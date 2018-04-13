@@ -47,8 +47,8 @@ SYS_INIT(init_msgq_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_OBJECT_TRACING */
 
-void _impl_k_msgq_init(struct k_msgq *q, char *buffer,
-		       size_t msg_size, u32_t max_msgs)
+void k_msgq_init(struct k_msgq *q, char *buffer, size_t msg_size,
+		 u32_t max_msgs)
 {
 	q->msg_size = msg_size;
 	q->max_msgs = max_msgs;
@@ -57,23 +57,56 @@ void _impl_k_msgq_init(struct k_msgq *q, char *buffer,
 	q->read_ptr = buffer;
 	q->write_ptr = buffer;
 	q->used_msgs = 0;
+	q->flags = 0;
 	sys_dlist_init(&q->wait_q);
 	SYS_TRACING_OBJ_INIT(k_msgq, q);
 
 	_k_object_init(q);
 }
 
-#ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_msgq_init, q, buffer, msg_size, max_msgs)
+int _impl_k_msgq_alloc_init(struct k_msgq *q, size_t msg_size,
+			    u32_t max_msgs)
 {
-	_SYSCALL_OBJ_INIT(q, K_OBJ_MSGQ);
-	_SYSCALL_MEMORY_ARRAY_WRITE(buffer, max_msgs, msg_size);
+	void *buffer;
+	int ret;
+	size_t total_size;
 
-	_impl_k_msgq_init((struct k_msgq *)q, (char *)buffer, msg_size,
-			  max_msgs);
-	return 0;
+	if (__builtin_umul_overflow((u32_t)msg_size, max_msgs,
+				    (u32_t *)&total_size)) {
+		ret = -EINVAL;
+	} else {
+		buffer = z_thread_malloc(total_size);
+		if (buffer) {
+			k_msgq_init(q, buffer, msg_size, max_msgs);
+			q->flags = K_MSGQ_FLAG_ALLOC;
+			ret = 0;
+		} else {
+			ret = -ENOMEM;
+		}
+	}
+
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+_SYSCALL_HANDLER(k_msgq_alloc_init, q, msg_size, max_msgs)
+{
+	_SYSCALL_OBJ_NEVER_INIT(q, K_OBJ_MSGQ);
+
+	return _impl_k_msgq_alloc_init((struct k_msgq *)q, msg_size, max_msgs);
 }
 #endif
+
+void k_msgq_cleanup(struct k_msgq *q)
+{
+	__ASSERT_NO_MSG(sys_dlist_is_empty(&q->wait_q));
+
+	if (q->flags & K_MSGQ_FLAG_ALLOC) {
+		k_free(q->buffer_start);
+		q->flags &= ~K_MSGQ_FLAG_ALLOC;
+	}
+}
+
 
 int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 {

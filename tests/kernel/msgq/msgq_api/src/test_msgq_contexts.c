@@ -156,6 +156,32 @@ void test_msgq_thread_overflow(void)
 	msgq_thread_overflow(&kmsgq);
 }
 
+#ifdef CONFIG_USERSPACE
+void test_msgq_user_thread(void)
+{
+	struct k_msgq *q;
+
+	q = k_object_alloc(K_OBJ_MSGQ);
+	zassert_not_null(q, "couldn't alloc message queue");
+	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN), NULL);
+	k_sem_init(&end_sema, 0, 1);
+
+	msgq_thread(q);
+}
+
+void test_msgq_user_thread_overflow(void)
+{
+	struct k_msgq *q;
+
+	q = k_object_alloc(K_OBJ_MSGQ);
+	zassert_not_null(q, "couldn't alloc message queue");
+	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, 1), NULL);
+	k_sem_init(&end_sema, 0, 1);
+
+	msgq_thread_overflow(q);
+}
+#endif /* CONFIG_USERSPACE */
+
 void test_msgq_isr(void)
 {
 	struct k_msgq stack_msgq;

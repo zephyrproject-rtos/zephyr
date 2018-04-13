@@ -2946,6 +2946,7 @@ struct k_msgq {
 	u32_t used_msgs;
 
 	_OBJECT_TRACING_NEXT_PTR(k_msgq);
+	u8_t flags;
 };
 
 #define _K_MSGQ_INITIALIZER(obj, q_buffer, q_msg_size, q_max_msgs) \
@@ -2962,6 +2963,8 @@ struct k_msgq {
 	}
 
 #define K_MSGQ_INITIALIZER DEPRECATED_MACRO _K_MSGQ_INITIALIZER
+
+#define K_MSGQ_FLAG_ALLOC	BIT(0)
 
 struct k_msgq_attrs {
 	size_t msg_size;
@@ -2999,7 +3002,7 @@ struct k_msgq_attrs {
  * @param q_align Alignment of the message queue's ring buffer.
  */
 #define K_MSGQ_DEFINE(q_name, q_msg_size, q_max_msgs, q_align)      \
-	static char __noinit __aligned(q_align)                     \
+	static char __kernel_noinit __aligned(q_align)              \
 		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];  \
 	struct k_msgq q_name                                        \
 		__in_section(_k_msgq, static, q_name) =        \
@@ -3024,8 +3027,33 @@ struct k_msgq_attrs {
  *
  * @return N/A
  */
-__syscall void k_msgq_init(struct k_msgq *q, char *buffer,
-			   size_t msg_size, u32_t max_msgs);
+void k_msgq_init(struct k_msgq *q, char *buffer, size_t msg_size,
+		 u32_t max_msgs);
+
+/**
+ * @brief Initialize a message queue.
+ *
+ * This routine initializes a message queue object, prior to its first use,
+ * allocating its internal ring buffer from the calling thread's resource
+ * pool.
+ *
+ * Memory allocated for the ring buffer can be released by calling
+ * k_msgq_cleanup(), or if userspace is enabled and the msgq object loses
+ * all of its references.
+ *
+ * @param q Address of the message queue.
+ * @param msg_size Message size (in bytes).
+ * @param max_msgs Maximum number of messages that can be queued.
+ *
+ * @return 0 on success, -ENOMEM if there was insufficient memory in the
+ *	thread's resource pool, or -EINVAL if the size parameters cause
+ *	an integer overflow.
+ */
+__syscall int k_msgq_alloc_init(struct k_msgq *q, size_t msg_size,
+				u32_t max_msgs);
+
+
+void k_msgq_cleanup(struct k_msgq *q);
 
 /**
  * @brief Send a message to a message queue.

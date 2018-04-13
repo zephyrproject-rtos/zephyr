@@ -19,36 +19,56 @@ static void tThread_entry(void *p1, void *p2, void *p3)
 	zassert_equal(ret, -ENOMSG, NULL);
 }
 
+static void purge_when_put(struct k_msgq *q)
+{
+	int ret;
+
+	/*fill the queue to full*/
+	for (int i = 0; i < MSGQ_LEN; i++) {
+		ret = k_msgq_put(q, (void *)&data[i], K_NO_WAIT);
+		zassert_equal(ret, 0, NULL);
+	}
+	/*create another thread waiting to put msg*/
+	k_thread_create(&tdata, tstack, STACK_SIZE,
+			tThread_entry, q, NULL, NULL,
+			K_PRIO_PREEMPT(0), K_USER | K_INHERIT_PERMS, 0);
+	k_sleep(TIMEOUT >> 1);
+	/**TESTPOINT: msgq purge while another thread waiting to put msg*/
+	k_msgq_purge(q);
+
+	/*verify msg put after purge*/
+	for (int i = 0; i < MSGQ_LEN; i++) {
+		ret = k_msgq_put(q, (void *)&data[i], K_NO_WAIT);
+		zassert_equal(ret, 0, NULL);
+	}
+}
+
 /**
  * @brief Verify zephyr msgq purge under different scenario
  * @addtogroup kernel_message_queue
  * @{
  */
+
 void test_msgq_purge_when_put(void)
 {
-	int ret;
-
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
 
-	/*fill the queue to full*/
-	for (int i = 0; i < MSGQ_LEN; i++) {
-		ret = k_msgq_put(&msgq, (void *)&data[i], K_NO_WAIT);
-		zassert_equal(ret, 0, NULL);
-	}
-	/*create another thread waiting to put msg*/
-	k_thread_create(&tdata, tstack, STACK_SIZE,
-			tThread_entry, &msgq, NULL, NULL,
-			K_PRIO_PREEMPT(0), K_USER | K_INHERIT_PERMS, 0);
-	k_sleep(TIMEOUT >> 1);
-	/**TESTPOINT: msgq purge while another thread waiting to put msg*/
-	k_msgq_purge(&msgq);
-
-	/*verify msg put after purge*/
-	for (int i = 0; i < MSGQ_LEN; i++) {
-		ret = k_msgq_put(&msgq, (void *)&data[i], K_NO_WAIT);
-		zassert_equal(ret, 0, NULL);
-	}
+	purge_when_put(&msgq);
 }
+
+#ifdef CONFIG_USERSPACE
+void test_msgq_user_purge_when_put(void)
+{
+	struct k_msgq *q;
+
+	q = k_object_alloc(K_OBJ_MSGQ);
+	zassert_not_null(q, "couldn't alloc message queue");
+	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN), NULL);
+
+	purge_when_put(q);
+}
+#endif
+
 /**
  * @}
  */
