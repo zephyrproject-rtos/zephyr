@@ -317,9 +317,9 @@ standards together with a configuration file we've provided:
 .. code-block:: bash
 
    # On Linux/macOS
-   uncrustify --replace --no-backup -l C -c $ZEPHYR_BASE/scripts/uncrustify.cfg my_source_file.c
+   uncrustify --replace --no-backup -l C -c $ZEPHYR_BASE/.uncrustify.cfg my_source_file.c
    # On Windows
-   uncrustify --replace --no-backup -l C -c %ZEPHYR_BASE%\scripts\uncrustify.cfg my_source_file.c
+   uncrustify --replace --no-backup -l C -c %ZEPHYR_BASE%\.uncrustify.cfg my_source_file.c
 
 On Linux systems, you can install uncrustify with
 
