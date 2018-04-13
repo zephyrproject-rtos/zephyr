@@ -1,3 +1,5 @@
+common:
+  depends_on: netif
 tests:
   test:
     min_ram: 32
