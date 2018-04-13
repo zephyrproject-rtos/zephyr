@@ -173,6 +173,25 @@ memory block is actually used to satisfy the request.)
     ... /* use memory block */
     k_mem_pool_free(&block);
 
+Thread Resource Pools
+*********************
+
+Certain kernel APIs may need to make heap allocations on behalf of the
+calling thread. For example, some initialization APIs for objects like
+pipes and message queues may need to allocate a private kernel-side buffer,
+or objects like queues may temporarily allocate kernel data structures
+as items are placed in the queue.
+
+Such memory allocations are drawn from memory pools that are assigned to
+a thread. By default, a thread in the system has no resource pool and
+any allocations made on its behalf will fail. The supervisor-mode only
+:cpp:func:`k_thread_resource_pool_assign()` will associate any implicit
+kernel-side allocations to the target thread with the provided memory pool,
+and any children of that thread will inherit this assignment.
+
+If a system heap exists, threads may alternatively have their resources
+drawn from it using the :cpp:func:`k_thread_system_pool_assign()` API.
+
 Suggested Uses
 **************
 
@@ -191,3 +210,5 @@ The following memory pool APIs are provided by :file:`kernel.h`:
 * :cpp:func:`k_mem_pool_free()`
 * :cpp:func:`k_mem_pool_malloc()`
 * :cpp:func:`k_free()`
+* :cpp:func:`k_thread_resource_pool_assign()`
+* :cpp:func:`k_thread_system_pool_assign()`

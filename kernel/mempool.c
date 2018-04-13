@@ -185,4 +185,22 @@ void *k_calloc(size_t nmemb, size_t size)
 	}
 	return ret;
 }
+
+void k_thread_system_pool_assign(struct k_thread *thread)
+{
+	thread->resource_pool = _HEAP_MEM_POOL;
+}
 #endif
+
+void *z_thread_malloc(size_t size)
+{
+	void *ret;
+
+	if (_current->resource_pool) {
+		ret = k_mem_pool_malloc(_current->resource_pool, size);
+	} else {
+		ret = NULL;
+	}
+
+	return ret;
+}
