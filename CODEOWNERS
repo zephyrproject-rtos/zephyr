@@ -21,9 +21,9 @@ arch/nios2/*                             @andrewboie @ramakrishnapallala
 arch/nios2/core/*                        @andrewboie @ramakrishnapallala
 arch/posix/*                             @aescolar-ot
 arch/riscv32                             @fractalclone @kgugala @pgielda
-arch/x86/*                               @andrewboie @youvedeep
+arch/x86/*                               @andrewboie @ramakrishnapallala
 arch/x86/core/*                          @andrewboie
-arch/x86/core/crt0.S                     @youvedeep @nashif
+arch/x86/core/crt0.S                     @ramakrishnapallala @nashif
 arch/x86/soc/intel_quark/quark_d2000/*   @nashif
 arch/x86/soc/intel_quark/quark_se/*      @nashif
 arch/x86/soc/intel_quark/quark_x1000/*   @nashif
@@ -93,7 +93,7 @@ drivers/spi/spi_ll_stm32.*               @superna9999
 drivers/timer/altera_avalon_timer.c      @ramakrishnapallala
 drivers/timer/pulpino_timer.c            @fractalclone @kgugala @pgielda
 drivers/timer/riscv_machine_timer.c      @fractalclone @kgugala @pgielda
-drivers/usb                              @youvedeep @andyross
+drivers/usb                              @jfischer-phytec-iot @finikorg
 drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
 dts/arm/st/*                             @erwango
@@ -114,14 +114,14 @@ include/arch/arm/cortex_m/irq.h          @andrewboie
 include/arch/nios2/*                     @andrewboie
 include/arch/nios2/arch.h                @andrewboie
 include/arch/riscv32                     @fractalclone @kgugala @pgielda
-include/arch/x86/*                       @andrewboie @youvedeep
+include/arch/x86/*                       @andrewboie @ramakrishnapallala
 include/arch/x86/arch.h                  @andrewboie
 include/arch/xtensa/*                    @andrewboie
 include/atomic.h                         @andrewboie @andyross
 include/bluetooth/*                      @sjanc @jhedberg @Vudentz
 include/cache.h                          @andrewboie @andyross
 include/counter.h                        @anangl
-include/device.h                         @youvedeep @nashif
+include/device.h                         @ramakrishnapallala @nashif
 include/drivers/bluetooth/*              @sjanc @jhedberg @Vudentz
 include/drivers/ioapic.h                 @andrewboie
 include/drivers/loapic.h                 @andrewboie
@@ -142,7 +142,7 @@ include/linker/sections.h                @andrewboie @andyross
 include/misc/*                           @andrewboie @andyross
 include/net/*                            @jukkar @tbursztyka
 include/net/buf.h                        @jukkar @jhedberg @tbursztyka
-include/power.h                          @youvedeep @nashif
+include/power.h                          @ramakrishnapallala @nashif
 include/sensor.h                         @bogdan-davidoaia
 include/shared_irq.h                     @andrewboie @andyross
 include/spi.h                            @tbursztyka
@@ -153,11 +153,11 @@ include/toolchain.h                      @andrewboie @andyross
 include/toolchain/*                      @andrewboie @andyross
 include/zephyr.h                         @andrewboie @andyross
 kernel/*                                 @andrewboie @andyross
-kernel/posix/*				 @youvedeep
-kernel/device.c                          @youvedeep @nashif
-kernel/idle.c                            @youvedeep @nashif
+kernel/posix/*                           @ramakrishnapallala
+kernel/device.c                          @ramakrishnapallala @nashif
+kernel/idle.c                            @ramakrishnapallala @nashif
 samples/bluetooth/*                      @sjanc @jhedberg @Vudentz
-samples/boards/quark_se_c1000/power*/*   @youvedeep @nashif
+samples/boards/quark_se_c1000/power*/*   @ramakrishnapallala @nashif
 samples/net/*                            @jukkar @tbursztyka
 samples/net/dns_resolve/*                @jukkar @tbursztyka
 samples/net/http_server/*                @jukkar @tbursztyka
@@ -168,7 +168,7 @@ samples/net/coap_client/*                @rveerama1
 samples/net/coap_server/*                @rveerama1
 samples/net/sockets/*                    @jukkar @tbursztyka @pfalcon
 samples/sensor/*                         @bogdan-davidoaia
-samples/subsys/usb                       @youvedeep @andyross
+samples/subsys/usb                       @jfischer-phytec-iot @finikorg
 scripts/expr_parser.py                   @andrewboie
 scripts/sanity_chk/*                     @andrewboie
 scripts/sanitycheck                      @andrewboie @nashif
@@ -185,7 +185,7 @@ subsys/net/lib/lwm2m/*                   @mike-scott
 subsys/net/lib/mqtt/*                    @jukkar @tbursztyka
 subsys/net/lib/coap/*                    @rveerama1
 subsys/net/lib/sockets/*                 @jukkar @tbursztyka @pfalcon
-subsys/usb                               @youvedeep @andyross
+subsys/usb                               @jfischer-phytec-iot @finikorg
 tests/bluetooth/*                        @sjanc @jhedberg @Vudentz
 tests/crypto/*                           @lpereira
 tests/crypto/mbedtls/*                   @nashif
