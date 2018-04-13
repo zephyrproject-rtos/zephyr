@@ -153,6 +153,8 @@ void cbc_mode(void)
 		goto out;
 	}
 
+	SYS_LOG_INF("Output length (encryption): %d", encrypt.out_len);
+
 	if (memcmp(encrypt.out_buf, ciphertext, sizeof(ciphertext))) {
 		SYS_LOG_ERR("CBC mode ENCRYPT - Mismatch between expected and "
 			    "returned cipher text");
@@ -180,6 +182,8 @@ void cbc_mode(void)
 		SYS_LOG_ERR("CBC mode DECRYPT - Failed");
 		goto out;
 	}
+
+	SYS_LOG_INF("Output length (decryption): %d", decrypt.out_len);
 
 	if (memcmp(decrypt.out_buf, plaintext, sizeof(plaintext))) {
 		SYS_LOG_ERR("CBC mode DECRYPT - Mismatch between plaintext and "
@@ -254,6 +258,8 @@ void ctr_mode(void)
 		goto out;
 	}
 
+	SYS_LOG_INF("Output length (encryption): %d", encrypt.out_len);
+
 	if (memcmp(encrypt.out_buf, ctr_ciphertext, sizeof(ctr_ciphertext))) {
 		SYS_LOG_ERR("CTR mode ENCRYPT - Mismatch between expected "
 			    "and returned cipher text");
@@ -280,6 +286,8 @@ void ctr_mode(void)
 		SYS_LOG_ERR("CTR mode DECRYPT - Failed");
 		goto out;
 	}
+
+	SYS_LOG_INF("Output length (decryption): %d", decrypt.out_len);
 
 	if (memcmp(decrypt.out_buf, plaintext, sizeof(plaintext))) {
 		SYS_LOG_ERR("CTR mode DECRYPT - Mismatch between plaintext "
@@ -372,6 +380,8 @@ void ccm_mode(void)
 		goto out;
 	}
 
+	SYS_LOG_INF("Output length (encryption): %d", encrypt.out_len);
+
 	if (memcmp(encrypt.out_buf, ccm_expected, sizeof(ccm_expected))) {
 		SYS_LOG_ERR("CCM mode ENCRYPT - Mismatch between expected "
 			    "and returned cipher text");
@@ -400,6 +410,8 @@ void ccm_mode(void)
 		SYS_LOG_ERR("CCM mode DECRYPT - Failed");
 		goto out;
 	}
+
+	SYS_LOG_INF("Output length (decryption): %d", decrypt.out_len);
 
 	if (memcmp(decrypt.out_buf, ccm_data, sizeof(ccm_data))) {
 		SYS_LOG_ERR("CCM mode DECRYPT - Mismatch between plaintext "
