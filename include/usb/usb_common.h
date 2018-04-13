@@ -65,10 +65,12 @@
 #define USB_ENDPOINT_DESC		0x05
 #define USB_DEVICE_QUAL_DESC		0x06
 #define USB_INTERFACE_ASSOC_DESC	0x0B
+#define USB_DEVICE_CAPABILITY_DESC	0x10
 #define USB_HID_DESC			0x21
 #define USB_HID_REPORT_DESC		0x22
 #define USB_DFU_FUNCTIONAL_DESC		0x21
 #define USB_ASSOCIATION_DESC		0x0B
+#define USB_BINARY_OBJECT_STORE_DESC	0x0F
 
 /* Useful define */
 #define USB_1_1				0x0110
@@ -194,6 +196,27 @@ struct usb_ep_descriptor {
 	u8_t bmAttributes;
 	u16_t wMaxPacketSize;
 	u8_t bInterval;
+} __packed;
+
+/** Binary Device Object Store (BOS) */
+
+#define USB_BOS_CAPABILITY_PLATFORM	0x05
+
+/** BOS Capability Descriptor */
+struct usb_bos_platform_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u8_t bDevCapabilityType;
+	u8_t bReserved;
+	u8_t PlatformCapabilityUUID[16];
+} __packed;
+
+/** BOS Descriptor */
+struct usb_bos_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u16_t wTotalLength;
+	u8_t bNumDeviceCaps;
 } __packed;
 
 #endif /* USB_COMMON_H_ */
