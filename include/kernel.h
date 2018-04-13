@@ -223,11 +223,19 @@ static inline void _impl_k_object_access_grant(void *object,
 /**
  * @internal
  */
-static inline void _impl_k_object_access_revoke(void *object,
-						struct k_thread *thread)
+static inline void k_object_access_revoke(void *object,
+					  struct k_thread *thread)
 {
 	ARG_UNUSED(object);
 	ARG_UNUSED(thread);
+}
+
+/**
+ * @internal
+ */
+static inline void _impl_k_object_release(void *object)
+{
+	ARG_UNUSED(object);
 }
 
 static inline void k_object_access_all_grant(void *object)
@@ -258,7 +266,10 @@ __syscall void k_object_access_grant(void *object, struct k_thread *thread);
  * @param object Address of kernel object
  * @param thread Thread to remove access to the object
  */
-__syscall void k_object_access_revoke(void *object, struct k_thread *thread);
+void k_object_access_revoke(void *object, struct k_thread *thread);
+
+
+__syscall void k_object_release(void *object);
 
 /**
  * grant all present and future threads access to an object
