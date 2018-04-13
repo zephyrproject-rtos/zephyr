@@ -239,6 +239,25 @@ static int thread_index_get(struct k_thread *t)
 	return ko->data;
 }
 
+static void unref_check(struct _k_object *ko)
+{
+	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
+		if (ko->perms[i]) {
+			return;
+		}
+	}
+
+	/* This object has no more references. Some objects may have
+	 * dynamically allocated resources, require cleanup, or need to be
+	 * marked as uninitailized when all references are gone. What
+	 * specifically needs to happen depends on the object type.
+	 */
+	switch (ko->type) {
+	default:
+		break;
+	}
+}
+
 static void wordlist_cb(struct _k_object *ko, void *ctx_ptr)
 {
 	struct perm_ctx *ctx = (struct perm_ctx *)ctx_ptr;
@@ -276,15 +295,22 @@ void _thread_perms_clear(struct _k_object *ko, struct k_thread *thread)
 	int index = thread_index_get(thread);
 
 	if (index != -1) {
+		int key = irq_lock();
+
 		sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
+		unref_check(ko);
+		irq_unlock(key);
 	}
 }
 
 static void clear_perms_cb(struct _k_object *ko, void *ctx_ptr)
 {
 	int id = (int)ctx_ptr;
+	int key = irq_lock();
 
 	sys_bitfield_clear_bit((mem_addr_t)&ko->perms, id);
+	unref_check(ko);
+	irq_unlock(key);
 }
 
 void _thread_perms_all_clear(struct k_thread *thread)
