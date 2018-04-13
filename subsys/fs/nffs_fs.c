@@ -350,8 +350,8 @@ static off_t nffs_tell(struct fs_file_t *zfp)
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
 	if (!zfp->nffs_fp) {
-		return -EIO;
 		k_mutex_unlock(&nffs_lock);
+		return -EIO;
 	}
 
 	offset = zfp->nffs_fp->nf_offset;
