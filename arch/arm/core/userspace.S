@@ -118,61 +118,53 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
  */
 SECTION_FUNC(TEXT, _arm_do_syscall)
     /*
-     * r0-r3 are values from pre-SVC from stack frame stored during SVC
-     * 16 bytes of storage reside on the stack:
-     * arg5, arg6, call_id, and LR from SVC frame
+     * r0-r5 contain arguments
+     * r6 contains call_id
+     * r7 contains original LR
      */
-    push {r4,r5,r6,lr}
-
-    ldr ip, =_k_syscall_table
-    ldr r4, [sp, #24]	/* load call_id from stack */
-    lsl r4, #2
-    add ip, r4
-    ldr ip, [ip]	/* load table address */
-    ldr r5, =_SYSCALL_BAD
-    lsl r5, #2		/* shift to match the shift we did on the call_id */
-    cmp r4, r5
+    ldr ip, =_SYSCALL_BAD
+    cmp r6, ip
     bne valid_syscall
 
     /* BAD SYSCALL path */
     /* fixup stack frame on unprivileged stack, adding ssf */
-    /* pop registers and lr as this is a one way jump */
-    mov r4, sp
-    str r4, [sp, #24]
-    pop {r4,r5,r6,lr}
+    mov ip, sp
+    push {r4,r5,ip,lr}
     b dispatch_syscall
 
 valid_syscall:
     /* setup priviliged stack */
-    ldr r4, =_kernel
-    ldr r4, [r4, #_kernel_offset_to_current]
-    ldr r5, [r4, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
+    push {r6}
+    ldr r6, =_kernel
+    ldr r6, [r6, #_kernel_offset_to_current]
+    ldr ip, [r6, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
     ldr r6, =CONFIG_PRIVILEGED_STACK_SIZE
-    add r5, r6
-
-    /* setup privileged stack frame */
-    /* 16 bytes: arg5, arg6, ssf, 4 bytes padding */
-    sub r5, #16
-    ldr r6, [sp, #16]
-    str r6, [r5, #0]
-    ldr r6, [sp, #20]
-    str r6, [r5, #4]
-    mov r6, sp
-    str r6, [r5, #8]	/* store ssf of unprivileged stack */
-    ldr r6, =0
-    str r6, [r5, #12]	/* store zeroed padding */
+    add ip, r6
+    pop {r6}
+    subs ip, #8
+    str sp, [ip, #0]
+    str lr, [ip, #4]
 
     /* switch to privileged stack */
-    msr PSP, r5
+    msr PSP, ip
+
+    /* push args to complete stack frame */
+    push {r4,r5}
+
 dispatch_syscall:
+    ldr ip, =_k_syscall_table
+    lsl r6, #2
+    add ip, r6
+    ldr ip, [ip]	/* load table address */
     /* execute function from dispatch table */
     blx ip
+
+    /* restore LR */
+    ldr lr, [sp,#12]
 
     /* set stack back to unprivileged stack */
     ldr ip, [sp,#8]
     msr PSP, ip
-
-    pop {r4,r5,r6,lr}
 
     /* drop privileges by setting bit 0 in CONTROL */
     mrs ip, CONTROL
@@ -189,6 +181,6 @@ dispatch_syscall:
      * return back to original function that called SVC, add 1 to force thumb
      * mode
      */
-    ldr ip, [sp, #12]
+    mov ip, r7
     orrs ip, ip, #1
     bx ip

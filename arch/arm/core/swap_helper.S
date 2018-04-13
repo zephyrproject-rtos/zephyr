@@ -368,25 +368,30 @@ _oops:
      *
      * On SVC exeption, the stack looks like the following:
      * r0 - r1 - r2 - r3 - r12 - LR - PC - PSR
-     * r5 - r6 - call id - saved LR
      *
+     * Registers look like:
+     * r0 - arg1
+     * r1 - arg2
+     * r2 - arg3
+     * r3 - arg4
+     * r4 - arg5
+     * r5 - arg6
+     * r6 - call_id
+     * r7 - saved link register
      */
 _do_syscall:
-    ldr r1, [r0, #24]   /* grab address of PC from stack frame */
-    str r1, [r0, #44]   /* store address to use for LR after syscall */
+    ldr r7, [r0, #24]   /* grab address of PC from stack frame */
     ldr r1, =_arm_do_syscall
     str r1, [r0, #24]   /* overwrite the LR to point to _arm_do_syscall */
 
     /* validate syscall limit, only set priv mode if valid */
     ldr ip, =_SYSCALL_LIMIT
-    ldr r1, [r0, #40]
-    cmp r1, ip
+    cmp r6, ip
     blt valid_syscall_id
 
     /* bad syscall id.  Set arg0 to bad id and set call_id to SYSCALL_BAD */
-    str r1, [r0, #0]
-    ldr r1, =_SYSCALL_BAD
-    str r1, [r0, #40]
+    str r6, [r0, #0]
+    ldr r6, =_SYSCALL_BAD
 
 valid_syscall_id:
     /* set mode to privileged, r2 still contains value from CONTROL */
