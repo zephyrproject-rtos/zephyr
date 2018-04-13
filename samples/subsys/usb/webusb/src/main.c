@@ -18,59 +18,101 @@
 #include <device.h>
 #include <uart.h>
 #include <zephyr.h>
+#include <misc/byteorder.h>
+#include <usb/usb_common.h>
 #include "webusb_serial.h"
 
 static volatile bool data_transmitted;
 static volatile bool data_arrived;
 static u8_t data_buf[64];
 
-/* WebUSB + MS Platform Capability Descriptors */
-static const u8_t webusb_bos_descriptor[] = {
-	0x05, /* Descriptor size */
-	0x0F, /* Descriptor type (Binary device Object Store) */
-	(0x05 + 0x18 + 0x1C), 0x00, /* Total length of BOS */
-	0x02, /* Number of capability descriptors that follow */
+struct usb_bos_capability_webusb {
+	u16_t bcdVersion;
+	u8_t bVendorCode;
+	u8_t iLandingPage;
+} __packed;
 
+struct usb_bos_capability_msos {
+	u32_t dwWindowsVersion;
+	u16_t wMSOSDescriptorSetTotalLength;
+	u8_t bMS_VendorCode;
+	u8_t bAltEnumCode;
+} __packed;
+
+static struct webusb_bos_desc {
+	struct usb_bos_descriptor bos;
+	struct usb_bos_platform_descriptor platform_webusb;
+	struct usb_bos_capability_webusb capability_data_webusb;
+	struct usb_bos_platform_descriptor platform_msos;
+	struct usb_bos_capability_msos capability_data_msos;
+} __packed webusb_bos_descriptor = {
+	.bos = {
+		.bLength = sizeof(struct usb_bos_descriptor),
+		.bDescriptorType = USB_BINARY_OBJECT_STORE_DESC,
+		.wTotalLength = sizeof(struct usb_bos_descriptor)
+			+ sizeof(struct usb_bos_platform_descriptor)
+			+ sizeof(struct usb_bos_capability_webusb)
+			+ 0x1C,
+		.bNumDeviceCaps = 2,
+	},
 	/* WebUSB Platform Capability Descriptor:
 	 * https://wicg.github.io/webusb/#webusb-platform-capability-descriptor
 	 */
-	0x18, /* Descriptor size (24 bytes)          */
-	0x10, /* Descriptor type (Device Capability) */
-	0x05, /* Capability type (Platform)          */
-	0x00, /* Reserved                            */
-
-	/* WebUSB Platform Capability UUID (3408b638-09a9-47a0-8bfd-a0768815b665) */
-	0x38, 0xB6, 0x08, 0x34,
-	0xA9, 0x09,
-	0xA0, 0x47,
-	0x8B, 0xFD,
-	0xA0, 0x76, 0x88, 0x15, 0xB6, 0x65,
-
-	0x00, 0x01, /* BCD WebUSB version: 1.0  */
-	0x01, /* Vendor-assigned WebUSB request code, for control requests */
-	0x01, /* Landing page index (refers to "http://localhost:8000") */
-
+	.platform_webusb = {
+		.bLength = sizeof(struct usb_bos_platform_descriptor)
+			+ sizeof(struct usb_bos_capability_webusb),
+		.bDescriptorType = USB_DEVICE_CAPABILITY_DESC,
+		.bDevCapabilityType = USB_BOS_CAPABILITY_PLATFORM,
+		.bReserved = 0,
+		/* WebUSB Platform Capability UUID
+		 * 3408b638-09a9-47a0-8bfd-a0768815b665
+		 */
+		.PlatformCapabilityUUID = {
+			0x38, 0xB6, 0x08, 0x34,
+			0xA9, 0x09,
+			0xA0, 0x47,
+			0x8B, 0xFD,
+			0xA0, 0x76, 0x88, 0x15, 0xB6, 0x65,
+		},
+	},
+	.capability_data_webusb = {
+		.bcdVersion = sys_cpu_to_le16(0x0100),
+		.bVendorCode = 0x01,
+		.iLandingPage = 0x01
+	},
 	/* Microsoft OS 2.0 Platform Capability Descriptor
-	 * See https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/microsoft-defined-usb-descriptors
-	 * Adapted from https://github.com/sowbug/weblight/blob/master/firmware/webusb.c (BSD-2)
-	 * Thanks http://janaxelson.com/files/ms_os_20_descriptors.c
+	 * See https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/
+	 * microsoft-defined-usb-descriptors
+	 * Adapted from the source:
+	 * https://github.com/sowbug/weblight/blob/master/firmware/webusb.c
+	 * (BSD-2) Thanks http://janaxelson.com/files/ms_os_20_descriptors.c
 	 */
-	0x1C, /* Descriptor size (28 bytes)          */
-	0x10, /* Descriptor type (Device Capability) */
-	0x05, /* Capability type (Platform)          */
-	0x00, /* Reserved                            */
-
-	/* MS OS 2.0 Platform Capability ID (D8DD60DF-4589-4CC7-9CD2-659D9E648A9F) */
-	0xDF, 0x60, 0xDD, 0xD8,
-	0x89, 0x45,
-	0xC7, 0x4C,
-	0x9C, 0xD2,
-	0x65, 0x9D, 0x9E, 0x64, 0x8A, 0x9F,
-
-	0x00, 0x00, 0x03, 0x06, /* Windows version (8.1) (0x06030000) */
-	(0x0A + 0x14 + 0x08), 0x00, /* Length of the MS OS 2.0 descriptor set */
-	0x02, /* Vendor-assigned bMS_VendorCode, used for a control request */
-	0x00  /* Alternate enumeration support. 0 = Doesn’t support it */
+	.platform_msos = {
+		.bLength = sizeof(struct usb_bos_platform_descriptor)
+			+ sizeof(struct usb_bos_capability_msos),
+		.bDescriptorType = USB_DEVICE_CAPABILITY_DESC,
+		.bDevCapabilityType = USB_BOS_CAPABILITY_PLATFORM,
+		.bReserved = 0,
+		.PlatformCapabilityUUID = {
+			/**
+			 * MS OS 2.0 Platform Capability ID
+			 * D8DD60DF-4589-4CC7-9CD2-659D9E648A9F
+			 */
+			0xDF, 0x60, 0xDD, 0xD8,
+			0x89, 0x45,
+			0xC7, 0x4C,
+			0x9C, 0xD2,
+			0x65, 0x9D, 0x9E, 0x64, 0x8A, 0x9F,
+		},
+	},
+	.capability_data_msos = {
+		/* Windows version (8.1) (0x06030000) */
+		.dwWindowsVersion = sys_cpu_to_le32(0x06030000),
+		.wMSOSDescriptorSetTotalLength =
+			sys_cpu_to_le16(0x0A + 0x14 + 0x08),
+		.bMS_VendorCode = 0x02,
+		.bAltEnumCode = 0x00
+	}
 };
 
 /* WebUSB Device Requests */
