@@ -3187,6 +3187,11 @@ static void reassembly_info(char *str, struct net_ipv6_reassembly *reass)
 	snprintk(out, sizeof(out), "%s", net_sprint_ipv6_addr(&reass->dst));
 
 	for (i = 0, len = 0; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
+		if (!reass->pkt[i]) {
+			NET_ERR("NULL pending fragment");
+			continue;
+		}
+
 		len += net_pkt_get_len(reass->pkt[i]);
 	}
 
