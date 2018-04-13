@@ -1,4 +1,4 @@
 tests:
   test:
-    min_ram: 16
+    min_ram: 24
     tags: net
