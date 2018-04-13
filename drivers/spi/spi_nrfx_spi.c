@@ -139,7 +139,7 @@ static void transfer_next_chunk(struct device *dev)
 	size_t chunk_len = spi_context_longest_current_buf(ctx);
 
 	if (chunk_len > 0) {
-		nrfx_spim_xfer_desc_t xfer;
+		nrfx_spi_xfer_desc_t xfer;
 		nrfx_err_t result;
 
 		dev_data->chunk_len = chunk_len;
