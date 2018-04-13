@@ -210,18 +210,26 @@ static int usb_dc_stm32_clock_enable(void)
 	};
 
 	/*
-	 * Some SoCs in STM32F0/L0/L4 series disable USB clock by default.
-	 * We force USB clock source to PLL clock for this SoCs.
-	 * Example reference manual RM0360 for STM32F030x4/x6/x8/xC and
-	 * STM32F070x6/xB.
+	 * Some SoCs in STM32F0/L0/L4 series disable USB clock by
+	 * default.  We force USB clock source to PLL clock for this
+	 * SoCs.  However, if these parts have an HSI48 clock, use
+	 * that instead.  Example reference manual RM0360 for
+	 * STM32F030x4/x6/x8/xC and STM32F070x6/xB.
 	 */
-#ifdef LL_RCC_USB_CLKSOURCE_NONE
+#if defined(RCC_HSI48_SUPPORT)
+	LL_RCC_HSI48_Enable();
+	while (!LL_RCC_HSI48_IsReady()) {
+		/* Wait for HSI48 to become ready */
+	}
+
+	LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_HSI48);
+#elif defined(LL_RCC_USB_CLKSOURCE_NONE)
 	if (LL_RCC_PLL_IsReady()) {
 		LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL);
 	} else {
 		SYS_LOG_ERR("Unable to set USB clock source to PLL.");
 	}
-#endif /* LL_RCC_USB_CLKSOURCE_NONE */
+#endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE */
 
 	clock_control_on(clk, (clock_control_subsys_t *)&pclken);
 
