@@ -93,6 +93,50 @@ int arm_cmse_addr_read_ok(u32_t addr, int force_npriv);
  */
 int arm_cmse_addr_readwrite_ok(u32_t addr, int force_npriv);
 
+/**
+ * @brief Read accessibility of an address range
+ *
+ * Evaluates whether a memory address range, specified by its base address
+ * and size, can be read according to the permissions of the current state MPU
+ * and the specified operation mode.
+ *
+ * This function shall always return zero:
+ * - if executed from an unprivileged mode,
+ * - if the address range overlaps with multiple MPU (and/or SAU/IDAU) regions.
+ *
+ * @param addr The base address of an address range,
+ *             for which the readability is requested
+ * @param size The size of the address range
+ * @param force_npriv Instruct to return the readability of the address range
+ *                    for unprivileged access, regardless of whether the current
+ *                    mode is privileged or unprivileged.
+ *
+ * @return 1 if address range is readable, 0 otherwise.
+ */
+int arm_cmse_addr_range_read_ok(u32_t addr, u32_t size, int force_npriv);
+
+/**
+ * @brief Read and Write accessibility of an address range
+ *
+ * Evaluates whether a memory address range, specified by its base address
+ * and size, can be read/written according to the permissions of the current
+ * state MPU and the specified operation mode.
+ *
+ * This function shall always return zero:
+ * - if executed from an unprivileged mode,
+ * - if the address range overlaps with multiple MPU (and/or SAU/IDAU) regions.
+ *
+ * @param addr The base address of an address range,
+ *             for which the RW ability is requested
+ * @param size The size of the address range
+ * @param force_npriv Instruct to return the RW ability of the address range
+ *                    for unprivileged access, regardless of whether the current
+ *                    mode is privileged or unprivileged.
+ *
+ * @return 1 if address range is Read and Writable, 0 otherwise.
+ */
+int arm_cmse_addr_range_readwrite_ok(u32_t addr, u32_t size, int force_npriv);
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
