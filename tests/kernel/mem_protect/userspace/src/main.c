@@ -418,7 +418,7 @@ static void revoke_noperms_object(void)
 	expect_fault = true;
 	expected_reason = REASON_KERNEL_OOPS;
 	BARRIER();
-	k_object_access_revoke(&ksem, k_current_get());
+	k_object_release(&ksem);
 
 	zassert_unreachable("Revoke access to unauthorized object "
 		"did not fault\n");
@@ -426,7 +426,7 @@ static void revoke_noperms_object(void)
 
 static void access_after_revoke(void)
 {
-	k_object_access_revoke(&test_revoke_sem, k_current_get());
+	k_object_release(&test_revoke_sem);
 
 	/* Try to access an object after revoking access to it */
 	expect_fault = true;
@@ -435,35 +435,6 @@ static void access_after_revoke(void)
 	k_sem_take(&test_revoke_sem, K_NO_WAIT);
 
 	zassert_unreachable("Using revoked object did not fault\n");
-}
-
-static void revoke_from_parent(k_tid_t parentThread)
-{
-	/* The following should cause a fault */
-	expect_fault = true;
-	expected_reason = REASON_KERNEL_OOPS;
-	BARRIER();
-	k_object_access_revoke(&test_revoke_sem, parentThread);
-
-	zassert_unreachable("Revoking from unauthorized thread did "
-		"not fault\n");
-}
-
-static void revoke_other_thread(void)
-{
-	/* Create user mode thread */
-	k_thread_create(&uthread_thread, uthread_stack, STACKSIZE,
-			(k_thread_entry_t)revoke_from_parent, k_current_get(),
-			NULL, NULL, -1, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
-
-	/*
-	 * Abort ztest thread so that it does not return to the caller
-	 * and incorrectly signal a passing test. The thread created above
-	 * will handle calling ztest_test_pass() or ztest_test_fail()
-	 * to complete the test, either directly or from
-	 * _SysFatalErrorHandler().
-	 */
-	k_thread_abort(k_current_get());
 }
 
 static void umode_enter_func(void)
@@ -560,7 +531,6 @@ void test_main(void)
 			 ztest_user_unit_test(write_other_stack),
 			 ztest_user_unit_test(revoke_noperms_object),
 			 ztest_user_unit_test(access_after_revoke),
-			 ztest_user_unit_test(revoke_other_thread),
 			 ztest_unit_test(user_mode_enter),
 			 ztest_user_unit_test(write_kobject_user_pipe),
 			 ztest_user_unit_test(read_kobject_user_pipe)

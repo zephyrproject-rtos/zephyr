@@ -152,9 +152,10 @@ ways to do this.
   access to a set of kernel objects at boot time.
 
 Once a thread has been granted access to an object, such access may be
-removed with the :c:func:`k_object_access_revoke()` API. User threads using
-this API must have permission on both the object in question, and the thread
-object that is having access revoked.
+removed with the :c:func:`k_object_access_revoke()` API. This API is not
+available to user threads, however user threads may use
+:c:func:`k_object_release()` to relinquish their own permissions on an
+object.
 
 API calls from supervisor mode to set permissions on kernel objects that are
 not being tracked by the kernel will be no-ops. Doing the same from user mode

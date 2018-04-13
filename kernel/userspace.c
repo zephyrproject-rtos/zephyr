@@ -350,13 +350,18 @@ void _impl_k_object_access_grant(void *object, struct k_thread *thread)
 	}
 }
 
-void _impl_k_object_access_revoke(void *object, struct k_thread *thread)
+void k_object_access_revoke(void *object, struct k_thread *thread)
 {
 	struct _k_object *ko = _k_object_find(object);
 
 	if (ko) {
 		_thread_perms_clear(ko, thread);
 	}
+}
+
+void _impl_k_object_release(void *object)
+{
+	k_object_access_revoke(object, _current);
 }
 
 void k_object_access_all_grant(void *object)
