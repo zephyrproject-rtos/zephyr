@@ -39,6 +39,9 @@ static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 		return -EIO;
 	}
 
+	/* out_len is the same as in_len in CBC mode */
+	op->out_len = op->in_len;
+
 	return 0;
 }
 
@@ -64,9 +67,11 @@ static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 		return -EIO;
 	}
 
+	/* out_len is the same as in_len in CBC mode */
+	op->out_len = op->in_len;
+
 	return 0;
 }
-
 
 static int do_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *op,
 		     u8_t *iv)
@@ -86,6 +91,9 @@ static int do_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *op,
 		SYS_LOG_ERR("TC internal error during CTR OP");
 		return -EIO;
 	}
+
+	/* out_len is the same as in_len in CTR mode */
+	op->out_len = op->in_len;
 
 	return 0;
 }
@@ -118,6 +126,12 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 	 * both encrypted output and hash
 	 */
 	aead_op->tag = op->out_buf + op->in_len;
+
+	/* Before returning TC_CRYPTO_SUCCESS, tc_ccm_generation_encryption()
+	 * will advance the output buffer pointer by op->in_len bytes,
+	 * and then increment it ccm.mlen times (while writing to it).
+	 */
+	op->out_len = op->in_len + ccm.mlen;
 
 	return 0;
 }
@@ -154,6 +168,8 @@ static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
 		SYS_LOG_ERR("TC internal error during CCM decryption OP");
 		return -EIO;
 	}
+
+	op->out_len = op->in_len + ccm_param->tag_len;
 
 	return 0;
 }
@@ -273,7 +289,6 @@ static int tc_query_caps(struct device *dev)
 	return (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS);
 }
 
-
 static int tc_session_free(struct device *dev, struct cipher_ctx *sessn)
 {
 	struct tc_shim_drv_state *data =  sessn->drv_sessn_state;
@@ -283,7 +298,6 @@ static int tc_session_free(struct device *dev, struct cipher_ctx *sessn)
 	data->in_use = 0;
 
 	return 0;
-
 }
 
 static int tc_shim_init(struct device *dev)
@@ -294,11 +308,9 @@ static int tc_shim_init(struct device *dev)
 	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
 		tc_driver_state[i].in_use = 0;
 	}
+
 	return 0;
 }
-
-
-
 
 static struct crypto_driver_api crypto_enc_funcs = {
 	.begin_session = tc_session_setup,
@@ -306,7 +318,6 @@ static struct crypto_driver_api crypto_enc_funcs = {
 	.crypto_async_callback_set = NULL,
 	.query_hw_caps = tc_query_caps,
 };
-
 
 DEVICE_AND_API_INIT(crypto_tinycrypt, CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME,
 		    &tc_shim_init, NULL, NULL,
