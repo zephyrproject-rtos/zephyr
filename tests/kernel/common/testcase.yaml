@@ -1,4 +1,5 @@
 tests:
   kernel.common:
     tags: kernel
+    min_flash: 33
     min_ram: 16

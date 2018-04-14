@@ -8,6 +8,7 @@ common:
   min_ram: 16
 tests:
   test-mbedtls:
+    min_flash: 34
     extra_args: CONF_FILE=prj_mtls_shim.conf
     harness_config:
       type: multi_line
