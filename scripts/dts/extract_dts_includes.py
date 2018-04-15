@@ -32,7 +32,7 @@ class Loader(yaml.Loader):
         elif isinstance(node, yaml.SequenceNode):
             result = []
             for filename in self.construct_sequence(node):
-                result += self.extractFile(filename)
+                result.append(self.extractFile(filename))
             return result
 
         elif isinstance(node, yaml.MappingNode):
@@ -572,6 +572,9 @@ def dict_merge(dct, merge_dct):
                 and isinstance(merge_dct[k], collections.Mapping)):
             dict_merge(dct[k], merge_dct[k])
         else:
+            if k in dct and dct[k] != merge_dct[k]:
+                print("extract_dts_includes.py: Merge of '{}': '{}'  overwrites '{}'.".format(
+                        k, merge_dct[k], dct[k]))
             dct[k] = merge_dct[k]
 
 
@@ -584,15 +587,34 @@ def yaml_traverse_inherited(node):
     :return: node
     """
 
-    if 'inherits' in node.keys():
-        if 'id' in node['inherits'].keys():
-            node['inherits']['node_type'] = node['inherits']['id']
-            node['inherits'].pop('id')
-        if 'inherits' in node['inherits'].keys():
-            node['inherits'] = yaml_traverse_inherited(node['inherits'])
-        dict_merge(node['inherits'], node)
-        node = node['inherits']
+    if 'node_type' not in node:
+        node['node_type'] = []
+    if 'inherits' in node:
+        if isinstance(node['inherits'], list):
+            inherits_list  = node['inherits']
+        else:
+            inherits_list  = [node['inherits'],]
         node.pop('inherits')
+        for inherits in inherits_list:
+            if 'id' in inherits:
+                node['node_type'].append(inherits['id'])
+                inherits.pop('id')
+            # title, description, version of inherited node are overwritten
+            # by intention. Remove to prevent dct_merge to complain about
+            # duplicates.
+            if 'title' in inherits and 'title' in node:
+                inherits.pop('title')
+            if 'version' in inherits and 'version' in node:
+                inherits.pop('version')
+            if 'description' in inherits and 'description' in node:
+                inherits.pop('description')
+
+            if 'inherits' in inherits:
+                inherits = yaml_traverse_inherited(inherits)
+                if 'node_type' in inherits:
+                    node['node_type'].extend(inherits['node_type'])
+            dict_merge(inherits, node)
+            node = inherits
     return node
 
 
