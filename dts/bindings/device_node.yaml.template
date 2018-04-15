@@ -6,6 +6,11 @@ description: >
     Describe in free form text w/ spanning lines what you
     are describing
 
+inherits:
+  - !include other.yaml # or [other1.yaml, other2.yaml]
+# other.yaml contains bindings that also apply to this node.
+# In case there are duplicate definitions in the different
+# bindings the one that is defined first prevails.
 
 < parent | child >:
 # parent/child is used to document implicit relation between nodes.
