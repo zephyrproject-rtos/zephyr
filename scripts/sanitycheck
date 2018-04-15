@@ -2213,6 +2213,9 @@ def parse_arguments():
     parser.add_argument("--list-tags", action="store_true",
             help="list all tags in selected tests")
 
+    parser.add_argument("--list-tests", action="store_true",
+            help="list all tests.")
+
     parser.add_argument(
         "-r", "--release", action="store_true",
         help="Update the benchmark database with the results of this test "
@@ -2510,6 +2513,16 @@ def main():
         for t in tags:
             print("- {}".format(t))
 
+        return
+
+    if options.list_tests:
+        cnt = 0
+        for n,tc in ts.testcases.items():
+            for c in tc.cases:
+                cnt = cnt + 1
+                print(" - {}".format(c))
+
+        print("{} total.".format(cnt))
         return
 
     discards = []
