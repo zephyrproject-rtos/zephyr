@@ -260,7 +260,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 static void spi_mcux_config_func_0(struct device *dev);
 
 static const struct spi_mcux_config spi_mcux_config_0 = {
-	.base = DSPI0,
+	.base = (SPI_Type *) CONFIG_SPI_0_BASE_ADDRESS,
 	.clock_source = DSPI0_CLK_SRC,
 	.irq_config_func = spi_mcux_config_func_0,
 };
@@ -277,10 +277,10 @@ DEVICE_AND_API_INIT(spi_mcux_0, CONFIG_SPI_0_NAME, &spi_mcux_init,
 
 static void spi_mcux_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(IRQ_SPI0, CONFIG_SPI_0_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_SPI_0_IRQ, CONFIG_SPI_0_IRQ_PRI,
 		    spi_mcux_isr, DEVICE_GET(spi_mcux_0), 0);
 
-	irq_enable(IRQ_SPI0);
+	irq_enable(CONFIG_SPI_0_IRQ);
 }
 #endif /* CONFIG_SPI_0 */
 
@@ -288,7 +288,7 @@ static void spi_mcux_config_func_0(struct device *dev)
 static void spi_mcux_config_func_1(struct device *dev);
 
 static const struct spi_mcux_config spi_mcux_config_1 = {
-	.base = DSPI1,
+	.base = (SPI_Type *) CONFIG_SPI_1_BASE_ADDRESS,
 	.clock_source = DSPI1_CLK_SRC,
 	.irq_config_func = spi_mcux_config_func_1,
 };
@@ -305,10 +305,10 @@ DEVICE_AND_API_INIT(spi_mcux_1, CONFIG_SPI_1_NAME, &spi_mcux_init,
 
 static void spi_mcux_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(IRQ_SPI1, CONFIG_SPI_1_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_SPI_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
 		    spi_mcux_isr, DEVICE_GET(spi_mcux_1), 0);
 
-	irq_enable(IRQ_SPI1);
+	irq_enable(CONFIG_SPI_1_IRQ);
 }
 #endif /* CONFIG_SPI_1 */
 
@@ -316,7 +316,7 @@ static void spi_mcux_config_func_1(struct device *dev)
 static void spi_mcux_config_func_2(struct device *dev);
 
 static const struct spi_mcux_config spi_mcux_config_2 = {
-	.base = DSPI2,
+	.base = (SPI_Type *) CONFIG_SPI_2_BASE_ADDRESS,
 	.clock_source = DSPI2_CLK_SRC,
 	.irq_config_func = spi_mcux_config_func_2,
 };
@@ -333,9 +333,9 @@ DEVICE_AND_API_INIT(spi_mcux_2, CONFIG_SPI_2_NAME, &spi_mcux_init,
 
 static void spi_mcux_config_func_2(struct device *dev)
 {
-	IRQ_CONNECT(IRQ_SPI2, CONFIG_SPI_2_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_SPI_2_IRQ, CONFIG_SPI_2_IRQ_PRI,
 		    spi_mcux_isr, DEVICE_GET(spi_mcux_2), 0);
 
-	irq_enable(IRQ_SPI2);
+	irq_enable(CONFIG_SPI_2_IRQ);
 }
 #endif /* CONFIG_SPI_2 */
