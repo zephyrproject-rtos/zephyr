@@ -123,8 +123,6 @@ firq_nest:
 
 SECTION_FUNC(TEXT, _firq_exit)
 
-	pop sp
-
 #if CONFIG_RGF_NUM_BANKS != 1
 #ifndef CONFIG_FIRQ_NO_LPCC
 	/* restore lp_count, lp_start, lp_end from r23-r25 */
@@ -141,6 +139,10 @@ SECTION_FUNC(TEXT, _firq_exit)
 	cmp	r0, 0
 	bne.d	_firq_no_reschedule
 	st	r0, [r1]
+
+#ifdef CONFIG_STACK_SENTINEL
+	bl _check_stack_sentinel
+#endif
 
 #ifdef CONFIG_PREEMPT_ENABLED
 
@@ -164,6 +166,8 @@ SECTION_FUNC(TEXT, _firq_exit)
 
 .balign 4
 _firq_no_reschedule:
+	pop sp
+
 	/*
 	 * Keeping this code block close to those that use it allows using brxx
 	 * instruction instead of a pair of cmp and bxx
@@ -207,6 +211,7 @@ _firq_no_reschedule:
 
 .balign 4
 _firq_reschedule:
+	pop sp
 
 #if CONFIG_RGF_NUM_BANKS != 1
 	/*

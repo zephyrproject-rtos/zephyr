@@ -95,6 +95,10 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	bne.d	_rirq_return_from_rirq
 	st	r0, [r1]
 
+#ifdef CONFIG_STACK_SENTINEL
+	bl _check_stack_sentinel
+#endif
+
 #ifdef CONFIG_PREEMPT_ENABLED
 
 	mov r1, _kernel
