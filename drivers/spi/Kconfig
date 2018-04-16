@@ -83,6 +83,7 @@ config SPI_0_OP_MODES
 
 config SPI_0_IRQ_PRI
 	int "Port 0 interrupt priority"
+	depends on !HAS_DTS_SPI
 
 config SPI_0_CS_GPIO_PORT
 	string "The GPIO port which is used to control CS"
@@ -216,6 +217,7 @@ if SPI_4
 
 config SPI_4_NAME
 	string "SPI port 4 device name"
+	depends on !HAS_DTS_SPI
 	default "SPI_4"
 
 config SPI_4_OP_MODES
@@ -241,6 +243,7 @@ if SPI_5
 
 config SPI_5_NAME
 	string "SPI port 5 device name"
+	depends on !HAS_DTS_SPI
 	default "SPI_5"
 
 config SPI_5_OP_MODES
