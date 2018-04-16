@@ -274,6 +274,13 @@ set(KERNEL_EXE_NAME   ${KERNEL_NAME}.exe)
 set(KERNEL_STAT_NAME  ${KERNEL_NAME}.stat)
 set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
 
+# Populate USER_CACHE_DIR with a directory that user applications may
+# write cache files to.
+if(NOT DEFINED USER_CACHE_DIR)
+  find_appropriate_cache_directory(USER_CACHE_DIR)
+endif()
+message(STATUS "Cache files will be written to: ${USER_CACHE_DIR}")
+
 include(${BOARD_DIR}/board.cmake OPTIONAL)
 
 zephyr_library_named(app)
