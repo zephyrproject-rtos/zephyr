@@ -55,6 +55,17 @@ config FILE_SYSTEM_SHELL
 	  This shell provides basic browsing of the contents of the
 	  file system.
 
+menu "FatFs Settings"
+	visible if FAT_FILESYSTEM_ELM
+
+config FS_FATFS_NUM_FILES
+	int "Maximum number of opened files"
+	default 4
+
+config FS_FATFS_NUM_DIRS
+	int "Maximum number of opened directories"
+	default 4
+endmenu
 
 menu "NFFS Settings"
 	visible if FILE_SYSTEM_NFFS
