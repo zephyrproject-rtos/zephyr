@@ -85,7 +85,7 @@ packages from their respective websites.
 #. Install the required Python modules::
 
       cd %userprofile%\zephyr
-      pip install --user -r scripts/requirements.txt
+      pip3 install --user -r scripts/requirements.txt
 
 #. If you require pyocd, an open source python2 library for programming and
    debugging ARM Cortex-M microcontrollers, use this command::
