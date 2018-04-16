@@ -101,6 +101,36 @@ static const u8_t webusb_origin_url[] = {
 	'l', 'o', 'c', 'a', 'l', 'h', 'o', 's', 't', ':', '8', '0', '0', '0'
 };
 
+/* Predefined response to control commands related to MS OS 1.0 descriptors
+ * Please note that this code only defines "extended compat ID OS feature
+ * descriptors" and not "extended properties OS features descriptors"
+ */
+static const u8_t msos1_string_descriptor[] = {
+	0x12, /* Descriptor size (18 bytes) */
+	0x03, /* Descriptor type (string)   */
+	'M',  0x00, 'S',  0x00, 'F',  0x00, 'T',  0x00, '1',  0x00, '0',  0x00, '0', 0x00,
+	0x03, /* Vendor-assigned bMS_VendorCode, used for a control request */
+	0x00, /* Padding byte, so bMS_VendorCode looks UTF16-compliant. */
+};
+
+static const u8_t msos1_compatid_descriptor[] = {
+	/* See https://github.com/pbatard/libwdi/wiki/WCID-Devices */
+	/* MS OS 1.0 header section */
+	0x28, 0x00, 0x00, 0x00, /* Descriptor size (40 bytes)          */
+	0x00, 0x01,             /* Version 1.00                        */
+	0x04, 0x00,             /* Type: Extended compat ID descriptor */
+	0x01,                   /* Number of function sections         */
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,       /* reserved    */
+
+	/* MS OS 1.0 function section */
+	0x02,     /* Index of interface this section applies to. */
+	0x01,     /* reserved */
+	/* 8-byte compatible ID string, then 8-byte sub-compatible ID string */
+	'W',  'I',  'N',  'U',  'S',  'B',  0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00 /* reserved */
+};
+
 /* Predefined response to control commands related to MS OS 2.0 descriptors */
 static const u8_t msos2_descriptor[] = {
 	/* MS OS 2.0 set header descriptor   */
@@ -148,12 +178,20 @@ int custom_handle_req(struct usb_setup_packet *pSetup,
 		return 0;
 	}
 
+	if (GET_DESC_TYPE(pSetup->wValue) == DESC_STRING &&
+		GET_DESC_INDEX(pSetup->wValue) == 0xEE) {
+		*data = (u8_t *)(&msos1_string_descriptor);
+		*len = sizeof(msos1_string_descriptor);
+
+		return 0;
+	}
+
 	return -ENOTSUP;
 }
 
 /**
  * @brief Handler called for vendor specific commands. This includes
- *        WebUSB allowed origins and MS OS 2.0 descriptors.
+ *        WebUSB allowed origins and MS OS 1.0 and 2.0 descriptors.
  *
  * @param pSetup    Information about the request to execute.
  * @param len       Size of the buffer.
@@ -186,6 +224,15 @@ int vendor_handle_req(struct usb_setup_packet *pSetup,
 		/* 0x07 means "MS_OS_20_DESCRIPTOR_INDEX" */
 		*data = (u8_t *)(&msos2_descriptor);
 		*len = sizeof(msos2_descriptor);
+
+		return 0;
+	} else if (pSetup->bRequest == 0x03 && pSetup->wIndex == 0x04) {
+		/* Get MS OS 1.0 Descriptors request */
+		/* 0x04 means "Extended compat ID".
+		 * Use 0x05 instead for "Extended properties".
+		 */
+		*data = (u8_t *)(&msos1_compatid_descriptor);
+		*len = sizeof(msos1_compatid_descriptor);
 
 		return 0;
 	}
