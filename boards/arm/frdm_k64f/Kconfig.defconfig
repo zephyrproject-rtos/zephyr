@@ -99,20 +99,11 @@ if SPI
 config SPI_0
 	def_bool y
 
-config SPI_0_IRQ_PRI
-	default 3
-
 config SPI_1
 	def_bool n
 
-config SPI_1_IRQ_PRI
-	default 3
-
 config SPI_2
 	def_bool n
-
-config SPI_2_IRQ_PRI
-	default 3
 
 endif # SPI
 
