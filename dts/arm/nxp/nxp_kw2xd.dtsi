@@ -236,9 +236,10 @@
 		};
 
 		spi0: spi@4002c000 {
-			compatible = "nxp,k64f-spi";
+			compatible = "nxp,kinetis-dspi";
 			reg = <0x4002c000 0x88>;
-			interrupts = <26 0>;
+			interrupts = <26 3>;
+			label = "SPI_0";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 12>;
 			status = "disabled";
 			#address-cells = <1>;
@@ -246,9 +247,10 @@
 		};
 
 		spi1: spi@4002d000 {
-			compatible = "nxp,k64f-spi";
+			compatible = "nxp,kinetis-dspi";
 			reg = <0x4002d000 0x88>;
-			interrupts = <27 0>;
+			interrupts = <27 3>;
+			label = "SPI_1";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 13>;
 
 			cs = <&gpiob 10 0>;
