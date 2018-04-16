@@ -24,12 +24,12 @@ static volatile bool data_transmitted;
 static volatile bool data_arrived;
 static u8_t data_buf[64];
 
-/* WebUSB Platform Capability Descriptor */
+/* WebUSB + MS Platform Capability Descriptors */
 static const u8_t webusb_bos_descriptor[] = {
 	0x05, /* Descriptor size */
 	0x0F, /* Descriptor type (Binary device Object Store) */
-	(0x05 + 0x18), 0x00, /* Total length of BOS */
-	0x01, /* Number of capability descriptors that follow */
+	(0x05 + 0x18 + 0x1C), 0x00, /* Total length of BOS */
+	0x02, /* Number of capability descriptors that follow */
 
 	/* WebUSB Platform Capability Descriptor:
 	 * https://wicg.github.io/webusb/#webusb-platform-capability-descriptor
@@ -49,6 +49,28 @@ static const u8_t webusb_bos_descriptor[] = {
 	0x00, 0x01, /* BCD WebUSB version: 1.0  */
 	0x01, /* Vendor-assigned WebUSB request code, for control requests */
 	0x01, /* Landing page index (refers to "http://localhost:8000") */
+
+	/* Microsoft OS 2.0 Platform Capability Descriptor
+	 * See https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/microsoft-defined-usb-descriptors
+	 * Adapted from https://github.com/sowbug/weblight/blob/master/firmware/webusb.c (BSD-2)
+	 * Thanks http://janaxelson.com/files/ms_os_20_descriptors.c
+	 */
+	0x1C, /* Descriptor size (28 bytes)          */
+	0x10, /* Descriptor type (Device Capability) */
+	0x05, /* Capability type (Platform)          */
+	0x00, /* Reserved                            */
+
+	/* MS OS 2.0 Platform Capability ID (D8DD60DF-4589-4CC7-9CD2-659D9E648A9F) */
+	0xDF, 0x60, 0xDD, 0xD8,
+	0x89, 0x45,
+	0xC7, 0x4C,
+	0x9C, 0xD2,
+	0x65, 0x9D, 0x9E, 0x64, 0x8A, 0x9F,
+
+	0x00, 0x00, 0x03, 0x06, /* Windows version (8.1) (0x06030000) */
+	(0x0A + 0x14 + 0x08), 0x00, /* Length of the MS OS 2.0 descriptor set */
+	0x02, /* Vendor-assigned bMS_VendorCode, used for a control request */
+	0x00  /* Alternate enumeration support. 0 = Doesn’t support it */
 };
 
 /* WebUSB Device Requests */
@@ -79,6 +101,32 @@ static const u8_t webusb_origin_url[] = {
 	'l', 'o', 'c', 'a', 'l', 'h', 'o', 's', 't', ':', '8', '0', '0', '0'
 };
 
+/* Predefined response to control commands related to MS OS 2.0 descriptors */
+static const u8_t msos2_descriptor[] = {
+	/* MS OS 2.0 set header descriptor   */
+	0x0A, 0x00,             /* Descriptor size (10 bytes)                 */
+	0x00, 0x00,             /* MS_OS_20_SET_HEADER_DESCRIPTOR             */
+	0x00, 0x00, 0x03, 0x06, /* Windows version (8.1) (0x06030000)         */
+	(0x0A + 0x14 + 0x08), 0x00, /* Length of the MS OS 2.0 descriptor set */
+
+	/* MS OS 2.0 function subset ID descriptor
+	 * This means that the descriptors below will only apply to one
+	 * set of interfaces
+	 */
+	0x08, 0x00, /* Descriptor size (8 bytes) */
+	0x02, 0x00, /* MS_OS_20_SUBSET_HEADER_FUNCTION */
+	0x02,       /* Index of first interface this subset applies to. */
+	0x00,       /* reserved */
+	(0x08 + 0x14), 0x00, /* Length of the MS OS 2.0 descriptor subset */
+
+	/* MS OS 2.0 compatible ID descriptor */
+	0x14, 0x00, /* Descriptor size                */
+	0x03, 0x00, /* MS_OS_20_FEATURE_COMPATIBLE_ID */
+	/* 8-byte compatible ID string, then 8-byte sub-compatible ID string */
+	'W',  'I',  'N',  'U',  'S',  'B',  0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
 /**
  * @brief Custom handler for standard requests in
  *        order to catch the request and return the
@@ -104,7 +152,8 @@ int custom_handle_req(struct usb_setup_packet *pSetup,
 }
 
 /**
- * @brief Handler called for WebUSB vendor specific commands.
+ * @brief Handler called for vendor specific commands. This includes
+ *        WebUSB allowed origins and MS OS 2.0 descriptors.
  *
  * @param pSetup    Information about the request to execute.
  * @param len       Size of the buffer.
@@ -130,6 +179,13 @@ int vendor_handle_req(struct usb_setup_packet *pSetup,
 
 		*data = (u8_t *)(&webusb_origin_url);
 		*len = sizeof(webusb_origin_url);
+
+		return 0;
+	} else if (pSetup->bRequest == 0x02 && pSetup->wIndex == 0x07) {
+		/* Get MS OS 2.0 Descriptors request */
+		/* 0x07 means "MS_OS_20_DESCRIPTOR_INDEX" */
+		*data = (u8_t *)(&msos2_descriptor);
+		*len = sizeof(msos2_descriptor);
 
 		return 0;
 	}
