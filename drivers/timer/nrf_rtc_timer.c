@@ -8,7 +8,9 @@
 #include <clock_control.h>
 #include <system_timer.h>
 #include <drivers/clock_control/nrf5_clock_control.h>
+#if !defined(CONFIG_ARCH_POSIX)
 #include <arch/arm/cortex_m/cmsis.h>
+#endif
 #include <sys_clock.h>
 
 extern void youve_print(void);
@@ -23,7 +25,12 @@ extern void youve_print(void);
 /* Minimum delta between current counter and CC register that the RTC is able
  * to handle
  */
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+#define RTC_MIN_DELTA          1
+#else
 #define RTC_MIN_DELTA          2
+#endif
+
 #define RTC_MASK               0x00FFFFFF
 /* Maximum difference for RTC counter values used. Half the maximum value is
  * selected to be able to detect overflow (a negative value has the same
@@ -516,6 +523,9 @@ int _sys_clock_driver_init(struct device *device)
 
 	SYS_CLOCK_RTC->TASKS_CLEAR = 1;
 	SYS_CLOCK_RTC->TASKS_START = 1;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+	NRF_RTC1_regw_sideeffects();
+#endif
 
 	return 0;
 }
@@ -565,6 +575,9 @@ void sys_clock_disable(void)
 
 	SYS_CLOCK_RTC->TASKS_STOP = 1;
 	SYS_CLOCK_RTC->TASKS_CLEAR = 1;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+	NRF_RTC1_regw_sideeffects();
+#endif
 
 	irq_unlock(key);
 
