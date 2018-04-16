@@ -137,6 +137,83 @@ int arm_cmse_addr_range_read_ok(u32_t addr, u32_t size, int force_npriv);
  */
 int arm_cmse_addr_range_readwrite_ok(u32_t addr, u32_t size, int force_npriv);
 
+/* Required for C99 compilation */
+#ifndef typeof
+#define typeof  __typeof__
+#endif
+
+/**
+ * @brief Read accessibility of an object
+ *
+ * Evaluates whether a given object can be read according to the
+ * permissions of the current state MPU.
+ *
+ * The macro shall always evaluate to zero if called from an unprivileged mode.
+ *
+ * @param p_obj Pointer to the given object
+ *              for which the readability is requested
+ *
+ * @pre Object is allocated in a single MPU (and/or SAU/IDAU) region.
+ *
+ * @return p_obj if object is readable, NULL otherwise.
+ */
+#define ARM_CMSE_OBJECT_READ_OK(p_obj) \
+	cmse_check_pointed_object(p_obj, CMSE_MPU_READ)
+
+/**
+ * @brief Read accessibility of an object (nPRIV mode)
+ *
+ * Evaluates whether a given object can be read according to the
+ * permissions of the current state MPU (unprivileged read).
+ *
+ * The macro shall always evaluate to zero if called from an unprivileged mode.
+ *
+ * @param p_obj Pointer to the given object
+ *              for which the readability is requested
+ *
+ * @pre Object is allocated in a single MPU (and/or SAU/IDAU) region.
+ *
+ * @return p_obj if object is readable, NULL otherwise.
+ */
+#define ARM_CMSE_OBJECT_UNPRIV_READ_OK(p_obj) \
+	cmse_check_pointed_object(p_obj, CMSE_MPU_UNPRIV | CMSE_MPU_READ)
+
+/**
+ * @brief Read and Write accessibility of an object
+ *
+ * Evaluates whether a given object can be read and written
+ * according to the permissions of the current state MPU.
+ *
+ * The macro shall always evaluate to zero if called from an unprivileged mode.
+ *
+ * @param p_obj Pointer to the given object
+ *              for which the read and write ability is requested
+ *
+ * @pre Object is allocated in a single MPU (and/or SAU/IDAU) region.
+ *
+ * @return p_obj if object is Read and Writable, NULL otherwise.
+ */
+#define ARM_CMSE_OBJECT_READWRITE_OK(p_obj) \
+	cmse_check_pointed_object(p_obj, CMSE_MPU_READWRITE)
+
+/**
+ * @brief Read and Write accessibility of an object (nPRIV mode)
+ *
+ * Evaluates whether a given object can be read and written according
+ * to the permissions of the current state MPU (unprivileged read/write).
+ *
+ * The macro shall always evaluate to zero if called from an unprivileged mode.
+ *
+ * @param p_obj Pointer to the given object
+ *              for which the read and write ability is requested
+ *
+ * @pre Object is allocated in a single MPU (and/or SAU/IDAU) region.
+ *
+ * @return p_obj if object is Read and Writable, NULL otherwise.
+ */
+#define ARM_CMSE_OBJECT_UNPRIV_READWRITE_OK(p_obj) \
+	cmse_check_pointed_object(p_obj, CMSE_MPU_UNPRIV | CMSE_MPU_READWRITE)
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
