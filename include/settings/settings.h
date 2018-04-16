@@ -101,7 +101,7 @@ struct settings_handler {
 	char *(*h_get)(int argc, char **argv, char *val, int val_len_max);
 	int (*h_set)(int argc, char **argv, char *val);
 	int (*h_commit)(void);
-	int (*h_export)(void (*export_func)(char *name, char *val),
+	int (*h_export)(int (*export_func)(const char *name, char *val),
 			enum settings_export_tgt tgt);
 };
 
@@ -111,8 +111,10 @@ struct settings_handler {
  * Can be called at application startup.
  * In case the backend is NFFS Remember to call it after FS was mounted.
  * For FCB backend it can be called without such a restriction.
+ *
+ * @return 0 on success, non-zero on failure.
  */
-void settings_subsys_init(void);
+int settings_subsys_init(void);
 
 /**
  * Register a handler for settings items.

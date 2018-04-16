@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <errno.h>
+#include <misc/__assert.h>
 
 #include "settings/settings.h"
 #include "settings_priv.h"
@@ -45,7 +46,9 @@ void settings_dst_register(struct settings_store *cs)
 
 static void settings_load_cb(char *name, char *val, void *cb_arg)
 {
-	settings_set_value(name, val);
+	int rc = settings_set_value(name, val);
+	__ASSERT(rc == 0, "set-value operation failure\n");
+	(void)rc;
 }
 
 int settings_load(void)
@@ -114,15 +117,6 @@ int settings_save_one(const char *name, char *value)
 	return cs->cs_itf->csi_save(cs, name, value);
 }
 
-/*
- * Walk through all registered subsystems, and ask them to export their
- * config variables. Persist these settings.
- */
-static void settings_store_one(char *name, char *value)
-{
-	settings_save_one(name, value);
-}
-
 int settings_save(void)
 {
 	struct settings_store *cs;
@@ -142,7 +136,7 @@ int settings_save(void)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
 		if (ch->h_export) {
-			rc2 = ch->h_export(settings_store_one,
+			rc2 = ch->h_export(settings_save_one,
 					   SETTINGS_EXPORT_PERSIST);
 			if (!rc) {
 				rc = rc2;

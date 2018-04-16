@@ -25,17 +25,17 @@ int c2_var_count = 1;
 char *c1_handle_get(int argc, char **argv, char *val, int val_len_max);
 int c1_handle_set(int argc, char **argv, char *val);
 int c1_handle_commit(void);
-int c1_handle_export(void (*cb)(char *name, char *value),
+int c1_handle_export(int (*cb)(const char *name, char *value),
 			enum settings_export_tgt tgt);
 
 char *c2_handle_get(int argc, char **argv, char *val, int val_len_max);
 int c2_handle_set(int argc, char **argv, char *val);
-int c2_handle_export(void (*cb)(char *name, char *value),
+int c2_handle_export(int (*cb)(const char *name, char *value),
 		     enum settings_export_tgt tgt);
 
 char *c3_handle_get(int argc, char **argv, char *val, int val_len_max);
 int c3_handle_set(int argc, char **argv, char *val);
-int c3_handle_export(void (*cb)(char *name, char *value),
+int c3_handle_export(int (*cb)(const char *name, char *value),
 		     enum settings_export_tgt tgt);
 
 struct settings_handler c_test_handlers[] = {
@@ -112,7 +112,7 @@ int c1_handle_commit(void)
 	return 0;
 }
 
-int c1_handle_export(void (*cb)(char *name, char *value),
+int c1_handle_export(int (*cb)(const char *name, char *value),
 			enum settings_export_tgt tgt)
 {
 	char value[32];
@@ -122,10 +122,10 @@ int c1_handle_export(void (*cb)(char *name, char *value),
 	}
 
 	settings_str_from_value(SETTINGS_INT8, &val8, value, sizeof(value));
-	cb("myfoo/mybar", value);
+	(void)cb("myfoo/mybar", value);
 
 	settings_str_from_value(SETTINGS_INT64, &val64, value, sizeof(value));
-	cb("myfoo/mybar64", value);
+	(void)cb("myfoo/mybar64", value);
 
 	return 0;
 }
@@ -258,7 +258,7 @@ int c2_handle_set(int argc, char **argv, char *val)
 	return -ENOENT;
 }
 
-int c2_handle_export(void (*cb)(char *name, char *value),
+int c2_handle_export(int (*cb)(const char *name, char *value),
 		     enum settings_export_tgt tgt)
 {
 	int i;
@@ -266,7 +266,7 @@ int c2_handle_export(void (*cb)(char *name, char *value),
 
 	for (i = 0; i < c2_var_count; i++) {
 		snprintf(name, sizeof(name), "2nd/string%d", i);
-		cb(name, val_string[i]);
+		(void)cb(name, val_string[i]);
 	}
 
 	return 0;
@@ -297,13 +297,13 @@ int c3_handle_set(int argc, char **argv, char *val)
 	return -ENOENT;
 }
 
-int c3_handle_export(void (*cb)(char *name, char *value),
+int c3_handle_export(int (*cb)(const char *name, char *value),
 		     enum settings_export_tgt tgt)
 {
 	char value[32];
 
 	settings_str_from_value(SETTINGS_INT32, &val32, value, sizeof(value));
-	cb("3/v", value);
+	(void)cb("3/v", value);
 
 	return 0;
 }
