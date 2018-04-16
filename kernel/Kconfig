@@ -491,6 +491,16 @@ endmenu
 
 menu "Security Options"
 
+config RANDOMIZE_LINK_ORDER
+	bool
+	prompt "Randomize link order of libzephyr.a"
+	default n
+	help
+	  Enabling this option will randomize the libzephyr.a link order.
+
+	  This provides a little bit more unpredictability, making reusing
+	  exploits slightly harder.
+
 config STACK_CANARIES
 	bool
 	prompt "Compiler stack canaries"

@@ -44,6 +44,20 @@ include(CheckCXXCompilerFlag)
 
 # https://cmake.org/cmake/help/latest/command/target_sources.html
 function(zephyr_sources)
+  if (CONFIG_RANDOMIZE_LINK_ORDER)
+    list(LENGTH ARGV SOURCES_LENGTH)
+    foreach(i RANGE ${SOURCES_LENGTH} 1)
+      # Random seed here seems fixed
+      string(RANDOM LENGTH 8 ALPHABET 0123456789 j)
+
+      math(EXPR j "(${j} + 0) % ${SOURCES_LENGTH}")
+
+      set(TEMP, ${ARGV${j}})
+      set(ARGV${i}, ${ARGV${j}})
+      set(ARGV${j}, ${TEMP})
+    endforeach()
+  endif ()
+
   foreach(arg ${ARGV})
     if(IS_ABSOLUTE ${arg})
       set(path ${arg})
