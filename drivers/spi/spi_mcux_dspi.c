@@ -7,9 +7,8 @@
 
 #include <errno.h>
 #include <spi.h>
-#include <soc.h>
+#include <clock_control.h>
 #include <fsl_dspi.h>
-#include <fsl_clock.h>
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
 #include <logging/sys_log.h>
@@ -18,7 +17,8 @@
 
 struct spi_mcux_config {
 	SPI_Type *base;
-	clock_name_t clock_source;
+	char *clock_name;
+	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(struct device *dev);
 };
 
@@ -123,6 +123,7 @@ static int spi_mcux_configure(struct device *dev,
 	struct spi_mcux_data *data = dev->driver_data;
 	SPI_Type *base = config->base;
 	dspi_master_config_t master_config;
+	struct device *clock_dev;
 	u32_t clock_freq;
 	u32_t word_size;
 
@@ -160,9 +161,13 @@ static int spi_mcux_configure(struct device *dev,
 
 	master_config.ctarConfig.baudRate = spi_cfg->frequency;
 
-	clock_freq = CLOCK_GetFreq(config->clock_source);
-	if (!clock_freq) {
-		SYS_LOG_ERR("Got frequency of 0");
+	clock_dev = device_get_binding(config->clock_name);
+	if (clock_dev == NULL) {
+		return -EINVAL;
+	}
+
+	if (clock_control_get_rate(clock_dev, config->clock_subsys,
+				   &clock_freq)) {
 		return -EINVAL;
 	}
 
@@ -261,7 +266,8 @@ static void spi_mcux_config_func_0(struct device *dev);
 
 static const struct spi_mcux_config spi_mcux_config_0 = {
 	.base = (SPI_Type *) CONFIG_SPI_0_BASE_ADDRESS,
-	.clock_source = DSPI0_CLK_SRC,
+	.clock_name = CONFIG_SPI_0_CLOCK_NAME,
+	.clock_subsys = (clock_control_subsys_t) CONFIG_SPI_0_CLOCK_SUBSYS,
 	.irq_config_func = spi_mcux_config_func_0,
 };
 
@@ -289,7 +295,8 @@ static void spi_mcux_config_func_1(struct device *dev);
 
 static const struct spi_mcux_config spi_mcux_config_1 = {
 	.base = (SPI_Type *) CONFIG_SPI_1_BASE_ADDRESS,
-	.clock_source = DSPI1_CLK_SRC,
+	.clock_name = CONFIG_SPI_1_CLOCK_NAME,
+	.clock_subsys = (clock_control_subsys_t) CONFIG_SPI_1_CLOCK_SUBSYS,
 	.irq_config_func = spi_mcux_config_func_1,
 };
 
@@ -317,7 +324,8 @@ static void spi_mcux_config_func_2(struct device *dev);
 
 static const struct spi_mcux_config spi_mcux_config_2 = {
 	.base = (SPI_Type *) CONFIG_SPI_2_BASE_ADDRESS,
-	.clock_source = DSPI2_CLK_SRC,
+	.clock_name = CONFIG_SPI_2_CLOCK_NAME,
+	.clock_subsys = (clock_control_subsys_t) CONFIG_SPI_2_CLOCK_SUBSYS,
 	.irq_config_func = spi_mcux_config_func_2,
 };
 
