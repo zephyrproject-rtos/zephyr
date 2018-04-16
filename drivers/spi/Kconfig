@@ -212,14 +212,14 @@ config SPI_4
 	help
 	  Enable SPI controller port 4.
 
+if SPI_4
+
 config SPI_4_NAME
 	string "SPI port 4 device name"
-	depends on SPI_4
 	default "SPI_4"
 
 config SPI_4_OP_MODES
 	int "Port 4 supported operation modes (master/slave/both)"
-	depends on SPI_4
 	default 1
 	range 1 3
 	help
@@ -229,20 +229,22 @@ config SPI_4_OP_MODES
 	  2 is SLAVE mode only
 	  3 is both modes are available.
 
+endif # SPI_4
+
 config SPI_5
 	bool "SPI port 5"
 	default n
 	help
 	  Enable SPI controller port 5.
 
+if SPI_5
+
 config SPI_5_NAME
 	string "SPI port 5 device name"
-	depends on SPI_5
 	default "SPI_5"
 
 config SPI_5_OP_MODES
 	int "Port 5 supported operation modes (master/slave/both)"
-	depends on SPI_5
 	default 1
 	range 1 3
 	help
@@ -251,6 +253,8 @@ config SPI_5_OP_MODES
 	  1 is MASTER mode only (default)
 	  2 is SLAVE mode only
 	  3 is both modes are available.
+
+endif # SPI_5
 
 config SPI_INTEL
 	bool "Intel SPI controller driver"
