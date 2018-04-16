@@ -179,16 +179,15 @@ Pull Requests and Issues
 
 .. _open pull requests: https://github.com/zephyrproject-rtos/zephyr/pulls
 
-.. _Zephyr-devel mailing list:
-   https://lists.zephyrproject.org/mailman/listinfo/zephyr-devel
+.. _Zephyr devel mailing list: https://lists.zephyrproject.org/g/devel
 
 Before starting on a patch, first check in our issues `Zephyr Project Issues`_
 system to see what's been reported on the issue you'd like to address.  Have a
-conversation on the `Zephyr-devel mailing list`_ (or the #zephyrproject IRC
+conversation on the `Zephyr devel mailing list`_ (or the #zephyrproject IRC
 channel on freenode.net) to see what others think of your issue (and proposed
 solution).  You may find others that have encountered the issue you're
 finding, or that have similar ideas for changes or additions.  Send a message
-to the `Zephyr-devel mailing list`_ to introduce and discuss your idea with
+to the `Zephyr devel mailing list`_ to introduce and discuss your idea with
 the development community.
 
 Please note that it's common practice on IRC to be away from the

@@ -68,7 +68,7 @@ support systems:
 
 * **Documentation**: Extensive Project technical documentation is developed
   along with the Zephyr kernel itself, and can be found at
-  https://zephyrproject.org/doc.  Additional documentation is maintained in
+  http://docs.zephyrproject.  Additional documentation is maintained in
   the `Zephyr GitHub wiki`_.
 
 * **Cross-reference**: Source code cross-reference for the Zephyr
@@ -88,10 +88,11 @@ support systems:
   Security related issue tracking is done in JIRA.  The location of this JIRA
   is https://zephyrprojectsec.atlassian.net.
 
-* **Mailing List**: The `Zephyr Mailing Lists`_ are perhaps the most convenient
+* **Mailing List**: The `Zephyr mailing lists`_ are perhaps the most convenient
   way to track developer discussions and to ask your own support questions to
-  the Zephyr project community.
-  You can also read through message archives to follow
+  the Zephyr project community.  Notice there are specific `Zephyr mailing list
+  subgroups`_ for announcements and developers.
+  You can read through message archives to follow
   past posts and discussions, a good thing to do to discover more about the
   Zephyr project.
 
@@ -106,6 +107,7 @@ support systems:
 .. _Getting Started Guide: https://www.zephyrproject.org/doc/getting_started/getting_started.html
 .. _Contribution Guide: https://www.zephyrproject.org/doc/contribute/contribute_guidelines.html
 .. _Zephyr GitHub wiki: https://github.com/zephyrproject-rtos/zephyr/wiki
-.. _Zephyr Mailing Lists: https://lists.zephyrproject.org/
+.. _Zephyr mailing lists: https://lists.zephyrproject.org/
+.. _Zephyr mailing list subgroups: https://lists.zephyrproject.org/g/main/subgroups
 .. _Sample and Demo Code Examples: https://www.zephyrproject.org/doc/samples/samples.html
 .. _Security Overview: https://www.zephyrproject.org/doc/security/security-overview.html
