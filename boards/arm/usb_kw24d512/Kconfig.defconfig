@@ -97,9 +97,6 @@ if SPI
 config SPI_1
 	def_bool y
 
-config SPI_1_IRQ_PRI
-	default 3
-
 endif # SPI
 
 if IEEE802154_MCR20A
