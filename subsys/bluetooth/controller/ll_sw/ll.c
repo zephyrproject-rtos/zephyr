@@ -34,9 +34,17 @@
 #include "ticker/ticker.h"
 
 #include "pdu.h"
+#include "ll.h"
+
+#include "lll.h"
+#include "lll_adv.h"
+#include "ull_types.h"
+#include "ull_internal.h"
+#include "ull_adv_types.h"
+
 #include "ctrl.h"
 #include "ctrl_internal.h"
-#include "ll.h"
+
 #include "ll_filter.h"
 
 /* Global singletons */
@@ -49,7 +57,8 @@
 #define FLASH_TICKER_USER_APP_OPS 0
 #endif
 
-#define TICKER_NODES              (RADIO_TICKER_NODES + FLASH_TICKER_NODES)
+#define TICKER_NODES              (RADIO_TICKER_NODES + \
+				   FLASH_TICKER_NODES)
 #define TICKER_USER_APP_OPS       (RADIO_TICKER_USER_APP_OPS + \
 				   FLASH_TICKER_USER_APP_OPS)
 #define TICKER_USER_OPS           (RADIO_TICKER_USER_OPS + \

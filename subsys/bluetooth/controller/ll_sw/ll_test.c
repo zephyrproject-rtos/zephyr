@@ -17,9 +17,10 @@
 #include "hal/ccm.h"
 #include "hal/radio.h"
 
-#include "util/util.h"
-#include "ll_sw/pdu.h"
-#include "ll_sw/ctrl.h"
+#include "util/memq.h"
+
+#include "lll.h"
+#include "lll_internal.h"
 
 #include "ll_test.h"
 
@@ -77,7 +78,7 @@ static const u8_t prbs15[255] = { 0x00, };
 static u8_t tx_req;
 static u8_t volatile tx_ack;
 
-static void isr_tx(void)
+static void isr_tx(void *param)
 {
 	u32_t l, i, s, t;
 
@@ -125,7 +126,7 @@ static void isr_tx(void)
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 }
 
-static void isr_rx(void)
+static void isr_rx(void *param)
 {
 	u8_t crc_ok = 0;
 	u8_t trx_done;
@@ -154,9 +155,9 @@ static void isr_rx(void)
 	}
 }
 
-static u32_t init(u8_t chan, u8_t phy, void (*isr)(void))
+static u32_t init(u8_t chan, u8_t phy, void (*isr)(void *))
 {
-	struct device *hf_clock;
+	int err;
 
 	if (started) {
 		return 1;
@@ -166,12 +167,11 @@ static u32_t init(u8_t chan, u8_t phy, void (*isr)(void))
 	cntr_start();
 
 	/* Setup resources required by Radio */
-	hf_clock = radio_hf_clock_get();
-	clock_control_on(hf_clock, (void *)1); /* start clock, blocking. */
+	err = lll_clk_on_wait();
 
 	/* Reset Radio h/w */
 	radio_reset();
-	radio_isr_set(isr);
+	radio_isr_set(isr, NULL);
 
 	/* Store value needed in Tx/Rx ISR */
 	if (phy < 0x04) {
@@ -302,7 +302,6 @@ u32_t ll_test_rx(u8_t chan, u8_t phy, u8_t mod_idx)
 
 u32_t ll_test_end(u16_t *num_rx)
 {
-	struct device *hf_clock;
 	u8_t ack;
 
 	if (!started) {
@@ -329,8 +328,7 @@ u32_t ll_test_end(u16_t *num_rx)
 	radio_tmr_stop();
 
 	/* Release resources acquired for Radio */
-	hf_clock = radio_hf_clock_get();
-	clock_control_off(hf_clock, NULL);
+	lll_clk_off();
 
 	/* Stop coarse timer */
 	cntr_stop();

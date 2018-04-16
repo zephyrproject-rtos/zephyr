@@ -17,27 +17,55 @@ if(CONFIG_BT_LL_SW)
     ll_sw/ctrl.c
     ll_sw/ll.c
     )
-  zephyr_library_sources_ifdef(
-    CONFIG_BT_BROADCASTER
-    ll_sw/ll_adv.c
+endif()
+
+if(CONFIG_BT_LL_SW_SPLIT)
+  zephyr_library_sources(
+    ll_sw/ull.c
+    ll_sw/lll.c
+    ll_sw/lll_chan.c
     )
   zephyr_library_sources_ifdef(
-    CONFIG_BT_OBSERVER
-    ll_sw/ll_scan.c
+    CONFIG_BT_TMP
+    ll_sw/ull_tmp.c
+    ll_sw/lll_tmp.c
+    )
+endif()
+
+if(CONFIG_BT_BROADCASTER)
+  zephyr_library_sources(
+    ll_sw/ull_adv.c
+    ll_sw/lll_adv.c
     )
   zephyr_library_sources_ifdef(
-    CONFIG_BT_CENTRAL
-    ll_sw/ll_master.c
-    )
-  zephyr_library_sources_ifdef(
-    CONFIG_BT_CTLR_DTM
-    ll_sw/ll_test.c
+    CONFIG_BT_CTLR_ADV_EXT
+    ll_sw/ull_adv_aux.c
     )
 endif()
 
 zephyr_library_sources_ifdef(
+  CONFIG_BT_OBSERVER
+  ll_sw/ull_scan.c
+  ll_sw/lll_scan.c
+  )
+
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CENTRAL
+  ll_sw/ll_master.c
+  )
+zephyr_library_sources_ifdef(
   CONFIG_BT_CTLR_FILTER
   ll_sw/ll_filter.c
+  )
+
+zephyr_library_sources_ifdef(
+  CONFIG_BT_HCI_MESH_EXT
+  ll_sw/ll_mesh.c
+  )
+
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CTLR_DTM
+  ll_sw/ll_test.c
   )
 
 zephyr_library_sources_ifdef(
@@ -51,9 +79,6 @@ zephyr_library_sources_ifdef(
 
 zephyr_library_include_directories(
   .
-  util
-  hal
-  ticker
   include
   )
 

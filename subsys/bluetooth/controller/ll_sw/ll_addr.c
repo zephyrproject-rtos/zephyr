@@ -9,12 +9,11 @@
 
 #include <zephyr/types.h>
 #include <bluetooth/hci.h>
-#include <misc/slist.h>
 
-#include "util/util.h"
+#include "pdu.h"
 
-#include "ll_sw/pdu.h"
-#include "ll_sw/ctrl.h"
+#include "ull_adv_internal.h"
+#include "ull_scan_internal.h"
 
 static u8_t pub_addr[BDADDR_SIZE];
 static u8_t rnd_addr[BDADDR_SIZE];
@@ -42,8 +41,13 @@ u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
 
 u32_t ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 {
-	if (ll_adv_is_enabled() ||
-	    (ll_scan_is_enabled() & (BIT(1) | BIT(2)))) {
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
+	    ull_adv_is_enabled(0xFFFF)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_OBSERVER) &&
+	    (ull_scan_is_enabled(0) & (BIT(1) | BIT(2)))) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 

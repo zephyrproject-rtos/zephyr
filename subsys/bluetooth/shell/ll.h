@@ -20,4 +20,7 @@ int cmd_test_tx(int argc, char *argv[]);
 int cmd_test_rx(int argc, char *argv[]);
 int cmd_test_end(int argc, char *argv[]);
 
+int cmd_ull_reset(int argc, char *argv[]);
+int cmd_ull_tmp_enable(int argc, char *argv[]);
+int cmd_ull_tmp_send(int argc, char *argv[]);
 #endif /* __LL_H */

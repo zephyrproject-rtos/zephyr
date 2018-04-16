@@ -11,12 +11,21 @@
 #include <bluetooth/hci.h>
 
 #include "util/util.h"
-#include "util/mem.h"
+#include "util/memq.h"
 
 #include "pdu.h"
-#include "ctrl.h"
 #include "ll.h"
-#include "ll_adv.h"
+
+#include "lll.h"
+#include "lll_adv.h"
+#include "lll_filter.h"
+
+#include "ull_types.h"
+#include "ull_internal.h"
+#include "ull_adv_types.h"
+#include "ull_adv_internal.h"
+#include "ull_scan_internal.h"
+
 #include "ll_filter.h"
 
 #define ADDR_TYPE_ANON 0xFF
@@ -84,6 +93,65 @@ struct k_delayed_work rpa_work;
 		    (list[i].id_addr_type == (type & 0x1)) && \
 		    !memcmp(list[i].id_addr.val, addr, BDADDR_SIZE))
 
+#else /* CONFIG_BT_CTLR_PRIVACY */
+
+static void filter_clear(struct ll_filter *filter)
+{
+	filter->enable_bitmask = 0;
+	filter->addr_type_bitmask = 0;
+}
+
+static void filter_insert(struct ll_filter *filter, int index, u8_t addr_type,
+			   u8_t *bdaddr)
+{
+	filter->enable_bitmask |= BIT(index);
+	filter->addr_type_bitmask |= ((addr_type & 0x01) << index);
+	memcpy(&filter->bdaddr[index][0], bdaddr, BDADDR_SIZE);
+}
+
+static u32_t filter_add(struct ll_filter *filter, u8_t addr_type, u8_t *bdaddr)
+{
+	int index;
+
+	if (filter->enable_bitmask == 0xFF) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
+
+	for (index = 0;
+	     (filter->enable_bitmask & BIT(index));
+	     index++) {
+	}
+
+	filter_insert(filter, index, addr_type, bdaddr);
+	return 0;
+}
+
+static u32_t filter_remove(struct ll_filter *filter, u8_t addr_type,
+			   u8_t *bdaddr)
+{
+	int index;
+
+	if (!filter->enable_bitmask) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	index = 8;
+	while (index--) {
+		if ((filter->enable_bitmask & BIT(index)) &&
+		    (((filter->addr_type_bitmask >> index) & 0x01) ==
+		     (addr_type & 0x01)) &&
+		    !memcmp(filter->bdaddr[index], bdaddr, BDADDR_SIZE)) {
+			filter->enable_bitmask &= ~BIT(index);
+			filter->addr_type_bitmask &= ~BIT(index);
+			return 0;
+		}
+	}
+
+	return BT_HCI_ERR_INVALID_PARAM;
+}
+#endif /* !CONFIG_BT_CTLR_PRIVACY */
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 static void wl_clear(void)
 {
 	for (int i = 0; i < WL_SIZE; i++) {
@@ -158,66 +226,6 @@ static u32_t wl_remove(bt_addr_le_t *id_addr)
 	return BT_HCI_ERR_UNKNOWN_CONN_ID;
 }
 
-#endif /* CONFIG_BT_CTLR_PRIVACY */
-
-static void filter_clear(struct ll_filter *filter)
-{
-	filter->enable_bitmask = 0;
-	filter->addr_type_bitmask = 0;
-}
-
-static void filter_insert(struct ll_filter *filter, int index, u8_t addr_type,
-			   u8_t *bdaddr)
-{
-	filter->enable_bitmask |= BIT(index);
-	filter->addr_type_bitmask |= ((addr_type & 0x01) << index);
-	memcpy(&filter->bdaddr[index][0], bdaddr, BDADDR_SIZE);
-}
-
-#if !defined(CONFIG_BT_CTLR_PRIVACY)
-static u32_t filter_add(struct ll_filter *filter, u8_t addr_type, u8_t *bdaddr)
-{
-	int index;
-
-	if (filter->enable_bitmask == 0xFF) {
-		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-	}
-
-	for (index = 0;
-	     (filter->enable_bitmask & BIT(index));
-	     index++) {
-	}
-
-	filter_insert(filter, index, addr_type, bdaddr);
-	return 0;
-}
-
-static u32_t filter_remove(struct ll_filter *filter, u8_t addr_type,
-			   u8_t *bdaddr)
-{
-	int index;
-
-	if (!filter->enable_bitmask) {
-		return BT_HCI_ERR_INVALID_PARAM;
-	}
-
-	index = 8;
-	while (index--) {
-		if ((filter->enable_bitmask & BIT(index)) &&
-		    (((filter->addr_type_bitmask >> index) & 0x01) ==
-		     (addr_type & 0x01)) &&
-		    !memcmp(filter->bdaddr[index], bdaddr, BDADDR_SIZE)) {
-			filter->enable_bitmask &= ~BIT(index);
-			filter->addr_type_bitmask &= ~BIT(index);
-			return 0;
-		}
-	}
-
-	return BT_HCI_ERR_INVALID_PARAM;
-}
-#endif
-
-#if defined(CONFIG_BT_CTLR_PRIVACY)
 bt_addr_t *ctrl_lrpa_get(u8_t rl_idx)
 {
 	if ((rl_idx >= ARRAY_SIZE(rl)) || !rl[rl_idx].lirk ||
@@ -273,7 +281,7 @@ bool ctrl_irk_whitelisted(u8_t rl_idx)
 
 	return rl[rl_idx].wl;
 }
-#endif
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 struct ll_filter *ctrl_filter_get(bool whitelist)
 {
@@ -295,15 +303,24 @@ u32_t ll_wl_size_get(void)
 
 u32_t ll_wl_clear(void)
 {
-	if (radio_adv_filter_pol_get() || (radio_scan_filter_pol_get() & 0x1)) {
+#if defined(CONFIG_BT_BROADCASTER)
+	if (ull_adv_filter_pol_get(0)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+#endif /* CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_OBSERVER)
+	if (ull_scan_filter_pol_get(0) & 0x1) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	wl_clear();
 #else
 	filter_clear(&wl_filter);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
 	wl_anon = 0;
 
 	return 0;
@@ -311,9 +328,17 @@ u32_t ll_wl_clear(void)
 
 u32_t ll_wl_add(bt_addr_le_t *addr)
 {
-	if (radio_adv_filter_pol_get() || (radio_scan_filter_pol_get() & 0x1)) {
+#if defined(CONFIG_BT_BROADCASTER)
+	if (ull_adv_filter_pol_get(0)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+#endif /* CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_OBSERVER)
+	if (ull_scan_filter_pol_get(0) & 0x1) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif /* CONFIG_BT_OBSERVER */
 
 	if (addr->type == ADDR_TYPE_ANON) {
 		wl_anon = 1;
@@ -329,9 +354,17 @@ u32_t ll_wl_add(bt_addr_le_t *addr)
 
 u32_t ll_wl_remove(bt_addr_le_t *addr)
 {
-	if (radio_adv_filter_pol_get() || (radio_scan_filter_pol_get() & 0x1)) {
+#if defined(CONFIG_BT_BROADCASTER)
+	if (ull_adv_filter_pol_get(0)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+#endif /* CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_OBSERVER)
+	if (ull_scan_filter_pol_get(0) & 0x1) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif /* CONFIG_BT_OBSERVER */
 
 	if (addr->type == ADDR_TYPE_ANON) {
 		wl_anon = 0;
@@ -346,7 +379,6 @@ u32_t ll_wl_remove(bt_addr_le_t *addr)
 }
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-
 static void filter_wl_update(void)
 {
 	u8_t i;
@@ -388,7 +420,7 @@ void ll_filters_adv_update(u8_t adv_fp)
 	filter_clear(&wl_filter);
 
 	/* enabling advertising */
-	if (adv_fp && !(radio_scan_filter_pol_get() & 0x1)) {
+	if (adv_fp && !(ull_scan_filter_pol_get(0) & 0x1)) {
 		/* whitelist not in use, update whitelist */
 		filter_wl_update();
 	}
@@ -408,7 +440,7 @@ void ll_filters_scan_update(u8_t scan_fp)
 	filter_clear(&wl_filter);
 
 	/* enabling advertising */
-	if ((scan_fp & 0x1) && !radio_adv_filter_pol_get()) {
+	if ((scan_fp & 0x1) && !ull_adv_filter_pol_get(0)) {
 		/* whitelist not in use, update whitelist */
 		filter_wl_update();
 	}
@@ -416,7 +448,7 @@ void ll_filters_scan_update(u8_t scan_fp)
 	/* Clear before populating rl filter */
 	filter_clear(&rl_filter);
 
-	if (rl_enable && !ll_adv_is_enabled()) {
+	if (rl_enable && !ll_adv_is_enabled(LL_ADV_SET_MAX)) {
 		/* rl not in use, update resolving list LUT */
 		filter_rl_update();
 	}
@@ -516,13 +548,12 @@ bool ctrl_rl_enabled(void)
 }
 
 #if defined(CONFIG_BT_BROADCASTER)
-void ll_rl_pdu_adv_update(u8_t idx, struct pdu_adv *pdu)
+void ll_rl_pdu_adv_update(struct ll_adv_set *adv, u8_t idx,
+			  struct pdu_adv *pdu)
 {
 	u8_t *adva = pdu->type == PDU_ADV_TYPE_SCAN_RSP ?
 				  &pdu->scan_rsp.addr[0] :
 				  &pdu->adv_ind.addr[0];
-
-	struct ll_adv_set *ll_adv = ll_adv_set_get();
 
 	/* AdvA */
 	if (idx < ARRAY_SIZE(rl) && rl[idx].lirk) {
@@ -530,8 +561,8 @@ void ll_rl_pdu_adv_update(u8_t idx, struct pdu_adv *pdu)
 		pdu->tx_addr = 1;
 		memcpy(adva, rl[idx].local_rpa->val, BDADDR_SIZE);
 	} else {
-		pdu->tx_addr = ll_adv->own_addr_type & 0x1;
-		ll_addr_get(ll_adv->own_addr_type & 0x1, adva);
+		pdu->tx_addr = adv->own_addr_type & 0x1;
+		ll_addr_get(adv->own_addr_type & 0x1, adva);
 	}
 
 	/* TargetA */
@@ -541,26 +572,23 @@ void ll_rl_pdu_adv_update(u8_t idx, struct pdu_adv *pdu)
 			memcpy(&pdu->direct_ind.tgt_addr[0],
 			       rl[idx].peer_rpa.val, BDADDR_SIZE);
 		} else {
-			pdu->rx_addr = ll_adv->id_addr_type;
+			pdu->rx_addr = adv->id_addr_type;
 			memcpy(&pdu->direct_ind.tgt_addr[0],
-			       ll_adv->id_addr, BDADDR_SIZE);
+			       adv->id_addr, BDADDR_SIZE);
 		}
 	}
 }
 
-static void rpa_adv_refresh(void)
+static void rpa_adv_refresh(struct ll_adv_set *adv)
 {
 	struct radio_adv_data *radio_adv_data;
-	struct ll_adv_set *ll_adv;
 	struct pdu_adv *prev;
 	struct pdu_adv *pdu;
 	u8_t last;
 	u8_t idx;
 
-	ll_adv = ll_adv_set_get();
-
-	if (ll_adv->own_addr_type != BT_ADDR_LE_PUBLIC_ID &&
-	    ll_adv->own_addr_type != BT_ADDR_LE_RANDOM_ID) {
+	if (adv->own_addr_type != BT_ADDR_LE_PUBLIC_ID &&
+	    adv->own_addr_type != BT_ADDR_LE_RANDOM_ID) {
 		return;
 	}
 
@@ -587,9 +615,9 @@ static void rpa_adv_refresh(void)
 		pdu->chan_sel = 0;
 	}
 
-	idx = ll_rl_find(ll_adv->id_addr_type, ll_adv->id_addr, NULL);
+	idx = ll_rl_find(adv->id_addr_type, adv->id_addr, NULL);
 	LL_ASSERT(idx < ARRAY_SIZE(rl));
-	ll_rl_pdu_adv_update(idx, pdu);
+	ll_rl_pdu_adv_update(adv, idx, pdu);
 
 	memcpy(&pdu->adv_ind.data[0], &prev->adv_ind.data[0],
 	       prev->len - BDADDR_SIZE);
@@ -618,7 +646,8 @@ static int rl_access_check(bool check_ar)
 		}
 	}
 
-	return (ll_adv_is_enabled() || ll_scan_is_enabled()) ? 0 : 1;
+	return (ll_adv_is_enabled(LL_ADV_SET_MAX) ||
+		ll_scan_is_enabled()) ? 0 : 1;
 }
 
 void ll_rl_rpa_update(bool timeout)
@@ -667,8 +696,12 @@ void ll_rl_rpa_update(bool timeout)
 
 	if (timeout) {
 #if defined(CONFIG_BT_BROADCASTER)
-		if (ll_adv_is_enabled()) {
-			rpa_adv_refresh();
+		struct ll_adv_set *adv;
+
+		/* TODO: foreach adv set */
+		adv = ll_adv_is_enabled_get(0);
+		if (adv) {
+			rpa_adv_refresh(adv);
 		}
 #endif
 	}
@@ -942,5 +975,4 @@ void ll_filter_reset(bool init)
 #else
 	filter_clear(&wl_filter);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-
 }

@@ -1,6 +1,7 @@
 /* hci_vs.h - Bluetooth Host Control Interface Vendor Specific definitions */
 
 /*
+ * Copyright (c) 2017-2018 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -162,6 +163,142 @@ struct bt_hci_evt_vs_scan_req_rx {
 #define BT_EVT_MASK_VS_FATAL_ERROR             BT_EVT_BIT(1)
 #define BT_EVT_MASK_VS_TRACE_INFO              BT_EVT_BIT(2)
 #define BT_EVT_MASK_VS_SCAN_REQ_RX             BT_EVT_BIT(3)
+
+/* Mesh HCI commands */
+#define BT_HCI_MESH_REVISION                   0x01
+
+#define BT_HCI_OP_VS_MESH                      BT_OP(BT_OGF_VS, 0x0042)
+#define BT_HCI_MESH_EVT_PREFIX                 0xF0
+
+struct bt_hci_cp_mesh {
+	u8_t         opcode;
+} __packed;
+
+#define BT_HCI_OC_MESH_GET_OPTS                0x00
+struct bt_hci_rp_mesh_get_opts {
+	u8_t      status;
+	u8_t      opcode;
+	u8_t      revision;
+	u8_t      ch_map;
+	s8_t      min_tx_power;
+	s8_t      max_tx_power;
+	u8_t      max_scan_filter;
+	u8_t      max_filter_pattern;
+	u8_t      max_adv_slot;
+	u8_t      max_tx_window;
+	u8_t      evt_prefix_len;
+	u8_t      evt_prefix;
+} __packed;
+
+#define BT_HCI_MESH_PATTERN_LEN_MAX            0x0f
+
+#define BT_HCI_OC_MESH_SET_SCAN_FILTER         0x01
+struct bt_hci_mesh_pattern {
+	u8_t pattern_len;
+	u8_t pattern[0];
+} __packed;
+
+struct bt_hci_cp_mesh_set_scan_filter {
+	u8_t      scan_filter;
+	u8_t      filter_dup;
+	u8_t      num_patterns;
+	struct    bt_hci_mesh_pattern patterns[0];
+} __packed;
+struct bt_hci_rp_mesh_set_scan_filter {
+	u8_t      status;
+	u8_t      opcode;
+	u8_t      scan_filter;
+} __packed;
+
+#define BT_HCI_OC_MESH_ADVERTISE               0x02
+struct bt_hci_cp_mesh_advertise {
+	u8_t      adv_slot;
+	u8_t      own_addr_type;
+	bt_addr_t random_addr;
+	u8_t      ch_map;
+	s8_t      tx_power;
+	u8_t      min_tx_delay;
+	u8_t      max_tx_delay;
+	u8_t      retx_count;
+	u8_t      retx_interval;
+	u8_t      scan_delay;
+	u16_t     scan_duration;
+	u8_t      scan_filter;
+	u8_t      data_len;
+	u8_t      data[31];
+} __packed;
+struct bt_hci_rp_mesh_advertise {
+	u8_t      status;
+	u8_t      opcode;
+	u8_t      adv_slot;
+} __packed;
+
+#define BT_HCI_OC_MESH_ADVERTISE_TIMED         0x03
+struct bt_hci_cp_mesh_advertise_timed {
+	u8_t      adv_slot;
+	u8_t      own_addr_type;
+	bt_addr_t random_addr;
+	u8_t      ch_map;
+	s8_t      tx_power;
+	u8_t      retx_count;
+	u8_t      retx_interval;
+	u32_t     instant;
+	u16_t     tx_delay;
+	u16_t     tx_window;
+	u8_t      data_len;
+	u8_t      data[31];
+} __packed;
+struct bt_hci_rp_mesh_advertise_timed {
+	u8_t      status;
+	u8_t      opcode;
+	u8_t      adv_slot;
+} __packed;
+
+#define BT_HCI_OC_MESH_ADVERTISE_CANCEL        0x04
+struct bt_hci_cp_mesh_advertise_cancel {
+	u8_t      adv_slot;
+} __packed;
+struct bt_hci_rp_mesh_advertise_cancel {
+	u8_t      status;
+	u8_t      opcode;
+	u8_t      adv_slot;
+} __packed;
+
+#define BT_HCI_OC_MESH_SET_SCANNING            0x05
+struct bt_hci_cp_mesh_set_scanning {
+	u8_t      enable;
+	u8_t      ch_map;
+	u8_t      scan_filter;
+} __packed;
+struct bt_hci_rp_mesh_set_scanning {
+	u8_t      status;
+	u8_t      opcode;
+} __packed;
+
+/* Events */
+struct bt_hci_evt_mesh {
+	u8_t  prefix;
+	u8_t  subevent;
+} __packed;
+
+#define BT_HCI_EVT_MESH_ADV_COMPLETE           0x00
+struct bt_hci_evt_mesh_adv_complete {
+	u8_t         adv_slot;
+} __packed;
+
+#define BT_HCI_EVT_MESH_SCANNING_REPORT        0x01
+struct bt_hci_evt_mesh_scan_report {
+	bt_addr_le_t addr;
+	u8_t         chan;
+	s8_t         rssi;
+	u32_t        instant;
+	u8_t         data_len;
+	u8_t         data[0];
+} __packed;
+struct bt_hci_evt_mesh_scanning_report {
+	u8_t num_reports;
+	struct bt_hci_evt_mesh_scan_report reports[0];
+} __packed;
 
 #ifdef __cplusplus
 }

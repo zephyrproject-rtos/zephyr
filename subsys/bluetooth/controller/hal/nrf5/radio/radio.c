@@ -23,34 +23,29 @@
 #error "Platform not defined."
 #endif
 
-static radio_isr_fp sfp_radio_isr;
+static radio_isr_cb_t isr_cb;
+static void           *isr_cb_param;
 
 void isr_radio(void)
 {
-	if (sfp_radio_isr) {
-		sfp_radio_isr();
+	if (radio_has_disabled()) {
+		isr_cb(isr_cb_param);
 	}
 }
 
-void radio_isr_set(radio_isr_fp fp_radio_isr)
+void radio_isr_set(radio_isr_cb_t cb, void *param)
 {
-	sfp_radio_isr = fp_radio_isr;	/* atomic assignment of 32-bit word */
+	irq_disable(RADIO_IRQn);
 
-	NRF_RADIO->INTENSET = (0 |
-				/* RADIO_INTENSET_READY_Msk |
-				 * RADIO_INTENSET_ADDRESS_Msk |
-				 * RADIO_INTENSET_PAYLOAD_Msk |
-				 * RADIO_INTENSET_END_Msk |
-				 */
-				RADIO_INTENSET_DISABLED_Msk
-				/* | RADIO_INTENSET_RSSIEND_Msk |
-				 */
-	    );
+	isr_cb_param = param;
+	isr_cb = cb;
+
+	NRF_RADIO->INTENSET = RADIO_INTENSET_DISABLED_Msk;
 
 #if defined(CONFIG_BOARD_NRFXX_NWTSIM)
 	NRF_RADIO_regw_sideeffects_INTENSET();
 #endif
-	NVIC_ClearPendingIRQ(RADIO_IRQn);
+
 	irq_enable(RADIO_IRQn);
 }
 

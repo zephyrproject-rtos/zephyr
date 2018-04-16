@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2018 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -12,24 +12,37 @@ int ll_init(struct k_sem *sem_rx);
 void ll_reset(void);
 
 u8_t *ll_addr_get(u8_t addr_type, u8_t *p_bdaddr);
-u32_t ll_addr_set(u8_t addr_type, u8_t const *const p_bdaddr);
+u8_t ll_addr_set(u8_t addr_type, u8_t const *const p_bdaddr);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-u32_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
-			u8_t adv_type, u8_t own_addr_type,
-			u8_t direct_addr_type, u8_t const *const direct_addr,
-			u8_t chan_map, u8_t filter_policy, u8_t *tx_pwr,
-			u8_t phy_p, u8_t skip, u8_t phy_s, u8_t sid, u8_t sreq);
+u8_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
+		       u8_t adv_type, u8_t own_addr_type,
+		       u8_t direct_addr_type, u8_t const *const direct_addr,
+		       u8_t chan_map, u8_t filter_policy, u8_t *tx_pwr,
+		       u8_t phy_p, u8_t skip, u8_t phy_s, u8_t sid, u8_t sreq);
+u8_t ll_adv_data_set(u16_t handle, u8_t len, u8_t const *const p_data);
+u8_t ll_adv_scan_rsp_set(u16_t handle, u8_t len, u8_t const *const p_data);
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
-u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
-			u8_t own_addr_type, u8_t direct_addr_type,
-			u8_t const *const direct_addr, u8_t chan_map,
-			u8_t filter_policy);
+u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
+		       u8_t own_addr_type, u8_t direct_addr_type,
+		       u8_t const *const direct_addr, u8_t chan_map,
+		       u8_t filter_policy);
+u8_t ll_adv_data_set(u8_t len, u8_t const *const p_data);
+u8_t ll_adv_scan_rsp_set(u8_t len, u8_t const *const p_data);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
-void ll_adv_data_set(u8_t len, u8_t const *const p_data);
-void ll_scan_data_set(u8_t len, u8_t const *const p_data);
+#if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_HCI_MESH_EXT)
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+u32_t ll_adv_enable(u16_t handle, u8_t enable,
+		    u8_t at_anchor, u32_t ticks_anchor, u8_t retry,
+		    u8_t scan_window, u8_t scan_delay);
+#else /* !CONFIG_BT_HCI_MESH_EXT */
+u32_t ll_adv_enable(u16_t handle, u8_t enable);
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
+#else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
 u32_t ll_adv_enable(u8_t enable);
+#endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
+
 u32_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 			 u8_t own_addr_type, u8_t filter_policy);
 u32_t ll_scan_enable(u8_t enable);

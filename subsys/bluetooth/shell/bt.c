@@ -31,6 +31,7 @@
 #include "bt.h"
 #include "gatt.h"
 #include "ll.h"
+#include "hci.h"
 
 #define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
@@ -2059,15 +2060,29 @@ static const struct shell_cmd bt_commands[] = {
 #endif /* CONFIG_BT_RFCOMM */
 #endif /* CONFIG_BT_BREDR */
 #endif /* CONFIG_BT_CONN */
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	{ "mesh_adv", cmd_mesh_adv, "<on, off>"},
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	{ "advx", cmd_advx, "<on off> [coded] [anon] [txp]" },
+#if defined(CONFIG_BT_BROADCASTER)
+	{ "advx", cmd_advx, "<on off> [coded] [anon] [txp] [ad]" },
+#endif /* CONFIG_BT_BROADCASTER */
+#if defined(CONFIG_BT_OBSERVER)
 	{ "scanx", cmd_scanx, "<on passive off> [coded]" },
+#endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #if defined(CONFIG_BT_CTLR_DTM)
 	{ "test_tx", cmd_test_tx, "<chan> <len> <type> <phy>" },
 	{ "test_rx", cmd_test_rx, "<chan> <phy> <mod_idx>" },
 	{ "test_end", cmd_test_end, HELP_NONE},
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_CTLR_DTM */
+#if defined(CONFIG_BT_LL_SW_SPLIT)
+	{ "ull_reset", cmd_ull_reset, HELP_NONE},
+#if defined(CONFIG_BT_TMP)
+	{ "ull_tmp_enable", cmd_ull_tmp_enable, "<on off> [handle]" },
+	{ "ull_tmp_send", cmd_ull_tmp_send, "[handle]" },
+#endif /* CONFIG_BT_TMP */
+#endif /* CONFIG_BT_LL_SW_SPLIT */
 	{ NULL, NULL, NULL }
 };
 
