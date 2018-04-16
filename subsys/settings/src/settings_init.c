@@ -95,18 +95,19 @@ static void settings_init_fcb(void)
 
 #endif
 
-void settings_subsys_init(void)
+int settings_subsys_init(void)
 {
 	settings_init();
 
 #ifdef CONFIG_SETTINGS_FS
-	settings_init_fs();
+	settings_init_fs(); /* func rises kernel panic once error */
 
 	/*
 	 * Must be called after root FS has been initialized.
 	 */
-	fs_mkdir(CONFIG_SETTINGS_FS_DIR);
+	return fs_mkdir(CONFIG_SETTINGS_FS_DIR);
 #elif defined(CONFIG_SETTINGS_FCB)
-	settings_init_fcb();
+	settings_init_fcb(); /* func rises kernel panic once error */
+	return 0;
 #endif
 }
