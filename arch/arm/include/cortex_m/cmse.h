@@ -367,6 +367,80 @@ int arm_cmse_addr_range_nonsecure_read_ok(u32_t addr, u32_t size,
 int arm_cmse_addr_range_nonsecure_readwrite_ok(u32_t addr, u32_t size,
 	int force_npriv);
 
+/**
+ * @brief Non-Secure Read accessibility of an object
+ *
+ * Evaluates whether a given object can be read according to the
+ * permissions of the Non-Secure state MPU.
+ *
+ * The macro shall always evaluate to zero if called from Non-Secure state.
+ *
+ * @param p_obj Pointer to the given object
+ *              for which the readability is requested
+ *
+ * @pre Object is allocated in a single MPU region.
+ *
+ * @return p_obj if object is readable from Non-Secure state, NULL otherwise.
+ */
+#define ARM_CMSE_OBJECT_NONSECURE_READ_OK(p_obj) \
+	cmse_check_pointed_object(p_obj, CMSE_NONSECURE | CMSE_MPU_READ)
+
+/**
+ * @brief Non-Secure Read accessibility of an object (nPRIV mode)
+ *
+ * Evaluates whether a given object can be read according to the
+ * permissions of the Non-Secure state MPU (unprivileged read).
+ *
+ * The macro shall always evaluate to zero if called from Non-Secure state.
+ *
+ * @param p_obj Pointer to the given object
+ *              for which the readability is requested
+ *
+ * @pre Object is allocated in a single MPU region.
+ *
+ * @return p_obj if object is readable from Non-Secure state, NULL otherwise.
+ */
+#define ARM_CMSE_OBJECT_NONSECURE_UNPRIV_READ_OK(p_obj) \
+	cmse_check_pointed_object(p_obj, \
+		CMSE_NONSECURE | CMSE_MPU_UNPRIV | CMSE_MPU_READ)
+
+/**
+ * @brief Non-Secure Read and Write accessibility of an object
+ *
+ * Evaluates whether a given object can be read and written
+ * according to the permissions of the Non-Secure state MPU.
+ *
+ * The macro shall always evaluate to zero if called from Non-Secure state.
+ *
+ * @param p_obj Pointer to the given object
+ *              for which the read and write ability is requested
+ *
+ * @pre Object is allocated in a single MPU region.
+ *
+ * @return p_obj if object is Non-Secure Read and Writable, NULL otherwise.
+ */
+#define ARM_CMSE_OBJECT_NONSECURE_READWRITE_OK(p_obj) \
+	cmse_check_pointed_object(p_obj, CMSE_NONSECURE | CMSE_MPU_READWRITE)
+
+/**
+ * @brief Non-Secure Read and Write accessibility of an object (nPRIV mode)
+ *
+ * Evaluates whether a given object can be read and written according
+ * to the permissions of the Non-Secure state MPU (unprivileged read/write).
+ *
+ * The macro shall always evaluate to zero if called from Non-Secure state.
+ *
+ * @param p_obj Pointer to the given object
+ *              for which the read and write ability is requested
+ *
+ * @pre Object is allocated in a single MPU region.
+ *
+ * @return p_obj if object is Non-Secure Read and Writable, NULL otherwise.
+ */
+#define ARM_CMSE_OBJECT_NON_SECURE_UNPRIV_READWRITE_OK(p_obj) \
+	cmse_check_pointed_object(p_obj, \
+			CMSE_NONSECURE | CMSE_MPU_UNPRIV | CMSE_MPU_READWRITE)
+
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 #endif /* _ASMLANGUAGE */
