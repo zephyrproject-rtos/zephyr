@@ -20,6 +20,22 @@
 
 static u8_t tx_buf[NETUSB_MTU], rx_buf[NETUSB_MTU];
 
+#define EEM_OUT_EP_IDX		0
+#define EEM_IN_EP_IDX		1
+
+static struct usb_ep_cfg_data eem_ep_data[] = {
+	{
+		/* Use transfer API */
+		.ep_cb = usb_transfer_ep_callback,
+		.ep_addr = CONFIG_CDC_EEM_OUT_EP_ADDR
+	},
+	{
+		/* Use transfer API */
+		.ep_cb = usb_transfer_ep_callback,
+		.ep_addr = CONFIG_CDC_EEM_IN_EP_ADDR
+	},
+};
+
 static inline u16_t eem_pkt_size(u16_t hdr)
 {
 	if (hdr & BIT(15)) {
@@ -60,7 +76,8 @@ static int eem_send(struct net_pkt *pkt)
 	b_idx += sizeof(sentinel);
 
 	/* transfer data to host */
-	ret = usb_transfer_sync(CONFIG_CDC_EEM_IN_EP_ADDR, tx_buf, b_idx,
+	ret = usb_transfer_sync(eem_ep_data[EEM_IN_EP_IDX].ep_addr,
+				tx_buf, b_idx,
 				USB_TRANS_WRITE);
 	if (ret != b_idx) {
 		SYS_LOG_ERR("Transfer failure");
@@ -137,35 +154,22 @@ done:
 		ptr += eem_size;
 	} while (size);
 
-	usb_transfer(CONFIG_CDC_EEM_OUT_EP_ADDR, rx_buf, sizeof(rx_buf),
-		     USB_TRANS_READ, eem_read_cb, NULL);
+	usb_transfer(eem_ep_data[EEM_OUT_EP_IDX].ep_addr, rx_buf,
+		     sizeof(rx_buf), USB_TRANS_READ, eem_read_cb, NULL);
 }
 
 static int eem_connect(bool connected)
 {
 	if (connected) {
-		eem_read_cb(CONFIG_CDC_EEM_OUT_EP_ADDR, 0, NULL);
+		eem_read_cb(eem_ep_data[EEM_OUT_EP_IDX].ep_addr, 0, NULL);
 	} else {
 		/* Cancel any transfer */
-		usb_cancel_transfer(CONFIG_CDC_EEM_OUT_EP_ADDR);
-		usb_cancel_transfer(CONFIG_CDC_EEM_IN_EP_ADDR);
+		usb_cancel_transfer(eem_ep_data[EEM_OUT_EP_IDX].ep_addr);
+		usb_cancel_transfer(eem_ep_data[EEM_IN_EP_IDX].ep_addr);
 	}
 
 	return 0;
 }
-
-static struct usb_ep_cfg_data eem_ep_data[] = {
-	{
-		/* Use transfer API */
-		.ep_cb = usb_transfer_ep_callback,
-		.ep_addr = CONFIG_CDC_EEM_OUT_EP_ADDR
-	},
-	{
-		/* Use transfer API */
-		.ep_cb = usb_transfer_ep_callback,
-		.ep_addr = CONFIG_CDC_EEM_IN_EP_ADDR
-	},
-};
 
 static inline void eem_status_interface(u8_t *iface)
 {

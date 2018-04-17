@@ -210,8 +210,9 @@ static struct usb_ep_cfg_data hid_ep_data[] = {
 	}
 };
 
-static struct usb_cfg_data hid_config = {
+USBD_CFG_DATA_DEFINE(hid) struct usb_cfg_data hid_config = {
 	.usb_device_description = NULL,
+	.interface_descriptor = &hid_cfg.if0,
 	.cb_usb_status = hid_status_cb,
 	.interface = {
 		.class_handler = hid_class_handle_req,

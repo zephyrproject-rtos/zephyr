@@ -73,6 +73,10 @@
 /* Serial state notification timeout */
 #define CDC_CONTROL_SERIAL_STATE_TIMEOUT_US 100000
 
+#define ACM_INT_EP_IDX			0
+#define ACM_OUT_EP_IDX			1
+#define ACM_IN_EP_IDX			2
+
 struct usb_cdc_acm_config {
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 	struct usb_association_descriptor iad_cdc;
@@ -437,8 +441,9 @@ static struct usb_ep_cfg_data cdc_acm_ep_data[] = {
 };
 
 /* Configuration of the CDC-ACM Device send to the USB Driver */
-static struct usb_cfg_data cdc_acm_config = {
+USBD_CFG_DATA_DEFINE(cdc_acm) struct usb_cfg_data cdc_acm_config = {
 	.usb_device_description = NULL,
+	.interface_descriptor = &cdc_acm_cfg.if0,
 	.cb_usb_status = cdc_acm_dev_status_cb,
 	.interface = {
 		.class_handler = cdc_acm_class_handle_req,
@@ -545,7 +550,8 @@ static int cdc_acm_fifo_fill(struct device *dev,
 	len = len > sizeof(u32_t) ? sizeof(u32_t) : len;
 #endif
 
-	err = usb_write(CONFIG_CDC_ACM_IN_EP_ADDR, tx_data, len, &wrote);
+	err = usb_write(cdc_acm_ep_data[ACM_IN_EP_IDX].ep_addr,
+			tx_data, len, &wrote);
 	if (err != 0) {
 		return err;
 	}
@@ -762,8 +768,8 @@ static int cdc_acm_send_notification(struct device *dev, u16_t serial_state)
 	notification.data = sys_cpu_to_le16(serial_state);
 
 	dev_data->notification_sent = 0;
-	usb_write(CONFIG_CDC_ACM_INT_EP_ADDR, (const u8_t *)&notification,
-		  sizeof(notification), NULL);
+	usb_write(cdc_acm_ep_data[ACM_INT_EP_IDX].ep_addr,
+		  (const u8_t *)&notification, sizeof(notification), NULL);
 
 	/* Wait for notification to be sent */
 	while (!((volatile u8_t)dev_data->notification_sent)) {

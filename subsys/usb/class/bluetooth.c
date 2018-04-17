@@ -104,6 +104,25 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_bluetooth_config bluetooth_cfg = {
 	},
 };
 
+#define HCI_INT_EP_IDX			0
+#define HCI_OUT_EP_IDX			1
+#define HCI_IN_EP_IDX			2
+
+static struct usb_ep_cfg_data bluetooth_ep_data[] = {
+	{
+		.ep_cb = usb_transfer_ep_callback,
+		.ep_addr = CONFIG_BLUETOOTH_INT_EP_ADDR,
+	},
+	{
+		.ep_cb = usb_transfer_ep_callback,
+		.ep_addr = CONFIG_BLUETOOTH_OUT_EP_ADDR,
+	},
+	{
+		.ep_cb = usb_transfer_ep_callback,
+		.ep_addr = CONFIG_BLUETOOTH_IN_EP_ADDR,
+	},
+};
+
 static void hci_rx_thread(void)
 {
 	SYS_LOG_DBG("Start USB Bluetooth thread");
@@ -115,14 +134,16 @@ static void hci_rx_thread(void)
 
 		switch (bt_buf_get_type(buf)) {
 		case BT_BUF_EVT:
-			usb_transfer_sync(CONFIG_BLUETOOTH_INT_EP_ADDR,
-					  buf->data, buf->len,
-					  USB_TRANS_WRITE);
+			usb_transfer_sync(
+				bluetooth_ep_data[HCI_INT_EP_IDX].ep_addr,
+				buf->data, buf->len,
+				USB_TRANS_WRITE);
 			break;
 		case BT_BUF_ACL_IN:
-			usb_transfer_sync(CONFIG_BLUETOOTH_IN_EP_ADDR,
-					  buf->data, buf->len,
-					  USB_TRANS_WRITE);
+			usb_transfer_sync(
+				bluetooth_ep_data[HCI_IN_EP_IDX].ep_addr,
+				buf->data, buf->len,
+				USB_TRANS_WRITE);
 			break;
 		default:
 			SYS_LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
@@ -170,8 +191,8 @@ static void acl_read_cb(u8_t ep, int size, void *priv)
 	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
 
 	/* Start a new read transfer */
-	usb_transfer(CONFIG_BLUETOOTH_OUT_EP_ADDR, buf->data, BT_BUF_ACL_SIZE,
-		     USB_TRANS_READ, acl_read_cb, buf);
+	usb_transfer(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr, buf->data,
+		     BT_BUF_ACL_SIZE, USB_TRANS_READ, acl_read_cb, buf);
 }
 
 static void bluetooth_status_cb(enum usb_dc_status_code status, u8_t *param)
@@ -190,14 +211,14 @@ static void bluetooth_status_cb(enum usb_dc_status_code status, u8_t *param)
 	case USB_DC_CONFIGURED:
 		SYS_LOG_DBG("USB device configured");
 		/* Start reading */
-		acl_read_cb(CONFIG_BLUETOOTH_OUT_EP_ADDR, 0, NULL);
+		acl_read_cb(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr, 0, NULL);
 		break;
 	case USB_DC_DISCONNECTED:
 		SYS_LOG_DBG("USB device disconnected");
 		/* Cancel any transfer */
-		usb_cancel_transfer(CONFIG_BLUETOOTH_INT_EP_ADDR);
-		usb_cancel_transfer(CONFIG_BLUETOOTH_IN_EP_ADDR);
-		usb_cancel_transfer(CONFIG_BLUETOOTH_OUT_EP_ADDR);
+		usb_cancel_transfer(bluetooth_ep_data[HCI_INT_EP_IDX].ep_addr);
+		usb_cancel_transfer(bluetooth_ep_data[HCI_IN_EP_IDX].ep_addr);
+		usb_cancel_transfer(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr);
 		break;
 	case USB_DC_SUSPEND:
 		SYS_LOG_DBG("USB device suspended");
@@ -240,23 +261,9 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 	return 0;
 }
 
-static struct usb_ep_cfg_data bluetooth_ep_data[] = {
-	{
-		.ep_cb = usb_transfer_ep_callback,
-		.ep_addr = CONFIG_BLUETOOTH_INT_EP_ADDR,
-	},
-	{
-		.ep_cb = usb_transfer_ep_callback,
-		.ep_addr = CONFIG_BLUETOOTH_OUT_EP_ADDR,
-	},
-	{
-		.ep_cb = usb_transfer_ep_callback,
-		.ep_addr = CONFIG_BLUETOOTH_IN_EP_ADDR,
-	},
-};
-
-static struct usb_cfg_data bluetooth_config = {
+USBD_CFG_DATA_DEFINE(hci) struct usb_cfg_data bluetooth_config = {
 	.usb_device_description = NULL,
+	.interface_descriptor = &bluetooth_cfg.if0,
 	.cb_usb_status = bluetooth_status_cb,
 	.interface = {
 		.class_handler = bluetooth_class_handler,
