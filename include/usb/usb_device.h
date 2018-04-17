@@ -167,6 +167,8 @@ struct usb_cfg_data {
 	 * http://www.beyondlogic.org/usbnutshell/usb5.shtml#DeviceDescriptors
 	 */
 	const u8_t *usb_device_description;
+	/** Pointer to interface descriptor */
+	const void *interface_descriptor;
 	/** Callback to be notified on USB connection status change */
 	usb_status_callback cb_usb_status;
 	/** USB interface (Class) handler and storage space */

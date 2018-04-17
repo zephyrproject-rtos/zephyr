@@ -35,6 +35,8 @@
 /* Linker-defined symbols bound the USB descriptor structs */
 extern struct usb_desc_header __usb_descriptor_start[];
 extern struct usb_desc_header __usb_descriptor_end[];
+extern struct usb_cfg_data __usb_data_start[];
+extern struct usb_cfg_data __usb_data_end[];
 
 /* Structure representing the global USB description */
 struct common_descriptor {
@@ -173,6 +175,82 @@ static void ascii7_to_utf16le(void *descriptor)
 }
 
 /*
+ * Validate endpoint address and Update the endpoint descriptors at runtime,
+ * the result depends on the capabilities of the driver and the number and
+ * type of endpoints.
+ * The default endpoint address is stored in endpoint descriptor and
+ * usb_ep_cfg_data, so both variables bEndpointAddress and ep_addr need
+ * to be updated.
+ */
+static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
+				    struct usb_cfg_data * const cfg_data,
+				    u32_t *requested_ep)
+{
+	for (int i = 0; i < cfg_data->num_endpoints; i++) {
+		struct usb_ep_cfg_data *ep_data = cfg_data->endpoint;
+
+		/*
+		 * Trying to find the right entry in the usb_ep_cfg_data.
+		 */
+		if (ep_descr->bEndpointAddress != ep_data[i].ep_addr) {
+			continue;
+		}
+
+		for (u8_t idx = 1; idx < 16; idx++) {
+			struct usb_dc_ep_cfg_data ep_cfg;
+
+			ep_cfg.ep_type = ep_descr->bmAttributes;
+			ep_cfg.ep_mps = ep_descr->wMaxPacketSize;
+			ep_cfg.ep_addr = ep_descr->bEndpointAddress;
+			if (ep_cfg.ep_addr & USB_EP_DIR_IN) {
+				if ((*requested_ep & (1 << (idx + 16)))) {
+					continue;
+				}
+
+				ep_cfg.ep_addr = (USB_EP_DIR_IN | idx);
+			} else {
+				if ((*requested_ep & (1 << (idx)))) {
+					continue;
+				}
+
+				ep_cfg.ep_addr = idx;
+			}
+			if (!usb_dc_ep_check_cap(&ep_cfg)) {
+				ep_descr->bEndpointAddress = ep_cfg.ep_addr;
+				ep_data[i].ep_addr = ep_cfg.ep_addr;
+				if (ep_cfg.ep_addr & USB_EP_DIR_IN) {
+					*requested_ep |= (1 << (idx + 16));
+				} else {
+					*requested_ep |= (1 << idx);
+				}
+				SYS_LOG_DBG("endpoint 0x%x",
+					    ep_data[i].ep_addr);
+				return 0;
+			}
+		}
+	}
+	return -1;
+}
+
+/*
+ * The interface descriptor of a USB function must be assigned to the
+ * usb_cfg_data so that usb_ep_cfg_data and matching endpoint descriptor
+ * can be found.
+ */
+static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
+{
+	size_t length = (__usb_data_end - __usb_data_start);
+
+	for (size_t i = 0; i < length; i++) {
+		if (__usb_data_start[i].interface_descriptor == iface) {
+			return &__usb_data_start[i];
+		}
+	}
+
+	return NULL;
+}
+
+/*
  * The entire descriptor, placed in the .usb.descriptor section,
  * needs to be fixed before use. Currently, only the length of the
  * entire device configuration (with all interfaces and endpoints)
@@ -186,8 +264,11 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 {
 	struct usb_cfg_descriptor *cfg_descr = NULL;
 	struct usb_if_descriptor *if_descr = NULL;
+	struct usb_cfg_data *cfg_data = NULL;
+	struct usb_ep_descriptor *ep_descr = NULL;
 	u8_t numof_ifaces = 0;
 	u8_t str_descr_idx = 0;
+	u32_t requested_ep = BIT(16) | BIT(0);
 
 	while (head->bLength != 0) {
 		switch (head->bDescriptorType) {
@@ -206,10 +287,27 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 				break;
 			}
 
+			if (if_descr->bInterfaceNumber == 0) {
+				cfg_data = usb_get_cfg_data(if_descr);
+				if (!cfg_data) {
+					SYS_LOG_ERR("There is no usb_cfg_data "
+						    "for %p", head);
+					return -1;
+				}
+			}
+
 			numof_ifaces++;
 			break;
 		case USB_ENDPOINT_DESC:
 			SYS_LOG_DBG("Endpoint descriptor %p", head);
+			ep_descr = (struct usb_ep_descriptor *)head;
+			if (usb_validate_ep_cfg_data(ep_descr,
+						     cfg_data,
+						     &requested_ep)) {
+				SYS_LOG_ERR("Failed to validate endpoints");
+				return -1;
+			}
+
 			break;
 		case 0:
 		case USB_STRING_DESC:
