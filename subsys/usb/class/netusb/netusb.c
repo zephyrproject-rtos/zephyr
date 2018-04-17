@@ -470,8 +470,17 @@ static int netusb_class_handler(struct usb_setup_packet *setup,
 static u8_t interface_data[300];
 #endif
 
-static struct usb_cfg_data netusb_config = {
+USBD_CFG_DATA_DEFINE(netusb) struct usb_cfg_data netusb_config = {
 	.usb_device_description = NULL,
+#ifdef CONFIG_USB_DEVICE_NETWORK_RNDIS
+	.interface_descriptor = &rndis_cfg.if0,
+#endif
+#ifdef CONFIG_USB_DEVICE_NETWORK_ECM
+	.interface_descriptor = &cdc_ecm_cfg.if0,
+#endif
+#ifdef CONFIG_USB_DEVICE_NETWORK_EEM
+	.interface_descriptor = &cdc_eem_cfg.if0,
+#endif
 	.cb_usb_status = NULL,
 	.interface = {
 		.class_handler = netusb_class_handler,
