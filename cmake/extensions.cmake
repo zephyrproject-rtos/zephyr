@@ -882,9 +882,9 @@ function(check_compiler_flag lang option ok)
   string(MAKE_C_IDENTIFIER check${option}_${lang} ${ok})
 
   if(${lang} STREQUAL C)
-    check_c_compiler_flag(${option} ${${ok}})
+    check_c_compiler_flag("${option}" ${${ok}})
   else()
-    check_cxx_compiler_flag(${option} ${${ok}})
+    check_cxx_compiler_flag("${option}" ${${ok}})
   endif()
 
   if(${${${ok}}})
