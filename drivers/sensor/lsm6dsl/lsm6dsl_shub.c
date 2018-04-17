@@ -142,6 +142,14 @@ static struct lsm6dsl_shub_sens_list {
 
 static u8_t ext_i2c_addr;
 
+static inline void lsm6dsl_shub_wait_completed(struct lsm6dsl_data *data)
+{
+	u16_t freq;
+
+	freq = (data->accel_freq == 0) ? 26 : data->accel_freq;
+	k_sleep((2000U / freq) + 1);
+}
+
 static inline void lsm6dsl_shub_embedded_en(struct lsm6dsl_data *data, bool on)
 {
 	u8_t func_en = (on) ? 0x1 : 0x0;
@@ -195,10 +203,13 @@ static void lsm6dsl_shub_enable(struct lsm6dsl_data *data)
 				LSM6DSL_MASK_CTRL10_C_FUNC_EN,
 				1 << LSM6DSL_SHIFT_CTRL10_C_FUNC_EN);
 
-	/* Enable Accel (TBD) */
-	/* data->hw_tf->update_reg(data, LSM6DSL_REG_CTRL1_XL,
-	 * LSM6DSL_MASK_CTRL10_C_FUNC_EN, 1 << LSM6DSL_SHIFT_CTRL10_C_FUNC_EN);
-	 */
+	/* Enable Accel @26hz */
+	if (!data->accel_freq) {
+		data->hw_tf->update_reg(data,
+				    LSM6DSL_REG_CTRL1_XL,
+				    LSM6DSL_MASK_CTRL1_XL_ODR_XL,
+				    2 << LSM6DSL_SHIFT_CTRL1_XL_ODR_XL);
+	}
 
 	/* Enable Sensor Hub */
 	data->hw_tf->update_reg(data, LSM6DSL_REG_MASTER_CONFIG,
@@ -213,10 +224,13 @@ static void lsm6dsl_shub_disable(struct lsm6dsl_data *data)
 				LSM6DSL_MASK_MASTER_CONFIG_MASTER_ON,
 				0 << LSM6DSL_SHIFT_MASTER_CONFIG_MASTER_ON);
 
-	/* Disable Accel (TBD) */
-	/* data->hw_tf->update_reg(data, LSM6DSL_REG_CTRL1_XL,
-	 * LSM6DSL_MASK_CTRL10_C_FUNC_EN, 1 << LSM6DSL_SHIFT_CTRL10_C_FUNC_EN);
-	 */
+	/* Disable Accel */
+	if (!data->accel_freq) {
+		data->hw_tf->update_reg(data,
+				    LSM6DSL_REG_CTRL1_XL,
+				    LSM6DSL_MASK_CTRL1_XL_ODR_XL,
+				    0 << LSM6DSL_SHIFT_CTRL1_XL_ODR_XL);
+	}
 
 	/* Disable Digital Func */
 	data->hw_tf->update_reg(data, LSM6DSL_REG_CTRL10_C,
@@ -245,7 +259,7 @@ static int lsm6dsl_shub_read_slave_reg(struct lsm6dsl_data *data,
 
 	/* turn SH on */
 	lsm6dsl_shub_enable(data);
-	k_sleep(100); /* (TBD) based on odr */
+	lsm6dsl_shub_wait_completed(data);
 	data->hw_tf->read_data(data, LSM6DSL_REG_SENSORHUB1, value, len);
 
 	lsm6dsl_shub_disable(data);
@@ -283,7 +297,7 @@ static int lsm6dsl_shub_write_slave_reg(struct lsm6dsl_data *data,
 
 		/* turn SH on */
 		lsm6dsl_shub_enable(data);
-		k_sleep(100); /* (TBD) based on odr */
+		lsm6dsl_shub_wait_completed(data);
 		lsm6dsl_shub_disable(data);
 
 		cnt++;
@@ -339,7 +353,7 @@ static int lsm6dsl_shub_set_data_channel(struct lsm6dsl_data *data)
 
 	/* turn SH on */
 	lsm6dsl_shub_enable(data);
-	k_sleep(100); /* (TBD) based on odr */
+	lsm6dsl_shub_wait_completed(data);
 
 	return 0;
 }

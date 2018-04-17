@@ -18,6 +18,69 @@
 
 #include "lsm6dsl.h"
 
+static const u16_t lsm6dsl_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,
+					1660, 3330, 6660};
+
+#if defined(LSM6DSL_ACCEL_ODR_RUNTIME) || defined(LSM6DSL_GYRO_ODR_RUNTIME)
+static int lsm6dsl_freq_to_odr_val(u16_t freq)
+{
+	size_t i;
+
+	for (i = 0; i < ARRAY_SIZE(lsm6dsl_odr_map); i++) {
+		if (freq == lsm6dsl_odr_map[i]) {
+			return i;
+		}
+	}
+
+	return -EINVAL;
+}
+#endif
+
+static int lsm6dsl_odr_to_freq_val(u16_t odr)
+{
+	if (odr > ARRAY_SIZE(lsm6dsl_odr_map)) {
+		odr = ARRAY_SIZE(lsm6dsl_odr_map);
+	}
+
+	return lsm6dsl_odr_map[odr];
+}
+
+#ifdef LSM6DSL_ACCEL_FS_RUNTIME
+static const u16_t lsm6dsl_accel_fs_map[] = {2, 16, 4, 8};
+static const u16_t lsm6dsl_accel_fs_sens[] = {1, 8, 2, 4};
+
+static int lsm6dsl_accel_range_to_fs_val(s32_t range)
+{
+	size_t i;
+
+	for (i = 0; i < ARRAY_SIZE(lsm6dsl_accel_fs_map); i++) {
+		if (range == lsm6dsl_accel_fs_map[i]) {
+			return i;
+		}
+	}
+
+	return -EINVAL;
+}
+#endif
+
+#ifdef LSM6DSL_GYRO_FS_RUNTIME
+static const u16_t lsm6dsl_gyro_fs_map[] = {245, 500, 1000, 2000, 125};
+static const u16_t lsm6dsl_gyro_fs_sens[] = {2, 4, 8, 16, 1};
+
+static int lsm6dsl_gyro_range_to_fs_val(s32_t range)
+{
+	size_t i;
+
+	for (i = 0; i < ARRAY_SIZE(lsm6dsl_gyro_fs_map); i++) {
+		if (range == lsm6dsl_gyro_fs_map[i]) {
+			return i;
+		}
+	}
+
+	return -EINVAL;
+}
+#endif
+
 static inline int lsm6dsl_reboot(struct device *dev)
 {
 	struct lsm6dsl_data *data = dev->driver_data;
@@ -45,6 +108,8 @@ static int lsm6dsl_accel_set_fs_raw(struct device *dev, u8_t fs)
 		return -EIO;
 	}
 
+	data->accel_fs = fs;
+
 	return 0;
 }
 
@@ -58,6 +123,8 @@ static int lsm6dsl_accel_set_odr_raw(struct device *dev, u8_t odr)
 				    odr << LSM6DSL_SHIFT_CTRL1_XL_ODR_XL) < 0) {
 		return -EIO;
 	}
+
+	data->accel_freq = lsm6dsl_odr_to_freq_val(odr);
 
 	return 0;
 }
@@ -94,6 +161,147 @@ static int lsm6dsl_gyro_set_odr_raw(struct device *dev, u8_t odr)
 				    LSM6DSL_MASK_CTRL2_G_ODR_G,
 				    odr << LSM6DSL_SHIFT_CTRL2_G_ODR_G) < 0) {
 		return -EIO;
+	}
+
+	return 0;
+}
+
+#ifdef LSM6DSL_ACCEL_ODR_RUNTIME
+static int lsm6dsl_accel_odr_set(struct device *dev, u16_t freq)
+{
+	int odr;
+
+	odr = lsm6dsl_freq_to_odr_val(freq);
+	if (odr < 0) {
+		return odr;
+	}
+
+	if (lsm6dsl_accel_set_odr_raw(dev, odr) < 0) {
+		SYS_LOG_DBG("failed to set accelerometer sampling rate");
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif
+
+#ifdef LSM6DSL_ACCEL_FS_RUNTIME
+static int lsm6dsl_accel_range_set(struct device *dev, s32_t range)
+{
+	int fs;
+	struct lsm6dsl_data *data = dev->driver_data;
+
+	fs = lsm6dsl_accel_range_to_fs_val(range);
+	if (fs < 0) {
+		return fs;
+	}
+
+	if (lsm6dsl_accel_set_fs_raw(dev, fs) < 0) {
+		SYS_LOG_DBG("failed to set accelerometer full-scale");
+		return -EIO;
+	}
+
+	data->accel_sensitivity = (float)(lsm6dsl_accel_fs_sens[fs]
+						    * SENSI_GRAIN_XL);
+	return 0;
+}
+#endif
+
+static int lsm6dsl_accel_config(struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    const struct sensor_value *val)
+{
+	switch (attr) {
+#ifdef LSM6DSL_ACCEL_FS_RUNTIME
+	case SENSOR_ATTR_FULL_SCALE:
+		return lsm6dsl_accel_range_set(dev, sensor_ms2_to_g(val));
+#endif
+#ifdef LSM6DSL_ACCEL_ODR_RUNTIME
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		return lsm6dsl_accel_odr_set(dev, val->val1);
+#endif
+	default:
+		SYS_LOG_DBG("Accel attribute not supported.");
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+#ifdef LSM6DSL_GYRO_ODR_RUNTIME
+static int lsm6dsl_gyro_odr_set(struct device *dev, u16_t freq)
+{
+	int odr;
+
+	odr = lsm6dsl_freq_to_odr_val(freq);
+	if (odr < 0) {
+		return odr;
+	}
+
+	if (lsm6dsl_gyro_set_odr_raw(dev, odr) < 0) {
+		SYS_LOG_DBG("failed to set gyroscope sampling rate");
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif
+
+#ifdef LSM6DSL_GYRO_FS_RUNTIME
+static int lsm6dsl_gyro_range_set(struct device *dev, s32_t range)
+{
+	int fs;
+	struct lsm6dsl_data *data = dev->driver_data;
+
+	fs = lsm6dsl_gyro_range_to_fs_val(range);
+	if (fs < 0) {
+		return fs;
+	}
+
+	if (lsm6dsl_gyro_set_fs_raw(dev, fs) < 0) {
+		SYS_LOG_DBG("failed to set gyroscope full-scale");
+		return -EIO;
+	}
+
+	data->gyro_sensitivity = (float)(lsm6dsl_gyro_fs_sens[fs]
+						    * SENSI_GRAIN_G);
+	return 0;
+}
+#endif
+
+static int lsm6dsl_gyro_config(struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    const struct sensor_value *val)
+{
+	switch (attr) {
+#ifdef LSM6DSL_GYRO_FS_RUNTIME
+	case SENSOR_ATTR_FULL_SCALE:
+		return lsm6dsl_gyro_range_set(dev, sensor_ms2_to_g(val));
+#endif
+#ifdef LSM6DSL_GYRO_ODR_RUNTIME
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		return lsm6dsl_gyro_odr_set(dev, val->val1);
+#endif
+	default:
+		SYS_LOG_DBG("Gyro attribute not supported.");
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int lsm6dsl_attr_set(struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr,
+			   const struct sensor_value *val)
+{
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_XYZ:
+		return lsm6dsl_accel_config(dev, chan, attr, val);
+	case SENSOR_CHAN_GYRO_XYZ:
+		return lsm6dsl_gyro_config(dev, chan, attr, val);
+	default:
+		SYS_LOG_WRN("attr_set() not supported on this channel.");
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -294,7 +502,7 @@ static int lsm6dsl_accel_channel_get(enum sensor_channel chan,
 				     struct lsm6dsl_data *data)
 {
 	return lsm6dsl_accel_get_channel(chan, val, data,
-					LSM6DSL_DEFAULT_ACCEL_SENSITIVITY);
+					data->accel_sensitivity);
 }
 
 static inline void lsm6dsl_gyro_convert(struct sensor_value *val, int raw_val,
@@ -481,6 +689,7 @@ static int lsm6dsl_channel_get(struct device *dev,
 }
 
 static const struct sensor_driver_api lsm6dsl_api_funcs = {
+	.attr_set = lsm6dsl_attr_set,
 #if CONFIG_LSM6DSL_TRIGGER
 	.trigger_set = lsm6dsl_trigger_set,
 #endif
@@ -510,13 +719,14 @@ static int lsm6dsl_init_chip(struct device *dev)
 	SYS_LOG_DBG("chip id 0x%x", chip_id);
 
 	if (lsm6dsl_accel_set_fs_raw(dev,
-				LSM6DSL_DEFAULT_ACCEL_FULLSCALE) < 0) {
+				     LSM6DSL_DEFAULT_ACCEL_FULLSCALE) < 0) {
 		SYS_LOG_DBG("failed to set accelerometer full-scale");
 		return -EIO;
 	}
+	data->accel_sensitivity = LSM6DSL_DEFAULT_ACCEL_SENSITIVITY;
 
-	if (lsm6dsl_accel_set_odr_raw(dev,
-				LSM6DSL_DEFAULT_ACCEL_SAMPLING_RATE) < 0) {
+	data->accel_freq = lsm6dsl_odr_to_freq_val(CONFIG_LSM6DSL_ACCEL_ODR);
+	if (lsm6dsl_accel_set_odr_raw(dev, CONFIG_LSM6DSL_ACCEL_ODR) < 0) {
 		SYS_LOG_DBG("failed to set accelerometer sampling rate");
 		return -EIO;
 	}
@@ -525,9 +735,10 @@ static int lsm6dsl_init_chip(struct device *dev)
 		SYS_LOG_DBG("failed to set gyroscope full-scale");
 		return -EIO;
 	}
+	data->gyro_sensitivity = LSM6DSL_DEFAULT_GYRO_SENSITIVITY;
 
-	if (lsm6dsl_gyro_set_odr_raw(dev,
-				     LSM6DSL_DEFAULT_GYRO_SAMPLING_RATE) < 0) {
+	data->gyro_freq = lsm6dsl_odr_to_freq_val(CONFIG_LSM6DSL_GYRO_ODR);
+	if (lsm6dsl_gyro_set_odr_raw(dev, CONFIG_LSM6DSL_GYRO_ODR) < 0) {
 		SYS_LOG_DBG("failed to set gyroscope sampling rate");
 		return -EIO;
 	}
