@@ -18,6 +18,7 @@ include(CheckCXXCompilerFlag)
 # 3.2. *_ifndef
 # 3.3. *_option compiler compatibility checks
 # 3.4. Debugging CMake
+# 3.5. File system management
 
 ########################################################
 # 1. Zephyr-aware extensions
@@ -1003,4 +1004,22 @@ macro(assert_with_usage test comment)
     message(FATAL_ERROR "Invalid usage")
   endif()
 endmacro()
+
+# 3.5. File system management
+function(check_if_directory_is_writeable dir ok)
+  execute_process(
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/dir_is_writeable.py
+    ${dir}
+    RESULT_VARIABLE ret
+    )
+
+  if("${ret}" STREQUAL "0")
+    # The directory is write-able
+    set(${ok} 1 PARENT_SCOPE)
+  else()
+    set(${ok} 0 PARENT_SCOPE)
+  endif()
+endfunction()
 
