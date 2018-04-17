@@ -4255,7 +4255,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 
 		frag = net_frag_read_u8(frag, offset, &offset, &next_hdr);
 		frag = net_frag_read_u8(frag, offset, &offset, &length);
-		if (!frag && offset == 0xffff) {
+		if (!frag) {
 			goto drop;
 		}
 
