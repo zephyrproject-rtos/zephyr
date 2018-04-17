@@ -128,7 +128,7 @@ SYS_INIT(init_pipes_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_NUM_PIPE_ASYNC_MSGS or CONFIG_OBJECT_TRACING */
 
-void _impl_k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
+void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 {
 	pipe->buffer = buffer;
 	pipe->size = size;
@@ -140,18 +140,6 @@ void _impl_k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 	SYS_TRACING_OBJ_INIT(k_pipe, pipe);
 	_k_object_init(pipe);
 }
-
-#ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_pipe_init, pipe, buffer, size)
-{
-	_SYSCALL_OBJ_INIT(pipe, K_OBJ_PIPE);
-	_SYSCALL_MEMORY_WRITE(buffer, size);
-
-	_impl_k_pipe_init((struct k_pipe *)pipe, (unsigned char *)buffer,
-			  size);
-	return 0;
-}
-#endif
 
 /**
  * @brief Copy bytes from @a src to @a dest
