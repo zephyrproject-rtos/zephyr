@@ -41,8 +41,8 @@
 #include <usb/class/usb_msc.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
-#include "../usb_descriptor.h"
-#include "../composite.h"
+#include <usb_descriptor.h>
+#include <composite.h>
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_MASS_STORAGE_LEVEL
 #define SYS_LOG_DOMAIN "usb/msc"
