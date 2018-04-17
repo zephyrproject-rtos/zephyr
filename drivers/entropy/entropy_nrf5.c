@@ -8,6 +8,7 @@
 #include <entropy.h>
 #include <atomic.h>
 #include <soc.h>
+#include "nrf_rng.h"
 
 /*
  * The nRF5 RNG HW has several characteristics that need to be taken
@@ -161,10 +162,7 @@ static inline u8_t get(struct rand *rng, u8_t octets, u8_t *rand)
 	}
 
 	if (remaining < rng->threshold) {
-		NRF_RNG->TASKS_START = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-		NRF_RNG_regw_sideeffects();
-#endif
+		nrf_rng_task_trigger(NRF_RNG_TASK_START);
 	}
 
 	return octets;
@@ -228,10 +226,7 @@ static void isr_rand(void *arg)
 		NRF_RNG->EVENTS_VALRDY = 0;
 
 		if (ret != -EBUSY) {
-			NRF_RNG->TASKS_STOP = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-			NRF_RNG_regw_sideeffects();
-#endif
+			nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
 		}
 	}
 }
@@ -330,10 +325,7 @@ static int entropy_nrf5_init(struct device *device)
 	NRF_RNG->EVENTS_VALRDY = 0;
 	NRF_RNG->INTENSET = RNG_INTENSET_VALRDY_Msk;
 
-	NRF_RNG->TASKS_START = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_RNG_regw_sideeffects();
-#endif
+	nrf_rng_task_trigger(NRF_RNG_TASK_START);
 
 	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, CONFIG_ENTROPY_NRF5_PRI, isr_rand,
 		    DEVICE_GET(entropy_nrf5), 0);
