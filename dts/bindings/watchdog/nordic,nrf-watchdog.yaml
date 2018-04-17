@@ -1,0 +1,43 @@
+#
+# Copyright (c) 2018, Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Nordic Semiconductor NRF watchdog driver
+id: nordic,nrf-watchdog
+version: 0.1
+
+description: >
+    This is a representation of the NRF watchdog
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nordic,nrf-watchdog"
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    interrupt-names:
+      type: stringlist
+      category: optional
+      description: readable string describing the interrupts
+      generation: define
