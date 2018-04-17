@@ -57,6 +57,13 @@ config I2C_MCUX
 
 endif # I2C
 
+if SPI
+
+config SPI_MCUX_DSPI
+	def_bool y
+
+endif # SPI
+
 if ENTROPY_GENERATOR
 
 config ENTROPY_MCUX_TRNG
