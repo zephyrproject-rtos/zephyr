@@ -73,4 +73,11 @@ config FXOS8700_DRDY_INT1
 
 endif # FXOS8700
 
+if SPI
+
+config SPI_0
+	def_bool y
+
+endif # SPI
+
 endif # BOARD_FRDM_KW41Z
