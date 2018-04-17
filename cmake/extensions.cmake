@@ -466,7 +466,7 @@ endfunction()
 function(zephyr_library_cc_option)
   foreach(option ${ARGV})
     string(MAKE_C_IDENTIFIER check${option} check)
-    check_c_compiler_flag(${option} ${check})
+    zephyr_check_compiler_flag(C ${option} ${check})
 
     if(${check})
       zephyr_library_compile_options(${option})
@@ -971,7 +971,7 @@ function(target_cc_option_fallback target scope option1 option2)
     foreach(lang C CXX)
       # For now, we assume that all flags that apply to C/CXX also
       # apply to ASM.
-      check_compiler_flag(${lang} ${option1} check)
+      zephyr_check_compiler_flag(${lang} ${option1} check)
       if(${check})
         target_compile_options(${target} ${scope}
           $<$<COMPILE_LANGUAGE:${lang}>:${option1}>
@@ -985,7 +985,7 @@ function(target_cc_option_fallback target scope option1 option2)
       endif()
     endforeach()
   else()
-    check_compiler_flag(C ${option1} check)
+    zephyr_check_compiler_flag(C ${option1} check)
     if(${check})
       target_compile_options(${target} ${scope} ${option1})
     elseif(option2)
@@ -1000,7 +1000,7 @@ function(target_ld_options target scope)
 
     set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
     set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
-    check_c_compiler_flag("" ${check})
+    zephyr_check_compiler_flag(C "" ${check})
     set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
 
     target_link_libraries_ifdef(${check} ${target} ${scope} ${option})
