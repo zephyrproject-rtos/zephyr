@@ -10,6 +10,7 @@ include(CheckCXXCompilerFlag)
 # 1.2.1 zephyr_interface_library_*
 # 1.3. generate_inc_*
 # 1.4. board_*
+# 1.5. Misc.
 # 2. Kconfig-aware extensions
 # 2.1 *_if_kconfig
 # 2.2 Misc
@@ -583,6 +584,69 @@ function(board_finalize_runner_args runner)
     # Arguments explicitly given with board_runner_args() come
     # last, so they take precedence.
     ${explicit}
+    )
+endfunction()
+
+# 1.5. Misc.
+
+# zephyr_check_compiler_flag is a part of Zephyr's toolchain
+# infrastructure. It should be used when testing toolchain
+# capabilities and it should normally be used in place of the
+# functions:
+#
+# check_compiler_flag
+# check_c_compiler_flag
+# check_cxx_compiler_flag
+#
+# See check_compiler_flag() for API documentation as it has the same
+# API.
+#
+# It is implemented as a wrapper on top of check_compiler_flag, which
+# again wraps the CMake-builtin's check_c_compiler_flag and
+# check_cxx_compiler_flag.
+#
+# It takes time to check for compatibility of flags against toolchains
+# so we cache the capability test results in USER_CACHE_DIR (This
+# caching comes in addition to the caching that CMake does in the
+# build folder's CMakeCache.txt)
+function(zephyr_check_compiler_flag lang option check)
+  # Locate the cache
+  set_ifndef(
+    ZEPHYR_TOOLCHAIN_CAPABILITY_CACHE
+    ${USER_CACHE_DIR}/ToolchainCapabilityDatabase.cmake
+    )
+
+  # Read the cache
+  include(${ZEPHYR_TOOLCHAIN_CAPABILITY_CACHE} OPTIONAL)
+
+  # We need to create a unique key wrt. testing the toolchain
+  # capability. This key must be a valid C identifier that includes
+  # everything that can affect the toolchain test.
+  set(key_string "")
+  set(key_string "${key_string}ZEPHYR_TOOLCHAIN_CAPABILITY_CACHE_")
+  set(key_string "${key_string}${TOOLCHAIN_SIGNATURE}_")
+  set(key_string "${key_string}${lang}_")
+  set(key_string "${key_string}${option}_")
+  set(key_string "${key_string}${CMAKE_REQUIRED_FLAGS}_")
+
+  string(MAKE_C_IDENTIFIER ${key_string} key)
+
+  # Check the cache
+  if(DEFINED ${key})
+    set(${check} ${${key}} PARENT_SCOPE)
+    return()
+  endif()
+
+  # Test the flag
+  check_compiler_flag(${lang} "${option}" inner_check)
+
+  set(${check} ${inner_check} PARENT_SCOPE)
+
+  # Populate the cache
+  file(
+    APPEND
+    ${ZEPHYR_TOOLCHAIN_CAPABILITY_CACHE}
+    "set(${key} ${inner_check})\n"
     )
 endfunction()
 
