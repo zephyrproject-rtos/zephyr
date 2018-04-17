@@ -1,3 +1,4 @@
+zephyr_sources(thread_entry.c)
 add_subdirectory(crc)
 add_subdirectory_ifdef(CONFIG_JSON_LIBRARY          json)
 if(NOT CONFIG_NATIVE_APPLICATION)
