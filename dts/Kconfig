@@ -74,3 +74,11 @@ config HAS_DTS_USB
 	help
 	  This option specifies that the target platform supports device tree
 	  configuration for USB.
+
+config HAS_DTS_WDT
+	bool
+	default n
+	depends on HAS_DTS
+	help
+	  This option specifies that the target platform supports device tree
+	  configuration for WDT.
