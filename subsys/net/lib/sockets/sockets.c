@@ -18,6 +18,8 @@
 #include <net/net_pkt.h>
 #include <net/socket.h>
 
+#include "sockets_tls.h"
+
 #define SOCK_EOF 1
 #define SOCK_NONBLOCK 2
 
@@ -581,7 +583,24 @@ int zsock_inet_pton(sa_family_t family, const char *src, void *dst)
 int zsock_getsockopt(int sock, int level, int optname,
 		     void *optval, socklen_t *optlen)
 {
-	SET_ERRNO(-EOPNOTSUPP);
+	int ret = 0;
+
+	if (!sock) {
+		SET_ERRNO(-ENOTSOCK);
+	}
+
+	switch (level) {
+	case SOL_TCP:
+		/* TLS is the only one implemented right now */
+		ret = tls_getsockopt(sock, level, optname, optval, optlen);
+		break;
+
+	default:
+		ret = -EOPNOTSUPP;
+		break;
+	}
+
+	SET_ERRNO(ret);
 
 	return 0;
 }
@@ -589,7 +608,24 @@ int zsock_getsockopt(int sock, int level, int optname,
 int zsock_setsockopt(int sock, int level, int optname,
 		     const void *optval, socklen_t optlen)
 {
-	SET_ERRNO(-EOPNOTSUPP);
+	int ret = 0;
+
+	if (!sock) {
+		SET_ERRNO(-ENOTSOCK);
+	}
+
+	switch (level) {
+	case SOL_TCP:
+		/* TLS is the only one implemented right now */
+		ret = tls_setsockopt(sock, level, optname, optval, optlen);
+		break;
+
+	default:
+		ret = -EOPNOTSUPP;
+		break;
+	}
+
+	SET_ERRNO(ret);
 
 	return 0;
 }

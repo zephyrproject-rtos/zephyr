@@ -43,6 +43,12 @@ struct zsock_pollfd {
 #define ZSOCK_MSG_PEEK 0x02
 #define ZSOCK_MSG_DONTWAIT 0x40
 
+/* socket option for TCP */
+#define SOL_TCP             6
+
+/* TCP socket options */
+#define TCP_TLS             0xff
+
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;
 	int ai_flags;

@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <net/net_context.h>
+#include <net/socket.h>
+
+#include "sockets_tls.h"
+
+int tls_getsockopt(int sock, int level, int optname,
+		   void *optval, socklen_t *optlen)
+{
+	struct net_context *ctx = INT_TO_POINTER(sock);
+	int ret = 0;
+
+	if (net_context_get_type(ctx) != SOCK_STREAM) {
+		return -EBADF;
+	}
+
+	if  (!optval || !optlen || !*optlen) {
+		return -EFAULT;
+	}
+
+	switch (optname) {
+	case TCP_TLS:
+		break;
+
+	default:
+		return -ENOPROTOOPT;
+	}
+
+	return ret;
+}
+
+int tls_setsockopt(int sock, int level, int optname,
+		   const void *optval, socklen_t optlen)
+{
+	struct net_context *ctx = INT_TO_POINTER(sock);
+	int ret = 0;
+
+	if (net_context_get_type(ctx) != SOCK_STREAM) {
+		return -EBADF;
+	}
+
+	if  (!optval || !optlen) {
+		return -EFAULT;
+	}
+
+	switch (optname) {
+	case TCP_TLS:
+		break;
+
+	default:
+		return -ENOPROTOOPT;
+	}
+
+	return ret;
+}
