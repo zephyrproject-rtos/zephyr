@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2016 Piotr Mienkowski
+ * Copyringt (c) 2018 Antmicro Ltd
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -35,6 +37,11 @@
 #include <soc.h>
 #include "phy_sam_gmac.h"
 #include "eth_sam_gmac_priv.h"
+
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+#include <ptp_clock.h>
+#include <net/gptp.h>
+#endif
 
 /*
  * Verify Kconfig configuration
@@ -294,6 +301,72 @@ static void tx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 	ring_buf_reset(&queue->tx_frames);
 }
 
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
+				       struct net_pkt *pkt)
+{
+	struct ethernet_context *eth_ctx;
+	struct gptp_hdr *gptp_hdr;
+	u8_t *msg_start;
+
+	if (net_pkt_ll_reserve(pkt)) {
+		msg_start = net_pkt_ll(pkt);
+	} else {
+		msg_start = net_pkt_ip_data(pkt);
+	}
+
+#if defined(CONFIG_NET_VLAN)
+	eth_ctx = net_if_l2_data(iface);
+	if (net_eth_is_vlan_enabled(eth_ctx, iface)) {
+		struct net_eth_vlan_hdr *hdr_vlan;
+
+		hdr_vlan = (struct net_eth_vlan_hdr *)msg_start;
+		if (ntohs(hdr_vlan->type) != NET_ETH_PTYPE_PTP) {
+			return NULL;
+		}
+
+		gptp_hdr = (struct gptp_hdr *)(msg_start +
+					sizeof(struct net_eth_vlan_hdr));
+	} else
+#else
+	ARG_UNUSED(eth_ctx);
+#endif
+	{
+		struct net_eth_hdr *hdr;
+
+		hdr = (struct net_eth_hdr *)msg_start;
+		if (ntohs(hdr->type) != NET_ETH_PTYPE_PTP) {
+			return NULL;
+		}
+
+		gptp_hdr = (struct gptp_hdr *)(msg_start +
+					sizeof(struct net_eth_hdr));
+	}
+
+	return gptp_hdr;
+}
+
+static bool need_timestamping(struct gptp_hdr *hdr)
+{
+	switch (hdr->message_type) {
+	case GPTP_SYNC_MESSAGE:
+	case GPTP_PATH_DELAY_RESP_MESSAGE:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static void update_pkt_priority(struct gptp_hdr *hdr, struct net_pkt *pkt)
+{
+	if (GPTP_IS_EVENT_MSG(hdr->message_type)) {
+		net_pkt_set_priority(pkt, NET_PRIORITY_CA);
+	} else {
+		net_pkt_set_priority(pkt, NET_PRIORITY_IC);
+	}
+}
+#endif
+
 /*
  * Process successfully sent packets
  */
@@ -302,6 +375,12 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 	struct gmac_desc_list *tx_desc_list = &queue->tx_desc_list;
 	struct gmac_desc *tx_desc;
 	struct net_pkt *pkt;
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+	struct net_ptp_time timestamp;
+	struct gptp_hdr *hdr;
+	struct eth_sam_dev_data *dev_data =
+		CONTAINER_OF(queue, struct eth_sam_dev_data, queue_list);
+#endif
 
 	__ASSERT(gmac_desc_get_w1(&tx_desc_list->buf[tx_desc_list->tail])
 		 & GMAC_TXW1_USED,
@@ -316,6 +395,19 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 		if (gmac_desc_get_w1(tx_desc) & GMAC_TXW1_LASTBUFFER) {
 			/* Release net buffer to the buffer pool */
 			pkt = UINT_TO_POINTER(ring_buf_get(&queue->tx_frames));
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+			timestamp.second =
+				((u64_t)(gmac->GMAC_PEFTSH & 0xffff) << 32)
+				| gmac->GMAC_PEFTSL;
+			timestamp.nanosecond = gmac->GMAC_PEFTN;
+
+			net_pkt_set_timestamp(pkt, &timestamp);
+
+			hdr = check_gptp_msg(dev_data->iface, pkt);
+			if (hdr && need_timestamping(hdr)) {
+				net_if_add_tx_timestamp(pkt);
+			}
+#endif
 			net_pkt_unref(pkt);
 			SYS_LOG_DBG("Dropping pkt %p", pkt);
 
@@ -444,6 +536,15 @@ static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 #ifdef CONFIG_ETH_SAM_GMAC_MII
 	/* Setup MII Interface to the Physical Layer, RMII is the default */
 	gmac->GMAC_UR = GMAC_UR_RMII; /* setting RMII to 1 selects MII mode */
+#endif
+
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+	/* Initialize PTP Clock Registers */
+	gmac->GMAC_TI = GMAC_TI_CNS(1);
+	gmac->GMAC_TISUBN = 0;
+	gmac->GMAC_TN = 0;
+	gmac->GMAC_TSH = 0;
+	gmac->GMAC_TSL = 0;
 #endif
 
 	return 0;
@@ -696,6 +797,11 @@ static void eth_rx(struct gmac_queue *queue)
 		CONTAINER_OF(queue, struct eth_sam_dev_data, queue_list);
 	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct net_pkt *rx_frame;
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+	struct device *const dev = net_if_get_device(dev_data->iface);
+	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
+	Gmac *gmac = cfg->regs;
+#endif
 
 	/* More than one frame could have been received by GMAC, get all
 	 * complete frames stored in the GMAC RX descriptor list.
@@ -732,6 +838,22 @@ static void eth_rx(struct gmac_queue *queue)
 			}
 		}
 #endif
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+		struct gptp_hdr *hdr;
+		struct net_ptp_time timestamp;
+
+		timestamp.second = ((u64_t)(gmac->GMAC_PEFRSH & 0xffff) << 32)
+			| gmac->GMAC_PEFRSL;
+		timestamp.nanosecond = gmac->GMAC_PEFRN;
+
+		net_pkt_set_timestamp(rx_frame, &timestamp);
+
+		hdr = check_gptp_msg(dev_data->iface, rx_frame);
+		if (hdr) {
+			update_pkt_priority(hdr, rx_frame);
+		}
+#endif /* CONFIG_PTP_CLOCK_SAM_GMAC */
+
 		if (net_recv_data(get_iface(dev_data, vlan_tag),
 				  rx_frame) < 0) {
 			net_pkt_unref(rx_frame);
@@ -1008,14 +1130,30 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(struct device *dev)
 	ARG_UNUSED(dev);
 
 	return ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+		ETHERNET_PTP |
+#endif
 		ETHERNET_LINK_100BASE_T;
 }
+
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+static struct device *eth_sam_gmac_get_ptp_clock(struct device *dev)
+{
+	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
+
+	return dev_data->ptp_clock;
+}
+#endif
 
 static const struct ethernet_api eth_api = {
 	.iface_api.init = eth0_iface_init,
 	.iface_api.send = eth_tx,
 
 	.get_capabilities = eth_sam_gmac_get_capabilities,
+
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+	.get_ptp_clock = eth_sam_gmac_get_ptp_clock,
+#endif
 };
 
 static struct device DEVICE_NAME_GET(eth0_sam_gmac);
@@ -1094,3 +1232,128 @@ static struct eth_sam_dev_data eth0_data = {
 ETH_NET_DEVICE_INIT(eth0_sam_gmac, CONFIG_ETH_SAM_GMAC_NAME, eth_initialize,
 		    &eth0_data, &eth0_config, CONFIG_ETH_INIT_PRIORITY,
 		    &eth_api, GMAC_MTU);
+
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+struct ptp_context {
+	struct device *eth_dev;
+};
+
+static struct ptp_context ptp_gmac_0_context;
+
+static int ptp_clock_sam_gmac_set(struct device *dev,
+				  struct net_ptp_time *tm)
+{
+	struct ptp_context *ptp_context = dev->driver_data;
+	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(ptp_context->eth_dev);
+	Gmac *gmac = cfg->regs;
+
+	gmac->GMAC_TSH = tm->_sec.high & 0xffff;
+	gmac->GMAC_TSL = tm->_sec.low & 0xffffffff;
+	gmac->GMAC_TN = tm->nanosecond & 0xffffffff;
+
+	return 0;
+}
+
+static int ptp_clock_sam_gmac_get(struct device *dev,
+				  struct net_ptp_time *tm)
+{
+	struct ptp_context *ptp_context = dev->driver_data;
+	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(ptp_context->eth_dev);
+	Gmac *gmac = cfg->regs;
+
+	tm->second = ((u64_t)(gmac->GMAC_TSH & 0xffff) << 32) | gmac->GMAC_TSL;
+	tm->nanosecond = gmac->GMAC_TN;
+
+	return 0;
+}
+
+static int ptp_clock_sam_gmac_adjust(struct device *dev, int increment)
+{
+	struct ptp_context *ptp_context = dev->driver_data;
+	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(ptp_context->eth_dev);
+	Gmac *gmac = cfg->regs;
+	GMAC_TA_Type gmac_ta;
+
+	if ((increment <= -NSEC_PER_SEC) || (increment >= NSEC_PER_SEC)) {
+		return -EINVAL;
+	}
+
+	if (increment < 0) {
+		gmac_ta.bit.ADJ = 1;
+		gmac_ta.bit.ITDT = -increment;
+	} else {
+		gmac_ta.bit.ADJ = 0;
+		gmac_ta.bit.ITDT = increment;
+	}
+
+	gmac->GMAC_TA = gmac_ta.reg;
+
+	return 0;
+}
+
+static int ptp_clock_sam_gmac_rate_adjust(struct device *dev, float ratio)
+{
+	struct ptp_context *ptp_context = dev->driver_data;
+	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(ptp_context->eth_dev);
+	Gmac *gmac = cfg->regs;
+	u8_t nanos;
+	u16_t subnanos;
+	float increment;
+
+	/* No change needed. */
+	if (ratio == 1.0) {
+		return 0;
+	}
+
+	if (ratio < 0) {
+		return -EINVAL;
+	}
+
+	/* Get current increment values */
+	nanos = gmac->GMAC_TI & GMAC_TI_CNS_Msk;
+	subnanos = gmac->GMAC_TISUBN & GMAC_TISUBN_Msk;
+
+	/* Convert to a single float */
+	increment = (nanos + (subnanos / UINT16_MAX));
+	increment *= ratio;
+
+	/* Calculate new increment values */
+	nanos = (uint8_t)increment;
+	subnanos = (uint16_t)((increment - nanos) * UINT16_MAX);
+
+	/* Validate, not validating subnanos, 1 nano is the least we accept */
+	if (nanos == 0) {
+		return -EINVAL;
+	}
+
+	/* Write the registers (clears ACNS and NIT fields on purpose) */
+	gmac->GMAC_TI = GMAC_TI_CNS(nanos);
+	gmac->GMAC_TISUBN = GMAC_TISUBN_LSBTIR(subnanos);
+
+	return 0;
+}
+
+static const struct ptp_clock_driver_api ptp_api = {
+	.set = ptp_clock_sam_gmac_set,
+	.get = ptp_clock_sam_gmac_get,
+	.adjust = ptp_clock_sam_gmac_adjust,
+	.rate_adjust = ptp_clock_sam_gmac_rate_adjust,
+};
+
+static int ptp_gmac_init(struct device *port)
+{
+	struct device *eth_dev = DEVICE_GET(eth0_sam_gmac);
+	struct eth_sam_dev_data *dev_data = eth_dev->driver_data;
+	struct ptp_context *ptp_context = port->driver_data;
+
+	dev_data->ptp_clock = port;
+	ptp_context->eth_dev = eth_dev;
+
+	return 0;
+}
+
+DEVICE_AND_API_INIT(gmac_ptp_clock_0, PTP_CLOCK_NAME, ptp_gmac_init,
+		    &ptp_gmac_0_context, NULL, POST_KERNEL,
+		    CONFIG_APPLICATION_INIT_PRIORITY, &ptp_api);
+
+#endif /* CONFIG_PTP_CLOCK_SAM_GMAC */
