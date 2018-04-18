@@ -1,0 +1,195 @@
+/*
+ * Copyright (c) 2018, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a9";
+			reg = <0>;
+			status = "disabled";
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	tcml:memory@1FFF8000 {
+		device_type = "memory";
+		compatible = "nxp,imx-code-bus";
+		reg = <0x1FFF8000 0x00008000>;
+		label = "TCML";
+	};
+
+	tcmu:memory@20000000 {
+		device_type = "memory";
+		compatible = "nxp,imx-sys-bus";
+		reg = <0x20000000 0x00008000>;
+		label = "TCMU";
+	};
+
+	ocram_s:memory@208F8000 {
+		device_type = "memory";
+		compatible = "nxp,imx-sys-bus";
+		reg = <0x208F8000 0x00004000>;
+		label = "OCRAM_S";
+	};
+
+	ocram:memory@20900000 {
+		device_type = "memory";
+		compatible = "nxp,imx-sys-bus";
+		reg = <0x20900000 0x00020000>;
+		label = "OCRAM";
+	};
+
+	ddr:memory@80000000 {
+		device_type = "memory";
+		compatible = "nxp,imx-sys-bus";
+		reg = <0x80000000 0x60000000>;
+		label = "DDR";
+	};
+
+	flash:memory@DT_FLASH_ADDR {
+		reg = <DT_FLASH_ADDR DT_FLASH_SIZE>;
+	};
+
+	sram:memory@DT_SRAM_ADDR {
+		reg = <DT_SRAM_ADDR DT_SRAM_SIZE>;
+	};
+
+	soc {
+		uart1:uart@42020000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x42020000 0x00004000>;
+			interrupts = <26 0>;
+			label = "UART_1";
+			status = "disabled";
+		};
+
+		uart2:uart@421E8000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x421E8000 0x00004000>;
+			interrupts = <27 0>;
+			label = "UART_2";
+			status = "disabled";
+		};
+
+		uart3:uart@421EC000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x421EC000 0x00004000>;
+			interrupts = <28 0>;
+			label = "UART_3";
+			status = "disabled";
+		};
+
+		uart4:uart@421F0000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x421F0000 0x00004000>;
+			interrupts = <29 0>;
+			label = "UART_4";
+			status = "disabled";
+		};
+
+		uart5:uart@421F4000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x421F4000 0x00004000>;
+			interrupts = <30 0>;
+			label = "UART_5";
+			status = "disabled";
+		};
+
+		uart6:uart@422A0000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x422A0000 0x00004000>;
+			interrupts = <17 0>;
+			label = "UART_6";
+			status = "disabled";
+		};
+
+		gpio1:gpio@4209C000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x4209C000 0x4000>;
+			interrupts = <66 0>, <67 0>;
+			label = "GPIO_1";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio2:gpio@420A0000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x420A0000 0x4000>;
+			interrupts = <68 0>, <69 0>;
+			label = "GPIO_2";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio3:gpio@420A4000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x420A4000 0x4000>;
+			interrupts = <70 0>, <71 0>;
+			label = "GPIO_3";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio4:gpio@420A8000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x420A8000 0x4000>;
+			interrupts = <72 0>, <73 0>;
+			label = "GPIO_4";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio5:gpio@420AC000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x420AC000 0x4000>;
+			interrupts = <74 0>, <74 0>;
+			label = "GPIO_5";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio6:gpio@420B0000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x420B0000 0x4000>;
+			interrupts = <76 0>, <77 0>;
+			label = "GPIO_6";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio7:gpio@420B4000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x420B4000 0x4000>;
+			interrupts = <78 0>, <79 0>;
+			label = "GPIO_7";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
