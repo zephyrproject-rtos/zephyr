@@ -751,7 +751,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	struct gmac_desc_list *tx_desc_list = &queue->tx_desc_list;
 	struct gmac_desc *tx_desc;
 	struct net_buf *frag;
-	u8_t *frag_data;
+	u8_t *frag_data, *frag_orig;
 	u16_t frag_len;
 	u32_t err_tx_flushed_count_at_entry = queue->err_tx_flushed_count;
 	unsigned int key;
@@ -760,6 +760,9 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	__ASSERT(pkt->frags, "Frame data missing");
 
 	SYS_LOG_DBG("ETH tx");
+
+	/* Store the original frag data pointer */
+	frag_orig = pkt->frags->data;
 
 	/* First fragment is special - it contains link layer (Ethernet
 	 * in our case) header. Modify the data pointer to account for more data
@@ -816,6 +819,9 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 		/* Continue with the rest of fragments (only data) */
 		frag = frag->frags;
 	}
+
+	/* Restore the original frag data pointer */
+	pkt->frags->data = frag_orig;
 
 	key = irq_lock();
 
