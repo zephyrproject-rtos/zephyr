@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2018, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#define __SIZE_K(x)	((x) * 1024)
+
+/*
+ * Determines the address and size for code memory which will be applied
+ * when "zephyr,flash = &flash". Use this to select a custom region,
+ * usually within DDR.
+ */
+#define DT_FLASH_SIZE	__SIZE_K(512)
+#define DT_FLASH_ADDR	0x84000000
+
+/*
+ * Determines the address and size for data memory which will be applied
+ * when "zephyr,sram = &sram". Use this to select a custom region,
+ * usually within DDR.
+ */
+#define DT_SRAM_SIZE	__SIZE_K(128)
+#define DT_SRAM_ADDR	0x84080000
+
+#include <nxp/nxp_imx6sx_m4.dtsi>
+
+/ {
+	model = "UDOO Neo Full board";
+	compatible = "nxp,mcimx6x_m4";
+
+	aliases {
+		uart-5 = &uart5;
+		gpio-4 = &gpio4;
+		gpio-5 = &gpio5;
+		gpio-6 = &gpio6;
+		led0 = &red_led;
+	};
+
+	chosen {
+		zephyr,flash = &flash;
+		zephyr,sram = &tcmu;
+		zephyr,console = &uart5;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led@0 {
+			gpios = <&gpio4 6 GPIO_INT_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+	};
+};
+
+&uart5 {
+	status = "ok";
+	current-speed = <115200>;
+	modem-mode = <0>;
+};
+
+&gpio4 {
+	status = "ok";
+};
+
+&gpio5 {
+	status = "ok";
+};
+
+&gpio6 {
+	status = "ok";
+};
