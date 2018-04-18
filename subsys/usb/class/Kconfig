@@ -132,6 +132,55 @@ config SYS_LOG_USB_MASS_STORAGE_LEVEL
 
 	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
+config USB_DEVICE_BLUETOOTH
+	bool
+	prompt "USB Bluetooth Device Class Driver"
+	select BT
+	select BT_HCI_RAW
+	default n
+	help
+	  USB Bluetooth device class driver
+
+config BLUETOOTH_INT_EP_ADDR
+	hex
+	depends on USB_DEVICE_BLUETOOTH
+	default 0x81
+	range 0x81 0x8f
+	help
+	  Bluetooth device class INT endpoint address
+
+config BLUETOOTH_OUT_EP_ADDR
+	hex
+	depends on USB_DEVICE_BLUETOOTH
+	default 0x02
+	range 0x01 0x0f
+	help
+	  Bluetooth device class OUT endpoint address
+
+config BLUETOOTH_IN_EP_ADDR
+	hex
+	depends on USB_DEVICE_BLUETOOTH
+	default 0x82
+	range 0x81 0x8f
+	help
+	  Bluetooth device class IN endpoint address
+
+config BLUETOOTH_INT_EP_MPS
+	int
+	depends on USB_DEVICE_BLUETOOTH
+	default 16
+	range 8 64
+	help
+	  Bluetooth device class interrupt endpoint size
+
+config BLUETOOTH_BULK_EP_MPS
+	int
+	depends on USB_DEVICE_BLUETOOTH
+	default 64
+	range 8 64
+	help
+	  Bluetooth device class bulk endpoint size
+
 source "subsys/usb/class/netusb/Kconfig"
 
 source "subsys/usb/class/hid/Kconfig"
