@@ -25,6 +25,15 @@ int tls_getsockopt(int sock, int level, int optname,
 
 	switch (optname) {
 	case TCP_TLS:
+		if (*optlen != sizeof(int)) {
+			return -EINVAL;
+		}
+
+		if (net_context_get_option(ctx, NET_OPT_TLS, optval,
+					   optlen) < 0) {
+			ret = -EINVAL;
+		}
+
 		break;
 
 	default:
@@ -50,6 +59,15 @@ int tls_setsockopt(int sock, int level, int optname,
 
 	switch (optname) {
 	case TCP_TLS:
+		if (optlen != sizeof(int)) {
+			return -EINVAL;
+		}
+
+		if (net_context_set_option(ctx, NET_OPT_TLS, optval,
+					   optlen) < 0) {
+			ret = -EINVAL;
+		}
+
 		break;
 
 	default:

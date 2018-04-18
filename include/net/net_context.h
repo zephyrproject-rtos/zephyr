@@ -222,6 +222,10 @@ struct net_context {
 		/** Priority of the network data sent via this net_context */
 		u8_t priority;
 #endif
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+		/** Enable/disable TLS for the context */
+		bool tls;
+#endif
 	} options;
 
 #if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
@@ -794,6 +798,7 @@ int net_context_update_recv_wnd(struct net_context *context,
 
 enum net_context_option {
 	NET_OPT_PRIORITY = 1,
+	NET_OPT_TLS      = 2,
 };
 
 /**

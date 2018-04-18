@@ -1293,6 +1293,38 @@ static int get_context_priority(struct net_context *context,
 #endif
 }
 
+static int get_context_tls(struct net_context *context,
+			   void *value, size_t *len)
+{
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	if (!len || *len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	*((int *)value) = context->options.tls;
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+static int set_context_tls(struct net_context *context,
+			   const void *value, size_t len)
+{
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	context->options.tls = !!*(int *)value;
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -1305,10 +1337,19 @@ int net_context_set_option(struct net_context *context,
 		return -EINVAL;
 	}
 
+	if (!value) {
+		return -EINVAL;
+	}
+
 	switch (option) {
 	case NET_OPT_PRIORITY:
 		ret = set_context_priority(context, value, len);
 		break;
+
+	case NET_OPT_TLS:
+		ret = set_context_tls(context, value, len);
+		break;
+
 	}
 
 	return ret;
@@ -1326,9 +1367,17 @@ int net_context_get_option(struct net_context *context,
 		return -EINVAL;
 	}
 
+	if (!value) {
+		return -EINVAL;
+	}
+
 	switch (option) {
 	case NET_OPT_PRIORITY:
 		ret = get_context_priority(context, value, len);
+		break;
+
+	case NET_OPT_TLS:
+		ret = get_context_tls(context, value, len);
 		break;
 	}
 
