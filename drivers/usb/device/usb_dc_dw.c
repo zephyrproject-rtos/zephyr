@@ -1187,5 +1187,15 @@ int usb_dc_set_status_callback(const usb_dc_status_callback cb)
 
 int usb_dc_ep_mps(const u8_t ep)
 {
-	return usb_dw_ctrl.out_ep_ctrl[USB_DW_EP_ADDR2IDX(ep)].mps;
+	enum usb_dw_out_ep_idx ep_idx = USB_DW_EP_ADDR2IDX(ep);
+
+	switch (USB_DW_EP_ADDR2DIR(ep)) {
+	case USB_EP_DIR_OUT:
+		return usb_dw_ctrl.out_ep_ctrl[ep_idx].mps;
+	case USB_EP_DIR_IN:
+		return usb_dw_ctrl.in_ep_ctrl[ep_idx].mps;
+	}
+
+	/* Should not happen */
+	return 0;
 }
