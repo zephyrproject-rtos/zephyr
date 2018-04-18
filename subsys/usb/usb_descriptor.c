@@ -123,6 +123,14 @@ struct dev_common_descriptor {
 		struct usb_ep_descriptor if0_out_ep;
 	} __packed cdc_eem_cfg;
 #endif
+#ifdef CONFIG_USB_DEVICE_BLUETOOTH
+	struct usb_bluetooth_config {
+		struct usb_if_descriptor if0;
+		struct usb_ep_descriptor if0_int_ep;
+		struct usb_ep_descriptor if0_out_ep;
+		struct usb_ep_descriptor if0_in_ep;
+	} __packed bluetooth_cfg;
+#endif
 	struct usb_string_desription {
 		struct usb_string_descriptor lang_descr;
 		struct usb_mfr_descriptor {
@@ -664,6 +672,58 @@ static struct dev_common_descriptor common_desc = {
 		},
 	},
 #endif /* CONFIG_USB_DEVICE_NETWORK_EEM */
+#ifdef CONFIG_USB_DEVICE_BLUETOOTH
+	.bluetooth_cfg = {
+		/* Interface descriptor 0 */
+		.if0 = {
+			.bLength = sizeof(struct usb_if_descriptor),
+			.bDescriptorType = USB_INTERFACE_DESC,
+			.bInterfaceNumber = FIRST_IFACE_BLUETOOTH,
+			.bAlternateSetting = 0,
+			.bNumEndpoints = 3,
+			.bInterfaceClass = WIRELESS_DEVICE_CLASS,
+			.bInterfaceSubClass = RF_SUBCLASS,
+			.bInterfaceProtocol = BLUETOOTH_PROTOCOL,
+			.iInterface = 0,
+		},
+
+		/* Interrupt Endpoint */
+		.if0_int_ep = {
+			.bLength = sizeof(struct usb_ep_descriptor),
+			.bDescriptorType = USB_ENDPOINT_DESC,
+			.bEndpointAddress = CONFIG_BLUETOOTH_INT_EP_ADDR,
+			.bmAttributes = USB_DC_EP_INTERRUPT,
+			.wMaxPacketSize =
+				sys_cpu_to_le16(
+				CONFIG_BLUETOOTH_INT_EP_MPS),
+			.bInterval = 0x01,
+		},
+
+		/* Data Endpoint OUT */
+		.if0_out_ep = {
+			.bLength = sizeof(struct usb_ep_descriptor),
+			.bDescriptorType = USB_ENDPOINT_DESC,
+			.bEndpointAddress = CONFIG_BLUETOOTH_OUT_EP_ADDR,
+			.bmAttributes = USB_DC_EP_BULK,
+			.wMaxPacketSize =
+				sys_cpu_to_le16(
+				CONFIG_BLUETOOTH_BULK_EP_MPS),
+			.bInterval = 0x01,
+		},
+
+		/* Data Endpoint IN */
+		.if0_in_ep = {
+			.bLength = sizeof(struct usb_ep_descriptor),
+			.bDescriptorType = USB_ENDPOINT_DESC,
+			.bEndpointAddress = CONFIG_BLUETOOTH_IN_EP_ADDR,
+			.bmAttributes = USB_DC_EP_BULK,
+			.wMaxPacketSize =
+				sys_cpu_to_le16(
+				CONFIG_BLUETOOTH_BULK_EP_MPS),
+			.bInterval = 0x01,
+		},
+	},
+#endif /* CONFIG_USB_DEVICE_BLUETOOTH */
 	.string_descr = {
 		.lang_descr = {
 			.bLength = sizeof(struct usb_string_descriptor),
