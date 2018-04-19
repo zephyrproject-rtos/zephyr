@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Ding Tao
+ * Copyright (c) 2018 Ding Tao <miyatsu@qq.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,13 +34,13 @@ GDATA(_vector_table_pointer)
 GDATA(_main_stack)
 
 SECTION_FUNC(vector_relay_handler, __vector_relay_handler)
-	mrs		r0, ipsr;
+	mrs	r0, ipsr;
 	lsls	r0, r0, $0x02;
 
-	ldr		r1, = _vector_table_pointer;
-	ldr		r1, [r1];
+	ldr	r1, =_vector_table_pointer;
+	ldr	r1, [r1];
 	adds	r1, r1, r0;
-	ldr		r1, [r1];
+	ldr	r1, [r1];
 
 	/**
 	 * The size of IRQ vector is 4 bytes, the offset within vector table
@@ -49,7 +49,7 @@ SECTION_FUNC(vector_relay_handler, __vector_relay_handler)
 	 * be the real irq handle vector.
 	 * */
 
-	bx		r1;
+	bx	r1;
 
 GTEXT(__vector_relay_handler)
 
