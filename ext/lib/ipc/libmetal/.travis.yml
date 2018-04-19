@@ -1,0 +1,100 @@
+language: minimal # setting language to C will override cross-compiler and fail
+
+compiler:
+  - gcc
+
+sudo: required
+dist: trusty
+
+env:
+  global:
+    - ZEPHYR_GCC_VARIANT=zephyr
+    - ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
+    - ZEPHYR_BASE=$TRAVIS_BUILD_DIR/deps/zephyr
+    - ZEPHYR_SDK_VERSION=0.9.2
+    - ZEPHYR_SDK_DOWNLOAD_FOLDER=https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/$ZEPHYR_SDK_VERSION
+    - ZEPHYR_SDK_SETUP_BINARY=zephyr-sdk-$ZEPHYR_SDK_VERSION-setup.run
+    - ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER/$ZEPHYR_SDK_SETUP_BINARY
+    - FREERTOS_ZIP_URL=https://downloads.sourceforge.net/project/freertos/FreeRTOS/V10.0.1/FreeRTOSv10.0.1.zip
+
+matrix:
+  fast_finish: true
+  include:
+    - os: linux
+      env: TARGET="zephyr"
+    - os: linux
+      env: TARGET="linux"
+    - os: linux
+      env: TARGET="generic"
+    - os: linux
+      env: TARGET="freertos"
+
+cache:
+  directories:
+    - $ZEPHYR_SDK_INSTALL_DIR
+    - /usr/local/bin
+
+before_install:
+  - if [[ "$TARGET" == "zephyr" ]]; then
+      sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test &&
+      sudo apt-get update -qq &&
+      sudo apt-get install libc6-dev-i386 make gperf gcc g++ python3-ply python3-yaml python3-pip device-tree-compiler ncurses-dev uglifyjs -qq &&
+      sudo pip3 install pyelftools;
+    fi
+  - if [[ "$TARGET" == "linux" ]]; then
+      sudo apt-get update -qq &&
+      sudo apt-get install libsysfs-dev libhugetlbfs-dev make gcc;
+    fi
+# This is to kick start CI on generic platform. Will need to have a proper way to get the required packages
+  - if [[ "$TARGET" == "generic" || "$TARGET" == "freertos" ]]; then
+      wget http://ppa.launchpad.net/team-gcc-arm-embedded/ppa/ubuntu/pool/main/g/gcc-arm-none-eabi/gcc-arm-embedded_7-2017q4-1~trusty3_amd64.deb &&
+      sudo dpkg -i gcc-arm-embedded_7-2017q4-1~trusty3_amd64.deb;
+    fi
+  - if [[ "$TARGET" == "freertos" ]]; then
+      wget $FREERTOS_ZIP_URL &&
+      pwd && ls &&
+      unzip FreeRTOSv10.0.1.zip > /dev/null;
+    fi
+
+install: >
+  if [[ "$TARGET" == "zephyr" && "$(cat $ZEPHYR_SDK_INSTALL_DIR/sdk_version)" != "$ZEPHYR_SDK_VERSION" ]]; then
+    wget $ZEPHYR_SDK_DOWNLOAD_URL &&
+    chmod +x $ZEPHYR_SDK_SETUP_BINARY &&
+    rm -rf $ZEPHYR_SDK_INSTALL_DIR &&
+    ./$ZEPHYR_SDK_SETUP_BINARY --quiet -- -y -d $ZEPHYR_SDK_INSTALL_DIR > /dev/null;
+  fi
+
+before_script: >
+  if [[ "$TARGET" == "zephyr" ]]; then
+    cd .. &&
+    git clone --depth=1 https://github.com/zephyrproject-rtos/zephyr.git &&
+    cd zephyr &&
+    source zephyr-env.sh;
+  fi
+
+script:
+  - if [[ "$TARGET" == "zephyr" ]]; then
+       mkdir -p ../libmetal/build-zephyr &&
+       cd ../libmetal/build-zephyr &&
+       cmake .. -DWITH_ZEPHYR=on -DBOARD=qemu_cortex_m3 -DWITH_TESTS=on &&
+       make VERBOSE=1;
+    fi
+  - if [[ "$TARGET" == "linux" ]]; then
+       mkdir -p build-linux &&
+       cd build-linux &&
+       cmake .. -DWITH_TESTS_EXEC=on &&
+       make VERBOSE=1 all test;
+    fi
+  - if [[ "$TARGET" == "generic" ]]; then
+       mkdir -p build-generic &&
+       cd build-generic &&
+       cmake .. -DCMAKE_TOOLCHAIN_FILE=template-generic &&
+       make VERBOSE=1;
+    fi
+  - if [[ "$TARGET" == "freertos" ]]; then
+       mkdir -p build-freertos &&
+       cd build-freertos &&
+       export &&
+       cmake .. -DCMAKE_TOOLCHAIN_FILE=template-freertos -DCMAKE_C_FLAGS="-I$PWD/../FreeRTOSv10.0.1/FreeRTOS/Source/include/ -I$PWD/../FreeRTOSv10.0.1/FreeRTOS/Demo/CORTEX_STM32F107_GCC_Rowley -I$PWD/../FreeRTOSv10.0.1/FreeRTOS/Source/portable/GCC/ARM_CM3" &&
+       make VERBOSE=1;
+    fi
