@@ -3485,6 +3485,7 @@ static enum net_verdict handle_fragment_hdr(struct net_pkt *pkt,
 		 * list. We must discard the whole packet at this point.
 		 */
 		NET_DBG("No slots available for 0x%x", reass->id);
+		net_pkt_unref(pkt);
 		goto drop;
 	}
 
@@ -3515,6 +3516,7 @@ static enum net_verdict handle_fragment_hdr(struct net_pkt *pkt,
 			reass->pkt[i] = NULL;
 		}
 
+		net_pkt_unref(pkt);
 		goto drop;
 	}
 
@@ -3526,7 +3528,9 @@ accept:
 
 drop:
 	if (reass) {
-		reassembly_cancel(reass->id, &reass->src, &reass->dst);
+		if (reassembly_cancel(reass->id, &reass->src, &reass->dst)) {
+			return NET_OK;
+		}
 	}
 
 	return NET_DROP;
