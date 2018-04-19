@@ -84,6 +84,12 @@ set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
 # Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 
+# Load additional default values from the user
+if (EXISTS ${ZEPHYR_BASE}/defaults.cmake)
+  message(STATUS "Loading additional defaults")
+  include(${ZEPHYR_BASE}/defaults.cmake)
+endif()
+
 include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 
 find_package(PythonInterp 3.4)

@@ -13,6 +13,7 @@ cscope.*
 .dir
 outdir
 outdir-*
+defaults.cmake
 scripts/basic/fixdep
 scripts/gen_idt/gen_idt
 scripts/kconfig/conf
