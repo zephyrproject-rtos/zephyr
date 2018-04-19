@@ -64,7 +64,6 @@ struct wpanusb_dev_data_t {
 	/* USB device status code */
 	enum usb_dc_status_code usb_status;
 	u8_t interface_data[WPANUSB_CLASS_MAX_DATA_SIZE];
-	u8_t notification_sent;
 };
 
 static const struct dev_common_descriptor {
@@ -524,16 +523,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	return 0;
 }
 
-static int shell_cmd_help(int argc, char *argv[])
-{
-	/* Keep the commands in alphabetical order */
-	printk("wpanusb help\n");
-
-	return 0;
-}
-
 struct shell_cmd commands[] = {
-	{ "help", shell_cmd_help, "help" },
 	{ NULL, NULL }
 };
 
