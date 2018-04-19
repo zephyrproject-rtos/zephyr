@@ -53,9 +53,9 @@
 			reg = <0x00070000 0xa000>;
 		};
 
-#if defined(CONFIG_FILE_SYSTEM_NFFS)
-		nffs_partition: partition@7a000 {
-			label = "nffs";
+#if defined(CONFIG_FS_FLASH_MAP_STORAGE)
+		storage_partition: partition@7a000 {
+			label = "storage";
 			reg = <0x0007a000 0x00006000>;
 		};
 #endif
