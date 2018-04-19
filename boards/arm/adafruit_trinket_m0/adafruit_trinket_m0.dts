@@ -69,9 +69,9 @@
 		 * and is used by NFFS if enabled.
 		 */
 
-#if defined(CONFIG_FILE_SYSTEM_NFFS)
-		nffs_partition: partition@3c000 {
-			label = "nffs";
+#if defined(CONFIG_FS_FLASH_MAP_STORAGE)
+		storage_partition: partition@3c000 {
+			label = "storage";
 			reg = <0x0003c000 0x00004000>;
 		};
 #endif
