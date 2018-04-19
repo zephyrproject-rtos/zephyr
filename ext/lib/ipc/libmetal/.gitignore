@@ -1,0 +1,18 @@
+*.o
+*~
+!libs/system/zc702evk/linux/lib/*/*.a
+*.bin
+*.map
+*.out
+*.log
+*.swp
+*.swo
+*.d
+build*/
+
+/tags
+/TAGS
+
+# cscope files
+cscope.*
+ncscope.*
