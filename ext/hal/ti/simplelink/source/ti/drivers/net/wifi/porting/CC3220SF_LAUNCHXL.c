@@ -10,6 +10,7 @@
 #include <ti/devices/cc32xx/inc/hw_memmap.h>
 #include <ti/devices/cc32xx/inc/hw_types.h>
 
+#include <ti/devices/cc32xx/driverlib/rom.h>
 #include <ti/devices/cc32xx/driverlib/rom_map.h>
 #include <ti/devices/cc32xx/driverlib/prcm.h>
 #include <ti/devices/cc32xx/driverlib/spi.h>
