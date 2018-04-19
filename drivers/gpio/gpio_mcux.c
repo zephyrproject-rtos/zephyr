@@ -237,9 +237,9 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 static int gpio_mcux_porta_init(struct device *dev);
 
 static const struct gpio_mcux_config gpio_mcux_porta_config = {
-	.gpio_base = GPIOA,
+	.gpio_base = (GPIO_Type *) GPIO_A_BASE_ADDRESS,
 	.port_base = PORTA,
-#ifdef IRQ_GPIO_PORTA
+#ifdef GPIO_A_IRQ
 	.flags = GPIO_INT,
 #else
 	.flags = 0,
@@ -248,7 +248,7 @@ static const struct gpio_mcux_config gpio_mcux_porta_config = {
 
 static struct gpio_mcux_data gpio_mcux_porta_data;
 
-DEVICE_AND_API_INIT(gpio_mcux_porta, CONFIG_GPIO_MCUX_PORTA_NAME,
+DEVICE_AND_API_INIT(gpio_mcux_porta, GPIO_A_LABEL,
 		    gpio_mcux_porta_init,
 		    &gpio_mcux_porta_data, &gpio_mcux_porta_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -256,11 +256,11 @@ DEVICE_AND_API_INIT(gpio_mcux_porta, CONFIG_GPIO_MCUX_PORTA_NAME,
 
 static int gpio_mcux_porta_init(struct device *dev)
 {
-#ifdef IRQ_GPIO_PORTA
-	IRQ_CONNECT(IRQ_GPIO_PORTA, CONFIG_GPIO_MCUX_PORTA_PRI,
+#ifdef GPIO_A_IRQ
+	IRQ_CONNECT(GPIO_A_IRQ, GPIO_A_IRQ_PRIORITY,
 		    gpio_mcux_port_isr, DEVICE_GET(gpio_mcux_porta), 0);
 
-	irq_enable(IRQ_GPIO_PORTA);
+	irq_enable(GPIO_A_IRQ);
 
 	return 0;
 #else
@@ -273,9 +273,9 @@ static int gpio_mcux_porta_init(struct device *dev)
 static int gpio_mcux_portb_init(struct device *dev);
 
 static const struct gpio_mcux_config gpio_mcux_portb_config = {
-	.gpio_base = GPIOB,
+	.gpio_base = (GPIO_Type *) GPIO_B_BASE_ADDRESS,
 	.port_base = PORTB,
-#ifdef IRQ_GPIO_PORTB
+#ifdef GPIO_B_IRQ
 	.flags = GPIO_INT,
 #else
 	.flags = 0,
@@ -284,7 +284,7 @@ static const struct gpio_mcux_config gpio_mcux_portb_config = {
 
 static struct gpio_mcux_data gpio_mcux_portb_data;
 
-DEVICE_AND_API_INIT(gpio_mcux_portb, CONFIG_GPIO_MCUX_PORTB_NAME,
+DEVICE_AND_API_INIT(gpio_mcux_portb, GPIO_B_LABEL,
 		    gpio_mcux_portb_init,
 		    &gpio_mcux_portb_data, &gpio_mcux_portb_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -292,11 +292,11 @@ DEVICE_AND_API_INIT(gpio_mcux_portb, CONFIG_GPIO_MCUX_PORTB_NAME,
 
 static int gpio_mcux_portb_init(struct device *dev)
 {
-#ifdef IRQ_GPIO_PORTB
-	IRQ_CONNECT(IRQ_GPIO_PORTB, CONFIG_GPIO_MCUX_PORTB_PRI,
+#ifdef GPIO_B_IRQ
+	IRQ_CONNECT(GPIO_B_IRQ, GPIO_B_IRQ_PRIORITY,
 		    gpio_mcux_port_isr, DEVICE_GET(gpio_mcux_portb), 0);
 
-	irq_enable(IRQ_GPIO_PORTB);
+	irq_enable(GPIO_B_IRQ);
 
 	return 0;
 #else
@@ -309,9 +309,9 @@ static int gpio_mcux_portb_init(struct device *dev)
 static int gpio_mcux_portc_init(struct device *dev);
 
 static const struct gpio_mcux_config gpio_mcux_portc_config = {
-	.gpio_base = GPIOC,
+	.gpio_base = (GPIO_Type *) GPIO_C_BASE_ADDRESS,
 	.port_base = PORTC,
-#ifdef IRQ_GPIO_PORTC
+#ifdef GPIO_C_IRQ
 	.flags = GPIO_INT,
 #else
 	.flags = 0,
@@ -320,7 +320,7 @@ static const struct gpio_mcux_config gpio_mcux_portc_config = {
 
 static struct gpio_mcux_data gpio_mcux_portc_data;
 
-DEVICE_AND_API_INIT(gpio_mcux_portc, CONFIG_GPIO_MCUX_PORTC_NAME,
+DEVICE_AND_API_INIT(gpio_mcux_portc, GPIO_C_LABEL,
 		    gpio_mcux_portc_init,
 		    &gpio_mcux_portc_data, &gpio_mcux_portc_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -328,11 +328,11 @@ DEVICE_AND_API_INIT(gpio_mcux_portc, CONFIG_GPIO_MCUX_PORTC_NAME,
 
 static int gpio_mcux_portc_init(struct device *dev)
 {
-#ifdef IRQ_GPIO_PORTC
-	IRQ_CONNECT(IRQ_GPIO_PORTC, CONFIG_GPIO_MCUX_PORTC_PRI,
+#ifdef GPIO_C_IRQ
+	IRQ_CONNECT(GPIO_C_IRQ, GPIO_C_IRQ_PRIORITY,
 		    gpio_mcux_port_isr, DEVICE_GET(gpio_mcux_portc), 0);
 
-	irq_enable(IRQ_GPIO_PORTC);
+	irq_enable(GPIO_C_IRQ);
 
 	return 0;
 #else
@@ -345,9 +345,9 @@ static int gpio_mcux_portc_init(struct device *dev)
 static int gpio_mcux_portd_init(struct device *dev);
 
 static const struct gpio_mcux_config gpio_mcux_portd_config = {
-	.gpio_base = GPIOD,
+	.gpio_base = (GPIO_Type *) GPIO_D_BASE_ADDRESS,
 	.port_base = PORTD,
-#ifdef IRQ_GPIO_PORTD
+#ifdef GPIO_D_IRQ
 	.flags = GPIO_INT,
 #else
 	.flags = 0,
@@ -356,7 +356,7 @@ static const struct gpio_mcux_config gpio_mcux_portd_config = {
 
 static struct gpio_mcux_data gpio_mcux_portd_data;
 
-DEVICE_AND_API_INIT(gpio_mcux_portd, CONFIG_GPIO_MCUX_PORTD_NAME,
+DEVICE_AND_API_INIT(gpio_mcux_portd, GPIO_D_LABEL,
 		    gpio_mcux_portd_init,
 		    &gpio_mcux_portd_data, &gpio_mcux_portd_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -364,11 +364,11 @@ DEVICE_AND_API_INIT(gpio_mcux_portd, CONFIG_GPIO_MCUX_PORTD_NAME,
 
 static int gpio_mcux_portd_init(struct device *dev)
 {
-#ifdef IRQ_GPIO_PORTD
-	IRQ_CONNECT(IRQ_GPIO_PORTD, CONFIG_GPIO_MCUX_PORTD_PRI,
+#ifdef GPIO_D_IRQ
+	IRQ_CONNECT(GPIO_D_IRQ, GPIO_D_IRQ_PRIORITY,
 		    gpio_mcux_port_isr, DEVICE_GET(gpio_mcux_portd), 0);
 
-	irq_enable(IRQ_GPIO_PORTD);
+	irq_enable(GPIO_D_IRQ);
 
 	return 0;
 #else
@@ -381,9 +381,9 @@ static int gpio_mcux_portd_init(struct device *dev)
 static int gpio_mcux_porte_init(struct device *dev);
 
 static const struct gpio_mcux_config gpio_mcux_porte_config = {
-	.gpio_base = GPIOE,
+	.gpio_base = (GPIO_Type *) GPIO_E_BASE_ADDRESS,
 	.port_base = PORTE,
-#ifdef IRQ_GPIO_PORTE
+#ifdef GPIO_E_IRQ
 	.flags = GPIO_INT,
 #else
 	.flags = 0,
@@ -392,7 +392,7 @@ static const struct gpio_mcux_config gpio_mcux_porte_config = {
 
 static struct gpio_mcux_data gpio_mcux_porte_data;
 
-DEVICE_AND_API_INIT(gpio_mcux_porte, CONFIG_GPIO_MCUX_PORTE_NAME,
+DEVICE_AND_API_INIT(gpio_mcux_porte, GPIO_E_LABEL,
 		    gpio_mcux_porte_init,
 		    &gpio_mcux_porte_data, &gpio_mcux_porte_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -400,11 +400,11 @@ DEVICE_AND_API_INIT(gpio_mcux_porte, CONFIG_GPIO_MCUX_PORTE_NAME,
 
 static int gpio_mcux_porte_init(struct device *dev)
 {
-#ifdef IRQ_GPIO_PORTE
-	IRQ_CONNECT(IRQ_GPIO_PORTE, CONFIG_GPIO_MCUX_PORTE_PRI,
+#ifdef GPIO_E_IRQ
+	IRQ_CONNECT(GPIO_E_IRQ, GPIO_E_IRQ_PRIORITY,
 		    gpio_mcux_port_isr, DEVICE_GET(gpio_mcux_porte), 0);
 
-	irq_enable(IRQ_GPIO_PORTE);
+	irq_enable(GPIO_E_IRQ);
 
 	return 0;
 #else
