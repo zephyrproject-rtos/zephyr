@@ -1,5 +1,6 @@
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/clock/kinetis_sim.h>
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 
 / {
@@ -193,7 +194,7 @@
 			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff000 0x40>;
 			interrupts = <59 2>;
-
+			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
@@ -202,7 +203,7 @@
 			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff040 0x40>;
 			interrupts = <60 2>;
-
+			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
@@ -211,7 +212,7 @@
 			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff080 0x40>;
 			interrupts = <61 2>;
-
+			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
@@ -220,7 +221,7 @@
 			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff0c0 0x40>;
 			interrupts = <62 2>;
-
+			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
@@ -229,7 +230,7 @@
 			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff100 0x40>;
 			interrupts = <63 2>;
-
+			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
