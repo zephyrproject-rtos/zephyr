@@ -56,7 +56,7 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	/* 3V3B_EN */
 	pinmux_pin_set(portb, 12, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-	struct device *gpiob = device_get_binding(CONFIG_GPIO_MCUX_PORTB_NAME);
+	struct device *gpiob = device_get_binding(GPIO_B_LABEL);
 
 	gpio_pin_configure(gpiob, 12, GPIO_DIR_OUT);
 	gpio_pin_write(gpiob, 12, 0);
@@ -91,7 +91,7 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	/* LDO - MAX30101 power supply */
 	pinmux_pin_set(porta, 29, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-	struct device *gpioa = device_get_binding(CONFIG_GPIO_MCUX_PORTA_NAME);
+	struct device *gpioa = device_get_binding(GPIO_A_LABEL);
 
 	gpio_pin_configure(gpioa, 29, GPIO_DIR_OUT);
 	gpio_pin_write(gpioa, 29, 1);
@@ -100,7 +100,7 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 #ifdef CONFIG_BATTERY_SENSE
 	pinmux_pin_set(portc, 14, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-	struct device *gpioc = device_get_binding(CONFIG_GPIO_MCUX_PORTC_NAME);
+	struct device *gpioc = device_get_binding(GPIO_C_LABEL);
 
 	gpio_pin_configure(gpioc, 14, GPIO_DIR_OUT);
 	gpio_pin_write(gpioc, 14, 0);
