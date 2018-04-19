@@ -1,0 +1,22 @@
+# Kconfig - LoRaWAN configuration options
+#
+# Copyright (c) 2018 Ding Tao
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "LoRaWAN"
+
+config LORAWAN
+	bool "LoraWAN support [Experimental]"
+	help
+	  This option enables LoRaWAN support.
+
+if LORAWAN
+
+source "subsys/lorawan/radio/Kconfig"
+source "subsys/lorawan/class/Kconfig"
+
+endif # LORAWAN
+
+endmenu

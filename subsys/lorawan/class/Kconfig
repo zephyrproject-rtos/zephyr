@@ -1,0 +1,42 @@
+# Kconfig - LoRaWAN radio frequency configuration options
+#
+# Copyright (c) 2018 Ding Tao
+#
+# SPDX-License-Identifuer: Apache-2.0
+#
+
+choice
+	prompt "LoRaWAN radio frequency selection"
+	default REGION_CN470
+
+config REGION_AS923
+	bool "AS923"
+
+config REGION_AU915
+	bool "AS915"
+
+config REGION_CN470
+	bool "CN470"
+
+config REGION_CN779
+	bool "CN779"
+
+config REGION_EU433
+	bool "EU433"
+
+config REGION_EU868
+	bool "EU868"
+
+config REGION_IN865
+	bool "IN865"
+
+config REGION_KR920
+	bool "KR920"
+
+config REGION_US915
+	bool "US915"
+
+config REGION_US915_HYBRID
+	bool "US915-Hybird"
+
+endchoice

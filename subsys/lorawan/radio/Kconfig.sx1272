@@ -1,0 +1,43 @@
+# Kconfig - Semetech sx1272 radio chip configuration
+#
+# Copyright (c) 2018 Ding Tao
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "SX1272 Configuration"
+	visible if SX1272
+
+config SX1272_DIO0_DEV_NAME
+	string "DIO0 GPIO device name"
+	default "GPIOA"
+
+config SX1272_DIO0_PIN
+	int "DIO0 GPIO pin number"
+	default 1
+
+config SX1272_DIO1_DEV_NAME
+	string "DIO1 GPIO device name"
+	default "GPIOA"
+
+config SX1272_DIO1_PIN
+	int "DIO1 GPIO pin number"
+	default 1
+
+config SX1272_DIO2_DEV_NAME
+	string "DIO2 GPIO device name"
+	default "GPIOA"
+
+config SX1272_DIO2_PIN
+	int "DIO2 GPIO pin number"
+	default 1
+
+config SX1272_DIO3_DEV_NAME
+	string "DIO3 GPIO device name"
+	default "GPIOA"
+
+config SX1272_DIO3_PIN
+	int "DIO3 GPIO pin number"
+	default 1
+
+endmenu

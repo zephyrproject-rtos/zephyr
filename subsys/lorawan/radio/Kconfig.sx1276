@@ -1,0 +1,59 @@
+# Kconfig - Semtech sx1276 radio chip configuration
+#
+# Copyright (c) 2018 Ding Tao
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "SX1276 Configuration"
+	visible if SX1276
+
+config SX1276_DIO0_DEV_NAME
+	string "DIO0 GPIO device name"
+	default "GPIOA"
+
+config SX1276_DIO0_PIN
+	int "DIO0 GPIO pin number"
+	default 1
+
+config SX1276_DIO1_DEV_NAME
+	string "DIO1 GPIO device name"
+	default "GPIOA"
+
+config SX1276_DIO1_PIN
+	int "DIO1 GPIO pin number"
+	default 1
+
+config SX1276_DIO2_DEV_NAME
+	string "DIO2 GPIO device name"
+	default "GPIOA"
+
+config SX1276_DIO2_PIN
+	int "DIO2 GPIO pin number"
+	default 1
+
+config SX1276_DIO3_DEV_NAME
+	string "DIO3 GPIO device name"
+	default "GPIOA"
+
+config SX1276_DIO3_PIN
+	int "DIO3 GPIO pin number"
+	default 1
+
+config SX1276_DIO4_DEV_NAME
+	string "DIO4 GPIO device name"
+	default "GPIOA"
+
+config SX1276_DIO4_PIN
+	int "DIO4 GPIO pin number"
+	default 1
+
+config SX1276_DIO5_DEV_NAME
+	string "DIO5 GPIO device name"
+	default "GPIOA"
+
+config SX1276_DIO5_PIN
+	int "DIO5 GPIO pin number"
+	default 1
+
+endmenu
