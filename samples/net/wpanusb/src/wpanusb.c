@@ -32,36 +32,13 @@
 #define WPANUSB_SUBCLASS	0
 #define WPANUSB_PROTOCOL	0
 
-#define WPANUSB_BUFFER_SIZE	64
-
 /* Max packet size for endpoints */
 #define WPANUSB_BULK_EP_MPS		64
-
-/* Max packet size for Interrupt endpoints */
-#define WPANUSB_INTERRUPT_EP_MPS	16
 
 /* Max Bluetooth command data size */
 #define WPANUSB_CLASS_MAX_DATA_SIZE	100
 
-#define DEVICE_RELNUM			0x0100
-
-#define WPANUSB_NUM_CONF		1
-
-#define WPANUSB_NUM_ITF			1
-
-#define WPANUSB_IF1_NUM_EP		1
-/* Include all endpoints, also alternate configurations */
-#define WPANUSB_NUM_EP		(WPANUSB_IF1_NUM_EP)
-
 #define WPANUSB_ENDP_BULK_IN		0x81
-
-#define WPANUSB_CONF_SIZE (USB_CONFIGURATION_DESC_SIZE + \
-			 (WPANUSB_NUM_ITF * USB_INTERFACE_DESC_SIZE) + \
-			 (WPANUSB_NUM_EP * USB_ENDPOINT_DESC_SIZE))
-
-/* Misc. macros */
-#define LOW_BYTE(x)	((x) & 0xFF)
-#define HIGH_BYTE(x)	((x) >> 8)
 
 static struct device *wpanusb_dev;
 
@@ -87,90 +64,73 @@ struct wpanusb_dev_data_t {
 	u8_t notification_sent;
 };
 
-/**
- * ieee802.15.4 USB descriptors configuration
- */
-static const u8_t wpanusb_desc[] = {
+static const struct dev_common_descriptor {
+	struct usb_device_descriptor device_descriptor;
+	struct usb_cfg_descriptor configuration_descr;
+	struct usb_device_config {
+		struct usb_if_descriptor if0;
+		struct usb_ep_descriptor if0_in_ep;
+	} __packed device_configuration;
+	/*
+	 * String descriptors not enabled at the moment
+	 */
+} __packed wpanusb_desc = {
 	/* Device descriptor */
-	USB_DEVICE_DESC_SIZE,		/* Descriptor size */
-	USB_DEVICE_DESC,		/* Descriptor type */
-	LOW_BYTE(USB_1_1),
-	HIGH_BYTE(USB_1_1),		/* USB version in BCD format */
-	CUSTOM_CLASS,			/* Class */
-	WPANUSB_SUBCLASS,		/* SubClass - Interface specific */
-	WPANUSB_PROTOCOL,		/* Protocol - Interface specific */
-	MAX_PACKET_SIZE0,		/* Max Packet Size */
-	LOW_BYTE(CONFIG_USB_DEVICE_VID),
-	HIGH_BYTE(CONFIG_USB_DEVICE_VID),/* Vendor Id */
-	LOW_BYTE(CONFIG_USB_DEVICE_PID),
-	HIGH_BYTE(CONFIG_USB_DEVICE_PID),/* Product Id */
-	LOW_BYTE(DEVICE_RELNUM),
-	HIGH_BYTE(DEVICE_RELNUM),	/* Device Release Number */
-	/* Index of Manufacturer String Descriptor */
-	0x00,
-	/* Index of Product String Descriptor */
-	0x00,
-	/* Index of Serial Number String Descriptor */
-	0x00,
-	WPANUSB_NUM_CONF,		/* Number of Possible Configuration */
+	.device_descriptor = {
+		.bLength = sizeof(struct usb_device_descriptor),
+		.bDescriptorType = USB_DEVICE_DESC,
+		.bcdUSB = sys_cpu_to_le16(USB_1_1),
+		.bDeviceClass = CUSTOM_CLASS,
+		.bDeviceSubClass = 0,
+		.bDeviceProtocol = 0,
+		.bMaxPacketSize0 = MAX_PACKET_SIZE0,
+		.idVendor = sys_cpu_to_le16((u16_t)CONFIG_USB_DEVICE_VID),
+		.idProduct = sys_cpu_to_le16((u16_t)CONFIG_USB_DEVICE_PID),
+		.bcdDevice = sys_cpu_to_le16(BCDDEVICE_RELNUM),
+		.iManufacturer = 0,
+		.iProduct = 0,
+		.iSerialNumber = 0,
+		.bNumConfigurations = 1,
+	},
 
 	/* Configuration descriptor */
-	USB_CONFIGURATION_DESC_SIZE,	/* Descriptor size */
-	USB_CONFIGURATION_DESC,		/* Descriptor type */
-	/* Total length in bytes of data returned */
-	LOW_BYTE(WPANUSB_CONF_SIZE),
-	HIGH_BYTE(WPANUSB_CONF_SIZE),
-	WPANUSB_NUM_ITF,		/* Number of interfaces */
-	0x01,				/* Configuration value */
-	0x00,				/* Index of the Configuration string */
-	USB_CONFIGURATION_ATTRIBUTES,	/* Attributes */
-	MAX_LOW_POWER,			/* Max power consumption */
+	.configuration_descr = {
+		.bLength = sizeof(struct usb_cfg_descriptor),
+		.bDescriptorType = USB_CONFIGURATION_DESC,
+		.wTotalLength = sizeof(struct dev_common_descriptor)
+			      - sizeof(struct usb_device_descriptor),
+		.bNumInterfaces = 1,
+		.bConfigurationValue = 1,
+		.iConfiguration = 0,
+		.bmAttributes = USB_CONFIGURATION_ATTRIBUTES,
+		.bMaxPower = MAX_LOW_POWER,
+	},
 
-	/* Interface descriptor 0 */
-	USB_INTERFACE_DESC_SIZE,	/* Descriptor size */
-	USB_INTERFACE_DESC,		/* Descriptor type */
-	0x00,				/* Interface index */
-	0x00,				/* Alternate setting */
-	WPANUSB_IF1_NUM_EP,		/* Number of Endpoints */
-	CUSTOM_CLASS,			/* Class */
-	WPANUSB_SUBCLASS,		/* SubClass */
-	WPANUSB_PROTOCOL,		/* Protocol */
-	/* Index of the Interface String Descriptor */
-	0x00,
+	/* Device configuration */
+	.device_configuration = {
+		/* Interface descriptor */
+		.if0 = {
+			.bLength = sizeof(struct usb_if_descriptor),
+			.bDescriptorType = USB_INTERFACE_DESC,
+			.bInterfaceNumber = 0,
+			.bAlternateSetting = 0,
+			.bNumEndpoints = 1,
+			.bInterfaceClass = CUSTOM_CLASS,
+			.bInterfaceSubClass = WPANUSB_SUBCLASS,
+			.bInterfaceProtocol = WPANUSB_PROTOCOL,
+			.iInterface = 0,
+		},
 
-	/* Endpoint IN */
-	USB_ENDPOINT_DESC_SIZE,		/* Descriptor size */
-	USB_ENDPOINT_DESC,		/* Descriptor type */
-	WPANUSB_ENDP_BULK_IN,		/* Endpoint address */
-	USB_DC_EP_BULK,			/* Attributes */
-	LOW_BYTE(WPANUSB_BULK_EP_MPS),
-	HIGH_BYTE(WPANUSB_BULK_EP_MPS),	/* Max packet size */
-	0x00,				/* Interval */
-
-#if 0
-	/* String descriptor language, only one, so min size 4 bytes.
-	 * 0x0409 English(US) language code used
-	 */
-	USB_STRING_DESC_SIZE,           /* Descriptor size */
-	USB_STRING_DESC,                /* Descriptor type */
-	0x09,
-	0x04,
-
-	/* Manufacturer String Descriptor "Intel" */
-	0x0C,
-	USB_STRING_DESC,
-	'I', 0, 'n', 0, 't', 0, 'e', 0, 'l', 0,
-
-	/* Product String Descriptor */
-	0x10,
-	USB_STRING_DESC,
-	'Q', 0, 'U', 0, 'A', 0, 'R', 0, 'Q', 0, 'A', 0, 'T', 0,
-
-	/* Serial Number String Descriptor "00.01" */
-	0x0C,
-	USB_STRING_DESC,
-	'0', 0, '0', 0, '.', 0, '0', 0, '1', 0,
-#endif
+		/* Endpoint IN */
+		.if0_in_ep = {
+			.bLength = sizeof(struct usb_ep_descriptor),
+			.bDescriptorType = USB_ENDPOINT_DESC,
+			.bEndpointAddress = WPANUSB_ENDP_BULK_IN,
+			.bmAttributes = USB_DC_EP_BULK,
+			.wMaxPacketSize = sys_cpu_to_le16(WPANUSB_BULK_EP_MPS),
+			.bInterval = 0x00,
+		},
+	},
 };
 
 #ifdef VERBOSE_DEBUG
@@ -501,7 +461,7 @@ static void tx_thread(void)
 static u8_t buffer[300];
 
 static struct usb_cfg_data wpanusb_config = {
-	.usb_device_description = wpanusb_desc,
+	.usb_device_description = (u8_t *)&wpanusb_desc,
 	.cb_usb_status = wpanusb_status_cb,
 	.interface = {
 		.class_handler = wpanusb_class_handler,
