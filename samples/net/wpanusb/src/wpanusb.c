@@ -8,6 +8,10 @@
 #define SYS_LOG_DOMAIN "wpanusb"
 #include <logging/sys_log.h>
 
+/* Enable net_hexdump() here */
+#define NET_LOG_ENABLED		1
+#include <net_private.h>
+
 #include <linker/sections.h>
 #include <toolchain.h>
 #include <string.h>
@@ -25,7 +29,6 @@
 #include <usb/usb_common.h>
 
 #include <net/ieee802154_radio.h>
-#include <net_private.h>
 
 #include "wpanusb.h"
 
@@ -133,42 +136,6 @@ static const struct dev_common_descriptor {
 	},
 };
 
-#ifdef VERBOSE_DEBUG
-/* TODO: move to standard utils */
-static void hexdump(const char *str, const u8_t *packet, size_t length)
-{
-	int n = 0;
-
-	if (!length) {
-		printk("%s zero-length signal packet\n", str);
-		return;
-	}
-
-	while (length--) {
-		if (n % 16 == 0) {
-			printk("%s %08X ", str, n);
-		}
-
-		printk("%02X ", *packet++);
-
-		n++;
-		if (n % 8 == 0) {
-			if (n % 16 == 0) {
-				printk("\n");
-			} else {
-				printk(" ");
-			}
-		}
-	}
-
-	if (n % 16) {
-		printk("\n");
-	}
-}
-#else
-#define hexdump(...)
-#endif
-
 /* EP Bulk IN handler, used to send data to the Host */
 static void wpanusb_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
@@ -226,7 +193,7 @@ static int wpanusb_class_handler(struct usb_setup_packet *setup,
 {
 	SYS_LOG_DBG("len %d", *len);
 
-	hexdump(">", *data, *len);
+	net_hexdump(">", *data, *len);
 
 	return 0;
 }
@@ -419,7 +386,7 @@ static void tx_thread(void)
 		buf = net_buf_frag_last(pkt->frags);
 		cmd = net_buf_pull_u8(buf);
 
-		hexdump(">", buf->data, buf->len);
+		net_hexdump(">", buf->data, buf->len);
 
 		switch (cmd) {
 		case RESET:
@@ -548,7 +515,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	 */
 	net_buf_push_u8(frag, net_pkt_get_len(pkt) - 1);
 
-	hexdump("<", frag->data, net_pkt_get_len(pkt));
+	net_hexdump("<", frag->data, net_pkt_get_len(pkt));
 
 	try_write(WPANUSB_ENDP_BULK_IN, frag->data, net_pkt_get_len(pkt));
 
