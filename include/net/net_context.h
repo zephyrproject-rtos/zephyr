@@ -27,6 +27,12 @@
 #include <net/net_if.h>
 #include <net/net_stats.h>
 
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+#if defined(CONFIG_MBEDTLS)
+#include <mbedtls/ssl.h>
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -217,6 +223,15 @@ struct net_context {
 		u8_t priority;
 #endif
 	} options;
+
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+#if defined(CONFIG_MBEDTLS)
+	struct {
+		mbedtls_ssl_context ssl;
+		mbedtls_ssl_config config;
+	} mbedtls;
+#endif
+#endif
 
 	/** Connection handle */
 	struct net_conn_handle *conn_handler;
