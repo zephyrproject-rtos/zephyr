@@ -491,6 +491,19 @@ endmenu
 
 menu "Security Options"
 
+config RETPOLINE
+	bool
+	prompt "Build with retpolines enabled"
+	default y if !X86_NO_SPECTRE
+	help
+	  This is recommended on platforms with speculative exeuctions, to protect
+	  against branch target injection (AKA Spectre-V2).  Full description of
+	  how retpolines work can be found here[1].
+
+	  Currently only the x86 port
+
+	  [1] https://support.google.com/faqs/answer/7625886
+
 config STACK_CANARIES
 	bool
 	prompt "Compiler stack canaries"

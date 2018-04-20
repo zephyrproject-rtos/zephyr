@@ -89,6 +89,13 @@ config X86_NO_MELTDOWN
 	help
 	  This hidden option should be set on a per-SOC basis to indicate that
 	  a particular SOC is not vulnerable to the Meltdown CPU vulnerability.
+
+config X86_NO_SPECTRE
+	bool
+	default y
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Spectre V2 CPU vulnerability.
 endmenu
 
 config X86_ENABLE_TSS
