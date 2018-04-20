@@ -54,7 +54,7 @@ typedef enum {
 	BusFault_IRQn                 = -11,
 	UsageFault_IRQn               = -10,
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
-	SecureFault_IRQn              = -7,
+	SecureFault_IRQn              = -9,
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 #endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 	SVCall_IRQn                   =  -5,
