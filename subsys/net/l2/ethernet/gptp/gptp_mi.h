@@ -62,6 +62,15 @@ void gptp_mi_port_bmca_state_machines(int port);
  */
 void gptp_mi_state_machines(void);
 
+/**
+ * @brief Return current time in nanoseconds.
+ *
+ * @param port Port number of the clock to use.
+ *
+ * @return Current time in nanoseconds.
+ */
+u64_t gptp_get_current_time_nanosecond(int port);
+
 #endif /* CONFIG_NET_GPTP */
 
 #ifdef __cplusplus
