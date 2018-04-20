@@ -342,6 +342,12 @@ int net_context_put(struct net_context *context)
 		return 0;
 	}
 
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	if (context->options.tls) {
+		net_tls_enable(context, false);
+	}
+#endif /* defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS) */
+
 	net_context_unref(context);
 	return 0;
 }
@@ -1313,13 +1319,15 @@ static int set_context_tls(struct net_context *context,
 			   const void *value, size_t len)
 {
 #if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	bool enabled;
+
 	if (len != sizeof(int)) {
 		return -EINVAL;
 	}
 
-	context->options.tls = !!*(int *)value;
+	enabled = !!*(int *)value;
 
-	return 0;
+	return net_tls_enable(context, enabled);
 #else
 	return -ENOTSUP;
 #endif

@@ -40,7 +40,16 @@
 
 #endif /* CONFIG_MBEDTLS */
 
+int net_tls_enable(struct net_context *context, bool enabled);
+
 #else
+static inline int net_tls_enable(struct net_context *context, bool enabled)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(enabled);
+
+	return 0;
+}
 
 #endif /* CONFIG_NET_TLS || CONFIG_NET_DTLS */
 

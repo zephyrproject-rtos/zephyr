@@ -233,6 +233,8 @@ struct net_context {
 	struct {
 		mbedtls_ssl_context ssl;
 		mbedtls_ssl_config config;
+		/** TLS packet fifo */
+		struct k_fifo rx_fifo;
 	} mbedtls;
 #endif
 #endif
