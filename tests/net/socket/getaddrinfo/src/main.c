@@ -21,6 +21,8 @@ void test_getaddrinfo_ok(void)
 
 	/* With a local dnsmasq server this request shall return 0. */
 	/* zassert_equal(ret, 0, "Invalid result"); */
+
+	freeaddrinfo(res);
 }
 
 void test_getaddrinfo_no_host(void)
@@ -33,6 +35,8 @@ void test_getaddrinfo_no_host(void)
 	zassert_equal(ret, DNS_EAI_SYSTEM, "Invalid result");
 	zassert_equal(errno, EINVAL, "Invalid errno");
 	zassert_is_null(res, "ai_addr is not NULL");
+
+	freeaddrinfo(res);
 }
 
 void test_main(void)
