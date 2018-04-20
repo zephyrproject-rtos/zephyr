@@ -12,22 +12,13 @@
 #define NET_LOG_ENABLED		1
 #include <net_private.h>
 
-#include <linker/sections.h>
-#include <toolchain.h>
-#include <string.h>
-#include <misc/printk.h>
-
 #include <device.h>
-#include <uart.h>
-
-#include <misc/util.h>
 #include <shell/shell.h>
-
-#include <net/buf.h>
 
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 
+#include <net/buf.h>
 #include <net/ieee802154_radio.h>
 
 #include "wpanusb.h"
