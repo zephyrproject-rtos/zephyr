@@ -16,7 +16,7 @@ long.
 Commands from Host to Device
 ============================
 
-USB command endpoint
+USB Control endpoint, Vendor commands
 
 	Opcode 0x00 - Reset		bRequest
 
