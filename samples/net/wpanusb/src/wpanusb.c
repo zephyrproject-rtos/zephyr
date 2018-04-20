@@ -466,17 +466,20 @@ static void init_tx_queue(void)
 			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
 }
 
+/**
+ * Interface to the network stack, will be called when the packet is
+ * received
+ */
 int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_buf *frag;
 
-	SYS_LOG_DBG("Got data, pkt %p, frags->len %d",
-		    pkt, net_pkt_get_len(pkt));
+	SYS_LOG_DBG("Got data, pkt %p, len %d", pkt, net_pkt_get_len(pkt));
 
 	frag = net_buf_frag_last(pkt->frags);
 
 	/* Linux requires LQI to be put at the beginning of the buffer */
-	memmove(frag->data+1, frag->data, frag->len);
+	memmove(frag->data + 1, frag->data, frag->len);
 	frag->data[0] = net_pkt_ieee802154_lqi(pkt);
 
 	/**
