@@ -24,6 +24,14 @@
 	status = "ok";
 };
 
+&i2c0 {
+	status = "ok";
+};
+
+&i2c1 {
+	status = "ok";
+};
+
 &flash0 {
 	/*
 	 * For more information, see:
