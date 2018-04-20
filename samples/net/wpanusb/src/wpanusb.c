@@ -178,27 +178,6 @@ static void wpanusb_status_cb(enum usb_dc_status_code status, u8_t *param)
 		}
 }
 
-static int wpanusb_class_handler(struct usb_setup_packet *setup,
-				 s32_t *len, u8_t **data)
-{
-	SYS_LOG_DBG("len %d", *len);
-
-	net_hexdump(">", *data, *len);
-
-	return 0;
-}
-
-static int wpanusb_custom_handler(struct usb_setup_packet *setup,
-				  s32_t *len, u8_t **data)
-{
-	/**
-	 * FIXME:
-	 * Keep custom handler for now in a case some data is sent
-	 * over this endpoint, at the moment return to higher layer.
-	 */
-	return -ENOTSUP;
-}
-
 static int try_write(u8_t ep, u8_t *data, u16_t len)
 {
 	while (1) {
@@ -421,10 +400,10 @@ static struct usb_cfg_data wpanusb_config = {
 	.usb_device_description = (u8_t *)&wpanusb_desc,
 	.cb_usb_status = wpanusb_status_cb,
 	.interface = {
-		.class_handler = wpanusb_class_handler,
-		.custom_handler = wpanusb_custom_handler,
 		.vendor_handler = wpanusb_vendor_handler,
 		.vendor_data = buffer,
+		.class_handler = NULL,
+		.custom_handler = NULL,
 	},
 	.num_endpoints = ARRAY_SIZE(wpanusb_ep),
 	.endpoint = wpanusb_ep,
