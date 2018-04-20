@@ -51,7 +51,7 @@ _id_ok:
 	mov	_k_syscall_table(%edi, %esi, 4), %ebx
 
 	/* Run the handler, which is some entry in _k_syscall_table */
-	call	*%ebx
+	INDIRECT_CALL(%ebx)
 
 	/* EAX now contains return value. Pop or xor everything else to prevent
 	 * information leak from kernel mode.

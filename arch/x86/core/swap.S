@@ -466,5 +466,5 @@ SECTION_FUNC(TEXT, _x86_thread_entry_wrapper)
 	push	$0	 /* Null return address */
 #endif
 	movl	$0, (%esp)
-	jmp	*%edi
+	INDIRECT_JMP(%edi)
 #endif /* _THREAD_WRAPPER_REQUIRED */
