@@ -313,13 +313,50 @@ static int stm32_clock_control_init(struct device *dev)
 	LL_RCC_MSI_Disable();
 	LL_RCC_PLL_Disable();
 
+#elif CONFIG_CLOCK_STM32_SYSCLK_SRC_MSI
+
+	/* Set MSI Range */
+	LL_RCC_MSI_SetRange(LL_RCC_MSIRANGE_8);
+
+	/* Enable MSI if not enabled */
+	if (LL_RCC_MSI_IsReady() != 1) {
+		/* Enable HSI */
+		LL_RCC_MSI_Enable();
+		while (LL_RCC_MSI_IsReady() != 1) {
+		/* Wait for HSI ready */
+		}
+	}
+
+	/* Set MSI as SYSCLCK source */
+	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSI);
+	LL_RCC_SetAHBPrescaler(s_ClkInitStruct.AHBCLKDivider);
+	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSI) {
+	}
+
+	/* Update SystemCoreClock variable */
+	LL_SetSystemCoreClock(__LL_RCC_CALC_HCLK_FREQ(MSI_VALUE,
+						s_ClkInitStruct.AHBCLKDivider));
+
+	/* Set APB1 & APB2 prescaler*/
+	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
+	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
+
+	/* Set flash latency */
+	/* MSI used as SYSCLK (16MHz), set latency to 0 */
+	LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
+
+	/* Disable other clocks */
+	LL_RCC_HSE_Disable();
+	LL_RCC_HSI_Disable();
+	LL_RCC_PLL_Disable();
+
 #elif CONFIG_CLOCK_STM32_SYSCLK_SRC_HSI
 
 	stm32_clock_switch_to_hsi(s_ClkInitStruct.AHBCLKDivider);
 
 	/* Update SystemCoreClock variable */
 	LL_SetSystemCoreClock(__LL_RCC_CALC_HCLK_FREQ(HSI_VALUE,
-						  s_ClkInitStruct.AHBCLKDivider));
+						s_ClkInitStruct.AHBCLKDivider));
 
     /* Set APB1 & APB2 prescaler*/
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
