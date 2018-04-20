@@ -41,12 +41,21 @@
 #endif /* CONFIG_MBEDTLS */
 
 int net_tls_enable(struct net_context *context, bool enabled);
+int net_tls_connect(struct net_context *context, bool listening);
 
 #else
 static inline int net_tls_enable(struct net_context *context, bool enabled)
 {
 	ARG_UNUSED(context);
 	ARG_UNUSED(enabled);
+
+	return 0;
+}
+
+static inline int net_tls_connect(struct net_context *context, bool listening)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(listening);
 
 	return 0;
 }

@@ -624,7 +624,7 @@ int net_context_listen(struct net_context *context, int backlog)
 #endif /* CONFIG_NET_OFFLOAD */
 
 	if (net_tcp_listen(context) >= 0) {
-		return 0;
+		return net_tls_connect(context, true);
 	}
 
 	return -EOPNOTSUPP;
@@ -774,19 +774,25 @@ int net_context_connect(struct net_context *context,
 			cb(context, 0, user_data);
 		}
 
-		return 0;
+		ret = 0;
 
+		break;
 #endif /* CONFIG_NET_UDP */
 
 	case SOCK_STREAM:
-		return net_tcp_connect(context, addr, laddr, rport, lport,
-				       timeout, cb, user_data);
+		ret = net_tcp_connect(context, addr, laddr, rport, lport,
+				      timeout, cb, user_data);
+		break;
 
 	default:
-		return -ENOTSUP;
+		ret = -ENOTSUP;
 	}
 
-	return 0;
+	if (ret < 0) {
+		return ret;
+	}
+
+	return net_tls_connect(context, false);
 }
 
 int net_context_accept(struct net_context *context,

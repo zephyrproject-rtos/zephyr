@@ -233,10 +233,14 @@ struct net_context {
 	struct {
 		mbedtls_ssl_context ssl;
 		mbedtls_ssl_config config;
+		/** intermediated mbedTLS buffer to store decrypted content */
+		char rx_ssl_buf[64];
 		/** TLS packet fifo */
 		struct k_fifo rx_fifo;
 	} mbedtls;
 #endif
+	/** Receive callback for TLS */
+	net_context_recv_cb_t tls_cb;
 #endif
 
 	/** Connection handle */
