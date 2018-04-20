@@ -429,40 +429,6 @@ static inline void _init_irq_gate(struct segment_descriptor *sd,
 }
 
 /**
- * Perform an IA far jump to code within another code segment
- *
- * @param sel Segment selector
- * @param offset Offset within that selector
- */
-static inline void _far_jump(u16_t sel, void *offset)
-{
-	struct far_ptr ptr = {
-		.offset = offset,
-		.sel = sel
-	};
-
-	__asm__ __volatile__ ("ljmp *%0" :: "m" (ptr));
-}
-
-
-/**
- * Perform an IA far call to code within another code segment
- *
- * @param sel Segment selector
- * @param offset Offset within that selector
- */
-static inline void _far_call(u16_t sel, void *offset)
-{
-	struct far_ptr ptr = {
-		.offset = offset,
-		.sel = sel
-	};
-
-	__asm__ __volatile__ ("lcall *%0" :: "m" (ptr));
-}
-
-
-/**
  * Set current IA task TSS
  *
  * @param sel Segment selector in GDT for desired TSS
