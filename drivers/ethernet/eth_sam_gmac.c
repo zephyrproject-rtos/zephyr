@@ -367,6 +367,25 @@ static void update_pkt_priority(struct gptp_hdr *hdr, struct net_pkt *pkt)
 }
 #endif
 
+static inline struct net_if *get_iface(struct eth_sam_dev_data *ctx,
+				       u16_t vlan_tag)
+{
+#if defined(CONFIG_NET_VLAN)
+	struct net_if *iface;
+
+	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
+	if (!iface) {
+		return ctx->iface;
+	}
+
+	return iface;
+#else
+	ARG_UNUSED(vlan_tag);
+
+	return ctx->iface;
+#endif
+}
+
 /*
  * Process successfully sent packets
  */
@@ -376,6 +395,7 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 	struct gmac_desc *tx_desc;
 	struct net_pkt *pkt;
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct net_ptp_time timestamp;
 	struct gptp_hdr *hdr;
 	struct eth_sam_dev_data *dev_data =
@@ -403,7 +423,15 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 
 			net_pkt_set_timestamp(pkt, &timestamp);
 
-			hdr = check_gptp_msg(dev_data->iface, pkt);
+#if defined(CONFIG_NET_VLAN)
+			struct net_eth_hdr *eth_hdr = NET_ETH_HDR(pkt);
+
+			if (ntohs(eth_hdr->type) == NET_ETH_PTYPE_VLAN) {
+				vlan_tag = net_pkt_vlan_tag(pkt);
+			}
+#endif
+			hdr = check_gptp_msg(get_iface(dev_data, vlan_tag),
+					     pkt);
 			if (hdr && need_timestamping(hdr)) {
 				net_if_add_tx_timestamp(pkt);
 			}
@@ -772,25 +800,6 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 	return rx_frame;
 }
 
-static inline struct net_if *get_iface(struct eth_sam_dev_data *ctx,
-				       u16_t vlan_tag)
-{
-#if defined(CONFIG_NET_VLAN)
-	struct net_if *iface;
-
-	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
-	if (!iface) {
-		return ctx->iface;
-	}
-
-	return iface;
-#else
-	ARG_UNUSED(vlan_tag);
-
-	return ctx->iface;
-#endif
-}
-
 static void eth_rx(struct gmac_queue *queue)
 {
 	struct eth_sam_dev_data *dev_data =
@@ -848,7 +857,7 @@ static void eth_rx(struct gmac_queue *queue)
 
 		net_pkt_set_timestamp(rx_frame, &timestamp);
 
-		hdr = check_gptp_msg(dev_data->iface, rx_frame);
+		hdr = check_gptp_msg(get_iface(dev_data, vlan_tag), rx_frame);
 		if (hdr) {
 			update_pkt_priority(hdr, rx_frame);
 		}
