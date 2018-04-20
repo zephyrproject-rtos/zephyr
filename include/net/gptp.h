@@ -165,17 +165,10 @@ struct gptp_hdr {
 	s8_t log_msg_interval;
 } __packed;
 
-/*
- * TODO: k_uptime_get need to be replaced by the MAC ptp_clock.
- * The ptp_clock access infrastructure is not ready yet
- * so use it for the time being.
- * k_uptime time precision is in ms.
- */
-#define GPTP_GET_CURRENT_TIME_NANOSECOND() (k_uptime_get() * 1000000)
-#define GPTP_GET_CURRENT_TIME_USCALED_NS(uscaled_ns_ptr)		\
+#define GPTP_GET_CURRENT_TIME_USCALED_NS(port, uscaled_ns_ptr)		\
 	do {								\
 		(uscaled_ns_ptr)->low =					\
-			GPTP_GET_CURRENT_TIME_NANOSECOND() << 16;	\
+			gptp_get_current_time_nanosecond(port) << 16;	\
 		(uscaled_ns_ptr)->high = 0;				\
 	} while (0)
 

@@ -226,6 +226,30 @@ void gptp_mi_init_state_machine(void)
 	gptp_mi_init_clock_master_sync_rcv_sm();
 }
 
+u64_t gptp_get_current_time_nanosecond(int port)
+{
+	struct device *clk;
+
+	clk = net_eth_get_ptp_clock(GPTP_PORT_IFACE(port));
+	if (clk) {
+		struct net_ptp_time tm = {};
+
+		ptp_clock_get(clk, &tm);
+
+		if (tm.second == 0 && tm.nanosecond == 0) {
+			goto use_uptime;
+		}
+
+		return gptp_timestamp_to_nsec(&tm);
+	}
+
+use_uptime:
+	/* A workaround if clock cannot be found. Note that accuracy is
+	 * only in milliseconds.
+	 */
+	return k_uptime_get() * 1000000;
+}
+
 static void gptp_mi_pss_rcv_compute(int port)
 {
 	struct gptp_pss_rcv_state *state;
@@ -250,7 +274,7 @@ static void gptp_mi_pss_rcv_compute(int port)
 
 	memcpy(&pss->sync_info, sync_rcv, sizeof(struct gptp_md_sync_info));
 
-	pss->sync_receipt_timeout_time = GPTP_GET_CURRENT_TIME_NANOSECOND();
+	pss->sync_receipt_timeout_time = gptp_get_current_time_nanosecond(port);
 	pss->sync_receipt_timeout_time +=
 		(port_ds->sync_receipt_timeout_time_itv >> 16);
 
@@ -455,7 +479,7 @@ static void gptp_mi_pss_send_state_machine(int port)
 			state->send_sync_receipt_timeout_timer_expired = false;
 
 			duration = (state->last_sync_receipt_timeout_time -
-				    GPTP_GET_CURRENT_TIME_NANOSECOND()) /
+				    gptp_get_current_time_nanosecond(port)) /
 				(NSEC_PER_USEC * USEC_PER_MSEC);
 
 			k_timer_start(&state->send_sync_receipt_timeout_timer,
