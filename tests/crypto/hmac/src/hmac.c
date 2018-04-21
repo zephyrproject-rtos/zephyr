@@ -60,7 +60,7 @@ u32_t do_hmac_test(TCHmacState_t h, u32_t testnum, const u8_t *data,
 /*
  * NIST test vectors for encryption.
  */
-void test_1(void)
+void test_hmac_1(void)
 {
 	u32_t result = TC_PASS;
 
@@ -94,7 +94,7 @@ void test_1(void)
 	zassert_false(result, "HMAC test #7 failed");
 }
 
-void test_2(void)
+void test_hmac_2(void)
 {
 	u32_t result = TC_PASS;
 
@@ -128,7 +128,7 @@ void test_2(void)
 	zassert_false(result, "HMAC test #7 failed");
 }
 
-void test_3(void)
+void test_hmac_3(void)
 {
 	u32_t result = TC_PASS;
 
@@ -168,7 +168,7 @@ void test_3(void)
 	zassert_false(result, "HMAC test #3 failed");
 }
 
-void test_4(void)
+void test_hmac_4(void)
 {
 	u32_t result = TC_PASS;
 
@@ -210,7 +210,7 @@ void test_4(void)
 	zassert_false(result, "HMAC test #4 failed");
 }
 
-void test_5(void)
+void test_hmac_5(void)
 {
 	u32_t result = TC_PASS;
 
@@ -244,7 +244,7 @@ void test_5(void)
 	zassert_false(result, "HMAC test #5 failed");
 }
 
-void test_6(void)
+void test_hmac_6(void)
 {
 	u32_t result = TC_PASS;
 
@@ -302,7 +302,7 @@ void test_6(void)
 	zassert_false(result, "HMAC test #6 failed");
 }
 
-void test_7(void)
+void test_hmac_7(void)
 {
 	u32_t result = TC_PASS;
 
