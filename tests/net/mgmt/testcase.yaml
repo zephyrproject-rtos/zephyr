@@ -1,3 +1,5 @@
+common:
+  depends_on: netif
 tests:
   net.management:
     min_ram: 16

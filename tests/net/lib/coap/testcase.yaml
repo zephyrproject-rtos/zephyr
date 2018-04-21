@@ -1,4 +1,5 @@
 tests:
-  test:
+  net.coap:
     min_ram: 16
     tags: net
+    depends_on: netif

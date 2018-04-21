@@ -771,7 +771,7 @@ static const struct {
 	{ "test_ipv6_ntop_6", &ipv6_ntop_6},
 };
 
-static bool test_net_addr(struct net_addr_test_data *data)
+static bool check_net_addr(struct net_addr_test_data *data)
 {
 	switch (data->family) {
 	case AF_INET:
@@ -860,14 +860,14 @@ static bool test_net_addr(struct net_addr_test_data *data)
 	return true;
 }
 
-void run_net_addr_tests(void)
+void test_net_addr(void)
 {
 	int count, pass;
 
 	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
 		TC_START(tests[count].name);
 
-		if (test_net_addr(tests[count].data)) {
+		if (check_net_addr(tests[count].data)) {
 			TC_END(PASS, "passed\n");
 			pass++;
 		} else {
@@ -875,10 +875,10 @@ void run_net_addr_tests(void)
 		}
 	}
 
-	zassert_equal(pass, ARRAY_SIZE(tests), "test_net_addr error");
+	zassert_equal(pass, ARRAY_SIZE(tests), "check_net_addr error");
 }
 
-void run_addr_parse_tests(void)
+void test_addr_parse(void)
 {
 	struct sockaddr addr;
 	bool ret;
@@ -1306,7 +1306,7 @@ void run_addr_parse_tests(void)
 #endif
 }
 
-void run_net_pkt_addr_parse_tests(void)
+void test_net_pkt_addr_parse(void)
 {
 #if defined(CONFIG_NET_IPV6)
 	static struct ipv6_test_data {
@@ -1553,9 +1553,9 @@ void test_main(void)
 {
 	ztest_test_suite(test_utils_fn,
 			 ztest_unit_test(run_tests),
-			 ztest_unit_test(run_net_addr_tests),
-			 ztest_unit_test(run_addr_parse_tests),
-			 ztest_unit_test(run_net_pkt_addr_parse_tests));
+			 ztest_unit_test(test_net_addr),
+			 ztest_unit_test(test_addr_parse),
+			 ztest_unit_test(test_net_pkt_addr_parse));
 
 	ztest_run_test_suite(test_utils_fn);
 }

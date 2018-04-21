@@ -1,5 +1,6 @@
+common:
+  depends_on: netif
 tests:
-  test:
-    depends_on: netif
+  net.udp:
     min_ram: 20
     tags: net

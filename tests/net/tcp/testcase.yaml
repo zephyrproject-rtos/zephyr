@@ -1,4 +1,4 @@
 tests:
   net.tcp:
-    platform_whitelist: qemu_x86 native_posix
+    depends_on: netif
     tags: net tcp

@@ -1,4 +1,6 @@
+common:
+  depends_on: netif
 tests:
-  test:
+  net.vlan:
     min_ram: 32
     tags: net vlan

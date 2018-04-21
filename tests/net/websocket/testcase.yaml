@@ -1,5 +1,6 @@
+common:
+  depends_on: netif
 tests:
-  test:
-      build_only: true
+  net.websocket:
       min_ram: 46
       tags: net http websocket

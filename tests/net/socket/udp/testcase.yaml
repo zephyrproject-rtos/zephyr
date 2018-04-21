@@ -1,5 +1,7 @@
+common:
+  depends_on: netif
 tests:
-  test:
+  net.socket.udp:
     extra_configs:
       - CONFIG_NET_TEST=y
       - CONFIG_NET_LOOPBACK=y

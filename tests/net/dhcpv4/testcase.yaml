@@ -1,4 +1,5 @@
+common:
+  depends_on: netif
 tests:
   net.dhcp:
     tags: net dhcpv4
-    depends_on: netif

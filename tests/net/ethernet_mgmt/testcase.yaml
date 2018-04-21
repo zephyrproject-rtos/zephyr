@@ -1,5 +1,6 @@
+common:
+  depends_on: netif
 tests:
-  test:
+  net.ethernet_mgmt:
     min_ram: 32
-    depends_on: netif
     tags: net ethernet_mgmt
