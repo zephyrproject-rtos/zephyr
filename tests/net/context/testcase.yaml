@@ -1,3 +1,5 @@
+common:
+  depends_on: netif
 tests:
   net.context:
     min_ram: 16

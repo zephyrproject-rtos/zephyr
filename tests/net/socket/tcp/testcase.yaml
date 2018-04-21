@@ -1,4 +1,6 @@
+common:
+  depends_on: netif
 tests:
-  test:
+  net.socket.tcp:
     min_ram: 32
     tags: net
