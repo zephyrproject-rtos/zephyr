@@ -1,4 +1,4 @@
 tests:
-  posix.semaphore:
+  portability.posix:
     tags: posix
 
