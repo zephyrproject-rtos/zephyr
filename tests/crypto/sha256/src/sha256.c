@@ -50,7 +50,7 @@
 /*
  * NIST SHA256 test vector 1.
  */
-void test_1(void)
+void test_sha256_1(void)
 {
 	TC_START("Performing SHA256 tests (NIST tests vectors):");
 
@@ -81,7 +81,7 @@ void test_1(void)
 /*
  * NIST SHA256 test vector 2.
  */
-void test_2(void)
+void test_sha256_2(void)
 {
 	u32_t result = TC_PASS;
 
@@ -109,7 +109,7 @@ void test_2(void)
 	zassert_false(result, "SHA256 test #2 failed.");
 }
 
-void test_3(void)
+void test_sha256_3(void)
 {
 	u32_t result = TC_PASS;
 
@@ -137,7 +137,7 @@ void test_3(void)
 
 }
 
-void test_4(void)
+void test_sha256_4(void)
 {
 	u32_t result = TC_PASS;
 
@@ -165,7 +165,7 @@ void test_4(void)
 
 }
 
-void test_5(void)
+void test_sha256_5(void)
 {
 	u32_t result = TC_PASS;
 
@@ -195,7 +195,7 @@ void test_5(void)
 
 }
 
-void test_6(void)
+void test_sha256_6(void)
 {
 	u32_t result = TC_PASS;
 
@@ -225,7 +225,7 @@ void test_6(void)
 
 }
 
-void test_7(void)
+void test_sha256_7(void)
 {
 	u32_t result = TC_PASS;
 
@@ -255,7 +255,7 @@ void test_7(void)
 
 }
 
-void test_8(void)
+void test_sha256_8(void)
 {
 	u32_t result = TC_PASS;
 
@@ -285,7 +285,7 @@ void test_8(void)
 
 }
 
-void test_9(void)
+void test_sha256_9(void)
 {
 	u32_t result = TC_PASS;
 
@@ -315,7 +315,7 @@ void test_9(void)
 
 }
 
-void test_10(void)
+void test_sha256_10(void)
 {
 	u32_t result = TC_PASS;
 
@@ -345,7 +345,7 @@ void test_10(void)
 
 }
 
-void test_11(void)
+void test_sha256_11(void)
 {
 	u32_t result = TC_PASS;
 
@@ -375,7 +375,7 @@ void test_11(void)
 
 }
 
-void test_12(void)
+void test_sha256_12(void)
 {
 	u32_t result = TC_PASS;
 
@@ -407,7 +407,7 @@ void test_12(void)
 	zassert_false(result, "SHA256 test #12 failed.");
 }
 #if EXTREME_SLOW
-void test_13(void)
+void test_sha256_13(void)
 {
 	u32_t result = TC_PASS;
 
@@ -440,7 +440,7 @@ void test_13(void)
 
 }
 
-void test_14(void)
+void test_sha256_14(void)
 {
 	u32_t result = TC_PASS;
 
@@ -474,10 +474,10 @@ void test_14(void)
 }
 #endif
 
-void test_13_and_14(void)
+void test_sha256_13_and_14(void)
 {
 #if EXTREME_SLOW
-	result = test_13();
-	result = test_14();
+	result = test_sha256_13();
+	result = test_sha256_14();
 #endif
 }
