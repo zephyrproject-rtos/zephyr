@@ -130,7 +130,8 @@ void msg_receiver_unlimited(void)
 void test_main(void)
 {
 	test_mbox_init();
-	ztest_test_suite(test_mbox, ztest_unit_test(test_msg_receiver),
+	ztest_test_suite(test_mbox,
+			 ztest_unit_test(test_msg_receiver),
 			 ztest_unit_test(msg_receiver_unlimited));
 	ztest_run_test_suite(test_mbox);
 }

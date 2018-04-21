@@ -1,4 +1,4 @@
 tests:
-  arch.x86.interrupt:
+  arch.interrupt:
     arch_whitelist: x86
     tags: ignore_faults interrupt idt

@@ -1,3 +1,3 @@
 tests:
-  libraries.ringbuffer:
+  libraries.data_structures:
     tags: ring_buffer circular_buffer
