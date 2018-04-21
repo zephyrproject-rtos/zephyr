@@ -1,3 +1,3 @@
 tests:
-  posix.posix_checks:
-    tags: core
+  portability.posix:
+    tags: posix
