@@ -10,12 +10,12 @@ if BOARD_NUCLEO_F412ZG
 config BOARD
 	default nucleo_f412zg
 
-if UART_CONSOLE
+if UART_CONSOLE || BT_DEBUG_MONITOR
 
 config UART_STM32_PORT_3
 	default y
 
-endif # UART_CONSOLE
+endif # UART_CONSOLE || BT_DEBUG_MONITOR
 
 if I2C
 

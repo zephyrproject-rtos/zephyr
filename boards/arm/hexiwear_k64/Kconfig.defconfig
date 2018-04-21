@@ -25,7 +25,7 @@ config MCG_FCRDIV
 if UART_MCUX
 
 config UART_MCUX_0
-	def_bool y if UART_CONSOLE
+	def_bool y if UART_CONSOLE || BT_DEBUG_MONITOR
 
 config UART_MCUX_4
 	def_bool y if BT_UART

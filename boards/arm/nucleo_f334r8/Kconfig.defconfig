@@ -10,12 +10,12 @@ if BOARD_NUCLEO_F334R8
 config BOARD
 	default nucleo_f334r8
 
-if UART_CONSOLE
+if UART_CONSOLE || BT_DEBUG_MONITOR
 
 config UART_STM32_PORT_2
 	default y
 
-endif # UART_CONSOLE
+endif # UART_CONSOLE || BT_DEBUG_MONITOR
 
 if SPI
 

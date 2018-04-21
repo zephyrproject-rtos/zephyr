@@ -10,11 +10,11 @@ if BOARD_STM3210C_EVAL
 config BOARD
 	default stm3210c_eval
 
-if UART_CONSOLE
+if UART_CONSOLE || BT_DEBUG_MONITOR
 
 config UART_STM32_PORT_2
 	default y
 
-endif # UART_CONSOLE
+endif # UART_CONSOLE || BT_DEBUG_MONITOR
 
 endif # BOARD_STM3210C_EVAL

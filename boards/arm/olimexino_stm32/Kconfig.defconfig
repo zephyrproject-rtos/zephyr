@@ -10,12 +10,12 @@ if BOARD_OLIMEXINO_STM32
 config BOARD
 	default olimexino_stm32
 
-if UART_CONSOLE
+if UART_CONSOLE || BT_DEBUG_MONITOR
 
 config UART_STM32_PORT_1
 	default y
 
-endif # UART_CONSOLE
+endif # UART_CONSOLE || BT_DEBUG_MONITOR
 
 if I2C
 

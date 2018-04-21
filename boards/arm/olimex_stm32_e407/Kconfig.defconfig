@@ -10,12 +10,12 @@ if BOARD_OLIMEX_STM32_E407
 config BOARD
 	default olimex_stm32_e407
 
-if UART_CONSOLE
+if UART_CONSOLE || BT_DEBUG_MONITOR
 
 config UART_STM32_PORT_1
 	default y
 
-endif # UART_CONSOLE
+endif # UART_CONSOLE || BT_DEBUG_MONITOR
 
 endif # BOARD_OLIMEX_STM32_E407
 

@@ -13,11 +13,11 @@ config BOARD
 config BOARD_DEPRECATED
 	default "1.11"
 
-if UART_CONSOLE
+if UART_CONSOLE || BT_DEBUG_MONITOR
 
 config UART_STM32_PORT_1
 	default y
 
-endif # UART_CONSOLE
+endif # UART_CONSOLE || BT_DEBUG_MONITOR
 
 endif # BOARD_STM32_MINI_A15
