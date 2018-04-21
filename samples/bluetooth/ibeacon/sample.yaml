@@ -1,0 +1,8 @@
+sample:
+  description: Sample code for Zephyr iBeacon Demo
+  name: iBeacon
+tests:
+  test:
+    harness: bluetooth
+    platform_whitelist: bbc_microbit qemu_x86
+    tags: bluetooth
