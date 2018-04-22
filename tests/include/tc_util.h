@@ -59,10 +59,12 @@
 
 #define FAIL "FAIL"
 #define PASS "PASS"
+#define SKIP "SKIP"
 #define FMT_ERROR "%s - %s@%d. "
 
 #define TC_PASS 0
 #define TC_FAIL 1
+#define TC_SKIP 2
 
 #define TC_ERROR(fmt, ...)                               \
 	do {                                                 \
@@ -77,8 +79,13 @@
 /* prints result and the function name */
 #define _TC_END_RESULT(result, func)					\
 	do {								\
-		TC_END(result, "%s - %s.\n",				\
-		       (result) == TC_PASS ? PASS : FAIL, func);	\
+		if ((result) == TC_PASS) {				\
+			TC_END(result, "%s - %s.\n", PASS, func);	\
+		} else if ((result) == TC_FAIL) {			\
+			TC_END(result, "%s - %s.\n", FAIL, func);	\
+		} else {						\
+			TC_END(result, "%s - %s.\n", SKIP, func);	\
+		}							\
 		PRINT_LINE;						\
 	} while (0)
 #define TC_END_RESULT(result)                           \
