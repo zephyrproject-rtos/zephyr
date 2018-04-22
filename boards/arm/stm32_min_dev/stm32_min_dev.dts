@@ -48,3 +48,11 @@
 	pinctrl-0 = <&usart3_pins_a>;
 	pinctrl-names = "default";
 };
+
+&spi1 {
+	status = "ok";
+};
+
+&spi2 {
+	status = "ok";
+};
