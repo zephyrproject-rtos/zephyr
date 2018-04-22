@@ -20,6 +20,18 @@ TC_CMD_DEFINE(test_uart_poll_in)
 TC_CMD_DEFINE(test_uart_poll_out)
 #endif
 
+#ifndef CONFIG_UART_INTERRUPT_DRIVEN
+void test_uart_fifo_fill(void)
+{
+	ztest_test_skip();
+}
+
+void test_uart_fifo_read(void)
+{
+	ztest_test_skip();
+}
+#endif
+
 void test_main(void)
 {
 #ifdef CONFIG_CONSOLE_SHELL
@@ -35,10 +47,8 @@ void test_main(void)
 	shell_register_default_module("uart");
 #else
 	ztest_test_suite(uart_basic_test,
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 			 ztest_unit_test(test_uart_fifo_fill),
 			 ztest_unit_test(test_uart_fifo_read),
-#endif
 			 ztest_unit_test(test_uart_poll_in),
 			 ztest_unit_test(test_uart_poll_out));
 	ztest_run_test_suite(uart_basic_test);

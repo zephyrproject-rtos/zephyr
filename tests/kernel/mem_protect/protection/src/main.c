@@ -170,19 +170,37 @@ static void exec_heap(void)
 	k_free(heap_buf);
 	zassert_unreachable("Execute from heap did not fault");
 }
+#else
+static void exec_heap(void)
+{
+	ztest_test_skip();
+}
 #endif
+
+#else
+static void exec_data(void)
+{
+	ztest_test_skip();
+}
+
+static void exec_stack(void)
+{
+	ztest_test_skip();
+}
+
+static void exec_heap(void)
+{
+	ztest_test_skip();
+}
+
 #endif /* NO_EXECUTE_SUPPORT */
 
 void test_main(void)
 {
 	ztest_test_suite(protection,
-#ifdef NO_EXECUTE_SUPPORT
 			 ztest_unit_test(exec_data),
 			 ztest_unit_test(exec_stack),
-#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
 			 ztest_unit_test(exec_heap),
-#endif
-#endif /* NO_EXECUTE_SUPPORT */
 			 ztest_unit_test(write_ro),
 			 ztest_unit_test(write_text)
 		);

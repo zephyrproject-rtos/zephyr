@@ -803,4 +803,9 @@ void test_pipe_get_invalid_size(void)
 
 	zassert_unreachable("fault didn't occur for min_xfer <= bytes_to_read");
 }
+#else
+void test_pipe_get_invalid_size(void)
+{
+	ztest_test_skip();
+}
 #endif
