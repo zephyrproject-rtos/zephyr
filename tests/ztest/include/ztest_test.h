@@ -52,6 +52,12 @@ void ztest_test_fail(void);
 void ztest_test_pass(void);
 
 /**
+ * @brief Skip the current test.
+ *
+ */
+void ztest_test_skip(void);
+
+/**
  * @brief Do nothing, successfully.
  *
  * Unit test / setup function / teardown function that does
