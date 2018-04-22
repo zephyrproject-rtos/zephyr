@@ -158,6 +158,8 @@ line break instead of white spaces.
 Most everyday users will run with no arguments.
 """
 
+import contextlib
+import mmap
 import argparse
 import os
 import sys
@@ -1362,6 +1364,8 @@ class TestCase:
             from the testcase.yaml file
         """
         self.code_location = os.path.join(testcase_root, workdir)
+        self.id = name
+        self.cases = []
         self.type = tc_dict["type"]
         self.tags = tc_dict["tags"]
         self.extra_args = tc_dict["extra_args"]
@@ -1389,9 +1393,76 @@ class TestCase:
             testcase_root).replace(os.path.realpath(ZEPHYR_BASE) + "/", ''),
             workdir, name))
 
+
         self.name = os.path.join(self.path)
         self.defconfig = {}
         self.yamlfile = yamlfile
+
+    def scan_file(self, inf_name):
+        include_regex = re.compile(
+            br"#include\s*<ztest\.h>",
+            re.MULTILINE)
+        suite_regex = re.compile(
+            br"^\s*ztest_test_suite\(\s*(?P<suite_name>[a-zA-Z0-9_]+)[\s,]*$",
+            re.MULTILINE)
+        stc_regex = re.compile(
+            br"^\s*ztest_(user_)?unit_test\((test_)?(?P<stc_name>[a-zA-Z0-9_]+)\)[\s,;\)]*$",
+            re.MULTILINE)
+        suite_run_regex = re.compile(
+            br"^\s*ztest_run_test_suite\((?P<suite_name>[a-zA-Z0-9_]+)\)",
+            re.MULTILINE)
+        achtung_regex = re.compile(
+            br"(#ifdef|#endif)",
+            re.MULTILINE)
+        warnings = None
+
+        with open(inf_name) as inf:
+            with contextlib.closing(mmap.mmap(inf.fileno(), 0, mmap.MAP_PRIVATE,
+                                              mmap.PROT_READ, 0)) as main_c:
+                #if not include_regex.search(main_c):
+                #    return None, None #"skipped, not using ztest.h"
+
+                suite_regex_match = suite_regex.search(main_c)
+                if not suite_regex_match:
+                    # can't find ztest_test_suite, maybe a client, because
+                    # it includes ztest.h
+                    return None, None
+
+                suite_run_match = suite_run_regex.search(main_c)
+                if not suite_run_match:
+                    raise ValueError("can't find ztest_run_test_suite")
+
+                achtung_matches = re.findall(
+                    achtung_regex,
+                    main_c[suite_regex_match.end():suite_run_match.start()])
+                if achtung_matches:
+                    warnings = "found invalid %s in ztest_test_suite()" \
+                               % ", ".join(set(achtung_matches))
+                matches = re.findall(
+                    stc_regex,
+                    main_c[suite_regex_match.end():suite_run_match.start()])
+                return matches, warnings
+
+    def scan_path(self, path):
+        subcases = []
+        for filename in glob.glob(os.path.join(path, "src", "*.c")):
+            try:
+                _subcases, warnings = self.scan_file(filename)
+                if warnings:
+                    warning("%s: %s", filename, warnings)
+                if _subcases:
+                    subcases += _subcases
+            except ValueError as e:
+                error("%s: can't find: %s", filename, e)
+        return subcases
+
+
+    def parse_subcases(self):
+        results = self.scan_path(self.code_location)
+        for sub in results:
+            name = "{}.{}".format(self.id, sub[2].decode())
+            self.cases.append(name)
+
 
     def __str__(self):
         return self.name
@@ -1505,6 +1576,7 @@ class TestSuite:
                         tc_dict = parsed_data.get_test(name, testcase_valid_keys)
                         tc = TestCase(testcase_root, workdir, name, tc_dict,
                                       yaml_path)
+                        tc.parse_subcases()
 
                         self.testcases[tc.name] = tc
 
