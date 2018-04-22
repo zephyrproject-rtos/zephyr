@@ -2212,9 +2212,9 @@ def parse_arguments():
                         default="%s/sanity-out" % ZEPHYR_BASE,
                         help="Output directory for logs and binaries.")
     parser.add_argument(
-        "-n", "--no-clean", action="store_true",
-        help="Do not delete the outdir before building. Will result in "
-        "faster compilation since builds will be incremental")
+        "--clean", action="store_true",
+        help="Delete the outdir before building. Will result in "
+        "slower compilation since builds will not be incremental.")
     parser.add_argument(
         "-T", "--testcase-root", action="append", default=[],
         help="Base directory to recursively search for test cases. All "
@@ -2416,7 +2416,7 @@ def main():
             error("You have provided a wrong subset value: %s." % options.subset)
             return
 
-    if os.path.exists(options.outdir) and not options.no_clean:
+    if os.path.exists(options.outdir) and options.clean:
         info("Cleaning output directory " + options.outdir)
         shutil.rmtree(options.outdir)
 
