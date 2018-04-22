@@ -8,6 +8,8 @@
 #include <shell/shell.h>
 #include <init.h>
 #include <debug/object_tracing.h>
+#include <misc/reboot.h>
+#include <string.h>
 
 #define SHELL_KERNEL "kernel"
 
@@ -76,6 +78,28 @@ static int shell_cmd_stack(int argc, char *argv[])
 }
 #endif
 
+#if defined(CONFIG_REBOOT)
+static int shell_cmd_reboot(int argc, char *argv[])
+{
+	int type;
+
+	if (argc != 2) {
+		return -EINVAL;
+	}
+
+	if (!strcmp(argv[1], "warm")) {
+		type = SYS_REBOOT_WARM;
+	} else if (!strcmp(argv[1], "cold")) {
+		type = SYS_REBOOT_COLD;
+	} else {
+		return -EINVAL;
+	}
+
+	sys_reboot(type);
+	return 0;
+}
+#endif
+
 struct shell_cmd kernel_commands[] = {
 	{ "version", shell_cmd_version, "show kernel version" },
 	{ "uptime", shell_cmd_uptime, "show system uptime in milliseconds" },
@@ -85,6 +109,9 @@ struct shell_cmd kernel_commands[] = {
 #endif
 #if defined(CONFIG_INIT_STACKS)
 	{ "stacks", shell_cmd_stack, "show system stacks" },
+#endif
+#if defined(CONFIG_REBOOT)
+	{ "reboot", shell_cmd_reboot, "<warm cold>" },
 #endif
 	{ NULL, NULL, NULL }
 };
