@@ -55,7 +55,6 @@ union raw_double_u {
 	};
 };
 
-#ifdef CONFIG_FLOAT
 /**
  *
  * @brief Test sprintf with doubles
@@ -66,6 +65,11 @@ void test_sprintf_double(void)
 {
 	char buffer[100];
 	union raw_double_u var;
+
+#ifndef CONFIG_FLOAT
+	ztest_test_skip();
+	return;
+#endif
 
 	var.u1 = 0x00000000;
 	var.u2 = 0x7ff00000;    /* Bit pattern for +INF (double) */
@@ -164,7 +168,6 @@ void test_sprintf_double(void)
 		     "sprintf(1.234E+009) - incorrect "
 		     "output '%s'\n", buffer);
 }
-#endif /* CONFIG_FLOAT */
 
 /**
  * @brief A test wrapper for vsnprintf()
@@ -517,9 +520,7 @@ void test_sprintf_string(void)
 void test_main(void)
 {
 	ztest_test_suite(test_sprintf,
-#ifdef CONFIG_FLOAT
 			 ztest_unit_test(test_sprintf_double),
-#endif
 			 ztest_unit_test(test_sprintf_integer),
 			 ztest_unit_test(test_vsprintf),
 			 ztest_unit_test(test_vsnprintf),
