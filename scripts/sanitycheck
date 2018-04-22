@@ -2209,8 +2209,9 @@ def parse_arguments():
         help="Show all footprint deltas, positive or negative. Implies "
         "--footprint-threshold=0")
     parser.add_argument("-O", "--outdir",
-                        default="%s/sanity-out" % ZEPHYR_BASE,
-                        help="Output directory for logs and binaries.")
+        default="%s/" % ZEPHYR_BASE,
+        help="Output directory for logs and binaries. "
+        "Note: 'sanity-out' will be appended.")
     parser.add_argument(
         "-n", "--no-clean", action="store_true",
         help="Do not delete the outdir before building. Will result in "
@@ -2390,6 +2391,14 @@ def generate_coverage(outdir, ignores):
                  os.path.join(outdir, "coverage","index.html"));
 
 
+def ensure_folder_in_end_of_path(in_path, end_folder):
+    if in_path.endswith(os.sep):
+        in_path = in_path[:-1]
+    if in_path.split(os.sep)[-1] != end_folder:
+        in_path = os.path.join(in_path, end_folder)
+    return in_path
+
+
 def main():
     start_time = time.time()
     global VERBOSE, INLINE_LOGS, CPU_COUNTS, log_file
@@ -2415,6 +2424,8 @@ def main():
         else:
             error("You have provided a wrong subset value: %s." % options.subset)
             return
+
+    options.outdir = ensure_folder_in_end_of_path(options.outdir, "sanity-out")
 
     if os.path.exists(options.outdir) and not options.no_clean:
         info("Cleaning output directory " + options.outdir)
