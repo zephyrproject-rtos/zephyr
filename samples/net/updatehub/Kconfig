@@ -1,0 +1,25 @@
+#
+#  Copyright (c) 2018 O.S.Systems
+#
+#  SPDX-License-Identifier: Apache-2.0
+#
+mainmenu "Sample app Configuration"
+
+config UPDATEHUB_MANUAL
+	bool "UpdateHub manual mode"
+	help
+	  Manual mode requires the user to call the server probe and then, if
+	  there is an available update, also requires the user to decide if
+	  it is appropriate to update now or later.
+
+if !UPDATEHUB_MANUAL
+config UPDATEHUB_POLLING
+	bool "UpdateHub polling mode"
+	default y
+	help
+	  Polling mode runs automatically on a predefined period, probing the
+	  server for updates and installing them without requiring user
+	  intervention.
+endif #!UPDATEHUB_MANUAL
+
+source "$ZEPHYR_BASE/Kconfig.zephyr"
