@@ -55,8 +55,6 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		user_button: button@0 {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
