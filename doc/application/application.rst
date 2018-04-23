@@ -47,11 +47,14 @@ These contents are:
   such as board-specific kernel configuration files, the ability to run and
   debug compiled binaries on real or emulated hardware, and more.
 
-* **Kernel configuration files**: An application typically provides
-  a configuration file (ending in :file:`.conf`) that specifies values for one
-  or more kernel configuration options. If omitted, the application's existing
-  kernel configuration option values are used; if no existing values are
-  provided, the kernel's default configuration values are used.
+* **Kernel configuration files**: An application typically provides a
+  configuration file (usually called :file:`prj.conf`) that specifies
+  application-specific values for one or more kernel configuration options.
+  These application settings are merged with board-specific settings to produce
+  a kernel configuration.
+
+  The :ref:`application_kconfig` section below goes over application
+  configuration in detail.
 
 * **Application source code files**: An application typically provides one
   or more application-specific files, written in C or assembly language. These
@@ -831,44 +834,49 @@ Application Configuration
 Kconfig Configuration
 =====================
 
-The application is configured using a set of options that can be customized for
-application-specific purposes. The Zephyr build system takes a configuration
-option's value from the first source in which it is specified, taken from the
-following available sources, in order:
+The initial configuration for an application is produced by merging
+configuration settings from two sources:
 
-#. An application's current configuration (i.e. the file
-   :file:`zephyr/.config` in the build directory). This can be used
-   during development as described below in :ref:`override_kernel_conf`.
+1. A :makevar:`BOARD`-specific configuration file, stored in
+   :file:`boards/ARCHITECTURE/BOARD/BOARD_defconfig` in the Zephyr base
+   directory.
 
-#. The application's configuration file(s) given by the
-   :makevar:`CONF_FILE` variable, either as set explicitly by the user
-   or using one of the default values detailed below.
+2. One or more application-specific configuration files.
 
-#. The board's default configuration for the current :makevar:`BOARD`
-   setting (i.e. the :file:`boards/ARCHITECTURE/BOARD/BOARD_defconfig`
-   file in the Zephyr base directory).
+The application-specific configuration file(s) can be specified in any of the
+following ways. The simplest option is to just have a single :file:`prj.conf`
+file.
 
-#. The kernel's default configuration settings (i.e. the default value given to
-   the option in one of Zephyr's :file:`Kconfig` files).
+1. If :makevar:`CONF_FILE` is set in :file:`CMakeLists.txt` (**before including
+   the boilerplate.cmake file**), or is present in the CMake variable cache,
+   the configuration files specified in it are merged and used as the
+   application-specific settings.
 
-The Zephyr build system determines a value for :makevar:`CONF_FILE` by
-checking the following until one is found, in order:
+   Alternatively, an application may define a CMake command, macro, or function
+   called ``set_conf_file``, which is invoked and is expected to set
+   :makevar:`CONF_FILE`.
 
-- Any value given to :makevar:`CONF_FILE` in your application
-  :file:`CMakeLists.txt` (**before including the boilerplate.cmake file**),
-  passed to the the CMake command line, or present in the CMake variable cache,
-  takes precedence.
+2. Otherwise (if (1.) does not apply), if a file :file:`prj_BOARD.conf` exists
+   in the application directory, where :makevar:`BOARD` is the BOARD value set
+   earlier, the settings in it are used.
 
-- If a CMake command, macro, or function ``set_conf_file`` is defined, it
-  will be invoked and must set :makevar:`CONF_FILE`.
+3. Otherwise, if a file :file:`prj.conf` exists in the application directory,
+   the settings in it are used.
 
-- If the file :file:`prj_BOARD.conf` exists in your application directory,
-  where ``BOARD`` is the BOARD value set earlier, it will be used.
+4. Otherwise, there are no application-specific settings, and just the settings
+   in the :makevar:`BOARD`-specific configuration are used.
 
-- Finally, if :file:`prj.conf` exists in your application directory, it will
-  be used.
+Configuration settings that are specified in neither the :makevar:`BOARD`
+configuration file nor in the application configuration file(s) fall back on
+their default value, as given in the :file:`Kconfig` files.
 
-If :makevar:`CONF_FILE` specifies multiple files, they will be merged in order.
+The merged configuration is saved in :file:`zephyr/.config` in the build
+directory.
+
+As long as :file:`zephyr/.config` exists and is up-to-date (is newer than the
+:makevar:`BOARD` and application configuration files), it will be used in
+preference to producing a new merged configuration. This can be used during
+development, as described below in :ref:`override_kernel_conf`.
 
 For information on available kernel configuration options, including
 inter-dependencies between options, see the :ref:`configuration`.
