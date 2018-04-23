@@ -28,7 +28,7 @@
 
 #include <openthread/platform/radio.h>
 #include <openthread/platform/diag.h>
-#include <openthread/platform/platform.h>
+#include <platform.h>
 
 #include <openthread/types.h>
 
@@ -89,7 +89,7 @@ void platformRadioProcess(otInstance *aInstance)
 		tx_payload->len = sTransmitFrame.mLength - FCS_SIZE;
 
 		radio_api->set_channel(radio_dev, sTransmitFrame.mChannel);
-		radio_api->set_txpower(radio_dev, sTransmitFrame.mPower);
+		radio_api->set_txpower(radio_dev, tx_power);
 
 		if (sTransmitFrame.mIsCcaEnabled) {
 			if (radio_api->cca(radio_dev) ||
@@ -123,7 +123,7 @@ void platformRadioProcess(otInstance *aInstance)
 				ackPsdu[2] = sTransmitFrame.mPsdu[2];
 				ackFrame.mPsdu = ackPsdu;
 				ackFrame.mLqi = 80;
-				ackFrame.mPower = -40;
+				ackFrame.mRssi = -40;
 				ackFrame.mLength = 5;
 
 				otPlatRadioTxDone(aInstance, &sTransmitFrame,
@@ -344,9 +344,25 @@ int8_t otPlatRadioGetReceiveSensitivity(otInstance *aInstance)
 	return -100;
 }
 
-void otPlatRadioSetDefaultTxPower(otInstance *aInstance, int8_t aPower)
+otError otPlatRadioGetTransmitPower(otInstance *aInstance, int8_t *aPower)
+{
+	ARG_UNUSED(aInstance);
+
+	if (aPower == NULL) {
+		return OT_ERROR_INVALID_ARGS;
+	}
+
+	*aPower = tx_power;
+
+	return OT_ERROR_NONE;
+}
+
+otError otPlatRadioSetTransmitPower(otInstance *aInstance, int8_t aPower)
 {
 	ARG_UNUSED(aInstance);
 
 	tx_power = aPower;
+
+	return OT_ERROR_NONE;
 }
+
