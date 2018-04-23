@@ -1964,14 +1964,18 @@ class Kconfig(object):
                 name = self._next_token()
                 if name is None:
                     choice = Choice()
+                    choice.direct_dep = self.n
+
                     self._choices.append(choice)
                 else:
                     # Named choice
                     choice = self.named_choices.get(name)
                     if not choice:
                         choice = Choice()
-                        self._choices.append(choice)
                         choice.name = name
+                        choice.direct_dep = self.n
+
+                        self._choices.append(choice)
                         self.named_choices[name] = choice
 
                 choice.kconfig = self
@@ -2267,10 +2271,9 @@ class Kconfig(object):
             else node.parent.dep)
 
         if isinstance(node.item, (Symbol, Choice)):
-            if isinstance(node.item, Symbol):
-                # See the class documentation
-                node.item.direct_dep = \
-                    self._make_or(node.item.direct_dep, node.dep)
+            # See the Symbol/Choice class documentation
+            node.item.direct_dep = \
+                self._make_or(node.item.direct_dep, node.dep)
 
             # Set the prompt, with dependencies propagated
             if node.prompt:
@@ -3548,6 +3551,9 @@ class Choice(object):
       Note that 'depends on' and parent dependencies are propagated to
       'default' conditions.
 
+    direct_dep:
+      See Symbol.direct_dep.
+
     is_optional:
       True if the choice has the 'optional' flag set on it and can be in
       n mode.
@@ -3562,6 +3568,7 @@ class Choice(object):
         "_dependents",
         "_was_set",
         "defaults",
+        "direct_dep",
         "is_constant",
         "is_optional",
         "kconfig",
@@ -3759,6 +3766,7 @@ class Choice(object):
         """
         # These attributes are always set on the instance from outside and
         # don't need defaults:
+        #   direct_dep
         #   kconfig
 
         self.orig_type = UNKNOWN
