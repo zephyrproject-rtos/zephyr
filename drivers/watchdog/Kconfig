@@ -59,4 +59,6 @@ source "drivers/watchdog/Kconfig.sam0"
 
 source "drivers/watchdog/Kconfig.nrfx"
 
+source "drivers/watchdog/Kconfig.mcux_wdog"
+
 endif
