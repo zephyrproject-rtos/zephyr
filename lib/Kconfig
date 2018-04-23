@@ -18,4 +18,6 @@ source "lib/os/Kconfig"
 
 source "lib/posix/Kconfig"
 
+source "lib/updatehub/Kconfig"
+
 endmenu
