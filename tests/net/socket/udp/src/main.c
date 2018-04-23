@@ -314,6 +314,12 @@ void test_send_recv_2_sock(void)
 	zassert_equal(len, STRLEN(TEST_STR_SMALL), "Invalid recv len");
 	cmp = memcmp(buf, TEST_STR_SMALL, STRLEN(TEST_STR_SMALL));
 	zassert_equal(cmp, 0, "Invalid recv data");
+
+	rv = close(sock1);
+	zassert_equal(rv, 0, "close failed");
+
+	rv = close(sock2);
+	zassert_equal(rv, 0, "close failed");
 }
 
 void test_main(void)
