@@ -12,5 +12,6 @@ supported:
   - spi
   - gpio
   - usb_device
+  - watchdog
 testing:
   default: true
