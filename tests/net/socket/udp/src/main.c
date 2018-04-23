@@ -283,30 +283,35 @@ void test_send_recv_2_sock(void)
 	int sock1, sock2;
 	struct sockaddr_in bind_addr, conn_addr;
 	char buf[10];
-	int len, cmp;
+	int len, cmp, rv;
 
 	sock1 = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	sock2 = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(sock1 >= 0, "cannot create sock1");
+	zassert_true(sock2 >= 0, "cannot create sock2");
 
 	bind_addr.sin_family = AF_INET;
 	bind_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	bind_addr.sin_port = htons(55555);
-	bind(sock1, (struct sockaddr *)&bind_addr, sizeof(bind_addr));
+	rv = bind(sock1, (struct sockaddr *)&bind_addr, sizeof(bind_addr));
+	zassert_equal(rv, 0, "bind failed");
 
 	conn_addr.sin_family = AF_INET;
 	conn_addr.sin_addr.s_addr = htonl(0xc0000201);
 	conn_addr.sin_port = htons(55555);
-	connect(sock2, (struct sockaddr *)&conn_addr, sizeof(conn_addr));
+	rv = connect(sock2, (struct sockaddr *)&conn_addr, sizeof(conn_addr));
+	zassert_equal(rv, 0, "connect failed");
 
-	send(sock2, BUF_AND_SIZE(TEST_STR_SMALL), 0);
+	len = send(sock2, BUF_AND_SIZE(TEST_STR_SMALL), 0);
+	zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid send len");
 
 	len = recv(sock1, buf, sizeof(buf), MSG_PEEK);
-	zassert_equal(len, 4, "Invalid recv len");
+	zassert_equal(len, STRLEN(TEST_STR_SMALL), "Invalid recv len");
 	cmp = memcmp(buf, TEST_STR_SMALL, STRLEN(TEST_STR_SMALL));
 	zassert_equal(cmp, 0, "Invalid recv data");
 
 	len = recv(sock1, buf, sizeof(buf), 0);
-	zassert_equal(len, 4, "Invalid recv len");
+	zassert_equal(len, STRLEN(TEST_STR_SMALL), "Invalid recv len");
 	cmp = memcmp(buf, TEST_STR_SMALL, STRLEN(TEST_STR_SMALL));
 	zassert_equal(cmp, 0, "Invalid recv data");
 }
