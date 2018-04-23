@@ -980,26 +980,18 @@ preferred, since it correctly handles dependencies between options.
 
    * Use the arrow keys to navigate within any menu or list.
 
-   * Press :kbd:`Enter` to select a menu item.
+   * Press :kbd:`Enter` to enter submenus and choices, which appear with
+     ``--->`` next to them.
 
-   * Type an upper case :kbd:`Y` or :kbd:`N` in the
-      square brackets :guilabel:`[ ]` to
-      enable or disable a kernel configuration option.
-
-   * Type a numerical value in the parentheses :guilabel:`( )`.
+   * Press :kbd:`Space` to toggle or configure a symbol value. Boolean
+     configuration symbols are shown with :guilabel:`[ ]` brackets, while
+     numeric and string-valued configuration symbols are shown with
+     :guilabel:`( )` brackets.
 
    * Press :kbd:`Tab` to navigate the command menu at the bottom of the
      display.
 
-     .. note::
-
-       When a non-default entry is selected for options that are non-numerical,
-       an asterisk :kbd:`*` appears between the square brackets in the display.
-       There is nothing added added the display when you select the option's
-       default.
-
-#. For information about any option, select the option and tab to
-   :guilabel:`<Help >` and press :kbd:`Enter`.
+#. For information about any symbol, select the symbol and type :kbd:`?`.
 
    Press :kbd:`Enter` to return to the menu.
 
