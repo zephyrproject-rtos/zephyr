@@ -121,6 +121,10 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 
 	/* clear USFR sticky bits */
 	SCB->CFSR |= SCB_CFSR_USGFAULTSR_Msk;
+#if defined(CONFIG_ARMV8_M_MAINLINE)
+	/* clear BSFR sticky bits */
+	SCB->CFSR |= SCB_CFSR_BUSFAULTSR_Msk;
+#endif /* CONFIG_ARMV8_M_MAINLINE */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -247,6 +251,11 @@ static void _BusFault(const NANO_ESF *esf, int fromHardFault)
 		PR_EXC("  Floating-point lazy state preservation error\n");
 	}
 #endif /* !defined(CONFIG_ARMV7_M_ARMV8_M_FP) */
+
+#if defined(CONFIG_ARMV8_M_MAINLINE)
+	/* clear BSFR sticky bits */
+	SCB->CFSR |= SCB_CFSR_BUSFAULTSR_Msk;
+#endif /* CONFIG_ARMV8_M_MAINLINE */
 }
 
 /**
