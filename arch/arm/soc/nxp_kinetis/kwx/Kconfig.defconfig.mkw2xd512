@@ -107,4 +107,11 @@ config USB_KINETIS
 
 endif # USB
 
+if WATCHDOG
+
+config WDT_MCUX_WDOG
+	def_bool y
+
+endif # WATCHDOG
+
 endif # SOC_MKW2xD512
