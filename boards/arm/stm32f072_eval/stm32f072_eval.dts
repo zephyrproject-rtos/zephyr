@@ -40,8 +40,6 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		tamper: tamper@0 {
 			label = "tamper button";
 			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;

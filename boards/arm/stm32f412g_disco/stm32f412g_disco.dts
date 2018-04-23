@@ -39,8 +39,6 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		joy_sel: joystick@0 {
 			label = "joystick selection";
 			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
