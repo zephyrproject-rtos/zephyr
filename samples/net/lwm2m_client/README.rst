@@ -37,8 +37,11 @@ samples/net/lwm2m_client directory:
 - :file:`prj.conf`
   This is the standard default config.
 
-- :file:`prj_dtls.conf`
-  This config is the same as the standard but enables DTLS support via MBEDTLS.
+- :file:`overlay-dtls.conf`
+  This overlay config can be added for DTLS support via MBEDTLS.
+
+- :file:`overlay-bt.conf`
+  This overlay config can be added to enable Bluetooth networking support.
 
 Build the lwm2m-client sample application like this:
 
@@ -90,7 +93,7 @@ To build the lwm2m-client sample for QEMU with DTLS support do the following:
    :zephyr-app: samples/net/lwm2m_client
    :host-os: unix
    :board: qemu_x86
-   :conf: prj_dtls.conf
+   :conf: "prj.conf overlay-dtls.conf"
    :goals: run
    :compact:
 
@@ -105,6 +108,32 @@ Setup DTLS security in Leshan Demo Server:
     Identity: Client_identity
     Key: 000102030405060708090a0b0c0d0e0f
 - Start the Zephyr sample
+
+Bluetooth Support
+=================
+
+To build the lwm2m-client sample for hardware requiring Bluetooth for
+networking (IPSP node connected via 6lowpan) do the following:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/lwm2m_client
+   :host-os: unix
+   :board: <board to use>
+   :conf: "prj.conf overlay-bt.conf"
+   :goals: build
+   :compact:
+
+The overlay-\*.conf files can also be combined.  For example, you could build a
+DTLS-enabled LwM2M client sample for BLENano2 hardware by using the following
+commands (requires Bluetooth for networking):
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/lwm2m_client
+   :host-os: unix
+   :board: nrf52_blenano2
+   :conf: "prj.conf overlay-bt.conf overlay-dtls.conf"
+   :goals: build
+   :compact:
 
 Sample output without DTLS enabled
 ==================================
