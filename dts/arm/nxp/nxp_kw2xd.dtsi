@@ -271,8 +271,11 @@
 		};
 
 		wdog: watchdog@40052000 {
-			compatible = "nxp,k64f-watchdog";
+			compatible = "nxp,kinetis-wdog";
 			reg = <0x40052000 16>;
+			interrupts = <22 0>;
+			clocks = <&sim KINETIS_SIM_LPO_CLK 0 0>;
+			label = "WDT_0";
 			clock-source = <0>;	/* LPO 1kHz or other source */
 			reload-counter = <40000>;
 			start-on-boot;
