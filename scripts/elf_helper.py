@@ -325,11 +325,17 @@ def get_filename_lineno(die):
 
 class ElfHelper:
 
-    def __init__(self, filename, verbose, kobjs, subs):
+    def __init__(self, filename, verbose, kobjs, subs,
+                 check_bounds = True):
+        """
+        :param bool check_bounds: (optional) check the objects are
+            inside the kernel RAM and ROM bounds (default: yes)
+        """
         self.verbose = verbose
         self.fp = open(filename, "rb")
         self.elf = ELFFile(self.fp)
         self.little_endian = self.elf.little_endian
+        self.check_bounds = check_bounds
         global kobjects
         global subsystems
         kobjects = kobjs
@@ -445,8 +451,9 @@ class ElfHelper:
                 # Never linked; gc-sections deleted it
                 continue
 
-            if ((addr < kram_start or addr >= kram_end) and
-               (addr < krom_start or addr >= krom_end)):
+            if self.check_bounds \
+               and (((addr < kram_start or addr >= kram_end) and
+                     (addr < krom_start or addr >= krom_end))):
 
                 self.debug_die(die,
                                "object '%s' found in invalid location %s"
