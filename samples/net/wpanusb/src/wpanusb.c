@@ -478,14 +478,15 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 
 	frag = net_buf_frag_last(pkt->frags);
 
-	/* Linux requires LQI to be put at the beginning of the buffer */
-	memmove(frag->data + 1, frag->data, frag->len);
-	frag->data[0] = net_pkt_ieee802154_lqi(pkt);
-
 	/**
 	 * Add length 1 byte, do not forget to reserve it
 	 */
 	net_buf_push_u8(frag, net_pkt_get_len(pkt) - 1);
+
+	/**
+	 * Add LQI at the end of the packet
+	 */
+	net_buf_add_u8(frag, net_pkt_ieee802154_lqi(pkt));
 
 	net_hexdump("<", frag->data, net_pkt_get_len(pkt));
 
