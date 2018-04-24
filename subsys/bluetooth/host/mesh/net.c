@@ -692,12 +692,6 @@ bool bt_mesh_net_iv_update(u32_t iv_index, bool iv_update)
 			update_ivu_timestamp();
 			return false;
 		}
-
-		if (iv_index != bt_mesh.iv_index + 1) {
-			BT_WARN("Wrong new IV Index: 0x%08x != 0x%08x + 1",
-				iv_index, bt_mesh.iv_index);
-			return false;
-		}
 	}
 
 	if (bt_mesh.last_update != IV_UPDATE_UNKNOWN &&
