@@ -15,6 +15,7 @@
 		zephyr,console = &usart3;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,ccm = &ccm0;
 	};
 
 	leds {
@@ -49,14 +50,28 @@
 	};
 };
 
+arduino_i2c: &i2c1 {};
+arduino_spi: &spi1 {};
+arduino_serial: &usart6 {};
+
 &i2c1 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
+&spi1 {
+	status = "ok";
+};
+
 &usart3 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart3_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+&usart6 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart6_pins_a>;
 	pinctrl-names = "default";
 	status = "ok";
 };

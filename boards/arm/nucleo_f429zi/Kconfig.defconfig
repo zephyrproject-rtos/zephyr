@@ -27,11 +27,32 @@ config ETH_STM32_HAL
 
 endif # NETWORKING
 
+if SERIAL
+
+config UART_STM32_PORT_6
+	default y
+
+endif # SERIAL
+
 if I2C
 
 config I2C_1
 	def_bool y
 
 endif # I2C
+
+if SPI
+
+config SPI_1
+	def_bool y
+
+endif # SPI
+
+if PWM
+
+config PWM_STM32_1
+	def_bool y
+
+endif # PWM
 
 endif # BOARD_NUCLEO_F429ZI
