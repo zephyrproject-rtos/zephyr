@@ -1,18 +1,15 @@
 /dts-v1/;
 
-#include <ti/lm3s6965.dtsi>
+#include <arm/armv7-m.dtsi>
+#include <dt-bindings/i2c/i2c.h>
 
 / {
-	model = "QEMU Cortex-M3";
-	compatible = "ti,lm3s6965evb-qemu", "ti,lm3s6965";
-
-	aliases {
-		uart-0 = &uart0;
-		uart-1 = &uart1;
-		uart-2 = &uart2;
-	};
+	compatible = "arm,mps2";
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	chosen {
+		zephyr,console = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
@@ -20,19 +17,153 @@
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart2;
 	};
+
+	cpus {
+		cpu@0 {
+			compatible = "arm,cortex-m3";
+		};
+	};
+
+	sram0: memory {
+		compatible = "mmio-sram";
+		reg = <0x20000000 0x400000>;
+	};
+
+	flash0: flash {
+		reg = <0 0x400000>;
+	};
+
+	soc {
+		timer0: timer@40000000 {
+			compatible = "arm,cmsdk-timer";
+			reg = <0x40000000 0x1000>;
+			interrupts = <8 3>;
+		};
+
+		timer1: timer@40001000 {
+			compatible = "arm,cmsdk-timer";
+			reg = <0x40001000 0x1000>;
+			interrupts = <9 3>;
+		};
+
+		dtimer0: dtimer@40002000 {
+			compatible = "arm,cmsdk-dtimer";
+			reg = <0x40000000 0x1000>;
+			interrupts = <10 3>;
+		};
+
+		uart0: uart@40004000 {
+			compatible = "arm,cmsdk-uart";
+			reg = <0x40004000 0x1000>;
+			interrupts = <1 3 0 3>;
+			interrupt-names = "tx", "rx";
+			current-speed = <115200>;
+			label = "UART_0";
+		};
+
+		uart1: uart@40005000 {
+			compatible = "arm,cmsdk-uart";
+			reg = <0x40005000 0x1000>;
+			interrupts = <3 3 2 3>;
+			interrupt-names = "tx", "rx";
+			current-speed = <115200>;
+			label = "UART_1";
+		};
+
+		uart2: uart@40006000 {
+			compatible = "arm,cmsdk-uart";
+			reg = <0x40006000 0x1000>;
+			interrupts = <5 3 4 3>;
+			interrupt-names = "tx", "rx";
+			current-speed = <115200>;
+			label = "UART_2";
+		};
+
+		uart3: uart@40007000 {
+			compatible = "arm,cmsdk-uart";
+			reg = <0x40007000 0x1000>;
+			interrupts = <19 3 18 3>;
+			interrupt-names = "tx", "rx";
+			current-speed = <115200>;
+			label = "UART_3";
+		};
+
+		wdog0: wdog@40008000 {
+			compatible = "arm,cmsdk-watchdog";
+			reg = <0x40008000 0x1000>;
+		};
+
+		uart4: uart@40009000 {
+			compatible = "arm,cmsdk-uart";
+			reg = <0x40009000 0x1000>;
+			interrupts = <21 3 20 3>;
+			interrupt-names = "tx", "rx";
+			current-speed = <115200>;
+			label = "UART_4";
+		};
+
+		gpio0: gpio@40010000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40010000 0x1000>;
+			interrupts = <6 3>;
+		};
+
+		gpio1: gpio@40011000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40011000 0x1000>;
+			interrupts = <7 3>;
+		};
+
+		gpio2: gpio@40012000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40012000 0x1000>;
+			interrupts = <16 3>;
+		};
+
+		gpio3: gpio@40013000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40013000 0x1000>;
+			interrupts = <17 3>;
+		};
+
+		i2c_touch: i2c@40022000 {
+			compatible = "arm,versatile-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40022000 0x1000>;
+			label = "I2C_TOUCH";
+		};
+
+		i2c_audio_conf: i2c@40023000 {
+			compatible = "arm,versatile-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40023000 0x1000>;
+			label = "I2C_AUDIO_CONF";
+		};
+
+		i2c_shield0: i2c@40029000 {
+			compatible = "arm,versatile-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40029000 0x1000>;
+			label = "I2C_SHIELD0";
+		};
+
+		i2c_shield1: i2c@4002a000 {
+			compatible = "arm,versatile-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4002a000 0x1000>;
+			label = "I2C_SHIELD1";
+		};
+	};
 };
 
-&uart0 {
-	status = "ok";
-	current-speed = <115200>;
-};
-
-&uart1 {
-	status = "ok";
-	current-speed = <115200>;
-};
-
-&uart2 {
-	status = "ok";
-	current-speed = <115200>;
+&nvic {
+	arm,num-irq-priority-bits = <3>;
 };
