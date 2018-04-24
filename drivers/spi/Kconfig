@@ -121,7 +121,7 @@ config SPI_1_OP_MODES
 	  3 is both modes are available.
 
 config SPI_1_IRQ_PRI
-	int "Port 0 interrupt priority"
+	int "Port 1 interrupt priority"
 	depends on !HAS_DTS_SPI
 
 config SPI_1_CS_GPIO_PORT
