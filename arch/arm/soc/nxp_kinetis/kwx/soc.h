@@ -22,6 +22,9 @@ extern "C" {
 
 #define IRQ_SPI0 10
 #define IRQ_SPI1 29
+#define IRQ_GPIO_PORTA 30
+#define IRQ_GPIO_PORTB 31
+#define IRQ_GPIO_PORTC 31
 
 #endif
 
@@ -32,6 +35,11 @@ extern "C" {
 /* IRQs */
 #define IRQ_SPI0 26
 #define IRQ_SPI1 27
+#define IRQ_GPIO_PORTA 59
+#define IRQ_GPIO_PORTB 60
+#define IRQ_GPIO_PORTC 61
+#define IRQ_GPIO_PORTD 62
+#define IRQ_GPIO_PORTE 63
 
 #endif
 
