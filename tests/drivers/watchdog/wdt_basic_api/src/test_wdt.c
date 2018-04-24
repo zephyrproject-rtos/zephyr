@@ -70,8 +70,18 @@
 #define WDT_TEST_CB0_TEST_VALUE    0x0CB0
 #define WDT_TEST_CB1_TEST_VALUE    0x0CB1
 
+#ifdef CONFIG_WDT_NRFX
+#define TIMEOUTS                   2
+#else
+#define TIMEOUTS                   1
+#endif
+
+#define TEST_WDT_CALLBACK_2        (TIMEOUTS > 1)
+
 static struct wdt_timeout_cfg m_cfg_wdt0;
+#if TEST_WDT_CALLBACK_2
 static struct wdt_timeout_cfg m_cfg_wdt1;
+#endif
 
 /* m_state indicates state of particular test. Used to check whether testcase
  * should go to reset state or check other values after reset.
@@ -95,12 +105,14 @@ static void wdt_int_cb0(struct device *wdt_dev, int channel_id)
 	m_testvalue += WDT_TEST_CB0_TEST_VALUE;
 }
 
+#if TEST_WDT_CALLBACK_2
 static void wdt_int_cb1(struct device *wdt_dev, int channel_id)
 {
 	ARG_UNUSED(wdt_dev);
 	ARG_UNUSED(channel_id);
 	m_testvalue += WDT_TEST_CB1_TEST_VALUE;
 }
+#endif
 
 static int test_wdt_no_callback(void)
 {
@@ -187,6 +199,7 @@ static int test_wdt_callback_1(void)
 	};
 }
 
+#if TEST_WDT_CALLBACK_2
 static int test_wdt_callback_2(void)
 {
 	int err;
@@ -245,6 +258,7 @@ static int test_wdt_callback_2(void)
 		wdt_feed(wdt, 0);
 	};
 }
+#endif
 
 void test_wdt(void)
 {
@@ -255,7 +269,11 @@ void test_wdt(void)
 		zassert_true(test_wdt_callback_1() == TC_PASS, NULL);
 	}
 	if (m_testcase_index == 2) {
+#if TEST_WDT_CALLBACK_2
 		zassert_true(test_wdt_callback_2() == TC_PASS, NULL);
+#else
+		m_testcase_index++;
+#endif
 	}
 	if (m_testcase_index > 2) {
 		m_testcase_index = 0;
