@@ -40,4 +40,22 @@ config SPI_2
 
 endif # SPI
 
+if LSM6DSL
+
+choice LSM6DSL_BUS_TYPE
+	default LSM6DSL_SPI
+endchoice
+
+choice LSM6DSL_TRIGGER_MODE
+	default LSM6DSL_TRIGGER_GLOBAL_THREAD
+endchoice
+
+config LSM6DSL_SENSORHUB
+	default y
+
+config LSM6DSL_EXT0_LIS2MDL
+	default y
+
+endif # LSM6DSL
+
 endif # BOARD_96B_ARGONKEY
