@@ -4,7 +4,7 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/generated)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/config)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 
-set_ifndef(KCONFIG_ROOT ${PROJECT_SOURCE_DIR}/Kconfig)
+set_ifndef(KCONFIG_ROOT ${ZEPHYR_BASE}/Kconfig)
 
 set(BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_defconfig)
 set(DOTCONFIG       ${PROJECT_BINARY_DIR}/.config)
@@ -13,7 +13,7 @@ if(CONF_FILE)
 string(REPLACE " " ";" CONF_FILE_AS_LIST ${CONF_FILE})
 endif()
 
-set(ENV{srctree}            ${PROJECT_SOURCE_DIR})
+set(ENV{srctree}            ${ZEPHYR_BASE})
 set(ENV{KERNELVERSION}      ${PROJECT_VERSION})
 set(ENV{KCONFIG_CONFIG}     ${DOTCONFIG})
 set(ENV{KCONFIG_AUTOHEADER} ${AUTOCONF_H})
@@ -42,7 +42,7 @@ foreach(kconfig_target ${kconfig_target_list})
     add_custom_target(
       ${kconfig_target}
       ${CMAKE_COMMAND} -E env
-      srctree=${PROJECT_SOURCE_DIR}
+      srctree=${ZEPHYR_BASE}
       KERNELVERSION=${PROJECT_VERSION}
       KCONFIG_CONFIG=${DOTCONFIG}
       ENV_VAR_ARCH=$ENV{ENV_VAR_ARCH}
@@ -131,7 +131,7 @@ endif()
 execute_process(
   COMMAND
   ${PYTHON_EXECUTABLE}
-  ${PROJECT_SOURCE_DIR}/scripts/kconfig/kconfig.py
+  ${ZEPHYR_BASE}/scripts/kconfig/kconfig.py
   ${KCONFIG_ROOT}
   ${PROJECT_BINARY_DIR}/.config
   ${PROJECT_BINARY_DIR}/include/generated/autoconf.h
