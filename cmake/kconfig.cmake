@@ -22,15 +22,19 @@ set(kconfig_target_list
   config
   gconfig
   menuconfig
+  pymenuconfig
   oldconfig
   xconfig
   )
 
-set(COMMAND_FOR_config     ${KCONFIG_CONF} --oldaskconfig ${KCONFIG_ROOT})
-set(COMMAND_FOR_gconfig    gconf                          ${KCONFIG_ROOT})
-set(COMMAND_FOR_menuconfig ${KCONFIG_MCONF}               ${KCONFIG_ROOT})
-set(COMMAND_FOR_oldconfig  ${KCONFIG_CONF} --oldconfig    ${KCONFIG_ROOT})
-set(COMMAND_FOR_xconfig    qconf                          ${KCONFIG_ROOT})
+set(COMMAND_FOR_config       ${KCONFIG_CONF} --oldaskconfig ${KCONFIG_ROOT})
+set(COMMAND_FOR_gconfig      gconf                          ${KCONFIG_ROOT})
+set(COMMAND_FOR_menuconfig   ${KCONFIG_MCONF}               ${KCONFIG_ROOT})
+set(COMMAND_FOR_pymenuconfig ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/kconfig/menuconfig.py ${KCONFIG_ROOT})
+set(COMMAND_FOR_oldconfig    ${KCONFIG_CONF} --oldconfig    ${KCONFIG_ROOT})
+set(COMMAND_FOR_xconfig      qconf                          ${KCONFIG_ROOT})
+
+set(COMMAND_RUNS_ON_WIN_pymenuconfig 1)
 
 # Set environment variables so that Kconfig can prune Kconfig source
 # files for other architectures
@@ -38,7 +42,7 @@ set(ENV{ENV_VAR_ARCH}         ${ARCH})
 set(ENV{ENV_VAR_BOARD_DIR}    ${BOARD_DIR})
 
 foreach(kconfig_target ${kconfig_target_list})
-  if (NOT WIN32)
+  if ((NOT WIN32) OR (DEFINED COMMAND_RUNS_ON_WIN_${kconfig_target}))
     add_custom_target(
       ${kconfig_target}
       ${CMAKE_COMMAND} -E env

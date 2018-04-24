@@ -1,6 +1,7 @@
 message(" config          - Update current config utilising a line-oriented program")
 message(" nconfig         - Update current config utilising a ncurses menu based program")
 message(" menuconfig      - Update current config utilising a menu based program")
+message(" pymenuconfig    - Update current config with an experimental Python-based menuconfig, slated to replace menuconfig")
 message(" xconfig         - Update current config utilising a QT based front-end")
 message(" gconfig         - Update current config utilising a GTK based front-end")
 message(" oldconfig       - Update current config utilising a provided .config as base")
