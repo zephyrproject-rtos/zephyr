@@ -1318,6 +1318,13 @@ static int ptp_clock_sam_gmac_rate_adjust(struct device *dev, float ratio)
 		return -EINVAL;
 	}
 
+	/* Do not allow drastic rate changes */
+	if (ratio < 0.5) {
+		ratio = 0.5;
+	} else if (ratio > 2.0) {
+		ratio = 2.0;
+	}
+
 	/* Get current increment values */
 	nanos = gmac->GMAC_TI & GMAC_TI_CNS_Msk;
 	subnanos = gmac->GMAC_TISUBN & GMAC_TISUBN_Msk;
