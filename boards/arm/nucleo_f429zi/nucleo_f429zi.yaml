@@ -5,5 +5,11 @@ arch: arm
 toolchain:
   - zephyr
   - gccarmemb
+ram: 256
+flash: 2048
 supported:
+  - netif:eth
+  - i2c
+  - spi
+  - gpio
   - pwm

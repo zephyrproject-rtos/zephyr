@@ -99,7 +99,8 @@ The Zephyr nucleo_f249zi board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
-
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -141,11 +142,15 @@ For mode details please refer to `STM32 Nucleo-144 board User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
-- UART_3_TX : PD8
-- UART_3_RX : PD9
-- PWM_2_CH1 : PA0
-- I2C1_SCL : PB8
-- I2C1_SDA : PB9
+The Nucleo F429ZI board features a ST Zio connector (extended Arduino Uno V3)
+and a ST morpho connector. Board is configured as follows
+
+- UART_3 TX/RX : PD8/PD9 (ST-Link Virtual Port Com)
+- UART_6 TX/RX : PG14/PG9 (Arduino Serial)
+- I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- SPI1 NSS/SCK/MISO/MOSI : PA4/PA5/PA6/PA7 (Arduino SPI)
+- PWM_2_CH1 : PE13
+- ETH : PA1, PA2, PA7, PB13, PC1, PC4, PC5, PG11, PG13
 - USER_PB : PC13
 - LD1 : PB0
 - LD2 : PB7
