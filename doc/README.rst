@@ -48,7 +48,7 @@ Installing the documentation processors
 Our documentation processing has been tested to run with:
 
 * Doxygen version 1.8.13
-* Sphinx version 1.7.0
+* Sphinx version 1.6.7
 * Breathe version 4.7.3
 * docutils version 0.14
 * sphinx_rtd_theme version 0.2.4
