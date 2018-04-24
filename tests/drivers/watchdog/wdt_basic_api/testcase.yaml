@@ -1,8 +1,4 @@
 tests:
-  peripheral.watchdog.int_reset:
-    extra_args: CFLAGS=-DINT_RESET
-    platform_whitelist: quark_se_c1000_devboard quark_d2000_crb
-    tags: drivers
-  peripheral.watchdog.reset:
-    platform_whitelist: quark_se_c1000_devboard quark_d2000_crb
-    tags: drivers
+  peripheral.watchdog:
+    depends_on: watchdog
+    tags: drivers watchdog
