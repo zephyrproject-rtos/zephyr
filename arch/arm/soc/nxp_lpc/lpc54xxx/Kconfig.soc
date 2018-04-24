@@ -12,6 +12,7 @@ depends on SOC_SERIES_LPC54XXX
 config SOC_LPC54114_M4
 	bool "SOC_LPC54114_M4"
 	select CPU_CORTEX_M4
+	select PLATFORM_SPECIFIC_INIT
 
 endchoice
 
