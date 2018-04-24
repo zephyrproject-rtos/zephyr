@@ -1,0 +1,17 @@
+config HAS_ARDUINO_SERIAL
+	bool
+	help
+	  This option specifies that the target platform is compatible
+	  with Arduino Serial
+
+config HAS_ARDUINO_I2C
+	bool
+	help
+	  This option specifies that the target platform is compatible
+	  with Arduino I2C
+
+config HAS_ARDUINO_SPI
+	bool
+	help
+	  This option specifies that the target platform is compatible
+	  with Arduino SPI
