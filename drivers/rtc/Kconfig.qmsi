@@ -18,4 +18,12 @@ config RTC_QMSI_API_REENTRANCY
 	default n
 	help
 	  Enable support for RTC shim driver API reentrancy.
+
+config RTC_PRESCALER
+	int
+	default 1
+	prompt "Prescaler size"
+	help
+	  RTC prescaler used to determine ticks per second
+
 endif

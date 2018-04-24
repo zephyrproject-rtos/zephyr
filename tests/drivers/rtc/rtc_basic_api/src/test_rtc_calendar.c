@@ -42,7 +42,7 @@ static int test_task(void)
 	k_sleep(2000);
 	val_2 = rtc_read(rtc);
 
-	TC_PRINT("val_1: %u, val_2: %u, delta: %lu:%lu\n",
+	TC_PRINT("val_1: %u, val_2: %u, delta: %u:%u\n",
 		 val_1, val_2,
 		 (val_2 - val_1) / RTC_ALARM_SECOND,
 		 (val_2 - val_1) % RTC_ALARM_SECOND);
