@@ -8,7 +8,7 @@
 
 / {
 	soc {
-		pinctrl: pin-controller {
+		pinctrl: pin-controller@40020000 {
 			reg = <0x40020000 0x2C00>;
 
 			gpioj: gpio@40022400 {

@@ -8,7 +8,7 @@
 
 / {
 	soc {
-		pinctrl: pin-controller {
+		pinctrl: pin-controller@48000000 {
 
 			gpioe: gpio@48001000 {
 				compatible = "st,stm32-gpio";

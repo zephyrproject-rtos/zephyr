@@ -14,7 +14,7 @@
 	};
 
 	soc {
-		pinctrl: pin-controller {
+		pinctrl: pin-controller@40020000 {
 			reg = <0x40020000 0x2400>;
 
 			gpiof: gpio@40021400 {

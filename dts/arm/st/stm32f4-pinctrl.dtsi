@@ -8,7 +8,7 @@
 
 / {
 	soc {
-		pinctrl: pin-controller {
+		pinctrl: pin-controller@40020000 {
 			usart1_pins_a: usart1@0 {
 				rx_tx {
 					rx = <STM32_PIN_PB7 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;

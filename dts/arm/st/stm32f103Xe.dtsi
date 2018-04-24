@@ -20,7 +20,7 @@
 			status = "disabled";
 		};
 
-		pinctrl: pin-controller {
+		pinctrl: pin-controller@40010800 {
 			reg = <0x40010800 0x2000>;
 
 			gpiof: gpio@40011c00 {
