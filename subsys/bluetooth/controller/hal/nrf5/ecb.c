@@ -33,7 +33,7 @@ static void do_ecb(struct ecb_param *ecb)
 		while ((NRF_ECB->EVENTS_ENDECB == 0) &&
 		       (NRF_ECB->EVENTS_ERRORECB == 0) &&
 		       (NRF_ECB->ECBDATAPTR != 0)) {
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+#if defined(CONFIG_SOC_SERIES_NWTSIM_NRFXX)
 			__WFE();
 #else
 			/*__WFE();*/
