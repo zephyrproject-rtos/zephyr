@@ -1333,9 +1333,13 @@ static int ptp_clock_sam_gmac_rate_adjust(struct device *dev, float ratio)
 	increment = (nanos + (subnanos / UINT16_MAX));
 	increment *= ratio;
 
-	/* Calculate new increment values */
-	nanos = (uint8_t)increment;
-	subnanos = (uint16_t)((increment - nanos) * UINT16_MAX);
+	/* Limit and calculate new increment values */
+	if (increment > 255) {
+		increment = 255;
+	}
+
+	nanos = (u8_t)increment;
+	subnanos = (u16_t)((increment - (u16_t)increment) * UINT16_MAX);
 
 	/* Validate, not validating subnanos, 1 nano is the least we accept */
 	if (nanos == 0) {
