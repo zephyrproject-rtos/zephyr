@@ -1,5 +1,5 @@
 
 config BOARD_QEMU_CORTEX_M3
 	bool "Cortex-M3 Emulation (QEMU)"
-	depends on SOC_TI_LM3S6965
+	depends on SOC_MPS2_AN385
 	select QEMU_TARGET
