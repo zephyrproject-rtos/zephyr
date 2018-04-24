@@ -481,7 +481,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	/**
 	 * Add length 1 byte, do not forget to reserve it
 	 */
-	net_buf_push_u8(frag, net_pkt_get_len(pkt) - 1);
+	net_buf_push_u8(frag, net_pkt_get_len(pkt));
 
 	/**
 	 * Add LQI at the end of the packet
