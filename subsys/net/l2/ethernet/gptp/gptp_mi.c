@@ -627,6 +627,13 @@ static void gptp_update_local_port_clock(void)
 
 	port_ds = GPTP_PORT_DS(port);
 
+	/* Check if the last neighbor rate ratio can still be used */
+	if (!port_ds->neighbor_rate_ratio_valid) {
+		return;
+	}
+
+	port_ds->neighbor_rate_ratio_valid = false;
+
 	second_diff = global_ds->sync_receipt_time.second -
 		(global_ds->sync_receipt_local_time / NSEC_PER_SEC);
 	nanosecond_diff = global_ds->sync_receipt_time.nanosecond -
