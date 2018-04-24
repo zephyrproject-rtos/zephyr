@@ -1,0 +1,14 @@
+# Kconfig - MCUXpresso SDK RTC
+#
+# Copyright (c) 2018, blik GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig RTC_MCUX
+	bool
+	prompt "MCUX RTC driver"
+	depends on RTC && HAS_MCUX
+	default n
+	help
+	  Enable support for mcux rtc driver.

@@ -15,6 +15,13 @@ config NUM_IRQS
 	int
 	default 32
 
+if RTC
+
+config RTC_MCUX
+	def_bool y
+
+endif # RTC
+
 if ADC
 
 config ADC_MCUX_ADC16
