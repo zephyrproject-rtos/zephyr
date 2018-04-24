@@ -17,14 +17,6 @@ menuconfig RTC
 
 if RTC
 
-
-config RTC_QMSI
-	bool "QMSI RTC Driver"
-	depends on QMSI
-	default n
-	help
-	  Build QMSI RTC driver.
-
 config RTC_0_NAME
 	string "Driver instance name"
 	default "RTC_0"
@@ -32,17 +24,8 @@ config RTC_0_NAME
 	help
 	  RTC driver instance name
 
-config RTC_0_IRQ_PRI
-	int "RTC Driver Interrupt priority"
-	depends on RTC_QMSI
-	help
-	  RTC interrupt priority.
+comment "RTC drivers"
 
-config RTC_QMSI_API_REENTRANCY
-	bool
-	prompt "RTC shim driver API reentrancy"
-	default n
-	help
-	  Enable support for RTC shim driver API reentrancy.
+source "drivers/rtc/Kconfig.qmsi"
 
 endif # RTC
