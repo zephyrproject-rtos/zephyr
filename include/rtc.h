@@ -14,29 +14,8 @@
 extern "C" {
 #endif
 
-enum clk_rtc_div {
-	RTC_CLK_DIV_1,
-	RTC_CLK_DIV_2,
-	RTC_CLK_DIV_4,
-	RTC_CLK_DIV_8,
-	RTC_CLK_DIV_16,
-	RTC_CLK_DIV_32,
-	RTC_CLK_DIV_64,
-	RTC_CLK_DIV_128,
-	RTC_CLK_DIV_256,
-	RTC_CLK_DIV_512,
-	RTC_CLK_DIV_1024,
-	RTC_CLK_DIV_2048,
-	RTC_CLK_DIV_4096,
-	RTC_CLK_DIV_8192,
-	RTC_CLK_DIV_16384,
-	RTC_CLK_DIV_32768
-};
-
-#define RTC_DIVIDER RTC_CLK_DIV_1
-
 /** Number of RTC ticks in a second */
-#define RTC_ALARM_SECOND (32768 / (1UL << RTC_DIVIDER))
+#define RTC_ALARM_SECOND (32768 / CONFIG_RTC_PRESCALER)
 
 /** Number of RTC ticks in a minute */
 #define RTC_ALARM_MINUTE (RTC_ALARM_SECOND * 60)
