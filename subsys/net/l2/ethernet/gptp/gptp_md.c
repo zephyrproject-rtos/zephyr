@@ -260,6 +260,7 @@ static void gptp_md_compute_pdelay_rate_ratio(int port)
 	}
 
 	port_ds->neighbor_rate_ratio = neighbor_rate_ratio;
+	port_ds->neighbor_rate_ratio_valid = state->neighbor_rate_ratio_valid;
 }
 
 static void gptp_md_compute_prop_time(int port)
