@@ -44,7 +44,7 @@
 			label = "STM32_CLK_RCC";
 		};
 
-		pinctrl: pin-controller {
+		pinctrl: pin-controller@40010800 {
 			compatible = "st,stm32-pinmux";
 			#address-cells = <1>;
 			#size-cells = <1>;
