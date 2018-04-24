@@ -35,10 +35,13 @@
 			enable-external-reference;
 		};
 
-		rtc@4003d000 {
-			compatible = "nxp,kw41z-rtc";
+		rtc0: rtc@4003d000 {
+			compatible = "nxp,kinetis-rtc";
 			reg = <0x4003d000 0x20>;
+			interrupts = <20 0>;
 			clock-frequency = <32768>;
+			label = "RTC_0";
+			prescaler = <32768>;
 		};
 
 		sim: sim@40047000 {
