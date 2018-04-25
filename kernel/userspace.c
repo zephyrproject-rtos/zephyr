@@ -50,13 +50,9 @@ struct perm_ctx {
 #ifdef CONFIG_DYNAMIC_OBJECTS
 struct dyn_obj {
 	struct _k_object kobj;
+	sys_dnode_t obj_list;
 	struct rbnode node; /* must be immediately before data member */
 	u8_t data[]; /* The object itself */
-};
-
-struct visit_ctx {
-	_wordlist_cb_func_t func;
-	void *original_context;
 };
 
 extern struct _k_object *_k_object_gperf_find(void *obj);
@@ -65,9 +61,24 @@ extern void _k_object_gperf_wordlist_foreach(_wordlist_cb_func_t func,
 
 static int node_lessthan(struct rbnode *a, struct rbnode *b);
 
+/*
+ * Red/black tree of allocated kernel objects, for reasonably fast lookups
+ * based on object pointer values.
+ */
 static struct rbtree obj_rb_tree = {
 	.lessthan_fn = node_lessthan
 };
+
+/*
+ * Linked list of allocated kernel objects, for iteration over all allocated
+ * objects (and potentially deleting them during iteration).
+ */
+static sys_dlist_t obj_list = SYS_DLIST_STATIC_INIT(&obj_list);
+
+/*
+ * TODO: Write some hash table code that will replace both obj_rb_tree
+ * and obj_list.
+ */
 
 /* TODO: incorporate auto-gen with Leandro's patch */
 static size_t obj_size_get(enum k_objects otype)
@@ -128,7 +139,7 @@ static struct dyn_obj *dyn_object_find(void *obj)
 	return ret;
 }
 
-void *k_object_alloc(enum k_objects otype)
+void *_impl_k_object_alloc(enum k_objects otype)
 {
 	struct dyn_obj *dyn_obj;
 	int key;
@@ -140,7 +151,7 @@ void *k_object_alloc(enum k_objects otype)
 		 otype != K_OBJ__THREAD_STACK_ELEMENT,
 		 "bad object type requested");
 
-	dyn_obj = k_malloc(sizeof(*dyn_obj) + obj_size_get(otype));
+	dyn_obj = z_thread_malloc(sizeof(*dyn_obj) + obj_size_get(otype));
 	if (!dyn_obj) {
 		SYS_LOG_WRN("could not allocate kernel object");
 		return NULL;
@@ -148,7 +159,7 @@ void *k_object_alloc(enum k_objects otype)
 
 	dyn_obj->kobj.name = (char *)&dyn_obj->data;
 	dyn_obj->kobj.type = otype;
-	dyn_obj->kobj.flags = 0;
+	dyn_obj->kobj.flags = K_OBJ_FLAG_ALLOC;
 	memset(dyn_obj->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
 
 	/* The allocating thread implicitly gets permission on kernel objects
@@ -158,6 +169,7 @@ void *k_object_alloc(enum k_objects otype)
 
 	key = irq_lock();
 	rb_insert(&obj_rb_tree, &dyn_obj->node);
+	sys_dlist_append(&obj_list, &dyn_obj->obj_list);
 	irq_unlock(key);
 
 	return dyn_obj->kobj.name;
@@ -177,6 +189,7 @@ void k_object_free(void *obj)
 	dyn_obj = dyn_object_find(obj);
 	if (dyn_obj) {
 		rb_remove(&obj_rb_tree, &dyn_obj->node);
+		sys_dlist_remove(&dyn_obj->obj_list);
 	}
 	irq_unlock(key);
 
@@ -203,25 +216,17 @@ struct _k_object *_k_object_find(void *obj)
 	return ret;
 }
 
-static void visit_fn(struct rbnode *node, void *context)
-{
-	struct visit_ctx *vctx = context;
-
-	vctx->func(&node_to_dyn_obj(node)->kobj, vctx->original_context);
-}
-
 void _k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 {
-	struct visit_ctx vctx;
 	int key;
+	struct dyn_obj *obj, *next;
 
 	_k_object_gperf_wordlist_foreach(func, context);
 
-	vctx.func = func;
-	vctx.original_context = context;
-
 	key = irq_lock();
-	rb_walk(&obj_rb_tree, visit_fn, &vctx);
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&obj_list, obj, next, obj_list) {
+		func(&obj->kobj, context);
+	}
 	irq_unlock(key);
 }
 #endif /* CONFIG_DYNAMIC_OBJECTS */
@@ -256,6 +261,16 @@ static void unref_check(struct _k_object *ko)
 	default:
 		break;
 	}
+
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	if (ko->flags & K_OBJ_FLAG_ALLOC) {
+		struct dyn_obj *dyn_obj =
+			CONTAINER_OF(ko, struct dyn_obj, kobj);
+		rb_remove(&obj_rb_tree, &dyn_obj->node);
+		sys_dlist_remove(&dyn_obj->obj_list);
+		k_free(dyn_obj);
+	}
+#endif
 }
 
 static void wordlist_cb(struct _k_object *ko, void *ctx_ptr)

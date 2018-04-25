@@ -58,3 +58,12 @@ _SYSCALL_HANDLER(k_object_release, object)
 
 	return 0;
 }
+
+_SYSCALL_HANDLER(k_object_alloc, otype)
+{
+	_SYSCALL_VERIFY_MSG(otype > K_OBJ_ANY && otype < K_OBJ_LAST &&
+			    otype != K_OBJ__THREAD_STACK_ELEMENT,
+			    "bad object type %d requested", otype);
+
+	return (u32_t)_impl_k_object_alloc(otype);
+}
