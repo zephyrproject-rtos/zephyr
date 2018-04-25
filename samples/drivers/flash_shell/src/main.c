@@ -236,11 +236,7 @@ static int flash_shell_write_block_size(int argc, char *argv[])
 		return 0;
 	}
 
-#if defined FLASH_WRITE_BLOCK_SIZE
-	printk("%d\n", FLASH_WRITE_BLOCK_SIZE);
-#else
-	printk("Flash write block size is unknown.\n");
-#endif
+	printk("%d\n", flash_get_write_block_size(flash_device));
 	return 0;
 }
 
