@@ -70,20 +70,22 @@ static void settings_init_fcb(void)
 	rc = settings_fcb_src(&config_init_settings_fcb);
 
 	if (rc != 0) {
-		k_panic();
-	}
+		rc = flash_area_open(CONFIG_SETTINGS_FCB_FLASH_AREA, &fap);
 
-	rc = flash_area_open(CONFIG_SETTINGS_FCB_FLASH_AREA, &fap);
+		if (rc == 0) {
+			rc = flash_area_erase(fap, 0, fap->fa_size);
+			flash_area_close(fap);
+		}
 
-	if (rc == 0) {
-		rc = flash_area_erase(fap, 0, fap->fa_size);
-		flash_area_close(fap);
+		if (rc != 0) {
+			k_panic();
+		} else {
+			rc = settings_fcb_src(&config_init_settings_fcb);
+		}
 	}
 
 	if (rc != 0) {
 		k_panic();
-	} else {
-		rc = settings_fcb_src(&config_init_settings_fcb);
 	}
 
 	rc = settings_fcb_dst(&config_init_settings_fcb);
