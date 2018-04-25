@@ -17,6 +17,18 @@
 #include <arch/cpu.h>
 #include <cortex_m/exc.h>
 
+
+/**
+ * @brief This function provides minimum delay (in milliseconds) based
+ *	  on variable incremented.
+ * @param Delay: specifies the delay time length, in milliseconds.
+ * @return None
+ */
+void HAL_Delay(__IO uint32_t Delay)
+{
+	k_sleep(Delay);
+}
+
 /**
  * @brief This function configures the source of stm32cube time base.
  *        Cube HAL expects a 1ms tick which matches with k_uptime_get_32.
