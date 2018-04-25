@@ -159,6 +159,9 @@ SECTIONS
 #ifdef CONFIG_APPLICATION_MEMORY
 	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
 	{
+#ifndef CONFIG_XIP
+		MMU_PAGE_ALIGN
+#endif
 		_image_ram_start = .;
 		__app_ram_start = .;
 		__app_data_ram_start = .;
