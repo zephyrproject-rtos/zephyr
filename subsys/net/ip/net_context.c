@@ -994,6 +994,10 @@ static int sendto(struct net_pkt *pkt,
 		return -EINVAL;
 	}
 
+	context->send_cb = cb;
+	context->user_data = user_data;
+	net_pkt_set_token(pkt, token);
+
 #if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(net_pkt_iface(pkt))) {
 		return net_offload_sendto(
@@ -1006,6 +1010,12 @@ static int sendto(struct net_pkt *pkt,
 	context->send_cb = cb;
 	context->user_data = user_data;
 	net_pkt_set_token(pkt, token);
+
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	if (context->options.tls) {
+		return net_tls_send(pkt);
+	}
+#endif
 
 	return net_context_output(context, pkt, dst_addr);
 }

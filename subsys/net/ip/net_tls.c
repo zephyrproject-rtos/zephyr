@@ -8,16 +8,31 @@
 #include "net_private.h"
 
 #define TIMEOUT_TLS_RX_MS       100
+#define TIMEOUT_TLS_TX_MS       100
 
 static mbedtls_ctr_drbg_context tls_ctr_drbg;
 
 static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
 {
 	struct net_context *context = ctx;
+	struct net_pkt *pkt;
+	int bytes, ret;
 
-	ARG_UNUSED(context);
+	pkt = net_pkt_get_tx(context, TIMEOUT_TLS_TX_MS);
 
-	return -EOPNOTSUPP;
+	if (!pkt) {
+		return -EIO;
+	}
+
+	bytes = net_pkt_append(pkt, len, (u8_t *)buf, TIMEOUT_TLS_TX_MS);
+
+	ret = net_context_output(context, pkt, &context->remote);
+	if (ret < 0) {
+		net_pkt_unref(pkt);
+		return ret;
+	}
+
+	return bytes;
 }
 
 static int tls_rx(void *ctx, unsigned char *buf, size_t len)
@@ -214,4 +229,39 @@ mbed_err_conf:
 	mbedtls_ssl_config_free(&context->mbedtls.config);
 
 	return err;
+}
+
+int net_tls_send(struct net_pkt *pkt)
+{
+	struct net_context *context = net_pkt_context(pkt);
+	struct net_buf *frag = pkt->frags;
+
+	while (frag) {
+		int ret = 0;
+		u8_t *data = frag->data;
+		u16_t len = frag->len;
+
+		while (ret < len) {
+			ret = mbedtls_ssl_write(&context->mbedtls.ssl,
+						data, len);
+			if (ret == len) {
+				break;
+			}
+
+			if (ret > 0 && ret < len) {
+				data += ret;
+				len -= ret;
+				continue;
+			}
+
+			if (ret != MBEDTLS_ERR_SSL_WANT_WRITE &&
+			    ret != MBEDTLS_ERR_SSL_WANT_READ) {
+				return -EBADF;
+			}
+		}
+
+		frag = frag->frags;
+	}
+
+	return 0;
 }

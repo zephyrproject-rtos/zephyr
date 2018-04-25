@@ -42,6 +42,7 @@
 
 int net_tls_enable(struct net_context *context, bool enabled);
 int net_tls_connect(struct net_context *context, bool listening);
+int net_tls_send(struct net_pkt *pkt);
 
 #else
 static inline int net_tls_enable(struct net_context *context, bool enabled)
@@ -60,6 +61,12 @@ static inline int net_tls_connect(struct net_context *context, bool listening)
 	return 0;
 }
 
+static inline int net_tls_send(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
 #endif /* CONFIG_NET_TLS || CONFIG_NET_DTLS */
 
 #endif
