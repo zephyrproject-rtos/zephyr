@@ -1845,6 +1845,8 @@ static inline int send_syn_segment(struct net_context *context,
 		return ret;
 	}
 
+	print_send_info(pkt, msg);
+
 	ret = net_send_data(pkt);
 	if (ret < 0) {
 		net_pkt_unref(pkt);
@@ -1852,8 +1854,6 @@ static inline int send_syn_segment(struct net_context *context,
 	}
 
 	context->tcp->send_seq++;
-
-	print_send_info(pkt, msg);
 
 	return ret;
 }
