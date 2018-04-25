@@ -46,7 +46,7 @@
 			label = "TCMU SYSTEM";
 		};
 
-		ocram_code: code@00900000 {
+		ocram_code: code@900000 {
 			compatible = "nxp,imx-code-bus";
 			reg = <0x00900000 0x20000>;
 			label = "OCRAM CODE";
@@ -65,7 +65,7 @@
 			label = "OCRAM_S CODE";
 		};
 
-		ocram_s_sys: memory@00180000 {
+		ocram_s_sys: memory@180000 {
 			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x00180000 0x8000>;
