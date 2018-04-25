@@ -14,6 +14,7 @@
 
 #include "nrf_radio.h"
 #include "nrf_rtc.h"
+#include "nrf_ccm.h"
 
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 #define RADIO_PDU_LEN_MAX (BIT(5) - 1)
@@ -1128,10 +1129,7 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt)
 	NRF_PPI_regw_sideeffects();
 #endif
 
-	NRF_CCM->TASKS_KSGEN = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_CCM_regw_sideeffects_TASKS_KSGEN();
-#endif
+	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);
 
 	return _pkt_scratch;
 }
@@ -1164,29 +1162,20 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 	NRF_CCM->EVENTS_ENDCRYPT = 0;
 	NRF_CCM->EVENTS_ERROR = 0;
 
-	NRF_CCM->TASKS_KSGEN = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_CCM_regw_sideeffects_TASKS_KSGEN();
-#endif
+	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);
 
 	return _pkt_scratch;
 }
 
 u32_t radio_ccm_is_done(void)
 {
-	NRF_CCM->INTENSET = CCM_INTENSET_ENDCRYPT_Msk;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_CCM_regw_sideeffects_INTENSET();
-#endif
+	nrf_ccm_int_enable(NRF_CCM, CCM_INTENSET_ENDCRYPT_Msk);
 	while (NRF_CCM->EVENTS_ENDCRYPT == 0) {
 		__WFE();
 		__SEV();
 		__WFE();
 	}
-	NRF_CCM->INTENCLR = CCM_INTENCLR_ENDCRYPT_Msk;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_CCM_regw_sideeffects_INTENCLR();
-#endif
+	nrf_ccm_int_disable(NRF_CCM, CCM_INTENCLR_ENDCRYPT_Msk);
 	NVIC_ClearPendingIRQ(CCM_AAR_IRQn);
 
 	return (NRF_CCM->EVENTS_ERROR == 0);
