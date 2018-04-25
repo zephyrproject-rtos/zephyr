@@ -99,9 +99,6 @@ endif # FXOS8700
 
 if FXAS21002
 
-config FXAS21002_GPIO_NAME
-	default GPIO_MCUX_PORTC_NAME
-
 config FXAS21002_GPIO_PIN
 	default 18
 
