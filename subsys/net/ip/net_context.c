@@ -886,6 +886,64 @@ static int create_udp_packet(struct net_context *context,
 }
 #endif /* CONFIG_NET_UDP */
 
+int net_context_output(struct net_context *context, struct net_pkt *pkt,
+		       const struct sockaddr *dst_addr)
+{
+	int ret;
+
+	switch (net_context_get_ip_proto(context)) {
+#if defined(CONFIG_NET_UDP)
+	case IPPROTO_UDP:
+		/* Bind default address and port only if UDP */
+		ret = bind_default(context);
+		if (ret) {
+			return ret;
+		}
+
+		ret = create_udp_packet(context, pkt, dst_addr, &pkt);
+		if (ret < 0) {
+			goto err;
+		}
+
+		ret = net_send_data(pkt);
+		if (ret < 0) {
+			goto err;
+		}
+		break;
+#endif /* CONFIG_NET_UDP */
+
+	case IPPROTO_TCP:
+		ret = net_tcp_queue_data(context, pkt);
+		if (ret < 0) {
+			goto err;
+		}
+
+		ret = net_tcp_send_data(context, context->send_cb,
+					net_pkt_token(pkt), context->user_data);
+		if (ret < 0) {
+			goto err;
+		}
+
+		break;
+
+	default:
+		ret = -EPROTONOSUPPORT;
+	}
+
+err:
+	if (ret < 0) {
+		if (ret == -EPROTONOSUPPORT) {
+			NET_DBG("Unknown protocol while sending packet: %d",
+				net_context_get_ip_proto(context));
+		} else {
+			NET_DBG("Could not create network packet to send (%d)",
+				ret);
+		}
+	}
+
+	return ret;
+}
+
 static int sendto(struct net_pkt *pkt,
 		  const struct sockaddr *dst_addr,
 		  socklen_t addrlen,
@@ -895,7 +953,6 @@ static int sendto(struct net_pkt *pkt,
 		  void *user_data)
 {
 	struct net_context *context = net_pkt_context(pkt);
-	int ret = 0;
 
 	if (!net_context_is_used(context)) {
 		return -EBADF;
@@ -946,53 +1003,11 @@ static int sendto(struct net_pkt *pkt,
 	}
 #endif /* CONFIG_NET_OFFLOAD */
 
-	switch (net_context_get_ip_proto(context)) {
-	case IPPROTO_UDP:
-#if defined(CONFIG_NET_UDP)
-		/* Bind default address and port only if UDP */
-		ret = bind_default(context);
-		if (ret) {
-			return ret;
-		}
-
-		ret = create_udp_packet(context, pkt, dst_addr, &pkt);
-#endif /* CONFIG_NET_UDP */
-		break;
-
-	case IPPROTO_TCP:
-		ret = net_tcp_queue_data(context, pkt);
-		break;
-
-	default:
-		ret = -EPROTONOSUPPORT;
-	}
-
-	if (ret < 0) {
-		if (ret == -EPROTONOSUPPORT) {
-			NET_DBG("Unknown protocol while sending packet: %d",
-				net_context_get_ip_proto(context));
-		} else {
-			NET_DBG("Could not create network packet to send (%d)",
-				ret);
-		}
-
-		return ret;
-	}
-
 	context->send_cb = cb;
 	context->user_data = user_data;
 	net_pkt_set_token(pkt, token);
 
-	switch (net_context_get_ip_proto(context)) {
-	case IPPROTO_UDP:
-		return net_send_data(pkt);
-
-	case IPPROTO_TCP:
-		return net_tcp_send_data(context, cb, token, user_data);
-
-	default:
-		return -EPROTONOSUPPORT;
-	}
+	return net_context_output(context, pkt, dst_addr);
 }
 
 int net_context_send(struct net_pkt *pkt,

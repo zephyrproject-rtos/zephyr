@@ -42,6 +42,8 @@ extern void net_pkt_init(void);
 extern void net_if_init(void);
 extern void net_if_post_init(void);
 extern void net_if_carrier_down(struct net_if *iface);
+extern int net_context_output(struct net_context *context, struct net_pkt *pkt,
+			      const struct sockaddr *dst_addr);
 extern void net_context_init(void);
 enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt);
 enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt);
