@@ -26,6 +26,18 @@ a kernel object, checks are performed by system call handler functions
 that the kernel object address is valid and that the calling thread
 has sufficient permissions to work with it.
 
+Permission on an object also has the semantics of a reference to an object.
+This is significant for certain object APIs which do temporary allocations,
+or objects which themselves have been allocated from a runtime memory pool.
+
+If an object loses all references, two events may happen:
+
+* If the object has an associated cleanup function, the cleanup function
+  may be called to release any runtime-allocated buffers the object was using.
+
+* If the object itself was dynamically allocated, the memory for the object
+  will be freed.
+
 Object Placement
 ****************
 
@@ -34,8 +46,8 @@ and can be located anywhere in the binary, or even declared on stacks. However,
 to prevent accidental or intentional corruption by user threads, they must
 not be located in any memory that user threads have direct access to.
 
-In order for a kernel object to be usable by a user thread via system call
-APIs, several conditions must be met on how the kernel object is declared:
+In order for a static kernel object to be usable by a user thread via system
+call APIs, several conditions must be met on how the kernel object is declared:
 
 * The object must be declared as a top-level global at build time, such that it
   appears in the ELF symbol table. It is permitted to declare kernel objects
@@ -67,6 +79,30 @@ The debug output of the ``gen_kobject_list.py`` script may be useful when
 debugging why some object was unexpectedly not being tracked. This
 information will be printed if the script is run with the ``--verbose`` flag,
 or if the build system is invoked with verbose output.
+
+Dynamic Objects
+***************
+
+Kernel objects may also be allocated at runtime if
+:option:`CONFIG_DYNAMIC_OBJECTS` is enabled. In this case, the
+:cpp:func:`k_object_alloc()` API may be used to instantiate an object from
+the calling thread's resource pool. Such allocations may be freed in two
+ways:
+
+* Supervisor threads may call :cpp:func:`k_object_free()` to force a dynamic
+  object to be released.
+
+* If an object's references drop to zero (which happens when no threads have
+  permissions on it) the object will be automatically freed. User threads
+  may drop their own permission on an object with
+  :cpp:func:`k_object_release()`, and their permissions are automatically
+  cleared when a thread terminates. Supervisor threads may additionally
+  revoke references for another thread using
+  :cpp:func:`k_object_access_revoke()`.
+
+Because permissions are also used for reference counting, it is important for
+supervisor threads to acquire permissions on objects they are using even though
+the access control aspects of the permission system are not enforced.
 
 Implementation Details
 ======================
@@ -104,6 +140,9 @@ includes:
 * An extra data field. This is currently used for thread stack objects
   to denote how large the stack is, and for thread objects to indicate
   the thread's index in kernel object permission bitfields.
+
+Dynamic objects allocated at runtime are tracked in a runtime red/black tree
+which is used in parallel to the gperf table when validating object pointers.
 
 Supervisor Thread Access Permission
 ***********************************
@@ -160,6 +199,9 @@ object.
 API calls from supervisor mode to set permissions on kernel objects that are
 not being tracked by the kernel will be no-ops. Doing the same from user mode
 will result in a fatal error for the calling thread.
+
+Objects allocated with :cpp:func:`k_object_alloc()` implicitly grant
+permission on the allocated object to the calling thread.
 
 Initialization State
 ********************
@@ -241,6 +283,9 @@ APIs
 * :c:func:`k_object_access_grant()`
 * :c:func:`k_object_access_revoke()`
 * :c:func:`k_object_access_all_grant()`
+* :c:func:`k_object_alloc()`
+* :c:func:`k_object_free()`
+* :c:func:`k_object_release()`
 * :c:func:`k_thread_access_grant()`
 * :c:func:`k_thread_user_mode_enter()`
 * :c:macro:`K_THREAD_ACCESS_GRANT()`

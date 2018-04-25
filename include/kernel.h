@@ -187,6 +187,7 @@ struct _k_object_assignment {
 
 #define K_OBJ_FLAG_INITIALIZED	BIT(0)
 #define K_OBJ_FLAG_PUBLIC	BIT(1)
+#define K_OBJ_FLAG_ALLOC	BIT(2)
 
 /**
  * Lookup a kernel object and init its metadata if it exists
@@ -290,14 +291,13 @@ __syscall void k_object_release(void *object);
  */
 void k_object_access_all_grant(void *object);
 
-#ifdef CONFIG_DYNAMIC_OBJECTS
 /**
  * Allocate a kernel object of a designated type
  *
  * This will instantiate at runtime a kernel object of the specified type,
  * returning a pointer to it. The object will be returned in an uninitialized
  * state, with the calling thread being granted permission on it. The memory
- * for the object will be allocated out of the kernel's heap.
+ * for the object will be allocated out of the calling thread's resource pool.
  *
  * Currently, allocation of thread stacks is not supported.
  *
@@ -305,18 +305,29 @@ void k_object_access_all_grant(void *object);
  * @return A pointer to the allocated kernel object, or NULL if memory wasn't
  * available
  */
-void *k_object_alloc(enum k_objects otype);
+__syscall void *k_object_alloc(enum k_objects otype);
 
+#ifdef CONFIG_DYNAMIC_OBJECTS
 /**
  * Free a kernel object previously allocated with k_object_alloc()
  *
- * This will return memory for a kernel object back to the system heap.
- * Care must be exercised that the object will not be used during or after
- * when this call is made.
+ * This will return memory for a kernel object back to resource pool it was
+ * allocated from.  Care must be exercised that the object will not be used
+ * during or after when this call is made.
  *
  * @param obj Pointer to the kernel object memory address.
  */
 void k_object_free(void *obj);
+#else
+static inline void *_impl_k_object_alloc(enum k_objects otype)
+{
+	return NULL;
+}
+
+static inline void k_obj_free(void *obj)
+{
+	ARG_UNUSED(obj);
+}
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
 /* Using typedef deliberately here, this is quite intended to be an opaque

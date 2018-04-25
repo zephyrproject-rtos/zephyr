@@ -107,12 +107,18 @@ config MAX_THREAD_BYTES
 	  be created in the system.
 
 config DYNAMIC_OBJECTS
-	bool "Allow kernel objects to be requested on system heap"
+	bool "Allow kernel objects to be allocated at runtime"
 	default n
 	depends on USERSPACE
 	help
 	Enabling this option allows for kernel objects to be requested from
-	the system heap, at a cost in performance and additional memory.
+	the calling thread's resource pool, at a slight cost in performance
+	due to the supplemental run-time tables required to validate such
+	objects.
+
+	Objects allocated in this way can be freed with a supervisor-only
+	API call, or when the number of references to that object drops to
+	zero.
 
 config SIMPLE_FATAL_ERROR_HANDLER
 	prompt "Simple system fatal error handler"
