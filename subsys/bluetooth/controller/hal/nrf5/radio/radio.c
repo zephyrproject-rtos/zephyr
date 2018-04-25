@@ -12,6 +12,9 @@
 #include "ll_sw/pdu.h"
 #include "radio_nrf5.h"
 
+#include "nrf_radio.h"
+#include "nrf_rtc.h"
+
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 #define RADIO_PDU_LEN_MAX (BIT(5) - 1)
 #elif defined(CONFIG_SOC_SERIES_NRF52X)
@@ -33,7 +36,7 @@ void radio_isr_set(radio_isr_fp fp_radio_isr)
 {
 	sfp_radio_isr = fp_radio_isr;	/* atomic assignment of 32-bit word */
 
-	NRF_RADIO->INTENSET = (0 |
+	nrf_radio_int_enable(0 |
 				/* RADIO_INTENSET_READY_Msk |
 				 * RADIO_INTENSET_ADDRESS_Msk |
 				 * RADIO_INTENSET_PAYLOAD_Msk |
@@ -44,9 +47,6 @@ void radio_isr_set(radio_isr_fp fp_radio_isr)
 				 */
 	    );
 
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_RADIO_regw_sideeffects_INTENSET();
-#endif
 	NVIC_ClearPendingIRQ(RADIO_IRQn);
 	irq_enable(RADIO_IRQn);
 }
@@ -75,18 +75,10 @@ void radio_reset(void)
 {
 	irq_disable(RADIO_IRQn);
 
-	NRF_RADIO->POWER =
-	    ((RADIO_POWER_POWER_Disabled << RADIO_POWER_POWER_Pos) &
-	     RADIO_POWER_POWER_Msk);
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_RADIO_regw_sideeffects_POWER();
-#endif
-	NRF_RADIO->POWER =
-	    ((RADIO_POWER_POWER_Enabled << RADIO_POWER_POWER_Pos) &
-	     RADIO_POWER_POWER_Msk);
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_RADIO_regw_sideeffects_POWER();
-#endif
+	nrf_radio_power_set((RADIO_POWER_POWER_Disabled
+			    << RADIO_POWER_POWER_Pos) & RADIO_POWER_POWER_Msk);
+	nrf_radio_power_set((RADIO_POWER_POWER_Enabled << RADIO_POWER_POWER_Pos)
+			    & RADIO_POWER_POWER_Msk);
 
 	hal_radio_reset();
 }
@@ -248,18 +240,12 @@ u32_t radio_rx_chain_delay_get(u8_t phy, u8_t flags)
 
 void radio_rx_enable(void)
 {
-	NRF_RADIO->TASKS_RXEN = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_RADIO_regw_sideeffects_TASKS_RXEN();
-#endif
+	nrf_radio_task_trigger(NRF_RADIO_TASK_RXEN);
 }
 
 void radio_tx_enable(void)
 {
-	NRF_RADIO->TASKS_TXEN = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_RADIO_regw_sideeffects_TASKS_TXEN();
-#endif
+	nrf_radio_task_trigger(NRF_RADIO_TASK_TXEN);
 }
 
 void radio_disable(void)
@@ -276,10 +262,7 @@ void radio_disable(void)
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	NRF_RADIO->SHORTS = 0;
-	NRF_RADIO->TASKS_DISABLE = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_RADIO_regw_sideeffects_TASKS_DISABLE();
-#endif
+	nrf_radio_task_trigger(NRF_RADIO_TASK_DISABLE);
 }
 
 void radio_status_reset(void)
@@ -642,11 +625,8 @@ u32_t radio_filter_match_get(void)
 
 void radio_bc_configure(u32_t n)
 {
-	NRF_RADIO->BCC = n;
+	nrf_radio_bcc_set(n);
 	NRF_RADIO->SHORTS |= RADIO_SHORTS_ADDRESS_BCSTART_Msk;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_RADIO_regw_sideeffects_BCC();
-#endif
 }
 
 void radio_bc_status_reset(void)
@@ -661,10 +641,7 @@ u32_t radio_bc_has_match(void)
 
 void radio_tmr_status_reset(void)
 {
-	NRF_RTC0->EVTENCLR = RTC_EVTENCLR_COMPARE2_Msk;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_RTC0_regw_sideeffects();
-#endif
+	nrf_rtc_event_disable(NRF_RTC0, RTC_EVTENCLR_COMPARE2_Msk);
 
 	NRF_PPI->CHENCLR =
 			HAL_RADIO_ENABLE_ON_TICK_PPI_DISABLE |
@@ -719,8 +696,8 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 	NRF_TIMER_regw_sideeffects_TASKS_CLEAR(EVENT_TIMER_NBR);
 #endif
 
-	NRF_RTC0->CC[2] = ticks_start;
-	NRF_RTC0->EVTENSET = RTC_EVTENSET_COMPARE2_Msk;
+	nrf_rtc_cc_set(NRF_RTC0, 2, ticks_start);
+	nrf_rtc_event_enable(NRF_RTC0, RTC_EVTENSET_COMPARE2_Msk);
 
 	HAL_EVENT_TIMER_START_PPI_REGISTER_EVT = HAL_EVENT_TIMER_START_EVT;
 	HAL_EVENT_TIMER_START_PPI_REGISTER_TASK = HAL_EVENT_TIMER_START_TASK;
@@ -785,7 +762,6 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 #if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_RTC0_regw_sideeffects();
 	NRF_PPI_regw_sideeffects();
 #endif
 	return remainder;
