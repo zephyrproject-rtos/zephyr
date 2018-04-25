@@ -12,7 +12,7 @@ set(arch_list
   xtensa
   )
 
-set(board_dir $ENV{ZEPHYR_BASE}/boards)
+set(board_dir ${BOARD_ROOT}/boards)
 
 foreach(arch ${arch_list})
   set(board_arch_dir ${board_dir}/${arch})

@@ -996,7 +996,9 @@ macro(assert_with_usage test comment)
     message("see usage:")
     execute_process(
       COMMAND
-      ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/usage/usage.cmake
+      ${CMAKE_COMMAND}
+      -DBOARD_ROOT=${BOARD_ROOT}
+      -P ${ZEPHYR_BASE}/cmake/usage/usage.cmake
       )
     message(FATAL_ERROR "Invalid usage")
   endif()
