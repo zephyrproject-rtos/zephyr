@@ -158,6 +158,13 @@ configure the Zephyr build system:
   can also be defined in the environment, in your application's
   :file:`CMakeLists.txt` file, or in the ``cmake`` command line.
 
+Additionally, if you have a single Zephyr copy that you use to build multiple
+applications against, you can also set CMake defaults using the
+:file:`{ZEPHYR_BASE}/defaults.cmake`. This file does not exist by default, but
+you can create it to share CMake variables across multiple applications. For
+example, you could use it to define a string or a path that is unique to your
+applications. If the file exists, the Zephyr build system will load it.
+
 .. _build_an_application:
 
 Build an Application
