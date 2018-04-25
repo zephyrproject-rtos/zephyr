@@ -2283,9 +2283,11 @@ def parse_arguments():
         "-D", "--all-deltas", action="store_true",
         help="Show all footprint deltas, positive or negative. Implies "
         "--footprint-threshold=0")
-    parser.add_argument("-O", "--outdir",
-                        default="%s/sanity-out" % ZEPHYR_BASE,
-                        help="Output directory for logs and binaries.")
+    parser.add_argument(
+        "-O", "--outdir",
+        default="%s/sanity-out" % ZEPHYR_BASE,
+        help="Output directory for logs and binaries. "
+        "This directory will be deleted unless '--no-clean' is set.")
     parser.add_argument(
         "-n", "--no-clean", action="store_true",
         help="Do not delete the outdir before building. Will result in "
