@@ -1,6 +1,8 @@
 add_custom_target(
   usage
-  ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/usage.cmake
+  ${CMAKE_COMMAND}
+  -DBOARD_ROOT=${BOARD_ROOT}
+  -P ${CMAKE_CURRENT_SOURCE_DIR}/usage.cmake
   )
 
 add_custom_target(
