@@ -41,6 +41,7 @@
 #include "l2cap_internal.h"
 #include "smp.h"
 #include "crypto.h"
+#include "settings.h"
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
 #define CONN_UPDATE_TIMEOUT  K_SECONDS(5)
@@ -4143,7 +4144,7 @@ static const char *ver_str(u8_t ver)
 	return "unknown";
 }
 
-static void show_dev_info(void)
+void bt_dev_show_info(void)
 {
 	BT_INFO("Identity: %s", bt_addr_le_str(&bt_dev.id_addr));
 	BT_INFO("HCI: version %s (0x%02x) revision 0x%04x, manufacturer 0x%04x",
@@ -4154,7 +4155,7 @@ static void show_dev_info(void)
 		bt_dev.lmp_subversion);
 }
 #else
-static inline void show_dev_info(void)
+void bt_dev_show_info(void)
 {
 }
 #endif /* CONFIG_BT_DEBUG */
@@ -4320,7 +4321,9 @@ static int hci_init(void)
 		}
 	}
 
-	show_dev_info();
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_dev_show_info();
+	}
 
 	return 0;
 }
@@ -4547,6 +4550,13 @@ int bt_enable(bt_ready_cb_t cb)
 
 	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_ENABLE)) {
 		return -EALREADY;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		err = bt_settings_init();
+		if (err) {
+			return err;
+		}
 	}
 
 	ready_cb = cb;

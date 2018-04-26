@@ -13,6 +13,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_A2DP             a2dp.c)
 zephyr_library_sources_ifdef(CONFIG_BT_AVDTP            avdtp.c)
 zephyr_library_sources_ifdef(CONFIG_BT_RFCOMM           rfcomm.c)
 zephyr_library_sources_ifdef(CONFIG_BT_TESTING          testing.c)
+zephyr_library_sources_ifdef(CONFIG_BT_SETTINGS         settings.c)
 
 zephyr_library_sources_ifdef(
   CONFIG_BT_BREDR
