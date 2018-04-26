@@ -14,9 +14,9 @@ kconf = Kconfig(sys.argv[1])
 # Enable warnings for assignments to undefined symbols
 kconf.enable_undef_warnings()
 
-# (This script uses alldefconfig as the base. Other starting states could be
-# set up here as well. The approach in examples/allnoconfig_simpler.py could
-# provide an allnoconfig starting state for example.)
+# This script uses alldefconfig as the base. Other starting states could be set
+# up here as well. The approach in examples/allnoconfig_simpler.py could
+# provide an allnoconfig starting state for example.
 
 print("Using {} as base".format(sys.argv[4]))
 for config in sys.argv[5:]:
@@ -25,11 +25,6 @@ for config in sys.argv[5:]:
 for config in sys.argv[4:]:
     kconf.load_config(config, replace=False)
 
-# Write the merged configuration
-kconf.write_config(sys.argv[2])
-
-# Output autoconf
-kconf.write_autoconf(sys.argv[3])
 
 # Print warnings for symbols whose actual value doesn't match the assigned
 # value
@@ -47,7 +42,6 @@ def name_and_loc(sym):
 
 for sym in kconf.defined_syms:
     # Was the symbol assigned to?
-    #print('name: {} value: {}'.format(sym.name, sym.str_value))
     if sym.user_value is not None:
         # Tristate values are represented as 0, 1, 2. Having them as
         # "n", "m", "y" is more convenient here, so convert.
@@ -57,6 +51,22 @@ for sym in kconf.defined_syms:
             user_value = sym.user_value
         if user_value != sym.str_value:
             print('warning: {} was assigned the value "{}" but got the '
-                  'value "{}" -- check dependencies'
-                  .format(name_and_loc(sym), user_value, sym.str_value))
+                  'value "{}" -- check dependencies'.format(
+                      name_and_loc(sym), user_value, sym.str_value
+                  ),
+                  file=sys.stderr)
 
+
+# Turn the warning for malformed .config lines into an error
+for warning in kconf.warnings:
+    if "ignoring malformed line" in warning:
+        print("Aborting due to malformed configuration settings",
+              file=sys.stderr)
+        sys.exit(1)
+
+
+# Write the merged configuration
+kconf.write_config(sys.argv[2])
+
+# Write the C header
+kconf.write_autoconf(sys.argv[3])
