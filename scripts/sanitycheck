@@ -1399,14 +1399,27 @@ class TestCase:
         self.yamlfile = yamlfile
 
     def scan_file(self, inf_name):
-        include_regex = re.compile(
-            br"#include\s*<ztest\.h>",
-            re.MULTILINE)
         suite_regex = re.compile(
-            br"^\s*ztest_test_suite\(\s*(?P<suite_name>[a-zA-Z0-9_]+)[\s,]*$",
+            # do not match until end-of-line, otherwise we won't allow
+            # stc_regex below to catch the ones that are declared in the same
+            # line--as we only search starting the end of this match
+            br"^\s*ztest_test_suite\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,",
             re.MULTILINE)
         stc_regex = re.compile(
-            br"^\s*ztest_(user_)?unit_test\((test_)?(?P<stc_name>[a-zA-Z0-9_]+)\)[\s,;\)]*$",
+            br"^\s*"		# empy space at the beginning is ok
+            # catch the case where it is declared in the same sentence, e.g:
+            #
+            # ztest_test_suite(mutex_complex, ztest_user_unit_test(TESTNAME));
+            br"(?:ztest_test_suite\([a-zA-Z0-9_]+,\s*)?"
+            # Catch ztest[_user]_unit_test-[_setup_teardown](TESTNAME)
+            br"ztest_(?:user_)?unit_test(?:_setup_teardown)?"
+            # Consume the argument that becomes the extra testcse
+            br"\(\s*"
+            br"(?P<stc_name>[a-zA-Z0-9_]+)"
+            # _setup_teardown() variant has two extra arguments that we ignore
+            br"(?:\s*,\s*[a-zA-Z0-9_]+\s*,\s*[a-zA-Z0-9_]+)?"
+            br"\s*\)",
+            # We don't check how it finishes; we don't care
             re.MULTILINE)
         suite_run_regex = re.compile(
             br"^\s*ztest_run_test_suite\((?P<suite_name>[a-zA-Z0-9_]+)\)",
@@ -1419,9 +1432,6 @@ class TestCase:
         with open(inf_name) as inf:
             with contextlib.closing(mmap.mmap(inf.fileno(), 0, mmap.MAP_PRIVATE,
                                               mmap.PROT_READ, 0)) as main_c:
-                #if not include_regex.search(main_c):
-                #    return None, None #"skipped, not using ztest.h"
-
                 suite_regex_match = suite_regex.search(main_c)
                 if not suite_regex_match:
                     # can't find ztest_test_suite, maybe a client, because
@@ -1437,10 +1447,13 @@ class TestCase:
                     main_c[suite_regex_match.end():suite_run_match.start()])
                 if achtung_matches:
                     warnings = "found invalid %s in ztest_test_suite()" \
-                               % ", ".join(set(achtung_matches))
-                matches = re.findall(
+                               % ", ".join(set([
+                                   match.decode() for match in achtung_matches
+                               ]))
+                _matches = re.findall(
                     stc_regex,
                     main_c[suite_regex_match.end():suite_run_match.start()])
+                matches = [ match.decode().replace("test_", "") for match in _matches ]
                 return matches, warnings
 
     def scan_path(self, path):
@@ -1449,7 +1462,7 @@ class TestCase:
             try:
                 _subcases, warnings = self.scan_file(filename)
                 if warnings:
-                    warning("%s: %s", filename, warnings)
+                    error("%s: %s" % (filename, warnings))
                 if _subcases:
                     subcases += _subcases
             except ValueError as e:
@@ -1460,7 +1473,7 @@ class TestCase:
     def parse_subcases(self):
         results = self.scan_path(self.code_location)
         for sub in results:
-            name = "{}.{}".format(self.id, sub[2].decode())
+            name = "{}.{}".format(self.id, sub)
             self.cases.append(name)
 
 
