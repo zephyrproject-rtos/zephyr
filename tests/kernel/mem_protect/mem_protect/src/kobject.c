@@ -581,6 +581,7 @@ void kobject_test_user_1_17(void *p1, void *p2, void *p3)
 /* Create a new thread from user and use a huge stack size which overflows
  * _handler_k_thread_create validation.
  */
+#ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 void test_create_new_thread_from_user_invalid_stacksize(void *p1,
 							void *p2, void *p3)
 {
@@ -599,6 +600,13 @@ void test_create_new_thread_from_user_invalid_stacksize(void *p1,
 	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
 
 }
+#else
+void test_create_new_thread_from_user_invalid_stacksize(void *p1,
+							void *p2, void *p3)
+{
+	ztest_test_skip();
+}
+#endif
 
 /****************************************************************************/
 /* object validation checks */
@@ -626,6 +634,8 @@ void kobject_test_user_1_18(void *p1, void *p2, void *p3)
 /* Create a new thread from user and use a stack bigger than allowed size.
  * _handler_k_thread_create validation.
  */
+
+#ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 void test_create_new_thread_from_user_huge_stacksize(void *p1,
 						     void *p2, void *p3)
 {
@@ -644,6 +654,13 @@ void test_create_new_thread_from_user_huge_stacksize(void *p1,
 	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
 
 }
+#else
+void test_create_new_thread_from_user_huge_stacksize(void *p1,
+						     void *p2, void *p3)
+{
+	ztest_test_skip();
+}
+#endif
 
 /****************************************************************************/
 /* object validation checks */
