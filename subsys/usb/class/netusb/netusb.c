@@ -88,6 +88,13 @@ static int netusb_disconnect_media(void)
 	return netusb.func->connect_media(false);
 }
 
+static void netusb_configure(void)
+{
+	netusb.enabled = true;
+	net_if_up(netusb.iface);
+	netusb_connect_media();
+}
+
 static inline void netusb_status_interface(u8_t *iface)
 {
 	SYS_LOG_DBG("");
@@ -96,9 +103,9 @@ static inline void netusb_status_interface(u8_t *iface)
 		return;
 	}
 
-	netusb.enabled = true;
-	net_if_up(netusb.iface);
-	netusb_connect_media();
+	if (!netusb.enabled) {
+		netusb_configure();
+	}
 }
 
 static inline void netusb_status_disconnected(void)
@@ -129,6 +136,7 @@ static void netusb_status_cb(enum usb_dc_status_code status, u8_t *param)
 		break;
 	case USB_DC_CONFIGURED:
 		SYS_LOG_DBG("USB device configured");
+		netusb_configure();
 		break;
 	case USB_DC_DISCONNECTED:
 		SYS_LOG_DBG("USB device disconnected");
