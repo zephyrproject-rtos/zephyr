@@ -656,7 +656,7 @@ static inline int http_server_init(struct http_ctx *ctx,
 	return -ENOTSUP;
 }
 
-#if defined(CONFIG_HTTPS)
+#if defined(CONFIG_HTTPS) && defined(CONFIG_NET_APP_SERVER)
 static inline int http_server_set_tls(struct http_ctx *ctx,
 				      const char *server_banner,
 				      u8_t *personalization_data,
@@ -679,7 +679,7 @@ static inline int http_server_set_tls(struct http_ctx *ctx,
 
 	return -ENOTSUP;
 }
-#endif /* CONFIG_HTTPS */
+#endif /* CONFIG_HTTPS && CONFIG_NET_APP_SERVER */
 
 static inline int http_server_enable(struct http_ctx *ctx)
 {
