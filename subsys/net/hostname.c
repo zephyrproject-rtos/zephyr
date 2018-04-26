@@ -24,7 +24,7 @@
 #define EXTRA_SPACE 0
 #endif /* CONFIG_NET_HOSTNAME_UNIQUE */
 
-static char hostname[sizeof(CONFIG_NET_HOSTNAME) - 1 + EXTRA_SPACE];
+static char hostname[sizeof(CONFIG_NET_HOSTNAME) + EXTRA_SPACE];
 
 const char *net_hostname_get(void)
 {
