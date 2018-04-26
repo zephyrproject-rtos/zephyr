@@ -123,8 +123,9 @@ config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	depends on ARMV7_M_ARMV8_M_MAINLINE
 	default n
 	help
-	  This option signifies the CPU faults other than the hard fault, and
-	  needs to reserve a priority for them.
+	  This option signifies the CPU may trigger system faults
+	  (other than HardFault) with configurable priority, and,
+	  therefore, it needs to reserve a priority level for them.
 
 config CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
 	bool
