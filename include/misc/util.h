@@ -400,5 +400,31 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 #define MACRO_MAP_13(macro, a, ...) macro(a)MACRO_MAP_12(macro, __VA_ARGS__,)
 #define MACRO_MAP_14(macro, a, ...) macro(a)MACRO_MAP_13(macro, __VA_ARGS__,)
 #define MACRO_MAP_15(macro, a, ...) macro(a)MACRO_MAP_14(macro, __VA_ARGS__,)
+/*
+ * The following provides variadic preprocessor macro support to
+ * help eliminate multiple, repetitive function/macro calls.  This
+ * allows up to 10 "arguments" in addition to _call .
+ * Note - derived from work on:
+ * https://codecraft.co/2014/11/25/variadic-macros-tricks/
+ */
+
+#define _GET_ARG(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
+
+#define _for_0(_call, ...)
+#define _for_1(_call, x) _call(x)
+#define _for_2(_call, x, ...) _call(x) _for_1(_call, ##__VA_ARGS__)
+#define _for_3(_call, x, ...) _call(x) _for_2(_call, ##__VA_ARGS__)
+#define _for_4(_call, x, ...) _call(x) _for_3(_call, ##__VA_ARGS__)
+#define _for_5(_call, x, ...) _call(x) _for_4(_call, ##__VA_ARGS__)
+#define _for_6(_call, x, ...) _call(x) _for_5(_call, ##__VA_ARGS__)
+#define _for_7(_call, x, ...) _call(x) _for_6(_call, ##__VA_ARGS__)
+#define _for_8(_call, x, ...) _call(x) _for_7(_call, ##__VA_ARGS__)
+#define _for_9(_call, x, ...) _call(x) _for_8(_call, ##__VA_ARGS__)
+#define _for_10(_call, x, ...) _call(x) _for_9(_call, ##__VA_ARGS__)
+
+#define FOR_EACH(x, ...) \
+	_GET_ARG(__VA_ARGS__, \
+	_for_10, _for_9, _for_8, _for_7, _for_6, _for_5, \
+	_for_4, _for_3, _for_2, _for_1, _for_0)(x, ##__VA_ARGS__)
 
 #endif /* _UTIL__H_ */

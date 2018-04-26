@@ -130,10 +130,12 @@
     UTIL_LISTIFY(NUM_KERNEL_OBJECT_FILES, X, sect)
 #define APP_INPUT_SECTION(sect)	\
     *(EXCLUDE_FILE (UTIL_LISTIFY(NUM_KERNEL_OBJECT_FILES, Y, ~)) sect)
+#define APP_SMEM_SECTION()	KEEP(*(SORT(data_smem_[_a-zA-Z0-9]*)))
 
 #else
 #define KERNEL_INPUT_SECTION(sect)	*(sect)
 #define APP_INPUT_SECTION(sect)		*(sect)
+#define APP_SMEM_SECTION()	KEEP(*(SORT(data_smem_[_a-zA-Z0-9]*)))
 #endif
 
 
@@ -171,6 +173,15 @@ GDATA(__data_num_words)
 #else /* ! _ASMLANGUAGE */
 
 #include <zephyr/types.h>
+/*
+ * The following are externs symbols from the linker. This enables
+ * the dynamic k_mem_domain and k_mem_partition creation and alignment
+ * to the section produced in the linker.
+ */
+extern char _app_smem_start[];
+extern char _app_smem_end[];
+extern char _app_smem_size[];
+extern char _app_smem_rom_start[];
 
 #ifdef CONFIG_APPLICATION_MEMORY
 /* Memory owned by the application. Start and end will be aligned for memory

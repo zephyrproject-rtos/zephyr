@@ -641,7 +641,7 @@ class SizeCalculator:
                    "kobject_data", "mmu_tables", "app_pad", "priv_stacks",
                    "ccm_data", "usb_descriptor", "usb_data", "usb_bos_desc",
                    'log_backends_sections', 'log_dynamic_sections',
-                   'log_const_sections']
+                   'log_const_sections',"app_smem"]
     # These get copied into RAM only on non-XIP
     ro_sections = ["text", "ctors", "init_array", "reset", "object_access",
                    "rodata", "devconfig", "net_l2", "vector", "_bt_settings_area"]

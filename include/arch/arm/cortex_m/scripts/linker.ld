@@ -219,15 +219,29 @@ SECTIONS
 	}
 #endif
 
+#include <app_data_alignment.ld>
+	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
+	{
+		. = ALIGN(4);
+		_image_ram_start = .;
+		_app_smem_start = .;
+#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+		#include <app_smem.ld>
+#else
+		APP_SMEM_SECTION()
+#endif
+		_app_smem_end = .;
+		_app_smem_size = _app_smem_end - _app_smem_start;
+		. = ALIGN(4);
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #ifdef CONFIG_APPLICATION_MEMORY
 	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
 	{
 
-#include <app_data_alignment.ld>
-
 		__app_ram_start = .;
 		__app_data_ram_start = .;
-		_image_ram_start = .;
 		APP_INPUT_SECTION(.data)
 		APP_INPUT_SECTION(".data.*")
 		__app_data_ram_end = .;
@@ -271,9 +285,6 @@ SECTIONS
          */
         . = ALIGN(4);
 	__bss_start = .;
-#ifndef CONFIG_APPLICATION_MEMORY
-	_image_ram_start = .;
-#endif
 	__kernel_ram_start = .;
 
 	KERNEL_INPUT_SECTION(.bss)

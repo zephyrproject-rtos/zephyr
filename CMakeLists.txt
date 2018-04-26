@@ -632,6 +632,9 @@ endif() # CONFIG_APPLICATION_MEMORY
 # Declare MPU userspace dependencies before the linker scripts to make
 # sure the order of dependencies are met
 if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
+	if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APP_SHARED_MEM )
+    set(APP_SMEM_DEP app_smem_linker)
+  endif()
   if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APPLICATION_MEMORY)
     set(ALIGN_SIZING_DEP app_sizing_prebuilt linker_app_sizing_script)
   endif()
@@ -1008,7 +1011,32 @@ configure_file(
      $ENV{ZEPHYR_BASE}/include/arch/arm/cortex_m/scripts/app_data_alignment.ld
      ${PROJECT_BINARY_DIR}/include/generated/app_data_alignment.ld)
 
+configure_file(
+     $ENV{ZEPHYR_BASE}/include/arch/arm/cortex_m/scripts/app_smem.ld
+     ${PROJECT_BINARY_DIR}/include/generated/app_smem.ld)
+
 if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
+
+    if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APP_SHARED_MEM)
+        set(GEN_APP_SMEM $ENV{ZEPHYR_BASE}/scripts/gen_app_smem.py)
+        set(APP_SMEM_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem.ld")
+        set(OBJ_FILE_DIR "${PROJECT_BINARY_DIR}/../")
+
+        add_custom_target(
+          ${APP_SMEM_DEP} ALL
+          DEPENDS zephyr_prebuilt
+         )
+
+        add_custom_command(
+          TARGET ${APP_SMEM_DEP}
+          COMMAND ${PYTHON_EXECUTABLE} ${GEN_APP_SMEM}
+          -d ${OBJ_FILE_DIR}
+          -o ${APP_SMEM_LD}
+          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
+          COMMENT "Generating power of 2 aligned app_smem linker section"
+         )
+  endif()
+
 
   if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APPLICATION_MEMORY)
 
@@ -1038,7 +1066,7 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
     add_executable(       app_sizing_prebuilt misc/empty_file.c)
     target_link_libraries(app_sizing_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker_app_sizing.cmd ${zephyr_lnk})
     set_property(TARGET   app_sizing_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_app_sizing.cmd)
-    add_dependencies(     app_sizing_prebuilt linker_app_sizing_script offsets)
+    add_dependencies(     app_sizing_prebuilt linker_app_sizing_script offsets )
 
     add_custom_command(
       TARGET app_sizing_prebuilt
@@ -1119,7 +1147,7 @@ if(GKOF OR GKSF)
   add_executable(       kernel_elf misc/empty_file.c ${GKSF})
   target_link_libraries(kernel_elf ${GKOF} ${TOPT} ${PROJECT_BINARY_DIR}/linker_pass_final.cmd ${zephyr_lnk})
   set_property(TARGET   kernel_elf PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass_final.cmd)
-  add_dependencies(     kernel_elf ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} linker_pass_final_script)
+  add_dependencies(     kernel_elf ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} ${APP_SMEM_DEP} linker_pass_final_script)
 else()
   set(logical_target_for_zephyr_elf zephyr_prebuilt)
   # Use the prebuilt elf as the final elf since we don't have a
