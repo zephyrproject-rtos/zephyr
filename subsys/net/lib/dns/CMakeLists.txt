@@ -10,3 +10,7 @@ if(CONFIG_MDNS_RESPONDER)
   zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 endif()
 
+if(CONFIG_LLMNR_RESPONDER)
+  zephyr_library_sources(llmnr_responder.c)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
+endif()

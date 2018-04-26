@@ -348,6 +348,12 @@ int dns_copy_qname(u8_t *buf, u16_t *len, u16_t size,
  */
 int mdns_unpack_query_header(struct dns_msg_t *msg, u16_t *src_id);
 
+static inline int llmnr_unpack_query_header(struct dns_msg_t *msg,
+					    u16_t *src_id)
+{
+	return mdns_unpack_query_header(msg, src_id);
+}
+
 /**
  * @brief Unpacks the query.
  *
