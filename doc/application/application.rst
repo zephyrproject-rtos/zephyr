@@ -880,6 +880,9 @@ As long as :file:`zephyr/.config` exists and is up-to-date (is newer than the
 preference to producing a new merged configuration. This can be used during
 development, as described below in :ref:`override_kernel_conf`.
 
+For more information on Zephyr's Kconfig configuration scheme, see the
+:ref:`setting_configuration_values` section in the :ref:`board_porting_guide`.
+
 For information on available kernel configuration options, including
 inter-dependencies between options, see the :ref:`configuration`.
 
