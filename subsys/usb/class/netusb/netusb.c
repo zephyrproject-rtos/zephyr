@@ -68,6 +68,8 @@ void netusb_recv(struct net_pkt *pkt)
 
 static int netusb_connect_media(void)
 {
+	SYS_LOG_DBG("");
+
 	if (!netusb.func->connect_media) {
 		return -ENOTSUP;
 	}
@@ -77,6 +79,8 @@ static int netusb_connect_media(void)
 
 static int netusb_disconnect_media(void)
 {
+	SYS_LOG_DBG("");
+
 	if (!netusb.func->connect_media) {
 		return -ENOTSUP;
 	}
@@ -86,6 +90,8 @@ static int netusb_disconnect_media(void)
 
 static inline void netusb_status_interface(u8_t *iface)
 {
+	SYS_LOG_DBG("");
+
 	if (*iface != NETUSB_IFACE_IDX) {
 		return;
 	}
@@ -97,6 +103,8 @@ static inline void netusb_status_interface(u8_t *iface)
 
 static inline void netusb_status_disconnected(void)
 {
+	SYS_LOG_DBG("");
+
 	if (!netusb.enabled) {
 		return;
 	}
