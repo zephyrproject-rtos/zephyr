@@ -1,0 +1,55 @@
+# Kconfig.defconfig.series - ST Microelectronics STM32F7 MCU line
+#
+# Copyright (c) 2016 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_STM32F7X
+
+source "arch/arm/soc/st_stm32/stm32f7/Kconfig.defconfig.stm32f7*"
+
+config SOC_SERIES
+	default stm32f7
+
+if GPIO_STM32
+
+config GPIO_STM32_PORTD
+	default y
+
+config GPIO_STM32_PORTE
+	default y
+
+config GPIO_STM32_PORTH
+	default y
+
+endif # GPIO_STM32
+
+if USB
+
+config USB_DC_STM32
+	def_bool y
+
+if USB_CDC_ACM
+
+config CDC_ACM_INT_EP_ADDR
+	default 0x81
+
+config CDC_ACM_IN_EP_ADDR
+	default 0x82
+
+config CDC_ACM_OUT_EP_ADDR
+	default 0x03
+
+endif # USB_CDC_ACM
+
+endif #USB
+
+if I2C_STM32
+
+config I2C_STM32_V1
+	def_bool y
+
+endif # I2C_STM32
+
+endif # SOC_SERIES_STM32F7X

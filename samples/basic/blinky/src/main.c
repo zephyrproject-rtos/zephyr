@@ -8,7 +8,7 @@
 #include <board.h>
 #include <device.h>
 #include <gpio.h>
-
+#include <misc/printk.h>
 /* Change this if you have an LED connected to a custom port */
 #ifndef LED0_GPIO_CONTROLLER
 #define LED0_GPIO_CONTROLLER 	LED0_GPIO_PORT
@@ -36,5 +36,6 @@ void main(void)
 		gpio_pin_write(dev, LED, cnt % 2);
 		cnt++;
 		k_sleep(SLEEP_TIME);
+		printk("Hello World! %s",CONFIG_ARCH);
 	}
 }
