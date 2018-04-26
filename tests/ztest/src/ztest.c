@@ -6,18 +6,19 @@
 
 #include <ztest.h>
 #include <stdio.h>
+#include <app_memory/app_memdomain.h>
 #ifdef KERNEL
 __kernel static struct k_thread ztest_thread;
 #endif
 
-enum {
+_app_dmem(part0) enum {
 	TEST_PHASE_SETUP,
 	TEST_PHASE_TEST,
 	TEST_PHASE_TEARDOWN,
 	TEST_PHASE_FRAMEWORK
 } phase = TEST_PHASE_FRAMEWORK;
 
-static int test_status;
+_app_bmem(part0) static int test_status;
 
 
 static int cleanup_test(struct unit_test *test)
@@ -155,7 +156,7 @@ out:
 K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACKSIZE +
 		      CONFIG_TEST_EXTRA_STACKSIZE);
 
-static int test_result;
+_app_bmem(part0) static int test_result;
 __kernel static struct k_sem test_end_signal;
 
 void ztest_test_fail(void)

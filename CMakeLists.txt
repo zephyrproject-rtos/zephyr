@@ -536,6 +536,9 @@ endif() # CONFIG_APPLICATION_MEMORY
 # Declare MPU userspace dependencies before the linker scripts to make
 # sure the order of dependencies are met
 if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
+  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+    set(APP_SMEM_DEP app_smem_linker)
+  endif()
   if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APPLICATION_MEMORY)
     set(ALIGN_SIZING_DEP app_sizing_prebuilt linker_app_sizing_script)
   endif()
@@ -600,7 +603,7 @@ add_custom_command(
 add_custom_target(
   linker_script
   DEPENDS
-  ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP}
+  ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} ${APP_SMEM_DEP}
   linker.cmd
   offsets_h
   )
@@ -901,6 +904,33 @@ configure_file(
 
 if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
 
+  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+
+    construct_add_custom_command_for_linker_pass(app_smem_linker custom_command)
+
+    set(GEN_APP_SMEM $ENV{ZEPHYR_BASE}/scripts/gen_app_smem.py)
+    set(APP_SMEM_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem.ld")
+    set(OBJ_FILE_DIR "${PROJECT_BINARY_DIR}/../")
+
+    add_custom_target(
+      app_smem_linker
+      DEPENDS
+      ${APP_SMEM_LD}
+      )
+
+    add_custom_command(
+      OUTPUT ${APP_SMEM_LD}
+      PRE_LINK
+      COMMAND ${PYTHON_EXECUTABLE} ${GEN_APP_SMEM}
+      -d ${OBJ_FILE_DIR}
+      -o ${APP_SMEM_LD}
+      VERBATIM
+      DEPENDS ${GEN_APP_SMEM}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
+      COMMENT "Generating power of 2 aligned app_smem linker section"
+   )
+  endif()
+
   if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APPLICATION_MEMORY)
 
     construct_add_custom_command_for_linker_pass(linker_app_sizing custom_command)
@@ -913,6 +943,7 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
       DEPENDS
       linker_app_sizing.cmd
       offsets_h
+      ${APP_SMEM_DEP}
     )
 
     set_property(TARGET
@@ -929,7 +960,7 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
     add_executable(       app_sizing_prebuilt misc/empty_file.c)
     target_link_libraries(app_sizing_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker_app_sizing.cmd ${zephyr_lnk})
     set_property(TARGET   app_sizing_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_app_sizing.cmd)
-    add_dependencies(     app_sizing_prebuilt linker_app_sizing_script offsets)
+    add_dependencies(     app_sizing_prebuilt linker_app_sizing_script offsets ${APP_SMEM_LD})
 
     add_custom_command(
       TARGET app_sizing_prebuilt
@@ -954,6 +985,7 @@ if(CONFIG_ARM)
     ${ALIGN_SIZING_DEP}
     linker_priv_stacks.cmd
     offsets_h
+    ${APP_SMEM_DEP}
     )
 
   set_property(TARGET
