@@ -190,3 +190,5 @@ u16_t bt_hci_get_cmd_opcode(struct net_buf *buf);
 struct bt_keys;
 int bt_id_add(struct bt_keys *keys);
 int bt_id_del(struct bt_keys *keys);
+
+void bt_dev_show_info(void);
