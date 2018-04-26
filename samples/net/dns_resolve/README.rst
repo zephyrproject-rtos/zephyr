@@ -115,6 +115,24 @@ For testing mDNS, use Avahi script in net-tools project:
     $ cd net-tools
     $ ./avahi-daemon.sh
 
+
+LLMNR Responder
+===============
+
+If you want Zephyr to respond to a LLMNR DNS request that Windows host is
+sending, then following config options could be set:
+
+.. code-block:: console
+
+    CONFIG_NET_HOSTNAME_ENABLE=y
+    CONFIG_NET_HOSTNAME="zephyr-device"
+    CONFIG_DNS_RESOLVER=y
+    CONFIG_LLMNR_RESPONDER=y
+
+A Zephyr host needs a hostname assigned to it so that it can respond to a DNS
+query. Note that the hostname should not have any dots in it.
+
+
 QEMU x86
 ========
 
