@@ -25,6 +25,8 @@
 #include <net/coap.h>
 #include <net/coap_link_format.h>
 
+#include "net_private.h"
+
 #define MY_COAP_PORT 5683
 
 #define STACKSIZE 2000
@@ -131,24 +133,16 @@ static int well_known_core_get(struct coap_resource *resource,
 	return r;
 }
 
-static void payload_dump(const char *s, u8_t *data,
-		unsigned int len, unsigned int payloadlen)
+static void payload_dump(const char *s, struct net_buf *frag,
+			 u16_t offset, u16_t len)
 {
-	unsigned int i, loop_count;
+	printk("payload message = %s [%u]\n", s, len);
 
-	loop_count = len - payloadlen;
-
-	printk("payload message =  %s\n", s);
-	for (i = loop_count; i < len; i++) {
-		printk("%02x ", data[i]);
+	while (frag) {
+		_hexdump(frag->data + offset, frag->len - offset, 0);
+		frag = frag->frags;
+		offset = 0;
 	}
-
-	printk("\n");
-
-	for (i = loop_count; i < len; i++) {
-		printk(" %c ", data[i]);
-	}
-	printk("\npayloadlen = %u bytes\n", payloadlen);
 }
 
 static int test_del(struct coap_resource *resource,
@@ -224,17 +218,22 @@ static int test_put(struct coap_resource *resource,
 
 	NET_INFO("\n ****** test put method  *******\n");
 
-	payloadfrag = coap_packet_get_payload(request, &offset, &len);
-
-	if (payloadfrag == NULL && len == 0) {
-		NET_INFO("Packet without payload\n");
-	}
-
 	NET_INFO("*******\n");
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
-	payload_dump("put_payload", payloadfrag->data, payloadfrag->len, len);
 
+	payloadfrag = coap_packet_get_payload(request, &offset, &len);
+	if (!payloadfrag && len == 0xffff) {
+		NET_ERR("Invalid payload");
+		return -EINVAL;
+	} else if (!payloadfrag && !len) {
+		NET_INFO("Packet without payload\n");
+		goto next;
+	}
+
+	payload_dump("put_payload", payloadfrag, offset, len);
+
+next:
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);
 
@@ -290,18 +289,22 @@ static int test_post(struct coap_resource *resource,
 	tkl = coap_header_get_token(request, token);
 
 	NET_INFO("\n ****** test post method  *******\n");
-
-	payloadfrag = coap_packet_get_payload(request, &offset, &len);
-
-	if (payloadfrag == NULL && len == 0) {
-		NET_INFO("Packet without payload\n");
-	}
-
 	NET_INFO("*******\n");
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
-	payload_dump("post_payload", payloadfrag->data, payloadfrag->len, len);
 
+	payloadfrag = coap_packet_get_payload(request, &offset, &len);
+	if (!payloadfrag && len == 0xffff) {
+		NET_ERR("Invalid payload");
+		return -EINVAL;
+	} else if (!payloadfrag && !len) {
+		NET_INFO("Packet without payload\n");
+		goto next;
+	}
+
+	payload_dump("post_payload", payloadfrag, offset, len);
+
+next:
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);
 
