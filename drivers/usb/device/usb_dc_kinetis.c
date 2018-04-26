@@ -92,6 +92,8 @@ struct usb_ep_ctrl_data {
 		u16_t out_data1 : 1;
 		u16_t in_odd : 1;
 		u16_t out_odd : 1;
+		u16_t in_stalled : 1;
+		u16_t out_stalled : 1;
 	} status;
 	u16_t mps_in;
 	u16_t mps_out;
@@ -279,6 +281,13 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 		return -EINVAL;
 	}
 
+	if (ep_idx && (dev_data.ep_ctrl[ep_idx].status.in_enabled ||
+	    dev_data.ep_ctrl[ep_idx].status.out_enabled)) {
+		SYS_LOG_WRN("endpoint already configured");
+		return -EBUSY;
+	}
+
+
 	SYS_LOG_DBG("ep %x, mps %d, type %d",
 		    cfg->ep_addr,
 		    cfg->ep_mps,
@@ -355,14 +364,26 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 int usb_dc_ep_set_stall(const u8_t ep)
 {
 	u8_t ep_idx = EP_ADDR2IDX(ep);
+	u8_t bd_idx;
 
 	if (ep_idx > NUM_OF_EP_MAX) {
 		SYS_LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
 
-	SYS_LOG_DBG("ep %x, idx %d", ep_idx, ep);
-	USB0->ENDPOINT[ep_idx].ENDPT |= USB_ENDPT_EPSTALL_MASK;
+	SYS_LOG_DBG("ep %x, idx %d", ep, ep_idx);
+
+	if (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+		dev_data.ep_ctrl[ep_idx].status.out_stalled = 1;
+		bd_idx = get_bdt_idx(ep,
+				     ~dev_data.ep_ctrl[ep_idx].status.out_odd);
+	} else {
+		dev_data.ep_ctrl[ep_idx].status.in_stalled = 1;
+		bd_idx = get_bdt_idx(ep,
+				     dev_data.ep_ctrl[ep_idx].status.in_odd);
+	}
+
+	bdt[bd_idx].set.bd_ctrl = BD_STALL_MASK | BD_DTS_MASK | BD_OWN_MASK;
 
 	return 0;
 }
@@ -370,14 +391,35 @@ int usb_dc_ep_set_stall(const u8_t ep)
 int usb_dc_ep_clear_stall(const u8_t ep)
 {
 	u8_t ep_idx = EP_ADDR2IDX(ep);
+	u8_t bd_idx;
 
 	if (ep_idx > NUM_OF_EP_MAX) {
 		SYS_LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
 
-	SYS_LOG_DBG("ep %x, idx %d", ep_idx, ep);
+	SYS_LOG_DBG("ep %x, idx %d", ep, ep_idx);
 	USB0->ENDPOINT[ep_idx].ENDPT &= ~USB_ENDPT_EPSTALL_MASK;
+
+	if (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+		dev_data.ep_ctrl[ep_idx].status.out_stalled = 0;
+		dev_data.ep_ctrl[ep_idx].status.out_data1 = false;
+		bd_idx = get_bdt_idx(ep,
+				     ~dev_data.ep_ctrl[ep_idx].status.out_odd);
+		bdt[bd_idx].set.bd_ctrl = 0;
+		bdt[bd_idx].set.bd_ctrl = BD_DTS_MASK | BD_OWN_MASK;
+	} else {
+		dev_data.ep_ctrl[ep_idx].status.in_stalled = 0;
+		dev_data.ep_ctrl[ep_idx].status.in_data1 = false;
+		bd_idx = get_bdt_idx(ep,
+				     dev_data.ep_ctrl[ep_idx].status.in_odd);
+		bdt[bd_idx].set.bd_ctrl = 0;
+	}
+
+	/* Resume TX token processing, see USBx_CTL field descriptions */
+	if (ep == 0) {
+		USB0->CTL &= ~USB_CTL_TXSUSPENDTOKENBUSY_MASK;
+	}
 
 	return 0;
 }
@@ -397,8 +439,20 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
 	}
 
 	*stalled = 0;
-	if (USB0->ENDPOINT[ep_idx].ENDPT & USB_ENDPT_EPSTALL_MASK) {
-		*stalled = 1;
+	if (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+		*stalled = dev_data.ep_ctrl[ep_idx].status.out_stalled;
+	} else {
+		*stalled = dev_data.ep_ctrl[ep_idx].status.in_stalled;
+	}
+
+	if (SYS_LOG_LEVEL == SYS_LOG_LEVEL_INFO) {
+		u8_t bd_idx = get_bdt_idx(ep,
+				dev_data.ep_ctrl[ep_idx].status.in_odd);
+		bd_idx = bd_idx;
+		SYS_LOG_WRN("active bd ctrl: %x", bdt[bd_idx].set.bd_ctrl);
+		bd_idx = get_bdt_idx(ep,
+				~dev_data.ep_ctrl[ep_idx].status.in_odd);
+		SYS_LOG_WRN("next bd ctrl: %x", bdt[bd_idx].set.bd_ctrl);
 	}
 
 	return 0;
@@ -420,16 +474,24 @@ int usb_dc_ep_enable(const u8_t ep)
 		return -EINVAL;
 	}
 
+	if (ep_idx && (dev_data.ep_ctrl[ep_idx].status.in_enabled ||
+	    dev_data.ep_ctrl[ep_idx].status.out_enabled)) {
+		SYS_LOG_WRN("endpoint 0x%x already enabled", ep);
+		return -EBUSY;
+	}
+
 	if (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
 		bdt[idx_even].set.bd_ctrl = BD_DTS_MASK | BD_OWN_MASK;
 		bdt[idx_odd].set.bd_ctrl = 0;
 		dev_data.ep_ctrl[ep_idx].status.out_odd = 0;
+		dev_data.ep_ctrl[ep_idx].status.out_stalled = 0;
 		dev_data.ep_ctrl[ep_idx].status.out_data1 = false;
 		dev_data.ep_ctrl[ep_idx].status.out_enabled = true;
 	} else {
 		bdt[idx_even].bd_fields = 0;
 		bdt[idx_odd].bd_fields = 0;
 		dev_data.ep_ctrl[ep_idx].status.in_odd = 0;
+		dev_data.ep_ctrl[ep_idx].status.in_stalled = 0;
 		dev_data.ep_ctrl[ep_idx].status.in_data1 = false;
 		dev_data.ep_ctrl[ep_idx].status.in_enabled = true;
 	}
@@ -496,6 +558,11 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		return -EINVAL;
 	}
 
+	if (dev_data.ep_ctrl[ep_idx].status.in_stalled) {
+		SYS_LOG_WRN("endpoint is stalled");
+		return -EBUSY;
+	}
+
 	while (bdt[bd_idx].get.own) {
 		SYS_LOG_DBG("ep 0x%x is busy", ep);
 		k_yield();
@@ -552,6 +619,11 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	if (EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
 		SYS_LOG_ERR("Wrong endpoint direction");
 		return -EINVAL;
+	}
+
+	if (dev_data.ep_ctrl[ep_idx].status.out_stalled) {
+		SYS_LOG_WRN("endpoint is stalled");
+		return -EBUSY;
 	}
 
 	/* Allow to read 0 bytes */
@@ -629,7 +701,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 		bdt[bd_idx].set.bd_ctrl = BD_DTS_MASK | BD_OWN_MASK;
 	}
 
-	/* Resume TX toke processing, see USBx_CTL field descriptions */
+	/* Resume TX token processing, see USBx_CTL field descriptions */
 	if (ep_idx == 0) {
 		USB0->CTL &= ~USB_CTL_TXSUSPENDTOKENBUSY_MASK;
 	}
@@ -642,8 +714,10 @@ int usb_dc_ep_read_continue(u8_t ep)
 int usb_dc_ep_read(const u8_t ep, u8_t *const data,
 		   const u32_t max_data_len, u32_t *const read_bytes)
 {
-	if (usb_dc_ep_read_wait(ep, data, max_data_len, read_bytes) != 0) {
-		return -EINVAL;
+	int retval = usb_dc_ep_read_wait(ep, data, max_data_len, read_bytes);
+
+	if (retval) {
+		return retval;
 	}
 
 	if (!data && !max_data_len) {
@@ -745,9 +819,11 @@ static void usb_kinetis_isr_handler(void)
 	}
 
 	if (istatus & USB_ISTAT_STALL_MASK) {
-		if (istatus & USB_ISTAT_STALL_MASK) {
-			/* STALL handshake was sent, unset STALL for EP0. */
-			USB0->ENDPOINT[0].ENDPT &= ~USB_ENDPT_EPSTALL_MASK;
+		if (dev_data.ep_ctrl[0].status.out_stalled) {
+			usb_dc_ep_clear_stall(0);
+		}
+		if (dev_data.ep_ctrl[0].status.in_stalled) {
+			usb_dc_ep_clear_stall(0x80);
 		}
 	}
 
