@@ -158,13 +158,24 @@ SECTIONS
 	/* RAMABLE_REGION */
 	GROUP_START(RAMABLE_REGION)
 
+	/* APP SHARED MEMORY REGION */
+	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
+	{
+		_image_ram_start = .;
+		_app_smem_start = .;
+		APP_SMEM_SECTION()
+		MMU_PAGE_ALIGN
+		_app_smem_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+	_app_smem_size = _app_smem_end - _app_smem_start;
+	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #ifdef CONFIG_APPLICATION_MEMORY
 	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
 	{
 #ifndef CONFIG_XIP
 		MMU_PAGE_ALIGN
 #endif
-		_image_ram_start = .;
 		__app_ram_start = .;
 		__app_data_ram_start = .;
 		APP_INPUT_SECTION(.data)
@@ -213,9 +224,6 @@ SECTIONS
 	 * a multiple of 4 bytes.
 	 */
 	. = ALIGN(4);
-#ifndef CONFIG_APPLICATION_MEMORY
-	_image_ram_start = .;
-#endif
 	__kernel_ram_start = .;
 	__bss_start = .;
 

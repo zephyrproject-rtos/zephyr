@@ -6,19 +6,21 @@
 
 #include <ztest.h>
 #include <stdio.h>
+#include <app_memory/app_memdomain.h>
 #ifdef KERNEL
 __kernel static struct k_thread ztest_thread;
 #endif
 
-enum {
+/* APPDMEMP0 and APPBMEMP0 are used for the application shared memory test  */
+
+APPDMEMP0 enum {
 	TEST_PHASE_SETUP,
 	TEST_PHASE_TEST,
 	TEST_PHASE_TEARDOWN,
 	TEST_PHASE_FRAMEWORK
 } phase = TEST_PHASE_FRAMEWORK;
 
-static int test_status;
-
+APPBMEMP0 static int test_status;
 
 static int cleanup_test(struct unit_test *test)
 {
@@ -150,8 +152,9 @@ out:
 
 K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACKSIZE +
 		      CONFIG_TEST_EXTRA_STACKSIZE);
+/* APPBMEMP0 is used for the application shared memory test    */
+APPBMEMP0 static int test_result;
 
-static int test_result;
 __kernel static struct k_sem test_end_signal;
 
 void ztest_test_fail(void)

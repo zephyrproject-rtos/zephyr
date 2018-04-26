@@ -127,6 +127,23 @@ SECTIONS {
 
 	GROUP_START(RAMABLE_REGION)
 
+#include <app_data_alignment.ld>
+	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
+	{
+		MPU_MIN_SIZE_ALIGN
+		_image_ram_start = .;
+		_app_smem_start = .;
+#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+		#include <app_smem.ld>
+#else
+		APP_SMEM_SECTION()
+#endif
+		MPU_MIN_SIZE_ALIGN
+		_app_smem_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+	_app_smem_size = _app_smem_end - _app_smem_start;
+	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #ifdef CONFIG_APPLICATION_MEMORY
 	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
 	{

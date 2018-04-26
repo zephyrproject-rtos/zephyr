@@ -190,3 +190,4 @@ for execution after the kernel starts:
     memory_domain.rst
     mpu_stack_objects.rst
     mpu_userspace.rst
+    usermode_sharedmem.rst

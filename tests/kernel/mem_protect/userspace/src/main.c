@@ -12,6 +12,8 @@
 #include <kernel_structs.h>
 #include <string.h>
 #include <stdlib.h>
+#include <app_memory/app_memdomain.h>
+#include <misc/util.h>
 
 #if defined(CONFIG_ARC)
 #include <arch/arc/v2/mpu/arc_core_mpu.h>
@@ -26,8 +28,24 @@ K_SEM_DEFINE(uthread_end_sem, 0, 1);
 K_SEM_DEFINE(test_revoke_sem, 0, 1);
 K_SEM_DEFINE(expect_fault_sem, 0, 1);
 
-static volatile bool give_uthread_end_sem;
-static volatile bool expect_fault;
+/*
+ * Create partitions. part0 is for all variables to run
+ * ztest and this test suite. part1 and part2 are for
+ * subsequent test specifically for this new implementation.
+ */
+FOR_EACH(appmem_partition, part0, part1, part2);
+
+/*
+ * Create memory domains. dom0 is for the ztest and this
+ * test suite, specifically. dom1 is for a specific test
+ * in this test suite.
+ */
+FOR_EACH(appmem_domain, dom0, dom1);
+
+_app_dmem(part0) static volatile bool give_uthread_end_sem;
+_app_dmem(part0) bool mem_access_check;
+
+_app_bmem(part0) static volatile bool expect_fault;
 
 #if defined(CONFIG_X86)
 #define REASON_HW_EXCEPTION _NANO_ERR_CPU_EXCEPTION
@@ -41,7 +59,7 @@ static volatile bool expect_fault;
 #else
 #error "Not implemented for this architecture"
 #endif
-static volatile unsigned int expected_reason;
+_app_bmem(part0) static volatile unsigned int expected_reason;
 
 /*
  * We need something that can act as a memory barrier
@@ -243,15 +261,16 @@ static void write_kernel_data(void)
 /*
  * volatile to avoid compiler mischief.
  */
-volatile int *priv_stack_ptr;
+_app_dmem(part0) volatile int *priv_stack_ptr;
 #if defined(CONFIG_X86)
 /*
  * We can't inline this in the code or make it static
  * or local without triggering a warning on -Warray-bounds.
  */
-size_t size = MMU_PAGE_SIZE;
+_app_dmem(part0) size_t size = MMU_PAGE_SIZE;
 #elif defined(CONFIG_ARC)
-int32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE - STACK_GUARD_SIZE);
+_app_dmem(part0) s32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
+	STACK_GUARD_SIZE);
 #endif
 
 static void read_priv_stack(void)
@@ -297,7 +316,7 @@ static void write_priv_stack(void)
 }
 
 
-static struct k_sem sem;
+_app_bmem(part0) static struct k_sem sem;
 
 static void pass_user_object(void)
 {
@@ -462,7 +481,7 @@ static void user_mode_enter(void)
 
 /* Define and initialize pipe. */
 K_PIPE_DEFINE(kpipe, PIPE_LEN, BYTES_TO_READ_WRITE);
-static size_t bytes_written_read;
+_app_bmem(part0) static size_t bytes_written_read;
 
 static void write_kobject_user_pipe(void)
 {
@@ -496,6 +515,56 @@ static void read_kobject_user_pipe(void)
 		"did not fault");
 }
 
+/* Removed test for access_non_app_memory
+ * due to the APPLICATION_MEMORY variable
+ * defaulting to y, when enabled the
+ * section app_bss is made available to
+ * all threads breaking the test
+ */
+
+/* Create bool in part1 partitions */
+_app_dmem(part1) bool thread_bool;
+
+static void shared_mem_thread(void)
+{
+	/*
+	 * Try to access thread_bool_1 in denied memory
+	 * domain.
+	 */
+	expect_fault = true;
+	expected_reason = REASON_HW_EXCEPTION;
+	BARRIER();
+	thread_bool = false;
+	zassert_unreachable("Thread accessed global in other "
+		"memory domain\n");
+}
+
+static void access_other_memdomain(void)
+{
+	/*
+	 * Following tests the ability for a thread to access data
+	 * in a domain that it is denied.
+	 */
+
+	/* initialize domain dom1 with partition part2 */
+	appmem_init_domain_dom1(part2);
+	/* add partition part0 for test globals */
+	appmem_add_part_dom1(part0);
+	/* remove current thread from domain dom0 */
+	appmem_rm_thread_dom0(k_current_get());
+	/* initialize domain with current thread*/
+	appmem_add_thread_dom1(k_current_get());
+
+	/* Create user mode thread */
+	k_thread_create(&uthread_thread, uthread_stack, STACKSIZE,
+			(k_thread_entry_t)shared_mem_thread, NULL,
+			NULL, NULL, -1, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	k_thread_abort(k_current_get());
+
+}
+
+
 #if defined(CONFIG_ARM)
 extern u8_t *_k_priv_stack_find(void *obj);
 extern k_thread_stack_t ztest_thread_stack[];
@@ -503,6 +572,20 @@ extern k_thread_stack_t ztest_thread_stack[];
 
 void test_main(void)
 {
+	/* partitions must be initialized first */
+	FOR_EACH(appmem_init_part, part0, part1, part2);
+	/*
+	 * Next, the app_memory must be initialized in order to
+	 * calculate size of the dynamically created subsections.
+	 */
+	appmem_init_app_memory();
+	/* Domain is initialized with partition part0 */
+	appmem_init_domain_dom0(part0);
+	/* Next, the partition must be added to the domain */
+	appmem_add_part_dom0(part1);
+	/* Finally, the current thread is added to domain */
+	appmem_add_thread_dom0(k_current_get());
+
 #if defined(CONFIG_ARM)
 	priv_stack_ptr = (int *)_k_priv_stack_find(ztest_thread_stack);
 #endif
@@ -533,7 +616,9 @@ void test_main(void)
 			 ztest_user_unit_test(access_after_revoke),
 			 ztest_unit_test(user_mode_enter),
 			 ztest_user_unit_test(write_kobject_user_pipe),
-			 ztest_user_unit_test(read_kobject_user_pipe)
+			 ztest_user_unit_test(read_kobject_user_pipe),
+			 ztest_user_unit_test(read_kobject_user_pipe),
+			 ztest_unit_test(access_other_memdomain)
 		);
 	ztest_run_test_suite(userspace);
 }
