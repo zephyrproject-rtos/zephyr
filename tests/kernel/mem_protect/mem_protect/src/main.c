@@ -75,10 +75,8 @@ void test_main(void)
 	 ztest_unit_test(test_kobject_reinitialize_thread_kobj),
 	 ztest_unit_test(test_create_new_thread_from_user),
 	 ztest_unit_test(test_create_new_thread_from_user_no_access_stack),
-#ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	 ztest_unit_test(test_create_new_thread_from_user_invalid_stacksize),
 	 ztest_unit_test(test_create_new_thread_from_user_huge_stacksize),
-#endif
 	 ztest_unit_test(test_create_new_supervisor_thread_from_user),
 	 ztest_unit_test(test_create_new_essential_thread_from_user),
 	 ztest_unit_test(test_create_new_higher_prio_thread_from_user),
