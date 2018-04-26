@@ -30,7 +30,6 @@ config SOC_MKW24D5
 	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
-	select HAS_SEGGER_RTT
 
 config SOC_MKW40Z4
 	bool "SOC_MKW40Z4"
@@ -42,7 +41,6 @@ config SOC_MKW40Z4
 	select HAS_MCUX_TRNG
 	select HAS_OSC
 	select HAS_MCG
-	select HAS_SEGGER_RTT
 
 config SOC_MKW41Z4
 	bool "SOC_MKW41Z4"

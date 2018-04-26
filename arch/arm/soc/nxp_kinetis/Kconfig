@@ -7,6 +7,7 @@
 
 config SOC_FAMILY_KINETIS
 	bool
+	select HAS_SEGGER_RTT
 	# omit prompt to signify a "hidden" option
 	default n
 
