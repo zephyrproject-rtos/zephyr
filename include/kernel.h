@@ -2705,8 +2705,8 @@ static inline unsigned int _impl_k_sem_count_get(struct k_sem *sem)
 	struct k_sem name \
 		__in_section(_k_sem, static, name) = \
 		_K_SEM_INITIALIZER(name, initial_count, count_limit); \
-	BUILD_ASSERT((count_limit) != 0); \
-	BUILD_ASSERT((initial_count) <= (count_limit));
+	BUILD_ASSERT(((count_limit) != 0) && \
+		     ((initial_count) <= (count_limit)));
 
 /** @} */
 
