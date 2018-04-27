@@ -18,13 +18,28 @@
 #include "hci_core.h"
 #include "settings.h"
 
+/* Linker-defined symbols bound to the bt_settings_handler structs */
+extern const struct bt_settings_handler _bt_settings_start[];
+extern const struct bt_settings_handler _bt_settings_end[];
+
 static int set(int argc, char **argv, char *val)
 {
 	int len;
 
 	BT_DBG("argc %d argv[0] %s val %s", argc, argv[0], val);
 
-	if (argc != 1) {
+	if (argc > 1) {
+		const struct bt_settings_handler *h;
+
+		for (h = _bt_settings_start; h < _bt_settings_end; h++) {
+			if (!strcmp(argv[0], h->name)) {
+				argc--;
+				argv++;
+
+				return h->set(argc, argv, val);
+			}
+		}
+
 		return -ENOENT;
 	}
 
@@ -102,6 +117,8 @@ static void generate_irk(void)
 
 static int commit(void)
 {
+	const struct bt_settings_handler *h;
+
 	BT_DBG("");
 
 	if (!bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_ANY) ||
@@ -119,7 +136,32 @@ static int commit(void)
 	}
 #endif /* CONFIG_BT_PRIVACY */
 
+	for (h = _bt_settings_start; h < _bt_settings_end; h++) {
+		if (h->commit) {
+			h->commit();
+		}
+	}
+
 	bt_dev_show_info();
+
+	return 0;
+}
+
+static int export(int (*func)(const char *name, char *val),
+		  enum settings_export_tgt tgt)
+{
+	const struct bt_settings_handler *h;
+
+	if (tgt != SETTINGS_EXPORT_PERSIST) {
+		BT_WARN("Only persist target supported");
+		return -ENOTSUP;
+	}
+
+	for (h = _bt_settings_start; h < _bt_settings_end; h++) {
+		if (h->export) {
+			h->export(func);
+		}
+	}
 
 	return 0;
 }
@@ -128,6 +170,7 @@ static struct settings_handler bt_settings = {
 	.name = "bt",
 	.h_set = set,
 	.h_commit = commit,
+	.h_export = export,
 };
 
 int bt_settings_init(void)
