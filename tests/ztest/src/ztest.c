@@ -174,7 +174,7 @@ void ztest_test_pass(void)
 
 void ztest_test_skip(void)
 {
-	test_result = 2;
+	test_result = -2;
 	k_sem_give(&test_end_signal);
 	k_thread_abort(k_current_get());
 }
@@ -223,15 +223,17 @@ static int run_test(struct unit_test *test)
 	 * phase": this will corrupt the kernel ready queue.
 	 */
 	k_sem_take(&test_end_signal, K_FOREVER);
-	if (test_result == 1) {
+	if (test_result == -1) {
 		ret = TC_FAIL;
-		_TC_END_RESULT(ret, test->name);
 	}
 
-	if (test_result == 2) {
-		_TC_END_RESULT(TC_SKIP, test->name);
-	} else if (!test_result || !FAIL_FAST) {
+	if (!test_result || !FAIL_FAST) {
 		ret |= cleanup_test(test);
+	}
+
+	if (test_result == -2) {
+		_TC_END_RESULT(TC_SKIP, test->name);
+	} else {
 		_TC_END_RESULT(ret, test->name);
 	}
 
