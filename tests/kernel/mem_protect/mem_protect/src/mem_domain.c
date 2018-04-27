@@ -18,6 +18,7 @@ __kernel struct k_thread mem_domain_1_tid, mem_domain_2_tid, mem_domain_6_tid;
 /****************************************************************************/
 /* The mem domains needed.*/
 __kernel u8_t MEM_DOMAIN_ALIGNMENT mem_domain_buf[MEM_REGION_ALLOC];
+__kernel u8_t MEM_DOMAIN_ALIGNMENT mem_domain_buf1[MEM_REGION_ALLOC];
 
 /* partitions added later in the test cases.*/
 __kernel u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part1[MEM_REGION_ALLOC];
@@ -34,11 +35,27 @@ K_MEM_PARTITION_DEFINE(mem_domain_memory_partition,
 		       sizeof(mem_domain_buf),
 		       K_MEM_PARTITION_P_RW_U_RW);
 
+#ifdef CONFIG_X86
+K_MEM_PARTITION_DEFINE(mem_domain_memory_partition1,
+		mem_domain_buf1,
+		sizeof(mem_domain_buf1),
+		K_MEM_PARTITION_P_RO_U_RO);
+#else
+K_MEM_PARTITION_DEFINE(mem_domain_memory_partition1,
+		mem_domain_buf1,
+		sizeof(mem_domain_buf1),
+		K_MEM_PARTITION_P_RW_U_RO);
+#endif
+
 struct k_mem_partition *mem_domain_memory_partition_array[] = {
 	&mem_domain_memory_partition
 };
 
+struct k_mem_partition *mem_domain_memory_partition_array1[] = {
+	    &mem_domain_memory_partition1
+};
 __kernel struct k_mem_domain mem_domain_mem_domain;
+__kernel struct k_mem_domain mem_domain1;
 
 /****************************************************************************/
 /* Common init functions */
@@ -130,8 +147,92 @@ void test_mem_domain_invalid_access(void *p1, void *p2, void *p3)
 
 	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
 }
+/***************************************************************************/
+static void thread_entry_rw(void *p1, void *p2, void *p3)
+{
+	valid_fault = false;
+	USERSPACE_BARRIER;
+
+	u8_t read_data = mem_domain_buf[0];
+
+	/* Just to avoid compiler warnings */
+	(void) read_data;
+
+	/* Write to the partition */
+	mem_domain_buf[0] = 99;
+
+	ztest_test_pass();
+}
+/* Provide read/write access to a partition and verify access from a
+ * user thread added to it
+ */
+void test_mem_domain_partitions_user_rw(void)
+{
+	/* Initialize the memory domain */
+	k_mem_domain_init(&mem_domain_mem_domain,
+			MEM_PARTITION_INIT_NUM,
+			mem_domain_memory_partition_array);
+
+	k_mem_domain_add_thread(&mem_domain_mem_domain,
+			k_current_get());
+
+	k_thread_user_mode_enter(thread_entry_rw, NULL, NULL, NULL);
+}
+/****************************************************************************/
+static void user_thread_entry_ro(void *p1, void *p2, void *p3)
+{
+	valid_fault = true;
+	USERSPACE_BARRIER;
+
+	/* Read the partition */
+	u8_t read_data = mem_domain_buf1[0];
+
+	/* Just to avoid compiler warning */
+	(void) read_data;
+
+	/* Writing to the partition, this should generate fault
+	 * as the partition has read only permission for
+	 * user threads
+	 */
+	mem_domain_buf1[0] = 10;
+
+	zassert_unreachable("The user thread is allowed to access a read only"
+			" partition of a memory domain\n");
+}
+
+void test_mem_domain_partitions_user_ro(void)
+{
+	/* Initialize the memory domain containing the partition
+	 * with read only access privilege
+	 */
+	k_mem_domain_init(&mem_domain1,
+			MEM_PARTITION_INIT_NUM,
+			mem_domain_memory_partition_array1);
+
+	k_mem_domain_add_thread(&mem_domain1, k_current_get());
+
+	k_thread_user_mode_enter(user_thread_entry_ro, NULL, NULL, NULL);
+}
 
 /****************************************************************************/
+void test_mem_domain_partitions_supervisor_rw(void)
+{
+	k_mem_domain_init(&mem_domain_mem_domain,
+			 MEM_PARTITION_INIT_NUM,
+			 mem_domain_memory_partition_array1);
+
+	k_mem_domain_add_thread(&mem_domain_mem_domain, k_current_get());
+
+	/* Create a supervisor thread */
+	k_thread_create(&mem_domain_1_tid, mem_domain_1_stack,
+			MEM_DOMAIN_STACK_SIZE, (k_thread_entry_t)thread_entry_rw,
+			NULL, NULL, NULL, 10, K_INHERIT_PERMS, K_NO_WAIT);
+
+	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
+}
+
+/****************************************************************************/
+
 /* add partitions */
 K_MEM_PARTITION_DEFINE(mem_domain_tc3_part1_struct,
 		       mem_domain_tc3_part1,
@@ -401,4 +502,26 @@ void test_mem_domain_remove_thread(void *p1, void *p2, void *p3)
 	k_thread_user_mode_enter(mem_domain_for_user_tc7,
 				 NULL, NULL, NULL);
 
+}
+/****************************************************************************/
+/* Test k_mem_domain_destroy API */
+void test_mem_domain_destroy(void)
+{
+	k_mem_domain_init(&mem_domain1,
+			MEM_PARTITION_INIT_NUM,
+			mem_domain_memory_partition_array1);
+
+	k_mem_domain_add_thread(&mem_domain1, k_current_get());
+
+	k_tid_t tid = k_current_get();
+
+	if (tid->mem_domain_info.mem_domain == &mem_domain1) {
+		k_mem_domain_destroy(&mem_domain1);
+
+		zassert_true(tid->mem_domain_info.mem_domain !=
+				&mem_domain1, "The thread has reference to"
+				" memory domain which is already destroyed");
+	} else {
+		zassert_unreachable("k_mem_domain_add_thread() failed\n");
+	}
 }
