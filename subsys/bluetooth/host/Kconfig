@@ -148,15 +148,6 @@ config BT_SETTINGS
 	  which case it's more efficient to load all settings in one go,
 	  instead of each subsystem doing it independently.
 
-config BT_INTERNAL_STORAGE
-	bool "Use an internal persistent storage handler"
-	depends on FILE_SYSTEM
-	depends on PRINTK
-	help
-	  When selected the application doesn't need to register its own
-	  persistent storage handlers through the bt_storage API, rather
-	  an internal default handler is used for this.
-
 if BT_CONN
 
 if BT_HCI_ACL_FLOW_CONTROL

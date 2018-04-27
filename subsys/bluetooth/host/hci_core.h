@@ -166,7 +166,6 @@ struct bt_dev {
 };
 
 extern struct bt_dev bt_dev;
-extern const struct bt_storage *bt_storage;
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 extern const struct bt_conn_auth_cb *bt_auth;
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
@@ -190,5 +189,7 @@ u16_t bt_hci_get_cmd_opcode(struct net_buf *buf);
 struct bt_keys;
 int bt_id_add(struct bt_keys *keys);
 int bt_id_del(struct bt_keys *keys);
+
+int bt_set_static_addr(void);
 
 void bt_dev_show_info(void);

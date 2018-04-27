@@ -25,7 +25,6 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_vs.h>
 #include <bluetooth/hci_driver.h>
-#include <bluetooth/storage.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #include "common/log.h"
@@ -77,8 +76,6 @@ struct bt_dev bt_dev = {
 };
 
 static bt_ready_cb_t ready_cb;
-
-const struct bt_storage *bt_storage;
 
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
@@ -1272,6 +1269,53 @@ static int set_flow_control(void)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
 }
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
+static int bt_clear_all_pairings(void)
+{
+	bt_conn_disconnect_all();
+
+	if (IS_ENABLED(CONFIG_BT_SMP)) {
+		bt_keys_clear_all();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BREDR)) {
+		bt_keys_link_key_clear_addr(NULL);
+	}
+
+	return 0;
+}
+
+int bt_unpair(const bt_addr_le_t *addr)
+{
+	struct bt_conn *conn;
+
+	if (!addr || !bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+		return bt_clear_all_pairings();
+	}
+
+	conn = bt_conn_lookup_addr_le(addr);
+	if (conn) {
+		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		bt_conn_unref(conn);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BREDR)) {
+		/* LE Public may indicate BR/EDR as well */
+		if (addr->type == BT_ADDR_LE_PUBLIC) {
+			bt_keys_link_key_clear_addr(&addr->a);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SMP)) {
+		struct bt_keys *keys = bt_keys_find_addr(addr);
+		if (keys) {
+			bt_keys_clear(keys);
+		}
+	}
+
+	return 0;
+}
+
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_BREDR)
@@ -4050,19 +4094,29 @@ int bt_addr_le_create_static(bt_addr_le_t *addr)
 	return 0;
 }
 
-static int set_static_addr(void)
+int bt_set_static_addr(void)
 {
 	int err;
 
-	if (bt_storage) {
-		ssize_t ret;
-
-		ret = bt_storage->read(NULL, BT_STORAGE_ID_ADDR,
-				       &bt_dev.id_addr, sizeof(bt_dev.id_addr));
-		if (ret == sizeof(bt_dev.id_addr)) {
-			goto set_addr;
-		}
+	if (bt_dev.id_addr.type != BT_ADDR_LE_RANDOM ||
+	    (bt_dev.id_addr.a.val[5] & 0xc0) != 0xc0) {
+		BT_ERR("Only static random address supported as identity");
+		return -EINVAL;
 	}
+
+	err = set_random_address(&bt_dev.id_addr.a);
+	if (err) {
+		return err;
+	}
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_ID_STATIC_RANDOM);
+
+	return 0;
+}
+
+static int setup_id_addr(void)
+{
+	int err;
 
 #if defined(CONFIG_BT_HCI_VS_EXT)
 	/* Check for VS_Read_Static_Addresses support */
@@ -4082,7 +4136,7 @@ static int set_static_addr(void)
 			bt_dev.id_addr.type = BT_ADDR_LE_RANDOM;
 			bt_addr_copy(&bt_dev.id_addr.a, &rp->a[0].bdaddr);
 			net_buf_unref(rsp);
-			goto set_addr;
+			return bt_set_static_addr();
 		}
 
 		BT_WARN("No static addresses stored in controller");
@@ -4093,40 +4147,21 @@ static int set_static_addr(void)
 
 generate:
 #endif
-	BT_DBG("Generating new static random address");
 
-	err = bt_addr_le_create_static(&bt_dev.id_addr);
-	if (err) {
-		return err;
-	}
-
-	if (bt_storage) {
-		ssize_t ret;
-
-		ret = bt_storage->write(NULL, BT_STORAGE_ID_ADDR,
-					&bt_dev.id_addr,
-					sizeof(bt_dev.id_addr));
-		if (ret != sizeof(bt_dev.id_addr)) {
-			BT_ERR("Unable to store static address");
-		}
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		BT_DBG("Expecing identity addr to be handled by settings");
+		return 0;
 	} else {
-		BT_WARN("Using temporary static random address");
-	}
+		err = bt_addr_le_create_static(&bt_dev.id_addr);
+		if (err) {
+			return err;
+		}
 
-set_addr:
-	if (bt_dev.id_addr.type != BT_ADDR_LE_RANDOM ||
-	    (bt_dev.id_addr.a.val[5] & 0xc0) != 0xc0) {
-		BT_ERR("Only static random address supported as identity");
-		return -EINVAL;
-	}
+		BT_WARN("Using temporary static random address %s",
+			bt_addr_str(&bt_dev.id_addr.a));
 
-	err = set_random_address(&bt_dev.id_addr.a);
-	if (err) {
-		return err;
+		return bt_set_static_addr();
 	}
-
-	atomic_set_bit(bt_dev.flags, BT_DEV_ID_STATIC_RANDOM);
-	return 0;
 }
 
 #if defined(CONFIG_BT_DEBUG)
@@ -4314,7 +4349,7 @@ static int hci_init(void)
 	if (!bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_ANY) ||
 	    !bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_NONE)) {
 		BT_DBG("No public address. Trying to set static random.");
-		err = set_static_addr();
+		err = setup_id_addr();
 		if (err) {
 			BT_ERR("Unable to set identity address");
 			return err;
@@ -4429,30 +4464,16 @@ int bt_hci_driver_register(const struct bt_hci_driver *drv)
 #if defined(CONFIG_BT_PRIVACY)
 static int irk_init(void)
 {
-	ssize_t err;
-
-	if (bt_storage) {
-		err = bt_storage->read(NULL, BT_STORAGE_LOCAL_IRK, &bt_dev.irk,
-				       sizeof(bt_dev.irk));
-		if (err == sizeof(bt_dev.irk)) {
-			return 0;
-		}
-	}
-
-	BT_DBG("Generating new IRK");
-
-	err = bt_rand(bt_dev.irk, sizeof(bt_dev.irk));
-	if (err) {
-		return err;
-	}
-
-	if (bt_storage) {
-		err = bt_storage->write(NULL, BT_STORAGE_LOCAL_IRK, bt_dev.irk,
-					sizeof(bt_dev.irk));
-		if (err != sizeof(bt_dev.irk)) {
-			BT_ERR("Unable to store IRK");
-		}
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		BT_DBG("Expecting settings to handle local IRK");
 	} else {
+		int err;
+
+		err = bt_rand(bt_dev.irk, sizeof(bt_dev.irk));
+		if (err) {
+			return err;
+		}
+
 		BT_WARN("Using temporary IRK");
 	}
 
@@ -5132,68 +5153,6 @@ int bt_br_set_discoverable(bool enable)
 	}
 }
 #endif /* CONFIG_BT_BREDR */
-
-void bt_storage_register(const struct bt_storage *storage)
-{
-	bt_storage = storage;
-}
-
-static int bt_storage_clear_all(void)
-{
-	if (IS_ENABLED(CONFIG_BT_CONN)) {
-		bt_conn_disconnect_all();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_SMP)) {
-		bt_keys_clear_all();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_BREDR)) {
-		bt_keys_link_key_clear_addr(NULL);
-	}
-
-	if (bt_storage) {
-		return bt_storage->clear(NULL);
-	}
-
-	return 0;
-}
-
-int bt_storage_clear(const bt_addr_le_t *addr)
-{
-	if (!addr) {
-		return bt_storage_clear_all();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_CONN)) {
-		struct bt_conn *conn = bt_conn_lookup_addr_le(addr);
-		if (conn) {
-			bt_conn_disconnect(conn,
-					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-			bt_conn_unref(conn);
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_BT_BREDR)) {
-		/* LE Public may indicate BR/EDR as well */
-		if (addr->type == BT_ADDR_LE_PUBLIC) {
-			bt_keys_link_key_clear_addr(&addr->a);
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_BT_SMP)) {
-		struct bt_keys *keys = bt_keys_find_addr(addr);
-		if (keys) {
-			bt_keys_clear(keys);
-		}
-	}
-
-	if (bt_storage) {
-		return bt_storage->clear(addr);
-	}
-
-	return 0;
-}
 
 u16_t bt_hci_get_cmd_opcode(struct net_buf *buf)
 {

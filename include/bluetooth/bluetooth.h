@@ -474,6 +474,15 @@ int bt_br_set_discoverable(bool enable);
  */
 int bt_br_set_connectable(bool enable);
 
+/** Clear pairing information.
+  *
+  * @param addr  Remote address, NULL or BT_ADDR_LE_ANY to clear all remote
+  *              devices.
+  *
+  * @return 0 on success or negative error value on failure.
+  */
+int bt_unpair(const bt_addr_le_t *addr);
+
 /**
  * @}
  */
