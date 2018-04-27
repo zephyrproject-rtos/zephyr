@@ -120,6 +120,8 @@
  */
 #define USB_STRING_DESCRIPTOR_LENGTH(s)	(sizeof(s) * 2)
 
+int usb_get_str_descriptor_idx(void *ptr);
+
 u8_t *usb_get_device_descriptor(void);
 
 #endif /* __USB_DESCRIPTOR_H__ */
