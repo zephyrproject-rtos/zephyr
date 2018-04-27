@@ -19,6 +19,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include "list_gen.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,8 +55,7 @@ typedef struct _slist sys_slist_t;
  * @param __sn A sys_snode_t pointer to peek each node of the list
  */
 #define SYS_SLIST_FOR_EACH_NODE(__sl, __sn)				\
-	for (__sn = sys_slist_peek_head(__sl); __sn;			\
-	     __sn = sys_slist_peek_next(__sn))
+	Z_GENLIST_FOR_EACH_NODE(slist, __sl, __sn)
 
 /**
  * @brief Provide the primitive to iterate on a list, from a node in the list
@@ -78,10 +78,7 @@ typedef struct _slist sys_slist_t;
  *             it contains the starting node, or NULL to start from the head
  */
 #define SYS_SLIST_ITERATE_FROM_NODE(__sl, __sn)				\
-	for (__sn = __sn ? sys_slist_peek_next_no_check(__sn)		\
-			 : sys_slist_peek_head(__sl);			\
-	     __sn;							\
-	     __sn = sys_slist_peek_next(__sn))
+	Z_GENLIST_ITERATE_FROM_NODE(slist, __sl, __sn)
 
 /**
  * @brief Provide the primitive to safely iterate on a list
@@ -100,10 +97,7 @@ typedef struct _slist sys_slist_t;
  * @param __sns A sys_snode_t pointer for the loop to run safely
  */
 #define SYS_SLIST_FOR_EACH_NODE_SAFE(__sl, __sn, __sns)			\
-	for (__sn = sys_slist_peek_head(__sl),				\
-		     __sns = sys_slist_peek_next(__sn);			\
-	     __sn; __sn = __sns,					\
-		     __sns = sys_slist_peek_next(__sn))
+	Z_GENLIST_FOR_EACH_NODE_SAFE(slist, __sl, __sn, __sns)
 
 /*
  * @brief Provide the primitive to resolve the container of a list node
@@ -114,7 +108,8 @@ typedef struct _slist sys_slist_t;
  * @param __n The field name of sys_node_t within the container struct
  */
 #define SYS_SLIST_CONTAINER(__ln, __cn, __n) \
-	((__ln) ? CONTAINER_OF((__ln), __typeof__(*(__cn)), __n) : NULL)
+	Z_GENLIST_CONTAINER(__ln, __cn, __n)
+
 /*
  * @brief Provide the primitive to peek container of the list head
  *
@@ -123,7 +118,7 @@ typedef struct _slist sys_slist_t;
  * @param __n The field name of sys_node_t within the container struct
  */
 #define SYS_SLIST_PEEK_HEAD_CONTAINER(__sl, __cn, __n) \
-	SYS_SLIST_CONTAINER(sys_slist_peek_head(__sl), __cn, __n)
+	Z_GENLIST_PEEK_HEAD_CONTAINER(slist, __sl, __cn, __n)
 
 /*
  * @brief Provide the primitive to peek container of the list tail
@@ -133,7 +128,7 @@ typedef struct _slist sys_slist_t;
  * @param __n The field name of sys_node_t within the container struct
  */
 #define SYS_SLIST_PEEK_TAIL_CONTAINER(__sl, __cn, __n) \
-	SYS_SLIST_CONTAINER(sys_slist_peek_tail(__sl), __cn, __n)
+	Z_GENLIST_PEEK_TAIL_CONTAINER(slist, __sl, __cn, __n)
 
 /*
  * @brief Provide the primitive to peek the next container
@@ -141,10 +136,8 @@ typedef struct _slist sys_slist_t;
  * @param __cn Container struct type pointer
  * @param __n The field name of sys_node_t within the container struct
  */
-
 #define SYS_SLIST_PEEK_NEXT_CONTAINER(__cn, __n) \
-	((__cn) ? SYS_SLIST_CONTAINER(sys_slist_peek_next(&((__cn)->__n)), \
-				      __cn, __n) : NULL)
+	Z_GENLIST_PEEK_NEXT_CONTAINER(slist, __cn, __n)
 
 /**
  * @brief Provide the primitive to iterate on a list under a container
@@ -161,8 +154,7 @@ typedef struct _slist sys_slist_t;
  * @param __n The field name of sys_node_t within the container struct
  */
 #define SYS_SLIST_FOR_EACH_CONTAINER(__sl, __cn, __n)			\
-	for (__cn = SYS_SLIST_PEEK_HEAD_CONTAINER(__sl, __cn, __n); __cn; \
-	     __cn = SYS_SLIST_PEEK_NEXT_CONTAINER(__cn, __n))
+	Z_GENLIST_FOR_EACH_CONTAINER(slist, __sl, __cn, __n)
 
 /**
  * @brief Provide the primitive to safely iterate on a list under a container
@@ -180,9 +172,15 @@ typedef struct _slist sys_slist_t;
  * @param __n The field name of sys_node_t within the container struct
  */
 #define SYS_SLIST_FOR_EACH_CONTAINER_SAFE(__sl, __cn, __cns, __n)	\
-	for (__cn = SYS_SLIST_PEEK_HEAD_CONTAINER(__sl, __cn, __n),	\
-	     __cns = SYS_SLIST_PEEK_NEXT_CONTAINER(__cn, __n); __cn;	\
-	     __cn = __cns, __cns = SYS_SLIST_PEEK_NEXT_CONTAINER(__cn, __n))
+	Z_GENLIST_FOR_EACH_CONTAINER_SAFE(slist, __sl, __cn, __cns, __n)
+
+
+/*
+ * Required function definitions for the list_gen.h interface
+ *
+ * These are the only functions that do not treat the list/node pointers
+ * as completely opaque types.
+ */
 
 /**
  * @brief Initialize a list
@@ -197,16 +195,24 @@ static inline void sys_slist_init(sys_slist_t *list)
 
 #define SYS_SLIST_STATIC_INIT(ptr_to_list) {NULL, NULL}
 
-/**
- * @brief Test if the given list is empty
- *
- * @param list A pointer on the list to test
- *
- * @return a boolean, true if it's empty, false otherwise
- */
-static inline bool sys_slist_is_empty(sys_slist_t *list)
+static inline sys_snode_t *sys_snode_next_peek(sys_snode_t *node)
 {
-	return (!list->head);
+	return node->next;
+}
+
+static inline void sys_snode_next_set(sys_snode_t *parent, sys_snode_t *child)
+{
+	parent->next = child;
+}
+
+static inline void sys_slist_head_set(sys_slist_t *list, sys_snode_t *node)
+{
+	list->head = node;
+}
+
+static inline void sys_slist_tail_set(sys_slist_t *list, sys_snode_t *node)
+{
+	list->tail = node;
 }
 
 /**
@@ -233,6 +239,21 @@ static inline sys_snode_t *sys_slist_peek_tail(sys_slist_t *list)
 	return list->tail;
 }
 
+/*
+ * Derived, generated APIs
+ */
+
+/**
+ * @brief Test if the given list is empty
+ *
+ * @param list A pointer on the list to test
+ *
+ * @return a boolean, true if it's empty, false otherwise
+ */
+static inline bool sys_slist_is_empty(sys_slist_t *list);
+
+Z_GENLIST_IS_EMPTY(slist);
+
 /**
  * @brief Peek the next node from current node, node is not NULL
  *
@@ -242,10 +263,9 @@ static inline sys_snode_t *sys_slist_peek_tail(sys_slist_t *list)
  *
  * @return a pointer on the next node (or NULL if none)
  */
-static inline sys_snode_t *sys_slist_peek_next_no_check(sys_snode_t *node)
-{
-	return node->next;
-}
+static inline sys_snode_t *sys_slist_peek_next_no_check(sys_snode_t *node);
+
+Z_GENLIST_PEEK_NEXT_NO_CHECK(slist, snode);
 
 /**
  * @brief Peek the next node from current node
@@ -254,10 +274,9 @@ static inline sys_snode_t *sys_slist_peek_next_no_check(sys_snode_t *node)
  *
  * @return a pointer on the next node (or NULL if none)
  */
-static inline sys_snode_t *sys_slist_peek_next(sys_snode_t *node)
-{
-	return node ? sys_slist_peek_next_no_check(node) : NULL;
-}
+static inline sys_snode_t *sys_slist_peek_next(sys_snode_t *node);
+
+Z_GENLIST_PEEK_NEXT(slist, snode);
 
 /**
  * @brief Prepend a node to the given list
@@ -268,15 +287,9 @@ static inline sys_snode_t *sys_slist_peek_next(sys_snode_t *node)
  * @param node A pointer on the node to prepend
  */
 static inline void sys_slist_prepend(sys_slist_t *list,
-				     sys_snode_t *node)
-{
-	node->next = list->head;
-	list->head = node;
+				     sys_snode_t *node);
 
-	if (!list->tail) {
-		list->tail = list->head;
-	}
-}
+Z_GENLIST_PREPEND(slist, snode);
 
 /**
  * @brief Append a node to the given list
@@ -287,18 +300,9 @@ static inline void sys_slist_prepend(sys_slist_t *list,
  * @param node A pointer on the node to append
  */
 static inline void sys_slist_append(sys_slist_t *list,
-				    sys_snode_t *node)
-{
-	node->next = NULL;
+				    sys_snode_t *node);
 
-	if (!list->tail) {
-		list->tail = node;
-		list->head = node;
-	} else {
-		list->tail->next = node;
-		list->tail = node;
-	}
-}
+Z_GENLIST_APPEND(slist, snode);
 
 /**
  * @brief Append a list to the given list
@@ -307,21 +311,16 @@ static inline void sys_slist_append(sys_slist_t *list,
  * the pointer to the next node as the first element of a node, to @a list.
  * This and other sys_slist_*() functions are not thread safe.
  *
+ * FIXME: Why are the element parameters void *?
+ *
  * @param list A pointer on the list to affect
  * @param head A pointer to the first element of the list to append
  * @param tail A pointer to the last element of the list to append
  */
 static inline void sys_slist_append_list(sys_slist_t *list,
-					 void *head, void *tail)
-{
-	if (!list->tail) {
-		list->head = (sys_snode_t *)head;
-		list->tail = (sys_snode_t *)tail;
-	} else {
-		list->tail->next = (sys_snode_t *)head;
-		list->tail = (sys_snode_t *)tail;
-	}
-}
+					 void *head, void *tail);
+
+Z_GENLIST_APPEND_LIST(slist, snode);
 
 /**
  * @brief merge two slists, appending the second one to the first
@@ -333,12 +332,9 @@ static inline void sys_slist_append_list(sys_slist_t *list,
  * @param list_to_append A pointer to the list to append.
  */
 static inline void sys_slist_merge_slist(sys_slist_t *list,
-					 sys_slist_t *list_to_append)
-{
-	sys_slist_append_list(list, list_to_append->head,
-				    list_to_append->tail);
-	sys_slist_init(list_to_append);
-}
+					 sys_slist_t *list_to_append);
+
+Z_GENLIST_MERGE_LIST(slist);
 
 /**
  * @brief Insert a node to the given list
@@ -351,17 +347,9 @@ static inline void sys_slist_merge_slist(sys_slist_t *list,
  */
 static inline void sys_slist_insert(sys_slist_t *list,
 				    sys_snode_t *prev,
-				    sys_snode_t *node)
-{
-	if (!prev) {
-		sys_slist_prepend(list, node);
-	} else if (!prev->next) {
-		sys_slist_append(list, node);
-	} else {
-		node->next = prev->next;
-		prev->next = node;
-	}
-}
+				    sys_snode_t *node);
+
+Z_GENLIST_INSERT(slist, snode);
 
 /**
  * @brief Fetch and remove the first node of the given list
@@ -373,17 +361,9 @@ static inline void sys_slist_insert(sys_slist_t *list,
  *
  * @return A pointer to the first node of the list
  */
-static inline sys_snode_t *sys_slist_get_not_empty(sys_slist_t *list)
-{
-	sys_snode_t *node = list->head;
+static inline sys_snode_t *sys_slist_get_not_empty(sys_slist_t *list);
 
-	list->head = node->next;
-	if (list->tail == node) {
-		list->tail = list->head;
-	}
-
-	return node;
-}
+Z_GENLIST_GET_NOT_EMPTY(slist, snode);
 
 /**
  * @brief Fetch and remove the first node of the given list
@@ -394,10 +374,9 @@ static inline sys_snode_t *sys_slist_get_not_empty(sys_slist_t *list)
  *
  * @return A pointer to the first node of the list (or NULL if empty)
  */
-static inline sys_snode_t *sys_slist_get(sys_slist_t *list)
-{
-	return sys_slist_is_empty(list) ? NULL : sys_slist_get_not_empty(list);
-}
+static inline sys_snode_t *sys_slist_get(sys_slist_t *list);
+
+Z_GENLIST_GET(slist, snode);
 
 /**
  * @brief Remove a node
@@ -411,26 +390,9 @@ static inline sys_snode_t *sys_slist_get(sys_slist_t *list)
  */
 static inline void sys_slist_remove(sys_slist_t *list,
 				    sys_snode_t *prev_node,
-				    sys_snode_t *node)
-{
-	if (!prev_node) {
-		list->head = node->next;
+				    sys_snode_t *node);
 
-		/* Was node also the tail? */
-		if (list->tail == node) {
-			list->tail = list->head;
-		}
-	} else {
-		prev_node->next = node->next;
-
-		/* Was node the tail? */
-		if (list->tail == node) {
-			list->tail = prev_node;
-		}
-	}
-
-	node->next = NULL;
-}
+Z_GENLIST_REMOVE(slist, snode);
 
 /**
  * @brief Find and remove a node from a list
@@ -443,23 +405,9 @@ static inline void sys_slist_remove(sys_slist_t *list,
  * @return true if node was removed
  */
 static inline bool sys_slist_find_and_remove(sys_slist_t *list,
-					     sys_snode_t *node)
-{
-	sys_snode_t *prev = NULL;
-	sys_snode_t *test;
+					     sys_snode_t *node);
 
-	SYS_SLIST_FOR_EACH_NODE(list, test) {
-		if (test == node) {
-			sys_slist_remove(list, prev, node);
-			return true;
-		}
-
-		prev = test;
-	}
-
-	return false;
-}
-
+Z_GENLIST_FIND_AND_REMOVE(slist, snode);
 
 #ifdef __cplusplus
 }
