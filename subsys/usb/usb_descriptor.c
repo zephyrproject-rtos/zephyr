@@ -175,6 +175,37 @@ static void ascii7_to_utf16le(void *descriptor)
 }
 
 /*
+ * Look for the bString that has the address equal to the ptr and
+ * return its index. Use it to determine the index of the bString and
+ * assign it to the interfaces iInterface variable.
+ */
+int usb_get_str_descriptor_idx(void *ptr)
+{
+	struct usb_desc_header *head = __usb_descriptor_start;
+	struct usb_string_descriptor *str = ptr;
+	int str_descr_idx = 0;
+
+	while (head->bLength != 0) {
+		switch (head->bDescriptorType) {
+		case USB_STRING_DESC:
+			if (head == (struct usb_desc_header *)str) {
+				return str_descr_idx;
+			}
+
+			str_descr_idx += 1;
+			break;
+		default:
+			break;
+		}
+
+		/* move to next descriptor */
+		head = (struct usb_desc_header *)((u8_t *)head + head->bLength);
+	}
+
+	return 0;
+}
+
+/*
  * Validate endpoint address and Update the endpoint descriptors at runtime,
  * the result depends on the capabilities of the driver and the number and
  * type of endpoints.
@@ -293,6 +324,11 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 					SYS_LOG_ERR("There is no usb_cfg_data "
 						    "for %p", head);
 					return -1;
+				}
+
+				if (cfg_data->interface_config) {
+					cfg_data->interface_config(
+							numof_ifaces);
 				}
 			}
 
