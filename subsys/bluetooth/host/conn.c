@@ -785,8 +785,8 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 	}
 }
 
-int bt_conn_le_start_encryption(struct bt_conn *conn, u64_t rand,
-				u16_t ediv, const u8_t *ltk, size_t len)
+int bt_conn_le_start_encryption(struct bt_conn *conn, u8_t rand[8], u16_t ediv,
+				const u8_t *ltk, size_t len)
 {
 	struct bt_hci_cp_le_start_encryption *cp;
 	struct net_buf *buf;
@@ -798,7 +798,7 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, u64_t rand,
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
-	cp->rand = rand;
+	memcpy(&cp->rand, rand, sizeof(cp->rand));
 	cp->ediv = ediv;
 
 	memcpy(cp->ltk, ltk, len);
@@ -906,14 +906,12 @@ static int start_security(struct bt_conn *conn)
 		}
 
 		if (conn->required_sec_level > BT_SECURITY_MEDIUM &&
-		    !atomic_test_bit(conn->le.keys->flags,
-				     BT_KEYS_AUTHENTICATED)) {
+		    !(conn->le.keys->flags & BT_KEYS_AUTHENTICATED)) {
 			return bt_smp_send_pairing_req(conn);
 		}
 
 		if (conn->required_sec_level > BT_SECURITY_HIGH &&
-		    !atomic_test_bit(conn->le.keys->flags,
-				     BT_KEYS_AUTHENTICATED) &&
+		    !(conn->le.keys->flags & BT_KEYS_AUTHENTICATED) &&
 		    !(conn->le.keys->keys & BT_KEYS_LTK_P256)) {
 			return bt_smp_send_pairing_req(conn);
 		}

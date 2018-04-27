@@ -732,12 +732,14 @@ static void update_conn_param(struct bt_conn *conn)
 #if defined(CONFIG_BT_SMP)
 static void update_pending_id(struct bt_keys *keys)
 {
-	if (atomic_test_and_clear_bit(keys->flags, BT_KEYS_ID_PENDING_ADD)) {
+	if (keys->flags & BT_KEYS_ID_PENDING_ADD) {
+		keys->flags &= ~BT_KEYS_ID_PENDING_ADD;
 		bt_id_add(keys);
 		return;
 	}
 
-	if (atomic_test_and_clear_bit(keys->flags, BT_KEYS_ID_PENDING_DEL)) {
+	if (keys->flags & BT_KEYS_ID_PENDING_DEL) {
+		keys->flags &= ~BT_KEYS_ID_PENDING_DEL;
 		bt_id_del(keys);
 		return;
 	}
@@ -1459,8 +1461,7 @@ static void update_sec_level_br(struct bt_conn *conn)
 	}
 
 	if (conn->br.link_key) {
-		if (atomic_test_bit(conn->br.link_key->flags,
-				    BT_LINK_KEY_AUTHENTICATED)) {
+		if (conn->br.link_key->flags & BT_LINK_KEY_AUTHENTICATED) {
 			if (conn->encrypt == 0x02) {
 				conn->sec_level = BT_SECURITY_FIPS;
 			} else {
@@ -1587,7 +1588,7 @@ static void link_key_notify(struct net_buf *buf)
 	}
 
 	/* clear any old Link Key flags */
-	atomic_set(conn->br.link_key->flags, 0);
+	conn->br.link_key->flags = 0;
 
 	switch (evt->key_type) {
 	case BT_LK_COMBINATION:
@@ -1597,14 +1598,12 @@ static void link_key_notify(struct net_buf *buf)
 		 */
 		if (atomic_test_and_clear_bit(conn->flags,
 					      BT_CONN_BR_LEGACY_SECURE)) {
-			atomic_set_bit(conn->br.link_key->flags,
-				       BT_LINK_KEY_AUTHENTICATED);
+			conn->br.link_key->flags |= BT_LINK_KEY_AUTHENTICATED;
 		}
 		memcpy(conn->br.link_key->val, evt->link_key, 16);
 		break;
 	case BT_LK_AUTH_COMBINATION_P192:
-		atomic_set_bit(conn->br.link_key->flags,
-			       BT_LINK_KEY_AUTHENTICATED);
+		conn->br.link_key->flags |= BT_LINK_KEY_AUTHENTICATED;
 		/* fall through */
 	case BT_LK_UNAUTH_COMBINATION_P192:
 		/* Mark no-bond so that link-key is removed on disconnection */
@@ -1615,11 +1614,10 @@ static void link_key_notify(struct net_buf *buf)
 		memcpy(conn->br.link_key->val, evt->link_key, 16);
 		break;
 	case BT_LK_AUTH_COMBINATION_P256:
-		atomic_set_bit(conn->br.link_key->flags,
-			       BT_LINK_KEY_AUTHENTICATED);
+		conn->br.link_key->flags |= BT_LINK_KEY_AUTHENTICATED;
 		/* fall through */
 	case BT_LK_UNAUTH_COMBINATION_P256:
-		atomic_set_bit(conn->br.link_key->flags, BT_LINK_KEY_SC);
+		conn->br.link_key->flags |= BT_LINK_KEY_SC;
 
 		/* Mark no-bond so that link-key is removed on disconnection */
 		if (bt_conn_ssp_get_auth(conn) < BT_HCI_DEDICATED_BONDING) {
@@ -1703,8 +1701,7 @@ static void link_key_req(struct net_buf *buf)
 	 * Enforce regenerate by controller stronger link key since found one
 	 * in database not covers requested security level.
 	 */
-	if (!atomic_test_bit(conn->br.link_key->flags,
-			     BT_LINK_KEY_AUTHENTICATED) &&
+	if (!(conn->br.link_key->flags & BT_LINK_KEY_AUTHENTICATED) &&
 	    conn->required_sec_level > BT_SECURITY_MEDIUM) {
 		link_key_neg_reply(&evt->bdaddr);
 		bt_conn_unref(conn);
@@ -2431,7 +2428,7 @@ int bt_id_add(struct bt_keys *keys)
 	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
 	if (conn) {
 		atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
-		atomic_set_bit(keys->flags, BT_KEYS_ID_PENDING_ADD);
+		keys->flags |= BT_KEYS_ID_PENDING_ADD;
 		bt_conn_unref(conn);
 		return -EAGAIN;
 	}
@@ -2533,7 +2530,7 @@ int bt_id_del(struct bt_keys *keys)
 	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
 	if (conn) {
 		atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
-		atomic_set_bit(keys->flags, BT_KEYS_ID_PENDING_DEL);
+		keys->flags |= BT_KEYS_ID_PENDING_DEL;
 		bt_conn_unref(conn);
 		return -EAGAIN;
 	}
@@ -2603,8 +2600,7 @@ static void update_sec_level(struct bt_conn *conn)
 		return;
 	}
 
-	if (conn->le.keys && atomic_test_bit(conn->le.keys->flags,
-					     BT_KEYS_AUTHENTICATED)) {
+	if (conn->le.keys && (conn->le.keys->flags & BT_KEYS_AUTHENTICATED)) {
 		if (conn->le.keys->keys & BT_KEYS_LTK_P256) {
 			conn->sec_level = BT_SECURITY_FIPS;
 		} else {
@@ -2833,7 +2829,7 @@ static void le_ltk_request(struct net_buf *buf)
 
 #if !defined(CONFIG_BT_SMP_SC_ONLY)
 	if (conn->le.keys && (conn->le.keys->keys & BT_KEYS_SLAVE_LTK) &&
-	    conn->le.keys->slave_ltk.rand == evt->rand &&
+	    !memcmp(conn->le.keys->slave_ltk.rand, &evt->rand, 8) &&
 	    conn->le.keys->slave_ltk.ediv == evt->ediv) {
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
 					sizeof(*cp));
