@@ -59,7 +59,7 @@ static void generate_static_addr(void)
 		return;
 	}
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_ID_STATIC_RANDOM);
+	bt_set_static_addr();
 
 	BT_DBG("New ID Addr: %s", bt_addr_le_str(&bt_dev.id_addr));
 
