@@ -18,11 +18,45 @@
 #include <linker/sections.h>
 #include <wait_q.h>
 #include <ksched.h>
-#include <misc/slist.h>
+#include <misc/sflist.h>
 #include <init.h>
+#include <syscall_handler.h>
 
 extern struct k_queue _k_queue_list_start[];
 extern struct k_queue _k_queue_list_end[];
+
+struct alloc_node {
+	sys_sfnode_t node;
+	void *data;
+};
+
+void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
+{
+	void *ret;
+
+	if (node && sys_sfnode_flags_get(node)) {
+		/* If the flag is set, then the enqueue operation for this item
+		 * did a behind-the scenes memory allocation of an alloc_node
+		 * struct, which is what got put in the queue. Free it and pass
+		 * back the data pointer.
+		 */
+		struct alloc_node *anode;
+
+		anode = CONTAINER_OF(node, struct alloc_node, node);
+		ret = anode->data;
+		if (needs_free) {
+			k_free(anode);
+		}
+	} else {
+		/* Data was directly placed in the queue, the first 4 bytes
+		 * reserved for the linked list. User mode isn't allowed to
+		 * do this, although it can get data sent this way.
+		 */
+		ret = (void *)node;
+	}
+
+	return ret;
+}
 
 #ifdef CONFIG_OBJECT_TRACING
 
@@ -47,16 +81,28 @@ SYS_INIT(init_queue_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_OBJECT_TRACING */
 
-void k_queue_init(struct k_queue *queue)
+void _impl_k_queue_init(struct k_queue *queue)
 {
-	sys_slist_init(&queue->data_q);
+	sys_sflist_init(&queue->data_q);
 	sys_dlist_init(&queue->wait_q);
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&queue->poll_events);
 #endif
 
 	SYS_TRACING_OBJ_INIT(k_queue, queue);
+	_k_object_init(queue);
 }
+
+#ifdef CONFIG_USERSPACE
+_SYSCALL_HANDLER(k_queue_init, queue_ptr)
+{
+	struct k_queue *queue = (struct k_queue *)queue_ptr;
+
+	_SYSCALL_OBJ_NEVER_INIT(queue, K_OBJ_QUEUE);
+	_impl_k_queue_init(queue);
+	return 0;
+}
+#endif
 
 #if !defined(CONFIG_POLL)
 static void prepare_thread_to_run(struct k_thread *thread, void *data)
@@ -73,7 +119,7 @@ static inline void handle_poll_events(struct k_queue *queue, u32_t state)
 #endif
 }
 
-void k_queue_cancel_wait(struct k_queue *queue)
+void _impl_k_queue_cancel_wait(struct k_queue *queue)
 {
 	unsigned int key = irq_lock();
 #if !defined(CONFIG_POLL)
@@ -91,7 +137,13 @@ void k_queue_cancel_wait(struct k_queue *queue)
 	_reschedule(key);
 }
 
-void k_queue_insert(struct k_queue *queue, void *prev, void *data)
+#ifdef CONFIG_USERSPACE
+_SYSCALL_HANDLER1_SIMPLE_VOID(k_queue_cancel_wait, K_OBJ_QUEUE,
+			      struct k_queue *);
+#endif
+
+static int queue_insert(struct k_queue *queue, void *prev, void *data,
+			bool alloc)
 {
 	unsigned int key = irq_lock();
 #if !defined(CONFIG_POLL)
@@ -102,28 +154,79 @@ void k_queue_insert(struct k_queue *queue, void *prev, void *data)
 	if (first_pending_thread) {
 		prepare_thread_to_run(first_pending_thread, data);
 		_reschedule(key);
-		return;
+		return 0;
 	}
 #endif /* !CONFIG_POLL */
 
-	sys_slist_insert(&queue->data_q, prev, data);
+	/* Only need to actually allocate if no threads are pending */
+	if (alloc) {
+		struct alloc_node *anode;
+
+		anode = z_thread_malloc(sizeof(*anode));
+		if (!anode) {
+			return -ENOMEM;
+		}
+		anode->data = data;
+		sys_sfnode_init(&anode->node, 0x1);
+		data = anode;
+	} else {
+		sys_sfnode_init(data, 0x0);
+	}
+	sys_sflist_insert(&queue->data_q, prev, data);
 
 #if defined(CONFIG_POLL)
 	handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 #endif /* CONFIG_POLL */
 
 	_reschedule(key);
+	return 0;
+}
+
+void k_queue_insert(struct k_queue *queue, void *prev, void *data)
+{
+	queue_insert(queue, prev, data, false);
 }
 
 void k_queue_append(struct k_queue *queue, void *data)
 {
-	return k_queue_insert(queue, queue->data_q.tail, data);
+	queue_insert(queue, sys_sflist_peek_tail(&queue->data_q), data, false);
 }
 
 void k_queue_prepend(struct k_queue *queue, void *data)
 {
-	return k_queue_insert(queue, NULL, data);
+	queue_insert(queue, NULL, data, false);
 }
+
+int _impl_k_queue_alloc_append(struct k_queue *queue, void *data)
+{
+	return queue_insert(queue, sys_sflist_peek_tail(&queue->data_q), data,
+			    true);
+}
+
+#ifdef CONFIG_USERSPACE
+_SYSCALL_HANDLER(k_queue_alloc_append, queue, data)
+{
+	_SYSCALL_OBJ(queue, K_OBJ_QUEUE);
+
+	return _impl_k_queue_alloc_append((struct k_queue *)queue,
+					  (void *)data);
+}
+#endif
+
+int _impl_k_queue_alloc_prepend(struct k_queue *queue, void *data)
+{
+	return queue_insert(queue, NULL, data, true);
+}
+
+#ifdef CONFIG_USERSPACE
+_SYSCALL_HANDLER(k_queue_alloc_prepend, queue, data)
+{
+	_SYSCALL_OBJ(queue, K_OBJ_QUEUE);
+
+	return _impl_k_queue_alloc_prepend((struct k_queue *)queue,
+					   (void *)data);
+}
+#endif
 
 void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 {
@@ -139,11 +242,11 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 	}
 
 	if (head) {
-		sys_slist_append_list(&queue->data_q, head, tail);
+		sys_sflist_append_list(&queue->data_q, head, tail);
 	}
 
 #else
-	sys_slist_append_list(&queue->data_q, head, tail);
+	sys_sflist_append_list(&queue->data_q, head, tail);
 	handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 #endif /* !CONFIG_POLL */
 
@@ -159,6 +262,9 @@ void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
 	 * - the slist implementation keeps the next pointer as the first
 	 *   field of the node object type
 	 * - list->tail->next = NULL.
+	 * - sflist implementation only differs from slist by stuffing
+	 *   flag bytes in the lower order bits of the data pointer
+	 * - source list is really an slist and not an sflist with flags set
 	 */
 	k_queue_append_list(queue, list->head, list->tail);
 	sys_slist_init(list);
@@ -186,11 +292,11 @@ static void *k_queue_poll(struct k_queue *queue, s32_t timeout)
 		__ASSERT_NO_MSG(event.state ==
 				K_POLL_STATE_FIFO_DATA_AVAILABLE);
 
-		/* sys_slist_* aren't threadsafe, so must be always protected by
-		 * irq_lock.
+		/* sys_sflist_* aren't threadsafe, so must be always protected
+		 * by irq_lock.
 		 */
 		key = irq_lock();
-		val = sys_slist_get(&queue->data_q);
+		val = z_queue_node_peek(sys_sflist_get(&queue->data_q), true);
 		irq_unlock(key);
 	} while (!val && timeout == K_FOREVER);
 
@@ -198,15 +304,18 @@ static void *k_queue_poll(struct k_queue *queue, s32_t timeout)
 }
 #endif /* CONFIG_POLL */
 
-void *k_queue_get(struct k_queue *queue, s32_t timeout)
+void *_impl_k_queue_get(struct k_queue *queue, s32_t timeout)
 {
 	unsigned int key;
 	void *data;
 
 	key = irq_lock();
 
-	if (likely(!sys_slist_is_empty(&queue->data_q))) {
-		data = sys_slist_get_not_empty(&queue->data_q);
+	if (likely(!sys_sflist_is_empty(&queue->data_q))) {
+		sys_sfnode_t *node;
+
+		node = sys_sflist_get_not_empty(&queue->data_q);
+		data = z_queue_node_peek(node, true);
 		irq_unlock(key);
 		return data;
 	}
@@ -227,3 +336,18 @@ void *k_queue_get(struct k_queue *queue, s32_t timeout)
 	return ret ? NULL : _current->base.swap_data;
 #endif /* CONFIG_POLL */
 }
+
+#ifdef CONFIG_USERSPACE
+_SYSCALL_HANDLER(k_queue_get, queue, timeout_p)
+{
+	s32_t timeout = timeout_p;
+
+	_SYSCALL_OBJ(queue, K_OBJ_QUEUE);
+
+	return (u32_t)_impl_k_queue_get((struct k_queue *)queue, timeout);
+}
+
+_SYSCALL_HANDLER1_SIMPLE(k_queue_is_empty, K_OBJ_QUEUE, struct k_queue *);
+_SYSCALL_HANDLER1_SIMPLE(k_queue_peek_head, K_OBJ_QUEUE, struct k_queue *);
+_SYSCALL_HANDLER1_SIMPLE(k_queue_peek_tail, K_OBJ_QUEUE, struct k_queue *);
+#endif /* CONFIG_USERSPACE */

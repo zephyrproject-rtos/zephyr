@@ -20,7 +20,7 @@
 #define TIMEOUT 100
 
 /*test cases*/
-void test_queue_get_fail(void *p1, void *p2, void *p3)
+void test_queue_get_fail(void)
 {
 	struct k_queue queue;
 

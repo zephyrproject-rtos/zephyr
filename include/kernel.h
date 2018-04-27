@@ -24,6 +24,7 @@
 #include <misc/__assert.h>
 #include <misc/dlist.h>
 #include <misc/slist.h>
+#include <misc/sflist.h>
 #include <misc/util.h>
 #include <misc/mempool_base.h>
 #include <kernel_version.h>
@@ -1634,7 +1635,7 @@ extern u32_t k_uptime_delta_32(s64_t *reftime);
  */
 
 struct k_queue {
-	sys_slist_t data_q;
+	sys_sflist_t data_q;
 	union {
 		_wait_q_t wait_q;
 
@@ -1653,6 +1654,8 @@ struct k_queue {
 	}
 
 #define K_QUEUE_INITIALIZER DEPRECATED_MACRO _K_QUEUE_INITIALIZER
+
+extern void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free);
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -1673,7 +1676,7 @@ struct k_queue {
  *
  * @return N/A
  */
-extern void k_queue_init(struct k_queue *queue);
+__syscall void k_queue_init(struct k_queue *queue);
 
 /**
  * @brief Cancel waiting on a queue.
@@ -1687,7 +1690,7 @@ extern void k_queue_init(struct k_queue *queue);
  *
  * @return N/A
  */
-extern void k_queue_cancel_wait(struct k_queue *queue);
+__syscall void k_queue_cancel_wait(struct k_queue *queue);
 
 /**
  * @brief Append an element to the end of a queue.
@@ -1706,6 +1709,23 @@ extern void k_queue_cancel_wait(struct k_queue *queue);
 extern void k_queue_append(struct k_queue *queue, void *data);
 
 /**
+ * @brief Append an element to a queue.
+ *
+ * This routine appends a data item to @a queue. There is an implicit
+ * memory allocation from the calling thread's resource pool, which is
+ * automatically freed when the item is removed from the queue.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param queue Address of the queue.
+ * @param data Address of the data item.
+ *
+ * @retval 0 on success
+ * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
+ */
+__syscall int k_queue_alloc_append(struct k_queue *queue, void *data);
+
+/**
  * @brief Prepend an element to a queue.
  *
  * This routine prepends a data item to @a queue. A queue data item must be
@@ -1720,6 +1740,23 @@ extern void k_queue_append(struct k_queue *queue, void *data);
  * @return N/A
  */
 extern void k_queue_prepend(struct k_queue *queue, void *data);
+
+/**
+ * @brief Prepend an element to a queue.
+ *
+ * This routine prepends a data item to @a queue. There is an implicit
+ * memory allocation from the calling thread's resource pool, which is
+ * automatically freed when the item is removed from the queue.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param queue Address of the queue.
+ * @param data Address of the data item.
+ *
+ * @retval 0 on success
+ * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
+ */
+__syscall int k_queue_alloc_prepend(struct k_queue *queue, void *data);
 
 /**
  * @brief Inserts an element to a queue.
@@ -1787,7 +1824,7 @@ extern void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
  * @return Address of the data item if successful; NULL if returned
  * without waiting, or waiting period timed out.
  */
-extern void *k_queue_get(struct k_queue *queue, s32_t timeout);
+__syscall void *k_queue_get(struct k_queue *queue, s32_t timeout);
 
 /**
  * @brief Remove an element from a queue.
@@ -1805,7 +1842,7 @@ extern void *k_queue_get(struct k_queue *queue, s32_t timeout);
  */
 static inline bool k_queue_remove(struct k_queue *queue, void *data)
 {
-	return sys_slist_find_and_remove(&queue->data_q, (sys_snode_t *)data);
+	return sys_sflist_find_and_remove(&queue->data_q, (sys_sfnode_t *)data);
 }
 
 /**
@@ -1821,9 +1858,11 @@ static inline bool k_queue_remove(struct k_queue *queue, void *data)
  * @return Non-zero if the queue is empty.
  * @return 0 if data is available.
  */
-static inline int k_queue_is_empty(struct k_queue *queue)
+__syscall int k_queue_is_empty(struct k_queue *queue);
+
+static inline int _impl_k_queue_is_empty(struct k_queue *queue)
 {
-	return (int)sys_slist_is_empty(&queue->data_q);
+	return (int)sys_sflist_is_empty(&queue->data_q);
 }
 
 /**
@@ -1835,9 +1874,11 @@ static inline int k_queue_is_empty(struct k_queue *queue)
  *
  * @return Head element, or NULL if queue is empty.
  */
-static inline void *k_queue_peek_head(struct k_queue *queue)
+__syscall void *k_queue_peek_head(struct k_queue *queue);
+
+static inline void *_impl_k_queue_peek_head(struct k_queue *queue)
 {
-	return sys_slist_peek_head(&queue->data_q);
+	return z_queue_node_peek(sys_sflist_peek_head(&queue->data_q), false);
 }
 
 /**
@@ -1849,9 +1890,11 @@ static inline void *k_queue_peek_head(struct k_queue *queue)
  *
  * @return Tail element, or NULL if queue is empty.
  */
-static inline void *k_queue_peek_tail(struct k_queue *queue)
+__syscall void *k_queue_peek_tail(struct k_queue *queue);
+
+static inline void *_impl_k_queue_peek_tail(struct k_queue *queue)
 {
-	return sys_slist_peek_tail(&queue->data_q);
+	return z_queue_node_peek(sys_sflist_peek_tail(&queue->data_q), false);
 }
 
 /**
@@ -1939,6 +1982,24 @@ struct k_fifo {
  */
 #define k_fifo_put(fifo, data) \
 	k_queue_append((struct k_queue *) fifo, data)
+
+/**
+ * @brief Add an element to a FIFO queue.
+ *
+ * This routine adds a data item to @a fifo. There is an implicit
+ * memory allocation from the calling thread's resource pool, which is
+ * automatically freed when the item is removed.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param fifo Address of the FIFO.
+ * @param data Address of the data item.
+ *
+ * @retval 0 on success
+ * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
+ */
+#define k_fifo_alloc_put(fifo, data) \
+	k_queue_alloc_append((struct k_queue *) fifo, data)
 
 /**
  * @brief Atomically add a list of elements to a FIFO.
@@ -2110,6 +2171,24 @@ struct k_lifo {
  */
 #define k_lifo_put(lifo, data) \
 	k_queue_prepend((struct k_queue *) lifo, data)
+
+/**
+ * @brief Add an element to a LIFO queue.
+ *
+ * This routine adds a data item to @a lifo. There is an implicit
+ * memory allocation from the calling thread's resource pool, which is
+ * automatically freed when the item is removed.
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param lifo Address of the LIFO.
+ * @param data Address of the data item.
+ *
+ * @retval 0 on success
+ * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
+ */
+#define k_lifo_alloc_put(lifo, data) \
+	k_queue_alloc_prepend((struct k_queue *) lifo, data)
 
 /**
  * @brief Get an element from a LIFO queue.
