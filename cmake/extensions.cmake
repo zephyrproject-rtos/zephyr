@@ -10,6 +10,7 @@ include(CheckCXXCompilerFlag)
 # 1.2.1 zephyr_interface_library_*
 # 1.3. generate_inc_*
 # 1.4. board_*
+# 1.5. Misc.
 # 2. Kconfig-aware extensions
 # 2.1 *_if_kconfig
 # 2.2 Misc
@@ -18,6 +19,7 @@ include(CheckCXXCompilerFlag)
 # 3.2. *_ifndef
 # 3.3. *_option compiler compatibility checks
 # 3.4. Debugging CMake
+# 3.5. File system management
 
 ########################################################
 # 1. Zephyr-aware extensions
@@ -464,7 +466,7 @@ endfunction()
 function(zephyr_library_cc_option)
   foreach(option ${ARGV})
     string(MAKE_C_IDENTIFIER check${option} check)
-    check_c_compiler_flag(${option} ${check})
+    zephyr_check_compiler_flag(C ${option} ${check})
 
     if(${check})
       zephyr_library_compile_options(${option})
@@ -582,6 +584,69 @@ function(board_finalize_runner_args runner)
     # Arguments explicitly given with board_runner_args() come
     # last, so they take precedence.
     ${explicit}
+    )
+endfunction()
+
+# 1.5. Misc.
+
+# zephyr_check_compiler_flag is a part of Zephyr's toolchain
+# infrastructure. It should be used when testing toolchain
+# capabilities and it should normally be used in place of the
+# functions:
+#
+# check_compiler_flag
+# check_c_compiler_flag
+# check_cxx_compiler_flag
+#
+# See check_compiler_flag() for API documentation as it has the same
+# API.
+#
+# It is implemented as a wrapper on top of check_compiler_flag, which
+# again wraps the CMake-builtin's check_c_compiler_flag and
+# check_cxx_compiler_flag.
+#
+# It takes time to check for compatibility of flags against toolchains
+# so we cache the capability test results in USER_CACHE_DIR (This
+# caching comes in addition to the caching that CMake does in the
+# build folder's CMakeCache.txt)
+function(zephyr_check_compiler_flag lang option check)
+  # Locate the cache
+  set_ifndef(
+    ZEPHYR_TOOLCHAIN_CAPABILITY_CACHE
+    ${USER_CACHE_DIR}/ToolchainCapabilityDatabase.cmake
+    )
+
+  # Read the cache
+  include(${ZEPHYR_TOOLCHAIN_CAPABILITY_CACHE} OPTIONAL)
+
+  # We need to create a unique key wrt. testing the toolchain
+  # capability. This key must be a valid C identifier that includes
+  # everything that can affect the toolchain test.
+  set(key_string "")
+  set(key_string "${key_string}ZEPHYR_TOOLCHAIN_CAPABILITY_CACHE_")
+  set(key_string "${key_string}${TOOLCHAIN_SIGNATURE}_")
+  set(key_string "${key_string}${lang}_")
+  set(key_string "${key_string}${option}_")
+  set(key_string "${key_string}${CMAKE_REQUIRED_FLAGS}_")
+
+  string(MAKE_C_IDENTIFIER ${key_string} key)
+
+  # Check the cache
+  if(DEFINED ${key})
+    set(${check} ${${key}} PARENT_SCOPE)
+    return()
+  endif()
+
+  # Test the flag
+  check_compiler_flag(${lang} "${option}" inner_check)
+
+  set(${check} ${inner_check} PARENT_SCOPE)
+
+  # Populate the cache
+  file(
+    APPEND
+    ${ZEPHYR_TOOLCHAIN_CAPABILITY_CACHE}
+    "set(${key} ${inner_check})\n"
     )
 endfunction()
 
@@ -881,9 +946,9 @@ function(check_compiler_flag lang option ok)
   string(MAKE_C_IDENTIFIER check${option}_${lang} ${ok})
 
   if(${lang} STREQUAL C)
-    check_c_compiler_flag(${option} ${${ok}})
+    check_c_compiler_flag("${option}" ${${ok}})
   else()
-    check_cxx_compiler_flag(${option} ${${ok}})
+    check_cxx_compiler_flag("${option}" ${${ok}})
   endif()
 
   if(${${${ok}}})
@@ -906,7 +971,7 @@ function(target_cc_option_fallback target scope option1 option2)
     foreach(lang C CXX)
       # For now, we assume that all flags that apply to C/CXX also
       # apply to ASM.
-      check_compiler_flag(${lang} ${option1} check)
+      zephyr_check_compiler_flag(${lang} ${option1} check)
       if(${check})
         target_compile_options(${target} ${scope}
           $<$<COMPILE_LANGUAGE:${lang}>:${option1}>
@@ -920,7 +985,7 @@ function(target_cc_option_fallback target scope option1 option2)
       endif()
     endforeach()
   else()
-    check_compiler_flag(C ${option1} check)
+    zephyr_check_compiler_flag(C ${option1} check)
     if(${check})
       target_compile_options(${target} ${scope} ${option1})
     elseif(option2)
@@ -935,7 +1000,7 @@ function(target_ld_options target scope)
 
     set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
     set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
-    check_c_compiler_flag("" ${check})
+    zephyr_check_compiler_flag(C "" ${check})
     set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
 
     target_link_libraries_ifdef(${check} ${target} ${scope} ${option})
@@ -1004,3 +1069,76 @@ macro(assert_with_usage test comment)
   endif()
 endmacro()
 
+# 3.5. File system management
+function(check_if_directory_is_writeable dir ok)
+  execute_process(
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/dir_is_writeable.py
+    ${dir}
+    RESULT_VARIABLE ret
+    )
+
+  if("${ret}" STREQUAL "0")
+    # The directory is write-able
+    set(${ok} 1 PARENT_SCOPE)
+  else()
+    set(${ok} 0 PARENT_SCOPE)
+  endif()
+endfunction()
+
+function(find_appropriate_cache_directory dir)
+  set(env_suffix_LOCALAPPDATA   .cache)
+
+  if(CMAKE_HOST_APPLE)
+    # On macOS, ~/Library/Caches is the preferred cache directory.
+    set(env_suffix_HOME Library/Caches)
+  else()
+    set(env_suffix_HOME .cache)
+  endif()
+
+  # Determine which env vars should be checked
+  if(CMAKE_HOST_APPLE)
+    set(dirs HOME)
+  elseif(CMAKE_HOST_WIN32)
+    set(dirs LOCALAPPDATA)
+  else()
+    # Assume Linux when we did not detect 'mac' or 'win'
+    #
+    # On Linux, freedesktop.org recommends using $XDG_CACHE_HOME if
+    # that is defined and defaulting to $HOME/.cache otherwise.
+    set(dirs
+      XDG_CACHE_HOME
+      HOME
+      )
+  endif()
+
+  foreach(env_var ${dirs})
+    if(DEFINED ENV{${env_var}})
+      set(env_dir $ENV{${env_var}})
+
+      check_if_directory_is_writeable(${env_dir} ok)
+      if(${ok})
+        # The directory is write-able
+        set(user_dir ${env_dir}/${env_suffix_${env_var}})
+        break()
+      else()
+        # The directory was not writeable, keep looking for a suitable
+        # directory
+      endif()
+    endif()
+  endforeach()
+
+  # Populate local_dir with a suitable directory for caching
+  # files. Prefer a directory outside of the git repository because it
+  # is good practice to have clean git repositories.
+  if(DEFINED user_dir)
+    # Zephyr's cache files go in the "zephyr" subdirectory of the
+    # user's cache directory.
+    set(local_dir ${user_dir}/zephyr)
+  else()
+    set(local_dir ${ZEPHYR_BASE}/.cache)
+  endif()
+
+  set(${dir} ${local_dir} PARENT_SCOPE)
+endfunction()

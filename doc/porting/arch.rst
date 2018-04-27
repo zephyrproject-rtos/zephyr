@@ -14,6 +14,10 @@ The following are examples of ISAs and ABIs that Zephyr supports:
 * ARMv7-M ISA with Thumb2 instruction set and ARM Embedded ABI (aeabi)
 * ARCv2 ISA
 
+For information on Kconfig configuration, see the
+:ref:`setting_configuration_values` section in the :ref:`board_porting_guide`.
+Architectures use a similar Kconfig configuration scheme.
+
 An architecture port can be divided in several parts; most are required and
 some are optional:
 

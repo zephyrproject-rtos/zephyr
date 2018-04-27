@@ -7,3 +7,4 @@
 config BOARD_96B_NEONKEY
 	bool "96Boards Neonkey"
 	depends on SOC_STM32F411XE
+	select HAS_DTS_I2C_DEVICE
