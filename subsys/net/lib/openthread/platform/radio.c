@@ -32,6 +32,8 @@
 
 #include <openthread/types.h>
 
+#include "platform-zephyr.h"
+
 #define FCS_SIZE 2
 
 static otRadioState sState = OT_RADIO_STATE_DISABLED;
@@ -45,6 +47,7 @@ static struct device *radio_dev;
 static struct ieee802154_radio_api *radio_api;
 
 static s8_t tx_power;
+static u16_t channel;
 
 static void dataInit(void)
 {
@@ -87,6 +90,8 @@ void platformRadioProcess(otInstance *aInstance)
 		 * adds CRC and increases frame length on its own.
 		 */
 		tx_payload->len = sTransmitFrame.mLength - FCS_SIZE;
+
+		channel = sTransmitFrame.mChannel;
 
 		radio_api->set_channel(radio_dev, sTransmitFrame.mChannel);
 		radio_api->set_txpower(radio_dev, tx_power);
@@ -134,6 +139,13 @@ void platformRadioProcess(otInstance *aInstance)
 			}
 		}
 	}
+}
+
+uint16_t platformRadioChannelGet(otInstance *aInstance)
+{
+	ARG_UNUSED(aInstance);
+
+	return channel;
 }
 
 void otPlatRadioSetPanId(otInstance *aInstance, u16_t aPanId)
@@ -206,6 +218,8 @@ otError otPlatRadioSleep(otInstance *aInstance)
 otError otPlatRadioReceive(otInstance *aInstance, u8_t aChannel)
 {
 	ARG_UNUSED(aInstance);
+
+	channel = aChannel;
 
 	radio_api->set_channel(radio_dev, aChannel);
 	radio_api->set_txpower(radio_dev, tx_power);
