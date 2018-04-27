@@ -22,11 +22,75 @@
 extern const struct bt_settings_handler _bt_settings_start[];
 extern const struct bt_settings_handler _bt_settings_end[];
 
+void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
+			    bt_addr_le_t *addr, const char *key)
+{
+	if (key) {
+		snprintk(path, path_size,
+			 "bt/%s/%02x%02x%02x%02x%02x%02x%u/%s", subsys,
+			 addr->a.val[5], addr->a.val[4], addr->a.val[3],
+			 addr->a.val[2], addr->a.val[1], addr->a.val[0],
+			 addr->type, key);
+	} else {
+		snprintk(path, path_size,
+			 "bt/%s/%02x%02x%02x%02x%02x%02x%u", subsys,
+			 addr->a.val[5], addr->a.val[4], addr->a.val[3],
+			 addr->a.val[2], addr->a.val[1], addr->a.val[0],
+			 addr->type);
+	}
+
+	BT_DBG("Encoded path %s", path);
+}
+
+int bt_settings_decode_key(char *key, bt_addr_le_t *addr)
+{
+	bool high;
+	int i;
+
+	if (strlen(key) != 13) {
+		return -EINVAL;
+	}
+
+	if (key[12] == '0') {
+		addr->type = BT_ADDR_LE_PUBLIC;
+	} else if (key[12] == '1') {
+		addr->type = BT_ADDR_LE_RANDOM;
+	} else {
+		return -EINVAL;
+	}
+
+	for (i = 5, high = true; i >= 0; key++) {
+		u8_t nibble;
+
+		if (*key >= '0' && *key <= '9') {
+			nibble = *key - '0';
+		} else if (*key >= 'a' && *key <= 'f') {
+			nibble = *key - 'a' + 10;
+		} else {
+			return -EINVAL;
+		}
+
+		if (high) {
+			addr->a.val[i] = nibble << 4;
+			high = false;
+		} else {
+			addr->a.val[i] |= nibble;
+			high = true;
+			i--;
+		}
+	}
+
+	BT_DBG("Decoded %s as %s", key, bt_addr_le_str(addr));
+
+	return 0;
+}
+
 static int set(int argc, char **argv, char *val)
 {
 	int len;
 
-	BT_DBG("argc %d argv[0] %s val %s", argc, argv[0], val);
+	BT_DBG("argc %d argv[0] %s argv[1] %s val %s", argc, argv[0],
+	       argc > 1 ? argv[1] : "(null)", val ? val : "(null)");
 
 	if (argc > 1) {
 		const struct bt_settings_handler *h;
@@ -64,7 +128,7 @@ static int set(int argc, char **argv, char *val)
 
 static void generate_static_addr(void)
 {
-	char buf[13];
+	char buf[BT_SETTINGS_SIZE(sizeof(bt_dev.id_addr))];
 	char *str;
 
 	BT_DBG("Generating new static random address");
@@ -92,7 +156,7 @@ static void generate_static_addr(void)
 #if defined(CONFIG_BT_PRIVACY)
 static void generate_irk(void)
 {
-	char buf[25];
+	char buf[BT_SETTINGS_SIZE(sizeof(bt_dev.irk))];
 	char *str;
 
 	BT_DBG("Generating new IRK");

@@ -694,23 +694,26 @@ static void smp_br_reset(struct bt_smp_br *smp)
 
 static void smp_pairing_br_complete(struct bt_smp_br *smp, u8_t status)
 {
+	struct bt_conn *conn = smp->chan.chan.conn;
+	struct bt_keys *keys;
+	bt_addr_le_t addr;
+
 	BT_DBG("status 0x%x", status);
 
+	/* For dualmode devices LE address is same as BR/EDR address
+	 * and is of public type.
+	 */
+	bt_addr_copy(&addr.a, &conn->br.dst);
+	addr.type = BT_ADDR_LE_PUBLIC;
+	keys = bt_keys_find_addr(&addr);
+
 	if (status) {
-		struct bt_conn *conn = smp->chan.chan.conn;
-		struct bt_keys *keys;
-		bt_addr_le_t addr;
-
-		/*
-		 * For dualmode devices LE address is same as BR/EDR address
-		 * and is of public type.
-		 */
-		bt_addr_copy(&addr.a, &conn->br.dst);
-		addr.type = BT_ADDR_LE_PUBLIC;
-
-		keys = bt_keys_find_addr(&addr);
 		if (keys) {
 			bt_keys_clear(keys);
+		}
+	} else if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
+		if (keys) {
+			bt_keys_store(keys);
 		}
 	}
 
@@ -1469,8 +1472,8 @@ static void smp_pairing_complete(struct bt_smp *smp, u8_t status)
 {
 	BT_DBG("status 0x%x", status);
 
-#if defined(CONFIG_BT_BREDR)
 	if (!status) {
+#if defined(CONFIG_BT_BREDR)
 		/*
 		 * Don't derive if Debug Keys are used.
 		 * TODO should we allow this if BR/EDR is already connected?
@@ -1479,8 +1482,11 @@ static void smp_pairing_complete(struct bt_smp *smp, u8_t status)
 		    !atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY)) {
 			sc_derive_link_key(smp);
 		}
-	}
 #endif /* CONFIG_BT_BREDR */
+		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
+			bt_keys_store(smp->chan.chan.conn->le.keys);
+		}
+	}
 
 	smp_reset(smp);
 }
