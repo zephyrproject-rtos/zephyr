@@ -12,17 +12,26 @@
  */
 
 #include <ztest.h>
-extern void test_queue_thread2thread(void);
-extern void test_queue_thread2isr(void);
-extern void test_queue_isr2thread(void);
-extern void test_queue_get_2threads(void);
-extern void test_queue_get_fail(void);
-extern void test_queue_loop(void);
+#include "test_queue.h"
+
+#ifndef CONFIG_USERSPACE
+static void test_queue_supv_to_user(void)
+{
+	ztest_test_skip();
+}
+
+static void test_auto_free(void)
+{
+	ztest_test_skip();
+}
+#endif
 
 /*test case main entry*/
 void test_main(void)
 {
 	ztest_test_suite(queue_api,
+			 ztest_unit_test(test_queue_supv_to_user),
+			 ztest_unit_test(test_auto_free),
 			 ztest_unit_test(test_queue_thread2thread),
 			 ztest_unit_test(test_queue_thread2isr),
 			 ztest_unit_test(test_queue_isr2thread),
