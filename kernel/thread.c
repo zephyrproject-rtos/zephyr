@@ -36,6 +36,29 @@ extern struct _static_thread_data _static_thread_data_list_end[];
 	     thread_data < _static_thread_data_list_end; \
 	     thread_data++)
 
+#if defined(CONFIG_THREAD_MONITOR)
+void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
+{
+	struct k_thread *thread;
+	unsigned int key;
+
+	__ASSERT(user_cb, "user_cb can not be NULL");
+
+	/*
+	 * Lock is needed to make sure that the _kernel.threads is not being
+	 * modified by the user_cb either dircetly or indircetly.
+	 * The indircet ways are through calling k_thread_create and
+	 * k_thread_abort from user_cb.
+	 */
+	key = irq_lock();
+	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
+		user_cb(thread, user_data);
+	}
+	irq_unlock(key);
+}
+#else
+void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data) { }
+#endif
 
 int k_is_in_isr(void)
 {

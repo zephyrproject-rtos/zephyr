@@ -533,6 +533,8 @@ enum execution_context_types {
  * @ingroup kernel_apis
  * @{
  */
+typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
+				   void *user_data);
 
 /**
  * @brief Analyze the main, idle, interrupt and system workqueue call stacks
@@ -551,6 +553,25 @@ enum execution_context_types {
  * @return N/A
  */
 extern void k_call_stacks_analyze(void);
+
+/**
+ * @brief Iterate over all the threads in the system.
+ *
+ * This routine iterates over all the threads in the system and
+ * calls the user_cb function for each thread.
+ *
+ * @param user_cb Pointer to the user callback function.
+ * @param user_data Pointer to user data.
+ *
+ * @note CONFIG_THREAD_MONITOR must be set for this function
+ * to be effective. Also this API uses irq_lock to protect the
+ * _kernel.threads list which means creation of new threads and
+ * terminations of existing threads are blocked until this
+ * API returns.
+ *
+ * @return N/A
+ */
+extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
 
 /** @} */
 
