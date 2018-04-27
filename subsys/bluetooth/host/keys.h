@@ -47,6 +47,7 @@ struct bt_csrk {
 
 struct bt_keys {
 	bt_addr_le_t		addr;
+	u8_t                    storage_start[0];
 	u8_t			enc_size;
 	ATOMIC_DEFINE(flags, BT_KEYS_NUM_FLAGS);
 	u16_t			keys;
@@ -61,7 +62,11 @@ struct bt_keys {
 #endif /* CONFIG_BT_SMP_SC_ONLY */
 };
 
-void bt_keys_foreach(int type, void (*func)(struct bt_keys *keys));
+#define BT_KEYS_STORAGE_LEN     (sizeof(struct bt_keys) - \
+				 offsetof(struct bt_keys, storage_start))
+
+typedef void (*bt_keys_func_t)(struct bt_keys *keys);
+void bt_keys_foreach(int type, bt_keys_func_t func);
 
 struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr);
 struct bt_keys *bt_keys_get_type(int type, const bt_addr_le_t *addr);
@@ -72,6 +77,15 @@ struct bt_keys *bt_keys_find_addr(const bt_addr_le_t *addr);
 void bt_keys_add_type(struct bt_keys *keys, int type);
 void bt_keys_clear(struct bt_keys *keys);
 void bt_keys_clear_all(void);
+
+#if defined(CONFIG_BT_SETTINGS)
+int bt_keys_store(struct bt_keys *keys);
+#else
+static inline int bt_keys_store(struct bt_keys *keys)
+{
+	return 0;
+}
+#endif
 
 enum {
 	BT_LINK_KEY_AUTHENTICATED,
