@@ -369,6 +369,32 @@ struct net_if *net_if_get_first_by_type(const struct net_l2 *l2)
 	return NULL;
 }
 
+/* Return how many bits are shared between two IP addresses */
+static u8_t get_ipaddr_diff(const u8_t *src, const u8_t *dst, int addr_len)
+{
+	u8_t j, k, xor;
+	u8_t len = 0;
+
+	for (j = 0; j < addr_len; j++) {
+		if (src[j] == dst[j]) {
+			len += 8;
+		} else {
+			xor = src[j] ^ dst[j];
+			for (k = 0; k < 8; k++) {
+				if (!(xor & 0x80)) {
+					len++;
+					xor <<= 1;
+				} else {
+					break;
+				}
+			}
+			break;
+		}
+	}
+
+	return len;
+}
+
 #if defined(CONFIG_NET_IPV6)
 int net_if_config_ipv6_get(struct net_if *iface, struct net_if_ipv6 **ipv6)
 {
@@ -1461,29 +1487,10 @@ struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface)
 	return NULL;
 }
 
-static inline u8_t get_length(struct in6_addr *src, struct in6_addr *dst)
+static u8_t get_diff_ipv6(const struct in6_addr *src,
+			  const struct in6_addr *dst)
 {
-	u8_t j, k, xor;
-	u8_t len = 0;
-
-	for (j = 0; j < 16; j++) {
-		if (src->s6_addr[j] == dst->s6_addr[j]) {
-			len += 8;
-		} else {
-			xor = src->s6_addr[j] ^ dst->s6_addr[j];
-			for (k = 0; k < 8; k++) {
-				if (!(xor & 0x80)) {
-					len++;
-					xor <<= 1;
-				} else {
-					break;
-				}
-			}
-			break;
-		}
-	}
-
-	return len;
+	return get_ipaddr_diff((const u8_t *)src, (const u8_t *)dst, 16);
 }
 
 static inline bool is_proper_ipv6_address(struct net_if_addr *addr)
@@ -1515,7 +1522,7 @@ static inline struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 			continue;
 		}
 
-		len = get_length(dst, &ipv6->unicast[i].address.in6_addr);
+		len = get_diff_ipv6(dst, &ipv6->unicast[i].address.in6_addr);
 		if (len >= *best_so_far) {
 			*best_so_far = len;
 			src = &ipv6->unicast[i].address.in6_addr;
@@ -1754,6 +1761,129 @@ struct net_if *net_if_ipv4_select_src_iface(struct in_addr *dst)
 	}
 
 	return net_if_get_default();
+}
+
+static u8_t get_diff_ipv4(const struct in_addr *src,
+			  const struct in_addr *dst)
+{
+	return get_ipaddr_diff((const u8_t *)src, (const u8_t *)dst, 4);
+}
+
+static inline bool is_proper_ipv4_address(struct net_if_addr *addr)
+{
+	if (addr->is_used && addr->addr_state == NET_ADDR_PREFERRED &&
+	    addr->address.family == AF_INET &&
+	    !net_is_ipv4_ll_addr(&addr->address.in_addr)) {
+		return true;
+	}
+
+	return false;
+}
+
+static struct in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
+						  struct in_addr *dst,
+						  u8_t *best_so_far)
+{
+	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+	struct in_addr *src = NULL;
+	u8_t len;
+	int i;
+
+	if (!ipv4) {
+		return NULL;
+	}
+
+	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		if (!is_proper_ipv4_address(&ipv4->unicast[i])) {
+			continue;
+		}
+
+		len = get_diff_ipv4(dst, &ipv4->unicast[i].address.in_addr);
+		if (len >= *best_so_far) {
+			*best_so_far = len;
+			src = &ipv4->unicast[i].address.in_addr;
+		}
+	}
+
+	return src;
+}
+
+struct in_addr *net_if_ipv4_get_ll(struct net_if *iface,
+				   enum net_addr_state addr_state)
+{
+	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+	int i;
+
+	if (!ipv4) {
+		return NULL;
+	}
+
+	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		if (!ipv4->unicast[i].is_used ||
+		    (addr_state != NET_ADDR_ANY_STATE &&
+		     ipv4->unicast[i].addr_state != addr_state) ||
+		    ipv4->unicast[i].address.family != AF_INET) {
+			continue;
+		}
+
+		if (net_is_ipv4_ll_addr(&ipv4->unicast[i].address.in_addr)) {
+			return &ipv4->unicast[i].address.in_addr;
+		}
+	}
+
+	return NULL;
+}
+
+const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
+						  struct in_addr *dst)
+{
+	struct in_addr *src = NULL;
+	u8_t best_match = 0;
+	struct net_if *iface;
+
+	if (!net_is_ipv4_ll_addr(dst) && !net_is_ipv4_addr_mcast(dst)) {
+
+		for (iface = __net_if_start;
+		     !dst_iface && iface != __net_if_end;
+		     iface++) {
+			struct in_addr *addr;
+
+			addr = net_if_ipv4_get_best_match(iface, dst,
+							  &best_match);
+			if (addr) {
+				src = addr;
+			}
+		}
+
+		/* If caller has supplied interface, then use that */
+		if (dst_iface) {
+			src = net_if_ipv4_get_best_match(dst_iface, dst,
+							 &best_match);
+		}
+
+	} else {
+		for (iface = __net_if_start;
+		     !dst_iface && iface != __net_if_end;
+		     iface++) {
+			struct in_addr *addr;
+
+			addr = net_if_ipv4_get_ll(iface, NET_ADDR_PREFERRED);
+			if (addr) {
+				src = addr;
+				break;
+			}
+		}
+
+		if (dst_iface) {
+			src = net_if_ipv4_get_ll(dst_iface, NET_ADDR_PREFERRED);
+		}
+	}
+
+	if (!src) {
+		return net_ipv4_unspecified_address();
+	}
+
+	return src;
 }
 
 struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
