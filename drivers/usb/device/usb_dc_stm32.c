@@ -333,7 +333,8 @@ int usb_dc_attach(void)
 	/*
 	 * Required for at least STM32L4 devices as they electrically
 	 * isolate USB features from VDDUSB. It must be enabled before
-	 * USB can function. Refer to DM00310109, section 5.1.3.
+	 * USB can function. Refer to section 5.1.3 in DM00083560 or
+	 * DM00310109.
 	 */
 #ifdef PWR_CR2_PVME1
 	if (LL_APB1_GRP1_IsEnabledClock(LL_APB1_GRP1_PERIPH_PWR)) {
