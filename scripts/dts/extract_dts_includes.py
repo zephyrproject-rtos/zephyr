@@ -68,13 +68,13 @@ def find_parent_irq_node(node_address):
 
     return phandles[interrupt_parent]
 
-def extract_interrupts(node_address, yaml, y_key, names, defs, def_label):
+def extract_interrupts(node_address, yaml, prop, names, defs, def_label):
     node = reduced[node_address]
 
     try:
-        props = list(node['props'].get(y_key))
+        props = list(node['props'].get(prop))
     except:
-        props = [node['props'].get(y_key)]
+        props = [node['props'].get(prop)]
 
     irq_parent = find_parent_irq_node(node_address)
 
@@ -189,11 +189,11 @@ def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
         index += 1
 
 
-def extract_controller(node_address, y_key, prefix, defs, def_label):
+def extract_controller(node_address, prop, prefix, defs, def_label):
     try:
-        props = list(reduced[node_address]['props'].get(y_key))
+        props = list(reduced[node_address]['props'].get(prop))
     except:
-        props = reduced[node_address]['props'].get(y_key)
+        props = reduced[node_address]['props'].get(prop)
 
     # get controller node (referenced via phandle)
     cell_parent = phandles[props[0]]
@@ -228,12 +228,12 @@ def extract_controller(node_address, y_key, prefix, defs, def_label):
         insert_defs(node_address, defs, prop_def, prop_alias)
 
 
-def extract_cells(node_address, yaml, y_key, names, index, prefix, defs,
+def extract_cells(node_address, yaml, prop, names, index, prefix, defs,
                   def_label):
     try:
-        props = list(reduced[node_address]['props'].get(y_key))
+        props = list(reduced[node_address]['props'].get(prop))
     except:
-        props = reduced[node_address]['props'].get(y_key)
+        props = reduced[node_address]['props'].get(prop)
 
     cell_parent = phandles[props.pop(0)]
 
@@ -285,7 +285,7 @@ def extract_cells(node_address, yaml, y_key, names, index, prefix, defs,
 
     # recurse if we have anything left
     if len(props):
-        extract_cells(node_address, yaml, y_key, names,
+        extract_cells(node_address, yaml, prop, names,
                       index + 1, prefix, defs, def_label)
 
 
@@ -379,7 +379,7 @@ def extract_string_prop(node_address, yaml, key, label, defs):
         defs[node_address] = prop_def
 
 
-def extract_property(node_compat, yaml, node_address, y_key, y_val, names,
+def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
                      prefix, defs, label_override):
 
     if 'base_label' in yaml[node_compat]:
@@ -431,23 +431,23 @@ def extract_property(node_compat, yaml, node_address, y_key, y_val, names,
     if label_override is not None:
         def_label += '_' + label_override
 
-    if y_key == 'reg':
+    if prop == 'reg':
         extract_reg_prop(node_address, names, defs, def_label,
-                         1, y_val.get('label', None))
-    elif y_key == 'interrupts' or y_key == 'interupts-extended':
-        extract_interrupts(node_address, yaml, y_key, names, defs, def_label)
-    elif 'pinctrl-' in y_key:
-        p_index = int(y_key.split('-')[1])
+                         1, prop_val.get('label', None))
+    elif prop == 'interrupts' or prop == 'interupts-extended':
+        extract_interrupts(node_address, yaml, prop, names, defs, def_label)
+    elif 'pinctrl-' in prop:
+        p_index = int(prop.split('-')[1])
         extract_pinctrl(node_address, yaml,
-                        reduced[node_address]['props'][y_key],
+                        reduced[node_address]['props'][prop],
                         names[p_index], p_index, defs, def_label)
-    elif 'clocks' in y_key or 'gpios' in y_key:
-        extract_controller(node_address, y_key, prefix, defs, def_label)
-        extract_cells(node_address, yaml, y_key,
+    elif 'clocks' in prop or 'gpios' in prop:
+        extract_controller(node_address, prop, prefix, defs, def_label)
+        extract_cells(node_address, yaml, prop,
                       names, 0, prefix, defs, def_label)
     else:
         extract_single(node_address, yaml,
-                       reduced[node_address]['props'][y_key], y_key,
+                       reduced[node_address]['props'][prop], prop,
                        prefix, defs, def_label)
 
 
