@@ -13,6 +13,8 @@
 #ifndef PLATFORM_ZEPHYR_H_
 #define PLATFORM_ZEPHYR_H_
 
+#include <stdint.h>
+
 #include <openthread/openthread.h>
 
 /**
@@ -42,6 +44,16 @@ void platformRadioInit(void);
  *
  */
 void platformRadioProcess(otInstance *aInstance);
+
+/**
+ * Get current channel from radio driver.
+ *
+ * @param[in]  aInstance  The OpenThread instance structure.
+ *
+ * @return Current channel radio driver operates on.
+ *
+ */
+uint16_t platformRadioChannelGet(otInstance *aInstance);
 
 /**
  * This function initializes the random number service used by OpenThread.
