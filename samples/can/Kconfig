@@ -1,0 +1,52 @@
+# Kconfig - Private config options for can sample app
+
+#
+# Copyright (c) 2018 Alexander Wachter
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Controller Area Network sample application"
+
+config ZEPHYR_BASE
+	string
+	option env="ZEPHYR_BASE"
+
+source "$ZEPHYR_BASE/Kconfig.zephyr"
+
+config CAN_DEV
+	string "Name of the CAN device"
+	default "CAN_1"
+	help
+	  Name of the can device used for send an receive.
+
+config GPIO_LED_DEV
+	string "Name of the LED GPIO port"
+	default "GPIOC"
+	help
+	  Name of the LED port for signaling message reception.
+
+config GPIO_BUTTON_DEV
+	string "Name of the button GPIO port"
+	default "GPIOA"
+	help
+	  Name of the button port for triggering messages.
+
+config PIN_USER_BUTTON
+	int "Pin User Button"
+	default 0
+	help
+	  Pin number of the user Button.
+
+config PIN_LED_1
+	int "Pin LED 1"
+	default 6
+	help
+	  Pin number of the first LED.
+
+config LOOPBACK_MODE
+	bool "Loopback LOOPBACK_MODE"
+	default y
+	help
+	  Set the controller to loopback mode.
+	  This allows testing without a second board.

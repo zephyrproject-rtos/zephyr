@@ -329,7 +329,7 @@ __syscall int can_attach_msgq(struct device *dev, struct k_msgq *msg_q,
 
 static inline int _impl_can_attach_msgq(struct device *dev,
 					struct k_msgq *msg_q,
-					struct can_filter *filter)
+					const struct can_filter *filter)
 {
 	const struct can_driver_api *api = dev->driver_api;
 
