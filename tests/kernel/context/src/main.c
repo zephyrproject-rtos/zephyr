@@ -249,10 +249,9 @@ void irq_unlock_wrapper(int imask)
 }
 
 /**
- *
  * @brief A wrapper for irq_disable()
  *
- * @return <irq>
+ * @return @a irq
  */
 int irq_disable_wrapper(int irq)
 {
@@ -401,7 +400,7 @@ static void test_kernel_ctx_task(void)
  * cooperative thread).  Checking those routines with preemptible threads are
  * done elsewhere.
  *
- * This routine may set <thread_detected_error> to the following values:
+ * This routine may set @a thread_detected_error to the following values:
  *   1 - if thread ID matches that of the task
  *   2 - if thread ID taken during ISR does not match that of the thread
  *   3 - k_is_in_isr() when called from an ISR is false
@@ -463,6 +462,7 @@ static int test_kernel_thread(k_tid_t task_thread_id)
  *
  * @param arg1    unused
  * @param arg2    unused
+ * @param arg3    unused
  *
  * @return N/A
  */
@@ -504,7 +504,7 @@ static void thread_helper(void *arg1, void *arg2, void *arg3)
  * k_yield() against the cases of there being a higher priority thread,
  * a lower priority thread, and another thread of equal priority.
  *
- * On error, it may set <thread_detected_error> to one of the following values:
+ * On error, it may set @a thread_detected_error to one of the following values:
  *   10 - helper thread ran prematurely
  *   11 - k_yield() did not yield to a higher priority thread
  *   12 - k_yield() did not yield to an equal priority thread
@@ -538,7 +538,7 @@ static int test_k_yield(void)
 
 	/*
 	 * Test that the thread will yield to the higher priority helper.
-	 * <thread_evidence> is still 0.
+	 * thread_evidence is still 0.
 	 */
 
 	k_yield();
@@ -570,7 +570,7 @@ static int test_k_yield(void)
 	}
 
 	/*
-	 * Block on <sem_thread>.  This will allow the helper thread to
+	 * Block on sem_thread.  This will allow the helper thread to
 	 * complete. The main task will wake this thread.
 	 */
 
