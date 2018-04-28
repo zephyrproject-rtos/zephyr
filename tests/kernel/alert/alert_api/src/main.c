@@ -5,12 +5,15 @@
  */
 
 /**
- * @addtogroup t_alert_api
- * @{
- * @defgroup t_alert_context test_alert_send_recv_context
- * @brief TestPurpose: verify zephyr alert send/recv across different contexts
+ * @file
+ * @brief Verify zephyr alert send/recv across different contexts
  */
 
+/**
+ * @brief Tests for the Alert kernel object
+ * @defgroup kernel.alerts
+ * @{
+ */
 #include <ztest.h>
 #include <irq_offload.h>
 
@@ -240,6 +243,8 @@ void test_isr_kinit_alert(void)
 
 
 /**
+ * @brief Test alert_recv(timeout)
+ *
  * This test checks alert_recv(timeout) against the following cases:
  *  1. The current task times out while waiting for the event.
  *  2. There is already an event waiting (signalled from a task).
@@ -277,6 +282,8 @@ void test_thread_alert_timeout(void)
 }
 
 /**
+ * @brief Test alert_recv() against different cases
+ *
  * This test checks alert_recv(K_FOREVER) against
  * the following cases:
  *  1. There is already an event waiting (signalled from a task and ISR).
@@ -315,12 +322,14 @@ void test_thread_alert_wait(void)
 	}
 }
 
-int eventHandler(struct k_alert *alt)
+int event_handler(struct k_alert *alt)
 {
 	return handler_val;
 }
 
 /**
+ * @brief Test thread alert handler
+ *
  * This test checks that the event handler is set up properly when
  * alert_event_handler_set() is called.  It shows that event handlers
  * are tied to the specified event and that the return value from the
@@ -334,7 +343,7 @@ void test_thread_alert_handler(void)
 	int ret;
 
 	/**TESTPOINT: init via k_alert_init*/
-	k_alert_init(&alert, eventHandler, PENDING_MAX);
+	k_alert_init(&alert, event_handler, PENDING_MAX);
 
 	palert = &alert;
 
@@ -414,3 +423,6 @@ void test_main(void)
 			 ztest_unit_test(test_isr_kinit_alert));
 	ztest_run_test_suite(alert_api);
 }
+/**
+ * @}
+ */
