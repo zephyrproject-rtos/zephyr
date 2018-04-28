@@ -19,6 +19,8 @@
 #include <misc/byteorder.h>
 #include <zephyr.h>
 
+#include <settings/settings.h>
+
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/l2cap.h>
@@ -512,6 +514,10 @@ static void bt_ready(int err)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
+	}
 
 #if defined(CONFIG_BT_CONN)
 	default_conn = NULL;
