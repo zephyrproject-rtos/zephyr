@@ -6,7 +6,7 @@
  */
 
 /**
- * @file SoC configuration macros for the STM32F103 family processors.
+ * @file SoC configuration macros for the STM32L4 family processors.
  *
  * Based on reference manual:
  *   STM32L4x1, STM32L4x2, STM32L431xx STM32L443xx STM32L433xx, STM32L4x5,
