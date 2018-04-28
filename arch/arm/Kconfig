@@ -27,7 +27,7 @@ config ARCH_DEFCONFIG
 
 source "arch/arm/core/Kconfig"
 
-menu "Board Configuration"
+menu "SoC Configuration"
 
 source "arch/arm/soc/*/Kconfig"
 
