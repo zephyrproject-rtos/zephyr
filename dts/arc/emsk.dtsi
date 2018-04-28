@@ -8,6 +8,12 @@
 		compatible = "simple-bus";
 		ranges;
 
+		sram0: memory@10000000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+			reg = <0x10000000 0x8000000>;
+		};
+
 		i2c0: i2c@f0004000 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
