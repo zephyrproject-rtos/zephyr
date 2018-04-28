@@ -1,14 +1,14 @@
 #
 # Copyright (c) 2014 Wind River Systems, Inc.
-# Copyright (c) 2016 Synopsys, Inc. All rights reserved.
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_EM9D
+if SOC_EMSK_EM9D
 
-config SOC
-	default em9d
+config CPU_EM4_FPUS
+	def_bool y
 
 config NUM_IRQ_PRIO_LEVELS
 	# This processor supports 4 priority levels:
@@ -29,4 +29,4 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config HARVARD
 	def_bool y
 
-endif #SOC_EM9D
+endif #SOC_EMSK_EM9D
