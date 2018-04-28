@@ -33,17 +33,12 @@ The default SoC for this board supported in Zephyr is the EM9D.
 This configuration is a Harvard Architecture, with a separate
 instruction bus and data bus. Instruction memory is called ICCM
 and data memory is called DCCM. The configuration file for EM9D
-is found in :file:`arch/arc/soc/em9d/Kconfig.defconfig`.
+is found in :file:`arch/arc/soc/snps_emsk/Kconfig.defconfig.em9d`.
 
 If you have a larger program, you can select the EM7D or EM11D, which gives
 access to 128KB DRAM with i-cache and d-cache. The configuration file for EM7D
-is found in :file:`arch/arc/soc/em7d/Kconfig.defconfig` and EM11D is found in
-:file:`arch/arc/soc/em11d/Kconfig.defconfig`.
-
-.. note::
-
-   EM7D of EM Starter Kit 2.3 has secureshield feature,
-   which is not supported in Zephyr currently.
+is found in :file:`arch/arc/soc/snps_emsk/Kconfig.defconfig.em7d` and EM11D is
+found in :file:`arch/arc/soc/snps_emsk/Kconfig.defconfig.em11d`.
 
 
 Hardware
@@ -74,14 +69,15 @@ In Zephyr, only firmware versions 2.2 and 2.3 are supported.
 * For EM Starter Kit 2.2, EM7D, EM9D and EM11D core configurations are supported.
 
   * Use :option:`CONFIG_BOARD_EM_STARTERKIT_R22` to select 2.2 version.
-  * Use :option:`CONFIG_SOC_EM7D`, :option:`CONFIG_SOC_EM9D` or
-    :option:`CONFIG_SOC_EM11D` to select EM7D, EM9D or EM11D.
+  * Use :option:`CONFIG_SOC_EMSK_EM7D`, :option:`CONFIG_SOC_EMSK_EM9D` or
+    :option:`CONFIG_SOC_EMSK_EM11D` to select EM7D or EM9D or EM11D.
 
-* For EM Starter Kit 2.3, EM9D and EM11D core configurations are supported.
+* For EM Starter Kit 2.3, EM7D, EM9D and EM11D core configurations are
+  supported.
 
   * Use :option:`CONFIG_BOARD_EM_STARTERKIT_R23` to select 2.3 version.
-  * Use :option:`CONFIG_SOC_EM9D` or :option:`CONFIG_SOC_EM11D`
-    to select EM9D or EM11D.
+  * Use :option:`CONFIG_SOC_EMSK_EM7D`, :option:`CONFIG_SOC_EMSK_EM9D` or
+    :option:`CONFIG_SOC_EMSK_EM11D` to select EM7D or EM9D or EM11D.
 
 Supported Features
 ==================
