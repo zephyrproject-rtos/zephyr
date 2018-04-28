@@ -1,5 +1,0 @@
-
-config SOC_EM7D
-	bool "Synopsys ARC EM7D"
-	select CPU_HAS_MPU
-	select ARC_HAS_SECURE if BOARD_EM_STARTERKIT_R23

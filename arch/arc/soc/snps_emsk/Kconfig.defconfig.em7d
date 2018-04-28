@@ -1,14 +1,14 @@
 #
 # Copyright (c) 2014 Wind River Systems, Inc.
-# Copyright (c) 2016 Synopsys, Inc. All rights reserved.
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_EM7D
+if SOC_EMSK_EM7D
 
-config SOC
-	default em7d
+config CPU_EM4_DMIPS
+	def_bool y
 
 config NUM_IRQ_PRIO_LEVELS
 	# This processor supports 4 priority levels:
@@ -58,4 +58,4 @@ endif # ZTEST
 
 endif # ARC_MPU_VER
 
-endif #SOC_EM7D
+endif #SOC_EMSK_EM7D

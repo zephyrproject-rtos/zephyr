@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Synopsys, Inc. All rights reserved.
+ * Copyright (c) 2018 Synopsys, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Synopsys, Inc. All rights reserved.
+ * Copyright (c) 2018 Synopsys, Inc. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,13 +20,22 @@
 /* On the EM Starter Kit board, the peripheral bus clock frequency is 50Mhz */
 #define SYSCLK_DEFAULT_IOSC_HZ			MHZ(50)
 
-
 /* ARC EM Core IRQs */
 #define IRQ_TIMER0				16
 #define IRQ_TIMER1				17
 
+#if defined(CONFIG_BOARD_EM_STARTERKIT_R23) && defined(CONFIG_SOC_EMSK_EM7D)
+#define IRQ_SEC_TIMER0				20
+#endif /* CONFIG_BOARD_EM_STARTERKIT_R23 && CONFIG_SOC_EMSK_EM7D */
+
+#if defined(CONFIG_BOARD_EM_STARTERKIT_R23) && defined(CONFIG_SOC_EMSK_EM7D)
+#define IRQ_CORE_DMA_COMPLETE			22
+#define IRQ_CORE_DMA_ERROR			23
+#else /* CONFIG_BOARD_EM_STARTERKIT_R23 && CONFIG_SOC_EMSK_EM7D */
 #define IRQ_CORE_DMA_COMPLETE			20
 #define IRQ_CORE_DMA_ERROR			21
+#endif /* !(CONFIG_BOARD_EM_STARTERKIT_R23 && CONFIG_SOC_EMSK_EM7D) */
+
 
 #ifndef _ASMLANGUAGE
 
