@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <device.h>
+#include <sensor.h>
+#include <stdio.h>
+#include <zephyr.h>
+
+#define SYS_LOG_DOMAIN "main"
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#include <logging/sys_log.h>
+
+void main(void)
+{
+	struct sensor_value oversampling_rate = { 8192, 0 };
+	struct device *dev = device_get_binding(CONFIG_MS5837_DEV_NAME);
+
+	if (dev == NULL) {
+		SYS_LOG_ERR("Could not find MS5837 device, aborting test.");
+		return;
+	}
+
+	if (sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_OVERSAMPLING,
+				&oversampling_rate) != 0) {
+		SYS_LOG_ERR("Could not set oversampling rate of %d "
+				"on MS5837 device, aborting test.",
+				oversampling_rate.val1);
+		return;
+	}
+
+	while (1) {
+		struct sensor_value temp;
+		struct sensor_value press;
+
+		sensor_sample_fetch(dev);
+		sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
+		sensor_channel_get(dev, SENSOR_CHAN_PRESS, &press);
+
+		printf("Temperature: %d.%06d, Pressure: %d.%06d\n", temp.val1,
+		       temp.val2, press.val1, press.val2);
+
+		k_sleep(10000);
+	}
+}
