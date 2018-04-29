@@ -1,0 +1,3 @@
+tests:
+  section.subsection:
+    tags: my_tags

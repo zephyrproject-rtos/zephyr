@@ -29,9 +29,9 @@ CMakeLists.txt
    :language: CMake
    :linenos:
 
-sample.yaml
+testcase.yaml
 
-.. literalinclude:: ../../../samples/testing/integration/sample.yaml
+.. literalinclude:: ../../../samples/testing/integration/testcase.yaml
    :language: yaml
    :linenos:
 
@@ -51,6 +51,37 @@ src/main.c
    :depth: 1
    :local:
    :backlinks: top
+
+
+
+A test case project may consist of multiple sub-tests or smaller tests that
+either can be testing functionality or APIs. Functions implementing a test
+should follow the the guidelines below:
+
+* Test cases function names should be prefix with **test_**
+* Test cases should be documented using doxygen
+* Test function names should be unique within the section or component being
+  tested
+
+
+An example can be seen below::
+
+    /**
+     * @brief Test Asserts
+     *
+     * This test verifies the zassert_true macro.
+     */
+    static void test_assert(void)
+    {
+            zassert_true(1, "1 was false");
+    }
+
+
+The above test is then enabled as part of the testsuite using::
+
+    ztest_unit_test(test_assert)
+
+
 
 Quick start - Unit testing
 **************************

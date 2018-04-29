@@ -6,7 +6,13 @@
 
 #include <ztest.h>
 
-static void assert_tests(void)
+/**
+ * @brief Test Asserts
+ *
+ * This test verifies various assert macros provided by ztest.
+ *
+ */
+static void test_assert(void)
 {
 	zassert_true(1, "1 was false");
 	zassert_false(0, "0 was true");
@@ -19,7 +25,7 @@ static void assert_tests(void)
 void test_main(void)
 {
 	ztest_test_suite(framework_tests,
-		ztest_unit_test(assert_tests)
+		ztest_unit_test(test_assert)
 	);
 
 	ztest_run_test_suite(framework_tests);
