@@ -107,6 +107,8 @@ source "drivers/sensor/mma8451q/Kconfig"
 
 source "drivers/sensor/mpu6050/Kconfig"
 
+source "drivers/sensor/ms5837/Kconfig"
+
 source "drivers/sensor/nrf5/Kconfig"
 
 source "drivers/sensor/pms7003/Kconfig"
