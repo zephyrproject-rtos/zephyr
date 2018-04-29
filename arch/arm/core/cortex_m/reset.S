@@ -89,6 +89,12 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     msr PSP, r0
     movs.n r0, #2	/* switch to using PSP (bit1 of CONTROL reg) */
     msr CONTROL, r0
+    /*
+     * When changing the stack pointer, software must use an ISB instruction
+     * immediately after the MSR instruction. This ensures that instructions
+     * after the ISB instruction execute using the new stack pointer.
+    */
+    isb
 
     b _PrepC
 
