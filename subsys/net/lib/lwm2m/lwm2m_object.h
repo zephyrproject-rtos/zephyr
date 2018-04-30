@@ -81,6 +81,8 @@
 				 LWM2M_OP_BIT(LWM2M_OP_CREATE) | \
 				 LWM2M_OP_BIT(LWM2M_OP_EXECUTE))
 
+#define LWM2M_HAS_PERM(of, p)	((of->permissions & p) == p)
+
 /* resource types */
 #define LWM2M_RES_TYPE_NONE	0
 #define LWM2M_RES_TYPE_OPAQUE	1

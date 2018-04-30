@@ -2640,8 +2640,7 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 							       res->res_id);
 			if (!obj_field) {
 				ret = -ENOENT;
-			} else if ((obj_field->permissions &
-				    LWM2M_PERM_R) != LWM2M_PERM_R) {
+			} else if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_R)) {
 				ret = -EPERM;
 			} else {
 				/* formatter startup if needed */
