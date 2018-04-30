@@ -90,6 +90,19 @@ void tz_nonsecure_exception_prio_config(int secure_boost)
 		| aircr_payload;
 }
 
+void tz_nonsecure_system_reset_req_block(int block)
+{
+	u32_t aircr_payload = SCB->AIRCR & (~(SCB_AIRCR_VECTKEY_Msk));
+	if (block) {
+		aircr_payload |= SCB_AIRCR_SYSRESETREQS_Msk;
+	} else {
+		aircr_payload &= ~(SCB_AIRCR_SYSRESETREQS_Msk);
+	}
+	SCB->AIRCR = ((0x5FAUL << SCB_AIRCR_VECTKEY_Pos)
+			& SCB_AIRCR_VECTKEY_Msk)
+		| aircr_payload;
+}
+
 void tz_sau_configure(int enable, int allns)
 {
 	if (enable) {
