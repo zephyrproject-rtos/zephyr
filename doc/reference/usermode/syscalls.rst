@@ -26,8 +26,9 @@ Components
 
 All system calls have the following components:
 
-* A **C prototype** for the API, declared in some header under ``include/`` and
-  prefixed with :c:macro:`__syscall`.  This prototype is never implemented
+* A **C prototype** prefixed with :c:macro:`__syscall` for the API. It
+  will be declared in some header under ``include/`` or in another
+  ``SYSCALL_INCLUDE_DIRS`` directory. This prototype is never implemented
   manually, instead it gets created by the :ref:`gen_syscalls.py` script.
   What gets generated is an inline function which either calls the
   implementation function directly (if called from supervisor mode) or goes
@@ -87,6 +88,15 @@ bottom of ``include/sensor.h``:
 .. code-block:: c
 
     #include <syscalls/sensor.h>
+
+C prototype functions must be declared in one of the directories
+listed in the CMake variable ``SYSCALL_INCLUDE_DIRS``. This list
+always contains ``${ZEPHYR_BASE}/include``, but will also contain
+``APPLICATION_SOURCE_DIR`` when ``CONFIG_APPLICATION_DEFINED_SYSCALL``
+is set, or ``${ZEPHYR_BASE}/subsys/testsuite/ztest/include`` when
+``CONFIG_ZTEST`` is set. Additional paths can be added to the list
+through the CMake command line or in CMake code that is run before
+``${ZEPHYR_BASE}/cmake/app/boilerplate.cmake`` is run.
 
 Invocation Context
 ==================
