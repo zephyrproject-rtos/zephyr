@@ -106,6 +106,23 @@ void tz_nonsecure_psplim_set(u32_t val);
 #endif /* CONFIG_ARMV8_M_MAINLINE */
 
 /**
+ * @brief Block or permit Non-Secure System Reset Requests
+ *
+ * Function allows the user to configure the system to block or
+ * permit the Non-Secure domain to issue System Reset Requests.
+ *
+ * @param block Flag indicating whether Non-Secure System Reset
+ *                          Requests shall be blocked (1), or permitted (0).
+ *
+ * Note:
+ *
+ * This function shall only be called from Secure state.
+ *
+ * @return N/A
+ */
+void tz_nonsecure_system_reset_req_block(int block);
+
+/**
  * @brief Prioritize Secure exceptions
  *
  * Function allows the user to prioritize Secure exceptions over Non-Secure,
