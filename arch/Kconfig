@@ -110,7 +110,6 @@ config DYNAMIC_OBJECTS
 	bool "Allow kernel objects to be requested on system heap"
 	default n
 	depends on USERSPACE
-	depends on HEAP_MEM_POOL_SIZE > 0
 	help
 	Enabling this option allows for kernel objects to be requested from
 	the system heap, at a cost in performance and additional memory.
