@@ -943,7 +943,11 @@ endfunction()
 # check_compiler_flag(C "-Wall" my_check)
 # print(my_check) # my_check is now 1
 function(check_compiler_flag lang option ok)
-  string(MAKE_C_IDENTIFIER check${option}_${lang} ${ok})
+
+  string(MAKE_C_IDENTIFIER
+    check${option}_${lang}_${CMAKE_REQUIRED_FLAGS}
+    ${ok}
+    )
 
   if(${lang} STREQUAL C)
     check_c_compiler_flag("${option}" ${${ok}})
