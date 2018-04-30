@@ -943,6 +943,9 @@ endfunction()
 # check_compiler_flag(C "-Wall" my_check)
 # print(my_check) # my_check is now 1
 function(check_compiler_flag lang option ok)
+  if(NOT DEFINED CMAKE_REQUIRED_QUIET)
+    set(CMAKE_REQUIRED_QUIET 1)
+  endif()
 
   string(MAKE_C_IDENTIFIER
     check${option}_${lang}_${CMAKE_REQUIRED_FLAGS}
