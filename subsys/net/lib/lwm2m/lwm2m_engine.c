@@ -1870,7 +1870,7 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	}
 
 	if (!data_ptr || data_len == 0) {
-		return -EINVAL;
+		return -ENOENT;
 	}
 
 	if (res->multi_count_var != NULL) {
@@ -2180,6 +2180,8 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			return -EINVAL;
 
 		}
+	} else {
+		return -ENOENT;
 	}
 
 	if (res->post_write_cb &&
