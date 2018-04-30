@@ -195,22 +195,22 @@ static inline void sys_slist_init(sys_slist_t *list)
 
 #define SYS_SLIST_STATIC_INIT(ptr_to_list) {NULL, NULL}
 
-static inline sys_snode_t *sys_snode_next_peek(sys_snode_t *node)
+static inline sys_snode_t *z_snode_next_peek(sys_snode_t *node)
 {
 	return node->next;
 }
 
-static inline void sys_snode_next_set(sys_snode_t *parent, sys_snode_t *child)
+static inline void z_snode_next_set(sys_snode_t *parent, sys_snode_t *child)
 {
 	parent->next = child;
 }
 
-static inline void sys_slist_head_set(sys_slist_t *list, sys_snode_t *node)
+static inline void z_slist_head_set(sys_slist_t *list, sys_snode_t *node)
 {
 	list->head = node;
 }
 
-static inline void sys_slist_tail_set(sys_slist_t *list, sys_snode_t *node)
+static inline void z_slist_tail_set(sys_slist_t *list, sys_snode_t *node)
 {
 	list->tail = node;
 }
