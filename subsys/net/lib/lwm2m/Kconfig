@@ -108,14 +108,6 @@ config LWM2M_PEER_PORT
 	help
 	  This is the server port to connect to for LWM2M communication
 
-config LWM2M_BOOTSTRAP_PORT
-	int "LWM2M bootstrap port"
-	depends on LWM2M_RD_CLIENT_SUPPORT
-	default 5684
-	help
-	  This is the bootstrap port to connect to for security configuration
-
-
 config LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
 	bool "Firmware Update object support"
 	default y
