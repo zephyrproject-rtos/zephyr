@@ -207,6 +207,20 @@ int lwm2m_engine_register_post_write_callback(char *path,
 int lwm2m_engine_register_exec_callback(char *path,
 					lwm2m_engine_exec_cb_t cb);
 
+/* resource data bit values */
+#define LWM2M_RES_DATA_READ_ONLY	0
+
+/* resource data flags */
+#define LWM2M_RES_DATA_FLAG_RO		BIT(LWM2M_RES_DATA_READ_ONLY)
+
+/* helper macro to read resource flag */
+#define LWM2M_HAS_RES_FLAG(res, f)	((res->data_flags & f) == f)
+
+int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, u16_t data_len,
+			      u8_t data_flags);
+int lwm2m_engine_get_res_data(char *pathstr, void **data_ptr, u16_t *data_len,
+			      u8_t *data_flags);
+
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 int lwm2m_engine_set_net_pkt_pool(struct lwm2m_ctx *ctx,
 				  net_pkt_get_slab_func_t tx_slab,

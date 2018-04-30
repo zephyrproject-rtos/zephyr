@@ -63,22 +63,39 @@
 #define LWM2M_OP_CREATE		2
 #define LWM2M_OP_DELETE		3
 #define LWM2M_OP_EXECUTE	4
+#define LWM2M_FLAG_OPTIONAL	7
 /* values >7 aren't used for permission checks */
 #define LWM2M_OP_DISCOVER	8
 #define LWM2M_OP_WRITE_ATTR	9
 
 /* resource permissions */
 #define LWM2M_PERM_R		BIT(LWM2M_OP_READ)
+#define LWM2M_PERM_R_OPT	(BIT(LWM2M_OP_READ) | \
+				 BIT(LWM2M_FLAG_OPTIONAL))
 #define LWM2M_PERM_W		(BIT(LWM2M_OP_WRITE) | \
 				 BIT(LWM2M_OP_CREATE))
+#define LWM2M_PERM_W_OPT	(BIT(LWM2M_OP_WRITE) | \
+				 BIT(LWM2M_OP_CREATE) | \
+				 BIT(LWM2M_FLAG_OPTIONAL))
 #define LWM2M_PERM_X		BIT(LWM2M_OP_EXECUTE)
+#define LWM2M_PERM_X_OPT	(BIT(LWM2M_OP_EXECUTE) | \
+				 BIT(LWM2M_FLAG_OPTIONAL))
 #define LWM2M_PERM_RW		(BIT(LWM2M_OP_READ) | \
 				 BIT(LWM2M_OP_WRITE) | \
 				 BIT(LWM2M_OP_CREATE))
+#define LWM2M_PERM_RW_OPT	(BIT(LWM2M_OP_READ) | \
+				 BIT(LWM2M_OP_WRITE) | \
+				 BIT(LWM2M_OP_CREATE) | \
+				 BIT(LWM2M_FLAG_OPTIONAL))
 #define LWM2M_PERM_RWX		(BIT(LWM2M_OP_READ) | \
 				 BIT(LWM2M_OP_WRITE) | \
 				 BIT(LWM2M_OP_CREATE) | \
 				 BIT(LWM2M_OP_EXECUTE))
+#define LWM2M_PERM_RWX_OPT	(BIT(LWM2M_OP_READ) | \
+				 BIT(LWM2M_OP_WRITE) | \
+				 BIT(LWM2M_OP_CREATE) | \
+				 BIT(LWM2M_OP_EXECUTE) | \
+				 BIT(LWM2M_FLAG_OPTIONAL))
 
 #define LWM2M_HAS_PERM(of, p)	((of->permissions & p) == p)
 
@@ -130,6 +147,9 @@ struct lwm2m_obj_path {
 
 #define OBJ_FIELD_EXECUTE(res_id) \
 	OBJ_FIELD(res_id, X, NONE, 0)
+
+#define OBJ_FIELD_EXECUTE_OPT(res_id) \
+	OBJ_FIELD(res_id, X_OPT, NONE, 0)
 
 struct lwm2m_engine_obj_field {
 	u16_t  res_id;
@@ -219,6 +239,7 @@ struct lwm2m_engine_res_inst {
 	void  *data_ptr;
 	u16_t data_len;
 	u16_t res_id;
+	u8_t  data_flags;
 };
 
 struct lwm2m_engine_obj_inst {

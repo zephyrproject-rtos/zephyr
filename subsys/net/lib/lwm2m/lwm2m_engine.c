@@ -1344,6 +1344,38 @@ int lwm2m_engine_create_obj_inst(char *pathstr)
 	return lwm2m_create_obj_inst(path.obj_id, path.obj_inst_id, &obj_inst);
 }
 
+int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, u16_t data_len,
+			      u8_t data_flags)
+{
+	struct lwm2m_obj_path path;
+	struct lwm2m_engine_res_inst *res = NULL;
+	int ret = 0;
+
+	/* translate path -> path_obj */
+	ret = string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (path.level < 3) {
+		SYS_LOG_ERR("path must have 3 parts");
+		return -EINVAL;
+	}
+
+	/* look up resource obj */
+	ret = path_to_objs(&path, NULL, NULL, &res);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* assign data elements */
+	res->data_ptr = data_ptr;
+	res->data_len = data_len;
+	res->data_flags = data_flags;
+
+	return ret;
+}
+
 static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 {
 	struct lwm2m_obj_path path;
@@ -1377,6 +1409,11 @@ static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 	if (!res) {
 		SYS_LOG_ERR("res instance %d not found", path.res_id);
 		return -ENOENT;
+	}
+
+	if (LWM2M_HAS_RES_FLAG(res, LWM2M_RES_DATA_FLAG_RO)) {
+		SYS_LOG_ERR("res data pointer is read-only");
+		return -EACCES;
 	}
 
 	/* setup initial data elements */
@@ -1554,6 +1591,37 @@ int lwm2m_engine_set_float64(char *pathstr, float64_value_t *value)
 }
 
 /* user data getter functions */
+
+int lwm2m_engine_get_res_data(char *pathstr, void **data_ptr, u16_t *data_len,
+			      u8_t *data_flags)
+{
+	struct lwm2m_obj_path path;
+	struct lwm2m_engine_res_inst *res = NULL;
+	int ret = 0;
+
+	/* translate path -> path_obj */
+	ret = string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (path.level < 3) {
+		SYS_LOG_ERR("path must have 3 parts");
+		return -EINVAL;
+	}
+
+	/* look up resource obj */
+	ret = path_to_objs(&path, NULL, NULL, &res);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*data_ptr = res->data_ptr;
+	*data_len = res->data_len;
+	*data_flags = res->data_flags;
+
+	return 0;
+}
 
 static int lwm2m_engine_get(char *pathstr, void *buf, u16_t buflen)
 {
@@ -2051,6 +2119,10 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 
 	in = context->in;
 	path = context->path;
+
+	if (LWM2M_HAS_RES_FLAG(res, LWM2M_RES_DATA_FLAG_RO)) {
+		return -EACCES;
+	}
 
 	/* setup initial data elements */
 	data_ptr = res->data_ptr;
@@ -2655,8 +2727,12 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 				ret = lwm2m_read_handler(obj_inst, res,
 							 obj_field, context);
 				if (ret < 0) {
-					/* What to do here? */
-					SYS_LOG_ERR("READ OP failed: %d", ret);
+					/* ignore errors unless MATCH_SINGLE */
+					if (match_type == MATCH_SINGLE &&
+					    !LWM2M_HAS_PERM(obj_field,
+						BIT(LWM2M_FLAG_OPTIONAL))) {
+						SYS_LOG_ERR("READ OP: %d", ret);
+					}
 				} else {
 					num_read += 1;
 				}
