@@ -398,8 +398,6 @@ static int transceive(struct device *dev,
 		    spi->ctx.rx_len < DW_SPI_RXFTLR_DFLT) {
 			reg_data = spi->ctx.rx_len - 1;
 		}
-
-		reg_data = 0;
 	} else {
 		if (spi->ctx.rx_len && spi->ctx.rx_len < DW_SPI_FIFO_DEPTH) {
 			reg_data = spi->ctx.rx_len - 1;
