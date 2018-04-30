@@ -533,18 +533,21 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	}
 
 	if (i == ccc->cfg_len) {
+		/* If there's no existing entry, but the new value is zero,
+		 * we don't need to do anything, since a disabled CCC is
+		 * behavioraly the same as no written CCC.
+		 */
+		if (!value) {
+			return len;
+		}
+
 		for (i = 0; i < ccc->cfg_len; i++) {
 			/* Check for unused configuration */
-			if (ccc->cfg[i].valid) {
+			if (bt_addr_le_cmp(&ccc->cfg[i].peer, BT_ADDR_LE_ANY)) {
 				continue;
 			}
 
 			bt_addr_le_copy(&ccc->cfg[i].peer, &conn->le.dst);
-
-			if (value) {
-				ccc->cfg[i].valid = true;
-			}
-
 			break;
 		}
 
@@ -552,9 +555,6 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			BT_WARN("No space to store CCC cfg");
 			return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 		}
-	} else if (!value) {
-		/* free existing configuration for default value */
-		ccc->cfg[i].valid = false;
 	}
 
 	ccc->cfg[i].value = value;
@@ -564,6 +564,12 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	/* Update cfg if don't match */
 	if (ccc->cfg[i].value != ccc->value) {
 		gatt_ccc_changed(attr, ccc);
+	}
+
+	/* Disabled CCC is the same as no configured CCC, so clear the entry */
+	if (!value) {
+		bt_addr_le_copy(&ccc->cfg[i].peer, BT_ADDR_LE_ANY);
+		ccc->cfg[i].value = 0;
 	}
 
 	return len;
@@ -926,9 +932,9 @@ static u8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 		} else {
 			/* Clear value if not paired */
 			if (!bt_addr_le_is_bonded(&conn->le.dst)) {
-				ccc->cfg[i].valid = false;
-				memset(&ccc->cfg[i].value, 0,
-				       sizeof(ccc->cfg[i].value));
+				bt_addr_le_copy(&ccc->cfg[i].peer,
+						BT_ADDR_LE_ANY);
+				ccc->cfg[i].value = 0;
 			} else {
 				/* Update address in case it has changed */
 				bt_addr_le_copy(&ccc->cfg[i].peer,
