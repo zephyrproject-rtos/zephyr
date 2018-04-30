@@ -65,8 +65,6 @@
 #define SECONDS_TO_UPDATE_EARLY	2
 #define STATE_MACHINE_UPDATE_INTERVAL K_MSEC(500)
 
-#define LWM2M_PEER_PORT		CONFIG_LWM2M_PEER_PORT
-
 /* Leave room for 32 hexadeciaml digits (UUID) + NULL */
 #define CLIENT_EP_LEN		33
 
