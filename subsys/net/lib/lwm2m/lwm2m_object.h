@@ -50,6 +50,7 @@
 #include <net/coap.h>
 #include <net/lwm2m.h>
 #include <misc/printk.h>
+#include <misc/util.h>
 #include <kernel.h>
 
 /* #####/###/#####/### + NULL */
@@ -66,21 +67,18 @@
 #define LWM2M_OP_DISCOVER	8
 #define LWM2M_OP_WRITE_ATTR	9
 
-/* operation permission bits */
-#define LWM2M_OP_BIT(op)	(1 << (op - 1))
-
 /* resource permissions */
-#define LWM2M_PERM_R		LWM2M_OP_BIT(LWM2M_OP_READ)
-#define LWM2M_PERM_W		(LWM2M_OP_BIT(LWM2M_OP_WRITE) | \
-				 LWM2M_OP_BIT(LWM2M_OP_CREATE))
-#define LWM2M_PERM_X		LWM2M_OP_BIT(LWM2M_OP_EXECUTE)
-#define LWM2M_PERM_RW		(LWM2M_OP_BIT(LWM2M_OP_READ) | \
-				 LWM2M_OP_BIT(LWM2M_OP_WRITE) | \
-				 LWM2M_OP_BIT(LWM2M_OP_CREATE))
-#define LWM2M_PERM_RWX		(LWM2M_OP_BIT(LWM2M_OP_READ) | \
-				 LWM2M_OP_BIT(LWM2M_OP_WRITE) | \
-				 LWM2M_OP_BIT(LWM2M_OP_CREATE) | \
-				 LWM2M_OP_BIT(LWM2M_OP_EXECUTE))
+#define LWM2M_PERM_R		BIT(LWM2M_OP_READ)
+#define LWM2M_PERM_W		(BIT(LWM2M_OP_WRITE) | \
+				 BIT(LWM2M_OP_CREATE))
+#define LWM2M_PERM_X		BIT(LWM2M_OP_EXECUTE)
+#define LWM2M_PERM_RW		(BIT(LWM2M_OP_READ) | \
+				 BIT(LWM2M_OP_WRITE) | \
+				 BIT(LWM2M_OP_CREATE))
+#define LWM2M_PERM_RWX		(BIT(LWM2M_OP_READ) | \
+				 BIT(LWM2M_OP_WRITE) | \
+				 BIT(LWM2M_OP_CREATE) | \
+				 BIT(LWM2M_OP_EXECUTE))
 
 #define LWM2M_HAS_PERM(of, p)	((of->permissions & p) == p)
 
