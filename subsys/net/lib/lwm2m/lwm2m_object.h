@@ -55,15 +55,16 @@
 /* #####/###/#####/### + NULL */
 #define MAX_RESOURCE_LEN	20
 
-/* operations */
-#define LWM2M_OP_NONE		0
-#define LWM2M_OP_READ		1
-#define LWM2M_OP_DISCOVER	2
-#define LWM2M_OP_WRITE		3
-#define LWM2M_OP_WRITE_ATTR	4
-#define LWM2M_OP_EXECUTE	5
-#define LWM2M_OP_DELETE		6
-#define LWM2M_OP_CREATE		7
+/* operations / permissions */
+/* values from 0 to 7 can be used as permission checks */
+#define LWM2M_OP_READ		0
+#define LWM2M_OP_WRITE		1
+#define LWM2M_OP_CREATE		2
+#define LWM2M_OP_DELETE		3
+#define LWM2M_OP_EXECUTE	4
+/* values >7 aren't used for permission checks */
+#define LWM2M_OP_DISCOVER	8
+#define LWM2M_OP_WRITE_ATTR	9
 
 /* operation permission bits */
 #define LWM2M_OP_BIT(op)	(1 << (op - 1))
