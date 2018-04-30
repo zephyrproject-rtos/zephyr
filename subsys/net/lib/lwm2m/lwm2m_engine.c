@@ -1199,6 +1199,7 @@ static int string_to_path(char *pathstr, struct lwm2m_obj_path *path,
 	int i, tokstart = -1, toklen;
 	int end_index = strlen(pathstr) - 1;
 
+	memset(path, 0, sizeof(*path));
 	for (i = 0; i <= end_index; i++) {
 		/* search for first numeric */
 		if (tokstart == -1) {
@@ -1325,7 +1326,6 @@ int lwm2m_engine_create_obj_inst(char *pathstr)
 	SYS_LOG_DBG("path:%s", pathstr);
 
 	/* translate path -> path_obj */
-	memset(&path, 0, sizeof(path));
 	ret = string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
@@ -1353,7 +1353,6 @@ static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 	SYS_LOG_DBG("path:%s, value:%p, len:%d", pathstr, value, len);
 
 	/* translate path -> path_obj */
-	memset(&path, 0, sizeof(path));
 	ret = string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
@@ -1564,7 +1563,6 @@ static int lwm2m_engine_get(char *pathstr, void *buf, u16_t buflen)
 	SYS_LOG_DBG("path:%s, buf:%p, buflen:%d", pathstr, buf, buflen);
 
 	/* translate path -> path_obj */
-	memset(&path, 0, sizeof(path));
 	ret = string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
@@ -1768,7 +1766,6 @@ int lwm2m_engine_get_resource(char *pathstr, struct lwm2m_engine_res_inst **res)
 	int ret;
 	struct lwm2m_obj_path path;
 
-	memset(&path, 0, sizeof(path));
 	ret = string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
