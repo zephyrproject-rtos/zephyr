@@ -178,12 +178,6 @@ config COMPILER_OPT
 	  and can be used to change compiler optimization, warning and error
 	  messages, and so on.
 
-config TOOLCHAIN_VARIANT
-	string "Cross-compiler variant name"
-	help
-	  For optimized compilers with reduced features, specify the name
-	  of the variant.
-
 config CPLUSPLUS
 	bool "Enable C++ support for the application"
 	default n
