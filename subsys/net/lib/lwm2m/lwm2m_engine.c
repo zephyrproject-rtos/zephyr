@@ -1687,81 +1687,65 @@ int lwm2m_engine_get_string(char *pathstr, void *buf, u16_t buflen)
 	return lwm2m_engine_get(pathstr, buf, buflen);
 }
 
-u8_t lwm2m_engine_get_u8(char *pathstr)
+int lwm2m_engine_get_u8(char *pathstr, u8_t *value)
 {
-	u8_t value = 0;
-
-	lwm2m_engine_get(pathstr, &value, 1);
-	return value;
+	return lwm2m_engine_get(pathstr, value, 1);
 }
 
-u16_t lwm2m_engine_get_u16(char *pathstr)
+int lwm2m_engine_get_u16(char *pathstr, u16_t *value)
 {
-	u16_t value = 0;
-
-	lwm2m_engine_get(pathstr, &value, 2);
-	return value;
+	return lwm2m_engine_get(pathstr, value, 2);
 }
 
-u32_t lwm2m_engine_get_u32(char *pathstr)
+int lwm2m_engine_get_u32(char *pathstr, u32_t *value)
 {
-	u32_t value = 0;
-
-	lwm2m_engine_get(pathstr, &value, 4);
-	return value;
+	return lwm2m_engine_get(pathstr, value, 4);
 }
 
-u64_t lwm2m_engine_get_u64(char *pathstr)
+int lwm2m_engine_get_u64(char *pathstr, u64_t *value)
 {
-	u64_t value = 0;
-
-	lwm2m_engine_get(pathstr, &value, 8);
-	return value;
+	return lwm2m_engine_get(pathstr, value, 8);
 }
 
-s8_t lwm2m_engine_get_s8(char *pathstr)
+int lwm2m_engine_get_s8(char *pathstr, s8_t *value)
 {
-	s8_t value = 0;
-
-	lwm2m_engine_get(pathstr, &value, 1);
-	return value;
+	return lwm2m_engine_get(pathstr, value, 1);
 }
 
-s16_t lwm2m_engine_get_s16(char *pathstr)
+int lwm2m_engine_get_s16(char *pathstr, s16_t *value)
 {
-	s16_t value = 0;
-
-	lwm2m_engine_get(pathstr, &value, 2);
-	return value;
+	return lwm2m_engine_get(pathstr, value, 2);
 }
 
-s32_t lwm2m_engine_get_s32(char *pathstr)
+int lwm2m_engine_get_s32(char *pathstr, s32_t *value)
 {
-	s32_t value = 0;
-
-	lwm2m_engine_get(pathstr, &value, 4);
-	return value;
+	return lwm2m_engine_get(pathstr, value, 4);
 }
 
-s64_t lwm2m_engine_get_s64(char *pathstr)
+int lwm2m_engine_get_s64(char *pathstr, s64_t *value)
 {
-	s64_t value = 0;
-
-	lwm2m_engine_get(pathstr, &value, 8);
-	return value;
+	return lwm2m_engine_get(pathstr, value, 8);
 }
 
-bool lwm2m_engine_get_bool(char *pathstr)
+int lwm2m_engine_get_bool(char *pathstr, bool *value)
 {
-	return (lwm2m_engine_get_s8(pathstr) != 0);
+	int ret = 0;
+	s8_t temp = 0;
+
+	ret = lwm2m_engine_get_s8(pathstr, &temp);
+	if (!ret) {
+		*value = temp != 0;
+	}
+
+	return ret;
 }
 
-int   lwm2m_engine_get_float32(char *pathstr, float32_value_t *buf)
+int lwm2m_engine_get_float32(char *pathstr, float32_value_t *buf)
 {
 	return lwm2m_engine_get(pathstr, buf, sizeof(float32_value_t));
 }
 
-int   lwm2m_engine_get_float64(char *pathstr, float64_value_t *buf)
+int lwm2m_engine_get_float64(char *pathstr, float64_value_t *buf)
 {
 	return lwm2m_engine_get(pathstr, buf, sizeof(float64_value_t));
 }
