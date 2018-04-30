@@ -488,13 +488,11 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 #define BT_GATT_CCC_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
 
 /** @brief GATT CCC configuration entry.
- *  @param valid Valid flag
  *  @param peer Remote peer address
  *  @param value Configuration value.
  *  @param data Configuration pointer data.
  */
 struct bt_gatt_ccc_cfg {
-	u8_t			valid;
 	bt_addr_le_t		peer;
 	u16_t			value;
 	u8_t			data[4] __aligned(4);
