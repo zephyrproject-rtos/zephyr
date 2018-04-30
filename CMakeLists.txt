@@ -340,14 +340,22 @@ add_custom_command(OUTPUT always_rebuild COMMAND cmake -E echo Building for boar
 set(syscall_list_h ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
 set(syscalls_json  ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
 
+list(APPEND SYSCALL_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/include)
+
+foreach(d ${SYSCALL_INCLUDE_DIRS})
+  list(APPEND parse_syscalls_include_args
+    --include ${d}
+    )
+endforeach()
+
 add_custom_command(
   OUTPUT
   ${syscalls_json}
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${PROJECT_SOURCE_DIR}/scripts/parse_syscalls.py
-  --include          ${PROJECT_SOURCE_DIR}/include        # Read files from this dir
-  --json-file        ${syscalls_json}                     # Write this file
+  ${parse_syscalls_include_args}                  # Read files from these dirs
+  --json-file        ${syscalls_json}             # Write this file
   DEPENDS always_rebuild
   )
 
