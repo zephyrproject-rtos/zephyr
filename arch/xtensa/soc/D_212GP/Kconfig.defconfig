@@ -13,8 +13,4 @@ config SOC
 config IRQ_OFFLOAD_INTNUM
 	default 7
 
-config TOOLCHAIN_VARIANT
-	string
-	default RF-2016.4-linux
-
 endif

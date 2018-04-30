@@ -105,10 +105,6 @@ config XTENSA_ASM2
 	for SMP.  Assumes/requires hardware that implements the
 	register window extension, however.
 
-config TOOLCHAIN_VARIANT
-	string
-	default RG-2016.4-linux
-
 gsource "arch/xtensa/soc/*/Kconfig"
 
 endmenu

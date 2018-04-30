@@ -12,8 +12,4 @@ config SOC
 config IRQ_OFFLOAD_INTNUM
 	default 0
 
-config TOOLCHAIN_VARIANT
-	string
-	default RF-2015.3-linux
-
 endif
