@@ -709,7 +709,7 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
     ${GPERF} -C
     --output-file ${PRIV_STACKS_OUTPUT_SRC_PRE}
     ${PRIV_STACKS}
-    DEPENDS priv_stacks
+    DEPENDS priv_stacks ${PRIV_STACKS}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_custom_target(priv_stacks_output_src_pre DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC_PRE})
@@ -727,7 +727,7 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
     -o ${PRIV_STACKS_OUTPUT_SRC}
     -p "struct _k_priv_stack_map"
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS priv_stacks_output_src_pre
+    DEPENDS priv_stacks_output_src_pre ${PRIV_STACKS_OUTPUT_SRC_PRE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_custom_target(priv_stacks_output_src DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC})
