@@ -993,6 +993,15 @@ static void prov_random(const u8_t *data)
 	link.expect = PROV_DATA;
 }
 
+static inline bool is_pb_gatt(void)
+{
+#if defined(CONFIG_BT_MESH_PB_GATT)
+	return !!link.conn;
+#else
+	return false;
+#endif
+}
+
 static void prov_data(const u8_t *data)
 {
 	PROV_BUF(msg, 1);
@@ -1005,6 +1014,7 @@ static void prov_data(const u8_t *data)
 	u16_t addr;
 	u16_t net_idx;
 	int err;
+	bool identity_enable;
 
 	BT_DBG("");
 
@@ -1056,16 +1066,21 @@ static void prov_data(const u8_t *data)
 	/* Ignore any further PDUs on this link */
 	link.expect = 0;
 
+	/* Store info, since bt_mesh_provision() will end up clearing it */
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
+		identity_enable = is_pb_gatt();
+	} else {
+		identity_enable = false;
+	}
+
 	bt_mesh_provision(pdu, net_idx, flags, iv_index, 0, addr, dev_key);
 
-#if defined(CONFIG_BT_MESH_PB_GATT) && defined(CONFIG_BT_MESH_GATT_PROXY)
 	/* After PB-GATT provisioning we should start advertising
 	 * using Node Identity.
 	 */
-	if (link.conn) {
+	if (identity_enable) {
 		bt_mesh_proxy_identity_enable();
 	}
-#endif
 }
 
 static void prov_complete(const u8_t *data)
