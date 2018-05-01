@@ -7,3 +7,4 @@ tests:
       arduino_due
     tags: drivers sensor grove temperature
     harness: grove
+    depends_on: adc

@@ -1,3 +1,5 @@
+common:
+  depends_on: gpio spi i2c
 tests:
   test_build_drivers:
     build_only: true
