@@ -154,7 +154,7 @@ static int spi_mcux_configure(struct device *dev,
 		: kDSPI_ClockPhaseFirstEdge;
 
 	master_config.ctarConfig.direction =
-		(SPI_MODE_GET(spi_cfg->operation) & SPI_TRANSFER_LSB)
+		(spi_cfg->operation & SPI_TRANSFER_LSB)
 		? kDSPI_LsbFirst
 		: kDSPI_MsbFirst;
 
