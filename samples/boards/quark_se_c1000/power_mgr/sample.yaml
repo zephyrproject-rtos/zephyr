@@ -4,3 +4,4 @@ tests:
   test:
     filter: (CONFIG_SOC_QUARK_SE_C1000 or CONFIG_SOC_QUARK_SE_C1000_SS)
     tags: samples power
+    depends_on: rtc
