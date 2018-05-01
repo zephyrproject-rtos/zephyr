@@ -142,9 +142,6 @@ struct lwm2m_obj_path {
 #define OBJ_FIELD_DATA(res_id, perm, type) \
 	OBJ_FIELD(res_id, perm, type, 1)
 
-#define OBJ_FIELD_MULTI_DATA(res_id, perm, type, multi_max) \
-	OBJ_FIELD(res_id, perm, type, multi_max)
-
 #define OBJ_FIELD_EXECUTE(res_id) \
 	OBJ_FIELD(res_id, X, NONE, 0)
 
