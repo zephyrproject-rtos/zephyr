@@ -56,7 +56,7 @@ src/main.c
 
 A test case project may consist of multiple sub-tests or smaller tests that
 either can be testing functionality or APIs. Functions implementing a test
-should follow the the guidelines below:
+should follow the guidelines below:
 
 * Test cases function names should be prefix with **test_**
 * Test cases should be documented using doxygen
@@ -82,6 +82,53 @@ The above test is then enabled as part of the testsuite using::
     ztest_unit_test(test_assert)
 
 
+Listing Tests
+=============
+
+Tests (test projects) in the Zephyr tree consist of many testcases that run as
+part of a project and test similar functionality, for example an API or a
+feature. The ``sanitycheck`` script can parse the testcases in all
+test projects or a subset of them, and can generate reports on a granular
+level, i.e. if cases have passed or failed or if they were blocked or skipped.
+
+Sanitycheck parses the source files looking for test case names, so you
+can list all kernel test cases, for example, by entering::
+
+        sanitycheck --list-tests -T tests/kernel
+
+Skipping Tests
+==============
+
+Special- or architecture-specific tests cannot run on all
+platforms and architectures, however we still want to count those and
+report them as being skipped.  Because the test inventory and
+the list of tests is extracted from the code, adding
+conditionals inside the test suite is sub-optimal.  Tests that need
+to be skipped for a certain platform or feature need to explicitly
+report a skip using :c:func:`ztest_test_skip()`. If the test runs,
+it needs to report either a pass or fail.  For example::
+
+	#ifdef CONFIG_TEST1
+	void test_test1(void)
+	{
+		zassert_true(1, "true");
+	}
+        #else
+	void test_test1(void)
+	{
+		ztest_test_skip();
+	}
+	#endif
+
+
+	void test_main(void)
+	{
+		ztest_test_suite(common,
+				 ztest_unit_test(test_test1),
+				 ztest_unit_test(test_test2)
+				 );
+		ztest_run_test_suite(common);
+	}
 
 Quick start - Unit testing
 **************************
