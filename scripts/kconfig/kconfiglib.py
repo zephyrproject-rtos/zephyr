@@ -514,6 +514,7 @@ class Kconfig(object):
     """
     __slots__ = (
         "_choices",
+        "_encoding",
         "_set_re_match",
         "_unset_re_match",
         "_warn_for_no_prompt",
@@ -552,7 +553,8 @@ class Kconfig(object):
     # Public interface
     #
 
-    def __init__(self, filename="Kconfig", warn=True, warn_to_stderr=True):
+    def __init__(self, filename="Kconfig", warn=True, warn_to_stderr=True,
+                 encoding="utf-8"):
         """
         Creates a new Kconfig object by parsing Kconfig files. Raises
         KconfigSyntaxError on syntax errors. Note that Kconfig files are not
@@ -589,6 +591,20 @@ class Kconfig(object):
 
           This can be changed later with
           Kconfig.enable/disable_stderr_warnings().
+
+        encoding (default: "utf-8"):
+          The encoding to use when reading and writing files. If None, the
+          encoding specified in the current locale will be used.
+
+          The "utf-8" default avoids exceptions on systems that are configured
+          to use the C locale, which implies an ASCII encoding.
+
+          This parameter has no effect on Python 2, due to implementation
+          issues (regular strings turning into Unicode strings, which are
+          distinct in Python 2). Python 2 doesn't decode regular strings
+          anyway.
+
+          Related PEP: https://www.python.org/dev/peps/pep-0538/
         """
         self.srctree = os.environ.get("srctree")
 
@@ -615,6 +631,9 @@ class Kconfig(object):
         self._warn_to_stderr = warn_to_stderr
         self._warn_for_undef_assign = False
         self._warn_for_redun_assign = True
+
+
+        self._encoding = encoding
 
 
         self.syms = {}
@@ -936,7 +955,7 @@ class Kconfig(object):
           would usually want it enclosed in '/* */' to make it a C comment,
           and include a final terminating newline.
         """
-        with open(filename, "w") as f:
+        with self._open_enc(filename, "w") as f:
             f.write(header)
 
             # Avoid duplicates -- see write_config()
@@ -997,7 +1016,7 @@ class Kconfig(object):
           would usually want each line to start with '#' to make it a comment,
           and include a final terminating newline.
         """
-        with open(filename, "w") as f:
+        with self._open_enc(filename, "w") as f:
             f.write(header)
 
             # Symbol._written is set to True when a symbol config string is
@@ -1067,7 +1086,7 @@ class Kconfig(object):
           would usually want each line to start with '#' to make it a comment,
           and include a final terminating newline.
         """
-        with open(filename, "w") as f:
+        with self._open_enc(filename, "w") as f:
             f.write(header)
 
             # Avoid duplicates -- see write_config()
@@ -1229,7 +1248,7 @@ class Kconfig(object):
         # A separate helper function is neater than complicating write_config()
         # by passing a flag to it, plus we only need to look at symbols here.
 
-        with open("auto.conf", "w") as f:
+        with self._open_enc("auto.conf", "w") as f:
             for sym in self.defined_syms:
                 sym._written = False
 
@@ -1255,7 +1274,7 @@ class Kconfig(object):
             # No old values
             return
 
-        with open("auto.conf", _UNIVERSAL_NEWLINES_MODE) as f:
+        with self._open_enc("auto.conf", _UNIVERSAL_NEWLINES_MODE) as f:
             for line in f:
                 set_match = self._set_re_match(line)
                 if not set_match:
@@ -1417,12 +1436,12 @@ class Kconfig(object):
         # was set when the configuration was loaded
 
         try:
-            return open(filename, _UNIVERSAL_NEWLINES_MODE)
+            return self._open_enc(filename, _UNIVERSAL_NEWLINES_MODE)
         except IOError as e:
             if not os.path.isabs(filename) and self.srctree is not None:
                 filename = os.path.join(self.srctree, filename)
                 try:
-                    return open(filename, _UNIVERSAL_NEWLINES_MODE)
+                    return self._open_enc(filename, _UNIVERSAL_NEWLINES_MODE)
                 except IOError as e2:
                     # This is needed for Python 3, because e2 is deleted after
                     # the try block:
@@ -2576,6 +2595,14 @@ class Kconfig(object):
 
         raise KconfigSyntaxError(
             "{}Couldn't parse '{}': {}".format(loc, self._line.rstrip(), msg))
+
+    def _open_enc(self, filename, mode):
+        # open() wrapper for forcing the encoding on Python 3. Forcing the
+        # encoding on Python 2 turns strings into Unicode strings, which gets
+        # messy. Python 2 doesn't decode regular strings anyway.
+
+        return open(filename, mode) if _IS_PY2 else \
+               open(filename, mode, encoding=self._encoding)
 
     def _warn(self, msg, filename=None, linenr=None):
         # For printing general warnings
@@ -4867,6 +4894,9 @@ STR_TO_TRI = {
 # constants)
 #
 
+# Are we running on Python 2?
+_IS_PY2 = sys.version_info[0] < 3
+
 # Tokens
 (
     _T_ALLNOCONFIG_Y,
@@ -5009,7 +5039,7 @@ _TYPE_TOKENS = frozenset((
 ))
 
 # Use ASCII regex matching on Python 3. It's already the default on Python 2.
-_RE_ASCII = 0 if sys.version_info[0] < 3 else re.ASCII
+_RE_ASCII = 0 if _IS_PY2 else re.ASCII
 
 # Note: This hack is no longer needed as of upstream commit c226456
 # (kconfig: warn of unhandled characters in Kconfig commands). It
@@ -5112,4 +5142,4 @@ _REL_TO_STR = {
 #
 # There's no appreciable performance difference between "r" and "rU" for
 # parsing performance on Python 2.
-_UNIVERSAL_NEWLINES_MODE = "rU" if sys.version_info[0] < 3 else "r"
+_UNIVERSAL_NEWLINES_MODE = "rU" if _IS_PY2 else "r"
