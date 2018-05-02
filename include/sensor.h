@@ -228,6 +228,10 @@ enum sensor_attribute {
 	 * algorithms to calibrate itself on a certain axis, or all of them.
 	 */
 	SENSOR_ATTR_CALIB_TARGET,
+	/**
+	 * Sensor sampling interval in seconds.
+	 */
+	SENSOR_ATTR_SAMPLING_INTERVAL,
 };
 
 /**
