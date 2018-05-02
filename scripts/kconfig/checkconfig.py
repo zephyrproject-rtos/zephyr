@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# NOTE: This script has not been updated for Kconfiglib 2 and will not run
+
 """Zephyr Check kconfigs Definitions
 
 Check all CONFIG_* in the code are defined into a Kconfig file
