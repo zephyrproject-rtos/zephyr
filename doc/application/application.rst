@@ -935,155 +935,120 @@ The example below shows a comment line and an override setting
 
 .. _override_kernel_conf:
 
-Overriding Default Configuration
---------------------------------
+Overriding the Default Configuration
+------------------------------------
 
-Follow these steps to override an application's configuration
-temporarily, perhaps to test the effect of a change.
+An interactive configuration interface is available for making temporary
+changes to the configuration. This can be handy during development.
 
 .. note::
 
-   If you want to permanently alter the configuration you should set
-   the new value in a :file:`.conf` file, as described above in
-   :ref:`application_set_conf`.
+   The configuration can also be changed by editing :file:`zephyr/.config` in
+   the application build directory by hand. Using the configuration interface
+   is safer, as it correctly handles dependencies between configurations
+   symbols.
 
-The steps below describe how to configure your application using a
-menu-driven configurator interface. While you can edit your
-application's :file:`.config` manually, using a configurator tool is
-preferred, since it correctly handles dependencies between options.
+To make a setting permanent, you should set it in a :file:`.conf` file, as
+described above in :ref:`application_set_conf`.
 
+The steps below will run the interactive configuration interface:
 
-#. Generate a Make build system, and use it to run ``ninja
-   menuconfig`` as follows.
+#. Create a build directory :file:`<home>/app/build` inside your application
+   directory and generate build files inside it with CMake, as follows:
 
-   a) Using CMake, create a build directory (:file:`<home>/app/build`) from
-      your application directory (:file:`<home>/app`).
+   .. code-block:: bash
 
-      For example, on a shell or command prompt:
+      # On Linux/macOS
+      cd ~/app
+      # On Windows
+      cd %userprofile%\app
 
-      .. code-block:: bash
+      mkdir build && cd build
+      cmake -GNinja ..
 
-         # On Linux/macOS
-         cd ~/app
-         # On Windows
-         cd %userprofile%\app
+#. Run the following command from the build directory (:file:`<home>/app/build`)
+   to start the configuration interface:
 
-         mkdir build && cd build
-         cmake -GNinja ..
+   .. code-block:: bash
 
-   b) Run ``ninja menuconfig`` from the build directory
-      (:file:`<home>/app/build`).
+       ninja menuconfig
 
-      Continuing the above Unix shell example:
+   The configuration interface is shown below:
 
-      .. code-block:: bash
+   .. image:: figures/app_kernel_conf_1.png
+        :align: center
+        :alt: Main Configuration Menu
 
-          ninja menuconfig
+#. Change configuration symbols to their desired values as follows:
 
-      A question-based menu opens that allows you to set individual
-      configuration options.
+   * Use the arrow keys to navigate the menu.
 
-      .. image:: figures/app_kernel_conf_1.png
-           :width: 600px
-           :align: center
-           :alt: Main Configuration Menu
+     .. note::
 
-#. Set kernel configuration values using the following
-   key commands:
+        Common `Vim <https://www.vim.org>`_ key bindings are supported as well.
 
-   * Use the arrow keys to navigate within any menu or list.
-
-   * Press :kbd:`Enter` to enter submenus and choices, which appear with
-     ``--->`` next to them.
+   * Press :kbd:`Enter` or :kbd:`Space` to enter submenus and choices, which
+     appear with ``--->`` next to them. Press :kbd:`ESC` returns to the parent
+     menu.
 
    * Press :kbd:`Space` to toggle or configure a symbol value. Boolean
      configuration symbols are shown with :guilabel:`[ ]` brackets, while
      numeric and string-valued configuration symbols are shown with
      :guilabel:`( )` brackets.
 
-   * Press :kbd:`Tab` to navigate the command menu at the bottom of the
-     display.
+     .. note::
 
-#. For information about any symbol, select the symbol and type :kbd:`?`.
+        You can also press :kbd:`Y` or :kbd:`N` to set a boolean configuration
+        symbol, to the corresponding value.
 
-   Press :kbd:`Enter` to return to the menu.
+   * Press :kbd:`?` to display information about the currently selected symbol.
+     Press :kbd:`ESC` or :kbd:`Q` to return from the information display to the
+     menu.
 
-#. Press :kbd:`/` to bring up a search menu to look for a particular option.
-
-#. After configuring the kernel options for your application, tab to
-   :guilabel:`< Save >` and press :kbd:`Enter`.
-
-   The following dialog opens with the :guilabel:`< Ok >` command selected:
+#. After configuring the kernel options for your application, press
+   :kbd:`Q` to bring up the save-and-quit dialog:
 
    .. image:: figures/app_kernel_conf_2.png
-      :width: 400px
       :align: center
-      :height: 100px
-      :alt: Save Configuration Dialog
+      :alt: Save and Quit Dialog
 
+#. Press :kbd:`Y` to save the kernel configuration options to the default
+   filename (:file:`zephyr/.config`).
 
-#. Press :kbd:`Enter` to save the kernel configuration options to the default
-   file name; alternatively, type a file name and press :kbd:`Enter`.
-
-   Typically, you will save to the default file name unless you are
+   Typically, you will save to the default filename unless you are
    experimenting with various configuration scenarios.
-
-   A :file:`zephyr` directory will have been created in the build
-    directory.
 
    .. note::
 
-      At present, only a :file:`.config` file can be built. If you have saved
-      files with different file names and want to build with one of these,
-      change the file name to :file:`.config`. To keep your original
-      :file:`.config`, rename it to something other than :file:`.config`.
+      At present, the configuration file used during building is always
+      :file:`zephyr/.config`. If you have another saved configuration that you
+      want to build with, copy it to :file:`zephyr/.config`. Make sure to back
+      up your original configuration file.
 
-   Kernel configuration files, such as the :file:`.config` file, are saved
-   as hidden files in :file:`zephyr`. To list all your kernel configuration
-   files, enter :command:`ls -a` at the terminal prompt.
+      Also note that filenames starting with ``.`` are not listed by ``ls`` by
+      default on Linux and macOS. Use the ``-a`` flag to see them.
 
-   The following dialog opens, displaying the file name the configuration
-   was saved to.
+Finding a symbol in the menu tree and navigating to it can be tedious. To jump
+directly to a symbol, press the :kbd:`/` key. This brings up the following
+dialog, where you can search for symbols by name and jump to them:
 
-   .. image:: figures/app_kernel_conf_3.png
-         :width: 400px
-         :align: center
-         :height: 150px
-         :alt: Saved Configuration Name Dialog
+.. image:: figures/app_kernel_conf_3.png
+    :align: center
+    :alt: Menuconfig Search Dialog
 
-#. Press :kbd:`Enter` to return to the options menu.
+If you jump to a symbol that isn't currently visible (e.g., due to having
+unsatisfied dependencies) then *show-all mode* will be enabled. In show-all
+mode, all symbols are displayed, including currently invisible symbols. To
+disable show-all mode, press :kbd:`A`.
 
-#. To load any saved kernel configuration file, tab to :guilabel:`< Load >` and
-   press :kbd:`Enter`.
+.. note::
 
-   The following dialog opens with the :guilabel:`< Ok >` command selected:
+    Show-all mode can't be disabled if there are no visible items in the menu.
 
-   .. image:: figures/app_kernel_conf_4.png
-      :width: 400px
-      :align: center
-      :height: 175px
-      :alt: Configuration File Load Dialog
-
-#. To load the last saved kernel configuration file, press :guilabel:`< Ok >`,
-   or to load another saved configuration file, type the file name, then select
-   :guilabel:`< Ok >`.
-
-#. Press :kbd:`Enter` to load the file and return to the main menu.
-
-#. To exit the menu configuration, tab to :guilabel:`< Exit >` and press
-   :kbd:`Enter`.
-
-   The following confirmation dialog opens with the :guilabel:`< Yes >`
-   command selected.
-
-   .. image:: figures/app_kernel_conf_5.png
-      :width: 400px
-      :align: center
-      :height: 100px
-      :alt: Exit Dialog
-
-#. Press :kbd:`Enter` to retire the menu display and return to the console
-   command line.
+To figure out why a symbol you jumped to isn't visible, inspect its
+dependencies by pressing :kbd:`?`. If you discover that the symbol depends on
+another symbol that isn't enabled, you can jump to that symbol, in turn, to see
+if it can be enabled.
 
 .. _application_dt:
 
