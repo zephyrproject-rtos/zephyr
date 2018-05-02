@@ -622,8 +622,15 @@ function(zephyr_check_compiler_flag lang option check)
   # We need to create a unique key wrt. testing the toolchain
   # capability. This key must be a valid C identifier that includes
   # everything that can affect the toolchain test.
+
+  # The 'cacheformat' must be bumped if a bug in the caching mechanism
+  # is detected and all old keys must be invalidated.
+  set(cacheformat 2)
+
   set(key_string "")
   set(key_string "${key_string}ZEPHYR_TOOLCHAIN_CAPABILITY_CACHE_")
+  set(key_string "${key_string}cacheformat_")
+  set(key_string "${key_string}${cacheformat}_")
   set(key_string "${key_string}${TOOLCHAIN_SIGNATURE}_")
   set(key_string "${key_string}${lang}_")
   set(key_string "${key_string}${option}_")
