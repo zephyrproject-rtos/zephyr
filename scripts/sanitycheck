@@ -834,8 +834,7 @@ class MakeGenerator:
         if self.deprecations:
             cflags = cflags + "  -Wno-deprecated-declarations"
 
-        if not "native_posix" in args:
-            ldflags="-Wl,--fatal-warnings"
+        ldflags="-Wl,--fatal-warnings"
 
         if options.ninja:
             generator = "Ninja"
