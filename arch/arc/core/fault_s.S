@@ -107,7 +107,7 @@ _exc_return:
 
 	/* check if the current thread needs to be rescheduled */
 	ld_s r0, [r1, _kernel_offset_to_ready_q_cache]
-	breq r0, r2, _exc_return
+	breq r0, r2, _exc_return_from_exc
 
 	_save_callee_saved_regs
 
