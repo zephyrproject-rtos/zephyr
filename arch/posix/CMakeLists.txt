@@ -39,7 +39,3 @@ zephyr_ld_options(
 
 add_subdirectory(soc)
 add_subdirectory(core)
-
-# Override the flag used with linker.cmd
-# "-Wl,--just-symbols linker.cmd" instead of "-T linker.cmd"
-set_property(GLOBAL PROPERTY TOPT -Wl,--just-symbols)

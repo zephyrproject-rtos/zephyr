@@ -9,7 +9,7 @@
  * @file
  * @brief Linker command/script file
  *
- * Linker script for the Nios II platform
+ * Linker script for the POSIX (native) platform
  */
 
 #define _LINKER
@@ -25,13 +25,15 @@
 SECTIONS
  {
 
-/* Ideally we would have here the platform default linker script SECTIONS */
-/* content */
-
-
 #include <linker/common-rom.ld>
 
 #include <linker/common-ram.ld>
 
  __data_ram_end = .;
- }
+ } INSERT AFTER .data;
+
+/*
+ * Note that the INSERT command actually changes the meaning of the -T command
+ * line switch: The script will now augment the default SECTIONS instead of
+ * replacing it.
+ */
