@@ -480,9 +480,10 @@ static void test_setup(void)
 		       net_sprint_ipv6_addr(&ll_addr));
 		zassert_not_null(ifaddr, "ll_addr");
 	} else {
-		/* For testing purposes we need to set the adddresses preferred */
+		/* For testing purposes we need to set 
+		the adddresses preferred */
 		ifaddr->addr_state = NET_ADDR_PREFERRED;
-        }
+	}
 
 	net_if_up(iface1);
 	net_if_up(iface2);
