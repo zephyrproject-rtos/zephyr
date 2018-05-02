@@ -18,11 +18,19 @@
 static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
+	static const int delays[] = {
+		0,	/* CCS811_MODE_IAQ_IDLE */
+		100,	/* CCS811_MODE_IAQ_1SEC */
+		1000,	/* CCS811_MODE_IAQ_10SEC */
+		6000,	/* CCS811_MODE_IAQ_60SEC */
+		25,	/* CCS811_MODE_RAW_DATA */
+	};
+	int delay = delays[drv_data->mode >> 4];
 	int tries = 11;
 	u16_t buf[4];
 	u8_t status;
 
-	/* Check data ready flag for the measurement interval of 1 seconds */
+	/* Check data ready flag for the given measurement interval */
 	while (tries-- > 0) {
 		if (i2c_reg_read_byte(drv_data->i2c, CONFIG_CCS811_I2C_ADDR,
 				      CCS811_REG_STATUS, &status) < 0) {
@@ -34,7 +42,7 @@ static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 			break;
 		}
 
-		k_sleep(100);
+		k_sleep(delay);
 	}
 
 	if (!(status & CCS811_STATUS_DATA_READY)) {
@@ -63,6 +71,11 @@ static int ccs811_channel_get(struct device *dev,
 {
 	struct ccs811_data *drv_data = dev->driver_data;
 	u32_t uval;
+
+	if (drv_data->mode == CCS811_MODE_RAW_DATA &&
+	    (chan == SENSOR_CHAN_CO2 || chan == SENSOR_CHAN_VOC)) {
+		return -ENOTSUP;
+	}
 
 	switch (chan) {
 	case SENSOR_CHAN_CO2:
@@ -102,9 +115,55 @@ static int ccs811_channel_get(struct device *dev,
 	return 0;
 }
 
+/*
+ * Refer to the sensor datasheet for the additional constraints on mode
+ * transitions.
+ */
+static int ccs811_set_measurement_mode(struct device *dev, uint8_t mode)
+{
+	struct ccs811_data *drv_data = dev->driver_data;
+
+	drv_data->mode = mode;
+	return i2c_reg_write_byte(drv_data->i2c, CONFIG_CCS811_I2C_ADDR,
+				  CCS811_REG_MEAS_MODE, mode);
+}
+
+static int ccs811_attr_set(struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr,
+			   const struct sensor_value *val)
+{
+	u8_t mode;
+
+	if (attr != SENSOR_ATTR_SAMPLING_INTERVAL) {
+		return -ENOTSUP;
+	}
+
+	if (chan != SENSOR_CHAN_CO2 && chan != SENSOR_CHAN_VOC &&
+	    chan != SENSOR_CHAN_VOLTAGE && chan != SENSOR_CHAN_CURRENT) {
+		return -ENOTSUP;
+	}
+
+	if (val->val1 == 0 && val->val2	== 0) {
+		mode = CCS811_MODE_IDLE;
+	} else if (val->val1 == 1 && val->val2 == 0) {
+		mode = CCS811_MODE_IAQ_1SEC;
+	} else if (val->val1 == 10 && val->val2 == 0) {
+		mode = CCS811_MODE_IAQ_10SEC;
+	} else if (val->val1 == 60 && val->val2 == 0) {
+		mode = CCS811_MODE_IAQ_60SEC;
+	} else if (val->val1 == 0 && val->val2 == 250000) {
+		mode = CCS811_MODE_IAQ_60SEC;
+	} else {
+		return -ENOTSUP;
+	}
+
+	return ccs811_set_measurement_mode(dev, mode);
+}
+
 static const struct sensor_driver_api ccs811_driver_api = {
 	.sample_fetch = ccs811_sample_fetch,
 	.channel_get = ccs811_channel_get,
+	.attr_set = ccs811_attr_set,
 };
 
 static int switch_to_app_mode(struct device *i2c)
@@ -210,9 +269,7 @@ int ccs811_init(struct device *dev)
 	}
 
 	/* Set Measurement mode for 1 second */
-	if (i2c_reg_write_byte(drv_data->i2c, CONFIG_CCS811_I2C_ADDR,
-			       CCS811_REG_MEAS_MODE,
-			       CCS811_MODE_IAQ_1SEC) < 0) {
+	if (ccs811_set_measurement_mode(dev, CCS811_MODE_IAQ_1SEC) < 0) {
 		SYS_LOG_ERR("Failed to set Measurement mode");
 		return -EIO;
 	}

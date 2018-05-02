@@ -52,6 +52,7 @@ struct ccs811_data {
 	u8_t status;
 	u8_t error;
 	u16_t resistance;
+	u8_t mode;
 };
 
 #define SYS_LOG_DOMAIN "CCS811"
