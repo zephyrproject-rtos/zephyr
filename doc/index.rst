@@ -9,15 +9,15 @@ Zephyr Project Documentation
    Welcome to the Zephyr Project's documentation version |version|!
 
    Documentation for the development branch of Zephyr can be found at
-   https://www.zephyrproject.org/doc/
+   http://docs.zephyrproject.org/
 
 .. only:: (development or daily)
 
    Welcome to the Zephyr Project's documentation. This is the documentation of the
    master tree under development (version |version|).
 
-   Documentation for released versions of Zephyr can be found at
-   ``https://www.zephyrproject.org/doc/<version>``. The following documentation
+   Documentation for tagged released versions of Zephyr can be found at
+   ``http://docs.zephyrproject.org/<version>``. The following documentation
    versions are available:
 
    `Zephyr 1.5.0`_ | `Zephyr 1.6.1`_ | `Zephyr 1.7.1`_ | `Zephyr 1.8.0`_ |
@@ -63,10 +63,10 @@ Indices and Tables
 
 * :ref:`genindex`
 
-.. _Zephyr 1.11.0: https://www.zephyrproject.org/doc/1.11.0/
-.. _Zephyr 1.10.0: https://www.zephyrproject.org/doc/1.10.0/
-.. _Zephyr 1.9.2: https://www.zephyrproject.org/doc/1.9.0/
-.. _Zephyr 1.8.0: https://www.zephyrproject.org/doc/1.8.0/
-.. _Zephyr 1.7.1: https://www.zephyrproject.org/doc/1.7.0/
-.. _Zephyr 1.6.1: https://www.zephyrproject.org/doc/1.6.0/
-.. _Zephyr 1.5.0: https://www.zephyrproject.org/doc/1.5.0/
+.. _Zephyr 1.11.0: http://docs.zephyrproject.org/1.11.0/
+.. _Zephyr 1.10.0: http://docs.zephyrproject.org/1.10.0/
+.. _Zephyr 1.9.2: http://docs.zephyrproject.org/1.9.0/
+.. _Zephyr 1.8.0: http://docs.zephyrproject.org/1.8.0/
+.. _Zephyr 1.7.1: http://docs.zephyrproject.org/1.7.0/
+.. _Zephyr 1.6.1: http://docs.zephyrproject.org/1.6.0/
+.. _Zephyr 1.5.0: http://docs.zephyrproject.org/1.5.0/
