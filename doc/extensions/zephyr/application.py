@@ -9,10 +9,6 @@ from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
 
 
-# TODO: extend and modify this for Windows.
-#
-# This could be as simple as generating a couple of sets of instructions, one
-# for Unix environments, and another for Windows.
 class ZephyrAppCommandsDirective(Directive):
     '''Zephyr directive for generating documentation with the shell
     commands needed to manage (build, flash, etc.) an application.
