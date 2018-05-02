@@ -284,8 +284,8 @@ static u32_t rf_evaluate_freq_setting(struct cc1200_context *ctx, u32_t chan)
 	u32_t freq = 0;
 	u32_t rf, lo_div;
 
-	rf = cc1200->rf_settings->chan_center_freq0 +
-		((chan * (u32_t)cc1200->rf_settings->channel_spacing) / 10);
+	rf = ctx->rf_settings->chan_center_freq0 +
+		((chan * (u32_t)ctx->rf_settings->channel_spacing) / 10);
 	lo_div = get_lo_divider(ctx);
 
 	SYS_LOG_DBG("Calculating freq for %u KHz RF (%u)", rf, lo_div);
