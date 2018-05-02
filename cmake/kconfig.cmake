@@ -18,51 +18,23 @@ set(ENV{KERNELVERSION}      ${PROJECT_VERSION})
 set(ENV{KCONFIG_CONFIG}     ${DOTCONFIG})
 set(ENV{KCONFIG_AUTOHEADER} ${AUTOCONF_H})
 
-set(kconfig_target_list
-  config
-  gconfig
-  menuconfig
-  oldconfig
-  xconfig
-  )
-
-set(COMMAND_FOR_config     ${KCONFIG_CONF} --oldaskconfig ${KCONFIG_ROOT})
-set(COMMAND_FOR_gconfig    gconf                          ${KCONFIG_ROOT})
-set(COMMAND_FOR_menuconfig ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/kconfig/menuconfig.py ${KCONFIG_ROOT})
-set(COMMAND_FOR_oldconfig  ${KCONFIG_CONF} --oldconfig    ${KCONFIG_ROOT})
-set(COMMAND_FOR_xconfig    qconf                          ${KCONFIG_ROOT})
-
-set(COMMAND_RUNS_ON_WIN_menuconfig 1)
-
 # Set environment variables so that Kconfig can prune Kconfig source
 # files for other architectures
-set(ENV{ENV_VAR_ARCH}         ${ARCH})
-set(ENV{ENV_VAR_BOARD_DIR}    ${BOARD_DIR})
+set(ENV{ENV_VAR_ARCH}      ${ARCH})
+set(ENV{ENV_VAR_BOARD_DIR} ${BOARD_DIR})
 
-foreach(kconfig_target ${kconfig_target_list})
-  if ((NOT WIN32) OR (DEFINED COMMAND_RUNS_ON_WIN_${kconfig_target}))
-    add_custom_target(
-      ${kconfig_target}
-      ${CMAKE_COMMAND} -E env
-      srctree=${ZEPHYR_BASE}
-      KERNELVERSION=${PROJECT_VERSION}
-      KCONFIG_CONFIG=${DOTCONFIG}
-      ENV_VAR_ARCH=$ENV{ENV_VAR_ARCH}
-      ENV_VAR_BOARD_DIR=$ENV{ENV_VAR_BOARD_DIR}
-      ${COMMAND_FOR_${kconfig_target}}
-      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
-      USES_TERMINAL
-      )
-  else()
-    add_custom_target(
-      ${kconfig_target}
-      ${CMAKE_COMMAND} -E echo
-        "========================================="
-	"Reconfiguration not supported on Windows."
-        "========================================="
-      )
-  endif()
-endforeach()
+add_custom_target(
+  menuconfig
+  ${CMAKE_COMMAND} -E env
+  srctree=${ZEPHYR_BASE}
+  KERNELVERSION=${PROJECT_VERSION}
+  KCONFIG_CONFIG=${DOTCONFIG}
+  ENV_VAR_ARCH=$ENV{ENV_VAR_ARCH}
+  ENV_VAR_BOARD_DIR=$ENV{ENV_VAR_BOARD_DIR}
+  ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/kconfig/menuconfig.py ${KCONFIG_ROOT}
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
+  USES_TERMINAL
+  )
 
 # Bring in extra configuration files dropped in by the user or anyone else;
 # make sure they are set at the end so we can override any other setting
