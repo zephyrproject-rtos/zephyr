@@ -68,7 +68,7 @@ support systems:
 
 * **Documentation**: Extensive Project technical documentation is developed
   along with the Zephyr kernel itself, and can be found at
-  http://docs.zephyrproject.  Additional documentation is maintained in
+  http://docs.zephyrproject.org.  Additional documentation is maintained in
   the `Zephyr GitHub wiki`_.
 
 * **Cross-reference**: Source code cross-reference for the Zephyr
@@ -102,12 +102,12 @@ support systems:
   client or use a client-side application such as pidgin.
 
 
-.. _supported boards: https://www.zephyrproject.org/doc/boards/boards.html
-.. _Zephyr Introduction: https://www.zephyrproject.org/doc/introduction/introducing_zephyr.html
-.. _Getting Started Guide: https://www.zephyrproject.org/doc/getting_started/getting_started.html
-.. _Contribution Guide: https://www.zephyrproject.org/doc/contribute/contribute_guidelines.html
+.. _supported boards: http://docs.zephyrproject.org/boards/boards.html
+.. _Zephyr Introduction: http://docs.zephyrproject.org/introduction/introducing_zephyr.html
+.. _Getting Started Guide: http://docs.zephyrproject.org/getting_started/getting_started.html
+.. _Contribution Guide: http://docs.zephyrproject.org/contribute/contribute_guidelines.html
 .. _Zephyr GitHub wiki: https://github.com/zephyrproject-rtos/zephyr/wiki
 .. _Zephyr mailing lists: https://lists.zephyrproject.org/
 .. _Zephyr mailing list subgroups: https://lists.zephyrproject.org/g/main/subgroups
-.. _Sample and Demo Code Examples: https://www.zephyrproject.org/doc/samples/samples.html
-.. _Security Overview: https://www.zephyrproject.org/doc/security/security-overview.html
+.. _Sample and Demo Code Examples: http://docs.zephyrproject.org/samples/samples.html
+.. _Security Overview: http://docs.zephyrproject.org/security/security-overview.html
