@@ -473,18 +473,16 @@ static void test_setup(void)
 		zassert_not_null(ifaddr, "addr1");
 	}
 
-	/* For testing purposes we need to set the adddresses preferred */
-	ifaddr->addr_state = NET_ADDR_PREFERRED;
-
 	ifaddr = net_if_ipv6_addr_add(iface1, &ll_addr,
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&ll_addr));
 		zassert_not_null(ifaddr, "ll_addr");
+	} else {
+		/* we need to set the adddresses preferred */
+		ifaddr->addr_state = NET_ADDR_PREFERRED;
 	}
-
-	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	net_if_up(iface1);
 	net_if_up(iface2);
