@@ -32,6 +32,13 @@ config ALTERA_AVALON_I2C
 
 endif # I2C_NIOS2
 
+if DMA_NIOS2_MSGDMA
+
+config ALTERA_AVALON_MSGDMA
+	def_bool y
+
+endif # DMA_NIOS2_MSGDMA
+
 if UART_NS16550
 
 config UART_NS16550_PCI

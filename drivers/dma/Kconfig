@@ -81,4 +81,6 @@ source "drivers/dma/Kconfig.sam_xdmac"
 
 source "drivers/dma/Kconfig.cavs"
 
+source "drivers/dma/Kconfig.nios2_msgdma"
+
 endif # DMA
