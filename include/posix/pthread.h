@@ -13,6 +13,8 @@
 #include <posix/unistd.h>
 #include "sys/types.h"
 #include "posix_sched.h"
+#include <stdlib.h>
+#include <string.h>
 
 enum pthread_state {
 	/* The thread is running and joinable. */
@@ -34,13 +36,11 @@ struct posix_thread {
 	/* Pthread cancellation */
 	int cancel_state;
 	int cancel_pending;
-	struct k_sem cancel_lock_sem;
 	pthread_mutex_t cancel_lock;
 
 	/* Pthread State */
 	enum pthread_state state;
 	pthread_mutex_t state_lock;
-	struct k_sem state_lock_sem;
 	pthread_cond_t state_cond;
 };
 
@@ -152,61 +152,73 @@ static inline int pthread_condattr_destroy(pthread_condattr_t *att)
  *
  * @param name Symbol name of the mutex
  */
-#define PTHREAD_MUTEX_DEFINE(name)		\
-	K_SEM_DEFINE(name##_psem, 1, 1);	\
-	struct pthread_mutex name = {		\
-		.sem = &name##_psem,		\
+#define PTHREAD_MUTEX_DEFINE(name) \
+	struct pthread_mutex name \
+		__in_section(_k_mutex, static, name) = \
+	{ \
+		.lock_count = 0, \
+		.wait_q = {SYS_DLIST_STATIC_INIT((sys_dlist_t *)&name.wait_q)}, \
+		.owner = NULL, \
 	}
 
-/**
- * @brief POSIX threading compatibility API
+/*
+ *  Mutex attributes - type
  *
- * See IEEE 1003.1
- */
-static inline int pthread_mutex_init(pthread_mutex_t *m,
-				     const pthread_mutexattr_t *att)
-{
-	ARG_UNUSED(att);
-
-	k_sem_init(m->sem, 1, 1);
-
-	return 0;
-}
-
-/**
- * @brief POSIX threading compatibility API
+ *  PTHREAD_MUTEX_NORMAL: Owner of mutex cannot relock it. Attempting
+ *      to relock will cause deadlock.
+ *  PTHREAD_MUTEX_RECURSIVE: Owner can relock the mutex.
+ *  PTHREAD_MUTEX_ERRORCHECK: If owner attempts to relock the mutex, an
+ *      error is returned.
  *
- * See IEEE 1003.1
  */
-static inline int pthread_mutex_destroy(pthread_mutex_t *m)
-{
-	ARG_UNUSED(m);
+#define PTHREAD_MUTEX_NORMAL        0
+#define PTHREAD_MUTEX_RECURSIVE     1
+#define PTHREAD_MUTEX_ERRORCHECK    2
+#define PTHREAD_MUTEX_DEFAULT       PTHREAD_MUTEX_NORMAL
 
-	return 0;
-}
-
-/**
- * @brief POSIX threading compatibility API
+/*
+ *  Mutex attributes - protocol
  *
- * See IEEE 1003.1
+ *  PTHREAD_PRIO_NONE: Ownership of mutex does not affect priority.
+ *  PTHREAD_PRIO_INHERIT: Owner's priority is boosted to the priority of
+ *      highest priority thread blocked on the mutex.
+ *  PTHREAD_PRIO_PROTECT:  Mutex has a priority ceiling.  The owner's
+ *      priority is boosted to the highest priority ceiling of all mutexes
+ *      owned (regardless of whether or not other threads are blocked on
+ *      any of these mutexes).
+ *  FIXME: Only PRIO_NONE is supported. Implement other protocols.
  */
-static inline int pthread_mutex_lock(pthread_mutex_t *m)
-{
-	return k_sem_take(m->sem, K_FOREVER);
-}
+#define PTHREAD_PRIO_NONE           0
 
 /**
  * @brief POSIX threading compatibility API
  *
  * See IEEE 1003.1
  */
-static inline int pthread_mutex_timedlock(pthread_mutex_t *m,
-					  const struct timespec *to)
-{
-	int ret = k_sem_take(m->sem, _ts_to_ms(to));
+int pthread_mutex_destroy(pthread_mutex_t *m);
 
-	return ret == 0 ? ret : ETIMEDOUT;
-}
+/**
+ * @brief POSIX threading compatibility API
+ *
+ * See IEEE 1003.1
+ */
+int pthread_mutex_lock(pthread_mutex_t *m);
+
+/**
+ * @brief POSIX threading compatibility API
+ *
+ * See IEEE 1003.1
+ */
+int pthread_mutex_unlock(pthread_mutex_t *m);
+
+/**
+ * @brief POSIX threading compatibility API
+ *
+ * See IEEE 1003.1
+ */
+
+int pthread_mutex_timedlock(pthread_mutex_t *m,
+			    const struct timespec *to);
 
 /**
  * @brief POSIX threading compatibility API
@@ -220,11 +232,37 @@ int pthread_mutex_trylock(pthread_mutex_t *m);
  *
  * See IEEE 1003.1
  */
-static inline int pthread_mutex_unlock(pthread_mutex_t *m)
-{
-	k_sem_give(m->sem);
-	return 0;
-}
+int pthread_mutex_init(pthread_mutex_t *m,
+				     const pthread_mutexattr_t *att);
+
+/**
+ * @brief POSIX threading compatibility API
+ *
+ * See IEEE 1003.1
+ */
+int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol);
+
+/**
+ * @brief POSIX threading compatibility API
+ *
+ * See IEEE 1003.1
+ */
+int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
+
+/**
+ * @brief POSIX threading compatibility API
+ *
+ * See IEEE 1003.1
+ */
+int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
+				  int *protocol);
+
+/**
+ * @brief POSIX threading compatibility API
+ *
+ * See IEEE 1003.1
+ */
+int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type);
 
 /**
  * @brief POSIX threading compatibility API
@@ -372,15 +410,11 @@ int pthread_mutex_consistent(pthread_mutex_t *);
 int pthread_mutex_getprioceiling(const pthread_mutex_t * int *);
 int pthread_mutex_setprioceiling(pthread_mutex_t *, int int *);
 int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *, int *);
-int pthread_mutexattr_getprotocol(const pthread_mutexattr_t * int *);
 int pthread_mutexattr_getpshared(const pthread_mutexattr_t * int *);
 int pthread_mutexattr_getrobust(const pthread_mutexattr_t * int *);
-int pthread_mutexattr_gettype(const pthread_mutexattr_t * int *);
 int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *, int);
-int pthread_mutexattr_setprotocol(pthread_mutexattr_t *, int);
 int pthread_mutexattr_setpshared(pthread_mutexattr_t *, int);
 int pthread_mutexattr_setrobust(pthread_mutexattr_t *, int);
-int pthread_mutexattr_settype(pthread_mutexattr_t *, int);
 int pthread_barrierattr_getpshared(const pthread_barrierattr_t *, int *);
 int pthread_barrierattr_setpshared(pthread_barrierattr_t *, int);
 */

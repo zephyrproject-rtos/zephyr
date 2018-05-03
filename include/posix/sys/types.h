@@ -37,10 +37,14 @@ typedef struct k_sem sem_t;
 
 /* Mutex */
 typedef struct pthread_mutex {
-	struct k_sem *sem;
+	pthread_t owner;
+	u16_t lock_count;
+	int type;
+	_wait_q_t wait_q;
 } pthread_mutex_t;
 
 typedef struct pthread_mutexattr {
+	int type;
 } pthread_mutexattr_t;
 
 /* Condition variables */
