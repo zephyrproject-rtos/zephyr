@@ -24,13 +24,32 @@ static u32_t data[STACK_LEN];
 extern struct k_stack stack;
 
 /*test cases*/
-void test_stack_pop_fail(void *p1, void *p2, void *p3)
+static void stack_pop_fail(struct k_stack *stack)
 {
 	u32_t rx_data;
 
-	k_stack_init(&stack, data, STACK_LEN);
 	/**TESTPOINT: stack pop returns -EBUSY*/
-	zassert_equal(k_stack_pop(&stack, &rx_data, K_NO_WAIT), -EBUSY, NULL);
+	zassert_equal(k_stack_pop(stack, &rx_data, K_NO_WAIT), -EBUSY, NULL);
 	/**TESTPOINT: stack pop returns -EAGAIN*/
-	zassert_equal(k_stack_pop(&stack, &rx_data, TIMEOUT), -EAGAIN, NULL);
+	zassert_equal(k_stack_pop(stack, &rx_data, TIMEOUT), -EAGAIN, NULL);
 }
+
+void test_stack_pop_fail(void)
+{
+	k_stack_init(&stack, data, STACK_LEN);
+
+	stack_pop_fail(&stack);
+}
+
+#ifdef CONFIG_USERSPACE
+void test_stack_user_pop_fail(void)
+{
+	struct k_stack *alloc_stack = k_object_alloc(K_OBJ_STACK);
+
+	zassert_not_null(alloc_stack, "couldn't allocate stack object");
+	zassert_false(k_stack_alloc_init(alloc_stack, STACK_LEN),
+		      "stack init failed");
+
+	stack_pop_fail(alloc_stack);
+}
+#endif

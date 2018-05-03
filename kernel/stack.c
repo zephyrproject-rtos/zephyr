@@ -45,7 +45,7 @@ SYS_INIT(init_stack_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_OBJECT_TRACING */
 
-void _impl_k_stack_init(struct k_stack *stack, u32_t *buffer,
+void k_stack_init(struct k_stack *stack, u32_t *buffer,
 			unsigned int num_entries)
 {
 	sys_dlist_init(&stack->wait_q);
@@ -56,17 +56,44 @@ void _impl_k_stack_init(struct k_stack *stack, u32_t *buffer,
 	_k_object_init(stack);
 }
 
-#ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_stack_init, stack, buffer, num_entries)
+int _impl_k_stack_alloc_init(struct k_stack *stack, unsigned int num_entries)
 {
-	_SYSCALL_OBJ_INIT(stack, K_OBJ_STACK);
-	_SYSCALL_MEMORY_ARRAY_WRITE(buffer, num_entries, sizeof(u32_t));
+	void *buffer;
+	int ret;
 
-	_impl_k_stack_init((struct k_stack *)stack, (u32_t *)buffer,
-			   num_entries);
+	buffer = z_thread_malloc(num_entries);
+	if (buffer) {
+		k_stack_init(stack, buffer, num_entries);
+		stack->flags = K_STACK_FLAG_ALLOC;
+		ret = 0;
+	} else {
+		ret = -ENOMEM;
+	}
+
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+_SYSCALL_HANDLER(k_stack_alloc_init, stack, num_entries)
+{
+	_SYSCALL_OBJ_NEVER_INIT(stack, K_OBJ_STACK);
+	_SYSCALL_VERIFY(num_entries > 0);
+
+	_impl_k_stack_alloc_init((struct k_stack *)stack, num_entries);
 	return 0;
 }
 #endif
+
+void k_stack_cleanup(struct k_stack *stack)
+{
+	__ASSERT_NO_MSG(sys_dlist_is_empty(&stack->wait_q));
+
+	if (stack->flags & K_STACK_FLAG_ALLOC) {
+		k_free(stack->base);
+		stack->base = NULL;
+		stack->flags &= ~K_STACK_FLAG_ALLOC;
+	}
+}
 
 void _impl_k_stack_push(struct k_stack *stack, u32_t data)
 {

@@ -264,6 +264,9 @@ static void unref_check(struct _k_object *ko)
 	case K_OBJ_MSGQ:
 		k_msgq_cleanup((struct k_msgq *)ko->name);
 		break;
+	case K_OBJ_STACK:
+		k_stack_cleanup((struct k_stack *)ko->name);
+		break;
 	default:
 		break;
 	}
