@@ -42,5 +42,15 @@
 			status = "disabled";
 			label= "USB";
 		};
+
+		can1: can@40006400 {
+			compatible = "st,stm32-can";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40006400 0x400>;
+			interrupts = <30 0>;
+			status = "disabled";
+			label = "CAN_1";
+		};
 	};
 };

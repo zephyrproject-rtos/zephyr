@@ -74,3 +74,10 @@
 &spi1 {
 	status = "ok";
 };
+
+&can1 {
+	pinctrl-0 = <&can_pins_a>;
+	pinctrl-names = "default";
+	bus-speed = <250000>;
+	status = "ok";
+};
