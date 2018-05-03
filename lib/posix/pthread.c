@@ -132,7 +132,6 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 		   void *(*threadroutine)(void *), void *arg)
 {
 	s32_t prio;
-	pthread_mutexattr_t att;
 	pthread_condattr_t cond_attr;
 	struct posix_thread *thread;
 	struct k_mem_block block;
@@ -160,10 +159,8 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & attr->flags;
 	thread->state = attr->detachstate;
 	thread->cancel_pending = 0;
-	thread->state_lock.sem = &thread->state_lock_sem;
-	pthread_mutex_init(&thread->state_lock, &att);
-	thread->cancel_lock.sem = &thread->cancel_lock_sem;
-	pthread_mutex_init(&thread->cancel_lock, &att);
+	pthread_mutex_init(&thread->state_lock, NULL);
+	pthread_mutex_init(&thread->cancel_lock, NULL);
 	pthread_cond_init(&thread->state_cond, &cond_attr);
 
 	*newthread = (pthread_t) k_thread_create(&thread->thread, attr->stack,
@@ -537,4 +534,3 @@ int pthread_attr_destroy(pthread_attr_t *attr)
 
 	return EINVAL;
 }
-
