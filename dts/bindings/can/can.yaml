@@ -1,0 +1,36 @@
+---
+title: CAN Base Structure
+id: can
+version: 0.1
+
+description: >
+    This binding gives the base structures for all CAN devices
+
+child:
+    bus: can
+
+properties:
+    "#address-cells":
+      type: int
+      category: required
+      description: should be 1.
+    "#size-cells":
+      type: int
+      category: required
+      description: should be 0.
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+    bus-speed:
+      type: int
+      category: required
+      description: bus spees in Baud/s
+      generation: define
+    pinctrl-\d+:
+      type: array
+      category: optional
+      description: pinmux information for RX, TX
+      generation: structure
+...
