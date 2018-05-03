@@ -75,6 +75,7 @@ void __stdin_hook_install(unsigned char (*hook)(void))
 	_stdin_hook = hook;
 }
 
+#ifndef CONFIG_POSIX_FS
 int _read(int fd, char *buf, int nbytes)
 {
 	int i = 0;
@@ -103,6 +104,28 @@ int _write(int fd, char *buf, int nbytes)
 	return nbytes;
 }
 FUNC_ALIAS(_write, write, int);
+
+int _open(const char *name, int mode)
+{
+	return -1;
+}
+FUNC_ALIAS(_open, open, int);
+
+int _close(int file)
+{
+	return -1;
+}
+FUNC_ALIAS(_close, close, int);
+
+int _lseek(int file, int ptr, int dir)
+{
+	return 0;
+}
+FUNC_ALIAS(_lseek, lseek, int);
+#else
+extern ssize_t write(int file, char *buffer, unsigned int count);
+#define _write	write
+#endif
 
 int _isatty(int file)
 {
@@ -136,24 +159,6 @@ void _exit(int status)
 		;
 	}
 }
-
-int _open(const char *name, int mode)
-{
-	return -1;
-}
-FUNC_ALIAS(_open, open, int);
-
-int _close(int file)
-{
-	return -1;
-}
-FUNC_ALIAS(_close, close, int);
-
-int _lseek(int file, int ptr, int dir)
-{
-	return 0;
-}
-FUNC_ALIAS(_lseek, lseek, int);
 
 void *_sbrk(int count)
 {

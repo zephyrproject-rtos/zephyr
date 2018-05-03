@@ -11,7 +11,9 @@
 extern "C" {
 #endif
 
+#ifndef CONFIG_ARCH_POSIX
 #include_next <sys/types.h>
+#endif
 
 #ifdef CONFIG_PTHREAD_IPC
 #include <kernel.h>
