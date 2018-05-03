@@ -9,6 +9,9 @@ config HAS_NORDIC_DRIVERS
 
 config HAS_NRFX
 	bool
+	
+config NRFX_PWM
+	bool
 
 config NRFX_SPI
 	bool
