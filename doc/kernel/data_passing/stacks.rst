@@ -54,7 +54,10 @@ Defining a Stack
 ================
 
 A stack is defined using a variable of type :c:type:`struct k_stack`.
-It must then be initialized by calling :cpp:func:`k_stack_init()`.
+It must then be initialized by calling :cpp:func:`k_stack_init()` or
+:cpp:func:`k_stack_alloc_init()`. In the latter case, a buffer is not
+provided and it is instead allocated from the calling thread's resource
+pool.
 
 The following code defines and initializes an empty stack capable of holding
 up to ten 32-bit data values.

@@ -109,6 +109,19 @@ void test_stack_thread2thread(void)
 	tstack_thread_thread(&kstack);
 }
 
+#ifdef CONFIG_USERSPACE
+void test_stack_user_thread2thread(void)
+{
+	struct k_stack *stack = k_object_alloc(K_OBJ_STACK);
+
+	zassert_not_null(stack, "couldn't allocate stack object");
+	zassert_false(k_stack_alloc_init(stack, STACK_LEN),
+		      "stack init failed");
+
+	tstack_thread_thread(stack);
+}
+#endif
+
 void test_stack_thread2isr(void)
 {
 	/**TESTPOINT: test k_stack_init stack*/

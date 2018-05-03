@@ -2146,12 +2146,14 @@ struct k_lifo {
 /**
  * @cond INTERNAL_HIDDEN
  */
+#define K_STACK_FLAG_ALLOC	BIT(0)	/* Buffer was allocated */
 
 struct k_stack {
 	_wait_q_t wait_q;
 	u32_t *base, *next, *top;
 
 	_OBJECT_TRACING_NEXT_PTR(k_stack);
+	u8_t flags;
 };
 
 #define _K_STACK_INITIALIZER(obj, stack_buffer, stack_num_entries) \
@@ -2186,8 +2188,37 @@ struct k_stack {
  *
  * @return N/A
  */
-__syscall void k_stack_init(struct k_stack *stack,
-			    u32_t *buffer, unsigned int num_entries);
+void k_stack_init(struct k_stack *stack,
+		  u32_t *buffer, unsigned int num_entries);
+
+
+/**
+ * @brief Initialize a stack.
+ *
+ * This routine initializes a stack object, prior to its first use. Internal
+ * buffers will be allocated from the calling thread's resource pool.
+ * This memory will be released if k_stack_cleanup() is called, or
+ * userspace is enabled and the stack object loses all references to it.
+ *
+ * @param stack Address of the stack.
+ * @param num_entries Maximum number of values that can be stacked.
+ *
+ * @return -ENOMEM if memory couldn't be allocated
+ */
+
+__syscall int k_stack_alloc_init(struct k_stack *stack,
+				 unsigned int num_entries);
+
+/**
+ * @brief Release a stack's allocated buffer
+ *
+ * If a stack object was given a dynamically allocated buffer via
+ * k_stack_alloc_init(), this will free it. This function does nothing
+ * if the buffer wasn't dynamically allocated.
+ *
+ * @param stack Address of the stack.
+ */
+void k_stack_cleanup(struct k_stack *stack);
 
 /**
  * @brief Push an element onto a stack.
