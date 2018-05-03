@@ -39,6 +39,18 @@
 					tx = <STM32_PIN_PD5 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUSHPULL_NOPULL)>;
 				};
 			};
+			can_pins_a: can@0 {
+				rx_tx {
+					rx = <STM32_PIN_PB8 (STM32_PINMUX_ALT_FUNC_4 | STM32_PUPDR_PULL_UP)>;
+					tx = <STM32_PIN_PB9 (STM32_PINMUX_ALT_FUNC_4 | STM32_PUPDR_NO_PULL)>;
+				};
+			};
+			can_pins_b: can@1 {
+				rx_tx {
+					rx = <STM32_PIN_PD0 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUPDR_PULL_UP)>;
+					tx = <STM32_PIN_PD1 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUPDR_NO_PULL)>;
+				};
+			};
 		};
 	};
 };
