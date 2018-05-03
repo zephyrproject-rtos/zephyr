@@ -15,13 +15,31 @@ config USB_DEVICE_HID
 
 if USB_DEVICE_HID
 
-config HID_INT_EP_ADDR
+config HID_INT_IN_EP_ADDR
 	hex
-	prompt "USB HID Device Interrupt Endpoint address"
+	prompt "USB HID Device Interrupt IN Endpoint address"
 	default 0x81
 	range 0x81 0x8F
 	help
-	  USB HID Device interrupt endpoint address
+	  USB HID Device interrupt IN endpoint address
+
+config ENABLE_HID_INT_OUT_EP
+	bool
+	prompt "Enable USB HID Device Interrupt Endpoint"
+	default n
+	help
+	  Enable USB HID Device Interrupt Endpoint.
+
+if ENABLE_HID_INT_OUT_EP
+
+config HID_INT_OUT_EP_ADDR
+	hex
+	prompt "USB HID Device Interrupt OUT Endpoint address"
+	default 0x01
+	range 0x01 0x0F
+	help
+	  USB HID Device interrupt OUT endpoint address
+endif
 
 config HID_INTERRUPT_EP_MPS
 	int

@@ -111,7 +111,10 @@ struct dev_common_descriptor {
 	struct usb_hid_config {
 		struct usb_if_descriptor if0;
 		struct usb_hid_descriptor if0_hid;
-		struct usb_ep_descriptor if0_int_ep;
+		struct usb_ep_descriptor if0_int_in_ep;
+#ifdef CONFIG_ENABLE_HID_INT_OUT_EP
+		struct usb_ep_descriptor if0_int_out_ep;
+#endif
 	} __packed hid_cfg;
 #endif
 #ifdef CONFIG_USB_DEVICE_NETWORK_EEM
@@ -591,7 +594,7 @@ static struct dev_common_descriptor common_desc = {
 			.bDescriptorType = USB_INTERFACE_DESC,
 			.bInterfaceNumber = FIRST_IFACE_HID,
 			.bAlternateSetting = 0,
-			.bNumEndpoints = 1,
+			.bNumEndpoints = NUMOF_ENDPOINTS_HID,
 			.bInterfaceClass = HID_CLASS,
 			.bInterfaceSubClass = 0,
 			.bInterfaceProtocol = 0,
@@ -612,16 +615,30 @@ static struct dev_common_descriptor common_desc = {
 				.wDescriptorLength = 0,
 			},
 		},
-		.if0_int_ep = {
+		.if0_int_in_ep = {
 			.bLength = sizeof(struct usb_ep_descriptor),
 			.bDescriptorType = USB_ENDPOINT_DESC,
-			.bEndpointAddress = CONFIG_HID_INT_EP_ADDR,
+			.bEndpointAddress = CONFIG_HID_INT_IN_EP_ADDR,
 			.bmAttributes = USB_DC_EP_INTERRUPT,
 			.wMaxPacketSize =
 				sys_cpu_to_le16(
 				CONFIG_HID_INTERRUPT_EP_MPS),
 			.bInterval = 0x09,
 		},
+
+#ifdef CONFIG_ENABLE_HID_INT_OUT_EP
+		.if0_int_out_ep = {
+			.bLength = sizeof(struct usb_ep_descriptor),
+			.bDescriptorType = USB_ENDPOINT_DESC,
+			.bEndpointAddress = CONFIG_HID_INT_OUT_EP_ADDR,
+			.bmAttributes = USB_DC_EP_INTERRUPT,
+			.wMaxPacketSize =
+				sys_cpu_to_le16(
+			CONFIG_HID_INTERRUPT_EP_MPS),
+			.bInterval = 0x09,
+		},
+#endif
+
 	},
 #endif /* CONFIG_USB_DEVICE_HID */
 
