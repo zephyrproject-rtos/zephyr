@@ -1,0 +1,48 @@
+---
+title: STM32 CAN
+id: st,stm32-can
+version: 0.1
+
+description: >
+    This binding gives a base representation of the STM32 CAN controller
+
+inherits:
+    !include can.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "st,stm32-can"
+
+    reg:
+      type: array
+      description: register base address
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    gpio-port:
+      type: string
+      category: required
+      description: gpio port name
+      generation: define
+
+    rx-pin:
+      type: string
+      category: required
+      description: rx pin name
+      generation: define
+
+    tx-pin:
+      type: string
+      category: required
+      description: tx pin name
+      generation: define
+...
