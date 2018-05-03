@@ -11,12 +11,13 @@
 
 static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut, int timeout)
 {
-	__ASSERT(mut->sem->count == 0, "");
+	__ASSERT(mut->lock_count == 1, "");
 
 	int ret, key = irq_lock();
 
-	mut->sem->count = 1;
-	_ready_one_thread(&mut->sem->wait_q);
+	mut->lock_count = 0;
+	mut->owner = NULL;
+	_ready_one_thread(&mut->wait_q);
 	ret = _pend_current_thread(key, &cv->wait_q, timeout);
 
 	/* FIXME: this extra lock (and the potential context switch it
