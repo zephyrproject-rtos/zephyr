@@ -273,7 +273,6 @@ static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
 			  IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
 			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL);
 	_mark_thread_as_started(thr);
-	_ready_thread(thr);
 }
 #endif
 
@@ -327,11 +326,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 	_IntLibInit();
 
-	/* ready the init/main and idle threads */
-
-	for (int ii = 0; ii < K_NUM_PRIORITIES; ii++) {
-		sys_dlist_init(&_ready_q.q[ii]);
-	}
+	_sched_init();
 
 #ifndef CONFIG_SMP
 	/*
@@ -355,10 +350,12 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 #ifdef CONFIG_MULTITHREADING
 	init_idle_thread(_idle_thread, _idle_stack);
+	_kernel.cpus[0].idle_thread = _idle_thread;
 #endif
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
 	init_idle_thread(_idle_thread1, _idle_stack1);
+	_kernel.cpus[1].idle_thread = _idle_thread1;
 	_kernel.cpus[1].id = 1;
 	_kernel.cpus[1].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack1)
 		+ CONFIG_ISR_STACK_SIZE;
@@ -366,6 +363,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 2
 	init_idle_thread(_idle_thread2, _idle_stack2);
+	_kernel.cpus[2].idle_thread = _idle_thread2;
 	_kernel.cpus[2].id = 2;
 	_kernel.cpus[2].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack2)
 		+ CONFIG_ISR_STACK_SIZE;
@@ -373,6 +371,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 3
 	init_idle_thread(_idle_thread3, _idle_stack3);
+	_kernel.cpus[3].idle_thread = _idle_thread3;
 	_kernel.cpus[3].id = 3;
 	_kernel.cpus[3].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack3)
 		+ CONFIG_ISR_STACK_SIZE;

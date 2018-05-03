@@ -316,14 +316,12 @@ static bool pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 			       size_t            min_xfer,
 			       s32_t           timeout)
 {
-	sys_dnode_t      *node;
 	struct k_thread  *thread;
 	struct k_pipe_desc *desc;
 	size_t num_bytes = 0;
 
 	if (timeout == K_NO_WAIT) {
-		SYS_DLIST_FOR_EACH_NODE(&wait_q->waitq, node) {
-			thread = (struct k_thread *)node;
+		_WAIT_Q_FOR_EACH(wait_q, thread) {
 			desc = (struct k_pipe_desc *)thread->base.swap_data;
 
 			num_bytes += desc->bytes_to_xfer;
@@ -367,7 +365,7 @@ static bool pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 		 * Add it to the transfer list.
 		 */
 		_unpend_thread(thread);
-		sys_dlist_append(xfer_list, &thread->base.k_q_node);
+		sys_dlist_append(xfer_list, &thread->base.qnode_dlist);
 	}
 
 	*waiter = (num_bytes > bytes_to_xfer) ? thread : NULL;

@@ -33,6 +33,7 @@
 #define _ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")
 #endif
 
+void _sched_init(void);
 void _add_thread_to_ready_q(struct k_thread *thread);
 void _move_thread_to_end_of_prio_q(struct k_thread *thread);
 void _remove_thread_from_ready_q(struct k_thread *thread);
@@ -111,6 +112,11 @@ static inline int _is_thread_polling(struct k_thread *thread)
 	return _is_thread_state_set(thread, _THREAD_POLLING);
 }
 
+static inline int _is_thread_queued(struct k_thread *thread)
+{
+	return _is_thread_state_set(thread, _THREAD_QUEUED);
+}
+
 static inline void _mark_thread_as_suspended(struct k_thread *thread)
 {
 	thread->base.thread_state |= _THREAD_SUSPENDED;
@@ -124,6 +130,11 @@ static inline void _mark_thread_as_not_suspended(struct k_thread *thread)
 static inline void _mark_thread_as_started(struct k_thread *thread)
 {
 	thread->base.thread_state &= ~_THREAD_PRESTART;
+}
+
+static inline void _mark_thread_as_pending(struct k_thread *thread)
+{
+	thread->base.thread_state |= _THREAD_PENDING;
 }
 
 static inline void _mark_thread_as_not_pending(struct k_thread *thread)
@@ -150,6 +161,16 @@ static inline void _mark_thread_as_polling(struct k_thread *thread)
 static inline void _mark_thread_as_not_polling(struct k_thread *thread)
 {
 	_reset_thread_states(thread, _THREAD_POLLING);
+}
+
+static inline void _mark_thread_as_queued(struct k_thread *thread)
+{
+	_set_thread_states(thread, _THREAD_QUEUED);
+}
+
+static inline void _mark_thread_as_not_queued(struct k_thread *thread)
+{
+	_reset_thread_states(thread, _THREAD_QUEUED);
 }
 
 static inline int _is_under_prio_ceiling(int prio)

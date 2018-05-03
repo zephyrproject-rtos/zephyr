@@ -22,6 +22,7 @@
 #include <atomic.h>
 #include <errno.h>
 #include <misc/__assert.h>
+#include <sched_priq.h>
 #include <misc/dlist.h>
 #include <misc/slist.h>
 #include <misc/sflist.h>
@@ -33,6 +34,7 @@
 #include <syscall.h>
 #include <misc/printk.h>
 #include <arch/cpu.h>
+#include <misc/rb.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,11 +93,25 @@ extern "C" {
 #define K_HIGHEST_APPLICATION_THREAD_PRIO (K_HIGHEST_THREAD_PRIO)
 #define K_LOWEST_APPLICATION_THREAD_PRIO (K_LOWEST_THREAD_PRIO - 1)
 
+#ifdef CONFIG_WAITQ_FAST
+
+typedef struct {
+	struct _priq_rb waitq;
+} _wait_q_t;
+
+extern int _priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
+
+#define _WAIT_Q_INIT(wait_q) { { { .lessthan_fn = _priq_rb_lessthan } } }
+
+#else
+
 typedef struct {
 	sys_dlist_t waitq;
 } _wait_q_t;
 
 #define _WAIT_Q_INIT(wait_q) { SYS_DLIST_STATIC_INIT(&(wait_q)->waitq) }
+
+#endif
 
 #ifdef CONFIG_OBJECT_TRACING
 #define _OBJECT_TRACING_NEXT_PTR(type) struct type *__next
@@ -405,7 +421,17 @@ struct __thread_entry {
 struct _thread_base {
 
 	/* this thread's entry in a ready/wait queue */
-	sys_dnode_t k_q_node;
+	union {
+		sys_dlist_t qnode_dlist;
+		struct rbnode qnode_rb;
+	};
+
+#ifdef CONFIG_WAITQ_FAST
+	/* wait queue on which the thread is pended (needed only for
+	 * trees, not dumb lists)
+	 */
+	_wait_q_t *pended_on;
+#endif
 
 	/* user facing 'thread options'; values defined in include/kernel.h */
 	u8_t user_options;
@@ -440,12 +466,11 @@ struct _thread_base {
 		u16_t preempt;
 	};
 
+	u32_t order_key;
+
 #ifdef CONFIG_SMP
 	/* True for the per-CPU idle threads */
 	u8_t is_idle;
-
-	/* Non-zero when actively running on a CPU */
-	u8_t active;
 
 	/* CPU index on which thread was last run */
 	u8_t cpu;

@@ -169,6 +169,34 @@ config APPLICATION_MEMORY
 	  will have the project-level application objects and any libraries
 	  including the C library in it.
 
+config WAITQ_FAST
+	bool
+	prompt "Use scalable wait_q implementation"
+	default n
+	help
+	  When selected, the wait_q abstraction used in IPC primitives
+	  to pend threads for wakeup later will be implemented with a
+	  balanced tree instead of a linear list.  Choose this if you
+	  expect to have many threads waiting on individual
+	  primitives, or if you have already included the red/black
+	  tree code in the build for some other purpose (in which case
+	  this results in less code size increase than the default
+	  implementation).
+
+config SCHED_DUMB
+	bool
+	prompt "Use a simple linked list scheduler"
+	default y
+	help
+	  When selected, the scheduler ready queue will be implemented
+	  as a simple unordered list, with very fast constant time
+	  performance for single threads and very low code size.
+	  Choose this on systems with constrained code size that will
+	  never see more than a small number (3, maybe) of runnable
+	  threads in the queue at any given time.  On most platforms
+	  (that are not otherwise using the red/black tree) this
+	  results in a savings of ~2k of code size.
+
 menu "Kernel Debugging and Metrics"
 
 config INIT_STACKS
