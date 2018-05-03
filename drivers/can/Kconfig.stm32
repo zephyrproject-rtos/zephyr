@@ -1,0 +1,23 @@
+# Kconfig.stm32 - STM32 CAN configuration options
+
+#
+# Copyright (c) 2018 Alexander Wachter
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config CAN_STM32
+	bool "STM32 CAN Driver"
+	default n
+	select USE_STM32_HAL_CAN
+	help
+	  Enable STM32 CAN Driver (tested on stm32F0 series)
+
+config CAN_MAX_FILTER
+	int "Maximum number of concurrent active filters"
+	depends on CAN_STM32
+	default 5
+	range 1 56
+	help
+	  Defines the array size of the callback/msgq pointers.
+	  Must be at least the size of concurrent reads.
