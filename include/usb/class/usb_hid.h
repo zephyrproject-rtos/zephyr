@@ -54,6 +54,9 @@ struct usb_hid_descriptor {
 typedef int (*hid_cb_t)(struct usb_setup_packet *setup, s32_t *len,
 			u8_t **data);
 typedef void (*hid_int_ready_callback)(void);
+#ifdef CONFIG_ENABLE_HID_INT_OUT_EP
+typedef void (*hid_out_ready_callback)(void *data, u32_t len);
+#endif
 
 struct hid_ops {
 	hid_cb_t get_report;
@@ -69,6 +72,9 @@ struct hid_ops {
 	 * the next transfer.
 	 */
 	hid_int_ready_callback int_in_ready;
+#ifdef CONFIG_ENABLE_HID_INT_OUT_EP
+	hid_out_ready_callback int_out_read;
+#endif
 };
 
 /* HID Report Definitions */
