@@ -1,0 +1,71 @@
+# Kconfig - CAN configuration options
+
+#
+# Copyright (c) 2018 Alexander Wachter
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# CAN options
+#
+menuconfig CAN
+	bool "CAN Drivers"
+	default n
+	help
+	  Enable CAN Driver Configuration
+
+if CAN
+
+config SYS_LOG_CAN_LEVEL
+	int "CAN driver log level"
+	depends on SYS_LOG
+	default 0
+	range 0 4
+	help
+	  Sets log level for CAN Device Drivers.
+	  Levels are:
+	  0 OFF, do not write
+	  1 ERROR, only write SYS_LOG_ERR
+	  2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  3 INFO, write SYS_LOG_INF in addition to previous levels
+	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+config CAN_INIT_PRIORITY
+	int "CAN driver init priority"
+	default 80
+	help
+	  CAN device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
+config CAN_PHASE_SEG1_PROP_SEG
+	int "Phase_Seg1_Prop_Seg"
+	default 5
+	range 1 16
+	help
+	  Time quantums of phase buffer 1 segment + propagation segment (ISO 11898-1)
+
+config CAN_PHASE_SEG2
+	int "Phase_Seg2"
+	default 6
+	range 1 8
+	help
+	  Time quantums of phase buffer 2 segment (ISO 11898-1)
+
+config CAN_SJW
+	int "SJW"
+	default 1
+	range 1 4
+	help
+	  Resynchronization jump width  (ISO 11898-1)
+
+config CAN_1
+	bool "Enable CAN 1"
+	default y
+	help
+	  Enable CAN controller 1
+
+
+endif # CAN

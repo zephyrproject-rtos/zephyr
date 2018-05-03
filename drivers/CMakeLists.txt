@@ -28,6 +28,7 @@ add_subdirectory_if_kconfig(spi)
 add_subdirectory_if_kconfig(usb)
 add_subdirectory_if_kconfig(watchdog)
 add_subdirectory_if_kconfig(wifi)
+add_subdirectory_if_kconfig(can)
 
 add_subdirectory_ifdef(CONFIG_AIO_COMPARATOR   aio)
 add_subdirectory_ifdef(CONFIG_BT               bluetooth)
