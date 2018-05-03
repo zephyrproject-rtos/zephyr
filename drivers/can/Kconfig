@@ -67,5 +67,6 @@ config CAN_1
 	help
 	  Enable CAN controller 1
 
+source "drivers/can/Kconfig.stm32"
 
 endif # CAN
