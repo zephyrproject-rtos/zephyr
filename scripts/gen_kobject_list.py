@@ -35,6 +35,7 @@ subsystems = [
     "i2c_driver_api",
     "i2s_driver_api",
     "ipm_driver_api",
+    "led_driver_api",
     "pinmux_driver_api",
     "pwm_driver_api",
     "entropy_driver_api",
