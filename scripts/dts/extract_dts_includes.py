@@ -188,14 +188,10 @@ def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
         index += 1
 
 
-def extract_controller(node_address, prop, prefix, defs, def_label):
-    try:
-        props = list(reduced[node_address]['props'].get(prop))
-    except:
-        props = reduced[node_address]['props'].get(prop)
+def extract_controller(node_address, prop, prop_values, prefix, defs, def_label):
 
     # get controller node (referenced via phandle)
-    cell_parent = phandles[props[0]]
+    cell_parent = phandles[prop_values[0]]
 
     try:
        l_cell = reduced[cell_parent]['props'].get('label')
@@ -227,15 +223,10 @@ def extract_controller(node_address, prop, prefix, defs, def_label):
         insert_defs(node_address, defs, prop_def, prop_alias)
 
 
-def extract_cells(node_address, yaml, prop, names, index, prefix, defs,
+def extract_cells(node_address, yaml, prop, prop_values, names, index, prefix, defs,
                   def_label):
-    try:
-        props = list(reduced[node_address]['props'].get(prop))
-    except:
-        props = reduced[node_address]['props'].get(prop)
 
-    cell_parent = phandles[props.pop(0)]
-
+    cell_parent = phandles[prop_values.pop(0)]
 
     try:
         cell_yaml = yaml[get_compat(cell_parent)]
@@ -259,7 +250,7 @@ def extract_cells(node_address, yaml, prop, names, index, prefix, defs,
     l_base = def_label.split('/')
     l_base += prefix
     # Check if #define should be indexed (_0, _1, ...)
-    if index == 0 and len(props) < (num_cells + 2):
+    if index == 0 and len(prop_values) < (num_cells + 2):
         # Less than 2 elements in prop_values (ie len < num_cells + phandle + 1)
         # Indexing is not needed
         l_idx = []
@@ -277,7 +268,7 @@ def extract_cells(node_address, yaml, prop, names, index, prefix, defs,
         else:
             label = l_base + l_cell + l_cellname + l_idx
         label_name = l_base + name + l_cellname
-        prop_def['_'.join(label)] = props.pop(0)
+        prop_def['_'.join(label)] = prop_values.pop(0)
         if len(name):
             prop_alias['_'.join(label_name)] = '_'.join(label)
 
@@ -285,14 +276,14 @@ def extract_cells(node_address, yaml, prop, names, index, prefix, defs,
         if node_address in aliases:
             for i in aliases[node_address]:
                 alias_label = convert_string_to_label(i)
-                alias = [alias_label] + label[1:-1]
-                prop_alias['_'.join(alias)] = '_'.join(label[:-1])
+                alias = [alias_label] + label[1:]
+                prop_alias['_'.join(alias)] = '_'.join(label)
 
         insert_defs(node_address, defs, prop_def, prop_alias)
 
     # recurse if we have anything left
-    if len(props):
-        extract_cells(node_address, yaml, prop, names,
+    if len(prop_values):
+        extract_cells(node_address, yaml, prop, prop_values, names,
                       index + 1, prefix, defs, def_label)
 
 
@@ -449,8 +440,14 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
                         reduced[node_address]['props'][prop],
                         names[p_index], p_index, defs, def_label)
     elif 'clocks' in prop or 'gpios' in prop:
-        extract_controller(node_address, prop, prefix, defs, def_label)
-        extract_cells(node_address, yaml, prop,
+        try:
+            prop_values = list(reduced[node_address]['props'].get(prop))
+        except:
+            prop_values = reduced[node_address]['props'].get(prop)
+
+        extract_controller(node_address, prop, prop_values, prefix, defs,
+                           def_label)
+        extract_cells(node_address, yaml, prop, prop_values,
                       names, 0, prefix, defs, def_label)
     else:
         extract_single(node_address, yaml,
