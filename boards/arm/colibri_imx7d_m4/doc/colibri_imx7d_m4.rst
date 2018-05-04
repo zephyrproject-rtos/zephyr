@@ -80,6 +80,8 @@ supports the following hardware features on the Cortex M4 Core:
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
 +-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -102,6 +104,10 @@ was tested with the following pinmux controller configuration.
 | UART_B RXD    | UART2_TXD       | UART Console              |
 +---------------+-----------------+---------------------------+
 | UART_B TXD    | UART2_RXD       | UART Console              |
++---------------+-----------------+---------------------------+
+| SODIMM_135    | GPIO1_IO02      | LED0                      |
++---------------+-----------------+---------------------------+
+| SODIMM_133    | GPIO2_IO26      | SW0                       |
 +---------------+-----------------+---------------------------+
 
 System Clock
