@@ -133,16 +133,16 @@ void _impl_k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_timer_start, timer, duration_p, period_p)
+Z_SYSCALL_HANDLER(k_timer_start, timer, duration_p, period_p)
 {
 	s32_t duration, period;
 
 	duration = (s32_t)duration_p;
 	period = (s32_t)period_p;
 
-	_SYSCALL_VERIFY(duration >= 0 && period >= 0 &&
-			(duration != 0 || period != 0));
-	_SYSCALL_OBJ(timer, K_OBJ_TIMER);
+	Z_OOPS(Z_SYSCALL_VERIFY(duration >= 0 && period >= 0 &&
+				(duration != 0 || period != 0)));
+	Z_OOPS(Z_SYSCALL_OBJ(timer, K_OBJ_TIMER));
 	_impl_k_timer_start((struct k_timer *)timer, duration, period);
 	return 0;
 }
@@ -178,7 +178,7 @@ void _impl_k_timer_stop(struct k_timer *timer)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1_SIMPLE_VOID(k_timer_stop, K_OBJ_TIMER, struct k_timer *);
+Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_timer_stop, K_OBJ_TIMER, struct k_timer *);
 #endif
 
 u32_t _impl_k_timer_status_get(struct k_timer *timer)
@@ -193,7 +193,7 @@ u32_t _impl_k_timer_status_get(struct k_timer *timer)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1_SIMPLE(k_timer_status_get, K_OBJ_TIMER, struct k_timer *);
+Z_SYSCALL_HANDLER1_SIMPLE(k_timer_status_get, K_OBJ_TIMER, struct k_timer *);
 #endif
 
 u32_t _impl_k_timer_status_sync(struct k_timer *timer)
@@ -225,7 +225,7 @@ u32_t _impl_k_timer_status_sync(struct k_timer *timer)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1_SIMPLE(k_timer_status_sync, K_OBJ_TIMER, struct k_timer *);
+Z_SYSCALL_HANDLER1_SIMPLE(k_timer_status_sync, K_OBJ_TIMER, struct k_timer *);
 #endif
 
 s32_t _timeout_remaining_get(struct _timeout *timeout)
@@ -256,12 +256,12 @@ s32_t _timeout_remaining_get(struct _timeout *timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1_SIMPLE(k_timer_remaining_get, K_OBJ_TIMER, struct k_timer *);
-_SYSCALL_HANDLER1_SIMPLE(k_timer_user_data_get, K_OBJ_TIMER, struct k_timer *);
+Z_SYSCALL_HANDLER1_SIMPLE(k_timer_remaining_get, K_OBJ_TIMER, struct k_timer *);
+Z_SYSCALL_HANDLER1_SIMPLE(k_timer_user_data_get, K_OBJ_TIMER, struct k_timer *);
 
-_SYSCALL_HANDLER(k_timer_user_data_set, timer, user_data)
+Z_SYSCALL_HANDLER(k_timer_user_data_set, timer, user_data)
 {
-	_SYSCALL_OBJ(timer, K_OBJ_TIMER);
+	Z_OOPS(Z_SYSCALL_OBJ(timer, K_OBJ_TIMER));
 	_impl_k_timer_user_data_set((struct k_timer *)timer, (void *)user_data);
 	return 0;
 }

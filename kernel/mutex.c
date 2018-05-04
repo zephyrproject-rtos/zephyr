@@ -82,9 +82,9 @@ void _impl_k_mutex_init(struct k_mutex *mutex)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_mutex_init, mutex)
+Z_SYSCALL_HANDLER(k_mutex_init, mutex)
 {
-	_SYSCALL_OBJ_INIT(mutex, K_OBJ_MUTEX);
+	Z_OOPS(Z_SYSCALL_OBJ_INIT(mutex, K_OBJ_MUTEX));
 	_impl_k_mutex_init((struct k_mutex *)mutex);
 
 	return 0;
@@ -192,9 +192,9 @@ int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_mutex_lock, mutex, timeout)
+Z_SYSCALL_HANDLER(k_mutex_lock, mutex, timeout)
 {
-	_SYSCALL_OBJ(mutex, K_OBJ_MUTEX);
+	Z_OOPS(Z_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
 	return _impl_k_mutex_lock((struct k_mutex *)mutex, (s32_t)timeout);
 }
 #endif
@@ -252,11 +252,11 @@ void _impl_k_mutex_unlock(struct k_mutex *mutex)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_mutex_unlock, mutex)
+Z_SYSCALL_HANDLER(k_mutex_unlock, mutex)
 {
-	_SYSCALL_OBJ(mutex, K_OBJ_MUTEX);
-	_SYSCALL_VERIFY(((struct k_mutex *)mutex)->lock_count > 0);
-	_SYSCALL_VERIFY(((struct k_mutex *)mutex)->owner == _current);
+	Z_OOPS(Z_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
+	Z_OOPS(Z_SYSCALL_VERIFY(((struct k_mutex *)mutex)->lock_count > 0));
+	Z_OOPS(Z_SYSCALL_VERIFY(((struct k_mutex *)mutex)->owner == _current));
 	_impl_k_mutex_unlock((struct k_mutex *)mutex);
 	return 0;
 }

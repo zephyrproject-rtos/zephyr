@@ -92,7 +92,7 @@ void _impl_k_alert_send(struct k_alert *alert)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1_SIMPLE_VOID(k_alert_send, K_OBJ_ALERT, struct k_alert *);
+Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_alert_send, K_OBJ_ALERT, struct k_alert *);
 #endif
 
 int _impl_k_alert_recv(struct k_alert *alert, s32_t timeout)
@@ -101,9 +101,9 @@ int _impl_k_alert_recv(struct k_alert *alert, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_alert_recv, alert, timeout)
+Z_SYSCALL_HANDLER(k_alert_recv, alert, timeout)
 {
-	_SYSCALL_OBJ(alert, K_OBJ_ALERT);
+	Z_OOPS(Z_SYSCALL_OBJ(alert, K_OBJ_ALERT));
 	return _impl_k_alert_recv((struct k_alert *)alert, timeout);
 }
 #endif
