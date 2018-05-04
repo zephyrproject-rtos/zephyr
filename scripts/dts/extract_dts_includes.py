@@ -144,7 +144,12 @@ def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
         prop_alias = {}
         addr = 0
         size = 0
-        l_idx = [str(index)]
+        # Check is defined should be indexed (_0, _1)
+        if index == 0 and len(props) < 3:
+            # 1 element (len 2) or no element (len 0) in props
+            l_idx = []
+        else:
+            l_idx = [str(index)]
 
         try:
             name = [names.pop(0).upper()]
@@ -167,12 +172,6 @@ def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
                 prop_alias['_'.join(l_base + name + l_addr)] = l_addr_fqn
             if size_cells:
                 prop_alias['_'.join(l_base + name + l_size)] = l_size_fqn
-
-        if index == 0:
-            if address_cells:
-                prop_alias['_'.join(l_base + l_addr)] = l_addr_fqn
-            if size_cells:
-                prop_alias['_'.join(l_base + l_size)] = l_size_fqn
 
         # generate defs for node aliases
         if node_address in aliases:
@@ -250,36 +249,44 @@ def extract_cells(node_address, yaml, prop, names, index, prefix, defs,
     except:
         name = []
 
+    # Get number of cells per element of current property
+    for k in reduced[cell_parent]['props'].keys():
+        if k[0] == '#' and '-cells' in k:
+            num_cells = reduced[cell_parent]['props'].get(k)
+
+    # Generate label for each field of the property element
     l_cell = [str(cell_yaml.get('cell_string', ''))]
     l_base = def_label.split('/')
     l_base += prefix
-    l_idx = [str(index)]
+    # Check if #define should be indexed (_0, _1, ...)
+    if index == 0 and len(props) < (num_cells + 2):
+        # Less than 2 elements in prop_values (ie len < num_cells + phandle + 1)
+        # Indexing is not needed
+        l_idx = []
+    else:
+        l_idx = [str(index)]
 
     prop_def = {}
     prop_alias = {}
 
-    for k in reduced[cell_parent]['props'].keys():
-        if k[0] == '#' and '-cells' in k:
-            for i in range(reduced[cell_parent]['props'].get(k)):
-                l_cellname = [str(cell_yaml['#cells'][i]).upper()]
-                if l_cell == l_cellname:
-                    label = l_base + l_cell + l_idx
-                else:
-                    label = l_base + l_cell + l_cellname + l_idx
-                label_name = l_base + name + l_cellname
-                prop_def['_'.join(label)] = props.pop(0)
-                if len(name):
-                    prop_alias['_'.join(label_name)] = '_'.join(label)
+    # Generate label for each field of the property element
+    for i in range(num_cells):
+        l_cellname = [str(cell_yaml['#cells'][i]).upper()]
+        if l_cell == l_cellname:
+            label = l_base + l_cell + l_idx
+        else:
+            label = l_base + l_cell + l_cellname + l_idx
+        label_name = l_base + name + l_cellname
+        prop_def['_'.join(label)] = props.pop(0)
+        if len(name):
+            prop_alias['_'.join(label_name)] = '_'.join(label)
 
-                if index == 0:
-                    prop_alias['_'.join(label[:-1])] = '_'.join(label)
-
-                # generate defs for node aliases
-                if node_address in aliases:
-                    for i in aliases[node_address]:
-                        alias_label = convert_string_to_label(i)
-                        alias = [alias_label] + label[1:-1]
-                        prop_alias['_'.join(alias)] = '_'.join(label[:-1])
+        # generate defs for node aliases
+        if node_address in aliases:
+            for i in aliases[node_address]:
+                alias_label = convert_string_to_label(i)
+                alias = [alias_label] + label[1:-1]
+                prop_alias['_'.join(alias)] = '_'.join(label[:-1])
 
         insert_defs(node_address, defs, prop_def, prop_alias)
 
