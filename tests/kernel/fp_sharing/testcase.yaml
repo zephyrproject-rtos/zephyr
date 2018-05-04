@@ -4,7 +4,7 @@ tests:
     platform_whitelist: frdm_k64f
     slow: true
     tags: core
-    timeout: 600
+    timeout: 3600
   kernel.fp_sharing.x86:
     platform_whitelist: qemu_x86
     slow: true
