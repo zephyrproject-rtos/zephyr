@@ -13,8 +13,11 @@
 	compatible = "nxp,mcimx7d_m4";
 
 	aliases {
-		gpio_1= &gpio1;
+		gpio_1 = &gpio1;
+		gpio_2 = &gpio2;
 		uart_2 = &uart2;
+		led0   = &green_led;
+		sw0    = &user_switch_1;
 	};
 
 	chosen {
@@ -24,10 +27,34 @@
 		zephyr,sram = &tcmu_sys;
 		zephyr,console = &uart2;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led@0 {
+			gpios = <&gpio1 2 GPIO_INT_ACTIVE_LOW>;
+			label = "User LED1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_switch_1: sw@0 {
+			gpios = <&gpio2 26 GPIO_INT_ACTIVE_LOW>;
+			label = "User SW1";
+		};
+	};
 };
 
 &uart2 {
 	status = "ok";
 	current-speed = <115200>;
 	modem-mode = <1>;
+};
+
+&gpio1 {
+	status = "ok";
+};
+
+&gpio2 {
+	status = "ok";
 };
