@@ -30,8 +30,6 @@ properties:
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
 
-cell_string: SIM_CLK
-
 "#cells":
   - name
   - offset

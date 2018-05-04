@@ -50,7 +50,6 @@ properties:
 # If a node is a interrupt controller, gpio controller, pinmux device
 # or any device which is referenced via phandle plus some number of cells
 # then the cell fiels below must be present.
-cell_string: <cell string prefix>
 
 "#cells":
   - cell0    # name of first cell

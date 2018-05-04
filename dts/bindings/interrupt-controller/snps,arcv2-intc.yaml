@@ -29,8 +29,6 @@ properties:
       description: number of bits of IRQ priorities
       generation: define
 
-cell_string: IRQ
-
 "#cells":
   - irq
   - priority
