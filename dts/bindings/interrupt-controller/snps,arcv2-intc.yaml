@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, synopsy
+# Copyright (c) 2018, synopsys
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -23,7 +23,7 @@ properties:
       description: mmio register space
       generation: define
 
-    arm,num-irq-priority-bits:
+    arc,num-irq-priority-bits:
       category: required
       type: int
       description: number of bits of IRQ priorities

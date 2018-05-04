@@ -6,3 +6,11 @@ toolchain:
   - zephyr
 testing:
   default: true
+supported:
+  - i2c
+  - spi
+  - gpio
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

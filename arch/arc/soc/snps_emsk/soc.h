@@ -54,6 +54,8 @@
 #define INT_ENABLE_ARC				~(0x00000001 << 8)
 #define INT_ENABLE_ARC_BIT_POS			(8)
 
+
+#ifndef CONFIG_HAS_DTS
 /* I2C */
 /* I2C_0 is on Pmod2 connector */
 #define CONFIG_I2C_0_BASE_ADDR			0xF0004000
@@ -141,6 +143,8 @@
 #define GPIO_DW_1_IRQ				0	/* can't interrupt */
 #define GPIO_DW_2_IRQ				0	/* can't interrupt */
 #define GPIO_DW_3_IRQ				0	/* can't interrupt */
+
+#endif /* CONFIG_HAS_DTS */
 
 #endif /* !_ASMLANGUAGE */
 
