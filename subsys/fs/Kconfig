@@ -5,9 +5,8 @@
 #
 
 # Hidden. Automatically selected by file systems or FCB that need it
-config FS_FLASH_MAP_STORAGE
+config FS_FLASH_STORAGE_PARTITION
 	bool
-	depends on FLASH_MAP
 	default n
 
 menu "File Systems"
@@ -43,7 +42,7 @@ config FAT_FILESYSTEM_ELM
 config FILE_SYSTEM_NFFS
 	bool "NFFS file system support"
 	select FLASH_PAGE_LAYOUT
-	select FS_FLASH_MAP_STORAGE
+	select FS_FLASH_STORAGE_PARTITION
 	help
 	  Enables NFFS file system support.
 	  Note: NFFS requires 1-byte unaligned access to flash thus it
