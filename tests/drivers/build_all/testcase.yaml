@@ -5,32 +5,37 @@ tests:
     build_only: true
     min_ram: 16
     tags: drivers footprint
+    depends_on: adc i2c
   test_build_ethernet:
     build_only: true
     extra_args: CONF_FILE=ethernet.conf
     min_flash: 42
     min_ram: 32
-    platform_exclude: zedboard_pulpino
+    platform_exclude: zedboard_pulpino frdm_kw41z
     tags: drivers footprint
+    depends_on: adc spi
   test_build_sensor_triggers:
     build_only: true
     extra_args: CONF_FILE=sensors_trigger.conf
     min_ram: 32
-    platform_exclude: zedboard_pulpino
+    platform_exclude: zedboard_pulpino frdm_kw41z
     tags: drivers footprint
+    depends_on: adc spi
   test_build_sensors_a_m:
     build_only: true
     extra_args: CONF_FILE=sensors_a_m.conf
     min_flash: 44
     min_ram: 32
-    platform_exclude: zedboard_pulpino
+    platform_exclude: zedboard_pulpino frdm_kw41z
     tags: drivers footprint
+    depends_on: adc spi
   test_build_sensors_n_z:
     build_only: true
     extra_args: CONF_FILE=sensors_n_z.conf
     min_ram: 32
-    platform_exclude: zedboard_pulpino
+    platform_exclude: zedboard_pulpino frdm_kw41z
     tags: drivers footprint
+    depends_on: adc spi
   test_nsim:
     build_only: true
     platform_whitelist: em_starterkit
@@ -46,4 +51,5 @@ tests:
     build_only: true
     extra_args: CONF_FILE=gpio.conf
     min_ram: 32
+    depends_on: gpio
 
