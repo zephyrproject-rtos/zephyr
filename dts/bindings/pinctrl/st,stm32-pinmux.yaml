@@ -19,8 +19,6 @@ properties:
       generation: define
       category: required
 
-cell_string: PINMUX
-
 "#cells":
   - pin
   - function

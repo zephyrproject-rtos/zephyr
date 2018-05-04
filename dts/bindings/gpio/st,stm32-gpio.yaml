@@ -42,8 +42,6 @@ properties:
       description: Clock gate control information
       generation: define
 
-cell_string: GPIO
-
 "#cells":
   - pin
   - flags

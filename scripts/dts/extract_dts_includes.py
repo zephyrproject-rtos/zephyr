@@ -92,8 +92,7 @@ def extract_interrupts(node_address, yaml, prop, names, defs, def_label):
             name = []
 
         cell_yaml = yaml[get_compat(irq_parent)]
-        l_cell_prefix = [yaml[get_compat(irq_parent)].get(
-            'cell_string', []).upper()]
+        l_cell_prefix = ['IRQ']
 
         for i in range(reduced[irq_parent]['props']['#interrupt-cells']):
             l_cell_name = [cell_yaml['#cells'][i].upper()]
@@ -188,7 +187,7 @@ def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
         index += 1
 
 
-def extract_controller(node_address, prop, prop_values, index, defs, def_label):
+def extract_controller(node_address, yaml, prop, prop_values, index, defs, def_label, generic):
 
     prop_def = {}
     prop_alias = {}
@@ -220,9 +219,18 @@ def extract_controller(node_address, prop, prop_values, index, defs, def_label):
         else:
             l_idx = [str(index)]
 
-        for k in reduced[cell_parent]['props']:
-            if 'controller' in k:
-                l_cellname = convert_string_to_label(str(k))
+        # Check node generation requirements
+        try:
+            generation = yaml[get_compat(node_address)]['properties'][prop][
+                'generation']
+        except:
+            generation = ''
+
+        if 'use-prop-name' in generation:
+            l_cellname = convert_string_to_label(prop + '_' + 'controller')
+        else:
+            l_cellname = convert_string_to_label(generic + '_' + 'controller')
+
         label = l_base + [l_cellname] + l_idx
 
         prop_def['_'.join(label)] = "\"" + l_cell + "\""
@@ -247,7 +255,7 @@ def extract_controller(node_address, prop, prop_values, index, defs, def_label):
 
 
 def extract_cells(node_address, yaml, prop, prop_values, names, index, defs,
-                  def_label):
+                  def_label, generic):
 
     cell_parent = phandles[prop_values.pop(0)]
 
@@ -267,9 +275,17 @@ def extract_cells(node_address, yaml, prop, prop_values, names, index, defs,
     for k in reduced[cell_parent]['props'].keys():
         if k[0] == '#' and '-cells' in k:
             num_cells = reduced[cell_parent]['props'].get(k)
+    try:
+        generation = yaml[get_compat(node_address)]['properties'][prop][
+            'generation']
+    except:
+        generation = ''
 
-    # Generate label for each field of the property element
-    l_cell = [str(cell_yaml.get('cell_string', ''))]
+    if 'use-prop-name' in generation:
+        l_cell = [convert_string_to_label(str(prop))]
+    else:
+        l_cell = [convert_string_to_label(str(generic))]
+
     l_base = def_label.split('/')
     # Check if #define should be indexed (_0, _1, ...)
     if index == 0 and len(prop_values) < (num_cells + 2):
@@ -306,11 +322,13 @@ def extract_cells(node_address, yaml, prop, prop_values, names, index, defs,
     # recurse if we have anything left
     if len(prop_values):
         extract_cells(node_address, yaml, prop, prop_values, names,
-                      index + 1, defs, def_label)
+                      index + 1, defs, def_label, generic)
 
 
-def extract_pinctrl(node_address, yaml, pinconf, names, index, defs,
+def extract_pinctrl(node_address, yaml, prop, names, index, defs,
                     def_label):
+
+    pinconf = reduced[node_address]['props'][prop]
 
     prop_list = []
     if not isinstance(pinconf, list):
@@ -325,7 +343,7 @@ def extract_pinctrl(node_address, yaml, pinconf, names, index, defs,
         pin_node_address = phandles[p]
         pin_subnode = '/'.join(pin_node_address.split('/')[-1:])
         cell_yaml = yaml[get_compat(pin_node_address)]
-        cell_prefix = cell_yaml.get('cell_string', None)
+        cell_prefix = 'PINMUX'
         post_fix = []
 
         if cell_prefix is not None:
@@ -458,19 +476,28 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
         extract_interrupts(node_address, yaml, prop, names, defs, def_label)
     elif 'pinctrl-' in prop:
         p_index = int(prop.split('-')[1])
-        extract_pinctrl(node_address, yaml,
-                        reduced[node_address]['props'][prop],
+        extract_pinctrl(node_address, yaml, prop,
                         names[p_index], p_index, defs, def_label)
-    elif 'clocks' in prop or 'gpios' in prop:
+    elif 'clocks' in prop:
         try:
             prop_values = list(reduced[node_address]['props'].get(prop))
         except:
             prop_values = reduced[node_address]['props'].get(prop)
 
-        extract_controller(node_address, prop, prop_values, 0, defs,
-                           def_label)
+        extract_controller(node_address, yaml, prop, prop_values, 0, defs,
+                           def_label, 'clock')
         extract_cells(node_address, yaml, prop, prop_values,
-                      names, 0, defs, def_label)
+                      names, 0, defs, def_label, 'clock')
+    elif 'gpios' in prop:
+        try:
+            prop_values = list(reduced[node_address]['props'].get(prop))
+        except:
+            prop_values = reduced[node_address]['props'].get(prop)
+
+        extract_controller(node_address, yaml, prop, prop_values, 0, defs,
+                           def_label, 'gpio')
+        extract_cells(node_address, yaml, prop, prop_values,
+                      names, 0, defs, def_label, 'gpio')
     else:
         extract_single(node_address, yaml,
                        reduced[node_address]['props'][prop], prop,
