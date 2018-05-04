@@ -333,7 +333,12 @@ static void eth_iface_init(struct net_if *iface)
 
 	hal_ret = HAL_ETH_Init(heth);
 
-	if (hal_ret != HAL_OK) {
+	if (hal_ret == HAL_TIMEOUT) {
+		/* HAL Init time out. This could be linked to */
+		/* a recoverable error. Log the issue and continue */
+		/* dirver initialisation */
+		SYS_LOG_ERR("HAL_ETH_Init Timed out\n");
+	} else if (hal_ret != HAL_OK) {
 		SYS_LOG_ERR("HAL_ETH_Init failed: %d\n", hal_ret);
 		return;
 	}
