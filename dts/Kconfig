@@ -43,6 +43,14 @@ config HAS_DTS_SPI_DEVICE
 	  This option specifies that the target platform supports device tree
 	  configuration for spi devices, like sensors or RF modules.
 
+config HAS_DTS_SPI_PINS
+	bool
+	default n
+	help
+	  This option specifies that the target platform supports device tree
+	  configuration for pin definition of spi devices, like sensors or
+	  RF modules.
+
 config HAS_DTS_USB
 	bool
 	default n
