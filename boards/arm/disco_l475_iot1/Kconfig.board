@@ -8,3 +8,4 @@
 config BOARD_DISCO_L475_IOT1
 	bool "Discovery IoT L475 Development Board"
 	depends on SOC_STM32L475XG
+	select HAS_DTS_SPI_PINS
