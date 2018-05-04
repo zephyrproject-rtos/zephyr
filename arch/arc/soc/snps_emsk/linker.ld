@@ -20,7 +20,6 @@
 #define SRAM_START		CONFIG_SRAM_BASE_ADDRESS
 #define SRAM_SIZE		CONFIG_SRAM_SIZE
 #endif
-/* TODO: Using SRAM config for now, even though this is really DRAM. */
 
 /* Instruction Closely Coupled Memory (ICCM) base address and size */
 #if defined(CONFIG_ICCM_BASE_ADDRESS) && (CONFIG_ICCM_SIZE > 0)
