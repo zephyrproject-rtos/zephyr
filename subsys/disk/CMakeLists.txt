@@ -1,2 +1,3 @@
-zephyr_sources_ifdef(CONFIG_DISK_ACCESS_RAM disk_access_ram.c)
+zephyr_sources_ifdef(CONFIG_DISK_ACCESS disk_access.c)
 zephyr_sources_ifdef(CONFIG_DISK_ACCESS_FLASH disk_access_flash.c)
+zephyr_sources_ifdef(CONFIG_DISK_ACCESS_RAM disk_access_ram.c)

@@ -70,6 +70,7 @@ static u8_t page[BLOCK_SIZE];
 /* Initialized during mass_storage_init() */
 static u32_t memory_size;
 static u32_t block_count;
+static const char *disk_pdrv = CONFIG_MASS_STORAGE_DISK_NAME;
 
 /* CSW Status */
 enum Status {
@@ -523,7 +524,7 @@ static void memoryVerify(u8_t *buf, u16_t size)
 	/* beginning of a new block -> load a whole block in RAM */
 	if (!(addr % BLOCK_SIZE)) {
 		SYS_LOG_DBG("Disk READ sector %d", addr/BLOCK_SIZE);
-		if (disk_access_read(page, addr/BLOCK_SIZE, 1)) {
+		if (disk_access_read(disk_pdrv, page, addr/BLOCK_SIZE, 1)) {
 			SYS_LOG_ERR("---- Disk Read Error %d", addr/BLOCK_SIZE);
 		}
 	}
@@ -565,7 +566,8 @@ static void memoryWrite(u8_t *buf, u16_t size)
 
 	/* if the array is filled, write it in memory */
 	if (!((addr + size) % BLOCK_SIZE)) {
-		if (!(disk_access_status() & DISK_STATUS_WR_PROTECT)) {
+		if (!(disk_access_status(disk_pdrv) &
+					DISK_STATUS_WR_PROTECT)) {
 			SYS_LOG_DBG("Disk WRITE Qd %d", (addr/BLOCK_SIZE));
 			thread_op = THREAD_OP_WRITE_QUEUED;  /* write_queued */
 			defered_wr_sz = size;
@@ -789,7 +791,8 @@ static void mass_thread_main(int arg1, int unused)
 
 		switch (thread_op) {
 		case THREAD_OP_READ_QUEUED:
-			if (disk_access_read(page, (addr/BLOCK_SIZE), 1)) {
+			if (disk_access_read(disk_pdrv,
+						page, (addr/BLOCK_SIZE), 1)) {
 				SYS_LOG_ERR("!! Disk Read Error %d !",
 					    addr/BLOCK_SIZE);
 			}
@@ -797,7 +800,8 @@ static void mass_thread_main(int arg1, int unused)
 			thread_memory_read_done();
 			break;
 		case THREAD_OP_WRITE_QUEUED:
-			if (disk_access_write(page, (addr/BLOCK_SIZE), 1)) {
+			if (disk_access_write(disk_pdrv,
+						page, (addr/BLOCK_SIZE), 1)) {
 				SYS_LOG_ERR("!!!!! Disk Write Error %d !!!!!",
 					    addr/BLOCK_SIZE);
 			}
@@ -831,17 +835,19 @@ static int mass_storage_init(struct device *dev)
 
 	ARG_UNUSED(dev);
 
-	if (disk_access_init() != 0) {
+	if (disk_access_init(disk_pdrv) != 0) {
 		SYS_LOG_ERR("Storage init ERROR !!!! - Aborting USB init");
 		return 0;
 	}
 
-	if (disk_access_ioctl(DISK_IOCTL_GET_SECTOR_COUNT, &block_count)) {
+	if (disk_access_ioctl(disk_pdrv,
+				DISK_IOCTL_GET_SECTOR_COUNT, &block_count)) {
 		SYS_LOG_ERR("Unable to get sector count - Aborting USB init");
 		return 0;
 	}
 
-	if (disk_access_ioctl(DISK_IOCTL_GET_SECTOR_SIZE, &block_size)) {
+	if (disk_access_ioctl(disk_pdrv,
+				DISK_IOCTL_GET_SECTOR_SIZE, &block_size)) {
 		SYS_LOG_ERR("Unable to get sector size - Aborting USB init");
 		return 0;
 	}
