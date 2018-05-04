@@ -188,7 +188,17 @@ def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
         index += 1
 
 
-def extract_controller(node_address, prop, prop_values, prefix, defs, def_label):
+def extract_controller(node_address, prop, prop_values, index, prefix, defs, def_label):
+
+    prop_def = {}
+    prop_alias = {}
+
+    # get controller node (referenced via phandle)
+    cell_parent = phandles[prop_values[0]]
+
+    for k in reduced[cell_parent]['props'].keys():
+        if k[0] == '#' and '-cells' in k:
+            num_cells = reduced[cell_parent]['props'].get(k)
 
     # get controller node (referenced via phandle)
     cell_parent = phandles[prop_values[0]]
@@ -202,14 +212,19 @@ def extract_controller(node_address, prop, prop_values, prefix, defs, def_label)
 
         l_base = def_label.split('/')
         l_base += prefix
-
-        prop_def = {}
-        prop_alias = {}
+        # Check is defined should be indexed (_0, _1)
+        if index == 0 and len(prop_values) < (num_cells + 2):
+            # 0 or 1 element in prop_values
+            # ( ie len < num_cells + phandle + 1 )
+            l_idx = []
+        else:
+            l_idx = [str(index)]
 
         for k in reduced[cell_parent]['props']:
             if 'controller' in k:
                 l_cellname = convert_string_to_label(str(k))
-        label = l_base + [l_cellname]
+        label = l_base + [l_cellname] + l_idx
+
         prop_def['_'.join(label)] = "\"" + l_cell + "\""
 
         #generate defs also if node is referenced as an alias in dts
@@ -221,6 +236,14 @@ def extract_controller(node_address, prop, prop_values, prefix, defs, def_label)
                 prop_alias['_'.join(alias)] = '_'.join(label)
 
         insert_defs(node_address, defs, prop_def, prop_alias)
+
+    # prop off phandle + num_cells to get to next list item
+    prop_values = prop_values[num_cells+1:]
+
+    # recurse if we have anything left
+    if len(prop_values):
+        extract_controller(node_address, prop, prop_values, index +1, prefix, defs,
+                           def_label)
 
 
 def extract_cells(node_address, yaml, prop, prop_values, names, index, prefix, defs,
@@ -445,7 +468,7 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
         except:
             prop_values = reduced[node_address]['props'].get(prop)
 
-        extract_controller(node_address, prop, prop_values, prefix, defs,
+        extract_controller(node_address, prop, prop_values, 0, prefix, defs,
                            def_label)
         extract_cells(node_address, yaml, prop, prop_values,
                       names, 0, prefix, defs, def_label)
