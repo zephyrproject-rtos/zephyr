@@ -188,7 +188,7 @@ def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
         index += 1
 
 
-def extract_controller(node_address, prop, prop_values, index, prefix, defs, def_label):
+def extract_controller(node_address, prop, prop_values, index, defs, def_label):
 
     prop_def = {}
     prop_alias = {}
@@ -211,7 +211,7 @@ def extract_controller(node_address, prop, prop_values, index, prefix, defs, def
     if l_cell is not None:
 
         l_base = def_label.split('/')
-        l_base += prefix
+
         # Check is defined should be indexed (_0, _1)
         if index == 0 and len(prop_values) < (num_cells + 2):
             # 0 or 1 element in prop_values
@@ -246,7 +246,7 @@ def extract_controller(node_address, prop, prop_values, index, prefix, defs, def
                            def_label)
 
 
-def extract_cells(node_address, yaml, prop, prop_values, names, index, prefix, defs,
+def extract_cells(node_address, yaml, prop, prop_values, names, index, defs,
                   def_label):
 
     cell_parent = phandles[prop_values.pop(0)]
@@ -271,7 +271,6 @@ def extract_cells(node_address, yaml, prop, prop_values, names, index, prefix, d
     # Generate label for each field of the property element
     l_cell = [str(cell_yaml.get('cell_string', ''))]
     l_base = def_label.split('/')
-    l_base += prefix
     # Check if #define should be indexed (_0, _1, ...)
     if index == 0 and len(prop_values) < (num_cells + 2):
         # Less than 2 elements in prop_values (ie len < num_cells + phandle + 1)
@@ -307,7 +306,7 @@ def extract_cells(node_address, yaml, prop, prop_values, names, index, prefix, d
     # recurse if we have anything left
     if len(prop_values):
         extract_cells(node_address, yaml, prop, prop_values, names,
-                      index + 1, prefix, defs, def_label)
+                      index + 1, defs, def_label)
 
 
 def extract_pinctrl(node_address, yaml, pinconf, names, index, defs,
@@ -352,7 +351,7 @@ def extract_pinctrl(node_address, yaml, pinconf, names, index, defs,
     insert_defs(node_address, defs, prop_def, {})
 
 
-def extract_single(node_address, yaml, prop, key, prefix, defs, def_label):
+def extract_single(node_address, yaml, prop, key, defs, def_label):
 
     prop_def = {}
     prop_alias = {}
@@ -401,7 +400,7 @@ def extract_string_prop(node_address, yaml, key, label, defs):
 
 
 def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
-                     prefix, defs, label_override):
+                     defs, label_override):
 
     if 'base_label' in yaml[node_compat]:
         def_label = yaml[node_compat].get('base_label')
@@ -447,7 +446,7 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
 
             # Generate bus-name define
             extract_single(node_address, yaml, 'parent-label',
-                           'bus-name', prefix, defs, def_label)
+                           'bus-name', defs, def_label)
 
     if label_override is not None:
         def_label += '_' + label_override
@@ -468,14 +467,14 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
         except:
             prop_values = reduced[node_address]['props'].get(prop)
 
-        extract_controller(node_address, prop, prop_values, 0, prefix, defs,
+        extract_controller(node_address, prop, prop_values, 0, defs,
                            def_label)
         extract_cells(node_address, yaml, prop, prop_values,
-                      names, 0, prefix, defs, def_label)
+                      names, 0, defs, def_label)
     else:
         extract_single(node_address, yaml,
                        reduced[node_address]['props'][prop], prop,
-                       prefix, defs, def_label)
+                       defs, def_label)
 
 
 def extract_node_include_info(reduced, root_node_address, sub_node_address,
@@ -509,10 +508,6 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                             v)
             if 'generation' in v:
 
-                prefix = []
-                if v.get('use-name-prefix') is not None:
-                    prefix = [convert_string_to_label(k)]
-
                 for c in node['props'].keys():
                     if c.endswith("-names"):
                         pass
@@ -531,7 +526,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
 
                         extract_property(
                             node_compat, yaml, sub_node_address, c, v, names,
-                            prefix, defs, label_override)
+                            defs, label_override)
 
 
 def dict_merge(dct, merge_dct):
@@ -778,7 +773,7 @@ def generate_node_definitions(yaml_list):
         for key in flash_keys:
             if key in reduced[node_addr]['props']:
                 prop = reduced[node_addr]['props'][key]
-                extract_single(node_addr, None, prop, key, None, defs, "FLASH")
+                extract_single(node_addr, None, prop, key, defs, "FLASH")
 
         # only compute the load offset if a code partition exists and
         # it is not the same as the flash base address
