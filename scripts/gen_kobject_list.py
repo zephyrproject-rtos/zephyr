@@ -120,18 +120,17 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
 
 
 driver_macro_tpl = """
-#define _SYSCALL_DRIVER_%(driver_upper)s(ptr, op) _SYSCALL_DRIVER_GEN(ptr, op, %(driver_lower)s, %(driver_upper)s)
+#define Z_SYSCALL_DRIVER_%(driver_upper)s(ptr, op) Z_SYSCALL_DRIVER_GEN(ptr, op, %(driver_lower)s, %(driver_upper)s)
 """
 
 def write_validation_output(fp):
     fp.write("#ifndef __DRIVER_VALIDATION_GEN_H__\n")
     fp.write("#define __DRIVER_VALIDATION_GEN_H__\n")
 
-    fp.write("""#define _SYSCALL_DRIVER_GEN(ptr, op, driver_lower_case, driver_upper_case) \\
-	do { \\
-		_SYSCALL_OBJ(ptr, K_OBJ_DRIVER_##driver_upper_case); \\
-		_SYSCALL_DRIVER_OP(ptr, driver_lower_case##_driver_api, op); \\
-	} while (0)\n\n""");
+    fp.write("""#define Z_SYSCALL_DRIVER_GEN(ptr, op, driver_lower_case, driver_upper_case) \\
+		(Z_SYSCALL_OBJ(ptr, K_OBJ_DRIVER_##driver_upper_case) || \\
+		 Z_SYSCALL_DRIVER_OP(ptr, driver_lower_case##_driver_api, op))
+                """)
 
     for subsystem in subsystems:
         subsystem = subsystem.replace("_driver_api", "")

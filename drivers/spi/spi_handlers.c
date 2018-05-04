@@ -22,9 +22,9 @@ static void copy_and_check(struct spi_buf_set *bufs,
 	}
 
 	/* Validate the array of struct spi_buf instances */
-	_SYSCALL_MEMORY_ARRAY_READ(bufs->buffers,
-				   bufs->count,
-				   sizeof(struct spi_buf));
+	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(bufs->buffers,
+					   bufs->count,
+					   sizeof(struct spi_buf)));;
 
 	/* Not worried abuot overflow here: _SYSCALL_MEMORY_ARRAY_READ()
 	 * takes care of it.
@@ -39,7 +39,7 @@ static void copy_and_check(struct spi_buf_set *bufs,
 		 */
 		struct spi_buf *buf = &bufs->buffers[i];
 
-		_SYSCALL_MEMORY(buf->buf, buf->len, writable);
+		Z_OOPS(Z_SYSCALL_MEMORY(buf->buf, buf->len, writable));
 	}
 }
 
@@ -65,23 +65,24 @@ static u32_t copy_bufs_and_transceive(struct device *dev,
 				    tx_bufs, rx_bufs);
 }
 
-_SYSCALL_HANDLER(spi_transceive, dev, config_p, tx_bufs, rx_bufs)
+Z_SYSCALL_HANDLER(spi_transceive, dev, config_p, tx_bufs, rx_bufs)
 {
 	const struct spi_config *config = (const struct spi_config *)config_p;
 	struct spi_buf_set tx_bufs_copy;
 	struct spi_buf_set rx_bufs_copy;
 	struct spi_config config_copy;
 
-	_SYSCALL_MEMORY_READ(config, sizeof(*config));
-	_SYSCALL_DRIVER_SPI(dev, transceive);
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(config, sizeof(*config)));
+	Z_OOPS(Z_SYSCALL_DRIVER_SPI(dev, transceive));
 
 	if (tx_bufs) {
 		const struct spi_buf_set *tx =
 			(const struct spi_buf_set *)tx_bufs;
 
-		_SYSCALL_MEMORY_READ(tx_bufs, sizeof(struct spi_buf_set));
+		Z_OOPS(Z_SYSCALL_MEMORY_READ(tx_bufs,
+					     sizeof(struct spi_buf_set)));
 		memcpy(&tx_bufs_copy, tx, sizeof(tx_bufs_copy));
-		_SYSCALL_VERIFY(tx_bufs_copy.count < 32);
+		Z_OOPS(Z_SYSCALL_VERIFY(tx_bufs_copy.count < 32));
 	} else {
 		memset(&tx_bufs_copy, 0, sizeof(tx_bufs_copy));
 	}
@@ -90,9 +91,10 @@ _SYSCALL_HANDLER(spi_transceive, dev, config_p, tx_bufs, rx_bufs)
 		const struct spi_buf_set *rx =
 			(const struct spi_buf_set *)rx_bufs;
 
-		_SYSCALL_MEMORY_READ(rx_bufs, sizeof(struct spi_buf_set));
+		Z_OOPS(Z_SYSCALL_MEMORY_READ(rx_bufs,
+					     sizeof(struct spi_buf_set)));
 		memcpy(&rx_bufs_copy, rx, sizeof(rx_bufs_copy));
-		_SYSCALL_VERIFY(rx_bufs_copy.count < 32);
+		Z_OOPS(Z_SYSCALL_VERIFY(rx_bufs_copy.count < 32));
 	} else {
 		memset(&rx_bufs_copy, 0, sizeof(rx_bufs_copy));
 	}
@@ -101,9 +103,9 @@ _SYSCALL_HANDLER(spi_transceive, dev, config_p, tx_bufs, rx_bufs)
 	if (config_copy.cs) {
 		const struct spi_cs_control *cs = config_copy.cs;
 
-		_SYSCALL_MEMORY_READ(cs, sizeof(*cs));
+		Z_OOPS(Z_SYSCALL_MEMORY_READ(cs, sizeof(*cs)));
 		if (cs->gpio_dev) {
-			_SYSCALL_OBJ(cs->gpio_dev, K_OBJ_DRIVER_GPIO);
+			Z_OOPS(Z_SYSCALL_OBJ(cs->gpio_dev, K_OBJ_DRIVER_GPIO));
 		}
 	}
 
@@ -117,11 +119,11 @@ _SYSCALL_HANDLER(spi_transceive, dev, config_p, tx_bufs, rx_bufs)
 					ssf);
 }
 
-_SYSCALL_HANDLER(spi_release, dev, config_p)
+Z_SYSCALL_HANDLER(spi_release, dev, config_p)
 {
 	const struct spi_config *config = (const struct spi_config *)config_p;
 
-	_SYSCALL_MEMORY_READ(config, sizeof(*config));
-	_SYSCALL_DRIVER_SPI(dev, release);
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(config, sizeof(*config)));
+	Z_OOPS(Z_SYSCALL_DRIVER_SPI(dev, release));
 	return _impl_spi_release((struct device *)dev, config);
 }

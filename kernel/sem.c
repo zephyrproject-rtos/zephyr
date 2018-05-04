@@ -73,10 +73,10 @@ void _impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_sem_init, sem, initial_count, limit)
+Z_SYSCALL_HANDLER(k_sem_init, sem, initial_count, limit)
 {
-	_SYSCALL_OBJ_INIT(sem, K_OBJ_SEM);
-	_SYSCALL_VERIFY(limit != 0 && initial_count <= limit);
+	Z_OOPS(Z_SYSCALL_OBJ_INIT(sem, K_OBJ_SEM));
+	Z_OOPS(Z_SYSCALL_VERIFY(limit != 0 && initial_count <= limit));
 	_impl_k_sem_init((struct k_sem *)sem, initial_count, limit);
 	return 0;
 }
@@ -139,7 +139,7 @@ void _impl_k_sem_give(struct k_sem *sem)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1_SIMPLE_VOID(k_sem_give, K_OBJ_SEM, struct k_sem *);
+Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_sem_give, K_OBJ_SEM, struct k_sem *);
 #endif
 
 int _impl_k_sem_take(struct k_sem *sem, s32_t timeout)
@@ -163,12 +163,12 @@ int _impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_sem_take, sem, timeout)
+Z_SYSCALL_HANDLER(k_sem_take, sem, timeout)
 {
-	_SYSCALL_OBJ(sem, K_OBJ_SEM);
+	Z_OOPS(Z_SYSCALL_OBJ(sem, K_OBJ_SEM));
 	return _impl_k_sem_take((struct k_sem *)sem, timeout);
 }
 
-_SYSCALL_HANDLER1_SIMPLE_VOID(k_sem_reset, K_OBJ_SEM, struct k_sem *);
-_SYSCALL_HANDLER1_SIMPLE(k_sem_count_get, K_OBJ_SEM, struct k_sem *);
+Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_sem_reset, K_OBJ_SEM, struct k_sem *);
+Z_SYSCALL_HANDLER1_SIMPLE(k_sem_count_get, K_OBJ_SEM, struct k_sem *);
 #endif
