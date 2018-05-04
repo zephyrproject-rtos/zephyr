@@ -41,6 +41,8 @@ set(COMMAND_RUNS_ON_WIN_pymenuconfig 1)
 set(ENV{ENV_VAR_ARCH}         ${ARCH})
 set(ENV{ENV_VAR_BOARD_DIR}    ${BOARD_DIR})
 
+set(ENV{ENV_VAR_CONTAINER_DIR} ${CONTAINER_DIR})
+
 foreach(kconfig_target ${kconfig_target_list})
   if ((NOT WIN32) OR (DEFINED COMMAND_RUNS_ON_WIN_${kconfig_target}))
     add_custom_target(

@@ -317,6 +317,16 @@ add_subdirectory(misc)
 # property which is set implicitly for custom command outputs
 include(misc/generated/CMakeLists.txt)
 add_subdirectory(boards)
+
+FILE(GLOB_RECURSE EXT_MODULES ${CONTAINER_DIR}/modules/*/module.yml)
+FILE(GLOB_RECURSE EXT_HALS ${CONTAINER_DIR}/hals/*/module.yml)
+set(modules ${EXT_MODULES} ${EXT_HALS})
+foreach(module_file ${modules})
+  get_filename_component(module_dir ${module_file} DIRECTORY)
+  string(REPLACE ${CONTAINER_DIR}/ "" MODULE_BINARY_DIR ${module_dir})
+  add_subdirectory(${module_dir} ${MODULE_BINARY_DIR})
+endforeach(module_file)
+
 add_subdirectory(ext)
 add_subdirectory(subsys)
 add_subdirectory(drivers)

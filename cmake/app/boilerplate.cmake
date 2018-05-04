@@ -73,6 +73,7 @@ set(__build_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
 
 set(PROJECT_BINARY_DIR ${__build_dir})
 set(PROJECT_SOURCE_DIR $ENV{ZEPHYR_BASE})
+get_filename_component(CONTAINER_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
 
 # Convert path to use the '/' separator
 string(REPLACE "\\" "/" PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR})

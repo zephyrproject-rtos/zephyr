@@ -18,6 +18,10 @@ config ENV_VAR_SYM_ARCH
 	string
 	option env="ENV_VAR_ARCH"
 
+config ENV_VAR_SYM_CONTAINER_DIR
+        string
+        option env="ENV_VAR_CONTAINER_DIR"
+
 source "arch/Kconfig"
 
 source "kernel/Kconfig"
@@ -33,6 +37,9 @@ source "lib/Kconfig"
 source "subsys/Kconfig"
 
 source "ext/Kconfig"
+
+source "$ENV_VAR_SYM_CONTAINER_DIR/hal/*/Kconfig.module"
+source "$ENV_VAR_SYM_CONTAINER_DIR/modules/*/Kconfig.module"
 
 source "tests/Kconfig"
 
