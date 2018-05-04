@@ -1,25 +1,25 @@
 #
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
-title: Synopys DesignWare I2C controller
-id: snps,designware-i2c
+title: Synopsys Designware SPI Controller
+id: snps,designware-spi
 version: 0.1
 
 description: >
-    This is a representation of the Synopsys DesignWare i2c node
+     This is a representation of the Synopsys DesignWare spi node
 
 inherits:
-    !include i2c.yaml
+    !include spi.yaml
 
 properties:
     compatible:
       type: string
       category: required
       description: compatible strings
-      constraint: "snps,designware-i2c"
+      constraint: "snps,designware-spi"
 
     reg:
       type: array
@@ -32,5 +32,4 @@ properties:
       category: required
       description: required interrupts
       generation: define
-
 ...
