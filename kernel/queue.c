@@ -94,11 +94,11 @@ void _impl_k_queue_init(struct k_queue *queue)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_queue_init, queue_ptr)
+Z_SYSCALL_HANDLER(k_queue_init, queue_ptr)
 {
 	struct k_queue *queue = (struct k_queue *)queue_ptr;
 
-	_SYSCALL_OBJ_NEVER_INIT(queue, K_OBJ_QUEUE);
+	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(queue, K_OBJ_QUEUE));
 	_impl_k_queue_init(queue);
 	return 0;
 }
@@ -138,8 +138,8 @@ void _impl_k_queue_cancel_wait(struct k_queue *queue)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1_SIMPLE_VOID(k_queue_cancel_wait, K_OBJ_QUEUE,
-			      struct k_queue *);
+Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_queue_cancel_wait, K_OBJ_QUEUE,
+			       struct k_queue *);
 #endif
 
 static int queue_insert(struct k_queue *queue, void *prev, void *data,
@@ -204,9 +204,9 @@ int _impl_k_queue_alloc_append(struct k_queue *queue, void *data)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_queue_alloc_append, queue, data)
+Z_SYSCALL_HANDLER(k_queue_alloc_append, queue, data)
 {
-	_SYSCALL_OBJ(queue, K_OBJ_QUEUE);
+	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
 
 	return _impl_k_queue_alloc_append((struct k_queue *)queue,
 					  (void *)data);
@@ -219,9 +219,9 @@ int _impl_k_queue_alloc_prepend(struct k_queue *queue, void *data)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_queue_alloc_prepend, queue, data)
+Z_SYSCALL_HANDLER(k_queue_alloc_prepend, queue, data)
 {
-	_SYSCALL_OBJ(queue, K_OBJ_QUEUE);
+	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
 
 	return _impl_k_queue_alloc_prepend((struct k_queue *)queue,
 					   (void *)data);
@@ -338,16 +338,16 @@ void *_impl_k_queue_get(struct k_queue *queue, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_queue_get, queue, timeout_p)
+Z_SYSCALL_HANDLER(k_queue_get, queue, timeout_p)
 {
 	s32_t timeout = timeout_p;
 
-	_SYSCALL_OBJ(queue, K_OBJ_QUEUE);
+	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
 
 	return (u32_t)_impl_k_queue_get((struct k_queue *)queue, timeout);
 }
 
-_SYSCALL_HANDLER1_SIMPLE(k_queue_is_empty, K_OBJ_QUEUE, struct k_queue *);
-_SYSCALL_HANDLER1_SIMPLE(k_queue_peek_head, K_OBJ_QUEUE, struct k_queue *);
-_SYSCALL_HANDLER1_SIMPLE(k_queue_peek_tail, K_OBJ_QUEUE, struct k_queue *);
+Z_SYSCALL_HANDLER1_SIMPLE(k_queue_is_empty, K_OBJ_QUEUE, struct k_queue *);
+Z_SYSCALL_HANDLER1_SIMPLE(k_queue_peek_head, K_OBJ_QUEUE, struct k_queue *);
+Z_SYSCALL_HANDLER1_SIMPLE(k_queue_peek_tail, K_OBJ_QUEUE, struct k_queue *);
 #endif /* CONFIG_USERSPACE */

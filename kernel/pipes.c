@@ -165,9 +165,9 @@ int _impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_pipe_alloc_init, pipe, size)
+Z_SYSCALL_HANDLER(k_pipe_alloc_init, pipe, size)
 {
-	_SYSCALL_OBJ_NEVER_INIT(pipe, K_OBJ_PIPE);
+	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(pipe, K_OBJ_PIPE));
 
 	return _impl_k_pipe_alloc_init((struct k_pipe *)pipe, size);
 }
@@ -714,16 +714,16 @@ int _impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_pipe_get,
+Z_SYSCALL_HANDLER(k_pipe_get,
 		  pipe, data, bytes_to_read, bytes_read_p, min_xfer_p, timeout)
 {
 	size_t *bytes_read = (size_t *)bytes_read_p;
 	size_t min_xfer = (size_t)min_xfer_p;
 
-	_SYSCALL_OBJ(pipe, K_OBJ_PIPE);
-	_SYSCALL_MEMORY_WRITE(bytes_read, sizeof(*bytes_read));
-	_SYSCALL_MEMORY_WRITE((void *)data, bytes_to_read);
-	_SYSCALL_VERIFY(min_xfer <= bytes_to_read);
+	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(bytes_read, sizeof(*bytes_read)));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE((void *)data, bytes_to_read));
+	Z_OOPS(Z_SYSCALL_VERIFY(min_xfer <= bytes_to_read));
 
 	return _impl_k_pipe_get((struct k_pipe *)pipe, (void *)data,
 				bytes_to_read, bytes_read, min_xfer,
@@ -743,16 +743,16 @@ int _impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_pipe_put, pipe, data, bytes_to_write, bytes_written_p,
+Z_SYSCALL_HANDLER(k_pipe_put, pipe, data, bytes_to_write, bytes_written_p,
 		  min_xfer_p, timeout)
 {
 	size_t *bytes_written = (size_t *)bytes_written_p;
 	size_t min_xfer = (size_t)min_xfer_p;
 
-	_SYSCALL_OBJ(pipe, K_OBJ_PIPE);
-	_SYSCALL_MEMORY_WRITE(bytes_written, sizeof(*bytes_written));
-	_SYSCALL_MEMORY_READ((void *)data, bytes_to_write);
-	_SYSCALL_VERIFY(min_xfer <= bytes_to_write);
+	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(bytes_written, sizeof(*bytes_written)));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ((void *)data, bytes_to_write));
+	Z_OOPS(Z_SYSCALL_VERIFY(min_xfer <= bytes_to_write));
 
 	return _impl_k_pipe_put((struct k_pipe *)pipe, (void *)data,
 				bytes_to_write, bytes_written, min_xfer,

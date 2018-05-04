@@ -11,9 +11,9 @@
  * instance and return an integral value
  */
 #define COUNTER_HANDLER(name) \
-	_SYSCALL_HANDLER(counter_ ## name, dev) \
+	Z_SYSCALL_HANDLER(counter_ ## name, dev) \
 	{ \
-		_SYSCALL_DRIVER_COUNTER(dev, name); \
+		Z_OOPS(Z_SYSCALL_DRIVER_COUNTER(dev, name)); \
 		return _impl_counter_ ## name((struct device *)dev); \
 	}
 
