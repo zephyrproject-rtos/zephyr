@@ -55,7 +55,7 @@ static struct net_icmpv6_handler test_handler2 = {
 	.handler = handle_test_msg,
 };
 
-void run_tests(void)
+void test_icmpv6(void)
 {
 	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
 
@@ -111,6 +111,6 @@ void run_tests(void)
 void test_main(void)
 {
 	ztest_test_suite(test_icmpv6_fn,
-		ztest_unit_test(run_tests));
+		ztest_unit_test(test_icmpv6));
 	ztest_run_test_suite(test_icmpv6_fn);
 }

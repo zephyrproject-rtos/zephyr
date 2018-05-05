@@ -9,7 +9,7 @@
 
 #include "altera_avalon_sysid.h"
 
-void testing_sysid(void)
+void test_sysid(void)
 {
 	s32_t sysid, status = TC_FAIL;
 
@@ -29,6 +29,6 @@ void testing_sysid(void)
 void test_main(void)
 {
 	ztest_test_suite(nios2_sysid_test_suite,
-			ztest_unit_test(testing_sysid));
+			ztest_unit_test(test_sysid));
 	ztest_run_test_suite(nios2_sysid_test_suite);
 }
