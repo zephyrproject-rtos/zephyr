@@ -26,6 +26,14 @@ config USB_DW_IRQ_PRI
 	help
 	  USB interrupt priority.
 
+config USB_DW_USB_2_0
+	bool
+	prompt "DesignWare Controller and PHY support for USB specification 2.0"
+	depends on USB_DW
+	default n
+	help
+	  Indicates whether or not USB specification version 2.0 is supported
+
 config USB_DC_STM32
 	bool
 	prompt "USB device controller driver for STM32 devices"

@@ -526,11 +526,15 @@ static int usb_dw_init(void)
 		return ret;
 	}
 
-	/* Set device speed to FS */
-#ifdef USB_PHY_2
-	USB_DW->dcfg &= ~USB_DW_DCFG_DEV_SPD_FS;
-	USB_DW->dcfg |= 0x01;
+#ifdef CONFIG_USB_DW_USB_2_0
+	/* set the PHY interface to be 16-bit UTMI */
+	USB_DW->gusbcfg = (USB_DW->gusbcfg & ~USB_DW_GUSBCFG_PHY_IF_MASK) |
+		USB_DW_GUSBCFG_PHY_IF_16_BIT;
+
+	/* Set USB2.0 High Speed */
+	USB_DW->dcfg |= USB_DW_DCFG_DEV_SPD_USB2_HS;
 #else
+	/* Set device speed to Full Speed */
 	USB_DW->dcfg |= USB_DW_DCFG_DEV_SPD_FS;
 #endif
 
