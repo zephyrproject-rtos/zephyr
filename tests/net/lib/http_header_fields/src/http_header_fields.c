@@ -827,18 +827,6 @@ void test_http_header_fields(void)
 {
 	int rc;
 
-	TC_START("HTTP header fields test");
-
-	/* api */
-	test_preserve_data();
-
-	test_parse_url();
-
-	test_method_str();
-
-	/* nread */
-	test_header_nread_value();
-
 	/* header field tests */
 	rc = test_double_content_length_error(HTTP_REQUEST);
 
@@ -894,6 +882,12 @@ void test_http_header_fields(void)
 void test_main(void)
 {
 	ztest_test_suite(test_http_header_fields_fn,
-		ztest_unit_test(test_http_header_fields));
+		ztest_unit_test(test_http_header_fields),
+		ztest_unit_test(test_preserve_data),
+		ztest_unit_test(test_parse_url),
+		ztest_unit_test(test_method_str),
+		ztest_unit_test(test_header_nread_value),
+		ztest_unit_test(test_http_header_fields)
+		);
 	ztest_run_test_suite(test_http_header_fields_fn);
 }
