@@ -106,7 +106,7 @@ void handler(union sigval val)
 void check_timer_support(int clock_id)
 {
 	int ret;
-	struct sigevent sig;
+	struct sigevent sig = {0};
 	timer_t timerid;
 	struct itimerspec value, ovalue;
 
