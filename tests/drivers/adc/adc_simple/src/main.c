@@ -62,7 +62,7 @@ static long _abs(long x)
 }
 
 
-static void adc_test(void)
+static void test_adc(void)
 {
 	int result = TC_FAIL;
 	struct device *adc;
@@ -103,7 +103,7 @@ static void adc_test(void)
 void test_main(void)
 {
 	ztest_test_suite(_adc_test,
-			 ztest_unit_test(adc_test));
+			 ztest_unit_test(test_adc));
 	ztest_run_test_suite(_adc_test);
 }
 

@@ -24,7 +24,6 @@
 #include <net/ethernet.h>
 #include <net/udp.h>
 
-#include <tc_util.h>
 #include <ztest.h>
 
 #if defined(CONFIG_NET_DEBUG_UDP)
@@ -505,7 +504,7 @@ static void set_port(sa_family_t family, struct sockaddr *raddr,
 	}
 }
 
-void run_tests(void)
+void test_udp(void)
 {
 	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
 
@@ -750,6 +749,6 @@ void run_tests(void)
 void test_main(void)
 {
 	ztest_test_suite(test_udp_fn,
-		ztest_unit_test(run_tests));
+		ztest_unit_test(test_udp));
 	ztest_run_test_suite(test_udp_fn);
 }
