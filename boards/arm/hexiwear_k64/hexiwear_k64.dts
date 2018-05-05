@@ -96,6 +96,8 @@
 		compatible = "nxp,fxas21002";
 		reg = <0x20>;
 		label = "FXAS21002";
+		int1-gpios = <&gpiod 1 0>;
+		int2-gpios = <&gpioc 18 0>;
 	};
 };
 
