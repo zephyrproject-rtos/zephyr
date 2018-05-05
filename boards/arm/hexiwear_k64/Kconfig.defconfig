@@ -90,16 +90,6 @@ config BATTERY_SENSE
 
 endif # ADC
 
-if FXAS21002
-
-config FXAS21002_GPIO_NAME
-	default GPIO_MCUX_PORTC_NAME
-
-config FXAS21002_GPIO_PIN
-	default 18
-
-endif # FXAS21002
-
 if PWM_MCUX_FTM
 
 config PWM_3
