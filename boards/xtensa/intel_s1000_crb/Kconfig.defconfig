@@ -68,8 +68,12 @@ config USB_DW
 	def_bool y
 config USB_DW_IRQ_PRI
 	default 3
-config USB_PHY_2
+config USB_DW_USB_2_0
 	def_bool y
+config USB_HID_MAX_PAYLOAD_SIZE
+	default 128
+config USB_COMPOSITE_BUFFER_SIZE
+	default 128
 endif # USB
 
 if UART_NS16550
