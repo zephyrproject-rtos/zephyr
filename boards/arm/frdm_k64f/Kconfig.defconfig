@@ -87,16 +87,6 @@ config ADC_1
 
 endif # ADC
 
-if FXOS8700
-
-config FXOS8700_GPIO_NAME
-	default GPIO_MCUX_PORTC_NAME
-
-config FXOS8700_GPIO_PIN
-	default 13
-
-endif # FXOS8700
-
 if PWM_MCUX_FTM
 
 config PWM_3

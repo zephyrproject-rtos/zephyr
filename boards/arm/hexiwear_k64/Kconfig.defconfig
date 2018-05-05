@@ -90,16 +90,6 @@ config BATTERY_SENSE
 
 endif # ADC
 
-if FXOS8700
-
-config FXOS8700_GPIO_NAME
-	default GPIO_MCUX_PORTD_NAME
-
-config FXOS8700_GPIO_PIN
-	default 13
-
-endif # FXOS8700
-
 if FXAS21002
 
 config FXAS21002_GPIO_NAME
