@@ -89,6 +89,8 @@
 		compatible = "nxp,fxos8700";
 		reg = <0x1d>;
 		label = "FXOS8700";
+		int1-gpios = <&gpioc 6 0>;
+		int2-gpios = <&gpioc 13 0>;
 	};
 };
 
