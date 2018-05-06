@@ -882,7 +882,6 @@ void test_http_header_fields(void)
 void test_main(void)
 {
 	ztest_test_suite(test_http_header_fields_fn,
-		ztest_unit_test(test_http_header_fields),
 		ztest_unit_test(test_preserve_data),
 		ztest_unit_test(test_parse_url),
 		ztest_unit_test(test_method_str),

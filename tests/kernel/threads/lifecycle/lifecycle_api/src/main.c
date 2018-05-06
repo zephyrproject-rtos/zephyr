@@ -42,10 +42,6 @@ void test_main(void)
 			 ztest_unit_test(test_threads_spawn_priority),
 			 ztest_user_unit_test(test_threads_spawn_delay),
 			 ztest_unit_test(test_threads_spawn_forever),
-			 ztest_unit_test(
-				 test_threads_suspend_resume_cooperative),
-			 ztest_unit_test(
-				 test_threads_suspend_resume_preemptible),
 			 ztest_unit_test(test_thread_start),
 			 ztest_unit_test(test_threads_suspend_resume_cooperative),
 			 ztest_unit_test(test_threads_suspend_resume_preemptible),
