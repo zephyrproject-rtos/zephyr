@@ -265,9 +265,9 @@ static void usb_handle_control_transfer(u8_t ep,
 		usb_dev.data_buf_residue = setup->wLength;
 		usb_dev.data_buf_len = setup->wLength;
 
-		if (!(setup->wLength == 0) &&
-		    !(REQTYPE_GET_DIR(setup->bmRequestType) ==
-		    REQTYPE_DIR_TO_HOST)) {
+		if (setup->wLength &&
+		    REQTYPE_GET_DIR(setup->bmRequestType)
+		    == REQTYPE_DIR_TO_DEVICE) {
 			return;
 		}
 
