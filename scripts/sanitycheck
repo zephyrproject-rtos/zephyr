@@ -2709,11 +2709,14 @@ def main():
 
     if options.list_tests:
         cnt = 0
+        unq = []
         for n,tc in ts.testcases.items():
             for c in tc.cases:
-                cnt = cnt + 1
-                print(" - {}".format(c))
+                unq.append(c)
 
+        for u in sorted(set(unq)):
+            cnt = cnt + 1
+            print(" - {}".format(u))
         print("{} total.".format(cnt))
         return
 
