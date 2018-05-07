@@ -138,7 +138,7 @@ static inline int _verify_entries(struct adc_seq_table *seq_table)
 		entry = &seq_table->entries[i];
 
 		if (entry->sampling_delay <= 0 ||
-		    entry->channel_id > ADC108S102_CHANNELS) {
+		    entry->channel_id >= ADC108S102_CHANNELS) {
 			return 0;
 		}
 
