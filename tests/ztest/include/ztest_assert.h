@@ -49,8 +49,10 @@ static inline void _zassert(int cond,
 		      file, line, func, default_msg);
 #if defined(CONFIG_STDOUT_CONSOLE)
 		vprintf(msg, vargs);
+		printf("\n");
 #else
 		vprintk(msg, vargs);
+		printk("\n");
 #endif
 		va_end(vargs);
 		ztest_test_fail();
