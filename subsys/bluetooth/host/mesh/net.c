@@ -34,6 +34,7 @@
 #include "foundation.h"
 #include "beacon.h"
 #include "settings.h"
+#include "prov.h"
 
 /* Minimum valid Mesh Network PDU length. The Network headers
  * themselves take up 9 bytes. After that there is a minumum of 1 byte
@@ -1362,6 +1363,38 @@ static void ivu_complete(struct k_work *work)
 
 	bt_mesh_beacon_ivu_initiator(true);
 	bt_mesh_net_iv_update(bt_mesh.iv_index, false);
+}
+
+void bt_mesh_net_start(void)
+{
+	if (bt_mesh_beacon_get() == BT_MESH_BEACON_ENABLED) {
+		bt_mesh_beacon_enable();
+	} else {
+		bt_mesh_beacon_disable();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
+	    bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_NOT_SUPPORTED) {
+		bt_mesh_proxy_gatt_enable();
+		bt_mesh_adv_update();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
+		bt_mesh_lpn_init();
+	} else {
+		bt_mesh_scan_enable();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
+		bt_mesh_friend_init();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {
+		u16_t net_idx = bt_mesh.sub[0].net_idx;
+		u16_t addr = bt_mesh_primary_addr();
+
+		bt_mesh_prov_complete(net_idx, addr);
+	}
 }
 
 void bt_mesh_net_init(void)
