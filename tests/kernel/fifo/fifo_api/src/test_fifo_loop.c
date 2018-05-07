@@ -4,28 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_fifo_api
- * @{
- * @defgroup t_fifo_loop test_fifo_loop
- * @brief TestPurpose: verify zephyr fifo continuous read write
- *                     in loop
- * @details
- * - Test Steps
- *   -# fifo put from main thread
- *   -# fifo read from isr
- *   -# fifo put from isr
- *   -# fifo get from spawn thread
- *   -# loop above steps for LOOPs times
- * - Expected Results
- *   -# fifo data pass correctly and stably across contexts
- * - API coverage
- *   -# k_fifo_init
- *   -# k_fifo_put
- *   -# k_fifo_get
- * @}
- */
-
 #include "test_fifo.h"
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -98,7 +76,25 @@ static void tfifo_read_write(struct k_fifo *pfifo)
 	TC_PRINT("\n");
 }
 
-/*test cases*/
+/**
+ * @brief Verify zephyr fifo continuous read write in loop
+ *
+ * @details
+ * - Test Steps
+ *   -# fifo put from main thread
+ *   -# fifo read from isr
+ *   -# fifo put from isr
+ *   -# fifo get from spawn thread
+ *   -# loop above steps for LOOPs times
+ * - Expected Results
+ *   -# fifo data pass correctly and stably across contexts
+ * - API coverage
+ *   -# k_fifo_init
+ *   -# k_fifo_put
+ *   -# k_fifo_get
+ * @addtogroup kernel_fifo
+ * @{
+ */
 void test_fifo_loop(void)
 {
 	k_fifo_init(&fifo);
@@ -107,3 +103,6 @@ void test_fifo_loop(void)
 		tfifo_read_write(&fifo);
 	}
 }
+/**
+ * @}
+ */

@@ -4,15 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_msgq_api
- * @{
- * @defgroup t_msgq_purge test_msgq_purge
- * @brief TestPurpose: verify zephyr msgq purge under different scenario
- * @}
- */
-
-
 #include "test_msgq.h"
 
 K_THREAD_STACK_EXTERN(tstack);
@@ -28,7 +19,11 @@ static void tThread_entry(void *p1, void *p2, void *p3)
 	zassert_equal(ret, -ENOMSG, NULL);
 }
 
-/*test cases*/
+/**
+ * @brief Verify zephyr msgq purge under different scenario
+ * @addtogroup kernel_message_queue
+ * @{
+ */
 void test_msgq_purge_when_put(void)
 {
 	int ret;
@@ -54,3 +49,6 @@ void test_msgq_purge_when_put(void)
 		zassert_equal(ret, 0, NULL);
 	}
 }
+/**
+ * @}
+ */

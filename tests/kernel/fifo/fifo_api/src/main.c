@@ -5,9 +5,18 @@
  */
 
 /**
- * @addtogroup t_fifo
+ * @brief Tests for the FIFO kernel object
+ *
+ * Verify zephyr fifo apis under different context
+ *
+ * - API coverage
+ *   -# k_fifo_init K_FIFO_DEFINE
+ *   -# k_fifo_put k_fifo_put_list k_fifo_put_slist
+ *   -# k_fifo_get *
+ *
+ * @defgroup kernel_fifo FIFOs
+ * @ingroup all_tests
  * @{
- * @defgroup t_fifo_api test_fifo_api
  * @}
  */
 

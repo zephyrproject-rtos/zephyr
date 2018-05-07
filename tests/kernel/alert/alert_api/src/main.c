@@ -9,11 +9,6 @@
  * @brief Verify zephyr alert send/recv across different contexts
  */
 
-/**
- * @brief Tests for the Alert kernel object
- * @defgroup kernel.alerts
- * @{
- */
 #include <ztest.h>
 #include <irq_offload.h>
 
@@ -138,6 +133,18 @@ static void isr_alert(void)
 	k_sleep(TIMEOUT);
 	alert_recv();
 }
+
+int event_handler(struct k_alert *alt)
+{
+	return handler_val;
+}
+
+/**
+ * @brief Tests for the Alert kernel object
+ * @defgroup kernel_alerts Alerts
+ * @ingroup all_tests
+ * @{
+ */
 
 /**
  * @brief Test thread alert default
@@ -397,11 +404,6 @@ void test_thread_alert_wait(void)
 	}
 }
 
-int event_handler(struct k_alert *alt)
-{
-	return handler_val;
-}
-
 /**
  * @brief Test thread alert handler
  *
@@ -434,6 +436,9 @@ void test_thread_alert_handler(void)
 
 	zassert_equal(ret, 0, NULL);
 }
+/**
+ * @}
+ */
 
 
 /**
@@ -498,6 +503,3 @@ void test_main(void)
 			 ztest_unit_test(test_isr_kinit_alert));
 	ztest_run_test_suite(alert_api);
 }
-/**
- * @}
- */

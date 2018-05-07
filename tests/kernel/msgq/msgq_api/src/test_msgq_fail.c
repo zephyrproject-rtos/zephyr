@@ -3,23 +3,17 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-/**
- * @addtogroup t_msgq_api
- * @{
- * @defgroup t_msgq_fail test_msgq_fail
- * @brief TestPurpose: verify zephyr msgq return code under negative tests
- * @}
- */
-
-
 #include "test_msgq.h"
 
 static char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
 static u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
 extern struct k_msgq msgq;
 
-/*test cases*/
+/**
+ * @brief Verify zephyr msgq return code under negative tests
+ * @addtogroup kernel_message_queue
+ * @{
+ */
 void test_msgq_put_fail(void *p1, void *p2, void *p3)
 {
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
@@ -52,3 +46,7 @@ void test_msgq_get_fail(void *p1, void *p2, void *p3)
 	ret = k_msgq_get(&msgq, &rx_data, TIMEOUT);
 	zassert_equal(ret, -EAGAIN, NULL);
 }
+
+/**
+ * @}
+ */
