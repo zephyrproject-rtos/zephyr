@@ -165,6 +165,14 @@ static int seq_set(int argc, char **argv, char *val)
 	bt_mesh.seq = ((u32_t)seq.val[0] | ((u32_t)seq.val[1] << 8) |
 		       ((u32_t)seq.val[2] << 16));
 
+	if (CONFIG_BT_MESH_SEQ_STORE_RATE > 0) {
+		/* Make sure we have a large enough sequence number. We
+		 * subtract 1 so that the first transmission causes a write
+		 * to the settings storage.
+		 */
+		bt_mesh.seq += CONFIG_BT_MESH_SEQ_STORE_RATE - 1;
+	}
+
 	BT_DBG("Sequence Number 0x%06x", bt_mesh.seq);
 
 	return 0;
@@ -548,6 +556,11 @@ void bt_mesh_store_seq(void)
 	struct seq_val seq;
 	char *str;
 
+	if (CONFIG_BT_MESH_SEQ_STORE_RATE &&
+	    (bt_mesh.seq % CONFIG_BT_MESH_SEQ_STORE_RATE)) {
+		return;
+	}
+
 	seq.val[0] = bt_mesh.seq;
 	seq.val[1] = bt_mesh.seq >> 8;
 	seq.val[2] = bt_mesh.seq >> 16;
@@ -562,7 +575,7 @@ void bt_mesh_store_seq(void)
 	settings_save_one("bt/mesh/Seq", str);
 }
 
-void bt_mesh_store_rpl(struct bt_mesh_rpl *entry)
+static void store_rpl(struct bt_mesh_rpl *entry)
 {
 	char buf[BT_SETTINGS_SIZE(sizeof(struct rpl_val))];
 	struct rpl_val rpl;
@@ -585,6 +598,38 @@ void bt_mesh_store_rpl(struct bt_mesh_rpl *entry)
 
 	BT_DBG("Saving RPL %s as value %s", path, str);
 	settings_save_one(path, str);
+}
+
+#if CONFIG_BT_MESH_RPL_STORE_TIMEOUT > 0
+static struct k_delayed_work rpl_store;
+
+static void rpl_store_timeout(struct k_work *work)
+{
+	int i;
+
+	BT_DBG("");
+
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.rpl); i++) {
+		struct bt_mesh_rpl *rpl = &bt_mesh.rpl[i];
+
+		if (rpl->store) {
+			rpl->store = false;
+			store_rpl(rpl);
+		}
+	}
+}
+#endif
+
+void bt_mesh_store_rpl(struct bt_mesh_rpl *entry)
+{
+#if CONFIG_BT_MESH_RPL_STORE_TIMEOUT > 0
+	entry->store = true;
+	k_delayed_work_submit(&rpl_store,
+			      K_SECONDS(CONFIG_BT_MESH_RPL_STORE_TIMEOUT));
+	BT_DBG("Waiting %d seconds", CONFIG_BT_MESH_RPL_STORE_TIMEOUT);
+#else
+	store_rpl(entry);
+#endif
 }
 
 void bt_mesh_store_subnet(struct bt_mesh_subnet *sub)
@@ -636,4 +681,11 @@ void bt_mesh_store_app_key(struct bt_mesh_app_key *app)
 
 	BT_DBG("Saving AppKey %s as value %s", path, str);
 	settings_save_one(path, str);
+}
+
+void bt_mesh_settings_init(void)
+{
+#if CONFIG_BT_MESH_RPL_STORE_TIMEOUT > 0
+	k_delayed_work_init(&rpl_store, rpl_store_timeout);
+#endif
 }

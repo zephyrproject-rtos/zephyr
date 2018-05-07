@@ -379,6 +379,42 @@ config BT_MESH_SHELL
 	  Activate shell module that provides Bluetooth Mesh commands to
 	  the console.
 
+if BT_SETTINGS
+
+config BT_MESH_SEQ_STORE_RATE
+	int "How often the sequence number gets updated in storage"
+	range 0 1000000
+	default 128
+	help
+	  This value defines how often the local sequence number gets
+	  updated in persistent storage (i.e. flash). E.g. a value of 100
+	  means that the sequence number will be stored to flash on every
+	  100th increment. If the node sends messages very frequently a
+	  higher value makes more sense, whereas if the node sends
+	  infrequently a value as low as 0 (update storage for every
+	  increment) can make sense. When the stack gets initialized it
+	  will add this number to the last stored one, so that it starts
+	  off with a value that's guaranteed to be larger than the last
+	  one used before power off.
+
+config BT_MESH_RPL_STORE_TIMEOUT
+	int "Minimum frequency that the RPL gets updated in storage"
+	range 0 1000000
+	default 5
+	help
+	  This value defines in seconds how soon the RPL gets written to
+	  persistent storage after a change occurs. If the node receives
+	  messages frequently it may make sense to have this set to a
+	  large value, whereas if the RPL gets updated infrequently a
+	  value as low as 0 (write immediately) may make sense. Note that
+	  if the node operates a security sensitive use case, and there's
+	  a risk of sudden power loss, it may be a security vulnerability
+	  to set this value to anything else than 0 (a power loss before
+	  writing to storage exposes the node to potential message
+	  replay attacks).
+
+endif # BT_SETTINGS
+
 config BT_MESH_DEBUG
 	bool "Enable debug logs"
 	depends on BT_DEBUG

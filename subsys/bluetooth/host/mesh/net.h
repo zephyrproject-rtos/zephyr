@@ -77,6 +77,9 @@ struct bt_mesh_subnet {
 struct bt_mesh_rpl {
 	u16_t src;
 	bool  old_iv;
+#if defined(CONFIG_BT_SETTINGS)
+	bool  store;
+#endif
 	u32_t seq;
 };
 
