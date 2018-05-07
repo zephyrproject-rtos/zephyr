@@ -214,6 +214,43 @@ void tz_sau_configure(int enable, int allns);
  */
 u32_t tz_sau_number_of_regions_get(void);
 
+#if defined(CONFIG_ARM_SAU)
+/**
+ *
+ * @brief SAU Region configuration
+ *
+ * A convenient struct to include all required elements
+ * for a SAU region configuration.
+ */
+typedef struct {
+	u8_t region_num;
+	u8_t enable:1;
+	u8_t nsc:1;
+	u32_t base_addr;
+	u32_t limit_addr;
+} tz_sau_conf_t;
+
+
+/**
+ *
+ * @brief Configure SAU Region
+ *
+ * Configure an existing ARMv8-M SAU region.
+ *
+ * @param p_sau_conf pointer to a tz_sau_conf_t structure
+ *
+ * This function shall only be called from Secure state, otherwise the
+ * Non-Secure instances of SAU RNR, RLAR, RBAR registers are RAZ/WI.
+ *
+ * This function shall be called before the Secure Firmware may transition
+ * to Non-Secure state.
+ *
+ * @return 1 if configuration is successful, otherwise 0.
+
+ */
+int tz_sau_region_configure(tz_sau_conf_t *p_sau_conf);
+
+#endif /* CONFIG_ARM_SAU */
 
 /**
  * @brief Non-Secure function type
