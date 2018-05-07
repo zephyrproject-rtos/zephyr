@@ -200,5 +200,9 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 		bt_mesh_proxy_init();
 	}
 
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_settings_init();
+	}
+
 	return 0;
 }
