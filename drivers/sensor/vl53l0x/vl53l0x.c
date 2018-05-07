@@ -199,9 +199,11 @@ static int vl53l0x_init(struct device *dev)
 	VL53L0X_Error ret;
 	u16_t vl53l0x_id = 0;
 	VL53L0X_DeviceInfo_t vl53l0x_dev_info;
-	struct device *gpio;
 
 	SYS_LOG_DBG("enter in %s", __func__);
+
+#ifdef CONFIG_VL53L0X_XSHUT_CONTROL_ENABLE
+	struct device *gpio;
 
 	/* configure and set VL53L0X_XSHUT_Pin */
 	gpio = device_get_binding(CONFIG_VL53L0X_XSHUT_GPIO_DEV_NAME);
@@ -222,6 +224,7 @@ static int vl53l0x_init(struct device *dev)
 
 	gpio_pin_write(gpio, CONFIG_VL53L0X_XSHUT_GPIO_PIN_NUM, 1);
 	k_sleep(100);
+#endif
 
 	drv_data->i2c = device_get_binding(CONFIG_VL53L0X_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
