@@ -6,7 +6,6 @@
 # Get all docs reviewed
 *.rst                                    @dbkinder
 .known-issues/*                          @inakypg @nashif
-MAINTAINERS                              @inakypg @nashif
 arch/arc/*                               @cjordan44 @ruuddw
 arch/arc/core/*                          @andrewboie
 arch/arm/*                               @MaureenHelm @galak
@@ -86,12 +85,12 @@ drivers/led/*                            @Mani-Sadhasivam
 drivers/led_strip/*                      @mbolivar
 drivers/pinmux/stm32/*                   @rsalveti @idlethread
 drivers/sensor/*                         @bogdan-davidoaia
-drivers/serial/uart_altera_jtag.c        @ramakrishnapallala
+drivers/serial/uart_altera_jtag_hal.c    @ramakrishnapallala
 drivers/serial/uart_riscv_qemu.c         @fractalclone @kgugala @pgielda
-drivers/net/slip/*                       @jukkar @tbursztyka
+drivers/net/slip.c                       @jukkar @tbursztyka
 drivers/spi/*                            @tbursztyka
 drivers/spi/spi_ll_stm32.*               @superna9999
-drivers/timer/altera_avalon_timer.c      @ramakrishnapallala
+drivers/timer/altera_avalon_timer_hal.c  @ramakrishnapallala
 drivers/timer/pulpino_timer.c            @fractalclone @kgugala @pgielda
 drivers/timer/riscv_machine_timer.c      @fractalclone @kgugala @pgielda
 drivers/usb                              @jfischer-phytec-iot @finikorg
@@ -100,7 +99,7 @@ drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
 dts/arm/st/*                             @erwango
 ext/fs/*                                 @nashif @ramakrishnapallala
 ext/hal/cmsis/*                          @MaureenHelm @galak
-ext/hal/nordic/mdk/*                     @carlescufi
+ext/hal/nordic/*                         @carlescufi @anangl
 ext/hal/nxp/mcux/*                       @MaureenHelm
 ext/hal/qmsi/*                           @nashif
 ext/hal/st/stm32cube/*                   @erwango
@@ -155,7 +154,7 @@ include/toolchain.h                      @andrewboie @andyross
 include/toolchain/*                      @andrewboie @andyross
 include/zephyr.h                         @andrewboie @andyross
 kernel/*                                 @andrewboie @andyross
-kernel/posix/*                           @ramakrishnapallala
+lib/posix/*                           	 @ramakrishnapallala @nniranjhana
 kernel/device.c                          @ramakrishnapallala @nashif
 kernel/idle.c                            @ramakrishnapallala @nashif
 samples/bluetooth/*                      @sjanc @jhedberg @Vudentz
@@ -189,6 +188,7 @@ subsys/net/lib/coap/*                    @rveerama1
 subsys/net/lib/sockets/*                 @jukkar @tbursztyka @pfalcon
 subsys/usb                               @jfischer-phytec-iot @finikorg
 tests/bluetooth/*                        @sjanc @jhedberg @Vudentz @tarunkum
+tests/posix/*                            @nniranjhana
 tests/crypto/*                           @lpereira @pswarnak
 tests/crypto/mbedtls/*                   @nashif @lpereira
 tests/drivers/spi/*                      @tbursztyka
