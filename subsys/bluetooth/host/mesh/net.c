@@ -33,6 +33,7 @@
 #include "access.h"
 #include "foundation.h"
 #include "beacon.h"
+#include "settings.h"
 
 /* Minimum valid Mesh Network PDU length. The Network headers
  * themselves take up 9 bytes. After that there is a minumum of 1 byte
@@ -714,6 +715,10 @@ do_update:
 		BT_DBG("Normal mode entered");
 		bt_mesh.seq = 0;
 		k_delayed_work_cancel(&bt_mesh.ivu_complete);
+
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			bt_mesh_store_seq();
+		}
 	}
 
 	/* Store time-stamp of the IV procedure state change */
@@ -725,12 +730,22 @@ do_update:
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_store_iv();
+	}
+
 	return true;
 }
 
 u32_t bt_mesh_next_seq(void)
 {
-	return bt_mesh.seq++;
+	u32_t seq = bt_mesh.seq++;
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_store_seq();
+	}
+
+	return seq;
 }
 
 int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,

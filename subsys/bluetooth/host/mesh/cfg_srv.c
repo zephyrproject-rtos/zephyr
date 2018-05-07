@@ -34,6 +34,7 @@
 #include "proxy.h"
 #include "foundation.h"
 #include "friend.h"
+#include "settings.h"
 
 #define DEFAULT_TTL 7
 
@@ -449,6 +450,11 @@ static u8_t app_key_set(u16_t net_idx, u16_t app_idx, const u8_t val[16],
 	key->net_idx = net_idx;
 	key->app_idx = app_idx;
 	memcpy(keys->val, val, 16);
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		BT_DBG("Storing AppKey persistently");
+		bt_mesh_store_app_key(key);
+	}
 
 	return STATUS_SUCCESS;
 }
@@ -2001,6 +2007,11 @@ static void net_key_add(struct bt_mesh_model *model,
 
 	sub->net_idx = idx;
 
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		BT_DBG("Storing NetKey persistently");
+		bt_mesh_store_subnet(sub);
+	}
+
 	/* Make sure we have valid beacon data to be sent */
 	bt_mesh_net_beacon_update(sub);
 
@@ -2073,6 +2084,11 @@ static void net_key_update(struct bt_mesh_model *model,
 	}
 
 	sub->kr_phase = BT_MESH_KR_PHASE_1;
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		BT_DBG("Storing NetKey persistently");
+		bt_mesh_store_subnet(sub);
+	}
 
 	bt_mesh_net_beacon_update(sub);
 
