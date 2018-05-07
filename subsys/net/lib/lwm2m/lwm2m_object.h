@@ -143,17 +143,24 @@ typedef struct lwm2m_engine_obj_inst *
 typedef int (*lwm2m_engine_obj_delete_cb_t)(u16_t obj_inst_id);
 
 struct lwm2m_engine_obj {
+	/* object list */
 	sys_snode_t node;
-	u16_t obj_id;
+
+	/* object field definitions */
 	struct lwm2m_engine_obj_field *fields;
-	u16_t field_count;
-	u16_t instance_count;
-	u16_t max_instance_count;
+
+	/* object event callbacks */
 	lwm2m_engine_obj_create_cb_t create_cb;
 	lwm2m_engine_obj_delete_cb_t delete_cb;
 
 	/* runtime field attributes (lwm2m_attr) */
 	sys_slist_t attr_list;
+
+	/* object member data */
+	u16_t obj_id;
+	u16_t field_count;
+	u16_t instance_count;
+	u16_t max_instance_count;
 };
 
 #define INIT_OBJ_RES(res_var, index_var, id_val, multi_var, \
@@ -205,10 +212,6 @@ struct lwm2m_attr {
 
 struct lwm2m_engine_res_inst {
 	char path[MAX_RESOURCE_LEN]; /* 3/0/0 */
-	u16_t  res_id;
-	u8_t   *multi_count_var;
-	void  *data_ptr;
-	size_t data_len;
 
 	/* runtime field attributes (lwm2m_attr) */
 	sys_slist_t attr_list;
@@ -218,30 +221,43 @@ struct lwm2m_engine_res_inst {
 	lwm2m_engine_get_data_cb_t	pre_write_cb;
 	lwm2m_engine_set_data_cb_t	post_write_cb;
 	lwm2m_engine_exec_cb_t		execute_cb;
+
+	u8_t  *multi_count_var;
+	void  *data_ptr;
+	u16_t data_len;
+	u16_t res_id;
 };
 
 struct lwm2m_engine_obj_inst {
+	/* instance list */
 	sys_snode_t node;
+
 	char path[MAX_RESOURCE_LEN]; /* 3/0 */
 	struct lwm2m_engine_obj *obj;
-	u16_t obj_inst_id;
 	struct lwm2m_engine_res_inst *resources;
-	u16_t resource_count;
 
 	/* runtime field attributes (lwm2m_attr) */
 	sys_slist_t attr_list;
+
+	/* object instance member data */
+	u16_t obj_inst_id;
+	u16_t resource_count;
 };
 
 struct lwm2m_output_context {
 	const struct lwm2m_writer *writer;
 	struct coap_packet *out_cpkt;
 
-	/* current write position in net_buf chain */
+	/* current write fragment in net_buf chain */
 	struct net_buf *frag;
-	u16_t offset;
 
 	/* markers for last resource inst */
 	struct net_buf *mark_frag_ri;
+
+	/* current write position in net_buf chain */
+	u16_t offset;
+
+	/* markers for last resource inst ID */
 	u16_t mark_pos_ri;
 
 	/* flags for reader/writer */
