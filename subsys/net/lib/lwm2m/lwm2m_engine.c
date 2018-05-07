@@ -104,7 +104,6 @@ struct observe_node {
 	u32_t max_period_sec;
 	u32_t counter;
 	u16_t format;
-	bool used;
 	u8_t  tkl;
 };
 
@@ -511,7 +510,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 
 	/* find an unused observer index node */
 	for (i = 0; i < CONFIG_LWM2M_ENGINE_MAX_OBSERVER; i++) {
-		if (!observe_node_data[i].used) {
+		if (!observe_node_data[i].ctx) {
 			break;
 		}
 	}
@@ -522,7 +521,6 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	}
 
 	/* copy the values and add it to the list */
-	observe_node_data[i].used = true;
 	observe_node_data[i].ctx = msg->ctx;
 	memcpy(&observe_node_data[i].path, path, sizeof(*path));
 	memcpy(observe_node_data[i].token, token, tkl);
