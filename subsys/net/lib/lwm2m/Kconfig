@@ -51,7 +51,7 @@ config LWM2M_ENGINE_MAX_REPLIES
 
 config LWM2M_ENGINE_MAX_OBSERVER
 	int "Maximum # of observable LWM2M resources"
-	default 20
+	default 10
 	range 5 200
 	help
 	  This value sets the maximum number of resources which can be
