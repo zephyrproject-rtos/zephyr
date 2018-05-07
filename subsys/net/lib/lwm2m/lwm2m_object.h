@@ -211,8 +211,6 @@ struct lwm2m_attr {
 };
 
 struct lwm2m_engine_res_inst {
-	char path[MAX_RESOURCE_LEN]; /* 3/0/0 */
-
 	/* runtime field attributes (lwm2m_attr) */
 	sys_slist_t attr_list;
 
@@ -232,7 +230,6 @@ struct lwm2m_engine_obj_inst {
 	/* instance list */
 	sys_snode_t node;
 
-	char path[MAX_RESOURCE_LEN]; /* 3/0 */
 	struct lwm2m_engine_obj *obj;
 	struct lwm2m_engine_res_inst *resources;
 
