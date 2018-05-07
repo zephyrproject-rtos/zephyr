@@ -408,6 +408,8 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 		avail_space = usb_dw_tx_fifo_avail(ep_idx);
 		if (avail_space == usb_dw_ctrl.in_ep_ctrl[ep_idx].fifo_size) {
 			break;
+		} else {
+			usb_dw_flush_tx_fifo(ep_idx);
 		}
 		/* Make sure we don't hog the CPU */
 		k_yield();
