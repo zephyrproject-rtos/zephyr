@@ -462,6 +462,12 @@ config BT_MESH_DEBUG_PROXY
 	help
 	  Use this option to enable Proxy protocol debug logs.
 
+config BT_MESH_DEBUG_SETTINGS
+	bool "Persistent settings debug"
+	depends on BT_SETTINGS
+	help
+	  Use this option to enable persistent settings debug logs.
+
 endif # BT_MESH_DEBUG
 
 endif # BT_MESH
