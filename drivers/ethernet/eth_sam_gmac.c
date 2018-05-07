@@ -1047,7 +1047,8 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 		key = irq_lock();
 
 		/* Check if tx_error_handler() function was executed */
-		if (queue->err_tx_flushed_count != err_tx_flushed_count_at_entry) {
+		if (queue->err_tx_flushed_count !=
+		    err_tx_flushed_count_at_entry) {
 			irq_unlock(key);
 			return -EIO;
 		}
