@@ -17,6 +17,7 @@ kobjects = [
     "k_mutex",
     "k_pipe",
     "k_queue",
+    "k_poll_signal",
     "k_sem",
     "k_stack",
     "k_thread",
