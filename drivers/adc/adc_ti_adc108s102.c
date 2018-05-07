@@ -134,6 +134,10 @@ static inline int _verify_entries(struct adc_seq_table *seq_table)
 	u32_t chans_set = 0;
 	int i;
 
+	if (seq_table->num_entries >= ADC108S102_CMD_BUFFER_SIZE) {
+		return 0;
+	}
+
 	for (i = 0; i < seq_table->num_entries; i++) {
 		entry = &seq_table->entries[i];
 
