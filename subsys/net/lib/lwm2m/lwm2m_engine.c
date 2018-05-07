@@ -668,7 +668,6 @@ next_engine_obj_inst(struct lwm2m_engine_obj_inst *last,
 int lwm2m_create_obj_inst(u16_t obj_id, u16_t obj_inst_id,
 			  struct lwm2m_engine_obj_inst **obj_inst)
 {
-	int i;
 	struct lwm2m_engine_obj *obj;
 
 	*obj_inst = NULL;
@@ -702,14 +701,6 @@ int lwm2m_create_obj_inst(u16_t obj_id, u16_t obj_inst_id,
 	obj->instance_count++;
 	(*obj_inst)->obj = obj;
 	(*obj_inst)->obj_inst_id = obj_inst_id;
-	snprintk((*obj_inst)->path, MAX_RESOURCE_LEN, "%u/%u",
-		 obj_id, obj_inst_id);
-	for (i = 0; i < (*obj_inst)->resource_count; i++) {
-		snprintk((*obj_inst)->resources[i].path, MAX_RESOURCE_LEN,
-			 "%u/%u/%u", obj_id, obj_inst_id,
-			 (*obj_inst)->resources[i].res_id);
-	}
-
 	engine_register_obj_inst(*obj_inst);
 #ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
 	engine_trigger_update();
@@ -1121,9 +1112,10 @@ u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size)
 					     obj_inst, node) {
 			if (obj_inst->obj->obj_id == obj->obj_id) {
 				len = snprintk(temp, sizeof(temp),
-					       "%s</%s>",
+					       "%s</%u/%u>",
 					       (pos > 0) ? "," : "",
-					       obj_inst->path);
+					       obj_inst->obj->obj_id,
+					       obj_inst->obj_inst_id);
 				/*
 				 * TODO: iterate through resources once block
 				 * transfer is handled correctly
