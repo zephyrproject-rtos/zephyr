@@ -271,6 +271,13 @@ static void usb_handle_control_transfer(u8_t ep,
 		/* Defaults for data pointer and residue */
 		type = REQTYPE_GET_TYPE(setup->bmRequestType);
 		usb_dev.data_buf = usb_dev.data_store[type];
+		if (!usb_dev.data_buf) {
+			SYS_LOG_DBG("buffer not available\n");
+			usb_dc_ep_set_stall(USB_CONTROL_OUT_EP0);
+			usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
+			return;
+		}
+
 		usb_dev.data_buf_residue = setup->wLength;
 		usb_dev.data_buf_len = setup->wLength;
 
@@ -310,6 +317,7 @@ static void usb_handle_control_transfer(u8_t ep,
 		    usb_dev.data_buf_residue, &chunk) < 0) {
 			SYS_LOG_DBG("Read DATA Packet failed\n");
 			usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
+			usb_dc_ep_set_stall(USB_CONTROL_OUT_EP0);
 			return;
 		}
 
