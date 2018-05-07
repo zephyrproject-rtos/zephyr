@@ -495,6 +495,8 @@ static int mesh_commit(void)
 
 	bt_mesh.valid = 1;
 
+	bt_mesh_net_start();
+
 	return 0;
 }
 
