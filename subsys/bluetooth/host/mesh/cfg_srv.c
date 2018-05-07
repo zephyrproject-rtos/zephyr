@@ -1965,7 +1965,7 @@ static void net_key_add(struct bt_mesh_model *model,
 	if (!sub) {
 		int i;
 
-		for (sub = NULL, i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
+		for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
 			if (bt_mesh.sub[i].net_idx == BT_MESH_KEY_UNUSED) {
 				sub = &bt_mesh.sub[i];
 				break;
