@@ -121,3 +121,33 @@ u32_t tz_sau_number_of_regions_get(void)
 {
 	return SAU->TYPE & SAU_TYPE_SREGION_Msk;
 }
+
+#if defined (CONFIG_ARM_SAU)
+#if defined (__SAUREGION_PRESENT) && (__SAUREGION_PRESENT == 1U)
+int tz_sau_region_configure_enable(tz_sau_conf_t *p_sau_conf)
+{
+	u32_t regions = tz_sau_number_of_regions_get();
+
+	if ((p_sau_conf->region_num == 0) ||
+		(p_sau_conf->region_num > (regions - 1))) {
+		return 0;
+	}
+
+	/* Valid region */
+	SAU->RNR = p_sau_conf->region_num & SAU_RNR_REGION_Msk;
+
+	if (p_sau_conf->enable) {
+		SAU->RLAR = SAU_RLAR_ENABLE_Msk
+			| (SAU_RLAR_LADDR_Msk & p_sau_conf->limit_addr)
+			| (p_sau_conf->nsc ? SAU_RLAR_NSC_Msk : 0);
+		SAU->RBAR = p_sau_conf->base_addr & SAU_RBAR_BADDR_Msk;
+	} else {
+		SAU->RLAR &= ~(SAU_RLAR_ENABLE_Msk);
+	}
+
+	return 1;
+}
+#else
+#error "ARM SAU not implemented"
+#endif
+#endif /* CONFIG_ARM_SAU */
