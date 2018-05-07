@@ -36,7 +36,6 @@ build:
         fi
       - source zephyr-env.sh
       - ccache -c -s --max-size=2000M
-      - pip3 install --user pyserial
       - >
           if [ "$MATRIX_BUILD" = "5" -a "$IS_PULL_REQUEST" = "true" ]; then
             export COMMIT_RANGE=origin/${PULL_REQUEST_BASE_BRANCH}..HEAD
