@@ -94,7 +94,7 @@ void nffs_test_util_assert_cache_is_sane(const char *filename)
 	rc = fs_open(&fs_file, filename);
 	zassert_equal(rc, 0, NULL);
 
-	file = fs_file.nffs_fp;
+	file = fs_file.filep;
 	rc = nffs_cache_inode_ensure(&cache_inode, file->nf_inode_entry);
 	zassert_equal(rc, 0, NULL);
 
@@ -169,7 +169,7 @@ int nffs_test_util_block_count(const char *filename)
 	rc = fs_open(&fs_file, filename);
 	zassert_equal(rc, 0, NULL);
 
-	file = fs_file.nffs_fp;
+	file = fs_file.filep;
 	count = 0;
 	entry = file->nf_inode_entry->nie_last_block_entry;
 	while (entry != NULL) {
@@ -208,7 +208,7 @@ void nffs_test_util_assert_cache_range(const char *filename,
 	rc = fs_open(&fs_file, filename);
 	zassert_equal(rc, 0, NULL);
 
-	file = fs_file.nffs_fp;
+	file = fs_file.filep;
 	rc = nffs_cache_inode_ensure(&cache_inode, file->nf_inode_entry);
 	zassert_equal(rc, 0, NULL);
 

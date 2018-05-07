@@ -47,7 +47,7 @@ void test_append(void)
 
 	rc = fs_open(&file, NFFS_MNTP"/myfile.txt");
 	zassert_equal(rc, 0, "cannot open file");
-	nffs_file = file.nffs_fp;
+	nffs_file = file.filep;
 	nffs_test_util_assert_file_len(nffs_file, 0);
 	zassert_equal(fs_tell(&file), 0, "invalid file length");
 

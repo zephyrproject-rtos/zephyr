@@ -8,6 +8,7 @@
 #include "settings_test.h"
 #include <device.h>
 #include <fs.h>
+#include <nffs/nffs.h>
 
 /* NFFS work area strcut */
 static struct nffs_flash_desc flash_desc;

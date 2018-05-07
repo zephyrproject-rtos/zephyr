@@ -50,7 +50,7 @@ void test_overwrite_two(void)
 	/*** Overwrite two blocks (middle). */
 	nffs_test_util_create_file_blocks(NFFS_MNTP"/myfile.txt", blocks, 2);
 	rc = fs_open(&file, NFFS_MNTP"/myfile.txt");
-	nffs_file = file.nffs_fp;
+	nffs_file = file.filep;
 	zassert_equal(rc, 0, "cannot open file");
 	nffs_test_util_assert_file_len(nffs_file, 16);
 	zassert_equal(fs_tell(&file), 0, "invalid pos in file");
