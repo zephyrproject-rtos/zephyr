@@ -728,11 +728,17 @@ do_update:
 	return true;
 }
 
+u32_t bt_mesh_next_seq(void)
+{
+	return bt_mesh.seq++;
+}
+
 int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 		       bool new_key, const struct bt_mesh_send_cb *cb,
 		       void *cb_data)
 {
 	const u8_t *enc, *priv;
+	u32_t seq;
 	int err;
 
 	BT_DBG("net_idx 0x%04x new_key %u len %u", sub->net_idx, new_key,
@@ -754,9 +760,10 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 	}
 
 	/* Update with a new sequence number */
-	buf->data[2] = (bt_mesh.seq >> 16);
-	buf->data[3] = (bt_mesh.seq >> 8);
-	buf->data[4] = bt_mesh.seq++;
+	seq = bt_mesh_next_seq();
+	buf->data[2] = seq >> 16;
+	buf->data[3] = seq >> 8;
+	buf->data[4] = seq;
 
 	err = bt_mesh_net_encrypt(enc, &buf->b, BT_MESH_NET_IVI_TX, false);
 	if (err) {
@@ -796,6 +803,7 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 		       bool proxy)
 {
 	const bool ctl = (tx->ctx->app_idx == BT_MESH_KEY_UNUSED);
+	u32_t seq_val;
 	u8_t nid;
 	const u8_t *enc, *priv;
 	u8_t *seq;
@@ -816,9 +824,10 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 	net_buf_simple_push_be16(buf, tx->src);
 
 	seq = net_buf_simple_push(buf, 3);
-	seq[0] = (bt_mesh.seq >> 16);
-	seq[1] = (bt_mesh.seq >> 8);
-	seq[2] = bt_mesh.seq++;
+	seq_val = bt_mesh_next_seq();
+	seq[0] = seq_val >> 16;
+	seq[1] = seq_val >> 8;
+	seq[2] = seq_val;
 
 	if (ctl) {
 		net_buf_simple_push_u8(buf, tx->ctx->send_ttl | 0x80);
