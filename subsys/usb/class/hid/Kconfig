@@ -30,4 +30,10 @@ config HID_INTERRUPT_EP_MPS
 	help
 	  USB HID Device interrupt endpoint size
 
+config USB_HID_MAX_PAYLOAD_SIZE
+	int
+	default 64
+	help
+	  Max allowed payload size over USB HID Class
+
 endif # USB_DEVICE_HID
