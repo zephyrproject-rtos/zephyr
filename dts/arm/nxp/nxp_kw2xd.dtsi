@@ -253,11 +253,21 @@
 			label = "SPI_1";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 13>;
 
-			cs = <&gpiob 10 0>;
+			cs-gpios = <&gpiob 10 0>;
 			pinctrl-0 = <&spi1_default>;
 			pinctrl-names = "default";
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			mcr20a@0 {
+				compatible = "nxp,mcr20a";
+				reg = <0x0>;
+				label = "mcr20a";
+				spi-max-frequency = <8000000>;
+				irqb-gpios = <&gpiob 3 0>;
+				reset-gpios = <&gpiob 19 0>;
+				status = "ok";
+			};
 		};
 
 		wdog: watchdog@40052000 {
