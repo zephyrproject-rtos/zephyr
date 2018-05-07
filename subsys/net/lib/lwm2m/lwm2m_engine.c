@@ -108,6 +108,16 @@ struct observe_node {
 	u8_t  tkl;
 };
 
+struct notification_attrs {
+	/* use to determine which value is set */
+	float32_value_t gt;
+	float32_value_t lt;
+	float32_value_t st;
+	s32_t pmin;
+	s32_t pmax;
+	u8_t flags;
+};
+
 static struct observe_node observe_node_data[CONFIG_LWM2M_ENGINE_MAX_OBSERVER];
 
 #define MAX_PERIODIC_SERVICE	10
@@ -317,16 +327,6 @@ static void free_block_ctx(struct block_context *ctx)
 }
 
 /* observer functions */
-
-struct notification_attrs {
-	/* use to determine which value is set */
-	u8_t flags;
-	float32_value_t gt;
-	float32_value_t lt;
-	float32_value_t st;
-	s32_t pmin;
-	s32_t pmax;
-};
 
 static int update_attrs(sys_slist_t *list, struct notification_attrs *out)
 {
