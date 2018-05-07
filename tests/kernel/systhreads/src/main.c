@@ -24,7 +24,13 @@ int _sys_soc_suspend(s32_t ticks)
 	return 0;
 }
 
-/* test cases */
+/**
+ * @brief System Thread Test Cases
+ * @defgroup kernel_systemthreads System Threads
+ * @ingroup all_tests
+ * @brief Verify 2 system threads - main thread and idle thread
+ * @{
+ */
 void test_systhreads_setup(void)
 {
 	main_prio = k_thread_priority_get(k_current_get());
@@ -42,7 +48,9 @@ void test_systhreads_idle(void)
 	zassert_true(k_thread_priority_get(k_current_get()) <
 			K_IDLE_PRIO, NULL);
 }
-
+/**
+ * @}
+ */
 void test_main(void)
 {
 	test_systhreads_setup();

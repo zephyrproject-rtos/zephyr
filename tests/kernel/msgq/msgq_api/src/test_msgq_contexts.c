@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_kernel_msgq
- * @{
- * @defgroup t_msgq_context test_msgq_context
- * @brief TestPurpose: verify zephyr msgq apis across contexts
- * @}
- */
-
 #include "test_msgq.h"
 
 /**TESTPOINT: init via K_MSGQ_DEFINE*/
@@ -139,8 +131,11 @@ static void msgq_isr(struct k_msgq *pmsgq)
 	/**TESTPOINT: msgq purge*/
 	purge_msgq(pmsgq);
 }
-
-/*test cases*/
+/**
+ * @brief Verify zephyr msgq apis across contexts
+ * @addtogroup kernel_message_queue
+ * @{
+ */
 void test_msgq_thread(void)
 {
 	/**TESTPOINT: init via k_msgq_init*/
@@ -171,3 +166,7 @@ void test_msgq_isr(void)
 	msgq_isr(&stack_msgq);
 	msgq_isr(&kmsgq);
 }
+
+/**
+ * @}
+ */

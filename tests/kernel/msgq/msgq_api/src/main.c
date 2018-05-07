@@ -5,9 +5,9 @@
  */
 
 /**
- * @addtogroup t_kernel_msgq
+ * @defgroup kernel_message_queue Message Queue
+ * @ingroup all_tests
  * @{
- * @defgroup t_msgq_api test_msgq_api
  * @}
  */
 
