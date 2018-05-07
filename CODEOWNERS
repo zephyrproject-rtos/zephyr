@@ -188,12 +188,12 @@ subsys/net/lib/mqtt/*                    @jukkar @tbursztyka
 subsys/net/lib/coap/*                    @rveerama1
 subsys/net/lib/sockets/*                 @jukkar @tbursztyka @pfalcon
 subsys/usb                               @jfischer-phytec-iot @finikorg
-tests/bluetooth/*                        @sjanc @jhedberg @Vudentz
-tests/crypto/*                           @lpereira
-tests/crypto/mbedtls/*                   @nashif
+tests/bluetooth/*                        @sjanc @jhedberg @Vudentz @tarunkum
+tests/crypto/*                           @lpereira @pswarnak
+tests/crypto/mbedtls/*                   @nashif @lpereira
 tests/drivers/spi/*                      @tbursztyka
-tests/kernel/*                           @andrewboie @andyross
-tests/net/*                              @jukkar @tbursztyka
+tests/kernel/*                           @andrewboie @andyross @spoorthik @pswarnak @nniranjhana
+tests/net/*                              @jukkar @tbursztyka @tarunkum
 tests/net/buf/*                          @jukkar @jhedberg @tbursztyka
 tests/net/lib/*                          @jukkar @tbursztyka
 tests/net/lib/http_header_fields/*       @jukkar @tbursztyka
