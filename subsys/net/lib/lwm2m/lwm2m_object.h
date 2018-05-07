@@ -153,9 +153,6 @@ struct lwm2m_engine_obj {
 	lwm2m_engine_obj_create_cb_t create_cb;
 	lwm2m_engine_obj_delete_cb_t delete_cb;
 
-	/* runtime field attributes (lwm2m_attr) */
-	sys_slist_t attr_list;
-
 	/* object member data */
 	u16_t obj_id;
 	u16_t field_count;
@@ -200,20 +197,18 @@ struct lwm2m_engine_obj {
 
 /* TODO: support multiple server (sec 5.4.2) */
 struct lwm2m_attr {
+	void *ref;
+
+	/* values */
 	union {
 		float32_value_t float_val;
 		s32_t int_val;
 	};
 
-	sys_snode_t node;
 	u8_t type;
-	bool used;
 };
 
 struct lwm2m_engine_res_inst {
-	/* runtime field attributes (lwm2m_attr) */
-	sys_slist_t attr_list;
-
 	/* callbacks set by user code on obj instance */
 	lwm2m_engine_get_data_cb_t	read_cb;
 	lwm2m_engine_get_data_cb_t	pre_write_cb;
@@ -232,9 +227,6 @@ struct lwm2m_engine_obj_inst {
 
 	struct lwm2m_engine_obj *obj;
 	struct lwm2m_engine_res_inst *resources;
-
-	/* runtime field attributes (lwm2m_attr) */
-	sys_slist_t attr_list;
 
 	/* object instance member data */
 	u16_t obj_inst_id;
