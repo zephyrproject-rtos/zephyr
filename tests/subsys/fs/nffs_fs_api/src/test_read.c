@@ -40,7 +40,7 @@ void test_read(void)
 
 	rc = fs_open(&file, NFFS_MNTP"/myfile.txt");
 	zassert_equal(rc, 0, "cannot open file");
-	nffs_test_util_assert_file_len(file.nffs_fp, 10);
+	nffs_test_util_assert_file_len(file.filep, 10);
 	zassert_equal(fs_tell(&file), 0, "invalid pos in file");
 
 	rc = fs_read(&file, &buf, 4);

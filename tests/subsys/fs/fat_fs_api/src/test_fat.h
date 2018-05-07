@@ -8,7 +8,7 @@
 #include <ztest.h>
 #include <fs.h>
 
-#define FATFS_MNTP	"/fatfs"
+#define FATFS_MNTP	"/NAND:"
 #define TEST_FILE	FATFS_MNTP"/testfile.txt"
 #define TEST_DIR	FATFS_MNTP"/testdir"
 #define TEST_DIR_FILE	FATFS_MNTP"/testdir/testfile.txt"
