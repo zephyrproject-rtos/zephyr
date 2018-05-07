@@ -23,8 +23,8 @@
 #include "../hci_core.h"
 
 #include "adv.h"
-#include "foundation.h"
 #include "net.h"
+#include "foundation.h"
 #include "beacon.h"
 #include "prov.h"
 #include "proxy.h"
