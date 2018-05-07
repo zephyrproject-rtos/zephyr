@@ -229,7 +229,7 @@ USBD_CFG_DATA_DEFINE(hid) struct usb_cfg_data hid_config = {
 };
 
 #if !defined(CONFIG_USB_COMPOSITE_DEVICE)
-static u8_t interface_data[64];
+static u8_t interface_data[CONFIG_USB_HID_MAX_PAYLOAD_SIZE];
 #endif
 
 int usb_hid_init(void)
