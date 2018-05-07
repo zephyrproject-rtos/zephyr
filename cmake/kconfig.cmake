@@ -51,6 +51,7 @@ foreach(kconfig_target ${kconfig_target_list})
       KCONFIG_CONFIG=${DOTCONFIG}
       ENV_VAR_ARCH=$ENV{ENV_VAR_ARCH}
       ENV_VAR_BOARD_DIR=$ENV{ENV_VAR_BOARD_DIR}
+      APPLICATION_BASE=$ENV{APPLICATION_BASE}
       ${COMMAND_FOR_${kconfig_target}}
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
       USES_TERMINAL
