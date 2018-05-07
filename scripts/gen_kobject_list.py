@@ -16,6 +16,7 @@ kobjects = [
     "k_msgq",
     "k_mutex",
     "k_pipe",
+    "k_poll_signal",
     "k_sem",
     "k_stack",
     "k_thread",

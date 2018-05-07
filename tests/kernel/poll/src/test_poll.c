@@ -29,13 +29,15 @@ struct fifo_msg {
 #define FIFO_MSG_VALUE 0xdeadbeef
 
 /* verify k_poll() without waiting */
-static struct k_sem no_wait_sem;
-static struct k_fifo no_wait_fifo;
-static struct k_poll_signal no_wait_signal;
+static __kernel struct k_sem no_wait_sem;
+static __kernel struct k_fifo no_wait_fifo;
+static __kernel struct k_poll_signal no_wait_signal;
 
 void test_poll_no_wait(void)
 {
 	struct fifo_msg msg = { NULL, FIFO_MSG_VALUE }, *msg_ptr;
+	unsigned int signaled;
+	int result;
 
 	k_sem_init(&no_wait_sem, 1, 1);
 	k_fifo_init(&no_wait_fifo);
@@ -54,7 +56,7 @@ void test_poll_no_wait(void)
 	};
 
 	/* test polling events that are already ready */
-	k_fifo_put(&no_wait_fifo, &msg);
+	zassert_false(k_fifo_alloc_put(&no_wait_fifo, &msg), NULL);
 	k_poll_signal(&no_wait_signal, SIGNAL_RESULT);
 
 	zassert_equal(k_poll(events, ARRAY_SIZE(events), 0), 0, "");
@@ -69,14 +71,15 @@ void test_poll_no_wait(void)
 	zassert_equal(msg_ptr->msg, FIFO_MSG_VALUE, "");
 
 	zassert_equal(events[2].state, K_POLL_STATE_SIGNALED, "");
-	zassert_equal(no_wait_signal.signaled, 1, "");
-	zassert_equal(no_wait_signal.result, SIGNAL_RESULT, "");
+	k_poll_signal_check(&no_wait_signal, &signaled, &result);
+	zassert_not_equal(signaled, 0, "");
+	zassert_equal(result, SIGNAL_RESULT, "");
 
 	/* verify events are not ready anymore (user has to clear them first) */
 	events[0].state = K_POLL_STATE_NOT_READY;
 	events[1].state = K_POLL_STATE_NOT_READY;
 	events[2].state = K_POLL_STATE_NOT_READY;
-	no_wait_signal.signaled = 0;
+	k_poll_signal_reset(&no_wait_signal);
 
 	zassert_equal(k_poll(events, ARRAY_SIZE(events), 0), -EAGAIN, "");
 	zassert_equal(events[0].state, K_POLL_STATE_NOT_READY, "");
@@ -91,12 +94,12 @@ void test_poll_no_wait(void)
 
 static K_SEM_DEFINE(wait_sem, 0, 1);
 static K_FIFO_DEFINE(wait_fifo);
-static struct k_poll_signal wait_signal =
+static __kernel struct k_poll_signal wait_signal =
 		K_POLL_SIGNAL_INITIALIZER(wait_signal);
 
 struct fifo_msg wait_msg = { NULL, FIFO_MSG_VALUE };
 
-static struct k_thread poll_wait_helper_thread;
+static __kernel struct k_thread poll_wait_helper_thread;
 static K_THREAD_STACK_DEFINE(poll_wait_helper_stack, KB(1));
 
 #define TAG_0 10
@@ -124,7 +127,7 @@ static void poll_wait_helper(void *use_fifo, void *p2, void *p3)
 	k_sem_give(&wait_sem);
 
 	if ((intptr_t)use_fifo) {
-		k_fifo_put(&wait_fifo, &wait_msg);
+		k_fifo_alloc_put(&wait_fifo, &wait_msg);
 	}
 
 	k_poll_signal(&wait_signal, SIGNAL_RESULT);
@@ -139,6 +142,7 @@ void test_poll_wait(void)
 
 	int old_prio = k_thread_priority_get(k_current_get());
 
+	k_poll_signal_init(&wait_signal);
 	/*
 	 * Wait for 3 non-ready events to become ready from a higher priority
 	 * thread.
@@ -148,7 +152,7 @@ void test_poll_wait(void)
 	k_thread_create(&poll_wait_helper_thread, poll_wait_helper_stack,
 			K_THREAD_STACK_SIZEOF(poll_wait_helper_stack),
 			poll_wait_helper, (void *)1, 0, 0,
-			main_low_prio - 1, 0, 0);
+			main_low_prio - 1, K_USER | K_INHERIT_PERMS, 0);
 
 	rc = k_poll(wait_events, ARRAY_SIZE(wait_events), K_SECONDS(1));
 
@@ -235,7 +239,8 @@ void test_poll_wait(void)
 	k_thread_create(&poll_wait_helper_thread, poll_wait_helper_stack,
 			K_THREAD_STACK_SIZEOF(poll_wait_helper_stack),
 			poll_wait_helper,
-			(void *)1, 0, 0, old_prio + 1, 0, 0);
+			(void *)1, 0, 0, old_prio + 1,
+			K_USER | K_INHERIT_PERMS, 0);
 
 	/* semaphore */
 	rc = k_poll(wait_events, ARRAY_SIZE(wait_events), K_SECONDS(1));
@@ -303,7 +308,7 @@ void test_poll_wait(void)
 static K_SEM_DEFINE(multi_sem, 0, 1);
 static K_SEM_DEFINE(multi_reply, 0, 1);
 
-static struct k_thread multi_thread;
+static __kernel struct k_thread multi_thread;
 static K_THREAD_STACK_DEFINE(multi_stack, KB(1));
 
 static void multi(void *p1, void *p2, void *p3)
@@ -341,7 +346,8 @@ void test_poll_multi(void)
 
 	k_thread_create(&multi_thread, multi_stack,
 			K_THREAD_STACK_SIZEOF(multi_stack),
-			multi, 0, 0, 0, main_low_prio - 1, 0, 0);
+			multi, 0, 0, 0, main_low_prio - 1,
+			K_USER | K_INHERIT_PERMS, 0);
 
 	rc = k_poll(events, ARRAY_SIZE(events), K_SECONDS(1));
 
@@ -356,4 +362,14 @@ void test_poll_multi(void)
 	rc = k_sem_take(&multi_reply, K_SECONDS(1));
 
 	zassert_equal(rc, 0, "");
+}
+
+void test_poll_grant_access(void)
+{
+	k_thread_access_grant(k_current_get(), &no_wait_sem, &no_wait_fifo,
+			      &no_wait_signal, &wait_sem, &wait_fifo,
+			      &wait_signal, &poll_wait_helper_thread,
+			      &poll_wait_helper_stack, &multi_sem,
+			      &multi_reply, &multi_thread, &multi_stack,
+			      NULL);
 }
