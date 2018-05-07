@@ -354,7 +354,7 @@ static u8_t mod_unbind(struct bt_mesh_model *model, u16_t key_idx)
 	return STATUS_SUCCESS;
 }
 
-static struct bt_mesh_app_key *app_key_alloc(u16_t app_idx)
+struct bt_mesh_app_key *bt_mesh_app_key_alloc(u16_t app_idx)
 {
 	int i;
 
@@ -428,7 +428,7 @@ static u8_t app_key_set(u16_t net_idx, u16_t app_idx, const u8_t val[16],
 			}
 		}
 
-		key = app_key_alloc(app_idx);
+		key = bt_mesh_app_key_alloc(app_idx);
 		if (!key) {
 			return STATUS_INSUFF_RESOURCES;
 		}
@@ -511,7 +511,7 @@ static void _mod_unbind(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 	mod_unbind(mod, *key_idx);
 }
 
-static void _app_key_del(struct bt_mesh_app_key *key)
+void bt_mesh_app_key_del(struct bt_mesh_app_key *key)
 {
 	bt_mesh_model_foreach(_mod_unbind, &key->app_idx);
 
@@ -551,7 +551,7 @@ static void app_key_del(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	_app_key_del(key);
+	bt_mesh_app_key_del(key);
 	status = STATUS_SUCCESS;
 
 send_status:
@@ -2095,9 +2095,8 @@ static void net_key_del(struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	struct bt_mesh_cfg_srv *cfg = model->user_data;
 	struct bt_mesh_subnet *sub;
-	u16_t del_idx, i;
+	u16_t del_idx;
 	u8_t status;
 
 	del_idx = net_buf_simple_pull_le16(buf);
@@ -2125,26 +2124,7 @@ static void net_key_del(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (cfg->hb_pub.net_idx == del_idx) {
-		hb_pub_disable(cfg);
-	}
-
-	/* Delete any app keys bound to this NetKey index */
-	for (i = 0; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
-		struct bt_mesh_app_key *key = &bt_mesh.app_keys[i];
-
-		if (key->net_idx == del_idx) {
-			_app_key_del(key);
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
-		bt_mesh_friend_clear_net_idx(del_idx);
-	}
-
-	memset(sub, 0, sizeof(*sub));
-	sub->net_idx = BT_MESH_KEY_UNUSED;
-
+	bt_mesh_subnet_del(sub);
 	status = STATUS_SUCCESS;
 
 send_status:
@@ -3148,7 +3128,7 @@ void bt_mesh_cfg_reset(void)
 		struct bt_mesh_app_key *key = &bt_mesh.app_keys[i];
 
 		if (key->net_idx != BT_MESH_KEY_UNUSED) {
-			_app_key_del(key);
+			bt_mesh_app_key_del(key);
 		}
 	}
 
@@ -3279,4 +3259,29 @@ u8_t *bt_mesh_label_uuid_get(u16_t addr)
 	BT_WARN("No matching Label UUID for 0x%04x", addr);
 
 	return NULL;
+}
+
+void bt_mesh_subnet_del(struct bt_mesh_subnet *sub)
+{
+	int i;
+
+	if (conf && conf->hb_pub.net_idx == sub->net_idx) {
+		hb_pub_disable(conf);
+	}
+
+	/* Delete any app keys bound to this NetKey index */
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
+		struct bt_mesh_app_key *key = &bt_mesh.app_keys[i];
+
+		if (key->net_idx == sub->net_idx) {
+			bt_mesh_app_key_del(key);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
+		bt_mesh_friend_clear_net_idx(sub->net_idx);
+	}
+
+	memset(sub, 0, sizeof(*sub));
+	sub->net_idx = BT_MESH_KEY_UNUSED;
 }

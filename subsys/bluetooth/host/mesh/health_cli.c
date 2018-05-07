@@ -21,6 +21,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_MODEL)
 #include "common/log.h"
 
+#include "net.h"
 #include "foundation.h"
 
 static s32_t msg_timeout = K_SECONDS(2);
