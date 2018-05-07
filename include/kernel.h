@@ -4178,6 +4178,9 @@ extern void k_poll_event_init(struct k_poll_event *event, u32_t type,
  * Before being reused for another call to k_poll(), the user has to reset the
  * state field to K_POLL_STATE_NOT_READY.
  *
+ * When called from user mode, a temporary memory allocation is required from
+ * the caller's resource pool.
+ *
  * @param events An array of pointers to events to be polled for.
  * @param num_events The number of events in the array.
  * @param timeout Waiting period for an event to be ready (in milliseconds),
@@ -4186,10 +4189,12 @@ extern void k_poll_event_init(struct k_poll_event *event, u32_t type,
  * @retval 0 One or more events are ready.
  * @retval -EAGAIN Waiting period timed out.
  * @retval -EINTR Poller thread has been interrupted.
+ * @retval -ENOMEM Thread resource pool insufficient memory (user mode only)
+ * @retval -EINVAL Bad parameters (user mode only)
  */
 
-extern int k_poll(struct k_poll_event *events, int num_events,
-		  s32_t timeout);
+__syscall int k_poll(struct k_poll_event *events, int num_events,
+		     s32_t timeout);
 
 /**
  * @brief Initialize a poll signal object.
@@ -4201,7 +4206,32 @@ extern int k_poll(struct k_poll_event *events, int num_events,
  * @return N/A
  */
 
-extern void k_poll_signal_init(struct k_poll_signal *signal);
+__syscall void k_poll_signal_init(struct k_poll_signal *signal);
+
+/*
+ * @brief Reset a poll signal object's state to unsignaled.
+ *
+ * @param signal A poll signal object
+ */
+__syscall void k_poll_signal_reset(struct k_poll_signal *signal);
+
+static inline void _impl_k_poll_signal_reset(struct k_poll_signal *signal)
+{
+	signal->signaled = 0;
+}
+
+/**
+ * @brief Fetch the signaled state and resylt value of a poll signal
+ *
+ * @param signal A poll signal object
+ * @param signaled An integer buffer which will be written nonzero if the
+ *		   object was signaled
+ * @param result An integer destination buffer which will be written with the
+ *		   result value if the object was signaed, or an undefined
+ *		   value if it was not.
+ */
+__syscall void k_poll_signal_check(struct k_poll_signal *signal,
+				   unsigned int *signaled, int *result);
 
 /**
  * @brief Signal a poll signal object.
@@ -4211,9 +4241,10 @@ extern void k_poll_signal_init(struct k_poll_signal *signal);
  * made ready to run. A @a result value can be specified.
  *
  * The poll signal contains a 'signaled' field that, when set by
- * k_poll_signal(), stays set until the user sets it back to 0. It thus has to
- * be reset by the user before being passed again to k_poll() or k_poll() will
- * consider it being signaled, and will return immediately.
+ * k_poll_signal(), stays set until the user sets it back to 0 with
+ * k_poll_signal_reset(). It thus has to be reset by the user before being
+ * passed again to k_poll() or k_poll() will consider it being signaled, and
+ * will return immediately.
  *
  * @param signal A poll signal.
  * @param result The value to store in the result field of the signal.
@@ -4222,7 +4253,7 @@ extern void k_poll_signal_init(struct k_poll_signal *signal);
  * @retval -EAGAIN The polling thread's timeout is in the process of expiring.
  */
 
-extern int k_poll_signal(struct k_poll_signal *signal, int result);
+__syscall int k_poll_signal(struct k_poll_signal *signal, int result);
 
 /**
  * @internal
