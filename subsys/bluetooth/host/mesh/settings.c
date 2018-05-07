@@ -31,6 +31,7 @@
 #include "access.h"
 #include "foundation.h"
 #include "proxy.h"
+#include "settings.h"
 
 /* Mesh network storage information */
 struct net_val {
@@ -498,3 +499,139 @@ static int mesh_commit(void)
 }
 
 BT_SETTINGS_DEFINE(mesh, mesh_set, mesh_commit, NULL);
+
+void bt_mesh_store_net(u16_t primary_addr, const u8_t dev_key[16])
+{
+	char buf[BT_SETTINGS_SIZE(sizeof(struct net_val))];
+	struct net_val net;
+	char *str;
+
+	BT_DBG("addr 0x%04x DevKey %s", primary_addr, bt_hex(dev_key, 16));
+
+	net.primary_addr = primary_addr;
+	memcpy(net.dev_key, dev_key, 16);
+
+	str = settings_str_from_bytes(&net, sizeof(net), buf, sizeof(buf));
+	if (!str) {
+		BT_ERR("Unable to encode Network as value");
+		return;
+	}
+
+	BT_DBG("Saving Network as value %s", str);
+	settings_save_one("bt/mesh/Net", str);
+}
+
+void bt_mesh_store_iv(void)
+{
+	char buf[BT_SETTINGS_SIZE(sizeof(struct iv_val))];
+	struct iv_val iv;
+	char *str;
+
+	iv.iv_index = bt_mesh.iv_index;
+	iv.iv_update = bt_mesh.iv_update;
+
+	str = settings_str_from_bytes(&iv, sizeof(iv), buf, sizeof(buf));
+	if (!str) {
+		BT_ERR("Unable to encode IV as value");
+		return;
+	}
+
+	BT_DBG("Saving IV as value %s", str);
+	settings_save_one("bt/mesh/IV", str);
+}
+
+void bt_mesh_store_seq(void)
+{
+	char buf[BT_SETTINGS_SIZE(sizeof(struct seq_val))];
+	struct seq_val seq;
+	char *str;
+
+	seq.val[0] = bt_mesh.seq;
+	seq.val[1] = bt_mesh.seq >> 8;
+	seq.val[2] = bt_mesh.seq >> 16;
+
+	str = settings_str_from_bytes(&seq, sizeof(seq), buf, sizeof(buf));
+	if (!str) {
+		BT_ERR("Unable to encode Seq as value");
+		return;
+	}
+
+	BT_DBG("Saving Seq as value %s", str);
+	settings_save_one("bt/mesh/Seq", str);
+}
+
+void bt_mesh_store_rpl(struct bt_mesh_rpl *entry)
+{
+	char buf[BT_SETTINGS_SIZE(sizeof(struct rpl_val))];
+	struct rpl_val rpl;
+	char path[18];
+	char *str;
+
+	BT_DBG("src 0x%04x seq 0x%06x old_iv %u", entry->src, entry->seq,
+	       entry->old_iv);
+
+	rpl.seq = entry->seq;
+	rpl.old_iv = entry->old_iv;
+
+	str = settings_str_from_bytes(&rpl, sizeof(rpl), buf, sizeof(buf));
+	if (!str) {
+		BT_ERR("Unable to encode RPL as value");
+		return;
+	}
+
+	snprintk(path, sizeof(path), "bt/mesh/RPL/%x", entry->src);
+
+	BT_DBG("Saving RPL %s as value %s", path, str);
+	settings_save_one(path, str);
+}
+
+void bt_mesh_store_subnet(struct bt_mesh_subnet *sub)
+{
+	char buf[BT_SETTINGS_SIZE(sizeof(struct net_key_val))];
+	struct net_key_val key;
+	char path[20];
+	char *str;
+
+	BT_DBG("NetKeyIndex 0x%03x NetKey %s", sub->net_idx,
+	       bt_hex(sub->keys[0].net, 16));
+
+	memcpy(&key.val[0], sub->keys[0].net, 16);
+	memcpy(&key.val[1], sub->keys[1].net, 16);
+	key.kr_flag = sub->kr_flag;
+	key.kr_phase = sub->kr_phase;
+
+	str = settings_str_from_bytes(&key, sizeof(key), buf, sizeof(buf));
+	if (!str) {
+		BT_ERR("Unable to encode NetKey as value");
+		return;
+	}
+
+	snprintk(path, sizeof(path), "bt/mesh/NetKey/%x", sub->net_idx);
+
+	BT_DBG("Saving NetKey %s as value %s", path, str);
+	settings_save_one(path, str);
+}
+
+void bt_mesh_store_app_key(struct bt_mesh_app_key *app)
+{
+	char buf[BT_SETTINGS_SIZE(sizeof(struct app_key_val))];
+	struct app_key_val key;
+	char path[20];
+	char *str;
+
+	key.net_idx = app->net_idx;
+	key.updated = app->updated;
+	memcpy(key.val[0], app->keys[0].val, 16);
+	memcpy(key.val[1], app->keys[1].val, 16);
+
+	str = settings_str_from_bytes(&key, sizeof(key), buf, sizeof(buf));
+	if (!str) {
+		BT_ERR("Unable to encode AppKey as value");
+		return;
+	}
+
+	snprintk(path, sizeof(path), "bt/mesh/AppKey/%x", app->app_idx);
+
+	BT_DBG("Saving AppKey %s as value %s", path, str);
+	settings_save_one(path, str);
+}

@@ -31,6 +31,7 @@
 #include "friend.h"
 #include "access.h"
 #include "foundation.h"
+#include "settings.h"
 #include "transport.h"
 
 #define AID_MASK                    ((u8_t)(BIT_MASK(6)))
@@ -538,6 +539,11 @@ static bool is_replay(struct bt_mesh_net_rx *rx)
 			rpl->src = rx->ctx.addr;
 			rpl->seq = rx->seq;
 			rpl->old_iv = rx->old_iv;
+
+			if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+				bt_mesh_store_rpl(rpl);
+			}
+
 			return false;
 		}
 
@@ -551,6 +557,11 @@ static bool is_replay(struct bt_mesh_net_rx *rx)
 			    rpl->seq < rx->seq) {
 				rpl->seq = rx->seq;
 				rpl->old_iv = rx->old_iv;
+
+				if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+					bt_mesh_store_rpl(rpl);
+				}
+
 				return false;
 			} else {
 				return true;

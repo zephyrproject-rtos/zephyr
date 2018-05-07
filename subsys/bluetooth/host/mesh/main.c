@@ -29,6 +29,7 @@
 #include "access.h"
 #include "foundation.h"
 #include "proxy.h"
+#include "settings.h"
 #include "mesh.h"
 
 static bool provisioned;
@@ -63,6 +64,13 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 	memcpy(bt_mesh.dev_key, dev_key, 16);
 
 	provisioned = true;
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		BT_DBG("Storing network information persistently");
+		bt_mesh_store_net(addr, dev_key);
+		bt_mesh_store_subnet(&bt_mesh.sub[0]);
+		bt_mesh_store_iv();
+	}
 
 	if (bt_mesh_beacon_get() == BT_MESH_BEACON_ENABLED) {
 		bt_mesh_beacon_enable();
