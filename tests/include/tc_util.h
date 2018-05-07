@@ -27,7 +27,7 @@
 #endif
 
 /**
- * @def TC_PRINT_RUN_ID
+ * @def TC_PRINT_RUNID
  * @brief Report a Run ID
  *
  * When the CPP symbol \c TC_RUNID is defined (for example, from the

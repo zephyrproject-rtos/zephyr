@@ -5,7 +5,9 @@
  */
 
 /**
- * @file measure context switch time between cooperative threads
+ * @file
+ *
+ * @brief Measure context switch time between cooperative threads
  *
  * This file contains thread (coop) context switch time measurement.
  * The thread starts two cooperative thread. One thread waits on a semaphore. The other,

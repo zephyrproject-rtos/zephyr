@@ -32,6 +32,7 @@ void lifo_test_init(void)
  *
  * @param par1   Ignored parameter.
  * @param par2   Number of test loops.
+ * @param par3	 unused
  *
  * @return N/A
  */
@@ -72,6 +73,7 @@ void lifo_thread1(void *par1, void *par2, void *par3)
  *
  * @param par1   Address of the counter.
  * @param par2   Number of test cycles.
+ * @param par3   unused
  *
  * @return N/A
  */
@@ -103,6 +105,7 @@ void lifo_thread2(void *par1, void *par2, void *par3)
  *
  * @param par1   Address of the counter.
  * @param par2   Number of test loops.
+ * @param par3   unused
  *
  * @return N/A
  */

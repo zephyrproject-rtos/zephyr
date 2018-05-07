@@ -5,7 +5,9 @@
  */
 
 /**
- * @file Sample app to illustrate dma transfer on Intel_S1000.
+ * @file
+ *
+ * @brief Sample app to illustrate dma transfer on Intel_S1000.
  *
  * Intel_S1000 - Xtensa
  * --------------------
@@ -19,9 +21,9 @@
  *   - Set direction memory-to-memory
  *   - Start transfer
  *
- * - Expected Results
+ * Expected Results
  *   - Data is transferred correctly from src to dest. The DMAed string should
- *   be printed on to the console. No error should be seen.
+ *     be printed on to the console. No error should be seen.
  */
 
 #include <zephyr.h>

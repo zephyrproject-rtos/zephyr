@@ -6,7 +6,9 @@
  */
 
 /**
- * @file measure time from ISR back to interrupted thread
+ * @file
+ *
+ * @brief Measure time from ISR back to interrupted thread
  *
  * This file contains test that measures time to switch from the interrupt
  * handler back to the interrupted thread.
