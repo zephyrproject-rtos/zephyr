@@ -404,6 +404,9 @@ static int uart_qmsi_line_ctrl_set(struct device *dev, u32_t ctrl, u32_t val)
 		cfg.line_control = QM_UART[instance]->lcr;
 		cfg.baud_divisor = QM_UART_CFG_BAUD_DL_PACK(DIVISOR_HIGH(val),
 							    DIVISOR_LOW(val), 0);
+		if (cfg.baud_divisor == 0) {
+			return -EINVAL;
+		}
 		cfg.hw_fc = QM_UART[instance]->mcr & QM_UART_MCR_AFCE;
 		qm_uart_set_config(instance, &cfg);
 		break;
