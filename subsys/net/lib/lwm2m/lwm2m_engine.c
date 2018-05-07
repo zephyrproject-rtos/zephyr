@@ -406,7 +406,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 		.pmin  = DEFAULT_SERVER_PMIN,
 		.pmax  = DEFAULT_SERVER_PMAX,
 	};
-	int i;
+	int i, ret;
 
 	if (!msg || !msg->ctx) {
 		SYS_LOG_ERR("valid lwm2m message is required");
@@ -451,8 +451,9 @@ static int engine_add_observer(struct lwm2m_message *msg,
 		return -ENOENT;
 	}
 
-	if (update_attrs(&obj->attr_list, &attrs) < 0) {
-		return -EINVAL;
+	ret = update_attrs(&obj->attr_list, &attrs);
+	if (ret < 0) {
+		return ret;
 	}
 
 	/* check if object instance exists */
@@ -465,8 +466,9 @@ static int engine_add_observer(struct lwm2m_message *msg,
 			return -ENOENT;
 		}
 
-		if (update_attrs(&obj_inst->attr_list, &attrs) < 0) {
-			return -EINVAL;
+		ret = update_attrs(&obj_inst->attr_list, &attrs);
+		if (ret < 0) {
+			return ret;
 		}
 	}
 
@@ -485,9 +487,9 @@ static int engine_add_observer(struct lwm2m_message *msg,
 			return -ENOENT;
 		}
 
-		if (update_attrs(&obj_inst->resources[i].attr_list,
-				 &attrs) < 0) {
-			return -EINVAL;
+		ret = update_attrs(&obj_inst->resources[i].attr_list, &attrs);
+		if (ret < 0) {
+			return ret;
 		}
 	}
 
@@ -2263,7 +2265,10 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 	}
 
 	/* retrieve existing attributes */
-	update_attrs(attr_list, &nattrs);
+	ret = update_attrs(attr_list, &nattrs);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* loop through options to parse attribute */
 	for (int i = 0; i < nr_opt; i++) {
@@ -2471,7 +2476,10 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		nattrs.pmin = DEFAULT_SERVER_PMIN;
 		nattrs.pmax = DEFAULT_SERVER_PMAX;
 
-		update_attrs(&obj->attr_list, &nattrs);
+		ret = update_attrs(&obj->attr_list, &nattrs);
+		if (ret < 0) {
+			return ret;
+		}
 
 		if (obs->path.level > 1) {
 			if (path->level > 1 &&
@@ -2490,7 +2498,10 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 				}
 			}
 
-			update_attrs(&obj_inst->attr_list, &nattrs);
+			ret = update_attrs(&obj_inst->attr_list, &nattrs);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 
 		if (obs->path.level > 2) {
@@ -2507,7 +2518,10 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 				}
 			}
 
-			update_attrs(&res->attr_list, &nattrs);
+			ret = update_attrs(&res->attr_list, &nattrs);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 
 		SYS_LOG_DBG("%d/%d/%d(%d) updated from %d/%d to %u/%u",
