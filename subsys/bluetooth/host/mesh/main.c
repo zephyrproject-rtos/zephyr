@@ -32,8 +32,6 @@
 #include "settings.h"
 #include "mesh.h"
 
-static bool provisioned;
-
 int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 		      u8_t flags, u32_t iv_index, u32_t seq,
 		      u16_t addr, const u8_t dev_key[16])
@@ -62,8 +60,6 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 	bt_mesh_comp_provision(addr);
 
 	memcpy(bt_mesh.dev_key, dev_key, 16);
-
-	provisioned = true;
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		BT_DBG("Storing network information persistently");
@@ -103,7 +99,7 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 
 void bt_mesh_reset(void)
 {
-	if (!provisioned) {
+	if (!bt_mesh.valid) {
 		return;
 	}
 
@@ -140,8 +136,6 @@ void bt_mesh_reset(void)
 
 	memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
 
-	provisioned = false;
-
 	bt_mesh_scan_disable();
 	bt_mesh_beacon_disable();
 
@@ -152,7 +146,7 @@ void bt_mesh_reset(void)
 
 bool bt_mesh_is_provisioned(void)
 {
-	return provisioned;
+	return bt_mesh.valid;
 }
 
 int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
