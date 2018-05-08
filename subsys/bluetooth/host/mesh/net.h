@@ -197,9 +197,13 @@ struct bt_mesh_lpn {
 	ATOMIC_DEFINE(to_remove, LPN_GROUPS);
 };
 
-/* bt_mesh_net.flags */
+/* bt_mesh_net.flags, mainly used for pending storage actions */
 enum {
-	BT_MESH_RPL_UPDATE,
+	BT_MESH_RPL_PENDING,
+	BT_MESH_KEYS_PENDING,
+	BT_MESH_NET_PENDING,
+	BT_MESH_IV_PENDING,
+	BT_MESH_SEQ_PENDING,
 
 	/* Don't touch - intentionally last */
 	BT_MESH_FLAG_COUNT,
