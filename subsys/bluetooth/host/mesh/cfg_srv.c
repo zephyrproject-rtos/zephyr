@@ -521,6 +521,10 @@ void bt_mesh_app_key_del(struct bt_mesh_app_key *key)
 {
 	bt_mesh_model_foreach(_mod_unbind, &key->app_idx);
 
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_clear_app_key(key);
+	}
+
 	key->net_idx = BT_MESH_KEY_UNUSED;
 	memset(key->keys, 0, sizeof(key->keys));
 }
@@ -3289,6 +3293,10 @@ void bt_mesh_subnet_del(struct bt_mesh_subnet *sub)
 
 	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
 		bt_mesh_friend_clear_net_idx(sub->net_idx);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_clear_subnet(sub);
 	}
 
 	memset(sub, 0, sizeof(*sub));

@@ -683,6 +683,53 @@ void bt_mesh_store_app_key(struct bt_mesh_app_key *app)
 	settings_save_one(path, str);
 }
 
+void bt_mesh_clear_net(void)
+{
+	BT_DBG("");
+
+	settings_save_one("bt/mesh/IV", NULL);
+	settings_save_one("bt/mesh/Net", NULL);
+}
+
+void bt_mesh_clear_subnet(struct bt_mesh_subnet *sub)
+{
+	char path[20];
+
+	BT_DBG("NetKeyIndex 0x%03x", sub->net_idx);
+
+	snprintk(path, sizeof(path), "bt/mesh/NetKey/%x", sub->net_idx);
+	settings_save_one(path, NULL);
+}
+
+void bt_mesh_clear_app_key(struct bt_mesh_app_key *key)
+{
+	char path[20];
+
+	BT_DBG("AppKeyIndex 0x%03x", key->app_idx);
+
+	snprintk(path, sizeof(path), "bt/mesh/AppKey/%x", key->app_idx);
+	settings_save_one(path, NULL);
+}
+
+void bt_mesh_clear_rpl(void)
+{
+	int i;
+
+	BT_DBG("");
+
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.rpl); i++) {
+		struct bt_mesh_rpl *rpl = &bt_mesh.rpl[i];
+		char path[18];
+
+		if (!rpl->src) {
+			continue;
+		}
+
+		snprintk(path, sizeof(path), "bt/mesh/RPL/%x", rpl->src);
+		settings_save_one(path, NULL);
+	}
+}
+
 void bt_mesh_settings_init(void)
 {
 #if CONFIG_BT_MESH_RPL_STORE_TIMEOUT > 0
