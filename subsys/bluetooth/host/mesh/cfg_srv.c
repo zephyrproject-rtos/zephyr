@@ -64,7 +64,7 @@ static void hb_send(struct bt_mesh_model *model)
 	struct bt_mesh_net_tx tx = {
 		.sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx),
 		.ctx = &ctx,
-		.src = model->elem->addr,
+		.src = bt_mesh_model_elem(model)->addr,
 		.xmit = bt_mesh_net_transmit_get(),
 	};
 

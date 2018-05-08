@@ -102,7 +102,7 @@ static void vnd_button_pressed(struct bt_mesh_model *model,
 {
 	printk("src 0x%04x\n", ctx->addr);
 
-	if (ctx->addr == model->elem->addr) {
+	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
 		return;
 	}
 
