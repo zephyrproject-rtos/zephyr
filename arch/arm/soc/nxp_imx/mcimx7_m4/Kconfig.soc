@@ -12,6 +12,7 @@ depends on SOC_SERIES_IMX7_M4
 config SOC_MCIMX7_M4
 	bool "SOC_MCIMX7_M4"
 	select HAS_IMX_HAL
+	select HAS_IMX_GPIO
 
 endchoice
 

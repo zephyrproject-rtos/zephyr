@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -75,8 +76,71 @@
 		gpio1: gpio@30200000 {
 			compatible = "nxp,imx-gpio";
 			reg = <0x30200000 0x10000>;
-			interrupts = <62 0>, <63 0>;
+			interrupts = <64 0>, <65 0>;
 			label = "GPIO_1";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio2: gpio@30210000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x30210000 0x10000>;
+			interrupts = <66 0>, <67 0>;
+			label = "GPIO_2";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio3: gpio@30220000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x30220000 0x10000>;
+			interrupts = <68 0>, <69 0>;
+			label = "GPIO_3";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio4: gpio@30230000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x30230000 0x10000>;
+			interrupts = <70 0>, <71 0>;
+			label = "GPIO_4";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio5: gpio@30240000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x30240000 0x10000>;
+			interrupts = <72 0>, <73 0>;
+			label = "GPIO_5";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio6: gpio@30250000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x30250000 0x10000>;
+			interrupts = <74 0>, <75 0>;
+			label = "GPIO_6";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio7: gpio@30260000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x30260000 0x10000>;
+			interrupts = <76 0>, <77 0>;
+			label = "GPIO_7";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		/* For now only uart2 is supported and
