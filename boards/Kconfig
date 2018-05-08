@@ -14,12 +14,14 @@ config QEMU_TARGET
 	  Mark all QEMU targets with this variable for checking whether we are
 	  running in an emulated environment.
 
+# $ENV_VAR_SYM_BOARD_DIR might be a glob pattern
+
 choice
 prompt "Board Selection"
-source "$ENV_VAR_SYM_BOARD_DIR/Kconfig.board"
+gsource "$ENV_VAR_SYM_BOARD_DIR/Kconfig.board"
 endchoice
 
 
 menu "Board Options"
-source "$ENV_VAR_SYM_BOARD_DIR/Kconfig"
+gsource "$ENV_VAR_SYM_BOARD_DIR/Kconfig"
 endmenu

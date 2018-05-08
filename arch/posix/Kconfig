@@ -10,7 +10,7 @@ choice
 	prompt "POSIX Configuration Selection"
 	depends on ARCH_POSIX
 
-	source "arch/posix/soc/*/Kconfig.soc"
+	gsource "arch/posix/soc/*/Kconfig.soc"
 endchoice
 
 menu "POSIX (native) Options"
@@ -34,6 +34,6 @@ config ARCH_POSIX_RECOMMENDED_STACK_SIZE
 	  thread stack, the real stack is the native underlying pthread stack.
 	  Therefore the allocated stack can be limited to this size)
 
-source "arch/posix/soc/*/Kconfig"
+gsource "arch/posix/soc/*/Kconfig"
 
 endmenu

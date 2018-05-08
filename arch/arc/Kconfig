@@ -10,7 +10,7 @@ choice
 	prompt "ARC SoC Selection"
 	depends on ARC
 
-	source "arch/arc/soc/*/Kconfig.soc"
+	gsource "arch/arc/soc/*/Kconfig.soc"
 endchoice
 
 
@@ -209,6 +209,6 @@ config CACHE_FLUSHING
 
 endmenu
 
-source "arch/arc/soc/*/Kconfig"
+gsource "arch/arc/soc/*/Kconfig"
 
 endmenu
