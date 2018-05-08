@@ -145,6 +145,12 @@ int hts221_init(struct device *dev)
 		return -EIO;
 	}
 
+	/*
+	 * the device requires about 2.2 ms to download the flash content
+	 * into the volatile mem
+	 */
+	k_sleep(3);
+
 	if (hts221_read_conversion_data(drv_data) < 0) {
 		SYS_LOG_ERR("Failed to read conversion data.");
 		return -EINVAL;
