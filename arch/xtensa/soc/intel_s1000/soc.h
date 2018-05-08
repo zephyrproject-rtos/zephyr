@@ -122,6 +122,11 @@
 #define USB_DW_BASE				0x000A0000
 #define USB_DW_IRQ				0x00000806
 
+/* SPI -SPI0*/
+#define SPI_DW_PORT_0_REGS                      0x0000E000
+#define SPI_DW_PORT_0_IRQ			0x00070706
+#define SPI_DW_IRQ_FLAGS                        0
+
 extern void _soc_irq_enable(u32_t irq);
 extern void _soc_irq_disable(u32_t irq);
 extern void setup_ownership_dma0(void);

@@ -23,6 +23,11 @@ static ALWAYS_INLINE void sys_write32(u32_t data, mem_addr_t addr)
 	*(volatile u32_t *)addr = data;
 }
 
+static ALWAYS_INLINE void sys_write16(u16_t data, mem_addr_t addr)
+{
+	*(volatile u16_t *)addr = data;
+}
+
 static ALWAYS_INLINE u8_t sys_read8(mem_addr_t addr)
 {
 	return *(volatile u8_t *)addr;
