@@ -73,7 +73,13 @@
 #define REGION_SRAM_0_SIZE REGION_256K
 #define REGION_SRAM_1_START 0x40000
 #define REGION_SRAM_1_SIZE REGION_128K
+
+#elif CONFIG_SRAM_SIZE == 496
+#define REGION_SRAM_0_SIZE REGION_128K
+#define REGION_SRAM_1_START 0x20000
+#define REGION_SRAM_1_SIZE REGION_256K
 #else
+
 #error "Unsupported configuration"
 #endif
 

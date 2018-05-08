@@ -103,6 +103,11 @@
 #elif defined(CONFIG_SOC_STM32L432XC)
 #define DT_FLASH_SIZE		__SIZE_K(256)
 #define DT_SRAM_SIZE		__SIZE_K(64)
+
+#elif defined(CONFIG_SOC_STM32F769XI)
+#define DT_FLASH_SIZE		__SIZE_K(2048)
+#define DT_SRAM_SIZE		__SIZE_K(496)
+
 #else
 #error "Flash, RAM, and CCM sizes not defined for this chip"
 #endif
