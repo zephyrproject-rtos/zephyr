@@ -33,6 +33,8 @@
 #include "proxy.h"
 #include "settings.h"
 
+static struct k_delayed_work pending_store;
+
 /* Mesh network storage information */
 struct net_val {
 	u16_t primary_addr;
@@ -600,10 +602,7 @@ static void store_rpl(struct bt_mesh_rpl *entry)
 	settings_save_one(path, str);
 }
 
-#if CONFIG_BT_MESH_RPL_STORE_TIMEOUT > 0
-static struct k_delayed_work rpl_store;
-
-static void rpl_store_timeout(struct k_work *work)
+static void store_pending_rpl(void)
 {
 	int i;
 
@@ -618,13 +617,22 @@ static void rpl_store_timeout(struct k_work *work)
 		}
 	}
 }
-#endif
+
+static void store_pending(struct k_work *work)
+{
+	BT_DBG("");
+
+	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_RPL_UPDATE)) {
+		store_pending_rpl();
+	}
+}
 
 void bt_mesh_store_rpl(struct bt_mesh_rpl *entry)
 {
 #if CONFIG_BT_MESH_RPL_STORE_TIMEOUT > 0
 	entry->store = true;
-	k_delayed_work_submit(&rpl_store,
+	atomic_set_bit(bt_mesh.flags, BT_MESH_RPL_UPDATE);
+	k_delayed_work_submit(&pending_store,
 			      K_SECONDS(CONFIG_BT_MESH_RPL_STORE_TIMEOUT));
 	BT_DBG("Waiting %d seconds", CONFIG_BT_MESH_RPL_STORE_TIMEOUT);
 #else
@@ -732,7 +740,5 @@ void bt_mesh_clear_rpl(void)
 
 void bt_mesh_settings_init(void)
 {
-#if CONFIG_BT_MESH_RPL_STORE_TIMEOUT > 0
-	k_delayed_work_init(&rpl_store, rpl_store_timeout);
-#endif
+	k_delayed_work_init(&pending_store, store_pending);
 }

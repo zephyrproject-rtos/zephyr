@@ -197,6 +197,14 @@ struct bt_mesh_lpn {
 	ATOMIC_DEFINE(to_remove, LPN_GROUPS);
 };
 
+/* bt_mesh_net.flags */
+enum {
+	BT_MESH_RPL_UPDATE,
+
+	/* Don't touch - intentionally last */
+	BT_MESH_FLAG_COUNT,
+};
+
 struct bt_mesh_net {
 	u32_t iv_index;          /* Current IV Index */
 	u32_t seq:24,            /* Next outgoing sequence number */
@@ -207,6 +215,8 @@ struct bt_mesh_net {
 	      valid:1;           /* 0 if unused */
 
 	s64_t last_update;       /* Time since last IV Update change */
+
+	ATOMIC_DEFINE(flags, BT_MESH_FLAG_COUNT);
 
 	/* Local network interface */
 	struct k_work local_work;
