@@ -98,7 +98,7 @@ static int fault_test(struct bt_mesh_model *model, uint8_t test_id,
 	}
 
 	has_reg_fault = true;
-	bt_mesh_fault_update(model->elem);
+	bt_mesh_fault_update(bt_mesh_model_elem(model));
 
 	return 0;
 }

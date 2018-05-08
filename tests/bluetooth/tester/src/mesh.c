@@ -654,7 +654,7 @@ static void model_send(u8_t *data, u16_t len)
 
 	/* Lookup source address */
 	for (i = 0; i < ARRAY_SIZE(model_bound); i++) {
-		if (model_bound[i].model->elem->addr == src) {
+		if (bt_mesh_model_elem(model_bound[i].model)->addr == src) {
 			model = model_bound[i].model;
 			ctx.app_idx = model_bound[i].appkey_idx;
 
