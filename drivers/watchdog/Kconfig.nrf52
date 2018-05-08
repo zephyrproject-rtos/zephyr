@@ -1,0 +1,15 @@
+# Kconfig - Nordic nRF52x WDT configuration
+#
+# Copyright (c) 2018 Intellinium.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WDT_NRF52
+	bool "nRF52 series Watchdog (WDT) Driver"
+	depends on WATCHDOG && SOC_FAMILY_NRF5
+	default y
+	help
+	  Enable WDT driver for nRF52 MCUs.
+
+config WDT_IRQ_PRI
+	int "IRQ priority"
+	default 2
