@@ -61,8 +61,8 @@ static void gptp_md_follow_up_prepare(struct net_pkt *pkt,
 	fup->prec_orig_ts_nsecs =
 		htonl(sync_send->precise_orig_ts.nanosecond);
 
-	fup->tlv.type = htons(GPTP_TLV_ORGANIZATION_EXT);
-	fup->tlv.len = htons(sizeof(struct gptp_follow_up_tlv));
+	fup->tlv_hdr.type = htons(GPTP_TLV_ORGANIZATION_EXT);
+	fup->tlv_hdr.len = htons(sizeof(struct gptp_follow_up_tlv));
 	fup->tlv.org_id[0] = GPTP_FUP_TLV_ORG_ID_BYTE_0;
 	fup->tlv.org_id[1] = GPTP_FUP_TLV_ORG_ID_BYTE_1;
 	fup->tlv.org_id[2] = GPTP_FUP_TLV_ORG_ID_BYTE_2;

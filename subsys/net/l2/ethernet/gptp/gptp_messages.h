@@ -190,13 +190,15 @@ struct gptp_sync {
 	u8_t reserved[10];
 } __packed;
 
-struct gptp_follow_up_tlv {
+struct gptp_follow_up_tlv_hdr {
 	/** TLV type: 0x3. */
 	u16_t type;
 
 	/** Length: 28. */
 	u16_t len;
+} __packed;
 
+struct gptp_follow_up_tlv {
 	/** Organization Id: 00-80-C2. */
 	u8_t org_id[3];
 
@@ -227,6 +229,7 @@ struct gptp_follow_up {
 	u32_t prec_orig_ts_nsecs;
 
 	/** Follow up TLV. */
+	struct gptp_follow_up_tlv_hdr tlv_hdr;
 	struct gptp_follow_up_tlv tlv;
 } __packed;
 
