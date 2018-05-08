@@ -111,7 +111,7 @@ struct net_pkt {
 				 * Used only if defined(CONFIG_NET_ROUTE)
 				 */
 	u8_t family     : 4;	/* IPv4 vs IPv6 */
-	u8_t _unused    : 3;
+	u8_t _unused    : 1;
 
 	union {
 		/* IPv6 hop limit or IPv4 ttl for this network packet.
