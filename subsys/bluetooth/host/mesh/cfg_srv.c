@@ -3137,22 +3137,15 @@ void bt_mesh_cfg_reset(void)
 	cfg->hb_sub.dst = BT_MESH_ADDR_UNASSIGNED;
 	cfg->hb_sub.expiry = 0;
 
-	hb_pub_disable(cfg);
-
-	/* Delete all app keys */
-	for (i = 0; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
-		struct bt_mesh_app_key *key = &bt_mesh.app_keys[i];
-
-		if (key->net_idx != BT_MESH_KEY_UNUSED) {
-			bt_mesh_app_key_del(key);
-		}
-	}
-
+	/* Delete all net keys, which also takes care of all app keys which
+	 * are associated with each net key.
+	 */
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
 		struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
 
-		memset(sub, 0, sizeof(*sub));
-		sub->net_idx = BT_MESH_KEY_UNUSED;
+		if (sub->net_idx != BT_MESH_KEY_UNUSED) {
+			bt_mesh_subnet_del(sub);
+		}
 	}
 
 	memset(labels, 0, sizeof(labels));
