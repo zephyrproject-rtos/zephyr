@@ -38,6 +38,7 @@
 
 #include "conn_internal.h"
 #include "l2cap_internal.h"
+#include "gatt_internal.h"
 #include "smp.h"
 #include "crypto.h"
 #include "settings.h"
@@ -1313,6 +1314,10 @@ int bt_unpair(const bt_addr_le_t *addr)
 		if (keys) {
 			bt_keys_clear(keys);
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_gatt_clear_ccc(addr);
 	}
 
 	return 0;
