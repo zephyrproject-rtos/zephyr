@@ -16,5 +16,9 @@ endif()
 if(CONFIG_USB)
 target_sources(app PRIVATE src/test_hid.c)
 endif()
+if(CONFIG_SPI)
+target_sources(app PRIVATE src/spi_flash.c)
+endif()
+
 
 target_sources(app PRIVATE src/main.c)
