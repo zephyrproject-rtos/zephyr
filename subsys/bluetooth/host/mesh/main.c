@@ -63,7 +63,7 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		BT_DBG("Storing network information persistently");
-		bt_mesh_store_net(addr, dev_key);
+		bt_mesh_store_net();
 		bt_mesh_store_subnet(&bt_mesh.sub[0]);
 		bt_mesh_store_iv();
 	}

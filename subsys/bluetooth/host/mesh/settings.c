@@ -33,6 +33,18 @@
 #include "proxy.h"
 #include "settings.h"
 
+/* Tracking of what storage changes are pending for App and Net Keys. We
+ * track this in a separate array here instead of within the respective
+ * bt_mesh_app_key and bt_mesh_subnet structs themselves, since once a key
+ * gets deleted its struct becomes invalid and may be reused for other keys.
+ */
+static struct key_update {
+	u16_t key_idx:12,    /* AppKey or NetKey Index */
+	      valid:1,       /* 1 if this entry is valid, 0 if not */
+	      app_key:1,     /* 1 if this is an AppKey, 0 if a NetKey */
+	      clear:1;       /* 1 if key needs clearing, 0 if storing */
+} key_updates[CONFIG_BT_MESH_APP_KEY_COUNT + CONFIG_BT_MESH_SUBNET_COUNT];
+
 static struct k_delayed_work pending_store;
 
 /* Mesh network storage information */
@@ -512,16 +524,40 @@ static int mesh_commit(void)
 
 BT_SETTINGS_DEFINE(mesh, mesh_set, mesh_commit, NULL);
 
-void bt_mesh_store_net(u16_t primary_addr, const u8_t dev_key[16])
+static void schedule_store(int flag)
+{
+	s32_t timeout;
+
+	atomic_set_bit(bt_mesh.flags, flag);
+
+	if (atomic_test_bit(bt_mesh.flags, BT_MESH_NET_PENDING) ||
+	    atomic_test_bit(bt_mesh.flags, BT_MESH_IV_PENDING) ||
+	    atomic_test_bit(bt_mesh.flags, BT_MESH_SEQ_PENDING)) {
+		timeout = K_NO_WAIT;
+	} else if (atomic_test_bit(bt_mesh.flags, BT_MESH_RPL_PENDING) &&
+		   (CONFIG_BT_MESH_RPL_STORE_TIMEOUT <
+		    CONFIG_BT_MESH_STORE_TIMEOUT)) {
+		timeout = K_SECONDS(CONFIG_BT_MESH_RPL_STORE_TIMEOUT);
+	} else {
+		timeout = K_SECONDS(CONFIG_BT_MESH_STORE_TIMEOUT);
+	}
+
+	BT_DBG("Waiting %d seconds", timeout / MSEC_PER_SEC);
+
+	k_delayed_work_submit(&pending_store, timeout);
+}
+
+static void store_pending_net(void)
 {
 	char buf[BT_SETTINGS_SIZE(sizeof(struct net_val))];
 	struct net_val net;
 	char *str;
 
-	BT_DBG("addr 0x%04x DevKey %s", primary_addr, bt_hex(dev_key, 16));
+	BT_DBG("addr 0x%04x DevKey %s", bt_mesh_primary_addr(),
+	       bt_hex(bt_mesh.dev_key, 16));
 
-	net.primary_addr = primary_addr;
-	memcpy(net.dev_key, dev_key, 16);
+	net.primary_addr = bt_mesh_primary_addr();
+	memcpy(net.dev_key, bt_mesh.dev_key, 16);
 
 	str = settings_str_from_bytes(&net, sizeof(net), buf, sizeof(buf));
 	if (!str) {
@@ -533,7 +569,12 @@ void bt_mesh_store_net(u16_t primary_addr, const u8_t dev_key[16])
 	settings_save_one("bt/mesh/Net", str);
 }
 
-void bt_mesh_store_iv(void)
+void bt_mesh_store_net(void)
+{
+	schedule_store(BT_MESH_NET_PENDING);
+}
+
+static void store_pending_iv(void)
 {
 	char buf[BT_SETTINGS_SIZE(sizeof(struct iv_val))];
 	struct iv_val iv;
@@ -552,16 +593,18 @@ void bt_mesh_store_iv(void)
 	settings_save_one("bt/mesh/IV", str);
 }
 
-void bt_mesh_store_seq(void)
+void bt_mesh_store_iv(void)
+{
+	schedule_store(BT_MESH_IV_PENDING);
+	/* Always update Seq whenever IV changes */
+	schedule_store(BT_MESH_SEQ_PENDING);
+}
+
+static void store_pending_seq(void)
 {
 	char buf[BT_SETTINGS_SIZE(sizeof(struct seq_val))];
 	struct seq_val seq;
 	char *str;
-
-	if (CONFIG_BT_MESH_SEQ_STORE_RATE &&
-	    (bt_mesh.seq % CONFIG_BT_MESH_SEQ_STORE_RATE)) {
-		return;
-	}
 
 	seq.val[0] = bt_mesh.seq;
 	seq.val[1] = bt_mesh.seq >> 8;
@@ -575,6 +618,16 @@ void bt_mesh_store_seq(void)
 
 	BT_DBG("Saving Seq as value %s", str);
 	settings_save_one("bt/mesh/Seq", str);
+}
+
+void bt_mesh_store_seq(void)
+{
+	if (CONFIG_BT_MESH_SEQ_STORE_RATE &&
+	    (bt_mesh.seq % CONFIG_BT_MESH_SEQ_STORE_RATE)) {
+		return;
+	}
+
+	schedule_store(BT_MESH_SEQ_PENDING);
 }
 
 static void store_rpl(struct bt_mesh_rpl *entry)
@@ -618,29 +671,27 @@ static void store_pending_rpl(void)
 	}
 }
 
-static void store_pending(struct k_work *work)
+static void clear_app_key(u16_t app_idx)
 {
-	BT_DBG("");
+	char path[20];
 
-	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_RPL_UPDATE)) {
-		store_pending_rpl();
-	}
+	BT_DBG("AppKeyIndex 0x%03x", app_idx);
+
+	snprintk(path, sizeof(path), "bt/mesh/AppKey/%x", app_idx);
+	settings_save_one(path, NULL);
 }
 
-void bt_mesh_store_rpl(struct bt_mesh_rpl *entry)
+static void clear_net_key(u16_t net_idx)
 {
-#if CONFIG_BT_MESH_RPL_STORE_TIMEOUT > 0
-	entry->store = true;
-	atomic_set_bit(bt_mesh.flags, BT_MESH_RPL_UPDATE);
-	k_delayed_work_submit(&pending_store,
-			      K_SECONDS(CONFIG_BT_MESH_RPL_STORE_TIMEOUT));
-	BT_DBG("Waiting %d seconds", CONFIG_BT_MESH_RPL_STORE_TIMEOUT);
-#else
-	store_rpl(entry);
-#endif
+	char path[20];
+
+	BT_DBG("NetKeyIndex 0x%03x", net_idx);
+
+	snprintk(path, sizeof(path), "bt/mesh/NetKey/%x", net_idx);
+	settings_save_one(path, NULL);
 }
 
-void bt_mesh_store_subnet(struct bt_mesh_subnet *sub)
+static void store_net_key(struct bt_mesh_subnet *sub)
 {
 	char buf[BT_SETTINGS_SIZE(sizeof(struct net_key_val))];
 	struct net_key_val key;
@@ -667,7 +718,7 @@ void bt_mesh_store_subnet(struct bt_mesh_subnet *sub)
 	settings_save_one(path, str);
 }
 
-void bt_mesh_store_app_key(struct bt_mesh_app_key *app)
+static void store_app_key(struct bt_mesh_app_key *app)
 {
 	char buf[BT_SETTINGS_SIZE(sizeof(struct app_key_val))];
 	struct app_key_val key;
@@ -691,6 +742,164 @@ void bt_mesh_store_app_key(struct bt_mesh_app_key *app)
 	settings_save_one(path, str);
 }
 
+static void store_pending_keys(void)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(key_updates); i++) {
+		struct key_update *update = &key_updates[i];
+
+		if (!update->valid) {
+			continue;
+		}
+
+		if (update->clear) {
+			if (update->app_key) {
+				clear_app_key(update->key_idx);
+			} else {
+				clear_net_key(update->key_idx);
+			}
+		} else {
+			if (update->app_key) {
+				struct bt_mesh_app_key *key;
+
+				key = bt_mesh_app_key_find(update->key_idx);
+				if (key) {
+					store_app_key(key);
+				} else {
+					BT_WARN("AppKeyIndex 0x%03x not found",
+					       update->key_idx);
+				}
+
+			} else {
+				struct bt_mesh_subnet *sub;
+
+				sub = bt_mesh_subnet_get(update->key_idx);
+				if (sub) {
+					store_net_key(sub);
+				} else {
+					BT_WARN("NetKeyIndex 0x%03x not found",
+					       update->key_idx);
+				}
+			}
+		}
+
+		update->valid = 0;
+	}
+}
+
+static void store_pending(struct k_work *work)
+{
+	BT_DBG("");
+
+	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_RPL_PENDING)) {
+		store_pending_rpl();
+	}
+
+	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_KEYS_PENDING)) {
+		store_pending_keys();
+	}
+
+	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_NET_PENDING)) {
+		store_pending_net();
+	}
+
+	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_IV_PENDING)) {
+		store_pending_iv();
+	}
+
+	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_SEQ_PENDING)) {
+		store_pending_seq();
+	}
+}
+
+void bt_mesh_store_rpl(struct bt_mesh_rpl *entry)
+{
+	entry->store = true;
+	schedule_store(BT_MESH_RPL_PENDING);
+}
+
+static struct key_update *key_update_find(bool app_key, u16_t key_idx,
+					  struct key_update **free_slot)
+{
+	struct key_update *match;
+	int i;
+
+	match = NULL;
+	*free_slot = NULL;
+
+	for (i = 0; i < ARRAY_SIZE(key_updates); i++) {
+		struct key_update *update = &key_updates[i];
+
+		if (!update->valid) {
+			*free_slot = update;
+			continue;
+		}
+
+		if (update->app_key != app_key) {
+			continue;
+		}
+
+		if (update->key_idx == key_idx) {
+			match = update;
+		}
+	}
+
+	return match;
+}
+
+void bt_mesh_store_subnet(struct bt_mesh_subnet *sub)
+{
+	struct key_update *update, *free_slot;
+
+	BT_DBG("NetKeyIndex 0x%03x", sub->net_idx);
+
+	update = key_update_find(false, sub->net_idx, &free_slot);
+	if (update) {
+		update->clear = 0;
+		schedule_store(BT_MESH_KEYS_PENDING);
+		return;
+	}
+
+	if (!free_slot) {
+		store_net_key(sub);
+		return;
+	}
+
+	free_slot->valid = 1;
+	free_slot->key_idx = sub->net_idx;
+	free_slot->app_key = 0;
+	free_slot->clear = 0;
+
+	schedule_store(BT_MESH_KEYS_PENDING);
+}
+
+void bt_mesh_store_app_key(struct bt_mesh_app_key *key)
+{
+	struct key_update *update, *free_slot;
+
+	BT_DBG("AppKeyIndex 0x%03x", key->app_idx);
+
+	update = key_update_find(true, key->app_idx, &free_slot);
+	if (update) {
+		update->clear = 0;
+		schedule_store(BT_MESH_KEYS_PENDING);
+		return;
+	}
+
+	if (!free_slot) {
+		store_app_key(key);
+		return;
+	}
+
+	free_slot->valid = 1;
+	free_slot->key_idx = key->app_idx;
+	free_slot->app_key = 1;
+	free_slot->clear = 0;
+
+	schedule_store(BT_MESH_KEYS_PENDING);
+}
+
 void bt_mesh_clear_net(void)
 {
 	BT_DBG("");
@@ -701,22 +910,54 @@ void bt_mesh_clear_net(void)
 
 void bt_mesh_clear_subnet(struct bt_mesh_subnet *sub)
 {
-	char path[20];
+	struct key_update *update, *free_slot;
 
 	BT_DBG("NetKeyIndex 0x%03x", sub->net_idx);
 
-	snprintk(path, sizeof(path), "bt/mesh/NetKey/%x", sub->net_idx);
-	settings_save_one(path, NULL);
+	update = key_update_find(false, sub->net_idx, &free_slot);
+	if (update) {
+		update->clear = 1;
+		schedule_store(BT_MESH_KEYS_PENDING);
+		return;
+	}
+
+	if (!free_slot) {
+		clear_net_key(sub->net_idx);
+		return;
+	}
+
+	free_slot->valid = 1;
+	free_slot->key_idx = sub->net_idx;
+	free_slot->app_key = 0;
+	free_slot->clear = 1;
+
+	schedule_store(BT_MESH_KEYS_PENDING);
 }
 
 void bt_mesh_clear_app_key(struct bt_mesh_app_key *key)
 {
-	char path[20];
+	struct key_update *update, *free_slot;
 
 	BT_DBG("AppKeyIndex 0x%03x", key->app_idx);
 
-	snprintk(path, sizeof(path), "bt/mesh/AppKey/%x", key->app_idx);
-	settings_save_one(path, NULL);
+	update = key_update_find(true, key->app_idx, &free_slot);
+	if (update) {
+		update->clear = 1;
+		schedule_store(BT_MESH_KEYS_PENDING);
+		return;
+	}
+
+	if (!free_slot) {
+		clear_app_key(key->app_idx);
+		return;
+	}
+
+	free_slot->valid = 1;
+	free_slot->key_idx = key->app_idx;
+	free_slot->app_key = 1;
+	free_slot->clear = 1;
+
+	schedule_store(BT_MESH_KEYS_PENDING);
 }
 
 void bt_mesh_clear_rpl(void)

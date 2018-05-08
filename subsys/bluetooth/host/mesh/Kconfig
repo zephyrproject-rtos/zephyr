@@ -381,6 +381,15 @@ config BT_MESH_SHELL
 
 if BT_SETTINGS
 
+config BT_MESH_STORE_TIMEOUT
+	int "Delay (in seconds) before storing anything persistently"
+	range 0 1000000
+	default 2
+	help
+	  This value defines in seconds how soon any pending changes
+	  are actually written into persistent storage (flash) after
+	  a change occurs.
+
 config BT_MESH_SEQ_STORE_RATE
 	int "How often the sequence number gets updated in storage"
 	range 0 1000000
