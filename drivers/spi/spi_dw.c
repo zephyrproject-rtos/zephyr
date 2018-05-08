@@ -208,10 +208,19 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 
 	SYS_LOG_DBG("%p (prev %p)", config, spi->ctx.config);
 
+	/* SPI DW controller in intel_s1000 introduces new bit filed
+	 * called DFS(Data frame size). Which selects the data frame
+	 * length. When a command sent dfs can be selected for 8 bit serial
+	 * transfer and when address and command is sent it can be
+	 * 16 bit serial transfer. It allows flash driver using SPI
+	 * driver to confiure DFS multiple times.
+	 */
+#ifndef CONFIG_SOC_INTEL_S1000
 	if (spi_context_configured(&spi->ctx, config)) {
 		/* Nothing to do */
 		return 0;
 	}
+#endif
 
 	/* Verify if requested op mode is relevant to this controller */
 	if (config->operation & SPI_OP_MODE_SLAVE) {
