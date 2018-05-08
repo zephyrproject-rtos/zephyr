@@ -1411,6 +1411,10 @@ void bt_mesh_rx_reset(void)
 	for (i = 0; i < ARRAY_SIZE(seg_rx); i++) {
 		seg_rx_reset(&seg_rx[i], true);
 	}
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_clear_rpl();
+	}
 }
 
 void bt_mesh_tx_reset(void)
