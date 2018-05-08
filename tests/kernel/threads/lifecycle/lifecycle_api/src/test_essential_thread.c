@@ -25,17 +25,20 @@ static void thread_entry(void *p1, void *p2, void *p3)
 
 	_thread_essential_clear();
 	zassert_false(_is_thread_essential(),
-			"Essential flag of the thread is not cleared\n");
+		      "Essential flag of the thread is not cleared\n");
 
 	k_sem_give(&sync_sem);
 }
 
-/* The test to validate essential flag set/clear */
+/**
+ * @brief Test to validate essential flag set/clear
+ *
+ */
 void test_essential_thread_operation(void)
 {
 	k_tid_t tid = k_thread_create(&kthread_thread, kthread_stack,
-			STACKSIZE, (k_thread_entry_t)thread_entry, NULL,
-			NULL, NULL, K_PRIO_PREEMPT(0), 0, 0);
+				      STACKSIZE, (k_thread_entry_t)thread_entry, NULL,
+				      NULL, NULL, K_PRIO_PREEMPT(0), 0, 0);
 
 	k_sem_take(&sync_sem, K_FOREVER);
 	k_thread_abort(tid);

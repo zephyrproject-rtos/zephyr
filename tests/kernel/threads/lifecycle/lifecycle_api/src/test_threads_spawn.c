@@ -42,7 +42,15 @@ static void thread_entry_delay(void *p1, void *p2, void *p3)
 	tp2 = 100;
 }
 
-/*test cases*/
+/* test cases */
+
+/**
+ * @brief Check the parameters passed to thread entry function
+ *
+ * @details Create an user thread and pass 2 variables and a
+ * semaphore to a thread entry function. Check for the correctness
+ * of the parameters passed.
+ */
 void test_threads_spawn_params(void)
 {
 	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_params,
@@ -51,6 +59,12 @@ void test_threads_spawn_params(void)
 	k_sleep(100);
 }
 
+/**
+ * @brief Spawn thread with higher priority
+ *
+ * @details Create an user thread with priority greater than
+ * current thread and check its behavior.
+ */
 void test_threads_spawn_priority(void)
 {
 	/* spawn thread with higher priority */
@@ -60,6 +74,12 @@ void test_threads_spawn_priority(void)
 	k_sleep(100);
 }
 
+/**
+ * @brief Spawn thread with a delay
+ *
+ * @details Create a user thread with delay and check if the
+ * thread entry function is executed only after the timeout occurs.
+ */
 void test_threads_spawn_delay(void)
 {
 	/* spawn thread with higher priority */
@@ -75,6 +95,15 @@ void test_threads_spawn_delay(void)
 	zassert_true(tp2 == 100, NULL);
 }
 
+/**
+ * @brief Spawn thread with forever delay and highest priority
+ *
+ * @details Create an user thread with forever delay and yield
+ * the current thread. Eventhough the current thread has yielded,
+ * the thread will not be put in ready queue since it has forever delay,
+ * the thread is explicitly started using k_thread_start() and checked
+ * if thread has started executing.
+ */
 void test_threads_spawn_forever(void)
 {
 	/* spawn thread with highest priority. It will run immediately once
@@ -95,15 +124,19 @@ void test_threads_spawn_forever(void)
 	k_thread_abort(tid);
 }
 
-/* Test to validate behavior of multiple calls to k_thread_start() */
+/**
+ * @brief Validate behavior of multiple calls to k_thread_start()
+ *
+ * @details Call k_thread_start() on an already terminated thread
+ */
 void test_thread_start(void)
 {
 	tp2 = 5;
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-			thread_entry_delay, NULL, NULL, NULL,
-			K_HIGHEST_THREAD_PRIO,
-			K_USER, K_FOREVER);
+				      thread_entry_delay, NULL, NULL, NULL,
+				      K_HIGHEST_THREAD_PRIO,
+				      K_USER, K_FOREVER);
 
 	k_thread_start(tid);
 	k_yield();

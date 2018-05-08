@@ -55,7 +55,20 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 }
 
 /*test cases*/
-
+/**
+ * @brief Check the behavior of preemptive threads when the
+ * time slice is disabled and enabled
+ *
+ * @details Create multiple preemptive threads with few different
+ * priorities and few with same priorities and enable the time slice.
+ * Ensure that each thread is given the time slice period to execute.
+ *
+ * API_coverage
+ * k_sched_time_slice_set()
+ * k_sem_reset()
+ * k_uptime_delta()
+ * k_uptime_get_32()
+ */
 void test_slice_reset(void)
 {
 	u32_t t32;

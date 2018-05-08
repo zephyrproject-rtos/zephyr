@@ -71,6 +71,15 @@ static void teardown_threads(void)
 }
 
 /*test cases*/
+
+/**
+ * @brief Validate the behavior of cooperative thread
+ * when it yields
+ *
+ * @details Create 3 threads of priority -2, -1 and 0.
+ * Yield the main thread which is cooperative. Check
+ * if all the threads gets executed.
+ */
 void test_yield_cooperative(void)
 {
 
@@ -89,7 +98,13 @@ void test_yield_cooperative(void)
 	/* restore environment */
 	teardown_threads();
 }
-
+/**
+ * @brief Validate the behavior of cooperative thread when it sleeps
+ *
+ * @details Create 3 threads of priority -2, -1 and 0. Put the main
+ * thread in timeout queue by calling k_sleep() which is cooperative.
+ * Check if all the threads gets executed.
+ */
 void test_sleep_cooperative(void)
 {
 	/* set current thread to a cooperative priority */
@@ -123,6 +138,18 @@ void test_busy_wait_cooperative(void)
 	teardown_threads();
 }
 
+/**
+ * @brief Validate k_wakeup()
+ *
+ * @details Create 3 threads with main thead with priority 0
+ * and other threads with -1, 0 ,+1 priority. Now -1 priority
+ * thread gets executed and it is made to sleep for 10 sec.
+ * Now, wake up the -1 priority thread and check if it starts
+ * executing.
+ *
+ * API_coverage
+ * k_wakeup()
+ */
 void test_sleep_wakeup_preemptible(void)
 {
 	/* set current thread to a preemptible priority */
@@ -140,6 +167,13 @@ void test_sleep_wakeup_preemptible(void)
 	teardown_threads();
 }
 
+/**
+ * @brief Validate preemptive thread behavior with time slice
+ *
+ * @details Create 3 threads with -1, 0, and 1 as priority, setup
+ * time slice for threads with priority 0. Make sure the threads
+ * with equal priorities are executed in time slice.
+ */
 void test_time_slicing_preemptible(void)
 {
 	/* set current thread to a preemptible priority */
@@ -162,6 +196,15 @@ void test_time_slicing_preemptible(void)
 	teardown_threads();
 }
 
+/**
+ * @brief Check the behavior of preemptive thread with busy_wait
+ *
+ * @details Create 3 threads with -1, 0, and 1 as priority,
+ * setup time slice for threads with priority 0. Make sure the
+ * threads with equal priorities are executed in time slice.
+ * Also run k_busy_wait() for 5 secs and check if other threads
+ * are not executed at that time.
+ */
 void test_time_slicing_disable_preemptible(void)
 {
 	/* set current thread to a preemptible priority */
@@ -181,6 +224,13 @@ void test_time_slicing_disable_preemptible(void)
 	teardown_threads();
 }
 
+/**
+ * @brief Lock the scheduler when preemptive threads are running
+ *
+ * @details Create 3 threads and lock the scheduler. Make sure that the
+ * threads are not executed. Call k_sleep() and check if the threads
+ * have executed.
+ */
 void test_lock_preemptible(void)
 {
 	/* set current thread to a preemptible priority */
@@ -205,6 +255,17 @@ void test_lock_preemptible(void)
 	teardown_threads();
 }
 
+/**
+ * @brief Validate k_sched_lock() and k_sched_unlock()
+ *
+ * @details  Lock the scheduler and create 3 threads. Check
+ * that the threads are not executed. Call k_sched_unlock()
+ * and check if the threads have executed.
+ *
+ * API_coverage
+ * k_sched_lock()
+ * k_sched_unlock()
+ */
 void test_unlock_preemptible(void)
 {
 	/* set current thread to a preemptible priority */

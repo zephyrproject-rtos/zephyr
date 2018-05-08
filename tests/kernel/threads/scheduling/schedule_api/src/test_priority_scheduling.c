@@ -32,7 +32,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 {
 	/* Print New line for last thread */
 	int thread_parameter = ((int)p1 == (NUM_THREAD - 1)) ? '\n' :
-								((int)p1 + 'A');
+			       ((int)p1 + 'A');
 
 	while (1) {
 		/* Prining alphabet corresponding to thread*/
@@ -50,6 +50,15 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 }
 
 /*test cases*/
+
+/**
+ *
+ * @brief Check the behavior of preemptive threads with different priorities
+ *
+ * @details Create multiple threads of different priorities - all are preemptive,
+ * current thread is also made preemptive. Check how the threads get chance to
+ * exeucte based on their priorities
+ */
 void test_priority_scheduling(void)
 {
 	k_tid_t tid[NUM_THREAD];
@@ -58,13 +67,13 @@ void test_priority_scheduling(void)
 
 	/* update priority for current thread*/
 	k_thread_priority_set(k_current_get(),
-			K_PRIO_PREEMPT(BASE_PRIORITY - 1));
+			      K_PRIO_PREEMPT(BASE_PRIORITY - 1));
 
 	/* Create Threads with different Priority*/
 	for (int i = 0; i < NUM_THREAD; i++) {
 		tid[i] = k_thread_create(&t[i], tstack[i], STACK_SIZE,
-			 thread_tslice, (void *)(intptr_t) i, NULL, NULL,
-				 K_PRIO_PREEMPT(BASE_PRIORITY + i), 0, 0);
+					 thread_tslice, (void *)(intptr_t) i, NULL, NULL,
+					 K_PRIO_PREEMPT(BASE_PRIORITY + i), 0, 0);
 	}
 
 	while (count < ITRERATION_COUNT) {

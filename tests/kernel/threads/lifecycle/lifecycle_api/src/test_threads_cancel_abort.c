@@ -36,7 +36,13 @@ static void thread_entry_abort(void *p1, void *p2, void *p3)
 	execute_flag = 2;
 	zassert_true(1 == 0, NULL);
 }
-
+/**
+ * @brief Validate k_thread_abort() when called by current thread
+ *
+ * @details Create a user thread and let the thread execute.
+ * Then call k_thread_abort() and check if the thread is terminated.
+ * Here the main thread is also a user thread.
+ */
 void test_threads_abort_self(void)
 {
 	execute_flag = 0;
@@ -47,6 +53,13 @@ void test_threads_abort_self(void)
 	zassert_true(execute_flag == 1, NULL);
 }
 
+/**
+ * @brief Validate k_thread_abort() when called by other thread
+ *
+ * @details Create a user thread and abort the thread before its
+ * execution. Create a another user thread and abort the thread
+ * after it has started.
+ */
 void test_threads_abort_others(void)
 {
 	execute_flag = 0;
@@ -70,7 +83,10 @@ void test_threads_abort_others(void)
 	zassert_true(execute_flag == 1, NULL);
 }
 
-/* Test should not crash if repeated aborts are called on a dead thread. */
+/**
+ * @brief Test abort on a terminated thread
+ *
+ */
 void test_threads_abort_repeat(void)
 {
 	execute_flag = 0;
@@ -87,9 +103,6 @@ void test_threads_abort_repeat(void)
 	ztest_test_pass();
 }
 
-/* Test to validate the call of abort handler specified by thread
- * when it is aborted
- */
 bool abort_called;
 void *block;
 
@@ -108,6 +121,11 @@ static void uthread_entry(void)
 	k_sleep(K_MSEC(2));
 }
 
+/**
+ *
+ * @brief Test to validate the call of abort handler
+ * specified by thread when it is aborted
+ */
 void test_abort_handler(void)
 {
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
@@ -134,6 +152,10 @@ static void delayed_thread_entry(void *p1, void *p2, void *p3)
 	zassert_unreachable("Delayed thread shouldn't be executed\n");
 }
 
+/**
+ * @brief Test abort on delayed thread before it has started
+ * execution
+ */
 void test_delayed_thread_abort(void)
 {
 	int current_prio = k_thread_priority_get(k_current_get());
