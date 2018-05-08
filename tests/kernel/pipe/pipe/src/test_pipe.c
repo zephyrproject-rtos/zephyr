@@ -8,7 +8,7 @@
 #include <ztest.h>
 
 K_PIPE_DEFINE(test_pipe, 256, 4);
-#define STACK_SIZE (512)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define PIPE_SIZE (256)
 
 K_THREAD_STACK_DEFINE(stack_1, STACK_SIZE);
