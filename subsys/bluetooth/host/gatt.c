@@ -14,6 +14,8 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
+#include <settings/settings.h>
+
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/uuid.h>
@@ -29,9 +31,16 @@
 #include "l2cap_internal.h"
 #include "att_internal.h"
 #include "smp.h"
+#include "settings.h"
 #include "gatt_internal.h"
 
 #define SC_TIMEOUT K_MSEC(10)
+
+/* Persistent storage format for GATT CCC */
+struct ccc_store {
+	u16_t handle;
+	u16_t value;
+};
 
 #if defined(CONFIG_BT_GATT_CLIENT)
 static sys_slist_t subscriptions;
@@ -2090,7 +2099,225 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 	BT_DBG("conn %p", conn);
 	bt_gatt_foreach_attr(0x0001, 0xffff, disconnected_cb, conn);
 
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
+	    bt_addr_le_is_bonded(&conn->le.dst)) {
+		bt_gatt_store_ccc(&conn->le.dst);
+	}
+
 #if defined(CONFIG_BT_GATT_CLIENT)
 	remove_subscriptions(conn);
 #endif /* CONFIG_BT_GATT_CLIENT */
 }
+
+#if defined(CONFIG_BT_SETTINGS)
+
+#define CCC_STORE_MAX 48
+
+static struct bt_gatt_ccc_cfg *ccc_find_cfg(struct _bt_gatt_ccc *ccc,
+					    const bt_addr_le_t *addr)
+{
+	int i;
+
+	for (i = 0; i < ccc->cfg_len; i++) {
+		if (!bt_addr_le_cmp(&ccc->cfg[i].peer, addr)) {
+			return &ccc->cfg[i];
+		}
+	}
+
+	return NULL;
+}
+
+struct ccc_save {
+	const bt_addr_le_t *addr;
+	struct ccc_store store[CCC_STORE_MAX];
+	size_t count;
+};
+
+static u8_t ccc_save(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct ccc_save *save = user_data;
+	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_cfg *cfg;
+
+	/* Check if attribute is a CCC */
+	if (attr->write != bt_gatt_attr_write_ccc) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	ccc = attr->user_data;
+
+	/* Check if there is a cfg for the peer */
+	cfg = ccc_find_cfg(ccc, save->addr);
+	if (!cfg) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	BT_DBG("Storing CCCs handle 0x%04x value 0x%04x", attr->handle,
+	       cfg->value);
+
+	save->store[save->count].handle = attr->handle;
+	save->store[save->count].value = cfg->value;
+	save->count++;
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+int bt_gatt_store_ccc(const bt_addr_le_t *addr)
+{
+	struct ccc_save save;
+	char val[BT_SETTINGS_SIZE(sizeof(save.store))];
+	char key[BT_SETTINGS_KEY_MAX];
+	char *str;
+	int err;
+
+	save.addr = addr;
+	save.count = 0;
+
+	bt_gatt_foreach_attr(0x0001, 0xffff, ccc_save, &save);
+
+	str = settings_str_from_bytes(save.store,
+				      save.count * sizeof(*save.store),
+				      val, sizeof(val));
+	if (!str) {
+		BT_ERR("Unable to encode CCC as handle:value");
+		return -EINVAL;
+	}
+
+	bt_settings_encode_key(key, sizeof(key), "ccc",
+			       (bt_addr_le_t *)addr, NULL);
+
+	err = settings_save_one(key, str);
+	if (err) {
+		BT_ERR("Failed to store CCCs (err %d)", err);
+		return err;
+	}
+
+	BT_DBG("Stored CCCs for %s (%s) val %s", bt_addr_le_str(addr), key,
+	       str);
+
+	return 0;
+}
+
+int bt_gatt_clear_ccc(const bt_addr_le_t *addr)
+{
+	char key[BT_SETTINGS_KEY_MAX];
+
+	bt_settings_encode_key(key, sizeof(key), "ccc",
+			       (bt_addr_le_t *)addr, NULL);
+
+	return settings_save_one(key, NULL);
+}
+
+static void ccc_clear(struct _bt_gatt_ccc *ccc, bt_addr_le_t *addr)
+{
+	struct bt_gatt_ccc_cfg *cfg;
+
+	cfg = ccc_find_cfg(ccc, addr);
+	if (!cfg) {
+		BT_DBG("Unable to clear CCC: cfg not found");
+		return;
+	}
+
+	bt_addr_le_copy(&cfg->peer, BT_ADDR_LE_ANY);
+	cfg->value = 0;
+}
+
+struct ccc_load {
+	bt_addr_le_t addr;
+	struct ccc_store *entry;
+	size_t count;
+};
+
+static u8_t ccc_load(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct ccc_load *load = user_data;
+	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_cfg *cfg;
+
+	/* Check if attribute is a CCC */
+	if (attr->write != bt_gatt_attr_write_ccc) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	ccc = attr->user_data;
+
+	/* Clear if value was invalidade */
+	if (!load->entry) {
+		ccc_clear(ccc, &load->addr);
+		return BT_GATT_ITER_CONTINUE;
+	} else if (!load->count) {
+		return BT_GATT_ITER_STOP;
+	}
+
+	/* Skip if value is not for the given attribute */
+	if (load->entry->handle != attr->handle) {
+		/* If attribute handle is bigger then it means
+		 * the attribute no longer exists and cannot
+		 * be restored.
+		 */
+		if (load->entry->handle < attr->handle) {
+			BT_DBG("Unable to restore CCC: handle 0x%04x cannot be"
+			       " found",  load->entry->handle);
+			goto next;
+		}
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	BT_DBG("Restoring CCC: handle 0x%04x value 0x%04x", load->entry->handle,
+	       load->entry->value);
+
+	cfg = ccc_find_cfg(ccc, BT_ADDR_LE_ANY);
+	if (!cfg) {
+		BT_DBG("Unable to restore CCC: no cfg left");
+		goto next;
+	}
+
+	bt_addr_le_copy(&cfg->peer, &load->addr);
+	cfg->value = load->entry->value;
+
+next:
+	load->entry++;
+	load->count--;
+
+	return load->count ? BT_GATT_ITER_CONTINUE : BT_GATT_ITER_STOP;
+}
+
+static int ccc_set(int argc, char **argv, char *val)
+{
+	struct ccc_store ccc_store[CCC_STORE_MAX];
+	struct ccc_load load;
+	int len, err;
+
+	if (argc < 1) {
+		BT_ERR("Insufficient number of arguments");
+		return -EINVAL;
+	}
+
+	BT_DBG("argv[0] %s val %s", argv[0], val ? val : "(null)");
+
+	err = bt_settings_decode_key(argv[0], &load.addr);
+	if (err) {
+		BT_ERR("Unable to decode address %s", argv[0]);
+		return -EINVAL;
+	}
+
+	if (val) {
+		len = sizeof(ccc_store);
+		err = settings_bytes_from_str(val, ccc_store, &len);
+		if (err) {
+			BT_ERR("Failed to decode value (err %d)", err);
+			return err;
+		}
+		load.entry = ccc_store;
+		load.count = len / sizeof(*ccc_store);
+	}
+
+	bt_gatt_foreach_attr(0x0001, 0xffff, ccc_load, &load);
+
+	BT_DBG("Restored CCC for %s", bt_addr_le_str(&load.addr));
+
+	return 0;
+}
+
+BT_SETTINGS_DEFINE(ccc, ccc_set, NULL, NULL);
+#endif /* CONFIG_BT_SETTINGS */
