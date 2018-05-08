@@ -551,8 +551,10 @@ typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
  * produce output.
  *
  * @return N/A
+ *
+ * @deprecated This API is deprecated.  Use k_thread_foreach().
  */
-extern void k_call_stacks_analyze(void);
+__deprecated extern void k_call_stacks_analyze(void);
 
 /**
  * @brief Iterate over all the threads in the system.
