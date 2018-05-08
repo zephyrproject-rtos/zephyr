@@ -102,6 +102,18 @@ from kconfiglib import Kconfig, \
 # Configuration variables
 #
 
+# If True, try to convert LC_CTYPE to a UTF-8 locale if it is set to the C
+# locale (which implies ASCII). This fixes curses Unicode I/O issues on systems
+# with bad defaults. ncurses configures itself from the locale settings.
+#
+# Related PEP: https://www.python.org/dev/peps/pep-0538/
+_CONVERT_C_LC_CTYPE_TO_UTF8 = True
+
+# How many steps an implicit submenu will be indented. Implicit submenus are
+# created when an item depends on the symbol before it. Note that symbols
+# defined with 'menuconfig' create a separate menu instead of indenting.
+_SUBMENU_INDENT = 4
+
 # Number of steps for Page Up/Down to jump
 _PG_JUMP = 6
 
@@ -163,7 +175,7 @@ def _init_styles():
     # A_BOLD tends to produce faint and hard-to-read text on the Windows
     # console, especially with the old color scheme, before the introduction of
     # https://blogs.msdn.microsoft.com/commandline/2017/08/02/updating-the-windows-console-colors/
-    BOLD = curses.A_NORMAL if platform.system() == "Windows" else curses.A_BOLD
+    BOLD = curses.A_NORMAL if _IS_WINDOWS else curses.A_BOLD
 
 
     # Separator lines between windows. Also used for the top line in the symbol
@@ -307,8 +319,12 @@ def menuconfig(kconf):
     # errors ourselves.
     _kconf.disable_warnings()
 
-    # Make sure curses uses the encoding specified in the environment
+    # Make curses use the locale settings specified in the environment
     locale.setlocale(locale.LC_ALL, "")
+
+    # Try to fix Unicode issues on systems with bad defaults
+    if _CONVERT_C_LC_CTYPE_TO_UTF8:
+        _convert_c_lc_ctype_to_utf8()
 
     # Get rid of the delay between pressing ESC and jumping to the parent menu
     os.environ.setdefault("ESCDELAY", "0")
@@ -2022,7 +2038,7 @@ def _node_str(node):
     indent = 0
     parent = node.parent
     while not parent.is_menuconfig:
-        indent += 2
+        indent += _SUBMENU_INDENT
         parent = parent.parent
 
     # This approach gives nice alignment for empty string symbols ("()  Foo")
@@ -2228,6 +2244,36 @@ def _safe_move(win, *args):
         win.move(*args)
     except curses.error:
         pass
+
+def _convert_c_lc_ctype_to_utf8():
+    # See _CONVERT_C_LOCALE_TO_UTF8
+
+    if _IS_WINDOWS:
+        # Windows rarely has issues here, and the PEP 538 implementation avoids
+        # changing the locale on it. None of the UTF-8 locales below were
+        # supported from some quick testing either. Play it safe.
+        return
+
+    def _try_set_locale(loc):
+        try:
+            locale.setlocale(locale.LC_CTYPE, loc)
+            return True
+        except locale.Error:
+            return False
+
+    # Is LC_CTYPE set to the C locale?
+    if locale.setlocale(locale.LC_CTYPE, None) == "C":
+        # This list was taken from the PEP 538 implementation in the CPython
+        # code, in Python/pylifecycle.c
+        for loc in "C.UTF-8", "C.utf8", "UTF-8":
+            if _try_set_locale(loc):
+                print("Note: Your environment is configured to use ASCII. To "
+                      "avoid Unicode issues, LC_CTYPE was changed from the "
+                      "C locale to the {} locale.".format(loc))
+                break
+
+# Are we running on Windows?
+_IS_WINDOWS = (platform.system() == "Windows")
 
 if __name__ == "__main__":
     if len(sys.argv) > 2:
