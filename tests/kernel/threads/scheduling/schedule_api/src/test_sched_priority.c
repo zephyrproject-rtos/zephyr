@@ -24,6 +24,16 @@ static void thread_entry(void *p1, void *p2, void *p3)
 }
 
 /*test cases*/
+
+/**
+ * @brief Validate that the cooperative thread will
+ * not be preempted
+ *
+ * @details Create a cooperative thread with priority higher
+ * than the current cooperative thread. Make sure that the higher
+ * priority thread will not preempt the lower priority cooperative
+ * thread.
+ */
 void test_priority_cooperative(void)
 {
 	int old_prio = k_thread_priority_get(k_current_get());
@@ -49,6 +59,15 @@ void test_priority_cooperative(void)
 	k_thread_priority_set(k_current_get(), old_prio);
 }
 
+/**
+ * @brief Validate preemptiveness of preemptive thread
+ *
+ * @details Create a preemptive thread which is of priority
+ * lower than current thread. Current thread is made has preemptive.
+ * Make sure newly created thread is not preempted. Now create a
+ * preemptive thread which is of priority higher than current
+ * thread. Make sure newly created thread is preempted
+ */
 void test_priority_preemptible(void)
 {
 	int old_prio = k_thread_priority_get(k_current_get());

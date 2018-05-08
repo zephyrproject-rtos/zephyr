@@ -64,6 +64,19 @@ static void tcoop_ctx(void *p1, void *p2, void *p3)
 }
 
 /*test cases*/
+
+/**
+ * @brief Validate the correctness of k_is_preempt_thread()
+ *
+ * @details Create a preemptive thread, lock the scheduler
+ * and call k_is_preempt_thread(). Unlock the scheduler and
+ * call k_is_preempt_thread() again. Create a cooperative
+ * thread and lock the scheduler k_is_preempt_thread() and
+ * unlock the scheduler and call k_is_preempt_thread().
+ *
+ * API_coverage
+ * k_is_preempt_thread()
+ */
 void test_sched_is_preempt_thread(void)
 {
 	k_sem_init(&end_sema, 0, 1);
