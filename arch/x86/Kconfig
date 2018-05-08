@@ -10,7 +10,7 @@ choice
 	prompt "x86 SoC Selection"
 	depends on X86
 
-	source "arch/x86/soc/*/Kconfig.soc"
+	gsource "arch/x86/soc/*/Kconfig.soc"
 endchoice
 
 menu "X86 Architecture Options"
@@ -312,6 +312,6 @@ config X86_FIXED_IRQ_MAPPING
 
 endmenu
 
-source "arch/x86/soc/*/Kconfig"
+gsource "arch/x86/soc/*/Kconfig"
 
 endmenu

@@ -16,7 +16,7 @@ config SOC_FAMILY
 	default "nxp_lpc"
 endif
 
-source "arch/arm/soc/nxp_lpc/*/Kconfig.soc"
+gsource "arch/arm/soc/nxp_lpc/*/Kconfig.soc"
 
 config SOC_PART_NUMBER
 	string

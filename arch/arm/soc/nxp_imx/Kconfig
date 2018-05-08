@@ -16,7 +16,7 @@ config SOC_FAMILY
 	default "nxp_imx"
 endif
 
-source "arch/arm/soc/nxp_imx/*/Kconfig.soc"
+gsource "arch/arm/soc/nxp_imx/*/Kconfig.soc"
 
 config SOC_PART_NUMBER
 	string

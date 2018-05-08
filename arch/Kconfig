@@ -326,6 +326,7 @@ config BOARD
 	  arch/<arch>/soc/<family>/<series>
 
 
-source "arch/$ENV_VAR_SYM_ARCH/Kconfig"
+# $ENV_VAR_SYM_ARCH might be a glob pattern
+gsource "arch/$ENV_VAR_SYM_ARCH/Kconfig"
 
 source "boards/Kconfig"

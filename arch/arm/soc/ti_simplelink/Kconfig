@@ -12,4 +12,4 @@ config SOC_FAMILY
 	default ti_simplelink
 endif
 
-source "arch/arm/soc/ti_simplelink/*/Kconfig.soc"
+gsource "arch/arm/soc/ti_simplelink/*/Kconfig.soc"

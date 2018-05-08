@@ -1941,7 +1941,6 @@ class Kconfig(object):
                 prev.next = prev = node
 
             elif t0 == _T_SOURCE:
-                assert False # T_SOURCE is not in use in Zephyr for now.
                 self._enter_file(self._expand_syms(self._expect_str_and_eol()))
                 prev = self._parse_block(None, parent, prev, visible_if_deps)
                 self._leave_file()
@@ -4998,7 +4997,7 @@ _get_keyword = {
     "range":          _T_RANGE,
     "rsource":        _T_RSOURCE,
     "select":         _T_SELECT,
-    "source":         _T_GSOURCE, # Have 'source' behave like 'gsource' for now
+    "source":         _T_SOURCE,
     "string":         _T_STRING,
     "tristate":       _T_TRISTATE,
     "visible":        _T_VISIBLE,

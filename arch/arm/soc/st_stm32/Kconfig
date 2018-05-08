@@ -30,4 +30,4 @@ config STM32_ARM_MPU_ENABLE
 	help
 	  Enable MPU support on STM32 SoCs
 
-source "arch/arm/soc/st_stm32/*/Kconfig.soc"
+gsource "arch/arm/soc/st_stm32/*/Kconfig.soc"

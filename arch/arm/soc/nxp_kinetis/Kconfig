@@ -17,7 +17,7 @@ config SOC_FAMILY
 	default "nxp_kinetis"
 endif
 
-source "arch/arm/soc/nxp_kinetis/*/Kconfig.soc"
+gsource "arch/arm/soc/nxp_kinetis/*/Kconfig.soc"
 
 config SOC_PART_NUMBER
 	string

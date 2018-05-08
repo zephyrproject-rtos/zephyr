@@ -11,7 +11,7 @@ choice
 	default SOC_SERIES_KINETIS_K6X
 	depends on ARM
 
-	source "arch/arm/soc/*/Kconfig.soc"
+	gsource "arch/arm/soc/*/Kconfig.soc"
 endchoice
 
 menu "ARM Options"
@@ -29,7 +29,7 @@ source "arch/arm/core/Kconfig"
 
 menu "SoC Configuration"
 
-source "arch/arm/soc/*/Kconfig"
+gsource "arch/arm/soc/*/Kconfig"
 
 endmenu
 endmenu

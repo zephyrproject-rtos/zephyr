@@ -43,5 +43,8 @@ source "tests/Kconfig"
 # Board defaults should be parsed after SoC defaults
 # because board usually overrides SoC values.
 #
-source "arch/$ENV_VAR_SYM_ARCH/soc/*/Kconfig.defconfig"
-source "$ENV_VAR_SYM_BOARD_DIR/Kconfig.defconfig"
+
+# $ENV_VAR_SYM_ARCH and $ENV_VAR_SYM_BOARD_DIR might be glob patterns
+
+gsource "arch/$ENV_VAR_SYM_ARCH/soc/*/Kconfig.defconfig"
+gsource "$ENV_VAR_SYM_BOARD_DIR/Kconfig.defconfig"
