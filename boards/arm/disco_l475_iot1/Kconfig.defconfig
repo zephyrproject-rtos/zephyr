@@ -78,6 +78,9 @@ endif # PWM
 
 if VL53L0X
 
+config VL53L0X_XSHUT_CONTROL_ENABLE
+	default y
+
 config VL53L0X_XSHUT_GPIO_DEV_NAME
 	default "GPIOC"
 
