@@ -45,7 +45,6 @@ def read_intlist(intlist_path):
     include/linker/intlist.ld:
 
      struct {
-       void * spurious_irq_handler;
        void * sw_irq_handler;
        u32_t num_isrs;
        u32_t num_vectors; <- typically CONFIG_NUM_IRQS
@@ -71,7 +70,7 @@ def read_intlist(intlist_path):
 
     prefix = endian_prefix()
 
-    intlist_header_fmt = prefix + "IIIII"
+    intlist_header_fmt = prefix + "IIII"
     intlist_entry_fmt = prefix + "iiII"
 
     with open(intlist_path, "rb") as fp:
@@ -83,13 +82,10 @@ def read_intlist(intlist_path):
 
     debug(str(header))
 
-    intlist["spurious_handler"] = header[0]
-    intlist["sw_irq_handler"] = header[1]
-    intlist["num_vectors"] = header[2]
-    intlist["offset"] = header[3]
-    intlist["num_isrs"] = header[4]
-
-    debug("spurious handler: %s" % hex(header[0]))
+    intlist["sw_irq_handler"] = header[0]
+    intlist["num_vectors"]    = header[1]
+    intlist["offset"]         = header[2]
+    intlist["num_isrs"]       = header[3]
 
     intlist["interrupts"] = [i for i in
             struct.iter_unpack(intlist_entry_fmt, intdata)]
@@ -135,6 +131,7 @@ source_header = """
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <sw_isr_table.h>
+#include <arch/cpu.h>
 
 """
 
@@ -156,7 +153,12 @@ def write_source_file(fp, vt, swt, intlist):
             % nv)
     for i in range(nv):
         param, func = swt[i]
-        fp.write("\t{(void *)0x%x, (void *)0x%x},\n" % (param, func))
+        if type(func) is int:
+            func_as_string = "{0:#x}".format(func)
+        else:
+            func_as_string = func
+
+        fp.write("\t{{(void *){0:#x}, (void *){1}}},\n".format(param, func_as_string))
     fp.write("};\n")
 
 def get_symbols(obj):
@@ -209,6 +211,8 @@ def main():
     prefix = endian_prefix()
     numisrs = intlist["num_isrs"]
 
+    spurious_handler = "&_irq_spurious"
+
     debug('offset is ' + str(offset))
     debug('num_vectors is ' + str(nvec))
     debug('num_isrs is ' + str(numisrs))
@@ -223,10 +227,10 @@ def main():
             vt = None
         # Default to spurious interrupt handler. Configured interrupts
         # will replace these entries.
-        swt = [(0, intlist["spurious_handler"]) for i in range(nvec)]
+        swt = [(0, spurious_handler) for i in range(nvec)]
     else:
         if args.vector_table:
-            vt = [intlist["spurious_handler"] for i in range(nvec)]
+            vt = [spurious_handler for i in range(nvec)]
         else:
             error("one or both of -s or -V needs to be specified on command line")
         swt = None
