@@ -146,6 +146,14 @@ static inline void adv_send(struct net_buf *buf)
 	BT_DBG("Advertising stopped");
 }
 
+static void adv_stack_dump(const struct k_thread *thread, void *user_data)
+{
+#if defined(CONFIG_THREAD_STACK_INFO)
+	stack_analyze((char *)user_data, (char *)thread->stack_info.start,
+						thread->stack_info.size);
+#endif
+}
+
 static void adv_thread(void *p1, void *p2, void *p3)
 {
 	BT_DBG("started");
@@ -179,7 +187,7 @@ static void adv_thread(void *p1, void *p2, void *p3)
 		}
 
 		STACK_ANALYZE("adv stack", adv_thread_stack);
-		k_call_stacks_analyze();
+		k_thread_foreach(adv_stack_dump, "BT_MESH");
 
 		/* Give other threads a chance to run */
 		k_yield();
