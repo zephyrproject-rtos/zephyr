@@ -88,11 +88,12 @@ support systems:
   Security related issue tracking is done in JIRA.  The location of this JIRA
   is https://zephyrprojectsec.atlassian.net.
 
-* **Mailing List**: The `Zephyr mailing lists`_ are perhaps the most convenient
+* **Mailing List**: The `Zephyr Development mailing list`_ is perhaps the most convenient
   way to track developer discussions and to ask your own support questions to
-  the Zephyr project community.  Notice there are specific `Zephyr mailing list
-  subgroups`_ for announcements and developers.
-  You can read through message archives to follow
+  the Zephyr project community.  There are also specific `Zephyr mailing list
+  subgroups`_ for announcements, builds, marketing, and Technical
+  Steering Committe notes, for example.
+  You can read through the message archives to follow
   past posts and discussions, a good thing to do to discover more about the
   Zephyr project.
 
@@ -107,7 +108,7 @@ support systems:
 .. _Getting Started Guide: http://docs.zephyrproject.org/getting_started/getting_started.html
 .. _Contribution Guide: http://docs.zephyrproject.org/contribute/contribute_guidelines.html
 .. _Zephyr GitHub wiki: https://github.com/zephyrproject-rtos/zephyr/wiki
-.. _Zephyr mailing lists: https://lists.zephyrproject.org/
+.. _Zephyr Development mailing list: https://lists.zephyrproject.org/g/devel
 .. _Zephyr mailing list subgroups: https://lists.zephyrproject.org/g/main/subgroups
 .. _Sample and Demo Code Examples: http://docs.zephyrproject.org/samples/samples.html
 .. _Security Overview: http://docs.zephyrproject.org/security/security-overview.html
