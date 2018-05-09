@@ -25,4 +25,10 @@ config HAS_IMX_CCM
 	help
 	  Set if the CCM module is present in the SoC.
 
+config HAS_IMX_GPIO
+	bool
+	default n
+	help
+	  Set if the GPIO module is present in the SoC.
+
 endif # HAS_IMX_HAL

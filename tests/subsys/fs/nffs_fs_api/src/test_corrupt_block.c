@@ -61,7 +61,7 @@ void test_corrupt_block(void)
 	rc = fs_open(&fs_file, NFFS_MNTP"/mydir/b");
 	zassert_equal(rc, 0, "cannot open file");
 
-	file = fs_file.nffs_fp;
+	file = fs_file.filep;
 	rc = nffs_block_from_hash_entry(&block,
 				file->nf_inode_entry->nie_last_block_entry);
 	zassert_equal(rc, 0, "block from hash entry error");

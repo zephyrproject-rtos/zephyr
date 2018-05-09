@@ -15,6 +15,7 @@
 #include <usb/class/usb_msc.h>
 #include <usb/class/usb_cdc.h>
 #include <usb/class/usb_hid.h>
+#include <usb/class/usb_dfu.h>
 #include "usb_descriptor.h"
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_LEVEL
@@ -123,6 +124,20 @@ struct dev_common_descriptor {
 		struct usb_ep_descriptor if0_out_ep;
 	} __packed cdc_eem_cfg;
 #endif
+#ifdef CONFIG_USB_DEVICE_BLUETOOTH
+	struct usb_bluetooth_config {
+		struct usb_if_descriptor if0;
+		struct usb_ep_descriptor if0_int_ep;
+		struct usb_ep_descriptor if0_out_ep;
+		struct usb_ep_descriptor if0_in_ep;
+	} __packed bluetooth_cfg;
+#endif
+#ifdef CONFIG_USB_DFU_CLASS
+	struct usb_dfu_config {
+		struct usb_if_descriptor if0;
+		struct dfu_runtime_descriptor dfu_descr;
+	} __packed dfu_cfg;
+#endif
 	struct usb_string_desription {
 		struct usb_string_descriptor lang_descr;
 		struct usb_mfr_descriptor {
@@ -181,10 +196,11 @@ static struct dev_common_descriptor common_desc = {
 	.cfg_descr = {
 		.bLength = sizeof(struct usb_cfg_descriptor),
 		.bDescriptorType = USB_CONFIGURATION_DESC,
-		.wTotalLength = sizeof(struct dev_common_descriptor)
-			      - sizeof(struct usb_device_descriptor)
-			      - sizeof(struct usb_string_desription)
-			      - sizeof(struct usb_desc_header),
+		.wTotalLength = sys_cpu_to_le16(
+			sizeof(struct dev_common_descriptor)
+			- sizeof(struct usb_device_descriptor)
+			- sizeof(struct usb_string_desription)
+			- sizeof(struct usb_desc_header)),
 		.bNumInterfaces = NUMOF_IFACES,
 		.bConfigurationValue = 1,
 		.iConfiguration = 0,
@@ -663,6 +679,87 @@ static struct dev_common_descriptor common_desc = {
 		},
 	},
 #endif /* CONFIG_USB_DEVICE_NETWORK_EEM */
+#ifdef CONFIG_USB_DEVICE_BLUETOOTH
+	.bluetooth_cfg = {
+		/* Interface descriptor 0 */
+		.if0 = {
+			.bLength = sizeof(struct usb_if_descriptor),
+			.bDescriptorType = USB_INTERFACE_DESC,
+			.bInterfaceNumber = FIRST_IFACE_BLUETOOTH,
+			.bAlternateSetting = 0,
+			.bNumEndpoints = 3,
+			.bInterfaceClass = WIRELESS_DEVICE_CLASS,
+			.bInterfaceSubClass = RF_SUBCLASS,
+			.bInterfaceProtocol = BLUETOOTH_PROTOCOL,
+			.iInterface = 0,
+		},
+
+		/* Interrupt Endpoint */
+		.if0_int_ep = {
+			.bLength = sizeof(struct usb_ep_descriptor),
+			.bDescriptorType = USB_ENDPOINT_DESC,
+			.bEndpointAddress = CONFIG_BLUETOOTH_INT_EP_ADDR,
+			.bmAttributes = USB_DC_EP_INTERRUPT,
+			.wMaxPacketSize =
+				sys_cpu_to_le16(
+				CONFIG_BLUETOOTH_INT_EP_MPS),
+			.bInterval = 0x01,
+		},
+
+		/* Data Endpoint OUT */
+		.if0_out_ep = {
+			.bLength = sizeof(struct usb_ep_descriptor),
+			.bDescriptorType = USB_ENDPOINT_DESC,
+			.bEndpointAddress = CONFIG_BLUETOOTH_OUT_EP_ADDR,
+			.bmAttributes = USB_DC_EP_BULK,
+			.wMaxPacketSize =
+				sys_cpu_to_le16(
+				CONFIG_BLUETOOTH_BULK_EP_MPS),
+			.bInterval = 0x01,
+		},
+
+		/* Data Endpoint IN */
+		.if0_in_ep = {
+			.bLength = sizeof(struct usb_ep_descriptor),
+			.bDescriptorType = USB_ENDPOINT_DESC,
+			.bEndpointAddress = CONFIG_BLUETOOTH_IN_EP_ADDR,
+			.bmAttributes = USB_DC_EP_BULK,
+			.wMaxPacketSize =
+				sys_cpu_to_le16(
+				CONFIG_BLUETOOTH_BULK_EP_MPS),
+			.bInterval = 0x01,
+		},
+	},
+#endif /* CONFIG_USB_DEVICE_BLUETOOTH */
+#ifdef CONFIG_USB_DFU_CLASS
+	.dfu_cfg = {
+		/* Interface descriptor */
+		.if0 = {
+			.bLength = sizeof(struct usb_if_descriptor),
+			.bDescriptorType = USB_INTERFACE_DESC,
+			.bInterfaceNumber = FIRST_IFACE_DFU,
+			.bAlternateSetting = 0,
+			.bNumEndpoints = 0,
+			.bInterfaceClass = DFU_DEVICE_CLASS,
+			.bInterfaceSubClass = DFU_SUBCLASS,
+			.bInterfaceProtocol = DFU_RT_PROTOCOL,
+			.iInterface = 0,
+		},
+		.dfu_descr = {
+			.bLength = sizeof(struct dfu_runtime_descriptor),
+			.bDescriptorType = DFU_FUNC_DESC,
+			.bmAttributes = DFU_ATTR_CAN_DNLOAD |
+					DFU_ATTR_CAN_UPLOAD |
+					DFU_ATTR_MANIFESTATION_TOLERANT,
+			.wDetachTimeOut =
+				sys_cpu_to_le16(CONFIG_USB_DFU_DETACH_TIMEOUT),
+			.wTransferSize =
+				sys_cpu_to_le16(CONFIG_USB_DFU_MAX_XFER_SIZE),
+			.bcdDFUVersion =
+				sys_cpu_to_le16(DFU_VERSION),
+		},
+	},
+#endif /* CONFIG_USB_DFU_CLASS */
 	.string_descr = {
 		.lang_descr = {
 			.bLength = sizeof(struct usb_string_descriptor),

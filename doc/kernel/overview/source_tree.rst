@@ -25,7 +25,7 @@ which are not described here.
 
 :file:`doc`
     Zephyr technical documentation source files and tools used to
-    generate the http://zephyrproject.org/doc web content.
+    generate the http://docs.zephyrproject.org web content.
 
 :file:`drivers`
     Device driver code.

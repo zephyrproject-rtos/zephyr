@@ -34,6 +34,11 @@
 #include "foundation.h"
 #include "beacon.h"
 
+/* Special time-stamp to indicate that we don't know when the last IV
+ * Update happened.
+ */
+#define IV_UPDATE_UNKNOWN -1
+
 /* Minimum valid Mesh Network PDU length. The Network headers
  * themselves take up 9 bytes. After that there is a minumum of 1 byte
  * payload for both CTL=1 and CTL=0 PDUs (smallest OpCode is 1 byte). CTL=1
@@ -490,7 +495,13 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 	bt_mesh.iv_update = BT_MESH_IV_UPDATE(flags);
 
 	/* Set initial IV Update procedure state time-stamp */
-	bt_mesh.last_update = k_uptime_get();
+	bt_mesh.last_update = IV_UPDATE_UNKNOWN;
+
+	/* Set a timer to transition back to normal mode */
+	if (bt_mesh.iv_update) {
+		k_delayed_work_submit(&bt_mesh.ivu_complete,
+				      IV_UPDATE_TIMEOUT);
+	}
 
 	/* Make sure we have valid beacon data to be sent */
 	bt_mesh_net_beacon_update(sub);
@@ -620,6 +631,13 @@ void bt_mesh_net_sec_update(struct bt_mesh_subnet *sub)
 	}
 }
 
+static void update_ivu_timestamp(void)
+{
+	if (bt_mesh.last_update == IV_UPDATE_UNKNOWN) {
+		bt_mesh.last_update = k_uptime_get();
+	}
+}
+
 bool bt_mesh_net_iv_update(u32_t iv_index, bool iv_update)
 {
 	int i;
@@ -636,6 +654,7 @@ bool bt_mesh_net_iv_update(u32_t iv_index, bool iv_update)
 		if (iv_update) {
 			/* Nothing to do */
 			BT_DBG("Already in IV Update in Progress state");
+			update_ivu_timestamp();
 			return false;
 		}
 	} else {
@@ -643,6 +662,7 @@ bool bt_mesh_net_iv_update(u32_t iv_index, bool iv_update)
 
 		if (iv_index == bt_mesh.iv_index) {
 			BT_DBG("Same IV Index in normal mode");
+			update_ivu_timestamp();
 			return false;
 		}
 
@@ -669,17 +689,13 @@ bool bt_mesh_net_iv_update(u32_t iv_index, bool iv_update)
 		if (!iv_update) {
 			/* Nothing to do */
 			BT_DBG("Already in Normal state");
-			return false;
-		}
-
-		if (iv_index != bt_mesh.iv_index + 1) {
-			BT_WARN("Wrong new IV Index: 0x%08x != 0x%08x + 1",
-				iv_index, bt_mesh.iv_index);
+			update_ivu_timestamp();
 			return false;
 		}
 	}
 
-	if (!IS_ENABLED(CONFIG_BT_MESH_IV_UPDATE_TEST) || !bt_mesh.ivu_test) {
+	if (bt_mesh.last_update != IV_UPDATE_UNKNOWN &&
+	    !(IS_ENABLED(CONFIG_BT_MESH_IV_UPDATE_TEST) && bt_mesh.ivu_test)) {
 		s64_t delta = k_uptime_get() - bt_mesh.last_update;
 
 		if (delta < K_HOURS(96)) {

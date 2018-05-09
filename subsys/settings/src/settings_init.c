@@ -70,20 +70,22 @@ static void settings_init_fcb(void)
 	rc = settings_fcb_src(&config_init_settings_fcb);
 
 	if (rc != 0) {
-		k_panic();
-	}
+		rc = flash_area_open(CONFIG_SETTINGS_FCB_FLASH_AREA, &fap);
 
-	rc = flash_area_open(CONFIG_SETTINGS_FCB_FLASH_AREA, &fap);
+		if (rc == 0) {
+			rc = flash_area_erase(fap, 0, fap->fa_size);
+			flash_area_close(fap);
+		}
 
-	if (rc == 0) {
-		rc = flash_area_erase(fap, 0, fap->fa_size);
-		flash_area_close(fap);
+		if (rc != 0) {
+			k_panic();
+		} else {
+			rc = settings_fcb_src(&config_init_settings_fcb);
+		}
 	}
 
 	if (rc != 0) {
 		k_panic();
-	} else {
-		rc = settings_fcb_src(&config_init_settings_fcb);
 	}
 
 	rc = settings_fcb_dst(&config_init_settings_fcb);
@@ -95,18 +97,19 @@ static void settings_init_fcb(void)
 
 #endif
 
-void settings_subsys_init(void)
+int settings_subsys_init(void)
 {
 	settings_init();
 
 #ifdef CONFIG_SETTINGS_FS
-	settings_init_fs();
+	settings_init_fs(); /* func rises kernel panic once error */
 
 	/*
 	 * Must be called after root FS has been initialized.
 	 */
-	fs_mkdir(CONFIG_SETTINGS_FS_DIR);
+	return fs_mkdir(CONFIG_SETTINGS_FS_DIR);
 #elif defined(CONFIG_SETTINGS_FCB)
-	settings_init_fcb();
+	settings_init_fcb(); /* func rises kernel panic once error */
+	return 0;
 #endif
 }

@@ -151,7 +151,7 @@ allDone:
 #else
 	pushl	%esp			/* push NANO_ESF * parameter */
 #endif
-	call	*%ecx			/* call exception handler */
+	INDIRECT_CALL(%ecx)		/* call exception handler */
 
 #ifndef CONFIG_X86_IAMCU
 	addl	$0x4, %esp

@@ -23,6 +23,7 @@
 #include <string.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
+#include <misc/util.h>
 #include <misc/byteorder.h>
 #include <toolchain.h>
 
@@ -470,6 +471,18 @@ static inline bool net_is_ipv4_addr_unspecified(const struct in_addr *addr)
 static inline bool net_is_ipv4_addr_mcast(const struct in_addr *addr)
 {
 	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xE0000000) == 0xE0000000;
+}
+
+/**
+ * @brief Check if the given IPv4 address is a link local address.
+ *
+ * @param addr A valid pointer on an IPv4 address
+ *
+ * @return True if it is, false otherwise.
+ */
+static inline bool net_is_ipv4_ll_addr(const struct in_addr *addr)
+{
+	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xA9FE0000) == 0xA9FE0000;
 }
 
 extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
@@ -991,8 +1004,24 @@ int net_rx_priority2tc(enum net_priority prio);
  */
 static inline enum net_priority net_vlan2priority(u8_t priority)
 {
-	/* Currently this is 1:1 mapping */
-	return priority;
+	/* Map according to IEEE 802.1Q */
+	static const u8_t vlan2priority[] = {
+		NET_PRIORITY_BE,
+		NET_PRIORITY_BK,
+		NET_PRIORITY_EE,
+		NET_PRIORITY_CA,
+		NET_PRIORITY_VI,
+		NET_PRIORITY_VO,
+		NET_PRIORITY_IC,
+		NET_PRIORITY_NC
+	};
+
+	if (priority >= ARRAY_SIZE(vlan2priority)) {
+		/* Use Best Effort as the default priority */
+		return NET_PRIORITY_BE;
+	}
+
+	return vlan2priority[priority];
 }
 
 #ifdef __cplusplus

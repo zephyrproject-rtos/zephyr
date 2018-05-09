@@ -13,8 +13,8 @@ board it runs on (e.g. :ref:`arduino_101` has this).
 Requirements
 ************
 
-* BlueZ running on the host, or
-* A board with BLE support
+* Bluetooth stack running on the host (e.g. BlueZ)
+* A board with Bluetooth and USB support in Zephyr
 
 Building and Running
 ********************

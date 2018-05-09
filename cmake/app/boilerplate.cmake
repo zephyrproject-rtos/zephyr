@@ -236,13 +236,18 @@ DTC_OVERLAY_FILE=\"dts1.overlay dts2.overlay\"")
 set(CMAKE_C_COMPILER_FORCED   1)
 set(CMAKE_CXX_COMPILER_FORCED 1)
 
-include(${ZEPHYR_BASE}/cmake/GetGitRevisionDescription.cmake)
 include(${ZEPHYR_BASE}/cmake/version.cmake)
 include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 include(${ZEPHYR_BASE}/cmake/kconfig.cmake)
 include(${ZEPHYR_BASE}/cmake/toolchain.cmake)
 
-git_describe(BUILD_VERSION)
+find_package(Git QUIET)
+if(GIT_FOUND)
+  execute_process(COMMAND ${GIT_EXECUTABLE} --work-tree=${ZEPHYR_BASE} describe
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE BUILD_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
 
 set(SOC_NAME ${CONFIG_SOC})
 set(SOC_SERIES ${CONFIG_SOC_SERIES})
@@ -273,6 +278,13 @@ set(KERNEL_S19_NAME   ${KERNEL_NAME}.s19)
 set(KERNEL_EXE_NAME   ${KERNEL_NAME}.exe)
 set(KERNEL_STAT_NAME  ${KERNEL_NAME}.stat)
 set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
+
+# Populate USER_CACHE_DIR with a directory that user applications may
+# write cache files to.
+if(NOT DEFINED USER_CACHE_DIR)
+  find_appropriate_cache_directory(USER_CACHE_DIR)
+endif()
+message(STATUS "Cache files will be written to: ${USER_CACHE_DIR}")
 
 include(${BOARD_DIR}/board.cmake OPTIONAL)
 

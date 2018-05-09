@@ -4,6 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+# Hidden. Automatically selected by file systems or FCB that need it
+config FS_FLASH_STORAGE_PARTITION
+	bool
+	default n
+
 menu "File Systems"
 
 config FILE_SYSTEM
@@ -37,6 +42,7 @@ config FAT_FILESYSTEM_ELM
 config FILE_SYSTEM_NFFS
 	bool "NFFS file system support"
 	select FLASH_PAGE_LAYOUT
+	select FS_FLASH_STORAGE_PARTITION
 	help
 	  Enables NFFS file system support.
 	  Note: NFFS requires 1-byte unaligned access to flash thus it
@@ -49,6 +55,17 @@ config FILE_SYSTEM_SHELL
 	  This shell provides basic browsing of the contents of the
 	  file system.
 
+menu "FatFs Settings"
+	visible if FAT_FILESYSTEM_ELM
+
+config FS_FATFS_NUM_FILES
+	int "Maximum number of opened files"
+	default 4
+
+config FS_FATFS_NUM_DIRS
+	int "Maximum number of opened directories"
+	default 4
+endmenu
 
 menu "NFFS Settings"
 	visible if FILE_SYSTEM_NFFS

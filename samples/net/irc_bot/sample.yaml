@@ -3,5 +3,5 @@ sample:
 tests:
   test:
     harness: net
-    depends_on: netif
+    depends_on: netif gpio
     tags: net irc

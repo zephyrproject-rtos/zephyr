@@ -23,7 +23,7 @@ pull requests (PR) following the Zephyr Project's :ref:`Contribution workflow`.
 
 Before you begin working on including a new component to the Zephyr
 Project (Apache-2.0 licensed or not), you should start up a conversation
-on the `developer mailing list <https://lists.zephyrproject.org>`_
+on the `developer mailing list <https://lists.zephyrproject.org/g/devel>`_
 to see what the Zephyr community thinks about the idea.  Maybe there's
 someone else working on something similar you can collaborate with, or a
 different approach may make the new component unnecessary.

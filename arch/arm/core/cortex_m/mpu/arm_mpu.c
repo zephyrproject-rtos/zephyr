@@ -382,10 +382,10 @@ int arm_core_mpu_get_max_domain_partition_regions(void)
  */
 int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
 {
-	u32_t r_index;
+	s32_t r_index;
 
 	/* Iterate all mpu regions in reversed order */
-	for (r_index = _get_num_regions() + 1; r_index-- > 0;) {
+	for (r_index = _get_num_regions() - 1; r_index >= 0;  r_index--) {
 		if (!_is_enabled_region(r_index) ||
 		    !_is_in_region(r_index, (u32_t)addr, size)) {
 			continue;

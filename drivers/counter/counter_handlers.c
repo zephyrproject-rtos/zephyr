@@ -11,9 +11,13 @@
  * instance and return an integral value
  */
 #define COUNTER_HANDLER(name) \
-	_SYSCALL_HANDLER1_SIMPLE(name, K_OBJ_DRIVER_COUNTER, struct device *)
+	_SYSCALL_HANDLER(counter_ ## name, dev) \
+	{ \
+		_SYSCALL_DRIVER_COUNTER(dev, name); \
+		return _impl_counter_ ## name((struct device *)dev); \
+	}
 
-COUNTER_HANDLER(counter_get_pending_int);
-COUNTER_HANDLER(counter_read);
-COUNTER_HANDLER(counter_stop);
-COUNTER_HANDLER(counter_start);
+COUNTER_HANDLER(get_pending_int)
+COUNTER_HANDLER(read)
+COUNTER_HANDLER(stop)
+COUNTER_HANDLER(start)

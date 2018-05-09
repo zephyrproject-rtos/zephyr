@@ -10,7 +10,7 @@
 #include <pinmux.h>
 #include <fsl_common.h>
 #include <fsl_clock.h>
-#include <fsl_lpc_iocon.h>
+#include <fsl_iocon.h>
 #include <fsl_device_registers.h>
 
 #define PORT0_IDX	0u

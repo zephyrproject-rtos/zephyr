@@ -47,7 +47,7 @@ SYS_RING_BUF_DECLARE_POW2(ring_buf1, 8);
 #define POW 2
 
 
-void ring_buffer_main_test(void)
+void test_ring_buffer_main(void)
 {
 	int ret, put_count, i;
 	u32_t getdata[6];
@@ -239,6 +239,6 @@ void test_main(void)
 			 ztest_unit_test(test_ringbuffer_put_get_thread_isr),
 			 ztest_unit_test(test_ringbuffer_pow2_put_get_thread_isr),
 			 ztest_unit_test(test_ringbuffer_size_put_get_thread_isr),
-			 ztest_unit_test(ring_buffer_main_test));
+			 ztest_unit_test(test_ring_buffer_main));
 	ztest_run_test_suite(test_ringbuffer_api);
 }

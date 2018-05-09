@@ -1,16 +1,17 @@
 # Configures CMake for using GCC
 
-set(CMAKE_C_COMPILER   gcc     CACHE INTERNAL " " FORCE)
-set(CMAKE_OBJCOPY      objcopy CACHE INTERNAL " " FORCE)
-set(CMAKE_OBJDUMP      objdump CACHE INTERNAL " " FORCE)
-#set(CMAKE_LINKER      ld      CACHE INTERNAL " " FORCE) # Not in use yet
-set(CMAKE_AR           ar      CACHE INTERNAL " " FORCE)
-set(CMAKE_RANLILB      ranlib  CACHE INTERNAL " " FORCE)
-set(CMAKE_READELF      readelf CACHE INTERNAL " " FORCE)
-set(CMAKE_GDB          gdb     CACHE INTERNAL " " FORCE)
-set(CMAKE_C_FLAGS 	-m32   CACHE INTERNAL " " FORCE)
-set(CMAKE_CXX_FLAGS 	-m32   CACHE INTERNAL " " FORCE)
-set(CMAKE_SHARED_LINKER_FLAGS -m32 CACHE INTERNAL " " FORCE)
+find_program(CMAKE_C_COMPILER   gcc    )
+find_program(CMAKE_OBJCOPY      objcopy)
+find_program(CMAKE_OBJDUMP      objdump)
+#find_program(CMAKE_LINKER      ld     ) # Not in use yet
+find_program(CMAKE_AR           ar     )
+find_program(CMAKE_RANLILB      ranlib )
+find_program(CMAKE_READELF      readelf)
+find_program(CMAKE_GDB          gdb    )
+
+set(CMAKE_C_FLAGS 	          -m32 )
+set(CMAKE_CXX_FLAGS 	      -m32 )
+set(CMAKE_SHARED_LINKER_FLAGS -m32 )
 
 if(CONFIG_CPLUSPLUS)
   set(cplusplus_compiler g++)
@@ -24,5 +25,4 @@ else()
     set(cplusplus_compiler ${CMAKE_C_COMPILER})
   endif()
 endif()
-set(CMAKE_CXX_COMPILER ${cplusplus_compiler}     CACHE INTERNAL " " FORCE)
-
+find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler}     CACHE INTERNAL " " FORCE)

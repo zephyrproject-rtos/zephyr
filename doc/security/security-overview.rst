@@ -457,7 +457,7 @@ modules in all of its stages and the management of reported security
 issues. Furthermore, threat models need to be created for currently
 known and future attack vectors, and their impact on the system needs to
 be investigated and mitigated. Please refer to the
-`secure coding guidelines`_ outlined in the Zephyr project documentation
+:ref:`secure code` outlined in the Zephyr project documentation
 for detailed information.
 
 The software security process includes:
@@ -787,7 +787,5 @@ See :ref:`security-citations`
 .. _`RFC2119`: https://www.ietf.org/rfc/rfc2119.txt
 .. _`Application Thread Modeling`: https://www.owasp.org/index.php/Application_Threat_Modeling
 .. _`STRIDE`: https://msdn.microsoft.com/en-us/library/ee823878%28v=cs.20%29.aspx
-.. _`Zephyr Kernel subsystem documentation`: https://www.zephyrproject.org/doc/subsystems/subsystems.html
-.. _`secure coding guidelines`: https://www.zephyrproject.org/doc/contribute/security.html
 .. _`development model documentation`: https://github.com/zephyrproject-rtos/zephyr/wiki/Development-Model
 .. _`CVSS`: https://www.first.org/cvss/specification-document

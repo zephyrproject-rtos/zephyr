@@ -41,13 +41,13 @@ const struct flash_area default_flash_map[] = {
 		.fa_size = FLASH_AREA_IMAGE_SCRATCH_SIZE,
 	},
 
-#ifdef CONFIG_FILE_SYSTEM_NFFS
-	/* FLASH_AREA_NFFS_ */
+#ifdef CONFIG_FS_FLASH_STORAGE_PARTITION
+	/* FLASH_AREA_STORAGE */
 	{
 		.fa_id = 4,
 		.fa_device_id = SOC_FLASH_0_ID,
-		.fa_off = FLASH_AREA_NFFS_OFFSET,
-		.fa_size = FLASH_AREA_NFFS_SIZE,
+		.fa_off = FLASH_AREA_STORAGE_OFFSET,
+		.fa_size = FLASH_AREA_STORAGE_SIZE,
 	},
 #endif
 };

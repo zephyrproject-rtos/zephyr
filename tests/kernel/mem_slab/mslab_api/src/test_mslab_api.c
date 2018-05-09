@@ -86,15 +86,15 @@ static void tmslab_alloc_timeout(void *data)
 	}
 
 	/** TESTPOINT: Use K_NO_WAIT to return without waiting*/
-	/** TESTPOINT: @retval -ENOMEM Returned without waiting.*/
+	/** TESTPOINT: -ENOMEM Returned without waiting.*/
 	zassert_equal(k_mem_slab_alloc(pslab, &block_fail, K_NO_WAIT), -ENOMEM,
 		      NULL);
-	/** TESTPOINT: @retval -EAGAIN Waiting period timed out*/
+	/** TESTPOINT: -EAGAIN Waiting period timed out*/
 	tms = k_uptime_get();
 	zassert_equal(k_mem_slab_alloc(pslab, &block_fail, TIMEOUT), -EAGAIN,
 		      NULL);
 	/**
-	 * TESTPOINT: @param timeout Maximum time to wait for operation to
+	 * TESTPOINT: timeout Maximum time to wait for operation to
 	 * complete (in milliseconds)
 	 */
 	zassert_true(k_uptime_delta(&tms) >= TIMEOUT, NULL);

@@ -1,4 +1,6 @@
+common:
+  depends_on: netif
 tests:
-  test:
+  net.util:
     min_ram: 24
     tags: net

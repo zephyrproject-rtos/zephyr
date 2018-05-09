@@ -1,0 +1,6 @@
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_INTEL_S1000
+	bool "intel_s1000"
+

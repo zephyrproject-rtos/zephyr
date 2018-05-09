@@ -5,21 +5,47 @@
  */
 
 /**
- * @addgroup t_irq_offload
- * @{
- * @defgroup t_thread_contex test_main
- * @brief TestPurpose: verify thread context
- * @details Check whether offloaded running function is in
- *          interrupt context, on the IRQ stack or not.
- * - API coverage
- *   - irq_offload
- * @}
+ * @file
+ *
+ * This test case verifies the correctness of irq_offload(), an important
+ * routine used in many other test cases for running a function in interrupt
+ * context, on the IRQ stack.
+ *
  */
-
+#include <zephyr.h>
 #include <ztest.h>
-extern void test_irq_offload(void);
+#include <kernel_structs.h>
+#include <irq_offload.h>
 
-/**test case main entry*/
+volatile u32_t sentinel;
+#define SENTINEL_VALUE 0xDEADBEEF
+
+static void offload_function(void *param)
+{
+	u32_t x = (u32_t)param;
+
+	/* Make sure we're in IRQ context */
+	zassert_true(_is_in_isr(), "Not in IRQ context!\n");
+
+	sentinel = x;
+}
+
+/**
+ * @brief Verify thread context
+ *
+ * Check whether offloaded running function is in interrupt context, on the IRQ
+ * stack or not.
+ */
+void test_irq_offload(void)
+{
+	/**TESTPOINT: Offload to IRQ context*/
+	irq_offload(offload_function, (void *)SENTINEL_VALUE);
+
+	zassert_equal(sentinel, SENTINEL_VALUE,
+		"irq_offload() didn't work properly\n");
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(irq_offload_fn,

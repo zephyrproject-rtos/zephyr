@@ -1,3 +1,3 @@
-include($ENV{ZEPHYR_BASE}/tests/unit/unittest.cmake)
 project(none)
+include($ENV{ZEPHYR_BASE}/tests/unit/unittest.cmake)
 

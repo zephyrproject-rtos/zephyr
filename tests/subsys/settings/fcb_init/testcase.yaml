@@ -1,0 +1,4 @@
+tests:
+  system.settings.fcb:
+    platform_whitelist: nrf52840_pca10056 nrf52_pca10040
+    tags: settings_intialization_fcb

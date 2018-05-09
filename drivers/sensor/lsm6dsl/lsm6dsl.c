@@ -18,6 +18,69 @@
 
 #include "lsm6dsl.h"
 
+static const u16_t lsm6dsl_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,
+					1660, 3330, 6660};
+
+#if defined(LSM6DSL_ACCEL_ODR_RUNTIME) || defined(LSM6DSL_GYRO_ODR_RUNTIME)
+static int lsm6dsl_freq_to_odr_val(u16_t freq)
+{
+	size_t i;
+
+	for (i = 0; i < ARRAY_SIZE(lsm6dsl_odr_map); i++) {
+		if (freq == lsm6dsl_odr_map[i]) {
+			return i;
+		}
+	}
+
+	return -EINVAL;
+}
+#endif
+
+static int lsm6dsl_odr_to_freq_val(u16_t odr)
+{
+	if (odr > ARRAY_SIZE(lsm6dsl_odr_map)) {
+		odr = ARRAY_SIZE(lsm6dsl_odr_map);
+	}
+
+	return lsm6dsl_odr_map[odr];
+}
+
+#ifdef LSM6DSL_ACCEL_FS_RUNTIME
+static const u16_t lsm6dsl_accel_fs_map[] = {2, 16, 4, 8};
+static const u16_t lsm6dsl_accel_fs_sens[] = {1, 8, 2, 4};
+
+static int lsm6dsl_accel_range_to_fs_val(s32_t range)
+{
+	size_t i;
+
+	for (i = 0; i < ARRAY_SIZE(lsm6dsl_accel_fs_map); i++) {
+		if (range == lsm6dsl_accel_fs_map[i]) {
+			return i;
+		}
+	}
+
+	return -EINVAL;
+}
+#endif
+
+#ifdef LSM6DSL_GYRO_FS_RUNTIME
+static const u16_t lsm6dsl_gyro_fs_map[] = {245, 500, 1000, 2000, 125};
+static const u16_t lsm6dsl_gyro_fs_sens[] = {2, 4, 8, 16, 1};
+
+static int lsm6dsl_gyro_range_to_fs_val(s32_t range)
+{
+	size_t i;
+
+	for (i = 0; i < ARRAY_SIZE(lsm6dsl_gyro_fs_map); i++) {
+		if (range == lsm6dsl_gyro_fs_map[i]) {
+			return i;
+		}
+	}
+
+	return -EINVAL;
+}
+#endif
+
 static inline int lsm6dsl_reboot(struct device *dev)
 {
 	struct lsm6dsl_data *data = dev->driver_data;
@@ -45,6 +108,8 @@ static int lsm6dsl_accel_set_fs_raw(struct device *dev, u8_t fs)
 		return -EIO;
 	}
 
+	data->accel_fs = fs;
+
 	return 0;
 }
 
@@ -58,6 +123,8 @@ static int lsm6dsl_accel_set_odr_raw(struct device *dev, u8_t odr)
 				    odr << LSM6DSL_SHIFT_CTRL1_XL_ODR_XL) < 0) {
 		return -EIO;
 	}
+
+	data->accel_freq = lsm6dsl_odr_to_freq_val(odr);
 
 	return 0;
 }
@@ -94,6 +161,147 @@ static int lsm6dsl_gyro_set_odr_raw(struct device *dev, u8_t odr)
 				    LSM6DSL_MASK_CTRL2_G_ODR_G,
 				    odr << LSM6DSL_SHIFT_CTRL2_G_ODR_G) < 0) {
 		return -EIO;
+	}
+
+	return 0;
+}
+
+#ifdef LSM6DSL_ACCEL_ODR_RUNTIME
+static int lsm6dsl_accel_odr_set(struct device *dev, u16_t freq)
+{
+	int odr;
+
+	odr = lsm6dsl_freq_to_odr_val(freq);
+	if (odr < 0) {
+		return odr;
+	}
+
+	if (lsm6dsl_accel_set_odr_raw(dev, odr) < 0) {
+		SYS_LOG_DBG("failed to set accelerometer sampling rate");
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif
+
+#ifdef LSM6DSL_ACCEL_FS_RUNTIME
+static int lsm6dsl_accel_range_set(struct device *dev, s32_t range)
+{
+	int fs;
+	struct lsm6dsl_data *data = dev->driver_data;
+
+	fs = lsm6dsl_accel_range_to_fs_val(range);
+	if (fs < 0) {
+		return fs;
+	}
+
+	if (lsm6dsl_accel_set_fs_raw(dev, fs) < 0) {
+		SYS_LOG_DBG("failed to set accelerometer full-scale");
+		return -EIO;
+	}
+
+	data->accel_sensitivity = (float)(lsm6dsl_accel_fs_sens[fs]
+						    * SENSI_GRAIN_XL);
+	return 0;
+}
+#endif
+
+static int lsm6dsl_accel_config(struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    const struct sensor_value *val)
+{
+	switch (attr) {
+#ifdef LSM6DSL_ACCEL_FS_RUNTIME
+	case SENSOR_ATTR_FULL_SCALE:
+		return lsm6dsl_accel_range_set(dev, sensor_ms2_to_g(val));
+#endif
+#ifdef LSM6DSL_ACCEL_ODR_RUNTIME
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		return lsm6dsl_accel_odr_set(dev, val->val1);
+#endif
+	default:
+		SYS_LOG_DBG("Accel attribute not supported.");
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+#ifdef LSM6DSL_GYRO_ODR_RUNTIME
+static int lsm6dsl_gyro_odr_set(struct device *dev, u16_t freq)
+{
+	int odr;
+
+	odr = lsm6dsl_freq_to_odr_val(freq);
+	if (odr < 0) {
+		return odr;
+	}
+
+	if (lsm6dsl_gyro_set_odr_raw(dev, odr) < 0) {
+		SYS_LOG_DBG("failed to set gyroscope sampling rate");
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif
+
+#ifdef LSM6DSL_GYRO_FS_RUNTIME
+static int lsm6dsl_gyro_range_set(struct device *dev, s32_t range)
+{
+	int fs;
+	struct lsm6dsl_data *data = dev->driver_data;
+
+	fs = lsm6dsl_gyro_range_to_fs_val(range);
+	if (fs < 0) {
+		return fs;
+	}
+
+	if (lsm6dsl_gyro_set_fs_raw(dev, fs) < 0) {
+		SYS_LOG_DBG("failed to set gyroscope full-scale");
+		return -EIO;
+	}
+
+	data->gyro_sensitivity = (float)(lsm6dsl_gyro_fs_sens[fs]
+						    * SENSI_GRAIN_G);
+	return 0;
+}
+#endif
+
+static int lsm6dsl_gyro_config(struct device *dev, enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    const struct sensor_value *val)
+{
+	switch (attr) {
+#ifdef LSM6DSL_GYRO_FS_RUNTIME
+	case SENSOR_ATTR_FULL_SCALE:
+		return lsm6dsl_gyro_range_set(dev, sensor_ms2_to_g(val));
+#endif
+#ifdef LSM6DSL_GYRO_ODR_RUNTIME
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		return lsm6dsl_gyro_odr_set(dev, val->val1);
+#endif
+	default:
+		SYS_LOG_DBG("Gyro attribute not supported.");
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int lsm6dsl_attr_set(struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr,
+			   const struct sensor_value *val)
+{
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_XYZ:
+		return lsm6dsl_accel_config(dev, chan, attr, val);
+	case SENSOR_CHAN_GYRO_XYZ:
+		return lsm6dsl_gyro_config(dev, chan, attr, val);
+	default:
+		SYS_LOG_WRN("attr_set() not supported on this channel.");
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -160,6 +368,48 @@ static int lsm6dsl_sample_fetch_temp(struct device *dev)
 }
 #endif
 
+#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
+static int lsm6dsl_sample_fetch_magn(struct device *dev)
+{
+	struct lsm6dsl_data *data = dev->driver_data;
+	u8_t buf[6];
+
+	if (lsm6dsl_shub_read_external_chip(dev, buf, sizeof(buf)) < 0) {
+		SYS_LOG_DBG("failed to read ext mag sample");
+		return -EIO;
+	}
+
+	data->magn_sample_x = (s16_t)((u16_t)(buf[0]) |
+				((u16_t)(buf[1]) << 8));
+	data->magn_sample_y = (s16_t)((u16_t)(buf[2]) |
+				((u16_t)(buf[3]) << 8));
+	data->magn_sample_z = (s16_t)((u16_t)(buf[4]) |
+				((u16_t)(buf[5]) << 8));
+
+	return 0;
+}
+#endif
+#if defined(CONFIG_LSM6DSL_EXT0_LPS22HB)
+static int lsm6dsl_sample_fetch_press(struct device *dev)
+{
+	struct lsm6dsl_data *data = dev->driver_data;
+	u8_t buf[5];
+
+	if (lsm6dsl_shub_read_external_chip(dev, buf, sizeof(buf)) < 0) {
+		SYS_LOG_DBG("failed to read ext press sample");
+		return -EIO;
+	}
+
+	data->sample_press = (s32_t)((u32_t)(buf[0]) |
+				     ((u32_t)(buf[1]) << 8) |
+				     ((u32_t)(buf[2]) << 16));
+	data->sample_temp = (s16_t)((u16_t)(buf[3]) |
+				     ((u16_t)(buf[4]) << 8));
+
+	return 0;
+}
+#endif
+
 static int lsm6dsl_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	switch (chan) {
@@ -174,11 +424,28 @@ static int lsm6dsl_sample_fetch(struct device *dev, enum sensor_channel chan)
 		lsm6dsl_sample_fetch_temp(dev);
 		break;
 #endif
+#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
+	case SENSOR_CHAN_MAGN_XYZ:
+		lsm6dsl_sample_fetch_magn(dev);
+		break;
+#endif
+#if defined(CONFIG_LSM6DSL_EXT0_LPS22HB)
+	case SENSOR_CHAN_AMBIENT_TEMP:
+	case SENSOR_CHAN_PRESS:
+		lsm6dsl_sample_fetch_press(dev);
+		break;
+#endif
 	case SENSOR_CHAN_ALL:
 		lsm6dsl_sample_fetch_accel(dev);
 		lsm6dsl_sample_fetch_gyro(dev);
 #if defined(CONFIG_LSM6DSL_ENABLE_TEMP)
 		lsm6dsl_sample_fetch_temp(dev);
+#endif
+#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
+		lsm6dsl_sample_fetch_magn(dev);
+#endif
+#if defined(CONFIG_LSM6DSL_EXT0_LPS22HB)
+		lsm6dsl_sample_fetch_press(dev);
 #endif
 		break;
 	default:
@@ -235,7 +502,7 @@ static int lsm6dsl_accel_channel_get(enum sensor_channel chan,
 				     struct lsm6dsl_data *data)
 {
 	return lsm6dsl_accel_get_channel(chan, val, data,
-					LSM6DSL_DEFAULT_ACCEL_SENSITIVITY);
+					data->accel_sensitivity);
 }
 
 static inline void lsm6dsl_gyro_convert(struct sensor_value *val, int raw_val,
@@ -295,6 +562,84 @@ static void lsm6dsl_gyro_channel_get_temp(struct sensor_value *val,
 }
 #endif
 
+#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
+static inline void lsm6dsl_magn_convert(struct sensor_value *val, int raw_val,
+					float sensitivity)
+{
+	double dval;
+
+	/* Sensitivity is exposed in mgauss/LSB */
+	dval = (double)(raw_val * sensitivity);
+	val->val1 = (s32_t)dval / 1000000;
+	val->val2 = (s32_t)dval % 1000000;
+}
+
+static inline int lsm6dsl_magn_get_channel(enum sensor_channel chan,
+					   struct sensor_value *val,
+					   struct lsm6dsl_data *data)
+{
+	switch (chan) {
+	case SENSOR_CHAN_MAGN_X:
+		lsm6dsl_magn_convert(val,
+				     data->magn_sample_x,
+				     data->magn_sensitivity);
+		break;
+	case SENSOR_CHAN_MAGN_Y:
+		lsm6dsl_magn_convert(val,
+				     data->magn_sample_y,
+				     data->magn_sensitivity);
+		break;
+	case SENSOR_CHAN_MAGN_Z:
+		lsm6dsl_magn_convert(val,
+				     data->magn_sample_z,
+				     data->magn_sensitivity);
+		break;
+	case SENSOR_CHAN_MAGN_XYZ:
+		lsm6dsl_magn_convert(val,
+				     data->magn_sample_x,
+				     data->magn_sensitivity);
+		lsm6dsl_magn_convert(val + 1,
+				     data->magn_sample_y,
+				     data->magn_sensitivity);
+		lsm6dsl_magn_convert(val + 2,
+				     data->magn_sample_z,
+				     data->magn_sensitivity);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int lsm6dsl_magn_channel_get(enum sensor_channel chan,
+				    struct sensor_value *val,
+				    struct lsm6dsl_data *data)
+{
+	return lsm6dsl_magn_get_channel(chan, val, data);
+}
+#endif
+
+#if defined(CONFIG_LSM6DSL_EXT0_LPS22HB)
+static inline void lps22hb_press_convert(struct sensor_value *val,
+					 s32_t raw_val)
+{
+	/* Pressure sensitivity is 4096 LSB/hPa */
+	/* Convert raw_val to val in kPa */
+	val->val1 = (raw_val >> 12) / 10;
+	val->val2 = (raw_val >> 12) % 10 * 100000 +
+		(((s32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
+}
+
+static inline void lps22hb_temp_convert(struct sensor_value *val,
+					s16_t raw_val)
+{
+	/* Temperature sensitivity is 100 LSB/deg C */
+	val->val1 = raw_val / 100;
+	val->val2 = (s32_t)raw_val % 100 * (10000);
+}
+#endif
+
 static int lsm6dsl_channel_get(struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
@@ -319,6 +664,23 @@ static int lsm6dsl_channel_get(struct device *dev,
 		lsm6dsl_gyro_channel_get_temp(val, data);
 		break;
 #endif
+#if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL)
+	case SENSOR_CHAN_MAGN_X:
+	case SENSOR_CHAN_MAGN_Y:
+	case SENSOR_CHAN_MAGN_Z:
+	case SENSOR_CHAN_MAGN_XYZ:
+		lsm6dsl_magn_channel_get(chan, val, data);
+		break;
+#endif
+#if defined(CONFIG_LSM6DSL_EXT0_LPS22HB)
+	case SENSOR_CHAN_PRESS:
+		lps22hb_press_convert(val, data->sample_press);
+		break;
+
+	case SENSOR_CHAN_AMBIENT_TEMP:
+		lps22hb_temp_convert(val, data->sample_temp);
+		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -327,6 +689,7 @@ static int lsm6dsl_channel_get(struct device *dev,
 }
 
 static const struct sensor_driver_api lsm6dsl_api_funcs = {
+	.attr_set = lsm6dsl_attr_set,
 #if CONFIG_LSM6DSL_TRIGGER
 	.trigger_set = lsm6dsl_trigger_set,
 #endif
@@ -356,13 +719,14 @@ static int lsm6dsl_init_chip(struct device *dev)
 	SYS_LOG_DBG("chip id 0x%x", chip_id);
 
 	if (lsm6dsl_accel_set_fs_raw(dev,
-				LSM6DSL_DEFAULT_ACCEL_FULLSCALE) < 0) {
+				     LSM6DSL_DEFAULT_ACCEL_FULLSCALE) < 0) {
 		SYS_LOG_DBG("failed to set accelerometer full-scale");
 		return -EIO;
 	}
+	data->accel_sensitivity = LSM6DSL_DEFAULT_ACCEL_SENSITIVITY;
 
-	if (lsm6dsl_accel_set_odr_raw(dev,
-				LSM6DSL_DEFAULT_ACCEL_SAMPLING_RATE) < 0) {
+	data->accel_freq = lsm6dsl_odr_to_freq_val(CONFIG_LSM6DSL_ACCEL_ODR);
+	if (lsm6dsl_accel_set_odr_raw(dev, CONFIG_LSM6DSL_ACCEL_ODR) < 0) {
 		SYS_LOG_DBG("failed to set accelerometer sampling rate");
 		return -EIO;
 	}
@@ -371,9 +735,10 @@ static int lsm6dsl_init_chip(struct device *dev)
 		SYS_LOG_DBG("failed to set gyroscope full-scale");
 		return -EIO;
 	}
+	data->gyro_sensitivity = LSM6DSL_DEFAULT_GYRO_SENSITIVITY;
 
-	if (lsm6dsl_gyro_set_odr_raw(dev,
-				     LSM6DSL_DEFAULT_GYRO_SAMPLING_RATE) < 0) {
+	data->gyro_freq = lsm6dsl_odr_to_freq_val(CONFIG_LSM6DSL_GYRO_ODR);
+	if (lsm6dsl_gyro_set_odr_raw(dev, CONFIG_LSM6DSL_GYRO_ODR) < 0) {
 		SYS_LOG_DBG("failed to set gyroscope sampling rate");
 		return -EIO;
 	}
@@ -438,6 +803,13 @@ static int lsm6dsl_init(struct device *dev)
 		SYS_LOG_DBG("failed to initialize chip");
 		return -EIO;
 	}
+
+#ifdef CONFIG_LSM6DSL_SENSORHUB
+	if (lsm6dsl_shub_init_external_chip(dev) < 0) {
+		SYS_LOG_DBG("failed to initialize external chip");
+		return -EIO;
+	}
+#endif
 
 	return 0;
 }

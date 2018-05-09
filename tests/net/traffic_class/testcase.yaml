@@ -1,123 +1,123 @@
 common:
-    platform_whitelist: native_posix
-    tags: net traffic_class
+  platform_whitelist: native_posix
+  tags: net traffic_class
 tests:
-  test_tc_1:
+  net.traffic_class.1:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=1
       - CONFIG_NET_TC_RX_COUNT=1
-  test_tc_2:
+  net.traffic_class.2:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=2
       - CONFIG_NET_TC_RX_COUNT=2
-  test_tc_3:
+  net.traffic_class.3:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=3
       - CONFIG_NET_TC_RX_COUNT=3
-  test_tc_4:
+  net.traffic_class.4:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=4
       - CONFIG_NET_TC_RX_COUNT=4
-  test_tc_5:
+  net.traffic_class.5:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=5
       - CONFIG_NET_TC_RX_COUNT=5
-  test_tc_6:
+  net.traffic_class.6:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=6
       - CONFIG_NET_TC_RX_COUNT=6
-  test_tc_7:
+  net.traffic_class.7:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=7
       - CONFIG_NET_TC_RX_COUNT=7
-  test_tc_8:
+  net.traffic_class.8:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=8
       - CONFIG_NET_TC_RX_COUNT=8
 # TX multi queue, RX one queue
-  test_tc_2_no_rx:
+  net.traffic_class.2_no_rx:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=2
       - CONFIG_NET_TC_RX_COUNT=1
-  test_tc_3_no_rx:
+  net.traffic_class.3_no_rx:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=3
       - CONFIG_NET_TC_RX_COUNT=1
-  test_tc_4_no_rx:
+  net.traffic_class.4_no_rx:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=4
       - CONFIG_NET_TC_RX_COUNT=1
-  test_tc_5_no_rx:
+  net.traffic_class.5_no_rx:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=5
       - CONFIG_NET_TC_RX_COUNT=1
-  test_tc_6_no_rx:
+  net.traffic_class.6_no_rx:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=6
       - CONFIG_NET_TC_RX_COUNT=1
-  test_tc_7_no_rx:
+  net.traffic_class.7_no_rx:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=7
       - CONFIG_NET_TC_RX_COUNT=1
-  test_tc_8_no_rx:
+  net.traffic_class.8_no_rx:
     extra_configs:
       - CONFIG_NET_TC_TX_COUNT=8
       - CONFIG_NET_TC_RX_COUNT=1
 # TX one queue, RX multi queue
-  test_tc_2_no_tx:
+  net.traffic_class.2_no_tx:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=2
       - CONFIG_NET_TC_TX_COUNT=1
-  test_tc_3_no_tx:
+  net.traffic_class.3_no_tx:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=3
       - CONFIG_NET_TC_TX_COUNT=1
-  test_tc_4_no_tx:
+  net.traffic_class.4_no_tx:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=4
       - CONFIG_NET_TC_TX_COUNT=1
-  test_tc_5_no_tx:
+  net.traffic_class.5_no_tx:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=5
       - CONFIG_NET_TC_TX_COUNT=1
-  test_tc_6_no_tx:
+  net.traffic_class.6_no_tx:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=6
       - CONFIG_NET_TC_TX_COUNT=1
-  test_tc_7_no_tx:
+  net.traffic_class.7_no_tx:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=7
       - CONFIG_NET_TC_TX_COUNT=1
-  test_tc_8_no_tx:
+  net.traffic_class.8_no_tx:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=8
       - CONFIG_NET_TC_TX_COUNT=1
 # Then test some hybrid combinations.
-  test_tc_tx_2_rx_3:
+  net.traffic_class.tx_2_rx_3:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=3
       - CONFIG_NET_TC_TX_COUNT=2
-  test_tc_tx_3_rx_8:
+  net.traffic_class.tx_3_rx_8:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=8
       - CONFIG_NET_TC_TX_COUNT=3
-  test_tc_rx_4_tx_8:
+  net.traffic_class.rx_4_tx_8:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=4
       - CONFIG_NET_TC_TX_COUNT=8
-  test_tc_rx_5_tx_7:
+  net.traffic_class.rx_5_tx_7:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=5
       - CONFIG_NET_TC_TX_COUNT=7
-  test_tc_tx_6_rx_2:
+  net.traffic_class.tx_6_rx_2:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=2
       - CONFIG_NET_TC_TX_COUNT=6
-  test_tc_tx_7_rx_5:
+  net.traffic_class.tx_7_rx_5:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=5
       - CONFIG_NET_TC_TX_COUNT=7
-  test_tc_tx_8_rx_7:
+  net.traffic_class.tx_8_rx_7:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=7
       - CONFIG_NET_TC_TX_COUNT=8

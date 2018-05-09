@@ -10,7 +10,6 @@
 #include <init.h>
 #include <string.h>
 #include <misc/__assert.h>
-#include <kswap.h>
 
 /* Linker-defined symbols bound the static pool structs */
 extern struct k_mem_pool _k_mem_pool_list_start[];
@@ -51,7 +50,7 @@ SYS_INIT(init_static_pools, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 		     size_t size, s32_t timeout)
 {
-	int ret, key;
+	int ret;
 	s64_t end = 0;
 
 	__ASSERT(!(_is_in_isr() && timeout != K_NO_WAIT), "");
@@ -74,9 +73,7 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 			return ret;
 		}
 
-		key = irq_lock();
-		_pend_current_thread(&p->wait_q, timeout);
-		_Swap(key);
+		_pend_current_thread(irq_lock(), &p->wait_q, timeout);
 
 		if (timeout != K_FOREVER) {
 			timeout = end - _tick_get();
@@ -106,13 +103,12 @@ void k_mem_pool_free_id(struct k_mem_block_id *id)
 		struct k_thread *th = (void *)sys_dlist_peek_head(&p->wait_q);
 
 		_unpend_thread(th);
-		_abort_thread_timeout(th);
 		_ready_thread(th);
 		need_sched = 1;
 	}
 
 	if (need_sched && !_is_in_isr()) {
-		_reschedule_threads(key);
+		_reschedule(key);
 	} else {
 		irq_unlock(key);
 	}

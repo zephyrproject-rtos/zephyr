@@ -479,6 +479,19 @@ class Kconfig(object):
       C tools). Can be changed with the 'mainmenu' statement (see
       kconfig-language.txt).
 
+    warnings:
+      A list of strings containing all warnings that have been generated. This
+      allows flexibility in how warnings are printed and processed.
+
+      See the 'warn_to_stderr' parameter to Kconfig.__init__() and the
+      Kconfig.enable/disable_stderr_warnings() functions as well. Note that
+      warnings still get added to Kconfig.warnings when 'warn_to_stderr' is
+      True.
+
+      Just as for warnings printed to stderr, only optional warnings that are
+      enabled will get added to Kconfig.warnings. See the various
+      Kconfig.enable/disable_*_warnings() functions.
+
     srctree:
       The value of the $srctree environment variable when the configuration was
       loaded, or None if $srctree wasn't set. Kconfig and .config files are
@@ -501,12 +514,14 @@ class Kconfig(object):
     """
     __slots__ = (
         "_choices",
-        "_print_undef_assign",
-        "_print_redun_assign",
-        "_print_warnings",
+        "_encoding",
         "_set_re_match",
         "_unset_re_match",
-        "_warn_no_prompt",
+        "_warn_for_no_prompt",
+        "_warn_for_redun_assign",
+        "_warn_for_undef_assign",
+        "_warn_to_stderr",
+        "_warnings_enabled",
         "config_prefix",
         "const_syms",
         "defconfig_list",
@@ -518,6 +533,7 @@ class Kconfig(object):
         "srctree",
         "syms",
         "top_node",
+        "warnings",
         "y",
 
         # Parsing-related
@@ -537,7 +553,8 @@ class Kconfig(object):
     # Public interface
     #
 
-    def __init__(self, filename="Kconfig", warn=True):
+    def __init__(self, filename="Kconfig", warn=True, warn_to_stderr=True,
+                 encoding="utf-8"):
         """
         Creates a new Kconfig object by parsing Kconfig files. Raises
         KconfigSyntaxError on syntax errors. Note that Kconfig files are not
@@ -557,10 +574,37 @@ class Kconfig(object):
           set. See the class documentation.
 
         warn (default: True):
-          True if warnings related to this configuration should be printed to
-          stderr. This can be changed later with
-          Kconfig.enable/disable_warnings(). It is provided as a constructor
-          argument since warnings might be generated during parsing.
+          True if warnings related to this configuration should be generated.
+          This can be changed later with Kconfig.enable/disable_warnings(). It
+          is provided as a constructor argument since warnings might be
+          generated during parsing.
+
+          See the other Kconfig.enable_*_warnings() functions as well, which
+          enable or suppress certain warnings when warnings are enabled.
+
+          All generated warnings are added to the Kconfig.warnings list. See
+          the class documentation.
+
+        warn_to_stderr (default: True):
+          True if warnings should be printed to stderr in addition to being
+          added to Kconfig.warnings.
+
+          This can be changed later with
+          Kconfig.enable/disable_stderr_warnings().
+
+        encoding (default: "utf-8"):
+          The encoding to use when reading and writing files. If None, the
+          encoding specified in the current locale will be used.
+
+          The "utf-8" default avoids exceptions on systems that are configured
+          to use the C locale, which implies an ASCII encoding.
+
+          This parameter has no effect on Python 2, due to implementation
+          issues (regular strings turning into Unicode strings, which are
+          distinct in Python 2). Python 2 doesn't decode regular strings
+          anyway.
+
+          Related PEP: https://www.python.org/dev/peps/pep-0538/
         """
         self.srctree = os.environ.get("srctree")
 
@@ -581,9 +625,16 @@ class Kconfig(object):
                        _RE_ASCII).match
 
 
-        self._print_warnings = warn
-        self._print_undef_assign = False
-        self._print_redun_assign = True
+        self.warnings = []
+
+        self._warnings_enabled = warn
+        self._warn_to_stderr = warn_to_stderr
+        self._warn_for_undef_assign = False
+        self._warn_for_redun_assign = True
+
+
+        self._encoding = encoding
+
 
         self.syms = {}
         self.const_syms = {}
@@ -657,10 +708,14 @@ class Kconfig(object):
 
         self._file = self._open(filename)
 
-        self._parse_block(None,           # end_token
-                          self.top_node,  # parent
-                          self.top_node,  # prev
-                          self.y)         # visible_if_deps
+        try:
+            self._parse_block(None,           # end_token
+                              self.top_node,  # parent
+                              self.top_node,  # prev
+                              self.y)         # visible_if_deps
+        except UnicodeDecodeError as e:
+            _decoding_error(e, self._filename)
+
         self.top_node.list = self.top_node.next
         self.top_node.next = None
 
@@ -683,7 +738,7 @@ class Kconfig(object):
         # Build Symbol._dependents for all symbols
         self._build_dep()
 
-        self._warn_no_prompt = True
+        self._warn_for_no_prompt = True
 
     @property
     def mainmenu_text(self):
@@ -733,13 +788,15 @@ class Kconfig(object):
         """
         # Disable the warning about assigning to symbols without prompts. This
         # is normal and expected within a .config file.
-        self._warn_no_prompt = False
+        self._warn_for_no_prompt = False
 
-        # This stub only exists to make sure _warn_no_prompt gets reenabled
+        # This stub only exists to make sure _warn_for_no_prompt gets reenabled
         try:
             self._load_config(filename, replace)
+        except UnicodeDecodeError as e:
+            _decoding_error(e, filename)
         finally:
-            self._warn_no_prompt = True
+            self._warn_for_no_prompt = True
 
     def _load_config(self, filename, replace):
         with self._open(filename) as f:
@@ -814,7 +871,7 @@ class Kconfig(object):
                     elif sym.orig_type == STRING:
                         string_match = _conf_string_re_match(val)
                         if not string_match:
-                            self._warn("Malformed string literal in "
+                            self._warn("malformed string literal in "
                                        "assignment to {}. Assignment ignored."
                                        .format(_name_and_loc(sym)),
                                        filename, linenr)
@@ -825,6 +882,15 @@ class Kconfig(object):
                 else:
                     unset_match = unset_re_match(line)
                     if not unset_match:
+                        # Print a warning for lines that match neither
+                        # set_re_match() nor unset_re_match() and that are not
+                        # blank lines or comments. 'line' has already been
+                        # rstrip()'d, so blank lines show up as "" here.
+                        if line and not line.lstrip().startswith("#"):
+                            self._warn("ignoring malformed line '{}'"
+                                       .format(line),
+                                       filename, linenr)
+
                         continue
 
                     name = unset_match.group(1)
@@ -889,7 +955,7 @@ class Kconfig(object):
           would usually want it enclosed in '/* */' to make it a C comment,
           and include a final terminating newline.
         """
-        with open(filename, "w") as f:
+        with self._open_enc(filename, "w") as f:
             f.write(header)
 
             # Avoid duplicates -- see write_config()
@@ -950,7 +1016,7 @@ class Kconfig(object):
           would usually want each line to start with '#' to make it a comment,
           and include a final terminating newline.
         """
-        with open(filename, "w") as f:
+        with self._open_enc(filename, "w") as f:
             f.write(header)
 
             # Symbol._written is set to True when a symbol config string is
@@ -1020,7 +1086,7 @@ class Kconfig(object):
           would usually want each line to start with '#' to make it a comment,
           and include a final terminating newline.
         """
-        with open(filename, "w") as f:
+        with self._open_enc(filename, "w") as f:
             f.write(header)
 
             # Avoid duplicates -- see write_config()
@@ -1182,7 +1248,7 @@ class Kconfig(object):
         # A separate helper function is neater than complicating write_config()
         # by passing a flag to it, plus we only need to look at symbols here.
 
-        with open("auto.conf", "w") as f:
+        with self._open_enc("auto.conf", "w") as f:
             for sym in self.defined_syms:
                 sym._written = False
 
@@ -1208,7 +1274,7 @@ class Kconfig(object):
             # No old values
             return
 
-        with open("auto.conf", _UNIVERSAL_NEWLINES_MODE) as f:
+        with self._open_enc("auto.conf", _UNIVERSAL_NEWLINES_MODE) as f:
             for line in f:
                 set_match = self._set_re_match(line)
                 if not set_match:
@@ -1268,7 +1334,7 @@ class Kconfig(object):
         Resets the user values of all symbols, as if Kconfig.load_config() or
         Symbol.set_value() had never been called.
         """
-        self._warn_no_prompt = False
+        self._warn_for_no_prompt = False
         try:
             # set_value() already rejects undefined symbols, and they don't
             # need to be invalidated (because their value never changes), so we
@@ -1279,46 +1345,61 @@ class Kconfig(object):
             for choice in self._choices:
                 choice.unset_value()
         finally:
-            self._warn_no_prompt = True
+            self._warn_for_no_prompt = True
 
     def enable_warnings(self):
         """
         See Kconfig.__init__().
         """
-        self._print_warnings = True
+        self._warnings_enabled = True
 
     def disable_warnings(self):
         """
         See Kconfig.__init__().
         """
-        self._print_warnings = False
+        self._warnings_enabled = False
+
+    def enable_stderr_warnings(self):
+        """
+        See Kconfig.__init__().
+        """
+        self._warn_to_stderr = True
+
+    def disable_stderr_warnings(self):
+        """
+        See Kconfig.__init__().
+        """
+        self._warn_to_stderr = False
 
     def enable_undef_warnings(self):
         """
-        Enables warnings for assignments to undefined symbols. Printed to
-        stderr. Disabled by default since they tend to be spammy for Kernel
-        configurations (and mostly suggests cleanups).
+        Enables warnings for assignments to undefined symbols. Disabled by
+        default since they tend to be spammy for Kernel configurations (and
+        mostly suggests cleanups).
         """
-        self._print_undef_assign = True
+        self._warn_for_undef_assign = True
 
     def disable_undef_warnings(self):
         """
         See enable_undef_assign().
         """
-        self._print_undef_assign = False
+        self._warn_for_undef_assign = False
 
     def enable_redun_warnings(self):
         """
-        Enables warnings for redundant assignments to symbols. Printed to
-        stderr. Enabled by default.
+        Enables warnings for duplicated assignments in .config files that all
+        set the same value.
+
+        These warnings are enabled by default. Disabling them might be helpful
+        in certain cases when merging configurations.
         """
-        self._print_redun_assign = True
+        self._warn_for_redun_assign = True
 
     def disable_redun_warnings(self):
         """
         See enable_redun_warnings().
         """
-        self._print_redun_assign = False
+        self._warn_for_redun_assign = False
 
     def __repr__(self):
         """
@@ -1331,11 +1412,14 @@ class Kconfig(object):
             "srctree not set" if self.srctree is None else
                 'srctree "{}"'.format(self.srctree),
             'config symbol prefix "{}"'.format(self.config_prefix),
-            "warnings " + ("enabled" if self._print_warnings else "disabled"),
+            "warnings " +
+                ("enabled" if self._warnings_enabled else "disabled"),
+            "printing of warnings to stderr " +
+                ("enabled" if self._warn_to_stderr else "disabled"),
             "undef. symbol assignment warnings " +
-                ("enabled" if self._print_undef_assign else "disabled"),
+                ("enabled" if self._warn_for_undef_assign else "disabled"),
             "redundant symbol assignment warnings " +
-                ("enabled" if self._print_redun_assign else "disabled")
+                ("enabled" if self._warn_for_redun_assign else "disabled")
         )))
 
     #
@@ -1352,12 +1436,12 @@ class Kconfig(object):
         # was set when the configuration was loaded
 
         try:
-            return open(filename, _UNIVERSAL_NEWLINES_MODE)
+            return self._open_enc(filename, _UNIVERSAL_NEWLINES_MODE)
         except IOError as e:
             if not os.path.isabs(filename) and self.srctree is not None:
                 filename = os.path.join(self.srctree, filename)
                 try:
-                    return open(filename, _UNIVERSAL_NEWLINES_MODE)
+                    return self._open_enc(filename, _UNIVERSAL_NEWLINES_MODE)
                 except IOError as e2:
                     # This is needed for Python 3, because e2 is deleted after
                     # the try block:
@@ -1857,7 +1941,6 @@ class Kconfig(object):
                 prev.next = prev = node
 
             elif t0 == _T_SOURCE:
-                assert False # T_SOURCE is not in use in Zephyr for now.
                 self._enter_file(self._expand_syms(self._expect_str_and_eol()))
                 prev = self._parse_block(None, parent, prev, visible_if_deps)
                 self._leave_file()
@@ -1964,14 +2047,18 @@ class Kconfig(object):
                 name = self._next_token()
                 if name is None:
                     choice = Choice()
+                    choice.direct_dep = self.n
+
                     self._choices.append(choice)
                 else:
                     # Named choice
                     choice = self.named_choices.get(name)
                     if not choice:
                         choice = Choice()
-                        self._choices.append(choice)
                         choice.name = name
+                        choice.direct_dep = self.n
+
+                        self._choices.append(choice)
                         self.named_choices[name] = choice
 
                 choice.kconfig = self
@@ -2267,10 +2354,9 @@ class Kconfig(object):
             else node.parent.dep)
 
         if isinstance(node.item, (Symbol, Choice)):
-            if isinstance(node.item, Symbol):
-                # See the class documentation
-                node.item.direct_dep = \
-                    self._make_or(node.item.direct_dep, node.dep)
+            # See the Symbol/Choice class documentation
+            node.item.direct_dep = \
+                self._make_or(node.item.direct_dep, node.dep)
 
             # Set the prompt, with dependencies propagated
             if node.prompt:
@@ -2509,17 +2595,31 @@ class Kconfig(object):
         raise KconfigSyntaxError(
             "{}Couldn't parse '{}': {}".format(loc, self._line.rstrip(), msg))
 
+    def _open_enc(self, filename, mode):
+        # open() wrapper for forcing the encoding on Python 3. Forcing the
+        # encoding on Python 2 turns strings into Unicode strings, which gets
+        # messy. Python 2 doesn't decode regular strings anyway.
+
+        return open(filename, mode) if _IS_PY2 else \
+               open(filename, mode, encoding=self._encoding)
+
     def _warn(self, msg, filename=None, linenr=None):
         # For printing general warnings
 
-        if self._print_warnings:
-            _stderr_msg("warning: " + msg, filename, linenr)
+        if self._warnings_enabled:
+            msg = "warning: " + msg
+            if filename is not None:
+                msg = "{}:{}: {}".format(filename, linenr, msg)
+
+            self.warnings.append(msg)
+            if self._warn_to_stderr:
+                sys.stderr.write(msg + "\n")
 
     def _warn_undef_assign(self, msg, filename=None, linenr=None):
         # See the class documentation
 
-        if self._print_undef_assign:
-            _stderr_msg("warning: " + msg, filename, linenr)
+        if self._warn_for_undef_assign:
+            self._warn(msg, filename, linenr)
 
     def _warn_undef_assign_load(self, name, val, filename, linenr):
         # Special version for load_config()
@@ -2531,8 +2631,8 @@ class Kconfig(object):
     def _warn_redun_assign(self, msg, filename=None, linenr=None):
         # See the class documentation
 
-        if self._print_redun_assign:
-            _stderr_msg("warning: " + msg, filename, linenr)
+        if self._warn_for_redun_assign:
+            self._warn(msg, filename, linenr)
 
 class Symbol(object):
     """
@@ -3347,7 +3447,7 @@ class Symbol(object):
                 self._rec_invalidate()
                 return
 
-        if self.kconfig._warn_no_prompt:
+        if self.kconfig._warn_for_no_prompt:
             self.kconfig._warn(_name_and_loc(self) + " has no prompt, meaning "
                                "user values have no effect on it")
 
@@ -3548,6 +3648,9 @@ class Choice(object):
       Note that 'depends on' and parent dependencies are propagated to
       'default' conditions.
 
+    direct_dep:
+      See Symbol.direct_dep.
+
     is_optional:
       True if the choice has the 'optional' flag set on it and can be in
       n mode.
@@ -3562,6 +3665,7 @@ class Choice(object):
         "_dependents",
         "_was_set",
         "defaults",
+        "direct_dep",
         "is_constant",
         "is_optional",
         "kconfig",
@@ -3759,6 +3863,7 @@ class Choice(object):
         """
         # These attributes are always set on the instance from outside and
         # don't need defaults:
+        #   direct_dep
         #   kconfig
 
         self.orig_type = UNKNOWN
@@ -4312,18 +4417,28 @@ def _sym_to_num(sym):
     return sym.tri_value if sym.orig_type in (BOOL, TRISTATE) else \
            int(sym.str_value, _TYPE_TO_BASE[sym.orig_type])
 
-def _stderr_msg(msg, filename, linenr):
-    if filename is not None:
-        msg = "{}:{}: {}".format(filename, linenr, msg)
-
-    sys.stderr.write(msg + "\n")
-
 def _internal_error(msg):
     raise InternalError(
         msg +
         "\nSorry! You may want to send an email to ulfalizer a.t Google's "
         "email service to tell me about this. Include the message above and "
         "the stack trace and describe what you were doing.")
+
+def _decoding_error(e, filename):
+    # Gives the filename and context for UnicodeDecodeError's, which are a pain
+    # to debug otherwise. 'e' is the UnicodeDecodeError object.
+
+    raise KconfigSyntaxError(
+        "\n"
+        "Malformed {} in {}\n"
+        "Context: {}\n"
+        "Problematic data: {}\n"
+        "Reason: {}".format(
+            e.encoding, filename,
+            e.object[max(e.start - 40, 0):e.end + 40],
+            e.object[e.start:e.end],
+            e.reason))
+
 
 # Printing functions
 
@@ -4778,6 +4893,9 @@ STR_TO_TRI = {
 # constants)
 #
 
+# Are we running on Python 2?
+_IS_PY2 = sys.version_info[0] < 3
+
 # Tokens
 (
     _T_ALLNOCONFIG_Y,
@@ -4879,7 +4997,7 @@ _get_keyword = {
     "range":          _T_RANGE,
     "rsource":        _T_RSOURCE,
     "select":         _T_SELECT,
-    "source":         _T_GSOURCE, # Have 'source' behave like 'gsource' for now
+    "source":         _T_SOURCE,
     "string":         _T_STRING,
     "tristate":       _T_TRISTATE,
     "visible":        _T_VISIBLE,
@@ -4920,7 +5038,7 @@ _TYPE_TOKENS = frozenset((
 ))
 
 # Use ASCII regex matching on Python 3. It's already the default on Python 2.
-_RE_ASCII = 0 if sys.version_info[0] < 3 else re.ASCII
+_RE_ASCII = 0 if _IS_PY2 else re.ASCII
 
 # Note: This hack is no longer needed as of upstream commit c226456
 # (kconfig: warn of unhandled characters in Kconfig commands). It
@@ -5023,4 +5141,4 @@ _REL_TO_STR = {
 #
 # There's no appreciable performance difference between "r" and "rU" for
 # parsing performance on Python 2.
-_UNIVERSAL_NEWLINES_MODE = "rU" if sys.version_info[0] < 3 else "r"
+_UNIVERSAL_NEWLINES_MODE = "rU" if _IS_PY2 else "r"

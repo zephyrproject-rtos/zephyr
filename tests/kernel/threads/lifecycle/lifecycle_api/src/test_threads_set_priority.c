@@ -79,8 +79,8 @@ void test_threads_priority_set(void)
 	int thread2_prio = prio + 1;
 
 	k_tid_t thread2_id = k_thread_create(&tdata, tstack, STACK_SIZE,
-				(k_thread_entry_t)thread2_set_prio_test,
-				NULL, NULL, NULL, thread2_prio, 0, 0);
+					     (k_thread_entry_t)thread2_set_prio_test,
+					     NULL, NULL, NULL, thread2_prio, 0, 0);
 
 	/* Lower the priority of thread2 */
 	k_thread_priority_set(thread2_id, thread2_prio + 2);

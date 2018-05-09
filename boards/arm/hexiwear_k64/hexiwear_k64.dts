@@ -28,6 +28,9 @@
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
 		i2c-2 = &i2c2;
+		led0 = &green_led;
+		led1 = &blue_led;
+		led2 = &red_led;
 	};
 
 	chosen {
@@ -39,6 +42,21 @@
 #endif
 	};
 
+	leds {
+		compatible = "gpio-leds";
+		red_led: led@0 {
+			gpios = <&gpioc 8 GPIO_INT_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+		green_led: led@1 {
+			gpios = <&gpiod 0 GPIO_INT_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+		blue_led: led@2 {
+			gpios = <&gpioc 9 GPIO_INT_ACTIVE_LOW>;
+			label = "User LD3";
+		};
+	};
 };
 
 &adc0 {

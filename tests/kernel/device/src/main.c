@@ -84,16 +84,24 @@ void test_dummy_device_pm(void)
 
 	build_suspend_device_list();
 }
+#else
+static void build_suspend_device_list(void)
+{
+	ztest_test_skip();
+}
+
+void test_dummy_device_pm(void)
+{
+	ztest_test_skip();
+}
 #endif
 
 
 void test_main(void)
 {
 	ztest_test_suite(device,
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 			 ztest_unit_test(test_dummy_device_pm),
 			 ztest_unit_test(build_suspend_device_list),
-#endif
 			 ztest_unit_test(test_dummy_device),
 			 ztest_unit_test(test_bogus_dynamic_name),
 			 ztest_unit_test(test_dynamic_name));

@@ -1,4 +1,4 @@
 tests:
-  test:
+  boards.altera_max10:
     platform_whitelist: altera_max10
     tags: i2c

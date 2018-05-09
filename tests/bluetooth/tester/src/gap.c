@@ -13,7 +13,6 @@
 #include <toolchain.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
-#include <bluetooth/storage.h>
 
 #include <misc/byteorder.h>
 #include <net/buf.h>
@@ -608,7 +607,7 @@ static void unpair(const u8_t *data, u16_t len)
 		goto rsp;
 	}
 keys:
-	err = bt_storage_clear(&addr);
+	err = bt_unpair(&addr);
 
 	status = err < 0 ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS;
 rsp:

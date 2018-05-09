@@ -19,7 +19,6 @@
 #include <kernel_internal.h>
 #include <wait_q.h>
 #include <ksched.h>
-#include <kswap.h>
 #include <misc/slist.h>
 #include <misc/dlist.h>
 #include <misc/__assert.h>
@@ -246,9 +245,7 @@ int k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 
 	_wait_q_t wait_q = _WAIT_Q_INIT(&wait_q);
 
-	_pend_current_thread(&wait_q, timeout);
-
-	int swap_rc = _Swap(key);
+	int swap_rc = _pend_current_thread(key, &wait_q, timeout);
 
 	/*
 	 * Clear all event registrations. If events happen while we're in this
@@ -267,11 +264,8 @@ int k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 }
 
 /* must be called with interrupts locked */
-static int signal_poll_event(struct k_poll_event *event, u32_t state,
-			      int *must_reschedule)
+static int signal_poll_event(struct k_poll_event *event, u32_t state)
 {
-	*must_reschedule = 0;
-
 	if (!event->poller) {
 		goto ready_event;
 	}
@@ -291,7 +285,6 @@ static int signal_poll_event(struct k_poll_event *event, u32_t state,
 	}
 
 	_unpend_thread(thread);
-	_abort_thread_timeout(thread);
 	_set_thread_return_value(thread,
 				 state == K_POLL_STATE_NOT_READY ? -EINTR : 0);
 
@@ -300,26 +293,20 @@ static int signal_poll_event(struct k_poll_event *event, u32_t state,
 	}
 
 	_ready_thread(thread);
-	*must_reschedule = !_is_in_isr() && _must_switch_threads();
 
 ready_event:
 	set_event_ready(event, state);
 	return 0;
 }
 
-/* returns 1 if a reschedule must take place, 0 otherwise */
-int _handle_obj_poll_events(sys_dlist_t *events, u32_t state)
+void _handle_obj_poll_events(sys_dlist_t *events, u32_t state)
 {
 	struct k_poll_event *poll_event;
-	int must_reschedule;
 
 	poll_event = (struct k_poll_event *)sys_dlist_get(events);
-	if (!poll_event) {
-		return 0;
+	if (poll_event) {
+		(void) signal_poll_event(poll_event, state);
 	}
-
-	(void) signal_poll_event(poll_event, state, &must_reschedule);
-	return must_reschedule;
 }
 
 void k_poll_signal_init(struct k_poll_signal *signal)
@@ -333,7 +320,6 @@ int k_poll_signal(struct k_poll_signal *signal, int result)
 {
 	unsigned int key = irq_lock();
 	struct k_poll_event *poll_event;
-	int must_reschedule;
 
 	signal->result = result;
 	signal->signaled = 1;
@@ -344,14 +330,8 @@ int k_poll_signal(struct k_poll_signal *signal, int result)
 		return 0;
 	}
 
-	int rc = signal_poll_event(poll_event, K_POLL_STATE_SIGNALED,
-				    &must_reschedule);
+	int rc = signal_poll_event(poll_event, K_POLL_STATE_SIGNALED);
 
-	if (must_reschedule) {
-		(void)_Swap(key);
-	} else {
-		irq_unlock(key);
-	}
-
+	_reschedule(key);
 	return rc;
 }

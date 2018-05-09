@@ -15,7 +15,6 @@ endif()
 
 zephyr_compile_options(
   -mabi=aapcs
-  ${TOOLCHAIN_C_FLAGS}
   ${ARCH_FLAG}
   )
 

@@ -8,7 +8,6 @@ zephyr_compile_options(
   -m32
   -MMD
   -MP
-  ${TOOLCHAIN_C_FLAGS}
   ${ARCH_FLAG}
   -include ${PROJECT_SOURCE_DIR}/arch/posix/include/posix_cheats.h
   )
@@ -40,7 +39,3 @@ zephyr_ld_options(
 
 add_subdirectory(soc)
 add_subdirectory(core)
-
-# Override the flag used with linker.cmd
-# "-Wl,--just-symbols linker.cmd" instead of "-T linker.cmd"
-set_property(GLOBAL PROPERTY TOPT -Wl,--just-symbols)

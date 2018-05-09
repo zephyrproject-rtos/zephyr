@@ -19,6 +19,7 @@
 extern "C" {
 #endif
 
+#include <generated_dts_board.h>
 #if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
 #include "sys_io.h" /* Include from the very same folder of this file */
 #include <zephyr/types.h>

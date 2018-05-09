@@ -5,3 +5,4 @@ tests:
     platform_whitelist: arduino_due
     tags: samples
     harness: display
+    depends_on: gpio

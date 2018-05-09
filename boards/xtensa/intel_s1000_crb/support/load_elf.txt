@@ -1,0 +1,14 @@
+target remote localhost:20000
+
+# make SRAM writable
+set *(0x71d10) = 0
+set *(0x71d20) = 0
+
+# disable xtensa core power saving
+set *(0x71F90) = 0x71
+
+set pagination off
+set confirm off
+load zephyr/zephyr.elf
+file zephyr/zephyr.elf
+c

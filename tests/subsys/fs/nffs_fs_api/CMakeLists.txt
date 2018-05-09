@@ -12,8 +12,8 @@ project(NONE)
 if(BOARD STREQUAL qemu_x86)
     zephyr_compile_definitions(
         -DTEST_FLASH_OFFSET=0
-        -DFLASH_AREA_NFFS_OFFSET=0
-        -DFLASH_AREA_NFFS_SIZE=1048576
+	-DFLASH_AREA_STORAGE_OFFSET=0
+	-DFLASH_AREA_STORAGE_SIZE=1048576
     )
 elseif(BOARD STREQUAL nrf51_pca10028)
     zephyr_compile_definitions(

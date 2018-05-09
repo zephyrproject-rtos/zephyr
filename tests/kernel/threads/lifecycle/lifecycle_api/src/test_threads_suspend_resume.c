@@ -53,11 +53,28 @@ static void threads_suspend_resume(int prio)
 }
 
 /*test cases*/
+
+/**
+ * @brief Check the suspend and resume functionality in
+ * a cooperative thread
+ *
+ * @details Create a thread with the priority lower than the current
+ * thread which is cooperative and suspend it, make sure it doesn't
+ * gets scheduled, and resume and check if the entry function is executed.
+ */
 void test_threads_suspend_resume_cooperative(void)
 {
 	threads_suspend_resume(-2);
 }
 
+/**
+ * @brief Check the suspend and resume functionality in
+ * preemptive thread
+ *
+ * @details Create a thread with the priority lower than the current
+ * thread which is preemptive and suspend it, make sure it doesn't gets
+ * scheduled, and resume and check if the entry function is executed.
+ */
 void test_threads_suspend_resume_preemptible(void)
 {
 	threads_suspend_resume(1);

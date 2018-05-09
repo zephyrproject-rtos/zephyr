@@ -176,11 +176,10 @@ cross-compiler, keep the ZEPHYR_SDK_INSTALL_DIR environment variable
 set to the Zephyr SDK installation directory.
 
 To build without the Zephyr SDK's prebuilt host tools, the
-ZEPHYR_SDK_INSTALL_DIR environment variable must be unset, the host
-tools must be built and added to path, and a 3rd party cross-compiler
-must be installed.
+ZEPHYR_SDK_INSTALL_DIR environment variable must be unset, and a 3rd party
+cross-compiler must be installed.
 
-#. Follow the steps below to build without the Zephyr SDK:
+Follow the steps below to build without the Zephyr SDK:
 
    .. code-block:: console
 
@@ -195,26 +194,8 @@ must be installed.
       cd <zephyr git clone location>
       zephyr-env.cmd
 
-
-#. On UNIX platforms, Build Kconfig in :file:`$ZEPHYR_BASE/build` and add
-   it to path
-
-   .. code-block:: console
-
-      cd $ZEPHYR_BASE
-      mkdir build && cd build
-      cmake $ZEPHYR_BASE/scripts
-      make
-      echo "export PATH=$PWD/kconfig:\$PATH" >> $HOME/.zephyrrc
-      source $ZEPHYR_BASE/zephyr-env.sh
-
-   .. note::
-
-      You only need to do this once after cloning the git repository.
-
-Now that the host tools are installed, a 3rd party cross compiler must
-be installed. See `Using Custom and 3rd Party Cross Compilers`_ for
-details.
+See `Using Custom and 3rd Party Cross Compilers`_ for details on installing a
+3rd party cross compiler.
 
 .. _third_party_x_compilers:
 

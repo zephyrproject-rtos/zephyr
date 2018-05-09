@@ -1,0 +1,4 @@
+tests:
+  test:
+    platform_whitelist: qemu_x86
+    tags: fs

@@ -35,6 +35,7 @@ subsystems = [
     "i2c_driver_api",
     "i2s_driver_api",
     "ipm_driver_api",
+    "led_driver_api",
     "pinmux_driver_api",
     "pwm_driver_api",
     "entropy_driver_api",
@@ -52,6 +53,7 @@ header = """%compare-lengths
 %struct-type
 %{
 #include <kernel.h>
+#include <toolchain.h>
 #include <syscall_handler.h>
 #include <string.h>
 %}
@@ -65,12 +67,12 @@ struct _k_object;
 # turned into a string, we told gperf to expect binary strings that are not
 # NULL-terminated.
 footer = """%%
-struct _k_object *_k_object_find(void *obj)
+struct _k_object *_k_object_gperf_find(void *obj)
 {
     return _k_object_lookup((const char *)obj, sizeof(void *));
 }
 
-void _k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+void _k_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 {
     int i;
 
@@ -80,6 +82,14 @@ void _k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
         }
     }
 }
+
+#ifndef CONFIG_DYNAMIC_OBJECTS
+struct _k_object *_k_object_find(void *obj)
+	ALIAS_OF(_k_object_gperf_find);
+
+void _k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+	ALIAS_OF(_k_object_gperf_wordlist_foreach);
+#endif
 """
 
 
@@ -108,6 +118,75 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
     fp.write(footer)
 
 
+driver_macro_tpl = """
+#define _SYSCALL_DRIVER_%(driver_upper)s(ptr, op) _SYSCALL_DRIVER_GEN(ptr, op, %(driver_lower)s, %(driver_upper)s)
+"""
+
+def write_validation_output(fp):
+    fp.write("#ifndef __DRIVER_VALIDATION_GEN_H__\n")
+    fp.write("#define __DRIVER_VALIDATION_GEN_H__\n")
+
+    fp.write("""#define _SYSCALL_DRIVER_GEN(ptr, op, driver_lower_case, driver_upper_case) \\
+	do { \\
+		_SYSCALL_OBJ(ptr, K_OBJ_DRIVER_##driver_upper_case); \\
+		_SYSCALL_DRIVER_OP(ptr, driver_lower_case##_driver_api, op); \\
+	} while (0)\n\n""");
+
+    for subsystem in subsystems:
+        subsystem = subsystem.replace("_driver_api", "")
+
+        fp.write(driver_macro_tpl % {
+            "driver_lower": subsystem.lower(),
+            "driver_upper": subsystem.upper(),
+        })
+
+    fp.write("#endif /* __DRIVER_VALIDATION_GEN_H__ */\n")
+
+
+def write_kobj_types_output(fp):
+    fp.write("/* Core kernel objects */\n")
+    for kobj in kobjects:
+        if kobj == "device":
+            continue
+
+        if kobj.startswith("k_"):
+            kobj = kobj[2:]
+        elif kobj.startswith("_k_"):
+            kobj = kobj[2:]
+
+        fp.write("K_OBJ_%s,\n" % kobj.upper())
+
+    fp.write("/* Driver subsystems */\n")
+    for subsystem in subsystems:
+        subsystem = subsystem.replace("_driver_api", "").upper()
+        fp.write("K_OBJ_DRIVER_%s,\n" % subsystem)
+
+
+def write_kobj_otype_output(fp):
+    fp.write("/* Core kernel objects */\n")
+    for kobj in kobjects:
+        if kobj == "device":
+            continue
+
+        if kobj.startswith("k_"):
+            kobj = kobj[2:]
+        elif kobj.startswith("_k_"):
+            kobj = kobj[2:]
+
+        fp.write('case K_OBJ_%s: return "%s";\n' % (
+            kobj.upper(),
+            kobj
+        ))
+
+    fp.write("/* Driver subsystems */\n")
+    for subsystem in subsystems:
+        subsystem = subsystem.replace("_driver_api", "")
+        fp.write('case K_OBJ_DRIVER_%s: return "%s driver";\n' % (
+            subsystem.upper(),
+            subsystem
+        ))
+
+
 def parse_args():
     global args
 
@@ -115,11 +194,20 @@ def parse_args():
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("-k", "--kernel", required=True,
+    parser.add_argument("-k", "--kernel", required=False,
                         help="Input zephyr ELF binary")
     parser.add_argument(
-        "-o", "--output", required=True,
+        "-g", "--gperf-output", required=False,
         help="Output list of kernel object addresses for gperf use")
+    parser.add_argument(
+        "-V", "--validation-output", required=False,
+        help="Output driver validation macros")
+    parser.add_argument(
+        "-K", "--kobj-types-output", required=False,
+        help="Output k_object enum values")
+    parser.add_argument(
+        "-S", "--kobj-otype-output", required=False,
+        help="Output case statements for otype_to_str()")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Print extra debugging information")
     args = parser.parse_args()
@@ -130,21 +218,34 @@ def parse_args():
 def main():
     parse_args()
 
-    eh = ElfHelper(args.kernel, args.verbose, kobjects, subsystems)
-    syms = eh.get_symbols()
-    max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
-    objs = eh.find_kobjects(syms)
+    if args.gperf_output:
+        eh = ElfHelper(args.kernel, args.verbose, kobjects, subsystems)
+        syms = eh.get_symbols()
+        max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
+        objs = eh.find_kobjects(syms)
 
-    if eh.get_thread_counter() > max_threads:
-        sys.stderr.write("Too many thread objects (%d)\n" % thread_counter)
-        sys.stderr.write("Increase CONFIG_MAX_THREAD_BYTES to %d\n",
-                         -(-thread_counter // 8))
-        sys.exit(1)
+        if eh.get_thread_counter() > max_threads:
+            sys.stderr.write("Too many thread objects (%d)\n" % thread_counter)
+            sys.stderr.write("Increase CONFIG_MAX_THREAD_BYTES to %d\n",
+                             -(-thread_counter // 8))
+            sys.exit(1)
 
-    with open(args.output, "w") as fp:
-        write_gperf_table(fp, eh, objs, syms["_static_kernel_objects_begin"],
-                          syms["_static_kernel_objects_end"])
+        with open(args.gperf_output, "w") as fp:
+            write_gperf_table(fp, eh, objs,
+                              syms["_static_kernel_objects_begin"],
+                              syms["_static_kernel_objects_end"])
 
+    if args.validation_output:
+        with open(args.validation_output, "w") as fp:
+            write_validation_output(fp)
+
+    if args.kobj_types_output:
+        with open(args.kobj_types_output, "w") as fp:
+            write_kobj_types_output(fp)
+
+    if args.kobj_otype_output:
+        with open(args.kobj_otype_output, "w") as fp:
+            write_kobj_otype_output(fp)
 
 if __name__ == "__main__":
     main()

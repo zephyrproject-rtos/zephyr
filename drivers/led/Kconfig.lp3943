@@ -1,0 +1,48 @@
+#
+# Copyright (c) 2018 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig LP3943
+	bool "LP3943 LED driver"
+	depends on I2C
+	default n
+	help
+	  Enable LED driver for LP3943.
+
+	  LP3943 LED driver has 16 channels each with multi-programmable
+	  states at a specified rate. Each channel can drive upto 25 mA
+	  per LED.
+
+if !HAS_DTS_I2C_DEVICE
+
+config LP3943_DEV_NAME
+	string "LP3943 device name"
+	default "LP3943"
+	help
+	  Device name for LP3943 LED driver.
+
+config LP3943_I2C_ADDRESS
+	hex "LP3943 I2C slave address"
+	range 0x60 0x67
+	default 0x60
+	help
+	  Specify the I2C slave address for the LP3943 LED driver.
+	  0x60: ADR0 = 0, ADR1 = 0, ADR2 = 0
+	  0x61: ADR0 = 0, ADR1 = 0, ADR2 = 1
+	  0x62: ADR0 = 0, ADR1 = 1, ADR2 = 0
+	  0x63: ADR0 = 0, ADR1 = 1, ADR2 = 1
+	  0x64: ADR0 = 1, ADR1 = 0, ADR2 = 0
+	  0x65: ADR0 = 1, ADR1 = 0, ADR2 = 1
+	  0x66: ADR0 = 1, ADR1 = 1, ADR2 = 0
+	  0x67: ADR0 = 1, ADR1 = 1, ADR2 = 1
+
+config LP3943_I2C_MASTER_DEV_NAME
+	string "I2C master where LP3943 is connected"
+	default "I2C_0"
+	help
+	  Specify the device name of the I2C master device to which
+	  LP3943 is connected.
+
+endif

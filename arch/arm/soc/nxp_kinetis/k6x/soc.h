@@ -35,11 +35,6 @@ extern "C" {
 
 #define IRQ_SPI0 26
 #define IRQ_SPI1 27
-#define IRQ_GPIO_PORTA 59
-#define IRQ_GPIO_PORTB 60
-#define IRQ_GPIO_PORTC 61
-#define IRQ_GPIO_PORTD 62
-#define IRQ_GPIO_PORTE 63
 #define IRQ_ETH_IEEE1588_TMR 82
 #define IRQ_ETH_TX 83
 #define IRQ_ETH_RX 84

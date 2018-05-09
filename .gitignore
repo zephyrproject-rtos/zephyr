@@ -11,15 +11,17 @@ build
 build-*
 cscope.*
 .dir
+
+/*.patch
+
+# The .cache directory will be used to cache toolchain capabilities if
+# no suitable out-of-tree directory is found.
+.cache
+
 outdir
 outdir-*
 scripts/basic/fixdep
 scripts/gen_idt/gen_idt
-scripts/kconfig/conf
-scripts/kconfig/mconf
-scripts/kconfig/zconf.hash.c
-scripts/kconfig/zconf.lex.c
-scripts/kconfig/zconf.tab.c
 doc/_build
 doc/doxygen
 doc/xml

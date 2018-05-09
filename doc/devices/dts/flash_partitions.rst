@@ -224,8 +224,8 @@ See the  `MCUboot documentation`_ for more details on these partitions.
 .. _MCUboot documentation:
    https://github.com/runtimeco/mcuboot/blob/master/docs/design.md#image-slots
 
-NFFS Partitions
-***************
+File System Partitions
+**********************
 
-**nffs_partition**
-  This is the area where NFFS expects its partition.
+**storage_partition**
+  This is the area where e.g. NFFS expects its partition.

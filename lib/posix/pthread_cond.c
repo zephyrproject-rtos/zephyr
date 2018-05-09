@@ -7,10 +7,7 @@
 #include <kernel.h>
 #include <ksched.h>
 #include <wait_q.h>
-#include <kswap.h>
 #include <posix/pthread.h>
-
-void ready_one_thread(_wait_q_t *wq);
 
 static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut, int timeout)
 {
@@ -19,10 +16,8 @@ static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut, int timeout)
 	int ret, key = irq_lock();
 
 	mut->sem->count = 1;
-	ready_one_thread(&mut->sem->wait_q);
-	_pend_current_thread(&cv->wait_q, timeout);
-
-	ret = _Swap(key);
+	_ready_one_thread(&mut->sem->wait_q);
+	ret = _pend_current_thread(key, &cv->wait_q, timeout);
 
 	/* FIXME: this extra lock (and the potential context switch it
 	 * can cause) could be optimized out.  At the point of the
@@ -47,25 +42,13 @@ static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut, int timeout)
  *
  * https://blog.mozilla.org/nfroyd/2017/03/29/on-mutex-performance-part-1/
  */
-static void swap_or_unlock(int key)
-{
-	/* API madness: use __ not _ here.  The latter checks for our
-	 * preemption state, but we want to do a switch here even if
-	 * we can be preempted.
-	 */
-	if (!_is_in_isr() && __must_switch_threads()) {
-		_Swap(key);
-	} else {
-		irq_unlock(key);
-	}
-}
 
 int pthread_cond_signal(pthread_cond_t *cv)
 {
 	int key = irq_lock();
 
-	ready_one_thread(&cv->wait_q);
-	swap_or_unlock(key);
+	_ready_one_thread(&cv->wait_q);
+	_reschedule(key);
 
 	return 0;
 }
@@ -75,10 +58,10 @@ int pthread_cond_broadcast(pthread_cond_t *cv)
 	int key = irq_lock();
 
 	while (!sys_dlist_is_empty(&cv->wait_q)) {
-		ready_one_thread(&cv->wait_q);
+		_ready_one_thread(&cv->wait_q);
 	}
 
-	swap_or_unlock(key);
+	_reschedule(key);
 
 	return 0;
 }

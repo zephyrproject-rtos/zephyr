@@ -6,6 +6,7 @@
  */
 
 #include <stddef.h>
+#include <string.h>
 
 #include "fcb.h"
 #include "fcb_priv.h"
@@ -115,16 +116,18 @@ int
 fcb_append_finish(struct fcb *fcb, struct fcb_entry *loc)
 {
 	int rc;
-	u8_t crc8;
+	u8_t crc8[fcb->f_align];
 	off_t off;
 
-	rc = fcb_elem_crc8(fcb, loc, &crc8);
+	memset(crc8, 0xFF, sizeof(crc8));
+
+	rc = fcb_elem_crc8(fcb, loc, &crc8[0]);
 	if (rc) {
 		return rc;
 	}
 	off = loc->fe_data_off + fcb_len_in_flash(fcb, loc->fe_data_len);
 
-	rc = fcb_flash_write(fcb, loc->fe_sector, off, &crc8, sizeof(crc8));
+	rc = fcb_flash_write(fcb, loc->fe_sector, off, crc8, fcb->f_align);
 	if (rc) {
 		return FCB_ERR_FLASH;
 	}

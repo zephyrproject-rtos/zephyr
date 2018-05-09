@@ -50,36 +50,37 @@
 #include <net/coap.h>
 #include <net/lwm2m.h>
 #include <misc/printk.h>
+#include <misc/util.h>
 #include <kernel.h>
 
 /* #####/###/#####/### + NULL */
 #define MAX_RESOURCE_LEN	20
 
-/* operations */
-#define LWM2M_OP_NONE		0
-#define LWM2M_OP_READ		1
-#define LWM2M_OP_DISCOVER	2
-#define LWM2M_OP_WRITE		3
-#define LWM2M_OP_WRITE_ATTR	4
-#define LWM2M_OP_EXECUTE	5
-#define LWM2M_OP_DELETE		6
-#define LWM2M_OP_CREATE		7
-
-/* operation permission bits */
-#define LWM2M_OP_BIT(op)	(1 << (op - 1))
+/* operations / permissions */
+/* values from 0 to 7 can be used as permission checks */
+#define LWM2M_OP_READ		0
+#define LWM2M_OP_WRITE		1
+#define LWM2M_OP_CREATE		2
+#define LWM2M_OP_DELETE		3
+#define LWM2M_OP_EXECUTE	4
+/* values >7 aren't used for permission checks */
+#define LWM2M_OP_DISCOVER	8
+#define LWM2M_OP_WRITE_ATTR	9
 
 /* resource permissions */
-#define LWM2M_PERM_R		LWM2M_OP_BIT(LWM2M_OP_READ)
-#define LWM2M_PERM_W		(LWM2M_OP_BIT(LWM2M_OP_WRITE) | \
-				 LWM2M_OP_BIT(LWM2M_OP_CREATE))
-#define LWM2M_PERM_X		LWM2M_OP_BIT(LWM2M_OP_EXECUTE)
-#define LWM2M_PERM_RW		(LWM2M_OP_BIT(LWM2M_OP_READ) | \
-				 LWM2M_OP_BIT(LWM2M_OP_WRITE) | \
-				 LWM2M_OP_BIT(LWM2M_OP_CREATE))
-#define LWM2M_PERM_RWX		(LWM2M_OP_BIT(LWM2M_OP_READ) | \
-				 LWM2M_OP_BIT(LWM2M_OP_WRITE) | \
-				 LWM2M_OP_BIT(LWM2M_OP_CREATE) | \
-				 LWM2M_OP_BIT(LWM2M_OP_EXECUTE))
+#define LWM2M_PERM_R		BIT(LWM2M_OP_READ)
+#define LWM2M_PERM_W		(BIT(LWM2M_OP_WRITE) | \
+				 BIT(LWM2M_OP_CREATE))
+#define LWM2M_PERM_X		BIT(LWM2M_OP_EXECUTE)
+#define LWM2M_PERM_RW		(BIT(LWM2M_OP_READ) | \
+				 BIT(LWM2M_OP_WRITE) | \
+				 BIT(LWM2M_OP_CREATE))
+#define LWM2M_PERM_RWX		(BIT(LWM2M_OP_READ) | \
+				 BIT(LWM2M_OP_WRITE) | \
+				 BIT(LWM2M_OP_CREATE) | \
+				 BIT(LWM2M_OP_EXECUTE))
+
+#define LWM2M_HAS_PERM(of, p)	((of->permissions & p) == p)
 
 /* resource types */
 #define LWM2M_RES_TYPE_NONE	0

@@ -49,7 +49,7 @@ There are some imported or reused components of the Zephyr project that
 use other licensing, as described in `Zephyr Licensing`_.
 
 .. _Zephyr Licensing:
-   https://www.zephyrproject.org/doc/LICENSING.html
+   http://docs.zephyrproject.org/LICENSING.html
 
 Importing code into the Zephyr OS from other projects that use a license
 other than the Apache 2.0 license needs to be fully understood in
@@ -64,7 +64,7 @@ See `Contributing non-Apache 2.0 components`_ for more information about
 this contributing and review process for imported components.
 
 .. _Contributing non-Apache 2.0 components:
-   https://www.zephyrproject.org/doc/contribute/contribute_non-apache.html
+   http://docs.zephyrproject.org/contribute/contribute_non-apache.html
 
 .. _DCO:
 
@@ -138,7 +138,7 @@ and how to set up your development environment as introduced in the Zephyr
 `Getting Started Guide`_.
 
 .. _Getting Started Guide:
-   https://www.zephyrproject.org/doc/getting_started/getting_started.html
+   http://docs.zephyrproject.org/getting_started/getting_started.html
 
 You should be familiar with common developer tools such as Git and CMake, and
 platforms such as GitHub.
@@ -170,7 +170,7 @@ configurations, and a collection of subsystem tests.  All of these are
 available for developers to contribute to and enhance.
 
 .. _Source Tree Structure:
-   https://www.zephyrproject.org/doc/kernel/overview/source_tree.html
+   http://docs.zephyrproject.org/kernel/overview/source_tree.html
 
 Pull Requests and Issues
 ************************
@@ -179,16 +179,15 @@ Pull Requests and Issues
 
 .. _open pull requests: https://github.com/zephyrproject-rtos/zephyr/pulls
 
-.. _Zephyr-devel mailing list:
-   https://lists.zephyrproject.org/mailman/listinfo/zephyr-devel
+.. _Zephyr devel mailing list: https://lists.zephyrproject.org/g/devel
 
 Before starting on a patch, first check in our issues `Zephyr Project Issues`_
 system to see what's been reported on the issue you'd like to address.  Have a
-conversation on the `Zephyr-devel mailing list`_ (or the #zephyrproject IRC
+conversation on the `Zephyr devel mailing list`_ (or the #zephyrproject IRC
 channel on freenode.net) to see what others think of your issue (and proposed
 solution).  You may find others that have encountered the issue you're
 finding, or that have similar ideas for changes or additions.  Send a message
-to the `Zephyr-devel mailing list`_ to introduce and discuss your idea with
+to the `Zephyr devel mailing list`_ to introduce and discuss your idea with
 the development community.
 
 Please note that it's common practice on IRC to be away from the

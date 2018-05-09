@@ -15,6 +15,7 @@
 #include <misc/__assert.h>
 #include <misc/printk.h>
 #include <nffs/os.h>
+#include <nffs/nffs.h>
 
 #define NFFS_MAX_FILE_NAME 256
 
@@ -30,6 +31,9 @@ static struct k_mutex nffs_lock;
  * system to have multiple instances of NFFS.
  */
 static struct device *flash_dev;
+
+/* nffs flash area descriptors */
+static struct nffs_area_desc descs[CONFIG_NFFS_FILESYSTEM_MAX_AREAS + 1];
 
 K_MEM_SLAB_DEFINE(nffs_file_pool,		sizeof(struct nffs_file),
 		  CONFIG_FS_NFFS_NUM_FILES,		4);
@@ -224,18 +228,19 @@ static int inode_to_dirent(struct nffs_inode_entry *inode,
 
 static int nffs_open(struct fs_file_t *zfp, const char *file_name)
 {
-	int rc;
+	int rc, match_len;
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	zfp->nffs_fp = NULL;
+	zfp->filep = NULL;
 
 	if (!nffs_misc_ready()) {
 		k_mutex_unlock(&nffs_lock);
 		return -ENODEV;
 	}
 
-	rc = nffs_file_open(&zfp->nffs_fp, file_name,
+	match_len = strlen(zfp->mp->mnt_point);
+	rc = nffs_file_open((struct nffs_file **)&zfp->filep, &file_name[match_len],
 			    FS_ACCESS_READ | FS_ACCESS_WRITE);
 
 	k_mutex_unlock(&nffs_lock);
@@ -249,9 +254,9 @@ static int nffs_close(struct fs_file_t *zfp)
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	rc = nffs_file_close(zfp->nffs_fp);
+	rc = nffs_file_close(zfp->filep);
 	if (!rc) {
-		zfp->nffs_fp = NULL;
+		zfp->filep = NULL;
 	}
 
 	k_mutex_unlock(&nffs_lock);
@@ -261,11 +266,12 @@ static int nffs_close(struct fs_file_t *zfp)
 
 static int nffs_unlink(struct fs_mount_t *mountp, const char *path)
 {
-	int rc;
+	int rc, match_len;
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	rc = nffs_path_unlink(path);
+	match_len = strlen(mountp->mnt_point);
+	rc = nffs_path_unlink(&path[match_len]);
 
 	k_mutex_unlock(&nffs_lock);
 
@@ -279,7 +285,7 @@ static ssize_t nffs_read(struct fs_file_t *zfp, void *ptr, size_t size)
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	rc = nffs_file_read(zfp->nffs_fp, size, ptr, &br);
+	rc = nffs_file_read(zfp->filep, size, ptr, &br);
 
 	k_mutex_unlock(&nffs_lock);
 
@@ -296,7 +302,7 @@ static ssize_t nffs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	rc = nffs_write_to_file(zfp->nffs_fp, ptr, size);
+	rc = nffs_write_to_file(zfp->filep, ptr, size);
 
 	k_mutex_unlock(&nffs_lock);
 
@@ -321,10 +327,10 @@ static int nffs_seek(struct fs_file_t *zfp, off_t offset, int whence)
 		pos = offset;
 		break;
 	case FS_SEEK_CUR:
-		pos = zfp->nffs_fp->nf_offset + offset;
+		pos = ((struct nffs_file *)zfp->filep)->nf_offset + offset;
 		break;
 	case FS_SEEK_END:
-		rc = nffs_inode_data_len(zfp->nffs_fp->nf_inode_entry, &len);
+		rc = nffs_inode_data_len(((struct nffs_file *)zfp->filep)->nf_inode_entry, &len);
 		if (rc) {
 			k_mutex_unlock(&nffs_lock);
 			return -EINVAL;
@@ -336,7 +342,7 @@ static int nffs_seek(struct fs_file_t *zfp, off_t offset, int whence)
 		return -EINVAL;
 	}
 
-	rc = nffs_file_seek(zfp->nffs_fp, pos);
+	rc = nffs_file_seek(zfp->filep, pos);
 
 	k_mutex_unlock(&nffs_lock);
 
@@ -349,12 +355,12 @@ static off_t nffs_tell(struct fs_file_t *zfp)
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	if (!zfp->nffs_fp) {
+	if (!zfp->filep) {
 		k_mutex_unlock(&nffs_lock);
 		return -EIO;
 	}
 
-	offset = zfp->nffs_fp->nf_offset;
+	offset = ((struct nffs_file *)zfp->filep)->nf_offset;
 
 	k_mutex_unlock(&nffs_lock);
 
@@ -385,7 +391,7 @@ static int nffs_sync(struct fs_file_t *zfp)
 
 static int nffs_mkdir(struct fs_mount_t *mountp, const char *path)
 {
-	int rc;
+	int rc, match_len;
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
@@ -394,7 +400,8 @@ static int nffs_mkdir(struct fs_mount_t *mountp, const char *path)
 		return -ENODEV;
 	}
 
-	rc = nffs_path_new_dir(path, NULL);
+	match_len = strlen(mountp->mnt_point);
+	rc = nffs_path_new_dir(&path[match_len], NULL);
 
 	k_mutex_unlock(&nffs_lock);
 
@@ -403,18 +410,19 @@ static int nffs_mkdir(struct fs_mount_t *mountp, const char *path)
 
 static int nffs_opendir(struct fs_dir_t *zdp, const char *path)
 {
-	int rc;
+	int rc, match_len;
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	zdp->nffs_dp = NULL;
+	zdp->dirp = NULL;
 
 	if (!nffs_misc_ready()) {
 		k_mutex_unlock(&nffs_lock);
 		return -ENODEV;
 	}
 
-	rc = nffs_dir_open(path, &zdp->nffs_dp);
+	match_len = strlen(zdp->mp->mnt_point);
+	rc = nffs_dir_open(&path[match_len], (struct nffs_dir **)&zdp->dirp);
 
 	k_mutex_unlock(&nffs_lock);
 
@@ -428,7 +436,7 @@ static int nffs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	rc = nffs_dir_read(zdp->nffs_dp, &dirent);
+	rc = nffs_dir_read(zdp->dirp, &dirent);
 	switch (rc) {
 	case 0:
 		rc = inode_to_dirent(dirent->nde_inode_entry, entry);
@@ -452,9 +460,9 @@ static int nffs_closedir(struct fs_dir_t *zdp)
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	rc = nffs_dir_close(zdp->nffs_dp);
+	rc = nffs_dir_close(zdp->dirp);
 	if (!rc) {
-		zdp->nffs_dp = NULL;
+		zdp->dirp = NULL;
 	}
 
 	k_mutex_unlock(&nffs_lock);
@@ -468,11 +476,12 @@ static int nffs_stat(struct fs_mount_t *mountp,
 	struct nffs_path_parser parser;
 	struct nffs_inode_entry *parent;
 	struct nffs_inode_entry *inode;
-	int rc;
+	int rc, match_len;
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	nffs_path_parser_new(&parser, path);
+	match_len = strlen(mountp->mnt_point);
+	nffs_path_parser_new(&parser, &path[match_len]);
 
 	rc = nffs_path_find(&parser, &inode, &parent);
 	if (rc == 0) {
@@ -498,7 +507,7 @@ static int nffs_statvfs(struct fs_mount_t *mountp,
 static int nffs_rename(struct fs_mount_t *mountp, const char *from,
 		       const char *to)
 {
-	int rc;
+	int rc, match_len;
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
@@ -507,7 +516,8 @@ static int nffs_rename(struct fs_mount_t *mountp, const char *from,
 		return -ENODEV;
 	}
 
-	rc = nffs_path_rename(from, to);
+	match_len = strlen(mountp->mnt_point);
+	rc = nffs_path_rename(&from[match_len], &to[match_len]);
 
 	k_mutex_unlock(&nffs_lock);
 
@@ -516,20 +526,19 @@ static int nffs_rename(struct fs_mount_t *mountp, const char *from,
 
 static int nffs_mount(struct fs_mount_t *mountp)
 {
-	struct nffs_area_desc descs[CONFIG_NFFS_FILESYSTEM_MAX_AREAS + 1];
 	struct nffs_flash_desc *flash_desc =
 				(struct nffs_flash_desc *)mountp->fs_data;
 	int cnt;
 	int rc;
 
 	/* Set flash device */
-	flash_dev = mountp->storage_dev;
+	flash_dev = (struct device *)mountp->storage_dev;
 
 	/* Set flash descriptor fields */
 	flash_desc->id = 0;
 	flash_desc->sector_count = flash_get_page_count(flash_dev);
-	flash_desc->area_offset = FLASH_AREA_NFFS_OFFSET;
-	flash_desc->area_size = FLASH_AREA_NFFS_SIZE;
+	flash_desc->area_offset = FLASH_AREA_STORAGE_OFFSET;
+	flash_desc->area_size = FLASH_AREA_STORAGE_SIZE;
 
 	rc = nffs_misc_reset();
 	if (rc) {

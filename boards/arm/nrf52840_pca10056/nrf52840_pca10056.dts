@@ -25,6 +25,14 @@
 	status = "ok";
 };
 
+&i2c0 {
+	status = "ok";
+};
+
+&i2c1 {
+	status = "ok";
+};
+
 &flash0 {
 	/*
 	 * For more information, see:
@@ -52,9 +60,9 @@
 			reg = <0x000de000 0x0001e000>;
 		};
 
-#if defined(CONFIG_FILE_SYSTEM_NFFS)
-		nffs_partition: partition@fc000 {
-			label = "nffs";
+#if defined(CONFIG_FS_FLASH_STORAGE_PARTITION)
+		storage_partition: partition@fc000 {
+			label = "storage";
 			reg = <0x000fc000 0x00004000>;
 		};
 #endif

@@ -36,7 +36,6 @@
 #include <errno.h>
 #include <init.h>
 #include <syscall_handler.h>
-#include <kswap.h>
 
 #define RECORD_STATE_CHANGE(mutex) do { } while ((0))
 #define RECORD_CONFLICT(mutex) do { } while ((0))
@@ -158,9 +157,7 @@ int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 		adjust_owner_prio(mutex, new_prio);
 	}
 
-	_pend_current_thread(&mutex->wait_q, timeout);
-
-	int got_mutex = _Swap(key);
+	int got_mutex = _pend_current_thread(key, &mutex->wait_q, timeout);
 
 	K_DEBUG("on mutex %p got_mutex value: %d\n", mutex, got_mutex);
 
@@ -228,11 +225,12 @@ void _impl_k_mutex_unlock(struct k_mutex *mutex)
 
 	struct k_thread *new_owner = _unpend_first_thread(&mutex->wait_q);
 
+	mutex->owner = new_owner;
+
 	K_DEBUG("new owner of mutex %p: %p (prio: %d)\n",
 		mutex, new_owner, new_owner ? new_owner->base.prio : -1000);
 
 	if (new_owner) {
-		_abort_thread_timeout(new_owner);
 		_ready_thread(new_owner);
 
 		irq_unlock(key);
@@ -244,13 +242,11 @@ void _impl_k_mutex_unlock(struct k_mutex *mutex)
 		 * waiter since the wait queue is priority-based: no need to
 		 * ajust its priority
 		 */
-		mutex->owner = new_owner;
 		mutex->lock_count++;
 		mutex->owner_orig_prio = new_owner->base.prio;
-	} else {
-		irq_unlock(key);
-		mutex->owner = NULL;
 	}
+
+	irq_unlock(key);
 
 	k_sched_unlock();
 }

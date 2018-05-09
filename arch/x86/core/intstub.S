@@ -230,7 +230,7 @@ alreadyOnIntStack:
 	sti			/* re-enable interrupts */
 #endif
 	/* Now call the interrupt handler */
-	call	*%edx
+	INDIRECT_CALL(%edx)
 #ifndef CONFIG_X86_IAMCU
 	/* Discard ISR argument */
 	addl	$0x4, %esp

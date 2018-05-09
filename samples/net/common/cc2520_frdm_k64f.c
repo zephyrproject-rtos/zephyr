@@ -16,7 +16,7 @@
 #include <ieee802154/cc2520.h>
 #include <gpio.h>
 
-#define CC2520_GPIO_DEV_NAME CONFIG_GPIO_MCUX_PORTC_NAME
+#define CC2520_GPIO_DEV_NAME GPIO_C_LABEL
 
 #define CC2520_GPIO_VREG_EN	12  /* PTC12 */
 #define CC2520_GPIO_RESET	3   /* PTC3 */

@@ -26,6 +26,16 @@ config CLOCK_CONTROL_IMX_CCM
 
 endif # CLOCK_CONTROL
 
+config GPIO
+	def_bool y
+
+if GPIO
+
+config GPIO_IMX
+	def_bool y
+
+endif # GPIO
+
 if SERIAL
 
 config UART_IMX

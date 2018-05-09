@@ -32,7 +32,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 {
 	/*Print New line for last thread*/
 	int thread_parameter = ((int)p1 == (NUM_THREAD - 1)) ? '\n' :
-								((int)p1 + 'A');
+			       ((int)p1 + 'A');
 
 	while (1) {
 		s64_t tdelta = k_uptime_delta(&elapsed_slice);
@@ -43,7 +43,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 		 */
 		zassert_true(((tdelta <= SLICE_SIZE) &&
 			      ((int)p1 == thread_idx)), NULL);
-		thread_idx = (thread_idx+1) % (NUM_THREAD);
+		thread_idx = (thread_idx + 1) % (NUM_THREAD);
 		u32_t t32 = k_uptime_get_32();
 
 		/* Keep the current thread busy for more than one slice,
@@ -64,6 +64,15 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 }
 
 /*test cases*/
+
+/**
+ * @brief Check the behavior of preemptive threads when the
+ * time slice is disabled and enabled
+ *
+ * @details Create multiple preemptive threads with same priorities
+ * priorities and few with same priorities and enable the time slice.
+ * Ensure that each thread is given the time slice period to execute.
+ */
 void test_slice_scheduling(void)
 {
 	u32_t t32;
@@ -80,8 +89,8 @@ void test_slice_scheduling(void)
 	/* create threads with equal preemptive priority*/
 	for (int i = 0; i < NUM_THREAD; i++) {
 		tid[i] = k_thread_create(&t[i], tstack[i], STACK_SIZE,
-			 thread_tslice, (void *)(intptr_t) i, NULL, NULL,
-				 K_PRIO_PREEMPT(BASE_PRIORITY), 0, 0);
+					 thread_tslice, (void *)(intptr_t) i, NULL, NULL,
+					 K_PRIO_PREEMPT(BASE_PRIORITY), 0, 0);
 	}
 
 	/* enable time slice*/

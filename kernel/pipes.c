@@ -19,7 +19,6 @@
 #include <misc/dlist.h>
 #include <init.h>
 #include <syscall_handler.h>
-#include <kswap.h>
 
 struct k_pipe_desc {
 	unsigned char *buffer;           /* Position in src/dest buffer */
@@ -336,7 +335,6 @@ static bool pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 		 * Add it to the transfer list.
 		 */
 		_unpend_thread(thread);
-		_abort_thread_timeout(thread);
 		sys_dlist_append(xfer_list, &thread->base.k_q_node);
 	}
 
@@ -511,7 +509,7 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 		_sched_unlock_no_reschedule();
 		_pend_thread((struct k_thread *) &async_desc->thread,
 			     &pipe->wait_q.writers, K_FOREVER);
-		_reschedule_threads(key);
+		_reschedule(key);
 		return 0;
 	}
 #endif
@@ -529,8 +527,7 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 		 */
 		key = irq_lock();
 		_sched_unlock_no_reschedule();
-		_pend_current_thread(&pipe->wait_q.writers, timeout);
-		_Swap(key);
+		_pend_current_thread(key, &pipe->wait_q.writers, timeout);
 	} else {
 		k_sched_unlock();
 	}
@@ -672,8 +669,7 @@ int _impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		_current->base.swap_data = &pipe_desc;
 		key = irq_lock();
 		_sched_unlock_no_reschedule();
-		_pend_current_thread(&pipe->wait_q.readers, timeout);
-		_Swap(key);
+		_pend_current_thread(key, &pipe->wait_q.readers, timeout);
 	} else {
 		k_sched_unlock();
 	}

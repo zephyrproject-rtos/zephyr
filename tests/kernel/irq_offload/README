@@ -1,3 +1,0 @@
-This test case verifies the correctness of irq_offload(), an important
-routine used in many other test cases for running a function in interrupt
-context, on the IRQ stack.

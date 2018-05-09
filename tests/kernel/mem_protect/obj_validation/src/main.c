@@ -11,6 +11,8 @@
 #define SEM_ARRAY_SIZE	16
 
 static __kernel struct k_sem semarray[SEM_ARRAY_SIZE];
+static struct k_sem *dyn_sem[SEM_ARRAY_SIZE];
+
 K_SEM_DEFINE(sem1, 0, 1);
 static __kernel struct k_sem sem2;
 static __kernel char bad_sem[sizeof(struct k_sem)];
@@ -31,7 +33,8 @@ static int test_object(struct k_sem *sem, int retval)
 	}
 
 	if (ret != retval) {
-		TC_PRINT("FAIL check of %p is not %d\n", sem, retval);
+		TC_PRINT("FAIL check of %p is not %d, got %d instead\n", sem,
+			 retval, ret);
 		return 1;
 	}
 	return 0;
@@ -75,6 +78,17 @@ void test_generic_object(void)
 
 	for (int i = 0; i < SEM_ARRAY_SIZE; i++) {
 		object_permission_checks(&semarray[i], false);
+		dyn_sem[i] = k_object_alloc(K_OBJ_SEM);
+	}
+
+	/* dynamic object table well-populated with semaphores at this point */
+	for (int i = 0; i < SEM_ARRAY_SIZE; i++) {
+		/* Should have permission granted but be uninitialized */
+		zassert_false(test_object(dyn_sem[i], -EINVAL), NULL);
+		k_object_access_revoke(dyn_sem[i], k_current_get());
+		object_permission_checks(dyn_sem[i], false);
+		k_object_free(dyn_sem[i]);
+		zassert_false(test_object(dyn_sem[i], -EBADF), NULL);
 	}
 }
 

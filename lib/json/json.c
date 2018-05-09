@@ -476,8 +476,6 @@ static int decode_value(struct json_obj *obj,
 
 static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 {
-	assert(descr->alignment);
-
 	switch (descr->type) {
 	case JSON_TOK_NUMBER:
 		return sizeof(s32_t);
@@ -495,7 +493,7 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 		for (i = 0; i < descr->object.sub_descr_len; i++) {
 			ptrdiff_t s = get_elem_size(&descr->object.sub_descr[i]);
 
-			total += ROUND_UP(s, descr->alignment);
+			total += ROUND_UP(s, descr->alignment + 1);
 		}
 
 		return total;

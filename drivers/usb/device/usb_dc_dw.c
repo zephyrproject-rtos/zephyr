@@ -14,13 +14,13 @@
  * level control routines to deal directly with the hardware.
  */
 
-#include <soc.h>
 #include <string.h>
 #include <stdio.h>
 #include <misc/byteorder.h>
 #include <usb/usb_dc.h>
 #include <usb/usb_device.h>
 #include "usb_dw_registers.h"
+#include <soc.h>
 #ifdef CONFIG_QMSI
 #include "clk.h"
 #endif
@@ -44,7 +44,7 @@
 struct usb_ep_ctrl_prv {
 	u8_t ep_ena;
 	u8_t fifo_num;
-	u8_t fifo_size;
+	u32_t fifo_size;
 	u16_t mps;         /* Max ep pkt size */
 	usb_dc_ep_callback cb;/* Endpoint callback function */
 	u32_t data_len;
@@ -527,7 +527,12 @@ static int usb_dw_init(void)
 	}
 
 	/* Set device speed to FS */
+#ifdef USB_PHY_2
+	USB_DW->dcfg &= ~USB_DW_DCFG_DEV_SPD_FS;
+	USB_DW->dcfg |= 0x01;
+#else
 	USB_DW->dcfg |= USB_DW_DCFG_DEV_SPD_FS;
+#endif
 
 	/* Set NAK for all OUT EPs */
 	for (ep = 0; ep < USB_DW_OUT_EP_NUM; ep++) {
@@ -1187,5 +1192,11 @@ int usb_dc_set_status_callback(const usb_dc_status_callback cb)
 
 int usb_dc_ep_mps(const u8_t ep)
 {
-	return usb_dw_ctrl.out_ep_ctrl[USB_DW_EP_ADDR2IDX(ep)].mps;
+	enum usb_dw_out_ep_idx ep_idx = USB_DW_EP_ADDR2IDX(ep);
+
+	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+		return usb_dw_ctrl.out_ep_ctrl[ep_idx].mps;
+	} else {
+		return usb_dw_ctrl.in_ep_ctrl[ep_idx].mps;
+	}
 }

@@ -16,6 +16,88 @@
 /* the only struct _kernel instance */
 struct _kernel _kernel = {0};
 
+#ifndef CONFIG_SMP
+extern k_tid_t const _idle_thread;
+#endif
+
+static inline int _is_thread_dummy(struct k_thread *thread)
+{
+	return _is_thread_state_set(thread, _THREAD_DUMMY);
+}
+
+static inline int _is_preempt(struct k_thread *thread)
+{
+#ifdef CONFIG_PREEMPT_ENABLED
+	/* explanation in kernel_struct.h */
+	return thread->base.preempt <= _PREEMPT_THRESHOLD;
+#else
+	return 0;
+#endif
+}
+
+static inline void _mark_thread_as_pending(struct k_thread *thread)
+{
+	thread->base.thread_state |= _THREAD_PENDING;
+
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_THREAD
+	_sys_k_event_logger_thread_pend(thread);
+#endif
+}
+
+static inline int _is_idle_thread_ptr(k_tid_t thread)
+{
+#ifdef CONFIG_SMP
+	return thread->base.is_idle;
+#else
+	return thread == _idle_thread;
+#endif
+}
+
+static inline int _get_ready_q_q_index(int prio)
+{
+	return prio + _NUM_COOP_PRIO;
+}
+
+static inline int _get_ready_q_prio_bmap_index(int prio)
+{
+	return (prio + _NUM_COOP_PRIO) >> 5;
+}
+
+static inline int _get_ready_q_prio_bit(int prio)
+{
+	return (1u << ((prio + _NUM_COOP_PRIO) & 0x1f));
+}
+
+#ifdef CONFIG_SMP
+int _get_highest_ready_prio(void);
+#else
+static inline int _get_highest_ready_prio(void)
+{
+	int bitmap = 0;
+	u32_t ready_range;
+
+#if (K_NUM_PRIORITIES <= 32)
+	ready_range = _ready_q.prio_bmap[0];
+#else
+	for (;; bitmap++) {
+
+		__ASSERT(bitmap < K_NUM_PRIO_BITMAPS, "prio out-of-range\n");
+
+		if (_ready_q.prio_bmap[bitmap]) {
+			ready_range = _ready_q.prio_bmap[bitmap];
+			break;
+		}
+	}
+#endif
+
+	int abs_prio = (find_lsb_set(ready_range) - 1) + (bitmap << 5);
+
+	__ASSERT(abs_prio < K_NUM_PRIORITIES, "prio out-of-range\n");
+
+	return abs_prio - _NUM_COOP_PRIO;
+}
+#endif
+
 /* set the bit corresponding to prio in ready q bitmap */
 #if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_SMP)
 static void set_ready_q_prio_bit(int prio)
@@ -135,23 +217,24 @@ void _remove_thread_from_ready_q(struct k_thread *thread)
 #endif
 }
 
-/* reschedule threads if the scheduler is not locked */
-/* not callable from ISR */
-/* must be called with interrupts locked */
-void _reschedule_threads(int key)
+/* Releases the irq_lock and swaps to a higher priority thread if one
+ * is available, returning the _Swap() return value, otherwise zero.
+ * Does not swap away from a thread at a cooperative (unpreemptible)
+ * priority unless "yield" is true.
+ */
+int _reschedule(int key)
 {
-#ifdef CONFIG_PREEMPT_ENABLED
 	K_DEBUG("rescheduling threads\n");
 
-	if (_must_switch_threads()) {
+	if (!_is_in_isr() &&
+	    _is_preempt(_current) &&
+	    _is_prio_higher(_get_highest_ready_prio(), _current->base.prio)) {
 		K_DEBUG("context-switching out %p\n", _current);
-		_Swap(key);
+		return _Swap(key);
 	} else {
 		irq_unlock(key);
+		return 0;
 	}
-#else
-	irq_unlock(key);
-#endif
 }
 
 void k_sched_lock(void)
@@ -174,7 +257,7 @@ void k_sched_unlock(void)
 	K_DEBUG("scheduler unlocked (%p:%d)\n",
 		_current, _current->base.sched_locked);
 
-	_reschedule_threads(key);
+	_reschedule(key);
 #endif
 }
 
@@ -203,6 +286,10 @@ void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 	sys_dlist_t *wait_q_list = (sys_dlist_t *)wait_q;
 	struct k_thread *pending;
 
+	if (!wait_q_list) {
+		goto inserted;
+	}
+
 	SYS_DLIST_FOR_EACH_CONTAINER(wait_q_list, pending, base.k_q_node) {
 		if (_is_t1_higher_prio_than_t2(thread, pending)) {
 			sys_dlist_insert_before(wait_q_list,
@@ -225,49 +312,40 @@ inserted:
 #endif
 }
 
-/* pend the current thread */
-/* must be called with interrupts locked */
-void _pend_current_thread(_wait_q_t *wait_q, s32_t timeout)
+void _unpend_thread_no_timeout(struct k_thread *thread)
+{
+	__ASSERT(thread->base.thread_state & _THREAD_PENDING, "");
+
+	sys_dlist_remove(&thread->base.k_q_node);
+	_mark_thread_as_not_pending(thread);
+}
+
+void _unpend_thread(struct k_thread *thread)
+{
+	_unpend_thread_no_timeout(thread);
+	_abort_thread_timeout(thread);
+}
+
+struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
+{
+	struct k_thread *t = _unpend1_no_timeout(wait_q);
+
+	if (t) {
+		_abort_thread_timeout(t);
+	}
+
+	return t;
+}
+
+/* Block the current thread and swap to the next.  Releases the
+ * irq_lock, does a _Swap and returns the return value set at wakeup
+ * time
+ */
+int _pend_current_thread(int key, _wait_q_t *wait_q, s32_t timeout)
 {
 	_remove_thread_from_ready_q(_current);
 	_pend_thread(_current, wait_q, timeout);
-}
-
-#if defined(CONFIG_PREEMPT_ENABLED) && defined(CONFIG_KERNEL_DEBUG)
-/* debug aid */
-static void dump_ready_q(void)
-{
-	K_DEBUG("bitmaps: ");
-	for (int bitmap = 0; bitmap < K_NUM_PRIO_BITMAPS; bitmap++) {
-		K_DEBUG("%x", _ready_q.prio_bmap[bitmap]);
-	}
-	K_DEBUG("\n");
-	for (int prio = 0; prio < K_NUM_PRIORITIES; prio++) {
-		K_DEBUG("prio: %d, head: %p\n",
-			prio - _NUM_COOP_PRIO,
-			sys_dlist_peek_head(&_ready_q.q[prio]));
-	}
-}
-#endif  /* CONFIG_PREEMPT_ENABLED && CONFIG_KERNEL_DEBUG */
-
-/*
- * Check if there is a thread of higher prio than the current one. Should only
- * be called if we already know that the current thread is preemptible.
- */
-int __must_switch_threads(void)
-{
-#ifdef CONFIG_PREEMPT_ENABLED
-	K_DEBUG("current prio: %d, highest prio: %d\n",
-		_current->base.prio, _get_highest_ready_prio());
-
-#ifdef CONFIG_KERNEL_DEBUG
-	dump_ready_q();
-#endif  /* CONFIG_KERNEL_DEBUG */
-
-	return _is_prio_higher(_get_highest_ready_prio(), _current->base.prio);
-#else
-	return 0;
-#endif
+	return _Swap(key);
 }
 
 int _impl_k_thread_priority_get(k_tid_t thread)
@@ -293,7 +371,7 @@ void _impl_k_thread_priority_set(k_tid_t tid, int prio)
 	int key = irq_lock();
 
 	_thread_priority_set(thread, prio);
-	_reschedule_threads(key);
+	_reschedule(key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -302,7 +380,7 @@ _SYSCALL_HANDLER(k_thread_priority_set, thread_p, prio)
 	struct k_thread *thread = (struct k_thread *)thread_p;
 
 	_SYSCALL_OBJ(thread, K_OBJ_THREAD);
-	_SYSCALL_VERIFY_MSG(_VALID_PRIO(prio, NULL),
+	_SYSCALL_VERIFY_MSG(_is_valid_prio(prio, NULL),
 			    "invalid thread priority %d", (int)prio);
 	_SYSCALL_VERIFY_MSG((s8_t)prio >= thread->base.prio,
 			    "thread priority may only be downgraded (%d < %d)",
@@ -427,7 +505,7 @@ void _impl_k_wakeup(k_tid_t thread)
 	if (_is_in_isr()) {
 		irq_unlock(key);
 	} else {
-		_reschedule_threads(key);
+		_reschedule(key);
 	}
 }
 
@@ -566,16 +644,67 @@ void *_get_next_switch_handle(void *interrupted)
 	}
 
 	int key = irq_lock();
+	struct k_thread *new_thread = _get_next_ready_thread();
 
-	_current->switch_handle = interrupted;
-	_current = _get_next_ready_thread();
-
-	void *ret = _current->switch_handle;
+#ifdef CONFIG_SMP
+	_current->base.active = 0;
+	new_thread->base.active = 1;
+#endif
 
 	irq_unlock(key);
+
+	_current->switch_handle = interrupted;
+	_current = new_thread;
+
+	void *ret = new_thread->switch_handle;
+
+#ifdef CONFIG_SMP
+	_smp_reacquire_global_lock(_current);
+#endif
 
 	_check_stack_sentinel();
 
 	return ret;
 }
 #endif
+
+void _thread_priority_set(struct k_thread *thread, int prio)
+{
+	if (_is_thread_ready(thread)) {
+		_remove_thread_from_ready_q(thread);
+		thread->base.prio = prio;
+		_add_thread_to_ready_q(thread);
+	} else {
+		thread->base.prio = prio;
+	}
+}
+
+struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
+					      struct k_thread *from)
+{
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+	extern volatile int _handling_timeouts;
+
+	if (_handling_timeouts) {
+		sys_dlist_t *q = (sys_dlist_t *)wait_q;
+		sys_dnode_t *cur = from ? &from->base.k_q_node : NULL;
+
+		/* skip threads that have an expired timeout */
+		SYS_DLIST_ITERATE_FROM_NODE(q, cur) {
+			struct k_thread *thread = (struct k_thread *)cur;
+
+			if (_is_thread_timeout_expired(thread)) {
+				continue;
+			}
+
+			return thread;
+		}
+		return NULL;
+	}
+#else
+	ARG_UNUSED(from);
+#endif
+
+	return (struct k_thread *)sys_dlist_peek_head(wait_q);
+
+}

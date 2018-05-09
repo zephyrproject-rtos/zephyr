@@ -80,6 +80,8 @@ supports the following hardware features on the Cortex M4 Core:
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
 +-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -103,6 +105,10 @@ was tested with the following pinmux controller configuration.
 +---------------+-----------------+---------------------------+
 | UART_B TXD    | UART2_RXD       | UART Console              |
 +---------------+-----------------+---------------------------+
+| SODIMM_135    | GPIO1_IO02      | LED0                      |
++---------------+-----------------+---------------------------+
+| SODIMM_133    | GPIO2_IO26      | SW0                       |
++---------------+-----------------+---------------------------+
 
 System Clock
 ============
@@ -122,7 +128,7 @@ The Colibri iMX7D doesn't have QSPI flash for the M4 and it needs to be started 
 the A7 core. The A7 core is responsible to load the M4 binary application into the
 RAM, put the M4 in reset, set the M4 Program Counter and Stack Pointer, and get
 the M4 out of reset.
-The A7 can perform these steps at bootloader level after the Linux system has
+The A7 can perform these steps at bootloader level or after the Linux system has
 booted.
 
 The M4 can use up to 5 different RAMs. These are the memory mapping for A7 and M4:
@@ -183,7 +189,7 @@ configured in the Zephyr compilation:
 
 .. code-block:: console
 
-   setenv bootm4 'ext2load mmc 0:1 $m4addr $m4fw && dcache flush && bootaux $m4addr'
+   setenv bootm4 'ext4load mmc 0:1 $m4addr $m4fw && dcache flush && bootaux $m4addr'
    # TCML
    setenv m4tcml 'setenv m4fw zephyr.bin; setenv m4addr 0x007F8000'
    setenv bootm4tcml 'run m4tcml && run bootm4'

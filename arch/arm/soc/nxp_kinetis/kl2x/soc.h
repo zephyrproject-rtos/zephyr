@@ -18,8 +18,6 @@ extern "C" {
 /* IRQs */
 #define IRQ_SPI0		10
 #define IRQ_SPI1                11
-#define IRQ_GPIO_PORTA          30
-#define IRQ_GPIO_PORTD          31
 
 #ifndef _ASMLANGUAGE
 

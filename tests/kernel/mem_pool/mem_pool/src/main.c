@@ -5,7 +5,9 @@
  */
 
 /**
- * @file test memory pool and heap APIs
+ * @file
+ *
+ * Test memory pool and heap APIs
  *
  * This modules tests the following memory pool routines:
  *
@@ -83,12 +85,10 @@ static struct TEST_CASE getwt_set[] = {
 
 
 /**
- *
  * @brief Wrapper for k_mem_pool_alloc()
  *
  * @return k_mem_pool_alloc() return value
  */
-
 static int pool_block_get_func(struct k_mem_block *block, struct k_mem_pool *pool,
 			int size, s32_t unused)
 {
@@ -104,7 +104,6 @@ static int pool_block_get_func(struct k_mem_block *block, struct k_mem_pool *poo
  *
  * @return k_mem_pool_alloc(timeout) return value
  */
-
 static int pool_block_get_wt_func(struct k_mem_block *block, struct k_mem_pool *pool,
 			   int size, s32_t timeout)
 {
@@ -130,11 +129,9 @@ static void free_blocks(struct TEST_CASE *tests, int n_tests)
 }
 
 /**
- *
  * @brief Perform the work of getting blocks
  *
  */
-
 static void pool_block_get_work(char *string, pool_block_get_func_t func,
 			 struct TEST_CASE *tests, int n_tests)
 {
@@ -152,13 +149,11 @@ static void pool_block_get_work(char *string, pool_block_get_func_t func,
 }
 
 /**
- *
  * @brief Test the k_mem_pool_alloc(K_NO_WAIT) API
  *
  * The pool is 4 k_b in size.
  *
  */
-
 static void test_pool_block_get(void)
 {
 	int j;          /* loop counter */
@@ -177,12 +172,10 @@ static void test_pool_block_get(void)
 }
 
 /**
- *
  * @brief Helper task to test_pool_block_get_timeout()
  *
  * @return N/A
  */
-
 void helper_task(void)
 {
 	k_sem_take(&HELPER_SEM, K_FOREVER);
@@ -192,11 +185,9 @@ void helper_task(void)
 }
 
 /**
- *
  * @brief Test k_mem_pool_alloc(timeout)
  *
  */
-
 static void test_pool_block_get_timeout(void)
 {
 	struct k_mem_block block;
@@ -230,12 +221,6 @@ static void test_pool_block_get_timeout(void)
 
 }
 
-/**
- *
- * test_pool_block_get_wait
- *
- */
-
 static void test_pool_block_get_wait(void)
 {
 	int rv;
@@ -264,14 +249,12 @@ static void test_pool_block_get_wait(void)
 }
 
 /**
- *
  * @brief Alternate task in the test suite
  *
- * This routine runs at a lower priority than Regression_task().
+ * This routine runs at a lower priority than main thread.
  *
  * @return N/A
  */
-
 void alternate_task(void)
 {
 	k_sem_take(&ALTERNATE_SEM, K_FOREVER);
@@ -293,7 +276,6 @@ void alternate_task(void)
  * kernel adds at the start of any block allocated from this memory pool.)
  *
  */
-
 static void test_pool_malloc(void)
 {
 	char *block[4];
@@ -351,16 +333,6 @@ K_THREAD_DEFINE(t_alternate, STACKSIZE, alternate_task, NULL, NULL, NULL,
 K_THREAD_DEFINE(t_helper, STACKSIZE, helper_task, NULL, NULL, NULL,
 		7, 0, K_NO_WAIT);
 
-/**
- *
- * @brief Main task in the test suite
- *
- * This is the entry point to the memory pool test suite.
- *
- * @return N/A
- */
-
-/*test case main entry*/
 void test_main(void)
 {
 	ztest_test_suite(mempool,

@@ -99,13 +99,6 @@
 #define _STRINGIFY(x) #x
 #define STRINGIFY(s) _STRINGIFY(s)
 
-/* Indicate that an array will be used for stack space. */
-
-#if !defined(_ASMLANGUAGE)
-  /* don't use this anymore, use K_DECLARE_STACK instead. Remove for 1.11 */
-  #define __stack __aligned(STACK_ALIGN) __DEPRECATED_MACRO
-#endif
-
 /* concatenate the values of the arguments into one */
 #define _DO_CONCAT(x, y) x ## y
 #define _CONCAT(x, y) _DO_CONCAT(x, y)
@@ -127,7 +120,10 @@
 
 #ifndef BUILD_ASSERT
 /* compile-time assertion that makes the build fail */
-#define BUILD_ASSERT(EXPR) typedef char __build_assert_failure[(EXPR) ? 1 : -1]
+#define BUILD_ASSERT(EXPR) \
+	enum _CONCAT(__build_assert_enum, __COUNTER__) { \
+		_CONCAT(__build_assert, __COUNTER__) = 1 / !!(EXPR) \
+	}
 #endif
 #ifndef BUILD_ASSERT_MSG
 /* build assertion with message -- common implementation swallows message. */

@@ -1199,6 +1199,7 @@ static int string_to_path(char *pathstr, struct lwm2m_obj_path *path,
 	int i, tokstart = -1, toklen;
 	int end_index = strlen(pathstr) - 1;
 
+	memset(path, 0, sizeof(*path));
 	for (i = 0; i <= end_index; i++) {
 		/* search for first numeric */
 		if (tokstart == -1) {
@@ -1257,6 +1258,65 @@ static int string_to_path(char *pathstr, struct lwm2m_obj_path *path,
 	return 0;
 }
 
+static int path_to_objs(const struct lwm2m_obj_path *path,
+			struct lwm2m_engine_obj_inst **obj_inst,
+			struct lwm2m_engine_obj_field **obj_field,
+			struct lwm2m_engine_res_inst **res)
+{
+	struct lwm2m_engine_obj_inst *oi;
+	struct lwm2m_engine_obj_field *of;
+	struct lwm2m_engine_res_inst *r = NULL;
+	int i;
+
+	if (!path) {
+		return -EINVAL;
+	}
+
+	oi = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
+	if (!oi) {
+		SYS_LOG_ERR("obj instance %d/%d not found",
+			    path->obj_id, path->obj_inst_id);
+		return -ENOENT;
+	}
+
+	if (!oi->resources || oi->resource_count == 0) {
+		SYS_LOG_ERR("obj instance has no resources");
+		return -EINVAL;
+	}
+
+	of = lwm2m_get_engine_obj_field(oi->obj, path->res_id);
+	if (!of) {
+		SYS_LOG_ERR("obj field %d not found", path->res_id);
+		return -ENOENT;
+	}
+
+	for (i = 0; i < oi->resource_count; i++) {
+		if (oi->resources[i].res_id == path->res_id) {
+			r = &oi->resources[i];
+			break;
+		}
+	}
+
+	if (!r) {
+		SYS_LOG_ERR("res instance %d not found", path->res_id);
+		return -ENOENT;
+	}
+
+	if (obj_inst) {
+		*obj_inst = oi;
+	}
+
+	if (obj_field) {
+		*obj_field = of;
+	}
+
+	if (res) {
+		*res = r;
+	}
+
+	return 0;
+}
+
 int lwm2m_engine_create_obj_inst(char *pathstr)
 {
 	struct lwm2m_obj_path path;
@@ -1266,7 +1326,6 @@ int lwm2m_engine_create_obj_inst(char *pathstr)
 	SYS_LOG_DBG("path:%s", pathstr);
 
 	/* translate path -> path_obj */
-	memset(&path, 0, sizeof(path));
 	ret = string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
@@ -1282,19 +1341,18 @@ int lwm2m_engine_create_obj_inst(char *pathstr)
 
 static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 {
-	int ret = 0, i;
 	struct lwm2m_obj_path path;
 	struct lwm2m_engine_obj_inst *obj_inst;
 	struct lwm2m_engine_obj_field *obj_field;
 	struct lwm2m_engine_res_inst *res = NULL;
-	bool changed = false;
 	void *data_ptr = NULL;
 	size_t data_len = 0;
+	int ret = 0;
+	bool changed = false;
 
 	SYS_LOG_DBG("path:%s, value:%p, len:%d", pathstr, value, len);
 
 	/* translate path -> path_obj */
-	memset(&path, 0, sizeof(path));
 	ret = string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
@@ -1305,30 +1363,10 @@ static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 		return -EINVAL;
 	}
 
-	/* find obj_inst/res_id */
-	obj_inst = get_engine_obj_inst(path.obj_id, path.obj_inst_id);
-	if (!obj_inst) {
-		SYS_LOG_ERR("obj instance %d/%d not found",
-			    path.obj_id, path.obj_inst_id);
-		return -ENOENT;
-	}
-
-	if (!obj_inst->resources || obj_inst->resource_count == 0) {
-		SYS_LOG_ERR("obj instance has no resources");
-		return -EINVAL;
-	}
-
-	obj_field = lwm2m_get_engine_obj_field(obj_inst->obj, path.res_id);
-	if (!obj_field) {
-		SYS_LOG_ERR("obj field %d not found", path.res_id);
-		return -ENOENT;
-	}
-
-	for (i = 0; i < obj_inst->resource_count; i++) {
-		if (obj_inst->resources[i].res_id == path.res_id) {
-			res = &obj_inst->resources[i];
-			break;
-		}
+	/* look up resource obj */
+	ret = path_to_objs(&path, &obj_inst, &obj_field, &res);
+	if (ret < 0) {
+		return ret;
 	}
 
 	if (!res) {
@@ -1514,7 +1552,7 @@ int lwm2m_engine_set_float64(char *pathstr, float64_value_t *value)
 
 static int lwm2m_engine_get(char *pathstr, void *buf, u16_t buflen)
 {
-	int ret = 0, i;
+	int ret = 0;
 	struct lwm2m_obj_path path;
 	struct lwm2m_engine_obj_inst *obj_inst;
 	struct lwm2m_engine_obj_field *obj_field;
@@ -1525,7 +1563,6 @@ static int lwm2m_engine_get(char *pathstr, void *buf, u16_t buflen)
 	SYS_LOG_DBG("path:%s, buf:%p, buflen:%d", pathstr, buf, buflen);
 
 	/* translate path -> path_obj */
-	memset(&path, 0, sizeof(path));
 	ret = string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
@@ -1536,30 +1573,10 @@ static int lwm2m_engine_get(char *pathstr, void *buf, u16_t buflen)
 		return -EINVAL;
 	}
 
-	/* find obj_inst/res_id */
-	obj_inst = get_engine_obj_inst(path.obj_id, path.obj_inst_id);
-	if (!obj_inst) {
-		SYS_LOG_ERR("obj instance %d/%d not found",
-			    path.obj_id, path.obj_inst_id);
-		return -ENOENT;
-	}
-
-	if (!obj_inst->resources || obj_inst->resource_count == 0) {
-		SYS_LOG_ERR("obj instance has no resources");
-		return -EINVAL;
-	}
-
-	obj_field = lwm2m_get_engine_obj_field(obj_inst->obj, path.res_id);
-	if (!obj_field) {
-		SYS_LOG_ERR("obj field %d not found", path.res_id);
-		return -ENOENT;
-	}
-
-	for (i = 0; i < obj_inst->resource_count; i++) {
-		if (obj_inst->resources[i].res_id == path.res_id) {
-			res = &obj_inst->resources[i];
-			break;
-		}
+	/* look up resource obj */
+	ret = path_to_objs(&path, &obj_inst, &obj_field, &res);
+	if (ret < 0) {
+		return ret;
 	}
 
 	if (!res) {
@@ -1744,51 +1761,11 @@ int   lwm2m_engine_get_float64(char *pathstr, float64_value_t *buf)
 	return lwm2m_engine_get(pathstr, buf, sizeof(float64_value_t));
 }
 
-/* user callback functions */
-static int engine_get_resource(struct lwm2m_obj_path *path,
-			       struct lwm2m_engine_res_inst **res)
-{
-	int i;
-	struct lwm2m_engine_obj_inst *obj_inst;
-
-	if (!path) {
-		return -EINVAL;
-	}
-
-	/* find obj_inst/res_id */
-	obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
-	if (!obj_inst) {
-		SYS_LOG_ERR("obj instance %d/%d not found",
-			    path->obj_id, path->obj_inst_id);
-		return -ENOENT;
-	}
-
-	if (!obj_inst->resources || obj_inst->resource_count == 0) {
-		SYS_LOG_ERR("obj instance has no resources");
-		return -EINVAL;
-	}
-
-	for (i = 0; i < obj_inst->resource_count; i++) {
-		if (obj_inst->resources[i].res_id == path->res_id) {
-			*res = &obj_inst->resources[i];
-			break;
-		}
-	}
-
-	if (!*res) {
-		SYS_LOG_ERR("res instance %d not found", path->res_id);
-		return -ENOENT;
-	}
-
-	return 0;
-}
-
 int lwm2m_engine_get_resource(char *pathstr, struct lwm2m_engine_res_inst **res)
 {
 	int ret;
 	struct lwm2m_obj_path path;
 
-	memset(&path, 0, sizeof(path));
 	ret = string_to_path(pathstr, &path, '/');
 	if (ret < 0) {
 		return ret;
@@ -1799,7 +1776,7 @@ int lwm2m_engine_get_resource(char *pathstr, struct lwm2m_engine_res_inst **res)
 		return -EINVAL;
 	}
 
-	return engine_get_resource(&path, res);
+	return path_to_objs(&path, NULL, NULL, res);
 }
 
 int lwm2m_engine_register_read_callback(char *pathstr,
@@ -1893,7 +1870,7 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	}
 
 	if (!data_ptr || data_len == 0) {
-		return -EINVAL;
+		return -ENOENT;
 	}
 
 	if (res->multi_count_var != NULL) {
@@ -2203,6 +2180,8 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			return -EINVAL;
 
 		}
+	} else {
+		return -ENOENT;
 	}
 
 	if (res->post_write_cb &&
@@ -2259,7 +2238,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 
 	/* get lwm2m_attr slist */
 	if (path->level == 3) {
-		ret = engine_get_resource(path, &res);
+		ret = path_to_objs(path, NULL, NULL, &res);
 		if (ret < 0) {
 			return ret;
 		}
@@ -2517,7 +2496,8 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			}
 
 			if (!res || res->res_id != obs->path.res_id) {
-				ret = engine_get_resource(&obs->path, &res);
+				ret = path_to_objs(&obs->path, NULL, NULL,
+						   &res);
 				if (ret < 0) {
 					return ret;
 				}
@@ -2553,12 +2533,7 @@ static int lwm2m_exec_handler(struct lwm2m_engine_obj *obj,
 
 	path = context->path;
 
-	obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
-	if (!obj_inst) {
-		return -ENOENT;
-	}
-
-	ret = engine_get_resource(path, &res);
+	ret = path_to_objs(path, &obj_inst, NULL, &res);
 	if (ret < 0) {
 		return ret;
 	}
@@ -2665,8 +2640,7 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 							       res->res_id);
 			if (!obj_field) {
 				ret = -ENOENT;
-			} else if ((obj_field->permissions &
-				    LWM2M_PERM_R) != LWM2M_PERM_R) {
+			} else if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_R)) {
 				ret = -EPERM;
 			} else {
 				/* formatter startup if needed */

@@ -1,0 +1,10 @@
+# Kconfig - XTENSA board configuration
+#
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config  BOARD_INTEL_S1000_CRB
+	bool "Xtensa on Intel_S1000"
+	depends on SOC_INTEL_S1000
+	select HAS_DTS
+	select HAS_DTS_I2C

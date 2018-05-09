@@ -22,32 +22,12 @@ config GPIO_MCUX_PORTA
 	help
 	  Enable Port A.
 
-config GPIO_MCUX_PORTA_NAME
-	string "Port A driver name"
-	depends on GPIO_MCUX_PORTA
-	default "GPIO_0"
-
-config GPIO_MCUX_PORTA_PRI
-	int "Port A interrupt priority"
-	depends on GPIO_MCUX_PORTA
-	default 2
-
 config GPIO_MCUX_PORTB
 	bool "Port B"
 	depends on PINMUX_MCUX_PORTB
 	default n
 	help
 	  Enable Port B.
-
-config GPIO_MCUX_PORTB_NAME
-	string "Port B driver name"
-	depends on GPIO_MCUX_PORTB
-	default "GPIO_1"
-
-config GPIO_MCUX_PORTB_PRI
-	int "Port B interrupt priority"
-	depends on GPIO_MCUX_PORTB
-	default 2
 
 config GPIO_MCUX_PORTC
 	bool "Port C"
@@ -56,16 +36,6 @@ config GPIO_MCUX_PORTC
 	help
 	  Enable Port C.
 
-config GPIO_MCUX_PORTC_NAME
-	string "Port C driver name"
-	depends on GPIO_MCUX_PORTC
-	default "GPIO_2"
-
-config GPIO_MCUX_PORTC_PRI
-	int "Port C interrupt priority"
-	depends on GPIO_MCUX_PORTC
-	default 2
-
 config GPIO_MCUX_PORTD
 	bool "Port D"
 	depends on PINMUX_MCUX_PORTD
@@ -73,31 +43,11 @@ config GPIO_MCUX_PORTD
 	help
 	  Enable Port D.
 
-config GPIO_MCUX_PORTD_NAME
-	string "Port D driver name"
-	depends on GPIO_MCUX_PORTD
-	default "GPIO_3"
-
-config GPIO_MCUX_PORTD_PRI
-	int "Port D interrupt priority"
-	depends on GPIO_MCUX_PORTD
-	default 2
-
 config GPIO_MCUX_PORTE
 	bool "Port E"
 	depends on PINMUX_MCUX_PORTE
 	default n
 	help
 	  Enable Port E.
-
-config GPIO_MCUX_PORTE_NAME
-	string "Port E driver name"
-	depends on GPIO_MCUX_PORTE
-	default "GPIO_4"
-
-config GPIO_MCUX_PORTE_PRI
-	int "Port E interrupt priority"
-	depends on GPIO_MCUX_PORTE
-	default 2
 
 endif # GPIO_MCUX

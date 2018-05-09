@@ -1,18 +1,18 @@
 common:
   depends_on: netif
 tests:
-  test:
+  net.app:
     min_ram: 32
     tags: net
-  test-no-ipv4:
+  net.app.no-ipv4:
     extra_args: CONF_FILE=prj-no-ipv4.conf
     min_ram: 32
     tags: net
-  test-no-ipv6:
+  net.app.no-ipv6:
     extra_args: CONF_FILE=prj-no-ipv6.conf
     min_ram: 32
     tags: net
-  test-with-dns:
+  net.app.with-dns:
     extra_args: CONF_FILE=prj-with-dns.conf
     min_ram: 32
     tags: net dns

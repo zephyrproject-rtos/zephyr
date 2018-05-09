@@ -135,35 +135,15 @@ struct k_mem_partition;
 enum k_objects {
 	K_OBJ_ANY,
 
-	/* Core kernel objects */
-	K_OBJ_ALERT,
-	K_OBJ_MSGQ,
-	K_OBJ_MUTEX,
-	K_OBJ_PIPE,
-	K_OBJ_SEM,
-	K_OBJ_STACK,
-	K_OBJ_THREAD,
-	K_OBJ_TIMER,
-	K_OBJ__THREAD_STACK_ELEMENT,
-
-	/* Driver subsystems */
-	K_OBJ_DRIVER_ADC,
-	K_OBJ_DRIVER_AIO_CMP,
-	K_OBJ_DRIVER_COUNTER,
-	K_OBJ_DRIVER_CRYPTO,
-	K_OBJ_DRIVER_DMA,
-	K_OBJ_DRIVER_FLASH,
-	K_OBJ_DRIVER_GPIO,
-	K_OBJ_DRIVER_I2C,
-	K_OBJ_DRIVER_I2S,
-	K_OBJ_DRIVER_IPM,
-	K_OBJ_DRIVER_PINMUX,
-	K_OBJ_DRIVER_PWM,
-	K_OBJ_DRIVER_ENTROPY,
-	K_OBJ_DRIVER_RTC,
-	K_OBJ_DRIVER_SENSOR,
-	K_OBJ_DRIVER_SPI,
-	K_OBJ_DRIVER_UART,
+	/** @cond
+	 *  Doxygen should ignore this build-time generated include file
+	 *  when genrating API documentation.  Enumeration values are
+	 *  generated during build by gen_kobject_list.py.  It includes
+	 *  basic kernel objects (e.g.  pipes and mutexes) and driver types.
+	 */
+#include <kobj-types-enum.h>
+	/** @endcond
+	 */
 
 	K_OBJ_LAST
 };
@@ -299,6 +279,35 @@ __syscall void k_object_access_revoke(void *object, struct k_thread *thread);
  */
 void k_object_access_all_grant(void *object);
 
+#ifdef CONFIG_DYNAMIC_OBJECTS
+/**
+ * Allocate a kernel object of a designated type
+ *
+ * This will instantiate at runtime a kernel object of the specified type,
+ * returning a pointer to it. The object will be returned in an uninitialized
+ * state, with the calling thread being granted permission on it. The memory
+ * for the object will be allocated out of the kernel's heap.
+ *
+ * Currently, allocation of thread stacks is not supported.
+ *
+ * @param otype Requested kernel object type
+ * @return A pointer to the allocated kernel object, or NULL if memory wasn't
+ * available
+ */
+void *k_object_alloc(enum k_objects otype);
+
+/**
+ * Free a kernel object previously allocated with k_object_alloc()
+ *
+ * This will return memory for a kernel object back to the system heap.
+ * Care must be exercised that the object will not be used during or after
+ * when this call is made.
+ *
+ * @param obj Pointer to the kernel object memory address.
+ */
+void k_object_free(void *obj);
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+
 /* Using typedef deliberately here, this is quite intended to be an opaque
  * type. K_THREAD_STACK_BUFFER() should be used to access the data within.
  *
@@ -411,6 +420,9 @@ struct _thread_base {
 
 	/* CPU index on which thread was last run */
 	u8_t cpu;
+
+	/* Recursive count of irq_lock() calls */
+	u8_t global_lock_count;
 #endif
 
 	/* data returned by APIs */
@@ -717,8 +729,10 @@ __syscall k_tid_t k_current_get(void);
  *
  * @retval 0 Thread spawning canceled.
  * @retval -EINVAL Thread has already started executing.
+ *
+ * @deprecated This API is deprecated.  Use k_thread_abort().
  */
-__syscall int k_thread_cancel(k_tid_t thread);
+__deprecated __syscall int k_thread_cancel(k_tid_t thread);
 
 /**
  * @brief Abort a thread.
@@ -2693,7 +2707,9 @@ static inline unsigned int _impl_k_sem_count_get(struct k_sem *sem)
 #define K_SEM_DEFINE(name, initial_count, count_limit) \
 	struct k_sem name \
 		__in_section(_k_sem, static, name) = \
-		_K_SEM_INITIALIZER(name, initial_count, count_limit)
+		_K_SEM_INITIALIZER(name, initial_count, count_limit); \
+	BUILD_ASSERT(((count_limit) != 0) && \
+		     ((initial_count) <= (count_limit)));
 
 /** @} */
 
@@ -3948,7 +3964,7 @@ extern int k_poll_signal(struct k_poll_signal *signal, int result);
 /**
  * @internal
  */
-extern int _handle_obj_poll_events(sys_dlist_t *events, u32_t state);
+extern void _handle_obj_poll_events(sys_dlist_t *events, u32_t state);
 
 /** @} */
 

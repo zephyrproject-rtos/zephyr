@@ -196,8 +196,8 @@ static inline struct net_pkt *prepare_arp(struct net_if *iface,
 
 struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 {
-	struct ethernet_context *ctx = net_if_l2_data(net_pkt_iface(pkt));
 	struct arp_entry *entry, *free_entry = NULL, *non_pending = NULL;
+	struct ethernet_context *ctx;
 	struct net_buf *frag;
 	struct net_linkaddr *ll;
 	struct net_eth_hdr *hdr;
@@ -206,6 +206,8 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 	if (!pkt || !pkt->frags) {
 		return NULL;
 	}
+
+	ctx = net_if_l2_data(net_pkt_iface(pkt));
 
 	if (net_pkt_ll_reserve(pkt) != sizeof(struct net_eth_hdr)
 #if defined(CONFIG_NET_VLAN)

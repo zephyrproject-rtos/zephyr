@@ -158,6 +158,8 @@ line break instead of white spaces.
 Most everyday users will run with no arguments.
 """
 
+import contextlib
+import mmap
 import argparse
 import os
 import sys
@@ -171,6 +173,7 @@ import threading
 import time
 import csv
 import glob
+import serial
 import concurrent
 import concurrent.futures
 import xml.etree.ElementTree as ET
@@ -304,6 +307,15 @@ class Handler:
         self.metrics["ram_size"] = 0
         self.metrics["rom_size"] = 0
 
+        self.name = instance.name
+        self.instance = instance
+        self.timeout = instance.test.timeout
+        self.sourcedir = instance.test.code_location
+        self.outdir = instance.outdir
+        self.handler_log = os.path.join(self.outdir, "handler.log")
+        self.returncode = 0
+        self.set_state("running", {})
+
     def set_state(self, state, metrics):
         self.lock.acquire()
         self.state = state
@@ -316,6 +328,93 @@ class Handler:
         self.lock.release()
         return ret
 
+
+class DeviceHandler(Handler):
+
+    def __init__(self, instance):
+        """Constructor
+
+        @param instance Test Instance
+        """
+        super().__init__(instance)
+
+    def monitor_serial(self, ser, harness):
+        log_out_fp = open(self.handler_log, "wt")
+
+        while ser.isOpen():
+            try:
+                serial_line = ser.readline()
+            except TypeError:
+                pass
+
+            if serial_line:
+                sl = serial_line.decode('utf-8', 'ignore')
+                verbose("DEVICE: {0}".format(sl.rstrip()))
+
+                log_out_fp.write(sl)
+                log_out_fp.flush()
+                harness.handle(sl.rstrip())
+            if harness.state:
+                ser.close()
+                break
+
+        log_out_fp.close()
+
+    def handle(self):
+        out_state = "failed"
+
+        if options.ninja:
+            generator_cmd = "ninja"
+        else:
+            generator_cmd = "make"
+
+        command = [generator_cmd, "-C", self.outdir, "flash"]
+
+        device = options.device_serial
+        ser = serial.Serial(
+                device,
+                baudrate=115200,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                bytesize=serial.EIGHTBITS,
+                timeout=self.timeout
+                )
+
+        ser.flush()
+
+        harness_name = self.instance.test.harness.capitalize()
+        harness_import = HarnessImporter(harness_name)
+        harness = harness_import.instance
+        harness.configure(self.instance)
+
+        t = threading.Thread(target=self.monitor_serial, args=(ser, harness))
+        t.start()
+
+        try:
+            subprocess.check_output(command, stderr=subprocess.PIPE)
+        except subprocess.CalledProcessError:
+            pass
+
+        t.join(self.timeout)
+        if t.is_alive():
+            out_state = "timeout"
+            ser.close()
+
+        if ser.isOpen():
+            ser.close()
+
+        if out_state == "timeout":
+            for c in self.instance.test.cases:
+                if c not in harness.tests:
+                    harness.tests[c] = "BLOCK"
+
+        self.instance.results = harness.tests
+
+        if harness.state:
+            self.set_state(harness.state, {})
+        else:
+            self.set_state(out_state, {})
+
 class NativeHandler(Handler):
     def __init__(self, instance):
         """Constructor
@@ -324,15 +423,7 @@ class NativeHandler(Handler):
         """
         super().__init__(instance)
 
-        self.instance = instance
-        self.timeout = instance.test.timeout
-        self.sourcedir = instance.test.code_location
-        self.outdir = instance.outdir
-        self.run_log = os.path.join(self.outdir, "run.log")
-        self.handler_log = os.path.join(self.outdir, "handler.log")
         self.valgrind = False
-        self.returncode = 0
-        self.set_state("running", {})
 
     def _output_reader(self, proc, harness):
         log_out_fp = open(self.handler_log, "wt")
@@ -377,6 +468,8 @@ class NativeHandler(Handler):
 
         returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-b", "-s", self.outdir], shell=True)
 
+
+        self.instance.results = harness.tests
         if harness.state:
             self.set_state(harness.state, {})
         else:
@@ -391,18 +484,11 @@ class UnitHandler(Handler):
         """
         super().__init__(instance)
 
-        self.timeout = instance.test.timeout
-        self.sourcedir = instance.test.code_location
-        self.outdir = instance.outdir
-        self.run_log = os.path.join(self.outdir, "run.log")
-        self.handler_log = os.path.join(self.outdir, "handler.log")
-        self.returncode = 0
-        self.set_state("running", {})
 
     def handle(self):
         out_state = "failed"
 
-        with open(self.run_log, "wt") as rl, open(self.handler_log, "wt") as vl:
+        with open(self.handler_log, "wt") as hl:
             try:
                 binary = os.path.join(self.outdir, "testbinary")
                 command = [binary]
@@ -410,7 +496,7 @@ class UnitHandler(Handler):
                     command = ["valgrind", "--error-exitcode=2",
                                "--leak-check=full"] + command
                 returncode = subprocess.call(command, timeout=self.timeout,
-                                             stdout=rl, stderr=vl)
+                                             stdout=hl, stderr=hl)
                 self.returncode = returncode
                 if returncode != 0:
                     if self.returncode == 1:
@@ -526,21 +612,10 @@ class QEMUHandler(Handler):
     def __init__(self, instance):
         """Constructor
 
-        @param name Arbitrary name of the created thread
-        @param outdir Working directory, should be where qemu.pid gets created
-            by the build system
-        @param log_fn Absolute path to write out QEMU's log data
-        @param timeout Kill the QEMU process if it doesn't finish up within
-            the given number of seconds
+        @param instance Test instance
         """
 
-
         super().__init__(instance)
-        outdir = instance.outdir
-        timeout = instance.test.timeout
-        name = instance.name
-        run_log = os.path.join(outdir, "run.log")
-        handler_log = os.path.join(outdir, "handler.log")
 
         self.results = {}
 
@@ -552,17 +627,19 @@ class QEMUHandler(Handler):
         if os.path.exists(self.pid_fn):
             os.unlink(self.pid_fn)
 
-        self.log_fn = handler_log
+        self.log_fn = self.handler_log
 
         harness_import = HarnessImporter(instance.test.harness.capitalize())
         harness = harness_import.instance
-        harness.configure(instance)
-        self.thread = threading.Thread(name=name, target=QEMUHandler._thread,
-                                       args=(self, timeout, outdir,
+        harness.configure(self.instance)
+        self.thread = threading.Thread(name=self.name, target=QEMUHandler._thread,
+                                       args=(self, self.timeout, self.outdir,
                                              self.log_fn, self.fifo_fn,
                                              self.pid_fn, self.results, harness))
+
+        self.instance.results = harness.tests
         self.thread.daemon = True
-        verbose("Spawning QEMU process for %s" % name)
+        verbose("Spawning QEMU process for %s" % self.name)
         self.thread.start()
 
     def get_fifo(self):
@@ -795,7 +872,7 @@ class MakeGenerator:
     re_make = re.compile(
         "sanity_test_([A-Za-z0-9]+) (.+)|$|make[:] \*\*\* \[(.+:.+: )?(.+)\] Error.+$")
 
-    def __init__(self, base_outdir, asserts=False, deprecations=False):
+    def __init__(self, base_outdir):
         """MakeGenerator constructor
 
         @param base_outdir Intended to be the base out directory. A make.log
@@ -809,8 +886,8 @@ class MakeGenerator:
             os.makedirs(base_outdir)
         self.logfile = os.path.join(base_outdir, "make.log")
         self.makefile = os.path.join(base_outdir, "Makefile")
-        self.asserts = asserts
-        self.deprecations = deprecations
+        self.asserts = options.enable_asserts
+        self.deprecations = options.error_on_deprecations
 
     def _get_rule_header(self, name):
         return MakeGenerator.GOAL_HEADER_TMPL.format(goal=name)
@@ -832,8 +909,7 @@ class MakeGenerator:
         if self.deprecations:
             cflags = cflags + "  -Wno-deprecated-declarations"
 
-        if not "native_posix" in args:
-            ldflags="-Wl,--fatal-warnings"
+        ldflags="-Wl,--fatal-warnings"
 
         if options.ninja:
             generator = "Ninja"
@@ -958,7 +1034,7 @@ class MakeGenerator:
         self.goals[name] = MakeGoal(name, text, qemu_handler, self.logfile, build_logfile,
                                     run_logfile, handler_logfile)
 
-    def add_unit_goal(self, instance, args, timeout=30, coverage=False):
+    def add_unit_goal(self, instance, args, timeout=30):
         outdir = instance.outdir
         timeout = instance.test.timeout
         name = instance.name
@@ -980,7 +1056,7 @@ class MakeGenerator:
         self.goals[name] = MakeGoal(name, text, unit_handler, self.logfile, build_logfile,
                                     run_logfile, handler_logfile)
 
-    def add_native_goal(self, instance, args, coverage=False):
+    def add_native_goal(self, instance, args):
 
         outdir = instance.outdir
         timeout = instance.test.timeout
@@ -1001,8 +1077,28 @@ class MakeGenerator:
         self.goals[name] = MakeGoal(name, text, native_handler, self.logfile, build_logfile,
                                     run_logfile, handler_logfile)
 
-    def add_test_instance(self, ti, build_only=False, enable_slow=False, coverage=False,
-                          extra_args=[]):
+    def add_device_goal(self, instance, args):
+
+        outdir = instance.outdir
+        timeout = instance.test.timeout
+        name = instance.name
+        directory = instance.test.code_location
+
+        self._add_goal(outdir)
+        build_logfile = os.path.join(outdir, "build.log")
+        run_logfile = os.path.join(outdir, "run.log")
+        handler_logfile = os.path.join(outdir, "handler.log")
+
+        # we handle running in the NativeHandler class
+        text = (self._get_rule_header(name) +
+                self._get_sub_make(name, "building", directory,
+                                   outdir, build_logfile, args) +
+                self._get_rule_footer(name))
+        handler = DeviceHandler(instance)
+        self.goals[name] = MakeGoal(name, text, handler, self.logfile, build_logfile,
+                                    run_logfile, handler_logfile)
+
+    def add_test_instance(self, ti, extra_args=[]):
         """Add a goal to build/test a TestInstance object
 
         @param ti TestInstance object to build. The status dictionary returned
@@ -1016,19 +1112,22 @@ class MakeGenerator:
         args.append("BOARD={}".format(ti.platform.name))
         args.extend(extra_args)
 
-        do_run_slow = enable_slow or not ti.test.slow
-        do_build_only = ti.build_only or build_only
+        do_run_slow = options.enable_slow or not ti.test.slow
+        do_build_only = ti.build_only or options.build_only
         do_run = (not do_build_only) and do_run_slow
-
 
         if ti.platform.qemu_support and do_run:
             self.add_qemu_goal(ti, args)
 
         elif ti.test.type == "unit":
-            self.add_unit_goal(ti, args, coverage)
+            self.add_unit_goal(ti, args)
 
         elif ti.platform.type == "native" and do_run:
-            self.add_native_goal(ti, args, coverage)
+            self.add_native_goal(ti, args)
+
+        elif options.device_testing and (not ti.build_only) and (not options.build_only):
+            self.add_device_goal(ti, args)
+
         else:
             self.add_instance_build_goal(ti, args, "build.log")
 
@@ -1362,6 +1461,8 @@ class TestCase:
             from the testcase.yaml file
         """
         self.code_location = os.path.join(testcase_root, workdir)
+        self.id = name
+        self.cases = []
         self.type = tc_dict["type"]
         self.tags = tc_dict["tags"]
         self.extra_args = tc_dict["extra_args"]
@@ -1389,9 +1490,89 @@ class TestCase:
             testcase_root).replace(os.path.realpath(ZEPHYR_BASE) + "/", ''),
             workdir, name))
 
+
         self.name = os.path.join(self.path)
         self.defconfig = {}
         self.yamlfile = yamlfile
+
+    def scan_file(self, inf_name):
+        suite_regex = re.compile(
+            # do not match until end-of-line, otherwise we won't allow
+            # stc_regex below to catch the ones that are declared in the same
+            # line--as we only search starting the end of this match
+            br"^\s*ztest_test_suite\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,",
+            re.MULTILINE)
+        stc_regex = re.compile(
+            br"^\s*"		# empy space at the beginning is ok
+            # catch the case where it is declared in the same sentence, e.g:
+            #
+            # ztest_test_suite(mutex_complex, ztest_user_unit_test(TESTNAME));
+            br"(?:ztest_test_suite\([a-zA-Z0-9_]+,\s*)?"
+            # Catch ztest[_user]_unit_test-[_setup_teardown](TESTNAME)
+            br"ztest_(?:user_)?unit_test(?:_setup_teardown)?"
+            # Consume the argument that becomes the extra testcse
+            br"\(\s*"
+            br"(?P<stc_name>[a-zA-Z0-9_]+)"
+            # _setup_teardown() variant has two extra arguments that we ignore
+            br"(?:\s*,\s*[a-zA-Z0-9_]+\s*,\s*[a-zA-Z0-9_]+)?"
+            br"\s*\)",
+            # We don't check how it finishes; we don't care
+            re.MULTILINE)
+        suite_run_regex = re.compile(
+            br"^\s*ztest_run_test_suite\((?P<suite_name>[a-zA-Z0-9_]+)\)",
+            re.MULTILINE)
+        achtung_regex = re.compile(
+            br"(#ifdef|#endif)",
+            re.MULTILINE)
+        warnings = None
+
+        with open(inf_name) as inf:
+            with contextlib.closing(mmap.mmap(inf.fileno(), 0, mmap.MAP_PRIVATE,
+                                              mmap.PROT_READ, 0)) as main_c:
+                suite_regex_match = suite_regex.search(main_c)
+                if not suite_regex_match:
+                    # can't find ztest_test_suite, maybe a client, because
+                    # it includes ztest.h
+                    return None, None
+
+                suite_run_match = suite_run_regex.search(main_c)
+                if not suite_run_match:
+                    raise ValueError("can't find ztest_run_test_suite")
+
+                achtung_matches = re.findall(
+                    achtung_regex,
+                    main_c[suite_regex_match.end():suite_run_match.start()])
+                if achtung_matches:
+                    warnings = "found invalid %s in ztest_test_suite()" \
+                               % ", ".join(set([
+                                   match.decode() for match in achtung_matches
+                               ]))
+                _matches = re.findall(
+                    stc_regex,
+                    main_c[suite_regex_match.end():suite_run_match.start()])
+                matches = [ match.decode().replace("test_", "") for match in _matches ]
+                return matches, warnings
+
+    def scan_path(self, path):
+        subcases = []
+        for filename in glob.glob(os.path.join(path, "src", "*.c")):
+            try:
+                _subcases, warnings = self.scan_file(filename)
+                if warnings:
+                    error("%s: %s" % (filename, warnings))
+                if _subcases:
+                    subcases += _subcases
+            except ValueError as e:
+                error("%s: can't find: %s", filename, e)
+        return subcases
+
+
+    def parse_subcases(self):
+        results = self.scan_path(self.code_location)
+        for sub in results:
+            name = "{}.{}".format(self.id, sub)
+            self.cases.append(name)
+
 
     def __str__(self):
         return self.name
@@ -1406,13 +1587,13 @@ class TestInstance:
         out directory used is <outdir>/<platform>/<test case name>
     """
 
-    def __init__(self, test, platform, base_outdir, build_only=False,
-                 slow=False, coverage=False):
+    def __init__(self, test, platform, base_outdir):
         self.test = test
         self.platform = platform
         self.name = os.path.join(platform.name, test.name)
         self.outdir = os.path.join(base_outdir, platform.name, test.path)
-        self.build_only = build_only or test.build_only or (test.harness and test.harness != 'console')
+        self.build_only = options.build_only or test.build_only or (test.harness and test.harness != 'console')
+        self.results = {}
 
     def create_overlay(self):
         if len(self.test.extra_configs) > 0:
@@ -1466,7 +1647,7 @@ class TestSuite:
         os.path.join(os.environ['ZEPHYR_BASE'],
                      "scripts", "sanity_chk", "sanitycheck-tc-schema.yaml"))
 
-    def __init__(self, board_root_list, testcase_roots, outdir, coverage):
+    def __init__(self, board_root_list, testcase_roots, outdir):
         # Keep track of which test cases we've filtered out and why
         self.arches = {}
         self.testcases = {}
@@ -1475,7 +1656,6 @@ class TestSuite:
         self.instances = {}
         self.goals = None
         self.discards = None
-        self.coverage = coverage
         self.load_errors = 0
 
         for testcase_root in testcase_roots:
@@ -1492,6 +1672,7 @@ class TestSuite:
                     filename = 'testcase.yaml'
                 else:
                     continue
+
                 verbose("Found possible test case in " + dirpath)
                 dirnames[:] = []
                 yaml_path = os.path.join(dirpath, filename)
@@ -1505,6 +1686,7 @@ class TestSuite:
                         tc_dict = parsed_data.get_test(name, testcase_valid_keys)
                         tc = TestCase(testcase_root, workdir, name, tc_dict,
                                       yaml_path)
+                        tc.parse_subcases()
 
                         self.testcases[tc.name] = tc
 
@@ -1865,8 +2047,7 @@ class TestSuite:
         for ti in ti_list:
             self.instances[ti.name] = ti
 
-    def execute(self, cb, cb_context, build_only, enable_slow,
-                enable_asserts, enable_deprecations, extra_args):
+    def execute(self, cb, cb_context):
 
         def calc_one_elf_size(name, goal):
             if not goal.failed:
@@ -1876,11 +2057,9 @@ class TestSuite:
                 goal.metrics["rom_size"] = sc.get_rom_size()
                 goal.metrics["unrecognized"] = sc.unrecognized_sections()
 
-        mg = MakeGenerator(self.outdir, asserts=enable_asserts,
-                           deprecations=enable_deprecations)
+        mg = MakeGenerator(self.outdir)
         for i in self.instances.values():
-            mg.add_test_instance(i, build_only, enable_slow,
-                                 self.coverage, extra_args)
+            mg.add_test_instance(i, options.extra_args)
         self.goals = mg.execute(cb, cb_context)
 
         # Parallelize size calculation
@@ -1958,6 +2137,85 @@ class TestSuite:
                 results.append((i, metric, goal.metrics[metric], delta,
                                 lower_better))
         return results
+
+
+
+    def encode_for_xml(self, unicode_data, encoding='ascii'):
+        unicode_data = unicode_data.replace('\x00', '')
+        return unicode_data
+
+    def testcase_target_report(self, report_file):
+
+        run = "Sanitycheck"
+        eleTestsuite = None
+        append = options.only_failed
+
+        errors = 0
+        passes = 0
+        fails = 0
+        duration = 0
+        skips = 0
+
+        for identifier, ti in self.instances.items():
+            for k in ti.results.keys():
+                if ti.results[k] == 'PASS':
+                    passes += 1
+                elif ti.results[k] == 'BLOCK':
+                    errors += 1
+                elif ti.results[k] == 'SKIP':
+                    skips += 1
+                else:
+                    fails += 1
+
+        eleTestsuites = ET.Element('testsuites')
+        eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
+                                     name=run, time="%d" % duration,
+                                     tests="%d" % (errors + passes + fails),
+                                     failures="%d" % fails,
+                                     errors="%d" % errors, skipped="%d" %skips)
+
+        handler_time = "0"
+
+        # print out test results
+        for identifier, ti in self.instances.items():
+            for k in ti.results.keys():
+
+                eleTestcase = ET.SubElement(
+                        eleTestsuite, 'testcase', classname="%s:%s" %(ti.platform.name, os.path.basename(ti.test.name)),
+                        name="%s" % (k), time=handler_time)
+                if ti.results[k] in ['FAIL', 'BLOCK']:
+                    el = None
+
+                    if ti.results[k] == 'FAIL':
+                        el = ET.SubElement(
+                            eleTestcase,
+                            'failure',
+                            type="failure",
+                            message="failed")
+                    elif ti.results[k] == 'BLOCK':
+                        el = ET.SubElement(
+                            eleTestcase,
+                            'error',
+                            type="failure",
+                            message="failed")
+                    p = os.path.join(options.outdir, ti.platform.name, ti.test.name)
+                    bl = os.path.join(p, "handler.log")
+
+                    if os.path.exists(bl):
+                        with open(bl, "rb") as f:
+                            log = f.read().decode("utf-8")
+                            el.text = self.encode_for_xml(log)
+
+                elif ti.results[k] == 'SKIP':
+                    el = ET.SubElement(
+                        eleTestcase,
+                        'skipped')
+
+        result = ET.tostring(eleTestsuites)
+        f = open(report_file, 'wb')
+        f.write(result)
+        f.close()
+
 
     def testcase_xunit_report(self, filename, duration):
         if self.goals is None:
@@ -2141,6 +2399,14 @@ def parse_arguments():
     parser.add_argument("--list-tags", action="store_true",
             help="list all tags in selected tests")
 
+    parser.add_argument("--list-tests", action="store_true",
+            help="list all tests.")
+
+    parser.add_argument("--detailed-report",
+            action="store",
+            metavar="FILENAME",
+            help="Generate a junit report with detailed testcase results.")
+
     parser.add_argument(
         "-r", "--release", action="store_true",
         help="Update the benchmark database with the results of this test "
@@ -2194,6 +2460,14 @@ def parse_arguments():
         "-j", "--jobs", type=int,
         help="Number of cores to use when building, defaults to "
         "number of CPUs * 2")
+
+    parser.add_argument(
+        "--device-testing", action="store_true",
+        help="Test on device directly. You need to specify the serial"
+			 "using --device-serial option")
+    parser.add_argument(
+        "--device-serial",
+		help="Serial device the board can be accessed through")
     parser.add_argument(
             "--show-footprint", action="store_true",
             help="Show footprint statistics and deltas since last release."
@@ -2208,9 +2482,11 @@ def parse_arguments():
         "-D", "--all-deltas", action="store_true",
         help="Show all footprint deltas, positive or negative. Implies "
         "--footprint-threshold=0")
-    parser.add_argument("-O", "--outdir",
-                        default="%s/sanity-out" % ZEPHYR_BASE,
-                        help="Output directory for logs and binaries.")
+    parser.add_argument(
+        "-O", "--outdir",
+        default="%s/sanity-out" % ZEPHYR_BASE,
+        help="Output directory for logs and binaries. "
+        "This directory will be deleted unless '--no-clean' is set.")
     parser.add_argument(
         "-n", "--no-clean", action="store_true",
         help="Do not delete the outdir before building. Will result in "
@@ -2401,6 +2677,11 @@ def main():
             size_report(SizeCalculator(fn, []))
         sys.exit(0)
 
+
+    if options.device_testing:
+        if options.device_serial is None or len(options.platform) != 1:
+            sys.exit(1)
+
     VERBOSE += options.verbose
     INLINE_LOGS = options.inline_logs
     if options.log_file:
@@ -2424,8 +2705,7 @@ def main():
         options.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
                               os.path.join(ZEPHYR_BASE, "samples")]
 
-    ts = TestSuite(options.board_root, options.testcase_root,
-                   options.outdir, options.coverage)
+    ts = TestSuite(options.board_root, options.testcase_root, options.outdir)
 
     if ts.load_errors:
         sys.exit(1)
@@ -2438,6 +2718,19 @@ def main():
         for t in tags:
             print("- {}".format(t))
 
+        return
+
+    if options.list_tests:
+        cnt = 0
+        unq = []
+        for n,tc in ts.testcases.items():
+            for c in tc.cases:
+                unq.append(c)
+
+        for u in sorted(set(unq)):
+            cnt = cnt + 1
+            print(" - {}".format(u))
+        print("{} total.".format(cnt))
         return
 
     discards = []
@@ -2504,22 +2797,15 @@ def main():
     if VERBOSE or not TERMINAL:
         goals = ts.execute(
             chatty_test_cb,
-            ts.instances,
-            options.build_only,
-            options.enable_slow,
-            options.enable_asserts,
-            options.error_on_deprecations,
-            options.extra_args)
+            ts.instances)
     else:
         goals = ts.execute(
             terse_test_cb,
-            ts.instances,
-            options.build_only,
-            options.enable_slow,
-            options.enable_asserts,
-            options.error_on_deprecations,
-            options.extra_args)
+            ts.instances)
         info("")
+
+    if options.detailed_report:
+        ts.testcase_target_report(options.detailed_report)
 
     # figure out which report to use for size comparison
     if options.compare_report:

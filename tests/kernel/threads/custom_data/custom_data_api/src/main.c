@@ -41,8 +41,9 @@ static void customdata_entry(void *p1, void *p2, void *p3)
 void test_customdata_get_set_coop(void)
 {
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-		customdata_entry, NULL, NULL, NULL,
-		K_PRIO_COOP(1), 0, 0);
+				      customdata_entry, NULL, NULL, NULL,
+				      K_PRIO_COOP(1), 0, 0);
+
 	k_sleep(500);
 
 	/* cleanup environment */
@@ -57,8 +58,9 @@ void test_customdata_get_set_preempt(void)
 {
 	/** TESTPOINT: custom data of preempt thread */
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-		customdata_entry, NULL, NULL, NULL,
-		K_PRIO_PREEMPT(0), K_USER, 0);
+				      customdata_entry, NULL, NULL, NULL,
+				      K_PRIO_PREEMPT(0), K_USER, 0);
+
 	k_sleep(500);
 
 	/* cleanup environment */
@@ -71,7 +73,7 @@ void test_main(void)
 	k_thread_access_grant(k_current_get(), &tdata, tstack, NULL);
 
 	ztest_test_suite(customdata_api,
-		ztest_unit_test(test_customdata_get_set_coop),
-		ztest_user_unit_test(test_customdata_get_set_preempt));
+			 ztest_unit_test(test_customdata_get_set_coop),
+			 ztest_user_unit_test(test_customdata_get_set_preempt));
 	ztest_run_test_suite(customdata_api);
 }

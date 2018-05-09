@@ -147,3 +147,114 @@ guidelines should be followed when porting a board:
 - Propose and configure a default network interface.
 
 - Enable all GPIO ports.
+
+.. _setting_configuration_values:
+
+Setting configuration values
+============================
+
+Kconfig symbols can be set to their ``BOARD``-specific values in one of two
+ways. The right method to use depends on whether the symbol is *visible* or
+not.
+
+
+Visible and invisible Kconfig symbols
+-------------------------------------
+
+Kconfig symbols come in two varieties:
+
+- A Kconfig symbol defined with a prompt is *visible*, and can be configured from
+  the ``menuconfig`` configuration interface.
+
+- A Kconfig symbol defined without a prompt is *invisible*. The user has no
+  direct control over its value.
+
+Here are some examples of visible and invisible symbols:
+
+.. code-block:: none
+
+    config NOT_VISIBLE
+    	bool
+    	default FOO
+
+    config VISIBLE_1
+    	bool "Enable stuff"
+
+    config VISIBLE_2
+    	string
+    	prompt "Foo value"
+
+
+Configuring visible Kconfig symbols
+-----------------------------------
+
+Default ``BOARD``-specific configuration values for visible Kconfig symbols
+*should* be given in :file:`boards/ARCHITECTURE/BOARD/BOARD_defconfig`, which
+uses the standard Kconfig :file:`.config` file syntax.
+
+
+Configuring invisible Kconfig symbols
+-------------------------------------
+
+``BOARD``-specific configuration values for invisible Kconfig symbols *must* be
+given in :file:`boards/ARCHITECTURE/BOARD/Kconfig.defconfig`, which uses
+Kconfig syntax.
+
+Assigning values in :file:`Kconfig.defconfig` relies on being able to define a
+Kconfig symbol in multiple locations. As an example, say we want to set
+``FOO_WIDTH`` below to 32:
+
+.. code-block:: none
+
+    config FOO_WIDTH
+    	int
+
+To do this, we extend the definition of ``FOO_WIDTH`` as follows, in
+:file:`Kconfig.defconfig`:
+
+.. code-block:: none
+
+    if BOARD_MY_BOARD
+
+    config FOO_WIDTH
+    	default 32
+
+    endif
+
+.. note::
+
+    Since the type of the symbol (``int``) has already been given at the first
+    definition location, it does not need to be repeated here.
+
+``default`` properties from :file:`Kconfig.defconfig` files override
+``default`` properties given on the "base" definition of the symbol. Zephyr
+uses a custom Kconfig patch that makes Kconfig prefer later defaults, and
+includes the :file:`Kconfig.defconfig` files last.
+
+.. note::
+
+    Assignments in :file:`.config` files have no effect on invisible symbols,
+    so this scheme is not just an organizational issue.
+
+If you want a symbol to only be user-configurable on some boards, make its base
+definition have no prompt, and then add a prompt to it in the
+:file:`Kconfig.defconfig` files of the boards where it should be configurable.
+
+.. note::
+
+    Prompts added in :file:`Kconfig.defconfig` files show up at the location of
+    the :file:`Kconfig.defconfig` file in the ``menuconfig`` interface, rather
+    than at the location of the base definition of the symbol.
+
+Motivation
+----------
+
+One motivation for this scheme is to avoid making fixed ``BOARD``-specific
+settings configurable in the ``menuconfig`` interface. If all
+configuration were done via :file:`boards/ARCHITECTURE/BOARD/BOARD_defconfig`,
+all symbols would have to be visible, as values given in
+:file:`boards/ARCHITECTURE/BOARD/BOARD_defconfig` have no effect on invisible
+symbols.
+
+Having fixed settings be user-configurable might be confusing, and would allow
+the user to create broken configurations.

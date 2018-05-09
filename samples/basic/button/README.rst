@@ -18,7 +18,7 @@ have defined the SW0_* variable in board.h
 To use this sample, you will require a board that defines the user switch in its
 header file. The :file:`board.h` must define the following variables:
 
-- SW0_GPIO_NAME
+- SW0_GPIO_NAME (or SW0_GPIO_CONTROLLER)
 - SW0_GPIO_PIN
 
 The following boards currently define the above variables:

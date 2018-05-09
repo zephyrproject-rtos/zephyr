@@ -13,7 +13,6 @@
 #include <misc/dlist.h>
 #include <ksched.h>
 #include <init.h>
-#include <kswap.h>
 
 extern struct k_mem_slab _k_mem_slab_list_start[];
 extern struct k_mem_slab _k_mem_slab_list_end[];
@@ -101,8 +100,7 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, s32_t timeout)
 		result = -ENOMEM;
 	} else {
 		/* wait for a free block or timeout */
-		_pend_current_thread(&slab->wait_q, timeout);
-		result = _Swap(key);
+		result = _pend_current_thread(key, &slab->wait_q, timeout);
 		if (result == 0) {
 			*mem = _current->base.swap_data;
 		}
@@ -121,17 +119,12 @@ void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 
 	if (pending_thread) {
 		_set_thread_return_value_with_data(pending_thread, 0, *mem);
-		_abort_thread_timeout(pending_thread);
 		_ready_thread(pending_thread);
-		if (_must_switch_threads()) {
-			_Swap(key);
-			return;
-		}
 	} else {
 		**(char ***)mem = slab->free_list;
 		slab->free_list = *(char **)mem;
 		slab->num_used--;
 	}
 
-	irq_unlock(key);
+	_reschedule(key);
 }

@@ -13,9 +13,28 @@ config DISK_ACCESS
 	help
 	  Enable disk access over a supported media backend like FLASH or RAM
 
+config DISK_ACCESS_MAX_VOLUMES
+	int
+	default 8
+	prompt "Maximum Disk Interfaces"
+	help
+	  Maximum number of disk access interfaces supported
+
+config SYS_LOG_DISK_LEVEL
+	int
+	prompt "File System log level"
+	depends on SYS_LOG
+	default 0
+	help
+	  Sets log level for Disk drivers.
+	  Levels are:
+	  - 0 OFF, do not write
+	  - 1 ERROR, only write SYS_LOG_ERR
+	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
+	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
 if DISK_ACCESS
-choice
-	prompt "Storage backend selection"
 
 config DISK_ACCESS_RAM
 	bool "RAM Disk"
@@ -30,9 +49,27 @@ config DISK_ACCESS_FLASH
 	help
 	  Flash device is used for the file system.
 
-endchoice
+endif # DISK_ACCESS
+
+if DISK_ACCESS_RAM
+
+config DISK_RAM_VOLUME_NAME
+	string
+	prompt "RAM Disk mount point or drive name"
+	default "RAM"
+	help
+	  Disk name as per file system naming guidelines.
+
+endif # DISK_ACCESS_RAM
 
 if DISK_ACCESS_FLASH
+
+config DISK_FLASH_VOLUME_NAME
+	string
+	prompt "Flash mount point or drive name"
+	default "NAND"
+	help
+	  Disk name as per file system naming guidelines.
 
 config DISK_FLASH_DEV_NAME
 	string
@@ -73,5 +110,4 @@ config DISK_VOLUME_SIZE
 	  This is the file system volume size in bytes.
 
 endif # DISK_ACCESS_FLASH
-endif # DISK_ACCESS
 endmenu

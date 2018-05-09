@@ -1,0 +1,94 @@
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_INTEL_S1000_CRB
+
+config BOARD
+	default intel_s1000_crb
+
+config BOARD_XTENSA
+	def_bool y
+
+config CAVS_ICTL_0_OFFSET
+	default 0x06
+config CAVS_ICTL_1_OFFSET
+	default 0x0A
+config CAVS_ICTL_2_OFFSET
+	default 0x0D
+config CAVS_ICTL_3_OFFSET
+	default 0x10
+
+config DW_ICTL_OFFSET
+	default 0x07
+
+config 2ND_LVL_INTR_00_OFFSET
+	default CAVS_ICTL_0_OFFSET
+config 2ND_LVL_INTR_01_OFFSET
+	default CAVS_ICTL_1_OFFSET
+config 2ND_LVL_INTR_02_OFFSET
+	default CAVS_ICTL_2_OFFSET
+config 2ND_LVL_INTR_03_OFFSET
+	default CAVS_ICTL_3_OFFSET
+config 3RD_LVL_INTR_00_OFFSET
+	default DW_ICTL_OFFSET
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 32
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 4
+config NUM_3RD_LEVEL_AGGREGATORS
+	default 1
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 21
+config 3RD_LVL_ISR_TBL_OFFSET
+	default 149
+
+config CAVS_ISR_TBL_OFFSET
+	default 2ND_LVL_ISR_TBL_OFFSET
+config DW_ISR_TBL_OFFSET
+	default 3RD_LVL_ISR_TBL_OFFSET
+
+config GPIO_DW_0_NAME
+	default "GPIO_PORTA"
+config GPIO_DW_0_IRQ_PRI
+	default 1
+
+config I2C_0_DEFAULT_CFG
+	default 0x12
+config I2C_0_IRQ_PRI
+	default 0
+
+if DMA_CAVS
+
+config HEAP_MEM_POOL_SIZE
+	default 1024
+
+endif # DMA_CAVS
+
+if USB
+config USB_DW
+	def_bool y
+config USB_DW_IRQ_PRI
+	default 3
+config USB_PHY_2
+	def_bool y
+endif # USB
+
+if UART_NS16550
+
+config UART_NS16550_PORT_0
+	def_bool y
+
+if UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_0_OPTIONS
+	default 0
+config UART_INTERRUPT_DRIVEN
+	def_bool y
+
+endif # UART_NS16550_PORT_0
+
+endif # UART_NS16550
+
+endif # BOARD_INTEL_S1000_CRB

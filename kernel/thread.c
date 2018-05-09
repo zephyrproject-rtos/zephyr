@@ -228,7 +228,7 @@ void _impl_k_thread_start(struct k_thread *thread)
 
 	_mark_thread_as_started(thread);
 	_ready_thread(thread);
-	_reschedule_threads(key);
+	_reschedule(key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -405,7 +405,7 @@ _SYSCALL_HANDLER(k_thread_create,
 	/* Check validity of prio argument; must be the same or worse priority
 	 * than the caller
 	 */
-	_SYSCALL_VERIFY(_VALID_PRIO(prio, NULL));
+	_SYSCALL_VERIFY(_is_valid_prio(prio, NULL));
 	_SYSCALL_VERIFY(_is_prio_lower_or_equal(prio, _current->base.prio));
 
 	_setup_new_thread((struct k_thread *)new_thread, stack, stack_size,
@@ -484,7 +484,7 @@ void _impl_k_thread_resume(struct k_thread *thread)
 
 	_k_thread_single_resume(thread);
 
-	_reschedule_threads(key);
+	_reschedule(key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -501,7 +501,7 @@ void _k_thread_single_abort(struct k_thread *thread)
 		_remove_thread_from_ready_q(thread);
 	} else {
 		if (_is_thread_pending(thread)) {
-			_unpend_thread(thread);
+			_unpend_thread_no_timeout(thread);
 		}
 		if (_is_thread_timeout_active(thread)) {
 			_abort_thread_timeout(thread);

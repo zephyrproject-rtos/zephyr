@@ -4,14 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_pipe
- * @{
- * @defgroup t_pipe test_pipe
- * @}
- */
-
 #include <ztest.h>
+
 extern void test_pipe_on_single_elements(void);
 extern void test_pipe_on_multiple_elements(void);
 extern void test_pipe_forever_wait(void);
@@ -19,9 +13,7 @@ extern void test_pipe_timeout(void);
 extern void test_pipe_get_on_empty_pipe(void);
 extern void test_pipe_forever_timeout(void);
 extern void test_pipe_get_timeout(void);
-#ifdef CONFIG_USERSPACE
 extern void test_pipe_get_invalid_size(void);
-#endif
 
 extern struct k_pipe test_pipe;
 extern struct k_sem put_sem, get_sem, sync_sem, multiple_send_sem;
@@ -44,10 +36,8 @@ void test_main(void)
 			 ztest_user_unit_test(test_pipe_timeout),
 			 ztest_user_unit_test(test_pipe_get_on_empty_pipe),
 			 ztest_user_unit_test(test_pipe_forever_timeout),
-			 ztest_user_unit_test(test_pipe_get_timeout)
-#ifdef CONFIG_USERSPACE
-			 , ztest_user_unit_test(test_pipe_get_invalid_size)
-#endif
+			 ztest_user_unit_test(test_pipe_get_timeout),
+			 ztest_user_unit_test(test_pipe_get_invalid_size)
 			 );
 
 	ztest_run_test_suite(test_pipe);

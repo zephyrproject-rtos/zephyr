@@ -184,6 +184,12 @@ config TOOLCHAIN_VARIANT
 	  For optimized compilers with reduced features, specify the name
 	  of the variant.
 
+config CPLUSPLUS
+	bool "Enable C++ support for the application"
+	default n
+	help
+	  This option enables the use of applications built with C++.
+
 endmenu
 
 menu "Build Options"

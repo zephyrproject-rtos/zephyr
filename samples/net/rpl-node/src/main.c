@@ -37,13 +37,17 @@
 #define ALL_NODES_LOCAL_COAP_MCAST					\
 	{ { { 0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xfd } } }
 
-#if defined(LED0_GPIO_PORT)
-#define LED_GPIO_NAME LED0_GPIO_PORT
-#define LED_PIN LED0_GPIO_PIN
+#ifndef LED0_GPIO_CONTROLLER
+#ifdef LED0_GPIO_PORT
+#define LED0_GPIO_CONTROLLER 	LED0_GPIO_PORT
 #else
-#define LED_GPIO_NAME "(fail)"
-#define LED_PIN 0
+#define LED0_GPIO_CONTROLLER "(fail)"
+#define LED0_GPIO_PIN 0
 #endif
+#endif
+
+#define LED_GPIO_NAME LED0_GPIO_CONTROLLER
+#define LED_PIN LED0_GPIO_PIN
 
 #define RPL_MAX_REPLY 75
 

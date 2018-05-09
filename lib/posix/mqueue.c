@@ -36,7 +36,7 @@ static s32_t send_message(mqueue_desc *mqd, const char *msg_ptr, size_t msg_len,
 			  s32_t timeout);
 static int receive_message(mqueue_desc *mqd, char *msg_ptr, size_t msg_len,
 			   s32_t timeout);
-static void remove_mq(mqueue_object  *msg_queue);
+static void remove_mq(mqueue_object *msg_queue);
 
 /**
  * @brief Open a message queue.
@@ -52,7 +52,7 @@ mqd_t mq_open(const char *name, int oflags, ...)
 	mode_t mode;
 	mq_attr *attrs = NULL;
 	u32_t msg_size = 0, max_msgs = 0;
-	mqueue_object  *msg_queue;
+	mqueue_object *msg_queue;
 	mqueue_desc *msg_queue_desc = NULL, *mqd = (mqueue_desc *)(-1);
 	char *mq_desc_ptr, *mq_obj_ptr, *mq_buf_ptr, *mq_name_ptr;
 
@@ -203,7 +203,7 @@ int mq_close(mqd_t mqdes)
  */
 int mq_unlink(const char *name)
 {
-	mqueue_object  *msg_queue;
+	mqueue_object *msg_queue;
 
 	k_sem_take(&mq_sem, K_FOREVER);
 	msg_queue = find_in_list(name);
@@ -296,7 +296,6 @@ int mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len,
 int mq_getattr(mqd_t mqdes, struct mq_attr *mqstat)
 {
 	mqueue_desc *mqd = (mqueue_desc *)mqdes;
-	mqueue_object  *msg_queue = mqd->mqueue;
 	struct k_msgq_attrs attrs;
 
 	if (mqd == NULL) {
@@ -305,7 +304,7 @@ int mq_getattr(mqd_t mqdes, struct mq_attr *mqstat)
 	}
 
 	k_sem_take(&mq_sem, K_FOREVER);
-	k_msgq_get_attrs(&msg_queue->queue, &attrs);
+	k_msgq_get_attrs(&mqd->mqueue->queue, &attrs);
 	mqstat->mq_flags = mqd->flags;
 	mqstat->mq_maxmsg = attrs.max_msgs;
 	mqstat->mq_msgsize = attrs.msg_size;
@@ -420,7 +419,7 @@ static s32_t receive_message(mqueue_desc *mqd, char *msg_ptr, size_t msg_len,
 	return ret;
 }
 
-static void remove_mq(mqueue_object  *msg_queue)
+static void remove_mq(mqueue_object *msg_queue)
 {
 	if (atomic_cas(&msg_queue->ref_count, 0, 0)) {
 		k_sem_take(&mq_sem, K_FOREVER);

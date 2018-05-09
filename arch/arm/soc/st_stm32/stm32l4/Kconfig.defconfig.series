@@ -8,7 +8,7 @@
 
 if SOC_SERIES_STM32L4X
 
-source "arch/arm/soc/st_stm32/stm32l4/Kconfig.defconfig.stm32l4*"
+gsource "arch/arm/soc/st_stm32/stm32l4/Kconfig.defconfig.stm32l4*"
 
 config SOC_SERIES
 	default stm32l4

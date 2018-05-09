@@ -26,20 +26,29 @@ static u8_t data_buf[64];
 
 /* WebUSB Platform Capability Descriptor */
 static const u8_t webusb_bos_descriptor[] = {
-	/* Binary Object Store descriptor */
-	0x05, 0x0F, 0x1D, 0x00, 0x01,
+	0x05, /* Descriptor size */
+	0x0F, /* Descriptor type (Binary device Object Store) */
+	(0x05 + 0x18), 0x00, /* Total length of BOS */
+	0x01, /* Number of capability descriptors that follow */
 
 	/* WebUSB Platform Capability Descriptor:
 	 * https://wicg.github.io/webusb/#webusb-platform-capability-descriptor
 	 */
-	0x18, 0x10, 0x05, 0x00,
+	0x18, /* Descriptor size (24 bytes)          */
+	0x10, /* Descriptor type (Device Capability) */
+	0x05, /* Capability type (Platform)          */
+	0x00, /* Reserved                            */
 
-	/* PlatformCapability UUID */
-	0x38, 0xB6, 0x08, 0x34, 0xA9, 0x09, 0xA0, 0x47,
-	0x8B, 0xFD, 0xA0, 0x76, 0x88, 0x15, 0xB6, 0x65,
+	/* WebUSB Platform Capability UUID (3408b638-09a9-47a0-8bfd-a0768815b665) */
+	0x38, 0xB6, 0x08, 0x34,
+	0xA9, 0x09,
+	0xA0, 0x47,
+	0x8B, 0xFD,
+	0xA0, 0x76, 0x88, 0x15, 0xB6, 0x65,
 
-	/* Version, VendorCode, Landing Page */
-	0x00, 0x01, 0x01, 0x01,
+	0x00, 0x01, /* BCD WebUSB version: 1.0  */
+	0x01, /* Vendor-assigned WebUSB request code, for control requests */
+	0x01, /* Landing page index (refers to "http://localhost:8000") */
 };
 
 /* WebUSB Device Requests */

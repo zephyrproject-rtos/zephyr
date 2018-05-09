@@ -20,7 +20,6 @@
 #include <misc/dlist.h>
 #include <init.h>
 #include <syscall_handler.h>
-#include <kswap.h>
 
 extern struct k_msgq _k_msgq_list_start[];
 extern struct k_msgq _k_msgq_list_end[];
@@ -93,12 +92,9 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 			       q->msg_size);
 			/* wake up waiting thread */
 			_set_thread_return_value(pending_thread, 0);
-			_abort_thread_timeout(pending_thread);
 			_ready_thread(pending_thread);
-			if (!_is_in_isr() && _must_switch_threads()) {
-				_Swap(key);
-				return 0;
-			}
+			_reschedule(key);
+			return 0;
 		} else {
 			/* put message in queue */
 			memcpy(q->write_ptr, data, q->msg_size);
@@ -114,9 +110,8 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 		result = -ENOMSG;
 	} else {
 		/* wait for put message success, failure, or timeout */
-		_pend_current_thread(&q->wait_q, timeout);
 		_current->base.swap_data = data;
-		return _Swap(key);
+		return _pend_current_thread(key, &q->wait_q, timeout);
 	}
 
 	irq_unlock(key);
@@ -186,12 +181,9 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 
 			/* wake up waiting thread */
 			_set_thread_return_value(pending_thread, 0);
-			_abort_thread_timeout(pending_thread);
 			_ready_thread(pending_thread);
-			if (!_is_in_isr() && _must_switch_threads()) {
-				_Swap(key);
-				return 0;
-			}
+			_reschedule(key);
+			return 0;
 		}
 		result = 0;
 	} else if (timeout == K_NO_WAIT) {
@@ -199,9 +191,8 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 		result = -ENOMSG;
 	} else {
 		/* wait for get message success or timeout */
-		_pend_current_thread(&q->wait_q, timeout);
 		_current->base.swap_data = data;
-		return _Swap(key);
+		return _pend_current_thread(key, &q->wait_q, timeout);
 	}
 
 	irq_unlock(key);
@@ -229,14 +220,13 @@ void _impl_k_msgq_purge(struct k_msgq *q)
 	/* wake up any threads that are waiting to write */
 	while ((pending_thread = _unpend_first_thread(&q->wait_q)) != NULL) {
 		_set_thread_return_value(pending_thread, -ENOMSG);
-		_abort_thread_timeout(pending_thread);
 		_ready_thread(pending_thread);
 	}
 
 	q->used_msgs = 0;
 	q->read_ptr = q->write_ptr;
 
-	_reschedule_threads(key);
+	_reschedule(key);
 }
 
 #ifdef CONFIG_USERSPACE

@@ -5,7 +5,9 @@
  */
 
 /**
- * @file main.c - DesignWare AIO/Comparator demo on Arduino 101
+ * @file
+ *
+ * @brief DesignWare AIO/Comparator demo on Arduino 101
  *
  * This is used to demo the DesignWare AIO/Comparator. The voltage input
  * pin is analog in A0 on circuit board, which maps to AIN[10] on chip.

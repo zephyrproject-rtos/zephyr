@@ -103,6 +103,7 @@ zephyr_compile_options(
   -ffreestanding
   -Wno-main
   ${NOSTDINC_F}
+  ${TOOLCHAIN_C_FLAGS}
 )
 
 zephyr_compile_options(
@@ -230,6 +231,7 @@ else() # GCC assumed
     -Wno-unused-but-set-variable
     -fno-reorder-functions
     )
+
   if(NOT ${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "xcc")
     zephyr_cc_option(-fno-defer-pop)
   endif()
@@ -363,6 +365,21 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   DEPENDS ${syscalls_json}
   )
 
+set(DRV_VALIDATION ${PROJECT_BINARY_DIR}/include/generated/driver-validation.h)
+add_custom_command(
+  OUTPUT ${DRV_VALIDATION}
+  COMMAND
+  ${PYTHON_EXECUTABLE}
+  ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
+  --validation-output ${DRV_VALIDATION}
+  $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+add_custom_target(driver_validation_h_target DEPENDS ${DRV_VALIDATION})
+
+include($ENV{ZEPHYR_BASE}/cmake/kobj.cmake)
+gen_kobj(KOBJ_INCLUDE_PATH)
+
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
 
@@ -375,6 +392,8 @@ target_link_libraries(offsets zephyr_interface)
 add_dependencies(     offsets
   syscall_list_h_target
   syscall_macros_h_target
+  driver_validation_h_target
+  kobj_types_h_target
   )
 
 add_custom_command(
@@ -620,6 +639,14 @@ set(zephyr_lnk
   )
 
 if(CONFIG_GEN_ISR_TABLES)
+  if(CONFIG_GEN_SW_ISR_TABLE)
+    list(APPEND GEN_ISR_TABLE_EXTRA_ARG --sw-isr-table)
+  endif()
+
+  if(CONFIG_GEN_IRQ_VECTOR_TABLE)
+    list(APPEND GEN_ISR_TABLE_EXTRA_ARG --vector-table)
+  endif()
+
   # isr_tables.c is generated from zephyr_prebuilt by
   # gen_isr_tables.py
   add_custom_command(
@@ -636,8 +663,7 @@ if(CONFIG_GEN_ISR_TABLES)
     --kernel $<TARGET_FILE:zephyr_prebuilt>
     --intlist isrList.bin
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
-    --sw-isr-table
-    --vector-table
+    ${GEN_ISR_TABLE_EXTRA_ARG}
     DEPENDS zephyr_prebuilt
     )
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
@@ -683,7 +709,7 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
     ${GPERF} -C
     --output-file ${PRIV_STACKS_OUTPUT_SRC_PRE}
     ${PRIV_STACKS}
-    DEPENDS priv_stacks
+    DEPENDS priv_stacks ${PRIV_STACKS}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_custom_target(priv_stacks_output_src_pre DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC_PRE})
@@ -701,7 +727,7 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
     -o ${PRIV_STACKS_OUTPUT_SRC}
     -p "struct _k_priv_stack_map"
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS priv_stacks_output_src_pre
+    DEPENDS priv_stacks_output_src_pre ${PRIV_STACKS_OUTPUT_SRC_PRE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_custom_target(priv_stacks_output_src DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC})
@@ -781,7 +807,7 @@ if(CONFIG_USERSPACE)
     ${PYTHON_EXECUTABLE}
     ${GEN_KOBJ_LIST}
     --kernel $<TARGET_FILE:zephyr_prebuilt>
-    --output ${OBJ_LIST}
+    --gperf-output ${OBJ_LIST}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS zephyr_prebuilt
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -1071,7 +1097,7 @@ if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
 
   set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
   set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
-  check_c_compiler_flag("" ${check})
+  zephyr_check_compiler_flag(C "" ${check})
   set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
 
   target_link_libraries_ifdef(${check} zephyr_prebuilt ${option})

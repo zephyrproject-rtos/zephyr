@@ -1,12 +1,14 @@
+common:
+    harness: net
+    tags: net http
 sample:
   name: HTTP Client
 tests:
   test:
-    harness: net
     depends_on: netif
-    tags: net http
   test_bt:
-    harness: net
     extra_args: CONF_FILE="prj_bt.conf"
     platform_whitelist: qemu_x86 qemu_cortex_m3
-    tags: net http
+  test_tls:
+    extra_args: CONF_FILE="prj_tls.conf"
+    platform_whitelist: qemu_x86 qemu_cortex_m3

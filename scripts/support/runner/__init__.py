@@ -21,5 +21,6 @@ from . import openocd
 from . import pyocd
 from . import qemu
 from . import xtensa
+from . import intel_s1000
 
 __all__ = ['ZephyrBinaryRunner']

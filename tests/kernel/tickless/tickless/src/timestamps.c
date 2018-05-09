@@ -5,7 +5,9 @@
  */
 
 /**
- * @file timestamp support for tickless idle testing
+ * @file
+ *
+ * Timestamp support for tickless idle testing
  *
  * Platform-specific timestamp support for the tickless idle test.
  */

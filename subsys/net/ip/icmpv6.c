@@ -537,6 +537,8 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 	} else if (NET_IPV6_HDR(orig)->nexthdr == IPPROTO_TCP) {
 		extra_len = sizeof(struct net_ipv6_hdr) +
 			sizeof(struct net_tcp_hdr);
+	} else if (NET_IPV6_HDR(orig)->nexthdr == NET_IPV6_NEXTHDR_FRAG) {
+		extra_len = net_pkt_get_len(orig);
 	} else {
 		size_t space = CONFIG_NET_BUF_DATA_SIZE -
 			net_if_get_ll_reserve(iface,

@@ -105,7 +105,6 @@ void test_mqueue(void)
 	zassert_false(mq_close(mqd),
 		      "unable to close message queue descriptor.\n");
 	zassert_false(mq_unlink(queue), "Not able to unlink Queue\n");
-	printk("Exiting the test.");
 }
 
 void test_main(void)
