@@ -8,18 +8,6 @@
 
 / {
 	soc {
-		pinctrl: pin-controller@48000000 {
-
-			gpioe: gpio@48001000 {
-				compatible = "st,stm32-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x48001000 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00200000>;
-				label = "GPIOE";
-			};
-		};
-
 		timers2: timers@40000000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40000000 0x400>;
@@ -44,6 +32,18 @@
 			interrupts = <26 3>;
 			status = "disabled";
 			label = "SPI_2";
+		};
+
+		gpioe: gpio@48001000 {
+			compatible = "st,stm32-gpio-pinctrl";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x48001000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00200000>;
+			st,bank-name = "GPIOE";
+			label = "GPIOE";
+			gpio-ranges = <&pinctrl \
+				GPIO_PORT_PIN0 PINCTRL_STM32_PINE0 16>;
 		};
 
 		usb: usb@40005c00 {
