@@ -106,10 +106,11 @@ void handler(union sigval val)
 void check_timer_support(int clock_id)
 {
 	int ret;
-	struct sigevent sig = {0};
+	struct sigevent sig;
 	timer_t timerid;
 	struct itimerspec value, ovalue;
 
+	sig.sigev_signo = 0;
 	sig.sigev_notify = SIGEV_SIGNAL;
 	sig.sigev_notify_function = handler;
 	sig.sigev_value.sival_int = 20;
