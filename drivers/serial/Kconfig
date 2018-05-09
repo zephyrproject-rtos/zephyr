@@ -89,6 +89,8 @@ source "drivers/serial/Kconfig.stm32"
 
 source "drivers/serial/Kconfig.nrf5"
 
+source "drivers/serial/Kconfig.nrf5e"
+
 source "drivers/serial/Kconfig.altera_jtag"
 
 source "drivers/serial/Kconfig.cc32xx"

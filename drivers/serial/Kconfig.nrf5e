@@ -1,0 +1,103 @@
+# Kconfig.nrf5e - NRF5 UARTE configuration
+#
+# Copyright (c) 2017 Byteflies, Inc. (Bertold Van den Bergh)
+# Copyright (c) 2016 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig UART_NRF5E
+	bool "Nordic Semiconductor NRF5 family processor UARTE driver"
+	default n
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	depends on SOC_FAMILY_NRF5
+	select GPIO_NRF5
+	help
+	  This option enables the UART driver for Nordic Semiconductor nRF5
+	  family processors. Note that there is only one
+	  UART controller on nRF5 ICs.
+
+config UART_NRF5E_CLK_FREQ
+	int
+	default 16000000
+	depends on UART_NRF5E
+
+config UART_NRF5E_TX_DMA_BUFSIZE
+	int "Transmit buffer size"
+	range 0 255
+	default 128
+	depends on UART_NRF5E
+	depends on UART_INTERRUPT_DRIVEN
+	help
+	  The transmit FIFO size.
+
+config UART_NRF5E_RX_DMA_BUFSIZE
+	int "Receive buffer size"
+	range 0 255
+	default 128
+	depends on UART_NRF5E
+	depends on UART_INTERRUPT_DRIVEN
+	help
+	  The receive FIFO size.
+
+config UART_NRF5E_TX_DMA_MAXBLOCK
+	int "Transmit maximum block size"
+	range 0 255
+	default 64
+	depends on UART_NRF5E
+	depends on UART_INTERRUPT_DRIVEN
+	help
+	  The maximum DMA block size on the transmit chain.
+
+config UART_NRF5E_RX_DMA_MAXBLOCK
+	int "Receive maximum block size"
+	range 0 255
+	default 1
+	depends on UART_NRF5E
+	depends on UART_INTERRUPT_DRIVEN
+	help
+	  The maximum DMA block size on the receive chain.
+	  Leave this set to one unless you know what you are doing.
+
+config UART_NRF5E_FLOW_CONTROL
+	bool "Enable Flow Control"
+	default n
+	depends on UART_NRF5E
+	help
+	  Enable Flow Control. If selected, additionally two pins, RTS and CTS
+	  has to be configured.
+
+config UART_NRF5E_GPIO_TX_PIN
+	int "TX Pin Number"
+	range 0 31
+	depends on UART_NRF5E
+	depends on GPIO_NRF5
+	help
+	  The GPIO pin to use for TX.
+
+config UART_NRF5E_GPIO_RX_PIN
+	int "RX Pin Number"
+	range 0 31
+	depends on UART_NRF5E
+	depends on GPIO_NRF5
+	help
+	  The GPIO pin to use for RX.
+
+config UART_NRF5E_GPIO_RTS_PIN
+	int "RTS Pin Number"
+	range 0 31
+	depends on UART_NRF5E
+	depends on GPIO_NRF5
+	depends on UART_NRF5E_FLOW_CONTROL
+	help
+	  The GPIO pin to use for RTS.
+
+config UART_NRF5E_GPIO_CTS_PIN
+	int "CTS Pin Number"
+	range 0 31
+	depends on UART_NRF5E
+	depends on GPIO_NRF5
+	depends on UART_NRF5E_FLOW_CONTROL
+	help
+	  The GPIO pin to use for CTS.
