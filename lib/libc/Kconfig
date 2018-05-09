@@ -16,6 +16,22 @@ config NEWLIB_LIBC
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.
 
+config NEWLIB_LIBC_ALIGNED_HEAP_SIZE
+	int
+	prompt "Newlib aligned heap size"
+	depends on CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	depends on NEWLIB_LIBC
+	depends on USERSPACE
+	default 0
+	help
+	  If user mode is enabled, and MPU hardware has requirements that
+	  regions be sized to a power of two and aligned to their size,
+	  and user mode threads need to access this heap, then this is necessary
+	  to properly define an MPU region for the heap.
+
+	  If this is left at 0, then remaining system RAM will be used for this
+	  area and it may not be possible to program it as an MPU region.
+
 config NEWLIB_LIBC_FLOAT_PRINTF
 	bool "Build with newlib float printf"
 	default n
