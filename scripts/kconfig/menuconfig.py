@@ -1080,8 +1080,11 @@ def _input_dialog(title, initial_text, info_text=None):
     # Cursor position
     i = len(initial_text)
 
+    def edit_width():
+        return win.getmaxyx()[1] - 4
+
     # Horizontal scroll offset
-    hscroll = 0
+    hscroll = max(i - edit_width() + 1, 0)
 
     while True:
         # Draw the "main" display with the menu, etc., so that resizing still
@@ -1109,7 +1112,7 @@ def _input_dialog(title, initial_text, info_text=None):
             _resize_input_dialog(win, title, info_text)
 
         else:
-            s, i, hscroll = _edit_text(c, s, i, hscroll, win.getmaxyx()[1] - 4)
+            s, i, hscroll = _edit_text(c, s, i, hscroll, edit_width())
 
 def _resize_input_dialog(win, title, info_text):
     # Resizes the input dialog to a size appropriate for the terminal size
