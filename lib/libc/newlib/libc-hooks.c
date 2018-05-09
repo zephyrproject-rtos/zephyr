@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <linker/linker-defs.h>
 #include <misc/util.h>
+#include <init.h>
 
 #define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
 
@@ -157,3 +158,24 @@ void *_sbrk(int count)
 	}
 }
 FUNC_ALIAS(_sbrk, sbrk, void *);
+
+#ifdef CONFIG_X86_MMU
+static int newlib_mmu_prepare(struct device *unused)
+{
+	ARG_UNUSED(unused);
+
+	/* Set up the newlib heap area as a globally user-writable region.
+	 * We can't do this at build time with MMU_BOOT_REGION() as the _end
+	 * pointer shifts significantly between build phases due to the
+	 * introduction of page tables.
+	 */
+	_x86_mmu_set_flags(UINT_TO_POINTER(USED_RAM_END_ADDR), MAX_HEAP_SIZE,
+			   MMU_ENTRY_PRESENT | MMU_ENTRY_WRITE |
+			   MMU_ENTRY_USER,
+			   MMU_PTE_P_MASK | MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+
+	return 0;
+}
+
+SYS_INIT(newlib_mmu_prepare, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif /* CONFIG_X86_MMU */
