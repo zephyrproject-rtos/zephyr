@@ -322,6 +322,11 @@ static u8_t mod_bind(struct bt_mesh_model *model, u16_t key_idx)
 	for (i = 0; i < ARRAY_SIZE(model->keys); i++) {
 		if (model->keys[i] == BT_MESH_KEY_UNUSED) {
 			model->keys[i] = key_idx;
+
+			if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+				bt_mesh_store_mod_bind(model);
+			}
+
 			return STATUS_SUCCESS;
 		}
 	}
@@ -345,6 +350,10 @@ static u8_t mod_unbind(struct bt_mesh_model *model, u16_t key_idx)
 		}
 
 		model->keys[i] = BT_MESH_KEY_UNUSED;
+
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			bt_mesh_store_mod_bind(model);
+		}
 
 		if (model->pub && model->pub->key == key_idx) {
 			_mod_pub_set(model, BT_MESH_ADDR_UNASSIGNED,

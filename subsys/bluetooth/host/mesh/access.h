@@ -6,6 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* bt_mesh_model.flags */
+enum {
+	BT_MESH_MOD_BIND_PENDING = BIT(0),
+};
+
 void bt_mesh_elem_register(struct bt_mesh_elem *elem, u8_t count);
 
 u8_t bt_mesh_elem_count(void);

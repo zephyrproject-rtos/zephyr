@@ -409,6 +409,74 @@ static int app_key_set(int argc, char **argv, char *val)
 	return 0;
 }
 
+static int mod_set_bind(struct bt_mesh_model *mod, char *val)
+{
+	int len, err, i;
+
+	/* Start with empty array regardless of cleared or set value */
+	for (i = 0; i < ARRAY_SIZE(mod->keys); i++) {
+		mod->keys[i] = BT_MESH_KEY_UNUSED;
+	}
+
+	if (!val) {
+		BT_DBG("Cleared bindings for model");
+		return 0;
+	}
+
+	len = sizeof(mod->keys);
+	err = settings_bytes_from_str(val, mod->keys, &len);
+	if (err) {
+		BT_ERR("Failed to decode value %s (err %d)", val, err);
+		return -EINVAL;
+	}
+
+	BT_DBG("Decoded %u bound keys for model", len / sizeof(mod->keys[0]));
+	return 0;
+}
+
+static int mod_set(bool vnd, int argc, char **argv, char *val)
+{
+	struct bt_mesh_model *mod;
+	u8_t elem_idx, mod_idx;
+	u16_t mod_key;
+
+	if (argc < 2) {
+		BT_ERR("Too small argc (%d)", argc);
+		return -ENOENT;
+	}
+
+	mod_key = strtol(argv[0], NULL, 16);
+	elem_idx = mod_key >> 8;
+	mod_idx = mod_key;
+
+	BT_DBG("Decoded mod_key 0x%04x as elem_idx %u mod_idx %u",
+	       mod_key, elem_idx, mod_idx);
+
+	mod = bt_mesh_model_get(vnd, elem_idx, mod_idx);
+	if (!mod) {
+		BT_ERR("Failed to get model for elem_idx %u mod_idx %u",
+		       elem_idx, mod_idx);
+		return -ENOENT;
+	}
+
+	if (!strcmp(argv[1], "bind")) {
+		return mod_set_bind(mod, val);
+	}
+
+	BT_WARN("Unknown module key %s", argv[1]);
+	return -ENOENT;
+}
+
+static int sig_mod_set(int argc, char **argv, char *val)
+{
+	return mod_set(false, argc, argv, val);
+}
+
+static int vnd_mod_set(int argc, char **argv, char *val)
+{
+	return mod_set(true, argc, argv, val);
+}
+
 const struct mesh_setting {
 	const char *name;
 	int (*func)(int argc, char **argv, char *val);
@@ -419,6 +487,8 @@ const struct mesh_setting {
 	{ "RPL", rpl_set },
 	{ "NetKey", net_key_set },
 	{ "AppKey", app_key_set },
+	{ "s", sig_mod_set },
+	{ "v", vnd_mod_set },
 };
 
 static int mesh_set(int argc, char **argv, char *val)
@@ -821,6 +891,63 @@ static void store_pending_keys(void)
 	}
 }
 
+static void encode_mod_path(struct bt_mesh_model *mod, bool vnd,
+			    const char *key, char *path, size_t path_len)
+{
+	u16_t mod_key = (((u16_t)mod->elem_idx << 8) | mod->mod_idx);
+
+	if (vnd) {
+		snprintk(path, path_len, "bt/mesh/v/%x/%s", mod_key, key);
+	} else {
+		snprintk(path, path_len, "bt/mesh/s/%x/%s", mod_key, key);
+	}
+}
+
+static void store_pending_mod_bind(struct bt_mesh_model *mod, bool vnd)
+{
+	u16_t keys[CONFIG_BT_MESH_MODEL_KEY_COUNT];
+	char buf[BT_SETTINGS_SIZE(sizeof(keys))];
+	char path[20];
+	int i, count;
+	char *val;
+
+	for (i = 0, count = 0; i < ARRAY_SIZE(mod->keys); i++) {
+		if (mod->keys[i] != BT_MESH_KEY_UNUSED) {
+			keys[count++] = mod->keys[i];
+		}
+	}
+
+	if (count) {
+		val = settings_str_from_bytes(keys, count * sizeof(keys[0]),
+					      buf, sizeof(buf));
+		if (!val) {
+			BT_ERR("Unable to encode model bindings as value");
+			return;
+		}
+	} else {
+		val = NULL;
+	}
+
+	encode_mod_path(mod, vnd, "bind", path, sizeof(path));
+
+	BT_DBG("Saving %s as %s", path, val ? val : "(null)");
+	settings_save_one(path, val);
+}
+
+static void store_pending_mod(struct bt_mesh_model *mod,
+			      struct bt_mesh_elem *elem, bool vnd,
+			      bool primary, void *user_data)
+{
+	if (!mod->flags) {
+		return;
+	}
+
+	if (mod->flags & BT_MESH_MOD_BIND_PENDING) {
+		mod->flags &= ~BT_MESH_MOD_BIND_PENDING;
+		store_pending_mod_bind(mod, vnd);
+	}
+}
+
 static void store_pending(struct k_work *work)
 {
 	BT_DBG("");
@@ -855,6 +982,10 @@ static void store_pending(struct k_work *work)
 
 	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_SEQ_PENDING)) {
 		store_pending_seq();
+	}
+
+	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_MOD_PENDING)) {
+		bt_mesh_model_foreach(store_pending_mod, NULL);
 	}
 }
 
@@ -1006,6 +1137,12 @@ void bt_mesh_clear_app_key(struct bt_mesh_app_key *key)
 void bt_mesh_clear_rpl(void)
 {
 	schedule_store(BT_MESH_RPL_PENDING);
+}
+
+void bt_mesh_store_mod_bind(struct bt_mesh_model *mod)
+{
+	mod->flags |= BT_MESH_MOD_BIND_PENDING;
+	schedule_store(BT_MESH_MOD_PENDING);
 }
 
 void bt_mesh_settings_init(void)
