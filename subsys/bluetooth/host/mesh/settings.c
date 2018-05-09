@@ -434,6 +434,30 @@ static int mod_set_bind(struct bt_mesh_model *mod, char *val)
 	return 0;
 }
 
+static int mod_set_sub(struct bt_mesh_model *mod, char *val)
+{
+	int len, err;
+
+	/* Start with empty array regardless of cleared or set value */
+	memset(mod->groups, 0, sizeof(mod->groups));
+
+	if (!val) {
+		BT_DBG("Cleared subscriptions for model");
+		return 0;
+	}
+
+	len = sizeof(mod->groups);
+	err = settings_bytes_from_str(val, mod->groups, &len);
+	if (err) {
+		BT_ERR("Failed to decode value %s (err %d)", val, err);
+		return -EINVAL;
+	}
+
+	BT_DBG("Decoded %u subscribed group addresses for model",
+	       len / sizeof(mod->groups[0]));
+	return 0;
+}
+
 static int mod_set(bool vnd, int argc, char **argv, char *val)
 {
 	struct bt_mesh_model *mod;
@@ -461,6 +485,10 @@ static int mod_set(bool vnd, int argc, char **argv, char *val)
 
 	if (!strcmp(argv[1], "bind")) {
 		return mod_set_bind(mod, val);
+	}
+
+	if (!strcmp(argv[1], "sub")) {
+		return mod_set_sub(mod, val);
 	}
 
 	BT_WARN("Unknown module key %s", argv[1]);
@@ -934,6 +962,37 @@ static void store_pending_mod_bind(struct bt_mesh_model *mod, bool vnd)
 	settings_save_one(path, val);
 }
 
+static void store_pending_mod_sub(struct bt_mesh_model *mod, bool vnd)
+{
+	u16_t groups[CONFIG_BT_MESH_MODEL_GROUP_COUNT];
+	char buf[BT_SETTINGS_SIZE(sizeof(groups))];
+	char path[20];
+	int i, count;
+	char *val;
+
+	for (i = 0, count = 0; i < ARRAY_SIZE(mod->groups); i++) {
+		if (mod->groups[i] != BT_MESH_ADDR_UNASSIGNED) {
+			groups[count++] = mod->groups[i];
+		}
+	}
+
+	if (count) {
+		val = settings_str_from_bytes(groups, count * sizeof(groups[0]),
+					      buf, sizeof(buf));
+		if (!val) {
+			BT_ERR("Unable to encode model subscription as value");
+			return;
+		}
+	} else {
+		val = NULL;
+	}
+
+	encode_mod_path(mod, vnd, "sub", path, sizeof(path));
+
+	BT_DBG("Saving %s as %s", path, val ? val : "(null)");
+	settings_save_one(path, val);
+}
+
 static void store_pending_mod(struct bt_mesh_model *mod,
 			      struct bt_mesh_elem *elem, bool vnd,
 			      bool primary, void *user_data)
@@ -945,6 +1004,11 @@ static void store_pending_mod(struct bt_mesh_model *mod,
 	if (mod->flags & BT_MESH_MOD_BIND_PENDING) {
 		mod->flags &= ~BT_MESH_MOD_BIND_PENDING;
 		store_pending_mod_bind(mod, vnd);
+	}
+
+	if (mod->flags & BT_MESH_MOD_SUB_PENDING) {
+		mod->flags &= ~BT_MESH_MOD_SUB_PENDING;
+		store_pending_mod_sub(mod, vnd);
 	}
 }
 
@@ -1142,6 +1206,12 @@ void bt_mesh_clear_rpl(void)
 void bt_mesh_store_mod_bind(struct bt_mesh_model *mod)
 {
 	mod->flags |= BT_MESH_MOD_BIND_PENDING;
+	schedule_store(BT_MESH_MOD_PENDING);
+}
+
+void bt_mesh_store_mod_sub(struct bt_mesh_model *mod)
+{
+	mod->flags |= BT_MESH_MOD_SUB_PENDING;
 	schedule_store(BT_MESH_MOD_PENDING);
 }
 

@@ -1377,6 +1377,10 @@ static void mod_sub_add(struct bt_mesh_model *model,
 	} else {
 		status = STATUS_SUCCESS;
 
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			bt_mesh_store_mod_sub(mod);
+		}
+
 		if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 			bt_mesh_lpn_group_add(sub_addr);
 		}
@@ -1437,6 +1441,10 @@ static void mod_sub_del(struct bt_mesh_model *model,
 	match = bt_mesh_model_find_group(mod, sub_addr);
 	if (match) {
 		*match = BT_MESH_ADDR_UNASSIGNED;
+
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			bt_mesh_store_mod_sub(mod);
+		}
 	}
 
 send_status:
@@ -1491,6 +1499,10 @@ static void mod_sub_overwrite(struct bt_mesh_model *model,
 		mod->groups[0] = sub_addr;
 		status = STATUS_SUCCESS;
 
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			bt_mesh_store_mod_sub(mod);
+		}
+
 		if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 			bt_mesh_lpn_group_add(sub_addr);
 		}
@@ -1540,6 +1552,10 @@ static void mod_sub_del_all(struct bt_mesh_model *model,
 	}
 
 	mod_sub_list_clear(mod);
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_store_mod_sub(mod);
+	}
 
 	status = STATUS_SUCCESS;
 
@@ -1716,6 +1732,10 @@ static void mod_sub_va_add(struct bt_mesh_model *model,
 			bt_mesh_lpn_group_add(sub_addr);
 		}
 
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			bt_mesh_store_mod_sub(mod);
+		}
+
 		status = STATUS_SUCCESS;
 	}
 
@@ -1773,6 +1793,11 @@ static void mod_sub_va_del(struct bt_mesh_model *model,
 	match = bt_mesh_model_find_group(mod, sub_addr);
 	if (match) {
 		*match = BT_MESH_ADDR_UNASSIGNED;
+
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			bt_mesh_store_mod_sub(mod);
+		}
+
 		status = STATUS_SUCCESS;
 	} else {
 		status = STATUS_CANNOT_REMOVE;
@@ -1827,6 +1852,10 @@ static void mod_sub_va_overwrite(struct bt_mesh_model *model,
 		status = va_add(label_uuid, &sub_addr);
 		if (status == STATUS_SUCCESS) {
 			mod->groups[0] = sub_addr;
+
+			if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+				bt_mesh_store_mod_sub(mod);
+			}
 
 			if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 				bt_mesh_lpn_group_add(sub_addr);
@@ -3135,6 +3164,22 @@ int bt_mesh_cfg_srv_init(struct bt_mesh_model *model, bool primary)
 	return 0;
 }
 
+static void mod_reset(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
+		      bool vnd, bool primary, void *user_data)
+{
+	/* Clear model state that isn't otherwise cleared. E.g. AppKey
+	 * binding and model publication is cleared as a consequence
+	 * of removing all app keys, however model subscription clearing
+	 * must be taken care of here.
+	 */
+
+	mod_sub_list_clear(mod);
+
+	if (IS_ENABLED(BT_SETTINGS)) {
+		bt_mesh_store_mod_sub(mod);
+	}
+}
+
 void bt_mesh_cfg_reset(void)
 {
 	struct bt_mesh_cfg_srv *cfg = conf;
@@ -3160,6 +3205,8 @@ void bt_mesh_cfg_reset(void)
 			bt_mesh_subnet_del(sub);
 		}
 	}
+
+	bt_mesh_model_foreach(mod_reset, NULL);
 
 	memset(labels, 0, sizeof(labels));
 }
