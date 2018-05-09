@@ -114,8 +114,6 @@ void bt_mesh_reset(void)
 
 	memset(bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
 
-	memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
-
 	bt_mesh_scan_disable();
 	bt_mesh_beacon_disable();
 
