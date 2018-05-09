@@ -11,6 +11,7 @@
 #include <device.h>
 #include <string.h>
 #include <pwm.h>
+#include <misc/stack.h>
 
 #include <display/mb_display.h>
 
@@ -297,11 +298,19 @@ static void game_ended(bool won)
 	k_delayed_work_submit(&refresh, RESTART_THRESHOLD);
 }
 
+static void game_stack_dump(const struct k_thread *thread, void *user_data)
+{
+#if defined(CONFIG_THREAD_STACK_INFO)
+	stack_analyze((char *)user_data, (char *)thread->stack_info.start,
+						thread->stack_info.size);
+#endif
+}
+
 static void game_refresh(struct k_work *work)
 {
 	if (sound_state != SOUND_IDLE) {
 		sound_set(SOUND_IDLE);
-		k_call_stacks_analyze();
+		k_thread_foreach(game_stack_dump, "Test");
 	}
 
 	if (state == INIT) {
