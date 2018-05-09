@@ -531,9 +531,10 @@ endmacro()
 # This section is for extensions which control Zephyr's board runners
 # from the build system. The Zephyr build system has targets for
 # flashing and debugging supported boards. These are wrappers around a
-# "runner" Python package that is part of Zephyr. This section
-# provides glue between CMake and the runner invocation script,
-# zephyr_flash_debug.py.
+# "runner" Python subpackage that is part of Zephyr's "west" tool.
+#
+# This section provides glue between CMake and the Python code that
+# manages the runners.
 
 # This function is intended for board.cmake files and application
 # CMakeLists.txt files.
@@ -541,8 +542,8 @@ endmacro()
 # Usage from board.cmake files:
 #   board_runner_args(runner "--some-arg=val1" "--another-arg=val2")
 #
-# The build system will then ensure the command line to
-# zephyr_flash_debug.py contains:
+# The build system will then ensure the command line used to
+# create the runner contains:
 #   --some-arg=val1 --another-arg=val2
 #
 # Within application CMakeLists.txt files, ensure that all calls to

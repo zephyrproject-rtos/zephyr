@@ -19,7 +19,7 @@ import functools
 import sys
 import os
 
-from runner.core import ZephyrBinaryRunner
+from west.runner.core import ZephyrBinaryRunner
 
 
 def print_runners_handler(args):
