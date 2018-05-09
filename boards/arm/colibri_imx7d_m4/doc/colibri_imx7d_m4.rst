@@ -118,7 +118,7 @@ The M4 Core is configured to run at a 200 MHz clock speed.
 Serial Port
 ===========
 
-The iMX7D SoC has seven UARTs. The numeber 2 is configured for the console and
+The iMX7D SoC has seven UARTs. The number 2 is configured for the console and
 the remaining are not used/tested.
 
 Programming and Debugging

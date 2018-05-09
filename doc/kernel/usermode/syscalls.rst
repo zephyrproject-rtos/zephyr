@@ -295,7 +295,7 @@ Several macros exist to validate arguments:
 * :c:macro:`_SYSCALL_DRIVER_OP()` checks at runtime if a driver
   instance is capable of performing a particular operation.  While this
   macro can be used by itself, it's mostly a building block for macros
-  that are automatically generated for every driver subsytem.  For
+  that are automatically generated for every driver subsystem.  For
   instance, to validate the GPIO driver, one could use the
   :c:macro:`_SYSCALL_DRIVER_GPIO()` macro.
 
