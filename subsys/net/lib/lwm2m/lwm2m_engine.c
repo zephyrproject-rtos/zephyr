@@ -186,19 +186,31 @@ char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
 }
 
 #if CONFIG_SYS_LOG_LWM2M_LEVEL > 3
+static u8_t to_hex_digit(u8_t digit)
+{
+	if (digit >= 10) {
+		return digit - 10 + 'a';
+	}
+
+	return digit + '0';
+}
+
 static char *sprint_token(const u8_t *token, u8_t tkl)
 {
 	static char buf[32];
-	int pos = 0;
+	char *ptr = buf;
 
 	if (token && tkl != LWM2M_MSG_TOKEN_LEN_SKIP) {
 		int i;
 
+		tkl = min(tkl, sizeof(buf) / 2 - 1);
+
 		for (i = 0; i < tkl; i++) {
-			pos += snprintk(&buf[pos], 31 - pos, "%x", token[i]);
+			*ptr++ = to_hex_digit(token[i] >> 4);
+			*ptr++ = to_hex_digit(token[i] & 0x0F);
 		}
 
-		buf[pos] = '\0';
+		*ptr = '\0';
 	} else if (tkl == LWM2M_MSG_TOKEN_LEN_SKIP) {
 		strcpy(buf, "[skip-token]");
 	} else {
