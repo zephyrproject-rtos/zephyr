@@ -283,9 +283,6 @@ static int uart_nrf5_poll_in(struct device *dev, unsigned char *c)
 /**
  * @brief Output a character in polled mode.
  *
- * Checks if the transmitter is empty. If empty, a character is written to
- * the data register.
- *
  * @param dev UART device struct
  * @param c Character to send
  *
@@ -296,14 +293,26 @@ static unsigned char uart_nrf5_poll_out(struct device *dev,
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
+	/* The UART API dictates that poll_out should wait for the transmitter
+	 * to be empty before sending a character. However, without locking,
+	 * this introduces a rare yet possible race condition if the thread is
+	 * preempted between sending the byte and checking for completion.
+
+	 * Because of this race condition, the while loop has to be placed
+	 * after the write to TXD, and we can't wait for an empty transmitter
+	 * before writing. This is a trade-off between losing a byte once in a
+	 * blue moon against hanging up the whole thread permanently
+	 */
+
+	/* reset transmitter ready state */
+	uart->EVENTS_TXDRDY = 0;
+
 	/* send a character */
 	uart->TXD = (u8_t)c;
 
-	/* Wait for transmitter to be ready */
+	/* wait for transmitter to be ready */
 	while (!uart->EVENTS_TXDRDY) {
 	}
-
-	uart->EVENTS_TXDRDY = 0;
 
 	return c;
 }
