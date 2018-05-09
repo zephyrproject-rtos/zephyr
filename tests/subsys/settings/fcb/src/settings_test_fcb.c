@@ -324,6 +324,7 @@ void test_config_insert3(void);
 void test_config_save_3_fcb(void);
 void test_config_compress_reset(void);
 void test_config_save_one_fcb(void);
+void test_config_compress_deleted(void);
 
 void test_main(void)
 {
@@ -344,7 +345,8 @@ void test_main(void)
 			 ztest_unit_test(test_config_insert3),
 			 ztest_unit_test(test_config_save_3_fcb),
 			 ztest_unit_test(test_config_compress_reset),
-			 ztest_unit_test(test_config_save_one_fcb)
+			 ztest_unit_test(test_config_save_one_fcb),
+			 ztest_unit_test(test_config_compress_deleted)
 			);
 
 	ztest_run_test_suite(test_config_fcb);
