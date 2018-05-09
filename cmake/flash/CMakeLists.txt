@@ -79,7 +79,7 @@ foreach(target flash debug debugserver)
     set(cmd
       ${CMAKE_COMMAND} -E env
       ${PYTHON_EXECUTABLE}
-      ${ZEPHYR_BASE}/scripts/support/zephyr_flash_debug.py
+      ${ZEPHYR_BASE}/scripts/meta/zephyr_flash_debug.py
       ${RUNNER_VERBOSE}
       ${runner}
       ${target}
