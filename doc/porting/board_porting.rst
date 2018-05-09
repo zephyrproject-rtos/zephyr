@@ -200,6 +200,11 @@ Configuring invisible Kconfig symbols
 given in :file:`boards/ARCHITECTURE/BOARD/Kconfig.defconfig`, which uses
 Kconfig syntax.
 
+.. note::
+
+    Assignments in :file:`.config` files have no effect on invisible symbols,
+    so this scheme is not just an organizational issue.
+
 Assigning values in :file:`Kconfig.defconfig` relies on being able to define a
 Kconfig symbol in multiple locations. As an example, say we want to set
 ``FOO_WIDTH`` below to 32:
@@ -229,12 +234,8 @@ To do this, we extend the definition of ``FOO_WIDTH`` as follows, in
 ``default`` properties from :file:`Kconfig.defconfig` files override
 ``default`` properties given on the "base" definition of the symbol. Zephyr
 uses a custom Kconfig patch that makes Kconfig prefer later defaults, and
-includes the :file:`Kconfig.defconfig` files last.
-
-.. note::
-
-    Assignments in :file:`.config` files have no effect on invisible symbols,
-    so this scheme is not just an organizational issue.
+includes any :file:`Kconfig.defconfig` file last. See the
+:ref:`zephyr-specific_kconfig_behavior_for_defaults` section.
 
 If you want a symbol to only be user-configurable on some boards, make its base
 definition have no prompt, and then add a prompt to it in the
@@ -258,3 +259,113 @@ symbols.
 
 Having fixed settings be user-configurable might be confusing, and would allow
 the user to create broken configurations.
+
+Kconfig extensions
+==================
+
+Zephyr uses the `Kconfiglib <https://github.com/ulfalizer/Kconfiglib>`_ Kconfig
+implementation, which adds the following extensions to the `Kconfig language
+<https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt>`_:
+
+- The ``gsource`` statement, which includes each file matching a given wildcard
+  pattern.
+
+  Consider the following example:
+
+  .. code-block:: none
+
+      gsource "foo/bar/*/Kconfig"
+
+  If the pattern ``foo/bar/*/Kconfig`` matches the files
+  :file:`foo/bar/baz/Kconfig` and :file:`foo/bar/qaz/Kconfig`, the statement
+  above is equivalent to the following two ``source`` statements:
+
+  .. code-block:: none
+
+      source "foo/bar/baz/Kconfig"
+      source "foo/bar/qaz/Kconfig"
+
+  .. note
+
+      The wildcard patterns accepted are the same as for the Python `glob
+      <https://docs.python.org/3/library/glob.html>`_ module.
+
+  If no files match the pattern, ``gsource`` has no effect. This means that
+  ``gsource`` also functions as an "optional" include statement (similar to
+  ``-include`` in Make):
+
+  .. code-block:: none
+
+      gsource "foo/include-if-exists"
+
+  .. note::
+
+     Wildcard patterns that do not include any wildcard symbols (e.g., ``*``)
+     only match exactly the filename given, and only match it if the file
+     exists.
+
+  It might help to think of *g* as standing for *generalized* rather than
+  *glob* in this case.
+
+  .. note::
+
+      Only use ``gsource`` if you need it. Trying to ``source`` a non-existent
+      file produces an error, while ``gsource`` silently ignores missing files.
+      ``source`` also makes it clearer which files are being included.
+
+- The ``rsource`` statement, which includes a file specified with a relative
+  path.
+
+  The path is relative to the directory of the :file:`Kconfig` file that has
+  the ``rsource`` statement.
+
+  As an example, assume that :file:`foo/Kconfig` is the top-level
+  :file:`Kconfig` file, and that :file:`foo/bar/Kconfig` has the following
+  statements:
+
+  .. code-block:: none
+
+      source "qaz/Kconfig1"
+      rsource "qaz/Kconfig2"
+
+  This will include the two files :file:`foo/qaz/Kconfig1` and
+  :file:`foo/bar/qaz/Kconfig2`.
+
+  ``rsource`` can be used to create :file:`Kconfig` "subtrees" that can be
+  moved around freely.
+
+- The ``grsource`` statement, which combines ``gsource`` and ``rsource``.
+
+  For example, the following statement will include :file:`Kconfig1` and
+  :file:`Kconfig2` from the current directory (if they exist):
+
+  .. code-block:: none
+
+      grsource "Kconfig[12]"
+
+.. _zephyr-specific_kconfig_behavior_for_defaults:
+
+Zephyr-specific Kconfig behavior for defaults
+=============================================
+
+Zephyr uses a Kconfig patch that gives later ``default``\ s precedence over
+earlier ``default``\ s. This is a significant change from standard Kconfig
+behavior, which is to pick the first ``default`` with a satisfied condition.
+
+Consider the following example:
+
+.. code-block:: none
+
+    config FOO
+        string
+        default "first" if n
+        default "second"
+        default "third" if n
+        default "fourth"
+        default "fifth" if n
+
+In unpatched Kconfig, this will give ``FOO`` the value ``"second"``, which is
+the first ``default`` with a satisfied condition.
+
+In Zephyr, this will give ``FOO`` the value ``"fourth"``, which is the last
+``default`` with a satisfied condition.
