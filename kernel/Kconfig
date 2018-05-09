@@ -496,7 +496,7 @@ config RETPOLINE
 	prompt "Build with retpolines enabled"
 	default y if !X86_NO_SPECTRE
 	help
-	  This is recommended on platforms with speculative exeuctions, to protect
+	  This is recommended on platforms with speculative executions, to protect
 	  against branch target injection (AKA Spectre-V2).  Full description of
 	  how retpolines work can be found here[1].
 
