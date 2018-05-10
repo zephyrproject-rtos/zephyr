@@ -99,13 +99,7 @@ void k_mem_pool_free_id(struct k_mem_block_id *id)
 	 */
 	key = irq_lock();
 
-	while (!sys_dlist_is_empty(&p->wait_q)) {
-		struct k_thread *th = (void *)sys_dlist_peek_head(&p->wait_q);
-
-		_unpend_thread(th);
-		_ready_thread(th);
-		need_sched = 1;
-	}
+	_unpend_all(&p->wait_q);
 
 	if (need_sched && !_is_in_isr()) {
 		_reschedule(key);
