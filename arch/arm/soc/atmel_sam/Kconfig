@@ -14,7 +14,7 @@ config SOC_FAMILY
 	string
 	default atmel_sam
 
-endif #SOC_FAMILY_SAM
-
 # Select SoC Part No. and configuration options
 gsource "arch/arm/soc/atmel_sam/*/Kconfig.soc"
+
+endif # SOC_FAMILY_SAM

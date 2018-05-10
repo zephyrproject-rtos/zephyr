@@ -14,6 +14,6 @@ if SOC_FAMILY_NRF
 config SOC_FAMILY
 	string
 	default nordic_nrf
-endif
 
 gsource "arch/arm/soc/nordic_nrf/*/Kconfig.soc"
+endif # SOC_FAMILY_NRF
