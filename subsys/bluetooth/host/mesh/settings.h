@@ -12,6 +12,7 @@ void bt_mesh_store_subnet(struct bt_mesh_subnet *sub);
 void bt_mesh_store_app_key(struct bt_mesh_app_key *key);
 void bt_mesh_store_mod_bind(struct bt_mesh_model *mod);
 void bt_mesh_store_mod_sub(struct bt_mesh_model *mod);
+void bt_mesh_store_mod_pub(struct bt_mesh_model *mod);
 
 void bt_mesh_clear_net(void);
 void bt_mesh_clear_subnet(struct bt_mesh_subnet *sub);
