@@ -723,27 +723,30 @@ void gptp_handle_pdelay_req(int port, struct net_pkt *pkt)
 
 	GPTP_STATS_INC(port, rx_pdelay_req_count);
 
+	if (ts_cb_registered) {
+		NET_WARN("Multiple pdelay requests");
+		return;
+	}
+
 	/* Prepare response and send */
 	reply = gptp_prepare_pdelay_resp(port, pkt);
-	if (reply) {
-		if (!ts_cb_registered) {
-			net_if_register_timestamp_cb(
-				&pdelay_response_timestamp_cb,
-				net_pkt_iface(pkt),
-				gptp_pdelay_response_timestamp_callback);
-
-			ts_cb_registered = true;
-		}
-
-		/* TS thread will send this back to us so increment ref count
-		 * so that the packet is not removed when sending it.
-		 * This will be unref'ed by timestamp callback in
-		 * gptp_pdelay_response_timestamp_callback()
-		 */
-		net_pkt_ref(reply);
-
-		gptp_send_pdelay_resp(port, reply, net_pkt_timestamp(pkt));
+	if (!reply) {
+		return;
 	}
+
+	net_if_register_timestamp_cb(&pdelay_response_timestamp_cb,
+				     net_pkt_iface(pkt),
+				     gptp_pdelay_response_timestamp_callback);
+
+	ts_cb_registered = true;
+
+	/* TS thread will send this back to us so increment ref count so that
+	 * the packet is not removed when sending it. This will be unref'ed by
+	 * timestamp callback in gptp_pdelay_response_timestamp_callback()
+	 */
+	net_pkt_ref(reply);
+
+	gptp_send_pdelay_resp(port, reply, net_pkt_timestamp(pkt));
 }
 
 int gptp_handle_pdelay_resp(int port, struct net_pkt *pkt)
