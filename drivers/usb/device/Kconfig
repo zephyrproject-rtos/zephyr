@@ -87,28 +87,4 @@ config USB_DC_STM32_DISCONN_ENABLE
 	  Say Y if your board uses USB DISCONNECT pin to enable the
 	  pull-up resistor on USB DP.
 
-config USB_DC_STM32_DISCONN_GPIO_PORT_NAME
-	string
-	depends on USB_DC_STM32_DISCONN_ENABLE
-	default "GPIOC"
-	help
-	  GPIO controller where the USB DISCONNECT pin is attached to.
-
-config USB_DC_STM32_DISCONN_PIN
-	int
-	depends on USB_DC_STM32_DISCONN_ENABLE
-	default 12
-	help
-	  USB DISCONNECT pin.
-
-config USB_DC_STM32_DISCONN_PIN_LEVEL
-	int
-	depends on USB_DC_STM32_DISCONN_ENABLE
-	default 0
-	help
-	  USB DISCONNECT pin active level:
-
-	  - 0, USB DISCONNECT PIN is active low
-	  - 1, USB DISCONNECT PIN is active high
-
 endif # USB
