@@ -31,7 +31,7 @@ endchoice
 
 config ARM_MPU_NRF52X
 	bool "Enable MPU on nRF52"
-	depends on CPU_HAS_MPU
+	depends on CPU_HAS_MPU && SOC_SERIES_NRF52X
 	select ARM_MPU
 	default n
 	help
