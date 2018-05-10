@@ -47,3 +47,8 @@ config NFCT_PINS_AS_GPIOS
 	  not switch back these pins to NFCT mode. Doing this requires UICR
 	  erase prior to flashing device using the image which has
 	  this option disabled.
+
+config GPIO_AS_PINRESET
+	bool "GPIO as pin reset (reset button)"
+	depends on SOC_SERIES_NRF52X
+	default y
