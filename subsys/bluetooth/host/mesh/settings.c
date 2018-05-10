@@ -58,6 +58,16 @@ struct seq_val {
 	u8_t val[3];
 } __packed;
 
+/* Heartbeat Publication storage */
+struct hb_pub_val {
+	u16_t dst;
+	u8_t  period;
+	u8_t  ttl;
+	u16_t feat;
+	u16_t net_idx:12,
+	      indefinite:1;
+};
+
 /* IV Index & IV Update storage */
 struct iv_val {
 	u32_t iv_index;
@@ -419,6 +429,59 @@ static int app_key_set(int argc, char **argv, char *val)
 	return 0;
 }
 
+static int hb_pub_set(int argc, char **argv, char *val)
+{
+	struct bt_mesh_hb_pub *pub = bt_mesh_hb_pub_get();
+	struct hb_pub_val hb_val;
+	int len, err;
+
+	BT_DBG("val %s", val ? val : "(null)");
+
+	if (!pub) {
+		return -ENOENT;
+	}
+
+	if (!val) {
+		pub->dst = BT_MESH_ADDR_UNASSIGNED;
+		pub->count = 0;
+		pub->ttl = 0;
+		pub->period = 0;
+		pub->feat = 0;
+
+		BT_DBG("Cleared heartbeat publication");
+		return 0;
+	}
+
+	len = sizeof(hb_val);
+	err = settings_bytes_from_str(val, &hb_val, &len);
+	if (err) {
+		BT_ERR("Failed to decode value %s (err %d)", val, err);
+		return err;
+	}
+
+	if (len != sizeof(hb_val)) {
+		BT_ERR("Unexpected value length (%d != %zu)", len,
+		       sizeof(hb_val));
+		return -EINVAL;
+	}
+
+	pub->dst = hb_val.dst;
+	pub->period = hb_val.period;
+	pub->ttl = hb_val.ttl;
+	pub->feat = hb_val.feat;
+	pub->net_idx = hb_val.net_idx;
+
+	if (hb_val.indefinite) {
+		pub->count = 0xffff;
+	} else {
+		pub->count = 0;
+	}
+
+	BT_DBG("Restored heartbeat publication");
+
+	return 0;
+}
+
 static int mod_set_bind(struct bt_mesh_model *mod, char *val)
 {
 	int len, err, i;
@@ -578,6 +641,7 @@ const struct mesh_setting {
 	{ "RPL", rpl_set },
 	{ "NetKey", net_key_set },
 	{ "AppKey", app_key_set },
+	{ "HBPub", hb_pub_set },
 	{ "s", sig_mod_set },
 	{ "v", vnd_mod_set },
 };
@@ -653,6 +717,7 @@ static void commit_mod(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 
 static int mesh_commit(void)
 {
+	struct bt_mesh_hb_pub *hb_pub;
 	int i;
 
 	BT_DBG("sub[0].net_idx 0x%03x", bt_mesh.sub[0].net_idx);
@@ -690,6 +755,13 @@ static int mesh_commit(void)
 	}
 
 	bt_mesh_model_foreach(commit_mod, NULL);
+
+	hb_pub = bt_mesh_hb_pub_get();
+	if (hb_pub && hb_pub->dst != BT_MESH_ADDR_UNASSIGNED &&
+	    hb_pub->count && hb_pub->period) {
+		BT_DBG("Starting heartbeat publication");
+		k_work_submit(&hb_pub->timer.work);
+	}
 
 	bt_mesh.valid = 1;
 
@@ -878,6 +950,40 @@ static void store_pending_rpl(void)
 			store_rpl(rpl);
 		}
 	}
+}
+
+static void store_pending_hb_pub(void)
+{
+	char buf[BT_SETTINGS_SIZE(sizeof(struct hb_pub_val))];
+	struct bt_mesh_hb_pub *pub = bt_mesh_hb_pub_get();
+	struct hb_pub_val val;
+	char *str;
+
+	if (!pub) {
+		return;
+	}
+
+	if (pub->dst == BT_MESH_ADDR_UNASSIGNED) {
+		str = NULL;
+	} else {
+		val.indefinite = (pub->count = 0xffff);
+		val.dst = pub->dst;
+		val.period = pub->period;
+		val.ttl = pub->ttl;
+		val.feat = pub->feat;
+		val.net_idx = pub->net_idx;
+
+		str = settings_str_from_bytes(&val, sizeof(val),
+					      buf, sizeof(buf));
+		if (!str) {
+			BT_ERR("Unable to encode hb pub as value");
+			return;
+		}
+	}
+
+	BT_DBG("Saving Heartbeat Publication as value %s",
+	       str ? str : "(null)");
+	settings_save_one("bt/mesh/HBPub", str);
 }
 
 static void clear_app_key(u16_t app_idx)
@@ -1163,6 +1269,10 @@ static void store_pending(struct k_work *work)
 		store_pending_seq();
 	}
 
+	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_HB_PUB_PENDING)) {
+		store_pending_hb_pub();
+	}
+
 	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_MOD_PENDING)) {
 		bt_mesh_model_foreach(store_pending_mod, NULL);
 	}
@@ -1253,6 +1363,11 @@ void bt_mesh_store_app_key(struct bt_mesh_app_key *key)
 	free_slot->clear = 0;
 
 	schedule_store(BT_MESH_KEYS_PENDING);
+}
+
+void bt_mesh_store_hb_pub(void)
+{
+	schedule_store(BT_MESH_HB_PUB_PENDING);
 }
 
 void bt_mesh_clear_net(void)
