@@ -31,6 +31,7 @@ enum {
 	BT_DEV_ENABLE,
 	BT_DEV_READY,
 	BT_DEV_ID_STATIC_RANDOM,
+	BT_DEV_USER_ID_ADDR,
 	BT_DEV_HAS_PUB_KEY,
 	BT_DEV_PUB_KEY_BUSY,
 
@@ -54,6 +55,11 @@ enum {
 	/* Total number of flags - must be at the end of the enum */
 	BT_DEV_NUM_FLAGS,
 };
+
+/* Flags which should not be cleared upon HCI_Reset */
+#define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLE) | \
+				 BIT(BT_DEV_USER_ID_ADDR) | \
+				 BIT(BT_DEV_ID_STATIC_RANDOM))
 
 struct bt_dev_le {
 	/* LE features */
