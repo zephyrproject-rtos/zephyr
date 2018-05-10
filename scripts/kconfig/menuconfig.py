@@ -141,9 +141,10 @@ _INFO_HELP_LINES = """
 
 # Lines of help text shown at the bottom of the search dialog
 _JUMP_TO_HELP_LINES = """
-Type text to narrow the search. Regular expressions are supported (anything
-available in the Python 're' module). Use the up/down cursor keys to step in
-the list. [Enter] jumps to the selected symbol. [ESC] aborts the search.
+Type text to narrow the search. Regexes are supported (via Python's 're'
+module). The up/down cursor keys step in the list. [Enter] jumps to the
+selected symbol. [ESC] aborts the search. Type multiple space-separated
+strings/regexes to find entries that match all of them.
 """[1:-1].split("\n")
 
 def _init_styles():
@@ -213,30 +214,30 @@ def _init_styles():
 # Main application
 #
 
-# Color pairs we've already created, indexed by a
-# (<foreground color>, <background color>) tuple
-_color_attribs = {}
-
-def _style(fg_color, bg_color, attribs, no_color_extra_attribs=0):
+# color_attribs holds the color pairs we've already created, indexed by a
+# (<foreground color>, <background color>) tuple.
+#
+# Obscure Python: We never pass a value for color_attribs, and it keeps
+# pointing to the same dict. This avoids a global.
+def _style(fg_color, bg_color, attribs, no_color_extra_attribs=0,
+           color_attribs={}):
     # Returns an attribute with the specified foreground and background color
     # and the attributes in 'attribs'. Reuses color pairs already created if
     # possible, and creates a new color pair otherwise.
     #
     # Returns 'attribs | no_color_extra_attribs' if colors aren't supported.
 
-    global _color_attribs
-
     if not curses.has_colors():
         return attribs | no_color_extra_attribs
 
-    if (fg_color, bg_color) not in _color_attribs:
+    if (fg_color, bg_color) not in color_attribs:
         # Create new color pair. Color pair number 0 is hardcoded and cannot be
         # changed, hence the +1s.
-        curses.init_pair(len(_color_attribs) + 1, fg_color, bg_color)
-        _color_attribs[(fg_color, bg_color)] = \
-            curses.color_pair(len(_color_attribs) + 1)
+        curses.init_pair(len(color_attribs) + 1, fg_color, bg_color)
+        color_attribs[(fg_color, bg_color)] = \
+            curses.color_pair(len(color_attribs) + 1)
 
-    return _color_attribs[(fg_color, bg_color)] | attribs
+    return color_attribs[(fg_color, bg_color)] | attribs
 
 # "Extend" the standard kconfiglib.expr_str() to show values for symbols
 # appearing in expressions, for the information dialog.
@@ -292,16 +293,20 @@ def menuconfig(kconf):
     if _config_filename is None:
         _config_filename = ".config"
 
+
     if os.path.exists(_config_filename):
         print("Using existing configuration '{}' as base"
               .format(_config_filename))
         _kconf.load_config(_config_filename)
+
     elif kconf.defconfig_filename is not None:
         print("Using default configuration found in '{}' as base"
               .format(kconf.defconfig_filename))
         _kconf.load_config(kconf.defconfig_filename)
+
     else:
         print("Using default symbol values as base")
+
 
     # Any visible items in the top menu?
     _show_all = False
@@ -459,9 +464,15 @@ def _menuconfig(stdscr):
 
         elif c == "/":
             _jump_to_dialog()
+            # The terminal might have been resized while the fullscreen jump-to
+            # dialog was open
+            _resize_main()
 
         elif c == "?":
             _info_dialog(_shown[_sel_node_i])
+            # The terminal might have been resized while the fullscreen info
+            # dialog was open
+            _resize_main()
 
         elif c in ("a", "A"):
             _toggle_show_all()
@@ -912,7 +923,7 @@ def _draw_main():
 def _parent_menu(node):
     # Returns the menu node of the menu that contains 'node'. In addition to
     # proper 'menu's, this might also be a 'menuconfig' symbol or a 'choice'.
-    # "Menu" here means a menu in the interface (a list of menu entries).
+    # "Menu" here means a menu in the interface.
 
     menu = node.parent
     while not menu.is_menuconfig:
@@ -1320,9 +1331,6 @@ def _jump_to_dialog():
 
     _safe_curs_set(2)
 
-    # Defined symbols sorted by name, with duplicates removed
-    sorted_syms = sorted(set(_kconf.defined_syms), key=lambda sym: sym.name)
-
     # TODO: Code duplication with _select_{next,prev}_menu_entry(). Can this be
     # factored out in some nice way?
 
@@ -1353,20 +1361,23 @@ def _jump_to_dialog():
             prev_s = s
 
             try:
-                re_search = re.compile(s, re.IGNORECASE).search
+                regex_searches = [re.compile(regex, re.IGNORECASE).search
+                                  for regex in s.split()]
 
-                # No exception thrown, so the regex is okay
+                # No exception thrown, so the regexes are okay
                 bad_re = None
 
-                # 'matches' holds a list of matching menu nodes.
+                # List of (node, node_string) tuples for the matching nodes
+                matches = []
 
-                # This is a bit faster than the loop equivalent. At a high
-                # level, the syntax of list comprehensions is
-                # [<item> <loop template>].
-                matches = [node
-                           for sym in sorted_syms
-                               if re_search(sym.name)
-                                   for node in sym.nodes]
+                # Go through the list of (node, node_string) tuples, where
+                # 'node_string' describes 'node'
+                for node, node_string in _search_strings():
+                    for search in regex_searches:
+                        if not search(node_string):
+                            break
+                    else:
+                        matches.append((node, node_string))
 
             except re.error as e:
                 # Bad regex. Remember the error message so we can show it.
@@ -1385,27 +1396,17 @@ def _jump_to_dialog():
         c = _get_wch_compat(edit_box)
 
         if c == "\n":
-            if not matches:
-                continue
-
-            _jump_to(matches[sel_node_i])
-
-            _safe_curs_set(0)
-            # Resize the main display before returning in case the terminal was
-            # resized while the search dialog was open
-            _resize_main()
-            return
+            if matches:
+                _jump_to(matches[sel_node_i][0])
+                _safe_curs_set(0)
+                return
 
         if c == "\x1B":  # \x1B = ESC
             _safe_curs_set(0)
-            _resize_main()
             return
 
 
         if c == curses.KEY_RESIZE:
-            # No need to call _resize_main(), because the search window is
-            # fullscreen.
-
             # We adjust the scroll so that the selected node stays visible in
             # the list when the terminal is resized, hence the 'scroll'
             # assignment
@@ -1432,6 +1433,33 @@ def _jump_to_dialog():
         else:
             s, s_i, hscroll = _edit_text(c, s, s_i, hscroll,
                                          edit_box.getmaxyx()[1] - 2)
+
+# Obscure Python: We never pass a value for cached_search_strings, and it keeps
+# pointing to the same list. This avoids a global.
+def _search_strings(cached_search_strings=[]):
+    # Returns a list with (node, node_string) tuples for all symbol menu nodes,
+    # sorted by symbol name.
+    #
+    # node_string is a string containing the symbol's name and prompt. It is
+    # matched against the regex(es) the user inputs during search, and doubles
+    # as the string displayed for the node in the list of matches.
+
+    # This is a static list. Only computing it once makes the search dialog
+    # come up a bit faster after the first time it's entered.
+    if not cached_search_strings:
+        # Defined symbols sorted by name, with duplicates removed.
+        #
+        # Duplicates appear when symbols have multiple menu nodes (definition
+        # locations), but they appear in menu order, which isn't what we want
+        # here. We'd still need to go through sym.nodes as well.
+        for sym in sorted(set(_kconf.defined_syms), key=lambda sym: sym.name):
+            for node in sym.nodes:
+                node_string = sym.name
+                if node.prompt:
+                    node_string += ' "{}"'.format(node.prompt[0])
+                cached_search_strings.append((node, node_string))
+
+    return cached_search_strings
 
 def _resize_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
                            sel_node_i, scroll):
@@ -1489,24 +1517,16 @@ def _draw_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
         # bad_re holds the error message from the re.error exception on errors
         _safe_addstr(matches_win, 0, 0,
                      "Bad regular expression: " + bad_re)
+
     elif not matches:
         _safe_addstr(matches_win, 0, 0, "No matches")
+
     else:
         for i in range(scroll,
                        min(scroll + matches_win.getmaxyx()[0], len(matches))):
-            style = _LIST_SEL_STYLE if i == sel_node_i else _LIST_STYLE
 
-            sym = matches[i].item
-
-            s2 = sym.name
-            if len(sym.nodes) > 1:
-                # Give menu locations as well for symbols that are defined in
-                # multiple locations. The different menu locations will be
-                # listed next to one another.
-                s2 += " (in menu {})".format(
-                    _parent_menu(matches[i]).prompt[0])
-
-            _safe_addstr(matches_win, i - scroll, 0, s2, style)
+            _safe_addstr(matches_win, i - scroll, 0, matches[i][1],
+                         _LIST_SEL_STYLE if i == sel_node_i else _LIST_STYLE)
 
     matches_win.noutrefresh()
 
@@ -1594,8 +1614,6 @@ def _info_dialog(node):
         c = _get_wch_compat(text_win)
 
         if c == curses.KEY_RESIZE:
-            # No need to call _resize_main(), because the help window is
-            # fullscreen
             _resize_info_dialog(top_line_win, text_win, bot_sep_win, help_win)
 
         elif c in (curses.KEY_DOWN, "j", "J"):
@@ -1621,10 +1639,6 @@ def _info_dialog(node):
         elif c in (curses.KEY_LEFT, curses.KEY_BACKSPACE, _ERASE_CHAR,
                    "\x1B",  # \x1B = ESC
                    "q", "Q", "h", "H"):
-
-            # Resize the main display before returning in case the terminal was
-            # resized while the help dialog was open
-            _resize_main()
 
             return
 
@@ -2115,7 +2129,7 @@ def _value_str(node):
 
     if item.type == TRISTATE:
         if item.assignable == (1, 2):
-            return "{{{}}}".format(tri_val_str)  # { }/{M}/{*}
+            return "{{{}}}".format(tri_val_str)  # {M}/{*}
         return "<{}>".format(tri_val_str)
 
 def _is_y_mode_choice_sym(item):
