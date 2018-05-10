@@ -84,6 +84,16 @@ struct app_key_val {
 	u8_t  val[2][16];
 } __packed;
 
+struct mod_pub_val {
+	u16_t addr;
+	u16_t key;
+	u8_t  ttl;
+	u8_t  retransmit;
+	u8_t  period;
+	u8_t  period_div:4,
+	      cred:1;
+};
+
 static int net_set(int argc, char **argv, char *val)
 {
 	struct net_val net;
@@ -458,6 +468,55 @@ static int mod_set_sub(struct bt_mesh_model *mod, char *val)
 	return 0;
 }
 
+static int mod_set_pub(struct bt_mesh_model *mod, char *val)
+{
+	struct mod_pub_val pub;
+	int len, err;
+
+	if (!mod->pub) {
+		BT_WARN("Model has no publication context!");
+		return -EINVAL;
+	}
+
+	if (!val) {
+		mod->pub->addr = BT_MESH_ADDR_UNASSIGNED;
+		mod->pub->key = 0;
+		mod->pub->cred = 0;
+		mod->pub->ttl = 0;
+		mod->pub->period = 0;
+		mod->pub->retransmit = 0;
+		mod->pub->count = 0;
+
+		BT_DBG("Cleared publication for model");
+		return 0;
+	}
+
+	len = sizeof(pub);
+	err = settings_bytes_from_str(val, &pub, &len);
+	if (err) {
+		BT_ERR("Failed to decode value %s (err %d)", val, err);
+		return -EINVAL;
+	}
+
+	if (len != sizeof(pub)) {
+		BT_ERR("Invalid length for model publication");
+		return -EINVAL;
+	}
+
+	mod->pub->addr = pub.addr;
+	mod->pub->key = pub.key;
+	mod->pub->cred = pub.cred;
+	mod->pub->ttl = pub.ttl;
+	mod->pub->period = pub.period;
+	mod->pub->retransmit = pub.retransmit;
+	mod->pub->count = 0;
+
+	BT_DBG("Restored model publication, dst 0x%04x app_idx 0x%03x",
+	       pub.addr, pub.key);
+
+	return 0;
+}
+
 static int mod_set(bool vnd, int argc, char **argv, char *val)
 {
 	struct bt_mesh_model *mod;
@@ -489,6 +548,10 @@ static int mod_set(bool vnd, int argc, char **argv, char *val)
 
 	if (!strcmp(argv[1], "sub")) {
 		return mod_set_sub(mod, val);
+	}
+
+	if (!strcmp(argv[1], "pub")) {
+		return mod_set_pub(mod, val);
 	}
 
 	BT_WARN("Unknown module key %s", argv[1]);
@@ -575,6 +638,19 @@ static int subnet_init(struct bt_mesh_subnet *sub)
 	return 0;
 }
 
+static void commit_mod(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
+		       bool vnd, bool primary, void *user_data)
+{
+	if (mod->pub && mod->pub->update &&
+	    mod->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
+		s32_t ms = bt_mesh_model_pub_period_get(mod);
+		if (ms) {
+			BT_DBG("Starting publish timer (period %u ms)", ms);
+			k_delayed_work_submit(&mod->pub->timer, ms);
+		}
+	}
+}
+
 static int mesh_commit(void)
 {
 	int i;
@@ -612,6 +688,8 @@ static int mesh_commit(void)
 		k_delayed_work_submit(&bt_mesh.ivu_complete,
 				      BT_MESH_NET_IVU_TIMEOUT);
 	}
+
+	bt_mesh_model_foreach(commit_mod, NULL);
 
 	bt_mesh.valid = 1;
 
@@ -993,6 +1071,38 @@ static void store_pending_mod_sub(struct bt_mesh_model *mod, bool vnd)
 	settings_save_one(path, val);
 }
 
+static void store_pending_mod_pub(struct bt_mesh_model *mod, bool vnd)
+{
+	char buf[BT_SETTINGS_SIZE(sizeof(struct mod_pub_val))];
+	struct mod_pub_val pub;
+	char path[20];
+	char *val;
+
+	if (!mod->pub || mod->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+		val = NULL;
+	} else {
+		pub.addr = mod->pub->addr;
+		pub.key = mod->pub->key;
+		pub.ttl = mod->pub->ttl;
+		pub.retransmit = mod->pub->retransmit;
+		pub.period = mod->pub->period;
+		pub.period_div = mod->pub->period_div;
+		pub.cred = mod->pub->cred;
+
+		val = settings_str_from_bytes(&pub, sizeof(pub),
+					      buf, sizeof(buf));
+		if (!val) {
+			BT_ERR("Unable to encode model publication as value");
+			return;
+		}
+	}
+
+	encode_mod_path(mod, vnd, "pub", path, sizeof(path));
+
+	BT_DBG("Saving %s as %s", path, val ? val : "(null)");
+	settings_save_one(path, val);
+}
+
 static void store_pending_mod(struct bt_mesh_model *mod,
 			      struct bt_mesh_elem *elem, bool vnd,
 			      bool primary, void *user_data)
@@ -1009,6 +1119,11 @@ static void store_pending_mod(struct bt_mesh_model *mod,
 	if (mod->flags & BT_MESH_MOD_SUB_PENDING) {
 		mod->flags &= ~BT_MESH_MOD_SUB_PENDING;
 		store_pending_mod_sub(mod, vnd);
+	}
+
+	if (mod->flags & BT_MESH_MOD_PUB_PENDING) {
+		mod->flags &= ~BT_MESH_MOD_PUB_PENDING;
+		store_pending_mod_pub(mod, vnd);
 	}
 }
 
@@ -1212,6 +1327,12 @@ void bt_mesh_store_mod_bind(struct bt_mesh_model *mod)
 void bt_mesh_store_mod_sub(struct bt_mesh_model *mod)
 {
 	mod->flags |= BT_MESH_MOD_SUB_PENDING;
+	schedule_store(BT_MESH_MOD_PENDING);
+}
+
+void bt_mesh_store_mod_pub(struct bt_mesh_model *mod)
+{
+	mod->flags |= BT_MESH_MOD_PUB_PENDING;
 	schedule_store(BT_MESH_MOD_PENDING);
 }
 
