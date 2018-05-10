@@ -205,6 +205,7 @@ enum {
 	BT_MESH_IV_PENDING,
 	BT_MESH_SEQ_PENDING,
 	BT_MESH_HB_PUB_PENDING,
+	BT_MESH_CFG_PENDING,
 	BT_MESH_MOD_PENDING,
 
 	/* Don't touch - intentionally last */

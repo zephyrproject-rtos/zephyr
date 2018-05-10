@@ -11,6 +11,7 @@ void bt_mesh_store_rpl(struct bt_mesh_rpl *rpl);
 void bt_mesh_store_subnet(struct bt_mesh_subnet *sub);
 void bt_mesh_store_app_key(struct bt_mesh_app_key *key);
 void bt_mesh_store_hb_pub(void);
+void bt_mesh_store_cfg(void);
 void bt_mesh_store_mod_bind(struct bt_mesh_model *mod);
 void bt_mesh_store_mod_sub(struct bt_mesh_model *mod);
 void bt_mesh_store_mod_pub(struct bt_mesh_model *mod);

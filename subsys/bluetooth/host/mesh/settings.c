@@ -68,6 +68,17 @@ struct hb_pub_val {
 	      indefinite:1;
 };
 
+/* Miscelaneous configuration server model states */
+struct cfg_val {
+	u8_t net_transmit;
+	u8_t relay;
+	u8_t relay_retransmit;
+	u8_t beacon;
+	u8_t gatt_proxy;
+	u8_t frnd;
+	u8_t default_ttl;
+};
+
 /* IV Index & IV Update storage */
 struct iv_val {
 	u32_t iv_index;
@@ -103,6 +114,14 @@ struct mod_pub_val {
 	u8_t  period_div:4,
 	      cred:1;
 };
+
+/* We need this so we don't overwrite app-hardcoded values in case FCB
+ * contains a history of changes but then has a NULL at the end.
+ */
+static struct {
+	bool valid;
+	struct cfg_val cfg;
+} stored_cfg;
 
 static int net_set(int argc, char **argv, char *val)
 {
@@ -482,6 +501,42 @@ static int hb_pub_set(int argc, char **argv, char *val)
 	return 0;
 }
 
+static int cfg_set(int argc, char **argv, char *val)
+{
+	struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
+	int len, err;
+
+	BT_DBG("val %s", val ? val : "(null)");
+
+	if (!cfg) {
+		return -ENOENT;
+	}
+
+	if (!val) {
+		stored_cfg.valid = false;
+		BT_DBG("Cleared configuration state");
+		return 0;
+	}
+
+	len = sizeof(stored_cfg.cfg);
+	err = settings_bytes_from_str(val, &stored_cfg.cfg, &len);
+	if (err) {
+		BT_ERR("Failed to decode value %s (err %d)", val, err);
+		return err;
+	}
+
+	if (len != sizeof(stored_cfg.cfg)) {
+		BT_ERR("Unexpected value length (%d != %zu)", len,
+		       sizeof(stored_cfg.cfg));
+		return -EINVAL;
+	}
+
+	stored_cfg.valid = true;
+	BT_DBG("Restored configuration state");
+
+	return 0;
+}
+
 static int mod_set_bind(struct bt_mesh_model *mod, char *val)
 {
 	int len, err, i;
@@ -642,6 +697,7 @@ const struct mesh_setting {
 	{ "NetKey", net_key_set },
 	{ "AppKey", app_key_set },
 	{ "HBPub", hb_pub_set },
+	{ "Cfg", cfg_set },
 	{ "s", sig_mod_set },
 	{ "v", vnd_mod_set },
 };
@@ -718,6 +774,7 @@ static void commit_mod(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 static int mesh_commit(void)
 {
 	struct bt_mesh_hb_pub *hb_pub;
+	struct bt_mesh_cfg_srv *cfg;
 	int i;
 
 	BT_DBG("sub[0].net_idx 0x%03x", bt_mesh.sub[0].net_idx);
@@ -761,6 +818,17 @@ static int mesh_commit(void)
 	    hb_pub->count && hb_pub->period) {
 		BT_DBG("Starting heartbeat publication");
 		k_work_submit(&hb_pub->timer.work);
+	}
+
+	cfg = bt_mesh_cfg_get();
+	if (cfg && stored_cfg.valid) {
+		cfg->net_transmit = stored_cfg.cfg.net_transmit;
+		cfg->relay = stored_cfg.cfg.relay;
+		cfg->relay_retransmit = stored_cfg.cfg.relay_retransmit;
+		cfg->beacon = stored_cfg.cfg.beacon;
+		cfg->gatt_proxy = stored_cfg.cfg.gatt_proxy;
+		cfg->frnd = stored_cfg.cfg.frnd;
+		cfg->default_ttl = stored_cfg.cfg.default_ttl;
 	}
 
 	bt_mesh.valid = 1;
@@ -984,6 +1052,41 @@ static void store_pending_hb_pub(void)
 	BT_DBG("Saving Heartbeat Publication as value %s",
 	       str ? str : "(null)");
 	settings_save_one("bt/mesh/HBPub", str);
+}
+
+static void store_pending_cfg(void)
+{
+	char buf[BT_SETTINGS_SIZE(sizeof(struct cfg_val))];
+	struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
+	struct cfg_val val;
+	char *str;
+
+	if (!cfg) {
+		return;
+	}
+
+	val.net_transmit = cfg->net_transmit;
+	val.relay = cfg->relay;
+	val.relay_retransmit = cfg->relay_retransmit;
+	val.beacon = cfg->beacon;
+	val.gatt_proxy = cfg->gatt_proxy;
+	val.frnd = cfg->frnd;
+	val.default_ttl = cfg->default_ttl;
+
+	str = settings_str_from_bytes(&val, sizeof(val), buf, sizeof(buf));
+	if (!str) {
+		BT_ERR("Unable to encode configuration as value");
+		return;
+	}
+
+	BT_DBG("Saving configuration as value %s", str);
+	settings_save_one("bt/mesh/Cfg", str);
+}
+
+static void clear_cfg(void)
+{
+	BT_DBG("Clearing configuration");
+	settings_save_one("bt/mesh/Cfg", NULL);
 }
 
 static void clear_app_key(u16_t app_idx)
@@ -1273,6 +1376,14 @@ static void store_pending(struct k_work *work)
 		store_pending_hb_pub();
 	}
 
+	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_CFG_PENDING)) {
+		if (bt_mesh.valid) {
+			store_pending_cfg();
+		} else {
+			clear_cfg();
+		}
+	}
+
 	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_MOD_PENDING)) {
 		bt_mesh_model_foreach(store_pending_mod, NULL);
 	}
@@ -1370,10 +1481,16 @@ void bt_mesh_store_hb_pub(void)
 	schedule_store(BT_MESH_HB_PUB_PENDING);
 }
 
+void bt_mesh_store_cfg(void)
+{
+	schedule_store(BT_MESH_CFG_PENDING);
+}
+
 void bt_mesh_clear_net(void)
 {
 	schedule_store(BT_MESH_NET_PENDING);
 	schedule_store(BT_MESH_IV_PENDING);
+	schedule_store(BT_MESH_CFG_PENDING);
 }
 
 void bt_mesh_clear_subnet(struct bt_mesh_subnet *sub)
