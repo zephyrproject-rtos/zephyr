@@ -397,6 +397,21 @@ class ZephyrBinaryRunner(abc.ABC):
             server_proc.terminate()
             server_proc.wait()
 
+    def call(self, cmd):
+        '''Subclass subprocess.call() wrapper.
+
+        Subclasses should use this method to run command in a
+        subprocess and get its return code, rather than
+        using subprocess directly, to keep accurate debug logs.
+        '''
+        if DEBUG or self.debug:
+            print(quote_sh_list(cmd))
+
+        if DEBUG:
+            return 0
+
+        return subprocess.call(cmd)
+
     def check_call(self, cmd):
         '''Subclass subprocess.check_call() wrapper.
 
