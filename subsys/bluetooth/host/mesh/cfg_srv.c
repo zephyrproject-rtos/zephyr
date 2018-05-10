@@ -2902,6 +2902,10 @@ static void heartbeat_pub_set(struct bt_mesh_model *model,
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_store_hb_pub();
+	}
+
 	hb_pub_send_status(model, ctx, STATUS_SUCCESS, NULL);
 
 	return;
@@ -3338,12 +3342,25 @@ u8_t *bt_mesh_label_uuid_get(u16_t addr)
 	return NULL;
 }
 
+struct bt_mesh_hb_pub *bt_mesh_hb_pub_get(void)
+{
+	if (!conf) {
+		return NULL;
+	}
+
+	return &conf->hb_pub;
+}
+
 void bt_mesh_subnet_del(struct bt_mesh_subnet *sub)
 {
 	int i;
 
 	if (conf && conf->hb_pub.net_idx == sub->net_idx) {
 		hb_pub_disable(conf);
+
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			bt_mesh_store_hb_pub();
+		}
 	}
 
 	/* Delete any app keys bound to this NetKey index */
