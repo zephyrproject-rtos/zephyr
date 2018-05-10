@@ -36,3 +36,14 @@ config ARM_MPU_NRF52X
 	default n
 	help
 	  Enable MPU support on Nordic Semiconductor nRF52x series ICs.
+
+config NFCT_PINS_AS_GPIOS
+	bool "NFCT pins as GPIOs"
+	depends on SOC_SERIES_NRF52X
+	help
+	  P0.9 and P0.10 are usually reserved for NFC. This option switch
+	  them to normal GPIO mode. HW enabling happens once in the device
+	  lifetime, during the first system startup. Disabling this option will
+	  not switch back these pins to NFCT mode. Doing this requires UICR
+	  erase prior to flashing device using the image which has
+	  this option disabled.
