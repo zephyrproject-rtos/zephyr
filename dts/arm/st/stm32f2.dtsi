@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2018 qianfan Zhao
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <st/mem.h>
+#include <st/stm32f2-pinctrl.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m3";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SRAM_SIZE>;
+	};
+
+	soc {
+		flash-controller@40023c00 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_STM32";
+				reg = <0x08000000 DT_FLASH_SIZE>;
+
+				write-block-size = <1>;
+			};
+		};
+	};
+};
