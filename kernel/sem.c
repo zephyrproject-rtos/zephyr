@@ -62,7 +62,7 @@ void _impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 
 	sem->count = initial_count;
 	sem->limit = limit;
-	sys_dlist_init(&sem->wait_q);
+	_waitq_init(&sem->wait_q);
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&sem->poll_events);
 #endif

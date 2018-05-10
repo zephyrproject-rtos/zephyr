@@ -84,7 +84,7 @@ SYS_INIT(init_queue_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 void _impl_k_queue_init(struct k_queue *queue)
 {
 	sys_sflist_init(&queue->data_q);
-	sys_dlist_init(&queue->wait_q);
+	_waitq_init(&queue->wait_q);
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&queue->poll_events);
 #endif

@@ -48,7 +48,7 @@ SYS_INIT(init_stack_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 void k_stack_init(struct k_stack *stack, u32_t *buffer,
 			unsigned int num_entries)
 {
-	sys_dlist_init(&stack->wait_q);
+	_waitq_init(&stack->wait_q);
 	stack->next = stack->base = buffer;
 	stack->top = stack->base + num_entries;
 
@@ -86,7 +86,7 @@ Z_SYSCALL_HANDLER(k_stack_alloc_init, stack, num_entries)
 
 void k_stack_cleanup(struct k_stack *stack)
 {
-	__ASSERT_NO_MSG(sys_dlist_is_empty(&stack->wait_q));
+	__ASSERT_NO_MSG(sys_dlist_is_empty(&stack->wait_q.waitq));
 
 	if (stack->flags & K_STACK_FLAG_ALLOC) {
 		k_free(stack->base);

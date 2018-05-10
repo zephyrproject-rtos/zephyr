@@ -68,7 +68,7 @@ void _timer_expiration_handler(struct _timeout *t)
 		timer->expiry_fn(timer);
 	}
 
-	thread = (struct k_thread *)sys_dlist_peek_head(&timer->wait_q);
+	thread = _waitq_head(&timer->wait_q);
 
 	if (!thread) {
 		return;
@@ -100,7 +100,7 @@ void k_timer_init(struct k_timer *timer,
 	timer->stop_fn = stop_fn;
 	timer->status = 0;
 
-	sys_dlist_init(&timer->wait_q);
+	_waitq_init(&timer->wait_q);
 	_init_timeout(&timer->timeout, _timer_expiration_handler);
 	SYS_TRACING_OBJ_INIT(k_timer, timer);
 

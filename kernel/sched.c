@@ -337,15 +337,18 @@ struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
 	return t;
 }
 
-void _unpend_all(_wait_q_t *waitq)
+int _unpend_all(_wait_q_t *waitq)
 {
-	while (!sys_dlist_is_empty(waitq)) {
-		struct k_thread *th = (void *)sys_dlist_peek_head(waitq);
+	int need_sched = 0;
+	struct k_thread *th;
 
+	while ((th = _waitq_head(waitq))) {
 		_unpend_thread(th);
 		_ready_thread(th);
 		need_sched = 1;
 	}
+
+	return need_sched;
 }
 
 
@@ -717,6 +720,6 @@ struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
 	ARG_UNUSED(from);
 #endif
 
-	return (struct k_thread *)sys_dlist_peek_head(wait_q);
+	return _waitq_head(wait_q);
 
 }

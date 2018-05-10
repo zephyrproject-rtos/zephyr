@@ -57,7 +57,7 @@ int pthread_cond_broadcast(pthread_cond_t *cv)
 {
 	int key = irq_lock();
 
-	while (!sys_dlist_is_empty(&cv->wait_q)) {
+	while (_waitq_head(&cv->wait_q)) {
 		_ready_one_thread(&cv->wait_q);
 	}
 
