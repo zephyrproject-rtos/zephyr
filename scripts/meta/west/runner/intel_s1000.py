@@ -5,9 +5,11 @@
 
 '''Runner for debugging and flashing intel_s1000 devices'''
 from os import path
-from .core import ZephyrBinaryRunner
 import time
 import subprocess
+
+from .. import log
+from .core import ZephyrBinaryRunner
 
 DEFAULT_XT_GDB_PORT = 20000
 
@@ -122,7 +124,7 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
             raise subprocess.CalledProcessError((retcode, gdb_cmd))
 
     def print_gdbserver_message(self, gdb_port):
-        print('Intel S1000 GDB server running on port {}'.format(gdb_port))
+        log.inf('Intel S1000 GDB server running on port {}'.format(gdb_port))
 
     def debugserver(self, **kwargs):
         topology_file = kwargs['ocd-topology']

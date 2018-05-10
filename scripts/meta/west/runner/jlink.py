@@ -6,6 +6,8 @@
 
 import os
 import tempfile
+
+from .. import log
 from .core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
 
 DEFAULT_JLINK_GDB_PORT = 2331
@@ -78,7 +80,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  tui=args.tui, debug=args.verbose)
 
     def print_gdbserver_message(self):
-        print('J-Link GDB server running on port {}'.format(self.gdb_port))
+        log.inf('J-Link GDB server running on port {}'.format(self.gdb_port))
 
     def do_run(self, command, **kwargs):
         server_cmd = (self.gdbserver_cmd +
@@ -137,5 +139,5 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                     '-device', self.device,
                     '-CommanderScript', fname])
 
-            print('Flashing Target Device')
+            log.inf('Flashing Target Device')
             self.check_call(cmd)

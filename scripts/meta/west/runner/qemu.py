@@ -4,6 +4,7 @@
 
 '''Runner stub for QEMU.'''
 
+from .. import log
 from .core import ZephyrBinaryRunner
 
 
@@ -27,4 +28,4 @@ class QemuBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         if command == 'debugserver':
-            print('Detached GDB server')
+            log.inf('Detached GDB server')
