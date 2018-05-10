@@ -13,6 +13,8 @@
 #ifndef OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 #define OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 
+#include <generated_dts_board.h>
+
 /**
  * @def OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS
  *
@@ -73,10 +75,11 @@
 /**
  * @def SETTINGS_CONFIG_PAGE_SIZE
  *
- * The page size of settings.
+ * The page size of settings. Ensure that 'erase-block-size'
+ * is set in your SOC dts file.
  *
  */
-#define SETTINGS_CONFIG_PAGE_SIZE                               4096
+#define SETTINGS_CONFIG_PAGE_SIZE          FLASH_ERASE_BLOCK_SIZE
 
 /**
  * @def SETTINGS_CONFIG_PAGE_NUM
