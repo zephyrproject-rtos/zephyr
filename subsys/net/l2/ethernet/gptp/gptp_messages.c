@@ -903,7 +903,7 @@ void gptp_handle_signaling(int port, struct net_pkt *pkt)
 
 void gptp_send_sync(int port, struct net_pkt *pkt)
 {
-	if (sync_cb_registered) {
+	if (!sync_cb_registered) {
 		net_if_register_timestamp_cb(&sync_timestamp_cb,
 					     net_pkt_iface(pkt),
 					     gptp_sync_timestamp_callback);
