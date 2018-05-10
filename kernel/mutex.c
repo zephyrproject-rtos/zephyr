@@ -75,7 +75,7 @@ void _impl_k_mutex_init(struct k_mutex *mutex)
 	/* initialized upon first use */
 	/* mutex->owner_orig_prio = 0; */
 
-	sys_dlist_init(&mutex->wait_q);
+	_waitq_init(&mutex->wait_q);
 
 	SYS_TRACING_OBJ_INIT(k_mutex, mutex);
 	_k_object_init(mutex);
@@ -173,8 +173,7 @@ int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 
 	K_DEBUG("%p timeout on mutex %p\n", _current, mutex);
 
-	struct k_thread *waiter =
-		(struct k_thread *)sys_dlist_peek_head(&mutex->wait_q);
+	struct k_thread *waiter = _waitq_head(&mutex->wait_q);
 
 	new_prio = mutex->owner_orig_prio;
 	new_prio = waiter ? new_prio_for_inheritance(waiter->base.prio,

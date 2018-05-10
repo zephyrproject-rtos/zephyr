@@ -58,7 +58,7 @@ void k_msgq_init(struct k_msgq *q, char *buffer, size_t msg_size,
 	q->write_ptr = buffer;
 	q->used_msgs = 0;
 	q->flags = 0;
-	sys_dlist_init(&q->wait_q);
+	_waitq_init(&q->wait_q);
 	SYS_TRACING_OBJ_INIT(k_msgq, q);
 
 	_k_object_init(q);
@@ -99,7 +99,7 @@ Z_SYSCALL_HANDLER(k_msgq_alloc_init, q, msg_size, max_msgs)
 
 void k_msgq_cleanup(struct k_msgq *q)
 {
-	__ASSERT_NO_MSG(sys_dlist_is_empty(&q->wait_q));
+	__ASSERT_NO_MSG(sys_dlist_is_empty(&q->wait_q.waitq));
 
 	if (q->flags & K_MSGQ_FLAG_ALLOC) {
 		k_free(q->buffer_start);
