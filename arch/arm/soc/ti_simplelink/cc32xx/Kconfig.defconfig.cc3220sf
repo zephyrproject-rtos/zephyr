@@ -21,6 +21,10 @@ config TEXT_SECTION_OFFSET
 	default 0x800 if XIP
 	default 0x0   if !XIP
 
+# Override the setting in misc/Kconfig to allow full use of SRAM:
+config BOOTLOADER_SRAM_SIZE
+	default 0 if !XIP
+
 if GPIO
 
 config GPIO_CC32XX
