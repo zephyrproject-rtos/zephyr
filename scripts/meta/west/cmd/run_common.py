@@ -110,8 +110,7 @@ def do_run_common(command, args, runner_args, cached_runner_var):
     # Construct the final command line arguments, create a
     # runner-specific parser to handle them, and run the command.
     assert isinstance(runner_args, list), runner_args
-    final_runner_args = (cached_common_args + cached_runner_args +
-                         runner_args + [command_name])
+    final_runner_args = cached_common_args + cached_runner_args + runner_args
 
     # Having the runners themselves be the place where their argument
     # parsing is handled is hackish; it's an artifact of the time
