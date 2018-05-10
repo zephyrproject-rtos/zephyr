@@ -27,6 +27,7 @@
 				compatible = "soc-nv-flash";
 				label = "NRF_FLASH";
 				reg = <0x00000000 DT_FLASH_SIZE>;
+				erase-block-size = <4096>;
 				write-block-size = <4>;
 			};
 	};
