@@ -6,14 +6,76 @@
 
 #include <sys/param.h>
 
-#include "net_tls.h"
 #include "net_private.h"
+#include "net_tls_internal.h"
 #include "tcp_internal.h"
 
 #define TIMEOUT_TLS_RX_MS       100
 #define TIMEOUT_TLS_TX_MS       100
 
+#if defined(CONFIG_NET_PRECONFIGURE_TLS_CREDENTIALS)
+#include CONFIG_NET_TLS_CREDENTIALS_FILE
+#endif
+
 static mbedtls_ctr_drbg_context tls_ctr_drbg;
+
+struct net_tls_credential {
+	enum net_tls_credential_type type;
+	int tag;
+	const void *buf;
+	size_t len;
+};
+
+/* Global poll of credentials shared among TLS contexts. */
+static struct net_tls_credential credentials[CONFIG_NET_MAX_CREDENTIALS_NUMBER];
+
+static struct net_tls_credential *unused_credential_get(void)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(credentials); i++) {
+		if (credentials[i].type == NET_TLS_CREDENTIAL_UNUSED) {
+			return &credentials[i];
+		}
+	}
+
+	return NULL;
+}
+
+static struct net_tls_credential *credential_get(
+		sec_tag_t tag, enum net_tls_credential_type type)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(credentials); i++) {
+		if (credentials[i].type == type && credentials[i].tag == tag) {
+			return &credentials[i];
+		}
+	}
+
+	return NULL;
+}
+
+static struct net_tls_credential *credential_next_get(
+		sec_tag_t tag, struct net_tls_credential *iter)
+{
+	int i;
+
+	if (!iter) {
+		iter = credentials;
+	} else {
+		iter++;
+	}
+
+	for (i = iter - credentials; i < ARRAY_SIZE(credentials); i++) {
+		if (credentials[i].type != NET_TLS_CREDENTIAL_UNUSED &&
+		    credentials[i].tag == tag) {
+			return &credentials[i];
+		}
+	}
+
+	return NULL;
+}
 
 static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
 {
@@ -164,6 +226,31 @@ err:
 	net_pkt_unref(decrypted_pkt);
 }
 
+void net_tls_init(void)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(credentials); i++) {
+		credentials[i].type = NET_TLS_CREDENTIAL_UNUSED;
+	}
+
+#if defined(CONFIG_NET_PRECONFIGURE_TLS_CREDENTIALS)
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	net_tls_credential_add(NET_TLS_DEFAULT_CA_CERTIFICATE_TAG,
+			       NET_TLS_CREDENTIAL_CA_CERTIFICATE,
+			       ca_certificate, sizeof(ca_certificate));
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
+#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
+	net_tls_credential_add(NET_TLS_DEFAULT_PSK_TAG,
+			       NET_TLS_CREDENTIAL_PSK,
+			       client_psk, sizeof(client_psk));
+	net_tls_credential_add(NET_TLS_DEFAULT_PSK_TAG,
+			       NET_TLS_CREDENTIAL_PSK_ID,
+			       client_psk_id, sizeof(client_psk_id));
+#endif /* MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED */
+#endif /* CONFIG_NET_PRECONFIGURE_TLS_CREDENTIALS */
+}
+
 int net_tls_enable(struct net_context *context, bool enabled)
 {
 	int state;
@@ -307,6 +394,59 @@ int net_tls_recv(struct net_context *context, net_context_recv_cb_t cb,
 #if defined(CONFIG_NET_TCP)
 	context->tcp->recv_user_data = user_data;
 #endif
+
+	return 0;
+}
+
+int net_tls_credential_add(int tag, enum net_tls_credential_type type,
+			   const void *cred, size_t credlen)
+{
+	struct net_tls_credential *credential = credential_get(tag, type);
+
+	if (credential != NULL) {
+		return -EEXIST;
+	}
+
+	credential = unused_credential_get();
+	if (credential == NULL) {
+		return -ENOMEM;
+	}
+
+	credential->tag = tag;
+	credential->type = type;
+	credential->buf = cred;
+	credential->len = credlen;
+
+	return 0;
+}
+
+int net_tls_credential_get(sec_tag_t tag, enum net_tls_credential_type type,
+			   void *cred, size_t *credlen)
+{
+	struct net_tls_credential *credential = credential_get(tag, type);
+
+	if (credential == NULL) {
+		return -ENOENT;
+	}
+
+	*credlen = credential->len;
+	memcpy(cred, credential->buf, credential->len);
+
+	return 0;
+}
+
+int net_tls_credential_delete(int tag, enum net_tls_credential_type type)
+{
+	struct net_tls_credential *credential = NULL;
+
+	credential = credential_get(tag, type);
+
+	if (!credential) {
+		return -ENOENT;
+	}
+
+	memset(credential, 0, sizeof(struct net_tls_credential));
+	credential->type = NET_TLS_CREDENTIAL_UNUSED;
 
 	return 0;
 }

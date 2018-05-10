@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_TLS_H
-#define __NET_TLS_H
+#ifndef __NET_TLS_INTERNAL_H
+#define __NET_TLS_INTERNAL_H
 
 #include <net/net_context.h>
+#include <net/net_tls.h>
 
 #if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
 
@@ -40,6 +41,11 @@
 
 #endif /* CONFIG_MBEDTLS */
 
+
+/**
+ * @brief Initialize TLS module.
+ */
+void net_tls_init(void);
 int net_tls_enable(struct net_context *context, bool enabled);
 int net_tls_connect(struct net_context *context, bool listening);
 int net_tls_send(struct net_pkt *pkt);
@@ -47,6 +53,10 @@ int net_tls_recv(struct net_context *context, net_context_recv_cb_t cb,
 		 void *user_data);
 
 #else
+static inline void net_tls_init(void)
+{
+}
+
 static inline int net_tls_enable(struct net_context *context, bool enabled)
 {
 	ARG_UNUSED(context);
@@ -81,4 +91,4 @@ static inline int net_tls_recv(struct net_context *context,
 }
 #endif /* CONFIG_NET_TLS || CONFIG_NET_DTLS */
 
-#endif
+#endif /* __NET_TLS_INTERNAL_H */

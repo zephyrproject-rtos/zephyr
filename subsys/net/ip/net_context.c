@@ -28,7 +28,7 @@
 
 #include "connection.h"
 #include "net_private.h"
-#include "net_tls.h"
+#include "net_tls_internal.h"
 
 #include "ipv6.h"
 #include "ipv4.h"

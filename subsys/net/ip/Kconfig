@@ -248,17 +248,7 @@ config NET_DEBUG_UDP
 	help
 	  Enables UDP handler output debug messages
 
-config NET_TLS
-       bool "TCP TLS support"
-       default n
-       depends on NET_TCP && MBEDTLS
-       help
-         Enable TLS support for TCP connections. TLS is implemented by mbedTLS.
-
-config NET_DTLS
-       bool "UDP DTLS placeholder"
-       default n
-       depends on NET_UDP && MBEDTLS
+source "subsys/net/ip/Kconfig.tls"
 
 config NET_MAX_CONN
 	int "How many network connections are supported"
