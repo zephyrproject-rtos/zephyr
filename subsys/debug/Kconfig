@@ -25,8 +25,9 @@ config STACK_USAGE
 
 config STACK_SENTINEL
 	bool "Enable stack sentinel"
-	select THREAD_STACK_INFO
 	default n
+	select THREAD_STACK_INFO
+	depends on !USERSPACE
 	help
 	  Store a magic value at the lowest addresses of a thread's stack.
 	  Periodically check that this value is still present and kill the
