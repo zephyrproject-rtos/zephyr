@@ -15,10 +15,10 @@ import abc
 import argparse
 import os
 import platform
-import shlex
 import signal
 import subprocess
 
+from ..util import quote_sh_list
 
 # Turn on to enable just printing the commands that would be run,
 # without actually running them. This can break runners that are expecting
@@ -33,13 +33,6 @@ class _DebugDummyPopen:
 
     def wait(self):
         pass
-
-
-def quote_sh_list(cmd):
-    '''Transform a command from list into shell string form.'''
-    fmt = ' '.join('{}' for _ in cmd)
-    args = [shlex.quote(s) for s in cmd]
-    return fmt.format(*args)
 
 
 MAX_PORT = 49151
