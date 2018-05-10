@@ -42,4 +42,11 @@ properties:
       description: Size of USB dedicated RAM. STM32 SOC's reference
                    manual defines USB packet SRAM size.
       generation: define
+
+    disconnect-gpios:
+      type: compound
+      category: optional
+      description: Some boards use a USB DISCONNECT pin to enable
+                   the pull-up resistor on USB Data Positive signal.
+      generation: define
 ...
