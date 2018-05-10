@@ -19,12 +19,6 @@ config TOOLCHAIN_VARIANT
 	default "iamcu" if X86_IAMCU
 	default "" if !X86_IAMCU
 
-config RAM_SIZE
-	default 52
-
-config ROM_SIZE
-	default 144
-
 config	SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32000000
 

@@ -11,13 +11,6 @@ if SOC_ATOM
 config SOC
 	default atom
 
-config RAM_SIZE
-	default 128 if XIP
-	default 256
-
-config ROM_SIZE
-	default 72 if XIP
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 150000000 if LOAPIC_TIMER
 	default 25000000  if HPET_TIMER

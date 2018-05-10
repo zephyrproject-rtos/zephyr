@@ -10,9 +10,6 @@ config TEXT_SECTION_OFFSET
 config SS_RESET_VECTOR
 	default 0x40034000
 
-config ROM_SIZE
-	default 192
-
 if USB
 
 config USB_DW

@@ -19,12 +19,6 @@ config TOOLCHAIN_VARIANT
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32000000
 
-config RAM_SIZE
-	default 8
-
-config ROM_SIZE
-	default 32
-
 config IDT_NUM_VECTORS
 	default 64
 
