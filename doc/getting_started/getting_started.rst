@@ -260,7 +260,8 @@ Running a Sample Application natively (POSIX OS)
 It is also possible to compile some of the sample and test applications to run
 as native process on a POSIX OS (e.g. Linux).
 To be able to do this, remember to have installed the 32 bit libC if your OS is
-natively 64bit.
+natively 64bit. See the :ref:`native_posix` section on host depencencies
+for more information.
 
 To compile and run an application in this way, type:
 
@@ -275,9 +276,13 @@ and then:
 .. code-block:: console
 
    ninja run
+
    # or just:
    zephyr/zephyr.exe
    # Press Ctrl+C to exit
+
+You can run ``zephyr/zephyr.exe --help`` to get a list of available
+options.  See the :ref:`native_posix` document for more information.
 
 This executable can be instrumented like any other Linux process. For ex. with gdb
 or valgrind.
