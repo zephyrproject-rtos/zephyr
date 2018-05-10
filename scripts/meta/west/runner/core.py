@@ -400,7 +400,7 @@ class ZephyrBinaryRunner(abc.ABC):
     def check_call(self, cmd):
         '''Subclass subprocess.check_call() wrapper.
 
-        Subclasses should use this command to run command in a
+        Subclasses should use this method to run command in a
         subprocess and check that it executed correctly, rather than
         using subprocess directly, to keep accurate debug logs.
         '''
@@ -420,7 +420,7 @@ class ZephyrBinaryRunner(abc.ABC):
     def check_output(self, cmd):
         '''Subclass subprocess.check_output() wrapper.
 
-        Subclasses should use this command to run command in a
+        Subclasses should use this method to run command in a
         subprocess and check that it executed correctly, rather than
         using subprocess directly, to keep accurate debug logs.
         '''
