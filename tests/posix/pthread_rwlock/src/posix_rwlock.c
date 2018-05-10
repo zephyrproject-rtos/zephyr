@@ -54,7 +54,7 @@ static void *thread_top(void *p1)
 static void test_rw_lock(void)
 {
 	s32_t i, ret;
-	pthread_attr_t attr[N_THR];
+	pthread_attr_t attr[N_THR] = {0};
 	struct sched_param schedparam;
 	pthread_t newthread[N_THR];
 	struct timespec time;

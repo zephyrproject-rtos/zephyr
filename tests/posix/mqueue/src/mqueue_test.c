@@ -65,7 +65,7 @@ void test_mqueue(void)
 	struct mq_attr attrs;
 	s32_t mode = 0777, flags = O_RDWR | O_CREAT, ret, i;
 	void *retval;
-	pthread_attr_t attr[N_THR];
+	pthread_attr_t attr[N_THR] = {0};
 	pthread_t newthread[N_THR];
 
 	attrs.mq_msgsize = MESSAGE_SIZE;

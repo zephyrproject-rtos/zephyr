@@ -46,7 +46,7 @@ static bool is_sched_prio_valid(int prio, int policy)
 void test_pthread_join(void)
 {
 	s32_t i, ret;
-	pthread_attr_t attr[N_THR];
+	pthread_attr_t attr[N_THR] = {0};
 	struct sched_param schedparam;
 	pthread_t newthread[N_THR];
 	u32_t detachstate, schedpolicy = SCHED_RR;

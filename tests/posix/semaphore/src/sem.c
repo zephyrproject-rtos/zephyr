@@ -26,7 +26,7 @@ static void *foo_func(void *p1)
 static void test_sema(void)
 {
 	pthread_t newthread;
-	pthread_attr_t attr;
+	pthread_attr_t attr = {0};
 	struct sched_param schedparam;
 	int schedpolicy = SCHED_FIFO;
 	int val, ret;
