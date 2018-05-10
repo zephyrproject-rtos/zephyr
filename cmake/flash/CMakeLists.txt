@@ -57,13 +57,10 @@ endif()
 foreach(target flash debug debugserver)
   if(target STREQUAL flash)
     set(comment "Flashing ${BOARD}")
-    set(runner "${BOARD_FLASH_RUNNER}")
   elseif(target STREQUAL debug)
     set(comment "Debugging ${BOARD}")
-    set(runner "${BOARD_DEBUG_RUNNER}")
   elseif(target STREQUAL debugserver)
     set(comment "Debugging ${BOARD}")
-    set(runner "${BOARD_DEBUG_RUNNER}")
     if(EMU_PLATFORM)
       # cmake/qemu/CMakeLists.txt will add a debugserver target for
       # emulation platforms, so we don't add one here
@@ -71,30 +68,19 @@ foreach(target flash debug debugserver)
     endif()
   endif()
 
-  if(runner)
-    # E.g. runner_ident = dfu_util (note the underscore), etc.
-    string(MAKE_C_IDENTIFIER "${runner}" runner_ident)
-    # E.g. args = BOARD_RUNNER_ARGS_openocd, BOARD_RUNNER_ARGS_dfu_util, etc.
-    get_property(args GLOBAL PROPERTY "BOARD_RUNNER_ARGS_${runner_ident}")
-    set(cmd
-      ${CMAKE_COMMAND} -E env
-      ${PYTHON_EXECUTABLE}
-      ${ZEPHYR_BASE}/scripts/meta/zephyr_flash_debug.py
-      ${RUNNER_VERBOSE}
-      ${runner}
-      ${target}
-      ${RUNNER_ARGS_COMMON}
-      ${args}
-      DEPENDS ${logical_target_for_zephyr_elf}
-      WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
-      )
-  else()
-    set(cmd
-      ${CMAKE_COMMAND} -E echo
-	  "'${target}' is not supported with this board."
-	  "Please check the documentation for alternate instructions."
-      )
-  endif()
+  # We pass --skip-rebuild here because the DEPENDS value ensures the
+  # build is already up to date before west is run.
+  set(cmd
+    ${CMAKE_COMMAND} -E env
+    PYTHONPATH=${ZEPHYR_BASE}/scripts/meta
+    ${PYTHON_EXECUTABLE}
+    -m west
+    ${RUNNER_VERBOSE}
+    ${target}
+    --skip-rebuild
+    DEPENDS ${logical_target_for_zephyr_elf}
+    WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
+    )
 
   add_custom_target(${target}
     COMMAND
