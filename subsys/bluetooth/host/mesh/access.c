@@ -473,7 +473,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	int i;
 
 	BT_DBG("app_idx 0x%04x src 0x%04x dst 0x%04x", rx->ctx.app_idx,
-	       rx->ctx.addr, rx->dst);
+	       rx->ctx.addr, rx->ctx.recv_dst);
 	BT_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
 	if (get_opcode(buf, &opcode) < 0) {
@@ -486,16 +486,17 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	for (i = 0; i < dev_comp->elem_count; i++) {
 		struct bt_mesh_elem *elem = &dev_comp->elem[i];
 
-		if (BT_MESH_ADDR_IS_UNICAST(rx->dst)) {
-			if (elem->addr != rx->dst) {
+		if (BT_MESH_ADDR_IS_UNICAST(rx->ctx.recv_dst)) {
+			if (elem->addr != rx->ctx.recv_dst) {
 				continue;
 			}
-		} else if (BT_MESH_ADDR_IS_GROUP(rx->dst) ||
-			   BT_MESH_ADDR_IS_VIRTUAL(rx->dst)) {
-			if (!bt_mesh_elem_find_group(elem, rx->dst)) {
+		} else if (BT_MESH_ADDR_IS_GROUP(rx->ctx.recv_dst) ||
+			   BT_MESH_ADDR_IS_VIRTUAL(rx->ctx.recv_dst)) {
+			if (!bt_mesh_elem_find_group(elem, rx->ctx.recv_dst)) {
 				continue;
 			}
-		} else if (i != 0 || !bt_mesh_fixed_group_match(rx->dst)) {
+		} else if (i != 0 ||
+			   !bt_mesh_fixed_group_match(rx->ctx.recv_dst)) {
 			continue;
 		}
 
