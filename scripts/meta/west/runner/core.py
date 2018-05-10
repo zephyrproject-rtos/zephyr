@@ -18,12 +18,13 @@ import platform
 import signal
 import subprocess
 
+from .. import log
 from ..util import quote_sh_list
 
 # Turn on to enable just printing the commands that would be run,
 # without actually running them. This can break runners that are expecting
 # output or if one command depends on another, so it's just for debugging.
-DEBUG = False
+JUST_PRINT = False
 
 
 class _DebugDummyPopen:
@@ -404,12 +405,13 @@ class ZephyrBinaryRunner(abc.ABC):
         subprocess and get its return code, rather than
         using subprocess directly, to keep accurate debug logs.
         '''
-        if DEBUG or self.debug:
-            print(quote_sh_list(cmd))
+        quoted = quote_sh_list(cmd)
 
-        if DEBUG:
+        if JUST_PRINT:
+            log.inf(quoted)
             return 0
 
+        log.dbg(quoted)
         return subprocess.call(cmd)
 
     def check_call(self, cmd):
@@ -419,17 +421,16 @@ class ZephyrBinaryRunner(abc.ABC):
         subprocess and check that it executed correctly, rather than
         using subprocess directly, to keep accurate debug logs.
         '''
-        if DEBUG or self.debug:
-            print(quote_sh_list(cmd))
+        quoted = quote_sh_list(cmd)
 
-        if DEBUG:
+        if JUST_PRINT:
+            log.inf(quoted)
             return
 
+        log.dbg(quoted)
         try:
             subprocess.check_call(cmd)
         except subprocess.CalledProcessError:
-            if self.debug:
-                print('Error running {}'.format(quote_sh_list(cmd)))
             raise
 
     def check_output(self, cmd):
@@ -439,17 +440,16 @@ class ZephyrBinaryRunner(abc.ABC):
         subprocess and check that it executed correctly, rather than
         using subprocess directly, to keep accurate debug logs.
         '''
-        if self.debug:
-            print(quote_sh_list(cmd))
+        quoted = quote_sh_list(cmd)
 
-        if DEBUG:
+        if JUST_PRINT:
+            log.inf(quoted)
             return b''
 
+        log.dbg(quoted)
         try:
             return subprocess.check_output(cmd)
         except subprocess.CalledProcessError:
-            if self.debug:
-                print('Error running {}'.format(quote_sh_list(cmd)))
             raise
 
     def popen_ignore_int(self, cmd):
@@ -459,16 +459,16 @@ class ZephyrBinaryRunner(abc.ABC):
         cflags = 0
         preexec = None
         system = platform.system()
+        quoted = quote_sh_list(cmd)
 
         if system == 'Windows':
             cflags |= subprocess.CREATE_NEW_PROCESS_GROUP
         elif system in {'Linux', 'Darwin'}:
             preexec = os.setsid
 
-        if DEBUG or self.debug:
-            print(quote_sh_list(cmd))
-
-        if DEBUG:
+        if JUST_PRINT:
+            log.inf(quoted)
             return _DebugDummyPopen()
 
+        log.dbg(quoted)
         return subprocess.Popen(cmd, creationflags=cflags, preexec_fn=preexec)

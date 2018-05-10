@@ -7,6 +7,7 @@
 import os
 import sys
 from .core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
+from .. import log
 
 DEFAULT_PYOCD_GDB_PORT = 3333
 
@@ -79,13 +80,11 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
     def create_from_args(cls, args):
         daparg = os.environ.get('PYOCD_DAPARG')
         if daparg:
-            print('Warning: setting PYOCD_DAPARG in the environment is',
-                  'deprecated; use the --daparg option instead.',
-                  file=sys.stderr)
+            log.wrn('Setting PYOCD_DAPARG in the environment is',
+                    'deprecated; use the --daparg option instead.')
             if args.daparg is None:
-                print('Missing --daparg set to {} from environment'.format(
-                          daparg),
-                      file=sys.stderr)
+                log.dbg('Missing --daparg set to {} from environment'.format(
+                    daparg), level=log.VERBOSE_VERY)
                 args.daparg = daparg
 
         build_conf = BuildConfiguration(os.getcwd())
@@ -120,11 +119,11 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                self.flashtool_extra +
                [self.bin_name])
 
-        print('Flashing Target Device')
+        log.inf('Flashing Target Device')
         self.check_call(cmd)
 
     def print_gdbserver_message(self):
-        print('pyOCD GDB server running on port {}'.format(self.gdb_port))
+        log.inf('pyOCD GDB server running on port {}'.format(self.gdb_port))
 
     def debug_debugserver(self, command, **kwargs):
         server_cmd = ([self.gdbserver] +

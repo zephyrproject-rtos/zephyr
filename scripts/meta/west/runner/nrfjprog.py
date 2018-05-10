@@ -6,6 +6,7 @@
 
 import sys
 
+from .. import log
 from .core import ZephyrBinaryRunner, RunnerCaps
 
 
@@ -52,6 +53,12 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                 raise RuntimeError('"nrfjprog --ids" returned 0; is a debugger already connected?')
             return board_snr
 
+        log.dbg("Refusing the temptation to guess a board",
+                level=log.VERBOSE_EXTREME)
+
+        # Use of print() here is advised. We don't want to lose
+        # this information in a separate log -- this is
+        # interactive and requires a terminal.
         print('There are multiple boards connected.')
         for i, snr in enumerate(snrs, 1):
             print('{}. {}'.format(i, snr))
@@ -95,5 +102,5 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         for cmd in commands:
             self.check_call(cmd)
 
-        print('Board with serial number {} flashed successfully.'.format(
+        log.inf('Board with serial number {} flashed successfully.'.format(
                   board_snr))

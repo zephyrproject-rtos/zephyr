@@ -9,6 +9,7 @@ import os
 import sys
 import time
 
+from .. import log
 from .core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
 
 
@@ -92,6 +93,11 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
         reset = False
         if not self.find_device():
             reset = True
+            log.dbg('Device not found, waiting for it',
+                    level=log.VERBOSE_EXTREME)
+            # Use of print() here is advised. We don't want to lose
+            # this information in a separate log -- this is
+            # interactive and requires a terminal.
             print('Please reset your board to switch to DFU mode...')
             while not self.find_device():
                 time.sleep(0.1)
