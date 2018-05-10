@@ -12,12 +12,6 @@ if SOC_SERIES_QUARK_X1000
 config SOC_SERIES
 	default quark_x1000
 
-config RAM_SIZE
-	default 32768
-
-config ROM_SIZE
-	default 1024 if XIP
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 25000000  if HPET_TIMER
 

@@ -10,9 +10,6 @@ config TEXT_SECTION_OFFSET
 config SS_RESET_VECTOR
 	default 0x40034000
 
-config ROM_SIZE
-	default 144
-
 if FLASH && SPI
 
 config SPI_FLASH_W25QXXDV
