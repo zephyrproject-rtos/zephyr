@@ -19,9 +19,9 @@ DfuSeConfig = namedtuple('DfuSeConfig', ['address', 'options'])
 class DfuUtilBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for dfu-util.'''
 
-    def __init__(self, pid, alt, img, exe='dfu-util',
-                 dfuse_config=None, debug=False):
-        super(DfuUtilBinaryRunner, self).__init__(debug=debug)
+    def __init__(self, cfg, pid, alt, img, exe='dfu-util',
+                 dfuse_config=None):
+        super(DfuUtilBinaryRunner, self).__init__(cfg)
         self.alt = alt
         self.img = img
         self.cmd = [exe, '-d,{}'.format(pid)]
@@ -67,9 +67,9 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
                             help='dfu-util executable; defaults to "dfu-util"')
 
     @classmethod
-    def create_from_args(cls, args):
+    def create(cls, cfg, args):
         if args.img is None:
-            args.img = args.kernel_bin
+            args.img = cfg.kernel_bin
 
         if args.dfuse:
             args.dt_flash = True  # --dfuse implies --dt-flash.
@@ -79,9 +79,8 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
         else:
             dcfg = None
 
-        return DfuUtilBinaryRunner(args.pid, args.alt, args.img,
-                                   exe=args.dfu_util, dfuse_config=dcfg,
-                                   debug=args.verbose)
+        return DfuUtilBinaryRunner(cfg, args.pid, args.alt, args.img,
+                                   exe=args.dfu_util, dfuse_config=dcfg)
 
     def find_device(self):
         cmd = list(self.cmd) + ['-l']

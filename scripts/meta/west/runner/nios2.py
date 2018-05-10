@@ -17,14 +17,13 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
     #      over the JTAG and the CPU directly boots from __start. CONFIG_XIP
     #      and CONFIG_INCLUDE_RESET_VECTOR must be disabled."
 
-    def __init__(self, hex_name=None, elf_name=None, cpu_sof=None,
-                 quartus_py=None, gdb=None, tui=False, debug=False):
-        super(Nios2BinaryRunner, self).__init__(debug=debug)
-        self.hex_name = hex_name
-        self.elf_name = elf_name
+    def __init__(self, cfg, quartus_py=None, cpu_sof=None, tui=False):
+        super(Nios2BinaryRunner, self).__init__(cfg)
+        self.hex_name = cfg.kernel_hex
+        self.elf_name = cfg.kernel_elf
         self.cpu_sof = cpu_sof
         self.quartus_py = quartus_py
-        self.gdb_cmd = [gdb] if gdb is not None else None
+        self.gdb_cmd = [cfg.gdbgdb] if cfg.gdb else None
         self.tui_arg = ['-tui'] if tui else []
 
     @classmethod
@@ -41,13 +40,10 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
                             help='if given, GDB uses -tui')
 
     @classmethod
-    def create_from_args(command, args):
-        return Nios2BinaryRunner(hex_name=args.kernel_hex,
-                                 elf_name=args.kernel_elf,
+    def create(cls, cfg, args):
+        return Nios2BinaryRunner(quartus_py=args.quartus_flash,
                                  cpu_sof=args.cpu_sof,
-                                 quartus_py=args.quartus_flash,
-                                 gdb=args.gdb, tui=args.tui,
-                                 debug=args.verbose)
+                                 tui=args.tui)
 
     def do_run(self, command, **kwargs):
         if command == 'flash':

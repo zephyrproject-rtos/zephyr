@@ -3,20 +3,6 @@ assert_not(DEBUG_SCRIPT "DEBUG_SCRIPT has been removed; use BOARD_DEBUG_RUNNER")
 
 get_property(RUNNERS GLOBAL PROPERTY ZEPHYR_RUNNERS)
 
-# These arguments are common to all runners.
-set(RUNNER_ARGS_COMMON
-  # Required:
-  "--board-dir=${BOARD_DIR}"
-  "--kernel-elf=${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}"
-  "--kernel-hex=${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME}"
-  "--kernel-bin=${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME}"
-  # Optional, but so often needed that they're provided by default:
-  # (TODO: revisit whether we really want these here)
-  "--gdb=${CMAKE_GDB}"
-  "--openocd=${OPENOCD}"
-  "--openocd-search=${OPENOCD_DEFAULT_PATH}"
-  )
-
 # Enable verbose output, if requested.
 if(CMAKE_VERBOSE_MAKEFILE)
   set(RUNNER_VERBOSE "--verbose")
@@ -33,8 +19,37 @@ endif()
 # configuration if the board files change.
 if(RUNNERS)
   set(ZEPHYR_RUNNERS ${RUNNERS} CACHE INTERNAL "Available runners")
-  set(ZEPHYR_RUNNER_ARGS_COMMON ${RUNNER_ARGS_COMMON} CACHE STRING
-    "Common arguments to all runners" FORCE)
+
+  # Runner configuration. This is provided to all runners, and is
+  # distinct from the free-form arguments provided by e.g.
+  # board_runner_args().
+  #
+  # Always applicable:
+  set(ZEPHYR_RUNNER_CONFIG_BOARD_DIR "${BOARD_DIR}"
+    CACHE STRING "Board definition directory" FORCE)
+  set(ZEPHYR_RUNNER_CONFIG_KERNEL_ELF "${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}"
+    CACHE STRING "Path to kernel image in ELF format" FORCE)
+  set(ZEPHYR_RUNNER_CONFIG_KERNEL_HEX "${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME}"
+    CACHE STRING "Path to kernel image in Intel Hex format" FORCE)
+  set(ZEPHYR_RUNNER_CONFIG_KERNEL_BIN "${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME}"
+    CACHE STRING "Path to kernel image as raw binary" FORCE)
+  # Not always applicable, but so often needed that they're provided
+  # by default: (TODO: clean this up)
+  if(DEFINED CMAKE_GDB)
+    set(ZEPHYR_RUNNER_CONFIG_GDB "${CMAKE_GDB}"
+      CACHE STRING "Path to GDB binary, if applicable" FORCE)
+  endif()
+  if(DEFINED OPENOCD)
+    set(ZEPHYR_RUNNER_CONFIG_OPENOCD "${OPENOCD}"
+      CACHE STRING "Path to openocd binary, if applicable" FORCE)
+  endif()
+  if(DEFINED OPENOCD_DEFAULT_PATH)
+    set(ZEPHYR_RUNNER_CONFIG_OPENOCD_SEARCH "${OPENOCD_DEFAULT_PATH}"
+      CACHE STRING "Path to add to openocd search path, if applicable" FORCE)
+  endif()
+
+  # Runner-specific command line arguments obtained from the board's
+  # build scripts, the application's scripts, etc.
   foreach(runner ${RUNNERS})
     string(MAKE_C_IDENTIFIER ${runner} runner_id)
     # E.g. args = BOARD_RUNNER_ARGS_openocd, BOARD_RUNNER_ARGS_dfu_util, etc.

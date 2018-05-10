@@ -24,19 +24,16 @@ class EmStarterKitBinaryRunner(ZephyrBinaryRunner):
     # client to execute the application.
     #
 
-    def __init__(self, board_dir, elf, gdb,
-                 openocd='openocd', search=None,
+    def __init__(self, cfg,
                  tui=False, tcl_port=DEFAULT_ARC_TCL_PORT,
                  telnet_port=DEFAULT_ARC_TELNET_PORT,
-                 gdb_port=DEFAULT_ARC_GDB_PORT, debug=False):
-        super(EmStarterKitBinaryRunner, self).__init__(debug=debug)
-        self.board_dir = board_dir
-        self.elf = elf
-        self.gdb_cmd = [gdb] + (['-tui'] if tui else [])
+                 gdb_port=DEFAULT_ARC_GDB_PORT):
+        super(EmStarterKitBinaryRunner, self).__init__(cfg)
+        self.gdb_cmd = [cfg.gdb] + (['-tui'] if tui else [])
         search_args = []
-        if search is not None:
-            search_args = ['-s', search]
-        self.openocd_cmd = [openocd] + search_args
+        if cfg.openocd_search is not None:
+            search_args = ['-s', cfg.openocd_search]
+        self.openocd_cmd = [cfg.openocd or 'openocd'] + search_args
         self.tcl_port = tcl_port
         self.telnet_port = telnet_port
         self.gdb_port = gdb_port
@@ -57,18 +54,17 @@ class EmStarterKitBinaryRunner(ZephyrBinaryRunner):
                             help='openocd gdb port, defaults to 3333')
 
     @classmethod
-    def create_from_args(cls, args):
-        if args.gdb is None:
+    def create(cls, cfg, args):
+        if cfg.gdb is None:
             raise ValueError('--gdb not provided at command line')
 
         return EmStarterKitBinaryRunner(
-            args.board_dir, args.kernel_elf, args.gdb,
-            openocd=args.openocd, search=args.openocd_search,
+            cfg,
             tui=args.tui, tcl_port=args.tcl_port, telnet_port=args.telnet_port,
-            gdb_port=args.gdb_port, debug=args.verbose)
+            gdb_port=args.gdb_port)
 
     def do_run(self, command, **kwargs):
-        kwargs['openocd-cfg'] = path.join(self.board_dir, 'support',
+        kwargs['openocd-cfg'] = path.join(self.cfg.board_dir, 'support',
                                           'openocd.cfg')
 
         if command in {'flash', 'debug'}:
@@ -97,7 +93,7 @@ class EmStarterKitBinaryRunner(ZephyrBinaryRunner):
                    ['-ex', 'target remote :{}'.format(self.gdb_port),
                     '-ex', 'load'] +
                    continue_arg +
-                   [self.elf])
+                   [self.cfg.kernel_elf])
 
         self.run_server_and_client(server_cmd, gdb_cmd)
 

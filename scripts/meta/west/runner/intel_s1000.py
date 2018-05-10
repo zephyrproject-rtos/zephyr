@@ -17,19 +17,17 @@ DEFAULT_XT_GDB_PORT = 20000
 class IntelS1000BinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for Intel_s1000.'''
 
-    def __init__(self,
-                 board_dir, xt_ocd_dir,
+    def __init__(self, cfg, xt_ocd_dir,
                  ocd_topology, ocd_jtag_instr, gdb_flash_file,
-                 elf_name, gdb,
-                 gdb_port=DEFAULT_XT_GDB_PORT, debug=False):
-        super(IntelS1000BinaryRunner, self).__init__(debug=debug)
-        self.board_dir = board_dir
+                 gdb_port=DEFAULT_XT_GDB_PORT):
+        super(IntelS1000BinaryRunner, self).__init__(cfg)
+        self.board_dir = cfg.board_dir
+        self.elf_name = cfg.kernel_elf
+        self.gdb_cmd = cfg.gdb
         self.xt_ocd_dir = xt_ocd_dir
         self.ocd_topology = ocd_topology
         self.ocd_jtag_instr = ocd_jtag_instr
         self.gdb_flash_file = gdb_flash_file
-        self.elf_name = elf_name
-        self.gdb_cmd = gdb
         self.gdb_port = gdb_port
 
     @classmethod
@@ -38,12 +36,7 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_add_parser(cls, parser):
-        # Required
-
         # Optional
-        parser.add_argument(
-            '--gdb-port', default=DEFAULT_XT_GDB_PORT,
-            help='xt-gdb port, defaults to 20000')
         parser.add_argument(
             '--xt-ocd-dir', default='/opt/Tensilica/xocd-12.0.4/xt-ocd',
             help='ocd-dir, defaults to /opt/Tensilica/xocd-12.0.4/xt-ocd')
@@ -56,14 +49,16 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
         parser.add_argument(
             '--gdb-flash-file', default='load_elf.txt',
             help='gdb-flash-file, defaults to load_elf.txt')
+        parser.add_argument(
+            '--gdb-port', default=DEFAULT_XT_GDB_PORT,
+            help='xt-gdb port, defaults to 20000')
 
     @classmethod
-    def create_from_args(command, args):
+    def create(cls, cfg, args):
         return IntelS1000BinaryRunner(
-            args.board_dir, args.xt_ocd_dir,
+            cfg, args.xt_ocd_dir,
             args.ocd_topology, args.ocd_jtag_instr, args.gdb_flash_file,
-            args.kernel_elf, args.gdb,
-            gdb_port=args.gdb_port, debug=args.verbose)
+            gdb_port=args.gdb_port)
 
     def do_run(self, command, **kwargs):
         kwargs['ocd-topology'] = path.join(self.board_dir, 'support',

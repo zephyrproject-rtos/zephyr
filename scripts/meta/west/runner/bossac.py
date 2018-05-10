@@ -14,10 +14,8 @@ DEFAULT_BOSSAC_PORT = '/dev/ttyACM0'
 class BossacBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for bossac.'''
 
-    def __init__(self, bin_name, bossac='bossac',
-                 port=DEFAULT_BOSSAC_PORT, debug=False):
-        super(BossacBinaryRunner, self).__init__(debug=debug)
-        self.bin_name = bin_name
+    def __init__(self, cfg, bossac='bossac', port=DEFAULT_BOSSAC_PORT):
+        super(BossacBinaryRunner, self).__init__(cfg)
         self.bossac = bossac
         self.port = port
 
@@ -37,9 +35,9 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
                             help='serial port to use, default is /dev/ttyACM0')
 
     @classmethod
-    def create_from_args(command, args):
-        return BossacBinaryRunner(args.kernel_bin, bossac=args.bossac,
-                                  port=args.bossac_port, debug=args.verbose)
+    def create(cls, cfg, args):
+        return BossacBinaryRunner(cfg, bossac=args.bossac,
+                                  port=args.bossac_port)
 
     def do_run(self, command, **kwargs):
         if platform.system() != 'Linux':
@@ -50,7 +48,7 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
                     'ospeed', '1200', 'cs8', '-cstopb', 'ignpar', 'eol', '255',
                     'eof', '255']
         cmd_flash = [self.bossac, '-p', self.port, '-R', '-e', '-w', '-v',
-                     '-b', self.bin_name]
+                     '-b', self.cfg.kernel_bin]
 
         self.check_call(cmd_stty)
         self.check_call(cmd_flash)
