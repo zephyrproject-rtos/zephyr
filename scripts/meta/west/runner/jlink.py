@@ -68,7 +68,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def create(cls, cfg, args):
-        build_conf = BuildConfiguration(os.getcwd())
+        build_conf = BuildConfiguration(cfg.build_dir)
         flash_addr = cls.get_flash_address(args, build_conf)
         return JLinkBinaryRunner(cfg, args.device,
                                  commander=args.commander,

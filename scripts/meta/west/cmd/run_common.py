@@ -6,7 +6,7 @@
 '''
 
 import argparse
-from os import getcwd, chdir
+from os import getcwd, path
 from subprocess import CalledProcessError
 from textwrap import dedent
 
@@ -24,6 +24,7 @@ def add_parser_common(parser_adder, command):
         description=command.description)
 
     group = parser.add_argument_group(title='General Options')
+
     group.add_argument('-d', '--build-dir',
                        help='''Build directory to obtain runner information
                        from; default is the current working directory.''')
@@ -90,8 +91,8 @@ def desc_common(command_name):
     '''.format(**{'command': command_name}))
 
 
-def cached_runner_config(cache):
-    '''Parse the RunnerConfig from a CMake Cache.'''
+def cached_runner_config(build_dir, cache):
+    '''Parse the RunnerConfig from a build directory and CMake Cache.'''
     board_dir = cache['ZEPHYR_RUNNER_CONFIG_BOARD_DIR']
     kernel_elf = cache['ZEPHYR_RUNNER_CONFIG_KERNEL_ELF']
     kernel_hex = cache['ZEPHYR_RUNNER_CONFIG_KERNEL_HEX']
@@ -100,7 +101,8 @@ def cached_runner_config(cache):
     openocd = cache.get('ZEPHYR_RUNNER_CONFIG_OPENOCD')
     openocd_search = cache.get('ZEPHYR_RUNNER_CONFIG_OPENOCD_SEARCH')
 
-    return RunnerConfig(board_dir, kernel_elf, kernel_hex, kernel_bin,
+    return RunnerConfig(build_dir, board_dir,
+                        kernel_elf, kernel_hex, kernel_bin,
                         gdb=gdb, openocd=openocd,
                         openocd_search=openocd_search)
 
@@ -130,21 +132,13 @@ def do_run_common(command, args, runner_args, cached_runner_var):
                         'current directory {} failed'.format(command_name,
                                                              build_dir))
 
-    # Temporary hack: we need to ensure we're running from the build
-    # directory for now. Otherwise, the BuildConfiguration objects
-    # that get created by the runners look for .config in the wrong
-    # places.
-    chdir(build_dir)
-
     # Runner creation, phase 1.
     #
     # Get the default runner name from the cache, allowing a command
     # line override. Get the ZephyrBinaryRunner class by name, and
     # make sure it supports the command.
 
-    # TODO: build this by joining with build_dir once the above chdir
-    # goes away.
-    cache_file = args.cmake_cache
+    cache_file = path.join(build_dir, args.cmake_cache)
     cache = cmake.CMakeCache(cache_file)
     board = cache['CACHED_BOARD']
     available = cache.get_list('ZEPHYR_RUNNERS')
@@ -175,7 +169,7 @@ def do_run_common(command, args, runner_args, cached_runner_var):
     # - Pull the RunnerConfig out of the cache
     # - Override cached values with applicable command-line options
 
-    cfg = cached_runner_config(cache)
+    cfg = cached_runner_config(build_dir, cache)
     _override_config_from_namespace(cfg, args)
 
     # Runner creation, phase 3.
