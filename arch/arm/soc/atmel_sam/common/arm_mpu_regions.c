@@ -16,7 +16,7 @@ static struct arm_mpu_region mpu_regions[] = {
 			 REGION_FLASH_ATTR(REGION_FLASH_SIZE)),
 
 	MPU_REGION_ENTRY("SRAM_0",
-			 CONFIG_SRAM_BASE_ADDRESS_0,
+			 CONFIG_SRAM_BASE_ADDRESS,
 			 REGION_RAM_ATTR(REGION_SRAM_0_SIZE))
 
 };
