@@ -130,6 +130,9 @@ struct bt_mesh_msg_ctx {
 	/** Remote address. */
 	u16_t addr;
 
+	/** Destination address of a received message. Not used for sending. */
+	u16_t recv_dst;
+
 	/** Received TTL value. Not used for sending. */
 	u8_t  recv_ttl:7;
 

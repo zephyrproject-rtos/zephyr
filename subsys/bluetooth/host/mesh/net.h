@@ -246,7 +246,6 @@ struct bt_mesh_net_rx {
 	struct bt_mesh_subnet *sub;
 	struct bt_mesh_msg_ctx ctx;
 	u32_t  seq;            /* Sequence Number */
-	u16_t  dst;            /* Destination address */
 	u8_t   old_iv:1,       /* iv_index - 1 was used */
 	       new_key:1,      /* Data was encrypted with updated key */
 	       friend_cred:1,  /* Data was encrypted with friend cred */

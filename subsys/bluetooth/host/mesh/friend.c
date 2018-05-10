@@ -1102,7 +1102,7 @@ static void friend_lpn_enqueue_rx(struct bt_mesh_friend *frnd,
 	}
 
 	info.src = rx->ctx.addr;
-	info.dst = rx->dst;
+	info.dst = rx->ctx.recv_dst;
 
 	if (rx->net_if == BT_MESH_NET_IF_LOCAL) {
 		info.ttl = rx->ctx.recv_ttl;
@@ -1239,12 +1239,14 @@ void bt_mesh_friend_enqueue_rx(struct bt_mesh_net_rx *rx,
 	}
 
 	BT_DBG("recv_ttl %u net_idx 0x%04x src 0x%04x dst 0x%04x",
-	       rx->ctx.recv_ttl, rx->sub->net_idx, rx->ctx.addr, rx->dst);
+	       rx->ctx.recv_ttl, rx->sub->net_idx, rx->ctx.addr,
+	       rx->ctx.recv_dst);
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
 		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
 
-		if (friend_lpn_matches(frnd, rx->sub->net_idx, rx->dst)) {
+		if (friend_lpn_matches(frnd, rx->sub->net_idx,
+				       rx->ctx.recv_dst)) {
 			friend_lpn_enqueue_rx(frnd, rx, type, seq_auth, sbuf);
 		}
 	}
