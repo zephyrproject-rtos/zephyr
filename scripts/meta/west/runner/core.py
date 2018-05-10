@@ -300,10 +300,7 @@ class ZephyrBinaryRunner(abc.ABC):
         * --dt-flash (if the runner capabilities includes flash_addr)
 
         Runner-specific options are added through the do_add_parser()
-        hook.
-
-        The single positional argument is "command". This is currently
-        restricted to values 'flash', 'debug', and 'debugserver'.'''
+        hook.'''
         # Required options.
         parser.add_argument('--board-dir', required=True,
                             help='Zephyr board directory')
@@ -331,25 +328,10 @@ class ZephyrBinaryRunner(abc.ABC):
         # Runner-specific options.
         cls.do_add_parser(parser)
 
-        # The lone positional argument. Note that argparse can't cope
-        # with adding options after the first positional argument, so
-        # this must come last.
-        parser.add_argument('command',
-                            choices=['flash', 'debug', 'debugserver'],
-                            help='command to run (flash, debug, debugserver)')
-
     @classmethod
     @abc.abstractmethod
     def do_add_parser(cls, parser):
-        '''Hook for adding runner-specific options.
-
-        Subclasses **must not** add positional arguments. That is, when
-        calling parser.add_argument(), make sure to begin the argument
-        with '-' so it is interpreted as an option, rather than a
-        positional argument.
-
-        * OK: parser.add_argument('--my-option')
-        * Not OK: parser.add_argument('my-argument').'''
+        '''Hook for adding runner-specific options.'''
 
     @classmethod
     @abc.abstractmethod
