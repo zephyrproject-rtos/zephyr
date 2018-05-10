@@ -16,23 +16,23 @@ DEFAULT_JLINK_GDB_PORT = 2331
 class JLinkBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for the J-Link GDB server.'''
 
-    def __init__(self, device,
-                 commander='JLinkExe', bin_name=None,
+    def __init__(self, cfg, device,
+                 commander='JLinkExe',
                  flash_addr=0x0, erase=True,
-                 gdbserver='JLinkGDBServer', iface='swd', speed='auto',
-                 elf_name=None, gdb=None, gdb_port=DEFAULT_JLINK_GDB_PORT,
-                 tui=False, debug=False):
-        super(JLinkBinaryRunner, self).__init__(debug=debug)
+                 iface='swd', speed='auto',
+                 gdbserver='JLinkGDBServer', gdb_port=DEFAULT_JLINK_GDB_PORT,
+                 tui=False):
+        super(JLinkBinaryRunner, self).__init__(cfg)
+        self.bin_name = cfg.kernel_bin
+        self.elf_name = cfg.kernel_elf
+        self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
         self.device = device
         self.commander = commander
-        self.bin_name = bin_name
         self.flash_addr = flash_addr
         self.erase = erase
         self.gdbserver_cmd = [gdbserver]
         self.iface = iface
         self.speed = speed
-        self.elf_name = elf_name
-        self.gdb_cmd = [gdb] if gdb is not None else None
         self.gdb_port = gdb_port
         self.tui_arg = ['-tui'] if tui else []
 
@@ -67,17 +67,16 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             help='if given, mass erase flash before loading')
 
     @classmethod
-    def create_from_args(cls, args):
+    def create(cls, cfg, args):
         build_conf = BuildConfiguration(os.getcwd())
         flash_addr = cls.get_flash_address(args, build_conf)
-        return JLinkBinaryRunner(args.device, gdbserver=args.gdbserver,
+        return JLinkBinaryRunner(cfg, args.device,
                                  commander=args.commander,
-                                 bin_name=args.kernel_bin,
                                  flash_addr=flash_addr, erase=args.erase,
                                  iface=args.iface, speed=args.speed,
-                                 elf_name=args.kernel_elf,
-                                 gdb=args.gdb, gdb_port=args.gdb_port,
-                                 tui=args.tui, debug=args.verbose)
+                                 gdbserver=args.gdbserver,
+                                 gdb_port=args.gdb_port,
+                                 tui=args.tui)
 
     def print_gdbserver_message(self):
         log.inf('J-Link GDB server running on port {}'.format(self.gdb_port))

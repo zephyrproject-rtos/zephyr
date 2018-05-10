@@ -16,22 +16,21 @@ DEFAULT_OPENOCD_GDB_PORT = 3333
 class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for openocd.'''
 
-    def __init__(self, openocd_config,
-                 openocd='openocd', search=None,
-                 elf_name=None,
+    def __init__(self, cfg,
                  pre_cmd=None, load_cmd=None, verify_cmd=None, post_cmd=None,
+                 tui=None,
                  tcl_port=DEFAULT_OPENOCD_TCL_PORT,
                  telnet_port=DEFAULT_OPENOCD_TELNET_PORT,
-                 gdb_port=DEFAULT_OPENOCD_GDB_PORT,
-                 gdb=None, tui=None, debug=False):
-        super(OpenOcdBinaryRunner, self).__init__(debug=debug)
-        self.openocd_config = openocd_config
+                 gdb_port=DEFAULT_OPENOCD_GDB_PORT):
+        super(OpenOcdBinaryRunner, self).__init__(cfg)
+        self.openocd_config = path.join(cfg.board_dir, 'support',
+                                        'openocd.cfg')
 
         search_args = []
-        if search is not None:
-            search_args = ['-s', search]
-        self.openocd_cmd = [openocd] + search_args
-        self.elf_name = elf_name
+        if cfg.openocd_search is not None:
+            search_args = ['-s', cfg.openocd_search]
+        self.openocd_cmd = [cfg.openocd] + search_args
+        self.elf_name = cfg.kernel_elf
         self.load_cmd = load_cmd
         self.verify_cmd = verify_cmd
         self.pre_cmd = pre_cmd
@@ -39,7 +38,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.tcl_port = tcl_port
         self.telnet_port = telnet_port
         self.gdb_port = gdb_port
-        self.gdb_cmd = [gdb] if gdb is not None else None
+        self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
         self.tui_arg = ['-tui'] if tui else []
 
     @classmethod
@@ -71,19 +70,14 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                             help='openocd gdb port, defaults to 3333')
 
     @classmethod
-    def create_from_args(cls, args):
-        openocd_config = path.join(args.board_dir, 'support', 'openocd.cfg')
-
+    def create(cls, cfg, args):
         return OpenOcdBinaryRunner(
-            openocd_config,
-            openocd=args.openocd, search=args.openocd_search,
-            elf_name=args.kernel_elf,
-            pre_cmd=args.cmd_pre_load,
-            load_cmd=args.cmd_load, verify_cmd=args.cmd_verify,
-            post_cmd=args.cmd_post_verify,
+            cfg,
+            pre_cmd=args.cmd_pre_load, load_cmd=args.cmd_load,
+            verify_cmd=args.cmd_verify, post_cmd=args.cmd_post_verify,
+            tui=args.tui,
             tcl_port=args.tcl_port, telnet_port=args.telnet_port,
-            gdb_port=args.gdb_port, gdb=args.gdb, tui=args.tui,
-            debug=args.verbose)
+            gdb_port=args.gdb_port)
 
     def do_run(self, command, **kwargs):
         if command == 'flash':

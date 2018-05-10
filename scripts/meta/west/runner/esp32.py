@@ -13,11 +13,10 @@ from .core import ZephyrBinaryRunner, RunnerCaps
 class Esp32BinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for espidf.'''
 
-    def __init__(self, elf, device, baud=921600, flash_size='detect',
-                 flash_freq='40m', flash_mode='dio', espidf='espidf',
-                 debug=False):
-        super(Esp32BinaryRunner, self).__init__(debug=debug)
-        self.elf = elf
+    def __init__(self, cfg, device, baud=921600, flash_size='detect',
+                 flash_freq='40m', flash_mode='dio', espidf='espidf'):
+        super(Esp32BinaryRunner, self).__init__(cfg)
+        self.elf = cfg.kernel_elf
         self.device = device
         self.baud = baud
         self.flash_size = flash_size
@@ -56,7 +55,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
             it in [ESP_IDF_PATH]/components/esptool_py/esptool/esptool.py''')
 
     @classmethod
-    def create_from_args(command, args):
+    def create(cls, cfg, args):
         if args.esp_tool:
             espidf = args.esp_tool
         else:
@@ -64,10 +63,9 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                                'esptool', 'esptool.py')
 
         return Esp32BinaryRunner(
-            args.kernel_elf, args.esp_device, baud=args.esp_baud_rate,
+            cfg, args.esp_device, baud=args.esp_baud_rate,
             flash_size=args.esp_flash_size, flash_freq=args.esp_flash_freq,
-            flash_mode=args.esp_flash_mode, espidf=espidf,
-            debug=args.verbose)
+            flash_mode=args.esp_flash_mode, espidf=espidf)
 
     def do_run(self, command, **kwargs):
         bin_name = path.splitext(self.elf)[0] + path.extsep + 'bin'

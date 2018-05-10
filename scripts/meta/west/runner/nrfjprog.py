@@ -13,9 +13,9 @@ from .core import ZephyrBinaryRunner, RunnerCaps
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for nrfjprog.'''
 
-    def __init__(self, hex_, family, softreset, debug=False):
-        super(NrfJprogBinaryRunner, self).__init__(debug=debug)
-        self.hex_ = hex_
+    def __init__(self, cfg, family, softreset):
+        super(NrfJprogBinaryRunner, self).__init__(cfg)
+        self.hex_ = cfg.kernel_hex
         self.family = family
         self.softreset = softreset
 
@@ -37,9 +37,8 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                             help='use reset instead of pinreset')
 
     @classmethod
-    def create_from_args(cls, args):
-        return NrfJprogBinaryRunner(args.kernel_hex, args.nrf_family,
-                                    args.softreset, debug=args.verbose)
+    def create(cls, cfg, args):
+        return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset)
 
     def get_board_snr_from_user(self):
         snrs = self.check_output(['nrfjprog', '--ids'])

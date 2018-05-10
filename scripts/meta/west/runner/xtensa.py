@@ -12,10 +12,8 @@ from .core import ZephyrBinaryRunner, RunnerCaps
 class XtensaBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for xt-gdb.'''
 
-    def __init__(self, gdb, elf_name, debug=False):
-        super(XtensaBinaryRunner, self).__init__(debug=debug)
-        self.gdb_cmd = [gdb]
-        self.elf_name = elf_name
+    def __init__(self, cfg):
+        super(XtensaBinaryRunner, self).__init__(cfg)
 
     @classmethod
     def name(cls):
@@ -31,11 +29,12 @@ class XtensaBinaryRunner(ZephyrBinaryRunner):
                             help='path to XTensa tools')
 
     @classmethod
-    def create_from_args(command, args):
-        xt_gdb = path.join(args.xcc_tools, 'bin', 'xt-gdb')
-        return XtensaBinaryRunner(xt_gdb, args.kernel_elf, args.verbose)
+    def create(cls, cfg, args):
+        # Override any GDB with the one provided by the XTensa tools.
+        cfg.gdb = path.join(args.xcc_tools, 'bin', 'xt-gdb')
+        return XtensaBinaryRunner(cfg)
 
     def do_run(self, command, **kwargs):
-        gdb_cmd = (self.gdb_cmd + [self.elf_name])
+        gdb_cmd = [self.cfg.gdb, self.cfg.kernel_elf]
 
         self.check_call(gdb_cmd)

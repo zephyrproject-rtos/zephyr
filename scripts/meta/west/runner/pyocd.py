@@ -15,24 +15,23 @@ DEFAULT_PYOCD_GDB_PORT = 3333
 class PyOcdBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for pyOCD.'''
 
-    def __init__(self, target,
+    def __init__(self, cfg, target,
                  flashtool='pyocd-flashtool', flash_addr=0x0,
                  flashtool_opts=None,
-                 gdb=None, gdbserver='pyocd-gdbserver',
+                 gdbserver='pyocd-gdbserver',
                  gdb_port=DEFAULT_PYOCD_GDB_PORT, tui=False,
-                 bin_name=None, elf_name=None,
-                 board_id=None, daparg=None, debug=False):
-        super(PyOcdBinaryRunner, self).__init__(debug=debug)
+                 board_id=None, daparg=None):
+        super(PyOcdBinaryRunner, self).__init__(cfg)
 
         self.target_args = ['-t', target]
         self.flashtool = flashtool
         self.flash_addr_args = ['-a', hex(flash_addr)] if flash_addr else []
-        self.gdb_cmd = [gdb] if gdb is not None else None
+        self.gdb_cmd = [cfg.gdb] if cfg.gdb is not None else None
         self.gdbserver = gdbserver
         self.gdb_port = gdb_port
         self.tui_args = ['-tui'] if tui else []
-        self.bin_name = bin_name
-        self.elf_name = elf_name
+        self.bin_name = cfg.kernel_bin
+        self.elf_name = cfg.kernel_elf
 
         board_args = []
         if board_id is not None:
@@ -77,7 +76,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                             help='ID of board to flash, default is to prompt')
 
     @classmethod
-    def create_from_args(cls, args):
+    def create(cls, cfg, args):
         daparg = os.environ.get('PYOCD_DAPARG')
         if daparg:
             log.wrn('Setting PYOCD_DAPARG in the environment is',
@@ -91,12 +90,10 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         flash_addr = cls.get_flash_address(args, build_conf)
 
         return PyOcdBinaryRunner(
-            args.target, flashtool=args.flashtool,
-            flashtool_opts=args.flashtool_opt,
-            flash_addr=flash_addr, gdb=args.gdb,
+            cfg, args.target, flashtool=args.flashtool,
+            flash_addr=flash_addr, flashtool_opts=args.flashtool_opt,
             gdbserver=args.gdbserver, gdb_port=args.gdb_port, tui=args.tui,
-            bin_name=args.kernel_bin, elf_name=args.kernel_elf,
-            board_id=args.board_id, daparg=args.daparg, debug=args.verbose)
+            board_id=args.board_id, daparg=args.daparg)
 
     def port_args(self):
         return ['-p', str(self.gdb_port)]
