@@ -337,6 +337,18 @@ struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
 	return t;
 }
 
+void _unpend_all(_wait_q_t *waitq)
+{
+	while (!sys_dlist_is_empty(waitq)) {
+		struct k_thread *th = (void *)sys_dlist_peek_head(waitq);
+
+		_unpend_thread(th);
+		_ready_thread(th);
+		need_sched = 1;
+	}
+}
+
+
 /* Block the current thread and swap to the next.  Releases the
  * irq_lock, does a _Swap and returns the return value set at wakeup
  * time
