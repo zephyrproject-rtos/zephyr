@@ -1,4 +1,5 @@
 # Copyright (c) 2018 Intel Corporation.
+# Copyright 2018 Open Source Foundries Limited.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -6,7 +7,7 @@
 from os import path
 from .core import ZephyrBinaryRunner
 import time
-import signal
+import subprocess
 
 DEFAULT_XT_GDB_PORT = 20000
 
@@ -75,6 +76,7 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
         elif command == 'debugserver':
             self.debugserver(**kwargs)
         else:
+            self.debugserver(**kwargs)
             self.do_debug()
 
     def flash(self, **kwargs):
@@ -90,23 +92,19 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
         # Start the server
         # Note that XTOCD always fails the first time. It has to be
         # relaunched the second time to work.
-        self.popen_ignore_int(server_cmd)
-        time.sleep(3)
+        self.call(server_cmd)
         server_proc = self.popen_ignore_int(server_cmd)
         time.sleep(3)
 
-        # Start the client
+        # Start the client, and wait for it to finish flashing the file.
         gdb_cmd = [self.gdb_cmd, '-x', gdb_flash_file]
         client_proc = self.popen_ignore_int(gdb_cmd)
-
-        # Wait for 3 seconds (waiting for XTGDB to finish)
-        time.sleep(3)
+        client_proc.wait()
 
         # At this point, the ELF image is loaded and the program is in
-        # execution. Now we can quit the client (xt-gdb) and the server
-        # (xt-ocd) as they are not needed anymore. The loaded program
-        # (ELF) will continue to run though.
-        client_proc.terminate()
+        # execution. Now we can quit the server (xt-ocd); it is not
+        # needed anymore. The loaded program (ELF) will continue to
+        # run.
         server_proc.terminate()
 
     def do_debug(self):
@@ -118,15 +116,10 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
         gdb_cmd = [self.gdb_cmd,
                    '-ex', 'target remote :{}'.format(self.gdb_port),
                    self.elf_name]
-
-        # The below statement will consume the "^C" keypress ensuring
-        # the python main application doesn't exit. This is important
-        # since ^C in gdb means a "halt" operation.
-        previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
-        try:
-            self.check_call(gdb_cmd)
-        finally:
-            signal.signal(signal.SIGINT, previous)
+        gdb_proc = self.popen_ignore_int(gdb_cmd)
+        retcode = gdb_proc.wait()
+        if retcode:
+            raise subprocess.CalledProcessError((retcode, gdb_cmd))
 
     def print_gdbserver_message(self, gdb_port):
         print('Intel S1000 GDB server running on port {}'.format(gdb_port))
@@ -142,6 +135,5 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
 
         # Note that XTOCD always fails the first time. It has to be
         # relaunched the second time to work.
-        self.popen_ignore_int(server_cmd)
-        time.sleep(3)
+        self.call(server_cmd)
         self.check_call(server_cmd)
