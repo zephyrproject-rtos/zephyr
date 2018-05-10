@@ -86,7 +86,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                     daparg), level=log.VERBOSE_VERY)
                 args.daparg = daparg
 
-        build_conf = BuildConfiguration(os.getcwd())
+        build_conf = BuildConfiguration(cfg.build_dir)
         flash_addr = cls.get_flash_address(args, build_conf)
 
         return PyOcdBinaryRunner(

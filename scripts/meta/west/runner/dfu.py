@@ -73,7 +73,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
 
         if args.dfuse:
             args.dt_flash = True  # --dfuse implies --dt-flash.
-            build_conf = BuildConfiguration(os.getcwd())
+            build_conf = BuildConfiguration(cfg.build_dir)
             dcfg = DfuSeConfig(address=cls.get_flash_address(args, build_conf),
                                options=args.dfuse_modifiers)
         else:

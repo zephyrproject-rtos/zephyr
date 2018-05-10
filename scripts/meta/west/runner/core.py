@@ -191,16 +191,20 @@ class RunnerConfig:
     This class's __slots__ contains exactly the configuration variables.
     '''
 
-    __slots__ = ['board_dir', 'kernel_elf', 'kernel_hex', 'kernel_bin',
-                 'gdb', 'openocd', 'openocd_search']
+    __slots__ = ['build_dir', 'board_dir', 'kernel_elf', 'kernel_hex',
+                 'kernel_bin', 'gdb', 'openocd', 'openocd_search']
 
     # TODO: revisit whether we can get rid of some of these.  Having
     # tool-specific configuration options here is a layering
     # violation, but it's very convenient to have a single place to
     # store the locations of tools (like gdb and openocd) that are
     # needed by multiple ZephyrBinaryRunner subclasses.
-    def __init__(self, board_dir, kernel_elf, kernel_hex, kernel_bin,
+    def __init__(self, build_dir, board_dir,
+                 kernel_elf, kernel_hex, kernel_bin,
                  gdb=None, openocd=None, openocd_search=None):
+        self.build_dir = build_dir
+        '''Zephyr application build directory'''
+
         self.board_dir = board_dir
         '''Zephyr board directory'''
 
