@@ -13,7 +13,6 @@ if SOC_FAMILY_EXX32
 config SOC_FAMILY
 	string
 	default "silabs_exx32"
-endif
 
 gsource "arch/arm/soc/silabs_exx32/*/Kconfig.soc"
 
@@ -69,3 +68,4 @@ config CMU_LFXO_FREQ
 	  board's defconfig.
 
 endif # HAS_CMU
+endif # SOC_FAMILY_EXX32

@@ -15,7 +15,6 @@ if SOC_FAMILY_KINETIS
 config SOC_FAMILY
 	string
 	default "nxp_kinetis"
-endif
 
 gsource "arch/arm/soc/nxp_kinetis/*/Kconfig.soc"
 
@@ -117,3 +116,4 @@ config MCG_FRDIV
 	  kHz.
 
 endif # HAS_MCG
+endif # SOC_FAMILY_KINETIS
