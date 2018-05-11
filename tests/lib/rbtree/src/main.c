@@ -152,7 +152,8 @@ void check_tree(int size)
 		CHECK(get_node_mask(i) == rb_contains(&tree, &nodes[i]));
 
 		if (get_node_mask(i)) {
-			CHECK(node_index(walked_nodes[ni++]) == i);
+			CHECK(node_index(walked_nodes[ni]) == i);
+			ni++;
 		}
 	}
 
