@@ -886,6 +886,17 @@ For more information on Zephyr's Kconfig configuration scheme, see the
 For information on available kernel configuration options, including
 inter-dependencies between options, see the :ref:`configuration`.
 
+.. note::
+
+    Dependencies between options can also be viewed in the interactive
+    configuration interface, which is explained in the
+    :ref:`override_kernel_conf` section. It will have the most up-to-date
+    dependencies, and also shows which dependencies are currently unsatisfied.
+
+    To view the dependencies of an option in the configuration interface, jump
+    to it with :kbd:`/` and press :kbd:`?`. For each unsatisfied dependency,
+    jump to it in turn to check its dependencies.
+
 .. _application_set_conf:
 
 Setting Application Configuration Values
