@@ -60,10 +60,9 @@ static ssize_t write_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_CTS),
 	BT_GATT_CHARACTERISTIC(BT_UUID_CTS_CURRENT_TIME, BT_GATT_CHRC_READ |
-			       BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_WRITE),
-	BT_GATT_DESCRIPTOR(BT_UUID_CTS_CURRENT_TIME,
-			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-			   read_ct, write_ct, ct),
+			       BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			       read_ct, write_ct, ct),
 	BT_GATT_CCC(ct_ccc_cfg, ct_ccc_cfg_changed),
 };
 

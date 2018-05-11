@@ -606,27 +606,24 @@ static struct bt_gatt_attr vnd_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(&vnd_uuid),
 
 	BT_GATT_CHARACTERISTIC(&vnd_auth_uuid.uuid,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
-	BT_GATT_DESCRIPTOR(&vnd_auth_uuid.uuid,
-			   BT_GATT_PERM_READ_AUTHEN |
-			   BT_GATT_PERM_WRITE_AUTHEN,
-			   read_vnd, write_vnd, vnd_value),
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ_AUTHEN |
+			       BT_GATT_PERM_WRITE_AUTHEN,
+			       read_vnd, write_vnd, vnd_value),
 
 	BT_GATT_CHARACTERISTIC(&vnd_long_uuid1.uuid, BT_GATT_CHRC_READ |
-			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_EXT_PROP),
-	BT_GATT_DESCRIPTOR(&vnd_long_uuid1.uuid,
-				BT_GATT_PERM_READ | BT_GATT_PERM_WRITE |
-				BT_GATT_PERM_PREPARE_WRITE,
-				read_long_vnd, write_long_vnd,
-				&vnd_long_value1),
+			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_EXT_PROP,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE |
+			       BT_GATT_PERM_PREPARE_WRITE,
+			       read_long_vnd, write_long_vnd,
+			       &vnd_long_value1),
 
 	BT_GATT_CHARACTERISTIC(&vnd_long_uuid2.uuid, BT_GATT_CHRC_READ |
-			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_EXT_PROP),
-	BT_GATT_DESCRIPTOR(&vnd_long_uuid2.uuid,
-				BT_GATT_PERM_READ | BT_GATT_PERM_WRITE |
-				BT_GATT_PERM_PREPARE_WRITE,
-				read_long_vnd, write_long_vnd,
-				&vnd_long_value2),
+			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_EXT_PROP,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE |
+			       BT_GATT_PERM_PREPARE_WRITE,
+			       read_long_vnd, write_long_vnd,
+			       &vnd_long_value2),
 };
 
 static struct bt_gatt_service vnd_svc = BT_GATT_SERVICE(vnd_attrs);
@@ -637,9 +634,8 @@ static struct bt_gatt_attr vnd1_attrs[] = {
 
 	BT_GATT_CHARACTERISTIC(&vnd1_echo_uuid.uuid,
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP |
-			       BT_GATT_CHRC_NOTIFY),
-	BT_GATT_DESCRIPTOR(&vnd1_echo_uuid.uuid,
-			   BT_GATT_PERM_WRITE, NULL, write_vnd1, NULL),
+			       BT_GATT_CHRC_NOTIFY,
+			       BT_GATT_PERM_WRITE, NULL, write_vnd1, NULL),
 	BT_GATT_CCC(vnd1_ccc_cfg, vnd1_ccc_cfg_changed),
 };
 
@@ -730,10 +726,9 @@ static struct bt_gatt_attr met_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(&met_svc_uuid),
 
 	BT_GATT_CHARACTERISTIC(&met_char_uuid.uuid,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
-	BT_GATT_DESCRIPTOR(&met_char_uuid.uuid,
-			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-			   read_met, write_met, met_char_value),
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			       read_met, write_met, met_char_value),
 };
 
 static struct bt_gatt_service met_svc = BT_GATT_SERVICE(met_attrs);
