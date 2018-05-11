@@ -30,6 +30,7 @@ static struct spi_config lsm6dsl_spi_conf = {
 static int lsm6dsl_raw_read(struct lsm6dsl_data *data, u8_t reg_addr,
 			    u8_t *value, u8_t len)
 {
+	int ret;
 	struct spi_config *spi_cfg = &lsm6dsl_spi_conf;
 	u8_t buffer_tx[2] = { reg_addr | LSM6DSL_SPI_READ, 0 };
 	const struct spi_buf tx_buf = {
@@ -60,8 +61,9 @@ static int lsm6dsl_raw_read(struct lsm6dsl_data *data, u8_t reg_addr,
 		return -EIO;
 	}
 
-	if (spi_transceive(data->comm_master, spi_cfg, &tx, &rx)) {
-		return -EIO;
+	ret = spi_transceive(data->comm_master, spi_cfg, &tx, &rx);
+	if (ret < 0) {
+		return ret;
 	}
 
 	return 0;
@@ -70,6 +72,7 @@ static int lsm6dsl_raw_read(struct lsm6dsl_data *data, u8_t reg_addr,
 static int lsm6dsl_raw_write(struct lsm6dsl_data *data, u8_t reg_addr,
 			     u8_t *value, u8_t len)
 {
+	int ret;
 	struct spi_config *spi_cfg = &lsm6dsl_spi_conf;
 	u8_t buffer_tx[1] = { reg_addr & ~LSM6DSL_SPI_READ };
 	const struct spi_buf tx_buf[2] = {
@@ -92,8 +95,9 @@ static int lsm6dsl_raw_write(struct lsm6dsl_data *data, u8_t reg_addr,
 		return -EIO;
 	}
 
-	if (spi_write(data->comm_master, spi_cfg, &tx)) {
-		return -EIO;
+	ret = spi_write(data->comm_master, spi_cfg, &tx);
+	if (ret < 0) {
+		return ret;
 	}
 
 	return 0;
