@@ -99,6 +99,62 @@ static void nxp_mcimx7_uart_config(void)
 }
 #endif /* CONFIG_UART_IMX */
 
+
+#ifdef CONFIG_I2C_IMX
+static void nxp_mcimx7_i2c_config(void)
+{
+
+#ifdef CONFIG_I2C_1
+	/* In this example, we need to grasp board I2C exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapI2c1,
+			  RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
+			  false, false);
+	/* Select I2C clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootI2c1, ccmRootmuxI2cOsc24m, 0, 0);
+	/* Enable I2C clock */
+	CCM_EnableRoot(CCM, ccmRootI2c1);
+	CCM_ControlGate(CCM, ccmCcgrGateI2c1, ccmClockNeededRunWait);
+#endif /* CONFIG_I2C_1 */
+
+#ifdef CONFIG_I2C_2
+	/* In this example, we need to grasp board I2C exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapI2c2,
+			  RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
+			  false, false);
+	/* Select I2C clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootI2c2, ccmRootmuxI2cOsc24m, 0, 0);
+	/* Enable I2C clock */
+	CCM_EnableRoot(CCM, ccmRootI2c2);
+	CCM_ControlGate(CCM, ccmCcgrGateI2c2, ccmClockNeededRunWait);
+#endif /* CONFIG_I2C_2 */
+
+#ifdef CONFIG_I2C_3
+	/* In this example, we need to grasp board I2C exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapI2c3,
+			  RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
+			  false, false);
+	/* Select I2C clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootI2c3, ccmRootmuxI2cOsc24m, 0, 0);
+	/* Enable I2C clock */
+	CCM_EnableRoot(CCM, ccmRootI2c3);
+	CCM_ControlGate(CCM, ccmCcgrGateI2c3, ccmClockNeededRunWait);
+#endif /* CONFIG_I2C_3 */
+
+#ifdef CONFIG_I2C_4
+	/* In this example, we need to grasp board I2C exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapI2c4,
+			  RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
+			  false, false);
+	/* Select I2C clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootI2c4, ccmRootmuxI2cOsc24m, 0, 0);
+	/* Enable I2C clock */
+	CCM_EnableRoot(CCM, ccmRootI2c4);
+	CCM_ControlGate(CCM, ccmCcgrGateI2c4, ccmClockNeededRunWait);
+#endif /* CONFIG_I2C_4 */
+
+}
+#endif /* CONFIG_I2C_IMX */
+
 static int nxp_mcimx7_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
@@ -116,6 +172,10 @@ static int nxp_mcimx7_init(struct device *arg)
 #ifdef CONFIG_UART_IMX
 	nxp_mcimx7_uart_config();
 #endif /* CONFIG_UART_IMX */
+
+#ifdef CONFIG_I2C_IMX
+	nxp_mcimx7_i2c_config();
+#endif /* CONFIG_I2C_IMX */
 
 	return 0;
 }

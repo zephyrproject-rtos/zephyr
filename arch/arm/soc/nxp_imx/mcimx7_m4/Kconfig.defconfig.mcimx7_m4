@@ -43,6 +43,13 @@ config UART_IMX
 
 endif # SERIAL
 
+if I2C
+
+config I2C_IMX
+	def_bool y
+
+endif # I2C
+
 config DOMAIN_ID
 	int
 	default 1
