@@ -94,27 +94,29 @@ static void send_system_desc(void)
 	SEGGER_SYSVIEW_SendSysDesc("O=Zephyr");
 }
 
+static void sysview_api_send_task(const struct k_thread *thr, void *udata)
+{
+	char name[20];
+
+	snprintk(name, sizeof(name), "T%xE%x",
+			(uintptr_t)thr, (uintptr_t)thr->entry);
+
+	/* NOTE: struct k_thread is inside the stack on Zephyr 1.7.
+	 * This is not guaranteed by the API, and is likely to change
+	 * in the future.  Hence, StackBase/StackSize are not set here;
+	 * these could be stored as part of the kernel event.
+	 */
+	SEGGER_SYSVIEW_SendTaskInfo(&(SEGGER_SYSVIEW_TASKINFO) {
+		.TaskID = (u32_t)(uintptr_t)thr,
+		.sName = name,
+		.Prio = thr->base.prio,
+	});
+
+}
+
 static void sysview_api_send_task_list(void)
 {
-	struct k_thread *thr;
-
-	for (thr = _kernel.threads; thr; thr = thr->next_thread) {
-		char name[20];
-
-		snprintk(name, sizeof(name), "T%xE%x", (uintptr_t)thr,
-			 (uintptr_t)thr->entry);
-
-		/* NOTE: struct k_thread is inside the stack on Zephyr 1.7.
-		 * This is not guaranteed by the API, and is likely to change
-		 * in the future.  Hence, StackBase/StackSize are not set here;
-		 * these could be stored as part of the kernel event.
-		 */
-		SEGGER_SYSVIEW_SendTaskInfo(&(SEGGER_SYSVIEW_TASKINFO) {
-			.TaskID = (u32_t)(uintptr_t)thr,
-			.sName = name,
-			.Prio = thr->base.prio,
-		});
-	}
+	k_thread_foreach(sysview_api_send_task, NULL);
 }
 
 static u32_t zephyr_to_sysview(int event_type)
