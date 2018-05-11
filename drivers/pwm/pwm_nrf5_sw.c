@@ -83,7 +83,7 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	struct pwm_data *data;
 	u8_t ppi_index;
 	u8_t channel;
-	u16_t div;
+	u16_t prescaler;
 	u32_t ret;
 
 	config = (struct pwm_config *)dev->config->config_info;
@@ -138,12 +138,20 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	 * use that info in config struct and setup accordingly.
 	 */
 
-	/* calc div, to scale down to fit in 16 bits */
-	div = period_cycles >> 16;
-
+	/* calc prescaler, to scale down to fit in 16 bits */
+	u8_t clz = __CLZ(period_cycles);
+	if (clz >= 16) {
+		prescaler = 0;
+	} else if (clz >= (16 - 9)) {
+		prescaler = 16 - clz;
+	} else {
+		SYS_LOG_ERR("Incompatible period");
+		return -EINVAL;
+	}
+	
 	/* setup HF timer in 16MHz frequency */
 	timer->MODE = TIMER_MODE_MODE_Timer;
-	timer->PRESCALER = 0;
+	timer->PRESCALER = prescaler;
 	timer->BITMODE = TIMER_BITMODE_BITMODE_16Bit;
 	timer->EVENTS_COMPARE[channel] = 0;
 	timer->EVENTS_COMPARE[config->map_size] = 0;
@@ -151,8 +159,8 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	 * supports more than 4 compares, then more channels can be supported.
 	 */
 	timer->SHORTS = TIMER_SHORTS_COMPARE3_CLEAR_Msk;
-	timer->CC[channel] = pulse_cycles >> div;
-	timer->CC[config->map_size] = period_cycles >> div;
+	timer->CC[channel] = pulse_cycles >> prescaler;
+	timer->CC[config->map_size] = period_cycles >> prescaler;
 	timer->TASKS_CLEAR = 1;
 
 	/* configure GPIOTE, toggle with initialise output high */
@@ -203,13 +211,10 @@ pin_set_pwm_off:
 static int pwm_nrf5_sw_get_cycles_per_sec(struct device *dev, u32_t pwm,
 					  u64_t *cycles)
 {
-	struct pwm_config *config;
-
-	config = (struct pwm_config *)dev->config->config_info;
 
 	/* HF timer frequency is derived from 16MHz source and prescaler is 0 */
-	*cycles = 16 * 1024 * 1024;
-
+	*cycles = 16000000;
+	
 	return 0;
 }
 
