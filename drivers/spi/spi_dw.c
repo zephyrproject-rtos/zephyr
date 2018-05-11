@@ -250,7 +250,7 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 	if (!spi_dw_is_slave(spi)) {
 		/* Baud rate and Slave select, for master only */
 		write_baudr(SPI_DW_CLK_DIVIDER(config->frequency), info->regs);
-		write_ser(config->slave, info->regs);
+		write_ser(1 << config->slave, info->regs);
 	}
 
 	spi_context_cs_configure(&spi->ctx);
