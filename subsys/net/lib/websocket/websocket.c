@@ -354,6 +354,7 @@ static struct net_pkt *prepare_reply(struct http_ctx *ctx,
 	struct net_pkt *pkt;
 	char tmp[64];
 	int ret;
+	size_t key_len;
 	size_t olen;
 
 	pkt = net_app_get_net_pkt_with_dst(&ctx->app_ctx,
@@ -368,20 +369,15 @@ static struct net_pkt *prepare_reply(struct http_ctx *ctx,
 		goto fail;
 	}
 
-	olen = min(sizeof(key_accept) - 1,
-		   ctx->http.field_values[ws_sec_key].value_len);
-	strncpy(key_accept, ctx->http.field_values[ws_sec_key].value, olen);
+	key_len = min(sizeof(key_accept) - 1,
+		      ctx->http.field_values[ws_sec_key].value_len);
+	strncpy(key_accept, ctx->http.field_values[ws_sec_key].value,
+		key_len);
 
-	olen = min(sizeof(key_accept) - 1 -
-		   ctx->http.field_values[ws_sec_key].value_len,
-		   sizeof(WS_MAGIC) - 1);
-	strncpy(key_accept + ctx->http.field_values[ws_sec_key].value_len,
-		WS_MAGIC, olen);
+	olen = min(sizeof(key_accept) - 1 - key_len, sizeof(WS_MAGIC) - 1);
+	strncpy(key_accept + key_len, WS_MAGIC, olen);
 
-	olen = ctx->http.field_values[ws_sec_key].value_len +
-		sizeof(WS_MAGIC) - 1;
-
-	mbedtls_sha1(key_accept, olen, accept);
+	mbedtls_sha1(key_accept, olen + key_len, accept);
 
 	ret = base64_encode(tmp, sizeof(tmp) - 1, &olen, accept,
 			    sizeof(accept));
