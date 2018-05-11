@@ -51,6 +51,10 @@ int net_tls_connect(struct net_context *context, bool listening);
 int net_tls_send(struct net_pkt *pkt);
 int net_tls_recv(struct net_context *context, net_context_recv_cb_t cb,
 		 void *user_data);
+int net_tls_sec_tag_list_get(struct net_context *context, sec_tag_t *sec_tags,
+			     int *sec_tag_cnt);
+int net_tls_sec_tag_list_set(struct net_context *context,
+			     const sec_tag_t *sec_tags, int sec_tag_cnt);
 
 #else
 static inline void net_tls_init(void)
@@ -89,6 +93,29 @@ static inline int net_tls_recv(struct net_context *context,
 
 	return 0;
 }
+
+static inline int net_tls_sec_tag_list_get(struct net_context *context,
+					   sec_tag_t *sec_tags,
+					   int *sec_tag_cnt)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(sec_tags);
+	ARG_UNUSED(sec_tag_cnt);
+
+	return 0;
+}
+
+static inline int net_tls_sec_tag_list_set(struct net_context *context,
+					   const sec_tag_t *sec_tags,
+					   int sec_tag_cnt)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(sec_tags);
+	ARG_UNUSED(sec_tag_cnt);
+
+	return 0;
+}
+
 #endif /* CONFIG_NET_TLS || CONFIG_NET_DTLS */
 
 #endif /* __NET_TLS_INTERNAL_H */

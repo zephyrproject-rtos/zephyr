@@ -21,7 +21,7 @@ static mbedtls_ctr_drbg_context tls_ctr_drbg;
 
 struct net_tls_credential {
 	enum net_tls_credential_type type;
-	int tag;
+	sec_tag_t tag;
 	const void *buf;
 	size_t len;
 };
@@ -226,6 +226,39 @@ err:
 	net_pkt_unref(decrypted_pkt);
 }
 
+static int tls_mbedtls_set_credentials(struct net_context *context)
+{
+	struct net_tls_credential *credential;
+	sec_tag_t tag;
+	int i;
+
+	for (i = 0; i < context->options.sec_tag_list.sec_tag_count; i++) {
+		tag = context->options.sec_tag_list.sec_tags[i];
+		credential = NULL;
+
+		while ((credential = credential_next_get(tag, credential)) != NULL) {
+			switch (credential->type) {
+			case NET_TLS_CREDENTIAL_CA_CERTIFICATE:
+				/* TODO configure mbedtls CA CERTIFICATE */
+				break;
+
+			case NET_TLS_CREDENTIAL_PSK:
+				/* TODO configure mbedtls PSK */
+				break;
+
+			case NET_TLS_CREDENTIAL_PSK_ID:
+				/* Ignore PSK Id - it will be used together with PSK */
+				break;
+
+			default:
+				return -EINVAL;
+			}
+		}
+	}
+
+	return 0;
+}
+
 void net_tls_init(void)
 {
 	int i;
@@ -324,6 +357,11 @@ int net_tls_connect(struct net_context *context, bool listening)
 	mbedtls_ssl_conf_rng(&context->mbedtls.config,
 			     tls_mbedtls_ctr_drbg_random, &tls_ctr_drbg);
 
+	err = tls_mbedtls_set_credentials(context);
+	if (err) {
+		goto mbed_err_conf;
+	}
+
 	err = mbedtls_ssl_setup(&context->mbedtls.ssl,
 				&context->mbedtls.config);
 	if (err) {
@@ -398,7 +436,65 @@ int net_tls_recv(struct net_context *context, net_context_recv_cb_t cb,
 	return 0;
 }
 
-int net_tls_credential_add(int tag, enum net_tls_credential_type type,
+int net_tls_sec_tag_list_get(struct net_context *context,
+			     sec_tag_t *sec_tags, int *sec_tag_cnt)
+{
+	int tags_to_copy;
+
+	if (!context || !sec_tags || !sec_tag_cnt) {
+		return -EINVAL;
+	}
+
+	if (!context->options.tls) {
+		return -EPERM;
+	}
+
+	tags_to_copy = MIN(context->options.sec_tag_list.sec_tag_count,
+			   *sec_tag_cnt);
+	memcpy(sec_tags, context->options.sec_tag_list.sec_tags,
+	       tags_to_copy * sizeof(sec_tag_t));
+	*sec_tag_cnt = tags_to_copy;
+
+	return 0;
+}
+
+int net_tls_sec_tag_list_set(struct net_context *context,
+			     const sec_tag_t *sec_tags, int sec_tag_cnt)
+{
+	enum net_context_state state;
+	int i;
+
+	if (!context || !sec_tags) {
+		return -EINVAL;
+	}
+
+	if (!context->options.tls) {
+		return -EPERM;
+	}
+
+	state = net_context_get_state(context);
+	if (state != NET_CONTEXT_IDLE && state != NET_CONTEXT_UNCONNECTED) {
+		return -EPERM;
+	}
+
+	if (sec_tag_cnt > ARRAY_SIZE(context->options.sec_tag_list.sec_tags)) {
+		return -ENOMEM;
+	}
+
+	for (i = 0; i < sec_tag_cnt; i++) {
+		if (credential_next_get(sec_tags[i], NULL) == NULL) {
+			return -ENOENT;
+		}
+	}
+
+	memcpy(context->options.sec_tag_list.sec_tags, sec_tags,
+	       sec_tag_cnt * sizeof(sec_tag_t));
+	context->options.sec_tag_list.sec_tag_count = sec_tag_cnt;
+
+	return 0;
+}
+
+int net_tls_credential_add(sec_tag_t tag, enum net_tls_credential_type type,
 			   const void *cred, size_t credlen)
 {
 	struct net_tls_credential *credential = credential_get(tag, type);
@@ -435,7 +531,7 @@ int net_tls_credential_get(sec_tag_t tag, enum net_tls_credential_type type,
 	return 0;
 }
 
-int net_tls_credential_delete(int tag, enum net_tls_credential_type type)
+int net_tls_credential_delete(sec_tag_t tag, enum net_tls_credential_type type)
 {
 	struct net_tls_credential *credential = NULL;
 

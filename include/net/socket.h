@@ -46,8 +46,14 @@ struct zsock_pollfd {
 /* socket option for TCP */
 #define SOL_TCP             6
 
-/* TCP socket options */
-#define TCP_TLS             0xff
+/* Socket option for TLS.
+ * Here, the same socket option level for TLS as in Linux was used.
+ */
+#define SOL_TLS             282
+
+/* TLS socket options */
+#define TLS_ENABLE          1
+#define TLS_SEC_TAG_LIST    2
 
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;

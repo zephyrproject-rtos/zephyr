@@ -40,6 +40,15 @@ typedef int sec_tag_t;
 
 #if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
 
+/** A list of secure tags that context should use */
+struct sec_tag_list {
+	/** An array of secure tags referencing TLS credentials */
+	sec_tag_t sec_tags[CONFIG_NET_MAX_CREDENTIALS_NUMBER];
+
+	/** Number of configured secure tags */
+	int sec_tag_count;
+};
+
 /**
  * @brief Add a TLS credential.
  *
@@ -53,7 +62,7 @@ typedef int sec_tag_t;
  *
  * @return 0 if ok, < 0 if error.
  */
-int net_tls_credential_add(int tag, enum net_tls_credential_type type,
+int net_tls_credential_add(sec_tag_t tag, enum net_tls_credential_type type,
 			   const void *cred, size_t credlen);
 
 /**
@@ -69,7 +78,7 @@ int net_tls_credential_add(int tag, enum net_tls_credential_type type,
  *
  * @return 0 if ok, < 0 if error.
  */
-int net_tls_credential_get(int tag, enum net_tls_credential_type type,
+int net_tls_credential_get(sec_tag_t tag, enum net_tls_credential_type type,
 			   void *cred, size_t *credlen);
 
 /**
@@ -83,7 +92,8 @@ int net_tls_credential_get(int tag, enum net_tls_credential_type type,
  *
  * @return 0 if ok, < 0 if error.
  */
-int net_tls_credential_delete(int tag, enum net_tls_credential_type type);
+int net_tls_credential_delete(sec_tag_t tag,
+			      enum net_tls_credential_type type);
 
 #else
 

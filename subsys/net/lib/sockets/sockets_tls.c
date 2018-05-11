@@ -24,13 +24,21 @@ int tls_getsockopt(int sock, int level, int optname,
 	}
 
 	switch (optname) {
-	case TCP_TLS:
+	case TLS_ENABLE:
 		if (*optlen != sizeof(int)) {
 			return -EINVAL;
 		}
 
-		if (net_context_get_option(ctx, NET_OPT_TLS, optval,
-					   optlen) < 0) {
+		if (net_context_get_option(ctx, NET_OPT_TLS_ENABLE,
+					   optval, optlen) < 0) {
+			ret = -EINVAL;
+		}
+
+		break;
+
+	case TLS_SEC_TAG_LIST:
+		if (net_context_get_option(ctx, NET_OPT_TLS_SEC_TAG_LIST,
+					   optval, optlen) < 0) {
 			ret = -EINVAL;
 		}
 
@@ -58,13 +66,21 @@ int tls_setsockopt(int sock, int level, int optname,
 	}
 
 	switch (optname) {
-	case TCP_TLS:
+	case TLS_ENABLE:
 		if (optlen != sizeof(int)) {
 			return -EINVAL;
 		}
 
-		if (net_context_set_option(ctx, NET_OPT_TLS, optval,
-					   optlen) < 0) {
+		if (net_context_set_option(ctx, NET_OPT_TLS_ENABLE,
+					   optval, optlen) < 0) {
+			ret = -EINVAL;
+		}
+
+		break;
+
+	case TLS_SEC_TAG_LIST:
+		if (net_context_set_option(ctx, NET_OPT_TLS_SEC_TAG_LIST,
+					   optval, optlen) < 0) {
 			ret = -EINVAL;
 		}
 

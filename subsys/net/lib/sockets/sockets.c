@@ -590,8 +590,7 @@ int zsock_getsockopt(int sock, int level, int optname,
 	}
 
 	switch (level) {
-	case SOL_TCP:
-		/* TLS is the only one implemented right now */
+	case SOL_TLS:
 		ret = tls_getsockopt(sock, level, optname, optval, optlen);
 		break;
 
@@ -615,8 +614,7 @@ int zsock_setsockopt(int sock, int level, int optname,
 	}
 
 	switch (level) {
-	case SOL_TCP:
-		/* TLS is the only one implemented right now */
+	case SOL_TLS:
 		ret = tls_setsockopt(sock, level, optname, optval, optlen);
 		break;
 

@@ -26,6 +26,7 @@
 #include <net/net_ip.h>
 #include <net/net_if.h>
 #include <net/net_stats.h>
+#include <net/net_tls.h>
 
 #if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
 #if defined(CONFIG_MBEDTLS)
@@ -225,6 +226,9 @@ struct net_context {
 #if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
 		/** Enable/disable TLS for the context */
 		bool tls;
+
+		/** Select which credentials to use with TLS. */
+		struct sec_tag_list sec_tag_list;
 #endif
 	} options;
 
@@ -807,8 +811,9 @@ int net_context_update_recv_wnd(struct net_context *context,
 				s32_t delta);
 
 enum net_context_option {
-	NET_OPT_PRIORITY = 1,
-	NET_OPT_TLS      = 2,
+	NET_OPT_PRIORITY         = 1,
+	NET_OPT_TLS_ENABLE       = 2,
+	NET_OPT_TLS_SEC_TAG_LIST = 3,
 };
 
 /**

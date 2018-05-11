@@ -71,7 +71,7 @@ static void test_getsockopt(void)
 	zassert_equal(errno, EOPNOTSUPP, "getsockopt errno");
 
 	errno = 0;
-	zassert_equal(getsockopt(s6_tcp, SOL_TCP, 0, NULL, NULL), -1,
+	zassert_equal(getsockopt(s6_tcp, SOL_TLS, 0, NULL, NULL), -1,
 		      "getsockopt");
 	zassert_equal(errno, EFAULT, "getsockopt errno");
 
@@ -79,46 +79,46 @@ static void test_getsockopt(void)
 			    &s6_udp, &addr6);
 
 	errno = 0;
-	zassert_equal(getsockopt(s6_udp, SOL_TCP, 0, &enable, &size), -1,
+	zassert_equal(getsockopt(s6_udp, SOL_TLS, 0, &enable, &size), -1,
 		      "getsockopt");
 	zassert_equal(errno, EBADF, "getsockopt errno");
 
 	errno = 0;
-	zassert_equal(getsockopt(s6_tcp, SOL_TCP, 0, &enable, NULL), -1,
+	zassert_equal(getsockopt(s6_tcp, SOL_TLS, 0, &enable, NULL), -1,
 		      "getsockopt");
 	zassert_equal(errno, EFAULT, "getsockopt errno");
 
 	errno = 0;
-	zassert_equal(getsockopt(s6_tcp, SOL_TCP, 0, NULL, &size), -1,
+	zassert_equal(getsockopt(s6_tcp, SOL_TLS, 0, NULL, &size), -1,
 		      "getsockopt");
 	zassert_equal(errno, EFAULT, "getsockopt errno");
 
 	errno = 0;
-	zassert_equal(getsockopt(s6_tcp, SOL_TCP, 0, &enable, NULL), -1,
+	zassert_equal(getsockopt(s6_tcp, SOL_TLS, 0, &enable, NULL), -1,
 		      "getsockopt");
 	zassert_equal(errno, EFAULT, "getsockopt errno");
 
 	errno = 0;
 	size = 0;
-	zassert_equal(getsockopt(s6_tcp, SOL_TCP, 0, &enable, &size), -1,
+	zassert_equal(getsockopt(s6_tcp, SOL_TLS, 0, &enable, &size), -1,
 		      "getsockopt");
 	zassert_equal(errno, EFAULT, "getsockopt errno");
 
 	size = 0;
 	errno = 0;
-	zassert_equal(getsockopt(s6_tcp, SOL_TCP, 0, &enable, &size), -1,
+	zassert_equal(getsockopt(s6_tcp, SOL_TLS, 0, &enable, &size), -1,
 		      "getsockopt");
 	zassert_equal(errno, EFAULT, "getsockopt errno");
 
 	size = sizeof(enable);
 	errno = 0;
-	zassert_equal(getsockopt(s6_tcp, SOL_TCP, 0, &enable, &size),
+	zassert_equal(getsockopt(s6_tcp, SOL_TLS, 0, &enable, &size),
 		      -1, "getsockopt");
 	zassert_equal(errno, ENOPROTOOPT, "getsockopt errno");
 	zassert_equal(size, sizeof(enable), "getsockopt errno");
 
 	errno = 0;
-	zassert_equal(getsockopt(s6_tcp, SOL_TCP, TCP_TLS, &enable, &size),
+	zassert_equal(getsockopt(s6_tcp, SOL_TLS, TLS_ENABLE, &enable, &size),
 		      0, "getsockopt");
 	zassert_equal(errno, 0, "getsockopt errno");
 	zassert_equal(size, sizeof(enable), "getsockopt errno");
@@ -144,17 +144,17 @@ static void test_setsockopt(void)
 	zassert_equal(errno, EOPNOTSUPP, "setsockopt errno");
 
 	errno = 0;
-	zassert_equal(setsockopt(s6_tcp, SOL_TCP, 0, NULL, 0), -1,
+	zassert_equal(setsockopt(s6_tcp, SOL_TLS, 0, NULL, 0), -1,
 		      "setsockopt");
 	zassert_equal(errno, EFAULT, "setsockopt errno");
 
 	errno = 0;
-	zassert_equal(setsockopt(s6_tcp, SOL_TCP, 0, &enable, 0), -1,
+	zassert_equal(setsockopt(s6_tcp, SOL_TLS, 0, &enable, 0), -1,
 		      "setsockopt");
 	zassert_equal(errno, EFAULT, "setsockopt errno");
 
 	errno = 0;
-	zassert_equal(setsockopt(s6_tcp, SOL_TCP, 0, &enable, sizeof(enable)),
+	zassert_equal(setsockopt(s6_tcp, SOL_TLS, 0, &enable, sizeof(enable)),
 		      -1, "setsockopt");
 	zassert_equal(errno, ENOPROTOOPT, "setsockopt errno");
 
@@ -162,12 +162,12 @@ static void test_setsockopt(void)
 			    &s6_udp, &addr6);
 
 	errno = 0;
-	zassert_equal(setsockopt(s6_udp, SOL_TCP, 0, &enable, sizeof(enable)),
+	zassert_equal(setsockopt(s6_udp, SOL_TLS, 0, &enable, sizeof(enable)),
 		      -1, "setsockopt");
 	zassert_equal(errno, EBADF, "setsockopt errno");
 
 	errno = 0;
-	zassert_equal(setsockopt(s6_tcp, SOL_TCP, TCP_TLS,
+	zassert_equal(setsockopt(s6_tcp, SOL_TLS, TLS_ENABLE,
 				 &enable, sizeof(enable)), 0, "setsockopt");
 	zassert_equal(errno, 0, "setsockopt errno");
 

@@ -1336,8 +1336,8 @@ static int get_context_priority(struct net_context *context,
 #endif
 }
 
-static int get_context_tls(struct net_context *context,
-			   void *value, size_t *len)
+static int get_context_tls_enable(struct net_context *context,
+				  void *value, size_t *len)
 {
 #if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
 	if (!len || *len != sizeof(int)) {
@@ -1352,8 +1352,8 @@ static int get_context_tls(struct net_context *context,
 #endif
 }
 
-static int set_context_tls(struct net_context *context,
-			   const void *value, size_t len)
+static int set_context_tls_enable(struct net_context *context,
+				  const void *value, size_t len)
 {
 #if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
 	bool enabled;
@@ -1368,6 +1368,44 @@ static int set_context_tls(struct net_context *context,
 #else
 	return -ENOTSUP;
 #endif
+}
+
+static int get_context_tls_sec_tag_list(struct net_context *context,
+					void *value, size_t *len)
+{
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	int ret;
+	int sec_tag_cnt;
+
+	if (!len || !value || *len % sizeof(sec_tag_t) != 0)
+		return -EINVAL;
+
+	sec_tag_cnt = *len / sizeof(sec_tag_t);
+
+	ret = net_tls_sec_tag_list_get(context, value, &sec_tag_cnt);
+	if (ret < 0)
+		return ret;
+
+	*len = sec_tag_cnt * sizeof(sec_tag_t);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif /* defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS) */
+}
+
+static int set_context_tls_sec_tag_list(struct net_context *context,
+					const void *value, size_t len)
+{
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	if (!value || len % sizeof(sec_tag_t) != 0)
+		return -EINVAL;
+
+	return net_tls_sec_tag_list_set(context, value,
+					len / sizeof(sec_tag_t));
+#else
+	return -ENOTSUP;
+#endif /* defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS) */
 }
 
 int net_context_set_option(struct net_context *context,
@@ -1391,10 +1429,13 @@ int net_context_set_option(struct net_context *context,
 		ret = set_context_priority(context, value, len);
 		break;
 
-	case NET_OPT_TLS:
-		ret = set_context_tls(context, value, len);
+	case NET_OPT_TLS_ENABLE:
+		ret = set_context_tls_enable(context, value, len);
 		break;
 
+	case NET_OPT_TLS_SEC_TAG_LIST:
+		ret = set_context_tls_sec_tag_list(context, value, len);
+		break;
 	}
 
 	return ret;
@@ -1421,8 +1462,12 @@ int net_context_get_option(struct net_context *context,
 		ret = get_context_priority(context, value, len);
 		break;
 
-	case NET_OPT_TLS:
-		ret = get_context_tls(context, value, len);
+	case NET_OPT_TLS_ENABLE:
+		ret = get_context_tls_enable(context, value, len);
+		break;
+
+	case NET_OPT_TLS_SEC_TAG_LIST:
+		ret = get_context_tls_sec_tag_list(context, value, len);
 		break;
 	}
 
