@@ -262,7 +262,8 @@ static void test_init(void)
 	 * manually in this special case so that subsequent tests can
 	 * pass.
 	 */
-	net_if_config_ipv6_get(iface, &ipv6);
+	zassert_false(net_if_config_ipv6_get(iface, &ipv6) < 0,
+			"IPv6 config is not valid\n");
 
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
 		if (iface->config.ip.ipv6->unicast[i].is_used) {
