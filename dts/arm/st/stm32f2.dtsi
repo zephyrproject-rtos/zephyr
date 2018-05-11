@@ -7,6 +7,7 @@
 #include <arm/armv7-m.dtsi>
 #include <st/mem.h>
 #include <st/stm32f2-pinctrl.dtsi>
+#include <dt-bindings/clock/stm32_clock.h>
 
 / {
 	cpus {
@@ -38,6 +39,14 @@
 
 				write-block-size = <1>;
 			};
+		};
+
+		rcc: rcc@40023800 {
+			compatible = "st,stm32-rcc";
+			clocks-controller;
+			#clock-cells = <2>;
+			reg = <0x40023800 0x400>;
+			label = "STM32_CLK_RCC";
 		};
 	};
 };
