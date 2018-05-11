@@ -285,15 +285,14 @@ void bt_mesh_reset(void);
  *  @param net_idx  Network Key Index
  *  @param flags    Provisioning Flags
  *  @param iv_index IV Index
- *  @param seq      Sequence Number (0 if newly provisioned).
  *  @param addr     Primary element address
  *  @param dev_key  Device Key
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
-		      u8_t flags, u32_t iv_index, u32_t seq,
-		      u16_t addr, const u8_t dev_key[16]);
+		      u8_t flags, u32_t iv_index, u16_t addr,
+		      const u8_t dev_key[16]);
 
 /** @brief Toggle the IV Update test mode
  *

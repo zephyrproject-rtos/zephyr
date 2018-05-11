@@ -197,7 +197,7 @@ static void bt_ready(int err)
 		settings_load();
 	}
 
-	err = bt_mesh_provision(net_key, net_idx, flags, iv_index, 0, addr,
+	err = bt_mesh_provision(net_key, net_idx, flags, iv_index, addr,
 				dev_key);
 	if (err == -EALREADY) {
 		printk("Using stored settings\n");
