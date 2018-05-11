@@ -508,3 +508,76 @@ int rb_contains(struct rbtree *tree, struct rbnode *node)
 
 	return n == node;
 }
+
+/* Pushes the node and its chain of left-side children onto the stack
+ * in the foreach struct, returning the last node, which is the next
+ * node to iterate.  By construction node will always be a right child
+ * or the root, so is_left must be false.
+ */
+static inline struct rbnode *stack_left_limb(struct rbnode *n,
+					     struct _rb_foreach *f)
+{
+	f->top++;
+	f->stack[f->top] = n;
+	f->is_left[f->top] = 0;
+
+	while ((n = get_child(n, 0))) {
+		f->top++;
+		f->stack[f->top] = n;
+		f->is_left[f->top] = 1;
+	}
+
+	return f->stack[f->top];
+}
+
+/* The foreach tracking works via a dynamic stack allocated via
+ * alloca().  The current node is found in stack[top] (and its parent
+ * is thus stack[top-1]).  The side of each stacked node from its
+ * parent is stored in is_left[] (i.e. if is_left[top] is true, then
+ * node/stack[top] is the left child of stack[top-1]).  The special
+ * case of top == -1 indicates that the stack is uninitialized and we
+ * need to push an initial stack starting at the root.
+ */
+struct rbnode *_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f)
+{
+	struct rbnode *n;
+
+	if (!tree->root) {
+		return NULL;
+	}
+
+	/* Initialization condition, pick the leftmost child of the
+	 * root as our first node, initializing the stack on the way.
+	 */
+	if (f->top == -1) {
+		return stack_left_limb(tree->root, f);
+	}
+
+	/* The next child from a given node is the leftmost child of
+	 * it's right subtree if it has a right child
+	 */
+	n = get_child(f->stack[f->top], 1);
+	if (n) {
+		return stack_left_limb(n, f);
+	}
+
+	/* Otherwise if the node is a left child of its parent, the
+	 * next node is the parent (note that the root is stacked
+	 * above with is_left set to 0, so this condition still works
+	 * even if node has no parent).
+	 */
+	if (f->is_left[f->top]) {
+		return f->stack[--f->top];
+	}
+
+	/* If we had no left tree and are a right child then our
+	 * parent was already walked, so walk up the stack looking for
+	 * a left child (whose parent is unwalked, and thus next).
+	 */
+	while (f->top > 0 && !f->is_left[f->top]) {
+		f->top--;
+	}
+
+	f->top--;
+	return f->top >= 0 ? f->stack[f->top] : NULL;
+}
