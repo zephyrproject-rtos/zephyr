@@ -14,7 +14,7 @@ The number of additional queries is controlled by the
 DNS_RESOLVER_ADDITIONAL_QUERIES Kconfig variable.
 
 The multicast DNS (mDNS) client resolver support can be enabled by setting
-CONFIG_MDNS_RESOLVER Kconfig variable.
+:option:`CONFIG_MDNS_RESOLVER` Kconfig option.
 See https://tools.ietf.org/html/rfc6762 for more details about mDNS.
 
 The link-local multicast name resolution (LLMNR) client resolver support can be
