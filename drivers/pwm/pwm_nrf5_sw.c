@@ -84,7 +84,6 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	struct pwm_data *data;
 	u8_t ppi_index;
 	u8_t channel;
-	u16_t div;
 	u32_t ret;
 
 	config = (struct pwm_config *)dev->config->config_info;
@@ -139,8 +138,11 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	 * use that info in config struct and setup accordingly.
 	 */
 
-	/* calc div, to scale down to fit in 16 bits */
-	div = period_cycles >> 16;
+	/* Overflow check */
+	if (period_cycles >= BIT(16)) {
+		SYS_LOG_ERR("Incompatible period");
+		return -EINVAL;
+	}
 
 	/* setup HF timer in 16MHz frequency */
 	timer->MODE = TIMER_MODE_MODE_Timer;
@@ -152,8 +154,8 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	 * supports more than 4 compares, then more channels can be supported.
 	 */
 	timer->SHORTS = TIMER_SHORTS_COMPARE3_CLEAR_Msk;
-	timer->CC[channel] = pulse_cycles >> div;
-	timer->CC[config->map_size] = period_cycles >> div;
+	timer->CC[channel] = pulse_cycles;
+	timer->CC[config->map_size] = period_cycles;
 	timer->TASKS_CLEAR = 1;
 
 	/* configure GPIOTE, toggle with initialise output high */
