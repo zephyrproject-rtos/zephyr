@@ -85,6 +85,8 @@ The Zephyr nucleo_413zh board configuration supports the following hardware feat
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -129,6 +131,8 @@ Default Zephyr Peripheral Mapping:
 - UART_3_TX : PD8
 - UART_3_RX : PD9
 - PWM_2_CH1 : PA0
+- USB_DM : PA11
+- USB_DP : PA12
 - USER_PB : PC13
 - LD1 : PB0
 - LD2 : PB7
@@ -146,6 +150,12 @@ Serial Port
 
 Nucleo F413ZH board has 10 UARTs. The Zephyr console output is assigned to UART3.
 Default settings are 115200 8N1.
+
+USB
+===
+Nucleo F413ZH board has a USB OTG dual-role device (DRD) controller that
+supports both device and host functions through its micro USB connector
+(USB USER). Only USB device function is supported in Zephyr at the moment.
 
 
 Programming and Debugging
