@@ -1508,7 +1508,7 @@ static int cmd_provision(int argc, char *argv[])
 		iv_index = 0;
 	}
 
-	err = bt_mesh_provision(default_key, net_idx, 0, iv_index, 0, addr,
+	err = bt_mesh_provision(default_key, net_idx, 0, iv_index, addr,
 				default_key);
 	if (err) {
 		printk("Provisioning failed (err %d)\n", err);

@@ -29,7 +29,6 @@ static u8_t net_key[16];
 static u16_t net_key_idx;
 static u8_t flags;
 static u32_t iv_index;
-static u32_t seq_num;
 static u16_t addr;
 static u8_t dev_key[16];
 static u8_t input_size;
@@ -411,7 +410,6 @@ static void provision_node(u8_t *data, u16_t len)
 	flags = cmd->flags;
 	iv_index = sys_le32_to_cpu(cmd->iv_index);
 	net_key_idx = sys_le16_to_cpu(cmd->net_key_idx);
-	seq_num = sys_le32_to_cpu(cmd->seq_num);
 
 	tester_rsp(BTP_SERVICE_ID_MESH, MESH_PROVISION_NODE,
 		   CONTROLLER_INDEX, BTP_STATUS_SUCCESS);
@@ -433,7 +431,7 @@ static void init(u8_t *data, u16_t len)
 
 	if (addr) {
 		err = bt_mesh_provision(net_key, net_key_idx, flags, iv_index,
-					seq_num, addr, dev_key);
+					addr, dev_key);
 		if (err) {
 			status = BTP_STATUS_FAILED;
 		}

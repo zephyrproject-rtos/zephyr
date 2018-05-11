@@ -1073,7 +1073,7 @@ static void prov_data(const u8_t *data)
 		identity_enable = false;
 	}
 
-	bt_mesh_provision(pdu, net_idx, flags, iv_index, 0, addr, dev_key);
+	bt_mesh_provision(pdu, net_idx, flags, iv_index, addr, dev_key);
 
 	/* After PB-GATT provisioning we should start advertising
 	 * using Node Identity.
