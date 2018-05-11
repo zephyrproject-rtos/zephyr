@@ -531,6 +531,11 @@ static bool is_replay(struct bt_mesh_net_rx *rx)
 {
 	int i;
 
+	/* Don't bother checking messages from ourselves */
+	if (rx->net_if == BT_MESH_NET_IF_LOCAL) {
+		return false;
+	}
+
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.rpl); i++) {
 		struct bt_mesh_rpl *rpl = &bt_mesh.rpl[i];
 
