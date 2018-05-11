@@ -170,25 +170,25 @@ config NET_TCP_BACKLOG_SIZE
 	  The number of simultaneous TCP connection attempts, i.e. outstanding
 	  TCP connections waiting for initial ACK.
 
-config NET_TCP_TIME_WAIT
-	bool "Enable TCP TIME_WAIT timeouts"
+config NET_TCP_TIME_WAIT_DELAY
+	int "How long to wait in TIME_WAIT state (in milliseconds)"
 	depends on NET_TCP
-	default n
+	default 250
 	help
-	  Officially, the TCP standard requires a 4 minute timeout on
-	  connection close before that particular port pair can be used
-	  again.  This requires that the net_context and net_tcp structs
-	  persist for the full duration, so has non-trivial memory costs
-	  and is optional.  Modern systems with well-randomized sequence
-	  numbers don't need this, but it is present for specification
-	  compliance where needed.
-
-config NET_TCP_2MSL_TIME
-	int "How long to wait in TIME_WAIT (in seconds)"
-	depends on NET_TCP_TIME_WAIT
-	default 240
-	help
-	  The value is in seconds.
+	  To avoid a (low-probability) issue when delayed packets from
+	  previous connection get delivered to next connection reusing
+	  the same local/remote ports, RFC 793 (TCP) suggests to keep
+	  an old, closed connection in a special "TIME_WAIT" state for
+	  the duration of 2*MSL (Maximum Segment Lifetime). The RFC
+	  suggests to use MSL of 2 minutes, but notes "This is an
+	  engineering choice, and may be changed if experience indicates
+	  it is desirable to do so." For low-resource systems, having
+	  large MSL may lead to quick resource exhaustion (and related
+	  DoS attacks). At the same time, the issue of packet mis-delivery
+	  is largely alleviated in the modern TCP stacks by using random,
+	  non-repeating port numbers and initial sequence numbers. Due
+	  to this, Zephyr uses much lower value of 250ms by default.
+	  Value of 0 disables TIME_WAIT state completely.
 
 config NET_TCP_ACK_TIMEOUT
 	int "How long to wait for ACK (in milliseconds)"
