@@ -175,6 +175,39 @@ becomes the current thread, its non-preemptible status is maintained.
     Locking out the scheduler is a more efficient way for a preemptible thread
     to inhibit preemption than changing its priority level to a negative value.
 
+.. _metairq_priorities:
+
+Meta-IRQ Priorities
+===================
+
+When enabled (see :option:`CONFIG_NUM_METAIRQ_PRIORITIES`), there is a special
+subclass of cooperative priorities at the highest (numerically lowest)
+end of the priority space: meta-IRQ threads.  These are scheduled
+according to their normal priority, but also have the special ability
+to preempt all other threads (and other meta-irq threads) at lower
+priorities, even if those threads are cooperative and/or have taken a
+scheduler lock.
+
+This behavior makes the act of unblocking a meta-IRQ thread (by any
+means, e.g. creating it, calling k_sem_give(), etc.) into the
+equivalent of a synchronous system call when done by a lower
+priority thread, or an ARM-like "pended IRQ" when done from true
+interrupt context.  The intent is that this feature will be used to
+implement interrupt "bottom half" processing and/or "tasklet" features
+in driver subsystems.  The thread, once woken, will be guaranteed to
+run before the current CPU returns into application code.
+
+Unlike similar features in other OSes, meta-IRQ threads are true
+threads and run on their own stack (which much be allocated normally),
+not the per-CPU interrupt stack.  Design work to enable the use of the
+IRQ stack on supported architectures is pending.
+
+Note that because this breaks the promise made to cooperative
+threads by the Zephyr API (namely that the OS won't schedule other
+thread until the current thread deliberately blocks), it should be
+used only with great care from application code.  These are not simply
+very high priority threads and should not be used as such.
+
 .. _thread_sleeping:
 
 Thread Sleeping

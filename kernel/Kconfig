@@ -100,6 +100,28 @@ config PRIORITY_CEILING
 	prompt "Priority inheritance ceiling"
 	default 0
 
+config NUM_METAIRQ_PRIORITIES
+	int
+	prompt "Number of very-high priority 'preemptor' threads"
+	default 0
+	help
+	 This defines a set of priorities at the (numerically) lowest
+	 end of the range which have "meta-irq" behavior.  Runnable
+	 threads at these priorities will always be scheduled before
+	 threads at lower priorities, EVEN IF those threads are
+	 otherwise cooperative and/or have taken a scheduler lock.
+	 Making such a thread runnable in any way thus has the effect
+	 of "interrupting" the current task and running the meta-irq
+	 thread synchronously, like an exception or system call.  The
+	 intent is to use these priorities to implement "interrupt
+	 bottom half" or "tasklet" behavior, allowing driver
+	 subsystems to return from interrupt context but be guaranteed
+	 that user code will not be executed (on the current CPU)
+	 until the remaining work is finished.  As this breaks the
+	 "promise" of non-preemptibility granted by the current API
+	 for cooperative threads, this tool probably shouldn't be used
+	 from application code.
+
 config MAIN_STACK_SIZE
 	int
 	prompt "Size of stack for initialization and main thread"
