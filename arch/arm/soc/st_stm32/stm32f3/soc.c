@@ -28,6 +28,17 @@ uint32_t HAL_GetTick(void)
 }
 
 /**
+ * @brief This function provides minimum delay (in milliseconds) based
+ *	  on variable incremented.
+ * @param Delay: specifies the delay time length, in milliseconds.
+ * @return None
+ */
+void HAL_Delay(__IO uint32_t Delay)
+{
+	k_sleep(Delay);
+}
+
+/**
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.

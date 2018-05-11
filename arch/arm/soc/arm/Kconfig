@@ -14,6 +14,6 @@ if SOC_FAMILY_ARM
 config SOC_FAMILY
 	string
 	default arm
-endif
 
 gsource "arch/arm/soc/arm/*/Kconfig.soc"
+endif # SOC_FAMILY_ARM

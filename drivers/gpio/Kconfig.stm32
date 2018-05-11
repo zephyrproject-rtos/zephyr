@@ -8,6 +8,7 @@
 menuconfig GPIO_STM32
 	bool "GPIO Driver for STM32 family of MCUs"
 	depends on GPIO && SOC_FAMILY_STM32
+	select HAS_DTS_GPIO
 	default n
 	help
 	  Enable GPIO driver for STM32 line of MCUs

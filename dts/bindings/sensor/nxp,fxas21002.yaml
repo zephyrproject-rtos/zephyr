@@ -18,4 +18,13 @@ properties:
     compatible:
       constraint: "nxp,fxas21002"
 
+    int1-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
+
+    int2-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
 ...

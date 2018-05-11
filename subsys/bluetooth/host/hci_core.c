@@ -2895,6 +2895,7 @@ static void le_dhkey_complete(struct net_buf *buf)
 static void hci_reset_complete(struct net_buf *buf)
 {
 	u8_t status = buf->data[0];
+	atomic_t flags;
 
 	BT_DBG("status %u", status);
 
@@ -2910,8 +2911,8 @@ static void hci_reset_complete(struct net_buf *buf)
 	discovery_results_count = 0;
 #endif /* CONFIG_BT_BREDR */
 
-	/* we only allow to enable once so this bit must be keep set */
-	atomic_set(bt_dev.flags, BIT(BT_DEV_ENABLE));
+	flags = (atomic_get(bt_dev.flags) & BT_DEV_PERSISTENT_FLAGS);
+	atomic_set(bt_dev.flags, flags);
 }
 
 static void hci_cmd_done(u16_t opcode, u8_t status, struct net_buf *buf)
@@ -3572,12 +3573,14 @@ static int common_init(void)
 	net_buf_unref(rsp);
 
 	/* Read Bluetooth Address */
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BD_ADDR, NULL, &rsp);
-	if (err) {
-		return err;
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_USER_ID_ADDR)) {
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BD_ADDR, NULL, &rsp);
+		if (err) {
+			return err;
+		}
+		read_bdaddr_complete(rsp);
+		net_buf_unref(rsp);
 	}
-	read_bdaddr_complete(rsp);
-	net_buf_unref(rsp);
 
 	/* Read Local Supported Commands */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_SUPPORTED_COMMANDS, NULL,
@@ -4257,7 +4260,8 @@ static void hci_vs_init(void)
 	 */
 	if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT) &&
 	    (bt_dev.hci_version < BT_HCI_VERSION_5_0 ||
-	     bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_ANY))) {
+	     (!atomic_test_bit(bt_dev.flags, BT_DEV_USER_ID_ADDR) &&
+	      bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_ANY)))) {
 		BT_WARN("Controller doesn't seem to support Zephyr vendor HCI");
 		return;
 	}
@@ -4609,6 +4613,25 @@ int bt_enable(bt_ready_cb_t cb)
 	}
 
 	k_work_submit(&bt_dev.init);
+	return 0;
+}
+
+int bt_set_id_addr(const bt_addr_le_t *addr)
+{
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		BT_ERR("Setting identity not allowed after bt_enable()");
+		return -EBUSY;
+	}
+
+	if (addr->type != BT_ADDR_LE_RANDOM || !BT_ADDR_IS_STATIC(&addr->a)) {
+		BT_ERR("Only static random identity address supported");
+		return -EINVAL;
+	}
+
+	bt_addr_le_copy(&bt_dev.id_addr, addr);
+	atomic_set_bit(bt_dev.flags, BT_DEV_USER_ID_ADDR);
+	atomic_set_bit(bt_dev.flags, BT_DEV_ID_STATIC_RANDOM);
+
 	return 0;
 }
 

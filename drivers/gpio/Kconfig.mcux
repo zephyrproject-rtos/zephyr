@@ -9,6 +9,7 @@
 menuconfig GPIO_MCUX
 	bool "MCUX GPIO driver"
 	depends on GPIO && HAS_MCUX
+	select HAS_DTS_GPIO
 	default n
 	help
 	  Enable the MCUX pinmux driver.

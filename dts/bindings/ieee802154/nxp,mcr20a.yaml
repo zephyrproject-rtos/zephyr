@@ -1,24 +1,24 @@
 #
-# Copyright (c) 2018, I-SENSE group of ICCS
+# Copyright (c) 2018, NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
-title: STMicroelectronics SPBTLE-RF bluetooth module
-id: st,spbtle-rf
+title: NXP MCR20A 802.15.4 Wireless Transceiver
+id: nxp,mcr20a
 version: 0.1
 
 description: >
-    This binding gives the base representation of SPBTLE-RF bluetooth module
+    This is a representation of the NXP MCR20A wireless transceiver.
 
 inherits:
     !include spi-device.yaml
 
 properties:
     compatible:
-      constraint: "st,spbtle-rf"
+      constraint: "nxp,mcr20a"
 
-    irq-gpios:
+    irqb-gpios:
       type: compound
       category: required
       generation: define, use-prop-name
