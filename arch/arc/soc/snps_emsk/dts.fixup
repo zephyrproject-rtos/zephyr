@@ -99,5 +99,7 @@
 
 #define SPI_DW_IRQ_FLAGS	0
 
+#define SPI_DW_SPI_CLOCK	NS16550_F0009000_CLOCK_FREQUENCY
+
 
 /* End of SoC Level DTS fixup file */
