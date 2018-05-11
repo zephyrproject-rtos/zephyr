@@ -8,6 +8,7 @@
 #include <st/mem.h>
 #include <st/stm32f2-pinctrl.dtsi>
 #include <dt-bindings/clock/stm32_clock.h>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -47,6 +48,94 @@
 			#clock-cells = <2>;
 			reg = <0x40023800 0x400>;
 			label = "STM32_CLK_RCC";
+		};
+
+		pinctrl: pin-controller@40020000 {
+			compatible = "st,stm32-pinmux";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40020000 0x2000>;
+
+			gpioa: gpio@40020000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40020000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000001>;
+				label = "GPIOA";
+			};
+
+			gpiob: gpio@40020400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40020400 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000002>;
+				label = "GPIOB";
+			};
+
+			gpioc: gpio@40020800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40020800 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000004>;
+				label = "GPIOC";
+			};
+
+			gpiod: gpio@40020c00 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40020c00 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000008>;
+				label = "GPIOD";
+			};
+
+			gpioe: gpio@40021000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40021000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000010>;
+				label = "GPIOE";
+			};
+
+			gpiof: gpio@40021400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40021400 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
+				label = "GPIOF";
+			};
+
+			gpiog: gpio@40021800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40021800 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000040>;
+				label = "GPIOG";
+			};
+
+			gpioh: gpio@40021c00 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40021c00 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000080>;
+				label = "GPIOH";
+			};
+
+			gpioi: gpio@40022000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40022000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000100>;
+				label = "GPIOI";
+			};
 		};
 	};
 };
