@@ -55,21 +55,11 @@ static struct tcp_backlog_entry {
 	struct k_delayed_work ack_timer;
 } tcp_backlog[CONFIG_NET_TCP_BACKLOG_SIZE];
 
-/* 2MSL timeout, where "MSL" is arbitrarily 2 minutes in the RFC */
-#if defined(CONFIG_NET_TCP_2MSL_TIME)
-#define TIME_WAIT_MS K_SECONDS(CONFIG_NET_TCP_2MSL_TIME)
-#else
-#define TIME_WAIT_MS K_SECONDS(2 * 2 * 60)
-#endif
-
 #if defined(CONFIG_NET_TCP_ACK_TIMEOUT)
 #define ACK_TIMEOUT CONFIG_NET_TCP_ACK_TIMEOUT
 #else
 #define ACK_TIMEOUT K_SECONDS(1)
 #endif
-
-/* TODO: It should be 2 * MSL (Maximum segment lifetime) */
-#define TIMEWAIT_TIMEOUT MSEC(250)
 
 #define FIN_TIMEOUT K_SECONDS(1)
 
@@ -251,7 +241,7 @@ static void tcp_retry_expired(struct k_work *work)
 							net_pkt_iface(pkt));
 			}
 		}
-	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
+	} else if (CONFIG_NET_TCP_TIME_WAIT_DELAY != 0) {
 		if (tcp->fin_sent && tcp->fin_rcvd) {
 			NET_DBG("[%p] Closing connection (context %p)",
 				tcp, tcp->context);
@@ -948,12 +938,13 @@ static void restart_timer(struct net_tcp *tcp)
 		tcp->flags |= NET_TCP_RETRYING;
 		tcp->retry_timeout_shift = 0;
 		k_delayed_work_submit(&tcp->retry_timer, retry_timeout(tcp));
-	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
+	} else if (CONFIG_NET_TCP_TIME_WAIT_DELAY != 0) {
 		if (tcp->fin_sent && tcp->fin_rcvd) {
 			/* We know sent_list is empty, which means if
 			 * fin_sent is true it must have been ACKd
 			 */
-			k_delayed_work_submit(&tcp->retry_timer, TIME_WAIT_MS);
+			k_delayed_work_submit(&tcp->retry_timer,
+					      CONFIG_NET_TCP_TIME_WAIT_DELAY);
 			net_context_ref(tcp->context);
 		}
 	} else {
@@ -1731,7 +1722,7 @@ static void handle_timewait_timeout(struct k_work *work)
 	struct net_tcp *tcp = CONTAINER_OF(work, struct net_tcp,
 					   timewait_timer);
 
-	NET_DBG("Timewait expired in %dms", TIMEWAIT_TIMEOUT);
+	NET_DBG("Timewait expired in %dms", CONFIG_NET_TCP_TIME_WAIT_DELAY);
 
 	if (net_tcp_get_state(tcp) == NET_TCP_TIME_WAIT) {
 		net_tcp_change_state(tcp, NET_TCP_CLOSED);
@@ -2080,7 +2071,7 @@ NET_CONN_CB(tcp_established)
 clean_up:
 	if (net_tcp_get_state(context->tcp) == NET_TCP_TIME_WAIT) {
 		k_delayed_work_submit(&context->tcp->timewait_timer,
-				      TIMEWAIT_TIMEOUT);
+				      CONFIG_NET_TCP_TIME_WAIT_DELAY);
 	}
 
 	if (net_tcp_get_state(context->tcp) == NET_TCP_CLOSED) {
