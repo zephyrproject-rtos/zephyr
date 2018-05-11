@@ -124,13 +124,20 @@ void check_rb(void)
 /* First validates the external API behavior via a walk, then checks
  * interior tree and red/black state via internal APIs.
  */
-void check_tree(int size)
+void _check_tree(int size, int use_foreach)
 {
 	int nwalked = 0, i, ni;
 	struct rbnode *n, *last = NULL;
 
 	memset(walked_nodes, 0, sizeof(walked_nodes));
-	rb_walk(&tree, visit_node, &nwalked);
+
+	if (use_foreach) {
+		RB_FOR_EACH(&tree, n) {
+			visit_node(n, &nwalked);
+		}
+	} else {
+		rb_walk(&tree, visit_node, &nwalked);
+	}
 
 	/* Make sure all found nodes are in-order and marked in the tree */
 	for (i = 0; i < nwalked; i++) {
@@ -162,6 +169,13 @@ void check_tree(int size)
 	if (tree.root) {
 		check_rb();
 	}
+}
+
+void check_tree(int size)
+{
+	/* Do it with both enumeration mechanisms */
+	_check_tree(size, 0);
+	_check_tree(size, 1);
 }
 
 void test_tree(int size)
@@ -210,7 +224,7 @@ void test_rbtree_spam(void)
 			size = MAX_NODES;
 		}
 
-		TC_PRINT("Checking trees build from %d nodes...\n", size);
+		TC_PRINT("Checking trees built from %d nodes...\n", size);
 
 		test_tree(size);
 	} while (size < MAX_NODES);
