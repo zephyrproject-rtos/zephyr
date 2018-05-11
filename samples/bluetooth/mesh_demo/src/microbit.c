@@ -11,7 +11,6 @@
 #include <soc.h>
 #include <misc/printk.h>
 #include <ctype.h>
-#include <flash.h>
 #include <gpio.h>
 #include <pwm.h>
 
@@ -35,84 +34,6 @@ static struct device *nvm;
 static struct device *pwm;
 
 static struct k_work button_work;
-
-void board_seq_update(u32_t seq)
-{
-	u32_t loc, seq_map;
-	int err;
-
-	if (seq % SEQ_PER_BIT) {
-		return;
-	}
-
-	loc = (SEQ_PAGE + ((seq / SEQ_PER_BIT) / 32));
-
-	err = flash_read(nvm, loc, &seq_map, sizeof(seq_map));
-	if (err) {
-		printk("flash_read err %d\n", err);
-		return;
-	}
-
-	seq_map >>= 1;
-
-	flash_write_protection_set(nvm, false);
-	err = flash_write(nvm, loc, &seq_map, sizeof(seq_map));
-	flash_write_protection_set(nvm, true);
-	if (err) {
-		printk("flash_write err %d\n", err);
-	}
-}
-
-static u32_t get_seq(void)
-{
-	u32_t seq_map, seq = 0;
-	int err, i;
-
-	for (i = 0; i < NRF_FICR->CODEPAGESIZE / sizeof(seq_map); i++) {
-		err = flash_read(nvm, SEQ_PAGE + (i * sizeof(seq_map)),
-				 &seq_map, sizeof(seq_map));
-		if (err) {
-			printk("flash_read err %d\n", err);
-			return seq;
-		}
-
-		printk("seq_map 0x%08x\n", seq_map);
-
-		if (seq_map) {
-			seq = ((i * 32) +
-			       (32 - popcount(seq_map))) * SEQ_PER_BIT;
-			if (!seq) {
-				return 0;
-			}
-
-			break;
-		}
-	}
-
-	seq += SEQ_PER_BIT;
-	if (seq >= SEQ_MAX) {
-		seq = 0;
-	}
-
-	if (seq) {
-		seq_map >>= 1;
-		flash_write_protection_set(nvm, false);
-		err = flash_write(nvm, SEQ_PAGE + (i * sizeof(seq_map)),
-				  &seq_map, sizeof(seq_map));
-		flash_write_protection_set(nvm, true);
-		if (err) {
-			printk("flash_write err %d\n", err);
-		}
-	} else {
-		printk("Performing flash erase of page 0x%08x\n", SEQ_PAGE);
-		err = flash_erase(nvm, SEQ_PAGE, NRF_FICR->CODEPAGESIZE);
-		if (err) {
-			printk("flash_erase err %d\n", err);
-		}
-	}
-
-	return seq;
-}
 
 static void button_send_pressed(struct k_work *work)
 {
@@ -323,11 +244,9 @@ static void configure_button(void)
 	gpio_pin_enable_callback(gpio, SW1_GPIO_PIN);
 }
 
-void board_init(u16_t *addr, u32_t *seq)
+void board_init(u16_t *addr)
 {
 	struct mb_display *disp = mb_display_get();
-
-	printk("SEQ_PAGE 0x%08x\n", SEQ_PAGE);
 
 	nvm = device_get_binding(FLASH_DEV_NAME);
 	pwm = device_get_binding(CONFIG_PWM_NRF5_SW_0_DEV_NAME);
@@ -340,8 +259,6 @@ void board_init(u16_t *addr, u32_t *seq)
 		*addr = 0x0b0c;
 #endif
 	}
-
-	*seq = get_seq();
 
 	mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT, SCROLL_SPEED,
 			 "0x%04x", *addr);
