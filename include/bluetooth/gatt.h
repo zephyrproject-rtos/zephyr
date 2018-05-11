@@ -393,12 +393,8 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
  *  @param _service Service attribute value.
  */
 #define BT_GATT_PRIMARY_SERVICE(_service)				\
-{									\
-	.uuid = BT_UUID_GATT_PRIMARY,					\
-	.perm = BT_GATT_PERM_READ,					\
-	.read = bt_gatt_attr_read_service,				\
-	.user_data = _service,						\
-}
+	BT_GATT_ATTRIBUTE(BT_UUID_GATT_PRIMARY, BT_GATT_PERM_READ,	\
+			 bt_gatt_attr_read_service, NULL, _service)
 
 /** @def BT_GATT_SECONDARY_SERVICE
  *  @brief Secondary Service Declaration Macro.
@@ -408,12 +404,8 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
  *  @param _service Service attribute value.
  */
 #define BT_GATT_SECONDARY_SERVICE(_service)				\
-{									\
-	.uuid = BT_UUID_GATT_SECONDARY,					\
-	.perm = BT_GATT_PERM_READ,					\
-	.read = bt_gatt_attr_read_service,				\
-	.user_data = _service,						\
-}
+	BT_GATT_ATTRIBUTE(BT_UUID_GATT_SECONDARY, BT_GATT_PERM_READ,	\
+			 bt_gatt_attr_read_service, NULL, _service)
 
 /** @brief Read Include Attribute helper.
  *
@@ -442,12 +434,8 @@ ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
  *  @param _service_incl the first service attribute of service to include
  */
 #define BT_GATT_INCLUDE_SERVICE(_service_incl)				\
-{									\
-	.uuid = BT_UUID_GATT_INCLUDE,					\
-	.perm = BT_GATT_PERM_READ,					\
-	.read = bt_gatt_attr_read_included,				\
-	.user_data = _service_incl,					\
-}
+	BT_GATT_ATTRIBUTE(BT_UUID_GATT_INCLUDE, BT_GATT_PERM_READ,	\
+			  bt_gatt_attr_read_included, NULL, _service_incl)
 
 /** @brief Read Characteristic Attribute helper.
  *
@@ -477,13 +465,10 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
  *  @param _props Characteristic attribute properties.
  */
 #define BT_GATT_CHARACTERISTIC(_uuid, _props)				\
-{									\
-	.uuid = BT_UUID_GATT_CHRC,					\
-	.perm = BT_GATT_PERM_READ,					\
-	.read = bt_gatt_attr_read_chrc,					\
-	.user_data = (&(struct bt_gatt_chrc) { .uuid = _uuid,		\
-					       .properties = _props, }),\
-}
+	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CHRC, BT_GATT_PERM_READ,		\
+			  bt_gatt_attr_read_chrc, NULL,			\
+			  (&(struct bt_gatt_chrc) { .uuid = _uuid,	\
+						   .properties = _props, }))
 
 #define BT_GATT_CCC_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
 
@@ -554,15 +539,12 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  @param _cfg_changed Configuration changed callback.
  */
 #define BT_GATT_CCC(_cfg, _cfg_changed)					\
-{									\
-	.uuid = BT_UUID_GATT_CCC,					\
-	.perm = BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,			\
-	.read = bt_gatt_attr_read_ccc,					\
-	.write = bt_gatt_attr_write_ccc,				\
-	.user_data = (&(struct _bt_gatt_ccc) { .cfg = _cfg,		\
+	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CCC,				\
+			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,		\
+			bt_gatt_attr_read_ccc, bt_gatt_attr_write_ccc,	\
+			(&(struct _bt_gatt_ccc) { .cfg = _cfg,		\
 					       .cfg_len = ARRAY_SIZE(_cfg), \
-					       .cfg_changed = _cfg_changed, }),\
-}
+					       .cfg_changed = _cfg_changed, }))
 
 /** @brief Read Characteristic Extended Properties Attribute helper
  *
@@ -591,12 +573,8 @@ ssize_t bt_gatt_attr_read_cep(struct bt_conn *conn,
  *  @param _value Descriptor attribute value.
  */
 #define BT_GATT_CEP(_value)						\
-{									\
-	.uuid = BT_UUID_GATT_CEP,					\
-	.perm = BT_GATT_PERM_READ,					\
-	.read = bt_gatt_attr_read_cep,					\
-	.user_data = _value,						\
-}
+	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CEP, BT_GATT_PERM_READ,		\
+			  bt_gatt_attr_read_cep, NULL, _value)
 
 /** @brief Read Characteristic User Description Descriptor Attribute helper
  *
@@ -626,12 +604,8 @@ ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn,
  *  @param _perm Descriptor attribute access permissions.
  */
 #define BT_GATT_CUD(_value, _perm)					\
-{									\
-	.uuid = BT_UUID_GATT_CUD,					\
-	.perm = _perm,							\
-	.read = bt_gatt_attr_read_cud,					\
-	.user_data = _value,						\
-}
+	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CUD, _perm, bt_gatt_attr_read_cud, \
+			  NULL, _value)
 
 /** @brief Read Characteristic Presentation format Descriptor Attribute helper
  *
@@ -660,12 +634,8 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
  *  @param _value Descriptor attribute value.
  */
 #define BT_GATT_CPF(_value)						\
-{									\
-	.uuid = BT_UUID_GATT_CPF,					\
-	.perm = BT_GATT_PERM_READ,					\
-	.read = bt_gatt_attr_read_cpf,					\
-	.user_data = _value,						\
-}
+	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CPF, BT_GATT_PERM_READ,		\
+			  bt_gatt_attr_read_cpf, NULL, _value)
 
 /** @def BT_GATT_DESCRIPTOR
  *  @brief Descriptor Declaration Macro.
@@ -679,6 +649,20 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
  *  @param _value Descriptor attribute value.
  */
 #define BT_GATT_DESCRIPTOR(_uuid, _perm, _read, _write, _value)		\
+	BT_GATT_ATTRIBUTE(_uuid, _perm, _read, _write, _value)
+
+/** @def BT_GATT_ATTRIBUTE
+ *  @brief Attribute Declaration Macro.
+ *
+ *  Helper macro to declare an attribute.
+ *
+ *  @param _uuid Attribute uuid.
+ *  @param _perm Attribute access permissions.
+ *  @param _read Attribute read callback.
+ *  @param _write Attribute write callback.
+ *  @param _value Attribute value.
+ */
+#define BT_GATT_ATTRIBUTE(_uuid, _perm, _read, _write, _value)		\
 {									\
 	.uuid = _uuid,							\
 	.perm = _perm,							\
