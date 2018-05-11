@@ -44,13 +44,11 @@ static ssize_t read_manuf(struct bt_conn *conn,
 /* Device Information Service Declaration */
 static struct bt_gatt_attr attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_DIS),
-	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_PERM_READ,
-			   read_model, NULL, NULL),
+	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MODEL_NUMBER, BT_GATT_CHRC_READ,
+			       BT_GATT_PERM_READ, read_model, NULL, NULL),
 	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MANUFACTURER_NAME,
-			       BT_GATT_CHRC_READ),
-	BT_GATT_DESCRIPTOR(BT_UUID_DIS_MANUFACTURER_NAME, BT_GATT_PERM_READ,
-			   read_manuf, NULL, NULL),
+			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
+			       read_manuf, NULL, NULL),
 };
 
 static struct bt_gatt_service dis_svc = BT_GATT_SERVICE(attrs);

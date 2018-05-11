@@ -457,18 +457,24 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 			       u16_t len, u16_t offset);
 
 /** @def BT_GATT_CHARACTERISTIC
- *  @brief Characteristic Declaration Macro.
+ *  @brief Characteristic and Value Declaration Macro.
  *
- *  Helper macro to declare a characteristic attribute.
+ *  Helper macro to declare a characteristic attribute along with its
+ *  attribute value.
  *
  *  @param _uuid Characteristic attribute uuid.
  *  @param _props Characteristic attribute properties.
+ *  @param _perm Characteristic Attribute access permissions.
+ *  @param _read Characteristic Attribute read callback.
+ *  @param _write Characteristic Attribute write callback.
+ *  @param _value Characteristic Attribute value.
  */
-#define BT_GATT_CHARACTERISTIC(_uuid, _props)				\
+#define BT_GATT_CHARACTERISTIC(_uuid, _props, _perm, _read, _write, _value) \
 	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CHRC, BT_GATT_PERM_READ,		\
 			  bt_gatt_attr_read_chrc, NULL,			\
 			  (&(struct bt_gatt_chrc) { .uuid = _uuid,	\
-						   .properties = _props, }))
+						   .properties = _props, })), \
+	BT_GATT_ATTRIBUTE(_uuid, _perm, _read, _write, _value)
 
 #define BT_GATT_CCC_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
 

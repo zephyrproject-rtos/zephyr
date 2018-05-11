@@ -566,85 +566,62 @@ static ssize_t write_connectable(struct bt_conn *conn,
 /* Eddystone Configuration Service Declaration */
 static struct bt_gatt_attr eds_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(&eds_uuid),
-	/* Capabilities */
-	BT_GATT_CHARACTERISTIC(&eds_caps_uuid.uuid, BT_GATT_CHRC_READ),
-	/* Readable only when unlocked. Never writable. */
-	BT_GATT_DESCRIPTOR(&eds_caps_uuid.uuid, BT_GATT_PERM_READ,
-			   read_caps, NULL, &eds_caps),
-	/* Active slot */
+	/* Capabilities: Readable only when unlocked. Never writable. */
+	BT_GATT_CHARACTERISTIC(&eds_caps_uuid.uuid, BT_GATT_CHRC_READ,
+			       BT_GATT_PERM_READ, read_caps, NULL, &eds_caps),
+	/* Active slot: Must be unlocked for both read and write. */
 	BT_GATT_CHARACTERISTIC(&eds_slot_uuid.uuid,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
-	/* Must be unlocked for both read and write. */
-	BT_GATT_DESCRIPTOR(&eds_slot_uuid.uuid,
-			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-			   read_slot, write_slot, NULL),
-	/* Advertising Interval */
-	BT_GATT_CHARACTERISTIC(&eds_intv_uuid.uuid, BT_GATT_CHRC_READ),
-	/* Must be unlocked for both read and write. */
-	BT_GATT_DESCRIPTOR(&eds_intv_uuid.uuid, BT_GATT_PERM_READ,
-			   read_interval, NULL, NULL),
-	/* Radio TX Power */
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			       read_slot, write_slot, NULL),
+	/* Advertising Interval: Must be unlocked for both read and write. */
+	BT_GATT_CHARACTERISTIC(&eds_intv_uuid.uuid, BT_GATT_CHRC_READ,
+			       BT_GATT_PERM_READ, read_interval, NULL, NULL),
+	/* Radio TX Power: Must be unlocked for both read and write. */
 	BT_GATT_CHARACTERISTIC(&eds_tx_uuid.uuid,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
-	/* Must be unlocked for both read and write. */
-	BT_GATT_DESCRIPTOR(&eds_tx_uuid.uuid,
-			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-			   read_tx_power, write_tx_power, NULL),
-	/* Advertised TX Power */
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			       read_tx_power, write_tx_power, NULL),
+	/* Advertised TX Power: Must be unlocked for both read and write. */
 	BT_GATT_CHARACTERISTIC(&eds_adv_tx_uuid.uuid,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
-	/* Must be unlocked for both read and write. */
-	BT_GATT_DESCRIPTOR(&eds_adv_tx_uuid.uuid,
-			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-			   read_adv_tx_power, write_adv_tx_power, NULL),
-	/* Lock State */
-	BT_GATT_CHARACTERISTIC(&eds_lock_uuid.uuid,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
-	/* Readable in locked or unlocked state.
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			       read_adv_tx_power, write_adv_tx_power, NULL),
+	/* Lock State:
+	 * Readable in locked or unlocked state.
 	 * Writeable only in unlocked state.
 	 */
-	BT_GATT_DESCRIPTOR(&eds_lock_uuid.uuid,
-			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-			   read_lock, write_lock, NULL),
-	/* Unlock */
-	BT_GATT_CHARACTERISTIC(&eds_unlock_uuid.uuid,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
-	/* Readable only in locked state.
+	BT_GATT_CHARACTERISTIC(&eds_lock_uuid.uuid,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			       read_lock, write_lock, NULL),
+	/* Unlock:
+	 * Readable only in locked state.
 	 * Writeable only in locked state.
 	 */
-	BT_GATT_DESCRIPTOR(&eds_unlock_uuid.uuid,
-			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-			   read_unlock, write_unlock, NULL),
-	/* Public ECDH Key */
-	BT_GATT_CHARACTERISTIC(&eds_ecdh_uuid.uuid, BT_GATT_CHRC_READ),
-	/* Readable only in unlocked state. Never writable. */
-	BT_GATT_DESCRIPTOR(&eds_ecdh_uuid.uuid, BT_GATT_PERM_READ,
-			   read_ecdh, NULL, &eds_ecdh),
-	/* EID Identity Key */
-	BT_GATT_CHARACTERISTIC(&eds_eid_uuid.uuid, BT_GATT_CHRC_READ),
-	/* Readable only in unlocked state. Never writable. */
-	BT_GATT_DESCRIPTOR(&eds_eid_uuid.uuid, BT_GATT_PERM_READ,
-			   read_eid, NULL, eds_eid),
-	/* ADV Slot Data */
+	BT_GATT_CHARACTERISTIC(&eds_unlock_uuid.uuid,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			       read_unlock, write_unlock, NULL),
+	/* Public ECDH Key: Readable only in unlocked state. Never writable. */
+	BT_GATT_CHARACTERISTIC(&eds_ecdh_uuid.uuid, BT_GATT_CHRC_READ,
+			       BT_GATT_PERM_READ, read_ecdh, NULL, &eds_ecdh),
+	/* EID Identity Key:Readable only in unlocked state. Never writable. */
+	BT_GATT_CHARACTERISTIC(&eds_eid_uuid.uuid, BT_GATT_CHRC_READ,
+			       BT_GATT_PERM_READ, read_eid, NULL, eds_eid),
+	/* ADV Slot Data: Must be unlocked for both read and write. */
 	BT_GATT_CHARACTERISTIC(&eds_data_uuid.uuid,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
-	/* Must be unlocked for both read and write. */
-	BT_GATT_DESCRIPTOR(&eds_eid_uuid.uuid,
-			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-			   read_adv_data, write_adv_data, NULL),
-	/* ADV Factory Reset */
-	BT_GATT_CHARACTERISTIC(&eds_reset_uuid.uuid,  BT_GATT_CHRC_WRITE),
-	/* Must be unlocked write. */
-	BT_GATT_DESCRIPTOR(&eds_reset_uuid.uuid,
-			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-			   NULL, write_reset, NULL),
-	/* ADV Remain Connectable */
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			       read_adv_data, write_adv_data, NULL),
+	/* ADV Factory Reset: Must be unlocked for write. */
+	BT_GATT_CHARACTERISTIC(&eds_reset_uuid.uuid,  BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_WRITE, NULL, write_reset, NULL),
+	/* ADV Remain Connectable: Must be unlocked for write. */
 	BT_GATT_CHARACTERISTIC(&eds_connectable_uuid.uuid,
-			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE),
-	/* Must be unlocked for write. */
-	BT_GATT_DESCRIPTOR(&eds_connectable_uuid.uuid,
-			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
-			   read_connectable, write_connectable, NULL),
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			       read_connectable, write_connectable, NULL),
 };
 
 static struct bt_gatt_service eds_svc = BT_GATT_SERVICE(eds_attrs);
