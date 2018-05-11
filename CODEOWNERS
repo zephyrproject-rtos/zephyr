@@ -141,8 +141,8 @@ include/linker/linker-tool.h             @andrewboie @andyross
 include/linker/section_tags.h            @andrewboie @andyross
 include/linker/sections.h                @andrewboie @andyross
 include/misc/*                           @andrewboie @andyross
-include/net/*                            @jukkar @tbursztyka
-include/net/buf.h                        @jukkar @jhedberg @tbursztyka
+include/net/*                            @jukkar @tbursztyka @pfalcon
+include/net/buf.h                        @jukkar @jhedberg @tbursztyka @pfalcon
 include/power.h                          @ramakrishnapallala @nashif
 include/sensor.h                         @bogdan-davidoaia
 include/shared_irq.h                     @andrewboie @andyross
@@ -159,8 +159,8 @@ kernel/device.c                          @ramakrishnapallala @nashif
 kernel/idle.c                            @ramakrishnapallala @nashif
 samples/bluetooth/*                      @sjanc @jhedberg @Vudentz
 samples/boards/quark_se_c1000/power*/*   @ramakrishnapallala @nashif
-samples/net/*                            @jukkar @tbursztyka
-samples/net/dns_resolve/*                @jukkar @tbursztyka
+samples/net/*                            @jukkar @tbursztyka @pfalcon
+samples/net/dns_resolve/*                @jukkar @tbursztyka @pfalcon
 samples/net/http_server/*                @jukkar @tbursztyka
 samples/net/lwm2m_client/*               @mike-scott
 samples/net/mbedtls_sslclient/*          @jukkar
@@ -177,10 +177,10 @@ scripts/support/runner/*                 @mbolivar
 subsys/bluetooth/*                       @sjanc @jhedberg @Vudentz
 subsys/bluetooth/controller/*            @carlescufi @cvinayak
 subsys/fs/*                              @nashif
-subsys/net/buf.c                         @jukkar @jhedberg @tbursztyka
-subsys/net/ip/*                          @jukkar @tbursztyka
-subsys/net/lib/*                         @jukkar @tbursztyka
-subsys/net/lib/dns/*                     @jukkar @tbursztyka
+subsys/net/buf.c                         @jukkar @jhedberg @tbursztyka @pfalcon
+subsys/net/ip/*                          @jukkar @tbursztyka @pfalcon
+subsys/net/lib/*                         @jukkar @tbursztyka @pfalcon
+subsys/net/lib/dns/*                     @jukkar @tbursztyka @pfalcon
 subsys/net/lib/http/*                    @jukkar @tbursztyka
 subsys/net/lib/lwm2m/*                   @mike-scott
 subsys/net/lib/mqtt/*                    @jukkar @tbursztyka
@@ -193,9 +193,9 @@ tests/crypto/*                           @lpereira @pswarnak
 tests/crypto/mbedtls/*                   @nashif @lpereira
 tests/drivers/spi/*                      @tbursztyka
 tests/kernel/*                           @andrewboie @andyross @spoorthik @pswarnak @nniranjhana
-tests/net/*                              @jukkar @tbursztyka @tarunkum
-tests/net/buf/*                          @jukkar @jhedberg @tbursztyka
-tests/net/lib/*                          @jukkar @tbursztyka
+tests/net/*                              @jukkar @tbursztyka @tarunkum @pfalcon
+tests/net/buf/*                          @jukkar @jhedberg @tbursztyka @pfalcon
+tests/net/lib/*                          @jukkar @tbursztyka @pfalcon
 tests/net/lib/http_header_fields/*       @jukkar @tbursztyka
 tests/net/lib/mqtt_packet/*              @jukkar @tbursztyka
 tests/net/lib/coap/*                     @rveerama1
