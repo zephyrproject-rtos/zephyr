@@ -38,11 +38,13 @@ static int lsm6dsl_freq_to_odr_val(u16_t freq)
 
 static int lsm6dsl_odr_to_freq_val(u16_t odr)
 {
-	if (odr > ARRAY_SIZE(lsm6dsl_odr_map)) {
-		odr = ARRAY_SIZE(lsm6dsl_odr_map);
+	/* for valid index, return value from map */
+	if (odr < ARRAY_SIZE(lsm6dsl_odr_map)) {
+		return lsm6dsl_odr_map[odr];
 	}
 
-	return lsm6dsl_odr_map[odr];
+	/* invalid index, return last entry */
+	return lsm6dsl_odr_map[ARRAY_SIZE(lsm6dsl_odr_map) - 1];
 }
 
 #ifdef LSM6DSL_ACCEL_FS_RUNTIME
