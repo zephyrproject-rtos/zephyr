@@ -223,7 +223,9 @@ static int seq_set(int argc, char **argv, char *val)
 		 * subtract 1 so that the first transmission causes a write
 		 * to the settings storage.
 		 */
-		bt_mesh.seq += CONFIG_BT_MESH_SEQ_STORE_RATE - 1;
+		bt_mesh.seq += (CONFIG_BT_MESH_SEQ_STORE_RATE -
+				(bt_mesh.seq % CONFIG_BT_MESH_SEQ_STORE_RATE));
+		bt_mesh.seq--;
 	}
 
 	BT_DBG("Sequence Number 0x%06x", bt_mesh.seq);
