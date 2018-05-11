@@ -51,7 +51,7 @@ void *thread_top(void *p1)
 void test_pthread_cancel(void)
 {
 	s32_t i, ret;
-	pthread_attr_t attr[N_THR];
+	pthread_attr_t attr[N_THR] = {0};
 	struct sched_param schedparam;
 	pthread_t newthread[N_THR];
 	void *retval;

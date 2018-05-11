@@ -23,7 +23,7 @@ void *thread_top(void *p1)
 void test_pthread_equal(void)
 {
 	int ret = -1;
-	pthread_attr_t attr;
+	pthread_attr_t attr = {0};
 	struct sched_param schedparam;
 	pthread_t newthread;
 

@@ -175,7 +175,7 @@ int barrier_test_done(void)
 void test_pthread(void)
 {
 	int i, ret, min_prio, max_prio;
-	pthread_attr_t attr[N_THR];
+	pthread_attr_t attr[N_THR] = {0};
 	struct sched_param schedparam;
 	pthread_t newthread[N_THR];
 	int schedpolicy = SCHED_FIFO;
