@@ -25,7 +25,7 @@ void handler(union sigval val)
 void test_timer(void)
 {
 	int ret;
-	struct sigevent sig;
+	struct sigevent sig = {0};
 	timer_t timerid;
 	struct itimerspec value, ovalue;
 	struct timespec ts, te;
@@ -34,7 +34,6 @@ void test_timer(void)
 	sig.sigev_notify = SIGEV_SIGNAL;
 	sig.sigev_notify_function = handler;
 	sig.sigev_value.sival_int = 20;
-	sig.sigev_notify_attributes = NULL;
 
 	printk("POSIX timer test\n");
 	ret = timer_create(CLOCK_MONOTONIC, &sig, &timerid);
