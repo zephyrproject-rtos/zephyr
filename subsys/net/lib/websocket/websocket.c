@@ -344,6 +344,11 @@ static bool check_ws_headers(struct http_ctx *ctx, struct http_parser *parser,
 static struct net_pkt *prepare_reply(struct http_ctx *ctx,
 				     int ws_sec_key, int host, int subprotocol)
 {
+	static const char basic_reply_headers[] =
+		"HTTP/1.1 101 OK\r\n"
+		"Upgrade: websocket\r\n"
+		"Connection: Upgrade\r\n"
+		"Sec-WebSocket-Accept: ";
 	char key_accept[32 + sizeof(WS_MAGIC)];
 	char accept[20];
 	struct net_pkt *pkt;
@@ -358,23 +363,8 @@ static struct net_pkt *prepare_reply(struct http_ctx *ctx,
 		return NULL;
 	}
 
-	snprintk(tmp, sizeof(tmp), "HTTP/1.1 101 OK\r\n");
-	if (!net_pkt_append_all(pkt, strlen(tmp), (u8_t *)tmp, ctx->timeout)) {
-		goto fail;
-	}
-
-	snprintk(tmp, sizeof(tmp), "User-Agent: %s\r\n", ZEPHYR_USER_AGENT);
-	if (!net_pkt_append_all(pkt, strlen(tmp), (u8_t *)tmp, ctx->timeout)) {
-		goto fail;
-	}
-
-	snprintk(tmp, sizeof(tmp), "Upgrade: websocket\r\n");
-	if (!net_pkt_append_all(pkt, strlen(tmp), (u8_t *)tmp, ctx->timeout)) {
-		goto fail;
-	}
-
-	snprintk(tmp, sizeof(tmp), "Connection: Upgrade\r\n");
-	if (!net_pkt_append_all(pkt, strlen(tmp), (u8_t *)tmp, ctx->timeout)) {
+	if (!net_pkt_append_all(pkt, sizeof(basic_reply_headers) - 1,
+				(u8_t *)basic_reply_headers, ctx->timeout)) {
 		goto fail;
 	}
 
@@ -393,12 +383,8 @@ static struct net_pkt *prepare_reply(struct http_ctx *ctx,
 
 	mbedtls_sha1(key_accept, olen, accept);
 
-	snprintk(tmp, sizeof(tmp), "Sec-WebSocket-Accept: ");
-
-	ret = base64_encode(tmp + sizeof("Sec-WebSocket-Accept: ") - 1,
-			    sizeof(tmp) -
-			    (sizeof("Sec-WebSocket-Accept: ") - 1),
-			    &olen, accept, sizeof(accept));
+	ret = base64_encode(tmp, sizeof(tmp) - 1, &olen, accept,
+			    sizeof(accept));
 	if (ret) {
 		if (ret == -ENOMEM) {
 			NET_DBG("[%p] Too short buffer olen %zd", ctx, olen);
@@ -406,12 +392,16 @@ static struct net_pkt *prepare_reply(struct http_ctx *ctx,
 
 		goto fail;
 	}
+	if (!net_pkt_append_all(pkt, olen, (u8_t *)tmp, ctx->timeout)) {
+		goto fail;
+	}
 
-	snprintk(tmp + sizeof("Sec-WebSocket-Accept: ") - 1 + olen,
-		 sizeof(tmp) - (sizeof("Sec-WebSocket-Accept: ") - 1) - olen,
-		 "\r\n\r\n");
-
-	if (!net_pkt_append_all(pkt, strlen(tmp), (u8_t *)tmp, ctx->timeout)) {
+	ret = snprintk(tmp, sizeof(tmp), "User-Agent: %s\r\n\r\n",
+		       ZEPHYR_USER_AGENT);
+	if (ret < 0 || ret >= sizeof(tmp)) {
+		goto fail;
+	}
+	if (!net_pkt_append_all(pkt, ret, (u8_t *)tmp, ctx->timeout)) {
 		goto fail;
 	}
 
