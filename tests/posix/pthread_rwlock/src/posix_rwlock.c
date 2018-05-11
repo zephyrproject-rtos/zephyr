@@ -81,7 +81,10 @@ static void test_rw_lock(void)
 	/* Creating N premptive threads in increasing order of priority */
 	for (i = 0; i < N_THR; i++) {
 		pthread_attr_destroy(&attr[i]);
-		pthread_attr_init(&attr[i]);
+		if (pthread_attr_init(&attr[i]) != 0) {
+			zassert_false(pthread_attr_init(&attr[i]),
+                                      "pthread attr init failed\n");
+		}
 
 		/* Setting scheduling priority */
 		schedparam.priority = i + 1;
