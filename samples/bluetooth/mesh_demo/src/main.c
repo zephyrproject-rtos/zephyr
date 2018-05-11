@@ -8,6 +8,8 @@
 
 #include <misc/printk.h>
 
+#include <settings/settings.h>
+
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>
 
@@ -37,7 +39,6 @@ static const u16_t app_idx;
 static const u32_t iv_index;
 static u8_t flags;
 static u16_t addr = NODE_ADDR;
-static u32_t seq;
 
 static void heartbeat(u8_t hops, u16_t feat)
 {
@@ -162,19 +163,7 @@ static void configure(void)
 		bt_mesh_cfg_hb_pub_set(net_idx, addr, &pub, NULL);
 		printk("Publishing heartbeat messages\n");
 	}
-#else
-	{
-		struct bt_mesh_cfg_hb_sub sub = {
-			.src = PUBLISHER_ADDR,
-			.dst = GROUP_ADDR,
-			.period = 0x10,
-		};
-
-		bt_mesh_cfg_hb_sub_set(net_idx, addr, &sub, NULL);
-		printk("Subscribing to heartbeat messages\n");
-	}
 #endif
-
 	printk("Configuration complete\n");
 
 	board_play("100C100D100E100F100G100A100H");
@@ -203,16 +192,40 @@ static void bt_ready(int err)
 
 	printk("Mesh initialized\n");
 
-	err = bt_mesh_provision(net_key, net_idx, flags, iv_index, seq, addr,
-				dev_key);
-	if (err) {
-		printk("Provisioning failed (err %d)\n", err);
-		return;
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		printk("Loading stored settings\n");
+		settings_load();
 	}
 
-	printk("Provisioning completed\n");
+	err = bt_mesh_provision(net_key, net_idx, flags, iv_index, 0, addr,
+				dev_key);
+	if (err == -EALREADY) {
+		printk("Using stored settings\n");
+	} else if (err) {
+		printk("Provisioning failed (err %d)\n", err);
+		return;
+	} else {
+		printk("Provisioning completed\n");
+		configure();
+	}
 
-	configure();
+#if NODE_ADDR != PUBLISHER_ADDR
+	/* Heartbeat subcscription is a temporary state (due to there
+	 * not being an "indefinite" value for the period, so it never
+	 * gets stored persistently. Therefore, we always have to configure
+	 * it explicitly.
+	 */
+	{
+		struct bt_mesh_cfg_hb_sub sub = {
+			.src = PUBLISHER_ADDR,
+			.dst = GROUP_ADDR,
+			.period = 0x10,
+		};
+
+		bt_mesh_cfg_hb_sub_set(net_idx, addr, &sub, NULL);
+		printk("Subscribing to heartbeat messages\n");
+	}
+#endif
 }
 
 static u16_t target = GROUP_ADDR;
@@ -269,9 +282,9 @@ void main(void)
 
 	printk("Initializing...\n");
 
-	board_init(&addr, &seq);
+	board_init(&addr);
 
-	printk("Unicast address: 0x%04x, seq 0x%06x\n", addr, seq);
+	printk("Unicast address: 0x%04x\n", addr);
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);
