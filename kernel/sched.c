@@ -52,6 +52,16 @@ static inline int _is_preempt(struct k_thread *thread)
 #endif
 }
 
+static inline int is_metairq(struct k_thread *thread)
+{
+#if CONFIG_NUM_METAIRQ_PRIORITIES > 0
+	return (thread->base.prio - K_HIGHEST_THREAD_PRIO)
+		< CONFIG_NUM_METAIRQ_PRIORITIES;
+#else
+	return 0;
+#endif
+}
+
 static inline int _is_thread_dummy(struct k_thread *thread)
 {
 	return !!(thread->base.thread_state & _THREAD_DUMMY);
@@ -90,6 +100,7 @@ static struct k_thread *next_up(void)
 
 	return th ? th : _current_cpu->idle_thread;
 #else
+
 	/* Under SMP, the "cache" mechanism for selecting the next
 	 * thread doesn't work, so we have more work to do to test
 	 * _current against the best choice from the queue.
@@ -108,7 +119,8 @@ static struct k_thread *next_up(void)
 	 * queue and something better is available (c.f. timeslicing,
 	 * yield)
 	 */
-	if (active && !queued && !_is_t1_higher_prio_than_t2(th, _current)) {
+	if (active && !queued && !_is_t1_higher_prio_than_t2(th, _current)
+	    && !is_metairq(th))	{
 		th = _current;
 	}
 
@@ -135,7 +147,7 @@ static void update_cache(int preempt_ok)
 		/* Don't preempt cooperative threads unless the caller allows
 		 * it (i.e. k_yield())
 		 */
-		if (!preempt_ok && !_is_preempt(_current)) {
+		if (!preempt_ok && !_is_preempt(_current) && !is_metairq(th)) {
 			th = _current;
 		}
 	}
