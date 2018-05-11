@@ -678,6 +678,7 @@ static void recv_cb_offload_disabled(struct net_context *context,
 
 	udp_hdr = net_udp_get_hdr(pkt, &hdr);
 
+	zassert_not_null(udp_hdr, "UDP header missing");
 	zassert_not_equal(udp_hdr->chksum, 0, "Checksum is not set\n");
 
 	if (net_pkt_family(pkt) == AF_INET) {
@@ -701,6 +702,7 @@ static void recv_cb_offload_enabled(struct net_context *context,
 
 	udp_hdr = net_udp_get_hdr(pkt, &hdr);
 
+	zassert_not_null(udp_hdr, "UDP header missing");
 	zassert_equal(udp_hdr->chksum, 0, "Checksum is set\n");
 
 	if (net_pkt_family(pkt) == AF_INET) {
