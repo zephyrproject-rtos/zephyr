@@ -56,11 +56,13 @@
 #include <logging/sys_log.h>
 
 /*
- * USB LL API provides the EP_TYPE_* defines. STM32Cube does
- * not provide USB LL API for STM32F0 and STM32F3 families.
+ * USB LL API provides the EP_TYPE_* defines. STM32Cube does not
+ * provide USB LL API for STM32F0, STM32F3 and STM32L0 families.
  * Map EP_TYPE_* defines to PCD_EP_TYPE_* defines
  */
-#if defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32F0X)
+#if defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X)
 #define EP_TYPE_CTRL PCD_EP_TYPE_CTRL
 #define EP_TYPE_ISOC PCD_EP_TYPE_ISOC
 #define EP_TYPE_BULK PCD_EP_TYPE_BULK
