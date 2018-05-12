@@ -150,12 +150,6 @@ struct bt_dev {
 	struct k_fifo		rx_queue;
 #endif
 
-	/* Queue for high priority HCI events which may unlock waiters
-	 * in other threads. Such events include Number of Completed
-	 * Packets, as well as the Command Complete/Status events.
-	 */
-	struct k_fifo		rx_prio_queue;
-
 	/* Queue for outgoing HCI commands */
 	struct k_fifo		cmd_tx_queue;
 
