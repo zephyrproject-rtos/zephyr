@@ -29,11 +29,11 @@
 #endif
 
 /* change to use another GPIO pin interrupt config */
-#ifdef SW0_GPIO_INT_CONF
-#define EDGE    SW0_GPIO_INT_CONF
+#ifdef SW0_GPIO_FLAGS
+#define EDGE    SW0_GPIO_FLAGS
 #else
 /*
- * If SW0_GPIO_INT_CONF not defined used default EDGE value.
+ * If SW0_GPIO_FLAGS not defined used default EDGE value.
  * Change this to use a different interrupt trigger
  */
 #define EDGE    (GPIO_INT_EDGE | GPIO_INT_ACTIVE_LOW)
