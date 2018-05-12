@@ -10,23 +10,10 @@
  * @brief System/hardware module for STM32F4 processor
  */
 
-#include <kernel.h>
 #include <device.h>
 #include <init.h>
-#include <soc.h>
 #include <arch/cpu.h>
 #include <cortex_m/exc.h>
-
-/**
- * @brief This function configures the source of stm32cube time base.
- *        Cube HAL expects a 1ms tick which matches with k_uptime_get_32.
- *        Tick interrupt priority is not used
- * @return HAL status
- */
-uint32_t HAL_GetTick(void)
-{
-	return k_uptime_get_32();
-}
 
 /**
  * @brief Perform basic hardware initialization at boot.
