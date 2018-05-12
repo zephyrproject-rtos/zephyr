@@ -37,7 +37,7 @@ config USB_DC_STM32
 	select HAS_DTS_USB
 	default n
 	help
-	  Enable USB support on the STM32 F0, F1, F3, F4 and L4 family of
+	  Enable USB support on the STM32 F0, F1, F3, F4, L0 and L4 family of
 	  processors.
 
 config USB_DC_SAM0
