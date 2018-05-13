@@ -4,22 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_mslab
- * @{
- * @defgroup t_mslab_api test_mslab_api
- * @brief TestPurpose: verify memory slab APIs.
- * @details All TESTPOINTs extracted from kernel-doc comments in <kernel.h>
- * - API coverage
- *   - K_MEM_SLAB_DEFINE
- *   - k_mem_slab_init
- *   - k_mem_slab_alloc
- *   - k_mem_slab_free
- *   - k_mem_slab_num_used_get
- *   - k_mem_slab_num_free_get
- * @}
- */
-
 #include <ztest.h>
 #include "test_mslab.h"
 

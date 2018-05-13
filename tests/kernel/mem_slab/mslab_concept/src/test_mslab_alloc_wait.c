@@ -4,28 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_mslab
- * @{
- * @defgroup t_mslab_concept test_mslab_concept
- * @brief TestPurpose: verify memory slab concepts.
- * @details All TESTPOINTs extracted from kernel documentation.
- * TESTPOINTs cover testable kernel behaviors that preserve across internal
- * implementation change or kernel version change.
- * As a black-box test, TESTPOINTs do not cover internal operations.
- *
- * TESTPOINTs duplicated to <kernel.h> are covered in API test:
- * - TESTPOINT: ensure that all memory blocks in the buffer are similarly
- * aligned to this boundary
- * - TESTPOINT: A memory slab must be initialized before it can be used. This
- * marks all of its blocks as unused.
- *
- * TESTPOINTS related to multiple instances are covered in re-entrance test:
- * - TESTPOINT: Unlike a heap, more than one memory slab can be defined, if
- * needed.
- * @}
- */
-
 #include <ztest.h>
 #include "test_mslab.h"
 

@@ -4,15 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_kernel_threads
- * @{
- * @defgroup t_threads_scheduling test_threads_scheduling
- * @brief TestPurpose: verify threads scheduling based on priority, time
- * slice and lock/unlock
- * @}
- */
-
 #include "test_sched.h"
 
 /*test case main entry*/

@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_threads_lifecycle
- * @{
- * @defgroup t_threads_spawn test_thread_spawn
- * @brief TestPurpose: verify basic thread spawn relevant apis
- * @}
- */
 
 #include <ztest.h>
 

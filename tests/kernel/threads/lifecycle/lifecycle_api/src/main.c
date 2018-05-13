@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_threads_lifecycle
- * @{
- * @defgroup t_threads_lifecycle_api test_threads_lifecycle_api
- * @brief TestPurpose: verify zephyr basic threads lifecycle apis
- * @}
- */
-
 #include <ztest.h>
 extern void test_threads_spawn_params(void);
 extern void test_threads_spawn_priority(void);

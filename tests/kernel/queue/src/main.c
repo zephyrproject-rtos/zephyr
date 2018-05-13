@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_queue
- * @{
- * @defgroup t_queue_api test_queue_api
- * @}
- */
-
 #include <ztest.h>
 #include "test_queue.h"
 

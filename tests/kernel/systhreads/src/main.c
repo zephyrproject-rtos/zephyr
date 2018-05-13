@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_kernel_threads
- * @{
- * @defgroup t_systhreads test_systhreads
- * @brief TestPurpose: verify 2 system threads - main thread and idle thread
- * @}
- */
 
 #include <ztest.h>
 static int main_prio;

@@ -4,28 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_lifo_api
- * @{
- * @defgroup t_lifo_loop test_lifo_loop
- * @brief TestPurpose: verify zephyr lifo continuous read write
- *                     in loop
- * @details
- * - Test Steps
- *   -# lifo put from main thread
- *   -# lifo read from isr
- *   -# lifo put from isr
- *   -# lifo get from spawn thread
- *   -# loop above steps for LOOPs times
- * - Expected Results
- *   -# lifo data pass correctly and stably across contexts
- * - API coverage
- *   -# k_lifo_init
- *   -# k_lifo_put
- *   -# k_lifo_get
- * @}
- */
-
 #include "test_lifo.h"
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)

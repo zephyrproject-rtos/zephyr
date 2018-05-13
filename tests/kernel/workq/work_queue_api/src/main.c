@@ -5,26 +5,6 @@
  */
 
 
-/**
- * @addtogroup t_workq
- * @{
- * @defgroup t_workq_api test_workq_api
- * @brief TestPurpose: verify work queue API functionalities
- * - API coverage
- *   -# k_work_init
- *   -# k_delayed_work_init
- *   -# k_work_q_start
- *   -# k_work_submit_to_queue
- *   -# k_work_submit
- *   -# k_delayed_work_submit_to_queue
- *   -# k_delayed_work_submit
- *   -# k_delayed_work_cancel
- *   -# k_delayed_work_remaining_get
- *   -# k_work_pending
- *   -#
- * @}
- */
-
 #include <ztest.h>
 #include <irq_offload.h>
 

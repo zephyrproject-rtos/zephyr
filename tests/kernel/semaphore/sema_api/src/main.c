@@ -4,18 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_sema_api
- * @{
- * @defgroup t_sema_api_basic test_sema_api_basic
- * @brief TestPurpose: verify zephyr sema apis across different context
- * - API coverage
- *   -# k_sem_init K_SEMA_DEFINE
- *   -# k_sem_take k_sema_give k_sema_reset
- *   -# k_sem_count_get
- * @}
- */
-
 #include <ztest.h>
 #include <irq_offload.h>
 

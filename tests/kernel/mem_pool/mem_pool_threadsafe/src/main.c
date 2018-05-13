@@ -4,35 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
-/**
- * @addtogroup t_mpool
- * @{
- * @defgroup t_mpool_threadsafe test_mpool_threadsafe
- * @brief TestPurpose: verify API thread safe in multi-threads environment.
- * @details This is an extensive test. Multiple threads in same priority are
- * created, with time slice scheduling enabled in a very small slicing size:
- * 1 millisecond (refer to prj.conf).
- * All threads share a same entry function to invoke same kernel APIs.
- * Unless explicitly stated, kernel APIs are supposed to be thread safe.
- * Expect all threads should complete and exit the entry function normally.
- *
- * NOTE:
- * # API functionality is not TESTPOINT here. When invoked by multiple
- * threads, each API following its own behavior specification returns either
- * success or failure. Like, memory allocation successful or fail is pending on
- * whether any free memory blocks are available at the moment when the API is
- * invoked by a thread just got scheduled in.
- * # For kernel object APIs, more than one instance of the same object type are
- * created. Like, 4 threads operating on 2 instances, the test would cover the
- * kernel's code branches that handling "multiple threads accessing to a same
- * instance" and that handling "multiple instances serving simultaneously".
- * # The test adopts a slicing size in 1 millisecond. Thread safe theoretically
- * should work in a smaller slicing size. But this does not intent to stress
- * test that.
- * @}
- */
-
 #include <ztest.h>
 #include <atomic.h>
 #define THREAD_NUM 4

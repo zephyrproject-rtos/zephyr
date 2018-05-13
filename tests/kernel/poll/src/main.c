@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_poll
- * @{
- * @defgroup t_poll_api test_poll_api
- * @}
- */
-
 #include <ztest.h>
 extern void test_poll_no_wait(void);
 extern void test_poll_wait(void);

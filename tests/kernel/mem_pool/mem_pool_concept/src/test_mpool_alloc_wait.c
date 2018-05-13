@@ -4,38 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_mpool
- * @{
- * @defgroup t_mpool_concept test_mpool_concept
- * @brief TestPurpose: verify memory pool concepts.
- * @details All TESTPOINTs extracted from kernel documentation.
- * TESTPOINTs cover testable kernel behaviors that preserve across internal
- * implementation change or kernel version change.
- * As a black-box test, TESTPOINTs do not cover internal operations.
- *
- * TESTPOINTs duplicated to <kernel.h> are covered in API test:
- * - TESTPOINT: ensure that all memory blocks in the buffer are similarly
- * aligned to this boundary
- * - TESTPOINT: Following a successful allocation, the data field of the block
- * descriptor supplied by the thread indicates the starting address of the
- * memory block
- * - TESTPOINT: memory pool blocks can be recursively partitioned into quarters
- * until blocks of the minimum size are obtained
- * - TESTPOINT: if a suitable block can't be created, the allocation request
- * fails
- *
- * TESTPOINTs related to kconfig are covered in kconfig test:
- * - TESTPOINT: If the block set does not contain a free block, the memory pool
- * attempts to create one automatically by splitting a free block of a larger
- * size or by merging free blocks of smaller sizes
- *
- * TESTPOINTS related to multiple instances are covered in re-entrance test:
- * - TESTPOINT: More than one memory pool can be defined, if needed. For
- * example, different applications can utilize different memory pools
- * @}
- */
-
 #include <ztest.h>
 #include "test_mpool.h"
 

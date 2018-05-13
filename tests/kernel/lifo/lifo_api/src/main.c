@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_lifo
- * @{
- * @defgroup t_lifo_api test_lifo_api
- * @}
- */
-
 #include <ztest.h>
 extern void test_lifo_thread2thread(void);
 extern void test_lifo_thread2isr(void);

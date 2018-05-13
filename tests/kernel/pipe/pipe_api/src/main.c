@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_pipe
- * @{
- * @defgroup t_pipe_api test_pipe_api
- * @}
- */
-
 #include <ztest.h>
 extern void test_pipe_thread2thread(void);
 

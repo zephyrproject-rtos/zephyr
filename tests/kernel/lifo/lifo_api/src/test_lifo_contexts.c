@@ -4,19 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_lifo_api
- * @{
- * @defgroup t_lifo_api_basic test_lifo_api_basic
- * @brief TestPurpose: verify zephyr lifo apis under different context
- * - API coverage
- *   -# k_lifo_init K_LIFO_DEFINE
- *   -# k_lifo_put
- *   -# k_lifo_get
- * @}
- */
-
-
 #include "test_lifo.h"
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)

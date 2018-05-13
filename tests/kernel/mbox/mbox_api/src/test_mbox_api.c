@@ -4,22 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_mbox
- * @{
- * @defgroup t_mbox_api test_mbox_api
- * @brief TestPurpose: verify data passing via mailbox APIs
- * - API coverage
- *   -# K_MBOX_DEFINE
- *   -# k_mbox_init
- *   -# k_mbox_put
- *   -# k_mbox_async_put
- *   -# k_mbox_get
- *   -# k_mbox_data_get
- *   -# k_mbox_data_block_get
- * @}
- */
-
 #include <ztest.h>
 
 #define TIMEOUT 100

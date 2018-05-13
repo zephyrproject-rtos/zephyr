@@ -4,16 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_tickless
- * @{
- * @defgroup t_tickless_concept test_tickless_concept
- * @brief TestPurpose: verify tickless idle concepts
- * @details
-https://www.zephyrproject.org/doc/subsystems/power_management.html#tickless-idle
- * @}
- */
-
 #include <ztest.h>
 #include <power.h>
 
