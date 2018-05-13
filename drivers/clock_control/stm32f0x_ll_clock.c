@@ -69,7 +69,10 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
  */
 void config_enable_default_clocks(void)
 {
-	/* Nothing for now */
+#if defined(CONFIG_EXTI_STM32) || defined(CONFIG_USB_DC_STM32)
+	/* Enable System Configuration Controller clock. */
+	LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
+#endif
 }
 
 /**
