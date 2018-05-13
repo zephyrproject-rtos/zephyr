@@ -126,6 +126,8 @@ Default Zephyr Peripheral Mapping:
 - UART_2_RX : PA3
 - UART_3_TX : PB10
 - UART_3_RX : PB11
+- UART_11_TX : PG7
+- UART_11_RX : PG8
 - I2C_1_SCL : PB6
 - I2C_1_SDA : PB7
 - SPI_1_NSS : PA4
@@ -142,20 +144,20 @@ Default Zephyr Peripheral Mapping:
 - SPI_3_MOSI : PC12
 - PWM_2_CH1 : PA0
 - USER_PB : PC13
-- LD2 : PA5
+- LD1 : PB7
+- LD2 : PC7
 
 System Clock
 ------------
 
 Nucleo L4R5ZI System Clock could be driven by internal or external oscillator,
-as well as main PLL clock. By default System clock is driven by PLL clock at 80MHz,
+as well as main PLL clock. By default System clock is driven by PLL clock at 32Mhz,
 driven by 16MHz high speed internal oscillator.
 
 Serial Port
 -----------
 
-Nucleo L4R5ZI board has 6 U(S)ARTs. The Zephyr console output is assigned to UART2.
-Default settings are 115200 8N1.
+The Zephyr console output is assigned to UART11. Default settings are 115200 8N1.
 
 
 
