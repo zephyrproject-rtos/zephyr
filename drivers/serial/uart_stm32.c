@@ -283,15 +283,35 @@ static int uart_stm32_init(struct device *dev)
 			       (clock_control_subsys_t *)&config->pclken,
 			       &clock_rate);
 
-	LL_USART_SetBaudRate(UartInstance,
-			     clock_rate,
+
+/* Check if LPUART defines exists, if not stub them out */
+#ifndef IS_LPUART_INSTANCE
+#define IS_LPUART_INSTANCE(INSTANCE) false
+
 #ifdef USART_PRESC_PRESCALER
-			     LL_USART_PRESCALER_DIV1,
+#define LL_LPUART_SetBaudRate(A, B, C, D)
+#else
+#define LL_LPUART_SetBaudRate(A, B, C)
+#endif
+
+#endif
+
+	if (IS_LPUART_INSTANCE(UartInstance)) {
+		LL_LPUART_SetBaudRate(UartInstance, clock_rate,
+#ifdef USART_PRESC_PRESCALER
+				LL_USART_PRESCALER_DIV1,
+#endif
+				data->huart.Init.BaudRate);
+	} else {
+		LL_USART_SetBaudRate(UartInstance, clock_rate,
+#ifdef USART_PRESC_PRESCALER
+				LL_USART_PRESCALER_DIV1,
 #endif
 #ifdef USART_CR1_OVER8
-			     LL_USART_OVERSAMPLING_16,
+				LL_USART_OVERSAMPLING_16,
 #endif
-			     data->huart.Init.BaudRate);
+				data->huart.Init.BaudRate);
+	}
 
 	LL_USART_Enable(UartInstance);
 
@@ -458,5 +478,9 @@ UART_DEVICE_INIT_STM32(9, STM32_CLOCK_BUS_APB2, LL_APB2_GRP1_PERIPH_UART9)
 #ifdef CONFIG_UART_STM32_PORT_10
 UART_DEVICE_INIT_STM32(10, STM32_CLOCK_BUS_APB2, LL_APB2_GRP1_PERIPH_UART10)
 #endif /* CONFIG_UART_STM32_PORT_10 */
+
+#ifdef CONFIG_UART_STM32_PORT_11
+UART_DEVICE_INIT_STM32(11, STM32_CLOCK_BUS_APB1_2, LL_APB1_GRP2_PERIPH_LPUART1)
+#endif	/* CONFIG_UART_STM32_PORT_11 */
 
 #endif

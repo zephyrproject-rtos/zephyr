@@ -57,6 +57,12 @@
 					tx = <STM32_PIN_PB10 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
 				};
 			};
+			lpuart1_pins_a: lpuart1@0 {
+				rx_tx {
+					rx = <STM32_PIN_PG8 (STM32_PINMUX_ALT_FUNC_8 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PG7 (STM32_PINMUX_ALT_FUNC_8 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
 		};
 	};
 };
