@@ -219,6 +219,23 @@ static int usb_dc_stm32_clock_enable(void)
 	 * STM32F030x4/x6/x8/xC and STM32F070x6/xB.
 	 */
 #if defined(RCC_HSI48_SUPPORT)
+
+	/*
+	 * In STM32L0 series, HSI48 requires VREFINT and its buffer
+	 * with 48 MHz RC to be enabled.
+	 * See ENREF_HSI48 in referenc maual RM0367 section10.2.3:
+	 * "Reference control and status register (SYSCFG_CFGR3)"
+	 */
+#ifdef CONFIG_SOC_SERIES_STM32L0X
+	if (LL_APB2_GRP1_IsEnabledClock(LL_APB2_GRP1_PERIPH_SYSCFG)) {
+		LL_SYSCFG_VREFINT_EnableHSI48();
+	} else {
+		SYS_LOG_ERR("System Configuration Controller clock is "
+			    "disabled. Unable to enable VREFINT which "
+			    "is required by HSI48.");
+	}
+#endif /* CONFIG_SOC_SERIES_STM32L0X */
+
 	LL_RCC_HSI48_Enable();
 	while (!LL_RCC_HSI48_IsReady()) {
 		/* Wait for HSI48 to become ready */
