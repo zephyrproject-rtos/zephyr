@@ -336,7 +336,12 @@ int usb_dc_attach(void)
 	 * pair PA11/12 mapped instead of PA9/10 (e.g. stm32f070x6)
 	 */
 #if defined(CONFIG_SOC_SERIES_STM32F0X) && defined(SYSCFG_CFGR1_PA11_PA12_RMP)
-	LL_SYSCFG_EnablePinRemap();
+	if (LL_APB1_GRP2_IsEnabledClock(LL_APB1_GRP2_PERIPH_SYSCFG)) {
+		LL_SYSCFG_EnablePinRemap();
+	} else {
+		SYS_LOG_ERR("System Configuration Controller clock is "
+			    "disable. Unable to enable pin remapping."
+	}
 #endif
 
 	ret = usb_dc_stm32_clock_enable();
