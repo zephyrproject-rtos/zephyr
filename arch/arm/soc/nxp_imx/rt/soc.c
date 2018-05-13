@@ -131,7 +131,9 @@ static int imxrt_init(struct device *arg)
 	}
 
 	SCB_EnableICache();
-	SCB_EnableDCache();
+	if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
+		SCB_EnableDCache();
+	}
 
 	_ClearFaults();
 
