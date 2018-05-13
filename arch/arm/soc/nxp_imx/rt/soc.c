@@ -58,6 +58,11 @@ static ALWAYS_INLINE void clkInit(void)
 	/* Setting the VDD_SOC to 1.5V. It is necessary to config AHB to 600Mhz
 	 */
 	DCDC->REG3 = (DCDC->REG3 & (~DCDC_REG3_TRG_MASK)) | DCDC_REG3_TRG(0x12);
+	/* Waiting for DCDC_STS_DC_OK bit is asserted */
+	while (DCDC_REG0_STS_DC_OK_MASK !=
+			(DCDC_REG0_STS_DC_OK_MASK & DCDC->REG0)) {
+		;
+	}
 
 #ifdef CONFIG_INIT_ARM_PLL
 	CLOCK_InitArmPll(&armPllConfig); /* Configure ARM PLL to 1200M */
