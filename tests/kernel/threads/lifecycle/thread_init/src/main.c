@@ -4,23 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_lifecycle
- * @{
- * @defgroup t_thread_init test_thread_init
- * @brief TestPurpose: verify thread initialization in all supported means
- * @details
- * - Test Steps
- *   -# initialize a thread in specific mean
- *   -# from thread entry function verify initialized fields
- * - Expected Results
- *   -# TESTPOINT: check initialized fields. Expect delay start, priority,
- * params of entry function are initialized as expected
- * - Verified Platforms
- *   -# qemu_x86, quark_se x86, quark_se arc, quark_d2000 x86, qemu_cortex_m3
- * @}
- */
-
 #include <ztest.h>
 
 /*macro definition*/

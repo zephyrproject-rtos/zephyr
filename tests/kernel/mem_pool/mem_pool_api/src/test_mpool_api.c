@@ -4,19 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_mpool
- * @{
- * @defgroup t_mpool_api test_mpool_api
- * @brief TestPurpose: verify memory pool APIs.
- * @details All TESTPOINTs extracted from kernel-doc comments in <kernel.h>
- * - API coverage
- *   -# K_MEM_POOL_DEFINE
- *   -# k_mem_pool_alloc
- *   -# k_mem_pool_free
- * @}
- */
-
 #include <ztest.h>
 #include <irq_offload.h>
 #include "test_mpool.h"

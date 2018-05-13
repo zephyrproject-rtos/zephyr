@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_kernel_timer
- * @{
- * @defgroup t_timer_api test_timer_api
- * @brief TestPurpose: verify timer api functionality
- * @}
- */
-
 #include <ztest.h>
 #include <zephyr/types.h>
 

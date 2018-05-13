@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_threads_scheduling
- * @{
- * @defgroup t_sched_timeslice_and_lock test_sched_timeslice_and_lock
- * @brief TestPurpose: verify sched time slice and lock/unlock
- * @}
- */
-
 #include "test_sched.h"
 #define THREADS_NUM     3
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREADS_NUM, STACK_SIZE);

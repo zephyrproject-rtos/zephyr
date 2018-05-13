@@ -4,19 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_mheap
- * @{
- * @defgroup t_mheap_api test_mheap_api
- * @brief TestPurpose: verify heap memory pool APIs.
- * @details All TESTPOINTs extracted from API doc
- * https://www.zephyrproject.org/doc/api/kernel_api.html#heap-memory-pool
- * - API coverage
- *   -# k_malloc
- *   -# k_free
- * @}
- */
-
 #include <ztest.h>
 #include "test_mheap.h"
 

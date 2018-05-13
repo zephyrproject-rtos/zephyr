@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_threads_scheduling
- * @{
- * @defgroup t_threads_priority test_threads_priority
- * @brief TestPurpose: verify threads scheduling priority
- * @}
- */
-
 #include "test_sched.h"
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);

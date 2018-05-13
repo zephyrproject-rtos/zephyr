@@ -4,17 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_queue_api
- * @{
- * @defgroup t_queue_get_fail test_queue_get_fail
- * @brief TestPurpose: verify zephyr queue_get when no data
- * - API coverage
- *   -# k_queue_init
- *   -# k_queue_get
- * @}
- */
-
 #include "test_queue.h"
 
 #define TIMEOUT 100

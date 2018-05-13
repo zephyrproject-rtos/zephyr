@@ -4,18 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_poll_api
- * @{
- * @defgroup t_poll_api_basic test_poll_api_basic
- * @brief TestPurpose: verify zephyr poll apis across different context
- * - API coverage
- *   -# k_sem_init K_SEMA_DEFINE
- *   -# k_sem_take k_sema_give k_sema_reset
- *   -# k_sem_count_get
- * @}
- */
-
 #include <ztest.h>
 #include <kernel.h>
 

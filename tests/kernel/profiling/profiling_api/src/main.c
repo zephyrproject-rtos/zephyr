@@ -4,17 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_profiling
- * @{
- * @defgroup t_profiling_api test_profiling_api
- * @brief TestPurpose: verify profiling APIs.
- * @details All TESTPOINTs extracted from kernel-doc comments in <kernel.h>
- * - API coverage
- *   - k_thread_foreach
- * @}
- */
-
 #include <ztest.h>
 #include <irq_offload.h>
 #include <misc/stack.h>

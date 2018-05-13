@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_mslab
- * @{
- * @defgroup t_mslab_threadsafe test_mslab_threadsafe
- * @brief TestPurpose: verify API thread safe in multi-threads environment
- * @}
- */
-
 #include <ztest.h>
 #include <atomic.h>
 #define LOOP 10

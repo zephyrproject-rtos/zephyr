@@ -4,20 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_mheap
- * @{
- * @defgroup t_mheap_concept test_mheap_concept
- * @brief TestPurpose: verify memory pool concepts.
- * @details All TESTPOINTs extracted from kernel documentation.
- * https://www.zephyrproject.org/doc/kernel/memory/heap.html#concepts
- *
- * TESTPOINTs cover testable kernel behaviors that preserve across internal
- * implementation change or kernel version change.
- * As a black-box test, TESTPOINTs do not cover internal operations.
- * @}
- */
-
 #include <ztest.h>
 #include "test_mheap.h"
 

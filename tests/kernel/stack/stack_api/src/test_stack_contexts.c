@@ -4,18 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_stack_api
- * @{
- * @defgroup t_stack_api_basic test_stack_api_basic
- * @brief TestPurpose: verify zephyr stack apis under different context
- * - API coverage
- *   -# k_stack_init K_STACK_DEFINE
- *   -# k_stack_push
- *   -# k_stack_pop
- * @}
- */
-
 #include <ztest.h>
 #include <irq_offload.h>
 

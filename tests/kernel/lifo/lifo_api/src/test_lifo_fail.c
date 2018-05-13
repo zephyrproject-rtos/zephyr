@@ -4,17 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_lifo_api
- * @{
- * @defgroup t_lifo_get_fail test_lifo_get_fail
- * @brief TestPurpose: verify zephyr lifo_get when no data
- * - API coverage
- *   -# k_lifo_init
- *   -# k_lifo_get [TIMEOUT|K_NO_WAIT]
- * @}
- */
-
 #include "test_lifo.h"
 
 #define TIMEOUT 100

@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_threads_lifecycle
- * @{
- * @defgroup t_threads_suspend_resume test_threads_suspend_resume
- * @}
- */
 #include <ztest.h>
 
 #define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
