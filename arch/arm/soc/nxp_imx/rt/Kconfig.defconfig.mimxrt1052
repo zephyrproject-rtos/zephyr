@@ -10,6 +10,9 @@ if SOC_MIMXRT1052
 config SOC
 	string
 	default "mimxrt1052"
+	select INIT_ARM_PLL
+	select INIT_SYS_PLL
+	select INIT_USB1_PLL
 
 if CLOCK_CONTROL
 
@@ -17,6 +20,15 @@ config CLOCK_CONTROL_MCUX_CCM
 	def_bool y
 
 endif # CLOCK_CONTROL
+
+config ARM_DIV
+	default 1
+
+config AHB_DIV
+	default 0
+
+config IPG_DIV
+	default 3
 
 config GPIO
 	def_bool y
