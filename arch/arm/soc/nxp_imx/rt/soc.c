@@ -13,20 +13,26 @@
 #include <arch/cpu.h>
 #include <cortex_m/exc.h>
 
+#ifdef CONFIG_INIT_ARM_PLL
 /* ARM PLL configuration for RUN mode */
 const clock_arm_pll_config_t armPllConfig = {
 	.loopDivider = 100U
 };
+#endif
 
+#ifdef CONFIG_INIT_SYS_PLL
 /* SYS PLL configuration for RUN mode */
 const clock_sys_pll_config_t sysPllConfig = {
 	.loopDivider = 1U
 };
+#endif
 
+#ifdef CONFIG_INIT_USB1_PLL
 /* USB1 PLL configuration for RUN mode */
 const clock_usb_pll_config_t usb1PllConfig = {
 	.loopDivider = 0U
 };
+#endif
 
 /**
  *
@@ -53,13 +59,19 @@ static ALWAYS_INLINE void clkInit(void)
 	 */
 	DCDC->REG3 = (DCDC->REG3 & (~DCDC_REG3_TRG_MASK)) | DCDC_REG3_TRG(0x12);
 
+#ifdef CONFIG_INIT_ARM_PLL
 	CLOCK_InitArmPll(&armPllConfig); /* Configure ARM PLL to 1200M */
+#endif
+#ifdef CONFIG_INIT_SYS_PLL
 	CLOCK_InitSysPll(&sysPllConfig); /* Configure SYS PLL to 528M */
+#endif
+#ifdef CONFIG_INIT_USB1_PLL
 	CLOCK_InitUsb1Pll(&usb1PllConfig); /* Configure USB1 PLL to 480M */
+#endif
 
-	CLOCK_SetDiv(kCLOCK_ArmDiv, 0x1); /* Set ARM PODF to 0, divide by 2 */
-	CLOCK_SetDiv(kCLOCK_AhbDiv, 0x0); /* Set AHB PODF to 0, divide by 1 */
-	CLOCK_SetDiv(kCLOCK_IpgDiv, 0x3); /* Set IPG PODF to 3, divide by 4 */
+	CLOCK_SetDiv(kCLOCK_ArmDiv, CONFIG_ARM_DIV); /* Set ARM PODF */
+	CLOCK_SetDiv(kCLOCK_AhbDiv, CONFIG_AHB_DIV); /* Set AHB PODF */
+	CLOCK_SetDiv(kCLOCK_IpgDiv, CONFIG_IPG_DIV); /* Set IPG PODF */
 
 	/* Set PRE_PERIPH_CLK to PLL1, 1200M */
 	CLOCK_SetMux(kCLOCK_PrePeriphMux, 0x3);

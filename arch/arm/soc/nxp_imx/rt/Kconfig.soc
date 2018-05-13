@@ -62,4 +62,25 @@ config SOC_PART_NUMBER_IMX_RT
 	  that you should not set directly. The part number selection choice defines
 	  the default value for this string.
 
+config INIT_ARM_PLL
+	bool "Initialize ARM PLL"
+
+config INIT_SYS_PLL
+	bool "Initialize SYS PLL"
+
+config INIT_USB1_PLL
+	bool "Initialize USB1 PLL"
+
+config ARM_DIV
+	int "ARM clock divider"
+	range 0 7
+
+config AHB_DIV
+	int "AHB clock divider"
+	range 0 7
+
+config IPG_DIV
+	int "IPG clock divider"
+	range 0 3
+
 endif # SOC_SERIES_IMX_RT
