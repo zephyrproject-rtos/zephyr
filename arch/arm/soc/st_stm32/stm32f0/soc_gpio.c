@@ -110,17 +110,6 @@ int stm32_gpio_enable_int(int port, int pin)
 		(struct stm32f0x_syscfg *)SYSCFG_BASE;
 	volatile union syscfg__exticr *exticr;
 
-	/* Enable System Configuration Controller clock. */
-	struct device *clk =
-		device_get_binding(STM32_CLOCK_CONTROL_NAME);
-
-	struct stm32_pclken pclken = {
-		.bus = STM32_CLOCK_BUS_APB1_2,
-		.enr = LL_APB1_GRP2_PERIPH_SYSCFG
-	};
-
-	clock_control_on(clk, (clock_control_subsys_t *) &pclken);
-
 	int shift = 0;
 
 	if (pin <= 3) {
