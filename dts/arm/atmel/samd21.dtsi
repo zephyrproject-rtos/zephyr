@@ -109,6 +109,13 @@
 			label = "SERCOM5";
 		};
 
+		eic0: eic@40001800 {
+			compatible = "atmel,sam0-eic";
+			reg = <0x40001800 0x40>;
+			interrupts = <4 0>;
+			label = "EIC_0";
+		};
+
 		porta: gpio@41004400 {
 			compatible = "atmel,sam0-gpio";
 			reg = <0x41004400 0x80>;

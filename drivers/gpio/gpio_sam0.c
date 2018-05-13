@@ -9,9 +9,7 @@
 #include <gpio.h>
 #include <soc.h>
 
-struct gpio_sam0_config {
-	PortGroup *regs;
-};
+#include "gpio_sam0.h"
 
 #define DEV_CFG(dev) \
 	((const struct gpio_sam0_config *const)(dev)->config->config_info)
@@ -25,6 +23,7 @@ static int gpio_sam0_config(struct device *dev, int access_op, u32_t pin,
 	bool is_out = (flags & GPIO_DIR_MASK) == GPIO_DIR_OUT;
 	int pud = flags & GPIO_PUD_MASK;
 	PORT_PINCFG_Type pincfg;
+	int err;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
@@ -61,13 +60,36 @@ static int gpio_sam0_config(struct device *dev, int access_op, u32_t pin,
 		return -ENOTSUP;
 	}
 
+#if CONFIG_EIC_SAM0_BASE_ADDRESS
+	/* External interrupts */
+	err = eic_sam0_config(eic_sam0_get_target(dev, pin),
+			      pin % EIC_EXTINT_NUM, flags);
+	if (err != 0) {
+		return err;
+	}
+
+	if ((flags & GPIO_INT) != 0) {
+		if ((pin & 1) != 0) {
+			regs->PMUX[pin / 2].bit.PMUXO = PORT_PMUX_PMUXO_A_Val;
+		} else {
+			regs->PMUX[pin / 2].bit.PMUXE = PORT_PMUX_PMUXE_A_Val;
+		}
+
+		pincfg.bit.PMUXEN = 1;
+	}
+#endif
+
 	/* Write the now-built pin configuration */
 	regs->PINCFG[pin] = pincfg;
 
+#if !CONFIG_EIC_SAM0_BASE_ADDRESS
+	/* Prevent an unused variable warning */
+	(void)err;
+
 	if ((flags & GPIO_INT) != 0) {
-		/* TODO(mlhx): implement. */
 		return -ENOTSUP;
 	}
+#endif
 
 	if ((flags & GPIO_POL_MASK) != GPIO_POL_NORMAL) {
 		return -ENOTSUP;
@@ -117,6 +139,12 @@ static const struct gpio_driver_api gpio_sam0_api = {
 	.config = gpio_sam0_config,
 	.write = gpio_sam0_write,
 	.read = gpio_sam0_read,
+#if CONFIG_EIC_SAM0_BASE_ADDRESS
+	.manage_callback = gpio_sam0_manage_callback,
+	.enable_callback = gpio_sam0_enable_callback,
+	.disable_callback = gpio_sam0_disable_callback,
+	.get_pending_int = gpio_sam0_get_pending_int,
+#endif
 };
 
 static int gpio_sam0_init(struct device *dev) { return 0; }
@@ -126,6 +154,7 @@ static int gpio_sam0_init(struct device *dev) { return 0; }
 
 static const struct gpio_sam0_config gpio_sam0_config_0 = {
 	.regs = (PortGroup *)CONFIG_GPIO_SAM0_PORTA_BASE_ADDRESS,
+	.id = 0,
 };
 
 DEVICE_AND_API_INIT(gpio_sam0_0, CONFIG_GPIO_SAM0_PORTA_LABEL, gpio_sam0_init,
@@ -138,6 +167,7 @@ DEVICE_AND_API_INIT(gpio_sam0_0, CONFIG_GPIO_SAM0_PORTA_LABEL, gpio_sam0_init,
 
 static const struct gpio_sam0_config gpio_sam0_config_1 = {
 	.regs = (PortGroup *)CONFIG_GPIO_SAM0_PORTB_BASE_ADDRESS,
+	.id = 1,
 };
 
 DEVICE_AND_API_INIT(gpio_sam0_1, CONFIG_GPIO_SAM0_PORTB_LABEL, gpio_sam0_init,
