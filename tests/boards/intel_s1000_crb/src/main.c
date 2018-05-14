@@ -56,11 +56,26 @@ void iomux_config_i2c(void)
 	*(volatile u32_t *)IOMUX_CONTROL2 = iomux_cntrl2;
 }
 
+#define DSPLRST        0x00071F78
+
+static void platform_pll_cfg(void)
+{
+	u32_t pll_value;
+	u32_t dummyval = *(volatile uint32_t *)(DSPLRST);
+
+	dummyval |= 4;
+
+	*(volatile uint32_t *)(DSPLRST) = dummyval;
+}
+
+
 void main(void)
 {
 	printk("Sample app running on: %s Intel_S1000\n", CONFIG_ARCH);
 
 	disable_ts_powergate();
+	platform_pll_cfg();
 	iomux_config_i2c();
 	iomux_config_ctsrts();
+	test_flash();
 }
