@@ -2806,8 +2806,8 @@
 
 // <e> NRFX_WDT_ENABLED - nrfx_wdt - WDT peripheral driver
 //==========================================================
-#ifndef NRFX_WDT_ENABLED
-#define NRFX_WDT_ENABLED 0
+#ifdef CONFIG_NRFX_WDT
+#define NRFX_WDT_ENABLED 1
 #endif
 // <o> NRFX_WDT_CONFIG_BEHAVIOUR  - WDT behavior in CPU SLEEP or HALT mode
 
