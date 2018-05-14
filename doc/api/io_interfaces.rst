@@ -27,6 +27,9 @@ DMA Interface
 GPIO Interface
 **************
 
+.. doxygengroup:: gpio_interface_pin_defs
+   :project: Zephyr
+
 .. doxygengroup:: gpio_interface
    :project: Zephyr
 
@@ -56,6 +59,18 @@ PWM Interface
 *************
 
 .. doxygengroup:: pwm_interface
+   :project: Zephyr
+
+Pinctrl Interface
+*****************
+
+.. doxygengroup:: pinctrl_interface_pin_configurations
+   :project: Zephyr
+
+.. doxygengroup:: pinctrl_interface_functions
+   :project: Zephyr
+
+.. doxygengroup:: pinctrl_interface
    :project: Zephyr
 
 Pinmux Interface
