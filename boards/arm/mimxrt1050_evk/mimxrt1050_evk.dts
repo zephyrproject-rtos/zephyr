@@ -19,6 +19,8 @@
 		gpio-4= &gpio4;
 		gpio-5= &gpio5;
 		uart-1 = &uart1;
+		led0 = &green_led;
+		sw0 = &user_button;
 	};
 
 	chosen {
@@ -37,6 +39,22 @@
 		/* Micron MT48LC16M16A2B4-6AIT:G */
 		device_type = "memory";
 		reg = <0x80000000 0x2000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led@0 {
+			gpios = <&gpio1 9 GPIO_INT_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button@0 {
+			label = "User SW8";
+			gpios = <&gpio5 0 GPIO_INT_ACTIVE_LOW>;
+		};
 	};
 };
 
