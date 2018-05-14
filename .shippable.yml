@@ -72,7 +72,7 @@ build:
       - rm test_file.txt
       - ccache -s
     on_failure:
-      - rm -rf ccache
+      - rm -rf ccache $HOME/.cache/zephyr
       - mkdir -p shippable/testresults
       - mkdir -p shippable/codecoverage
       - source zephyr-env.sh
@@ -97,7 +97,7 @@ build:
             cp ./scripts/sanity_chk/last_sanity.xml shippable/testresults/;
           fi;
     on_success:
-      - rm -rf ccache
+      - rm -rf ccache $HOME/.cache/zephyr
       - mkdir -p shippable/testresults
       - mkdir -p shippable/codecoverage
       - source zephyr-env.sh
