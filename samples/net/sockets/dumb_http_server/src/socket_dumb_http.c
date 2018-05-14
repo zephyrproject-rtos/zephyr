@@ -5,6 +5,8 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #ifndef __ZEPHYR__
 
@@ -29,6 +31,8 @@
 #define USE_BIG_PAYLOAD 1
 #endif
 
+#define CHECK(r) { if (r == -1) { printf("Error: " #r "\n"); exit(1); } }
+
 static const char content[] = {
 #if USE_BIG_PAYLOAD
     #include "response_big.html.bin.inc"
@@ -44,13 +48,14 @@ int main(void)
 	static int counter;
 
 	serv = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	CHECK(serv);
 
 	bind_addr.sin_family = AF_INET;
 	bind_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	bind_addr.sin_port = htons(PORT);
-	bind(serv, (struct sockaddr *)&bind_addr, sizeof(bind_addr));
+	CHECK(bind(serv, (struct sockaddr *)&bind_addr, sizeof(bind_addr)));
 
-	listen(serv, 5);
+	CHECK(listen(serv, 5));
 
 	printf("Single-threaded dumb HTTP server waits for a connection on port %d...\n", PORT);
 
@@ -64,6 +69,11 @@ int main(void)
 
 		int client = accept(serv, (struct sockaddr *)&client_addr,
 				    &client_addr_len);
+		if (client < 0) {
+			printf("Error in accept: %d - continuing\n", errno);
+			continue;
+		}
+
 		inet_ntop(client_addr.sin_family, &client_addr.sin_addr,
 			  addr_str, sizeof(addr_str));
 		printf("Connection #%d from %s\n", counter++, addr_str);
