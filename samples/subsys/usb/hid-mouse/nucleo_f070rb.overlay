@@ -1,0 +1,3 @@
+&usb {
+	status = "ok";
+};
