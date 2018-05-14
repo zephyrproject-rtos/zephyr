@@ -1543,15 +1543,26 @@ struct net_buf *net_frag_get_pos(struct net_pkt *pkt,
 				 u16_t offset,
 				 u16_t *pos);
 
+/** Flags for pkt clone operation
+ */
+/** Clone pkt metadata only */
+#define NET_PKT_CLONE_META       0x0
+/** Clone pkt headers */
+#define NET_PKT_CLONE_HDR        0x1
+/** Clone headers and application data */
+#define NET_PKT_CLONE_USER_DATA  0x2
+
 /**
  * @brief Clone pkt and its fragment chain.
  *
  * @param pkt Original pkt to be cloned
  * @param timeout Timeout to wait for free net_buf
+ * @param flags Flags to indicate which parts of the pkt to clone
  *
  * @return NULL if error, clone fragment chain otherwise.
  */
-struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout);
+struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout,
+			      int flags);
 
 /**
  * @brief Get information about predefined RX, TX and DATA pools.
