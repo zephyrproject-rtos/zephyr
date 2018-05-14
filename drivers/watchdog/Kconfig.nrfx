@@ -1,0 +1,14 @@
+# Kconfig - nrfx WDT support
+#
+# Copyright (c) 2018, Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WDT_NRFX
+	bool "nRF WDT nrfx driver"
+	depends on SOC_FAMILY_NRF && CLOCK_CONTROL_NRF5
+	select HAS_DTS_WDT
+	select NRFX_WDT
+	default n
+	help
+	  Enable support for nrfx WDT driver for nRF MCU series.
