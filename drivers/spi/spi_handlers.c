@@ -7,41 +7,83 @@
 #include <spi.h>
 #include <syscall_handler.h>
 
-static void verify_spi_buf_array(const struct spi_buf *bufs, size_t len,
-				 int writable, void *ssf)
+/* This assumes that bufs and buf_copy are copies from the values passed
+ * as syscall arguments.
+ */
+static void copy_and_check(struct spi_buf_set *bufs,
+			   struct spi_buf *buf_copy,
+			   int writable, void *ssf)
 {
-	/* Empty array, nothing to do */
-	if (!len) {
+	size_t i;
+
+	if (bufs->count == 0) {
+		bufs->buffers = NULL;
 		return;
 	}
 
 	/* Validate the array of struct spi_buf instances */
-	_SYSCALL_MEMORY_ARRAY_READ(bufs, len, sizeof(struct spi_buf));
+	_SYSCALL_MEMORY_ARRAY_READ(bufs->buffers,
+				   bufs->count,
+				   sizeof(struct spi_buf));
 
-	for ( ; len; --len, ++bufs) {
+	/* Not worried abuot overflow here: _SYSCALL_MEMORY_ARRAY_READ()
+	 * takes care of it.
+	 */
+	bufs->buffers = memcpy(buf_copy,
+			       bufs->buffers,
+			       bufs->count * sizeof(struct spi_buf));
+
+	for (i = 0; i < bufs->count; i++) {
 		/* Now for each array element, validate the memory buffers
 		 * that they point to
 		 */
-		_SYSCALL_MEMORY(bufs->buf, bufs->len, writable);
+		struct spi_buf *buf = &bufs->buffers[i];
+
+		_SYSCALL_MEMORY(buf->buf, buf->len, writable);
 	}
+}
+
+/* This function is only here so tx_buf_copy and rx_buf_copy can be allocated
+ * using VLA.  It assumes that both tx_bufs and rx_bufs will receive a copy of
+ * the values passed to the syscall as arguments.  It also assumes that the
+ * count member has been verified and is a value that won't lead to stack
+ * overflow.
+ */
+static u32_t copy_bufs_and_transceive(struct device *dev,
+				      const struct spi_config *config,
+				      struct spi_buf_set *tx_bufs,
+				      struct spi_buf_set *rx_bufs,
+				      void *ssf)
+{
+	struct spi_buf tx_buf_copy[tx_bufs->count ? tx_bufs->count : 1];
+	struct spi_buf rx_buf_copy[rx_bufs->count ? rx_bufs->count : 1];
+
+	copy_and_check(tx_bufs, tx_buf_copy, 0, ssf);
+	copy_and_check(rx_bufs, rx_buf_copy, 1, ssf);
+
+	return _impl_spi_transceive((struct device *)dev, config,
+				    tx_bufs, rx_bufs);
 }
 
 _SYSCALL_HANDLER(spi_transceive, dev, config_p, tx_bufs, rx_bufs)
 {
 	const struct spi_config *config = (const struct spi_config *)config_p;
+	struct spi_buf_set tx_bufs_copy;
+	struct spi_buf_set rx_bufs_copy;
+	struct spi_config config_copy;
 
 	_SYSCALL_MEMORY_READ(config, sizeof(*config));
 	_SYSCALL_DRIVER_SPI(dev, transceive);
 
-	/* ssf is implicit system call stack frame parameter, used by
-	 * _SYSCALL_* APIs when something goes wrong.
-	 */
 	if (tx_bufs) {
 		const struct spi_buf_set *tx =
 			(const struct spi_buf_set *)tx_bufs;
 
 		_SYSCALL_MEMORY_READ(tx_bufs, sizeof(struct spi_buf_set));
-		verify_spi_buf_array(tx->buffers, tx->count, 0, ssf);
+		memcpy(&tx_bufs_copy, tx, sizeof(tx_bufs_copy));
+		_SYSCALL_VERIFY(tx_bufs_copy.count < 32);
+	} else {
+		memset(&tx_bufs_copy, 0, sizeof(tx_bufs_copy));
 	}
 
 	if (rx_bufs) {
@@ -49,11 +91,15 @@ _SYSCALL_HANDLER(spi_transceive, dev, config_p, tx_bufs, rx_bufs)
 			(const struct spi_buf_set *)rx_bufs;
 
 		_SYSCALL_MEMORY_READ(rx_bufs, sizeof(struct spi_buf_set));
-		verify_spi_buf_array(rx->buffers, rx->count, 1, ssf);
+		memcpy(&rx_bufs_copy, rx, sizeof(rx_bufs_copy));
+		_SYSCALL_VERIFY(rx_bufs_copy.count < 32);
+	} else {
+		memset(&rx_bufs_copy, 0, sizeof(rx_bufs_copy));
 	}
 
-	if (config->cs) {
-		const struct spi_cs_control *cs = config->cs;
+	memcpy(&config_copy, config, sizeof(*config));
+	if (config_copy.cs) {
+		const struct spi_cs_control *cs = config_copy.cs;
 
 		_SYSCALL_MEMORY_READ(cs, sizeof(*cs));
 		if (cs->gpio_dev) {
@@ -61,9 +107,14 @@ _SYSCALL_HANDLER(spi_transceive, dev, config_p, tx_bufs, rx_bufs)
 		}
 	}
 
-	return _impl_spi_transceive((struct device *)dev, config,
-				    (const struct spi_buf_set *)tx_bufs,
-				    (const struct spi_buf_set *)rx_bufs);
+	/* ssf is implicit system call stack frame parameter, used by
+	 * _SYSCALL_* APIs when something goes wrong.
+	 */
+	return copy_bufs_and_transceive((struct device *)dev,
+					&config_copy,
+					&tx_bufs_copy,
+					&rx_bufs_copy,
+					ssf);
 }
 
 _SYSCALL_HANDLER(spi_release, dev, config_p)
