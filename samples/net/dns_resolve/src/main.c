@@ -175,7 +175,8 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 	}
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		struct net_if_addr *if_addr = &iface->ipv4.unicast[i];
+		struct net_if_addr *if_addr =
+			&iface->config.ip.ipv4->unicast[i];
 
 		if (if_addr->addr_type != NET_ADDR_DHCP || !if_addr->is_used) {
 			continue;
@@ -184,12 +185,14 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 		NET_INFO("IPv4 address: %s",
 			 net_addr_ntop(AF_INET, &if_addr->address.in_addr,
 				       hr_addr, NET_IPV4_ADDR_LEN));
-		NET_INFO("Lease time: %u seconds", iface->dhcpv4.lease_time);
+		NET_INFO("Lease time: %u seconds",
+			 iface->config.dhcpv4.lease_time);
 		NET_INFO("Subnet: %s",
-			 net_addr_ntop(AF_INET, &iface->ipv4.netmask,
+			 net_addr_ntop(AF_INET,
+				       &iface->config.ip.ipv4->netmask,
 				       hr_addr, NET_IPV4_ADDR_LEN));
 		NET_INFO("Router: %s",
-			 net_addr_ntop(AF_INET, &iface->ipv4.gw,
+			 net_addr_ntop(AF_INET, &iface->config.ip.ipv4->gw,
 				       hr_addr, NET_IPV4_ADDR_LEN));
 		break;
 	}
