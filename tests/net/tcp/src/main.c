@@ -295,7 +295,7 @@ static void setup_ipv4_tcp(struct net_pkt *pkt,
 			   u16_t remote_port,
 			   u16_t local_port)
 {
-	struct net_ipv4_hdr ipv4;
+	struct net_ipv4_hdr ipv4 = {};
 	struct net_tcp_hdr tcp_hdr = { 0 };
 	u8_t data[] = { 'f', 'o', 'o', 'b', 'a', 'r' };
 
