@@ -9,5 +9,5 @@
  */
 
 #include <layout.h>
-
+#include <generated_dts_board.h>
 #include <arch/nios2/linker.ld>
