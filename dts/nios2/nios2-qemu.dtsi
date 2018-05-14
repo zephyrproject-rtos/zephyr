@@ -1,0 +1,43 @@
+#include "skeleton.dtsi"
+
+#define __SIZE_K(x) (x * 1024)
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "qemu,nios2";
+			reg = <0>;
+		};
+
+	};
+
+	flash0: flash@0 {
+		reg = <0x420000 0x20000>;
+	};
+
+	sram0: memory@400000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x400000 0x20000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		uart0: uart@201000 {
+			compatible = "altera,jtag-uart";
+			reg = <0x201000 0x400>;
+			label = "jtag_uart0";
+
+			status = "disabled";
+		};
+
+	};
+};
