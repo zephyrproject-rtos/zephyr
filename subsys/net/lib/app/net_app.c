@@ -2129,7 +2129,7 @@ reset:
 					 * Is closing the connection here the
 					 * right thing?
 					 */
-					NET_ERR("could not skip %zu bytes",
+					NET_ERR("could not skip %d bytes",
 						hdr_len);
 					net_pkt_unref(pkt);
 					ret = -EINVAL;
