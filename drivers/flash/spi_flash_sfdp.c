@@ -6,7 +6,7 @@
 
 /* Generic SPI Flash driver for chips with Discoverable Parameters */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_FLASH_SFDP_LEVEL
 #include <logging/sys_log.h>
 
 #include <errno.h>
@@ -110,6 +110,7 @@ struct sfdp_basic_flash_parameters {
 #define SFDP_SECTOR_MAP_ID	0xff81  /* Sector Map Table */
 
 struct spi_flash_data {
+	struct device *spi;
 	struct spi_config config;
 	struct k_sem sem;
 
@@ -148,10 +149,14 @@ static inline int spi_flash_reg_read(struct device *dev, u8_t cmd_id)
 		.buf = buf,
 		.len = sizeof(buf),
 	};
+	struct spi_buf_set cmd_set = {
+		.buffers = &cmd,
+		.count = 1
+	};
 
 	buf[0] = cmd_id;
 
-	if (spi_transceive(&data->config, &cmd, 1, &cmd, 1) != 0) {
+	if (spi_write(data->spi, &data->config, &cmd_set) != 0) {
 		return -EIO;
 	}
 
@@ -172,12 +177,16 @@ static inline int spi_flash_write_sr_cr(struct device *dev, u8_t sr, u8_t cr)
 		.buf = buf,
 		.len = sizeof(buf),
 	};
+	struct spi_buf_set cmd_set = {
+		.buffers = &cmd,
+		.count = 1
+	};
 
 	buf[0] = CMD_WRITE_STATUS_CONFIG;
 	buf[1] = sr;
 	buf[2] = cr;
 
-	if (spi_transceive(&data->config, &cmd, 1, &cmd, 1) != 0) {
+	if (spi_write(data->spi, &data->config, &cmd_set) != 0) {
 		return -EIO;
 	}
 
@@ -193,8 +202,12 @@ static inline int spi_flash_id(struct device *dev)
 		.buf = &buf,
 		.len = sizeof(buf)
 	};
+	struct spi_buf_set buf_set = {
+		.buffers = &bufs,
+		.count = 1
+	};
 
-	if (spi_transceive(&data->config, &bufs, 1, &bufs, 1) != 0) {
+	if (spi_transceive(data->spi, &data->config, &buf_set, &buf_set) != 0) {
 		return -EIO;
 	}
 
@@ -225,8 +238,16 @@ static int spi_flash_read_sfdp(struct device *dev, uint32_t addr,
 		{ .buf = NULL, sizeof(hdr) },
 		{ .buf = ptr, len },
 	};
+	struct spi_buf_set tx = {
+		.buffers = txbufs,
+		.count = 2
+	};
+	struct spi_buf_set rx = {
+		.buffers = rxbufs,
+		.count = 2
+	};
 
-	if (spi_transceive(&data->config, txbufs, 2, rxbufs, 2) != 0) {
+	if (spi_transceive(data->spi, &data->config, &tx, &rx) != 0) {
 		return -EIO;
 	}
 
@@ -320,10 +341,14 @@ static int spi_flash_cmd(struct device *dev, u8_t cmd_id)
 		.buf = buf,
 		.len = sizeof(buf),
 	};
+	struct spi_buf_set cmd_set = {
+		.buffers = &cmd,
+		.count = 1
+	};
 
 	buf[0] = cmd_id;
 
-	if (spi_transceive(&data->config, &cmd, 1, &cmd, 1) != 0) {
+	if (spi_write(data->spi, &data->config, &cmd_set) != 0) {
 		return -EIO;
 	}
 
@@ -344,6 +369,14 @@ static int spi_flash_read(struct device *dev, off_t offset, void *ptr,
 		{ .buf = ptr,  .len = len },
 	};
 	int r, i;
+	struct spi_buf_set tx = {
+		.buffers = txbufs,
+		.count = ARRAY_SIZE(txbufs)
+	};
+	struct spi_buf_set rx = {
+		.buffers = rxbufs,
+		.count = ARRAY_SIZE(rxbufs)
+	};
 
 	if (offset < 0 || offset+len >= data->flash_size) {
 		return -ENODEV;
@@ -359,8 +392,7 @@ static int spi_flash_read(struct device *dev, off_t offset, void *ptr,
 	hdr[i++] = offset >> 16;
 	hdr[i++] = offset >> 8;
 	hdr[i++] = offset;
-	r = spi_transceive(&data->config, txbufs, ARRAY_SIZE(txbufs),
-			   rxbufs, ARRAY_SIZE(rxbufs));
+	r = spi_transceive(data->spi, &data->config, &tx, &rx);
 	k_sem_give(&data->sem);
 
 	return r;
@@ -377,6 +409,10 @@ static int spi_flash_write(struct device *dev, off_t offset,
 		{ .buf = (void *)ptr, .len = len },
 	};
 	int r, i;
+	struct spi_buf_set tx = {
+		.buffers = txbufs,
+		.count = ARRAY_SIZE(txbufs)
+	};
 
 	SYS_LOG_DBG("write: @%x len %x, opcode %x (page size %d)",
 		offset, len,
@@ -409,7 +445,7 @@ static int spi_flash_write(struct device *dev, off_t offset,
 	hdr[i++] = offset >> 8;
 	hdr[i++] = offset;
 
-	r = spi_transceive(&data->config, txbufs, ARRAY_SIZE(txbufs), NULL, 0);
+	r = spi_write(data->spi, &data->config, &tx);
 	if (r == 0) {
 		wait_for_flash_idle(dev);
 	}
@@ -453,6 +489,10 @@ static inline int spi_flash_erase_cmd(struct device *dev,
 	struct spi_buf txbufs[] = {
 		{ .buf = hdr,  .len = 1 + data->addr_len },
 	};
+	struct spi_buf_set tx = {
+		.buffers = txbufs,
+		.count = ARRAY_SIZE(txbufs)
+	};
 	int r, i;
 
 	SYS_LOG_DBG("erase: %02x %06x", opcode, offset);
@@ -473,7 +513,7 @@ static inline int spi_flash_erase_cmd(struct device *dev,
 	hdr[i++] = offset;
 
 	wait_for_flash_idle(dev);
-	return spi_transceive(&data->config, txbufs, ARRAY_SIZE(txbufs), 0, 0);
+	return spi_write(data->spi, &data->config, &tx);
 }
 
 static int spi_flash_erase(struct device *dev, off_t offset, size_t size)
@@ -521,19 +561,19 @@ static const struct flash_driver_api spi_flash_api = {
 
 static int spi_flash_init(struct device *dev)
 {
-	struct device *spi_dev;
 	struct spi_flash_data *data = dev->driver_data;
 	int r;
 
-	spi_dev = device_get_binding(CONFIG_SPI_FLASH_SFDP_SPI_NAME);
-	if (!spi_dev) {
+	data->spi = device_get_binding(CONFIG_SPI_FLASH_SFDP_SPI_NAME);
+	if (!data->spi) {
 		return -EIO;
 	}
 
 	data->config = (struct spi_config) {
-		.dev = spi_dev,
 		.frequency = CONFIG_SPI_FLASH_SFDP_SPI_FREQ_0,
 		.operation = SPI_WORD_SET(8),
+		.slave = CONFIG_SPI_FLASH_SFDP_SPI_SLAVE,
+		.cs = NULL
 	};
 
 	r = spi_flash_id(dev);
@@ -553,6 +593,6 @@ static int spi_flash_init(struct device *dev)
 
 static struct spi_flash_data spi_flash_memory_data;
 
-DEVICE_INIT(spi_flash_memory, "flash0", spi_flash_init,
-	    &spi_flash_memory_data, NULL, POST_KERNEL,
-	    CONFIG_SPI_FLASH_SFDP_INIT_PRIORITY);
+DEVICE_INIT(spi_flash_memory, CONFIG_SPI_FLASH_SFDP_DRV_NAME,
+            spi_flash_init, &spi_flash_memory_data, NULL, POST_KERNEL,
+            CONFIG_SPI_FLASH_SFDP_INIT_PRIORITY);
