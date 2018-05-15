@@ -14,6 +14,9 @@
 
 	aliases{
 		usart-0 = &usart0;
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
 	};
 
 	chosen {
@@ -22,6 +25,21 @@
 		zephyr,console = &usart0;
 	};
 
+	leds {
+		compatible = "gpio-leds";
+		red_led: led@0 {
+			gpios = <&gpio0 29 GPIO_INT_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+		green_led: led@1 {
+			gpios = <&gpio1 10 GPIO_INT_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+		blue_led: led@2 {
+			gpios = <&gpio1 9 GPIO_INT_ACTIVE_LOW>;
+			label = "User LD3";
+		};
+	};
 };
 
 &usart0 {
