@@ -5,7 +5,7 @@
  */
 
 void bt_mesh_store_net(void);
-void bt_mesh_store_iv(void);
+void bt_mesh_store_iv(bool only_duration);
 void bt_mesh_store_seq(void);
 void bt_mesh_store_rpl(struct bt_mesh_rpl *rpl);
 void bt_mesh_store_subnet(struct bt_mesh_subnet *sub);

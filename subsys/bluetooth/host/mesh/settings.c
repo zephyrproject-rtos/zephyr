@@ -82,7 +82,8 @@ struct cfg_val {
 /* IV Index & IV Update storage */
 struct iv_val {
 	u32_t iv_index;
-	bool  iv_update;
+	u8_t  iv_update:1,
+	      iv_duration:7;
 } __packed;
 
 /* Replay Protection List storage */
@@ -184,9 +185,11 @@ static int iv_set(int argc, char **argv, char *val)
 
 	bt_mesh.iv_index = iv.iv_index;
 	bt_mesh.iv_update = iv.iv_update;
+	bt_mesh.ivu_duration = iv.iv_duration;
+	bt_mesh.ivu_unknown = 0;
 
-	BT_DBG("IV Index 0x%04x (IV Update Flag %u)", bt_mesh.iv_index,
-	       bt_mesh.iv_update);
+	BT_DBG("IV Index 0x%04x (IV Update Flag %u) duration %u hours",
+	       bt_mesh.iv_index, bt_mesh.iv_update, bt_mesh.ivu_duration);
 
 	return 0;
 }
@@ -804,13 +807,8 @@ static int mesh_commit(void)
 		}
 	}
 
-	/* Set initial IV Update procedure state time-stamp */
-	bt_mesh.last_update = BT_MESH_NET_IVU_UNKNOWN;
-
-	/* Set a timer to transition back to normal mode */
-	if (bt_mesh.iv_update) {
-		k_delayed_work_submit(&bt_mesh.ivu_complete,
-				      BT_MESH_NET_IVU_TIMEOUT);
+	if (bt_mesh.ivu_duration < BT_MESH_IVU_MIN_HOURS) {
+		k_delayed_work_submit(&bt_mesh.ivu_timer, BT_MESH_IVU_TIMEOUT);
 	}
 
 	bt_mesh_model_foreach(commit_mod, NULL);
@@ -912,6 +910,7 @@ static void store_pending_iv(void)
 
 	iv.iv_index = bt_mesh.iv_index;
 	iv.iv_update = bt_mesh.iv_update;
+	iv.iv_duration = bt_mesh.ivu_duration;
 
 	str = settings_str_from_bytes(&iv, sizeof(iv), buf, sizeof(buf));
 	if (!str) {
@@ -923,11 +922,14 @@ static void store_pending_iv(void)
 	settings_save_one("bt/mesh/IV", str);
 }
 
-void bt_mesh_store_iv(void)
+void bt_mesh_store_iv(bool only_duration)
 {
 	schedule_store(BT_MESH_IV_PENDING);
-	/* Always update Seq whenever IV changes */
-	schedule_store(BT_MESH_SEQ_PENDING);
+
+	if (!only_duration) {
+		/* Always update Seq whenever IV changes */
+		schedule_store(BT_MESH_SEQ_PENDING);
+	}
 }
 
 static void store_pending_seq(void)

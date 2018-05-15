@@ -17,18 +17,11 @@
 #define BT_MESH_IV_UPDATE(flags)   ((flags >> 1) & 0x01)
 #define BT_MESH_KEY_REFRESH(flags) (flags & 0x01)
 
-/* Special time-stamp to indicate that we don't know when the last IV
- * Update happened.
- */
-#define BT_MESH_NET_IVU_UNKNOWN -1
-
-#if defined(CONFIG_BT_MESH_IV_UPDATE_TEST)
-/* Small test timeout for IV Update Procedure testing */
-#define BT_MESH_NET_IVU_TIMEOUT  K_SECONDS(120)
-#else
-/* Maximum time to stay in IV Update mode (96 < time < 144) */
-#define BT_MESH_NET_IVU_TIMEOUT  K_HOURS(120)
-#endif /* CONFIG_BT_MESH_IV_UPDATE_TEST */
+/* How many hours in between updating IVU duration */
+#define BT_MESH_IVU_MIN_HOURS      96
+#define BT_MESH_IVU_HOURS          (BT_MESH_IVU_MIN_HOURS /     \
+				    CONFIG_BT_MESH_IVU_DIVIDER)
+#define BT_MESH_IVU_TIMEOUT        K_HOURS(BT_MESH_IVU_HOURS)
 
 struct bt_mesh_app_key {
 	u16_t net_idx;
@@ -218,10 +211,9 @@ struct bt_mesh_net {
 	      iv_update:1,       /* 1 if IV Update in Progress */
 	      ivu_initiator:1,   /* IV Update initiated by us */
 	      ivu_test:1,        /* IV Update test mode */
+	      ivu_unknown:1,     /* Set to 1 right after provisioning */
 	      pending_update:1,  /* Update blocked by SDU in progress */
 	      valid:1;           /* 0 if unused */
-
-	s64_t last_update;       /* Time since last IV Update change */
 
 	ATOMIC_DEFINE(flags, BT_MESH_FLAG_COUNT);
 
@@ -238,8 +230,11 @@ struct bt_mesh_net {
 	struct bt_mesh_lpn lpn;  /* Low Power Node state */
 #endif
 
-	/* Timer to transition IV Update in Progress state */
-	struct k_delayed_work ivu_complete;
+	/* Number of hours in current IV Update state */
+	u8_t  ivu_duration;
+
+	/* Timer to track duration in current IV Update state */
+	struct k_delayed_work ivu_timer;
 
 	u8_t dev_key[16];
 
