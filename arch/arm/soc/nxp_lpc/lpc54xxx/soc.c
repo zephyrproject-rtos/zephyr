@@ -105,3 +105,61 @@ static int nxp_lpc54114_init(struct device *arg)
 }
 
 SYS_INIT(nxp_lpc54114_init, PRE_KERNEL_1, 0);
+
+
+#ifdef CONFIG_SLAVE_CORE_MCUX
+
+#define CORE_M0_BOOT_ADDRESS (void *)CONFIG_SLAVE_BOOT_ADDRESS_MCUX
+
+static const char core_m0[] = {
+#include "core-m0.inc"
+};
+
+/**
+ *
+ * @brief Slave Init
+ *
+ * This routine boots the secondary core
+ * @return N/A
+ */
+/* This function is also called at deep sleep resume. */
+int _slave_init(struct device *arg)
+{
+	s32_t temp;
+
+	ARG_UNUSED(arg);
+
+	/* Enable SRAM2, used by other core */
+	SYSCON->AHBCLKCTRLSET[0] = SYSCON_AHBCLKCTRL_SRAM2_MASK;
+
+	/* Copy second core image to SRAM */
+	memcpy(CORE_M0_BOOT_ADDRESS, (void *)core_m0, sizeof(core_m0));
+
+	/* Setup the reset handler pointer (PC) and stack pointer value.
+	 * This is used once the second core runs its startup code.
+	 * The second core first boots from flash (address 0x00000000)
+	 * and then detects its identity (Cortex-M0, slave) and checks
+	 * registers CPBOOT and CPSTACK and use them to continue the
+	 * boot process.
+	 * Make sure the startup code for current core (Cortex-M4) is
+	 * appropriate and shareable with the Cortex-M0 core!
+	 */
+	SYSCON->CPBOOT = SYSCON_CPBOOT_BOOTADDR(
+			*(uint32_t *)((uint8_t *)CORE_M0_BOOT_ADDRESS + 0x4));
+	SYSCON->CPSTACK = SYSCON_CPSTACK_STACKADDR(
+			*(uint32_t *)CORE_M0_BOOT_ADDRESS);
+
+	/* Reset the secondary core and start its clocks */
+	temp = SYSCON->CPCTRL;
+	temp |= 0xc0c48000;
+	SYSCON->CPCTRL = (temp | SYSCON_CPCTRL_CM0CLKEN_MASK
+					| SYSCON_CPCTRL_CM0RSTEN_MASK);
+	SYSCON->CPCTRL = (temp | SYSCON_CPCTRL_CM0CLKEN_MASK)
+					& (~SYSCON_CPCTRL_CM0RSTEN_MASK);
+
+	return 0;
+}
+
+SYS_INIT(_slave_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+#endif /*CONFIG_SLAVE_CORE_MCUX*/
