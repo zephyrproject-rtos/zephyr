@@ -51,12 +51,6 @@ The configuration options' information below is extracted directly from
 Click on the option name in the table below for detailed information about
 each option.
 
-For symbols defined in multiple locations, the defaults, selects, implies, and
-ranges from all instances will be listed on the first instance of the symbol in
-the Kconfig display on the symbol's help page. This has to do with Kconfig
-internals, as those properties belong to symbols, while e.g. prompts belong to
-menu entries.
-
 Supported Options
 *****************
 
@@ -182,20 +176,37 @@ def write_sym_rst(sym, out_dir):
                           "==================================\n\n")
             write_select_imply_rst(sym.weak_rev_dep)
 
-        # parsed-literal supports links in the definition
-        sym_rst.write("Kconfig definition\n"
-                      "==================\n\n"
-                      ".. parsed-literal::\n\n"
-                      "{}\n\n"
-                      "*(Includes propagated dependencies, including from if's and menus.)*\n\n"
-                      .format(textwrap.indent(str(sym), " "*4)))
+        def menu_path(node):
+            path = ""
 
-        sym_rst.write("Definition location{}\n"
-                      "====================\n\n"
-                      "{}".format(
-            "s" if len(sym.nodes) > 1 else "",
-            "\n".join(" - ``{}:{}``".format(node.filename, node.linenr) for
-                      node in sym.nodes)))
+            menu = node.parent
+            while menu is not kconf.top_node:
+                # Fancy Unicode arrow. Added in '93, so ought to be pretty
+                # safe.
+                path = " → " + menu.prompt[0] + path
+                menu = menu.parent
+
+            # The strip() avoids RST choking on leading/trailing whitespace in
+            # prompts
+            return ("(top menu)" + path).strip()
+
+        heading = "Kconfig definition"
+        if len(sym.nodes) > 1:
+            heading += "s"
+
+        # Add ==... below heading. Adding too many '=' would be okay too, but
+        # this looks a bit neater in the RST file.
+        sym_rst.write("{}\n{}\n\n".format(heading, len(heading)*"="))
+
+        sym_rst.write("\n\n".join(
+            "At ``{}:{}``, in menu ``{}``:\n\n"
+            ".. parsed-literal::\n\n"
+            "{}".format(node.filename, node.linenr, menu_path(node),
+                        textwrap.indent(str(node), " "*4))
+            for node in sym.nodes))
+
+        sym_rst.write("\n\n*(Definitions include propagated dependencies, "
+                      "including from if's and menus.)*")
 
 if __name__ == "__main__":
     write_kconfig_rst()
