@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_LPC54114
+if SOC_LPC54114_M4
 
 config SOC
 	string
@@ -32,4 +32,4 @@ config USART_MCUX_LPC
 
 endif # SERIAL
 
-endif # SOC_LPC54114
+endif # SOC_LPC54114_M4
