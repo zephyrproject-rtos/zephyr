@@ -23,6 +23,7 @@
 #include <net/net_pkt.h>
 #include <net/ethernet.h>
 
+#include <usb_descriptor.h>
 #include "netusb.h"
 
 #define USB_CDC_ECM_REQ_TYPE		0x21
@@ -197,10 +198,60 @@ static struct usb_ep_cfg_data ecm_ep_data[] = {
 	},
 };
 
+static inline void ecm_status_interface(u8_t *iface)
+{
+	SYS_LOG_DBG("iface %u", *iface);
+
+	/* First interface is CDC Comm interface */
+	if (*iface != NETUSB_IFACE_IDX + 1) {
+		return;
+	}
+
+	netusb_enable();
+}
+
+static void ecm_status_cb(enum usb_dc_status_code status, u8_t *param)
+{
+	/* Check the USB status and do needed action if required */
+	switch (status) {
+	case USB_DC_ERROR:
+		SYS_LOG_DBG("USB device error");
+		break;
+	case USB_DC_RESET:
+		SYS_LOG_DBG("USB device reset detected");
+		break;
+	case USB_DC_CONNECTED:
+		SYS_LOG_DBG("USB device connected");
+		break;
+	case USB_DC_CONFIGURED:
+		SYS_LOG_DBG("USB device configured");
+		break;
+	case USB_DC_DISCONNECTED:
+		SYS_LOG_DBG("USB device disconnected");
+		netusb_disable();
+		break;
+	case USB_DC_SUSPEND:
+		SYS_LOG_DBG("USB device suspended");
+		break;
+	case USB_DC_RESUME:
+		SYS_LOG_DBG("USB device resumed");
+		break;
+	case USB_DC_INTERFACE:
+		SYS_LOG_DBG("USB interface selected");
+		ecm_status_interface(param);
+		break;
+	case USB_DC_UNKNOWN:
+	default:
+		SYS_LOG_DBG("USB unknown state");
+		break;
+	}
+}
+
 struct netusb_function ecm_function = {
 	.init = NULL,
 	.connect_media = ecm_connect,
 	.class_handler = ecm_class_handler,
+	.status_cb = ecm_status_cb,
 	.send_pkt = ecm_send,
 	.num_ep = ARRAY_SIZE(ecm_ep_data),
 	.ep = ecm_ep_data,
