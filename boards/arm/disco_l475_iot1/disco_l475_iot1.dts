@@ -87,7 +87,7 @@
 	};
 
 	lsm6dsl@6a {
-		compatible = "st,lsm6dsl";
+		compatible = "st,lsm6dsl-i2c";
 		reg = <0x6a>;
 		label = "LSM6DSL";
 	};

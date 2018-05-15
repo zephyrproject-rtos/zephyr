@@ -1,22 +1,23 @@
 #
 # Copyright (c) 2017, Linaro Limited
+# Copyright (c) 2018, STMicroelectronics
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
 title: STMicroelectronics MEMS sensors LSM6DSL
-id: st,lsm6dsl
+id: st,lsm6dsl-i2c
 version: 0.1
 
 description: >
     This binding gives a base representation of LSM6DSL 6-axis accelerometer
-    and gyrometer
+    and gyrometer accessed through I2C bus
 
 inherits:
     !include i2c-device.yaml
 
 properties:
     compatible:
-      constraint: "st,lsm6dsl"
+      constraint: "st,lsm6dsl-i2c"
 
 ...
