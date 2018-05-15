@@ -15,6 +15,7 @@
 
 #include <net/net_pkt.h>
 
+#include <usb_descriptor.h>
 #include "netusb.h"
 
 static u8_t tx_buf[NETUSB_MTU], rx_buf[NETUSB_MTU];
@@ -158,9 +159,58 @@ static struct usb_ep_cfg_data eem_ep_data[] = {
 	},
 };
 
+static inline void eem_status_interface(u8_t *iface)
+{
+	SYS_LOG_DBG("");
+
+	if (*iface != NETUSB_IFACE_IDX) {
+		return;
+	}
+
+	netusb_enable();
+}
+
+static void eem_status_cb(enum usb_dc_status_code status, u8_t *param)
+{
+	/* Check the USB status and do needed action if required */
+	switch (status) {
+	case USB_DC_ERROR:
+		SYS_LOG_DBG("USB device error");
+		break;
+	case USB_DC_RESET:
+		SYS_LOG_DBG("USB device reset detected");
+		break;
+	case USB_DC_CONNECTED:
+		SYS_LOG_DBG("USB device connected");
+		break;
+	case USB_DC_CONFIGURED:
+		SYS_LOG_DBG("USB device configured");
+		break;
+	case USB_DC_DISCONNECTED:
+		SYS_LOG_DBG("USB device disconnected");
+		netusb_disable();
+		break;
+	case USB_DC_SUSPEND:
+		SYS_LOG_DBG("USB device suspended");
+		break;
+	case USB_DC_RESUME:
+		SYS_LOG_DBG("USB device resumed");
+		break;
+	case USB_DC_INTERFACE:
+		SYS_LOG_DBG("USB interface selected");
+		eem_status_interface(param);
+		break;
+	case USB_DC_UNKNOWN:
+	default:
+		SYS_LOG_DBG("USB unknown state");
+		break;
+	}
+}
+
 struct netusb_function eem_function = {
 	.connect_media = eem_connect,
 	.class_handler = NULL,
+	.status_cb = eem_status_cb,
 	.send_pkt = eem_send,
 	.num_ep = ARRAY_SIZE(eem_ep_data),
 	.ep = eem_ep_data,
