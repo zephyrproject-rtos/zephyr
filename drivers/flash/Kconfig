@@ -36,68 +36,6 @@ config FLASH_PAGE_LAYOUT
 	help
 	  Enables API for retrieving the layout of flash memory pages.
 
-config SPI_FLASH_SFDP
-	bool
-	prompt "Generic SPI Flash driver (SFDP)"
-	depends on SPI && FLASH
-	depends on !SPI_LEGACY_API
-	help
-	  This is a generic driver for SPI Flash chips supporting Serial
-	  Flash Discoverable Parameters (SFDP).
-
-config SYS_LOG_SPI_FLASH_SFDP_LEVEL
-	int
-	prompt "SPI FLASH driver (SFDP) log level"
-	depends on SPI_FLASH_SFDP && FLASH
-	default 0
-	range 0 4
-	help
-	  Sets log level for SLIP driver.
-	  Levels are:
-	  0 OFF, do not write
-	  1 ERROR, only write SYS_LOG_ERR
-	  2 WARNING, write SYS_LOG_WRN in addition to previous level
-	  3 INFO, write SYS_LOG_INF in addition to previous levels
-	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
-
-config SPI_FLASH_SFDP_SPI_NAME
-	string
-	prompt "SPI controller device (SFDP) name"
-	depends on SPI_FLASH_SFDP
-	default ""
-
-config SPI_FLASH_SFDP_DRV_NAME
-	string
-	prompt "SPI flash device (SFDP) name"
-	depends on SPI_FLASH_SFDP
-	default "SPI_FLASH"
-
-config SPI_FLASH_SFDP_INIT_PRIORITY
-	int
-	depends on SPI_FLASH_SFDP
-	default 80
-	help
-	  Device driver initialization priority.
-	  Device is connected to SPI bus, it has to
-	  be initialized after SPI driver.
-
-config SPI_FLASH_SFDP_SPI_FREQ_0
-	int "SPI system frequency"
-	depends on SPI_FLASH_SFDP
-	default 12000000
-	help
-	  This option sets the SPI controller's frequency. Beware this value
-	  depends on the SPI controller being used and also on the system
-	  clock.
-
-config SPI_FLASH_SFDP_SPI_SLAVE
-	int "SPI slave linked to SPI flash"
-	depends on SPI_FLASH_SFDP
-	default 0
-	help
-	  This option sets the SPI slave number the SPI controller has to switch
-	  to when dealing with SFDP SPI flash chip.
-
 config SPI_FLASH_W25QXXDV
 	bool
 	prompt "SPI NOR Flash Winbond W25QXXDV"
@@ -248,3 +186,5 @@ config SOC_FLASH_NIOS2_QSPI_DEV_NAME
 source "drivers/flash/Kconfig.stm32"
 
 source "drivers/flash/Kconfig.sam0"
+
+source "drivers/flash/Kconfig.spi"

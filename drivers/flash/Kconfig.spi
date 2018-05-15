@@ -1,0 +1,97 @@
+# Kconfig.spi - SPI Flash driver configuration options
+
+#
+# Copyright (c) 2018 Findlay Feng
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SPI_FLASH
+	bool "SPI Flash"
+	depends on SPI && FLASH
+	default n
+	help
+	  Enable options for SPI Flash drivers.
+
+if SPI_FLASH
+
+config	SYS_LOG_SPI_FLASH_LEVEL
+	int
+	prompt "SPI FLASH driver log level"
+	depends on SYS_LOG && SPI_FLASH
+	default 0
+	range 0 4
+	help
+	  Sets log level for SLIP driver.
+	  Levels are:
+	  0 OFF, do not write
+	  1 ERROR, only write SYS_LOG_ERR
+	  2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  3 INFO, write SYS_LOG_INF in addition to previous levels
+	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+config SPI_FLASH_SPI_NAME
+	string
+	prompt "SPI controller device name"
+	depends on SPI_FLASH
+	default "SPI_0"
+
+config SPI_FLASH_DRV_NAME
+	string
+	prompt "SPI flash device name"
+	depends on SPI_FLASH
+	default "SPI_FLASH"
+
+config SPI_FLASH_SPI_SLAVE
+	int "SPI slave linked to SPI flash"
+	depends on SPI_FLASH
+	default 0
+	help
+	  This option sets the SPI slave number the SPI controller has to switch
+	  to when dealing with WinBond SPI flash chip.
+
+config SPI_FLASH_INIT_PRIORITY
+	int "SPI FLASH driver initialization priority"
+	depends on SPI_FLASH
+	default 80
+	help
+	  Device driver initialization priority.
+	  Device is connected to SPI bus, it has to
+	  be initialized after SPI driver.
+
+config SPI_FLASH_SPI_FREQ_0
+	int "SPI system frequency"
+	depends on SPI_FLASH
+	default 30000000
+	help
+	  This option sets the SPI controller's frequency. Beware this value
+	  depends on the SPI controller being used and also on the system
+	  clock.
+
+config SPI_FLASH_CS
+	bool "SPI Flash CS"
+	depends on SPI_FLASH
+	default n
+
+if SPI_FLASH_CS
+
+config SPI_FLASH_CS_NAME
+	string "SPI CS GPIO Device Name"
+	depends on SPI_FLASH_CS
+	default "GPIO_0"
+
+config SPI_FLASH_CS_PIN
+	int "SPI CS GPIO Pin"
+	depends on SPI_FLASH_CS
+	default 0
+
+config SPI_FLASH_CS_DELAY
+	int "SPI CS Delay"
+	depends on SPI_FLASH_CS
+	default 0
+
+endif # SPI_FLASH_CS
+
+endif # SPI_FLASH
+
+gsource "drivers/flash/Kconfig.spi.*"

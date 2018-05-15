@@ -112,6 +112,9 @@ struct sfdp_basic_flash_parameters {
 struct spi_flash_data {
 	struct device *spi;
 	struct spi_config config;
+#if defined(CONFIG_SPI_FLASH_CS)
+	struct spi_cs_control cs;
+#endif
 	struct k_sem sem;
 
 	u32_t flash_size, page_size;
@@ -564,17 +567,30 @@ static int spi_flash_init(struct device *dev)
 	struct spi_flash_data *data = dev->driver_data;
 	int r;
 
-	data->spi = device_get_binding(CONFIG_SPI_FLASH_SFDP_SPI_NAME);
+	data->spi = device_get_binding(CONFIG_SPI_FLASH_SPI_NAME);
 	if (!data->spi) {
 		return -EIO;
 	}
 
 	data->config = (struct spi_config) {
-		.frequency = CONFIG_SPI_FLASH_SFDP_SPI_FREQ_0,
+		.frequency = CONFIG_SPI_FLASH_SPI_FREQ_0,
 		.operation = SPI_WORD_SET(8),
-		.slave = CONFIG_SPI_FLASH_SFDP_SPI_SLAVE,
-		.cs = NULL
+		.slave = CONFIG_SPI_FLASH_SPI_SLAVE,
 	};
+
+#if defined(CONFIG_SPI_FLASH_CS)
+	data->cs = (struct spi_cs_control) {
+		.gpio_dev = device_get_binding(CONFIG_SPI_FLASH_CS_NAME),
+		.gpio_pin = CONFIG_SPI_FLASH_CS_PIN,
+		.delay = CONFIG_SPI_FLASH_CS_DELAY
+	};
+	if (!data->cs.gpio_dev) {
+		return -EIO;
+	}
+	data->config.cs = &data->cs;
+#else
+	data->config.cs = NULL;
+#endif
 
 	r = spi_flash_id(dev);
 	if (r != 0) {
@@ -593,6 +609,6 @@ static int spi_flash_init(struct device *dev)
 
 static struct spi_flash_data spi_flash_memory_data;
 
-DEVICE_INIT(spi_flash_memory, CONFIG_SPI_FLASH_SFDP_DRV_NAME,
+DEVICE_INIT(spi_flash_memory, CONFIG_SPI_FLASH_DRV_NAME,
             spi_flash_init, &spi_flash_memory_data, NULL, POST_KERNEL,
-            CONFIG_SPI_FLASH_SFDP_INIT_PRIORITY);
+            CONFIG_SPI_FLASH_INIT_PRIORITY);
