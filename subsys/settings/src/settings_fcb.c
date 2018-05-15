@@ -23,7 +23,7 @@ struct settings_fcb_load_cb_arg {
 static int settings_fcb_load(struct settings_store *cs, load_cb cb,
 			     void *cb_arg);
 static int settings_fcb_save(struct settings_store *cs, const char *name,
-			     const char *value);
+			     const char *value, size_t val_len);
 
 static struct settings_store_itf settings_fcb_itf = {
 	.csi_load = settings_fcb_load,
@@ -79,33 +79,23 @@ int settings_fcb_dst(struct settings_fcb *cf)
 static int settings_fcb_load_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 {
 	struct settings_fcb_load_cb_arg *argp;
-	char buf[SETTINGS_MAX_NAME_LEN + SETTINGS_MAX_VAL_LEN +
-		 SETTINGS_EXTRA_LEN];
-	char *name_str;
-	char *val_str;
+	char buf[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
 	int rc;
-	int len;
 
 	argp = (struct settings_fcb_load_cb_arg *)arg;
 
-	len = entry_ctx->loc.fe_data_len;
-	if (len >= sizeof(buf)) {
-		len = sizeof(buf) - 1;
-	}
+	size_t len_read;
 
-	rc = flash_area_read(entry_ctx->fap,
-			     FCB_ENTRY_FA_DATA_OFF(entry_ctx->loc), buf, len);
-
+	rc = settings_line_name_read(buf, sizeof(buf), &len_read,
+				     (void *)&entry_ctx->loc);
 	if (rc) {
 		return 0;
 	}
-	buf[len] = '\0';
+	buf[len_read] = '\0';
 
-	rc = settings_line_parse(buf, &name_str, &val_str);
-	if (rc) {
-		return 0;
-	}
-	argp->cb(name_str, val_str, argp->cb_arg);
+	/*name, val-read_cb-ctx, val-off*/
+	/* take into account '=' separator after the name */
+	argp->cb(buf, (void *)&entry_ctx->loc, len_read + 1, argp->cb_arg);
 	return 0;
 }
 
@@ -125,64 +115,79 @@ static int settings_fcb_load(struct settings_store *cs, load_cb cb,
 	return 0;
 }
 
-static int settings_fcb_var_read(struct fcb_entry_ctx *entry_ctx, char *buf,
-				 char **name, char **val)
+static int read_handler(void *ctx, off_t off, char *buf, size_t *len)
 {
-	int rc;
+	struct fcb_entry_ctx *entry_ctx = ctx;
 
-	rc = flash_area_read(entry_ctx->fap,
-			     FCB_ENTRY_FA_DATA_OFF(entry_ctx->loc), buf,
-			     entry_ctx->loc.fe_data_len);
-	if (rc) {
-		return rc;
+	if (off >= entry_ctx->loc.fe_data_len) {
+		return -EINVAL;
 	}
-	buf[entry_ctx->loc.fe_data_len] = '\0';
-	rc = settings_line_parse(buf, name, val);
-	return rc;
+
+	if ((off + *len) > entry_ctx->loc.fe_data_len) {
+		*len = entry_ctx->loc.fe_data_len - off;
+	}
+
+	return flash_area_read(entry_ctx->fap,
+			       FCB_ENTRY_FA_DATA_OFF(entry_ctx->loc) + off, buf,
+			       *len);
 }
 
 static void settings_fcb_compress(struct settings_fcb *cf)
 {
 	int rc;
-	char buf1[SETTINGS_MAX_NAME_LEN + SETTINGS_MAX_VAL_LEN +
-		  SETTINGS_EXTRA_LEN];
-	char buf2[SETTINGS_MAX_NAME_LEN + SETTINGS_MAX_VAL_LEN +
-		  SETTINGS_EXTRA_LEN];
 	struct fcb_entry_ctx loc1;
 	struct fcb_entry_ctx loc2;
-	char *name1, *val1;
-	char *name2, *val2;
+	char name1[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN];
+	char name2[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN];
 	int copy;
+	u8_t rbs;
 
 	rc = fcb_append_to_scratch(&cf->cf_fcb);
 	if (rc) {
 		return; /* XXX */
 	}
 
+	rbs = flash_area_align(cf->cf_fcb.fap);
+
 	loc1.fap = cf->cf_fcb.fap;
 
 	loc1.loc.fe_sector = NULL;
 	loc1.loc.fe_elem_off = 0;
+
 	while (fcb_getnext(&cf->cf_fcb, &loc1.loc) == 0) {
 		if (loc1.loc.fe_sector != cf->cf_fcb.f_oldest) {
 			break;
 		}
-		rc = settings_fcb_var_read(&loc1, buf1, &name1, &val1);
+
+		off_t val1_off;
+
+		rc = settings_line_name_read(name1, sizeof(name1), &val1_off,
+					     &loc1);
 		if (rc) {
 			continue;
 		}
-		if (!val1) {
-			/* No sense to copy empty entry from the oldest sector*/
+
+		if (val1_off + 1 == loc1.loc.fe_data_len) {
+			/* Lack of a value so the record is a deletion-record */
+			/* No sense to copy empty entry from */
+			/* the oldest sector */
 			continue;
 		}
+
 		loc2 = loc1;
 		copy = 1;
+
 		while (fcb_getnext(&cf->cf_fcb, &loc2.loc) == 0) {
-			rc = settings_fcb_var_read(&loc2, buf2, &name2, &val2);
+			off_t val2_off;
+
+			rc = settings_line_name_read(name2, sizeof(name2),
+						     &val2_off, &loc2);
 			if (rc) {
 				continue;
 			}
-			if (!strcmp(name1, name2)) {
+
+			if ((val1_off == val2_off) &&
+			    !memcmp(name1, name2, val1_off)) {
 				copy = 0;
 				break;
 			}
@@ -194,17 +199,13 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 		/*
 		 * Can't find one. Must copy.
 		 */
-		rc = flash_area_read(loc1.fap, FCB_ENTRY_FA_DATA_OFF(loc1.loc),
-				     buf1, loc1.loc.fe_data_len);
-		if (rc) {
-			continue;
-		}
 		rc = fcb_append(&cf->cf_fcb, loc1.loc.fe_data_len, &loc2.loc);
 		if (rc) {
 			continue;
 		}
-		rc = flash_area_write(loc2.fap, FCB_ENTRY_FA_DATA_OFF(loc2.loc),
-				      buf1, loc1.loc.fe_data_len);
+
+		rc = settings_entry_copy(&loc2, 0, &loc1, 0,
+					 loc1.loc.fe_data_len);
 		if (rc) {
 			continue;
 		}
@@ -216,14 +217,35 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 	__ASSERT(rc == 0, "Failed to fcb rotate.\n");
 }
 
-static int settings_fcb_append(struct settings_fcb *cf, char *buf, int len)
+static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
 {
+	struct fcb_entry_ctx *entry_ctx = ctx;
+
+	return flash_area_write(entry_ctx->fap,
+				FCB_ENTRY_FA_DATA_OFF(entry_ctx->loc) + off,
+				buf, len);
+}
+
+/* ::csi_save implementation */
+static int settings_fcb_save(struct settings_store *cs, const char *name,
+			     const char *value, size_t val_len)
+{
+	struct settings_fcb *cf = (struct settings_fcb *)cs;
+	struct fcb_entry_ctx loc;
+	int len;
 	int rc;
 	int i;
-	struct fcb_entry loc;
+	u8_t wbs;
 
-	for (i = 0; i < 10; i++) {
-		rc = fcb_append(&cf->cf_fcb, len, &loc);
+	if (!name) {
+		return -EINVAL;
+	}
+
+	wbs = flash_area_align(cf->cf_fcb.fap);
+	len = settings_line_len_calc(name, val_len);
+
+	for (i = 0; i < CONFIG_SETTINGS_FCB_NUM_AREAS; i++) {
+		rc = fcb_append(&cf->cf_fcb, len, &loc.loc);
 		if (rc != FCB_ERR_NOSPACE) {
 			break;
 		}
@@ -233,29 +255,24 @@ static int settings_fcb_append(struct settings_fcb *cf, char *buf, int len)
 		return -EINVAL;
 	}
 
-	rc = flash_area_write(cf->cf_fcb.fap, FCB_ENTRY_FA_DATA_OFF(loc),
-			      buf, len);
-	if (rc) {
-		return -EINVAL;
+	loc.fap = cf->cf_fcb.fap;
+
+	rc = settings_line_write(name, value, val_len, 0, (void *)&loc);
+
+	if (rc != -EIO) {
+		i = fcb_append_finish(&cf->cf_fcb, &loc.loc);
+		if (!rc) {
+			rc = i;
+		}
 	}
-	return fcb_append_finish(&cf->cf_fcb, &loc);
+	return rc;
 }
 
-static int settings_fcb_save(struct settings_store *cs, const char *name,
-			     const char *value)
+void settings_mount_fcb_backend(struct settings_fcb *cf)
 {
-	struct settings_fcb *cf = (struct settings_fcb *)cs;
-	char buf[SETTINGS_MAX_NAME_LEN + SETTINGS_MAX_VAL_LEN +
-		 SETTINGS_EXTRA_LEN];
-	int len;
+	u8_t rbs;
 
-	if (!name) {
-		return -EINVAL;
-	}
+	rbs = cf->cf_fcb.f_align;
 
-	len = settings_line_make(buf, sizeof(buf), name, value);
-	if (len < 0 || len + 2 > sizeof(buf)) {
-		return -EINVAL;
-	}
-	return settings_fcb_append(cf, buf, len);
+	settings_line_io_init(read_handler, write_handler, rbs);
 }
