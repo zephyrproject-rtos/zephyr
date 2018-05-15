@@ -29,6 +29,8 @@ int settings_file_src(struct settings_file *cf);
 /* settings saves go to a file */
 int settings_file_dst(struct settings_file *cf);
 
+void settings_mount_fs_backend(struct settings_file *cf);
+
 #ifdef __cplusplus
 }
 #endif
