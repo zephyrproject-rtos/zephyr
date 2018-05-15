@@ -49,6 +49,13 @@ static void tmslab_api(void *p1, void *p2, void *p3)
 }
 
 /* test cases*/
+/**
+ * @brief Verify alloc and free from multiple equal priority threads
+ *
+ * @details Test creates 4 preemptive threads of equal priorty. Then
+ * validates the syncronization of threads by allocating and
+ * freeing up the memory blocks in memory slab.
+ */
 void test_mslab_threadsafe(void)
 {
 	k_tid_t tid[THREAD_NUM];
