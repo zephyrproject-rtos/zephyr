@@ -4,7 +4,7 @@ compiler: gcc
 
 env:
     global:
-        - SDK=0.9.2
+        - SDK=0.9.3
         - SANITYCHECK_OPTIONS=" --inline-logs"
         - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.2
