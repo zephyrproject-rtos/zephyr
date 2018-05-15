@@ -46,6 +46,7 @@
 		led1 = &green_led_2;
 		led2 = &bt_blue_led;
 		sw0 = &user_button;
+		bt = &bt0;
 	};
 };
 
@@ -83,9 +84,11 @@
 	status = "ok";
 
 	/* Nordic nRF51822-QFAC */
-	bt-hci@0 {
+	bt0: bt-hci@0 {
 		compatible = "zephyr,bt-hci-spi";
 		reg = <0>;
+		reset-gpios = <&gpiob 4 0>;
+		irq-gpios = <&gpiob 1 0>;
 		spi-max-frequency = <2000000>;
 		label = "BT_HCI";
 	};
