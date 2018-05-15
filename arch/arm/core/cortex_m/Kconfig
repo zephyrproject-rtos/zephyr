@@ -319,6 +319,15 @@ config SW_VECTOR_RELAY
 	  vector table relocation mechanisms or for Cortex-M0+
 	  (or an Armv8-M baseline core) with no VTOR and no other hardware
 	  relocation table mechanisms.
+
+config PLATFORM_SPECIFIC_INIT
+	bool
+	prompt "Enable platform (SOC) specific startup hook"
+	default n
+	help
+	  The platform specific initialization code (_PlatformInit) is executed
+	  at the beginning of the startup code (__start).
+
 endmenu
 
 endif # CPU_CORTEX_M
