@@ -35,6 +35,8 @@
 
 static ALWAYS_INLINE void clkInit(void)
 {
+
+#ifdef CONFIG_SOC_LPC54114_M4
 	/* Set up the clock sources */
 
 	/* Ensure FRO is on */
@@ -62,6 +64,7 @@ static ALWAYS_INLINE void clkInit(void)
 
 	/* Attach 12 MHz clock to FLEXCOMM0 */
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM0);
+#endif /* CONFIG_SOC_LPC54114_M4 */
 }
 
 /**
