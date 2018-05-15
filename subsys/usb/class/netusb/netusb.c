@@ -26,8 +26,8 @@
 
 #include <net/ethernet.h>
 
-#include "../../usb_descriptor.h"
-#include "../../composite.h"
+#include <usb_descriptor.h>
+#include <composite.h>
 #include "netusb.h"
 
 static struct __netusb {
