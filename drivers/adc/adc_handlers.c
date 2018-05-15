@@ -25,14 +25,19 @@ _SYSCALL_HANDLER(adc_read, dev, seq_table_p)
 {
 	struct adc_seq_entry *entry;
 	struct adc_seq_table *seq_table = (struct adc_seq_table *)seq_table_p;
-	int i;
+	struct adc_seq_table seq_table_copy;
+	int i = 0;
 
 	_SYSCALL_DRIVER_ADC(dev, read);
 	_SYSCALL_MEMORY_READ(seq_table, sizeof(struct adc_seq_table));
-	_SYSCALL_MEMORY_ARRAY_READ(seq_table->entries, seq_table->num_entries,
+
+	seq_table_copy = *seq_table;
+
+	_SYSCALL_MEMORY_ARRAY_READ(seq_table_copy.entries,
+				   seq_table_copy.num_entries,
 				   sizeof(struct adc_seq_entry));
 
-	for (entry = seq_table->entries, i = 0; i < seq_table->num_entries;
+	for (entry = seq_table_copy.entries; i < seq_table_copy.num_entries;
 	     i++, entry++) {
 		_SYSCALL_MEMORY_WRITE(entry->buffer, entry->buffer_length);
 	}
