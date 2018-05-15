@@ -230,7 +230,7 @@ struct lwm2m_engine_res_inst {
 	lwm2m_engine_get_data_cb_t	read_cb;
 	lwm2m_engine_get_data_cb_t	pre_write_cb;
 	lwm2m_engine_set_data_cb_t	post_write_cb;
-	lwm2m_engine_exec_cb_t		execute_cb;
+	lwm2m_engine_user_cb_t		execute_cb;
 
 	u8_t  *multi_count_var;
 	void  *data_ptr;

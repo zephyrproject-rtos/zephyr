@@ -1883,7 +1883,7 @@ int lwm2m_engine_register_post_write_callback(char *pathstr,
 }
 
 int lwm2m_engine_register_exec_callback(char *pathstr,
-					lwm2m_engine_exec_cb_t cb)
+					lwm2m_engine_user_cb_t cb)
 {
 	int ret;
 	struct lwm2m_engine_res_inst *res = NULL;
