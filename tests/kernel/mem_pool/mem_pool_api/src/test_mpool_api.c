@@ -70,16 +70,58 @@ void tmpool_alloc_free(void *data)
 }
 
 /*test cases*/
+
+/**
+ * @brief Test to validate k_mem_pool_allocate and k_mem_pool_free()
+ * of different block sizes.
+ *
+ * @details The test defines a memory pool which has 2 blocks of
+ * maximum size 128 bytes and minimum size 64 bytes with block
+ * alignment of 8 bytes. The test allocates 2 blocks of size 64
+ * bytes and frees up both the blocks. Then it allocates 2 blocks
+ * of size 128 bytes and frees them up. The test is basically
+ * checking if allocation happens for MAX_SIZE and MIN_SIZE
+ * defined in memory pool.
+ */
 void test_mpool_alloc_free_thread(void)
 {
 	tmpool_alloc_free(NULL);
 }
 
+/**
+ * @brief Test to validate alloc and free on mem_pool on IRQ context
+ *
+ * @details The test is run on IRQ context. The test calls the same
+ * function which mem_pool_alloc_free_thread does.
+ * The test defines a memory pool which has 2 blocks of maximum
+ * size 128 bytes and minimum size 64 bytes with block alignment
+ * of 8 bytes. The test allocates 2 blocks of size 64 bytes and
+ * frees up both the blocks. Then it allocates 2 blocks of size 128
+ * bytes and frees them up. The test is basically checking if allocation
+ * happens for MAX_SIZE and MIN_SIZE defined in memory pool.
+ */
 void test_mpool_alloc_free_isr(void)
 {
 	irq_offload(tmpool_alloc_free, NULL);
 }
 
+/**
+ * @brief Test to validate how a mem_pool provides functionality
+ * to break a block into quarters.
+ *
+ * @details The test case validates how a mem_pool provides
+ * functionality to break a block into quarters and repeatedly
+ * allocate and free the blocks. Initially a block of 128
+ * bytes(MAX_BLCK_SIZE) is allocated and checked if it is 8 byte
+ * aligned. Checked if the block size allocated is greater than
+ * or equal to MIN_BLCK_SIZE which is 32. Now a block of 32 bytes
+ * is allocated and checked for 8 byte alignment and >= to
+ * MIN_BLCK_SIZE. All the blocks are freed. Now do the same
+ * procedure starting with allocation of MIN_BLCK_SIZE and gradually
+ * increase the size of block upto MAX_BLCK_SIZE along with checking
+ * for alignment. finally realise all the blocks allocated using
+ * k_mem_pool_free(&block_id).
+ */
 void test_mpool_alloc_size(void)
 {
 	struct k_mem_block block[BLK_NUM_MIN];
@@ -121,6 +163,9 @@ void test_mpool_alloc_size(void)
 	}
 }
 
+/**
+ * @brief Verify memory pool allocation with timeouts
+ */
 void test_mpool_alloc_timeout(void)
 {
 	struct k_mem_block block[BLK_NUM_MIN], fblock;

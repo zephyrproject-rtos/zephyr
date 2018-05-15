@@ -65,6 +65,29 @@ void tmpool_alloc_wait_ok(void *p1, void *p2, void *p3)
 }
 
 /*test cases*/
+/**
+ * @brief Test to check the behavior of alloc and free
+ * on memory pool in multiple threads of different priority
+ * scenario.
+ *
+ * @details The test case allocates 3 blocks of MIN_SIZE
+ * which is 64 bytes in memory pool with NO_WAIT,
+ * (all blocks of memory pool are allocated, no free blocks left).
+ * Now create 3 threads with priority 1( lowest priority) (T1)
+ * and other thread with priority 0 and delayed start for 10 ms (T2)
+ * and another with priority 0 with delayed start for 20ms(T3).
+ * The main threads goes to sleep and lets other threads run.
+ * Now T3 will start to execute, tries to allocate a block,
+ * again of MIN_SIZE = 64 bytes, but timeouts since there are
+ * no blocks to allocate. Now T2 will tries to allocate memory
+ * block with timeout of 2000ms. The main thread, then frees 1
+ * block = 64 bytes and that block will be acquired by T2 and
+ * T2 gives the semaphore. The main thread starts executing,
+ * and takes the semaphore with K_FOREVER wait and lets T1 run,
+ * T1 tries to allocate the block of same size but fails with
+ * -ENOMEM. The main thread then aborts all 3 threads and
+ * frees up all the blocks allocated.
+ */
 void test_mpool_alloc_wait_prio(void)
 {
 	struct k_mem_block block[BLK_NUM_MIN];

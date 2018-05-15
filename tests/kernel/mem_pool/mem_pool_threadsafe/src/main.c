@@ -77,6 +77,17 @@ static void tmpool_api(void *p1, void *p2, void *p3)
 }
 
 /* test cases*/
+/**
+ * @brief Test to check the behavior of alloc and free
+ * on memory pool in multiple threads of same priority scenario.
+ *
+ * @details The test creates 4 threads of equal priority and
+ * invokes memory pool APIs on same memory domain. Checks for
+ * the synronization of threads on the resource memory pool.
+ * Each thread allocates 4 blocks of size 4 bytes (all blocks
+ * in memory pool) with timeout of 200 ms and frees up all the
+ * blocks
+ */
 void test_mpool_threadsafe(void)
 {
 	k_tid_t tid[THREAD_NUM];
