@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_lpc54xxx.dtsi>
+#include <nxp/nxp_lpc54xxx_m4.dtsi>
 
 / {
 	model = "NXP LPCXpresso54114 board";
