@@ -57,16 +57,36 @@ void tmpool_alloc_free(void *data)
 }
 
 /*test cases*/
+/**
+ * @brief Verify alloc and free of different block sizes.
+ *
+ * @details The test is basically checking if allocation
+ * happens for MAX_SIZE and MIN_SIZE defined in memory pool.
+ */
 void test_mpool_alloc_free_thread(void)
 {
 	tmpool_alloc_free(NULL);
 }
 
+/**
+ * @brief Test to validate alloc and free on IRQ context
+ *
+ * @details The test is run on IRQ context.
+ * The test checks allocation of MAX_SIZE and MIN_SIZE
+ * defined in memory pool.
+ */
 void test_mpool_alloc_free_isr(void)
 {
 	irq_offload(tmpool_alloc_free, NULL);
 }
 
+/**
+ * @brief Validates breaking a block into quarters feature
+ *
+ * @details The test case validates how a mem_pool provides
+ * functionality to break a block into quarters and repeatedly
+ * allocate and free the blocks.
+ */
 void test_mpool_alloc_size(void)
 {
 	struct k_mem_block block[BLK_NUM_MIN];
@@ -108,6 +128,9 @@ void test_mpool_alloc_size(void)
 	}
 }
 
+/**
+ * @brief Verify memory pool allocation with timeouts
+ */
 void test_mpool_alloc_timeout(void)
 {
 	struct k_mem_block block[BLK_NUM_MIN], fblock;

@@ -8,6 +8,16 @@
 #include "test_mheap.h"
 
 /*test cases*/
+
+/**
+ * @brief Test to demonstrate k_malloc() and k_free() API usage
+ *
+ * @details The test allocates 4 blocks from heap memory pool
+ * using k_malloc() API. It also tries to allocate a block of size
+ * 64 bytes which fails as all the memory is allocated up. It then
+ * validates k_free() API by feeing up all the blocks which were
+ * allocated from the heap memory.
+ */
 void test_mheap_malloc_free(void)
 {
 	void *block[BLK_NUM_MAX], *block_fail;
@@ -38,10 +48,19 @@ void test_mheap_malloc_free(void)
 	k_free(NULL);
 }
 
-#define NMEMB	8
-#define SIZE	16
-#define BOUNDS	(NMEMB * SIZE)
+#define NMEMB   8
+#define SIZE    16
+#define BOUNDS  (NMEMB * SIZE)
 
+/**
+ * @brief Test to demonstrate k_calloc() API functionality.
+ *
+ * @details The test validates k_calloc() API. The 8 blocks of memory of
+ * size 16 bytes are allocated by k_calloc() API. When allocated using
+ * k_calloc() the memory buffers have to be zeroed. Check is done, if the
+ * blocks are memset to 0 and read/write is allowed. The test is then
+ * teared up by freeing all the blocks allocated.
+ */
 void test_mheap_calloc(void)
 {
 	char *mem;

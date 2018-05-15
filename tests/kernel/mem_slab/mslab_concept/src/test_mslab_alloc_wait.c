@@ -34,6 +34,18 @@ void tmslab_alloc_wait_ok(void *p1, void *p2, void *p3)
 }
 
 /*test cases*/
+/**
+ * @brief Verify alloc with multiple threads
+ *
+ * @details The test allocates all blocks of memory slab and
+ * then spawns 3 threads with lowest priority and 2 more with
+ * same priority higher than first thread with delay 10ms and
+ * 20ms. Checks the behavior of alloc when requested by multiple
+ * threads
+ *
+ * @see k_mem_slab_alloc()
+ * @see k_mem_slab_free()
+ */
 void test_mslab_alloc_wait_prio(void)
 {
 	void *block[BLK_NUM];
