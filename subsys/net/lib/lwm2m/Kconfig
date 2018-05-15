@@ -95,13 +95,6 @@ config LWM2M_RD_CLIENT_SUPPORT
 	  Client will use registration state machine to locate and connect to
 	  LWM2M servers (including bootstrap server support)
 
-config LWM2M_RD_CLIENT_INSTANCE_COUNT
-	int "Maximum # of LWM2M RD client instances"
-	default 1
-	help
-	  This setting establishes the total count of LWM2M RD client instances
-	  available.
-
 config LWM2M_PEER_PORT
 	int "LWM2M server port"
 	depends on LWM2M_RD_CLIENT_SUPPORT
