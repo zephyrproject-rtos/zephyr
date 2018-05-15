@@ -84,23 +84,6 @@ Building a Sample Application
 
 To build an example application follow these steps:
 
-
-#. Make sure your environment is setup by exporting the following environment
-   variables. When using the Zephyr SDK on Linux for example, type:
-
-   .. code-block:: console
-
-
-      # On Linux/macOS
-      export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-      export ZEPHYR_SDK_INSTALL_DIR=<sdk installation directory>
-      # On Windows
-      set ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-      set ZEPHYR_SDK_INSTALL_DIR=<sdk installation directory>
-
-   .. note:: In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT``
-             variable was called ``ZEPHYR_GCC_VARIANT``.
-
 #. Navigate to the main project directory:
 
    .. code-block:: console

@@ -144,6 +144,9 @@ packages from their respective websites.
 
       zephyr-env.cmd
 
+.. note:: In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT``
+          variable was called ``ZEPHYR_GCC_VARIANT``.
+
 #. Finally, you can try building the :ref:`hello_world` sample to check things
    out.
 
