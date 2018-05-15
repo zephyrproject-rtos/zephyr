@@ -1,3 +1,4 @@
+zephyr_sources_ifdef(CONFIG_SPI_FLASH spi_flash_sfdp.c)
 zephyr_sources_ifdef(CONFIG_SPI_FLASH_W25QXXDV spi_flash_w25qxxdv.c)
 zephyr_sources_ifdef(CONFIG_SOC_FLASH_QMSI soc_flash_qmsi.c)
 zephyr_sources_ifdef(CONFIG_SOC_FLASH_NRF soc_flash_nrf.c)
