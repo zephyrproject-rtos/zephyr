@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright (c) 2017,2018, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,9 +8,7 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
-#include <uart.h>
 #include <linker/sections.h>
-#include <fsl_common.h>
 #include <fsl_clock.h>
 #include <arch/cpu.h>
 #include <cortex_m/exc.h>
@@ -29,74 +27,6 @@ const clock_sys_pll_config_t sysPllConfig = {
 const clock_usb_pll_config_t usb1PllConfig = {
 	.loopDivider = 0U
 };
-
-static void BOARD_BootClockGate(void)
-{
-	/* Disable all unused peripheral clocks */
-	CCM->CCGR0 = CCM_CCGR0_CG15(0) | CCM_CCGR0_CG14(0) |
-		     CCM_CCGR0_CG13(0) | CCM_CCGR0_CG12(0) |
-		     CCM_CCGR0_CG11(3) | CCM_CCGR0_CG10(0) |
-		     CCM_CCGR0_CG9(0) | CCM_CCGR0_CG8(0) |
-		     CCM_CCGR0_CG7(0) | CCM_CCGR0_CG6(0) |
-		     CCM_CCGR0_CG5(0) | CCM_CCGR0_CG4(0) |
-		     CCM_CCGR0_CG3(0) | CCM_CCGR0_CG2(0) |
-		     CCM_CCGR0_CG1(3) | CCM_CCGR0_CG0(3);
-
-	CCM->CCGR1 = CCM_CCGR1_CG15(0) | CCM_CCGR1_CG14(3) |
-		     CCM_CCGR1_CG13(0) | CCM_CCGR1_CG12(0) |
-		     CCM_CCGR1_CG11(0) | CCM_CCGR1_CG10(0) |
-		     CCM_CCGR1_CG9(0) | CCM_CCGR1_CG8(0) |
-		     CCM_CCGR1_CG7(0) | CCM_CCGR1_CG6(0) |
-		     CCM_CCGR1_CG5(0) | CCM_CCGR1_CG4(0) |
-		     CCM_CCGR1_CG3(0) | CCM_CCGR1_CG2(0) |
-		     CCM_CCGR1_CG1(0) | CCM_CCGR1_CG0(0);
-
-	CCM->CCGR2 = CCM_CCGR2_CG15(3) | CCM_CCGR2_CG14(3) |
-		     CCM_CCGR2_CG13(3) | CCM_CCGR2_CG12(3) |
-		     CCM_CCGR2_CG11(0) | CCM_CCGR2_CG10(3) |
-		     CCM_CCGR2_CG9(3) | CCM_CCGR2_CG8(3) |
-		     CCM_CCGR2_CG7(0) | CCM_CCGR2_CG6(3) |
-		     CCM_CCGR2_CG5(0) | CCM_CCGR2_CG4(0) |
-		     CCM_CCGR2_CG3(0) | CCM_CCGR2_CG2(3) |
-		     CCM_CCGR2_CG1(3) | CCM_CCGR2_CG0(3);
-
-	CCM->CCGR3 = CCM_CCGR3_CG15(3) | CCM_CCGR3_CG14(3) |
-		     CCM_CCGR3_CG13(0) | CCM_CCGR3_CG12(0) |
-		     CCM_CCGR3_CG11(0) | CCM_CCGR3_CG10(0) |
-		     CCM_CCGR3_CG9(0) | CCM_CCGR3_CG8(0) |
-		     CCM_CCGR3_CG7(0) | CCM_CCGR3_CG6(0) |
-		     CCM_CCGR3_CG5(0) | CCM_CCGR3_CG4(3) |
-		     CCM_CCGR3_CG3(0) | CCM_CCGR3_CG2(3) |
-		     CCM_CCGR3_CG1(0) | CCM_CCGR3_CG0(0);
-
-
-	CCM->CCGR4 = CCM_CCGR4_CG15(0) | CCM_CCGR4_CG14(0) |
-		     CCM_CCGR4_CG13(0) | CCM_CCGR4_CG12(0) |
-		     CCM_CCGR4_CG11(0) | CCM_CCGR4_CG10(0) |
-		     CCM_CCGR4_CG9(0) | CCM_CCGR4_CG8(0) |
-		     CCM_CCGR4_CG7(3) | CCM_CCGR4_CG6(3) |
-		     CCM_CCGR4_CG5(3) | CCM_CCGR4_CG4(3) |
-		     CCM_CCGR4_CG3(0) | CCM_CCGR4_CG2(3) |
-		     CCM_CCGR4_CG1(3) | CCM_CCGR4_CG0(0);
-
-	CCM->CCGR5 = CCM_CCGR5_CG15(3) | CCM_CCGR5_CG14(3) |
-		     CCM_CCGR5_CG13(0) | CCM_CCGR5_CG12(0) |
-		     CCM_CCGR5_CG11(0) | CCM_CCGR5_CG10(0) |
-		     CCM_CCGR5_CG9(0) | CCM_CCGR5_CG8(3) |
-		     CCM_CCGR5_CG7(0) | CCM_CCGR5_CG6(3) |
-		     CCM_CCGR5_CG5(0) | CCM_CCGR5_CG4(3) |
-		     CCM_CCGR5_CG3(0) | CCM_CCGR5_CG2(0) |
-		     CCM_CCGR5_CG1(3) | CCM_CCGR5_CG0(3);
-
-	CCM->CCGR6 = CCM_CCGR6_CG15(0) | CCM_CCGR6_CG14(0) |
-		     CCM_CCGR6_CG13(0) | CCM_CCGR6_CG12(0) |
-		     CCM_CCGR6_CG11(3) | CCM_CCGR6_CG10(3) |
-		     CCM_CCGR6_CG9(3) | CCM_CCGR6_CG8(0) |
-		     CCM_CCGR6_CG7(0) | CCM_CCGR6_CG6(0) |
-		     CCM_CCGR6_CG5(3) | CCM_CCGR6_CG4(3) |
-		     CCM_CCGR6_CG3(0) | CCM_CCGR6_CG2(0) |
-		     CCM_CCGR6_CG1(0) | CCM_CCGR6_CG0(0);
-}
 
 /**
  *
@@ -137,20 +67,12 @@ static ALWAYS_INLINE void clkInit(void)
 	/* Set PERIPH_CLK MUX to PRE_PERIPH_CLK */
 	CLOCK_SetMux(kCLOCK_PeriphMux, 0x0);
 
-	/* Disable unused clock */
-	BOARD_BootClockGate();
-
-	/* Power down all unused PLL */
-	CLOCK_DeinitAudioPll();
-	CLOCK_DeinitVideoPll();
-	CLOCK_DeinitEnetPll();
-	CLOCK_DeinitUsb2Pll();
-
 #ifdef CONFIG_UART_MCUX_LPUART
 	/* Configure UART divider to default */
 	CLOCK_SetMux(kCLOCK_UartMux, 0); /* Set UART source to PLL3 80M */
 	CLOCK_SetDiv(kCLOCK_UartDiv, 0); /* Set UART divider to 1 */
 #endif
+
 }
 
 /**
@@ -196,7 +118,7 @@ static int imxrt_init(struct device *arg)
 
 	_ClearFaults();
 
-	/* Initialize PLL/system clock to 120 MHz */
+	/* Initialize system clock */
 	clkInit();
 
 	/*
