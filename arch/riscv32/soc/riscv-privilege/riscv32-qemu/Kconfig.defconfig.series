@@ -20,18 +20,6 @@ config NUM_IRQS
 	int
 	default 32
 
-config RISCV_ROM_BASE_ADDR
-	hex
-	default 0x00001000
-
-config RISCV_ROM_SIZE
-	hex
-	default 0x100000
-
-config RISCV_RAM_BASE_ADDR
-	hex
-	default	0x80000000
-
 config RISCV_RAM_SIZE_MB
 	int
 	default 32

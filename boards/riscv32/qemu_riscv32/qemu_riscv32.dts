@@ -1,0 +1,23 @@
+/dts-v1/;
+
+#include <riscv32-qemu.dtsi>
+
+/ {
+	model = "qemu_riscv32";
+	compatible = "qemu,riscv32";
+
+	aliases {
+		uart_0 = &uart0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+	};
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+};

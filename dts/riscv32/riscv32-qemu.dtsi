@@ -1,0 +1,41 @@
+#include "skeleton.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "qemu,riscv32";
+			reg = <0>;
+		};
+
+	};
+
+	flash0: flash@1000 {
+		reg = <0x1000 0x100000>;
+	};
+
+	sram0: memory@80000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x80000000 0x2000000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		uart0: uart@40002000 {
+			compatible = "riscv,qemu-uart";
+			reg = <0x40002000 0x400>;
+			label = "uart0";
+
+			status = "disabled";
+		};
+
+	};
+};

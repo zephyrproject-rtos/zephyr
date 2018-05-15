@@ -7,5 +7,5 @@
 /**
  * @brief Linker script for riscv32-qemu
  */
-
+#include <generated_dts_board.h>
 #include <arch/riscv32/common/linker.ld>

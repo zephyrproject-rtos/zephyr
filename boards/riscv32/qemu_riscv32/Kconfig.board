@@ -3,3 +3,4 @@ config BOARD_QEMU_RISCV32
 	bool "QEMU RISCV32 target"
 	depends on SOC_RISCV32_QEMU
 	select QEMU_TARGET
+	select HAS_DTS

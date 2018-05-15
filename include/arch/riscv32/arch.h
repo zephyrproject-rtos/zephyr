@@ -20,6 +20,7 @@
 #include <irq.h>
 #include <sw_isr_table.h>
 #include <soc.h>
+#include <generated_dts_board.h>
 
 #ifdef __cplusplus
 extern "C" {
