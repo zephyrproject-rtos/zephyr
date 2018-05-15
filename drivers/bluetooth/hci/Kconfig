@@ -11,9 +11,8 @@ comment "Bluetooth HCI Driver Options"
 config BT_UART
 	bool
 
-choice
+choice BT_HCI_BUS_TYPE
 	prompt "Bluetooth HCI driver"
-	default BT_H4
 
 config BT_H4
 	bool "H:4 UART"
