@@ -6,13 +6,13 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_lpc54xxx.dtsi>
+#include <nxp/nxp_lpc54xxx_m0.dtsi>
 
 / {
-	model = "NXP LPCXpresso54114 board";
-	compatible = "nxp,lpc54xxx", "nxp,lpc";
+	model = "NXP LPCXPRESSO54114 board";
+	compatible = "nxp,lpc54xxx","nxp,lpc";
 
-	aliases{
+	aliases {
 		usart-0 = &usart0;
 		mailbox-0 = &mailbox0;
 		led0 = &red_led;
@@ -21,9 +21,9 @@
 	};
 
 	chosen {
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
-		zephyr,console = &usart0;
+		zephyr,sram = &sram2;
+		zephyr,flash = &sram1;
+		/*zephyr,console = &usart0; uncomment to use console on M0  */
 	};
 
 	leds {
@@ -44,7 +44,7 @@
 };
 
 &usart0 {
-	status = "ok";
+	status = "disabled"; /* enable for console, if needed */
 	current-speed = <115200>;
 };
 

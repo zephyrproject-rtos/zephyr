@@ -5,7 +5,12 @@ string(TOUPPER ${CONFIG_SOC} MCUX_DEVICE)
 if("${MCUX_DEVICE}" STREQUAL "LPC54114")
   set(MCUX_CPU CPU_${CONFIG_SOC_PART_NUMBER}_cm4)
 else()
-  set(MCUX_CPU CPU_${CONFIG_SOC_PART_NUMBER})
+  if("${MCUX_DEVICE}" STREQUAL "LPC54114_M0")
+    set(MCUX_CPU CPU_${CONFIG_SOC_PART_NUMBER}_cm0plus)
+    set(MCUX_DEVICE LPC54114)
+  else()
+    set(MCUX_CPU CPU_${CONFIG_SOC_PART_NUMBER})
+  endif()
 endif()
 
 zephyr_include_directories(devices/${MCUX_DEVICE})
@@ -30,3 +35,7 @@ add_subdirectory_ifdef(
   CONFIG_IEEE802154_KW41Z
   middleware/wireless/framework_5.3.3
   )
+
+enable_language(C ASM)
+
+zephyr_sources_ifdef(CONFIG_SOC_LPC54114_M4 devices/${MCUX_DEVICE}/startup_LPC54114_cm4.S)
