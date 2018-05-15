@@ -21,6 +21,11 @@ config NET_DTLS
 	default n
 	depends on NET_UDP && MBEDTLS
 
+config NET_TLS_DEBUG
+	bool "Enable TLS debug log"
+	default n
+	depends on NET_TLS || NET_DTLS
+
 config NET_MAX_CREDENTIALS_NUMBER
 	int "Maximum number of TLS/DTLS credentials"
 	default 4

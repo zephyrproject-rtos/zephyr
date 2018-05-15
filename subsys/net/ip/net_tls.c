@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_NET_TLS_DEBUG)
+#define SYS_LOG_DOMAIN "net/tls"
+#define NET_LOG_ENABLED 1
+#endif
+
+#include <stdio.h>
 #include <sys/param.h>
 
 #include "net_private.h"
@@ -28,6 +34,33 @@ struct net_tls_credential {
 
 /* Global poll of credentials shared among TLS contexts. */
 static struct net_tls_credential credentials[CONFIG_NET_MAX_CREDENTIALS_NUMBER];
+
+#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_TLS_DEBUG)
+static void my_debug(void *ctx, int level,
+		     const char *file, int line, const char *str)
+{
+	const char *p, *basename;
+	int len;
+
+	ARG_UNUSED(ctx);
+
+	/* Extract basename from file */
+	for (p = basename = file; *p != '\0'; p++) {
+		if (*p == '/' || *p == '\\') {
+			basename = p + 1;
+		}
+
+	}
+
+	/* Avoid printing double newlines */
+	len = strlen(str);
+	if (str[len - 1] == '\n') {
+		((char *)str)[len - 1] = '\0';
+	}
+
+	NET_DBG("%s:%04d: |%d| %s", basename, line, level, str);
+}
+#endif /* defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_TLS_DEBUG) */
 
 static struct net_tls_credential *unused_credential_get(void)
 {
@@ -353,6 +386,10 @@ void net_tls_init(void)
 			       client_psk_id, sizeof(client_psk_id));
 #endif /* MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED */
 #endif /* CONFIG_NET_PRECONFIGURE_TLS_CREDENTIALS */
+
+#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_TLS_DEBUG)
+	mbedtls_debug_set_threshold(CONFIG_MBEDTLS_DEBUG_LEVEL);
+#endif
 }
 
 int net_tls_enable(struct net_context *context, bool enabled)
@@ -380,6 +417,10 @@ int net_tls_enable(struct net_context *context, bool enabled)
 				    tls_tx, tls_rx, NULL);
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 		mbedtls_x509_crt_init(&context->mbedtls.ca_chain);
+#endif
+
+#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_TLS_DEBUG)
+		mbedtls_ssl_conf_dbg(&context->mbedtls.config, my_debug, NULL);
 #endif
 	} else {
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
