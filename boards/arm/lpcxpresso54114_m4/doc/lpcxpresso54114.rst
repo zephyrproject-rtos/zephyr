@@ -67,7 +67,7 @@ features:
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/lpcxpresso54114/lpcxpresso54114_defconfig``
+	``boards/arm/lpcxpresso54114_m4/lpcxpresso54114_m4_defconfig``
 
 Other hardware features are not currently supported by the port.
 

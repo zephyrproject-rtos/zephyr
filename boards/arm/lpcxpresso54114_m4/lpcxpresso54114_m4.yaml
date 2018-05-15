@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: lpcxpresso54114
-name: NXP LPCXpresso54114
+identifier: lpcxpresso54114_m4
+name: NXP LPCXpresso54114 M4
 type: mcu
 arch: arm
 ram: 64
