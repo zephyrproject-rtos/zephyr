@@ -122,6 +122,18 @@ config NUM_METAIRQ_PRIORITIES
 	 for cooperative threads, this tool probably shouldn't be used
 	 from application code.
 
+config SCHED_DEADLINE
+	bool
+	prompt "Enable earliest-deadline-first scheduling"
+	default n
+	help
+	  This enables a simple "earliest deadline first" scheduling
+	  mode where threads can set "deadline" deltas measured in
+	  k_cycle_get_32() units.  Priority decisions within (!!) a
+	  single priority will choose the next expiring deadline and
+	  not simply the least recently added thread.
+
+
 config MAIN_STACK_SIZE
 	int
 	prompt "Size of stack for initialization and main thread"

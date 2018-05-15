@@ -87,6 +87,31 @@ s32_t _ms_to_ticks(s32_t ms)
 }
 #endif
 
+int _is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2)
+{
+	if (t1->base.prio < t2->base.prio) {
+		return 1;
+	}
+
+#ifdef CONFIG_SCHED_DEADLINE
+	/* Note that we don't care about wraparound conditions.  The
+	 * expectation is that the application will have arranged to
+	 * block the threads, change their priorities or reset their
+	 * deadlines when the job is complete.  Letting the deadlines
+	 * go negative is fine and in fact prevents aliasing bugs.
+	 */
+	if (t1->base.prio == t2->base.prio) {
+		int now = (int) k_cycle_get_32();
+		int dt1 = t1->base.prio_deadline - now;
+		int dt2 = t2->base.prio_deadline - now;
+
+		return dt1 < dt2;
+	}
+#endif
+
+	return 0;
+}
+
 static struct k_thread *next_up(void)
 {
 #ifndef CONFIG_SMP
@@ -605,6 +630,36 @@ Z_SYSCALL_HANDLER(k_thread_priority_set, thread_p, prio)
 	_impl_k_thread_priority_set((k_tid_t)thread, prio);
 	return 0;
 }
+#endif
+
+#ifdef CONFIG_SCHED_DEADLINE
+void _impl_k_thread_deadline_set(k_tid_t tid, int deadline)
+{
+	struct k_thread *th = tid;
+
+	LOCKED(&sched_lock) {
+		th->base.prio_deadline = k_cycle_get_32() + deadline;
+		if (_is_thread_queued(th)) {
+			_priq_run_remove(&_kernel.ready_q.runq, th);
+			_priq_run_add(&_kernel.ready_q.runq, th);
+		}
+	}
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(k_thread_deadline_set, thread_p, deadline)
+{
+	struct k_thread *thread = (struct k_thread *)thread_p;
+
+	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(deadline > 0,
+				    "invalid thread deadline %d",
+				    (int)deadline));
+
+	_impl_k_thread_deadline_set((k_tid_t)thread, deadline);
+	return 0;
+}
+#endif
 #endif
 
 void _impl_k_yield(void)
