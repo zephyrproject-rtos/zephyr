@@ -206,6 +206,10 @@ int lwm2m_engine_register_post_write_callback(char *path,
 					      lwm2m_engine_set_data_cb_t cb);
 int lwm2m_engine_register_exec_callback(char *path,
 					lwm2m_engine_user_cb_t cb);
+int lwm2m_engine_register_create_callback(u16_t obj_id,
+					  lwm2m_engine_user_cb_t cb);
+int lwm2m_engine_register_delete_callback(u16_t obj_id,
+					  lwm2m_engine_user_cb_t cb);
 
 /* resource data bit values */
 #define LWM2M_RES_DATA_READ_ONLY	0

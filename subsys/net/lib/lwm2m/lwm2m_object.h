@@ -169,6 +169,8 @@ struct lwm2m_engine_obj {
 	/* object event callbacks */
 	lwm2m_engine_obj_create_cb_t create_cb;
 	lwm2m_engine_obj_delete_cb_t delete_cb;
+	lwm2m_engine_user_cb_t user_create_cb;
+	lwm2m_engine_user_cb_t user_delete_cb;
 
 	/* object member data */
 	u16_t obj_id;
