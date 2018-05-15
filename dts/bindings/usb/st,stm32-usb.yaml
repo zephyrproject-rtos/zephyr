@@ -48,5 +48,5 @@ properties:
       category: optional
       description: Some boards use a USB DISCONNECT pin to enable
                    the pull-up resistor on USB Data Positive signal.
-      generation: define
+      generation: define, use-prop-name
 ...
