@@ -39,6 +39,32 @@ struct usb_bos_capability_msos {
 	u8_t bAltEnumCode;
 } __packed;
 
+/* Predefined response to control commands related to MS OS 2.0 descriptors */
+static const u8_t msos2_descriptor[] = {
+	/* MS OS 2.0 set header descriptor   */
+	0x0A, 0x00,             /* Descriptor size (10 bytes)                 */
+	0x00, 0x00,             /* MS_OS_20_SET_HEADER_DESCRIPTOR             */
+	0x00, 0x00, 0x03, 0x06, /* Windows version (8.1) (0x06030000)         */
+	(0x0A + 0x14 + 0x08), 0x00, /* Length of the MS OS 2.0 descriptor set */
+
+	/* MS OS 2.0 function subset ID descriptor
+	 * This means that the descriptors below will only apply to one
+	 * set of interfaces
+	 */
+	0x08, 0x00, /* Descriptor size (8 bytes) */
+	0x02, 0x00, /* MS_OS_20_SUBSET_HEADER_FUNCTION */
+	0x02,       /* Index of first interface this subset applies to. */
+	0x00,       /* reserved */
+	(0x08 + 0x14), 0x00, /* Length of the MS OS 2.0 descriptor subset */
+
+	/* MS OS 2.0 compatible ID descriptor */
+	0x14, 0x00, /* Descriptor size                */
+	0x03, 0x00, /* MS_OS_20_FEATURE_COMPATIBLE_ID */
+	/* 8-byte compatible ID string, then 8-byte sub-compatible ID string */
+	'W',  'I',  'N',  'U',  'S',  'B',  0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
 static struct webusb_bos_desc {
 	struct usb_bos_descriptor bos;
 	struct usb_bos_platform_descriptor platform_webusb;
@@ -109,7 +135,7 @@ static struct webusb_bos_desc {
 		/* Windows version (8.1) (0x06030000) */
 		.dwWindowsVersion = sys_cpu_to_le32(0x06030000),
 		.wMSOSDescriptorSetTotalLength =
-			sys_cpu_to_le16(0x0A + 0x14 + 0x08),
+			sys_cpu_to_le16(sizeof(msos2_descriptor)),
 		.bMS_VendorCode = 0x02,
 		.bAltEnumCode = 0x00
 	}
@@ -171,32 +197,6 @@ static const u8_t msos1_compatid_descriptor[] = {
 	'W',  'I',  'N',  'U',  'S',  'B',  0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00 /* reserved */
-};
-
-/* Predefined response to control commands related to MS OS 2.0 descriptors */
-static const u8_t msos2_descriptor[] = {
-	/* MS OS 2.0 set header descriptor   */
-	0x0A, 0x00,             /* Descriptor size (10 bytes)                 */
-	0x00, 0x00,             /* MS_OS_20_SET_HEADER_DESCRIPTOR             */
-	0x00, 0x00, 0x03, 0x06, /* Windows version (8.1) (0x06030000)         */
-	(0x0A + 0x14 + 0x08), 0x00, /* Length of the MS OS 2.0 descriptor set */
-
-	/* MS OS 2.0 function subset ID descriptor
-	 * This means that the descriptors below will only apply to one
-	 * set of interfaces
-	 */
-	0x08, 0x00, /* Descriptor size (8 bytes) */
-	0x02, 0x00, /* MS_OS_20_SUBSET_HEADER_FUNCTION */
-	0x02,       /* Index of first interface this subset applies to. */
-	0x00,       /* reserved */
-	(0x08 + 0x14), 0x00, /* Length of the MS OS 2.0 descriptor subset */
-
-	/* MS OS 2.0 compatible ID descriptor */
-	0x14, 0x00, /* Descriptor size                */
-	0x03, 0x00, /* MS_OS_20_FEATURE_COMPATIBLE_ID */
-	/* 8-byte compatible ID string, then 8-byte sub-compatible ID string */
-	'W',  'I',  'N',  'U',  'S',  'B',  0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 /**
