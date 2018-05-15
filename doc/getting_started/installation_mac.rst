@@ -238,6 +238,9 @@ variables in the file :file:`${HOME}/.zephyrrc`, for example:
    export ZEPHYR_TOOLCHAIN_VARIANT=xtools
    EOF
 
+.. note:: In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT``
+          variable was called ``ZEPHYR_GCC_VARIANT``.
+
 .. _Homebrew site: http://brew.sh/
 
 .. _crosstool-ng site: http://crosstool-ng.org

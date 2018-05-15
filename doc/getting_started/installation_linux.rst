@@ -166,5 +166,8 @@ Follow these steps to install the SDK on your Linux host system.
      export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
      EOF
 
+.. note:: In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT``
+          variable was called ``ZEPHYR_GCC_VARIANT``.
+
 .. _Zephyr SDK archive:
     https://www.zephyrproject.org/developers/#downloads
