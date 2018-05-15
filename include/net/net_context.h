@@ -237,6 +237,9 @@ struct net_context {
 	struct {
 		mbedtls_ssl_context ssl;
 		mbedtls_ssl_config config;
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+		mbedtls_x509_crt ca_chain;
+#endif
 		/** intermediated mbedTLS buffer to store decrypted content */
 		char rx_ssl_buf[64];
 		/** TLS packet fifo */

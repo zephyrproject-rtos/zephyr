@@ -226,34 +226,105 @@ err:
 	net_pkt_unref(decrypted_pkt);
 }
 
+static int tls_add_ca_certificate(struct net_context *context,
+				  struct net_tls_credential *ca_cert)
+{
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	int err = mbedtls_x509_crt_parse(&context->mbedtls.ca_chain,
+					 ca_cert->buf, ca_cert->len);
+	if (err != 0) {
+		return -EINVAL;
+	}
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
+
+	return 0;
+}
+
+static void tls_set_ca_chain(struct net_context *context)
+{
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	mbedtls_ssl_conf_ca_chain(&context->mbedtls.config,
+				  &context->mbedtls.ca_chain, NULL);
+
+	mbedtls_ssl_conf_authmode(&context->mbedtls.config,
+				  MBEDTLS_SSL_VERIFY_REQUIRED);
+
+	mbedtls_ssl_conf_cert_profile(&context->mbedtls.config,
+				      &mbedtls_x509_crt_profile_default);
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
+}
+
+static int tls_set_psk(struct net_context *context,
+		       struct net_tls_credential *psk,
+		       struct net_tls_credential *psk_id)
+{
+#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
+	mbedtls_ssl_conf_psk(&context->mbedtls.config,
+			     psk->buf, psk->len,
+			     (const unsigned char *)psk_id->buf,
+			     psk_id->len - 1);
+#endif
+
+	return 0;
+}
+
 static int tls_mbedtls_set_credentials(struct net_context *context)
 {
 	struct net_tls_credential *credential;
 	sec_tag_t tag;
-	int i;
+	int i, err;
+	bool ca_cert_present = false;
 
 	for (i = 0; i < context->options.sec_tag_list.sec_tag_count; i++) {
 		tag = context->options.sec_tag_list.sec_tags[i];
 		credential = NULL;
 
-		while ((credential = credential_next_get(tag, credential)) != NULL) {
+		while ((credential = credential_next_get(tag, credential))
+				!= NULL) {
 			switch (credential->type) {
 			case NET_TLS_CREDENTIAL_CA_CERTIFICATE:
-				/* TODO configure mbedtls CA CERTIFICATE */
+			{
+				err = tls_add_ca_certificate(context,
+							     credential);
+				if (err < 0) {
+					return err;
+				}
+
+				ca_cert_present = true;
+
 				break;
+			}
 
 			case NET_TLS_CREDENTIAL_PSK:
-				/* TODO configure mbedtls PSK */
+			{
+				struct net_tls_credential *psk_id =
+					credential_get(
+						tag, NET_TLS_CREDENTIAL_PSK_ID);
+
+				if (!psk_id) {
+					return -ENOENT;
+				}
+
+				err = tls_set_psk(context, credential, psk_id);
+				if (err < 0) {
+					return err;
+				}
+
 				break;
+			}
 
 			case NET_TLS_CREDENTIAL_PSK_ID:
-				/* Ignore PSK Id - it will be used together with PSK */
+				/* Ignore PSK ID - it will be used together with PSK */
 				break;
 
 			default:
 				return -EINVAL;
 			}
 		}
+	}
+
+	if (ca_cert_present) {
+		tls_set_ca_chain(context);
 	}
 
 	return 0;
@@ -307,7 +378,13 @@ int net_tls_enable(struct net_context *context, bool enabled)
 		mbedtls_ssl_config_init(&context->mbedtls.config);
 		mbedtls_ssl_set_bio(&context->mbedtls.ssl, context,
 				    tls_tx, tls_rx, NULL);
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+		mbedtls_x509_crt_init(&context->mbedtls.ca_chain);
+#endif
 	} else {
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+		mbedtls_x509_crt_free(&context->mbedtls.ca_chain);
+#endif
 		mbedtls_ssl_set_bio(&context->mbedtls.ssl,
 				    NULL, NULL, NULL, NULL);
 		mbedtls_ssl_config_free(&context->mbedtls.config);
