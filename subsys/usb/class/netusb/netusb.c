@@ -88,27 +88,16 @@ static int netusb_disconnect_media(void)
 	return netusb.func->connect_media(false);
 }
 
-static void netusb_configure(void)
+void netusb_enable(void)
 {
+	SYS_LOG_DBG("");
+
 	netusb.enabled = true;
 	net_if_up(netusb.iface);
 	netusb_connect_media();
 }
 
-static inline void netusb_status_interface(u8_t *iface)
-{
-	SYS_LOG_DBG("");
-
-	if (*iface != NETUSB_IFACE_IDX) {
-		return;
-	}
-
-	if (!netusb.enabled) {
-		netusb_configure();
-	}
-}
-
-static inline void netusb_status_disconnected(void)
+void netusb_disable(void)
 {
 	SYS_LOG_DBG("");
 
@@ -119,44 +108,6 @@ static inline void netusb_status_disconnected(void)
 	netusb.enabled = false;
 	netusb_disconnect_media();
 	net_if_down(netusb.iface);
-}
-
-static void netusb_status_cb(enum usb_dc_status_code status, u8_t *param)
-{
-	/* Check the USB status and do needed action if required */
-	switch (status) {
-	case USB_DC_ERROR:
-		SYS_LOG_DBG("USB device error");
-		break;
-	case USB_DC_RESET:
-		SYS_LOG_DBG("USB device reset detected");
-		break;
-	case USB_DC_CONNECTED:
-		SYS_LOG_DBG("USB device connected");
-		break;
-	case USB_DC_CONFIGURED:
-		SYS_LOG_DBG("USB device configured");
-		netusb_configure();
-		break;
-	case USB_DC_DISCONNECTED:
-		SYS_LOG_DBG("USB device disconnected");
-		netusb_status_disconnected();
-		break;
-	case USB_DC_SUSPEND:
-		SYS_LOG_DBG("USB device suspended");
-		break;
-	case USB_DC_RESUME:
-		SYS_LOG_DBG("USB device resumed");
-		break;
-	case USB_DC_INTERFACE:
-		SYS_LOG_DBG("USB interface selected");
-		netusb_status_interface(param);
-		break;
-	case USB_DC_UNKNOWN:
-	default:
-		SYS_LOG_DBG("USB unknown state");
-		break;
-	}
 }
 
 static int netusb_class_handler(struct usb_setup_packet *setup,
@@ -181,7 +132,7 @@ static u8_t interface_data[300];
 
 static struct usb_cfg_data netusb_config = {
 	.usb_device_description = NULL,
-	.cb_usb_status = netusb_status_cb,
+	.cb_usb_status = NULL,
 	.interface = {
 		.class_handler = netusb_class_handler,
 		.custom_handler = NULL,
@@ -270,6 +221,7 @@ static void netusb_init(struct net_if *iface)
 
 	netusb_config.endpoint = netusb.func->ep;
 	netusb_config.num_endpoints = netusb.func->num_ep;
+	netusb_config.cb_usb_status = netusb.func->status_cb;
 
 #if defined(CONFIG_USB_COMPOSITE_DEVICE)
 	ret = composite_add_function(&netusb_config, NETUSB_IFACE_IDX);
