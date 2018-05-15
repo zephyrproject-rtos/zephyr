@@ -1060,10 +1060,48 @@ static struct usb_ep_cfg_data rndis_ep_data[] = {
 	},
 };
 
+static void rndis_status_cb(enum usb_dc_status_code status, u8_t *param)
+{
+	/* Check the USB status and do needed action if required */
+	switch (status) {
+	case USB_DC_ERROR:
+		SYS_LOG_DBG("USB device error");
+		break;
+	case USB_DC_RESET:
+		SYS_LOG_DBG("USB device reset detected");
+		break;
+	case USB_DC_CONNECTED:
+		SYS_LOG_DBG("USB device connected");
+		break;
+	case USB_DC_CONFIGURED:
+		SYS_LOG_DBG("USB device configured");
+		netusb_enable();
+		break;
+	case USB_DC_DISCONNECTED:
+		SYS_LOG_DBG("USB device disconnected");
+		netusb_disable();
+		break;
+	case USB_DC_SUSPEND:
+		SYS_LOG_DBG("USB device suspended");
+		break;
+	case USB_DC_RESUME:
+		SYS_LOG_DBG("USB device resumed");
+		break;
+	case USB_DC_INTERFACE:
+		SYS_LOG_DBG("USB interface selected");
+		break;
+	case USB_DC_UNKNOWN:
+	default:
+		SYS_LOG_DBG("USB unknown state");
+		break;
+	}
+}
+
 struct netusb_function rndis_function = {
 	.init = rndis_init,
 	.connect_media = rndis_connect_media,
 	.class_handler = rndis_class_handler,
+	.status_cb = rndis_status_cb,
 	.send_pkt = rndis_send,
 	.num_ep = ARRAY_SIZE(rndis_ep_data),
 	.ep = rndis_ep_data,
