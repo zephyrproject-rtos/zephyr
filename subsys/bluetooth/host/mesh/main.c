@@ -65,7 +65,7 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 		BT_DBG("Storing network information persistently");
 		bt_mesh_store_net();
 		bt_mesh_store_subnet(&bt_mesh.sub[0]);
-		bt_mesh_store_iv();
+		bt_mesh_store_iv(false);
 	}
 
 	bt_mesh_net_start();
@@ -86,10 +86,10 @@ void bt_mesh_reset(void)
 	bt_mesh.iv_update = 0;
 	bt_mesh.pending_update = 0;
 	bt_mesh.valid = 0;
-	bt_mesh.last_update = 0;
+	bt_mesh.ivu_duration = 0;
 	bt_mesh.ivu_initiator = 0;
 
-	k_delayed_work_cancel(&bt_mesh.ivu_complete);
+	k_delayed_work_cancel(&bt_mesh.ivu_timer);
 
 	bt_mesh_cfg_reset();
 

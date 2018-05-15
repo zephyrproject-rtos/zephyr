@@ -162,6 +162,32 @@ config BT_MESH_ADV_BUF_COUNT
 	  which leaves 56 bytes for application layer data using a
 	  4-byte MIC and 52 bytes using an 8-byte MIC.
 
+config BT_MESH_IVU_DIVIDER
+	int "Divider for IV Update state refresh timer"
+	default 4
+	range 2 96
+	help
+	  When the IV Update state enters Normal operation or IV Update
+	  in Progress, we need to keep track of how many hours has passed
+	  in the state, since the specification requires us to remain in
+	  the state at least for 96 hours (Update in Progress has an
+	  additional upper limit of 144 hours).
+
+	  In order to fulfil the above requirement, even if the node might
+	  be powered off once in a while, we need to store persistently
+	  how many hours the node has been in the state. This doesn't
+	  necessarily need to happen every hour (thanks to the flexible
+	  duration range). The exact cadence will depend a lot on the
+	  ways that the node will be used and what kind of power source it
+	  has.
+
+	  Since there is no single optimal answer, this configuration
+	  option allows specifying a divider, i.e. how many intervals
+	  the 96 hour minimum gets split into. After each interval the
+	  duration that the node has been in the current state gets
+	  stored to flash. E.g. the default value of 4 means that the
+	  state is saved every 24 hours (96 / 4).
+
 config BT_MESH_TX_SEG_MSG_COUNT
 	int "Maximum number of simultaneous outgoing segmented messages"
 	default 1
