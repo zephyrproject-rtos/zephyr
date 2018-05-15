@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2018, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: STMicroelectronics MEMS sensors LSM6DSL SPI
+id: st,lsm6dsl-spi
+version: 0.1
+
+description: >
+    This binding gives a base representation of LSM6DSL 6-axis accelerometer
+    and gyrometer accessed through SPI bus
+
+inherits:
+    !include spi-device.yaml
+
+properties:
+    compatible:
+        constraint: "st,lsm6dsl-spi"
+
+    irq-gpios:
+      type: compound
+      category: required
+      generation: define, use-prop-name
+...
