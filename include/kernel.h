@@ -466,6 +466,10 @@ struct _thread_base {
 		u16_t preempt;
 	};
 
+#ifdef CONFIG_SCHED_DEADLINE
+	int prio_deadline;
+#endif
+
 	u32_t order_key;
 
 #ifdef CONFIG_SMP
@@ -999,6 +1003,38 @@ __syscall int k_thread_priority_get(k_tid_t thread);
  * @return N/A
  */
 __syscall void k_thread_priority_set(k_tid_t thread, int prio);
+
+
+#ifdef CONFIG_SCHED_DEADLINE
+/**
+ * @brief Set deadline expiration time for scheduler
+ *
+ * This sets the "deadline" expiration as a time delta from the
+ * current time, in the same units used by k_cycle_get_32().  The
+ * scheduler (when deadline scheduling is enabled) will choose the
+ * next expiring thread when selecting between threads at the same
+ * static priority.  Threads at different priorities will be scheduled
+ * according to their static priority.
+ *
+ * @note Deadlines that are negative (i.e. in the past) are still seen
+ * as higher priority than others, even if the thread has "finished"
+ * its work.  If you don't want it scheduled anymore, you have to
+ * reset the deadline into the future, block/pend the thread, or
+ * modify its priority with k_thread_priority_set().
+ *
+ * @note Despite the API naming, the scheduler makes no guarantees the
+ * the thread WILL be scheduled within that deadline, nor does it take
+ * extra metadata (like e.g. the "runtime" and "period" parameters in
+ * Linux sched_setattr()) that allows the kernel to validate the
+ * scheduling for achievability.  Such features could be implemented
+ * above this call, which is simply input to the priority selection
+ * logic.
+ *
+ * @param thread A thread on which to set the deadline
+ * @param deadline A time delta, in cycle units
+ */
+__syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
+#endif
 
 /**
  * @brief Suspend a thread.

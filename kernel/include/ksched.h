@@ -213,11 +213,7 @@ static inline int _is_prio_lower_or_equal(int prio1, int prio2)
 	return _is_prio1_lower_than_or_equal_to_prio2(prio1, prio2);
 }
 
-static inline int _is_t1_higher_prio_than_t2(struct k_thread *t1,
-					     struct k_thread *t2)
-{
-	return _is_prio1_higher_than_prio2(t1->base.prio, t2->base.prio);
-}
+int _is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2);
 
 static inline int _is_valid_prio(int prio, void *entry_point)
 {

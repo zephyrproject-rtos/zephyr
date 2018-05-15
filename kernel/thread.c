@@ -314,6 +314,9 @@ void _setup_new_thread(struct k_thread *new_thread,
 		_thread_perms_inherit(_current, new_thread);
 	}
 #endif
+#ifdef CONFIG_SCHED_DEADLINE
+	new_thread->base.prio_deadline = 0;
+#endif
 	new_thread->resource_pool = _current->resource_pool;
 }
 
