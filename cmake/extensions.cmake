@@ -329,14 +329,27 @@ function(generate_inc_file
     )
 endfunction()
 
+function(generate_inc_file_for_gen_target
+    target          # The cmake target that depends on the generated file
+    source_file     # The source file to be converted to hex
+    generated_file  # The generated file
+    gen_target      # The generated file target we depend on
+                    # Any additional arguments are passed on to file2hex.py
+    )
+  generate_inc_file(${source_file} ${generated_file} ${ARGN})
+
+  # Ensure 'generated_file' is generated before 'target' by creating a
+  # dependency between the two targets
+
+  add_dependencies(${target} ${gen_target})
+endfunction()
+
 function(generate_inc_file_for_target
     target          # The cmake target that depends on the generated file
     source_file     # The source file to be converted to hex
     generated_file  # The generated file
                     # Any additional arguments are passed on to file2hex.py
     )
-  generate_inc_file(${source_file} ${generated_file} ${ARGN})
-
   # Ensure 'generated_file' is generated before 'target' by creating a
   # 'custom_target' for it and setting up a dependency between the two
   # targets
@@ -355,7 +368,7 @@ function(generate_inc_file_for_target
   set(generated_target_name "gen_${basename}_${random_chars}")
 
   add_custom_target(${generated_target_name} DEPENDS ${generated_file})
-  add_dependencies(${target} ${generated_target_name})
+  generate_inc_file_for_gen_target(${target} ${source_file} ${generated_file} ${generated_target_name} ${ARGN})
 endfunction()
 
 # 1.2 zephyr_library_*
