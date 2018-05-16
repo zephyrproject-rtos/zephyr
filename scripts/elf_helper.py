@@ -36,6 +36,7 @@ thread_counter = 0
 
 # Global type environment. Populated by pass 1.
 type_env = {}
+extern_env = {}
 kobjects = {}
 subsystems = {}
 
@@ -210,15 +211,32 @@ class AggregateType:
 
 # --- helper functions for getting data from DIEs ---
 
+def die_get_spec(die):
+    if 'DW_AT_specification' not in die.attributes:
+        return None
+
+    spec_val = die.attributes["DW_AT_specification"].value
+
+    # offset of the DW_TAG_variable for the extern declaration
+    offset = spec_val + die.cu.cu_offset
+
+    return extern_env.get(offset)
+
+
 def die_get_name(die):
     if 'DW_AT_name' not in die.attributes:
-        return None
+        die = die_get_spec(die)
+        if not die:
+            return None
+
     return die.attributes["DW_AT_name"].value.decode("utf-8")
 
 
 def die_get_type_offset(die):
     if 'DW_AT_type' not in die.attributes:
-        return 0
+        die = die_get_spec(die)
+        if not die:
+            return None
 
     return die.attributes["DW_AT_type"].value + die.cu.cu_offset
 
@@ -381,9 +399,6 @@ class ElfHelper:
         # all variables
         all_objs = {}
 
-        # Gross hack, see below
-        work_q_found = False
-
         for die in variables:
             name = die_get_name(die)
             if not name:
@@ -397,49 +412,42 @@ class ElfHelper:
                 continue
 
             if "DW_AT_declaration" in die.attributes:
-                # FIXME: why does k_sys_work_q not resolve an address in the
-                # DWARF data??? Every single instance it finds is an extern
-                # definition but not the actual instance in system_work_q.c
-                # Is there something weird about how lib-y stuff is linked?
-                if name == "k_sys_work_q" and not work_q_found and \
-                   name in syms:
-                    addr = syms[name]
-                    work_q_found = True
+                # Extern declaration, only used indirectly
+                extern_env[die.offset] = die
+                continue
+
+            if "DW_AT_location" not in die.attributes:
+                self.debug_die(
+                    die,
+                    "No location information for object '%s'; possibly"
+                    " stack allocated" % name)
+                continue
+
+            loc = die.attributes["DW_AT_location"]
+            if loc.form != "DW_FORM_exprloc" and \
+               loc.form != "DW_FORM_block1":
+                self.debug_die(
+                    die,
+                    "kernel object '%s' unexpected location format" %
+                    name)
+                continue
+
+            opcode = loc.value[0]
+            if opcode != DW_OP_addr:
+
+                # Check if frame pointer offset DW_OP_fbreg
+                if opcode == DW_OP_fbreg:
+                    self.debug_die(die, "kernel object '%s' found on stack" %
+                              name)
                 else:
-                    continue
-            else:
-                if "DW_AT_location" not in die.attributes:
                     self.debug_die(
                         die,
-                        "No location information for object '%s'; possibly"
-                        " stack allocated" % name)
-                    continue
+                        "kernel object '%s' unexpected exprloc opcode %s" %
+                        (name, hex(opcode)))
+                continue
 
-                loc = die.attributes["DW_AT_location"]
-                if loc.form != "DW_FORM_exprloc" and \
-                   loc.form != "DW_FORM_block1":
-                    self.debug_die(
-                        die,
-                        "kernel object '%s' unexpected location format" %
-                        name)
-                    continue
-
-                opcode = loc.value[0]
-                if opcode != DW_OP_addr:
-
-                    # Check if frame pointer offset DW_OP_fbreg
-                    if opcode == DW_OP_fbreg:
-                        self.debug_die(die, "kernel object '%s' found on stack" %
-                                  name)
-                    else:
-                        self.debug_die(
-                            die,
-                            "kernel object '%s' unexpected exprloc opcode %s" %
-                            (name, hex(opcode)))
-                    continue
-
-                addr = (loc.value[1] | (loc.value[2] << 8) |
-                        (loc.value[3] << 16) | (loc.value[4] << 24))
+            addr = (loc.value[1] | (loc.value[2] << 8) |
+                    (loc.value[3] << 16) | (loc.value[4] << 24))
 
             if addr == 0:
                 # Never linked; gc-sections deleted it

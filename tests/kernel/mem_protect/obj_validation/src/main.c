@@ -10,6 +10,11 @@
 
 #define SEM_ARRAY_SIZE	16
 
+/* Show that extern declarations don't interfere with detecting kernel
+ * objects, this was at one point a problem.
+ */
+extern struct k_sem sem1;
+
 static __kernel struct k_sem semarray[SEM_ARRAY_SIZE];
 static struct k_sem *dyn_sem[SEM_ARRAY_SIZE];
 
