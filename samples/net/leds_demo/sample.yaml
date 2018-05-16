@@ -1,8 +1,8 @@
 sample:
-  description: TBD
-  name: TBD
+  description: Control LEDs using CoAP
+  name: LED Demo
 tests:
   test:
-    arch_whitelist: x86
+    depends_on: netif gpio
     harness: net
     tags: net coap
