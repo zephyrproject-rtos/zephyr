@@ -4,8 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sys/param.h>
+
 #include "net_tls.h"
 #include "net_private.h"
+#include "tcp_internal.h"
 
 #define TIMEOUT_TLS_RX_MS       100
 #define TIMEOUT_TLS_TX_MS       100
@@ -38,10 +41,38 @@ static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
 static int tls_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct net_context *context = ctx;
+	int ret;
+	u16_t len_left;
 
-	ARG_UNUSED(context);
+	if (!context->mbedtls.rx_pkt) {
+		context->mbedtls.rx_pkt =
+			k_fifo_get(&context->mbedtls.rx_fifo, K_NO_WAIT);
+		if (context->mbedtls.rx_pkt) {
+			context->mbedtls.rx_offset =
+				net_pkt_appdata(context->mbedtls.rx_pkt) -
+				context->mbedtls.rx_pkt->frags->data;
+		} else {
+			return MBEDTLS_ERR_SSL_WANT_READ;
+		}
+	}
 
-	return -EOPNOTSUPP;
+	len_left = net_pkt_get_len(context->mbedtls.rx_pkt) -
+		   context->mbedtls.rx_offset;
+	ret = net_frag_linearize(buf, len, context->mbedtls.rx_pkt,
+				 context->mbedtls.rx_offset,
+				 MIN(len, len_left));
+	if (ret > 0) {
+		context->mbedtls.rx_offset += ret;
+	}
+
+	if (context->mbedtls.rx_offset >=
+	    net_pkt_get_len(context->mbedtls.rx_pkt)) {
+		net_pkt_unref(context->mbedtls.rx_pkt);
+		context->mbedtls.rx_pkt = NULL;
+		context->mbedtls.rx_offset = 0;
+	}
+
+	return ret;
 }
 
 static int tls_mbedtls_ctr_drbg_random(void *p_rng, unsigned char *output,
@@ -262,6 +293,20 @@ int net_tls_send(struct net_pkt *pkt)
 
 		frag = frag->frags;
 	}
+
+	net_pkt_unref(pkt);
+
+	return 0;
+}
+
+int net_tls_recv(struct net_context *context, net_context_recv_cb_t cb,
+		 void *user_data)
+{
+	context->tls_cb = cb;
+
+#if defined(CONFIG_NET_TCP)
+	context->tcp->recv_user_data = user_data;
+#endif
 
 	return 0;
 }

@@ -43,6 +43,8 @@
 int net_tls_enable(struct net_context *context, bool enabled);
 int net_tls_connect(struct net_context *context, bool listening);
 int net_tls_send(struct net_pkt *pkt);
+int net_tls_recv(struct net_context *context, net_context_recv_cb_t cb,
+		 void *user_data);
 
 #else
 static inline int net_tls_enable(struct net_context *context, bool enabled)
@@ -64,6 +66,16 @@ static inline int net_tls_connect(struct net_context *context, bool listening)
 static inline int net_tls_send(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline int net_tls_recv(struct net_context *context,
+			       net_context_recv_cb_t cb, void *user_data)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(user_data);
 
 	return 0;
 }

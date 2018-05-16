@@ -1261,6 +1261,12 @@ int net_context_recv(struct net_context *context,
 #endif /* CONFIG_NET_UDP */
 
 	case IPPROTO_TCP:
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+		if (context->options.tls) {
+			ret = net_tls_recv(context, cb, user_data);
+			break;
+		}
+#endif
 		ret = net_tcp_recv(context, cb, user_data);
 		break;
 

@@ -237,6 +237,10 @@ struct net_context {
 		char rx_ssl_buf[64];
 		/** TLS packet fifo */
 		struct k_fifo rx_fifo;
+		/** last data that came in via TLS */
+		struct net_pkt *rx_pkt;
+		/** offset in the last data */
+		int rx_offset;
 	} mbedtls;
 #endif
 	/** Receive callback for TLS */
