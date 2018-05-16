@@ -18,6 +18,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <syscall_handler.h>
+#include <logging/log.h>
 
 typedef int (*out_func_t)(int c, void *ctx);
 
@@ -338,7 +339,12 @@ int printk(const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	ret = vprintk(fmt, ap);
+
+	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
+		ret = log_printk(fmt, ap);
+	} else {
+		ret = vprintk(fmt, ap);
+	}
 	va_end(ap);
 
 	return ret;

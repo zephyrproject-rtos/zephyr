@@ -120,5 +120,135 @@ config SYS_LOG_BACKEND_NET_MAX_BUF_SIZE
 
 endif
 
+config LOG
+	bool "Enable Logger"
+	help
+	  Global switch for the logger, when turned off log calls will not be
+	  compiled in.
+
+if LOG
+config LOG_RUNTIME_FILTERING
+	bool "Enable runtime reconfiguration of the logger"
+	help
+	  Allow runtime configuration of maximal, independent severity
+	  level for instance.
+
+choice
+	prompt "Log full strategy"
+
+config LOG_MODE_OVERFLOW
+	bool "Oldest logs are discarded"
+
+config LOG_MODE_NO_OVERFLOW
+	bool "New logs are dropped"
+
+endchoice
+
+config LOG_DEFAULT_LEVEL
+	int "Default log level"
+	default 3
+	range 0 4
+	help
+	  Sets log level for modules which don't specify it explicitly. When
+	  set to 0 it means log will not be activated for those modules.
+	  Levels are:
+
+	  - 0 OFF, do not write by default
+	  - 1 ERROR, default to only write LOG_LEVEL_ERR
+	  - 2 WARNING, default to write LOG_LEVEL_WRN
+	  - 3 INFO, default to write LOG_LEVEL_INFO
+	  - 4 DEBUG, default to write LOG_LEVEL_DBG
+
+config LOG_OVERRIDE_LEVEL
+	int "Override lowest log level"
+	default 0
+	range 0 4
+	help
+	  Forces a minimum log level for all modules. Modules use their
+	  specified level if it is greater than this option, otherwise they use
+	  the level specified by this option instead of their default or
+	  whatever was manually set.
+	  Levels are:
+
+	  - 0 OFF, do not override
+	  - 1 ERROR, override to write LOG_LEVEL_ERR
+	  - 2 WARNING, override to write LOG_LEVEL_WRN
+	  - 3 INFO, override to write LOG_LEVEL_INFO
+	  - 4 DEBUG, override to write LOG_LEVEL_DBG
+
+config LOG_MAX_LEVEL
+	int "Maximal log level compiled in the system"
+	default 4
+	range 0 4
+	help
+	  Forces a maximal log level for all modules. Modules saturates their
+	  specified level if it is greater than this option, otherwise they use
+	  the level specified by this option instead of their default or
+	  whatever was manually set.
+	  Levels are:
+
+	  - 0 OFF, logging is turned off
+	  - 1 ERROR, maximal level set to LOG_LEVEL_ERR
+	  - 2 WARNING, maximal level set to LOG_LEVEL_WRN
+	  - 3 INFO, maximal level set to LOG_LEVEL_INFO
+	  - 4 DEBUG, maximal level set to LOG_LEVEL_DBG
+
+config LOG_PRINTK
+	bool "Enable processing of printk messages."
+	help
+	  LOG_PRINTK messages are formatten in place and logged unconditionally.
+
+config LOG_PRINTK_MAX_STRING_LENGTH
+	int "Maximum string length supported by LOG_PRINTK"
+	depends on LOG_PRINTK
+	default 128
+	help
+	  Array is allocated on the stack.
+
+config LOG_INPLACE_PROCESS
+	bool "Enable in place processing"
+	help
+	  When enabled log is processed in the context of the call. It impacts
+	  performance of the system since time consuming operations are performed in
+	  the context of the log entry (e.g. high priority interrupt). When enabled
+	  LOG_BUFFER_SIZE can be reduced. Logger backends must support exclusive
+	  access to work flawlessly in that mode because one log operation can be
+	  interrupted by another one in higher priority context.
+
+config LOG_BUFFER_SIZE
+	int "Number of bytes dedicated for the logger internal buffer."
+	default 1024
+	range 128 65536
+	help
+	  Number of bytes dedicated for the logger internal buffer.
+
+config LOG_DOMAIN_ID
+	int "Domain ID"
+	default 0
+	range 0 7
+	help
+	  In multicore system each application/core must have unique domain ID.
+
+config LOG_BACKEND_UART
+	bool "Enable UART backend"
+	depends on UART_CONSOLE
+	default y
+	help
+	  When enabled backend is using UART to output logs.
+
+config LOG_BACKEND_UART_SHOW_COLOR
+	bool "Enable colors in the UART backend"
+	depends on LOG_BACKEND_UART
+	default y
+	help
+	  When enabled UART backend prints errors in red and warning in yellow.
+
+config LOG_BACKEND_UART_FORMAT_TIMESTAMP
+	bool "Enable timestamp formatting in the UART backend"
+	depends on LOG_BACKEND_UART
+	default y
+	help
+	  When enabled timestamp is formatted to hh:mm:ss:ms,us.
+endif
 endmenu
 

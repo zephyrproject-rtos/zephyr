@@ -15,6 +15,13 @@
 		SHELL_INIT_SECTIONS()
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+	SECTION_DATA_PROLOGUE(log_dynamic_sections, (OPTIONAL),)
+	{
+		__log_dynamic_start = .;
+		KEEP(*(SORT(.log_dynamic_*)));
+		__log_dynamic_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
 	SECTION_DATA_PROLOGUE(_static_thread_area, (OPTIONAL), SUBALIGN(4))
 	{
 		_static_thread_data_list_start = .;
