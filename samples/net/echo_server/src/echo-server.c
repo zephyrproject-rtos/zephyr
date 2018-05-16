@@ -55,7 +55,7 @@ struct net_pkt *build_reply_pkt(const char *name,
 {
 	struct net_pkt *reply_pkt;
 	struct net_buf *frag, *tmp;
-	int header_len = 0, recv_len, reply_len;
+	int header_len = 0, recv_len;
 
 	NET_INFO("%s received %d bytes", name, net_pkt_appdatalen(pkt));
 
@@ -89,41 +89,14 @@ struct net_pkt *build_reply_pkt(const char *name,
 
 	net_pkt_set_appdatalen(reply_pkt, net_pkt_appdatalen(pkt));
 
-	while (tmp) {
-		frag = net_app_get_net_buf(ctx, reply_pkt, K_FOREVER);
-
-		if (net_buf_headroom(tmp) == 0) {
-			/* If there is no link layer headers in the
-			 * received fragment, then get rid of that also
-			 * in the sending fragment. We end up here
-			 * if MTU is larger than fragment size, this
-			 * is typical for ethernet.
-			 */
-			net_buf_push(frag, net_buf_headroom(frag));
-
-			frag->len = 0; /* to make fragment empty */
-
-			/* Make sure to set the reserve so that
-			 * in sending side we add the link layer
-			 * header if needed.
-			 */
-			net_pkt_set_ll_reserve(reply_pkt, 0);
-		}
-
-		NET_ASSERT_INFO(net_buf_tailroom(frag) >= tmp->len,
-				"tail %zd longer than len %d",
-				net_buf_tailroom(frag), tmp->len);
-
-		memcpy(net_buf_add(frag, tmp->len), tmp->data, tmp->len);
-
-		tmp = net_pkt_frag_del(pkt, NULL, tmp);
+	frag = net_pkt_copy_all(pkt, 0, K_FOREVER);
+	if (!frag) {
+		NET_ERR("Failed to copy all data");
+		net_pkt_unref(reply_pkt);
+		return NULL;
 	}
 
-	reply_len = net_pkt_get_len(reply_pkt);
-
-	NET_ASSERT_INFO((recv_len - header_len) == reply_len,
-			"Received %d bytes, sending %d bytes",
-			recv_len - header_len, reply_len);
+	net_pkt_frag_add(reply_pkt, frag);
 
 	return reply_pkt;
 }
