@@ -45,7 +45,6 @@ def read_intlist(intlist_path):
     include/linker/intlist.ld:
 
      struct {
-       void * sw_irq_handler;
        u32_t num_isrs;
        u32_t num_vectors; <- typically CONFIG_NUM_IRQS
        struct _isr_list isrs[];  <- of size num_isrs
@@ -70,7 +69,7 @@ def read_intlist(intlist_path):
 
     prefix = endian_prefix()
 
-    intlist_header_fmt = prefix + "IIII"
+    intlist_header_fmt = prefix + "III"
     intlist_entry_fmt = prefix + "iiII"
 
     with open(intlist_path, "rb") as fp:
@@ -82,10 +81,9 @@ def read_intlist(intlist_path):
 
     debug(str(header))
 
-    intlist["sw_irq_handler"] = header[0]
-    intlist["num_vectors"]    = header[1]
-    intlist["offset"]         = header[2]
-    intlist["num_isrs"]       = header[3]
+    intlist["num_vectors"]    = header[0]
+    intlist["offset"]         = header[1]
+    intlist["num_isrs"]       = header[2]
 
     intlist["interrupts"] = [i for i in
             struct.iter_unpack(intlist_entry_fmt, intdata)]
@@ -133,6 +131,12 @@ source_header = """
 #include <sw_isr_table.h>
 #include <arch/cpu.h>
 
+#if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE)
+#define ISR_WRAPPER ((u32_t)&_isr_wrapper)
+#else
+#define ISR_WRAPPER NULL
+#endif
+
 """
 
 def write_source_file(fp, vt, swt, intlist):
@@ -143,7 +147,7 @@ def write_source_file(fp, vt, swt, intlist):
     if vt:
         fp.write("u32_t __irq_vector_table _irq_vector_table[%d] = {\n" % nv)
         for i in range(nv):
-            fp.write("\t0x%x,\n" % vt[i])
+            fp.write("\t{},\n".format(vt[i]))
         fp.write("};\n")
 
     if not swt:
@@ -212,6 +216,7 @@ def main():
     numisrs = intlist["num_isrs"]
 
     spurious_handler = "&_irq_spurious"
+    sw_irq_handler   = "ISR_WRAPPER"
 
     debug('offset is ' + str(offset))
     debug('num_vectors is ' + str(nvec))
@@ -222,7 +227,7 @@ def main():
         # All vectors just jump to the common sw_irq_handler. If some entries
         # are used for direct interrupts, they will be replaced later.
         if args.vector_table:
-            vt = [intlist["sw_irq_handler"] for i in range(nvec)]
+            vt = [sw_irq_handler for i in range(nvec)]
         else:
             vt = None
         # Default to spurious interrupt handler. Configured interrupts
