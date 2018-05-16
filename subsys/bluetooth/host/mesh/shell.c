@@ -15,6 +15,8 @@
 #include <shell/shell.h>
 #include <misc/printk.h>
 
+#include <settings/settings.h>
+
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>
 
@@ -531,7 +533,17 @@ static int cmd_init(int argc, char *argv[])
 	}
 
 	printk("Mesh initialized\n");
-	printk("Use \"pb-adv on\" or \"pb-gatt on\" to enable advertising\n");
+
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
+	}
+
+	if (bt_mesh_is_provisioned()) {
+		printk("Mesh network restored from flash\n");
+	} else {
+		printk("Use \"pb-adv on\" or \"pb-gatt on\" to enable"
+		       " advertising\n");
+	}
 
 #if IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)
 	bt_mesh_lpn_set_cb(lpn_cb);
