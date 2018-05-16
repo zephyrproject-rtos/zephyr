@@ -415,6 +415,8 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 #if defined(CONFIG_NET_IPV6)
 			ret = setup_ipv6_ctx(ctx, sock_type, proto);
 			ctx->default_ctx = &ctx->ipv6;
+			net_sin6(&ctx->ipv6.local)->sin6_port =
+				net_sin6(addr)->sin6_port;
 #else
 			ret = -EPFNOSUPPORT;
 			goto fail;
@@ -423,6 +425,8 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 #if defined(CONFIG_NET_IPV4)
 			ret = setup_ipv4_ctx(ctx, sock_type, proto);
 			ctx->default_ctx = &ctx->ipv4;
+			net_sin(&ctx->ipv4.local)->sin_port =
+				net_sin(addr)->sin_port;
 #else
 			ret = -EPFNOSUPPORT;
 			goto fail;
@@ -431,11 +435,15 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 #if defined(CONFIG_NET_IPV4)
 			ret = setup_ipv4_ctx(ctx, sock_type, proto);
 			ctx->default_ctx = &ctx->ipv4;
+			net_sin(&ctx->ipv4.local)->sin_port =
+				net_sin(addr)->sin_port;
 #endif
 			/* We ignore the IPv4 error if IPv6 is enabled */
 #if defined(CONFIG_NET_IPV6)
 			ret = setup_ipv6_ctx(ctx, sock_type, proto);
 			ctx->default_ctx = &ctx->ipv6;
+			net_sin6(&ctx->ipv6.local)->sin6_port =
+				net_sin6(addr)->sin6_port;
 #endif
 		} else {
 			ret = -EINVAL;

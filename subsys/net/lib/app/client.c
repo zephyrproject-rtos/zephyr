@@ -379,12 +379,42 @@ int net_app_init_client(struct net_app_ctx *ctx,
 	}
 
 	if (client_addr) {
-		memcpy(&addr, client_addr, sizeof(addr));
+		u16_t local_port = 0;
+		bool empty_addr = false;
 
-		if (addr.sa_family != remote_addr.sa_family) {
-			NET_DBG("Address family mismatch %d vs %d",
-				addr.sa_family, remote_addr.sa_family);
-			return -EINVAL;
+		addr.sa_family = remote_addr.sa_family;
+
+		/* local_port is used if the IP address isn't specified */
+#if defined(CONFIG_NET_IPV4)
+		if (client_addr->sa_family == AF_INET) {
+			empty_addr = net_is_ipv4_addr_unspecified(
+					&net_sin(client_addr)->sin_addr);
+			local_port = net_sin(client_addr)->sin_port;
+		}
+#endif
+
+#if defined(CONFIG_NET_IPV6)
+		if (client_addr->sa_family == AF_INET6) {
+			empty_addr = net_is_ipv6_addr_unspecified(
+					&net_sin6(client_addr)->sin6_addr);
+			local_port = net_sin6(client_addr)->sin6_port;
+		}
+#endif
+
+		if (empty_addr) {
+			if (remote_addr.sa_family == AF_INET6) {
+				net_sin6(&addr)->sin6_port = local_port;
+			} else {
+				net_sin(&addr)->sin_port = local_port;
+			}
+		} else {
+			memcpy(&addr, client_addr, sizeof(addr));
+
+			if (addr.sa_family != remote_addr.sa_family) {
+				NET_DBG("Address family mismatch %d vs %d",
+					addr.sa_family, remote_addr.sa_family);
+				return -EINVAL;
+			}
 		}
 	} else {
 		addr.sa_family = remote_addr.sa_family;
