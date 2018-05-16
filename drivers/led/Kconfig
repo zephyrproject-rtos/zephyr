@@ -42,5 +42,6 @@ config LED_INIT_PRIORITY
 
 source "drivers/led/Kconfig.lp3943"
 source "drivers/led/Kconfig.pca9633"
+source "drivers/led/Kconfig.ncp5623"
 
 endif # LED

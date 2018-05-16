@@ -1,0 +1,63 @@
+#
+# Copyright (c) 2018 Workaround GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig NCP5623
+	bool
+	prompt "NCP5623 LED driver"
+	depends on I2C
+	default n
+	help
+	  Enable LED driver for NCP5623.
+
+config NCP5623C
+	bool
+	prompt "NCP5623C LED driver"
+	depends on NCP5623
+	default n
+	help
+	  Enable the C variant of the NCP5623 LED driver line.
+
+config NCP5623C_DEV_NAME
+	string
+	prompt "NCP5623C device name"
+	depends on NCP5623C
+	default "NCP5623C"
+	help
+	  Device name for NCP5623C LED driver.
+
+config NCP5623C_I2C_MASTER_DEV_NAME
+	string
+	prompt "I2C master where NCP5623C is connected"
+	depends on NCP5623C
+	default "I2C_0"
+	help
+	  Specify the device name of the I2C master device to which
+	  NCP5623C is connected.
+
+config NCP5623D
+	bool
+	prompt "NCP5623D LED driver"
+	depends on NCP5623
+	default n
+	help
+	  Enable the D variant of the NCP5623 LED driver line.
+
+config NCP5623D_DEV_NAME
+	string
+	prompt "NCP5623D device name"
+	depends on NCP5623D
+	default "NCP5623D"
+	help
+	  Device name for NCP5623D LED driver.
+
+config NCP5623D_I2C_MASTER_DEV_NAME
+	string
+	prompt "I2C master where NCP5623D is connected"
+	depends on NCP5623D
+	default "I2C_0"
+	help
+	  Specify the device name of the I2C master device to which
+	  NCP5623D is connected.
