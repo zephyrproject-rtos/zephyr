@@ -125,6 +125,15 @@ config LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	  block transfer and "FIRMWARE PACKAGE URI" resource.  This option
 	  adds another UDP context and packet handling.
 
+config LWM2M_FIRMWARE_UPDATE_PULL_LOCAL_PORT
+	int "LWM2M client firmware pull local port"
+	default 0
+	depends on LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
+	help
+	  This is the client port for LWM2M firmware download.  The default
+	  setting of 0 sets a random port for the client to be used for
+	  outgoing communication.
+
 config LWM2M_COAP_BLOCK_SIZE
 	int "LWM2M CoAP block-wise transfer size"
 	default 256
