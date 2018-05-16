@@ -278,11 +278,11 @@ int pthread_setschedparam(pthread_t pthread, int policy,
 int pthread_attr_init(pthread_attr_t *attr)
 {
 
-	if (attr->initialized == true) {
-		return EBUSY;
+	if (attr == NULL) {
+		return ENOMEM;
 	}
 
-	*attr = init_pthread_attrs;
+	memcpy(attr, &init_pthread_attrs, sizeof(pthread_attr_t));
 
 	return 0;
 }
