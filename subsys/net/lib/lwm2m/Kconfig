@@ -66,10 +66,11 @@ config LWM2M_ENGINE_DEFAULT_LIFETIME
 
 config LWM2M_LOCAL_PORT
 	int "LWM2M client port"
-	default 5683
+	default 0
 	help
-	  This is the client port for LWM2M communication (0 = random, defaults
-	  to 5683)
+	  This is the client port for LWM2M communication.  The default
+	  setting of 0 sets a random port for the client to be used for
+	  outgoing communication.
 
 config LWM2M_SECURITY_INSTANCE_COUNT
 	int "Maximum # of LWM2M Security object instances"
