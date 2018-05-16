@@ -27,8 +27,7 @@
 #ifdef CONFIG_CPU_CORTEX_M_HAS_VTOR
 
 #ifdef CONFIG_XIP
-#define VECTOR_ADDRESS ((uintptr_t)&_image_rom_start + \
-			CONFIG_TEXT_SECTION_OFFSET)
+#define VECTOR_ADDRESS ((uintptr_t)_vector_start)
 #else
 #define VECTOR_ADDRESS CONFIG_SRAM_BASE_ADDRESS
 #endif
