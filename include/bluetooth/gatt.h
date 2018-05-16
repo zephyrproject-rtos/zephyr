@@ -701,6 +701,8 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
  *  @param conn Connection object.
  *  @param attr Attribute object.
  *  @param err ATT error code
+ *
+ *  @return 0 in case of success or negative value in case of error.
  */
 typedef void (*bt_gatt_indicate_func_t)(struct bt_conn *conn,
 					const struct bt_gatt_attr *attr,
