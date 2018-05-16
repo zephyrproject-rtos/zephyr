@@ -80,26 +80,10 @@ static sys_dlist_t obj_list = SYS_DLIST_STATIC_INIT(&obj_list);
  * and obj_list.
  */
 
-/* TODO: incorporate auto-gen with Leandro's patch */
 static size_t obj_size_get(enum k_objects otype)
 {
 	switch (otype) {
-	case K_OBJ_ALERT:
-		return sizeof(struct k_alert);
-	case K_OBJ_MSGQ:
-		return sizeof(struct k_msgq);
-	case K_OBJ_MUTEX:
-		return sizeof(struct k_mutex);
-	case K_OBJ_PIPE:
-		return sizeof(struct k_pipe);
-	case K_OBJ_SEM:
-		return sizeof(struct k_sem);
-	case K_OBJ_STACK:
-		return sizeof(struct k_stack);
-	case K_OBJ_THREAD:
-		return sizeof(struct k_thread);
-	case K_OBJ_TIMER:
-		return sizeof(struct k_timer);
+#include <otype-to-size.h>
 	default:
 		return sizeof(struct device);
 	}
