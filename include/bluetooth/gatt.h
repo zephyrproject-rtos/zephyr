@@ -144,7 +144,7 @@ struct bt_gatt_service {
 	/** Service Attributes */
 	struct bt_gatt_attr	*attrs;
 	/** Service Attribute count */
-	u16_t			attr_count;
+	size_t			attr_count;
 	sys_snode_t		node;
 };
 
