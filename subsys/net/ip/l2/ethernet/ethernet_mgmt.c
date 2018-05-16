@@ -90,7 +90,7 @@ static int ethernet_set_config(u32_t mgmt_request,
 			return -EACCES;
 		}
 
-		memcpy(&params->mac_address, &config.mac_address,
+		memcpy(&config.mac_address, &params->mac_address,
 		       sizeof(struct net_eth_addr));
 		type = ETHERNET_CONFIG_TYPE_MAC_ADDRESS;
 	} else {
