@@ -163,6 +163,11 @@ static void test_change_mac_when_down(void)
 	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_MAC_ADDRESS, iface,
 		       &params, sizeof(struct ethernet_req_params));
 
+	zassert_equal(ret, 0, "unable to change mac address\n");
+
+	ret = memcmp(net_if_get_link_addr(iface)->addr, mac_addr_change,
+		     sizeof(mac_addr_change));
+
 	zassert_equal(ret, 0, "invalid mac address change\n");
 
 	net_if_up(iface);
