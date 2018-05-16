@@ -415,6 +415,7 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 
 static void firmware_transfer(struct k_work *work)
 {
+	struct sockaddr client_addr;
 	int ret, family;
 	u16_t off;
 	u16_t len;
@@ -478,7 +479,20 @@ static void firmware_transfer(struct k_work *work)
 	tmp = server_addr[off + len];
 	server_addr[off + len] = '\0';
 
-	ret = net_app_init_udp_client(&firmware_ctx.net_app_ctx, NULL, NULL,
+	/* setup the local firmware download client port */
+	memset(&client_addr, 0, sizeof(client_addr));
+#if defined(CONFIG_NET_IPV6)
+	client_addr.sa_family = AF_INET6;
+	net_sin6(&client_addr)->sin6_port =
+		htons(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_LOCAL_PORT);
+#elif defined(CONFIG_NET_IPV4)
+	client_addr.sa_family = AF_INET;
+	net_sin(&client_addr)->sin_port =
+		htons(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_LOCAL_PORT);
+#endif
+
+	ret = net_app_init_udp_client(&firmware_ctx.net_app_ctx,
+				      &client_addr, NULL,
 				      &server_addr[off], parsed_uri.port,
 				      firmware_ctx.net_init_timeout, NULL);
 	server_addr[off + len] = tmp;
