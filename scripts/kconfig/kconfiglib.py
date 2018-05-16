@@ -245,9 +245,12 @@ This organization mirrors the C implementation. MenuNode is called
 'struct menu' there, but I thought "menu" was a confusing name.
 
 It is possible to give a Choice a name and define it in multiple locations,
-hence why Choice.nodes is also a list. In practice, you're unlikely to ever see
-a choice defined in more than one location. I don't think I've even seen a
-named choice outside of the test suite.
+hence why Choice.nodes is also a list.
+
+As a convenience, the properties added at a particular definition location are
+available on the MenuNode itself, in e.g. MenuNode.defaults. This is helpful
+when generating documentation, so that symbols/choices defined in multiple
+locations can be shown with the correct properties at each location.
 
 
 Intro to expressions
@@ -419,11 +422,10 @@ class Kconfig(object):
       the 'Intro to the menu tree' section in the module docstring.
 
     const_syms:
-      A dictionary like 'syms' for constant (quoted) symbols.
+      A dictionary like 'syms' for constant (quoted) symbols
 
     named_choices:
-      A dictionary like 'syms' for named choices (choice FOO). This is for
-      completeness. I've never seen a named choice outside of the test suite.
+      A dictionary like 'syms' for named choices (choice FOO)
 
     defined_syms:
       A list with all defined symbols, in the same order as they appear in the
@@ -710,10 +712,7 @@ class Kconfig(object):
         self._file = self._open(filename)
 
         try:
-            self._parse_block(None,           # end_token
-                              self.top_node,  # parent
-                              self.top_node,  # prev
-                              self.y)         # visible_if_deps
+            self._parse_block(None, self.top_node, self.top_node)
         except UnicodeDecodeError as e:
             _decoding_error(e, self._filename)
 
@@ -723,7 +722,7 @@ class Kconfig(object):
         self._parsing_kconfigs = False
 
         # Do various post-processing of the menu tree
-        _finalize_tree(self.top_node)
+        self._finalize_tree(self.top_node, self.y)
 
 
         # Do sanity checks. Some of these depend on everything being
@@ -1885,7 +1884,7 @@ class Kconfig(object):
 
         return (OR, e1, e2)
 
-    def _parse_block(self, end_token, parent, prev, visible_if_deps):
+    def _parse_block(self, end_token, parent, prev):
         # Parses a block, which is the contents of either a file or an if,
         # menu, or choice statement.
         #
@@ -1904,10 +1903,6 @@ class Kconfig(object):
         #   'prev' is reused to parse a list of child menu nodes (for a menu or
         #   Choice): After parsing the children, the 'next' pointer is assigned
         #   to the 'list' pointer to "tilt up" the children above the node.
-        #
-        # visible_if_deps:
-        #   'visible if' dependencies from enclosing menus. Propagated to
-        #   Symbol and Choice prompts.
         #
         # Returns the final menu node in the block (or 'prev' if the block is
         # empty). This allows chaining.
@@ -1938,7 +1933,7 @@ class Kconfig(object):
 
                 sym.nodes.append(node)
 
-                self._parse_properties(node, visible_if_deps)
+                self._parse_properties(node)
 
                 if node.is_menuconfig and not node.prompt:
                     self._warn("the menuconfig symbol {} has no prompt"
@@ -1949,7 +1944,7 @@ class Kconfig(object):
 
             elif t0 == _T_SOURCE:
                 self._enter_file(os.path.expandvars(self._expect_str_and_eol()))
-                prev = self._parse_block(None, parent, prev, visible_if_deps)
+                prev = self._parse_block(None, parent, prev)
                 self._leave_file()
 
             elif t0 == _T_RSOURCE:
@@ -1957,7 +1952,7 @@ class Kconfig(object):
                     os.path.dirname(self._filename),
                     os.path.expandvars(self._expect_str_and_eol())
                 ))
-                prev = self._parse_block(None, parent, prev, visible_if_deps)
+                prev = self._parse_block(None, parent, prev)
                 self._leave_file()
 
             elif t0 in (_T_GSOURCE, _T_GRSOURCE):
@@ -1986,7 +1981,7 @@ class Kconfig(object):
                         filename = os.path.relpath(filename, self.srctree)
 
                     self._enter_file(filename)
-                    prev = self._parse_block(None, parent, prev, visible_if_deps)
+                    prev = self._parse_block(None, parent, prev)
                     self._leave_file()
 
             elif t0 == end_token:
@@ -2002,13 +1997,9 @@ class Kconfig(object):
                 node.filename = self._filename
                 node.linenr = self._linenr
 
-                node.dep = self._make_and(
-                    self._parse_expr(True),
-                    # See similar code in _parse_properties()
-                    parent.item if isinstance(parent.item, Choice)
-                    else parent.dep)
+                node.dep = self._parse_expr(True)
 
-                self._parse_block(_T_ENDIF, node, node, visible_if_deps)
+                self._parse_block(_T_ENDIF, node, node)
                 node.list = node.next
 
                 prev.next = prev = node
@@ -2018,18 +2009,14 @@ class Kconfig(object):
                 node.kconfig = self
                 node.item = MENU
                 node.is_menuconfig = True
+                node.prompt = (self._expect_str_and_eol(), self.y)
                 node.visibility = self.y
                 node.parent = parent
                 node.filename = self._filename
                 node.linenr = self._linenr
 
-                prompt = self._expect_str_and_eol()
-                self._parse_properties(node, visible_if_deps)
-                node.prompt = (prompt, node.dep)
-
-                self._parse_block(_T_ENDMENU, node, node,
-                                  self._make_and(visible_if_deps,
-                                                 node.visibility))
+                self._parse_properties(node)
+                self._parse_block(_T_ENDMENU, node, node)
                 node.list = node.next
 
                 prev.next = prev = node
@@ -2039,14 +2026,13 @@ class Kconfig(object):
                 node.kconfig = self
                 node.item = COMMENT
                 node.is_menuconfig = False
+                node.prompt = (self._expect_str_and_eol(), self.y)
                 node.list = None
                 node.parent = parent
                 node.filename = self._filename
                 node.linenr = self._linenr
 
-                prompt = self._expect_str_and_eol()
-                self._parse_properties(node, visible_if_deps)
-                node.prompt = (prompt, node.dep)
+                self._parse_properties(node)
 
                 prev.next = prev = node
 
@@ -2079,8 +2065,8 @@ class Kconfig(object):
                 node.filename = self._filename
                 node.linenr = self._linenr
 
-                self._parse_properties(node, visible_if_deps)
-                self._parse_block(_T_ENDCHOICE, node, node, visible_if_deps)
+                self._parse_properties(node)
+                self._parse_block(_T_ENDCHOICE, node, node)
                 node.list = node.next
 
                 choice.nodes.append(node)
@@ -2113,32 +2099,32 @@ class Kconfig(object):
             self._parse_error("extra tokens at end of line")
         return expr
 
-    def _parse_properties(self, node, visible_if_deps):
-        # Parses properties for symbols, menus, choices, and comments. Also
-        # takes care of propagating dependencies from the menu node to the
-        # properties of the item (this mirrors the C tools, though they do it
-        # after parsing).
+    def _parse_properties(self, node):
+        # Parses and adds properties to the MenuNode 'node' (type, 'prompt',
+        # 'default's, etc.) Properties are later copied up to symbols and
+        # choices in a separate pass after parsing, in _propagate_deps().
+        #
+        # An older version of this code added properties directly to symbols
+        # and choices instead of to their menu nodes (and handled dependency
+        # propagation simultaneously), but that loses information on where a
+        # property is added when a symbol or choice is defined in multiple
+        # locations. Some Kconfig configuration systems rely heavily on such
+        # symbols, and better docs can be generated by keeping track of where
+        # properties are added.
         #
         # node:
-        #   The menu node we're parsing properties on. Prompt, help text,
-        #   'depends on', and 'visible if' properties apply to the Menu node,
-        #   while other properties apply to the contained item.
-        #
-        # visible_if_deps:
-        #   'visible if' dependencies from enclosing menus. Propagated to
-        #   Symbol and Choice prompts.
+        #   The menu node we're parsing properties on
 
-        # New properties encountered at this location. A local 'depends on'
-        # only applies to these, in case a symbol is defined in multiple
-        # locations.
-        defaults = []
-        selects = []
-        implies = []
-        ranges = []
-
-        # Menu node dependencies from 'depends on'. Will get propagated to the
-        # properties above.
+        # Dependencies from 'depends on'. Will get propagated to the properties
+        # below.
         node.dep = self.y
+
+        # Properties added at this location. A local 'depends on' only applies
+        # to these, in case a symbol is defined in multiple locations.
+        node.defaults = []
+        node.selects = []
+        node.implies = []
+        node.ranges = []
 
         while self._next_line():
             t0 = self._next_token()
@@ -2148,8 +2134,7 @@ class Kconfig(object):
             if t0 in _TYPE_TOKENS:
                 new_type = _TOKEN_TO_TYPE[t0]
 
-                if node.item.orig_type != UNKNOWN and \
-                   node.item.orig_type != new_type:
+                if node.item.orig_type not in (UNKNOWN, new_type):
                     self._warn("{} defined with multiple types, {} will be used"
                                .format(_name_and_loc(node.item),
                                        TYPE_TO_STR[new_type]))
@@ -2228,31 +2213,32 @@ class Kconfig(object):
                 if not isinstance(node.item, Symbol):
                     self._parse_error("only symbols can select")
 
-                selects.append((self._expect_nonconst_sym(),
-                                self._parse_cond()))
+                node.selects.append((self._expect_nonconst_sym(),
+                                     self._parse_cond()))
 
             elif t0 == _T_IMPLY:
                 if not isinstance(node.item, Symbol):
                     self._parse_error("only symbols can imply")
 
-                implies.append((self._expect_nonconst_sym(),
-                                self._parse_cond()))
+                node.implies.append((self._expect_nonconst_sym(),
+                                     self._parse_cond()))
 
             elif t0 == _T_DEFAULT:
-                defaults.append((self._parse_expr(False), self._parse_cond()))
+                node.defaults.append((self._parse_expr(False),
+                                      self._parse_cond()))
 
             elif t0 in (_T_DEF_BOOL, _T_DEF_TRISTATE):
                 new_type = _TOKEN_TO_TYPE[t0]
 
-                if node.item.orig_type != UNKNOWN and \
-                   node.item.orig_type != new_type:
+                if node.item.orig_type not in (UNKNOWN, new_type):
                     self._warn("{} defined with multiple types, {} will be used"
                                .format(_name_and_loc(node.item),
                                        TYPE_TO_STR[new_type]))
 
                 node.item.orig_type = new_type
 
-                defaults.append((self._parse_expr(False), self._parse_cond()))
+                node.defaults.append((self._parse_expr(False),
+                                      self._parse_cond()))
 
             elif t0 == _T_PROMPT:
                 # 'prompt' properties override each other within a single
@@ -2265,9 +2251,9 @@ class Kconfig(object):
                 node.prompt = (self._expect_str(), self._parse_cond())
 
             elif t0 == _T_RANGE:
-                ranges.append((self._expect_sym(),
-                               self._expect_sym(),
-                               self._parse_cond()))
+                node.ranges.append((self._expect_sym(),
+                                    self._expect_sym(),
+                                    self._parse_cond()))
 
             elif t0 == _T_OPTION:
                 if self._check_token(_T_ENV):
@@ -2283,7 +2269,7 @@ class Kconfig(object):
                                    "set".format(node.item.name, env_var),
                                    self._filename, self._linenr)
                     else:
-                        defaults.append(
+                        node.defaults.append(
                             (self._lookup_const_sym(os.environ[env_var]),
                              self.y))
 
@@ -2341,72 +2327,7 @@ class Kconfig(object):
                 # Reuse the tokens for the non-property line later
                 self._has_tokens = True
                 self._tokens_i = -1
-                break
-
-        # Done parsing properties. Now add the new
-        # prompts/defaults/selects/implies/ranges properties, with dependencies
-        # from node.dep propagated.
-
-        # First propagate parent dependencies to node.dep
-
-        # If the parent node holds a Choice, we use the Choice itself as the
-        # parent dependency. This matches the C implementation, and makes sense
-        # as the value (mode) of the choice limits the visibility of the
-        # contained choice symbols. Due to the similar interface, Choice works
-        # as a drop-in replacement for Symbol here.
-        node.dep = self._make_and(
-            node.dep,
-            node.parent.item if isinstance(node.parent.item, Choice)
-            else node.parent.dep)
-
-        if isinstance(node.item, (Symbol, Choice)):
-            # See the Symbol/Choice class documentation
-            node.item.direct_dep = \
-                self._make_or(node.item.direct_dep, node.dep)
-
-            # Set the prompt, with dependencies propagated
-            if node.prompt:
-                node.prompt = \
-                    (node.prompt[0],
-                     self._make_and(node.prompt[1],
-                                    self._make_and(node.dep, visible_if_deps)))
-
-            # Add the new defaults, with dependencies propagated
-            for val_expr, cond in defaults:
-                node.item.defaults.append(
-                    (val_expr, self._make_and(cond, node.dep)))
-
-            # Add the new ranges, with dependencies propagated
-            for low, high, cond in ranges:
-                node.item.ranges.append(
-                    (low, high, self._make_and(cond, node.dep)))
-
-            # Handle selects
-            for target, cond in selects:
-                # Only stored for inspection. Not used during evaluation.
-                node.item.selects.append(
-                    (target, self._make_and(cond, node.dep)))
-
-                # Modify the dependencies of the selected symbol
-                # Warning: See _warn_select_unsatisfied_deps()
-                target.rev_dep = \
-                    self._make_or(target.rev_dep,
-                                  self._make_and(node.item,
-                                                 self._make_and(cond,
-                                                                node.dep)))
-
-            # Handle implies
-            for target, cond in implies:
-                # Only stored for inspection. Not used during evaluation.
-                node.item.implies.append(
-                    (target, self._make_and(cond, node.dep)))
-
-                # Modify the dependencies of the implied symbol
-                target.weak_rev_dep = \
-                    self._make_or(target.weak_rev_dep,
-                                  self._make_and(node.item,
-                                                 self._make_and(cond,
-                                                                node.dep)))
+                return
 
     def _parse_expr(self, transform_m):
         # Parses an expression from the tokens in Kconfig._tokens using a
@@ -2572,6 +2493,161 @@ class Kconfig(object):
         for choice in self._choices:
             choice._invalidate()
 
+
+    #
+    # Post-parsing menu tree processing, including dependency propagation and
+    # implicit submenu creation
+    #
+
+    def _finalize_tree(self, node, visible_if):
+        # Propagates properties and dependencies, creates implicit menus (see
+        # kconfig-language.txt), removes 'if' nodes, and finalizes choices.
+        # This pretty closely mirrors menu_finalize() from the C
+        # implementation, with some minor tweaks (MenuNode holds lists of
+        # properties instead of each property having a MenuNode pointer, for
+        # example).
+        #
+        # node:
+        #   The current "parent" menu node, from which we propagate
+        #   dependencies
+        #
+        # visible_if:
+        #   Dependencies from 'visible if' on parent menus. These are added to
+        #   the prompts of symbols and choices.
+
+        if node.list:
+            # The menu node is a choice, menu, or if. Finalize each child in
+            # it.
+
+            if node.item == MENU:
+                visible_if = self._make_and(visible_if, node.visibility)
+
+            self._propagate_deps(node, visible_if)
+
+            cur = node.list
+            while cur:
+                self._finalize_tree(cur, visible_if)
+                cur = cur.next
+
+        elif isinstance(node.item, Symbol):
+            # The menu node is a symbol. See if we can create an implicit menu
+            # rooted at it and finalize each child in that menu if so, like for
+            # the choice/menu/if case above.
+            cur = node
+            while cur.next and _auto_menu_dep(node, cur.next):
+                # This also makes implicit submenu creation work recursively,
+                # with implicit menus inside implicit menus
+                self._finalize_tree(cur.next, visible_if)
+                cur = cur.next
+                cur.parent = node
+
+            if cur is not node:
+                # Found symbols that should go in an implicit submenu. Tilt
+                # them up above us.
+                node.list = node.next
+                node.next = cur.next
+                cur.next = None
+
+
+        if node.list:
+            # We have a parent node with individually finalized child nodes. Do
+            # final steps to finalize this "level" in the menu tree.
+            _flatten(node.list)
+            _remove_ifs(node)
+
+        # Empty choices (node.list None) are possible, so this needs to go
+        # outside
+        if isinstance(node.item, Choice):
+            _finalize_choice(node)
+
+    def _propagate_deps(self, node, visible_if):
+        # This function combines two tasks:
+        #
+        #   1) Copy properties from menu nodes to symbols and choices
+        #
+        #   2) Propagate dependencies from 'if' and 'depends on' to all
+        #      properties
+        #
+        # See _parse_properties() as well.
+
+        # If the parent node holds a Choice, we use the Choice itself as the
+        # parent dependency. This makes sense as the value (mode) of the choice
+        # limits the visibility of the contained choice symbols. The C
+        # implementation works the same way.
+        #
+        # Due to the similar interface, Choice works as a drop-in replacement
+        # for Symbol here.
+        basedep = node.item if isinstance(node.item, Choice) else node.dep
+
+        cur = node.list
+        while cur:
+            cur.dep = dep = self._make_and(cur.dep, basedep)
+
+            # Propagate dependencies to prompt
+            if cur.prompt:
+                cur.prompt = (cur.prompt[0],
+                              self._make_and(cur.prompt[1], dep))
+
+            if isinstance(cur.item, (Symbol, Choice)):
+                sc = cur.item
+
+                # See the Symbol class docstring
+                sc.direct_dep = self._make_or(sc.direct_dep, dep)
+
+                # TODO: Profile this code and see if the 'if's are worthwhile.
+                # Another potential optimization would be to assign the lists
+                # from the MenuNode directly instead of using extend() in cases
+                # where a symbol/choice only has a single MenuNode (the
+                # majority of cases).
+
+                # Propagate 'visible if' dependencies to the prompt
+                if cur.prompt:
+                    cur.prompt = (cur.prompt[0],
+                                  self._make_and(cur.prompt[1], visible_if))
+
+                # Propagate dependencies to defaults
+
+                if cur.defaults:
+                    cur.defaults = [(default, self._make_and(cond, dep))
+                                    for default, cond in cur.defaults]
+                    sc.defaults.extend(cur.defaults)
+
+                # Propagate dependencies to ranges
+
+                if cur.ranges:
+                    cur.ranges = [(low, high, self._make_and(cond, dep))
+                                  for low, high, cond in cur.ranges]
+                    sc.ranges.extend(cur.ranges)
+
+                # Propagate dependencies to selects
+
+                if cur.selects:
+                    cur.selects = [(target, self._make_and(cond, dep))
+                                   for target, cond in cur.selects]
+                    sc.selects.extend(cur.selects)
+
+                    # Modify the reverse dependencies of the selected symbol
+                    for target, cond in cur.selects:
+                        target.rev_dep = self._make_or(
+                            target.rev_dep,
+                            self._make_and(sc, cond))
+
+                # Propagate dependencies to implies
+
+                if cur.implies:
+                    cur.implies = [(target, self._make_and(cond, dep))
+                                   for target, cond in cur.implies]
+                    sc.implies.extend(cur.implies)
+
+                    # Modify the weak reverse dependencies of the implied
+                    # symbol
+                    for target, cond in cur.implies:
+                        target.weak_rev_dep = self._make_or(
+                            target.weak_rev_dep,
+                            self._make_and(sc, cond))
+
+
+            cur = cur.next
 
     #
     # Misc.
@@ -3280,18 +3356,16 @@ class Symbol(object):
     def __str__(self):
         """
         Returns a string representation of the symbol when it is printed,
-        matching the Kconfig format. Prompts and help texts are included,
-        though they really belong to the symbol's menu nodes rather than the
-        symbol itself.
+        matching the Kconfig format, with parent dependencies propagated.
 
-        The output is designed so that feeding it back to a Kconfig parser
-        redefines the symbol as is. This also works for symbols defined in
-        multiple locations, where all the definitions are output. See the
-        module documentation for a small gotcha related to choice symbols.
+        The string is constructed by joining the strings returned by
+        MenuNode.__str__() for each of the symbol's menu nodes, so symbols
+        defined in multiple locations will return a string with all
+        definitions.
 
         An empty string is returned for undefined and constant symbols.
         """
-        return _sym_choice_str(self)
+        return "\n".join(str(node) for node in self.nodes)
 
     #
     # Private methods
@@ -3836,12 +3910,11 @@ class Choice(object):
         """
         Returns a string representation of the choice when it is printed,
         matching the Kconfig format (though without the contained choice
-        symbols). Prompts and help texts are included, though they really
-        belong to the choice's menu nodes rather than the choice itself.
+        symbols).
 
         See Symbol.__str__() as well.
         """
-        return _sym_choice_str(self)
+        return "\n".join(str(node) for node in self.nodes)
 
     #
     # Private methods
@@ -3984,6 +4057,24 @@ class MenuNode(object):
       the Symbol or Choice instance. For menus and comments, the prompt holds
       the text.
 
+    defaults:
+      The 'default' properties for this particular menu node. See
+      symbol.defaults.
+
+      When evaluating defaults, you should use Symbol/Choice.defaults instead,
+      as it include properties from all menu nodes (a symbol/choice can have
+      multiple definition locations/menu nodes). MenuNode.defaults is meant for
+      documentation generation.
+
+    selects:
+      Like MenuNode.defaults, for selects.
+
+    implies:
+      Like MenuNode.defaults, for implies.
+
+    ranges:
+      Like MenuNode.defaults, for ranges.
+
     help:
       The help text for the menu node for Symbols and Choices. None if there is
       no help text. Always stored in the node rather than the Symbol or Choice.
@@ -3996,9 +4087,9 @@ class MenuNode(object):
       attribute, and this attribute is then in turn propagated to the
       properties of symbols and choices.
 
-      If a symbol is defined in multiple locations, only the properties defined
-      at a particular location get the corresponding MenuNode.dep dependencies
-      propagated to them.
+      If a symbol or choice is defined in multiple locations, only the
+      properties defined at a particular location get the corresponding
+      MenuNode.dep dependencies propagated to them.
 
     visibility:
       The 'visible if' dependencies for the menu node (which must represent a
@@ -4040,6 +4131,12 @@ class MenuNode(object):
         "parent",
         "prompt",
         "visibility",
+
+        # Properties
+        "defaults",
+        "selects",
+        "implies",
+        "ranges"
     )
 
     def __repr__(self):
@@ -4101,30 +4198,105 @@ class MenuNode(object):
 
     def __str__(self):
         """
-        Returns a string representation of the MenuNode, matching the Kconfig
+        Returns a string representation of the menu node, matching the Kconfig
         format.
 
-        For Symbol and Choice menu nodes, this function simply calls through to
-        MenuNode.item.__str__(). For MENU and COMMENT nodes, a Kconfig-like
-        representation of the menu or comment is returned.
+        The output could (almost) be fed back into a Kconfig parser to redefine
+        the object associated with the menu node. See the module documentation
+        for a gotcha related to choice symbols.
+
+        For symbols and choices with multiple menu nodes (multiple definition
+        locations), properties that aren't associated with a particular menu
+        node are shown on all menu nodes ('option env=...', 'optional' for
+        choices, etc.).
         """
+
+        return self._menu_comment_node_str() \
+               if self.item in (MENU, COMMENT) else \
+               self._sym_choice_node_str()
+
+    def _menu_comment_node_str(self):
+        s = '{} "{}"\n'.format("menu" if self.item == MENU else "comment",
+                               self.prompt[0])
+
+        if self.dep is not self.kconfig.y:
+            s += "\tdepends on {}\n".format(expr_str(self.dep))
+
+        if self.item == MENU and self.visibility is not self.kconfig.y:
+            s += "\tvisible if {}\n".format(expr_str(self.visibility))
+
+        return s
+
+    def _sym_choice_node_str(self):
+        lines = []
+
+        def indent_add(s):
+            lines.append("\t" + s)
+
+        def indent_add_cond(s, cond):
+            if cond is not self.kconfig.y:
+                s += " if " + expr_str(cond)
+            indent_add(s)
+
         if isinstance(self.item, (Symbol, Choice)):
-            return self.item.__str__()
+            sc = self.item
 
-        if self.item in (MENU, COMMENT):
-            s = ("menu" if self.item == MENU else "comment") + \
-                ' "{}"\n'.format(escape(self.prompt[0]))
+            if isinstance(sc, Symbol):
+                lines.append(
+                    ("menuconfig " if self.is_menuconfig else "config ")
+                    + sc.name)
+            else:
+                lines.append(
+                    "choice" if sc.name is None else "choice " + sc.name)
 
-            if self.dep is not self.kconfig.y:
-                s += "\tdepends on {}\n".format(expr_str(self.dep))
+            if sc.orig_type != UNKNOWN:
+                indent_add(TYPE_TO_STR[sc.orig_type])
 
-            if self.item == MENU and self.visibility is not self.kconfig.y:
-                s += "\tvisible if {}\n".format(expr_str(self.visibility))
+            if self.prompt:
+                indent_add_cond(
+                    'prompt "{}"'.format(escape(self.prompt[0])),
+                    self.prompt[1])
 
-            return s
+            if isinstance(sc, Symbol):
+                if sc.is_allnoconfig_y:
+                    indent_add("option allnoconfig_y")
 
-        # 'if' node. Should never appear in the final tree.
-        return "if " + expr_str(self.dep)
+                if sc is sc.kconfig.defconfig_list:
+                    indent_add("option defconfig_list")
+
+                if sc.env_var is not None:
+                    indent_add('option env="{}"'.format(sc.env_var))
+
+                if sc is sc.kconfig.modules:
+                    indent_add("option modules")
+
+                for low, high, cond in self.ranges:
+                    indent_add_cond(
+                        "range {} {}".format(expr_str(low), expr_str(high)),
+                        cond)
+
+            for default, cond in self.defaults:
+                indent_add_cond("default " + expr_str(default), cond)
+
+            if isinstance(sc, Choice) and sc.is_optional:
+                indent_add("optional")
+
+            if isinstance(sc, Symbol):
+                for select, cond in self.selects:
+                    indent_add_cond("select " + expr_str(select), cond)
+
+                for imply, cond in self.implies:
+                    indent_add_cond("imply " + expr_str(imply), cond)
+
+            if self.dep is not sc.kconfig.y:
+                indent_add("depends on " + expr_str(self.dep))
+
+            if self.help is not None:
+                indent_add("help")
+                for line in self.help.splitlines():
+                    indent_add("  " + line)
+
+        return "\n".join(lines) + "\n"
 
 class KconfigSyntaxError(Exception):
     """
@@ -4430,110 +4602,6 @@ def _decoding_error(e, filename):
             e.object[e.start:e.end],
             e.reason))
 
-
-# Printing functions
-
-def _sym_choice_str(sc):
-    # Symbol/choice __str__() implementation. These have many properties in
-    # common, so it makes sense to handle them together.
-
-    lines = []
-
-    def indent_add(s):
-        lines.append("\t" + s)
-
-    # We print the prompt(s) and help text(s) too as a convenience, even though
-    # they're actually part of the MenuNode. If a symbol or choice is defined
-    # in multiple locations (has more than one MenuNode), we output one
-    # statement for each location, and print all the properties that belong to
-    # the symbol/choice itself only at the first location. This gives output
-    # that would function if fed to a Kconfig parser, even for such
-    # symbols/choices (choices defined in multiple locations gets a bit iffy
-    # since they also have child nodes, though I've never seen such a choice).
-
-    if not sc.nodes:
-        return ""
-
-    for node in sc.nodes:
-        if isinstance(sc, Symbol):
-            if node.is_menuconfig:
-                lines.append("menuconfig " + sc.name)
-            else:
-                lines.append("config " + sc.name)
-        else:
-            if sc.name is None:
-                lines.append("choice")
-            else:
-                lines.append("choice " + sc.name)
-
-        if node is sc.nodes[0] and sc.orig_type != UNKNOWN:
-            indent_add(TYPE_TO_STR[sc.orig_type])
-
-        if node.prompt:
-            prompt, cond = node.prompt
-            prompt_str = 'prompt "{}"'.format(escape(prompt))
-            if cond is not sc.kconfig.y:
-                prompt_str += " if " + expr_str(cond)
-            indent_add(prompt_str)
-
-        if node is sc.nodes[0]:
-            if isinstance(sc, Symbol):
-                if sc.is_allnoconfig_y:
-                    indent_add("option allnoconfig_y")
-
-                if sc is sc.kconfig.defconfig_list:
-                    indent_add("option defconfig_list")
-
-                if sc.env_var is not None:
-                    indent_add('option env="{}"'.format(sc.env_var))
-
-                if sc is sc.kconfig.modules:
-                    indent_add("option modules")
-
-            if isinstance(sc, Symbol):
-                for low, high, cond in sc.ranges:
-                    range_string = "range {} {}" \
-                                   .format(expr_str(low), expr_str(high))
-                    if cond is not sc.kconfig.y:
-                        range_string += " if " + expr_str(cond)
-                    indent_add(range_string)
-
-            for default, cond in sc.defaults:
-                default_string = "default " + expr_str(default)
-                if cond is not sc.kconfig.y:
-                    default_string += " if " + expr_str(cond)
-                indent_add(default_string)
-
-            if isinstance(sc, Choice) and sc.is_optional:
-                indent_add("optional")
-
-            if isinstance(sc, Symbol):
-                for select, cond in sc.selects:
-                    select_string = "select " + expr_str(select)
-                    if cond is not sc.kconfig.y:
-                        select_string += " if " + expr_str(cond)
-                    indent_add(select_string)
-
-                for imply, cond in sc.implies:
-                    imply_string = "imply " + expr_str(imply)
-                    if cond is not sc.kconfig.y:
-                        imply_string += " if " + expr_str(cond)
-                    indent_add(imply_string)
-
-        if node.dep is not sc.kconfig.y:
-            indent_add("depends on " + expr_str(node.dep))
-
-        if node.help is not None:
-            indent_add("help")
-            for line in node.help.splitlines():
-                indent_add("  " + line)
-
-        # Add a blank line if there are more nodes to print
-        if node is not sc.nodes[-1]:
-            lines.append("")
-
-    return "\n".join(lines) + "\n"
-
 def _name_and_loc(sc):
     # Helper for giving the symbol/choice name and location(s) in e.g. warnings
 
@@ -4651,50 +4719,6 @@ def _finalize_choice(node):
     for sym in choice.syms:
         if sym.orig_type == UNKNOWN:
             sym.orig_type = choice.orig_type
-
-def _finalize_tree(node):
-    # Creates implicit menus from dependencies (see kconfig-language.txt),
-    # removes 'if' nodes, and finalizes choices. This pretty closely mirrors
-    # menu_finalize() from the C implementation, though we propagate
-    # dependencies during parsing instead.
-
-    if node.list:
-        # The menu node is a choice, menu, or if. Finalize each child in it.
-        cur = node.list
-        while cur:
-            _finalize_tree(cur)
-            cur = cur.next
-
-    elif isinstance(node.item, Symbol):
-        # The menu node is a symbol. See if we can create an implicit menu
-        # rooted at it and finalize each child in that menu if so, like for the
-        # choice/menu/if case above.
-        cur = node
-        while cur.next and _auto_menu_dep(node, cur.next):
-            # This also makes implicit submenu creation work recursively, with
-            # implicit menus inside implicit menus
-            _finalize_tree(cur.next)
-            cur = cur.next
-            cur.parent = node
-
-        if cur is not node:
-            # Found symbols that should go in an implicit submenu. Tilt them up
-            # above us.
-            node.list = node.next
-            node.next = cur.next
-            cur.next = None
-
-
-    if node.list:
-        # We have a node with child nodes where the child nodes are now
-        # individually finalized. Do final steps to finalize this "level" in
-        # the menu tree.
-        _flatten(node.list)
-        _remove_ifs(node)
-
-    # Empty choices (node.list None) are possible, so this needs to go outside
-    if isinstance(node.item, Choice):
-        _finalize_choice(node)
 
 def _check_sym_sanity(sym):
     # Checks various symbol properties that are handiest to check after
