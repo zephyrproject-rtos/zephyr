@@ -59,3 +59,13 @@
 		_bt_settings_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
+
+	SECTION_DATA_PROLOGUE(log_rom_sections, (OPTIONAL),)
+	{
+		LOG_ROM_SECTIONS()
+	} GROUP_LINK_IN(ROMABLE_REGION)
+	
+	SECTION_DATA_PROLOGUE(log_backends_sections, (OPTIONAL),)
+	{
+		LOG_BACKENDS_SECTION()
+	} GROUP_LINK_IN(ROMABLE_REGION)

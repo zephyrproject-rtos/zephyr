@@ -107,6 +107,26 @@
 		KEEP(*(".shell_cmd_*"));		\
 		__shell_cmd_end = .;			\
 
+/*
+ * link in shell initialization objects for all modules that use shell and
+ * their shell commands are automatically initialized by the kernel.
+ */
+
+#define	LOG_RAM_SECTIONS()				\
+		__log_ram_start = .;			\
+		KEEP(*(SORT(.log_ram_*)));		\
+		__log_ram_end = .;
+
+#define	LOG_ROM_SECTIONS()				\
+		__log_rom_start = .;			\
+		KEEP(*(SORT(.log_rom_*)));		\
+		__log_rom_end = .;
+
+#define	LOG_BACKENDS_SECTION()				\
+		__log_backends_start = .;		\
+		KEEP(*(".log_backends"));		\
+		__log_backends_end = .;
+
 #ifdef CONFIG_APPLICATION_MEMORY
 
 #ifndef NUM_KERNEL_OBJECT_FILES
