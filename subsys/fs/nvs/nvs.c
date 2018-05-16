@@ -16,10 +16,11 @@
 
 static inline u16_t _nvs_len_in_flash(struct nvs_fs *fs, u16_t len)
 {
-	if (fs->write_block_size <= 1) {
+	if (FLASH_WRITE_BLOCK_SIZE <= 1) {
 		return len;
 	}
-	return (len + (fs->write_block_size - 1)) & ~(fs->write_block_size - 1);
+	return (len + (FLASH_WRITE_BLOCK_SIZE - 1)) &
+	       ~(FLASH_WRITE_BLOCK_SIZE - 1);
 }
 
 u16_t _nvs_entry_len_in_flash(struct nvs_fs *fs, u16_t len)
@@ -32,8 +33,8 @@ u16_t _nvs_entry_len_in_flash(struct nvs_fs *fs, u16_t len)
 
 off_t _nvs_head_addr_in_flash(struct nvs_fs *fs, const struct nvs_entry *entry)
 {
-	return entry->data_addr -
-	       _nvs_len_in_flash(fs, sizeof(struct _nvs_data_hdr));
+	return entry->data_addr
+	       -_nvs_len_in_flash(fs, sizeof(struct _nvs_data_hdr));
 }
 
 off_t _nvs_slt_addr_in_flash(struct nvs_fs *fs, const struct nvs_entry *entry)
@@ -197,6 +198,8 @@ int _nvs_gc(struct nvs_fs *fs, off_t addr)
 			/* entry is not found, copy needed - but find the last
 			 * entry first
 			 */
+			last_entry.len = 0;
+			last_entry.data_addr = 0;
 			walker_last = walker;
 			while (walker_last.id != NVS_ID_SECTOR_END) {
 				rd_addr = _nvs_head_addr_in_flash(
@@ -377,7 +380,6 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name, u32_t magic)
 		SYS_LOG_ERR("No valid flash device found");
 		return -ENXIO;
 	}
-	fs->write_block_size = flash_get_write_block_size(fs->flash_device);
 
 	/* check the sector size, should be power of 2 */
 	if (!((fs->sector_size != 0) &&
@@ -476,7 +478,7 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name, u32_t magic)
 
 	SYS_LOG_INF("maximum storage length %d bytes", fs->max_len);
 	SYS_LOG_INF("write-align: %d, write-addr: %"PRIx32"",
-		fs->write_block_size, fs->write_location);
+		FLASH_WRITE_BLOCK_SIZE, fs->write_location);
 	SYS_LOG_INF("entry sector: %d, entry sector ID: %d",
 		fs->entry_sector, fs->sector_id);
 
@@ -501,7 +503,15 @@ int nvs_append(struct nvs_fs *fs, struct nvs_entry *entry)
 	 */
 	hdr_len = _nvs_len_in_flash(fs, sizeof(struct _nvs_data_hdr));
 	slt_len = _nvs_len_in_flash(fs, sizeof(struct _nvs_data_slt));
+
 	extended_len = required_len + hdr_len + slt_len;
+
+	/* an extra hdr and slt is required to guarantee that deletion of
+	 * items is always possible
+	 */
+	if (entry->len) {
+		extended_len += hdr_len + slt_len;
+	}
 
 	if ((fs->sector_size - (fs->write_location & (fs->sector_size - 1))) <
 		extended_len) {
@@ -536,7 +546,9 @@ int nvs_append_close(struct nvs_fs *fs, const struct nvs_entry *entry)
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
 	/* crc16_ccitt is calculated on flash data, set correct offset */
 	addr = entry->data_addr + fs->offset;
-	data_slt.crc16 = crc16_ccitt(0xFFFF, (const u8_t *) addr, entry->len);
+	data_slt.crc16 = crc16_ccitt(0xFFFF,
+				     (const u8_t *) addr,
+				     _nvs_len_in_flash(fs, entry->len));
 	data_slt._pad = 0xFFFF;
 	addr = _nvs_slt_addr_in_flash(fs, entry);
 	slt_len = _nvs_len_in_flash(fs, sizeof(struct _nvs_data_slt));
@@ -555,7 +567,9 @@ int nvs_check_crc(struct nvs_fs *fs, struct nvs_entry *entry)
 
 	/* crc16_ccitt is calculated on flash data, set correct offset */
 	addr = entry->data_addr + fs->offset;
-	crc16 = crc16_ccitt(0xFFFF, (const u8_t *) addr, entry->len);
+	crc16 = crc16_ccitt(0xFFFF,
+			    (const u8_t *) addr,
+			    _nvs_len_in_flash(fs, entry->len));
 	addr = _nvs_slt_addr_in_flash(fs, entry);
 	slt_len = _nvs_len_in_flash(fs, sizeof(struct _nvs_data_slt));
 	rc = nvs_flash_read(fs, addr, &data_slt, slt_len);

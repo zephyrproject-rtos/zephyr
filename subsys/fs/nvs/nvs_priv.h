@@ -28,7 +28,7 @@ extern "C" {
  */
 #define NVS_STATUS_NOSPACE 1
 
-#define NVS_MOVE_BLOCK_SIZE 8
+#define NVS_MOVE_BLOCK_SIZE (2*FLASH_WRITE_BLOCK_SIZE)
 
 struct nvs_entry {
 	off_t data_addr; /* address in flash to write data */
@@ -38,21 +38,21 @@ struct nvs_entry {
 			  */
 };
 
-struct _nvs_sector_hdr {
+struct _nvs_sector_hdr  {
 	u32_t fd_magic;
 	u16_t fd_id;
 	u16_t _pad;
-};
+} __aligned(FLASH_WRITE_BLOCK_SIZE);
 
 struct _nvs_data_hdr {
 	u16_t id;
 	u16_t len;
-};
+} __aligned(FLASH_WRITE_BLOCK_SIZE);
 
 struct _nvs_data_slt {
 	u16_t crc16;
 	u16_t _pad;
-};
+} __aligned(FLASH_WRITE_BLOCK_SIZE);
 
 
 int nvs_append(struct nvs_fs *fs, struct nvs_entry *entry);
