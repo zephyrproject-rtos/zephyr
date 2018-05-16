@@ -107,6 +107,11 @@
 		KEEP(*(".shell_cmd_*"));		\
 		__shell_cmd_end = .;			\
 
+/*
+ * link in shell initialization objects for all modules that use shell and
+ * their shell commands are automatically initialized by the kernel.
+ */
+
 #ifdef CONFIG_APPLICATION_MEMORY
 
 #ifndef NUM_KERNEL_OBJECT_FILES

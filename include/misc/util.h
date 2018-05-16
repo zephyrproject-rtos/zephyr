@@ -325,4 +325,80 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
  */
 #define UTIL_LISTIFY(LEN, F, F_ARG) UTIL_EVAL(UTIL_REPEAT(LEN, F, F_ARG))
 
+/**@brief Implementation details for NUM_VAR_ARGS */
+#define NUM_VA_ARGS_LESS_1_IMPL(				\
+	_ignored,						\
+	_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,		\
+	_11, _12, _13, _14, _15, _16, _17, _18, _19, _20,	\
+	_21, _22, _23, _24, _25, _26, _27, _28, _29, _30,	\
+	_31, _32, _33, _34, _35, _36, _37, _38, _39, _40,	\
+	_41, _42, _43, _44, _45, _46, _47, _48, _49, _50,	\
+	_51, _52, _53, _54, _55, _56, _57, _58, _59, _60,	\
+	_61, _62, N, ...) N
+
+/**@brief Macro to get the number of arguments in a call variadic macro call.
+ * First argument is not counted.
+ *
+ * param[in]    ...     List of arguments
+ *
+ * @retval  Number of variadic arguments in the argument list
+ */
+#define NUM_VA_ARGS_LESS_1(...) \
+	NUM_VA_ARGS_LESS_1_IMPL(__VA_ARGS__, 63, 62, 61, \
+	60, 59, 58, 57, 56, 55, 54, 53, 52, 51,		 \
+	50, 49, 48, 47, 46, 45, 44, 43, 42, 41,		 \
+	40, 39, 38, 37, 36, 35, 34, 33, 32, 31,		 \
+	30, 29, 28, 27, 26, 25, 24, 23, 22, 21,		 \
+	20, 19, 18, 17, 16, 15, 14, 13, 12, 11,		 \
+	10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, ~)
+
+/**
+ * @brief Mapping macro
+ *
+ * Macro that process all arguments using given macro
+ *
+ * @param ... Macro name to be used for argument processing followed by
+ *            arguments to process. Macro should have following
+ *            form: MACRO(argument).
+ *
+ * @return All arguments processed by given macro
+ */
+#define MACRO_MAP(...) MACRO_MAP_(__VA_ARGS__)
+#define MACRO_MAP_(...)							\
+	/* To make sure it works also for 2 arguments in total */	\
+	MACRO_MAP_N(NUM_VA_ARGS_LESS_1(__VA_ARGS__), __VA_ARGS__)
+
+/**
+ * @brief Mapping N arguments macro
+ *
+ * Macro similar to @ref MACRO_MAP but maps exact number of arguments.
+ * If there is more arguments given, the rest would be ignored.
+ *
+ * @param N   Number of arguments to map
+ * @param ... Macro name to be used for argument processing followed by
+ *            arguments to process. Macro should have following
+ *            form: MACRO(argument).
+ *
+ * @return Selected number of arguments processed by given macro
+ */
+#define MACRO_MAP_N(N, ...) MACRO_MAP_N_(N, __VA_ARGS__)
+#define MACRO_MAP_N_(N, ...) UTIL_CAT(MACRO_MAP_, N)(__VA_ARGS__,)
+
+#define MACRO_MAP_0(...)
+#define MACRO_MAP_1(macro, a, ...)  macro(a)
+#define MACRO_MAP_2(macro, a, ...)  macro(a)MACRO_MAP_1(macro, __VA_ARGS__,)
+#define MACRO_MAP_3(macro, a, ...)  macro(a)MACRO_MAP_2(macro, __VA_ARGS__,)
+#define MACRO_MAP_4(macro, a, ...)  macro(a)MACRO_MAP_3(macro, __VA_ARGS__,)
+#define MACRO_MAP_5(macro, a, ...)  macro(a)MACRO_MAP_4(macro, __VA_ARGS__,)
+#define MACRO_MAP_6(macro, a, ...)  macro(a)MACRO_MAP_5(macro, __VA_ARGS__,)
+#define MACRO_MAP_7(macro, a, ...)  macro(a)MACRO_MAP_6(macro, __VA_ARGS__,)
+#define MACRO_MAP_8(macro, a, ...)  macro(a)MACRO_MAP_7(macro, __VA_ARGS__,)
+#define MACRO_MAP_9(macro, a, ...)  macro(a)MACRO_MAP_8(macro, __VA_ARGS__,)
+#define MACRO_MAP_10(macro, a, ...) macro(a)MACRO_MAP_9(macro, __VA_ARGS__,)
+#define MACRO_MAP_11(macro, a, ...) macro(a)MACRO_MAP_10(macro, __VA_ARGS__,)
+#define MACRO_MAP_12(macro, a, ...) macro(a)MACRO_MAP_11(macro, __VA_ARGS__,)
+#define MACRO_MAP_13(macro, a, ...) macro(a)MACRO_MAP_12(macro, __VA_ARGS__,)
+#define MACRO_MAP_14(macro, a, ...) macro(a)MACRO_MAP_13(macro, __VA_ARGS__,)
+#define MACRO_MAP_15(macro, a, ...) macro(a)MACRO_MAP_14(macro, __VA_ARGS__,)
+
 #endif /* _UTIL__H_ */
