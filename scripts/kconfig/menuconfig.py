@@ -91,7 +91,7 @@ import textwrap
 import kconfiglib
 
 from kconfiglib import Kconfig, \
-                       Symbol, Choice, MENU, COMMENT, \
+                       Symbol, Choice, MENU, COMMENT, MenuNode, \
                        BOOL, TRISTATE, STRING, INT, HEX, UNKNOWN, \
                        AND, OR, NOT, \
                        expr_value, split_expr, \
@@ -1513,20 +1513,19 @@ def _draw_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
 
     matches_win.erase()
 
-    if bad_re is not None:
-        # bad_re holds the error message from the re.error exception on errors
-        _safe_addstr(matches_win, 0, 0,
-                     "Bad regular expression: " + bad_re)
-
-    elif not matches:
-        _safe_addstr(matches_win, 0, 0, "No matches")
-
-    else:
+    if matches:
         for i in range(scroll,
                        min(scroll + matches_win.getmaxyx()[0], len(matches))):
 
             _safe_addstr(matches_win, i - scroll, 0, matches[i][1],
                          _LIST_SEL_STYLE if i == sel_node_i else _LIST_STYLE)
+
+    else:
+        # bad_re holds the error message from the re.error exception on errors
+        _safe_addstr(matches_win, 0, 0,
+                     "No matches"
+                     if bad_re is None else
+                     "Bad regular expression: " + bad_re)
 
     matches_win.noutrefresh()
 
@@ -1759,7 +1758,6 @@ def _info_str(node):
             _direct_dep_info(sym) +
             _defaults_info(sym) +
             _select_imply_info(sym) +
-            _loc_info(sym) +
             _kconfig_def_info(sym)
         )
 
@@ -1774,7 +1772,6 @@ def _info_str(node):
             _choice_syms_info(choice) +
             _direct_dep_info(choice) +
             _defaults_info(choice) +
-            _loc_info(choice) +
             _kconfig_def_info(choice)
         )
 
@@ -1917,24 +1914,22 @@ def _select_imply_info(sym):
 
     return s
 
-def _loc_info(sc):
-    # Returns a string with information about where 'sc' (Symbol or Choice) is
-    # defined in the Kconfig files. Also includes the menu path leading up to
-    # it.
-
-    s = "Definition location{}:\n".format("s" if len(sc.nodes) > 1 else "")
-
-    for node in sc.nodes:
-        s += "  - {}:{}\n      Menu: {}\n" \
-             .format(node.filename, node.linenr, _menu_path_info(node))
-
-    return s + "\n"
-
 def _kconfig_def_info(item):
-    # Returns a string with the definition of 'item' in Kconfig syntax
+    # Returns a string with the definition of 'item' in Kconfig syntax,
+    # together with the definition location(s)
 
-    return "Kconfig definition (with propagated dependencies):\n\n" + \
-           textwrap.indent(str(item).expandtabs(), "  ")
+    nodes = [item] if isinstance(item, MenuNode) else item.nodes
+
+    s = "Kconfig definition{}, with propagated dependencies\n" \
+        .format("s" if len(nodes) > 1 else "")
+    s += (len(s) - 1)*"=" + "\n\n"
+
+    s += "\n\n".join("At {}:{}, in menu {}:\n\n{}".format(
+                         node.filename, node.linenr, _menu_path_info(node),
+                         textwrap.indent(str(node), "  "))
+                     for node in nodes)
+
+    return s
 
 def _menu_path_info(node):
     # Returns a string describing the menu path leading up to 'node'
@@ -2010,6 +2005,12 @@ def _edit_text(c, s, i, hscroll, width):
     elif c == curses.KEY_DC:
         s = s[:i] + s[i+1:]
 
+    elif c == "\x17":  # \x17 = CTRL-W
+        # The \W removes characters like ',' one at a time
+        new_i = re.search(r"(?:\w*|\W)\s*$", s[:i]).start()
+        s = s[:new_i] + s[i:]
+        i = new_i
+
     elif c == "\x0B":  # \x0B = CTRL-K
         s = s[:i]
 
@@ -2065,6 +2066,7 @@ def _node_str(node):
         # Show the symbol/choice name in <> brackets if it has no prompt. This
         # path can only hit in show-all mode.
         s += "<{}>".format(node.item.name)
+
     else:
         if node.item == COMMENT:
             s += "*** {} ***".format(node.prompt[0])
@@ -2263,7 +2265,7 @@ def _safe_move(win, *args):
         pass
 
 def _convert_c_lc_ctype_to_utf8():
-    # See _CONVERT_C_LOCALE_TO_UTF8
+    # See _CONVERT_C_LC_CTYPE_TO_UTF8
 
     if _IS_WINDOWS:
         # Windows rarely has issues here, and the PEP 538 implementation avoids
