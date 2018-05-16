@@ -13,7 +13,7 @@ extern "C" {
 
 struct args_t {
 	double stop_at;
-#if defined(CONFIG_ENTROPY_NATIVE_POSIX)
+#if defined(CONFIG_FAKE_ENTROPY_NATIVE_POSIX)
 	u32_t seed;
 #endif
 };
