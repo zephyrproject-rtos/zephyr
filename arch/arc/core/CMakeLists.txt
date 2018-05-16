@@ -1,6 +1,4 @@
-zephyr_library()
-
-zephyr_library_sources(
+zephyr_sources(
 	thread.c
 	thread_entry_wrapper.S
 	cpu_idle.S
@@ -19,9 +17,9 @@ zephyr_library_sources(
 	vector_table.c
 	)
 
-zephyr_library_sources_ifdef(CONFIG_ARC_FIRQ fast_irq.S)
+zephyr_sources_ifdef(CONFIG_ARC_FIRQ fast_irq.S)
 
-zephyr_library_sources_if_kconfig(irq_offload.c)
-zephyr_library_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_CUSTOM atomic.c)
+zephyr_sources_if_kconfig(irq_offload.c)
+zephyr_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_CUSTOM atomic.c)
 add_subdirectory_ifdef(CONFIG_CPU_HAS_MPU mpu)
-zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
+zephyr_sources_ifdef(CONFIG_USERSPACE userspace.S)
