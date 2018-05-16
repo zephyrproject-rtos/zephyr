@@ -75,6 +75,9 @@ enum ethernet_hw_caps {
 
 	/** IEEE 802.1AS (gPTP) clock supported */
 	ETHERNET_PTP			= BIT(8),
+
+	/** IEEE 802.1Qav (credit-based shaping) supported */
+	ETHERNET_QAV			= BIT(9),
 };
 
 enum ethernet_config_type {
@@ -82,6 +85,16 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_LINK,
 	ETHERNET_CONFIG_TYPE_DUPLEX,
 	ETHERNET_CONFIG_TYPE_MAC_ADDRESS,
+	ETHERNET_CONFIG_TYPE_QAV_DELTA_BANDWIDTH,
+	ETHERNET_CONFIG_TYPE_QAV_IDLE_SLOPE,
+};
+
+struct ethernet_qav_queue_param {
+	int queue_id;
+	union {
+		unsigned int delta_bandwidth;
+		unsigned int idle_slope;
+	};
 };
 
 struct ethernet_config {
@@ -97,6 +110,8 @@ struct ethernet_config {
 		} l;
 
 		struct net_eth_addr mac_address;
+
+		struct ethernet_qav_queue_param qav_queue_param;
 	};
 /* @endcond */
 };

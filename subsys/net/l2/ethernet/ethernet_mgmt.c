@@ -93,6 +93,28 @@ static int ethernet_set_config(u32_t mgmt_request,
 		memcpy(&config.mac_address, &params->mac_address,
 		       sizeof(struct net_eth_addr));
 		type = ETHERNET_CONFIG_TYPE_MAC_ADDRESS;
+	} else if (mgmt_request ==
+			NET_REQUEST_ETHERNET_SET_QAV_DELTA_BANDWIDTH) {
+		if (!is_hw_caps_supported(dev, ETHERNET_QAV)) {
+			return -ENOTSUP;
+		}
+
+		if (params->qav_queue_param.delta_bandwidth < 0
+		    || params->qav_queue_param.delta_bandwidth > 100) {
+			return -EINVAL;
+		}
+
+		memcpy(&config.qav_queue_param, &params->qav_queue_param,
+		       sizeof(struct ethernet_qav_queue_param));
+		type = ETHERNET_CONFIG_TYPE_QAV_DELTA_BANDWIDTH;
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_QAV_IDLE_SLOPE) {
+		if (!is_hw_caps_supported(dev, ETHERNET_QAV)) {
+			return -ENOTSUP;
+		}
+
+		memcpy(&config.qav_queue_param, &params->qav_queue_param,
+		       sizeof(struct ethernet_qav_queue_param));
+		type = ETHERNET_CONFIG_TYPE_QAV_IDLE_SLOPE;
 	} else {
 		return -EINVAL;
 	}
@@ -110,6 +132,12 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_DUPLEX,
 				  ethernet_set_config);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_MAC_ADDRESS,
+				  ethernet_set_config);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QAV_DELTA_BANDWIDTH,
+				  ethernet_set_config);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QAV_IDLE_SLOPE,
 				  ethernet_set_config);
 
 void ethernet_mgmt_raise_carrier_on_event(struct net_if *iface)
