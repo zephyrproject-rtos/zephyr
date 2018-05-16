@@ -3851,11 +3851,23 @@ static int setup_cert(struct net_app_ctx *app_ctx, void *cert)
 int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 		       char *peer_str, u16_t peer_port)
 {
+	struct sockaddr client_addr;
 	int ret = 0;
 
 	/* TODO: use security object for initial setup */
+
+	/* setup the local client port */
+	memset(&client_addr, 0, sizeof(client_addr));
+#if defined(CONFIG_NET_IPV6)
+	client_addr.sa_family = AF_INET6;
+	net_sin6(&client_addr)->sin6_port = htons(CONFIG_LWM2M_LOCAL_PORT);
+#elif defined(CONFIG_NET_IPV4)
+	client_addr.sa_family = AF_INET;
+	net_sin(&client_addr)->sin_port = htons(CONFIG_LWM2M_LOCAL_PORT);
+#endif
+
 	ret = net_app_init_udp_client(&client_ctx->net_app_ctx,
-				      NULL, NULL,
+				      &client_addr, NULL,
 				      peer_str,
 				      peer_port,
 				      client_ctx->net_init_timeout,
