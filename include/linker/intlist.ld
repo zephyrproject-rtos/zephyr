@@ -10,7 +10,6 @@
  * What we create here is a data structure:
  *
  * struct {
- *	void *sw_irq_handler;
  *	u32_t num_isrs;
  *	u32_t num_vectors;
  *	struct _isr_list isrs[];  <- of size num_isrs
