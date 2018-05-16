@@ -32,6 +32,24 @@ typedef int (*led_api_blink)(struct device *dev, u32_t led,
  */
 typedef int (*led_api_set_brightness)(struct device *dev, u32_t led,
 				      u8_t value);
+
+/**
+ * @typedef led_api_set_color()
+ * @brief Callback API for setting color of an LED
+ *
+ * @see led_set_color() for argument descriptions.
+ */
+typedef int (*led_api_set_color)(struct device *dev, u8_t r, u8_t g, u8_t b);
+
+/**
+ * @typedef led_api_fade_brightness()
+ * @brief Callback API for fading brightness of an LED
+ *
+ * @see led_fade_brightness() for argument descriptions.
+ */
+typedef int (*led_api_fade_brightness)(struct device *dev, u32_t led,
+				       u8_t start, u8_t stop, u32_t fade_time);
+
 /**
  * @typedef led_api_on()
  * @brief Callback API for turning on an LED
@@ -56,6 +74,8 @@ typedef int (*led_api_off)(struct device *dev, u32_t led);
 struct led_driver_api {
 	led_api_blink blink;
 	led_api_set_brightness set_brightness;
+	led_api_set_color set_color;
+	led_api_fade_brightness fade_brightness;
 	led_api_on on;
 	led_api_off off;
 };
@@ -102,6 +122,51 @@ static inline int _impl_led_set_brightness(struct device *dev, u32_t led,
 	const struct led_driver_api *api = dev->driver_api;
 
 	return api->set_brightness(dev, led, value);
+}
+
+/**
+ * @brief Set LED color
+ *
+ * This routine sets the color of a RGB LED to the given values.
+ *
+ * @param dev LED device
+ * @param r Red value to be set between 0 and 255
+ * @param g Green value to be set between 0 and 255
+ * @param b Blue value to be set between 0 and 255
+ * @return 0 on success, negative on error
+ */
+__syscall int led_set_color(struct device *dev, u8_t r, u8_t g, u8_t b);
+
+static inline int _impl_led_set_color(struct device *dev,
+				     u8_t r, u8_t g, u8_t b)
+{
+	const struct led_driver_api *api = dev->driver_api;
+
+	return api->set_color(dev, r, g, b);
+}
+
+/**
+ * @brief Fade brightness of a LED over given time frame
+ *
+ * This routine fades the brightness of a LED from the start to stop brightness
+ * over the given time.
+ *
+ * @param dev LED device
+ * @param led LED channel/pin
+ * @param start Start brightness in percent
+ * @param stop Target brightness in percent
+ * @param fade_time Time in milliseconds until fading is completed.
+ * @return 0 on success, negative on error
+ */
+__syscall int led_fade_brightness(struct device *dev, u32_t led,
+				     u8_t start, u8_t stop, u32_t fade_time);
+
+static inline int _impl_led_fade_brightness(struct device *dev, u32_t led,
+				     u8_t start, u8_t stop, u32_t fade_time)
+{
+	const struct led_driver_api *api = dev->driver_api;
+
+	return api->fade_brightness(dev, led, start, stop, fade_time);
 }
 
 /**

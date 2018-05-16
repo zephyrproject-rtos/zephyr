@@ -15,6 +15,8 @@
  *   to LEDs from 8 to 15. So, it is not possible to set unique blink period
  *   and brightness value for LEDs in a group, changing either of these
  *   values for a LED will affect other LEDs also.
+ * - RGB colors are currently not supported.
+ * - Fading the brightness is currently not supported.
  */
 
 #include <i2c.h>
@@ -184,6 +186,17 @@ static int lp3943_led_set_brightness(struct device *dev, u32_t led,
 	return 0;
 }
 
+static int lp3943_led_set_color(struct device *dev, u8_t r, u8_t g, u8_t b)
+{
+	return -ENOTSUP;
+}
+
+static int lp3943_led_fade_brightness(struct device *dev, u32_t led,
+			    u8_t start, u8_t stop, u32_t fade_time)
+{
+	return -ENOTSUP;
+}
+
 static inline int lp3943_led_on(struct device *dev, u32_t led)
 {
 	struct lp3943_data *data = dev->driver_data;
@@ -253,6 +266,8 @@ static struct lp3943_data lp3943_led_data;
 static const struct led_driver_api lp3943_led_api = {
 	.blink = lp3943_led_blink,
 	.set_brightness = lp3943_led_set_brightness,
+	.set_color = lp3943_led_set_color,
+	.fade_brightness = lp3943_led_fade_brightness,
 	.on = lp3943_led_on,
 	.off = lp3943_led_off,
 };
