@@ -6,4 +6,5 @@
 
 config  BOARD_NRF52_PCA10040
 	bool "nRF52 PCA10040"
+	select HAS_DTS_GPIO
 	depends on SOC_NRF52832_QFAA

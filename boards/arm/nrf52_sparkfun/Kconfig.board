@@ -8,4 +8,5 @@
 
 config BOARD_NRF52_SPARKFUN
 	bool "nRF52 SPARKFUN"
+	select HAS_DTS_GPIO
 	depends on SOC_NRF52832_QFAA

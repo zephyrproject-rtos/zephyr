@@ -6,4 +6,5 @@
 
 config  BOARD_NRF52_VBLUNO52
 	bool "nRF52 VBLUno52"
+	select HAS_DTS_GPIO
 	depends on SOC_NRF52832_QFAA

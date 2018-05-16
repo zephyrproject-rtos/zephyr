@@ -19,6 +19,18 @@
 	};
 };
 
+&gpiote {
+	status ="ok";
+};
+
+&gpio0 {
+	status ="ok";
+};
+
+&gpio1 {
+	status ="ok";
+};
+
 &uart0 {
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
