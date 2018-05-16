@@ -23,6 +23,9 @@ static unsigned int node_mask[(MAX_NODES + 31)/32];
 /* Array of nodes dumed via rb_walk */
 static struct rbnode *walked_nodes[MAX_NODES];
 
+/* Node currently being inserted, for testing lessthan() argument order */
+static struct rbnode *current_insertee;
+
 void set_node_mask(int node, int val)
 {
 	unsigned int *p = &node_mask[node / 32];
@@ -48,6 +51,11 @@ int node_index(struct rbnode *n)
 /* Our "lessthan" is just the location of the struct */
 int node_lessthan(struct rbnode *a, struct rbnode *b)
 {
+	if (current_insertee) {
+		CHECK(a == current_insertee);
+		CHECK(b != current_insertee);
+	}
+
 	return a < b;
 }
 
@@ -176,6 +184,13 @@ void check_tree(int size)
 	/* Do it with both enumeration mechanisms */
 	_check_tree(size, 0);
 	_check_tree(size, 1);
+}
+
+void checked_insert(struct rbtree *tree, struct rbnode *node)
+{
+	current_insertee = node;
+	rb_insert(tree, node);
+	current_insertee = NULL;
 }
 
 void test_tree(int size)
