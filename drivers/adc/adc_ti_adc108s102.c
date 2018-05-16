@@ -150,6 +150,10 @@ static inline int _verify_entries(struct adc_seq_table *seq_table)
 			continue;
 		}
 
+		if (entry->buffer_length & 0x1) {
+			return 0;
+		}
+
 		chans_set++;
 	}
 
