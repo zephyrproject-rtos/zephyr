@@ -795,9 +795,15 @@ Make sure to follow these steps in order.
 
    .. literalinclude:: application-kconfig.include
 
-   .. important::
+   .. note::
 
-      The indented lines above must use tabs, not spaces.
+       Environment variables in ``source`` statements are expanded directly,
+       so you do not need to define a ``option env="ZEPHYR_BASE"`` Kconfig
+       "bounce" symbol. If you use such a symbol, it must have the same name as
+       the environment variable.
+
+       See the :ref:`kconfig_extensions_and_changes` section in the
+       :ref:`board_porting_guide` for more information.
 
 #. Now include the mandatory boilerplate that integrates the
    application with the Zephyr build system on a new line, **after any

@@ -6,17 +6,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-config KERNELVERSION
-	string
-	option env="KERNELVERSION"
-
-config ENV_VAR_SYM_BOARD_DIR
-	string
-	option env="ENV_VAR_BOARD_DIR"
-
-config ENV_VAR_SYM_ARCH
-	string
-	option env="ENV_VAR_ARCH"
 
 source "arch/Kconfig"
 
@@ -44,7 +33,7 @@ source "tests/Kconfig"
 # because board usually overrides SoC values.
 #
 
-# $ENV_VAR_SYM_ARCH and $ENV_VAR_SYM_BOARD_DIR might be glob patterns
+# $ENV_VAR_ARCH and $ENV_VAR_BOARD_DIR might be glob patterns
 
-gsource "arch/$ENV_VAR_SYM_ARCH/soc/*/Kconfig.defconfig"
-gsource "$ENV_VAR_SYM_BOARD_DIR/Kconfig.defconfig"
+gsource "arch/$ENV_VAR_ARCH/soc/*/Kconfig.defconfig"
+gsource "$ENV_VAR_BOARD_DIR/Kconfig.defconfig"

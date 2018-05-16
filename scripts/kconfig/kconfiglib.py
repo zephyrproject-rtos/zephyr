@@ -79,8 +79,8 @@ Using Kconfiglib without the Makefile targets
 =============================================
 
 The make targets are only needed for a trivial reason: The Kbuild makefiles
-export environment variables which are referenced inside the Kconfig files (via
-'option env="ENV_VARIABLE"').
+export environment variables which are referenced inside the Kconfig files
+(via e.g. 'source "arch/$SRCARCH/Kconfig").
 
 In practice, the only variables referenced (as of writing, and for many years)
 are ARCH, SRCARCH, and KERNELVERSION. To run Kconfiglib without the Makefile
@@ -384,6 +384,7 @@ import os
 import platform
 import re
 import sys
+import textwrap
 
 # File layout:
 #
@@ -745,7 +746,7 @@ class Kconfig(object):
         """
         See the class documentation.
         """
-        return self._expand_syms(self.top_node.prompt[0])
+        return os.path.expandvars(self.top_node.prompt[0])
 
     @property
     def defconfig_filename(self):
@@ -758,7 +759,7 @@ class Kconfig(object):
         for filename, cond in self.defconfig_list.defaults:
             if expr_value(cond):
                 try:
-                    with self._open(self._expand_syms(filename.str_value)) as f:
+                    with self._open(os.path.expandvars(filename.str_value)) as f:
                         return f.name
                 except IOError:
                     continue
@@ -1449,7 +1450,7 @@ class Kconfig(object):
                     # https://docs.python.org/3/reference/compound_stmts.html#the-try-statement
                     e = e2
 
-            raise IOError(
+            raise IOError(textwrap.fill(
                 "Could not open '{}' ({}: {}). Perhaps the $srctree "
                 "environment variable (which was {}) is set incorrectly. Note "
                 "that the current value of $srctree is saved when the Kconfig "
@@ -1457,7 +1458,8 @@ class Kconfig(object):
                 "separate instances)."
                 .format(filename, errno.errorcode[e.errno], e.strerror,
                         "unset" if self.srctree is None else
-                        '"{}"'.format(self.srctree)))
+                        '"{}"'.format(self.srctree)),
+                80))
 
     def _enter_file(self, filename):
         # Jumps to the beginning of a sourced Kconfig file, saving the previous
@@ -1481,13 +1483,18 @@ class Kconfig(object):
             self._file = self._open(filename)
         except IOError as e:
             # Extend the error message a bit in this case
-            raise IOError(
-                "{}:{}: {} Also note that e.g. $FOO in a 'source' "
-                "statement does not refer to the environment "
-                "variable FOO, but rather to the Kconfig Symbol FOO "
-                "(which would commonly have 'option env=\"FOO\"' in "
-                "its definition)."
-                .format(self._filename, self._linenr, str(e)))
+            raise IOError(textwrap.fill(
+                "{}:{}: {} Also note that Kconfiglib expands references to "
+                "environment variables directly (via os.path.expandvars()), "
+                "meaning you do not need \"bounce\" symbols with "
+                "'option env=\"FOO\"'. For compatibility with the C tools, "
+                "name the bounce symbols the same as the environment variable "
+                "they reference (like the Linux kernel does). This change is "
+                "likely to soon appear in the C tools as well, and simplifies "
+                "the parsing implementation (symbols no longer need to be "
+                "evaluated during parsing)."
+                .format(self._filename, self._linenr, str(e)),
+                80))
 
         self._filename = filename
         self._linenr = 0
@@ -1941,20 +1948,20 @@ class Kconfig(object):
                 prev.next = prev = node
 
             elif t0 == _T_SOURCE:
-                self._enter_file(self._expand_syms(self._expect_str_and_eol()))
+                self._enter_file(os.path.expandvars(self._expect_str_and_eol()))
                 prev = self._parse_block(None, parent, prev, visible_if_deps)
                 self._leave_file()
 
             elif t0 == _T_RSOURCE:
                 self._enter_file(os.path.join(
                     os.path.dirname(self._filename),
-                    self._expand_syms(self._expect_str_and_eol())
+                    os.path.expandvars(self._expect_str_and_eol())
                 ))
                 prev = self._parse_block(None, parent, prev, visible_if_deps)
                 self._leave_file()
 
             elif t0 in (_T_GSOURCE, _T_GRSOURCE):
-                pattern = self._expand_syms(self._expect_str_and_eol())
+                pattern = os.path.expandvars(self._expect_str_and_eol())
                 if t0 == _T_GRSOURCE:
                     # Relative gsource
                     pattern = os.path.join(os.path.dirname(self._filename),
@@ -2271,10 +2278,9 @@ class Kconfig(object):
                     node.item.env_var = env_var
 
                     if env_var not in os.environ:
-                        self._warn("'option env=\"{0}\"' on symbol {1} has "
-                                   "no effect, because the environment "
-                                   "variable {0} is not set"
-                                   .format(env_var, node.item.name),
+                        self._warn("{1} has 'option env=\"{0}\"', "
+                                   "but the environment variable {0} is not "
+                                   "set".format(node.item.name, env_var),
                                    self._filename, self._linenr)
                     else:
                         defaults.append(
@@ -2571,21 +2577,6 @@ class Kconfig(object):
     # Misc.
     #
 
-    def _expand_syms(self, s):
-        # Expands $-references to symbols in 's' to symbol values, or to the
-        # empty string for undefined symbols
-
-        while 1:
-            sym_ref_match = _sym_ref_re_search(s)
-            if not sym_ref_match:
-                return s
-
-            sym = self.syms.get(sym_ref_match.group(1))
-
-            s = s[:sym_ref_match.start()] + \
-                (sym.str_value if sym else "") + \
-                s[sym_ref_match.end():]
-
     def _parse_error(self, msg):
         if self._filename is None:
             loc = ""
@@ -2803,18 +2794,18 @@ class Symbol(object):
 
     env_var:
       If the Symbol has an 'option env="FOO"' option, this contains the name
-      ("FOO") of the environment variable. None for symbols that aren't set
-      from the environment.
+      ("FOO") of the environment variable. None for symbols without no
+      'option env'.
 
-      'option env="FOO"' acts as a 'default' property whose value is the value
-      of $FOO.
+      'option env="FOO"' acts like a 'default' property whose value is the
+      value of $FOO.
 
       env_var is set to "<uname release>" for the predefined symbol
       UNAME_RELEASE, which holds the 'release' field from uname.
 
-      Symbols with an 'option env' option are never written out to .config
-      files, even if they are visible. env_var corresponds to a flag called
-      SYMBOL_AUTO in the C implementation.
+      Symbols with 'option env' are never written out to .config files, even if
+      they are visible. env_var corresponds to a flag called SYMBOL_AUTO in the
+      C implementation.
 
     is_allnoconfig_y:
       True if the symbol has 'option allnoconfig_y' set on it. This has no
@@ -3192,7 +3183,7 @@ class Symbol(object):
 
         if self.env_var is not None:
             self.kconfig._warn("ignored attempt to assign user value to "
-                               "{}, which gets its value from the environment"
+                               "{}, which is set from the environment"
                                .format(_name_and_loc(self)))
             return False
 
@@ -5062,9 +5053,6 @@ _initial_token_re_match = \
 
 # Matches an identifier/keyword, also eating trailing whitespace
 _id_keyword_re_match = re.compile(r"([A-Za-z0-9_/.-]+)\s*", _RE_ASCII).match
-
-# Regular expression for finding $-references to symbols in strings
-_sym_ref_re_search = re.compile(r"\$([A-Za-z0-9_]+)", _RE_ASCII).search
 
 # Matches a valid right-hand side for an assignment to a string symbol in a
 # .config file, including escaped characters. Extracts the contents.

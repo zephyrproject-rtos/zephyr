@@ -260,12 +260,28 @@ symbols.
 Having fixed settings be user-configurable might be confusing, and would allow
 the user to create broken configurations.
 
-Kconfig extensions
-==================
+.. _kconfig_extensions_and_changes:
 
-Zephyr uses the `Kconfiglib <https://github.com/ulfalizer/Kconfiglib>`_ Kconfig
-implementation, which adds the following extensions to the `Kconfig language
-<https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt>`_:
+Kconfig extensions and changes
+==============================
+
+Zephyr uses the `Kconfiglib <https://github.com/ulfalizer/Kconfiglib>`_
+implementation of `Kconfig
+<https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt>`_. It
+simplifies how environment variables are handled, and adds some extensions.
+
+Environment variables in ``source`` statements are expanded directly in
+Kconfiglib, meaning no ``option env="ENV_VAR"`` "bounce" symbols need to be
+defined. If you need compatibility with the C Kconfig tools for an out-of-tree
+Kconfig tree, you can still add such symbols, but they must have the same name
+as the corresponding environment variables.
+
+.. note::
+
+    As of writing, there are plans to remove ``option env`` from the C tools as
+    well.
+
+The following Kconfig extensions are available:
 
 - The ``gsource`` statement, which includes each file matching a given wildcard
   pattern.
