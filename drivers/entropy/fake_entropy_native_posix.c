@@ -7,6 +7,8 @@
  * Following the principle of reproducibility of the native_posix board
  * this entropy device will always generate the same random sequence when
  * initialized with the same seed
+ *
+ * This entropy source should only be used for testing.
  */
 
 #include "device.h"
@@ -15,6 +17,7 @@
 #include "misc/util.h"
 #include <stdlib.h>
 #include <string.h>
+#include "posix_soc_if.h"
 
 static unsigned int seed = 0x5678;
 
@@ -49,6 +52,8 @@ static int entropy_native_posix_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 	srandom(seed);
+	posix_print_warning("WARNING: "
+			    "Using a test - not safe - entropy source\n");
 	return 0;
 }
 
