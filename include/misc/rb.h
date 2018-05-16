@@ -53,6 +53,12 @@ struct rbnode {
  *
  * Compares the two nodes and returns 1 if node A is strictly less
  * than B according to the tree's sorting criteria, 0 otherwise.
+ *
+ * Note that during insert, the new node being inserted will always be
+ * "A", where "B" is the existing node within the tree against which
+ * it is being compared.  This trait can be used (with care!) to
+ * implement "most/least recently added" semantics between nodes which
+ * would otherwise compare as equal.
  */
 typedef int (*rb_lessthan_t)(struct rbnode *a, struct rbnode *b);
 
