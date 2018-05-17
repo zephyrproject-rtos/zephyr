@@ -211,7 +211,6 @@ struct bt_mesh_net {
 	      iv_update:1,       /* 1 if IV Update in Progress */
 	      ivu_initiator:1,   /* IV Update initiated by us */
 	      ivu_test:1,        /* IV Update test mode */
-	      ivu_unknown:1,     /* Set to 1 right after provisioning */
 	      pending_update:1,  /* Update blocked by SDU in progress */
 	      valid:1;           /* 0 if unused */
 
