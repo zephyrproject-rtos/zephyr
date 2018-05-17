@@ -15,6 +15,7 @@ void test_main(void)
 			 ztest_unit_test(test_yield_cooperative),
 			 ztest_unit_test(test_sleep_cooperative),
 			 ztest_unit_test(test_sleep_wakeup_preemptible),
+			 ztest_unit_test(test_pending_thread_wakeup),
 			 ztest_unit_test(test_time_slicing_preemptible),
 			 ztest_unit_test(test_time_slicing_disable_preemptible),
 			 ztest_unit_test(test_lock_preemptible),
