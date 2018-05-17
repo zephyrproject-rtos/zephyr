@@ -5,6 +5,7 @@
  */
 
 #include <spi.h>
+#include <string.h>
 #include <syscall_handler.h>
 #include <string.h>
 
