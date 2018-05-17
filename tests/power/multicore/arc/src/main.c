@@ -19,6 +19,8 @@
 #define TASK_TIME_IN_SEC 10
 #define MAX_SUSPEND_DEVICE_COUNT 15
 
+/* trivial change */
+
 static struct device *suspended_devices[MAX_SUSPEND_DEVICE_COUNT];
 static int suspend_device_count;
 static struct k_fifo fifo;
