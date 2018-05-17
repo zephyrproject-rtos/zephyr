@@ -164,3 +164,28 @@ config UART_NS16550_PORT_1_DLF
 	depends on UART_NS16550_PORT_1 && UART_NS16550_DLF
 	help
 	  Value for DLF register.
+
+# ---------- Port 2 ----------
+
+menuconfig UART_NS16550_PORT_2
+	bool "Enable NS16550 Port 2"
+	default n
+	depends on UART_NS16550
+	help
+	  This tells the driver to configure the UART port at boot, depending on
+	  the additional configure options below.
+
+
+config UART_NS16550_PORT_2_OPTIONS
+	int "Port 2 Options"
+	default 0
+	depends on UART_NS16550_PORT_2
+	help
+	  Options used for port initialization.
+
+config UART_NS16550_PORT_2_DLF
+	hex "Port 2 DLF value"
+	default 0x0
+	depends on UART_NS16550_PORT_2 && UART_NS16550_DLF
+	help
+	  Value for DLF register.

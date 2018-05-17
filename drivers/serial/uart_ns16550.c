@@ -850,3 +850,47 @@ static void irq_config_func_1(struct device *dev)
 #endif
 
 #endif /* CONFIG_UART_NS16550_PORT_1 */
+
+#ifdef CONFIG_UART_NS16550_PORT_2
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_2(struct device *port);
+#endif
+
+static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_2 = {
+	.sys_clk_freq = CONFIG_UART_NS16550_PORT_2_CLK_FREQ,
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = irq_config_func_2,
+#endif
+};
+
+static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_2 = {
+	.port = CONFIG_UART_NS16550_PORT_2_BASE_ADDR,
+	.baud_rate = CONFIG_UART_NS16550_PORT_2_BAUD_RATE,
+	.options = CONFIG_UART_NS16550_PORT_2_OPTIONS,
+
+#ifdef CONFIG_UART_NS16550_PORT_2_DLF
+	.dlf = CONFIG_UART_NS16550_PORT_2_DLF,
+#endif
+};
+
+DEVICE_AND_API_INIT(uart_ns16550_2, CONFIG_UART_NS16550_PORT_2_NAME, &uart_ns16550_init,
+		    &uart_ns16550_dev_data_2, &uart_ns16550_dev_cfg_2,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &uart_ns16550_driver_api);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void irq_config_func_2(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	IRQ_CONNECT(CONFIG_UART_NS16550_PORT_2_IRQ,
+		    CONFIG_UART_NS16550_PORT_2_IRQ_PRI,
+		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_2),
+		    CONFIG_UART_NS16550_PORT_2_IRQ_FLAGS);
+	irq_enable(CONFIG_UART_NS16550_PORT_2_IRQ);
+}
+#endif
+
+#endif /* CONFIG_UART_NS16550_PORT_2 */
