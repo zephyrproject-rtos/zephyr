@@ -63,6 +63,16 @@ void isr2(void)
 	_IntExit();
 }
 
+/**
+ * @brief test installation of ISRs directly in the vector table
+ *
+ * @details this test is to validate the arm irq vector table. We create a
+ * irq vector table with the address of the interrupt handler. We write
+ * into the Software Trigger Interrupt Register(STIR) or calling
+ * NVIC_SetPendingIRQ(), to trigger the pending interrupt. And we check
+ * that the corresponding interrupt handler is getting called or not.
+ *
+ */
 void test_arm_irq_vector_table(void)
 {
 	printk("Test Cortex-M3 IRQ installed directly in vector table\n");
