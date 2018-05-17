@@ -1,0 +1,4 @@
+zephyr_sources_ifdef(CONFIG_LIS2DW12 lis2dw12.c)
+zephyr_sources_ifdef(CONFIG_LIS2DW12_I2C lis2dw12_i2c.c)
+zephyr_sources_ifdef(CONFIG_LIS2DW12_SPI lis2dw12_spi.c)
+zephyr_sources_ifdef(CONFIG_LIS2DW12_TRIGGER lis2dw12_trigger.c)
