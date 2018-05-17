@@ -321,6 +321,8 @@ void k_object_free(void *obj);
 #else
 static inline void *_impl_k_object_alloc(enum k_objects otype)
 {
+	ARG_UNUSED(otype);
+
 	return NULL;
 }
 
