@@ -94,7 +94,11 @@ static int pwm_stm32_pin_set(struct device *dev, u32_t pwm,
 	counter_32b = IS_TIM_32B_COUNTER_INSTANCE(PWM_STRUCT(dev));
 #endif
 
-	if (!counter_32b && (period_cycles > 0xFFFF)) {
+	/*
+	 * The timer counts from 0 up to the value in the ARR register (16-bit).
+	 * Thus period_cycles cannot be greater than UINT16_MAX + 1.
+	 */
+	if (!counter_32b && (period_cycles > 0x10000)) {
 		/* 16 bits counter does not support requested period
 		 * You might want to adapt PWM output clock to adjust
 		 * cycle durations to fit requested period into 16 bits
@@ -111,7 +115,7 @@ static int pwm_stm32_pin_set(struct device *dev, u32_t pwm,
 	TimerHandle->Init.RepetitionCounter = 0;
 
 	/* Set period value */
-	TimerHandle->Init.Period = period_cycles;
+	TimerHandle->Init.Period = period_cycles - 1;
 
 	HAL_TIM_PWM_Init(TimerHandle);
 
