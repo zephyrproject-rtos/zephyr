@@ -182,7 +182,7 @@ struct net_icmp_hdr *net_icmpv6_get_hdr(struct net_pkt *pkt,
 	frag = net_frag_read_u8(frag, pos, &pos, &hdr->code);
 	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->chksum),
 			     (u8_t *)&hdr->chksum);
-	if (!frag) {
+	if (pos > 0 && !frag) {
 		NET_ERR("Malformed ICMPv6 packet");
 		return NULL;
 	}
@@ -238,7 +238,7 @@ struct net_icmpv6_ns_hdr *net_icmpv6_get_ns_hdr(struct net_pkt *pkt,
 			     net_pkt_ipv6_ext_len(pkt) +
 			     sizeof(struct net_icmp_hdr) + 4 /* reserved */,
 			     &pos, sizeof(struct in6_addr), (u8_t *)&hdr->tgt);
-	if (!frag) {
+	if (pos > 0 && !frag) {
 		NET_ASSERT(frag);
 		return NULL;
 	}
@@ -294,7 +294,7 @@ struct net_icmpv6_nd_opt_hdr *net_icmpv6_get_nd_opt_hdr(struct net_pkt *pkt,
 				net_pkt_ipv6_ext_opt_len(pkt),
 				&pos, &hdr->type);
 	frag = net_frag_read_u8(frag, pos, &pos, &hdr->len);
-	if (!frag) {
+	if (pos > 0 && !frag) {
 		return NULL;
 	}
 
@@ -320,7 +320,7 @@ struct net_icmpv6_na_hdr *net_icmpv6_get_na_hdr(struct net_pkt *pkt,
 	frag = net_frag_skip(frag, pos, &pos, 3); /* reserved */
 	frag = net_frag_read(frag, pos, &pos, sizeof(struct in6_addr),
 			     (u8_t *)&hdr->tgt);
-	if (!frag) {
+	if (pos > 0 && !frag) {
 		NET_ASSERT(frag);
 		return NULL;
 	}
@@ -382,7 +382,7 @@ struct net_icmpv6_ra_hdr *net_icmpv6_get_ra_hdr(struct net_pkt *pkt,
 			     (u8_t *)&hdr->reachable_time);
 	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->retrans_timer),
 			     (u8_t *)&hdr->retrans_timer);
-	if (!frag) {
+	if (pos > 0 && !frag) {
 		NET_ASSERT(frag);
 		return NULL;
 	}
