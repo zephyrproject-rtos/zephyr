@@ -12,6 +12,11 @@ static struct thread_data tdata[THREADS_NUM];
 static struct k_thread tthread[THREADS_NUM];
 static int old_prio, init_prio;
 
+K_THREAD_STACK_DEFINE(t_stack, STACK_SIZE);
+struct k_thread t;
+
+K_SEM_DEFINE(pend_sema, 0, 1);
+
 static void thread_entry(void *p1, void *p2, void *p3)
 {
 	int sleep_ms = (int)p2;
@@ -157,6 +162,46 @@ void test_sleep_wakeup_preemptible(void)
 	zassert_true(tdata[0].executed == 1, NULL);
 	/* restore environment */
 	teardown_threads();
+}
+
+static int executed;
+static void coop_thread(void *p1, void *p2, void *p3)
+{
+	k_sem_take(&pend_sema, 100);
+	executed = 1;
+}
+
+/**
+ * @brief Verify k_wakeup() behavior on pending thread
+ *
+ * @details The test creates a cooperative thread and let
+ * it wait for semaphore. Then calls k_wakeup(). The k_wakeup()
+ * call should return gracefully without waking up the thread
+ */
+void test_pending_thread_wakeup(void)
+{
+	/* Make current thread preemptible */
+	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(1));
+
+	/* Create a thread which waits for semaphore */
+	k_tid_t tid = k_thread_create(&t, t_stack, STACK_SIZE,
+				      (k_thread_entry_t)coop_thread,
+				      NULL, NULL, NULL,
+				      K_PRIO_COOP(1), 0, 0);
+
+	zassert_false(executed == 1, "The thread didn't wait"
+		      " for semaphore acquisition\n");
+
+	/* Call wakeup on pending thread */
+	k_wakeup(tid);
+
+	/* TESTPOINT: k_wakeup() shouldn't resume
+	 * execution of pending thread
+	 */
+	zassert_true(executed != 1, "k_wakeup woke up a"
+		     " pending thread!\n");
+
+	k_thread_abort(tid);
 }
 
 /**

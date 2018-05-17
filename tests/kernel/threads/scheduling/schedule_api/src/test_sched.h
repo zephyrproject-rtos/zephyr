@@ -27,6 +27,7 @@ void test_priority_preemptible(void);
 void test_yield_cooperative(void);
 void test_sleep_cooperative(void);
 void test_sleep_wakeup_preemptible(void);
+void test_pending_thread_wakeup(void);
 void test_time_slicing_preemptible(void);
 void test_time_slicing_disable_preemptible(void);
 void test_lock_preemptible(void);
