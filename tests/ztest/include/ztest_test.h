@@ -13,6 +13,8 @@
 #ifndef __ZTEST_TEST_H__
 #define __ZTEST_TEST_H__
 
+#include <app_memory/app_memdomain.h>
+
 struct unit_test {
 	const char *name;
 	void (*test)(void);
@@ -140,7 +142,7 @@ static inline void unit_test_noop(void)
  * @param name Name of the testing suite
  */
 #define ztest_test_suite(name, ...) \
-	static struct unit_test _##name[] = { \
+	_app_dmem(part0) static struct unit_test _##name[] = { \
 		__VA_ARGS__, { 0 } \
 	}
 /**
