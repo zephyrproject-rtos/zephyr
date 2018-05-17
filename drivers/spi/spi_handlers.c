@@ -6,6 +6,7 @@
 
 #include <spi.h>
 #include <syscall_handler.h>
+#include <string.h>
 
 /* This assumes that bufs and buf_copy are copies from the values passed
  * as syscall arguments.
