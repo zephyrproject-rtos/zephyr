@@ -28,7 +28,7 @@ Features:
 * XDS110-based JTAG emulation with serial port for flash programming
 
 Details on the CC3220SF LaunchXL development board can be found in the
-`CC3220SF LaunchXL User's Guide`_.
+`CC3220SF LaunchPad Dev Kit Hardware User's Guide`_.
 
 Hardware
 ********
@@ -169,8 +169,8 @@ Prerequisites:
    subsequent reboots, bypassing the bootloader flash signature
    verification.
 
-   See Section of the 21.10 of the `CC3220 TRM`_ for details on the
-   secure flash boot process.
+   See Section 21.10 "Debugging Flash User Application Using JTAG" of the
+   `CC3220 TRM`_ for details on the secure flash boot process.
 
 
 Once the above prerequisites are met, applications for the ``_cc3220sf_launchxl``
@@ -220,13 +220,13 @@ CC32xx Wiki:
     http://www.ti.com/product/cc3220
 
 .. _CC3220 TRM:
-   http://www.ti.com/lit/ug/swru465/swru465.pdf
+   http://www.ti.com/lit/pdf/swru465
 
 .. _CC3220 Programmer's Guide:
-   http://www.ti.com/lit/ug/swru464/swru464.pdf
+   http://www.ti.com/lit/pdf/swru464
 
 .. _CC3220 Getting Started Guide:
-   http://www.ti.com/lit/ug/swru461a/swru461a.pdf
+   http://www.ti.com/lit/pdf/swru461
 
 .. _UniFlash:
    http://processors.wiki.ti.com/index.php/Category:CCS_UniFlash
@@ -234,8 +234,8 @@ CC32xx Wiki:
 .. _CC3220 SDK:
    http://www.ti.com/tool/download/SIMPLELINK-CC3220-SDK
 
-.. _CC3220SF LaunchXL User's Guide:
-   http://www.ti.com/lit/ug/swru463/swru463.pdf
+.. _CC3220SF LaunchPad Dev Kit Hardware User's Guide:
+   http://www.ti.com/lit/pdf/swru463
 
 ..  _XDS-110 emulation package:
    http://processors.wiki.ti.com/index.php/XDS_Emulation_Software_Package#XDS_Emulation_Software_.28emupack.29_Download
