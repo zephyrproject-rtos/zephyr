@@ -5,6 +5,7 @@
  */
 
 #include <spi.h>
+#include <string.h>
 #include <syscall_handler.h>
 
 /* This assumes that bufs and buf_copy are copies from the values passed
@@ -37,7 +38,7 @@ static void copy_and_check(struct spi_buf_set *bufs,
 		/* Now for each array element, validate the memory buffers
 		 * that they point to
 		 */
-		struct spi_buf *buf = &bufs->buffers[i];
+		const struct spi_buf *buf = &bufs->buffers[i];
 
 		_SYSCALL_MEMORY(buf->buf, buf->len, writable);
 	}
