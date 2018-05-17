@@ -122,12 +122,12 @@ Follow these steps to install the SDK on your Linux host system.
    including the latest version.
 
    Alternatively, you can use the following command to download the
-   desired version (*0.9.2* can be replaced with the version number you
+   desired version (*0.9.3* can be replaced with the version number you
    wish to download).
 
    .. code-block:: console
 
-      wget https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/0.9.2/zephyr-sdk-0.9.2-setup.run
+      wget https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/0.9.3/zephyr-sdk-0.9.3-setup.run
 
 #. Run the installation binary, follow this example:
 
