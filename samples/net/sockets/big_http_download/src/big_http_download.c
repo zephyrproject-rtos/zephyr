@@ -182,6 +182,7 @@ int main(void)
 	int st;
 	char *p;
 	unsigned int total_bytes = 0;
+	int resolve_attempts = 10;
 
 	setbuf(stdout, NULL);
 
@@ -218,8 +219,17 @@ int main(void)
 
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	st = getaddrinfo(host, port, &hints, &res);
-	printf("getaddrinfo status: %d\n", st);
+
+	while (resolve_attempts--) {
+		st = getaddrinfo(host, port, &hints, &res);
+
+		if (st == 0) {
+			break;
+		}
+
+		printf("getaddrinfo status: %d, retrying\n", st);
+		sleep(2);
+	}
 
 	if (st != 0) {
 		fatal("Unable to resolve address");
