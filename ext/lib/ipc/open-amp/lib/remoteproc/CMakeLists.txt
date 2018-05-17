@@ -1,0 +1,5 @@
+collect (PROJECT_LIB_SOURCES elf_loader.c)
+collect (PROJECT_LIB_SOURCES remoteproc.c)
+collect (PROJECT_LIB_SOURCES remoteproc_loader.c)
+collect (PROJECT_LIB_SOURCES rsc_table_parser.c)
+add_subdirectory (drivers)
