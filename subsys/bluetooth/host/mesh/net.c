@@ -482,11 +482,12 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 
 	bt_mesh.iv_index = iv_index;
 	bt_mesh.iv_update = BT_MESH_IV_UPDATE(flags);
-	bt_mesh.ivu_duration = 0;
-	bt_mesh.ivu_unknown = 1;
 
-	/* Set a timer to keep refreshing the stored duration */
-	k_delayed_work_submit(&bt_mesh.ivu_timer, BT_MESH_IVU_TIMEOUT);
+	/* Set minimum required hours, since the 96-hour minimum requirement
+	 * doesn't apply straight after provisioning (since we can't know how
+	 * long has actually passed since the network changed its state).
+	 */
+	bt_mesh.ivu_duration = BT_MESH_IVU_MIN_HOURS;
 
 	/* Make sure we have valid beacon data to be sent */
 	bt_mesh_net_beacon_update(sub);
@@ -582,8 +583,8 @@ void bt_mesh_rpl_reset(void)
 void bt_mesh_iv_update_test(bool enable)
 {
 	bt_mesh.ivu_test = enable;
-	/* Clear the "unknown duration" variable - needed for some PTS tests */
-	bt_mesh.ivu_unknown = 0;
+	/* Reset the duration variable - needed for some PTS tests */
+	bt_mesh.ivu_duration = 0;
 }
 
 bool bt_mesh_iv_update(void)
@@ -671,8 +672,7 @@ bool bt_mesh_net_iv_update(u32_t iv_index, bool iv_update)
 		}
 	}
 
-	if (!bt_mesh.ivu_unknown &&
-	    !(IS_ENABLED(CONFIG_BT_MESH_IV_UPDATE_TEST) && bt_mesh.ivu_test)) {
+	if (!(IS_ENABLED(CONFIG_BT_MESH_IV_UPDATE_TEST) && bt_mesh.ivu_test)) {
 		if (bt_mesh.ivu_duration < BT_MESH_IVU_MIN_HOURS) {
 			BT_WARN("IV Update before minimum duration");
 			return false;
@@ -689,7 +689,6 @@ bool bt_mesh_net_iv_update(u32_t iv_index, bool iv_update)
 do_update:
 	bt_mesh.iv_update = iv_update;
 	bt_mesh.ivu_duration = 0;
-	bt_mesh.ivu_unknown = 0;
 
 	if (bt_mesh.iv_update) {
 		bt_mesh.iv_index = iv_index;

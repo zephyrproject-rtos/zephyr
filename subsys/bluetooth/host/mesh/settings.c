@@ -186,7 +186,6 @@ static int iv_set(int argc, char **argv, char *val)
 	bt_mesh.iv_index = iv.iv_index;
 	bt_mesh.iv_update = iv.iv_update;
 	bt_mesh.ivu_duration = iv.iv_duration;
-	bt_mesh.ivu_unknown = 0;
 
 	BT_DBG("IV Index 0x%04x (IV Update Flag %u) duration %u hours",
 	       bt_mesh.iv_index, bt_mesh.iv_update, bt_mesh.ivu_duration);
