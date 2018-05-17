@@ -110,28 +110,24 @@ UniFlash.
 
 Note that zephyr.bin produced by the Zephyr SDK may not load via
 UniFlash tool.  If encountering difficulties, use the zephyr.elf
-file and dslite.sh instead.
+file and openocd instead (see below).
 
 The following instructions are geared towards Linux developers who
 prefer command line tools to an IDE.
 
-Flashing
-========
-
-The TI UniFlash tool can be used to download a program into flash, which
-will persist over subsequent reboots.
+Before flashing and debugging the board, there are a few one-time board
+setup steps to follow.
 
 Prerequisites:
---------------
+==============
 
-#. Python 2.7 (the DSLite tool does not work with Python v 3.x).
-#. Download and install `UniFlash`_ version 4.1 for Linux.
-#. Jumper SOP[2..0] (J15) to 010, and connect the USB cable to the PC.
+#. Download and install the latest version of `UniFlash`_.
+#. Jumper SOP[2..0] (J15) to [010], and connect the USB cable to the PC.
 
    This should result in a new device "Texas Instruments XDS110 Embed
    with CMSIS-DAP" appearing at /dev/ttyACM1 and /dev/ttyACM0.
 
-#. Update the service pack, and place board in "Development Mode".
+#. Update the service pack, and place the board in "Development Mode".
 
    Setting "Development Mode" enables the JTAG interface, necessary
    for subsequent use of OpenOCD and updating XDS110 firmware.
@@ -150,9 +146,23 @@ Prerequisites:
    Note that the emulation package install may place the xdsdfu utility
    in <install_dir>/ccs_base/common/uscif/xds110/.
 
-#. Ensure CONFIG_XIP=y is set.
+#. Switch Jumper SOP[2..0] (J15) back to [001].
 
-   Add a 'CONFIG_XIP=y' line to the project's prj.conf file.
+   Remove power from the board (disconnect USB cable) before switching jumpers.
+
+#. Install TI OpenOCD
+
+   Clone the TI OpenOCD git repository from: http://git.ti.com/sdo-emu/openocd.
+   Follow the instructions in the Release Notes in that repository to build
+   and install.
+
+   Since the default TI OpenOCD installation is /usr/local/bin/,
+   and /usr/local/share/, you may want to backup any current openocd
+   installations there.
+   If you decide to change the default installation location, also update
+   the OPENOCD path variable in :file:`boards/arm/cc3220sf_launchxl/board.cmake`.
+
+#. Ensure CONFIG_XIP=y (default) is set.
 
    This locates the program into flash, and sets CONFIG_CC3220SF_DEBUG=y,
    which prepends a debug header enabling the flash to persist over
@@ -162,53 +172,43 @@ Prerequisites:
    See Section of the 21.10 of the `CC3220 TRM`_ for details on the
    secure flash boot process.
 
-Flashing Command:
------------------
 
-Once the above prerequisites are met, use the UniFlash command line tool
-to flash the Zephyr image:
+Once the above prerequisites are met, applications for the ``_cc3220sf_launchxl``
+board can be built, flashed, and debugged with openocd and gdb per the Zephyr
+Application Development Primer (see :ref:`build_an_application` and
+:ref:`application_run`).
 
-.. code-block:: console
+Flashing
+========
 
-  % dslite.sh -c $ZEPHYR_BASE/boards/arm/cc3220sf_launchxl/support/CC3220SF.ccxml \
-    -e -f zephyr.elf
+To build and flash an application, execute the following commands for <my_app>:
 
-The CC3220SF.ccxml is a configuration file written by TI's Code Composer
-Studio IDE, and required for the dslite.sh tool.
+.. zephyr-app-commands::
+   :zephyr-app: <my_app>
+   :board: cc3220sf_launchxl
+   :goals: flash
 
-To see program output from UART0, one can execute in a separate terminal
-window:
+This will load the image into flash.
+
+To see program output from UART0, connect a separate terminal window:
 
 .. code-block:: console
 
   % screen /dev/ttyACM0 115200 8N1
 
+Then press the reset button (SW1) on the board to run the program.
+
 Debugging
 =========
 
-It is possible to enable loading and debugging of an application via
-openocd and gdb, by linking and locating the program completely in SRAM.
+To debug a previously flashed image, after resetting the board, use the 'debug'
+build target:
 
-Prerequisites:
---------------
-
-Follow the same prerequisites as in Flashing above, in addition:
-
-#. Ensure OpenOCD v0.9+ is configured/built with CMSIS-DAP support.
-#. Power off the board, jumper SOP[2..0] (J15) to 001, and reconnect
-   the USB cable to the PC.
-#. Set CONFIG_XIP=n and build the Zephyr elf file.
-
-The necessary OpenOCD CFG and sample gdbinit scripts can be found in
-:file:`boards/arm/cc3220sf_launchxl/support/`.
-
-Debugging Command
------------------
-
-.. code-block:: console
-
-  % arm-none-eabi-gdb -x $ZEPHYR_BASE/boards/arm/cc3220sf_launchxl/support/gdbinit_xds110 \
-    zephyr.elf
+.. zephyr-app-commands::
+   :zephyr-app: <my_app>
+   :board: cc3220sf_launchxl
+   :maybe-skip-config:
+   :goals: debug
 
 References
 **********
