@@ -89,9 +89,9 @@ int _impl_k_msgq_alloc_init(struct k_msgq *q, size_t msg_size,
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_msgq_alloc_init, q, msg_size, max_msgs)
+Z_SYSCALL_HANDLER(k_msgq_alloc_init, q, msg_size, max_msgs)
 {
-	_SYSCALL_OBJ_NEVER_INIT(q, K_OBJ_MSGQ);
+	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(q, K_OBJ_MSGQ));
 
 	return _impl_k_msgq_alloc_init((struct k_msgq *)q, msg_size, max_msgs);
 }
@@ -153,12 +153,12 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_msgq_put, msgq_p, data, timeout)
+Z_SYSCALL_HANDLER(k_msgq_put, msgq_p, data, timeout)
 {
 	struct k_msgq *q = (struct k_msgq *)msgq_p;
 
-	_SYSCALL_OBJ(q, K_OBJ_MSGQ);
-	_SYSCALL_MEMORY_READ(data, q->msg_size);
+	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(data, q->msg_size));
 
 	return _impl_k_msgq_put(q, (void *)data, timeout);
 }
@@ -172,12 +172,12 @@ void _impl_k_msgq_get_attrs(struct k_msgq *q, struct k_msgq_attrs *attrs)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_msgq_get_attrs, msgq_p, attrs)
+Z_SYSCALL_HANDLER(k_msgq_get_attrs, msgq_p, attrs)
 {
 	struct k_msgq *q = (struct k_msgq *)msgq_p;
 
-	_SYSCALL_OBJ(q, K_OBJ_MSGQ);
-	_SYSCALL_MEMORY_WRITE(attrs, sizeof(struct k_msgq_attrs));
+	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(attrs, sizeof(struct k_msgq_attrs)));
 	_impl_k_msgq_get_attrs(q, (struct k_msgq_attrs *) attrs);
 	return 0;
 }
@@ -234,12 +234,12 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_msgq_get, msgq_p, data, timeout)
+Z_SYSCALL_HANDLER(k_msgq_get, msgq_p, data, timeout)
 {
 	struct k_msgq *q = (struct k_msgq *)msgq_p;
 
-	_SYSCALL_OBJ(q, K_OBJ_MSGQ);
-	_SYSCALL_MEMORY_WRITE(data, q->msg_size);
+	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, q->msg_size));
 
 	return _impl_k_msgq_get(q, (void *)data, timeout);
 }
@@ -263,7 +263,7 @@ void _impl_k_msgq_purge(struct k_msgq *q)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1_SIMPLE_VOID(k_msgq_purge, K_OBJ_MSGQ, struct k_msgq *);
-_SYSCALL_HANDLER1_SIMPLE(k_msgq_num_free_get, K_OBJ_MSGQ, struct k_msgq *);
-_SYSCALL_HANDLER1_SIMPLE(k_msgq_num_used_get, K_OBJ_MSGQ, struct k_msgq *);
+Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_msgq_purge, K_OBJ_MSGQ, struct k_msgq *);
+Z_SYSCALL_HANDLER1_SIMPLE(k_msgq_num_free_get, K_OBJ_MSGQ, struct k_msgq *);
+Z_SYSCALL_HANDLER1_SIMPLE(k_msgq_num_used_get, K_OBJ_MSGQ, struct k_msgq *);
 #endif

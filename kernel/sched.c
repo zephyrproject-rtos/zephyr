@@ -354,8 +354,8 @@ int _impl_k_thread_priority_get(k_tid_t thread)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1_SIMPLE(k_thread_priority_get, K_OBJ_THREAD,
-			 struct k_thread *);
+Z_SYSCALL_HANDLER1_SIMPLE(k_thread_priority_get, K_OBJ_THREAD,
+			  struct k_thread *);
 #endif
 
 void _impl_k_thread_priority_set(k_tid_t tid, int prio)
@@ -375,16 +375,16 @@ void _impl_k_thread_priority_set(k_tid_t tid, int prio)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_thread_priority_set, thread_p, prio)
+Z_SYSCALL_HANDLER(k_thread_priority_set, thread_p, prio)
 {
 	struct k_thread *thread = (struct k_thread *)thread_p;
 
-	_SYSCALL_OBJ(thread, K_OBJ_THREAD);
-	_SYSCALL_VERIFY_MSG(_is_valid_prio(prio, NULL),
-			    "invalid thread priority %d", (int)prio);
-	_SYSCALL_VERIFY_MSG((s8_t)prio >= thread->base.prio,
-			    "thread priority may only be downgraded (%d < %d)",
-			    prio, thread->base.prio);
+	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(_is_valid_prio(prio, NULL),
+				    "invalid thread priority %d", (int)prio));
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG((s8_t)prio >= thread->base.prio,
+				    "thread priority may only be downgraded (%d < %d)",
+				    prio, thread->base.prio));
 
 	_impl_k_thread_priority_set((k_tid_t)thread, prio);
 	return 0;
@@ -438,7 +438,7 @@ void _impl_k_yield(void)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER0_SIMPLE_VOID(k_yield);
+Z_SYSCALL_HANDLER0_SIMPLE_VOID(k_yield);
 #endif
 
 void _impl_k_sleep(s32_t duration)
@@ -472,13 +472,13 @@ void _impl_k_sleep(s32_t duration)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_sleep, duration)
+Z_SYSCALL_HANDLER(k_sleep, duration)
 {
 	/* FIXME there were some discussions recently on whether we should
 	 * relax this, thread would be unscheduled until k_wakeup issued
 	 */
-	_SYSCALL_VERIFY_MSG(duration != K_FOREVER,
-			    "sleeping forever not allowed");
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(duration != K_FOREVER,
+				    "sleeping forever not allowed"));
 	_impl_k_sleep(duration);
 
 	return 0;
@@ -510,7 +510,7 @@ void _impl_k_wakeup(k_tid_t thread)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1_SIMPLE_VOID(k_wakeup, K_OBJ_THREAD, k_tid_t);
+Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_wakeup, K_OBJ_THREAD, k_tid_t);
 #endif
 
 k_tid_t _impl_k_current_get(void)
@@ -519,7 +519,7 @@ k_tid_t _impl_k_current_get(void)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER0_SIMPLE(k_current_get);
+Z_SYSCALL_HANDLER0_SIMPLE(k_current_get);
 #endif
 
 #ifdef CONFIG_TIMESLICING
@@ -591,7 +591,7 @@ int _impl_k_is_preempt_thread(void)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER0_SIMPLE(k_is_preempt_thread);
+Z_SYSCALL_HANDLER0_SIMPLE(k_is_preempt_thread);
 #endif
 
 #ifdef CONFIG_SMP
