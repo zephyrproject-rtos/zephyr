@@ -780,18 +780,29 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 		return -ESRCH;
 	}
 
-	if (!net_pkt_ll_src(pkt)->addr) {
-		NET_DBG("Link layer source address not set");
-		return -EINVAL;
-	}
-
-	/* Sanitycheck: If src and dst ll addresses are going to be same,
-	 * then something went wrong in route lookup.
+#if defined(CONFIG_NET_L2_DUMMY)
+	/* No need to do this check for dummy L2 as it does not have any
+	 * link layer. This is done at runtime because we can have multiple
+	 * network technologies enabled.
 	 */
-	if (!memcmp(net_pkt_ll_src(pkt)->addr, lladdr->addr, lladdr->len)) {
-		NET_ERR("Src ll and Dst ll are same");
-		return -EINVAL;
+	if (net_if_l2(net_pkt_iface(pkt)) != &NET_L2_GET_NAME(DUMMY)) {
+#endif
+		if (!net_pkt_ll_src(pkt)->addr) {
+			NET_DBG("Link layer source address not set");
+			return -EINVAL;
+		}
+
+		/* Sanitycheck: If src and dst ll addresses are going to be
+		 * same, then something went wrong in route lookup.
+		 */
+		if (!memcmp(net_pkt_ll_src(pkt)->addr, lladdr->addr,
+			    lladdr->len)) {
+			NET_ERR("Src ll and Dst ll are same");
+			return -EINVAL;
+		}
+#if defined(CONFIG_NET_L2_DUMMY)
 	}
+#endif
 
 	net_pkt_set_forwarding(pkt, true);
 
