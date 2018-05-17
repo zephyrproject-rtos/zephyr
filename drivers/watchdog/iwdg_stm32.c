@@ -58,7 +58,7 @@ static void iwdg_stm32_convert_timeout(u32_t timeout,
 	 * defines of LL_IWDG_PRESCALER_XX type.
 	 */
 	*prescaler = --shift;
-	*reload = (uint32_t)(m_timeout / divider) - 1;
+	*reload = (u32_t)(m_timeout / divider) - 1;
 }
 
 static void iwdg_stm32_enable(struct device *dev)
