@@ -10,7 +10,7 @@ arch/arc/                                @vonhust @ruuddw
 arch/arm/                                @MaureenHelm @galak
 arch/arm/soc/arm/mps2/*                  @fvincenzo
 arch/arm/soc/atmel_sam/sam4s             @fallrisk
-arch/arm/soc/nxp/                        @MaureenHelm
+arch/arm/soc/nxp*/                       @MaureenHelm
 arch/arm/soc/st_stm32/*                  @erwango
 arch/arm/soc/st_stm32/stm32f4/*          @rsalveti @idlethread
 arch/arm/soc/ti_simplelink/cc32xx        @GAnthony
@@ -98,7 +98,7 @@ dts/arm/st/                              @erwango
 ext/fs/                                  @nashif @ramakrishnapallala
 ext/hal/cmsis/                           @MaureenHelm @galak
 ext/hal/nordic/                          @carlescufi @anangl
-ext/hal/nxp/mcux/                        @MaureenHelm
+ext/hal/nxp/                             @MaureenHelm
 ext/hal/qmsi/                            @nashif
 ext/hal/st/stm32cube/                    @erwango
 ext/lib/crypto/mbedtls/                  @nashif
