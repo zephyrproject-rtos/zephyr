@@ -145,13 +145,15 @@ static const struct wdt_driver_api iwdg_stm32_api = {
 
 static int iwdg_stm32_init(struct device *dev)
 {
-	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 	struct wdt_config config;
 
-	config.timeout = CONFIG_IWDG_STM32_TIMEOUT;
+#ifdef CONFIG_IWDG_STM32_START_AT_BOOT
+	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 
 	LL_IWDG_Enable(iwdg);
+#endif /* CONFIG_IWDG_STM32_START_AT_BOOT */
 
+	config.timeout = CONFIG_IWDG_STM32_TIMEOUT;
 	iwdg_stm32_set_config(dev, &config);
 
 	/*
