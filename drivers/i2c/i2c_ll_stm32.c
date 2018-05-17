@@ -313,4 +313,47 @@ static void i2c_stm32_irq_config_func_3(struct device *dev)
 
 #endif /* CONFIG_I2C_3 */
 
+#ifdef CONFIG_I2C_4
+
+#ifndef I2C4_BASE
+#error "I2C_4 is not available on the platform that you selected"
+#endif /* I2C4_BASE */
+
+#ifdef CONFIG_I2C_STM32_INTERRUPT
+static void i2c_stm32_irq_config_func_4(struct device *port);
+#endif
+
+static const struct i2c_stm32_config i2c_stm32_cfg_4 = {
+	.i2c = (I2C_TypeDef *)CONFIG_I2C_4_BASE_ADDRESS,
+	.pclken = {
+		.enr = LL_APB1_GRP2_PERIPH_I2C4,
+		.bus = STM32_CLOCK_BUS_APB1_2,
+	},
+#ifdef CONFIG_I2C_STM32_INTERRUPT
+	.irq_config_func = i2c_stm32_irq_config_func_4,
+#endif
+	.bitrate = CONFIG_I2C_4_BITRATE,
+};
+
+static struct i2c_stm32_data i2c_stm32_dev_data_4;
+
+DEVICE_AND_API_INIT(i2c_stm32_4, CONFIG_I2C_4_NAME, &i2c_stm32_init,
+		    &i2c_stm32_dev_data_4, &i2c_stm32_cfg_4,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &api_funcs);
+
+#ifdef CONFIG_I2C_STM32_INTERRUPT
+static void i2c_stm32_irq_config_func_4(struct device *dev)
+{
+	IRQ_CONNECT(CONFIG_I2C_4_EVENT_IRQ, CONFIG_I2C_4_EVENT_IRQ_PRI,
+		   stm32_i2c_event_isr, DEVICE_GET(i2c_stm32_4), 0);
+	irq_enable(CONFIG_I2C_4_EVENT_IRQ);
+
+	IRQ_CONNECT(CONFIG_I2C_4_ERROR_IRQ, CONFIG_I2C_4_ERROR_IRQ_PRI,
+		   stm32_i2c_error_isr, DEVICE_GET(i2c_stm32_4), 0);
+	irq_enable(CONFIG_I2C_4_ERROR_IRQ);
+}
+#endif
+
+#endif /* CONFIG_I2C_4 */
 
