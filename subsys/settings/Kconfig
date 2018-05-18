@@ -42,7 +42,7 @@ config SETTINGS_FCB_NUM_AREAS
 	int
 	default 8
 	depends on SETTINGS && SETTINGS_FCB
-	prompt "Number of flash areas used by the settings subsystem "
+	prompt "Number of flash areas used by the settings subsystem"
 	help
 	  Number of areas to allocate in the settings FCB. A smaller number is
 	  used if the flash hardware cannot support this value.

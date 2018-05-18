@@ -95,21 +95,6 @@ possibilities for ARCH and SRCARCH. Kconfiglib will print a warning if an unset
 environment variable is referenced inside the Kconfig files.
 
 
-Gotcha
-******
-
-It's important to set $SRCARCH even if you don't care about values and only
-want to extract information from Kconfig files, because the top-level Kconfig
-file does this (as of writing):
-
-  source "arch/$SRCARCH/Kconfig"
-
-If $SRCARCH is not set, this expands to "arch//Kconfig", and arch/Kconfig
-happens to be an existing file, giving something that appears to work but is
-actually a truncated configuration. The available symbols will differ depending
-on the arch as well.
-
-
 Intro to symbol values
 ======================
 
@@ -745,7 +730,7 @@ class Kconfig(object):
         """
         See the class documentation.
         """
-        return os.path.expandvars(self.top_node.prompt[0])
+        return _expand(self.top_node.prompt[0])
 
     @property
     def defconfig_filename(self):
@@ -758,7 +743,7 @@ class Kconfig(object):
         for filename, cond in self.defconfig_list.defaults:
             if expr_value(cond):
                 try:
-                    with self._open(os.path.expandvars(filename.str_value)) as f:
+                    with self._open(_expand(filename.str_value)) as f:
                         return f.name
                 except IOError:
                     continue
@@ -1943,20 +1928,20 @@ class Kconfig(object):
                 prev.next = prev = node
 
             elif t0 == _T_SOURCE:
-                self._enter_file(os.path.expandvars(self._expect_str_and_eol()))
+                self._enter_file(_expand(self._expect_str_and_eol()))
                 prev = self._parse_block(None, parent, prev)
                 self._leave_file()
 
             elif t0 == _T_RSOURCE:
                 self._enter_file(os.path.join(
                     os.path.dirname(self._filename),
-                    os.path.expandvars(self._expect_str_and_eol())
+                    _expand(self._expect_str_and_eol())
                 ))
                 prev = self._parse_block(None, parent, prev)
                 self._leave_file()
 
             elif t0 in (_T_GSOURCE, _T_GRSOURCE):
-                pattern = os.path.expandvars(self._expect_str_and_eol())
+                pattern = _expand(self._expect_str_and_eol())
                 if t0 == _T_GRSOURCE:
                     # Relative gsource
                     pattern = os.path.join(os.path.dirname(self._filename),
@@ -2132,21 +2117,9 @@ class Kconfig(object):
                 continue
 
             if t0 in _TYPE_TOKENS:
-                new_type = _TOKEN_TO_TYPE[t0]
-
-                if node.item.orig_type not in (UNKNOWN, new_type):
-                    self._warn("{} defined with multiple types, {} will be used"
-                               .format(_name_and_loc(node.item),
-                                       TYPE_TO_STR[new_type]))
-
-                node.item.orig_type = new_type
-
+                self._set_type(node, _TOKEN_TO_TYPE[t0])
                 if self._peek_token() is not None:
-                    if node.prompt:
-                        self._warn("{} defined with multiple prompts in single location"
-                                   .format(_name_and_loc(node.item)))
-
-                    node.prompt = (self._expect_str(), self._parse_cond())
+                    self._parse_prompt(node)
 
             elif t0 == _T_DEPENDS:
                 if not self._check_token(_T_ON):
@@ -2155,59 +2128,7 @@ class Kconfig(object):
                 node.dep = self._make_and(node.dep, self._parse_expr(True))
 
             elif t0 == _T_HELP:
-                # Find first non-blank (not all-space) line and get its
-                # indentation
-
-                if node.help is not None:
-                    self._warn("{} defined with more than one help text -- "
-                               "only the last one will be used"
-                               .format(_name_and_loc(node.item)))
-
-                # Small optimization. This code is pretty hot.
-                readline = self._file.readline
-
-                while 1:
-                    line = readline()
-                    self._linenr += 1
-                    if not line or not line.isspace():
-                        break
-
-                if not line:
-                    self._warn("{} has 'help' but empty help text"
-                               .format(_name_and_loc(node.item)))
-
-                    node.help = ""
-                    break
-
-                indent = _indentation(line)
-                if indent == 0:
-                    # If the first non-empty lines has zero indent, there is no
-                    # help text
-                    self._warn("{} has 'help' but empty help text"
-                               .format(_name_and_loc(node.item)))
-
-                    node.help = ""
-                    self._saved_line = line  # "Unget" the line
-                    break
-
-                help_lines = [_dedent_rstrip(line, indent)]
-                # Small optimization
-                add_help_line = help_lines.append
-
-                # The help text goes on till the first non-empty line with less
-                # indent
-
-                while 1:
-                    line = readline()
-                    self._linenr += 1
-                    if not (line and (line.isspace() or \
-                                      _indentation(line) >= indent)):
-                        break
-
-                    add_help_line(_dedent_rstrip(line, indent))
-
-                node.help = "\n".join(help_lines).rstrip() + "\n"
-                self._saved_line = line  # "Unget" the line
+                self._parse_help(node)
 
             elif t0 == _T_SELECT:
                 if not isinstance(node.item, Symbol):
@@ -2228,27 +2149,12 @@ class Kconfig(object):
                                       self._parse_cond()))
 
             elif t0 in (_T_DEF_BOOL, _T_DEF_TRISTATE):
-                new_type = _TOKEN_TO_TYPE[t0]
-
-                if node.item.orig_type not in (UNKNOWN, new_type):
-                    self._warn("{} defined with multiple types, {} will be used"
-                               .format(_name_and_loc(node.item),
-                                       TYPE_TO_STR[new_type]))
-
-                node.item.orig_type = new_type
-
+                self._set_type(node, _TOKEN_TO_TYPE[t0])
                 node.defaults.append((self._parse_expr(False),
                                       self._parse_cond()))
 
             elif t0 == _T_PROMPT:
-                # 'prompt' properties override each other within a single
-                # definition of a symbol, but additional prompts can be added
-                # by defining the symbol multiple times
-                if node.prompt:
-                    self._warn("{} defined with multiple prompts in single location"
-                               .format(_name_and_loc(node.item)))
-
-                node.prompt = (self._expect_str(), self._parse_cond())
+                self._parse_prompt(node)
 
             elif t0 == _T_RANGE:
                 node.ranges.append((self._expect_sym(),
@@ -2263,15 +2169,15 @@ class Kconfig(object):
                     env_var = self._expect_str_and_eol()
                     node.item.env_var = env_var
 
-                    if env_var not in os.environ:
+                    if env_var in os.environ:
+                        node.defaults.append(
+                            (self._lookup_const_sym(os.environ[env_var]),
+                             self.y))
+                    else:
                         self._warn("{1} has 'option env=\"{0}\"', "
                                    "but the environment variable {0} is not "
                                    "set".format(node.item.name, env_var),
                                    self._filename, self._linenr)
-                    else:
-                        node.defaults.append(
-                            (self._lookup_const_sym(os.environ[env_var]),
-                             self.y))
 
                 elif self._check_token(_T_DEFCONFIG_LIST):
                     if not self.defconfig_list:
@@ -2328,6 +2234,92 @@ class Kconfig(object):
                 self._has_tokens = True
                 self._tokens_i = -1
                 return
+
+    def _set_type(self, node, new_type):
+        if node.item.orig_type not in (UNKNOWN, new_type):
+            self._warn("{} defined with multiple types, {} will be used"
+                       .format(_name_and_loc(node.item),
+                               TYPE_TO_STR[new_type]))
+
+        node.item.orig_type = new_type
+
+    def _parse_prompt(self, node):
+        # 'prompt' properties override each other within a single definition of
+        # a symbol, but additional prompts can be added by defining the symbol
+        # multiple times
+        if node.prompt:
+            self._warn("{} defined with multiple prompts in single location"
+                       .format(_name_and_loc(node.item)))
+
+        prompt = self._expect_str()
+        if prompt != prompt.strip():
+            self._warn("{} has leading or trailing whitespace in its prompt"
+                       .format(_name_and_loc(node.item)))
+
+            # This avoid issues for e.g. reStructuredText documentation, where
+            # '*prompt *' is invalid
+            prompt = prompt.strip()
+
+        node.prompt = (prompt, self._parse_cond())
+
+    def _parse_help(self, node):
+        # Find first non-blank (not all-space) line and get its indentation
+
+        if node.help is not None:
+            self._warn("{} defined with more than one help text -- only the "
+                       "last one will be used"
+                       .format(_name_and_loc(node.item)))
+
+        # Small optimization. This code is pretty hot.
+        readline = self._file.readline
+
+        while 1:
+            line = readline()
+            self._linenr += 1
+            if not line or not line.isspace():
+                break
+
+        if not line:
+            self._warn("{} has 'help' but empty help text"
+                       .format(_name_and_loc(node.item)))
+
+            node.help = ""
+            return
+
+        indent = _indentation(line)
+        if indent == 0:
+            # If the first non-empty lines has zero indent, there is no help
+            # text
+            self._warn("{} has 'help' but empty help text"
+                       .format(_name_and_loc(node.item)))
+
+            node.help = ""
+            self._saved_line = line  # "Unget" the line
+            return
+
+        # The help text goes on till the first non-empty line with less indent
+        # than the first line
+
+        help_lines = []
+        # Small optimization
+        add_help_line = help_lines.append
+
+        while line and (line.isspace() or _indentation(line) >= indent):
+            # De-indent 'line' by 'indent' spaces and rstrip() it to remove any
+            # newlines (which gets rid of other trailing whitespace too, but
+            # that's fine).
+            #
+            # This prepares help text lines in a speedy way: The [indent:]
+            # might already remove trailing newlines for lines shorter than
+            # indent (e.g. empty lines). The rstrip() makes it consistent,
+            # meaning we can join the lines with "\n" later.
+            add_help_line(line.expandtabs()[indent:].rstrip())
+
+            line = readline()
+            self._linenr += 1
+
+        node.help = "\n".join(help_lines).rstrip() + "\n"
+        self._saved_line = line  # "Unget" the line
 
     def _parse_expr(self, transform_m):
         # Parses an expression from the tokens in Kconfig._tokens using a
@@ -4532,6 +4524,15 @@ def _make_depend_on(sym, expr):
         _internal_error("Internal error while fetching symbols from an "
                         "expression with token stream {}.".format(expr))
 
+def _expand(s):
+    # The predefined UNAME_RELEASE symbol is expanded in one of the 'default's
+    # of the DEFCONFIG_LIST symbol in the Linux kernel. This function maintains
+    # compatibility with it even though environment variables in strings are
+    # now expanded directly.
+
+    # platform.uname() has an internal cache, so this is speedy enough
+    return os.path.expandvars(s.replace("$UNAME_RELEASE", platform.uname()[2]))
+
 def _parenthesize(expr, type_):
     # expr_str() helper. Adds parentheses around expressions of type 'type_'.
 
@@ -4545,18 +4546,6 @@ def _indentation(line):
 
     line = line.expandtabs()
     return len(line) - len(line.lstrip())
-
-def _dedent_rstrip(line, indent):
-    # De-indents 'line' by 'indent' spaces and rstrip()s it to remove any
-    # newlines (which gets rid of other trailing whitespace too, but that's
-    # fine).
-    #
-    # Used to prepare help text lines in a speedy way: The [indent:] might
-    # already remove trailing newlines for lines shorter than indent (e.g.
-    # empty lines). The rstrip() makes it consistent, meaning we can join the
-    # lines with "\n" later.
-
-    return line.expandtabs()[indent:].rstrip()
 
 def _is_base_n(s, n):
     try:
