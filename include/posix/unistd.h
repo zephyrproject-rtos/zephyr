@@ -16,9 +16,6 @@ extern "C" {
 #ifdef CONFIG_POSIX_FS
 #include <fs.h>
 
-#undef PATH_MAX
-#define PATH_MAX        256
-
 typedef struct fs_dir_t DIR;
 typedef unsigned int mode_t;
 
