@@ -271,7 +271,7 @@ static void close_net_ctx(struct net_app_ctx *ctx)
 		ctx->ipv4.ctx = NULL;
 	}
 #endif
-#if defined(CONFIG_NET_APP_SERVER)
+#if defined(CONFIG_NET_APP_SERVER) && defined(CONFIG_NET_TCP)
 	{
 		int i;
 
