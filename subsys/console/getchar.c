@@ -23,7 +23,6 @@ static K_SEM_DEFINE(uart_sem, 0, UINT_MAX);
 static u8_t uart_ringbuf[CONFIG_CONSOLE_GETCHAR_BUFSIZE];
 static u8_t i_get, i_put;
 
-static K_SEM_DEFINE(tx_sem, 0, UINT_MAX);
 static u8_t tx_ringbuf[CONFIG_CONSOLE_PUTCHAR_BUFSIZE];
 static u8_t tx_get, tx_put;
 
