@@ -166,4 +166,20 @@ struct rbnode *_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f);
 	     (node = _rb_foreach_next(tree, &__f));			\
 	     /**/)
 
+/**
+ * @brief Loop over rbtree with implicit container field logic
+ *
+ * As for RB_FOR_EACH(), but "node" can have an aribtrary type
+ * containing a struct rbnode.
+ *
+ * @param tree A pointer to a struct rbtree to walk
+ * @param node The symbol name of a local iterator
+ * @param field The field name of a struct rbnode inside node
+ */
+#define RB_FOR_EACH_CONTAINER(tree, node, field)			\
+	for (struct _rb_foreach __f = _RB_FOREACH_INIT(tree, node);	\
+	     (node = CONTAINER_OF(_rb_foreach_next(tree, &__f),		\
+				  __typeof__(*(node)), field));		\
+	     /**/)
+
 #endif /* _RB_H */
