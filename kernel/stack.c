@@ -86,7 +86,7 @@ Z_SYSCALL_HANDLER(k_stack_alloc_init, stack, num_entries)
 
 void k_stack_cleanup(struct k_stack *stack)
 {
-	__ASSERT_NO_MSG(sys_dlist_is_empty(&stack->wait_q.waitq));
+	__ASSERT_NO_MSG(!_waitq_head(&stack->wait_q));
 
 	if (stack->flags & K_STACK_FLAG_ALLOC) {
 		k_free(stack->base);

@@ -175,8 +175,8 @@ Z_SYSCALL_HANDLER(k_pipe_alloc_init, pipe, size)
 
 void k_pipe_cleanup(struct k_pipe *pipe)
 {
-	__ASSERT_NO_MSG(sys_dlist_is_empty(&pipe->wait_q.readers.waitq));
-	__ASSERT_NO_MSG(sys_dlist_is_empty(&pipe->wait_q.writers.waitq));
+	__ASSERT_NO_MSG(!_waitq_head(&pipe->wait_q.readers));
+	__ASSERT_NO_MSG(!_waitq_head(&pipe->wait_q.writers));
 
 	if (pipe->flags & K_PIPE_FLAG_ALLOC) {
 		k_free(pipe->buffer);
