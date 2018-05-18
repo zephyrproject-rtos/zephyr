@@ -268,7 +268,7 @@ config INT_LATENCY_BENCHMARK
 
 config EXECUTION_BENCHMARKING
 	bool
-	prompt "Timing metrics "
+	prompt "Timing metrics"
 	default n
 	help
 	  This option enables the tracking of various times inside the kernel

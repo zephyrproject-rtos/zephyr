@@ -88,12 +88,9 @@ def write_kconfig_rst():
         # Add an index entry for the symbol that links to its RST file. Also
         # list its prompt(s), if any. (A symbol can have multiple prompts if it
         # has multiple definitions.)
-        #
-        # The strip() avoids RST choking on stuff like *foo *, when people
-        # accidentally include leading/trailing whitespace in prompts.
         index_rst += "   * - :option:`CONFIG_{}`\n     - {}\n".format(
             sym.name,
-            " / ".join(node.prompt[0].strip()
+            " / ".join(node.prompt[0]
                        for node in sym.nodes if node.prompt))
 
     write_if_updated(os.path.join(out_dir, "index.rst"), index_rst)
@@ -104,7 +101,7 @@ def write_sym_rst(sym, out_dir):
     kconf = sym.kconfig
 
     # List all prompts on separate lines
-    prompt_str = "\n\n".join("*{}*".format(node.prompt[0].strip())
+    prompt_str = "\n\n".join("*{}*".format(node.prompt[0])
                              for node in sym.nodes if node.prompt) \
                  or "*(No prompt -- not directly user assignable.)*"
 
@@ -187,9 +184,7 @@ def write_sym_rst(sym, out_dir):
             path = " → " + menu.prompt[0] + path
             menu = menu.parent
 
-        # The strip() avoids RST choking on leading/trailing whitespace in
-        # prompts
-        return ("(top menu)" + path).strip()
+        return "(top menu)" + path
 
     heading = "Kconfig definition"
     if len(sym.nodes) > 1:
