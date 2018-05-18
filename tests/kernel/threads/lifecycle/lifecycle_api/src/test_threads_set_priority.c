@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 
-#define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (384 + CONFIG_TEST_EXTRA_STACKSIZE)
 K_THREAD_STACK_EXTERN(tstack);
 extern struct k_thread tdata;
 static int thread2_data;
