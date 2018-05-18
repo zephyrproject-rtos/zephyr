@@ -10,7 +10,6 @@ zephyr_compile_options_ifdef(CONFIG_COVERAGE_GCOV
 
 zephyr_library_sources(
   exc_exit.S
-  irq_init.c
   swap.c
   swap_helper.S
   fault.c
