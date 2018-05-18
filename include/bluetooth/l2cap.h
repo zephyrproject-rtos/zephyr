@@ -214,7 +214,18 @@ struct bt_l2cap_chan_ops {
 
 /** @brief L2CAP Server structure. */
 struct bt_l2cap_server {
-	/** Server PSM */
+	/** Server PSM. Possible values:
+	 *
+	 *  0               A dynamic value will be auto-allocated when
+	 *                  bt_l2cap_server_register() is called.
+	 *
+	 *  0x0001-0x007f   Standard, Bluetooth SIG-assigned fixed values.
+	 *
+	 *  0x0080-0x00ff   Dynamically allocated. May be pre-set by the
+	 *                  application before server registration (not
+	 *                  recommended however), or auto-allocated by the
+	 *                  stack if the app gave 0 as the value.
+	 */
 	u16_t			psm;
 
 	/** Required minimim security level */
@@ -240,6 +251,15 @@ struct bt_l2cap_server {
  *  Register L2CAP server for a PSM, each new connection is authorized using
  *  the accept() callback which in case of success shall allocate the channel
  *  structure to be used by the new connection.
+ *
+ *  For fixed, SIG-assigned PSMs (in the range 0x0001-0x007f) the PSM should
+ *  be assigned to server->psm before calling this API. For dynamic PSMs
+ *  (in the range 0x0080-0x00ff) server->psm may be pre-set to a given value
+ *  (this is however not recommended) or be left as 0, in which case upon
+ *  return a newly allocated value will have been assigned to it. For
+ *  dynamically allocated values the expectation is that it's exposed through
+ *  a GATT service, and that's how L2CAP clients discover how to connect to
+ *  the server.
  *
  *  @param server Server structure.
  *
