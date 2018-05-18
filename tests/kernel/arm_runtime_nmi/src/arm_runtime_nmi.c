@@ -30,6 +30,15 @@ static void nmi_test_isr(void)
 	TC_END_REPORT(TC_PASS);
 }
 
+/**
+ * @brief test the behaviour of CONFIG_RUNTIME_NMI at run time
+ *
+ * @details this test is to validate _NmiHandlerSet() api.
+ * First we configure the NMI isr using _NmiHandlerSet() api.
+ * After wait for some time, and set the  Interrupt Control and
+ * State Register(ICSR) of System control block (SCB).
+ * The registered NMI isr should fire immediately.
+ */
 void test_arm_runtime_nmi(void)
 {
 	u32_t i = 0;
