@@ -7,7 +7,11 @@
 #include <ztest.h>
 
 #define TIMEOUT 100
+#if !defined(CONFIG_BOARD_QEMU_X86)
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#else
+#define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACKSIZE)
+#endif
 #define MAIL_LEN 64
 
 /**TESTPOINT: init via K_MBOX_DEFINE*/

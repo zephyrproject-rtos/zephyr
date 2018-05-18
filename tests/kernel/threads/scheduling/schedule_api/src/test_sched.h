@@ -10,7 +10,7 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#if defined(CONFIG_RISCV32)
+#if defined(CONFIG_RISCV32) || defined(CONFIG_X86)
 #define STACK_SIZE 512
 #else
 #define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
