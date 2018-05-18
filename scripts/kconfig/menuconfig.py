@@ -129,7 +129,7 @@ _N_SCROLL_ARROWS = 14
 
 # Lines of help text shown at the bottom of the "main" display
 _MAIN_HELP_LINES = """
-[Space/Enter] Toggle/enter   [ESC] Leave menu    [S] Save
+[Space/Enter] Toggle/enter   [ESC] Leave menu    [S] Save        [O] Load
 [?] Symbol info              [/] Jump to symbol  [A] Toggle show-all mode
 [Q] Quit (prompts for save)  [D] Save minimal config (advanced)
 """[1:-1].split("\n")
@@ -451,6 +451,22 @@ def _menuconfig(stdscr):
                     return res
             else:
                 _leave_menu()
+
+        elif c in ("o", "O"):
+            if _conf_changed:
+                c = _key_dialog(
+                    "Load",
+                    "You have unsaved changes. Load new\n"
+                    "configuration anyway?\n"
+                    "\n"
+                    "        (Y)es  (C)ancel",
+                    "yc")
+
+                if c is None or c == "c":
+                    continue
+
+            if _load_dialog():
+                _conf_changed = False
 
         elif c in ("s", "S"):
             if _save_dialog(_kconf.write_config, _config_filename,
@@ -825,7 +841,7 @@ def _draw_main():
     menu = _cur_menu
     while menu is not _kconf.top_node:
         menu_prompts.append(menu.prompt[0])
-        menu = menu.parent
+        menu = _parent_menu(menu)
     menu_prompts.append("(top menu)")
     menu_prompts.reverse()
 
@@ -1160,8 +1176,63 @@ def _draw_input_dialog(win, title, info_text, s, i, hscroll):
 
     win.noutrefresh()
 
+def _load_dialog():
+    # Dialog for loading a new configuration
+    #
+    # Return value:
+    #   True if a new configuration was loaded, and False if the user canceled
+    #   the dialog
+
+    global _show_all
+
+    filename = ""
+    while True:
+        filename = _input_dialog("File to load", filename)
+
+        if filename is None:
+            return False
+
+        if _try_load(filename):
+            sel_node = _shown[_sel_node_i]
+
+            # Turn on show-all mode if the current node is (no longer) visible
+            if not (sel_node.prompt and expr_value(sel_node.prompt[1])):
+                _show_all = True
+
+            _update_menu()
+
+            # The message dialog indirectly updates the menu display, so _msg()
+            # must be called after the new state has been initialized
+            _msg("Success", "Loaded {}".format(filename))
+            return True
+
+def _try_load(filename):
+    # Tries to load a configuration file. Pops up an error and returns False on
+    # failure.
+    #
+    # filename:
+    #   Configuration file to load
+
+    # Hack: strerror and errno are lost after we raise the custom IOError with
+    # troubleshooting help in Kconfig.load_config(). Adding them back to the
+    # exception loses the custom message. As a workaround, try opening the file
+    # separately first and report any errors.
+    try:
+        open(filename).close()
+    except OSError as e:
+        _error("Error loading {}\n\n{} (errno: {})"
+               .format(filename, e.strerror, errno.errorcode[e.errno]))
+        return False
+
+    try:
+        _kconf.load_config(filename)
+        return True
+    except OSError as e:
+        _error("Error loading {}\n\nUnknown error".format(filename))
+        return False
+
 def _save_dialog(save_fn, default_filename, description):
-    # Pops up a dialog that prompts the user for where to save a file
+    # Dialog for saving the current configuration
     #
     # save_fn:
     #   Function to call with 'filename' to save the file
@@ -1173,8 +1244,8 @@ def _save_dialog(save_fn, default_filename, description):
     #   String describing the thing being saved
     #
     # Return value:
-    #   Returns True if the configuration was saved, and False if the user
-    #   canceled the dialog
+    #   True if the configuration was saved, and False if the user canceled the
+    #   dialog
 
     filename = default_filename
     while True:
@@ -1190,7 +1261,8 @@ def _save_dialog(save_fn, default_filename, description):
             return True
 
 def _try_save(save_fn, filename, description):
-    # Tries to save a file. Pops up an error and returns False on failure.
+    # Tries to save a configuration file. Pops up an error and returns False on
+    # failure.
     #
     # save_fn:
     #   Function to call with 'filename' to save the file
@@ -1776,9 +1848,7 @@ def _info_str(node):
         )
 
     # node.item in (MENU, COMMENT)
-    return "Defined at {}:{}\nMenu: {}\n\n{}" \
-           .format(node.filename, node.linenr, _menu_path_info(node),
-                   _kconfig_def_info(node))
+    return _kconfig_def_info(node)
 
 def _prompt_info(sc):
     # Returns a string listing the prompts of 'sc' (Symbol or Choice)
