@@ -31,6 +31,12 @@ static int test_mount(void)
 	return TC_PASS;
 }
 
+/**
+ * @brief Test for File System mount operation
+ *
+ * @details Test initializes the fs_mount_t data structure with FatFs
+ * related info and calls the fs_mount API for mount the file system.
+ */
 void test_fs_mount(void)
 {
 	zassert_true(test_mount() == TC_PASS, NULL);
