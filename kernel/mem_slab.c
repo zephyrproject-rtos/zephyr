@@ -120,11 +120,11 @@ void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 	if (pending_thread) {
 		_set_thread_return_value_with_data(pending_thread, 0, *mem);
 		_ready_thread(pending_thread);
+		_reschedule(key);
 	} else {
 		**(char ***)mem = slab->free_list;
 		slab->free_list = *(char **)mem;
 		slab->num_used--;
+		irq_unlock(key);
 	}
-
-	_reschedule(key);
 }
