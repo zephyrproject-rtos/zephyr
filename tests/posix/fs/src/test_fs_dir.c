@@ -79,11 +79,25 @@ static int test_lsdir(const char *path)
 	return 0;
 }
 
+/**
+ * @brief Test for POSIX mkdir API
+ *
+ * @details Test creates a new directory through POSIX
+ * mkdir API and open a new file under the directory and
+ * writes some data into the file.
+ */
 void test_fs_mkdir(void)
 {
 	zassert_true(test_mkdir() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Test for POSIX opendir, readdir and closedir API
+ *
+ * @details Test opens an existing directory through POSIX
+ * opendir API, reads the contents of the directory through
+ * readdir API and closes it through closedir API.
+ */
 void test_fs_readdir(void)
 {
 	zassert_true(test_lsdir(TEST_DIR) == TC_PASS, NULL);
