@@ -447,7 +447,12 @@ static void uart_nrf5_irq_err_disable(struct device *dev)
 /** Interrupt driven pending status function */
 static int uart_nrf5_irq_is_pending(struct device *dev)
 {
-	return (uart_nrf5_irq_tx_ready(dev) || uart_nrf5_irq_rx_ready(dev));
+	volatile struct _uart *uart = UART_STRUCT(dev);
+
+	return ((uart->INTENSET & UART_IRQ_MASK_TX) &&
+		(uart_nrf5_irq_tx_ready(dev))) ||
+	       ((uart->INTENSET & UART_IRQ_MASK_RX) &&
+		(uart_nrf5_irq_rx_ready(dev)));
 }
 
 /** Interrupt driven interrupt update function */
