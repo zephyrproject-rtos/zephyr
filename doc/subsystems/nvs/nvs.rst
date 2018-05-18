@@ -32,8 +32,8 @@ already performing such a check you can disable the extra flash protection
 (``CONFIG_NVS_FLASH_PROTECTION=n``).
 
 To protect the storage system against frequent sector erases the size of
-id-data pairs is limited to ``CONFIG_NVS_MAX_ELEM_SIZE``. This limit is by default set to 1/4 of the sector
-size.
+id-data pairs is limited to ``CONFIG_NVS_MAX_ELEM_SIZE``. This limit is
+by default set to 1/4 of the sector size.
 
 
 For NVS the file system is declared as:
@@ -107,5 +107,8 @@ API
 
 The NVS subsystem APIs are provided by ``nvs.h``:
 
-.. doxygengroup:: nvs
+.. doxygengroup:: nvs_data_structures
+   :project: Zephyr
+
+.. doxygengroup:: nvs_high_level_api
    :project: Zephyr
