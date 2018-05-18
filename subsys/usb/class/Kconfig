@@ -124,6 +124,19 @@ config BLUETOOTH_BULK_EP_MPS
 	help
 	  Bluetooth device class bulk endpoint size
 
+config USB_DEVICE_LOOPBACK
+	bool
+	prompt "USB Loopback Function Driver"
+	help
+	  USB Loopback Function Driver
+
+config LOOPBACK_BULK_EP_MPS
+	int
+	depends on USB_DEVICE_LOOPBACK
+	default 64
+	help
+	  Loopback Function bulk endpoint size
+
 source "subsys/usb/class/netusb/Kconfig"
 
 source "subsys/usb/class/hid/Kconfig"
