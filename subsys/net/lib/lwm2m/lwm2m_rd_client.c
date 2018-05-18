@@ -240,10 +240,6 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 	if (code == COAP_RESPONSE_CODE_CREATED) {
 		ret = coap_find_options(response, COAP_OPTION_LOCATION_PATH,
 					options, 2);
-		if (ret < 0) {
-			return ret;
-		}
-
 		if (ret < 2) {
 			SYS_LOG_ERR("Unexpected endpoint data returned.");
 			return -EINVAL;
