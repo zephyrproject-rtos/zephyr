@@ -62,6 +62,31 @@ static void my_debug(void *ctx, int level,
 }
 #endif /* defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_TLS_DEBUG) */
 
+static int tls_entropy_func(void *ctx, unsigned char *buf, size_t len)
+{
+	/* TODO Provide a decent entropy source. */
+
+	ARG_UNUSED(ctx);
+
+	size_t i = len / 4;
+	u32_t val;
+
+	while (i--) {
+		val = sys_rand32_get();
+		UNALIGNED_PUT(val, (u32_t *)buf);
+		buf += 4;
+	}
+
+	i = len & 0x3;
+	val = sys_rand32_get();
+	while (i--) {
+		*buf++ = val;
+		val >>= 8;
+	}
+
+	return 0;
+}
+
 static struct net_tls_credential *unused_credential_get(void)
 {
 	int i;
@@ -168,16 +193,6 @@ static int tls_rx(void *ctx, unsigned char *buf, size_t len)
 	}
 
 	return ret;
-}
-
-static int tls_mbedtls_ctr_drbg_random(void *p_rng, unsigned char *output,
-				       size_t output_len)
-{
-	static K_MUTEX_DEFINE(mutex);
-
-	ARG_UNUSED(mutex);
-
-	return 0;
 }
 
 static void tls_recv_cb(struct net_context *context, struct net_pkt *pkt,
@@ -365,7 +380,8 @@ static int tls_mbedtls_set_credentials(struct net_context *context)
 
 void net_tls_init(void)
 {
-	int i;
+	static const unsigned char drbg_seed[] = "zephyr";
+	int i, ret;
 
 	for (i = 0; i < ARRAY_SIZE(credentials); i++) {
 		credentials[i].type = NET_TLS_CREDENTIAL_UNUSED;
@@ -386,6 +402,14 @@ void net_tls_init(void)
 			       client_psk_id, sizeof(client_psk_id));
 #endif /* MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED */
 #endif /* CONFIG_NET_PRECONFIGURE_TLS_CREDENTIALS */
+
+	mbedtls_ctr_drbg_init(&tls_ctr_drbg);
+
+	ret = mbedtls_ctr_drbg_seed(&tls_ctr_drbg, tls_entropy_func, NULL,
+				    drbg_seed, sizeof(drbg_seed));
+	if (ret != 0) {
+		mbedtls_ctr_drbg_free(&tls_ctr_drbg);
+	}
 
 #if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_TLS_DEBUG)
 	mbedtls_debug_set_threshold(CONFIG_MBEDTLS_DEBUG_LEVEL);
@@ -470,10 +494,9 @@ int net_tls_connect(struct net_context *context, bool listening)
 		goto mbed_err_conf;
 	}
 
-	mbedtls_ctr_drbg_init(&tls_ctr_drbg);
-
 	mbedtls_ssl_conf_rng(&context->mbedtls.config,
-			     tls_mbedtls_ctr_drbg_random, &tls_ctr_drbg);
+			     mbedtls_ctr_drbg_random,
+			     &tls_ctr_drbg);
 
 	err = tls_mbedtls_set_credentials(context);
 	if (err) {
