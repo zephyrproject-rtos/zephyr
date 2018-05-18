@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
-#include <string.h>
 #include <errno.h>
+#include <kernel.h>
+#include <limits.h>
 #include <posix/pthread.h>
 #include <posix/unistd.h>
-
+#include <string.h>
 
 union file_desc {
 	struct fs_file_t file;
