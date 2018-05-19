@@ -196,6 +196,8 @@ int _nvs_gc(struct nvs_fs *fs, off_t addr)
 			/* entry is not found, copy needed - but find the last
 			 * entry first
 			 */
+			last_entry.len = 0;
+			last_entry.data_addr = 0;
 			walker_last = walker;
 			while (walker_last.id != NVS_ID_SECTOR_END) {
 				rd_addr = _nvs_head_addr_in_flash(
