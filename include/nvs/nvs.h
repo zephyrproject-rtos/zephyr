@@ -39,7 +39,6 @@ extern "C" {
  * @param max_len Maximum size of storage items
  * @param sector_count Amount of sectors in the file systems
  * @param entry_sector Oldest sector in used
- * @param write_block_size Alignment size in bytes_to_copy
  * @param nvs_lock Mutex
  * @param flash_device Flash Device
  */
@@ -61,7 +60,6 @@ struct nvs_fs {
 	u8_t sector_count; /* how many sectors in the filesystem */
 
 	u8_t entry_sector; /* oldest sector in use */
-	u8_t write_block_size; /* write block size for alignment */
 
 	struct k_mutex nvs_lock;
 	struct device *flash_device;
