@@ -157,7 +157,7 @@ static inline int pthread_condattr_destroy(pthread_condattr_t *att)
 		__in_section(_k_mutex, static, name) = \
 	{ \
 		.lock_count = 0, \
-		.wait_q = {SYS_DLIST_STATIC_INIT((sys_dlist_t *)&name.wait_q)}, \
+		.wait_q = _WAIT_Q_INIT(&name.wait_q),	\
 		.owner = NULL, \
 	}
 

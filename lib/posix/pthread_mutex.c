@@ -95,7 +95,7 @@ int pthread_mutex_init(pthread_mutex_t *m,
 
 	m->type = mattr->type;
 
-	sys_dlist_init((sys_dlist_t *)&m->wait_q);
+	_waitq_init(&m->wait_q);
 
 	return 0;
 }
