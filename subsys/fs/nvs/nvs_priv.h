@@ -41,7 +41,6 @@ struct nvs_entry {
 struct _nvs_sector_hdr {
 	u32_t fd_magic;
 	u16_t fd_id;
-	u16_t _pad;
 };
 
 struct _nvs_data_hdr {
@@ -51,7 +50,6 @@ struct _nvs_data_hdr {
 
 struct _nvs_data_slt {
 	u16_t crc16;
-	u16_t _pad;
 };
 
 
