@@ -98,7 +98,6 @@ int _nvs_sector_init(struct nvs_fs *fs, off_t offset)
 	}
 	sector_hdr.fd_magic = fs->magic;
 	sector_hdr.fd_id = fs->sector_id;
-	sector_hdr._pad = 0;
 	sector_hdr_len = _nvs_len_in_flash(fs, sizeof(struct _nvs_sector_hdr));
 	rc = nvs_flash_write(fs, offset, &sector_hdr, sizeof(sector_hdr));
 	if (rc) {
@@ -534,7 +533,6 @@ int nvs_append_close(struct nvs_fs *fs, const struct nvs_entry *entry)
 	addr = entry->data_addr + fs->offset;
 	data_slt.crc16 = crc16_ccitt(0xFFFF, (const u8_t *) addr,
 				     _nvs_len_in_flash(fs, entry->len));
-	data_slt._pad = 0xFFFF;
 	addr = _nvs_slt_addr_in_flash(fs, entry);
 	rc = nvs_flash_write(fs, addr, &data_slt, sizeof(data_slt));
 	k_mutex_unlock(&fs->nvs_lock);
