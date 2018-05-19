@@ -536,7 +536,8 @@ int nvs_append_close(struct nvs_fs *fs, const struct nvs_entry *entry)
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
 	/* crc16_ccitt is calculated on flash data, set correct offset */
 	addr = entry->data_addr + fs->offset;
-	data_slt.crc16 = crc16_ccitt(0xFFFF, (const u8_t *) addr, entry->len);
+	data_slt.crc16 = crc16_ccitt(0xFFFF, (const u8_t *) addr,
+				     _nvs_len_in_flash(fs, entry->len));
 	data_slt._pad = 0xFFFF;
 	addr = _nvs_slt_addr_in_flash(fs, entry);
 	slt_len = _nvs_len_in_flash(fs, sizeof(struct _nvs_data_slt));
@@ -680,10 +681,28 @@ int nvs_flash_write(struct nvs_fs *fs, off_t offset, const void *data,
 		/* flash protection set error */
 		return rc;
 	}
-	rc = flash_write(fs->flash_device, fs->offset + offset, data, len);
-	if (rc) {
-		/* flash write error */
-		return rc;
+	/* write and entire number of blocks */
+	if (len >= fs->write_block_size) {
+		size_t blen = len & ~(fs->write_block_size - 1);
+		rc = flash_write(fs->flash_device, fs->offset + offset, data, blen);
+		if (rc) {
+			/* flash write error */
+			return rc;
+		}
+		len -= blen;
+		offset += len;
+		data += len;
+	}
+	/* write the remaining data padding up to write_blocks_zize with 0xff */
+	if (len) {
+		u8_t buf[fs->write_block_size];
+		memcpy(buf, data, len);
+		memset(buf + len, 0xff, fs->write_block_size - len);
+		rc = flash_write(fs->flash_device, fs->offset + offset, buf, fs->write_block_size);
+		if (rc) {
+			/* flash write error */
+			return rc;
+		}
 	}
 	(void) flash_write_protection_set(fs->flash_device, 1);
 	/* don't mind about this error */
