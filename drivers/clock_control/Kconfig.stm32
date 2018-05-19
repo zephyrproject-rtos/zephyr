@@ -396,5 +396,91 @@ config CLOCK_STM32_APB2_PRESCALER
 
 endif # SOC_SERIES_STM32F0X!=y
 
+choice
+prompt "STM32 MCO1 Clock Source"
+default CLOCK_STM32_MCO1_SRC_NOCLOCK
+
+config CLOCK_STM32_MCO1_SRC_NOCLOCK
+	bool "NOCLOCK"
+	help
+	  MCO1 output disabled, no clock on MCO1
+
+config CLOCK_STM32_MCO1_SRC_LSE
+	bool "LSE"
+	depends on SOC_SERIES_STM32F4X
+	help
+	  Use LSE as source of MCO1
+
+config CLOCK_STM32_MCO1_SRC_HSE
+	bool "HSE"
+	depends on SOC_SERIES_STM32F4X
+	help
+	  Use HSE as source of MCO1
+
+config CLOCK_STM32_MCO1_SRC_HSI
+	bool "HSI"
+	depends on SOC_SERIES_STM32F4X
+	help
+	  Use HSI as source of MCO1
+
+config CLOCK_STM32_MCO1_SRC_PLLCLK
+	bool "PLLCLK"
+	depends on SOC_SERIES_STM32F4X
+	help
+	  Use PLLCLK as source of MCO1
+
+endchoice
+
+config CLOCK_STM32_MCO1_DIV
+	int "MCO1 prescaler"
+	depends on !CLOCK_STM32_MCO1_SRC_NOCLOCK
+	default 1
+	range 1   5
+	help
+	  allowed values: 1, 2, 3, 4, 5
+
+choice
+prompt "STM32 MCO2 Clock Source"
+default CLOCK_STM32_MCO2_SRC_NOCLOCK
+
+config CLOCK_STM32_MCO2_SRC_NOCLOCK
+	bool "NOCLOCK"
+	help
+	  MCO2 output disabled, no clock on MCO2
+
+config CLOCK_STM32_MCO2_SRC_SYSCLK
+	bool "SYSCLK"
+	depends on SOC_SERIES_STM32F4X
+	help
+	  Use SYSCLK as source of MCO2
+
+config CLOCK_STM32_MCO2_SRC_PLLI2S
+	bool "PLLI2S"
+	depends on SOC_SERIES_STM32F4X
+	help
+	  Use PLLI2S as source of MCO2
+
+config CLOCK_STM32_MCO2_SRC_HSE
+	bool "HSE"
+	depends on SOC_SERIES_STM32F4X
+	help
+	  Use HSE as source of MCO2
+
+config CLOCK_STM32_MCO2_SRC_PLLCLK
+	bool "PLLCLK"
+	depends on SOC_SERIES_STM32F4X
+	help
+	  Use PLLCLK as source of MCO2
+
+endchoice
+
+config CLOCK_STM32_MCO2_DIV
+	int "MCO2 prescaler"
+	depends on !CLOCK_STM32_MCO2_SRC_NOCLOCK
+	default 1
+	range 1 5
+	help
+	  allowed values: 1, 2, 3, 4, 5
+
 endif # CLOCK_CONTROL_STM32_CUBE
 endif # SOC_FAMILY_STM32
