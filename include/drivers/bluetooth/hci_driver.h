@@ -129,6 +129,17 @@ struct bt_hci_driver {
 	int (*open)(void);
 
 	/**
+	 * @brief Optional driver setup routine.
+	 *
+	 * This provides the driver the ability to have some vendor-
+	 * specific commands sent after the host has sent the initial
+	 * HCI_Reset, but before the host sends any other commands.
+	 *
+	 * @return 0 on success or negative error number on failure.
+	 */
+	int (*setup)(void);
+
+	/**
 	 * @brief Send HCI buffer to controller.
 	 *
 	 * Send an HCI command or ACL data to the controller. The exact
