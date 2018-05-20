@@ -7,14 +7,12 @@
 #ifndef _TCP_H_
 #define _TCP_H_
 
-#include <net/net_context.h>
-#include <net/net_ip.h>
-#include <net/net_pkt.h>
+#include <sys/types.h>
+#include <net/socket.h>
 
 struct tcp_context {
-	struct net_context *net_ctx;
+	int socket;
 	struct sockaddr local_sock;
-	struct net_pkt *rx_pkt;
 	s32_t timeout;
 };
 
