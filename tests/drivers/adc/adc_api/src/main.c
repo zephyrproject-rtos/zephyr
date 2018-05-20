@@ -11,7 +11,10 @@
  * @}
  */
 
-extern void test_adc_sample(void);
+extern void test_adc_sample_one_channel(void);
+extern void test_adc_sample_two_channels(void);
+extern void test_adc_sample_with_delay_trigger(void);
+extern void test_adc_repeated_samplings(void);
 
 #include <zephyr.h>
 #include <ztest.h>
@@ -19,6 +22,9 @@ extern void test_adc_sample(void);
 void test_main(void)
 {
 	ztest_test_suite(adc_basic_test,
-			 ztest_unit_test(test_adc_sample));
+			 ztest_unit_test(test_adc_sample_one_channel),
+			 ztest_unit_test(test_adc_sample_two_channels),
+			 ztest_unit_test(test_adc_sample_with_delay_trigger),
+			 ztest_unit_test(test_adc_repeated_samplings));
 	ztest_run_test_suite(adc_basic_test);
 }
