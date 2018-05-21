@@ -50,7 +50,7 @@
 			label = "SIM";
 
 			clock-controller;
-			#clocks-cells = <3>;
+			#clock-cells = <3>;
 		};
 
 		flash-controller@40020000 {

@@ -75,7 +75,7 @@
 			clk-divider-flash = <5>;
 
 			clock-controller;
-			#clocks-cells = <3>;
+			#clock-cells = <3>;
 		};
 
 		uart0: uart@4006A000 {
