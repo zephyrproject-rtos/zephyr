@@ -126,8 +126,12 @@ static void tfifo_is_empty(void *p)
 }
 
 /**
- * @addtogroup kernel_fifo
+ * @addtogroup kernel_fifo_tests
  * @{
+ */
+
+/**
+ * @see k_fifo_init(), k_fifo_put_list(), #K_FIFO_DEFINE(x)
  */
 void test_fifo_thread2thread(void)
 {
@@ -139,6 +143,9 @@ void test_fifo_thread2thread(void)
 	tfifo_thread_thread(&kfifo);
 }
 
+/**
+ * @see k_fifo_init(), k_fifo_put_list(), #K_FIFO_DEFINE(x)
+ */
 void test_fifo_thread2isr(void)
 {
 	/**TESTPOINT: init via k_fifo_init*/
@@ -149,6 +156,9 @@ void test_fifo_thread2isr(void)
 	tfifo_thread_isr(&kfifo);
 }
 
+/**
+ * @see k_fifo_init(), k_fifo_put_list()
+ */
 void test_fifo_isr2thread(void)
 {
 	/**TESTPOINT: test k_fifo_init fifo*/
@@ -159,6 +169,9 @@ void test_fifo_isr2thread(void)
 	tfifo_isr_thread(&kfifo);
 }
 
+/**
+ * @see k_fifo_init(), k_fifo_is_empty()
+ */
 void test_fifo_is_empty_thread(void)
 {
 	k_fifo_init(&fifo);
@@ -169,6 +182,9 @@ void test_fifo_is_empty_thread(void)
 	tfifo_is_empty(&fifo);
 }
 
+/**
+ * @see k_fifo_init(), k_fifo_is_empty()
+ */
 void test_fifo_is_empty_isr(void)
 {
 	k_fifo_init(&fifo);

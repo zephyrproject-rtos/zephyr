@@ -77,6 +77,11 @@ static void tfifo_read_write(struct k_fifo *pfifo)
 }
 
 /**
+ * @addtogroup kernel_fifo_tests
+ * @{
+ */
+
+/**
  * @brief Verify zephyr fifo continuous read write in loop
  *
  * @details
@@ -88,12 +93,8 @@ static void tfifo_read_write(struct k_fifo *pfifo)
  *   -# loop above steps for LOOPs times
  * - Expected Results
  *   -# fifo data pass correctly and stably across contexts
- * - API coverage
- *   -# k_fifo_init
- *   -# k_fifo_put
- *   -# k_fifo_get
- * @addtogroup kernel_fifo
- * @{
+ *
+ * @see k_fifo_init(), k_fifo_put(), k_fifo_get()
  */
 void test_fifo_loop(void)
 {
