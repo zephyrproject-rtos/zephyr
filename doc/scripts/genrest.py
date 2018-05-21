@@ -49,9 +49,8 @@ are organized based on their common characteristics and on what new symbols
 they add to the configuration menus.
 
 The configuration options' information below is extracted directly from
-:program:`Kconfig` using the :file:`~/doc/scripts/genrest/genrest.py` script.
-Click on the option name in the table below for detailed information about
-each option.
+:program:`Kconfig` using the :file:`~/doc/scripts/genrest.py` script. Click on
+the option name in the table below for detailed information about each option.
 
 Supported Options
 *****************

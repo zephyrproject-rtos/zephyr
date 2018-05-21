@@ -72,7 +72,7 @@ htmldocs: doxy html
 content: scripts/extract_content.py
 	$(Q)$<
 
-kconfig: scripts/genrest/genrest.py
+kconfig: scripts/genrest.py
 	$(Q)PYTHONPATH="${ZEPHYR_BASE}/scripts/kconfig:${PYTHONPATH}" \
 	    srctree=../ ENV_VAR_BOARD_DIR=boards/*/*/ ENV_VAR_ARCH=* KERNELVERSION=1.9.99 SRCARCH=x86 \
 	    python3 $< ../Kconfig reference/kconfig/
