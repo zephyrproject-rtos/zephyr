@@ -786,15 +786,17 @@ static bool is_invalid_packet(struct net_pkt *pkt,
 	switch (NET_IPV6_HDR(pkt)->vtc & 0xf0) {
 #if defined(CONFIG_NET_IPV6)
 	case 0x60:
-		if (!net_is_my_ipv6_addr(&NET_IPV6_HDR(pkt)->src)) {
+		if (net_is_my_ipv6_addr(&NET_IPV6_HDR(pkt)->src)) {
 			my_src_addr = true;
 		}
+		break;
 #endif
 #if defined(CONFIG_NET_IPV4)
 	case 0x40:
-		if (!net_is_my_ipv4_addr(&NET_IPV4_HDR(pkt)->src)) {
+		if (net_is_my_ipv4_addr(&NET_IPV4_HDR(pkt)->src)) {
 			my_src_addr = true;
 		}
+		break;
 #endif
 	}
 
