@@ -531,12 +531,14 @@ int nvs_append_close(struct nvs_fs *fs, const struct nvs_entry *entry)
 	off_t addr;
 
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
-	/* crc16_ccitt is calculated on flash data, set correct offset */
-	addr = entry->data_addr + fs->offset;
-	data_slt.crc16 = crc16_ccitt(0xFFFF, (const u8_t *) addr,
-				     _nvs_len_in_flash(fs, entry->len));
+	rc = nvs_compute_crc(fs, entry, &data_slt.crc16);
+	if (rc) {
+		goto err;
+	}
 	addr = _nvs_slt_addr_in_flash(fs, entry);
 	rc = nvs_flash_write(fs, addr, &data_slt, sizeof(data_slt));
+
+err:
 	k_mutex_unlock(&fs->nvs_lock);
 	return rc;
 }
@@ -549,9 +551,10 @@ int nvs_check_crc(struct nvs_fs *fs, struct nvs_entry *entry)
 	off_t addr;
 	u16_t crc16;
 
-	/* crc16_ccitt is calculated on flash data, set correct offset */
-	addr = entry->data_addr + fs->offset;
-	crc16 = crc16_ccitt(0xFFFF, (const u8_t *) addr, entry->len);
+	rc = nvs_compute_crc(fs, entry, &crc16);
+	if (rc) {
+		return -EIO;
+	}
 	addr = _nvs_slt_addr_in_flash(fs, entry);
 	rc = nvs_flash_read(fs, addr, &data_slt, sizeof(data_slt));
 	if (rc || (crc16 != data_slt.crc16)) {
@@ -622,6 +625,24 @@ int nvs_rotate(struct nvs_fs *fs)
 out:
 	k_mutex_unlock(&fs->nvs_lock);
 	return rc;
+}
+
+int nvs_compute_crc(struct nvs_fs *fs, const struct nvs_entry *entry,
+		    u16_t *crc16)
+{
+	int rc;
+
+	*crc16 = 0xFFFF;
+	for (int i = 0; i < entry->len; i += fs->write_block_size) {
+		u8_t buf[fs->write_block_size];
+
+		rc = nvs_flash_read(fs, entry->data_addr + i, buf, sizeof(buf));
+		if (rc) {
+			return -EIO;
+		}
+		*crc16 = crc16_ccitt(*crc16, buf, sizeof(buf));
+	}
+	return 0;
 }
 
 int nvs_clear(struct nvs_fs *fs)
