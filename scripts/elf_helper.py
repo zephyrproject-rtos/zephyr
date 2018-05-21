@@ -138,7 +138,10 @@ class AggregateTypeMember:
     def __init__(self, offset, member_name, member_type, member_offset):
         self.member_name = member_name
         self.member_type = member_type
-        self.member_offset = member_offset
+        if isinstance(member_offset, list):
+            self.member_offset = member_offset[0]
+        else:
+            self.member_offset = member_offset
 
     def __repr__(self):
         return "<member %s, type %d, offset %d>" % (
