@@ -237,7 +237,7 @@ static void eth_rx(struct eth_context *ctx)
 			}
 		}
 
-		k_sleep(MSEC(50));
+		k_sleep(K_MSEC(50));
 	}
 }
 
