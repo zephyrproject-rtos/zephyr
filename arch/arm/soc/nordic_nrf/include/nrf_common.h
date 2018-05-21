@@ -61,30 +61,4 @@
 #define NRF52_IRQ_I2S_IRQn                     37
 #define NRF52_IRQ_FPU_IRQn                     38
 
-/**
- * @file UART baudrate divisors for nRFx family processors.
- *
- * Based on Nordic MDK included header file: nrf52_bitfields.h
- * Uses the UARTE_BAUDRATE macros since they are more precise.
- */
-
-#define NRF_UART_BAUDRATE_300                  0x00014000
-#define NRF_UART_BAUDRATE_600                  0x00027000
-#define NRF_UART_BAUDRATE_1200                 0x0004f000
-#define NRF_UART_BAUDRATE_2400                 0x0009d000
-#define NRF_UART_BAUDRATE_4800                 0x0013b000
-#define NRF_UART_BAUDRATE_9600                 0x00275000
-#define NRF_UART_BAUDRATE_14400                0x003af000
-#define NRF_UART_BAUDRATE_19200                0x004ea000
-#define NRF_UART_BAUDRATE_28800                0x0075c000
-#define NRF_UART_BAUDRATE_38400                0x009d0000
-#define NRF_UART_BAUDRATE_57600                0x00eb0000
-#define NRF_UART_BAUDRATE_76800                0x013a9000
-#define NRF_UART_BAUDRATE_115200               0x01d60000
-#define NRF_UART_BAUDRATE_230400               0x03b00000
-#define NRF_UART_BAUDRATE_250000               0x04000000
-#define NRF_UART_BAUDRATE_460800               0x07400000
-#define NRF_UART_BAUDRATE_921600               0x0f000000
-#define NRF_UART_BAUDRATE_1000000              0x10000000
-
 #endif /* _NRF_SOC_COMMON_H_ */
