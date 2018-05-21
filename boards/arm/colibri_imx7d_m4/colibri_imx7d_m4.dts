@@ -13,9 +13,9 @@
 	compatible = "nxp,mcimx7d_m4";
 
 	aliases {
-		gpio_1 = &gpio1;
-		gpio_2 = &gpio2;
-		uart_2 = &uart2;
+		gpio-1 = &gpio1;
+		gpio-2 = &gpio2;
+		uart-2 = &uart2;
 		led0   = &green_led;
 		sw0    = &user_switch_1;
 	};
