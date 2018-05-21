@@ -132,9 +132,12 @@ static void msgq_isr(struct k_msgq *pmsgq)
 	purge_msgq(pmsgq);
 }
 /**
- * @brief Verify zephyr msgq apis across contexts
- * @addtogroup kernel_message_queue
+ * @addtogroup kernel_message_queue_tests
  * @{
+ */
+
+/**
+ * @see k_msgq_init()
  */
 void test_msgq_thread(void)
 {
@@ -146,6 +149,9 @@ void test_msgq_thread(void)
 	msgq_thread(&kmsgq);
 }
 
+/**
+ * @see k_msgq_init()
+ */
 void test_msgq_thread_overflow(void)
 {
 	/**TESTPOINT: init via k_msgq_init*/
@@ -157,6 +163,9 @@ void test_msgq_thread_overflow(void)
 }
 
 #ifdef CONFIG_USERSPACE
+/**
+ * @see k_msgq_init()
+ */
 void test_msgq_user_thread(void)
 {
 	struct k_msgq *q;
@@ -169,6 +178,9 @@ void test_msgq_user_thread(void)
 	msgq_thread(q);
 }
 
+/**
+ * @see k_msgq_init()
+ */
 void test_msgq_user_thread_overflow(void)
 {
 	struct k_msgq *q;
@@ -182,6 +194,9 @@ void test_msgq_user_thread_overflow(void)
 }
 #endif /* CONFIG_USERSPACE */
 
+/**
+ * @see k_msgq_init()
+ */
 void test_msgq_isr(void)
 {
 	struct k_msgq stack_msgq;
