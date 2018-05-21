@@ -130,6 +130,15 @@ struct i2s_cavs_ssp {
 #define SSIOC_SFCR		(1 << 4)
 #define SSIOC_SCOE		(1 << 5)
 
+struct i2s_cavs_mn_div {
+	u32_t mval;		/* 0x00 - M value */
+	u32_t nval;		/* 0x04 - N value */
+};
+
+/* MVAL & NVAL bits */
+#define I2S_MNVAL_MASK		(BIT_MASK(24))
+#define I2S_MNVAL(x)		((x) & I2S_MNVAL_MASK)
+
 #ifdef __cplusplus
 }
 #endif
