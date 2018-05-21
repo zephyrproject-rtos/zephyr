@@ -120,7 +120,7 @@ int _nvs_sector_is_used(struct nvs_fs *fs, off_t offset)
 	offset &= ~(fs->sector_size - 1);
 	for (addr = 0; addr < fs->sector_size; addr += sizeof(buf)) {
 		rc = flash_read(fs->flash_device,
-				fs->offset + addr,
+				fs->offset + offset + addr,
 				&buf, sizeof(buf));
 		if (rc) {
 			return rc;
