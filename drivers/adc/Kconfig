@@ -85,6 +85,8 @@ source "drivers/adc/Kconfig.dw"
 
 source "drivers/adc/Kconfig.mcux"
 
+source "drivers/adc/Kconfig.nrfx"
+
 source "drivers/adc/Kconfig.qmsi"
 
 source "drivers/adc/Kconfig.sam_afec"
