@@ -126,10 +126,21 @@ static struct k_thread *next_up(void)
 #endif
 }
 
-static void update_cache(void)
+static void update_cache(int preempt_ok)
 {
 #ifndef CONFIG_SMP
-	_kernel.ready_q.cache = next_up();
+	struct k_thread *th = next_up();
+
+	if (_current && !_is_idle(_current) && !_is_thread_dummy(_current)) {
+		/* Don't preempt cooperative threads unless the caller allows
+		 * it (i.e. k_yield())
+		 */
+		if (!preempt_ok && !_is_preempt(_current)) {
+			th = _current;
+		}
+	}
+
+	_kernel.ready_q.cache = th;
 #endif
 }
 
@@ -138,7 +149,7 @@ void _add_thread_to_ready_q(struct k_thread *thread)
 	LOCKED(&sched_lock) {
 		_priq_run_add(&_kernel.ready_q.runq, thread);
 		_mark_thread_as_queued(thread);
-		update_cache();
+		update_cache(0);
 	}
 }
 
@@ -148,7 +159,7 @@ void _move_thread_to_end_of_prio_q(struct k_thread *thread)
 		_priq_run_remove(&_kernel.ready_q.runq, thread);
 		_priq_run_add(&_kernel.ready_q.runq, thread);
 		_mark_thread_as_queued(thread);
-		update_cache();
+		update_cache(0);
 	}
 }
 
@@ -158,7 +169,7 @@ void _remove_thread_from_ready_q(struct k_thread *thread)
 		if (_is_thread_queued(thread)) {
 			_priq_run_remove(&_kernel.ready_q.runq, thread);
 			_mark_thread_as_not_queued(thread);
-			update_cache();
+			update_cache(thread == _current);
 		}
 	}
 }
@@ -277,7 +288,7 @@ void _thread_priority_set(struct k_thread *thread, int prio)
 			_priq_run_remove(&_kernel.ready_q.runq, thread);
 			thread->base.prio = prio;
 			_priq_run_add(&_kernel.ready_q.runq, thread);
-			update_cache();
+			update_cache(1);
 		} else {
 			thread->base.prio = prio;
 		}
@@ -302,7 +313,9 @@ int _reschedule(int key)
 
 void k_sched_lock(void)
 {
-	_sched_lock();
+	LOCKED(&sched_lock) {
+		_sched_lock();
+	}
 }
 
 void k_sched_unlock(void)
@@ -311,16 +324,15 @@ void k_sched_unlock(void)
 	__ASSERT(_current->base.sched_locked != 0, "");
 	__ASSERT(!_is_in_isr(), "");
 
-	int key = irq_lock();
-
-	/* compiler_barrier() not needed, comes from irq_lock() */
-
-	++_current->base.sched_locked;
+	LOCKED(&sched_lock) {
+		++_current->base.sched_locked;
+		update_cache(1);
+	}
 
 	K_DEBUG("scheduler unlocked (%p:%d)\n",
 		_current, _current->base.sched_locked);
 
-	_reschedule(key);
+	_reschedule(irq_lock());
 #endif
 }
 
@@ -588,7 +600,11 @@ void _impl_k_yield(void)
 	__ASSERT(!_is_in_isr(), "");
 
 	if (!_is_idle(_current)) {
-		_move_thread_to_end_of_prio_q(_current);
+		LOCKED(&sched_lock) {
+			_priq_run_remove(&_kernel.ready_q.runq, _current);
+			_priq_run_add(&_kernel.ready_q.runq, _current);
+			update_cache(1);
+		}
 	}
 
 	if (_get_next_ready_thread() != _current) {
