@@ -8,11 +8,16 @@
 
 / {
 	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		cpu@0 {
 			compatible = "arm,cortex-m4f";
+			reg = <0>;
 		};
 		cpu@1 {
 			compatible = "arm,cortex-m0+";
+			reg = <1>;
 		};
 	};
 
