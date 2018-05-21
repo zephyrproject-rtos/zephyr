@@ -40,11 +40,13 @@ static void get_fail(struct k_msgq *q)
 }
 
 /**
- * @brief Verify zephyr msgq return code under negative tests
- * @addtogroup kernel_message_queue
+ * @addtogroup kernel_message_queue_tests
  * @{
  */
 
+/**
+ * @see k_msgq_init()
+ */
 void test_msgq_put_fail(void)
 {
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
@@ -52,6 +54,9 @@ void test_msgq_put_fail(void)
 }
 
 #ifdef CONFIG_USERSPACE
+/**
+ * @see k_msgq_alloc_init()
+ */
 void test_msgq_user_put_fail(void)
 {
 	struct k_msgq *q;
@@ -63,6 +68,9 @@ void test_msgq_user_put_fail(void)
 }
 #endif /* CONFIG_USERSPACE */
 
+/**
+ * @see k_msgq_init(), k_msgq_put()
+ */
 void test_msgq_get_fail(void)
 {
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
@@ -70,6 +78,9 @@ void test_msgq_get_fail(void)
 }
 
 #ifdef CONFIG_USERSPACE
+/**
+ * @see k_msgq_alloc_init(), k_msgq_get()
+ */
 void test_msgq_user_get_fail(void)
 {
 	struct k_msgq *q;

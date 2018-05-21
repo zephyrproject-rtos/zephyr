@@ -37,11 +37,15 @@ static void attrs_get(struct k_msgq *q)
 }
 
 /**
- * @brief Verify zephyr msgq get attributes API.
- * @addtogroup kernel_message_queue
+ * @addtogroup kernel_message_queue_tests
  * @{
  */
 
+/**
+ * @brief Test k_msgq_get_attrs()
+ *
+ * @see  k_msgq_get_attrs()
+ */
 void test_msgq_attrs_get(void)
 {
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
@@ -49,6 +53,12 @@ void test_msgq_attrs_get(void)
 }
 
 #ifdef CONFIG_USERSPACE
+
+/**
+ * @brief Test k_msgq_get_attrs()
+ *
+ * @see  k_msgq_get_attrs()
+ */
 void test_msgq_user_attrs_get(void)
 {
 	struct k_msgq *q;

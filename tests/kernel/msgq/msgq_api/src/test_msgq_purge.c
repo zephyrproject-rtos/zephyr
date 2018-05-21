@@ -44,11 +44,13 @@ static void purge_when_put(struct k_msgq *q)
 }
 
 /**
- * @brief Verify zephyr msgq purge under different scenario
- * @addtogroup kernel_message_queue
+ * @addtogroup kernel_message_queue_tests
  * @{
  */
 
+/**
+ * @see k_msgq_init(), k_msgq_purge()
+ */
 void test_msgq_purge_when_put(void)
 {
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
@@ -57,6 +59,9 @@ void test_msgq_purge_when_put(void)
 }
 
 #ifdef CONFIG_USERSPACE
+/**
+ * @see k_msgq_init(), k_msgq_purge()
+ */
 void test_msgq_user_purge_when_put(void)
 {
 	struct k_msgq *q;
