@@ -913,7 +913,7 @@ class MakeGenerator:
 
         if options.ninja:
             generator = "Ninja"
-            generator_cmd = "ninja"
+            generator_cmd = "ninja -j1"
             verb = "-v" if VERBOSE else ""
         else:
             generator = "Unix Makefiles"
@@ -1154,8 +1154,16 @@ class MakeGenerator:
             tf.write("all: %s\n" % (" ".join(self.goals.keys())))
             tf.flush()
 
+            # Normally spawn 2x as many processes as CPUs.  Ninja,
+            # though, seems to have significant parallelism internally
+            # and results in rather high loads, so use 1.5x there to
+            # match what we see with GNU make.
+            loadmul = 2
+            if options.ninja:
+                    loadmul = 1.5
+
             cmd = ["make", "-k", "-j",
-                   str(CPU_COUNTS * 2), "-f", tf.name, "all"]
+                   str(int(CPU_COUNTS * loadmul)), "-f", tf.name, "all"]
             p = subprocess.Popen(cmd, stderr=subprocess.PIPE,
                                  stdout=devnull)
 
