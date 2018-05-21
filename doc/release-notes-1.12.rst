@@ -30,6 +30,7 @@ Architectures
 Boards
 ******
 
+* nios2: Added device tree support for qemu_nios2 and altera_max10
 
 Drivers and Sensors
 *******************
