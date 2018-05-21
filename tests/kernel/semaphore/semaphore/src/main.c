@@ -52,7 +52,77 @@ void isr_sem_take(void *semaphore)
 {
 	k_sem_take((struct k_sem *)semaphore, K_NO_WAIT);
 }
-/******************************************************************************/
+
+void sem_give_task(void *p1, void *p2, void *p3)
+{
+	k_sem_give(&simple_sem);
+}
+
+void sem_take_timeout_forever_helper(void *p1, void *p2, void *p3)
+{
+	k_sleep(MSEC(100));
+	k_sem_give(&simple_sem);
+}
+
+void sem_take_timeout_isr_helper(void *p1, void *p2, void *p3)
+{
+	sem_give_from_isr(&simple_sem);
+}
+
+void sem_take_multiple_low_prio_helper(void *p1, void *p2, void *p3)
+{
+	s32_t ret_value;
+
+	ret_value = k_sem_take(&low_prio_sem, K_FOREVER);
+	zassert_true(ret_value == 0,
+		     "k_sem_take failed when its shouldn't have\n");
+
+	ret_value = k_sem_take(&multiple_thread_sem, K_FOREVER);
+	zassert_true(ret_value == 0,
+		     "k_sem_take failed when its shouldn't have\n");
+
+	k_sem_give(&low_prio_sem);
+}
+
+void sem_take_multiple_mid_prio_helper(void *p1, void *p2, void *p3)
+{
+	s32_t ret_value;
+
+	ret_value = k_sem_take(&mid_prio_sem, K_FOREVER);
+	zassert_true(ret_value == 0,
+		     "k_sem_take failed when its shouldn't have\n");
+
+	ret_value = k_sem_take(&multiple_thread_sem, K_FOREVER);
+	zassert_true(ret_value == 0,
+		     "k_sem_take failed when its shouldn't have\n");
+
+	k_sem_give(&mid_prio_sem);
+}
+
+void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
+{
+	s32_t ret_value;
+
+	ret_value = k_sem_take(&high_prio_sem, K_FOREVER);
+	zassert_true(ret_value == 0,
+		     "k_sem_take failed when its shouldn't have\n");
+
+	ret_value = k_sem_take(&multiple_thread_sem, K_FOREVER);
+	zassert_true(ret_value == 0,
+		     "k_sem_take failed when its shouldn't have\n");
+
+	k_sem_give(&high_prio_sem);
+}
+
+
+/**
+ * @ingroup kernel_semaphore_tests
+ * @{
+ */
+
+/**
+ * @see k_sem_give()
+ */
 void test_simple_sem_from_isr(void)
 {
 	u32_t signal_count;
@@ -73,7 +143,9 @@ void test_simple_sem_from_isr(void)
 
 }
 
-/******************************************************************************/
+/**
+ * @see k_sem_give()
+ */
 void test_simple_sem_from_task(void)
 {
 	u32_t signal_count;
@@ -96,7 +168,9 @@ void test_simple_sem_from_task(void)
 
 }
 
-/******************************************************************************/
+/**
+ * @see k_sem_take()
+ */
 void test_sem_take_no_wait(void)
 {
 	u32_t signal_count;
@@ -122,7 +196,9 @@ void test_sem_take_no_wait(void)
 
 }
 
-/******************************************************************************/
+/**
+ * @see k_sem_take()
+ */
 void test_sem_take_no_wait_fails(void)
 {
 	u32_t signal_count;
@@ -148,7 +224,9 @@ void test_sem_take_no_wait_fails(void)
 
 }
 
-/******************************************************************************/
+/**
+ * @see k_sem_take()
+ */
 void test_sem_take_timeout_fails(void)
 {
 	s32_t ret_value;
@@ -167,12 +245,9 @@ void test_sem_take_timeout_fails(void)
 
 }
 
-/******************************************************************************/
-void sem_give_task(void *p1, void *p2, void *p3)
-{
-	k_sem_give(&simple_sem);
-}
-
+/**
+ * @see k_sem_take()
+ */
 void test_sem_take_timeout(void)
 {
 	s32_t ret_value;
@@ -196,13 +271,9 @@ void test_sem_take_timeout(void)
 
 }
 
-/******************************************************************************/
-void sem_take_timeout_forever_helper(void *p1, void *p2, void *p3)
-{
-	k_sleep(MSEC(100));
-	k_sem_give(&simple_sem);
-}
-
+/**
+ * @see k_sem_take()
+ */
 void test_sem_take_timeout_forever(void)
 {
 	s32_t ret_value;
@@ -226,12 +297,9 @@ void test_sem_take_timeout_forever(void)
 
 }
 
-/******************************************************************************/
-void sem_take_timeout_isr_helper(void *p1, void *p2, void *p3)
-{
-	sem_give_from_isr(&simple_sem);
-}
-
+/**
+ * @see k_sem_take()
+ */
 void test_sem_take_timeout_isr(void)
 {
 	s32_t ret_value;
@@ -254,52 +322,9 @@ void test_sem_take_timeout_isr(void)
 
 }
 
-/******************************************************************************/
-void sem_take_multiple_low_prio_helper(void *p1, void *p2, void *p3)
-{
-	s32_t ret_value;
-
-	ret_value = k_sem_take(&low_prio_sem, K_FOREVER);
-	zassert_true(ret_value == 0,
-		     "k_sem_take failed when its shouldn't have");
-
-	ret_value = k_sem_take(&multiple_thread_sem, K_FOREVER);
-	zassert_true(ret_value == 0,
-		     "k_sem_take failed when its shouldn't have");
-
-	k_sem_give(&low_prio_sem);
-}
-
-void sem_take_multiple_mid_prio_helper(void *p1, void *p2, void *p3)
-{
-	s32_t ret_value;
-
-	ret_value = k_sem_take(&mid_prio_sem, K_FOREVER);
-	zassert_true(ret_value == 0,
-		     "k_sem_take failed when its shouldn't have");
-
-	ret_value = k_sem_take(&multiple_thread_sem, K_FOREVER);
-	zassert_true(ret_value == 0,
-		     "k_sem_take failed when its shouldn't have");
-
-	k_sem_give(&mid_prio_sem);
-}
-
-void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
-{
-	s32_t ret_value;
-
-	ret_value = k_sem_take(&high_prio_sem, K_FOREVER);
-	zassert_true(ret_value == 0,
-		     "k_sem_take failed when its shouldn't have");
-
-	ret_value = k_sem_take(&multiple_thread_sem, K_FOREVER);
-	zassert_true(ret_value == 0,
-		     "k_sem_take failed when its shouldn't have");
-
-	k_sem_give(&high_prio_sem);
-}
-
+/**
+ * @see k_sem_take()
+ */
 void test_sem_take_multiple(void)
 {
 	u32_t signal_count;
@@ -388,7 +413,9 @@ void test_sem_take_multiple(void)
 
 }
 
-/******************************************************************************/
+/**
+ * @see k_sem_give()
+ */
 void test_sem_give_take_from_isr(void)
 {
 	u32_t signal_count;
@@ -417,7 +444,9 @@ void test_sem_give_take_from_isr(void)
 
 }
 
-/******************************************************************************/
+/**
+ * @see k_sem_take(), k_sem_give()
+ */
 void test_sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
 {
 	/* get blocked until the test thread gives the semaphore */
@@ -428,6 +457,9 @@ void test_sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
 }
 
 
+/**
+ * @see k_sem_take(), k_sem_give()
+ */
 void test_sem_multiple_threads_wait(void)
 {
 	u32_t signal_count;
@@ -484,7 +516,9 @@ void test_sem_multiple_threads_wait(void)
 	} while (repeat_count < 2);
 }
 
-/******************************************************************************/
+/**
+ * @see k_sem_take(), k_sem_give(), k_sem_reset()
+ */
 void test_sem_measure_timeouts(void)
 {
 	s32_t ret_value;
@@ -522,7 +556,9 @@ void test_sem_measure_timeouts(void)
 
 }
 
-/******************************************************************************/
+/**
+ * @see k_sem_give()
+ */
 void test_sem_measure_timeout_from_thread_helper(void *p1, void *p2, void *p3)
 {
 	/* first sync the 2 threads */
@@ -533,6 +569,10 @@ void test_sem_measure_timeout_from_thread_helper(void *p1, void *p2, void *p3)
 
 }
 
+
+/**
+ * @see k_sem_give(), k_sem_reset(), k_sem_take()
+ */
 void test_sem_measure_timeout_from_thread(void)
 {
 	s32_t ret_value;
@@ -567,7 +607,9 @@ void test_sem_measure_timeout_from_thread(void)
 
 }
 
-/******************************************************************************/
+/**
+ * @see k_sem_take()
+ */
 void test_sem_multiple_take_and_timeouts_helper(void *timeout,
 						void *p2,
 						void *p3)
@@ -591,6 +633,9 @@ void test_sem_multiple_take_and_timeouts_helper(void *timeout,
 
 }
 
+/**
+ * @see k_sem_take(), k_sem_reset()
+ */
 void test_sem_multiple_take_and_timeouts(void)
 {
 	u32_t timeout;
@@ -623,7 +668,9 @@ void test_sem_multiple_take_and_timeouts(void)
 
 }
 
-/******************************************************************************/
+/**
+ * @see k_sem_take()
+ */
 void test_sem_multi_take_timeout_diff_sem_helper(void *timeout,
 						void *sema,
 						void *p3)
@@ -652,6 +699,9 @@ void test_sem_multi_take_timeout_diff_sem_helper(void *timeout,
 
 }
 
+/**
+ * @see k_sem_take(), k_sem_reset()
+ */
 void test_sem_multi_take_timeout_diff_sem(void)
 {
 	size_t bytes_read;
@@ -696,7 +746,10 @@ void test_sem_multi_take_timeout_diff_sem(void)
 	}
 
 }
-/******************************************************************************/
+/**
+ * @}
+ */
+
 
 /* ztest main entry*/
 void test_main(void)
