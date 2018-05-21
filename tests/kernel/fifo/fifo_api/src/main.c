@@ -14,7 +14,7 @@
  *   -# k_fifo_put k_fifo_put_list k_fifo_put_slist
  *   -# k_fifo_get *
  *
- * @defgroup kernel_fifo FIFOs
+ * @defgroup kernel_fifo_tests FIFOs
  * @ingroup all_tests
  * @{
  * @}

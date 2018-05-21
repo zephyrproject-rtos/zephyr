@@ -51,8 +51,12 @@ static void tfifo_thread_thread(struct k_fifo *pfifo)
 }
 
 /**
- * @addtogroup kernel_fifo
+ * @addtogroup kernel_fifo_tests
  * @{
+ */
+
+/**
+ * @see k_fifo_cancel_wait()
  */
 void test_fifo_cancel_wait(void)
 {
