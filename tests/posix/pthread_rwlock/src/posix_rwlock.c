@@ -80,7 +80,6 @@ static void test_rw_lock(void)
 
 	/* Creating N premptive threads in increasing order of priority */
 	for (i = 0; i < N_THR; i++) {
-		pthread_attr_destroy(&attr[i]);
 		pthread_attr_init(&attr[i]);
 
 		/* Setting scheduling priority */
