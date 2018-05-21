@@ -40,10 +40,10 @@
 		do { } while (0)
 #endif
 
-#define CAVS_SSP_WORD_SIZE_BITS_MIN    2
-#define CAVS_SSP_WORD_SIZE_BITS_MAX   32
-#define CAVS_SSP_WORD_PER_FRAME_MIN    1
-#define CAVS_SSP_WORD_PER_FRAME_MAX   16
+#define CAVS_SSP_WORD_SIZE_BITS_MIN	4
+#define CAVS_SSP_WORD_SIZE_BITS_MAX	32
+#define CAVS_SSP_WORD_PER_FRAME_MIN	1
+#define CAVS_SSP_WORD_PER_FRAME_MAX	8
 
 struct queue_item {
 	void *mem_block;
@@ -79,15 +79,16 @@ struct stream {
 	struct ring_buf mem_block_queue;
 	void *mem_block;
 	bool last_block;
-	int (*stream_start)(struct stream *, struct i2s_cavs_ssp *const,
-				struct device *);
-	void (*stream_disable)(struct stream *, struct i2s_cavs_ssp *const,
-				struct device *);
+	int (*stream_start)(struct stream *,
+			volatile struct i2s_cavs_ssp *const, struct device *);
+	void (*stream_disable)(struct stream *,
+			volatile struct i2s_cavs_ssp *const, struct device *);
 	void (*queue_drop)(struct stream *);
 };
 
 struct i2s_cavs_config {
 	struct i2s_cavs_ssp *regs;
+	struct i2s_cavs_mn_div *mn_regs;
 	u32_t irq_id;
 	void (*irq_config)(void);
 };
@@ -106,8 +107,8 @@ struct i2s_cavs_dev_data {
 
 static struct device *get_dev_from_dma_channel(u32_t dma_channel);
 static void dma_tx_callback(struct device *, u32_t, int);
-static void tx_stream_disable(struct stream *, struct i2s_cavs_ssp *const,
-				struct device *);
+static void tx_stream_disable(struct stream *,
+		volatile struct i2s_cavs_ssp *const, struct device *);
 
 static inline u16_t modulo_inc(u16_t val, u16_t max)
 {
@@ -227,7 +228,7 @@ static void dma_tx_callback(struct device *dev_dma, u32_t channel, int status)
 	struct device *dev = get_dev_from_dma_channel(channel);
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
-	struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
+	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
 	struct stream *strm = &dev_data->tx;
 	size_t mem_block_size;
 	int ret;
@@ -287,7 +288,8 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 {
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
-	struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
+	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
+	volatile struct i2s_cavs_mn_div *const mn_div = dev_cfg->mn_regs;
 	u8_t num_words = i2s_cfg->channels;
 	u8_t word_size_bits = i2s_cfg->word_size;
 	u8_t word_size_bytes;
@@ -303,10 +305,10 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 	u32_t sstsa;
 	u32_t ssrsa;
 	u32_t ssto;
-	u32_t ssioc;
+	u32_t ssioc = 0;
 	u32_t mdiv;
-	u32_t i2s_m;
-	u32_t i2s_n;
+	u32_t i2s_m = 0;
+	u32_t i2s_n = 0;
 	u32_t frame_len = 0;
 	bool inverted_frame = false;
 
@@ -346,11 +348,7 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 
 	/* reset SSP settings */
 	/* sscr0 dynamic settings are DSS, EDSS, SCR, FRDC, ECS */
-	/*
-	 * FIXME: MOD, ACS, NCS are not set,
-	 * no support for network mode for now
-	 */
-	ssc0 = SSCR0_PSP | SSCR0_RIM | SSCR0_TIM;
+	ssc0 = SSCR0_MOD | SSCR0_PSP | SSCR0_RIM | SSCR0_TIM;
 
 	/* sscr1 dynamic settings are SFRMDIR, SCLKDIR, SCFR */
 	ssc1 = SSCR1_TTE | SSCR1_TTELP | SSCR1_RWOT | SSCR1_TRAIL;
@@ -367,32 +365,29 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 	/* sspsp2 no dynamic setting */
 	sspsp2 = 0x0;
 
-	/* ssioc dynamic setting is SFCR */
-	ssioc = SSIOC_SCOE;
-
-	/* i2s_m M divider setting, default 1 */
-	i2s_m = 0x1;
-
-	/* i2s_n N divider setting, default 1 */
-	i2s_n = 0x1;
-
 	/* ssto no dynamic setting */
 	ssto = 0x0;
 
-	/* sstsa dynamic setting is TTSA, default 2 slots */
-	/* TODO: Expand I2s.h to make this configurable */
-	sstsa = (0x1 << 8) | (0x3 << 0);
+	/* sstsa dynamic setting is TTSA, set according to num_words */
+	sstsa = SSTSA_TXEN | BIT_MASK(num_words);
 
-	/* ssrsa dynamic setting is RTSA, default 2 slots */
-	/* TODO: Expand I2s.h to make this configurable */
-	ssrsa = 0;
+	/* ssrsa dynamic setting is RTSA, set according to num_words */
+	ssrsa = SSRSA_RXEN | BIT_MASK(num_words);
 
-	/* clock masters */
-	ssc1 &= ~SSCR1_SFRMDIR;
+	if (i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) {
+		/* set BCLK mode as slave */
+		ssc1 |= SSCR1_SCLKDIR;
+	} else {
+		/* enable BCLK output */
+		ssioc = SSIOC_SCOE;
 
-	/* codec is clk slave & FRM slave */
-	/* TODO: Expand I2s.h to make this configurable */
-	ssc1 |= SSCR1_SCFR;
+	}
+
+	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE) {
+		/* set WCLK mode as slave */
+		ssc1 |= SSCR1_SFRMDIR;
+	}
+
 	ssioc |= SSIOC_SFCR;
 
 	/* clock signal polarity */
@@ -418,19 +413,33 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
-	ssc0 |= SSCR0_MOD | SSCR0_ACS;
-
-	mclk = SOC_INTEL_S1000_MCK_XTAL_FREQ_HZ;
+	mclk = soc_get_ref_clk_freq();
 	bit_clk_freq = i2s_cfg->frame_clk_freq * word_size_bits * num_words;
 
 	/* BCLK is generated from MCLK - must be divisible */
 	if (mclk % bit_clk_freq) {
-		SYS_LOG_ERR("MCLK is not a factor of BCLK");
-		return -EINVAL;
+		SYS_LOG_INF("MCLK/BCLK is not an integer, using M/N divider");
+
+		/*
+		 * Simplification: Instead of calculating lowest values of
+		 * M and N, just set M and N as BCLK and MCLK respectively
+		 * in 0.1KHz units
+		 * In addition, double M so that it can be later divided by 2
+		 * to get an approximately 50% duty cycle clock
+		 */
+		i2s_m = (bit_clk_freq << 1) / 100;
+		i2s_n = mclk / 100;
+
+		/* set divider value of 1 which divides the clock by 2 */
+		mdiv = 1;
+
+		/* Select M/N divider as the clock source */
+		ssc0 |= SSCR0_ECS;
+	} else {
+		mdiv = (mclk / bit_clk_freq) - 1;
 	}
 
 	/* divisor must be within SCR range */
-	mdiv = (mclk / bit_clk_freq) - 1;
 	if (mdiv > (SSCR0_SCR_MASK >> 8)) {
 		SYS_LOG_ERR("Divisor is not within SCR range");
 		return -EINVAL;
@@ -438,12 +447,6 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 
 	/* set the SCR divisor */
 	ssc0 |= SSCR0_SCR(mdiv);
-
-	/* word_size_bits must be <= 38 for SSP */
-	if (word_size_bits > 38) {
-		SYS_LOG_ERR("word size bits is more than 38");
-		return -EINVAL;
-	}
 
 	/* format */
 	switch (i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) {
@@ -497,6 +500,9 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 	ssp->sstsa = sstsa;
 	ssp->ssrsa = ssrsa;
 
+	mn_div->mval = I2S_MNVAL(i2s_m);
+	mn_div->nval = I2S_MNVAL(i2s_n);
+
 	/* Set up DMA channel parameters */
 	word_size_bytes = (word_size_bits + 7) / 8;
 	strm->dma_cfg.source_data_size = word_size_bytes;
@@ -507,7 +513,7 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 }
 
 static int tx_stream_start(struct stream *strm,
-			   struct i2s_cavs_ssp *const ssp,
+			   volatile struct i2s_cavs_ssp *const ssp,
 			   struct device *dev_dma)
 {
 	size_t mem_block_size;
@@ -544,7 +550,7 @@ static int tx_stream_start(struct stream *strm,
 }
 
 static void tx_stream_disable(struct stream *strm,
-			      struct i2s_cavs_ssp *const ssp,
+			      volatile struct i2s_cavs_ssp *const ssp,
 			      struct device *dev_dma)
 {
 	/* Disable DMA service request handshake logic. Handshake is
@@ -592,7 +598,7 @@ static int i2s_cavs_trigger(struct device *dev, enum i2s_dir dir,
 {
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
-	struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
+	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
 	struct stream *strm;
 	unsigned int key;
 	int ret;
@@ -681,7 +687,7 @@ static int i2s_cavs_write(struct device *dev, void *mem_block, size_t size)
 
 	if (dev_data->tx.state != I2S_STATE_RUNNING &&
 	    dev_data->tx.state != I2S_STATE_READY) {
-		SYS_LOG_DBG("invalid state");
+		SYS_LOG_ERR("invalid state");
 		return -EIO;
 	}
 
@@ -694,7 +700,6 @@ static int i2s_cavs_write(struct device *dev, void *mem_block, size_t size)
 	/* Add data to the end of the TX queue */
 	queue_put(&dev_data->tx.mem_block_queue, strm->cfg.options,
 			 mem_block, size);
-
 	return 0;
 }
 
@@ -703,7 +708,7 @@ static void i2s_cavs_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
-	struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
+	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
 	u32_t temp;
 
 	/* clear IRQ */
@@ -756,7 +761,7 @@ static struct device *get_dev_from_dma_channel(u32_t dma_channel)
 	return &DEVICE_NAME_GET(i2s1_cavs);
 }
 
-struct queue_item tx_0_ring_buf[CONFIG_I2S_CAVS_TX_BLOCK_COUNT + 1];
+struct queue_item i2s1_ring_buf[CONFIG_I2S_CAVS_TX_BLOCK_COUNT];
 
 static void i2s1_irq_config(void)
 {
@@ -766,6 +771,7 @@ static void i2s1_irq_config(void)
 
 static const struct i2s_cavs_config i2s1_cavs_config = {
 	.regs = (struct i2s_cavs_ssp *)SSP_BASE(1),
+	.mn_regs = &((struct i2s_cavs_mn_div *)SSP_MN_DIV_BASE)[1],
 	.irq_id = I2S1_CAVS_IRQ,
 	.irq_config = i2s1_irq_config,
 };
@@ -785,8 +791,8 @@ static struct i2s_cavs_dev_data i2s1_cavs_data = {
 			.channel_direction = MEMORY_TO_PERIPHERAL,
 			.dma_slot = DMA_HANDSHAKE_SSP1_TX,
 		},
-		.mem_block_queue.buf = tx_0_ring_buf,
-		.mem_block_queue.len = ARRAY_SIZE(tx_0_ring_buf),
+		.mem_block_queue.buf = i2s1_ring_buf,
+		.mem_block_queue.len = ARRAY_SIZE(i2s1_ring_buf),
 		.stream_start = tx_stream_start,
 		.stream_disable = tx_stream_disable,
 		.queue_drop = tx_queue_drop,
