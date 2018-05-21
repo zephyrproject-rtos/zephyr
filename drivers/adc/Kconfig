@@ -12,9 +12,21 @@
 menuconfig ADC
 	bool "ADC drivers"
 	help
-	  Enable ADC (Analog to Digital Converter) driver configuration
+	  Enable ADC (Analog to Digital Converter) driver configuration.
 
 if ADC
+
+# By selecting or not this option particular ADC drivers indicate if it is
+# required to explicitly specify analog inputs when configuring channels or
+# just the channel identifier is sufficient.
+config ADC_CONFIGURABLE_INPUTS
+	bool
+
+config ADC_ASYNC
+	bool "Enable asynchronous call support"
+	select POLL
+	help
+	  This option enables the asynchronous API calls.
 
 config SYS_LOG_ADC_LEVEL
 	int "ADC drivers log level"
