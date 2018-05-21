@@ -177,12 +177,21 @@ def write_sym_rst(sym, out_dir):
     def menu_path(node):
         path = ""
 
-        menu = node.parent
-        while menu is not kconf.top_node:
-            # Fancy Unicode arrow. Added in '93, so ought to be pretty
-            # safe.
-            path = " → " + menu.prompt[0] + path
-            menu = menu.parent
+        while True:
+            # This excludes indented submenus created in the menuconfig
+            # interface when items depend on the preceding symbol.
+            # is_menuconfig means anything that would be shown as a separate
+            # menu (not indented): proper 'menu's, menuconfig symbols, and
+            # choices.
+            node = node.parent
+            while not node.is_menuconfig:
+                node = node.parent
+
+            if node is kconf.top_node:
+                break
+
+            # Fancy Unicode arrow. Added in '93, so ought to be pretty safe.
+            path = " → " + node.prompt[0] + path
 
         return "(top menu)" + path
 
