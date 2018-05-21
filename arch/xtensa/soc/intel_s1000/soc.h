@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2018 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -107,6 +107,8 @@
 
 #define SSP_SIZE				0x0000200
 #define SSP_BASE(x)				(0x00077000 + (x) * SSP_SIZE)
+#define SSP_MN_DIV_BASE				(0x00078D00)
+
 
 #define SOC_INTEL_S1000_MCK_XTAL_FREQ_HZ	38400000
 
@@ -119,6 +121,15 @@
 #define USB_DW_BASE				0x000A0000
 #define USB_DW_IRQ				0x00000806
 
+/* Global Control registers */
+#define SOC_S1000_GLB_CTRL_BASE			(0x00081C00)
+
+#define SOC_S1000_GLB_CTRL_STRAPS		(SOC_S1000_GLB_CTRL_BASE + 0x40)
+#define SOC_S1000_STRAP_REF_CLK			(BIT_MASK(2) << 3)
+#define SOC_S1000_STRAP_REF_CLK_38P4		(0 << 3)
+#define SOC_S1000_STRAP_REF_CLK_19P2		(1 << 3)
+#define SOC_S1000_STRAP_REF_CLK_24P576		(2 << 3)
+
 extern void _soc_irq_enable(u32_t irq);
 extern void _soc_irq_disable(u32_t irq);
 extern void setup_ownership_dma0(void);
@@ -126,5 +137,6 @@ extern void setup_ownership_dma1(void);
 extern void setup_ownership_dma2(void);
 extern void dcache_writeback_region(void *addr, size_t size);
 extern void setup_ownership_i2s(void);
+extern u32_t soc_get_ref_clk_freq(void);
 
 #endif /* __INC_SOC_H */
