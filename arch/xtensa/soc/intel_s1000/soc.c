@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -171,4 +171,33 @@ void setup_ownership_i2s(void)
 	u32_t value = I2S_OWNSEL(0) | I2S_OWNSEL(1) |
 			 I2S_OWNSEL(2) | I2S_OWNSEL(3);
 	*(volatile u32_t *)SUE_DSPIOPO_REG |= value;
+}
+
+u32_t soc_get_ref_clk_freq(void)
+{
+	u32_t bootstrap;
+	static u32_t freq = 0;
+
+	if (0 == freq) {
+		/* if bootstraps have not been read before, read them */
+
+		bootstrap = *((volatile u32_t *)SOC_S1000_GLB_CTRL_STRAPS);
+
+		bootstrap &= SOC_S1000_STRAP_REF_CLK;
+
+		switch (bootstrap) {
+			case SOC_S1000_STRAP_REF_CLK_19P2:
+				freq = 19200000;
+				break;
+			case SOC_S1000_STRAP_REF_CLK_24P576:
+				freq = 24576000;
+				break;
+			case SOC_S1000_STRAP_REF_CLK_38P4:
+			default:
+				freq = 38400000;
+				break;
+		}
+	}
+
+	return freq;
 }
