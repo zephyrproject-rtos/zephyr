@@ -954,6 +954,13 @@ void gptp_send_pdelay_req(int port)
 
 	pkt = gptp_prepare_pdelay_req(port);
 	if (pkt) {
+		if (state->tx_pdelay_req_ptr) {
+			NET_DBG("Unref pending %s %p", "PDELAY_REQ",
+				state->tx_pdelay_req_ptr);
+
+			net_pkt_unref(state->tx_pdelay_req_ptr);
+		}
+
 		/* Keep the buffer alive until pdelay_rate_ratio is computed. */
 		state->tx_pdelay_req_ptr = net_pkt_ref(pkt);
 
