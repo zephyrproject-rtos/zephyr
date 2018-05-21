@@ -2006,10 +2006,10 @@ def _menu_path_info(node):
 
     path = ""
 
-    menu = node.parent
-    while menu is not _kconf.top_node:
-        path = " -> " + menu.prompt[0] + path
-        menu = menu.parent
+    node = _parent_menu(node)
+    while node is not _kconf.top_node:
+        path = " -> " + node.prompt[0] + path
+        node = _parent_menu(node)
 
     return "(top menu)" + path
 
