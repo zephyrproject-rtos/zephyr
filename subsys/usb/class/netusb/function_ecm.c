@@ -214,35 +214,28 @@ static void ecm_status_cb(enum usb_dc_status_code status, u8_t *param)
 {
 	/* Check the USB status and do needed action if required */
 	switch (status) {
-	case USB_DC_ERROR:
-		SYS_LOG_DBG("USB device error");
-		break;
-	case USB_DC_RESET:
-		SYS_LOG_DBG("USB device reset detected");
-		break;
-	case USB_DC_CONNECTED:
-		SYS_LOG_DBG("USB device connected");
-		break;
-	case USB_DC_CONFIGURED:
-		SYS_LOG_DBG("USB device configured");
-		break;
 	case USB_DC_DISCONNECTED:
 		SYS_LOG_DBG("USB device disconnected");
 		netusb_disable();
 		break;
-	case USB_DC_SUSPEND:
-		SYS_LOG_DBG("USB device suspended");
-		break;
-	case USB_DC_RESUME:
-		SYS_LOG_DBG("USB device resumed");
-		break;
+
 	case USB_DC_INTERFACE:
 		SYS_LOG_DBG("USB interface selected");
 		ecm_status_interface(param);
 		break;
+
+	case USB_DC_ERROR:
+	case USB_DC_RESET:
+	case USB_DC_CONNECTED:
+	case USB_DC_CONFIGURED:
+	case USB_DC_SUSPEND:
+	case USB_DC_RESUME:
+		SYS_LOG_DBG("USB unhandlded state: %d", status);
+		break;
+
 	case USB_DC_UNKNOWN:
 	default:
-		SYS_LOG_DBG("USB unknown state");
+		SYS_LOG_DBG("USB unknown state: %d", status);
 		break;
 	}
 }
