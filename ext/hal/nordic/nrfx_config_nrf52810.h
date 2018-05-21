@@ -1125,8 +1125,8 @@
 
 // <e> NRFX_SAADC_ENABLED - nrfx_saadc - SAADC peripheral driver
 //==========================================================
-#ifndef NRFX_SAADC_ENABLED
-#define NRFX_SAADC_ENABLED 0
+#ifdef CONFIG_NRFX_SAADC
+#define NRFX_SAADC_ENABLED 1
 #endif
 // <o> NRFX_SAADC_CONFIG_RESOLUTION  - Resolution
 
