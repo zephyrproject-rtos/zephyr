@@ -37,9 +37,8 @@ def validate_context(args, unknown):
         os.environ['ZEPHYR_BASE'] = args.zephyr_base
     else:
         if 'ZEPHYR_BASE' not in os.environ:
-            raise InvalidWestContext(
-                '--zephyr-base missing and no ZEPHYR_BASE '
-                'in the environment')
+            log.wrn('--zephyr-base missing and no ZEPHYR_BASE',
+                    'in the environment')
         else:
             args.zephyr_base = os.environ['ZEPHYR_BASE']
 
