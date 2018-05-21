@@ -313,8 +313,10 @@ void mem_domain_for_user_tc3(void *max_partitions, void *p2, void *p3)
  */
 void test_mem_domain_add_partitions_invalid(void *p1, void *p2, void *p3)
 {
-
-	u8_t max_partitions = (u8_t)_arch_mem_domain_max_partitions_get();
+	/* Subtract one since the domain is initialized with one partition
+	 * already present.
+	 */
+	u8_t max_partitions = (u8_t)_arch_mem_domain_max_partitions_get() - 1;
 	u8_t index;
 
 	mem_domain_init();
