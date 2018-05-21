@@ -76,7 +76,26 @@ static void tlifo_read_write(struct k_lifo *plifo)
 	TC_PRINT("\n");
 }
 
-/*test cases*/
+/**
+ * @addtogroup kernel_lifo_tests
+ * @{
+ */
+
+/**
+ * @brief Verify zephyr lifo continuous read write in loop
+ *
+ * @details
+ * - Test Steps
+ *   -# lifo put from main thread
+ *   -# lifo read from isr
+ *   -# lifo put from isr
+ *   -# lifo get from spawn thread
+ *   -# loop above steps for LOOPs times
+ * - Expected Results
+ *   -# lifo data pass correctly and stably across contexts
+ *
+ * @see k_lifo_init(), k_fifo_put(), k_fifo_get()
+ */
 void test_lifo_loop(void)
 {
 	k_lifo_init(&lifo);
@@ -85,3 +104,7 @@ void test_lifo_loop(void)
 		tlifo_read_write(&lifo);
 	}
 }
+
+/**
+ * @}
+ */
