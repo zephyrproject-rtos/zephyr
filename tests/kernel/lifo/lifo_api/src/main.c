@@ -4,6 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @brief Tests for the LIFO kernel object
+ *
+ * Verify zephyr fifo apis under different context
+ *
+ * - API coverage
+ *   -# k_lifo_init K_LIFO_DEFINE
+ *   -# k_lifo_put k_lifo_put_list k_lifo_put_slist
+ *   -# k_lifo_get *
+ *
+ * @defgroup kernel_lifo_tests LIFOs
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
 #include <ztest.h>
 extern void test_lifo_thread2thread(void);
 extern void test_lifo_thread2isr(void);
