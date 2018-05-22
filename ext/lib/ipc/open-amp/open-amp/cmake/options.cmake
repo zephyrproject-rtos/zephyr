@@ -70,6 +70,10 @@ if ("${PROJECT_SYSTEM}" STREQUAL "linux")
   option (WITH_SHARED_LIB "Build with a shared library" ON)
 endif ("${PROJECT_SYSTEM}" STREQUAL "linux")
 
+if (WITH_ZEPHYR)
+  option (WITH_ZEPHYR_LIB "Build open-amp as a zephyr library" OFF)
+endif (WITH_ZEPHYR)
+
 option (WITH_LIBMETAL_FIND "Check Libmetal library can be found" ON)
 option (WITH_EXT_INCLUDES_FIND "Check other external includes are found" ON)
 
