@@ -876,10 +876,6 @@ static bool sockaddr_equal(const struct sockaddr *a,
 		const struct sockaddr_in6 *a6 = net_sin6(a);
 		const struct sockaddr_in6 *b6 = net_sin6(b);
 
-		if (a6->sin6_scope_id != b6->sin6_scope_id) {
-			return false;
-		}
-
 		if (a6->sin6_port != b6->sin6_port) {
 			return false;
 		}
