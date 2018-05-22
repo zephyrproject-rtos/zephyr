@@ -12,6 +12,10 @@ cmsis
 The ARM Cortex Microcontroller Software Interface Standard (CMSIS) defines a
 set of standard interfaces to ARM Cortex-M SoCs.
 
+libmetal
+--------
+libmetal provides a HAL abstraction layer utilized by open-amp
+
 gecko
 -----
 The Silicon Labs Gecko SDK provides device header files and peripheral drivers

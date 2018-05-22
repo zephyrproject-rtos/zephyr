@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2018 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config LIBMETAL
+	bool
+	prompt "libmetal Support"
+	default n
+	help
+	  This option enables the libmetal HAL abstraction layer
