@@ -85,6 +85,10 @@
 			compatible = "ns16550";
 			reg = <0x80800 0x400>;
 			label = "UART_0";
+			clock-frequency = <38400000>;
+			interrupts = <3 0>;
+			interrupt-parent = <&dw_intc>;
+
 
 			status = "disabled";
 		};
