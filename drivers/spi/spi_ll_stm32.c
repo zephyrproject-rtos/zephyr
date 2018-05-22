@@ -52,7 +52,13 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 {
 	u32_t sr = LL_SPI_ReadReg(spi, SR);
 
-	return (int)(sr & SPI_STM32_ERR_MSK);
+	if (sr & SPI_STM32_ERR_MSK) {
+		SYS_LOG_ERR("%s: err=%d", __func__,
+			    sr & SPI_STM32_ERR_MSK);
+		return -EIO;
+	}
+
+	return 0;
 }
 
 static inline u16_t spi_stm32_next_tx(struct spi_stm32_data *data)
@@ -410,15 +416,18 @@ static int transceive(struct device *dev,
 	} while (!ret && spi_stm32_transfer_ongoing(data));
 
 	spi_stm32_complete(data, spi, ret);
+
+#ifdef CONFIG_SPI_SLAVE
+	if (spi_context_is_slave(&data->ctx) && !ret) {
+		ret = data->ctx.recv_frames;
+	}
+#endif /* CONFIG_SPI_SLAVE */
+
 #endif
 
 	spi_context_release(&data->ctx, ret);
 
-	if (ret) {
-		SYS_LOG_ERR("error mask 0x%x", ret);
-	}
-
-	return ret ? -EIO : 0;
+	return ret;
 }
 
 static int spi_stm32_transceive(struct device *dev,
