@@ -97,9 +97,9 @@
 #define IV_INTEL_RESERVED_END 31
 
 /*
- * Model specific register (MSR) definitions.  Use the _MsrRead() and
- * _MsrWrite() primitives to read/write the MSRs.  Only the so-called
- * "Architectural MSRs" are listed, i.e. the subset of MSRs and associated
+ * Model specific register (MSR) definitions.  Use the _x86_msr_read() and
+ * _x86_msr_write() primitives to read/write the MSRs.  Only the so-called
+ * "Architectural MSRs" are listed, i.e.  the subset of MSRs and associated
  * bit fields which will not change on future processor generations.
  */
 
