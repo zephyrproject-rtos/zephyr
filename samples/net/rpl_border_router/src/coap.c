@@ -437,6 +437,10 @@ static void node_obs_reply(struct coap_packet *response, void *user_data)
 		rank_str[i++] = payload[offset++];
 	}
 
+	if (i > strlen(rank_str)) {
+		return;
+	}
+
 	rank_str[i] = '\0';
 
 	if (net_addr_pton(AF_INET6, parent_str, &parent) < 0) {
