@@ -242,6 +242,15 @@ config ARMV8_M_MAINLINE
 	  ARMv8-M Main Extension includes additional features
 	  not present in the ARMv7-M architecture.
 
+config ARMV8_M_SE
+	bool
+	# Omit prompt to signify "hidden" option
+	depends on ARMV8_M_BASELINE || ARMV8_M_MAINLINE
+	help
+	  This option signifies the use of an ARMv8-M processor
+	  implementation (Baseline or Mainline) supporting the
+	  Security Extensions.
+
 config ARMV7_M_ARMV8_M_FP
 	bool
 	# Omit prompt to signify "hidden" option
