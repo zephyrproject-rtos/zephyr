@@ -1179,6 +1179,10 @@ static void append_route(struct net_route_entry *entry, struct user_data *data)
 		if (nexthop_route->nbr->idx == NET_NBR_LLADDR_UNKNOWN) {
 			ret = add_string(data, "Link address", "unknown",
 					 false);
+			if (ret < 0) {
+				ret = -ENOMEM;
+				goto out;
+			}
 		} else {
 			lladdr = net_nbr_get_lladdr(nexthop_route->nbr->idx);
 
@@ -1630,6 +1634,7 @@ static void handle_coap_request(struct http_ctx *ctx,
 	if (len > MAX_PAYLOAD_LEN - 1) {
 		NET_ERR("Can't handle payload more than %d(%d)",
 			MAX_PAYLOAD_LEN, len);
+		return;
 	}
 
 	frag = pkt->frags;
