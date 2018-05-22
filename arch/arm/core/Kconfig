@@ -60,6 +60,7 @@ config ARM_STACK_PROTECTION
 
 config ARM_SECURE_FIRMWARE
 	bool
+	depends on ARMV8_M_SE
 	default n
 	help
 	  This option indicates that we are building a Zephyr image that
@@ -81,6 +82,7 @@ config ARM_SECURE_FIRMWARE
 config ARM_NONSECURE_FIRMWARE
 	bool
 	depends on !ARM_SECURE_FIRMWARE
+	depends on ARMV8_M_SE
 	default n
 	help
 	  This option indicates that we are building a Zephyr image that
