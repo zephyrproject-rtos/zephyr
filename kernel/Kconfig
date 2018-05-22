@@ -556,7 +556,7 @@ menu "Security Options"
 config RETPOLINE
 	bool
 	prompt "Build with retpolines enabled"
-	default y if !X86_NO_SPECTRE
+	default y if !X86_NO_SPECTRE_V2
 	help
 	  This is recommended on platforms with speculative executions, to protect
 	  against branch target injection (AKA Spectre-V2).  Full description of

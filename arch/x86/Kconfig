@@ -90,7 +90,7 @@ config X86_NO_MELTDOWN
 	  This hidden option should be set on a per-SOC basis to indicate that
 	  a particular SOC is not vulnerable to the Meltdown CPU vulnerability.
 
-config X86_NO_SPECTRE
+config X86_NO_SPECTRE_V2
 	bool
 	default y
 	help
