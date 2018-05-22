@@ -26,15 +26,19 @@ Kernel
 Architectures
 *************
 
+* nxp_imx/mcimx7_m4: Added support for i.MX7 Cortex M4 core
 
 Boards
 ******
 
 * nios2: Added device tree support for qemu_nios2 and altera_max10
+* colibri_imx7d_m4: Added support for Toradex Colibri i.MX7 board
 
 Drivers and Sensors
 *******************
 
+* serial: Added support for i.MX UART interface
+* gpio: Added support for i.MX GPIO
 
 Networking
 **********
@@ -55,6 +59,7 @@ Libraries / Subsystems
 HALs
 ****
 
+* nxp/imx: imported i.MX7 FreeRTOS HAL
 
 Documentation
 *************
