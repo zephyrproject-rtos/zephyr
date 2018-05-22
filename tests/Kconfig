@@ -36,9 +36,11 @@ config COVERAGE
 config TEST_USERSPACE
 	bool "Enable userspace if available"
 	depends on ARCH_HAS_USERSPACE
+	depends on TEST
 	select USERSPACE
 	select APPLICATION_MEMORY
-	default n
+	select DYNAMIC_OBJECTS
+	default y
 	help
 	  This option will help test the userspace mode. This can be enabled
 	  only when CONFIG_HAS_USERSPACE is set.
