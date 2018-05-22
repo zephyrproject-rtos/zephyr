@@ -276,7 +276,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 	struct k_mem_block *block;
 	struct usb_ep_ctrl_data *ep_ctrl = &dev_data.ep_ctrl[ep_idx];
 
-	if (ep_idx > NUM_OF_EP_MAX) {
+	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		SYS_LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -366,7 +366,7 @@ int usb_dc_ep_set_stall(const u8_t ep)
 	u8_t ep_idx = EP_ADDR2IDX(ep);
 	u8_t bd_idx;
 
-	if (ep_idx > NUM_OF_EP_MAX) {
+	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		SYS_LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -393,7 +393,7 @@ int usb_dc_ep_clear_stall(const u8_t ep)
 	u8_t ep_idx = EP_ADDR2IDX(ep);
 	u8_t bd_idx;
 
-	if (ep_idx > NUM_OF_EP_MAX) {
+	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		SYS_LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -428,7 +428,7 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
 {
 	u8_t ep_idx = EP_ADDR2IDX(ep);
 
-	if (ep_idx > NUM_OF_EP_MAX) {
+	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		SYS_LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -469,7 +469,7 @@ int usb_dc_ep_enable(const u8_t ep)
 	u8_t idx_odd = get_bdt_idx(ep, 1);
 	u8_t ep_idx = EP_ADDR2IDX(ep);
 
-	if (ep_idx > NUM_OF_EP_MAX) {
+	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		SYS_LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -507,7 +507,7 @@ int usb_dc_ep_disable(const u8_t ep)
 	u8_t idx_odd = get_bdt_idx(ep, 1);
 	u8_t ep_idx = EP_ADDR2IDX(ep);
 
-	if (ep_idx > NUM_OF_EP_MAX) {
+	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		SYS_LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -529,7 +529,7 @@ int usb_dc_ep_flush(const u8_t ep)
 {
 	u8_t ep_idx = EP_ADDR2IDX(ep);
 
-	if (ep_idx > NUM_OF_EP_MAX) {
+	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		SYS_LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -548,7 +548,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	u8_t *bufp = (u8_t *)bdt[bd_idx].buf_addr;
 	u32_t len_to_send = data_len;
 
-	if (ep_idx > NUM_OF_EP_MAX) {
+	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		SYS_LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -611,7 +611,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	u8_t *bufp = (u8_t *)bdt[bd_idx].buf_addr;
 	u32_t data_len;
 
-	if (ep_idx > NUM_OF_EP_MAX) {
+	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		SYS_LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -678,7 +678,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 	/* select the index of the next endpoint buffer */
 	u8_t bd_idx = get_bdt_idx(ep, ~dev_data.ep_ctrl[ep_idx].status.out_odd);
 
-	if (ep_idx > NUM_OF_EP_MAX) {
+	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		SYS_LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
