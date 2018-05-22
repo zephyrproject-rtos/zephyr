@@ -62,10 +62,13 @@ config ARM_SECURE_FIRMWARE
 	bool
 	default n
 	help
+	  This option indicates that we are building a Zephyr image that
+	  is intended to execute in Secure state. The option is only
+	  applicable to ARMv8-M MCUs that implement the Security Extension.
+
 	  This option enables Zephyr to include code that executes in
 	  Secure state, as well as to exclude code that is designed to
-	  execute only in Non-secure state. The option is only applicable
-	  to ARMv8-M MCUs that implement the Security Extension.
+	  execute only in Non-secure state.
 
 	  Code executing in Secure state has access to both the Secure
 	  and Non-Secure resources of the Cortex-M MCU.
