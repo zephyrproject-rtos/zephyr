@@ -1,13 +1,11 @@
 include(ExternalProject)
 
-include($ENV{ZEPHYR_BASE}/ext/hal/libmetal/libmetal.cmake)
-
 ExternalProject_Add(
   open-amp
   SOURCE_DIR $ENV{ZEPHYR_BASE}/ext/lib/ipc/open-amp/
-  DEPENDS libmetal
+  DEPENDS metal
   INSTALL_COMMAND ""      # This particular build system has no install command
-  CMAKE_ARGS -DWITH_ZEPHYR=ON -DWITH_PROXY=OFF -DBOARD=${BOARD} -DLIBMETAL_INCLUDE_DIR=${LIBMETAL_INCLUDE_DIR} -DLIBMETAL_LIB=${LIBMETAL_LIBRARY}
+  CMAKE_ARGS -DWITH_ZEPHYR=ON -DWITH_PROXY=OFF -DBOARD=${BOARD} -DLIBMETAL_INCLUDE_DIR=${ZEPHYR_BINARY_DIR}/ext/hal/libmetal/libmetal/lib/include -DLIBMETAL_LIB=${ZEPHYR_BINARY_DIR}/ext/hal/libmetal/libmetal/lib
 )
 
 ExternalProject_Get_property(open-amp SOURCE_DIR)
