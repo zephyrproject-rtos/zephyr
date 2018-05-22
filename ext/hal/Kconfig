@@ -16,6 +16,8 @@ source "ext/hal/altera/Kconfig"
 
 source "ext/hal/cmsis/Kconfig"
 
+source "ext/hal/libmetal/Kconfig"
+
 source "ext/hal/nordic/Kconfig"
 
 source "ext/hal/nxp/mcux/Kconfig"

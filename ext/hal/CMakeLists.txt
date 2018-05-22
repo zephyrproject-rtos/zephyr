@@ -1,5 +1,13 @@
+if(CONFIG_LIBMETAL)
+  set(WITH_ZEPHYR 1)
+  set(WITH_ZEPHYR_LIB 1)
+  set(WITH_DOC OFF CACHE BOOL "" FORCE)
+  set(WITH_DEFAULT_LOGGER OFF CACHE BOOL "" FORCE)
+endif(CONFIG_LIBMETAL)
+
 add_subdirectory(atmel)
 add_subdirectory(cmsis)
+add_subdirectory_ifdef(CONFIG_LIBMETAL libmetal)
 add_subdirectory(nordic)
 add_subdirectory(nxp)
 add_subdirectory_if_kconfig(qmsi)
