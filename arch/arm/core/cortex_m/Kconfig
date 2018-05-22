@@ -135,7 +135,7 @@ config CPU_CORTEX_M_HAS_VTOR
 config CPU_CORTEX_M_HAS_SPLIM
 	bool
 	# Omit prompt to signify "hidden" option
-	depends on ARMV8_M_MAINLINE
+	depends on ARMV8_M_MAINLINE || (ARMV8_M_SE && !ARM_NONSECURE_FIRMWARE)
 	default n
 	help
 	  This option signifies the CPU has the MSPLIM, PSPLIM registers.
@@ -145,8 +145,10 @@ config CPU_CORTEX_M_HAS_SPLIM
 	  can descend. MSPLIM, PSPLIM are always present in ARMv8-M
 	  MCUs that implement the ARMv8-M Main Extension (Mainline).
 
-	  In an ARMv8-M implementation with the Security Extension, the
-	  MSPLIM, PSPLIM registers have additional Secure instances.
+	  In an ARMv8-M Mainline implementation with the Security Extension
+	  the MSPLIM, PSPLIM registers have additional Secure instances.
+  	  In an ARMv8-M Baseline implementation with the Security Extension
+	  the MSPLIM, PSPLIM registers have only Secure instances.
 
 config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	bool
@@ -246,6 +248,7 @@ config ARMV8_M_SE
 	bool
 	# Omit prompt to signify "hidden" option
 	depends on ARMV8_M_BASELINE || ARMV8_M_MAINLINE
+	select CPU_CORTEX_M_HAS_SPLIM if !ARM_NONSECURE_FIRMWARE
 	help
 	  This option signifies the use of an ARMv8-M processor
 	  implementation (Baseline or Mainline) supporting the
