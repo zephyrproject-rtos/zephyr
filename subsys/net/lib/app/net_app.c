@@ -1297,7 +1297,7 @@ int _net_app_tls_sendto(struct net_pkt *pkt,
 		 * a bit and hope things are ok after that. If not, then
 		 * return error.
 		 */
-		k_sleep(MSEC(50));
+		k_sleep(K_MSEC(50));
 
 		if (!ctx->tls.handshake_done) {
 			NET_DBG("TLS handshake not yet done, pkt %p not sent",
