@@ -15,7 +15,6 @@ zephyr_library_sources(
   excstub.S
   intstub.S
   irq_manage.c
-  msr.c
   swap.S
   sys_fatal_error_handler.c
   thread.c
