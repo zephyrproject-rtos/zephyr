@@ -51,6 +51,10 @@ if (WITH_TESTS AND (${_host} STREQUAL ${_target}))
   option (WITH_TESTS_EXEC "Run test applications during build" ON)
 endif (WITH_TESTS AND (${_host} STREQUAL ${_target}))
 
+if (WITH_ZEPHYR)
+  option (WITH_ZEPHYR_LIB "Build libmetal as a zephyr library" OFF)
+endif (WITH_ZEPHYR)
+
 option (WITH_DEFAULT_LOGGER "Build with default logger" ON)
 
 option (WITH_DOC "Build with documentation" ON)
