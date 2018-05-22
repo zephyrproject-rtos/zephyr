@@ -77,26 +77,25 @@ int _arch_irq_is_enabled(unsigned int irq)
  *
  * The priority is verified if ASSERT_ON is enabled. The maximum number
  * of priority levels is a little complex, as there are some hardware
- * priority levels which are reserved: three for various types of exceptions,
- * and possibly one additional to support zero latency interrupts.
+ * priority levels which are reserved.
  *
  * @return N/A
  */
 void _irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 {
-	/* Hardware priority levels 0 and 1 reserved for Kernel use.
-	 * So we add 2 to the requested priority level. If we support
-	 * ZLI, 2 is also reserved so we add 3.
+	/* The kernel may reserve some of the highest priority levels.
+	 * So we offset the requested priority level with the number
+	 * of priority levels reserved by the kernel.
 	 */
 
 #if CONFIG_ZERO_LATENCY_IRQS
-	/* If we have zero latency interrupts, that makes priority level 2
-	 * a case with special semantics; it is not masked by irq_lock().
+	/* If we have zero latency interrupts, those interrupts will
+	 * run at a priority level which is not masked by irq_lock().
 	 * Our policy is to express priority levels with special properties
 	 * via flags
 	 */
 	if (flags & IRQ_ZERO_LATENCY) {
-		prio = 2;
+		prio = _EXC_ZERO_LATENCY_IRQS_PRIO;
 	} else {
 		prio += _IRQ_PRIO_OFFSET;
 	}

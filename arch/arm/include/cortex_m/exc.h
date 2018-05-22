@@ -27,6 +27,7 @@ extern "C" {
 #else
 
 #include <arch/arm/cortex_m/cmsis.h>
+#include <arch/arm/cortex_m/exc.h>
 #include <irq_offload.h>
 
 #ifdef CONFIG_IRQ_OFFLOAD
@@ -78,8 +79,6 @@ static ALWAYS_INLINE int _IsInIsr(void)
 		;
 }
 
-#define _EXC_SVC_PRIO 0
-#define _EXC_FAULT_PRIO 0
 /**
  * @brief Setup system exceptions
  *
