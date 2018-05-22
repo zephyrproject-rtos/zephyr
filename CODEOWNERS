@@ -3,8 +3,6 @@
 # Do not use wildcard on all source yet
 # *                                        @galak @nashif
 
-# Get all docs reviewed
-*.rst                                    @dbkinder
 .known-issues/*                          @inakypg @nashif
 arch/arc/                                @vonhust @ruuddw
 arch/arm/                                @MaureenHelm @galak
@@ -199,3 +197,6 @@ tests/net/lib/mqtt_packet/               @jukkar @tbursztyka
 tests/net/lib/coap/                      @rveerama1
 tests/net/socket/                        @jukkar @tbursztyka @pfalcon
 tests/subsys/fs/                         @nashif @ramakrishnapallala
+
+# Get all docs reviewed
+*.rst                                    @dbkinder
