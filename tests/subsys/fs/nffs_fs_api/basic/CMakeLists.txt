@@ -40,6 +40,7 @@ else()
 endif()
 
 
+zephyr_include_directories(../common)
 target_link_libraries(app NFFS)
-FILE(GLOB app_sources src/*.c)
+FILE(GLOB app_sources ../common/*.c src/*.c)
 target_sources(app PRIVATE ${app_sources})

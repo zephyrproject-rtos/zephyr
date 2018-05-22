@@ -1,0 +1,6 @@
+common:
+  tags: nffs filesystem
+tests:
+  filesystem.nffs.large:
+    extra_args: TEST=large
+    platform_whitelist: qemu_x86

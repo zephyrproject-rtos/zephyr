@@ -1,0 +1,6 @@
+common:
+  tags: nffs filesystem
+tests:
+  filesystem.nffs.basic:
+    extra_args: TEST=basic
+    platform_whitelist: qemu_x86
