@@ -11,6 +11,9 @@ version: 0.1
 description: >
     This is a representation of the Intel QMSI RTC nodes
 
+inherits:
+    !include rtc.yaml
+
 properties:
     compatible:
       type: string
@@ -23,17 +26,5 @@ properties:
       description: mmio register space
       generation: define
       category: required
-
-    interrupts:
-      type: array
-      category: required
-      description: required interrupts
-      generation: define
-
-    label:
-      type: string
-      category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
 
 ...
