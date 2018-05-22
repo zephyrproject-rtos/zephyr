@@ -75,7 +75,7 @@
 			compatible = "snps,designware-intc";
 			reg = <0x00081800 0x400>;
 			interrupt-controller;
-			#interrupt-cells = <2>;
+			#interrupt-cells = <3>;
 			interrupts = <7 0>;
 			interrupt-parent = <&cavs0>;
 		};
@@ -86,7 +86,7 @@
 			reg = <0x80800 0x400>;
 			label = "UART_0";
 			clock-frequency = <38400000>;
-			interrupts = <3 0>;
+			interrupts = <3 0 0>;
 			interrupt-parent = <&dw_intc>;
 
 
@@ -99,7 +99,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80400 0x400>;
-			interrupts = <2 0>;
+			interrupts = <2 0 0>;
 			interrupt-parent = <&dw_intc>;
 			label = "I2C_0";
 
