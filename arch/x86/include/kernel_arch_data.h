@@ -372,6 +372,7 @@
 #define IA32_GS_BASE_MSR 0xc0000101
 #define IA32_KERNEL_GS_BASE_MSR 0xc0000102
 #define IA32_TSC_AUX_MSR 0xc0000103
+#define IA32_SPEC_CTRL_MSR 0x48
 
 /*
  * EFLAGS value to utilize for the initial context:
