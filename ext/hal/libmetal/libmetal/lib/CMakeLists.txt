@@ -64,6 +64,7 @@ if (WITH_ZEPHYR)
   zephyr_library_named(metal)
   add_dependencies(metal offsets_h)
   target_sources (metal PRIVATE ${_sources})
+  zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 else (WITH_ZEPHYR)
   # Build a shared library if so configured.
   if (WITH_SHARED_LIB)
