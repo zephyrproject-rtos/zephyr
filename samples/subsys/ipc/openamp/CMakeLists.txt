@@ -29,11 +29,9 @@ ExternalProject_Add(
 )
 add_dependencies(core_m0_inc_target openamp_remote)
 
-target_include_directories(app PRIVATE ${LIBMETAL_INCLUDE_DIR}
-			   ${OPENAMP_INCLUDE_DIR} ${PLATFORM_DIR})
+target_include_directories(app PRIVATE ${OPENAMP_INCLUDE_DIR} ${PLATFORM_DIR})
 
 target_link_libraries(app
 	${OPENAMP_LIBRARY}
-	${LIBMETAL_LIBRARY}
 	${ZEPHYR_KERNEL_LIBRARY})
 

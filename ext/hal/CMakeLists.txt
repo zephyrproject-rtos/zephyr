@@ -1,5 +1,6 @@
 add_subdirectory(atmel)
 add_subdirectory(cmsis)
+add_subdirectory_if_kconfig(libmetal)
 add_subdirectory(nordic)
 add_subdirectory(nxp)
 add_subdirectory_if_kconfig(qmsi)
