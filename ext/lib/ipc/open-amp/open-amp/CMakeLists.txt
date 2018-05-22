@@ -1,14 +1,16 @@
 cmake_minimum_required (VERSION 2.6)
-
+if (POLICY CMP0048)
+  cmake_policy(SET CMP0048 NEW)
+endif()
 
 # The version number
 set (OPENAMP_VERSION_MAJOR 1)
 set (OPENAMP_VERSION_MINOR 0)
 
 list (APPEND CMAKE_MODULE_PATH
-  "${CMAKE_SOURCE_DIR}/cmake"
-  "${CMAKE_SOURCE_DIR}/cmake/modules"
-  "${CMAKE_SOURCE_DIR}/cmake/platforms")
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/platforms")
 
 include (syscheck)
 project (open_amp C)
