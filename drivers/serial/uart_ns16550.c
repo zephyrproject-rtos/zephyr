@@ -20,12 +20,12 @@
  *  UART_REG_ADDR_INTERVAL
  */
 
-#include <soc.h>
-#include <errno.h>
 
+#include <errno.h>
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <zephyr/types.h>
+#include <soc.h>
 
 #include <board.h>
 #include <init.h>
