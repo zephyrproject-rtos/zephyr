@@ -84,11 +84,12 @@ config BT_HCI_RESERVE
 	default 1 if BT_SPI
 
 config BT_RECV_IS_RX_THREAD
-	# Virtual option set by the HCI driver to indicate that there's
-	# no need for the host to have its own RX thread, rather the
-	# context that bt_recv() gets called in is already good enough.
-	# If this is set, the driver RX thread is required as the first
-	# thing to make a call to bt_rx_thread_ready().
+	# Hidden option set by the HCI driver to indicate that there's
+	# no need for the host to have its own RX thread.
+	# It is then the responsibility of the HCI driver to call bt_recv_prio
+	# from a higher priority context than bt_recv in order to avoid deadlock.
+	# If the host has its own RX thread it is safe to call bt_recv and
+	# bt_recv_prio from the same priority context.
 	bool
 
 config BT_RX_STACK_SIZE
