@@ -63,6 +63,6 @@ static const struct entropy_driver_api entropy_native_posix_api_funcs = {
 
 DEVICE_AND_API_INIT(entropy_native_posix, CONFIG_ENTROPY_NAME,
 		    entropy_native_posix_init, NULL, NULL,
-		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_native_posix_api_funcs);
 
