@@ -78,6 +78,25 @@ config ARM_SECURE_FIRMWARE
 	  Secure Faults may only be handled by code executing in Secure
 	  state.
 
+config ARM_NONSECURE_FIRMWARE
+	bool
+	depends on !ARM_SECURE_FIRMWARE
+	default n
+	help
+	  This option indicates that we are building a Zephyr image that
+	  is intended to execute in Non-Secure state. Execution of this
+	  image is triggered by Secure firmware that executes in Secure
+	  state. The option is only applicable to ARMv8-M MCUs that
+	  implement the Security Extension.
+
+	  This option enables Zephyr to include code that executes in
+	  Non-Secure state only, as well as to exclude code that is
+	  designed to execute only in Secure state.
+
+	  Code executing in Non-Secure state has no access to Secure
+	  resources of the Cortex-M MCU, and, therefore, it shall avoid
+	  accessing them.
+
 menu "Architecture Floating Point Options"
 depends on CPU_HAS_FPU
 
