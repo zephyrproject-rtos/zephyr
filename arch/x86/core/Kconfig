@@ -69,3 +69,24 @@ config GDT_DYNAMIC
 	  be modified at runtime at the expense of some memory.
 
 endmenu
+
+config DISABLE_SSBD
+	bool
+	prompt "Disable Speculative Store Bypass"
+	depends on USERSPACE
+	default y if !X86_NO_SPECTRE_V4
+	help
+	  This option will disable Speculative Store Bypass in order to
+	  mitigate against certain kinds of side channel attacks.  Quoting
+	  the "Speculative Execution Side Channels" document, version 2.0:
+
+	      When SSBD is set, loads will not execute speculatively
+	      until the addresses of all older stores are known.  This
+	      ensure s that a load does not speculatively consume stale
+	      data values due to bypassing an older store on the same
+	      logical processor.
+
+	  If enabled, this applies to all threads in the system.
+
+	  Even if enabled, will have no effect on CPUs that do not
+	  require this feature.
