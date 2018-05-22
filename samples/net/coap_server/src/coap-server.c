@@ -1276,9 +1276,8 @@ static void udp_receive(struct net_context *context,
 	get_from_ip_addr(&request, &from);
 	pending = coap_pending_received(&request, pendings,
 					NUM_PENDINGS);
-	if (pending) {
-		net_pkt_unref(pkt);
-		return;
+	if (!pending) {
+		goto not_found;
 	}
 
 	if (coap_header_get_type(&request) == COAP_TYPE_RESET) {
@@ -1288,16 +1287,21 @@ static void udp_receive(struct net_context *context,
 		o = coap_find_observer_by_addr(observers, NUM_OBSERVERS,
 					       (struct sockaddr *)&from);
 		if (!o) {
+			NET_ERR("Observer not found\n");
 			goto not_found;
 		}
 
 		r = find_resouce_by_observer(resources, o);
 		if (!r) {
+			NET_ERR("Observer found but Resource not found\n");
 			goto not_found;
 		}
 
 		coap_remove_observer(r, o);
 	}
+
+	net_pkt_unref(pkt);
+	return;
 
 not_found:
 	r = coap_handle_request(&request, resources, options, opt_num);
