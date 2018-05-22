@@ -52,7 +52,9 @@
 /** Do Edge trigger. */
 #define GPIO_INT_EDGE		(1 << 5)
 
-/** Interrupt triggers on both rising and falling edge. */
+/** Interrupt triggers on both rising and falling edge.
+ *  Must be combined with GPIO_INT_EDGE.
+ */
 #define GPIO_INT_DOUBLE_EDGE	(1 << 6)
 /** @} */
 
