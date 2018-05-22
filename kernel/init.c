@@ -315,17 +315,6 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 #endif
 
 	/* _kernel.ready_q is all zeroes */
-
-	/*
-	 * The interrupt library needs to be initialized early since a series
-	 * of handlers are installed into the interrupt table to catch
-	 * spurious interrupts. This must be performed before other kernel
-	 * subsystems install bonafide handlers, or before hardware device
-	 * drivers are initialized.
-	 */
-
-	_IntLibInit();
-
 	_sched_init();
 
 #ifndef CONFIG_SMP
@@ -427,14 +416,15 @@ FUNC_NORETURN void _Cstart(void)
 
 	memset(dummy_thread_memory, 0, sizeof(dummy_thread_memory));
 #endif
-
 	/*
-	 * Initialize kernel data structures. This step includes
-	 * initializing the interrupt subsystem, which must be performed
-	 * before the hardware initialization phase.
+	 * The interrupt library needs to be initialized early since a series
+	 * of handlers are installed into the interrupt table to catch
+	 * spurious interrupts. This must be performed before other kernel
+	 * subsystems install bonafide handlers, or before hardware device
+	 * drivers are initialized.
 	 */
 
-	prepare_multithreading(dummy_thread);
+	_IntLibInit();
 
 	/* perform basic hardware initialization */
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_1);
@@ -444,6 +434,7 @@ FUNC_NORETURN void _Cstart(void)
 #ifdef CONFIG_STACK_CANARIES
 	__stack_chk_guard = (void *)sys_rand32_get();
 #endif
+	prepare_multithreading(dummy_thread);
 
 	/* display boot banner */
 

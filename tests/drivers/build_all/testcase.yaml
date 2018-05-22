@@ -29,6 +29,9 @@ tests:
     platform_exclude: zedboard_pulpino frdm_kw41z
     tags: drivers footprint
     depends_on: adc spi
+    # FIXME see #7703
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
   test_build_sensors_n_z:
     build_only: true
     extra_args: CONF_FILE=sensors_n_z.conf
