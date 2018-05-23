@@ -256,50 +256,51 @@ Argument Validation
 
 Several macros exist to validate arguments:
 
-* :c:macro:`_SYSCALL_OBJ()` Checks a memory address to assert that it is
+* :c:macro:`Z_SYSCALL_OBJ()` Checks a memory address to assert that it is
   a valid kernel object of the expected type, that the calling thread
   has permissions on it, and that the object is initialized.
 
-* :c:macro:`_SYSCALL_OBJ_INIT()` is the same as
-  :c:macro:`_SYSCALL_OBJ()`, except that the provided object may be
+* :c:macro:`Z_SYSCALL_OBJ_INIT()` is the same as
+  :c:macro:`Z_SYSCALL_OBJ()`, except that the provided object may be
   uninitialized. This is useful for handlers of object init functions.
 
-* :c:macro:`_SYSCALL_OBJ_NEVER_INIT()` is the same as
-  :c:macro:`_SYSCALL_OBJ()`, except that the provided object must be
+* :c:macro:`Z_SYSCALL_OBJ_NEVER_INIT()` is the same as
+  :c:macro:`Z_SYSCALL_OBJ()`, except that the provided object must be
   uninitialized. This is not used very often, currently only for
   :c:func:`k_thread_create()`.
 
-* :c:macro:`_SYSCALL_MEMORY_READ()` validates a memory buffer of a particular
+* :c:macro:`Z_SYSCALL_MEMORY_READ()` validates a memory buffer of a particular
   size. The calling thread must have read permissions on the entire buffer.
 
-* :c:macro:`_SYSCALL_MEMORY_WRITE()` is the same as
-  :c:macro:`_SYSCALL_MEMORY_READ()` but the calling thread must additionally
+* :c:macro:`Z_SYSCALL_MEMORY_WRITE()` is the same as
+  :c:macro:`Z_SYSCALL_MEMORY_READ()` but the calling thread must additionally
   have write permissions.
 
-* :c:macro:`_SYSCALL_MEMORY_ARRAY_READ()` validates an array whose total size
+* :c:macro:`Z_SYSCALL_MEMORY_ARRAY_READ()` validates an array whose total size
   is expressed as separate arguments for the number of elements and the
   element size. This macro correctly accounts for multiplication overflow
   when computing the total size. The calling thread must have read permissions
   on the total size.
 
-* :c:macro:`_SYSCALL_MEMORY_ARRAY_WRITE()` is the same as
-  :c:macro:`_SYSCALL_MEMORY_ARRAY_READ()` but the calling thread must
+* :c:macro:`Z_SYSCALL_MEMORY_ARRAY_WRITE()` is the same as
+  :c:macro:`Z_SYSCALL_MEMORY_ARRAY_READ()` but the calling thread must
   additionally have write permissions.
 
-* :c:macro:`_SYSCALL_VERIFY_MSG()` does a runtime check of some boolean
+* :c:macro:`Z_SYSCALL_VERIFY_MSG()` does a runtime check of some boolean
   expression which must evaluate to true otherwise the check will fail.
-  A variant :c:macro:`_SYSCALL_VERIFY` exists which does not take
+  A variant :c:macro:`Z_SYSCALL_VERIFY` exists which does not take
   a message parameter, instead printing the expression tested if it
   fails. The latter should only be used for the most obvious of tests.
 
-* :c:macro:`_SYSCALL_DRIVER_OP()` checks at runtime if a driver
+* :c:macro:`Z_SYSCALL_DRIVER_OP()` checks at runtime if a driver
   instance is capable of performing a particular operation.  While this
   macro can be used by itself, it's mostly a building block for macros
   that are automatically generated for every driver subsystem.  For
   instance, to validate the GPIO driver, one could use the
-  :c:macro:`_SYSCALL_DRIVER_GPIO()` macro.
+  :c:macro:`Z_SYSCALL_DRIVER_GPIO()` macro.
 
-If any check fails, a kernel oops will be triggered which will kill the
+If any check fails, the macros will return a nonzero value. The macro
+:c:macro:`Z_OOPS()` can be used to induce a kernel oops which will kill the
 calling thread. This is done instead of returning some error condition to
 keep the APIs the same when calling from supervisor mode.
 
@@ -326,7 +327,7 @@ information is not necessary since all arguments and the return value are
 
 .. code-block:: c
 
-    _SYSCALL_HANDLER(k_sem_init, sem, initial_count, limit)
+    Z_SYSCALL_HANDLER(k_sem_init, sem, initial_count, limit)
     {
         ...
     }
@@ -347,10 +348,10 @@ initialized), and that the limit parameter is nonzero:
 
 .. code-block:: c
 
-    _SYSCALL_HANDLER(k_sem_init, sem, initial_count, limit)
+    Z_SYSCALL_HANDLER(k_sem_init, sem, initial_count, limit)
     {
-        _SYSCALL_OBJ_INIT(sem, K_OBJ_SEM);
-        _SYSCALL_VERIFY(limit != 0);
+        Z_OOPS(Z_SYSCALL_OBJ_INIT(sem, K_OBJ_SEM));
+        Z_OOPS(Z_SYSCALL_VERIFY(limit != 0));
         _impl_k_sem_init((struct k_sem *)sem, initial_count, limit);
         return 0;
     }
@@ -364,12 +365,12 @@ pointer of some specific type. Some special macros have been defined for
 these simple cases, with variants depending on whether the API has a return
 value:
 
-* :c:macro:`_SYSCALL_HANDLER1_SIMPLE()` one kernel object argument, returns
+* :c:macro:`Z_SYSCALL_HANDLER1_SIMPLE()` one kernel object argument, returns
   a value
-* :c:macro:`_SYSCALL_HANDLER1_SIMPLE_VOID()` one kernel object argument,
+* :c:macro:`Z_SYSCALL_HANDLER1_SIMPLE_VOID()` one kernel object argument,
   no return value
-* :c:macro:`_SYSCALL_HANDLER0_SIMPLE()` no arguments, returns a value
-* :c:macro:`_SYSCALL_HANDLER0_SIMPLE_VOID()` no arguments, no return value
+* :c:macro:`Z_SYSCALL_HANDLER0_SIMPLE()` no arguments, returns a value
+* :c:macro:`Z_SYSCALL_HANDLER0_SIMPLE_VOID()` no arguments, no return value
 
 For example, :c:func:`k_sem_count_get()` takes a semaphore object as its
 only argument and returns a value, so its handler can be completely expressed
@@ -377,7 +378,7 @@ as:
 
 .. code-block:: c
 
-    _SYSCALL_HANDLER1_SIMPLE(k_sem_count_get, K_OBJ_SEM, struct k_sem *);
+    Z_SYSCALL_HANDLER1_SIMPLE(k_sem_count_get, K_OBJ_SEM, struct k_sem *);
 
 System Calls With 6 Or More Arguments
 =====================================
@@ -396,11 +397,11 @@ malicious:
 
 .. code-block:: c
 
-    _SYSCALL_HANDLER(k_foo, arg1, arg2, arg3, arg4, arg5, more_args_ptr)
+    Z_SYSCALL_HANDLER(k_foo, arg1, arg2, arg3, arg4, arg5, more_args_ptr)
     {
         struct _syscall_9_args *margs = (struct _syscall_9_args *)more_args_ptr;
 
-        _SYSCALL_MEMORY_READ(margs, sizeof(*margs));
+        Z_OOPS(Z_SYSCALL_MEMORY_READ(margs, sizeof(*margs)));
 
         ...
 
@@ -415,15 +416,15 @@ before checking. Using the previous example:
 
 .. code-block:: c
 
-    _SYSCALL_HANDLER(k_foo, arg1, arg2, arg3, arg4, arg5, more_args_ptr)
+    Z_SYSCALL_HANDLER(k_foo, arg1, arg2, arg3, arg4, arg5, more_args_ptr)
     {
         volatile struct _syscall_9_args *margs =
                         (struct _syscall_9_args *)more_args_ptr;
         int arg8;
 
-        _SYSCALL_MEMORY_READ(margs, sizeof(*margs));
+        Z_OOPS(Z_SYSCALL_MEMORY_READ(margs, sizeof(*margs)));
         arg8 = margs->arg8;
-        _SYSCALL_VERIFY_MSG(arg8 < 12, "arg8 must be less than 12");
+        Z_OOPS(Z_SYSCALL_VERIFY_MSG(arg8 < 12, "arg8 must be less than 12"));
 
         _impl_k_foo(arg1, arg2, arg3, arg3, arg4, arg5, margs->arg6,
                     margs->arg7, arg8, margs->arg9);
@@ -448,11 +449,11 @@ be validated as writable by the calling thread:
 
 .. code-block:: c
 
-    _SYSCALL_HANDLER(k_uptime_get, ret_p)
+    Z_SYSCALL_HANDLER(k_uptime_get, ret_p)
     {
         s64_t *ret = (s64_t *)ret_p;
 
-        _SYSCALL_MEMORY_WRITE(ret, sizeof(*ret));
+        Z_OOPS(Z_SYSCALL_MEMORY_WRITE(ret, sizeof(*ret)));
         *ret = _impl_k_uptime_get();
         return 0;
     }
@@ -470,20 +471,21 @@ APIs
 Helper macros for creating system call handlers are provided in
 :file:`kernel/include/syscall_handler.h`:
 
-* :c:macro:`_SYSCALL_HANDLER()`
-* :c:macro:`_SYSCALL_HANDLER1_SIMPLE()`
-* :c:macro:`_SYSCALL_HANDLER1_SIMPLE_VOID()`
-* :c:macro:`_SYSCALL_HANDLER0_SIMPLE()`
-* :c:macro:`_SYSCALL_HANDLER0_SIMPLE_VOID()`
-* :c:macro:`_SYSCALL_OBJ()`
-* :c:macro:`_SYSCALL_OBJ_INIT()`
-* :c:macro:`_SYSCALL_OBJ_NEVER_INIT()`
-* :c:macro:`_SYSCALL_MEMORY_READ()`
-* :c:macro:`_SYSCALL_MEMORY_WRITE()`
-* :c:macro:`_SYSCALL_MEMORY_ARRAY_READ()`
-* :c:macro:`_SYSCALL_MEMORY_ARRAY_WRITE()`
-* :c:macro:`_SYSCALL_VERIFY_MSG()`
-* :c:macro:`_SYSCALL_VERIFY`
+* :c:macro:`Z_SYSCALL_HANDLER()`
+* :c:macro:`Z_SYSCALL_HANDLER1_SIMPLE()`
+* :c:macro:`Z_SYSCALL_HANDLER1_SIMPLE_VOID()`
+* :c:macro:`Z_SYSCALL_HANDLER0_SIMPLE()`
+* :c:macro:`Z_SYSCALL_HANDLER0_SIMPLE_VOID()`
+* :c:macro:`Z_SYSCALL_OBJ()`
+* :c:macro:`Z_SYSCALL_OBJ_INIT()`
+* :c:macro:`Z_SYSCALL_OBJ_NEVER_INIT()`
+* :c:macro:`Z_OOPS()`
+* :c:macro:`Z_SYSCALL_MEMORY_READ()`
+* :c:macro:`Z_SYSCALL_MEMORY_WRITE()`
+* :c:macro:`Z_SYSCALL_MEMORY_ARRAY_READ()`
+* :c:macro:`Z_SYSCALL_MEMORY_ARRAY_WRITE()`
+* :c:macro:`Z_SYSCALL_VERIFY_MSG()`
+* :c:macro:`Z_SYSCALL_VERIFY`
 
 Functions for invoking system calls are defined in
 :file:`include/syscall.h`:
