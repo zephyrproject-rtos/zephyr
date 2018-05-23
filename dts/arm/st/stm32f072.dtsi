@@ -64,6 +64,7 @@
 			#size-cells = <0>;
 			reg = <0x40006400 0x400>;
 			interrupts = <30 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
 			label = "CAN_1";
 			bus-speed = <250000>;
