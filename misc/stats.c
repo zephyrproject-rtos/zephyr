@@ -281,5 +281,9 @@ stats_init_and_reg(struct stats_hdr *shdr, u8_t size, u8_t cnt,
 void
 stats_reset(struct stats_hdr *hdr)
 {
-	memset(hdr + 1, 0, hdr->s_size * hdr->s_cnt);
+	void *stats_data;
+
+	/* Statistical data are place right after the statistic group header */
+	stats_data = hdr + 1;
+	memset(stats_data, 0, hdr->s_size * hdr->s_cnt);
 }
