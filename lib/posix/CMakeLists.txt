@@ -1,7 +1,9 @@
 
+target_include_directories(PTHREAD PRIVATE $<$<CONFIG:PTHREAD_IPC>:${PROJECT_SOURCE_DIR}/include/posix>)
+
 add_library(PTHREAD INTERFACE)
 
-target_include_directories(PTHREAD INTERFACE ${PROJECT_SOURCE_DIR}/include/posix)
+target_include_directories(PTHREAD INTERFACE $<$<CONFIG:PTHREAD_IPC>:${PROJECT_SOURCE_DIR}/include/posix>)
 
 zephyr_library()
 zephyr_library_sources(pthread_common.c)
@@ -20,3 +22,5 @@ zephyr_library_sources_ifdef(CONFIG_POSIX_FS fs.c)
 
 zephyr_library_link_libraries(PTHREAD)
 target_link_libraries(PTHREAD INTERFACE zephyr_interface)
+
+
