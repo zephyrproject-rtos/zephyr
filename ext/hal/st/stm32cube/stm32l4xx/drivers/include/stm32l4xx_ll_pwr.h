@@ -514,7 +514,7 @@ __STATIC_INLINE uint32_t LL_PWR_IsEnabledDSIPinsPDActivation(void)
 }
 #endif /* PWR_CR3_DSIPDEN */
 
-#if defined(PWR_CR2_PVME1)
+#if defined(PWR_CR2_USV)
 /**
   * @brief  Enable VDDUSB supply
   * @rmtoll CR2          USV           LL_PWR_EnableVddUSB
