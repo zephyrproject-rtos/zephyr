@@ -1,4 +1,4 @@
-zephyr_library_ifdef(CONFIG_FLASH_HAS_DRIVER_ENABLED)
+zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_SPI_FLASH_W25QXXDV spi_flash_w25qxxdv.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_QMSI soc_flash_qmsi.c)
