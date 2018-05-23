@@ -1,6 +1,5 @@
 # Board initialization
 zephyr_sources_ifdef(CONFIG_PINMUX_CC2650          pinmux_cc2650.c)
-zephyr_sources_ifdef(CONFIG_PINMUX_DW              pinmux_dw.c)
 zephyr_sources_ifdef(CONFIG_PINMUX_ESP32           pinmux_esp32.c)
 zephyr_sources_ifdef(CONFIG_PINMUX_FE310           pinmux_fe310.c)
 zephyr_sources_ifdef(CONFIG_PINMUX_MCUX            pinmux_mcux.c)
