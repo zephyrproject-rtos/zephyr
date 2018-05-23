@@ -3652,7 +3652,7 @@ void k_pipe_cleanup(struct k_pipe *pipe);
  * @param size Size of the pipe's ring buffer (in bytes), or zero if no ring
  *             buffer is used.
  * @retval 0 on success
- * @retval -ENOMEM if memory couln't be allocated
+ * @retval -ENOMEM if memory couldn't be allocated
  */
 __syscall int k_pipe_alloc_init(struct k_pipe *pipe, size_t size);
 
@@ -4286,13 +4286,13 @@ static inline void _impl_k_poll_signal_reset(struct k_poll_signal *signal)
 }
 
 /**
- * @brief Fetch the signaled state and resylt value of a poll signal
+ * @brief Fetch the signaled state and result value of a poll signal
  *
  * @param signal A poll signal object
  * @param signaled An integer buffer which will be written nonzero if the
  *		   object was signaled
  * @param result An integer destination buffer which will be written with the
- *		   result value if the object was signaed, or an undefined
+ *		   result value if the object was signaled, or an undefined
  *		   value if it was not.
  */
 __syscall void k_poll_signal_check(struct k_poll_signal *signal,

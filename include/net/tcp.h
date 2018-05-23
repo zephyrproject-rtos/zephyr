@@ -33,7 +33,7 @@ extern "C" {
  *
  * @param pkt Network packet
  * @param hdr Where to place the header if it does not fit in first fragment
- * of the network packet. This might not be pupulated if TCP header fits in
+ * of the network packet. This might not be populated if TCP header fits in
  * net_buf fragment.
  *
  * @return Return pointer to header or NULL if something went wrong.

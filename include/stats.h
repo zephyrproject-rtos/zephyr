@@ -105,28 +105,28 @@ struct stats_hdr {
 /**
  * @brief Declares a 32-bit stat entry inside a group struct.
  *
- * @param var__                 The name ot assign to the entry.
+ * @param var__                 The name to assign to the entry.
  */
 #define STATS_SECT_ENTRY(var__) u32_t var__;
 
 /**
  * @brief Declares a 16-bit stat entry inside a group struct.
  *
- * @param var__                 The name ot assign to the entry.
+ * @param var__                 The name to assign to the entry.
  */
 #define STATS_SECT_ENTRY16(var__) u16_t var__;
 
 /**
  * @brief Declares a 32-bit stat entry inside a group struct.
  *
- * @param var__                 The name ot assign to the entry.
+ * @param var__                 The name to assign to the entry.
  */
 #define STATS_SECT_ENTRY32(var__) u32_t var__;
 
 /**
  * @brief Declares a 64-bit stat entry inside a group struct.
  *
- * @param var__                 The name ot assign to the entry.
+ * @param var__                 The name to assign to the entry.
  */
 #define STATS_SECT_ENTRY64(var__) u64_t var__;
 

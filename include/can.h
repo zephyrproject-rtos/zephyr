@@ -160,7 +160,7 @@ struct can_filter {
  * @typedef can_tx_callback_t
  * @brief Define the application callback handler function signature
  *
- * @param error_flags status of the preformed send operation
+ * @param error_flags status of the performed send operation
  */
 typedef void (*can_tx_callback_t)(u32_t error_flags);
 
@@ -211,7 +211,7 @@ typedef int (*can_send_t)(struct device *dev, struct can_msg *msg,
  *
  * This routine attaches a message queue to identifiers specified by
  * a filter. Whenever the filter matches, the message is pushed to the queue
- * If a message passes more than one filter the priotity of the match
+ * If a message passes more than one filter the priority of the match
  * is hardware dependent.
  * A message queue can be attached to more than one filter.
  * The message queue must me initialized before.
@@ -232,12 +232,12 @@ typedef int (*can_attach_msgq_t)(struct device *dev, struct k_msgq *msg_q,
  * This routine attaches an isr callback to identifiers specified by
  * a filter. Whenever the filter matches, the callback function is called
  * with isr context.
- * If a message passes more than one filter the priotity of the match
+ * If a message passes more than one filter the priority of the match
  * is hardware dependent.
  * A callback function can be attached to more than one filter.
  * *
  * @param dev    Pointer to the device structure for the driver instance.
- * @param isr    Callback functionpointer.
+ * @param isr    Callback function pointer.
  * @param filter Pointer to a can_filter structure defining the id filtering.
  *
  * @retval filter id on success.
