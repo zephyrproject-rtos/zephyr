@@ -47,3 +47,11 @@ Patch List:
     Impacted files:
      drivers/include/stm32l4xx_ll_spi.h
     ST Bug tracker ID: 13359
+
+    * The STM32L4x2 SoCs need to control the isolation of the USB features
+    from VDDUSB. This is done through the PWR_CR2 bit USV. The STM32L4 HAL
+    in stm32l4xx_ll_pwr.h wrongly checks for the PWR_CR2_PVME1 bit, which
+    is only available on Cat. 3 devices. Replace the check by PWR_CR2_USV.
+    Impacted files:
+     ext/hal/st/stm32cube/stm32l4xx/drivers/include/stm32l4xx_ll_pwr.h
+    ST Bug tracker ID: 47844
