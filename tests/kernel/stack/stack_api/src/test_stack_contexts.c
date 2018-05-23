@@ -86,18 +86,28 @@ static void tstack_thread_isr(struct k_stack *pstack)
 	irq_offload(tIsr_entry_pop, pstack);
 }
 
-/*test cases*/
+/**
+ * @addtogroup kernel_stack_tests
+ * @{
+ */
+
+/**
+ * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
+ */
 void test_stack_thread2thread(void)
 {
 	/**TESTPOINT: test k_stack_init stack*/
 	k_stack_init(&stack, data, STACK_LEN);
 	tstack_thread_thread(&stack);
 
-	/**TESTPOINT: test K_STACK_INIT stack*/
+	/**TESTPOINT: test K_STACK_DEFINE stack*/
 	tstack_thread_thread(&kstack);
 }
 
 #ifdef CONFIG_USERSPACE
+/**
+ * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
+ */
 void test_stack_user_thread2thread(void)
 {
 	struct k_stack *stack = k_object_alloc(K_OBJ_STACK);
@@ -110,12 +120,19 @@ void test_stack_user_thread2thread(void)
 }
 #endif
 
+/**
+ * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
+ */
 void test_stack_thread2isr(void)
 {
 	/**TESTPOINT: test k_stack_init stack*/
 	k_stack_init(&stack, data, STACK_LEN);
 	tstack_thread_isr(&stack);
 
-	/**TESTPOINT: test K_STACK_INIT stack*/
+	/**TESTPOINT: test K_STACK_DEFINE stack*/
 	tstack_thread_isr(&kstack);
 }
+
+/**
+ * @}
+ */
