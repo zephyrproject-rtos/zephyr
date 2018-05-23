@@ -70,7 +70,7 @@ static void test_adc(void)
 	unsigned int bufi0 = ~0, bufi;
 
 	adc = device_get_binding(ADC_DEVICE_NAME);
-	zassert_not_null(adc, "Cannot get adc controller\n");
+	zassert_not_null(adc, "Cannot get adc controller");
 
 	adc_enable(adc);
 	while (loops--) {
@@ -79,7 +79,7 @@ static void test_adc(void)
 		sample.buffer = (void *) seq_buffer[bufi];
 		result = adc_read(adc, &table);
 		zassert_equal(result, 0, "Sampling could not proceed, "
-			"an error occurred\n");
+			"an error occurred");
 		printk("loop %u: sampling done to buffer #%u\n", loops, bufi);
 		_print_sample_in_hex(seq_buffer[bufi], BUFFER_SIZE);
 		if (bufi0 != ~0) {

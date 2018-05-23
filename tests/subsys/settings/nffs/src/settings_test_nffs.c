@@ -178,7 +178,7 @@ int settings_test_file_strstr(const char *fname, char *string)
 
 	len = entry.size;
 	buf = (char *)k_malloc(len + 1);
-	zassert_not_null(buf, "out of memory\n");
+	zassert_not_null(buf, "out of memory");
 
 	rc = fsutil_read_file(fname, 0, len, buf, &rlen);
 	zassert_true(rc == 0, "can't access the file\n'");

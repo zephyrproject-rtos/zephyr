@@ -32,10 +32,10 @@ void *sender_thread(void *p1)
 	clock_gettime(CLOCK_MONOTONIC, &curtime);
 	curtime.tv_sec += 1;
 	zassert_false(mq_timedsend(mqd, send_data, MESSAGE_SIZE, 0, &curtime),
-		      "Not able to send message in timer\n");
+		      "Not able to send message in timer");
 	usleep(USEC_PER_MSEC);
 	zassert_false(mq_close(mqd),
-		      "unable to close message queue descriptor.\n");
+		      "unable to close message queue descriptor.");
 	pthread_exit(p1);
 	return NULL;
 }
@@ -51,10 +51,10 @@ void *receiver_thread(void *p1)
 	clock_gettime(CLOCK_MONOTONIC, &curtime);
 	curtime.tv_sec += 1;
 	mq_timedreceive(mqd, rec_data, MESSAGE_SIZE, 0, &curtime);
-	zassert_false(strcmp(rec_data, send_data), "Error in data reception\n");
+	zassert_false(strcmp(rec_data, send_data), "Error in data reception");
 	usleep(USEC_PER_MSEC);
 	zassert_false(mq_close(mqd),
-		      "unable to close message queue descriptor.\n");
+		      "unable to close message queue descriptor.");
 	pthread_exit(p1);
 	return NULL;
 }
@@ -78,7 +78,7 @@ void test_mqueue(void)
 		if (pthread_attr_init(&attr[i]) != 0) {
 			pthread_attr_destroy(&attr[i]);
 			zassert_false(pthread_attr_init(&attr[i]),
-				      "pthread attr init failed\n");
+				      "pthread attr init failed");
 		}
 		pthread_attr_setstack(&attr[i], &stacks[i][0], STACKSZ);
 
@@ -92,7 +92,7 @@ void test_mqueue(void)
 					     (void *)i);
 		}
 
-		zassert_false(ret, "Not enough space to create new thread\n");
+		zassert_false(ret, "Not enough space to create new thread");
 		pthread_attr_destroy(&attr[i]);
 	}
 
@@ -103,8 +103,8 @@ void test_mqueue(void)
 	}
 
 	zassert_false(mq_close(mqd),
-		      "unable to close message queue descriptor.\n");
-	zassert_false(mq_unlink(queue), "Not able to unlink Queue\n");
+		      "unable to close message queue descriptor.");
+	zassert_false(mq_unlink(queue), "Not able to unlink Queue");
 }
 
 void test_main(void)

@@ -66,12 +66,12 @@ void test_init(void)
 	val32++;
 
 	err = settings_save();
-	zassert_true(err == 0, "can't save settings\n");
+	zassert_true(err == 0, "can't save settings");
 
 	prev_int = val32;
 	val32 = 0;
 	err = settings_load();
-	zassert_true(err == 0, "can't load settings\n");
+	zassert_true(err == 0, "can't load settings");
 	zassert_equal(prev_int, val32,
 		      "load value doesn't match to what was saved");
 }
@@ -83,15 +83,15 @@ void test_init_setup(void)
 	settings_subsys_init();
 
 	err = settings_register(&c1_settings);
-	zassert_true(err == 0, "can't regsister the settings handler\n");
+	zassert_true(err == 0, "can't regsister the settings handler");
 
 	err = settings_load();
-	zassert_true(err == 0, "can't load settings\n");
+	zassert_true(err == 0, "can't load settings");
 
 	if (val32 < 1) {
 		val32 = 1;
 		err = settings_save();
-		zassert_true(err == 0, "can't save settings\n");
+		zassert_true(err == 0, "can't save settings");
 		k_sleep(250);
 		sys_reboot(SYS_REBOOT_COLD);
 	}

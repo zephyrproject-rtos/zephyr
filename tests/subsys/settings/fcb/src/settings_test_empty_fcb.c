@@ -21,7 +21,7 @@ void test_config_empty_fcb(void)
 	cf.cf_fcb.f_sector_cnt = ARRAY_SIZE(fcb_sectors);
 
 	rc = settings_fcb_src(&cf);
-	zassert_true(rc == 0, "settings_fcb_src call should succeed\n");
+	zassert_true(rc == 0, "settings_fcb_src call should succeed");
 
 	/*
 	 * No values

@@ -177,7 +177,7 @@ void config_wipe_fcb(struct flash_sector *fs, int cnt)
 
 	for (i = 0; i < cnt; i++) {
 		rc = flash_area_erase(fap, fs[i].fs_off, fs[i].fs_size);
-		zassert_true(rc == 0, "Can't get flash area\n");
+		zassert_true(rc == 0, "Can't get flash area");
 	}
 }
 
@@ -203,13 +203,13 @@ char *c2_var_find(char *name)
 	char *eptr;
 
 	len = strlen(name);
-	zassert_true(len > 6, "string type expected\n");
-	zassert_true(!strncmp(name, "string", 6), "string type expected\n");
+	zassert_true(len > 6, "string type expected");
+	zassert_true(!strncmp(name, "string", 6), "string type expected");
 
 	idx = strtoul(&name[6], &eptr, 10);
-	zassert_true(*eptr == '\0', "EOF\n");
+	zassert_true(*eptr == '\0', "EOF");
 	zassert_true(idx < c2_var_count,
-		     "var index greather than any exporter\n");
+		     "var index greather than any exporter");
 
 	return val_string[idx];
 }

@@ -86,7 +86,7 @@ void test_generic_object(void)
 	for (int i = 0; i < SEM_ARRAY_SIZE; i++) {
 		object_permission_checks(&semarray[i], false);
 		dyn_sem[i] = k_object_alloc(K_OBJ_SEM);
-		zassert_not_null(dyn_sem[i], "couldn't allocate semaphore\n");
+		zassert_not_null(dyn_sem[i], "couldn't allocate semaphore");
 		/* Give an extra reference to another thread so the object
 		 * doesn't disappear if we revoke our own
 		 */

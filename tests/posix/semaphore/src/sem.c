@@ -19,7 +19,7 @@ static K_THREAD_STACK_DEFINE(stack, STACK_SIZE);
 static void *foo_func(void *p1)
 {
 	printk("Child thread running\n");
-	zassert_false(sem_post(&sema), "sem_post failed\n");
+	zassert_false(sem_post(&sema), "sem_post failed");
 	return NULL;
 }
 
@@ -35,9 +35,9 @@ static void test_sema(void)
 	ret = pthread_attr_init(&attr);
 	if (ret != 0) {
 		zassert_false(pthread_attr_destroy(&attr),
-			      "Unable to destroy pthread object attrib\n");
+			      "Unable to destroy pthread object attrib");
 		zassert_false(pthread_attr_init(&attr),
-			      "Unable to create pthread object attrib\n");
+			      "Unable to create pthread object attrib");
 	}
 
 	pthread_attr_setstack(&attr, &stack, STACK_SIZE);
@@ -48,16 +48,16 @@ static void test_sema(void)
 		      "value larger than %d\n", CONFIG_SEM_VALUE_MAX);
 	zassert_equal(errno, EINVAL, NULL);
 
-	zassert_false(sem_init(&sema, 0, 0), "sem_init failed\n");
+	zassert_false(sem_init(&sema, 0, 0), "sem_init failed");
 
 	zassert_equal(sem_getvalue(&sema, &val), 0, NULL);
 	zassert_equal(val, 0, NULL);
 
 	pthread_create(&newthread, &attr, foo_func, NULL);
-	zassert_false(sem_wait(&sema), "sem_wait failed\n");
+	zassert_false(sem_wait(&sema), "sem_wait failed");
 
 	printk("Parent thread unlocked\n");
-	zassert_false(sem_destroy(&sema), "sema is not destroyed\n");
+	zassert_false(sem_destroy(&sema), "sema is not destroyed");
 }
 
 void test_main(void)

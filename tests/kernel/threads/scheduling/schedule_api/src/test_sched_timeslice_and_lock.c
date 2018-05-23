@@ -190,7 +190,7 @@ void test_pending_thread_wakeup(void)
 				      K_PRIO_COOP(1), 0, 0);
 
 	zassert_false(executed == 1, "The thread didn't wait"
-		      " for semaphore acquisition\n");
+		      " for semaphore acquisition");
 
 	/* Call wakeup on pending thread */
 	k_wakeup(tid);
@@ -199,7 +199,7 @@ void test_pending_thread_wakeup(void)
 	 * execution of pending thread
 	 */
 	zassert_true(executed != 1, "k_wakeup woke up a"
-		     " pending thread!\n");
+		     " pending thread!");
 
 	k_thread_abort(tid);
 }

@@ -26,7 +26,7 @@ void config_setup_nffs(void)
 	int rc;
 
 	flash_dev = device_get_binding(CONFIG_FS_NFFS_FLASH_DEV_NAME);
-	zassert_not_null(flash_dev, "Can't bind to the flash device\n");
+	zassert_not_null(flash_dev, "Can't bind to the flash device");
 
 	/* set backend storage dev */
 	nffs_mnt.storage_dev = flash_dev;

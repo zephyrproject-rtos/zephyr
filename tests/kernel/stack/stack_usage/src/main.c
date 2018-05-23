@@ -89,7 +89,7 @@ static void thread_entry_fn_single(void *p1, void *p2, void *p3)
 		k_stack_pop((struct k_stack *)p1, &tmp[i - 1], K_NO_WAIT);
 	}
 	zassert_false(memcmp(tmp, data1, STACK_LEN),
-			"Push & Pop items does not match\n");
+			"Push & Pop items does not match");
 
 	/* Push items from stack */
 	for (i = 0; i < STACK_LEN; i++) {
@@ -114,7 +114,7 @@ static void thread_entry_fn_dual(void *p1, void *p2, void *p3)
 
 	}
 	zassert_false(memcmp(tmp, data2, STACK_LEN),
-			"Push & Pop items does not match\n");
+			"Push & Pop items does not match");
 }
 
 static void thread_entry_fn_isr(void *p1, void *p2, void *p3)
@@ -122,7 +122,7 @@ static void thread_entry_fn_isr(void *p1, void *p2, void *p3)
 	/* Pop items from stack2 */
 	irq_offload(tIsr_entry_pop, p2);
 	zassert_false(memcmp(data_isr, data2, STACK_LEN),
-			"Push & Pop items does not match\n");
+			"Push & Pop items does not match");
 
 	/* Push items to stack1 */
 	irq_offload(tIsr_entry_push, p1);
@@ -159,7 +159,7 @@ static void test_single_stack_play(void)
 	}
 
 	zassert_false(memcmp(tmp, data2, STACK_LEN),
-			"Push & Pop items does not match\n");
+			"Push & Pop items does not match");
 
 	/* Clear the spawn thread to avoid side effect */
 	k_thread_abort(tid);
@@ -184,7 +184,7 @@ static void test_dual_stack_play(void)
 	}
 
 	zassert_false(memcmp(tmp, data1, STACK_LEN),
-			"Push & Pop items does not match\n");
+			"Push & Pop items does not match");
 
 	/* Clear the spawn thread to avoid side effect */
 	k_thread_abort(tid);
@@ -211,7 +211,7 @@ static void test_isr_stack_play(void)
 	irq_offload(tIsr_entry_pop, &stack1);
 
 	zassert_false(memcmp(data_isr, data1, STACK_LEN),
-			"Push & Pop items does not match\n");
+			"Push & Pop items does not match");
 
 	/* Clear the spawn thread to avoid side effect */
 	k_thread_abort(tid);

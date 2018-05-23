@@ -149,9 +149,9 @@ static void test_trickle_1_wait_long(void)
 	cb_1_called = false;
 	k_sem_take(&wait, WAIT_TIME_LONG);
 
-	zassert_true(!cb_1_called, "Trickle 1 no timeout\n");
+	zassert_true(!cb_1_called, "Trickle 1 no timeout");
 
-	zassert_true(!net_trickle_is_running(&t1), "Trickle 1 not running\n");
+	zassert_true(!net_trickle_is_running(&t1), "Trickle 1 not running");
 
 }
 #else

@@ -79,7 +79,7 @@ static int check_compressed_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 	buf[len] = '\0';
 
 	rc = strncmp(buf, NAME_DELETABLE, sizeof(NAME_DELETABLE)-1);
-	zassert_true(rc != 0, "The deleted settings shouldn be compressed.\n");
+	zassert_true(rc != 0, "The deleted settings shouldn be compressed.");
 
 	return 0;
 }
@@ -98,21 +98,21 @@ void test_config_compress_deleted(void)
 	cf.cf_fcb.f_sector_cnt = ARRAY_SIZE(fcb_small_sectors);
 
 	rc = settings_fcb_src(&cf);
-	zassert_true(rc == 0, "can't register FCB as configuration source\n");
+	zassert_true(rc == 0, "can't register FCB as configuration source");
 
 	rc = settings_fcb_dst(&cf);
 	zassert_true(rc == 0,
-		     "can't register FCB as configuration destination\n");
+		     "can't register FCB as configuration destination");
 
 	rc = settings_register(&c4_test_handler);
-	zassert_true(rc == 0, "settings_register fail\n");
+	zassert_true(rc == 0, "settings_register fail");
 
 	deletable_val.valid = true;
 	deletable_val.val32 = 2018;
 	val4v2 = 0;
 
 	rc = settings_save();
-	zassert_true(rc == 0, "fcb write error\n");
+	zassert_true(rc == 0, "fcb write error");
 
 	deletable_val.valid = false;
 
@@ -120,7 +120,7 @@ void test_config_compress_deleted(void)
 		val4v2++;
 
 		rc = settings_save();
-		zassert_true(rc == 0, "fcb write error\n");
+		zassert_true(rc == 0, "fcb write error");
 
 		if (cf.cf_fcb.f_active.fe_sector == &fcb_small_sectors[1]) {
 			/*

@@ -31,7 +31,7 @@ void test_posix_clock(void)
 
 	/*TESTPOINT: Check if POSIX clock API test passes*/
 	zassert_equal(secs_elapsed, (2 * SLEEP_SECONDS),
-			"POSIX clock API test failed\n");
+			"POSIX clock API test failed");
 
 	printk("POSIX clock APIs test done\n");
 }

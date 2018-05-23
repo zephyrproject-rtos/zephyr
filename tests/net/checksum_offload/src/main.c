@@ -207,7 +207,7 @@ static int eth_tx_offloading_enabled(struct net_if *iface, struct net_pkt *pkt)
 
 		DBG("Chksum 0x%x offloading enabled\n", chksum);
 
-		zassert_equal(chksum, 0, "Checksum calculated\n");
+		zassert_equal(chksum, 0, "Checksum calculated");
 
 		k_sem_give(&wait_data);
 	}
@@ -349,15 +349,15 @@ static void address_setup(void)
 	iface1 = eth_interfaces[0];
 	iface2 = eth_interfaces[1];
 
-	zassert_not_null(iface1, "Interface 1\n");
-	zassert_not_null(iface2, "Interface 2\n");
+	zassert_not_null(iface1, "Interface 1");
+	zassert_not_null(iface2, "Interface 2");
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr1));
-		zassert_not_null(ifaddr, "addr1\n");
+		zassert_not_null(ifaddr, "addr1");
 	}
 
 	/* For testing purposes we need to set the adddresses preferred */
@@ -368,28 +368,28 @@ static void address_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&ll_addr));
-		zassert_not_null(ifaddr, "ll_addr\n");
+		zassert_not_null(ifaddr, "ll_addr");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	ifaddr = net_if_ipv4_addr_add(iface1, &in4addr_my,
 				      NET_ADDR_MANUAL, 0);
-	zassert_not_null(ifaddr, "Cannot add IPv4 address\n");
+	zassert_not_null(ifaddr, "Cannot add IPv4 address");
 
 	ifaddr = net_if_ipv6_addr_add(iface2, &my_addr2,
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr2));
-		zassert_not_null(ifaddr, "addr2\n");
+		zassert_not_null(ifaddr, "addr2");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	ifaddr = net_if_ipv4_addr_add(iface2, &in4addr_my2,
 				      NET_ADDR_MANUAL, 0);
-	zassert_not_null(ifaddr, "Cannot add IPv4 address\n");
+	zassert_not_null(ifaddr, "Cannot add IPv4 address");
 
 	net_if_up(iface1);
 	net_if_up(iface2);
@@ -447,24 +447,24 @@ static void tx_chksum_offload_disabled_test_v6(void)
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
 			      &udp_v6_ctx_1);
-	zassert_equal(ret, 0, "Create IPv6 UDP context failed\n");
+	zassert_equal(ret, 0, "Create IPv6 UDP context failed");
 
 	memcpy(&src_addr6.sin6_addr, &my_addr1, sizeof(struct in6_addr));
 	memcpy(&dst_addr6.sin6_addr, &dst_addr, sizeof(struct in6_addr));
 
 	ret = net_context_bind(udp_v6_ctx_1, (struct sockaddr *)&src_addr6,
 			       sizeof(struct sockaddr_in6));
-	zassert_equal(ret, 0, "Context bind failure test failed\n");
+	zassert_equal(ret, 0, "Context bind failure test failed");
 
 	iface = eth_interfaces[0];
 	ctx = net_if_get_device(iface)->driver_data;
 	zassert_equal_ptr(&eth_context_offloading_disabled, ctx,
-			  "eth context mismatch\n");
+			  "eth context mismatch");
 
 	pkt = net_pkt_get_tx(udp_v6_ctx_1, K_FOREVER);
-	zassert_not_null(pkt, "Cannot get pkt\n");
+	zassert_not_null(pkt, "Cannot get pkt");
 	frag = net_pkt_get_data(udp_v6_ctx_1, K_FOREVER);
-	zassert_not_null(frag, "Cannot get frag\n");
+	zassert_not_null(frag, "Cannot get frag");
 	net_pkt_frag_add(pkt, frag);
 
 	len = strlen(test_data);
@@ -474,7 +474,7 @@ static void tx_chksum_offload_disabled_test_v6(void)
 	test_started = true;
 
 	ret = add_neighbor(iface, &dst_addr);
-	zassert_true(ret, "Cannot add neighbor\n");
+	zassert_true(ret, "Cannot add neighbor");
 
 	ret = net_context_sendto(pkt, (struct sockaddr *)&dst_addr6,
 				 sizeof(struct sockaddr_in6),
@@ -483,7 +483,7 @@ static void tx_chksum_offload_disabled_test_v6(void)
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout\n");
+		zassert_false(true, "Timeout");
 	}
 
 	net_context_unref(udp_v6_ctx_1);
@@ -507,24 +507,24 @@ static void tx_chksum_offload_disabled_test_v4(void)
 
 	ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP,
 			      &udp_v4_ctx_1);
-	zassert_equal(ret, 0, "Create IPv4 UDP context failed\n");
+	zassert_equal(ret, 0, "Create IPv4 UDP context failed");
 
 	memcpy(&src_addr4.sin_addr, &in4addr_my, sizeof(struct in_addr));
 	memcpy(&dst_addr4.sin_addr, &in4addr_dst, sizeof(struct in_addr));
 
 	ret = net_context_bind(udp_v4_ctx_1, (struct sockaddr *)&src_addr4,
 			       sizeof(struct sockaddr_in));
-	zassert_equal(ret, 0, "Context bind failure test failed\n");
+	zassert_equal(ret, 0, "Context bind failure test failed");
 
 	iface = eth_interfaces[0];
 	ctx = net_if_get_device(iface)->driver_data;
 	zassert_equal_ptr(&eth_context_offloading_disabled, ctx,
-			  "eth context mismatch\n");
+			  "eth context mismatch");
 
 	pkt = net_pkt_get_tx(udp_v4_ctx_1, K_FOREVER);
-	zassert_not_null(pkt, "Cannot get pkt\n");
+	zassert_not_null(pkt, "Cannot get pkt");
 	frag = net_pkt_get_data(udp_v4_ctx_1, K_FOREVER);
-	zassert_not_null(frag, "Cannot get frag\n");
+	zassert_not_null(frag, "Cannot get frag");
 	net_pkt_frag_add(pkt, frag);
 
 	len = strlen(test_data);
@@ -534,7 +534,7 @@ static void tx_chksum_offload_disabled_test_v4(void)
 	test_started = true;
 
 	ret = add_neighbor(iface, &dst_addr);
-	zassert_true(ret, "Cannot add neighbor\n");
+	zassert_true(ret, "Cannot add neighbor");
 
 	ret = net_context_sendto(pkt, (struct sockaddr *)&dst_addr4,
 				 sizeof(struct sockaddr_in),
@@ -543,7 +543,7 @@ static void tx_chksum_offload_disabled_test_v4(void)
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout\n");
+		zassert_false(true, "Timeout");
 	}
 
 	net_context_unref(udp_v4_ctx_1);
@@ -567,24 +567,24 @@ static void tx_chksum_offload_enabled_test_v6(void)
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
 			      &udp_v6_ctx_2);
-	zassert_equal(ret, 0, "Create IPv6 UDP context failed\n");
+	zassert_equal(ret, 0, "Create IPv6 UDP context failed");
 
 	memcpy(&src_addr6.sin6_addr, &my_addr2, sizeof(struct in6_addr));
 	memcpy(&dst_addr6.sin6_addr, &dst_addr, sizeof(struct in6_addr));
 
 	ret = net_context_bind(udp_v6_ctx_2, (struct sockaddr *)&src_addr6,
 			       sizeof(struct sockaddr_in6));
-	zassert_equal(ret, 0, "Context bind failure test failed\n");
+	zassert_equal(ret, 0, "Context bind failure test failed");
 
 	iface = eth_interfaces[1];
 	ctx = net_if_get_device(iface)->driver_data;
 	zassert_equal_ptr(&eth_context_offloading_enabled, ctx,
-			  "eth context mismatch\n");
+			  "eth context mismatch");
 
 	pkt = net_pkt_get_tx(udp_v6_ctx_2, K_FOREVER);
-	zassert_not_null(pkt, "Cannot get pkt\n");
+	zassert_not_null(pkt, "Cannot get pkt");
 	frag = net_pkt_get_data(udp_v6_ctx_2, K_FOREVER);
-	zassert_not_null(frag, "Cannot get frag\n");
+	zassert_not_null(frag, "Cannot get frag");
 	net_pkt_frag_add(pkt, frag);
 
 	len = strlen(test_data);
@@ -594,7 +594,7 @@ static void tx_chksum_offload_enabled_test_v6(void)
 	test_started = true;
 
 	ret = add_neighbor(iface, &dst_addr);
-	zassert_true(ret, "Cannot add neighbor\n");
+	zassert_true(ret, "Cannot add neighbor");
 
 	ret = net_context_sendto(pkt, (struct sockaddr *)&dst_addr6,
 				 sizeof(struct sockaddr_in6),
@@ -603,7 +603,7 @@ static void tx_chksum_offload_enabled_test_v6(void)
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout\n");
+		zassert_false(true, "Timeout");
 	}
 
 	net_context_unref(udp_v6_ctx_2);
@@ -627,24 +627,24 @@ static void tx_chksum_offload_enabled_test_v4(void)
 
 	ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP,
 			      &udp_v4_ctx_2);
-	zassert_equal(ret, 0, "Create IPv4 UDP context failed\n");
+	zassert_equal(ret, 0, "Create IPv4 UDP context failed");
 
 	memcpy(&src_addr4.sin_addr, &in4addr_my2, sizeof(struct in_addr));
 	memcpy(&dst_addr4.sin_addr, &in4addr_dst, sizeof(struct in_addr));
 
 	ret = net_context_bind(udp_v4_ctx_2, (struct sockaddr *)&src_addr4,
 			       sizeof(struct sockaddr_in));
-	zassert_equal(ret, 0, "Context bind failure test failed\n");
+	zassert_equal(ret, 0, "Context bind failure test failed");
 
 	iface = eth_interfaces[1];
 	ctx = net_if_get_device(iface)->driver_data;
 	zassert_equal_ptr(&eth_context_offloading_enabled, ctx,
-			  "eth context mismatch\n");
+			  "eth context mismatch");
 
 	pkt = net_pkt_get_tx(udp_v4_ctx_2, K_FOREVER);
-	zassert_not_null(pkt, "Cannot get pkt\n");
+	zassert_not_null(pkt, "Cannot get pkt");
 	frag = net_pkt_get_data(udp_v4_ctx_2, K_FOREVER);
-	zassert_not_null(frag, "Cannot get frag\n");
+	zassert_not_null(frag, "Cannot get frag");
 	net_pkt_frag_add(pkt, frag);
 
 	len = strlen(test_data);
@@ -654,7 +654,7 @@ static void tx_chksum_offload_enabled_test_v4(void)
 	test_started = true;
 
 	ret = add_neighbor(iface, &dst_addr);
-	zassert_true(ret, "Cannot add neighbor\n");
+	zassert_true(ret, "Cannot add neighbor");
 
 	ret = net_context_sendto(pkt, (struct sockaddr *)&dst_addr4,
 				 sizeof(struct sockaddr_in),
@@ -663,7 +663,7 @@ static void tx_chksum_offload_enabled_test_v4(void)
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout\n");
+		zassert_false(true, "Timeout");
 	}
 
 	net_context_unref(udp_v4_ctx_2);
@@ -679,13 +679,13 @@ static void recv_cb_offload_disabled(struct net_context *context,
 	udp_hdr = net_udp_get_hdr(pkt, &hdr);
 
 	zassert_not_null(udp_hdr, "UDP header missing");
-	zassert_not_equal(udp_hdr->chksum, 0, "Checksum is not set\n");
+	zassert_not_equal(udp_hdr->chksum, 0, "Checksum is not set");
 
 	if (net_pkt_family(pkt) == AF_INET) {
 		struct net_ipv4_hdr *ipv4 = NET_IPV4_HDR(pkt);
 
 		zassert_not_equal(ipv4->chksum, 0,
-				  "IPv4 checksum is not set\n");
+				  "IPv4 checksum is not set");
 	}
 
 	k_sem_give(&wait_data);
@@ -703,12 +703,12 @@ static void recv_cb_offload_enabled(struct net_context *context,
 	udp_hdr = net_udp_get_hdr(pkt, &hdr);
 
 	zassert_not_null(udp_hdr, "UDP header missing");
-	zassert_equal(udp_hdr->chksum, 0, "Checksum is set\n");
+	zassert_equal(udp_hdr->chksum, 0, "Checksum is set");
 
 	if (net_pkt_family(pkt) == AF_INET) {
 		struct net_ipv4_hdr *ipv4 = NET_IPV4_HDR(pkt);
 
-		zassert_equal(ipv4->chksum, 0, "IPv4 checksum is set\n");
+		zassert_equal(ipv4->chksum, 0, "IPv4 checksum is set");
 	}
 
 	k_sem_give(&wait_data);
@@ -734,24 +734,24 @@ static void rx_chksum_offload_disabled_test_v6(void)
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
 			      &udp_v6_ctx_1);
-	zassert_equal(ret, 0, "Create IPv6 UDP context failed\n");
+	zassert_equal(ret, 0, "Create IPv6 UDP context failed");
 
 	memcpy(&src_addr6.sin6_addr, &my_addr1, sizeof(struct in6_addr));
 	memcpy(&dst_addr6.sin6_addr, &dst_addr, sizeof(struct in6_addr));
 
 	ret = net_context_bind(udp_v6_ctx_1, (struct sockaddr *)&src_addr6,
 			       sizeof(struct sockaddr_in6));
-	zassert_equal(ret, 0, "Context bind failure test failed\n");
+	zassert_equal(ret, 0, "Context bind failure test failed");
 
 	iface = eth_interfaces[0];
 	ctx = net_if_get_device(iface)->driver_data;
 	zassert_equal_ptr(&eth_context_offloading_disabled, ctx,
-			  "eth context mismatch\n");
+			  "eth context mismatch");
 
 	pkt = net_pkt_get_tx(udp_v6_ctx_1, K_FOREVER);
-	zassert_not_null(pkt, "Cannot get pkt\n");
+	zassert_not_null(pkt, "Cannot get pkt");
 	frag = net_pkt_get_data(udp_v6_ctx_1, K_FOREVER);
-	zassert_not_null(frag, "Cannot get frag\n");
+	zassert_not_null(frag, "Cannot get frag");
 	net_pkt_frag_add(pkt, frag);
 
 	len = strlen(test_data);
@@ -772,7 +772,7 @@ static void rx_chksum_offload_disabled_test_v6(void)
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout\n");
+		zassert_false(true, "Timeout");
 	}
 
 	/* Let the receiver to receive the packets */
@@ -797,24 +797,24 @@ static void rx_chksum_offload_disabled_test_v4(void)
 
 	ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP,
 			      &udp_v4_ctx_1);
-	zassert_equal(ret, 0, "Create IPv4 UDP context failed\n");
+	zassert_equal(ret, 0, "Create IPv4 UDP context failed");
 
 	memcpy(&src_addr4.sin_addr, &in4addr_my, sizeof(struct in_addr));
 	memcpy(&dst_addr4.sin_addr, &in4addr_dst, sizeof(struct in_addr));
 
 	ret = net_context_bind(udp_v4_ctx_1, (struct sockaddr *)&src_addr4,
 			       sizeof(struct sockaddr_in));
-	zassert_equal(ret, 0, "Context bind failure test failed\n");
+	zassert_equal(ret, 0, "Context bind failure test failed");
 
 	iface = eth_interfaces[0];
 	ctx = net_if_get_device(iface)->driver_data;
 	zassert_equal_ptr(&eth_context_offloading_disabled, ctx,
-			  "eth context mismatch\n");
+			  "eth context mismatch");
 
 	pkt = net_pkt_get_tx(udp_v4_ctx_1, K_FOREVER);
-	zassert_not_null(pkt, "Cannot get pkt\n");
+	zassert_not_null(pkt, "Cannot get pkt");
 	frag = net_pkt_get_data(udp_v4_ctx_1, K_FOREVER);
-	zassert_not_null(frag, "Cannot get frag\n");
+	zassert_not_null(frag, "Cannot get frag");
 	net_pkt_frag_add(pkt, frag);
 
 	len = strlen(test_data);
@@ -835,7 +835,7 @@ static void rx_chksum_offload_disabled_test_v4(void)
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout\n");
+		zassert_false(true, "Timeout");
 	}
 
 	/* Let the receiver to receive the packets */
@@ -860,24 +860,24 @@ static void rx_chksum_offload_enabled_test_v6(void)
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
 			      &udp_v6_ctx_2);
-	zassert_equal(ret, 0, "Create IPv6 UDP context failed\n");
+	zassert_equal(ret, 0, "Create IPv6 UDP context failed");
 
 	memcpy(&src_addr6.sin6_addr, &my_addr2, sizeof(struct in6_addr));
 	memcpy(&dst_addr6.sin6_addr, &dst_addr, sizeof(struct in6_addr));
 
 	ret = net_context_bind(udp_v6_ctx_2, (struct sockaddr *)&src_addr6,
 			       sizeof(struct sockaddr_in6));
-	zassert_equal(ret, 0, "Context bind failure test failed\n");
+	zassert_equal(ret, 0, "Context bind failure test failed");
 
 	iface = eth_interfaces[1];
 	ctx = net_if_get_device(iface)->driver_data;
 	zassert_equal_ptr(&eth_context_offloading_enabled, ctx,
-			  "eth context mismatch\n");
+			  "eth context mismatch");
 
 	pkt = net_pkt_get_tx(udp_v6_ctx_2, K_FOREVER);
-	zassert_not_null(pkt, "Cannot get pkt\n");
+	zassert_not_null(pkt, "Cannot get pkt");
 	frag = net_pkt_get_data(udp_v6_ctx_2, K_FOREVER);
-	zassert_not_null(frag, "Cannot get frag\n");
+	zassert_not_null(frag, "Cannot get frag");
 	net_pkt_frag_add(pkt, frag);
 
 	len = strlen(test_data);
@@ -898,7 +898,7 @@ static void rx_chksum_offload_enabled_test_v6(void)
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout\n");
+		zassert_false(true, "Timeout");
 	}
 
 	/* Let the receiver to receive the packets */
@@ -923,24 +923,24 @@ static void rx_chksum_offload_enabled_test_v4(void)
 
 	ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP,
 			      &udp_v4_ctx_2);
-	zassert_equal(ret, 0, "Create IPv4 UDP context failed\n");
+	zassert_equal(ret, 0, "Create IPv4 UDP context failed");
 
 	memcpy(&src_addr4.sin_addr, &in4addr_my2, sizeof(struct in_addr));
 	memcpy(&dst_addr4.sin_addr, &in4addr_dst, sizeof(struct in_addr));
 
 	ret = net_context_bind(udp_v4_ctx_2, (struct sockaddr *)&src_addr4,
 			       sizeof(struct sockaddr_in));
-	zassert_equal(ret, 0, "Context bind failure test failed\n");
+	zassert_equal(ret, 0, "Context bind failure test failed");
 
 	iface = eth_interfaces[1];
 	ctx = net_if_get_device(iface)->driver_data;
 	zassert_equal_ptr(&eth_context_offloading_enabled, ctx,
-			  "eth context mismatch\n");
+			  "eth context mismatch");
 
 	pkt = net_pkt_get_tx(udp_v4_ctx_2, K_FOREVER);
-	zassert_not_null(pkt, "Cannot get pkt\n");
+	zassert_not_null(pkt, "Cannot get pkt");
 	frag = net_pkt_get_data(udp_v4_ctx_2, K_FOREVER);
-	zassert_not_null(frag, "Cannot get frag\n");
+	zassert_not_null(frag, "Cannot get frag");
 	net_pkt_frag_add(pkt, frag);
 
 	len = strlen(test_data);
@@ -961,7 +961,7 @@ static void rx_chksum_offload_enabled_test_v4(void)
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout\n");
+		zassert_false(true, "Timeout");
 	}
 
 	/* Let the receiver to receive the packets */

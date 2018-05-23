@@ -331,7 +331,7 @@ static void test_kernel_interrupts(disable_int_func disable_int,
 	enable_int(imask);
 
 	zassert_equal(tick2, tick,
-			"tick advanced with interrupts locked\n");
+			"tick advanced with interrupts locked");
 
 	/* Now repeat with interrupts unlocked. */
 	for (i = 0; i < count; i++) {
@@ -343,7 +343,7 @@ static void test_kernel_interrupts(disable_int_func disable_int,
 
 	tick2 = _tick_get_32();
 	zassert_not_equal(tick, tick2,
-			"tick didn't advance as expected\n");
+			"tick didn't advance as expected");
 }
 
 /**
@@ -368,26 +368,26 @@ static void test_kernel_ctx_task(void)
 	/* isr_info is modified by the isr_handler routine */
 	isr_handler_trigger();
 
-	zassert_false(isr_info.error, "ISR detected an error\n");
+	zassert_false(isr_info.error, "ISR detected an error");
 
 	zassert_equal(isr_info.data, (void *)self_thread_id,
-		"ISR context ID mismatch\n");
+		"ISR context ID mismatch");
 
 	TC_PRINT("Testing k_is_in_isr() from an ISR\n");
 	isr_info.command = EXEC_CTX_TYPE_CMD;
 	isr_info.error = 0;
 	isr_handler_trigger();
 
-	zassert_false(isr_info.error, "ISR detected an error\n");
+	zassert_false(isr_info.error, "ISR detected an error");
 
 	zassert_equal(isr_info.value, K_ISR,
-		"isr_info.value was not K_ISR\n");
+		"isr_info.value was not K_ISR");
 
 	TC_PRINT("Testing k_is_in_isr() from a preemptible thread\n");
-	zassert_false(k_is_in_isr(), "Should not be in ISR context\n");
+	zassert_false(k_is_in_isr(), "Should not be in ISR context");
 
 	zassert_false(_current->base.prio < 0,
-			"Current thread should have preemptible priority\n");
+			"Current thread should have preemptible priority");
 
 }
 
@@ -727,7 +727,7 @@ static void test_timeout(void)
 
 	rv = k_sem_take(&reply_timeout, timeout * 2);
 
-	zassert_false(rv, " *** task timed out waiting for " "k_busy_wait()\n");
+	zassert_false(rv, " *** task timed out waiting for " "k_busy_wait()");
 
 	/* test k_sleep() */
 
@@ -741,7 +741,7 @@ static void test_timeout(void)
 
 	rv = k_sem_take(&reply_timeout, timeout * 2);
 	zassert_equal(rv, 0, " *** task timed out waiting for thread on "
-			 "k_sleep().\n");
+			 "k_sleep().");
 
 	/* test k_thread_create() without cancellation */
 	TC_PRINT("Testing k_thread_create() without cancellation\n");
@@ -757,7 +757,7 @@ static void test_timeout(void)
 	for (i = 0; i < NUM_TIMEOUT_THREADS; i++) {
 		data = k_fifo_get(&timeout_order_fifo, 750);
 		zassert_not_null(data, " *** timeout while waiting for"
-				 " delayed thread\n");
+				 " delayed thread");
 
 		zassert_equal(data->timeout_order, i,
 				" *** wrong delayed thread ran (got %d, "
@@ -770,7 +770,7 @@ static void test_timeout(void)
 	/* ensure no more thread fire */
 	data = k_fifo_get(&timeout_order_fifo, 750);
 
-	zassert_false(data, " *** got something unexpected in the fifo\n");
+	zassert_false(data, " *** got something unexpected in the fifo");
 
 	/* test k_thread_create() with cancellation */
 	TC_PRINT("Testing k_thread_create() with cancellations\n");
@@ -816,7 +816,7 @@ static void test_timeout(void)
 		data = k_fifo_get(&timeout_order_fifo, 2750);
 
 		zassert_not_null(data, " *** timeout while waiting for"
-				 " delayed thread\n");
+				 " delayed thread");
 
 		zassert_equal(data->timeout_order, i,
 				" *** wrong delayed thread ran (got %d, "
@@ -833,7 +833,7 @@ static void test_timeout(void)
 
 	/* ensure no more thread fire */
 	data = k_fifo_get(&timeout_order_fifo, 750);
-	zassert_false(data, " *** got something unexpected in the fifo\n");
+	zassert_false(data, " *** got something unexpected in the fifo");
 
 }
 
@@ -859,7 +859,7 @@ void test_context(void)
 
 	TC_PRINT("Initializing kernel objects\n");
 	rv = kernel_init_objects();
-	zassert_equal(rv, TC_PASS, "failure kernel objects\n");
+	zassert_equal(rv, TC_PASS, "failure kernel objects");
 
 	TC_PRINT("Testing interrupt locking and unlocking\n");
 	TC_START("test_kernel_interrupts");
@@ -886,7 +886,7 @@ void test_context(void)
 			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, 0);
 
 	zassert_equal(thread_evidence, 1,
-		      "  - thread did not execute as expected!\n");
+		      "  - thread did not execute as expected!");
 
 	/*
 	 * The thread ran, now wake it so it can test k_current_get and

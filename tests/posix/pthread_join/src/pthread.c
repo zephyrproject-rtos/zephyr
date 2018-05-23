@@ -59,9 +59,9 @@ void test_pthread_join(void)
 		ret = pthread_attr_init(&attr[i]);
 		if (ret != 0) {
 			zassert_false(pthread_attr_destroy(&attr[i]),
-				      "Unable to destroy pthread object attrib\n");
+				      "Unable to destroy pthread object attrib");
 			zassert_false(pthread_attr_init(&attr[i]),
-				      "Unable to create pthread object attrib\n");
+				      "Unable to create pthread object attrib");
 		}
 
 		/* Setting pthread as JOINABLE */
@@ -87,7 +87,7 @@ void test_pthread_join(void)
 					schedpolicy);
 
 			/*TESTPOINT: Check if priority is valid*/
-			zassert_true(ret, "Scheduling priority invalid\n");
+			zassert_true(ret, "Scheduling priority invalid");
 
 			pthread_attr_setschedparam(&attr[i], &schedparam);
 		}
@@ -104,7 +104,7 @@ void test_pthread_join(void)
 				     (void *)i);
 
 		/*TESTPOINT: Check if thread created successfully*/
-		zassert_false(ret, "Number of threads exceed max limit\n");
+		zassert_false(ret, "Number of threads exceed max limit");
 
 		pthread_attr_destroy(&attr[i]);
 	}
@@ -116,7 +116,7 @@ void test_pthread_join(void)
 	}
 
 	/* Test PASS if all threads have exited before main exit */
-	zassert_equal(exit_count, N_THR, "pthread join test failed\n");
+	zassert_equal(exit_count, N_THR, "pthread join test failed");
 }
 
 void test_main(void)
