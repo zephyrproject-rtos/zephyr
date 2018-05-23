@@ -4,6 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @defgroup kernel_pipe_tests PIPEs
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
 #include <ztest.h>
 extern void test_pipe_thread2thread(void);
 

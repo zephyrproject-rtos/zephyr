@@ -66,7 +66,9 @@ static void get_fail(struct k_pipe *p)
 	zassert_true(rd_byte < 1, NULL);
 }
 
-
+/**
+ * @see k_pipe_init(), k_pipe_get()
+ */
 void test_pipe_get_fail(void)
 {
 	k_pipe_init(&put_get_pipe, data, PIPE_LEN);
@@ -75,6 +77,9 @@ void test_pipe_get_fail(void)
 }
 
 #ifdef CONFIG_USERSPACE
+/**
+ * @see k_pipe_alloc_init()
+ */
 void test_pipe_user_get_fail(void)
 {
 	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
@@ -85,3 +90,8 @@ void test_pipe_user_get_fail(void)
 	get_fail(p);
 }
 #endif
+
+
+/**
+ * @}
+ */

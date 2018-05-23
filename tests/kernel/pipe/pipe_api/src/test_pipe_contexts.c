@@ -109,7 +109,15 @@ static void tpipe_thread_thread(struct k_pipe *ppipe)
 	k_thread_abort(tid);
 }
 
-/*test cases*/
+
+/**
+ * @addtogroup kernel_pipe_tests
+ * @{
+ */
+
+/**
+ * @see k_pipe_init(), k_pipe_put(), #K_PIPE_DEFINE(x)
+ */
 void test_pipe_thread2thread(void)
 {
 	/**TESTPOINT: test k_pipe_init pipe*/
@@ -122,6 +130,9 @@ void test_pipe_thread2thread(void)
 }
 
 #ifdef CONFIG_USERSPACE
+/**
+ * @see k_pipe_init(), k_pipe_put(), #K_PIPE_DEFINE(x)
+ */
 void test_pipe_user_thread2thread(void)
 {
 	/**TESTPOINT: test k_pipe_init pipe*/
@@ -137,6 +148,9 @@ void test_pipe_user_thread2thread(void)
 }
 #endif
 
+/**
+ * @see k_pipe_block_put()
+ */
 void test_pipe_block_put(void)
 {
 
@@ -152,6 +166,9 @@ void test_pipe_block_put(void)
 	k_thread_abort(tid);
 }
 
+/**
+ * @see k_pipe_block_put()
+ */
 void test_pipe_block_put_sema(void)
 {
 	struct k_sem sync_sema;
@@ -168,6 +185,9 @@ void test_pipe_block_put_sema(void)
 	k_thread_abort(tid);
 }
 
+/**
+ * @see k_pipe_put(), k_pipe_get()
+ */
 void test_pipe_get_put(void)
 {
 	/**TESTPOINT: test API sequence: [get, put]*/
@@ -192,3 +212,7 @@ void test_resource_pool_auto_free(void)
 	zassert_true(k_mem_pool_malloc(&test_pool, 64) != NULL, NULL);
 }
 #endif
+
+/**
+ * @}
+ */
