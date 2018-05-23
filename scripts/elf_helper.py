@@ -25,8 +25,13 @@ def subsystem_to_enum(subsys):
     return "K_OBJ_DRIVER_" + subsys[:-11].upper()
 
 
-def kobject_to_enum(ko):
-    return "K_OBJ_" + ko[2:].upper()
+def kobject_to_enum(kobj):
+    if kobj.startswith("k_") or kobj.startswith("_k_"):
+        name = kobj[2:]
+    else:
+        name = kobj
+
+    return "K_OBJ_%s" % name.upper()
 
 
 DW_OP_addr = 0x3
