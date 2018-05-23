@@ -12,7 +12,7 @@
  */
 
 #define SYS_LOG_DOMAIN "netlo"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_NETLO_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_NET_LOOPBACK_LEVEL
 #include <logging/sys_log.h>
 
 #include <misc/printk.h>
