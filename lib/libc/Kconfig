@@ -19,7 +19,7 @@ config NEWLIB_LIBC
 config NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 	int
 	prompt "Newlib aligned heap size"
-	depends on CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	depends on MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	depends on NEWLIB_LIBC
 	depends on USERSPACE
 	default 0
