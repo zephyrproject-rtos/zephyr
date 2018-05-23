@@ -176,7 +176,6 @@ static void update_cache(int preempt_ok)
 			th = _current;
 		}
 	}
-
 	_kernel.ready_q.cache = th;
 #endif
 }
@@ -339,7 +338,6 @@ void _thread_priority_set(struct k_thread *thread, int prio)
 int _reschedule(int key)
 {
 	if (!_is_in_isr() &&
-	    _is_preempt(_current) &&
 	    _get_next_ready_thread() != _current) {
 		return _Swap(key);
 	}
@@ -389,19 +387,10 @@ struct k_thread *_get_next_ready_thread(void)
 #ifdef CONFIG_USE_SWITCH
 void *_get_next_switch_handle(void *interrupted)
 {
-	if (!_is_preempt(_current) &&
-	    !(_current->base.thread_state & _THREAD_DEAD)) {
-		return interrupted;
-	}
-
 	_current->switch_handle = interrupted;
 
 	LOCKED(&sched_lock) {
-		struct k_thread *next = next_up();
-
-		if (next != _current) {
-			_current = next;
-		}
+		_current = _get_next_ready_thread();
 	}
 
 	_check_stack_sentinel();

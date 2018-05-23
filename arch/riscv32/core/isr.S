@@ -292,14 +292,6 @@ on_thread_stack:
 	lw t2, _kernel_offset_to_current(t1)
 
 	/*
-	 * If non-preemptible thread, do not schedule
-	 * (see explanation of preempt field in kernel_structs.h
-	 */
-	lhu t3, _thread_offset_to_preempt(t2)
-	li t4, _NON_PREEMPT_THRESHOLD
-	bgeu t3, t4, no_reschedule
-
-	/*
 	 * Check if next thread to schedule is current thread.
 	 * If yes do not perform a reschedule
 	 */

@@ -75,14 +75,6 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
 
     ldr r1, [r0, #_kernel_offset_to_current]
 
-    /*
-     * Non-preemptible thread ? Do not schedule (see explanation of
-     * preempt field in kernel_struct.h).
-     */
-    ldrh r2, [r1, #_thread_offset_to_preempt]
-    cmp r2, #_PREEMPT_THRESHOLD
-    bhi _EXIT_EXC
-
     ldr r0, [r0, _kernel_offset_to_ready_q_cache]
     cmp r0, r1
     beq _EXIT_EXC

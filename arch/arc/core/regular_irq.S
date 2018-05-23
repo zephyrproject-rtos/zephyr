@@ -109,16 +109,6 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	 * point on until return from interrupt.
 	 */
 
-
-	/*
-	 * Non-preemptible thread ? Do not schedule (see explanation of
-	 * preempt field in kernel_struct.h).
-	 */
-	ldh_s r0, [r2, _thread_offset_to_preempt]
-	mov r3, _NON_PREEMPT_THRESHOLD
-	cmp_s r0, r3
-	bhs.d _rirq_no_reschedule
-
 	/*
 	 * Both (a)reschedule and (b)non-reschedule cases need to load the
 	 * current thread's stack, but don't have to use it until the decision
