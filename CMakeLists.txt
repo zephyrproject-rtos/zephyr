@@ -237,7 +237,6 @@ else() # GCC assumed
   endif()
 endif()
 
-zephyr_cc_option_ifdef(CONFIG_DEBUG_SECTION_MISMATCH -fno-inline-functions-called-once)
 zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)
 
 zephyr_system_include_directories(${NOSTDINC})
