@@ -82,11 +82,9 @@ void _arch_isr_direct_footer(int swap)
 	 *
 	 * 1) swap argument was enabled to this function
 	 * 2) We are not in a nested interrupt
-	 * 3) Current thread is preemptible
-	 * 4) Next thread to run in the ready queue is not this thread
+	 * 3) Next thread to run in the ready queue is not this thread
 	 */
 	if (swap && !_kernel.nested &&
-	    _current->base.preempt < _NON_PREEMPT_THRESHOLD &&
 	    _kernel.ready_q.cache != _current) {
 		unsigned int flags;
 

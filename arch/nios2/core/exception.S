@@ -123,14 +123,6 @@ on_irq_stack:
 	 * switch
 	 */
 
-	/*
-	 * Non-preemptible thread ? Do not schedule (see explanation of
-	 * preempt field in kernel_struct.h).
-	 */
-	ldhu r12, _thread_offset_to_preempt(r11)
-	movui r3, _NON_PREEMPT_THRESHOLD
-	bgeu r12, r3, no_reschedule
-
 	/* Call into the kernel to see if a scheduling decision is necessary */
 	ldw  r2, _kernel_offset_to_ready_q_cache(r10)
 	beq  r2, r11, no_reschedule

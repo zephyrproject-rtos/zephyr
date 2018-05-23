@@ -149,13 +149,6 @@ SECTION_FUNC(TEXT, _firq_exit)
 	mov_s r1, _kernel
 	ld_s r2, [r1, _kernel_offset_to_current]
 
-	/*
-	 * Non-preemptible thread ? Do not schedule (see explanation of
-	 * preempt field in kernel_struct.h).
-	 */
-	ldh_s r0, [r2, _thread_offset_to_preempt]
-	brhs r0, _NON_PREEMPT_THRESHOLD, _firq_no_reschedule
-
 	/* Check if the current thread (in r2) is the cached thread */
 	ld_s r0, [r1, _kernel_offset_to_ready_q_cache]
 	brne r0, r2, _firq_reschedule
