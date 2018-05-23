@@ -26,7 +26,11 @@
 /* HTTP server to connect to */
 #define HTTP_HOST "google.com"
 /* Port to connect to, as string */
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+#define HTTP_PORT "443"
+#else
 #define HTTP_PORT "80"
+#endif
 /* HTTP path to request */
 #define HTTP_PATH "/"
 
@@ -74,7 +78,11 @@ int main(void)
 
 	dump_addrinfo(res);
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	sock = socket(res->ai_family, res->ai_socktype, IPPROTO_TLS_1_2);
+#else
 	sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+#endif
 	CHECK(sock);
 	printf("sock = %d\n", sock);
 	CHECK(connect(sock, res->ai_addr, res->ai_addrlen));
@@ -95,8 +103,10 @@ int main(void)
 		}
 
 		response[len] = 0;
-		printf("%s\n", response);
+		printf("%s", response);
 	}
+
+	printf("\n");
 
 	(void)close(sock);
 
