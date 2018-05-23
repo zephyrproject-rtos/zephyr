@@ -25,6 +25,15 @@
 #include <zephyr/types.h>
 #include <string.h>
 
+/* Recent GCC's are issuing a warning for the truncated strncpy()
+ * below (the static source string is longer than the locally-defined
+ * destination array).  That's exactly the case we're testing, so turn
+ * it off.
+ */
+#if defined(__GNUC__) && __GNUC__ >= 8
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
+
 /*
  * variables used during limits library testing; must be marked as "volatile"
  * to prevent compiler from computing results at compile time
