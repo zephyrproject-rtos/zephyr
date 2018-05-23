@@ -206,6 +206,12 @@ extern void smp_timer_init(void);
 extern void z_newlib_get_heap_bounds(void **base, size_t *size);
 #endif
 
+extern u32_t z_early_boot_rand32_get(void);
+
+#if CONFIG_STACK_POINTER_RANDOM
+extern int z_stack_adjust_initialized;
+#endif
+
 #ifdef __cplusplus
 }
 #endif
