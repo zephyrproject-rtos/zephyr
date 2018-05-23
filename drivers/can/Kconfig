@@ -45,14 +45,14 @@ config CAN_PHASE_SEG1_PROP_SEG
 	default 5
 	range 1 16
 	help
-	  Time quantums of phase buffer 1 segment + propagation segment (ISO 11898-1)
+	  Time quanta of phase buffer 1 segment + propagation segment (ISO 11898-1)
 
 config CAN_PHASE_SEG2
 	int "Phase_Seg2"
 	default 6
 	range 1 8
 	help
-	  Time quantums of phase buffer 2 segment (ISO 11898-1)
+	  Time quanta of phase buffer 2 segment (ISO 11898-1)
 
 config CAN_SJW
 	int "SJW"

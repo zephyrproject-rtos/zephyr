@@ -173,7 +173,7 @@ config BT_MESH_IVU_DIVIDER
 	  the state at least for 96 hours (Update in Progress has an
 	  additional upper limit of 144 hours).
 
-	  In order to fulfil the above requirement, even if the node might
+	  In order to fulfill the above requirement, even if the node might
 	  be powered off once in a while, we need to store persistently
 	  how many hours the node has been in the state. This doesn't
 	  necessarily need to happen every hour (thanks to the flexible
