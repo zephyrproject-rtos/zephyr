@@ -33,18 +33,6 @@ static struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("PPB_0",
 			 PPB_BASE,
 			 REGION_PPB_ATTR(REGION_256M)),
-#if defined(CONFIG_BL_APPLICATION)
-	/* Region 5 */
-	/*
-	 * The application booting from a bootloader has no access to the
-	 * bootloader region. This behavior can be changed at runtime by
-	 * the bootloader.
-	 */
-	MPU_REGION_ENTRY("BOOTLOADER_0",
-			 CONFIG_FLASH_BASE_ADDRESS,
-			 (NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE |
-			  REGION_32K | P_NA_U_NA)),
-#endif
 };
 
 struct arm_mpu_config mpu_config = {
