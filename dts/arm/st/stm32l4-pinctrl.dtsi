@@ -57,6 +57,12 @@
 					tx = <STM32_PIN_PB10 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
 				};
 			};
+			can_pins_a: can@0 {
+				rx_tx {
+					rx = <STM32_PIN_PA11 (STM32_PINMUX_ALT_FUNC_9 | STM32_PUPDR_PULL_UP)>;
+					tx = <STM32_PIN_PA12 (STM32_PINMUX_ALT_FUNC_9 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
 		};
 	};
 };

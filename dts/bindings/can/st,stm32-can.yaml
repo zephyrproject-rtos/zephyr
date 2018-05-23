@@ -28,6 +28,12 @@ properties:
       description: required interrupts
       generation: define
 
+    interrupt-names:
+      type: array
+      category: optional
+      description: names off the interrupt lines
+      generation: define
+
     gpio-port:
       type: string
       category: required
