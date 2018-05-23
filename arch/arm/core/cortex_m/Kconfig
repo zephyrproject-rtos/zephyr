@@ -127,9 +127,9 @@ config CPU_CORTEX_M_HAS_VTOR
 	  This option signifies the CPU has the VTOR register.
 	  The VTOR indicates the offset of the vector table base
 	  address from memory address 0x00000000. Always present
-	  in CPUs implementing the ARMv7-M or ARMv8-M architetures.
+	  in CPUs implementing the ARMv7-M or ARMv8-M architectures.
 	  Optional in CPUs implementing ARMv6-M, ARMv8-M Baseline
-	  architetures (except for Cortex-M0, where it is never
+	  architectures (except for Cortex-M0, where it is never
 	  implemented).
 
 config CPU_CORTEX_M_HAS_SPLIM
