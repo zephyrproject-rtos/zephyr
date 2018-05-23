@@ -34,22 +34,31 @@ endif # UART_NRFX
 
 if I2C
 
-config I2C_NRF5
+config I2C_NRFX
 	def_bool y
 
+if I2C_NRFX
+
 config I2C_0
-	default y
+	def_bool y
 
-endif # I2C
+endif #I2C_NRFX
 
-if I2C_NRF5
+if I2C_0
 
-config I2C_NRF5_0_GPIO_SCL_PIN
-	default 27
+choice I2C_0_NRF_TYPE
+	default I2C_0_NRF_TWIM
 
-config I2C_NRF5_0_GPIO_SDA_PIN
+endchoice
+
+config I2C_0_NRF_SDA_PIN
 	default 26
 
-endif # I2C_NRF5
+config I2C_0_NRF_SCL_PIN
+	default 27
+
+endif # I2C_0
+
+endif # I2C
 
 endif # BOARD_NRF52_VBLUNO52
