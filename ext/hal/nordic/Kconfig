@@ -19,5 +19,11 @@ config NRFX_SPIM
 config NRFX_SPIS
 	bool
 
+config NRFX_TWI
+	bool
+
+config NRFX_TWIM
+	bool
+
 config NRFX_WDT
 	bool

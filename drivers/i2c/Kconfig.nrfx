@@ -1,0 +1,99 @@
+# Kconfig - nrfx I2C support
+#
+# Copyright (c) 2018, Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig I2C_NRFX
+	bool "nRF TWI nrfx drivers"
+	depends on SOC_FAMILY_NRF
+	help
+	  Enable support for nrfx TWI drivers for nRF MCU series.
+	  Peripherals with the same instance ID cannot be used together,
+	  e.g. I2C_0 and SPI_0. You may need to disable SPI_0 or SPI_1.
+
+if I2C_NRFX
+
+# Nordic TWIx0 and SPIx0 instances can not be used at the same time.
+if I2C_0 && !SPI_0
+
+choice I2C_0_NRF_TYPE
+	prompt "I2C Port 0 Driver type"
+
+config I2C_0_NRF_TWI
+	bool "nRF TWI 0"
+	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF51X
+	select NRFX_TWI
+	help
+	  Enable nRF TWI Master without EasyDMA on port 0.
+
+config I2C_0_NRF_TWIM
+	bool "nRF TWIM 0"
+	depends on SOC_SERIES_NRF52X
+	select NRFX_TWIM
+	help
+	  Enable nRF TWI Master with EasyDMA on port 0.
+	  This peripheral accepts transfers from RAM only,
+	  if provided buffer is placed in flash, transfer will fail.
+
+endchoice
+
+config I2C_0_NRF_SDA_PIN
+	int "SDA pin number"
+	range 0 47 if SOC_NRF52840_QIAA
+	range 0 31
+	help
+	  GPIO pin number to use for SDA.
+
+config I2C_0_NRF_SCL_PIN
+	int "SCL pin number"
+	range 0 47 if SOC_NRF52840_QIAA
+	range 0 31
+	help
+	  GPIO pin number to use for SCL.
+
+endif # I2C_0 && !SPI_0
+
+# Nordic TWIx1 and SPIx1 instances can not be used at the same time.
+if I2C_1 && !SPI_1
+
+choice I2C_1_NRF_TYPE
+	prompt "I2C Port 1 Driver type"
+
+config I2C_1_NRF_TWI
+	bool "nRF TWI 1"
+	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF51X
+	select NRFX_TWI
+	help
+	  Enable nRF TWI Master without EasyDMA on port 1.
+
+config I2C_1_NRF_TWIM
+	bool "nRF TWIM 1"
+	depends on SOC_SERIES_NRF52X
+	select NRFX_TWIM
+	help
+	  Enable nRF TWI Master with EasyDMA on port 1.
+	  This peripheral accepts transfers from RAM only,
+	  if provided buffer is placed in flash, transfer will fail.
+
+endchoice
+
+config I2C_1_NRF_SDA_PIN
+	int "SDA pin number"
+	range 0 47 if SOC_NRF52840_QIAA
+	range 0 31
+	help
+	  GPIO pin number to use for SDA.
+
+config I2C_1_NRF_SCL_PIN
+	int "SCL pin number"
+	range 0 47 if SOC_NRF52840_QIAA
+	range 0 31
+	help
+	  GPIO pin number to use for SCL.
+
+endif # I2C_1 && !SPI_1
+
+endif #I2C_NRFX
+
