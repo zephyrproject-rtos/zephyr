@@ -1,6 +1,6 @@
 include(ExternalProject)
 
-include($ENV{ZEPHYR_BASE}/ext/lib/ipc/libmetal.cmake)
+include($ENV{ZEPHYR_BASE}/ext/hal/libmetal/libmetal.cmake)
 
 ExternalProject_Add(
   open-amp
