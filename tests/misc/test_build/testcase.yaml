@@ -12,10 +12,6 @@ tests:
     build_only: true
     extra_args: CONF_FILE=runtime_nmi.conf
     tags: apps
-  test_gdb_server:
-    build_only: true
-    extra_configs:
-      - CONFIG_GDB_SERVER=y
   test_mcuboot_bootloader:
     build_only: true
     platform_whitelist: nrf51_pca10028 nrf52_pca10040
