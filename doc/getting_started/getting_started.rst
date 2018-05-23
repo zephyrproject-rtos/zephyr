@@ -243,7 +243,7 @@ Running a Sample Application natively (POSIX OS)
 It is also possible to compile some of the sample and test applications to run
 as native process on a POSIX OS (e.g. Linux).
 To be able to do this, remember to have installed the 32 bit libC if your OS is
-natively 64bit. See the :ref:`native_posix` section on host depencencies
+natively 64bit. See the :ref:`native_posix` section on host dependencies
 for more information.
 
 To compile and run an application in this way, type:

@@ -92,7 +92,7 @@ support systems:
   way to track developer discussions and to ask your own support questions to
   the Zephyr project community.  There are also specific `Zephyr mailing list
   subgroups`_ for announcements, builds, marketing, and Technical
-  Steering Committe notes, for example.
+  Steering Committee notes, for example.
   You can read through the message archives to follow
   past posts and discussions, a good thing to do to discover more about the
   Zephyr project.

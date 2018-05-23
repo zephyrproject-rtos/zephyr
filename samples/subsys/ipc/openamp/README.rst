@@ -6,7 +6,7 @@ OpenAMP Sample Application
 Overview
 ********
 
-This application demostrates how to use OpenAMP with Zephyr. It is designed to
+This application demonstrates how to use OpenAMP with Zephyr. It is designed to
 demonstrate how to integrate OpenAMP with Zephyr both from a build perspective
 and code.
 
