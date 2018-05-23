@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,24 +24,42 @@
 #include <net/socket.h>
 #include <kernel.h>
 #include <net/net_app.h>
+#include <net/net_tls.h>
+#include "tls_default_credentials.h"
+
 #define sleep(x) k_sleep(x * 1000)
 
 #endif
 
 /* This URL is parsed in-place, so buffer must be non-const. */
 static char download_url[] =
+#if !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
     "http://archive.ubuntu.com/ubuntu/dists/xenial/main/installer-amd64/current/images/hd-media/vmlinuz";
+#else
+    "https://www.7-zip.org/a/7z1805.exe";
+#endif /* !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 /* Quick testing. */
 /*    "http://google.com/foo";*/
 
 /* print("".join(["\\x%02x" % x for x in list(binascii.unhexlify("hash"))])) */
-static uint8_t download_hash[32] = "\x33\x7c\x37\xd7\xec\x00\x34\x84\x14\x22\x4b\xaa\x6b\xdb\x2d\x43\xf2\xa3\x4e\xf5\x67\x6b\xaf\xcd\xca\xd9\x16\xf1\x48\xb5\xb3\x17";
+static uint8_t download_hash[32] =
+#if !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+"\x33\x7c\x37\xd7\xec\x00\x34\x84\x14\x22\x4b\xaa\x6b\xdb\x2d\x43\xf2\xa3\x4e\xf5\x67\x6b\xaf\xcd\xca\xd9\x16\xf1\x48\xb5\xb3\x17";
+#else
+"\x65\xdb\x32\xfb\x76\x31\x6f\x07\x05\xd0\x82\xa4\x3e\x6a\x6a\xef\x6a\xca\xdf\x56\xcf\xd9\xcd\x52\xe1\x46\xc5\xf2\xd0\x0a\xb6\x42";
+#endif /* !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 
 #define SSTRLEN(s) (sizeof(s) - 1)
 #define CHECK(r) { if (r == -1) { printf("Error: " #r "\n"); exit(1); } }
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+const bool tls_enabled = true;
+#else
+const bool tls_enabled;
+#endif
+
 const char *host;
-const char *port = "80";
+const char *port;
 const char *uri_path = "";
 static char response[1024];
 static char response_hash[32];
@@ -119,9 +138,23 @@ void download(struct addrinfo *ai)
 
 	cur_bytes = 0;
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	sock = socket(ai->ai_family, ai->ai_socktype, IPPROTO_TLS_1_2);
+#else
 	sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+#endif
 	CHECK(sock);
 	printf("sock = %d\n", sock);
+
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	sec_tag_t sec_tag_opt[] = {
+		NET_TLS_DEFAULT_CA_CERTIFICATE_TAG,
+	};
+
+	CHECK(setsockopt(sock, SOL_TLS, TLS_SEC_TAG_LIST,
+			 sec_tag_opt, sizeof(sec_tag_opt)));
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
+
 	CHECK(connect(sock, ai->ai_addr, ai->ai_addrlen));
 	sendall(sock, "GET /", SSTRLEN("GET /"));
 	sendall(sock, uri_path, strlen(uri_path));
@@ -186,11 +219,16 @@ int main(void)
 
 	setbuf(stdout, NULL);
 
-	if (strncmp(download_url, "http://", SSTRLEN("http://")) != 0) {
-		fatal("Only http: URLs are supported");
+	if (strncmp(download_url, "http://", SSTRLEN("http://")) == 0) {
+		port = "80";
+		p = download_url + SSTRLEN("http://");
+	} else if (strncmp(download_url, "https://",
+		   SSTRLEN("https://")) == 0) {
+		port = "443";
+		p = download_url + SSTRLEN("https://");
+	} else {
+		fatal("Only http: and https: URLs are supported");
 	}
-
-	p = download_url + SSTRLEN("http://");
 
 	/* Parse host part */
 	host = p;
@@ -214,8 +252,8 @@ int main(void)
 		uri_path = p;
 	}
 
-	printf("Preparing HTTP GET request for http://%s:%s/%s\n",
-	       host, port, uri_path);
+	printf("Preparing HTTP GET request for http%s://%s:%s/%s\n",
+		       (tls_enabled ? "s" : ""), host, port, uri_path);
 
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
