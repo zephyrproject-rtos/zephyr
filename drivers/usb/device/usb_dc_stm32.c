@@ -360,7 +360,7 @@ int usb_dc_attach(void)
 	 * USB can function. Refer to section 5.1.3 in DM00083560 or
 	 * DM00310109.
 	 */
-#ifdef PWR_CR2_PVME1
+#ifdef PWR_CR2_USV
 	if (LL_APB1_GRP1_IsEnabledClock(LL_APB1_GRP1_PERIPH_PWR)) {
 		LL_PWR_EnableVddUSB();
 	} else {
@@ -368,7 +368,7 @@ int usb_dc_attach(void)
 		LL_PWR_EnableVddUSB();
 		LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_PWR);
 	}
-#endif /* PWR_CR2_PVME1 */
+#endif /* PWR_CR2_USV */
 
 	return 0;
 }
