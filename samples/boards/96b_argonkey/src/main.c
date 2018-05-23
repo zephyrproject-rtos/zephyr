@@ -215,16 +215,6 @@ void main(void)
 	}
 #endif
 
-#ifdef CONFIG_ILS29035
-	struct device *light_dev = device_get_binding(CONFIG_ISL29035_NAME);
-
-	if (!hum_dev) {
-		printk("Could not get pointer to %s sensor\n",
-			CONFIG_ISL29035_NAME);
-		return;
-	}
-#endif
-
 #ifdef CONFIG_LSM6DSL_TRIGGER
 	struct sensor_trigger trig;
 
@@ -239,9 +229,6 @@ void main(void)
 #endif
 #ifdef CONFIG_HTS221
 		struct sensor_value humidity;
-#endif
-#ifdef CONFIG_ILS29035
-		struct sensor_value light;
 #endif
 #ifdef CONFIG_LSM6DSL
 		struct sensor_value accel_x, accel_y, accel_z;
@@ -327,12 +314,6 @@ void main(void)
 #endif
 
 #endif /* CONFIG_LSM6DSL */
-
-#ifdef CONFIG_ILS29035
-		sensor_sample_fetch(light_dev);
-		sensor_channel_get(light_dev, SENSOR_CHAN_ALL, &light);
-		printk("light %d.%06d\n", light.val1, light.val2);
-#endif
 
 		printk("- (%d) (trig_cnt: %d)\n\n", ++cnt, lsm6dsl_trig_cnt);
 		k_sleep(2000);
