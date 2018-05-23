@@ -26,6 +26,7 @@
 #include <syscall_handler.h>
 #include <kernel_internal.h>
 #include <kswap.h>
+#include <init.h>
 
 extern struct _static_thread_data _static_thread_data_list_start[];
 extern struct _static_thread_data _static_thread_data_list_end[];
@@ -254,15 +255,25 @@ static inline size_t adjust_stack_size(size_t stack_size)
 	return stack_size;
 }
 #else
+int z_stack_adjust_initialized;
+
 static inline size_t adjust_stack_size(size_t stack_size)
 {
+	size_t random_val;
+
+	if (!z_stack_adjust_initialized) {
+		random_val = z_early_boot_rand32_get();
+	} else {
+		random_val = sys_rand32_get();
+	}
+
 	/* Don't need to worry about alignment of the size here, _new_thread()
 	 * is required to do it
 	 *
 	 * FIXME: Not the best way to get a random number in a range.
 	 * See #6493
 	 */
-	const size_t fuzz = sys_rand32_get() % CONFIG_STACK_POINTER_RANDOM;
+	const size_t fuzz = random_val % CONFIG_STACK_POINTER_RANDOM;
 
 	if (unlikely(fuzz * 2 > stack_size)) {
 		return stack_size;
@@ -270,7 +281,6 @@ static inline size_t adjust_stack_size(size_t stack_size)
 
 	return stack_size - fuzz;
 }
-
 #if defined(CONFIG_STACK_GROWS_UP)
 	/* This is so rare not bothering for now */
 #error "Stack pointer randomization not implemented for upward growing stacks"

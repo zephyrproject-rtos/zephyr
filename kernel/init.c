@@ -29,6 +29,7 @@
 #include <misc/dlist.h>
 #include <kernel_internal.h>
 #include <kswap.h>
+#include <entropy.h>
 
 /* kernel build timestamp items */
 #define BUILD_TIMESTAMP "BUILD: " __DATE__ " " __TIME__
@@ -206,6 +207,9 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused3);
 
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_POST_KERNEL);
+#if CONFIG_STACK_POINTER_RANDOM
+	z_stack_adjust_initialized = 1;
+#endif
 	if (boot_delay > 0) {
 		printk("***** delaying boot " STRINGIFY(CONFIG_BOOT_DELAY)
 		       "ms (per build configuration) *****\n");
@@ -374,26 +378,20 @@ static void switch_to_main_thread(void)
 #endif
 }
 
-#ifdef CONFIG_STACK_CANARIES
-#include <entropy.h>
-
-extern uintptr_t __stack_chk_guard;
-
-static inline void _initialize_stack_canaries(void)
+u32_t z_early_boot_rand32_get(void)
 {
 #ifdef CONFIG_ENTROPY_HAS_DRIVER
 	struct device *entropy = device_get_binding(CONFIG_ENTROPY_NAME);
 	int rc;
+	u32_t retval;
 
 	if (entropy == NULL) {
 		goto sys_rand32_fallback;
 	}
 
-	rc = entropy_get_entropy(entropy,
-				 (u8_t *)&__stack_chk_guard,
-				 sizeof(__stack_chk_guard));
+	rc = entropy_get_entropy(entropy, (u8_t *)&retval, sizeof(retval));
 	if (rc == 0) {
-		return;
+		return retval;
 	}
 
 	/* FIXME: rc could be -EAGAIN here, for cases where the entropy
@@ -410,8 +408,11 @@ sys_rand32_fallback:
 	 * devices are available should be built, this is only a fallback for
 	 * those devices without a HWRNG entropy driver.
 	 */
-	__stack_chk_guard = (uintptr_t)sys_rand32_get();
+	return sys_rand32_get();
 }
+
+#ifdef CONFIG_STACK_CANARIES
+extern uintptr_t __stack_chk_guard;
 #endif /* CONFIG_STACK_CANARIES */
 
 /**
@@ -455,7 +456,7 @@ FUNC_NORETURN void _Cstart(void)
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_2);
 
 #ifdef CONFIG_STACK_CANARIES
-	_initialize_stack_canaries();
+	__stack_chk_guard = z_early_boot_rand32_get();
 #endif
 
 	prepare_multithreading(dummy_thread);
