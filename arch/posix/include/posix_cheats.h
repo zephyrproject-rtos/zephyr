@@ -26,6 +26,7 @@
 #ifdef CONFIG_PTHREAD_IPC
 
 #define timespec zap_timespec
+#define timeval  zap_timeval
 #define pthread_mutex_t zap_pthread_mutex_t
 #define pthread_mutexattr_t    zap_pthread_mutexattr_t
 #define pthread_cond_t         zap_pthread_cond_t
@@ -131,6 +132,7 @@
 /* Clock */
 #define clock_gettime(...)		zap_clock_gettime(__VA_ARGS__)
 #define clock_settime(...)		zap_clock_settime(__VA_ARGS__)
+#define gettimeofday(...)		zap_clock_gettimeofday(__VA_ARGS__)
 
 /* Timer */
 #define timer_create(...)	zap_timer_create(__VA_ARGS__)

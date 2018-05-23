@@ -29,3 +29,24 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts)
 
 	return 0;
 }
+
+/**
+ * @brief Get current real time.
+ *
+ * See IEEE 1003.1
+ */
+int gettimeofday(struct timeval *tv, const void *tz)
+{
+	struct timespec ts;
+	int res;
+
+	/* As per POSIX, "if tzp is not a null pointer, the behavior
+	 * is unspecified."  "tzp" is the "tz" parameter above. */
+	ARG_UNUSED(tv);
+
+	res = clock_gettime(CLOCK_REALTIME, &ts);
+	tv->tv_sec = ts.tv_sec;
+	tv->tv_usec = ts.tv_nsec / NSEC_PER_USEC;
+
+	return res;
+}
