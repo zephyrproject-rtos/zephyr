@@ -304,6 +304,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 	/* _kernel.ready_q is all zeroes */
 	_sched_init();
+	initialize_timeouts();
 
 #ifndef CONFIG_SMP
 	/*
@@ -353,9 +354,6 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	_kernel.cpus[3].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack3)
 		+ CONFIG_ISR_STACK_SIZE;
 #endif
-
-	initialize_timeouts();
-
 }
 
 static void switch_to_main_thread(void)
@@ -375,44 +373,8 @@ static void switch_to_main_thread(void)
 }
 
 #ifdef CONFIG_STACK_CANARIES
-#include <entropy.h>
-
-extern uintptr_t __stack_chk_guard;
-
-static inline void _initialize_stack_canaries(void)
-{
-#ifdef CONFIG_ENTROPY_HAS_DRIVER
-	struct device *entropy = device_get_binding(CONFIG_ENTROPY_NAME);
-	int rc;
-
-	if (entropy == NULL) {
-		goto sys_rand32_fallback;
-	}
-
-	rc = entropy_get_entropy(entropy,
-				 (u8_t *)&__stack_chk_guard,
-				 sizeof(__stack_chk_guard));
-	if (rc == 0) {
-		return;
-	}
-
-	/* FIXME: rc could be -EAGAIN here, for cases where the entropy
-	 * driver doesn't yet have the requested amount of entropy.  In
-	 * the meantime, just use the fallback with sys_rand32_get().
-	 */
-
-sys_rand32_fallback:
+extern void *__stack_chk_guard;
 #endif
-
-	/* FIXME: this assumes sys_rand32_get() won't use any synchronization
-	 * primitive, like semaphores or mutexes.  It's too early in the boot
-	 * process to use any of them.  Ideally, only the path where entropy
-	 * devices are available should be built, this is only a fallback for
-	 * those devices without a HWRNG entropy driver.
-	 */
-	__stack_chk_guard = (uintptr_t)sys_rand32_get();
-}
-#endif /* CONFIG_STACK_CANARIES */
 
 /**
  *
@@ -454,12 +416,11 @@ FUNC_NORETURN void _Cstart(void)
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_1);
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_2);
 
-#ifdef CONFIG_STACK_CANARIES
-	_initialize_stack_canaries();
-#endif
-
 	prepare_multithreading(dummy_thread);
-
+	/* initialize stack canaries */
+#ifdef CONFIG_STACK_CANARIES
+	__stack_chk_guard = (void *)sys_rand32_get();
+#endif
 	/* display boot banner */
 
 	switch_to_main_thread();
