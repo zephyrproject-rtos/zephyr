@@ -53,7 +53,7 @@ static void tmpool_api(void *p1, void *p2, void *p3)
  *
  * @details The test creates 4 threads of equal priority and
  * invokes memory pool APIs on same memory domain. Checks for
- * the synronization of threads on the resource memory pool.
+ * the synchronization of threads on the resource memory pool.
  * Each thread allocates 4 blocks of size 4 bytes (all blocks
  * in memory pool) with timeout of 200 ms and frees up all the
  * blocks

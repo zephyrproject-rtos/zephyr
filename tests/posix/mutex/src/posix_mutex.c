@@ -52,7 +52,7 @@ void *recursive_mutex_entry(void *p1)
 }
 
 /**
- * @brief Test to demostrate PTHREAD_MUTEX_NORMAL
+ * @brief Test to demonstrate PTHREAD_MUTEX_NORMAL
  *
  * @details Mutex type is setup as normal. pthread_mutex_trylock
  *	    and pthread_mutex_lock are tested with mutex type being
@@ -111,7 +111,7 @@ static void test_mutex_normal(void)
 }
 
 /**
- * @brief Test to demostrate PTHREAD_MUTEX_RECURSIVE
+ * @brief Test to demonstrate PTHREAD_MUTEX_RECURSIVE
  *
  * @details Mutex type is setup as recursive. mutex will be locked
  *	    twice and unlocked for the same number of time.

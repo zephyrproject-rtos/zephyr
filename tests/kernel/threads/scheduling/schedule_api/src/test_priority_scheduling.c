@@ -57,7 +57,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
  *
  * @details Create multiple threads of different priorities - all are preemptive,
  * current thread is also made preemptive. Check how the threads get chance to
- * exeucte based on their priorities
+ * execute based on their priorities
  */
 void test_priority_scheduling(void)
 {
