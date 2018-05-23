@@ -29,17 +29,17 @@
 #include "function_rndis.h"
 
 /* RNDIS handling */
-#define CONFIG_RNDIS_TX_BUF_COUNT	5
-#define CONFIG_RNDIS_TX_BUF_SIZE	512
-NET_BUF_POOL_DEFINE(rndis_tx_pool, CONFIG_RNDIS_TX_BUF_COUNT,
-		    CONFIG_RNDIS_TX_BUF_SIZE, 0, NULL);
+#define CFG_RNDIS_TX_BUF_COUNT	5
+#define CFG_RNDIS_TX_BUF_SIZE	512
+NET_BUF_POOL_DEFINE(rndis_tx_pool, CFG_RNDIS_TX_BUF_COUNT,
+		    CFG_RNDIS_TX_BUF_SIZE, 0, NULL);
 static struct k_fifo rndis_tx_queue;
 
 /* Serialize RNDIS command queue for later processing */
-#define CONFIG_RNDIS_CMD_BUF_COUNT	2
-#define CONFIG_RNDIS_CMD_BUF_SIZE	512
-NET_BUF_POOL_DEFINE(rndis_cmd_pool, CONFIG_RNDIS_CMD_BUF_COUNT,
-		    CONFIG_RNDIS_CMD_BUF_SIZE, 0, NULL);
+#define CFG_RNDIS_CMD_BUF_COUNT	2
+#define CFG_RNDIS_CMD_BUF_SIZE	512
+NET_BUF_POOL_DEFINE(rndis_cmd_pool, CFG_RNDIS_CMD_BUF_COUNT,
+		    CFG_RNDIS_CMD_BUF_SIZE, 0, NULL);
 static struct k_fifo rndis_cmd_queue;
 
 static struct k_delayed_work notify_work;
