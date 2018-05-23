@@ -9,7 +9,7 @@ import argparse
 import pprint
 import os
 import struct
-from elf_helper import ElfHelper
+from elf_helper import ElfHelper, kobject_to_enum
 
 kobjects = [
     "k_alert",
@@ -150,12 +150,7 @@ def write_kobj_types_output(fp):
         if kobj == "device":
             continue
 
-        if kobj.startswith("k_"):
-            kobj = kobj[2:]
-        elif kobj.startswith("_k_"):
-            kobj = kobj[2:]
-
-        fp.write("K_OBJ_%s,\n" % kobj.upper())
+        fp.write("%s,\n" % kobject_to_enum(kobj))
 
     fp.write("/* Driver subsystems */\n")
     for subsystem in subsystems:
@@ -169,15 +164,7 @@ def write_kobj_otype_output(fp):
         if kobj == "device":
             continue
 
-        if kobj.startswith("k_"):
-            kobj = kobj[2:]
-        elif kobj.startswith("_k_"):
-            kobj = kobj[2:]
-
-        fp.write('case K_OBJ_%s: return "%s";\n' % (
-            kobj.upper(),
-            kobj
-        ))
+        fp.write('case %s: return "%s";\n' % (kobject_to_enum(kobj), kobj))
 
     fp.write("/* Driver subsystems */\n")
     for subsystem in subsystems:
@@ -195,9 +182,8 @@ def write_kobj_size_output(fp):
         if kobj == "device" or kobj == "_k_thread_stack_element":
             continue
 
-        kobj_enum = "K_OBJ_%s" % kobj[2:].upper();
-
-        fp.write('case %s: return sizeof(struct %s);\n' % (kobj_enum, kobj))
+        fp.write('case %s: return sizeof(struct %s);\n' %
+                (kobject_to_enum(kobj), kobj))
 
 def parse_args():
     global args
