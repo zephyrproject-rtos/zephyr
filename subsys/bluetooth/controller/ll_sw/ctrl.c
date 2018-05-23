@@ -3267,7 +3267,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 			conn->llcp_ack--;
 		}
 		break;
-#endif /* CONFIG_BT_MIN_USED_CHAN */
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 
 	default:
 isr_rx_conn_unknown_rsp_send:

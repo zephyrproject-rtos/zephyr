@@ -94,7 +94,7 @@ static const char *state2str(int state)
 		return "(unknown)";
 	}
 }
-#endif /* CONFIG_BT_MESH_DEBUG_LPN */
+#endif /* CONFIG_BT_MESH_DEBUG_LOW_POWER */
 
 static inline void lpn_set_state(int state)
 {
