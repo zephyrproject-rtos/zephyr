@@ -147,7 +147,7 @@ static void test_change_mac_when_up(void)
 		       &params, sizeof(struct ethernet_req_params));
 
 	zassert_not_equal(ret, 0,
-			  "mac address change should not be possible\n");
+			  "mac address change should not be possible");
 }
 
 static void test_change_mac_when_down(void)
@@ -163,12 +163,12 @@ static void test_change_mac_when_down(void)
 	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_MAC_ADDRESS, iface,
 		       &params, sizeof(struct ethernet_req_params));
 
-	zassert_equal(ret, 0, "unable to change mac address\n");
+	zassert_equal(ret, 0, "unable to change mac address");
 
 	ret = memcmp(net_if_get_link_addr(iface)->addr, mac_addr_change,
 		     sizeof(mac_addr_change));
 
-	zassert_equal(ret, 0, "invalid mac address change\n");
+	zassert_equal(ret, 0, "invalid mac address change");
 
 	net_if_up(iface);
 }
@@ -184,7 +184,7 @@ static void test_change_auto_neg(void)
 	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_AUTO_NEGOTIATION, iface,
 		       &params, sizeof(struct ethernet_req_params));
 
-	zassert_equal(ret, 0, "invalid auto negotiation change\n");
+	zassert_equal(ret, 0, "invalid auto negotiation change");
 }
 
 static void test_change_to_same_auto_neg(void)
@@ -199,7 +199,7 @@ static void test_change_to_same_auto_neg(void)
 		       &params, sizeof(struct ethernet_req_params));
 
 	zassert_not_equal(ret, 0,
-			  "invalid change to already auto negotiation\n");
+			  "invalid change to already auto negotiation");
 }
 
 static void test_change_link(void)
@@ -213,7 +213,7 @@ static void test_change_link(void)
 	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_LINK, iface,
 		       &params, sizeof(struct ethernet_req_params));
 
-	zassert_equal(ret, 0, "invalid link change\n");
+	zassert_equal(ret, 0, "invalid link change");
 }
 
 static void test_change_same_link(void)
@@ -227,7 +227,7 @@ static void test_change_same_link(void)
 	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_LINK, iface,
 		       &params, sizeof(struct ethernet_req_params));
 
-	zassert_not_equal(ret, 0, "invalid same link change\n");
+	zassert_not_equal(ret, 0, "invalid same link change");
 }
 
 static void test_change_unsupported_link(void)
@@ -241,7 +241,7 @@ static void test_change_unsupported_link(void)
 	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_LINK, iface,
 		       &params, sizeof(struct ethernet_req_params));
 
-	zassert_not_equal(ret, 0, "invalid change to unsupported link\n");
+	zassert_not_equal(ret, 0, "invalid change to unsupported link");
 }
 
 static void test_change_duplex(void)
@@ -255,7 +255,7 @@ static void test_change_duplex(void)
 	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_DUPLEX, iface,
 		       &params, sizeof(struct ethernet_req_params));
 
-	zassert_equal(ret, 0, "invalid duplex change\n");
+	zassert_equal(ret, 0, "invalid duplex change");
 }
 
 static void test_change_same_duplex(void)
@@ -269,7 +269,7 @@ static void test_change_same_duplex(void)
 	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_DUPLEX, iface,
 		       &params, sizeof(struct ethernet_req_params));
 
-	zassert_not_equal(ret, 0, "invalid change to already set duplex\n");
+	zassert_not_equal(ret, 0, "invalid change to already set duplex");
 }
 
 void test_main(void)

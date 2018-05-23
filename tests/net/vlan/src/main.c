@@ -124,7 +124,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 
 		zassert_equal(context->expecting_tag,
 			      net_eth_vlan_get_vid(ntohs(hdr->vlan.tci)),
-			      "Invalid VLAN tag in ethernet header\n");
+			      "Invalid VLAN tag in ethernet header");
 
 		k_sem_give(&wait_data);
 	}
@@ -315,7 +315,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		dummy_interfaces[ud->dummy_if_count++] = iface;
 
 		zassert_true(ud->dummy_if_count <= 2,
-			     "Too many dummy interfaces\n");
+			     "Too many dummy interfaces");
 	}
 
 	/* By default all interfaces are down initially */
@@ -337,11 +337,11 @@ static void test_vlan_setup(void)
 		      ud.eth_if_count, NET_VLAN_MAX_COUNT);
 
 	zassert_equal(ud.total_if_count, NET_VLAN_MAX_COUNT + 1 + 2,
-		      "Invalid numer of interfaces\n");
+		      "Invalid numer of interfaces");
 
 	/* Put the extra non-vlan ethernet interface to last */
 	eth_interfaces[4] = extra_eth;
-	zassert_not_null(extra_eth, "Extra interface missing\n");
+	zassert_not_null(extra_eth, "Extra interface missing");
 	zassert_equal_ptr(net_if_l2(extra_eth), &NET_L2_GET_NAME(ETHERNET),
 			  "Invalid L2 type %p for iface %p (should be %p)\n",
 			  net_if_l2(extra_eth), extra_eth,
@@ -357,16 +357,16 @@ static void test_address_setup(void)
 	iface2 = eth_interfaces[0]; /* and this one not */
 	iface3 = eth_interfaces[3]; /* and this one has VLAN enabled */
 
-	zassert_not_null(iface1, "Interface 1\n");
-	zassert_not_null(iface2, "Interface 2\n");
-	zassert_not_null(iface3, "Interface 3\n");
+	zassert_not_null(iface1, "Interface 1");
+	zassert_not_null(iface2, "Interface 2");
+	zassert_not_null(iface3, "Interface 3");
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr1));
-		zassert_not_null(ifaddr, "addr1\n");
+		zassert_not_null(ifaddr, "addr1");
 	}
 
 	/* For testing purposes we need to set the adddresses preferred */
@@ -377,7 +377,7 @@ static void test_address_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&ll_addr));
-		zassert_not_null(ifaddr, "ll_addr\n");
+		zassert_not_null(ifaddr, "ll_addr");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -387,7 +387,7 @@ static void test_address_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr2));
-		zassert_not_null(ifaddr, "addr2\n");
+		zassert_not_null(ifaddr, "addr2");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -397,7 +397,7 @@ static void test_address_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr3));
-		zassert_not_null(ifaddr, "addr3\n");
+		zassert_not_null(ifaddr, "addr3");
 	}
 
 	net_if_up(iface1);
@@ -428,70 +428,70 @@ static void test_vlan_tci(void)
 	net_pkt_set_vlan_priority(pkt, priority);
 
 	zassert_equal(net_pkt_vlan_tag(pkt), NET_VLAN_TAG_UNSPEC,
-		      "invalid VLAN tag unspec\n");
+		      "invalid VLAN tag unspec");
 	zassert_equal(net_pkt_vlan_priority(pkt), priority,
-		      "invalid VLAN priority\n");
+		      "invalid VLAN priority");
 
 	net_pkt_set_vlan_tag(pkt, 0);
-	zassert_equal(net_pkt_vlan_tag(pkt), 0, "invalid VLAN tag\n");
+	zassert_equal(net_pkt_vlan_tag(pkt), 0, "invalid VLAN tag");
 
 	/* TCI should be zero now */
-	zassert_equal(net_pkt_vlan_tci(pkt), 0, "invalid VLAN TCI\n");
+	zassert_equal(net_pkt_vlan_tci(pkt), 0, "invalid VLAN TCI");
 
 	priority = 1;
 	net_pkt_set_vlan_priority(pkt, priority);
 
 	zassert_equal(net_pkt_vlan_priority(pkt), priority,
-		      "invalid VLAN priority\n");
+		      "invalid VLAN priority");
 
 	net_pkt_set_vlan_tag(pkt, tag);
 
 	zassert_equal(net_pkt_vlan_tag(pkt), NET_VLAN_TAG_UNSPEC,
-		      "invalid VLAN tag unspec\n");
+		      "invalid VLAN tag unspec");
 
 	zassert_equal(net_pkt_vlan_priority(pkt), priority,
-		      "invalid VLAN priority\n");
+		      "invalid VLAN priority");
 
 	net_pkt_set_vlan_tag(pkt, 0);
 	zassert_equal(net_pkt_vlan_priority(pkt), priority,
-		      "invalid VLAN priority\n");
+		      "invalid VLAN priority");
 
 	dei = true;
 	net_pkt_set_vlan_dei(pkt, dei);
 
-	zassert_equal(net_pkt_vlan_dei(pkt), dei, "invalid VLAN DEI\n");
+	zassert_equal(net_pkt_vlan_dei(pkt), dei, "invalid VLAN DEI");
 	zassert_equal(net_pkt_vlan_priority(pkt), priority,
-		      "invalid VLAN priority\n");
-	zassert_equal(net_pkt_vlan_tag(pkt), 0, "invalid VLAN tag\n");
+		      "invalid VLAN priority");
+	zassert_equal(net_pkt_vlan_tag(pkt), 0, "invalid VLAN tag");
 
 	net_pkt_set_vlan_tag(pkt, tag);
-	zassert_equal(net_pkt_vlan_tag(pkt), tag, "invalid VLAN tag\n");
-	zassert_equal(net_pkt_vlan_dei(pkt), dei, "invalid VLAN DEI\n");
+	zassert_equal(net_pkt_vlan_tag(pkt), tag, "invalid VLAN tag");
+	zassert_equal(net_pkt_vlan_dei(pkt), dei, "invalid VLAN DEI");
 	zassert_equal(net_pkt_vlan_priority(pkt), priority,
-		      "invalid VLAN priority\n");
+		      "invalid VLAN priority");
 
 	dei = false;
 	net_pkt_set_vlan_dei(pkt, dei);
-	zassert_equal(net_pkt_vlan_tag(pkt), tag, "invalid VLAN tag\n");
-	zassert_equal(net_pkt_vlan_dei(pkt), dei, "invalid VLAN DEI\n");
+	zassert_equal(net_pkt_vlan_tag(pkt), tag, "invalid VLAN tag");
+	zassert_equal(net_pkt_vlan_dei(pkt), dei, "invalid VLAN DEI");
 	zassert_equal(net_pkt_vlan_priority(pkt), priority,
-		      "invalid VLAN priority\n");
+		      "invalid VLAN priority");
 
 	tag = 0;
 	net_pkt_set_vlan_tag(pkt, tag);
-	zassert_equal(net_pkt_vlan_tag(pkt), tag, "invalid VLAN tag\n");
-	zassert_equal(net_pkt_vlan_dei(pkt), dei, "invalid VLAN DEI\n");
+	zassert_equal(net_pkt_vlan_tag(pkt), tag, "invalid VLAN tag");
+	zassert_equal(net_pkt_vlan_dei(pkt), dei, "invalid VLAN DEI");
 	zassert_equal(net_pkt_vlan_priority(pkt), priority,
-		      "invalid VLAN priority\n");
+		      "invalid VLAN priority");
 
 	priority = 0;
 	net_pkt_set_vlan_priority(pkt, priority);
-	zassert_equal(net_pkt_vlan_tag(pkt), tag, "invalid VLAN tag\n");
-	zassert_equal(net_pkt_vlan_dei(pkt), dei, "invalid VLAN DEI\n");
+	zassert_equal(net_pkt_vlan_tag(pkt), tag, "invalid VLAN tag");
+	zassert_equal(net_pkt_vlan_dei(pkt), dei, "invalid VLAN DEI");
 	zassert_equal(net_pkt_vlan_priority(pkt), priority,
-		      "invalid VLAN priority\n");
+		      "invalid VLAN priority");
 
-	zassert_equal(net_pkt_vlan_tci(pkt), 0, "invalid VLAN TCI\n");
+	zassert_equal(net_pkt_vlan_tci(pkt), 0, "invalid VLAN TCI");
 
 	tci = 0;
 	tag = 100;
@@ -500,9 +500,9 @@ static void test_vlan_tci(void)
 	tci = net_eth_vlan_set_vid(tci, tag);
 	tci = net_eth_vlan_set_pcp(tci, priority);
 
-	zassert_equal(tag, net_eth_vlan_get_vid(tci), "Invalid VLAN tag\n");
+	zassert_equal(tag, net_eth_vlan_get_vid(tci), "Invalid VLAN tag");
 	zassert_equal(priority, net_eth_vlan_get_pcp(tci),
-		      "Invalid VLAN priority\n");
+		      "Invalid VLAN priority");
 }
 
 /* Enable two VLAN tags and verity that proper interfaces are enabled.
@@ -531,16 +531,16 @@ static void test_vlan_enable(void)
 			  VLAN_TAG_2, iface, eth_interfaces[3]);
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[0]);
-	zassert_equal(ret, false, "VLAN enabled for interface 0\n");
+	zassert_equal(ret, false, "VLAN enabled for interface 0");
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[1]);
-	zassert_equal(ret, true, "VLAN disabled for interface 1\n");
+	zassert_equal(ret, true, "VLAN disabled for interface 1");
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[2]);
-	zassert_equal(ret, false, "VLAN enabled for interface 2\n");
+	zassert_equal(ret, false, "VLAN enabled for interface 2");
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[3]);
-	zassert_equal(ret, true, "VLAN disabled for interface 3\n");
+	zassert_equal(ret, true, "VLAN disabled for interface 3");
 
 	iface = eth_interfaces[0];
 	ret = net_eth_vlan_enable(iface, NET_VLAN_TAG_UNSPEC);
@@ -576,16 +576,16 @@ static void test_vlan_disable(void)
 			  VLAN_TAG_2, iface, eth_interfaces[0]);
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[0]);
-	zassert_equal(ret, false, "VLAN enabled for interface 0\n");
+	zassert_equal(ret, false, "VLAN enabled for interface 0");
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[1]);
-	zassert_equal(ret, false, "VLAN enabled for interface 1\n");
+	zassert_equal(ret, false, "VLAN enabled for interface 1");
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[2]);
-	zassert_equal(ret, false, "VLAN enabled for interface 2\n");
+	zassert_equal(ret, false, "VLAN enabled for interface 2");
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[3]);
-	zassert_equal(ret, false, "VLAN enabled for interface 3\n");
+	zassert_equal(ret, false, "VLAN enabled for interface 3");
 
 	iface = eth_interfaces[0];
 	ret = net_eth_vlan_disable(iface, NET_VLAN_TAG_UNSPEC);
@@ -615,22 +615,22 @@ static void test_vlan_enable_all(void)
 	eth_ctx = net_if_l2_data(eth_interfaces[0]);
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[0]);
-	zassert_equal(ret, true, "VLAN disabled for interface 0\n");
+	zassert_equal(ret, true, "VLAN disabled for interface 0");
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[1]);
-	zassert_equal(ret, true, "VLAN disabled for interface 1\n");
+	zassert_equal(ret, true, "VLAN disabled for interface 1");
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[2]);
-	zassert_equal(ret, true, "VLAN disabled for interface 2\n");
+	zassert_equal(ret, true, "VLAN disabled for interface 2");
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[3]);
-	zassert_equal(ret, true, "VLAN disabled for interface 3\n");
+	zassert_equal(ret, true, "VLAN disabled for interface 3");
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
-	zassert_not_null(iface, "No dummy iface found\n");
+	zassert_not_null(iface, "No dummy iface found");
 
 	zassert_equal(net_if_l2(iface), &NET_L2_GET_NAME(DUMMY),
-		      "Not a dummy interface\n");
+		      "Not a dummy interface");
 
 	ret = net_eth_vlan_enable(iface, VLAN_TAG_5);
 	zassert_equal(ret, -EINVAL, "Wrong iface type (%d)\n", ret);
@@ -654,22 +654,22 @@ static void test_vlan_disable_all(void)
 	eth_ctx = net_if_l2_data(eth_interfaces[0]);
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[0]);
-	zassert_equal(ret, false, "VLAN enabled for interface 0\n");
+	zassert_equal(ret, false, "VLAN enabled for interface 0");
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[1]);
-	zassert_equal(ret, false, "VLAN enabled for interface 1\n");
+	zassert_equal(ret, false, "VLAN enabled for interface 1");
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[2]);
-	zassert_equal(ret, false, "VLAN enabled for interface 2\n");
+	zassert_equal(ret, false, "VLAN enabled for interface 2");
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[3]);
-	zassert_equal(ret, false, "VLAN enabled for interface 3\n");
+	zassert_equal(ret, false, "VLAN enabled for interface 3");
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
-	zassert_not_null(iface, "No dummy iface found\n");
+	zassert_not_null(iface, "No dummy iface found");
 
 	zassert_equal(net_if_l2(iface), &NET_L2_GET_NAME(DUMMY),
-		      "Not a dummy interface\n");
+		      "Not a dummy interface");
 
 	ret = net_eth_vlan_disable(iface, VLAN_TAG_5);
 	zassert_equal(ret, -EINVAL, "Wrong iface type (%d)\n", ret);
@@ -725,20 +725,20 @@ static void test_vlan_send_data(void)
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
 			      &udp_v6_ctx);
-	zassert_equal(ret, 0, "Create IPv6 UDP context failed\n");
+	zassert_equal(ret, 0, "Create IPv6 UDP context failed");
 
 	memcpy(&src_addr6.sin6_addr, &my_addr1, sizeof(struct in6_addr));
 	memcpy(&dst_addr6.sin6_addr, &dst_addr, sizeof(struct in6_addr));
 
 	ret = net_context_bind(udp_v6_ctx, (struct sockaddr *)&src_addr6,
 			       sizeof(struct sockaddr_in6));
-	zassert_equal(ret, 0, "Context bind failure test failed\n");
+	zassert_equal(ret, 0, "Context bind failure test failed");
 
 	iface = eth_interfaces[1]; /* This is the VLAN interface */
 	ctx = net_if_get_device(iface)->driver_data;
 	eth_ctx = net_if_l2_data(iface);
 	ret = net_eth_is_vlan_enabled(eth_ctx, iface);
-	zassert_equal(ret, true, "VLAN disabled for interface 1\n");
+	zassert_equal(ret, true, "VLAN disabled for interface 1");
 
 	ctx->expecting_tag = VLAN_TAG_1;
 
@@ -746,12 +746,12 @@ static void test_vlan_send_data(void)
 	ctx = net_if_get_device(iface)->driver_data;
 	eth_ctx = net_if_l2_data(iface);
 	ret = net_eth_is_vlan_enabled(eth_ctx, iface);
-	zassert_equal(ret, true, "VLAN disabled for interface 1\n");
+	zassert_equal(ret, true, "VLAN disabled for interface 1");
 
 	pkt = net_pkt_get_tx(udp_v6_ctx, K_FOREVER);
-	zassert_not_null(pkt, "Cannot get pkt\n");
+	zassert_not_null(pkt, "Cannot get pkt");
 	frag = net_pkt_get_data(udp_v6_ctx, K_FOREVER);
-	zassert_not_null(frag, "Cannot get frag\n");
+	zassert_not_null(frag, "Cannot get frag");
 	net_pkt_frag_add(pkt, frag);
 
 	/* VLAN tag will be automatically set by ethernet L2 driver
@@ -765,16 +765,16 @@ static void test_vlan_send_data(void)
 	test_started = true;
 
 	ret = add_neighbor(iface, &dst_addr);
-	zassert_true(ret, "Cannot add neighbor\n");
+	zassert_true(ret, "Cannot add neighbor");
 
 	ret = net_context_sendto(pkt, (struct sockaddr *)&dst_addr6,
 				 sizeof(struct sockaddr_in6),
 				 NULL, 0, NULL, NULL);
-	zassert_equal(ret, 0, "Send UDP pkt failed\n");
+	zassert_equal(ret, 0, "Send UDP pkt failed");
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout\n");
+		zassert_false(true, "Timeout");
 	}
 
 	net_context_unref(udp_v6_ctx);

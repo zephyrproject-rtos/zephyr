@@ -30,9 +30,9 @@ void test_pthread_equal(void)
 	ret = pthread_attr_init(&attr);
 	if (ret != 0) {
 		zassert_false(pthread_attr_destroy(&attr),
-			      "Unable to destroy pthread object attrib\n");
+			      "Unable to destroy pthread object attrib");
 		zassert_false(pthread_attr_init(&attr),
-			      "Unable to create pthread object attrib\n");
+			      "Unable to create pthread object attrib");
 	}
 
 	schedparam.priority = 2;
@@ -43,17 +43,17 @@ void test_pthread_equal(void)
 			(void *)0);
 
 	/*TESTPOINT: Check if thread is created*/
-	zassert_false(ret, "attempt to create thread failed\n");
+	zassert_false(ret, "attempt to create thread failed");
 
 	pthread_join(newthread, NULL);
 
 	/*TESTPOINT: Check if threads are equal*/
 	zassert_true(pthread_equal(newthread, thread),
-			"thread IDs should be equal! exiting...\n");
+			"thread IDs should be equal! exiting...");
 
 	/*TESTPOINT: Check case when threads are not equal*/
 	zassert_false(pthread_equal(newthread, k_current_get()),
-			"thread IDs cannot be equal! exiting...\n");
+			"thread IDs cannot be equal! exiting...");
 }
 
 void test_main(void)

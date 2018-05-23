@@ -51,7 +51,7 @@ void vlog_cbuf_put(const char *format, va_list args)
 
 	buf_size += vsnprintf(&buf[buf_size], sizeof(buf), format, args);
 	zassert_false(logger_put(&log_cbuffer, buf, buf_size),
-		      "logger put error\n");
+		      "logger put error");
 }
 
 void log_cbuf_put(const char *format, ...)

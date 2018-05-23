@@ -263,7 +263,7 @@ static void test_init(void)
 	 * pass.
 	 */
 	zassert_false(net_if_config_ipv6_get(iface, &ipv6) < 0,
-			"IPv6 config is not valid\n");
+			"IPv6 config is not valid");
 
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
 		if (iface->config.ip.ipv6->unicast[i].is_used) {
@@ -308,36 +308,36 @@ static void test_cmp_prefix(void)
 					0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 
 	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
-	zassert_true(st, "Prefix /64  compare failed\n");
+	zassert_true(st, "Prefix /64  compare failed");
 
 	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
-	zassert_true(st, "Prefix /65 compare failed\n");
+	zassert_true(st, "Prefix /65 compare failed");
 
 	/* Set one extra bit in the other prefix for testing /65 */
 	prefix1.s6_addr[8] = 0x80;
 
 	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
-	zassert_false(st, "Prefix /65 compare should have failed\n");
+	zassert_false(st, "Prefix /65 compare should have failed");
 
 	/* Set two bits in prefix2, it is now /66 */
 	prefix2.s6_addr[8] = 0xc0;
 
 	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
-	zassert_true(st, "Prefix /65 compare failed\n");
+	zassert_true(st, "Prefix /65 compare failed");
 
 	/* Set all remaining bits in prefix2, it is now /128 */
 	memset(&prefix2.s6_addr[8], 0xff, 8);
 
 	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
-	zassert_true(st, "Prefix /65 compare failed\n");
+	zassert_true(st, "Prefix /65 compare failed");
 
 	/* Comparing /64 should be still ok */
 	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
-	zassert_true(st, "Prefix /64 compare failed\n");
+	zassert_true(st, "Prefix /64 compare failed");
 
 	/* But comparing /66 should should fail */
 	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 66);
-	zassert_false(st, "Prefix /66 compare should have failed\n");
+	zassert_false(st, "Prefix /66 compare should have failed");
 
 }
 
@@ -475,7 +475,7 @@ static void test_prefix_timeout(void)
 
 	prefix = net_if_ipv6_prefix_add(net_if_get_default(),
 					&addr, len, lifetime);
-	zassert_not_null(prefix, "Cannot get prefix\n");
+	zassert_not_null(prefix, "Cannot get prefix");
 
 	net_if_ipv6_prefix_set_lf(prefix, false);
 	net_if_ipv6_prefix_set_timer(prefix, lifetime);
@@ -603,7 +603,7 @@ static void test_change_ll_addr(void)
 
 	ret = net_ipv6_send_na(iface, &peer_addr, &dst,
 			       &peer_addr, flags);
-	zassert_false(ret < 0, "Cannot send NA 1\n");
+	zassert_false(ret < 0, "Cannot send NA 1");
 
 	nbr = net_ipv6_nbr_lookup(iface, &peer_addr);
 	ll = net_nbr_get_lladdr(nbr->idx);
@@ -611,7 +611,7 @@ static void test_change_ll_addr(void)
 	ll_iface = net_if_get_link_addr(iface);
 
 	zassert_true(memcmp(ll->addr, ll_iface->addr, ll->len) != 0,
-		     "Wrong link address 1\n");
+		     "Wrong link address 1");
 
 	/* As the net_ipv6_send_na() uses interface link address to
 	 * greate tllao, change the interface ll address here.
@@ -620,13 +620,13 @@ static void test_change_ll_addr(void)
 
 	ret = net_ipv6_send_na(iface, &peer_addr, &dst,
 			       &peer_addr, flags);
-	zassert_false(ret < 0, "Cannot send NA 2\n");
+	zassert_false(ret < 0, "Cannot send NA 2");
 
 	nbr = net_ipv6_nbr_lookup(iface, &peer_addr);
 	ll = net_nbr_get_lladdr(nbr->idx);
 
 	zassert_true(memcmp(ll->addr, ll_iface->addr, ll->len) != 0,
-		     "Wrong link address 2\n");
+		     "Wrong link address 2");
 }
 
 void test_main(void)

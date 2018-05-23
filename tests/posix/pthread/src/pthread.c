@@ -193,15 +193,15 @@ void test_pthread(void)
 
 	/*TESTPOINT: Check if scheduling priority is valid*/
 	zassert_false(ret,
-			"Scheduling priority outside valid priority range\n");
+			"Scheduling priority outside valid priority range");
 
 	for (i = 0; i < N_THR; i++) {
 		ret = pthread_attr_init(&attr[i]);
 		if (ret != 0) {
 			zassert_false(pthread_attr_destroy(&attr[i]),
-				      "Unable to destroy pthread object attrib\n");
+				      "Unable to destroy pthread object attrib");
 			zassert_false(pthread_attr_init(&attr[i]),
-				      "Unable to create pthread object attrib\n");
+				      "Unable to create pthread object attrib");
 		}
 
 		pthread_attr_setstack(&attr[i], &stacks[i][0], STACKSZ);
@@ -211,7 +211,7 @@ void test_pthread(void)
 				     (void *)i);
 
 		/*TESTPOINT: Check if thread is created successfully*/
-		zassert_false(ret, "Number of threads exceed max limit\n");
+		zassert_false(ret, "Number of threads exceed max limit");
 	}
 
 	while (!bounce_test_done()) {
@@ -219,7 +219,7 @@ void test_pthread(void)
 	}
 
 	/*TESTPOINT: Check if bounce test passes*/
-	zassert_false(bounce_failed, "Bounce test failed\n");
+	zassert_false(bounce_failed, "Bounce test failed");
 
 	printk("Bounce test OK\n");
 
@@ -233,7 +233,7 @@ void test_pthread(void)
 	}
 
 	/*TESTPOINT: Check if barrier test passes*/
-	zassert_false(barrier_failed, "Barrier test failed\n");
+	zassert_false(barrier_failed, "Barrier test failed");
 
 	for (i = 0; i < N_THR; i++) {
 		pthread_join(newthread[i], &retval);

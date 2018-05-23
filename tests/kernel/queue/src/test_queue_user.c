@@ -63,11 +63,11 @@ void test_queue_supv_to_user(void)
 	k_thread_resource_pool_assign(k_current_get(), &test_pool);
 
 	q = k_object_alloc(K_OBJ_QUEUE);
-	zassert_not_null(q, "no memory for allocated queue object\n");
+	zassert_not_null(q, "no memory for allocated queue object");
 	k_queue_init(q);
 
 	sem = k_object_alloc(K_OBJ_SEM);
-	zassert_not_null(sem, "no memory for semaphore object\n");
+	zassert_not_null(sem, "no memory for semaphore object");
 	k_sem_init(sem, 0, 1);
 
 	for (int i = 0; i < (LIST_LEN * 2); i = i + 2) {

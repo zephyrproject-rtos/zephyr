@@ -19,7 +19,7 @@ void verify_bootdelay(void)
 	/* compare this with the boot delay specified */
 	zassert_true(SYS_CLOCK_HW_CYCLES_TO_NS64(current_cycles) >=
 		     (CONFIG_BOOT_DELAY * NSEC_PER_USEC * USEC_PER_MSEC),
-		     "boot delay not executed\n");
+		     "boot delay not executed");
 }
 
 /*test case main entry*/

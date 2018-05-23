@@ -62,9 +62,9 @@ void test_pthread_cancel(void)
 		ret = pthread_attr_init(&attr[i]);
 		if (ret != 0) {
 			zassert_false(pthread_attr_destroy(&attr[i]),
-				      "Unable to destroy pthread object attrib\n");
+				      "Unable to destroy pthread object attrib");
 			zassert_false(pthread_attr_init(&attr[i]),
-				      "Unable to create pthread object attrib\n");
+				      "Unable to create pthread object attrib");
 		}
 
 		if (i == 1) {
@@ -81,7 +81,7 @@ void test_pthread_cancel(void)
 		ret = pthread_create(&newthread[i], &attr[i], thread_top,
 				     (void *)i);
 
-		zassert_false(ret, "Not enough space to create new thread\n");
+		zassert_false(ret, "Not enough space to create new thread");
 	}
 
 	for (i = 0; i < N_THR; i++) {
@@ -93,7 +93,7 @@ void test_pthread_cancel(void)
 	printk("Pthread join test over %d\n", exit_count);
 
 	/* Test PASS if all threads have exited before main exit */
-	zassert_equal(exit_count, 1, "pthread_cancel test failed\n");
+	zassert_equal(exit_count, 1, "pthread_cancel test failed");
 }
 
 void test_main(void)

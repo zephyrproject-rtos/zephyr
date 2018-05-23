@@ -60,7 +60,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 		u64_t t_delay = k_uptime_get() - t_create;
 		/**TESTPOINT: check delay start*/
 		zassert_true(t_delay >= expected.init_delay,
-			     "k_thread_create delay start failed\n");
+			     "k_thread_create delay start failed");
 	}
 
 	k_sem_take(&start_sema, K_FOREVER);
@@ -135,7 +135,7 @@ void test_kinit_preempt_thread(void)
 
 	/*record time stamp of thread creation*/
 	t_create = k_uptime_get();
-	zassert_not_null(pthread, "thread creation failed\n");
+	zassert_not_null(pthread, "thread creation failed");
 
 	expected.init_p1 = INIT_PREEMPT_P1;
 	expected.init_p2 = INIT_PREEMPT_P2;
@@ -165,7 +165,7 @@ void test_kinit_coop_thread(void)
 
 	/*record time stamp of thread creation*/
 	t_create = k_uptime_get();
-	zassert_not_null(pthread, "thread spawn failed\n");
+	zassert_not_null(pthread, "thread spawn failed");
 
 	expected.init_p1 = INIT_COOP_P1;
 	expected.init_p2 = INIT_COOP_P2;

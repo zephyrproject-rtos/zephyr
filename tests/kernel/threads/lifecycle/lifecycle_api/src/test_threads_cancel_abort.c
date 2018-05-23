@@ -143,7 +143,7 @@ static void delayed_thread_entry(void *p1, void *p2, void *p3)
 {
 	execute_flag = 1;
 
-	zassert_unreachable("Delayed thread shouldn't be executed\n");
+	zassert_unreachable("Delayed thread shouldn't be executed");
 }
 
 /**
@@ -169,13 +169,13 @@ void test_delayed_thread_abort(void)
 
 	/* Test point: check if thread delayed for 100ms has not started*/
 	zassert_true(execute_flag == 0, "Delayed thread created is not"
-		     " put to wait queue\n");
+		     " put to wait queue");
 
 	k_thread_abort(tid);
 
 	/* Test point: Test abort of thread before its execution*/
 	zassert_false(execute_flag == 1, "Delayed thread is has executed"
-		      " before cancellation\n");
+		      " before cancellation");
 
 	/* Restore the priority */
 	k_thread_priority_set(k_current_get(), current_prio);
