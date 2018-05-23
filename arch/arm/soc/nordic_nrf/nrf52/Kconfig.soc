@@ -180,6 +180,11 @@ choice
 prompt "nRF52x MCU Selection"
 depends on SOC_SERIES_NRF52X
 
+config SOC_NRF52810_QFAA
+	bool "NRF52810_QFAA"
+	select SOC_NRF52810
+	select HAS_SEGGER_RTT
+
 config SOC_NRF52832_QFAA
 	bool "NRF52832_QFAA"
 	select SOC_NRF52832
@@ -207,7 +212,7 @@ config ARM_MPU_NRF52X
 
 config NFCT_PINS_AS_GPIOS
 	bool "NFCT pins as GPIOs"
-	depends on SOC_SERIES_NRF52X
+	depends on SOC_NRF52832 || SOC_NRF52840
 	help
 	  P0.9 and P0.10 are usually reserved for NFC. This option switch
 	  them to normal GPIO mode. HW enabling happens once in the device
@@ -223,5 +228,5 @@ config GPIO_AS_PINRESET
 
 config NRF_ENABLE_ICACHE
 	bool "Enable the instruction cache (I-Cache)"
-	depends on SOC_SERIES_NRF52X
+	depends on SOC_NRF52832 || SOC_NRF52840
 	default y
