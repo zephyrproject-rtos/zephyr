@@ -9,11 +9,11 @@ if SOC_SERIES_SAM4S
 
 config SOC_SERIES
 	string
-	default sam4s
+	default "sam4s"
 
 config SOC_PART_NUMBER
 	string
-	default sam4s16c if SOC_PART_NUMBER_SAM4S16C
+	default "sam4s16c" if SOC_PART_NUMBER_SAM4S16C
 
 #
 # SAM4S family has total 35 peripherals capable of
