@@ -663,7 +663,7 @@ class SizeCalculator:
                    "ccm_data"]
     # These get copied into RAM only on non-XIP
     ro_sections = ["text", "ctors", "init_array", "reset", "object_access",
-                   "rodata", "devconfig", "net_l2", "vector"]
+                   "rodata", "devconfig", "net_l2", "vector", "_bt_settings_area"]
 
     def __init__(self, filename, extra_sections):
         """Constructor
