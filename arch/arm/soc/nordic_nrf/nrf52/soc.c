@@ -25,7 +25,9 @@ extern void _NmiInit(void);
 #define NMI_INIT()
 #endif
 
-#if defined(CONFIG_SOC_NRF52832)
+#if defined(CONFIG_SOC_NRF52810)
+#include <system_nrf52810.h>
+#elif defined(CONFIG_SOC_NRF52832)
 #include <system_nrf52.h>
 #elif defined(CONFIG_SOC_NRF52840)
 #include <system_nrf52840.h>
