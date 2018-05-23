@@ -169,7 +169,7 @@ struct rbnode *_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f);
 /**
  * @brief Loop over rbtree with implicit container field logic
  *
- * As for RB_FOR_EACH(), but "node" can have an aribtrary type
+ * As for RB_FOR_EACH(), but "node" can have an arbitrary type
  * containing a struct rbnode.
  *
  * @param tree A pointer to a struct rbtree to walk

@@ -238,7 +238,7 @@ struct wdt_driver_api {
  * This function is used for configuring global watchdog settings that
  * affect all timeouts. It should be called after installing timeouts.
  * After successful return, all installed timeouts are valid and must be
- * serviced periodically by callig wdt_feed().
+ * serviced periodically by calling wdt_feed().
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param options Configuration options as defined by the WDT_OPT_* constants
@@ -308,7 +308,7 @@ static inline int wdt_install_timeout(struct device *dev,
  * @brief Feed specified watchdog timeout.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param channel_id Index of the feeded channel.
+ * @param channel_id Index of the fed channel.
  *
  * @retval 0 If successful.
  * @retval -EINVAL If there is no installed timeout for supplied channel.
