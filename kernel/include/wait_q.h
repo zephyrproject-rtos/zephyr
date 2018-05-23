@@ -79,7 +79,7 @@ static inline struct k_thread *_waitq_head(_wait_q_t *w)
 	return (void *)sys_dlist_peek_head(&w->waitq);
 }
 
-#endif /* !CONFIG_WAIT_Q_FAST */
+#endif /* !CONFIG_WAITQ_FAST */
 
 #ifdef __cplusplus
 }
