@@ -218,7 +218,7 @@ extern "C" {
  * passed to K_THREAD_STACK_DEFINE and related macros.
  *
  * In the case of CONFIG_USERSPACE=y and
- * CONFIG_MPU_REQUIRES_POWER_OF_2_ALIGNMENT, the size will be larger than the
+ * CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT, the size will be larger than the
  * requested size.
  *
  * In all other configurations, the size will be correct.
