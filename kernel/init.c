@@ -356,9 +356,6 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 	initialize_timeouts();
 
-	/* perform any architecture-specific initialization */
-
-	kernel_arch_init();
 }
 
 static void switch_to_main_thread(void)
@@ -413,6 +410,9 @@ FUNC_NORETURN void _Cstart(void)
 	 */
 
 	_IntLibInit();
+
+	/* perform any architecture-specific initialization */
+	kernel_arch_init();
 
 	/* perform basic hardware initialization */
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_1);
