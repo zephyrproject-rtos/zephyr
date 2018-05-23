@@ -71,7 +71,7 @@ SECTION_FUNC(TEXT, _user_thread_entry_wrapper)
 	ld r4, [r1, ___thread_stack_info_t_start_OFFSET]
 
 /*
- * when CONFIG_INIT_STACK is enable, stack will be initialized
+ * when CONFIG_INIT_STACKS is enable, stack will be initialized
  * in _new_thread_init.
  */
 	j _arc_go_to_user_space
