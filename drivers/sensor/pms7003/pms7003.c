@@ -24,7 +24,7 @@
 #include <logging/sys_log.h>
 
 /* wait serial output with 1000ms timeout */
-#define CONFIG_PMS7003_SERIAL_TIMEOUT 1000
+#define CFG_PMS7003_SERIAL_TIMEOUT 1000
 
 struct pms7003_data {
 	struct device *uart_dev;
@@ -115,13 +115,13 @@ static int pms7003_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	if (uart_wait_for(drv_data->uart_dev, pms7003_start_bytes,
 			  sizeof(pms7003_start_bytes),
-			  CONFIG_PMS7003_SERIAL_TIMEOUT) < 0) {
+			  CFG_PMS7003_SERIAL_TIMEOUT) < 0) {
 		SYS_LOG_WRN("waiting for start bytes is timeout");
 		return -ETIME;
 	}
 
 	if (uart_read_bytes(drv_data->uart_dev, pms7003_receive_buffer, 30,
-			    CONFIG_PMS7003_SERIAL_TIMEOUT) < 0) {
+			    CFG_PMS7003_SERIAL_TIMEOUT) < 0) {
 		return -ETIME;
 	}
 
