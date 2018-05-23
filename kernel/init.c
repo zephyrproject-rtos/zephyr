@@ -68,15 +68,6 @@ u64_t __noinit __idle_time_stamp;  /* timestamp when CPU goes idle */
 /* init/main and idle threads */
 
 #define IDLE_STACK_SIZE CONFIG_IDLE_STACK_SIZE
-
-#if CONFIG_MAIN_STACK_SIZE & (STACK_ALIGN - 1)
-    #error "MAIN_STACK_SIZE must be a multiple of the stack alignment"
-#endif
-
-#if IDLE_STACK_SIZE & (STACK_ALIGN - 1)
-    #error "IDLE_STACK_SIZE must be a multiple of the stack alignment"
-#endif
-
 #define MAIN_STACK_SIZE CONFIG_MAIN_STACK_SIZE
 
 K_THREAD_STACK_DEFINE(_main_stack, MAIN_STACK_SIZE);
@@ -96,9 +87,6 @@ k_tid_t const _idle_thread = (k_tid_t)&_idle_thread_s;
  * of this area is safe since interrupts are disabled until the kernel context
  * switches to the init thread.
  */
-#if CONFIG_ISR_STACK_SIZE & (STACK_ALIGN - 1)
-    #error "ISR_STACK_SIZE must be a multiple of the stack alignment"
-#endif
 K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
 /*
