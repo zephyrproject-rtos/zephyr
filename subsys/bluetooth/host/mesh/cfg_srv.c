@@ -2655,7 +2655,7 @@ static void lpn_timeout_get(struct bt_mesh_model *model,
 	bt_mesh_model_msg_init(&msg, OP_LPN_TIMEOUT_STATUS);
 	net_buf_simple_add_le16(&msg, lpn_addr);
 
-	if (!IS_ENABLED(CONFIG_BLUETOOTH_MESH_FRIEND)) {
+	if (!IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
 		timeout = 0;
 		goto send_rsp;
 	}
