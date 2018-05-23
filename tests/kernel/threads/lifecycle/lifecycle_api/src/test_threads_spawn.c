@@ -92,7 +92,7 @@ void test_threads_spawn_delay(void)
  * @brief Spawn thread with forever delay and highest priority
  *
  * @details Create an user thread with forever delay and yield
- * the current thread. Eventhough the current thread has yielded,
+ * the current thread. Even though the current thread has yielded,
  * the thread will not be put in ready queue since it has forever delay,
  * the thread is explicitly started using k_thread_start() and checked
  * if thread has started executing.

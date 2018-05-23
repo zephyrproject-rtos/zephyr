@@ -329,8 +329,8 @@ void test_isr_kinit_alert(void)
  *
  * This test checks alert_recv(timeout) against the following cases:
  *  1. The current task times out while waiting for the event.
- *  2. There is already an event waiting (signalled from a task).
- *  3. The current task must wait on the event until it is signalled
+ *  2. There is already an event waiting (signaled from a task).
+ *  3. The current task must wait on the event until it is signaled
  *     from either another task or an ISR.
  */
 void test_thread_alert_timeout(void)
@@ -368,8 +368,8 @@ void test_thread_alert_timeout(void)
  *
  * This test checks alert_recv(K_FOREVER) against
  * the following cases:
- *  1. There is already an event waiting (signalled from a task and ISR).
- *  2. The current task must wait on the event until it is signalled
+ *  1. There is already an event waiting (signaled from a task and ISR).
+ *  2. The current task must wait on the event until it is signaled
  *     from either another task or an ISR.
  */
 void test_thread_alert_wait(void)

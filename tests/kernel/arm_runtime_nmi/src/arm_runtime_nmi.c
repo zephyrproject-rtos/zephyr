@@ -31,7 +31,7 @@ static void nmi_test_isr(void)
 }
 
 /**
- * @brief test the behaviour of CONFIG_RUNTIME_NMI at run time
+ * @brief test the behavior of CONFIG_RUNTIME_NMI at run time
  *
  * @details this test is to validate _NmiHandlerSet() api.
  * First we configure the NMI isr using _NmiHandlerSet() api.

@@ -15,7 +15,7 @@
  * @details The test allocates 4 blocks from heap memory pool
  * using k_malloc() API. It also tries to allocate a block of size
  * 64 bytes which fails as all the memory is allocated up. It then
- * validates k_free() API by feeing up all the blocks which were
+ * validates k_free() API by freeing up all the blocks which were
  * allocated from the heap memory.
  */
 void test_mheap_malloc_free(void)

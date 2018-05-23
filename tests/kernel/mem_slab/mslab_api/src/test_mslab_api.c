@@ -184,7 +184,7 @@ void test_mslab_alloc_align(void)
  * the allocation fails with return value -ENOMEM. Then the
  * system up time is obtained, memory block allocation is
  * tried with timeout of 2000 ms. Now the allocation API
- * returns -EAGAIN as the wating period is timeout. The
+ * returns -EAGAIN as the waiting period is timeout. The
  * test case also checks if timeout has really happened by
  * checking delta period between the allocation request
  * was made and return of -EAGAIN.

@@ -138,7 +138,7 @@ void test_busy_wait_cooperative(void)
 /**
  * @brief Validate k_wakeup()
  *
- * @details Create 3 threads with main thead with priority 0
+ * @details Create 3 threads with main thread with priority 0
  * and other threads with -1, 0 ,+1 priority. Now -1 priority
  * thread gets executed and it is made to sleep for 10 sec.
  * Now, wake up the -1 priority thread and check if it starts
