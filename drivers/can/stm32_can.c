@@ -43,18 +43,47 @@ static inline void can_stm32_get_msg_fifo(CAN_FIFOMailBox_TypeDef *mbox,
 	msg->data_32[1] = mbox->RDHR;
 }
 
-static void can_stm32_isr(void *arg)
+static inline
+void can_stm32_rx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 {
-	struct device *dev;
-	struct can_stm32_data *data;
-	const struct can_stm32_config *cfg;
-	CAN_TypeDef *can;
-	u32_t bus_off;
+	CAN_FIFOMailBox_TypeDef *mbox;
+	int filter_match_index;
+	struct can_msg msg;
 
-	dev = (struct device *)arg;
-	data = DEV_DATA(dev);
-	cfg = DEV_CFG(dev);
-	can = cfg->can;
+	while (can->RF0R & CAN_RF0R_FMP0) {
+		mbox = &can->sFIFOMailBox[0];
+		filter_match_index = ((mbox->RDTR & CAN_RDT0R_FMI)
+					   >> CAN_RDT0R_FMI_Pos);
+
+		if (filter_match_index >= CONFIG_CAN_MAX_FILTER) {
+			break;
+		}
+
+		SYS_LOG_DBG("Message on filter index %d", filter_match_index);
+		can_stm32_get_msg_fifo(mbox, &msg);
+
+		if (data->rx_response[filter_match_index]) {
+			if (data->response_type & (1ULL << filter_match_index)) {
+				struct k_msgq *msg_q =
+					data->rx_response[filter_match_index];
+
+				k_msgq_put(msg_q, &msg, K_NO_WAIT);
+			} else {
+				can_rx_callback_t callback =
+					data->rx_response[filter_match_index];
+				callback(&msg);
+			}
+		}
+
+		/* Release message */
+		can->RF0R |= CAN_RF0R_RFOM0;
+	}
+}
+
+static inline
+void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
+{
+	u32_t bus_off;
 
 	bus_off = can->ESR & CAN_ESR_BOFF;
 
@@ -97,40 +126,60 @@ static void can_stm32_isr(void *arg)
 	if (can->TSR & CAN_TSR_TME) {
 		k_sem_give(&data->tx_int_sem);
 	}
-
-	while (can->RF0R & CAN_RF0R_FMP0) {
-		CAN_FIFOMailBox_TypeDef *mbox;
-		int filter_match_index;
-		struct can_msg msg;
-
-		mbox = &can->sFIFOMailBox[0];
-		filter_match_index = ((mbox->RDTR & CAN_RDT0R_FMI)
-					   >> CAN_RDT0R_FMI_Pos);
-
-		if (filter_match_index >= CONFIG_CAN_MAX_FILTER) {
-			break;
-		}
-
-		SYS_LOG_DBG("Message on filter index %d", filter_match_index);
-		can_stm32_get_msg_fifo(mbox, &msg);
-
-		if (data->rx_response[filter_match_index]) {
-			if (data->response_type & (1ULL << filter_match_index)) {
-				struct k_msgq *msg_q =
-					data->rx_response[filter_match_index];
-
-				k_msgq_put(msg_q, &msg, K_NO_WAIT);
-			} else {
-				can_rx_callback_t callback =
-					data->rx_response[filter_match_index];
-				callback(&msg);
-			}
-		}
-
-		/* Release message */
-		can->RF0R |= CAN_RF0R_RFOM0;
-	}
 }
+
+#ifdef CONFIG_SOC_SERIES_STM32F0X
+
+static void can_stm32_isr(void *arg)
+{
+	struct device *dev;
+	struct can_stm32_data *data;
+	const struct can_stm32_config *cfg;
+	CAN_TypeDef *can;
+
+	dev = (struct device *)arg;
+	data = DEV_DATA(dev);
+	cfg = DEV_CFG(dev);
+	can = cfg->can;
+
+	can_stm32_tx_isr_handler(can, data);
+	can_stm32_rx_isr_handler(can, data);
+
+}
+
+#else
+
+static void can_stm32_rx_isr(void *arg)
+{
+	struct device *dev;
+	struct can_stm32_data *data;
+	const struct can_stm32_config *cfg;
+	CAN_TypeDef *can;
+
+	dev = (struct device *)arg;
+	data = DEV_DATA(dev);
+	cfg = DEV_CFG(dev);
+	can = cfg->can;
+
+	can_stm32_rx_isr_handler(can, data);
+}
+
+static void can_stm32_tx_isr(void *arg)
+{
+	struct device *dev;
+	struct can_stm32_data *data;
+	const struct can_stm32_config *cfg;
+	CAN_TypeDef *can;
+
+	dev = (struct device *)arg;
+	data = DEV_DATA(dev);
+	cfg = DEV_CFG(dev);
+	can = cfg->can;
+
+	can_stm32_tx_isr_handler(can, data);
+}
+
+#endif
 
 void HAL_CAN_MspInit(CAN_HandleTypeDef *hcan)
 {
@@ -798,8 +847,8 @@ static const struct can_stm32_config can_stm32_cfg_1 = {
 	.prop_bs1 = CONFIG_CAN_1_PROP_SEG_PHASE_SEG1,
 	.bs2 = CONFIG_CAN_1_PHASE_SEG2,
 	.pclken = {
-		.enr = RCC_APB1ENR_CANEN,
-		.bus = STM32_CLOCK_BUS_APB1,
+		.enr = CONFIG_CAN_1_CLOCK_BITS,
+		.bus = CONFIG_CAN_1_CLOCK_BUS,
 	},
 	.config_irq = config_can_1_irq
 };
@@ -814,9 +863,23 @@ DEVICE_AND_API_INIT(can_stm32_1, CONFIG_CAN_1_NAME, &can_stm32_init,
 static void config_can_1_irq(CAN_TypeDef *can)
 {
 	SYS_LOG_DBG("Enable CAN1 IRQ");
+#ifdef CONFIG_SOC_SERIES_STM32F0X
 	IRQ_CONNECT(CONFIG_CAN_1_IRQ, CONFIG_CAN_1_IRQ_PRIORITY, can_stm32_isr,
 		    DEVICE_GET(can_stm32_1), 0);
 	irq_enable(CONFIG_CAN_1_IRQ);
+#else
+	IRQ_CONNECT(CONFIG_CAN_1_IRQ_RX0, CONFIG_CAN_1_IRQ_PRIORITY,
+		    can_stm32_rx_isr, DEVICE_GET(can_stm32_1), 0);
+	irq_enable(CONFIG_CAN_1_IRQ_RX0);
+
+	IRQ_CONNECT(CONFIG_CAN_1_IRQ_TX, CONFIG_CAN_1_IRQ_PRIORITY,
+		    can_stm32_tx_isr, DEVICE_GET(can_stm32_1), 0);
+	irq_enable(CONFIG_CAN_1_IRQ_TX);
+
+	IRQ_CONNECT(CONFIG_CAN_1_IRQ_SCE, CONFIG_CAN_1_IRQ_PRIORITY,
+		    can_stm32_tx_isr, DEVICE_GET(can_stm32_1), 0);
+	irq_enable(CONFIG_CAN_1_IRQ_SCE);
+#endif
 	can->IER |= CAN_IT_TME | CAN_IT_ERR | CAN_IT_FMP0 | CAN_IT_FMP1;
 }
 
