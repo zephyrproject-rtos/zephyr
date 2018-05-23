@@ -59,7 +59,7 @@ extern "C" {
 		#error "Requires to enable MPU"
 	#endif
 
-#else  /* CONFIG_MPU_STACK_GUARD  || CONFIG_USERPSACE*/
+#else  /* CONFIG_MPU_STACK_GUARD  || CONFIG_USERSPACE */
 	#define STACK_ALIGN  4
 #endif
 
