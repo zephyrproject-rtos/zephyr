@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <pthread.h>
+#include <posix/pthread.h>
 
 int pthread_cancel(pthread_t pthread);
 #define N_THR 4

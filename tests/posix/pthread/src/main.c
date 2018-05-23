@@ -6,8 +6,8 @@
 
 #include <ztest.h>
 #include <kernel.h>
-#include <pthread.h>
-#include <semaphore.h>
+#include <posix/pthread.h>
+#include <posix/semaphore.h>
 
 #define N_THR 3
 

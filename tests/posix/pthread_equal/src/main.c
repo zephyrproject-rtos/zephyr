@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <pthread.h>
+#include <posix/pthread.h>
 
 #define STACKSZ 1024
 

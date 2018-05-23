@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include <errno.h>
-#include <pthread.h>
+#include <posix/pthread.h>
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 

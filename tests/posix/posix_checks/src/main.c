@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
-#include <pthread.h>
-#include <time.h>
+#include <posix/pthread.h>
+#include <posix/time.h>
 
 #define DURATION_SECS 1
 #define DURATION_NSECS 0

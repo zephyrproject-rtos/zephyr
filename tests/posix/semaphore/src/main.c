@@ -6,8 +6,8 @@
 
 #include <ztest.h>
 #include <errno.h>
-#include <pthread.h>
-#include <semaphore.h>
+#include <posix/pthread.h>
+#include <posix/semaphore.h>
 #include <misc/printk.h>
 
 #define STACK_SIZE 1024
