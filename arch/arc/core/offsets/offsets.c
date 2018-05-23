@@ -58,6 +58,9 @@ GEN_OFFSET_SYM(_isf_t, ldi_base);
 GEN_OFFSET_SYM(_isf_t, jli_base);
 #endif
 GEN_OFFSET_SYM(_isf_t, pc);
+#ifdef CONFIG_ARC_HAS_SECURE
+GEN_OFFSET_SYM(_isf_t, sec_stat);
+#endif
 GEN_OFFSET_SYM(_isf_t, status32);
 GEN_ABSOLUTE_SYM(___isf_t_SIZEOF, sizeof(_isf_t));
 
