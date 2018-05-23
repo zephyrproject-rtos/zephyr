@@ -29,7 +29,13 @@ extern struct k_stack stack;
 extern struct k_thread thread_data;
 extern struct k_sem end_sema;
 K_THREAD_STACK_EXTERN(threadstack);
-
+/**
+ *
+ * @defgroup kernel_stack_tests Stacks
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
 /*test case main entry*/
 void test_main(void)
 {

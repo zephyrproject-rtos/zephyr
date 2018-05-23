@@ -131,7 +131,14 @@ static void thread_entry_fn_isr(void *p1, void *p2, void *p3)
 	k_sem_give(&end_sema);
 }
 
-/*test cases*/
+/**
+ * @addtogroup kernel_stack_tests
+ * @{
+ */
+
+/**
+ * @see k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
+ */
 static void test_single_stack_play(void)
 {
 	u32_t tmp[STACK_LEN];
@@ -165,6 +172,9 @@ static void test_single_stack_play(void)
 	k_thread_abort(tid);
 }
 
+/**
+ * @see k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
+ */
 static void test_dual_stack_play(void)
 {
 	u32_t tmp[STACK_LEN];
@@ -190,6 +200,9 @@ static void test_dual_stack_play(void)
 	k_thread_abort(tid);
 }
 
+/**
+ * @see k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
+ */
 static void test_isr_stack_play(void)
 {
 	/* Init kernel objects */
@@ -216,6 +229,10 @@ static void test_isr_stack_play(void)
 	/* Clear the spawn thread to avoid side effect */
 	k_thread_abort(tid);
 }
+
+/**
+ * @}
+ */
 
 /*test case main entry*/
 void test_main(void)

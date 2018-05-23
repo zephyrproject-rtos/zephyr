@@ -13,7 +13,6 @@
 static u32_t data[STACK_LEN];
 extern struct k_stack stack;
 
-/*test cases*/
 static void stack_pop_fail(struct k_stack *stack)
 {
 	u32_t rx_data;
@@ -24,6 +23,14 @@ static void stack_pop_fail(struct k_stack *stack)
 	zassert_equal(k_stack_pop(stack, &rx_data, TIMEOUT), -EAGAIN, NULL);
 }
 
+/**
+ * @addtogroup kernel_stack_tests
+ * @{
+ */
+
+/**
+ * @see k_stack_init(), k_stack_pop()
+ */
 void test_stack_pop_fail(void)
 {
 	k_stack_init(&stack, data, STACK_LEN);
@@ -32,6 +39,9 @@ void test_stack_pop_fail(void)
 }
 
 #ifdef CONFIG_USERSPACE
+/**
+ * @see k_stack_init(), k_stack_pop()
+ */
 void test_stack_user_pop_fail(void)
 {
 	struct k_stack *alloc_stack = k_object_alloc(K_OBJ_STACK);
@@ -43,3 +53,6 @@ void test_stack_user_pop_fail(void)
 	stack_pop_fail(alloc_stack);
 }
 #endif
+/**
+ * @}
+ */
