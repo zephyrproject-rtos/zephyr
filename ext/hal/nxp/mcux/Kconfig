@@ -55,6 +55,12 @@ config HAS_MCUX_RNGA
 	  Set if the random number generator accelerator (RNGA) module is
 	  present in the SoC.
 
+config HAS_MCUX_RTC
+	bool
+	default n
+	help
+	  Set if the real time clock (RTC) modules is present in the SoC.
+
 config HAS_MCUX_SIM
 	bool
 	default n
