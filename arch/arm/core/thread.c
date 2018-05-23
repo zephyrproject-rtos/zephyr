@@ -172,4 +172,4 @@ void configure_builtin_stack_guard(struct k_thread *thread)
 #error "Built-in PSP limit checks not supported by HW"
 #endif
 }
-#endif /* CONFIG_BUIILTIN_STACK_GUARD */
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
