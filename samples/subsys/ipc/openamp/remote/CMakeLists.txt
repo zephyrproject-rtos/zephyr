@@ -12,7 +12,7 @@ project(NONE)
 
 target_sources(app PRIVATE src/main_remote.c ${PLATFORM_DIR}/platform.c ${PLATFORM_DIR}/resource_table.c ${PLATFORM_DIR}/platform_ops.c)
 
-include($ENV{ZEPHYR_BASE}/ext/lib/ipc/open-amp.cmake)
+include($ENV{ZEPHYR_BASE}/ext/lib/ipc/open-amp/open-amp.cmake)
 
 target_include_directories(app PRIVATE ${OPENAMP_INCLUDE_DIR} ${PLATFORM_DIR})
 

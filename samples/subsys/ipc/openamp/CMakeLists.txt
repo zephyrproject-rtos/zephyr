@@ -18,7 +18,7 @@ target_include_directories(app PRIVATE $ENV{ZEPHYR_BASE}/drivers)
 target_sources(app PRIVATE src/main_master.c ${PLATFORM_DIR}/platform.c
 	       ${PLATFORM_DIR}/platform_ops.c ${PLATFORM_DIR}/resource_table.c)
 
-include($ENV{ZEPHYR_BASE}/ext/lib/ipc/open-amp.cmake)
+include($ENV{ZEPHYR_BASE}/ext/lib/ipc/open-amp/open-amp.cmake)
 
 add_dependencies(app open-amp)
 
