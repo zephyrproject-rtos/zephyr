@@ -46,8 +46,15 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	 * ...
 	 * 16 -> LL_RCC_PLLSOURCE_HSE_DIV_16 -> 0x0001000F
 	 */
-	pllinit->PLLDiv = (RCC_CFGR_PLLSRC_HSE_PREDIV |
-					(CONFIG_CLOCK_STM32_PLL_PREDIV1 - 1));
+	/*
+	 * TODO: Enable this code and matching CONFIG symbol once one of
+	 * the following SoC is introduced:
+	 * STM32F02XE, STM32F303XE, STM32F398XX
+	 * Kconfig symbol CLOCK_STM32_PLL_PREDIV1 should be set as
+	 * conditional on the activation of one of these SoC.
+	 * pllinit->PLLDiv = (RCC_CFGR_PLLSRC_HSE_PREDIV |
+	 *			(CONFIG_CLOCK_STM32_PLL_PREDIV1 - 1));
+	 */
 #endif /* CONFIG_CLOCK_STM32_PLL_SRC_HSI */
 #else
 	/*
