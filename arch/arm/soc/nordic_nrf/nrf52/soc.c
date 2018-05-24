@@ -26,6 +26,7 @@ extern void _NmiInit(void);
 #endif
 
 #include "nrf.h"
+#include "nrf_power.h"
 
 #define __SYSTEM_CLOCK_64M (64000000UL)
 
@@ -428,6 +429,10 @@ static int nordicsemi_nrf52_init(struct device *arg)
 		}
 		NVIC_SystemReset();
 	}
+#endif
+
+#if defined(CONFIG_SOC_DCDC_NRF52X)
+	nrf_power_dcdcen_set(true);
 #endif
 
 	_ClearFaults();
