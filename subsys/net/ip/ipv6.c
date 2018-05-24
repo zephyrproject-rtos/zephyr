@@ -65,7 +65,7 @@ static void nd_reachable_timeout(struct k_work *work);
 
 #define MAX_MULTICAST_SOLICIT 3
 #define MAX_UNICAST_SOLICIT   3
-#define DELAY_FIRST_PROBE_TIME (5 * MSEC_PER_SEC) /* RFC 4861 ch 10 */
+#define DELAY_FIRST_PROBE_TIME K_SECONDS(5) /* RFC 4861 ch 10 */
 #define RETRANS_TIMER 1000 /* in ms, RFC 4861 ch 10 */
 
 extern void net_neighbor_data_remove(struct net_nbr *nbr);
@@ -318,7 +318,7 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
 	return true;
 }
 
-#define NS_REPLY_TIMEOUT MSEC_PER_SEC
+#define NS_REPLY_TIMEOUT K_SECONDS(1)
 
 static void ns_reply_timeout(struct k_work *work)
 {
@@ -2398,7 +2398,7 @@ static inline void handle_prefix_onlink(struct net_pkt *pkt,
 
 static inline u32_t remaining(struct k_delayed_work *work)
 {
-	return k_delayed_work_remaining_get(work) / MSEC_PER_SEC;
+	return k_delayed_work_remaining_get(work) / K_SECONDS(1);
 }
 
 static inline void handle_prefix_autonomous(struct net_pkt *pkt,

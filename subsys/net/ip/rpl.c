@@ -411,7 +411,7 @@ static void net_rpl_print_parents(void)
 			parent == rpl_default_instance->current_dag->
 						preferred_parent ? '*' : ' ',
 			(unsigned)((now - parent->last_tx_time) /
-				   (60 * MSEC_PER_SEC)));
+				   K_SECONDS(60)));
 	}
 }
 
@@ -604,7 +604,7 @@ int net_rpl_dio_send(struct net_if *iface,
 	return ret;
 }
 
-#define DIO_TIMEOUT (MSEC_PER_SEC)
+#define DIO_TIMEOUT K_SECONDS(1)
 
 static void dio_timer(struct k_work *work)
 {
@@ -828,11 +828,11 @@ static struct net_rpl_instance *net_rpl_get_instance(u8_t instance_id)
 #if defined(CONFIG_NET_RPL_PROBING)
 
 #if !defined(NET_RPL_PROBING_INTERVAL)
-#define NET_RPL_PROBING_INTERVAL (120 * MSEC_PER_SEC)
+#define NET_RPL_PROBING_INTERVAL K_SECONDS(120)
 #endif
 
 #if !defined(NET_RPL_PROBING_EXPIRATION_TIME)
-#define NET_RPL_PROBING_EXPIRATION_TIME ((10 * 60) * MSEC_PER_SEC)
+#define NET_RPL_PROBING_EXPIRATION_TIME K_SECONDS(10 * 60)
 #endif
 
 static void net_rpl_schedule_probing(struct net_rpl_instance *instance);
@@ -962,7 +962,7 @@ static void net_rpl_schedule_probing(struct net_rpl_instance *instance)
 
 	expiration = ((NET_RPL_PROBING_INTERVAL / 2) +
 		      sys_rand32_get() % NET_RPL_PROBING_INTERVAL) *
-		MSEC_PER_SEC;
+		K_SECONDS(1);
 
 	NET_DBG("Send probe in %d ms, instance %p (%d)",
 		expiration, instance, instance->instance_id);
@@ -1643,8 +1643,7 @@ static void set_dao_lifetime_timer(struct net_rpl_instance *instance)
 		u32_t expiration_time;
 
 		expiration_time = (u32_t)instance->default_lifetime *
-			(u32_t)instance->lifetime_unit *
-			MSEC_PER_SEC / 2;
+			(u32_t)instance->lifetime_unit * K_SECONDS(1) / 2;
 
 		instance->dao_lifetime_timer_active = true;
 
@@ -1669,7 +1668,7 @@ static void dao_send_timer(struct k_work *work)
 
 		instance->dao_timer_active = true;
 
-		k_delayed_work_submit(&instance->dao_timer, MSEC_PER_SEC);
+		k_delayed_work_submit(&instance->dao_timer, K_SECONDS(1));
 		return;
 	}
 
@@ -1690,7 +1689,7 @@ static void schedule_dao(struct net_rpl_instance *instance, int latency)
 	}
 
 	if (latency != 0) {
-		latency = latency * MSEC_PER_SEC;
+		latency = K_SECONDS(latency);
 		expiration = latency / 2 + (sys_rand32_get() % latency);
 	} else {
 		expiration = 0;
@@ -4191,7 +4190,7 @@ static void dis_timeout(struct k_work *work)
 
 	net_rpl_dis_send(NULL, rpl_default_iface);
 
-	dis_interval = CONFIG_NET_RPL_DIS_INTERVAL * MSEC_PER_SEC;
+	dis_interval = K_SECONDS(CONFIG_NET_RPL_DIS_INTERVAL);
 
 	k_delayed_work_submit(&dis_timer, dis_interval);
 }
@@ -4203,10 +4202,10 @@ static inline void net_rpl_init_timers(void)
 	/* Randomize the first DIS sending*/
 	u32_t dis_interval;
 
-	dis_interval = (CONFIG_NET_RPL_DIS_INTERVAL / 2 +
-			((u32_t)CONFIG_NET_RPL_DIS_INTERVAL *
-			 (u32_t)sys_rand32_get()) / UINT_MAX -
-			NET_RPL_DIS_START_DELAY) * MSEC_PER_SEC;
+	dis_interval = K_SECONDS(CONFIG_NET_RPL_DIS_INTERVAL / 2 +
+				 ((u32_t)CONFIG_NET_RPL_DIS_INTERVAL *
+				  (u32_t)sys_rand32_get()) / UINT_MAX -
+				 NET_RPL_DIS_START_DELAY);
 
 	k_delayed_work_init(&dis_timer, dis_timeout);
 	k_delayed_work_submit(&dis_timer, dis_interval);
