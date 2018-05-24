@@ -26,7 +26,7 @@
 
 #include "net_stats.h"
 
-#define REACHABLE_TIME (30 * MSEC_PER_SEC) /* in ms */
+#define REACHABLE_TIME K_SECONDS(30) /* in ms */
 /*
  * split the min/max random reachable factors into numerator/denominator
  * so that integer-based math works better
@@ -504,7 +504,7 @@ static void leave_mcast_all(struct net_if *iface)
 #endif /* CONFIG_NET_IPV6_MLD */
 
 #if defined(CONFIG_NET_IPV6_DAD)
-#define DAD_TIMEOUT (MSEC_PER_SEC / 10)
+#define DAD_TIMEOUT K_MSEC(100)
 
 static void dad_timeout(struct k_work *work)
 {
@@ -621,7 +621,7 @@ static inline void net_if_ipv6_start_dad(struct net_if *iface,
 #endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_ND)
-#define RS_TIMEOUT MSEC_PER_SEC
+#define RS_TIMEOUT K_SECONDS(1)
 #define RS_COUNT 3
 
 static void rs_timeout(struct k_work *work)
@@ -723,8 +723,7 @@ void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
 		vlifetime);
 
-	k_delayed_work_submit(&ifaddr->lifetime,
-			      vlifetime * MSEC_PER_SEC);
+	k_delayed_work_submit(&ifaddr->lifetime, K_SECONDS(vlifetime));
 }
 
 static struct net_if_addr *ipv6_addr_find(struct net_if *iface,
@@ -1240,18 +1239,18 @@ void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix *prefix,
 	 * all bits set means infinite and that value is never set
 	 * to timer.
 	 */
-	u32_t timeout = lifetime * MSEC_PER_SEC;
+	u32_t timeout = K_SECONDS(lifetime);
 
 	NET_ASSERT(lifetime != 0xffffffff);
 
-	if (lifetime > (0xfffffffe / MSEC_PER_SEC)) {
+	if (lifetime > (0xfffffffe / K_SECONDS(1))) {
 		timeout = 0xfffffffe;
 
 		NET_ERR("Prefix %s/%d lifetime %u overflow, "
 			"setting it to %u secs",
 			net_sprint_ipv6_addr(&prefix->prefix),
 			prefix->len,
-			lifetime, timeout / MSEC_PER_SEC);
+			lifetime, timeout / K_SECONDS(1));
 	}
 
 	NET_DBG("Prefix lifetime %u ms", timeout);
@@ -1329,8 +1328,7 @@ void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
 		net_sprint_ipv6_addr(&router->address.in6_addr),
 		lifetime);
 
-	k_delayed_work_submit(&router->lifetime,
-			      lifetime * MSEC_PER_SEC);
+	k_delayed_work_submit(&router->lifetime, K_SECONDS(lifetime));
 }
 
 static inline void net_if_router_init(struct net_if_router *router,
@@ -1350,8 +1348,7 @@ static inline void net_if_router_init(struct net_if_router *router,
 		router->is_infinite = false;
 
 		k_delayed_work_init(&router->lifetime, ipv6_router_expired);
-		k_delayed_work_submit(&router->lifetime,
-				      lifetime * MSEC_PER_SEC);
+		k_delayed_work_submit(&router->lifetime, K_SECONDS(lifetime));
 
 		NET_DBG("Expiring %s in %u secs", net_sprint_ipv6_addr(addr),
 			lifetime);

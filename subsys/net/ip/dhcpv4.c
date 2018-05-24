@@ -430,8 +430,7 @@ static void send_request(struct net_if *iface)
 	timeout = DHCPV4_INITIAL_RETRY_TIMEOUT <<
 					iface->config.dhcpv4.attempts;
 
-	k_delayed_work_submit(&iface->config.dhcpv4.timer,
-			      timeout * MSEC_PER_SEC);
+	k_delayed_work_submit(&iface->config.dhcpv4.timer, K_SECONDS(timeout));
 
 	iface->config.dhcpv4.attempts++;
 
@@ -491,8 +490,7 @@ static void send_discover(struct net_if *iface)
 
 	timeout = DHCPV4_INITIAL_RETRY_TIMEOUT << iface->config.dhcpv4.attempts;
 
-	k_delayed_work_submit(&iface->config.dhcpv4.timer,
-			      timeout * MSEC_PER_SEC);
+	k_delayed_work_submit(&iface->config.dhcpv4.timer, K_SECONDS(timeout));
 
 	iface->config.dhcpv4.attempts++;
 
@@ -621,11 +619,11 @@ static void enter_bound(struct net_if *iface)
 
 	/* Start renewal time */
 	k_delayed_work_submit(&iface->config.dhcpv4.t1_timer,
-			      renewal_time * MSEC_PER_SEC);
+			      K_SECONDS(renewal_time));
 
 	/* Start rebinding time */
 	k_delayed_work_submit(&iface->config.dhcpv4.t2_timer,
-			      rebinding_time * MSEC_PER_SEC);
+			      K_SECONDS(rebinding_time));
 }
 
 static void dhcpv4_timeout(struct k_work *work)
@@ -1117,7 +1115,7 @@ void net_dhcpv4_start(struct net_if *iface)
 		NET_DBG("wait timeout=%"PRIu32"s", timeout);
 
 		k_delayed_work_submit(&iface->config.dhcpv4.timer,
-				      timeout * MSEC_PER_SEC);
+				      K_SECONDS(timeout));
 		break;
 	case NET_DHCPV4_INIT:
 	case NET_DHCPV4_SELECTING:
