@@ -52,7 +52,7 @@ static int signal_sock;
 static struct sockaddr_in loopback_addr;
 
 /* Dedicated buffer for loopback message: */
-static u8_t server_rcv_buf[SIGNAL_MSG_SIZE];
+static uint8_t server_rcv_buf[SIGNAL_MSG_SIZE];
 
 /* Loopback socket's bind address: */
 static struct sockaddr_in bind_addr = {

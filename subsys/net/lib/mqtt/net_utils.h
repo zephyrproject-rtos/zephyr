@@ -18,7 +18,7 @@ extern "C" {
 bool net_util_init_tcp_client(struct sockaddr *addr,
 			      struct sockaddr *peer_addr,
 			      const char *peer_addr_str,
-			      u16_t peer_port);
+			      uint16_t peer_port);
 
 #ifdef __cplusplus
 }

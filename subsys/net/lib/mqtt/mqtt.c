@@ -60,7 +60,7 @@ static void _mqtt_msg_free(void *buf)
 int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 {
 	void *data = NULL;
-	u16_t len;
+	uint16_t len;
 	int rc;
 
 	data = _mqtt_msg_alloc();
@@ -86,8 +86,8 @@ int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 {
 	/* DISCONNECT is a zero length message: 2 bytes required, no payload */
-	u8_t msg[2];
-	u16_t len;
+	uint8_t msg[2];
+	uint16_t len;
 	int rc;
 
 	rc = mqtt_pack_disconnect(msg, &len, sizeof(msg));
@@ -123,11 +123,11 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
  * @retval -EIO on network error
  */
 static
-int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, u16_t id,
+int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, uint16_t id,
 		     enum mqtt_packet pkt_type)
 {
-	u8_t msg[4];
-	u16_t len;
+	uint8_t msg[4];
+	uint16_t len;
 	int rc;
 
 	switch (pkt_type) {
@@ -157,22 +157,22 @@ int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, u16_t id,
 	return rc;
 }
 
-int mqtt_tx_puback(struct mqtt_ctx *ctx, u16_t id)
+int mqtt_tx_puback(struct mqtt_ctx *ctx, uint16_t id)
 {
 	return mqtt_tx_pub_msgs(ctx, id, MQTT_PUBACK);
 }
 
-int mqtt_tx_pubcomp(struct mqtt_ctx *ctx, u16_t id)
+int mqtt_tx_pubcomp(struct mqtt_ctx *ctx, uint16_t id)
 {
 	return mqtt_tx_pub_msgs(ctx, id, MQTT_PUBCOMP);
 }
 
-int mqtt_tx_pubrec(struct mqtt_ctx *ctx, u16_t id)
+int mqtt_tx_pubrec(struct mqtt_ctx *ctx, uint16_t id)
 {
 	return mqtt_tx_pub_msgs(ctx, id, MQTT_PUBREC);
 }
 
-int mqtt_tx_pubrel(struct mqtt_ctx *ctx, u16_t id)
+int mqtt_tx_pubrel(struct mqtt_ctx *ctx, uint16_t id)
 {
 	return mqtt_tx_pub_msgs(ctx, id, MQTT_PUBREL);
 }
@@ -180,7 +180,7 @@ int mqtt_tx_pubrel(struct mqtt_ctx *ctx, u16_t id)
 int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 {
 	void *data = NULL;
-	u16_t len;
+	uint16_t len;
 	int rc;
 
 	data = _mqtt_msg_alloc();
@@ -203,8 +203,8 @@ int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 
 int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 {
-	u8_t msg[2];
-	u16_t len;
+	uint8_t msg[2];
+	uint16_t len;
 	int rc;
 
 	rc = mqtt_pack_pingreq(msg, &len, sizeof(msg));
@@ -218,11 +218,11 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 	return rc;
 }
 
-int mqtt_tx_subscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
+int mqtt_tx_subscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 		      const char *topics[], const enum mqtt_qos qos[])
 {
 	void *data = NULL;
-	u16_t len;
+	uint16_t len;
 	int rc;
 
 	data = _mqtt_msg_alloc();
@@ -244,11 +244,11 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 	return rc;
 }
 
-int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
+int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, uint16_t pkt_id, uint8_t items,
 			const char *topics[])
 {
 	void *data = NULL;
-	u16_t len;
+	uint16_t len;
 	int rc;
 
 	data = _mqtt_msg_alloc();
@@ -273,12 +273,12 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 int mqtt_rx_connack(struct mqtt_ctx *ctx, void *rx, size_t len,
 		    int clean_session)
 {
-	u8_t connect_rc;
-	u8_t session;
-	u8_t *data;
+	uint8_t connect_rc;
+	uint8_t session;
+	uint8_t *data;
 	int rc;
 
-	data = (u8_t *)rx;
+	data = (uint8_t *)rx;
 
 	/* CONNACK is 4 bytes len */
 	rc = mqtt_unpack_connack(data, len, &session, &connect_rc);
@@ -338,9 +338,9 @@ static
 int mqtt_rx_pub_msgs(struct mqtt_ctx *ctx, void *data, size_t len,
 		     enum mqtt_packet type)
 {
-	int (*unpack)(u8_t *, u16_t, u16_t *) = NULL;
-	int (*response)(struct mqtt_ctx *, u16_t) = NULL;
-	u16_t pkt_id;
+	int (*unpack)(uint8_t *, uint16_t, uint16_t *) = NULL;
+	int (*response)(struct mqtt_ctx *, uint16_t) = NULL;
+	uint16_t pkt_id;
 	int rc;
 
 	switch (type) {
@@ -436,8 +436,8 @@ int mqtt_rx_pingresp(struct mqtt_ctx *ctx, void *data, size_t len)
 int mqtt_rx_suback(struct mqtt_ctx *ctx, void *data, size_t len)
 {
 	enum mqtt_qos suback_qos[CONFIG_MQTT_SUBSCRIBE_MAX_TOPICS];
-	u16_t pkt_id;
-	u8_t items;
+	uint16_t pkt_id;
+	uint8_t items;
 	int rc;
 
 	rc = mqtt_unpack_suback(data, len, &pkt_id, &items,
@@ -460,7 +460,7 @@ int mqtt_rx_suback(struct mqtt_ctx *ctx, void *data, size_t len)
 
 int mqtt_rx_unsuback(struct mqtt_ctx *ctx, void *data, size_t len)
 {
-	u16_t pkt_id;
+	uint16_t pkt_id;
 	int rc;
 
 	/* 4 bytes message */
@@ -532,7 +532,7 @@ int mqtt_rx_publish(struct mqtt_ctx *ctx, void *data, size_t len)
 static
 int mqtt_parser(struct mqtt_ctx *ctx, void *data, size_t len)
 {
-	u16_t pkt_type = MQTT_INVALID;
+	uint16_t pkt_type = MQTT_INVALID;
 	int rc = -EINVAL;
 
 	/*
@@ -545,7 +545,7 @@ int mqtt_parser(struct mqtt_ctx *ctx, void *data, size_t len)
 		return -EMSGSIZE;
 	}
 
-	pkt_type = MQTT_PACKET_TYPE(((u8_t *)data)[0]);
+	pkt_type = MQTT_PACKET_TYPE(((uint8_t *)data)[0]);
 
 	switch (pkt_type) {
 	case MQTT_CONNACK:

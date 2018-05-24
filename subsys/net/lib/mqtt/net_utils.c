@@ -21,7 +21,7 @@ static int get_port_number(const char *peer_addr_str,
 			   char *buf,
 			   size_t buf_len)
 {
-	u16_t port = 0;
+	uint16_t port = 0;
 	char *ptr;
 	int count, i;
 
@@ -84,12 +84,12 @@ static int get_port_number(const char *peer_addr_str,
 bool net_util_init_tcp_client(struct sockaddr *addr,
 			      struct sockaddr *peer_addr,
 			      const char *peer_addr_str,
-			      u16_t peer_port)
+			      uint16_t peer_port)
 {
 	const char *base_peer_addr = peer_addr_str;
 	char base_addr_str[INET6_ADDRSTRLEN + 1];
 	int addr_ok = false;
-	u16_t port = 0;
+	uint16_t port = 0;
 
 	/* If the peer string contains port number, use that and
 	 * ignore the port number parameter.

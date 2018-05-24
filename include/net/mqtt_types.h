@@ -8,7 +8,7 @@
 #define _MQTT_TYPES_H_
 
 #include <stddef.h>
-#include <zephyr/types.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,35 +58,35 @@ enum mqtt_qos {
 };
 
 struct mqtt_connect_msg {
-	u8_t clean_session:1;
+	uint8_t clean_session:1;
 	char *client_id;
-	u16_t client_id_len;
-	u8_t will_flag:1;
+	uint16_t client_id_len;
+	uint8_t will_flag:1;
 	enum mqtt_qos will_qos;
-	u8_t will_retain:1;
+	uint8_t will_retain:1;
 	char *will_topic;
-	u16_t will_topic_len;
-	u8_t *will_msg;
-	u16_t will_msg_len;
-	u16_t keep_alive;
+	uint16_t will_topic_len;
+	uint8_t *will_msg;
+	uint16_t will_msg_len;
+	uint16_t keep_alive;
 	const char *user_name;
-	u16_t user_name_len;
-	u8_t *password;
-	u16_t password_len;
+	uint16_t user_name_len;
+	uint8_t *password;
+	uint16_t password_len;
 };
 
 /**
  * @brief MQTT Publish Message
  */
 struct mqtt_publish_msg {
-	u8_t dup;
+	uint8_t dup;
 	enum mqtt_qos qos;
-	u8_t retain;
-	u16_t pkt_id;
+	uint8_t retain;
+	uint16_t pkt_id;
 	char *topic;
-	u16_t topic_len;
-	u8_t *msg;
-	u16_t msg_len;
+	uint16_t topic_len;
+	uint8_t *msg;
+	uint16_t msg_len;
 };
 
 /**
