@@ -76,10 +76,15 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	k_sem_give(&end_sema);
 }
 
-/*test cases*/
 /**
- * @ingroup t_thread_init
+ * @addtogroup kernel_thread_tests
+ * @{
+ */
+
+/**
  * @brief test preempt thread initialization via K_THREAD_DEFINE
+ *
+ * @see #K_THREAD_DEFINE(x)
  */
 void test_kdefine_preempt_thread(void)
 {
@@ -100,8 +105,9 @@ void test_kdefine_preempt_thread(void)
 }
 
 /**
- * @ingroup t_thread_init
  * @brief test coop thread initialization via K_THREAD_DEFINE
+ *
+ * @see #K_THREAD_DEFINE(x)
  */
 void test_kdefine_coop_thread(void)
 {
@@ -122,8 +128,9 @@ void test_kdefine_coop_thread(void)
 }
 
 /**
- * @ingroup t_thread_init
  * @brief test preempt thread initialization via k_thread_create
+ *
+ * @see k_thread_create()
  */
 void test_kinit_preempt_thread(void)
 {
@@ -152,8 +159,8 @@ void test_kinit_preempt_thread(void)
 }
 
 /**
- * @ingroup t_thread_init
  * @brief test coop thread initialization via k_thread_create
+ * @see k_thread_create()
  */
 void test_kinit_coop_thread(void)
 {
@@ -180,6 +187,11 @@ void test_kinit_coop_thread(void)
 	/*wait for thread to exit*/
 	k_sem_take(&end_sema, K_FOREVER);
 }
+
+
+/**
+ * @}
+ */
 
 /*test case main entry*/
 void test_main(void)

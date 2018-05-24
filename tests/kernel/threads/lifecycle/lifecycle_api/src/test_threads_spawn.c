@@ -38,11 +38,14 @@ static void thread_entry_delay(void *p1, void *p2, void *p3)
 /* test cases */
 
 /**
+ * @ingroup kernel_thread_tests
  * @brief Check the parameters passed to thread entry function
  *
  * @details Create an user thread and pass 2 variables and a
  * semaphore to a thread entry function. Check for the correctness
  * of the parameters passed.
+ *
+ * @see k_thread_create()
  */
 void test_threads_spawn_params(void)
 {
@@ -53,10 +56,13 @@ void test_threads_spawn_params(void)
 }
 
 /**
+ * @ingroup kernel_thread_tests
  * @brief Spawn thread with higher priority
  *
  * @details Create an user thread with priority greater than
  * current thread and check its behavior.
+ *
+ * @see k_thread_create()
  */
 void test_threads_spawn_priority(void)
 {
@@ -68,10 +74,13 @@ void test_threads_spawn_priority(void)
 }
 
 /**
+ * @ingroup kernel_thread_tests
  * @brief Spawn thread with a delay
  *
  * @details Create a user thread with delay and check if the
  * thread entry function is executed only after the timeout occurs.
+ *
+ * @see k_thread_create()
  */
 void test_threads_spawn_delay(void)
 {
@@ -89,6 +98,7 @@ void test_threads_spawn_delay(void)
 }
 
 /**
+ * @ingroup kernel_thread_tests
  * @brief Spawn thread with forever delay and highest priority
  *
  * @details Create an user thread with forever delay and yield
@@ -96,6 +106,8 @@ void test_threads_spawn_delay(void)
  * the thread will not be put in ready queue since it has forever delay,
  * the thread is explicitly started using k_thread_start() and checked
  * if thread has started executing.
+ *
+ * @see k_thread_create()
  */
 void test_threads_spawn_forever(void)
 {
@@ -118,9 +130,12 @@ void test_threads_spawn_forever(void)
 }
 
 /**
+ * @ingroup kernel_thread_tests
  * @brief Validate behavior of multiple calls to k_thread_start()
  *
  * @details Call k_thread_start() on an already terminated thread
+ *
+ * @see k_thread_start()
  */
 void test_thread_start(void)
 {

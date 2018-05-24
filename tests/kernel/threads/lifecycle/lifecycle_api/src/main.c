@@ -4,6 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+
+/**
+ * @brief Thread Tests
+ * @defgroup kernel_thread_tests Threads
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
 #include <ztest.h>
 extern void test_threads_spawn_params(void);
 extern void test_threads_spawn_priority(void);
