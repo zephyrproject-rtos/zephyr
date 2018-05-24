@@ -155,18 +155,18 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	STORE_xFAR(sfar, SAU->SFAR);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
-	if (SCB->CFSR & CFSR_MMARVALID_Msk) {
+	if (SCB->CFSR & SCB_CFSR_MMARVALID_Msk) {
 		PR_EXC("MMFAR: 0x%x\n", mmfar);
 		if (escalation) {
 			/* clear MMAR[VALID] to reset */
-			SCB->CFSR &= ~CFSR_MMARVALID_Msk;
+			SCB->CFSR &= ~SCB_CFSR_MMARVALID_Msk;
 		}
 	}
-	if (SCB->CFSR & CFSR_BFARVALID_Msk) {
+	if (SCB->CFSR & SCB_CFSR_BFARVALID_Msk) {
 		PR_EXC("BFAR: 0x%x\n", bfar);
 		if (escalation) {
 			/* clear CFSR_BFAR[VALID] to reset */
-			SCB->CFSR &= ~CFSR_BFARVALID_Msk;
+			SCB->CFSR &= ~SCB_CFSR_BFARVALID_Msk;
 		}
 	}
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
