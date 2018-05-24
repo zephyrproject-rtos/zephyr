@@ -9,4 +9,4 @@ set(WITH_ZEPHYR_LIB 1)
 set(WITH_DOC OFF CACHE BOOL "" FORCE)
 set(WITH_DEFAULT_LOGGER OFF CACHE BOOL "" FORCE)
 
-add_subdirectory(libmetal)
+add_subdirectory(${CONFIG_LIBMETAL_SRC_PATH} libmetal)
