@@ -38,7 +38,7 @@
 static struct net_context *ipv4;
 static struct net_context *ipv6;
 
-#define BUF_ALLOC_TIMEOUT MSEC(100)
+#define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
 /* This value is recommended by RFC 1035 */
 #define DNS_RESOLVER_MAX_BUF_SIZE	512

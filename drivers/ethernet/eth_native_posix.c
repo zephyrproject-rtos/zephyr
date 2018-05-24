@@ -35,7 +35,7 @@
 #define _ETH_MTU 1500
 #endif
 
-#define NET_BUF_TIMEOUT MSEC(10)
+#define NET_BUF_TIMEOUT K_MSEC(100)
 
 #if defined(CONFIG_NET_VLAN)
 #define ETH_HDR_LEN sizeof(struct net_eth_vlan_hdr)

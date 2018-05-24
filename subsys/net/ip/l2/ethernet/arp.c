@@ -21,7 +21,7 @@
 #include <net/arp.h>
 #include "net_private.h"
 
-#define NET_BUF_TIMEOUT MSEC(100)
+#define NET_BUF_TIMEOUT K_MSEC(100)
 
 static struct arp_entry arp_table[CONFIG_NET_ARP_TABLE_SIZE];
 

@@ -40,7 +40,7 @@
 /* Timeout value to be used when allocating net buffer during various
  * neighbor discovery procedures.
  */
-#define ND_NET_BUF_TIMEOUT MSEC(100)
+#define ND_NET_BUF_TIMEOUT K_MSEC(100)
 
 /* Maximum reachable time value specified in RFC 4861 section
  * 6.2.1. Router Configuration Variables, AdvReachableTime
