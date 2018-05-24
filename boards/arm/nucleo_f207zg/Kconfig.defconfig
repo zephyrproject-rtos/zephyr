@@ -1,0 +1,20 @@
+# Kconfig - NUCLEO-144 F207ZG board configuration
+#
+# Copyright (c) 2018 qianfan Zhao
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_NUCLEO_F207ZG
+
+config BOARD
+	default "nucleo_f207zg"
+
+if UART_CONSOLE
+
+config UART_STM32_PORT_3
+	default y
+
+endif # UART_CONSOLE
+
+endif # BOARD_NUCLEO_F207ZG
