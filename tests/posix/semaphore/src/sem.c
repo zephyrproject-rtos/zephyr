@@ -53,7 +53,9 @@ static void test_sema(void)
 	zassert_equal(sem_getvalue(&sema, &val), 0, NULL);
 	zassert_equal(val, 0, NULL);
 
-	pthread_create(&newthread, &attr, foo_func, NULL);
+	ret = pthread_create(&newthread, &attr, foo_func, NULL);
+	zassert_false(ret, "Thread creation failed");
+
 	zassert_false(sem_wait(&sema), "sem_wait failed");
 
 	printk("Parent thread unlocked\n");
