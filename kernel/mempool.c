@@ -62,14 +62,32 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 	while (1) {
 		u32_t level_num, block_num;
 
-		ret = _sys_mem_pool_block_alloc(&p->base, size, &level_num,
-						&block_num, &block->data);
+		/* There is a "managed race" in alloc that can fail
+		 * (albeit in a well-defined way, see comments there)
+		 * with -EAGAIN when simultaneous allocations happen.
+		 * Retry exactly once before sleeping to resolve it.
+		 * If we're so contended that it fails twice, then we
+		 * clearly want to block.
+		 */
+		for (int i = 0; i < 2; i++) {
+			ret = _sys_mem_pool_block_alloc(&p->base, size,
+							&level_num, &block_num,
+							&block->data);
+			if (ret != -EAGAIN) {
+				break;
+			}
+		}
+
+		if (ret == -EAGAIN) {
+			ret = -ENOMEM;
+		}
+
 		block->id.pool = pool_id(p);
 		block->id.level = level_num;
 		block->id.block = block_num;
 
 		if (ret == 0 || timeout == K_NO_WAIT ||
-		    ret == -EAGAIN || (ret && ret != -ENOMEM)) {
+		    (ret && ret != -ENOMEM)) {
 			return ret;
 		}
 
