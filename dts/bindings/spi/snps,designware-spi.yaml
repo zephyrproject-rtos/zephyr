@@ -32,4 +32,10 @@ properties:
       category: required
       description: required interrupts
       generation: define
+
+    interrupt-masq:
+      category: optional
+      description: required interrupt masq
+      generation: define
+
 ...
