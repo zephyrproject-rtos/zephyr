@@ -1,3 +1,0 @@
-tests:
-  kernel.threads:
-    tags: kernel threads userspace
