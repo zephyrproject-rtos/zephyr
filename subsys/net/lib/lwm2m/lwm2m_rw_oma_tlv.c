@@ -717,6 +717,21 @@ const struct lwm2m_reader oma_tlv_reader = {
 	get_opaque
 };
 
+static int do_write_op_tlv_dummy_read(struct lwm2m_engine_context *context)
+{
+	struct lwm2m_input_context *in = context->in;
+	struct oma_tlv tlv;
+	u8_t read_char;
+
+	oma_tlv_get(&tlv, in, false);
+	while (in->frag && tlv.length--) {
+		in->frag = net_frag_read_u8(in->frag, in->offset, &in->offset,
+					    &read_char);
+	}
+
+	return 0;
+}
+
 static int do_write_op_tlv_item(struct lwm2m_engine_context *context)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
@@ -727,26 +742,24 @@ static int do_write_op_tlv_item(struct lwm2m_engine_context *context)
 
 	ret = lwm2m_get_or_create_engine_obj(context, &obj_inst, &created);
 	if (ret < 0) {
-		return ret;
+		goto error;
 	}
 
 	obj_field = lwm2m_get_engine_obj_field(obj_inst->obj,
 					       context->path->res_id);
-	/* if obj_field is not found, treat as an optional resource */
 	if (!obj_field) {
-		if (context->operation == LWM2M_OP_CREATE) {
-			return -ENOTSUP;
-		}
-
-		return -ENOENT;
+		ret = -ENOENT;
+		goto error;
 	}
 
 	if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_W)) {
-		return -EPERM;
+		ret = -EPERM;
+		goto error;
 	}
 
 	if (!obj_inst->resources || obj_inst->resource_count == 0) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto error;
 	}
 
 	for (i = 0; i < obj_inst->resource_count; i++) {
@@ -757,10 +770,29 @@ static int do_write_op_tlv_item(struct lwm2m_engine_context *context)
 	}
 
 	if (!res) {
-		return -ENOENT;
+		/* if OPTIONAL and OP_CREATE use ENOTSUP */
+		if (context->operation == LWM2M_OP_CREATE &&
+		    LWM2M_HAS_PERM(obj_field, BIT(LWM2M_FLAG_OPTIONAL))) {
+			ret = -ENOTSUP;
+			goto error;
+		}
+
+		ret = -ENOENT;
+		goto error;
 	}
 
-	return lwm2m_write_handler(obj_inst, res, obj_field, context);
+	ret = lwm2m_write_handler(obj_inst, res, obj_field, context);
+	if (ret == -EACCES || ret == -ENOENT) {
+		/* if read-only or non-existent data buffer move on */
+		do_write_op_tlv_dummy_read(context);
+		ret = 0;
+	}
+
+	return ret;
+
+error:
+	do_write_op_tlv_dummy_read(context);
+	return ret;
 }
 
 int do_write_op_tlv(struct lwm2m_engine_obj *obj,
