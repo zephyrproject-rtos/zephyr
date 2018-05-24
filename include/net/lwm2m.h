@@ -27,6 +27,9 @@
 #define IPSO_OBJECT_TEMP_SENSOR_ID			3303
 #define IPSO_OBJECT_LIGHT_CONTROL_ID			3311
 
+/* #####/###/##### + NULL */
+#define MAX_RESOURCE_LEN				16
+
 /**
  * @brief LwM2M context structure
  *

@@ -53,9 +53,6 @@
 #include <misc/util.h>
 #include <kernel.h>
 
-/* #####/###/#####/### + NULL */
-#define MAX_RESOURCE_LEN	20
-
 /* operations / permissions */
 /* values from 0 to 7 can be used as permission checks */
 #define LWM2M_OP_READ		0
