@@ -235,7 +235,7 @@ void test_fatal(void)
 			(k_thread_entry_t)stack_thread2,
 			NULL, NULL, NULL, K_PRIO_PREEMPT(PRIORITY), 0,
 			K_NO_WAIT);
-#ifdef CONFIG_ARM
+#ifdef CONFIG_NXP_MPU
 	/* FIXME: See #7706 */
 	zassert_true(crash_reason == _NANO_ERR_STACK_CHK_FAIL ||
 		     crash_reason == _NANO_ERR_HW_EXCEPTION, NULL);
