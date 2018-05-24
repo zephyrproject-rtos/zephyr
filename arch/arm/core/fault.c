@@ -28,10 +28,11 @@
 #endif /* CONFIG_PRINTK */
 
 #if (CONFIG_FAULT_DUMP > 0)
-#define FAULT_DUMP(esf, fault) _FaultDump(esf, fault)
+#define FAULT_DUMP(reason, esf, fault) reason = _FaultDump(esf, fault)
 #else
-#define FAULT_DUMP(esf, fault) \
+#define FAULT_DUMP(reason, esf, fault) \
 	do {                   \
+		(void)reason;  \
 		(void) esf;    \
 		(void) fault;  \
 	} while ((0))
@@ -115,9 +116,9 @@
  * MMFSR: 0x00000000, BFSR: 0x00000082, UFSR: 0x00000000
  * BFAR: 0xff001234
  *
- * @return N/A
+ * @return default fatal error reason (_NANO_ERR_HW_EXCEPTION)
  */
-void _FaultDump(const NANO_ESF *esf, int fault)
+u32_t  _FaultDump(const NANO_ESF *esf, int fault)
 {
 	PR_EXC("Fault! EXC #%d, Thread: %p, instr @ 0x%x\n",
 	       fault,
@@ -191,6 +192,8 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+
+	return _NANO_ERR_HW_EXCEPTION;
 }
 #endif
 
@@ -556,6 +559,7 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
  */
 void _Fault(const NANO_ESF *esf, u32_t exc_return)
 {
+	u32_t reason = _NANO_ERR_HW_EXCEPTION;
 	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
@@ -573,7 +577,7 @@ void _Fault(const NANO_ESF *esf, u32_t exc_return)
 
 	if (exc_return & EXC_RETURN_RETURN_STACK_Secure) {
 		/* Exception entry occurred in Secure stack. */
-		FAULT_DUMP(esf, fault);
+		FAULT_DUMP(reason, esf, fault);
 	} else {
 		/* Exception entry occurred in Non-Secure stack. Therefore, the
 		 * exception stack frame is located in the Non-Secure stack.
@@ -592,7 +596,7 @@ void _Fault(const NANO_ESF *esf, u32_t exc_return)
 				_SysFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, esf);
 			}
 		}
-		FAULT_DUMP(esf_ns, fault);
+		FAULT_DUMP(reason, esf_ns, fault);
 
 		/* Dumping the Secure Stack, too.
 		 * In case a Non-Secure exception interrupted the Secure
@@ -630,10 +634,10 @@ void _Fault(const NANO_ESF *esf, u32_t exc_return)
 	}
 #else
 	(void) exc_return;
-	FAULT_DUMP(esf, fault);
+	FAULT_DUMP(reason, esf, fault);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE*/
 
-	_SysFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, esf);
+	_SysFatalErrorHandler(reason, esf);
 }
 
 /**
