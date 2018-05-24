@@ -10,4 +10,4 @@ set(WITH_LIBMETAL_FIND OFF CACHE BOOL "" FORCE)
 set(LIBMETAL_INCLUDE_DIR ${ZEPHYR_BINARY_DIR}/ext/hal/libmetal/lib/include)
 set(LIBMETAL_LIB ${ZEPHYR_BINARY_DIR}/ext/hal/libmetal/lib)
 
-add_subdirectory(open-amp)
+add_subdirectory(${CONFIG_OPENAMP_SRC_PATH} open-amp)
