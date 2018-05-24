@@ -389,15 +389,22 @@ u32_t z_early_boot_rand32_get(void)
 		goto sys_rand32_fallback;
 	}
 
-	rc = entropy_get_entropy(entropy, (u8_t *)&retval, sizeof(retval));
-	if (rc == 0) {
+	/* Try to see if driver provides an ISR-specific API */
+	rc = entropy_get_entropy_isr(entropy, (u8_t *)&retval,
+				     sizeof(retval), ENTROPY_BUSYWAIT);
+	if (rc == -ENOTSUP) {
+		/* Driver does not provide an ISR-specific API, assume it can
+		 * be called from ISR context
+		 */
+		rc = entropy_get_entropy(entropy, (u8_t *)&retval,
+					 sizeof(retval));
+	}
+
+	if (rc >= 0) {
 		return retval;
 	}
 
-	/* FIXME: rc could be -EAGAIN here, for cases where the entropy
-	 * driver doesn't yet have the requested amount of entropy.  In
-	 * the meantime, just use the fallback with sys_rand32_get().
-	 */
+	/* Fall through to fallback */
 
 sys_rand32_fallback:
 #endif
