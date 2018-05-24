@@ -29,6 +29,11 @@ config SOC_NRF52840_QIAA
 
 endchoice
 
+config SOC_DCDC_NRF52X
+	bool
+	help
+	  Enable nRF52 series System on Chip DC/DC converter.
+
 config ARM_MPU_NRF52X
 	bool "Enable MPU on nRF52"
 	depends on CPU_HAS_MPU
