@@ -29,6 +29,14 @@ config WS2812_STRIP_NAME
 	help
 		Device name for WS2812 LED strip.
 
+config WS2812_STRIP_MAX_PIXELS
+	int "Maximum number of pixels in a strip"
+	default 12
+	help
+		Set this to the maximum number of pixels you need
+		to control at once. There is an 8x memory penalty associated
+		with each increment of this value, so it's worth optimizing.
+
 config WS2812_STRIP_SPI_DEV_NAME
 	string "SPI master to use to drive the strip"
 	default ""
