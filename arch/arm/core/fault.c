@@ -223,10 +223,12 @@ static void _FaultThreadShow(const NANO_ESF *esf)
  *
  * See _FaultDump() for example.
  *
- * @return N/A
+ * @return error code to identify the fatal error reason
  */
-static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
+static u32_t _MpuFault(const NANO_ESF *esf, int fromHardFault)
 {
+	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+
 	PR_EXC("***** MPU FAULT *****\n");
 
 	_FaultThreadShow(esf);
@@ -253,6 +255,30 @@ static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
 				/* clear SCB_MMAR[VALID] to reset */
 				SCB->CFSR &= ~SCB_CFSR_MMARVALID_Msk;
 			}
+#if defined(CONFIG_HW_STACK_PROTECTION)
+			/* When stack protection is enabled, we need to see
+			 * if the memory violation error is a stack corruption.
+			 * For that we investigate the address fail.
+			 */
+			struct k_thread *thread = _current;
+			u32_t guard_start;
+			if (thread != NULL) {
+#if defined(CONFIG_USERSPACE)
+				guard_start =
+					thread->arch.priv_stack_start ?
+					(u32_t)thread->arch.priv_stack_start :
+					(u32_t)thread->stack_obj;
+#else
+				guard_start = thread->stack_info.start;
+#endif
+				if (mmfar >= guard_start &&
+					mmfar < guard_start +
+					MPU_GUARD_ALIGN_AND_SIZE) {
+					/* Thread stack corruption */
+					reason = _NANO_ERR_STACK_CHK_FAIL;
+				}
+			}
+#endif /* CONFIG_HW_STACK_PROTECTION */
 		}
 	} else if (SCB->CFSR & SCB_CFSR_IACCVIOL_Msk) {
 		PR_EXC("  Instruction Access Violation\n");
@@ -263,6 +289,8 @@ static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
 		PR_EXC("  Floating-point lazy state preservation error\n");
 	}
 #endif /* !defined(CONFIG_ARMV7_M_ARMV8_M_FP) */
+
+	return reason;
 }
 
 /**
@@ -330,10 +358,12 @@ static void _BusFault(const NANO_ESF *esf, int fromHardFault)
  *
  * See _FaultDump() for example.
  *
- * @return N/A
+ * @return error code to identify the fatal error reason
  */
-static void _UsageFault(const NANO_ESF *esf)
+static u32_t _UsageFault(const NANO_ESF *esf)
 {
+	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+
 	PR_EXC("***** USAGE FAULT *****\n");
 
 	_FaultThreadShow(esf);
@@ -348,6 +378,12 @@ static void _UsageFault(const NANO_ESF *esf)
 #if defined(CONFIG_ARMV8_M_MAINLINE)
 	if (SCB->CFSR & SCB_CFSR_STKOF_Msk) {
 		PR_EXC("  Stack overflow\n");
+#if defined(CONFIG_HW_STACK_PROTECTION)
+		/* Stack Overflows are reported as stack
+		 * corruption errors.
+		 */
+		reason = _NANO_ERR_STACK_CHK_FAIL;
+#endif /* CONFIG_HW_STACK_PROTECTION */
 	}
 #endif /* CONFIG_ARMV8_M_MAINLINE */
 	if (SCB->CFSR & SCB_CFSR_NOCP_Msk) {
@@ -365,6 +401,8 @@ static void _UsageFault(const NANO_ESF *esf)
 
 	/* clear USFR sticky bits */
 	SCB->CFSR |= SCB_CFSR_USGFAULTSR_Msk;
+
+	return reason;
 }
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
@@ -434,10 +472,12 @@ static void _DebugMonitor(const NANO_ESF *esf)
  *
  * See _FaultDump() for example.
  *
- * @return N/A
+ * @return error code to identify the fatal error reason
  */
-static void _HardFault(const NANO_ESF *esf)
+static u32_t _HardFault(const NANO_ESF *esf)
 {
+	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+
 	PR_EXC("***** HARD FAULT *****\n");
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -448,11 +488,11 @@ static void _HardFault(const NANO_ESF *esf)
 	} else if (SCB->HFSR & SCB_HFSR_FORCED_Msk) {
 		PR_EXC("  Fault escalation (see below)\n");
 		if (SCB_MMFSR) {
-			_MpuFault(esf, 1);
+			reason = _MpuFault(esf, 1);
 		} else if (SCB_BFSR) {
 			_BusFault(esf, 1);
 		} else if (SCB_UFSR) {
-			_UsageFault(esf);
+			reason = _UsageFault(esf);
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 		} else if (SAU->SFSR) {
 			_SecureFault(esf);
@@ -462,6 +502,8 @@ static void _HardFault(const NANO_ESF *esf)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+
+	return reason;
 }
 
 /**
@@ -486,7 +528,8 @@ static void _ReservedException(const NANO_ESF *esf, int fault)
  * @brief Dump information regarding fault (FAULT_DUMP == 2)
  *
  * Dump information regarding the fault when CONFIG_FAULT_DUMP is set to 2
- * (long form).
+ * (long form), and return the error code for the kernel to identify the fatal
+ * error reason.
  *
  * eg. (precise bus error escalated to hard fault):
  *
@@ -498,25 +541,27 @@ static void _ReservedException(const NANO_ESF *esf, int fault)
  *   Precise data bus error
  *   Address: 0xff001234
  *
- * @return N/A
+ * @return error code to identify the fatal error reason
  */
-static void _FaultDump(const NANO_ESF *esf, int fault)
+static u32_t _FaultDump(const NANO_ESF *esf, int fault)
 {
+	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+
 	switch (fault) {
 	case 3:
-		_HardFault(esf);
+		reason = _HardFault(esf);
 		break;
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	/* HardFault is used for all fault conditions on ARMv6-M. */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	case 4:
-		_MpuFault(esf, 0);
+		reason = _MpuFault(esf, 0);
 		break;
 	case 5:
 		_BusFault(esf, 0);
 		break;
 	case 6:
-		_UsageFault(esf);
+		reason = _UsageFault(esf);
 		break;
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 	case 7:
@@ -533,6 +578,8 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
 		_ReservedException(esf, fault);
 		break;
 	}
+
+	return reason;
 }
 #endif /* FAULT_DUMP == 2 */
 
