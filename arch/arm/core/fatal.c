@@ -41,6 +41,8 @@
  *
  * @param reason the reason that the handler was called
  * @param pEsf pointer to the exception stack frame
+ *
+ * @return This function does not return.
  */
 void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *pEsf)
