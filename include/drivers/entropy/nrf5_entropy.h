@@ -16,6 +16,6 @@
  * @param len Buffer length.
  * @retval number of bytes filled with entropy.
  */
-u8_t entropy_get_entropy_isr(struct device *dev, u8_t *buf, u8_t len);
+u8_t entropy_nrf_get_entropy_isr(struct device *dev, u8_t *buf, u8_t len);
 
 #endif /* _NRF5_ENTROPY_H_ */

@@ -271,11 +271,34 @@ static int entropy_nrf5_get_entropy(struct device *device, u8_t *buf, u16_t len)
 	return 0;
 }
 
+static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len,
+					u32_t flags)
+{
+	struct entropy_nrf5_dev_data *dev_data = DEV_DATA(dev);
+	u16_t cnt = len;
+
+	if (!(flags & ENTROPY_BUSYWAIT)) {
+		return get((struct rand *)dev_data->isr, len, buf);
+	}
+
+	while (len) {
+		NRF_RNG->EVENTS_VALRDY = 0;
+		NRF_RNG->TASKS_START = 1;
+		while (NRF_RNG->EVENTS_VALRDY == 0) {
+		}
+		buf[--len] = NRF_RNG->VALUE;
+	}
+	NRF_RNG->TASKS_STOP = 1;
+
+	return cnt;
+}
+
 static struct entropy_nrf5_dev_data entropy_nrf5_data;
 static int entropy_nrf5_init(struct device *device);
 
 static const struct entropy_driver_api entropy_nrf5_api_funcs = {
-	.get_entropy = entropy_nrf5_get_entropy
+	.get_entropy = entropy_nrf5_get_entropy,
+	.get_entropy_isr = entropy_nrf5_get_entropy_isr
 };
 
 DEVICE_AND_API_INIT(entropy_nrf5, CONFIG_ENTROPY_NAME,
@@ -319,8 +342,9 @@ static int entropy_nrf5_init(struct device *device)
 	return 0;
 }
 
-u8_t entropy_get_entropy_isr(struct device *dev, u8_t *buf, u8_t len)
+u8_t entropy_nrf_get_entropy_isr(struct device *dev, u8_t *buf, u8_t len)
 {
 	ARG_UNUSED(dev);
 	return get((struct rand *)entropy_nrf5_data.isr, len, buf);
 }
+
