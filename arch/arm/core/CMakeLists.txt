@@ -18,7 +18,6 @@ zephyr_library_sources(
   cpu_idle.S
   fault_s.S
   fatal.c
-  thread_abort.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)
