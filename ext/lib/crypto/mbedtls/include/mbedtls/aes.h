@@ -1,7 +1,9 @@
 /**
  * \file aes.h
  *
- * \brief   The Advanced Encryption Standard (AES) specifies a FIPS-approved
+ * \brief   This file contains AES definitions and functions.
+ *
+ *          The Advanced Encryption Standard (AES) specifies a FIPS-approved
  *          cryptographic algorithm that can be used to protect electronic
  *          data.
  *
@@ -12,6 +14,7 @@
  *          techniques -- Encryption algorithms -- Part 2: Asymmetric
  *          ciphers</em>.
  */
+
 /*  Copyright (C) 2006-2018, Arm Limited (or its affiliates), All Rights Reserved.
  *  SPDX-License-Identifier: Apache-2.0
  *
@@ -59,13 +62,13 @@
 #define inline __inline
 #endif
 
-#if !defined(MBEDTLS_AES_ALT)
-// Regular implementation
-//
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if !defined(MBEDTLS_AES_ALT)
+// Regular implementation
+//
 
 /**
  * \brief The AES context-type definition.
@@ -84,6 +87,10 @@ typedef struct
                                          </li></ul> */
 }
 mbedtls_aes_context;
+
+#else  /* MBEDTLS_AES_ALT */
+#include "aes_alt.h"
+#endif /* MBEDTLS_AES_ALT */
 
 /**
  * \brief          This function initializes the specified AES context.
@@ -112,8 +119,8 @@ void mbedtls_aes_free( mbedtls_aes_context *ctx );
  *                 <li>192 bits</li>
  *                 <li>256 bits</li></ul>
  *
- * \return         \c 0 on success or #MBEDTLS_ERR_AES_INVALID_KEY_LENGTH
- *                 on failure.
+ * \return         \c 0 on success.
+ * \return         #MBEDTLS_ERR_AES_INVALID_KEY_LENGTH on failure.
  */
 int mbedtls_aes_setkey_enc( mbedtls_aes_context *ctx, const unsigned char *key,
                     unsigned int keybits );
@@ -128,7 +135,8 @@ int mbedtls_aes_setkey_enc( mbedtls_aes_context *ctx, const unsigned char *key,
  *                 <li>192 bits</li>
  *                 <li>256 bits</li></ul>
  *
- * \return         \c 0 on success, or #MBEDTLS_ERR_AES_INVALID_KEY_LENGTH on failure.
+ * \return         \c 0 on success.
+ * \return         #MBEDTLS_ERR_AES_INVALID_KEY_LENGTH on failure.
  */
 int mbedtls_aes_setkey_dec( mbedtls_aes_context *ctx, const unsigned char *key,
                     unsigned int keybits );
@@ -192,7 +200,8 @@ int mbedtls_aes_crypt_ecb( mbedtls_aes_context *ctx,
  * \param input    The buffer holding the input data.
  * \param output   The buffer holding the output data.
  *
- * \return         \c 0 on success, or #MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH
+ * \return         \c 0 on success.
+ * \return         #MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH
  *                 on failure.
  */
 int mbedtls_aes_crypt_cbc( mbedtls_aes_context *ctx,
@@ -313,7 +322,7 @@ int mbedtls_aes_crypt_cfb8( mbedtls_aes_context *ctx,
  * \param input            The buffer holding the input data.
  * \param output           The buffer holding the output data.
  *
- * \return     \c 0 on success.
+ * \return                 \c 0 on success.
  */
 int mbedtls_aes_crypt_ctr( mbedtls_aes_context *ctx,
                        size_t length,
@@ -391,22 +400,11 @@ MBEDTLS_DEPRECATED void mbedtls_aes_decrypt( mbedtls_aes_context *ctx,
 #undef MBEDTLS_DEPRECATED
 #endif /* !MBEDTLS_DEPRECATED_REMOVED */
 
-#ifdef __cplusplus
-}
-#endif
-
-#else  /* MBEDTLS_AES_ALT */
-#include "aes_alt.h"
-#endif /* MBEDTLS_AES_ALT */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * \brief          Checkup routine.
  *
- * \return         \c 0 on success, or \c 1 on failure.
+ * \return         \c 0 on success.
+ * \return         \c 1 on failure.
  */
 int mbedtls_aes_self_test( int verbose );
 

@@ -1,6 +1,9 @@
-/*
- *  Minimal configuration for TLS 1.2 with PSK and AES-CCM ciphersuites
+/**
+ * \file config-ccm-psk-tls1_2.h
  *
+ * \brief Minimal configuration for TLS 1.2 with PSK and AES-CCM ciphersuites
+ */
+/*
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *
@@ -32,22 +35,8 @@
 #define MBEDTLS_CONFIG_H
 
 /* System support */
-#define MBEDTLS_HAVE_ASM
-#define MBEDTLS_PLATFORM_C
-#define MBEDTLS_PLATFORM_MEMORY
-#define MBEDTLS_MEMORY_BUFFER_ALLOC_C
-#define MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
-#define MBEDTLS_PLATFORM_EXIT_ALT
-#define MBEDTLS_NO_PLATFORM_ENTROPY
-#define MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES
-#define MBEDTLS_PLATFORM_PRINTF_ALT
-
-#if defined(CONFIG_MBEDTLS_TEST)
-#define MBEDTLS_SELF_TEST
-#define MBEDTLS_DEBUG_C
-#else
-#define MBEDTLS_ENTROPY_C
-#endif
+//#define MBEDTLS_HAVE_TIME /* Optionally used in Hello messages */
+/* Other MBEDTLS_HAVE_XXX flags irrelevant for this configuration */
 
 /* mbed TLS feature support */
 #define MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
@@ -58,7 +47,9 @@
 #define MBEDTLS_CCM_C
 #define MBEDTLS_CIPHER_C
 #define MBEDTLS_CTR_DRBG_C
+#define MBEDTLS_ENTROPY_C
 #define MBEDTLS_MD_C
+#define MBEDTLS_NET_C
 #define MBEDTLS_SHA256_C
 #define MBEDTLS_SSL_CLI_C
 #define MBEDTLS_SSL_SRV_C
