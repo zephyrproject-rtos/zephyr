@@ -84,7 +84,7 @@ config EARLY_CONSOLE
 config ASSERT
 	bool
 	prompt "Enable __ASSERT() macro"
-	default n
+	default y if TEST
 	help
 	  This enables the __ASSERT() macro in the kernel code. If an assertion
 	  fails, the calling thread is put on an infinite tight loop. Since
