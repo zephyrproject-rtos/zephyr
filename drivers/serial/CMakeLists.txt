@@ -1,4 +1,4 @@
-zephyr_library_ifdef(CONFIG_SERIAL_HAS_DRIVER)
+zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_UART_ALTERA_JTAG uart_altera_jtag_hal.c)
 zephyr_library_sources_if_kconfig(uart_imx.c)
