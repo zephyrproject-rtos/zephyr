@@ -3,6 +3,8 @@
  * Copyright (c) 2018, Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * This implements the master side of an OpenAMP system.
  */
 
 #include <zephyr.h>
