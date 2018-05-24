@@ -1,14 +1,14 @@
 .. _openAMP_sample:
 
 OpenAMP Sample Application
-###########################
+##########################
 
 Overview
 ********
 
 This application demonstrates how to use OpenAMP with Zephyr. It is designed to
 demonstrate how to integrate OpenAMP with Zephyr both from a build perspective
-and code.
+and code.  Currently this integration is specific to the LPC54114 SoC.
 
 Building the application
 *************************
