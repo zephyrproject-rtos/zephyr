@@ -760,7 +760,7 @@ struct queue_item tx_0_ring_buf[CONFIG_I2S_CAVS_TX_BLOCK_COUNT + 1];
 
 static void i2s1_irq_config(void)
 {
-	IRQ_CONNECT(I2S1_CAVS_IRQ, CONFIG_I2S_1_IRQ_PRI, i2s_cavs_isr,
+	IRQ_CONNECT(I2S1_CAVS_IRQ, CONFIG_I2S_CAVS_1_IRQ_PRI, i2s_cavs_isr,
 		    DEVICE_GET(i2s1_cavs), 0);
 }
 
