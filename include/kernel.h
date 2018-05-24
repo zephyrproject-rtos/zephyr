@@ -733,6 +733,8 @@ extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
  * @param delay Scheduling delay (in milliseconds), or K_NO_WAIT (for no delay).
  *
  * @return ID of new thread.
+ *
+ * @req K-THREAD-001
  */
 __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
 				  k_thread_stack_t *stack,
@@ -748,6 +750,7 @@ __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
  * @param p1 1st entry point parameter
  * @param p2 2nd entry point parameter
  * @param p3 3rd entry point parameter
+ * @req K-THREAD-003
  */
 extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 						   void *p1, void *p2,
@@ -765,6 +768,7 @@ extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  *
  * @param thread Thread to grant access to objects
  * @param ... NULL-terminated list of kernel object pointers
+ * @req K-THREAD-004
  */
 extern void __attribute__((sentinel))
 	k_thread_access_grant(struct k_thread *thread, ...);
@@ -782,6 +786,7 @@ extern void __attribute__((sentinel))
  * @param thread Target thread to assign a memory pool for resource requests,
  *               or NULL if the thread should no longer have a memory pool.
  * @param pool Memory pool to use for resources.
+ * @req K-THREAD-005
  */
 static inline void k_thread_resource_pool_assign(struct k_thread *thread,
 						 struct k_mem_pool *pool)
@@ -800,6 +805,8 @@ static inline void k_thread_resource_pool_assign(struct k_thread *thread,
  * kernel heap.
  *
  * @param thread Target thread to assign the system heap for resource requests
+ *
+ * @req K-THREAD-004
  */
 void k_thread_system_pool_assign(struct k_thread *thread);
 #endif /* (CONFIG_HEAP_MEM_POOL_SIZE > 0) */
@@ -834,6 +841,7 @@ extern void k_busy_wait(u32_t usec_to_wait);
  * of the same or higher priority, the routine returns immediately.
  *
  * @return N/A
+ * @req K-THREAD-015
  */
 __syscall void k_yield(void);
 
@@ -847,6 +855,7 @@ __syscall void k_yield(void);
  * @param thread ID of thread to wake.
  *
  * @return N/A
+ * @req K-THREAD-014
  */
 __syscall void k_wakeup(k_tid_t thread);
 
@@ -854,6 +863,8 @@ __syscall void k_wakeup(k_tid_t thread);
  * @brief Get thread ID of the current thread.
  *
  * @return ID of current thread.
+ *
+ * @req K-THREAD-013
  */
 __syscall k_tid_t k_current_get(void);
 
@@ -885,6 +896,7 @@ __deprecated __syscall int k_thread_cancel(k_tid_t thread);
  * @param thread ID of thread to abort.
  *
  * @return N/A
+ * @req K-THREAD-012
  */
 __syscall void k_thread_abort(k_tid_t thread);
 
@@ -897,6 +909,7 @@ __syscall void k_thread_abort(k_tid_t thread);
  * on it.
  *
  * @param thread thread to start
+ * @req K-THREAD-011
  */
 __syscall void k_thread_start(k_tid_t thread);
 
@@ -968,9 +981,12 @@ struct _static_thread_data {
  * @param options Thread options.
  * @param delay Scheduling delay (in milliseconds), or K_NO_WAIT (for no delay).
  *
+ * @req K-THREAD-010
+ *
  * @internal It has been observed that the x86 compiler by default aligns
  * these _static_thread_data structures to 32-byte boundaries, thereby
  * wasting space. To work around this, force a 4-byte alignment.
+ *
  */
 #define K_THREAD_DEFINE(name, stack_size,                                \
 			entry, p1, p2, p3,                               \
@@ -993,6 +1009,7 @@ struct _static_thread_data {
  * @param thread ID of thread whose priority is needed.
  *
  * @return Priority of @a thread.
+ * @req K-THREAD-009
  */
 __syscall int k_thread_priority_get(k_tid_t thread);
 
@@ -1022,6 +1039,7 @@ __syscall int k_thread_priority_get(k_tid_t thread);
  * priority inheritance may result in undefined behavior.
  *
  * @return N/A
+ * @req K-THREAD-008
  */
 __syscall void k_thread_priority_set(k_tid_t thread, int prio);
 
@@ -1053,6 +1071,8 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  *
  * @param thread A thread on which to set the deadline
  * @param deadline A time delta, in cycle units
+ *
+ * @req K-THREAD-007
  */
 __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
 #endif
@@ -1070,6 +1090,7 @@ __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
  * @param thread ID of thread to suspend.
  *
  * @return N/A
+ * @req K-THREAD-005
  */
 __syscall void k_thread_suspend(k_tid_t thread);
 
@@ -1084,6 +1105,7 @@ __syscall void k_thread_suspend(k_tid_t thread);
  * @param thread ID of thread to resume.
  *
  * @return N/A
+ * @req K-THREAD-006
  */
 __syscall void k_thread_resume(k_tid_t thread);
 
@@ -1207,6 +1229,8 @@ extern void k_sched_unlock(void);
  * @param value New custom data value.
  *
  * @return N/A
+ *
+ * @req K-THREAD-016
  */
 __syscall void k_thread_custom_data_set(void *value);
 
@@ -1216,6 +1240,7 @@ __syscall void k_thread_custom_data_set(void *value);
  * This routine returns the custom data for the current thread.
  *
  * @return Current custom data value.
+ * @req K-THREAD-007
  */
 __syscall void *k_thread_custom_data_get(void);
 
@@ -4591,7 +4616,7 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * 'noinit' section so that it isn't zeroed at boot
  *
  * The declared symbol will always be a k_thread_stack_t which can be passed to
- * k_thread_create, but should otherwise not be manipulated. If the buffer
+ * k_thread_create(), but should otherwise not be manipulated. If the buffer
  * inside needs to be examined, use K_THREAD_STACK_BUFFER().
  *
  * It is legal to precede this definition with the 'static' keyword.
