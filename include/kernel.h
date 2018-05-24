@@ -516,47 +516,55 @@ struct _mem_domain_info {
 
 #endif /* CONFIG_USERSPACE */
 
+/**
+ * @ingroup thread_apis
+ * Thread Structure
+ */
 struct k_thread {
 
 	struct _thread_base base;
 
-	/* defined by the architecture, but all archs need these */
+	/** defined by the architecture, but all archs need these */
 	struct _caller_saved caller_saved;
+	/** defined by the architecture, but all archs need these */
 	struct _callee_saved callee_saved;
 
-	/* static thread init data */
+	/** static thread init data */
 	void *init_data;
 
-	/* abort function */
+	/**
+	 * abort function
+	 * @req K-THREAD-002
+	 * */
 	void (*fn_abort)(void);
 
 #if defined(CONFIG_THREAD_MONITOR)
-	/* thread entry and parameters description */
+	/** thread entry and parameters description */
 	struct __thread_entry *entry;
 
-	/* next item in list of all threads */
+	/** next item in list of all threads */
 	struct k_thread *next_thread;
 #endif
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
-	/* crude thread-local storage */
+	/** crude thread-local storage */
 	void *custom_data;
 #endif
 
 #ifdef CONFIG_ERRNO
-	/* per-thread errno variable */
+	/** per-thread errno variable */
 	int errno_var;
 #endif
 
 #if defined(CONFIG_THREAD_STACK_INFO)
-	/* Stack Info */
+	/** Stack Info */
 	struct _thread_stack_info stack_info;
 #endif /* CONFIG_THREAD_STACK_INFO */
 
 #if defined(CONFIG_USERSPACE)
-	/* memory domain info of the thread */
+	/** memory domain info of the thread */
 	struct _mem_domain_info mem_domain_info;
-	/* Base address of thread stack */
+	/** Base address of thread stack */
 	k_thread_stack_t *stack_obj;
 #endif /* CONFIG_USERSPACE */
 
@@ -565,15 +573,16 @@ struct k_thread {
 	 * become part of the core OS
 	 */
 
-	/* _Swap() return value */
+	/** _Swap() return value */
 	int swap_retval;
 
-	/* Context handle returned via _arch_switch() */
+	/** Context handle returned via _arch_switch() */
 	void *switch_handle;
 #endif
+	/** resource pool */
 	struct k_mem_pool *resource_pool;
 
-	/* arch-specifics: must always be at the end */
+	/** arch-specifics: must always be at the end */
 	struct _thread_arch arch;
 };
 
@@ -2759,13 +2768,19 @@ static inline s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 }
 
 /** @} */
-
 /**
- * @cond INTERNAL_HIDDEN
+ * @defgroup mutex_apis Mutex APIs
+ * @ingroup kernel_apis
+ * @{
  */
 
+/**
+ * Mutex Structure
+ * @ingroup mutex_apis
+ */
 struct k_mutex {
 	_wait_q_t wait_q;
+	/** Mutex owner */
 	struct k_thread *owner;
 	u32_t lock_count;
 	int owner_orig_prio;
@@ -2773,6 +2788,9 @@ struct k_mutex {
 	_OBJECT_TRACING_NEXT_PTR(k_mutex);
 };
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 #define _K_MUTEX_INITIALIZER(obj) \
 	{ \
 	.wait_q = _WAIT_Q_INIT(&obj.wait_q), \
@@ -2786,12 +2804,6 @@ struct k_mutex {
 
 /**
  * INTERNAL_HIDDEN @endcond
- */
-
-/**
- * @defgroup mutex_apis Mutex APIs
- * @ingroup kernel_apis
- * @{
  */
 
 /**
@@ -3621,26 +3633,32 @@ extern int k_mbox_data_block_get(struct k_mbox_msg *rx_msg,
 /** @} */
 
 /**
- * @cond INTERNAL_HIDDEN
+ * @defgroup pipe_apis Pipe APIs
+ * @ingroup kernel_apis
+ * @{
  */
 
-#define K_PIPE_FLAG_ALLOC	BIT(0)	/* Buffer was allocated */
-
+/** Pipe Structure */
 struct k_pipe {
-	unsigned char *buffer;          /* Pipe buffer: may be NULL */
-	size_t         size;            /* Buffer size */
-	size_t         bytes_used;      /* # bytes used in buffer */
-	size_t         read_index;      /* Where in buffer to read from */
-	size_t         write_index;     /* Where in buffer to write */
+	unsigned char *buffer;          /**< Pipe buffer: may be NULL */
+	size_t         size;            /**< Buffer size */
+	size_t         bytes_used;      /**< # bytes used in buffer */
+	size_t         read_index;      /**< Where in buffer to read from */
+	size_t         write_index;     /**< Where in buffer to write */
 
 	struct {
-		_wait_q_t      readers; /* Reader wait queue */
-		_wait_q_t      writers; /* Writer wait queue */
+		_wait_q_t      readers; /**< Reader wait queue */
+		_wait_q_t      writers; /**< Writer wait queue */
 	} wait_q;
 
 	_OBJECT_TRACING_NEXT_PTR(k_pipe);
-	u8_t	       flags;		/* Flags */
+	u8_t	       flags;		/**< Flags */
 };
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+#define K_PIPE_FLAG_ALLOC	BIT(0)	/** Buffer was allocated */
 
 #define _K_PIPE_INITIALIZER(obj, pipe_buffer, pipe_buffer_size)        \
 	{                                                             \
@@ -3658,12 +3676,6 @@ struct k_pipe {
 
 /**
  * INTERNAL_HIDDEN @endcond
- */
-
-/**
- * @defgroup pipe_apis Pipe APIs
- * @ingroup kernel_apis
- * @{
  */
 
 /**
