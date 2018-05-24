@@ -29,3 +29,8 @@ th,td {
 .rst-content div.breathe-sectiondef {
   padding-left: 0 !important;
 }
+
+/* tweak display of option tables to make first column wider */
+col.option {
+  width: 25%;
+}
