@@ -155,8 +155,10 @@ struct net_tcp {
 	u32_t fin_sent : 1;
 	/* An inbound FIN packet has been received */
 	u32_t fin_rcvd : 1;
+	/** Zero TCP receive window value sent to the peer */
+	u32_t zero_wnd_sent :1;
 	/** Remaining bits in this u32_t */
-	u32_t _padding : 13;
+	u32_t _padding : 12;
 
 	/** Accept callback to be called when the connection has been
 	 * established.

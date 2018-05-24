@@ -275,6 +275,7 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 
 	tcp_context[i].send_seq = tcp_init_isn();
 	tcp_context[i].recv_wnd = min(NET_TCP_MAX_WIN, NET_TCP_BUF_MAX_LEN);
+	tcp_context[i].zero_wnd_sent = false;
 	tcp_context[i].send_mss = NET_TCP_DEFAULT_MSS;
 
 	tcp_context[i].accept_cb = NULL;
@@ -875,6 +876,11 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 	}
 
 	ctx->tcp->sent_ack = ctx->tcp->send_ack;
+
+	/* Store information that zero window was sent to detect
+	 * zero window probe.
+	 */
+	ctx->tcp->zero_wnd_sent = (sys_get_be16(tcp_hdr->wnd) == 0);
 
 	/* As we modified the header, we need to write it back.
 	 */
@@ -1927,6 +1933,7 @@ NET_CONN_CB(tcp_established)
 	enum net_verdict ret = NET_OK;
 	u8_t tcp_flags;
 	u16_t data_len;
+	bool force_ack = false;
 
 	NET_ASSERT(context && context->tcp);
 
@@ -2042,16 +2049,24 @@ NET_CONN_CB(tcp_established)
 
 	net_context_set_appdata_values(pkt, IPPROTO_TCP);
 
-	data_len = net_pkt_appdatalen(pkt);
-	if (data_len > net_tcp_get_recv_wnd(context->tcp)) {
-		NET_ERR("Context %p: overflow of recv window (%d vs %d), "
-			"pkt dropped",
-			context, net_tcp_get_recv_wnd(context->tcp), data_len);
-		return NET_DROP;
+	if (!context->tcp->zero_wnd_sent) {
+		data_len = net_pkt_appdatalen(pkt);
+		if (data_len > net_tcp_get_recv_wnd(context->tcp)) {
+			NET_ERR("Context %p: overflow of recv window "
+				"(%d vs %d), pkt dropped",
+				context, net_tcp_get_recv_wnd(context->tcp),
+				data_len);
+			return NET_DROP;
+		}
+	} else {
+		/* Zero window probe expected. */
+		data_len = 0;
+		force_ack = true;
 	}
 
-	/* If the pkt has appdata, notify the recv callback which should
-	 * release the pkt. Otherwise, release the pkt immediately.
+	/* If the pkt has appdata, and no zero window probe is expected,
+	 * notify the recv callback which should release the pkt.
+	 * Otherwise, release the pkt immediately.
 	 */
 	if (data_len > 0) {
 		ret = net_context_packet_received(conn, pkt,
@@ -2066,7 +2081,7 @@ NET_CONN_CB(tcp_established)
 		context->tcp->send_ack += 1;
 	}
 
-	send_ack(context, &conn->remote_addr, false);
+	send_ack(context, &conn->remote_addr, force_ack);
 
 clean_up:
 	if (net_tcp_get_state(context->tcp) == NET_TCP_TIME_WAIT) {
