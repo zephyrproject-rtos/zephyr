@@ -413,7 +413,7 @@ config NET_DEFAULT_IF_IEEE802154
 
 config NET_DEFAULT_IF_OFFLOAD
 	bool "Offloaded interface"
-	depends on NET_L2_OFFLOAD
+	depends on NET_OFFLOAD
 
 config NET_DEFAULT_IF_DUMMY
 	bool "Dummy testing interface"
