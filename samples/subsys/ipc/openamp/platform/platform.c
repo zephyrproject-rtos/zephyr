@@ -54,4 +54,3 @@ struct hil_proc *platform_init(int role)
 		    SHM_SIZE);
 	return proc;
 }
-
