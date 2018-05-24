@@ -31,11 +31,14 @@ static void thread_entry_abort(void *p1, void *p2, void *p3)
 	zassert_true(1 == 0, NULL);
 }
 /**
+ * @ingroup kernel_thread_tests
  * @brief Validate k_thread_abort() when called by current thread
  *
  * @details Create a user thread and let the thread execute.
  * Then call k_thread_abort() and check if the thread is terminated.
  * Here the main thread is also a user thread.
+ *
+ * @see k_thread_abort()
  */
 void test_threads_abort_self(void)
 {
@@ -48,11 +51,14 @@ void test_threads_abort_self(void)
 }
 
 /**
+ * @ingroup kernel_thread_tests
  * @brief Validate k_thread_abort() when called by other thread
  *
  * @details Create a user thread and abort the thread before its
  * execution. Create a another user thread and abort the thread
  * after it has started.
+ *
+ * @see k_thread_abort()
  */
 void test_threads_abort_others(void)
 {
@@ -78,8 +84,10 @@ void test_threads_abort_others(void)
 }
 
 /**
+ * @ingroup kernel_thread_tests
  * @brief Test abort on a terminated thread
  *
+ * @see k_thread_abort()
  */
 void test_threads_abort_repeat(void)
 {
@@ -116,9 +124,11 @@ static void uthread_entry(void)
 }
 
 /**
- *
+ * @ingroup kernel_thread_tests
  * @brief Test to validate the call of abort handler
  * specified by thread when it is aborted
+ *
+ * @see k_thread_abort(), #k_thread.fn_abort
  */
 void test_abort_handler(void)
 {
@@ -147,8 +157,11 @@ static void delayed_thread_entry(void *p1, void *p2, void *p3)
 }
 
 /**
+ * @ingroup kernel_thread_tests
  * @brief Test abort on delayed thread before it has started
  * execution
+ *
+ * @see k_thread_abort()
  */
 void test_delayed_thread_abort(void)
 {

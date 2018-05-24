@@ -31,8 +31,10 @@ static void thread_entry(void *p1, void *p2, void *p3)
 }
 
 /**
+ * @ingroup kernel_thread_tests
  * @brief Test to validate essential flag set/clear
  *
+ * @see #K_ESSENTIAL(x)
  */
 void test_essential_thread_operation(void)
 {

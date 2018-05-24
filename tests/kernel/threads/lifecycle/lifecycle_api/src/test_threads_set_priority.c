@@ -38,11 +38,11 @@ void thread2_set_prio_test(void)
 }
 
 /**
- *
+ * @ingroup kernel_thread_tests
  * @brief Test the k_thread_priority_set() API
  *
+ * @see k_thread_priority_set(), k_thread_priority_get()
  */
-
 void test_threads_priority_set(void)
 {
 	int rv;
