@@ -24,7 +24,6 @@ config ARC
 
 config ARM
 	bool "ARM architecture"
-	select ARCH_HAS_THREAD_ABORT
 	select HAS_DTS
 
 config X86
