@@ -312,10 +312,13 @@ static void spi_async_call_cb(struct k_poll_event *async_evt,
 			      struct k_sem *caller_sem,
 			      void *unused)
 {
+	int ret;
+
 	SYS_LOG_DBG("Polling...");
 
 	while (1) {
-		k_poll(async_evt, 1, K_MSEC(100));
+		ret = k_poll(async_evt, 1, K_MSEC(100));
+		zassert_false(ret, "one or more events are not ready");
 
 		result = async_evt->signal->result;
 		k_sem_give(caller_sem);
