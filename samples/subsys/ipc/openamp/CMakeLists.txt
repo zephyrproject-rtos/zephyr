@@ -10,10 +10,12 @@ project(NONE)
 enable_language(C ASM)
 
 # Location of external dependencies:
-set(PLATFORM_DIR          "${CMAKE_CURRENT_SOURCE_DIR}/platform")
+set(PLATFORM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/platform")
 
-target_sources(app PRIVATE src/main_master.c ${PLATFORM_DIR}/platform.c
-	       ${PLATFORM_DIR}/platform_ops.c ${PLATFORM_DIR}/resource_table.c)
+target_sources(app PRIVATE src/main_master.c
+	       ${PLATFORM_DIR}/platform.c
+	       ${PLATFORM_DIR}/platform_ops.c
+	       ${PLATFORM_DIR}/resource_table.c)
 
 include(ExternalProject)
 
