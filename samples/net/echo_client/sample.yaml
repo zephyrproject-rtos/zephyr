@@ -16,8 +16,8 @@ tests:
     extra_args: CONF_FILE="prj_bt.conf"
     platform_whitelist: qemu_x86
     tags: bluetooth
-  test_cc2520:
-    extra_args: CONF_FILE="prj_frdm_k64f_cc2520.conf"
+  test_mcr20a:
+    extra_args: CONF_FILE="prj_frdm_k64f_mcr20a.conf"
     platform_whitelist: frdm_k64f
   test_nrf_openthread:
     extra_args: CONF_FILE="prj_nrf52840_ot.conf"
