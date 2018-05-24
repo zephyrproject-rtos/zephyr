@@ -3880,6 +3880,35 @@ int lwm2m_engine_set_net_pkt_pool(struct lwm2m_ctx *ctx,
 }
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
+/* HACK: Fix this */
+void _net_app_tls_handler_stop(struct net_app_ctx *ctx);
+
+int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
+{
+	int ret = 0;
+
+	k_delayed_work_cancel(&client_ctx->retransmit_work);
+
+	ret = net_app_close(&client_ctx->net_app_ctx);
+	if (ret < 0) {
+		return ret;
+	}
+
+#if defined(CONFIG_NET_APP_DTLS)
+	if (client_ctx->net_app_ctx.dtls.ctx) {
+		SYS_LOG_DBG("Releasing DTLS context %p",
+			    client_ctx->net_app_ctx.dtls.ctx);
+
+		_net_app_tls_handler_stop(&client_ctx->net_app_ctx);
+	}
+
+	client_ctx->net_app_ctx.tls.handshake_done = false;
+#endif /* CONFIG_NET_APP_DTLS */
+
+	ret = net_app_release(&client_ctx->net_app_ctx);
+	return ret;
+}
+
 void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
 {
 	k_delayed_work_init(&client_ctx->retransmit_work, retransmit_request);
@@ -3976,8 +4005,7 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 	return 0;
 
 error_start:
-	net_app_close(&client_ctx->net_app_ctx);
-	net_app_release(&client_ctx->net_app_ctx);
+	lwm2m_engine_context_close(client_ctx);
 	return ret;
 }
 
