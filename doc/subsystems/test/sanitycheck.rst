@@ -36,8 +36,7 @@ a simulated (QEMU) environment.
 
 The sanitycheck script accepts the following optional arguments:
 
-  -h, --help
-                        show this help message and exit
+  -h, --help            show this help message and exit
   -p PLATFORM, --platform PLATFORM
                         Platform filter for testing. This option may be used
                         multiple times. Testcases will only be built/run on
@@ -87,6 +86,11 @@ The sanitycheck script accepts the following optional arguments:
   -y, --dry-run         Create the filtered list of test cases, but don't
                         actually run them. Useful if you're just interested in
                         --discard-report
+  --list-tags           list all tags in selected tests
+  --list-tests          list all tests.
+  --detailed-report FILENAME
+                        Generate a junit report with detailed testcase
+                        results.
   -r, --release         Update the benchmark database with the results of this
                         test run. Intended to be run by CI when tagging an
                         official release. This database is used as a basis for
@@ -104,11 +108,19 @@ The sanitycheck script accepts the following optional arguments:
                         invocation
   -u, --no-update       do not update the results of the last run of the
                         sanity checks
-  -F, --load-tests      Load list of tests to be run from file
-  -E, --save_tests      Save list of tests to be run to file
+  -F FILENAME, --load-tests FILENAME
+                        Load list of tests to be run from file.
+  -E FILENAME, --save-tests FILENAME
+                        Save list of tests to be run to file.
   -b, --build-only      Only build the code, do not execute any of it in QEMU
   -j JOBS, --jobs JOBS  Number of cores to use when building, defaults to
                         number of CPUs * 2
+  --device-testing      Test on device directly. You need to specify the
+                        serialusing --device-serial option
+  --device-serial DEVICE_SERIAL
+                        Serial device the board can be accessed through
+  --show-footprint      Show footprint statistics and deltas since last
+                        release.
   -H FOOTPRINT_THRESHOLD, --footprint-threshold FOOTPRINT_THRESHOLD
                         When checking test case footprint sizes, warn the user
                         if the new app size is greater then the specified
@@ -117,7 +129,8 @@ The sanitycheck script accepts the following optional arguments:
   -D, --all-deltas      Show all footprint deltas, positive or negative.
                         Implies --footprint-threshold=0
   -O OUTDIR, --outdir OUTDIR
-                        Output directory for logs and binaries.
+                        Output directory for logs and binaries. This directory
+                        will be deleted unless '--no-clean' is set.
   -n, --no-clean        Do not delete the outdir before building. Will result
                         in faster compilation since builds will be incremental
   -T TESTCASE_ROOT, --testcase-root TESTCASE_ROOT
@@ -134,17 +147,20 @@ The sanitycheck script accepts the following optional arguments:
   -S, --enable-slow     Execute time-consuming test cases that have been
                         marked as 'slow' in testcase.yaml. Normally these are
                         only built.
-  -R, --enable-asserts  Build all test cases with assertions enabled.
+  -R, --enable-asserts  Build all test cases with assertions enabled. Default
+                        to assertions being enabled.
   --disable-asserts     Build all test cases with assertions disabled.
   -Q, --error-on-deprecations
                         Error on deprecation warnings.
   -x EXTRA_ARGS, --extra-args EXTRA_ARGS
-                        Extra arguments to pass to the build when compiling
-                        test cases. May be called multiple times. These will
-                        be passed in after any sanitycheck-supplied options.
+                        Extra CMake cache entries to define when building test
+                        cases. May be called multiple times. The key-value
+                        entries will be prefixed with -D before being passed
+                        to CMake. E.g "sanitycheck -x=USE_CCACHE=0" will
+                        translate to "cmake -DUSE_CCACHE=0" which will
+                        ultimately disable ccache.
   -C, --coverage        Generate coverage report for unit tests, and tests and
                         samples run in native_posix.
-
 
 Board Configuration
 *******************
