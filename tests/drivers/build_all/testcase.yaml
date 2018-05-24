@@ -43,7 +43,6 @@ tests:
     build_only: true
     platform_whitelist: em_starterkit
     extra_configs:
-      - CONFIG_NSIM=y
       - CONFIG_UART_NSIM=y
   test_clock:
     build_only: true

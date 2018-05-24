@@ -2,7 +2,7 @@ config UART_NSIM
 	bool "UART driver for MetaWare nSim"
 	default n
 	select SERIAL_HAS_DRIVER
-	depends on NSIM && SERIAL
+	depends on SERIAL
 	help
 	  This enables the UART driver for the MetaWare nSim simulator.
 

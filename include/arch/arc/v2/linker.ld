@@ -14,7 +14,7 @@
 #include <autoconf.h>
 #include <linker/sections.h>
 
-#if defined(CONFIG_NSIM)
+#if defined(CONFIG_UART_NSIM)
 	EXTERN(_VectorTable)
 #endif
 
