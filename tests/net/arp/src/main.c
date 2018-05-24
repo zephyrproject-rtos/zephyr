@@ -341,6 +341,7 @@ void test_arp(void)
 				      &src,
 				      NET_ADDR_MANUAL,
 				      0);
+	zassert_not_null(ifaddr, "Cannot add address");
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	/* Application data for testing */
