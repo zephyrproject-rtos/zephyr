@@ -121,6 +121,31 @@ static struct lwm2m_engine_obj_inst *security_create(u16_t obj_inst_id)
 	return &inst[index];
 }
 
+int lwm2m_security_inst_id_to_index(u16_t obj_inst_id) {
+	int i;
+
+	for (i = 0; i < MAX_INSTANCE_COUNT; i++) {
+		if (inst[i].obj && inst[i].obj_inst_id == obj_inst_id) {
+			return i;
+		}
+	}
+
+	return -ENOENT;
+}
+
+int lwm2m_security_index_to_inst_id(int index) {
+	if (index >= MAX_INSTANCE_COUNT) {
+		return -EINVAL;
+	}
+
+	/* not instanstiated */
+	if (!inst[index].obj) {
+		return -ENOENT;
+	}
+
+	return inst[index].obj_inst_id;
+}
+
 static int lwm2m_security_init(struct device *dev)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
