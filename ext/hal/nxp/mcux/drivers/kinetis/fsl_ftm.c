@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -234,7 +238,7 @@ status_t FTM_Init(FTM_Type *base, const ftm_config_t *config)
     /* Ungate the FTM clock*/
     CLOCK_EnableClock(s_ftmClocks[FTM_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
-
+   
     /* Configure the fault mode, enable FTM mode and disable write protection */
     base->MODE = FTM_MODE_FAULTM(config->faultMode) | FTM_MODE_FTMEN_MASK | FTM_MODE_WPDIS_MASK;
 
@@ -555,8 +559,10 @@ void FTM_SetupInputCapture(FTM_Type *base,
     base->COMBINE &= ~(1U << (FTM_COMBINE_COMBINE0_SHIFT + (FTM_COMBINE_COMBINE1_SHIFT * (chnlNumber >> 1))));
     /* Clear the dual edge capture mode because it's it's higher priority */
     base->COMBINE &= ~(1U << (FTM_COMBINE_DECAPEN0_SHIFT + (FTM_COMBINE_COMBINE1_SHIFT * (chnlNumber >> 1))));
+#if !(defined(FSL_FEATURE_FTM_HAS_NO_QDCTRL) && FSL_FEATURE_FTM_HAS_NO_QDCTRL)
     /* Clear the quadrature decoder mode beacause it's higher priority */
     base->QDCTRL &= ~FTM_QDCTRL_QUADEN_MASK;
+#endif
 
     reg = base->CONTROLS[chnlNumber].CnSC;
     reg &= ~(FTM_CnSC_MSA_MASK | FTM_CnSC_MSB_MASK | FTM_CnSC_ELSA_MASK | FTM_CnSC_ELSB_MASK);
@@ -589,9 +595,11 @@ void FTM_SetupOutputCompare(FTM_Type *base,
     base->COMBINE &= ~(1U << (FTM_COMBINE_COMBINE0_SHIFT + (FTM_COMBINE_COMBINE1_SHIFT * (chnlNumber >> 1))));
     /* Clear the dual edge capture mode because it's it's higher priority */
     base->COMBINE &= ~(1U << (FTM_COMBINE_DECAPEN0_SHIFT + (FTM_COMBINE_COMBINE1_SHIFT * (chnlNumber >> 1))));
+#if !(defined(FSL_FEATURE_FTM_HAS_NO_QDCTRL) && FSL_FEATURE_FTM_HAS_NO_QDCTRL)
     /* Clear the quadrature decoder mode beacause it's higher priority */
     base->QDCTRL &= ~FTM_QDCTRL_QUADEN_MASK;
-
+#endif    
+    
     reg = base->CONTROLS[chnlNumber].CnSC;
     reg &= ~(FTM_CnSC_MSA_MASK | FTM_CnSC_MSB_MASK | FTM_CnSC_ELSA_MASK | FTM_CnSC_ELSB_MASK);
     reg |= compareMode;
@@ -677,7 +685,7 @@ void FTM_SetupQuadDecode(FTM_Type *base,
         reg |= FTM_FILTER_CH1FVAL(phaseBParams->phaseFilterVal);
         base->FILTER = reg;
     }
-
+#if !(defined(FSL_FEATURE_FTM_HAS_NO_QDCTRL) && FSL_FEATURE_FTM_HAS_NO_QDCTRL)
     /* Set Quadrature decode properties */
     reg = base->QDCTRL;
     reg &= ~(FTM_QDCTRL_QUADMODE_MASK | FTM_QDCTRL_PHAFLTREN_MASK | FTM_QDCTRL_PHBFLTREN_MASK | FTM_QDCTRL_PHAPOL_MASK |
@@ -688,6 +696,7 @@ void FTM_SetupQuadDecode(FTM_Type *base,
     base->QDCTRL = reg;
     /* Enable Quad decode */
     base->QDCTRL |= FTM_QDCTRL_QUADEN_MASK;
+#endif
 }
 
 void FTM_SetupFault(FTM_Type *base, ftm_fault_input_t faultNumber, const ftm_fault_param_t *faultParams)

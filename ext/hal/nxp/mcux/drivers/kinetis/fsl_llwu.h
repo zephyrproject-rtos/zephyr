@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,7 +38,6 @@
 
 /*! @addtogroup llwu */
 /*! @{ */
-
 
 /*******************************************************************************
  * Definitions
@@ -208,6 +211,27 @@ static inline void LLWU_EnableInternalModuleInterruptWakup(LLWU_Type *base, uint
     }
 }
 
+#if (!(defined(FSL_FEATURE_LLWU_HAS_NO_INTERNAL_MODULE_WAKEUP_FLAG_REG) && \
+       FSL_FEATURE_LLWU_HAS_NO_INTERNAL_MODULE_WAKEUP_FLAG_REG))
+/* Re-define the register which includes the internal wakeup module flag. */
+#if (defined(FSL_FEATURE_LLWU_REG_BITWIDTH) && (FSL_FEATURE_LLWU_REG_BITWIDTH == 32)) /* 32-bit LLWU. */
+#if (defined(FSL_FEATURE_LLWU_HAS_MF) && FSL_FEATURE_LLWU_HAS_MF)
+#define INTERNAL_WAKEUP_MODULE_FLAG_REG MF
+#else
+#error "Unsupported internal module flag register."
+#endif
+#else /* 8-bit LLUW. */
+#if (defined(FSL_FEATURE_LLWU_HAS_MF) && FSL_FEATURE_LLWU_HAS_MF)
+#define INTERNAL_WAKEUP_MODULE_FLAG_REG MF5
+#elif(defined(FSL_FEATURE_LLWU_HAS_PF) && FSL_FEATURE_LLWU_HAS_PF)
+#define INTERNAL_WAKEUP_MODULE_FLAG_REG PF3
+#elif(!(defined(FSL_FEATURE_LLWU_HAS_EXTERNAL_PIN) && (FSL_FEATURE_LLWU_HAS_EXTERNAL_PIN > 16)))
+#define INTERNAL_WAKEUP_MODULE_FLAG_REG F3
+#else
+#error "Unsupported internal module flag register."
+#endif
+#endif /* FSL_FEATURE_LLWU_REG_BITWIDTH */
+
 /*!
  * @brief Gets the external wakeup source flag.
  *
@@ -220,24 +244,9 @@ static inline void LLWU_EnableInternalModuleInterruptWakup(LLWU_Type *base, uint
  */
 static inline bool LLWU_GetInternalWakeupModuleFlag(LLWU_Type *base, uint32_t moduleIndex)
 {
-#if (defined(FSL_FEATURE_LLWU_HAS_MF) && FSL_FEATURE_LLWU_HAS_MF)
-#if (defined(FSL_FEATURE_LLWU_REG_BITWIDTH) && (FSL_FEATURE_LLWU_REG_BITWIDTH == 32))
-    return (bool)(base->MF & (1U << moduleIndex));
-#else
-    return (bool)(base->MF5 & (1U << moduleIndex));
-#endif /* FSL_FEATURE_LLWU_REG_BITWIDTH */
-#else
-#if (defined(FSL_FEATURE_LLWU_HAS_EXTERNAL_PIN) && (FSL_FEATURE_LLWU_HAS_EXTERNAL_PIN > 16))
-    return (bool)(base->F5 & (1U << moduleIndex));
-#else
-#if (defined(FSL_FEATURE_LLWU_HAS_PF) && FSL_FEATURE_LLWU_HAS_PF)
-    return (bool)(base->PF3 & (1U << moduleIndex));
-#else
-    return (bool)(base->F3 & (1U << moduleIndex));
-#endif /* FSL_FEATURE_LLWU_HAS_PF */
-#endif /* FSL_FEATURE_LLWU_HAS_EXTERNAL_PIN */
-#endif /* FSL_FEATURE_LLWU_HAS_MF */
+    return ((1U << moduleIndex) == (base->INTERNAL_WAKEUP_MODULE_FLAG_REG & (1U << moduleIndex)));
 }
+#endif /* FSL_FEATURE_LLWU_HAS_NO_INTERNAL_MODULE_WAKEUP_FLAG_REG */
 #endif /* FSL_FEATURE_LLWU_HAS_INTERNAL_MODULE */
 
 #if (defined(FSL_FEATURE_LLWU_HAS_DMA_ENABLE_REG) && FSL_FEATURE_LLWU_HAS_DMA_ENABLE_REG)

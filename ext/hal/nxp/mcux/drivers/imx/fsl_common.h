@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
- *
+ * All rights reserved.
+ * 
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ *  that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -273,13 +277,6 @@ _Pragma("diag_suppress=Pm120")
     ((unsigned int)((var) + ((alignbytes)-1)) & (unsigned int)(~(unsigned int)((alignbytes)-1)))
 /* @} */
 
-/*! Function to allocate/free L1 cache aligned memory using the malloc/free. */
-void *SDK_Malloc(size_t size, size_t alignbytes);
-
-void SDK_Free(void *ptr);
-
-/* @} */
-
 /*! @name Non-cacheable region definition macros */
 /* For initialized non-zero non-cacheable variables, please using "AT_NONCACHEABLE_SECTION_INIT(var) ={xx};" or
  * "AT_NONCACHEABLE_SECTION_ALIGN_INIT(var) ={xx};" in your projects to define them, for zero-inited non-cacheable variables,
@@ -510,6 +507,24 @@ void SDK_Free(void *ptr);
      */
     void DisableDeepSleepIRQ(IRQn_Type interrupt);
 #endif /* FSL_FEATURE_SOC_SYSCON_COUNT */
+
+    /*!
+     * @brief Allocate memory with given alignment and aligned size.
+     *
+     * This is provided to support the dynamically allocated memory
+     * used in cache-able region.
+     * @param size The length required to malloc.
+     * @param alignbytes The alignment size.
+     * @retval The allocated memory.
+     */    
+    void *SDK_Malloc(size_t size, size_t alignbytes);
+    
+    /*!
+     * @brief Free memory.
+     *
+     * @param ptr The memory to be release.
+     */ 
+    void SDK_Free(void *ptr);    
 
 #if defined(__cplusplus)
 }

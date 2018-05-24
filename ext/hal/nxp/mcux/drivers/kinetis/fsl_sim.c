@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -47,7 +51,19 @@ void SIM_GetUniqueId(sim_uid_t *uid)
 #if defined(SIM_UIDH)
     uid->H = SIM->UIDH;
 #endif
+#if (defined(FSL_FEATURE_SIM_HAS_UIDM) && FSL_FEATURE_SIM_HAS_UIDM)
+    uid->M = SIM->UIDM;
+#else
     uid->MH = SIM->UIDMH;
     uid->ML = SIM->UIDML;
+#endif /* FSL_FEATURE_SIM_HAS_UIDM */
     uid->L = SIM->UIDL;
 }
+
+#if (defined(FSL_FEATURE_SIM_HAS_RF_MAC_ADDR) && FSL_FEATURE_SIM_HAS_RF_MAC_ADDR)
+void SIM_GetRfAddr(sim_rf_addr_t *info)
+{
+    info->rfAddrL = SIM->RFADDRL;
+    info->rfAddrH = SIM->RFADDRH;
+}
+#endif /* FSL_FEATURE_SIM_HAS_RF_MAC_ADDR */

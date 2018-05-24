@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -111,11 +115,9 @@ void DMA_ConfigureChannelTrigger(DMA_Type *base, uint32_t channel, dma_channel_t
 {
     assert((channel < FSL_FEATURE_DMA_NUMBER_OF_CHANNELS) && (NULL != trigger));
 
-    uint32_t tmp = (
-        DMA_CHANNEL_CFG_HWTRIGEN_MASK | DMA_CHANNEL_CFG_TRIGPOL_MASK | DMA_CHANNEL_CFG_TRIGTYPE_MASK |
-        DMA_CHANNEL_CFG_TRIGBURST_MASK | DMA_CHANNEL_CFG_BURSTPOWER_MASK | DMA_CHANNEL_CFG_SRCBURSTWRAP_MASK |
-        DMA_CHANNEL_CFG_DSTBURSTWRAP_MASK
-    );
+    uint32_t tmp = (DMA_CHANNEL_CFG_HWTRIGEN_MASK | DMA_CHANNEL_CFG_TRIGPOL_MASK | DMA_CHANNEL_CFG_TRIGTYPE_MASK |
+                    DMA_CHANNEL_CFG_TRIGBURST_MASK | DMA_CHANNEL_CFG_BURSTPOWER_MASK |
+                    DMA_CHANNEL_CFG_SRCBURSTWRAP_MASK | DMA_CHANNEL_CFG_DSTBURSTWRAP_MASK);
     tmp = base->CHANNEL[channel].CFG & (~tmp);
     tmp |= (uint32_t)(trigger->type) | (uint32_t)(trigger->burst) | (uint32_t)(trigger->wrap);
     base->CHANNEL[channel].CFG = tmp;
@@ -132,7 +134,7 @@ uint32_t DMA_GetRemainingBytes(DMA_Type *base, uint32_t channel)
 {
     assert(channel < FSL_FEATURE_DMA_NUMBER_OF_CHANNELS);
 
-    /* NOTE: when descriptors are chained, ACTIVE bit is set for whole chain. It makes 
+    /* NOTE: when descriptors are chained, ACTIVE bit is set for whole chain. It makes
      * impossible to distinguish between:
      * - transfer finishes (represented by value '0x3FF')
      * - and remaining 1024 bytes to transfer (value 0x3FF)
@@ -140,10 +142,9 @@ uint32_t DMA_GetRemainingBytes(DMA_Type *base, uint32_t channel)
      * If you decide to use this function, please use 1023 transfers as maximal value */
 
     /* Channel not active (transfer finished) and value is 0x3FF - nothing to transfer */
-    if (
-        (!(base->COMMON[DMA_CHANNEL_GROUP(channel)].ACTIVE & (1U << (DMA_CHANNEL_INDEX(channel))))) && 
-        (0x3FF == ((base->CHANNEL[channel].XFERCFG & DMA_CHANNEL_XFERCFG_XFERCOUNT_MASK) >> DMA_CHANNEL_XFERCFG_XFERCOUNT_SHIFT))
-    )
+    if ((!(base->COMMON[DMA_CHANNEL_GROUP(channel)].ACTIVE & (1U << (DMA_CHANNEL_INDEX(channel))))) &&
+        (0x3FF == ((base->CHANNEL[channel].XFERCFG & DMA_CHANNEL_XFERCFG_XFERCOUNT_MASK) >>
+                   DMA_CHANNEL_XFERCFG_XFERCOUNT_SHIFT)))
     {
         return 0;
     }
@@ -152,12 +153,7 @@ uint32_t DMA_GetRemainingBytes(DMA_Type *base, uint32_t channel)
 }
 
 static void DMA_SetupDescriptor(
-    dma_descriptor_t    *desc,
-    uint32_t            xfercfg,
-    void                *srcEndAddr,
-    void                *dstEndAddr,
-    void                *nextDesc
-)
+    dma_descriptor_t *desc, uint32_t xfercfg, void *srcEndAddr, void *dstEndAddr, void *nextDesc)
 {
     desc->xfercfg = xfercfg;
     desc->srcEndAddr = srcEndAddr;
@@ -166,10 +162,7 @@ static void DMA_SetupDescriptor(
 }
 
 /* Verify and convert dma_xfercfg_t to XFERCFG register */
-static void DMA_SetupXferCFG(
-    dma_xfercfg_t *xfercfg,
-    uint32_t *xfercfg_addr
-)
+static void DMA_SetupXferCFG(dma_xfercfg_t *xfercfg, uint32_t *xfercfg_addr)
 {
     assert(xfercfg != NULL);
     /* check source increment */
@@ -187,9 +180,9 @@ static void DMA_SetupXferCFG(
     /* set reload - allow link to next descriptor */
     xfer |= DMA_CHANNEL_XFERCFG_RELOAD(xfercfg->reload ? 1 : 0);
     /* set swtrig flag - start transfer */
-    xfer |= DMA_CHANNEL_XFERCFG_SWTRIG(xfercfg->swtrig? 1 : 0);
+    xfer |= DMA_CHANNEL_XFERCFG_SWTRIG(xfercfg->swtrig ? 1 : 0);
     /* set transfer count */
-    xfer |= DMA_CHANNEL_XFERCFG_CLRTRIG(xfercfg->clrtrig? 1 : 0);
+    xfer |= DMA_CHANNEL_XFERCFG_CLRTRIG(xfercfg->clrtrig ? 1 : 0);
     /* set INTA */
     xfer |= DMA_CHANNEL_XFERCFG_SETINTA(xfercfg->intA ? 1 : 0);
     /* set INTB */
@@ -210,13 +203,7 @@ static void DMA_SetupXferCFG(
     *xfercfg_addr = xfer;
 }
 
-void DMA_CreateDescriptor(
-    dma_descriptor_t    *desc,
-    dma_xfercfg_t       *xfercfg,
-    void                *srcAddr,
-    void                *dstAddr,
-    void                *nextDesc
-)
+void DMA_CreateDescriptor(dma_descriptor_t *desc, dma_xfercfg_t *xfercfg, void *srcAddr, void *dstAddr, void *nextDesc)
 {
     uint32_t xfercfg_reg = 0;
 
@@ -229,11 +216,9 @@ void DMA_CreateDescriptor(
     DMA_SetupXferCFG(xfercfg, &xfercfg_reg);
 
     /* Set descriptor structure */
-    DMA_SetupDescriptor(desc, xfercfg_reg,
-        (uint8_t*)srcAddr + (xfercfg->srcInc * xfercfg->byteWidth * (xfercfg->transferCount - 1)),
-        (uint8_t*)dstAddr + (xfercfg->dstInc * xfercfg->byteWidth * (xfercfg->transferCount - 1)),
-        nextDesc
-    );
+    DMA_SetupDescriptor(
+        desc, xfercfg_reg, (uint8_t *)srcAddr + (xfercfg->srcInc * xfercfg->byteWidth * (xfercfg->transferCount - 1)),
+        (uint8_t *)dstAddr + (xfercfg->dstInc * xfercfg->byteWidth * (xfercfg->transferCount - 1)), nextDesc);
 }
 
 void DMA_AbortTransfer(dma_handle_t *handle)
@@ -242,7 +227,8 @@ void DMA_AbortTransfer(dma_handle_t *handle)
 
     DMA_DisableChannel(handle->base, handle->channel);
     while (handle->base->COMMON[DMA_CHANNEL_GROUP(handle->channel)].BUSY & (1U << DMA_CHANNEL_INDEX(handle->channel)))
-    { }
+    {
+    }
     handle->base->COMMON[DMA_CHANNEL_GROUP(handle->channel)].ABORT |= 1U << DMA_CHANNEL_INDEX(handle->channel);
     DMA_EnableChannel(handle->base, handle->channel);
 }
@@ -272,12 +258,12 @@ void DMA_SetCallback(dma_handle_t *handle, dma_callback callback, void *userData
 }
 
 void DMA_PrepareTransfer(dma_transfer_config_t *config,
-                          void *srcAddr,
-                          void *dstAddr,
-                          uint32_t byteWidth,
-                          uint32_t transferBytes,
-                          dma_transfer_type_t type,
-                          void *nextDesc)
+                         void *srcAddr,
+                         void *dstAddr,
+                         uint32_t byteWidth,
+                         uint32_t transferBytes,
+                         dma_transfer_type_t type,
+                         void *nextDesc)
 {
     uint32_t xfer_count;
     assert((NULL != config) && (NULL != srcAddr) && (NULL != dstAddr));
@@ -290,35 +276,35 @@ void DMA_PrepareTransfer(dma_transfer_config_t *config,
     memset(config, 0, sizeof(*config));
     switch (type)
     {
-    case kDMA_MemoryToMemory:
-        config->xfercfg.srcInc = 1;
-        config->xfercfg.dstInc = 1;
-        config->isPeriph = false;
-        break;
-    case kDMA_PeripheralToMemory:
-        /* Peripheral register - source doesn't increment */
-        config->xfercfg.srcInc = 0;
-        config->xfercfg.dstInc = 1;
-        config->isPeriph = true;
-        break;
-    case kDMA_MemoryToPeripheral:
-        /* Peripheral register - destination doesn't increment */
-        config->xfercfg.srcInc = 1;
-        config->xfercfg.dstInc = 0;
-        config->isPeriph = true;
-        break;
-    case kDMA_StaticToStatic:
-        config->xfercfg.srcInc = 0;
-        config->xfercfg.dstInc = 0;
-        config->isPeriph = true;
-        break;
-    default:
-        return;
+        case kDMA_MemoryToMemory:
+            config->xfercfg.srcInc = 1;
+            config->xfercfg.dstInc = 1;
+            config->isPeriph = false;
+            break;
+        case kDMA_PeripheralToMemory:
+            /* Peripheral register - source doesn't increment */
+            config->xfercfg.srcInc = 0;
+            config->xfercfg.dstInc = 1;
+            config->isPeriph = true;
+            break;
+        case kDMA_MemoryToPeripheral:
+            /* Peripheral register - destination doesn't increment */
+            config->xfercfg.srcInc = 1;
+            config->xfercfg.dstInc = 0;
+            config->isPeriph = true;
+            break;
+        case kDMA_StaticToStatic:
+            config->xfercfg.srcInc = 0;
+            config->xfercfg.dstInc = 0;
+            config->isPeriph = true;
+            break;
+        default:
+            return;
     }
 
-    config->dstAddr = (uint8_t*)dstAddr;
-    config->srcAddr = (uint8_t*)srcAddr;
-    config->nextDesc = (uint8_t*)nextDesc;
+    config->dstAddr = (uint8_t *)dstAddr;
+    config->srcAddr = (uint8_t *)srcAddr;
+    config->nextDesc = (uint8_t *)nextDesc;
     config->xfercfg.transferCount = xfer_count;
     config->xfercfg.byteWidth = byteWidth;
     config->xfercfg.intA = true;
@@ -333,7 +319,7 @@ status_t DMA_SubmitTransfer(dma_handle_t *handle, dma_transfer_config_t *config)
     /* Previous transfer has not finished */
     if (DMA_ChannelIsActive(handle->base, handle->channel))
     {
-         return kStatus_DMA_Busy;
+        return kStatus_DMA_Busy;
     }
 
     /* enable/disable peripheral request */
@@ -346,10 +332,8 @@ status_t DMA_SubmitTransfer(dma_handle_t *handle, dma_transfer_config_t *config)
         DMA_DisableChannelPeriphRq(handle->base, handle->channel);
     }
 
-    DMA_CreateDescriptor(
-        &s_dma_descriptor_table[ handle->channel ], &config->xfercfg,
-        config->srcAddr, config->dstAddr, config->nextDesc
-    );
+    DMA_CreateDescriptor(&s_dma_descriptor_table[handle->channel], &config->xfercfg, config->srcAddr, config->dstAddr,
+                         config->nextDesc);
 
     return kStatus_Success;
 }
@@ -364,18 +348,18 @@ void DMA_StartTransfer(dma_handle_t *handle)
     /* If HW trigger is enabled - disable SW trigger */
     if (handle->base->CHANNEL[handle->channel].CFG & DMA_CHANNEL_CFG_HWTRIGEN_MASK)
     {
-        s_dma_descriptor_table[ handle->channel ].xfercfg &= ~(DMA_CHANNEL_XFERCFG_SWTRIG_MASK);
+        s_dma_descriptor_table[handle->channel].xfercfg &= ~(DMA_CHANNEL_XFERCFG_SWTRIG_MASK);
     }
     /* Otherwise enable SW trigger */
     else
     {
-        s_dma_descriptor_table[ handle->channel ].xfercfg |= DMA_CHANNEL_XFERCFG_SWTRIG_MASK;
+        s_dma_descriptor_table[handle->channel].xfercfg |= DMA_CHANNEL_XFERCFG_SWTRIG_MASK;
     }
 
     /* Set channel XFERCFG register according first channel descriptor. */
-    handle->base->CHANNEL[handle->channel].XFERCFG = s_dma_descriptor_table[ handle->channel ].xfercfg;
-    /* At this moment, the channel ACTIVE bit is set and application cannot modify 
-     * or start another transfer using this channel. Channel ACTIVE bit is cleared by 
+    handle->base->CHANNEL[handle->channel].XFERCFG = s_dma_descriptor_table[handle->channel].xfercfg;
+    /* At this moment, the channel ACTIVE bit is set and application cannot modify
+     * or start another transfer using this channel. Channel ACTIVE bit is cleared by
     * 'AbortTransfer' function or when the transfer finishes */
 }
 
@@ -416,6 +400,20 @@ void DMA0_DriverIRQHandler(void)
                 (handle->callback)(handle, handle->userData, true, kDMA_IntB);
             }
         }
+        /* Error flag */
+        if (handle->base->COMMON[channel_group].ERRINT & (1U << channel_index))
+        {
+            /* Clear error flag */
+            handle->base->COMMON[channel_group].ERRINT = 1U << channel_index;
+            if (handle->callback)
+            {
+                (handle->callback)(handle, handle->userData, false, kDMA_IntError);
+            }
+        }
     }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
-

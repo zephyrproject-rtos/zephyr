@@ -4434,7 +4434,7 @@ typedef struct {
        uint8_t RESERVED_37[184];
   __IO uint32_t HWWAKE;                            /**< Configures special cases of hardware wake-up, offset: 0x780 */
        uint8_t RESERVED_38[124];
-  __IO uint32_t CPCTRL;                            /**< CPU Control for multiple processors, offset: 0x800 */
+  __IO uint32_t CPUCTRL;                           /**< CPU Control for multiple processors, offset: 0x800 */
   __IO uint32_t CPBOOT;                            /**< Coprocessor Boot Address, offset: 0x804 */
   __IO uint32_t CPSTACK;                           /**< Coprocessor Stack Address, offset: 0x808 */
   __I  uint32_t CPSTAT;                            /**< Coprocessor Status, offset: 0x80C */
@@ -5331,25 +5331,25 @@ typedef struct {
 #define SYSCON_HWWAKE_WAKEDMA_SHIFT              (3U)
 #define SYSCON_HWWAKE_WAKEDMA(x)                 (((uint32_t)(((uint32_t)(x)) << SYSCON_HWWAKE_WAKEDMA_SHIFT)) & SYSCON_HWWAKE_WAKEDMA_MASK)
 
-/*! @name CPCTRL - CPU Control for multiple processors */
-#define SYSCON_CPCTRL_MASTERCPU_MASK             (0x1U)
-#define SYSCON_CPCTRL_MASTERCPU_SHIFT            (0U)
-#define SYSCON_CPCTRL_MASTERCPU(x)               (((uint32_t)(((uint32_t)(x)) << SYSCON_CPCTRL_MASTERCPU_SHIFT)) & SYSCON_CPCTRL_MASTERCPU_MASK)
-#define SYSCON_CPCTRL_CM4CLKEN_MASK              (0x4U)
-#define SYSCON_CPCTRL_CM4CLKEN_SHIFT             (2U)
-#define SYSCON_CPCTRL_CM4CLKEN(x)                (((uint32_t)(((uint32_t)(x)) << SYSCON_CPCTRL_CM4CLKEN_SHIFT)) & SYSCON_CPCTRL_CM4CLKEN_MASK)
-#define SYSCON_CPCTRL_CM0CLKEN_MASK              (0x8U)
-#define SYSCON_CPCTRL_CM0CLKEN_SHIFT             (3U)
-#define SYSCON_CPCTRL_CM0CLKEN(x)                (((uint32_t)(((uint32_t)(x)) << SYSCON_CPCTRL_CM0CLKEN_SHIFT)) & SYSCON_CPCTRL_CM0CLKEN_MASK)
-#define SYSCON_CPCTRL_CM4RSTEN_MASK              (0x10U)
-#define SYSCON_CPCTRL_CM4RSTEN_SHIFT             (4U)
-#define SYSCON_CPCTRL_CM4RSTEN(x)                (((uint32_t)(((uint32_t)(x)) << SYSCON_CPCTRL_CM4RSTEN_SHIFT)) & SYSCON_CPCTRL_CM4RSTEN_MASK)
-#define SYSCON_CPCTRL_CM0RSTEN_MASK              (0x20U)
-#define SYSCON_CPCTRL_CM0RSTEN_SHIFT             (5U)
-#define SYSCON_CPCTRL_CM0RSTEN(x)                (((uint32_t)(((uint32_t)(x)) << SYSCON_CPCTRL_CM0RSTEN_SHIFT)) & SYSCON_CPCTRL_CM0RSTEN_MASK)
-#define SYSCON_CPCTRL_POWERCPU_MASK              (0x40U)
-#define SYSCON_CPCTRL_POWERCPU_SHIFT             (6U)
-#define SYSCON_CPCTRL_POWERCPU(x)                (((uint32_t)(((uint32_t)(x)) << SYSCON_CPCTRL_POWERCPU_SHIFT)) & SYSCON_CPCTRL_POWERCPU_MASK)
+/*! @name CPUCTRL - CPU Control for multiple processors */
+#define SYSCON_CPUCTRL_MASTERCPU_MASK             (0x1U)
+#define SYSCON_CPUCTRL_MASTERCPU_SHIFT            (0U)
+#define SYSCON_CPUCTRL_MASTERCPU(x)               (((uint32_t)(((uint32_t)(x)) << SYSCON_CPUCTRL_MASTERCPU_SHIFT)) & SYSCON_CPUCTRL_MASTERCPU_MASK)
+#define SYSCON_CPUCTRL_CM4CLKEN_MASK              (0x4U)
+#define SYSCON_CPUCTRL_CM4CLKEN_SHIFT             (2U)
+#define SYSCON_CPUCTRL_CM4CLKEN(x)                (((uint32_t)(((uint32_t)(x)) << SYSCON_CPUCTRL_CM4CLKEN_SHIFT)) & SYSCON_CPUCTRL_CM4CLKEN_MASK)
+#define SYSCON_CPUCTRL_CM0CLKEN_MASK              (0x8U)
+#define SYSCON_CPUCTRL_CM0CLKEN_SHIFT             (3U)
+#define SYSCON_CPUCTRL_CM0CLKEN(x)                (((uint32_t)(((uint32_t)(x)) << SYSCON_CPUCTRL_CM0CLKEN_SHIFT)) & SYSCON_CPUCTRL_CM0CLKEN_MASK)
+#define SYSCON_CPUCTRL_CM4RSTEN_MASK              (0x10U)
+#define SYSCON_CPUCTRL_CM4RSTEN_SHIFT             (4U)
+#define SYSCON_CPUCTRL_CM4RSTEN(x)                (((uint32_t)(((uint32_t)(x)) << SYSCON_CPUCTRL_CM4RSTEN_SHIFT)) & SYSCON_CPUCTRL_CM4RSTEN_MASK)
+#define SYSCON_CPUCTRL_CM0RSTEN_MASK              (0x20U)
+#define SYSCON_CPUCTRL_CM0RSTEN_SHIFT             (5U)
+#define SYSCON_CPUCTRL_CM0RSTEN(x)                (((uint32_t)(((uint32_t)(x)) << SYSCON_CPUCTRL_CM0RSTEN_SHIFT)) & SYSCON_CPUCTRL_CM0RSTEN_MASK)
+#define SYSCON_CPUCTRL_POWERCPU_MASK              (0x40U)
+#define SYSCON_CPUCTRL_POWERCPU_SHIFT             (6U)
+#define SYSCON_CPUCTRL_POWERCPU(x)                (((uint32_t)(((uint32_t)(x)) << SYSCON_CPUCTRL_POWERCPU_SHIFT)) & SYSCON_CPUCTRL_POWERCPU_MASK)
 
 /*! @name CPBOOT - Coprocessor Boot Address */
 #define SYSCON_CPBOOT_BOOTADDR_MASK              (0xFFFFFFFFU)

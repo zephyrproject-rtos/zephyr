@@ -1,7 +1,7 @@
 /*
 ** ###################################################################
 **     Version:             rev. 2.15, 2016-03-21
-**     Build:               b170228
+**     Build:               b170918
 **
 **     Abstract:
 **         Chip specific module features.
@@ -11,14 +11,14 @@
 **     Redistribution and use in source and binary forms, with or without modification,
 **     are permitted provided that the following conditions are met:
 **
-**     o Redistributions of source code must retain the above copyright notice, this list
+**     1. Redistributions of source code must retain the above copyright notice, this list
 **       of conditions and the following disclaimer.
 **
-**     o Redistributions in binary form must reproduce the above copyright notice, this
+**     2. Redistributions in binary form must reproduce the above copyright notice, this
 **       list of conditions and the following disclaimer in the documentation and/or
 **       other materials provided with the distribution.
 **
-**     o Neither the name of the copyright holder nor the names of its
+**     3. Neither the name of the copyright holder nor the names of its
 **       contributors may be used to endorse or promote products derived from this
 **       software without specific prior written permission.
 **
@@ -761,6 +761,8 @@
     #define FSL_FEATURE_FLASH_HAS_MSCM_FLASH_CACHE_CONTROLS (0)
     /* @brief Has prefetch speculation control in flash, such as kv5x. */
     #define FSL_FEATURE_FLASH_PREFETCH_SPECULATION_CONTROL_IN_FLASH (0)
+    /* @brief P-Flash flash size coding rule version, value 0 for K1 and K2, value 1 for K3. */
+    #define FSL_FEATURE_FLASH_SIZE_ENCODING_RULE_VERSION (0)
     /* @brief P-Flash start address. */
     #define FSL_FEATURE_FLASH_PFLASH_START_ADDRESS (0x00000000)
     /* @brief P-Flash block count. */
@@ -948,6 +950,8 @@
     #define FSL_FEATURE_FLASH_HAS_MSCM_FLASH_CACHE_CONTROLS (0)
     /* @brief Has prefetch speculation control in flash, such as kv5x. */
     #define FSL_FEATURE_FLASH_PREFETCH_SPECULATION_CONTROL_IN_FLASH (0)
+    /* @brief P-Flash flash size coding rule version, value 0 for K1 and K2, value 1 for K3. */
+    #define FSL_FEATURE_FLASH_SIZE_ENCODING_RULE_VERSION (0)
     /* @brief P-Flash start address. */
     #define FSL_FEATURE_FLASH_PFLASH_START_ADDRESS (0x00000000)
     /* @brief P-Flash block count. */
@@ -1133,6 +1137,8 @@
 #define FSL_FEATURE_FTM_HAS_RELOAD_INTERRUPT (0)
 /* @brief Has reload initialization trigger. */
 #define FSL_FEATURE_FTM_HAS_RELOAD_INITIALIZATION_TRIGGER (0)
+/* @brief Has no QDCTRL. */
+#define FSL_FEATURE_FTM_HAS_NO_QDCTRL (0)
 
 /* GPIO module features */
 
@@ -1549,6 +1555,8 @@
 #define FSL_FEATURE_PIT_HAS_CHAIN_MODE (1)
 /* @brief Has shared interrupt handler (has not individual interrupt handler for each channel). */
 #define FSL_FEATURE_PIT_HAS_SHARED_IRQ_HANDLER (0)
+/* @brief Has timer enable control. */
+#define FSL_FEATURE_PIT_HAS_MDIS (1)
 
 /* PMC module features */
 
@@ -1669,6 +1677,28 @@
     #define FSL_FEATURE_RTC_HAS_TSIC (0)
     /* @brief Has OSC capacitor setting RTC_CR[SC2P ~ SC16P] */
     #define FSL_FEATURE_RTC_HAS_OSC_SCXP (1)
+    /* @brief Has Tamper Interrupt Register (register TIR). */
+    #define FSL_FEATURE_RTC_HAS_TIR (0)
+    /* @brief Has Tamper Pin Interrupt Enable (bitfield TIR[TPIE]). */
+    #define FSL_FEATURE_RTC_HAS_TIR_TPIE (0)
+    /* @brief Has Security Interrupt Enable (bitfield TIR[SIE]). */
+    #define FSL_FEATURE_RTC_HAS_TIR_SIE (0)
+    /* @brief Has Loss of Clock Interrupt Enable (bitfield TIR[LCIE]). */
+    #define FSL_FEATURE_RTC_HAS_TIR_LCIE (0)
+    /* @brief Has Tamper Interrupt Detect Flag (bitfield SR[TIDF]). */
+    #define FSL_FEATURE_RTC_HAS_SR_TIDF (0)
+    /* @brief Has Tamper Detect Register (register TDR). */
+    #define FSL_FEATURE_RTC_HAS_TDR (0)
+    /* @brief Has Tamper Pin Flag (bitfield TDR[TPF]). */
+    #define FSL_FEATURE_RTC_HAS_TDR_TPF (0)
+    /* @brief Has Security Tamper Flag (bitfield TDR[STF]). */
+    #define FSL_FEATURE_RTC_HAS_TDR_STF (0)
+    /* @brief Has Loss of Clock Tamper Flag (bitfield TDR[LCTF]). */
+    #define FSL_FEATURE_RTC_HAS_TDR_LCTF (0)
+    /* @brief Has Tamper Time Seconds Register (register TTSR). */
+    #define FSL_FEATURE_RTC_HAS_TTSR (0)
+    /* @brief Has Pin Configuration Register (register PCR). */
+    #define FSL_FEATURE_RTC_HAS_PCR (0)
 #elif defined(CPU_MK64FN1M0VMD12) || defined(CPU_MK64FX512VMD12)
     /* @brief Has wakeup pin. */
     #define FSL_FEATURE_RTC_HAS_WAKEUP_PIN (1)
@@ -1690,6 +1720,28 @@
     #define FSL_FEATURE_RTC_HAS_TSIC (0)
     /* @brief Has OSC capacitor setting RTC_CR[SC2P ~ SC16P] */
     #define FSL_FEATURE_RTC_HAS_OSC_SCXP (1)
+    /* @brief Has Tamper Interrupt Register (register TIR). */
+    #define FSL_FEATURE_RTC_HAS_TIR (0)
+    /* @brief Has Tamper Pin Interrupt Enable (bitfield TIR[TPIE]). */
+    #define FSL_FEATURE_RTC_HAS_TIR_TPIE (0)
+    /* @brief Has Security Interrupt Enable (bitfield TIR[SIE]). */
+    #define FSL_FEATURE_RTC_HAS_TIR_SIE (0)
+    /* @brief Has Loss of Clock Interrupt Enable (bitfield TIR[LCIE]). */
+    #define FSL_FEATURE_RTC_HAS_TIR_LCIE (0)
+    /* @brief Has Tamper Interrupt Detect Flag (bitfield SR[TIDF]). */
+    #define FSL_FEATURE_RTC_HAS_SR_TIDF (0)
+    /* @brief Has Tamper Detect Register (register TDR). */
+    #define FSL_FEATURE_RTC_HAS_TDR (0)
+    /* @brief Has Tamper Pin Flag (bitfield TDR[TPF]). */
+    #define FSL_FEATURE_RTC_HAS_TDR_TPF (0)
+    /* @brief Has Security Tamper Flag (bitfield TDR[STF]). */
+    #define FSL_FEATURE_RTC_HAS_TDR_STF (0)
+    /* @brief Has Loss of Clock Tamper Flag (bitfield TDR[LCTF]). */
+    #define FSL_FEATURE_RTC_HAS_TDR_LCTF (0)
+    /* @brief Has Tamper Time Seconds Register (register TTSR). */
+    #define FSL_FEATURE_RTC_HAS_TTSR (0)
+    /* @brief Has Pin Configuration Register (register PCR). */
+    #define FSL_FEATURE_RTC_HAS_PCR (0)
 #endif /* defined(CPU_MK64FN1M0CAJ12) || defined(CPU_MK64FN1M0VDC12) || defined(CPU_MK64FN1M0VLL12) || defined(CPU_MK64FN1M0VLQ12) || \
     defined(CPU_MK64FX512VDC12) || defined(CPU_MK64FX512VLL12) || defined(CPU_MK64FX512VLQ12) */
 
@@ -1975,6 +2027,8 @@
 #define FSL_FEATURE_SMC_HAS_SUB_STOP_MODE (1)
 /* @brief Has stop submode 0(VLLS0). */
 #define FSL_FEATURE_SMC_HAS_STOP_SUBMODE0 (1)
+/* @brief Has stop submode 1(VLLS1). */
+#define FSL_FEATURE_SMC_HAS_STOP_SUBMODE1 (1)
 /* @brief Has stop submode 2(VLLS2). */
 #define FSL_FEATURE_SMC_HAS_STOP_SUBMODE2 (1)
 /* @brief Has SMC_PARAM. */
@@ -1992,9 +2046,9 @@
 
 /* @brief Receive/transmit FIFO size in number of items. */
 #define FSL_FEATURE_DSPI_FIFO_SIZEn(x) \
-    ((x) == DSPI0 ? (4) : \
-    ((x) == DSPI1 ? (1) : \
-    ((x) == DSPI2 ? (1) : (-1))))
+    ((x) == SPI0 ? (4) : \
+    ((x) == SPI1 ? (1) : \
+    ((x) == SPI2 ? (1) : (-1))))
 /* @brief Maximum transfer data width in bits. */
 #define FSL_FEATURE_DSPI_MAX_DATA_WIDTH (16)
 /* @brief Maximum number of chip select pins. (Reflects the width of register bit field PUSHR[PCS].) */
@@ -2009,9 +2063,9 @@
 #define FSL_FEATURE_DSPI_16BIT_TRANSFERS (1)
 /* @brief Has separate DMA RX and TX requests. */
 #define FSL_FEATURE_DSPI_HAS_SEPARATE_DMA_RX_TX_REQn(x) \
-    ((x) == DSPI0 ? (1) : \
-    ((x) == DSPI1 ? (0) : \
-    ((x) == DSPI2 ? (0) : (-1))))
+    ((x) == SPI0 ? (1) : \
+    ((x) == SPI1 ? (0) : \
+    ((x) == SPI2 ? (0) : (-1))))
 
 /* SYSMPU module features */
 

@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
- *
+ * All rights reserved.
+ * 
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ *  that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -247,7 +251,7 @@ void FLEXSPI_Init(FLEXSPI_Type *base, const flexspi_config_t *config)
                   FLEXSPI_MCR0_HSEN(config->enableHalfSpeedAccess) |
                   FLEXSPI_MCR0_COMBINATIONEN(config->enableCombination) |
                   FLEXSPI_MCR0_ATDFEN(config->ahbConfig.enableAHBWriteIpTxFifo) |
-                  FLEXSPI_MCR0_ATDFEN(config->ahbConfig.enableAHBWriteIpRxFifo) | FLEXSPI_MCR0_MDIS_MASK;
+                  FLEXSPI_MCR0_ARDFEN(config->ahbConfig.enableAHBWriteIpRxFifo) | FLEXSPI_MCR0_MDIS_MASK;
     base->MCR0 = configValue;
 
     /* Configure MCR1 configurations. */
@@ -277,7 +281,7 @@ void FLEXSPI_Init(FLEXSPI_Type *base, const flexspi_config_t *config)
 
     /* Configure IP Fifo watermarks. */
     base->IPRXFCR |= FLEXSPI_IPRXFCR_RXWMRK(config->rxWatermark / 8 - 1);
-    base->IPTXFCR |= FLEXSPI_IPRXFCR_RXWMRK(config->txWatermark / 8 - 1);
+    base->IPTXFCR |= FLEXSPI_IPTXFCR_TXWMRK(config->txWatermark / 8 - 1);
 }
 
 void FLEXSPI_GetDefaultConfig(flexspi_config_t *config)
@@ -358,6 +362,15 @@ void FLEXSPI_SetFlashConfig(FLEXSPI_Type *base, flexspi_device_config_t *config,
     base->DLLCR[index] = FLEXSPI_ConfigureDll(base, config);
 
     /* Configure write mask. */
+    if (config->enableWriteMask)
+    {
+        base->FLSHCR4 &= ~FLEXSPI_FLSHCR4_WMOPT1_MASK;
+    }
+    else
+    {
+        base->FLSHCR4 |= FLEXSPI_FLSHCR4_WMOPT1_MASK;
+    }
+
     if (index == 0) /*PortA*/
     {
         base->FLSHCR4 &= ~FLEXSPI_FLSHCR4_WMENA_MASK;

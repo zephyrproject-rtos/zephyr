@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -46,8 +50,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief ADC driver version 2.0.0. */
-#define LPC_ADC_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*! @brief ADC driver version 2.1.0. */
+#define LPC_ADC_DRIVER_VERSION (MAKE_VERSION(2, 1, 0))
 /*@}*/
 
 /*!
@@ -150,7 +154,7 @@ typedef enum _adc_trigger_polarity
 typedef enum _adc_priority
 {
     kADC_PriorityLow = 0U,  /*!< This sequence would be preempted when another sequence is started. */
-    kADC_PriorityHigh = 1U, /*!< This sequence would preempt other sequence even when is is started. */
+    kADC_PriorityHigh = 1U, /*!< This sequence would preempt other sequence even when it is started. */
 } adc_priority_t;
 
 /*!
@@ -247,7 +251,7 @@ typedef struct _adc_conv_seq_config
  */
 typedef struct _adc_result_info
 {
-    uint32_t result;                                         /*!< Keey the conversion data value. */
+    uint32_t result;                                         /*!< Keep the conversion data value. */
     adc_threshold_compare_status_t thresholdCompareStatus;   /*!< Keep the threshold compare status. */
     adc_threshold_crossing_status_t thresholdCorssingStatus; /*!< Keep the threshold crossing status. */
     uint32_t channelNumber;                                  /*!< Keep the channel number for this conversion. */
@@ -307,6 +311,7 @@ void ADC_GetDefaultConfig(adc_config_t *config);
  */
 bool ADC_DoSelfCalibration(ADC_Type *base);
 
+#if !(defined(FSL_FEATURE_ADC_HAS_NO_INSEL) && FSL_FEATURE_ADC_HAS_NO_INSEL)
 /*!
  * @brief Enable the internal temperature sensor measurement.
  *
@@ -327,7 +332,7 @@ static inline void ADC_EnableTemperatureSensor(ADC_Type *base, bool enable)
         base->INSEL = (base->INSEL & ~ADC_INSEL_SEL_MASK) | ADC_INSEL_SEL(0);
     }
 }
-
+#endif /* FSL_FEATURE_ADC_HAS_NO_INSEL. */
 /* @} */
 
 /*!
@@ -611,13 +616,24 @@ static inline void ADC_DisableInterrupts(ADC_Type *base, uint32_t mask)
 }
 
 /*!
- * @brief Enable the interrupt of shreshold compare event for each channel.
+ * @brief Enable the interrupt of threshold compare event for each channel.
+ * @deprecated Do not use this function.  It has been superceded by @ADC_EnableThresholdCompareInterrupt
+ */
+static inline void ADC_EnableShresholdCompareInterrupt(ADC_Type *base,
+                                                       uint32_t channel,
+                                                       adc_threshold_interrupt_mode_t mode)
+{
+    base->INTEN = (base->INTEN & ~(0x3U << ((channel << 1U) + 3U))) | ((uint32_t)(mode) << ((channel << 1U) + 3U));
+}
+
+/*!
+ * @brief Enable the interrupt of threshold compare event for each channel.
  *
  * @param base ADC peripheral base address.
  * @param channel Channel number.
  * @param mode Interrupt mode for threshold compare event, see to #adc_threshold_interrupt_mode_t.
  */
-static inline void ADC_EnableShresholdCompareInterrupt(ADC_Type *base,
+static inline void ADC_EnableThresholdCompareInterrupt(ADC_Type *base,
                                                        uint32_t channel,
                                                        adc_threshold_interrupt_mode_t mode)
 {

@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -241,36 +245,31 @@ void LLWU_ClearExternalWakeupPinFlag(LLWU_Type *base, uint32_t pinIndex)
 void LLWU_SetPinFilterMode(LLWU_Type *base, uint32_t filterIndex, llwu_external_pin_filter_mode_t filterMode)
 {
 #if (defined(FSL_FEATURE_LLWU_REG_BITWIDTH) && (FSL_FEATURE_LLWU_REG_BITWIDTH == 32))
-    uint32_t reg;
-
-    reg = base->FILT;
-    reg &= ~((LLWU_FILT_FILTSEL1_MASK | LLWU_FILT_FILTE1_MASK) << (filterIndex * 8U - 1U));
-    reg |= (((filterMode.pinIndex << LLWU_FILT_FILTSEL1_SHIFT) | (filterMode.filterMode << LLWU_FILT_FILTE1_SHIFT)
-             /* Clear the Filter Detect Flag */
-             | LLWU_FILT_FILTF1_MASK)
-            << (filterIndex * 8U - 1U));
-    base->FILT = reg;
+    base->FILT = ((base->FILT) & ~((LLWU_FILT_FILTSEL1_MASK | LLWU_FILT_FILTE1_MASK) << ((filterIndex - 1U) * 8U))) |
+                 ((LLWU_FILT_FILTSEL1(filterMode.pinIndex) | LLWU_FILT_FILTE1(filterMode.filterMode))
+                  << ((filterIndex - 1U) * 8U)) |
+                 LLWU_FILT_FILTF1_MASK /* W1C to clear the FILTF flag bit. */
+        ;
 #else
     volatile uint8_t *regBase;
-    uint8_t reg;
 
     switch (filterIndex)
     {
-        case 1:
+        case 1U:
             regBase = &base->FILT1;
             break;
 #if (defined(FSL_FEATURE_LLWU_HAS_PIN_FILTER) && (FSL_FEATURE_LLWU_HAS_PIN_FILTER > 1))
-        case 2:
+        case 2U:
             regBase = &base->FILT2;
             break;
 #endif /* FSL_FEATURE_LLWU_HAS_PIN_FILTER */
 #if (defined(FSL_FEATURE_LLWU_HAS_PIN_FILTER) && (FSL_FEATURE_LLWU_HAS_PIN_FILTER > 2))
-        case 3:
+        case 3U:
             regBase = &base->FILT3;
             break;
 #endif /* FSL_FEATURE_LLWU_HAS_PIN_FILTER */
 #if (defined(FSL_FEATURE_LLWU_HAS_PIN_FILTER) && (FSL_FEATURE_LLWU_HAS_PIN_FILTER > 3))
-        case 4:
+        case 4U:
             regBase = &base->FILT4;
             break;
 #endif /* FSL_FEATURE_LLWU_HAS_PIN_FILTER */
@@ -279,15 +278,12 @@ void LLWU_SetPinFilterMode(LLWU_Type *base, uint32_t filterIndex, llwu_external_
             break;
     }
 
-    if (regBase)
+    if (NULL != regBase)
     {
-        reg = *regBase;
-        reg &= ~(LLWU_FILT1_FILTSEL_MASK | LLWU_FILT1_FILTE_MASK);
-        reg |= ((uint32_t)filterMode.pinIndex << LLWU_FILT1_FILTSEL_SHIFT);
-        reg |= ((uint32_t)filterMode.filterMode << LLWU_FILT1_FILTE_SHIFT);
-        /* Clear the Filter Detect Flag */
-        reg |= LLWU_FILT1_FILTF_MASK;
-        *regBase = reg;
+        *regBase = (*regBase & ~(LLWU_FILT1_FILTSEL_MASK | LLWU_FILT1_FILTE_MASK)) |
+                   LLWU_FILT1_FILTSEL(filterMode.pinIndex) | LLWU_FILT1_FILTE(filterMode.filterMode) |
+                   LLWU_FILT1_FILTF_MASK /* W1C to clear the FILTF flag bit. */
+            ;
     }
 #endif /* FSL_FEATURE_LLWU_REG_BITWIDTH */
 }
@@ -338,15 +334,21 @@ void LLWU_ClearPinFilterFlag(LLWU_Type *base, uint32_t filterIndex)
         case 1:
             reg |= LLWU_FILT_FILTF1_MASK;
             break;
+#if (defined(FSL_FEATURE_LLWU_HAS_PIN_FILTER) && (FSL_FEATURE_LLWU_HAS_PIN_FILTER > 1))
         case 2:
             reg |= LLWU_FILT_FILTF2_MASK;
             break;
+#endif /* FSL_FEATURE_LLWU_HAS_PIN_FILTER > 1 */
+#if (defined(FSL_FEATURE_LLWU_HAS_PIN_FILTER) && (FSL_FEATURE_LLWU_HAS_PIN_FILTER > 2))
         case 3:
             reg |= LLWU_FILT_FILTF3_MASK;
             break;
+#endif /* FSL_FEATURE_LLWU_HAS_PIN_FILTER > 2 */
+#if (defined(FSL_FEATURE_LLWU_HAS_PIN_FILTER) && (FSL_FEATURE_LLWU_HAS_PIN_FILTER > 3))
         case 4:
             reg |= LLWU_FILT_FILTF4_MASK;
             break;
+#endif /* FSL_FEATURE_LLWU_HAS_PIN_FILTER > 3 */
         default:
             break;
     }

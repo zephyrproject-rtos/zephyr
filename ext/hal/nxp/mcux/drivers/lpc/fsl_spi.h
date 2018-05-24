@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -46,11 +50,15 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief USART driver version 2.0.0. */
-#define FSL_SPI_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*! @brief SPI driver version 2.0.1. */
+#define FSL_SPI_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
 /*@}*/
 
-#define SPI_DUMMYDATA (0xFFFF)
+#ifndef SPI_DUMMYDATA
+/*! @brief SPI dummy transfer data, the data is sent while txBuff is NULL. */
+#define SPI_DUMMYDATA (0xFFU)
+#endif
+
 #define SPI_DATA(n) (((uint32_t)(n)) & 0xFFFF)
 #define SPI_CTRLMASK (0xFFFF0000)
 
@@ -64,25 +72,29 @@
 #define SPI_FIFOTRIG_RXLVL_GET(base) (((base)->FIFOTRIG & SPI_FIFOTRIG_RXLVL_MASK) >> SPI_FIFOTRIG_RXLVL_SHIFT)
 
 /*! @brief SPI transfer option.*/
-typedef enum _spi_xfer_option {
+typedef enum _spi_xfer_option
+{
     kSPI_FrameDelay = (SPI_FIFOWR_EOF_MASK),  /*!< Delay chip select */
     kSPI_FrameAssert = (SPI_FIFOWR_EOT_MASK), /*!< When transfer ends, assert chip select */
 } spi_xfer_option_t;
 
 /*! @brief SPI data shifter direction options.*/
-typedef enum _spi_shift_direction {
+typedef enum _spi_shift_direction
+{
     kSPI_MsbFirst = 0U, /*!< Data transfers start with most significant bit. */
     kSPI_LsbFirst = 1U  /*!< Data transfers start with least significant bit. */
 } spi_shift_direction_t;
 
 /*! @brief SPI clock polarity configuration.*/
-typedef enum _spi_clock_polarity {
+typedef enum _spi_clock_polarity
+{
     kSPI_ClockPolarityActiveHigh = 0x0U, /*!< Active-high SPI clock (idles low). */
     kSPI_ClockPolarityActiveLow          /*!< Active-low SPI clock (idles high). */
 } spi_clock_polarity_t;
 
 /*! @brief SPI clock phase configuration.*/
-typedef enum _spi_clock_phase {
+typedef enum _spi_clock_phase
+{
     kSPI_ClockPhaseFirstEdge = 0x0U, /*!< First edge on SCK occurs at the middle of the first
                                          *   cycle of a data transfer. */
     kSPI_ClockPhaseSecondEdge        /*!< First edge on SCK occurs at the start of the
@@ -90,7 +102,8 @@ typedef enum _spi_clock_phase {
 } spi_clock_phase_t;
 
 /*! @brief txFIFO watermark values */
-typedef enum _spi_txfifo_watermark {
+typedef enum _spi_txfifo_watermark
+{
     kSPI_TxFifo0 = 0, /*!< SPI tx watermark is empty */
     kSPI_TxFifo1 = 1, /*!< SPI tx watermark at 1 item */
     kSPI_TxFifo2 = 2, /*!< SPI tx watermark at 2 items */
@@ -102,7 +115,8 @@ typedef enum _spi_txfifo_watermark {
 } spi_txfifo_watermark_t;
 
 /*! @brief rxFIFO watermark values */
-typedef enum _spi_rxfifo_watermark {
+typedef enum _spi_rxfifo_watermark
+{
     kSPI_RxFifo1 = 0, /*!< SPI rx watermark at 1 item */
     kSPI_RxFifo2 = 1, /*!< SPI rx watermark at 2 items */
     kSPI_RxFifo3 = 2, /*!< SPI rx watermark at 3 items */
@@ -114,7 +128,8 @@ typedef enum _spi_rxfifo_watermark {
 } spi_rxfifo_watermark_t;
 
 /*! @brief Transfer data width */
-typedef enum _spi_data_width {
+typedef enum _spi_data_width
+{
     kSPI_Data4Bits = 3,   /*!< 4 bits data width */
     kSPI_Data5Bits = 4,   /*!< 5 bits data width */
     kSPI_Data6Bits = 5,   /*!< 6 bits data width */
@@ -131,12 +146,40 @@ typedef enum _spi_data_width {
 } spi_data_width_t;
 
 /*! @brief Slave select */
-typedef enum _spi_ssel {
+typedef enum _spi_ssel
+{
     kSPI_Ssel0 = 0, /*!< Slave select 0 */
     kSPI_Ssel1 = 1, /*!< Slave select 1 */
     kSPI_Ssel2 = 2, /*!< Slave select 2 */
     kSPI_Ssel3 = 3, /*!< Slave select 3 */
 } spi_ssel_t;
+
+/*! @brief ssel polarity */
+typedef enum _spi_spol
+{
+    kSPI_Spol0ActiveHigh = SPI_CFG_SPOL0(1),
+    kSPI_Spol1ActiveHigh = SPI_CFG_SPOL1(1),
+    kSPI_Spol2ActiveHigh = SPI_CFG_SPOL2(1),
+    kSPI_Spol3ActiveHigh = SPI_CFG_SPOL3(1),
+    kSPI_SpolActiveAllHigh =
+        (kSPI_Spol0ActiveHigh | kSPI_Spol1ActiveHigh | kSPI_Spol2ActiveHigh | kSPI_Spol3ActiveHigh),
+    kSPI_SpolActiveAllLow = 0,
+} spi_spol_t;
+
+/*!
+ * @brief SPI delay time configure structure.
+ * Note:
+ *   The DLY register controls several programmable delays related to SPI signalling,
+ *   it stands for how many SPI clock time will be inserted.
+ *   The maxinun value of these delay time is 15.
+ */
+typedef struct _spi_delay_config
+{
+    uint8_t preDelay;      /*!< Delay between SSEL assertion and the beginning of transfer. */
+    uint8_t postDelay;     /*!< Delay between the end of transfer and SSEL deassertion. */
+    uint8_t frameDelay;    /*!< Delay between frame to frame. */
+    uint8_t transferDelay; /*!< Delay between transfer to transfer. */
+} spi_delay_config_t;
 
 /*! @brief SPI master user configure structure.*/
 typedef struct _spi_master_config
@@ -149,8 +192,10 @@ typedef struct _spi_master_config
     uint32_t baudRate_Bps;              /*!< Baud Rate for SPI in Hz */
     spi_data_width_t dataWidth;         /*!< Width of the data */
     spi_ssel_t sselNum;                 /*!< Slave select number */
+    spi_spol_t sselPol;                 /*!< Configure active CS polarity */
     spi_txfifo_watermark_t txWatermark; /*!< txFIFO watermark */
     spi_rxfifo_watermark_t rxWatermark; /*!< rxFIFO watermark */
+    spi_delay_config_t delayConfig;     /*!< Delay configuration. */
 } spi_master_config_t;
 
 /*! @brief SPI slave user configure structure.*/
@@ -161,6 +206,7 @@ typedef struct _spi_slave_config
     spi_clock_phase_t phase;            /*!< Clock phase */
     spi_shift_direction_t direction;    /*!< MSB or LSB */
     spi_data_width_t dataWidth;         /*!< Width of the data */
+    spi_spol_t sselPol;                 /*!< Configure active CS polarity */
     spi_txfifo_watermark_t txWatermark; /*!< txFIFO watermark */
     spi_rxfifo_watermark_t rxWatermark; /*!< rxFIFO watermark */
 } spi_slave_config_t;
@@ -199,6 +245,19 @@ typedef struct _spi_transfer
     uint32_t configFlags; /*!< Additional option to control transfer */
     size_t dataSize;      /*!< Transfer bytes */
 } spi_transfer_t;
+
+/*! @brief SPI half-duplex(master only) transfer structure */
+typedef struct _spi_half_duplex_transfer
+{
+    uint8_t *txData;            /*!< Send buffer */
+    uint8_t *rxData;            /*!< Receive buffer */
+    size_t txDataSize;          /*!< Transfer bytes for transmit */
+    size_t rxDataSize;          /*!< Transfer bytes */
+    uint32_t configFlags;       /*!< Transfer configuration flags. */
+    bool isPcsAssertInTransfer; /*!< If PCS pin keep assert between transmit and receive. true for assert and false for
+                                   deassert. */
+    bool isTransmitFirst;       /*!< True for transmit first and false for receive first. */
+} spi_half_duplex_transfer_t;
 
 /*! @brief Internal configuration structure used in 'spi' and 'spi_dma' driver */
 typedef struct _spi_config
@@ -468,6 +527,28 @@ static inline uint32_t SPI_ReadData(SPI_Type *base)
     return base->FIFORD;
 }
 
+/*!
+ * @brief Set delay time for transfer.
+ *        the delay uint is SPI clock time, maximum value is 0xF.
+ * @param base SPI base pointer
+ * @param config configuration for delay option @ref spi_delay_config_t.
+ */
+static inline void SPI_SetTransferDelay(SPI_Type *base, const spi_delay_config_t *config)
+{
+    assert(NULL != base);
+    assert(NULL != config);
+    base->DLY = (SPI_DLY_PRE_DELAY(config->preDelay) | SPI_DLY_POST_DELAY(config->postDelay) |
+                 SPI_DLY_FRAME_DELAY(config->frameDelay) | SPI_DLY_TRANSFER_DELAY(config->transferDelay));
+}
+
+/*!
+ * @brief Set up the dummy data.
+ *
+ * @param base SPI peripheral address.
+ * @param dummyData Data to be transferred when tx buffer is NULL.
+ */
+void SPI_SetDummyData(SPI_Type *base, uint8_t dummyData);
+
 /*! @} */
 
 /*!
@@ -512,6 +593,36 @@ status_t SPI_MasterTransferBlocking(SPI_Type *base, spi_transfer_t *xfer);
  * @retval kStatus_SPI_Busy SPI is not idle, is running another transfer.
  */
 status_t SPI_MasterTransferNonBlocking(SPI_Type *base, spi_master_handle_t *handle, spi_transfer_t *xfer);
+
+/*!
+ * @brief Transfers a block of data using a polling method.
+ *
+ * This function will do a half-duplex transfer for SPI master, This is a blocking function,
+ * which does not retuen until all transfer have been completed. And data transfer mechanism is half-duplex,
+ * users can set transmit first or receive first.
+ *
+ * @param base SPI base pointer
+ * @param xfer pointer to spi_half_duplex_transfer_t structure
+ * @return status of status_t.
+ */
+status_t SPI_MasterHalfDuplexTransferBlocking(SPI_Type *base, spi_half_duplex_transfer_t *xfer);
+
+/*!
+ * @brief Performs a non-blocking SPI interrupt transfer.
+ *
+ * This function using polling way to do the first half transimission and using interrupts to
+ * do the second half transimission, the transfer mechanism is half-duplex.
+ * When do the second half transimission, code will return right away. When all data is transferred,
+ * the callback function is called.
+ *
+ * @param base SPI peripheral base address.
+ * @param handle pointer to spi_master_handle_t structure which stores the transfer state
+ * @param xfer pointer to spi_half_duplex_transfer_t structure
+ * @return status of status_t.
+ */
+status_t SPI_MasterHalfDuplexTransferNonBlocking(SPI_Type *base,
+                                                 spi_master_handle_t *handle,
+                                                 spi_half_duplex_transfer_t *xfer);
 
 /*!
  * @brief Gets the master transfer count.
@@ -591,7 +702,7 @@ static inline status_t SPI_SlaveTransferNonBlocking(SPI_Type *base, spi_slave_ha
  */
 static inline status_t SPI_SlaveTransferGetCount(SPI_Type *base, spi_slave_handle_t *handle, size_t *count)
 {
-    return SPI_MasterTransferGetCount(base, (spi_master_handle_t*)handle, count);
+    return SPI_MasterTransferGetCount(base, (spi_master_handle_t *)handle, count);
 }
 
 /*!
@@ -604,7 +715,7 @@ static inline status_t SPI_SlaveTransferGetCount(SPI_Type *base, spi_slave_handl
  */
 static inline void SPI_SlaveTransferAbort(SPI_Type *base, spi_slave_handle_t *handle)
 {
-    SPI_MasterTransferAbort(base, (spi_master_handle_t*)handle);
+    SPI_MasterTransferAbort(base, (spi_master_handle_t *)handle);
 }
 
 /*!

@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015 - 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -46,7 +50,7 @@
 /*! @name Driver version */
 /*@{*/
 /*! @brief Defines the driver version. */
-#define FSL_ENET_DRIVER_VERSION (MAKE_VERSION(2, 2, 1)) /*!< Version 2.2.1. */
+#define FSL_ENET_DRIVER_VERSION (MAKE_VERSION(2, 2, 2)) /*!< Version 2.2.2. */
 /*@}*/
 
 /*! @name ENET DESCRIPTOR QUEUE */
@@ -194,7 +198,7 @@ typedef enum _enet_mii_mode
  *
  * Notice: "kENET_MiiSpeed1000M" only supported when mii mode is "kENET_RgmiiMode".
  */
-typedef enum _enet_mii_speed 
+typedef enum _enet_mii_speed
 {
     kENET_MiiSpeed10M = 0U,  /*!< Speed 10 Mbps. */
     kENET_MiiSpeed100M = 1U, /*!< Speed 100 Mbps. */
@@ -204,21 +208,21 @@ typedef enum _enet_mii_speed
 } enet_mii_speed_t;
 
 /*! @brief Defines the half or full duplex for the MII data interface. */
-typedef enum _enet_mii_duplex 
+typedef enum _enet_mii_duplex
 {
     kENET_MiiHalfDuplex = 0U, /*!< Half duplex mode. */
     kENET_MiiFullDuplex       /*!< Full duplex mode. */
 } enet_mii_duplex_t;
 
 /*! @brief Define the MII opcode for normal MDIO_CLAUSES_22 Frame. */
-typedef enum _enet_mii_write 
+typedef enum _enet_mii_write
 {
     kENET_MiiWriteNoCompliant = 0U, /*!< Write frame operation, but not MII-compliant. */
     kENET_MiiWriteValidFrame        /*!< Write frame operation for a valid MII management frame. */
 } enet_mii_write_t;
 
 /*! @brief Defines the read operation for the MII management frame. */
-typedef enum _enet_mii_read 
+typedef enum _enet_mii_read
 {
     kENET_MiiReadValidFrame = 2U, /*!< Read frame operation for a valid MII management frame. */
     kENET_MiiReadNoCompliant = 3U /*!< Read frame operation, but not MII-compliant. */
@@ -226,7 +230,8 @@ typedef enum _enet_mii_read
 
 #if defined(FSL_FEATURE_ENET_HAS_EXTEND_MDIO) && FSL_FEATURE_ENET_HAS_EXTEND_MDIO
 /*! @brief Define the MII opcode for extended MDIO_CLAUSES_45 Frame. */
-typedef enum _enet_mii_extend_opcode {
+typedef enum _enet_mii_extend_opcode
+{
     kENET_MiiAddrWrite_C45 = 0U,  /*!< Address Write operation. */
     kENET_MiiWriteFrame_C45 = 1U, /*!< Write frame operation for a valid MII management frame. */
     kENET_MiiReadFrame_C45 = 3U   /*!< Read frame operation for a valid MII management frame. */
@@ -245,7 +250,7 @@ typedef enum _enet_mii_extend_opcode {
  * configure rxFifoFullThreshold and txFifoWatermark
  * in the enet_config_t.
  */
-typedef enum _enet_special_control_flag 
+typedef enum _enet_special_control_flag
 {
     kENET_ControlFlowControlEnable = 0x0001U,       /*!< Enable ENET flow control: pause frame. */
     kENET_ControlRxPayloadCheckEnable = 0x0002U,    /*!< Enable ENET receive payload length check. */
@@ -268,7 +273,7 @@ typedef enum _enet_special_control_flag
  * members. Members usually map to interrupt enable bits in one or more
  * peripheral registers.
  */
-typedef enum _enet_interrupt_enable 
+typedef enum _enet_interrupt_enable
 {
     kENET_BabrInterrupt = ENET_EIR_BABR_MASK,        /*!< Babbling receive error interrupt source */
     kENET_BabtInterrupt = ENET_EIR_BABT_MASK,        /*!< Babbling transmit error interrupt source */
@@ -302,7 +307,7 @@ typedef enum _enet_interrupt_enable
 } enet_interrupt_enable_t;
 
 /*! @brief Defines the common interrupt event for callback use. */
-typedef enum _enet_event 
+typedef enum _enet_event
 {
     kENET_RxEvent,            /*!< Receive event. */
     kENET_TxEvent,            /*!< Transmit event. */
@@ -314,7 +319,7 @@ typedef enum _enet_event
 
 #if defined(FSL_FEATURE_ENET_HAS_AVB) && FSL_FEATURE_ENET_HAS_AVB
 /*! @brief Defines certain idle slope for bandwidth fraction. */
-typedef enum _enet_idle_slope 
+typedef enum _enet_idle_slope
 {
     kENET_IdleSlope1 = 1U,       /*!< The bandwidth fraction is about 0.002. */
     kENET_IdleSlope2 = 2U,       /*!< The bandwidth fraction is about 0.003. */
@@ -339,7 +344,7 @@ typedef enum _enet_idle_slope
 #endif /* FSL_FEATURE_ENET_HAS_AVB */
 
 /*! @brief Defines the transmit accelerator configuration. */
-typedef enum _enet_tx_accelerator 
+typedef enum _enet_tx_accelerator
 {
     kENET_TxAccelIsShift16Enabled = ENET_TACC_SHIFT16_MASK, /*!< Transmit FIFO shift-16. */
     kENET_TxAccelIpCheckEnabled = ENET_TACC_IPCHK_MASK,     /*!< Insert IP header checksum. */
@@ -347,7 +352,7 @@ typedef enum _enet_tx_accelerator
 } enet_tx_accelerator_t;
 
 /*! @brief Defines the receive accelerator configuration. */
-typedef enum _enet_rx_accelerator 
+typedef enum _enet_rx_accelerator
 {
     kENET_RxAccelPadRemoveEnabled = ENET_RACC_PADREM_MASK,  /*!< Padding removal for short IP frames. */
     kENET_RxAccelIpCheckEnabled = ENET_RACC_IPDIS_MASK,     /*!< Discard with wrong IP header checksum. */
@@ -358,7 +363,7 @@ typedef enum _enet_rx_accelerator
 
 #ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
 /*! @brief Defines the ENET PTP message related constant. */
-typedef enum _enet_ptp_event_type 
+typedef enum _enet_ptp_event_type
 {
     kENET_PtpEventMsgType = 3U,  /*!< PTP event message type. */
     kENET_PtpSrcPortIdLen = 10U, /*!< PTP message sequence id length. */
@@ -367,7 +372,7 @@ typedef enum _enet_ptp_event_type
 } enet_ptp_event_type_t;
 
 /*! @brief Defines the IEEE 1588 PTP timer channel numbers. */
-typedef enum _enet_ptp_timer_channel 
+typedef enum _enet_ptp_timer_channel
 {
     kENET_PtpTimerChannel1 = 0U, /*!< IEEE 1588 PTP timer Channel 1. */
     kENET_PtpTimerChannel2,      /*!< IEEE 1588 PTP timer Channel 2. */
@@ -481,14 +486,16 @@ typedef struct _enet_data_error_stats
  */
 typedef struct _enet_buffer_config
 {
-    uint16_t rxBdNumber;                              /*!< Receive buffer descriptor number. */
-    uint16_t txBdNumber;                              /*!< Transmit buffer descriptor number. */
-    uint32_t rxBuffSizeAlign;                         /*!< Aligned receive data buffer size. */
-    uint32_t txBuffSizeAlign;                         /*!< Aligned transmit data buffer size. */
-    volatile enet_rx_bd_struct_t *rxBdStartAddrAlign; /*!< Aligned receive buffer descriptor start address: should be non-cacheable. */
-    volatile enet_tx_bd_struct_t *txBdStartAddrAlign; /*!< Aligned transmit buffer descriptor start address: should be non-cacheable. */
-    uint8_t *rxBufferAlign;                           /*!< Receive data buffer start address. */
-    uint8_t *txBufferAlign;                           /*!< Transmit data buffer start address. */
+    uint16_t rxBdNumber;      /*!< Receive buffer descriptor number. */
+    uint16_t txBdNumber;      /*!< Transmit buffer descriptor number. */
+    uint32_t rxBuffSizeAlign; /*!< Aligned receive data buffer size. */
+    uint32_t txBuffSizeAlign; /*!< Aligned transmit data buffer size. */
+    volatile enet_rx_bd_struct_t
+        *rxBdStartAddrAlign; /*!< Aligned receive buffer descriptor start address: should be non-cacheable. */
+    volatile enet_tx_bd_struct_t
+        *txBdStartAddrAlign; /*!< Aligned transmit buffer descriptor start address: should be non-cacheable. */
+    uint8_t *rxBufferAlign;  /*!< Receive data buffer start address. */
+    uint8_t *txBufferAlign;  /*!< Transmit data buffer start address. */
 } enet_buffer_config_t;
 
 #ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
@@ -699,10 +706,6 @@ void ENET_GetDefaultConfig(enet_config_t *config);
  * @param bufferConfig  ENET buffer configuration structure pointer.
  *        The buffer configuration should be prepared for ENET Initialization.
  *        It is the start address of "ringNum" enet_buffer_config structures.
- *        To support added multi-ring features in some soc and compatible with the previous
- *        enet driver version. For single ring supported, this bufferConfig is a buffer 
- *        configure structure pointer, for multi-ring supported and used case, this bufferConfig 
- *        pointer should be a buffer configure structure array pointer. 
  * @param macAddr  ENET mac address of Ethernet device. This MAC address should be
  *        provided.
  * @param srcClock_Hz The internal module clock source for MII clock.

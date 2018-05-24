@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -256,8 +260,36 @@ static status_t I2C_InitTransferStateMachine(I2C_Type *base, i2c_master_handle_t
     /* Clear all status before transfer. */
     I2C_MasterClearStatusFlags(base, kClearFlags);
 
+    /* Handle no start option. */
+    if (handle->transfer.flags & kI2C_TransferNoStartFlag)
+    {
+        /* No need to send start flag, directly go to send command or data */
+        if (handle->transfer.subaddressSize > 0)
+        {
+            handle->state = kSendCommandState;
+        }
+        else
+        {
+            if (direction == kI2C_Write)
+            {
+                /* Next state, send data. */
+                handle->state = kSendDataState;
+            }
+            else
+            {
+                /* Only support write with no stop signal. */
+                return kStatus_InvalidArgument;
+            }
+        }
+
+        /* Wait for TCF bit and manually trigger tx interrupt. */
+        while (!(base->S & kI2C_TransferCompleteFlag))
+        {
+        }
+        I2C_MasterTransferHandleIRQ(base, handle);
+    }
     /* If repeated start is requested, send repeated start. */
-    if (handle->transfer.flags & kI2C_TransferRepeatedStartFlag)
+    else if (handle->transfer.flags & kI2C_TransferRepeatedStartFlag)
     {
         result = I2C_MasterRepeatedStart(base, handle->transfer.slaveAddress, direction);
     }
@@ -686,9 +718,20 @@ status_t I2C_MasterStart(I2C_Type *base, uint8_t address, i2c_direction_t direct
         base->C1 |= I2C_C1_MST_MASK | I2C_C1_TX_MASK;
 
 #if defined(FSL_FEATURE_I2C_HAS_DOUBLE_BUFFERING) && FSL_FEATURE_I2C_HAS_DOUBLE_BUFFERING
+#if I2C_WAIT_TIMEOUT
+        uint32_t waitTimes = I2C_WAIT_TIMEOUT;
+        while ((!(base->S2 & I2C_S2_EMPTY_MASK)) && (--waitTimes))
+        {
+        }
+        if (waitTimes == 0)
+        {
+            return kStatus_I2C_Timeout;
+        }
+#else
         while (!(base->S2 & I2C_S2_EMPTY_MASK))
         {
         }
+#endif
 #endif /* FSL_FEATURE_I2C_HAS_DOUBLE_BUFFERING */
 
         base->D = (((uint32_t)address) << 1U | ((direction == kI2C_Read) ? 1U : 0U));
@@ -727,9 +770,20 @@ status_t I2C_MasterRepeatedStart(I2C_Type *base, uint8_t address, i2c_direction_
         }
 
 #if defined(FSL_FEATURE_I2C_HAS_DOUBLE_BUFFERING) && FSL_FEATURE_I2C_HAS_DOUBLE_BUFFERING
+#if I2C_WAIT_TIMEOUT
+        uint32_t waitTimes = I2C_WAIT_TIMEOUT;
+        while ((!(base->S2 & I2C_S2_EMPTY_MASK)) && (--waitTimes))
+        {
+        }
+        if (waitTimes == 0)
+        {
+            return kStatus_I2C_Timeout;
+        }
+#else
         while (!(base->S2 & I2C_S2_EMPTY_MASK))
         {
         }
+#endif
 #endif /* FSL_FEATURE_I2C_HAS_DOUBLE_BUFFERING */
 
         base->D = (((uint32_t)address) << 1U | ((direction == kI2C_Read) ? 1U : 0U));
@@ -741,20 +795,27 @@ status_t I2C_MasterRepeatedStart(I2C_Type *base, uint8_t address, i2c_direction_
 status_t I2C_MasterStop(I2C_Type *base)
 {
     status_t result = kStatus_Success;
-    uint16_t timeout = UINT16_MAX;
 
     /* Issue the STOP command on the bus. */
     base->C1 &= ~(I2C_C1_MST_MASK | I2C_C1_TX_MASK | I2C_C1_TXAK_MASK);
 
-    /* Wait until data transfer complete. */
-    while ((base->S & kI2C_BusBusyFlag) && (--timeout))
+#if I2C_WAIT_TIMEOUT
+    uint32_t waitTimes = I2C_WAIT_TIMEOUT;
+    /* Wait until bus not busy. */
+    while ((base->S & kI2C_BusBusyFlag) && (--waitTimes))
     {
     }
 
-    if (timeout == 0)
+    if (waitTimes == 0)
     {
         result = kStatus_I2C_Timeout;
     }
+#else
+    /* Wait until data transfer complete. */
+    while (base->S & kI2C_BusBusyFlag)
+    {
+    }
+#endif
 
     return result;
 }
@@ -787,10 +848,22 @@ status_t I2C_MasterWriteBlocking(I2C_Type *base, const uint8_t *txBuff, size_t t
     status_t result = kStatus_Success;
     uint8_t statusFlags = 0;
 
+#if I2C_WAIT_TIMEOUT
+    uint32_t waitTimes = I2C_WAIT_TIMEOUT;
+    /* Wait until the data register is ready for transmit. */
+    while ((!(base->S & kI2C_TransferCompleteFlag)) && (--waitTimes))
+    {
+    }
+    if (waitTimes == 0)
+    {
+        return kStatus_I2C_Timeout;
+    }
+#else
     /* Wait until the data register is ready for transmit. */
     while (!(base->S & kI2C_TransferCompleteFlag))
     {
     }
+#endif
 
     /* Clear the IICIF flag. */
     base->S = kI2C_IntPendingFlag;
@@ -803,11 +876,22 @@ status_t I2C_MasterWriteBlocking(I2C_Type *base, const uint8_t *txBuff, size_t t
         /* Send a byte of data. */
         base->D = *txBuff++;
 
+#if I2C_WAIT_TIMEOUT
+        waitTimes = I2C_WAIT_TIMEOUT;
+        /* Wait until data transfer complete. */
+        while ((!(base->S & kI2C_IntPendingFlag)) && (--waitTimes))
+        {
+        }
+        if (waitTimes == 0)
+        {
+            return kStatus_I2C_Timeout;
+        }
+#else
         /* Wait until data transfer complete. */
         while (!(base->S & kI2C_IntPendingFlag))
         {
         }
-
+#endif
         statusFlags = base->S;
 
         /* Clear the IICIF flag. */
@@ -853,10 +937,22 @@ status_t I2C_MasterReadBlocking(I2C_Type *base, uint8_t *rxBuff, size_t rxSize, 
     /* Add this to avoid build warning. */
     dummy++;
 
+#if I2C_WAIT_TIMEOUT
+    uint32_t waitTimes = I2C_WAIT_TIMEOUT;
+    /* Wait until the data register is ready for transmit. */
+    while ((!(base->S & kI2C_TransferCompleteFlag)) && (--waitTimes))
+    {
+    }
+    if (waitTimes == 0)
+    {
+        return kStatus_I2C_Timeout;
+    }
+#else
     /* Wait until the data register is ready for transmit. */
     while (!(base->S & kI2C_TransferCompleteFlag))
     {
     }
+#endif
 
     /* Clear the IICIF flag. */
     base->S = kI2C_IntPendingFlag;
@@ -876,11 +972,22 @@ status_t I2C_MasterReadBlocking(I2C_Type *base, uint8_t *rxBuff, size_t rxSize, 
 
     while ((rxSize--))
     {
+#if I2C_WAIT_TIMEOUT
+        waitTimes = I2C_WAIT_TIMEOUT;
+        /* Wait until data transfer complete. */
+        while ((!(base->S & kI2C_IntPendingFlag)) && (--waitTimes))
+        {
+        }
+        if (waitTimes == 0)
+        {
+            return kStatus_I2C_Timeout;
+        }
+#else
         /* Wait until data transfer complete. */
         while (!(base->S & kI2C_IntPendingFlag))
         {
         }
-
+#endif
         /* Clear the IICIF flag. */
         base->S = kI2C_IntPendingFlag;
 
@@ -922,10 +1029,22 @@ status_t I2C_MasterTransferBlocking(I2C_Type *base, i2c_master_transfer_t *xfer)
     /* Clear all status before transfer. */
     I2C_MasterClearStatusFlags(base, kClearFlags);
 
-    /* Wait until ready to complete. */
+#if I2C_WAIT_TIMEOUT
+    uint32_t waitTimes = I2C_WAIT_TIMEOUT;
+    /* Wait until the data register is ready for transmit. */
+    while ((!(base->S & kI2C_TransferCompleteFlag)) && (--waitTimes))
+    {
+    }
+    if (waitTimes == 0)
+    {
+        return kStatus_I2C_Timeout;
+    }
+#else
+    /* Wait until the data register is ready for transmit. */
     while (!(base->S & kI2C_TransferCompleteFlag))
     {
     }
+#endif
 
     /* Change to send write address when it's a read operation with command. */
     if ((xfer->subaddressSize > 0) && (xfer->direction == kI2C_Read))
@@ -933,8 +1052,16 @@ status_t I2C_MasterTransferBlocking(I2C_Type *base, i2c_master_transfer_t *xfer)
         direction = kI2C_Write;
     }
 
+    /* Handle no start option, only support write with no start signal. */
+    if (xfer->flags & kI2C_TransferNoStartFlag)
+    {
+        if (direction == kI2C_Read)
+        {
+            return kStatus_InvalidArgument;
+        }
+    }
     /* If repeated start is requested, send repeated start. */
-    if (xfer->flags & kI2C_TransferRepeatedStartFlag)
+    else if (xfer->flags & kI2C_TransferRepeatedStartFlag)
     {
         result = I2C_MasterRepeatedStart(base, xfer->slaveAddress, direction);
     }
@@ -943,30 +1070,45 @@ status_t I2C_MasterTransferBlocking(I2C_Type *base, i2c_master_transfer_t *xfer)
         result = I2C_MasterStart(base, xfer->slaveAddress, direction);
     }
 
-    /* Return if error. */
-    if (result)
+    if (!(xfer->flags & kI2C_TransferNoStartFlag))
     {
-        return result;
-    }
-
-    while (!(base->S & kI2C_IntPendingFlag))
-    {
-    }
-
-    /* Check if there's transfer error. */
-    result = I2C_CheckAndClearError(base, base->S);
-
-    /* Return if error. */
-    if (result)
-    {
-        if (result == kStatus_I2C_Nak)
+        /* Return if error. */
+        if (result)
         {
-            result = kStatus_I2C_Addr_Nak;
-
-            I2C_MasterStop(base);
+            return result;
         }
 
-        return result;
+#if I2C_WAIT_TIMEOUT
+        waitTimes = I2C_WAIT_TIMEOUT;
+        /* Wait until data transfer complete. */
+        while ((!(base->S & kI2C_IntPendingFlag)) && (--waitTimes))
+        {
+        }
+        if (waitTimes == 0)
+        {
+            return kStatus_I2C_Timeout;
+        }
+#else
+        /* Wait until data transfer complete. */
+        while (!(base->S & kI2C_IntPendingFlag))
+        {
+        }
+#endif
+        /* Check if there's transfer error. */
+        result = I2C_CheckAndClearError(base, base->S);
+
+        /* Return if error. */
+        if (result)
+        {
+            if (result == kStatus_I2C_Nak)
+            {
+                result = kStatus_I2C_Addr_Nak;
+
+                I2C_MasterStop(base);
+            }
+
+            return result;
+        }
     }
 
     /* Send subaddress. */
@@ -980,10 +1122,22 @@ status_t I2C_MasterTransferBlocking(I2C_Type *base, i2c_master_transfer_t *xfer)
             xfer->subaddressSize--;
             base->D = ((xfer->subaddress) >> (8 * xfer->subaddressSize));
 
+#if I2C_WAIT_TIMEOUT
+            waitTimes = I2C_WAIT_TIMEOUT;
+            /* Wait until data transfer complete. */
+            while ((!(base->S & kI2C_IntPendingFlag)) && (--waitTimes))
+            {
+            }
+            if (waitTimes == 0)
+            {
+                return kStatus_I2C_Timeout;
+            }
+#else
             /* Wait until data transfer complete. */
             while (!(base->S & kI2C_IntPendingFlag))
             {
             }
+#endif
 
             /* Check if there's transfer error. */
             result = I2C_CheckAndClearError(base, base->S);
@@ -1014,10 +1168,22 @@ status_t I2C_MasterTransferBlocking(I2C_Type *base, i2c_master_transfer_t *xfer)
                 return result;
             }
 
+#if I2C_WAIT_TIMEOUT
+            waitTimes = I2C_WAIT_TIMEOUT;
+            /* Wait until data transfer complete. */
+            while ((!(base->S & kI2C_IntPendingFlag)) && (--waitTimes))
+            {
+            }
+            if (waitTimes == 0)
+            {
+                return kStatus_I2C_Timeout;
+            }
+#else
             /* Wait until data transfer complete. */
             while (!(base->S & kI2C_IntPendingFlag))
             {
             }
+#endif
 
             /* Check if there's transfer error. */
             result = I2C_CheckAndClearError(base, base->S);
@@ -1105,11 +1271,14 @@ status_t I2C_MasterTransferNonBlocking(I2C_Type *base, i2c_master_handle_t *hand
     return result;
 }
 
-void I2C_MasterTransferAbort(I2C_Type *base, i2c_master_handle_t *handle)
+status_t I2C_MasterTransferAbort(I2C_Type *base, i2c_master_handle_t *handle)
 {
     assert(handle);
 
     volatile uint8_t dummy = 0;
+#if I2C_WAIT_TIMEOUT
+    uint32_t waitTimes = I2C_WAIT_TIMEOUT;
+#endif
 
     /* Add this to avoid build warning. */
     dummy++;
@@ -1120,13 +1289,32 @@ void I2C_MasterTransferAbort(I2C_Type *base, i2c_master_handle_t *handle)
     /* Reset the state to idle. */
     handle->state = kIdleState;
 
+    /* If the bus is already in use, but not by us */
+    if (!(base->C1 & I2C_C1_MST_MASK))
+    {
+        return kStatus_I2C_Busy;
+    }
+
     /* Send STOP signal. */
     if (handle->transfer.direction == kI2C_Read)
     {
         base->C1 |= I2C_C1_TXAK_MASK;
+
+#if I2C_WAIT_TIMEOUT
+        /* Wait until data transfer complete. */
+        while ((!(base->S & kI2C_IntPendingFlag)) && (--waitTimes))
+        {
+        }
+        if (waitTimes == 0)
+        {
+            return kStatus_I2C_Timeout;
+        }
+#else
+        /* Wait until data transfer complete. */
         while (!(base->S & kI2C_IntPendingFlag))
         {
         }
+#endif
         base->S = kI2C_IntPendingFlag;
 
         base->C1 &= ~(I2C_C1_MST_MASK | I2C_C1_TX_MASK | I2C_C1_TXAK_MASK);
@@ -1134,12 +1322,26 @@ void I2C_MasterTransferAbort(I2C_Type *base, i2c_master_handle_t *handle)
     }
     else
     {
+#if I2C_WAIT_TIMEOUT
+        /* Wait until data transfer complete. */
+        while ((!(base->S & kI2C_IntPendingFlag)) && (--waitTimes))
+        {
+        }
+        if (waitTimes == 0)
+        {
+            return kStatus_I2C_Timeout;
+        }
+#else
+        /* Wait until data transfer complete. */
         while (!(base->S & kI2C_IntPendingFlag))
         {
         }
+#endif
         base->S = kI2C_IntPendingFlag;
         base->C1 &= ~(I2C_C1_MST_MASK | I2C_C1_TX_MASK | I2C_C1_TXAK_MASK);
     }
+
+    return kStatus_Success;
 }
 
 status_t I2C_MasterTransferGetCount(I2C_Type *base, i2c_master_handle_t *handle, size_t *count)
@@ -1320,11 +1522,22 @@ status_t I2C_SlaveWriteBlocking(I2C_Type *base, const uint8_t *txBuff, size_t tx
     base->S = kI2C_IntPendingFlag;
 #endif /* FSL_FEATURE_I2C_HAS_START_STOP_DETECT */
 
+#if I2C_WAIT_TIMEOUT
+    uint32_t waitTimes = I2C_WAIT_TIMEOUT;
+    /* Wait until data transfer complete. */
+    while ((!(base->S & kI2C_AddressMatchFlag)) && (--waitTimes))
+    {
+    }
+    if (waitTimes == 0)
+    {
+        return kStatus_I2C_Timeout;
+    }
+#else
     /* Wait for address match flag. */
     while (!(base->S & kI2C_AddressMatchFlag))
     {
     }
-
+#endif
     /* Read dummy to release bus. */
     dummy = base->D;
 
@@ -1339,8 +1552,9 @@ status_t I2C_SlaveWriteBlocking(I2C_Type *base, const uint8_t *txBuff, size_t tx
     return result;
 }
 
-void I2C_SlaveReadBlocking(I2C_Type *base, uint8_t *rxBuff, size_t rxSize)
+status_t I2C_SlaveReadBlocking(I2C_Type *base, uint8_t *rxBuff, size_t rxSize)
 {
+    status_t result = kStatus_Success;
     volatile uint8_t dummy = 0;
 
     /* Add this to avoid build warning. */
@@ -1358,6 +1572,26 @@ void I2C_SlaveReadBlocking(I2C_Type *base, uint8_t *rxBuff, size_t rxSize)
     base->S = kI2C_IntPendingFlag;
 #endif /* FSL_FEATURE_I2C_HAS_START_STOP_DETECT */
 
+#if I2C_WAIT_TIMEOUT
+    uint32_t waitTimes = I2C_WAIT_TIMEOUT;
+    /* Wait for address match and int pending flag. */
+    while ((!(base->S & kI2C_AddressMatchFlag)) && (--waitTimes))
+    {
+    }
+    if (waitTimes == 0)
+    {
+        return kStatus_I2C_Timeout;
+    }
+
+    waitTimes = I2C_WAIT_TIMEOUT;
+    while ((!(base->S & kI2C_IntPendingFlag)) && (--waitTimes))
+    {
+    }
+    if (waitTimes == 0)
+    {
+        return kStatus_I2C_Timeout;
+    }
+#else
     /* Wait for address match and int pending flag. */
     while (!(base->S & kI2C_AddressMatchFlag))
     {
@@ -1365,6 +1599,7 @@ void I2C_SlaveReadBlocking(I2C_Type *base, uint8_t *rxBuff, size_t rxSize)
     while (!(base->S & kI2C_IntPendingFlag))
     {
     }
+#endif
 
     /* Read dummy to release bus. */
     dummy = base->D;
@@ -1377,16 +1612,30 @@ void I2C_SlaveReadBlocking(I2C_Type *base, uint8_t *rxBuff, size_t rxSize)
 
     while (rxSize--)
     {
+#if I2C_WAIT_TIMEOUT
+        waitTimes = I2C_WAIT_TIMEOUT;
+        /* Wait until data transfer complete. */
+        while ((!(base->S & kI2C_IntPendingFlag)) && (--waitTimes))
+        {
+        }
+        if (waitTimes == 0)
+        {
+            return kStatus_I2C_Timeout;
+        }
+#else
         /* Wait until data transfer complete. */
         while (!(base->S & kI2C_IntPendingFlag))
         {
         }
+#endif
         /* Clear the IICIF flag. */
         base->S = kI2C_IntPendingFlag;
 
         /* Read from the data register. */
         *rxBuff++ = base->D;
     }
+
+    return result;
 }
 
 void I2C_SlaveTransferCreateHandle(I2C_Type *base,

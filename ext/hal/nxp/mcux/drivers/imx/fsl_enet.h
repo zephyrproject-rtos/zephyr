@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015 - 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
- *
+ * All rights reserved.
+ * 
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ *  that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -1565,6 +1569,14 @@ static inline void ENET_Ptp1588ClearChannelStatus(ENET_Type *base, enet_ptp_time
 
 /*!
  * @brief Gets the current ENET time from the PTP 1588 timer.
+ *
+ * Note: To ensure that the correct time value is read from the ATVR register, 
+ * a minimum amount of time must elapse from issuing this command to reading 
+ * the ATVR register. This minimum time is defined by the greater of either 
+ * six register clock cycles or six 1588/timestamp clock cycles. In ENET Driver
+ * "ENET_1588TIME_DELAY_COUNT" is used to define the delay. we define a default
+ * value from our tests. But if you change any clock src and failed to get
+ * the right time, please increase this counter.
  *
  * @param base  ENET peripheral base address.
  * @param handle The ENET state pointer. This is the same state pointer used in the ENET_Init.

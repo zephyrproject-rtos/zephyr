@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -36,14 +40,13 @@
 /*! @addtogroup sim */
 /*! @{*/
 
-
 /*******************************************************************************
  * Definitions
  *******************************************************************************/
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_SIM_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Driver version 2.0.0 */
+#define FSL_SIM_DRIVER_VERSION (MAKE_VERSION(2, 1, 0)) /*!< Driver version 2.1.0 */
 /*@}*/
 
 #if (defined(FSL_FEATURE_SIM_OPT_HAS_USB_VOLTAGE_REGULATOR) && FSL_FEATURE_SIM_OPT_HAS_USB_VOLTAGE_REGULATOR)
@@ -64,10 +67,24 @@ typedef struct _sim_uid
 #if defined(SIM_UIDH)
     uint32_t H; /*!< UIDH.  */
 #endif
+
+#if (defined(FSL_FEATURE_SIM_HAS_UIDM) && FSL_FEATURE_SIM_HAS_UIDM)
+    uint32_t M; /*!< SIM_UIDM. */
+#else
     uint32_t MH; /*!< UIDMH. */
     uint32_t ML; /*!< UIDML. */
-    uint32_t L;  /*!< UIDL.  */
+#endif          /* FSL_FEATURE_SIM_HAS_UIDM */
+    uint32_t L; /*!< UIDL.  */
 } sim_uid_t;
+
+#if (defined(FSL_FEATURE_SIM_HAS_RF_MAC_ADDR) && FSL_FEATURE_SIM_HAS_RF_MAC_ADDR)
+/*! @brief RF Mac Address.*/
+typedef struct _sim_rf_addr
+{
+    uint32_t rfAddrL; /*!< RFADDRL. */
+    uint32_t rfAddrH; /*!< RFADDRH. */
+} sim_rf_addr_t;
+#endif /* FSL_FEATURE_SIM_HAS_RF_MAC_ADDR */
 
 /*!@brief Flash enable mode. */
 enum _sim_flash_mode
@@ -117,6 +134,38 @@ static inline void SIM_SetFlashMode(uint8_t mode)
 {
     SIM->FCFG1 = mode;
 }
+
+#if (defined(FSL_FEATURE_SIM_HAS_RF_MAC_ADDR) && FSL_FEATURE_SIM_HAS_RF_MAC_ADDR)
+/*!
+ * @brief Gets the RF address register value.
+ *
+ * @param info Pointer to the structure to save the RF address value.
+ */
+void SIM_GetRfAddr(sim_rf_addr_t *info);
+#endif /* FSL_FEATURE_SIM_HAS_RF_MAC_ADDR */
+
+#if (defined(FSL_FEATURE_SIM_MISC2_HAS_SYSTICK_CLK_EN) && FSL_FEATURE_SIM_MISC2_HAS_SYSTICK_CLK_EN)
+
+/*!
+ * @brief Enable the Systick clock or not.
+ *
+ * The Systick clock is enabled by default.
+ *
+ * @param enable The switcher for Systick clock.
+ */
+static inline void SIM_EnableSystickClock(bool enable)
+{
+    if (enable)
+    {
+        SIM->MISC2 &= ~SIM_MISC2_SYSTICK_CLK_EN_MASK; /* Clear to enable. */
+    }
+    else
+    {
+        SIM->MISC2 |= SIM_MISC2_SYSTICK_CLK_EN_MASK; /* Set to disable. */
+    }
+}
+
+#endif /* FSL_FEATURE_SIM_MISC2_HAS_SYSTICK_CLK_EN */
 
 #if defined(__cplusplus)
 }

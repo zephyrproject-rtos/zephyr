@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -366,7 +370,19 @@ static inline void USART_EnableInterrupts(USART_Type *base, uint32_t mask)
  */
 static inline void USART_DisableInterrupts(USART_Type *base, uint32_t mask)
 {
-    base->FIFOINTENSET = ~(mask & 0xF);
+    base->FIFOINTENCLR = mask & 0xF;
+}
+
+/*!
+ * @brief Returns enabled USART interrupts.
+ *
+ * This function returns the enabled USART interrupts.
+ *
+ * @param base USART peripheral base address.
+ */
+static inline uint32_t USART_GetEnabledInterrupts(USART_Type *base)
+{
+    return base->FIFOINTENSET;
 }
 
 /*!
@@ -539,6 +555,14 @@ void USART_TransferStartRingBuffer(USART_Type *base,
  * @param handle USART handle pointer.
  */
 void USART_TransferStopRingBuffer(USART_Type *base, usart_handle_t *handle);
+
+/*!
+ * @brief Get the length of received data in RX ring buffer.
+ *
+ * @param handle USART handle pointer.
+ * @return Length of received data in RX ring buffer.
+ */
+size_t USART_TransferGetRxRingBufferLength(usart_handle_t *handle);
 
 /*!
  * @brief Aborts the interrupt-driven data transmit.

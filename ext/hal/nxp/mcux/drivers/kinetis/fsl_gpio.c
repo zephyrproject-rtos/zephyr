@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,13 +37,29 @@
 /*******************************************************************************
  * Variables
  ******************************************************************************/
+
+#if !(defined(FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT) && FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT)
 static PORT_Type *const s_portBases[] = PORT_BASE_PTRS;
 static GPIO_Type *const s_gpioBases[] = GPIO_BASE_PTRS;
+#endif
+
+#if defined(FSL_FEATURE_SOC_FGPIO_COUNT) && FSL_FEATURE_SOC_FGPIO_COUNT
+
+#if defined(FSL_FEATURE_PCC_HAS_FGPIO_CLOCK_GATE_CONTROL) && FSL_FEATURE_PCC_HAS_FGPIO_CLOCK_GATE_CONTROL
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+/*! @brief Array to map FGPIO instance number to clock name. */
+static const clock_ip_name_t s_fgpioClockName[] = FGPIO_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+#endif /* FSL_FEATURE_PCC_HAS_FGPIO_CLOCK_GATE_CONTROL */
+
+#endif /* FSL_FEATURE_SOC_FGPIO_COUNT */
 
 /*******************************************************************************
 * Prototypes
 ******************************************************************************/
-
+#if !(defined(FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT) && FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT)
 /*!
 * @brief Gets the GPIO instance according to the GPIO base
 *
@@ -47,11 +67,11 @@ static GPIO_Type *const s_gpioBases[] = GPIO_BASE_PTRS;
 * @retval GPIO instance
 */
 static uint32_t GPIO_GetInstance(GPIO_Type *base);
-
+#endif
 /*******************************************************************************
  * Code
  ******************************************************************************/
-
+#if !(defined(FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT) && FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT)
 static uint32_t GPIO_GetInstance(GPIO_Type *base)
 {
     uint32_t instance;
@@ -69,7 +89,7 @@ static uint32_t GPIO_GetInstance(GPIO_Type *base)
 
     return instance;
 }
-
+#endif
 void GPIO_PinInit(GPIO_Type *base, uint32_t pin, const gpio_pin_config_t *config)
 {
     assert(config);
@@ -85,7 +105,8 @@ void GPIO_PinInit(GPIO_Type *base, uint32_t pin, const gpio_pin_config_t *config
     }
 }
 
-uint32_t GPIO_GetPinsInterruptFlags(GPIO_Type *base)
+#if !(defined(FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT) && FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT)
+uint32_t GPIO_PortGetInterruptFlags(GPIO_Type *base)
 {
     uint8_t instance;
     PORT_Type *portBase;
@@ -94,7 +115,7 @@ uint32_t GPIO_GetPinsInterruptFlags(GPIO_Type *base)
     return portBase->ISFR;
 }
 
-void GPIO_ClearPinsInterruptFlags(GPIO_Type *base, uint32_t mask)
+void GPIO_PortClearInterruptFlags(GPIO_Type *base, uint32_t mask)
 {
     uint8_t instance;
     PORT_Type *portBase;
@@ -102,6 +123,7 @@ void GPIO_ClearPinsInterruptFlags(GPIO_Type *base, uint32_t mask)
     portBase = s_portBases[instance];
     portBase->ISFR = mask;
 }
+#endif
 
 #if defined(FSL_FEATURE_GPIO_HAS_ATTRIBUTE_CHECKER) && FSL_FEATURE_GPIO_HAS_ATTRIBUTE_CHECKER
 void GPIO_CheckAttributeBytes(GPIO_Type *base, gpio_checker_attribute_t attribute)
@@ -116,11 +138,13 @@ void GPIO_CheckAttributeBytes(GPIO_Type *base, gpio_checker_attribute_t attribut
 /*******************************************************************************
  * Variables
  ******************************************************************************/
+#if !(defined(FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT) && FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT)
 static FGPIO_Type *const s_fgpioBases[] = FGPIO_BASE_PTRS;
-
+#endif
 /*******************************************************************************
 * Prototypes
 ******************************************************************************/
+#if !(defined(FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT) && FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT)
 /*!
 * @brief Gets the FGPIO instance according to the GPIO base
 *
@@ -128,11 +152,11 @@ static FGPIO_Type *const s_fgpioBases[] = FGPIO_BASE_PTRS;
 * @retval FGPIO instance
 */
 static uint32_t FGPIO_GetInstance(FGPIO_Type *base);
-
+#endif
 /*******************************************************************************
  * Code
  ******************************************************************************/
-
+#if !(defined(FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT) && FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT)
 static uint32_t FGPIO_GetInstance(FGPIO_Type *base)
 {
     uint32_t instance;
@@ -150,6 +174,16 @@ static uint32_t FGPIO_GetInstance(FGPIO_Type *base)
 
     return instance;
 }
+#endif
+#if defined(FSL_FEATURE_PCC_HAS_FGPIO_CLOCK_GATE_CONTROL) && FSL_FEATURE_PCC_HAS_FGPIO_CLOCK_GATE_CONTROL
+void FGPIO_PortInit(FGPIO_Type *base)
+{
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    /* Ungate FGPIO periphral clock */
+    CLOCK_EnableClock(s_fgpioClockName[FGPIO_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+}
+#endif /* FSL_FEATURE_PCC_HAS_FGPIO_CLOCK_GATE_CONTROL */
 
 void FGPIO_PinInit(FGPIO_Type *base, uint32_t pin, const gpio_pin_config_t *config)
 {
@@ -165,8 +199,8 @@ void FGPIO_PinInit(FGPIO_Type *base, uint32_t pin, const gpio_pin_config_t *conf
         base->PDDR |= (1U << pin);
     }
 }
-
-uint32_t FGPIO_GetPinsInterruptFlags(FGPIO_Type *base)
+#if !(defined(FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT) && FSL_FEATURE_GPIO_HAS_NO_PORTINTERRUPT)
+uint32_t FGPIO_PortGetInterruptFlags(FGPIO_Type *base)
 {
     uint8_t instance;
     instance = FGPIO_GetInstance(base);
@@ -175,7 +209,7 @@ uint32_t FGPIO_GetPinsInterruptFlags(FGPIO_Type *base)
     return portBase->ISFR;
 }
 
-void FGPIO_ClearPinsInterruptFlags(FGPIO_Type *base, uint32_t mask)
+void FGPIO_PortClearInterruptFlags(FGPIO_Type *base, uint32_t mask)
 {
     uint8_t instance;
     instance = FGPIO_GetInstance(base);
@@ -183,7 +217,7 @@ void FGPIO_ClearPinsInterruptFlags(FGPIO_Type *base, uint32_t mask)
     portBase = s_portBases[instance];
     portBase->ISFR = mask;
 }
-
+#endif
 #if defined(FSL_FEATURE_FGPIO_HAS_ATTRIBUTE_CHECKER) && FSL_FEATURE_FGPIO_HAS_ATTRIBUTE_CHECKER
 void FGPIO_CheckAttributeBytes(FGPIO_Type *base, gpio_checker_attribute_t attribute)
 {

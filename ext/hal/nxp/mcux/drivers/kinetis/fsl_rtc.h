@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -37,7 +41,6 @@
  * @{
  */
 
-
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -50,18 +53,53 @@
 /*! @brief List of RTC interrupts */
 typedef enum _rtc_interrupt_enable
 {
-    kRTC_TimeInvalidInterruptEnable = RTC_IER_TIIE_MASK,  /*!< Time invalid interrupt.*/
-    kRTC_TimeOverflowInterruptEnable = RTC_IER_TOIE_MASK, /*!< Time overflow interrupt.*/
-    kRTC_AlarmInterruptEnable = RTC_IER_TAIE_MASK,        /*!< Alarm interrupt.*/
-    kRTC_SecondsInterruptEnable = RTC_IER_TSIE_MASK       /*!< Seconds interrupt.*/
+    kRTC_TimeInvalidInterruptEnable = (1U << 0U),  /*!< Time invalid interrupt.*/
+    kRTC_TimeOverflowInterruptEnable = (1U << 1U), /*!< Time overflow interrupt.*/
+    kRTC_AlarmInterruptEnable = (1U << 2U),        /*!< Alarm interrupt.*/
+    kRTC_SecondsInterruptEnable = (1U << 3U),      /*!< Seconds interrupt.*/
+#if defined(FSL_FEATURE_RTC_HAS_MONOTONIC) && (FSL_FEATURE_RTC_HAS_MONOTONIC)
+    kRTC_MonotonicOverflowInterruptEnable = (1U << 4U), /*!< Monotonic Overflow Interrupt Enable */
+#endif /* FSL_FEATURE_RTC_HAS_MONOTONIC */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR) && FSL_FEATURE_RTC_HAS_TIR)
+    kRTC_TestModeInterruptEnable = (1U << 5U),      /* test mode interrupt */
+    kRTC_FlashSecurityInterruptEnable = (1U << 6U), /* flash security interrupt */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_TPIE) && FSL_FEATURE_RTC_HAS_TIR_TPIE)
+    kRTC_TamperPinInterruptEnable = (1U << 7U),     /* Tamper pin interrupt */
+#endif                                                     /* FSL_FEATURE_RTC_HAS_TIR_TPIE */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_SIE) && FSL_FEATURE_RTC_HAS_TIR_SIE)
+    kRTC_SecurityModuleInterruptEnable = (1U << 8U), /* security module interrupt */
+#endif                                                     /* FSL_FEATURE_RTC_HAS_TIR_SIE */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_LCIE) && FSL_FEATURE_RTC_HAS_TIR_LCIE)
+    kRTC_LossOfClockInterruptEnable = (1U << 9U), /* loss of clock interrupt */
+#endif /* FSL_FEATURE_RTC_HAS_TIR_LCIE */
+#endif /* FSL_FEATURE_RTC_HAS_TIR */
 } rtc_interrupt_enable_t;
 
 /*! @brief List of RTC flags */
 typedef enum _rtc_status_flags
 {
-    kRTC_TimeInvalidFlag = RTC_SR_TIF_MASK,  /*!< Time invalid flag */
-    kRTC_TimeOverflowFlag = RTC_SR_TOF_MASK, /*!< Time overflow flag */
-    kRTC_AlarmFlag = RTC_SR_TAF_MASK         /*!< Alarm flag*/
+    kRTC_TimeInvalidFlag = (1U << 0U),            /*!< Time invalid flag */
+    kRTC_TimeOverflowFlag = (1U << 1U),           /*!< Time overflow flag */
+    kRTC_AlarmFlag = (1U << 2U),                   /*!< Alarm flag*/
+#if defined(FSL_FEATURE_RTC_HAS_MONOTONIC) && (FSL_FEATURE_RTC_HAS_MONOTONIC)
+    kRTC_MonotonicOverflowFlag = (1U << 3U),       /*!< Monotonic Overflow Flag */
+#endif /* FSL_FEATURE_RTC_HAS_MONOTONIC */
+#if (defined(FSL_FEATURE_RTC_HAS_SR_TIDF) && FSL_FEATURE_RTC_HAS_SR_TIDF)
+    kRTC_TamperInterruptDetectFlag = (1U << 4U), /*!< Tamper interrupt detect flag */
+#endif                                                 /* FSL_FEATURE_RTC_HAS_SR_TIDF */
+#if (defined(FSL_FEATURE_RTC_HAS_TDR) && FSL_FEATURE_RTC_HAS_TDR)
+    kRTC_TestModeFlag = (1U << 5U),      /* Test mode flag */
+    kRTC_FlashSecurityFlag = (1U << 6U), /* Flash security flag */
+#if (defined(FSL_FEATURE_RTC_HAS_TDR_TPF) && FSL_FEATURE_RTC_HAS_TDR_TPF)
+    kRTC_TamperPinFlag = (1U << 7U),     /* Tamper pin flag */
+#endif                                         /* FSL_FEATURE_RTC_HAS_TDR_TPF */
+#if (defined(FSL_FEATURE_RTC_HAS_TDR_STF) && FSL_FEATURE_RTC_HAS_TDR_STF)
+    kRTC_SecurityTamperFlag = (1U << 8U), /* Security tamper flag */
+#endif                                          /* FSL_FEATURE_RTC_HAS_TDR_STF */
+#if (defined(FSL_FEATURE_RTC_HAS_TDR_LCTF) && FSL_FEATURE_RTC_HAS_TDR_LCTF)
+    kRTC_LossOfClockTamperFlag = (1U << 9U), /* Loss of clock flag */
+#endif                                             /* FSL_FEATURE_RTC_HAS_TDR_LCTF */
+#endif /* FSL_FEATURE_RTC_HAS_TDR */
 } rtc_status_flags_t;
 
 #if (defined(FSL_FEATURE_RTC_HAS_OSC_SCXP) && FSL_FEATURE_RTC_HAS_OSC_SCXP)
@@ -87,6 +125,27 @@ typedef struct _rtc_datetime
     uint8_t minute; /*!< Range from 0 to 59.*/
     uint8_t second; /*!< Range from 0 to 59.*/
 } rtc_datetime_t;
+
+#if (defined(FSL_FEATURE_RTC_HAS_PCR) && FSL_FEATURE_RTC_HAS_PCR)
+
+/*!
+ * @brief RTC pin config structure
+ */
+typedef struct _rtc_pin_config
+{
+    bool inputLogic;       /*!< true: Tamper pin input data is logic one.
+                                false: Tamper pin input data is logic zero. */
+    bool pinActiveLow;     /*!< true: Tamper pin is active low.
+                                false: Tamper pin is active high. */
+    bool filterEnable;     /*!< true: Input filter is enabled on the tamper pin.
+                                false: Input filter is disabled on the tamper pin. */
+    bool pullSelectNegate; /*!< true: Tamper pin pull resistor direction will negate the tamper pin.
+                                false: Tamper pin pull resistor direction will assert the tamper pin. */
+    bool pullEnable;       /*!< true: Pull resistor is enabled on tamper pin.
+                                false: Pull resistor is disabled on tamper pin. */
+} rtc_pin_config_t;
+
+#endif /* FSL_FEATURE_RTC_HAS_PCR */
 
 /*!
  * @brief RTC config structure
@@ -144,10 +203,12 @@ static inline void RTC_Deinit(RTC_Type *base)
     /* Stop the RTC timer */
     base->SR &= ~RTC_SR_TCE_MASK;
 
+#if defined(RTC_CLOCKS)
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Gate the module clock */
     CLOCK_DisableClock(kCLOCK_Rtc0);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+#endif /* RTC_CLOCKS */
 }
 
 /*!
@@ -231,10 +292,7 @@ void RTC_GetAlarm(RTC_Type *base, rtc_datetime_t *datetime);
  * @param mask The interrupts to enable. This is a logical OR of members of the
  *             enumeration ::rtc_interrupt_enable_t
  */
-static inline void RTC_EnableInterrupts(RTC_Type *base, uint32_t mask)
-{
-    base->IER |= mask;
-}
+void RTC_EnableInterrupts(RTC_Type *base, uint32_t mask);
 
 /*!
  * @brief Disables the selected RTC interrupts.
@@ -243,10 +301,7 @@ static inline void RTC_EnableInterrupts(RTC_Type *base, uint32_t mask)
  * @param mask The interrupts to enable. This is a logical OR of members of the
  *             enumeration ::rtc_interrupt_enable_t
  */
-static inline void RTC_DisableInterrupts(RTC_Type *base, uint32_t mask)
-{
-    base->IER &= ~mask;
-}
+void RTC_DisableInterrupts(RTC_Type *base, uint32_t mask);
 
 /*!
  * @brief Gets the enabled RTC interrupts.
@@ -256,10 +311,7 @@ static inline void RTC_DisableInterrupts(RTC_Type *base, uint32_t mask)
  * @return The enabled interrupts. This is the logical OR of members of the
  *         enumeration ::rtc_interrupt_enable_t
  */
-static inline uint32_t RTC_GetEnabledInterrupts(RTC_Type *base)
-{
-    return (base->IER & (RTC_IER_TIIE_MASK | RTC_IER_TOIE_MASK | RTC_IER_TAIE_MASK | RTC_IER_TSIE_MASK));
-}
+uint32_t RTC_GetEnabledInterrupts(RTC_Type *base);
 
 /*! @}*/
 
@@ -276,10 +328,7 @@ static inline uint32_t RTC_GetEnabledInterrupts(RTC_Type *base)
  * @return The status flags. This is the logical OR of members of the
  *         enumeration ::rtc_status_flags_t
  */
-static inline uint32_t RTC_GetStatusFlags(RTC_Type *base)
-{
-    return (base->SR & (RTC_SR_TIF_MASK | RTC_SR_TOF_MASK | RTC_SR_TAF_MASK));
-}
+uint32_t RTC_GetStatusFlags(RTC_Type *base);
 
 /*!
  * @brief  Clears the RTC status flags.
@@ -291,6 +340,34 @@ static inline uint32_t RTC_GetStatusFlags(RTC_Type *base)
 void RTC_ClearStatusFlags(RTC_Type *base, uint32_t mask);
 
 /*! @}*/
+
+/*!
+ * @brief Set RTC clock source.
+ * 
+ * @param base RTC peripheral base address
+ *
+ * @note After setting this bit, wait the oscillator startup time before enabling
+ *       the time counter to allow the 32.768 kHz clock time to stabilize.
+ */
+static inline void RTC_SetClockSource(RTC_Type *base)
+{
+    /* Enable the RTC 32KHz oscillator */
+    base->CR |= RTC_CR_OSCE_MASK;
+}
+
+#if (defined(FSL_FEATURE_RTC_HAS_TTSR) && FSL_FEATURE_RTC_HAS_TTSR)
+
+/*!
+ * @brief Get the RTC tamper time seconds.
+ *
+ * @param base RTC peripheral base address
+ */
+static inline uint32_t RTC_GetTamperTimeSeconds(RTC_Type *base)
+{
+    return base->TTSR;
+}
+
+#endif /* FSL_FEATURE_RTC_HAS_TTSR */
 
 /*!
  * @name Timer Start and Stop
@@ -380,7 +457,7 @@ void RTC_GetMonotonicCounter(RTC_Type *base, uint64_t *counter);
 
 /*!
  * @brief Writes values Monotonic Counter High and Monotonic Counter Low by decomposing
- *        the given single value.
+ *        the given single value. The Monotonic Overflow Flag in RTC_SR is cleared due to the API.
  *
  * @param base    RTC peripheral base address
  * @param counter Counter value

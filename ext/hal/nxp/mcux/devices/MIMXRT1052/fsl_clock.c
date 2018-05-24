@@ -1,8 +1,11 @@
 /*
+ * The Clear BSD License
  * Copyright 2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -15,6 +18,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -70,6 +74,9 @@ static uint32_t CLOCK_GetPeriphClkFreq(void)
                 break;
 
             case CCM_CBCMR_PERIPH_CLK2_SEL(2U):
+                freq = CLOCK_GetPllFreq(kCLOCK_PllSys);
+                break;
+
             case CCM_CBCMR_PERIPH_CLK2_SEL(3U):
             default:
                 freq = 0U;
@@ -504,16 +511,29 @@ uint32_t CLOCK_GetPllFreq(clock_pll_t pll)
         125000000U /* 125M */
     };
 
+    /* check if PLL is enabled */
+    if(!CLOCK_IsPllEnabled(CCM_ANALOG, pll))
+    {
+        return 0U;
+    }
+
+    /* get pll reference clock */
+    freq = CLOCK_GetPllBypassRefClk(CCM_ANALOG, pll);
+
+    /* check if pll is bypassed */
+    if(CLOCK_IsPllBypassed(CCM_ANALOG, pll))
+    {
+        return freq;
+    }
+
     switch (pll)
     {
         case kCLOCK_PllArm:
-            freq = ((CLOCK_GetOscFreq() * ((CCM_ANALOG->PLL_ARM & CCM_ANALOG_PLL_ARM_DIV_SELECT_MASK) >>
+            freq = ((freq * ((CCM_ANALOG->PLL_ARM & CCM_ANALOG_PLL_ARM_DIV_SELECT_MASK) >>
                                          CCM_ANALOG_PLL_ARM_DIV_SELECT_SHIFT)) >> 1U);
             break;
 
         case kCLOCK_PllSys:
-            freq = CLOCK_GetOscFreq();
-
             /* PLL output frequency = Fref * (DIV_SELECT + NUM/DENOM). */
             freqTmp = ((uint64_t)freq * ((uint64_t)(CCM_ANALOG->PLL_SYS_NUM))) / ((uint64_t)(CCM_ANALOG->PLL_SYS_DENOM));
 
@@ -530,12 +550,10 @@ uint32_t CLOCK_GetPllFreq(clock_pll_t pll)
             break;
 
         case kCLOCK_PllUsb1:
-            freq = (CLOCK_GetOscFreq() * ((CCM_ANALOG->PLL_USB1 & CCM_ANALOG_PLL_USB1_DIV_SELECT_MASK) ? 22U : 20U));
+            freq = (freq * ((CCM_ANALOG->PLL_USB1 & CCM_ANALOG_PLL_USB1_DIV_SELECT_MASK) ? 22U : 20U));
             break;
 
         case kCLOCK_PllAudio:
-            freq = CLOCK_GetOscFreq();
-
             /* PLL output frequency = Fref * (DIV_SELECT + NUM/DENOM). */
             divSelect = (CCM_ANALOG->PLL_AUDIO & CCM_ANALOG_PLL_AUDIO_DIV_SELECT_MASK) >> CCM_ANALOG_PLL_AUDIO_DIV_SELECT_SHIFT;
 
@@ -589,8 +607,6 @@ uint32_t CLOCK_GetPllFreq(clock_pll_t pll)
             break;
 
         case kCLOCK_PllVideo:
-            freq = CLOCK_GetOscFreq();
-
             /* PLL output frequency = Fref * (DIV_SELECT + NUM/DENOM). */
             divSelect = (CCM_ANALOG->PLL_VIDEO & CCM_ANALOG_PLL_VIDEO_DIV_SELECT_MASK) >> CCM_ANALOG_PLL_VIDEO_DIV_SELECT_SHIFT;
 
@@ -661,7 +677,7 @@ uint32_t CLOCK_GetPllFreq(clock_pll_t pll)
             break;
 
         case kCLOCK_PllUsb2:
-            freq = (CLOCK_GetOscFreq() * ((CCM_ANALOG->PLL_USB2 & CCM_ANALOG_PLL_USB2_DIV_SELECT_MASK) ? 22U : 20U));
+            freq = (freq * ((CCM_ANALOG->PLL_USB2 & CCM_ANALOG_PLL_USB2_DIV_SELECT_MASK) ? 22U : 20U));
             break;
 
         default:

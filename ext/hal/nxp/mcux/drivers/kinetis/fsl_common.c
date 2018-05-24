@@ -1,10 +1,13 @@
 /*
+* The Clear BSD License
 * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
  * Copyright 2016 NXP
 * All rights reserved.
 *
+*
 * Redistribution and use in source and binary forms, with or without modification,
-* are permitted provided that the following conditions are met:
+* are permitted (subject to the limitations in the disclaimer below) provided
+* that the following conditions are met:
 *
 * o Redistributions of source code must retain the above copyright notice, this list
 *   of conditions and the following disclaimer.
@@ -17,6 +20,7 @@
 *   contributors may be used to endorse or promote products derived from this
 *   software without specific prior written permission.
 *
+* NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -30,13 +34,6 @@
 */
 
 #include "fsl_common.h"
-#define SDK_MEM_MAGIC_NUMBER   12345U
-
-typedef struct _mem_align_control_block
-{
-    uint16_t    identifier;     /*!< Identifier for the memory control block. */
-    uint16_t    offset;         /*!< offset from aligned adress to real address */
-} mem_align_cb_t;
 
 #ifndef __GIC_PRIO_BITS
 #if defined(ENABLE_RAM_VECTOR_TABLE)
@@ -127,36 +124,3 @@ void DisableDeepSleepIRQ(IRQn_Type interrupt)
 #endif /* FSL_FEATURE_SOC_SYSCON_COUNT */
 
 #endif /* QN908XC_SERIES */
-
-void *SDK_Malloc(size_t size, size_t alignbytes)
-{
-    mem_align_cb_t *p_cb = NULL;
-    uint32_t alignedsize = SDK_SIZEALIGN(size, alignbytes) + alignbytes + sizeof(mem_align_cb_t);
-    void *p_align_addr, *p_addr = malloc(alignedsize);
-
-    if (!p_addr)
-    {
-        return NULL;
-    }
-
-    p_align_addr = (void *)SDK_SIZEALIGN((uint32_t)p_addr + sizeof(mem_align_cb_t), alignbytes);
-
-    p_cb = (mem_align_cb_t *)((uint32_t)p_align_addr - 4);
-    p_cb->identifier = SDK_MEM_MAGIC_NUMBER;
-    p_cb->offset = (uint32_t)p_align_addr - (uint32_t)p_addr;
-
-    return (void *)p_align_addr;
-}
-
-void SDK_Free(void *ptr)
-{
-    mem_align_cb_t *p_cb = (mem_align_cb_t *)((uint32_t)ptr - 4);
-
-    if (p_cb->identifier != SDK_MEM_MAGIC_NUMBER)
-    {
-        return;
-    }
-
-    free((void *)((uint32_t)ptr - p_cb->offset));
-}
-

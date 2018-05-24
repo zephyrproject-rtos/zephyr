@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -309,6 +313,7 @@ typedef enum _ftm_status_flags
     kFTM_ReloadFlag = (1U << 11)       /*!< Reload Flag; Available only on certain SoC's */
 } ftm_status_flags_t;
 
+#if !(defined(FSL_FEATURE_FTM_HAS_NO_QDCTRL) && FSL_FEATURE_FTM_HAS_NO_QDCTRL)
 /*!
  * @brief List of FTM Quad Decoder flags.
  */
@@ -319,6 +324,7 @@ enum _ftm_quad_decoder_flags
     kFTM_QuadDecoderCountingOverflowOnTopFlag = FTM_QDCTRL_TOFDIR_MASK, /*!< Indicates if the TOF bit was set on the top
                                                                              or the bottom of counting. */
 };
+#endif
 
 /*!
  * @brief FTM configuration structure
@@ -875,6 +881,7 @@ void FTM_SetupQuadDecode(FTM_Type *base,
                          const ftm_phase_params_t *phaseBParams,
                          ftm_quad_decode_mode_t quadMode);
 
+#if !(defined(FSL_FEATURE_FTM_HAS_NO_QDCTRL) && FSL_FEATURE_FTM_HAS_NO_QDCTRL)
 /*!
  * @brief Gets the FTM Quad Decoder flags.
  *
@@ -885,6 +892,7 @@ static inline uint32_t FTM_GetQuadDecoderFlags(FTM_Type *base)
 {
     return base->QDCTRL & (FTM_QDCTRL_QUADIR_MASK | FTM_QDCTRL_TOFDIR_MASK);
 }
+#endif
 
 /*!
  * @brief Sets the modulo values for Quad Decoder.

@@ -1,10 +1,13 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright (c) 2016 - 2017 , NXP
  * All rights reserved.
  *
+ *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -17,6 +20,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -789,8 +793,13 @@ static uint32_t FindGreatestCommonDivisor(uint32_t m, uint32_t n)
     return m;
 }
 
-/* Set PLL output based on desired output rate */
-static pll_error_t CLOCK_GetPllConfig(
+/*
+ * Set PLL output based on desired output rate.
+ * In this function, the it calculates the PLL setting for output frequency from input clock
+ * frequency. The calculation would cost a few time. So it is not recommaned to use it frequently.
+ * the "pllctrl", "pllndec", "pllpdec", "pllmdec" would updated in this function.
+ */
+static pll_error_t CLOCK_GetPllConfigInternal(
     uint32_t finHz, uint32_t foutHz, pll_setup_t *pSetup, bool useFeedbackDiv2, bool useSS)
 {
     uint32_t nDivOutHz, fccoHz, multFccoDiv;
@@ -958,6 +967,71 @@ static pll_error_t CLOCK_GetPllConfig(
                          (pllDirectOutput << SYSCON_SYSPLLCTRL_DIRECTO_SHIFT); /* Bypass post-divider? */
 
     return kStatus_PLL_Success;
+}
+
+#if (defined(CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT) && CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT)
+/* Alloct the static buffer for cache. */
+pll_setup_t gPllSetupCacheStruct[CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT];
+uint32_t gFinHzCache[CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT] = {0};
+uint32_t gFoutHzCache[CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT] = {0};
+bool gUseFeedbackDiv2Cache[CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT] = {false};
+bool gUseSSCache[CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT] = {false};
+uint32_t gPllSetupCacheIdx = 0U;
+#endif /* CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT */
+
+/*
+ * Calculate the PLL setting values from input clock freq to output freq.
+ */
+static pll_error_t CLOCK_GetPllConfig(
+    uint32_t finHz, uint32_t foutHz, pll_setup_t *pSetup, bool useFeedbackDiv2, bool useSS)
+{
+    pll_error_t retErr;
+#if (defined(CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT) && CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT)
+    uint32_t i;
+
+    for (i = 0U; i < CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT; i++)
+    {
+        if (   (finHz == gFinHzCache[i])
+            && (foutHz == gFoutHzCache[i]) 
+            && (useFeedbackDiv2 == gUseFeedbackDiv2Cache[i])
+            && (useSS == gUseSSCache[i]) )
+        {
+            /* Hit the target in cache buffer. */
+            pSetup->syspllctrl = gPllSetupCacheStruct[i].syspllctrl;
+            pSetup->syspllndec = gPllSetupCacheStruct[i].syspllndec;
+            pSetup->syspllpdec = gPllSetupCacheStruct[i].syspllpdec;
+            pSetup->syspllssctrl[0] = gPllSetupCacheStruct[i].syspllssctrl[0];
+            pSetup->syspllssctrl[1] = gPllSetupCacheStruct[i].syspllssctrl[1];
+            retErr = kStatus_PLL_Success;
+            break;
+        }
+    }
+
+    if (i < CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT)
+    {
+        return retErr;
+    }
+#endif /* CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT */
+
+    retErr = CLOCK_GetPllConfigInternal( finHz, foutHz, pSetup, useFeedbackDiv2, useSS);
+
+#if (defined(CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT) && CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT)
+    /* Cache the most recent calulation result into buffer. */
+    gFinHzCache[gPllSetupCacheIdx] = finHz;
+    gFoutHzCache[gPllSetupCacheIdx] = foutHz;
+    gUseFeedbackDiv2Cache[gPllSetupCacheIdx] = useFeedbackDiv2;
+    gUseSSCache[gPllSetupCacheIdx] = useSS;
+
+    gPllSetupCacheStruct[gPllSetupCacheIdx].syspllctrl = pSetup->syspllctrl;
+    gPllSetupCacheStruct[gPllSetupCacheIdx].syspllndec = pSetup->syspllndec;
+    gPllSetupCacheStruct[gPllSetupCacheIdx].syspllpdec = pSetup->syspllpdec;
+    gPllSetupCacheStruct[gPllSetupCacheIdx].syspllssctrl[0] = pSetup->syspllssctrl[0];
+    gPllSetupCacheStruct[gPllSetupCacheIdx].syspllssctrl[1] = pSetup->syspllssctrl[1];
+    /* Update the index for next available buffer. */
+    gPllSetupCacheIdx = (gPllSetupCacheIdx + 1U) % CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT;
+#endif /* CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT */
+
+    return retErr;
 }
 
 /* Update local PLL rate variable */

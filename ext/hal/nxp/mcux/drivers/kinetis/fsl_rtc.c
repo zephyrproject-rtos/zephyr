@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -211,9 +215,11 @@ void RTC_Init(RTC_Type *base, const rtc_config_t *config)
 
     uint32_t reg;
 
+#if defined(RTC_CLOCKS)
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     CLOCK_EnableClock(kCLOCK_Rtc0);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+#endif /* RTC_CLOCKS */
 
     /* Issue a software reset if timer is invalid */
     if (RTC_GetStatusFlags(RTC) & kRTC_TimeInvalidFlag)
@@ -234,6 +240,11 @@ void RTC_Init(RTC_Type *base, const rtc_config_t *config)
 
     /* Configure the RTC time compensation register */
     base->TCR = (RTC_TCR_CIR(config->compensationInterval) | RTC_TCR_TCR(config->compensationTime));
+	
+#if defined(FSL_FEATURE_RTC_HAS_TSIC) && FSL_FEATURE_RTC_HAS_TSIC
+	/* Configure RTC timer seconds interrupt to be generated once per second */
+	base->IER &= ~(RTC_IER_TSIC_MASK | RTC_IER_TSIE_MASK);
+#endif
 }
 
 void RTC_GetDefaultConfig(rtc_config_t *config)
@@ -320,6 +331,256 @@ void RTC_GetAlarm(RTC_Type *base, rtc_datetime_t *datetime)
     RTC_ConvertSecondsToDatetime(alarmSeconds, datetime);
 }
 
+void RTC_EnableInterrupts(RTC_Type *base, uint32_t mask)
+{
+    uint32_t tmp32 = 0U;
+
+    /* RTC_IER */
+    if (kRTC_TimeInvalidInterruptEnable == (kRTC_TimeInvalidInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TIIE_MASK;
+    }
+    if (kRTC_TimeOverflowInterruptEnable == (kRTC_TimeOverflowInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TOIE_MASK;
+    }
+    if (kRTC_AlarmInterruptEnable == (kRTC_AlarmInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TAIE_MASK;
+    }
+    if (kRTC_SecondsInterruptEnable == (kRTC_SecondsInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TSIE_MASK;
+    }
+#if defined(FSL_FEATURE_RTC_HAS_MONOTONIC) && (FSL_FEATURE_RTC_HAS_MONOTONIC)
+    if (kRTC_MonotonicOverflowInterruptEnable == (kRTC_MonotonicOverflowInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_MOIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_MONOTONIC */
+    base->IER |= tmp32;
+
+#if (defined(FSL_FEATURE_RTC_HAS_TIR) && FSL_FEATURE_RTC_HAS_TIR)
+    tmp32 = 0U;
+
+    /* RTC_TIR */
+    if (kRTC_TestModeInterruptEnable == (kRTC_TestModeInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_TMIE_MASK;
+    }
+    if (kRTC_FlashSecurityInterruptEnable == (kRTC_FlashSecurityInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_FSIE_MASK;
+    }
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_TPIE) && FSL_FEATURE_RTC_HAS_TIR_TPIE)
+    if (kRTC_TamperPinInterruptEnable == (kRTC_TamperPinInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_TPIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_TPIE */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_SIE) && FSL_FEATURE_RTC_HAS_TIR_SIE)
+    if (kRTC_SecurityModuleInterruptEnable == (kRTC_SecurityModuleInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_SIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_SIE */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_LCIE) && FSL_FEATURE_RTC_HAS_TIR_LCIE)
+    if (kRTC_LossOfClockInterruptEnable == (kRTC_LossOfClockInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_LCIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_LCIE */
+    base->TIR |= tmp32;
+#endif /* FSL_FEATURE_RTC_HAS_TIR */
+}
+
+void RTC_DisableInterrupts(RTC_Type *base, uint32_t mask)
+{
+    uint32_t tmp32 = 0U;
+
+    /* RTC_IER */
+    if (kRTC_TimeInvalidInterruptEnable == (kRTC_TimeInvalidInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TIIE_MASK;
+    }
+    if (kRTC_TimeOverflowInterruptEnable == (kRTC_TimeOverflowInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TOIE_MASK;
+    }
+    if (kRTC_AlarmInterruptEnable == (kRTC_AlarmInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TAIE_MASK;
+    }
+    if (kRTC_SecondsInterruptEnable == (kRTC_SecondsInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TSIE_MASK;
+    }
+#if defined(FSL_FEATURE_RTC_HAS_MONOTONIC) && (FSL_FEATURE_RTC_HAS_MONOTONIC)
+    if (kRTC_MonotonicOverflowInterruptEnable == (kRTC_MonotonicOverflowInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_MOIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_MONOTONIC */
+    base->IER &= (uint32_t)(~tmp32);
+
+#if (defined(FSL_FEATURE_RTC_HAS_TIR) && FSL_FEATURE_RTC_HAS_TIR)
+    tmp32 = 0U;
+
+    /* RTC_TIR */
+    if (kRTC_TestModeInterruptEnable == (kRTC_TestModeInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_TMIE_MASK;
+    }
+    if (kRTC_FlashSecurityInterruptEnable == (kRTC_FlashSecurityInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_FSIE_MASK;
+    }
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_TPIE) && FSL_FEATURE_RTC_HAS_TIR_TPIE)
+    if (kRTC_TamperPinInterruptEnable == (kRTC_TamperPinInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_TPIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_TPIE */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_SIE) && FSL_FEATURE_RTC_HAS_TIR_SIE)
+    if (kRTC_SecurityModuleInterruptEnable == (kRTC_SecurityModuleInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_SIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_SIE */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_LCIE) && FSL_FEATURE_RTC_HAS_TIR_LCIE)
+    if (kRTC_LossOfClockInterruptEnable == (kRTC_LossOfClockInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_LCIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_LCIE */
+    base->TIR &= (uint32_t)(~tmp32);
+#endif /* FSL_FEATURE_RTC_HAS_TIR */
+}
+
+uint32_t RTC_GetEnabledInterrupts(RTC_Type *base)
+{
+    uint32_t tmp32 = 0U;
+
+    /* RTC_IER */
+    if (RTC_IER_TIIE_MASK == (RTC_IER_TIIE_MASK & base->IER))
+    {
+        tmp32 |= kRTC_TimeInvalidInterruptEnable;
+    }
+    if (RTC_IER_TOIE_MASK == (RTC_IER_TOIE_MASK & base->IER))
+    {
+        tmp32 |= kRTC_TimeOverflowInterruptEnable;
+    }
+    if (RTC_IER_TAIE_MASK == (RTC_IER_TAIE_MASK & base->IER))
+    {
+        tmp32 |= kRTC_AlarmInterruptEnable;
+    }
+    if (RTC_IER_TSIE_MASK == (RTC_IER_TSIE_MASK & base->IER))
+    {
+        tmp32 |= kRTC_SecondsInterruptEnable;
+    }
+#if defined(FSL_FEATURE_RTC_HAS_MONOTONIC) && (FSL_FEATURE_RTC_HAS_MONOTONIC)
+    if (RTC_IER_MOIE_MASK == (RTC_IER_MOIE_MASK & base->IER))
+    {
+        tmp32 |= kRTC_MonotonicOverflowInterruptEnable;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_MONOTONIC */
+
+#if (defined(FSL_FEATURE_RTC_HAS_TIR) && FSL_FEATURE_RTC_HAS_TIR)
+    /* RTC_TIR */
+    if (RTC_TIR_TMIE_MASK == (RTC_TIR_TMIE_MASK & base->TIR))
+    {
+        tmp32 |= kRTC_TestModeInterruptEnable;
+    }
+    if (RTC_TIR_FSIE_MASK == (RTC_TIR_FSIE_MASK & base->TIR))
+    {
+        tmp32 |= kRTC_FlashSecurityInterruptEnable;
+    }
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_TPIE) && FSL_FEATURE_RTC_HAS_TIR_TPIE)
+    if (RTC_TIR_TPIE_MASK == (RTC_TIR_TPIE_MASK & base->TIR))
+    {
+        tmp32 |= kRTC_TamperPinInterruptEnable;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_TPIE */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_SIE) && FSL_FEATURE_RTC_HAS_TIR_SIE)
+    if (RTC_TIR_SIE_MASK == (RTC_TIR_SIE_MASK & base->TIR))
+    {
+        tmp32 |= kRTC_SecurityModuleInterruptEnable;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_SIE */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_LCIE) && FSL_FEATURE_RTC_HAS_TIR_LCIE)
+    if (RTC_TIR_LCIE_MASK == (RTC_TIR_LCIE_MASK & base->TIR))
+    {
+        tmp32 |= kRTC_LossOfClockInterruptEnable;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_LCIE */
+#endif /* FSL_FEATURE_RTC_HAS_TIR */
+
+    return tmp32;
+}
+
+uint32_t RTC_GetStatusFlags(RTC_Type *base)
+{
+    uint32_t tmp32 = 0U;
+
+    /* RTC_SR */
+    if (RTC_SR_TIF_MASK == (RTC_SR_TIF_MASK & base->SR))
+    {
+        tmp32 |= kRTC_TimeInvalidFlag;
+    }
+    if (RTC_SR_TOF_MASK == (RTC_SR_TOF_MASK & base->SR))
+    {
+        tmp32 |= kRTC_TimeOverflowFlag;
+    }
+    if (RTC_SR_TAF_MASK == (RTC_SR_TAF_MASK & base->SR))
+    {
+        tmp32 |= kRTC_AlarmFlag;
+    }
+#if defined(FSL_FEATURE_RTC_HAS_MONOTONIC) && (FSL_FEATURE_RTC_HAS_MONOTONIC)
+    if (RTC_SR_MOF_MASK == (RTC_SR_MOF_MASK & base->SR))
+    {
+        tmp32 |= kRTC_MonotonicOverflowFlag;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_MONOTONIC */
+#if (defined(FSL_FEATURE_RTC_HAS_SR_TIDF) && FSL_FEATURE_RTC_HAS_SR_TIDF)
+    if (RTC_SR_TIDF_MASK == (RTC_SR_TIDF_MASK & base->SR))
+    {
+        tmp32 |= kRTC_TamperInterruptDetectFlag;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_SR_TIDF */
+
+#if (defined(FSL_FEATURE_RTC_HAS_TDR) && FSL_FEATURE_RTC_HAS_TDR)
+    /* RTC_TDR */
+    if (RTC_TDR_TMF_MASK == (RTC_TDR_TMF_MASK & base->TDR))
+    {
+        tmp32 |= kRTC_TestModeFlag;
+    }
+    if (RTC_TDR_FSF_MASK == (RTC_TDR_FSF_MASK & base->TDR))
+    {
+        tmp32 |= kRTC_FlashSecurityFlag;
+    }
+#if (defined(FSL_FEATURE_RTC_HAS_TDR_TPF) && FSL_FEATURE_RTC_HAS_TDR_TPF)
+    if (RTC_TDR_TPF_MASK == (RTC_TDR_TPF_MASK & base->TDR))
+    {
+        tmp32 |= kRTC_TamperPinFlag;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TDR_TPF */
+#if (defined(FSL_FEATURE_RTC_HAS_TDR_STF) && FSL_FEATURE_RTC_HAS_TDR_STF)
+    if (RTC_TDR_STF_MASK == (RTC_TDR_STF_MASK & base->TDR))
+    {
+        tmp32 |= kRTC_SecurityTamperFlag;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TDR_STF */
+#if (defined(FSL_FEATURE_RTC_HAS_TDR_LCTF) && FSL_FEATURE_RTC_HAS_TDR_LCTF)
+    if (RTC_TDR_LCTF_MASK == (RTC_TDR_LCTF_MASK & base->TDR))
+    {
+        tmp32 |= kRTC_LossOfClockTamperFlag;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TDR_LCTF */
+#endif /* FSL_FEATURE_RTC_HAS_TDR */
+
+    return tmp32;
+}
+
 void RTC_ClearStatusFlags(RTC_Type *base, uint32_t mask)
 {
     /* The alarm flag is cleared by writing to the TAR register */
@@ -343,6 +604,40 @@ void RTC_ClearStatusFlags(RTC_Type *base, uint32_t mask)
     {
         base->TSR = 1U;
     }
+
+#if (defined(FSL_FEATURE_RTC_HAS_TDR) && FSL_FEATURE_RTC_HAS_TDR)
+    /* To clear, write logic one to this flag after exiting from all test modes */
+    if (kRTC_TestModeFlag == (kRTC_TestModeFlag & mask))
+    {
+        base->TDR = RTC_TDR_TMF_MASK;
+    }
+    /* To clear, write logic one to this flag after flash security is enabled */
+    if (kRTC_FlashSecurityFlag == (kRTC_FlashSecurityFlag & mask))
+    {
+        base->TDR = RTC_TDR_FSF_MASK;
+    }
+#if (defined(FSL_FEATURE_RTC_HAS_TDR_TPF) && FSL_FEATURE_RTC_HAS_TDR_TPF)
+    /* To clear, write logic one to the corresponding flag after that tamper pin negates */
+    if (kRTC_TamperPinFlag == (kRTC_TamperPinFlag & mask))
+    {
+        base->TDR = RTC_TDR_TPF_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TDR_TPF */
+#if (defined(FSL_FEATURE_RTC_HAS_TDR_STF) && FSL_FEATURE_RTC_HAS_TDR_STF)
+    /* To clear, write logic one to this flag after security module has negated its tamper detect */
+    if (kRTC_SecurityTamperFlag == (kRTC_SecurityTamperFlag & mask))
+    {
+        base->TDR = RTC_TDR_STF_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TDR_STF */
+#if (defined(FSL_FEATURE_RTC_HAS_TDR_LCTF) && FSL_FEATURE_RTC_HAS_TDR_LCTF)
+    /* To clear, write logic one to this flag after loss of clock negates */
+    if (kRTC_LossOfClockTamperFlag == (kRTC_LossOfClockTamperFlag & mask))
+    {
+        base->TDR = RTC_TDR_LCTF_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TDR_LCTF */
+#endif /* FSL_FEATURE_RTC_HAS_TDR */
 }
 
 #if defined(FSL_FEATURE_RTC_HAS_MONOTONIC) && (FSL_FEATURE_RTC_HAS_MONOTONIC)

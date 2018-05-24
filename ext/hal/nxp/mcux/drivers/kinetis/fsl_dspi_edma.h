@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -185,6 +189,21 @@ void DSPI_MasterTransferCreateHandleEDMA(SPI_Type *base,
  * @return status of status_t.
  */
 status_t DSPI_MasterTransferEDMA(SPI_Type *base, dspi_master_edma_handle_t *handle, dspi_transfer_t *transfer);
+
+/*!
+ * @brief Transfers a block of data using a eDMA method.
+ *
+ * This function transfers data using eDNA, the transfer mechanism is half-duplex. This is a non-blocking function,
+ * which returns right away. When all data is transferred, the callback function is called.
+ *
+ * @param base DSPI base pointer
+ * @param handle A pointer to the dspi_master_edma_handle_t structure which stores the transfer state.
+ * @param transfer A pointer to the dspi_half_duplex_transfer_t structure.
+ * @return status of status_t.
+ */
+status_t DSPI_MasterHalfDuplexTransferEDMA(SPI_Type *base,
+                                           dspi_master_edma_handle_t *handle,
+                                           dspi_half_duplex_transfer_t *xfer);
 
 /*!
  * @brief DSPI master aborts a transfer which is using eDMA.

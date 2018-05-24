@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -37,15 +41,14 @@
  * @{
  */
 
-
 /**********************************************************************************************************************
  * Definitions
  *********************************************************************************************************************/
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief DSPI driver version 2.1.4. */
-#define FSL_DSPI_DRIVER_VERSION (MAKE_VERSION(2, 1, 4))
+/*! @brief DSPI driver version 2.2.0. */
+#define FSL_DSPI_DRIVER_VERSION (MAKE_VERSION(2, 2, 0))
 /*@}*/
 
 #ifndef DSPI_DUMMY_DATA
@@ -107,7 +110,8 @@ typedef enum _dspi_master_slave_mode
 } dspi_master_slave_mode_t;
 
 /*!
- * @brief DSPI Sample Point: Controls when the DSPI master samples SIN in the Modified Transfer Format. This field is valid
+ * @brief DSPI Sample Point: Controls when the DSPI master samples SIN in the Modified Transfer Format. This field is
+ * valid
  * only when the CPHA bit in the CTAR register is 0.
  */
 typedef enum _dspi_master_sample_point
@@ -216,8 +220,9 @@ enum _dspi_transfer_config_flag_for_master
     kDSPI_MasterPcs4 = 4U << DSPI_MASTER_PCS_SHIFT, /*!< DSPI master transfer use PCS4 signal. */
     kDSPI_MasterPcs5 = 5U << DSPI_MASTER_PCS_SHIFT, /*!< DSPI master transfer use PCS5 signal. */
 
-    kDSPI_MasterPcsContinuous = 1U << 20,       /*!< Indicates whether the PCS signal is continuous. */
-    kDSPI_MasterActiveAfterTransfer = 1U << 21, /*!< Indicates whether the PCS signal is active after the last frame transfer.*/
+    kDSPI_MasterPcsContinuous = 1U << 20, /*!< Indicates whether the PCS signal is continuous. */
+    kDSPI_MasterActiveAfterTransfer =
+        1U << 21, /*!< Indicates whether the PCS signal is active after the last frame transfer.*/
 };
 
 #define DSPI_SLAVE_CTAR_SHIFT (0U)   /*!< DSPI slave CTAR shift macro; used internally. */
@@ -240,7 +245,7 @@ enum _dspi_transfer_state
 /*! @brief DSPI master command date configuration used for the SPIx_PUSHR.*/
 typedef struct _dspi_command_data_config
 {
-    bool isPcsContinuous;            /*!< Option to enable the continuous assertion of the chip select between transfers.*/
+    bool isPcsContinuous; /*!< Option to enable the continuous assertion of the chip select between transfers.*/
     dspi_ctar_selection_t whichCtar; /*!< The desired Clock and Transfer Attributes
                                           Register (CTAR) to use for CTAS.*/
     dspi_which_pcs_t whichPcs;       /*!< The desired PCS signal to use for the data transfer.*/
@@ -257,10 +262,10 @@ typedef struct _dspi_master_ctar_config
     dspi_clock_phase_t cpha;          /*!< Clock phase. */
     dspi_shift_direction_t direction; /*!< MSB or LSB data shift direction. */
 
-    uint32_t pcsToSckDelayInNanoSec;        /*!< PCS to SCK delay time in nanoseconds; setting to 0 sets the minimum
-                                               delay. It also sets the boundary value if out of range.*/
-    uint32_t lastSckToPcsDelayInNanoSec;    /*!< The last SCK to PCS delay time in nanoseconds; setting to 0 sets the
-                                               minimum delay. It also sets the boundary value if out of range.*/
+    uint32_t pcsToSckDelayInNanoSec;     /*!< PCS to SCK delay time in nanoseconds; setting to 0 sets the minimum
+                                            delay. It also sets the boundary value if out of range.*/
+    uint32_t lastSckToPcsDelayInNanoSec; /*!< The last SCK to PCS delay time in nanoseconds; setting to 0 sets the
+                                            minimum delay. It also sets the boundary value if out of range.*/
 
     uint32_t betweenTransferDelayInNanoSec; /*!< After the SCK delay time in nanoseconds; setting to 0 sets the minimum
                                              delay. It also sets the boundary value if out of range.*/
@@ -361,6 +366,19 @@ typedef struct _dspi_transfer
                         is used for slave.*/
 } dspi_transfer_t;
 
+/*! @brief DSPI half-duplex(master) transfer structure */
+typedef struct _dspi_half_duplex_transfer
+{
+    uint8_t *txData;            /*!< Send buffer */
+    uint8_t *rxData;            /*!< Receive buffer */
+    size_t txDataSize;          /*!< Transfer bytes for transmit */
+    size_t rxDataSize;          /*!< Transfer bytes */
+    uint32_t configFlags;       /*!< Transfer configuration flags; set from _dspi_transfer_config_flag_for_master. */
+    bool isPcsAssertInTransfer; /*!< If Pcs pin keep assert between transmit and receive. true for assert and false for
+                                   deassert. */
+    bool isTransmitFirst;       /*!< True for transmit first and false for receive first. */
+} dspi_half_duplex_transfer_t;
+
 /*! @brief DSPI master transfer handle structure used for transactional API. */
 struct _dspi_master_handle
 {
@@ -370,8 +388,9 @@ struct _dspi_master_handle
 
     uint8_t fifoSize; /*!< FIFO dataSize. */
 
-    volatile bool isPcsActiveAfterTransfer; /*!< Indicates whether the PCS signal is active after the last frame transfer.*/
-    volatile bool isThereExtraByte;         /*!< Indicates whether there are extra bytes.*/
+    volatile bool
+        isPcsActiveAfterTransfer;   /*!< Indicates whether the PCS signal is active after the last frame transfer.*/
+    volatile bool isThereExtraByte; /*!< Indicates whether there are extra bytes.*/
 
     uint8_t *volatile txData;                  /*!< Send buffer. */
     uint8_t *volatile rxData;                  /*!< Receive buffer. */
@@ -575,6 +594,7 @@ static inline void DSPI_ClearStatusFlags(SPI_Type *base, uint32_t statusFlags)
  *
  * This function configures the various interrupt masks of the DSPI.  The parameters are a base and an interrupt mask.
  * Note, for Tx Fill and Rx FIFO drain requests, enable the interrupt request and disable the DMA request.
+ *       Do not use this API(write to RSER register) while DSPI is in running state.
  *
  * @code
  *  DSPI_EnableInterrupts(base, kDSPI_TxCompleteInterruptEnable | kDSPI_EndOfQueueInterruptEnable );
@@ -950,10 +970,12 @@ static inline uint32_t DSPI_MasterGetFormattedCommand(dspi_command_data_config_t
  * @brief Writes a 32-bit data word (16-bit command appended with 16-bit data) into the data
  *        buffer master mode and waits till complete to return.
  *
- * In this function, the user must append the 16-bit data to the 16-bit command information and then provide the total 32-bit word
+ * In this function, the user must append the 16-bit data to the 16-bit command information and then provide the total
+* 32-bit word
  * as the data to send.
  * The command portion provides characteristics of the data, such as the optional continuous chip select operation
- * between transfers, the desired Clock and Transfer Attributes register to use for the associated SPI frame, the desired PCS
+ * between transfers, the desired Clock and Transfer Attributes register to use for the associated SPI frame, the
+* desired PCS
  * signal to use for the data transfer, whether the current transfer is the last in the queue, and whether to clear the
  * transfer count (normally needed when sending the first frame of a data packet). The user is responsible for
  * appending this command with the data to send. This is an example:
@@ -1023,6 +1045,14 @@ static inline uint32_t DSPI_ReadData(SPI_Type *base)
 }
 
 /*!
+ * @brief Set up the dummy data.
+ *
+ * @param base DSPI peripheral address.
+ * @param dummyData Data to be transferred when tx buffer is NULL.
+ */
+void DSPI_SetDummyData(SPI_Type *base, uint8_t dummyData);
+
+/*!
  *@}
 */
 
@@ -1072,6 +1102,35 @@ status_t DSPI_MasterTransferBlocking(SPI_Type *base, dspi_transfer_t *transfer);
  * @return status of status_t.
  */
 status_t DSPI_MasterTransferNonBlocking(SPI_Type *base, dspi_master_handle_t *handle, dspi_transfer_t *transfer);
+
+/*!
+ * @brief Transfers a block of data using a polling method.
+ *
+ * This function will do a half-duplex transfer for DSPI master, This is a blocking function,
+ * which does not retuen until all transfer have been completed. And data transfer will be half-duplex,
+ * users can set transmit first or receive first.
+ *
+ * @param base DSPI base pointer
+ * @param xfer pointer to dspi_half_duplex_transfer_t structure
+ * @return status of status_t.
+ */
+status_t DSPI_MasterHalfDuplexTransferBlocking(SPI_Type *base, dspi_half_duplex_transfer_t *xfer);
+
+/*!
+ * @brief Performs a non-blocking DSPI interrupt transfer.
+ *
+ * This function transfers data using interrupts, the transfer mechanism is half-duplex. This is a non-blocking
+ * function,
+ * which returns right away. When all data is transferred, the callback function is called.
+ *
+ * @param base DSPI peripheral base address.
+ * @param handle pointer to dspi_master_handle_t structure which stores the transfer state
+ * @param xfer pointer to dspi_half_duplex_transfer_t structure
+ * @return status of status_t.
+ */
+status_t DSPI_MasterHalfDuplexTransferNonBlocking(SPI_Type *base,
+                                                  dspi_master_handle_t *handle,
+                                                  dspi_half_duplex_transfer_t *xfer);
 
 /*!
  * @brief Gets the master transfer count.

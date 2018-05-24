@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -159,10 +163,23 @@ static uint32_t I2C_PendingStatusWait(I2C_Type *base)
 {
     uint32_t status;
 
+#if I2C_WAIT_TIMEOUT
+    uint32_t waitTimes = I2C_WAIT_TIMEOUT;
+#endif
+
     do
     {
         status = I2C_GetStatusFlags(base);
+#if I2C_WAIT_TIMEOUT
+    } while (((status & I2C_STAT_MSTPENDING_MASK) == 0) && (--waitTimes));
+
+    if (waitTimes == 0)
+    {
+        return kStatus_I2C_Timeout;
+    }
+#else
     } while ((status & I2C_STAT_MSTPENDING_MASK) == 0);
+#endif
 
     /* Clear controller state. */
     I2C_MasterClearStatusFlags(base, I2C_STAT_MSTARBLOSS_MASK | I2C_STAT_MSTSTSTPERR_MASK);
@@ -172,7 +189,12 @@ static uint32_t I2C_PendingStatusWait(I2C_Type *base)
 
 status_t I2C_MasterStart(I2C_Type *base, uint8_t address, i2c_direction_t direction)
 {
-    I2C_PendingStatusWait(base);
+    status_t result;
+    result = I2C_PendingStatusWait(base);
+    if (result == kStatus_I2C_Timeout)
+    {
+        return kStatus_I2C_Timeout;
+    }
 
     /* Write Address and RW bit to data register */
     base->MSTDAT = ((uint32_t)address << 1) | ((uint32_t)direction & 1u);
@@ -184,7 +206,12 @@ status_t I2C_MasterStart(I2C_Type *base, uint8_t address, i2c_direction_t direct
 
 status_t I2C_MasterStop(I2C_Type *base)
 {
-    I2C_PendingStatusWait(base);
+    status_t result;
+    result = I2C_PendingStatusWait(base);
+    if (result == kStatus_I2C_Timeout)
+    {
+        return kStatus_I2C_Timeout;
+    }
 
     base->MSTCTL = I2C_MSTCTL_MSTSTOP_MASK;
     return kStatus_Success;
@@ -204,6 +231,10 @@ status_t I2C_MasterWriteBlocking(I2C_Type *base, const void *txBuff, size_t txSi
     while (txSize)
     {
         status = I2C_PendingStatusWait(base);
+        if (status == kStatus_I2C_Timeout)
+        {
+            return kStatus_I2C_Timeout;
+        }
 
         if (status & I2C_STAT_MSTARBLOSS_MASK)
         {
@@ -245,6 +276,11 @@ status_t I2C_MasterWriteBlocking(I2C_Type *base, const void *txBuff, size_t txSi
 
     status = I2C_PendingStatusWait(base);
 
+    if (status == kStatus_I2C_Timeout)
+    {
+        return kStatus_I2C_Timeout;
+    }
+
     if ((status & (I2C_STAT_MSTARBLOSS_MASK | I2C_STAT_MSTSTSTPERR_MASK)) == 0)
     {
         if (!(flags & kI2C_TransferNoStopFlag))
@@ -252,6 +288,10 @@ status_t I2C_MasterWriteBlocking(I2C_Type *base, const void *txBuff, size_t txSi
             /* Initiate stop */
             base->MSTCTL = I2C_MSTCTL_MSTSTOP_MASK;
             status = I2C_PendingStatusWait(base);
+            if (status == kStatus_I2C_Timeout)
+            {
+                return kStatus_I2C_Timeout;
+            }
         }
     }
 
@@ -282,6 +322,10 @@ status_t I2C_MasterReadBlocking(I2C_Type *base, void *rxBuff, size_t rxSize, uin
     while (rxSize)
     {
         status = I2C_PendingStatusWait(base);
+        if (status == kStatus_I2C_Timeout)
+        {
+            return kStatus_I2C_Timeout;
+        }
 
         if (status & (I2C_STAT_MSTARBLOSS_MASK | I2C_STAT_MSTSTSTPERR_MASK))
         {
@@ -305,6 +349,10 @@ status_t I2C_MasterReadBlocking(I2C_Type *base, void *rxBuff, size_t rxSize, uin
                         /* initiate NAK and stop */
                         base->MSTCTL = I2C_MSTCTL_MSTSTOP_MASK;
                         status = I2C_PendingStatusWait(base);
+                        if (status == kStatus_I2C_Timeout)
+                        {
+                            return kStatus_I2C_Timeout;
+                        }
                     }
                 }
                 break;
@@ -483,7 +531,7 @@ status_t I2C_MasterTransferGetCount(I2C_Type *base, i2c_master_handle_t *handle,
     return kStatus_Success;
 }
 
-void I2C_MasterTransferAbort(I2C_Type *base, i2c_master_handle_t *handle)
+status_t I2C_MasterTransferAbort(I2C_Type *base, i2c_master_handle_t *handle)
 {
     uint32_t status;
     uint32_t master_state;
@@ -495,6 +543,10 @@ void I2C_MasterTransferAbort(I2C_Type *base, i2c_master_handle_t *handle)
 
         /* Wait until module is ready */
         status = I2C_PendingStatusWait(base);
+        if (status == kStatus_I2C_Timeout)
+        {
+            return kStatus_I2C_Timeout;
+        }
 
         /* Get the state of the I2C module */
         master_state = (status & I2C_STAT_MSTSTATE_MASK) >> I2C_STAT_MSTSTATE_SHIFT;
@@ -505,12 +557,17 @@ void I2C_MasterTransferAbort(I2C_Type *base, i2c_master_handle_t *handle)
             base->MSTCTL = I2C_MSTCTL_MSTSTOP_MASK;
 
             /* Wait until the STOP is completed */
-            I2C_PendingStatusWait(base);
+            status = I2C_PendingStatusWait(base);
+            if (status == kStatus_I2C_Timeout)
+            {
+                return kStatus_I2C_Timeout;
+            }
         }
 
         /* Reset handle. */
         handle->state = kIdleState;
     }
+    return kStatus_Success;
 }
 
 /*!
@@ -842,10 +899,22 @@ static uint32_t I2C_SlavePollPending(I2C_Type *base)
 {
     uint32_t stat;
 
+#if I2C_WAIT_TIMEOUT
+    uint32_t waitTimes = I2C_WAIT_TIMEOUT;
+#endif
     do
     {
         stat = base->STAT;
+#if I2C_WAIT_TIMEOUT
+    } while ((0u == (stat & I2C_STAT_SLVPENDING_MASK)) && (--waitTimes));
+
+    if (waitTimes == 0u)
+    {
+        return kStatus_I2C_Timeout;
+    }
+#else
     } while (0u == (stat & I2C_STAT_SLVPENDING_MASK));
+#endif
 
     return stat;
 }
@@ -1099,6 +1168,10 @@ status_t I2C_SlaveWriteBlocking(I2C_Type *base, const uint8_t *txBuff, size_t tx
 
     /* wait for SLVPENDING */
     stat = I2C_SlavePollPending(base);
+    if (stat == kStatus_I2C_Timeout)
+    {
+        return kStatus_I2C_Timeout;
+    }
 
     /* Get slave machine state */
     slaveAddress = (((stat & I2C_STAT_SLVSTATE_MASK) >> I2C_STAT_SLVSTATE_SHIFT) == I2C_STAT_SLVST_ADDR);
@@ -1118,6 +1191,10 @@ status_t I2C_SlaveWriteBlocking(I2C_Type *base, const uint8_t *txBuff, size_t tx
 
         /* wait for SLVPENDING */
         stat = I2C_SlavePollPending(base);
+        if (stat == kStatus_I2C_Timeout)
+        {
+            return kStatus_I2C_Timeout;
+        }
     }
 
     /* send bytes up to txSize */
@@ -1145,6 +1222,10 @@ status_t I2C_SlaveWriteBlocking(I2C_Type *base, const uint8_t *txBuff, size_t tx
         {
             /* wait for SLVPENDING */
             stat = I2C_SlavePollPending(base);
+            if (stat == kStatus_I2C_Timeout)
+            {
+                return kStatus_I2C_Timeout;
+            }
         }
     }
 
@@ -1163,6 +1244,10 @@ status_t I2C_SlaveReadBlocking(I2C_Type *base, uint8_t *rxBuff, size_t rxSize)
 
     /* wait for SLVPENDING */
     stat = I2C_SlavePollPending(base);
+    if (stat == kStatus_I2C_Timeout)
+    {
+        return kStatus_I2C_Timeout;
+    }
 
     /* Get slave machine state */
     slaveAddress = (((stat & I2C_STAT_SLVSTATE_MASK) >> I2C_STAT_SLVSTATE_SHIFT) == I2C_STAT_SLVST_ADDR);
@@ -1182,6 +1267,10 @@ status_t I2C_SlaveReadBlocking(I2C_Type *base, uint8_t *rxBuff, size_t rxSize)
 
         /* wait for SLVPENDING */
         stat = I2C_SlavePollPending(base);
+        if (stat == kStatus_I2C_Timeout)
+        {
+            return kStatus_I2C_Timeout;
+        }
     }
 
     /* receive bytes up to rxSize */
@@ -1209,6 +1298,10 @@ status_t I2C_SlaveReadBlocking(I2C_Type *base, uint8_t *rxBuff, size_t rxSize)
         {
             /* wait for SLVPENDING */
             stat = I2C_SlavePollPending(base);
+            if (stat == kStatus_I2C_Timeout)
+            {
+                return kStatus_I2C_Timeout;
+            }
         }
     }
 
