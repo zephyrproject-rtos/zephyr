@@ -2,6 +2,9 @@
  * Copyright (c) 2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Implement the resource table that will get parsed by OpenAMP to convey
+ * the shared memory region used for message passing and ring setup.
  */
 
 #include "platform.h"
@@ -42,4 +45,3 @@ void resource_table_init(void **table_ptr, int *length)
 	*length = sizeof(struct lpc_resource_table);
 	*table_ptr = rsc_table_ptr;
 }
-

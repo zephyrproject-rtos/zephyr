@@ -2,6 +2,8 @@
  * Copyright (c) 2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Implement the HIL layer required by OpenAMP
  */
 
 #include <zephyr.h>
@@ -97,4 +99,3 @@ struct hil_platform_ops platform_ops = {
 	.initialize = initialize,
 	.release = release
 };
-
