@@ -2471,11 +2471,11 @@ def parse_arguments():
 
     parser.add_argument(
         "--device-testing", action="store_true",
-        help="Test on device directly. You need to specify the serial"
-			 "using --device-serial option")
+        help="Test on device directly. Specify the serial device to "
+             "use with the --device-serial option.")
     parser.add_argument(
         "--device-serial",
-		help="Serial device the board can be accessed through")
+		help="Serial device for accessing the board (e.g., /dev/ttyACM0)")
     parser.add_argument(
             "--show-footprint", action="store_true",
             help="Show footprint statistics and deltas since last release."
@@ -2523,7 +2523,7 @@ def parse_arguments():
     parser.add_argument("-R", "--enable-asserts", action="store_true",
                         default=True,
                         help="Build all test cases with assertions enabled. "
-                        "Default to assertions being enabled.")
+                        "(This is the default)")
     parser.add_argument("--disable-asserts", action="store_false",
                         dest="enable_asserts",
                         help="Build all test cases with assertions disabled.")
