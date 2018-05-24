@@ -115,10 +115,11 @@ The sanitycheck script accepts the following optional arguments:
   -b, --build-only      Only build the code, do not execute any of it in QEMU
   -j JOBS, --jobs JOBS  Number of cores to use when building, defaults to
                         number of CPUs * 2
-  --device-testing      Test on device directly. You need to specify the
-                        serialusing --device-serial option
+  --device-testing      Test on device directly. Specify the serial device to
+                        use with the --device-serial option.
   --device-serial DEVICE_SERIAL
-                        Serial device the board can be accessed through
+                        Serial device for accessing the board (e.g.,
+                        /dev/ttyACM0)
   --show-footprint      Show footprint statistics and deltas since last
                         release.
   -H FOOTPRINT_THRESHOLD, --footprint-threshold FOOTPRINT_THRESHOLD
@@ -147,8 +148,8 @@ The sanitycheck script accepts the following optional arguments:
   -S, --enable-slow     Execute time-consuming test cases that have been
                         marked as 'slow' in testcase.yaml. Normally these are
                         only built.
-  -R, --enable-asserts  Build all test cases with assertions enabled. Default
-                        to assertions being enabled.
+  -R, --enable-asserts  Build all test cases with assertions enabled. (This is
+                        the default)
   --disable-asserts     Build all test cases with assertions disabled.
   -Q, --error-on-deprecations
                         Error on deprecation warnings.
@@ -161,6 +162,7 @@ The sanitycheck script accepts the following optional arguments:
                         ultimately disable ccache.
   -C, --coverage        Generate coverage report for unit tests, and tests and
                         samples run in native_posix.
+
 
 Board Configuration
 *******************
@@ -246,9 +248,6 @@ testing:
   ignore_tags:
     Do not attempt to build (and therefore run) tests marked with this list of
     tags.
-
-
-
 
 Test Cases
 **********
@@ -462,3 +461,25 @@ To load arguments from a file, write '+' before the file name, e.g.,
 line break instead of white spaces.
 
 Most everyday users will run with no arguments.
+
+
+Running Tests on Hardware
+*************************
+
+Beside being able to run tests in QEMU and other simulated environments,
+sanitycheck supports running most of the tests on real devices and produces
+reports for each run with detailed FAIL/PASS results.
+
+To use this feature, run sanitycheck with the following new options::
+
+	scripts/sanitycheck --device-testing --device-serial /dev/ttyACM0 -p \
+	frdm_k64f  -T tests/kernel
+
+The ``--device-serial`` option denotes the serial device the board is connected to.
+This needs to be accessible by the user running sanitycheck. You can run this on
+only one board at a time, specified using the
+``--platform`` option.
+
+To produce test reports, use the ``--detailed-report FILENAME`` option which will
+generate an XML file using the JUNIT syntax. This file can be used to generate
+other reports, for example using ``junit2html`` which can be installed via PIP.
