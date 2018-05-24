@@ -1,4 +1,4 @@
-zephyr_library_ifdef(CONFIG_ENTROPY_HAS_DRIVER)
+zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_ESP32_RNG          entropy_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_MCUX_RNGA          entropy_mcux_rnga.c)
