@@ -11,6 +11,7 @@
 #include <misc/printk.h>
 #include <string.h>
 #include <stdio.h>
+#include <ztest.h>
 
 #include <spi.h>
 
@@ -312,10 +313,13 @@ static void spi_async_call_cb(struct k_poll_event *async_evt,
 			      struct k_sem *caller_sem,
 			      void *unused)
 {
+	int ret;
+
 	SYS_LOG_DBG("Polling...");
 
 	while (1) {
-		k_poll(async_evt, 1, K_MSEC(100));
+		ret = k_poll(async_evt, 1, K_MSEC(100));
+		zassert_false(ret, "one or more events are not ready");
 
 		result = async_evt->signal->result;
 		k_sem_give(caller_sem);
@@ -398,7 +402,7 @@ static int spi_resource_lock_test(struct device *lock_dev,
 	return 0;
 }
 
-void main(void)
+void testing_spi(void)
 {
 	struct k_thread async_thread;
 	k_tid_t async_thread_id;
@@ -450,4 +454,11 @@ void main(void)
 	SYS_LOG_INF("All tx/rx passed");
 end:
 	k_thread_abort(async_thread_id);
+}
+
+/*test case main entry*/
+void test_main(void)
+{
+	ztest_test_suite(test_spi, ztest_unit_test(testing_spi));
+	ztest_run_test_suite(test_spi);
 }
