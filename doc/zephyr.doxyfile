@@ -1971,7 +1971,10 @@ PREDEFINED             = "CONFIG_SYS_CLOCK_EXISTS=y" \
                          "CONFIG_KERNEL_EVENT_LOGGER=y" \
                          "CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC=y" \
                          "CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP=y" \
-                         "CONFIG_TASK_MONITOR=y" \
+                         "CONFIG_THREAD_MONITOR=y" \
+                         "CONFIG_THREAD_CUSTOM_DATA=y" \
+                         "CONFIG_ERRNO=y" \
+                         "CONFIG_THREAD_STACK_INFO=y" \
                          "CONFIG_UART_INTERRUPT_DRIVEN=y" \
                          "CONFIG_UART_DRV_CMD=y" \
                          "CONFIG_SYS_POWER_MANAGEMENT=y" \
