@@ -44,13 +44,13 @@
 #define MBEDTLS_ERR_BLOWFISH_HW_ACCEL_FAILED                   -0x0017  /**< Blowfish hardware accelerator failed. */
 #define MBEDTLS_ERR_BLOWFISH_INVALID_INPUT_LENGTH              -0x0018  /**< Invalid data input length. */
 
-#if !defined(MBEDTLS_BLOWFISH_ALT)
-// Regular implementation
-//
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if !defined(MBEDTLS_BLOWFISH_ALT)
+// Regular implementation
+//
 
 /**
  * \brief          Blowfish context structure
@@ -61,6 +61,10 @@ typedef struct
     uint32_t S[4][256];                 /*!<  key dependent S-boxes  */
 }
 mbedtls_blowfish_context;
+
+#else  /* MBEDTLS_BLOWFISH_ALT */
+#include "blowfish_alt.h"
+#endif /* MBEDTLS_BLOWFISH_ALT */
 
 /**
  * \brief          Initialize Blowfish context
@@ -197,9 +201,5 @@ int mbedtls_blowfish_crypt_ctr( mbedtls_blowfish_context *ctx,
 #ifdef __cplusplus
 }
 #endif
-
-#else  /* MBEDTLS_BLOWFISH_ALT */
-#include "blowfish_alt.h"
-#endif /* MBEDTLS_BLOWFISH_ALT */
 
 #endif /* blowfish.h */

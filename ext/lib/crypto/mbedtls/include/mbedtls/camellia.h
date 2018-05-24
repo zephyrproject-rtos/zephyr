@@ -40,13 +40,13 @@
 #define MBEDTLS_ERR_CAMELLIA_INVALID_INPUT_LENGTH         -0x0026  /**< Invalid data input length. */
 #define MBEDTLS_ERR_CAMELLIA_HW_ACCEL_FAILED              -0x0027  /**< Camellia hardware accelerator failed. */
 
-#if !defined(MBEDTLS_CAMELLIA_ALT)
-// Regular implementation
-//
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if !defined(MBEDTLS_CAMELLIA_ALT)
+// Regular implementation
+//
 
 /**
  * \brief          CAMELLIA context structure
@@ -57,6 +57,10 @@ typedef struct
     uint32_t rk[68];            /*!<  CAMELLIA round keys    */
 }
 mbedtls_camellia_context;
+
+#else  /* MBEDTLS_CAMELLIA_ALT */
+#include "camellia_alt.h"
+#endif /* MBEDTLS_CAMELLIA_ALT */
 
 /**
  * \brief          Initialize CAMELLIA context
@@ -210,18 +214,6 @@ int mbedtls_camellia_crypt_ctr( mbedtls_camellia_context *ctx,
                        const unsigned char *input,
                        unsigned char *output );
 #endif /* MBEDTLS_CIPHER_MODE_CTR */
-
-#ifdef __cplusplus
-}
-#endif
-
-#else  /* MBEDTLS_CAMELLIA_ALT */
-#include "camellia_alt.h"
-#endif /* MBEDTLS_CAMELLIA_ALT */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * \brief          Checkup routine

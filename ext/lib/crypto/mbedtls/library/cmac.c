@@ -771,7 +771,7 @@ static int cmac_test_subkeys( int verbose,
                               int block_size,
                               int num_tests )
 {
-    int i, ret;
+    int i, ret = 0;
     mbedtls_cipher_context_t ctx;
     const mbedtls_cipher_info_t *cipher_info;
     unsigned char K1[MBEDTLS_CIPHER_BLKSIZE_MAX];
@@ -853,7 +853,7 @@ static int cmac_test_wth_cipher( int verbose,
                                  int num_tests )
 {
     const mbedtls_cipher_info_t *cipher_info;
-    int i, ret;
+    int i, ret = 0;
     unsigned char output[MBEDTLS_CIPHER_BLKSIZE_MAX];
 
     cipher_info = mbedtls_cipher_info_from_type( cipher_type );

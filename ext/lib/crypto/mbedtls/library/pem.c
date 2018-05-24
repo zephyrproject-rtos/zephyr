@@ -403,7 +403,7 @@ int mbedtls_pem_read_buffer( mbedtls_pem_context *ctx, const char *header, const
          * The result will be ASN.1 starting with a SEQUENCE tag, with 1 to 3
          * length bytes (allow 4 to be sure) in all known use cases.
          *
-         * Use that as heurisitic to try detecting password mismatchs.
+         * Use that as a heuristic to try to detect password mismatches.
          */
         if( len <= 2 || buf[0] != 0x30 || buf[1] > 0x83 )
         {
