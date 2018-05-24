@@ -4,4 +4,9 @@ tests:
     depends_on: gpio
     # FIXME: code is board specific, it should be generalised
     platform_whitelist: quark_se_c1000_devboard quark_d2000_crb esp32
-    harness: loopback # see documentation
+    # each test platform can map this to whatever they want, but we
+    # need to guarantee it is unique in terms of configuration (one or
+    # more TCs can share a fixture type, but no different fixtures
+    # shall be called the same).
+    runtime_filter: fixture_gpio_loopback_type_A
+    # no harness, this is ztest

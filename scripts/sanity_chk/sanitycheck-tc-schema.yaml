@@ -71,6 +71,9 @@ mapping:
      "platform_whitelist":
        type: str
        required: no
+     "runtime_filter":
+       type: str
+       required: no
      "tags":
        type: str
        required: no
@@ -182,6 +185,9 @@ mapping:
                type: str
                required: no
              "platform_whitelist":
+               type: str
+               required: no
+             "runtime_filter":
                type: str
                required: no
              "tags":
