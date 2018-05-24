@@ -1382,6 +1382,7 @@ struct net_rpl_dag *net_rpl_set_root_with_version(struct net_if *iface,
 	NET_DBG("Node set to be a DAG root with DAG ID %s",
 		net_sprint_ipv6_addr(&dag->dag_id));
 
+	instance->iface = iface;
 	net_rpl_reset_dio_timer(instance);
 
 	return dag;
