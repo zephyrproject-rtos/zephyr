@@ -10,3 +10,10 @@ config LIBMETAL
 	default n
 	help
 	  This option enables the libmetal HAL abstraction layer
+
+config LIBMETAL_SRC_PATH
+	string
+	prompt "libmetal library source path"
+	default "libmetal"
+	help
+	  This option specifies the path to the source for the libmetal library
