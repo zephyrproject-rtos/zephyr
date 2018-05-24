@@ -33,6 +33,10 @@ __kernel struct k_thread tdata;
 #define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 
+/*local variables*/
+static K_THREAD_STACK_DEFINE(tstack_custom, STACK_SIZE);
+__kernel static struct k_thread tdata_custom;
+
 static int main_prio;
 
 /**
@@ -56,9 +60,61 @@ void test_systhreads_idle(void)
 			K_IDLE_PRIO, NULL);
 }
 
+static void customdata_entry(void *p1, void *p2, void *p3)
+{
+	u32_t data = 1;
+
+	zassert_is_null(k_thread_custom_data_get(), NULL);
+	while (1) {
+		k_thread_custom_data_set((void *)data);
+		/* relinguish cpu for a while */
+		k_sleep(50);
+		/** TESTPOINT: custom data comparison */
+		zassert_equal(data, (u32_t)k_thread_custom_data_get(), NULL);
+		data++;
+	}
+}
+
+/**
+ * @ingroup kernel_thread_tests
+ * @brief test thread custom data get/set from coop thread
+ *
+ * @see k_thread_custom_data_get(), k_thread_custom_data_set()
+ */
+void test_customdata_get_set_coop(void)
+{
+	k_tid_t tid = k_thread_create(&tdata_custom, tstack_custom, STACK_SIZE,
+				      customdata_entry, NULL, NULL, NULL,
+				      K_PRIO_COOP(1), 0, 0);
+
+	k_sleep(500);
+
+	/* cleanup environment */
+	k_thread_abort(tid);
+}
+
+/**
+ * @ingroup kernel_thread_tests
+ * @brief test thread custom data get/set from preempt thread
+ * @see k_thread_custom_data_get(), k_thread_custom_data_set()
+ */
+void test_customdata_get_set_preempt(void)
+{
+	/** TESTPOINT: custom data of preempt thread */
+	k_tid_t tid = k_thread_create(&tdata_custom, tstack_custom, STACK_SIZE,
+				      customdata_entry, NULL, NULL, NULL,
+				      K_PRIO_PREEMPT(0), K_USER, 0);
+
+	k_sleep(500);
+
+	/* cleanup environment */
+	k_thread_abort(tid);
+}
+
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &tdata, tstack, NULL);
+	k_thread_access_grant(k_current_get(), &tdata_custom, tstack_custom, NULL);
 	main_prio = k_thread_priority_get(k_current_get());
 
 	ztest_test_suite(threads_lifecycle,
@@ -77,7 +133,9 @@ void test_main(void)
 			 ztest_unit_test(test_delayed_thread_abort),
 			 ztest_unit_test(test_essential_thread_operation),
 			 ztest_unit_test(test_systhreads_main),
-			 ztest_unit_test(test_systhreads_idle)
+			 ztest_unit_test(test_systhreads_idle),
+			 ztest_unit_test(test_customdata_get_set_coop),
+			 ztest_user_unit_test(test_customdata_get_set_preempt)
 			 );
 
 	ztest_run_test_suite(threads_lifecycle);
