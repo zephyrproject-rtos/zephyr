@@ -853,7 +853,7 @@ int gptp_get_port_data(struct gptp_domain *domain,
 		return -ENOENT;
 	}
 
-	if (port < 0 || port > CONFIG_NET_GPTP_NUM_PORTS) {
+	if (port < GPTP_PORT_START || port >= GPTP_PORT_END) {
 		return -EINVAL;
 	}
 
