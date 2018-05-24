@@ -33,10 +33,33 @@ __kernel struct k_thread tdata;
 #define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 
-/*test case main entry*/
+static int main_prio;
+
+/**
+ * @ingroup kernel_thread_tests
+ * @brief Verify main thread
+ */
+void test_systhreads_main(void)
+{
+	zassert_true(main_prio == CONFIG_MAIN_THREAD_PRIORITY, NULL);
+}
+
+/**
+ * @ingroup kernel_thread_tests
+ * @brief Verify idle thread
+ */
+void test_systhreads_idle(void)
+{
+	k_sleep(100);
+	/** TESTPOINT: check working thread priority should */
+	zassert_true(k_thread_priority_get(k_current_get()) <
+			K_IDLE_PRIO, NULL);
+}
+
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &tdata, tstack, NULL);
+	main_prio = k_thread_priority_get(k_current_get());
 
 	ztest_test_suite(threads_lifecycle,
 			 ztest_user_unit_test(test_threads_spawn_params),
@@ -52,7 +75,10 @@ void test_main(void)
 			 ztest_unit_test(test_threads_abort_repeat),
 			 ztest_unit_test(test_abort_handler),
 			 ztest_unit_test(test_delayed_thread_abort),
-			 ztest_unit_test(test_essential_thread_operation)
+			 ztest_unit_test(test_essential_thread_operation),
+			 ztest_unit_test(test_systhreads_main),
+			 ztest_unit_test(test_systhreads_idle)
 			 );
+
 	ztest_run_test_suite(threads_lifecycle);
 }

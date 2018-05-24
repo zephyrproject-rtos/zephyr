@@ -1,4 +1,0 @@
-tests:
-  kernel.threads.sys:
-    arch_exclude: nios2 riscv32
-    tags: kernel
