@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Synopsys.
+ * Copyright (c) 2018 Synopsys.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,40 +12,35 @@
 #include <syscall.h>
 
 .macro clear_scratch_regs
-	mov	r1, 0
-	mov 	r2, 0
-	mov	r3, 0
-	mov	r4, 0
-	mov	r5, 0
-	mov	r6, 0
-	mov	r7, 0
-	mov	r8, 0
-	mov 	r9, 0
-	mov	r10, 0
-	mov	r11, 0
-	mov	r12, 0
-
-	mov 	fp, 0
-	mov 	r29, 0
-	mov 	r30, 0
-	mov	blink, 0
+	mov r1, 0
+	mov r2, 0
+	mov r3, 0
+	mov r4, 0
+	mov r5, 0
+	mov r6, 0
+	mov r7, 0
+	mov r8, 0
+	mov r9, 0
+	mov r10, 0
+	mov r11, 0
+	mov r12, 0
 .endm
 
 .macro clear_callee_regs
-	mov	r25, 0
-	mov	r24, 0
-	mov	r23, 0
-	mov	r22, 0
-	mov	r21, 0
-	mov	r20, 0
-	mov	r19, 0
-	mov	r18, 0
-	mov	r17, 0
-	mov	r16, 0
+	mov r25, 0
+	mov r24, 0
+	mov r23, 0
+	mov r22, 0
+	mov r21, 0
+	mov r20, 0
+	mov r19, 0
+	mov r18, 0
+	mov r17, 0
+	mov r16, 0
 
-	mov	r15, 0
-	mov	r14, 0
-	mov	r13, 0
+	mov r15, 0
+	mov r14, 0
+	mov r13, 0
 .endm
 
 GTEXT(_arc_userspace_enter)
@@ -144,6 +139,11 @@ _arc_go_to_user_space:
 
 	clear_scratch_regs
 
+	mov fp, 0
+	mov r29, 0
+	mov r30, 0
+	mov blink, 0
+
 	rtie
 
 /**
@@ -166,24 +166,30 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 
 	jl [r6]
 
+	/*
+	 * no need to clear callee regs, as they will be saved and restored
+	 * automatically
+	 */
+	clear_scratch_regs
+
+	mov r29, 0
+	mov r30, 0
+
 	pop_s blink
 
 	/* through fake exception return, go back to the caller */
 	kflag _ARC_V2_STATUS32_AE
 
-#ifdef CONFIG_ARC_HAS_SECURE
-	lr r6, [_ARC_V2_SEC_STAT]
-	/* the mode returns from exception return is secure mode */
-	bset r6, r6, 31
-	sr r6, [_ARC_V2_ERSEC_STAT]
-#endif
-	/* the status and return addesss are saved in trap_s handler */
+	/* the status and return address are saved in trap_s handler */
 	pop r6
 	sr r6, [_ARC_V2_ERSTATUS]
 	pop r6
 	sr r6, [_ARC_V2_ERET]
+#ifdef CONFIG_ARC_HAS_SECURE
+	pop r6
+	sr r6, [_ARC_V2_ERSEC_STAT]
+#endif
 
-	/* no nned to clear callee regs */
-	clear_scratch_regs
+	mov r6, 0
 
 	rtie
