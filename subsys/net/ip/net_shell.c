@@ -2079,9 +2079,14 @@ int net_shell_cmd_gptp(int argc, char *argv[])
 	}
 
 	if (argv[arg]) {
-		int port = strtol(argv[arg], NULL, 10);
+		char *endptr;
+		int port = strtol(argv[arg], &endptr, 10);
 
-		gptp_print_port_info(port);
+		if (endptr != argv[arg]) {
+			gptp_print_port_info(port);
+		} else {
+			printk("Not a valid gPTP port number: %s\n", argv[arg]);
+		}
 	} else {
 		gptp_foreach_port(gptp_port_cb, &count);
 
