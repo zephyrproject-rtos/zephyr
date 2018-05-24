@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2018 qianfan Zhao
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f207.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F207ZG-NUCLEO board";
+	compatible = "st,stm32f207zg-nucleo", "st,stm32f207";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led@0 {
+			gpios = <&gpiob 0 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+		blue_led_1: led@1 {
+			gpios = <&gpiob 7 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+		red_led_1: led@2 {
+			gpios = <&gpiob 14 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button@0 {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		led1 = &blue_led_1;
+		led2 = &red_led_1;
+		sw0 = &user_button;
+	};
+};
+
+&usart3 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart3_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};
