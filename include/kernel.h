@@ -659,20 +659,32 @@ extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
  * bits, arch-specific use high bits.
  */
 
-/* system thread that must not abort */
+/**
+ * @brief system thread that must not abort
+ * @req K-THREAD-000
+ * */
 #define K_ESSENTIAL (1 << 0)
 
 #if defined(CONFIG_FP_SHARING)
-/* thread uses floating point registers */
+/**
+ * @brief thread uses floating point registers
+ */
 #define K_FP_REGS (1 << 1)
 #endif
 
-/* This thread has dropped from supervisor mode to user mode and consequently
+/**
+ * @brief user mode thread
+ *
+ * This thread has dropped from supervisor mode to user mode and consequently
  * has additional restrictions
  */
 #define K_USER (1 << 2)
 
-/* Indicates that the thread being created should inherit all kernel object
+/**
+ * @brief Inherit Permissions
+ *
+ * @details
+ * Indicates that the thread being created should inherit all kernel object
  * permissions from the thread that created it. No effect if CONFIG_USERSPACE
  * is not enabled.
  */
