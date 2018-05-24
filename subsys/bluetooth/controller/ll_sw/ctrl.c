@@ -3892,8 +3892,9 @@ static inline u32_t isr_close_adv(void)
 			u32_t ticker_status;
 			u8_t random_delay;
 
-			entropy_get_entropy_isr(_radio.entropy, &random_delay,
-						sizeof(random_delay));
+			entropy_nrf_get_entropy_isr(_radio.entropy,
+						    &random_delay,
+						    sizeof(random_delay));
 			random_delay %= 10;
 			random_delay += 1;
 
@@ -9269,10 +9270,10 @@ static void enc_req_reused_send(struct connection *conn,
 	pdu_ctrl_tx->llctrl.enc_req.ediv[1] =
 		conn->llcp.encryption.ediv[1];
 	/* NOTE: if not sufficient random numbers, ignore waiting */
-	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_req.skdm,
-				sizeof(pdu_ctrl_tx->llctrl.enc_req.skdm));
-	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_req.ivm,
-				sizeof(pdu_ctrl_tx->llctrl.enc_req.ivm));
+	entropy_nrf_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_req.skdm,
+				    sizeof(pdu_ctrl_tx->llctrl.enc_req.skdm));
+	entropy_nrf_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_req.ivm,
+				    sizeof(pdu_ctrl_tx->llctrl.enc_req.ivm));
 }
 
 static u8_t enc_rsp_send(struct connection *conn)
@@ -9292,10 +9293,10 @@ static u8_t enc_rsp_send(struct connection *conn)
 			   sizeof(struct pdu_data_llctrl_enc_rsp);
 	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
 	/* NOTE: if not sufficient random numbers, ignore waiting */
-	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_rsp.skds,
-				sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds));
-	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_rsp.ivs,
-				sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs));
+	entropy_nrf_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_rsp.skds,
+				    sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds));
+	entropy_nrf_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_rsp.ivs,
+				    sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs));
 
 	/* things from slave stored for session key calculation */
 	memcpy(&conn->llcp.encryption.skd[8],
