@@ -886,7 +886,6 @@ class MakeGenerator:
             os.makedirs(base_outdir)
         self.logfile = os.path.join(base_outdir, "make.log")
         self.makefile = os.path.join(base_outdir, "Makefile")
-        self.asserts = options.enable_asserts
         self.deprecations = options.error_on_deprecations
 
     def _get_rule_header(self, name):
@@ -900,11 +899,7 @@ class MakeGenerator:
         """
         args = " ".join(["-D{}".format(a) for a in args])
         ldflags = ""
-
-        if self.asserts:
-            cflags = "-DCONFIG_ASSERT=1 -D__ASSERT_ON=2"
-        else:
-            cflags = ""
+        cflags = ""
 
         if self.deprecations:
             cflags = cflags + "  -Wno-deprecated-declarations"
@@ -2000,7 +1995,6 @@ class TestSuite:
                         continue
 
                     defconfig = {
-                            "ASSERT": 1 if options.enable_asserts else 0,
                             "ARCH": arch.name,
                             "PLATFORM": plat.name
                             }
@@ -2522,11 +2516,10 @@ def parse_arguments():
         "as 'slow' in testcase.yaml. Normally these are only built.")
     parser.add_argument("-R", "--enable-asserts", action="store_true",
                         default=True,
-                        help="Build all test cases with assertions enabled. "
-                        "(This is the default)")
+                        help="deprecated, left for compatibility")
     parser.add_argument("--disable-asserts", action="store_false",
                         dest="enable_asserts",
-                        help="Build all test cases with assertions disabled.")
+                        help="deprecated, left for compatibility")
     parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
                         help="Error on deprecation warnings.")
 
