@@ -21,14 +21,6 @@ static struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("SRAM_0",
 			 CONFIG_SRAM_BASE_ADDRESS,
 			 REGION_RAM_ATTR(REGION_SRAM_0_SIZE)),
-	/* Region 2 */
-	MPU_REGION_ENTRY("PERIPH_0",
-			 PERIPH_BASE,
-			 REGION_IO_ATTR(REGION_4M)),
-	/* Region 3 */
-	MPU_REGION_ENTRY("PPB_0",
-			 PPB_BASE,
-			 REGION_PPB_ATTR(REGION_1M)),
 };
 
 struct arm_mpu_config mpu_config = {
