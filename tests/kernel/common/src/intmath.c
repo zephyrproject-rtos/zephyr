@@ -21,7 +21,7 @@
 #endif
 
 /* Two's complement negation check: "-N" must equal "(~N)+1" */
-#define NEG_CHECK(T, N) BUILD_ASSERT((-((T)N)) == (~((T)N))+1)
+#define NEG_CHECK(T, N) BUILD_ASSERT((-((T)N)) == (~((T)N)) + 1)
 
 /* Checks that MAX+1==MIN in the given type */
 #define ROLLOVER_CHECK(T, MAX, MIN) BUILD_ASSERT((T)((T)1 + (T)MAX) == (T)MIN)
@@ -59,19 +59,22 @@ void test_intmath(void)
 	 */
 	volatile u64_t bignum, ba, bb;
 	volatile u32_t num, a, b;
+	volatile u64_t multi_64 = 0xbcdf0509369bf232ULL;
+	volatile u32_t multi_32 = 176160000,
+		       div_32 = 2368;
 
 	ba = 0x00000012ABCDEF12ULL;
 	bb = 0x0000001000000111ULL;
 	bignum = ba * bb;
-	zassert_true((bignum == 0xbcdf0509369bf232ULL), "64-bit multiplication failed");
+	zassert_true((bignum == multi_64), "64-bit multiplication failed");
 
 	a = 30000;
 	b = 5872;
 	num = a * b;
-	zassert_true((num == 176160000), "32-bit multiplication failed");
+	zassert_true((num == multi_32), "32-bit multiplication failed");
 
 	a = 234424432;
 	b = 98982;
 	num = a / b;
-	zassert_true((num == 2368), "32-bit division failed");
+	zassert_true((num == div_32), "32-bit division failed");
 }
