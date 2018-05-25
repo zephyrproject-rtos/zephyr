@@ -410,7 +410,7 @@ static void uart_fe310_irq_cfg_func_0(void)
 }
 #endif
 
-#endif /* CONFIG_FE310_UART_0 */
+#endif /* CONFIG_UART_FE310_PORT_0 */
 
 #ifdef CONFIG_UART_FE310_PORT_1
 
@@ -449,4 +449,4 @@ static void uart_fe310_irq_cfg_func_1(void)
 }
 #endif
 
-#endif /* CONFIG_FE310_UART_1 */
+#endif /* CONFIG_UART_FE310_PORT_1 */
