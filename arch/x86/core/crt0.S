@@ -368,9 +368,9 @@ __csSet:
 	orl $0x800, %eax
 	wrmsr
 #endif
-	/* set CR0.PG bit (31st bit in CR0)*/
+	/* Enable paging (CR0.PG, bit 31) / write protect (CR0.WP, bit 16) */
 	movl %cr0, %eax
-	orl $CR0_PAGING_ENABLE, %eax
+	orl $CR0_PG_WP_ENABLE, %eax
 	movl %eax, %cr0
 
 #endif /* CONFIG_X86_MMU */

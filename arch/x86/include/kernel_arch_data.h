@@ -386,7 +386,7 @@
 #define EFLAGS_MASK 0x00003200
 
 /* Enable paging and write protection */
-#define CR0_PAGING_ENABLE 0x80010000
+#define CR0_PG_WP_ENABLE 0x80010000
 /* Clear the 5th bit in  CR4 */
 #define CR4_PAE_DISABLE 0xFFFFFFEF
 /* Set the 5th bit in  CR4 */
