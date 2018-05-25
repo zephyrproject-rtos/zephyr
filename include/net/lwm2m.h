@@ -61,13 +61,10 @@ struct lwm2m_ctx {
 	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
 	struct k_delayed_work retransmit_work;
 
-#if defined(CONFIG_NET_APP_DTLS)
-	/** Pre-Shared Key  Information*/
-	unsigned char *client_psk;
-	size_t client_psk_len;
-	char *client_psk_id;
-	size_t client_psk_id_len;
+	/* current security object index */
+	int sec_obj_inst;
 
+#if defined(CONFIG_NET_APP_DTLS)
 	/** DTLS support structures */
 	char *cert_host;
 	u8_t *dtls_result_buf;
@@ -233,16 +230,16 @@ int lwm2m_engine_set_net_pkt_pool(struct lwm2m_ctx *ctx,
 				  net_pkt_get_slab_func_t tx_slab,
 				  net_pkt_get_pool_func_t data_pool);
 #endif
-int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
-		       char *peer_str, u16_t peer_port);
+int lwm2m_engine_start(struct lwm2m_ctx *client_ctx, bool is_bootstrap_mode);
 
 /* LWM2M RD Client */
 
 /* Client events */
 enum lwm2m_rd_client_event {
 	LWM2M_RD_CLIENT_EVENT_NONE,
-	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_FAILURE,
-	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_COMPLETE,
+	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_FAILURE,
+	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_COMPLETE,
+	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_TRANSFER_COMPLETE,
 	LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE,
 	LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE,
 	LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE,
@@ -256,7 +253,6 @@ typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
 				     enum lwm2m_rd_client_event event);
 
 int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
-			  char *peer_str, u16_t peer_port,
 			  const char *ep_name,
 			  lwm2m_ctx_event_cb_t event_cb);
 

@@ -76,9 +76,12 @@
  */
 enum sm_engine_state {
 	ENGINE_INIT,
-	ENGINE_DO_BOOTSTRAP,
-	ENGINE_BOOTSTRAP_SENT,
-	ENGINE_BOOTSTRAP_DONE,
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	ENGINE_DO_BOOTSTRAP_REG,
+	ENGINE_BOOTSTRAP_REG_SENT,
+	ENGINE_BOOTSTRAP_REG_DONE,
+	ENGINE_BOOTSTRAP_TRANS_DONE,
+#endif
 	ENGINE_DO_REGISTRATION,
 	ENGINE_REGISTRATION_SENT,
 	ENGINE_REGISTRATION_DONE,
@@ -90,17 +93,11 @@ enum sm_engine_state {
 };
 
 struct lwm2m_rd_client_info {
-	u16_t lifetime;
 	struct lwm2m_ctx *ctx;
-	u8_t engine_state;
-	u8_t use_bootstrap;
-	u8_t has_bs_server_info;
-	u8_t use_registration;
-	u8_t has_registration_info;
-	u8_t bootstrapped; /* bootstrap done */
-	u8_t trigger_update;
-
 	s64_t last_update;
+	u32_t lifetime;
+	u8_t engine_state;
+	u8_t trigger_update;
 
 	char ep_name[CLIENT_EP_LEN];
 	char server_ep[CLIENT_EP_LEN];
@@ -117,16 +114,20 @@ static void set_sm_state(u8_t sm_state)
 	enum lwm2m_rd_client_event event = LWM2M_RD_CLIENT_EVENT_NONE;
 
 	/* Determine if a callback to the app is needed */
-	if (sm_state == ENGINE_BOOTSTRAP_DONE) {
-		event = LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_COMPLETE;
-	} else if (client.engine_state == ENGINE_UPDATE_SENT &&
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	if (sm_state == ENGINE_BOOTSTRAP_REG_DONE) {
+		event = LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_COMPLETE;
+	} else if (sm_state == ENGINE_BOOTSTRAP_TRANS_DONE) {
+		event = LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_TRANSFER_COMPLETE;
+#endif
+	if (client.engine_state == ENGINE_UPDATE_SENT &&
 		   sm_state == ENGINE_REGISTRATION_DONE) {
 		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE;
 	} else if (sm_state == ENGINE_REGISTRATION_DONE) {
 		event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE;
 	} else if ((sm_state == ENGINE_INIT ||
 		    sm_state == ENGINE_DEREGISTERED) &&
-		   (client.engine_state > ENGINE_BOOTSTRAP_DONE &&
+		   (client.engine_state > ENGINE_DO_REGISTRATION &&
 		    client.engine_state < ENGINE_DEREGISTER)) {
 		event = LWM2M_RD_CLIENT_EVENT_DISCONNECT;
 	}
@@ -156,9 +157,12 @@ static void sm_handle_timeout_state(struct lwm2m_message *msg,
 {
 	enum lwm2m_rd_client_event event = LWM2M_RD_CLIENT_EVENT_NONE;
 
-	if (client.engine_state == ENGINE_BOOTSTRAP_SENT) {
-		event = LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_FAILURE;
-	} else if (client.engine_state == ENGINE_REGISTRATION_SENT) {
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	if (client.engine_state == ENGINE_BOOTSTRAP_REG_SENT) {
+		event = LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_FAILURE;
+	} else
+#endif
+	if (client.engine_state == ENGINE_REGISTRATION_SENT) {
 		event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE;
 	} else if (client.engine_state == ENGINE_UPDATE_SENT) {
 		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE;
@@ -184,6 +188,7 @@ void engine_trigger_update(void)
 
 /* state machine reply callbacks */
 
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 static int do_bootstrap_reply_cb(const struct coap_packet *response,
 				 struct coap_reply *reply,
 				 const struct sockaddr *from)
@@ -196,12 +201,14 @@ static int do_bootstrap_reply_cb(const struct coap_packet *response,
 		    COAP_RESPONSE_CODE_DETAIL(code));
 
 	if (code == COAP_RESPONSE_CODE_CHANGED) {
-		SYS_LOG_DBG("Considered done!");
-		set_sm_state(ENGINE_BOOTSTRAP_DONE);
+		SYS_LOG_INF("Bootstrap registration done!");
+		set_sm_state(ENGINE_BOOTSTRAP_REG_DONE);
 	} else if (code == COAP_RESPONSE_CODE_NOT_FOUND) {
+		/* TODO: try and find another bootstrap server entry? */
 		SYS_LOG_ERR("Failed: NOT_FOUND.  Not Retrying.");
 		set_sm_state(ENGINE_DO_REGISTRATION);
 	} else if (code == COAP_RESPONSE_CODE_FORBIDDEN) {
+		/* TODO: try and find another bootstrap server entry? */
 		SYS_LOG_ERR("Failed: 4.03 - Forbidden.  Not Retrying.");
 		set_sm_state(ENGINE_DO_REGISTRATION);
 	} else {
@@ -215,13 +222,18 @@ static int do_bootstrap_reply_cb(const struct coap_packet *response,
 	return 0;
 }
 
-static void do_bootstrap_timeout_cb(struct lwm2m_message *msg)
+static void do_bootstrap_reg_timeout_cb(struct lwm2m_message *msg)
 {
 	SYS_LOG_WRN("Bootstrap Timeout");
+
+	/* TODO:
+	 * Look for the "next" BOOTSTRAP server entry in our security info
+	 */
 
 	/* Restart from scratch */
 	sm_handle_timeout_state(msg, ENGINE_INIT);
 }
+#endif
 
 static int do_registration_reply_cb(const struct coap_packet *response,
 				    struct coap_reply *reply,
@@ -285,6 +297,10 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 static void do_registration_timeout_cb(struct lwm2m_message *msg)
 {
 	SYS_LOG_WRN("Registration Timeout");
+
+	/* TODO:
+	 * Look for the "next" normal server entry in our security info
+	 */
 
 	/* Restart from scratch */
 	sm_handle_timeout_state(msg, ENGINE_INIT);
@@ -361,148 +377,218 @@ static void do_deregister_timeout_cb(struct lwm2m_message *msg)
 	sm_handle_timeout_state(msg, ENGINE_INIT);
 }
 
+/* utility functions */
+
+static int sm_select_next_sec_inst(bool bootstrap_server,
+				   int *sec_obj_inst, u32_t *lifetime)
+{
+	char pathstr[MAX_RESOURCE_LEN];
+	int ret, end, i, obj_inst_id, found = -1;
+	bool is_bootstrap_server;
+
+	/* lookup existing index */
+	i = lwm2m_security_inst_id_to_index(*sec_obj_inst);
+	if (i < 0) {
+		*sec_obj_inst = -1;
+		i = -1;
+	}
+
+	/* store end marker, due to looping */
+	end = (i == -1 ? CONFIG_LWM2M_SECURITY_INSTANCE_COUNT : i);
+
+	/* loop through servers starting from the index after the current one */
+	for (i++; i != end; i++) {
+		if (i >= CONFIG_LWM2M_SECURITY_INSTANCE_COUNT) {
+			i = 0;
+		}
+
+		obj_inst_id = lwm2m_security_index_to_inst_id(i);
+		if (obj_inst_id < 0) {
+			continue;
+		}
+
+		snprintk(pathstr, sizeof(pathstr), "0/%d/1",
+			 obj_inst_id);
+		ret = lwm2m_engine_get_bool(pathstr, &is_bootstrap_server);
+		if (ret < 0) {
+			continue;
+		}
+
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+		if (is_bootstrap_server == bootstrap_server) {
+#else
+		if (is_bootstrap_server == false) {
+#endif
+			found = obj_inst_id;
+			break;
+		}
+	}
+
+	if (found > -1) {
+		*sec_obj_inst = found;
+
+		/* query the lifetime */
+		/* TODO: use Short Server ID to link to server info */
+		snprintk(pathstr, sizeof(pathstr), "1/%d/1",
+			 obj_inst_id);
+		if (lwm2m_engine_get_u32(pathstr, lifetime) < 0) {
+			*lifetime = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
+			SYS_LOG_DBG("Using default lifetime: %u", *lifetime);
+		}
+	}
+
+	if (*sec_obj_inst < 0) {
+		/* no servers found */
+		SYS_LOG_DBG("sec_obj_inst: NOT_FOUND");
+		return -ENOENT;
+	}
+
+	SYS_LOG_DBG("sec_obj_inst: %d", *sec_obj_inst);
+	return 0;
+}
+
 /* state machine step functions */
 
 static int sm_do_init(void)
 {
-	SYS_LOG_INF("RD Client started with endpoint "
-		    "'%s' and client lifetime %d",
-		    client.ep_name,
-		    client.lifetime);
-	/* Zephyr has joined network already */
-	client.has_registration_info = 1;
-	client.bootstrapped = 0;
 	client.trigger_update = 0;
-#if defined(CONFIG_LWM2M_BOOTSTRAP_SERVER)
-	client.use_bootstrap = 1;
+
+	/* reset security object instance */
+	client.ctx->sec_obj_inst = -1;
+
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	set_sm_state(ENGINE_DO_BOOTSTRAP_REG);
 #else
-	client.use_registration = 1;
+	set_sm_state(ENGINE_DO_REGISTRATION);
 #endif
-	if (client.lifetime == 0) {
-		client.lifetime = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
-	}
-	/* Do bootstrap or registration */
-	if (client.use_bootstrap) {
-		set_sm_state(ENGINE_DO_BOOTSTRAP);
-	} else {
-		set_sm_state(ENGINE_DO_REGISTRATION);
-	}
 
 	return 0;
 }
 
-static int sm_do_bootstrap(void)
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+static int sm_do_bootstrap_reg(void)
 {
 	struct lwm2m_message *msg;
 	struct net_app_ctx *app_ctx = NULL;
 	int ret;
 	struct sockaddr *remote = NULL;
 
-	if (client.use_bootstrap &&
-	    client.bootstrapped == 0 &&
-	    client.has_bs_server_info) {
-		app_ctx = &client.ctx->net_app_ctx;
-		msg = lwm2m_get_message(client.ctx);
-		if (!msg) {
-			SYS_LOG_ERR("Unable to get a lwm2m message!");
-			return -ENOMEM;
-		}
+	/* TODO: clear out connection data? */
 
-		msg->type = COAP_TYPE_CON;
-		msg->code = COAP_METHOD_POST;
-		msg->mid = 0;
-		msg->reply_cb = do_bootstrap_reply_cb;
-		msg->message_timeout_cb = do_bootstrap_timeout_cb;
+	ret = sm_select_next_sec_inst(true,
+				      &client.ctx->sec_obj_inst,
+				      &client.lifetime);
+	if (ret < 0) {
+		/* try again */
+		return ret;
+	}
 
-		ret = lwm2m_init_message(msg);
-		if (ret) {
-			goto cleanup;
-		}
+	if (client.lifetime == 0) {
+		client.lifetime = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
+	}
 
-		/* TODO: handle return error */
-		coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
-					  "bs", strlen("bs"));
+	SYS_LOG_INF("Bootstrap started with endpoint "
+		    "'%s' with client lifetime %d",
+		    client.ep_name, client.lifetime);
 
-		snprintk(query_buffer, sizeof(query_buffer) - 1,
-			 "ep=%s", client.ep_name);
-		/* TODO: handle return error */
-		coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
-					  query_buffer, strlen(query_buffer));
+	ret = lwm2m_engine_start(client.ctx, true);
+	if (ret < 0) {
+		SYS_LOG_ERR("Cannot init LWM2M engine (%d)", ret);
+		goto cleanup_engine;
+	}
 
-		/* log the bootstrap attempt */
+	if (!client.ctx->net_app_ctx.default_ctx) {
+		SYS_LOG_ERR("Default net_app_ctx not selected!");
+		ret = -EINVAL;
+		goto cleanup_engine;
+	}
+
+	app_ctx = &client.ctx->net_app_ctx;
+	msg = lwm2m_get_message(client.ctx);
+	if (!msg) {
+		SYS_LOG_ERR("Unable to get a lwm2m message!");
+		return -ENOMEM;
+	}
+
+	msg->type = COAP_TYPE_CON;
+	msg->code = COAP_METHOD_POST;
+	msg->mid = 0;
+	msg->reply_cb = do_bootstrap_reply_cb;
+	msg->message_timeout_cb = do_bootstrap_reg_timeout_cb;
+
+	ret = lwm2m_init_message(msg);
+	if (ret) {
+		goto cleanup;
+	}
+
+	/* TODO: handle return error */
+	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
+				  "bs", strlen("bs"));
+
+	snprintk(query_buffer, sizeof(query_buffer) - 1, "ep=%s",
+		 client.ep_name);
+	/* TODO: handle return error */
+	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
+				  query_buffer, strlen(query_buffer));
+
+	/* log the bootstrap attempt */
 #if defined(CONFIG_NET_APP_DTLS)
-		if (app_ctx->dtls.ctx) {
-			remote = &app_ctx->dtls.ctx->remote;
-		}
+	if (app_ctx->dtls.ctx) {
+		remote = &app_ctx->dtls.ctx->remote;
+	}
 #endif
 
-		if (!remote) {
-			remote = &app_ctx->default_ctx->remote;
-		}
-
-		SYS_LOG_DBG("Register ID with bootstrap server [%s] as '%s'",
-			    lwm2m_sprint_ip_addr(remote),
-			    query_buffer);
-
-		ret = lwm2m_send_message(msg);
-		if (ret < 0) {
-			SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
-				    ret);
-			goto cleanup;
-		}
-
-		set_sm_state(ENGINE_BOOTSTRAP_SENT);
+	if (!remote) {
+		remote = &app_ctx->default_ctx->remote;
 	}
+
+	SYS_LOG_DBG("Register ID with bootstrap server [%s] as '%s'",
+		    lwm2m_sprint_ip_addr(remote),
+		    query_buffer);
+
+	ret = lwm2m_send_message(msg);
+	if (ret < 0) {
+		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
+			    ret);
+		goto cleanup;
+	}
+
+	set_sm_state(ENGINE_BOOTSTRAP_REG_SENT);
 	return 0;
 
 cleanup:
 	lwm2m_reset_message(msg, true);
 	return ret;
+
+cleanup_engine:
+	lwm2m_engine_context_close(client.ctx);
+	return ret;
 }
 
 static int sm_bootstrap_done(void)
 {
-	/* TODO: Fix this */
-	/* check that we should still use bootstrap */
-	if (client.use_bootstrap) {
-#ifdef CONFIG_LWM2M_SECURITY_OBJ_SUPPORT
-		int i;
+	return 0;
+}
 
-		SYS_LOG_DBG("*** Bootstrap - checking for server info ...");
+void engine_bootstrap_finish(void)
+{
+	SYS_LOG_INF("Bootstrap data transfer done!");
+	set_sm_state(ENGINE_BOOTSTRAP_TRANS_DONE);
+}
 
-		/* get the server URI */
-		if (sec_data->server_uri_len > 0) {
-			/* TODO: Write endpoint parsing function */
-#if 0
-			if (!parse_endpoint(sec_data->server_uri,
-					    sec_data->server_uri_len,
-					    &client.reg_server)) {
-#else
-			if (true) {
-#endif
-				SYS_LOG_ERR("Failed to parse URI!");
-			} else {
-				client.has_registration_info = 1;
-				client.bootstrapped++;
-			}
-		} else {
-			SYS_LOG_ERR("** failed to parse URI");
-		}
+static int sm_bootstrap_trans_done(void)
+{
+	/* close down net_app contexts */
+	lwm2m_engine_context_close(client.ctx);
 
-		/* if we did not register above - then fail this and restart */
-		if (client.bootstrapped == 0) {
-			/* Not ready - Retry with the bootstrap server again */
-			set_sm_state(ENGINE_DO_BOOTSTRAP);
-		} else {
-			set_sm_state(ENGINE_DO_REGISTRATION);
-		}
-	} else {
-#endif
-		set_sm_state(ENGINE_DO_REGISTRATION);
-	}
+	/* reset security object instance */
+	client.ctx->sec_obj_inst = -1;
+
+	set_sm_state(ENGINE_DO_REGISTRATION);
 
 	return 0;
 }
+#endif
 
 static int sm_send_registration(bool send_obj_support_data,
 				coap_reply_t reply_cb,
@@ -619,9 +705,37 @@ static int sm_do_registration(void)
 {
 	int ret = 0;
 
-	if (client.use_registration &&
-	    !sm_is_registered() &&
-	    client.has_registration_info) {
+	/* TODO: clear out connection data? */
+
+	ret = sm_select_next_sec_inst(false,
+				      &client.ctx->sec_obj_inst,
+				      &client.lifetime);
+	if (ret < 0) {
+		set_sm_state(ENGINE_INIT);
+		return -EINVAL;
+	}
+
+	if (client.lifetime == 0) {
+		client.lifetime = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
+	}
+
+	SYS_LOG_INF("RD Client started with endpoint "
+		    "'%s' with client lifetime %d",
+		    client.ep_name, client.lifetime);
+
+	ret = lwm2m_engine_start(client.ctx, false);
+	if (ret < 0) {
+		SYS_LOG_ERR("Cannot init LWM2M engine (%d)", ret);
+		goto cleanup_engine;
+	}
+
+	if (!client.ctx->net_app_ctx.default_ctx) {
+		SYS_LOG_ERR("Default net_app_ctx not selected!");
+		ret = -EINVAL;
+		goto cleanup_engine;
+	}
+
+	if (!sm_is_registered()) {
 		ret = sm_send_registration(true,
 					   do_registration_reply_cb,
 					   do_registration_timeout_cb);
@@ -632,6 +746,10 @@ static int sm_do_registration(void)
 		}
 	}
 
+	return ret;
+
+cleanup_engine:
+	lwm2m_engine_context_close(client.ctx);
 	return ret;
 }
 
@@ -718,17 +836,24 @@ static void lwm2m_rd_client_service(void)
 			sm_do_init();
 			break;
 
-		case ENGINE_DO_BOOTSTRAP:
-			sm_do_bootstrap();
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+		case ENGINE_DO_BOOTSTRAP_REG:
+			sm_do_bootstrap_reg();
 			break;
 
-		case ENGINE_BOOTSTRAP_SENT:
-			/* wait for bootstrap to be done or timeout */
+		case ENGINE_BOOTSTRAP_REG_SENT:
+			/* wait for bootstrap registration done */
 			break;
 
-		case ENGINE_BOOTSTRAP_DONE:
+		case ENGINE_BOOTSTRAP_REG_DONE:
 			sm_bootstrap_done();
+			/* wait for transfer done */
 			break;
+
+		case ENGINE_BOOTSTRAP_TRANS_DONE:
+			sm_bootstrap_trans_done();
+			break;
+#endif
 
 		case ENGINE_DO_REGISTRATION:
 			sm_do_registration();
@@ -768,24 +893,9 @@ static void lwm2m_rd_client_service(void)
 }
 
 int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
-			  char *peer_str, u16_t peer_port,
 			  const char *ep_name,
 			  lwm2m_ctx_event_cb_t event_cb)
 {
-	int ret = 0;
-
-	ret = lwm2m_engine_start(client_ctx, peer_str, peer_port);
-	if (ret < 0) {
-		SYS_LOG_ERR("Cannot init LWM2M engine (%d)", ret);
-		goto cleanup;
-	}
-
-	if (!client_ctx->net_app_ctx.default_ctx) {
-		SYS_LOG_ERR("Default net_app_ctx not selected!");
-		return -EINVAL;
-	}
-
-	/* TODO: use server URI data from security */
 	client.ctx = client_ctx;
 	client.event_cb = event_cb;
 	set_sm_state(ENGINE_INIT);
@@ -793,11 +903,6 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 	SYS_LOG_INF("LWM2M Client: %s", client.ep_name);
 
 	return 0;
-
-cleanup:
-	net_app_close(&client_ctx->net_app_ctx);
-	net_app_release(&client_ctx->net_app_ctx);
-	return ret;
 }
 
 static int lwm2m_rd_client_init(struct device *dev)

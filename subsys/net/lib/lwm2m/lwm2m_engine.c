@@ -118,6 +118,7 @@ struct notification_attrs {
 };
 
 static struct observe_node observe_node_data[CONFIG_LWM2M_ENGINE_MAX_OBSERVER];
+static bool bootstrap_mode;
 
 #define MAX_PERIODIC_SERVICE	10
 
@@ -3926,25 +3927,88 @@ static int setup_cert(struct net_app_ctx *app_ctx, void *cert)
 	struct lwm2m_ctx *client_ctx = CONTAINER_OF(app_ctx,
 						    struct lwm2m_ctx,
 						    net_app_ctx);
+	char path[MAX_RESOURCE_LEN];
+	u8_t *psk, *psk_id;
+	int ret;
+	u16_t psk_len, psk_id_len;
+	u8_t psk_data_flags, psk_id_data_flags;
+
+	snprintk(path, sizeof(path), "0/%d/3", client_ctx->sec_obj_inst);
+	ret = lwm2m_engine_get_res_data(path, (void **)&psk_id, &psk_id_len,
+					&psk_id_data_flags);
+	if (ret < 0) {
+		return ret;
+	}
+
+	snprintk(path, sizeof(path), "0/%d/5", client_ctx->sec_obj_inst);
+	ret = lwm2m_engine_get_res_data(path, (void **)&psk, &psk_len,
+					&psk_data_flags);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return mbedtls_ssl_conf_psk(
 			&app_ctx->tls.mbedtls.conf,
-			(const unsigned char *)client_ctx->client_psk,
-			client_ctx->client_psk_len,
-			(const unsigned char *)client_ctx->client_psk_id,
-			client_ctx->client_psk_id_len);
+			(const unsigned char *)psk, (size_t)psk_len,
+			(const unsigned char *)psk_id, strlen(psk_id));
 #else
 	return 0;
 #endif
 }
 #endif /* CONFIG_NET_APP_DTLS */
 
-int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
-		       char *peer_str, u16_t peer_port)
+int lwm2m_engine_start(struct lwm2m_ctx *client_ctx, bool is_bootstrap_mode)
 {
+	char pathstr[MAX_RESOURCE_LEN];
+	char *data_ptr, *peer_str;
 	struct sockaddr client_addr;
 	int ret = 0;
+	u16_t peer_strlen;
+	u8_t peer_data_flags;
+#if defined(CONFIG_NET_APP_DTLS)
+	bool use_dtls = false;
+#endif
 
-	/* TODO: use security object for initial setup */
+	/* get the server URL */
+	snprintk(pathstr, sizeof(pathstr), "0/%d/0", client_ctx->sec_obj_inst);
+	ret = lwm2m_engine_get_res_data(pathstr, (void **)&data_ptr,
+					&peer_strlen,
+					&peer_data_flags);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* walk forward till colon shifting to lower case */
+	peer_str = data_ptr;
+	while (*peer_str != '\0' && *peer_str != ':') {
+		*peer_str = tolower(*peer_str);
+		peer_str += 1;
+	}
+
+	/* check to make sure there was a colon */
+	if (*peer_str != ':') {
+		return -EINVAL;
+	}
+
+	if (strncmp(data_ptr, "coap:", 5) != 0 &&
+	    strncmp(data_ptr, "coaps:", 6) != 0) {
+		return -EPROTONOSUPPORT;
+	}
+
+	if (strncmp(data_ptr, "coaps:", 6) == 0) {
+#if defined(CONFIG_NET_APP_DTLS)
+		use_dtls = true;
+#else
+		return -EPROTONOSUPPORT;
+#endif
+	}
+
+	/* skip the colons and slashes */
+	while (*peer_str == ':' || *peer_str == '/') {
+		peer_str += 1;
+	}
+
+	SYS_LOG_DBG("URL: %s", data_ptr);
 
 	/* setup the local client port */
 	memset(&client_addr, 0, sizeof(client_addr));
@@ -3956,10 +4020,13 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 	net_sin(&client_addr)->sin_port = htons(CONFIG_LWM2M_LOCAL_PORT);
 #endif
 
+	/* save bootstrap_mode for later */
+	bootstrap_mode = is_bootstrap_mode;
+
 	ret = net_app_init_udp_client(&client_ctx->net_app_ctx,
 				      &client_addr, NULL,
 				      peer_str,
-				      peer_port,
+				      CONFIG_LWM2M_PEER_PORT,
 				      client_ctx->net_init_timeout,
 				      client_ctx);
 	if (ret) {
@@ -3978,20 +4045,22 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 	}
 
 #if defined(CONFIG_NET_APP_DTLS)
-	ret = net_app_client_tls(&client_ctx->net_app_ctx,
-				 client_ctx->dtls_result_buf,
-				 client_ctx->dtls_result_buf_len,
-				 INSTANCE_INFO,
-				 strlen(INSTANCE_INFO),
-				 setup_cert,
-				 client_ctx->cert_host,
-				 NULL,
-				 client_ctx->dtls_pool,
-				 client_ctx->dtls_stack,
-				 client_ctx->dtls_stack_len);
-	if (ret < 0) {
-		SYS_LOG_ERR("Cannot init DTLS (%d)", ret);
-		goto error_start;
+	if (use_dtls) {
+		ret = net_app_client_tls(&client_ctx->net_app_ctx,
+					 client_ctx->dtls_result_buf,
+					 client_ctx->dtls_result_buf_len,
+					 INSTANCE_INFO,
+					 strlen(INSTANCE_INFO),
+					 setup_cert,
+					 client_ctx->cert_host,
+					 NULL,
+					 client_ctx->dtls_pool,
+					 client_ctx->dtls_stack,
+					 client_ctx->dtls_stack_len);
+		if (ret < 0) {
+			SYS_LOG_ERR("Cannot init DTLS (%d)", ret);
+			goto error_start;
+		}
 	}
 #endif
 
@@ -4001,6 +4070,18 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 		SYS_LOG_ERR("Cannot connect UDP (%d)", ret);
 		goto error_start;
 	}
+
+#if defined(CONFIG_NET_APP_DTLS)
+	if (use_dtls) {
+		SYS_LOG_DBG("Waiting for TLS handshake");
+		while (!client_ctx->net_app_ctx.tls.handshake_done) {
+			k_sleep(K_SECONDS(1));
+			SYS_LOG_DBG("Check TLS handshake: %d", client_ctx->net_app_ctx.tls.handshake_done);
+		}
+
+		SYS_LOG_DBG("TLS handshake complete!");
+	}
+#endif
 
 	return 0;
 

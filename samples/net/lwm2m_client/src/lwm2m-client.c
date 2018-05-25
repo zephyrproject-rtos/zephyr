@@ -77,7 +77,7 @@ static struct lwm2m_ctx client;
 NET_APP_TLS_POOL_DEFINE(dtls_pool, 10);
 
 /* "000102030405060708090a0b0c0d0e0f" */
-static unsigned char client_psk[] = {
+static const unsigned char client_psk[] = {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
 };
@@ -222,8 +222,37 @@ static int firmware_block_received_cb(u16_t obj_inst_id,
 static int lwm2m_setup(void)
 {
 	struct float32_value float_value;
+	int ret;
+	char *server_url;
+	u16_t server_url_len;
+	u8_t server_url_flags;
 
 	/* setup SECURITY object */
+
+	/* Server URL */
+	ret = lwm2m_engine_get_res_data("0/0/0",
+					(void **)&server_url, &server_url_len,
+					&server_url_flags);
+	if (ret < 0) {
+		return ret;
+	}
+
+	snprintk(server_url, server_url_len, "%s",
+		 IS_ENABLED(CONFIG_NET_IPV6) ? CONFIG_NET_APP_PEER_IPV6_ADDR :
+			CONFIG_NET_APP_PEER_IPV4_ADDR);
+
+	/* Bootstrap Mode */
+	lwm2m_engine_set_bool("0/0/1",
+			IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP));
+	/* Security Mode */
+	lwm2m_engine_set_u8("0/0/2", IS_ENABLED(CONFIG_NET_APP_DTLS) ? 0 : 3);
+#if defined(CONFIG_NET_APP_DTLS)
+	lwm2m_engine_set_opaque("0/0/3",
+				(void *)client_psk_id, sizeof(client_psk_id));
+	lwm2m_engine_set_opaque("0/0/5",
+				(void *)client_psk, sizeof(client_psk));
+#endif /* CONFIG_NET_APP_DTLS */
+
 	/* setup SERVER object */
 
 	/* setup DEVICE object */
@@ -309,12 +338,16 @@ static void rd_client_event(struct lwm2m_ctx *client,
 		/* do nothing */
 		break;
 
-	case LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_FAILURE:
-		SYS_LOG_DBG("Bootstrap failure!");
+	case LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_FAILURE:
+		SYS_LOG_DBG("Bootstrap registration failure!");
 		break;
 
-	case LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_COMPLETE:
-		SYS_LOG_DBG("Bootstrap complete");
+	case LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_COMPLETE:
+		SYS_LOG_DBG("Bootstrap registration complete");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_TRANSFER_COMPLETE:
+		SYS_LOG_DBG("Bootstrap transfer complete");
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE:
@@ -367,10 +400,6 @@ void main(void)
 #endif
 
 #if defined(CONFIG_NET_APP_DTLS)
-	client.client_psk = client_psk;
-	client.client_psk_len = 16;
-	client.client_psk_id = (char *)client_psk_id;
-	client.client_psk_id_len = strlen(client_psk_id);
 	client.cert_host = HOSTNAME;
 	client.dtls_pool = &dtls_pool;
 	client.dtls_result_buf = dtls_result;
@@ -379,18 +408,7 @@ void main(void)
 	client.dtls_stack_len = K_THREAD_STACK_SIZEOF(net_app_dtls_stack);
 #endif /* CONFIG_NET_APP_DTLS */
 
-#if defined(CONFIG_NET_IPV6)
-	ret = lwm2m_rd_client_start(&client, CONFIG_NET_APP_PEER_IPV6_ADDR,
-				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD,
-				    rd_client_event);
-#elif defined(CONFIG_NET_IPV4)
-	ret = lwm2m_rd_client_start(&client, CONFIG_NET_APP_PEER_IPV4_ADDR,
-				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD,
-				    rd_client_event);
-#else
-	SYS_LOG_ERR("LwM2M client requires IPv4 or IPv6.");
-	ret = -EPROTONOSUPPORT;
-#endif
+	ret = lwm2m_rd_client_start(&client, CONFIG_BOARD, rd_client_event);
 	if (ret < 0) {
 		SYS_LOG_ERR("LWM2M init LWM2M RD client error (%d)",
 			ret);
