@@ -1,0 +1,9 @@
+# Kconfig - nRF52810 PCA10040 board configuration
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config  BOARD_NRF52810_PCA10040
+	bool "nRF52810 PCA10040"
+	depends on SOC_NRF52810_QFAA
