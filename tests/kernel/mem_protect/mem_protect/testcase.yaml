@@ -1,4 +1,5 @@
 tests:
   kernel.memory_protection:
+    min_ram: 32
     filter: CONFIG_ARCH_HAS_USERSPACE
     tags: core security userspace ignore_faults
