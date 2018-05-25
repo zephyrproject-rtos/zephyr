@@ -4754,7 +4754,18 @@ def _check_sym_sanity(sym):
                     .format(TYPE_TO_STR[sym.orig_type], _name_and_loc(sym),
                             expr_str(default)))
 
-            if sym.orig_type in (INT, HEX) and \
+            if sym.orig_type == STRING:
+                if not default.is_constant and not default.nodes and \
+                   default.name != default.name.upper():
+                    # 'default foo' on a string symbol could be either a symbol
+                    # reference or someone leaving out the quotes. Guess that
+                    # the quotes were left out if 'foo' isn't all-uppercase
+                    # (and no symbol named 'foo' exists).
+                    sym.kconfig._warn("style: quotes recommended around "
+                                      "default value for string symbol "
+                                      + _name_and_loc(sym))
+
+            elif sym.orig_type in (INT, HEX) and \
                not _int_hex_ok(default, sym.orig_type):
 
                 sym.kconfig._warn("the {0} symbol {1} has a non-{0} default {2}"
