@@ -100,6 +100,14 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 			goto done;
 		}
 
+		SYS_LOG_DBG("hdr 0x%x, eem_size %d, size %d",
+			    eem_hdr, eem_size, size);
+
+		if (!size || !eem_size) {
+			SYS_LOG_DBG("no payload");
+			break;
+		}
+
 		pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 		if (!pkt) {
 			SYS_LOG_ERR("Unable to alloc pkt\n");
