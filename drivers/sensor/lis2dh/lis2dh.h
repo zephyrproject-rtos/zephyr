@@ -259,7 +259,7 @@ static inline int lis2dh_reg_read_byte(struct device *dev, u8_t reg_addr,
 #endif
 }
 
-static inline int lis2dh_burst_write(struct device *bus, u8_t start_addr,
+static inline int lis2dh_burst_write(struct device *dev, u8_t start_addr,
 				     u8_t *buf, u8_t num_bytes)
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
