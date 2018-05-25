@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Texas Instruments, Inc
+ * Copyright (c) 2018 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,9 +7,16 @@
 #ifndef _NET_UTILS_H_
 #define _NET_UTILS_H_
 
-#include <stddef.h>
+#include <stdint.h>
 #include <stdbool.h>
+
+#ifndef __ZEPHYR__
+#include <sys/socket.h>
+#else
 #include <net/socket.h>
+#endif
+
+#define min(a, b) (((a) < (b)) ? (a) : (b))
 
 #ifdef __cplusplus
 extern "C" {

@@ -12,6 +12,7 @@ menuconfig NET_ASYNC_SOCKET
 	select NET_SOCKETS
 	select NET_SOCKETS_POSIX_NAMES
 	select NEWLIB_LIBC # Needed to find <sys/fcntl.h>
+	select PTHREAD_IPC # needed for pthread_attr_t
 	help
 	  Asynchronous adaptation layer over BSD sockets".
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2018 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +14,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "config.h"
+
 #define MEM_ALIGN	(sizeof(uint32_t))
 #define MSG_SIZE	CONFIG_MQTT_MSG_MAX_SIZE
 #define MQTT_BUF_CTR	(2 + CONFIG_MQTT_ADDITIONAL_BUFFER_CTR)
@@ -22,6 +25,18 @@
 /* Reset rc to 0 if rc > 0 (meaning, rc bytes sent), indicating success: */
 #define SET_ERRNO_AND_RC(rc) { rc = (rc < 0 ? -errno : 0); }
 
+#ifndef __ZEPHYR__
+static inline void *_mqtt_msg_alloc()
+{
+	return malloc(MSG_SIZE);
+}
+
+static inline void _mqtt_msg_free(void *buf)
+{
+	free(buf);
+}
+
+#else
 /*
  * Memory pool for MQTT message buffers.
  * The number of buffers should equal the number of mqtt contexts
@@ -49,7 +64,7 @@ static void _mqtt_msg_free(void *buf)
 {
 	k_mem_slab_free(&mqtt_msg_pool, (void **)&buf);
 }
-
+#endif
 
 #define MQTT_PUBLISHER_MIN_MSG_SIZE	2
 
@@ -421,8 +436,6 @@ int mqtt_rx_pingresp(struct mqtt_ctx *ctx, void *data, size_t len)
 {
 	int rc;
 
-	ARG_UNUSED(ctx);
-
 	/* 2 bytes message */
 	rc = mqtt_unpack_pingresp(data, len);
 
@@ -594,9 +607,6 @@ void async_connected_cb(int sock, int status, void *cb_data)
 {
 	struct mqtt_ctx *mqtt = (struct mqtt_ctx *)cb_data;
 
-	ARG_UNUSED(sock);
-	ARG_UNUSED(status);
-
 	if (!mqtt || !status) {
 		return;
 	}
@@ -610,8 +620,6 @@ static
 void async_recv_cb(int sock, void *data, size_t bytes_received, void *cb_data)
 {
 	struct mqtt_ctx *mqtt = (struct mqtt_ctx *)cb_data;
-
-	ARG_UNUSED(sock);
 
 	if (!data || bytes_received <= 0) {
 		return;

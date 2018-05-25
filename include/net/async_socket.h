@@ -18,7 +18,13 @@
 #ifndef __NET_ASYNC_SOCKET_H
 #define __NET_ASYNC_SOCKET_H
 
+#ifndef __ZEPHYR__
+#include <stddef.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#else
 #include <net/socket.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {

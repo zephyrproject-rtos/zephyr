@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2018 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +16,14 @@
  */
 
 #include "mqtt_pkt.h"
+
+#ifndef __ZEPHYR__
+#include "config.h"
+#include <toolchain.h>  		/* for UNALIGNED_GET/PUT */
+#include <arpa/inet.h>
+#else
 #include <net/net_ip.h>			/* for htons/ntohs */
+#endif
 #include <string.h>
 #include <errno.h>
 

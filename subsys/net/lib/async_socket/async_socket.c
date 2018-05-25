@@ -9,9 +9,32 @@
 #define NET_LOG_ENABLED 1
 #endif
 
+#ifdef __ZEPHYR__
 /* Zephyr headers */
-#include <kernel.h>
+#include <posix/pthread.h>
 #include <init.h>
+#ifndef assert
+#define assert(x) NET_ASSERT(x)
+#endif
+#else
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <pthread.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <poll.h>
+#include "config.h"
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#ifdef NET_LOG_ENABLED
+#define NET_ERR printf
+#else
+#define NET_ERR(...)
+#endif
+#endif
+
+#include <errno.h>
 #include <net/async_socket.h>
 
 /* Convenience macro to check for invalid socket fd */
@@ -27,7 +50,6 @@
 #define SIGNAL_MSG_SIZE 4
 
 #define ASYNC_SOCK_TASK_STACKSIZE 1024
-#define ASYNC_SOCK_TASK_PRIORITY K_HIGHEST_THREAD_PRIO
 
 /*Socket to callback map, for use by async_recv() and async_sock_server() */
 struct rcv_callbacks {
@@ -57,15 +79,12 @@ static uint8_t server_rcv_buf[SIGNAL_MSG_SIZE];
 /* Loopback socket's bind address: */
 static struct sockaddr_in bind_addr = {
 	.sin_family = AF_INET,
-	.sin_port = htons(DISCARD_PORT),
-	.sin_addr = {
-		.s_addr = htonl(INADDR_ANY),
-	},
 };
 
-/* Async socket server thread: */
+#ifdef __ZEPHYR__
+/* Async socket server thread stack: */
 static K_THREAD_STACK_DEFINE(async_sock_task_stack, ASYNC_SOCK_TASK_STACKSIZE);
-static struct k_thread async_sock_task_data;
+#endif
 
 /* Helper function, to restart poll() loop: */
 static int async_server_restart(void)
@@ -212,12 +231,8 @@ static void rcv_callbacks_to_ufds(struct pollfd *fds)
  * The loopback is processed in Zephyr IP stack before calling
  * the L2 driver, so this should work generally.
  */
-void async_sock_server(void *unused1, void *unused2, void *unused3)
+void *async_sock_server(void *unused1)
 {
-	ARG_UNUSED(unused1);
-	ARG_UNUSED(unused2);
-	ARG_UNUSED(unused3);
-
 	static struct pollfd ufds[MAX_RCV_CALLBACKS];
 	static struct sockaddr_storage from;
 	int nfds;
@@ -225,7 +240,7 @@ void async_sock_server(void *unused1, void *unused2, void *unused3)
 	struct rcv_callbacks *cb_entry;
 	size_t size;
 	int rcv_len;
-	size_t from_len;
+	socklen_t from_len;
 
 	/* signal_sock is never closed, and always remains in first position */
 	ufds[0].fd = signal_sock;
@@ -239,20 +254,20 @@ void async_sock_server(void *unused1, void *unused2, void *unused3)
 		rcv_callbacks_to_ufds(&ufds[1]);
 
 		/* Wait until any socket gets signalled: */
-		nfds = poll(ufds, (num_rcv_cbs + 1), K_FOREVER);
-		NET_ASSERT(nfds != 0);  /* Timeout should be impossible */
+		nfds = poll(ufds, (num_rcv_cbs + 1), -1);
+		assert(nfds != 0);  /* Timeout should be impossible */
 
 		if (nfds > 0) {
 			/* signal_sock signalled via loopback msg: */
 			if (ufds[0].revents & POLLIN) {
-				NET_ASSERT(ufds[0].fd == signal_sock);
+				assert(ufds[0].fd == signal_sock);
 
 				/* Just get and discard data: */
 				rcv_len = recvfrom(ufds[0].fd, server_rcv_buf,
 						   SIGNAL_MSG_SIZE, 0,
 						   (struct sockaddr *)&from,
 						   &from_len);
-				NET_ASSERT(rcv_len == SIGNAL_MSG_SIZE);
+				assert(rcv_len == SIGNAL_MSG_SIZE);
 				if (rcv_len != SIGNAL_MSG_SIZE) {
 					NET_ERR("Received invalid message");
 				}
@@ -264,7 +279,7 @@ void async_sock_server(void *unused1, void *unused2, void *unused3)
 				if (entry->revents & POLLIN) {
 					cb_entry =
 					       get_rcv_callback_slot(entry->fd);
-					NET_ASSERT(cb_entry != NULL);
+					assert(cb_entry != NULL);
 
 					/* Retrieve the socket data: */
 					size = recv(cb_entry->sock,
@@ -339,18 +354,23 @@ int async_close(int sock)
 }
 
 
+#ifdef __ZEPHYR__
 int async_sock_init(struct device *device)
+#else
+int async_sock_init(void)
+#endif
 {
 	int rc = 0, retval = 0;
-
-	ARG_UNUSED(device);
 
 	rcv_callbacks_init();
 
 	loopback_addr.sin_family = AF_INET;
-	rc = net_addr_pton(AF_INET, LOOPBACK_ADDR, &loopback_addr.sin_addr);
-	NET_ASSERT(!rc);
+	rc = inet_pton(AF_INET, LOOPBACK_ADDR, &loopback_addr.sin_addr);
+	assert(rc > 0);
 	loopback_addr.sin_port = htons(DISCARD_PORT);
+
+	bind_addr.sin_port = htons(DISCARD_PORT),
+	bind_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	/* Create a special socket to enable unblocking the server's poll(): */
 	signal_sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -364,17 +384,27 @@ int async_sock_init(struct device *device)
 			NET_ERR("Cannot bind poll server socket: %d\n", -errno);
 			retval = -1;
 		} else {
+			pthread_attr_t attr;
+			pthread_t thread;
+
 			/* Start the async_socket receive server: */
-			(void)k_thread_create(&async_sock_task_data,
-					      async_sock_task_stack,
-					      ASYNC_SOCK_TASK_STACKSIZE,
-					      async_sock_server,
-					      NULL, NULL, NULL,
-					      ASYNC_SOCK_TASK_PRIORITY,
-					      0, K_NO_WAIT);
+			retval = pthread_attr_init(&attr);
+			assert(!retval);
+#ifdef __ZEPHYR__
+			retval = pthread_attr_setstack(&attr,
+						     async_sock_task_stack,
+						     ASYNC_SOCK_TASK_STACKSIZE);
+			assert(!retval);
+#endif
+			retval = pthread_create(&thread, &attr,
+						async_sock_server,
+						(void *)NULL);
 		}
 	}
+
 	return retval;
 }
 
+#ifdef __ZEPHYR__
 SYS_INIT(async_sock_init, APPLICATION, CONFIG_NET_ASYNC_SOCKET_PRIO);
+#endif
