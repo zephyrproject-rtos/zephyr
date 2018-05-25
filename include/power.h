@@ -13,6 +13,8 @@ extern "C" {
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 
+#include <zephyr/types.h>
+
 /* Constants identifying power state categories */
 #define SYS_PM_ACTIVE_STATE		0 /* SOC and CPU are in active state */
 #define SYS_PM_LOW_POWER_STATE		1 /* CPU low power state */
