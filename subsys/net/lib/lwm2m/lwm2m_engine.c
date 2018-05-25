@@ -2882,11 +2882,11 @@ static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 	u16_t temp_len;
 	bool reported = false;
 
-	/* object ID is required unless it's bootstrap discover (TODO) or it's
+	/* object ID is required unless it's bootstrap discover or it's
 	 * a ".well-known/core" discovery
 	 * ref: lwm2m spec 20170208-A table 11
 	 */
-	if (!well_known &&
+	if (!bootstrap_mode && !well_known &&
 	    (path->level == 0 ||
 	     (path->level > 0 && path->obj_id == LWM2M_OBJECT_SECURITY_ID))) {
 		return -EPERM;
@@ -2933,18 +2933,21 @@ static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 		return 0;
 	}
 
-	/* TODO: lwm2m spec 20170208-A sec 5.2.7.3 bootstrap discover on "/"
+	/*
+	 * lwm2m spec 20170208-A sec 5.2.7.3 bootstrap discover on "/"
 	 * - report object 0 (security) with ssid
-	 * - prefixed w/ lwm2m enabler version. e.g. lwm2m="1.0"
+	 * - (TODO) prefixed w/ lwm2m enabler version. e.g. lwm2m="1.0"
 	 * - returns object and object instances only
 	 */
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list, obj_inst, node) {
-		/* TODO: support bootstrap discover
-		 * Avoid discovery for security object (5.2.7.3)
-		 * Skip reporting unrelated object
+		/*
+		 * - Avoid discovery for security object (5.2.7.3) unless
+		 *   Bootstrap discover
+		 * - Skip reporting unrelated object
 		 */
-		if (obj_inst->obj->obj_id == LWM2M_OBJECT_SECURITY_ID ||
+		if ((!bootstrap_mode &&
+		     obj_inst->obj->obj_id == LWM2M_OBJECT_SECURITY_ID) ||
 		    obj_inst->obj->obj_id != path->obj_id) {
 			continue;
 		}
@@ -2995,6 +2998,11 @@ static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 			}
 
 			reported = true;
+		}
+
+		/* don't return resource info for bootstrap discovery */
+		if (bootstrap_mode) {
+			continue;
 		}
 
 		for (int i = 0; i < obj_inst->resource_count; i++) {
