@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2017 Shawn Nock <shawn@monadnock.ca>
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52810.dtsi>
+
+/ {
+	model = "Nordic PCA10040 Dev Kit";
+	compatible = "nordic,pca10040-dk", "nordic,nrf52810-qfaa",
+		     "nordic,nrf52810";
+
+	chosen {
+		zephyr,console = &uart0;
+#ifdef CONFIG_MCUMGR_SMP_UART
+		zephyr,uart-mcumgr = &uart0;
+#endif
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+};
+&i2c0 {
+	status = "ok";
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0xd000>;
+		};
+		slot1_partition: partition@19000 {
+			label = "image-1";
+			reg = <0x00019000 0xd000>;
+		};
+		scratch_partition: partition@26000 {
+			label = "image-scratch";
+			reg = <0x00026000 0x3000>;
+		};
+
+#if defined(CONFIG_FS_FLASH_STORAGE_PARTITION)
+		storage_partition: partition@29000 {
+			label = "storage";
+			reg = <0x00029000 0x00007000>;
+		};
+#endif
+	};
+};
