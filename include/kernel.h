@@ -178,7 +178,7 @@ struct _k_object {
 	u8_t type;
 	u8_t flags;
 	u32_t data;
-} __packed;
+} __packed __aligned(4);
 
 struct _k_object_assignment {
 	struct k_thread *thread;
