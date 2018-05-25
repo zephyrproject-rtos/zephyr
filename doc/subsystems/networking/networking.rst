@@ -21,3 +21,4 @@ operation of the stacks and how they were implemented.
    qemu_setup.rst
    usbnet_setup.rst
    vlan.rst
+   traffic-class.rst
