@@ -3209,6 +3209,20 @@ static int handle_request(struct coap_packet *request,
 		}
 
 		well_known = true;
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	/* bootstrap transfer finish is marked by resource /bs */
+	} else if (bootstrap_mode && r == 1 &&
+	    (options[0].len == 2 &&
+	     strncmp(options[0].value, "bs", 2) == 0)) {
+		msg->code = COAP_RESPONSE_CODE_CHANGED;
+		r = lwm2m_init_message(msg);
+		if (r < 0) {
+			goto error;
+		}
+
+		engine_bootstrap_finish();
+		return 0;
+#endif
 	} else {
 		r = coap_options_to_path(options, r, &path);
 		if (r < 0) {
