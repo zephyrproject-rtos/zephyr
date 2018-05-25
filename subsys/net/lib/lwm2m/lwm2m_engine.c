@@ -2125,6 +2125,11 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 		if (first_read) {
 			len = engine_get_opaque(in, (u8_t *)data_ptr,
 						data_len, &last_pkt_block);
+			if (len == 0) {
+				/* ignore empty content and continue */
+				return 0;
+			}
+
 			first_read = false;
 		} else {
 			len = lwm2m_engine_get_opaque_more(in, (u8_t *)data_ptr,
