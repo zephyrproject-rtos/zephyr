@@ -103,6 +103,10 @@ can be disabled if not needed.
   ethernet networks into logical networks. See :ref:`vlan-support` for more
   details.
 
+* **Network traffic classification.** The sent and received network packets can
+  be prioritized depending on application needs.
+  See :ref:`traffic-class-support` for more details.
+
 Additionally these network technologies (link layers) are supported in
 Zephyr OS v1.7 and later:
 
