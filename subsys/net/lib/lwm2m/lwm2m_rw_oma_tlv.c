@@ -770,8 +770,9 @@ static int do_write_op_tlv_item(struct lwm2m_engine_context *context)
 	}
 
 	if (!res) {
-		/* if OPTIONAL and OP_CREATE use ENOTSUP */
-		if (context->operation == LWM2M_OP_CREATE &&
+		/* if OPTIONAL and BOOTSTRAP-WRITE or OP_CREATE use ENOTSUP */
+		if ((context->bootstrap_mode ||
+		     context->operation == LWM2M_OP_CREATE) &&
 		    LWM2M_HAS_PERM(obj_field, BIT(LWM2M_FLAG_OPTIONAL))) {
 			ret = -ENOTSUP;
 			goto error;
@@ -858,12 +859,13 @@ int do_write_op_tlv(struct lwm2m_engine_obj *obj,
 			path->level = 3;
 			ret = do_write_op_tlv_item(context);
 			/*
-			 * ignore errors for CREATE op
-			 * TODO: support BOOTSTRAP WRITE where optional
-			 * resources are ignored
+			 * for OP_CREATE and BOOTSTRAP WRITE: errors on optional
+			 * resources are ignored (ENOTSUP)
 			 */
-			if (ret < 0 && (context->operation != LWM2M_OP_CREATE ||
-					ret != -ENOTSUP)) {
+			if (ret < 0 &&
+			    !((ret == -ENOTSUP) &&
+			      (context->bootstrap_mode ||
+			       context->operation == LWM2M_OP_CREATE))) {
 				return ret;
 			}
 		}

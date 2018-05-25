@@ -347,6 +347,7 @@ struct lwm2m_engine_context {
 	struct lwm2m_output_context *out;
 	struct lwm2m_obj_path *path;
 	u8_t operation;
+	bool bootstrap_mode;
 };
 
 /* inline multi-format write / read functions */

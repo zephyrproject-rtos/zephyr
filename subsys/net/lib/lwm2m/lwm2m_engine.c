@@ -3106,6 +3106,7 @@ static int handle_request(struct coap_packet *request,
 	context.out  = &out;
 	context.path = &path;
 	engine_clear_context(&context);
+	context.bootstrap_mode = bootstrap_mode;
 
 	/* set CoAP request / message */
 	in.in_cpkt = request;
