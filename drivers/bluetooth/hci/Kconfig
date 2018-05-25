@@ -43,6 +43,16 @@ config BT_SPI
 	  additional platform specific knowledge may need to be added as
 	  devices are.
 
+config BT_USERCHAN
+	bool "HCI User Channel based driver"
+	depends on BOARD_NATIVE_POSIX
+	help
+	  This driver provides access to the local Linux host's Bluetooth
+	  adapter using a User Channel HCI socket to the Linux kernel. It
+	  is only intended to be used with the native POSIX build of Zephyr.
+	  The Bluetooth adapter must be powered off in order for Zephyr to
+	  be able to use it.
+
 config BT_NO_DRIVER
 	bool "No default HCI driver"
 	help

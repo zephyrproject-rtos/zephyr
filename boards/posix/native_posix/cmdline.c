@@ -5,11 +5,13 @@
  */
 
 #include <stdbool.h>
+#include <string.h>
 #include "cmdline_common.h"
 #include "zephyr/types.h"
 #include "hw_models_top.h"
 #include "cmdline.h"
 #include "toolchain.h"
+#include "board.h"
 
 static int s_argc, test_argc;
 static char **s_argv, **test_argv;
@@ -33,6 +35,22 @@ static void cmd_seed_found(char *argv, int offset)
 	ARG_UNUSED(argv);
 	ARG_UNUSED(offset);
 	entropy_native_posix_set_seed(args.seed);
+}
+#endif
+
+#if defined(CONFIG_BT_USERCHAN)
+int bt_dev_index = -1;
+
+static void cmd_bt_dev_found(char *argv, int offset)
+{
+	if (strncmp(&argv[offset], "hci", 3) || strlen(&argv[offset]) < 4) {
+		posix_print_error_and_exit("Error: Invalid Bluetooth device "
+					   "name '%s' (should be e.g. hci0)\n",
+					   &argv[offset]);
+		return;
+	}
+
+	bt_dev_index = strtol(&argv[offset + 3], NULL, 10);
 }
 #endif
 
@@ -66,6 +84,13 @@ void native_handle_cmd_line(int argc, char *argv[])
 		"97229 (decimal), 0x17BCD (hex), or 0275715 (octal)"},
 #endif
 
+#if defined(CONFIG_BT_USERCHAN)
+		{ false, true, false,
+		  "bt-dev", "hciX", 's',
+		  NULL, cmd_bt_dev_found,
+		"A local HCI device to be used for Bluetooth (e.g. hci0)" },
+#endif
+
 		{true, false, false,
 		 "testargs", "arg", 'l',
 		(void *)NULL, NULL,
@@ -94,6 +119,13 @@ void native_handle_cmd_line(int argc, char *argv[])
 						   argv[i]);
 		}
 	}
+
+#if defined(CONFIG_BT_USERCHAN)
+	if (bt_dev_index < 0) {
+		posix_print_error_and_exit("Error: Bluetooth device missing. "
+					   "Specify one using --bt-dev=hciN\n");
+	}
+#endif
 }
 
 /**
