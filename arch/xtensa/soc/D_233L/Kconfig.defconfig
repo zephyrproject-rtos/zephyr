@@ -8,7 +8,7 @@ if SOC_D_233L
 
 config SOC
 	string
-	default D_233L
+	default "D_233L"
 
 config IRQ_OFFLOAD_INTNUM
 	default 7

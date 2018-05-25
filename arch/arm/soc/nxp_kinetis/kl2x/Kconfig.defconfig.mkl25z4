@@ -9,7 +9,7 @@ if SOC_MKL25Z4
 
 config SOC
 	string
-	default mkl25z4
+	default "mkl25z4"
 
 config NUM_IRQS
 	int

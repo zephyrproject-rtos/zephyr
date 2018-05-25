@@ -9,7 +9,7 @@ if SOC_MCIMX7_M4
 
 config SOC
 	string
-	default mcimx7d
+	default "mcimx7d"
 
 config SYS_CLOCK_TICKS_PER_SEC
 	int

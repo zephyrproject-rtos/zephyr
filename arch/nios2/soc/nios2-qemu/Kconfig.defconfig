@@ -2,7 +2,7 @@ if SOC_NIOS2_QEMU
 
 config SOC
 	string
-	default nios2-qemu
+	default "nios2-qemu"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int

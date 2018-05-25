@@ -9,7 +9,7 @@ if SOC_MIMXRT1052
 
 config SOC
 	string
-	default mimxrt1052
+	default "mimxrt1052"
 
 if CLOCK_CONTROL
 

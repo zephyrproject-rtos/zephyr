@@ -10,7 +10,7 @@ if SOC_STM32L476XG
 
 config SOC
 	string
-	default stm32l476xx
+	default "stm32l476xx"
 
 config NUM_IRQS
 	int

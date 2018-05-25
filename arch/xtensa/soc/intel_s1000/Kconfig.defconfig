@@ -7,7 +7,7 @@ if SOC_INTEL_S1000
 
 config SOC
 	string
-	default intel_s1000
+	default "intel_s1000"
 
 config IRQ_OFFLOAD_INTNUM
 	default 0

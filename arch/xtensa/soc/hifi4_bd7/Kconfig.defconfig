@@ -8,7 +8,7 @@ if SOC_HIFI4_BD7
 
 config SOC
 	string
-	default hifi4_bd7
+	default "hifi4_bd7"
 
 config IRQ_OFFLOAD_INTNUM
 	default 4

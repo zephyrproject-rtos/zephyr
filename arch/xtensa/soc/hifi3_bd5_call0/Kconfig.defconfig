@@ -8,7 +8,7 @@ if SOC_HIFI3_BD5_CALL0
 
 config SOC
 	string
-	default hifi3_bd5_call0
+	default "hifi3_bd5_call0"
 
 config IRQ_OFFLOAD_INTNUM
 	default 13

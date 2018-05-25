@@ -8,7 +8,7 @@
 if SOC_QUARK_SE_C1000_SS
 
 config SOC
-	default quark_se_c1000_ss
+	default "quark_se_c1000_ss"
 
 config NUM_IRQ_PRIO_LEVELS
 	# This processor supports only 2 priority levels:

@@ -10,7 +10,7 @@ if SOC_NRF51822_QFAA
 
 config SOC
 	string
-	default nRF51822_QFAA
+	default "nRF51822_QFAA"
 
 config ISR_STACK_SIZE
 	default 640

@@ -8,7 +8,7 @@ if SOC_XTENSA_SAMPLE_CONTROLLER
 
 config SOC
 	string
-	default sample_controller
+	default "sample_controller"
 
 config IRQ_OFFLOAD_INTNUM
 	default 7

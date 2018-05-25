@@ -8,7 +8,7 @@ if SOC_D_108MINI
 
 config SOC
 	string
-	default D_108mini
+	default "D_108mini"
 
 config IRQ_OFFLOAD_INTNUM
 	default 7

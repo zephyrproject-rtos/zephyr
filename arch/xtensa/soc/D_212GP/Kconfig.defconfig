@@ -8,7 +8,7 @@ if SOC_D_212GP
 
 config SOC
 	string
-	default D_212GP
+	default "D_212GP"
 
 config IRQ_OFFLOAD_INTNUM
 	default 7

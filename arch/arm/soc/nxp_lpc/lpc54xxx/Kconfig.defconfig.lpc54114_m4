@@ -9,7 +9,7 @@ if SOC_LPC54114_M4
 
 config SOC
 	string
-	default lpc54114
+	default "lpc54114"
 
 if PINMUX
 
