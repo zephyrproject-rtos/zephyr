@@ -91,6 +91,11 @@ config USB_DEVICE_BOS
 	prompt "Enable USB Binary Device Object Store (BOS)"
 	default n
 
+config USB_DEVICE_OS_DESC
+	bool
+	prompt "Enable MS OS Descriptors support"
+	default n
+
 source "subsys/usb/class/Kconfig"
 
 endif # USB_DEVICE_STACK
