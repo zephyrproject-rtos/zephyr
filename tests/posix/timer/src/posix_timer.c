@@ -19,13 +19,13 @@ static int exp_count;
 void handler(union sigval val)
 {
 	printk("Handler Signal value :%d for %d times\n", val.sival_int,
-		 ++exp_count);
+	       ++exp_count);
 }
 
 void test_timer(void)
 {
 	int ret;
-	struct sigevent sig = {0};
+	struct sigevent sig = { 0 };
 	timer_t timerid;
 	struct itimerspec value, ovalue;
 	struct timespec ts, te;
@@ -77,19 +77,19 @@ void test_timer(void)
 		secs_elapsed = (te.tv_sec - ts.tv_sec - 1);
 	}
 
-	total_secs_timer = (u64_t) (value.it_value.tv_sec * NSEC_PER_SEC +
-				    value.it_value.tv_nsec + exp_count *
-				    (value.it_interval.tv_sec * NSEC_PER_SEC +
-				     value.it_interval.tv_nsec)) / NSEC_PER_SEC;
+	total_secs_timer = (value.it_value.tv_sec * NSEC_PER_SEC +
+			    value.it_value.tv_nsec + (u64_t) exp_count *
+			    (value.it_interval.tv_sec * NSEC_PER_SEC +
+			     value.it_interval.tv_nsec)) / NSEC_PER_SEC;
 
 	/*TESTPOINT: Check if POSIX timer test passed*/
 	zassert_equal(total_secs_timer, secs_elapsed,
-			"POSIX timer test has failed");
+		      "POSIX timer test has failed");
 }
 
 void test_main(void)
 {
 	ztest_test_suite(test_posix_timer,
-			ztest_unit_test(test_timer));
+			 ztest_unit_test(test_timer));
 	ztest_run_test_suite(test_posix_timer);
 }
