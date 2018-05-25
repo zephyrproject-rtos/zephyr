@@ -732,7 +732,9 @@ int lwm2m_create_obj_inst(u16_t obj_id, u16_t obj_inst_id,
 	}
 
 #ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
-	engine_trigger_update();
+	if (!bootstrap_mode) {
+		engine_trigger_update();
+	}
 #endif
 	return 0;
 }
@@ -779,7 +781,9 @@ int lwm2m_delete_obj_inst(u16_t obj_id, u16_t obj_inst_id)
 	clear_attrs(obj_inst);
 	memset(obj_inst, 0, sizeof(struct lwm2m_engine_obj_inst));
 #ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
-	engine_trigger_update();
+	if (!bootstrap_mode) {
+		engine_trigger_update();
+	}
 #endif
 	return ret;
 }
