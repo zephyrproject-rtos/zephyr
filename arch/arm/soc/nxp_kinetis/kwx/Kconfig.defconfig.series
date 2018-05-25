@@ -8,7 +8,7 @@
 if SOC_SERIES_KINETIS_KWX
 
 config SOC_SERIES
-	default kwx
+	default "kwx"
 
 gsource "arch/arm/soc/nxp_kinetis/kwx/Kconfig.defconfig.mk*"
 

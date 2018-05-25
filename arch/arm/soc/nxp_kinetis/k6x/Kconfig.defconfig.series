@@ -9,7 +9,7 @@
 if SOC_SERIES_KINETIS_K6X
 
 config SOC_SERIES
-	default k6x
+	default "k6x"
 
 config NUM_IRQS
 	int

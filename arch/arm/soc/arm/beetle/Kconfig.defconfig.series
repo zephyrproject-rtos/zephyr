@@ -11,7 +11,7 @@ if SOC_SERIES_BEETLE
 gsource "arch/arm/soc/arm/beetle/Kconfig.defconfig.beetle*"
 
 config SOC_SERIES
-	default beetle
+	default "beetle"
 
 config NUM_IRQS
 	int

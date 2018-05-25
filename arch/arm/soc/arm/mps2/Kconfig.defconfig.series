@@ -7,7 +7,7 @@
 if SOC_SERIES_MPS2
 
 config SOC_SERIES
-	default mps2
+	default "mps2"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int

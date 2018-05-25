@@ -7,7 +7,7 @@
 if SOC_SERIES_QUARK_SE
 
 config SOC_SERIES
-	default quark_se
+	default "quark_se"
 
 config X86_IAMCU
 	def_bool y

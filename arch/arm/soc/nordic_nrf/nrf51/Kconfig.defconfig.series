@@ -11,7 +11,7 @@ if SOC_SERIES_NRF51X
 gsource "arch/arm/soc/nordic_nrf/nrf51/Kconfig.defconfig.nrf51*"
 
 config SOC_SERIES
-	default nrf51
+	default "nrf51"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
