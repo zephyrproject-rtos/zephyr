@@ -1,0 +1,41 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include "ti/cc2650.dtsi"
+
+/ {
+	model = "TI CC2650 SensorTag";
+	compatible = "ti,cc2650";
+
+	aliases {
+		gpio-a = &gpioa;
+		pinmux-a = &pinmux_a;
+		prcm0 = &prcm0;
+		trng0 = &trng0;
+		uart-0 = &uart0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+#ifdef CONFIG_BT
+        zephyr,bt-uart = &uart0;
+#endif
+	};
+};
+
+&gpioa {
+	status = "ok";
+};
+
+&trng0 {
+	status = "ok";
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+};
+
