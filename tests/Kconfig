@@ -43,7 +43,17 @@ config TEST_USERSPACE
 	default y
 	help
 	  This option will help test the userspace mode. This can be enabled
-	  only when CONFIG_HAS_USERSPACE is set.
+	  only when CONFIG_ARCH_HAS_USERSPACE is set.
+
+config TEST_HW_STACK_PROTECTION
+	bool "Enable hardware-based stack overflow detection if available"
+	depends on ARCH_HAS_STACK_PROTECTION
+	depends on TEST
+	select HW_STACK_PROTECTION
+	default y
+	help
+	  This option will enable hardware-based stack protection by default
+	  for all test cases if the hardware supports it.
 
 config TEST_FLASH_DRIVERS
 	bool "Test flash drivers"
