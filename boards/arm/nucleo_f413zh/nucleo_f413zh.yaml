@@ -5,4 +5,6 @@ arch: arm
 toolchain:
   - zephyr
   - gccarmemb
+supported:
   - usb_device
+  - pwm

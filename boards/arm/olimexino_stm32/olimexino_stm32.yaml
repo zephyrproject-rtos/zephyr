@@ -9,5 +9,6 @@ ram: 20
 supported:
   - gpio
   - i2c
+  - pwm
   - spi
   - usb_device
