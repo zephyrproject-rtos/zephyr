@@ -9,7 +9,7 @@
 if SOC_TI_LM3S6965
 
 config SOC
-	default ti_lm3s6965
+	default "ti_lm3s6965"
 
 config NUM_IRQS
 	int

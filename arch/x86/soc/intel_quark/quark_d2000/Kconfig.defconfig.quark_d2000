@@ -9,6 +9,6 @@
 if SOC_QUARK_D2000
 
 config SOC
-	default quark_d2000
+	default "quark_d2000"
 
 endif # SOC_QUARK_D2000

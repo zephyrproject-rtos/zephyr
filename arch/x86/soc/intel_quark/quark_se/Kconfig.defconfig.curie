@@ -9,6 +9,6 @@
 if SOC_QUARK_SE_CURIE
 
 config SOC
-	default curie
+	default "curie"
 
 endif

@@ -8,7 +8,7 @@ if SOC_HIFI_MINI
 
 config SOC
 	string
-	default hifi_mini
+	default "hifi_mini"
 
 config IRQ_OFFLOAD_INTNUM
 	default 13

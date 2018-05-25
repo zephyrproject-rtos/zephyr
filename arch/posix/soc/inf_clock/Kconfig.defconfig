@@ -7,6 +7,6 @@
 if SOC_POSIX
 
 config SOC
-	default inf_clock
+	default "inf_clock"
 
 endif

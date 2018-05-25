@@ -11,7 +11,7 @@ if SOC_MKW22D5
 
 config SOC
 	string
-	default mkw22d5
+	default "mkw22d5"
 
 endif # SOC_MKW22D5
 
@@ -19,7 +19,7 @@ if SOC_MKW24D5
 
 config SOC
 	string
-	default mkw24d5
+	default "mkw24d5"
 
 endif # SOC_MKW24D5
 

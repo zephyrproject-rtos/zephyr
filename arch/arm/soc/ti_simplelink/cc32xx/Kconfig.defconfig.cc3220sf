@@ -5,7 +5,7 @@ if SOC_CC3220SF
 
 config SOC
 	string
-	default cc3220sf
+	default "cc3220sf"
 
 config NUM_IRQS
 	int

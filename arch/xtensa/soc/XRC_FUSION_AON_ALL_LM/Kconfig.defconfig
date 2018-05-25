@@ -8,7 +8,7 @@ if SOC_XRC_FUSION_AON_ALL_LM
 
 config SOC
 	string
-	default XRC_FUSION_AON_ALL_LM
+	default "XRC_FUSION_AON_ALL_LM"
 
 config IRQ_OFFLOAD_INTNUM
 	default 13

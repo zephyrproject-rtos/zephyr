@@ -9,7 +9,7 @@ if SOC_EMSK
 
 config SOC
 	string
-	default snps_emsk
+	default "snps_emsk"
 
 source "arch/arc/soc/snps_emsk/Kconfig.defconfig.em7d"
 source "arch/arc/soc/snps_emsk/Kconfig.defconfig.em11d"

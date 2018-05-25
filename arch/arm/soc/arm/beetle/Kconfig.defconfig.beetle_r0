@@ -9,6 +9,6 @@
 if SOC_BEETLE_R0
 
 config SOC
-	default beetle_r0
+	default "beetle_r0"
 
 endif # SOC_BEETLE_R0

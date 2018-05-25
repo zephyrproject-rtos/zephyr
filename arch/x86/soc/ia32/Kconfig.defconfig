@@ -9,7 +9,7 @@
 if SOC_IA32
 
 config SOC
-	default ia32
+	default "ia32"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 150000000 if LOAPIC_TIMER
