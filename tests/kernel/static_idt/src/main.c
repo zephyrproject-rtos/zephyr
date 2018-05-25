@@ -157,14 +157,18 @@ void idt_spur_task(void *arg1, void *arg2, void *arg3)
 void test_static_idt(void)
 {
 	volatile int error;     /* used to create a divide by zero error */
-
+	volatile int local_int_handler_executed, local_exc_handler_executed;
+	volatile int local_spur_handler_aborted_thread;
 
 	TC_PRINT("Testing to see interrupt handler executes properly\n");
 	_trigger_isr_handler();
 
-	zassert_not_equal(int_handler_executed, 0,
+	local_int_handler_executed = int_handler_executed;
+	zassert_not_equal(local_int_handler_executed, 0,
 			  "Interrupt handler did not execute");
-	zassert_equal(int_handler_executed, 1,
+
+	local_int_handler_executed = int_handler_executed;
+	zassert_equal(local_int_handler_executed, 1,
 		      "Interrupt handler executed more than once! (%d)\n",
 		      int_handler_executed);
 
@@ -177,9 +181,12 @@ void test_static_idt(void)
 	error = 32;     /* avoid static checker uninitialized warnings */
 	error = error / exc_handler_executed;
 
-	zassert_not_equal(exc_handler_executed, 0,
+	local_exc_handler_executed = exc_handler_executed;
+	zassert_not_equal(local_exc_handler_executed, 0,
 			  "Exception handler did not execute");
-	zassert_equal(exc_handler_executed, 1,
+
+	local_exc_handler_executed = exc_handler_executed;
+	zassert_equal(local_exc_handler_executed, 1,
 		      "Exception handler executed more than once! (%d)\n",
 		      exc_handler_executed);
 	/*
@@ -194,7 +201,8 @@ void test_static_idt(void)
 	 * The thread should not run past where the spurious interrupt is
 	 * generated. Therefore spur_handler_aborted_thread should remain at 1.
 	 */
-	zassert_not_equal(spur_handler_aborted_thread, 0,
+	local_spur_handler_aborted_thread = spur_handler_aborted_thread;
+	zassert_not_equal(local_spur_handler_aborted_thread, 0,
 			  "Spurious handler did not execute as expected");
 }
 
