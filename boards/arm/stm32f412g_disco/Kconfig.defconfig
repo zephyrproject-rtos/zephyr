@@ -6,7 +6,7 @@
 if BOARD_STM32F412G_DISCO
 
 config BOARD
-	default stm32f412g_disco
+	default "stm32f412g_disco"
 
 if UART_CONSOLE
 

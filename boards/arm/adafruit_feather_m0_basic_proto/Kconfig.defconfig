@@ -7,6 +7,6 @@
 if BOARD_ADAFRUIT_FEATHER_M0_BASIC_PROTO
 
 config BOARD
-	default adafruit_feather_m0_basic_proto
+	default "adafruit_feather_m0_basic_proto"
 
 endif

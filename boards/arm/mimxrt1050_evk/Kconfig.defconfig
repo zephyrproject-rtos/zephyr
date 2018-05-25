@@ -8,7 +8,7 @@
 if BOARD_MIMXRT1050_EVK
 
 config BOARD
-	default mimxrt1050_evk
+	default "mimxrt1050_evk"
 
 if GPIO_MCUX_IGPIO
 

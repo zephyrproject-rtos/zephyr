@@ -7,7 +7,7 @@
 if BOARD_NRF52_VBLUNO52
 
 config BOARD
-	default nrf52_vbluno52
+	default "nrf52_vbluno52"
 
 if GPIO_NRF5
 

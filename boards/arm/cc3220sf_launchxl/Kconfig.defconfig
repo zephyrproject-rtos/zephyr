@@ -4,7 +4,7 @@
 if BOARD_CC3220SF_LAUNCHXL
 
 config BOARD
-	default cc3220sf_launchxl
+	default "cc3220sf_launchxl"
 
 if I2C
 

@@ -8,7 +8,7 @@
 if BOARD_LPCXPRESSO54114_M4
 
 config BOARD
-	default lpcxpresso54114_m4
+	default "lpcxpresso54114_m4"
 
 if USART_MCUX_LPC
 

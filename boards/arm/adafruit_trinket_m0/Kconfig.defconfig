@@ -6,6 +6,6 @@
 if BOARD_ADAFRUIT_TRINKET_M0
 
 config BOARD
-	default adafruit_trinket_m0
+	default "adafruit_trinket_m0"
 
 endif

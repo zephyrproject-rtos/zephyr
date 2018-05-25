@@ -6,6 +6,6 @@
 if BOARD_ESP32
 
 config BOARD
-	default esp32
+	default "esp32"
 
 endif # BOARD_ESP32

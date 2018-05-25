@@ -5,7 +5,7 @@
 if BOARD_INTEL_S1000_CRB
 
 config BOARD
-	default intel_s1000_crb
+	default "intel_s1000_crb"
 
 config BOARD_XTENSA
 	def_bool y

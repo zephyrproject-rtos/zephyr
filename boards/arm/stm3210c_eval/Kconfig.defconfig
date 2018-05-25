@@ -8,7 +8,7 @@
 if BOARD_STM3210C_EVAL
 
 config BOARD
-	default stm3210c_eval
+	default "stm3210c_eval"
 
 if UART_CONSOLE
 

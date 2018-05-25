@@ -8,7 +8,7 @@
 if BOARD_COLIBRI_IMX7D_M4
 
 config BOARD
-	default colibri_imx7d_m4
+	default "colibri_imx7d_m4"
 
 if GPIO_IMX
 

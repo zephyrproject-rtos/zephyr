@@ -8,7 +8,7 @@
 if BOARD_96B_ARGONKEY
 
 config BOARD
-	default 96b_argonkey
+	default "96b_argonkey"
 
 if UART_CONSOLE
 

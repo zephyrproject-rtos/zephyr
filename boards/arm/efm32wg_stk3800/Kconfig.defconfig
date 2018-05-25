@@ -8,7 +8,7 @@
 if BOARD_EFM32WG_STK3800
 
 config BOARD
-	default efm32wg_stk3800
+	default "efm32wg_stk3800"
 
 config CMU_HFXO_FREQ
 	default 48000000

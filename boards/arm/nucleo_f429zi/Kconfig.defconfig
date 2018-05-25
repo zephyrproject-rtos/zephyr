@@ -8,7 +8,7 @@
 if BOARD_NUCLEO_F429ZI
 
 config BOARD
-	default nucleo_f429zi
+	default "nucleo_f429zi"
 
 if UART_CONSOLE
 

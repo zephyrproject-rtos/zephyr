@@ -9,7 +9,7 @@
 if BOARD_V2M_BEETLE
 
 config BOARD
-	default v2m_beetle
+	default "v2m_beetle"
 
 if GPIO
 

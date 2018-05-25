@@ -8,7 +8,7 @@
 if BOARD_FRDM_KL25Z
 
 config BOARD
-	default frdm_kl25z
+	default "frdm_kl25z"
 
 config OSC_XTAL0_FREQ
 	default 8000000

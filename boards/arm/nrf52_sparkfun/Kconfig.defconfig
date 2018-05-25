@@ -8,7 +8,7 @@
 if BOARD_NRF52_SPARKFUN
 
 config BOARD
-	default nrf52_sparkfun
+	default "nrf52_sparkfun"
 
 if GPIO_NRF5
 
