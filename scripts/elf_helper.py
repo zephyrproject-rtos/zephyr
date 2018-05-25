@@ -144,7 +144,15 @@ class AggregateTypeMember:
         self.member_name = member_name
         self.member_type = member_type
         if isinstance(member_offset, list):
-            self.member_offset = member_offset[0]
+            # DWARF v2, location encoded as set of operations
+            # only "DW_OP_plus_uconst" with ULEB128 argument supported
+            if member_offset[0]==0x23:
+                self.member_offset = member_offset[1] & 0x7f
+                for i in range(1, len(member_offset)-1):
+                    if (member_offset[i] & 0x80):
+                        self.member_offset += (member_offset[i+1] & 0x7f) << i*7
+            else:
+                debug_die("not yet supported location operation")
         else:
             self.member_offset = member_offset
 
