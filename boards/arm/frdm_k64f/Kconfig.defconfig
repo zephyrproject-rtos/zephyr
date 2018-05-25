@@ -8,7 +8,7 @@
 if BOARD_FRDM_K64F
 
 config BOARD
-	default frdm_k64f
+	default "frdm_k64f"
 
 config OSC_XTAL0_FREQ
 	default 50000000

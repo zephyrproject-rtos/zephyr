@@ -8,7 +8,7 @@
 if BOARD_USB_KW24D512
 
 config BOARD
-	default usb_kw24d512
+	default "usb_kw24d512"
 
 config OSC_XTAL0_FREQ
 	# The MCU is configured to use 4 MHz external

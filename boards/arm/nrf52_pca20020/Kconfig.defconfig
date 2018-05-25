@@ -7,7 +7,7 @@
 if BOARD_NRF52_PCA20020
 
 config BOARD
-	default nrf52_pca20020
+	default "nrf52_pca20020"
 
 if GPIO_NRF5
 

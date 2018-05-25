@@ -8,7 +8,7 @@
 if BOARD_FRDM_KW41Z
 
 config BOARD
-	default frdm_kw41z
+	default "frdm_kw41z"
 
 config OSC_XTAL0_FREQ
 	default 32000000

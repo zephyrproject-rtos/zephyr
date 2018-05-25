@@ -7,7 +7,7 @@
 if BOARD_96B_NITROGEN
 
 config BOARD
-	default 96b_nitrogen
+	default "96b_nitrogen"
 
 if GPIO_NRF5
 

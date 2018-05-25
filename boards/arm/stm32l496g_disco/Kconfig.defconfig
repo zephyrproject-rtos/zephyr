@@ -9,7 +9,7 @@
 if BOARD_STM32L496G_DISCO
 
 config BOARD
-	default stm32l496g_disco
+	default "stm32l496g_disco"
 
 if UART_CONSOLE
 

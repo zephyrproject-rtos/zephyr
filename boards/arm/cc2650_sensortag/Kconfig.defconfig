@@ -6,6 +6,6 @@
 if BOARD_CC2650_SENSORTAG
 
 config BOARD
-	default cc2650_sensortag
+	default "cc2650_sensortag"
 
 endif # BOARD_CC2650_SENSORTAG

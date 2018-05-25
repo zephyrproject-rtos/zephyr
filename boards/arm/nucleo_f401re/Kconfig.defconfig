@@ -8,7 +8,7 @@
 if BOARD_NUCLEO_F401RE
 
 config BOARD
-	default nucleo_f401re
+	default "nucleo_f401re"
 
 if UART_CONSOLE
 

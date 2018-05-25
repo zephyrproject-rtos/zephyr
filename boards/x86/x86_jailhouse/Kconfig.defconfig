@@ -2,7 +2,7 @@
 if BOARD_X86_JAILHOUSE
 
 config BOARD
-	default x86_jailhouse
+	default "x86_jailhouse"
 
 config JAILHOUSE
 	bool "Zephyr port to boot as a (x86) Jailhouse inmate cell payload"

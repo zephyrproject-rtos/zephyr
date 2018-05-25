@@ -4,6 +4,6 @@
 if BOARD_XT_SIM
 
 config BOARD
-	default xt-sim
+	default "xt-sim"
 
 endif # BOARD_SIMULATOR_XTENSA

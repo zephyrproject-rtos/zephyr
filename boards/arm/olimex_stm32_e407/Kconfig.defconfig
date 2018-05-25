@@ -8,7 +8,7 @@
 if BOARD_OLIMEX_STM32_E407
 
 config BOARD
-	default olimex_stm32_e407
+	default "olimex_stm32_e407"
 
 if UART_CONSOLE
 

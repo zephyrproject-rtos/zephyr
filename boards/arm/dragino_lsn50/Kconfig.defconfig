@@ -8,7 +8,7 @@
 if BOARD_DRAGINO_LSN50
 
 config BOARD
-	default dragino_lsn50
+	default "dragino_lsn50"
 
 if UART_CONSOLE
 

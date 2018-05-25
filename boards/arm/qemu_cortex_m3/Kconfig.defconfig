@@ -5,6 +5,6 @@ config BUILD_OUTPUT_BIN
         default n
 
 config BOARD
-	default qemu_cortex_m3
+	default "qemu_cortex_m3"
 
 endif # BOARD_QEMU_CORTEX_M3

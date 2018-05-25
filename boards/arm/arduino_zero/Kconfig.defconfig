@@ -6,6 +6,6 @@
 if BOARD_ARDUINO_ZERO
 
 config BOARD
-	default arduino_zero
+	default "arduino_zero"
 
 endif # BOARD_ARDUINO_ZERO

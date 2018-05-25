@@ -8,7 +8,7 @@
 if BOARD_STM32F072_EVAL
 
 config BOARD
-	default stm32f072_eval
+	default "stm32f072_eval"
 
 if UART_CONSOLE
 

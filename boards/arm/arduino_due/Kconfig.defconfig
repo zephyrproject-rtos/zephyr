@@ -7,7 +7,7 @@
 if BOARD_ARDUINO_DUE
 
 config BOARD
-	default arduino_due
+	default "arduino_due"
 
 if GPIO
 

@@ -8,6 +8,6 @@ config BUILD_OUTPUT_BIN
         default n
 
 config BOARD
-	default qemu_xtensa
+	default "qemu_xtensa"
 
 endif # BOARD_QEMU_XTENSA

@@ -9,7 +9,7 @@
 if BOARD_NUCLEO_L432KC
 
 config BOARD
-	default nucleo_l432kc
+	default "nucleo_l432kc"
 
 if UART_CONSOLE
 
