@@ -9,7 +9,7 @@ config SOC_FAMILY_TISIMPLELINK
 if SOC_FAMILY_TISIMPLELINK
 config SOC_FAMILY
 	string
-	default ti_simplelink
+	default "ti_simplelink"
 
 gsource "arch/arm/soc/ti_simplelink/*/Kconfig.soc"
 endif # SOC_FAMILY_TISIMPLELINK

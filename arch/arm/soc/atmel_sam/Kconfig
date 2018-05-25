@@ -12,7 +12,7 @@ if SOC_FAMILY_SAM
 
 config SOC_FAMILY
 	string
-	default atmel_sam
+	default "atmel_sam"
 
 # Select SoC Part No. and configuration options
 gsource "arch/arm/soc/atmel_sam/*/Kconfig.soc"
