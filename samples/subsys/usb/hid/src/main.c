@@ -108,7 +108,7 @@ void main(void)
 
 		report_1[1]++;
 
-		ret = usb_write(CONFIG_HID_INT_EP_ADDR, report_1,
+		ret = usb_write(CONFIG_HID_INT_IN_EP_ADDR, report_1,
 				sizeof(report_1), &wrote);
 		SYS_LOG_DBG("Wrote %d bytes with ret %d", wrote, ret);
 	}

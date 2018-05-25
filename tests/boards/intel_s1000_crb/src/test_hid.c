@@ -22,6 +22,11 @@
 /* scheduling priority used by each thread */
 #define PRIORITY                7
 
+K_SEM_DEFINE(usb_sem, 0, 1);
+
+u8_t rdata[CONFIG_HID_INTERRUPT_EP_MPS];
+u32_t glen;
+
 /* Some HID sample Report Descriptor */
 static const u8_t hid_report_desc[] = {
 	/* 0x05, 0x01,		USAGE_PAGE (Generic Desktop)		*/
@@ -86,6 +91,13 @@ int get_report_cb(struct usb_setup_packet *setup, s32_t *len,
 	return 0;
 }
 
+void read_cb(void *data, u32_t len)
+{
+	memcpy(rdata, data, len);
+	glen = len;
+	k_sem_give(&usb_sem);
+}
+
 static struct hid_ops ops = {
 	.get_report = get_report_cb,
 	.get_idle = debug_cb,
@@ -93,12 +105,15 @@ static struct hid_ops ops = {
 	.set_report = debug_cb,
 	.set_idle = set_idle_cb,
 	.set_protocol = debug_cb,
+#ifdef CONFIG_ENABLE_HID_INT_OUT_EP
+	.int_out_read = read_cb,
+#endif
 };
 
 void hid_thread(void)
 {
 	u8_t report_1[2] = { REPORT_ID_1, 0x00 };
-	int ret, wrote;
+	int ret, wrote, i;
 
 	SYS_LOG_DBG("Starting application");
 
@@ -107,12 +122,17 @@ void hid_thread(void)
 	usb_hid_init();
 
 	while (true) {
+		k_sem_take(&usb_sem, K_FOREVER);
+
+		for (i = 0; i < glen; i++) {
+			printk("data read from host = %x\n", rdata[i]);
+		}
 
 		k_sleep(K_SECONDS(1));
 
 		report_1[1]++;
 
-		ret = usb_write(CONFIG_HID_INT_EP_ADDR, report_1,
+		ret = usb_write(CONFIG_HID_INT_IN_EP_ADDR, report_1,
 				sizeof(report_1), &wrote);
 		SYS_LOG_DBG("Wrote %d bytes with ret %d", wrote, ret);
 	}

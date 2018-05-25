@@ -149,12 +149,34 @@ static void hid_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	hid_device.ops->int_in_ready();
 }
 
+#ifdef CONFIG_ENABLE_HID_INT_OUT_EP
+static void hid_int_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+{
+	if (hid_device.ops->int_out_read  &&
+		(ep_status == USB_DC_EP_DATA_OUT)) {
+
+		u8_t data[CONFIG_HID_INTERRUPT_EP_MPS];
+		u32_t len = 0;
+
+		usb_read(ep, data, sizeof(data), &len);
+		hid_device.ops->int_out_read(data, len);
+	}
+}
+#endif
+
 /* Describe Endpoints configuration */
 static struct usb_ep_cfg_data hid_ep_data[] = {
 	{
 		.ep_cb = hid_int_in,
-		.ep_addr = CONFIG_HID_INT_EP_ADDR
+		.ep_addr = CONFIG_HID_INT_IN_EP_ADDR,
+	},
+#ifdef CONFIG_ENABLE_HID_INT_OUT_EP
+	{
+		.ep_cb = hid_int_out,
+		.ep_addr = CONFIG_HID_INT_OUT_EP_ADDR,
+
 	}
+#endif
 };
 
 static struct usb_cfg_data hid_config = {
