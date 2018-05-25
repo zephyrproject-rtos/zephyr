@@ -75,6 +75,7 @@
 #include <logging/sys_log.h>
 
 #include <usb/bos.h>
+#include <os_desc.h>
 
 #define MAX_DESC_HANDLERS           4 /** Device, interface, endpoint, other */
 
@@ -145,6 +146,8 @@ static struct usb_dev_priv {
 	s32_t data_buf_len;
 	/** Installed custom request handler */
 	usb_request_handler custom_req_handler;
+	/** Installed vendor request handler */
+	usb_request_handler vendor_req_handler;
 	/** USB stack status clalback */
 	usb_status_callback status_callback;
 	/** Pointer to registered descriptors */
@@ -805,6 +808,10 @@ static int usb_handle_standard_request(struct usb_setup_packet *setup,
 		return 0;
 	}
 
+	if (!usb_handle_os_desc(setup, len, data_buf)) {
+		return 0;
+	}
+
 	/* try the custom request handler first */
 	if (usb_dev.custom_req_handler &&
 	    !usb_dev.custom_req_handler(setup, len, data_buf)) {
@@ -830,6 +837,23 @@ static int usb_handle_standard_request(struct usb_setup_packet *setup,
 	return rc;
 }
 
+static int usb_handle_vendor_request(struct usb_setup_packet *setup,
+				     s32_t *len, u8_t **data_buf)
+{
+	SYS_LOG_DBG("\n");
+
+	if (usb_os_desc_enabled()) {
+		if (!usb_handle_os_desc_feature(setup, len, data_buf)) {
+			return 0;
+		}
+	}
+
+	if (usb_dev.vendor_req_handler) {
+		return usb_dev.vendor_req_handler(setup, len, data_buf);
+	}
+
+	return -ENOTSUP;
+}
 
 /*
  * @brief Registers a callback for custom device requests
@@ -913,12 +937,19 @@ int usb_set_config(struct usb_cfg_data *config)
 					     config->interface.class_handler,
 					     config->interface.payload_data);
 	}
-	/* register vendor request handlers */
-	if (config->interface.vendor_handler) {
+
+	/* register vendor request handler */
+	if (config->interface.vendor_handler || usb_os_desc_enabled()) {
 		usb_register_request_handler(REQTYPE_TYPE_VENDOR,
-					     config->interface.vendor_handler,
+					     usb_handle_vendor_request,
 					     config->interface.vendor_data);
+
+		if (config->interface.vendor_handler) {
+			usb_dev.vendor_req_handler =
+				config->interface.vendor_handler;
+		}
 	}
+
 	/* register class request handlers for each interface*/
 	if (config->interface.custom_handler != NULL) {
 		usb_register_custom_req_handler(
