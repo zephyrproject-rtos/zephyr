@@ -68,7 +68,7 @@ static int imx_gpio_configure(struct device *dev,
 		for (i = 0; i < 32; i++) {
 			pin_config.pin = i;
 			GPIO_Init(config->base, &pin_config);
-			GPIO_SetIntEdgeSelect(config->base, pin, double_edge);
+			GPIO_SetIntEdgeSelect(config->base, i, double_edge);
 		}
 	}
 
