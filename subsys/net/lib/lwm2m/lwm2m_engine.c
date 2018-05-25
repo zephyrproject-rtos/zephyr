@@ -3097,6 +3097,29 @@ static int do_write_op(struct lwm2m_engine_obj *obj,
 	}
 }
 
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+static int bootstrap_delete(void)
+{
+	struct lwm2m_engine_obj_inst *obj_inst, *tmp;
+	int ret = 0;
+
+	/* delete SECURITY instances > 0 */
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&engine_obj_inst_list,
+					  obj_inst, tmp, node) {
+		if (obj_inst->obj->obj_id == LWM2M_OBJECT_SECURITY_ID &&
+		    obj_inst->obj_inst_id > 0) {
+			ret = lwm2m_delete_obj_inst(obj_inst->obj->obj_id,
+						    obj_inst->obj_inst_id);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
+	return ret;
+}
+#endif
+
 static int handle_request(struct coap_packet *request,
 			  struct lwm2m_message *msg)
 {
@@ -3146,14 +3169,32 @@ static int handle_request(struct coap_packet *request,
 	r = coap_find_options(in.in_cpkt, COAP_OPTION_URI_PATH, options,
 			      ARRAY_SIZE(options));
 	if (r <= 0) {
-		/* '/' is used by bootstrap-delete only */
+		switch (code & COAP_REQUEST_MASK) {
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+		case COAP_METHOD_DELETE:
+			if (bootstrap_mode) {
+				r = bootstrap_delete();
+				if (r < 0) {
+					goto error;
+				}
 
-		/*
-		 * TODO: Handle bootstrap deleted --
-		 * re-add when DTLS support ready
-		 */
-		r = -EPERM;
-		goto error;
+				msg->code = COAP_RESPONSE_CODE_DELETED;
+				r = lwm2m_init_message(msg);
+			} else {
+				r = -EPERM;
+			}
+
+			if (r < 0) {
+				goto error;
+			}
+
+			return 0;
+#endif
+		default:
+			r = -EPERM;
+			goto error;
+			break;
+		}
 	}
 
 	/* check for .well-known/core URI query (DISCOVER) */
