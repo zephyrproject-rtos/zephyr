@@ -18,7 +18,7 @@ config BT_HCI_VS_EXT
 config BT_HCI_VS_EXT_DETECT
 	bool "Use heuristics to guess HCI vendor extensions support in advance"
 	depends on BT_HCI_VS_EXT && !BT_CTLR
-	default y if BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3
+	default y if BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3 || BOARD_NATIVE_POSIX
 	help
 	  Use some heuristics to try to guess in advance whether the controller
 	  supports the HCI vendor extensions in advance, in order to prevent

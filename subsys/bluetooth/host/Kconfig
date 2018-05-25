@@ -57,6 +57,7 @@ config BT_HCI_TX_STACK_SIZE
 	default 256 if BT_H5
 	default 416 if BT_SPI
 	default 640 if BT_CTLR
+	default 256 if BT_USERCHAN
 
 config BT_HCI_TX_PRIO
 	# Hidden option for Co-Operative Tx thread priority
@@ -82,6 +83,7 @@ config BT_HCI_RESERVE
 	default 0 if BT_H4
 	default 1 if BT_H5
 	default 1 if BT_SPI
+	default 1 if BT_USERCHAN
 
 config BT_RECV_IS_RX_THREAD
 	# Hidden option set by the HCI driver to indicate that there's
@@ -212,7 +214,7 @@ config BT_CONN_TX_MAX
 config BT_ATT_ENFORCE_FLOW
 	bool "Enforce strict flow control semantics for incoming PDUs"
 	default y
-	default n if BOARD_QEMU_CORTEX_M3 || BOARD_QEMU_X86
+	default n if BOARD_QEMU_CORTEX_M3 || BOARD_QEMU_X86 || BOARD_NATIVE_POSIX
 	help
 	  Enforce flow control rules on incoming PDUs, preventing a peer
 	  from sending new requests until a previous one has been responded

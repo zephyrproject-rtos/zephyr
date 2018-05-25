@@ -411,6 +411,16 @@ The following peripherals are currently provided with this board:
   Note that this device can only be used with Linux hosts, and that the user
   needs elevated permissions.
 
+**Bluetooth controller**:
+  It's possible to use the host's Bluetooth adapter as a Bluetooth
+  controller for Zephyr. To do this the HCI device needs to be passed as
+  a command line option to ``zephyr.exe``. For example, to use ``hci0``,
+  use ``sudo zephyr.exe --bt-dev=hci0``. Using the device requires root
+  privileges (or the CAP_NET_ADMIN POSIX capability, to be exact) so
+  ``zephyr.exe`` needs to be run through ``sudo``. The chosen HCI device
+  must be powered down and support Bluetooth Low Energy (i.e. support the
+  Bluetooth specification version 4.0 or greater).
+
 Shell support
 *************
 
