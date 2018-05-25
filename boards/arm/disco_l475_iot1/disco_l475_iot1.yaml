@@ -8,5 +8,6 @@ toolchain:
 supported:
   - i2c
   - hts221
+  - pwm
 ram: 96
 flash: 1024

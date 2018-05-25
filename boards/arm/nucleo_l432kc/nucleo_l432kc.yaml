@@ -7,3 +7,5 @@ toolchain:
   - gccarmemb
 ram: 64
 flash: 256
+supported:
+  - pwm
