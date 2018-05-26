@@ -6,17 +6,16 @@
 
 /*
  * @file
- * @brief Test early sleeping
+ * @brief Test early sleep functionality
  *
- * This test verifies that k_sleep() can be used
- * to put the calling thread to sleep for a specified
- * number of ticks during system initialization.
- * In this test we are calling k_sleep() at POST_KERNEL
- * and APPLICATION level initialization sequence.
+ * This test verifies that k_sleep() can be used to put the calling thread to
+ * sleep for a specified number of ticks during system initialization.  In this
+ * test we are calling k_sleep() at POST_KERNEL and APPLICATION level
+ * initialization sequence.
  *
- * Note: We can not call k_sleep() during PRE_KERNEL1
- * or PRE_KERNEL2 level because the core kernel objects
- * and devices initialization happens at these levels.
+ * Note: We can not call k_sleep() during PRE_KERNEL1 or PRE_KERNEL2 level
+ * because the core kernel objects and devices initialization happens at these
+ * levels.
  */
 
 #include <init.h>
@@ -79,7 +78,12 @@ static int test_early_sleep_app(struct device *unused)
 
 SYS_INIT(test_early_sleep_app, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-static void verify_early_sleep(void)
+/**
+ * @brief Test early sleep
+ *
+ * @see k_sleep()
+ */
+static void test_early_sleep(void)
 {
 	TC_PRINT("Testing early sleeping\n");
 
@@ -123,6 +127,6 @@ static void verify_early_sleep(void)
 void test_main(void)
 {
 	ztest_test_suite(test_earlysleep,
-			ztest_unit_test(verify_early_sleep));
+			ztest_unit_test(test_early_sleep));
 	ztest_run_test_suite(test_earlysleep);
 }
