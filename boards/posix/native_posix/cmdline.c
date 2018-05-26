@@ -9,6 +9,7 @@
 #include "cmdline_common.h"
 #include "zephyr/types.h"
 #include "hw_models_top.h"
+#include "timer_model.h"
 #include "cmdline.h"
 #include "toolchain.h"
 #include "board.h"
@@ -26,6 +27,20 @@ static void cmd_stop_at_found(char *argv, int offset)
 					   "(%s)\n", argv);
 	}
 	hwm_set_end_of_time(args.stop_at*1e6);
+}
+
+static void cmd_realtime_found(char *argv, int offset)
+{
+	ARG_UNUSED(argv);
+	ARG_UNUSED(offset);
+	hwtimer_set_real_time(true);
+}
+
+static void cmd_no_realtime_found(char *argv, int offset)
+{
+	ARG_UNUSED(argv);
+	ARG_UNUSED(offset);
+	hwtimer_set_real_time(false);
 }
 
 #if defined(CONFIG_FAKE_ENTROPY_NATIVE_POSIX)
@@ -71,8 +86,20 @@ void native_handle_cmd_line(int argc, char *argv[])
 		 * destination, callback,
 		 * description
 		 */
+		{false, false, true,
+		"rt", "", 'b',
+		NULL, cmd_realtime_found,
+		"Slow down the execution to the host real time"},
+
+		{false, false, true,
+		"no-rt", "", 'b',
+		NULL, cmd_no_realtime_found,
+		"Do NOT slow down the execution to real time, but advance "
+		"Zephyr's time as fast as possible and decoupled from the host "
+		"time"},
+
 		{false, false, false,
-		  "stop_at", "time", 'd',
+		 "stop_at", "time", 'd',
 		(void *)&args.stop_at, cmd_stop_at_found,
 		"In simulated seconds, when to stop automatically"},
 
