@@ -31,14 +31,67 @@ Architectures
 Boards
 ******
 
+* Added support for the following Arm boards:
+
+  * 96b_argonkey
+  * adafruit_feather_m0_basic_proto
+  * colibri_imx7d_m4
+  * dragino_lsn50
+  * lpcxpresso54114_m0
+  * nrf51_ble400
+  * nrf52_pca20020
+  * nucleo_f070rb
+  * nucleo_f446re
+  * nucleo_l053r8
+  * nucleo_l073rzA
+  * olimex_stm32_h407
+  * stm32f0_disco
+
+* Added support for the following RISC-V boards:
+
+  * hifive1
+
+* Added support for the following Xtensa boards:
+
+  * intel_s1000_crb
+
+* arc: Added device tree support for all ARC SoCs
+* arm: Renamed lpcxpresso54114 to lpcxpresso54114_m4
 * nios2: Added device tree support for qemu_nios2 and altera_max10
-* colibri_imx7d_m4: Added support for Toradex Colibri i.MX7 board
+* Continued adding dts support for device drivers (gpio, spi, i2c, sensors, usb)
 
 Drivers and Sensors
 *******************
 
-* serial: Added support for i.MX UART interface
+* can: Added CAN driver support for STM32 SoCs
+* display: Added ILI9340 LCD display driver
+* dma: Added dma driver for Nios-II MSGDMA core
+* dma: Introduce Intel CAVS DMA
+* ethernet: Added ethernet driver for native posix arch
 * gpio: Added support for i.MX GPIO
+* gpio: Added driver for SX1509B
+* gpio: Added GPIO for SAM family
+* gpio: Added GPIO driver for stm32l0x
+* i2s: Introduce CAVS I2S
+* ieee802154: Added OpenThread modifications to KW41Z driver
+* interrupts: Introduce Desinware interrupt controller
+* ipm: Added mcux ipm driver for LPC SoCs
+* led: Added new public API and driver support for TI LP3943
+* pinmux: Added pinmux driver for stm32l0x
+* rtc: Added mcux RTC driver for Kinetis SoCs
+* sensor: Added sensorhub support to lsm6dsl driver
+* sensor: Added trigger support to lsm6dsl
+* serial: Added support for i.MX UART interface
+* spi: Added shims for nrfx SPIS and SPIM drivers
+* spi: Updated mcux shim driver to new SPI API
+* spi: Updated sensor and radio drivers to new SPI API
+* usb: Added usb device driver for Kinetis USBFSOTG controller
+* usb: Added usb support for stml072/73, stm32f070/72
+* usb: Enable usb2.0 on intel_s1000
+* usb: Added nRF52840 USB Device Controller Driver
+* watchdog: Added mcux watchdog driver for Kinetis SoCs
+* watchdog: Added nrfx watchdog driver for NRF SoCs
+* wifi: Added winc1500 WiFi driver
 
 Networking
 **********
@@ -100,6 +153,11 @@ Bluetooth
 Build and Infrastructure
 ************************
 
+* kconfig: Drop support for CONFIG_TOOLCHAIN_VARIANT
+* kconfig: Remove the C Kconfig implementation
+* scripts: kconfig: Add a Python menuconfig implementation
+* scripts: west: introduce common runner configuration
+* xtensa: provide XCC compiler support for Xtensa
 
 Libraries / Subsystems
 ***********************
@@ -108,11 +166,20 @@ Libraries / Subsystems
 * subsys/fs: Added support for multiple instances of filesystem
 * subsys/fs: Added Virtual File system Switch (VFS) support
 * lib/posix: Added POSIX Mutex support
+* crypto: Updated mbedTLS to 2.9.0
+* Imported libmetal and OpenAMP for IPC
 
 HALs
 ****
 
-* nxp/imx: imported i.MX7 FreeRTOS HAL
+* altera: Add modular Scatter-Gather DMA HAL driver
+* atmel: Added winc1500 driver from Atmel
+* cmsis: Update ARM CMSIS headers to version 5.3.0
+* nordic: Import SVD files for nRF5 SoCs
+* nordic: Update nrfx to version 1.0.0
+* nxp: imported i.MX7 FreeRTOS HAL
+* nxp: Added dual core startup code for lpc54114 based on mcux 2.3.0
+* stm32l0x: Add HAL for the STM32L0x series
 
 Documentation
 *************
