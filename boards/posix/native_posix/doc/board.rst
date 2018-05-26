@@ -164,6 +164,10 @@ available options::
    $ zephyr/zephyr.exe --help
 
      [-h] [--h] [--help] [-?]  :Display this help
+     [-rt]                     :Slow down the execution to the host real time
+     [-no-rt]                  :Do NOT slow down the execution to real time, but
+                                advance Zephyr's time as fast as possible and
+                                decoupled from the host time
      [-stop_at=<time>]         :In simulated seconds, when to stop automatically
      [-seed=<r_seed>]          :Seed for the entropy device
      [-testargs <arg>...]      :Any argument that follows will be ignored
@@ -374,8 +378,7 @@ The following peripherals are currently provided with this board:
   This peripheral driver also provides the needed functionality for this
   architecture-specific :c:func:`k_busy_wait`.
 
-  This timer, is configured by default with
-  :option:`CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME`
+  This timer, may be configured
   to slow down the execution to real host time.
   This will provide the illusion that the simulated time is running at the same
   speed as the real host time.
@@ -384,6 +387,9 @@ The following peripherals are currently provided with this board:
   the execution before raising its next timer interrupt.
   Normally the Zephyr application and HW models run in very little time
   on the host CPU, so this is a good enough approach.
+  To configure the timer to slow down the execution, either set the option
+  :option:`CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME`
+  or use the command line switch --rt.
 
 **Entropy device**:
   An entropy device based on the host :c:func:`random` API.

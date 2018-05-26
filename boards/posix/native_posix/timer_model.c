@@ -9,9 +9,12 @@
  *
  * If you want this timer model to slow down the execution to real time
  * set (CONFIG_)NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME
+ * You can also control it with the --rt and --no-rt options from command line
  */
 
 #include <stdint.h>
+#include <time.h>
+#include <stdbool.h>
 #include "hw_models_top.h"
 #include "irq_ctrl.h"
 #include "board_soc.h"
@@ -28,14 +31,22 @@ u64_t hw_timer_awake_timer;
 static u64_t tick_p; /* Period of the ticker */
 static s64_t silent_ticks;
 
+static bool real_time =
 #if (CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME)
-#include <time.h>
+	true;
+#else
+	false;
+#endif
 
 static u64_t Boot_time;
 static struct timespec tv;
-#endif
 
 extern u64_t posix_get_hw_cycle(void);
+
+void hwtimer_set_real_time(bool new_rt)
+{
+	real_time = new_rt;
+}
 
 static void hwtimer_update_timer(void)
 {
@@ -48,10 +59,10 @@ void hwtimer_init(void)
 	hw_timer_tick_timer = NEVER;
 	hw_timer_awake_timer = NEVER;
 	hwtimer_update_timer();
-#if (CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME)
-	clock_gettime(CLOCK_MONOTONIC, &tv);
-	Boot_time = tv.tv_sec*1e6 + tv.tv_nsec/1000;
-#endif
+	if (real_time) {
+		clock_gettime(CLOCK_MONOTONIC, &tv);
+		Boot_time = tv.tv_sec*1e6 + tv.tv_nsec/1000;
+	}
 }
 
 void hwtimer_cleanup(void)
@@ -72,24 +83,25 @@ void hwtimer_enable(u64_t period)
 
 static void hwtimer_tick_timer_reached(void)
 {
-#if (CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME)
-	u64_t expected_realtime = Boot_time + hw_timer_tick_timer;
+	if (real_time) {
+		u64_t expected_realtime = Boot_time + hw_timer_tick_timer;
 
-	clock_gettime(CLOCK_MONOTONIC, &tv);
-	u64_t actual_real_time = tv.tv_sec*1e6 + tv.tv_nsec/1000;
+		clock_gettime(CLOCK_MONOTONIC, &tv);
+		u64_t actual_real_time = tv.tv_sec*1e6 + tv.tv_nsec/1000;
 
-	int64_t diff = expected_realtime - actual_real_time;
+		int64_t diff = expected_realtime - actual_real_time;
 
-	if (diff > 0) { /* we need to slow down */
-		struct timespec requested_time;
-		struct timespec remaining;
+		if (diff > 0) { /* we need to slow down */
+			struct timespec requested_time;
+			struct timespec remaining;
 
-		requested_time.tv_sec  = diff / 1e6;
-		requested_time.tv_nsec = (diff - requested_time.tv_sec*1e6)*1e3;
+			requested_time.tv_sec  = diff / 1e6;
+			requested_time.tv_nsec = (diff -
+						 requested_time.tv_sec*1e6)*1e3;
 
-		nanosleep(&requested_time, &remaining);
+			nanosleep(&requested_time, &remaining);
+		}
 	}
-#endif
 
 	hw_timer_tick_timer += tick_p;
 	hwtimer_update_timer();
