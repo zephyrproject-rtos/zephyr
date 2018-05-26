@@ -144,8 +144,7 @@ void test_busy_wait_cooperative(void)
  * Now, wake up the -1 priority thread and check if it starts
  * executing.
  *
- * API_coverage
- * k_wakeup()
+ * @see k_wakeup()
  */
 void test_sleep_wakeup_preemptible(void)
 {
@@ -177,6 +176,8 @@ static void coop_thread(void *p1, void *p2, void *p3)
  * @details The test creates a cooperative thread and let
  * it wait for semaphore. Then calls k_wakeup(). The k_wakeup()
  * call should return gracefully without waking up the thread
+ *
+ * @see k_wakeup()
  */
 void test_pending_thread_wakeup(void)
 {
@@ -234,13 +235,15 @@ void test_time_slicing_preemptible(void)
 }
 
 /**
- * @brief Check the behavior of preemptive thread with busy_wait
+ * @brief Check the behavior of preemptive thread with k_busy_wait()
  *
  * @details Create 3 threads with -1, 0, and 1 as priority,
  * setup time slice for threads with priority 0. Make sure the
  * threads with equal priorities are executed in time slice.
  * Also run k_busy_wait() for 5 secs and check if other threads
  * are not executed at that time.
+ *
+ * @see k_busy_wait()
  */
 void test_time_slicing_disable_preemptible(void)
 {
@@ -299,9 +302,7 @@ void test_lock_preemptible(void)
  * that the threads are not executed. Call k_sched_unlock()
  * and check if the threads have executed.
  *
- * API_coverage
- * k_sched_lock()
- * k_sched_unlock()
+ * @see k_sched_lock(), k_sched_unlock()
  */
 void test_unlock_preemptible(void)
 {
