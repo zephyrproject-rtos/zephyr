@@ -64,8 +64,7 @@ static void tcoop_ctx(void *p1, void *p2, void *p3)
  * thread and lock the scheduler k_is_preempt_thread() and
  * unlock the scheduler and call k_is_preempt_thread().
  *
- * API_coverage
- * k_is_preempt_thread()
+ * @see k_is_preempt_thread()
  */
 void test_sched_is_preempt_thread(void)
 {
