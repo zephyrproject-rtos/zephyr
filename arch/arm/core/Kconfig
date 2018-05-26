@@ -75,7 +75,7 @@ config ARM_SECURE_FIRMWARE
 	  Secure Faults may only be handled by code executing in Secure
 	  state.
 
-menu "Architectue Floating Point Options"
+menu "Architecture Floating Point Options"
 depends on CPU_HAS_FPU
 
 choice
