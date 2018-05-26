@@ -271,8 +271,8 @@ static u32_t _MpuFault(const NANO_ESF *esf, int fromHardFault)
 #else
 				guard_start = thread->stack_info.start;
 #endif
-				if (mmfar >= guard_start &&
-					mmfar < guard_start +
+				if (SCB->MMFAR >= guard_start &&
+					SCB->MMFAR < guard_start +
 					MPU_GUARD_ALIGN_AND_SIZE) {
 					/* Thread stack corruption */
 					reason = _NANO_ERR_STACK_CHK_FAIL;
