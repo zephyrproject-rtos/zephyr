@@ -247,7 +247,7 @@ static u32_t _MpuFault(const NANO_ESF *esf, int fromHardFault)
 		 * Software must follow this sequence because another higher
 		 * priority exception might change the MMFAR value.
 		 */
-		STORE_xFAR(mmfar, SCB->MMFAR);
+		u32_t mmfar = SCB->MMFAR;
 
 		if (SCB->CFSR & SCB_CFSR_MMARVALID_Msk) {
 			PR_EXC("  Address: 0x%x\n", mmfar);
@@ -271,13 +271,15 @@ static u32_t _MpuFault(const NANO_ESF *esf, int fromHardFault)
 #else
 				guard_start = thread->stack_info.start;
 #endif
-				if (SCB->MMFAR >= guard_start &&
-					SCB->MMFAR < guard_start +
+				if (mmfar >= guard_start &&
+					mmfar < guard_start +
 					MPU_GUARD_ALIGN_AND_SIZE) {
 					/* Thread stack corruption */
 					reason = _NANO_ERR_STACK_CHK_FAIL;
 				}
 			}
+#else
+		(void)mmfar;
 #endif /* CONFIG_HW_STACK_PROTECTION */
 		}
 	} else if (SCB->CFSR & SCB_CFSR_IACCVIOL_Msk) {
