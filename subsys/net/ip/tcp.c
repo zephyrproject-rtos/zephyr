@@ -1954,6 +1954,7 @@ NET_CONN_CB(tcp_established)
 		/* RFC793 specifies that "highest" (i.e. current from our PoV)
 		 * ack # value can/should be sent, so we just force resend.
 		 */
+resend_ack:
 		send_ack(context, &conn->remote_addr, true);
 		return NET_DROP;
 	}
@@ -2044,6 +2045,18 @@ NET_CONN_CB(tcp_established)
 
 	data_len = net_pkt_appdatalen(pkt);
 	if (data_len > net_tcp_get_recv_wnd(context->tcp)) {
+		/* In case we have zero window, we should still accept
+		 * Zero Window Probes from peer, which per convention
+		 * come with len=1. Note that normally we need to check
+		 * for net_tcp_get_recv_wnd(context->tcp) == 0, but
+		 * given the if above, we know that if data_len == 1,
+		 * then net_tcp_get_recv_wnd(context->tcp) can be only 0
+		 * here.
+		 */
+		if (data_len == 1) {
+			goto resend_ack;
+		}
+
 		NET_ERR("Context %p: overflow of recv window (%d vs %d), "
 			"pkt dropped",
 			context, net_tcp_get_recv_wnd(context->tcp), data_len);
