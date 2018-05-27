@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2018 qianfan Zhao
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/stm32f2.dtsi>
