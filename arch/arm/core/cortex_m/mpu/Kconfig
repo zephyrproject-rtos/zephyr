@@ -23,6 +23,7 @@ config MPU_STACK_GUARD
 
 config ARM_MPU
 	bool "ARM MPU Support"
+	depends on !CPU_CORTEX_M0
 	depends on CPU_HAS_MPU
 	depends on SOC_FAMILY_ARM || SOC_FAMILY_STM32 || SOC_FAMILY_NRF || SOC_FAMILY_IMX || SOC_FAMILY_SAM
 	select ARM_CORE_MPU
