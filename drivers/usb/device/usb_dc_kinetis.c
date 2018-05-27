@@ -675,8 +675,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 int usb_dc_ep_read_continue(u8_t ep)
 {
 	u8_t ep_idx = EP_ADDR2IDX(ep);
-	/* select the index of the next endpoint buffer */
-	u8_t bd_idx = get_bdt_idx(ep, ~dev_data.ep_ctrl[ep_idx].status.out_odd);
+	u8_t bd_idx = get_bdt_idx(ep, dev_data.ep_ctrl[ep_idx].status.out_odd);
 
 	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		SYS_LOG_ERR("Wrong endpoint index/address");
@@ -688,6 +687,14 @@ int usb_dc_ep_read_continue(u8_t ep)
 		return -EINVAL;
 	}
 
+	if (bdt[bd_idx].get.own) {
+		/* May occur when usb_transfer initializes the OUT transfer */
+		SYS_LOG_WRN("Current buffer is claimed by the controller");
+		return 0;
+	}
+
+	/* select the index of the next endpoint buffer */
+	bd_idx = get_bdt_idx(ep, ~dev_data.ep_ctrl[ep_idx].status.out_odd);
 	/* Update next toggle bit */
 	dev_data.ep_ctrl[ep_idx].status.out_data1 ^= 1;
 	bdt[bd_idx].set.bc = dev_data.ep_ctrl[ep_idx].mps_out;
