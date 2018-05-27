@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig AUDIO_INTEL_DMIC
+	bool "Intel digital PDM microphone driver support"
+	depends on AUDIO_DMIC
+	help
+	  Enable Intel digital PDM microphone driver
