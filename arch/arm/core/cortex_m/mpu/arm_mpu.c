@@ -86,11 +86,20 @@ static inline u32_t _get_region_attr_by_type(u32_t type, u32_t size)
 
 static inline u8_t _get_num_regions(void)
 {
+#if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
+	defined(CONFIG_CPU_CORTEX_M3) || \
+	defined(CONFIG_CPU_CORTEX_M4)
+	/* Cortex-M0+, Cortex-M3, and Cortex-M4 MCUs may
+	 * have a fixed number of 8 MPU regions.
+	 */
+	return 8;
+#else
 	u32_t type = ARM_MPU_DEV->type;
 
 	type = (type & 0xFF00) >> 8;
 
 	return (u8_t)type;
+#endif
 }
 
 /* This internal function performs MPU region initialization.
@@ -488,6 +497,13 @@ static int arm_mpu_init(struct device *arg)
 
 	_arm_mpu_config();
 
+	/* Sanity check for number of regions in Cortex-M0+, M3, and M4. */
+#if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
+	defined(CONFIG_CPU_CORTEX_M3) || \
+	defined(CONFIG_CPU_CORTEX_M4)
+	__ASSERT((ARM_MPU_DEV->type & 0xFF00) >> 8 == 8,
+		"Invalid number of MPU regions\n");
+#endif
 	return 0;
 }
 
