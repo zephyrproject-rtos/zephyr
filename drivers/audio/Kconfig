@@ -35,4 +35,26 @@ source "subsys/logging/Kconfig.template.log_config"
 source "drivers/audio/Kconfig.tlv320dac"
 
 endif # AUDIO_CODEC
+
+menuconfig AUDIO_DMIC
+	bool "Digital Microphone (Audio) Drivers"
+	help
+	  Enable Digital Microphone Driver Configuration
+
+if AUDIO_DMIC
+
+config AUDIO_DMIC_INIT_PRIORITY
+	int "Init priority"
+	default 60
+	help
+	  Audio Digital Microphone device driver initialization priority.
+
+module = AUDIO_DMIC
+module-str = audio_dmic
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/audio/Kconfig.intel_dmic"
+
+endif # AUDIO_DMIC
+
 endif # AUDIO
