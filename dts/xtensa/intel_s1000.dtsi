@@ -24,7 +24,7 @@
 			compatible = "xtensa,core-intc";
 			reg = <0x00 0x400>;
 			interrupt-controller;
-			#interrupt-cells = <2>;
+			#interrupt-cells = <3>;
 		};
 
 	};
@@ -45,8 +45,8 @@
 			compatible = "intel,cavs-intc";
 			reg = <0x78800 0x10>;
 			interrupt-controller;
-			#interrupt-cells = <2>;
-			interrupts = <6 0>;
+			#interrupt-cells = <3>;
+			interrupts = <6 0 0>;
 			interrupt-parent = <&core_intc>;
 		};
 
@@ -54,21 +54,27 @@
 			compatible = "intel,cavs-intc";
 			reg = <0x78810 0x10>;
 			interrupt-controller;
-			#interrupt-cells = <2>;
+			#interrupt-cells = <3>;
+			interrupts = <0xA 0 0>;
+			interrupt-parent = <&core_intc>;
 		};
 
 		cavs2: cavs@78820  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78820 0x10>;
 			interrupt-controller;
-			#interrupt-cells = <2>;
+			#interrupt-cells = <3>;
+			interrupts = <0XD 0 0>;
+			interrupt-parent = <&core_intc>;
 		};
 
 		cavs3: cavs@78830  {
 			compatible = "intel,cavs-intc";
 			reg = <0x78830 0x10>;
 			interrupt-controller;
-			#interrupt-cells = <2>;
+			#interrupt-cells = <3>;
+			interrupts = <0x10 0 0>;
+			interrupt-parent = <&core_intc>;
 		};
 
 		dw_intc: intc@81800  {
@@ -76,7 +82,7 @@
 			reg = <0x00081800 0x400>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
-			interrupts = <7 0>;
+			interrupts = <7 0 0>;
 			interrupt-parent = <&cavs0>;
 		};
 

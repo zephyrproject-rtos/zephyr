@@ -35,4 +35,5 @@ cell_string: IRQ
 "#cells":
   - irq
   - sense
+  - priority
 ...

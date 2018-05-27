@@ -28,28 +28,12 @@
 #define INTR_CNTL_IRQ_NUM(_irq) \
 	(((_irq >> INTR_CNTL_IRQ_NUM_SHIFT) & INTR_CNTL_IRQ_NUM_MASK) - 1)
 
-/* CAVS interrupt logic */
-#define CAVS_ICTL_BASE_ADDR			0x00078800
-#define CAVS_ICTL_0_IRQ				0x00000006
-#define CAVS_ICTL_0_IRQ_FLAGS			0
-
-#define CAVS_ICTL_1_IRQ				0x0000000A
-#define CAVS_ICTL_1_IRQ_FLAGS			0
-
-#define CAVS_ICTL_2_IRQ				0x0000000D
-#define CAVS_ICTL_2_IRQ_FLAGS			0
-
-#define CAVS_ICTL_3_IRQ				0x00000010
-#define CAVS_ICTL_3_IRQ_FLAGS			0
-
 #define IOAPIC_EDGE				0
 #define IOAPIC_HIGH				0
 
 /* DW interrupt controller */
-#define DW_ICTL_IRQ				0x00000706
 #define DW_ICTL_IRQ_CAVS_OFFSET			CAVS_IRQ_NUMBER(DW_ICTL_IRQ)
 #define DW_ICTL_NUM_IRQS			9
-#define DW_ICTL_IRQ_FLAGS			0
 
 /* GPIO */
 #define GPIO_DW_0_BASE_ADDR			0x00080C00
