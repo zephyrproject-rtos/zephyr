@@ -249,7 +249,9 @@ static inline int _is_user_accessible_region(u32_t r_index, int write)
 void arm_core_mpu_enable(void)
 {
 	if (arm_mpu_enabled == 0) {
-		/* Enable MPU */
+		/* Enable MPU and use the default memory map as a
+		 * background region for privileged software access.
+		 */
 		ARM_MPU_DEV->ctrl = ARM_MPU_ENABLE | ARM_MPU_PRIVDEFENA;
 
 		arm_mpu_enabled = 1;
@@ -481,7 +483,9 @@ static void _arm_mpu_config(void)
 			     mpu_config.mpu_regions[r_index].attr);
 	}
 
-	/* Enable MPU */
+	/* Enable MPU and use the default memory map as a
+	 * background region for privileged software access.
+	 */
 	ARM_MPU_DEV->ctrl = ARM_MPU_ENABLE | ARM_MPU_PRIVDEFENA;
 
 	arm_mpu_enabled = 1;
