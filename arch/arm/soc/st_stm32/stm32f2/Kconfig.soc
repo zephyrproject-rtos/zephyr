@@ -9,6 +9,9 @@ choice
 prompt "STM32F2X MCU Selection"
 depends on SOC_SERIES_STM32F2X
 
+config SOC_STM32F207XE
+	bool "STM32F207XE"
+
 config SOC_STM32F207XG
 	bool "STM32F207XG"
 
