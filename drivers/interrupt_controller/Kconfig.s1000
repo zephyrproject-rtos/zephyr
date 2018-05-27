@@ -25,6 +25,13 @@ config CAVS_ICTL_0_NAME
 	depends on CAVS_ICTL
 	default "CAVS_0"
 
+config CAVS_ICTL_0_IRQ_PRI
+	int "CAVS 0 IRQ priority"
+	depends on CAVS_ICTL
+	default 0
+	help
+	  IRQ priority of CAVS 0 interrupt
+
 config CAVS_ICTL_0_OFFSET
 	hex "Parent interrupt number to which CAVS_0 maps"
 	default 0x00
@@ -34,6 +41,13 @@ config CAVS_ICTL_1_NAME
 	string "CAVS 1 Driver name"
 	depends on CAVS_ICTL
 	default "CAVS_1"
+
+config CAVS_ICTL_1_IRQ_PRI
+	int "CAVS 1 IRQ priority"
+	depends on CAVS_ICTL
+	default 0
+	help
+	  IRQ priority of CAVS 1 interrupt
 
 config CAVS_ICTL_1_OFFSET
 	hex "Parent interrupt number to which CAVS_1 maps"
@@ -45,6 +59,13 @@ config CAVS_ICTL_2_NAME
 	depends on CAVS_ICTL
 	default "CAVS_2"
 
+config CAVS_ICTL_2_IRQ_PRI
+	int "CAVS 2 IRQ priority"
+	depends on CAVS_ICTL
+	default 0
+	help
+	  IRQ priority of CAVS 2 interrupt
+
 config CAVS_ICTL_2_OFFSET
 	hex "Parent interrupt number to which CAVS_2 maps"
 	default 0x00
@@ -54,6 +75,13 @@ config CAVS_ICTL_3_NAME
 	string "CAVS 3 Driver name"
 	depends on CAVS_ICTL
 	default "CAVS_3"
+
+config CAVS_ICTL_3_IRQ_PRI
+	int "CAVS 3 IRQ priority"
+	depends on CAVS_ICTL
+	default 0
+	help
+	  IRQ priority of CAVS 3 interrupt
 
 config CAVS_ICTL_3_OFFSET
 	hex "Parent interrupt number to which CAVS_3 maps"

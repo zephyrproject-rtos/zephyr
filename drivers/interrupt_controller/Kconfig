@@ -148,6 +148,13 @@ config DW_ICTL_OFFSET
 	help
 	  Parent interrupt number to which DW_ICTL maps
 
+config DW_ICTL_IRQ_PRI
+	int "DW ICTL IRQ priority"
+	depends on DW_ICTL
+	default 0
+	help
+	  IRQ priority of DW ICTL interrupt
+
 config DW_ISR_TBL_OFFSET
 	int "Offset in the SW ISR Table"
 	default 0
