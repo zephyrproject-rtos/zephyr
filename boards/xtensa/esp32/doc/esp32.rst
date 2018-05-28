@@ -59,6 +59,46 @@ The toolchain is available for Linux, Windows, and Mac hosts and
 instructions to obtain and set them up are available in the ESP-IDF
 repository, using the toolchain and SDK links above.
 
+Docker container based builds
+=============================
+
+You can skip locally installing and configuring the Zephyr build system by
+using pre-made the ``svendowideit/zephyr-esp32`` Docker image.
+
+For example, to build the ``hello_world`` sample and flash it when its attached to ttyUSB0:
+
+.. code-block:: console
+
+   $ docker run --rm -it --device /dev/ttyUSB0:/dev/ttyUSB0 -w /esp32 svendowideit/zephyr-esp32 sh -c "cmake -DBOARD=esp32 /zephyr/samples/hello_world && make flash"
+
+You can test that the ESP32 has hello_world running by attaching a serial console
+to ttyUSB0, and resetting the device:
+
+.. code-block:: console
+   $ screen /dev/ttyUSB0 115200
+   ts Jun  8 2016 00:22:57
+
+   rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+   ets Jun  8 2016 00:22:57
+   
+   rst:0x10 (RTCWDT_RTC_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+   configsip: 0, SPIWP:0xee
+   clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+   mode:DIO, clock div:2
+   load:0x3ffb0000,len:96
+   load:0x3ffb0060,len:636
+   load:0x3ffb02e0,len:1816
+   load:0x40080000,len:1024
+   ho 0 tail 12 room 4
+   load:0x40080400,len:96
+   load:0x40080460,len:10028
+   load:0x400c0000,len:0
+   entry 0x40080688
+   ***** BOOTING ZEPHYR OS v1.9.99 - BUILD: Nov 19 2017 03:11:40 *****
+   Hello World! xtensa
+
+
+
 Set up build environment
 ========================
 
