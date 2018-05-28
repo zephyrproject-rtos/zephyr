@@ -107,6 +107,7 @@ Libraries / Subsystems
 * subsys/disk: Added support for multiple disk interfaces
 * subsys/fs: Added support for multiple instances of filesystem
 * subsys/fs: Added Virtual File system Switch (VFS) support
+* lib/posix: Added POSIX Mutex support
 
 HALs
 ****
@@ -119,7 +120,7 @@ Documentation
 
 Tests and Samples
 *****************
-
+Added test for POSIX mutex
 
 Issue Related Items
 *******************
