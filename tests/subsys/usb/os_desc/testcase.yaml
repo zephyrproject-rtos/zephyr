@@ -1,0 +1,4 @@
+tests:
+  usb.osdesc:
+    platform_whitelist: native_posix
+    tags: usb osdesc
