@@ -55,6 +55,7 @@ Sections
    boards/boards.rst
    devices/index.rst
    subsystems/subsystems.rst
+   tests/verification_plan.rst
 
 Indices and Tables
 ******************
