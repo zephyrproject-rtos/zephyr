@@ -60,6 +60,8 @@ The USB-KW24D512 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | soc flash                           |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -114,6 +116,14 @@ Serial Port
 The KW2xD SoC has three UARTs. One is configured and can be used for the
 console, but it uses the same pins as the JTAG interface and is only
 accessible via the JTAG SWD connector.
+
+USB
+===
+
+The KW2xD SoC has a USB OTG (USBOTG) controller that supports both
+device and host functions. Only USB device function is supported in Zephyr
+at the moment. The USB-KW24D512 board has a USB Type A connector and
+can only be used in device mode.
 
 Programming and Debugging
 *************************
