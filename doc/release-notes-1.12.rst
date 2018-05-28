@@ -21,7 +21,7 @@ The following sections provide detailed lists of changes by component.
 Kernel
 ******
 
-* Detail
+* Added k_thread_foreach API
 
 Architectures
 *************
@@ -104,6 +104,9 @@ Build and Infrastructure
 Libraries / Subsystems
 ***********************
 
+* subsys/disk: Added support for multiple disk interfaces
+* subsys/fs: Added support for multiple instances of filesystem
+* subsys/fs: Added Virtual File system Switch (VFS) support
 
 HALs
 ****
