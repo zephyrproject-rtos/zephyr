@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_TLS_DEFAULT_CREDENTIALS_H__
-#define __NET_TLS_DEFAULT_CREDENTIALS_H__
+#ifndef __TLS_DEFAULT_CREDENTIALS_H__
+#define __TLS_DEFAULT_CREDENTIALS_H__
 
 #define NET_TLS_DEFAULT_CA_CERTIFICATE_TAG 1
 #define NET_TLS_DEFAULT_PSK_TAG 2
@@ -151,4 +151,4 @@ static const unsigned char client_psk[] = {
 static const char client_psk_id[] = "Client_identity";
 #endif
 
-#endif
+#endif /* __TLS_DEFAULT_CREDENTIALS_H__ */

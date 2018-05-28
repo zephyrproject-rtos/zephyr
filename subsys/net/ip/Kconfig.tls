@@ -170,7 +170,7 @@ config NET_PRECONFIGURE_TLS_CREDENTIALS
 
 config NET_TLS_CREDENTIALS_FILE
 	string "TLS/DTLS credentials to preconfigure"
-	default "net_tls_default_credentials.h"
+	default "tls_default_credentials.h"
 	depends on NET_PRECONFIGURE_TLS_CREDENTIALS
 	help
 	  File containing default TLS/DTLS credentials to preconfigure. TODO Extend description.

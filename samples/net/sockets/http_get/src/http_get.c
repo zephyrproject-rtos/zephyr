@@ -22,6 +22,8 @@
 #include <net/net_app.h>
 #include <net/net_tls.h>
 
+#include "tls_default_credentials.h"
+
 #endif
 
 /* HTTP server to connect to */
@@ -34,10 +36,6 @@
 #endif
 /* HTTP path to request */
 #define HTTP_PATH "/"
-
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-#define NET_TLS_DEFAULT_CA_CERTIFICATE_TAG 1
-#endif
 
 #define SSTRLEN(s) (sizeof(s) - 1)
 #define CHECK(r) { if (r == -1) { printf("Error: " #r "\n"); exit(1); } }
@@ -95,7 +93,6 @@ int main(void)
 	sec_tag_t sec_tag_opt[] = {
 		NET_TLS_DEFAULT_CA_CERTIFICATE_TAG,
 	};
-
 	CHECK(setsockopt(sock, SOL_TLS, TLS_SEC_TAG_LIST,
 			 sec_tag_opt, sizeof(sec_tag_opt)));
 #endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
