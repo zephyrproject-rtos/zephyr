@@ -21,6 +21,8 @@
 &uart0 {
 	status = "ok";
 	current-speed = <115200>;
+	sda-pin = <30>;
+	scl-pin = <0>;
 };
 
 &i2c0 {

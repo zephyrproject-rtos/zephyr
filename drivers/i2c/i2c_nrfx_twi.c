@@ -135,8 +135,8 @@ static int init_twi(struct device *dev, const nrfx_twi_config_t *config)
 			    CONFIG_I2C_##idx##_IRQ_PRI,			\
 			    nrfx_isr, nrfx_twi_##idx##_irq_handler, 0);	\
 		const nrfx_twi_config_t config = {			\
-			.scl       = CONFIG_I2C_##idx##_NRF_SCL_PIN,	\
-			.sda       = CONFIG_I2C_##idx##_NRF_SDA_PIN,	\
+			.scl       = CONFIG_I2C_##idx##_SCL_PIN,	\
+			.sda       = CONFIG_I2C_##idx##_SDA_PIN,	\
 			.frequency = NRF_TWI_FREQ_100K,			\
 		};							\
 		return init_twi(dev, &config);				\

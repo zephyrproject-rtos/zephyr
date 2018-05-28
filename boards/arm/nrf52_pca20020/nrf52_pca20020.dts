@@ -38,6 +38,8 @@
 &i2c0 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-pin = <7>;
+	scl-pin = <8>;
 
 	sx1509b: sx1509b@3e {
 		compatible = "semtech,sx1509b";
@@ -67,6 +69,8 @@
 &i2c1 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-pin = <14>;
+	scl-pin = <15>;
 };
 
 &flash0 {

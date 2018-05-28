@@ -39,20 +39,6 @@ config I2C_0_NRF_TWIM
 
 endchoice
 
-config I2C_0_NRF_SDA_PIN
-	int "SDA pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for SDA.
-
-config I2C_0_NRF_SCL_PIN
-	int "SCL pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for SCL.
-
 endif # I2C_0 && !SPI_0
 
 # Nordic TWIx1 and SPIx1 instances can not be used at the same time.
@@ -78,20 +64,6 @@ config I2C_1_NRF_TWIM
 	  if provided buffer is placed in flash, transfer will fail.
 
 endchoice
-
-config I2C_1_NRF_SDA_PIN
-	int "SDA pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for SDA.
-
-config I2C_1_NRF_SCL_PIN
-	int "SCL pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for SCL.
 
 endif # I2C_1 && !SPI_1
 
