@@ -45,6 +45,10 @@ struct dma_chan_data {
 	struct dw_lli2 *lli;
 	u32_t cfg_lo;
 	u32_t cfg_hi;
+	void (*dma_blkcallback)(struct device *dev, u32_t channel,
+		int error_code);
+	void (*dma_tfrcallback)(struct device *dev, u32_t channel,
+		int error_code);
 };
 
 #define DW_MAX_CHAN		8
@@ -111,10 +115,6 @@ struct dw_drv_plat_data {
 
 /* Device run time data */
 struct dw_dma_dev_data {
-	void (*dma_blkcallback)(struct device *dev, u32_t channel,
-		int error_code);
-	void (*dma_tfrcallback)(struct device *dev, u32_t channel,
-		int error_code);
 	struct dw_drv_plat_data *channel_data;
 	struct dma_chan_data chan[DW_MAX_CHAN];
 };
