@@ -52,3 +52,8 @@ config GPIO_AS_PINRESET
 	bool "GPIO as pin reset (reset button)"
 	depends on SOC_SERIES_NRF52X
 	default y
+
+config NRF_ENABLE_ICACHE
+	bool "Enable the instruction cache (I-Cache)"
+	depends on SOC_SERIES_NRF52X
+	default y
