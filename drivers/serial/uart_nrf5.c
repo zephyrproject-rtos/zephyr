@@ -377,7 +377,7 @@ static void uart_nrf5_irq_tx_enable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	uart->INTENSET |= UART_IRQ_MASK_TX;
+	uart->INTENSET = UART_IRQ_MASK_TX;
 }
 
 /** Interrupt driven transfer disabling function */
@@ -385,7 +385,7 @@ static void uart_nrf5_irq_tx_disable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	uart->INTENCLR |= UART_IRQ_MASK_TX;
+	uart->INTENCLR = UART_IRQ_MASK_TX;
 }
 
 /** Interrupt driven transfer ready function */
@@ -401,7 +401,7 @@ static void uart_nrf5_irq_rx_enable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	uart->INTENSET |= UART_IRQ_MASK_RX;
+	uart->INTENSET = UART_IRQ_MASK_RX;
 }
 
 /** Interrupt driven receiver disabling function */
@@ -409,7 +409,7 @@ static void uart_nrf5_irq_rx_disable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	uart->INTENCLR |= UART_IRQ_MASK_RX;
+	uart->INTENCLR = UART_IRQ_MASK_RX;
 }
 
 /** Interrupt driven transfer empty function */
@@ -433,7 +433,7 @@ static void uart_nrf5_irq_err_enable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	uart->INTENSET |= UART_IRQ_MASK_ERROR;
+	uart->INTENSET = UART_IRQ_MASK_ERROR;
 }
 
 /** Interrupt driven error disabling function */
@@ -441,7 +441,7 @@ static void uart_nrf5_irq_err_disable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	uart->INTENCLR |= UART_IRQ_MASK_ERROR;
+	uart->INTENCLR = UART_IRQ_MASK_ERROR;
 }
 
 /** Interrupt driven pending status function */
