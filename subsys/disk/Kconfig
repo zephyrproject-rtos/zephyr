@@ -22,7 +22,7 @@ config DISK_ACCESS_MAX_VOLUMES
 
 config SYS_LOG_DISK_LEVEL
 	int
-	prompt "File System log level"
+	prompt "Disk log level"
 	depends on SYS_LOG
 	default 0
 	help
