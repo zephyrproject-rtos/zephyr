@@ -47,7 +47,7 @@ static void work_handler(struct k_work *work)
 }
 
 /**
- * @ingroup workqueue_thread_tests
+ * @ingroup kernel_workqueue_tests
  * @see k_work_init()
  */
 static void test_items_init(void)
@@ -88,7 +88,7 @@ static void coop_work_main(int arg1, int arg2)
 }
 
 /**
- * @ingroup workqueue_thread_tests
+ * @ingroup kernel_workqueue_tests
  * @see k_work_submit()
  */
 static void test_items_submit(void)
@@ -124,7 +124,7 @@ static void check_results(int num_tests)
 }
 
 /**
- * @ingroup workqueue_thread_tests
+ * @ingroup kernel_workqueue_tests
  * @see k_work_init(), k_work_submit()
  */
 static void test_sequence(void)
@@ -159,7 +159,7 @@ static void resubmit_work_handler(struct k_work *work)
 	}
 }
 /**
- * @ingroup workqueue_thread_tests
+ * @ingroup kernel_workqueue_tests
  * @see k_work_submit()
  */
 static void test_resubmit(void)
@@ -190,7 +190,7 @@ static void delayed_work_handler(struct k_work *work)
 }
 
 /**
- * @ingroup workqueue_thread_tests
+ * @ingroup kernel_workqueue_tests
  * @see k_delayed_work_init()
  */
 static void test_delayed_init(void)
@@ -222,7 +222,7 @@ static void coop_delayed_work_main(int arg1, int arg2)
 }
 
 /**
- * @ingroup workqueue_thread_tests
+ * @ingroup kernel_workqueue_tests
  * @see k_delayed_work_init(), k_delayed_work_submit()
  */
 static void test_delayed_submit(void)
@@ -261,7 +261,7 @@ static void coop_delayed_work_cancel_main(int arg1, int arg2)
 }
 
 /**
- * @ingroup workqueue_thread_tests
+ * @ingroup kernel_workqueue_tests
  * @see k_delayed_work_init(), k_delayed_work_submit(), k_delayed_work_cancel()
  */
 static void test_delayed_cancel(void)
@@ -285,7 +285,7 @@ static void test_delayed_cancel(void)
 }
 
 /**
- * @ingroup workqueue_thread_tests
+ * @ingroup kernel_workqueue_tests
  * @see k_delayed_work_init(), k_delayed_work_submit()
  */
 static void delayed_resubmit_work_handler(struct k_work *work)
@@ -302,7 +302,7 @@ static void delayed_resubmit_work_handler(struct k_work *work)
 }
 
 /**
- * @ingroup workqueue_thread_tests
+ * @ingroup kernel_workqueue_tests
  * @see k_delayed_work_init(), k_delayed_work_submit()
  */
 static void test_delayed_resubmit(void)
@@ -345,7 +345,7 @@ static void coop_delayed_work_resubmit(void)
 
 
 /**
- * @ingroup workqueue_thread_tests
+ * @ingroup kernel_workqueue_tests
  * @see k_delayed_work_init()
  */
 static void test_delayed_resubmit_thread(void)
@@ -368,7 +368,7 @@ static void test_delayed_resubmit_thread(void)
 }
 
 /**
- * @ingroup workqueue_thread_tests
+ * @ingroup kernel_workqueue_tests
  * @see k_delayed_work_init(), k_delayed_work_submit()
  */
 static void test_delayed(void)
