@@ -198,16 +198,17 @@ config LSM6DSL_ENABLE_INTERNAL_PULLUP
 	bool "Enabled internals pull-up resistors"
 	default y
 
-choice
+choice LSM6DSL_EXTERNAL_SENSOR_0
 	prompt "External sensor 0"
-	default LSM6DSL_EXT0_LIS2MDL
 	help
 	  Choose the external sensor 0 connected to LSM6DS3.
 
 config LSM6DSL_EXT0_LIS2MDL
 	bool "LIS2MDL"
+
 config LSM6DSL_EXT0_LPS22HB
 	bool "LPS22HB"
+
 endchoice
 
 endif #LSM6DSL_SENSORHUB

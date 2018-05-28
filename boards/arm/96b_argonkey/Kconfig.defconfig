@@ -53,8 +53,9 @@ endchoice
 config LSM6DSL_SENSORHUB
 	default y
 
-config LSM6DSL_EXT0_LIS2MDL
-	default y
+choice LSM6DSL_EXTERNAL_SENSOR_0
+	default LSM6DSL_EXT0_LIS2MDL
+endchoice
 
 endif # LSM6DSL
 
