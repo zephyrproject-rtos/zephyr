@@ -1,9 +1,5 @@
 mainmenu "Wi-Fi sample"
 
-config ZEPHYR_BASE
-	string
-	option env="ZEPHYR_BASE"
-
 source "$ZEPHYR_BASE/Kconfig.zephyr"
 
 if WIFI_WINC1500

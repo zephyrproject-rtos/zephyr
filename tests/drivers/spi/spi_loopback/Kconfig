@@ -1,9 +1,5 @@
 mainmenu "SPI Loopback Test"
 
-config ZEPHYR_BASE
-	string
-	option env="ZEPHYR_BASE"
-
 source "$ZEPHYR_BASE/Kconfig.zephyr"
 
 config SPI_LOOPBACK_DRV_NAME

@@ -1,13 +1,5 @@
 mainmenu "Zephyr Object Sizes"
 
-config ZEPHYR_BASE
-	string
-	option env="ZEPHYR_BASE"
-
-config APPLICATION_BASE
-	string
-	option env="PROJECT_BASE"
-
 source "$ZEPHYR_BASE/Kconfig.zephyr"
 
 config OBJECTS_PRINTK
