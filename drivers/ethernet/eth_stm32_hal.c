@@ -364,7 +364,7 @@ static void eth_iface_init(struct net_if *iface)
 	disable_mcast_filter(heth);
 
 	SYS_LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
-		    dev_data->mac_addr[0], contdev_dataext->mac_addr[1],
+		    dev_data->mac_addr[0], dev_data->mac_addr[1],
 		    dev_data->mac_addr[2], dev_data->mac_addr[3],
 		    dev_data->mac_addr[4], dev_data->mac_addr[5]);
 
