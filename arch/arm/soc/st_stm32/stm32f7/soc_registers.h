@@ -8,5 +8,6 @@
 #define _STM32F7_SOC_REGISTERS_H_
 
 /* include register mapping headers */
+#include "flash_registers.h"
 
 #endif /* _STM32F7_SOC_REGISTERS_H_ */
