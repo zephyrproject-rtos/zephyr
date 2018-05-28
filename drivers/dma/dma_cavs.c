@@ -86,27 +86,29 @@ static void dw_dma_isr(void *arg)
 	dw_write(dev_cfg->base, DW_CLEAR_TFR, status_tfr);
 
 	/* Dispatch ISRs for channels depending upon the bit set */
-	if (dev_data->dma_blkcallback) {
-		while (status_block) {
-			channel = find_lsb_set(status_block) - 1;
-			status_block &= ~(1 << channel);
+	while (status_block) {
+		channel = find_lsb_set(status_block) - 1;
+		status_block &= ~(1 << channel);
+		chan_data = &dev_data->chan[channel];
+
+		if (chan_data->dma_blkcallback) {
 
 			/* Ensure the linked list (chan_data->lli) is
 			 * freed in the user callback function once
 			 * all the blocks are transferred.
 			 */
-			dev_data->dma_blkcallback(dev, channel, 0);
+			chan_data->dma_blkcallback(dev, channel, 0);
 		}
 	}
 
-	if (dev_data->dma_tfrcallback) {
-		while (status_tfr) {
-			channel = find_lsb_set(status_tfr) - 1;
-			status_tfr &= ~(1 << channel);
-			chan_data = &dev_data->chan[channel];
-			k_free(chan_data->lli);
-			chan_data->lli = NULL;
-			dev_data->dma_tfrcallback(dev, channel, 0);
+	while (status_tfr) {
+		channel = find_lsb_set(status_tfr) - 1;
+		status_tfr &= ~(1 << channel);
+		chan_data = &dev_data->chan[channel];
+		k_free(chan_data->lli);
+		chan_data->lli = NULL;
+		if (chan_data->dma_tfrcallback) {
+			chan_data->dma_tfrcallback(dev, channel, 0);
 		}
 	}
 }
@@ -250,9 +252,9 @@ static int dw_dma_config(struct device *dev, u32_t channel,
 	 * at the end of each block.
 	 */
 	if (cfg->complete_callback_en) {
-		dev_data->dma_blkcallback = cfg->dma_callback;
+		chan_data->dma_blkcallback = cfg->dma_callback;
 	} else {
-		dev_data->dma_tfrcallback = cfg->dma_callback;
+		chan_data->dma_tfrcallback = cfg->dma_callback;
 	}
 
 	return 0;
@@ -270,11 +272,11 @@ static int dw_dma_transfer_start(struct device *dev, u32_t channel)
 
 	chan_data = &dev_data->chan[channel];
 
-	if (dev_data->dma_tfrcallback) {
+	if (chan_data->dma_tfrcallback) {
 		dw_write(dev_cfg->base, DW_MASK_TFR, INT_UNMASK(channel));
 	}
 
-	if (dev_data->dma_blkcallback) {
+	if (chan_data->dma_blkcallback) {
 		dw_write(dev_cfg->base, DW_MASK_BLOCK, INT_UNMASK(channel));
 	}
 
