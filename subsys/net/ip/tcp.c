@@ -37,7 +37,7 @@
 #include "tcp_internal.h"
 #include "net_stats.h"
 
-#define ALLOC_TIMEOUT 500
+#define ALLOC_TIMEOUT K_MSEC(500)
 
 /*
  * Each TCP connection needs to be tracked by net_context, so
