@@ -51,6 +51,20 @@ extern "C" {
 #define GPIO_PIN_DISABLE	(0 __DEPRECATED_MACRO)
 
 
+/** @cond INTERNAL_HIDDEN */
+#define GPIO_DMA_REQ_POS		15
+#define GPIO_DMA_REQ_MASK		(0x3 << GPIO_DMA_REQ_POS)
+/** @endcond */
+
+/** GPIO pin trigger DMA requenst on falling edge. */
+#define GPIO_DMA_REQ_EDGE_LOW		(1 << GPIO_DMA_REQ_POS)
+
+/** GPIO pin trigger DMA requenst on rising edge. */
+#define GPIO_DMA_REQ_EDGE_HIGH		(2 << GPIO_DMA_REQ_POS)
+
+/** GPIO pin trigger DMA requenst on rising and falling edge. */
+#define GPIO_DMA_REQ_EDGE_DOUBLE	(3 << GPIO_DMA_REQ_POS)
+
 struct gpio_callback;
 
 /**
