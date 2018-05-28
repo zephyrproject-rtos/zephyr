@@ -89,6 +89,8 @@ The frdm_k64f board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | soc flash                           |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 | SENSOR    | off-chip   | fxos8700 polling;                   |
 |           |            | fxos8700 trigger                    |
 +-----------+------------+-------------------------------------+
@@ -189,6 +191,13 @@ Serial Port
 
 The K64F SoC has six UARTs. One is configured for the console, another for BT
 HCI, and the remaining are not used.
+
+USB
+===
+
+The K64F SoC has a USB OTG (USBOTG) controller that supports both
+device and host functions through its micro USB connector (K64F USB).
+Only USB device function is supported in Zephyr at the moment.
 
 Programming and Debugging
 *************************
