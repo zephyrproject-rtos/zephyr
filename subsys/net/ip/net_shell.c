@@ -1456,7 +1456,7 @@ static void print_dns_info(struct dns_resolve_context *ctx)
 int net_shell_cmd_dns(int argc, char *argv[])
 {
 #if defined(CONFIG_DNS_RESOLVER)
-#define DNS_TIMEOUT 2000 /* ms */
+#define DNS_TIMEOUT K_MSEC(2000) /* ms */
 
 	struct dns_resolve_context *ctx;
 	enum dns_query_type qtype = DNS_QUERY_TYPE_A;

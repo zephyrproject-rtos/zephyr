@@ -97,4 +97,4 @@
  * that can cause the stack to deadlock. This can happen if RX side is flooding
  * incoming data and we cannot get process the packet in 6lo side.
  */
-#define NET_6LO_RX_PKT_TIMEOUT 100 /* in ms */
+#define NET_6LO_RX_PKT_TIMEOUT K_MSEC(100) /* in ms */
