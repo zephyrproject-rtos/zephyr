@@ -86,6 +86,11 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 		block->id.level = level_num;
 		block->id.block = block_num;
 
+		/* [Sanechips] When race condition causes failure, re_alloc. */
+		if (ret == -EAGAIN) {
+                        continue;
+                }
+
 		if (ret == 0 || timeout == K_NO_WAIT ||
 		    (ret && ret != -ENOMEM)) {
 			return ret;
