@@ -14,7 +14,7 @@ menuconfig APDS9960
 config  APDS9960_I2C_DEV_NAME
 	string "I2C Master"
 	depends on APDS9960
-	default I2C_SS_0_NAME
+	default "I2C_0"
 	help
 	  The device name of the I2C master device to which the APDS9960
 	  chip is connected.
