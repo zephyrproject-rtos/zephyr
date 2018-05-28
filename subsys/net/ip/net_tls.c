@@ -187,6 +187,11 @@ static int tls_rx(void *ctx, unsigned char *buf, size_t len)
 
 	if (context->mbedtls.rx_offset >=
 	    net_pkt_get_len(context->mbedtls.rx_pkt)) {
+		if (net_context_get_type(context) == SOCK_STREAM) {
+			net_context_update_recv_wnd(
+				context,
+				net_pkt_appdatalen(context->mbedtls.rx_pkt));
+		}
 		net_pkt_unref(context->mbedtls.rx_pkt);
 		context->mbedtls.rx_pkt = NULL;
 		context->mbedtls.rx_offset = 0;
@@ -210,6 +215,10 @@ static void tls_recv_cb(struct net_context *context, struct net_pkt *pkt,
 	}
 
 	k_fifo_put(&context->mbedtls.rx_fifo, pkt);
+
+	if (net_context_get_type(context) == SOCK_STREAM) {
+		net_context_update_recv_wnd(context, -net_pkt_appdatalen(pkt));
+	}
 
 	/* Process it as application data only after handshake is over,
 	 * otherwise packet will be consumed by handshake.
