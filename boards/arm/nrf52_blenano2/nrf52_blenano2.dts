@@ -33,6 +33,11 @@
 	status = "ok";
 };
 
+&i2c0 {
+	sda-pin = <28>;
+	scl-pin = <2>;
+};
+
 &flash0 {
 	/*
 	 * For more information, see:

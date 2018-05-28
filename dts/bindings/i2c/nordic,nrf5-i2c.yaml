@@ -33,4 +33,15 @@ properties:
       description: required interrupts
       generation: define
 
+    sda-pin:
+      type: int
+      description: SDA pin
+      generation: define
+      category: required
+
+    scl-pin:
+      type: int
+      description: SCL pin
+      generation: define
+      category: required
 ...

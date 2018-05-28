@@ -51,12 +51,6 @@ choice I2C_0_NRF_TYPE
 
 endchoice
 
-config I2C_0_NRF_SDA_PIN
-	default 26
-
-config I2C_0_NRF_SCL_PIN
-	default 27
-
 endif # I2C_0
 
 endif # I2C

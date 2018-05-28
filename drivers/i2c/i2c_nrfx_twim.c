@@ -135,8 +135,8 @@ static int init_twim(struct device *dev, const nrfx_twim_config_t *config)
 			    CONFIG_I2C_##idx##_IRQ_PRI,			\
 			    nrfx_isr, nrfx_twim_##idx##_irq_handler, 0);\
 		const nrfx_twim_config_t config = {			\
-			.scl       = CONFIG_I2C_##idx##_NRF_SCL_PIN,	\
-			.sda       = CONFIG_I2C_##idx##_NRF_SDA_PIN,	\
+			.scl       = CONFIG_I2C_##idx##_SCL_PIN,	\
+			.sda       = CONFIG_I2C_##idx##_SDA_PIN,	\
 			.frequency = NRF_TWIM_FREQ_100K,		\
 		};							\
 		return init_twim(dev, &config);				\
