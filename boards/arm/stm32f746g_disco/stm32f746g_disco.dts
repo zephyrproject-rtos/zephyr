@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2018 Yurii Hamann
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f746.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F746G DISCOVERY board";
+	compatible = "st,stm32f746g-disco", "st,stm32f746";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led@0 {
+			gpios = <&gpioi 1 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button@0 {
+			label = "User";
+			gpios = <&gpioi 11 GPIO_INT_ACTIVE_HIGH>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		sw0 = &user_button;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart6 {
+	current-speed = <115200>;
+	pinctrl-names = "default";
+	status = "ok";
+};
