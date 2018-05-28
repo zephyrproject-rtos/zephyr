@@ -9,7 +9,7 @@ arch/arm/                                @MaureenHelm @galak
 arch/arm/soc/arm/mps2/*                  @fvincenzo
 arch/arm/soc/atmel_sam/sam4s             @fallrisk
 arch/arm/soc/nxp*/                       @MaureenHelm
-arch/arm/soc/st_stm32/*                  @erwango
+arch/arm/soc/st_stm32/                   @erwango
 arch/arm/soc/st_stm32/stm32f4/*          @rsalveti @idlethread
 arch/arm/soc/ti_simplelink/cc32xx        @GAnthony
 arch/arm/soc/ti_simplelink/msp432p4xx    @Mani-Sadhasivam
