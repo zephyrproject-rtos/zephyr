@@ -250,8 +250,8 @@ def extract_controller(node_address, yaml, prop, prop_values, index, defs, def_l
 
     # recurse if we have anything left
     if len(prop_values):
-        extract_controller(node_address, prop, prop_values, index +1, prefix, defs,
-                           def_label)
+        extract_controller(node_address, yaml, prop, prop_values, index + 1,
+                           defs, def_label, generic)
 
 
 def extract_cells(node_address, yaml, prop, prop_values, names, index, defs,
