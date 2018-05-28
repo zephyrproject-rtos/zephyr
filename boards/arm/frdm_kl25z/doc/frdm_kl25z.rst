@@ -61,6 +61,8 @@ The frdm_kl25z board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | soc flash                           |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -105,6 +107,13 @@ Serial Port
 ===========
 
 The KL25Z UART0 is used for the console.
+
+USB
+===
+
+The KL25Z SoC has a USB OTG (USBOTG) controller that supports both
+device and host functions through its mini USB connector (USB KL25Z).
+Only USB device function is supported in Zephyr at the moment.
 
 Programming and Debugging
 *************************

@@ -64,4 +64,11 @@ config SOC_FLASH_MCUX
 
 endif # FLASH
 
+if USB
+
+config USB_KINETIS
+	def_bool y
+
+endif # USB
+
 endif # SOC_MKL25Z

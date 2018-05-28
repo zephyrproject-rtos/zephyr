@@ -70,3 +70,9 @@
 	status = "ok";
 	current-speed = <115200>;
 };
+
+&usbd {
+	compatible = "nxp,kinetis-usbd";
+	status = "ok";
+	num-bidir-endpoints = <8>;
+};

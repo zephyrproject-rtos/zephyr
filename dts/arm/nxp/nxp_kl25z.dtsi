@@ -137,6 +137,16 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
+
+		usbd: usbd@40072000 {
+			compatible = "nxp,kinetis-usbd";
+			reg = <0x40072000 0x1000>;
+			interrupts = <24 1>;
+			interrupt-names = "usb_otg";
+			num-bidir-endpoints = <16>;
+			status = "disabled";
+			label = "USBD";
+		};
 	};
 };
 

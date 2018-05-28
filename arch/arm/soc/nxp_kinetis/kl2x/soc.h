@@ -17,6 +17,7 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
+#include <fsl_common.h>
 #include <device.h>
 #include <misc/util.h>
 #include <random/rand32.h>
