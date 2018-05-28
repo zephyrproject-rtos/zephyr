@@ -9,7 +9,7 @@
 menuconfig USB_DEVICE_STACK
 	bool
 	prompt "USB device stack"
-	depends on USB_DEVICE_DRIVER
+	depends on USB_DEVICE_DRIVER || ARCH_POSIX
 	default n
 	help
 	  Enable USB device stack.
