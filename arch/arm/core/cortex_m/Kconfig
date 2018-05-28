@@ -329,15 +329,17 @@ config ZERO_LATENCY_IRQS
 	default n
 	depends on CPU_CORTEX_M_HAS_BASEPRI
 	help
-	  Interrupt locking is done by setting exception masking to priority
-	  one, thus allowing exception of priority zero to still come in. By
-	  default, the kernel verifies, via __ASSERT() statements, that the
-	  interrupt priority is not set to zero when either connecting them or
-	  setting their priority. Enabling this option disables the check,
-	  thus allowing setting the priority of interrupts to zero.
-
-	  Note that this is a somewhat dangerous option: ISRs of priority zero
-	  interrupts cannot use any kernel functionality.
+	  The kernel may reserve some of the highest interrupts priorities in
+	  the system for its own use. These interrupts will not be masked
+	  by interrupt locking.
+	  When connecting interrupts the kernel will offset all interrupts
+	  to lower priority than those reserved by the kernel.
+	  Zero-latency interrupt can be used to set up an interrupt at the
+	  highest interrupt priority which will not be blocked by interrupt
+	  locking.
+	  Since Zero-latency ISRs will run in the same priority or possibly at
+	  higher priority than the rest of the kernel they cannot use any
+	  kernel functionality.
 
 config SW_VECTOR_RELAY
 	bool
