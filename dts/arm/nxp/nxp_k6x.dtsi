@@ -384,7 +384,7 @@
 			status = "disabled";
 		};
 
-		usbd: usbd@40027000 {
+		usbd: usbd@40072000 {
 			compatible = "nxp,kinetis-usbd";
 			reg = <0x40072000 0x1000>;
 			interrupts = <53 1>;
