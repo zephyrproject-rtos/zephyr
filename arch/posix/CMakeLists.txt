@@ -19,6 +19,12 @@ zephyr_link_libraries_ifdef(CONFIG_COVERAGE
 	-lgcov
 	)
 
+if (CONFIG_ASAN)
+	zephyr_compile_options(-fsanitize=address)
+	zephyr_link_libraries(-lasan)
+	zephyr_ld_options(-fsanitize=address)
+endif ()
+
 zephyr_compile_definitions(_POSIX_C_SOURCE=200809)
 
 zephyr_ld_options(
