@@ -16,6 +16,15 @@ config DEBUG
 	  only disables optimization, more debugging variants can be selected
 	  from here to allow more debugging.
 
+config ASAN
+	bool "Build with address sanitizer"
+	depends on ARCH_POSIX
+	help
+	  Builds Zephyr with Address Sanitizer enabled.  This is currently
+	  only supported by the native_posix port, and requires a recent-ish
+	  compiler with the `-fsanitize=address` command line option, and
+	  the libasan library.
+
 config STACK_USAGE
 	bool "Generate stack usage information"
 	default n
