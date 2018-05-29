@@ -70,7 +70,7 @@ static void async_put_sema_give(void *p1, void *p2, void *p3)
 
 static void mbox_get_waiting_thread(void *thread_number, void *pmbox, void *p3)
 {
-	struct k_mbox_msg mmsg;
+	struct k_mbox_msg mmsg = {0};
 
 	switch ((int) thread_number) {
 	case 0:
@@ -106,9 +106,7 @@ static void mbox_get_waiting_thread(void *thread_number, void *pmbox, void *p3)
 
 static void tmbox_put(struct k_mbox *pmbox)
 {
-	struct k_mbox_msg mmsg;
-
-	memset(&mmsg, 0, sizeof(mmsg));
+	struct k_mbox_msg mmsg = {0};
 
 	switch (info_type) {
 	case PUT_GET_NULL:
@@ -297,7 +295,7 @@ static void tmbox_put(struct k_mbox *pmbox)
 
 static void tmbox_get(struct k_mbox *pmbox)
 {
-	struct k_mbox_msg mmsg;
+	struct k_mbox_msg mmsg = {0};
 	char rxdata[MAIL_LEN];
 	struct k_mem_block rxblock;
 
