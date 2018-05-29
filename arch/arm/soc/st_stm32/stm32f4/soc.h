@@ -30,8 +30,6 @@
 
 #include <stm32f4xx.h>
 
-#include "soc_irq.h"
-
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 #include <stm32f4xx_ll_utils.h>
 #include <stm32f4xx_ll_bus.h>
