@@ -23,4 +23,7 @@ config ETH_NATIVE_POSIX
 
 endif # NETWORKING
 
+config ASAN
+	def_bool y
+
 endif
