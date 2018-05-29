@@ -1,0 +1,133 @@
+# Kconfig - Flash driver emulator config
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if FLASH && FLASH_EMULATOR
+
+config FLASH_EMULATOR_BASE_ADDR
+	hex
+	prompt "Base address of the flash"
+	default 0x00
+	depends on FLASH_EMULATOR
+	help
+	 The base address of the flash.
+
+config FLASH_EMULATOR_ERASE_UNIT
+	int
+	prompt "Erase unit size in bytes"
+	default 4096
+	range 1 65536
+	depends on FLASH_EMULATOR
+	help
+	 The smallest area of flash memory that can be indipendently erased.
+
+config FLASH_EMULATOR_WRITE_UNIT
+	int
+	prompt "Program unit size in bytes"
+	default 4
+	range 1 4096
+	depends on FLASH_EMULATOR
+	help
+	 The smallest area of flash memory that can be indipendently programmed.
+
+config FLASH_EMULATOR_FLASH_SIZE
+	int
+	prompt "Flash size in erase units"
+	default 4
+	range 1 65536
+	depends on FLASH_EMULATOR
+	help
+	 The size of the emulated flash area expressed in erase units.
+
+config FLASH_EMULATOR_EMULATE_TIMING
+	bool
+	prompt "Enable flash timing emulation"
+	default n
+
+config FLASH_EMULATOR_MIN_READ_TIME_US
+	int
+	prompt "Minimum read time (µS)"
+	depends on FLASH_EMULATOR && FLASH_EMULATOR_EMULATE_TIMING
+	default 2
+	range 1 3000000
+
+config FLASH_EMULATOR_MIN_WRITE_TIME_US
+	int
+	prompt "Minimum write time (µS)"
+	depends on FLASH_EMULATOR && FLASH_EMULATOR_EMULATE_TIMING
+	default 100
+	range 1 3000000
+
+config FLASH_EMULATOR_MIN_ERASE_TIME_US
+	int
+	prompt "Minimum erase time (µS)"
+	depends on FLASH_EMULATOR && FLASH_EMULATOR_EMULATE_TIMING
+	default 2000
+	range 1 3000000
+
+config FLASH_EMULATOR_EMULATE_FAILURES
+	bool
+	prompt "Enable flash failure emulation"
+	default n
+
+config FLASH_EMULATOR_READ_API_FAILURE_RATE
+	int
+	prompt "Read API failure rate"
+	default 0
+	range 0 100
+	depends on FLASH_EMULATOR && FLASH_EMULATOR_EMULATE_FAILURES
+	help
+	 This setting controls the read operation failure rate.
+	 It can be useful for testing purposes.
+
+config FLASH_EMULATOR_READ_HW_FAILURE_RATE
+	int
+	prompt "Hardware read failure rate"
+	default 0
+	range 0 100
+	depends on FLASH_EMULATOR && FLASH_EMULATOR_EMULATE_FAILURES
+	help
+	 This setting controls the read operation failure rate.
+	 It can be useful for testing purposes.
+
+config FLASH_EMULATOR_WRITE_API_FAILURE_RATE
+	int
+	prompt "Write API failure rate"
+	default 0
+	range 0 100
+	depends on FLASH_EMULATOR && FLASH_EMULATOR_EMULATE_FAILURES
+	help
+	 This setting controls the write operation failure rate.
+	 It can be useful for testing purposes.
+
+ config FLASH_EMULATOR_WRITE_HW_FAILURE_RATE
+	int
+	prompt "Hardware write failure rate"
+	default 0
+	range 0 100
+	depends on FLASH_EMULATOR && FLASH_EMULATOR_EMULATE_FAILURES
+	help
+	 This setting controls the write operation failure rate.
+	 It can be useful for testing purposes.
+
+config FLASH_EMULATOR_ERASE_API_FAILURE_RATE
+	int
+	prompt "Erase API failure rate"
+	default 0
+	range 0 100
+	depends on FLASH_EMULATOR && FLASH_EMULATOR_EMULATE_FAILURES
+	help
+	 This setting controls the erase operation failure rate.
+	 It can be useful for testing purposes.
+
+	config FLASH_EMULATOR_ERASE_HW_FAILURE_RATE
+	int
+	prompt "Hardware erase failure rate"
+	default 0
+	range 0 100
+	depends on FLASH_EMULATOR && FLASH_EMULATOR_EMULATE_FAILURES
+	help
+	 This setting controls the erase operation failure rate.
+	 It can be useful for testing purposes.
+
+endif

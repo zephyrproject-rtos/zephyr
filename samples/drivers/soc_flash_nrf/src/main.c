@@ -38,7 +38,7 @@ void main(void)
 	printf("\nNordic nRF5 Flash Testing\n");
 	printf("=========================\n");
 
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding("FLASH_EMULATOR");
 
 	if (!flash_dev) {
 		printf("Nordic nRF5 flash driver was not found!\n");
@@ -55,19 +55,20 @@ void main(void)
 	printf("\nTest 2: Flash write (word array 1)\n");
 	flash_write_protection_set(flash_dev, false);
 	for (i = 0; i < ARRAY_SIZE(buf_array_1); i++) {
+		buf_word = 0;
 		offset = FLASH_TEST_OFFSET + (i << 2);
 		printf("   Attempted to write %x at 0x%x\n", buf_array_1[i],
 				offset);
 		if (flash_write(flash_dev, offset, &buf_array_1[i],
 					sizeof(u32_t)) != 0) {
 			printf("   Flash write failed!\n");
-			return;
+			//return;
 		}
 		printf("   Attempted to read 0x%x\n", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
 					sizeof(u32_t)) != 0) {
 			printf("   Flash read failed!\n");
-			return;
+			//return;
 		}
 		printf("   Data read: %x\n", buf_word);
 		if (buf_array_1[i] == buf_word) {
@@ -89,19 +90,20 @@ void main(void)
 	printf("\nTest 4: Flash write (word array 2)\n");
 	flash_write_protection_set(flash_dev, false);
 	for (i = 0; i < ARRAY_SIZE(buf_array_2); i++) {
+		buf_word = 0;
 		offset = FLASH_TEST_OFFSET + (i << 2);
 		printf("   Attempted to write %x at 0x%x\n", buf_array_2[i],
 				offset);
 		if (flash_write(flash_dev, offset, &buf_array_2[i],
 					sizeof(u32_t)) != 0) {
 			printf("   Flash write failed!\n");
-			return;
+			//return;
 		}
 		printf("   Attempted to read 0x%x\n", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
 					sizeof(u32_t)) != 0) {
 			printf("   Flash read failed!\n");
-			return;
+			//return;
 		}
 		printf("   Data read: %x\n", buf_word);
 		if (buf_array_2[i] == buf_word) {
@@ -122,19 +124,20 @@ void main(void)
 	printf("\nTest 6: Non-word aligned write (word array 3)\n");
 	flash_write_protection_set(flash_dev, false);
 	for (i = 0; i < ARRAY_SIZE(buf_array_3); i++) {
+		buf_word = 0;
 		offset = FLASH_TEST_OFFSET + (i << 2) + 1;
 		printf("   Attempted to write %x at 0x%x\n", buf_array_3[i],
 				offset);
 		if (flash_write(flash_dev, offset, &buf_array_3[i],
 					sizeof(u32_t)) != 0) {
 			printf("   Flash write failed!\n");
-			return;
+			//return;
 		}
 		printf("   Attempted to read 0x%x\n", offset);
 		if (flash_read(flash_dev, offset, &buf_word,
 					sizeof(u32_t)) != 0) {
 			printf("   Flash read failed!\n");
-			return;
+			//return;
 		}
 		printf("   Data read: %x\n", buf_word);
 		if (buf_array_3[i] == buf_word) {
@@ -189,4 +192,6 @@ void main(void)
 	printf("\nTest 8: Write block size API\n");
 	printf("   write-block-size = %u\n",
 	       flash_get_write_block_size(flash_dev));
+
+	printf("\nAll tests completed.\n");
 }
