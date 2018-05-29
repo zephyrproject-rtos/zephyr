@@ -111,15 +111,14 @@ int validate_hw_compatibility(struct device *dev)
 
 }
 
-void cbc_mode(void)
+void cbc_mode(struct device *dev)
 {
-	struct device *dev;
 	u8_t encrypted[80] = {0};
 	u8_t decrypted[64] = {0};
 	struct cipher_ctx ini = {
 		.keylen = sizeof(key),
 		.key.bit_stream = key,
-		.flags = cap_flags
+		.flags = cap_flags,
 	};
 	struct cipher_pkt encrypt = {
 		.in_buf = plaintext,
@@ -133,19 +132,6 @@ void cbc_mode(void)
 		.out_buf = decrypted,
 		.out_buf_max = sizeof(decrypted),
 	};
-
-	SYS_LOG_INF("CBC Mode");
-
-	dev = device_get_binding(CRYPTO_DRV_NAME);
-	if (!dev) {
-		SYS_LOG_ERR("%s pseudo device not found", CRYPTO_DRV_NAME);
-		return;
-	}
-
-	if (validate_hw_compatibility(dev)) {
-		SYS_LOG_ERR("Incompatible h/w");
-		return;
-	}
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_CBC,
@@ -209,9 +195,8 @@ static u8_t ctr_ciphertext[64] = {
 	0xa3, 0x5c, 0x85, 0x3a, 0xb9, 0x2c, 0x6, 0xbb
 };
 
-void ctr_mode(void)
+void ctr_mode(struct device *dev)
 {
-	struct device *dev;
 	u8_t encrypted[64] = {0};
 	u8_t decrypted[64] = {0};
 	struct cipher_ctx ini = {
@@ -237,19 +222,6 @@ void ctr_mode(void)
 		0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
 		0xf8, 0xf9, 0xfa, 0xfb
 	};
-
-	SYS_LOG_INF("CTR Mode");
-
-	dev = device_get_binding(CRYPTO_DRV_NAME);
-	if (!dev) {
-		SYS_LOG_ERR("%s crypto device not found", CRYPTO_DRV_NAME);
-		return;
-	}
-
-	if (validate_hw_compatibility(dev)) {
-		SYS_LOG_ERR("Incompatible h/w");
-		return;
-	}
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_CTR,
@@ -323,9 +295,8 @@ static u8_t ccm_expected[31] = {
 	0xe8, 0xd1, 0x2c, 0xfd, 0xf9, 0x26, 0xe0
 };
 
-void ccm_mode(void)
+void ccm_mode(struct device *dev)
 {
-	struct device *dev;
 	u8_t encrypted[50];
 	u8_t decrypted[25];
 	struct cipher_ctx ini = {
@@ -361,19 +332,6 @@ void ccm_mode(void)
 		.out_buf = decrypted,
 		.out_buf_max = sizeof(decrypted),
 	};
-
-	SYS_LOG_INF("CCM Mode");
-
-	dev = device_get_binding(CRYPTO_DRV_NAME);
-	if (!dev) {
-		SYS_LOG_ERR("%s crypto device not found", CRYPTO_DRV_NAME);
-		return;
-	}
-
-	if (validate_hw_compatibility(dev)) {
-		SYS_LOG_ERR("Incompatible h/w");
-		return;
-	}
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_CCM,
@@ -427,10 +385,36 @@ out:
 	cipher_free_session(dev, &ini);
 }
 
+struct mode_test {
+	const char *mode;
+	void (*mode_func)(struct device *dev);
+};
+
 void main(void)
 {
+	struct device *dev = device_get_binding(CRYPTO_DRV_NAME);
+	const struct mode_test modes[] = {
+		{ .mode = "CBC Mode", .mode_func = cbc_mode },
+		{ .mode = "CTR Mode", .mode_func = ctr_mode },
+		{ .mode = "CCM Mode", .mode_func = ccm_mode },
+		{ },
+	};
+	int i;
+
+	if (!dev) {
+		SYS_LOG_ERR("%s pseudo device not found", CRYPTO_DRV_NAME);
+		return;
+	}
+
+	if (validate_hw_compatibility(dev)) {
+		SYS_LOG_ERR("Incompatible h/w");
+		return;
+	}
+
 	SYS_LOG_INF("Cipher Sample");
-	cbc_mode();
-	ctr_mode();
-	ccm_mode();
+
+	for (i = 0; modes[i].mode; i++) {
+		SYS_LOG_INF("%s", modes[i].mode);
+		modes[i].mode_func(dev);
+	}
 }
