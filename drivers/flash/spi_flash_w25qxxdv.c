@@ -325,6 +325,19 @@ static int spi_flash_wb_configure(struct device *dev)
 	data->spi_cfg.operation = SPI_WORD_SET(8);
 	data->spi_cfg.slave = CONFIG_SPI_FLASH_W25QXXDV_SPI_SLAVE;
 
+#if defined(CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS)
+	data->cs_ctrl.gpio_dev = device_get_binding(
+		CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS_DRV_NAME);
+	if (!data->cs_ctrl.gpio_dev) {
+		return -ENODEV;
+	}
+
+	data->cs_ctrl.gpio_pin = CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS_PIN;
+	data->cs_ctrl.delay = 0;
+
+	data->spi_cfg.cs = &data->cs_ctrl;
+#endif /* CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS */
+
 	return spi_flash_wb_id(dev);
 }
 
@@ -336,7 +349,7 @@ static int spi_flash_init(struct device *dev)
 	k_sem_init(&data->sem, 1, UINT_MAX);
 
 	ret = spi_flash_wb_configure(dev);
-	if (ret) {
+	if (!ret) {
 		dev->driver_api = &spi_flash_api;
 	}
 

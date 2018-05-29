@@ -79,6 +79,30 @@ config	SPI_FLASH_W25QXXDV_SPI_SLAVE
 	  This option sets the SPI slave number the SPI controller has to switch
 	  to when dealing with WinBond SPI flash chip.
 
+config SPI_FLASH_W25QXXDV_GPIO_SPI_CS
+	bool "Manage SPI CS through a GPIO pin"
+	default n
+	depends on SPI_FLASH_W25QXXDV
+	help
+	This option is useful if one needs to manage SPI CS through a GPIO
+	pin to by-pass the SPI controller's CS logic.
+
+config SPI_FLASH_W25QXXDV_GPIO_SPI_CS_DRV_NAME
+	string "GPIO driver's name to use to drive SPI CS through"
+	default ""
+	depends on SPI_FLASH_W25QXXDV_GPIO_SPI_CS
+	help
+	This option is mandatory to set which GPIO controller to use in order
+	to actually emulate the SPI CS.
+
+config SPI_FLASH_W25QXXDV_GPIO_SPI_CS_PIN
+	int "GPIO PIN to use to drive SPI CS through"
+	default 0
+	depends on SPI_FLASH_W25QXXDV_GPIO_SPI_CS
+	help
+	This option is mandatory to set which GPIO pin to use in order
+	to actually emulate the SPI CS.
+
 config SPI_FLASH_W25QXXDV_FLASH_SIZE
 	int "Flash size in bytes"
 	depends on SPI_FLASH_W25QXXDV

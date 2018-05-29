@@ -16,6 +16,9 @@
 
 struct spi_flash_data {
 	struct device *spi;
+#if defined(CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS)
+	struct spi_cs_control cs_ctrl;
+#endif /* CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS */
 	struct spi_config spi_cfg;
 	struct k_sem sem;
 };
