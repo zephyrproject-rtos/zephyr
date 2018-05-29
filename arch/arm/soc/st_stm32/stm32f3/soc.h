@@ -42,11 +42,14 @@
 #include <stm32f3xx_ll_bus.h>
 #include <stm32f3xx_ll_rcc.h>
 #include <stm32f3xx_ll_system.h>
-#include <stm32f3xx_ll_spi.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
 #ifdef CONFIG_I2C
 #include <stm32f3xx_ll_i2c.h>
+#endif
+
+#ifdef CONFIG_SPI_STM32
+#include <stm32f3xx_ll_spi.h>
 #endif
 
 #ifdef CONFIG_IWDG_STM32
