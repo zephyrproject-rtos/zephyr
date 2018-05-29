@@ -1,0 +1,84 @@
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+
+menuconfig SPI_FLASH_W25QXXDV
+	bool
+	prompt "SPI NOR Flash Winbond W25QXXDV"
+	select FLASH_HAS_DRIVER_ENABLED
+	depends on SPI && FLASH
+
+if SPI_FLASH_W25QXXDV
+
+config SPI_FLASH_W25QXXDV_SPI_NAME
+	string
+	prompt "SPI controller device name"
+	default ""
+
+config SPI_FLASH_W25QXXDV_DRV_NAME
+	string
+	prompt "SPI flash device name"
+	default "W25QXXDV"
+
+config SPI_FLASH_W25QXXDV_INIT_PRIORITY
+	int
+	default 80
+	help
+	  Device driver initialization priority.
+	  Device is connected to SPI bus, it has to
+	  be initialized after SPI driver.
+
+config SPI_FLASH_W25QXXDV_SPI_FREQ_0
+	int "SPI system frequency"
+	default 8000000
+	help
+	  This option sets the SPI controller's frequency. Beware this value
+	  depends on the SPI controller being used and also on the system
+	  clock.
+
+config SPI_FLASH_W25QXXDV_SPI_SLAVE
+	int "SPI slave linked to SPI flash"
+	help
+	  This option sets the SPI slave number the SPI controller has to switch
+	  to when dealing with WinBond SPI flash chip.
+
+config SPI_FLASH_W25QXXDV_GPIO_SPI_CS
+	bool "Manage SPI CS through a GPIO pin"
+	default n
+	help
+	This option is useful if one needs to manage SPI CS through a GPIO
+	pin to by-pass the SPI controller's CS logic.
+
+config SPI_FLASH_W25QXXDV_GPIO_SPI_CS_DRV_NAME
+	string "GPIO driver's name to use to drive SPI CS through"
+	default ""
+	depends on SPI_FLASH_W25QXXDV_GPIO_SPI_CS
+	help
+	This option is mandatory to set which GPIO controller to use in order
+	to actually emulate the SPI CS.
+
+config SPI_FLASH_W25QXXDV_GPIO_SPI_CS_PIN
+	int "GPIO PIN to use to drive SPI CS through"
+	default 0
+	depends on SPI_FLASH_W25QXXDV_GPIO_SPI_CS
+	help
+	This option is mandatory to set which GPIO pin to use in order
+	to actually emulate the SPI CS.
+
+config SPI_FLASH_W25QXXDV_FLASH_SIZE
+	int "Flash size in bytes"
+	default 2097152
+	help
+	  This is the flash capacity in bytes.
+
+config SPI_FLASH_W25QXXDV_MAX_DATA_LEN
+	int
+	range 1 256
+	default 256
+	help
+	  Maximum transmit or receive data length in one user data frame.
+
+endif # SPI_FLASH_W25QXXDV
