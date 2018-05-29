@@ -126,6 +126,8 @@ static void push_data(struct device *dev)
 			}
 
 			data = 0;
+		} else if (spi_context_tx_on(&spi->ctx)) {
+			data = 0;
 		} else {
 			/* Nothing to push anymore */
 			break;
