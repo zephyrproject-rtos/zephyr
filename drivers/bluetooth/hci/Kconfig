@@ -35,6 +35,7 @@ config BT_H5
 
 config BT_SPI
 	bool "SPI HCI"
+	select BT_RECV_IS_RX_THREAD
 	depends on SPI
 	help
 	  Supports Bluetooth ICs using SPI as the communication protocol.
