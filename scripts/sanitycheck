@@ -2606,6 +2606,14 @@ def chatty_test_cb(instances, goals, goal):
     if VERBOSE < 2 and not goal.finished:
         return
 
+    total_tests = len(goals)
+    total_tests_width = len(str(total_tests))
+    total_done = 0
+
+    for k, g in goals.items():
+        if g.finished:
+            total_done += 1
+
     if goal.failed:
         status = COLOR_RED + "FAILED" + COLOR_NORMAL + ": " + goal.reason
     elif goal.finished:
@@ -2613,7 +2621,9 @@ def chatty_test_cb(instances, goals, goal):
     else:
         status = goal.make_state
 
-    info("{:<25} {:<50} {}".format(i.platform.name, i.test.name, status))
+    info("{:>{}}/{} {:<25} {:<50} {}".format(
+        total_done, total_tests_width, total_tests, i.platform.name,
+        i.test.name, status))
     if goal.failed:
         log_info(goal.get_error_log())
 
