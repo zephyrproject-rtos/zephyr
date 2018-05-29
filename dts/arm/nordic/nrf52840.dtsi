@@ -32,6 +32,15 @@
 			};
 	};
 
+	emulated-flash-controller@0 {
+		compatible = "emulated-flash-controller";
+		label = "FLASH_EMULATOR";
+		flash1: flash@1 {
+			compatible = "soc-nv-flash";
+			label = "EMULATED_FLASH";
+		};
+	};
+
 	sram0: memory@20000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";

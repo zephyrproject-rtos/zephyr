@@ -36,6 +36,17 @@ config FLASH_PAGE_LAYOUT
 	help
 	  Enables API for retrieving the layout of flash memory pages.
 
+config FLASH_EMULATOR
+	bool "Emulated flash driver"
+	depends on FLASH
+	default n
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enable the flash emulator.
+
+source "drivers/flash/Kconfig.emulator"
+
 config SPI_FLASH_W25QXXDV
 	bool
 	prompt "SPI NOR Flash Winbond W25QXXDV"
