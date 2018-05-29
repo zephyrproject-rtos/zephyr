@@ -40,15 +40,6 @@ typedef int sec_tag_t;
 
 #if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
 
-/** A list of secure tags that context should use */
-struct sec_tag_list {
-	/** An array of secure tags referencing TLS credentials */
-	sec_tag_t sec_tags[CONFIG_NET_MAX_CREDENTIALS_NUMBER];
-
-	/** Number of configured secure tags */
-	int sec_tag_count;
-};
-
 /**
  * @brief Add a TLS credential.
  *

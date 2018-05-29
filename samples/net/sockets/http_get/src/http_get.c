@@ -82,25 +82,22 @@ int main(void)
 
 	dump_addrinfo(res);
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	sock = socket(res->ai_family, res->ai_socktype, IPPROTO_TLS_1_2);
+#else
 	sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+#endif
+
 	CHECK(sock);
 	printf("sock = %d\n", sock);
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-	int tls_opt = 1;
-
-	CHECK(setsockopt(sock, SOL_TLS, TLS_ENABLE, &tls_opt, sizeof(tls_opt)));
-
-#if defined(CONFIG_NET_PRECONFIGURE_TLS_CREDENTIALS)
 	sec_tag_t sec_tag_opt[] = {
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
 		NET_TLS_DEFAULT_CA_CERTIFICATE_TAG,
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
 	};
 
 	CHECK(setsockopt(sock, SOL_TLS, TLS_SEC_TAG_LIST,
 			 sec_tag_opt, sizeof(sec_tag_opt)));
-#endif /* defined(CONFIG_NET_PRECONFIGURE_TLS_CREDENTIALS) */
 #endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 
 	CHECK(connect(sock, res->ai_addr, res->ai_addrlen));

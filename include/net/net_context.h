@@ -26,13 +26,6 @@
 #include <net/net_ip.h>
 #include <net/net_if.h>
 #include <net/net_stats.h>
-#include <net/net_tls.h>
-
-#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
-#if defined(CONFIG_MBEDTLS)
-#include <mbedtls/ssl.h>
-#endif
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -191,6 +184,8 @@ struct net_tcp;
 
 struct net_conn_handle;
 
+struct net_tls;
+
 /**
  * Note that we do not store the actual source IP address in the context
  * because the address is already be set in the network interface struct.
@@ -223,36 +218,7 @@ struct net_context {
 		/** Priority of the network data sent via this net_context */
 		u8_t priority;
 #endif
-#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
-		/** Enable/disable TLS for the context */
-		bool tls;
-
-		/** Select which credentials to use with TLS. */
-		struct sec_tag_list sec_tag_list;
-#endif
 	} options;
-
-#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
-#if defined(CONFIG_MBEDTLS)
-	struct {
-		mbedtls_ssl_context ssl;
-		mbedtls_ssl_config config;
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-		mbedtls_x509_crt ca_chain;
-#endif
-		/** intermediated mbedTLS buffer to store decrypted content */
-		char rx_ssl_buf[64];
-		/** TLS packet fifo */
-		struct k_fifo rx_fifo;
-		/** last data that came in via TLS */
-		struct net_pkt *rx_pkt;
-		/** offset in the last data */
-		int rx_offset;
-	} mbedtls;
-#endif
-	/** Receive callback for TLS */
-	net_context_recv_cb_t tls_cb;
-#endif
 
 	/** Connection handle */
 	struct net_conn_handle *conn_handler;
@@ -312,6 +278,11 @@ struct net_context {
 		struct k_fifo accept_q;
 	};
 #endif /* CONFIG_NET_SOCKETS */
+
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	/** TLS context information */
+	struct net_tls *tls;
+#endif /* CONFIG_NET_TLS || CONFIG_NET_DTLS */
 };
 
 static inline bool net_context_is_used(struct net_context *context)

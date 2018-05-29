@@ -41,11 +41,73 @@
 
 #endif /* CONFIG_MBEDTLS */
 
+/** A list of secure tags that context should use */
+struct sec_tag_list {
+	/** An array of secure tags referencing TLS credentials */
+	sec_tag_t sec_tags[CONFIG_NET_MAX_CREDENTIALS_NUMBER];
+
+	/** Number of configured secure tags */
+	int sec_tag_count;
+};
+
+/** TLS context information. */
+struct net_tls {
+	/** Network context back pointer. */
+	struct net_context *context;
+
+	/** TLS specific option values. */
+	struct {
+		/** Select which credentials to use with TLS. */
+		struct sec_tag_list sec_tag_list;
+	} options;
+
+#if defined(CONFIG_MBEDTLS)
+	mbedtls_ssl_context ssl;
+	mbedtls_ssl_config config;
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	mbedtls_x509_crt ca_chain;
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
+#endif /* CONFIG_MBEDTLS */
+
+	/** Intermediated buffer to store decrypted content. */
+	char rx_ssl_buf[64];
+
+	/** Currently processed packet. */
+	struct net_pkt *rx_pkt;
+
+	/** Offset in the currently processed packet. */
+	int rx_offset;
+
+	/** TLS packet fifo. */
+	struct k_fifo rx_fifo;
+
+	/** Receive callback for TLS */
+	net_context_recv_cb_t tls_cb;
+};
 
 /**
  * @brief Initialize TLS module.
  */
 void net_tls_init(void);
+
+/**
+ * @brief Allocate TLS context.
+ *
+ * @param context A pointer to net_context structure that allocates TLS context.
+ *
+ * @return A pointer to allocated TLS context. NULL if no context was available.
+ */
+struct net_tls *net_tls_alloc(struct net_context *context);
+
+/**
+ * @brief Release TLS context.
+ *
+ * @param tls TLS context to deallocate.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int net_tls_release(struct net_tls *tls);
+
 int net_tls_enable(struct net_context *context, bool enabled);
 int net_tls_connect(struct net_context *context, bool listening);
 int net_tls_send(struct net_pkt *pkt);
@@ -59,6 +121,20 @@ int net_tls_sec_tag_list_set(struct net_context *context,
 #else
 static inline void net_tls_init(void)
 {
+}
+
+static inline struct net_tls *net_tls_alloc(struct net_context *context)
+{
+	ARG_UNUSED(context);
+
+	return NULL;
+}
+
+static inline int net_tls_release(struct net_tls *tls)
+{
+	ARG_UNUSED(tls);
+
+	return 0;
 }
 
 static inline int net_tls_enable(struct net_context *context, bool enabled)

@@ -117,6 +117,15 @@ int net_context_get(sa_family_t family,
 {
 	int i, ret = -ENOENT;
 
+#if defined(CONIFG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	bool tls = false;
+
+	if (ip_proto >= IPPROTO_TLS_1_0 && ip_proto <= IPPROTO_TLS_1_2) {
+		tls = true;
+		ip_proto = (type == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP;
+	}
+#endif
+
 #if defined(CONFIG_NET_CONTEXT_CHECK)
 
 #if !defined(CONFIG_NET_IPV4)
@@ -206,6 +215,14 @@ int net_context_get(sa_family_t family,
 				break;
 			}
 		}
+
+#if defined(CONIFG_NET_TLS) || defined(CONFIG_NET_DTLS)
+		if (tls) {
+			if (net_tls_enable(&contexts[i], true) < 0) {
+				break;
+			}
+		}
+#endif
 
 		contexts[i].iface = 0;
 		contexts[i].flags = 0;
@@ -343,7 +360,7 @@ int net_context_put(struct net_context *context)
 	}
 
 #if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
-	if (context->options.tls) {
+	if (context->tls) {
 		net_tls_enable(context, false);
 	}
 #endif /* defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS) */
@@ -1012,7 +1029,7 @@ static int sendto(struct net_pkt *pkt,
 	net_pkt_set_token(pkt, token);
 
 #if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
-	if (context->options.tls) {
+	if (context->tls) {
 		return net_tls_send(pkt);
 	}
 #endif
@@ -1262,7 +1279,7 @@ int net_context_recv(struct net_context *context,
 
 	case IPPROTO_TCP:
 #if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
-		if (context->options.tls) {
+		if (context->tls) {
 			ret = net_tls_recv(context, cb, user_data);
 			break;
 		}
@@ -1344,7 +1361,7 @@ static int get_context_tls_enable(struct net_context *context,
 		return -EINVAL;
 	}
 
-	*((int *)value) = context->options.tls;
+	*((int *)value) = (context->tls != 0);
 
 	return 0;
 #else

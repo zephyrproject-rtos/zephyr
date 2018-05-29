@@ -52,6 +52,9 @@ enum net_ip_protocol {
 	IPPROTO_TCP = 6,
 	IPPROTO_UDP = 17,
 	IPPROTO_ICMPV6 = 58,
+	IPPROTO_TLS_1_0 = 256,
+	IPPROTO_TLS_1_1 = 257,
+	IPPROTO_TLS_1_2 = 258,
 };
 
 /** Socket type */

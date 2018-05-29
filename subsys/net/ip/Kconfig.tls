@@ -141,6 +141,12 @@ config NET_TLS_DEBUG
 	bool "Enable TLS debug log"
 	default n
 
+config NET_TLS_MAX_CONTEXT
+	int "Maximum number of TLS/DTLS contexts"
+	default 1
+	help
+	  "This variable specifies maximum number of simultaneous TLS/DLTS connections"
+
 comment "TLS/DTLS credentials configuration"
 
 config NET_MAX_CREDENTIALS_NUMBER

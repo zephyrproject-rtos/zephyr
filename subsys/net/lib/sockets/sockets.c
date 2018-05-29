@@ -162,7 +162,7 @@ static void zsock_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 		header_len = net_pkt_appdata(pkt) - pkt->frags->data;
 		net_buf_pull(pkt->frags, header_len);
 #if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
-		if (!ctx->options.tls) {
+		if (!ctx->tls) {
 			net_context_update_recv_wnd(ctx, -net_pkt_appdatalen(pkt));
 		}
 #else
@@ -452,7 +452,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 
 	if (!(flags & ZSOCK_MSG_PEEK)) {
 #if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
-		if (!ctx->options.tls) {
+		if (!ctx->tls) {
 			net_context_update_recv_wnd(ctx, recv_len);
 		}
 #else

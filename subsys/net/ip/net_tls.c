@@ -35,6 +35,9 @@ struct net_tls_credential {
 /* Global poll of credentials shared among TLS contexts. */
 static struct net_tls_credential credentials[CONFIG_NET_MAX_CREDENTIALS_NUMBER];
 
+/* A poll of TLS contexts. */
+static struct net_tls tls_context[CONFIG_NET_TLS_MAX_CONTEXT];
+
 #if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_TLS_DEBUG)
 static void my_debug(void *ctx, int level,
 		     const char *file, int line, const char *str)
@@ -164,37 +167,37 @@ static int tls_rx(void *ctx, unsigned char *buf, size_t len)
 	int ret;
 	u16_t len_left;
 
-	if (!context->mbedtls.rx_pkt) {
-		context->mbedtls.rx_pkt =
-			k_fifo_get(&context->mbedtls.rx_fifo, K_NO_WAIT);
-		if (context->mbedtls.rx_pkt) {
-			context->mbedtls.rx_offset =
-				net_pkt_appdata(context->mbedtls.rx_pkt) -
-				context->mbedtls.rx_pkt->frags->data;
+	if (!context->tls->rx_pkt) {
+		context->tls->rx_pkt =
+			k_fifo_get(&context->tls->rx_fifo, K_NO_WAIT);
+		if (context->tls->rx_pkt) {
+			context->tls->rx_offset =
+				net_pkt_appdata(context->tls->rx_pkt) -
+				context->tls->rx_pkt->frags->data;
 		} else {
 			return MBEDTLS_ERR_SSL_WANT_READ;
 		}
 	}
 
-	len_left = net_pkt_get_len(context->mbedtls.rx_pkt) -
-		   context->mbedtls.rx_offset;
-	ret = net_frag_linearize(buf, len, context->mbedtls.rx_pkt,
-				 context->mbedtls.rx_offset,
+	len_left = net_pkt_get_len(context->tls->rx_pkt) -
+		   context->tls->rx_offset;
+	ret = net_frag_linearize(buf, len, context->tls->rx_pkt,
+				 context->tls->rx_offset,
 				 MIN(len, len_left));
 	if (ret > 0) {
-		context->mbedtls.rx_offset += ret;
+		context->tls->rx_offset += ret;
 	}
 
-	if (context->mbedtls.rx_offset >=
-	    net_pkt_get_len(context->mbedtls.rx_pkt)) {
+	if (context->tls->rx_offset >=
+	    net_pkt_get_len(context->tls->rx_pkt)) {
 		if (net_context_get_type(context) == SOCK_STREAM) {
 			net_context_update_recv_wnd(
 				context,
-				net_pkt_appdatalen(context->mbedtls.rx_pkt));
+				net_pkt_appdatalen(context->tls->rx_pkt));
 		}
-		net_pkt_unref(context->mbedtls.rx_pkt);
-		context->mbedtls.rx_pkt = NULL;
-		context->mbedtls.rx_offset = 0;
+		net_pkt_unref(context->tls->rx_pkt);
+		context->tls->rx_pkt = NULL;
+		context->tls->rx_offset = 0;
 	}
 
 	return ret;
@@ -208,13 +211,13 @@ static void tls_recv_cb(struct net_context *context, struct net_pkt *pkt,
 
 	if (!pkt) {
 		/* Forward EOF */
-		if (context->tls_cb) {
-			context->tls_cb(context, pkt, status, user_data);
+		if (context->tls->tls_cb) {
+			context->tls->tls_cb(context, pkt, status, user_data);
 		}
 		return;
 	}
 
-	k_fifo_put(&context->mbedtls.rx_fifo, pkt);
+	k_fifo_put(&context->tls->rx_fifo, pkt);
 
 	if (net_context_get_type(context) == SOCK_STREAM) {
 		net_context_update_recv_wnd(context, -net_pkt_appdatalen(pkt));
@@ -223,7 +226,7 @@ static void tls_recv_cb(struct net_context *context, struct net_pkt *pkt,
 	/* Process it as application data only after handshake is over,
 	 * otherwise packet will be consumed by handshake.
 	 */
-	if (context->mbedtls.ssl.state == MBEDTLS_SSL_HANDSHAKE_OVER) {
+	if (context->tls->ssl.state == MBEDTLS_SSL_HANDSHAKE_OVER) {
 		len = net_pkt_appdatalen(pkt);
 
 		decrypted_pkt = net_pkt_clone(pkt, 0, NET_PKT_CLONE_HDR);
@@ -246,9 +249,9 @@ static void tls_recv_cb(struct net_context *context, struct net_pkt *pkt,
 		net_pkt_set_appdatalen(decrypted_pkt, 0);
 
 		while (1) {
-			ret = mbedtls_ssl_read(&context->mbedtls.ssl,
-					       context->mbedtls.rx_ssl_buf,
-					       sizeof(context->mbedtls.rx_ssl_buf));
+			ret = mbedtls_ssl_read(&context->tls->ssl,
+					       context->tls->rx_ssl_buf,
+					       sizeof(context->tls->rx_ssl_buf));
 			if (ret == 0 || ret == MBEDTLS_ERR_SSL_WANT_READ ||
 				ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 				ret = 0;
@@ -258,7 +261,7 @@ static void tls_recv_cb(struct net_context *context, struct net_pkt *pkt,
 
 			if (ret > 0) {
 				ret = net_pkt_append(decrypted_pkt, ret,
-						     context->mbedtls.rx_ssl_buf,
+						     context->tls->rx_ssl_buf,
 						     TIMEOUT_TLS_RX_MS);
 				/* Update appdatalen */
 				net_pkt_set_appdatalen(decrypted_pkt,
@@ -270,8 +273,9 @@ static void tls_recv_cb(struct net_context *context, struct net_pkt *pkt,
 			break;
 		}
 
-		if (ret >= 0 && context->tls_cb) {
-			context->tls_cb(context, decrypted_pkt, status, user_data);
+		if (ret >= 0 && context->tls->tls_cb) {
+			context->tls->tls_cb(context, decrypted_pkt,
+					     status, user_data);
 		} else {
 			goto err;
 		}
@@ -287,7 +291,7 @@ static int tls_add_ca_certificate(struct net_context *context,
 				  struct net_tls_credential *ca_cert)
 {
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
-	int err = mbedtls_x509_crt_parse(&context->mbedtls.ca_chain,
+	int err = mbedtls_x509_crt_parse(&context->tls->ca_chain,
 					 ca_cert->buf, ca_cert->len);
 	if (err != 0) {
 		return -EINVAL;
@@ -300,13 +304,13 @@ static int tls_add_ca_certificate(struct net_context *context,
 static void tls_set_ca_chain(struct net_context *context)
 {
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
-	mbedtls_ssl_conf_ca_chain(&context->mbedtls.config,
-				  &context->mbedtls.ca_chain, NULL);
+	mbedtls_ssl_conf_ca_chain(&context->tls->config,
+				  &context->tls->ca_chain, NULL);
 
-	mbedtls_ssl_conf_authmode(&context->mbedtls.config,
+	mbedtls_ssl_conf_authmode(&context->tls->config,
 				  MBEDTLS_SSL_VERIFY_REQUIRED);
 
-	mbedtls_ssl_conf_cert_profile(&context->mbedtls.config,
+	mbedtls_ssl_conf_cert_profile(&context->tls->config,
 				      &mbedtls_x509_crt_profile_default);
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 }
@@ -316,7 +320,7 @@ static int tls_set_psk(struct net_context *context,
 		       struct net_tls_credential *psk_id)
 {
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
-	mbedtls_ssl_conf_psk(&context->mbedtls.config,
+	mbedtls_ssl_conf_psk(&context->tls->config,
 			     psk->buf, psk->len,
 			     (const unsigned char *)psk_id->buf,
 			     psk_id->len - 1);
@@ -332,8 +336,8 @@ static int tls_mbedtls_set_credentials(struct net_context *context)
 	int i, err;
 	bool ca_cert_present = false;
 
-	for (i = 0; i < context->options.sec_tag_list.sec_tag_count; i++) {
-		tag = context->options.sec_tag_list.sec_tags[i];
+	for (i = 0; i < context->tls->options.sec_tag_list.sec_tag_count; i++) {
+		tag = context->tls->options.sec_tag_list.sec_tags[i];
 		credential = NULL;
 
 		while ((credential = credential_next_get(tag, credential))
@@ -425,15 +429,58 @@ void net_tls_init(void)
 #endif
 }
 
+struct net_tls *net_tls_alloc(struct net_context *context)
+{
+	for (int i = 0; i < ARRAY_SIZE(tls_context); i++) {
+		if (!tls_context[i].context) {
+			tls_context[i].context = context;
+
+			k_fifo_init(&tls_context[i].rx_fifo);
+			mbedtls_ssl_init(&tls_context[i].ssl);
+			mbedtls_ssl_config_init(&tls_context[i].config);
+			mbedtls_ssl_set_bio(&tls_context[i].ssl, context,
+					    tls_tx, tls_rx, NULL);
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+			mbedtls_x509_crt_init(&tls_context[i].ca_chain);
+#endif
+#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_TLS_DEBUG)
+		mbedtls_ssl_conf_dbg(&tls_context[i].config, my_debug, NULL);
+#endif
+			return &tls_context[i];
+		}
+	}
+
+	return NULL;
+}
+
+int net_tls_release(struct net_tls *tls)
+{
+	if (!tls->context) {
+		NET_ERR("Deallocating unused TLS context");
+		return -EBADF;
+	}
+
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	mbedtls_x509_crt_free(&tls->ca_chain);
+#endif
+	mbedtls_ssl_set_bio(&tls->ssl, NULL, NULL, NULL, NULL);
+	mbedtls_ssl_config_free(&tls->config);
+	mbedtls_ssl_free(&tls->ssl);
+
+	tls->context = NULL;
+
+	return 0;
+}
+
 int net_tls_enable(struct net_context *context, bool enabled)
 {
-	int state;
+	int state, err;
 
 	if (!context) {
 		return -EINVAL;
 	}
 
-	if (context->options.tls == enabled) {
+	if ((context->tls && enabled) || (!context->tls && !enabled)) {
 		return 0;
 	}
 
@@ -442,30 +489,19 @@ int net_tls_enable(struct net_context *context, bool enabled)
 		return -EBUSY;
 	}
 
-	if (enabled) {
-		k_fifo_init(&context->mbedtls.rx_fifo);
-		mbedtls_ssl_init(&context->mbedtls.ssl);
-		mbedtls_ssl_config_init(&context->mbedtls.config);
-		mbedtls_ssl_set_bio(&context->mbedtls.ssl, context,
-				    tls_tx, tls_rx, NULL);
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-		mbedtls_x509_crt_init(&context->mbedtls.ca_chain);
-#endif
+	if (!enabled) {
+		err = net_tls_release(context->tls);
+		if (err == 0) {
+			context->tls = NULL;
+		}
 
-#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_TLS_DEBUG)
-		mbedtls_ssl_conf_dbg(&context->mbedtls.config, my_debug, NULL);
-#endif
-	} else {
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-		mbedtls_x509_crt_free(&context->mbedtls.ca_chain);
-#endif
-		mbedtls_ssl_set_bio(&context->mbedtls.ssl,
-				    NULL, NULL, NULL, NULL);
-		mbedtls_ssl_config_free(&context->mbedtls.config);
-		mbedtls_ssl_free(&context->mbedtls.ssl);
+		return err;
 	}
 
-	context->options.tls = enabled;
+	context->tls = net_tls_alloc(context);
+	if (!context->tls) {
+		return -ENOMEM;
+	}
 
 	return 0;
 }
@@ -479,7 +515,7 @@ int net_tls_connect(struct net_context *context, bool listening)
 		return -EINVAL;
 	}
 
-	if (!context->options.tls) {
+	if (!context->tls) {
 		return 0;
 	}
 
@@ -496,14 +532,14 @@ int net_tls_connect(struct net_context *context, bool listening)
 		MBEDTLS_SSL_TRANSPORT_STREAM :
 		MBEDTLS_SSL_TRANSPORT_DATAGRAM;
 
-	err = mbedtls_ssl_config_defaults(&context->mbedtls.config, role, type,
+	err = mbedtls_ssl_config_defaults(&context->tls->config, role, type,
 					  MBEDTLS_SSL_PRESET_DEFAULT);
 	if (err) {
 		err = -ENOMEM;
 		goto mbed_err_conf;
 	}
 
-	mbedtls_ssl_conf_rng(&context->mbedtls.config,
+	mbedtls_ssl_conf_rng(&context->tls->config,
 			     mbedtls_ctr_drbg_random,
 			     &tls_ctr_drbg);
 
@@ -512,14 +548,14 @@ int net_tls_connect(struct net_context *context, bool listening)
 		goto mbed_err_conf;
 	}
 
-	err = mbedtls_ssl_setup(&context->mbedtls.ssl,
-				&context->mbedtls.config);
+	err = mbedtls_ssl_setup(&context->tls->ssl,
+				&context->tls->config);
 	if (err) {
 		err = -EINVAL;
 		goto mbed_err_conf;
 	}
 
-	while ((err = mbedtls_ssl_handshake(&context->mbedtls.ssl)) != 0) {
+	while ((err = mbedtls_ssl_handshake(&context->tls->ssl)) != 0) {
 		if (err != MBEDTLS_ERR_SSL_WANT_READ &&
 		    err != MBEDTLS_ERR_SSL_WANT_WRITE) {
 			err = -ENOPROTOOPT;
@@ -531,8 +567,8 @@ int net_tls_connect(struct net_context *context, bool listening)
 
 mbed_err_handshake:
 mbed_err_conf:
-	mbedtls_ssl_session_reset(&context->mbedtls.ssl);
-	mbedtls_ssl_config_free(&context->mbedtls.config);
+	mbedtls_ssl_session_reset(&context->tls->ssl);
+	mbedtls_ssl_config_free(&context->tls->config);
 
 	return err;
 }
@@ -548,7 +584,7 @@ int net_tls_send(struct net_pkt *pkt)
 		u16_t len = frag->len;
 
 		while (ret < len) {
-			ret = mbedtls_ssl_write(&context->mbedtls.ssl,
+			ret = mbedtls_ssl_write(&context->tls->ssl,
 						data, len);
 			if (ret == len) {
 				break;
@@ -577,7 +613,7 @@ int net_tls_send(struct net_pkt *pkt)
 int net_tls_recv(struct net_context *context, net_context_recv_cb_t cb,
 		 void *user_data)
 {
-	context->tls_cb = cb;
+	context->tls->tls_cb = cb;
 
 #if defined(CONFIG_NET_TCP)
 	context->tcp->recv_user_data = user_data;
@@ -595,13 +631,13 @@ int net_tls_sec_tag_list_get(struct net_context *context,
 		return -EINVAL;
 	}
 
-	if (!context->options.tls) {
+	if (!context->tls) {
 		return -EPERM;
 	}
 
-	tags_to_copy = MIN(context->options.sec_tag_list.sec_tag_count,
+	tags_to_copy = MIN(context->tls->options.sec_tag_list.sec_tag_count,
 			   *sec_tag_cnt);
-	memcpy(sec_tags, context->options.sec_tag_list.sec_tags,
+	memcpy(sec_tags, context->tls->options.sec_tag_list.sec_tags,
 	       tags_to_copy * sizeof(sec_tag_t));
 	*sec_tag_cnt = tags_to_copy;
 
@@ -618,7 +654,7 @@ int net_tls_sec_tag_list_set(struct net_context *context,
 		return -EINVAL;
 	}
 
-	if (!context->options.tls) {
+	if (!context->tls) {
 		return -EPERM;
 	}
 
@@ -627,7 +663,8 @@ int net_tls_sec_tag_list_set(struct net_context *context,
 		return -EPERM;
 	}
 
-	if (sec_tag_cnt > ARRAY_SIZE(context->options.sec_tag_list.sec_tags)) {
+	if (sec_tag_cnt >
+	    ARRAY_SIZE(context->tls->options.sec_tag_list.sec_tags)) {
 		return -ENOMEM;
 	}
 
@@ -637,9 +674,9 @@ int net_tls_sec_tag_list_set(struct net_context *context,
 		}
 	}
 
-	memcpy(context->options.sec_tag_list.sec_tags, sec_tags,
+	memcpy(context->tls->options.sec_tag_list.sec_tags, sec_tags,
 	       sec_tag_cnt * sizeof(sec_tag_t));
-	context->options.sec_tag_list.sec_tag_count = sec_tag_cnt;
+	context->tls->options.sec_tag_list.sec_tag_count = sec_tag_cnt;
 
 	return 0;
 }
