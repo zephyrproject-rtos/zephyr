@@ -172,7 +172,7 @@ void download(struct addrinfo *ai)
 	}
 
 error:
-	close(sock);
+	(void)close(sock);
 }
 
 int main(void)
