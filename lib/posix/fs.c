@@ -11,6 +11,9 @@
 #include <posix/unistd.h>
 #include <string.h>
 
+BUILD_ASSERT_MSG(PATH_MAX > MAX_FILE_NAME,
+		"PATH_MAX is less than MAX_FILE_NAME");
+
 union file_desc {
 	struct fs_file_t file;
 	struct fs_dir_t	dir;
@@ -290,8 +293,11 @@ struct dirent *readdir(DIR *dirp)
 	}
 
 	rc = strlen(fdirent.name);
-	memcpy(pdirent.d_name, fdirent.name,
-		rc <= PATH_MAX ? rc : PATH_MAX);
+	rc = (rc <= PATH_MAX) ? rc : PATH_MAX;
+	memcpy(pdirent.d_name, fdirent.name, rc);
+
+	/* Make sure the name is NULL terminated */
+	pdirent.d_name[rc + 1] = '\0';
 	return &pdirent;
 }
 
