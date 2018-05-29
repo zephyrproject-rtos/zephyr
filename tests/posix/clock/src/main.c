@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <pthread.h>
+#include <posix/pthread.h>
 
 #define SLEEP_SECONDS 1
 

@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <pthread.h>
+#include <posix/pthread.h>
 
 #define N_THR 3
 #define STACKSZ 1024

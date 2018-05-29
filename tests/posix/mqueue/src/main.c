@@ -7,8 +7,8 @@
 #include <ztest.h>
 #include <zephyr.h>
 #include <misc/printk.h>
-#include <mqueue.h>
-#include <pthread.h>
+#include <posix/mqueue.h>
+#include <posix/pthread.h>
 
 #define N_THR 2
 #define STACKSZ 1024
