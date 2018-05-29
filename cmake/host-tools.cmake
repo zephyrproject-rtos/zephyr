@@ -12,13 +12,6 @@ if(${DTC} STREQUAL DTC-NOTFOUND)
   message(FATAL_ERROR "Unable to find dtc")
 endif()
 
-if (NOT WIN32)
-  find_program(
-    KCONFIG_CONF
-    conf
-    )
-endif()
-
 find_program(
   GPERF
   gperf
@@ -26,12 +19,6 @@ find_program(
 if(${GPERF} STREQUAL GPERF-NOTFOUND)
   message(FATAL_ERROR "Unable to find gperf")
 endif()
-
-# mconf is an optional dependency
-find_program(
-  KCONFIG_MCONF
-  mconf
-  )
 
 # openocd is an optional dependency
 find_program(

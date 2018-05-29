@@ -7,7 +7,7 @@
 if SOC_MPS2_AN385
 
 config SOC
-	default mps2_an385
+	default "mps2_an385"
 
 config NUM_IRQS
 	int

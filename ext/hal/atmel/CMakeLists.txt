@@ -1,1 +1,1 @@
-add_subdirectory_if_kconfig(asf)
+add_subdirectory(asf)

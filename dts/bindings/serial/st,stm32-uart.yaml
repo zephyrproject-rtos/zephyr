@@ -27,10 +27,4 @@ properties:
       category: required
       description: required interrupts
       generation: define
-
-    clocks:
-      type: array
-      category: required
-      description: Clock gate control information
-      generation: define
 ...

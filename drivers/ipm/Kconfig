@@ -22,3 +22,9 @@ config IPM_QUARK_SE_MASTER
 	  Sets up the initial interrupt mask and clears out all
 	  channels. Should be turned on for one CPU only.
 
+config IPM_MCUX
+	bool "MCUX IPM driver"
+	default n
+	depends on IPM && HAS_MCUX
+	help
+	  Driver for MCUX mailbox

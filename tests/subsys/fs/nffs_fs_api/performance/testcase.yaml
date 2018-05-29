@@ -1,0 +1,6 @@
+common:
+  tags: nffs filesystem
+tests:
+  filesystem.nffs.performance:
+    extra_args: TEST=performance
+    platform_whitelist: qemu_x86

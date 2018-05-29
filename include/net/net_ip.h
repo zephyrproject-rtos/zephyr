@@ -473,6 +473,18 @@ static inline bool net_is_ipv4_addr_mcast(const struct in_addr *addr)
 	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xE0000000) == 0xE0000000;
 }
 
+/**
+ * @brief Check if the given IPv4 address is a link local address.
+ *
+ * @param addr A valid pointer on an IPv4 address
+ *
+ * @return True if it is, false otherwise.
+ */
+static inline bool net_is_ipv4_ll_addr(const struct in_addr *addr)
+{
+	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xA9FE0000) == 0xA9FE0000;
+}
+
 extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 						   struct net_if **iface);
 

@@ -1,9 +1,15 @@
+/*
+ * Copyright (c) 2018, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /dts-v1/;
 
-#include <em7d.dtsi>
+#include <emsk.dtsi>
 
 / {
-	model = "em_starterkit-em7";
+	model = "em_starterkit-em7d";
 	compatible = "snps,em_starterkit-em7d", "snps,em_starterkit";
 
 	aliases {
@@ -13,7 +19,7 @@
 	};
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &ddr0;
 		zephyr,console = &uart1;
 	};
 };

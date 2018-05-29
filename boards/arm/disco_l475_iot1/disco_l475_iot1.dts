@@ -41,6 +41,7 @@
 		led0 = &green_led_2;
 		led1 = &green_led_1;
 		sw0 = &user_button;
+		bt = &bt0;
 	};
 };
 
@@ -105,9 +106,13 @@
 &spi3 {
 	status = "ok";
 
-	spbtle-rf@0 {
+	cs-gpios = <&gpiod 13 0>;
+
+	bt0: spbtle-rf@0 {
 		compatible = "st,spbtle-rf";
 		reg = <0>;
+		reset-gpios = <&gpioa 8 0>;
+		irq-gpios = <&gpioe 6 0>;
 		spi-max-frequency = <8000000>;
 		label = "SPBTLE-RF";
 	};

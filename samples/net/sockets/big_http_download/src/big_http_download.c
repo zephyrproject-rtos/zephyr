@@ -37,7 +37,7 @@ static char download_url[] =
 static uint8_t download_hash[32] = "\x33\x7c\x37\xd7\xec\x00\x34\x84\x14\x22\x4b\xaa\x6b\xdb\x2d\x43\xf2\xa3\x4e\xf5\x67\x6b\xaf\xcd\xca\xd9\x16\xf1\x48\xb5\xb3\x17";
 
 #define SSTRLEN(s) (sizeof(s) - 1)
-#define CHECK(r) { if (r == -1) { printf("Error: " #r "\n"); } }
+#define CHECK(r) { if (r == -1) { printf("Error: " #r "\n"); exit(1); } }
 
 const char *host;
 const char *port = "80";
@@ -172,7 +172,7 @@ void download(struct addrinfo *ai)
 	}
 
 error:
-	close(sock);
+	(void)close(sock);
 }
 
 int main(void)
@@ -182,6 +182,7 @@ int main(void)
 	int st;
 	char *p;
 	unsigned int total_bytes = 0;
+	int resolve_attempts = 10;
 
 	setbuf(stdout, NULL);
 
@@ -218,8 +219,17 @@ int main(void)
 
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	st = getaddrinfo(host, port, &hints, &res);
-	printf("getaddrinfo status: %d\n", st);
+
+	while (resolve_attempts--) {
+		st = getaddrinfo(host, port, &hints, &res);
+
+		if (st == 0) {
+			break;
+		}
+
+		printf("getaddrinfo status: %d, retrying\n", st);
+		sleep(2);
+	}
 
 	if (st != 0) {
 		fatal("Unable to resolve address");

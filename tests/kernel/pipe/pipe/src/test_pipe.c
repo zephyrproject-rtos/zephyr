@@ -4,17 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_pipe
- * @{
- * @defgroup t_pipe_basic test_pipe_basic
- * @brief TestPurpose: verify zephyr pipe apis under different context
- * - API coverage
- *   -# k_pipe_init K_PIPE_DEFINE
- *   -# k_pipe_put
- *   -# k_pipe_get
- * @}
- */
 
 #include <ztest.h>
 

@@ -28,14 +28,78 @@
 #endif /* CONFIG_PRINTK */
 
 #if (CONFIG_FAULT_DUMP > 0)
-#define FAULT_DUMP(esf, fault) _FaultDump(esf, fault)
+#define FAULT_DUMP(reason, esf, fault) reason = _FaultDump(esf, fault)
 #else
-#define FAULT_DUMP(esf, fault) \
+#define FAULT_DUMP(reason, esf, fault) \
 	do {                   \
+		(void)reason;  \
 		(void) esf;    \
 		(void) fault;  \
 	} while ((0))
 #endif
+
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+
+/* Exception Return (EXC_RETURN) is provided in LR upon exception entry.
+ * It is used to perform an exception return and to detect possible state
+ * transition upon exception.
+ */
+
+/* Prefix. Indicates that this is an EXC_RETURN value.
+ * This field reads as 0b11111111.
+ */
+#define EXC_RETURN_INDICATOR_PREFIX     (0xFF << 24)
+/* bit[0]: Exception Secure. The security domain the exception was taken to. */
+#define EXC_RETURN_EXCEPTION_SECURE_Pos 0
+#define EXC_RETURN_EXCEPTION_SECURE_Msk \
+		(1 << EXC_RETURN_EXCEPTION_SECURE_Pos)
+#define EXC_RETURN_EXCEPTION_SECURE_Non_Secure 0
+#define EXC_RETURN_EXCEPTION_SECURE_Secure EXC_RETURN_EXCEPTION_SECURE_Msk
+/* bit[2]: Stack Pointer selection. */
+#define EXC_RETURN_SPSEL_Pos 2
+#define EXC_RETURN_SPSEL_Msk (1 << EXC_RETURN_SPSEL_Pos)
+#define EXC_RETURN_SPSEL_MAIN 0
+#define EXC_RETURN_SPSEL_PROCESS EXC_RETURN_SPSEL_Msk
+/* bit[3]: Mode. Indicates the Mode that was stacked from. */
+#define EXC_RETURN_MODE_Pos 3
+#define EXC_RETURN_MODE_Msk (1 << EXC_RETURN_MODE_Pos)
+#define EXC_RETURN_MODE_HANDLER 0
+#define EXC_RETURN_MODE_THREAD EXC_RETURN_MODE_Msk
+/* bit[4]: Stack frame type. Indicates whether the stack frame is a standard
+ * integer only stack frame or an extended floating-point stack frame.
+ */
+#define EXC_RETURN_STACK_FRAME_TYPE_Pos 4
+#define EXC_RETURN_STACK_FRAME_TYPE_Msk (1 << EXC_RETURN_STACK_FRAME_TYPE_Pos)
+#define EXC_RETURN_STACK_FRAME_TYPE_EXTENDED 0
+#define EXC_RETURN_STACK_FRAME_TYPE_STANDARD EXC_RETURN_STACK_FRAME_TYPE_Msk
+/* bit[5]: Default callee register stacking. Indicates whether the default
+ * stacking rules apply, or whether the callee registers are already on the
+ * stack.
+ */
+#define EXC_RETURN_CALLEE_STACK_Pos 5
+#define EXC_RETURN_CALLEE_STACK_Msk (1 << EXC_RETURN_CALLEE_STACK_Pos)
+#define EXC_RETURN_CALLEE_STACK_SKIPPED 0
+#define EXC_RETURN_CALLEE_STACK_DEFAULT EXC_RETURN_CALLEE_STACK_Msk
+/* bit[6]: Secure or Non-secure stack. Indicates whether a Secure or
+ * Non-secure stack is used to restore stack frame on exception return.
+ */
+#define EXC_RETURN_RETURN_STACK_Pos 6
+#define EXC_RETURN_RETURN_STACK_Msk (1 << EXC_RETURN_RETURN_STACK_Pos)
+#define EXC_RETURN_RETURN_STACK_Non_Secure 0
+#define EXC_RETURN_RETURN_STACK_Secure EXC_RETURN_RETURN_STACK_Msk
+
+/* Integrity signature for an ARMv8-M implementation */
+#if defined(CONFIG_ARMV7_M_ARMV8_M_FP)
+#define INTEGRITY_SIGNATURE_STD 0xFEFA125BUL
+#define INTEGRITY_SIGNATURE_EXT 0xFEFA125AUL
+#else
+#define INTEGRITY_SIGNATURE 0xFEFA125BUL
+#endif /* CONFIG_ARMV7_M_ARMV8_M_FP */
+/* Size (in words) of the additional state context that is pushed
+ * to the Secure stack during a Non-Secure exception entry.
+ */
+#define ADDITIONAL_STATE_CONTEXT_WORDS 10
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 #if (CONFIG_FAULT_DUMP == 1)
 /**
@@ -52,9 +116,9 @@
  * MMFSR: 0x00000000, BFSR: 0x00000082, UFSR: 0x00000000
  * BFAR: 0xff001234
  *
- * @return N/A
+ * @return default fatal error reason (_NANO_ERR_HW_EXCEPTION)
  */
-void _FaultDump(const NANO_ESF *esf, int fault)
+u32_t  _FaultDump(const NANO_ESF *esf, int fault)
 {
 	PR_EXC("Fault! EXC #%d, Thread: %p, instr @ 0x%x\n",
 	       fault,
@@ -92,18 +156,18 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	STORE_xFAR(sfar, SAU->SFAR);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
-	if (SCB->CFSR & CFSR_MMARVALID_Msk) {
+	if (SCB->CFSR & SCB_CFSR_MMARVALID_Msk) {
 		PR_EXC("MMFAR: 0x%x\n", mmfar);
 		if (escalation) {
 			/* clear MMAR[VALID] to reset */
-			SCB->CFSR &= ~CFSR_MMARVALID_Msk;
+			SCB->CFSR &= ~SCB_CFSR_MMARVALID_Msk;
 		}
 	}
-	if (SCB->CFSR & CFSR_BFARVALID_Msk) {
+	if (SCB->CFSR & SCB_CFSR_BFARVALID_Msk) {
 		PR_EXC("BFAR: 0x%x\n", bfar);
 		if (escalation) {
 			/* clear CFSR_BFAR[VALID] to reset */
-			SCB->CFSR &= ~CFSR_BFARVALID_Msk;
+			SCB->CFSR &= ~SCB_CFSR_BFARVALID_Msk;
 		}
 	}
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
@@ -128,6 +192,8 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+
+	return _NANO_ERR_HW_EXCEPTION;
 }
 #endif
 
@@ -157,10 +223,12 @@ static void _FaultThreadShow(const NANO_ESF *esf)
  *
  * See _FaultDump() for example.
  *
- * @return N/A
+ * @return error code to identify the fatal error reason
  */
-static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
+static u32_t _MpuFault(const NANO_ESF *esf, int fromHardFault)
 {
+	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+
 	PR_EXC("***** MPU FAULT *****\n");
 
 	_FaultThreadShow(esf);
@@ -187,6 +255,30 @@ static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
 				/* clear SCB_MMAR[VALID] to reset */
 				SCB->CFSR &= ~SCB_CFSR_MMARVALID_Msk;
 			}
+#if defined(CONFIG_HW_STACK_PROTECTION)
+			/* When stack protection is enabled, we need to see
+			 * if the memory violation error is a stack corruption.
+			 * For that we investigate the address fail.
+			 */
+			struct k_thread *thread = _current;
+			u32_t guard_start;
+			if (thread != NULL) {
+#if defined(CONFIG_USERSPACE)
+				guard_start =
+					thread->arch.priv_stack_start ?
+					(u32_t)thread->arch.priv_stack_start :
+					(u32_t)thread->stack_obj;
+#else
+				guard_start = thread->stack_info.start;
+#endif
+				if (SCB->MMFAR >= guard_start &&
+					SCB->MMFAR < guard_start +
+					MPU_GUARD_ALIGN_AND_SIZE) {
+					/* Thread stack corruption */
+					reason = _NANO_ERR_STACK_CHK_FAIL;
+				}
+			}
+#endif /* CONFIG_HW_STACK_PROTECTION */
 		}
 	} else if (SCB->CFSR & SCB_CFSR_IACCVIOL_Msk) {
 		PR_EXC("  Instruction Access Violation\n");
@@ -197,6 +289,8 @@ static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
 		PR_EXC("  Floating-point lazy state preservation error\n");
 	}
 #endif /* !defined(CONFIG_ARMV7_M_ARMV8_M_FP) */
+
+	return reason;
 }
 
 /**
@@ -264,10 +358,12 @@ static void _BusFault(const NANO_ESF *esf, int fromHardFault)
  *
  * See _FaultDump() for example.
  *
- * @return N/A
+ * @return error code to identify the fatal error reason
  */
-static void _UsageFault(const NANO_ESF *esf)
+static u32_t _UsageFault(const NANO_ESF *esf)
 {
+	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+
 	PR_EXC("***** USAGE FAULT *****\n");
 
 	_FaultThreadShow(esf);
@@ -282,6 +378,12 @@ static void _UsageFault(const NANO_ESF *esf)
 #if defined(CONFIG_ARMV8_M_MAINLINE)
 	if (SCB->CFSR & SCB_CFSR_STKOF_Msk) {
 		PR_EXC("  Stack overflow\n");
+#if defined(CONFIG_HW_STACK_PROTECTION)
+		/* Stack Overflows are reported as stack
+		 * corruption errors.
+		 */
+		reason = _NANO_ERR_STACK_CHK_FAIL;
+#endif /* CONFIG_HW_STACK_PROTECTION */
 	}
 #endif /* CONFIG_ARMV8_M_MAINLINE */
 	if (SCB->CFSR & SCB_CFSR_NOCP_Msk) {
@@ -299,6 +401,8 @@ static void _UsageFault(const NANO_ESF *esf)
 
 	/* clear USFR sticky bits */
 	SCB->CFSR |= SCB_CFSR_USGFAULTSR_Msk;
+
+	return reason;
 }
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
@@ -338,19 +442,6 @@ static void _SecureFault(const NANO_ESF *esf)
 		PR_EXC("  Lazy state error\n");
 	}
 
-	/* SecureFault is never banked between security states. Therefore,
-	 * we may wish to, additionally, inspect the state of the Non-Secure
-	 * execution (program counter), to gain more information regarding
-	 * the root cause of the fault.
-	 */
-	NANO_ESF *esf_ns;
-	if (SCB_NS->ICSR & SCB_ICSR_RETTOBASE_Msk) {
-		esf_ns = (NANO_ESF *)__TZ_get_PSP_NS();
-	} else {
-		esf_ns = (NANO_ESF *)__TZ_get_MSP_NS();
-	}
-	PR_EXC("  NS instruction address:  0x%x\n", esf_ns->pc);
-
 	/* clear SFSR sticky bits */
 	SAU->SFSR |= 0xFF;
 }
@@ -381,10 +472,12 @@ static void _DebugMonitor(const NANO_ESF *esf)
  *
  * See _FaultDump() for example.
  *
- * @return N/A
+ * @return error code to identify the fatal error reason
  */
-static void _HardFault(const NANO_ESF *esf)
+static u32_t _HardFault(const NANO_ESF *esf)
 {
+	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+
 	PR_EXC("***** HARD FAULT *****\n");
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -395,11 +488,11 @@ static void _HardFault(const NANO_ESF *esf)
 	} else if (SCB->HFSR & SCB_HFSR_FORCED_Msk) {
 		PR_EXC("  Fault escalation (see below)\n");
 		if (SCB_MMFSR) {
-			_MpuFault(esf, 1);
+			reason = _MpuFault(esf, 1);
 		} else if (SCB_BFSR) {
 			_BusFault(esf, 1);
 		} else if (SCB_UFSR) {
-			_UsageFault(esf);
+			reason = _UsageFault(esf);
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 		} else if (SAU->SFSR) {
 			_SecureFault(esf);
@@ -409,6 +502,8 @@ static void _HardFault(const NANO_ESF *esf)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+
+	return reason;
 }
 
 /**
@@ -433,7 +528,8 @@ static void _ReservedException(const NANO_ESF *esf, int fault)
  * @brief Dump information regarding fault (FAULT_DUMP == 2)
  *
  * Dump information regarding the fault when CONFIG_FAULT_DUMP is set to 2
- * (long form).
+ * (long form), and return the error code for the kernel to identify the fatal
+ * error reason.
  *
  * eg. (precise bus error escalated to hard fault):
  *
@@ -445,25 +541,27 @@ static void _ReservedException(const NANO_ESF *esf, int fault)
  *   Precise data bus error
  *   Address: 0xff001234
  *
- * @return N/A
+ * @return error code to identify the fatal error reason
  */
-static void _FaultDump(const NANO_ESF *esf, int fault)
+static u32_t _FaultDump(const NANO_ESF *esf, int fault)
 {
+	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+
 	switch (fault) {
 	case 3:
-		_HardFault(esf);
+		reason = _HardFault(esf);
 		break;
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	/* HardFault is used for all fault conditions on ARMv6-M. */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	case 4:
-		_MpuFault(esf, 0);
+		reason = _MpuFault(esf, 0);
 		break;
 	case 5:
 		_BusFault(esf, 0);
 		break;
 	case 6:
-		_UsageFault(esf);
+		reason = _UsageFault(esf);
 		break;
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 	case 7:
@@ -480,6 +578,8 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
 		_ReservedException(esf, fault);
 		break;
 	}
+
+	return reason;
 }
 #endif /* FAULT_DUMP == 2 */
 
@@ -498,14 +598,93 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
  *
  * @param esf ESF on the stack, either MSP or PSP depending at what processor
  *            state the exception was taken.
+ *
+ * @param exc_return EXC_RETURN value present in LR after exception entry.
+ *
+ * Note: exc_return argument shall only be used by the Fault handler if we are
+ * building Secure Firmware.
  */
-void _Fault(const NANO_ESF *esf)
+void _Fault(const NANO_ESF *esf, u32_t exc_return)
 {
+	u32_t reason = _NANO_ERR_HW_EXCEPTION;
 	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
 
-	FAULT_DUMP(esf, fault);
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+	if ((exc_return & EXC_RETURN_INDICATOR_PREFIX) !=
+			EXC_RETURN_INDICATOR_PREFIX) {
+		/* Invalid EXC_RETURN value */
+		_SysFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, esf);
+	}
+	if ((exc_return & EXC_RETURN_EXCEPTION_SECURE_Secure) == 0) {
+		/* Secure Firmware shall only handle Secure Exceptions.
+		 * This is a fatal error.
+		 */
+		_SysFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, esf);
+	}
 
-	_SysFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, esf);
+	if (exc_return & EXC_RETURN_RETURN_STACK_Secure) {
+		/* Exception entry occurred in Secure stack. */
+		FAULT_DUMP(reason, esf, fault);
+	} else {
+		/* Exception entry occurred in Non-Secure stack. Therefore, the
+		 * exception stack frame is located in the Non-Secure stack.
+		 */
+		NANO_ESF *esf_ns;
+		if (exc_return & EXC_RETURN_MODE_THREAD) {
+			esf_ns = (NANO_ESF *)__TZ_get_PSP_NS();
+			if ((SCB->ICSR & SCB_ICSR_RETTOBASE_Msk) == 0) {
+				PR_EXC("RETTOBASE does not match EXC_RETURN\n");
+				_SysFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, esf);
+			}
+		} else {
+			esf_ns = (NANO_ESF *)__TZ_get_MSP_NS();
+			if ((SCB->ICSR & SCB_ICSR_RETTOBASE_Msk) != 0) {
+				PR_EXC("RETTOBASE does not match EXC_RETURN\n");
+				_SysFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, esf);
+			}
+		}
+		FAULT_DUMP(reason, esf_ns, fault);
+
+		/* Dumping the Secure Stack, too.
+		 * In case a Non-Secure exception interrupted the Secure
+		 * execution, the Secure state has stacked the additional
+		 * state context and the top of the stack contains the
+		 * integrity signature.
+		 *
+		 * In case of a Non-Secure function call the top of the
+		 * stack contains the return address to Secure state.
+		 */
+		u32_t *top_of_sec_stack = (u32_t *)esf;
+		u32_t sec_ret_addr;
+#if defined(CONFIG_ARMV7_M_ARMV8_M_FP)
+		if ((*top_of_sec_stack == INTEGRITY_SIGNATURE_STD) ||
+			(*top_of_sec_stack == INTEGRITY_SIGNATURE_EXT)) {
+#else
+		if (*top_of_sec_stack == INTEGRITY_SIGNATURE) {
+#endif /* CONFIG_ARMV7_M_ARMV8_M_FP */
+			/* Secure state interrupted by a Non-Secure exception.
+			 * The return address after the additional state
+			 * context, stacked by the Secure code upon
+			 * Non-Secure exception entry.
+			 */
+			top_of_sec_stack += ADDITIONAL_STATE_CONTEXT_WORDS;
+			esf = (const NANO_ESF *)top_of_sec_stack;
+			sec_ret_addr = esf->pc;
+
+		} else {
+			/* Exception during Non-Secure function call.
+			 * The return address is located on top of stack.
+			 */
+			sec_ret_addr = *top_of_sec_stack;
+		}
+		PR_EXC("  S instruction address:  0x%x\n", sec_ret_addr);
+	}
+#else
+	(void) exc_return;
+	FAULT_DUMP(reason, esf, fault);
+#endif /* CONFIG_ARM_SECURE_FIRMWARE*/
+
+	_SysFatalErrorHandler(reason, esf);
 }
 
 /**
@@ -524,4 +703,22 @@ void _FaultInit(void)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+	/* If Stack guarding via SP limit checking is enabled, disable
+	 * SP limit checking inside HardFault and NMI. This is done
+	 * in order to allow for the desired fault logging to execute
+	 * properly in all cases.
+	 *
+	 * Note that this could allow a Secure Firmware Main Stack
+	 * to descend into non-secure region during HardFault and
+	 * NMI exception entry. To prevent from this, non-secure
+	 * memory regions must be located higher than secure memory
+	 * regions.
+	 *
+	 * For Non-Secure Firmware this could allow the Non-Secure Main
+	 * Stack to attempt to descend into secure region, in which case a
+	 * Secure Hard Fault will occur and we can track the fault from there.
+	 */
+	SCB->CCR |= SCB_CCR_STKOFHFNMIGN_Msk;
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 }

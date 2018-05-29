@@ -1,0 +1,9 @@
+sample:
+  description: ArgonKey sensor testing
+  name: ArgonKey test
+tests:
+  test:
+    harness: sensor
+    platform_whitelist: 96b_argonkey
+    tags: sensors
+    depends_on: i2c spi gpio

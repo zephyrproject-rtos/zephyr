@@ -23,8 +23,8 @@ static struct k_mutex mutex;
 /* file system map table */
 static struct fs_file_system_t *fs_map[FS_TYPE_END];
 
-int get_mnt_point(struct fs_mount_t **mnt_pntp,
-		  const char *name, size_t *match_len)
+int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
+		     const char *name, size_t *match_len)
 {
 	struct fs_mount_t *mnt_p = NULL, *itr;
 	size_t longest_match = 0;
@@ -66,7 +66,9 @@ int get_mnt_point(struct fs_mount_t **mnt_pntp,
 	}
 
 	*mnt_pntp = mnt_p;
-	*match_len = mnt_p->mountp_len;
+	if (match_len)
+		*match_len = mnt_p->mountp_len;
+
 	return 0;
 }
 
@@ -74,7 +76,6 @@ int get_mnt_point(struct fs_mount_t **mnt_pntp,
 int fs_open(struct fs_file_t *zfp, const char *file_name)
 {
 	struct fs_mount_t *mp;
-	size_t match_len;
 	int rc = -EINVAL;
 
 	if ((file_name == NULL) ||
@@ -83,7 +84,7 @@ int fs_open(struct fs_file_t *zfp, const char *file_name)
 		return -EINVAL;
 	}
 
-	rc = get_mnt_point(&mp, file_name, &match_len);
+	rc = fs_get_mnt_point(&mp, file_name, NULL);
 	if (rc < 0) {
 		SYS_LOG_ERR("%s:mount point not found!!", __func__);
 		return rc;
@@ -92,7 +93,7 @@ int fs_open(struct fs_file_t *zfp, const char *file_name)
 	zfp->mp = mp;
 
 	if (zfp->mp->fs->open != NULL) {
-		rc = zfp->mp->fs->open(zfp, &file_name[match_len]);
+		rc = zfp->mp->fs->open(zfp, file_name);
 		if (rc < 0) {
 			SYS_LOG_ERR("file open error (%d)", rc);
 			return rc;
@@ -207,7 +208,6 @@ int fs_sync(struct fs_file_t *zfp)
 int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 {
 	struct fs_mount_t *mp;
-	size_t match_len;
 	int rc = -EINVAL;
 
 	if ((abs_path == NULL) ||
@@ -216,7 +216,7 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 		return -EINVAL;
 	}
 
-	rc = get_mnt_point(&mp, abs_path, &match_len);
+	rc = fs_get_mnt_point(&mp, abs_path, NULL);
 	if (rc < 0) {
 		SYS_LOG_ERR("%s:mount point not found!!", __func__);
 		return rc;
@@ -225,7 +225,7 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 	zdp->mp = mp;
 
 	if (zdp->mp->fs->opendir != NULL) {
-		rc = zdp->mp->fs->opendir(zdp, &abs_path[match_len]);
+		rc = zdp->mp->fs->opendir(zdp, abs_path);
 		if (rc < 0) {
 			SYS_LOG_ERR("directory open error (%d)", rc);
 		}
@@ -267,7 +267,6 @@ int fs_closedir(struct fs_dir_t *zdp)
 int fs_mkdir(const char *abs_path)
 {
 	struct fs_mount_t *mp;
-	size_t match_len;
 	int rc = -EINVAL;
 
 	if ((abs_path == NULL) ||
@@ -276,14 +275,14 @@ int fs_mkdir(const char *abs_path)
 		return -EINVAL;
 	}
 
-	rc = get_mnt_point(&mp, abs_path, &match_len);
+	rc = fs_get_mnt_point(&mp, abs_path, NULL);
 	if (rc < 0) {
 		SYS_LOG_ERR("%s:mount point not found!!", __func__);
 		return rc;
 	}
 
 	if (mp->fs->mkdir != NULL) {
-		rc = mp->fs->mkdir(mp, &abs_path[match_len]);
+		rc = mp->fs->mkdir(mp, abs_path);
 		if (rc < 0) {
 			SYS_LOG_ERR("failed to create directory (%d)", rc);
 		}
@@ -295,7 +294,6 @@ int fs_mkdir(const char *abs_path)
 int fs_unlink(const char *abs_path)
 {
 	struct fs_mount_t *mp;
-	size_t match_len;
 	int rc = -EINVAL;
 
 	if ((abs_path == NULL) ||
@@ -304,14 +302,14 @@ int fs_unlink(const char *abs_path)
 		return -EINVAL;
 	}
 
-	rc = get_mnt_point(&mp, abs_path, &match_len);
+	rc = fs_get_mnt_point(&mp, abs_path, NULL);
 	if (rc < 0) {
 		SYS_LOG_ERR("%s:mount point not found!!", __func__);
 		return rc;
 	}
 
 	if (mp->fs->unlink != NULL) {
-		rc = mp->fs->unlink(mp, &abs_path[match_len]);
+		rc = mp->fs->unlink(mp, abs_path);
 		if (rc < 0) {
 			SYS_LOG_ERR("failed to unlink path (%d)", rc);
 		}
@@ -332,7 +330,7 @@ int fs_rename(const char *from, const char *to)
 		return -EINVAL;
 	}
 
-	rc = get_mnt_point(&mp, from, &match_len);
+	rc = fs_get_mnt_point(&mp, from, &match_len);
 	if (rc < 0) {
 		SYS_LOG_ERR("%s:mount point not found!!", __func__);
 		return rc;
@@ -345,7 +343,7 @@ int fs_rename(const char *from, const char *to)
 	}
 
 	if (mp->fs->rename != NULL) {
-		rc = mp->fs->rename(mp, &from[match_len], &to[match_len]);
+		rc = mp->fs->rename(mp, from, to);
 		if (rc < 0) {
 			SYS_LOG_ERR("failed to rename file or dir (%d)", rc);
 		}
@@ -357,7 +355,6 @@ int fs_rename(const char *from, const char *to)
 int fs_stat(const char *abs_path, struct fs_dirent *entry)
 {
 	struct fs_mount_t *mp;
-	size_t match_len;
 	int rc = -EINVAL;
 
 	if ((abs_path == NULL) ||
@@ -366,14 +363,14 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 		return -EINVAL;
 	}
 
-	rc = get_mnt_point(&mp, abs_path, &match_len);
+	rc = fs_get_mnt_point(&mp, abs_path, NULL);
 	if (rc < 0) {
 		SYS_LOG_ERR("%s:mount point not found!!", __func__);
 		return rc;
 	}
 
 	if (mp->fs->stat != NULL) {
-		rc = mp->fs->stat(mp, &abs_path[match_len], entry);
+		rc = mp->fs->stat(mp, abs_path, entry);
 		if (rc < 0) {
 			SYS_LOG_ERR("failed get file or dir stat (%d)", rc);
 		}
@@ -384,7 +381,6 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 {
 	struct fs_mount_t *mp;
-	size_t match_len;
 	int rc;
 
 	if ((abs_path == NULL) ||
@@ -393,14 +389,14 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 		return -EINVAL;
 	}
 
-	rc = get_mnt_point(&mp, abs_path, &match_len);
+	rc = fs_get_mnt_point(&mp, abs_path, NULL);
 	if (rc < 0) {
 		SYS_LOG_ERR("%s:mount point not found!!", __func__);
 		return rc;
 	}
 
 	if (mp->fs->statvfs != NULL) {
-		rc = mp->fs->statvfs(mp, &abs_path[match_len], stat);
+		rc = mp->fs->statvfs(mp, abs_path, stat);
 		if (rc < 0) {
 			SYS_LOG_ERR("failed get file or dir stat (%d)", rc);
 		}

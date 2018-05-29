@@ -6,8 +6,4 @@
 
 if BOARD_96B_NITROGEN
 
-config GPIO_AS_PINRESET
-	bool "GPIO as pin reset (reset button)"
-	default y
-
 endif # BOARD_96B_NITROGEN

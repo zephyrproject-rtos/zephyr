@@ -26,12 +26,10 @@ Building and Running
  This project outputs sensor data to the console. It requires a VL53L0X
  sensor, which is present on the disco_l475_iot1 board.
 
- .. code-block:: console
+ .. zephyr-app-commands::
+    :app: samples/sensor/vl53l0x/
+    :goals: build flash
 
-    $ cd samples/sensors/vl53l0x
-    $ mkdir disco_l475_iot1 && cd disco_l475_iot1
-    $ cmake -DBOARD=disco_l475_iot1 ..
-    $ make
 
 Sample Output
 =============

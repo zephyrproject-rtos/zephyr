@@ -130,6 +130,9 @@ struct bt_mesh_msg_ctx {
 	/** Remote address. */
 	u16_t addr;
 
+	/** Destination address of a received message. Not used for sending. */
+	u16_t recv_dst;
+
 	/** Received TTL value. Not used for sending. */
 	u8_t  recv_ttl:7;
 
@@ -329,8 +332,10 @@ struct bt_mesh_model {
 		} vnd;
 	};
 
-	/* The Element this Model belongs to */
-	struct bt_mesh_elem *elem;
+	/* Internal information, mainly for persistent storage */
+	u8_t  elem_idx;   /* Belongs to Nth element */
+	u8_t  mod_idx;    /* Is the Nth model in the element */
+	u16_t flags;      /* Information about what has changed */
 
 	/* Model Publication */
 	struct bt_mesh_model_pub * const pub;
@@ -392,6 +397,15 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
  * @return 0 on success, or (negative) error code on failure.
  */
 int bt_mesh_model_publish(struct bt_mesh_model *model);
+
+/**
+ * @brief Get the element that a model belongs to.
+ *
+ * @param mod  Mesh model.
+ *
+ * @return Pointer to the element that the given model belongs to.
+ */
+struct bt_mesh_elem *bt_mesh_model_elem(struct bt_mesh_model *mod);
 
 /** Node Composition */
 struct bt_mesh_comp {

@@ -1,0 +1,41 @@
+libmetal
+#####################
+
+Origin:
+   https://github.com/OpenAMP/libmetal
+
+Status:
+   b4b5beab4b71388d63c732470b6d6da606ae8ffc
+
+   When we import libmetal we removed the tests/ and examples/ dir to reduce
+   the amount of code imported.
+
+Purpose:
+   HAL abstraction layer used by open-amp
+
+Description:
+   Libmetal provides common user APIs to access devices, handle device
+   interrupts and request memory across the following operating environments:
+
+   * Linux user space (based on UIO and VFIO support in the kernel)
+   * RTOS (with and without virtual memory)
+   * Bare-metal environments
+
+Dependencies:
+   Depends on Zephyr itself as it utilizes Zephyr's APIs to provide an
+   abstraction to open-amp.
+
+URL:
+   https://github.com/OpenAMP/libmetal
+
+commit:
+   b4b5beab4b71388d63c732470b6d6da606ae8ffc
+
+Maintained-by:
+   External
+
+License:
+   BSD-3-Clause
+
+License Link:
+   https://github.com/OpenAMP/libmetal/blob/master/LICENSE.md

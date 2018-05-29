@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 ---
 title: Intel QMSI Uart
 id: intel,qmsi-uart
@@ -34,9 +39,4 @@ properties:
       description: pinmux information for RX, TX, CTS, RTS
       generation: define
 
-    clocks:
-      type: array
-      category: required
-      description: Clock gate control information
-      generation: structures
 ...

@@ -10,7 +10,7 @@ if SOC_EFM32WG
 
 config SOC
 	string
-	default efm32wg
+	default "efm32wg"
 
 config GPIO
 	def_bool y

@@ -306,6 +306,7 @@ SECTIONS
 
 #include <linker/kobject.ld>
 
+	MMU_PAGE_ALIGN
 	__data_ram_end = .;
 
 	/* All unused memory also owned by the kernel for heaps */

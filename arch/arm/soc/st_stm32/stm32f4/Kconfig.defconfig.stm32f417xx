@@ -9,7 +9,7 @@ if SOC_STM32F417XE || SOC_STM32F417XG
 
 config SOC
 	string
-	default stm32f417xx
+	default "stm32f417xx"
 
 config NUM_IRQS
 	int

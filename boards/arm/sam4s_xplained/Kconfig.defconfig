@@ -8,7 +8,7 @@ if BOARD_SAM4S_XPLAINED
 
 config BOARD
 	string
-	default sam4s_xplained
+	default "sam4s_xplained"
 
 if I2C
 

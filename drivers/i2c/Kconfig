@@ -140,6 +140,32 @@ config I2C_3_IRQ_PRI
 	help
 	  IRQ priority.
 
+config I2C_4
+	bool "Enable I2C Port 4"
+	default n
+
+config I2C_4_NAME
+	string "Port 4 device name"
+	depends on I2C_4 && !HAS_DTS_I2C
+	default "I2C_4"
+
+config I2C_4_DEFAULT_CFG
+	hex "Port 4 default configuration"
+	depends on I2C_4 && !HAS_DTS_I2C
+	default 0x0
+	help
+	  Allows the I2C port to be brought up with a default configuration.
+	  This is useful to set if other drivers depend upon using the I2C bus
+	  before the application has a chance to custom configure the port.
+	  Setting this value does not prohibit the application from customizing
+	  the values later.  Refer to include/i2c.h file for proper values.
+
+config I2C_4_IRQ_PRI
+	int "Port 4 interrupt priority"
+	depends on I2C_4 && !HAS_DTS_I2C
+	help
+	  IRQ priority.
+
 config I2C_ATMEL_SAM3
 	bool "[deprecated] Atmel SAM3X I2C Driver"
 	depends on SOC_SERIES_SAM3X

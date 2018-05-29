@@ -10,23 +10,25 @@
 extern struct k_mem_pool mpool1;
 
 /*test cases*/
+/**
+ * @brief Test to verify merge of blocks of different quad-block
+ *
+ * @details TESTPOINT: The algo cannot merge adjacent free blocks
+ * of the same size if they belong to different parent quad-blocks
+ * Test steps: 1. allocate block [0~7] in minimum block size
+ * 2. free block [2~5], belong to diff parental quad-blocks
+ * 3. request a big block
+ * verify blocks [2, 3] and blocks [4, 5] can't be merged
+ * 4. tear down, free blocks [0, 1, 6, 7]
+ */
 void test_mpool_alloc_merge_failed_diff_parent(void)
 {
 	struct k_mem_block block[BLK_NUM_MIN], block_fail;
 
-	/**
-	 * TESTPOINT: nor can it merge adjacent free blocks of the same
-	 * size if they belong to different parent quad-blocks
-	 * Test steps: 1. allocate block [0~7] in minimum block size
-	 *             2. free block [2~5], belong to diff parental quad-blocks
-	 *             3. request a big block
-	 *                verify blocks [2, 3] and blocks [4, 5] can't be merged
-	 *             4. tear down, free blocks [0, 1, 6, 7]
-	 */
 	for (int i = 0; i < BLK_NUM_MIN; i++) {
 		/* 1. allocated up all blocks*/
 		zassert_true(k_mem_pool_alloc(&mpool1, &block[i], BLK_SIZE_MIN,
-			K_NO_WAIT) == 0, NULL);
+					      K_NO_WAIT) == 0, NULL);
 	}
 	/* 2. free adjacent blocks belong to different parent quad-blocks*/
 	for (int i = 2; i < 6; i++) {
@@ -34,7 +36,7 @@ void test_mpool_alloc_merge_failed_diff_parent(void)
 	}
 	/* 3. request a big block, expected failed to merge*/
 	zassert_true(k_mem_pool_alloc(&mpool1, &block_fail, BLK_SIZE_MAX,
-		TIMEOUT) == -EAGAIN, NULL);
+				      TIMEOUT) == -EAGAIN, NULL);
 
 	/* 4. test case tear down*/
 	k_mem_pool_free(&block[0]);

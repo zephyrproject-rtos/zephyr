@@ -325,8 +325,10 @@ int mbedtls_cipher_update( mbedtls_cipher_context_t *ctx, const unsigned char *i
         /*
          * If there is not enough data for a full block, cache it.
          */
-        if( ( ctx->operation == MBEDTLS_DECRYPT &&
+        if( ( ctx->operation == MBEDTLS_DECRYPT && NULL != ctx->add_padding &&
                 ilen <= block_size - ctx->unprocessed_len ) ||
+            ( ctx->operation == MBEDTLS_DECRYPT && NULL == ctx->add_padding &&
+                ilen < block_size - ctx->unprocessed_len ) ||
              ( ctx->operation == MBEDTLS_ENCRYPT &&
                 ilen < block_size - ctx->unprocessed_len ) )
         {
@@ -372,9 +374,17 @@ int mbedtls_cipher_update( mbedtls_cipher_context_t *ctx, const unsigned char *i
                 return MBEDTLS_ERR_CIPHER_INVALID_CONTEXT;
             }
 
+            /* Encryption: only cache partial blocks
+             * Decryption w/ padding: always keep at least one whole block
+             * Decryption w/o padding: only cache partial blocks
+             */
             copy_len = ilen % block_size;
-            if( copy_len == 0 && ctx->operation == MBEDTLS_DECRYPT )
+            if( copy_len == 0 &&
+                ctx->operation == MBEDTLS_DECRYPT &&
+                NULL != ctx->add_padding)
+            {
                 copy_len = block_size;
+            }
 
             memcpy( ctx->unprocessed_data, &( input[ilen - copy_len] ),
                     copy_len );

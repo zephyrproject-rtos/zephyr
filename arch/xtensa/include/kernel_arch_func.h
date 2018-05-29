@@ -10,6 +10,7 @@
 #define _kernel_arch_func__h_
 
 #ifndef _ASMLANGUAGE
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,6 +77,11 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 	 * Leave CPENABLE alone.
 	 */
 	_xt_coproc_init();
+#endif
+
+#ifdef CONFIG_INIT_STACKS
+	memset(K_THREAD_STACK_BUFFER(_interrupt_stack), 0xAA,
+	       CONFIG_ISR_STACK_SIZE);
 #endif
 }
 

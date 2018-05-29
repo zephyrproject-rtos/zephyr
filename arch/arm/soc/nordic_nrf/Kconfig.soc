@@ -5,5 +5,5 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-source "arch/arm/soc/nordic_nrf/*/Kconfig.series"
+gsource "arch/arm/soc/nordic_nrf/*/Kconfig.series"
 

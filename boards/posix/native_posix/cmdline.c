@@ -26,7 +26,7 @@ static void cmd_stop_at_found(char *argv, int offset)
 	hwm_set_end_of_time(args.stop_at*1e6);
 }
 
-#if defined(CONFIG_ENTROPY_NATIVE_POSIX)
+#if defined(CONFIG_FAKE_ENTROPY_NATIVE_POSIX)
 extern void entropy_native_posix_set_seed(unsigned int seed_i);
 static void cmd_seed_found(char *argv, int offset)
 {
@@ -58,7 +58,7 @@ void native_handle_cmd_line(int argc, char *argv[])
 		(void *)&args.stop_at, cmd_stop_at_found,
 		"In simulated seconds, when to stop automatically"},
 
-#if defined(CONFIG_ENTROPY_NATIVE_POSIX)
+#if defined(CONFIG_FAKE_ENTROPY_NATIVE_POSIX)
 		{false, false, false,
 		  "seed", "r_seed", 'u',
 		(void *)&args.seed, cmd_seed_found,

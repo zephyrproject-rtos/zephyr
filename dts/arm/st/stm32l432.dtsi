@@ -5,3 +5,18 @@
  */
 
 #include <st/stm32l4.dtsi>
+
+/ {
+	soc {
+		usb: usb@40006800 {
+			compatible = "st,stm32-usb";
+			reg = <0x40006800 0x40000>;
+			interrupts = <67 0>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <8>;
+			ram-size = <1024>;
+			status = "disabled";
+			label = "USB";
+		};
+	};
+};

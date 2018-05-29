@@ -1,0 +1,9 @@
+common:
+  tags: nffs filesystem
+tests:
+  filesystem.nffs.cache:
+    extra_args: TEST=cache
+    extra_configs:
+      - CONFIG_FS_NFFS_NUM_CACHE_BLOCKS=64
+      - CONFIG_FS_NFFS_NUM_CACHE_INODES=4
+    platform_whitelist: qemu_x86

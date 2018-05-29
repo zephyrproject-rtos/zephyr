@@ -45,6 +45,8 @@
 #define mqueue_desc	       zap_mqueue_desc
 #define mqd_t		       zap_mqd_t
 #define mq_attr		       zap_mq_attr
+#define dirent		       zap_dirent
+#define DIR		       zap_DIR
 
 /* Condition variables */
 
@@ -162,6 +164,20 @@
 #define mq_setattr(...)	zap_mq_setattr(__VA_ARGS__)
 #define mq_timedreceive(...)	zap_mq_timedreceive(__VA_ARGS__)
 #define mq_timedsend(...)	zap_mq_timedsend(__VA_ARGS__)
+
+/* File system */
+#define open		zap_open
+#define close		zap_close
+#define write		zap_write
+#define read		zap_read
+#define lseek		zap_lseek
+#define opendir		zap_opendir
+#define closedir	zap_closedir
+#define readdir		zap_readdir
+#define rename		zap_rename
+#define unlink		zap_unlink
+#define stat		zap_stat
+#define mkdir		zap_mkdir
 
 #endif /* CONFIG_PTHREAD_IPC */
 

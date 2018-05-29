@@ -8,7 +8,7 @@ if SOC_HIFI2_STD
 
 config SOC
 	string
-	default hifi2_std
+	default "hifi2_std"
 
 config IRQ_OFFLOAD_INTNUM
 	default 7

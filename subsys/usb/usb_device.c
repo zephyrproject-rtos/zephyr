@@ -265,9 +265,9 @@ static void usb_handle_control_transfer(u8_t ep,
 		usb_dev.data_buf_residue = setup->wLength;
 		usb_dev.data_buf_len = setup->wLength;
 
-		if (!(setup->wLength == 0) &&
-		    !(REQTYPE_GET_DIR(setup->bmRequestType) ==
-		    REQTYPE_DIR_TO_HOST)) {
+		if (setup->wLength &&
+		    REQTYPE_GET_DIR(setup->bmRequestType)
+		    == REQTYPE_DIR_TO_DEVICE) {
 			return;
 		}
 
@@ -388,6 +388,15 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 
 	type = GET_DESC_TYPE(type_index);
 	index = GET_DESC_INDEX(type_index);
+
+	/*
+	 * Invalid types of descriptors,
+	 * see USB Spec. Revision 2.0, 9.4.3 Get Descriptor
+	 */
+	if ((type == DESC_INTERFACE) || (type == DESC_ENDPOINT) ||
+	    (type > DESC_OTHER_SPEED)) {
+		return false;
+	}
 
 	p = (u8_t *)usb_dev.descriptors;
 	cur_index = 0;

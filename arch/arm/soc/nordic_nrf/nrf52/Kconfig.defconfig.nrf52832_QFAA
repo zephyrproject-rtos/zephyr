@@ -10,7 +10,7 @@ if SOC_NRF52832_QFAA
 
 config SOC
 	string
-	default nRF52832_QFAA
+	default "nRF52832_QFAA"
 
 config NUM_IRQS
 	int

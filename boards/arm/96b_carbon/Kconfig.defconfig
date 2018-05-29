@@ -8,7 +8,7 @@
 if BOARD_96B_CARBON
 
 config BOARD
-	default 96b_carbon
+	default "96b_carbon"
 
 if UART_CONSOLE
 
@@ -41,6 +41,10 @@ if BT
 
 config SPI
 	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_SPI
+endchoice
 
 endif # BT
 

@@ -8,7 +8,7 @@
 if BOARD_DISCO_L475_IOT1
 
 config BOARD
-	default disco_l475_iot1
+	default "disco_l475_iot1"
 
 if CLOCK_STM32_SYSCLK_SRC_PLL
 
@@ -77,6 +77,9 @@ config PWM_STM32_2
 endif # PWM
 
 if VL53L0X
+
+config VL53L0X_XSHUT_CONTROL_ENABLE
+	default y
 
 config VL53L0X_XSHUT_GPIO_DEV_NAME
 	default "GPIOC"

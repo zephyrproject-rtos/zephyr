@@ -4,26 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_mbox
- * @{
- * @defgroup t_mbox_api test_mbox_api
- * @brief TestPurpose: verify data passing via mailbox APIs
- * - API coverage
- *   -# K_MBOX_DEFINE
- *   -# k_mbox_init
- *   -# k_mbox_put
- *   -# k_mbox_async_put
- *   -# k_mbox_get
- *   -# k_mbox_data_get
- *   -# k_mbox_data_block_get
- * @}
- */
-
 #include <ztest.h>
 
 #define TIMEOUT 100
+#if !defined(CONFIG_BOARD_QEMU_X86)
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#else
+#define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACKSIZE)
+#endif
 #define MAIL_LEN 64
 
 /**TESTPOINT: init via K_MBOX_DEFINE*/

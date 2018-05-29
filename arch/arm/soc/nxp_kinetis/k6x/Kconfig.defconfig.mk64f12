@@ -10,7 +10,7 @@ if SOC_MK64F12
 
 config SOC
 	string
-	default mk64f12
+	default "mk64f12"
 
 if ADC
 
@@ -94,5 +94,19 @@ config UART_MCUX
 	def_bool y
 
 endif # SERIAL
+
+if USB
+
+config USB_KINETIS
+	def_bool y
+
+endif # USB
+
+if WATCHDOG
+
+config WDT_MCUX_WDOG
+	def_bool y
+
+endif # WATCHDOG
 
 endif # SOC_MK64F12

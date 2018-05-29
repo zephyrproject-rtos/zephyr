@@ -309,7 +309,7 @@ NET_DEVICE_INIT(net_arp_test, "net_arp_test",
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_arp_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
 
-void run_tests(void)
+void test_arp(void)
 {
 	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
 
@@ -341,6 +341,7 @@ void run_tests(void)
 				      &src,
 				      NET_ADDR_MANUAL,
 				      0);
+	zassert_not_null(ifaddr, "Cannot add address");
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	/* Application data for testing */
@@ -662,6 +663,6 @@ void run_tests(void)
 void test_main(void)
 {
 	ztest_test_suite(test_arp_fn,
-		ztest_unit_test(run_tests));
+		ztest_unit_test(test_arp));
 	ztest_run_test_suite(test_arp_fn);
 }

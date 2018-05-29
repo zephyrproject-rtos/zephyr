@@ -29,13 +29,12 @@
 #include "access.h"
 #include "foundation.h"
 #include "proxy.h"
+#include "settings.h"
 #include "mesh.h"
 
-static bool provisioned;
-
 int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
-		      u8_t flags, u32_t iv_index, u32_t seq,
-		      u16_t addr, const u8_t dev_key[16])
+		      u8_t flags, u32_t iv_index, u16_t addr,
+		      const u8_t dev_key[16])
 {
 	int err;
 
@@ -56,46 +55,27 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 		return err;
 	}
 
-	bt_mesh.seq = seq;
+	bt_mesh.seq = 0;
 
 	bt_mesh_comp_provision(addr);
 
 	memcpy(bt_mesh.dev_key, dev_key, 16);
 
-	provisioned = true;
-
-	if (bt_mesh_beacon_get() == BT_MESH_BEACON_ENABLED) {
-		bt_mesh_beacon_enable();
-	} else {
-		bt_mesh_beacon_disable();
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		BT_DBG("Storing network information persistently");
+		bt_mesh_store_net();
+		bt_mesh_store_subnet(&bt_mesh.sub[0]);
+		bt_mesh_store_iv(false);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
-	    bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_NOT_SUPPORTED) {
-		bt_mesh_proxy_gatt_enable();
-		bt_mesh_adv_update();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
-		bt_mesh_lpn_init();
-	} else {
-		bt_mesh_scan_enable();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
-		bt_mesh_friend_init();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {
-		bt_mesh_prov_complete(net_idx, addr);
-	}
+	bt_mesh_net_start();
 
 	return 0;
 }
 
 void bt_mesh_reset(void)
 {
-	if (!provisioned) {
+	if (!bt_mesh.valid) {
 		return;
 	}
 
@@ -106,10 +86,10 @@ void bt_mesh_reset(void)
 	bt_mesh.iv_update = 0;
 	bt_mesh.pending_update = 0;
 	bt_mesh.valid = 0;
-	bt_mesh.last_update = 0;
+	bt_mesh.ivu_duration = 0;
 	bt_mesh.ivu_initiator = 0;
 
-	k_delayed_work_cancel(&bt_mesh.ivu_complete);
+	k_delayed_work_cancel(&bt_mesh.ivu_timer);
 
 	bt_mesh_cfg_reset();
 
@@ -128,11 +108,11 @@ void bt_mesh_reset(void)
 		bt_mesh_proxy_gatt_disable();
 	}
 
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_clear_net();
+	}
+
 	memset(bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
-
-	memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
-
-	provisioned = false;
 
 	bt_mesh_scan_disable();
 	bt_mesh_beacon_disable();
@@ -144,7 +124,7 @@ void bt_mesh_reset(void)
 
 bool bt_mesh_is_provisioned(void)
 {
-	return provisioned;
+	return bt_mesh.valid;
 }
 
 int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
@@ -220,6 +200,10 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROXY)) {
 		bt_mesh_proxy_init();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_settings_init();
 	}
 
 	return 0;

@@ -48,6 +48,8 @@ extern "C" {
 #define ULONG_MAX   0xFFFFFFFFul
 #define ULLONG_MAX  0xFFFFFFFFFFFFFFFFull
 
+#define PATH_MAX    256
+
 #ifdef __cplusplus
 }
 #endif

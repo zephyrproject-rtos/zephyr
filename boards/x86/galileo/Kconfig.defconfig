@@ -5,7 +5,7 @@ config BUILD_OUTPUT_STRIPPED
 	def_bool y
 
 config BOARD
-	default galileo
+	default "galileo"
 
 config I2C
 	def_bool y

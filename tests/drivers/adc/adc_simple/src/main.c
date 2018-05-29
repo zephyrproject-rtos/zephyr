@@ -62,7 +62,7 @@ static long _abs(long x)
 }
 
 
-static void adc_test(void)
+static void test_adc(void)
 {
 	int result = TC_FAIL;
 	struct device *adc;
@@ -70,7 +70,7 @@ static void adc_test(void)
 	unsigned int bufi0 = ~0, bufi;
 
 	adc = device_get_binding(ADC_DEVICE_NAME);
-	zassert_not_null(adc, "Cannot get adc controller\n");
+	zassert_not_null(adc, "Cannot get adc controller");
 
 	adc_enable(adc);
 	while (loops--) {
@@ -79,7 +79,7 @@ static void adc_test(void)
 		sample.buffer = (void *) seq_buffer[bufi];
 		result = adc_read(adc, &table);
 		zassert_equal(result, 0, "Sampling could not proceed, "
-			"an error occurred\n");
+			"an error occurred");
 		printk("loop %u: sampling done to buffer #%u\n", loops, bufi);
 		_print_sample_in_hex(seq_buffer[bufi], BUFFER_SIZE);
 		if (bufi0 != ~0) {
@@ -103,7 +103,7 @@ static void adc_test(void)
 void test_main(void)
 {
 	ztest_test_suite(_adc_test,
-			 ztest_unit_test(adc_test));
+			 ztest_unit_test(test_adc));
 	ztest_run_test_suite(_adc_test);
 }
 

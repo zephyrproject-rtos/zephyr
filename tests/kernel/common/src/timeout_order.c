@@ -23,7 +23,8 @@ static void thread(void *p1, void *p2, void *p3)
 	uintptr_t id = (uintptr_t)p1;
 
 	k_timer_status_sync(&timer[id]);
-	printk("%s %d synced on timer %d\n", __func__, id, id);
+	printk("%s %" PRIxPTR " synced on timer %" PRIxPTR "\n",
+	       __func__, id, id);
 
 	/* no need to protect cur, all threads have the same prio */
 	results[cur++] = id;

@@ -329,14 +329,27 @@ function(generate_inc_file
     )
 endfunction()
 
+function(generate_inc_file_for_gen_target
+    target          # The cmake target that depends on the generated file
+    source_file     # The source file to be converted to hex
+    generated_file  # The generated file
+    gen_target      # The generated file target we depend on
+                    # Any additional arguments are passed on to file2hex.py
+    )
+  generate_inc_file(${source_file} ${generated_file} ${ARGN})
+
+  # Ensure 'generated_file' is generated before 'target' by creating a
+  # dependency between the two targets
+
+  add_dependencies(${target} ${gen_target})
+endfunction()
+
 function(generate_inc_file_for_target
     target          # The cmake target that depends on the generated file
     source_file     # The source file to be converted to hex
     generated_file  # The generated file
                     # Any additional arguments are passed on to file2hex.py
     )
-  generate_inc_file(${source_file} ${generated_file} ${ARGN})
-
   # Ensure 'generated_file' is generated before 'target' by creating a
   # 'custom_target' for it and setting up a dependency between the two
   # targets
@@ -355,7 +368,7 @@ function(generate_inc_file_for_target
   set(generated_target_name "gen_${basename}_${random_chars}")
 
   add_custom_target(${generated_target_name} DEPENDS ${generated_file})
-  add_dependencies(${target} ${generated_target_name})
+  generate_inc_file_for_gen_target(${target} ${source_file} ${generated_file} ${generated_target_name} ${ARGN})
 endfunction()
 
 # 1.2 zephyr_library_*
@@ -518,9 +531,10 @@ endmacro()
 # This section is for extensions which control Zephyr's board runners
 # from the build system. The Zephyr build system has targets for
 # flashing and debugging supported boards. These are wrappers around a
-# "runner" Python package that is part of Zephyr. This section
-# provides glue between CMake and the runner invocation script,
-# zephyr_flash_debug.py.
+# "runner" Python subpackage that is part of Zephyr's "west" tool.
+#
+# This section provides glue between CMake and the Python code that
+# manages the runners.
 
 # This function is intended for board.cmake files and application
 # CMakeLists.txt files.
@@ -528,8 +542,8 @@ endmacro()
 # Usage from board.cmake files:
 #   board_runner_args(runner "--some-arg=val1" "--another-arg=val2")
 #
-# The build system will then ensure the command line to
-# zephyr_flash_debug.py contains:
+# The build system will then ensure the command line used to
+# create the runner contains:
 #   --some-arg=val1 --another-arg=val2
 #
 # Within application CMakeLists.txt files, ensure that all calls to
@@ -557,7 +571,8 @@ endfunction()
 #   board_finalize_runner_args(runner)
 #
 # This ensures the build system captures all arguments added in any
-# board_runner_args() calls.
+# board_runner_args() calls, and otherwise finishes registering a
+# runner for use.
 #
 # Extended usage:
 #   board_runner_args(runner "--some-arg=default-value")
@@ -585,6 +600,9 @@ function(board_finalize_runner_args runner)
     # last, so they take precedence.
     ${explicit}
     )
+
+  # Add the finalized runner to the global property list.
+  set_property(GLOBAL APPEND PROPERTY ZEPHYR_RUNNERS ${runner})
 endfunction()
 
 # 1.5. Misc.

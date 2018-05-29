@@ -6,6 +6,11 @@ description: >
     Describe in free form text w/ spanning lines what you
     are describing
 
+inherits:
+  - !include other.yaml # or [other1.yaml, other2.yaml]
+# other.yaml contains bindings that also apply to this node.
+# In case there are duplicate definitions in the different
+# bindings the one that is defined first prevails.
 
 < parent | child >:
 # parent/child is used to document implicit relation between nodes.
@@ -50,7 +55,6 @@ properties:
 # If a node is a interrupt controller, gpio controller, pinmux device
 # or any device which is referenced via phandle plus some number of cells
 # then the cell fiels below must be present.
-cell_string: <cell string prefix>
 
 "#cells":
   - cell0    # name of first cell

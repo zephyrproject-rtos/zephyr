@@ -9,7 +9,7 @@
 if BOARD_NUCLEO_L476RG
 
 config BOARD
-	default nucleo_l476rg
+	default "nucleo_l476rg"
 
 if UART_CONSOLE
 

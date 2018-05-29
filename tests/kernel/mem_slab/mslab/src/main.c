@@ -129,11 +129,11 @@ void test_slab_get_all_blocks(void **p)
 	for (int i = 0; i < NUMBLOCKS; i++) {
 		/* Verify number of used blocks in the map */
 		zassert_equal(k_mem_slab_num_used_get(&map_lgblks), i,
-				"Failed k_mem_slab_num_used_get");
+			      "Failed k_mem_slab_num_used_get");
 
 		/* Get memory block */
 		zassert_equal(k_mem_slab_alloc(&map_lgblks, &p[i], K_NO_WAIT), 0,
-			"Failed k_mem_slab_alloc");
+			      "Failed k_mem_slab_alloc");
 	} /* for */
 
 	/*
@@ -141,11 +141,11 @@ void test_slab_get_all_blocks(void **p)
 	 * used
 	 */
 	zassert_equal(k_mem_slab_num_used_get(&map_lgblks), NUMBLOCKS,
-		"Failed k_mem_slab_num_used_get");
+		      "Failed k_mem_slab_num_used_get");
 
 	/* Try to get one more block and it should fail */
 	zassert_equal(k_mem_slab_alloc(&map_lgblks, &errptr, K_NO_WAIT), -ENOMEM,
-			"Failed k_mem_slab_alloc");
+		      "Failed k_mem_slab_alloc");
 
 }  /* test_slab_get_all_blocks */
 
@@ -170,7 +170,7 @@ void test_slab_free_all_blocks(void **p)
 	for (int i = 0; i < NUMBLOCKS; i++) {
 		/* Verify number of used blocks in the map */
 		zassert_equal(k_mem_slab_num_used_get(&map_lgblks), NUMBLOCKS - i,
-			"Failed k_mem_slab_num_used_get");
+			      "Failed k_mem_slab_num_used_get");
 
 		TC_PRINT("  block ptr to free p[%d] = %p\n", i, p[i]);
 		/* Free memory block */
@@ -186,7 +186,7 @@ void test_slab_free_all_blocks(void **p)
 	 */
 
 	zassert_equal(k_mem_slab_num_used_get(&map_lgblks), 0,
-			"Failed k_mem_slab_num_used_get");
+		      "Failed k_mem_slab_num_used_get");
 
 }   /* test_slab_free_all_blocks */
 
@@ -242,13 +242,13 @@ void test_mslab(void)
 
 	ret_value = k_mem_slab_alloc(&map_lgblks, &b, 20);
 	zassert_equal(-EAGAIN, ret_value,
-		     "Failed k_mem_slab_alloc, retValue %d\n", ret_value);
+		      "Failed k_mem_slab_alloc, retValue %d\n", ret_value);
 
 	TC_PRINT("%s: start to wait for block\n", __func__);
 	k_sem_give(&SEM_REGRESSDONE);    /* Allow helper thread to run part 4 */
 	ret_value = k_mem_slab_alloc(&map_lgblks, &b, 50);
 	zassert_equal(0, ret_value,
-		     "Failed k_mem_slab_alloc, ret_value %d\n", ret_value);
+		      "Failed k_mem_slab_alloc, ret_value %d\n", ret_value);
 
 	/* Wait for helper thread to complete */
 	k_sem_take(&SEM_HELPERDONE, K_FOREVER);
@@ -257,7 +257,7 @@ void test_mslab(void)
 	k_sem_give(&SEM_REGRESSDONE);    /* Allow helper thread to run part 5 */
 	ret_value = k_mem_slab_alloc(&map_lgblks, &b, K_FOREVER);
 	zassert_equal(0, ret_value,
-		     "Failed k_mem_slab_alloc, ret_value %d\n", ret_value);
+		      "Failed k_mem_slab_alloc, ret_value %d\n", ret_value);
 
 	/* Wait for helper thread to complete */
 	k_sem_take(&SEM_HELPERDONE, K_FOREVER);
@@ -278,6 +278,6 @@ K_THREAD_DEFINE(HELPER, STACKSIZE, helper_thread, NULL, NULL, NULL,
 void test_main(void)
 {
 	ztest_test_suite(memory_slab,
-			ztest_unit_test(test_mslab));
+			 ztest_unit_test(test_mslab));
 	ztest_run_test_suite(memory_slab);
 }

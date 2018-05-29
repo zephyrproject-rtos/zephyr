@@ -58,7 +58,7 @@ static void iwdg_stm32_convert_timeout(u32_t timeout,
 	 * defines of LL_IWDG_PRESCALER_XX type.
 	 */
 	*prescaler = --shift;
-	*reload = (uint32_t)(m_timeout / divider) - 1;
+	*reload = (u32_t)(m_timeout / divider) - 1;
 }
 
 static void iwdg_stm32_enable(struct device *dev)
@@ -68,10 +68,12 @@ static void iwdg_stm32_enable(struct device *dev)
 	LL_IWDG_Enable(iwdg);
 }
 
-static void iwdg_stm32_disable(struct device *dev)
+static int iwdg_stm32_disable(struct device *dev)
 {
 	/* watchdog cannot be stopped once started */
 	ARG_UNUSED(dev);
+
+	return 0;
 }
 
 static int iwdg_stm32_set_config(struct device *dev,
@@ -143,13 +145,15 @@ static const struct wdt_driver_api iwdg_stm32_api = {
 
 static int iwdg_stm32_init(struct device *dev)
 {
-	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 	struct wdt_config config;
 
-	config.timeout = CONFIG_IWDG_STM32_TIMEOUT;
+#ifdef CONFIG_IWDG_STM32_START_AT_BOOT
+	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 
 	LL_IWDG_Enable(iwdg);
+#endif /* CONFIG_IWDG_STM32_START_AT_BOOT */
 
+	config.timeout = CONFIG_IWDG_STM32_TIMEOUT;
 	iwdg_stm32_set_config(dev, &config);
 
 	/*

@@ -539,7 +539,7 @@ struct coap_pending *coap_pending_next_to_expire(
  * where ACK_TIMEOUT = 2 and ACK_RANDOM_FACTOR = 1.5 by default
  * Ref: https://tools.ietf.org/html/rfc7252#section-4.8
  */
-#define INIT_ACK_TIMEOUT	2345
+#define INIT_ACK_TIMEOUT	CONFIG_COAP_INIT_ACK_TIMEOUT_MS
 
 static s32_t next_timeout(s32_t previous)
 {
@@ -787,9 +787,7 @@ void coap_reply_init(struct coap_reply *reply,
 
 void coap_reply_clear(struct coap_reply *reply)
 {
-	reply->id = 0;
-	reply->tkl = 0;
-	reply->reply = NULL;
+	memset(reply, 0, sizeof(*reply));
 }
 
 int coap_resource_notify(struct coap_resource *resource)
@@ -877,10 +875,6 @@ static bool sockaddr_equal(const struct sockaddr *a,
 	if (b->sa_family == AF_INET6) {
 		const struct sockaddr_in6 *a6 = net_sin6(a);
 		const struct sockaddr_in6 *b6 = net_sin6(b);
-
-		if (a6->sin6_scope_id != b6->sin6_scope_id) {
-			return false;
-		}
 
 		if (a6->sin6_port != b6->sin6_port) {
 			return false;

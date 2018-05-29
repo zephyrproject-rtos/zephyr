@@ -7,7 +7,7 @@
 if BOARD_NRF51_BLE400
 
 config BOARD
-	default nrf51_ble400
+	default "nrf51_ble400"
 
 if GPIO_NRF5
 

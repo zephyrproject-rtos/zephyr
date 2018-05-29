@@ -30,7 +30,6 @@ void test_main(void)
 		ztest_unit_test(test_sha256_5),
 		ztest_unit_test(test_sha256_6),
 		ztest_unit_test(test_sha256_7),
-		ztest_unit_test(test_sha256_7),
 		ztest_unit_test(test_sha256_9),
 		ztest_unit_test(test_sha256_10),
 		ztest_unit_test(test_sha256_11),

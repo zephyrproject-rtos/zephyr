@@ -12,7 +12,7 @@ menuconfig LP3943
 	  Enable LED driver for LP3943.
 
 	  LP3943 LED driver has 16 channels each with multi-programmable
-	  states at a specified rate. Each channel can drive upto 25 mA
+	  states at a specified rate. Each channel can drive up to 25 mA
 	  per LED.
 
 if !HAS_DTS_I2C_DEVICE

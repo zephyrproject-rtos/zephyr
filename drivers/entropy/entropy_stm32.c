@@ -210,7 +210,7 @@ static struct entropy_stm32_rng_dev_data entropy_stm32_rng_data = {
 DEVICE_AND_API_INIT(entropy_stm32_rng, CONFIG_ENTROPY_NAME,
 		    entropy_stm32_rng_init,
 		    &entropy_stm32_rng_data, &entropy_stm32_rng_config,
-		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_stm32_rng_api);
 
 #endif

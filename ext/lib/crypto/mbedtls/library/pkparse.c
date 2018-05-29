@@ -861,7 +861,10 @@ static int pk_parse_key_sec1_der( mbedtls_ecp_keypair *eck,
             mbedtls_ecp_keypair_free( eck );
             return( MBEDTLS_ERR_PK_KEY_INVALID_FORMAT + ret );
         }
+    }
 
+    if( p != end )
+    {
         /*
          * Is 'publickey' present? If not, or if we can't read it (eg because it
          * is compressed), create it from the private key.

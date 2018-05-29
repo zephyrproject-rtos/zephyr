@@ -3,20 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-/**
- * @addtogroup t_mutex_api
- * @{
- * @defgroup t_mutex_lock test_mutex_lock
- * @brief TestPurpose: verify zephyr mutex lock/unlock apis under different
- *                     condition
- * - API coverage
- *   -# k_mutex_init K_MUTEX_DEFINE
- *   -# k_mutex_lock [FOREVER NO_WAIT TIMEOUT]
- *   -# k_mutex_unlock
- * @}
- */
-
 #include <ztest.h>
 
 #define TIMEOUT 500

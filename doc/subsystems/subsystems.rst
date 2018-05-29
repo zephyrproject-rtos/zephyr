@@ -21,3 +21,4 @@ to applications.
    test/index
    usb/usb.rst
    settings/settings.rst
+   nvs/nvs.rst

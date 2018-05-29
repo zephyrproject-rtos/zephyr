@@ -279,8 +279,8 @@ void test_pending(void)
 	 */
 	k_thread_priority_set(k_current_get(), 9);
 
-	struct offload_work offload1;
-	struct offload_work offload2;
+	struct offload_work offload1 = {0};
+	struct offload_work offload2 = {0};
 
 	k_work_init(&offload1.work_item, sync_threads);
 	offload1.sem = &start_test_sem;

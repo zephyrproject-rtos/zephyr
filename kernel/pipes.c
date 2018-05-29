@@ -19,6 +19,7 @@
 #include <misc/dlist.h>
 #include <init.h>
 #include <syscall_handler.h>
+#include <misc/__assert.h>
 
 struct k_pipe_desc {
 	unsigned char *buffer;           /* Position in src/dest buffer */
@@ -127,30 +128,62 @@ SYS_INIT(init_pipes_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_NUM_PIPE_ASYNC_MSGS or CONFIG_OBJECT_TRACING */
 
-void _impl_k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
+void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 {
 	pipe->buffer = buffer;
 	pipe->size = size;
 	pipe->bytes_used = 0;
 	pipe->read_index = 0;
 	pipe->write_index = 0;
-	sys_dlist_init(&pipe->wait_q.writers);
-	sys_dlist_init(&pipe->wait_q.readers);
+	pipe->flags = 0;
+	_waitq_init(&pipe->wait_q.writers);
+	_waitq_init(&pipe->wait_q.readers);
 	SYS_TRACING_OBJ_INIT(k_pipe, pipe);
 	_k_object_init(pipe);
 }
 
-#ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_pipe_init, pipe, buffer, size)
+int _impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 {
-	_SYSCALL_OBJ_INIT(pipe, K_OBJ_PIPE);
-	_SYSCALL_MEMORY_WRITE(buffer, size);
+	void *buffer;
+	int ret;
 
-	_impl_k_pipe_init((struct k_pipe *)pipe, (unsigned char *)buffer,
-			  size);
-	return 0;
+	if (size) {
+		buffer = z_thread_malloc(size);
+		if (buffer) {
+			k_pipe_init(pipe, buffer, size);
+			pipe->flags = K_PIPE_FLAG_ALLOC;
+			ret = 0;
+		} else {
+			ret = -ENOMEM;
+		}
+	} else {
+		k_pipe_init(pipe, NULL, 0);
+		ret = 0;
+	}
+
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(k_pipe_alloc_init, pipe, size)
+{
+	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(pipe, K_OBJ_PIPE));
+
+	return _impl_k_pipe_alloc_init((struct k_pipe *)pipe, size);
 }
 #endif
+
+void k_pipe_cleanup(struct k_pipe *pipe)
+{
+	__ASSERT_NO_MSG(!_waitq_head(&pipe->wait_q.readers));
+	__ASSERT_NO_MSG(!_waitq_head(&pipe->wait_q.writers));
+
+	if (pipe->flags & K_PIPE_FLAG_ALLOC) {
+		k_free(pipe->buffer);
+		pipe->buffer = NULL;
+		pipe->flags &= ~K_PIPE_FLAG_ALLOC;
+	}
+}
 
 /**
  * @brief Copy bytes from @a src to @a dest
@@ -283,15 +316,12 @@ static bool pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 			       size_t            min_xfer,
 			       s32_t           timeout)
 {
-	sys_dnode_t      *node;
 	struct k_thread  *thread;
 	struct k_pipe_desc *desc;
 	size_t num_bytes = 0;
 
 	if (timeout == K_NO_WAIT) {
-		for (node = sys_dlist_peek_head(wait_q); node != NULL;
-		     node = sys_dlist_peek_next(wait_q, node)) {
-			thread = (struct k_thread *)node;
+		_WAIT_Q_FOR_EACH(wait_q, thread) {
 			desc = (struct k_pipe_desc *)thread->base.swap_data;
 
 			num_bytes += desc->bytes_to_xfer;
@@ -314,7 +344,7 @@ static bool pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 	sys_dlist_init(xfer_list);
 	num_bytes = 0;
 
-	while ((thread = (struct k_thread *) sys_dlist_peek_head(wait_q))) {
+	while ((thread = _waitq_head(wait_q))) {
 		desc = (struct k_pipe_desc *)thread->base.swap_data;
 		num_bytes += desc->bytes_to_xfer;
 
@@ -335,7 +365,7 @@ static bool pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 		 * Add it to the transfer list.
 		 */
 		_unpend_thread(thread);
-		sys_dlist_append(xfer_list, &thread->base.k_q_node);
+		sys_dlist_append(xfer_list, &thread->base.qnode_dlist);
 	}
 
 	*waiter = (num_bytes > bytes_to_xfer) ? thread : NULL;
@@ -681,16 +711,16 @@ int _impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_pipe_get,
+Z_SYSCALL_HANDLER(k_pipe_get,
 		  pipe, data, bytes_to_read, bytes_read_p, min_xfer_p, timeout)
 {
 	size_t *bytes_read = (size_t *)bytes_read_p;
 	size_t min_xfer = (size_t)min_xfer_p;
 
-	_SYSCALL_OBJ(pipe, K_OBJ_PIPE);
-	_SYSCALL_MEMORY_WRITE(bytes_read, sizeof(*bytes_read));
-	_SYSCALL_MEMORY_WRITE((void *)data, bytes_to_read);
-	_SYSCALL_VERIFY(min_xfer <= bytes_to_read);
+	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(bytes_read, sizeof(*bytes_read)));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE((void *)data, bytes_to_read));
+	Z_OOPS(Z_SYSCALL_VERIFY(min_xfer <= bytes_to_read));
 
 	return _impl_k_pipe_get((struct k_pipe *)pipe, (void *)data,
 				bytes_to_read, bytes_read, min_xfer,
@@ -710,16 +740,16 @@ int _impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_pipe_put, pipe, data, bytes_to_write, bytes_written_p,
+Z_SYSCALL_HANDLER(k_pipe_put, pipe, data, bytes_to_write, bytes_written_p,
 		  min_xfer_p, timeout)
 {
 	size_t *bytes_written = (size_t *)bytes_written_p;
 	size_t min_xfer = (size_t)min_xfer_p;
 
-	_SYSCALL_OBJ(pipe, K_OBJ_PIPE);
-	_SYSCALL_MEMORY_WRITE(bytes_written, sizeof(*bytes_written));
-	_SYSCALL_MEMORY_READ((void *)data, bytes_to_write);
-	_SYSCALL_VERIFY(min_xfer <= bytes_to_write);
+	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(bytes_written, sizeof(*bytes_written)));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ((void *)data, bytes_to_write));
+	Z_OOPS(Z_SYSCALL_VERIFY(min_xfer <= bytes_to_write));
 
 	return _impl_k_pipe_put((struct k_pipe *)pipe, (void *)data,
 				bytes_to_write, bytes_written, min_xfer,

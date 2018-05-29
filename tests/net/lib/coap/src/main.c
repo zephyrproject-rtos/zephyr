@@ -381,12 +381,12 @@ static int test_parse_simple_pdu(void)
 	struct coap_packet cpkt;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	struct coap_option options[16];
+	struct coap_option options[16] = {};
 	u8_t ver, type, code, tkl;
 	const u8_t token[8];
 	u16_t id;
 	int result = TC_FAIL;
-	int r, count = 16;
+	int r, count = ARRAY_SIZE(options) - 1;
 
 	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
 	if (!pkt) {
@@ -770,10 +770,10 @@ static int test_observer_server(void)
 		0x51, 's', 0x01, '2', /* path */
 	};
 	struct coap_packet req;
-	struct coap_option options[4];
+	struct coap_option options[4] = {};
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	u8_t opt_num = 4;
+	u8_t opt_num = ARRAY_SIZE(options) - 1;
 	int result = TC_FAIL;
 	int r;
 
@@ -891,12 +891,12 @@ static int test_observer_client(void)
 {
 	struct coap_packet req, rsp;
 	struct coap_reply *reply;
-	struct coap_option options[4];
+	struct coap_option options[4] = {};
 	struct net_pkt *pkt, *rsp_pkt = NULL;
 	struct net_buf *frag;
 	const char token[] = "token";
 	const char * const *p;
-	u8_t opt_num = 4;
+	u8_t opt_num = ARRAY_SIZE(options) - 1;
 	int observe = 0;
 	int result = TC_FAIL;
 	int r;

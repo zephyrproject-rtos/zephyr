@@ -53,7 +53,7 @@
 			reg = <0x00070000 0xa000>;
 		};
 
-#if defined(CONFIG_FS_FLASH_MAP_STORAGE)
+#if defined(CONFIG_FS_FLASH_STORAGE_PARTITION)
 		storage_partition: partition@7a000 {
 			label = "storage";
 			reg = <0x0007a000 0x00006000>;

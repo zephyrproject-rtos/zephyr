@@ -271,20 +271,20 @@ static int i2c_qmsi_init(struct device *dev)
 		/* Register interrupt handler, unmask IRQ and route it
 		 * to Lakemont core.
 		 */
-		IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_I2C_0_INT),
+		IRQ_CONNECT(CONFIG_I2C_0_IRQ,
 			    CONFIG_I2C_0_IRQ_PRI, qm_i2c_0_irq_isr, NULL,
-			    (IOAPIC_LEVEL | IOAPIC_HIGH));
-		irq_enable(IRQ_GET_NUMBER(QM_IRQ_I2C_0_INT));
+			    CONFIG_I2C_0_IRQ_FLAGS);
+		irq_enable(CONFIG_I2C_0_IRQ);
 		QM_IR_UNMASK_INTERRUPTS(
 				QM_INTERRUPT_ROUTER->i2c_master_0_int_mask);
 		break;
 
 #ifdef CONFIG_I2C_1
 	case QM_I2C_1:
-		IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_I2C_1_INT),
+		IRQ_CONNECT(CONFIG_I2C_1_IRQ,
 			    CONFIG_I2C_1_IRQ_PRI, qm_i2c_1_irq_isr, NULL,
-			    (IOAPIC_LEVEL | IOAPIC_HIGH));
-		irq_enable(IRQ_GET_NUMBER(QM_IRQ_I2C_1_INT));
+			    CONFIG_I2C_1_IRQ_FLAGS);
+		irq_enable(CONFIG_I2C_1_IRQ);
 		QM_IR_UNMASK_INTERRUPTS(
 				QM_INTERRUPT_ROUTER->i2c_master_1_int_mask);
 		break;

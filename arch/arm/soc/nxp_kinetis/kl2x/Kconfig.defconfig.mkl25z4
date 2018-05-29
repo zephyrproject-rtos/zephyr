@@ -9,7 +9,7 @@ if SOC_MKL25Z4
 
 config SOC
 	string
-	default mkl25z4
+	default "mkl25z4"
 
 config NUM_IRQS
 	int
@@ -56,13 +56,6 @@ config I2C_MCUX
 	def_bool y
 
 endif # I2C
-
-if SPI
-
-config SPI_MCUX
-	def_bool y
-
-endif # SPI
 
 if FLASH
 

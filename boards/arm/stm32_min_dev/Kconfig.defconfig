@@ -8,7 +8,7 @@
 if BOARD_STM32_MIN_DEV
 
 config BOARD
-	default stm32_min_dev
+	default "stm32_min_dev"
 
 if UART_CONSOLE
 

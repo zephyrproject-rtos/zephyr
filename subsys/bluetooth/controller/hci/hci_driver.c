@@ -348,12 +348,18 @@ static void recv_thread(void *p1, void *p2, void *p3)
 
 static int cmd_handle(struct net_buf *buf)
 {
+	struct bt_hci_evt_hdr *hdr;
 	struct net_buf *evt;
 
 	evt = hci_cmd_handle(buf);
 	if (evt) {
+		hdr = (void *)evt->data;
 		BT_DBG("Replying with event of %u bytes", evt->len);
-		bt_recv_prio(evt);
+		if (unlikely(!bt_hci_evt_is_prio(hdr->evt))) {
+			bt_recv(evt);
+		} else {
+			bt_recv_prio(evt);
+		}
 	}
 
 	return 0;

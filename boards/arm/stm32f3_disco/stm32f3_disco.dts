@@ -98,3 +98,7 @@
 &spi2 {
 	status = "ok";
 };
+
+&usb {
+	status = "ok";
+};

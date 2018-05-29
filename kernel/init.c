@@ -29,6 +29,7 @@
 #include <misc/dlist.h>
 #include <kernel_internal.h>
 #include <kswap.h>
+#include <entropy.h>
 
 /* kernel build timestamp items */
 #define BUILD_TIMESTAMP "BUILD: " __DATE__ " " __TIME__
@@ -68,15 +69,6 @@ u64_t __noinit __idle_time_stamp;  /* timestamp when CPU goes idle */
 /* init/main and idle threads */
 
 #define IDLE_STACK_SIZE CONFIG_IDLE_STACK_SIZE
-
-#if CONFIG_MAIN_STACK_SIZE & (STACK_ALIGN - 1)
-    #error "MAIN_STACK_SIZE must be a multiple of the stack alignment"
-#endif
-
-#if IDLE_STACK_SIZE & (STACK_ALIGN - 1)
-    #error "IDLE_STACK_SIZE must be a multiple of the stack alignment"
-#endif
-
 #define MAIN_STACK_SIZE CONFIG_MAIN_STACK_SIZE
 
 K_THREAD_STACK_DEFINE(_main_stack, MAIN_STACK_SIZE);
@@ -96,9 +88,6 @@ k_tid_t const _idle_thread = (k_tid_t)&_idle_thread_s;
  * of this area is safe since interrupts are disabled until the kernel context
  * switches to the init thread.
  */
-#if CONFIG_ISR_STACK_SIZE & (STACK_ALIGN - 1)
-    #error "ISR_STACK_SIZE must be a multiple of the stack alignment"
-#endif
 K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
 /*
@@ -218,6 +207,9 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused3);
 
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_POST_KERNEL);
+#if CONFIG_STACK_POINTER_RANDOM
+	z_stack_adjust_initialized = 1;
+#endif
 	if (boot_delay > 0) {
 		printk("***** delaying boot " STRINGIFY(CONFIG_BOOT_DELAY)
 		       "ms (per build configuration) *****\n");
@@ -273,7 +265,6 @@ static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
 			  IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
 			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL);
 	_mark_thread_as_started(thr);
-	_ready_thread(thr);
 }
 #endif
 
@@ -316,22 +307,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 #endif
 
 	/* _kernel.ready_q is all zeroes */
-
-	/*
-	 * The interrupt library needs to be initialized early since a series
-	 * of handlers are installed into the interrupt table to catch
-	 * spurious interrupts. This must be performed before other kernel
-	 * subsystems install bonafide handlers, or before hardware device
-	 * drivers are initialized.
-	 */
-
-	_IntLibInit();
-
-	/* ready the init/main and idle threads */
-
-	for (int ii = 0; ii < K_NUM_PRIORITIES; ii++) {
-		sys_dlist_init(&_ready_q.q[ii]);
-	}
+	_sched_init();
 
 #ifndef CONFIG_SMP
 	/*
@@ -355,10 +331,12 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 #ifdef CONFIG_MULTITHREADING
 	init_idle_thread(_idle_thread, _idle_stack);
+	_kernel.cpus[0].idle_thread = _idle_thread;
 #endif
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
 	init_idle_thread(_idle_thread1, _idle_stack1);
+	_kernel.cpus[1].idle_thread = _idle_thread1;
 	_kernel.cpus[1].id = 1;
 	_kernel.cpus[1].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack1)
 		+ CONFIG_ISR_STACK_SIZE;
@@ -366,6 +344,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 2
 	init_idle_thread(_idle_thread2, _idle_stack2);
+	_kernel.cpus[2].idle_thread = _idle_thread2;
 	_kernel.cpus[2].id = 2;
 	_kernel.cpus[2].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack2)
 		+ CONFIG_ISR_STACK_SIZE;
@@ -373,6 +352,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 3
 	init_idle_thread(_idle_thread3, _idle_stack3);
+	_kernel.cpus[3].idle_thread = _idle_thread3;
 	_kernel.cpus[3].id = 3;
 	_kernel.cpus[3].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack3)
 		+ CONFIG_ISR_STACK_SIZE;
@@ -380,9 +360,6 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 	initialize_timeouts();
 
-	/* perform any architecture-specific initialization */
-
-	kernel_arch_init();
 }
 
 static void switch_to_main_thread(void)
@@ -401,9 +378,49 @@ static void switch_to_main_thread(void)
 #endif
 }
 
-#ifdef CONFIG_STACK_CANARIES
-extern void *__stack_chk_guard;
+u32_t z_early_boot_rand32_get(void)
+{
+#ifdef CONFIG_ENTROPY_HAS_DRIVER
+	struct device *entropy = device_get_binding(CONFIG_ENTROPY_NAME);
+	int rc;
+	u32_t retval;
+
+	if (entropy == NULL) {
+		goto sys_rand32_fallback;
+	}
+
+	/* Try to see if driver provides an ISR-specific API */
+	rc = entropy_get_entropy_isr(entropy, (u8_t *)&retval,
+				     sizeof(retval), ENTROPY_BUSYWAIT);
+	if (rc == -ENOTSUP) {
+		/* Driver does not provide an ISR-specific API, assume it can
+		 * be called from ISR context
+		 */
+		rc = entropy_get_entropy(entropy, (u8_t *)&retval,
+					 sizeof(retval));
+	}
+
+	if (rc >= 0) {
+		return retval;
+	}
+
+	/* Fall through to fallback */
+
+sys_rand32_fallback:
 #endif
+
+	/* FIXME: this assumes sys_rand32_get() won't use any synchronization
+	 * primitive, like semaphores or mutexes.  It's too early in the boot
+	 * process to use any of them.  Ideally, only the path where entropy
+	 * devices are available should be built, this is only a fallback for
+	 * those devices without a HWRNG entropy driver.
+	 */
+	return sys_rand32_get();
+}
+
+#ifdef CONFIG_STACK_CANARIES
+extern uintptr_t __stack_chk_guard;
+#endif /* CONFIG_STACK_CANARIES */
 
 /**
  *
@@ -428,23 +445,28 @@ FUNC_NORETURN void _Cstart(void)
 
 	memset(dummy_thread_memory, 0, sizeof(dummy_thread_memory));
 #endif
-
 	/*
-	 * Initialize kernel data structures. This step includes
-	 * initializing the interrupt subsystem, which must be performed
-	 * before the hardware initialization phase.
+	 * The interrupt library needs to be initialized early since a series
+	 * of handlers are installed into the interrupt table to catch
+	 * spurious interrupts. This must be performed before other kernel
+	 * subsystems install bonafide handlers, or before hardware device
+	 * drivers are initialized.
 	 */
 
-	prepare_multithreading(dummy_thread);
+	_IntLibInit();
+
+	/* perform any architecture-specific initialization */
+	kernel_arch_init();
 
 	/* perform basic hardware initialization */
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_1);
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_2);
 
-	/* initialize stack canaries */
 #ifdef CONFIG_STACK_CANARIES
-	__stack_chk_guard = (void *)sys_rand32_get();
+	__stack_chk_guard = z_early_boot_rand32_get();
 #endif
+
+	prepare_multithreading(dummy_thread);
 
 	/* display boot banner */
 

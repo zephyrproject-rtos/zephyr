@@ -285,15 +285,25 @@ void bt_mesh_reset(void);
  *  @param net_idx  Network Key Index
  *  @param flags    Provisioning Flags
  *  @param iv_index IV Index
- *  @param seq      Sequence Number (0 if newly provisioned).
  *  @param addr     Primary element address
  *  @param dev_key  Device Key
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
-		      u8_t flags, u32_t iv_index, u32_t seq,
-		      u16_t addr, const u8_t dev_key[16]);
+		      u8_t flags, u32_t iv_index, u16_t addr,
+		      const u8_t dev_key[16]);
+
+/** @brief Check if the local node has been provisioned.
+ *
+ *  This API can be used to check if the local node has been provisioned
+ *  or not. It can e.g. be helpful to determine if there was a stored
+ *  network in flash, i.e. if the network was restored after calling
+ *  settings_load().
+ *
+ *  @return True if the node is provisioned. False otherwise.
+ */
+bool bt_mesh_is_provisioned(void);
 
 /** @brief Toggle the IV Update test mode
  *

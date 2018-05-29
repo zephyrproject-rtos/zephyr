@@ -9,7 +9,7 @@
 #include <inttypes.h>
 
 #include <openthread/platform/alarm-milli.h>
-#include <openthread/platform/platform.h>
+#include <platform.h>
 
 #define SYS_LOG_DOMAIN "openthread-plat"
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG

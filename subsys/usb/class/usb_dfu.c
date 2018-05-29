@@ -388,7 +388,8 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		case dfuIDLE:
 			SYS_LOG_DBG("DFU_DNLOAD start");
 			dfu_reset_counters();
-			if (dfu_data.flash_addr != FLASH_AREA_IMAGE_1_OFFSET) {
+			if (dfu_data.flash_addr != CONFIG_FLASH_BASE_ADDRESS
+						+ FLASH_AREA_IMAGE_1_OFFSET) {
 				dfu_data.status = errWRITE;
 				dfu_data.state = dfuERROR;
 				SYS_LOG_ERR("This area can not be overwritten");

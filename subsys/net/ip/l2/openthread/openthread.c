@@ -23,7 +23,8 @@
 #include <misc/__assert.h>
 #include <openthread/openthread.h>
 #include <openthread/cli.h>
-#include <openthread/platform/platform.h>
+#include <platform.h>
+#include <platform-zephyr.h>
 
 #include "openthread_utils.h"
 
@@ -199,10 +200,9 @@ static enum net_verdict openthread_recv(struct net_if *iface,
 	recv_frame.mPsdu = net_buf_frag_last(pkt->frags)->data;
 	/* Length inc. CRC. */
 	recv_frame.mLength = net_buf_frags_len(pkt->frags);
-	/* TODO: get channel from packet */
-	recv_frame.mChannel = CONFIG_OPENTHREAD_CHANNEL;
+	recv_frame.mChannel = platformRadioChannelGet(ot_context->instance);
 	recv_frame.mLqi = net_pkt_ieee802154_lqi(pkt);
-	recv_frame.mPower = net_pkt_ieee802154_rssi(pkt);
+	recv_frame.mRssi = net_pkt_ieee802154_rssi(pkt);
 
 #if defined(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_15_4)
 	net_hexdump_frags("Received 802.15.4 frame", pkt, true);

@@ -84,23 +84,6 @@ Building a Sample Application
 
 To build an example application follow these steps:
 
-
-#. Make sure your environment is setup by exporting the following environment
-   variables. When using the Zephyr SDK on Linux for example, type:
-
-   .. code-block:: console
-
-
-      # On Linux/macOS
-      export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-      export ZEPHYR_SDK_INSTALL_DIR=<sdk installation directory>
-      # On Windows
-      set ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-      set ZEPHYR_SDK_INSTALL_DIR=<sdk installation directory>
-
-   .. note:: In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT``
-             variable was called ``ZEPHYR_GCC_VARIANT``.
-
 #. Navigate to the main project directory:
 
    .. code-block:: console
@@ -176,11 +159,10 @@ cross-compiler, keep the ZEPHYR_SDK_INSTALL_DIR environment variable
 set to the Zephyr SDK installation directory.
 
 To build without the Zephyr SDK's prebuilt host tools, the
-ZEPHYR_SDK_INSTALL_DIR environment variable must be unset, the host
-tools must be built and added to path, and a 3rd party cross-compiler
-must be installed.
+ZEPHYR_SDK_INSTALL_DIR environment variable must be unset, and a 3rd party
+cross-compiler must be installed.
 
-#. Follow the steps below to build without the Zephyr SDK:
+Follow the steps below to build without the Zephyr SDK:
 
    .. code-block:: console
 
@@ -195,26 +177,8 @@ must be installed.
       cd <zephyr git clone location>
       zephyr-env.cmd
 
-
-#. On UNIX platforms, Build Kconfig in :file:`$ZEPHYR_BASE/build` and add
-   it to path
-
-   .. code-block:: console
-
-      cd $ZEPHYR_BASE
-      mkdir build && cd build
-      cmake $ZEPHYR_BASE/scripts
-      make
-      echo "export PATH=$PWD/kconfig:\$PATH" >> $HOME/.zephyrrc
-      source $ZEPHYR_BASE/zephyr-env.sh
-
-   .. note::
-
-      You only need to do this once after cloning the git repository.
-
-Now that the host tools are installed, a 3rd party cross compiler must
-be installed. See `Using Custom and 3rd Party Cross Compilers`_ for
-details.
+See `Using Custom and 3rd Party Cross Compilers`_ for details on installing a
+3rd party cross compiler.
 
 .. _third_party_x_compilers:
 
@@ -279,7 +243,8 @@ Running a Sample Application natively (POSIX OS)
 It is also possible to compile some of the sample and test applications to run
 as native process on a POSIX OS (e.g. Linux).
 To be able to do this, remember to have installed the 32 bit libC if your OS is
-natively 64bit.
+natively 64bit. See the :ref:`native_posix` section on host dependencies
+for more information.
 
 To compile and run an application in this way, type:
 
@@ -294,9 +259,13 @@ and then:
 .. code-block:: console
 
    ninja run
+
    # or just:
    zephyr/zephyr.exe
    # Press Ctrl+C to exit
+
+You can run ``zephyr/zephyr.exe --help`` to get a list of available
+options.  See the :ref:`native_posix` document for more information.
 
 This executable can be instrumented like any other Linux process. For ex. with gdb
 or valgrind.

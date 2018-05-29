@@ -144,6 +144,9 @@ packages from their respective websites.
 
       zephyr-env.cmd
 
+.. note:: In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT``
+          variable was called ``ZEPHYR_GCC_VARIANT``.
+
 #. Finally, you can try building the :ref:`hello_world` sample to check things
    out.
 
@@ -301,22 +304,6 @@ to set it up:
       unset ZEPHYR_SDK_INSTALL_DIR
       cd <zephyr git clone location>
       source zephyr-env.sh
-
-#. Within the MSYS console, build Kconfig in :file:`$ZEPHYR_BASE/build` and
-    add it to path
-
-   .. code-block:: console
-
-      cd $ZEPHYR_BASE
-      mkdir build && cd build
-      cmake $ZEPHYR_BASE/scripts
-      make
-      echo "export PATH=$PWD/kconfig:\$PATH" >> $HOME/.zephyrrc
-      source $ZEPHYR_BASE/zephyr-env.sh
-
-    .. note::
-
-        You only need to do this once after cloning the git repository.
 
 #. Finally, you can try building the :ref:`hello_world` sample to check things
    out.

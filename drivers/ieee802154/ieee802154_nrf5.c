@@ -224,11 +224,16 @@ static int nrf5_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 	return 0;
 }
 
-static int nrf5_set_filter(struct device *dev,
-			   enum ieee802154_filter_type type,
-			   const struct ieee802154_filter *filter)
+static int nrf5_filter(struct device *dev,
+		       bool set,
+		       enum ieee802154_filter_type type,
+		       const struct ieee802154_filter *filter)
 {
 	SYS_LOG_DBG("Applying filter %u", type);
+
+	if (!set) {
+		return -ENOTSUP;
+	}
 
 	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
 		return nrf5_set_ieee_addr(dev, filter->ieee_addr);
@@ -238,7 +243,7 @@ static int nrf5_set_filter(struct device *dev,
 		return nrf5_set_pan_id(dev, filter->pan_id);
 	}
 
-	return -EINVAL;
+	return -ENOTSUP;
 }
 
 static int nrf5_set_txpower(struct device *dev, s16_t dbm)
@@ -422,7 +427,7 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.get_capabilities = nrf5_get_capabilities,
 	.cca = nrf5_cca,
 	.set_channel = nrf5_set_channel,
-	.set_filter = nrf5_set_filter,
+	.filter = nrf5_filter,
 	.set_txpower = nrf5_set_txpower,
 	.start = nrf5_start,
 	.stop = nrf5_stop,

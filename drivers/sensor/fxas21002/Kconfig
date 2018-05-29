@@ -92,11 +92,15 @@ config FXAS21002_TRIGGER
 
 if FXAS21002_TRIGGER
 
+if !HAS_DTS_GPIO_DEVICE
+
 config FXAS21002_GPIO_NAME
 	string "GPIO device name"
 
 config FXAS21002_GPIO_PIN
 	int "GPIO pin"
+
+endif
 
 config FXAS21002_DRDY_INT1
 	bool "Data ready interrupt to INT1 pin"

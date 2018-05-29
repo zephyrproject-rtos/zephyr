@@ -58,7 +58,7 @@ Zephyr. Where examples are given, they assume the sample is being built for
 the Nordic nRF52 Development Kit (``BOARD=nrf52_pca10040``).
 
 If you would like to use a more constrained platform, such as the nRF51 DK, you
-should use the :file:`prj.conf.tiny` configuration file rather than the default
+should use the :file:`prj_tiny.conf` configuration file rather than the default
 :file:`prj.conf`.
 
 Step 1: Build MCUboot

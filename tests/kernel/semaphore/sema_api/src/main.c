@@ -4,18 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_sema_api
- * @{
- * @defgroup t_sema_api_basic test_sema_api_basic
- * @brief TestPurpose: verify zephyr sema apis across different context
- * - API coverage
- *   -# k_sem_init K_SEMA_DEFINE
- *   -# k_sem_take k_sema_give k_sema_reset
- *   -# k_sem_count_get
- * @}
- */
-
 #include <ztest.h>
 #include <irq_offload.h>
 
@@ -60,7 +48,18 @@ static void tsema_thread_isr(struct k_sem *psem)
 	zassert_false(k_sem_take(psem, K_FOREVER), NULL);
 }
 
-/*test cases*/
+
+/**
+ * @brief Tests for the Semaphore kernel object
+ * @defgroup kernel_semaphore_tests Semaphore
+ * @ingroup all_tests
+ * @{
+ */
+
+/**
+ *
+ * @see k_sem_init(), #K_SEM_DEFINE(x)
+ */
 void test_sema_thread2thread(void)
 {
 	/**TESTPOINT: test k_sem_init sema*/
@@ -72,6 +71,10 @@ void test_sema_thread2thread(void)
 	tsema_thread_thread(&ksema);
 }
 
+/**
+ *
+ * @see k_sem_init(), #K_SEM_DEFINE(x)
+ */
 void test_sema_thread2isr(void)
 {
 	/**TESTPOINT: test k_sem_init sema*/
@@ -82,6 +85,10 @@ void test_sema_thread2isr(void)
 	tsema_thread_isr(&ksema);
 }
 
+/**
+ *
+ * @see k_sem_reset()
+ */
 void test_sema_reset(void)
 {
 	k_sem_init(&sema, SEM_INITIAL, SEM_LIMIT);
@@ -96,6 +103,10 @@ void test_sema_reset(void)
 	zassert_false(k_sem_take(&sema, K_FOREVER), NULL);
 }
 
+/**
+ *
+ * @see k_sem_count_get()
+ */
 void test_sema_count_get(void)
 {
 	k_sem_init(&sema, SEM_INITIAL, SEM_LIMIT);
@@ -114,6 +125,10 @@ void test_sema_count_get(void)
 	k_sem_give(&sema);
 	zassert_equal(k_sem_count_get(&sema), SEM_LIMIT, NULL);
 }
+
+/**
+ * @}
+ */
 
 /*test case main entry*/
 void test_main(void)

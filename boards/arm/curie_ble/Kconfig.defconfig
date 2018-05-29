@@ -7,7 +7,7 @@
 if BOARD_CURIE_BLE
 
 config BOARD
-	default curie_ble
+	default "curie_ble"
 
 if UART_NRF5
 

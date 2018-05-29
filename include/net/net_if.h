@@ -1386,6 +1386,32 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 struct net_if *net_if_ipv4_select_src_iface(struct in_addr *dst);
 
 /**
+ * @brief Get a IPv4 source address that should be used when sending
+ * network data to destination.
+ *
+ * @param iface Interface to use when sending the packet.
+ * If the interface is not known, then NULL can be given.
+ * @param dst IPv4 destination address
+ *
+ * @return Pointer to IPv4 address to use, NULL if no IPv4 address
+ * could be found.
+ */
+const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
+						  struct in_addr *dst);
+
+/**
+ * @brief Get a IPv4 link local address in a given state.
+ *
+ * @param iface Interface to use. Must be a valid pointer to an interface.
+ * @param addr_state IPv4 address state (preferred, tentative, deprecated)
+ *
+ * @return Pointer to link local IPv4 address, NULL if no proper IPv4 address
+ * could be found.
+ */
+struct in_addr *net_if_ipv4_get_ll(struct net_if *iface,
+				   enum net_addr_state addr_state);
+
+/**
  * @brief Set IPv4 netmask for an interface.
  *
  * @param iface Interface to use.

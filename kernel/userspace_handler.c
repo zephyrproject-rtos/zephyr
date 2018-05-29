@@ -6,6 +6,7 @@
 
 #include <kernel.h>
 #include <syscall_handler.h>
+#include <kernel_structs.h>
 
 static struct _k_object *validate_any_object(void *obj)
 {
@@ -35,26 +36,36 @@ static struct _k_object *validate_any_object(void *obj)
  * To avoid double _k_object_find() lookups, we don't call the implementation
  * function, but call a level deeper.
  */
-_SYSCALL_HANDLER(k_object_access_grant, object, thread)
+Z_SYSCALL_HANDLER(k_object_access_grant, object, thread)
 {
 	struct _k_object *ko;
 
-	_SYSCALL_OBJ_INIT(thread, K_OBJ_THREAD);
+	Z_OOPS(Z_SYSCALL_OBJ_INIT(thread, K_OBJ_THREAD));
 	ko = validate_any_object((void *)object);
-	_SYSCALL_VERIFY_MSG(ko, "object %p access denied", (void *)object);
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(ko, "object %p access denied",
+				    (void *)object));
 	_thread_perms_set(ko, (struct k_thread *)thread);
 
 	return 0;
 }
 
-_SYSCALL_HANDLER(k_object_access_revoke, object, thread)
+Z_SYSCALL_HANDLER(k_object_release, object)
 {
 	struct _k_object *ko;
 
-	_SYSCALL_OBJ_INIT(thread, K_OBJ_THREAD);
 	ko = validate_any_object((void *)object);
-	_SYSCALL_VERIFY_MSG(ko, "object %p access denied", (void *)object);
-	_thread_perms_clear(ko, (struct k_thread *)thread);
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(ko, "object %p access denied",
+				    (void *)object));
+	_thread_perms_clear(ko, _current);
 
 	return 0;
+}
+
+Z_SYSCALL_HANDLER(k_object_alloc, otype)
+{
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(otype > K_OBJ_ANY && otype < K_OBJ_LAST &&
+				    otype != K_OBJ__THREAD_STACK_ELEMENT,
+				    "bad object type %d requested", otype));
+
+	return (u32_t)_impl_k_object_alloc(otype);
 }

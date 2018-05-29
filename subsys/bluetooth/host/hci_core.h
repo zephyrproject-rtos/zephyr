@@ -31,6 +31,7 @@ enum {
 	BT_DEV_ENABLE,
 	BT_DEV_READY,
 	BT_DEV_ID_STATIC_RANDOM,
+	BT_DEV_USER_ID_ADDR,
 	BT_DEV_HAS_PUB_KEY,
 	BT_DEV_PUB_KEY_BUSY,
 
@@ -54,6 +55,11 @@ enum {
 	/* Total number of flags - must be at the end of the enum */
 	BT_DEV_NUM_FLAGS,
 };
+
+/* Flags which should not be cleared upon HCI_Reset */
+#define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLE) | \
+				 BIT(BT_DEV_USER_ID_ADDR) | \
+				 BIT(BT_DEV_ID_STATIC_RANDOM))
 
 struct bt_dev_le {
 	/* LE features */
@@ -144,12 +150,6 @@ struct bt_dev {
 	struct k_fifo		rx_queue;
 #endif
 
-	/* Queue for high priority HCI events which may unlock waiters
-	 * in other threads. Such events include Number of Completed
-	 * Packets, as well as the Command Complete/Status events.
-	 */
-	struct k_fifo		rx_prio_queue;
-
 	/* Queue for outgoing HCI commands */
 	struct k_fifo		cmd_tx_queue;
 
@@ -166,7 +166,6 @@ struct bt_dev {
 };
 
 extern struct bt_dev bt_dev;
-extern const struct bt_storage *bt_storage;
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 extern const struct bt_conn_auth_cb *bt_auth;
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
@@ -190,3 +189,7 @@ u16_t bt_hci_get_cmd_opcode(struct net_buf *buf);
 struct bt_keys;
 int bt_id_add(struct bt_keys *keys);
 int bt_id_del(struct bt_keys *keys);
+
+int bt_set_static_addr(void);
+
+void bt_dev_show_info(void);

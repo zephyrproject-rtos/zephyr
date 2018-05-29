@@ -1,0 +1,173 @@
+h1 {
+    margin-left: 20px;
+}
+
+table, th, td {
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 15px;
+}
+
+th {
+    text-align: left;
+}
+
+.tabcontent table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.tabcontent td, th {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
+}
+
+.tabcontent tr:nth-child(even) {
+    background-color: #dddddd;
+}
+
+/* Change background color on hover
+.tabcontent tr:hover {
+    background-color:#f5f5f5
+}
+*/
+
+td.wrappable {
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+.box {
+    background-color: white;
+    color: black;
+    border-radius: 5px;
+    font-size: 18px;
+}
+
+body {
+    margin: 40px;
+}
+
+.sidebar {
+    grid-area: sidebar;
+}
+
+.content {
+    grid-area: content;
+    height: 100%;
+    overflow: auto;
+}
+
+.header {
+    grid-area: header;
+    text-align: center;
+    background-color: #ededed;
+}
+
+.footer {
+    grid-area: footer;
+    scroll-behavior: auto;
+    font-size: 100%;
+    overflow: auto;
+}
+
+.container {
+    display: grid;
+    grid-gap: 10px;
+    grid-template-columns: 15% 45% 40%;
+    grid-template-rows: 3% 90% 5%;
+    grid-template-areas:
+	"header header header"
+	"sidebar content content"
+	"footer footer footer";
+}
+
+.footer {
+    background-color: #999;
+}
+
+/* Style the tab */
+div.tab {
+    overflow: hidden;
+    background-color: #444444;
+    border: 1px solid #444444;
+}
+
+/* Style the buttons inside the tab */
+div.tab button {
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+    color: #b0b0b0;
+    font-size: 14px;
+}
+
+/* Change background color of buttons on hover */
+div.tab button:hover {
+    background-color: #444444;
+    color:#fff;
+}
+
+/* Create an active/current tablink class */
+div.tab button.active {
+    background-color: #444444;
+    color:#fff;
+}
+
+/* Style the tab content */
+.tabcontent {
+    display: none;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-top: none;
+}
+
+#topology {
+    height: 600px;
+    border: 1px solid;
+}
+
+.configuration {
+    color: #444444;
+    text-decoration: none;
+    font-weight: 500;
+    padding-left: 17px;
+}
+
+.console {
+    color: #444444;
+    text-decoration: none;
+    font-weight: 500;
+    padding-left: 17px;
+}
+
+.connectButton {
+    cursor: pointer;
+    width: 125px;
+    height: 35px;
+    border-radius: 30px;
+    text-align: center;
+    letter-spacing: .9px;
+    font-weight: bold;
+    line-height: 27px;
+    color: #ffffff;
+    background-color: #444444;
+    border: solid 2px #444444;
+    text-transform: uppercase;
+    font-size: 10px;
+}
+
+.connectButton:hover {
+    outline:0px;
+}
+
+.title {
+    color: #444444;
+}

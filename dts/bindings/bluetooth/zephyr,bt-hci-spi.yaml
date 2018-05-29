@@ -19,4 +19,14 @@ properties:
     compatible:
       constraint: "zephyr,bt-hci-spi"
 
+    irq-gpios:
+      type: compound
+      category: required
+      generation: define, use-prop-name
+
+    reset-gpios:
+      type: compound
+      category: required
+      generation: define, use-prop-name
+
 ...

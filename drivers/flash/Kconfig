@@ -36,108 +36,6 @@ config FLASH_PAGE_LAYOUT
 	help
 	  Enables API for retrieving the layout of flash memory pages.
 
-config SPI_FLASH_W25QXXDV
-	bool
-	prompt "SPI NOR Flash Winbond W25QXXDV"
-	select FLASH_HAS_DRIVER_ENABLED
-	depends on SPI && FLASH
-
-config SPI_FLASH_W25QXXDV_SPI_NAME
-	string
-	prompt "SPI controller device name"
-	depends on SPI_FLASH_W25QXXDV
-	default ""
-
-config SPI_FLASH_W25QXXDV_DRV_NAME
-	string
-	prompt "SPI flash device name"
-	depends on SPI_FLASH_W25QXXDV
-	default "W25QXXDV"
-
-config SPI_FLASH_W25QXXDV_INIT_PRIORITY
-	int
-	depends on SPI_FLASH_W25QXXDV
-	default 80
-	help
-	  Device driver initialization priority.
-	  Device is connected to SPI bus, it has to
-	  be initialized after SPI driver.
-
-config SPI_FLASH_W25QXXDV_SPI_FREQ_0
-	int "SPI system frequency"
-	depends on SPI_FLASH_W25QXXDV
-	default 8000000
-	help
-	  This option sets the SPI controller's frequency. Beware this value
-	  depends on the SPI controller being used and also on the system
-	  clock.
-
-config	SPI_FLASH_W25QXXDV_SPI_SLAVE
-	int "SPI slave linked to SPI flash"
-	depends on SPI_FLASH_W25QXXDV
-	help
-	  This option sets the SPI slave number the SPI controller has to switch
-	  to when dealing with WinBond SPI flash chip.
-
-config SPI_FLASH_W25QXXDV_FLASH_SIZE
-	int "Flash size in bytes"
-	depends on SPI_FLASH_W25QXXDV
-	default 2097152
-	help
-	  This is the flash capacity in bytes.
-
-config SPI_FLASH_W25QXXDV_MAX_DATA_LEN
-	int
-	range 1 256
-	depends on SPI_FLASH_W25QXXDV
-	default 256
-	help
-	  Maximum transmit or receive data length in one user data frame.
-
-config SOC_FLASH_QMSI
-	bool
-	prompt "QMSI flash driver"
-	depends on QMSI && FLASH
-	select FLASH_HAS_DRIVER_ENABLED
-	default n
-	help
-	  Enable QMSI Quark flash driver.
-
-config SOC_FLASH_QMSI_DEV_NAME
-	string "QMSI flash device name"
-	depends on SOC_FLASH_QMSI
-	default "QUARK_FLASH"
-	help
-	  Specify the device name for the flash driver.
-
-config SOC_FLASH_QMSI_CLK_COUNT_US
-	int "System clk count per microsecond"
-	depends on SOC_FLASH_QMSI
-	default 32
-	help
-	  Specify the system clk cycles per microsecond.
-
-config SOC_FLASH_QMSI_WAIT_STATES
-	int "The number of flash wait states"
-	depends on SOC_FLASH_QMSI
-	default 1
-	help
-	  Specify the number of wait states for Quark flash.
-
-config SOC_FLASH_QMSI_SYS_SIZE
-	hex "SOC system flash size"
-	depends on SOC_FLASH_QMSI
-	help
-	  Specify system flash size on the Quark SOC.
-
-config SOC_FLASH_QMSI_API_REENTRANCY
-	bool
-	prompt "flash driver API reentrancy for QMSI shim driver"
-	depends on SOC_FLASH_QMSI
-	default n
-	help
-	 Enable support for QMSI flash driver API reentrancy.
-
 config SOC_FLASH_NRF
 	bool "Nordic Semiconductor nRF flash driver"
 	depends on FLASH && SOC_FAMILY_NRF
@@ -182,6 +80,10 @@ config SOC_FLASH_NIOS2_QSPI_DEV_NAME
 	help
 	  Specify the device name for the QSPI flash driver.
 
+source "drivers/flash/Kconfig.qmsi"
+
 source "drivers/flash/Kconfig.stm32"
 
 source "drivers/flash/Kconfig.sam0"
+
+source "drivers/flash/Kconfig.w25qxxdv"

@@ -97,6 +97,7 @@ _stack_frame_endif:
 	eors.n r0, r0
 	msr BASEPRI, r0
 
+#if !defined(CONFIG_ARM_SECURE_FIRMWARE)
 	/* this checks to see if we are in a nested exception */
 	ldr ip, =_SCS_ICSR
 	ldr ip, [ip]
@@ -110,9 +111,34 @@ _stack_frame_endif:
 				 *  this is not a nested exception: the stack
 				 * frame is on the PSP */
 #else
+	/* RETTOBASE flag is not banked between security states.
+	 * Therefore, we cannot rely on this flag, to obtain the SP
+	 * in Secure state. Instead, we use the EXC_RETURN SPSEL flag.
+	 */
+ 	ldr r0, =0x4
+	mov r1, lr
+	tst r1, r0
+	beq _s_stack_frame_msp
+	mrs r0, PSP
+	bne _s_stack_frame_endif
+_s_stack_frame_msp:
+	mrs r0, MSP
+_s_stack_frame_endif:
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
+#else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+	/* In ARM Secure firmware, the stack pointer that is retrieved
+	 * above points to the Secure stack. However, the exeption may
+	 * have occurred in Non-Secure state.
+	 * To determine this we need to inspect the EXC_RETURN value
+	 * located in the LR. Therefore, we supply the LR value as an
+	 * argument to the fault handler.
+	 */
+	mov r1, lr
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
 	push {lr}
 	bl _Fault
 

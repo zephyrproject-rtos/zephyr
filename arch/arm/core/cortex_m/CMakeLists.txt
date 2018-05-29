@@ -1,4 +1,6 @@
-zephyr_sources(
+zephyr_library()
+
+zephyr_library_sources(
   vector_table.S
   reset.S
   nmi_on_reset.S

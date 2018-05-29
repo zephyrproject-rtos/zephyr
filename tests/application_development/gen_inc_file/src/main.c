@@ -8,6 +8,10 @@
 #include <stdbool.h>
 #include <ztest.h>
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
 /* The file.inc contains characters from 0 to 255 */
 static const unsigned char inc_file[] = {
 #include <file.bin.inc>
@@ -16,6 +20,10 @@ static const unsigned char inc_file[] = {
 static const unsigned char gz_inc_file[] = {
 #include <file.bin.gz.inc>
 };
+
+/**
+ * @endcond
+ */
 
 static const unsigned char compressed_inc_file[] = {
 	0x1f, 0x8b, 0x08, 0x00, 0xb0, 0xd6, 0xb8, 0x59,

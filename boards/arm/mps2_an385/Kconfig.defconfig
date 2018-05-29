@@ -7,7 +7,7 @@
 if BOARD_MPS2_AN385
 
 config BOARD
-	default mps2_an385
+	default "mps2_an385"
 
 if GPIO
 

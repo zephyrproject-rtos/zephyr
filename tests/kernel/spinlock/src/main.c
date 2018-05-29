@@ -58,7 +58,7 @@ void bounce_once(int id)
 		return;
 	}
 
-	zassert_true(locked, "Other cpu did not get lock in 10000 tries\n");
+	zassert_true(locked, "Other cpu did not get lock in 10000 tries");
 
 	/* Mark us as the owner, spin for a while validating that we
 	 * never see another owner write to the protected data.

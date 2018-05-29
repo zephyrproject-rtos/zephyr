@@ -1,0 +1,13 @@
+identifier: nucleo_l053r8
+name: NUCLEO-L053R8
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+supported:
+  - gpio
+  - i2c
+  - spi
+ram: 8
+flash: 64

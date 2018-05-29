@@ -10,6 +10,7 @@
 #include <misc/util.h>
 #include <disk_access.h>
 #include <errno.h>
+#include <init.h>
 #include <device.h>
 #include <flash.h>
 
@@ -40,7 +41,7 @@ static off_t lba_to_address(u32_t sector_num)
 	return flash_addr;
 }
 
-int disk_access_status(void)
+static int disk_flash_access_status(struct disk_info *disk)
 {
 	if (!flash_dev) {
 		return DISK_STATUS_NOMEDIA;
@@ -49,7 +50,7 @@ int disk_access_status(void)
 	return DISK_STATUS_OK;
 }
 
-int disk_access_init(void)
+static int disk_flash_access_init(struct disk_info *disk)
 {
 	if (flash_dev) {
 		return 0;
@@ -63,8 +64,8 @@ int disk_access_init(void)
 	return 0;
 }
 
-int disk_access_read(u8_t *buff, u32_t start_sector,
-		     u32_t sector_count)
+static int disk_flash_access_read(struct disk_info *disk, u8_t *buff,
+				u32_t start_sector, u32_t sector_count)
 {
 	off_t fl_addr;
 	u32_t remaining;
@@ -185,8 +186,8 @@ static int update_flash_block(off_t start_addr, u32_t size, const void *buff)
 	return 0;
 }
 
-int disk_access_write(const u8_t *buff, u32_t start_sector,
-		      u32_t sector_count)
+static int disk_flash_access_write(struct disk_info *disk, const u8_t *buff,
+				 u32_t start_sector, u32_t sector_count)
 {
 	off_t fl_addr;
 	u32_t remaining;
@@ -254,7 +255,7 @@ int disk_access_write(const u8_t *buff, u32_t start_sector,
 	return 0;
 }
 
-int disk_access_ioctl(u8_t cmd, void *buff)
+static int disk_flash_access_ioctl(struct disk_info *disk, u8_t cmd, void *buff)
 {
 	switch (cmd) {
 	case DISK_IOCTL_CTRL_SYNC:
@@ -274,3 +275,25 @@ int disk_access_ioctl(u8_t cmd, void *buff)
 
 	return -EINVAL;
 }
+
+static const struct disk_operations flash_disk_ops = {
+	.init = disk_flash_access_init,
+	.status = disk_flash_access_status,
+	.read = disk_flash_access_read,
+	.write = disk_flash_access_write,
+	.ioctl = disk_flash_access_ioctl,
+};
+
+static struct disk_info flash_disk = {
+	.name = CONFIG_DISK_FLASH_VOLUME_NAME,
+	.ops = &flash_disk_ops,
+};
+
+static int disk_flash_init(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return disk_access_register(&flash_disk);
+}
+
+SYS_INIT(disk_flash_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

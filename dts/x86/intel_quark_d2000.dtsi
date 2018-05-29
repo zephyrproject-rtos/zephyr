@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2017 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "skeleton.dtsi"
 #include <dt-bindings/interrupt-controller/intel-mvic.h>
 #include <dt-bindings/i2c/i2c.h>
@@ -45,7 +51,7 @@
 			clock-frequency = <32768>;
 			interrupts = <2 IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
-
+			label = "RTC_0";
 		};
 
 		uart0: uart@b0002000 {
@@ -65,15 +71,15 @@
 			interrupts = <6 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 
-
 			status = "disabled";
 		};
 
-		gpio: gpio@b000c000 {
+		gpio: gpio@b0000c00 {
 			compatible = "intel,qmsi-gpio";
-			reg = <0xb00c00 0x400>;
+			reg = <0xb0000c00 0x400>;
 			interrupts = <15 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
+			label = "GPIO_0";
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -85,6 +91,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xb0002800 0x400>;
+			interrupts = <4 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
 			label = "I2C_0";
 
 			status = "disabled";

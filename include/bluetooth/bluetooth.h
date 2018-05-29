@@ -56,6 +56,21 @@ typedef void (*bt_ready_cb_t)(int err);
  */
 int bt_enable(bt_ready_cb_t cb);
 
+/** @brief Set the local Identity Address
+ *
+ *  Allows setting the local Identity Address from the application.
+ *  This API must be called before calling bt_enable(). Calling it at any
+ *  other time will cause it to fail. In most cases the application doesn't
+ *  need to use this API, however there are a few valid cases where
+ *  it can be useful (such as for testing).
+ *
+ *  At the moment, the given address must be a static random address. In the
+ *  future support for public addresses may be added.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_set_id_addr(const bt_addr_le_t *addr);
+
 /* Advertising API */
 
 /** Description of different data types that can be encoded into
@@ -473,6 +488,15 @@ int bt_br_set_discoverable(bool enable);
  *  already set. Zero if done successfully.
  */
 int bt_br_set_connectable(bool enable);
+
+/** Clear pairing information.
+  *
+  * @param addr  Remote address, NULL or BT_ADDR_LE_ANY to clear all remote
+  *              devices.
+  *
+  * @return 0 on success or negative error value on failure.
+  */
+int bt_unpair(const bt_addr_le_t *addr);
 
 /**
  * @}

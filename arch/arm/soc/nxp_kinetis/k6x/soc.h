@@ -33,8 +33,6 @@ extern "C" {
 
 /* IRQs */
 
-#define IRQ_SPI0 26
-#define IRQ_SPI1 27
 #define IRQ_ETH_IEEE1588_TMR 82
 #define IRQ_ETH_TX 83
 #define IRQ_ETH_RX 84

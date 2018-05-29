@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_mslab
- * @{
- * @defgroup t_mslab_threadsafe test_mslab_threadsafe
- * @brief TestPurpose: verify API thread safe in multi-threads environment
- * @}
- */
-
 #include <ztest.h>
 #include <atomic.h>
 #define LOOP 10
@@ -37,13 +29,14 @@ static void tmslab_api(void *p1, void *p2, void *p3)
 {
 	void *block[BLK_NUM];
 	struct k_mem_slab *slab = slabs[atomic_inc(&slab_id) % SLAB_NUM];
-	int i = LOOP;
+	int i = LOOP, ret;
 
 	while (i--) {
 		memset(block, 0, sizeof(block));
 
 		for (int i = 0; i < BLK_NUM; i++) {
-			k_mem_slab_alloc(slab, &block[i], TIMEOUT);
+			ret = k_mem_slab_alloc(slab, &block[i], TIMEOUT);
+			zassert_false(ret, "memory is not allocated");
 		}
 		for (int i = 0; i < BLK_NUM; i++) {
 			if (block[i]) {
@@ -57,6 +50,13 @@ static void tmslab_api(void *p1, void *p2, void *p3)
 }
 
 /* test cases*/
+/**
+ * @brief Verify alloc and free from multiple equal priority threads
+ *
+ * @details Test creates 4 preemptive threads of equal priority. Then
+ * validates the synchronization of threads by allocating and
+ * freeing up the memory blocks in memory slab.
+ */
 void test_mslab_threadsafe(void)
 {
 	k_tid_t tid[THREAD_NUM];

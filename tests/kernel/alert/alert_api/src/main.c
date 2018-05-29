@@ -4,16 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file
- * @brief Verify zephyr alert send/recv across different contexts
- */
-
-/**
- * @brief Tests for the Alert kernel object
- * @defgroup kernel.alerts
- * @{
- */
 #include <ztest.h>
 #include <irq_offload.h>
 
@@ -139,7 +129,30 @@ static void isr_alert(void)
 	alert_recv();
 }
 
-/*test cases*/
+int event_handler(struct k_alert *alt)
+{
+	return handler_val;
+}
+
+/**
+ * @brief Tests for the Alert kernel object
+ * @defgroup kernel_alert_tests Alerts
+ * @ingroup all_tests
+ * @{
+ */
+
+/**
+ * @brief Test thread alert default
+ *
+ * Checks k_alert_init(), k_alert_send(), k_alert_recv() Kernel APIs.
+ *
+ * Initializes an alert and creates a thread that signals an alert with
+ * k_alert_send() and then calls k_alert_recv() with K_NO_WAIT to receive the
+ * alerts. Checks if k_alert_recv() returns appropriate error values when
+ * alerts are not received.
+ *
+ * @see k_alert_init(), k_alert_send(), k_alert_recv()
+ */
 void test_thread_alert_default(void)
 {
 	palert = &thread_alerts[HANDLER_DEFAULT];
@@ -147,6 +160,16 @@ void test_thread_alert_default(void)
 	thread_alert();
 }
 
+/**
+ * @brief Test thread alert ignore
+ *
+ * Checks k_alert_init(), k_alert_send(), k_alert_recv() Kernel APIs - creates
+ * a thread that signals an alert using k_alert_send() and then calls
+ * k_alert_recv() with TIMEOUT of 100ms which is the waiting period for
+ * receiving the alert.
+ *
+ * @see k_alert_init(), k_alert_send(), k_alert_recv()
+ */
 void test_thread_alert_ignore(void)
 {
 	palert = &thread_alerts[HANDLER_IGNORE];
@@ -154,6 +177,17 @@ void test_thread_alert_ignore(void)
 	thread_alert();
 }
 
+/**
+ * @brief Test thread alert consumed
+ *
+ * Checks k_alert_init(), k_alert_send(), k_alert_recv() Kernel APIs.
+ *
+ * Creates a thread that signals an alert using k_alert_send(). Now
+ * k_alert_send() for this case is initialized with an address of the handler
+ * function, which increases handler_executed count each time it is called.
+ *
+ * @see k_alert_init(), k_alert_send(), k_alert_recv()
+ */
 void test_thread_alert_consumed(void)
 {
 	/**TESTPOINT: alert handler return 0*/
@@ -162,6 +196,15 @@ void test_thread_alert_consumed(void)
 	thread_alert();
 }
 
+/**
+ * @brief Test thread alert pending
+ *
+ * Checks k_alert_init(), k_alert_send(), k_alert_recv() Kernel APIs
+ *
+ * Creates a thread that signals an alert using k_alert_send().
+ *
+ * @see k_alert_init(), k_alert_send(), k_alert_recv()
+ */
 void test_thread_alert_pending(void)
 {
 	/**TESTPOINT: alert handler return 1*/
@@ -170,6 +213,15 @@ void test_thread_alert_pending(void)
 	thread_alert();
 }
 
+/**
+ * @brief Test default isr alert
+ *
+ * Similar to test_thread_alert_default(), but verifies kernel objects and
+ * APIs work correctly in interrupt context with the help of irq_offload()
+ * function.
+ *
+ * @see k_alert_init(), k_alert_send(), k_alert_recv()
+ */
 void test_isr_alert_default(void)
 {
 	struct k_alert alert;
@@ -183,6 +235,15 @@ void test_isr_alert_default(void)
 	isr_alert();
 }
 
+/**
+ * @brief Test isr alert ignore
+ *
+ * Similar to test_thread_alert_ignore(), but verifies kernel objects and
+ * APIs work correctly in interrupt context with the help of irq_offload()
+ * function.
+ *
+ * @see k_alert_init(), k_alert_send(), k_alert_recv()
+ */
 void test_isr_alert_ignore(void)
 {
 	/**TESTPOINT: alert handler ignore*/
@@ -195,6 +256,15 @@ void test_isr_alert_ignore(void)
 	isr_alert();
 }
 
+/**
+ * @brief Test isr alert consumed
+ *
+ * Similar to test_thread_alert_consumed, but verifies kernel objects
+ * and APIs work correctly in interrupt context with the help of irq_offload()
+ * function.
+ *
+ * @see k_alert_init(), k_alert_send(), k_alert_recv()
+ */
 void test_isr_alert_consumed(void)
 {
 	struct k_alert alert;
@@ -208,6 +278,15 @@ void test_isr_alert_consumed(void)
 	isr_alert();
 }
 
+/**
+ * @brief Test isr alert pending
+ *
+ * Similar to test_thread_alert_pending(), but verifies kernel objects and
+ * APIs work correctly in interrupt context with the help of irq_offload()
+ * function.
+ *
+ * @see k_alert_init(), k_alert_send(), k_alert_recv()
+ */
 void test_isr_alert_pending(void)
 {
 	struct k_alert alert;
@@ -221,6 +300,15 @@ void test_isr_alert_pending(void)
 	isr_alert();
 }
 
+/**
+ * @brief Test thread kinit alert
+ *
+ * Tests consumed and pending thread alert cases (reference line numbers 4 and
+ * 5), but handles case where alert has been defined via #K_ALERT_DEFINE(x) and not
+ * k_alert_init()
+ *
+ * @see #K_ALERT_DEFINE(x)
+ */
 void test_thread_kinit_alert(void)
 {
 	palert = &kalert_consumed;
@@ -231,6 +319,14 @@ void test_thread_kinit_alert(void)
 	thread_alert();
 }
 
+/**
+ * @brief Test isr kinit alert
+ *
+ * Checks consumed and pending isr alert cases but alert has been defined via
+ * #K_ALERT_DEFINE(x) and not k_alert_init()
+ *
+ * @see #K_ALERT_DEFINE(x)
+ */
 void test_isr_kinit_alert(void)
 {
 	palert = &kalert_consumed;
@@ -245,11 +341,13 @@ void test_isr_kinit_alert(void)
 /**
  * @brief Test alert_recv(timeout)
  *
- * This test checks alert_recv(timeout) against the following cases:
+ * This test checks k_alert_recv(timeout) against the following cases:
  *  1. The current task times out while waiting for the event.
- *  2. There is already an event waiting (signalled from a task).
- *  3. The current task must wait on the event until it is signalled
+ *  2. There is already an event waiting (signaled from a task).
+ *  3. The current task must wait on the event until it is signaled
  *     from either another task or an ISR.
+ *
+ * @see k_alert_recv()
  */
 void test_thread_alert_timeout(void)
 {
@@ -282,13 +380,15 @@ void test_thread_alert_timeout(void)
 }
 
 /**
- * @brief Test alert_recv() against different cases
+ * @brief Test k_alert_recv() against different cases
  *
- * This test checks alert_recv(K_FOREVER) against
+ * This test checks k_alert_recv(K_FOREVER) against
  * the following cases:
- *  1. There is already an event waiting (signalled from a task and ISR).
- *  2. The current task must wait on the event until it is signalled
+ *  1. There is already an event waiting (signaled from a task and ISR).
+ *  2. The current task must wait on the event until it is signaled
  *     from either another task or an ISR.
+ *
+ * @see k_alert_recv()
  */
 void test_thread_alert_wait(void)
 {
@@ -322,19 +422,15 @@ void test_thread_alert_wait(void)
 	}
 }
 
-int event_handler(struct k_alert *alt)
-{
-	return handler_val;
-}
-
 /**
  * @brief Test thread alert handler
  *
  * This test checks that the event handler is set up properly when
- * alert_event_handler_set() is called.  It shows that event handlers
- * are tied to the specified event and that the return value from the
- * handler affects whether the event wakes a task waiting upon that
- * event.
+ * k_alert_init() is called with an event handler.  It shows that event
+ * handlers are tied to the specified event and that the return value from the
+ * handler affects whether the event wakes a task waiting upon that event.
+ *
+ * @see k_alert_init()
  */
 void test_thread_alert_handler(void)
 {
@@ -359,6 +455,9 @@ void test_thread_alert_handler(void)
 
 	zassert_equal(ret, 0, NULL);
 }
+/**
+ * @}
+ */
 
 
 /**
@@ -423,6 +522,3 @@ void test_main(void)
 			 ztest_unit_test(test_isr_kinit_alert));
 	ztest_run_test_suite(alert_api);
 }
-/**
- * @}
- */

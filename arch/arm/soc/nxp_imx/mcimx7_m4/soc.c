@@ -51,6 +51,30 @@ void SOC_RdcInit(void)
 	RDC_SetDomainID(RDC, rdcMdaM4, CONFIG_DOMAIN_ID, false);
 }
 
+#ifdef CONFIG_GPIO_IMX
+static void nxp_mcimx7_gpio_config(void)
+{
+
+#ifdef CONFIG_GPIO_IMX_PORT_1
+	RDC_SetPdapAccess(RDC, rdcPdapGpio1,
+			  RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
+			  false, false);
+	/* Enable gpio clock gate */
+	CCM_ControlGate(CCM, ccmCcgrGateGpio1, ccmClockNeededRunWait);
+#endif /* CONFIG_GPIO_IMX_PORT_1 */
+
+
+#ifdef CONFIG_GPIO_IMX_PORT_2
+	RDC_SetPdapAccess(RDC, rdcPdapGpio2,
+			  RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
+			  false, false);
+	/* Enable gpio clock gate */
+	CCM_ControlGate(CCM, ccmCcgrGateGpio2, ccmClockNeededRunWait);
+#endif /* CONFIG_GPIO_IMX_PORT_2 */
+
+}
+#endif /* CONFIG_GPIO_IMX */
+
 #ifdef CONFIG_UART_IMX
 static void nxp_mcimx7_uart_config(void)
 {
@@ -84,6 +108,10 @@ static int nxp_mcimx7_init(struct device *arg)
 
 	/* BoC specific clock settings */
 	SOC_ClockInit();
+
+#ifdef CONFIG_GPIO_IMX
+	nxp_mcimx7_gpio_config();
+#endif /* CONFIG_GPIO_IMX */
 
 #ifdef CONFIG_UART_IMX
 	nxp_mcimx7_uart_config();

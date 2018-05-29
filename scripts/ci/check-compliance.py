@@ -61,7 +61,7 @@ def get_shas(refspec):
 
 def run_gitlint(tc, commit_range):
     proc = subprocess.Popen('gitlint --commits %s' %(commit_range),
-            cwd=repository_path, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     msg = ""
     if proc.wait() != 0:

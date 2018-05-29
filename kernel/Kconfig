@@ -100,6 +100,40 @@ config PRIORITY_CEILING
 	prompt "Priority inheritance ceiling"
 	default 0
 
+config NUM_METAIRQ_PRIORITIES
+	int
+	prompt "Number of very-high priority 'preemptor' threads"
+	default 0
+	help
+	 This defines a set of priorities at the (numerically) lowest
+	 end of the range which have "meta-irq" behavior.  Runnable
+	 threads at these priorities will always be scheduled before
+	 threads at lower priorities, EVEN IF those threads are
+	 otherwise cooperative and/or have taken a scheduler lock.
+	 Making such a thread runnable in any way thus has the effect
+	 of "interrupting" the current task and running the meta-irq
+	 thread synchronously, like an exception or system call.  The
+	 intent is to use these priorities to implement "interrupt
+	 bottom half" or "tasklet" behavior, allowing driver
+	 subsystems to return from interrupt context but be guaranteed
+	 that user code will not be executed (on the current CPU)
+	 until the remaining work is finished.  As this breaks the
+	 "promise" of non-preemptibility granted by the current API
+	 for cooperative threads, this tool probably shouldn't be used
+	 from application code.
+
+config SCHED_DEADLINE
+	bool
+	prompt "Enable earliest-deadline-first scheduling"
+	default n
+	help
+	  This enables a simple "earliest deadline first" scheduling
+	  mode where threads can set "deadline" deltas measured in
+	  k_cycle_get_32() units.  Priority decisions within (!!) a
+	  single priority will choose the next expiring deadline and
+	  not simply the least recently added thread.
+
+
 config MAIN_STACK_SIZE
 	int
 	prompt "Size of stack for initialization and main thread"
@@ -168,6 +202,34 @@ config APPLICATION_MEMORY
 	  separate them into application and kernel areas. The application area
 	  will have the project-level application objects and any libraries
 	  including the C library in it.
+
+config WAITQ_FAST
+	bool
+	prompt "Use scalable wait_q implementation"
+	default n
+	help
+	  When selected, the wait_q abstraction used in IPC primitives
+	  to pend threads for wakeup later will be implemented with a
+	  balanced tree instead of a linear list.  Choose this if you
+	  expect to have many threads waiting on individual
+	  primitives, or if you have already included the red/black
+	  tree code in the build for some other purpose (in which case
+	  this results in less code size increase than the default
+	  implementation).
+
+config SCHED_DUMB
+	bool
+	prompt "Use a simple linked list scheduler"
+	default y
+	help
+	  When selected, the scheduler ready queue will be implemented
+	  as a simple unordered list, with very fast constant time
+	  performance for single threads and very low code size.
+	  Choose this on systems with constrained code size that will
+	  never see more than a small number (3, maybe) of runnable
+	  threads in the queue at any given time.  On most platforms
+	  (that are not otherwise using the red/black tree) this
+	  results in a savings of ~2k of code size.
 
 menu "Kernel Debugging and Metrics"
 
@@ -240,7 +302,7 @@ config INT_LATENCY_BENCHMARK
 
 config EXECUTION_BENCHMARKING
 	bool
-	prompt "Timing metrics "
+	prompt "Timing metrics"
 	default n
 	help
 	  This option enables the tracking of various times inside the kernel
@@ -494,9 +556,9 @@ menu "Security Options"
 config RETPOLINE
 	bool
 	prompt "Build with retpolines enabled"
-	default y if !X86_NO_SPECTRE
+	default y if !X86_NO_SPECTRE_V2
 	help
-	  This is recommended on platforms with speculative exeuctions, to protect
+	  This is recommended on platforms with speculative executions, to protect
 	  against branch target injection (AKA Spectre-V2).  Full description of
 	  how retpolines work can be found here[1].
 

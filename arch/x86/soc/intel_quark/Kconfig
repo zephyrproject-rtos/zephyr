@@ -14,6 +14,6 @@ config SOC_FAMILY
 	default "intel_quark"
 endif
 
-source "arch/x86/soc/intel_quark/*/Kconfig.soc"
+gsource "arch/x86/soc/intel_quark/*/Kconfig.soc"
 
-source "arch/x86/soc/intel_quark/*/Kconfig"
+gsource "arch/x86/soc/intel_quark/*/Kconfig"

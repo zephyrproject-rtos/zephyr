@@ -103,8 +103,8 @@ SYS_INIT(init_mbox_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 void k_mbox_init(struct k_mbox *mbox_ptr)
 {
-	sys_dlist_init(&mbox_ptr->tx_msg_queue);
-	sys_dlist_init(&mbox_ptr->rx_msg_queue);
+	_waitq_init(&mbox_ptr->tx_msg_queue);
+	_waitq_init(&mbox_ptr->rx_msg_queue);
 	SYS_TRACING_OBJ_INIT(k_mbox, mbox_ptr);
 }
 
@@ -239,7 +239,7 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			     s32_t timeout)
 {
 	struct k_thread *sending_thread;
-	struct k_thread *receiving_thread, *next;
+	struct k_thread *receiving_thread;
 	struct k_mbox_msg *rx_msg;
 	unsigned int key;
 
@@ -253,8 +253,7 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	/* search mailbox's rx queue for a compatible receiver */
 	key = irq_lock();
 
-	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&mbox->rx_msg_queue, receiving_thread,
-					  next, base.k_q_node) {
+	_WAIT_Q_FOR_EACH(&mbox->rx_msg_queue, receiving_thread) {
 		rx_msg = (struct k_mbox_msg *)receiving_thread->base.swap_data;
 
 		if (mbox_message_match(tx_msg, rx_msg) == 0) {
@@ -421,7 +420,7 @@ static int mbox_message_data_check(struct k_mbox_msg *rx_msg, void *buffer)
 int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	       s32_t timeout)
 {
-	struct k_thread *sending_thread, *next;
+	struct k_thread *sending_thread;
 	struct k_mbox_msg *tx_msg;
 	unsigned int key;
 	int result;
@@ -432,9 +431,7 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	/* search mailbox's tx queue for a compatible sender */
 	key = irq_lock();
 
-	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&mbox->tx_msg_queue, sending_thread,
-					  next, base.k_q_node) {
-
+	_WAIT_Q_FOR_EACH(&mbox->tx_msg_queue, sending_thread) {
 		tx_msg = (struct k_mbox_msg *)sending_thread->base.swap_data;
 
 		if (mbox_message_match(tx_msg, rx_msg) == 0) {

@@ -80,3 +80,7 @@ unsigned int alt_busy_sleep (unsigned int us)
 	k_busy_wait(us);
 	return 0;
 }
+
+void alt_printf(const char *fmt, ...)
+{
+}

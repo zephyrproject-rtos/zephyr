@@ -1,0 +1,50 @@
+# Kconfig - STM32 Nucleo-64 development board with STM32L053R8 MCU
+#
+# Copyright (c) 2018 Anthony Kreft <anthony.kreft@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_NUCLEO_L053R8
+
+config BOARD
+	default "nucleo_l053r8"
+
+if UART_CONSOLE
+
+config UART_STM32_PORT_2
+	default y
+
+endif # UART_CONSOLE
+
+# Disable ports D and H to allow kernel test cases common and
+# contex to run on nucleo_l053r8.
+# Test cases fail due to 'SRAM' region overflow.
+if GPIO
+
+config GPIO_STM32_PORTD
+	default n
+
+config GPIO_STM32_PORTH
+	default n
+
+endif # GPIO
+
+if I2C
+
+config I2C_1
+	default y
+
+endif # I2C
+
+if SPI
+
+config SPI_1
+	default y
+
+config SPI_STM32_INTERRUPT
+	default y
+
+endif # SPI
+
+endif # BOARD_NUCLEO_L053R8

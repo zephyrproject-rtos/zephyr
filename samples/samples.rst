@@ -19,6 +19,8 @@ Samples and Demos
    mpu/*
    drivers/drivers.rst
    application_development/*
+   display/*
+   can/README.rst
 
 
 To add a new sample document, please use the template available under

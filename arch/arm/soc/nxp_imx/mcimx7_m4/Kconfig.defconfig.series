@@ -8,7 +8,7 @@
 if SOC_SERIES_IMX7_M4
 
 config SOC_SERIES
-	default mcimx7_m4
+	default "mcimx7_m4"
 
 config NUM_IRQS
 	int

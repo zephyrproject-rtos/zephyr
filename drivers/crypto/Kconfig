@@ -42,7 +42,7 @@ config SYS_LOG_CRYPTO_LEVEL
 	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config CRYPTO_TINYCRYPT_SHIM
-	bool "Enable TinyCrypt shim driver [EXPERIMENTAL] "
+	bool "Enable TinyCrypt shim driver [EXPERIMENTAL]"
 	default n
 	select TINYCRYPT
 	select TINYCRYPT_AES
@@ -69,7 +69,7 @@ config CRYPTO_TINYCRYPT_SHIM_DRV_NAME
 	  Device name for TinyCrypt Pseudo device.
 
 config CRYPTO_MBEDTLS_SHIM
-	bool "Enable mbedTLS shim driver [EXPERIMENTAL] "
+	bool "Enable mbedTLS shim driver [EXPERIMENTAL]"
 	default n
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP

@@ -159,7 +159,16 @@ Run the zephyr.exe executable as you would any other Linux console application.
 This executable accepts several command line options depending on the
 compilation configuration.
 You can run it with the ``--help`` command line switch to get a list of
-available options.
+available options::
+
+   $ zephyr/zephyr.exe --help
+
+     [-h] [--h] [--help] [-?]  :Display this help
+     [-stop_at=<time>]         :In simulated seconds, when to stop automatically
+     [-seed=<r_seed>]          :Seed for the entropy device
+     [-testargs <arg>...]      :Any argument that follows will be ignored
+                                by the top level, and made
+                                available for possible tests
 
 Note that the Zephyr kernel does not actually exit once the application is
 finished. It simply goes into the idle loop forever.

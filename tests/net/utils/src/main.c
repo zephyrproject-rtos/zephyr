@@ -277,7 +277,7 @@ static const unsigned char v4_udp_pkt1[192] = {
 
 #endif /* CONFIG_NET_IPV4 */
 
-void run_tests(void)
+void test_utils(void)
 {
 	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
 
@@ -1552,7 +1552,7 @@ void test_net_pkt_addr_parse(void)
 void test_main(void)
 {
 	ztest_test_suite(test_utils_fn,
-			 ztest_unit_test(run_tests),
+			 ztest_unit_test(test_utils),
 			 ztest_unit_test(test_net_addr),
 			 ztest_unit_test(test_addr_parse),
 			 ztest_unit_test(test_net_pkt_addr_parse));

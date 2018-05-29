@@ -54,7 +54,7 @@
 			clk-divider-flash = <2>;
 
 			clock-controller;
-			#clocks-cells = <3>;
+			#clock-cells = <3>;
 		};
 
 		flash-controller@40020000 {
@@ -236,9 +236,10 @@
 		};
 
 		spi0: spi@4002c000 {
-			compatible = "nxp,k64f-spi";
+			compatible = "nxp,kinetis-dspi";
 			reg = <0x4002c000 0x88>;
-			interrupts = <26 0>;
+			interrupts = <26 3>;
+			label = "SPI_0";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 12>;
 			status = "disabled";
 			#address-cells = <1>;
@@ -246,21 +247,35 @@
 		};
 
 		spi1: spi@4002d000 {
-			compatible = "nxp,k64f-spi";
+			compatible = "nxp,kinetis-dspi";
 			reg = <0x4002d000 0x88>;
-			interrupts = <27 0>;
+			interrupts = <27 3>;
+			label = "SPI_1";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 13>;
 
-			cs = <&gpiob 10 0>;
+			cs-gpios = <&gpiob 10 0>;
 			pinctrl-0 = <&spi1_default>;
 			pinctrl-names = "default";
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			mcr20a@0 {
+				compatible = "nxp,mcr20a";
+				reg = <0x0>;
+				label = "mcr20a";
+				spi-max-frequency = <8000000>;
+				irqb-gpios = <&gpiob 3 0>;
+				reset-gpios = <&gpiob 19 0>;
+				status = "ok";
+			};
 		};
 
 		wdog: watchdog@40052000 {
-			compatible = "nxp,k64f-watchdog";
+			compatible = "nxp,kinetis-wdog";
 			reg = <0x40052000 16>;
+			interrupts = <22 0>;
+			clocks = <&sim KINETIS_SIM_LPO_CLK 0 0>;
+			label = "WDT_0";
 			clock-source = <0>;	/* LPO 1kHz or other source */
 			reload-counter = <40000>;
 			start-on-boot;
@@ -302,6 +317,15 @@
 			status = "disabled";
 		};
 
+		usbd: usbd@40027000 {
+			compatible = "nxp,kinetis-usbd";
+			reg = <0x40072000 0x1000>;
+			interrupts = <53 1>;
+			interrupt-names = "usb_otg";
+			num-bidir-endpoints = <16>;
+			status = "disabled";
+			label = "USBD";
+		};
 	};
 };
 

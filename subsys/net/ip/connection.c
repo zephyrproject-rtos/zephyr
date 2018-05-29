@@ -19,12 +19,13 @@
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 #include <net/udp.h>
+#include <net/tcp.h>
 
 #include "net_private.h"
 #include "icmpv6.h"
 #include "icmpv4.h"
 #include "udp_internal.h"
-#include "tcp.h"
+#include "tcp_internal.h"
 #include "connection.h"
 #include "net_stats.h"
 
@@ -776,6 +777,32 @@ static inline void send_icmp_error(struct net_pkt *pkt)
 	}
 }
 
+static bool is_invalid_packet(struct net_pkt *pkt,
+			       u16_t src_port,
+			       u16_t dst_port)
+{
+	bool my_src_addr = false;
+
+	switch (NET_IPV6_HDR(pkt)->vtc & 0xf0) {
+#if defined(CONFIG_NET_IPV6)
+	case 0x60:
+		if (net_is_my_ipv6_addr(&NET_IPV6_HDR(pkt)->src)) {
+			my_src_addr = true;
+		}
+		break;
+#endif
+#if defined(CONFIG_NET_IPV4)
+	case 0x40:
+		if (net_is_my_ipv4_addr(&NET_IPV4_HDR(pkt)->src)) {
+			my_src_addr = true;
+		}
+		break;
+#endif
+	}
+
+	return my_src_addr && (src_port == dst_port);
+}
+
 enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 {
 	int i, best_match = -1;
@@ -826,6 +853,11 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 		chksum = tcp_hdr->chksum;
 	} else {
 		NET_DBG("No UDP or TCP configured, dropping packet.");
+		return NET_DROP;
+	}
+
+	if (is_invalid_packet(pkt, src_port, dst_port)) {
+		NET_DBG("Dropping invalid packet");
 		return NET_DROP;
 	}
 

@@ -159,6 +159,19 @@ void _arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2,
 extern FUNC_NORETURN void _arch_syscall_oops(void *ssf);
 #endif /* CONFIG_USERSPACE */
 
+/**
+ * @brief Allocate some memory from the current thread's resource pool
+ *
+ * Threads may be assigned a resource pool, which will be used to allocate
+ * memory on behalf of certain kernel and driver APIs. Memory reserved
+ * in this way should be freed with k_free().
+ *
+ * @param size Memory allocation size
+ * @return A pointer to the allocated memory, or NULL if there is insufficient
+ * RAM in the pool or the thread has no resource pool assigned
+ */
+void *z_thread_malloc(size_t size);
+
 /* set and clear essential thread flag */
 
 extern void _thread_essential_set(void);
@@ -177,6 +190,27 @@ extern void _thread_monitor_exit(struct k_thread *thread);
 extern void smp_init(void);
 
 extern void smp_timer_init(void);
+
+#ifdef CONFIG_NEWLIB_LIBC
+/**
+ * @brief Fetch dimentions of newlib heap area for _sbrk()
+ *
+ * This memory region is used for heap allocations by the newlib C library.
+ * If user threads need to have access to this, the results returned can be
+ * used to program memory protection hardware appropriately.
+ *
+ * @param base Pointer to void pointer, filled in with the heap starting
+ *             address
+ * @param size Pointer to a size_y, filled in with the maximum heap size
+ */
+extern void z_newlib_get_heap_bounds(void **base, size_t *size);
+#endif
+
+extern u32_t z_early_boot_rand32_get(void);
+
+#if CONFIG_STACK_POINTER_RANDOM
+extern int z_stack_adjust_initialized;
+#endif
 
 #ifdef __cplusplus
 }

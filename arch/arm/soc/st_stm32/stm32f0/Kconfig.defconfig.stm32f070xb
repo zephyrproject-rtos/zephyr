@@ -9,7 +9,7 @@ if SOC_STM32F070XB
 
 config SOC
 	string
-	default stm32f070xb
+	default "stm32f070xb"
 
 config NUM_IRQS
 	int

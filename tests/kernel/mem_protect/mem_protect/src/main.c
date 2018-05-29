@@ -17,18 +17,22 @@
 extern void test_permission_inheritance(void);
 extern void test_mem_domain_valid_access(void);
 extern void test_mem_domain_invalid_access(void);
+extern void test_mem_domain_partitions_user_rw(void);
+extern void test_mem_domain_partitions_user_ro(void);
+extern void test_mem_domain_partitions_supervisor_rw(void);
 extern void test_mem_domain_add_partitions_invalid(void);
 extern void test_mem_domain_add_partitions_simple(void);
 extern void test_mem_domain_remove_partitions_simple(void);
 extern void test_mem_domain_remove_partitions(void);
 extern void test_mem_domain_remove_thread(void);
+extern void test_mem_domain_destroy(void);
 extern void test_kobject_access_grant(void);
 extern void test_syscall_invalid_kobject(void);
 extern void test_thread_without_kobject_permission(void);
 extern void test_kobject_revoke_access(void);
 extern void test_kobject_grant_access_kobj(void);
 extern void test_kobject_grant_access_kobj_invalid(void);
-extern void test_kobject_revoke_access_from_user(void);
+extern void test_kobject_release_from_user(void);
 extern void test_kobject_access_all_grant(void);
 extern void test_thread_has_residual_permissions(void);
 extern void test_kobject_access_grant_to_invalid_thread(void);
@@ -54,18 +58,22 @@ void test_main(void)
 	 ztest_unit_test(test_permission_inheritance),
 	 ztest_unit_test(test_mem_domain_valid_access),
 	 ztest_unit_test(test_mem_domain_invalid_access),
+	 ztest_unit_test(test_mem_domain_partitions_user_rw),
+	 ztest_unit_test(test_mem_domain_partitions_supervisor_rw),
+	 ztest_unit_test(test_mem_domain_partitions_user_ro),
 	 ztest_unit_test(test_mem_domain_add_partitions_invalid),
 	 ztest_unit_test(test_mem_domain_add_partitions_simple),
 	 ztest_unit_test(test_mem_domain_remove_partitions_simple),
 	 ztest_unit_test(test_mem_domain_remove_partitions),
 	 ztest_unit_test(test_mem_domain_remove_thread),
+	 ztest_unit_test(test_mem_domain_destroy),
 	 ztest_unit_test(test_kobject_access_grant),
 	 ztest_unit_test(test_syscall_invalid_kobject),
 	 ztest_unit_test(test_thread_without_kobject_permission),
 	 ztest_unit_test(test_kobject_revoke_access),
 	 ztest_unit_test(test_kobject_grant_access_kobj),
 	 ztest_unit_test(test_kobject_grant_access_kobj_invalid),
-	 ztest_unit_test(test_kobject_revoke_access_from_user),
+	 ztest_unit_test(test_kobject_release_from_user),
 	 ztest_unit_test(test_kobject_access_all_grant),
 	 ztest_unit_test(test_thread_has_residual_permissions),
 	 ztest_unit_test(test_kobject_access_grant_to_invalid_thread),

@@ -9,6 +9,6 @@
 if SOC_QUARK_SE_C1000
 
 config SOC
-	default quark_se_c1000
+	default "quark_se_c1000"
 
 endif

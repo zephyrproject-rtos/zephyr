@@ -100,7 +100,7 @@ static int total_data_len = sizeof(ws_unmasked_msg);
 #define WAIT_TIME K_SECONDS(1)
 
 void test_websocket_init_server(void);
-void test_websocket_cleanup_server(void);
+void websocket_cleanup_server(void);
 
 static void ws_mask_payload(u8_t *payload, size_t payload_len,
 			    u32_t masking_value)
@@ -569,6 +569,10 @@ void test_v4_send_multi_msg(void)
 	test_send_multi_msg(&app_ctx_v4);
 }
 
+static void test_setup(void)
+{
+	return;
+}
 void test_main(void)
 {
 	ztest_test_suite(websocket,
@@ -584,8 +588,7 @@ void test_main(void)
 			 ztest_unit_test(test_v6_send_recv_6),
 			 ztest_unit_test(test_v6_send_recv_7),
 			 ztest_unit_test(test_v6_send_multi_msg),
-			 ztest_unit_test(test_v6_close),
-			 ztest_unit_test(test_websocket_cleanup_server),
+			 ztest_unit_test_setup_teardown(test_v6_close, test_setup, websocket_cleanup_server),
 			 ztest_unit_test(test_websocket_init_server),
 			 ztest_unit_test(test_v4_init),
 			 ztest_unit_test(test_v4_connect),
@@ -597,8 +600,8 @@ void test_main(void)
 			 ztest_unit_test(test_v4_send_recv_6),
 			 ztest_unit_test(test_v4_send_recv_7),
 			 ztest_unit_test(test_v4_send_multi_msg),
-			 ztest_unit_test(test_v4_close),
-			 ztest_unit_test(test_websocket_cleanup_server));
+			 ztest_unit_test_setup_teardown(test_v4_close, test_setup, websocket_cleanup_server)
+			 );
 
 	ztest_run_test_suite(websocket);
 }

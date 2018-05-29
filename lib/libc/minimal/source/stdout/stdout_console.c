@@ -59,7 +59,7 @@ size_t fwrite(const void *_MLIBC_RESTRICT ptr, size_t size, size_t nitems,
 	do {
 		j = size;
 		do {
-			if (_stdout_hook((int) *p) == EOF)
+			if (_stdout_hook((int) *p++) == EOF)
 				goto done;
 			j--;
 		} while (j > 0);

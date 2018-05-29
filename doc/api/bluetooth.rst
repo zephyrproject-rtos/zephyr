@@ -18,6 +18,7 @@ BR/EDR (Bluetooth Classic) APIs require :option:`CONFIG_BT_BREDR`.
 .. comment
    not documenting
    .. doxygengroup:: bluetooth
+   .. doxygengroup:: bt_test_cb
 
 Bluetooth Mesh Profile
 **********************
@@ -124,12 +125,6 @@ Logical Link Control and Adaptation Protocol (L2CAP)
 ****************************************************
 
 .. doxygengroup:: bt_l2cap
-   :project: Zephyr
-
-Persistent Storage
-******************
-
-.. doxygengroup:: bt_storage
    :project: Zephyr
 
 Serial Port Emulation (RFCOMM)

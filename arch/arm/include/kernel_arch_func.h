@@ -59,6 +59,15 @@ _arch_switch_to_main_thread(struct k_thread *main_thread,
 
 	/* the ready queue cache already contains the main thread */
 
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+	/* Set PSPLIM register for built-in stack guarding of main thread. */
+#if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
+	__set_PSPLIM((u32_t)main_stack);
+#else
+#error "Built-in PSP limit checks not supported by HW"
+#endif
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
+
 	__asm__ __volatile__(
 
 		/* move to main() thread stack */

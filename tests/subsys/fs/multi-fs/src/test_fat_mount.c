@@ -5,6 +5,7 @@
  */
 
 #include "test_fat.h"
+#include <ff.h>
 
 /* FatFs work area */
 static FATFS fat_fs;

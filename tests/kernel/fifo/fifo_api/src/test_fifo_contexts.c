@@ -4,18 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_fifo_api
- * @{
- * @defgroup t_fifo_api_basic test_fifo_api_basic
- * @brief TestPurpose: verify zephyr fifo apis under different context
- * - API coverage
- *   -# k_fifo_init K_FIFO_DEFINE
- *   -# k_fifo_put k_fifo_put_list k_fifo_put_slist
- *   -# k_fifo_get
- * @}
- */
-
 #include "test_fifo.h"
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -137,7 +125,14 @@ static void tfifo_is_empty(void *p)
 	zassert_true(k_fifo_is_empty(pfifo), NULL);
 }
 
-/*test cases*/
+/**
+ * @addtogroup kernel_fifo_tests
+ * @{
+ */
+
+/**
+ * @see k_fifo_init(), k_fifo_put_list(), #K_FIFO_DEFINE(x)
+ */
 void test_fifo_thread2thread(void)
 {
 	/**TESTPOINT: init via k_fifo_init*/
@@ -148,6 +143,9 @@ void test_fifo_thread2thread(void)
 	tfifo_thread_thread(&kfifo);
 }
 
+/**
+ * @see k_fifo_init(), k_fifo_put_list(), #K_FIFO_DEFINE(x)
+ */
 void test_fifo_thread2isr(void)
 {
 	/**TESTPOINT: init via k_fifo_init*/
@@ -158,6 +156,9 @@ void test_fifo_thread2isr(void)
 	tfifo_thread_isr(&kfifo);
 }
 
+/**
+ * @see k_fifo_init(), k_fifo_put_list()
+ */
 void test_fifo_isr2thread(void)
 {
 	/**TESTPOINT: test k_fifo_init fifo*/
@@ -168,6 +169,9 @@ void test_fifo_isr2thread(void)
 	tfifo_isr_thread(&kfifo);
 }
 
+/**
+ * @see k_fifo_init(), k_fifo_is_empty()
+ */
 void test_fifo_is_empty_thread(void)
 {
 	k_fifo_init(&fifo);
@@ -178,9 +182,15 @@ void test_fifo_is_empty_thread(void)
 	tfifo_is_empty(&fifo);
 }
 
+/**
+ * @see k_fifo_init(), k_fifo_is_empty()
+ */
 void test_fifo_is_empty_isr(void)
 {
 	k_fifo_init(&fifo);
 	/**TESTPOINT: check fifo is empty from isr*/
 	irq_offload(tfifo_is_empty, &fifo);
 }
+/**
+ * @}
+ */

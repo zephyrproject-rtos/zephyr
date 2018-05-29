@@ -8,7 +8,7 @@
 if BOARD_USB_KW24D512
 
 config BOARD
-	default usb_kw24d512
+	default "usb_kw24d512"
 
 config OSC_XTAL0_FREQ
 	# The MCU is configured to use 4 MHz external
@@ -97,30 +97,9 @@ if SPI
 config SPI_1
 	def_bool y
 
-config SPI_1_IRQ_PRI
-	default 3
-
 endif # SPI
 
 if IEEE802154_MCR20A
-
-config IEEE802154_MCR20A_SPI_DRV_NAME
-	default SPI_1_NAME
-
-config MCR20A_GPIO_IRQ_B_NAME
-	default GPIO_MCUX_PORTB_NAME
-
-config MCR20A_GPIO_IRQ_B_PIN
-	default 3
-
-config MCR20A_GPIO_RESET_NAME
-	default GPIO_MCUX_PORTB_NAME
-
-config MCR20A_GPIO_RESET_PIN
-	default 19
-
-config IEEE802154_MCR20A_SPI_FREQ
-	default 8000000
 
 config MCR20A_IS_PART_OF_KW2XD_SIP
 	default y

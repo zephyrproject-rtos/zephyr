@@ -16,6 +16,7 @@
 
 #include <system.h>
 #include <arch/nios2/asm_inline.h>
+#include <generated_dts_board.h>
 #include "nios2.h"
 
 #ifdef __cplusplus

@@ -1,0 +1,12 @@
+common:
+  harness: net
+  tags: net rpl ieee802154 ethernet
+  platform_whitelist: frdm_k64f
+sample:
+  description: Can be used to form RPL network. Needs
+    to be run in real device. This cannot be run in
+    QEMU.
+  name: RPL Border Router demo application
+tests:
+  test_frdm_k64f_mcr20a:
+    extra_args: CONF_FILE="prj_frdm_k64f_mcr20a.conf"

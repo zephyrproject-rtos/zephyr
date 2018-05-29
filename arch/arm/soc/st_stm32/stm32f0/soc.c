@@ -9,10 +9,8 @@
  * @brief System/hardware module for STM32F0 processor
  */
 
-#include <kernel.h>
 #include <device.h>
 #include <init.h>
-#include <soc.h>
 #include <arch/cpu.h>
 #include <cortex_m/exc.h>
 #include <linker/linker-defs.h>
@@ -46,18 +44,6 @@ void relocate_vector_table(void)
 	memcpy(_ram_vector_start, _vector_start, vector_size);
 	LL_SYSCFG_SetRemapMemory(LL_SYSCFG_REMAP_SRAM);
 #endif
-}
-
-
-/**
- * @brief This function configures the source of stm32cube time base.
- *        Cube HAL expects a 1ms tick which matches with k_uptime_get_32.
- *        Tick interrupt priority is not used
- * @return HAL status
- */
-uint32_t HAL_GetTick(void)
-{
-	return k_uptime_get_32();
 }
 
 /**

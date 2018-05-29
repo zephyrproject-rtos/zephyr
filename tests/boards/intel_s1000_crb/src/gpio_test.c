@@ -5,7 +5,9 @@
  */
 
 /**
- * @file Sample app to utilize GPIO on Intel_S1000.
+ * @file
+ *
+ * @brief Sample app to utilize GPIO on Intel_S1000.
  *
  * Intel_S1000 - Xtensa
  * --------------------

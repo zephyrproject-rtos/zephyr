@@ -14,6 +14,6 @@ config FCB
 	prompt "Flash Circular Buffer support"
 	default n
 	depends on FLASH_MAP
-	select FS_FLASH_MAP_STORAGE
+	select FS_FLASH_STORAGE_PARTITION
 	help
 	  Enable support of Flash Circular Buffer.

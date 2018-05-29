@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2017, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_lpc54xxx_m4.dtsi>
+
+/ {
+	model = "NXP LPCXpresso54114 board";
+	compatible = "nxp,lpc54xxx", "nxp,lpc";
+
+	aliases{
+		usart-0 = &usart0;
+		mailbox-0 = &mailbox0;
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led@0 {
+			gpios = <&gpio0 29 GPIO_INT_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+		green_led: led@1 {
+			gpios = <&gpio1 10 GPIO_INT_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+		blue_led: led@2 {
+			gpios = <&gpio1 9 GPIO_INT_ACTIVE_LOW>;
+			label = "User LD3";
+		};
+	};
+};
+
+&usart0 {
+	status = "ok";
+	current-speed = <115200>;
+};
+
+&mailbox0 {
+	status = "ok";
+};

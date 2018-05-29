@@ -84,17 +84,19 @@ config BT_HCI_RESERVE
 	default 1 if BT_SPI
 
 config BT_RECV_IS_RX_THREAD
-	# Virtual option set by the HCI driver to indicate that there's
-	# no need for the host to have its own RX thread, rather the
-	# context that bt_recv() gets called in is already good enough.
-	# If this is set, the driver RX thread is required as the first
-	# thing to make a call to bt_rx_thread_ready().
+	# Hidden option set by the HCI driver to indicate that there's
+	# no need for the host to have its own RX thread.
+	# It is then the responsibility of the HCI driver to call bt_recv_prio
+	# from a higher priority context than bt_recv in order to avoid deadlock.
+	# If the host has its own RX thread it is safe to call bt_recv and
+	# bt_recv_prio from the same priority context.
 	bool
 
 config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
 	depends on BT_HCI_HOST || BT_RECV_IS_RX_THREAD
 	default 1024
+	default 2048 if BT_SETTINGS
 	default 2048 if BT_MESH
 	default 512 if BT_HCI_RAW
 	range 512 65536 if BT_HCI_RAW
@@ -130,14 +132,22 @@ config BT_HOST_CRYPTO
 	select TINYCRYPT_SHA256_HMAC
 	select TINYCRYPT_SHA256_HMAC_PRNG
 
-config BT_INTERNAL_STORAGE
-	bool "Use an internal persistent storage handler"
-	depends on FILE_SYSTEM
-	depends on PRINTK
+config BT_SETTINGS
+	bool "Store Bluetooth state and configuration persistently"
+	depends on SETTINGS && PRINTK
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
-	  When selected the application doesn't need to register its own
-	  persistent storage handlers through the bt_storage API, rather
-	  an internal default handler is used for this.
+	  When selected, the Bluetooth stack will take care of storing
+	  (and restoring) the Bluetooth state (e.g. pairing keys) and
+	  configuration persistently in flash.
+
+	  When this option has been enabled, it's important that the
+	  application makes a call to settings_load() after having done
+	  all necessary initialization (e.g. calling bt_enable). The
+	  reason settings_load() is handled externally to the stack, is
+	  that there may be other subsystems using the settings API, in
+	  which case it's more efficient to load all settings in one go,
+	  instead of each subsystem doing it independently.
 
 if BT_CONN
 
@@ -350,6 +360,12 @@ config BT_TINYCRYPT_ECC
 	  Connections so that Hosts can make use of those.
 
 if BT_DEBUG
+config BT_DEBUG_SETTINGS
+	bool "Bluetooth storage debug"
+	depends on BT_SETTINGS
+	help
+	  This option enables debug support for Bluetooth storage.
+
 config BT_DEBUG_HCI_CORE
 	bool "Bluetooth HCI core debug"
 	help

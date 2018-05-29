@@ -23,7 +23,16 @@ add_library(kernel
   version.c
   work_q.c
   smp.c
-)
+  )
+
+# Kernel files has the macro __ZEPHYR_SUPERVISOR__ set so that it
+# optimizes the code when userspace is enabled.
+set_target_properties(
+  kernel
+  PROPERTIES
+  COMPILE_DEFINITIONS
+  __ZEPHYR_SUPERVISOR__
+  )
 
 target_sources_ifdef(CONFIG_INT_LATENCY_BENCHMARK kernel PRIVATE int_latency_bench.c)
 target_sources_ifdef(CONFIG_STACK_CANARIES        kernel PRIVATE compiler_stack_protect.c)
@@ -42,6 +51,7 @@ target_sources_ifdef(
   userspace_handler.c
   userspace.c
   )
+
 
 add_dependencies(kernel offsets_h)
 

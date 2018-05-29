@@ -9,13 +9,15 @@ import argparse
 import pprint
 import os
 import struct
-from elf_helper import ElfHelper
+from elf_helper import ElfHelper, kobject_to_enum
 
 kobjects = [
     "k_alert",
     "k_msgq",
     "k_mutex",
     "k_pipe",
+    "k_queue",
+    "k_poll_signal",
     "k_sem",
     "k_stack",
     "k_thread",
@@ -35,6 +37,7 @@ subsystems = [
     "i2c_driver_api",
     "i2s_driver_api",
     "ipm_driver_api",
+    "led_driver_api",
     "pinmux_driver_api",
     "pwm_driver_api",
     "entropy_driver_api",
@@ -118,18 +121,17 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
 
 
 driver_macro_tpl = """
-#define _SYSCALL_DRIVER_%(driver_upper)s(ptr, op) _SYSCALL_DRIVER_GEN(ptr, op, %(driver_lower)s, %(driver_upper)s)
+#define Z_SYSCALL_DRIVER_%(driver_upper)s(ptr, op) Z_SYSCALL_DRIVER_GEN(ptr, op, %(driver_lower)s, %(driver_upper)s)
 """
 
 def write_validation_output(fp):
     fp.write("#ifndef __DRIVER_VALIDATION_GEN_H__\n")
     fp.write("#define __DRIVER_VALIDATION_GEN_H__\n")
 
-    fp.write("""#define _SYSCALL_DRIVER_GEN(ptr, op, driver_lower_case, driver_upper_case) \\
-	do { \\
-		_SYSCALL_OBJ(ptr, K_OBJ_DRIVER_##driver_upper_case); \\
-		_SYSCALL_DRIVER_OP(ptr, driver_lower_case##_driver_api, op); \\
-	} while (0)\n\n""");
+    fp.write("""#define Z_SYSCALL_DRIVER_GEN(ptr, op, driver_lower_case, driver_upper_case) \\
+		(Z_SYSCALL_OBJ(ptr, K_OBJ_DRIVER_##driver_upper_case) || \\
+		 Z_SYSCALL_DRIVER_OP(ptr, driver_lower_case##_driver_api, op))
+                """)
 
     for subsystem in subsystems:
         subsystem = subsystem.replace("_driver_api", "")
@@ -148,12 +150,7 @@ def write_kobj_types_output(fp):
         if kobj == "device":
             continue
 
-        if kobj.startswith("k_"):
-            kobj = kobj[2:]
-        elif kobj.startswith("_k_"):
-            kobj = kobj[2:]
-
-        fp.write("K_OBJ_%s,\n" % kobj.upper())
+        fp.write("%s,\n" % kobject_to_enum(kobj))
 
     fp.write("/* Driver subsystems */\n")
     for subsystem in subsystems:
@@ -167,15 +164,7 @@ def write_kobj_otype_output(fp):
         if kobj == "device":
             continue
 
-        if kobj.startswith("k_"):
-            kobj = kobj[2:]
-        elif kobj.startswith("_k_"):
-            kobj = kobj[2:]
-
-        fp.write('case K_OBJ_%s: return "%s";\n' % (
-            kobj.upper(),
-            kobj
-        ))
+        fp.write('case %s: return "%s";\n' % (kobject_to_enum(kobj), kobj))
 
     fp.write("/* Driver subsystems */\n")
     for subsystem in subsystems:
@@ -185,6 +174,16 @@ def write_kobj_otype_output(fp):
             subsystem
         ))
 
+def write_kobj_size_output(fp):
+    fp.write("/* Non device/stack objects */\n")
+    for kobj in kobjects:
+        # device handled by default case. Stacks are not currently handled,
+        # if they eventually are it will be a special case.
+        if kobj == "device" or kobj == "_k_thread_stack_element":
+            continue
+
+        fp.write('case %s: return sizeof(struct %s);\n' %
+                (kobject_to_enum(kobj), kobj))
 
 def parse_args():
     global args
@@ -207,6 +206,9 @@ def parse_args():
     parser.add_argument(
         "-S", "--kobj-otype-output", required=False,
         help="Output case statements for otype_to_str()")
+    parser.add_argument(
+        "-Z", "--kobj-size-output", required=False,
+        help="Output case statements for obj_size_get()")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Print extra debugging information")
     args = parser.parse_args()
@@ -245,6 +247,10 @@ def main():
     if args.kobj_otype_output:
         with open(args.kobj_otype_output, "w") as fp:
             write_kobj_otype_output(fp)
+
+    if args.kobj_size_output:
+        with open(args.kobj_size_output, "w") as fp:
+            write_kobj_size_output(fp)
 
 if __name__ == "__main__":
     main()

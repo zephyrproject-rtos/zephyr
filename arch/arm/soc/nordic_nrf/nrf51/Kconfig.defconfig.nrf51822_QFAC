@@ -10,6 +10,6 @@ if SOC_NRF51822_QFAC
 
 config SOC
 	string
-	default nRF51822_QFAC
+	default "nRF51822_QFAC"
 
 endif # SOC_NRF51822_QFAC

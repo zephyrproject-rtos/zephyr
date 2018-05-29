@@ -49,7 +49,7 @@ config CPU_CORTEX_M23
 	bool
 	select CPU_CORTEX_M
 	# Omit prompt to signify "hidden" option
-	select ARMV6_M_ARMV8_M_BASELINE
+	select ARMV8_M_BASELINE
 	help
 	  This option signifies the use of a Cortex-M23 CPU
 
@@ -106,16 +106,47 @@ config ISA_THUMB2
 config CPU_CORTEX_M_HAS_BASEPRI
 	bool
 	# Omit prompt to signify "hidden" option
+	depends on ARMV7_M_ARMV8_M_MAINLINE
 	default n
 	help
 	  This option signifies the CPU has the BASEPRI register.
 
+	  The BASEPRI register defines the minimum priority for
+	  exception processing. When BASEPRI is set to a nonzero
+	  value, it prevents the activation of all exceptions with
+	  the same or lower priority level as the BASEPRI value.
+	  Always present in CPUs that implement the ARMv7-M or
+	  ARM8-M Mainline architectures.
+
 config CPU_CORTEX_M_HAS_VTOR
 	bool
 	# Omit prompt to signify "hidden" option
+	depends on !CPU_CORTEX_M0
 	default n
 	help
 	  This option signifies the CPU has the VTOR register.
+	  The VTOR indicates the offset of the vector table base
+	  address from memory address 0x00000000. Always present
+	  in CPUs implementing the ARMv7-M or ARMv8-M architectures.
+	  Optional in CPUs implementing ARMv6-M, ARMv8-M Baseline
+	  architectures (except for Cortex-M0, where it is never
+	  implemented).
+
+config CPU_CORTEX_M_HAS_SPLIM
+	bool
+	# Omit prompt to signify "hidden" option
+	depends on ARMV8_M_MAINLINE
+	default n
+	help
+	  This option signifies the CPU has the MSPLIM, PSPLIM registers.
+
+	  The stack pointer limit registers, MSPLIM, PSPLIM, limit the
+	  extend to which the Main and Process Stack Pointers, respectively,
+	  can descend. MSPLIM, PSPLIM are always present in ARMv8-M
+	  MCUs that implement the ARMv8-M Main Extension (Mainline).
+
+	  In an ARMv8-M implementation with the Security Extension, the
+	  MSPLIM, PSPLIM registers have additional Secure instances.
 
 config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	bool
@@ -134,6 +165,13 @@ config CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
 	help
 	  This option signifies the Cortex-M0 has some mechanisms that can map
 	  the vector table to SRAM
+
+config CPU_CORTEX_M_HAS_CMSE
+	bool
+	depends on ARMV8_M_BASELINE || ARMV8_M_MAINLINE
+	default n
+	help
+	  This option signifies the Cortex-M CPU has the CMSE intrinsics.
 
 config ARMV6_M_ARMV8_M_BASELINE
 	bool
@@ -154,6 +192,19 @@ config ARMV6_M_ARMV8_M_BASELINE
 	  - ARMv6-M compatibility is provided by all ARMv8-M
 	  implementations.
 
+config ARMV8_M_BASELINE
+	bool
+	# Omit prompt to signify "hidden" option
+	default n
+	select ARMV6_M_ARMV8_M_BASELINE
+	select CPU_CORTEX_M_HAS_CMSE
+	help
+	  This option signifies the use of an ARMv8-M processor
+	  implementation.
+
+	  ARMv8-M Baseline includes additional features
+	  not present in the ARMv6-M architecture.
+
 config ARMV7_M_ARMV8_M_MAINLINE
 	bool
 	# Omit prompt to signify "hidden" option
@@ -165,8 +216,9 @@ config ARMV7_M_ARMV8_M_MAINLINE
 	select CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	help
 	  This option signifies the use of an ARMv7-M processor
-	  implementation, or the use of an ARMv8-M processor
-	  implementation supporting the Main Extension.
+	  implementation, or the use of a backwards-compatible
+	  ARMv8-M processor implementation supporting the Main
+	  Extension.
 
 	  Notes:
 	  - A Processing Element (PE) with the Main Extension is also
@@ -181,6 +233,8 @@ config ARMV8_M_MAINLINE
 	bool
 	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
+	select CPU_CORTEX_M_HAS_SPLIM
+	select CPU_CORTEX_M_HAS_CMSE
 	help
 	  This option signifies the use of an ARMv8-M processor
 	  implementation, supporting the Main Extension.
@@ -286,6 +340,15 @@ config SW_VECTOR_RELAY
 	  vector table relocation mechanisms or for Cortex-M0+
 	  (or an Armv8-M baseline core) with no VTOR and no other hardware
 	  relocation table mechanisms.
+
+config PLATFORM_SPECIFIC_INIT
+	bool
+	prompt "Enable platform (SOC) specific startup hook"
+	default n
+	help
+	  The platform specific initialization code (_PlatformInit) is executed
+	  at the beginning of the startup code (__start).
+
 endmenu
 
 endif # CPU_CORTEX_M

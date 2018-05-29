@@ -326,10 +326,10 @@ void test_mutex(void)
 	TC_PRINT("Testing recursive locking\n");
 
 	rv = k_mutex_lock(&private_mutex, K_NO_WAIT);
-	zassert_equal(rv, 0, "Failed to lock private mutex\n");
+	zassert_equal(rv, 0, "Failed to lock private mutex");
 
 	rv = k_mutex_lock(&private_mutex, K_NO_WAIT);
-	zassert_equal(rv, 0, "Failed to recursively lock private mutex\n");
+	zassert_equal(rv, 0, "Failed to recursively lock private mutex");
 
 	/* Start thread */
 	k_thread_create(&thread_12_thread_data, thread_12_stack_area, STACKSIZE,
@@ -342,10 +342,10 @@ void test_mutex(void)
 	k_mutex_unlock(&private_mutex); /* thread_12 should now have lock */
 
 	rv = k_mutex_lock(&private_mutex, K_NO_WAIT);
-	zassert_equal(rv, -EBUSY, "Unexpectedly got lock on private mutex\n");
+	zassert_equal(rv, -EBUSY, "Unexpectedly got lock on private mutex");
 
 	rv = k_mutex_lock(&private_mutex, K_SECONDS(1));
-	zassert_equal(rv, 0, "Failed to re-obtain lock on private mutex\n");
+	zassert_equal(rv, 0, "Failed to re-obtain lock on private mutex");
 
 	k_mutex_unlock(&private_mutex);
 

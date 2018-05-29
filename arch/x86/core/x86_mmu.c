@@ -7,6 +7,8 @@
 #include <kernel.h>
 #include <mmustructs.h>
 #include <linker/linker-defs.h>
+#include <kernel_internal.h>
+#include <init.h>
 
 /* Common regions for all x86 processors.
  * Peripheral I/O ranges configured at the SOC level
@@ -301,9 +303,33 @@ void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	return;
 }
 
-u8_t _arch_mem_domain_max_partitions_get(void)
+int _arch_mem_domain_max_partitions_get(void)
 {
 	return CONFIG_MAX_DOMAIN_PARTITIONS;
 }
 
+#ifdef CONFIG_NEWLIB_LIBC
+static int newlib_mmu_prepare(struct device *unused)
+{
+	ARG_UNUSED(unused);
+	void *heap_base;
+	size_t heap_size;
+
+	z_newlib_get_heap_bounds(&heap_base, &heap_size);
+
+	/* Set up the newlib heap area as a globally user-writable region.
+	 * We can't do this at build time with MMU_BOOT_REGION() as the _end
+	 * pointer shifts significantly between build phases due to the
+	 * introduction of page tables.
+	 */
+	_x86_mmu_set_flags(heap_base, heap_size,
+			   MMU_ENTRY_PRESENT | MMU_ENTRY_WRITE |
+			   MMU_ENTRY_USER,
+			   MMU_PTE_P_MASK | MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
+
+	return 0;
+}
+
+SYS_INIT(newlib_mmu_prepare, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif /* CONFIG_NEWLIB_LIBC */
 #endif	/* CONFIG_X86_USERSPACE*/

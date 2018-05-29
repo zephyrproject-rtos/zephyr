@@ -5,7 +5,9 @@
  */
 
 /**
- * @file Sample app to illustrate I2S transmission (playback) on Intel_S1000.
+ * @file
+ *
+ * @brief Sample app to illustrate I2S transmission (playback) on Intel_S1000.
  *
  * Intel_S1000 - Xtensa
  * --------------------

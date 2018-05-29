@@ -374,7 +374,7 @@ static int ss_gpio_qmsi_init(struct device *port)
 	switch (gpio_config->gpio) {
 #ifdef CONFIG_GPIO_QMSI_SS_0
 	case QM_SS_GPIO_0:
-		IRQ_CONNECT(IRQ_GPIO0_INTR,
+		IRQ_CONNECT(CONFIG_GPIO_QMSI_SS_0_IRQ,
 			    CONFIG_GPIO_QMSI_SS_0_IRQ_PRI, ss_gpio_isr,
 			    DEVICE_GET(ss_gpio_0), 0);
 		irq_enable(IRQ_GPIO0_INTR);
@@ -388,7 +388,7 @@ static int ss_gpio_qmsi_init(struct device *port)
 #endif /* CONFIG_GPIO_QMSI_SS_0 */
 #ifdef CONFIG_GPIO_QMSI_SS_1
 	case QM_SS_GPIO_1:
-		IRQ_CONNECT(IRQ_GPIO1_INTR,
+		IRQ_CONNECT(CONFIG_GPIO_QMSI_SS_1_IRQ,
 			    CONFIG_GPIO_QMSI_SS_1_IRQ_PRI, ss_gpio_isr,
 			    DEVICE_GET(ss_gpio_1), 0);
 		irq_enable(IRQ_GPIO1_INTR);

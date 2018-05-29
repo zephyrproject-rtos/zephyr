@@ -38,6 +38,6 @@ config SYS_LOG_I2S_LEVEL
 
 comment "Device Drivers"
 
-source "drivers/i2s/Kconfig.*"
+gsource "drivers/i2s/Kconfig.*"
 
 endif # I2S

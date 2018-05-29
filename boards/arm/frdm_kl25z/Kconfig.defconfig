@@ -8,7 +8,7 @@
 if BOARD_FRDM_KL25Z
 
 config BOARD
-	default frdm_kl25z
+	default "frdm_kl25z"
 
 config OSC_XTAL0_FREQ
 	default 8000000
@@ -34,7 +34,7 @@ config PINMUX_MCUX_PORTB
 	def_bool y
 
 config PINMUX_MCUX_PORTC
-	def_bool y if SPI_0
+	def_bool n
 
 config PINMUX_MCUX_PORTD
 	def_bool y
@@ -83,20 +83,5 @@ config ADC_0
 	def_bool y
 
 endif # ADC
-
-if SPI
-
-config SPI_0
-	def_bool y
-
-if SPI_0
-
-config SPI_0_IRQ_PRI
-	default 0
-
-endif # SPI_0
-
-endif # SPI
-
 
 endif # BOARD_FRDM_KL25Z

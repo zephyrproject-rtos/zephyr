@@ -78,25 +78,27 @@ Supported Features
 The Zephyr 96b_carbon board configuration supports the following hardware
 features:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| FLASH     | on-chip    | flash                               |
-+-----------+------------+-------------------------------------+
-| SPI       | on-chip    | spi                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
++------------+------------+-------------------------------------+
+| Interface  | Controller | Driver/Component                    |
++============+============+=====================================+
+| NVIC       | on-chip    | nested vector interrupt controller  |
++------------+------------+-------------------------------------+
+| SYSTICK    | on-chip    | system clock                        |
++------------+------------+-------------------------------------+
+| UART       | on-chip    | serial port                         |
++------------+------------+-------------------------------------+
+| GPIO       | on-chip    | gpio                                |
++------------+------------+-------------------------------------+
+| PINMUX     | on-chip    | pinmux                              |
++------------+------------+-------------------------------------+
+| FLASH      | on-chip    | flash                               |
++------------+------------+-------------------------------------+
+| SPI        | on-chip    | spi                                 |
++------------+------------+-------------------------------------+
+| I2C        | on-chip    | i2c                                 |
++------------+------------+-------------------------------------+
+| USB OTG FS | on-chip    | USB device                          |
++------------+------------+-------------------------------------+
 
 More details about the board can be found at `96Boards website`_.
 
@@ -215,6 +217,16 @@ I2C
 - I2C1_SDA : PB7
 - I2C2_SCL : PB10
 - I2C2_SDA : PB3
+
+USB
+===
+
+96Boards Carbon board has a USB OTG dual-role device (DRD) controller that
+supports both device and host functions through its mini "OTG" USB connector.
+Only USB device functions are supported in Zephyr at the moment.
+
+- USB_DM : PA11
+- USB_DP : PA12
 
 Programming and Debugging
 *************************

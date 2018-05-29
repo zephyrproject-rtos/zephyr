@@ -148,10 +148,6 @@ out:
 #define FAIL_FAST 0
 #endif
 
-#if CONFIG_ZTEST_STACKSIZE & (STACK_ALIGN - 1)
-    #error "CONFIG_ZTEST_STACKSIZE must be a multiple of the stack alignment"
-#endif
-
 K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACKSIZE +
 		      CONFIG_TEST_EXTRA_STACKSIZE);
 

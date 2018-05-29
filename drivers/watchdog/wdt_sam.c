@@ -36,11 +36,13 @@ static void wdt_sam_enable(struct device *dev)
 	SYS_LOG_ERR("Function not implemented!");
 }
 
-static void wdt_sam_disable(struct device *dev)
+static int wdt_sam_disable(struct device *dev)
 {
 	Wdt *const wdt = DEV_CFG(dev)->regs;
 
 	wdt->WDT_MR |= WDT_MR_WDDIS;
+
+	return 0;
 }
 
 static int wdt_sam_set_config(struct device *dev, struct wdt_config *config)

@@ -1,12 +1,7 @@
 /dts-v1/;
 
-#define DT_FLASH_SIZE		__SIZE_K(72)
-
-#if XIP
-	#define DT_SRAM_SIZE		__SIZE_K(128)
-#else
-	#define DT_SRAM_SIZE		__SIZE_K(256)
-#endif
+#define DT_FLASH_SIZE		__SIZE_K(8912)
+#define DT_SRAM_SIZE		__SIZE_K(2097152)
 
 #include <atom.dtsi>
 

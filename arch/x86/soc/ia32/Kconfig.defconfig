@@ -9,14 +9,7 @@
 if SOC_IA32
 
 config SOC
-	default ia32
-
-config RAM_SIZE
-	default 4096 if XIP
-	default 8188 if !XIP
-
-config ROM_SIZE
-	default 4092 if XIP
+	default "ia32"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 150000000 if LOAPIC_TIMER
@@ -35,8 +28,6 @@ config UART_NS16550_PORT_0
 
 if UART_NS16550_PORT_0
 
-config UART_NS16550_PORT_0_IRQ_PRI
-	default 3
 config UART_NS16550_PORT_0_OPTIONS
 	default 0
 
@@ -47,8 +38,6 @@ config UART_NS16550_PORT_1
 
 if UART_NS16550_PORT_1
 
-config UART_NS16550_PORT_1_IRQ_PRI
-	default 3
 config UART_NS16550_PORT_1_OPTIONS
 	default 0
 

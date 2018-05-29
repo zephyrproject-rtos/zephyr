@@ -305,9 +305,9 @@ void _impl_k_str_out(char *c, size_t n)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_str_out, c, n)
+Z_SYSCALL_HANDLER(k_str_out, c, n)
 {
-	_SYSCALL_MEMORY_READ(c, n);
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(c, n));
 	_impl_k_str_out((char *)c, n);
 
 	return 0;

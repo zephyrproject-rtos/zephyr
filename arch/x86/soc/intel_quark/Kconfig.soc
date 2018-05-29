@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-source "arch/x86/soc/intel_quark/*/Kconfig.series"
+gsource "arch/x86/soc/intel_quark/*/Kconfig.series"

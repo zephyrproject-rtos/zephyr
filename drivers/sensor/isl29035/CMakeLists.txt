@@ -1,2 +1,4 @@
-zephyr_sources_ifdef(CONFIG_ISL29035 isl29035.c)
-zephyr_sources_ifdef(CONFIG_ISL29035_TRIGGER isl29035_trigger.c)
+zephyr_library()
+
+zephyr_library_sources_ifdef(CONFIG_ISL29035 isl29035.c)
+zephyr_library_sources_ifdef(CONFIG_ISL29035_TRIGGER isl29035_trigger.c)

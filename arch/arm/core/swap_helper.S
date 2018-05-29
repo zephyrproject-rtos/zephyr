@@ -175,6 +175,14 @@ _thread_irq_disabled:
     pop {r2, lr}
 #endif /* CONFIG_MPU_STACK_GUARD */
 
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+    /* r2 contains k_thread */
+    add r0, r2, #0
+    push {r2, lr}
+    blx configure_builtin_stack_guard
+    pop {r2, lr}
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
+
 #ifdef CONFIG_USERSPACE
     /* restore mode */
     ldr r0, [r2, #_thread_offset_to_mode]
@@ -297,7 +305,7 @@ SECTION_FUNC(TEXT, __svc)
 
    /*
     * grab service call number:
-    * 0: context switch
+    * 0: Unused
     * 1: irq_offload (if configured)
     * 2: kernel panic or oops (software generated fatal exception)
     * 3: System call
@@ -318,9 +326,7 @@ SECTION_FUNC(TEXT, __svc)
     tst r2, #0x1
     bne _oops
 
-    cmp r1, #0
 #endif
-    beq _context_switch
 
     cmp r1, #2
     beq _oops
@@ -333,24 +339,6 @@ SECTION_FUNC(TEXT, __svc)
     /* exception return is done in _IntExit() */
     b _IntExit
 #endif
-
-_context_switch:
-
-    /*
-     * Unlock interrupts:
-     * - in a SVC call, so protected against context switches
-     * - allow PendSV, since it's running at prio 0xff
-     */
-    eors.n r0, r0
-    msr BASEPRI, r0
-
-     /* set PENDSV bit, pending the PendSV exception */
-    ldr r1, =_SCS_ICSR
-    ldr r2, =_SCS_ICSR_PENDSV
-    str r2, [r1, #0]
-
-    /* handler mode exit, to PendSV */
-    bx lr
 
 _oops:
     push {lr}

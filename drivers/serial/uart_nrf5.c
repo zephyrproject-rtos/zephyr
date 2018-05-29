@@ -283,9 +283,6 @@ static int uart_nrf5_poll_in(struct device *dev, unsigned char *c)
 /**
  * @brief Output a character in polled mode.
  *
- * Checks if the transmitter is empty. If empty, a character is written to
- * the data register.
- *
  * @param dev UART device struct
  * @param c Character to send
  *
@@ -296,14 +293,26 @@ static unsigned char uart_nrf5_poll_out(struct device *dev,
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
+	/* The UART API dictates that poll_out should wait for the transmitter
+	 * to be empty before sending a character. However, without locking,
+	 * this introduces a rare yet possible race condition if the thread is
+	 * preempted between sending the byte and checking for completion.
+
+	 * Because of this race condition, the while loop has to be placed
+	 * after the write to TXD, and we can't wait for an empty transmitter
+	 * before writing. This is a trade-off between losing a byte once in a
+	 * blue moon against hanging up the whole thread permanently
+	 */
+
+	/* reset transmitter ready state */
+	uart->EVENTS_TXDRDY = 0;
+
 	/* send a character */
 	uart->TXD = (u8_t)c;
 
-	/* Wait for transmitter to be ready */
+	/* wait for transmitter to be ready */
 	while (!uart->EVENTS_TXDRDY) {
 	}
-
-	uart->EVENTS_TXDRDY = 0;
 
 	return c;
 }
@@ -368,7 +377,7 @@ static void uart_nrf5_irq_tx_enable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	uart->INTENSET |= UART_IRQ_MASK_TX;
+	uart->INTENSET = UART_IRQ_MASK_TX;
 }
 
 /** Interrupt driven transfer disabling function */
@@ -376,7 +385,7 @@ static void uart_nrf5_irq_tx_disable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	uart->INTENCLR |= UART_IRQ_MASK_TX;
+	uart->INTENCLR = UART_IRQ_MASK_TX;
 }
 
 /** Interrupt driven transfer ready function */
@@ -392,7 +401,7 @@ static void uart_nrf5_irq_rx_enable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	uart->INTENSET |= UART_IRQ_MASK_RX;
+	uart->INTENSET = UART_IRQ_MASK_RX;
 }
 
 /** Interrupt driven receiver disabling function */
@@ -400,7 +409,7 @@ static void uart_nrf5_irq_rx_disable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	uart->INTENCLR |= UART_IRQ_MASK_RX;
+	uart->INTENCLR = UART_IRQ_MASK_RX;
 }
 
 /** Interrupt driven transfer empty function */
@@ -424,7 +433,7 @@ static void uart_nrf5_irq_err_enable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	uart->INTENSET |= UART_IRQ_MASK_ERROR;
+	uart->INTENSET = UART_IRQ_MASK_ERROR;
 }
 
 /** Interrupt driven error disabling function */
@@ -432,13 +441,18 @@ static void uart_nrf5_irq_err_disable(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 
-	uart->INTENCLR |= UART_IRQ_MASK_ERROR;
+	uart->INTENCLR = UART_IRQ_MASK_ERROR;
 }
 
 /** Interrupt driven pending status function */
 static int uart_nrf5_irq_is_pending(struct device *dev)
 {
-	return (uart_nrf5_irq_tx_ready(dev) || uart_nrf5_irq_rx_ready(dev));
+	volatile struct _uart *uart = UART_STRUCT(dev);
+
+	return ((uart->INTENSET & UART_IRQ_MASK_TX) &&
+		(uart_nrf5_irq_tx_ready(dev))) ||
+	       ((uart->INTENSET & UART_IRQ_MASK_RX) &&
+		(uart_nrf5_irq_rx_ready(dev)));
 }
 
 /** Interrupt driven interrupt update function */

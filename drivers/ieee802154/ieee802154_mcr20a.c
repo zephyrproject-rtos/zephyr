@@ -1011,11 +1011,16 @@ static int mcr20a_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 	return 0;
 }
 
-static int mcr20a_set_filter(struct device *dev,
-			     enum ieee802154_filter_type type,
-			     const struct ieee802154_filter *filter)
+static int mcr20a_filter(struct device *dev,
+			 bool set,
+			 enum ieee802154_filter_type type,
+			 const struct ieee802154_filter *filter)
 {
 	SYS_LOG_DBG("Applying filter %u", type);
+
+	if (!set) {
+		return -ENOTSUP;
+	}
 
 	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
 		return mcr20a_set_ieee_addr(dev, filter->ieee_addr);
@@ -1025,7 +1030,7 @@ static int mcr20a_set_filter(struct device *dev,
 		return mcr20a_set_pan_id(dev, filter->pan_id);
 	}
 
-	return -EINVAL;
+	return -ENOTSUP;
 }
 
 static int mcr20a_set_txpower(struct device *dev, s16_t dbm)
@@ -1461,7 +1466,7 @@ static struct ieee802154_radio_api mcr20a_radio_api = {
 	.get_capabilities	= mcr20a_get_capabilities,
 	.cca			= mcr20a_cca,
 	.set_channel		= mcr20a_set_channel,
-	.set_filter		= mcr20a_set_filter,
+	.filter			= mcr20a_filter,
 	.set_txpower		= mcr20a_set_txpower,
 	.start			= mcr20a_start,
 	.stop			= mcr20a_stop,

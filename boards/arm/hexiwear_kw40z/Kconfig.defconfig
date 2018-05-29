@@ -8,7 +8,7 @@
 if BOARD_HEXIWEAR_KW40Z
 
 config BOARD
-	default hexiwear_kw40z
+	default "hexiwear_kw40z"
 
 config OSC_XTAL0_FREQ
 	default 32000000

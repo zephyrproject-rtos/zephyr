@@ -8,7 +8,7 @@
 if BOARD_MIMXRT1050_EVK
 
 config BOARD
-	default mimxrt1050_evk
+	default "mimxrt1050_evk"
 
 if GPIO_MCUX_IGPIO
 
@@ -35,5 +35,13 @@ config UART_MCUX_LPUART_1
 	def_bool y
 
 endif # UART_MCUX_LPUART
+
+if CODE_HYPERFLASH || CODE_QSPI
+
+# Reserve space for the IVT
+config TEXT_SECTION_OFFSET
+	default 0x2000
+
+endif
 
 endif # BOARD_MIMXRT1050_EVK

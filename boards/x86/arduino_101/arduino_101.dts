@@ -1,7 +1,7 @@
 /dts-v1/;
 
 #define DT_FLASH_SIZE		__SIZE_K(144)
-#define DT_SRAM_SIZE		__SIZE_K(55)
+#define DT_SRAM_SIZE		__SIZE_K(52)
 
 #include "intel_curie.dtsi"
 

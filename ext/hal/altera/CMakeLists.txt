@@ -57,6 +57,14 @@ if(CONFIG_ALTERA_AVALON_SGDMA)
   add_subdirectory(drivers/altera_avalon_sgdma/HAL/src)
 endif()
 
+if(CONFIG_ALTERA_AVALON_MSGDMA)
+  zephyr_include_directories(
+    drivers/altera_msgdma/inc
+    drivers/altera_msgdma/HAL/inc
+    )
+  add_subdirectory(drivers/altera_msgdma/HAL/src)
+endif()
+
 if(CONFIG_ALTERA_AVALON_I2C)
   zephyr_include_directories(
     drivers/altera_avalon_i2c/inc

@@ -29,13 +29,17 @@
 #include <ffconf.h>
 #include <disk_access.h>
 
+static const char* const pdrv_str[] = {_VOLUME_STRS};
+
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
 /*-----------------------------------------------------------------------*/
 
 DSTATUS disk_status(BYTE pdrv)
 {
-	if (disk_access_status() != 0) {
+	__ASSERT(pdrv < ARRAY_SIZE(pdrv_str), "pdrv out-of-range\n");
+
+	if (disk_access_status(pdrv_str[pdrv]) != 0) {
 		return STA_NOINIT;
 	} else {
 		return RES_OK;
@@ -43,12 +47,14 @@ DSTATUS disk_status(BYTE pdrv)
 }
 
 /*-----------------------------------------------------------------------*/
-/* Inidialize a Drive                                                    */
+/* Initialize a Drive                                                    */
 /*-----------------------------------------------------------------------*/
 
 DSTATUS disk_initialize(BYTE pdrv)
 {
-	if (disk_access_init() != 0) {
+	__ASSERT(pdrv < ARRAY_SIZE(pdrv_str), "pdrv out-of-range\n");
+
+	if (disk_access_init(pdrv_str[pdrv]) != 0) {
 		return STA_NOINIT;
 	} else {
 		return RES_OK;
@@ -61,7 +67,9 @@ DSTATUS disk_initialize(BYTE pdrv)
 
 DRESULT disk_read(BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
 {
-	if (disk_access_read(buff, sector, count) != 0) {
+	__ASSERT(pdrv < ARRAY_SIZE(pdrv_str), "pdrv out-of-range\n");
+
+	if (disk_access_read(pdrv_str[pdrv], buff, sector, count) != 0) {
 		return RES_ERROR;
 	} else {
 		return RES_OK;
@@ -74,7 +82,9 @@ DRESULT disk_read(BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
 /*-----------------------------------------------------------------------*/
 DRESULT disk_write(BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
 {
-	if(disk_access_write(buff, sector, count) != 0) {
+	__ASSERT(pdrv < ARRAY_SIZE(pdrv_str), "pdrv out-of-range\n");
+
+	if(disk_access_write(pdrv_str[pdrv], buff, sector, count) != 0) {
 		return RES_ERROR;
 	} else {
 		return RES_OK;
@@ -89,21 +99,26 @@ DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void *buff)
 {
 	int ret =  RES_OK;
 
+	__ASSERT(pdrv < ARRAY_SIZE(pdrv_str), "pdrv out-of-range\n");
+
 	switch (cmd) {
 	case CTRL_SYNC:
-		if(disk_access_ioctl(DISK_IOCTL_CTRL_SYNC, buff) != 0) {
+		if(disk_access_ioctl(pdrv_str[pdrv],
+				DISK_IOCTL_CTRL_SYNC, buff) != 0) {
 			ret = RES_ERROR;
 		}
 		break;
 
 	case GET_SECTOR_COUNT:
-		if (disk_access_ioctl(DISK_IOCTL_GET_SECTOR_COUNT, buff) != 0) {
+		if (disk_access_ioctl(pdrv_str[pdrv],
+				DISK_IOCTL_GET_SECTOR_COUNT, buff) != 0) {
 			ret = RES_ERROR;
                 }
 		break;
 
 	case GET_BLOCK_SIZE:
-		if (disk_access_ioctl(DISK_IOCTL_GET_ERASE_BLOCK_SZ, buff) != 0) {
+		if (disk_access_ioctl(pdrv_str[pdrv],
+				DISK_IOCTL_GET_ERASE_BLOCK_SZ, buff) != 0) {
 			ret = RES_ERROR;
 		}
 		break;

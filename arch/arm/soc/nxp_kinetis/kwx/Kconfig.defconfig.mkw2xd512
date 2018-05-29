@@ -11,7 +11,7 @@ if SOC_MKW22D5
 
 config SOC
 	string
-	default mkw22d5
+	default "mkw22d5"
 
 endif # SOC_MKW22D5
 
@@ -19,7 +19,7 @@ if SOC_MKW24D5
 
 config SOC
 	string
-	default mkw24d5
+	default "mkw24d5"
 
 endif # SOC_MKW24D5
 
@@ -99,5 +99,19 @@ config UART_MCUX
 	def_bool y
 
 endif # SERIAL
+
+if USB
+
+config USB_KINETIS
+	def_bool y
+
+endif # USB
+
+if WATCHDOG
+
+config WDT_MCUX_WDOG
+	def_bool y
+
+endif # WATCHDOG
 
 endif # SOC_MKW2xD512

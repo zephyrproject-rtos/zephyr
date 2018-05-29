@@ -44,11 +44,18 @@ config VL53L0X_I2C_MASTER_DEV_NAME
 
 endif
 
+config VL53L0X_XSHUT_CONTROL_ENABLE
+	bool "Enable XSHUT pin control"
+	depends on VL53L0X
+	default n
+	help
+	    Enable it if XSHUT pin is controlled by host.
+
 config VL53L0X_XSHUT_GPIO_DEV_NAME
 	string
 	prompt "GPIO device"
 	default "GPIO_6"
-	depends on VL53L0X
+	depends on VL53L0X_XSHUT_CONTROL_ENABLE
 	help
 	  The device name of the GPIO device to which the VL53L0X xshut pin
 	  is connected.
@@ -57,7 +64,7 @@ config VL53L0X_XSHUT_GPIO_PIN_NUM
 	int
 	prompt "Interrupt GPIO pin number"
 	default 6
-	depends on VL53L0X
+	depends on VL53L0X_XSHUT_CONTROL_ENABLE
 	help
 	  The number of the GPIO on which the xshut signal from the VL53L0X
 	  is connected.

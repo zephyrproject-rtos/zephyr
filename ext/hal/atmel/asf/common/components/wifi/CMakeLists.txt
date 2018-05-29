@@ -1,0 +1,1 @@
+add_subdirectory_ifdef(CONFIG_ATMEL_WINC1500 winc1500)

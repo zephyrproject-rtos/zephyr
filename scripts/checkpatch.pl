@@ -4959,7 +4959,7 @@ sub process {
 					ERROR("MULTISTATEMENT_MACRO_USE_DO_WHILE",
 					      "Macros with multiple statements should be enclosed in a do - while loop\n" . "$herectx");
 				} else {
-					ERROR("COMPLEX_MACRO",
+					WARN("COMPLEX_MACRO",
 					      "Macros with complex values should be enclosed in parentheses\n" . "$herectx");
 				}
 

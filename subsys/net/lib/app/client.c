@@ -271,7 +271,7 @@ static void close_net_ctx(struct net_app_ctx *ctx)
 		ctx->ipv4.ctx = NULL;
 	}
 #endif
-#if defined(CONFIG_NET_APP_SERVER)
+#if defined(CONFIG_NET_APP_SERVER) && defined(CONFIG_NET_TCP)
 	{
 		int i;
 
@@ -293,7 +293,7 @@ static int bind_local(struct net_app_ctx *ctx)
 	if (ctx->ipv4.remote.sa_family == AF_INET && ctx->ipv4.ctx) {
 		ctx->ipv4.local.sa_family = AF_INET;
 		_net_app_set_local_addr(ctx, &ctx->ipv4.local, NULL,
-					net_sin(&ctx->ipv4.local)->sin_port);
+				ntohs(net_sin(&ctx->ipv4.local)->sin_port));
 
 		ret = _net_app_set_net_ctx(ctx, ctx->ipv4.ctx,
 					   &ctx->ipv4.local,
@@ -310,7 +310,7 @@ static int bind_local(struct net_app_ctx *ctx)
 	if (ctx->ipv6.remote.sa_family == AF_INET6 && ctx->ipv6.ctx) {
 		ctx->ipv6.local.sa_family = AF_INET6;
 		_net_app_set_local_addr(ctx, &ctx->ipv6.local, NULL,
-				       net_sin6(&ctx->ipv6.local)->sin6_port);
+				ntohs(net_sin6(&ctx->ipv6.local)->sin6_port));
 
 		ret = _net_app_set_net_ctx(ctx, ctx->ipv6.ctx,
 					   &ctx->ipv6.local,
@@ -379,12 +379,42 @@ int net_app_init_client(struct net_app_ctx *ctx,
 	}
 
 	if (client_addr) {
-		memcpy(&addr, client_addr, sizeof(addr));
+		u16_t local_port = 0;
+		bool empty_addr = false;
 
-		if (addr.sa_family != remote_addr.sa_family) {
-			NET_DBG("Address family mismatch %d vs %d",
-				addr.sa_family, remote_addr.sa_family);
-			return -EINVAL;
+		addr.sa_family = remote_addr.sa_family;
+
+		/* local_port is used if the IP address isn't specified */
+#if defined(CONFIG_NET_IPV4)
+		if (client_addr->sa_family == AF_INET) {
+			empty_addr = net_is_ipv4_addr_unspecified(
+					&net_sin(client_addr)->sin_addr);
+			local_port = net_sin(client_addr)->sin_port;
+		}
+#endif
+
+#if defined(CONFIG_NET_IPV6)
+		if (client_addr->sa_family == AF_INET6) {
+			empty_addr = net_is_ipv6_addr_unspecified(
+					&net_sin6(client_addr)->sin6_addr);
+			local_port = net_sin6(client_addr)->sin6_port;
+		}
+#endif
+
+		if (empty_addr) {
+			if (remote_addr.sa_family == AF_INET6) {
+				net_sin6(&addr)->sin6_port = local_port;
+			} else {
+				net_sin(&addr)->sin_port = local_port;
+			}
+		} else {
+			memcpy(&addr, client_addr, sizeof(addr));
+
+			if (addr.sa_family != remote_addr.sa_family) {
+				NET_DBG("Address family mismatch %d vs %d",
+					addr.sa_family, remote_addr.sa_family);
+				return -EINVAL;
+			}
 		}
 	} else {
 		addr.sa_family = remote_addr.sa_family;

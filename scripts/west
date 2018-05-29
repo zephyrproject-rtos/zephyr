@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# UNIX operating system entry point to the west tool.
+export "PYTHONPATH=${PYTHONPATH:+${PYTHONPATH}:}$ZEPHYR_BASE/scripts/meta"
+python3 -m west $@

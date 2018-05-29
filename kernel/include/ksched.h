@@ -33,6 +33,7 @@
 #define _ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")
 #endif
 
+void _sched_init(void);
 void _add_thread_to_ready_q(struct k_thread *thread);
 void _move_thread_to_end_of_prio_q(struct k_thread *thread);
 void _remove_thread_from_ready_q(struct k_thread *thread);
@@ -43,6 +44,7 @@ void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout);
 int _reschedule(int key);
 struct k_thread *_unpend_first_thread(_wait_q_t *wait_q);
 void _unpend_thread(struct k_thread *thread);
+int _unpend_all(_wait_q_t *wait_q);
 void _thread_priority_set(struct k_thread *thread, int prio);
 void *_get_next_switch_handle(void *interrupted);
 struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
@@ -110,6 +112,11 @@ static inline int _is_thread_polling(struct k_thread *thread)
 	return _is_thread_state_set(thread, _THREAD_POLLING);
 }
 
+static inline int _is_thread_queued(struct k_thread *thread)
+{
+	return _is_thread_state_set(thread, _THREAD_QUEUED);
+}
+
 static inline void _mark_thread_as_suspended(struct k_thread *thread)
 {
 	thread->base.thread_state |= _THREAD_SUSPENDED;
@@ -123,6 +130,11 @@ static inline void _mark_thread_as_not_suspended(struct k_thread *thread)
 static inline void _mark_thread_as_started(struct k_thread *thread)
 {
 	thread->base.thread_state &= ~_THREAD_PRESTART;
+}
+
+static inline void _mark_thread_as_pending(struct k_thread *thread)
+{
+	thread->base.thread_state |= _THREAD_PENDING;
 }
 
 static inline void _mark_thread_as_not_pending(struct k_thread *thread)
@@ -149,6 +161,16 @@ static inline void _mark_thread_as_polling(struct k_thread *thread)
 static inline void _mark_thread_as_not_polling(struct k_thread *thread)
 {
 	_reset_thread_states(thread, _THREAD_POLLING);
+}
+
+static inline void _mark_thread_as_queued(struct k_thread *thread)
+{
+	_set_thread_states(thread, _THREAD_QUEUED);
+}
+
+static inline void _mark_thread_as_not_queued(struct k_thread *thread)
+{
+	_reset_thread_states(thread, _THREAD_QUEUED);
 }
 
 static inline int _is_under_prio_ceiling(int prio)
@@ -191,11 +213,7 @@ static inline int _is_prio_lower_or_equal(int prio1, int prio2)
 	return _is_prio1_lower_than_or_equal_to_prio2(prio1, prio2);
 }
 
-static inline int _is_t1_higher_prio_than_t2(struct k_thread *t1,
-					     struct k_thread *t2)
-{
-	return _is_prio1_higher_than_prio2(t1->base.prio, t2->base.prio);
-}
+int _is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2);
 
 static inline int _is_valid_prio(int prio, void *entry_point)
 {

@@ -50,36 +50,54 @@
 #include <net/coap.h>
 #include <net/lwm2m.h>
 #include <misc/printk.h>
+#include <misc/util.h>
 #include <kernel.h>
 
 /* #####/###/#####/### + NULL */
 #define MAX_RESOURCE_LEN	20
 
-/* operations */
-#define LWM2M_OP_NONE		0
-#define LWM2M_OP_READ		1
-#define LWM2M_OP_DISCOVER	2
-#define LWM2M_OP_WRITE		3
-#define LWM2M_OP_WRITE_ATTR	4
-#define LWM2M_OP_EXECUTE	5
-#define LWM2M_OP_DELETE		6
-#define LWM2M_OP_CREATE		7
-
-/* operation permission bits */
-#define LWM2M_OP_BIT(op)	(1 << (op - 1))
+/* operations / permissions */
+/* values from 0 to 7 can be used as permission checks */
+#define LWM2M_OP_READ		0
+#define LWM2M_OP_WRITE		1
+#define LWM2M_OP_CREATE		2
+#define LWM2M_OP_DELETE		3
+#define LWM2M_OP_EXECUTE	4
+#define LWM2M_FLAG_OPTIONAL	7
+/* values >7 aren't used for permission checks */
+#define LWM2M_OP_DISCOVER	8
+#define LWM2M_OP_WRITE_ATTR	9
 
 /* resource permissions */
-#define LWM2M_PERM_R		LWM2M_OP_BIT(LWM2M_OP_READ)
-#define LWM2M_PERM_W		(LWM2M_OP_BIT(LWM2M_OP_WRITE) | \
-				 LWM2M_OP_BIT(LWM2M_OP_CREATE))
-#define LWM2M_PERM_X		LWM2M_OP_BIT(LWM2M_OP_EXECUTE)
-#define LWM2M_PERM_RW		(LWM2M_OP_BIT(LWM2M_OP_READ) | \
-				 LWM2M_OP_BIT(LWM2M_OP_WRITE) | \
-				 LWM2M_OP_BIT(LWM2M_OP_CREATE))
-#define LWM2M_PERM_RWX		(LWM2M_OP_BIT(LWM2M_OP_READ) | \
-				 LWM2M_OP_BIT(LWM2M_OP_WRITE) | \
-				 LWM2M_OP_BIT(LWM2M_OP_CREATE) | \
-				 LWM2M_OP_BIT(LWM2M_OP_EXECUTE))
+#define LWM2M_PERM_R		BIT(LWM2M_OP_READ)
+#define LWM2M_PERM_R_OPT	(BIT(LWM2M_OP_READ) | \
+				 BIT(LWM2M_FLAG_OPTIONAL))
+#define LWM2M_PERM_W		(BIT(LWM2M_OP_WRITE) | \
+				 BIT(LWM2M_OP_CREATE))
+#define LWM2M_PERM_W_OPT	(BIT(LWM2M_OP_WRITE) | \
+				 BIT(LWM2M_OP_CREATE) | \
+				 BIT(LWM2M_FLAG_OPTIONAL))
+#define LWM2M_PERM_X		BIT(LWM2M_OP_EXECUTE)
+#define LWM2M_PERM_X_OPT	(BIT(LWM2M_OP_EXECUTE) | \
+				 BIT(LWM2M_FLAG_OPTIONAL))
+#define LWM2M_PERM_RW		(BIT(LWM2M_OP_READ) | \
+				 BIT(LWM2M_OP_WRITE) | \
+				 BIT(LWM2M_OP_CREATE))
+#define LWM2M_PERM_RW_OPT	(BIT(LWM2M_OP_READ) | \
+				 BIT(LWM2M_OP_WRITE) | \
+				 BIT(LWM2M_OP_CREATE) | \
+				 BIT(LWM2M_FLAG_OPTIONAL))
+#define LWM2M_PERM_RWX		(BIT(LWM2M_OP_READ) | \
+				 BIT(LWM2M_OP_WRITE) | \
+				 BIT(LWM2M_OP_CREATE) | \
+				 BIT(LWM2M_OP_EXECUTE))
+#define LWM2M_PERM_RWX_OPT	(BIT(LWM2M_OP_READ) | \
+				 BIT(LWM2M_OP_WRITE) | \
+				 BIT(LWM2M_OP_CREATE) | \
+				 BIT(LWM2M_OP_EXECUTE) | \
+				 BIT(LWM2M_FLAG_OPTIONAL))
+
+#define LWM2M_HAS_PERM(of, p)	((of->permissions & p) == p)
 
 /* resource types */
 #define LWM2M_RES_TYPE_NONE	0
@@ -124,11 +142,11 @@ struct lwm2m_obj_path {
 #define OBJ_FIELD_DATA(res_id, perm, type) \
 	OBJ_FIELD(res_id, perm, type, 1)
 
-#define OBJ_FIELD_MULTI_DATA(res_id, perm, type, multi_max) \
-	OBJ_FIELD(res_id, perm, type, multi_max)
-
 #define OBJ_FIELD_EXECUTE(res_id) \
 	OBJ_FIELD(res_id, X, NONE, 0)
+
+#define OBJ_FIELD_EXECUTE_OPT(res_id) \
+	OBJ_FIELD(res_id, X_OPT, NONE, 0)
 
 struct lwm2m_engine_obj_field {
 	u16_t  res_id;
@@ -142,17 +160,21 @@ typedef struct lwm2m_engine_obj_inst *
 typedef int (*lwm2m_engine_obj_delete_cb_t)(u16_t obj_inst_id);
 
 struct lwm2m_engine_obj {
+	/* object list */
 	sys_snode_t node;
-	u16_t obj_id;
+
+	/* object field definitions */
 	struct lwm2m_engine_obj_field *fields;
-	u16_t field_count;
-	u16_t instance_count;
-	u16_t max_instance_count;
+
+	/* object event callbacks */
 	lwm2m_engine_obj_create_cb_t create_cb;
 	lwm2m_engine_obj_delete_cb_t delete_cb;
 
-	/* runtime field attributes (lwm2m_attr) */
-	sys_slist_t attr_list;
+	/* object member data */
+	u16_t obj_id;
+	u16_t field_count;
+	u16_t instance_count;
+	u16_t max_instance_count;
 };
 
 #define INIT_OBJ_RES(res_var, index_var, id_val, multi_var, \
@@ -192,55 +214,57 @@ struct lwm2m_engine_obj {
 
 /* TODO: support multiple server (sec 5.4.2) */
 struct lwm2m_attr {
+	void *ref;
+
+	/* values */
 	union {
 		float32_value_t float_val;
 		s32_t int_val;
 	};
 
-	sys_snode_t node;
 	u8_t type;
-	bool used;
 };
 
 struct lwm2m_engine_res_inst {
-	char path[MAX_RESOURCE_LEN]; /* 3/0/0 */
-	u16_t  res_id;
-	u8_t   *multi_count_var;
-	void  *data_ptr;
-	size_t data_len;
-
-	/* runtime field attributes (lwm2m_attr) */
-	sys_slist_t attr_list;
-
 	/* callbacks set by user code on obj instance */
 	lwm2m_engine_get_data_cb_t	read_cb;
 	lwm2m_engine_get_data_cb_t	pre_write_cb;
 	lwm2m_engine_set_data_cb_t	post_write_cb;
 	lwm2m_engine_exec_cb_t		execute_cb;
+
+	u8_t  *multi_count_var;
+	void  *data_ptr;
+	u16_t data_len;
+	u16_t res_id;
+	u8_t  data_flags;
 };
 
 struct lwm2m_engine_obj_inst {
+	/* instance list */
 	sys_snode_t node;
-	char path[MAX_RESOURCE_LEN]; /* 3/0 */
-	struct lwm2m_engine_obj *obj;
-	u16_t obj_inst_id;
-	struct lwm2m_engine_res_inst *resources;
-	u16_t resource_count;
 
-	/* runtime field attributes (lwm2m_attr) */
-	sys_slist_t attr_list;
+	struct lwm2m_engine_obj *obj;
+	struct lwm2m_engine_res_inst *resources;
+
+	/* object instance member data */
+	u16_t obj_inst_id;
+	u16_t resource_count;
 };
 
 struct lwm2m_output_context {
 	const struct lwm2m_writer *writer;
 	struct coap_packet *out_cpkt;
 
-	/* current write position in net_buf chain */
+	/* current write fragment in net_buf chain */
 	struct net_buf *frag;
-	u16_t offset;
 
 	/* markers for last resource inst */
 	struct net_buf *mark_frag_ri;
+
+	/* current write position in net_buf chain */
+	u16_t offset;
+
+	/* markers for last resource inst ID */
 	u16_t mark_pos_ri;
 
 	/* flags for reader/writer */

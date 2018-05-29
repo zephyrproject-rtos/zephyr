@@ -2,7 +2,7 @@ if SOC_NIOS2F_ZEPHYR
 
 config SOC
 	string
-	default nios2f-zephyr
+	default "nios2f-zephyr"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
@@ -32,6 +32,13 @@ config ALTERA_AVALON_I2C
 
 endif # I2C_NIOS2
 
+if DMA_NIOS2_MSGDMA
+
+config ALTERA_AVALON_MSGDMA
+	def_bool y
+
+endif # DMA_NIOS2_MSGDMA
+
 if UART_NS16550
 
 config UART_NS16550_PCI
@@ -42,12 +49,8 @@ config UART_NS16550_PORT_0
 
 if UART_NS16550_PORT_0
 
-config UART_NS16550_PORT_0_NAME
-	default "UART_0"
 config UART_NS16550_PORT_0_IRQ_PRI
 	default 3
-config UART_NS16550_PORT_0_BAUD_RATE
-	default 115200
 config UART_NS16550_PORT_0_OPTIONS
 	default 0
 

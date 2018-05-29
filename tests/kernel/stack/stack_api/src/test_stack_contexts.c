@@ -4,18 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_stack_api
- * @{
- * @defgroup t_stack_api_basic test_stack_api_basic
- * @brief TestPurpose: verify zephyr stack apis under different context
- * - API coverage
- *   -# k_stack_init K_STACK_DEFINE
- *   -# k_stack_push
- *   -# k_stack_pop
- * @}
- */
-
 #include <ztest.h>
 #include <irq_offload.h>
 
@@ -98,23 +86,53 @@ static void tstack_thread_isr(struct k_stack *pstack)
 	irq_offload(tIsr_entry_pop, pstack);
 }
 
-/*test cases*/
+/**
+ * @addtogroup kernel_stack_tests
+ * @{
+ */
+
+/**
+ * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
+ */
 void test_stack_thread2thread(void)
 {
 	/**TESTPOINT: test k_stack_init stack*/
 	k_stack_init(&stack, data, STACK_LEN);
 	tstack_thread_thread(&stack);
 
-	/**TESTPOINT: test K_STACK_INIT stack*/
+	/**TESTPOINT: test K_STACK_DEFINE stack*/
 	tstack_thread_thread(&kstack);
 }
 
+#ifdef CONFIG_USERSPACE
+/**
+ * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
+ */
+void test_stack_user_thread2thread(void)
+{
+	struct k_stack *stack = k_object_alloc(K_OBJ_STACK);
+
+	zassert_not_null(stack, "couldn't allocate stack object");
+	zassert_false(k_stack_alloc_init(stack, STACK_LEN),
+		      "stack init failed");
+
+	tstack_thread_thread(stack);
+}
+#endif
+
+/**
+ * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
+ */
 void test_stack_thread2isr(void)
 {
 	/**TESTPOINT: test k_stack_init stack*/
 	k_stack_init(&stack, data, STACK_LEN);
 	tstack_thread_isr(&stack);
 
-	/**TESTPOINT: test K_STACK_INIT stack*/
+	/**TESTPOINT: test K_STACK_DEFINE stack*/
 	tstack_thread_isr(&kstack);
 }
+
+/**
+ * @}
+ */

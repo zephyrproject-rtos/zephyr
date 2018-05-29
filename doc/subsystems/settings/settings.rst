@@ -61,9 +61,9 @@ initializes the FCB area, so it must be called before calling
 Example: Device Configuration
 *****************************
 
-This is a simple example, where the settings handler only implements ``ch_set``
-and ``ch_export``. ``ch_set`` is called when the value is restored from storage
-(or when set initially), and ``ch_export`` is used to write the value to
+This is a simple example, where the settings handler only implements ``h_set``
+and ``h_export``. ``h_set`` is called when the value is restored from storage
+(or when set initially), and ``h_export`` is used to write the value to
 storage thanks to ``storage_func()``. The user can also implement some other
 export functionality, for example, writing to the shell console).
 
@@ -72,9 +72,9 @@ export functionality, for example, writing to the shell console).
     static int8 foo_val;
 
     struct settings_handler my_conf = {
-        .ch_name = "foo",
-        .ch_set = foo_settings_set,
-        .ch_export = foo_settings_export
+        .h_name = "foo",
+        .h_set = foo_settings_set,
+        .h_export = foo_settings_export
     }
 
     static int foo_settings_set(int argc, char **argv, char *val)
@@ -103,7 +103,7 @@ Example: Persist Runtime State
 ******************************
 
 This is a simple example showing how to persist runtime state. In this example,
-only ``ch_set`` is defined, which is used when restoring value from
+only ``h_set`` is defined, which is used when restoring value from
 persisted storage.
 
 In this example, the ``foo_callout`` function increments ``foo_val``, and then
@@ -116,8 +116,8 @@ up from where it was before restart.
     static int8 foo_val;
 
     struct settings_handler my_conf = {
-        .ch_name = "foo",
-        .ch_set = foo_settings_set
+        .h_name = "foo",
+        .h_set = foo_settings_set
     }
 
     static int foo_settings_set(int argc, char **argv, char *val)

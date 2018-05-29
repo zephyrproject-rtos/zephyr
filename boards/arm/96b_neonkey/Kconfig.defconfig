@@ -8,7 +8,7 @@
 if BOARD_96B_NEONKEY
 
 config BOARD
-	default 96b_neonkey
+	default "96b_neonkey"
 
 if UART_CONSOLE
 

@@ -741,7 +741,7 @@ static int do_write_op_tlv_item(struct lwm2m_engine_context *context)
 		return -ENOENT;
 	}
 
-	if ((obj_field->permissions & LWM2M_PERM_W) != LWM2M_PERM_W) {
+	if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_W)) {
 		return -EPERM;
 	}
 

@@ -18,9 +18,9 @@ inspired by Vi:
   g/Home  : Jump to beginning of list
 
 The mconf feature where pressing a key jumps to a menu entry with that
-character in it in the current menu isn't supported. A search feature with a
-"jump to" function for jumping directly to a particular symbol regardless of
-where it is defined will be added later instead.
+character in it in the current menu isn't supported. A jump-to feature for
+jumping directly to any symbol (including invisible symbols) is available
+instead.
 
 Space and Enter are "smart" and try to do what you'd expect for the given
 menu entry.
@@ -78,16 +78,48 @@ Limitations
     https://www.lfd.uci.edu/~gohlke/pythonlibs/#curses though.
 """
 
+import curses
+import errno
+import locale
+import os
+import platform
+import re
+import sys
+import textwrap
+
+# We need this double import for the _expr_str() override below
+import kconfiglib
+
+from kconfiglib import Kconfig, \
+                       Symbol, Choice, MENU, COMMENT, MenuNode, \
+                       BOOL, TRISTATE, STRING, INT, HEX, UNKNOWN, \
+                       AND, OR, NOT, \
+                       expr_value, split_expr, \
+                       TRI_TO_STR, TYPE_TO_STR
+
 
 #
 # Configuration variables
 #
 
+# If True, try to convert LC_CTYPE to a UTF-8 locale if it is set to the C
+# locale (which implies ASCII). This fixes curses Unicode I/O issues on systems
+# with bad defaults. ncurses configures itself from the locale settings.
+#
+# Related PEP: https://www.python.org/dev/peps/pep-0538/
+_CONVERT_C_LC_CTYPE_TO_UTF8 = True
+
+# How many steps an implicit submenu will be indented. Implicit submenus are
+# created when an item depends on the symbol before it. Note that symbols
+# defined with 'menuconfig' create a separate menu instead of indenting.
+_SUBMENU_INDENT = 4
+
 # Number of steps for Page Up/Down to jump
 _PG_JUMP = 6
 
 # How far the cursor needs to be from the edge of the window before it starts
-# to scroll
+# to scroll. Used for the main menu display, the information display, the
+# search display, and for text boxes.
 _SCROLL_OFFSET = 5
 
 # Minimum width of dialogs that ask for text input
@@ -98,31 +130,40 @@ _N_SCROLL_ARROWS = 14
 
 # Lines of help text shown at the bottom of the "main" display
 _MAIN_HELP_LINES = """
-[Space/Enter] Toggle/enter   [ESC] Leave menu   [S] Save
-[M] Save minimal config      [?] Symbol info    [Q] Quit (prompts for save)
+[Space/Enter] Toggle/enter   [ESC] Leave menu    [S] Save
+[O] Load                     [?] Symbol info     [/] Jump to symbol
+[A] Toggle show-all mode     [C] Toggle show-name mode
+[Q] Quit (prompts for save)  [D] Save minimal config (advanced)
 """[1:-1].split("\n")
 
-# Lines of help text shown at the bottom of the information display
+# Lines of help text shown at the bottom of the information dialog
 _INFO_HELP_LINES = """
 [ESC/q] Return to menu
 """[1:-1].split("\n")
 
+# Lines of help text shown at the bottom of the search dialog
+_JUMP_TO_HELP_LINES = """
+Type text to narrow the search. Regexes are supported (via Python's 're'
+module). The up/down cursor keys step in the list. [Enter] jumps to the
+selected symbol. [ESC] aborts the search. Type multiple space-separated
+strings/regexes to find entries that match all of them.
+"""[1:-1].split("\n")
+
 def _init_styles():
-    global _PATH_STYLE
-    global _TOP_SEP_STYLE
-    global _MENU_LIST_STYLE
-    global _MENU_LIST_SEL_STYLE
-    global _BOT_SEP_STYLE
+    global _SEPARATOR_STYLE
     global _HELP_STYLE
+    global _LIST_STYLE
+    global _LIST_SEL_STYLE
+    global _LIST_INVISIBLE_STYLE
+    global _LIST_INVISIBLE_SEL_STYLE
+    global _INPUT_FIELD_STYLE
+
+    global _PATH_STYLE
 
     global _DIALOG_FRAME_STYLE
     global _DIALOG_BODY_STYLE
-    global _INPUT_FIELD_STYLE
 
-    global _INFO_TOP_LINE_STYLE
     global _INFO_TEXT_STYLE
-    global _INFO_BOT_SEP_STYLE
-    global _INFO_HELP_STYLE
 
     # Initialize styles for different parts of the application. The arguments
     # are ordered as follows:
@@ -137,101 +178,71 @@ def _init_styles():
     # A_BOLD tends to produce faint and hard-to-read text on the Windows
     # console, especially with the old color scheme, before the introduction of
     # https://blogs.msdn.microsoft.com/commandline/2017/08/02/updating-the-windows-console-colors/
-    BOLD = curses.A_NORMAL if platform.system() == "Windows" else curses.A_BOLD
+    BOLD = curses.A_NORMAL if _IS_WINDOWS else curses.A_BOLD
 
 
-    # Top row, with menu path
-    _PATH_STYLE          = _style(curses.COLOR_BLACK, curses.COLOR_WHITE,  BOLD                              )
+    # Separator lines between windows. Also used for the top line in the symbol
+    # information dialog.
+    _SEPARATOR_STYLE          = _style(curses.COLOR_BLACK, curses.COLOR_YELLOW, BOLD,            curses.A_STANDOUT)
 
-    # Separator below menu path, with title and arrows pointing up
-    _TOP_SEP_STYLE       = _style(curses.COLOR_BLACK, curses.COLOR_YELLOW, BOLD,            curses.A_STANDOUT)
+    # Edit boxes
+    _INPUT_FIELD_STYLE        = _style(curses.COLOR_WHITE, curses.COLOR_BLUE,   curses.A_NORMAL, curses.A_STANDOUT)
 
-    # The "main" menu display with the list of symbols, etc.
-    _MENU_LIST_STYLE     = _style(curses.COLOR_BLACK, curses.COLOR_WHITE,  curses.A_NORMAL                   )
+    # List of items, e.g. the main display
+    _LIST_STYLE               = _style(curses.COLOR_BLACK, curses.COLOR_WHITE,  curses.A_NORMAL                   )
+    # Style for the selected item
+    _LIST_SEL_STYLE           = _style(curses.COLOR_WHITE, curses.COLOR_BLUE,   curses.A_NORMAL, curses.A_STANDOUT)
 
-    # Selected menu entry
-    _MENU_LIST_SEL_STYLE = _style(curses.COLOR_WHITE, curses.COLOR_BLUE,   curses.A_NORMAL, curses.A_STANDOUT)
+    # Like _LIST_(SEL_)STYLE, for invisible items. Used in show-all mode.
+    _LIST_INVISIBLE_STYLE     = _style(curses.COLOR_RED,   curses.COLOR_WHITE,  curses.A_NORMAL, BOLD             )
+    _LIST_INVISIBLE_SEL_STYLE = _style(curses.COLOR_RED,   curses.COLOR_BLUE,   curses.A_NORMAL, curses.A_STANDOUT)
 
-    # Row below menu list, with arrows pointing down
-    _BOT_SEP_STYLE       = _style(curses.COLOR_BLACK, curses.COLOR_YELLOW, BOLD,            curses.A_STANDOUT)
+    # Help text windows at the bottom of various fullscreen dialogs
+    _HELP_STYLE               = _style(curses.COLOR_BLACK, curses.COLOR_WHITE,  BOLD                              )
 
-    # Help window with keys at the bottom
-    _HELP_STYLE          = _style(curses.COLOR_BLACK, curses.COLOR_WHITE,  BOLD                              )
+    # Top row in the main display, with the menu path
+    _PATH_STYLE               = _style(curses.COLOR_BLACK, curses.COLOR_WHITE,  BOLD                              )
 
+    # Symbol information text
+    _INFO_TEXT_STYLE          = _LIST_STYLE
 
     # Frame around dialog boxes
-    _DIALOG_FRAME_STYLE  = _style(curses.COLOR_BLACK, curses.COLOR_YELLOW, BOLD,            curses.A_STANDOUT)
-
+    _DIALOG_FRAME_STYLE       = _style(curses.COLOR_BLACK, curses.COLOR_YELLOW, BOLD,            curses.A_STANDOUT)
     # Body of dialog boxes
-    _DIALOG_BODY_STYLE   = _style(curses.COLOR_WHITE, curses.COLOR_BLACK,  curses.A_NORMAL                   )
-
-    # Text input field in dialog boxes
-    _INPUT_FIELD_STYLE   = _style(curses.COLOR_WHITE, curses.COLOR_BLUE,   curses.A_NORMAL, curses.A_STANDOUT)
-
-
-    # Top line of information display, with title and arrows pointing up
-    _INFO_TOP_LINE_STYLE = _style(curses.COLOR_BLACK, curses.COLOR_YELLOW, BOLD,            curses.A_STANDOUT)
-
-    # Main information display window
-    _INFO_TEXT_STYLE     = _style(curses.COLOR_BLACK, curses.COLOR_WHITE,  curses.A_NORMAL                   )
-
-    # Separator below information display, with arrows pointing down
-    _INFO_BOT_SEP_STYLE  = _style(curses.COLOR_BLACK, curses.COLOR_YELLOW, BOLD,            curses.A_STANDOUT)
-
-    # Help window with keys at the bottom of the information display
-    _INFO_HELP_STYLE     = _style(curses.COLOR_BLACK, curses.COLOR_WHITE,  BOLD                              )
+    _DIALOG_BODY_STYLE        = _style(curses.COLOR_WHITE, curses.COLOR_BLACK,  curses.A_NORMAL                   )
 
 
 #
 # Main application
 #
 
-from kconfiglib import Kconfig, \
-                       Symbol, Choice, MENU, COMMENT, \
-                       BOOL, TRISTATE, STRING, INT, HEX, UNKNOWN, \
-                       AND, OR, NOT, \
-                       expr_value, split_expr, \
-                       TRI_TO_STR, TYPE_TO_STR
-
-# We need this double import for the _expr_str() override below
-import kconfiglib
-
-import curses
-import errno
-import locale
-import os
-import platform
-import sys
-import textwrap
-
-
-# Color pairs we've already created, indexed by a
-# (<foreground color>, <background color>) tuple
-_color_attribs = {}
-
-def _style(fg_color, bg_color, attribs, no_color_extra_attribs=0):
+# color_attribs holds the color pairs we've already created, indexed by a
+# (<foreground color>, <background color>) tuple.
+#
+# Obscure Python: We never pass a value for color_attribs, and it keeps
+# pointing to the same dict. This avoids a global.
+def _style(fg_color, bg_color, attribs, no_color_extra_attribs=0,
+           color_attribs={}):
     # Returns an attribute with the specified foreground and background color
     # and the attributes in 'attribs'. Reuses color pairs already created if
     # possible, and creates a new color pair otherwise.
     #
     # Returns 'attribs | no_color_extra_attribs' if colors aren't supported.
 
-    global _color_attribs
-
     if not curses.has_colors():
         return attribs | no_color_extra_attribs
 
-    if (fg_color, bg_color) not in _color_attribs:
+    if (fg_color, bg_color) not in color_attribs:
         # Create new color pair. Color pair number 0 is hardcoded and cannot be
         # changed, hence the +1s.
-        curses.init_pair(len(_color_attribs) + 1, fg_color, bg_color)
-        _color_attribs[(fg_color, bg_color)] = \
-            curses.color_pair(len(_color_attribs) + 1)
+        curses.init_pair(len(color_attribs) + 1, fg_color, bg_color)
+        color_attribs[(fg_color, bg_color)] = \
+            curses.color_pair(len(color_attribs) + 1)
 
-    return _color_attribs[(fg_color, bg_color)] | attribs
+    return color_attribs[(fg_color, bg_color)] | attribs
 
 # "Extend" the standard kconfiglib.expr_str() to show values for symbols
-# appearing in expressions, for the information display.
+# appearing in expressions, for the information dialog.
 #
 # This is a bit hacky, but officially supported. It beats having to reimplement
 # expression printing just to tweak it a bit.
@@ -277,36 +288,50 @@ def menuconfig(kconf):
 
     globals()["_kconf"] = kconf
     global _config_filename
+    global _show_all
 
 
     _config_filename = os.environ.get("KCONFIG_CONFIG")
     if _config_filename is None:
         _config_filename = ".config"
 
+
     if os.path.exists(_config_filename):
         print("Using existing configuration '{}' as base"
               .format(_config_filename))
         _kconf.load_config(_config_filename)
+
     elif kconf.defconfig_filename is not None:
         print("Using default configuration found in '{}' as base"
               .format(kconf.defconfig_filename))
         _kconf.load_config(kconf.defconfig_filename)
+
     else:
         print("Using default symbol values as base")
 
 
-    # We rely on having a selected node
-    if not _visible_nodes(_kconf.top_node):
-        print("No visible symbols in the top menu -- nothing to configure.\n"
-              "Check that environment variables are set properly.")
-        return
+    # Any visible items in the top menu?
+    _show_all = False
+    if not _shown_nodes(_kconf.top_node):
+        # Nothing visible. Start in show-all mode and try again.
+        _show_all = True
+        if not _shown_nodes(_kconf.top_node):
+            # Give up. The implementation relies on always having a selected
+            # node.
+            print("Empty configuration -- nothing to configure.\n"
+                  "Check that environment variables are set properly.")
+            return
 
     # Disable warnings. They get mangled in curses mode, and we deal with
     # errors ourselves.
     _kconf.disable_warnings()
 
-    # Make sure curses uses the encoding specified in the environment
+    # Make curses use the locale settings specified in the environment
     locale.setlocale(locale.LC_ALL, "")
+
+    # Try to fix Unicode issues on systems with bad defaults
+    if _CONVERT_C_LC_CTYPE_TO_UTF8:
+        _convert_c_lc_ctype_to_utf8()
 
     # Get rid of the delay between pressing ESC and jumping to the parent menu
     os.environ.setdefault("ESCDELAY", "0")
@@ -321,24 +346,45 @@ def menuconfig(kconf):
 #     Menu node of the menu (or menuconfig symbol, or choice) currently being
 #     shown
 #
-#   _visible:
-#     List of visible symbols in _cur_menu
+#   _shown:
+#     List of items in _cur_menu that are shown (ignoring scrolling). In
+#     show-all mode, this list contains all items in _cur_menu. Otherwise, it
+#     contains just the visible items.
 #
 #   _sel_node_i:
-#     Index in _visible of the currently selected node
+#     Index in _shown of the currently selected node
 #
 #   _menu_scroll:
-#     Index in _visible of the top row of the menu display
+#     Index in _shown of the top row of the main display
 #
 #   _parent_screen_rows:
 #     List/stack of the row numbers that the selections in the parent menus
 #     appeared on. This is used to prevent the scrolling from jumping around
 #     when going in and out of menus.
+#
+#   _show_all:
+#     If True, "show-all" mode is on. Show-all mode shows all symbols and other
+#     items in the current menu, including those that lack a prompt or aren't
+#     currently visible.
+#
+#     Invisible items are drawn in a different style to make them stand out.
+#
+#   _show_name:
+#     If True, the names of all symbol are shown in addition to the prompt.
+#
+#   _conf_changed:
+#     True if the configuration has been changed. If False, we don't bother
+#     showing the save-and-quit dialog.
+#
+#     We reset this to False whenever the configuration is saved explicitly
+#     from the save dialog.
 
 def _menuconfig(stdscr):
-    # Logic for the "main" display, with the list of symbols, etc.
+    # Logic for the main display, with the list of symbols, etc.
 
     globals()["stdscr"] = stdscr
+    global _conf_changed
+    global _show_name
 
     _init()
 
@@ -378,7 +424,7 @@ def _menuconfig(stdscr):
             # Do appropriate node action. Only Space is treated specially,
             # preferring to toggle nodes rather than enter menus.
 
-            sel_node = _visible[_sel_node_i]
+            sel_node = _shown[_sel_node_i]
 
             if sel_node.is_menuconfig and not \
                (c == " " and _prefer_toggle(sel_node.item)):
@@ -392,44 +438,99 @@ def _menuconfig(stdscr):
                     # selection, like 'make menuconfig' does
                     _leave_menu()
 
+        elif c in ("n", "N"):
+            _set_node_tri_val(_shown[_sel_node_i], 0)
+
+        elif c in ("m", "M"):
+            _set_node_tri_val(_shown[_sel_node_i], 1)
+
+        elif c in ("y", "Y"):
+            _set_node_tri_val(_shown[_sel_node_i], 2)
+
         elif c in (curses.KEY_LEFT, curses.KEY_BACKSPACE, _ERASE_CHAR,
                    "\x1B",  # \x1B = ESC
                    "h", "H"):
 
-            _leave_menu()
+            if c == "\x1B" and _cur_menu is _kconf.top_node:
+                res = quit_dialog()
+                if res:
+                    return res
+            else:
+                _leave_menu()
+
+        elif c in ("o", "O"):
+            if _conf_changed:
+                c = _key_dialog(
+                    "Load",
+                    "You have unsaved changes. Load new\n"
+                    "configuration anyway?\n"
+                    "\n"
+                    "        (Y)es  (C)ancel",
+                    "yc")
+
+                if c is None or c == "c":
+                    continue
+
+            if _load_dialog():
+                _conf_changed = False
 
         elif c in ("s", "S"):
-            _save_dialog(_kconf.write_config, _config_filename,
-                         "configuration")
+            if _save_dialog(_kconf.write_config, _config_filename,
+                            "configuration"):
 
-        elif c in ("m", "M"):
+                _conf_changed = False
+
+        elif c in ("d", "D"):
             _save_dialog(_kconf.write_min_config, "defconfig",
                          "minimal configuration")
 
+        elif c == "/":
+            _jump_to_dialog()
+            # The terminal might have been resized while the fullscreen jump-to
+            # dialog was open
+            _resize_main()
+
         elif c == "?":
-            _display_info(_visible[_sel_node_i])
+            _info_dialog(_shown[_sel_node_i])
+            # The terminal might have been resized while the fullscreen info
+            # dialog was open
+            _resize_main()
+
+        elif c in ("a", "A"):
+            _toggle_show_all()
+
+        elif c in ("c", "C"):
+            _show_name = not _show_name
 
         elif c in ("q", "Q"):
-            while True:
-                c = _key_dialog(
-                    "Quit",
-                    " Save configuration?\n"
-                    "\n"
-                    "(Y)es  (N)o  (C)ancel",
-                    "ync")
+            res = quit_dialog()
+            if res:
+                return res
 
-                if c is None or c == "c":
-                    break
+def quit_dialog():
+   if not _conf_changed:
+       return "No changes to save"
 
-                if c == "y":
-                    if _try_save(_kconf.write_config, _config_filename,
-                                 "configuration"):
+   while True:
+       c = _key_dialog(
+           "Quit",
+           " Save configuration?\n"
+           "\n"
+           "(Y)es  (N)o  (C)ancel",
+           "ync")
 
-                        return "Configuration saved to '{}'" \
-                               .format(_config_filename)
+       if c is None or c == "c":
+           return None
 
-                elif c == "n":
-                    return "Configuration was not saved"
+       if c == "y":
+           if _try_save(_kconf.write_config, _config_filename,
+                        "configuration"):
+
+               return "Configuration saved to '{}'" \
+                      .format(_config_filename)
+
+       elif c == "n":
+           return "Configuration was not saved"
 
 def _init():
     # Initializes the main display with the list of symbols, etc. Also does
@@ -446,9 +547,13 @@ def _init():
 
     global _parent_screen_rows
     global _cur_menu
-    global _visible
+    global _shown
     global _sel_node_i
     global _menu_scroll
+
+    global _show_name
+
+    global _conf_changed
 
     # Looking for this in addition to KEY_BACKSPACE (which is unreliable) makes
     # backspace work with TERM=vt100. That makes it likely to work in sane
@@ -469,14 +574,14 @@ def _init():
     _path_win = _styled_win(_PATH_STYLE)
 
     # Separator below menu path, with title and arrows pointing up
-    _top_sep_win = _styled_win(_TOP_SEP_STYLE)
+    _top_sep_win = _styled_win(_SEPARATOR_STYLE)
 
     # List of menu entries with symbols, etc.
-    _menu_win = _styled_win(_MENU_LIST_STYLE)
+    _menu_win = _styled_win(_LIST_STYLE)
     _menu_win.keypad(True)
 
     # Row below menu list, with arrows pointing down
-    _bot_sep_win = _styled_win(_BOT_SEP_STYLE)
+    _bot_sep_win = _styled_win(_SEPARATOR_STYLE)
 
     # Help window with keys at the bottom
     _help_win = _styled_win(_HELP_STYLE)
@@ -486,17 +591,23 @@ def _init():
     _parent_screen_rows = []
 
     # Initial state
+
     _cur_menu = _kconf.top_node
-    _visible = _visible_nodes(_cur_menu)
+    _shown = _shown_nodes(_cur_menu)
     _sel_node_i = 0
     _menu_scroll = 0
+
+    _show_name = False
 
     # Give windows their initial size
     _resize_main()
 
+    # No changes yet
+    _conf_changed = False
+
 def _resize_main():
-    # Resizes the "main" display, with the list of menu entries, etc., to a
-    # size appropriate for the terminal size
+    # Resizes the main display, with the list of symbols, etc., to fill the
+    # terminal
 
     global _menu_scroll
 
@@ -528,8 +639,8 @@ def _resize_main():
         for win in _top_sep_win, _menu_win, _bot_sep_win, _help_win:
             win.mvwin(0, 0)
 
-    # Adjust the scroll so that the selected node is still within the
-    # window, if needed
+    # Adjust the scroll so that the selected node is still within the window,
+    # if needed
     if _sel_node_i - _menu_scroll >= menu_win_height:
         _menu_scroll = _sel_node_i - menu_win_height + 1
 
@@ -537,12 +648,6 @@ def _menu_win_height():
     # Returns the height of the menu display
 
     return _menu_win.getmaxyx()[0]
-
-def _max_menu_scroll():
-    # Returns the maximum amount the menu display can be scrolled down. We stop
-    # scrolling when the bottom node is visible.
-
-    return max(0, len(_visible) - _menu_win_height())
 
 def _prefer_toggle(item):
     # For nodes with menus, determines whether Space should change the value of
@@ -557,29 +662,54 @@ def _enter_menu(menu):
     # Makes 'menu' the currently displayed menu
 
     global _cur_menu
-    global _visible
+    global _shown
     global _sel_node_i
     global _menu_scroll
 
-    visible_sub = _visible_nodes(menu)
+    shown_sub = _shown_nodes(menu)
     # Never enter empty menus. We depend on having a current node.
-    if visible_sub:
+    if shown_sub:
         # Remember where the current node appears on the screen, so we can try
         # to get it to appear in the same place when we leave the menu
         _parent_screen_rows.append(_sel_node_i - _menu_scroll)
 
         # Jump into menu
         _cur_menu = menu
-        _visible = visible_sub
+        _shown = shown_sub
         _sel_node_i = 0
         _menu_scroll = 0
+
+def _jump_to(node):
+    # Jumps directly to the menu node 'node'
+
+    global _cur_menu
+    global _shown
+    global _sel_node_i
+    global _menu_scroll
+    global _show_all
+    global _parent_screen_rows
+
+    # Clear remembered menu locations. We might not even have been in the
+    # parent menus before.
+    _parent_screen_rows = []
+
+    # Turn on show-all mode if the node isn't visible
+    if not (node.prompt and expr_value(node.prompt[1])):
+        _show_all = True
+
+    _cur_menu = _parent_menu(node)
+    _shown = _shown_nodes(_cur_menu)
+    _sel_node_i = _shown.index(node)
+
+    # Center the jumped-to node vertically, if possible
+    _menu_scroll = max(_sel_node_i - _menu_win_height()//2, 0)
 
 def _leave_menu():
     # Jumps to the parent menu of the current menu. Does nothing if we're in
     # the top menu.
 
     global _cur_menu
-    global _visible
+    global _shown
     global _sel_node_i
     global _menu_scroll
 
@@ -588,13 +718,21 @@ def _leave_menu():
 
     # Jump to parent menu
     parent = _parent_menu(_cur_menu)
-    _visible = _visible_nodes(parent)
-    _sel_node_i = _visible.index(_cur_menu)
+    _shown = _shown_nodes(parent)
+    _sel_node_i = _shown.index(_cur_menu)
     _cur_menu = parent
 
     # Try to make the menu entry appear on the same row on the screen as it did
-    # before we entered the menu
-    _menu_scroll = max(_sel_node_i - _parent_screen_rows.pop(), 0)
+    # before we entered the menu.
+
+    if _parent_screen_rows:
+        # The terminal might have shrunk since we were last in the parent menu
+        screen_row = min(_parent_screen_rows.pop(), _menu_win_height() - 1)
+        _menu_scroll = max(_sel_node_i - screen_row, 0)
+    else:
+        # No saved parent menu locations, meaning we jumped directly to some
+        # node earlier. Just center the node vertically if possible.
+        _menu_scroll = max(_sel_node_i - _menu_win_height()//2, 0)
 
 def _select_next_menu_entry():
     # Selects the menu entry after the current one, adjusting the scroll if
@@ -603,7 +741,7 @@ def _select_next_menu_entry():
     global _sel_node_i
     global _menu_scroll
 
-    if _sel_node_i < len(_visible) - 1:
+    if _sel_node_i < len(_shown) - 1:
         # Jump to the next node
         _sel_node_i += 1
 
@@ -612,7 +750,8 @@ def _select_next_menu_entry():
         # gives nice and non-jumpy behavior even when
         # _SCROLL_OFFSET >= _menu_win_height().
         if _sel_node_i >= _menu_scroll + _menu_win_height() - _SCROLL_OFFSET:
-            _menu_scroll = min(_menu_scroll + 1, _max_menu_scroll())
+            _menu_scroll = min(_menu_scroll + 1,
+                               _max_scroll(_shown, _menu_win))
 
 def _select_prev_menu_entry():
     # Selects the menu entry before the current one, adjusting the scroll if
@@ -635,8 +774,8 @@ def _select_last_menu_entry():
     global _sel_node_i
     global _menu_scroll
 
-    _sel_node_i = len(_visible) - 1
-    _menu_scroll = _max_menu_scroll()
+    _sel_node_i = len(_shown) - 1
+    _menu_scroll = _max_scroll(_shown, _menu_win)
 
 def _select_first_menu_entry():
     # Selects the first menu entry in the current menu
@@ -646,12 +785,61 @@ def _select_first_menu_entry():
 
     _sel_node_i = _menu_scroll = 0
 
+def _toggle_show_all():
+    # Toggles show-all mode on/off
+
+    global _show_all
+    global _shown
+    global _sel_node_i
+    global _menu_scroll
+
+    # Row on the screen the cursor is on. Preferably we want the same row to
+    # stay highlighted.
+    old_row = _sel_node_i - _menu_scroll
+
+    _show_all = not _show_all
+    # List of new nodes to be shown after toggling _show_all
+    new_shown = _shown_nodes(_cur_menu)
+
+    # Find a good node to select. The selected node might disappear if show-all
+    # mode is turned off.
+
+    # If there are visible nodes before the previously selected node, select
+    # the closest one. This will select the previously selected node itself if
+    # it is still visible.
+    for node in reversed(_shown[:_sel_node_i + 1]):
+        if node in new_shown:
+            _sel_node_i = new_shown.index(node)
+            break
+    else:
+        # No visible nodes before the previously selected node. Select the
+        # closest visible node after it instead.
+        for node in _shown[_sel_node_i + 1:]:
+            if node in new_shown:
+                _sel_node_i = new_shown.index(node)
+                break
+        else:
+            # No visible nodes at all, meaning show-all was turned off inside
+            # an invisible menu. Don't allow that, as the implementation relies
+            # on always having a selected node.
+            _show_all = True
+
+            return
+
+    _shown = new_shown
+
+    # Try to make the cursor stay on the same row in the menu window. This
+    # might be impossible if too many nodes have disappeared above the node.
+    _menu_scroll = max(_sel_node_i - old_row, 0)
+
 def _draw_main():
     # Draws the "main" display, with the list of symbols, the header, and the
     # footer.
     #
     # This could be optimized to only update the windows that have actually
     # changed, but keep it simple for now and let curses sort it out.
+
+    term_width = stdscr.getmaxyx()[1]
 
 
     #
@@ -666,14 +854,26 @@ def _draw_main():
 
     menu = _cur_menu
     while menu is not _kconf.top_node:
-        menu_prompts.insert(0, menu.prompt[0])
-        menu = menu.parent
+        menu_prompts.append(menu.prompt[0])
+        menu = _parent_menu(menu)
+    menu_prompts.append("(top menu)")
+    menu_prompts.reverse()
 
-    _safe_addstr(_path_win, 0, 0, "(top menu)")
-    for prompt in menu_prompts:
-        _safe_addch(_path_win, " ")
+    # Hack: We can't put ACS_RARROW directly in the string. Temporarily
+    # represent it with NULL. Maybe using a Unicode character would be better.
+    menu_path_str = " \0 ".join(menu_prompts)
+
+    # Scroll the menu path to the right if needed to make the current menu's
+    # title visible
+    if len(menu_path_str) > term_width:
+        menu_path_str = menu_path_str[len(menu_path_str) - term_width:]
+
+    # Print the path with the arrows reinserted
+    split_path = menu_path_str.split("\0")
+    _safe_addstr(_path_win, split_path[0])
+    for s in split_path[1:]:
         _safe_addch(_path_win, curses.ACS_RARROW)
-        _safe_addstr(_path_win, " " + prompt)
+        _safe_addstr(_path_win, s)
 
     _path_win.noutrefresh()
 
@@ -691,7 +891,7 @@ def _draw_main():
 
     # Add the 'mainmenu' text as the title, centered at the top
     _safe_addstr(_top_sep_win,
-                 0, (stdscr.getmaxyx()[1] - len(_kconf.mainmenu_text))//2,
+                 0, (term_width - len(_kconf.mainmenu_text))//2,
                  _kconf.mainmenu_text)
 
     _top_sep_win.noutrefresh()
@@ -703,16 +903,20 @@ def _draw_main():
 
     _menu_win.erase()
 
-    # Draw the _visible nodes starting from index _menu_scroll up to either as
-    # many as fit in the window, or to the end of _visible
+    # Draw the _shown nodes starting from index _menu_scroll up to either as
+    # many as fit in the window, or to the end of _shown
     for i in range(_menu_scroll,
-                   min(_menu_scroll + _menu_win_height(), len(_visible))):
+                   min(_menu_scroll + _menu_win_height(), len(_shown))):
 
-        _safe_addstr(_menu_win, i - _menu_scroll, 0,
-                     _node_str(_visible[i]),
-                     # Highlight the selected entry
-                     _MENU_LIST_SEL_STYLE
-                         if i == _sel_node_i else curses.A_NORMAL)
+        node = _shown[i]
+
+        if node.prompt and expr_value(node.prompt[1]):
+            style = _LIST_SEL_STYLE if i == _sel_node_i else _LIST_STYLE
+        else:
+            style = _LIST_INVISIBLE_SEL_STYLE if i == _sel_node_i else \
+                    _LIST_INVISIBLE_STYLE
+
+        _safe_addstr(_menu_win, i - _menu_scroll, 0, _node_str(node), style)
 
     _menu_win.noutrefresh()
 
@@ -724,8 +928,18 @@ def _draw_main():
     _bot_sep_win.erase()
 
     # Draw arrows pointing down if the symbol window is scrolled up
-    if _menu_scroll < _max_menu_scroll():
+    if _menu_scroll < _max_scroll(_shown, _menu_win):
         _safe_hline(_bot_sep_win, 0, 4, curses.ACS_DARROW, _N_SCROLL_ARROWS)
+
+    # Indicate when show-all and/or show-name mode is enabled
+    enabled_modes = []
+    if _show_all:
+        enabled_modes.append("show-all")
+    if _show_name:
+        enabled_modes.append("show-name")
+    if enabled_modes:
+        s = " and ".join(enabled_modes) + " mode enabled"
+        _safe_addstr(_bot_sep_win, 0, term_width - len(s) - 2, s)
 
     _bot_sep_win.noutrefresh()
 
@@ -744,50 +958,52 @@ def _draw_main():
 def _parent_menu(node):
     # Returns the menu node of the menu that contains 'node'. In addition to
     # proper 'menu's, this might also be a 'menuconfig' symbol or a 'choice'.
-    # "Menu" here means a menu in the interface (a list of menu entries).
+    # "Menu" here means a menu in the interface.
 
     menu = node.parent
     while not menu.is_menuconfig:
         menu = menu.parent
     return menu
 
-def _visible_nodes(menu):
+def _shown_nodes(menu):
     # Returns a list of the nodes in 'menu' (see _parent_menu()) that should be
-    # visible in the menu window
+    # shown in the menu window
+
+    res = []
 
     def rec(node):
-        res = []
+        nonlocal res
 
         while node:
             # Show the node if its prompt is visible. For menus, also check
-            # 'visible if'.
-            if node.prompt and expr_value(node.prompt[1]) and not \
-               (node.item == MENU and not expr_value(node.visibility)):
+            # 'visible if'. In show-all mode, show everything.
+            if _show_all or \
+               (node.prompt and expr_value(node.prompt[1]) and not \
+                (node.item == MENU and not expr_value(node.visibility))):
+
                 res.append(node)
 
                 # If a node has children but doesn't have the is_menuconfig
                 # flag set, the children come from a submenu created implicitly
                 # from dependencies. Show those in this menu too.
                 if node.list and not node.is_menuconfig:
-                    res.extend(rec(node.list))
+                    rec(node.list)
 
             node = node.next
 
-        return res
-
-    return rec(menu.list)
+    rec(menu.list)
+    return res
 
 def _change_node(node):
     # Changes the value of the menu node 'node' if it is a symbol. Bools and
     # tristates are toggled, while other symbol types pop up a text entry
     # dialog.
 
-    global _cur_menu
-    global _visible
-    global _sel_node_i
-    global _menu_scroll
-
     if not isinstance(node.item, (Symbol, Choice)):
+        return
+
+    # This will hit for invisible symbols in show-all mode
+    if not (node.prompt and expr_value(node.prompt[1])):
         return
 
     # sc = symbol/choice
@@ -813,34 +1029,71 @@ def _change_node(node):
                     s = "0x" + s
 
             if _check_validity(sc, s):
-                sc.set_value(s)
+                _set_val(sc, s)
                 break
 
     elif len(sc.assignable) == 1:
         # Handles choice symbols for choices in y mode, which are a special
         # case: .assignable can be (2,) while .tri_value is 0.
-        sc.set_value(sc.assignable[0])
+        _set_val(sc, sc.assignable[0])
 
     else:
         # Set the symbol to the value after the current value in
         # sc.assignable, with wrapping
         val_index = sc.assignable.index(sc.tri_value)
-        sc.set_value(
-            sc.assignable[(val_index + 1) % len(sc.assignable)])
+        _set_val(sc, sc.assignable[(val_index + 1) % len(sc.assignable)])
 
-    # Changing the value of the symbol might have changed what items in the
-    # current menu are visible. Recalculate the state.
+    _update_menu()
+
+def _set_node_tri_val(node, tri_val):
+    # Sets 'node' to 'tri_val', if that value can be assigned
+
+    if isinstance(node.item, (Symbol, Choice)) and \
+       tri_val in node.item.assignable:
+
+        _set_val(node.item, tri_val)
+
+def _set_val(sc, val):
+    # Wrapper around Symbol/Choice.set_value() for updating the menu state and
+    # _conf_changed
+
+    global _conf_changed
+
+    # Use the string representation of tristate values. This makes the format
+    # consistent for all symbol types.
+    if val in TRI_TO_STR:
+        val = TRI_TO_STR[val]
+
+    if val != sc.str_value:
+        sc.set_value(val)
+        _conf_changed = True
+
+        # Changing the value of the symbol might have changed what items in the
+        # current menu are visible. Recalculate the state.
+        _update_menu()
+
+def _update_menu():
+    # Updates the current menu after the value of a symbol or choice has been
+    # changed. Changing a value might change which items in the menu are
+    # visible.
+    #
+    # Tries to preserve the location of the cursor when items disappear above
+    # it.
+
+    global _shown
+    global _sel_node_i
+    global _menu_scroll
 
     # Row on the screen the cursor was on
     old_row = _sel_node_i - _menu_scroll
 
-    sel_node = _visible[_sel_node_i]
+    sel_node = _shown[_sel_node_i]
 
     # New visible nodes
-    _visible = _visible_nodes(_cur_menu)
+    _shown = _shown_nodes(_cur_menu)
 
     # New index of selected node
-    _sel_node_i = _visible.index(sel_node)
+    _sel_node_i = _shown.index(sel_node)
 
     # Try to make the cursor stay on the same row in the menu window. This
     # might be impossible if too many nodes have disappeared above the node.
@@ -862,8 +1115,10 @@ def _input_dialog(title, initial_text, info_text=None):
     win = _styled_win(_DIALOG_BODY_STYLE)
     win.keypad(True)
 
+    info_lines = info_text.split("\n") if info_text else []
+
     # Give the input dialog its initial size
-    _resize_input_dialog(win, title, info_text)
+    _resize_input_dialog(win, title, info_lines)
 
     _safe_curs_set(2)
 
@@ -873,26 +1128,18 @@ def _input_dialog(title, initial_text, info_text=None):
     # Cursor position
     i = len(initial_text)
 
+    def edit_width():
+        return win.getmaxyx()[1] - 4
+
     # Horizontal scroll offset
-    hscroll = 0
+    hscroll = max(i - edit_width() + 1, 0)
 
     while True:
-        # Width of input field
-        edit_width = win.getmaxyx()[1] - 4
-
-        # Adjust horizontal scroll if the cursor would be outside the input
-        # field
-        if i < hscroll:
-            hscroll = i
-        elif i >= hscroll + edit_width:
-            hscroll = i - edit_width + 1
-
         # Draw the "main" display with the menu, etc., so that resizing still
         # works properly. This is like a stack of windows, only hardcoded for
         # now.
         _draw_main()
-
-        _draw_input_dialog(win, title, info_text, s, i, hscroll)
+        _draw_input_dialog(win, title, info_lines, s, i, hscroll)
         curses.doupdate()
 
 
@@ -910,61 +1157,31 @@ def _input_dialog(title, initial_text, info_text=None):
         if c == curses.KEY_RESIZE:
             # Resize the main display too. The dialog floats above it.
             _resize_main()
+            _resize_input_dialog(win, title, info_lines)
 
-            _resize_input_dialog(win, title, info_text)
+        else:
+            s, i, hscroll = _edit_text(c, s, i, hscroll, edit_width())
 
-        elif c == curses.KEY_LEFT:
-            if i > 0:
-                i -= 1
-
-        elif c == curses.KEY_RIGHT:
-            if i < len(s):
-                i += 1
-
-        elif c in (curses.KEY_HOME, "\x01"):  # \x01 = CTRL-A
-            i = 0
-
-        elif c in (curses.KEY_END, "\x05"):  # \x05 = CTRL-E
-            i = len(s)
-
-        elif c in (curses.KEY_BACKSPACE, _ERASE_CHAR):
-            if i > 0:
-                s = s[:i-1] + s[i:]
-                i -= 1
-
-        elif c == curses.KEY_DC:
-            s = s[:i] + s[i+1:]
-
-        elif c == "\x0B":  # \x0B = CTRL-K
-            s = s[:i]
-
-        elif c == "\x15":  # \x15 = CTRL-U
-            s = s[i:]
-            i = 0
-
-        elif isinstance(c, str):
-            # Insert character
-
-            s = s[:i] + c + s[i:]
-            i += 1
-
-def _resize_input_dialog(win, title, info_text):
+def _resize_input_dialog(win, title, info_lines):
     # Resizes the input dialog to a size appropriate for the terminal size
 
     screen_height, screen_width = stdscr.getmaxyx()
 
-    win_height = min(5 if info_text is None else 7, screen_height)
+    win_height = 5
+    if info_lines:
+        win_height += len(info_lines) + 1
+    win_height = min(win_height, screen_height)
 
-    win_width = max(_INPUT_DIALOG_MIN_WIDTH, len(title) + 4)
-    if info_text is not None:
-        win_width = max(win_width, len(info_text) + 4)
+    win_width = max(_INPUT_DIALOG_MIN_WIDTH,
+                    len(title) + 4,
+                    *(len(line) + 4 for line in info_lines))
     win_width = min(win_width, screen_width)
 
     win.resize(win_height, win_width)
     win.mvwin((screen_height - win_height)//2,
               (screen_width - win_width)//2)
 
-def _draw_input_dialog(win, title, info_text, s, i, hscroll):
+def _draw_input_dialog(win, title, info_lines, s, i, hscroll):
     edit_width = win.getmaxyx()[1] - 4
 
     win.erase()
@@ -976,15 +1193,72 @@ def _draw_input_dialog(win, title, info_text, s, i, hscroll):
     _safe_addstr(win, 2, 2, visible_s + " "*(edit_width - len(visible_s)),
                  _INPUT_FIELD_STYLE)
 
-    if info_text is not None:
-        _safe_addstr(win, 4, 2, info_text)
+    for linenr, line in enumerate(info_lines):
+        _safe_addstr(win, 4 + linenr, 2, line)
 
     _safe_move(win, 2, 2 + i - hscroll)
 
     win.noutrefresh()
 
+def _load_dialog():
+    # Dialog for loading a new configuration
+    #
+    # Return value:
+    #   True if a new configuration was loaded, and False if the user canceled
+    #   the dialog
+
+    global _show_all
+
+    filename = ""
+    while True:
+        filename = _input_dialog("File to load", filename, _load_save_info())
+
+        if filename is None:
+            return False
+
+        filename = os.path.expanduser(filename)
+
+        if _try_load(filename):
+            sel_node = _shown[_sel_node_i]
+
+            # Turn on show-all mode if the current node is (no longer) visible
+            if not (sel_node.prompt and expr_value(sel_node.prompt[1])):
+                _show_all = True
+
+            _update_menu()
+
+            # The message dialog indirectly updates the menu display, so _msg()
+            # must be called after the new state has been initialized
+            _msg("Success", "Loaded {}".format(filename))
+            return True
+
+def _try_load(filename):
+    # Tries to load a configuration file. Pops up an error and returns False on
+    # failure.
+    #
+    # filename:
+    #   Configuration file to load
+
+    # Hack: strerror and errno are lost after we raise the custom IOError with
+    # troubleshooting help in Kconfig.load_config(). Adding them back to the
+    # exception loses the custom message. As a workaround, try opening the file
+    # separately first and report any errors.
+    try:
+        open(filename).close()
+    except OSError as e:
+        _error("Error loading {}\n\n{} (errno: {})"
+               .format(filename, e.strerror, errno.errorcode[e.errno]))
+        return False
+
+    try:
+        _kconf.load_config(filename)
+        return True
+    except OSError as e:
+        _error("Error loading {}\n\nUnknown error".format(filename))
+        return False
+
 def _save_dialog(save_fn, default_filename, description):
-    # Pops up a dialog that prompts the user for where to save a file
+    # Dialog for saving the current configuration
     #
     # save_fn:
     #   Function to call with 'filename' to save the file
@@ -994,20 +1268,29 @@ def _save_dialog(save_fn, default_filename, description):
     #
     # description:
     #   String describing the thing being saved
+    #
+    # Return value:
+    #   True if the configuration was saved, and False if the user canceled the
+    #   dialog
 
     filename = default_filename
     while True:
-        filename = _input_dialog(
-            "Filename to save {} to".format(description),
-            filename)
+        filename = _input_dialog("Filename to save {} to".format(description),
+                                 filename,
+                                 _load_save_info())
 
-        if filename is None or \
-           _try_save(save_fn, filename, description):
+        if filename is None:
+            return False
 
-            return
+        filename = os.path.expanduser(filename)
+
+        if _try_save(save_fn, filename, description):
+            _msg("Success", "{} saved to {}".format(description, filename))
+            return True
 
 def _try_save(save_fn, filename, description):
-    # Tries to save a file. Pops up an error and returns False on failure.
+    # Tries to save a configuration file. Pops up an error and returns False on
+    # failure.
     #
     # save_fn:
     #   Function to call with 'filename' to save the file
@@ -1051,7 +1334,6 @@ def _key_dialog(title, text, keys):
     while True:
         # See _input_dialog()
         _draw_main()
-
         _draw_key_dialog(win, title, text)
         curses.doupdate()
 
@@ -1065,7 +1347,6 @@ def _key_dialog(title, text, keys):
         if c == curses.KEY_RESIZE:
             # Resize the main display too. The dialog floats above it.
             _resize_main()
-
             _resize_key_dialog(win, text)
 
         elif isinstance(c, str):
@@ -1096,11 +1377,6 @@ def _draw_key_dialog(win, title, text):
 
     win.noutrefresh()
 
-def _error(text):
-    # Pops up an error dialog that can be dismissed with Space/Enter/ESC
-
-    _key_dialog("Error", text, " \n")
-
 def _draw_frame(win, title):
     # Draw a frame around the inner edges of 'win', with 'title' at the top
 
@@ -1121,57 +1397,348 @@ def _draw_frame(win, title):
 
     win.attroff(_DIALOG_FRAME_STYLE)
 
-def _display_info(node):
+def _jump_to_dialog():
+    # Search text
+    s = ""
+    # Previous search text
+    prev_s = None
+    # Search text cursor position
+    s_i = 0
+    # Horizontal scroll offset
+    hscroll = 0
+
+    # Index of selected row
+    sel_node_i = 0
+    # Index in 'matches' of the top row of the list
+    scroll = 0
+
+    # Edit box at the top
+    edit_box = _styled_win(_INPUT_FIELD_STYLE)
+    edit_box.keypad(True)
+
+    # List of matches
+    matches_win = _styled_win(_LIST_STYLE)
+
+    # Bottom separator, with arrows pointing down
+    bot_sep_win = _styled_win(_SEPARATOR_STYLE)
+
+    # Help window with instructions at the bottom
+    help_win = _styled_win(_HELP_STYLE)
+
+    # Give windows their initial size
+    _resize_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
+                           sel_node_i, scroll)
+
+    _safe_curs_set(2)
+
+    # TODO: Code duplication with _select_{next,prev}_menu_entry(). Can this be
+    # factored out in some nice way?
+
+    def select_next_match():
+        nonlocal sel_node_i
+        nonlocal scroll
+
+        if sel_node_i < len(matches) - 1:
+            sel_node_i += 1
+
+            if sel_node_i >= scroll + matches_win.getmaxyx()[0] - _SCROLL_OFFSET:
+                scroll = min(scroll + 1, _max_scroll(matches, matches_win))
+
+    def select_prev_match():
+        nonlocal sel_node_i
+        nonlocal scroll
+
+        if sel_node_i > 0:
+           sel_node_i -= 1
+
+           if sel_node_i <= scroll + _SCROLL_OFFSET:
+               scroll = max(scroll - 1, 0)
+
+    while True:
+        if s != prev_s:
+            # The search text changed. Find new matching nodes.
+
+            prev_s = s
+
+            try:
+                # We could use re.IGNORECASE here instead of lower(), but this
+                # is noticeably less jerky while inputting regexes like
+                # '.*debug$' (though the '.*' is redundant there). Those
+                # probably have bad interactions with re.search(), which
+                # matches anywhere in the string.
+                #
+                # It's not horrible either way. Just a bit smoother.
+                regex_searches = [re.compile(regex).search
+                                  for regex in s.lower().split()]
+
+                # No exception thrown, so the regexes are okay
+                bad_re = None
+
+                # List of matching nodes
+                matches = []
+
+                for node in _searched_nodes():
+                    for search in regex_searches:
+                        # Does the regex match either the symbol name or the
+                        # prompt (if any)?
+                        if not (search(node.item.name.lower()) or
+                                (node.prompt and
+                                 search(node.prompt[0].lower()))):
+
+                            # Give up on the first regex that doesn't match, to
+                            # speed things up a bit when multiple regexes are
+                            # entered
+                            break
+
+                    else:
+                        matches.append(node)
+
+            except re.error as e:
+                # Bad regex. Remember the error message so we can show it.
+                bad_re = "Bad regular expression"
+                # re.error.msg was added in Python 3.5
+                if hasattr(e, "msg"):
+                    bad_re += ": " + e.msg
+
+                matches = []
+
+            # Reset scroll and jump to the top of the list of matches
+            sel_node_i = scroll = 0
+
+        _draw_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
+                             s, s_i, hscroll,
+                             bad_re, matches, sel_node_i, scroll)
+        curses.doupdate()
+
+
+        c = _get_wch_compat(edit_box)
+
+        if c == "\n":
+            if matches:
+                _jump_to(matches[sel_node_i])
+                _safe_curs_set(0)
+                return
+
+        if c == "\x1B":  # \x1B = ESC
+            _safe_curs_set(0)
+            return
+
+
+        if c == curses.KEY_RESIZE:
+            # We adjust the scroll so that the selected node stays visible in
+            # the list when the terminal is resized, hence the 'scroll'
+            # assignment
+            scroll = _resize_jump_to_dialog(
+                edit_box, matches_win, bot_sep_win, help_win,
+                sel_node_i, scroll)
+
+        elif c == curses.KEY_DOWN:
+            select_next_match()
+
+        elif c == curses.KEY_UP:
+            select_prev_match()
+
+        elif c == curses.KEY_NPAGE:  # Page Down
+            # Keep it simple. This way we get sane behavior for small windows,
+            # etc., for free.
+            for _ in range(_PG_JUMP):
+                select_next_match()
+
+        elif c == curses.KEY_PPAGE:  # Page Up
+            for _ in range(_PG_JUMP):
+                select_prev_match()
+
+        else:
+            s, s_i, hscroll = _edit_text(c, s, s_i, hscroll,
+                                         edit_box.getmaxyx()[1] - 2)
+
+# Obscure Python: We never pass a value for cached_search_strings, and it keeps
+# pointing to the same list. This avoids a global.
+def _searched_nodes(cached_search_nodes=[]):
+    # Returns a list of menu nodes to search, sorted by symbol name
+
+    if not cached_search_nodes:
+        # Sort symbols by name and remove duplicates, then add all nodes for
+        # each symbol.
+        #
+        # Duplicates appear when symbols have multiple menu nodes (definition
+        # locations), but they appear in menu order, which isn't what we want
+        # here. We'd still need to go through sym.nodes as well.
+        for sym in sorted(set(_kconf.defined_syms), key=lambda sym: sym.name):
+            cached_search_nodes.extend(sym.nodes)
+
+    return cached_search_nodes
+
+def _resize_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
+                           sel_node_i, scroll):
+    # Resizes the jump-to dialog to fill the terminal.
+    #
+    # Returns the new scroll index. We adjust the scroll if needed so that the
+    # selected node stays visible.
+
+    screen_height, screen_width = stdscr.getmaxyx()
+
+    bot_sep_win.resize(1, screen_width)
+
+    help_win_height = len(_JUMP_TO_HELP_LINES)
+    matches_win_height = screen_height - help_win_height - 4
+
+    if matches_win_height >= 1:
+        edit_box.resize(3, screen_width)
+        matches_win.resize(matches_win_height, screen_width)
+        help_win.resize(help_win_height, screen_width)
+
+        matches_win.mvwin(3, 0)
+        bot_sep_win.mvwin(3 + matches_win_height, 0)
+        help_win.mvwin(3 + matches_win_height + 1, 0)
+    else:
+        # Degenerate case. Give up on nice rendering and just prevent errors.
+
+        matches_win_height = 1
+
+        edit_box.resize(screen_height, screen_width)
+        matches_win.resize(1, screen_width)
+        help_win.resize(1, screen_width)
+
+        for win in matches_win, bot_sep_win, help_win:
+            win.mvwin(0, 0)
+
+    # Adjust the scroll so that the selected row is still within the window, if
+    # needed
+    if sel_node_i - scroll >= matches_win_height:
+        return sel_node_i - matches_win_height + 1
+    return scroll
+
+def _draw_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
+                         s, s_i, hscroll,
+                         bad_re, matches, sel_node_i, scroll):
+
+    edit_width = edit_box.getmaxyx()[1] - 2
+
+
+    #
+    # Update list of matches
+    #
+
+    matches_win.erase()
+
+    if matches:
+        for i in range(scroll,
+                       min(scroll + matches_win.getmaxyx()[0], len(matches))):
+
+            sym = matches[i].item
+
+            sym_str = '{}(="{}")'.format(sym.name, sym.str_value)
+            if matches[i].prompt:
+                sym_str += ' "{}"'.format(matches[i].prompt[0])
+
+            _safe_addstr(matches_win, i - scroll, 0, sym_str,
+                         _LIST_SEL_STYLE if i == sel_node_i else _LIST_STYLE)
+
+    else:
+        # bad_re holds the error message from the re.error exception on errors
+        _safe_addstr(matches_win, 0, 0, bad_re or "No matches")
+
+    matches_win.noutrefresh()
+
+
+    #
+    # Update bottom separator line
+    #
+
+    bot_sep_win.erase()
+
+    # Draw arrows pointing down if the symbol list is scrolled up
+    if scroll < _max_scroll(matches, matches_win):
+        _safe_hline(bot_sep_win, 0, 4, curses.ACS_DARROW, _N_SCROLL_ARROWS)
+
+    bot_sep_win.noutrefresh()
+
+
+    #
+    # Update help window at bottom
+    #
+
+    help_win.erase()
+
+    for i, line in enumerate(_JUMP_TO_HELP_LINES):
+        _safe_addstr(help_win, i, 0, line)
+
+    help_win.noutrefresh()
+
+
+    #
+    # Update edit box. We do this last since it makes it handy to position the
+    # cursor.
+    #
+
+    edit_box.erase()
+
+    _draw_frame(edit_box, "Jump to symbol")
+
+    # Draw arrows pointing up if the symbol list is scrolled down
+    if scroll > 0:
+        # TODO: Bit ugly that _DIALOG_FRAME_STYLE is repeated here
+        _safe_hline(edit_box, 2, 4, curses.ACS_UARROW, _N_SCROLL_ARROWS,
+                    _DIALOG_FRAME_STYLE)
+
+    # Note: Perhaps having a separate window for the input field would be nicer
+    visible_s = s[hscroll:hscroll + edit_width]
+    _safe_addstr(edit_box, 1, 1, visible_s, _INPUT_FIELD_STYLE)
+
+    _safe_move(edit_box, 1, 1 + s_i - hscroll)
+
+    edit_box.noutrefresh()
+
+def _info_dialog(node):
     # Shows a fullscreen window with information about 'node'
 
     # Top row, with title and arrows point up
-    top_line_win = _styled_win(_INFO_TOP_LINE_STYLE)
+    top_line_win = _styled_win(_SEPARATOR_STYLE)
 
     # Text display
     text_win = _styled_win(_INFO_TEXT_STYLE)
     text_win.keypad(True)
 
     # Bottom separator, with arrows pointing down
-    bot_sep_win = _styled_win(_INFO_BOT_SEP_STYLE)
+    bot_sep_win = _styled_win(_SEPARATOR_STYLE)
 
     # Help window with keys at the bottom
-    help_win = _styled_win(_INFO_HELP_STYLE)
+    help_win = _styled_win(_HELP_STYLE)
 
     # Give windows their initial size
-    _resize_info_display(top_line_win, text_win, bot_sep_win, help_win)
+    _resize_info_dialog(top_line_win, text_win, bot_sep_win, help_win)
 
 
     # Get lines of help text
-    lines = _info(node).split("\n")
+    lines = _info_str(node).split("\n")
 
     # Index of first row in 'lines' to show
     scroll = 0
 
     while True:
-        _draw_info_display(node, lines, scroll, top_line_win, text_win,
-                           bot_sep_win, help_win)
+        _draw_info_dialog(node, lines, scroll, top_line_win, text_win,
+                          bot_sep_win, help_win)
         curses.doupdate()
 
 
         c = _get_wch_compat(text_win)
 
         if c == curses.KEY_RESIZE:
-            # No need to call _resize_main(), because the help window is
-            # fullscreen
-            _resize_info_display(top_line_win, text_win, bot_sep_win, help_win)
+            _resize_info_dialog(top_line_win, text_win, bot_sep_win, help_win)
 
         elif c in (curses.KEY_DOWN, "j", "J"):
-            if scroll < _max_info_scroll(text_win, lines):
+            if scroll < _max_scroll(lines, text_win):
                 scroll += 1
 
         elif c in (curses.KEY_NPAGE, "\x04"):  # Page Down/Ctrl-D
-            scroll = min(scroll + _PG_JUMP, _max_info_scroll(text_win, lines))
+            scroll = min(scroll + _PG_JUMP, _max_scroll(lines, text_win))
 
         elif c in (curses.KEY_PPAGE, "\x15"):  # Page Up/Ctrl-U
             scroll = max(scroll - _PG_JUMP, 0)
 
         elif c in (curses.KEY_END, "G"):
-            scroll = _max_info_scroll(text_win, lines)
+            scroll = _max_scroll(lines, text_win)
 
         elif c in (curses.KEY_HOME, "g"):
             scroll = 0
@@ -1184,15 +1751,10 @@ def _display_info(node):
                    "\x1B",  # \x1B = ESC
                    "q", "Q", "h", "H"):
 
-            # Resize the main display before returning so that it gets the
-            # right size in case the terminal was resized while the help
-            # display was open
-            _resize_main()
-
             return
 
-def _resize_info_display(top_line_win, text_win, bot_sep_win, help_win):
-    # Resizes the help display to a size appropriate for the terminal size
+def _resize_info_dialog(top_line_win, text_win, bot_sep_win, help_win):
+    # Resizes the info dialog to fill the terminal
 
     screen_height, screen_width = stdscr.getmaxyx()
 
@@ -1218,8 +1780,8 @@ def _resize_info_display(top_line_win, text_win, bot_sep_win, help_win):
         for win in text_win, bot_sep_win, help_win:
             win.mvwin(0, 0)
 
-def _draw_info_display(node, lines, scroll, top_line_win, text_win,
-                       bot_sep_win, help_win):
+def _draw_info_dialog(node, lines, scroll, top_line_win, text_win,
+                      bot_sep_win, help_win):
 
     text_win_height, text_win_width = text_win.getmaxyx()
 
@@ -1236,20 +1798,10 @@ def _draw_info_display(node, lines, scroll, top_line_win, text_win,
     if scroll > 0:
         _safe_hline(top_line_win, 0, 4, curses.ACS_UARROW, _N_SCROLL_ARROWS)
 
-
-    if isinstance(node.item, Symbol):
-        title = "{}{}".format(_kconf.config_prefix, node.item.name)
-
-    elif isinstance(node.item, Choice):
-        title = node.item.name or "Choice"
-
-    elif node.item == MENU:
-        title = 'menu "{}"'.format(node.prompt[0])
-
-    else:  # node.item == COMMENT
-        title = 'comment "{}"'.format(node.prompt[0])
-
-
+    title = ("Symbol" if isinstance(node.item, Symbol) else
+             "Choice" if isinstance(node.item, Choice) else
+             "Menu"   if node.item == MENU else
+             "Comment") + " information"
     _safe_addstr(top_line_win, 0, (text_win_width - len(title))//2, title)
 
     top_line_win.noutrefresh()
@@ -1274,7 +1826,7 @@ def _draw_info_display(node, lines, scroll, top_line_win, text_win,
     bot_sep_win.erase()
 
     # Draw arrows pointing down if the symbol window is scrolled up
-    if scroll < _max_info_scroll(text_win, lines):
+    if scroll < _max_scroll(lines, text_win):
         _safe_hline(bot_sep_win, 0, 4, curses.ACS_DARROW, _N_SCROLL_ARROWS)
 
     bot_sep_win.noutrefresh()
@@ -1291,13 +1843,7 @@ def _draw_info_display(node, lines, scroll, top_line_win, text_win,
 
     help_win.noutrefresh()
 
-def _max_info_scroll(text_win, lines):
-    # Returns the maximum amount the information display can be scrolled down.
-    # We stop scrolling when the last line of the help text is visible.
-
-    return max(0, len(lines) - text_win.getmaxyx()[0])
-
-def _info(node):
+def _info_str(node):
     # Returns information about the menu node 'node' as a string.
     #
     # The helper functions are responsible for adding newlines. This allows
@@ -1307,6 +1853,7 @@ def _info(node):
         sym = node.item
 
         return (
+            _name_info(sym) +
             _prompt_info(sym) +
             "Type: {}\n".format(TYPE_TO_STR[sym.type]) +
             'Value: "{}"\n\n'.format(sym.str_value) +
@@ -1314,7 +1861,6 @@ def _info(node):
             _direct_dep_info(sym) +
             _defaults_info(sym) +
             _select_imply_info(sym) +
-            _loc_info(sym) +
             _kconfig_def_info(sym)
         )
 
@@ -1322,6 +1868,7 @@ def _info(node):
         choice = node.item
 
         return (
+            _name_info(choice) +
             _prompt_info(choice) +
             "Type: {}\n".format(TYPE_TO_STR[choice.type]) +
             'Mode: "{}"\n\n'.format(choice.str_value) +
@@ -1329,14 +1876,17 @@ def _info(node):
             _choice_syms_info(choice) +
             _direct_dep_info(choice) +
             _defaults_info(choice) +
-            _loc_info(choice) +
             _kconfig_def_info(choice)
         )
 
     # node.item in (MENU, COMMENT)
-    return "Defined at {}:{}\nMenu: {}\n\n{}" \
-           .format(node.filename, node.linenr, _menu_path_info(node),
-                   _kconfig_def_info(node))
+    return _kconfig_def_info(node)
+
+def _name_info(sc):
+    # Returns a string with the name of the symbol/choice. Names are optional
+    # for choices.
+
+    return "Name: {}\n".format(sc.name) if sc.name else ""
 
 def _prompt_info(sc):
     # Returns a string listing the prompts of 'sc' (Symbol or Choice)
@@ -1398,14 +1948,15 @@ def _defaults_info(sc):
 
     s = "Defaults:\n"
 
-    for value, cond in sc.defaults:
+    for val, cond in sc.defaults:
         s += "  - "
         if isinstance(sc, Symbol):
-            s += _expr_str(value)
+            s += '{} (value: "{}")' \
+                 .format(_expr_str(val), TRI_TO_STR[expr_value(val)])
         else:
             # Don't print the value next to the symbol name for choice
             # defaults, as it looks a bit confusing
-            s += value.name
+            s += val.name
         s += "\n"
 
         if cond is not _kconf.y:
@@ -1471,34 +2022,32 @@ def _select_imply_info(sym):
 
     return s
 
-def _loc_info(sc):
-    # Returns a string with information about where 'sc' (Symbol or Choice) is
-    # defined in the Kconfig files. Also includes the menu path leading up to
-    # it.
-
-    s = "Definition location{}:\n".format("s" if len(sc.nodes) > 1 else "")
-
-    for node in sc.nodes:
-        s += "  - {}:{}\n      Menu: {}\n" \
-             .format(node.filename, node.linenr, _menu_path_info(node))
-
-    return s + "\n"
-
 def _kconfig_def_info(item):
-    # Returns a string with the definition of 'item' in Kconfig syntax
+    # Returns a string with the definition of 'item' in Kconfig syntax,
+    # together with the definition location(s)
 
-    return "Kconfig definition (with propagated dependencies):\n\n" + \
-           textwrap.indent(str(item).expandtabs(), "  ")
+    nodes = [item] if isinstance(item, MenuNode) else item.nodes
+
+    s = "Kconfig definition{}, with propagated dependencies\n" \
+        .format("s" if len(nodes) > 1 else "")
+    s += (len(s) - 1)*"=" + "\n\n"
+
+    s += "\n\n".join("At {}:{}, in menu {}:\n\n{}".format(
+                         node.filename, node.linenr, _menu_path_info(node),
+                         textwrap.indent(str(node), "  "))
+                     for node in nodes)
+
+    return s
 
 def _menu_path_info(node):
     # Returns a string describing the menu path leading up to 'node'
 
     path = ""
 
-    menu = node.parent
-    while menu is not _kconf.top_node:
-        path = " -> " + menu.prompt[0] + path
-        menu = menu.parent
+    node = _parent_menu(node)
+    while node is not _kconf.top_node:
+        path = " -> " + node.prompt[0] + path
+        node = _parent_menu(node)
 
     return "(top menu)" + path
 
@@ -1511,6 +2060,106 @@ def _styled_win(style):
     win.bkgdset(" ", style)
     return win
 
+def _max_scroll(lst, win):
+    # Assuming 'lst' is a list of items to be displayed in 'win',
+    # returns the maximum number of steps 'win' can be scrolled down.
+    # We stop scrolling when the bottom item is visible.
+
+    return max(0, len(lst) - win.getmaxyx()[0])
+
+def _edit_text(c, s, i, hscroll, width):
+    # Implements text editing commands for edit boxes. Takes a character (which
+    # could also be e.g. curses.KEY_LEFT) and the edit box state, and returns
+    # the new state after the character has been processed.
+    #
+    # c:
+    #   Character from user
+    #
+    # s:
+    #   Current contents of string
+    #
+    # i:
+    #   Current cursor index in string
+    #
+    # hscroll:
+    #   Index in s of the leftmost character in the edit box, for horizontal
+    #   scrolling
+    #
+    # width:
+    #   Width in characters of the edit box
+    #
+    # Return value:
+    #   An (s, i, hscroll) tuple for the new state
+
+    if c == curses.KEY_LEFT:
+        if i > 0:
+            i -= 1
+
+    elif c == curses.KEY_RIGHT:
+        if i < len(s):
+            i += 1
+
+    elif c in (curses.KEY_HOME, "\x01"):  # \x01 = CTRL-A
+        i = 0
+
+    elif c in (curses.KEY_END, "\x05"):  # \x05 = CTRL-E
+        i = len(s)
+
+    elif c in (curses.KEY_BACKSPACE, _ERASE_CHAR):
+        if i > 0:
+            s = s[:i-1] + s[i:]
+            i -= 1
+
+    elif c == curses.KEY_DC:
+        s = s[:i] + s[i+1:]
+
+    elif c == "\x17":  # \x17 = CTRL-W
+        # The \W removes characters like ',' one at a time
+        new_i = re.search(r"(?:\w*|\W)\s*$", s[:i]).start()
+        s = s[:new_i] + s[i:]
+        i = new_i
+
+    elif c == "\x0B":  # \x0B = CTRL-K
+        s = s[:i]
+
+    elif c == "\x15":  # \x15 = CTRL-U
+        s = s[i:]
+        i = 0
+
+    elif isinstance(c, str):
+        # Insert character
+
+        s = s[:i] + c + s[i:]
+        i += 1
+
+    # Adjust the horizontal scroll so that the cursor never touches the left or
+    # right edges of the edit box, except when it's at the beginning or the end
+    # of the string
+    if i < hscroll + _SCROLL_OFFSET:
+        hscroll = max(i - _SCROLL_OFFSET, 0)
+    elif i >= hscroll + width - _SCROLL_OFFSET:
+        max_scroll = max(len(s) - width + 1, 0)
+        hscroll = min(i - width + _SCROLL_OFFSET + 1, max_scroll)
+
+
+    return s, i, hscroll
+
+def _load_save_info():
+    # Returns an information string for load/save dialog boxes
+
+    return "(Relative to {})\n\nRefer to your home directory with ~" \
+           .format(os.path.join(os.getcwd(), ""))
+
+def _msg(title, text):
+    # Pops up a message dialog that can be dismissed with Space/Enter/ESC
+
+    _key_dialog(title, text, " \n")
+
+def _error(text):
+    # Pops up an error dialog that can be dismissed with Space/Enter/ESC
+
+    _msg("Error", text)
+
 def _node_str(node):
     # Returns the complete menu entry text for a menu node.
     #
@@ -1522,13 +2171,22 @@ def _node_str(node):
     indent = 0
     parent = node.parent
     while not parent.is_menuconfig:
-        indent += 2
+        indent += _SUBMENU_INDENT
         parent = parent.parent
 
     # This approach gives nice alignment for empty string symbols ("()  Foo")
-    s = "{:{}} ".format(_value_str(node), 3 + indent)
+    s = "{:{}}".format(_value_str(node), 3 + indent)
+
+    # 'not node.prompt' can only be True in show-all mode
+    if not node.prompt or \
+       (_show_name and
+        (isinstance(node.item, Symbol) or
+         (isinstance(node.item, Choice) and node.item.name))):
+
+        s += " <{}>".format(node.item.name)
 
     if node.prompt:
+        s += " "
         if node.item == COMMENT:
             s += "*** {} ***".format(node.prompt[0])
         else:
@@ -1557,7 +2215,7 @@ def _node_str(node):
     # entered. Add "(empty)" if the menu is empty. We don't allow those to be
     # entered.
     if node.is_menuconfig:
-        s += "  --->" if _visible_nodes(node) else "  ---> (empty)"
+        s += "  --->" if _shown_nodes(node) else "  ---> (empty)"
 
     return s
 
@@ -1592,7 +2250,7 @@ def _value_str(node):
 
     if item.type == TRISTATE:
         if item.assignable == (1, 2):
-            return "{{{}}}".format(tri_val_str)  # { }/{M}/{*}
+            return "{{{}}}".format(tri_val_str)  # {M}/{*}
         return "<{}>".format(tri_val_str)
 
 def _is_y_mode_choice_sym(item):
@@ -1724,6 +2382,36 @@ def _safe_move(win, *args):
         win.move(*args)
     except curses.error:
         pass
+
+def _convert_c_lc_ctype_to_utf8():
+    # See _CONVERT_C_LC_CTYPE_TO_UTF8
+
+    if _IS_WINDOWS:
+        # Windows rarely has issues here, and the PEP 538 implementation avoids
+        # changing the locale on it. None of the UTF-8 locales below were
+        # supported from some quick testing either. Play it safe.
+        return
+
+    def _try_set_locale(loc):
+        try:
+            locale.setlocale(locale.LC_CTYPE, loc)
+            return True
+        except locale.Error:
+            return False
+
+    # Is LC_CTYPE set to the C locale?
+    if locale.setlocale(locale.LC_CTYPE, None) == "C":
+        # This list was taken from the PEP 538 implementation in the CPython
+        # code, in Python/pylifecycle.c
+        for loc in "C.UTF-8", "C.utf8", "UTF-8":
+            if _try_set_locale(loc):
+                print("Note: Your environment is configured to use ASCII. To "
+                      "avoid Unicode issues, LC_CTYPE was changed from the "
+                      "C locale to the {} locale.".format(loc))
+                break
+
+# Are we running on Windows?
+_IS_WINDOWS = (platform.system() == "Windows")
 
 if __name__ == "__main__":
     if len(sys.argv) > 2:

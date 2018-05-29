@@ -10,6 +10,11 @@
 
 #define SEM_ARRAY_SIZE	16
 
+/* Show that extern declarations don't interfere with detecting kernel
+ * objects, this was at one point a problem.
+ */
+extern struct k_sem sem1;
+
 static __kernel struct k_sem semarray[SEM_ARRAY_SIZE];
 static struct k_sem *dyn_sem[SEM_ARRAY_SIZE];
 
@@ -60,6 +65,8 @@ void object_permission_checks(struct k_sem *sem, bool skip_init)
 		      "object should have had sufficient permissions");
 }
 
+extern const k_tid_t _main_thread;
+
 void test_generic_object(void)
 {
 	struct k_sem stack_sem;
@@ -79,6 +86,11 @@ void test_generic_object(void)
 	for (int i = 0; i < SEM_ARRAY_SIZE; i++) {
 		object_permission_checks(&semarray[i], false);
 		dyn_sem[i] = k_object_alloc(K_OBJ_SEM);
+		zassert_not_null(dyn_sem[i], "couldn't allocate semaphore");
+		/* Give an extra reference to another thread so the object
+		 * doesn't disappear if we revoke our own
+		 */
+		k_object_access_grant(dyn_sem[i], _main_thread);
 	}
 
 	/* dynamic object table well-populated with semaphores at this point */
@@ -94,6 +106,7 @@ void test_generic_object(void)
 
 void test_main(void)
 {
+	k_thread_system_pool_assign(k_current_get());
 	ztest_test_suite(object_validation,
 			 ztest_unit_test(test_generic_object));
 	ztest_run_test_suite(object_validation);

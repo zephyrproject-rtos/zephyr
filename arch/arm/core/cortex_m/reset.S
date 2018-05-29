@@ -23,6 +23,9 @@ _ASM_FILE_PROLOGUE
 GTEXT(__reset)
 GTEXT(memset)
 GDATA(_interrupt_stack)
+#if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
+GTEXT(_PlatformInit)
+#endif
 
 /**
  *
@@ -57,6 +60,10 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset)
  */
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
+#if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
+    bl _PlatformInit
+#endif
+
     /* lock interrupts: will get unlocked when switch to main task */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     cpsid i
@@ -89,6 +96,12 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     msr PSP, r0
     movs.n r0, #2	/* switch to using PSP (bit1 of CONTROL reg) */
     msr CONTROL, r0
+    /*
+     * When changing the stack pointer, software must use an ISB instruction
+     * immediately after the MSR instruction. This ensures that instructions
+     * after the ISB instruction execute using the new stack pointer.
+    */
+    isb
 
     b _PrepC
 

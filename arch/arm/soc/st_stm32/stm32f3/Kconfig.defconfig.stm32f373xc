@@ -9,7 +9,7 @@ if SOC_STM32F373XC
 
 config SOC
 	string
-	default stm32f373xc
+	default "stm32f373xc"
 
 config FLASH_PAGE_SIZE
 	hex

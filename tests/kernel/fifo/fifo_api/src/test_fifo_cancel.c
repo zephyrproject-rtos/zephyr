@@ -50,7 +50,14 @@ static void tfifo_thread_thread(struct k_fifo *pfifo)
 		     "k_fifo_get didn't get cancelled in expected timeframe");
 }
 
-/*test cases*/
+/**
+ * @addtogroup kernel_fifo_tests
+ * @{
+ */
+
+/**
+ * @see k_fifo_cancel_wait()
+ */
 void test_fifo_cancel_wait(void)
 {
 	/**TESTPOINT: init via k_fifo_init*/
@@ -60,3 +67,7 @@ void test_fifo_cancel_wait(void)
 	/**TESTPOINT: test K_FIFO_DEFINEed fifo*/
 	tfifo_thread_thread(&kfifo_c);
 }
+
+/**
+ * @}
+ */

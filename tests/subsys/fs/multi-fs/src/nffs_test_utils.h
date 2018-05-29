@@ -8,6 +8,7 @@
 #define H_NFFS_TEST_UTILS_
 
 #include <zephyr/types.h>
+#include <nffs/nffs.h>
 
 #ifdef __cplusplus
 extern "C" {

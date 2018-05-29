@@ -9,7 +9,7 @@ if SOC_MCIMX7_M4
 
 config SOC
 	string
-	default mcimx7d
+	default "mcimx7d"
 
 config SYS_CLOCK_TICKS_PER_SEC
 	int
@@ -25,6 +25,16 @@ config CLOCK_CONTROL_IMX_CCM
 	def_bool y
 
 endif # CLOCK_CONTROL
+
+config GPIO
+	def_bool y
+
+if GPIO
+
+config GPIO_IMX
+	def_bool y
+
+endif # GPIO
 
 if SERIAL
 

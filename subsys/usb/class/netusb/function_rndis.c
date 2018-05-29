@@ -29,17 +29,17 @@
 #include "function_rndis.h"
 
 /* RNDIS handling */
-#define CONFIG_RNDIS_TX_BUF_COUNT	5
-#define CONFIG_RNDIS_TX_BUF_SIZE	512
-NET_BUF_POOL_DEFINE(rndis_tx_pool, CONFIG_RNDIS_TX_BUF_COUNT,
-		    CONFIG_RNDIS_TX_BUF_SIZE, 0, NULL);
+#define CFG_RNDIS_TX_BUF_COUNT	5
+#define CFG_RNDIS_TX_BUF_SIZE	512
+NET_BUF_POOL_DEFINE(rndis_tx_pool, CFG_RNDIS_TX_BUF_COUNT,
+		    CFG_RNDIS_TX_BUF_SIZE, 0, NULL);
 static struct k_fifo rndis_tx_queue;
 
 /* Serialize RNDIS command queue for later processing */
-#define CONFIG_RNDIS_CMD_BUF_COUNT	2
-#define CONFIG_RNDIS_CMD_BUF_SIZE	512
-NET_BUF_POOL_DEFINE(rndis_cmd_pool, CONFIG_RNDIS_CMD_BUF_COUNT,
-		    CONFIG_RNDIS_CMD_BUF_SIZE, 0, NULL);
+#define CFG_RNDIS_CMD_BUF_COUNT	2
+#define CFG_RNDIS_CMD_BUF_SIZE	512
+NET_BUF_POOL_DEFINE(rndis_cmd_pool, CFG_RNDIS_CMD_BUF_COUNT,
+		    CFG_RNDIS_CMD_BUF_SIZE, 0, NULL);
 static struct k_fifo rndis_cmd_queue;
 
 static struct k_delayed_work notify_work;
@@ -1060,10 +1060,41 @@ static struct usb_ep_cfg_data rndis_ep_data[] = {
 	},
 };
 
+static void rndis_status_cb(enum usb_dc_status_code status, u8_t *param)
+{
+	/* Check the USB status and do needed action if required */
+	switch (status) {
+	case USB_DC_CONFIGURED:
+		SYS_LOG_DBG("USB device configured");
+		netusb_enable();
+		break;
+
+	case USB_DC_DISCONNECTED:
+		SYS_LOG_DBG("USB device disconnected");
+		netusb_disable();
+		break;
+
+	case USB_DC_ERROR:
+	case USB_DC_RESET:
+	case USB_DC_CONNECTED:
+	case USB_DC_SUSPEND:
+	case USB_DC_RESUME:
+	case USB_DC_INTERFACE:
+		SYS_LOG_DBG("USB unhandlded state: %d", status);
+		break;
+
+	case USB_DC_UNKNOWN:
+	default:
+		SYS_LOG_DBG("USB unknown state %d", status);
+		break;
+	}
+}
+
 struct netusb_function rndis_function = {
 	.init = rndis_init,
 	.connect_media = rndis_connect_media,
 	.class_handler = rndis_class_handler,
+	.status_cb = rndis_status_cb,
 	.send_pkt = rndis_send,
 	.num_ep = ARRAY_SIZE(rndis_ep_data),
 	.ep = rndis_ep_data,

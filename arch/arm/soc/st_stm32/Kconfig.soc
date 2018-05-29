@@ -5,4 +5,4 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-source "arch/arm/soc/st_stm32/*/Kconfig.series"
+gsource "arch/arm/soc/st_stm32/*/Kconfig.series"

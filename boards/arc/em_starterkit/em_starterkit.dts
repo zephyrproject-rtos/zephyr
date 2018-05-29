@@ -1,6 +1,13 @@
+/*
+ * Copyright (c) 2018, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /dts-v1/;
 
-#include <em9d.dtsi>
+#include <emsk.dtsi>
+
 
 / {
 	model = "em_starterkit-em9d";
@@ -13,6 +20,7 @@
 	};
 
 	chosen {
+		zephyr,sram = &dccm0;
 		zephyr,console = &uart1;
 	};
 };

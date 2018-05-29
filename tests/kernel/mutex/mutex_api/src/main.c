@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_sema
- * @{
- * @defgroup t_sema_api test_sema_api
- * @}
- */
-
-
 #include <ztest.h>
 extern void test_mutex_lock_unlock(void);
 extern void test_mutex_reent_lock_forever(void);

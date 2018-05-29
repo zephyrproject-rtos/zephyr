@@ -94,9 +94,11 @@ static void enable(struct device *dev)
 	clk_periph_enable(CLK_PERIPH_WDT_REGISTER | CLK_PERIPH_CLK);
 }
 
-static void disable(struct device *dev)
+static int disable(struct device *dev)
 {
 	clk_periph_disable(CLK_PERIPH_WDT_REGISTER);
+
+	return 0;
 }
 
 static const struct wdt_driver_api api = {

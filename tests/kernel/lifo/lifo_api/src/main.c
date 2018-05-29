@@ -5,9 +5,18 @@
  */
 
 /**
- * @addtogroup t_lifo
+ * @brief Tests for the LIFO kernel object
+ *
+ * Verify zephyr fifo apis under different context
+ *
+ * - API coverage
+ *   -# k_lifo_init K_LIFO_DEFINE
+ *   -# k_lifo_put k_lifo_put_list k_lifo_put_slist
+ *   -# k_lifo_get *
+ *
+ * @defgroup kernel_lifo_tests LIFOs
+ * @ingroup all_tests
  * @{
- * @defgroup t_lifo_api test_lifo_api
  * @}
  */
 

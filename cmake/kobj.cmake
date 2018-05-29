@@ -7,6 +7,7 @@ function(gen_kobj gen_dir_out)
 
   set(KOBJ_TYPES ${gen_dir}/kobj-types-enum.h)
   set(KOBJ_OTYPE ${gen_dir}/otype-to-str.h)
+  set(KOBJ_SIZE ${gen_dir}/otype-to-size.h)
 
   file(MAKE_DIRECTORY ${gen_dir})
 
@@ -17,6 +18,7 @@ function(gen_kobj gen_dir_out)
     $ENV{ZEPHYR_BASE}/scripts/gen_kobject_list.py
     --kobj-types-output ${KOBJ_TYPES}
     --kobj-otype-output ${KOBJ_OTYPE}
+    --kobj-size-output ${KOBJ_SIZE}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )

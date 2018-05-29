@@ -4,6 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Our SDK/toolchains integration seems to be inconsistent about
+ * whether they expose alloca.h or not.  On gcc it's a moot point as
+ * it's always builtin.
+ */
+#ifdef __GNUC__
+#ifndef alloca
+#define alloca __builtin_alloca
+#endif
+#else
+#include <alloca.h>
+#endif
+
 /**
  * @file
  * @brief Red/Black balanced tree data structure
@@ -41,6 +53,12 @@ struct rbnode {
  *
  * Compares the two nodes and returns 1 if node A is strictly less
  * than B according to the tree's sorting criteria, 0 otherwise.
+ *
+ * Note that during insert, the new node being inserted will always be
+ * "A", where "B" is the existing node within the tree against which
+ * it is being compared.  This trait can be used (with care!) to
+ * implement "most/least recently added" semantics between nodes which
+ * would otherwise compare as equal.
  */
 typedef int (*rb_lessthan_t)(struct rbnode *a, struct rbnode *b);
 
@@ -97,15 +115,71 @@ int rb_contains(struct rbtree *tree, struct rbnode *node);
 /**
  * @brief Walk/enumerate a rbtree
  *
- * Very simple recursive enumeration implementation.  A rather more
- * subtle (have to alloca() a stack to manage manually) iterative one
- * is possible that uses a FOREACH-style macro API, but this is good
- * enough for many purposes and much smaller.
+ * Very simple recursive enumeration.  Low code size, but requiring a
+ * separate function can be clumsy for the user and there is no way to
+ * break out of the loop early.  See RB_FOR_EACH for an iterative
+ * implementation.
  */
 static inline void rb_walk(struct rbtree *tree, rb_visit_t visit_fn,
 			   void *cookie)
 {
 	_rb_walk(tree->root, visit_fn, cookie);
 }
+
+struct _rb_foreach {
+	struct rbnode **stack;
+	char *is_left;
+	int top;
+};
+
+#define _RB_FOREACH_INIT(tree, node) {					\
+	.stack   = alloca((tree)->max_depth * sizeof(struct rbnode *)), \
+	.is_left = alloca((tree)->max_depth * sizeof(char)),		\
+	.top     = -1							\
+}
+
+struct rbnode *_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f);
+
+/**
+ * @brief Walk a tree in-order without recursing
+ *
+ * While @ref rb_walk() is very simple, recursing on the C stack can
+ * be clumsy for some purposes and on some architectures wastes
+ * significant memory in stack frames.  This macro implements a
+ * non-recursive "foreach" loop that can iterate directly on the tree,
+ * at a moderate cost in code size.
+ *
+ * Note that the resulting loop is not safe against modifications to
+ * the tree.  Changes to the tree structure during the loop will
+ * produce incorrect results, as nodes may be skipped or duplicated.
+ * Unlike linked lists, no _SAFE variant exists.
+ *
+ * Note also that the macro expands its arguments multiple times, so
+ * they should not be expressions with side effects.
+ *
+ * @param tree A pointer to a struct rbtree to walk
+ * @param node The symbol name of a local struct rbnode* variable to
+ *             use as the iterator
+ */
+#define RB_FOR_EACH(tree, node) \
+	for (struct _rb_foreach __f = _RB_FOREACH_INIT(tree, node);	\
+	     (node = _rb_foreach_next(tree, &__f));			\
+	     /**/)
+
+/**
+ * @brief Loop over rbtree with implicit container field logic
+ *
+ * As for RB_FOR_EACH(), but "node" can have an arbitrary type
+ * containing a struct rbnode.
+ *
+ * @param tree A pointer to a struct rbtree to walk
+ * @param node The symbol name of a local iterator
+ * @param field The field name of a struct rbnode inside node
+ */
+#define RB_FOR_EACH_CONTAINER(tree, node, field)			\
+	for (struct _rb_foreach __f = _RB_FOREACH_INIT(tree, node);	\
+	     (node = CONTAINER_OF(_rb_foreach_next(tree, &__f),		\
+				  __typeof__(*(node)), field));		\
+	     /**/)
 
 #endif /* _RB_H */

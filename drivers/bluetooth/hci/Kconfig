@@ -11,9 +11,8 @@ comment "Bluetooth HCI Driver Options"
 config BT_UART
 	bool
 
-choice
+choice BT_HCI_BUS_TYPE
 	prompt "Bluetooth HCI driver"
-	default BT_H4
 
 config BT_H4
 	bool "H:4 UART"
@@ -82,6 +81,8 @@ config BT_SPI_BLUENRG
 	  Enable support for devices compatible with the BlueNRG Bluetooth
 	  Stack. Current driver supports: ST X-NUCLEO BLE series.
 
+if !HAS_DTS_SPI_PINS
+
 config BT_SPI_CHIP_SELECT_DEV_NAME
 	string "Chip Select (CS) line driver name"
 	depends on BT_SPI_BLUENRG
@@ -117,6 +118,8 @@ config BT_SPI_RESET_PIN
 	int "SPI Reset line number"
 	help
 	  This option specifies the Reset line number on the SPI device
+
+endif # !HAS_DTS_SPI_PINS
 
 config BT_SPI_MAX_CLK_FREQ
 	int "Maximum clock frequency for the HCI SPI interface"

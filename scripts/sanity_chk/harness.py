@@ -9,9 +9,12 @@ class Harness:
         self.matches = OrderedDict()
         self.ordered = True
         self.repeat = 1
+        self.tests = {}
+        self.id = None
 
     def configure(self, instance):
         config = instance.test.harness_config
+        self.id = instance.test.id
         if config:
             self.type = config.get('type', None)
             self.regex = config.get('regex', [] )
@@ -48,13 +51,17 @@ class Console(Harness):
                 else:
                     self.state = "failed"
 
-
-
 class Test(Harness):
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
 
     def handle(self, line):
+        result = re.compile("(PASS|FAIL|SKIP) - (test_)?(.*)")
+        match = result.match(line)
+        if match:
+            name = "{}.{}".format(self.id, match.group(3))
+            self.tests[name] = match.group(1)
+
         if self.RUN_PASSED in line:
             self.state = "passed"
 

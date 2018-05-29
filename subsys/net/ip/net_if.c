@@ -26,7 +26,7 @@
 
 #include "net_stats.h"
 
-#define REACHABLE_TIME (30 * MSEC_PER_SEC) /* in ms */
+#define REACHABLE_TIME K_SECONDS(30) /* in ms */
 /*
  * split the min/max random reachable factors into numerator/denominator
  * so that integer-based math works better
@@ -369,6 +369,32 @@ struct net_if *net_if_get_first_by_type(const struct net_l2 *l2)
 	return NULL;
 }
 
+/* Return how many bits are shared between two IP addresses */
+static u8_t get_ipaddr_diff(const u8_t *src, const u8_t *dst, int addr_len)
+{
+	u8_t j, k, xor;
+	u8_t len = 0;
+
+	for (j = 0; j < addr_len; j++) {
+		if (src[j] == dst[j]) {
+			len += 8;
+		} else {
+			xor = src[j] ^ dst[j];
+			for (k = 0; k < 8; k++) {
+				if (!(xor & 0x80)) {
+					len++;
+					xor <<= 1;
+				} else {
+					break;
+				}
+			}
+			break;
+		}
+	}
+
+	return len;
+}
+
 #if defined(CONFIG_NET_IPV6)
 int net_if_config_ipv6_get(struct net_if *iface, struct net_if_ipv6 **ipv6)
 {
@@ -478,7 +504,7 @@ static void leave_mcast_all(struct net_if *iface)
 #endif /* CONFIG_NET_IPV6_MLD */
 
 #if defined(CONFIG_NET_IPV6_DAD)
-#define DAD_TIMEOUT (MSEC_PER_SEC / 10)
+#define DAD_TIMEOUT K_MSEC(100)
 
 static void dad_timeout(struct k_work *work)
 {
@@ -595,7 +621,7 @@ static inline void net_if_ipv6_start_dad(struct net_if *iface,
 #endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_ND)
-#define RS_TIMEOUT MSEC_PER_SEC
+#define RS_TIMEOUT K_SECONDS(1)
 #define RS_COUNT 3
 
 static void rs_timeout(struct k_work *work)
@@ -697,8 +723,7 @@ void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
 		vlifetime);
 
-	k_delayed_work_submit(&ifaddr->lifetime,
-			      vlifetime * MSEC_PER_SEC);
+	k_delayed_work_submit(&ifaddr->lifetime, K_SECONDS(vlifetime));
 }
 
 static struct net_if_addr *ipv6_addr_find(struct net_if *iface,
@@ -1214,18 +1239,18 @@ void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix *prefix,
 	 * all bits set means infinite and that value is never set
 	 * to timer.
 	 */
-	u32_t timeout = lifetime * MSEC_PER_SEC;
+	u32_t timeout = K_SECONDS(lifetime);
 
 	NET_ASSERT(lifetime != 0xffffffff);
 
-	if (lifetime > (0xfffffffe / MSEC_PER_SEC)) {
+	if (lifetime > (0xfffffffe / K_SECONDS(1))) {
 		timeout = 0xfffffffe;
 
 		NET_ERR("Prefix %s/%d lifetime %u overflow, "
 			"setting it to %u secs",
 			net_sprint_ipv6_addr(&prefix->prefix),
 			prefix->len,
-			lifetime, timeout / MSEC_PER_SEC);
+			lifetime, timeout / K_SECONDS(1));
 	}
 
 	NET_DBG("Prefix lifetime %u ms", timeout);
@@ -1303,8 +1328,7 @@ void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
 		net_sprint_ipv6_addr(&router->address.in6_addr),
 		lifetime);
 
-	k_delayed_work_submit(&router->lifetime,
-			      lifetime * MSEC_PER_SEC);
+	k_delayed_work_submit(&router->lifetime, K_SECONDS(lifetime));
 }
 
 static inline void net_if_router_init(struct net_if_router *router,
@@ -1324,8 +1348,7 @@ static inline void net_if_router_init(struct net_if_router *router,
 		router->is_infinite = false;
 
 		k_delayed_work_init(&router->lifetime, ipv6_router_expired);
-		k_delayed_work_submit(&router->lifetime,
-				      lifetime * MSEC_PER_SEC);
+		k_delayed_work_submit(&router->lifetime, K_SECONDS(lifetime));
 
 		NET_DBG("Expiring %s in %u secs", net_sprint_ipv6_addr(addr),
 			lifetime);
@@ -1461,29 +1484,10 @@ struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface)
 	return NULL;
 }
 
-static inline u8_t get_length(struct in6_addr *src, struct in6_addr *dst)
+static u8_t get_diff_ipv6(const struct in6_addr *src,
+			  const struct in6_addr *dst)
 {
-	u8_t j, k, xor;
-	u8_t len = 0;
-
-	for (j = 0; j < 16; j++) {
-		if (src->s6_addr[j] == dst->s6_addr[j]) {
-			len += 8;
-		} else {
-			xor = src->s6_addr[j] ^ dst->s6_addr[j];
-			for (k = 0; k < 8; k++) {
-				if (!(xor & 0x80)) {
-					len++;
-					xor <<= 1;
-				} else {
-					break;
-				}
-			}
-			break;
-		}
-	}
-
-	return len;
+	return get_ipaddr_diff((const u8_t *)src, (const u8_t *)dst, 16);
 }
 
 static inline bool is_proper_ipv6_address(struct net_if_addr *addr)
@@ -1515,7 +1519,7 @@ static inline struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 			continue;
 		}
 
-		len = get_length(dst, &ipv6->unicast[i].address.in6_addr);
+		len = get_diff_ipv6(dst, &ipv6->unicast[i].address.in6_addr);
 		if (len >= *best_so_far) {
 			*best_so_far = len;
 			src = &ipv6->unicast[i].address.in6_addr;
@@ -1754,6 +1758,129 @@ struct net_if *net_if_ipv4_select_src_iface(struct in_addr *dst)
 	}
 
 	return net_if_get_default();
+}
+
+static u8_t get_diff_ipv4(const struct in_addr *src,
+			  const struct in_addr *dst)
+{
+	return get_ipaddr_diff((const u8_t *)src, (const u8_t *)dst, 4);
+}
+
+static inline bool is_proper_ipv4_address(struct net_if_addr *addr)
+{
+	if (addr->is_used && addr->addr_state == NET_ADDR_PREFERRED &&
+	    addr->address.family == AF_INET &&
+	    !net_is_ipv4_ll_addr(&addr->address.in_addr)) {
+		return true;
+	}
+
+	return false;
+}
+
+static struct in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
+						  struct in_addr *dst,
+						  u8_t *best_so_far)
+{
+	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+	struct in_addr *src = NULL;
+	u8_t len;
+	int i;
+
+	if (!ipv4) {
+		return NULL;
+	}
+
+	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		if (!is_proper_ipv4_address(&ipv4->unicast[i])) {
+			continue;
+		}
+
+		len = get_diff_ipv4(dst, &ipv4->unicast[i].address.in_addr);
+		if (len >= *best_so_far) {
+			*best_so_far = len;
+			src = &ipv4->unicast[i].address.in_addr;
+		}
+	}
+
+	return src;
+}
+
+struct in_addr *net_if_ipv4_get_ll(struct net_if *iface,
+				   enum net_addr_state addr_state)
+{
+	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+	int i;
+
+	if (!ipv4) {
+		return NULL;
+	}
+
+	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		if (!ipv4->unicast[i].is_used ||
+		    (addr_state != NET_ADDR_ANY_STATE &&
+		     ipv4->unicast[i].addr_state != addr_state) ||
+		    ipv4->unicast[i].address.family != AF_INET) {
+			continue;
+		}
+
+		if (net_is_ipv4_ll_addr(&ipv4->unicast[i].address.in_addr)) {
+			return &ipv4->unicast[i].address.in_addr;
+		}
+	}
+
+	return NULL;
+}
+
+const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
+						  struct in_addr *dst)
+{
+	struct in_addr *src = NULL;
+	u8_t best_match = 0;
+	struct net_if *iface;
+
+	if (!net_is_ipv4_ll_addr(dst) && !net_is_ipv4_addr_mcast(dst)) {
+
+		for (iface = __net_if_start;
+		     !dst_iface && iface != __net_if_end;
+		     iface++) {
+			struct in_addr *addr;
+
+			addr = net_if_ipv4_get_best_match(iface, dst,
+							  &best_match);
+			if (addr) {
+				src = addr;
+			}
+		}
+
+		/* If caller has supplied interface, then use that */
+		if (dst_iface) {
+			src = net_if_ipv4_get_best_match(dst_iface, dst,
+							 &best_match);
+		}
+
+	} else {
+		for (iface = __net_if_start;
+		     !dst_iface && iface != __net_if_end;
+		     iface++) {
+			struct in_addr *addr;
+
+			addr = net_if_ipv4_get_ll(iface, NET_ADDR_PREFERRED);
+			if (addr) {
+				src = addr;
+				break;
+			}
+		}
+
+		if (dst_iface) {
+			src = net_if_ipv4_get_ll(dst_iface, NET_ADDR_PREFERRED);
+		}
+	}
+
+	if (!src) {
+		return net_ipv4_unspecified_address();
+	}
+
+	return src;
 }
 
 struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,

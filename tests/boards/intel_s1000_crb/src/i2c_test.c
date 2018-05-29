@@ -5,7 +5,9 @@
  */
 
 /**
- * @file Sample app to illustrate i2c master-slave communication on Intel_S1000.
+ * @file
+ *
+ * @brief Sample app to illustrate i2c master-slave communication on Intel_S1000.
  *
  * Intel_S1000 - Xtensa
  * --------------------

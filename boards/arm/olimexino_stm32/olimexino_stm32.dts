@@ -74,3 +74,8 @@
 &spi2 {
 	status = "ok";
 };
+
+&usb {
+	status = "ok";
+	disconnect-gpios = <&gpioc 12 0>;
+};

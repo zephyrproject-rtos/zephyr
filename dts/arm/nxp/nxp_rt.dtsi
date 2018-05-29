@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/clock/imx_ccm.h>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -28,17 +29,35 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			itcm0: itcm0 {
+			itcm0: itcm@0 {
 				reg = <0x00000000 0x20000>;
 			};
 
-			dtcm0: dtcm0 {
+			dtcm0: dtcm@20000000 {
 				reg = <0x20000000 0x20000>;
 			};
 
-			ocram0: ocram0 {
+			ocram0: ocram@20200000 {
 				reg = <0x20200000 0x40000>;
 			};
+		};
+
+		flexspi0: flexspi0@402a8000 {
+			compatible = "nxp,imx-flexspi";
+			reg = <0x402a8000 0x4000>;
+			interrupts = <108 0>;
+			label = "FLEXSPI0";
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		semc0: semc0@402f0000 {
+			compatible = "nxp,imx-semc";
+			reg = <0x402f0000 0x4000>;
+			interrupts = <109 0>;
+			label = "SEMC0";
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		ccm: ccm@400fc000 {
@@ -47,7 +66,7 @@
 			label = "CCM";
 
 			clock-controller;
-			#clocks-cells = <3>;
+			#clock-cells = <3>;
 		};
 
 		gpio1: gpio@401b8000 {
@@ -55,6 +74,8 @@
 			reg = <0x401b8000 0x4000>;
 			interrupts = <80 0>, <81 0>;
 			label = "GPIO_1";
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio2: gpio@401bc000 {
@@ -62,6 +83,8 @@
 			reg = <0x401bc000 0x4000>;
 			interrupts = <82 0>, <83 0>;
 			label = "GPIO_2";
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio3: gpio@401c0000 {
@@ -69,6 +92,8 @@
 			reg = <0x401c0000 0x4000>;
 			interrupts = <84 0>, <85 0>;
 			label = "GPIO_3";
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio4: gpio@401c4000 {
@@ -76,6 +101,8 @@
 			reg = <0x401c4000 0x4000>;
 			interrupts = <86 0>, <87 0>;
 			label = "GPIO_4";
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio5: gpio@400c0000 {
@@ -83,6 +110,8 @@
 			reg = <0x400c0000 0x4000>;
 			interrupts = <88 0>, <89 0>;
 			label = "GPIO_5";
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		iomuxc: iomuxc@401f8000 {

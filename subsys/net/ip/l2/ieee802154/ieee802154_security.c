@@ -22,6 +22,7 @@ int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx,
 				      u8_t *key, u8_t key_len)
 {
 	u8_t tag_size;
+	int ret;
 
 	if (level > IEEE802154_SECURITY_LEVEL_ENC_MIC_128 ||
 	    key_mode > IEEE802154_KEY_ID_MODE_SRC_8_INDEX) {
@@ -57,6 +58,27 @@ int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx,
 
 	sec_ctx->enc.mode_params.ccm_info.tag_len = tag_size;
 	sec_ctx->dec.mode_params.ccm_info.tag_len = tag_size;
+
+	ret = cipher_begin_session(sec_ctx->enc.device, &sec_ctx->enc,
+				   CRYPTO_CIPHER_ALGO_AES,
+				   CRYPTO_CIPHER_MODE_CCM,
+				   CRYPTO_CIPHER_OP_ENCRYPT);
+	if (ret) {
+		NET_ERR("Could not setup encryption context");
+
+		return ret;
+	}
+
+	ret = cipher_begin_session(sec_ctx->dec.device, &sec_ctx->dec,
+				   CRYPTO_CIPHER_ALGO_AES,
+				   CRYPTO_CIPHER_MODE_CCM,
+				   CRYPTO_CIPHER_OP_DECRYPT);
+	if (ret) {
+		NET_ERR("Could not setup decryption context");
+		cipher_free_session(sec_ctx->enc.device, &sec_ctx->enc);
+
+		return ret;
+	}
 
 	return 0;
 }
@@ -153,7 +175,6 @@ bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 int ieee802154_security_init(struct ieee802154_security_ctx *sec_ctx)
 {
 	struct device *dev;
-	int ret;
 
 	memset(&sec_ctx->enc, 0, sizeof(struct cipher_ctx));
 	memset(&sec_ctx->dec, 0, sizeof(struct cipher_ctx));
@@ -170,26 +191,8 @@ int ieee802154_security_init(struct ieee802154_security_ctx *sec_ctx)
 	sec_ctx->enc.mode_params.ccm_info.nonce_len = 13;
 	sec_ctx->dec.mode_params.ccm_info.nonce_len = 13;
 
-	ret = cipher_begin_session(dev, &sec_ctx->enc,
-				   CRYPTO_CIPHER_ALGO_AES,
-				   CRYPTO_CIPHER_MODE_CCM,
-				   CRYPTO_CIPHER_OP_ENCRYPT);
-	if (ret) {
-		NET_ERR("Could not setup encryption context");
-
-		return ret;
-	}
-
-	ret = cipher_begin_session(dev, &sec_ctx->dec,
-				   CRYPTO_CIPHER_ALGO_AES,
-				   CRYPTO_CIPHER_MODE_CCM,
-				   CRYPTO_CIPHER_OP_DECRYPT);
-	if (ret) {
-		NET_ERR("Could not setup decryption context");
-		cipher_free_session(dev, &sec_ctx->enc);
-
-		return ret;
-	}
+	sec_ctx->enc.device = dev;
+	sec_ctx->dec.device = dev;
 
 	return 0;
 }

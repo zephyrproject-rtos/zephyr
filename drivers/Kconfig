@@ -77,4 +77,6 @@ source "drivers/wifi/Kconfig"
 
 source "drivers/led/Kconfig"
 
+source "drivers/can/Kconfig"
+
 endmenu

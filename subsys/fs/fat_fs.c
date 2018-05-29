@@ -6,13 +6,23 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <kernel.h>
 #include <zephyr/types.h>
 #include <errno.h>
 #include <init.h>
 #include <fs.h>
 #include <misc/__assert.h>
+#include <ff.h>
 
 #define FATFS_MAX_FILE_NAME 12 /* Uses 8.3 SFN */
+
+/* Memory pool for FatFs directory objects */
+K_MEM_SLAB_DEFINE(fatfs_dirp_pool, sizeof(DIR),
+			CONFIG_FS_FATFS_NUM_DIRS, 4);
+
+/* Memory pool for FatFs file objects */
+K_MEM_SLAB_DEFINE(fatfs_filep_pool, sizeof(FIL),
+			CONFIG_FS_FATFS_NUM_FILES, 4);
 
 static int translate_error(int error)
 {
@@ -57,10 +67,18 @@ static int fatfs_open(struct fs_file_t *zfp, const char *file_name)
 {
 	FRESULT res;
 	u8_t fs_mode;
+	void *ptr;
+
+	if (k_mem_slab_alloc(&fatfs_filep_pool, &ptr, K_NO_WAIT) == 0) {
+		memset(ptr, 0, sizeof(FIL));
+		zfp->filep = ptr;
+	} else {
+		return -ENOMEM;
+	}
 
 	fs_mode = FA_READ | FA_WRITE | FA_OPEN_ALWAYS;
 
-	res = f_open(&zfp->fatfs_fp, file_name, fs_mode);
+	res = f_open(zfp->filep, &file_name[1], fs_mode);
 
 	return translate_error(res);
 }
@@ -69,7 +87,10 @@ static int fatfs_close(struct fs_file_t *zfp)
 {
 	FRESULT res;
 
-	res = f_close(&zfp->fatfs_fp);
+	res = f_close(zfp->filep);
+
+	/* Free file ptr memory */
+	k_mem_slab_free(&fatfs_filep_pool, &zfp->filep);
 
 	return translate_error(res);
 }
@@ -78,7 +99,7 @@ static int fatfs_unlink(struct fs_mount_t *mountp, const char *path)
 {
 	FRESULT res;
 
-	res = f_unlink(path);
+	res = f_unlink(&path[1]);
 
 	return translate_error(res);
 }
@@ -88,7 +109,7 @@ static ssize_t fatfs_read(struct fs_file_t *zfp, void *ptr, size_t size)
 	FRESULT res;
 	unsigned int br;
 
-	res = f_read(&zfp->fatfs_fp, ptr, size, &br);
+	res = f_read(zfp->filep, ptr, size, &br);
 	if (res != FR_OK) {
 		return translate_error(res);
 	}
@@ -101,7 +122,7 @@ static ssize_t fatfs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 	FRESULT res;
 	unsigned int bw;
 
-	res = f_write(&zfp->fatfs_fp, ptr, size, &bw);
+	res = f_write(zfp->filep, ptr, size, &bw);
 	if (res != FR_OK) {
 		return translate_error(res);
 	}
@@ -119,51 +140,51 @@ static int fatfs_seek(struct fs_file_t *zfp, off_t offset, int whence)
 		pos = offset;
 		break;
 	case FS_SEEK_CUR:
-		pos = f_tell(&zfp->fatfs_fp) + offset;
+		pos = f_tell((FIL *)zfp->filep) + offset;
 		break;
 	case FS_SEEK_END:
-		pos = f_size(&zfp->fatfs_fp) + offset;
+		pos = f_size((FIL *)zfp->filep) + offset;
 		break;
 	default:
 		return -EINVAL;
 	}
 
-	if ((pos < 0) || (pos > f_size(&zfp->fatfs_fp))) {
+	if ((pos < 0) || (pos > f_size((FIL *)zfp->filep))) {
 		return -EINVAL;
 	}
 
-	res = f_lseek(&zfp->fatfs_fp, pos);
+	res = f_lseek(zfp->filep, pos);
 
 	return translate_error(res);
 }
 
 static off_t fatfs_tell(struct fs_file_t *zfp)
 {
-	return f_tell(&zfp->fatfs_fp);
+	return f_tell((FIL *)zfp->filep);
 }
 
 static int fatfs_truncate(struct fs_file_t *zfp, off_t length)
 {
 	FRESULT res = FR_OK;
-	off_t cur_length = f_size(&zfp->fatfs_fp);
+	off_t cur_length = f_size((FIL *)zfp->filep);
 
 	/* f_lseek expands file if new position is larger than file size */
-	res = f_lseek(&zfp->fatfs_fp, length);
+	res = f_lseek(zfp->filep, length);
 	if (res != FR_OK) {
 		return translate_error(res);
 	}
 
 	if (length < cur_length) {
-		res = f_truncate(&zfp->fatfs_fp);
+		res = f_truncate(zfp->filep);
 	} else {
 		/*
 		 * Get actual length after expansion. This could be
 		 * less if there was not enough space in the volume
 		 * to expand to the requested length
 		 */
-		length = f_tell(&zfp->fatfs_fp);
+		length = f_tell((FIL *)zfp->filep);
 
-		res = f_lseek(&zfp->fatfs_fp, cur_length);
+		res = f_lseek(zfp->filep, cur_length);
 		if (res != FR_OK) {
 			return translate_error(res);
 		}
@@ -178,7 +199,7 @@ static int fatfs_truncate(struct fs_file_t *zfp, off_t length)
 		u8_t c = 0;
 
 		for (int i = cur_length; i < length; i++) {
-			res = f_write(&zfp->fatfs_fp, &c, 1, &bw);
+			res = f_write(zfp->filep, &c, 1, &bw);
 			if (res != FR_OK) {
 				break;
 			}
@@ -192,7 +213,7 @@ static int fatfs_sync(struct fs_file_t *zfp)
 {
 	FRESULT res = FR_OK;
 
-	res = f_sync(&zfp->fatfs_fp);
+	res = f_sync(zfp->filep);
 
 	return translate_error(res);
 }
@@ -201,7 +222,7 @@ static int fatfs_mkdir(struct fs_mount_t *mountp, const char *path)
 {
 	FRESULT res;
 
-	res = f_mkdir(path);
+	res = f_mkdir(&path[1]);
 
 	return translate_error(res);
 }
@@ -209,8 +230,17 @@ static int fatfs_mkdir(struct fs_mount_t *mountp, const char *path)
 static int fatfs_opendir(struct fs_dir_t *zdp, const char *path)
 {
 	FRESULT res;
+	void *ptr;
 
-	res = f_opendir(&zdp->fatfs_dp, path);
+	if (k_mem_slab_alloc(&fatfs_dirp_pool, &ptr, K_NO_WAIT) == 0) {
+		memset(ptr, 0, sizeof(DIR));
+		zdp->dirp = ptr;
+	} else {
+		return -ENOMEM;
+	}
+
+
+	res = f_opendir(zdp->dirp, &path[1]);
 
 	return translate_error(res);
 }
@@ -220,7 +250,7 @@ static int fatfs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 	FRESULT res;
 	FILINFO fno;
 
-	res = f_readdir(&zdp->fatfs_dp, &fno);
+	res = f_readdir(zdp->dirp, &fno);
 	if (res == FR_OK) {
 		entry->type = ((fno.fattrib & AM_DIR) ?
 			       FS_DIR_ENTRY_DIR : FS_DIR_ENTRY_FILE);
@@ -235,7 +265,10 @@ static int fatfs_closedir(struct fs_dir_t *zdp)
 {
 	FRESULT res;
 
-	res = f_closedir(&zdp->fatfs_dp);
+	res = f_closedir(zdp->dirp);
+
+	/* Free file ptr memory */
+	k_mem_slab_free(&fatfs_dirp_pool, &zdp->dirp);
 
 	return translate_error(res);
 }
@@ -246,7 +279,7 @@ static int fatfs_stat(struct fs_mount_t *mountp,
 	FRESULT res;
 	FILINFO fno;
 
-	res = f_stat(path, &fno);
+	res = f_stat(&path[1], &fno);
 	if (res == FR_OK) {
 		entry->type = ((fno.fattrib & AM_DIR) ?
 			       FS_DIR_ENTRY_DIR : FS_DIR_ENTRY_FILE);
@@ -263,7 +296,7 @@ static int fatfs_statvfs(struct fs_mount_t *mountp,
 	FATFS *fs;
 	FRESULT res;
 
-	res = f_getfree("", &stat->f_bfree, &fs);
+	res = f_getfree(&mountp->mnt_point[1], &stat->f_bfree, &fs);
 	if (res != FR_OK) {
 		return -EIO;
 	}
@@ -283,15 +316,17 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 {
 	FRESULT res;
 
-	res = f_mount((FATFS *)mountp->fs_data, "", 1);
+	res = f_mount((FATFS *)mountp->fs_data, &mountp->mnt_point[1], 1);
 
 	/* If no file system found then create one */
 	if (res == FR_NO_FILESYSTEM) {
 		u8_t work[_MAX_SS];
 
-		res = f_mkfs("", (FM_FAT | FM_SFD), 0, work, sizeof(work));
+		res = f_mkfs(&mountp->mnt_point[1],
+				(FM_FAT | FM_SFD), 0, work, sizeof(work));
 		if (res == FR_OK) {
-			res = f_mount((FATFS *)mountp->fs_data, "", 1);
+			res = f_mount((FATFS *)mountp->fs_data,
+					&mountp->mnt_point[1], 1);
 		}
 	}
 

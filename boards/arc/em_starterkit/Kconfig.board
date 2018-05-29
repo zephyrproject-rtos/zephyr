@@ -6,7 +6,10 @@
 #
 config BOARD_EM_STARTERKIT
 	bool "ARC EM Starter Kit"
-	depends on (SOC_EM7D || SOC_EM9D || SOC_EM11D)
+	depends on SOC_EMSK
+	select HAS_DTS_I2C
+	select HAS_DTS_SPI
+	select HAS_DTS
 	help
 	  The DesignWare ARC EM Starter Kit board is a board
 	  that can host up to 3 different SOC FPGA bit files.

@@ -9,7 +9,7 @@
 #include <misc/printk.h>
 #include <shell/shell.h>
 #include <openthread/cli.h>
-#include <openthread/platform/platform.h>
+#include <platform.h>
 
 #include "platform-zephyr.h"
 

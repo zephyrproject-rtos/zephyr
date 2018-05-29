@@ -65,7 +65,7 @@
 	static inline sys_ ## __nname ## _t *				    \
 	sys_ ## __lname ## _peek_next_no_check(sys_ ## __nname ## _t *node) \
 	{								    \
-		return sys_ ## __nname ## _next_peek(node);		    \
+		return z_ ## __nname ## _next_peek(node);		    \
 	}
 
 #define Z_GENLIST_PEEK_NEXT(__lname, __nname)				     \
@@ -81,12 +81,12 @@
 	sys_ ## __lname ## _prepend(sys_ ## __lname ## _t *list,	      \
 				    sys_ ## __nname ## _t *node)	      \
 	{								      \
-		sys_ ## __nname ## _next_set(node,			      \
+		z_ ## __nname ## _next_set(node,			      \
 					sys_ ## __lname ## _peek_head(list)); \
-		sys_ ## __lname ## _head_set(list, node);		      \
+		z_ ## __lname ## _head_set(list, node);			      \
 									      \
 		if (!sys_ ## __lname ## _peek_tail(list)) {		      \
-			sys_ ## __lname ## _tail_set(list,		      \
+			z_ ## __lname ## _tail_set(list,		      \
 					sys_ ## __lname ## _peek_head(list)); \
 		}							      \
 	}
@@ -96,16 +96,16 @@
 	sys_ ## __lname ## _append(sys_ ## __lname ## _t *list,		\
 				   sys_ ## __nname ## _t *node)		\
 	{								\
-		sys_ ## __nname ## _next_set(node, NULL);		\
+		z_ ## __nname ## _next_set(node, NULL);			\
 									\
 		if (!sys_ ## __lname ## _peek_tail(list)) {		\
-			sys_ ## __lname ## _tail_set(list, node);	\
-			sys_ ## __lname ## _head_set(list, node);	\
+			z_ ## __lname ## _tail_set(list, node);		\
+			z_ ## __lname ## _head_set(list, node);		\
 		} else {						\
-			sys_ ## __nname ## _next_set(			\
+			z_ ## __nname ## _next_set(			\
 				sys_ ## __lname ## _peek_tail(list),	\
 				node);					\
-			sys_ ## __lname ## _tail_set(list, node);	\
+			z_ ## __lname ## _tail_set(list, node);		\
 		}							\
 	}
 
@@ -115,14 +115,14 @@
 					void *head, void *tail)		\
 {									\
 	if (!sys_ ## __lname ## _peek_tail(list)) {			\
-		sys_ ## __lname ## _head_set(list,			\
+		z_ ## __lname ## _head_set(list,			\
 					(sys_ ## __nname ## _t *)head); \
 	} else {							\
-		sys_ ## __nname ## _next_set(				\
+		z_ ## __nname ## _next_set(				\
 			sys_ ## __lname ## _peek_tail(list),		\
 			(sys_ ## __nname ## _t *)head);			\
 	}								\
-	sys_ ## __lname ## _tail_set(list,				\
+	z_ ## __lname ## _tail_set(list,				\
 				     (sys_ ## __nname ## _t *)tail);	\
 }
 
@@ -146,12 +146,12 @@
 	{								\
 		if (!prev) {						\
 			sys_ ## __lname ## _prepend(list, node);	\
-		} else if (!sys_ ## __nname ## _next_peek(prev)) {	\
+		} else if (!z_ ## __nname ## _next_peek(prev)) {	\
 			sys_ ## __lname ## _append(list, node);		\
 		} else {						\
-			sys_ ## __nname ## _next_set(node,		\
-				sys_ ## __nname ## _next_peek(prev));	\
-			sys_ ## __nname ## _next_set(prev, node);	\
+			z_ ## __nname ## _next_set(node,		\
+				z_ ## __nname ## _next_peek(prev));	\
+			z_ ## __nname ## _next_set(prev, node);		\
 		}							\
 	}
 
@@ -162,10 +162,10 @@
 		sys_ ## __nname ## _t *node =				\
 				sys_ ## __lname ## _peek_head(list);	\
 									\
-		sys_ ## __lname ## _head_set(list,			\
-				sys_ ## __nname ## _next_peek(node));	\
+		z_ ## __lname ## _head_set(list,			\
+				z_ ## __nname ## _next_peek(node));	\
 		if (sys_ ## __lname ## _peek_tail(list) == node) {	\
-			sys_ ## __lname ## _tail_set(list,		\
+			z_ ## __lname ## _tail_set(list,		\
 				sys_ ## __lname ## _peek_head(list));	\
 		}							\
 									\
@@ -187,26 +187,26 @@
 				   sys_ ## __nname ## _t *node)		      \
 	{								      \
 		if (!prev_node) {					      \
-			sys_ ## __lname ## _head_set(list,		      \
-				sys_ ## __nname ## _next_peek(node));	      \
+			z_ ## __lname ## _head_set(list,		      \
+				z_ ## __nname ## _next_peek(node));	      \
 									      \
 			/* Was node also the tail? */			      \
 			if (sys_ ## __lname ## _peek_tail(list) == node) {    \
-				sys_ ## __lname ## _tail_set(list,	      \
+				z_ ## __lname ## _tail_set(list,	      \
 					sys_ ## __lname ## _peek_head(list)); \
 			}						      \
 		} else {						      \
-			sys_ ## __nname ## _next_set(prev_node,		      \
-				sys_ ## __nname ## _next_peek(node));	      \
+			z_ ## __nname ## _next_set(prev_node,		      \
+				z_ ## __nname ## _next_peek(node));	      \
 									      \
 			/* Was node the tail? */			      \
 			if (sys_ ## __lname ## _peek_tail(list) == node) {    \
-				sys_ ## __lname ## _tail_set(list,	      \
+				z_ ## __lname ## _tail_set(list,	      \
 							     prev_node);      \
 			}						      \
 		}							      \
 									      \
-		sys_ ## __nname ## _next_set(node, NULL);		      \
+		z_ ## __nname ## _next_set(node, NULL);			      \
 	}
 
 #define Z_GENLIST_FIND_AND_REMOVE(__lname, __nname)			 \

@@ -26,6 +26,7 @@
 #include <syscall_handler.h>
 #include <kernel_internal.h>
 #include <kswap.h>
+#include <init.h>
 
 extern struct _static_thread_data _static_thread_data_list_start[];
 extern struct _static_thread_data _static_thread_data_list_end[];
@@ -36,6 +37,29 @@ extern struct _static_thread_data _static_thread_data_list_end[];
 	     thread_data < _static_thread_data_list_end; \
 	     thread_data++)
 
+#if defined(CONFIG_THREAD_MONITOR)
+void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
+{
+	struct k_thread *thread;
+	unsigned int key;
+
+	__ASSERT(user_cb, "user_cb can not be NULL");
+
+	/*
+	 * Lock is needed to make sure that the _kernel.threads is not being
+	 * modified by the user_cb either dircetly or indircetly.
+	 * The indircet ways are through calling k_thread_create and
+	 * k_thread_abort from user_cb.
+	 */
+	key = irq_lock();
+	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
+		user_cb(thread, user_data);
+	}
+	irq_unlock(key);
+}
+#else
+void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data) { }
+#endif
 
 int k_is_in_isr(void)
 {
@@ -108,7 +132,7 @@ void _impl_k_thread_custom_data_set(void *value)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_thread_custom_data_set, data)
+Z_SYSCALL_HANDLER(k_thread_custom_data_set, data)
 {
 	_impl_k_thread_custom_data_set((void *)data);
 	return 0;
@@ -121,7 +145,7 @@ void *_impl_k_thread_custom_data_get(void)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER0_SIMPLE(k_thread_custom_data_get);
+Z_SYSCALL_HANDLER0_SIMPLE(k_thread_custom_data_get);
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_THREAD_CUSTOM_DATA */
 
@@ -185,37 +209,6 @@ void _check_stack_sentinel(void)
 }
 #endif
 
-/*
- * Common thread entry point function (used by all threads)
- *
- * This routine invokes the actual thread entry point function and passes
- * it three arguments. It also handles graceful termination of the thread
- * if the entry point function ever returns.
- *
- * This routine does not return, and is marked as such so the compiler won't
- * generate preamble code that is only used by functions that actually return.
- */
-FUNC_NORETURN void _thread_entry(k_thread_entry_t entry,
-				 void *p1, void *p2, void *p3)
-{
-	entry(p1, p2, p3);
-
-#ifdef CONFIG_MULTITHREADING
-	k_thread_abort(k_current_get());
-#else
-	for (;;) {
-		k_cpu_idle();
-	}
-#endif
-
-	/*
-	 * Compiler can't tell that k_thread_abort() won't return and issues a
-	 * warning unless we tell it that control never gets this far.
-	 */
-
-	CODE_UNREACHABLE;
-}
-
 #ifdef CONFIG_MULTITHREADING
 void _impl_k_thread_start(struct k_thread *thread)
 {
@@ -232,7 +225,7 @@ void _impl_k_thread_start(struct k_thread *thread)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1_SIMPLE_VOID(k_thread_start, K_OBJ_THREAD, struct k_thread *);
+Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_thread_start, K_OBJ_THREAD, struct k_thread *);
 #endif
 #endif
 
@@ -262,15 +255,25 @@ static inline size_t adjust_stack_size(size_t stack_size)
 	return stack_size;
 }
 #else
+int z_stack_adjust_initialized;
+
 static inline size_t adjust_stack_size(size_t stack_size)
 {
+	size_t random_val;
+
+	if (!z_stack_adjust_initialized) {
+		random_val = z_early_boot_rand32_get();
+	} else {
+		random_val = sys_rand32_get();
+	}
+
 	/* Don't need to worry about alignment of the size here, _new_thread()
 	 * is required to do it
 	 *
 	 * FIXME: Not the best way to get a random number in a range.
 	 * See #6493
 	 */
-	const size_t fuzz = sys_rand32_get() % CONFIG_STACK_POINTER_RANDOM;
+	const size_t fuzz = random_val % CONFIG_STACK_POINTER_RANDOM;
 
 	if (unlikely(fuzz * 2 > stack_size)) {
 		return stack_size;
@@ -278,7 +281,6 @@ static inline size_t adjust_stack_size(size_t stack_size)
 
 	return stack_size - fuzz;
 }
-
 #if defined(CONFIG_STACK_GROWS_UP)
 	/* This is so rare not bothering for now */
 #error "Stack pointer randomization not implemented for upward growing stacks"
@@ -303,13 +305,15 @@ void _setup_new_thread(struct k_thread *new_thread,
 
 	/* Any given thread has access to itself */
 	k_object_access_grant(new_thread, new_thread);
-
+#endif
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	/* _current may be null if the dummy thread is not used */
 	if (!_current) {
+		new_thread->resource_pool = NULL;
 		return;
 	}
 #endif
+#ifdef CONFIG_USERSPACE
 	/* New threads inherit any memory domain membership by the parent */
 	if (_current->mem_domain_info.mem_domain) {
 		k_mem_domain_add_thread(_current->mem_domain_info.mem_domain,
@@ -320,6 +324,10 @@ void _setup_new_thread(struct k_thread *new_thread,
 		_thread_perms_inherit(_current, new_thread);
 	}
 #endif
+#ifdef CONFIG_SCHED_DEADLINE
+	new_thread->base.prio_deadline = 0;
+#endif
+	new_thread->resource_pool = _current->resource_pool;
 }
 
 #ifdef CONFIG_MULTITHREADING
@@ -341,8 +349,8 @@ k_tid_t _impl_k_thread_create(struct k_thread *new_thread,
 
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_thread_create,
-		 new_thread_p, stack_p, stack_size, entry, p1, more_args)
+Z_SYSCALL_HANDLER(k_thread_create,
+		  new_thread_p, stack_p, stack_size, entry, p1, more_args)
 {
 	int prio;
 	u32_t options, delay;
@@ -357,12 +365,12 @@ _SYSCALL_HANDLER(k_thread_create,
 	k_thread_stack_t *stack = (k_thread_stack_t *)stack_p;
 
 	/* The thread and stack objects *must* be in an uninitialized state */
-	_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD);
+	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD));
 	stack_object = _k_object_find(stack);
-	_SYSCALL_VERIFY_MSG(!_obj_validation_check(stack_object, stack,
-						   K_OBJ__THREAD_STACK_ELEMENT,
-						   _OBJ_INIT_FALSE),
-			    "bad stack object");
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!_obj_validation_check(stack_object, stack,
+						K_OBJ__THREAD_STACK_ELEMENT,
+						_OBJ_INIT_FALSE),
+				    "bad stack object"));
 
 #ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	/* Verify that the stack size passed in is OK by computing the total
@@ -373,20 +381,21 @@ _SYSCALL_HANDLER(k_thread_create,
 	 * size and not allocated in addition to the stack size
 	 */
 	guard_size = (u32_t)K_THREAD_STACK_BUFFER(stack) - (u32_t)stack;
-	_SYSCALL_VERIFY_MSG(!__builtin_uadd_overflow(guard_size, stack_size,
-						     &total_size),
-			    "stack size overflow (%u+%u)", stack_size,
-			    guard_size);
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!__builtin_uadd_overflow(guard_size,
+							     stack_size,
+							     &total_size),
+				    "stack size overflow (%u+%u)", stack_size,
+				    guard_size));
 #else
 	total_size = stack_size;
 #endif
 	/* They really ought to be equal, make this more strict? */
-	_SYSCALL_VERIFY_MSG(total_size <= stack_object->data,
-			    "stack size %u is too big, max is %u",
-			    total_size, stack_object->data);
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(total_size <= stack_object->data,
+				    "stack size %u is too big, max is %u",
+				    total_size, stack_object->data));
 
 	/* Verify the struct containing args 6-10 */
-	_SYSCALL_MEMORY_READ(margs, sizeof(*margs));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(margs, sizeof(*margs)));
 
 	/* Stash struct arguments in local variables to prevent switcheroo
 	 * attacks
@@ -399,14 +408,15 @@ _SYSCALL_HANDLER(k_thread_create,
 	/* User threads may only create other user threads and they can't
 	 * be marked as essential
 	 */
-	_SYSCALL_VERIFY(options & K_USER);
-	_SYSCALL_VERIFY(!(options & K_ESSENTIAL));
+	Z_OOPS(Z_SYSCALL_VERIFY(options & K_USER));
+	Z_OOPS(Z_SYSCALL_VERIFY(!(options & K_ESSENTIAL)));
 
 	/* Check validity of prio argument; must be the same or worse priority
 	 * than the caller
 	 */
-	_SYSCALL_VERIFY(_is_valid_prio(prio, NULL));
-	_SYSCALL_VERIFY(_is_prio_lower_or_equal(prio, _current->base.prio));
+	Z_OOPS(Z_SYSCALL_VERIFY(_is_valid_prio(prio, NULL)));
+	Z_OOPS(Z_SYSCALL_VERIFY(_is_prio_lower_or_equal(prio,
+							_current->base.prio)));
 
 	_setup_new_thread((struct k_thread *)new_thread, stack, stack_size,
 			  (k_thread_entry_t)entry, (void *)p1,
@@ -443,7 +453,7 @@ int _impl_k_thread_cancel(k_tid_t tid)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1_SIMPLE(k_thread_cancel, K_OBJ_THREAD, struct k_thread *);
+Z_SYSCALL_HANDLER1_SIMPLE(k_thread_cancel, K_OBJ_THREAD, struct k_thread *);
 #endif
 
 void _k_thread_single_suspend(struct k_thread *thread)
@@ -469,7 +479,7 @@ void _impl_k_thread_suspend(struct k_thread *thread)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1_SIMPLE_VOID(k_thread_suspend, K_OBJ_THREAD, k_tid_t);
+Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_thread_suspend, K_OBJ_THREAD, k_tid_t);
 #endif
 
 void _k_thread_single_resume(struct k_thread *thread)
@@ -488,7 +498,7 @@ void _impl_k_thread_resume(struct k_thread *thread)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1_SIMPLE_VOID(k_thread_resume, K_OBJ_THREAD, k_tid_t);
+Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_thread_resume, K_OBJ_THREAD, k_tid_t);
 #endif
 
 void _k_thread_single_abort(struct k_thread *thread)

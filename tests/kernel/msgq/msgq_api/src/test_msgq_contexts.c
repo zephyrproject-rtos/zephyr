@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_kernel_msgq
- * @{
- * @defgroup t_msgq_context test_msgq_context
- * @brief TestPurpose: verify zephyr msgq apis across contexts
- * @}
- */
-
 #include "test_msgq.h"
 
 /**TESTPOINT: init via K_MSGQ_DEFINE*/
@@ -139,8 +131,14 @@ static void msgq_isr(struct k_msgq *pmsgq)
 	/**TESTPOINT: msgq purge*/
 	purge_msgq(pmsgq);
 }
+/**
+ * @addtogroup kernel_message_queue_tests
+ * @{
+ */
 
-/*test cases*/
+/**
+ * @see k_msgq_init()
+ */
 void test_msgq_thread(void)
 {
 	/**TESTPOINT: init via k_msgq_init*/
@@ -151,6 +149,9 @@ void test_msgq_thread(void)
 	msgq_thread(&kmsgq);
 }
 
+/**
+ * @see k_msgq_init()
+ */
 void test_msgq_thread_overflow(void)
 {
 	/**TESTPOINT: init via k_msgq_init*/
@@ -161,6 +162,41 @@ void test_msgq_thread_overflow(void)
 	msgq_thread_overflow(&kmsgq);
 }
 
+#ifdef CONFIG_USERSPACE
+/**
+ * @see k_msgq_init()
+ */
+void test_msgq_user_thread(void)
+{
+	struct k_msgq *q;
+
+	q = k_object_alloc(K_OBJ_MSGQ);
+	zassert_not_null(q, "couldn't alloc message queue");
+	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN), NULL);
+	k_sem_init(&end_sema, 0, 1);
+
+	msgq_thread(q);
+}
+
+/**
+ * @see k_msgq_init()
+ */
+void test_msgq_user_thread_overflow(void)
+{
+	struct k_msgq *q;
+
+	q = k_object_alloc(K_OBJ_MSGQ);
+	zassert_not_null(q, "couldn't alloc message queue");
+	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, 1), NULL);
+	k_sem_init(&end_sema, 0, 1);
+
+	msgq_thread_overflow(q);
+}
+#endif /* CONFIG_USERSPACE */
+
+/**
+ * @see k_msgq_init()
+ */
 void test_msgq_isr(void)
 {
 	struct k_msgq stack_msgq;
@@ -171,3 +207,7 @@ void test_msgq_isr(void)
 	msgq_isr(&stack_msgq);
 	msgq_isr(&kmsgq);
 }
+
+/**
+ * @}
+ */

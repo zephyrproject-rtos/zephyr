@@ -11,3 +11,4 @@ patches for code, documentation, tests, and more, directly to the project.
 
    contribute_guidelines.rst
    contribute_non-apache.rst
+   doc-guidelines.rst

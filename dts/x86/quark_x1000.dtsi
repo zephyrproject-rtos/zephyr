@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2017 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "skeleton.dtsi"
 #include <dt-bindings/interrupt-controller/intel-ioapic.h>
 #include <dt-bindings/i2c/i2c.h>
@@ -19,7 +25,7 @@
 			compatible = "intel,ioapic";
 			reg = <0xfec00000 0x100000>;
 			interrupt-controller;
-			#interrupt-cells = <2>;
+			#interrupt-cells = <3>;
 		};
 	};
 
@@ -41,21 +47,23 @@
 		ranges;
 
 
-		uart0: uart@f0008000 {
+		uart0: uart@9000f000 {
 			compatible = "ns16550";
-			reg = <0xf0008000 0x400>;
+			reg = <0x9000f000 0x400>;
 			label = "UART_0";
-			interrupts = <4 IRQ_TYPE_EDGE_RISING>;
+			clock-frequency = <44236800>;
+			interrupts = <0 IRQ_TYPE_LEVEL_LOW 0>;
 			interrupt-parent = <&intc>;
 
 			status = "disabled";
 		};
 
-		uart1: uart@f0009000 {
+		uart1: uart@9000b000 {
 			compatible = "ns16550";
-			reg = <0xf0009000 0x400>;
+			reg = <0x9000b000 0x400>;
 			label = "UART_1";
-			interrupts = <3 IRQ_TYPE_EDGE_RISING>;
+			clock-frequency = <44236800>;
+			interrupts = <17 IRQ_TYPE_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
 			status = "disabled";
@@ -67,7 +75,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x90007000 0x400>;
-			interrupts = <18 IRQ_TYPE_LEVEL_LOW>;
+			interrupts = <18 IRQ_TYPE_LEVEL_LOW 2>;
 			interrupt-parent = <&intc>;
 			label = "I2C_0";
 

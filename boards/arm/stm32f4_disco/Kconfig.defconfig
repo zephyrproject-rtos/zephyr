@@ -8,7 +8,7 @@
 if BOARD_STM32F4_DISCO
 
 config BOARD
-	default stm32f4_disco
+	default "stm32f4_disco"
 
 if UART_CONSOLE
 

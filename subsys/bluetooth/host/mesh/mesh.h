@@ -15,5 +15,3 @@
 #define BT_MESH_ADDR_IS_RFU(addr) ((addr) >= 0xff00 && (addr) <= 0xfffb)
 
 struct bt_mesh_net;
-
-bool bt_mesh_is_provisioned(void);

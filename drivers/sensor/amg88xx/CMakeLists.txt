@@ -1,2 +1,4 @@
-zephyr_sources_ifdef(CONFIG_AMG88XX amg88xx.c)
-zephyr_sources_ifdef(CONFIG_AMG88XX_TRIGGER amg88xx_trigger.c)
+zephyr_library()
+
+zephyr_library_sources_ifdef(CONFIG_AMG88XX amg88xx.c)
+zephyr_library_sources_ifdef(CONFIG_AMG88XX_TRIGGER amg88xx_trigger.c)

@@ -1004,7 +1004,7 @@ static int eval_msg_unsuback(struct mqtt_test *mqtt_test)
 	return eval_msg_packet_id(mqtt_test, MQTT_UNSUBACK);
 }
 
-void run_tests(void)
+void test_mqtt_packet(void)
 {
 	TC_START("MQTT Library test");
 
@@ -1033,6 +1033,6 @@ void run_tests(void)
 void test_main(void)
 {
 	ztest_test_suite(test_mqtt_packet_fn,
-		ztest_unit_test(run_tests));
+		ztest_unit_test(test_mqtt_packet));
 	ztest_run_test_suite(test_mqtt_packet_fn);
 }

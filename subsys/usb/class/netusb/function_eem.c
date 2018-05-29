@@ -15,6 +15,7 @@
 
 #include <net/net_pkt.h>
 
+#include <usb_descriptor.h>
 #include "netusb.h"
 
 static u8_t tx_buf[NETUSB_MTU], rx_buf[NETUSB_MTU];
@@ -99,6 +100,14 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 			goto done;
 		}
 
+		SYS_LOG_DBG("hdr 0x%x, eem_size %d, size %d",
+			    eem_hdr, eem_size, size);
+
+		if (!size || !eem_size) {
+			SYS_LOG_DBG("no payload");
+			break;
+		}
+
 		pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 		if (!pkt) {
 			SYS_LOG_ERR("Unable to alloc pkt\n");
@@ -158,9 +167,51 @@ static struct usb_ep_cfg_data eem_ep_data[] = {
 	},
 };
 
+static inline void eem_status_interface(u8_t *iface)
+{
+	SYS_LOG_DBG("");
+
+	if (*iface != NETUSB_IFACE_IDX) {
+		return;
+	}
+
+	netusb_enable();
+}
+
+static void eem_status_cb(enum usb_dc_status_code status, u8_t *param)
+{
+	/* Check the USB status and do needed action if required */
+	switch (status) {
+	case USB_DC_DISCONNECTED:
+		SYS_LOG_DBG("USB device disconnected");
+		netusb_disable();
+		break;
+
+	case USB_DC_INTERFACE:
+		SYS_LOG_DBG("USB interface selected");
+		eem_status_interface(param);
+		break;
+
+	case USB_DC_ERROR:
+	case USB_DC_RESET:
+	case USB_DC_CONNECTED:
+	case USB_DC_CONFIGURED:
+	case USB_DC_SUSPEND:
+	case USB_DC_RESUME:
+		SYS_LOG_DBG("USB unhandlded state: %d", status);
+		break;
+
+	case USB_DC_UNKNOWN:
+	default:
+		SYS_LOG_DBG("USB unknown state: %d", status);
+		break;
+	}
+}
+
 struct netusb_function eem_function = {
 	.connect_media = eem_connect,
 	.class_handler = NULL,
+	.status_cb = eem_status_cb,
 	.send_pkt = eem_send,
 	.num_ep = ARRAY_SIZE(eem_ep_data),
 	.ep = eem_ep_data,

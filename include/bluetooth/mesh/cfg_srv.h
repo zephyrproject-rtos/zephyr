@@ -30,7 +30,7 @@ struct bt_mesh_cfg_srv {
 	u8_t default_ttl;          /* Default TTL */
 
 	/* Heartbeat Publication */
-	struct {
+	struct bt_mesh_hb_pub {
 		struct k_delayed_work timer;
 
 		u16_t dst;
@@ -42,7 +42,7 @@ struct bt_mesh_cfg_srv {
 	} hb_pub;
 
 	/* Heartbeat Subscription */
-	struct {
+	struct bt_mesh_hb_sub {
 		s64_t  expiry;
 
 		u16_t src;

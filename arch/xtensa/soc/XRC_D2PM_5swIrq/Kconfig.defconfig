@@ -8,7 +8,7 @@ if SOC_XRC_D2PM_5SWIRQ
 
 config SOC
 	string
-	default XRC_D2PM_5swIrq
+	default "XRC_D2PM_5swIrq"
 
 config IRQ_OFFLOAD_INTNUM
 	default 22

@@ -147,11 +147,11 @@
 / Drive/Volume Configurations
 /---------------------------------------------------------------------------*/
 
-#define _VOLUMES	1
+#define _VOLUMES	8
 /* Number of volumes (logical drives) to be used. */
 
 
-#define _STR_VOLUME_ID	0
+#define _STR_VOLUME_ID	1
 #define _VOLUME_STRS	"RAM","NAND","CF","SD","SD2","USB","USB2","USB3"
 /* _STR_VOLUME_ID switches string support of volume ID.
 /  When _STR_VOLUME_ID is set to 1, also pre-defined strings can be used as drive

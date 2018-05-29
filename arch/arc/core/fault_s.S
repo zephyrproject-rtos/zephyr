@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2018 Synopsys.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,6 +72,10 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 	/* save caller saved registers */
 	_create_irq_stack_frame
 
+#ifdef CONFIG_ARC_HAS_SECURE
+	lr r0,[_ARC_V2_ERSEC_STAT]
+	st_s r0, [sp, ___isf_t_sec_stat_OFFSET]
+#endif
 	lr r0,[_ARC_V2_ERSTATUS]
 	st_s r0, [sp, ___isf_t_status32_OFFSET]
 	lr r0,[_ARC_V2_ERET]
@@ -117,6 +122,21 @@ _exc_return:
 	ld_s r2, [r1, _kernel_offset_to_ready_q_cache]
 	st_s r2, [r1, _kernel_offset_to_current]
 
+#ifdef CONFIG_ARC_HAS_SECURE
+	/*
+	 * sync up the ERSEC_STAT.ERM and SEC_STAT.IRM.
+	 * use a fake interrupt return to simulate an exception turn.
+	 * ERM and IRM record which mode the cpu should return, 1: secure
+	 * 0: normal
+	 */
+	lr r3,[_ARC_V2_ERSEC_STAT]
+	btst r3, 31
+	bset.nz r3, r3, 3
+	bclr.z r3, r3, 3
+	/* sflag r3 */
+	/* sflag instruction is not supported in current ARC GNU */
+	.long 0x00ff302f
+#endif
 	/* clear AE bit to forget this was an exception */
 	lr r3, [_ARC_V2_STATUS32]
 	and r3,r3,(~_ARC_V2_STATUS32_AE)
@@ -156,10 +176,15 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 	mov r6, _SYSCALL_BAD
 
 valid_syscall_id:
+#ifdef CONFIG_ARC_HAS_SECURE
+	lr ilink, [_ARC_V2_ERSEC_STAT]
+	push ilink
+#endif
 	lr ilink, [_ARC_V2_ERET]
 	push ilink
 	lr ilink, [_ARC_V2_ERSTATUS]
 	push ilink
+
 
 	bclr ilink, ilink, _ARC_V2_STATUS32_U_BIT
 	sr ilink, [_ARC_V2_ERSTATUS]
@@ -190,6 +215,10 @@ _do_other_trap:
 	/* save caller saved registers */
 	_create_irq_stack_frame
 
+#ifdef CONFIG_ARC_HAS_SECURE
+	lr r0,[_ARC_V2_ERSEC_STAT]
+	st_s r0, [sp, ___isf_t_sec_stat_OFFSET]
+#endif
 	lr r0,[_ARC_V2_ERSTATUS]
 	st_s r0, [sp, ___isf_t_status32_OFFSET]
 	lr r0,[_ARC_V2_ERET]

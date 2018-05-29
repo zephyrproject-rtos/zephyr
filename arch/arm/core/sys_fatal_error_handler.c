@@ -36,7 +36,7 @@
  * @param reason fatal error reason
  * @param pEsf pointer to exception stack frame
  *
- * @return N/A
+ * @return This function does not return.
  */
 void __weak _SysFatalErrorHandler(unsigned int reason,
 					 const NANO_ESF *pEsf)

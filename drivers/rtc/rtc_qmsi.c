@@ -93,7 +93,7 @@ static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
 	 * values defined by clk_rtc_div and by QMSI's clk_rtc_div_t match for
 	 * both D2000 and SE.
 	 */
-	qm_cfg.prescaler = (clk_rtc_div_t)RTC_DIVIDER;
+	qm_cfg.prescaler = (clk_rtc_div_t)CONFIG_RTC_PRESCALER;
 
 	if (IS_ENABLED(CONFIG_RTC_QMSI_API_REENTRANCY)) {
 		k_sem_take(RP_GET(dev), K_FOREVER);
@@ -142,12 +142,11 @@ static int rtc_qmsi_init(struct device *dev)
 		k_sem_init(RP_GET(dev), 1, UINT_MAX);
 	}
 
-	IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_RTC_0_INT), CONFIG_RTC_0_IRQ_PRI,
-		    qm_rtc_0_isr, NULL,
-		    IOAPIC_EDGE | IOAPIC_HIGH);
+	IRQ_CONNECT(CONFIG_RTC_0_IRQ, CONFIG_RTC_0_IRQ_PRI,
+		    qm_rtc_0_isr, NULL, CONFIG_RTC_0_IRQ_FLAGS);
 
 	/* Unmask RTC interrupt */
-	irq_enable(IRQ_GET_NUMBER(QM_IRQ_RTC_0_INT));
+	irq_enable(CONFIG_RTC_0_IRQ);
 
 	/* Route RTC interrupt to the current core */
 	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->rtc_0_int_mask);

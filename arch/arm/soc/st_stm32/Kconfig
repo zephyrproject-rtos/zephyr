@@ -19,8 +19,7 @@ config BUILD_OUTPUT_HEX
 
 config SOC_FAMILY
 	string
-	default st_stm32
-endif
+	default "st_stm32"
 
 config STM32_ARM_MPU_ENABLE
 	bool "Enable MPU on STM32"
@@ -30,4 +29,6 @@ config STM32_ARM_MPU_ENABLE
 	help
 	  Enable MPU support on STM32 SoCs
 
-source "arch/arm/soc/st_stm32/*/Kconfig.soc"
+gsource "arch/arm/soc/st_stm32/*/Kconfig.soc"
+
+endif # SOC_FAMILY_STM32

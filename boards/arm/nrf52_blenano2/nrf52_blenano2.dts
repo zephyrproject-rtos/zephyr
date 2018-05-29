@@ -52,10 +52,11 @@
 			reg = <0x00070000 0xD000>;
 		};
 
-		/*
-		 * The flash starting at 0x0007d000 and ending at
-		 * 0x0007ffff (sectors 125-127) is reserved for use
-		 * by the application.
-		 */
+#if defined(CONFIG_FS_FLASH_STORAGE_PARTITION)
+		storage_partition: partition@7D000 {
+			label = "storage";
+			reg = <0x0007D000 0x00004000>;
+		};
+#endif
 	};
 };

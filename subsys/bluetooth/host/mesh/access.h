@@ -6,6 +6,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* bt_mesh_model.flags */
+enum {
+	BT_MESH_MOD_BIND_PENDING = BIT(0),
+	BT_MESH_MOD_SUB_PENDING = BIT(1),
+	BT_MESH_MOD_PUB_PENDING = BIT(2),
+};
+
 void bt_mesh_elem_register(struct bt_mesh_elem *elem, u8_t count);
 
 u8_t bt_mesh_elem_count(void);
@@ -36,6 +43,8 @@ void bt_mesh_comp_unprovision(void);
 u16_t bt_mesh_primary_addr(void);
 
 const struct bt_mesh_comp *bt_mesh_comp_get(void);
+
+struct bt_mesh_model *bt_mesh_model_get(bool vnd, u8_t elem_idx, u8_t mod_idx);
 
 void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf);
 

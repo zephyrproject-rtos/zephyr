@@ -8,7 +8,7 @@
 if SOC_QUARK_SE_C1000_SS
 
 config SOC
-	default quark_se_c1000_ss
+	default "quark_se_c1000_ss"
 
 config NUM_IRQ_PRIO_LEVELS
 	# This processor supports only 2 priority levels:
@@ -39,9 +39,6 @@ if RTC
 config RTC_QMSI
 	def_bool y
 
-config RTC_0_IRQ_PRI
-	default 2
-
 endif # RTC
 
 if PWM
@@ -64,28 +61,8 @@ if GPIO_QMSI
 config GPIO_QMSI_0
 	def_bool y
 
-if GPIO_QMSI_0
-
-config GPIO_QMSI_0_NAME
-	default "GPIO_2"
-
-config GPIO_QMSI_0_IRQ_PRI
-	default 1
-
-endif # GPIO_QMSI_0
-
 config GPIO_QMSI_1
 	def_bool y
-
-if GPIO_QMSI_1
-
-config GPIO_QMSI_1_NAME
-	default "GPIO_3"
-
-config GPIO_QMSI_1_IRQ_PRI
-	default 1
-
-endif # GPIO_QMSI_1
 
 endif # GPIO_QMSI
 
@@ -97,28 +74,8 @@ if GPIO_QMSI_SS
 config GPIO_QMSI_SS_0
 	def_bool y
 
-if GPIO_QMSI_SS_0
-
-config GPIO_QMSI_SS_0_NAME
-	default "GPIO_0"
-
-config GPIO_QMSI_SS_0_IRQ_PRI
-	default 1
-
-endif # GPIO_QMSI_SS_0
-
 config GPIO_QMSI_SS_1
 	def_bool y
-
-if GPIO_QMSI_SS_1
-
-config GPIO_QMSI_SS_1_NAME
-	default "GPIO_1"
-
-config GPIO_QMSI_SS_1_IRQ_PRI
-	default 1
-
-endif # GPIO_QMSI_SS_1
 
 endif # GPIO_QMSI_SS
 
@@ -134,14 +91,8 @@ if I2C_QMSI
 config I2C_0
 	def_bool y
 
-config I2C_0_IRQ_PRI
-	default 1
-
 config I2C_1
 	def_bool y
-
-config I2C_1_IRQ_PRI
-	default 1
 
 config I2C_SDA_SETUP
 	default 2
@@ -187,9 +138,6 @@ config BT_UART_ON_DEV_NAME
 config UART_QMSI_0
 	def_bool y
 
-config UART_QMSI_0_BAUDRATE
-	default 1000000
-
 config UART_QMSI_0_HW_FC
 	def_bool y
 
@@ -197,22 +145,8 @@ endif # BT_H4
 
 if UART_QMSI
 
-if UART_QMSI_0
-
-config UART_QMSI_0_IRQ_PRI
-	default 3
-
-endif # UART_QMSI_0
-
 config UART_QMSI_1
 	def_bool y
-
-if UART_QMSI_1
-
-config UART_QMSI_1_IRQ_PRI
-	default 3
-
-endif # UART_QMSI_1
 
 endif # UART_QMSI
 

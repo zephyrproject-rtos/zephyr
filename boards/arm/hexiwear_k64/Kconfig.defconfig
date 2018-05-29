@@ -8,7 +8,7 @@
 if BOARD_HEXIWEAR_K64
 
 config BOARD
-	default hexiwear_k64
+	default "hexiwear_k64"
 
 config OSC_XTAL0_FREQ
 	default 12000000
@@ -90,26 +90,6 @@ config BATTERY_SENSE
 
 endif # ADC
 
-if FXOS8700
-
-config FXOS8700_GPIO_NAME
-	default GPIO_MCUX_PORTD_NAME
-
-config FXOS8700_GPIO_PIN
-	default 13
-
-endif # FXOS8700
-
-if FXAS21002
-
-config FXAS21002_GPIO_NAME
-	default GPIO_MCUX_PORTC_NAME
-
-config FXAS21002_GPIO_PIN
-	default 18
-
-endif # FXAS21002
-
 if PWM_MCUX_FTM
 
 config PWM_3
@@ -122,20 +102,11 @@ if SPI
 config SPI_0
 	def_bool y
 
-config SPI_0_IRQ_PRI
-	default 3
-
 config SPI_1
 	def_bool n
 
-config SPI_1_IRQ_PRI
-	default 3
-
 config SPI_2
 	def_bool n
-
-config SPI_2_IRQ_PRI
-	default 3
 
 endif # SPI
 

@@ -4,15 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arm/armv7-m.dtsi>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		cpu@0 {
 			compatible = "arm,cortex-m4f";
+			reg = <0>;
 		};
 		cpu@1 {
 			compatible = "arm,cortex-m0+";
+			reg = <1>;
 		};
 	};
 
@@ -49,9 +54,36 @@
 			label = "USART_0";
 			status = "disabled";
 		};
+
+		gpio0: gpio@0 {
+			compatible = "nxp,kinetis-gpio";
+			reg = <0x4008C000 0x2488>;
+			interrupts = <2 2>;
+			label = "GPIO_0";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio1: gpio@1 {
+			compatible = "nxp,kinetis-gpio";
+			reg = <0x4008C000 0x2488>;
+			interrupts = <3 2>;
+			label = "GPIO_1";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		mailbox0:mailbox@4008B000 {
+			compatible = "nxp,lpc-mailbox";
+			reg = <0x4008B000 0xEC>;
+			interrupts = <31 0>;
+			label = "MAILBOX_0";
+			status = "disabled";
+		};
 	};
 };
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+

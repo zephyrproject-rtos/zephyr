@@ -14,55 +14,69 @@ from docutils.parsers.rst import directives
 # This could be as simple as generating a couple of sets of instructions, one
 # for Unix environments, and another for Windows.
 class ZephyrAppCommandsDirective(Directive):
-    '''Zephyr directive for generating documentation with the shell
-    commands needed to manage (build, flash, etc.) an application.
+    '''
+    This is a Zephyr directive for generating consistent documentation
+    of the shell commands needed to manage (build, flash, etc.) an application.
 
     For example, to generate commands to build samples/hello_world for
-    qemu_x86:
+    qemu_x86 use::
 
-    .. zephyr-app-commands::
-       :zephyr-app: samples/hello_world
-       :board: qemu_x86
-       :goals: build
+       .. zephyr-app-commands::
+          :zephyr-app: samples/hello_world
+          :board: qemu_x86
+          :goals: build
 
     Directive options:
 
-    - :app: if set, the commands will change directories to this path to the
+    \:app:
+      if set, the commands will change directories to this path to the
       application.
 
-    - :zephyr-app: like :app:, but includes instructions from the Zephyr base
-      directory. Cannot be given with :app:.
+    \:zephyr-app:
+      like \:app:, but includes instructions from the Zephyr base
+      directory. Cannot be given with \:app:.
 
-    - :generator: which build system to generate. Valid options are
+    \:generator:
+      which build system to generate. Valid options are
       currently 'ninja' and 'make'. The default is 'ninja'. This option
       is not case sensitive.
 
-    - :host-os: which host OS the instructions are for. Valid options are
-       'unix', 'win' and 'all'. The default is 'all'.
+    \:host-os:
+      which host OS the instructions are for. Valid options are
+      'unix', 'win' and 'all'. The default is 'all'.
 
-    - :board: if set, the application build will target the given board.
+    \:board:
+      if set, the application build will target the given board.
 
-    - :conf: if set, the application build will use the given configuration
-      file.
+    \:conf:
+      if set, the application build will use the given configuration
+      file.  If multiple conf files are provided, enclose the
+      space-separated list of files with quotes, e.g., "a.conf b.conf".
 
-    - :gen-args: if set, additional arguments to the CMake invocation
+    \:gen-args:
+      if set, additional arguments to the CMake invocation
 
-    - :build-args: if set, additional arguments to the build invocation
+    \:build-args:
+      if set, additional arguments to the build invocation
 
-    - :build-dir: if set, the application build directory will *APPEND* this
+    \:build-dir:
+      if set, the application build directory will *APPEND* this
       (relative, Unix-separated) path to the standard build directory. This is
       mostly useful for distinguishing builds for one application within a
       single page.
 
-    - :goals: a whitespace-separated list of what to do with the app (in
+    \:goals:
+      a whitespace-separated list of what to do with the app (in
       'build', 'flash', 'debug', 'debugserver', 'run'). Commands to accomplish
       these tasks will be generated in the right order.
 
-    - :maybe-skip-config: if set, this indicates the reader may have already
+    \:maybe-skip-config:
+      if set, this indicates the reader may have already
       created a build directory and changed there, and will tweak the text to
       note that doing so again is not necessary.
 
-    - :compact: if set, the generated output is a single code block with no
+    \:compact:
+      if set, the generated output is a single code block with no
       additional comment lines
 
     '''

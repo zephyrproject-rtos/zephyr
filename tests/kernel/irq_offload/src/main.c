@@ -25,7 +25,7 @@ static void offload_function(void *param)
 	u32_t x = (u32_t)param;
 
 	/* Make sure we're in IRQ context */
-	zassert_true(_is_in_isr(), "Not in IRQ context!\n");
+	zassert_true(_is_in_isr(), "Not in IRQ context!");
 
 	sentinel = x;
 }
@@ -42,7 +42,7 @@ void test_irq_offload(void)
 	irq_offload(offload_function, (void *)SENTINEL_VALUE);
 
 	zassert_equal(sentinel, SENTINEL_VALUE,
-		"irq_offload() didn't work properly\n");
+		"irq_offload() didn't work properly");
 }
 
 

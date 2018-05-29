@@ -53,5 +53,18 @@
 			status = "disabled";
 			label = "SPI_2";
 		};
+
+		usb: usb@40005c00 {
+			compatible = "st,stm32-usb";
+			reg = <0x40005c00 0x400>;
+			interrupts = <31 0>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <8>;
+			num-in-endpoints = <0>;
+			num-out-endpoints = <0>;
+			ram-size = <1024>;
+			status = "disabled";
+			label= "USB";
+		};
 	};
 };

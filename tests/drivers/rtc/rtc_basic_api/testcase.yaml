@@ -1,4 +1,4 @@
 tests:
-  periphera.rtc:
+  peripheral.rtc:
     tags: drivers
     depends_on: rtc

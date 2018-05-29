@@ -72,9 +72,9 @@ static struct bt_gatt_attr smp_bt_attrs[] = {
 
 	BT_GATT_CHARACTERISTIC(&smp_bt_chr_uuid.uuid,
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP |
-			       BT_GATT_CHRC_NOTIFY),
-	BT_GATT_DESCRIPTOR(&smp_bt_chr_uuid.uuid,
-			   BT_GATT_PERM_WRITE, NULL, smp_bt_chr_write, NULL),
+			       BT_GATT_CHRC_NOTIFY,
+			       BT_GATT_PERM_WRITE,
+			       NULL, smp_bt_chr_write, NULL),
 	BT_GATT_CCC(smp_bt_ccc, smp_bt_ccc_changed),
 };
 

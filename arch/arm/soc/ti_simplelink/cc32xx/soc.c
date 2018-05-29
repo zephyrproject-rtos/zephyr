@@ -17,7 +17,7 @@ static int ti_cc32xx_init(struct device *arg)
 	ARG_UNUSED(arg);
 
 	/* Note: This function also performs CC3220 Initialization */
-	PRCMCC3200MCUInit();
+	MAP_PRCMCC3200MCUInit();
 
 #ifdef CONFIG_UART_CC32XX
 	/*

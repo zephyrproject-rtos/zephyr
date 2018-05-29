@@ -44,7 +44,7 @@ static void sl_isr(void *isr_arg)
 	}
 }
 
-/* Must hardcode the IRQ for IRQ_CONNECT macro.	 Must be <= CONFIG_NUM_IRQs.*/
+/* Must hardcode the IRQ for IRQ_CONNECT macro.	 Must be <= CONFIG_NUM_IRQS.*/
 #define EXCEPTION_UDMA		46	/* == INT_UDMA	(62) - 16 */
 #define EXCEPTION_UDMAERR	47	/* == INT_UDMAERR (63) - 16 */
 #define EXCEPTION_NWPIC		171	/* == INT_NWPIC (187) - 16 */

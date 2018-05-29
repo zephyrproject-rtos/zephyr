@@ -4,18 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_queue_api
- * @{
- * @defgroup t_queue_api_basic test_queue_api_basic
- * @brief TestPurpose: verify zephyr queue apis under different context
- * - API coverage
- *   -# k_queue_init K_QUEUE_DEFINE
- *   -# k_queue_append k_queue_prepend k_queue_append_list k_queue_merge_slist
- *   -# k_queue_get
- * @}
- */
-
 #include "test_queue.h"
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)

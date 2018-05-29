@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #ifndef __ZEPHYR__
 
@@ -31,7 +32,7 @@
 
 
 #define SSTRLEN(s) (sizeof(s) - 1)
-#define CHECK(r) { if (r == -1) { printf("Error: " #r "\n"); } }
+#define CHECK(r) { if (r == -1) { printf("Error: " #r "\n"); exit(1); } }
 
 #define REQUEST "GET " HTTP_PATH " HTTP/1.0\r\nHost: " HTTP_HOST "\r\n\r\n"
 
@@ -77,7 +78,7 @@ int main(void)
 	CHECK(sock);
 	printf("sock = %d\n", sock);
 	CHECK(connect(sock, res->ai_addr, res->ai_addrlen));
-	send(sock, REQUEST, SSTRLEN(REQUEST), 0);
+	CHECK(send(sock, REQUEST, SSTRLEN(REQUEST), 0));
 
 	printf("Response:\n\n");
 
@@ -97,7 +98,7 @@ int main(void)
 		printf("%s\n", response);
 	}
 
-	close(sock);
+	(void)close(sock);
 
 	return 0;
 }

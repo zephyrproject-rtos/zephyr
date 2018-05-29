@@ -191,13 +191,6 @@ _zxt_int_exit:
 	wsr a3, CPENABLE                /* disable all co-processors */
 #endif
 	l32i a3, a2, KERNEL_OFFSET(current) /*  _thread := _kernel.current */
-	/*
-	 * Non-preemptible thread ? Do not schedule (see explanation of
-	 * preempt field in kernel_struct.h).
-	 */
-	movi a4, _NON_PREEMPT_THRESHOLD
-	l16ui a5, a3, THREAD_OFFSET(preempt)
-	bgeu a5, a4, .noReschedule
 	/* _thread := _kernel.ready_q.cache */
 	l32i a3, a2, KERNEL_OFFSET(ready_q_cache)
 .noReschedule:

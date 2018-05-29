@@ -14,5 +14,4 @@ testing:
 supported:
   - adc
   - i2c
-  - spi
   - gpio

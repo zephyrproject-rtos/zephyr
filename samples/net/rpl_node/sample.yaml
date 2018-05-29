@@ -1,0 +1,12 @@
+common:
+  harness: net
+  tags: net rpl ieee802154
+sample:
+  description: Can be used to test RPL network. Needs
+    to be run in real device. This cannot be run in
+    QEMU.
+  name: RPL node demo application
+  platforms: all
+tests:
+  test:
+    platform_whitelist: quark_se_c1000_devboard nrf52840_pca10056

@@ -40,6 +40,8 @@ enum ieee802154_filter_type {
 	IEEE802154_FILTER_TYPE_IEEE_ADDR,
 	IEEE802154_FILTER_TYPE_SHORT_ADDR,
 	IEEE802154_FILTER_TYPE_PAN_ID,
+	IEEE802154_FILTER_TYPE_SRC_IEEE_ADDR,
+	IEEE802154_FILTER_TYPE_SRC_SHORT_ADDR,
 };
 
 struct ieee802154_filter {
@@ -70,10 +72,11 @@ struct ieee802154_radio_api {
 	/** Set current channel */
 	int (*set_channel)(struct device *dev, u16_t channel);
 
-	/** Set address filters (for IEEE802154_HW_FILTER ) */
-	int (*set_filter)(struct device *dev,
-			  enum ieee802154_filter_type type,
-			  const struct ieee802154_filter *filter);
+	/** Set/Unset filters (for IEEE802154_HW_FILTER ) */
+	int (*filter)(struct device *dev,
+		      bool set,
+		      enum ieee802154_filter_type type,
+		      const struct ieee802154_filter *filter);
 
 	/** Set TX power level in dbm */
 	int (*set_txpower)(struct device *dev, s16_t dbm);
@@ -93,6 +96,17 @@ struct ieee802154_radio_api {
 	/** Get the available amount of Sub-GHz channels */
 	u16_t (*get_subg_channel_count)(struct device *dev);
 #endif /* CONFIG_NET_L2_IEEE802154_SUB_GHZ */
+
+#ifdef CONFIG_NET_L2_OPENTHREAD
+	/** Run an energy detection scan.
+	 * Note: channel must be set prior to request this function.
+	 * duration parameter is in ms.
+	 */
+	int (*ed_scan)(struct device *dev,
+		       u16_t duration,
+		       void (*done_cb)(struct device *dev,
+				       s16_t max_ed));
+#endif /* CONFIG_NET_L2_OPENTHREAD */
 } __packed;
 
 #define IEEE802154_AR_FLAG_SET (0x20)

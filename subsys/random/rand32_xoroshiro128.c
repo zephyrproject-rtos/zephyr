@@ -37,11 +37,12 @@
  * output to fill s.
  */
 
+#include <init.h>
+#include <device.h>
 #include <entropy.h>
 #include <kernel.h>
 
 static u64_t state[2];
-static bool initialized;
 
 K_SEM_DEFINE(state_sem, 1, 1);
 
@@ -50,21 +51,20 @@ static inline u64_t rotl(const u64_t x, int k)
 	return (x << k) | (x >> (64 - k));
 }
 
-static bool xoroshiro128_initialize(void)
+static int xoroshiro128_initialize(struct device *dev)
 {
-	struct device *dev = device_get_binding(CONFIG_ENTROPY_NAME);
-
+	dev = device_get_binding(CONFIG_ENTROPY_NAME);
 	if (!dev) {
-		return false;
+		return -EINVAL;
 	}
 
 	if (entropy_get_entropy(dev, (uint8_t *)&state, sizeof(state)) < 0) {
-		return false;
+		return -EINVAL;
 	}
 
-	initialized = true;
+	k_object_access_all_grant(&state_sem);
 
-	return true;
+	return 0;
 }
 
 static u32_t xoroshiro128_next(void)
@@ -84,22 +84,24 @@ u32_t sys_rand32_get(void)
 {
 	u32_t ret;
 
-	k_sem_take(&state_sem, K_FOREVER);
-
-	if (unlikely(!initialized)) {
-		if (!xoroshiro128_initialize()) {
-			/* This should not happen, but beats returning 0
-			 * when the PRNG couldn't be initialized.
-			 */
-			ret = k_cycle_get_32();
-			goto out;
-		}
+	if (k_sem_take(&state_sem, K_FOREVER) < 0) {
+		/* FIXME: with all threads having access to this semaphore,
+		 * it's possible that they can corrupt state_sem in a way
+		 * that k_sem_take will fail.  This can be abused to
+		 * generate numbers without using the xoroshiro128+ RNG.
+		 */
+		return k_cycle_get_32();
 	}
 
 	ret = xoroshiro128_next();
 
-out:
 	k_sem_give(&state_sem);
 
 	return ret;
 }
+
+/* In-tree entropy drivers will initialize in PRE_KERNEL_1; ensure that they're
+ * initialized properly before initializing ourselves.
+ */
+SYS_INIT(xoroshiro128_initialize, PRE_KERNEL_2,
+	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

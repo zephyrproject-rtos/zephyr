@@ -18,7 +18,7 @@ int pthread_barrier_wait(pthread_barrier_t *b)
 	if (b->count >= b->max) {
 		b->count = 0;
 
-		while (!sys_dlist_is_empty(&b->wait_q)) {
+		while (_waitq_head(&b->wait_q)) {
 			_ready_one_thread(&b->wait_q);
 		}
 		return _reschedule(key);

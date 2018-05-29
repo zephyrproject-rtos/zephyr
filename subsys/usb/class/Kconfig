@@ -88,6 +88,13 @@ config USB_MASS_STORAGE
 	help
 	  USB Mass Storage device class driver
 
+config MASS_STORAGE_DISK_NAME
+	string "Mass storage disk or drive name"
+	depends on USB_MASS_STORAGE
+	default "RAM"
+	help
+	  Mass storage device disk or drive name
+
 config MASS_STORAGE_IN_EP_ADDR
 	hex
 	depends on USB_MASS_STORAGE

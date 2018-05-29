@@ -148,11 +148,11 @@ config I2C_GPIO_3_SCL_PIN
 	int "Bit Bang I2C device 3 GPIO pin number for SCL"
 	depends on I2C_GPIO_3
 	help
-	  This is the GPIO pin number for the I2S SCL line
+	  This is the GPIO pin number for the I2C SCL line
 
 config I2C_GPIO_3_SDA_PIN
 	int "Bit Bang I2C device 3 GPIO pin number for SDA"
 	depends on I2C_GPIO_3
 	help
-	  This is the GPIO pin number for the I2S SDA line
+	  This is the GPIO pin number for the I2C SDA line
 

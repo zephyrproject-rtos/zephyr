@@ -28,9 +28,11 @@
 
 #include <openthread/platform/radio.h>
 #include <openthread/platform/diag.h>
-#include <openthread/platform/platform.h>
+#include <platform.h>
 
 #include <openthread/types.h>
+
+#include "platform-zephyr.h"
 
 #define FCS_SIZE 2
 
@@ -45,6 +47,7 @@ static struct device *radio_dev;
 static struct ieee802154_radio_api *radio_api;
 
 static s8_t tx_power;
+static u16_t channel;
 
 static void dataInit(void)
 {
@@ -88,8 +91,10 @@ void platformRadioProcess(otInstance *aInstance)
 		 */
 		tx_payload->len = sTransmitFrame.mLength - FCS_SIZE;
 
+		channel = sTransmitFrame.mChannel;
+
 		radio_api->set_channel(radio_dev, sTransmitFrame.mChannel);
-		radio_api->set_txpower(radio_dev, sTransmitFrame.mPower);
+		radio_api->set_txpower(radio_dev, tx_power);
 
 		if (sTransmitFrame.mIsCcaEnabled) {
 			if (radio_api->cca(radio_dev) ||
@@ -123,7 +128,7 @@ void platformRadioProcess(otInstance *aInstance)
 				ackPsdu[2] = sTransmitFrame.mPsdu[2];
 				ackFrame.mPsdu = ackPsdu;
 				ackFrame.mLqi = 80;
-				ackFrame.mPower = -40;
+				ackFrame.mRssi = -40;
 				ackFrame.mLength = 5;
 
 				otPlatRadioTxDone(aInstance, &sTransmitFrame,
@@ -136,12 +141,19 @@ void platformRadioProcess(otInstance *aInstance)
 	}
 }
 
+uint16_t platformRadioChannelGet(otInstance *aInstance)
+{
+	ARG_UNUSED(aInstance);
+
+	return channel;
+}
+
 void otPlatRadioSetPanId(otInstance *aInstance, u16_t aPanId)
 {
 	ARG_UNUSED(aInstance);
 
-	radio_api->set_filter(radio_dev, IEEE802154_FILTER_TYPE_PAN_ID,
-			      (struct ieee802154_filter *) &aPanId);
+	radio_api->filter(radio_dev, true, IEEE802154_FILTER_TYPE_PAN_ID,
+			  (struct ieee802154_filter *) &aPanId);
 }
 
 void otPlatRadioSetExtendedAddress(otInstance *aInstance,
@@ -149,16 +161,16 @@ void otPlatRadioSetExtendedAddress(otInstance *aInstance,
 {
 	ARG_UNUSED(aInstance);
 
-	radio_api->set_filter(radio_dev, IEEE802154_FILTER_TYPE_IEEE_ADDR,
-			      (struct ieee802154_filter *) &aExtAddress);
+	radio_api->filter(radio_dev, true, IEEE802154_FILTER_TYPE_IEEE_ADDR,
+			  (struct ieee802154_filter *) &aExtAddress);
 }
 
 void otPlatRadioSetShortAddress(otInstance *aInstance, u16_t aShortAddress)
 {
 	ARG_UNUSED(aInstance);
 
-	radio_api->set_filter(radio_dev, IEEE802154_FILTER_TYPE_SHORT_ADDR,
-			      (struct ieee802154_filter *) &aShortAddress);
+	radio_api->filter(radio_dev, true, IEEE802154_FILTER_TYPE_SHORT_ADDR,
+			  (struct ieee802154_filter *) &aShortAddress);
 }
 
 bool otPlatRadioIsEnabled(otInstance *aInstance)
@@ -206,6 +218,8 @@ otError otPlatRadioSleep(otInstance *aInstance)
 otError otPlatRadioReceive(otInstance *aInstance, u8_t aChannel)
 {
 	ARG_UNUSED(aInstance);
+
+	channel = aChannel;
 
 	radio_api->set_channel(radio_dev, aChannel);
 	radio_api->set_txpower(radio_dev, tx_power);
@@ -344,9 +358,25 @@ int8_t otPlatRadioGetReceiveSensitivity(otInstance *aInstance)
 	return -100;
 }
 
-void otPlatRadioSetDefaultTxPower(otInstance *aInstance, int8_t aPower)
+otError otPlatRadioGetTransmitPower(otInstance *aInstance, int8_t *aPower)
+{
+	ARG_UNUSED(aInstance);
+
+	if (aPower == NULL) {
+		return OT_ERROR_INVALID_ARGS;
+	}
+
+	*aPower = tx_power;
+
+	return OT_ERROR_NONE;
+}
+
+otError otPlatRadioSetTransmitPower(otInstance *aInstance, int8_t aPower)
 {
 	ARG_UNUSED(aInstance);
 
 	tx_power = aPower;
+
+	return OT_ERROR_NONE;
 }
+

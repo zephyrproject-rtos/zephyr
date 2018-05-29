@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
-title: DesignWare i2c node description
+title: Synopys DesignWare I2C controller
 id: snps,designware-i2c
 version: 0.1
 

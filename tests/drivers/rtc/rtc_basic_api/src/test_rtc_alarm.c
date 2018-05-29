@@ -68,7 +68,7 @@ static int test_alarm(void)
 		return TC_FAIL;
 	}
 
-	k_sleep(1500);
+	k_sleep(2000);
 
 	if (!rtc_alarm_up) {
 		TC_PRINT("RTC alarm doesn't work well\n");
@@ -82,7 +82,7 @@ static int test_alarm(void)
 		return TC_FAIL;
 	}
 
-	k_sleep(1500);
+	k_sleep(2000);
 
 	if (!rtc_alarm_up) {
 		TC_PRINT("RTC alarm doesn't work well\n");

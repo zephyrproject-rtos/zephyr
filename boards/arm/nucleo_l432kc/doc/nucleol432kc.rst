@@ -18,7 +18,7 @@ some highlights of the Nucleo L432KC board:
   - USB VBUS or external source(3.3V, 5V, 7 - 12V)
   - Power management access point
 
-- Three LEDs: USB communication (LD1), user LED (LD2), power LED (LD3)
+- Three LEDs: USB communication (LD1), power LED (LD2), user LED (LD3)
 - One push-button: RESET
 
 .. image:: img/nucleo32_ulp_logo.jpg

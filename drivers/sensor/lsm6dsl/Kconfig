@@ -15,20 +15,19 @@ menuconfig LSM6DSL
 	  Enable driver for LSM6DSL accelerometer and gyroscope
 	  sensor.
 
-choice
+choice LSM6DSL_BUS_TYPE
 	prompt "Interface to AP"
 	depends on LSM6DSL
-	default LSM6DSL_I2C
 	help
 	  Select interface the LSM6DSL driver is connected to AP
-
-config LSM6DSL_SPI
-	depends on SPI
-	bool "SPI Interface"
 
 config LSM6DSL_I2C
 	depends on I2C
 	bool "I2C Interface"
+
+config LSM6DSL_SPI
+	depends on SPI
+	bool "SPI Interface"
 
 endchoice
 
@@ -60,6 +59,8 @@ config LSM6DSL_I2C_MASTER_DEV_NAME
 
 endif #HAS_DTS_I2C_DEVICE
 
+if !HAS_DTS_SPI_DEVICE
+
 config LSM6DSL_SPI_SELECT_SLAVE
 	hex "LSM6DSL SPI slave select pin"
 	depends on LSM6DSL && LSM6DSL_SPI
@@ -83,6 +84,8 @@ config LSM6DSL_SPI_MASTER_DEV_NAME
 	  Specify the device name of the spi master device to which LSM6DSL is
 	  connected.
 
+endif #HAS_DTS_SPI_DEVICE
+
 config LSM6DSL_SPI_GPIO_CS
 	bool "LSM6DSL SPI CS through a GPIO pin"
 	default n
@@ -90,6 +93,8 @@ config LSM6DSL_SPI_GPIO_CS
 	help
 	  This option is useful if one needs to manage SPI CS through a GPIO
 	  pin to by-pass the SPI controller's CS logic.
+
+if !HAS_DTS_SPI_PINS
 
 config LSM6DSL_SPI_GPIO_CS_DRV_NAME
 	string "GPIO driver's name to use to drive SPI CS through"
@@ -107,10 +112,11 @@ config LSM6DSL_SPI_GPIO_CS_PIN
 	  This option is mandatory to set which GPIO pin to use in order
 	  to actually emulate the SPI CS.
 
-choice
+endif # !HAS_DTS_SPI_PINS
+
+choice LSM6DSL_TRIGGER_MODE
 	prompt "Trigger mode"
 	depends on LSM6DSL
-	default LSM6DSL_TRIGGER_NONE
 	help
 	  Specify the type of triggering to be used by the driver.
 
@@ -136,6 +142,8 @@ config LSM6DSL_TRIGGER
 	bool
 	depends on LSM6DSL
 
+if !HAS_DTS_SPI_PINS
+
 config LSM6DSL_GPIO_DEV_NAME
 	string
 	prompt "GPIO device"
@@ -151,6 +159,8 @@ config LSM6DSL_GPIO_PIN_NUM
 	help
 	  The number of the GPIO on which the interrupt signal from the LSM6DSL
 	  chip will be received.
+
+endif #HAS_DTS_SPI_DEVICE
 
 config LSM6DSL_THREAD_PRIORITY
 	int
@@ -188,16 +198,17 @@ config LSM6DSL_ENABLE_INTERNAL_PULLUP
 	bool "Enabled internals pull-up resistors"
 	default y
 
-choice
+choice LSM6DSL_EXTERNAL_SENSOR_0
 	prompt "External sensor 0"
-	default LSM6DSL_EXT0_LIS2MDL
 	help
 	  Choose the external sensor 0 connected to LSM6DS3.
 
 config LSM6DSL_EXT0_LIS2MDL
 	bool "LIS2MDL"
+
 config LSM6DSL_EXT0_LPS22HB
 	bool "LPS22HB"
+
 endchoice
 
 endif #LSM6DSL_SENSORHUB

@@ -79,10 +79,10 @@ u32_t _impl_k_uptime_get_32(void)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_uptime_get_32)
+Z_SYSCALL_HANDLER(k_uptime_get_32)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
-	_SYSCALL_VERIFY(_sys_clock_always_on);
+	Z_OOPS(Z_SYSCALL_VERIFY(_sys_clock_always_on));
 #endif
 	return _impl_k_uptime_get_32();
 }
@@ -126,11 +126,11 @@ s64_t _impl_k_uptime_get(void)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_uptime_get, ret_p)
+Z_SYSCALL_HANDLER(k_uptime_get, ret_p)
 {
 	u64_t *ret = (u64_t *)ret_p;
 
-	_SYSCALL_MEMORY_WRITE(ret, sizeof(*ret));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(ret, sizeof(*ret)));
 	*ret = _impl_k_uptime_get();
 	return 0;
 }

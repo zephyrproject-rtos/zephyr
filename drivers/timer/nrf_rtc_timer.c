@@ -11,7 +11,6 @@
 #include <arch/arm/cortex_m/cmsis.h>
 #include <sys_clock.h>
 
-extern void youve_print(void);
 /*
  * Convenience defines.
  */

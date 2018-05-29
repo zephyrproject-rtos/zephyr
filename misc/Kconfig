@@ -178,12 +178,6 @@ config COMPILER_OPT
 	  and can be used to change compiler optimization, warning and error
 	  messages, and so on.
 
-config TOOLCHAIN_VARIANT
-	string "Cross-compiler variant name"
-	help
-	  For optimized compilers with reduced features, specify the name
-	  of the variant.
-
 config CPLUSPLUS
 	bool "Enable C++ support for the application"
 	default n
@@ -327,13 +321,16 @@ config IS_BOOTLOADER
 	  a separate Zephyr image payload.
 
 config BOOTLOADER_SRAM_SIZE
-	int "SRAM reserved for when Zephyr acts as a bootloader"
+	int "SRAM reserved for bootloader"
 	default 16
 	depends on !XIP || IS_BOOTLOADER
 	depends on ARM
 	help
 	  This option specifies the amount of SRAM (measure in kB) reserved for
-	  when Zephyr is to act as a bootloader.
+	  a bootloader image, when either:
+	  - the Zephyr image itself is to act as the bootloader, or
+	  - Zephyr is a !XIP image, which implicitly assumes existence of a
+	  bootloader that loads the Zephyr !XIP image onto SRAM.
 
 config BOOTLOADER_MCUBOOT
 	bool

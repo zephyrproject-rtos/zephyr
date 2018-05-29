@@ -62,6 +62,13 @@ config COAP_EXTENDED_OPTIONS_LEN_VALUE
 	  COAP_EXTENDED_OPTIONS_LEN is enabled. Define the value according to
 	  user requirement.
 
+config COAP_INIT_ACK_TIMEOUT_MS
+	int "base length of the random generated initial ACK timeout in ms"
+	default 2345
+	range 2345 100000
+	help
+	  This value is used as a base value to retry pending CoAP packets.
+
 config NET_DEBUG_COAP
 	bool "Debug COAP"
 	default n

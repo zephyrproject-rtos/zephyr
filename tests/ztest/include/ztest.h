@@ -10,6 +10,13 @@
  * @brief Zephyr testing suite
  */
 
+/**
+ * @brief Zephyr Tests
+ * @defgroup all_tests Zephyr Tests
+ * @{
+ * @}
+ */
+
 #ifndef __ZTEST_H__
 #define __ZTEST_H__
 

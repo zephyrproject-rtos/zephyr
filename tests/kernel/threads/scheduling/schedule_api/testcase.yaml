@@ -1,4 +1,0 @@
-tests:
-  kernel.threads.scheduling:
-    min_ram: 20
-    tags: kernel threads sched

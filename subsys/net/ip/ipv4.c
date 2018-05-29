@@ -18,12 +18,13 @@
 #include <net/net_pkt.h>
 #include <net/net_stats.h>
 #include <net/net_context.h>
+#include <net/tcp.h>
 #include "net_private.h"
 #include "connection.h"
 #include "net_stats.h"
 #include "icmpv4.h"
 #include "udp_internal.h"
-#include "tcp.h"
+#include "tcp_internal.h"
 #include "ipv4.h"
 
 struct net_pkt *net_ipv4_create_raw(struct net_pkt *pkt,

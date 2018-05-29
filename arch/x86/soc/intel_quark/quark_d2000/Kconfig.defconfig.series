@@ -7,23 +7,13 @@
 if SOC_SERIES_QUARK_D2000
 
 config SOC_SERIES
-	default quark_d2000
+	default "quark_d2000"
 
 config X86_IAMCU
         def_bool y
 
-config TOOLCHAIN_VARIANT
-        default "iamcu" if X86_IAMCU
-        default "" if !X86_IAMCU
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32000000
-
-config RAM_SIZE
-	default 8
-
-config ROM_SIZE
-	default 32
 
 config IDT_NUM_VECTORS
 	default 64
@@ -52,10 +42,12 @@ if UART_QMSI
 config UART_QMSI_0
 	def_bool y
 config UART_QMSI_0_IRQ_PRI
+	int
 	default 0
 config UART_QMSI_1
 	def_bool y
 config UART_QMSI_1_IRQ_PRI
+	int
 	default 0
 endif # UART_QMSI
 
@@ -72,6 +64,7 @@ config RTC_QMSI
 	def_bool y
 
 config RTC_0_IRQ_PRI
+	int
 	default 0
 
 endif # RTC
@@ -83,6 +76,7 @@ config GPIO_QMSI
 config GPIO_QMSI_0
 	def_bool y
 config GPIO_QMSI_0_IRQ_PRI
+	int
 	default 0
 
 endif # GPIO

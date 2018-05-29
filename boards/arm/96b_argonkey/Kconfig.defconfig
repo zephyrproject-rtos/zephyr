@@ -8,7 +8,7 @@
 if BOARD_96B_ARGONKEY
 
 config BOARD
-	default 96b_argonkey
+	default "96b_argonkey"
 
 if UART_CONSOLE
 
@@ -28,6 +28,9 @@ config I2C_2
 config I2C_3
 	default y
 
+config I2C_STM32_INTERRUPT
+	default y
+
 endif # I2C
 
 if SPI
@@ -36,5 +39,24 @@ config SPI_2
 	default y
 
 endif # SPI
+
+if LSM6DSL
+
+choice LSM6DSL_BUS_TYPE
+	default LSM6DSL_SPI
+endchoice
+
+choice LSM6DSL_TRIGGER_MODE
+	default LSM6DSL_TRIGGER_GLOBAL_THREAD
+endchoice
+
+config LSM6DSL_SENSORHUB
+	default y
+
+choice LSM6DSL_EXTERNAL_SENSOR_0
+	default LSM6DSL_EXT0_LIS2MDL
+endchoice
+
+endif # LSM6DSL
 
 endif # BOARD_96B_ARGONKEY

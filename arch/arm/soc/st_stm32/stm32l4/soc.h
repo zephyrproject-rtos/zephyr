@@ -33,6 +33,7 @@
 
 #ifdef CONFIG_SERIAL_HAS_DRIVER
 #include <stm32l4xx_ll_usart.h>
+#include <stm32l4xx_ll_lpuart.h>
 #endif
 
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
@@ -40,8 +41,11 @@
 #include <stm32l4xx_ll_bus.h>
 #include <stm32l4xx_ll_rcc.h>
 #include <stm32l4xx_ll_system.h>
-#include <stm32l4xx_ll_spi.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
+
+#ifdef CONFIG_SPI_STM32
+#include <stm32l4xx_ll_spi.h>
+#endif
 
 #ifdef CONFIG_I2C
 #include <stm32l4xx_ll_i2c.h>
@@ -54,6 +58,11 @@
 #ifdef CONFIG_ENTROPY_STM32_RNG
 #include <stm32l4xx_ll_rng.h>
 #endif
+
+#ifdef CONFIG_USB
+/* Required to remove USB transceiver supply isolation */
+#include <stm32l4xx_ll_pwr.h>
+#endif /* CONFIG_USB */
 
 #endif /* !_ASMLANGUAGE */
 

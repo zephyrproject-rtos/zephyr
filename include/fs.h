@@ -7,7 +7,25 @@
 #ifndef _FS_H_
 #define _FS_H_
 
+#ifdef CONFIG_ARCH_POSIX
+#ifndef __ssize_t_defined
+typedef __SIZE_TYPE__ ssize_t;
+#define __ssize_t_defined
+#endif
+
+#ifndef __off_t_defined
+#ifndef __USE_FILE_OFFSET64
+typedef long int off_t;
+#else
+typedef long long int off_t;
+#endif
+#define __off_t_defined
+#endif
+
+#else
 #include <sys/types.h>
+#endif
+
 #include <misc/dlist.h>
 #include <fs/fs_interface.h>
 
@@ -58,7 +76,7 @@ struct fs_mount_t {
 	enum fs_type type;
 	const char *mnt_point;
 	void *fs_data;
-	struct device *storage_dev;
+	void *storage_dev;
 	/* fields filled by file system core */
 	size_t mountp_len;
 	const struct fs_file_system_t *fs;

@@ -10,13 +10,7 @@
 if SOC_SERIES_QUARK_X1000
 
 config SOC_SERIES
-	default quark_x1000
-
-config RAM_SIZE
-	default 32768
-
-config ROM_SIZE
-	default 1024 if XIP
+	default "quark_x1000"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 25000000  if HPET_TIMER
@@ -190,9 +184,6 @@ config UART_NS16550_PORT_0
 
 if UART_NS16550_PORT_0
 
-config UART_NS16550_PORT_0_IRQ_PRI
-	default 0
-
 config UART_NS16550_PORT_0_OPTIONS
 	default 0
 
@@ -205,9 +196,6 @@ config UART_NS16550_PORT_1
 	def_bool y if PCI
 
 if UART_NS16550_PORT_1
-
-config UART_NS16550_PORT_1_IRQ_PRI
-	default 3
 
 config UART_NS16550_PORT_1_OPTIONS
 	default 0

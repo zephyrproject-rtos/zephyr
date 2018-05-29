@@ -18,20 +18,11 @@ extern "C" {
 
 #define LPUART0_CLK_SRC kCLOCK_CoreSysClk
 
-/* IRQs */
-
-#define IRQ_SPI0 10
-#define IRQ_SPI1 29
-
 #endif
 
 #if defined(CONFIG_SOC_MKW22D5) || defined(CONFIG_SOC_MKW24D5)
 
 #define PERIPH_ADDR_BASE_WDOG 0x40052000 /* Watchdog Timer module */
-
-/* IRQs */
-#define IRQ_SPI0 26
-#define IRQ_SPI1 27
 
 #endif
 

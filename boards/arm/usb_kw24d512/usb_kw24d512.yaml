@@ -9,3 +9,5 @@ toolchain:
   - gccarmemb
 supported:
   - ieee802154
+  - usb_device
+  - watchdog

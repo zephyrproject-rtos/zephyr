@@ -70,4 +70,23 @@ config	MQUEUE_NAMELEN_MAX
 	  Mention length of message queue name in number of characters.
 
 endif
+
+if FILE_SYSTEM
+config POSIX_FS
+	bool
+	prompt "Enable POSIX file system API support"
+	default n
+	help
+	  This enabled POSIX style file system related APIs.
+
+if POSIX_FS
+config	POSIX_MAX_OPEN_FILES
+	int
+	prompt "Maximum number of open file descriptors"
+	default 16
+	help
+	  Mention maximum number of open file descriptors.
+endif
+endif
+
 endif

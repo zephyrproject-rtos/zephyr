@@ -5,7 +5,9 @@
  */
 
 /**
- * @file measure time from ISR to a rescheduled thread
+ * @file
+ *
+ * @brief measure time from ISR to a rescheduled thread
  *
  * This file contains test that measures time to switch from an interrupt
  * handler to executing a thread after rescheduling. In other words, execution

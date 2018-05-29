@@ -7,7 +7,6 @@
  */
 
 #include <zephyr.h>
-#include <linker/sections.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -21,7 +20,7 @@
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
-#include <net/ethernet.h>
+#include <net/tcp.h>
 
 #include <tc_util.h>
 
@@ -32,7 +31,7 @@
 #define DBG(fmt, ...)
 #endif
 
-#include "tcp.h"
+#include "tcp_internal.h"
 #include "net_private.h"
 
 static bool test_failed;
@@ -78,41 +77,16 @@ static int accept_cb_called;
 static bool syn_v6_sent;
 
 struct net_tcp_context {
-	u8_t mac_addr[sizeof(struct net_eth_addr)];
-	struct net_linkaddr ll_addr;
 };
 
 int net_tcp_dev_init(struct device *dev)
 {
-	struct net_tcp_context *net_tcp_context = dev->driver_data;
-
-	net_tcp_context = net_tcp_context;
-
 	return 0;
-}
-
-static u8_t *net_tcp_get_mac(struct device *dev)
-{
-	struct net_tcp_context *context = dev->driver_data;
-
-	if (context->mac_addr[2] == 0x00) {
-		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
-		context->mac_addr[0] = 0x00;
-		context->mac_addr[1] = 0x00;
-		context->mac_addr[2] = 0x5E;
-		context->mac_addr[3] = 0x00;
-		context->mac_addr[4] = 0x53;
-		context->mac_addr[5] = sys_rand32_get();
-	}
-
-	return context->mac_addr;
 }
 
 static void net_tcp_iface_init(struct net_if *iface)
 {
-	u8_t *mac = net_tcp_get_mac(net_if_get_device(iface));
-
-	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
+	return;
 }
 
 static void v6_send_syn_ack(struct net_if *iface, struct net_pkt *req)
@@ -295,7 +269,7 @@ static void setup_ipv4_tcp(struct net_pkt *pkt,
 			   u16_t remote_port,
 			   u16_t local_port)
 {
-	struct net_ipv4_hdr ipv4;
+	struct net_ipv4_hdr ipv4 = {};
 	struct net_tcp_hdr tcp_hdr = { 0 };
 	u8_t data[] = { 'f', 'o', 'o', 'b', 'a', 'r' };
 

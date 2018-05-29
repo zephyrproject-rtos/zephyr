@@ -37,10 +37,12 @@ static void wdt_sam0_enable(struct device *dev)
 	wdt_sam0_wait_synchronization();
 }
 
-static void wdt_sam0_disable(struct device *dev)
+static int wdt_sam0_disable(struct device *dev)
 {
 	WDT_REGS->CTRL.reg = 0;
 	wdt_sam0_wait_synchronization();
+
+	return 0;
 }
 
 static int wdt_sam0_set_config(struct device *dev, struct wdt_config *config)

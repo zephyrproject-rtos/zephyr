@@ -67,24 +67,6 @@ static struct coap_resource *resource_to_notify;
 
 struct k_delayed_work retransmit_work;
 
-static void strip_headers(struct net_pkt *pkt)
-{
-	/* Get rid of IP + UDP/TCP header if it is there. The IP header
-	 * will be put back just before sending the packet.
-	 */
-	if (net_pkt_appdatalen(pkt) > 0) {
-		int header_len;
-
-		header_len = net_buf_frags_len(pkt->frags) -
-			     net_pkt_appdatalen(pkt);
-		if (header_len > 0) {
-			net_buf_pull(pkt->frags, header_len);
-		}
-	} else {
-		net_pkt_set_appdatalen(pkt, net_buf_frags_len(pkt->frags));
-	}
-}
-
 static void get_from_ip_addr(struct coap_packet *cpkt,
 			     struct sockaddr_in6 *from)
 {
@@ -682,9 +664,6 @@ done:
 		k_delayed_work_submit(&retransmit_work, pending->timeout);
 	}
 
-	/* setup appdatalen */
-	strip_headers(pkt);
-
 	return net_context_sendto(pkt, (const struct sockaddr *)&from,
 				  sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
@@ -1046,9 +1025,6 @@ static int send_notification_packet(const struct sockaddr *addr, u16_t age,
 		k_delayed_work_submit(&retransmit_work, pending->timeout);
 	}
 
-	/* setup appdatalen */
-	strip_headers(pkt);
-
 	return net_context_sendto(pkt, addr, addrlen, NULL, 0, NULL, NULL);
 }
 
@@ -1276,9 +1252,8 @@ static void udp_receive(struct net_context *context,
 	get_from_ip_addr(&request, &from);
 	pending = coap_pending_received(&request, pendings,
 					NUM_PENDINGS);
-	if (pending) {
-		net_pkt_unref(pkt);
-		return;
+	if (!pending) {
+		goto not_found;
 	}
 
 	if (coap_header_get_type(&request) == COAP_TYPE_RESET) {
@@ -1288,16 +1263,21 @@ static void udp_receive(struct net_context *context,
 		o = coap_find_observer_by_addr(observers, NUM_OBSERVERS,
 					       (struct sockaddr *)&from);
 		if (!o) {
+			NET_ERR("Observer not found\n");
 			goto not_found;
 		}
 
 		r = find_resouce_by_observer(resources, o);
 		if (!r) {
+			NET_ERR("Observer found but Resource not found\n");
 			goto not_found;
 		}
 
 		coap_remove_observer(r, o);
 	}
+
+	net_pkt_unref(pkt);
+	return;
 
 not_found:
 	r = coap_handle_request(&request, resources, options, opt_num);
@@ -1363,8 +1343,6 @@ static void retransmit_request(struct k_work *work)
 
 	/* ref to avoid being freed by sendto() */
 	net_pkt_ref(pending->pkt);
-	/* drop IP + UDP headers */
-	strip_headers(pending->pkt);
 
 	r = net_context_sendto(pending->pkt, &pending->addr,
 			       sizeof(struct sockaddr_in6),

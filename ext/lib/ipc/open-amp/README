@@ -1,0 +1,53 @@
+OpenAMP
+#####################
+
+Origin:
+   https://github.com/OpenAMP/open-amp
+
+Status:
+   db6de3ffb0a43b50e3a10af23a3d80eebd6db008
+
+   When we import open-amp we removed the apps dir to reduce the amount of
+   code imported.
+Purpose:
+   IPC layer that implements rpmsg communication between cores.
+
+Description:
+
+This repository is the home for the Open Asymmetric Multi Processing (OpenAMP)
+framework project. The OpenAMP framework provides software components that
+enable development of software applications for Asymmetric Multiprocessing
+(AMP) systems. The framework provides the following key capabilities.
+
+* Provides Life Cycle Management, and Inter Processor Communication capabilities
+  for management of remote compute resources and their associated software
+  contexts.
+* Provides a stand alone library usable with RTOS and Baremetal software
+  environments
+* Compatibility with upstream Linux remoteproc and rpmsg components
+* Following AMP configurations supported:
+  a. Linux master/Generic(Baremetal) remote
+  b. Generic(Baremetal) master/Linux remote
+* Proxy infrastructure and supplied demos showcase ability of proxy on master
+  to handle printf, scanf, open, close, read, write calls from Bare metal
+  based remote contexts.
+
+Dependencies:
+   libmetal (https://github.com/OpenAMP/libmetal) - provides HAL layer
+   between OpenAMP and RTOS or OS environment.
+
+URL:
+   https://github.com/OpenAMP/open-amp/
+
+commit:
+   db6de3ffb0a43b50e3a10af23a3d80eebd6db008
+
+Maintained-by:
+   External
+
+License:
+   BSD-3-Clause
+   BSD-2-Clause
+
+License Link:
+   https://github.com/OpenAMP/open-amp/blob/master/LICENSE.md

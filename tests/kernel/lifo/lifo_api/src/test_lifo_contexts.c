@@ -4,19 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_lifo_api
- * @{
- * @defgroup t_lifo_api_basic test_lifo_api_basic
- * @brief TestPurpose: verify zephyr lifo apis under different context
- * - API coverage
- *   -# k_lifo_init K_LIFO_DEFINE
- *   -# k_lifo_put
- *   -# k_lifo_get
- * @}
- */
-
-
 #include "test_lifo.h"
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -96,7 +83,14 @@ static void tlifo_isr_thread(struct k_lifo *plifo)
 	irq_offload(tIsr_entry_get, plifo);
 }
 
-/*test cases*/
+/**
+ * @addtogroup kernel_lifo_tests
+ * @{
+ */
+
+/**
+ * @see k_lifo_init(), k_lifo_put_list()
+ */
 void test_lifo_thread2thread(void)
 {
 	/**TESTPOINT: init via k_lifo_init*/
@@ -107,6 +101,9 @@ void test_lifo_thread2thread(void)
 	tlifo_thread_thread(&klifo);
 }
 
+/**
+ * @see k_fifo_init(), k_lifo_put_list(), #K_LIFO_DEFINE(x)
+ */
 void test_lifo_thread2isr(void)
 {
 	/**TESTPOINT: init via k_lifo_init*/
@@ -117,6 +114,9 @@ void test_lifo_thread2isr(void)
 	tlifo_thread_isr(&klifo);
 }
 
+/**
+ * @see k_fifo_init(), k_lifo_put_list(), #K_LIFO_DEFINE(x)
+ */
 void test_lifo_isr2thread(void)
 {
 	/**TESTPOINT: test k_lifo_init lifo*/
@@ -126,3 +126,7 @@ void test_lifo_isr2thread(void)
 	/**TESTPOINT: test K_LIFO_DEFINE lifo*/
 	tlifo_isr_thread(&klifo);
 }
+
+/**
+ * @}
+ */
