@@ -90,44 +90,44 @@ config EXTI_STM32_EXTI15_10_IRQ_PRI
 
 endif # SOC_SERIES_STM32F0X!=y && SOC_SERIES_STM32L0X!=y
 
-config EXTI_STM32_EXTI16_IRQ_PRI
-	int "EXTI16 IRQ priority"
+config EXTI_STM32_PVD_IRQ_PRI
+	int "RVD Through IRQ priority"
 	depends on EXTI_STM32
 	depends on SOC_SERIES_STM32F4X
 	default 0
 	help
-	 IRQ priority of EXTI16 interrupt
+	 IRQ priority of RVD Through interrupt
 
-config EXTI_STM32_EXTI17_IRQ_PRI
-	int "EXTI17 IRQ priority"
+config EXTI_STM32_RTC_ALARM_IRQ_PRI
+	int "RTC Alarm IRQ priority"
 	depends on EXTI_STM32
 	depends on SOC_SERIES_STM32F4X
 	default 0
 	help
-	 IRQ priority of EXTI17 interrupt
+	 IRQ priority of RTC Alarm interrupt
 
-config EXTI_STM32_EXTI18_IRQ_PRI
-	int "EXTI18 IRQ priority"
+config EXTI_STM32_OTG_FS_WKUP_IRQ_PRI
+	int "USB OTG FS Wake Up IRQ priority"
 	depends on EXTI_STM32
 	depends on SOC_SERIES_STM32F4X
 	default 0
 	help
-	 IRQ priority of EXTI18 interrupt
+	 IRQ priority of USB OTG FS Wake interrupt
 
-config EXTI_STM32_EXTI21_IRQ_PRI
-	int "EXTI21 IRQ priority"
+config EXTI_STM32_TAMP_STAMP_IRQ_PRI
+	int "Tamper and Timestamp IRQ priority"
 	depends on EXTI_STM32
 	depends on SOC_SERIES_STM32F4X
 	default 0
 	help
-	 IRQ priority of EXTI21 interrupt
+	 IRQ priority of Tamper and Timestamp interrupt
 
-config EXTI_STM32_EXTI22_IRQ_PRI
-	int "EXTI22 IRQ priority"
+config EXTI_STM32_RTC_WKUP_IRQ_PRI
+	int "RTC Wake Up IRQ priority"
 	depends on EXTI_STM32
 	depends on SOC_SERIES_STM32F4X
 	default 0
 	help
-	 IRQ priority of EXTI22 interrupt
+	 IRQ priority of RTC Wake Up interrupt
 
 endif # SOC_FAMILY_STM32
