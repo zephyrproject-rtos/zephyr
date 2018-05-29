@@ -137,6 +137,7 @@ static struct k_fifo *lines_queue;
 static u8_t (*completion_cb)(char *line, u8_t len);
 
 /* Control characters */
+#define BS                 0x08
 #define ESC                0x1b
 #define DEL                0x7f
 
@@ -516,6 +517,7 @@ void uart_console_isr(struct device *unused)
 		/* Handle special control characters */
 		if (!isprint(byte)) {
 			switch (byte) {
+			case BS:
 			case DEL:
 				if (cur > 0) {
 					del_char(&cmd->line[--cur], end);
