@@ -18,18 +18,18 @@ config SPI_FLASH_W25QXXDV
 config GPIO
 	def_bool y
 
-config SPI_CS_GPIO
-	def_bool y
-
-config SPI_0_CS_GPIO_PIN
-	default 24
-
 if SPI_FLASH_W25QXXDV
 
 config SPI_FLASH_W25QXXDV_SPI_NAME
 	default "SPI_0"
 config SPI_FLASH_W25QXXDV_SPI_SLAVE
 	default 1
+config SPI_FLASH_W25QXXDV_GPIO_SPI_CS
+	def_bool y
+config SPI_FLASH_W25QXXDV_GPIO_SPI_CS_DRV_NAME
+	default "GPIO_0"
+config SPI_FLASH_W25QXXDV_GPIO_SPI_CS_PIN
+	default 24
 
 if DISK_ACCESS_FLASH
 
