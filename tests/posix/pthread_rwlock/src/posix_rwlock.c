@@ -83,7 +83,7 @@ static void test_rw_lock(void)
 		zassert_false(pthread_attr_init(&attr[i]),
 					"Unable to create pthread object attrib\n");
 
-    /* Setting scheduling priority */
+    		/* Setting scheduling priority */
 		schedparam.priority = i + 1;
 		pthread_attr_setschedparam(&attr[i], &schedparam);
 
