@@ -16,9 +16,6 @@
 
 #define ARM_MPU_DEV ((volatile struct arm_mpu *) ARM_MPU_BASE)
 
-/* ARM MPU Enabled state */
-static u8_t arm_mpu_enabled;
-
 /**
  * The attributes referenced in this function are described at:
  * https://goo.gl/hMry3r
@@ -248,14 +245,10 @@ static inline int _is_user_accessible_region(u32_t r_index, int write)
  */
 void arm_core_mpu_enable(void)
 {
-	if (arm_mpu_enabled == 0) {
-		/* Enable MPU and use the default memory map as a
-		 * background region for privileged software access.
-		 */
-		ARM_MPU_DEV->ctrl = ARM_MPU_ENABLE | ARM_MPU_PRIVDEFENA;
-
-		arm_mpu_enabled = 1;
-	}
+	/* Enable MPU and use the default memory map as a
+	 * background region for privileged software access.
+	 */
+	ARM_MPU_DEV->ctrl = ARM_MPU_ENABLE | ARM_MPU_PRIVDEFENA;
 }
 
 /**
@@ -263,12 +256,8 @@ void arm_core_mpu_enable(void)
  */
 void arm_core_mpu_disable(void)
 {
-	if (arm_mpu_enabled == 1) {
-		/* Disable MPU */
-		ARM_MPU_DEV->ctrl = 0;
-
-		arm_mpu_enabled = 0;
-	}
+	/* Disable MPU */
+	ARM_MPU_DEV->ctrl = 0;
 }
 
 /**
@@ -487,8 +476,6 @@ static void _arm_mpu_config(void)
 	 * background region for privileged software access.
 	 */
 	ARM_MPU_DEV->ctrl = ARM_MPU_ENABLE | ARM_MPU_PRIVDEFENA;
-
-	arm_mpu_enabled = 1;
 
 	/* Make sure that all the registers are set before proceeding */
 	__DSB();
