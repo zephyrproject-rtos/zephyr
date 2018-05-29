@@ -30,8 +30,6 @@
 
 #include <stm32f0xx.h>
 
-#include "soc_irq.h"
-
 #ifdef CONFIG_SERIAL_HAS_DRIVER
 #include <stm32f0xx_ll_usart.h>
 #endif

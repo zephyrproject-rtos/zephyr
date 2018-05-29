@@ -31,8 +31,6 @@
 
 #include <stm32f3xx.h>
 
-#include "soc_irq.h"
-
 #ifdef CONFIG_SERIAL_HAS_DRIVER
 #include <stm32f3xx_ll_usart.h>
 #endif

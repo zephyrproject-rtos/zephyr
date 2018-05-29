@@ -29,8 +29,6 @@
 /* base address for where GPIO registers start */
 #define GPIO_PORTS_BASE       (GPIOA_BASE)
 
-#include "soc_irq.h"
-
 #ifdef CONFIG_SERIAL_HAS_DRIVER
 #include <stm32l4xx_ll_usart.h>
 #include <stm32l4xx_ll_lpuart.h>
