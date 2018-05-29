@@ -40,27 +40,6 @@ config CAN_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
-config CAN_PHASE_SEG1_PROP_SEG
-	int "Phase_Seg1_Prop_Seg"
-	default 5
-	range 1 16
-	help
-	  Time quanta of phase buffer 1 segment + propagation segment (ISO 11898-1)
-
-config CAN_PHASE_SEG2
-	int "Phase_Seg2"
-	default 6
-	range 1 8
-	help
-	  Time quanta of phase buffer 2 segment (ISO 11898-1)
-
-config CAN_SJW
-	int "SJW"
-	default 1
-	range 1 4
-	help
-	  Resynchronization jump width  (ISO 11898-1)
-
 config CAN_1
 	bool "Enable CAN 1"
 	default y

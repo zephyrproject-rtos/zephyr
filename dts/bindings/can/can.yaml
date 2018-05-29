@@ -26,7 +26,22 @@ properties:
     bus-speed:
       type: int
       category: required
-      description: bus spees in Baud/s
+      description: bus speed in Baud/s
+      generation: define
+    sjw:
+      type: int
+      category: required
+      description: Resynchronization jump width (ISO 11898-1)
+      generation: define
+    prop_seg_phase_seg1:
+      type: int
+      category: required
+      description: Time quantums of phase buffer 1 segment + propagation segment (ISO 11898-1)
+      generation: define
+    phase_seg2:
+      type: int
+      category: required
+      description: Time quantums of phase buffer 2 segment (ISO 11898-1)
       generation: define
     pinctrl-\d+:
       type: array

@@ -14,8 +14,7 @@
 #define DEV_CFG(dev) \
 	((const struct can_stm32_config *const)(dev)->config->config_info)
 
-#define BIT_SEG_LENGTH ((CONFIG_CAN_PHASE_SEG1_PROP_SEG) \
-			+ (CONFIG_CAN_PHASE_SEG2) + 1)
+#define BIT_SEG_LENGTH(cfg) ((cfg)->prop_bs1 + (cfg)->bs2 + 1)
 
 #define CAN_NUMBER_OF_FILTER_BANKS (14)
 #define CAN_MAX_NUMBER_OF_FILTES (CAN_NUMBER_OF_FILTER_BANKS * 4)
@@ -68,6 +67,9 @@ struct can_stm32_data {
 struct can_stm32_config {
 	CAN_TypeDef *can;   /*!< CAN Registers*/
 	u32_t bus_speed;
+	u8_t swj;
+	u8_t prop_bs1;
+	u8_t bs2;
 	struct stm32_pclken pclken;
 	void (*config_irq)(CAN_TypeDef *can);
 };
