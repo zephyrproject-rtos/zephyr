@@ -27,6 +27,7 @@ static u8_t interface_data[64];
 #endif
 
 static K_FIFO_DEFINE(rx_queue);
+static K_FIFO_DEFINE(tx_queue);
 
 /* HCI command buffers */
 #define CMD_BUF_SIZE BT_BUF_RX_SIZE
@@ -38,9 +39,11 @@ NET_BUF_POOL_DEFINE(tx_pool, CONFIG_BT_HCI_CMD_COUNT, CMD_BUF_SIZE,
 #define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU)
 NET_BUF_POOL_DEFINE(acl_tx_pool, 2, BT_BUF_ACL_SIZE, sizeof(u8_t), NULL);
 
-/* Stack for thread */
-static K_THREAD_STACK_DEFINE(bluetooth_thread_stack, 512);
-static struct k_thread bluetooth_thread_data;
+/* HCI RX/TX threads */
+static K_THREAD_STACK_DEFINE(rx_thread_stack, 512);
+static struct k_thread rx_thread_data;
+static K_THREAD_STACK_DEFINE(tx_thread_stack, 512);
+static struct k_thread tx_thread_data;
 
 static void bluetooth_status_cb(enum usb_dc_status_code status, u8_t *param)
 {
@@ -74,7 +77,7 @@ static void bluetooth_status_cb(enum usb_dc_status_code status, u8_t *param)
 	}
 }
 
-static void bluetooth_thread(void)
+static void hci_rx_thread(void)
 {
 	SYS_LOG_DBG("Start USB Bluetooth thread");
 
@@ -100,6 +103,20 @@ static void bluetooth_thread(void)
 		}
 
 		net_buf_unref(buf);
+	}
+}
+
+static void hci_tx_thread(void)
+{
+	while (true) {
+		struct net_buf *buf;
+
+		buf = net_buf_get(&tx_queue, K_FOREVER);
+
+		if (bt_send(buf)) {
+			SYS_LOG_ERR("Error sending to driver");
+			net_buf_unref(buf);
+		}
 	}
 }
 
@@ -129,7 +146,7 @@ static void bluetooth_bulk_out_callback(u8_t ep,
 
 	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
 
-	bt_send(buf);
+	net_buf_put(&tx_queue, buf);
 }
 
 static int bluetooth_class_handler(struct usb_setup_packet *setup,
@@ -154,7 +171,7 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 
 	net_buf_add_mem(buf, *data, *len);
 
-	bt_send(buf);
+	net_buf_put(&tx_queue, buf);
 
 	return 0;
 }
@@ -225,10 +242,15 @@ static int bluetooth_init(struct device *dev)
 	}
 #endif
 
-	k_thread_create(&bluetooth_thread_data, bluetooth_thread_stack,
-			K_THREAD_STACK_SIZEOF(bluetooth_thread_stack),
-			(k_thread_entry_t)bluetooth_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
+	k_thread_create(&rx_thread_data, rx_thread_stack,
+			K_THREAD_STACK_SIZEOF(rx_thread_stack),
+			(k_thread_entry_t)hci_rx_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(8), 0, K_NO_WAIT);
+
+	k_thread_create(&tx_thread_data, tx_thread_stack,
+			K_THREAD_STACK_SIZEOF(tx_thread_stack),
+			(k_thread_entry_t)hci_tx_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(8), 0, K_NO_WAIT);
 
 	return 0;
 }
