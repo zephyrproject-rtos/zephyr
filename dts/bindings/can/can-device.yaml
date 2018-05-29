@@ -29,9 +29,4 @@ properties:
       category: required
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
-    bus-speed:
-      type: int
-      category: required
-      description: bus spees in Baud/s
-      generation: define
 ...

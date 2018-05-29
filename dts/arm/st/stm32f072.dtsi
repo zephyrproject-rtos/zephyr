@@ -51,6 +51,10 @@
 			interrupts = <30 0>;
 			status = "disabled";
 			label = "CAN_1";
+			bus-speed = <250000>;
+			sjw = <1>;
+			prop_seg_phase_seg1 = <5>;
+			phase_seg2 = <6>;
 		};
 	};
 };

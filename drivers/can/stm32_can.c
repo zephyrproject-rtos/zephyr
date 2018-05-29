@@ -94,17 +94,17 @@ static void can_stm32_isr(void *arg)
 		can_stm32_signal_tx_complete(&data->mb2);
 	}
 
-	if (can->TSR & CAN_TSR_TME_Msk) {
+	if (can->TSR & CAN_TSR_TME) {
 		k_sem_give(&data->tx_int_sem);
 	}
 
-	while (can->RF0R & CAN_RF0R_FMP0_Msk) {
+	while (can->RF0R & CAN_RF0R_FMP0) {
 		CAN_FIFOMailBox_TypeDef *mbox;
 		int filter_match_index;
 		struct can_msg msg;
 
 		mbox = &can->sFIFOMailBox[0];
-		filter_match_index = ((mbox->RDTR & CAN_RDT0R_FMI_Msk)
+		filter_match_index = ((mbox->RDTR & CAN_RDT0R_FMI)
 					   >> CAN_RDT0R_FMI_Pos);
 
 		if (filter_match_index >= CONFIG_CAN_MAX_FILTER) {
@@ -162,16 +162,31 @@ int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
 		bitrate = cfg->bus_speed;
 	}
 
-	prescaler = clock_rate / (BIT_SEG_LENGTH * cfg->bus_speed);
+	prescaler = clock_rate / (BIT_SEG_LENGTH(cfg) * bitrate);
 	if (prescaler == 0 || prescaler > 1024) {
 		SYS_LOG_ERR("HAL_CAN_Init failed: prescaler > max (%d > 1024)",
 					prescaler);
 		return -EINVAL;
 	}
 
-	bs1 = (CONFIG_CAN_PHASE_SEG1_PROP_SEG - 1) << CAN_BTR_TS1_Pos;
-	bs2 = (CONFIG_CAN_PHASE_SEG2 - 1) << CAN_BTR_TS2_Pos;
-	swj = (CONFIG_CAN_SJW - 1) << CAN_BTR_SJW_Pos;
+	if (clock_rate % (BIT_SEG_LENGTH(cfg) * bitrate)) {
+		SYS_LOG_ERR("Prescaler is not a natural number! "
+			    "prescaler = clock_rate / ((PROP_SEG1 + SEG2 + 1)"
+			    " * bus_speed); "
+			    "prescaler = %d / ((%d + %d + 1) * %d)",
+			    clock_rate,
+			    cfg->prop_bs1,
+			    cfg->bs2,
+			    bitrate);
+	}
+
+	__ASSERT(cfg->swj <= 0x03,      "SWJ maximum is 3");
+	__ASSERT(cfg->prop_bs1 <= 0x0F, "PROP_BS1 maximum is 15");
+	__ASSERT(cfg->bs2 <= 0x07,      "BS2 maximum is 7");
+
+	bs1 = ((cfg->prop_bs1 & 0x0F) - 1) << CAN_BTR_TS1_Pos;
+	bs2 = ((cfg->bs2      & 0x07) - 1) << CAN_BTR_TS2_Pos;
+	swj = ((cfg->swj      & 0x07) - 1) << CAN_BTR_SJW_Pos;
 
 	hal_mode =  mode == CAN_NORMAL_MODE   ? CAN_MODE_NORMAL   :
 		    mode == CAN_LOOPBACK_MODE ? CAN_MODE_LOOPBACK :
@@ -272,7 +287,7 @@ int can_stm32_send(struct device *dev, struct can_msg *msg, s32_t timeout,
 	}
 
 	k_mutex_lock(tx_mutex, K_FOREVER);
-	while (!(transmit_status_register & CAN_TSR_TME_Msk)) {
+	while (!(transmit_status_register & CAN_TSR_TME)) {
 		k_mutex_unlock(tx_mutex);
 		SYS_LOG_DBG("Transmit buffer full. Wait with timeout (%dms)",
 			    timeout);
@@ -314,7 +329,7 @@ int can_stm32_send(struct device *dev, struct can_msg *msg, s32_t timeout,
 		mailbox->TIR |= CAN_TI1R_RTR;
 	}
 
-	mailbox->TDTR = (mailbox->TDTR & ~CAN_TDT1R_DLC_Msk) |
+	mailbox->TDTR = (mailbox->TDTR & ~CAN_TDT1R_DLC) |
 			((msg->dlc & 0xF) << CAN_TDT1R_DLC_Pos);
 
 	mailbox->TDLR = msg->data_32[0];
@@ -779,6 +794,9 @@ static void config_can_1_irq(CAN_TypeDef *can);
 static const struct can_stm32_config can_stm32_cfg_1 = {
 	.can = (CAN_TypeDef *)CONFIG_CAN_1_BASE_ADDRESS,
 	.bus_speed = CONFIG_CAN_1_BUS_SPEED,
+	.swj = CONFIG_CAN_1_SJW,
+	.prop_bs1 = CONFIG_CAN_1_PROP_SEG_PHASE_SEG1,
+	.bs2 = CONFIG_CAN_1_PHASE_SEG2,
 	.pclken = {
 		.enr = RCC_APB1ENR_CANEN,
 		.bus = STM32_CLOCK_BUS_APB1,
