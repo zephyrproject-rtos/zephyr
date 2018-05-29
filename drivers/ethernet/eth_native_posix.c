@@ -150,6 +150,7 @@ static inline struct net_if *get_iface(struct eth_context *ctx,
 static int read_data(struct eth_context *ctx, int fd)
 {
 	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
+	int count = 0;
 	struct net_if *iface;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
@@ -167,8 +168,6 @@ static int read_data(struct eth_context *ctx, int fd)
 	}
 
 	do {
-		int count = 0;
-
 		frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
 		if (!frag) {
 			net_pkt_unref(pkt);
