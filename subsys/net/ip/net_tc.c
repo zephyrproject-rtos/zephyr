@@ -345,8 +345,6 @@ void net_tc_tx_init(void)
 			       K_THREAD_STACK_SIZEOF(tx_stack[i]),
 			       K_PRIO_COOP(thread_priority));
 	}
-
-	k_yield();
 }
 
 void net_tc_rx_init(void)
@@ -385,6 +383,4 @@ void net_tc_rx_init(void)
 			       K_THREAD_STACK_SIZEOF(rx_stack[i]),
 			       K_PRIO_COOP(thread_priority));
 	}
-
-	k_yield();
 }
