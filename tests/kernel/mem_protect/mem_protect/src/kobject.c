@@ -624,7 +624,7 @@ void kobject_test_user_1_18(void *p1, void *p2, void *p3)
 
 	k_thread_create(&kobject_test_reuse_4_tid,
 			kobject_stack_2,
-			(KOBJECT_STACK_SIZE * 5),
+			K_THREAD_STACK_SIZEOF(kobject_stack_2) + 1,
 			kobject_test_user_2_18,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
