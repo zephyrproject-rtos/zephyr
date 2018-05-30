@@ -168,6 +168,7 @@ Libraries / Subsystems
 * subsys/fs: Added support for multiple instances of filesystem
 * subsys/fs: Added Virtual File system Switch (VFS) support
 * lib/posix: Added POSIX Mutex support
+* lib/posix: Added POSIX semaphore support
 * crypto: Updated mbedTLS to 2.9.0
 * Imported libmetal and OpenAMP for IPC
 
