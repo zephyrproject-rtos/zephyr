@@ -107,8 +107,8 @@
 
 #define SSP_SIZE				0x0000200
 #define SSP_BASE(x)				(0x00077000 + (x) * SSP_SIZE)
-#define SSP_MN_DIV_BASE				(0x00078D00)
-
+#define SSP_MN_DIV_SIZE				(8)
+#define SSP_MN_DIV_BASE(x)		(0x00078D00 + ((x) * SSP_MN_DIV_SIZE))
 
 #define SOC_INTEL_S1000_MCK_XTAL_FREQ_HZ	38400000
 
@@ -118,6 +118,12 @@
 #define SUE_DSP_RES_ALLOC_REG_BASE		0x00071A60
 #define SUE_DSPIOPO_REG			(SUE_DSP_RES_ALLOC_REG_BASE + 0x08)
 #define I2S_OWNSEL(x)				(0x1 << (8 + (x)))
+
+/* Address and bit field definition for general ownership register */
+#define DSP_RES_ALLOC_GEN_OWNER		(SUE_DSP_RES_ALLOC_REG_BASE + 0x0C)
+#define DSP_RES_ALLOC_GENO_DIOPTOSEL		(BIT(2))
+#define DSP_RES_ALLOC_GENO_MDIVOSEL		(BIT(1))
+
 #define USB_DW_BASE				0x000A0000
 #define USB_DW_IRQ				0x00000806
 
