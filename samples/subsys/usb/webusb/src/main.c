@@ -75,10 +75,7 @@ static struct webusb_bos_desc {
 	.bos = {
 		.bLength = sizeof(struct usb_bos_descriptor),
 		.bDescriptorType = USB_BINARY_OBJECT_STORE_DESC,
-		.wTotalLength = sizeof(struct usb_bos_descriptor)
-			+ sizeof(struct usb_bos_platform_descriptor)
-			+ sizeof(struct usb_bos_capability_webusb)
-			+ 0x1C,
+		.wTotalLength = sizeof(struct webusb_bos_desc),
 		.bNumDeviceCaps = 2,
 	},
 	/* WebUSB Platform Capability Descriptor:
