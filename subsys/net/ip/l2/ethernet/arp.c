@@ -22,6 +22,7 @@
 #include "net_private.h"
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
+#define ARP_REQUEST_TIMEOUT K_SECONDS(2)
 
 static struct arp_entry arp_table[CONFIG_NET_ARP_TABLE_SIZE];
 
@@ -151,6 +152,9 @@ static inline struct net_pkt *prepare_arp(struct net_if *iface,
 		entry->pending = net_pkt_ref(pending);
 		entry->iface = net_pkt_iface(pkt);
 
+		k_delayed_work_submit(&entry->arp_request_timer,
+				      ARP_REQUEST_TIMEOUT);
+
 		net_ipaddr_copy(&entry->ip, next_addr);
 
 		memcpy(&eth->src.addr,
@@ -192,6 +196,22 @@ static inline struct net_pkt *prepare_arp(struct net_if *iface,
 	net_buf_add(frag, sizeof(struct net_arp_hdr));
 
 	return pkt;
+}
+
+static void arp_request_timeout(struct k_work *work)
+{
+	/* This means that the ARP failed. */
+	struct arp_entry *entry = CONTAINER_OF(work,
+					       struct arp_entry,
+					       arp_request_timer);
+
+	if (entry->pending) {
+		NET_DBG("Releasing pending pkt %p (ref %d)", entry->pending,
+			entry->pending->ref - 1);
+		net_pkt_unref(entry->pending);
+		entry->pending = NULL;
+		entry->iface = NULL;
+	}
 }
 
 struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
@@ -332,6 +352,8 @@ static inline void arp_update(struct net_if *iface,
 			/* We only update the ARP cache if we were
 			 * initiating a request.
 			 */
+			k_delayed_work_cancel(&arp_table[i].arp_request_timer);
+
 			memcpy(&arp_table[i].eth, hwaddr,
 			       sizeof(struct net_eth_addr));
 
@@ -493,9 +515,14 @@ void net_arp_clear_cache(struct net_if *iface)
 
 		if (arp_table[i].pending) {
 			net_pkt_unref(arp_table[i].pending);
+			k_delayed_work_cancel(&arp_table[i].arp_request_timer);
 		}
 
-		memset(&arp_table[i], 0, sizeof(struct arp_entry));
+		arp_table[i].pending = NULL;
+		arp_table[i].iface = NULL;
+
+		memset(&arp_table[i].ip, 0, sizeof(arp_table[i].ip));
+		memset(&arp_table[i].eth, 0, sizeof(arp_table[i].eth));
 	}
 }
 
@@ -518,5 +545,12 @@ int net_arp_foreach(net_arp_cb_t cb, void *user_data)
 
 void net_arp_init(void)
 {
+	int i;
+
 	net_arp_clear_cache(NULL);
+
+	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
+		k_delayed_work_init(&arp_table[i].arp_request_timer,
+				    arp_request_timeout);
+	}
 }
