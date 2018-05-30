@@ -230,7 +230,7 @@ static struct dev_common_descriptor common_desc = {
 			.bNumEndpoints = 1,
 			.bInterfaceClass = COMMUNICATION_DEVICE_CLASS,
 			.bInterfaceSubClass = ACM_SUBCLASS,
-			.bInterfaceProtocol = V25TER_PROTOCOL,
+			.bInterfaceProtocol = 0,
 			.iInterface = 0,
 		},
 		/* Header Functional Descriptor */
