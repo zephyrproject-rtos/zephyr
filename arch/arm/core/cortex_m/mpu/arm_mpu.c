@@ -143,7 +143,7 @@ static inline u32_t _get_region_index_by_type(u32_t type)
 }
 
 /**
- * This internal function check if region is enabled or not
+ * This internal function checks if region is enabled or not.
  */
 static inline int _is_enabled_region(u32_t r_index)
 {
@@ -153,7 +153,7 @@ static inline int _is_enabled_region(u32_t r_index)
 }
 
 /**
- * This internal function check if the given buffer in in the region
+ * This internal function checks if the given buffer is in the region.
  */
 static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 {
@@ -175,7 +175,7 @@ static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 }
 
 /**
- * This internal function check if the region is user accessible or not
+ * This internal function checks if the region is user accessible or not.
  */
 static inline int _is_user_accessible_region(u32_t r_index, int write)
 {
@@ -269,9 +269,10 @@ void arm_core_mpu_configure_user_context(struct k_thread *thread)
 	index = _get_region_index_by_type(THREAD_APP_DATA_REGION);
 	size = (u32_t)&__app_ram_end - (u32_t)&__app_ram_start;
 	region_attr = _get_region_attr_by_type(THREAD_APP_DATA_REGION, size);
-	if (size > 0)
+	if (size > 0) {
 		_region_init(index, (u32_t)&__app_ram_start, region_attr);
-#endif
+	}
+#endif /* CONFIG_APPLICATION_MEMORY */
 }
 
 /**
