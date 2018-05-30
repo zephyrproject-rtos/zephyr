@@ -74,7 +74,8 @@ Drivers and Sensors
 * gpio: Added GPIO driver for stm32l0x
 * i2s: Introduce CAVS I2S
 * ieee802154: Added OpenThread modifications to KW41Z driver
-* interrupts: Introduce Desinware interrupt controller
+* interrupts: introduce CAVS interrupt logic
+* interrupts: Introduce Designware interrupt controller
 * ipm: Added mcux ipm driver for LPC SoCs
 * led: Added new public API and driver support for TI LP3943
 * pinmux: Added pinmux driver for stm32l0x
@@ -157,6 +158,7 @@ Build and Infrastructure
 * kconfig: Remove the C Kconfig implementation
 * scripts: kconfig: Add a Python menuconfig implementation
 * scripts: west: introduce common runner configuration
+* scripts: debug, debugserver and flash scripts for intel_s1000
 * xtensa: provide XCC compiler support for Xtensa
 
 Libraries / Subsystems
