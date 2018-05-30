@@ -291,6 +291,8 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 		SYS_LOG_DBG("configure domain: %p", mem_domain);
 		num_partitions = mem_domain->num_partitions;
 		pparts = mem_domain->partitions;
+
+		__ASSERT(pparts != NULL, "mem_domain has partitions");
 	} else {
 		SYS_LOG_DBG("disable domain partition regions");
 		num_partitions = 0;
@@ -305,6 +307,7 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 				      _size_to_mpu_rasr_size(pparts->size);
 			_region_init(region_index, pparts->start, region_attr);
 			num_partitions--;
+			pparts++;
 		} else {
 			SYS_LOG_DBG("disable region 0x%x", region_index);
 			/* Disable region */
@@ -312,7 +315,6 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 			ARM_MPU_DEV->rbar = 0;
 			ARM_MPU_DEV->rasr = 0;
 		}
-		pparts++;
 	}
 }
 
