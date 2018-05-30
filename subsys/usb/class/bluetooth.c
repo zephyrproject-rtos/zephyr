@@ -45,38 +45,6 @@ static struct k_thread rx_thread_data;
 static K_THREAD_STACK_DEFINE(tx_thread_stack, 512);
 static struct k_thread tx_thread_data;
 
-static void bluetooth_status_cb(enum usb_dc_status_code status, u8_t *param)
-{
-	/* Check the USB status and do needed action if required */
-	switch (status) {
-	case USB_DC_ERROR:
-		SYS_LOG_DBG("USB device error");
-		break;
-	case USB_DC_RESET:
-		SYS_LOG_DBG("USB device reset detected");
-		break;
-	case USB_DC_CONNECTED:
-		SYS_LOG_DBG("USB device connected");
-		break;
-	case USB_DC_CONFIGURED:
-		SYS_LOG_DBG("USB device configured");
-		break;
-	case USB_DC_DISCONNECTED:
-		SYS_LOG_DBG("USB device disconnected");
-		break;
-	case USB_DC_SUSPEND:
-		SYS_LOG_DBG("USB device suspended");
-		break;
-	case USB_DC_RESUME:
-		SYS_LOG_DBG("USB device resumed");
-		break;
-	case USB_DC_UNKNOWN:
-	default:
-		SYS_LOG_DBG("USB unknown state");
-		break;
-	}
-}
-
 static void hci_rx_thread(void)
 {
 	SYS_LOG_DBG("Start USB Bluetooth thread");
@@ -120,20 +88,19 @@ static void hci_tx_thread(void)
 	}
 }
 
-static void bluetooth_bulk_out_callback(u8_t ep,
-					enum usb_dc_ep_cb_status_code ep_status)
+static void acl_read_cb(u8_t ep, int size, void *priv)
 {
-	struct net_buf *buf;
-	u32_t len;
+	struct net_buf *buf = priv;
 
-	SYS_LOG_DBG("ep %x status %d", ep, ep_status);
+	if (size > 0) {
+		buf->len += size;
+		bt_buf_set_type(buf, BT_BUF_ACL_OUT);
+		net_buf_put(&tx_queue, buf);
+		buf = NULL;
+	}
 
-	/* Read number of bytes to read */
-	usb_read(ep, NULL, 0, &len);
-
-	if (!len || len > BT_BUF_ACL_SIZE) {
-		SYS_LOG_ERR("Incorrect length: %u\n", len);
-		return;
+	if (buf) {
+		net_buf_unref(buf);
 	}
 
 	buf = net_buf_alloc(&acl_tx_pool, K_NO_WAIT);
@@ -141,13 +108,11 @@ static void bluetooth_bulk_out_callback(u8_t ep,
 		SYS_LOG_ERR("Cannot get free buffer\n");
 		return;
 	}
-
 	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
-	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
 
-	usb_read(ep, net_buf_add(buf, len), len, NULL);
-
-	net_buf_put(&tx_queue, buf);
+	/* Start a new read transfer */
+	usb_transfer(CONFIG_BLUETOOTH_OUT_EP_ADDR, buf->data, BT_BUF_ACL_SIZE,
+		     USB_TRANS_READ, acl_read_cb, buf);
 }
 
 static int bluetooth_class_handler(struct usb_setup_packet *setup,
@@ -178,13 +143,51 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 	return 0;
 }
 
+static void bluetooth_status_cb(enum usb_dc_status_code status, u8_t *param)
+{
+	/* Check the USB status and do needed action if required */
+	switch (status) {
+	case USB_DC_ERROR:
+		SYS_LOG_DBG("USB device error");
+		break;
+	case USB_DC_RESET:
+		SYS_LOG_DBG("USB device reset detected");
+		break;
+	case USB_DC_CONNECTED:
+		SYS_LOG_DBG("USB device connected");
+		break;
+	case USB_DC_CONFIGURED:
+		SYS_LOG_DBG("USB device configured");
+		/* Start reading */
+		acl_read_cb(CONFIG_BLUETOOTH_OUT_EP_ADDR, 0, NULL);
+		break;
+	case USB_DC_DISCONNECTED:
+		SYS_LOG_DBG("USB device disconnected");
+		/* Cancel any transfer */
+		usb_cancel_transfer(CONFIG_BLUETOOTH_INT_EP_ADDR);
+		usb_cancel_transfer(CONFIG_BLUETOOTH_IN_EP_ADDR);
+		usb_cancel_transfer(CONFIG_BLUETOOTH_OUT_EP_ADDR);
+		break;
+	case USB_DC_SUSPEND:
+		SYS_LOG_DBG("USB device suspended");
+		break;
+	case USB_DC_RESUME:
+		SYS_LOG_DBG("USB device resumed");
+		break;
+	case USB_DC_UNKNOWN:
+	default:
+		SYS_LOG_DBG("USB unknown state");
+		break;
+	}
+}
+
 static struct usb_ep_cfg_data bluetooth_ep_data[] = {
 	{
 		.ep_cb = usb_transfer_ep_callback,
 		.ep_addr = CONFIG_BLUETOOTH_INT_EP_ADDR,
 	},
 	{
-		.ep_cb = bluetooth_bulk_out_callback,
+		.ep_cb = usb_transfer_ep_callback,
 		.ep_addr = CONFIG_BLUETOOTH_OUT_EP_ADDR,
 	},
 	{
