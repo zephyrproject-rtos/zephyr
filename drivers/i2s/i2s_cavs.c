@@ -380,7 +380,6 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 	} else {
 		/* enable BCLK output */
 		ssioc = SSIOC_SCOE;
-
 	}
 
 	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE) {
@@ -771,7 +770,7 @@ static void i2s1_irq_config(void)
 
 static const struct i2s_cavs_config i2s1_cavs_config = {
 	.regs = (struct i2s_cavs_ssp *)SSP_BASE(1),
-	.mn_regs = &((struct i2s_cavs_mn_div *)SSP_MN_DIV_BASE)[1],
+	.mn_regs = (struct i2s_cavs_mn_div *)SSP_MN_DIV_BASE(1),
 	.irq_id = I2S1_CAVS_IRQ,
 	.irq_config = i2s1_irq_config,
 };
