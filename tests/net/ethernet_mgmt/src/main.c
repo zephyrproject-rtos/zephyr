@@ -57,7 +57,7 @@ static int eth_fake_send(struct net_if *iface,
 static enum ethernet_hw_caps eth_fake_get_capabilities(struct device *dev)
 {
 	return ETHERNET_AUTO_NEGOTIATION_SET | ETHERNET_LINK_10BASE_T |
-		ETHERNET_LINK_100BASE_T | ETHERNET_DUPLEX_SET;
+		ETHERNET_LINK_100BASE_T | ETHERNET_DUPLEX_SET | ETHERNET_QAV;
 }
 
 static int eth_fake_set_config(struct device *dev,
@@ -104,6 +104,14 @@ static int eth_fake_set_config(struct device *dev,
 		net_if_set_link_addr(ctx->iface, ctx->mac_address,
 				     sizeof(ctx->mac_address),
 				     NET_LINK_ETHERNET);
+		break;
+	case ETHERNET_CONFIG_TYPE_QAV_DELTA_BANDWIDTH:
+	case ETHERNET_CONFIG_TYPE_QAV_IDLE_SLOPE:
+		/* Assumes just one priority queue - validate the id*/
+		if (config->qav_queue_param.queue_id != 0) {
+			return -EINVAL;
+		}
+
 		break;
 	}
 
@@ -272,6 +280,65 @@ static void test_change_same_duplex(void)
 	zassert_not_equal(ret, 0, "invalid change to already set duplex");
 }
 
+static void test_change_qav_params(void)
+{
+	struct net_if *iface = net_if_get_default();
+	struct ethernet_req_params params;
+	int ret;
+
+	/* Firstly - try to set correct params to a correct queue id */
+	params.qav_queue_param.queue_id = 0;
+
+	/* Starting with delta bandwidth */
+	params.qav_queue_param.delta_bandwidth = 10;
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_DELTA_BANDWIDTH,
+		       iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_equal(ret, 0, "could not set delta bandwidth");
+
+	/* And them the idle slope */
+	params.qav_queue_param.idle_slope = 10;
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_IDLE_SLOPE,
+		       iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_equal(ret, 0, "could not set idle slope");
+
+	/* Now try to set incorrect params to a correct queue */
+	params.qav_queue_param.delta_bandwidth = -10;
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_DELTA_BANDWIDTH,
+		       iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_not_equal(ret, 0,
+			  "should not be able to set such delta bandwidth");
+
+	params.qav_queue_param.delta_bandwidth = 101;
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_DELTA_BANDWIDTH,
+		       iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_not_equal(ret, 0,
+			  "should not be able to set such delta bandwidth");
+
+	/* Now try to set valid parameters to an invalid queue id */
+	params.qav_queue_param.queue_id = 1;
+	params.qav_queue_param.delta_bandwidth = 10;
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_DELTA_BANDWIDTH,
+		       iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_not_equal(ret, 0, "should not be able to set delta bandwidth");
+
+	params.qav_queue_param.idle_slope = 10;
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_IDLE_SLOPE,
+		       iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_not_equal(ret, 0, "should not be able to set idle slope");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(ethernet_mgmt_test,
@@ -283,7 +350,8 @@ void test_main(void)
 			 ztest_unit_test(test_change_same_link),
 			 ztest_unit_test(test_change_unsupported_link),
 			 ztest_unit_test(test_change_duplex),
-			 ztest_unit_test(test_change_same_duplex));
+			 ztest_unit_test(test_change_same_duplex),
+			 ztest_unit_test(test_change_qav_params));
 
 	ztest_run_test_suite(ethernet_mgmt_test);
 }
