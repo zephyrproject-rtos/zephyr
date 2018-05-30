@@ -1,0 +1,7 @@
+identifier: v2m_musca
+name: ARM V2M MUSCA
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
