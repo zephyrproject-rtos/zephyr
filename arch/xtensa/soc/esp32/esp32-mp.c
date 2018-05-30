@@ -8,6 +8,7 @@
 #include <soc.h>
 
 #include <zephyr.h>
+#include <spinlock.h>
 #include <kernel_structs.h>
 
 #define _REG(base, off) (*(volatile u32_t *)((base) + (off)))
@@ -43,9 +44,40 @@ struct cpustart_rec {
 volatile struct cpustart_rec *start_rec;
 static void *appcpu_top;
 
+static struct k_spinlock loglock;
+
+/* Note that the logging done here is ACTUALLY REQUIRED FOR RELIABLE
+ * OPERATION!  At least one particular board will experience spurious
+ * hangs during initialization (usually the APPCPU fails to start at
+ * all) without these calls present.  It's not just time -- careful
+ * use of k_busy_wait() (and even hand-crafted timer loops using the
+ * Xtensa timer SRs directly) that duplicates the timing exactly still
+ * sees hangs.  Something is happening inside the ROM UART code that
+ * magically makes the startup sequence reliable.
+ *
+ * Leave this in place until the sequence is understood better.
+ *
+ * (Note that the use of the spinlock is cosmetic only -- if you take
+ * it out the messages will interleave across the two CPUs but startup
+ * will still be reliable.)
+ */
+void smp_log(const char *msg)
+{
+	k_spinlock_key_t key = k_spin_lock(&loglock);
+
+	while (*msg) {
+		esp32_rom_uart_tx_one_char(*msg++);
+	}
+	esp32_rom_uart_tx_one_char('\r');
+	esp32_rom_uart_tx_one_char('\n');
+
+	k_spin_unlock(&loglock, key);
+}
+
 static void appcpu_entry2(void)
 {
 	volatile int ps, ie;
+	smp_log("ESP32: APPCPU running");
 
 	/* Copy over VECBASE from the main CPU for an initial value
 	 * (will need to revisit this if we ever allow a user API to
@@ -141,6 +173,8 @@ static void appcpu_entry1(void)
  */
 static void appcpu_start(void)
 {
+	smp_log("ESP32: starting APPCPU");
+
 	/* These two calls are wrapped in a "stall_other_cpu" API in
 	 * esp-idf.  But in this context the appcpu is stalled by
 	 * definition, so we can skip that complexity and just call
@@ -162,6 +196,8 @@ static void appcpu_start(void)
 	 * the CPU, but this is how they do it...
 	 */
 	esp32_rom_ets_set_appcpu_boot_addr((void *)appcpu_entry1);
+
+	smp_log("ESP32: APPCPU start sequence complete");
 }
 
 void _arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
@@ -192,4 +228,6 @@ void _arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	while (!alive_flag) {
 	}
+
+	smp_log("ESP32: APPCPU initialized");
 }
