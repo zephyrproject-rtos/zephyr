@@ -539,7 +539,7 @@ struct spi_dw_data spi_dw_data_port_0 = {
 };
 
 const struct spi_dw_config spi_dw_config_0 = {
-	.regs = SPI_DW_PORT_0_REGS,
+	.regs = CONFIG_SPI_DW_PORT_0_REGS,
 #ifdef CONFIG_SPI_DW_PORT_0_CLOCK_GATE
 	.clock_name = CONFIG_SPI_DW_PORT_1_CLOCK_GATE_DRV_NAME,
 	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_0_CLOCK_GATE_SUBSYS),
@@ -556,10 +556,11 @@ DEVICE_AND_API_INIT(spi_dw_port_0, CONFIG_SPI_0_NAME, spi_dw_init,
 void spi_config_0_irq(void)
 {
 #ifdef CONFIG_SPI_DW_PORT_0_INTERRUPT_SINGLE_LINE
-	IRQ_CONNECT(SPI_DW_PORT_0_IRQ, CONFIG_SPI_0_IRQ_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_0), SPI_DW_IRQ_FLAGS);
-	irq_enable(SPI_DW_PORT_0_IRQ);
-	_spi_int_unmask(SPI_DW_PORT_0_INT_MASK);
+	IRQ_CONNECT(CONFIG_SPI_DW_PORT_0_IRQ, CONFIG_SPI_0_IRQ_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_0),
+		    CONFIG_SPI_DW_PORT_0_IRQ_FLAGS);
+	irq_enable(CONFIG_SPI_DW_PORT_0_IRQ);
+	_spi_int_unmask(CONFIG_SPI_DW_PORT_0_INT_MASK);
 #else
 	IRQ_CONNECT(IRQ_SPI0_RX_AVAIL, CONFIG_SPI_0_IRQ_PRI,
 		    spi_dw_isr, DEVICE_GET(spi_dw_port_0), SPI_DW_IRQ_FLAGS);
@@ -587,7 +588,7 @@ struct spi_dw_data spi_dw_data_port_1 = {
 };
 
 static const struct spi_dw_config spi_dw_config_1 = {
-	.regs = SPI_DW_PORT_1_REGS,
+	.regs = CONFIG_SPI_DW_PORT_1_REGS,
 #ifdef CONFIG_SPI_DW_PORT_1_CLOCK_GATE
 	.clock_name = CONFIG_SPI_DW_PORT_1_CLOCK_GATE_DRV_NAME,
 	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_1_CLOCK_GATE_SUBSYS),
@@ -604,10 +605,11 @@ DEVICE_AND_API_INIT(spi_dw_port_1, CONFIG_SPI_1_NAME, spi_dw_init,
 void spi_config_1_irq(void)
 {
 #ifdef CONFIG_SPI_DW_PORT_1_INTERRUPT_SINGLE_LINE
-	IRQ_CONNECT(SPI_DW_PORT_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_1), SPI_DW_IRQ_FLAGS);
-	irq_enable(SPI_DW_PORT_1_IRQ);
-	_spi_int_unmask(SPI_DW_PORT_1_INT_MASK);
+	IRQ_CONNECT(CONFIG_SPI_DW_PORT_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_1),
+		    CONFIG_SPI_DW_PORT_1_IRQ_FLAGS);
+	irq_enable(CONFIG_SPI_DW_PORT_1_IRQ);
+	_spi_int_unmask(CONFIG_SPI_DW_PORT_1_INT_MASK);
 #else
 	IRQ_CONNECT(IRQ_SPI1_RX_AVAIL, CONFIG_SPI_1_IRQ_PRI,
 		    spi_dw_isr, DEVICE_GET(spi_dw_port_1), SPI_DW_IRQ_FLAGS);
@@ -635,7 +637,7 @@ struct spi_dw_data spi_dw_data_port_2 = {
 };
 
 static const struct spi_dw_config spi_dw_config_2 = {
-	.regs = SPI_DW_PORT_2_REGS,
+	.regs = CONFIG_SPI_DW_PORT_2_REGS,
 #ifdef CONFIG_SPI_DW_PORT_2_CLOCK_GATE
 	.clock_name = CONFIG_SPI_DW_PORT_2_CLOCK_GATE_DRV_NAME,
 	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_2_CLOCK_GATE_SUBSYS),
@@ -652,10 +654,11 @@ DEVICE_AND_API_INIT(spi_dw_port_2, CONFIG_SPI_2_NAME, spi_dw_init,
 void spi_config_2_irq(void)
 {
 #ifdef CONFIG_SPI_DW_PORT_2_INTERRUPT_SINGLE_LINE
-	IRQ_CONNECT(SPI_DW_PORT_2_IRQ, CONFIG_SPI_2_IRQ_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_2), SPI_DW_IRQ_FLAGS);
-	irq_enable(SPI_DW_PORT_2_IRQ);
-	_spi_int_unmask(SPI_DW_PORT_2_INT_MASK);
+	IRQ_CONNECT(CONFIG_SPI_DW_PORT_2_IRQ, CONFIG_SPI_2_IRQ_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_2),
+		    CONFIG_SPI_DW_PORT_2_IRQ_FLAGS);
+	irq_enable(CONFIG_SPI_DW_PORT_2_IRQ);
+	_spi_int_unmask(CONFIG_SPI_DW_PORT_2_INT_MASK);
 #else
 	IRQ_CONNECT(IRQ_SPI2_RX_AVAIL, CONFIG_SPI_2_IRQ_PRI,
 		    spi_dw_isr, DEVICE_GET(spi_dw_port_2), SPI_DW_IRQ_FLAGS);
@@ -683,7 +686,7 @@ struct spi_dw_data spi_dw_data_port_3 = {
 };
 
 static const struct spi_dw_config spi_dw_config_3 = {
-	.regs = SPI_DW_PORT_3_REGS,
+	.regs = CONFIG_SPI_DW_PORT_3_REGS,
 #ifdef CONFIG_SPI_DW_PORT_3_CLOCK_GATE
 	.clock_name = CONFIG_SPI_DW_PORT_3_CLOCK_GATE_DRV_NAME,
 	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_3_CLOCK_GATE_SUBSYS),
@@ -700,10 +703,11 @@ DEVICE_AND_API_INIT(spi_dw_port_3, CONFIG_SPI_3_NAME, spi_dw_init,
 void spi_config_3_irq(void)
 {
 #ifdef CONFIG_SPI_DW_PORT_3_INTERRUPT_SINGLE_LINE
-	IRQ_CONNECT(SPI_DW_PORT_3_IRQ, CONFIG_SPI_3_IRQ_PRI,
-		    spi_dw_isr, DEVICE_GET(spi_dw_port_3), SPI_DW_IRQ_FLAGS);
-	irq_enable(SPI_DW_PORT_3_IRQ);
-	_spi_int_unmask(SPI_DW_PORT_3_INT_MASK);
+	IRQ_CONNECT(CONFIG_SPI_DW_PORT_3_IRQ, CONFIG_SPI_3_IRQ_PRI,
+		    spi_dw_isr, DEVICE_GET(spi_dw_port_3),
+		    CONFIG_SPI_DW_PORT_3_IRQ_FLAGS);
+	irq_enable(CONFIG_SPI_DW_PORT_3_IRQ);
+	_spi_int_unmask(CONFIG_SPI_DW_PORT_3_INT_MASK);
 #else
 	IRQ_CONNECT(IRQ_SPI3_RX_AVAIL, CONFIG_SPI_3_IRQ_PRI,
 		    spi_dw_isr, DEVICE_GET(spi_dw_port_3), SPI_DW_IRQ_FLAGS);
