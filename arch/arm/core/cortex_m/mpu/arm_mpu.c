@@ -273,8 +273,7 @@ void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 	u32_t region_index = _get_region_index_by_type(type);
 	u32_t region_attr = _get_region_attr_by_type(type, size);
 
-	/* ARM MPU supports up to 16 Regions */
-	if (region_index > _get_num_regions()) {
+	if (region_index >= _get_num_regions()) {
 		return;
 	}
 
@@ -294,16 +293,22 @@ void arm_core_mpu_configure_user_context(struct k_thread *thread)
 		_disable_region(index);
 		return;
 	}
+	if (index >= _get_num_regions()) {
+		return;
+	}
 	/* configure stack */
 	_region_init(index, base, region_attr);
 
 #if defined(CONFIG_APPLICATION_MEMORY)
 	/* configure app data portion */
 	index = _get_region_index_by_type(THREAD_APP_DATA_REGION);
-	size = (u32_t)&__app_ram_end - (u32_t)&__app_ram_start;
-	region_attr = _get_region_attr_by_type(THREAD_APP_DATA_REGION, size);
-	if (size > 0) {
-		_region_init(index, (u32_t)&__app_ram_start, region_attr);
+	if (index < _get_num_regions()) {
+		size = (u32_t)&__app_ram_end - (u32_t)&__app_ram_start;
+		region_attr =
+			_get_region_attr_by_type(THREAD_APP_DATA_REGION, size);
+		if (size > 0) {
+			_region_init(index, (u32_t)&__app_ram_start, region_attr);
+		}
 	}
 #endif /* CONFIG_APPLICATION_MEMORY */
 }
@@ -361,7 +366,8 @@ void arm_core_mpu_configure_mem_partition(u32_t part_index,
 
 	SYS_LOG_DBG("configure partition index: %u", part_index);
 
-	if (part) {
+	if (part &&
+		(region_index + part_index < _get_num_regions())) {
 		SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
 			    region_index + part_index, part->start, part->size);
 		region_attr = part->attr | _size_to_mpu_rasr_size(part->size);
@@ -441,8 +447,18 @@ static void _arm_mpu_config(void)
 {
 	u32_t r_index;
 
-	/* ARM MPU supports up to 16 Regions */
 	if (mpu_config.num_regions > _get_num_regions()) {
+		/* Attempt to configure more MPU regions than
+		 * what is supported by hardware. As this operation
+		 * is executed during system (pre-kernel) initialization,
+		 * we want to ensure we can detect an attempt to
+		 * perform invalid configuration.
+		 */
+		__ASSERT(0,
+			"Request to configure: %u regions (supported: %u)\n",
+			mpu_config.num_regions,
+			_get_num_regions()
+		);
 		return;
 	}
 
