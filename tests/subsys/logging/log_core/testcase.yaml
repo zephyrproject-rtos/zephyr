@@ -1,0 +1,3 @@
+tests:
+  subsys.logging.log_core:
+    tags: log_core
