@@ -93,6 +93,11 @@ static inline u8_t _get_num_regions(void)
 	return (u8_t)type;
 }
 
+/* This internal function performs MPU region initialization.
+ *
+ * Note:
+ *   The caller is responsible to supply a valid region index.
+ */
 static void _region_init(u32_t index, u32_t region_addr,
 			 u32_t region_attr)
 {
@@ -144,6 +149,9 @@ static inline u32_t _get_region_index_by_type(u32_t type)
 
 /**
  * This internal function checks if region is enabled or not.
+ *
+ * Note:
+ *   The caller must provide a valid region number.
  */
 static inline int _is_enabled_region(u32_t r_index)
 {
@@ -154,6 +162,9 @@ static inline int _is_enabled_region(u32_t r_index)
 
 /**
  * This internal function checks if the given buffer is in the region.
+ *
+ * Note:
+ *   The caller must provide a valid region number.
  */
 static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 {
@@ -176,6 +187,9 @@ static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 
 /**
  * This internal function checks if the region is user accessible or not.
+ *
+ * Note:
+ *   The caller must provide a valid region number.
  */
 static inline int _is_user_accessible_region(u32_t r_index, int write)
 {
