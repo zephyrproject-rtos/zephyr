@@ -51,7 +51,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt);
 enum net_verdict net_arp_input(struct net_pkt *pkt);
 
 struct arp_entry {
-	u32_t time;	/* FIXME - implement timeout functionality */
+	struct k_delayed_work arp_request_timer;
 	struct net_if *iface;
 	struct net_pkt *pending;
 	struct in_addr ip;
