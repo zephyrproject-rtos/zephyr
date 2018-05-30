@@ -142,9 +142,10 @@ static void bluetooth_bulk_out_callback(u8_t ep,
 		return;
 	}
 
-	usb_read(ep, net_buf_add(buf, len), len, NULL);
-
+	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
 	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
+
+	usb_read(ep, net_buf_add(buf, len), len, NULL);
 
 	net_buf_put(&tx_queue, buf);
 }
@@ -167,6 +168,7 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 		return -ENOMEM;
 	}
 
+	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
 	bt_buf_set_type(buf, BT_BUF_CMD);
 
 	net_buf_add_mem(buf, *data, *len);
