@@ -723,20 +723,31 @@ static inline int _arch_is_user_context(void)
 #define _STACK_BASE_ALIGN	STACK_ALIGN
 #endif
 
+#ifdef CONFIG_USERSPACE
+/* If user mode enabled, expand any stack size to fill a page since that is
+ * the access control granularity and we don't want other kernel data to
+ * unintentionally fall in the latter part of the page
+ */
+#define _STACK_SIZE_ALIGN	MMU_PAGE_SIZE
+#else
+#define _STACK_SIZE_ALIGN	1
+#endif
+
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __kernel_noinit \
 		__aligned(_STACK_BASE_ALIGN) \
-		sym[(size) + _STACK_GUARD_SIZE]
+		sym[ROUND_UP((size), _STACK_SIZE_ALIGN) + _STACK_GUARD_SIZE]
 
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __kernel_noinit \
 		__aligned(_STACK_BASE_ALIGN) \
-		sym[nmemb][ROUND_UP(size, _STACK_BASE_ALIGN) + \
+		sym[nmemb][ROUND_UP(size, max(_STACK_BASE_ALIGN, \
+					      _STACK_SIZE_ALIGN)) + \
 			   _STACK_GUARD_SIZE]
 
 #define _ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element __aligned(_STACK_BASE_ALIGN) \
-		sym[(size) + _STACK_GUARD_SIZE]
+		sym[ROUND_UP((size), _STACK_SIZE_ALIGN) + _STACK_GUARD_SIZE]
 
 #define _ARCH_THREAD_STACK_SIZEOF(sym) \
 	(sizeof(sym) - _STACK_GUARD_SIZE)
