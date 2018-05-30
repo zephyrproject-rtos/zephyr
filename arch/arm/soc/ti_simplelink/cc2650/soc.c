@@ -66,11 +66,6 @@ ti_ccfg[CCFG_SIZE / sizeof(u32_t)] = {
 static const u32_t clkloadctl =
 	REG_ADDR(TI_CC2650_PRCM_40082000_BASE_ADDRESS,
 		 CC2650_PRCM_CLKLOADCTL);
-#ifdef CONFIG_CC2650_TRNG_ENTROPY_GENERATOR
-static const u32_t secdmaclkgr =
-	REG_ADDR(TI_CC2650_PRCM_40082000_BASE_ADDRESS,
-		 CC2650_PRCM_SECDMACLKGR);
-#endif
 static const u32_t gpioclkgr =
 	REG_ADDR(TI_CC2650_PRCM_40082000_BASE_ADDRESS,
 		 CC2650_PRCM_GPIOCLKGR);
@@ -90,11 +85,10 @@ static const u32_t uartclkgr =
 static void setup_modules_prcm(void)
 {
 #if defined(CONFIG_GPIO_CC2650) || \
-	defined(CONFIG_CC2650_TRNG_ENTROPY_GENERATOR) || \
 	defined(CONFIG_SERIAL)
 
 	/* Setup power */
-#if defined(CONFIG_GPIO_CC2650) || defined(CONFIG_CC2650_TRNG_ENTROPY_GENERATOR)
+#if defined(CONFIG_GPIO_CC2650)
 	sys_set_bit(pdctl0, CC2650_PRCM_PDCTL0_PERIPH_ON_POS);
 #endif
 #ifdef CONFIG_SERIAL
@@ -105,9 +99,6 @@ static void setup_modules_prcm(void)
 #ifdef CONFIG_GPIO_CC2650
 	sys_set_bit(gpioclkgr, CC2650_PRCM_GPIOCLKGR_CLK_EN_POS);
 #endif
-#ifdef CONFIG_CC2650_TRNG_ENTROPY_GENERATOR
-	sys_set_bit(secdmaclkgr, CC2650_PRCM_SECDMACLKGR_TRNG_CLK_EN_POS);
-#endif
 #ifdef CONFIG_SERIAL
 	sys_set_bit(uartclkgr, CC2650_PRCM_UARTCLKGR_CLK_EN_POS);
 #endif
@@ -117,7 +108,7 @@ static void setup_modules_prcm(void)
 	/* Wait for power to be completely on, to avoid bus faults
 	 * when accessing modules' registers.
 	 */
-#if defined(CONFIG_GPIO_CC2650) || defined(CONFIG_CC2650_TRNG_ENTROPY_GENERATOR)
+#if defined(CONFIG_GPIO_CC2650)
 	while (!(sys_read32(pdstat0) &
 	       BIT(CC2650_PRCM_PDSTAT0_PERIPH_ON_POS))) {
 		continue;
