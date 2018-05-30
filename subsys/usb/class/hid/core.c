@@ -17,10 +17,6 @@
 #include <usb_descriptor.h>
 #include <class/usb_hid.h>
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-#include <composite.h>
-#endif
-
 struct usb_hid_config {
 	struct usb_if_descriptor if0;
 	struct usb_hid_descriptor if0_hid;
@@ -32,7 +28,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_hid_config hid_cfg = {
 	.if0 = {
 		.bLength = sizeof(struct usb_if_descriptor),
 		.bDescriptorType = USB_INTERFACE_DESC,
-		.bInterfaceNumber = FIRST_IFACE_HID,
+		.bInterfaceNumber = 0,
 		.bAlternateSetting = 0,
 		.bNumEndpoints = 1,
 		.bInterfaceClass = HID_CLASS,
@@ -210,8 +206,14 @@ static struct usb_ep_cfg_data hid_ep_data[] = {
 	}
 };
 
+static void hid_interface_config(u8_t bInterfaceNumber)
+{
+	hid_cfg.if0.bInterfaceNumber = bInterfaceNumber;
+}
+
 USBD_CFG_DATA_DEFINE(hid) struct usb_cfg_data hid_config = {
 	.usb_device_description = NULL,
+	.interface_config = hid_interface_config,
 	.interface_descriptor = &hid_cfg.if0,
 	.cb_usb_status = hid_status_cb,
 	.interface = {
@@ -219,7 +221,7 @@ USBD_CFG_DATA_DEFINE(hid) struct usb_cfg_data hid_config = {
 		.custom_handler = hid_custom_handle_req,
 		.payload_data = NULL,
 	},
-	.num_endpoints = NUMOF_ENDPOINTS_HID,
+	.num_endpoints = ARRAY_SIZE(hid_ep_data),
 	.endpoint = hid_ep_data,
 };
 
@@ -229,8 +231,6 @@ static u8_t interface_data[64];
 
 int usb_hid_init(void)
 {
-	int ret;
-
 	SYS_LOG_DBG("Iinitializing HID Device");
 
 	/*
@@ -238,13 +238,9 @@ int usb_hid_init(void)
 	 */
 	usb_set_hid_report_size(hid_device.report_size);
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-	ret = composite_add_function(&hid_config, FIRST_IFACE_HID);
-	if (ret < 0) {
-		SYS_LOG_ERR("Failed to add HID function");
-		return ret;
-	}
-#else
+#ifndef CONFIG_USB_COMPOSITE_DEVICE
+	int ret;
+
 	hid_config.interface.payload_data = interface_data;
 	hid_config.usb_device_description = usb_get_device_descriptor();
 

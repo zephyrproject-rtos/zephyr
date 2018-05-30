@@ -58,7 +58,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_bluetooth_config bluetooth_cfg = {
 	.if0 = {
 		.bLength = sizeof(struct usb_if_descriptor),
 		.bDescriptorType = USB_INTERFACE_DESC,
-		.bInterfaceNumber = FIRST_IFACE_BLUETOOTH,
+		.bInterfaceNumber = 0,
 		.bAlternateSetting = 0,
 		.bNumEndpoints = 3,
 		.bInterfaceClass = WIRELESS_DEVICE_CLASS,
@@ -261,8 +261,14 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 	return 0;
 }
 
+static void bluetooth_interface_config(u8_t bInterfaceNumber)
+{
+	bluetooth_cfg.if0.bInterfaceNumber = bInterfaceNumber;
+}
+
 USBD_CFG_DATA_DEFINE(hci) struct usb_cfg_data bluetooth_config = {
 	.usb_device_description = NULL,
+	.interface_config = bluetooth_interface_config,
 	.interface_descriptor = &bluetooth_cfg.if0,
 	.cb_usb_status = bluetooth_status_cb,
 	.interface = {
@@ -271,7 +277,7 @@ USBD_CFG_DATA_DEFINE(hci) struct usb_cfg_data bluetooth_config = {
 		.vendor_handler = NULL,
 		.payload_data = NULL,
 	},
-	.num_endpoints = NUMOF_ENDPOINTS_BLUETOOTH,
+	.num_endpoints = ARRAY_SIZE(bluetooth_ep_data),
 	.endpoint = bluetooth_ep_data,
 };
 
@@ -287,14 +293,7 @@ static int bluetooth_init(struct device *dev)
 		return ret;
 	}
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-	ret = composite_add_function(&bluetooth_config,
-				     FIRST_IFACE_BLUETOOTH);
-	if (ret < 0) {
-		SYS_LOG_ERR("Failed to add bluetooth function");
-		return ret;
-	}
-#else
+#ifndef CONFIG_USB_COMPOSITE_DEVICE
 	bluetooth_config.interface.payload_data = interface_data;
 	bluetooth_config.usb_device_description =
 		usb_get_device_descriptor();

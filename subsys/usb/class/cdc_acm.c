@@ -46,7 +46,6 @@
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 #include <usb_descriptor.h>
-#include <composite.h>
 
 #ifndef CONFIG_UART_INTERRUPT_DRIVEN
 #error "CONFIG_UART_INTERRUPT_DRIVEN must be set for CDC ACM driver"
@@ -77,6 +76,8 @@
 #define ACM_OUT_EP_IDX			1
 #define ACM_IN_EP_IDX			2
 
+#define ACM_IF0_STRING			"ACM-CDC"
+
 struct usb_cdc_acm_config {
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 	struct usb_association_descriptor iad_cdc;
@@ -98,7 +99,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_acm_config cdc_acm_cfg = {
 	.iad_cdc = {
 		.bLength = sizeof(struct usb_association_descriptor),
 		.bDescriptorType = USB_ASSOCIATION_DESC,
-		.bFirstInterface = FIRST_IFACE_CDC_ACM,
+		.bFirstInterface = 0,
 		.bInterfaceCount = 0x02,
 		.bFunctionClass = COMMUNICATION_DEVICE_CLASS,
 		.bFunctionSubClass = ACM_SUBCLASS,
@@ -110,7 +111,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_acm_config cdc_acm_cfg = {
 	.if0 = {
 		.bLength = sizeof(struct usb_if_descriptor),
 		.bDescriptorType = USB_INTERFACE_DESC,
-		.bInterfaceNumber = FIRST_IFACE_CDC_ACM,
+		.bInterfaceNumber = 0,
 		.bAlternateSetting = 0,
 		.bNumEndpoints = 1,
 		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS,
@@ -169,7 +170,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_acm_config cdc_acm_cfg = {
 	.if1 = {
 		.bLength = sizeof(struct usb_if_descriptor),
 		.bDescriptorType = USB_INTERFACE_DESC,
-		.bInterfaceNumber = FIRST_IFACE_CDC_ACM + 1,
+		.bInterfaceNumber = 1,
 		.bAlternateSetting = 0,
 		.bNumEndpoints = 2,
 		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS_DATA,
@@ -424,6 +425,17 @@ static void cdc_acm_dev_status_cb(enum usb_dc_status_code status, u8_t *param)
 	}
 }
 
+static void cdc_interface_config(u8_t bInterfaceNumber)
+{
+	cdc_acm_cfg.if0.bInterfaceNumber = bInterfaceNumber;
+	cdc_acm_cfg.if0_union.bControlInterface = bInterfaceNumber;
+	cdc_acm_cfg.if1.bInterfaceNumber = bInterfaceNumber + 1;
+	cdc_acm_cfg.if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+	cdc_acm_cfg.iad_cdc.bFirstInterface = bInterfaceNumber;
+#endif
+}
+
 /* Describe EndPoints configuration */
 static struct usb_ep_cfg_data cdc_acm_ep_data[] = {
 	{
@@ -443,6 +455,7 @@ static struct usb_ep_cfg_data cdc_acm_ep_data[] = {
 /* Configuration of the CDC-ACM Device send to the USB Driver */
 USBD_CFG_DATA_DEFINE(cdc_acm) struct usb_cfg_data cdc_acm_config = {
 	.usb_device_description = NULL,
+	.interface_config = cdc_interface_config,
 	.interface_descriptor = &cdc_acm_cfg.if0,
 	.cb_usb_status = cdc_acm_dev_status_cb,
 	.interface = {
@@ -450,7 +463,7 @@ USBD_CFG_DATA_DEFINE(cdc_acm) struct usb_cfg_data cdc_acm_config = {
 		.custom_handler = NULL,
 		.payload_data = NULL,
 	},
-	.num_endpoints = NUMOF_ENDPOINTS_CDC_ACM,
+	.num_endpoints = ARRAY_SIZE(cdc_acm_ep_data),
 	.endpoint = cdc_acm_ep_data
 };
 
@@ -483,17 +496,10 @@ static void cdc_acm_baudrate_set(struct device *dev, u32_t baudrate)
  */
 static int cdc_acm_init(struct device *dev)
 {
-	int ret;
-
 	cdc_acm_dev = dev;
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-	ret = composite_add_function(&cdc_acm_config, FIRST_IFACE_CDC_ACM);
-	if (ret < 0) {
-		SYS_LOG_ERR("Failed to add a function");
-		return ret;
-	}
-#else
+#ifndef CONFIG_USB_COMPOSITE_DEVICE
+	int ret;
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	cdc_acm_config.interface.payload_data = dev_data->interface_data;

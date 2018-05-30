@@ -49,8 +49,7 @@
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 #include <usb/class/usb_dfu.h>
-#include "../usb_descriptor.h"
-#include "../composite.h"
+#include <usb_descriptor.h>
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_LEVEL
 #include <logging/sys_log.h>
@@ -73,7 +72,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_dfu_config dfu_cfg = {
 	.if0 = {
 		.bLength = sizeof(struct usb_if_descriptor),
 		.bDescriptorType = USB_INTERFACE_DESC,
-		.bInterfaceNumber = FIRST_IFACE_DFU,
+		.bInterfaceNumber = 0,
 		.bAlternateSetting = 0,
 		.bNumEndpoints = 0,
 		.bInterfaceClass = DFU_DEVICE_CLASS,
@@ -645,9 +644,33 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 	return -ENOTSUP;
 }
 
+static void dfu_interface_config(u8_t bInterfaceNumber)
+{
+	dfu_cfg.if0.bInterfaceNumber = bInterfaceNumber;
+}
+
 /* Configuration of the DFU Device send to the USB Driver */
-static struct usb_cfg_data dfu_config = {
+USBD_CFG_DATA_DEFINE(dfu) struct usb_cfg_data dfu_config = {
 	.usb_device_description = NULL,
+	.interface_config = dfu_interface_config,
+	.interface_descriptor = &dfu_cfg.if0,
+	.cb_usb_status = dfu_status_cb,
+	.interface = {
+		.class_handler = dfu_class_handle_req,
+		.custom_handler = dfu_custom_handle_req,
+		.payload_data = NULL,
+	},
+	.num_endpoints = 0,
+};
+
+/*
+ * Dummy configuration, this is necessary to configure DFU mode descriptor
+ * which is an alternative (secondary) device descriptor.
+ */
+USBD_CFG_DATA_DEFINE(dfu_mode) struct usb_cfg_data dfu_mode_config = {
+	.usb_device_description = NULL,
+	.interface_config = NULL,
+	.interface_descriptor = &dfu_mode_desc.sec_dfu_cfg.if0,
 	.cb_usb_status = dfu_status_cb,
 	.interface = {
 		.class_handler = dfu_class_handle_req,
@@ -669,14 +692,7 @@ static int usb_dfu_init(struct device *dev)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-	ret = composite_add_function(&dfu_config, FIRST_IFACE_DFU);
-	if (ret < 0) {
-		SYS_LOG_ERR("Failed to add a function");
-		return ret;
-	}
-	dfu_data.buffer = dfu_config.interface.payload_data;
-#else
+#ifndef CONFIG_USB_COMPOSITE_DEVICE
 	dfu_config.interface.payload_data = dfu_data.buffer;
 	dfu_config.usb_device_description = usb_get_device_descriptor();
 
