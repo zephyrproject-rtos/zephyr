@@ -26,7 +26,12 @@ static K_THREAD_STACK_DEFINE(alt_stack, STACKSIZE);
 static k_thread_stack_t *overflow_stack =
 		alt_stack + (STACKSIZE - OVERFLOW_STACKSIZE);
 #else
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_ARC)
+/* for ARC, privilege stack is merged into defined stack */
+#define OVERFLOW_STACKSIZE (STACKSIZE + CONFIG_PRIVILEGED_STACK_SIZE)
+#else
 #define OVERFLOW_STACKSIZE STACKSIZE
+#endif
 #endif
 
 static struct k_thread alt_thread;
