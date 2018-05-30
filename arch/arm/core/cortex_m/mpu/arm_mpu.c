@@ -148,6 +148,27 @@ static inline u32_t _get_region_index_by_type(u32_t type)
 }
 
 /**
+ * This internal function disables a given MPU region.
+ */
+static inline void _disable_region(u32_t r_index)
+{
+	/* Attempting to configure MPU_RNR with an invalid
+	 * region number has unpredictable behavior. Therefore
+	 * we add a check before disabling the requested MPU
+	 * region.
+	 */
+	__ASSERT(r_index < _get_num_regions(),
+		"Index 0x%x out-of-bound (supported regions: 0x%x)\n",
+		r_index,
+		_get_num_regions());
+	SYS_LOG_DBG("disable region 0x%x", r_index);
+	/* Disable region */
+	ARM_MPU_DEV->rnr = r_index;
+	ARM_MPU_DEV->rbar = 0;
+	ARM_MPU_DEV->rasr = 0;
+}
+
+/**
  * This internal function checks if region is enabled or not.
  *
  * Note:
@@ -270,9 +291,7 @@ void arm_core_mpu_configure_user_context(struct k_thread *thread)
 						     size);
 
 	if (!thread->arch.priv_stack_start) {
-		ARM_MPU_DEV->rnr = index;
-		ARM_MPU_DEV->rbar = 0;
-		ARM_MPU_DEV->rasr = 0;
+		_disable_region(index);
 		return;
 	}
 	/* configure stack */
@@ -321,11 +340,7 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 			_region_init(region_index, pparts->start, region_attr);
 			num_partitions--;
 		} else {
-			SYS_LOG_DBG("disable region 0x%x", region_index);
-			/* Disable region */
-			ARM_MPU_DEV->rnr = region_index;
-			ARM_MPU_DEV->rbar = 0;
-			ARM_MPU_DEV->rasr = 0;
+			_disable_region(region_index);
 		}
 		pparts++;
 	}
@@ -353,11 +368,7 @@ void arm_core_mpu_configure_mem_partition(u32_t part_index,
 		_region_init(region_index + part_index, part->start,
 			     region_attr);
 	} else {
-		SYS_LOG_DBG("disable region 0x%x", region_index + part_index);
-		/* Disable region */
-		ARM_MPU_DEV->rnr = region_index + part_index;
-		ARM_MPU_DEV->rbar = 0;
-		ARM_MPU_DEV->rasr = 0;
+		_disable_region(region_index + part_index);
 	}
 }
 
@@ -371,11 +382,7 @@ void arm_core_mpu_mem_partition_remove(u32_t part_index)
 	u32_t region_index =
 		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
 
-	SYS_LOG_DBG("disable region 0x%x", region_index + part_index);
-	/* Disable region */
-	ARM_MPU_DEV->rnr = region_index + part_index;
-	ARM_MPU_DEV->rbar = 0;
-	ARM_MPU_DEV->rasr = 0;
+	_disable_region(region_index + part_index);
 }
 
 /**
