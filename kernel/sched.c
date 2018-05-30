@@ -112,6 +112,38 @@ int _is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2)
 	return 0;
 }
 
+static int should_preempt(struct k_thread *th, int preempt_ok)
+{
+	/* System initialization states can have dummy threads, never
+	 * refuse to swap those
+	 */
+	if (!_current || _is_thread_dummy(_current)) {
+		return 1;
+	}
+
+	/* The idle threads can look "cooperative" if there are no
+	 * preemptible priorities (this is sort of an API glitch).
+	 * They must always be preemptible.
+	 */
+	if (_is_idle(_current)) {
+		return 1;
+	}
+
+	/* Preemption is OK if it's being explicitly allowed */
+	if (preempt_ok) {
+		return 1;
+	}
+
+	/* Otherwise we have to be running a preemptible thread or
+	 * switching to a metairq
+	 */
+	if (_is_preempt(_current) || is_metairq(th)) {
+		return 1;
+	}
+
+	return 0;
+}
+
 static struct k_thread *next_up(void)
 {
 #ifndef CONFIG_SMP
@@ -129,35 +161,43 @@ static struct k_thread *next_up(void)
 	/* Under SMP, the "cache" mechanism for selecting the next
 	 * thread doesn't work, so we have more work to do to test
 	 * _current against the best choice from the queue.
+	 *
+	 * Subtle note on "queued": in SMP mode, _current does not
+	 * live in the queue, so this isn't exactly the same thing as
+	 * "ready", it means "is _current already added back to the
+	 * queue such that we don't want to re-add it".
 	 */
-	int active = !_is_thread_prevented_from_running(_current);
 	int queued = _is_thread_queued(_current);
+	int active = !_is_thread_prevented_from_running(_current);
 
+	/* Choose the best thread that is not current */
 	struct k_thread *th = _priq_run_best(&_kernel.ready_q.runq);
-
-	/* Idle thread if nothing else */
 	if (!th) {
 		th = _current_cpu->idle_thread;
 	}
 
-	/* Stay with current unless it's already been put back in the
-	 * queue and something better is available (c.f. timeslicing,
-	 * yield)
-	 */
-	if (active && !queued && !_is_t1_higher_prio_than_t2(th, _current)
-	    && !is_metairq(th))	{
-		th = _current;
+	if (active) {
+		if (!queued &&
+		    !_is_t1_higher_prio_than_t2(th, _current)) {
+			th = _current;
+		}
+
+		if (!should_preempt(th, _current_cpu->swap_ok)) {
+			th = _current;
+		}
 	}
 
-	/* Put _current back into the queue if necessary */
-	if (th != _current && !queued) {
+	/* Put _current back into the queue */
+	if (th != _current && active && !_is_idle(_current) && !queued) {
 		_priq_run_add(&_kernel.ready_q.runq, _current);
+		_mark_thread_as_queued(_current);
 	}
 
-	/* Remove the thread we're about to run from the queue (which
-	 * potentially might not be there, but that's OK)
-	 */
-	_priq_run_remove(&_kernel.ready_q.runq, th);
+	/* Take the new _current out of the queue */
+	if (_is_thread_queued(th)) {
+		_priq_run_remove(&_kernel.ready_q.runq, th);
+	}
+	_mark_thread_as_not_queued(th);
 
 	return th;
 #endif
@@ -168,15 +208,20 @@ static void update_cache(int preempt_ok)
 #ifndef CONFIG_SMP
 	struct k_thread *th = next_up();
 
-	if (_current && !_is_idle(_current) && !_is_thread_dummy(_current)) {
-		/* Don't preempt cooperative threads unless the caller allows
-		 * it (i.e. k_yield())
-		 */
-		if (!preempt_ok && !_is_preempt(_current) && !is_metairq(th)) {
-			th = _current;
-		}
+	if (should_preempt(th, preempt_ok)) {
+		_kernel.ready_q.cache = th;
+	} else {
+		_kernel.ready_q.cache = _current;
 	}
-	_kernel.ready_q.cache = th;
+
+#else
+	/* The way this works is that the CPU record keeps its
+	 * "cooperative swapping is OK" flag until the next reschedule
+	 * call or context switch.  It doesn't need to be tracked per
+	 * thread because if the thread gets preempted for whatever
+	 * reason the scheduler will make the same decision anyway.
+	 */
+	_current_cpu->swap_ok = preempt_ok;
 #endif
 }
 
@@ -337,11 +382,27 @@ void _thread_priority_set(struct k_thread *thread, int prio)
 
 int _reschedule(int key)
 {
-	if (!_is_in_isr() &&
-	    _get_next_ready_thread() != _current) {
-		return _Swap(key);
+#ifdef CONFIG_SMP
+	if (!_current_cpu->swap_ok) {
+		goto noswap;
 	}
 
+	_current_cpu->swap_ok = 0;
+#endif
+
+	if (_is_in_isr()) {
+		goto noswap;
+	}
+
+#ifdef CONFIG_SMP
+	return _Swap(key);
+#else
+	if (_get_next_ready_thread() != _current) {
+		return _Swap(key);
+	}
+#endif
+
+ noswap:
 	irq_unlock(key);
 	return 0;
 }
@@ -389,9 +450,19 @@ void *_get_next_switch_handle(void *interrupted)
 {
 	_current->switch_handle = interrupted;
 
+#ifdef CONFIG_SMP
 	LOCKED(&sched_lock) {
-		_current = _get_next_ready_thread();
+		struct k_thread *th = next_up();
+
+		if (_current != th) {
+			_current_cpu->swap_ok = 0;
+			_current = th;
+		}
 	}
+
+#else
+	_current = _get_next_ready_thread();
+#endif
 
 	_check_stack_sentinel();
 
@@ -531,7 +602,7 @@ int _is_thread_time_slicing(struct k_thread *thread)
 /* Should be called only immediately before a thread switch */
 void _update_time_slice_before_swap(void)
 {
-#ifdef CONFIG_TICKLESS_KERNEL
+#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_SMP)
 	if (!_is_thread_time_slicing(_get_next_ready_thread())) {
 		return;
 	}
@@ -663,9 +734,13 @@ void _impl_k_yield(void)
 		}
 	}
 
+#ifdef CONFIG_SMP
+	_Swap(irq_lock());
+#else
 	if (_get_next_ready_thread() != _current) {
 		_Swap(irq_lock());
 	}
+#endif
 }
 
 #ifdef CONFIG_USERSPACE
