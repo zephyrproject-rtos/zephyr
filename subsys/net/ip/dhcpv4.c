@@ -273,7 +273,7 @@ static bool setup_header(struct net_pkt *pkt, const struct in_addr *server_addr)
 	ipv4->proto = IPPROTO_UDP;
 	ipv4->len[0] = len >> 8;
 	ipv4->len[1] = (u8_t)len;
-	ipv4->chksum = ~net_calc_chksum_ipv4(pkt);
+	ipv4->chksum = 0;
 
 	net_ipaddr_copy(&ipv4->dst, server_addr);
 
@@ -282,8 +282,11 @@ static bool setup_header(struct net_pkt *pkt, const struct in_addr *server_addr)
 	udp->src_port = htons(DHCPV4_CLIENT_PORT);
 	udp->dst_port = htons(DHCPV4_SERVER_PORT);
 	udp->len = htons(len);
-	udp->chksum = 0;
-	udp->chksum = ~net_calc_chksum_udp(pkt);
+
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+		ipv4->chksum = ~net_calc_chksum_ipv4(pkt);
+		net_udp_set_chksum(pkt, pkt->frags);
+	}
 
 	net_udp_set_hdr(pkt, udp);
 
