@@ -98,7 +98,8 @@ extern "C" {
 	struct _k_thread_stack_element __kernel_noinit \
 		__aligned(POW2_CEIL(STACK_SIZE_ALIGN(size))) \
 		sym[nmemb][POW2_CEIL(STACK_SIZE_ALIGN(size)) + \
-		+ STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE]
+		+ max(POW2_CEIL(STACK_SIZE_ALIGN(size)), \
+		POW2_CEIL(STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE))]
 
 #define _ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element \
