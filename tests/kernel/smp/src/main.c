@@ -30,6 +30,8 @@ void t2_fn(void *a, void *b, void *c)
 	ARG_UNUSED(b);
 	ARG_UNUSED(c);
 
+	t2_count = 0;
+
 	/* This thread simply increments a counter while spinning on
 	 * the CPU.  The idea is that it will always be iterating
 	 * faster than the other thread so long as it is fairly
@@ -60,6 +62,14 @@ void test_main(void)
 	k_thread_create(&t2, t2_stack, T2_STACK_SIZE, t2_fn,
 			NULL, NULL, NULL,
 			CONFIG_MAIN_THREAD_PRIORITY + 1, 0, K_NO_WAIT);
+
+	/* Wait for the other thread (on a separate CPU) to actually
+	 * start running.  We want synchrony to be as perfect as
+	 * possible.
+	 */
+	t2_count = -1;
+	while (t2_count == -1) {
+	}
 
 	for (i = 0; i < 10; i++) {
 		/* Wait slightly longer than the other thread so our
