@@ -14,7 +14,11 @@ tests:
       type: multi_line
       regex:
         - "\\[general\\] \\[INF\\] .*: Cipher Sample"
-        - "\\[general\\] \\[INF\\] ccm_mode: CCM Mode"
+        - "\\[general\\] \\[INF\\] main: CBC Mode"
+        - "\\[general\\] \\[INF\\] mtls_session_setup: Unsupported mode"
+        - "\\[general\\] \\[INF\\] main: CTR Mode"
+        - "\\[general\\] \\[INF\\] mtls_session_setup: Unsupported mode"
+        - "\\[general\\] \\[INF\\] main: CCM Mode"
         - "\\[general\\] \\[INF\\] ccm_mode: CCM mode ENCRYPT - Match"
         - "\\[general\\] \\[INF\\] ccm_mode: CCM mode DECRYPT - Match"
   test-micro:
@@ -23,12 +27,18 @@ tests:
       type: multi_line
       regex:
         - "\\[general\\] \\[INF\\] .*: Cipher Sample"
-        - "\\[general\\] \\[INF\\] cbc_mode: CBC Mode"
+        - "\\[general\\] \\[INF\\] main: CBC Mode"
+        - "\\[general\\] \\[INF\\] cbc_mode: Output length (encryption): 64"
         - "\\[general\\] \\[INF\\] cbc_mode: CBC mode ENCRYPT - Match"
+        - "\\[general\\] \\[INF\\] cbc_mode: Output length (decryption): 80"
         - "\\[general\\] \\[INF\\] cbc_mode: CBC mode DECRYPT - Match"
-        - "\\[general\\] \\[INF\\] ctr_mode: CTR Mode"
+        - "\\[general\\] \\[INF\\] main: CTR Mode"
+        - "\\[general\\] \\[INF\\] ctr_mode: Output length (encryption): 64"
         - "\\[general\\] \\[INF\\] ctr_mode: CTR mode ENCRYPT - Match"
+        - "\\[general\\] \\[INF\\] ctr_mode: Output length (decryption): 64"
         - "\\[general\\] \\[INF\\] ctr_mode: CTR mode DECRYPT - Match"
-        - "\\[general\\] \\[INF\\] ccm_mode: CCM Mode"
+        - "\\[general\\] \\[INF\\] main: CCM Mode"
         - "\\[general\\] \\[INF\\] ccm_mode: CCM mode ENCRYPT - Match"
+        - "\\[general\\] \\[INF\\] ccm_mode: Output length (encryption): 31"
         - "\\[general\\] \\[INF\\] ccm_mode: CCM mode DECRYPT - Match"
+        - "\\[general\\] \\[INF\\] ccm_mode: Output length (decryption): 31"
