@@ -96,7 +96,12 @@ struct _cpu {
 	/* one assigned idle thread per CPU */
 	struct k_thread *idle_thread;
 
-	int id;
+	u8_t id;
+
+#ifdef CONFIG_SMP
+	/* True when _current is allowed to context switch */
+	u8_t swap_ok;
+#endif
 };
 
 typedef struct _cpu _cpu_t;

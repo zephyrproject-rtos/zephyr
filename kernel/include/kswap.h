@@ -58,10 +58,11 @@ static inline unsigned int _Swap(unsigned int key)
 	new_thread = _get_next_ready_thread();
 
 	if (new_thread != old_thread) {
-
 		old_thread->swap_retval = -EAGAIN;
 
 #ifdef CONFIG_SMP
+		_current_cpu->swap_ok = 0;
+
 		new_thread->base.cpu = _arch_curr_cpu()->id;
 
 		_smp_release_global_lock(new_thread);
