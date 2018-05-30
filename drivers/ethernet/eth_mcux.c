@@ -286,12 +286,14 @@ static void eth_mcux_phy_event(struct eth_context *context)
 					  kENET_MiiReadValidFrame);
 			context->link_up = link_up;
 			context->phy_state = eth_mcux_phy_state_read_duplex;
+			net_eth_carrier_on(context->iface);
 		} else if (!link_up && context->link_up) {
 			SYS_LOG_INF("Link down");
 			context->link_up = link_up;
 			k_delayed_work_submit(&context->delayed_phy_work,
 					      CONFIG_ETH_MCUX_PHY_TICK_MS);
 			context->phy_state = eth_mcux_phy_state_wait;
+			net_eth_carrier_off(context->iface);
 		} else {
 			k_delayed_work_submit(&context->delayed_phy_work,
 					      CONFIG_ETH_MCUX_PHY_TICK_MS);
