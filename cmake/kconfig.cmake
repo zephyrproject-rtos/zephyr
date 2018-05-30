@@ -10,7 +10,7 @@ set(BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_defconfig)
 set(DOTCONFIG       ${PROJECT_BINARY_DIR}/.config)
 
 if(CONF_FILE)
-string(REPLACE " " ";" CONF_FILE_AS_LIST ${CONF_FILE})
+string(REPLACE " " ";" CONF_FILE_AS_LIST "${CONF_FILE}")
 endif()
 
 set(ENV{srctree}            ${ZEPHYR_BASE})
