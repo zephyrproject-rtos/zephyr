@@ -90,7 +90,11 @@ static void thread_callback(const struct k_thread *thread, void *user_data)
 
 	if (((char *)thread->stack_info.start ==
 			K_THREAD_STACK_BUFFER(test_stack)) &&
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_ARC)
+			(thread->stack_info.size >= STACKSIZE)) {
+#else
 			(thread->stack_info.size == STACKSIZE)) {
+#endif
 		TC_PRINT("%s: Newly added thread stack found\n", str);
 		TC_PRINT("%s: stack:%p, size:%u\n", str,
 					(char *)thread->stack_info.start,
