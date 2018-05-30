@@ -152,6 +152,15 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 			(u32_t) (stackEnd + STACK_GUARD_SIZE);
 		thread->arch.priv_stack_size =
 			(u32_t)CONFIG_PRIVILEGED_STACK_SIZE;
+#ifdef CONFIG_ARC_STACK_CHECKING
+	/*
+	 * for user thread, set the correct stack base, it covers both user stack
+	 * part and privileged stack part. One case can not be detected:
+	 *  the overflow from privilege stack to user stack.
+	 */
+		thread->arch.stack_base = (u32_t) stackEnd + STACK_GUARD_SIZE +
+			CONFIG_PRIVILEGED_STACK_SIZE;
+#endif
 	} else {
 		thread->arch.priv_stack_start = 0;
 		thread->arch.priv_stack_size = 0;
@@ -191,7 +200,7 @@ FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
 	_current->base.user_options |= K_USER;
 
 	/*
-	 * ajust the thread stack layout
+	 * adjust the thread stack layout
 	 * |----------------|    |---------------------|
 	 * | stack guard    |    |  user stack         |
 	 * |----------------| to |---------------------|
