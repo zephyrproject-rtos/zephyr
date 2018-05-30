@@ -1983,6 +1983,8 @@ PREDEFINED             = "CONFIG_SYS_CLOCK_EXISTS=y" \
                          "CONFIG_USERSPACE=y" \
                          "CONFIG_BT_BREDR=y" \
                          "NET_MGMT_DEFINE_REQUEST_HANDLER(x)=" \
+                         "DEVICE_DEFINE()=" \
+                         "DEVICE_AND_API_INIT()=" \
                          "__deprecated=" \
                          "__packed=" \
                          "__aligned(x)=" \
