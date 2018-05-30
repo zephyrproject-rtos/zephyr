@@ -43,7 +43,6 @@
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 #include <usb_descriptor.h>
-#include <composite.h>
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_MASS_STORAGE_LEVEL
 #define SYS_LOG_DOMAIN "usb/msc"
@@ -71,7 +70,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_mass_config mass_cfg = {
 	.if0 = {
 		.bLength = sizeof(struct usb_if_descriptor),
 		.bDescriptorType = USB_INTERFACE_DESC,
-		.bInterfaceNumber = FIRST_IFACE_MASS_STORAGE,
+		.bInterfaceNumber = 0,
 		.bAlternateSetting = 0,
 		.bNumEndpoints = 2,
 		.bInterfaceClass = MASS_STORAGE_CLASS,
@@ -817,9 +816,15 @@ static void mass_storage_status_cb(enum usb_dc_status_code status, u8_t *param)
 	}
 }
 
+static void mass_interface_config(u8_t bInterfaceNumber)
+{
+	mass_cfg.if0.bInterfaceNumber = bInterfaceNumber;
+}
+
 /* Configuration of the Mass Storage Device send to the USB Driver */
 USBD_CFG_DATA_DEFINE(msd) struct usb_cfg_data mass_storage_config = {
 	.usb_device_description = NULL,
+	.interface_config = mass_interface_config,
 	.interface_descriptor = &mass_cfg.if0,
 	.cb_usb_status = mass_storage_status_cb,
 	.interface = {
@@ -827,7 +832,7 @@ USBD_CFG_DATA_DEFINE(msd) struct usb_cfg_data mass_storage_config = {
 		.custom_handler = NULL,
 		.payload_data = NULL,
 	},
-	.num_endpoints = NUMOF_ENDPOINTS_MASS,
+	.num_endpoints = ARRAY_SIZE(mass_ep_data),
 	.endpoint = mass_ep_data
 };
 
@@ -881,7 +886,6 @@ static u8_t interface_data[64];
  */
 static int mass_storage_init(struct device *dev)
 {
-	int ret;
 	u32_t block_size = 0;
 
 	ARG_UNUSED(dev);
@@ -917,14 +921,9 @@ static int mass_storage_init(struct device *dev)
 	msd_state_machine_reset();
 	msd_init();
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-	ret = composite_add_function(&mass_storage_config,
-				 FIRST_IFACE_MASS_STORAGE);
-	if (ret < 0) {
-		SYS_LOG_ERR("Failed to add a function");
-		return ret;
-	}
-#else
+#ifndef CONFIG_USB_COMPOSITE_DEVICE
+	int ret;
+
 	mass_storage_config.interface.payload_data = interface_data;
 	mass_storage_config.usb_device_description =
 		usb_get_device_descriptor();

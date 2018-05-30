@@ -175,7 +175,7 @@ static inline void eem_status_interface(u8_t *iface)
 {
 	SYS_LOG_DBG("");
 
-	if (*iface != NETUSB_IFACE_IDX) {
+	if (*iface != netusb_get_first_iface_number()) {
 		return;
 	}
 

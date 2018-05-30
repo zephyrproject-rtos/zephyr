@@ -209,7 +209,7 @@ static inline void ecm_status_interface(u8_t *iface)
 	SYS_LOG_DBG("iface %u", *iface);
 
 	/* First interface is CDC Comm interface */
-	if (*iface != NETUSB_IFACE_IDX + 1) {
+	if (*iface != netusb_get_first_iface_number() + 1) {
 		return;
 	}
 
