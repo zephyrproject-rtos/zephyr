@@ -120,7 +120,7 @@ static inline u32_t _get_region_index_by_type(u32_t type)
 }
 
 /**
- * This internal function check if region is enabled or not
+ * This internal function checks if region is enabled or not.
  */
 static inline int _is_enabled_region(u32_t r_index)
 {
@@ -128,7 +128,7 @@ static inline int _is_enabled_region(u32_t r_index)
 }
 
 /**
- * This internal function check if the given buffer in in the region
+ * This internal function checks if the given buffer is in the region.
  */
 static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 {
@@ -146,7 +146,7 @@ static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 }
 
 /**
- * This internal function check if the region is user accessible or not
+ * This internal function checks if the region is user accessible or not.
  */
 static inline int _is_user_accessible_region(u32_t r_index, int write)
 {
@@ -170,7 +170,7 @@ static void nxp_mpu_setup_sram_region(u32_t base, u32_t size)
 
 	/*
 	 * The NXP MPU manages the permissions of the overlapping regions
-	 * doing the logic OR in between them, hence they can't be used
+	 * doing the logical OR in between them, hence they can't be used
 	 * for stack/stack guard protection. For this reason the last region of
 	 * the MPU will be reserved.
 	 *
@@ -407,7 +407,7 @@ int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
 {
 	u32_t r_index;
 
-	/* Iterate all mpu regions */
+	/* Iterate all MPU regions */
 	for (r_index = 0; r_index < _get_num_regions(); r_index++) {
 		if (!_is_enabled_region(r_index) ||
 		    !_is_in_region(r_index, (u32_t)addr, size)) {
