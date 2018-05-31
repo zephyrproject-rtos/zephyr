@@ -1,0 +1,4 @@
+tests:
+  usb.bos:
+    platform_whitelist: native_posix
+    tags: usb bos
