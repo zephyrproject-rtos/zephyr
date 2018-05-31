@@ -114,10 +114,22 @@ int _is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2)
 
 static int should_preempt(struct k_thread *th, int preempt_ok)
 {
-	/* System initialization states can have dummy threads, never
-	 * refuse to swap those
+	/* Preemption is OK if it's being explicitly allowed by
+	 * software state (e.g. the thread called k_yield())
 	 */
-	if (!_current || _is_thread_dummy(_current)) {
+	if (preempt_ok) {
+		return 1;
+	}
+
+	/* Or if we're pended/suspended/dummy (duh) */
+	if (!_current || _is_thread_prevented_from_running(_current)) {
+		return 1;
+	}
+
+	/* Otherwise we have to be running a preemptible thread or
+	 * switching to a metairq
+	 */
+	if (_is_preempt(_current) || is_metairq(th)) {
 		return 1;
 	}
 
@@ -126,18 +138,6 @@ static int should_preempt(struct k_thread *th, int preempt_ok)
 	 * They must always be preemptible.
 	 */
 	if (_is_idle(_current)) {
-		return 1;
-	}
-
-	/* Preemption is OK if it's being explicitly allowed */
-	if (preempt_ok) {
-		return 1;
-	}
-
-	/* Otherwise we have to be running a preemptible thread or
-	 * switching to a metairq
-	 */
-	if (_is_preempt(_current) || is_metairq(th)) {
 		return 1;
 	}
 
