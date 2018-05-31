@@ -3,6 +3,6 @@ sample:
 tests:
   test:
     # FIXME: We should remove those and just rely on depends_on
-    platform_whitelist: arduino_101 quark_d2000_crb
+    platform_whitelist: arduino_101 quark_d2000_crb bbc_microbit
     tags: drivers pwm
     depends_on: pwm
