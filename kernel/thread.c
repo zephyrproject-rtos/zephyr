@@ -196,7 +196,7 @@ void _check_stack_sentinel(void)
 {
 	u32_t *stack;
 
-	if (_current->base.thread_state == _THREAD_DUMMY) {
+	if (_current->base.thread_state & _THREAD_DUMMY) {
 		return;
 	}
 
