@@ -7,6 +7,12 @@ if(CONFIG_USB_DEVICE_STACK)
   add_subdirectory(class)
 endif()
 
+if(CONFIG_USB_DEVICE_BOS)
+  zephyr_sources(
+    bos.c
+    )
+endif()
+
 if(CONFIG_USB_DEVICE_VID EQUAL 0x2FE3)
   message(WARNING
     "CONFIG_USB_DEVICE_VID has default value 0x2FE3.
