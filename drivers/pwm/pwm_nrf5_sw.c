@@ -17,6 +17,7 @@ struct pwm_config {
 	u8_t gpiote_base;
 	u8_t ppi_base;
 	u8_t map_size;
+	u8_t prescaler;
 };
 
 struct chan_map {
@@ -143,7 +144,7 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 
 	/* setup HF timer in 16MHz frequency */
 	timer->MODE = TIMER_MODE_MODE_Timer;
-	timer->PRESCALER = 0;
+	timer->PRESCALER = config->prescaler;
 	timer->BITMODE = TIMER_BITMODE_BITMODE_16Bit;
 	timer->EVENTS_COMPARE[channel] = 0;
 	timer->EVENTS_COMPARE[config->map_size] = 0;
@@ -207,8 +208,8 @@ static int pwm_nrf5_sw_get_cycles_per_sec(struct device *dev, u32_t pwm,
 
 	config = (struct pwm_config *)dev->config->config_info;
 
-	/* HF timer frequency is derived from 16MHz source and prescaler is 0 */
-	*cycles = 16000000UL;
+	/* HF timer frequency is derived from 16MHz source with a prescaler */
+	*cycles = 16000000UL / BIT(config->prescaler);
 
 	return 0;
 }
@@ -242,6 +243,7 @@ static const struct pwm_config pwm_nrf5_sw_0_config = {
 #endif
 	.gpiote_base = 0,
 	.map_size = PWM_0_MAP_SIZE,
+	.prescaler = CONFIG_PWM_NRF5_SW_0_CLOCK_PRESCALER,
 };
 
 #define PWM_0_DATA_SIZE (offsetof(struct pwm_data, map) + \
