@@ -48,7 +48,10 @@ void main(void)
 	trig.type = SENSOR_TRIG_THRESHOLD;
 	trig.chan = SENSOR_CHAN_AMBIENT_TEMP;
 
-	sensor_trigger_set(dev, &trig, trigger_handler);
+	if (sensor_trigger_set(dev, &trig, trigger_handler)) {
+		printf("Could not set trigger.  aborting test.\n");
+		return;
+	}
 #endif
 
 	while (1) {
