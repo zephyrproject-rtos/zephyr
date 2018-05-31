@@ -13,7 +13,7 @@
  */
 
 #define SYS_LOG_DOMAIN "dev/eth_mcux"
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ETHERNET_LEVEL
 #include <logging/sys_log.h>
 
 #include <board.h>
