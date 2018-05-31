@@ -109,6 +109,7 @@ static int eth_fake_set_config(struct device *dev,
 				     sizeof(ctx->mac_address),
 				     NET_LINK_ETHERNET);
 		break;
+
 	case ETHERNET_CONFIG_TYPE_QAV_DELTA_BANDWIDTH:
 	case ETHERNET_CONFIG_TYPE_QAV_IDLE_SLOPE:
 		queue_id = config->qav_queue_param.queue_id;

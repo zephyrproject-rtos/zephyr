@@ -84,6 +84,9 @@ enum ethernet_hw_caps {
 
 	/** Priority queues available */
 	ETHERNET_PRIORITY_QUEUES	= BIT(11),
+
+	/** MAC address filtering supported */
+	ETHERNET_HW_FILTERING		= BIT(12),
 };
 
 enum ethernet_config_type {
@@ -95,6 +98,7 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_QAV_IDLE_SLOPE,
 	ETHERNET_CONFIG_TYPE_PROMISC_MODE,
 	ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM,
+	ETHERNET_CONFIG_TYPE_FILTER,
 };
 
 struct ethernet_qav_queue_param {
@@ -103,6 +107,20 @@ struct ethernet_qav_queue_param {
 		unsigned int delta_bandwidth;
 		unsigned int idle_slope;
 	};
+};
+
+enum ethernet_filter_type {
+	ETHERNET_FILTER_TYPE_SRC_MAC_ADDRESS,
+	ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS,
+};
+
+struct ethernet_filter {
+	/** Type of filter */
+	enum ethernet_filter_type type;
+	/** MAC address to filter */
+	struct net_eth_addr mac_address;
+	/** Set (true) or unset (false) the filter */
+	bool set;
 };
 
 struct ethernet_config {
@@ -123,6 +141,8 @@ struct ethernet_config {
 		struct ethernet_qav_queue_param qav_queue_param;
 
 		int priority_queues_num;
+
+		struct ethernet_filter filter;
 	};
 /* @endcond */
 };
