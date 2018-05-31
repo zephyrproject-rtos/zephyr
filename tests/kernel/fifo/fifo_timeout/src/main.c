@@ -199,12 +199,14 @@ static int test_multiple_threads_get_data(struct timeout_order_data *test_data,
 
 		data = k_fifo_get(&timeout_order_fifo, K_FOREVER);
 
-		if (data->q_order == ii) {
+		if (data && data->q_order == ii) {
 			TC_PRINT(" thread (q order: %d, t/o: %d, fifo %p)\n",
 				data->q_order, data->timeout, data->fifo);
 		} else {
-			TC_ERROR(" *** thread %d woke up, expected %d\n",
+			if (data) {
+				TC_ERROR(" *** thread %d woke up, expected %d\n",
 						data->q_order, ii);
+			}
 			return TC_FAIL;
 		}
 	}
@@ -214,8 +216,10 @@ static int test_multiple_threads_get_data(struct timeout_order_data *test_data,
 		TC_PRINT(" thread (q order: %d, t/o: %d, fifo %p)\n",
 				data->q_order, data->timeout, data->fifo);
 	} else {
-		TC_ERROR(" *** thread %d woke up, expected %d\n",
-					data->timeout_order, ii);
+		if (data) {
+			TC_ERROR(" *** thread %d woke up, expected %d\n",
+					data->q_order, ii);
+		}
 		return TC_FAIL;
 	}
 
