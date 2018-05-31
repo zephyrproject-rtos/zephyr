@@ -94,7 +94,7 @@
 #define ENDP_DESC_bmAttributes      3 /** Bulk or interrupt? */
 #define ENDP_DESC_wMaxPacketSize    4 /** Maximum packet size offset */
 
-#define MAX_NUM_REQ_HANDLERS        (4)
+#define MAX_NUM_REQ_HANDLERS        4
 #define MAX_STD_REQ_MSG_SIZE        8
 
 #define MAX_NUM_TRANSFERS           4 /** Max number of parallel transfers */
