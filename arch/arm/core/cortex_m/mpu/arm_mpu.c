@@ -96,7 +96,7 @@ static inline u8_t _get_num_regions(void)
 /* This internal function performs MPU region initialization.
  *
  * Note:
- *   The caller is responsible to supply a valid region index.
+ *   The caller must provide a valid region index.
  */
 static void _region_init(u32_t index, u32_t region_addr,
 			 u32_t region_attr)
