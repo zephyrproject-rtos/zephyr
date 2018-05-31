@@ -74,6 +74,8 @@
 #define SYS_LOG_NO_NEWLINE
 #include <logging/sys_log.h>
 
+#include <usb/bos.h>
+
 #define MAX_DESC_HANDLERS           4 /** Device, interface, endpoint, other */
 
 /* general descriptor field offsets */
@@ -781,6 +783,10 @@ static int usb_handle_standard_request(struct usb_setup_packet *setup,
 		s32_t *len, u8_t **data_buf)
 {
 	int rc = 0;
+
+	if (!usb_handle_bos(setup, len, data_buf)) {
+		return 0;
+	}
 
 	/* try the custom request handler first */
 	if (usb_dev.custom_req_handler &&

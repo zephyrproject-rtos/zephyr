@@ -86,6 +86,11 @@ config USB_COMPOSITE_BUFFER_SIZE
 	default 64
 	default 256 if USB_DEVICE_NETWORK_RNDIS
 
+config USB_DEVICE_BOS
+	bool
+	prompt "Enable USB Binary Device Object Store (BOS)"
+	default n
+
 source "subsys/usb/class/Kconfig"
 
 endif # USB_DEVICE_STACK
