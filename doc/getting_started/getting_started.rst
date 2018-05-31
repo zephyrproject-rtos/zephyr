@@ -43,7 +43,7 @@ by Zephyr:
  * ``make``: Supported on UNIX-like platforms (Linux, macOS).
  * ``ninja``: Supported on all platforms.
 
-Most of the examples in the Zephyr documentation use `ninja` as a build tool
+Most of the examples in the Zephyr documentation use ``ninja`` as a build tool,
 but you should be able to use any generator on any of the examples listed.
 
 Set Up the Development Environment
