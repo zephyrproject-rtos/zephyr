@@ -402,11 +402,11 @@ where the ``boards`` directory hosts the board you are building for:
 
    .
    ├── boards
-   │   └── x86
-   │       └── my_custom_board
-   │           ├── doc
-   │           │   └── img
-   │           └── support
+   │   └── x86
+   │       └── my_custom_board
+   │           ├── doc
+   │           │   └── img
+   │           └── support
    └── src
 
 
