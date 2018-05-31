@@ -1123,7 +1123,7 @@ if(CONFIG_ASSERT AND (NOT CONFIG_FORCE_NO_ASSERT))
   message(WARNING "
       ------------------------------------------------------------
       --- WARNING:  __ASSERT() statements are globally ENABLED ---
-      --- The kernel will run more slowly and uses more memory ---
+      --- The kernel will run more slowly and use more memory  ---
       ------------------------------------------------------------"
 )
 endif()
