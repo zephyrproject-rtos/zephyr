@@ -9,6 +9,7 @@ import re
 import argparse
 import os
 import json
+from itertools import chain
 
 api_regex = re.compile(r'''
 __syscall\s+                    # __syscall attribute, must be first
@@ -94,10 +95,10 @@ def analyze_fn(match_group, fn):
     return (fn, handler, invocation, sys_id, table_entry)
 
 
-def analyze_headers(base_path):
+def analyze_headers(base_paths):
     ret = []
 
-    for root, dirs, files in os.walk(base_path):
+    for root, dirs, files in chain.from_iterable(os.walk(path) for path in base_paths):
         for fn in files:
 
             # toolchain/common.h has the definition of __syscall which we
@@ -125,7 +126,7 @@ def parse_args():
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("-i", "--include", required=True,
+    parser.add_argument("-i", "--include", required=True, action='append',
                         help="Base include directory")
     parser.add_argument(
         "-j", "--json-file", required=True,
