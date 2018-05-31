@@ -16,7 +16,7 @@
 #define BLK_SIZE1 8
 #define BLK_SIZE2 4
 
-K_MEM_SLAB_DEFINE(mslab1, BLK_SIZE1, BLK_NUM, BLK_ALIGN);
+K_MEM_SLAB_DEFINE(mslab1, BLK_SIZE1, BLK_NUM * THREAD_NUM, BLK_ALIGN);
 static struct k_mem_slab mslab2, *slabs[SLAB_NUM] = { &mslab1, &mslab2 };
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREAD_NUM, STACK_SIZE);
 static struct k_thread tdata[THREAD_NUM];
