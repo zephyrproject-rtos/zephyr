@@ -172,7 +172,8 @@ static void update_cache(int preempt_ok)
 		/* Don't preempt cooperative threads unless the caller allows
 		 * it (i.e. k_yield())
 		 */
-		if (!preempt_ok && !_is_preempt(_current) && !is_metairq(th)) {
+		if (!preempt_ok && _is_thread_ready(_current) &&
+		    !_is_preempt(_current) && !is_metairq(th)) {
 			th = _current;
 		}
 	}
