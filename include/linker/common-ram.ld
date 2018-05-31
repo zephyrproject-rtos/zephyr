@@ -206,6 +206,16 @@
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif /* CONFIG_USB_DEVICE_STACK */
 
+#if defined(CONFIG_USB_DEVICE_BOS)
+	SECTION_DATA_PROLOGUE(usb_bos_desc, (OPTIONAL), SUBALIGN(1))
+	{
+		__usb_bos_desc_start = .;
+		*(".usb.bos_desc")
+		KEEP(*(SORT_BY_NAME(".usb.bos_desc*")))
+		__usb_bos_desc_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif /* CONFIG_USB_DEVICE_BOS */
+
 #ifdef CONFIG_USERSPACE
 	_static_kernel_objects_end = .;
 #endif
