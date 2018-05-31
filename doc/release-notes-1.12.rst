@@ -190,7 +190,8 @@ Documentation
 
 Tests and Samples
 *****************
-Added test for POSIX mutex
+* Added test for POSIX mutex
+* Added Apple iBeacon sample application
 
 Issue Related Items
 *******************
