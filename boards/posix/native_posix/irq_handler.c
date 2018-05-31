@@ -107,12 +107,10 @@ void posix_irq_handler(void)
 	/* Call swap if all the following is true:
 	 * 1) may_swap was enabled
 	 * 2) We are not nesting irq_handler calls (interrupts)
-	 * 3) Current thread is preemptible
-	 * 4) Next thread to run in the ready queue is not this thread
+	 * 3) Next thread to run in the ready queue is not this thread
 	 */
 	if (may_swap
 		&& (hw_irq_ctrl_get_cur_prio() == 256)
-		&& (_current->base.preempt < _NON_PREEMPT_THRESHOLD)
 		&& (_kernel.ready_q.cache != _current)) {
 
 		_Swap(irq_lock);
