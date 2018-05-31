@@ -83,7 +83,7 @@ Here are the Kernel module shell commands:
  Displays the system uptime in milliseconds
 
 ``cycles``
- Displays the current time (in cycles), as measured by the system’s hardware clock
+ Displays the current time (in cycles), as measured by the system's hardware clock
 
 ``threads``
  Displays information about the running threads (if

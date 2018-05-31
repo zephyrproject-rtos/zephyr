@@ -83,7 +83,7 @@ included in this model:
 
 5. **Current date/time**. TLS certificate verification requires
    knowledge of the current date and time in order to determine if the
-   current time falls within the certificate’s current validity time.
+   current time falls within the certificate's current validity time.
    Also, token based client authentication will generally require the
    client to sign a message containing a time window that the token is
    valid. Certificate validation requires the device's notion of date and
@@ -133,7 +133,7 @@ In addition to assets, the threat model also considers the locations
 where data or assets are communicated between entities of the system.
 
 1. **Flash contents**. The flash device contains several regions. The
-   contents of flash can be modified programmatically by the SoC’s CPU.
+   contents of flash can be modified programmatically by the SoC's CPU.
 
    a. **The bootloader**. As described in the Assets section, the
       bootloader is a small section of the flash device containing the
@@ -234,7 +234,7 @@ where data or assets are communicated between entities of the system.
            complies with this restriction.
 
       iii. **Validity period**. The validity period of all presented
-           certificates shall be checked against the device’s best
+           certificates shall be checked against the device's best
            notion of the current time.
 
    c. **Client authentication**. The client shall authenticate itself to
@@ -257,7 +257,7 @@ where data or assets are communicated between entities of the system.
           the MQTT CONNECT packet. However, the secret itself must not
           be transmitted in this packet. Instead, a token-based
           protocol, such as
-          `RFC7519 <https://tools.ietf.org/html/rfc7519>`__\ ’s JSON Web
+          `RFC7519 <https://tools.ietf.org/html/rfc7519>`__\ 's JSON Web
           Token (JWT) can be used. These tokens will generally have a
           small validity period (e.g. 1 hour), to prevent them from
           being reused if they are intercepted. The token shall not be
