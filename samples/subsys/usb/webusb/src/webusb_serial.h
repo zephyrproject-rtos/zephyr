@@ -43,9 +43,6 @@
 #include <device.h>
 #include <usb/usb_device.h>
 
-/* BOS descriptor type */
-#define DESCRIPTOR_TYPE_BOS     0x0f
-
 /* WebUSB enabled Custom Class driver port name */
 #define WEBUSB_SERIAL_PORT_NAME "WSERIAL"
 
