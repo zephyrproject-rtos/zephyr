@@ -78,7 +78,7 @@ debugging ARM Cortex-M microcontrollers, use this command::
    pip2 install --user -r scripts/py2-requirements.txt
 
 CMake version 3.8.2 or higher is required. Check what version you have using
-``cmake --version``, and if its an older version, check the backports or
+``cmake --version``; if you have an older version, check the backports or
 install a more recent version manually. For example, to install version
 3.8.2 from the CMake website directly in ~/cmake::
 
@@ -96,8 +96,8 @@ Installing the Zephyr Software Development Kit
 
 Zephyr's :abbr:`SDK (Software Development Kit)` contains all necessary tools
 and cross-compilers needed to build the kernel on all supported
-architectures. Additionally, it includes host tools such as a custom QEMU and
-a host compiler for building host tools if necessary. The SDK supports the
+architectures. Additionally, it includes host tools such as custom QEMU binaries
+and a host compiler for building host tools if necessary. The SDK supports the
 following architectures:
 
 * :abbr:`X86 (Intel Architecture 32 bits)`
@@ -108,7 +108,7 @@ following architectures:
 
 * :abbr:`ARC (Argonaut RISC Core)`
 
-* :abbr:`NIOS II`
+* :abbr:`Nios II`
 
 * :abbr:`Xtensa`
 
@@ -116,47 +116,41 @@ following architectures:
 
 Follow these steps to install the SDK on your Linux host system.
 
-#. Download the latest SDK self-extractable binary.
-
-   Visit the `Zephyr SDK archive`_ to find all available SDK versions,
-   including the latest version.
-
-   Alternatively, you can use the following command to download the
-   desired version (*0.9.3* can be replaced with the version number you
-   wish to download).
+#. Download the latest SDK as a self-extracting installation binary:
 
    .. code-block:: console
 
       wget https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/0.9.3/zephyr-sdk-0.9.3-setup.run
 
-#. Run the installation binary, follow this example:
+   (You can change *0.9.3* to another version if needed; the `Zephyr
+   Downloads`_ page contains all available SDK releases.)
 
-   .. important::
-      Make sure you have installed all required packages for your host
-      distribution as described in the previous section
-      `Installing Requirements and Dependencies`_ otherwise the SDK installation will fail.
+#. Run the installation binary:
 
    .. code-block:: console
 
-      sh zephyr-sdk-<version>-setup.run
+      sh zephyr-sdk-0.9.3-setup.run
 
-   There is no need to use ``sudo`` if the SDK is installed in the current
-   user's home directory.
+   .. important::
+      If this fails, make sure Zephyr's dependencies were installed
+      as described in `Installing Requirements and Dependencies`_.
 
-#. Follow the installation instructions on the screen. The
-   toolchain's default installation location is :file:`/opt/zephyr-sdk/`.
-   To install in the default installation location, you will need to use sudo. It is recommended
-   to install the SDK in your home directory and not in a system directory.
+#. Follow the installation instructions on the screen. The toolchain's
+   default installation location is :file:`/opt/zephyr-sdk/`, but it
+   is recommended to install the SDK under your home directory instead.
+
+   To install the SDK in the default location, you need to run the
+   installation binary as root.
 
 #. To use the Zephyr SDK, export the following environment variables and
-   use the target location where SDK was installed, type:
+   use the target location where SDK was installed:
 
    .. code-block:: console
 
       export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
       export ZEPHYR_SDK_INSTALL_DIR=<sdk installation directory>
 
-  To use the same toolchain in new sessions in the future you can set the
+  To use the same toolchain in new sessions in the future, you can set the
   variables in the file :file:`${HOME}/.zephyrrc`, for example:
 
   .. code-block:: console
@@ -169,5 +163,5 @@ Follow these steps to install the SDK on your Linux host system.
 .. note:: In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT``
           variable was called ``ZEPHYR_GCC_VARIANT``.
 
-.. _Zephyr SDK archive:
+.. _Zephyr Downloads:
     https://www.zephyrproject.org/developers/#downloads
