@@ -4,6 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @brief Memory Pool Tests
+ * @defgroup kernel_memory_pool_tests Memory Pool
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
 #include <ztest.h>
 
 extern void test_mpool_alloc_free_thread(void);

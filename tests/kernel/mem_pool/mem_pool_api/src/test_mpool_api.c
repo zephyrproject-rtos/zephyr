@@ -58,10 +58,13 @@ void tmpool_alloc_free(void *data)
 
 /*test cases*/
 /**
+ * @ingroup kernel_memory_pool_tests
  * @brief Verify alloc and free of different block sizes.
  *
  * @details The test is basically checking if allocation
  * happens for MAX_SIZE and MIN_SIZE defined in memory pool.
+ *
+ * @see k_mem_pool_alloc(), k_mem_pool_free()
  */
 void test_mpool_alloc_free_thread(void)
 {
@@ -69,11 +72,14 @@ void test_mpool_alloc_free_thread(void)
 }
 
 /**
+ * @ingroup kernel_memory_pool_tests
  * @brief Test to validate alloc and free on IRQ context
  *
  * @details The test is run on IRQ context.
  * The test checks allocation of MAX_SIZE and MIN_SIZE
  * defined in memory pool.
+ *
+ * @see k_mem_pool_alloc(), k_mem_pool_free()
  */
 void test_mpool_alloc_free_isr(void)
 {
@@ -81,11 +87,13 @@ void test_mpool_alloc_free_isr(void)
 }
 
 /**
+ * @ingroup kernel_memory_pool_tests
  * @brief Validates breaking a block into quarters feature
  *
  * @details The test case validates how a mem_pool provides
  * functionality to break a block into quarters and repeatedly
  * allocate and free the blocks.
+ * @see k_mem_pool_alloc(), k_mem_pool_free()
  */
 void test_mpool_alloc_size(void)
 {
@@ -129,7 +137,9 @@ void test_mpool_alloc_size(void)
 }
 
 /**
+ * @see k_mem_pool_alloc(), k_mem_pool_free()
  * @brief Verify memory pool allocation with timeouts
+ * @see k_mem_pool_alloc(), k_mem_pool_free()
  */
 void test_mpool_alloc_timeout(void)
 {
