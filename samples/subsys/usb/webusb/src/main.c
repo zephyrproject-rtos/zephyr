@@ -20,24 +20,14 @@
 #include <zephyr.h>
 #include <misc/byteorder.h>
 #include <usb/usb_common.h>
+#include <usb/usb_device.h>
+#include <usb/bos.h>
+
 #include "webusb_serial.h"
 
 static volatile bool data_transmitted;
 static volatile bool data_arrived;
 static u8_t data_buf[64];
-
-struct usb_bos_capability_webusb {
-	u16_t bcdVersion;
-	u8_t bVendorCode;
-	u8_t iLandingPage;
-} __packed;
-
-struct usb_bos_capability_msos {
-	u32_t dwWindowsVersion;
-	u16_t wMSOSDescriptorSetTotalLength;
-	u8_t bMS_VendorCode;
-	u8_t bAltEnumCode;
-} __packed;
 
 /* Predefined response to control commands related to MS OS 2.0 descriptors */
 static const u8_t msos2_descriptor[] = {
@@ -65,23 +55,14 @@ static const u8_t msos2_descriptor[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static struct webusb_bos_desc {
-	struct usb_bos_descriptor bos;
-	struct usb_bos_platform_descriptor platform_webusb;
-	struct usb_bos_capability_webusb capability_data_webusb;
-	struct usb_bos_platform_descriptor platform_msos;
-	struct usb_bos_capability_msos capability_data_msos;
-} __packed webusb_bos_descriptor = {
-	.bos = {
-		.bLength = sizeof(struct usb_bos_descriptor),
-		.bDescriptorType = USB_BINARY_OBJECT_STORE_DESC,
-		.wTotalLength = sizeof(struct webusb_bos_desc),
-		.bNumDeviceCaps = 2,
-	},
+USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_webusb_desc {
+	struct usb_bos_platform_descriptor platform;
+	struct usb_bos_capability_webusb cap;
+} __packed bos_cap_webusb = {
 	/* WebUSB Platform Capability Descriptor:
 	 * https://wicg.github.io/webusb/#webusb-platform-capability-descriptor
 	 */
-	.platform_webusb = {
+	.platform = {
 		.bLength = sizeof(struct usb_bos_platform_descriptor)
 			+ sizeof(struct usb_bos_capability_webusb),
 		.bDescriptorType = USB_DEVICE_CAPABILITY_DESC,
@@ -98,11 +79,17 @@ static struct webusb_bos_desc {
 			0xA0, 0x76, 0x88, 0x15, 0xB6, 0x65,
 		},
 	},
-	.capability_data_webusb = {
+	.cap = {
 		.bcdVersion = sys_cpu_to_le16(0x0100),
 		.bVendorCode = 0x01,
 		.iLandingPage = 0x01
-	},
+	}
+};
+
+USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_msosv2_desc {
+	struct usb_bos_platform_descriptor platform;
+	struct usb_bos_capability_msos cap;
+} __packed bos_cap_msosv2 = {
 	/* Microsoft OS 2.0 Platform Capability Descriptor
 	 * See https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/
 	 * microsoft-defined-usb-descriptors
@@ -110,7 +97,7 @@ static struct webusb_bos_desc {
 	 * https://github.com/sowbug/weblight/blob/master/firmware/webusb.c
 	 * (BSD-2) Thanks http://janaxelson.com/files/ms_os_20_descriptors.c
 	 */
-	.platform_msos = {
+	.platform = {
 		.bLength = sizeof(struct usb_bos_platform_descriptor)
 			+ sizeof(struct usb_bos_capability_msos),
 		.bDescriptorType = USB_DEVICE_CAPABILITY_DESC,
@@ -128,14 +115,14 @@ static struct webusb_bos_desc {
 			0x65, 0x9D, 0x9E, 0x64, 0x8A, 0x9F,
 		},
 	},
-	.capability_data_msos = {
+	.cap = {
 		/* Windows version (8.1) (0x06030000) */
 		.dwWindowsVersion = sys_cpu_to_le32(0x06030000),
 		.wMSOSDescriptorSetTotalLength =
 			sys_cpu_to_le16(sizeof(msos2_descriptor)),
 		.bMS_VendorCode = 0x02,
 		.bAltEnumCode = 0x00
-	}
+	},
 };
 
 /* WebUSB Device Requests */
@@ -210,13 +197,6 @@ static const u8_t msos1_compatid_descriptor[] = {
 int custom_handle_req(struct usb_setup_packet *pSetup,
 		      s32_t *len, u8_t **data)
 {
-	if (GET_DESC_TYPE(pSetup->wValue) == DESCRIPTOR_TYPE_BOS) {
-		*data = (u8_t *)(&webusb_bos_descriptor);
-		*len = sizeof(webusb_bos_descriptor);
-
-		return 0;
-	}
-
 	if (GET_DESC_TYPE(pSetup->wValue) == DESC_STRING &&
 	    GET_DESC_INDEX(pSetup->wValue) == 0xEE) {
 		*data = (u8_t *)(&msos1_string_descriptor);
@@ -338,6 +318,9 @@ void main(void)
 
 	/* Set the custom and vendor request handlers */
 	webusb_register_request_handlers(&req_handlers);
+
+	usb_bos_register_cap((void *)&bos_cap_webusb);
+	usb_bos_register_cap((void *)&bos_cap_msosv2);
 
 #ifdef CONFIG_UART_LINE_CTRL
 	printf("Wait for DTR\n");
