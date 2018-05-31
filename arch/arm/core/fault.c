@@ -235,9 +235,11 @@ static u32_t _MpuFault(const NANO_ESF *esf, int fromHardFault)
 
 	if (SCB->CFSR & SCB_CFSR_MSTKERR_Msk) {
 		PR_EXC("  Stacking error\n");
-	} else if (SCB->CFSR & SCB_CFSR_MUNSTKERR_Msk) {
+	}
+	if (SCB->CFSR & SCB_CFSR_MUNSTKERR_Msk) {
 		PR_EXC("  Unstacking error\n");
-	} else if (SCB->CFSR & SCB_CFSR_DACCVIOL_Msk) {
+	}
+	if (SCB->CFSR & SCB_CFSR_DACCVIOL_Msk) {
 		PR_EXC("  Data Access Violation\n");
 		/* In a fault handler, to determine the true faulting address:
 		 * 1. Read and save the MMFAR value.
@@ -282,12 +284,12 @@ static u32_t _MpuFault(const NANO_ESF *esf, int fromHardFault)
 		(void)mmfar;
 #endif /* CONFIG_HW_STACK_PROTECTION */
 		}
-	} else if (SCB->CFSR & SCB_CFSR_IACCVIOL_Msk) {
-		PR_EXC("  Instruction Access Violation\n");
-#if !defined(CONFIG_ARMV7_M_ARMV8_M_FP)
 	}
-#else
-	} else if (SCB->CFSR & SCB_CFSR_MLSPERR_Msk) {
+	if (SCB->CFSR & SCB_CFSR_IACCVIOL_Msk) {
+		PR_EXC("  Instruction Access Violation\n");
+	}
+#if defined(CONFIG_ARMV7_M_ARMV8_M_FP)
+	if (SCB->CFSR & SCB_CFSR_MLSPERR_Msk) {
 		PR_EXC("  Floating-point lazy state preservation error\n");
 	}
 #endif /* !defined(CONFIG_ARMV7_M_ARMV8_M_FP) */
