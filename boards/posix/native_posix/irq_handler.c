@@ -294,13 +294,31 @@ void posix_sw_clear_pending_IRQ(unsigned int IRQn)
 }
 
 /**
+ * Storage for functions offloaded to IRQ
+ */
+static irq_offload_routine_t off_routine;
+static void *off_parameter;
+
+/**
+ * IRQ handler for the SW interrupt assigned to irq_offload()
+ */
+static void offload_sw_irq_handler(void *a)
+{
+	ARG_UNUSED(a);
+	off_routine(off_parameter);
+}
+
+/**
  * @brief Run a function in interrupt context
  *
- * In this simple board, the function can just be run directly
+ * Raise the SW IRQ assigned to handled this
  */
 void irq_offload(irq_offload_routine_t routine, void *parameter)
 {
-	_kernel.nested++;
-	routine(parameter);
-	_kernel.nested--;
+	off_routine = routine;
+	off_parameter = parameter;
+	_isr_declare(OFFLOAD_SW_IRQ, 0, offload_sw_irq_handler, NULL);
+	_arch_irq_enable(OFFLOAD_SW_IRQ);
+	posix_sw_set_pending_IRQ(OFFLOAD_SW_IRQ);
+	_arch_irq_disable(OFFLOAD_SW_IRQ);
 }
