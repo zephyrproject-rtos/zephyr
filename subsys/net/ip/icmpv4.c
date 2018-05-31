@@ -219,11 +219,11 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 		    sizeof(struct net_icmp_hdr) +
 		    sizeof(struct net_icmpv4_echo_req));
 
-	setup_ipv4_header(pkt, 0, net_if_ipv4_get_ttl(iface),
-			  NET_ICMPV4_ECHO_REQUEST, 0);
-
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src, src);
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, dst);
+
+	setup_ipv4_header(pkt, 0, net_if_ipv4_get_ttl(iface),
+			  NET_ICMPV4_ECHO_REQUEST, 0);
 
 	NET_ICMPV4_ECHO_REQ(pkt)->identifier = htons(identifier);
 	NET_ICMPV4_ECHO_REQ(pkt)->sequence = htons(sequence);
@@ -323,12 +323,12 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 	net_pkt_set_iface(pkt, iface);
 	net_pkt_set_ll_reserve(pkt, net_buf_headroom(frag));
 
-	setup_ipv4_header(pkt, extra_len, net_if_ipv4_get_ttl(iface),
-			  type, code);
-
 	net_ipaddr_copy(&addr, src);
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src, dst);
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
+
+	setup_ipv4_header(pkt, extra_len, net_if_ipv4_get_ttl(iface),
+			  type, code);
 
 	net_pkt_ll_src(pkt)->addr = net_pkt_ll_dst(orig)->addr;
 	net_pkt_ll_src(pkt)->len = net_pkt_ll_dst(orig)->len;
