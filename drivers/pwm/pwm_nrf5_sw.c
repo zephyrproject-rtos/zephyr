@@ -208,7 +208,7 @@ static int pwm_nrf5_sw_get_cycles_per_sec(struct device *dev, u32_t pwm,
 	config = (struct pwm_config *)dev->config->config_info;
 
 	/* HF timer frequency is derived from 16MHz source and prescaler is 0 */
-	*cycles = 16 * 1024 * 1024;
+	*cycles = 16000000UL;
 
 	return 0;
 }
