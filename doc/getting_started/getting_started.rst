@@ -28,7 +28,7 @@ using Git to clone the repository anonymously. Enter:
    git clone https://github.com/zephyrproject-rtos/zephyr.git
 
 You have successfully checked out a copy of the source code to your local
-machine in the ~/zephyr folder.
+machine in a ``zephyr`` folder in your home directory.
 
 .. _getting_started_cmake:
 
