@@ -7,14 +7,17 @@
 #include <ztest.h>
 #include "test_mpool.h"
 
-/**
- * TESTPOINT: If the pool is to be accessed outside the module where it is
- * defined, it can be declared via @code extern struct k_mem_pool <name>
- * @endcode
- */
 extern struct k_mem_pool kmpool;
 
-/*test cases*/
+/**
+ * @brief Test exern define
+ *
+ * If the pool is to be accessed outside the module where it is
+ * defined, it can be declared via @code extern struct k_mem_pool <name>
+ * @endcode
+ *
+ * @see k_mem_pool_alloc(), k_mem_pool_free()
+ */
 void test_mpool_kdefine_extern(void)
 {
 	tmpool_alloc_free(NULL);

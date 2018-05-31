@@ -116,7 +116,6 @@ static int pool_block_get_wt_func(struct k_mem_block *block, struct k_mem_pool *
  *
  * @return N/A
  */
-
 static void free_blocks(struct TEST_CASE *tests, int n_tests)
 {
 	int i;
@@ -149,10 +148,12 @@ static void pool_block_get_work(char *string, pool_block_get_func_t func,
 }
 
 /**
+ * @ingroup kernel_memory_pool_tests
  * @brief Test the k_mem_pool_alloc(K_NO_WAIT) API
  *
  * The pool is 4 k_b in size.
  *
+ * @see k_mem_pool_alloc()
  */
 static void test_pool_block_get(void)
 {
@@ -185,8 +186,10 @@ void helper_task(void)
 }
 
 /**
+ * @ingroup kernel_memory_pool_tests
  * @brief Test k_mem_pool_alloc(timeout)
  *
+ * @see k_mem_pool_alloc()
  */
 static void test_pool_block_get_timeout(void)
 {
@@ -221,6 +224,10 @@ static void test_pool_block_get_timeout(void)
 
 }
 
+/**
+ * @ingroup kernel_memory_pool_tests
+ * @see k_mem_pool_alloc(), k_mem_pool_free()
+ */
 static void test_pool_block_get_wait(void)
 {
 	int rv;
@@ -267,7 +274,7 @@ void alternate_task(void)
 }
 
 /**
- *
+ * @ingroup kernel_memory_pool_tests
  * @brief Test the k_malloc() and k_free() APIs
  *
  * The heap memory pool is 256 bytes in size, and thus has only 4 blocks
@@ -275,6 +282,8 @@ void alternate_task(void)
  * amount of usable space, due to the hidden block descriptor info the
  * kernel adds at the start of any block allocated from this memory pool.)
  *
+ *
+ * @see k_malloc(), k_free()
  */
 static void test_pool_malloc(void)
 {
