@@ -4191,6 +4191,7 @@ extern void *k_calloc(size_t nmemb, size_t size);
 /* private - implementation data created as needed, per-type */
 struct _poller {
 	struct k_thread *thread;
+	volatile int is_polling;
 };
 
 /* private - types bit positions */

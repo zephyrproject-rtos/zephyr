@@ -107,11 +107,6 @@ static inline int _is_thread_state_set(struct k_thread *thread, u32_t state)
 	return !!(thread->base.thread_state & state);
 }
 
-static inline int _is_thread_polling(struct k_thread *thread)
-{
-	return _is_thread_state_set(thread, _THREAD_POLLING);
-}
-
 static inline int _is_thread_queued(struct k_thread *thread)
 {
 	return _is_thread_state_set(thread, _THREAD_QUEUED);
@@ -151,16 +146,6 @@ static inline void _reset_thread_states(struct k_thread *thread,
 					u32_t states)
 {
 	thread->base.thread_state &= ~states;
-}
-
-static inline void _mark_thread_as_polling(struct k_thread *thread)
-{
-	_set_thread_states(thread, _THREAD_POLLING);
-}
-
-static inline void _mark_thread_as_not_polling(struct k_thread *thread)
-{
-	_reset_thread_states(thread, _THREAD_POLLING);
 }
 
 static inline void _mark_thread_as_queued(struct k_thread *thread)

@@ -45,9 +45,6 @@
 /* Thread is suspended */
 #define _THREAD_SUSPENDED (1 << 4)
 
-/* Thread is actively looking at events to see if they are ready */
-#define _THREAD_POLLING (1 << 5)
-
 /* Thread is present in the ready queue */
 #define _THREAD_QUEUED (1 << 6)
 
