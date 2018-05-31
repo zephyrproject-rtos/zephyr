@@ -156,30 +156,26 @@ class ZephyrAppCommandsDirective(Directive):
 
         # Build the command content as a list, then convert to string.
         content = []
+        cd_to = zephyr_app or app
         comment = None
         if len(host_os) > 1:
             comment = '# On {}'
 
-        if zephyr_app:
-            if "unix" in host_os:
-                if comment:
-                    content.append('{}'.format(comment.format('Linux/macOS')))
-                content.append('cd $ZEPHYR_BASE/{}'.format(zephyr_app))
-                content.extend(self._mkdir(mkdir, build_dir, "unix",
-                                           skip_config, compact))
-                if comment:
-                    content.append('')
-            if "win" in host_os:
-                if comment:
-                    content.append('{}'.format(comment.format('Windows')))
-                zephyr_app = zephyr_app.replace('/','\\')
-                content.append('cd %ZEPHYR_BASE%\{}'.format(zephyr_app))
-                content.extend(self._mkdir(mkdir, build_dir, "win",
-                                           skip_config, compact))
-            if not compact or comment:
-                content.append('')
-        elif app:
-            content.append('cd {}'.format(app))
+        for host in host_os:
+            if cd_to:
+                if host == "unix":
+                    if comment:
+                        content.append(comment.format('Linux/macOS'))
+                    prefix = '$ZEPHYR_BASE/' if zephyr_app else ''
+                    content.append('cd {}{}'.format(prefix, cd_to))
+                elif host == "win":
+                    if comment:
+                        content.append(comment.format('Windows'))
+                    prefix = '%ZEPHYR_BASE%\\' if zephyr_app else ''
+                    backslashified = cd_to.replace('/', '\\')
+                    content.append('cd {}{}'.format(prefix, backslashified))
+            content.extend(self._mkdir(mkdir, build_dir, host,
+                                       skip_config, compact))
             if not compact:
                 content.append('')
 
