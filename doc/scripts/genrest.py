@@ -199,6 +199,8 @@ def write_sym_rst(sym, out_dir):
         heading += "s"
     sym_rst += "{}\n{}\n\n".format(heading, len(heading)*"=")
 
+    sym_rst += ".. highlight:: kconfig\n\n"
+
     sym_rst += "\n\n".join(
         "At ``{}:{}``, in menu ``{}``:\n\n"
         ".. parsed-literal::\n\n"
