@@ -10,6 +10,8 @@
  */
 
 #include <zephyr.h>
+#include <entropy.h>
+
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
 #define PRINT           printf
@@ -139,27 +141,75 @@ enum exit_codes {
 static int entropy_source(void *data, unsigned char *output, size_t len,
 			  size_t *olen)
 {
-	u32_t seed;
+	struct device *hwrng = data;
+	unsigned char *orig_output = output;
+	size_t orig_len = len;
 
-	ARG_UNUSED(data);
+	/* Use a weak random source if an entropy driver was not found at
+	 * boot.  Please don't do this in an application: set it up properly
+	 * so that a hardware entropy driver is always available.
+	 */
+	if (hwrng == NULL) {
+		u32_t seed;
 
-	seed = sys_rand32_get();
+		seed = sys_rand32_get();
 
-	if (len > sizeof(seed)) {
-		len = sizeof(seed);
+		if (len > sizeof(seed)) {
+			len = sizeof(seed);
+		}
+
+		memcpy(output, &seed, len);
+
+		*olen = len;
+
+		return 0;
 	}
 
-	memcpy(output, &seed, len);
+	/* If an entropy device has been found during boot, use it to gather
+	 * entropy.  This loop is required since `len` is a `size_t`, and the
+	 * equivalent parameter type in `entropy_get_entropy()` is a `u16_t`.
+	 * Most of the time, this loop will only run once.
+	 */
+	while (len) {
+		u16_t to_read = min(len, 0xffff);
+		int rc;
 
-	*olen = len;
+		rc = entropy_get_entropy(hwrng, output, to_read);
+		if (!rc) {
+			len -= to_read;
+			output += to_read;
+		} else if (rc < 0) {
+			/* Some error happened inside entropy_get_entropy():
+			 * clear the gathered entropy before returning to
+			 * avoid leaking unused information.
+			 */
+			memset(orig_output, 0, orig_len);
+			__asm__ volatile("" : : "g"(orig_output) : "memory");
+
+			*olen = 0;
+
+			return rc;
+		}
+	}
+
+	*olen = (size_t)(output - orig_output);
 
 	return 0;
 }
 
 void tls_client(void)
 {
+	struct device *hwrng;
 	int ret = exit_ok;
 	struct tcp_context ctx;
+
+	hwrng = device_get_binding(CONFIG_ENTROPY_NAME);
+	if (!hwrng) {
+		mbedtls_printf("Entropy driver not found."
+			       "Using weak entropy source\n");
+	} else {
+		mbedtls_printf("Using hardware entropy source\n");
+	}
 
 	ctx.timeout = MBEDTLS_NETWORK_TIMEOUT;
 
@@ -186,7 +236,7 @@ void tls_client(void)
 
 	mbedtls_printf("\n  . Seeding the random number generator...");
 	mbedtls_entropy_init(&entropy);
-	mbedtls_entropy_add_source(&entropy, entropy_source, NULL,
+	mbedtls_entropy_add_source(&entropy, entropy_source, hwrng,
 				   MBEDTLS_ENTROPY_MAX_GATHER,
 				   MBEDTLS_ENTROPY_SOURCE_STRONG);
 
