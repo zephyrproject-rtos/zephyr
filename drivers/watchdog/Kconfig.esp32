@@ -12,13 +12,6 @@ menuconfig WDT_ESP32
 	help
 	  Enable WDT driver for ESP32.
 
-config WDT_ESP32_DISABLE_AT_BOOT
-	bool "Disable WDT during boot"
-	depends on WDT_ESP32
-	default y
-	help
-	  Select this option to disable the WDT during boot.
-
 config WDT_ESP32_DEVICE_NAME
 	string "Device name for Watchdog (WDT)"
 	depends on WDT_ESP32

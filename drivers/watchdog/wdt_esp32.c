@@ -206,7 +206,7 @@ static int wdt_esp32_init(struct device *dev)
 
 	memset(&data->config, 0, sizeof(data->config));
 
-#ifdef CONFIG_ESP32_DISABLE_AT_BOOT
+#ifdef CONFIG_WDT_DISABLE_AT_BOOT
 	wdt_esp32_disable(dev);
 #endif
 
