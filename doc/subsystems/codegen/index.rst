@@ -23,5 +23,7 @@ programming logic, creates configuration-specific code fragments, and more.
 
    codegen
    functions
+   modules
+   templates
    build
    principle
