@@ -193,6 +193,7 @@ The pinouts for flyswatter2 and the corresponding pinouts for CRB are
 shown below. Note that pin 6 on CRB is left unconnected.
 
 The corresponding pin mapping is
+
 +-------------+-----------+
 | Flyswatter2 |   S1000   |
 +=============+===========+
