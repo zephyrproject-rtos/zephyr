@@ -90,7 +90,7 @@ static const struct wdt_sam_dev_cfg wdt_sam_config = {
 	.regs = WDT
 };
 
-DEVICE_AND_API_INIT(wdt_sam, CONFIG_WDT_SAM_DEVICE_NAME, wdt_sam_init,
+DEVICE_AND_API_INIT(wdt_sam, CONFIG_WDT_0_NAME, wdt_sam_init,
 		    NULL, &wdt_sam_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &wdt_sam_api);

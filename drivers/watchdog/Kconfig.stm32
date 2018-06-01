@@ -22,13 +22,6 @@ config IWDG_STM32_START_AT_BOOT
 	  it must be reloaded before the counter reaches 0, otherwise
 	  the MCU will be reset.
 
-config IWDG_STM32_DEVICE_NAME
-	string "Device name for Independent Watchdog (IWDG)"
-	depends on IWDG_STM32
-	default "IWDG"
-	help
-	  Set the name used by IWDG device during registration.
-
 config IWDG_STM32_TIMEOUT
 	int "Value for IWDG timeout in [us]"
 	depends on IWDG_STM32

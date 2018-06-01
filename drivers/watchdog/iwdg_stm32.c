@@ -173,7 +173,7 @@ static struct iwdg_stm32_data iwdg_stm32_dev_data = {
 	.Instance = IWDG
 };
 
-DEVICE_AND_API_INIT(iwdg_stm32, CONFIG_IWDG_STM32_DEVICE_NAME,
+DEVICE_AND_API_INIT(iwdg_stm32, CONFIG_WDT_0_NAME,
 		    iwdg_stm32_init, &iwdg_stm32_dev_data, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &iwdg_stm32_api);

@@ -12,13 +12,6 @@ menuconfig WDT_ESP32
 	help
 	  Enable WDT driver for ESP32.
 
-config WDT_ESP32_DEVICE_NAME
-	string "Device name for Watchdog (WDT)"
-	depends on WDT_ESP32
-	default "WATCHDOG_0"
-	help
-	  Set the name used by WDT device during registration.
-
 config WDT_ESP32_IRQ
 	int "IRQ line for watchdog interrupt"
 	depends on WDT_ESP32

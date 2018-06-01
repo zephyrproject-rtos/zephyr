@@ -14,6 +14,16 @@ menuconfig WATCHDOG
 
 if WATCHDOG
 
+if !HAS_DTS_WDT
+
+config WDT_0_NAME
+	string "Watchdog driver instance name"
+	default "WATCHDOG_0"
+	help
+	  Set the name used by the watchdog device during registation.
+
+endif # HAS_DTS_WDT
+
 config WDT_DISABLE_AT_BOOT
 	bool
 	prompt "Disable at boot"
