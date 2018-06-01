@@ -54,3 +54,8 @@ config SEGGER_RTT_MODE
 	default 0 if SEGGER_RTT_MODE_NO_BLOCK_SKIP
 	default 1 if SEGGER_RTT_MODE_NO_BLOCK_TRIM
 	default 2
+
+config SEGGER_RTT_MEMCPY_USE_BYTELOOP
+	bool "Use a simple byte-loop instead of standard memcpy"
+
+endif
