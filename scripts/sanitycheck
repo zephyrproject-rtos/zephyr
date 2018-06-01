@@ -2404,6 +2404,10 @@ def parse_arguments():
     parser.add_argument("--list-tests", action="store_true",
             help="list all tests.")
 
+    parser.add_argument("--export-tests", action="store",
+            metavar="FILENAME",
+            help="Export tests case meta-data to a file in CSV format.")
+
     parser.add_argument("--detailed-report",
             action="store",
             metavar="FILENAME",
@@ -2720,6 +2724,34 @@ def main():
             print("- {}".format(t))
 
         return
+
+
+    def export_tests(filename, tests):
+        with open(filename, "wt") as csvfile:
+            fieldnames = ['section', 'subsection', 'title', 'reference']
+            cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
+            for test in tests:
+                data = test.split(".")
+                subsec = " ".join(data[1].split("_")).title()
+                rowdict = {
+                        "section": data[0].capitalize(),
+                        "subsection": subsec,
+                        "title": test,
+                        "reference": test
+                        }
+                cw.writerow(rowdict)
+
+    if options.export_tests:
+        cnt = 0
+        unq = []
+        for n,tc in ts.testcases.items():
+            for c in tc.cases:
+                unq.append(c)
+
+        tests = sorted(set(unq))
+        export_tests(options.export_tests, tests)
+        return
+
 
     if options.list_tests:
         cnt = 0
