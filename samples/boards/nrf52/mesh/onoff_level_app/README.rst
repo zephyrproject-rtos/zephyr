@@ -16,11 +16,13 @@ FICR. Each button controls the state of its
 corresponding LED and does not initiate any mesh activity.
 
 In case of nRF52840-PDK Board,
- 
-	LED1 is associated with Gen. OnOFF Server
-	Button1 & Button2 are associated with Gen. OnOFF Client [Button1 : ON & Button 2: OFF]
-	LED1 is associated with Gen. Level Server [if (Level < 50) LED3: OFF ...if (Level >= 50) LED3: ON]
-	Button3 & Button4 are associated Gen. Level Client [Button3: publishes Level = 25 .....Button4: publishes Level = 100]
+
+.. association of Models with h/w::
+
+	:LED1 is associated with Gen. OnOFF Server
+	:Button1 & Button2 are associated with Gen. OnOFF Client [Button1 : ON & Button 2: OFF]
+	:LED1 is associated with Gen. Level Server [if (Level < 50) LED3: OFF ...if (Level >= 50) LED3: ON]
+	:Button3 & Button4 are associated Gen. Level Client [Button3: publishes Level = 25 .....Button4: publishes Level = 100]
 
 After provisioning, the button clients must
 be configured to publish and the LED servers to subscribe.
