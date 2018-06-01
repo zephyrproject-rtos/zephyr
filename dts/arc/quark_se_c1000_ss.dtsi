@@ -54,7 +54,7 @@
 			compatible = "intel,qmsi-rtc";
 			reg = <0xb0000400 0x400>;
 			clock-frequency = <32768>;
-			interrupts = <47 2>;
+			interrupts = <47 1>;
 			interrupt-parent = <&core_intc>;
 			label = "RTC_0";
 		};
@@ -62,7 +62,7 @@
 		uart0: uart@b0002000 {
 			compatible = "intel,qmsi-uart";
 			reg = <0xb0002000 0x400>;
-			interrupts = <41 3>;
+			interrupts = <41 0>;
 			interrupt-parent = <&core_intc>;
 			label = "UART_0";
 
@@ -72,7 +72,7 @@
 		uart1: uart@b0002400 {
 			compatible = "intel,qmsi-uart";
 			reg = <0xb0002400 0x400>;
-			interrupts = <42 3>;
+			interrupts = <42 0>;
 			interrupt-parent = <&core_intc>;
 			label = "UART_1";
 
@@ -82,7 +82,7 @@
 		gpio0: gpio@80017800 {
 			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017800 0x100>;
-			interrupts = <20 2>;
+			interrupts = <20 1>;
 			interrupt-parent = <&core_intc>;
 			label = "GPIO_0";
 
@@ -93,7 +93,7 @@
 		gpio1: gpio@80017900 {
 			compatible = "intel,qmsi-ss-gpio";
 			reg = <0x80017900 0x100>;
-			interrupts = <21 2>;
+			interrupts = <21 1>;
 			interrupt-parent = <&core_intc>;
 			label = "GPIO_1";
 
@@ -104,7 +104,7 @@
 		gpio2: gpio@b0000c00 {
 			compatible = "intel,qmsi-gpio";
 			reg = <0xb0000c00 0x400>;
-			interrupts = <44 2>;
+			interrupts = <44 1>;
 			interrupt-parent = <&core_intc>;
 			label = "GPIO_2";
 
@@ -115,7 +115,7 @@
 		gpio3: gpio@b0800b00 {
 			compatible = "intel,qmsi-gpio";
 			reg = <0xb0800b00 0x400>;
-			interrupts = <67 2>;
+			interrupts = <67 1>;
 			interrupt-parent = <&core_intc>;
 			label = "GPIO_3";
 
