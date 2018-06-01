@@ -15,6 +15,7 @@ User and Developer Guides
    documentation/index
    coccinelle.rst
    code-relocation.rst
+   cogeno.rst
    crypto/index
    debugging/index
    device_mgmt/index
