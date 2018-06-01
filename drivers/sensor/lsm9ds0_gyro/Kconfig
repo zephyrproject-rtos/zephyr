@@ -122,7 +122,7 @@ config LSM9DS0_GYRO_TRIGGER_DRDY
 config LSM9DS0_GYRO_GPIO_DRDY_DEV_NAME
 	string "GPIO device where LSM9DS0_GYRO data ready interrupt is connected"
 	depends on LSM9DS0_GYRO_TRIGGER_DRDY
-	default GPIO_0
+	default "GPIO_0"
 	help
 	  Specify the device name of the GPIO controller the BMC150_MAGN interrupt
 	  is connected to.
