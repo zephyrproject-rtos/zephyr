@@ -10,7 +10,6 @@ menu "Additional libraries"
 
 config JSON_LIBRARY
 	bool
-	default N
 	prompt "Build JSON library"
 	help
 	  Build a minimal JSON parsing/encoding library. Used by sample
