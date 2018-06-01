@@ -6,7 +6,7 @@ tests:
     tags: benchmark
     slow: true
     timeout: 300
-  test_posix:
+  benchmark.application.posix:
     arch_whitelist: posix
     min_ram: 32
     tags: benchmark

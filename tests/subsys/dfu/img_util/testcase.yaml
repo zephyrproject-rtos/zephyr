@@ -1,5 +1,5 @@
 tests:
-  use.device.image_util:
+  usb.device.image_util:
     depends_on: usb_device
     platform_whitelist: nrf52840_pca10056
     tags: dfu_image_util
