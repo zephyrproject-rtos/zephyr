@@ -143,6 +143,8 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 		break;
 
 		case 0x820A:	//GEN_DELTA_SRV_UNACK
+		
+			state_ptr->current += net_buf_simple_pull_le16(buf);
 			
 		break;
 

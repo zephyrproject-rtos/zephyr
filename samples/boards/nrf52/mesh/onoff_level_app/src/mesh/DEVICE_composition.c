@@ -110,7 +110,6 @@ struct bt_mesh_model s0_models[] = {
 	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI, gen_onoff_cli_op, &gen_onoff_cli_pub_s0, NULL),
 };
 
-
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 struct bt_mesh_elem elements[] = 
@@ -176,6 +175,7 @@ void gen_level_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, str
 
 void gen_delta_set_unack(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 {
+	doer(model, ctx, buf,0x820A);
 }
 
 void gen_delta_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
@@ -186,6 +186,7 @@ void gen_delta_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, str
 
 void gen_move_set_unack(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 {
+	doer(model, ctx, buf,0x820C);
 }
 
 void gen_move_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
