@@ -13,15 +13,40 @@ if not the id-data pair is copied.
 The id is a 16-bit unsigned number, where two values are reserved:
 
 - ``0xFFFF`` is used to determine free locations in flash
-- ``0xFFFE`` is used to close a sector
+- ``0x0000`` is used to determine jumps or to correct errors
 
 NVS ensures that for each id there is at least one id-data pair stored in flash
 at all time.
 
 NVS allows storage of binary blobs, strings, integers, longs, and any
-combination of these. As each element is stored with a header (containing the
-id and length) and a footer (containing the crc16) it is less suited to store
-only integers.
+combination of these.
+
+Each element is stored in flash as: ``length-data-id-length``. The length
+parameter is the size in byte of the data. It is added at the start and the end
+of a data block for two purposes:
+
+- It allows the verification of a data block, in case of a incomplete write
+  the length at the end is missing.
+- It allows NVS to travel forward and backward over the flash data blocks.
+
+
+To reduce flash usage the size of the length is dependent on the size of the
+data. For data size < 128 byte length occupies 1 byte in flash, for data size
+>= 128 byte length occupies 2 bytes.
+
+If an error is detected in the flash storage (during writing) NVS is placed in
+a locked state and becomes a read-only storage system. This allows the user
+application to read all variables up to the error location to recover as much
+as possible. A call to nvs_reinit() when in locked state erases the flash
+storage and reopens NVS for storage.
+
+NVS will also be placed in a locked state when it is full meaning there is no
+extra space to store data. A call to nvs_reinit() when in locked state erases
+the flash  storage and reopens NVS for storage.
+
+During initialization NVS will verify the data stored in flash, if it
+encounters an error it will correct the error and restore the data as much as
+possible. All data that is found before the error is restored.
 
 NVS has a configuration option to enable extra flash protection
 (``CONFIG_NVS_FLASH_PROTECTION=y``), when selected NVS does a extra check
@@ -71,17 +96,16 @@ Calculating expected device lifetime
 
 Suppose we use a 4 bytes state variable that is changed every minute and
 needs to be restored after reboot. NVS has been defined with a sector_size
-equal to the pagesize (1024 bytes) and 2 sectors have been defined. Each
-sector in NVS has a sector header of 8 bytes.
+equal to the pagesize (1024 bytes) and 2 sectors have been defined.
 
-Each write of the state variable requires 4 bytes for the variable, but also 4
-bytes for the data header and 4 bytes for the data slot, so in total 12 bytes.
-When storing the data the first sector will be full after (1024-8)/12 = 84
-minutes. After another 84 minutes, the second sector is full.  When this
-happens, because we're using only two sectors, the first sector will be used
-for storage and will be erased after 168 minutes of system time.  With the
-expected device life of 20,000 writes, with two sectors writing every 168
-minutes, the device should last about 168*20,000 minutes, or about 6.5 years.
+Each write of the state variable requires 8 bytes of flash storage (length: 1
+byte, id: 2 bytes, data: 4 bytes, length: 1 byte). When storing the data the
+first sector will be full after 1024/8 = 128 minutes. After another 128
+minutes, the second sector is full.  When this happens, because we're using
+only two sectors, the first sector will be used for storage and will be erased
+after 256 minutes of system time.  With the expected device life of 20,000
+writes, with two sectors writing every 256 minutes, the device should last
+about 256 * 20,000 minutes, or about 9.75 years.
 
 More generally then, with
 
@@ -90,9 +114,14 @@ More generally then, with
 - ``SECTOR_SIZE`` in bytes, and
 - ``PAGE_ERASES`` as the number of times the page can be erased,
 
-the expected device life (in minutes) can be calculated as::
+for DS < 128 byte, the expected device life (in minutes) can be calculated as::
 
-   SECTOR_COUNT * (SECTOR_SIZE-8) * PAGE_ERASES / (NS * (DS+8)) minutes
+   SECTOR_COUNT * SECTOR_SIZE * PAGE_ERASES / (NS * (DS+4)) minutes
+
+for DS >= 128 byte, the expected device life (in minutes) can be calculated
+as::
+
+   SECTOR_COUNT * SECTOR_SIZE * PAGE_ERASES / (NS * (DS+8)) minutes
 
 From this formula it is also clear what to do in case the expected life is too
 short: increase ``SECTOR_COUNT`` or ``SECTOR_SIZE``.
