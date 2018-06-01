@@ -80,7 +80,8 @@ static void test_rw_lock(void)
 
 	/* Creating N premptive threads in increasing order of priority */
 	for (i = 0; i < N_THR; i++) {
-		pthread_attr_init(&attr[i]);
+		zassert_equal(pthread_attr_init(&attr[i]), 0,
+			      "Unable to create pthread object attrib");
 
 		/* Setting scheduling priority */
 		schedparam.priority = i + 1;
