@@ -43,10 +43,12 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 				if(state_ptr->current != 0)
 				{
 					gpio_pin_write(led_device[0], LED0_GPIO_PIN, 0);	//LED1 On
+					//CLRB(NRF_P0->OUT, state_ptr->data);
 				}
 				else
 				{ 
 					gpio_pin_write(led_device[0], LED0_GPIO_PIN, 1);	//LED1 Off
+					//SETB(NRF_P0->OUT, state_ptr->data);
 				}
 
 				if(model->pub->addr != BT_MESH_ADDR_UNASSIGNED)
