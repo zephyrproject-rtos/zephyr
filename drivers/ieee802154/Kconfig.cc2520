@@ -92,28 +92,28 @@ if ! IEEE802154_CC2520_RANDOM_MAC
 config IEEE802154_CC2520_MAC4
 	hex "MAC Address Byte 4"
 	default 0
-	range 0 ff
+	range 0 0xff
 	help
 	  This is the byte 4 of the MAC address.
 
 config IEEE802154_CC2520_MAC5
 	hex "MAC Address Byte 5"
 	default 0
-	range 0 ff
+	range 0 0xff
 	help
 	  This is the byte 5 of the MAC address.
 
 config IEEE802154_CC2520_MAC6
 	hex "MAC Address Byte 6"
 	default 0
-	range 0 ff
+	range 0 0xff
 	help
 	  This is the byte 6 of the MAC address.
 
 config IEEE802154_CC2520_MAC7
 	hex "MAC Address Byte 7"
 	default 0
-	range 0 ff
+	range 0 0xff
 	help
 	  This is the byte 7 of the MAC address.
 
