@@ -67,6 +67,7 @@ Revision: $Rev: 4351 $
 #ifndef SEGGER_RTT_CONF_H
 #define SEGGER_RTT_CONF_H
 
+#include <autoconf.h>
 #ifdef __IAR_SYSTEMS_ICC__
   #include <intrinsics.h>
 #endif
@@ -78,15 +79,22 @@ Revision: $Rev: 4351 $
 **********************************************************************
 */
 
-#define SEGGER_RTT_MAX_NUM_UP_BUFFERS             (3)     // Max. number of up-buffers (T->H) available on this target    (Default: 3)
-#define SEGGER_RTT_MAX_NUM_DOWN_BUFFERS           (3)     // Max. number of down-buffers (H->T) available on this target  (Default: 3)
+#define SEGGER_RTT_MAX_NUM_UP_BUFFERS             CONFIG_SEGGER_RTT_MAX_NUM_UP_BUFFERS    // Max. number of up-buffers (T->H) available on this target    (Default: 3)
+#define SEGGER_RTT_MAX_NUM_DOWN_BUFFERS           CONFIG_SEGGER_RTT_MAX_NUM_DOWN_BUFFERS  // Max. number of down-buffers (H->T) available on this target  (Default: 3)
 
-#define BUFFER_SIZE_UP                            (1024)  // Size of the buffer for terminal output of target, up to host (Default: 1k)
-#define BUFFER_SIZE_DOWN                          (16)    // Size of the buffer for terminal input to target from host (Usually keyboard input) (Default: 16)
+#define BUFFER_SIZE_UP                            CONFIG_SEGGER_RTT_BUFFER_SIZE_UP        // Size of the buffer for terminal output of target, up to host (Default: 1k)
+#define BUFFER_SIZE_DOWN                          CONFIG_SEGGER_RTT_BUFFER_SIZE_DOWN      // Size of the buffer for terminal input to target from host (Usually keyboard input) (Default: 16)
 
-#define SEGGER_RTT_PRINTF_BUFFER_SIZE             (64u)    // Size of buffer for RTT printf to bulk-send chars via RTT     (Default: 64)
+#define SEGGER_RTT_PRINTF_BUFFER_SIZE             CONFIG_SEGGER_RTT_PRINTF_BUFFER_SIZE    // Size of buffer for RTT printf to bulk-send chars via RTT     (Default: 64)
 
-#define SEGGER_RTT_MODE_DEFAULT                   SEGGER_RTT_MODE_NO_BLOCK_SKIP // Mode for pre-initialized terminal channel (buffer 0)
+// Mode for pre-initialized terminal channel (buffer 0)
+#if   defined(CONFIG_SEGGER_RTT_MODE_NO_BLOCK_SKIP)
+#define SEGGER_RTT_MODE_DEFAULT                   SEGGER_RTT_MODE_NO_BLOCK_SKIP
+#elif defined(CONFIG_SEGGER_RTT_MODE_NO_BLOCK_TRIM)
+#define SEGGER_RTT_MODE_DEFAULT                   SEGGER_RTT_MODE_NO_BLOCK_TRIM
+#elif defined(CONFIG_SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL)
+#define SEGGER_RTT_MODE_DEFAULT                   SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL
+#endif
 
 //
 // Target is not allowed to perform other RTT operations while string still has not been stored completely.
