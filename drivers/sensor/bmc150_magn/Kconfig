@@ -112,7 +112,7 @@ config BMC150_MAGN_TRIGGER_DRDY
 config BMC150_MAGN_GPIO_DRDY_DEV_NAME
 	string "GPIO device where BMC150_MAGN data ready interrupt is connected"
 	depends on BMC150_MAGN_TRIGGER_DRDY
-	default GPIO_0
+	default "GPIO_0"
 	help
 	  Specify the device name of the GPIO controller the BMC150_MAGN interrupt
 	  is connected to.

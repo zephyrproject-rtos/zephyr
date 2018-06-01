@@ -69,7 +69,7 @@ config SX9500_TRIGGER
 config SX9500_GPIO_CONTROLLER
 	string "GPIO controller for SX9500 interrupt"
 	depends on SX9500 && SX9500_TRIGGER
-	default GPIO_0
+	default "GPIO_0"
 	help
 	  Specify the device name of the GPIO controller the SX9500 interrupt
 	  is connected to.
