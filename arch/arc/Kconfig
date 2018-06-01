@@ -126,7 +126,7 @@ config	FAULT_DUMP
 	  0: Off.
 
 config	XIP
-	default n if NSIM
+	default n if UART_NSIM
 	default y
 
 config GEN_ISR_TABLES
