@@ -143,6 +143,35 @@ config RTT_CONSOLE
 	  Segger J-Link software and displayed on a computer in real-time.
 	  Requires support for Segger J-Link on the companion IC onboard.
 
+if RTT_CONSOLE
+
+config RTT_TX_RETRY_CNT
+	int "Number of TX retries"
+	default 2
+	help
+	  Number of TX retries before dropping the byte and assuming that
+	  RTT session is inactive.
+
+config RTT_TX_RETRY_DELAY_MS
+	int "Delay between TX retries in milliseconds"
+	default 2
+	help
+	  Sleep period between TX retry attempts. During RTT session, host pulls data
+	  periodically. Period starts from 1-2 milliseconds and can be increased
+	  if traffic on RTT increases (also from host to device). In case of
+	  heavy traffic data can be lost and it may be necessary to increase
+	  delay or number of retries.
+
+config RTT_TX_RETRY_IN_INTERRUPT
+	bool "Busy wait in the interrupt context for TX retry"
+	help
+	  If enabled RTT console will busy wait between TX retries when console
+	  assumes that RTT session is active. In case of heavy traffic data can
+	  be lost and it may be necessary to increase delay or number of
+	  retries.
+
+endif
+
 config IPM_CONSOLE_SENDER
 	bool
 	prompt "Inter-processor Mailbox console sender"
