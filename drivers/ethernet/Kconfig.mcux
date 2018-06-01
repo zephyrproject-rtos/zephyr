@@ -82,21 +82,21 @@ if ETH_MCUX_0 && ! ETH_MCUX_0_RANDOM_MAC
 config ETH_MCUX_0_MAC3
 	hex "MAC Address Byte 3"
 	default 0
-	range 0 ff
+	range 0 0xff
 	help
 	  This is the byte 3 of the MAC address.
 
 config ETH_MCUX_0_MAC4
 	hex "MAC Address Byte 4"
 	default 0
-	range 0 ff
+	range 0 0xff
 	help
 	  This is the byte 4 of the MAC address.
 
 config ETH_MCUX_0_MAC5
 	hex "MAC Address Byte 5"
 	default 0
-	range 0 ff
+	range 0 0xff
 	help
 	  This is the byte 5 of the MAC address.
 endif
