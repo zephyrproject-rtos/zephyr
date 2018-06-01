@@ -29,40 +29,36 @@ extern "C" {
 /**
  * @brief Non-volatile Storage File system structure
  *
- * @param magic File system magic, repeated at start of each sector
- * @param write_location Next write location for entry header
+ * @param write_location Next write location
+ * @param entry_location Start of the filesystem
  * @param offset File system offset in flash
- * @param sector_id Counter for sector
  * @param sector_size File system is divided into sectors each sector should be
  * multiple of pagesize and also a power of 2
- * @param free_space Indicator for available space in the filesystem
  * @param max_len Maximum size of storage items
  * @param sector_count Amount of sectors in the file systems
- * @param entry_sector Oldest sector in used
- * @param write_block_size Alignment size in bytes_to_copy
+ * @param write_block_size Alignment size
+ * @param locked State of the filesystem, locked = true means the filesystem is
+ * read only
  * @param nvs_lock Mutex
  * @param flash_device Flash Device
  */
 struct nvs_fs {
-	u32_t magic; /* filesystem magic, repeated at start of each sector */
-	off_t write_location; /* next write location for entry header */
+	off_t write_location; /* next write location */
+	off_t entry_location; /* start of the filesystem */
 	off_t offset; /* filesystem offset in flash */
-	u16_t sector_id; /* sector id, a counter for each created sector */
 	u16_t sector_size; /* filesystem is divided into sectors,
 			    * sector size should be multiple of pagesize
 			    * and a power of 2
 			    */
-	u16_t free_space; /* Indicator for available space in the file system.
-			   * Writes are only allowed if free_space is equal to
-			   * max_len. Is set to zero when the file system is
-			   * full. Deletes increase free_space.
-			   */
 	u16_t max_len; /* maximum size of stored item, set to sector_size/4 */
 	u8_t sector_count; /* how many sectors in the filesystem */
 
-	u8_t entry_sector; /* oldest sector in use */
 	u8_t write_block_size; /* write block size for alignment */
-
+	bool locked; /* the filesystem is locked after an error occurred
+		      * when it is locked it becomes a read-only filesystem
+		      * it can be unlocked by calling nvs_init again, this
+		      * will destroy all stored data
+		      */
 	struct k_mutex nvs_lock;
 	struct device *flash_device;
 };
@@ -71,31 +67,41 @@ struct nvs_fs {
  * @}
  */
 
- /**
-  * @brief Non-volatile Storage APIs
-  * @defgroup nvs_high_level_api Non-volatile Storage APIs
-  * @ingroup nvs
-  * @{
-  */
+/**
+ * @brief Non-volatile Storage APIs
+ * @defgroup nvs_high_level_api Non-volatile Storage APIs
+ * @ingroup nvs
+ * @{
+ */
 
- /**
-  * @brief nvs_init
-  *
-  * Initializes a NVS file system in flash.
-  *
-  * @param fs Pointer to file system
-  * @param dev_name Pointer to flash device name
-  * @param magic Magic number used in file system
-  * @retval 0 Success
-  * @retval -ERRNO errno code if error
-  */
-int nvs_init(struct nvs_fs *fs, const char *dev_name, u32_t magic);
+/**
+ * @brief nvs_init
+ *
+ * Initializes a NVS file system in flash.
+ *
+ * @param fs Pointer to file system
+ * @param dev_name Pointer to flash device name
+ * @retval 0 Success
+ * @retval -ERRNO errno code if error
+ */
+int nvs_init(struct nvs_fs *fs, const char *dev_name);
+
+/**
+ * @brief nvs_reinit
+ *
+ * Reinitializes a NVS file system in flash, if the filesystem is locked this
+ * will erase the filesystem.
+ *
+ * @param fs Pointer to file system
+ * @retval 0 Success
+ * @retval -ERRNO errno code if error
+ */
+int nvs_reinit(struct nvs_fs *fs);
 
 /**
  * @brief nvs_clear
  *
  * Clears the NVS file system from flash.
- *
  * @param fs Pointer to file system
  * @retval 0 Success
  * @retval -ERRNO errno code if error
@@ -116,6 +122,7 @@ int nvs_clear(struct nvs_fs *fs);
  * of bytes requested to be written. Any other value, indicates an error. Will
  * return -ERRNO code on error.
  */
+
 ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len);
 
 /**

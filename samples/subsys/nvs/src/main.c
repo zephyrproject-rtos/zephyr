@@ -45,10 +45,8 @@
 #include <string.h>
 #include <nvs/nvs.h>
 
-#define STORAGE_MAGIC 0x4d455348 /* hex for "MESH" */
-
 #define NVS_SECTOR_SIZE 1024 /* Multiple of FLASH_PAGE_SIZE */
-#define NVS_SECTOR_COUNT 2 /* At least 2 sectors */
+#define NVS_SECTOR_COUNT 3 /* At least 2 sectors */
 #define NVS_STORAGE_OFFSET FLASH_AREA_STORAGE_OFFSET /* Start address of the
 						      * filesystem in flash
 						      */
@@ -62,24 +60,25 @@ static struct nvs_fs fs = {
 };
 
 /* 1000 msec = 1 sec */
-#define SLEEP_TIME      1000
+#define SLEEP_TIME      100
 /* maximum reboot counts, make high enough to trigger sector change (buffer */
 /* rotation). */
-#define MAX_REBOOT 82
+#define MAX_REBOOT 400
 
 #define ADDRESS_ID 1
 #define KEY_ID 2
 #define RBT_CNT_ID 3
 #define STRING_ID 4
+#define LONG_ID 5
 
 void main(void)
 {
 	int rc = 0, cnt = 0, cnt_his = 0;
 	char buf[16];
-	u8_t key[8];
+	u8_t key[8], longarray[128];
 	u32_t reboot_counter = 0, reboot_counter_his;
 
-	rc = nvs_init(&fs, FLASH_DEV_NAME, STORAGE_MAGIC);
+	rc = nvs_init(&fs, FLASH_DEV_NAME);
 	if (rc) {
 		printk("Flash Init failed\n");
 	}
@@ -154,6 +153,30 @@ void main(void)
 		}
 	}
 
+	/* LONG_ID is used to store a larger dataset ,lets see if we can read
+	 * it from flash
+	 */
+	rc = nvs_read(&fs, LONG_ID, &longarray, sizeof(longarray));
+	if (rc > 0) {
+		/* item was found, show it */
+		printk("Id: %d, Longarray: ", LONG_ID);
+		for (int n = 0; n < sizeof(longarray); n++) {
+			printk("%x ", longarray[n]);
+		}
+		printk("\n");
+	} else   {
+		/* entry was not found, add it if reboot_counter = 0*/
+		if (reboot_counter == 0) {
+			printk("Longarray not found, adding it as id %d\n",
+			       STRING_ID);
+			for (int n = 0; n < sizeof(longarray); n++) {
+				longarray[n] = n;
+			}
+			nvs_write(&fs, LONG_ID, &longarray, sizeof(longarray));
+		}
+	}
+
+
 
 	cnt = 5;
 	while (1) {
@@ -178,9 +201,10 @@ void main(void)
 					cnt_his++;
 				}
 				if (cnt_his == 0) {
-					printk("Error, no Reboot counter\n");
+					printk("\n Error, no Reboot counter");
 				} else {
-					printk("\n");
+					printk("\nOldest reboot counter: %d",
+					       reboot_counter_his);
 				}
 				printk("\nRebooting in ");
 			}
