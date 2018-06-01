@@ -20,7 +20,7 @@
 
 static struct net_if_timestamp_cb sync_timestamp_cb;
 static struct net_if_timestamp_cb pdelay_response_timestamp_cb;
-static bool ts_cb_registered;
+static struct net_pkt *ts_cb_registered_for;
 static bool sync_cb_registered;
 
 static const struct net_eth_addr gptp_multicast_eth_addr = {
@@ -107,7 +107,7 @@ static void gptp_pdelay_response_timestamp_callback(struct net_pkt *pkt)
 		}
 
 		net_if_unregister_timestamp_cb(&pdelay_response_timestamp_cb);
-		ts_cb_registered = false;
+		ts_cb_registered_for = NULL;
 
 		gptp_send_pdelay_follow_up(port, follow_up,
 					   net_pkt_timestamp(pkt));
@@ -680,9 +680,12 @@ void gptp_handle_pdelay_req(int port, struct net_pkt *pkt)
 
 	GPTP_STATS_INC(port, rx_pdelay_req_count);
 
-	if (ts_cb_registered) {
+	if (ts_cb_registered_for != NULL) {
 		NET_WARN("Multiple pdelay requests");
-		return;
+		net_if_unregister_timestamp_cb(&pdelay_response_timestamp_cb);
+
+		net_pkt_unref(ts_cb_registered_for);
+		ts_cb_registered_for = NULL;
 	}
 
 	/* Prepare response and send */
@@ -695,7 +698,7 @@ void gptp_handle_pdelay_req(int port, struct net_pkt *pkt)
 				     net_pkt_iface(pkt),
 				     gptp_pdelay_response_timestamp_callback);
 
-	ts_cb_registered = true;
+	ts_cb_registered_for = reply;
 
 	/* TS thread will send this back to us so increment ref count so that
 	 * the packet is not removed when sending it. This will be unref'ed by
