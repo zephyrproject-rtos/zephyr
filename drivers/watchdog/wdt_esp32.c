@@ -228,7 +228,7 @@ static const struct wdt_driver_api wdt_api = {
 	.reload = wdt_esp32_reload
 };
 
-DEVICE_AND_API_INIT(wdt_esp32, CONFIG_WDT_ESP32_DEVICE_NAME, wdt_esp32_init,
+DEVICE_AND_API_INIT(wdt_esp32, CONFIG_WDT_0_NAME, wdt_esp32_init,
 		    &shared_data, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &wdt_api);

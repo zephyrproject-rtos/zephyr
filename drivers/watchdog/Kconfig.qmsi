@@ -14,13 +14,6 @@ config WDT_QMSI
 	  This driver is simply a shim driver based on the watchdog
 	  driver provided by the QMSI BSP.
 
-config WDT_0_NAME
-	string "Watchdog driver instance name"
-	default "WATCHDOG_0"
-	depends on WDT_QMSI
-	help
-	  Watchdog driver instance name
-
 config WDT_0_IRQ_PRI
 	int "Interrupt priority"
 	depends on WDT_QMSI

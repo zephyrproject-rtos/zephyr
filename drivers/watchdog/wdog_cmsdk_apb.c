@@ -202,7 +202,7 @@ static int wdog_cmsdk_apb_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(wdog_cmsdk_apb, CONFIG_WDOG_CMSDK_APB_DEVICE_NAME,
+DEVICE_AND_API_INIT(wdog_cmsdk_apb, CONFIG_WDT_0_NAME,
 		    wdog_cmsdk_apb_init,
 		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
