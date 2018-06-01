@@ -82,7 +82,6 @@ void main(void)
 
 		gpio_pin_read(gpiob, PIN, &val);
 
-		printk("\n\rButton Value -> %d\n\r", val);
 		k_sleep(SLEEP_TIME);
 	}
 }
