@@ -33,7 +33,16 @@ static void tdata_dump_callback(const struct k_thread *thread, void *user_data)
 /*power hook functions*/
 int _sys_soc_suspend(s32_t ticks)
 {
-	k_thread_foreach(tdata_dump_callback, NULL);
+	static bool test_flag;
+
+	/* Call k_thread_foreach only once otherwise it will
+	 * flood the console with stack dumps.
+	 */
+	if (!test_flag) {
+		k_thread_foreach(tdata_dump_callback, NULL);
+		test_flag = true;
+	}
+
 	return 0;
 }
 
@@ -88,13 +97,8 @@ static void thread_callback(const struct k_thread *thread, void *user_data)
 		thread_flag = true;
 	}
 
-	if (((char *)thread->stack_info.start ==
-			K_THREAD_STACK_BUFFER(test_stack)) &&
-#if defined(CONFIG_USERSPACE) && defined(CONFIG_ARC)
-			(thread->stack_info.size >= STACKSIZE)) {
-#else
-			(thread->stack_info.size == STACKSIZE)) {
-#endif
+	if ((char *)thread->stack_info.start ==
+			K_THREAD_STACK_BUFFER(test_stack)) {
 		TC_PRINT("%s: Newly added thread stack found\n", str);
 		TC_PRINT("%s: stack:%p, size:%u\n", str,
 					(char *)thread->stack_info.start,
