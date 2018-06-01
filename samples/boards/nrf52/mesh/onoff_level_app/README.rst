@@ -7,8 +7,8 @@ Overview
 ********
 
 This is a simple application demonstrating a Bluetooth mesh node.
-Root element has a Generic On Off Server, Generic On Off Client,
-Generic Level Server, Generic Level Client models.
+
+Root element has Generic OnOff Server, Generic OnOff Client, Generic Level Server, Generic Level Client models.
 
 Prior to provisioning, an unprovisioned beacon is broadcast that contains
 a unique UUID. It is obtained from the device address set by Nordic in the
@@ -20,7 +20,7 @@ Association of Models with h/w (in case of nRF52840-PDK board)
 
 LED1 is associated with Gen. OnOFF Server
 
-Button1 & Button2 are associated with Gen. OnOFF Client [Button1 : ON & Button 2: OFF]
+Button1 & Button2 are associated with Gen. OnOff Client [Button1 : ON & Button 2: OFF]
 
 LED1 is associated with Gen. Level Server [if (Level < 50) LED3: OFF ...if (Level >= 50) LED3: ON]
 

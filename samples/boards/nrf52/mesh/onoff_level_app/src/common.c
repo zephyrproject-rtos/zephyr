@@ -13,18 +13,11 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb, uint32_
 
 void gpio_init(void)
 {
-	static struct gpio_callback button_cb[4];
-
-#ifdef corvi_mesh
-
-	pwm_init(13, 14);
-
-#endif  
+	static struct gpio_callback button_cb[4]; 
 
         //NRF_P0->DIR |= 0x0001E000;
 	//NRF_P0->OUT |= 0x0001E000;
 
-	
 	led_device[0] = device_get_binding(LED0_GPIO_PORT);
 	gpio_pin_configure(led_device[0], LED0_GPIO_PIN, GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
 	gpio_pin_write(led_device[0], LED0_GPIO_PIN, 1);
