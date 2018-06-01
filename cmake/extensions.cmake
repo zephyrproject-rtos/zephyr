@@ -384,6 +384,8 @@ function(target_sources_codegen
   # Get all the files that make up codegen for dependency
   file(GLOB CODEGEN_SOURCES
     ${ZEPHYR_BASE}/scripts/dts/edtsdatabase.py
+    ${ZEPHYR_BASE}/scripts/codegen/modules/*.py
+    ${ZEPHYR_BASE}/scripts/codegen/templates/drivers/*.py
     ${ZEPHYR_BASE}/scripts/codegen/*.py
     ${ZEPHYR_BASE}/scripts/gen_code.py)
 
