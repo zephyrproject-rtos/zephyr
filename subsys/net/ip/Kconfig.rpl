@@ -232,7 +232,6 @@ config	NET_RPL_PREFERENCE
 config	NET_RPL_GROUNDED
 	bool "DAG grounded default value"
 	depends on NET_RPL
-	default false
 	help
 	  A grounded DODAG offers connectivity to hosts that are
 	  required for satisfying the application-defined goal.  A floating
