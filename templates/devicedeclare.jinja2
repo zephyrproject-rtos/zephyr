@@ -1,0 +1,99 @@
+{# Copyright (c) 2018 Nordic Semiconductor ASA #}
+{# Copyright (c) 2018 Bobby Noelte #}
+{# SPDX-License-Identifier: Apache-2.0         #}
+
+{%- macro get_param(params, param) -%}
+	{%- for key, value in params.items() -%}
+		{%- if key == param -%}
+			{{ value }}
+			{%- break -%}
+		{%- else -%}
+                        {{'None' if loop.last }}
+		{%- endif -%}
+	{%- endfor -%}
+{%- endmacro %}
+
+{%- macro gen_device_name(device) -%}
+	{%- set name = device.get_property('compatible/0')|replace(',','_')|replace('-','_') -%}
+	{{ name + "_%x"|format(device.select_property('reg', 'FIRST', 'address', 'FIRST')) }}
+{%- endmacro -%}
+
+{%- macro gen_irq_connect(device, params) -%}
+{% for irq_name in device.get_property('interrupts') %}
+	IRQ_CONNECT({{ device.select_property('interrupts', irq_name, 'irq') }}, \
+		    {{ device.select_property('interrupts', irq_name, 'priority') }}, \
+		    {{ params.irq_func }}_{{ irq_name  }}, \
+		    DEVICE_GET({{ gen_device_name(device) }}), \
+		    0);
+	irq_enable({{ device.select_property('interrupts', irq_name, 'irq') }});
+{% endfor %}
+{%- endmacro -%}
+
+{# Input parameters
+	data               The data variable in the main template is not automatically carried over to this macro
+	compatibles        Tell the macro which compatibels in the dts data to look for
+	params             Is a list of parameters that this macro needs to render the code
+	init_priority_flag Defaults to the value "CONFIG_KERNEL_INIT_PRIORITY_DEVICE" if omitted
+	kernel_levels      Defaults to the value "POST_KERNEL" if omitted
+	#}
+{%- macro device(data, compatibles, params, init_priority_flag='CONFIG_KERNEL_INIT_PRIORITY_DEVICE', kernel_level='POST_KERNEL') -%}
+
+{# Will iterate through the compatibles list and look for device in dts data that
+   has the same compatibles string #}
+{%- for compa in compatibles -%}
+
+{# Will copy the device reference in the compatibles lookup table in to a variable #}
+{%- for device_id in codegen.edts().get_device_ids_by_compatible(compa) -%}
+
+{# Create a variable pointing to the devicetree metadata for the current intance #}
+{%- set device = codegen.edts().get_device_by_device_id(device_id)  %}
+
+{# Create some helper variable for information used multiple times,
+   can also  be used by overloaded blocks #}
+{%- set gen_variables = {'device_name'              : gen_device_name(device),
+                         'config_struct_name'       : gen_device_name(device) + "_config",
+                         'data_struct_name'         : gen_device_name(device) + "_data",
+                         'irq_config_function_name' : gen_device_name(device) + "_config_irq",
+                         'device_label'             : device.get_property('label')} -%}
+
+
+#ifdef CONFIG_{{ gen_variables.device_label }}
+#ifdef {{ params.irq_flag }}
+
+DEVICE_DECLARE({{ gen_variables.device_name }});
+static void {{ gen_variables.irq_config_function_name }}(struct device *dev)
+{
+{{ gen_irq_connect(device, params) }}
+}
+
+#endif
+
+{% if get_param(params, 'config_struct') != "None" -%}
+static const struct {{ params.config_struct }} {{ gen_variables.config_struct_name }} = {
+{{ codegen.render(params.config_struct_body, {'device':device, 'params':params, 'gen_variables':gen_variables }) }}
+};
+{%- endif %}
+
+{% if get_param(params, 'data_struct') != "None" -%}
+static struct {{ params.data_struct }} {{ gen_variables.data_struct_name }} = {
+{%- if get_param(params, 'data_struct_body') != "None" -%}
+{{ codegen.render(params.data_struct_body, {'device':device, 'params':params, 'gen_variables':gen_variables }) }}
+{%- endif -%}
+};
+{%- endif %}
+
+DEVICE_AND_API_INIT({{ gen_variables.device_name }}, \
+                    "{{ gen_variables.device_label }}", \
+                    &{{ params['init_function'] }}, \
+                    {{'NULL' if get_param(params, 'data_struct') == 'None' else '&'+gen_variables.data_struct_name }}, \
+                    {{'NULL' if get_param(params, 'config_struct') == 'None' else '&'+gen_variables.config_struct_name }}, \
+                    {{ kernel_level }}, \
+                    {{ init_priority_flag }}, \
+                    &{{ params['api_struct'] }});
+
+#endif /* CONFIG_{{ gen_variables.device_label }} */
+{%- endfor -%}
+
+{%- endfor -%}
+
+{% endmacro %}
