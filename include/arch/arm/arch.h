@@ -369,7 +369,7 @@ static inline u32_t _arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
 			   "r" (r4), "r" (r5), "r" (r6)
-			 : "r7", "memory");
+			 : "r8", "memory");
 
 	return ret;
 }
@@ -389,7 +389,7 @@ static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
 			   "r" (r4), "r" (r6)
-			 : "r7", "memory");
+			 : "r8", "memory");
 
 	return ret;
 }
@@ -408,7 +408,7 @@ static inline u32_t _arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
 			   "r" (r6)
-			 : "r7", "memory");
+			 : "r8", "memory");
 
 	return ret;
 }
@@ -425,7 +425,7 @@ static inline u32_t _arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r2), "r" (r6)
-			 : "r7", "memory", "r3");
+			 : "r8", "memory", "r3");
 
 	return ret;
 }
@@ -440,7 +440,7 @@ static inline u32_t _arch_syscall_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r1), "r" (r6)
-			 : "r7", "memory", "r2", "r3");
+			 : "r8", "memory", "r2", "r3");
 
 	return ret;
 }
@@ -454,7 +454,7 @@ static inline u32_t _arch_syscall_invoke1(u32_t arg1, u32_t call_id)
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r6)
-			 : "r7", "memory", "r1", "r2", "r3");
+			 : "r8", "memory", "r1", "r2", "r3");
 	return ret;
 }
 
@@ -467,7 +467,7 @@ static inline u32_t _arch_syscall_invoke0(u32_t call_id)
 			 : "=r"(ret)
 			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
 			   "r" (ret), "r" (r6)
-			 : "r7", "memory", "r1", "r2", "r3");
+			 : "r8", "memory", "r1", "r2", "r3");
 
 	return ret;
 }
