@@ -233,10 +233,18 @@ static int dw_dma_config(struct device *dev, u32_t channel,
 		cnt--;
 	} while (cfg_blocks && cnt);
 
-	/* Cyclic buffer not supported */
-	lli_desc_tail->llp = 0x0;
-	lli_desc_tail->ctrl_lo &=
-		~(DW_CTLL_LLP_S_EN | DW_CTLL_LLP_D_EN);
+	/* check if application requests circular list */
+	if (cfg_blocks) {
+		/*
+		 * if the last block was pointing to another block, then
+		 * it means the application is requesting a circular list
+		 */
+		lli_desc_tail->llp = (u32_t)chan_data->lli;
+	} else {
+		lli_desc_tail->llp = 0x0;
+		lli_desc_tail->ctrl_lo &=
+			~(DW_CTLL_LLP_S_EN | DW_CTLL_LLP_D_EN);
+	}
 
 #ifdef CONFIG_DCACHE_WRITEBACK
 	/* Flush the cache so that the descriptors are written to the memory.
