@@ -15,9 +15,9 @@ a unique UUID. It is obtained from the device address set by Nordic in the
 FICR. Each button controls the state of its
 corresponding LED and does not initiate any mesh activity.
 
-In case of nRF52840-PDK Board,
+Association of Models with h/w (in case of nRF52840-PDK board)
+**************************************************************
 
-Association of Models with h/w::
 -- LED1 is associated with Gen. OnOFF Server
 -- Button1 & Button2 are associated with Gen. OnOFF Client [Button1 : ON & Button 2: OFF]
 -- LED1 is associated with Gen. Level Server [if (Level < 50) LED3: OFF ...if (Level >= 50) LED3: ON]
