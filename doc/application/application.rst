@@ -146,11 +146,11 @@ configure the Zephyr build system:
   application's :file:`CMakeLists.txt` file, or in the ``cmake`` command line.
 
 * :makevar:`CONF_FILE`: Indicates the name of one or more configuration
-  fragment files.  Multiple filenames are separated by a single space.  Each
-  file includes Kconfig configuration values that override the default
-  configuration values.  Like :makevar:`BOARD`, this can also be defined in the
-  environment, in your application's :file:`CMakeLists.txt` file, or in the
-  ``cmake`` command line.
+  fragment files.  Multiple filenames can either be separated by a single space
+  or a single semicolon.  Each file includes Kconfig configuration values that
+  override the default configuration values.  Like :makevar:`BOARD`, this can
+  also be defined in the environment, in your application's
+  :file:`CMakeLists.txt` file, or in the ``cmake`` command line.
 
 * :makevar:`DTC_OVERLAY_FILE`: Indicates the name of one or more Device Tree
   overlay files.  Each file includes Device Tree values that
@@ -763,7 +763,15 @@ Make sure to follow these steps in order.
    the usual :file:`prj.conf` (or :file:`prj_YOUR_BOARD.conf`, where
    ``YOUR_BOARD`` is a board name), add lines setting the
    :makevar:`CONF_FILE` variable to these files appropriately.
-   If multiple filenames are given, separate them by a single space.
+   If multiple filenames are given, separate them by a single space or
+   semicolon.  CMake lists can be used to build up configuration fragment
+   files in a modular way when you want to avoid setting :makevar:`CONF_FILE`
+   in a single place. For example:
+
+   .. code-block:: cmake
+
+     set(CONF_FILE "fragment_file1.conf")
+     list(APPEND CONF_FILE "fragment_file2.conf")
 
    More details are available below in :ref:`application_kconfig`.
 
