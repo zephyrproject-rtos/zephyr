@@ -497,9 +497,15 @@ typedef struct _thread_base _thread_base_t;
 #if defined(CONFIG_THREAD_STACK_INFO)
 /* Contains the stack information of a thread */
 struct _thread_stack_info {
-	/* Stack Start */
+	/* Stack Start - Identical to K_THREAD_STACK_BUFFER() on the stack
+	 * object. Represents thread-writable stack area without any extras.
+	 */
 	u32_t start;
-	/* Stack Size */
+
+	/* Stack Size - Thread writable stack buffer size. Represents
+	 * the size of the actual area, starting from the start member,
+	 * that should be writable by the thread
+	 */
 	u32_t size;
 };
 
