@@ -385,6 +385,8 @@ function(target_sources_codegen
   file(GLOB CODEGEN_SOURCES
     ${ZEPHYR_BASE}/scripts/dts/edtsdevice.py
     ${ZEPHYR_BASE}/scripts/dts/edtsdatabase.py
+    ${ZEPHYR_BASE}/scripts/codegen/modules/*.py
+    ${ZEPHYR_BASE}/scripts/codegen/templates/drivers/*.py
     ${ZEPHYR_BASE}/scripts/codegen/*.py
     ${ZEPHYR_BASE}/scripts/gen_code.py)
 
