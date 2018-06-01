@@ -104,11 +104,7 @@ SECTION_FUNC(TEXT, __swap)
 
 	/* entering here, r2 contains the new current thread */
 #ifdef CONFIG_ARC_STACK_CHECKING
-	/* Use stack top and base registers from restored context */
-	ld r3, [r2, _thread_offset_to_stack_base]
-	sr r3, [_ARC_V2_KSTACK_BASE]
-	ld r3, [r2, _thread_offset_to_stack_top]
-	sr r3, [_ARC_V2_KSTACK_TOP]
+	_load_stack_check_regs
 #endif
 	/* XXX - can be moved to delay slot of _CAUSE_RIRQ ? */
 	st_s r2, [r1, _kernel_offset_to_current]
