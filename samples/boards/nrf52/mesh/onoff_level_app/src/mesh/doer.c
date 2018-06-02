@@ -3,9 +3,7 @@
 void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf, uint16_t opcode)
 {
 	int err = 0;
-
 	int8_t tmp8;
-	
 	int16_t tmp16;
 
 	struct net_buf_simple *msg;
