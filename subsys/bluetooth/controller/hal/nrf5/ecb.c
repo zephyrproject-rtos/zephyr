@@ -7,9 +7,6 @@
 
 #include <string.h>
 #include <soc.h>
-#if !defined(CONFIG_ARCH_POSIX)
-#include <arch/arm/cortex_m/cmsis.h>
-#endif
 
 #include "util/mem.h"
 #include "hal/ecb.h"

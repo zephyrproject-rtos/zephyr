@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <soc.h>
-#if !defined(CONFIG_ARCH_POSIX)
-#include <arch/arm/cortex_m/cmsis.h>
-#endif
 
 #include "util/mem.h"
 #include "hal/ccm.h"
