@@ -15,8 +15,7 @@
  */
 int clock_gettime(clockid_t clock_id, struct timespec *ts)
 {
-	s64_t elapsed_msecs, elapsed_secs;
-	s64_t elapsed_nsec, elapsed_cycles;
+	u64_t elapsed_msecs;
 
 	if (clock_id != CLOCK_MONOTONIC) {
 		errno = EINVAL;
@@ -24,14 +23,9 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts)
 	}
 
 	elapsed_msecs = k_uptime_get();
-	elapsed_secs = elapsed_msecs / MSEC_PER_SEC;
+	ts->tv_sec = (s32_t) (elapsed_msecs / MSEC_PER_SEC);
+	ts->tv_nsec = (s32_t) ((elapsed_msecs % MSEC_PER_SEC) *
+					USEC_PER_MSEC * NSEC_PER_USEC);
 
-	elapsed_cycles = (s64_t) (k_cycle_get_32() %
-				  sys_clock_hw_cycles_per_sec);
-	elapsed_nsec = (s64_t) ((elapsed_cycles * NSEC_PER_SEC) /
-				sys_clock_hw_cycles_per_sec);
-
-	ts->tv_sec = (s32_t) elapsed_secs;
-	ts->tv_nsec = (s32_t) elapsed_nsec;
 	return 0;
 }
