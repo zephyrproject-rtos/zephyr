@@ -25,15 +25,15 @@ Associations of Models with hardware
 
 For the nRF52840-PDK board, these are the model associations:
 
-* LED1 is associated with generic OnOff Server
-* Button1 and Button2 are associated with generic OnOff Client: 
+* LED1 is associated with Generic OnOff Server
+* Button1 and Button2 are associated with Generic OnOff Client: 
 
   * [Button1 : ON]
   * [Button2: OFF]
-* LED3 is associated with generic Level Server:
+* LED3 is associated with Generic Level Server:
 
   * [if (Level < 50) LED3: OFF else LED3: ON]
-* Button3 and Button4 are associated with generic Level Client: 
+* Button3 and Button4 are associated with Generic Level Client: 
 
   * [Button3: publishes Level = 25]
   * [Button4: publishes Level = 100]
@@ -41,8 +41,9 @@ For the nRF52840-PDK board, these are the model associations:
 After provisioning, the button clients must
 be configured to publish and the LED servers to subscribe.
 
-If a LED server is provided with a publish address, it will
-also publish its status on an onoff state change.
+If a LED1 server is provided with a publish address, it will
+also publish its status on an onoff state change. Same is valid 
+for LED3 Level server.
 
 Requirements
 ************
