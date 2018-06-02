@@ -16,11 +16,22 @@
 #define BLK_SIZE1 8
 #define BLK_SIZE2 4
 
-K_MEM_SLAB_DEFINE(mslab1, BLK_SIZE1, BLK_NUM * THREAD_NUM, BLK_ALIGN);
+/* Blocks per slab.  Note this number carefully, because if it is
+ * smaller than this the test can deadlock.  There are 4 threads
+ * allocating 3 blocks each, so it's possible in exhaustion situations
+ * for all four threads to have already allocated 2 blocks, with three
+ * of them having gone to sleep waiting on a fourth.  There must
+ * remain at least one free block for that final allocation, otherwise
+ * all four threads will end up sleeping forever (or until the
+ * allocation timeout hits and the test fails).
+ */
+#define SLAB_BLOCKS (THREAD_NUM * (BLK_NUM - 1) + 1)
+
+K_MEM_SLAB_DEFINE(mslab1, BLK_SIZE1, SLAB_BLOCKS, BLK_ALIGN);
 static struct k_mem_slab mslab2, *slabs[SLAB_NUM] = { &mslab1, &mslab2 };
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREAD_NUM, STACK_SIZE);
 static struct k_thread tdata[THREAD_NUM];
-static char __aligned(BLK_ALIGN) tslab[BLK_SIZE2 * BLK_NUM];
+static char __aligned(BLK_ALIGN) tslab[BLK_SIZE2 * SLAB_BLOCKS];
 static struct k_sem sync_sema;
 static atomic_t slab_id;
 
@@ -61,7 +72,7 @@ void test_mslab_threadsafe(void)
 {
 	k_tid_t tid[THREAD_NUM];
 
-	k_mem_slab_init(&mslab2, tslab, BLK_SIZE2, BLK_NUM);
+	k_mem_slab_init(&mslab2, tslab, BLK_SIZE2, SLAB_BLOCKS);
 	k_sem_init(&sync_sema, 0, THREAD_NUM);
 
 	/* create multiple threads to invoke same memory slab APIs*/
