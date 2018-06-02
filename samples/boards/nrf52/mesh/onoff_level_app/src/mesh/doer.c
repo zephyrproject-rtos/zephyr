@@ -96,12 +96,17 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 
 			msg = model->pub->msg;
 
-			state_ptr->current = net_buf_simple_pull_le16(buf);
+			tmp16 = net_buf_simple_pull_le16(buf);
+			
+			if(tmp16 < 0 || tmp16 > 100)
+			{
+				return;
+			}
+
+			state_ptr->current = tmp16;
 
 			if(state_ptr->previous != state_ptr->current) 
 			{
-				state_ptr->previous = state_ptr->current;
-				
 				if(state_ptr->current < 50)
 				{	
 					gpio_pin_write(led_device[2], LED2_GPIO_PIN, 0);	//LED3 On
@@ -126,6 +131,8 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 						printk("bt_mesh_model_publish err %d", err);
 					}
 				}
+
+				state_ptr->previous = state_ptr->current;
 			}		
 	
 		break;
@@ -139,9 +146,18 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 
 		case 0x820A:	//GEN_DELTA_SRV_UNACK
 		
-			state_ptr->current += net_buf_simple_pull_le16(buf);
+			tmp16 = state_ptr->current + net_buf_simple_pull_le16(buf);
 
-			state_ptr->previous = state_ptr->current;
+			if(tmp16 < 0)
+			{
+				tmp16 = 0;
+			}
+			else if(tmp16 > 100)
+			{
+				tmp16 = 100;
+			}
+	
+			state_ptr->current = tmp16;
 
 			if(state_ptr->current < 50)
 			{	
@@ -153,6 +169,8 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 				gpio_pin_write(led_device[2], LED2_GPIO_PIN, 1);	//LED3 Off
 				gpio_pin_write(led_device[3], LED3_GPIO_PIN, 0);	//LED4 On
 			}
+
+			state_ptr->previous = state_ptr->current;
 			
 		break;
 
