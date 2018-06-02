@@ -98,9 +98,13 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 
 			tmp16 = net_buf_simple_pull_le16(buf);
 			
-			if(tmp16 < 0 || tmp16 > 100)
+			if(tmp16 < 0)
 			{
-				return;
+				tmp16 = 0;
+			}
+			else if(tmp16 > 100)
+			{
+				tmp16 = 100;
 			}
 
 			state_ptr->current = tmp16;
