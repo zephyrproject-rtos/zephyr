@@ -8,11 +8,12 @@ Overview
 
 This is a simple application demonstrating a Bluetooth mesh node.
 
-The node's root element has 
-* Generic OnOff Server
-* Generic OnOff Client 
-* Generic Level Server
-* Generic Level Client models.
+The node's root element has:
+
+*  Generic OnOff Server
+*  Generic OnOff Client 
+*  Generic Level Server
+*  Generic Level Client models
 
 Prior to provisioning, an unprovisioned beacon is broadcast that contains
 a unique UUID. It is obtained from the device address set by Nordic in the Factory 
