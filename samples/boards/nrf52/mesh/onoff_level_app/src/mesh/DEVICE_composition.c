@@ -138,7 +138,7 @@ void gen_onoff_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, str
 
 void gen_onoff_set_unack(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 {	
-	doer(model, ctx, buf,0x8203);
+	doer(model, ctx, buf, 0x8203);
 }
 
 void gen_onoff_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
@@ -175,7 +175,7 @@ void gen_level_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, str
 
 void gen_delta_set_unack(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 {
-	doer(model, ctx, buf,0x820A);
+	doer(model, ctx, buf, 0x820A);
 }
 
 void gen_delta_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
@@ -186,7 +186,7 @@ void gen_delta_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, str
 
 void gen_move_set_unack(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 {
-	doer(model, ctx, buf,0x820C);
+	doer(model, ctx, buf, 0x820C);
 }
 
 void gen_move_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)

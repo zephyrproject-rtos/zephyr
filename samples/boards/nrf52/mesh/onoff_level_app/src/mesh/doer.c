@@ -73,7 +73,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 
 			tmp8 = net_buf_simple_pull_u8(buf);
 
-			printk("Acknownledgement from GEN_ONOFF_SRV = %u\n\r",tmp8);
+			printk("Acknownledgement from GEN_ONOFF_SRV = %u\n\r", tmp8);
 
 		break;
 
@@ -143,6 +143,17 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 		case 0x820A:	//GEN_DELTA_SRV_UNACK
 		
 			state_ptr->current += net_buf_simple_pull_le16(buf);
+
+			if(state_ptr->current < 50)
+			{	
+				gpio_pin_write(led_device[2], LED2_GPIO_PIN, 0);	//LED3 On
+				gpio_pin_write(led_device[3], LED3_GPIO_PIN, 1);	//LED4 Off
+			}
+			else
+			{
+				gpio_pin_write(led_device[2], LED2_GPIO_PIN, 1);	//LED3 Off
+				gpio_pin_write(led_device[3], LED3_GPIO_PIN, 0);	//LED4 On
+			}
 			
 		break;
 
