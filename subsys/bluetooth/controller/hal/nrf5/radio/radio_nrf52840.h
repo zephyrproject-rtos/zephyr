@@ -449,6 +449,11 @@ static inline u32_t hal_radio_phy_mode_get(u8_t phy, u8_t flags)
 	return mode;
 }
 
+static inline u32_t hal_radio_tx_power_max_get(void)
+{
+	return RADIO_TXPOWER_TXPOWER_Pos8dBm;
+}
+
 static inline u32_t hal_radio_tx_ready_delay_us_get(u8_t phy, u8_t flags)
 {
 	switch (phy) {

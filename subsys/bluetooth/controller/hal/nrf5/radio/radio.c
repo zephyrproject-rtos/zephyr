@@ -112,6 +112,11 @@ void radio_tx_power_set(u32_t power)
 	NRF_RADIO->TXPOWER = power;
 }
 
+void radio_tx_power_max_set(void)
+{
+	NRF_RADIO->TXPOWER = hal_radio_tx_power_max_get();
+}
+
 void radio_freq_chan_set(u32_t chan)
 {
 	NRF_RADIO->FREQUENCY = chan;
