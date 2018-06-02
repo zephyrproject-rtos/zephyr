@@ -8,7 +8,6 @@
 #include <clock_control.h>
 #include <system_timer.h>
 #include <drivers/clock_control/nrf5_clock_control.h>
-#include <arch/arm/cortex_m/cmsis.h>
 #include <sys_clock.h>
 
 /*
