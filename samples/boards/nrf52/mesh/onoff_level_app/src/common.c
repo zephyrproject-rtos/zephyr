@@ -34,7 +34,6 @@ void gpio_init(void)
 	gpio_pin_configure(led_device[3], LED3_GPIO_PIN, GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
 	gpio_pin_write(led_device[3], LED3_GPIO_PIN, 1);
 	
-
 	//***************************************************************************
 
 	k_work_init(&button_work, publish);

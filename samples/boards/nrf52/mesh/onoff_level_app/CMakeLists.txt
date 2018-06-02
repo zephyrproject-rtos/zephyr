@@ -13,6 +13,7 @@ target_sources(app PRIVATE
                src/mesh/publisher.c 
                src/mesh/doer.c 
 	       )
+
 target_sources_ifdef(CONFIG_BOARD_BBC_MICROBIT app PRIVATE src/microbit.c)
 
 zephyr_include_directories(
