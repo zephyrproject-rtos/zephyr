@@ -17,6 +17,7 @@ void radio_setup(void);
 void radio_reset(void);
 void radio_phy_set(u8_t phy, u8_t flags);
 void radio_tx_power_set(u32_t power);
+void radio_tx_power_max_set(void);
 void radio_freq_chan_set(u32_t chan);
 void radio_whiten_iv_set(u32_t iv);
 void radio_aa_set(u8_t *aa);
