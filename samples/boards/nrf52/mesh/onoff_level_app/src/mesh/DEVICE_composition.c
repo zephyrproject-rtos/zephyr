@@ -46,10 +46,10 @@ BT_MESH_MODEL_PUB_DEFINE(gen_onoff_cli_pub_s0, NULL, 2 + 2);
 
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-struct server_state   gen_onoff_srv_user_data_root = {.data = 1,};
-struct server_state   gen_level_srv_user_data_root = {.data = 1,};
+struct server_state   gen_onoff_srv_user_data_root = {.model_instance = 1,};
+struct server_state   gen_level_srv_user_data_root = {.model_instance = 1,};
 
-struct server_state   gen_onoff_srv_user_data_s0 = {.data = 2,};
+struct server_state   gen_onoff_srv_user_data_s0 = {.model_instance = 2,};
 
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

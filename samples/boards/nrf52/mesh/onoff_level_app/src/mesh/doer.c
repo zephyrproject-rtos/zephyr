@@ -45,12 +45,12 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 			state_ptr->last_tid = tid;
 			state_ptr->current = tmp8;
 
-			if(state_ptr->data == 0x01)
+			if(state_ptr->model_instance == 0x01)
 			{
 				light_state_current.OnOff = state_ptr->current;
 				update_light_state();
 			}
-			else if(state_ptr->data == 0x02)
+			else if(state_ptr->model_instance == 0x02)
 			{		
 			}
 
@@ -111,7 +111,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 			state_ptr->last_tid = tid;
 			state_ptr->current = tmp16;
 
-			if(state_ptr->data == 0x01)
+			if(state_ptr->model_instance == 0x01)
 			{
 				light_state_current.power = state_ptr->current;
 				update_light_state();
@@ -167,7 +167,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 
 			state_ptr->current = (int16_t)tmp32;
 
-			if(state_ptr->data == 0x01)
+			if(state_ptr->model_instance == 0x01)
 			{
 				light_state_current.power = state_ptr->current;
 				update_light_state();

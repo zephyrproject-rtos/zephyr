@@ -7,7 +7,7 @@ struct server_state
 {
 	int16_t current;
 	int16_t previous;
-	int16_t data;
+	int16_t model_instance;
 	uint8_t last_tid;
 };
 
