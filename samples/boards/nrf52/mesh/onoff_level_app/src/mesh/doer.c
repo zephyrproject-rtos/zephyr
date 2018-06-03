@@ -51,7 +51,8 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 				update_light_state();
 			}
 			else if(state_ptr->model_instance == 0x02)
-			{		
+			{	
+				nvs_light_state_save();	
 			}
 
 			if(model->pub->addr != BT_MESH_ADDR_UNASSIGNED)

@@ -42,6 +42,33 @@ extern struct device *led_device[4];
 
 void gpio_init(void);
 
+//-------------------------------------------------------------------------------------------
+
+#include <nvs/nvs.h>
+
+#define NVS_LED_STATE_ID 1
+
+#define STORAGE_MAGIC 0x4d455348 /* hex for "MESH" */
+
+#define NVS_SECTOR_SIZE 1024 /* Multiple of FLASH_PAGE_SIZE */
+#define NVS_SECTOR_COUNT 2 /* At least 2 sectors */
+#define NVS_STORAGE_OFFSET (FLASH_AREA_STORAGE_OFFSET - 4096) /* Start address of the
+						      * filesystem in flash */
+#define NVS_MAX_ELEM_SIZE 256 /* Largest item that can be stored */
+
+extern struct nvs_fs fs;
+
+int NVS_read(uint16_t id, void *data_buffer, size_t len);
+int NVS_write(uint16_t id, void *data_buffer, size_t len);
+
+//-------------------------------------------------------------------------------------------
+
+#define LEVEL_0   -32768
+#define LEVEL_25  -16384
+#define LEVEL_50  0
+#define LEVEL_75  16384
+#define LEVEL_100 32767
+
 struct light_state_t 
 {
 	uint8_t OnOff;
@@ -52,6 +79,7 @@ struct light_state_t
 extern struct light_state_t light_state_current;
 
 void update_light_state(void);
+void nvs_light_state_save(void);
 
 //-------------------------------------------------------------------------------------------
 

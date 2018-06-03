@@ -1,5 +1,12 @@
 #include "common.h"
 
+struct nvs_fs fs = {
+	.sector_size = NVS_SECTOR_SIZE,
+	.sector_count = NVS_SECTOR_COUNT,
+	.offset = NVS_STORAGE_OFFSET,
+	.max_len = NVS_MAX_ELEM_SIZE,
+};
+
 struct device *led_device[4];
 
 struct device *button_device[4];
@@ -65,11 +72,49 @@ void gpio_init(void)
 	//***************************************************************************
 }
 
+int NVS_read(uint16_t id, void *data_buffer, size_t len)
+{
+	int ret = -1;
+	int rc;
+
+	if(nvs_read_hist(&fs, id, data_buffer, len, 0) ==  len)
+	{
+		printk("\n\r%d found\n\r", id);
+
+		rc = nvs_read(&fs, id, data_buffer, len);
+		if (rc > 0) 
+		{
+			ret = 0;
+		} 
+	}
+	else
+	{
+		printk("\n\r%d not found\n\r", id);
+	}
+
+	return ret;
+}
+
+int NVS_write(uint16_t id, void *data_buffer, size_t len)
+{
+	int ret = -1;
+
+	if(nvs_write(&fs, id, data_buffer, len) == len)
+	{	
+		ret = 0;
+	}
+
+	return ret;
+}
+
+
+
 struct light_state_t light_state_current;
 
 void update_light_state(void)
 {
-	int power_percent = ((uint16_t)light_state_current.power)/0xffff * 100;
+	int power = (light_state_current.power + 32768)/65535 * 100;
+	//int color = (light_state_current.color + 32768)/65535 * 100;
 
 	if(light_state_current.OnOff == 0x01)
 	{
@@ -79,8 +124,8 @@ void update_light_state(void)
 	{ 
 		gpio_pin_write(led_device[0], LED0_GPIO_PIN, 1);	//LED1 Off
 	}
-
-	if(power_percent < 50)
+	
+	if(power < 50)
 	{	
 		gpio_pin_write(led_device[2], LED2_GPIO_PIN, 0);	//LED3 On
 		gpio_pin_write(led_device[3], LED3_GPIO_PIN, 1);	//LED4 Off
@@ -89,5 +134,18 @@ void update_light_state(void)
 	{
 		gpio_pin_write(led_device[2], LED2_GPIO_PIN, 1);	//LED3 Off
 		gpio_pin_write(led_device[3], LED3_GPIO_PIN, 0);	//LED4 On
+	}
+
+}
+
+void nvs_light_state_save(void)
+{
+	if(NVS_write(NVS_LED_STATE_ID, &light_state_current, sizeof(struct light_state_t)) == 0)
+	{
+		printk("\n\rLight state has saved using NVS featue !!\n\r");
+	}
+	else
+	{
+		printk("\n\rLight state has not saved !!\n\r");
 	}
 }
