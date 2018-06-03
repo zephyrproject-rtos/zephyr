@@ -4,6 +4,10 @@ void main(void)
 {
 	int err;
 
+	#ifdef corvi_mesh
+		corvi_pcb_init();
+  	#endif
+
 	gpio_init();
 
 	printk("Initializing...\n");
@@ -15,5 +19,4 @@ void main(void)
 	{
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
-
 }

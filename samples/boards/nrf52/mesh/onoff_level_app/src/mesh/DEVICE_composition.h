@@ -11,6 +11,9 @@ struct server_state
 	uint8_t last_tid;
 };
 
+extern struct server_state   gen_onoff_srv_user_data_root;
+extern struct server_state   gen_level_srv_user_data_root;
+
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 extern struct bt_mesh_model root_models[];

@@ -42,4 +42,17 @@ extern struct device *led_device[4];
 
 void gpio_init(void);
 
+struct light_state_t 
+{
+	uint8_t OnOff;
+	int16_t power;
+	int16_t color;
+};
+
+extern struct light_state_t light_state_current;
+
+void update_light_state(void);
+
+//-------------------------------------------------------------------------------------------
+
 #endif

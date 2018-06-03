@@ -35,8 +35,12 @@ static const struct bt_mesh_prov prov =
 	.uuid = dev_uuid,
 
       #ifdef OOB_AUTH_ENABLE
+		
+	//.static_val = static_oob,
+	//.static_val_len = 16,
 
 	.output_size = 6,
+	//.output_actions = BT_MESH_BLINK | BT_MESH_BEEP | BT_MESH_VIBRATE | BT_MESH_DISPLAY_NUMBER | BT_MESH_DISPLAY_STRING,
 	.output_actions = BT_MESH_DISPLAY_NUMBER | BT_MESH_DISPLAY_STRING,
 	
 	.output_number = output_number,

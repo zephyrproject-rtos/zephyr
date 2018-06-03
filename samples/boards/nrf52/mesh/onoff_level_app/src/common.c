@@ -15,7 +15,7 @@ void gpio_init(void)
 {
 	static struct gpio_callback button_cb[4]; 
 
-        //NRF_P0->DIR |= 0x0001E000;
+	//NRF_P0->DIR |= 0x0001E000;
 	//NRF_P0->OUT |= 0x0001E000;
 
 	led_device[0] = device_get_binding(LED0_GPIO_PORT);
@@ -33,7 +33,7 @@ void gpio_init(void)
 	led_device[3] = device_get_binding(LED3_GPIO_PORT);
 	gpio_pin_configure(led_device[3], LED3_GPIO_PIN, GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
 	gpio_pin_write(led_device[3], LED3_GPIO_PIN, 1);
-	
+
 	//***************************************************************************
 
 	k_work_init(&button_work, publish);
@@ -63,4 +63,31 @@ void gpio_init(void)
 	gpio_pin_enable_callback(button_device[3], SW3_GPIO_PIN);
 	
 	//***************************************************************************
+}
+
+struct light_state_t light_state_current;
+
+void update_light_state(void)
+{
+	int power_percent = ((uint16_t)light_state_current.power)/0xffff * 100;
+
+	if(light_state_current.OnOff == 0x01)
+	{
+		gpio_pin_write(led_device[0], LED0_GPIO_PIN, 0);	//LED1 On
+	}
+	else
+	{ 
+		gpio_pin_write(led_device[0], LED0_GPIO_PIN, 1);	//LED1 Off
+	}
+
+	if(power_percent < 50)
+	{	
+		gpio_pin_write(led_device[2], LED2_GPIO_PIN, 0);	//LED3 On
+		gpio_pin_write(led_device[3], LED3_GPIO_PIN, 1);	//LED4 Off
+	}
+	else
+	{
+		gpio_pin_write(led_device[2], LED2_GPIO_PIN, 1);	//LED3 Off
+		gpio_pin_write(led_device[3], LED3_GPIO_PIN, 0);	//LED4 On
+	}
 }
