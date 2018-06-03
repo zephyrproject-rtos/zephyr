@@ -73,10 +73,18 @@ int do_lock;
 /* Command to worker: use irq_offload() to indirect the wakeup? */
 int do_irq;
 
+/* Command to worker: sleep after wakeup? */
+int do_sleep;
+
+/* Command to worker: yield after wakeup? */
+int do_yield;
+
 K_SEM_DEFINE(main_sem, 0, 1);
 
 void wakeup_src_thread(int id)
 {
+	zassert_true(k_current_get() == &manager_thread, "");
+
 	/* irq_offload() on ARM appears not to do what we want.  It
 	 * doesn't appear to go through the normal exception return
 	 * path and always returns back into the calling context, so
@@ -85,6 +93,8 @@ void wakeup_src_thread(int id)
 	if (do_irq && IS_ENABLED(CONFIG_ARM)) {
 		return;
 	}
+
+	last_thread = NULL;
 
 	/* A little bit of white-box inspection: check that all the
 	 * worker threads are pending.
@@ -96,8 +106,14 @@ void wakeup_src_thread(int id)
 			     "worker thread %d not pending?", i);
 	}
 
+	/* Wake the src worker up */
 	last_thread = NULL;
 	k_sem_give(&worker_sems[id]);
+
+	while (do_sleep
+	       && !(worker_threads[id].base.thread_state & _THREAD_PENDING)) {
+		/* spin, waiting on the sleep timeout */
+	}
 
 	/* We are lowest priority, SOMEONE must have run */
 	zassert_true(!!last_thread, "");
@@ -105,8 +121,6 @@ void wakeup_src_thread(int id)
 
 void manager(void *p1, void *p2, void *p3)
 {
-	zassert_true(k_current_get() == &manager_thread, "");
-
 	for (int src = 0; src < NUM_THREADS; src++) {
 		for (target = 0; target < NUM_THREADS; target++) {
 
@@ -116,6 +130,16 @@ void manager(void *p1, void *p2, void *p3)
 
 			for (do_lock = 0; do_lock < 2; do_lock++) {
 				for (do_irq = 0; do_irq < 2; do_irq++) {
+					do_yield = 0;
+					do_sleep = 0;
+					wakeup_src_thread(src);
+
+					do_yield = 1;
+					do_sleep = 0;
+					wakeup_src_thread(src);
+
+					do_yield = 0;
+					do_sleep = 1;
 					wakeup_src_thread(src);
 				}
 			}
@@ -139,6 +163,25 @@ void validate_wakeup(int src, int target, k_tid_t last_thread)
 	int src_wins = PRI(src) < PRI(target);
 	int target_wins = PRI(target) < PRI(src);
 	int tie = PRI(src) == PRI(target);
+
+	if (do_sleep) {
+		zassert_true(preempted, "sleeping must let any worker run");
+		return;
+	}
+
+	if (do_yield) {
+		if (preempted) {
+			zassert_false(src_wins,
+				      "src (pri %d) should not have yielded to tgt (%d)",
+				      PRI(src), PRI(target));
+		} else {
+			zassert_true(src_wins,
+				      "src (pri %d) should have yielded to tgt (%d)",
+				      PRI(src), PRI(target));
+		}
+
+		return;
+	}
 
 	if (preempted) {
 		zassert_true(target_wins, "preemption must raise priority");
@@ -226,6 +269,21 @@ void worker(void *p1, void *p2, void *p3)
 
 		if (do_lock) {
 			k_sched_unlock();
+		}
+
+		if (do_yield) {
+			k_yield();
+			prev = last_thread;
+		}
+
+		if (do_sleep) {
+			u64_t start = k_uptime_get();
+
+			k_sleep(1);
+
+			zassert_true(k_uptime_get() - start > 0,
+				     "didn't sleep");
+			prev = last_thread;
 		}
 
 		validate_wakeup(id, target, prev);
