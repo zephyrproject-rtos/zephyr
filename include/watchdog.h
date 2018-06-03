@@ -285,7 +285,10 @@ static inline int wdt_disable(struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  * @param cfg Pointer to timeout configuration structure.
  *
- * @retval 0 If successful.
+ * @retval channel_id If successful, a non-negative value indicating the index
+ *                    of the channel to which the timeout was assigned. This
+ *                    value is supposed to be used as the parameter in calls to
+ *                    wdt_feed().
  * @retval -EBUSY If timeout can not be installed while watchdog has already
  *		  been setup.
  * @retval -ENOMEM If no more timeouts can be installed.
