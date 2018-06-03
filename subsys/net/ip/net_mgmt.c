@@ -225,6 +225,7 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 static void mgmt_thread(void)
 {
 	struct mgmt_event_entry *mgmt_event;
+	struct mgmt_event_entry event;
 
 	while (1) {
 		k_sem_take(&network_event, K_FOREVER);
@@ -247,11 +248,22 @@ static void mgmt_thread(void)
 			continue;
 		}
 
-		mgmt_run_callbacks(mgmt_event);
+		event.event = mgmt_event->event;
+		event.iface = mgmt_event->iface;
+
+#ifdef CONFIG_NET_MGMT_EVENT_INFO
+		event.info_length = mgmt_event->info_length;
+		if (event.info_length) {
+			memcpy(event.info, mgmt_event->info,
+			       event.info_length);
+		}
+#endif /* CONFIG_NET_MGMT_EVENT_INFO */
 
 		mgmt_clean_event(mgmt_event);
 
 		k_sem_give(&net_mgmt_lock);
+
+		mgmt_run_callbacks(&event);
 
 		k_yield();
 	}
