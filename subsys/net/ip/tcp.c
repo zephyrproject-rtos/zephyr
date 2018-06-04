@@ -760,7 +760,7 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 
 const char *net_tcp_state_str(enum net_tcp_state state)
 {
-#if defined(CONFIG_NET_DEBUG_TCP)
+#if defined(CONFIG_NET_DEBUG_TCP) || defined(CONFIG_NET_SHELL)
 	switch (state) {
 	case NET_TCP_CLOSED:
 		return "CLOSED";
