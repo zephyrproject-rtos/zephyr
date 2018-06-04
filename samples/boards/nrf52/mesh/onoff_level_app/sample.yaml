@@ -1,0 +1,7 @@
+sample:
+  name: Bluetooth Mesh
+tests:
+  test:
+    harness: bluetooth
+    platform_whitelist: bbc_microbit nrf51_blenano qemu_x86
+    tags: bluetooth
