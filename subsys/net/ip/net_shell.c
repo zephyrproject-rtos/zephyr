@@ -1321,7 +1321,7 @@ int net_shell_cmd_conn(int argc, char *argv[])
 
 #if defined(CONFIG_NET_TCP)
 	printk("\nTCP        Context   Src port Dst port   Send-Seq   Send-Ack  MSS"
-	       "%s\n", IS_ENABLED(CONFIG_NET_DEBUG_TCP) ? "    State" : "");
+	       "    State\n");
 
 	count = 0;
 
@@ -1336,6 +1336,11 @@ int net_shell_cmd_conn(int argc, char *argv[])
 		net_tcp_foreach(tcp_sent_list_cb, &count);
 #endif /* CONFIG_NET_DEBUG_TCP */
 	}
+
+#if !defined(CONFIG_NET_DEBUG_TCP)
+	printk("\nEnable CONFIG_NET_DEBUG_TCP for additional info\n");
+#endif /* CONFIG_NET_DEBUG_TCP */
+
 #endif
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
