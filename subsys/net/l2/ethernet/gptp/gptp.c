@@ -536,7 +536,7 @@ static void gptp_thread(void)
 
 	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
 		gptp_init_port_ds(port);
-		GPTP_GLOBAL_DS()->selected_role[port] = GPTP_PORT_DISABLED;
+		gptp_change_port_state(port, GPTP_PORT_DISABLED);
 	}
 
 	while (1) {
