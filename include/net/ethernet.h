@@ -164,16 +164,32 @@ struct ethernet_context {
 	 * of network interfaces.
 	 */
 	ATOMIC_DEFINE(interfaces, NET_VLAN_MAX_COUNT);
+#endif
 
+	struct {
+		/** Carrier ON/OFF handler worker. This is used to create
+		 * network interface UP/DOWN event when ethernet L2 driver
+		 * notices carrier ON/OFF situation. We must not create another
+		 * network management event from inside management handler thus
+		 * we use worker thread to trigger the UP/DOWN event.
+		 */
+		struct k_work work;
+
+		/** Network interface that is detecting carrier ON/OFF event.
+		 */
+		struct net_if *iface;
+	} carrier_mgmt;
+
+#if defined(CONFIG_NET_VLAN)
 	/** Flag that tells whether how many VLAN tags are enabled for this
 	 * context. The same information can be dug from the vlan array but
 	 * this saves some time in RX path.
 	 */
 	s8_t vlan_enabled;
+#endif
 
 	/** Is this context already initialized */
 	bool is_init;
-#endif
 };
 
 #define ETHERNET_L2_CTX_TYPE	struct ethernet_context
@@ -375,6 +391,22 @@ struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
 					u32_t ptype,
 					u8_t *src,
 					u8_t *dst);
+
+/**
+ * @brief Inform ethernet L2 driver that ethernet carrier is detected.
+ * This happens when cable is connected.
+ *
+ * @param iface Network interface
+ */
+void net_eth_carrier_on(struct net_if *iface);
+
+/**
+ * @brief Inform ethernet L2 driver that ethernet carrier was lost.
+ * This happens when cable is disconnected.
+ *
+ * @param iface Network interface
+ */
+void net_eth_carrier_off(struct net_if *iface);
 
 #ifdef __cplusplus
 }

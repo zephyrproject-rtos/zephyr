@@ -12,7 +12,9 @@
 #include <net/net_core.h>
 #include <net/net_l2.h>
 #include <net/net_if.h>
+#include <net/net_mgmt.h>
 #include <net/ethernet.h>
+#include <net/ethernet_mgmt.h>
 #include <net/arp.h>
 
 #include "net_private.h"
@@ -746,17 +748,71 @@ int net_eth_vlan_disable(struct net_if *iface, u16_t tag)
 NET_L2_INIT(ETHERNET_L2, ethernet_recv, ethernet_send, ethernet_reserve,
 	    ethernet_enable);
 
+static void carrier_on(struct k_work *work)
+{
+	struct ethernet_context *ctx = CONTAINER_OF(work,
+						    struct ethernet_context,
+						    carrier_mgmt.work);
+
+	NET_DBG("Carrier ON for interface %p", ctx->carrier_mgmt.iface);
+
+	ethernet_mgmt_raise_carrier_on_event(ctx->carrier_mgmt.iface);
+
+	net_if_up(ctx->carrier_mgmt.iface);
+}
+
+static void carrier_off(struct k_work *work)
+{
+	struct ethernet_context *ctx = CONTAINER_OF(work,
+						    struct ethernet_context,
+						    carrier_mgmt.work);
+
+	NET_DBG("Carrier OFF for interface %p", ctx->carrier_mgmt.iface);
+
+	ethernet_mgmt_raise_carrier_off_event(ctx->carrier_mgmt.iface);
+
+	net_if_carrier_down(ctx->carrier_mgmt.iface);
+}
+
+static void handle_carrier(struct ethernet_context *ctx,
+			   struct net_if *iface,
+			   k_work_handler_t handler)
+{
+	k_work_init(&ctx->carrier_mgmt.work, handler);
+
+	ctx->carrier_mgmt.iface = iface;
+
+	k_work_submit(&ctx->carrier_mgmt.work);
+}
+
+void net_eth_carrier_on(struct net_if *iface)
+{
+	struct ethernet_context *ctx = net_if_l2_data(iface);
+
+	handle_carrier(ctx, iface, carrier_on);
+}
+
+void net_eth_carrier_off(struct net_if *iface)
+{
+	struct ethernet_context *ctx = net_if_l2_data(iface);
+
+	handle_carrier(ctx, iface, carrier_off);
+}
+
 void ethernet_init(struct net_if *iface)
 {
-#if defined(CONFIG_NET_VLAN)
 	struct ethernet_context *ctx = net_if_l2_data(iface);
-	int i;
 
+#if defined(CONFIG_NET_VLAN)
+	int i;
+#endif
+
+	NET_DBG("Initializing Ethernet L2 %p for iface %p", ctx, iface);
+
+#if defined(CONFIG_NET_VLAN)
 	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN)) {
 		return;
 	}
-
-	NET_DBG("Initializing Ethernet L2 %p for iface %p", ctx, iface);
 
 	for (i = 0; i < CONFIG_NET_VLAN_COUNT; i++) {
 		if (!ctx->vlan[i].iface) {
@@ -771,9 +827,7 @@ void ethernet_init(struct net_if *iface)
 			break;
 		}
 	}
+#endif
 
 	ctx->is_init = true;
-#else
-	ARG_UNUSED(iface);
-#endif
 }
