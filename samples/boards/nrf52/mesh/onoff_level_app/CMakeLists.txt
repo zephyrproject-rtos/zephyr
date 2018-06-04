@@ -12,8 +12,6 @@ target_sources(app PRIVATE
                src/mesh/DEVICE_composition.c 
                src/mesh/publisher.c 
                src/mesh/doer.c 
-	       src/pwm.c
-	       src/saadc.c
 	       )
 target_sources_ifdef(CONFIG_BOARD_BBC_MICROBIT app PRIVATE src/microbit.c)
 
