@@ -1,0 +1,42 @@
+
+uint8_t enable_adc_use = 0;    // global
+extern uint8_t enable_adc_use; //should define in common.h
+
+
+uint8_t last_adc = 0;
+uint8_t current_adc = 0;
+uint8_t tid_adc = 0;
+
+while(1)
+{
+	if(enable_adc_use == 1)
+	{
+		break;
+	}
+
+	k_sleep(50);
+}
+
+saadc_init();
+
+while(1)
+{
+	
+	current_adc = saadc_read();
+
+	if(current_adc != last_adc)
+	{
+		printk("\n\radc -> %d\n\r", current_adc);
+		
+		bt_mesh_model_msg_init(root_models[5].pub->msg,  BT_MESH_MODEL_OP_2(0x82, 0x07));
+		net_buf_simple_add_le16(root_models[5].pub->msg, current_adc);
+		net_buf_simple_add_u8(root_models[5].pub->msg, tid_adc++);
+		err = bt_mesh_model_publish(&root_models[5]);
+
+		last_adc = current_adc;
+	}
+
+	k_sleep(50);
+
+}
+

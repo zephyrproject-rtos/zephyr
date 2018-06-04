@@ -135,7 +135,6 @@ void update_light_state(void)
 		gpio_pin_write(led_device[2], LED2_GPIO_PIN, 1);	//LED3 Off
 		gpio_pin_write(led_device[3], LED3_GPIO_PIN, 0);	//LED4 On
 	}
-
 }
 
 void nvs_light_state_save(void)

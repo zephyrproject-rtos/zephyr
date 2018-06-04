@@ -20,7 +20,6 @@
 #include <bluetooth/mesh.h>
 #include <stdio.h>
 
-
 #include <board.h>
 
 #include "nrf52840.h"

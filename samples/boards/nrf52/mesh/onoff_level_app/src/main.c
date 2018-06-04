@@ -5,7 +5,7 @@ void main(void)
 	int err;
 
 	//*********************************************************************************
-
+	
   	int rc = 0;
 
 	rc = nvs_init(&fs, FLASH_DEV_NAME, STORAGE_MAGIC);

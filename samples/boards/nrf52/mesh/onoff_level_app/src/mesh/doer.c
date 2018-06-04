@@ -37,7 +37,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 			tmp8 = net_buf_simple_pull_u8(buf);
 			tid = net_buf_simple_pull_u8(buf);
 
-			if(state_ptr->last_tid == tid || state_ptr->previous == tmp8)
+			if(state_ptr->last_tid == tid)
 			{
 				return;		
 			}
@@ -55,7 +55,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 				nvs_light_state_save();	
 			}
 
-			if(model->pub->addr != BT_MESH_ADDR_UNASSIGNED)
+			if(model->pub->addr != BT_MESH_ADDR_UNASSIGNED && state_ptr->previous != state_ptr->current)
 			{
 
 				bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x04));
@@ -104,7 +104,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 			tmp16 = net_buf_simple_pull_le16(buf);
 			tid = net_buf_simple_pull_u8(buf);
 
-			if(state_ptr->last_tid == tid || state_ptr->previous == tmp16)
+			if(state_ptr->last_tid == tid)
 			{
 				return;		
 			}
@@ -118,7 +118,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 				update_light_state();
 			}
 
-			if(model->pub->addr != BT_MESH_ADDR_UNASSIGNED)
+			if(model->pub->addr != BT_MESH_ADDR_UNASSIGNED && state_ptr->previous != state_ptr->current)
 			{
 
 				bt_mesh_model_msg_init(msg,BT_MESH_MODEL_OP_2(0x82, 0x08));
