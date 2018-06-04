@@ -175,11 +175,10 @@ void system_thread_bench(void)
 	/* thread Termination*/
 	TIMING_INFO_PRE_READ();
 	thread_cancel_start_time = TIMING_INFO_OS_GET_TIME();
-	s32_t ret_value_thread_cancel  = k_thread_cancel(my_tid);
+	k_thread_abort(my_tid);
 
 	TIMING_INFO_PRE_READ();
 	thread_cancel_end_time = TIMING_INFO_OS_GET_TIME();
-	ARG_UNUSED(ret_value_thread_cancel);
 
 	/* Thread suspend*/
 	k_tid_t sus_res_tid = k_thread_create(&my_thread, my_stack_area,
