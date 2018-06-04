@@ -274,23 +274,26 @@ void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
 static void *k_queue_poll(struct k_queue *queue, s32_t timeout)
 {
 	struct k_poll_event event;
-	int err;
+	int err, elapsed = 0, done = 0;
 	unsigned int key;
 	void *val;
+	u32_t start;
 
 	k_poll_event_init(&event, K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 			  K_POLL_MODE_NOTIFY_ONLY, queue);
 
+	if (timeout != K_FOREVER) {
+		start = k_uptime_get_32();
+	}
+
 	do {
 		event.state = K_POLL_STATE_NOT_READY;
 
-		err = k_poll(&event, 1, timeout);
-		if (err) {
+		err = k_poll(&event, 1, timeout - elapsed);
+
+		if (err && err != -EAGAIN) {
 			return NULL;
 		}
-
-		__ASSERT_NO_MSG(event.state ==
-				K_POLL_STATE_FIFO_DATA_AVAILABLE);
 
 		/* sys_sflist_* aren't threadsafe, so must be always protected
 		 * by irq_lock.
@@ -298,7 +301,12 @@ static void *k_queue_poll(struct k_queue *queue, s32_t timeout)
 		key = irq_lock();
 		val = z_queue_node_peek(sys_sflist_get(&queue->data_q), true);
 		irq_unlock(key);
-	} while (!val && timeout == K_FOREVER);
+
+		if (!val && timeout != K_FOREVER) {
+			elapsed = k_uptime_get_32() - start;
+			done = elapsed > timeout;
+		}
+	} while (!val && !done);
 
 	return val;
 }
