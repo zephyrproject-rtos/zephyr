@@ -208,7 +208,7 @@ endif # UART_NS16550_PORT_1
 endif # UART_NS16550
 
 
-if ETHERNET
+if NET_L2_ETHERNET
 config ETH_DW
 	def_bool y
 
@@ -226,7 +226,7 @@ endif # ETH_DW_0
 
 endif # ETH_DW
 
-endif # ETHERNET
+endif # NET_L2_ETHERNET
 
 # Pin multiplexer uses PCAL9535A, needs to be initialized after it
 config PINMUX_INIT_PRIORITY
