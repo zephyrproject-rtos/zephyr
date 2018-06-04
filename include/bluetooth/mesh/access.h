@@ -197,8 +197,8 @@ struct bt_mesh_model_op {
  *  @brief Encode transmission count & interval steps.
  *
  *  @param count   Number of retransmissions (first transmission is excluded).
- *  @param int_ms  Interval steps in milliseconds. Must be greater than 0
- *                 and a multiple of 10.
+ *  @param int_ms  Interval steps in milliseconds. Must be greater than 0,
+ *                 less than or equal to 320, and a multiple of 10.
  *
  *  @return Mesh transmit value that can be used e.g. for the default
  *          values of the configuration model data.

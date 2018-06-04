@@ -33,12 +33,10 @@
 #define BEACON_TYPE_SECURE         0x01
 
 /* 3 transmissions, 20ms interval */
-#define UNPROV_XMIT_COUNT          2
-#define UNPROV_XMIT_INT            20
+#define UNPROV_XMIT                BT_MESH_TRANSMIT(2, 20)
 
 /* 1 transmission, 20ms interval */
-#define PROV_XMIT_COUNT            0
-#define PROV_XMIT_INT              20
+#define PROV_XMIT                  BT_MESH_TRANSMIT(0, 20)
 
 static struct k_delayed_work beacon_timer;
 
@@ -134,8 +132,8 @@ static int secure_beacon_send(void)
 			continue;
 		}
 
-		buf = bt_mesh_adv_create(BT_MESH_ADV_BEACON, PROV_XMIT_COUNT,
-					 PROV_XMIT_INT, K_NO_WAIT);
+		buf = bt_mesh_adv_create(BT_MESH_ADV_BEACON, PROV_XMIT,
+					 K_NO_WAIT);
 		if (!buf) {
 			BT_ERR("Unable to allocate beacon buffer");
 			return -ENOBUFS;
@@ -160,8 +158,7 @@ static int unprovisioned_beacon_send(void)
 
 	BT_DBG("");
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_BEACON, UNPROV_XMIT_COUNT,
-				 UNPROV_XMIT_INT, K_NO_WAIT);
+	buf = bt_mesh_adv_create(BT_MESH_ADV_BEACON, UNPROV_XMIT, K_NO_WAIT);
 	if (!buf) {
 		BT_ERR("Unable to allocate beacon buffer");
 		return -ENOBUFS;
@@ -187,8 +184,8 @@ static int unprovisioned_beacon_send(void)
 	if (prov->uri) {
 		size_t len;
 
-		buf = bt_mesh_adv_create(BT_MESH_ADV_URI, UNPROV_XMIT_COUNT,
-					 UNPROV_XMIT_INT, K_NO_WAIT);
+		buf = bt_mesh_adv_create(BT_MESH_ADV_URI, UNPROV_XMIT,
+					 K_NO_WAIT);
 		if (!buf) {
 			BT_ERR("Unable to allocate URI buffer");
 			return -ENOBUFS;
