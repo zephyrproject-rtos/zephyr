@@ -23,7 +23,7 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
         self.elf_name = cfg.kernel_elf
         self.cpu_sof = cpu_sof
         self.quartus_py = quartus_py
-        self.gdb_cmd = [cfg.gdbgdb] if cfg.gdb else None
+        self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
         self.tui_arg = ['-tui'] if tui else []
 
     @classmethod
@@ -41,7 +41,8 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def create(cls, cfg, args):
-        return Nios2BinaryRunner(quartus_py=args.quartus_flash,
+        return Nios2BinaryRunner(cfg,
+                                 quartus_py=args.quartus_flash,
                                  cpu_sof=args.cpu_sof,
                                  tui=args.tui)
 
