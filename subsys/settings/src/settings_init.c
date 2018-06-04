@@ -115,6 +115,12 @@ int settings_subsys_init(void)
 	 * Must be called after root FS has been initialized.
 	 */
 	err = fs_mkdir(CONFIG_SETTINGS_FS_DIR);
+	/*
+	 * The following lines mask the file exist error.
+	 */
+	if (err == -EEXIST) {
+		err = 0;
+	}
 #elif defined(CONFIG_SETTINGS_FCB)
 	settings_init_fcb(); /* func rises kernel panic once error */
 	err = 0;
