@@ -98,14 +98,15 @@ config DISK_FLASH_ERASE_ALIGNMENT
 
 config DISK_ERASE_BLOCK_SIZE
 	hex
-	prompt "Flash device block size in hex"
+	prompt "Flash device erasable block size in hex"
 	help
 	  This is typically the minimum block size that
 	  is erased at one time in flash storage.
+	  Typically it is equal to the flash memory page size.
 
 config DISK_VOLUME_SIZE
 	hex
-	prompt "Flash device block size in hex"
+	prompt "Flash device volume size in hex"
 	help
 	  This is the file system volume size in bytes.
 
