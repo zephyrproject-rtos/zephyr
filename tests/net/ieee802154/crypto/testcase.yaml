@@ -3,3 +3,10 @@ tests:
     tags: net crypto
     platform_whitelist: quark_se_c1000_devboard
     depends_on: ieee802154
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - ".*ds_test: Authentication only test: PASSED"
+        - ".*ds_test: Encryption only test: PASSED"
+        - ".*Authentication and encryption test: PASSED"
