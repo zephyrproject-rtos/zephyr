@@ -115,9 +115,7 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 	BT_DBG("src 0x%04x dst 0x%04x app_idx 0x%04x sdu_len %u",
 	       tx->src, tx->ctx->addr, tx->ctx->app_idx, sdu->len);
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA,
-				 BT_MESH_TRANSMIT_COUNT(tx->xmit),
-				 BT_MESH_TRANSMIT_INT(tx->xmit), BUF_TIMEOUT);
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, tx->xmit, BUF_TIMEOUT);
 	if (!buf) {
 		BT_ERR("Out of network buffers");
 		return -ENOBUFS;
@@ -356,9 +354,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 		u16_t len;
 		int err;
 
-		seg = bt_mesh_adv_create(BT_MESH_ADV_DATA,
-					 BT_MESH_TRANSMIT_COUNT(net_tx->xmit),
-					 BT_MESH_TRANSMIT_INT(net_tx->xmit),
+		seg = bt_mesh_adv_create(BT_MESH_ADV_DATA, net_tx->xmit,
 					 BUF_TIMEOUT);
 		if (!seg) {
 			BT_ERR("Out of segment buffers");
@@ -930,9 +926,7 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
 	       tx->ctx->addr, tx->ctx->send_ttl, ctl_op);
 	BT_DBG("len %zu: %s", data_len, bt_hex(data, data_len));
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA,
-				 BT_MESH_TRANSMIT_COUNT(tx->xmit),
-				 BT_MESH_TRANSMIT_INT(tx->xmit), BUF_TIMEOUT);
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, tx->xmit, BUF_TIMEOUT);
 	if (!buf) {
 		BT_ERR("Out of transport buffers");
 		return -ENOBUFS;
