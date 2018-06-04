@@ -57,7 +57,6 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 
 			if(model->pub->addr != BT_MESH_ADDR_UNASSIGNED && state_ptr->previous != state_ptr->current)
 			{
-
 				bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x04));
 				net_buf_simple_add_u8(msg, state_ptr->current);
 
@@ -67,7 +66,6 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 				{
 					printk("bt_mesh_model_publish err %d", err);
 				}
-
 			}
 
 			state_ptr->previous = state_ptr->current;

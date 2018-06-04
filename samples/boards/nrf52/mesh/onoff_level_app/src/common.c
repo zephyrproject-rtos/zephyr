@@ -112,7 +112,7 @@ struct light_state_t light_state_current;
 
 void update_light_state(void)
 {
-	int power = (light_state_current.power + 32768)/65535 * 100;
+	int power = 100 * (light_state_current.power + 32768)/65535;
 
 	if(light_state_current.OnOff == 0x01)
 	{
