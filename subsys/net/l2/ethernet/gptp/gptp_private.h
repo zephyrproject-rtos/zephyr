@@ -121,6 +121,14 @@ static inline u64_t gptp_timestamp_to_nsec(struct net_ptp_time *ts)
 	return (ts->second * NSEC_PER_SEC) + ts->nanosecond;
 }
 
+/**
+ * @brief Change the port state
+ *
+ * @param port Port number of the clock to use.
+ * @param state New state
+ */
+void gptp_change_port_state(int port, enum gptp_port_state state);
+
 #endif /* CONFIG_NET_GPTP */
 
 #ifdef __cplusplus
