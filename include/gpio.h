@@ -35,8 +35,9 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 #define GPIO_ACCESS_BY_PIN 0
 #define GPIO_ACCESS_BY_PORT 1
-/** @endcond */
-/** @} */
+/**
+ * @endcond
+ */
 
 /**
  * @deprecated
