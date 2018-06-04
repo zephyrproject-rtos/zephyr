@@ -183,7 +183,7 @@ class CMakeCache:
             if isinstance(value, list):
                 return value
             elif isinstance(value, str):
-                return [value]
+                return [value] if value else []
             else:
                 msg = 'invalid value {} type {}'
                 raise RuntimeError(msg.format(value, type(value)))
