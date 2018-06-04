@@ -9,13 +9,19 @@ Overview
 This is a simple application demonstrating a Bluetooth mesh node.
 
 The Node's Root element has following models
+
 - Generic OnOff Server
+
 - Generic OnOff Client
+
 - Generic Level Server
+
 - Generic Level Client 
 
 And Secondary element has following models
+
 - Generic OnOff Server
+
 - Generic OnOff Client
 
 Prior to provisioning, an unprovisioned beacon is broadcast that contains
@@ -123,3 +129,4 @@ This application was derived from the sample mesh skeleton at
 :file:`samples/bluetooth/mesh`.
 
 See :ref:`bluetooth setup section <bluetooth_setup>` for details.
+

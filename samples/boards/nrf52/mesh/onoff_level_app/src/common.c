@@ -22,6 +22,8 @@ void gpio_init(void)
 {
 	static struct gpio_callback button_cb[4]; 
 
+	/*------------------------------LEDs configiuratin & setting-----------------------------*/
+
 	//NRF_P0->DIR |= 0x0001E000;
 	//NRF_P0->OUT |= 0x0001E000;
 
@@ -41,7 +43,7 @@ void gpio_init(void)
 	gpio_pin_configure(led_device[3], LED3_GPIO_PIN, GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
 	gpio_pin_write(led_device[3], LED3_GPIO_PIN, 1);
 
-	//***************************************************************************
+	/*-------------------------------------------------------Buttons configiuratin & setting----------------------------------------------------------------*/
 
 	k_work_init(&button_work, publish);
 	
@@ -68,18 +70,15 @@ void gpio_init(void)
 	gpio_init_callback(&button_cb[3], button_pressed, BIT(SW3_GPIO_PIN));
 	gpio_add_callback(button_device[3], &button_cb[3]);
 	gpio_pin_enable_callback(button_device[3], SW3_GPIO_PIN);
-	
-	//***************************************************************************
 }
 
 int NVS_read(uint16_t id, void *data_buffer, size_t len)
 {
-	int ret = -1;
-	int rc;
+	int rc, ret = -1;
 
 	if(nvs_read_hist(&fs, id, data_buffer, len, 0) ==  len)
 	{
-		printk("\n\r%d found\n\r", id);
+		printk("\n\r(NVS_Variable):%d found\n\r", id);
 
 		rc = nvs_read(&fs, id, data_buffer, len);
 		if (rc > 0) 
@@ -89,7 +88,7 @@ int NVS_read(uint16_t id, void *data_buffer, size_t len)
 	}
 	else
 	{
-		printk("\n\r%d not found\n\r", id);
+		printk("\n\r(NVS_Variable):%d not found\n\r", id);
 	}
 
 	return ret;
@@ -114,7 +113,6 @@ struct light_state_t light_state_current;
 void update_light_state(void)
 {
 	int power = (light_state_current.power + 32768)/65535 * 100;
-	//int color = (light_state_current.color + 32768)/65535 * 100;
 
 	if(light_state_current.OnOff == 0x01)
 	{
@@ -141,7 +139,7 @@ void nvs_light_state_save(void)
 {
 	if(NVS_write(NVS_LED_STATE_ID, &light_state_current, sizeof(struct light_state_t)) == 0)
 	{
-		printk("\n\rLight state has saved using NVS featue !!\n\r");
+		printk("\n\rLight state has saved !!\n\r");
 	}
 	else
 	{
