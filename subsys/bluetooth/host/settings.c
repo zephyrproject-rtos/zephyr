@@ -110,7 +110,14 @@ static int set(int argc, char **argv, char *val)
 	if (!strcmp(argv[0], "id")) {
 		len = sizeof(bt_dev.id_addr);
 		settings_bytes_from_str(val, &bt_dev.id_addr, &len);
-		BT_DBG("ID Addr set to %s", bt_addr_le_str(&bt_dev.id_addr));
+		if (len != sizeof(bt_dev.id_addr)) {
+			BT_ERR("Invalid length ID address in storage");
+			bt_addr_le_copy(&bt_dev.id_addr, BT_ADDR_LE_ANY);
+		} else {
+			BT_DBG("ID Addr set to %s",
+			       bt_addr_le_str(&bt_dev.id_addr));
+		}
+
 		return 0;
 	}
 
@@ -118,7 +125,13 @@ static int set(int argc, char **argv, char *val)
 	if (!strcmp(argv[0], "irk")) {
 		len = sizeof(bt_dev.irk);
 		settings_bytes_from_str(val, bt_dev.irk, &len);
-		BT_DBG("IRK set to %s", bt_hex(bt_dev.irk, 16));
+		if (len != sizeof(bt_dev.irk)) {
+			BT_ERR("Invalid length IRK in storage");
+			memset(bt_dev.irk, 0, sizeof(bt_dev.irk));
+		} else {
+			BT_DBG("IRK set to %s", bt_hex(bt_dev.irk, 16));
+		}
+
 		return 0;
 	}
 #endif /* CONFIG_BT_PRIVACY */
