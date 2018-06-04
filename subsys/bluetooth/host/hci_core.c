@@ -3315,7 +3315,7 @@ static void send_cmd(void)
 	/* Get next command */
 	BT_DBG("calling net_buf_get");
 	buf = net_buf_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
-	BT_ASSERT(buf);
+	//BT_ASSERT(buf);
 
 	/* Wait until ncmd > 0 */
 	BT_DBG("calling sem_take_wait");
