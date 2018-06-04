@@ -1,3 +1,13 @@
+if(NOT DEFINED ZEPHYR_BINARY_DIR)
+  message(FATAL_ERROR "A user error has occured.
+cmake was invoked with '${CMAKE_CURRENT_LIST_DIR}' specified as the source directory,
+but it must be invoked with an application source directory,
+such as '${CMAKE_CURRENT_LIST_DIR}/samples/hello_world'.
+Debug variables:
+CMAKE_CACHEFILE_DIR: ${CMAKE_CACHEFILE_DIR}
+")
+endif()
+
 project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 enable_language(C CXX ASM)
 
