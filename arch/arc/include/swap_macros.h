@@ -242,6 +242,10 @@ extern "C" {
 
 .endm
 
+/*
+ * To use this macor, r2 should have the value of thread struct pointer to
+ * _kernel.current. r3 is a scratch reg.
+ */
 .macro _load_stack_check_regs
 #ifdef CONFIG_ARC_HAS_SECURE
 	ld r3, [r2, _thread_offset_to_k_stack_base]

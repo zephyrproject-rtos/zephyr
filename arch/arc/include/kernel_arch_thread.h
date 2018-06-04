@@ -65,7 +65,7 @@ struct _thread_arch {
 	u32_t k_stack_top;
 #ifdef CONFIG_USERSPACE
 	u32_t u_stack_base;
-	u32_t u_stack_top			;
+	u32_t u_stack_top;
 #endif
 #endif
 
