@@ -1622,6 +1622,11 @@ struct net_if_timestamp_cb {
 	/** Node information for the slist. */
 	sys_snode_t node;
 
+	/** Packet for which the callback is needed.
+	 *  A NULL value means all packets.
+	 */
+	struct net_pkt *pkt;
+
 	/** Net interface for which the callback is needed.
 	 *  A NULL value means all interfaces.
 	 */
@@ -1635,11 +1640,14 @@ struct net_if_timestamp_cb {
  * @brief Register a timestamp callback.
  *
  * @param handle Caller specified handler for the callback.
+ * @param pkt Net packet for which the callback is registered. NULL for all
+ * 	      packets.
  * @param iface Net interface for which the callback is. NULL for all
  *		interfaces.
  * @param cb Callback to register.
  */
 void net_if_register_timestamp_cb(struct net_if_timestamp_cb *handle,
+				  struct net_pkt *pkt,
 				  struct net_if *iface,
 				  net_if_timestamp_callback_t cb);
 

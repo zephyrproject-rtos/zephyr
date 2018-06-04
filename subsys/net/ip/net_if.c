@@ -2331,6 +2331,7 @@ static void net_tx_ts_thread(void)
 }
 
 void net_if_register_timestamp_cb(struct net_if_timestamp_cb *handle,
+				  struct net_pkt *pkt,
 				  struct net_if *iface,
 				  net_if_timestamp_callback_t cb)
 {
@@ -2339,6 +2340,7 @@ void net_if_register_timestamp_cb(struct net_if_timestamp_cb *handle,
 
 	handle->iface = iface;
 	handle->cb = cb;
+	handle->pkt = pkt;
 }
 
 void net_if_unregister_timestamp_cb(struct net_if_timestamp_cb *handle)
@@ -2354,8 +2356,9 @@ void net_if_call_timestamp_cb(struct net_pkt *pkt)
 		struct net_if_timestamp_cb *handle =
 			CONTAINER_OF(sn, struct net_if_timestamp_cb, node);
 
-		if ((handle->iface == NULL) ||
-		    (handle->iface == net_pkt_iface(pkt))) {
+		if (((handle->iface == NULL) ||
+		     (handle->iface == net_pkt_iface(pkt))) &&
+		    (handle->pkt == NULL || handle->pkt == pkt)) {
 			handle->cb(pkt);
 		}
 	}

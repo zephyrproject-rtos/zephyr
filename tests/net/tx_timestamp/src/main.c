@@ -181,7 +181,7 @@ static void timestamp_setup(void)
 
 	iface = eth_interfaces[0];
 
-	net_if_register_timestamp_cb(&timestamp_cb, iface,
+	net_if_register_timestamp_cb(&timestamp_cb, NULL, iface,
 				     timestamp_callback);
 
 	timestamp_cb_called = false;
@@ -228,7 +228,7 @@ static void timestamp_setup_2nd_iface(void)
 
 	iface = eth_interfaces[1];
 
-	net_if_register_timestamp_cb(&timestamp_cb_2, iface,
+	net_if_register_timestamp_cb(&timestamp_cb_2, NULL, iface,
 				     timestamp_callback_2);
 
 	timestamp_cb_called = false;
@@ -248,7 +248,7 @@ static void timestamp_setup_all(void)
 {
 	struct net_pkt *pkt;
 
-	net_if_register_timestamp_cb(&timestamp_cb_3, NULL,
+	net_if_register_timestamp_cb(&timestamp_cb_3, NULL, NULL,
 				     timestamp_callback);
 
 	timestamp_cb_called = false;

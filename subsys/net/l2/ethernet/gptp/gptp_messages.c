@@ -20,8 +20,8 @@
 
 static struct net_if_timestamp_cb sync_timestamp_cb;
 static struct net_if_timestamp_cb pdelay_response_timestamp_cb;
-static struct net_pkt *ts_cb_registered_for;
 static bool sync_cb_registered;
+static bool ts_cb_registered;
 
 static const struct net_eth_addr gptp_multicast_eth_addr = {
 	{ 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e } };
@@ -107,7 +107,7 @@ static void gptp_pdelay_response_timestamp_callback(struct net_pkt *pkt)
 		}
 
 		net_if_unregister_timestamp_cb(&pdelay_response_timestamp_cb);
-		ts_cb_registered_for = NULL;
+		ts_cb_registered = false;
 
 		gptp_send_pdelay_follow_up(port, follow_up,
 					   net_pkt_timestamp(pkt));
@@ -680,12 +680,13 @@ void gptp_handle_pdelay_req(int port, struct net_pkt *pkt)
 
 	GPTP_STATS_INC(port, rx_pdelay_req_count);
 
-	if (ts_cb_registered_for != NULL) {
+	if (ts_cb_registered == true) {
 		NET_WARN("Multiple pdelay requests");
-		net_if_unregister_timestamp_cb(&pdelay_response_timestamp_cb);
 
-		net_pkt_unref(ts_cb_registered_for);
-		ts_cb_registered_for = NULL;
+		net_if_unregister_timestamp_cb(&pdelay_response_timestamp_cb);
+		net_pkt_unref(pdelay_response_timestamp_cb.pkt);
+
+		ts_cb_registered = false;
 	}
 
 	/* Prepare response and send */
@@ -695,16 +696,17 @@ void gptp_handle_pdelay_req(int port, struct net_pkt *pkt)
 	}
 
 	net_if_register_timestamp_cb(&pdelay_response_timestamp_cb,
+				     reply,
 				     net_pkt_iface(pkt),
 				     gptp_pdelay_response_timestamp_callback);
-
-	ts_cb_registered_for = reply;
 
 	/* TS thread will send this back to us so increment ref count so that
 	 * the packet is not removed when sending it. This will be unref'ed by
 	 * timestamp callback in gptp_pdelay_response_timestamp_callback()
 	 */
 	net_pkt_ref(reply);
+
+	ts_cb_registered = true;
 
 	gptp_send_pdelay_resp(port, reply, net_pkt_timestamp(pkt));
 }
@@ -865,6 +867,7 @@ void gptp_send_sync(int port, struct net_pkt *pkt)
 {
 	if (!sync_cb_registered) {
 		net_if_register_timestamp_cb(&sync_timestamp_cb,
+					     pkt,
 					     net_pkt_iface(pkt),
 					     gptp_sync_timestamp_callback);
 		sync_cb_registered = true;
