@@ -160,9 +160,9 @@ static struct net_buf *setup_ethernet_frame(struct net_pkt *pkt,
 		eth->type = htons(NET_ETH_PTYPE_PTP);
 	}
 
-	memcpy(&eth->src.addr, net_if_get_link_addr(iface)->addr,
+	memcpy(eth->src.addr, net_if_get_link_addr(iface)->addr,
 	       sizeof(struct net_eth_addr));
-	memcpy(&eth->dst.addr, &gptp_multicast_eth_addr,
+	memcpy(eth->dst.addr, &gptp_multicast_eth_addr,
 	       sizeof(struct net_eth_addr));
 
 	return frag;
@@ -354,8 +354,8 @@ struct net_pkt *gptp_prepare_pdelay_req(int port)
 	hdr->reserved1 = 0;
 	hdr->reserved2 = 0;
 
-	memcpy(&hdr->port_id.clk_id,
-	       &port_ds->port_id.clk_id, GPTP_CLOCK_ID_LEN);
+	memcpy(hdr->port_id.clk_id,
+	       port_ds->port_id.clk_id, GPTP_CLOCK_ID_LEN);
 
 	/* PTP configuration. */
 	memset(&req->reserved1, 0, sizeof(req->reserved1));
@@ -429,7 +429,7 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 	hdr->reserved1 = 0;
 	hdr->reserved2 = 0;
 
-	memcpy(&hdr->port_id.clk_id, &port_ds->port_id.clk_id,
+	memcpy(hdr->port_id.clk_id, port_ds->port_id.clk_id,
 	       GPTP_CLOCK_ID_LEN);
 
 	/* PTP configuration. */
@@ -505,7 +505,7 @@ struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
 	hdr->reserved1 = 0;
 	hdr->reserved2 = 0;
 
-	memcpy(&hdr->port_id.clk_id, &port_ds->port_id.clk_id,
+	memcpy(hdr->port_id.clk_id, port_ds->port_id.clk_id,
 	       GPTP_CLOCK_ID_LEN);
 
 	/* PTP configuration. */
