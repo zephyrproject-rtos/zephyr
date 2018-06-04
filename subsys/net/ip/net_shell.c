@@ -2947,7 +2947,7 @@ static struct shell_cmd net_commands[] = {
 		"iface up [idx]\n\tTake network interface up\n"
 		"iface down [idx]\n\tTake network interface down" },
 	{ "mem", net_shell_cmd_mem,
-		"\n\tPrint information about network interfaces" },
+		"\n\tPrint information about network memory usage" },
 	{ "nbr", net_shell_cmd_nbr, "\n\tPrint neighbor information\n"
 		"nbr rm <IPv6 address>\n\tRemove neighbor from cache" },
 	{ "ping", net_shell_cmd_ping, "<host>\n\tPing a network host" },
