@@ -68,9 +68,26 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	char *stackEnd = pStackMem + stackSize;
 #endif
 	struct __esf *pInitCtx;
+#ifdef CONFIG_THREAD_MONITOR
+	struct __thread_entry *pMon;
+#endif
 
 	_new_thread_init(thread, pStackMem, stackEnd - pStackMem, priority,
 			 options);
+
+#ifdef CONFIG_THREAD_MONITOR
+	pMon = (struct __thread_entry *)
+		STACK_ROUND_DOWN(stackEnd - sizeof(struct __thread_entry));
+	pMon->pEntry = pEntry;
+	pMon->parameter1 = parameter1;
+	pMon->parameter2 = parameter2;
+	pMon->parameter3 = parameter3;
+
+	thread->entry = pMon;
+	thread_monitor_init(thread);
+
+	stackEnd = (char *)pMon;
+#endif
 
 	/* carve the thread entry struct from the "base" of the stack */
 	pInitCtx = (struct __esf *)(STACK_ROUND_DOWN(stackEnd -
@@ -111,15 +128,6 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * initial values in all other registers/thread entries are
 	 * irrelevant.
 	 */
-
-#ifdef CONFIG_THREAD_MONITOR
-	/*
-	 * In debug mode thread->entry give direct access to the thread entry
-	 * and the corresponding parameters.
-	 */
-	thread->entry = (struct __thread_entry *)(pInitCtx);
-	thread_monitor_init(thread);
-#endif
 }
 
 #ifdef CONFIG_USERSPACE
