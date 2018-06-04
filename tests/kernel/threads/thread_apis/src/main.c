@@ -28,6 +28,7 @@ extern void test_abort_handler(void);
 extern void test_essential_thread_operation(void);
 extern void test_threads_priority_set(void);
 extern void test_delayed_thread_abort(void);
+extern void test_k_thread_foreach(void);
 
 __kernel struct k_thread tdata;
 #define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -135,7 +136,8 @@ void test_main(void)
 			 ztest_unit_test(test_systhreads_main),
 			 ztest_unit_test(test_systhreads_idle),
 			 ztest_unit_test(test_customdata_get_set_coop),
-			 ztest_user_unit_test(test_customdata_get_set_preempt)
+			 ztest_user_unit_test(test_customdata_get_set_preempt),
+			 ztest_unit_test(test_k_thread_foreach)
 			 );
 
 	ztest_run_test_suite(threads_lifecycle);
