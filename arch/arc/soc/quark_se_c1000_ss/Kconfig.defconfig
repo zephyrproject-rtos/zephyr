@@ -221,7 +221,7 @@ config WDT_QMSI
 	def_bool y
 
 config WDT_0_IRQ_PRI
-	default 2
+	default 0
 
 endif # WATCHDOG
 
