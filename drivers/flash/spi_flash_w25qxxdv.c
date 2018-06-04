@@ -197,8 +197,8 @@ static inline int spi_flash_wb_erase_internal(struct device *dev,
 					      off_t offset, size_t size)
 {
 	struct spi_flash_data *const driver_data = dev->driver_data;
+	bool need_offset = true;
 	u8_t erase_opcode;
-	u32_t len;
 
 	if (offset < 0) {
 		return -ENOTSUP;
@@ -214,19 +214,16 @@ static inline int spi_flash_wb_erase_internal(struct device *dev,
 	switch (size) {
 	case W25QXXDV_SECTOR_SIZE:
 		erase_opcode = W25QXXDV_CMD_SE;
-		len = W25QXXDV_LEN_CMD_ADDRESS;
 		break;
 	case W25QXXDV_BLOCK32K_SIZE:
 		erase_opcode = W25QXXDV_CMD_BE32K;
-		len = W25QXXDV_LEN_CMD_ADDRESS;
 		break;
 	case W25QXXDV_BLOCK_SIZE:
 		erase_opcode = W25QXXDV_CMD_BE;
-		len = W25QXXDV_LEN_CMD_ADDRESS;
 		break;
 	case CONFIG_SPI_FLASH_W25QXXDV_FLASH_SIZE:
 		erase_opcode = W25QXXDV_CMD_CE;
-		len = 1;
+		need_offset = false;
 		break;
 	default:
 		return -EIO;
@@ -238,7 +235,7 @@ static inline int spi_flash_wb_erase_internal(struct device *dev,
 	 * of each write or erase transaction.
 	 */
 	return spi_flash_wb_access(driver_data, erase_opcode,
-				   true, offset, NULL, len, true);
+				   need_offset, offset, NULL, 0, true);
 }
 
 static int spi_flash_wb_erase(struct device *dev, off_t offset, size_t size)
