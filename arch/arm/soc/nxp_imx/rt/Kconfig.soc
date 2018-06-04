@@ -17,6 +17,9 @@ config SOC_MIMXRT1051
 	select HAS_MCUX_LPUART
 	select CPU_HAS_FPU
 	select CPU_HAS_MPU
+	select INIT_ARM_PLL
+	select INIT_SYS_PLL
+	select INIT_USB1_PLL
 
 config SOC_MIMXRT1052
 	bool "SOC_MIMXRT1052"
@@ -26,6 +29,9 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_LPUART
 	select CPU_HAS_FPU
 	select CPU_HAS_MPU
+	select INIT_ARM_PLL
+	select INIT_SYS_PLL
+	select INIT_USB1_PLL
 
 endchoice
 

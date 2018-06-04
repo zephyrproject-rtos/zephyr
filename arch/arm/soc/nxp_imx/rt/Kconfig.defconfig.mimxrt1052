@@ -10,9 +10,6 @@ if SOC_MIMXRT1052
 config SOC
 	string
 	default "mimxrt1052"
-	select INIT_ARM_PLL
-	select INIT_SYS_PLL
-	select INIT_USB1_PLL
 
 if CLOCK_CONTROL
 
