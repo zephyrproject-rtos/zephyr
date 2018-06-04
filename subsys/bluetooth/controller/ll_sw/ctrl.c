@@ -25,6 +25,7 @@
 #include "hal/ecb.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
+#include "hal/radio_txp.h"
 #include "hal/ticker.h"
 #include "hal/debug.h"
 
@@ -5879,7 +5880,7 @@ again:
 static void adv_scan_conn_configure(void)
 {
 	radio_reset();
-	radio_tx_power_set(0);
+	radio_tx_power_set(RADIO_TXP_DEFAULT);
 	radio_isr_set(isr);
 }
 

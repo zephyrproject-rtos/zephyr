@@ -108,6 +108,67 @@ config BT_CTLR_TX_BUFFER_SIZE
 	  Maximum is set to 16384 due to implementation limitations (use of
 	  u16_t for size/length variables).
 
+choice
+	prompt "Tx Power"
+	default BT_CTLR_TX_PWR_0
+	help
+	  Select the supported BLE Radio transmit power level in dBm.
+
+config BT_CTLR_TX_PWR_PLUS_8
+	bool "+8 dBm"
+	depends on SOC_NRF52840
+
+config BT_CTLR_TX_PWR_PLUS_7
+	bool "+7 dBm"
+	depends on SOC_NRF52840
+
+config BT_CTLR_TX_PWR_PLUS_6
+	bool "+6 dBm"
+	depends on SOC_NRF52840
+
+config BT_CTLR_TX_PWR_PLUS_5
+	bool "+5 dBm"
+	depends on SOC_NRF52840
+
+config BT_CTLR_TX_PWR_PLUS_4
+	bool "+4 dBm"
+
+config BT_CTLR_TX_PWR_PLUS_3
+	bool "+3 dBm"
+	depends on SOC_SERIES_NRF52X
+
+config BT_CTLR_TX_PWR_PLUS_2
+	bool "+2 dBm"
+	depends on SOC_NRF52840
+
+config BT_CTLR_TX_PWR_0
+	bool "0 dBm"
+
+config BT_CTLR_TX_PWR_MINUS_4
+	bool "-4 dBm"
+
+config BT_CTLR_TX_PWR_MINUS_8
+	bool "-8 dBm"
+
+config BT_CTLR_TX_PWR_MINUS_12
+	bool "-12 dBm"
+
+config BT_CTLR_TX_PWR_MINUS_16
+	bool "-16 dBm"
+
+config BT_CTLR_TX_PWR_MINUS_20
+	bool "-20 dBm"
+
+config BT_CTLR_TX_PWR_MINUS_30
+	bool "-30 dBm"
+	depends on SOC_SERIES_NRF51X
+
+config BT_CTLR_TX_PWR_MINUS_40
+	bool "-40 dBm"
+	depends on SOC_SERIES_NRF52X
+
+endchoice
+
 config BT_CTLR_COMPANY_ID
 	prompt "Company Id"
 	hex

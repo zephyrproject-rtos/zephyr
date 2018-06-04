@@ -108,7 +108,7 @@ void radio_phy_set(u8_t phy, u8_t flags)
 
 void radio_tx_power_set(u32_t power)
 {
-	/* TODO map power to h/w values. */
+	/* NOTE: valid value range is passed by Kconfig define. */
 	NRF_RADIO->TXPOWER = power;
 }
 
