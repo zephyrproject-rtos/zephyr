@@ -34,7 +34,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 			tmp8 = net_buf_simple_pull_u8(buf);
 			tid = net_buf_simple_pull_u8(buf);
 
-			if(state_ptr->last_tid == tid)
+			if(state_ptr->last_tid == tid && tid != 0)	// This helps to skip execution for repeated message (except zero). 
 			{
 				return;		
 			}
@@ -102,7 +102,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 			tmp16 = net_buf_simple_pull_le16(buf);
 			tid = net_buf_simple_pull_u8(buf);
 
-			if(state_ptr->last_tid == tid)
+			if(state_ptr->last_tid == tid && tid != 0)	// This helps to skip execution for repeated message (except zero).
 			{
 				return;		
 			}
@@ -146,7 +146,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 			tmp32 = state_ptr->current + net_buf_simple_pull_le16(buf);
 			tid = net_buf_simple_pull_u8(buf);
 
-			if(state_ptr->last_tid == tid)
+			if(state_ptr->last_tid == tid && tid != 0)	// This helps to skip execution for repeated message (except zero).
 			{
 				return;		
 			}
