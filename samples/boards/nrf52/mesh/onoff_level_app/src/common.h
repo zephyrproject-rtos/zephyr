@@ -1,10 +1,10 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
-#define  SETB(x,y)   (x|=(1<<y))     //for o/p
-#define  CLRB(x,y)   (x&=(~(1<<y)))  //for o/p
-#define  TGLB(x,y)   (x^=(1<<y))     //for o/p
-#define  CHECKB(x,y) (x&(1<<y))      //for i/p
+#define  SETB(x, y)   (x |= (1<<y))     //for o/p
+#define  CLRB(x, y)   (x &= (~(1<<y)))  //for o/p
+#define  TGLB(x, y)   (x ^= (1<<y))     //for o/p
+#define  CHECKB(x, y) (x &  (1<<y))      //for i/p
 
 #include <misc/printk.h>
 #include <settings/settings.h>

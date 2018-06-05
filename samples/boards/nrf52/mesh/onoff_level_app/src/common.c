@@ -8,7 +8,6 @@ struct nvs_fs fs = {
 };
 
 struct device *led_device[4];
-
 struct device *button_device[4];
 
 static struct k_work button_work;

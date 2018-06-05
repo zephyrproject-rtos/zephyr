@@ -2,12 +2,9 @@
 
 void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf, uint16_t opcode)
 {
-	int err = 0;
-
 	uint8_t tid, tmp8;
-	
 	int16_t tmp16;
-	int tmp32;
+	int err = 0, tmp32;
 
 	struct net_buf_simple *msg;
 
@@ -52,7 +49,10 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 			}
 			else if(state_ptr->model_instance == 0x02)
 			{	
-				nvs_light_state_save();	
+				if(state_ptr->current == 0x01)
+				{
+					nvs_light_state_save();
+				}	
 			}
 
 			if(model->pub->addr != BT_MESH_ADDR_UNASSIGNED && state_ptr->previous != state_ptr->current)
