@@ -56,9 +56,6 @@ void gpio_init(void);
 
 extern struct nvs_fs fs;
 
-int NVS_read(uint16_t id, void *data_buffer, size_t len);
-int NVS_write(uint16_t id, void *data_buffer, size_t len);
-
 //--------------------------------------------Others--------------------------------------------------------------------
 
 #define LEVEL_0   -32768
