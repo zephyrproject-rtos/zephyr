@@ -803,10 +803,12 @@ static void start_server(u8_t *data, u16_t len)
 	struct gatt_start_server_rp rp;
 
 	/* Register last defined service */
-	if (register_service()) {
-		tester_rsp(BTP_SERVICE_ID_GATT, GATT_START_SERVER,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-		return;
+	if (svc_count) {
+		if (register_service()) {
+			tester_rsp(BTP_SERVICE_ID_GATT, GATT_START_SERVER,
+				   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+			return;
+		}
 	}
 
 	tester_send(BTP_SERVICE_ID_GATT, GATT_START_SERVER, CONTROLLER_INDEX,
