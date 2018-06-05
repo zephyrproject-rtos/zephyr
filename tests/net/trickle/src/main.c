@@ -17,7 +17,6 @@
 
 #include <tc_util.h>
 
-#include <net/ethernet.h>
 #include <net/buf.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
