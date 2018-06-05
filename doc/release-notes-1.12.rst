@@ -108,7 +108,7 @@ Networking
 * Add PRIORITY support to net_context. This is working same way as SO_PRIORITY
   in BSD sockets API.
 * Add network traffic classification support to Rx and Tx paths. This allows
-  priorization of incoming or outgoing network traffic. Both Rx and Tx can
+  prioritization of incoming or outgoing network traffic. Both Rx and Tx can
   have max 8 network queues.
 * Add network interface up/down command to net-shell.
 * Create ethernet driver for native_posix board. The driver is enabled
@@ -186,7 +186,13 @@ HALs
 
 Documentation
 *************
+
 * Added description for kernel test cases
+* Discovered some API docs were missing, and fixed
+* Documented writing guidelines and local doc generation process
+* Improved Sphinx search results output (removed markup)
+* Improved configuration options auto-generated documentation
+* Significantly reduced local doc regeneration time
 
 Tests and Samples
 *****************
