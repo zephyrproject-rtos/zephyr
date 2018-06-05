@@ -233,8 +233,11 @@ HALs
 Documentation
 *************
 
-* Added description for kernel test cases
+* Added description for kernel test cases through extensive doxygen comments
 * Discovered some API docs were missing, and fixed
+* Documentation added covering system calls and userspace, kernel, and
+  threading APIs, POSIX compability, VLANs, network traffic
+  classification, and the sanitycheck script used by CI.
 * Documented writing guidelines and local doc generation process
 * Improved Sphinx search results output (removed markup)
 * Improved configuration options auto-generated documentation
