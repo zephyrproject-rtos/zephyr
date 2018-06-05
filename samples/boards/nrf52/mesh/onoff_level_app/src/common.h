@@ -49,7 +49,7 @@ void gpio_init(void);
 
 #define STORAGE_MAGIC 0x4d455348 /* hex for "MESH" */
 
-#define NVS_SECTOR_SIZE 1024 /* Multiple of FLASH_PAGE_SIZE */
+#define NVS_SECTOR_SIZE 4096 /* Multiple of FLASH_PAGE_SIZE */
 #define NVS_SECTOR_COUNT 2 /* At least 2 sectors */
 #define NVS_STORAGE_OFFSET (FLASH_AREA_STORAGE_OFFSET - 8192) /* Start address of the filesystem in flash */
 #define NVS_MAX_ELEM_SIZE 256 /* Largest item that can be stored */
