@@ -39,10 +39,12 @@ After provisioning, the button clients must
 be configured to publish and the LED servers to subscribe.
 If a LED server is provided with a publish address, it will
 also publish its status on an onoff state change.
+
 Requirements
 ************
 This sample has been tested on the Nordic nRF52840-PDK board, but would
 likely also run on the nrf52_pca10040 board.
+
 Building and Running
 ********************
 This sample can be found under :file:`samples/boards/nrf52/mesh/onoff_level_app` in the
