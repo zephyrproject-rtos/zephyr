@@ -48,7 +48,9 @@ likely also run on the nrf52_pca10040 board.
 Building and Running
 ********************
 This sample can be found under :file:`samples/boards/nrf52/mesh/onoff_level_app` in the
-Zephyr tree. The following commands build the application.
+Zephyr tree.
+
+The following commands build the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nrf52/mesh/onoff_level_app
