@@ -138,7 +138,7 @@ zephyr_smp_write_at(struct cbor_encoder_writer *writer, size_t offset,
 	czw = (struct cbor_nb_writer *)writer;
 	nb = czw->nb;
 
-	if (offset < 0 || offset > nb->len) {
+	if (offset > nb->len) {
 		return MGMT_ERR_EINVAL;
 	}
 
