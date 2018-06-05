@@ -149,44 +149,47 @@ Building without the Zephyr SDK
 
 The Zephyr SDK is provided for convenience and ease of use. It provides
 cross-compilers for all ports supported by the Zephyr OS and does not require
-any extra flags when building applications or running tests.
+any extra flags when building applications or running tests. In addition to
+cross-compilers, the Zephyr SDK also provides prebuilt host tools.
 
-In addition to cross-compilers, the Zephyr SDK also provides prebuilt
-host tools. To use the SDK host tools alongside a custom or 3rd party
-cross-compiler, keep the ZEPHYR_SDK_INSTALL_DIR environment variable
-set to the Zephyr SDK installation directory.
+It is, however, possible to build without the SDK.  If you are using 3rd party
+cross compilers, jump forward to `Using 3rd Party Cross Compilers`_ for
+details.  A "3rd party cross compiler" is a toolchain that the Zephyr build
+system already knows about, such as `GCC ARM Embedded`_ that we use in this
+document.
 
-To build without the Zephyr SDK's prebuilt host tools, the
-ZEPHYR_SDK_INSTALL_DIR environment variable must be unset, and a 3rd party
-cross-compiler must be installed.
+If you are going to use custom compilers, check `Using Custom Cross Compilers`_
+for more detail.  A "custom compiler" would be the one your Linux distribution
+packaged, the one you compiled on your own, or the one you downloaded from the
+net.  The Zephyr build system doesn't know about them and doesn't officially
+support them.
+
+As already noted above, the SDK also includes prebuilt host tools.  To use the
+SDK's prebuilt host tools alongside a 3rd party or custom cross-compiler, keep
+the ZEPHYR_SDK_INSTALL_DIR environment variable set to the Zephyr SDK
+installation directory. To build without the Zephyr SDK's prebuilt host tools,
+the ZEPHYR_SDK_INSTALL_DIR environment variable must be unset
 
 Follow the steps below to build without the Zephyr SDK:
 
    .. code-block:: console
 
       # On Linux/macOS
-      unset ZEPHYR_TOOLCHAIN_VARIANT
       unset ZEPHYR_SDK_INSTALL_DIR
       cd <zephyr git clone location>
       source zephyr-env.sh
       # On Windows
-      set ZEPHYR_TOOLCHAIN_VARIANT=
       set ZEPHYR_SDK_INSTALL_DIR=
       cd <zephyr git clone location>
       zephyr-env.cmd
 
-See `Using Custom and 3rd Party Cross Compilers`_ for details on installing a
-3rd party cross compiler.
-
 .. _third_party_x_compilers:
 
-Using Custom and 3rd Party Cross Compilers
-==========================================
+Using 3rd Party Cross Compilers
+===============================
 
 To use a 3rd party cross compiler that is not provided by the Zephyr
-SDK, follow the steps below. It is possible to use a 3rd party cross
-compiler and still use the Zephyr SDK's host tools. See `Building
-without the Zephyr SDK`_ for details.
+SDK, follow the steps below.
 
 #. We will use the `GCC ARM Embedded`_ compiler for this example, download the
    package suitable for your operating system from the `GCC ARM Embedded`_ website
@@ -208,6 +211,57 @@ without the Zephyr SDK`_ for details.
       :zephyr-app: samples/hello_world
       :board: arduino_due
       :goals: build
+
+Make sure to unset the ZEPHYR_SDK_INSTALL_DIR if you don't use the
+SDK's host tools. See `Building without the Zephyr SDK`_ for details.
+
+It is possible to use the Zephyr SDK's host tools along with a 3rd
+party cross compiler. To do that, keep the ZEPHYR_SDK_INSTALL_DIR
+environment variable set to the Zephyr SDK installation directory.
+See `Set Up the Development Environment`_ for more details on the
+ZEPHYR_SDK_INSTALL_DIR environment variable.
+
+Using Custom Cross Compilers
+============================
+
+To use a custom cross compiler, follow the steps below.
+
+#. Install a cross compiler suitable for your system. We will use the
+   gcc-arm-none-eabi compiler on Debian system for this example.
+
+   .. code-block:: console
+
+      # On Debian or Ubuntu
+      sudo apt-get install gcc-arm-none-eabi
+      # On Fedora or Red hat
+      sudo dnf install arm-none-eabi-newlib
+
+#. Build the example :ref:`hello_world` project, enter:
+
+   .. code-block:: console
+
+      # On Linux
+      unset GCCARMEMB_TOOLCHAIN_PATH
+      export ZEPHYR_TOOLCHAIN_VARIANT=cross-compile
+      export CROSS_COMPILE=/usr/bin/arm-none-eabi-
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: arduino_zero
+      :goals: build
+
+Note that the Zephyr build system assumes that all the tools within your
+toolchain used to compile and link your code, reside in the same directory and
+have a common prefix.  Set the ``CROSS_COMPILE`` environment variable to the
+path of your toolchain's location and that common prefix. In the example above,
+gcc-arm-none-eabi is installed in ``/usr/bin/`` with the common prefix of
+``arm-none-eabi-``.  If your toolchain is at ``/opt/mytoolchain/bin`` with the
+prefix of ``myarch-none-elf-``, it would be
+``CROSS_COMPILE=/opt/mytoolchain/bin/arch-none-elf-``.
+
+Make sure to unset the ZEPHYR_SDK_INSTALL_DIR if you don't use the SDK's host
+tools. See `Building without the Zephyr SDK`_ and `Set Up the Development
+Environment`_ for more details.
 
 Running a Sample Application in QEMU
 ====================================
@@ -271,4 +325,3 @@ Note that the native port is currently only tested in Linux.
 
 .. _GCC ARM Embedded: https://launchpad.net/gcc-arm-embedded
 .. _CMake: https://cmake.org
-
