@@ -100,7 +100,7 @@ void update_light_state(void)
 
 void nvs_light_state_save(void)
 {
-	if(nvs_write(&fs, NVS_LED_STATE_ID, &light_state_current, sizeof(struct light_state_t)) == sizeof(struct light_state_t))
+	if(nvs_write(&fs, NVS_LED_STATE_ID, &light_state_current, sizeof(struct light_state_t)) > 0)
 	{
 		printk("\n\rLight state has saved !!\n\r");
 	}

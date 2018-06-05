@@ -11,7 +11,7 @@ void main(void)
 		printk("Flash Init failed\n");
 	}
 
-	if(nvs_read(&fs, NVS_LED_STATE_ID, &light_state_current, sizeof(struct light_state_t)) == -ENOENT)
+	if(nvs_read(&fs, NVS_LED_STATE_ID, &light_state_current, sizeof(struct light_state_t)) < 0)
 	{
 		printk("\n\rentry for NVS_LED_STATE_ID is not found on NVS\n\r");
 
