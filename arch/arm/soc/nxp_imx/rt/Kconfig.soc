@@ -17,6 +17,9 @@ config SOC_MIMXRT1051
 	select HAS_MCUX_LPUART
 	select CPU_HAS_FPU
 	select CPU_HAS_MPU
+	select INIT_ARM_PLL
+	select INIT_SYS_PLL
+	select INIT_USB1_PLL
 
 config SOC_MIMXRT1052
 	bool "SOC_MIMXRT1052"
@@ -26,6 +29,9 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_LPUART
 	select CPU_HAS_FPU
 	select CPU_HAS_MPU
+	select INIT_ARM_PLL
+	select INIT_SYS_PLL
+	select INIT_USB1_PLL
 
 endchoice
 
@@ -61,5 +67,26 @@ config SOC_PART_NUMBER_IMX_RT
 	  This string holds the full part number of the SoC. It is a hidden option
 	  that you should not set directly. The part number selection choice defines
 	  the default value for this string.
+
+config INIT_ARM_PLL
+	bool "Initialize ARM PLL"
+
+config INIT_SYS_PLL
+	bool "Initialize SYS PLL"
+
+config INIT_USB1_PLL
+	bool "Initialize USB1 PLL"
+
+config ARM_DIV
+	int "ARM clock divider"
+	range 0 7
+
+config AHB_DIV
+	int "AHB clock divider"
+	range 0 7
+
+config IPG_DIV
+	int "IPG clock divider"
+	range 0 3
 
 endif # SOC_SERIES_IMX_RT

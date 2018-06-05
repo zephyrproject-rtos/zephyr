@@ -26,14 +26,20 @@
 #define _thread_offset_to_return_value \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_return_value_OFFSET)
 
-#define _thread_offset_to_stack_base \
-	(___thread_t_arch_OFFSET + ___thread_arch_t_stack_base_OFFSET)
+#define _thread_offset_to_k_stack_base \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_k_stack_base_OFFSET)
+
+#define _thread_offset_to_k_stack_top \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_k_stack_top_OFFSET)
+
+#define _thread_offset_to_u_stack_base \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_u_stack_base_OFFSET)
+
+#define _thread_offset_to_u_stack_top \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_u_stack_top_OFFSET)
 
 #define _thread_offset_to_sp \
 	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_sp_OFFSET)
-
-#define _thread_offset_to_stack_top \
-	(___thread_t_stack_info_OFFSET + ___thread_stack_info_t_start_OFFSET)
 
 /* end - threads */
 

@@ -61,7 +61,12 @@ struct _thread_arch {
 	/* High address of stack region, stack grows downward from this
 	 * location. Usesd for hardware stack checking
 	 */
-	u32_t stack_base;
+	u32_t k_stack_base;
+	u32_t k_stack_top;
+#ifdef CONFIG_USERSPACE
+	u32_t u_stack_base;
+	u32_t u_stack_top;
+#endif
 #endif
 
 #ifdef CONFIG_USERSPACE

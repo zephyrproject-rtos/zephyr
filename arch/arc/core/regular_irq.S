@@ -143,11 +143,7 @@ _rirq_common_interrupt_swap:
 	/* r2 contains pointer to new thread */
 
 #ifdef CONFIG_ARC_STACK_CHECKING
-	/* Use stack top and base registers from restored context */
-	ld r3, [r2, _thread_offset_to_stack_base]
-	sr r3, [_ARC_V2_KSTACK_BASE]
-	ld r3, [r2, _thread_offset_to_stack_top]
-	sr r3, [_ARC_V2_KSTACK_TOP]
+	_load_stack_check_regs
 #endif
 	/*
 	 * _load_callee_saved_regs expects incoming thread in r2.

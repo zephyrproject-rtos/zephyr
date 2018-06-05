@@ -26,5 +26,11 @@ find_program(
   openocd
   )
 
+# bossac is an optional dependency
+find_program(
+  BOSSAC
+  bossac
+  )
+
 # TODO: Should we instead find one qemu binary for each ARCH?
 # TODO: This will probably need to be re-organized when there exists more than one SDK.

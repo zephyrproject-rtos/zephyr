@@ -128,7 +128,6 @@ static pfunc func_array[] = {
 	(pfunc)k_yield,
 	(pfunc)k_wakeup,
 	(pfunc)k_current_get,
-	(pfunc)k_thread_cancel,
 	(pfunc)k_thread_abort,
 	(pfunc)k_thread_priority_get,
 	(pfunc)k_thread_priority_set,

@@ -18,6 +18,15 @@ config CLOCK_CONTROL_MCUX_CCM
 
 endif # CLOCK_CONTROL
 
+config ARM_DIV
+	default 1
+
+config AHB_DIV
+	default 0
+
+config IPG_DIV
+	default 3
+
 config GPIO
 	def_bool y
 

@@ -122,7 +122,7 @@ static int should_preempt(struct k_thread *th, int preempt_ok)
 	}
 
 	/* Or if we're pended/suspended/dummy (duh) */
-	if (!_current || _is_thread_prevented_from_running(_current)) {
+	if (!_current || !_is_thread_ready(_current)) {
 		return 1;
 	}
 

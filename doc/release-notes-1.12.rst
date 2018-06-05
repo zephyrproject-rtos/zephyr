@@ -186,12 +186,14 @@ HALs
 
 Documentation
 *************
-
+* Added description for kernel test cases
 
 Tests and Samples
 *****************
 * Added test for POSIX mutex
 * Added Apple iBeacon sample application
+* Enhanced threads test suite
+* Added tests for memory domain
 
 Issue Related Items
 *******************

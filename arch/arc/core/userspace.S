@@ -10,6 +10,7 @@
 #include <kernel_structs.h>
 #include <arch/cpu.h>
 #include <syscall.h>
+#include <swap_macros.h>
 
 .macro clear_scratch_regs
 	mov r1, 0
@@ -84,6 +85,12 @@ SECTION_FUNC(TEXT, _arc_userspace_enter)
 	/*
 	 * In ARCv2, the U bit can only be set through exception return
 	 */
+#ifdef CONFIG_ARC_STACK_CHECKING
+	/* disable stack checking during swap */
+	lr blink, [_ARC_V2_STATUS32]
+	bclr blink, blink, _ARC_V2_STATUS32_SC_BIT
+	kflag blink
+#endif
 	/* the end of user stack in r5 */
 	add r5, r4, r5
 	/* start of privilege stack */
@@ -106,6 +113,17 @@ _clear_user_stack:
 	st.ab r0, [r4, 4]
 	cmp r4, r5
 	jlt _clear_user_stack
+
+#ifdef CONFIG_ARC_STACK_CHECKING
+	mov r1, _kernel
+	ld_s r2, [r1, _kernel_offset_to_current]
+
+	_load_stack_check_regs
+
+	lr r0, [_ARC_V2_STATUS32]
+	bset r0, r0, _ARC_V2_STATUS32_SC_BIT
+	kflag r0
+#endif
 
 _arc_go_to_user_space:
 	lr r0, [_ARC_V2_STATUS32]
