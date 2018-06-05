@@ -71,42 +71,6 @@ void gpio_init(void)
 	gpio_pin_enable_callback(button_device[3], SW3_GPIO_PIN);
 }
 
-int NVS_read(uint16_t id, void *data_buffer, size_t len)
-{
-	int rc, ret = -1;
-
-	if(nvs_read_hist(&fs, id, data_buffer, len, 0) ==  len)
-	{
-		printk("\n\r(NVS_Variable):%d found\n\r", id);
-
-		rc = nvs_read(&fs, id, data_buffer, len);
-		if (rc > 0) 
-		{
-			ret = 0;
-		} 
-	}
-	else
-	{
-		printk("\n\r(NVS_Variable):%d not found\n\r", id);
-	}
-
-	return ret;
-}
-
-int NVS_write(uint16_t id, void *data_buffer, size_t len)
-{
-	int ret = -1;
-
-	if(nvs_write(&fs, id, data_buffer, len) == len)
-	{	
-		ret = 0;
-	}
-
-	return ret;
-}
-
-
-
 struct light_state_t light_state_current;
 
 void update_light_state(void)
@@ -136,7 +100,7 @@ void update_light_state(void)
 
 void nvs_light_state_save(void)
 {
-	if(NVS_write(NVS_LED_STATE_ID, &light_state_current, sizeof(struct light_state_t)) == 0)
+	if(nvs_write(&fs, NVS_LED_STATE_ID, &light_state_current, sizeof(struct light_state_t)) == sizeof(struct light_state_t))
 	{
 		printk("\n\rLight state has saved !!\n\r");
 	}

@@ -11,7 +11,7 @@ void main(void)
 		printk("Flash Init failed\n");
 	}
 
-	if(NVS_read(NVS_LED_STATE_ID, &light_state_current, sizeof(struct light_state_t)) != 0)
+	if(nvs_read(&fs, , &light_state_current, sizeof(struct light_state_t)) == -ENOENT)
 	{
 		light_state_current.OnOff = 1;
 		light_state_current.power = LEVEL_100;

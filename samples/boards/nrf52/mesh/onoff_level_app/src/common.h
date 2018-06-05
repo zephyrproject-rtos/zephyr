@@ -51,8 +51,7 @@ void gpio_init(void);
 
 #define NVS_SECTOR_SIZE 1024 /* Multiple of FLASH_PAGE_SIZE */
 #define NVS_SECTOR_COUNT 2 /* At least 2 sectors */
-#define NVS_STORAGE_OFFSET (FLASH_AREA_STORAGE_OFFSET - 4096) /* Start address of the
-						      * filesystem in flash */
+#define NVS_STORAGE_OFFSET (FLASH_AREA_STORAGE_OFFSET - 8192) /* Start address of the filesystem in flash */
 #define NVS_MAX_ELEM_SIZE 256 /* Largest item that can be stored */
 
 extern struct nvs_fs fs;
@@ -72,7 +71,7 @@ struct light_state_t
 {
 	uint8_t OnOff;
 	int16_t power;
-	int16_t color;
+	//int16_t color;
 };
 
 extern struct light_state_t light_state_current;
