@@ -9,9 +9,15 @@ We are pleased to announce the release of Zephyr kernel version 1.12.0.
 
 Major enhancements with this release include:
 
+- Asymmetric multiprocessing (AMP) via integration of OpenAMP
+- Full persistent storage support for Bluetooth
 - 802.1Q - Virtual Local Area Network (VLAN) traffic on an Ethernet network
 - Support multiple concurrent filesystem devices, partitions, and FS types
+- Ethernet network management interface
+- Networking traffic prioritization on a per-connection basis
+- Support for Ethernet statistical counters
 - Support for TAP net device on the the native POSIX port
+- Command-line Zephyr meta-tool "west"
 - SPI slave support
 - Runtime non-volatile configuration data storage system
 
@@ -22,11 +28,50 @@ Kernel
 ******
 
 * Added k_thread_foreach API
+* kernel/sched: Fix preemption logic
+* kernel/sched: Fix SMP scheduling
+* kernel/sched: Don't preempt cooperative threads
+* kernel: Scheduler rewrite
+* kernel: Fix sloppy wait queue API
+* kernel/mempool: Handle transient failure condition
+* kernel: handle early entropy issues
+* kernel: Earliest-deadline-first scheduling policy
+* kernel: Add "meta IRQ" thread priorities
+* kernel: introduce initial stack randomization
+* k_poll: expose to user mode
+* k_queue: allow user mode access via allocators
+* mempool: add API for malloc semantics
+* userspace: add support for dynamic kernel objects
 
 Architectures
 *************
 
+* arch: arc: refactor the arc stack check support
+* arch: arc: add the support of STACK_SENTINEL
+* arch: arc: optimize the _SysFatalErrorHandler
+* arch: arc: bug fixes in irq_load
+* arch: arc: bug fixes and optimization in exception handling
+* arch: arm: Fix zero interrupt latency priority level
+* arch: arm: refactor default _FaultDump to provide fatal error code
+* arch: arm: Define & implement API for test target (Non-Secure)
+* arch: arm: thread built-in stack guard implementation
+* arch: arm: lpc: Added support for Cortex-M0+ on lpc54114 soc
+* arch: arm: Secure fault handling for Cortex-M23
+* arch: arm: SecureFault Handling for Cortex-M33A
+* arch: arm: Change method of __swap processing
+* arm_mpu: reduce boot MPU regions for various soc
+* arm: userspace: fix initial user sp location
+* arm: userspace: Rework system call arguments
+* arm: syscalls: fix some register issues
+* dts: nios2-qemu: add device tree support
+* dts: nios2f: Add device tree support
+* dts: x86: derive RAM and ROM size from dts instead of Kconfig
+* dts: xtensa: Add device tree support for xtensa
+* newlib: fix heap user mode access for MPU devices
 * nxp_imx/mcimx7_m4: Added support for i.MX7 Cortex M4 core
+* x86: minnowboard: Enable the userspace mode
+* arch: x86: Unwind the stack on fatal errors
+* xtensa: provide XCC compiler support for Xtensa
 
 Boards
 ******
@@ -154,6 +199,7 @@ Bluetooth
 Build and Infrastructure
 ************************
 
+* build: use git version and hash for boot banner
 * kconfig: Drop support for CONFIG_TOOLCHAIN_VARIANT
 * kconfig: Remove the C Kconfig implementation
 * scripts: kconfig: Add a Python menuconfig implementation
