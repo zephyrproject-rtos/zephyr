@@ -39,25 +39,21 @@ After provisioning, the button clients must
 be configured to publish and the LED servers to subscribe.
 If a LED server is provided with a publish address, it will
 also publish its status on an onoff state change.
-
 Requirements
 ************
 This sample has been tested on the Nordic nRF52840-PDK board, but would
 likely also run on the nrf52_pca10040 board.
-
 Building and Running
 ********************
 This sample can be found under :file:`samples/boards/nrf52/mesh/onoff_level_app` in the
 Zephyr tree.
-
 The following commands build the application.
-
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nrf52/mesh/onoff_level_app
    :board: nrf52840_pca10056
    :goals: build flash
    :compact:
-Provisioning is done using the BlueZ meshctl utility. In this example, we'll use meshctl commands to bind: 
+Provisioning is done using the BlueZ meshctl utility. In this example, we'll use meshctl commands to bind:  
 
 - Button1, Button2, and LED1 to application key 1. It then configures Button1 and Button2
   to publish to group 0xC000 and LED1 to subscribe to that group.
