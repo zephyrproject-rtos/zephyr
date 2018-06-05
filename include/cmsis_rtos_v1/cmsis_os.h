@@ -66,6 +66,7 @@
  
 #include <stdint.h>
 #include <stddef.h>
+#include <kernel.h>
  
 #ifdef  __cplusplus
 extern "C"
@@ -166,6 +167,8 @@ typedef struct os_thread_def  {
   osPriority             tpriority;    ///< initial thread priority
   uint32_t               instances;    ///< maximum number of instances of that thread function
   uint32_t               stacksize;    ///< stack size requirements in bytes; 0 is default stack size
+  void                  *stack_mem;    ///< pointer to array of stack memory
+  struct k_thread       *cm_thread;    ///< pointer to k_thread structure
 } osThreadDef_t;
  
 /// Timer Definition structure contains timer parameters.
@@ -276,8 +279,10 @@ uint32_t osKernelSysTick (void);
 extern const osThreadDef_t os_thread_def_##name
 #else                            // define the object
 #define osThreadDef(name, priority, instances, stacksz)  \
-const osThreadDef_t os_thread_def_##name = \
-{ (name), (priority), (instances), (stacksz)  }
+static K_THREAD_STACK_ARRAY_DEFINE(stacks_##name, instances, CONFIG_CMSIS_THREAD_MAX_STACK_SIZE); \
+static struct k_thread cm_thread_##name[instances]; \
+static osThreadDef_t os_thread_def_##name = \
+{ (name), (priority), (instances), (stacksz), (void *)(stacks_##name), (cm_thread_##name)}
 #endif
  
 /// Access a Thread definition.
