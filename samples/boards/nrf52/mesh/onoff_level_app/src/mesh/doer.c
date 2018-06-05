@@ -2,7 +2,7 @@
 
 void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf, uint16_t opcode)
 {
-	uint8_t tid, tmp8;
+	uint8_t tmp8;
 	int16_t tmp16;
 	int err = 0, tmp32;
 
@@ -32,15 +32,13 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 			msg = model->pub->msg;
 
 			tmp8 = net_buf_simple_pull_u8(buf);
-			tid = net_buf_simple_pull_u8(buf);
-
-			if(state_ptr->last_tid == tid && tid != 0)	// This helps to skip execution for repeated message (except zero). 
-			{
-				return;		
-			}
-
-			state_ptr->last_tid = tid;
+	
 			state_ptr->current = tmp8;
+
+			if(state_ptr->previous == state_ptr->current)
+			{
+				return;
+			}
 
 			if(state_ptr->model_instance == 0x01)
 			{
@@ -55,7 +53,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 				}	
 			}
 
-			if(model->pub->addr != BT_MESH_ADDR_UNASSIGNED && state_ptr->previous != state_ptr->current)
+			if(model->pub->addr != BT_MESH_ADDR_UNASSIGNED)
 			{
 				bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x04));
 				net_buf_simple_add_u8(msg, state_ptr->current);
@@ -100,15 +98,13 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 			msg = model->pub->msg;
 
 			tmp16 = net_buf_simple_pull_le16(buf);
-			tid = net_buf_simple_pull_u8(buf);
-
-			if(state_ptr->last_tid == tid && tid != 0)	// This helps to skip execution for repeated message (except zero).
-			{
-				return;		
-			}
-
-			state_ptr->last_tid = tid;
+		
 			state_ptr->current = tmp16;
+
+			if(state_ptr->previous == state_ptr->current)
+			{
+				return;
+			}
 
 			if(state_ptr->model_instance == 0x01)
 			{
@@ -116,7 +112,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 				update_light_state();
 			}
 
-			if(model->pub->addr != BT_MESH_ADDR_UNASSIGNED && state_ptr->previous != state_ptr->current)
+			if(model->pub->addr != BT_MESH_ADDR_UNASSIGNED)
 			{
 				bt_mesh_model_msg_init(msg,BT_MESH_MODEL_OP_2(0x82, 0x08));
 
@@ -144,15 +140,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 		case 0x820A:	//GEN_DELTA_SRV_UNACK
 		
 			tmp32 = state_ptr->current + net_buf_simple_pull_le16(buf);
-			tid = net_buf_simple_pull_u8(buf);
-
-			if(state_ptr->last_tid == tid && tid != 0)	// This helps to skip execution for repeated message (except zero).
-			{
-				return;		
-			}
-
-			state_ptr->last_tid = tid;
-
+			
 			if(tmp32 < -32768)
 			{
 				tmp32 = -32768;

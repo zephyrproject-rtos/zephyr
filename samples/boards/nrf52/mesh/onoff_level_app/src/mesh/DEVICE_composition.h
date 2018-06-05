@@ -3,10 +3,9 @@
 
 struct server_state
 {
-	int16_t current;
-	int16_t previous;
-	int16_t model_instance;
-	uint8_t last_tid;
+	int current;
+	int previous;
+	int model_instance;
 };
 
 extern struct server_state   gen_onoff_srv_user_data_root;

@@ -38,10 +38,23 @@ BT_MESH_MODEL_PUB_DEFINE(gen_level_cli_pub_root, NULL, 2 + 2 + 2);
 BT_MESH_MODEL_PUB_DEFINE(gen_onoff_srv_pub_s0, NULL, 2 + 2);
 BT_MESH_MODEL_PUB_DEFINE(gen_onoff_cli_pub_s0, NULL, 2 + 2);
 
-struct server_state   gen_onoff_srv_user_data_root = {.model_instance = 1,};
-struct server_state   gen_level_srv_user_data_root = {.model_instance = 1,};
+struct server_state   gen_onoff_srv_user_data_root = 
+{	
+	.previous = -1,
+	.model_instance = 1,
+};
 
-struct server_state   gen_onoff_srv_user_data_s0 = {.model_instance = 2,};
+struct server_state   gen_level_srv_user_data_root =
+{	
+	.previous = -1,
+	.model_instance = 1,
+};
+
+struct server_state   gen_onoff_srv_user_data_s0 = 
+{	
+	.previous = -1,
+	.model_instance = 2,
+};
 
 static const struct bt_mesh_model_op gen_onoff_srv_op[] = 
 {
