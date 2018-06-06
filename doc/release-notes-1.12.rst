@@ -10,7 +10,7 @@ We are pleased to announce the release of Zephyr kernel version 1.12.0.
 Major enhancements with this release include:
 
 - Asymmetric multiprocessing (AMP) via integration of OpenAMP
-- Full persistent storage support for Bluetooth
+- Persistent storage support for Bluetooth Low Energy including Mesh
 - 802.1Q - Virtual Local Area Network (VLAN) traffic on an Ethernet network
 - Support multiple concurrent filesystem devices, partitions, and FS types
 - Ethernet network management interface
@@ -19,7 +19,7 @@ Major enhancements with this release include:
 - Support for TAP net device on the the native POSIX port
 - Command-line Zephyr meta-tool "west"
 - SPI slave support
-- Runtime non-volatile configuration data storage system
+- Runtime non-volatile configuration data storage system (settings)
 
 
 The following sections provide detailed lists of changes by component.
