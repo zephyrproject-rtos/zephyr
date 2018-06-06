@@ -1,0 +1,23 @@
+# Linux makefile
+#
+
+AR=ar
+RM=rm
+CFLAGS=-g -DNET_LOG_ENABLED -I $(ZEPHYR_BASE)/include -I./
+NETDIR=$(ZEPHYR_BASE)/subsys/net/lib
+SAMPLESDIR=$(ZEPHYR_BASE)/samples/net/mqtt_publisher
+OBJECTS=$(NETDIR)/mqtt/mqtt.o $(NETDIR)/mqtt/mqtt_pkt.o $(NETDIR)/mqtt/net_utils.o\
+        $(NETDIR)/async_socket/async_socket.o
+
+all: mqtt_publisher
+
+# Build mqtt lib:
+libmqtt.a: $(OBJECTS)
+	$(AR) rcs $@ $^
+
+# Build Zephyr mqtt_publisher sample:
+mqtt_publisher: $(SAMPLESDIR)/src/main.c libmqtt.a
+	$(CC) -o $@ $^ $(CFLAGS) -L$(SAMPLESDIR) -lmqtt -lpthread
+
+clean:
+	-$(RM) $(OBJECTS) libmqtt.a mqtt_publisher

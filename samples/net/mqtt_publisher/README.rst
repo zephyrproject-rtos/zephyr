@@ -114,6 +114,28 @@ Open another terminal window and type:
 
 	$ mosquitto_sub -t sensors
 
+Building/Running On Linux
+==========================
+
+This sample can also be built and run natively on Linux.  The setup
+of the mosquitto server is the same, and the output should be similar
+to the Zephyr example.
+
+To build for a host POSIX OS:
+
+.. code-block:: console
+
+    $ make -f Makefile.posix
+
+To run:
+
+.. code-block:: console
+
+    $ sudo ./mqtt_publisher
+
+Note that sudo is necessary as the underlying mqtt library is using
+an async_sock server using a port less than 1024, making it privileged.
+
 Sample output
 =============
 
