@@ -87,10 +87,10 @@ config MCUMGR_BUF_SIZE
 config MCUMGR_BUF_USER_DATA_SIZE
 	int
 	prompt "Size of mcumgr buffer user data"
-	default 7
+	default 4
 	help
 	  The size, in bytes, of user data to allocate for each mcumgr buffer.
 	  Different mcumgr transports impose different requirements for this
-	  setting.  A value of 7 is sufficient for UART, shell, and bluetooth.
+	  setting.  A value of 4 is sufficient for UART, shell, and bluetooth.
 
 endmenu
