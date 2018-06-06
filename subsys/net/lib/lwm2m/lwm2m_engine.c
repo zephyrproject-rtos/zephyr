@@ -332,7 +332,7 @@ static int update_attrs(void *ref, struct notification_attrs *out)
 	int i;
 
 	for (i = 0; i < CONFIG_LWM2M_NUM_ATTR; i++) {
-		if (ref == write_attr_pool[i].ref) {
+		if (ref != write_attr_pool[i].ref) {
 			continue;
 		}
 
