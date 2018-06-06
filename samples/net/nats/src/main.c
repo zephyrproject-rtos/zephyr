@@ -194,6 +194,7 @@ static void write_led(const struct nats *nats,
 		      bool state)
 {
 	char *pubstate;
+	int ret;
 
 	if (!led0) {
 		fake_led = state;
@@ -202,8 +203,12 @@ static void write_led(const struct nats *nats,
 	}
 
 	pubstate = state ? "on" : "off";
-	nats_publish(nats, "led0", 0, msg->reply_to, 0,
-		     pubstate, strlen(pubstate));
+	ret = nats_publish(nats, "led0", 0, msg->reply_to, 0,
+			   pubstate, strlen(pubstate));
+
+	if (ret != 0) {
+		printk("nats_publish failed\n");
+	}
 
 	printk("*** Turning LED %s\n", pubstate);
 }
