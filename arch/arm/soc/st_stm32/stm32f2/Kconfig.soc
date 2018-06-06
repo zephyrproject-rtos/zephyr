@@ -15,4 +15,7 @@ config SOC_STM32F207XE
 config SOC_STM32F207XG
 	bool "STM32F207XG"
 
+config SOC_STM32F215XG
+	bool "STM32F215XG"
+
 endchoice
