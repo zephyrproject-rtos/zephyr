@@ -148,7 +148,10 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 			}
 			else if(state_ptr->last_tid == tid && state_ptr->tid_discard == 1)
 			{
-				return;
+				if(state_ptr->previous == tmp32)
+				{
+					return;
+				}
 			}
 			
 			state_ptr->last_tid = tid;
