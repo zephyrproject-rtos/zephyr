@@ -194,34 +194,40 @@ static int test_multiple_threads_get_data(struct timeout_order_data *test_data,
 				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, 0);
 
 	for (ii = 0; ii < test_data_size-1; ii++) {
-
 		k_fifo_put(test_data[ii].fifo, get_scratch_packet());
 
 		data = k_fifo_get(&timeout_order_fifo, K_FOREVER);
+		if (!data) {
+			TC_ERROR("thread %d got NULL value from fifo\n", ii);
+			return TC_FAIL;
+		}
 
-		if (data && data->q_order == ii) {
+		if (data->q_order != ii) {
+			TC_ERROR(" *** thread %d woke up, expected %d\n",
+				 data->q_order, ii);
+			return TC_FAIL;
+		}
+
+		if (data->q_order == ii) {
 			TC_PRINT(" thread (q order: %d, t/o: %d, fifo %p)\n",
 				data->q_order, data->timeout, data->fifo);
-		} else {
-			if (data) {
-				TC_ERROR(" *** thread %d woke up, expected %d\n",
-						data->q_order, ii);
-			}
-			return TC_FAIL;
 		}
 	}
 
 	data = k_fifo_get(&timeout_order_fifo, K_FOREVER);
-	if (data && data->q_order == ii) {
-		TC_PRINT(" thread (q order: %d, t/o: %d, fifo %p)\n",
-				data->q_order, data->timeout, data->fifo);
-	} else {
-		if (data) {
-			TC_ERROR(" *** thread %d woke up, expected %d\n",
-					data->q_order, ii);
-		}
+	if (!data) {
+		TC_ERROR("thread %d got NULL value from fifo\n", ii);
 		return TC_FAIL;
 	}
+
+	if (data->q_order != ii) {
+		TC_ERROR(" *** thread %d woke up, expected %d\n",
+			 data->q_order, ii);
+		return TC_FAIL;
+	}
+
+	TC_PRINT(" thread (q order: %d, t/o: %d, fifo %p)\n",
+		 data->q_order, data->timeout, data->fifo);
 
 	return TC_PASS;
 }
