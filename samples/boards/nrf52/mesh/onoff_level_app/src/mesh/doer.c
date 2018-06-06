@@ -148,10 +148,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 			}
 			else if(state_ptr->last_tid == tid && state_ptr->tid_discard == 1)
 			{
-				if(state_ptr->previous == tmp32)
-				{
-					return;
-				}
+				return;
 			}
 			
 			state_ptr->last_tid = tid;
@@ -167,6 +164,8 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 			}
 
 			state_ptr->current = (int16_t)tmp32;
+		
+			printk("\n\r Level -> %d", state_ptr->current);
 
 			if(state_ptr->model_instance == 0x01)
 			{
