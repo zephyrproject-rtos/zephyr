@@ -31,6 +31,9 @@ static int stm32l4_init(struct device *arg)
 
 	key = irq_lock();
 
+	/* Enable flash instruction prefetch */
+	LL_FLASH_EnablePrefetch();
+
 	_ClearFaults();
 
 	/* Install default handler that simply resets the CPU
