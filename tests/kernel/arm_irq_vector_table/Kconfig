@@ -1,0 +1,4 @@
+config NUM_IRQS
+	int "Number of IRQs for this test, made overridable in the .conf file"
+	default 3
+source "$ZEPHYR_BASE/Kconfig.zephyr"
