@@ -1528,7 +1528,7 @@ static void http_connected(struct http_ctx *ctx,
 			   void *user_data)
 {
 	char url[32];
-	int len = min(sizeof(url), ctx->http.url_len);
+	size_t len = min(sizeof(url) - 1, ctx->http.url_len);
 
 	NET_DBG("");
 
