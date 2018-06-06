@@ -139,7 +139,20 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 
 		case 0x820A:	//GEN_DELTA_SRV_UNACK
 		
-			tmp32 = state_ptr->current + net_buf_simple_pull_le16(buf);
+			tmp32 = state_ptr->current + net_buf_simple_pull_le32(buf);
+			tid = net_buf_simple_pull_u8(buf);
+
+			if(state_ptr->last_tid != tid)
+			{
+				state_ptr->tid_discard = 0;
+			}
+			else if(state_ptr->last_tid == tid && state_ptr->tid_discard == 1)
+			{
+				return;
+			}
+			
+			state_ptr->last_tid = tid;
+			state_ptr->tid_discard = 1;
 			
 			if(tmp32 < -32768)
 			{

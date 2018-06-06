@@ -158,6 +158,7 @@ void gen_level_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, str
 
 void gen_delta_set_unack(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 {
+	printk("\n\rHello World\n\r");
 	doer(model, ctx, buf,0x820A);
 }
 

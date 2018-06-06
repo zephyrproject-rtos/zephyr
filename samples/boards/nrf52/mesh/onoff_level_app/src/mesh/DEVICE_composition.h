@@ -7,6 +7,7 @@ struct server_state
 	int previous;
 	int model_instance;
 	int last_tid;
+	uint8_t tid_discard;
 };
 
 extern struct server_state   gen_onoff_srv_user_data_root;
