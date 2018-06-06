@@ -342,9 +342,19 @@ add_custom_command(                       OUTPUT  ${syscall_macros_h}
   DEPENDS ${PROJECT_SOURCE_DIR}/scripts/gen_syscall_header.py
   )
 
-# This command is a hack to support commands that are always run. Any
-# target that depends on always_rebuild will always be rebuilt.
-add_custom_command(OUTPUT always_rebuild COMMAND cmake -E echo Building for board ${BOARD})
+file(
+  GLOB
+  PARSE_SYSCALLS_HEADER_DEPENDS
+  ${PROJECT_SOURCE_DIR}/include/**/*.h
+  )
+# Looping over each file to depend and take the directory component
+# We want to monitor each folder to detect added / removed files.
+foreach(HEADER IN ITEMS ${PARSE_SYSCALLS_HEADER_DEPENDS})
+  get_filename_component(HEADER_PATH ${HEADER} DIRECTORY)
+  list(APPEND PARSE_SYSCALLS_PATHS_DEPENDS ${HEADER_PATH})
+  list(REMOVE_DUPLICATES PARSE_SYSCALLS_PATHS_DEPENDS)
+endforeach()
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PARSE_SYSCALLS_PATHS_DEPENDS})
 
 set(syscall_list_h ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
 set(syscalls_json  ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
@@ -357,7 +367,7 @@ add_custom_command(
   ${PROJECT_SOURCE_DIR}/scripts/parse_syscalls.py
   --include          ${PROJECT_SOURCE_DIR}/include        # Read files from this dir
   --json-file        ${syscalls_json}                     # Write this file
-  DEPENDS always_rebuild
+  DEPENDS ${PARSE_SYSCALLS_PATHS_DEPENDS} ${PARSE_SYSCALLS_HEADER_DEPENDS}
   )
 
 add_custom_target(syscall_list_h_target DEPENDS                ${syscall_list_h})
