@@ -121,8 +121,8 @@ The three major security measures currently implemented are:
 -  **Execution Protection** including thread separation, stack and
    memory protection is currently available in the upstream
    Zephyr RTOS starting with version 1.9.0 (stack protection).  Memory
-   protection and thread separation was added in version 1.10.0 for X86.
-   ARM and ARC support is targeted for version 1.11.0.
+   protection and thread separation was added in version 1.10.0 for X86
+   and in version 1.11.0 for ARM and ARC.
 
 These topics are discussed in more detail in the following subsections.
 
@@ -150,8 +150,17 @@ The security architecture is based on a monolithic design where the
 Zephyr kernel and all applications are compiled into a single static
 binary. System calls are implemented as function calls without requiring
 context switches. Static linking eliminates the potential for
-dynamically loading malicious code. Memory protection and task
-separation techniques are in scope starting with version 1.10.0.
+dynamically loading malicious code.
+
+Additional protection features are available in later releases.  Stack
+protection mechanisms are provided to protect against stack overruns.
+In addition, applications can take advantage of thread separation
+features to split the system into privileged and unprivileged execution
+environments.  Memory protection features provide the capability to
+partition system resources (memory, peripheral address space, etc) and
+assign resources to individual threads or groups of threads.  Stack,
+thread execution level, and memory protection constraints are enforced
+at the time of context switch.
 
 Quality Assurance
 =================
@@ -201,8 +210,8 @@ more detail; this document is part of that process.
 Execution Protection
 ====================
 
-Execution protection is planned for future releases and is roughly
-categorized into the following tasks:
+Execution protection is supported and can be categorized into the
+following tasks:
 
 -  **Memory separation:** Memory will be partitioned into regions and
    assigned attributes based on the owner of that region of memory.
@@ -214,7 +223,7 @@ categorized into the following tasks:
 
 -  **Thread separation:** Individual threads should only have access to
    their own memory resources. As threads are scheduled, only memory
-   resources owned by that thread will be accessible.Topics such as
+   resources owned by that thread will be accessible. Topics such as
    program flow protection and other measures for tamper resistance
    are currently not in scope.
 
