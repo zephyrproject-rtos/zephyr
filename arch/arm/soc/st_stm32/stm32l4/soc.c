@@ -31,6 +31,12 @@ static int stm32l4_init(struct device *arg)
 
 	key = irq_lock();
 
+	/* Enable flash instruction prefetch, instruction cache memory,
+	 * and data cache memory. */
+	LL_FLASH_EnablePrefetch();
+	LL_FLASH_EnableInstCache();
+	LL_FLASH_EnableDataCache();
+
 	_ClearFaults();
 
 	/* Install default handler that simply resets the CPU
