@@ -1682,6 +1682,11 @@ static void http_received(struct http_ctx *ctx,
 			  const struct sockaddr *dst,
 			  void *user_data)
 {
+	if (!pkt) {
+		NET_DBG("Received NULL packet for unknown reason");
+		return;
+	}
+
 	if (!status) {
 		NET_DBG("Received %d bytes data", net_pkt_appdatalen(pkt));
 
@@ -1689,18 +1694,11 @@ static void http_received(struct http_ctx *ctx,
 			     sizeof(JSON_COAP_PREFIX) - 1)) {
 			handle_coap_request(ctx, pkt, user_data);
 		}
-
-
-		if (pkt) {
-			net_pkt_unref(pkt);
-		}
 	} else {
 		NET_ERR("Receive error (%d)", status);
-
-		if (pkt) {
-			net_pkt_unref(pkt);
-		}
 	}
+
+	net_pkt_unref(pkt);
 }
 
 static void http_sent(struct http_ctx *ctx,
