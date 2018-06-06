@@ -195,6 +195,22 @@ Networking
 Bluetooth
 *********
 
+* settings-based persistent storage functionality for BLE (including CCC) and
+  Mesh
+* Mesh-specific optimizations to avoid flash wear
+* Added a new API to set the identity address from the application
+* Old bt_storage API removed from the codebase
+* Rewrote the HCI SPI driver to comply with the new API
+* Added BLE support for the standard entropy driver via an ISR-friendly call
+* Multiple BLE Mesh bugfixes and improvements
+* Added option to use the identity address for advertising even when using
+  privacy
+* Added support for L2CAP dynamically allocated PSM values
+* GATT CCC handling fixes
+* GATT attribute declaration macros reworked for clarity
+* Fixed handlng of connection cancellation in the controller
+* Fixed a potential assertion failure in the controller related to white list
+  handling
 
 Build and Infrastructure
 ************************
