@@ -64,6 +64,4 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->mepc = (u32_t)_thread_entry_wrapper;
 
 	thread->callee_saved.sp = (u32_t)stack_init;
-
-	thread_monitor_init(thread);
 }

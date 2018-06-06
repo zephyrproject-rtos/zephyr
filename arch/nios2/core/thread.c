@@ -57,6 +57,4 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->callee_saved.ra = (u32_t)_thread_entry_wrapper;
 	thread->callee_saved.key = NIOS2_STATUS_PIE_MSK;
 	/* Leave the rest of thread->callee_saved junk */
-
-	thread_monitor_init(thread);
 }
