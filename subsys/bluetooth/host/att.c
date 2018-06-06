@@ -2041,7 +2041,6 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 	att_reset(att);
 
 	bt_gatt_disconnected(ch->chan.conn);
-	memset(att, 0, sizeof(*att));
 }
 
 #if defined(CONFIG_BT_SMP)
@@ -2109,8 +2108,8 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 			continue;
 		}
 
+		memset(att, 0, sizeof(*att));
 		att->chan.chan.ops = &ops;
-		atomic_set(att->flags, 0);
 		k_sem_init(&att->tx_sem, CONFIG_BT_ATT_TX_MAX,
 			   CONFIG_BT_ATT_TX_MAX);
 
