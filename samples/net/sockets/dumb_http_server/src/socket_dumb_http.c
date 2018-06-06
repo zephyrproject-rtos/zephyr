@@ -82,9 +82,19 @@ int main(void)
 		 * connection reset error).
 		 */
 		while (1) {
+			ssize_t r;
 			char c;
 
-			recv(client, &c, 1, 0);
+			r = recv(client, &c, 1, 0);
+			if (r < 0) {
+				if (errno == EAGAIN || errno == EINTR) {
+					continue;
+				}
+
+				printf("Got error %d when receiving from "
+				       "socket\n", errno);
+				goto close_client;
+			}
 			if (req_state == 0 && c == '\r') {
 				req_state++;
 			} else if (req_state == 1 && c == '\n') {
@@ -111,6 +121,7 @@ int main(void)
 			len -= sent_len;
 		}
 
+close_client:
 		close(client);
 		printf("Connection from %s closed\n", addr_str);
 
