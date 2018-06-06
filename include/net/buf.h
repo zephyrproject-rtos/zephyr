@@ -971,7 +971,7 @@ struct net_buf *net_buf_clone(struct net_buf *buf, s32_t timeout);
  *
  *  @return Pointer to the user data of the buffer.
  */
-static inline void *net_buf_user_data(struct net_buf *buf)
+static inline void *net_buf_user_data(const struct net_buf *buf)
 {
 	return (void *)buf->user_data;
 }
