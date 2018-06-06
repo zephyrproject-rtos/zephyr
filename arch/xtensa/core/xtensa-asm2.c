@@ -71,15 +71,6 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack, size_t sz,
 
 	_new_thread_init(thread, base, sz, prio, opts);
 
-#ifdef CONFIG_THREAD_MONITOR
-	top -= sizeof(struct __thread_entry);
-	thread->entry = (void *)top;
-	thread->entry->pEntry = entry;
-
-	thread_monitor_init(thread);
-#endif
-
-
 	thread->switch_handle = xtensa_init_stack((void *)top, entry,
 						  p1, p2, p3);
 }

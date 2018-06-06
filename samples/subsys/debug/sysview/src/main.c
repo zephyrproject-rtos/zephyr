@@ -99,7 +99,7 @@ static void sysview_api_send_task(const struct k_thread *thr, void *udata)
 	char name[20];
 
 	snprintk(name, sizeof(name), "T%xE%x",
-			(uintptr_t)thr, (uintptr_t)thr->entry);
+			(uintptr_t)thr, (uintptr_t)(&thr->entry));
 
 	/* NOTE: struct k_thread is inside the stack on Zephyr 1.7.
 	 * This is not guaranteed by the API, and is likely to change

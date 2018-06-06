@@ -118,17 +118,8 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 	thread->callee_saved.topOfStack = pInitCtx;
 	thread->arch.flags = 0;
-#ifdef CONFIG_THREAD_MONITOR
-	/*
-	 * In debug mode thread->entry give direct access to the thread entry
-	 * and the corresponding parameters.
-	 */
-	thread->entry = (struct __thread_entry *)(pInitCtx);
-#endif
 	/* initial values in all other registers/k_thread entries are
 	 * irrelevant
 	 */
-
-	thread_monitor_init(thread);
 }
 

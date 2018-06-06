@@ -546,7 +546,7 @@ struct k_thread {
 
 #if defined(CONFIG_THREAD_MONITOR)
 	/** thread entry and parameters description */
-	struct __thread_entry *entry;
+	struct __thread_entry entry;
 
 	/** next item in list of all threads */
 	struct k_thread *next_thread;

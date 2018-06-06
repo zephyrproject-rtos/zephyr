@@ -77,10 +77,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	thread->callee_saved.thread_status = (u32_t)thread_status;
 
-
 	posix_new_thread(thread_status);
-
-	thread_monitor_init(thread);
 }
 
 void posix_new_thread_pre_start(void)

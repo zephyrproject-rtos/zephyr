@@ -247,25 +247,6 @@ static ALWAYS_INLINE void _new_thread_init(struct k_thread *thread,
 #endif /* CONFIG_THREAD_STACK_INFO */
 }
 
-#if defined(CONFIG_THREAD_MONITOR)
-/*
- * Add a thread to the kernel's list of active threads.
- */
-static ALWAYS_INLINE void thread_monitor_init(struct k_thread *thread)
-{
-	unsigned int key;
-
-	key = irq_lock();
-	thread->next_thread = _kernel.threads;
-	_kernel.threads = thread;
-	irq_unlock(key);
-}
-#else
-#define thread_monitor_init(thread)		\
-	do {/* do nothing */			\
-	} while ((0))
-#endif /* CONFIG_THREAD_MONITOR */
-
 #endif /* _ASMLANGUAGE */
 
 #endif /* _kernel_structs__h_ */

@@ -298,6 +298,18 @@ void _setup_new_thread(struct k_thread *new_thread,
 
 	_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 		    prio, options);
+#ifdef CONFIG_THREAD_MONITOR
+	new_thread->entry.pEntry = entry;
+	new_thread->entry.parameter1 = p1;
+	new_thread->entry.parameter2 = p2;
+	new_thread->entry.parameter3 = p3;
+
+	int key = irq_lock();
+
+	new_thread->next_thread = _kernel.threads;
+	_kernel.threads = new_thread;
+	irq_unlock(key);
+#endif
 #ifdef CONFIG_USERSPACE
 	_k_object_init(new_thread);
 	_k_object_init(stack);
@@ -641,6 +653,12 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 {
 	_current->base.user_options |= K_USER;
 	_thread_essential_clear();
+#ifdef CONFIG_THREAD_MONITOR
+	_current->entry.pEntry = entry;
+	_current->entry.parameter1 = p1;
+	_current->entry.parameter2 = p2;
+	_current->entry.parameter3 = p3;
+#endif
 #ifdef CONFIG_USERSPACE
 	_arch_user_mode_enter(entry, p1, p2, p3);
 #else
