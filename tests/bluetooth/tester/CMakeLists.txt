@@ -1,4 +1,8 @@
+if(BOARD STREQUAL "qemu_cortex_m3")
+set(CONF_FILE qemu.conf)
+else()
 set(CONF_FILE default.conf)
+endif()
 
 LIST(APPEND QEMU_EXTRA_FLAGS -serial unix:/tmp/bt-stack-tester)
 
