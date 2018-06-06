@@ -11,10 +11,14 @@ class Harness:
         self.repeat = 1
         self.tests = {}
         self.id = None
+        self.fail_on_fault = True
 
     def configure(self, instance):
         config = instance.test.harness_config
         self.id = instance.test.id
+        if "ignore_faults" in instance.test.tags:
+            self.fail_on_fault = False
+
         if config:
             self.type = config.get('type', None)
             self.regex = config.get('regex', [] )
@@ -55,6 +59,14 @@ class Test(Harness):
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
 
+    faults = [
+            "Unknown Fatal Error",
+            "MPU FAULT",
+            "Kernel Panic",
+            "Kernel OOPS",
+            "BUS FAULT"
+            ]
+
     def handle(self, line):
         result = re.compile("(PASS|FAIL|SKIP) - (test_)?(.*)")
         match = result.match(line)
@@ -67,3 +79,9 @@ class Test(Harness):
 
         if self.RUN_FAILED in line:
             self.state = "failed"
+
+        if self.fail_on_fault:
+            for fault in self.faults:
+                if fault in line:
+                    self.state = "failed"
+
