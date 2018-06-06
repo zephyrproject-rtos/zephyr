@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # Modified from: https://github.com/ulfalizer/Kconfiglib/blob/master/examples/merge_config.py
-from kconfiglib import Kconfig, Symbol, BOOL, STRING, TRISTATE, TRI_TO_STR
-import sys
 import argparse
+import sys
+
+from kconfiglib import Kconfig, Symbol, BOOL, STRING, TRISTATE, TRI_TO_STR
 
 def main():
     parse_args()
@@ -27,34 +28,10 @@ def main():
 
     # Print warnings for symbols whose actual value doesn't match the assigned
     # value
-
-    def name_and_loc(sym):
-        # Helper for printing symbol names and Kconfig file location(s) in warnings
-
-        if not sym.nodes:
-            return sym.name + " (undefined)"
-
-        return "{} (defined at {})".format(
-            sym.name,
-            ", ".join("{}:{}".format(node.filename, node.linenr)
-                      for node in sym.nodes))
-
     for sym in kconf.defined_syms:
         # Was the symbol assigned to?
         if sym.user_value is not None:
-            # Tristate values are represented as 0, 1, 2. Having them as
-            # "n", "m", "y" is more convenient here, so convert.
-            if sym.type in (BOOL, TRISTATE):
-                user_value = TRI_TO_STR[sym.user_value]
-            else:
-                user_value = sym.user_value
-            if user_value != sym.str_value:
-                print('warning: {} was assigned the value "{}" but got the '
-                      'value "{}" -- check dependencies'.format(
-                          name_and_loc(sym), user_value, sym.str_value
-                      ),
-                      file=sys.stderr)
-
+            verify_assigned_value(sym)
 
     # Turn the warning for malformed .config lines into an error
     for warning in kconf.warnings:
@@ -69,6 +46,40 @@ def main():
 
     # Write the C header
     kconf.write_autoconf(args.autoconf)
+
+
+def verify_assigned_value(sym):
+    # Verifies that the value assigned to 'sym' "took" (matches the value the
+    # symbol actually got), printing a warning otherwise
+
+    # Tristate values are represented as 0, 1, 2. Having them as
+    # "n", "m", "y" is more convenient here, so convert.
+    if sym.type in (BOOL, TRISTATE):
+        user_value = TRI_TO_STR[sym.user_value]
+    else:
+        user_value = sym.user_value
+
+    if user_value != sym.str_value:
+        print('warning: {} was assigned the value "{}" but got the value "{}". '
+              "Check its dependencies in the 'menuconfig' interface (see the "
+              "Application Development Primer section of the manual), or in "
+              "the Kconfig reference at "
+              "http://docs.zephyrproject.org/reference/kconfig/CONFIG_{}.html "
+              "(which is updated regularly from the master branch)"
+              .format(name_and_loc(sym), user_value, sym.str_value, sym.name),
+              file=sys.stderr)
+
+
+def name_and_loc(sym):
+    # Helper for printing the name and Kconfig file location(s) for a symbol
+
+    if not sym.nodes:
+        return sym.name + " (undefined)"
+
+    return "{} (defined at {})".format(
+        sym.name,
+        ", ".join("{}:{}".format(node.filename, node.linenr)
+                  for node in sym.nodes))
 
 
 def parse_args():
