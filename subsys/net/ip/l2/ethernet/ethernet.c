@@ -377,7 +377,6 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 				      struct net_pkt *pkt)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
-	struct net_buf *frag;
 	u16_t ptype;
 
 #ifdef CONFIG_NET_ARP
@@ -492,19 +491,11 @@ setup_hdr:
 	}
 #endif /* CONFIG_NET_VLAN */
 
-	/* Then go through the fragments and set the ethernet header.
+	/* Then set the ethernet header.
 	 */
-	frag = pkt->frags;
-
-	NET_ASSERT_INFO(frag, "No data!");
-
-	while (frag) {
-		net_eth_fill_header(ctx, pkt, frag, ptype,
-				    net_pkt_ll_src(pkt)->addr,
-				    net_pkt_ll_dst(pkt)->addr);
-
-		frag = frag->frags;
-	}
+	net_eth_fill_header(ctx, pkt, pkt->frags, ptype,
+			    net_pkt_ll_src(pkt)->addr,
+			    net_pkt_ll_dst(pkt)->addr);
 
 #ifdef CONFIG_NET_ARP
 send:
