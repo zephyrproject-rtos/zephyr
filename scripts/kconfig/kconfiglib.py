@@ -414,7 +414,19 @@ class Kconfig(object):
 
     defined_syms:
       A list with all defined symbols, in the same order as they appear in the
-      Kconfig files. Provided as a convenience.
+      Kconfig files
+
+    choices:
+      A list with all choices, in the same order as they appear in the Kconfig
+      files
+
+    menus:
+      A list with all menus, in the same order as they appear in the Kconfig
+      files
+
+    comments:
+      A list with all comments, in the same order as they appear in the Kconfig
+      files
 
     n/m/y:
       The predefined constant symbols n/m/y. Also available in const_syms.
@@ -501,7 +513,6 @@ class Kconfig(object):
       loaded matters.
     """
     __slots__ = (
-        "_choices",
         "_encoding",
         "_set_re_match",
         "_unset_re_match",
@@ -510,11 +521,14 @@ class Kconfig(object):
         "_warn_for_undef_assign",
         "_warn_to_stderr",
         "_warnings_enabled",
+        "choices",
+        "comments",
         "config_prefix",
         "const_syms",
         "defconfig_list",
         "defined_syms",
         "m",
+        "menus",
         "modules",
         "n",
         "named_choices",
@@ -627,9 +641,12 @@ class Kconfig(object):
         self.syms = {}
         self.const_syms = {}
         self.defined_syms = []
+
         self.named_choices = {}
-        # List containing all choices. Not sure it's helpful to expose this.
-        self._choices = []
+        self.choices = []
+
+        self.menus = []
+        self.comments = []
 
         for nmy in "n", "m", "y":
             sym = Symbol()
@@ -657,17 +674,6 @@ class Kconfig(object):
 
         self.modules = self._lookup_sym("MODULES")
         self.defconfig_list = None
-
-        # The only predefined symbol besides n/m/y. DEFCONFIG_LIST uses this as
-        # of writing.
-        uname_sym = self._lookup_const_sym("UNAME_RELEASE")
-        uname_sym.orig_type = STRING
-        # env_var doubles as the SYMBOL_AUTO flag from the C implementation, so
-        # just set it to something. The naming breaks a bit here.
-        uname_sym.env_var = "<uname release>"
-        uname_sym.defaults.append(
-            (self._lookup_const_sym(platform.uname()[2]), self.y))
-        self.syms["UNAME_RELEASE"] = uname_sym
 
         self.top_node = MenuNode()
         self.top_node.kconfig = self
@@ -716,7 +722,7 @@ class Kconfig(object):
         for sym in self.defined_syms:
             _check_sym_sanity(sym)
 
-        for choice in self._choices:
+        for choice in self.choices:
             _check_choice_sanity(choice)
 
 
@@ -795,7 +801,7 @@ class Kconfig(object):
                 for sym in self.defined_syms:
                     sym._was_set = False
 
-                for choice in self._choices:
+                for choice in self.choices:
                     choice._was_set = False
 
             # Small optimizations
@@ -918,7 +924,7 @@ class Kconfig(object):
                 if not sym._was_set:
                     sym.unset_value()
 
-            for choice in self._choices:
+            for choice in self.choices:
                 if not choice._was_set:
                     choice.unset_value()
 
@@ -1327,7 +1333,7 @@ class Kconfig(object):
             for sym in self.defined_syms:
                 sym.unset_value()
 
-            for choice in self._choices:
+            for choice in self.choices:
                 choice.unset_value()
         finally:
             self._warn_for_no_prompt = True
@@ -2000,6 +2006,8 @@ class Kconfig(object):
                 node.filename = self._filename
                 node.linenr = self._linenr
 
+                self.menus.append(node)
+
                 self._parse_properties(node)
                 self._parse_block(_T_ENDMENU, node, node)
                 node.list = node.next
@@ -2017,6 +2025,8 @@ class Kconfig(object):
                 node.filename = self._filename
                 node.linenr = self._linenr
 
+                self.comments.append(node)
+
                 self._parse_properties(node)
 
                 prev.next = prev = node
@@ -2027,7 +2037,7 @@ class Kconfig(object):
                     choice = Choice()
                     choice.direct_dep = self.n
 
-                    self._choices.append(choice)
+                    self.choices.append(choice)
                 else:
                     # Named choice
                     choice = self.named_choices.get(name)
@@ -2036,7 +2046,7 @@ class Kconfig(object):
                         choice.name = name
                         choice.direct_dep = self.n
 
-                        self._choices.append(choice)
+                        self.choices.append(choice)
                         self.named_choices[name] = choice
 
                 choice.kconfig = self
@@ -2327,7 +2337,8 @@ class Kconfig(object):
             add_help_line(line.expandtabs()[indent:].rstrip())
 
             line = readline()
-            self._linenr += 1
+
+        self._linenr += len(help_lines)
 
         node.help = "\n".join(help_lines).rstrip() + "\n"
         self._saved_line = line  # "Unget" the line
@@ -2469,7 +2480,7 @@ class Kconfig(object):
             # propagated to the conditions of the properties before
             # _build_dep() runs.
 
-        for choice in self._choices:
+        for choice in self.choices:
             # Choices depend on the following:
 
             # The prompt conditions
@@ -2493,7 +2504,7 @@ class Kconfig(object):
         for sym in self.defined_syms:
             sym._invalidate()
 
-        for choice in self._choices:
+        for choice in self.choices:
             choice._invalidate()
 
 
@@ -2878,9 +2889,6 @@ class Symbol(object):
 
       'option env="FOO"' acts like a 'default' property whose value is the
       value of $FOO.
-
-      env_var is set to "<uname release>" for the predefined symbol
-      UNAME_RELEASE, which holds the 'release' field from uname.
 
       Symbols with 'option env' are never written out to .config files, even if
       they are visible. env_var corresponds to a flag called SYMBOL_AUTO in the
@@ -4477,6 +4485,28 @@ def unescape(s):
     """
     return _unescape_re_sub(r"\1", s)
 
+def standard_kconfig():
+    """
+    Helper for tools. Loads the top-level Kconfig specified as the first
+    command-line argument, or "Kconfig" if there are no command-line arguments.
+    Returns the Kconfig instance.
+
+    Exits with sys.exit() (which raises a SystemExit exception) and prints a
+    usage note to stderr if more than one command-line argument is passed.
+    """
+    if len(sys.argv) > 2:
+        sys.exit("usage: {} [Kconfig]".format(sys.argv[0]))
+
+    return Kconfig("Kconfig" if len(sys.argv) < 2 else sys.argv[1])
+
+def standard_config_filename():
+    """
+    Helper for tools. Returns the value of KCONFIG_CONFIG (which specifies the
+    .config file to load/save) if it is set, and ".config" otherwise.
+    """
+    config_filename = os.environ.get("KCONFIG_CONFIG")
+    return config_filename if config_filename is not None else ".config"
+
 #
 # Internal functions
 #
@@ -4536,8 +4566,8 @@ def _make_depend_on(sym, expr):
                         "expression with token stream {}.".format(expr))
 
 def _expand(s):
-    # The predefined UNAME_RELEASE symbol is expanded in one of the 'default's
-    # of the DEFCONFIG_LIST symbol in the Linux kernel. This function maintains
+    # A predefined UNAME_RELEASE symbol is expanded in one of the 'default's of
+    # the DEFCONFIG_LIST symbol in the Linux kernel. This function maintains
     # compatibility with it even though environment variables in strings are
     # now expanded directly.
 
@@ -4756,7 +4786,7 @@ def _check_sym_sanity(sym):
 
             if sym.orig_type == STRING:
                 if not default.is_constant and not default.nodes and \
-                   default.name != default.name.upper():
+                   not default.name.isupper():
                     # 'default foo' on a string symbol could be either a symbol
                     # reference or someone leaving out the quotes. Guess that
                     # the quotes were left out if 'foo' isn't all-uppercase
