@@ -19,9 +19,9 @@
 #error CONFIG_CONSOLE_PUTCHAR_BUFSIZE must be power of 2
 #endif
 
-static K_SEM_DEFINE(uart_sem, 0, UINT_MAX);
-static u8_t uart_ringbuf[CONFIG_CONSOLE_GETCHAR_BUFSIZE];
-static u8_t i_get, i_put;
+static K_SEM_DEFINE(rx_sem, 0, UINT_MAX);
+static u8_t rx_ringbuf[CONFIG_CONSOLE_GETCHAR_BUFSIZE];
+static u8_t rx_get, rx_put;
 
 static u8_t tx_ringbuf[CONFIG_CONSOLE_PUTCHAR_BUFSIZE];
 static u8_t tx_get, tx_put;
@@ -60,18 +60,18 @@ static void uart_isr(struct device *dev)
 
 static int console_irq_input_hook(u8_t c)
 {
-	int i_next = (i_put + 1) & (CONFIG_CONSOLE_GETCHAR_BUFSIZE - 1);
+	int rx_next = (rx_put + 1) & (CONFIG_CONSOLE_GETCHAR_BUFSIZE - 1);
 
-	if (i_next == i_get) {
+	if (rx_next == rx_get) {
 		/* Try to give a clue to user that some input was lost */
 		console_putchar('~');
 		console_putchar('\n');
 		return 1;
 	}
 
-	uart_ringbuf[i_put] = c;
-	i_put = i_next;
-	k_sem_give(&uart_sem);
+	rx_ringbuf[rx_put] = c;
+	rx_put = rx_next;
+	k_sem_give(&rx_sem);
 
 	return 1;
 }
@@ -101,10 +101,10 @@ u8_t console_getchar(void)
 	unsigned int key;
 	u8_t c;
 
-	k_sem_take(&uart_sem, K_FOREVER);
+	k_sem_take(&rx_sem, K_FOREVER);
 	key = irq_lock();
-	c = uart_ringbuf[i_get++];
-	i_get &= CONFIG_CONSOLE_GETCHAR_BUFSIZE - 1;
+	c = rx_ringbuf[rx_get++];
+	rx_get &= CONFIG_CONSOLE_GETCHAR_BUFSIZE - 1;
 	irq_unlock(key);
 
 	return c;
