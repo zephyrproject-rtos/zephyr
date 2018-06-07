@@ -39,6 +39,13 @@
 	};
 };
 
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
 &usart2 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart2_pins_a>;
