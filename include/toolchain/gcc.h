@@ -66,6 +66,29 @@ __extension__ ({							\
 	__p->__v;							\
 })
 
+
+#if __GNUC__ >= 7 && defined(CONFIG_ARM)
+
+/* Version of UNALIGNED_PUT() which issues a compiler_barrier() after
+ * the store. It is required to workaround an apparent optimization
+ * bug in GCC for ARM Cortex-M3 and higher targets, when multiple
+ * byte, half-word and word stores (strb, strh, str instructions),
+ * which support unaligned access, can be coalesced into store double
+ * (strd) instruction, which doesn't support unaligned access (the
+ * compilers in question do this optimization ignoring __packed__
+ * attribute).
+ */
+#define UNALIGNED_PUT(v, p)                                             \
+do {                                                                    \
+	struct __attribute__((__packed__)) {                            \
+		__typeof__(*p) __v;                                     \
+	} *__p = (__typeof__(__p)) (p);                                 \
+	__p->__v = (v);                                                 \
+	compiler_barrier();                                             \
+} while (0)
+
+#else
+
 #define UNALIGNED_PUT(v, p)                                             \
 do {                                                                    \
 	struct __attribute__((__packed__)) {                            \
@@ -73,6 +96,8 @@ do {                                                                    \
 	} *__p = (__typeof__(__p)) (p);                                 \
 	__p->__v = (v);                                               \
 } while (0)
+
+#endif
 
 /* Double indirection to ensure section names are expanded before
  * stringification
