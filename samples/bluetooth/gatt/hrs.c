@@ -78,5 +78,5 @@ void hrs_notify(void)
 	hrm[0] = 0x06; /* uint8, sensor contact */
 	hrm[1] = heartrate;
 
-	bt_gatt_notify(NULL, &attrs[2], &hrm, sizeof(hrm));
+	bt_gatt_notify(NULL, &attrs[1], &hrm, sizeof(hrm));
 }
