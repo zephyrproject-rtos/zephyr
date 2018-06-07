@@ -172,11 +172,6 @@ extern const struct bt_conn_auth_cb *bt_auth;
 
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 
-struct net_buf *bt_hci_cmd_create(u16_t opcode, u8_t param_len);
-int bt_hci_cmd_send(u16_t opcode, struct net_buf *buf);
-int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
-			 struct net_buf **rsp);
-
 int bt_le_scan_update(bool fast_scan);
 
 bool bt_addr_le_is_bonded(const bt_addr_le_t *addr);
