@@ -194,7 +194,6 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
 	void *p1, void *p2, void *p3)
 {
-	_current->base.user_options |= K_USER;
 
 	/*
 	 * adjust the thread stack layout

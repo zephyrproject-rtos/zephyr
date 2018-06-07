@@ -40,7 +40,7 @@ menu "ARCv2 Family Options"
 
 config	CPU_ARCV2
 	bool
-	select		ARCH_HAS_STACK_PROTECTION
+	select ARCH_HAS_STACK_PROTECTION
 	select ARCH_HAS_USERSPACE if ARC_CORE_MPU
 	default y
 	help
