@@ -570,10 +570,9 @@ static struct net_pkt *net_pkt_get(struct k_mem_slab *slab,
 		if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
 			data_len -= NET_UDPH_LEN;
 
-#if defined(CONFIG_NET_RPL_INSERT_HBH_OPTION)
-			data_len -= NET_RPL_HOP_BY_HOP_LEN;
-#endif
-
+			if (IS_ENABLED(CONFIG_NET_RPL_INSERT_HBH_OPTION)) {
+				data_len -= NET_RPL_HOP_BY_HOP_LEN;
+			}
 		}
 
 		if (proto == IPPROTO_ICMP || proto == IPPROTO_ICMPV6) {

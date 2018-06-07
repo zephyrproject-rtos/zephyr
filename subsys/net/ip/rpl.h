@@ -22,8 +22,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_NET_RPL)
-
 #include "route.h"
 
 #define NET_ICMPV6_RPL			155  /* RPL Control Message */
@@ -152,6 +150,8 @@ enum net_rpl_mode {
 #define NET_RPL_LOLLIPOP_MAX_VALUE        255
 #define NET_RPL_LOLLIPOP_CIRCULAR_REGION  127
 #define NET_RPL_LOLLIPOP_SEQUENCE_WINDOWS 16
+
+#if defined(CONFIG_NET_RPL)
 
 static inline u8_t net_rpl_lollipop_init(void)
 {
