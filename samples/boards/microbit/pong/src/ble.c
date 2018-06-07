@@ -541,6 +541,6 @@ void ble_init(void)
 	bt_conn_cb_register(&conn_callbacks);
 
 
-	local_attr = &pong_attrs[2];
+	local_attr = &pong_attrs[1];
 	bt_gatt_service_register(&pong_svc);
 }
