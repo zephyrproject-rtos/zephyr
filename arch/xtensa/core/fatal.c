@@ -11,6 +11,10 @@
 #include <misc/printk.h>
 #include <xtensa/specreg.h>
 
+#ifdef XT_SIMULATOR
+#include <xtensa/simcall.h>
+#endif
+
 const NANO_ESF _default_esf = {
 	{0xdeaddead}, /* sp */
 	0xdeaddead, /* pc */

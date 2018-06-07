@@ -32,7 +32,6 @@
 
 #include    <xtensa/corebits.h>
 #include    <xtensa/config/system.h>
-#include    <xtensa/simcall.h>
 
 
 /*

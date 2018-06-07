@@ -8,15 +8,9 @@
 #include <system_timer.h>
 #include <xtensa_rtos.h>
 
-#include <xtensa/tie/xt_timer.h>
-
 #include <xtensa_timer.h>
 #include <kernel_structs.h>
 #include "irq.h"
-
-#ifdef XT_BOARD
-#include    <xtensa/xtbsp.h>
-#endif
 
 #include    "xtensa_rtos.h"
 
