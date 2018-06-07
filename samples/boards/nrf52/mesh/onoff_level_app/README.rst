@@ -76,7 +76,7 @@ Provisioning is done using the BlueZ meshctl utility. In this example, we'll use
    menu config
    target 0100
    appkey-add 1
-   bind 0 1 1000        
+   bind 0 1 1000
    bind 0 1 1001
    bind 0 1 1002
    bind 0 1 1003

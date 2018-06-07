@@ -78,6 +78,7 @@ void update_light_state(void)
 	int power = 100 * (light_state_current.power + 32768)/65535;
 
 	if (light_state_current.OnOff == 0x01) {
+
 		gpio_pin_write(led_device[0], LED0_GPIO_PIN, 0);	// LED1 On
 	} else {
 		gpio_pin_write(led_device[0], LED0_GPIO_PIN, 1);	// LED1 Off
