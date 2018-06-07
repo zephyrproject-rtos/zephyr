@@ -84,7 +84,7 @@ of ESP-IDF:
 .. code-block:: console
 
    cd ${ESP_IDF_PATH}
-   git checkout dc8c33892e0
+   git checkout b2ff235bd00
 
 Flashing
 ========
