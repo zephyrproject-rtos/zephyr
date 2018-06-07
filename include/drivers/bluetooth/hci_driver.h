@@ -25,6 +25,11 @@
 extern "C" {
 #endif
 
+enum {
+	/* The host should never send HCI_Reset */
+	BT_QUIRK_NO_RESET = BIT(0),
+};
+
 /**
  * @brief Check if an HCI event is high priority or not.
  *
@@ -112,6 +117,13 @@ struct bt_hci_driver {
 
 	/** Bus of the transport (BT_HCI_DRIVER_BUS_*) */
 	enum bt_hci_driver_bus bus;
+
+	/** Specific controller quirks. These are set by the HCI driver
+	 *  and acted upon by the host. They can either be statically
+	 *  set at buildtime, or set at runtime before the HCI driver's
+	 *  open() callback returns.
+	 */
+	u32_t quirks;
 
 	/**
 	 * @brief Open the HCI transport.
