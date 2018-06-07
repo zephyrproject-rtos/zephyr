@@ -685,6 +685,18 @@ static int gatt_indicate(struct bt_conn *conn,
 {
 	struct net_buf *buf;
 	struct bt_att_indicate *ind;
+	u16_t value_handle = params->attr->handle;
+
+	/* Check if attribute is a characteristic then adjust the handle */
+	if (!bt_uuid_cmp(params->attr->uuid, BT_UUID_GATT_CHRC)) {
+		struct bt_gatt_chrc *chrc = params->attr->user_data;
+
+		if (!(chrc->properties & BT_GATT_CHRC_INDICATE)) {
+			return -EINVAL;
+		}
+
+		value_handle += 1;
+	}
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_INDICATE,
 				sizeof(*ind) + params->len);
@@ -693,10 +705,10 @@ static int gatt_indicate(struct bt_conn *conn,
 		return -ENOMEM;
 	}
 
-	BT_DBG("conn %p handle 0x%04x", conn, params->attr->handle);
+	BT_DBG("conn %p handle 0x%04x", conn, value_handle);
 
 	ind = net_buf_add(buf, sizeof(*ind));
-	ind->handle = sys_cpu_to_le16(params->attr->handle);
+	ind->handle = sys_cpu_to_le16(value_handle);
 
 	net_buf_add(buf, params->len);
 	memcpy(ind->value, params->data, params->len);
