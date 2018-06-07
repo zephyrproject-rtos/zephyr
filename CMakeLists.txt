@@ -342,22 +342,74 @@ add_custom_command(                       OUTPUT  ${syscall_macros_h}
   DEPENDS ${PROJECT_SOURCE_DIR}/scripts/gen_syscall_header.py
   )
 
-file(
-  GLOB
-  PARSE_SYSCALLS_HEADER_DEPENDS
-  ${PROJECT_SOURCE_DIR}/include/**/*.h
-  )
-# Looping over each file to depend and take the directory component
-# We want to monitor each folder to detect added / removed files.
-foreach(HEADER IN ITEMS ${PARSE_SYSCALLS_HEADER_DEPENDS})
-  get_filename_component(HEADER_PATH ${HEADER} DIRECTORY)
-  list(APPEND PARSE_SYSCALLS_PATHS_DEPENDS ${HEADER_PATH})
-  list(REMOVE_DUPLICATES PARSE_SYSCALLS_PATHS_DEPENDS)
-endforeach()
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PARSE_SYSCALLS_PATHS_DEPENDS})
 
 set(syscall_list_h ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
 set(syscalls_json  ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
+
+# The syscalls subdirs txt file is constructed by python containing a list of folders to use for
+# dependency handling, including empty folders.
+# Windows:  The list is used to specify DIRECTORY list with CMAKE_CONFIGURE_DEPENDS attribute.
+# Other OS: The list will update whenever a file is added/removed/modified and ensure a re-build.
+set(syscalls_subdirs_txt ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls_subdirs.txt)
+
+# As syscalls_subdirs_txt is updated whenever a file is modified, this file can not be used for
+# monitoring of added / removed folders. A trigger file is thus used for correct dependency
+# handling. The trigger file will update when a folder is added / removed.
+set(syscalls_subdirs_trigger ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls_subdirs.trigger)
+
+# When running CMake it must be ensured that all dependencies are correctly acquired.
+execute_process(
+  COMMAND
+  ${PYTHON_EXECUTABLE}
+  ${PROJECT_SOURCE_DIR}/scripts/subfolder_list.py
+  --directory        ${PROJECT_SOURCE_DIR}/include # Walk this directory
+  --out-file         ${syscalls_subdirs_txt}       # Write this file
+  )
+file(STRINGS ${syscalls_subdirs_txt} PARSE_SYSCALLS_PATHS_DEPENDS)
+
+if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
+  # On windows only adding/removing files or folders will be reflected in depends.
+  # Hence adding a file requires CMake to re-run to add this file to the file list.
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PARSE_SYSCALLS_PATHS_DEPENDS})
+
+  # Also On Windows each header file must be monitored as file modifications are not reflected
+  # on directory level.
+  file(GLOB_RECURSE PARSE_SYSCALLS_HEADER_DEPENDS ${PROJECT_SOURCE_DIR}/include/*.h)
+else()
+  # The syscall parsing depends on the folders in order to detect add/removed/modified files.
+  # When a folder is removed, CMake will try to find a target that creates that dependency.
+  # This command sets up the target for CMake to find.
+  # With out this code, CMake will fail with the following error:
+  #   <folder> needed by '<target>', missing and no known rule to make it
+  # when a folder is removed.
+  add_custom_command(OUTPUT ${PARSE_SYSCALLS_PATHS_DEPENDS}
+    COMMAND ${CMAKE_COMMAND} -E echo ""
+    COMMENT "Preparing syscall dependency handling"
+    )
+
+  add_custom_command(
+    OUTPUT
+    ${syscalls_subdirs_txt}
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${PROJECT_SOURCE_DIR}/scripts/subfolder_list.py
+    --directory        ${PROJECT_SOURCE_DIR}/include # Walk this directory
+    --out-file         ${syscalls_subdirs_txt}       # Write this file
+    --trigger          ${syscalls_subdirs_trigger}   # Trigger file that will result in CMake rerun
+    DEPENDS ${PARSE_SYSCALLS_PATHS_DEPENDS}
+    )
+
+  # Ensure trigger file always exists when specifying CMake dependency.
+  if(NOT EXISTS ${syscalls_subdirs_trigger})
+    file(WRITE ${syscalls_subdirs_trigger} "")
+  endif()
+
+  # On other OS'es, modifying a file is reflected on the folder timestamp and hence detected
+  # when using depend on directory level.
+  # Thus CMake only needs to re-run when sub-directories are added / removed, which is indicated
+  # using a trigger file.
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${syscalls_subdirs_trigger})
+endif()
 
 add_custom_command(
   OUTPUT
@@ -367,7 +419,7 @@ add_custom_command(
   ${PROJECT_SOURCE_DIR}/scripts/parse_syscalls.py
   --include          ${PROJECT_SOURCE_DIR}/include        # Read files from this dir
   --json-file        ${syscalls_json}                     # Write this file
-  DEPENDS ${PARSE_SYSCALLS_PATHS_DEPENDS} ${PARSE_SYSCALLS_HEADER_DEPENDS}
+  DEPENDS ${syscalls_subdirs_txt} ${PARSE_SYSCALLS_HEADER_DEPENDS}
   )
 
 add_custom_target(syscall_list_h_target DEPENDS                ${syscall_list_h})
