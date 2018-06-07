@@ -184,6 +184,7 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 #endif /* CONFIG_NET_DEBUG_IPV4 */
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
+	net_pkt_set_ipv4_ttl(pkt, NET_IPV4_HDR(pkt)->ttl);
 
 	if (!net_is_my_ipv4_addr(&hdr->dst) &&
 	    !net_is_ipv4_addr_mcast(&hdr->dst)) {
