@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  * Copyright (c) 2016 Linaro Limited.
+ * Copyright (c) 2018 Bobby Noelte.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -352,161 +353,52 @@ static int uart_stm32_init(struct device *dev)
 	return 0;
 }
 
-/* Define clocks */
-#define STM32_CLOCK_UART(clock_bus, clock_enr)	\
-	.pclken = { .bus = clock_bus,		\
-		    .enr = clock_enr }
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define STM32_UART_IRQ_HANDLER_DECL(name)				\
-	static void uart_stm32_irq_config_func_##name(struct device *dev)
-#define STM32_UART_IRQ_HANDLER_FUNC(name)				\
-	.irq_config_func = uart_stm32_irq_config_func_##name,
-#define STM32_UART_IRQ_HANDLER(name)					\
-static void uart_stm32_irq_config_func_##name(struct device *dev)	\
-{									\
-	IRQ_CONNECT(name##_IRQ,					\
-		CONFIG_UART_STM32_##name##_IRQ_PRI,			\
-		uart_stm32_isr, DEVICE_GET(uart_stm32_##name),	\
-		0);							\
-	irq_enable(name##_IRQ);					\
-}
-#else
-#define STM32_UART_IRQ_HANDLER_DECL(name)
-#define STM32_UART_IRQ_HANDLER_FUNC(name)
-#define STM32_UART_IRQ_HANDLER(name)
-#endif
-
-#define STM32_UART_INIT(name, clock_bus, clock_enr)			\
-STM32_UART_IRQ_HANDLER_DECL(name);					\
-									\
-static const struct uart_stm32_config uart_stm32_cfg_##name = {		\
-	.uconf = {							\
-		.base = (u8_t *)CONFIG_UART_STM32_##name##_BASE_ADDRESS,\
-		STM32_UART_IRQ_HANDLER_FUNC(name)			\
-	},								\
-	STM32_CLOCK_UART(clock_bus, clock_enr),				\
-	.baud_rate = CONFIG_UART_STM32_##name##_BAUD_RATE		\
-};									\
-									\
-static struct uart_stm32_data uart_stm32_data_##name = {		\
-};									\
-									\
-DEVICE_AND_API_INIT(uart_stm32_##name, CONFIG_UART_STM32_##name##_NAME,	\
-		    &uart_stm32_init,					\
-		    &uart_stm32_data_##name, &uart_stm32_cfg_##name,	\
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-		    &uart_stm32_driver_api);				\
-									\
-STM32_UART_IRQ_HANDLER(name)
-
-/*
- * STM32F0 and STM32L0 series differ from other STM32 series by some
- * peripheral names (UART vs USART). Besides, STM32F0 doesn't have APB2 bus,
- * so APB1 GRP2 should be accessed instead.
+/**
+ * @code{.codegen}
+ * codegen.import_module('devicedeclare')
+ *
+ * device_configs = ['CONFIG_UART_STM32_PORT_{}'.format(x) \
+ *                   for x in range(1, 11)] + \
+ *                  ['CONFIG_UART_STM32_LPUART_{}'.format(x) \
+ *                   for x in range(1, 2)]
+ * driver_names = ['UART_{}'.format(x) for x in range(1, 11)] + \
+ *                ['LPUART_{}'.format(x) for x in range(1, 2)]
+ * device_inits = 'uart_stm32_init'
+ * device_levels = 'PRE_KERNEL_1'
+ * device_prios = 'CONFIG_KERNEL_INIT_PRIORITY_DEVICE'
+ * device_api = 'uart_stm32_driver_api'
+ * device_info = \
+ * """
+ * #if CONFIG_UART_INTERRUPT_DRIVEN
+ * DEVICE_DECLARE(${device-name});
+ * static void ${device-config-irq}(struct device *dev)
+ * {
+ *         IRQ_CONNECT(${interrupts/0/irq}, ${interrupts/0/priority}, \\
+ *                     uart_stm32_isr, \\
+ *                     DEVICE_GET(${device-name}), 0);
+ *         irq_enable(${interrupts/0/irq});
+ * }
+ * #endif
+ * static const struct uart_stm32_config ${device-config-info} = {
+ *         .uconf.base = (u8_t *)${reg/0/address/0},
+ * #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+ *         .uconf.irq_config_func = ${device-config-irq},
+ * #endif
+ *         .pclken.bus = ${clocks/0/bus},
+ *         .pclken.enr = ${clocks/0/bits},
+ *         .baud_rate = ${current-speed},
+ * };
+ * static struct uart_stm32_data ${device-data};
+ * """
+ *
+ * devicedeclare.device_declare_multi( \
+ *     device_configs,
+ *     driver_names,
+ *     device_inits,
+ *     device_levels,
+ *     device_prios,
+ *     device_api,
+ *     device_info)
+ * @endcode{.codegen}
  */
-#if defined(CONFIG_SOC_SERIES_STM32F0X)
-
-#ifdef CONFIG_UART_STM32_PORT_1
-STM32_UART_INIT(USART_1, STM32_CLOCK_BUS_APB1_2, LL_APB1_GRP2_PERIPH_USART1)
-#endif	/* CONFIG_UART_STM32_PORT_1 */
-
-#ifdef CONFIG_UART_STM32_PORT_2
-STM32_UART_INIT(USART_2, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_USART2)
-#endif	/* CONFIG_UART_STM32_PORT_2 */
-
-#ifdef CONFIG_UART_STM32_PORT_3
-STM32_UART_INIT(USART_3, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_USART3)
-#endif	/* CONFIG_UART_STM32_PORT_3 */
-
-#ifdef CONFIG_UART_STM32_PORT_4
-STM32_UART_INIT(USART_4, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_USART4)
-#endif /* CONFIG_UART_STM32_PORT_4 */
-
-#ifdef CONFIG_UART_STM32_PORT_5
-STM32_UART_INIT(USART_5, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_USART5)
-#endif /* CONFIG_UART_STM32_PORT_5 */
-
-#ifdef CONFIG_UART_STM32_PORT_6
-STM32_UART_INIT(USART_6, STM32_CLOCK_BUS_APB1_2, LL_APB1_GRP2_PERIPH_USART6)
-#endif /* CONFIG_UART_STM32_PORT_6 */
-
-#ifdef CONFIG_UART_STM32_PORT_7
-STM32_UART_INIT(USART_7, STM32_CLOCK_BUS_APB1_2, LL_APB1_GRP2_PERIPH_USART7)
-#endif /* CONFIG_UART_STM32_PORT_7 */
-
-#ifdef CONFIG_UART_STM32_PORT_8
-STM32_UART_INIT(USART_8, STM32_CLOCK_BUS_APB1_2, LL_APB1_GRP2_PERIPH_USART8)
-#endif /* CONFIG_UART_STM32_PORT_8 */
-
-#elif defined(CONFIG_SOC_SERIES_STM32L0X)
-
-#ifdef CONFIG_UART_STM32_PORT_1
-STM32_UART_INIT(USART_1, STM32_CLOCK_BUS_APB2, LL_APB2_GRP1_PERIPH_USART1)
-#endif	/* CONFIG_UART_STM32_PORT_1 */
-
-#ifdef CONFIG_UART_STM32_PORT_2
-STM32_UART_INIT(USART_2, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_USART2)
-#endif	/* CONFIG_UART_STM32_PORT_2 */
-
-#ifdef CONFIG_UART_STM32_PORT_4
-STM32_UART_INIT(USART_4, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_USART4)
-#endif /* CONFIG_UART_STM32_PORT_4 */
-
-#ifdef CONFIG_UART_STM32_PORT_5
-STM32_UART_INIT(USART_5, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_USART5)
-#endif /* CONFIG_UART_STM32_PORT_5 */
-
-#ifdef CONFIG_UART_STM32_LPUART_1
-STM32_UART_INIT(LPUART_1, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_LPUART1)
-#endif /* CONFIG_UART_STM32_LPUART_1 */
-
-#else
-
-#ifdef CONFIG_UART_STM32_PORT_1
-STM32_UART_INIT(USART_1, STM32_CLOCK_BUS_APB2, LL_APB2_GRP1_PERIPH_USART1)
-#endif	/* CONFIG_UART_STM32_PORT_1 */
-
-#ifdef CONFIG_UART_STM32_PORT_2
-STM32_UART_INIT(USART_2, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_USART2)
-#endif	/* CONFIG_UART_STM32_PORT_2 */
-
-#ifdef CONFIG_UART_STM32_PORT_3
-STM32_UART_INIT(USART_3, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_USART3)
-#endif	/* CONFIG_UART_STM32_PORT_3 */
-
-#ifdef CONFIG_UART_STM32_PORT_4
-STM32_UART_INIT(UART_4, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_UART4)
-#endif /* CONFIG_UART_STM32_PORT_4 */
-
-#ifdef CONFIG_UART_STM32_PORT_5
-STM32_UART_INIT(UART_5, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_UART5)
-#endif /* CONFIG_UART_STM32_PORT_5 */
-
-#ifdef CONFIG_UART_STM32_PORT_6
-STM32_UART_INIT(USART_6, STM32_CLOCK_BUS_APB2, LL_APB2_GRP1_PERIPH_USART6)
-#endif /* CONFIG_UART_STM32_PORT_6 */
-
-#ifdef CONFIG_UART_STM32_PORT_7
-STM32_UART_INIT(UART_7, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_UART7)
-#endif /* CONFIG_UART_STM32_PORT_7 */
-
-#ifdef CONFIG_UART_STM32_PORT_8
-STM32_UART_INIT(UART_8, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_UART8)
-#endif /* CONFIG_UART_STM32_PORT_8 */
-
-#ifdef CONFIG_UART_STM32_PORT_9
-STM32_UART_INIT(UART_9, STM32_CLOCK_BUS_APB2, LL_APB2_GRP1_PERIPH_UART9)
-#endif /* CONFIG_UART_STM32_PORT_9 */
-
-#ifdef CONFIG_UART_STM32_PORT_10
-STM32_UART_INIT(UART_10, STM32_CLOCK_BUS_APB2, LL_APB2_GRP1_PERIPH_UART10)
-#endif /* CONFIG_UART_STM32_PORT_10 */
-
-#ifdef CONFIG_SOC_SERIES_STM32L4X
-#ifdef CONFIG_UART_STM32_LPUART_1
-STM32_UART_INIT(LPUART_1, STM32_CLOCK_BUS_APB1_2, LL_APB1_GRP2_PERIPH_LPUART1)
-#endif /* CONFIG_UART_STM32_LPUART_1 */
-#endif /* CONFIG_SOC_SERIES_STM32L4X */
-
-#endif
+/** @code{.codeins}@endcode */

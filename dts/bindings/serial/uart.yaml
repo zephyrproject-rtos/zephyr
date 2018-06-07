@@ -10,6 +10,11 @@ child:
     bus: uart
 
 properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
     clock-frequency:
       type: int
       category: optional
