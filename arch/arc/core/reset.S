@@ -44,8 +44,18 @@ GTEXT(__start)
 SECTION_FUNC(TEXT,__reset)
 SECTION_FUNC(TEXT,__start)
 
-	/* lock interrupts: will get unlocked when switch to main task */
-	clri
+	/* lock interrupts: will get unlocked when switch to main task
+	 * also make sure the processor in the correct status
+	 */
+	mov r0, 0
+	kflag r0
+
+	/* interrupt related init */
+	sr r0, [_ARC_V2_AUX_IRQ_ACT]
+	sr r0, [_ARC_V2_AUX_IRQ_CTRL]
+	sr r0, [_ARC_V2_AUX_IRQ_HINT]
+
+	/* \todo: MPU init, gp for small data? */
 
 #if CONFIG_USERSPACE
 	lr r0, [_ARC_V2_STATUS32]
