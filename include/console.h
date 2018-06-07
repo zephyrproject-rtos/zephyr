@@ -77,6 +77,25 @@ void console_getline_init(void);
  */
 char *console_getline(void);
 
+/** @brief Initialize legacy fifo-based line input
+ *
+ *  Input processing is started when string is typed in the console.
+ *  Carriage return is translated to NULL making string always NULL
+ *  terminated. Application before calling register function need to
+ *  initialize two fifo queues mentioned below.
+ *
+ *  This is a special-purpose function, it's recommended to use
+ *  console_getchar() or console_getline() functions instead.
+ *
+ *  @param avail_queue k_fifo queue keeping available line buffers
+ *  @param out_queue k_fifo queue of entered lines which to be processed
+ *         in the application code.
+ *  @param completion callback for tab completion of entered commands
+ */
+void console_register_line_input(struct k_fifo *avail_queue,
+				 struct k_fifo *out_queue,
+				 u8_t (*completion)(char *str, u8_t len));
+
 
 #ifdef __cplusplus
 }

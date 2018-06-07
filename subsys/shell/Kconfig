@@ -13,6 +13,7 @@ config CONSOLE_SHELL
 	prompt "Enable console input handler [ Experimental ]"
 	default n
 	select CONSOLE_HANDLER
+	select CONSOLE_SUBSYS
 	help
 	  Shell implementation based on CONSOLE_HANDLER.
 
