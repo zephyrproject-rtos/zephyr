@@ -653,9 +653,6 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, src);
 	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, dst);
 
-	/* Clear and then set the chksum */
-	net_icmpv6_set_chksum(pkt, pkt->frags);
-
 	if (net_ipv6_finalize_raw(pkt, IPPROTO_ICMPV6) < 0) {
 		goto drop;
 	}
