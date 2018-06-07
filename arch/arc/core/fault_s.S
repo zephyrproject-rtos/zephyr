@@ -36,6 +36,15 @@ GTEXT(__ev_maligned)
 
 GDATA(exc_nest_count)
 
+	.balign 4
+SECTION_VAR(BSS, saved_value)
+	.word 0
+
+#define EXCEPTION_STACK_SIZE 256
+
+SECTION_VAR(NOINIT, _exception_stack)
+	.space EXCEPTION_STACK_SIZE
+
 /*
  * @brief Fault handler installed in the fault and reserved vectors
  */
@@ -53,21 +62,18 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_div_zero)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_dc_error)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 
-	/*
-	 * Before invoking exception handler, the kernel switches to an exception
-	 * stack, to save the faulting thread's registers.
-	 * The exception is fatal and all the kernel can do is just print
-	 * a diagnostic message and halt.
-	 */
 
 #ifdef CONFIG_ARC_STACK_CHECKING
-	push_s r2
+	st r0, [saved_value]
 	/* disable stack checking */
-	lr r2, [_ARC_V2_STATUS32]
-	bclr r2, r2, _ARC_V2_STATUS32_SC_BIT
-	kflag r2
-	pop_s r2
+	lr r0, [_ARC_V2_STATUS32]
+	bclr r0, r0, _ARC_V2_STATUS32_SC_BIT
+	kflag r0
+	ld r0, [saved_value]
 #endif
+	st sp, [saved_value]
+	mov_s sp, _exception_stack
+	add sp, sp, EXCEPTION_STACK_SIZE
 
 	/* save caller saved registers */
 	_create_irq_stack_frame
@@ -81,30 +87,11 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 	lr r0,[_ARC_V2_ERET]
 	st_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
 
-	ld r1, [exc_nest_count]
-	add r0, r1, 1
-	st r0, [exc_nest_count]
-	cmp r1, 0
-
-	bgt.d  exc_nest_handle
 	mov r0, sp
-
-	mov r1, _kernel
-	ld sp, [r1, _kernel_offset_to_irq_stack]
-exc_nest_handle:
-	push_s r0
 
 	jl _Fault
 
 _exc_return:
-	pop sp
-
-	mov	r1, exc_nest_count
-	ld	r0, [r1]
-	sub	r0, r0, 1
-	cmp	r0, 0
-	bne.d	_exc_return_from_exc
-	st 	r0, [r1]
 
 #ifdef CONFIG_PREEMPT_ENABLED
 	mov_s r1, _kernel
@@ -113,11 +100,6 @@ _exc_return:
 	/* check if the current thread needs to be rescheduled */
 	ld_s r0, [r1, _kernel_offset_to_ready_q_cache]
 	breq r0, r2, _exc_return_from_exc
-
-	_save_callee_saved_regs
-
-	st _CAUSE_RIRQ, [r2, _thread_offset_to_relinquish_cause]
-	/* note: Ok to use _CAUSE_RIRQ since everything is saved */
 
 	ld_s r2, [r1, _kernel_offset_to_ready_q_cache]
 	st_s r2, [r1, _kernel_offset_to_current]
@@ -152,6 +134,7 @@ _exc_return:
 
 _exc_return_from_exc:
 	_pop_irq_stack_frame
+	ld sp, [saved_value]
 	rtie
 
 
@@ -204,13 +187,16 @@ valid_syscall_id:
 _do_other_trap:
 #endif /* CONFIG_USERSPACE */
 #ifdef CONFIG_ARC_STACK_CHECKING
-	push_s r2
+	st r0, [saved_value]
 	/* disable stack checking */
-	lr r2, [_ARC_V2_STATUS32]
-	bclr r2, r2, _ARC_V2_STATUS32_SC_BIT
-	kflag r2
-	pop_s r2
+	lr r0, [_ARC_V2_STATUS32]
+	bclr r0, r0, _ARC_V2_STATUS32_SC_BIT
+	kflag r0
+	ld r0, [saved_value]
 #endif
+	st sp, [saved_value]
+	mov_s sp, _exception_stack
+	add sp, sp, EXCEPTION_STACK_SIZE
 
 	/* save caller saved registers */
 	_create_irq_stack_frame
@@ -224,18 +210,7 @@ _do_other_trap:
 	lr r0,[_ARC_V2_ERET]
 	st_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
 
-	ld r1, [exc_nest_count]
-	add r0, r1, 1
-	st r0, [exc_nest_count]
-	cmp r1, 0
-
-	bgt.d  trap_nest_handle
 	mov r0, sp
-
-	mov r1, _kernel
-	ld sp, [r1, _kernel_offset_to_irq_stack]
-trap_nest_handle:
-	push_s r0
 
 	mov blink,  _exc_return
 
