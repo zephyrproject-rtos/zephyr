@@ -293,7 +293,7 @@ struct dirent *readdir(DIR *dirp)
 	}
 
 	rc = strlen(fdirent.name);
-	rc = (rc <= PATH_MAX) ? rc : PATH_MAX;
+	rc = (rc < PATH_MAX) ? rc : (PATH_MAX - 1);
 	memcpy(pdirent.d_name, fdirent.name, rc);
 
 	/* Make sure the name is NULL terminated */
