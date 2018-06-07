@@ -16,14 +16,6 @@
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_CRYPTO_LEVEL
 #include <logging/sys_log.h>
 
-#ifdef CONFIG_CRYPTO_TINYCRYPT_SHIM
-#define CRYPTO_DRV_NAME CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME
-#elif CONFIG_CRYPTO_MBEDTLS_SHIM
-#define CRYPTO_DRV_NAME CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME
-#else
-#error "You need to enable one crypto device"
-#endif
-
 static u8_t key[16] = {
 	0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88,
 	0x09, 0xcf, 0x4f, 0x3c
@@ -392,7 +384,7 @@ struct mode_test {
 
 void main(void)
 {
-	struct device *dev = device_get_binding(CRYPTO_DRV_NAME);
+	struct device *dev = device_get_binding(CONFIG_CRYPTO_NAME);
 	const struct mode_test modes[] = {
 		{ .mode = "CBC Mode", .mode_func = cbc_mode },
 		{ .mode = "CTR Mode", .mode_func = ctr_mode },
@@ -402,7 +394,7 @@ void main(void)
 	int i;
 
 	if (!dev) {
-		SYS_LOG_ERR("%s pseudo device not found", CRYPTO_DRV_NAME);
+		SYS_LOG_ERR("%s pseudo device not found", CONFIG_CRYPTO_NAME);
 		return;
 	}
 

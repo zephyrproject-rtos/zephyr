@@ -14,12 +14,6 @@ menuconfig CRYPTO_ATAES132A
 
 if CRYPTO_ATAES132A
 
-config CRYPTO_ATAES132A_DRV_NAME
-	string "Driver's name"
-	default "ataes132a"
-	help
-	  Name for the ATAES132A driver which will be used for binding.
-
 config CRYPTO_ATAES132A_I2C_PORT_NAME
 	string "I2C master controller port name"
 	default "I2C_0"
