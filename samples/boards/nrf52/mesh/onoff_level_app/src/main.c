@@ -24,7 +24,7 @@ void main(void)
 
 	update_light_state();
 
-	printk("Initializing....\n\r");
+	printk("Initializing...\n\r");
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);
