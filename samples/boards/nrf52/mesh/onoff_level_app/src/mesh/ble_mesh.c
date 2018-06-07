@@ -30,19 +30,18 @@ static void prov_reset(void)
 
 static uint8_t dev_uuid[16];
 
-static const struct bt_mesh_prov prov = 
-{
+static const struct bt_mesh_prov prov = {
 	.uuid = dev_uuid,
 
       #ifdef OOB_AUTH_ENABLE
-		
-	//.static_val = static_oob,
-	//.static_val_len = 16,
+
+	// .static_val = static_oob,
+	// .static_val_len = 16,
 
 	.output_size = 6,
-	//.output_actions = BT_MESH_BLINK | BT_MESH_BEEP | BT_MESH_VIBRATE | BT_MESH_DISPLAY_NUMBER | BT_MESH_DISPLAY_STRING,
+	// .output_actions = BT_MESH_BLINK | BT_MESH_BEEP | BT_MESH_VIBRATE | BT_MESH_DISPLAY_NUMBER | BT_MESH_DISPLAY_STRING,
 	.output_actions = BT_MESH_DISPLAY_NUMBER | BT_MESH_DISPLAY_STRING,
-	
+
 	.output_number = output_number,
 	.output_string = output_string,
 
@@ -56,8 +55,7 @@ void bt_ready(int err)
 {
 	struct bt_le_oob oob;
 
-	if (err) 
-        {
+	if (err) {
 		printk("Bluetooth init failed (err %d", err);
 		return;
 	}
@@ -65,12 +63,9 @@ void bt_ready(int err)
 	printk("Bluetooth initialized");
 
 	/* Use identity address as device UUID */
-	if (bt_le_oob_get_local(&oob)) 
-	{
+	if (bt_le_oob_get_local(&oob)) {
 		printk("Identity Address unavailable");
-	} 
-	else 
-	{
+	} else {
 		memcpy(dev_uuid, oob.addr.a.val, 6);
 	}
 
@@ -86,7 +81,7 @@ void bt_ready(int err)
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
 	}
-        
+
 	bt_mesh_prov_enable(BT_MESH_PROV_GATT | BT_MESH_PROV_ADV);
 
 	printk("Mesh initialized\n\r");

@@ -1,10 +1,10 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
-#define  SETB(x, y)   (x |= (1<<y))     //for o/p
-#define  CLRB(x, y)   (x &= (~(1<<y)))  //for o/p
-#define  TGLB(x, y)   (x ^= (1<<y))     //for o/p
-#define  CHECKB(x, y) (x &  (1<<y))      //for i/p
+#define  SETB(x, y)   (x |= (1<<y))     // for o/p
+#define  CLRB(x, y)   (x &= (~(1<<y)))  // for o/p
+#define  TGLB(x, y)   (x ^= (1<<y))     // for o/p
+#define  CHECKB(x, y) (x &  (1<<y))     // for i/p
 
 #include <misc/printk.h>
 #include <settings/settings.h>
@@ -30,18 +30,18 @@
 #include "publisher.h"
 #include "doer.h"
 
-//--------------------------------------------COMPANY ID----------------------------------------------------------------
+// --------------------------------------------COMPANY ID----------------------------------------------------------------
 
 #define CID_INTEL 0x0002
 
-//--------------------------------------------GPIO----------------------------------------------------------------------
+// --------------------------------------------GPIO----------------------------------------------------------------------
 
 extern struct device *button_device[4];
 extern struct device *led_device[4];
 
 void gpio_init(void);
 
-//--------------------------------------------NVS-----------------------------------------------------------------------
+// --------------------------------------------NVS-----------------------------------------------------------------------
 
 #include <nvs/nvs.h>
 
@@ -56,7 +56,7 @@ void gpio_init(void);
 
 extern struct nvs_fs fs;
 
-//--------------------------------------------Others--------------------------------------------------------------------
+// --------------------------------------------Others--------------------------------------------------------------------
 
 #define LEVEL_0   -32768
 #define LEVEL_25  -16384
@@ -64,11 +64,10 @@ extern struct nvs_fs fs;
 #define LEVEL_75  16384
 #define LEVEL_100 32767
 
-struct light_state_t 
-{
+struct light_state_t {
 	uint8_t OnOff;
 	int16_t power;
-	//int16_t color;
+	// int16_t color;
 };
 
 extern struct light_state_t light_state_current;
