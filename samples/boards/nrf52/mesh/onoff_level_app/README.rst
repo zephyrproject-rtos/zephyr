@@ -1,4 +1,5 @@
 .. _bluetooth-mesh-onoff-level-sample:
+
 Bluetooth: Mesh OnOff & Level Model
 ###################################
 Overview
