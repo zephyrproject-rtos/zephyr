@@ -29,16 +29,10 @@
  */
 #define RTC_HALF               (RTC_MASK / 2)
 
-#define RTC_TICKS_PER_SYS_TICK ((u32_t)((((u64_t)1000000UL / \
-				 sys_clock_ticks_per_sec) * \
-				1000000000UL) / 30517578125UL) & RTC_MASK)
-
-extern s32_t _sys_idle_elapsed_ticks;
-
 /*
  * rtc_past holds the value of RTC_COUNTER at the time the last sys tick was
  * announced, in RTC ticks. It is therefore always a multiple of
- * RTC_TICKS_PER_SYS_TICK.
+ * sys_clock_hw_cycles_per_tick.
  */
 static u32_t rtc_past;
 
@@ -114,12 +108,12 @@ static void rtc_announce_set_next(void)
 	/* If no sys ticks have elapsed, there is no point in incrementing the
 	 * counters or announcing it.
 	 */
-	if (rtc_elapsed >= RTC_TICKS_PER_SYS_TICK) {
+	if (rtc_elapsed >= sys_clock_hw_cycles_per_tick) {
 #ifdef CONFIG_TICKLESS_IDLE
 		/* Calculate how many sys ticks elapsed since the last sys tick
 		 * and notify the kernel if necessary.
 		 */
-		sys_elapsed = rtc_elapsed / RTC_TICKS_PER_SYS_TICK;
+		sys_elapsed = rtc_elapsed / sys_clock_hw_cycles_per_tick;
 
 		if (sys_elapsed > expected_sys_ticks) {
 			/* Never announce more sys ticks than the kernel asked
@@ -141,7 +135,7 @@ static void rtc_announce_set_next(void)
 		 * has passed.
 		 */
 		rtc_past = (rtc_past +
-				(sys_elapsed * RTC_TICKS_PER_SYS_TICK)
+				(sys_elapsed * sys_clock_hw_cycles_per_tick)
 			   ) & RTC_MASK;
 
 		_sys_idle_elapsed_ticks = sys_elapsed;
@@ -149,7 +143,7 @@ static void rtc_announce_set_next(void)
 	}
 
 	/* Set the RTC to the next sys tick */
-	rtc_compare_set(rtc_past + RTC_TICKS_PER_SYS_TICK);
+	rtc_compare_set(rtc_past + sys_clock_hw_cycles_per_tick);
 }
 #endif
 
@@ -196,8 +190,8 @@ void _timer_idle_enter(s32_t sys_ticks)
 #else
 	/* Restrict ticks to max supported by RTC without risking overflow*/
 	if ((sys_ticks < 0) ||
-		(sys_ticks > (RTC_HALF / RTC_TICKS_PER_SYS_TICK))) {
-		sys_ticks = RTC_HALF / RTC_TICKS_PER_SYS_TICK;
+		(sys_ticks > (RTC_HALF / sys_clock_hw_cycles_per_tick))) {
+		sys_ticks = RTC_HALF / sys_clock_hw_cycles_per_tick;
 	}
 
 	expected_sys_ticks = sys_ticks;
@@ -205,7 +199,7 @@ void _timer_idle_enter(s32_t sys_ticks)
 	/* If ticks is 0, the RTC interrupt handler will be set pending
 	 * immediately, meaning that we will not go to sleep.
 	 */
-	rtc_compare_set(rtc_past + (sys_ticks * RTC_TICKS_PER_SYS_TICK));
+	rtc_compare_set(rtc_past + (sys_ticks * sys_clock_hw_cycles_per_tick));
 #endif
 }
 
@@ -264,7 +258,7 @@ u32_t _get_elapsed_program_time(void)
 	} while (rtc_prev != rtc_now);
 
 	/*Convert number of Machine cycles to SYS TICS*/
-	return (rtc_elapsed / RTC_TICKS_PER_SYS_TICK);
+	return (rtc_elapsed / sys_clock_hw_cycles_per_tick);
 }
 
 
@@ -288,14 +282,14 @@ void _set_time(u32_t time)
 	expected_sys_ticks = time;
 	_sys_clock_tick_count = _get_elapsed_clock_time();
 	/* Update rtc_past to track rtc timer count*/
-	rtc_past = (_sys_clock_tick_count * RTC_TICKS_PER_SYS_TICK) & RTC_MASK;
+	rtc_past = (_sys_clock_tick_count * sys_clock_hw_cycles_per_tick) & RTC_MASK;
 
 	expected_sys_ticks = expected_sys_ticks > _get_max_clock_time() ?
 				_get_max_clock_time() : expected_sys_ticks;
 
 	/* Programe RTC compare register to generate interrupt*/
 	rtc_compare_set(rtc_past +
-			(expected_sys_ticks * RTC_TICKS_PER_SYS_TICK));
+			(expected_sys_ticks * sys_clock_hw_cycles_per_tick));
 
 }
 
@@ -323,8 +317,8 @@ s32_t _get_max_clock_time(void)
 	} while (rtc_now != rtc_prev);
 
 	/* Convert RTC Ticks to SYS TICKS*/
-	if (rtc_away >= RTC_TICKS_PER_SYS_TICK) {
-		sys_away = rtc_away / RTC_TICKS_PER_SYS_TICK;
+	if (rtc_away >= sys_clock_hw_cycles_per_tick) {
+		sys_away = rtc_away / sys_clock_hw_cycles_per_tick;
 	}
 	return sys_away;
 }
@@ -365,9 +359,9 @@ u64_t _get_elapsed_clock_time(void)
 		rtc_now = RTC_COUNTER;
 	} while (rtc_now != rtc_prev);
 
-	if (rtc_elapsed >= RTC_TICKS_PER_SYS_TICK) {
+	if (rtc_elapsed >= sys_clock_hw_cycles_per_tick) {
 		/* Convert RTC cycles to SYS TICKS*/
-		sys_elapsed = rtc_elapsed / RTC_TICKS_PER_SYS_TICK;
+		sys_elapsed = rtc_elapsed / sys_clock_hw_cycles_per_tick;
 		/* Update total number of SYS_TICKS passed*/
 		elapsed += sys_elapsed;
 	}
@@ -501,7 +495,7 @@ int _sys_clock_driver_init(struct device *device)
 
 	/* TODO: replace with counter driver to access RTC */
 	SYS_CLOCK_RTC->PRESCALER = 0;
-	SYS_CLOCK_RTC->CC[0] = RTC_TICKS_PER_SYS_TICK;
+	SYS_CLOCK_RTC->CC[0] = sys_clock_hw_cycles_per_tick;
 	SYS_CLOCK_RTC->EVTENSET = RTC_EVTENSET_COMPARE0_Msk;
 	SYS_CLOCK_RTC->INTENSET = RTC_INTENSET_COMPARE0_Msk;
 
@@ -530,7 +524,7 @@ u32_t _timer_cycle_get_32(void)
 	do {
 		sys_clock_tick_count = _sys_clock_tick_count;
 		elapsed_cycles = (rtc_now - (sys_clock_tick_count *
-					     RTC_TICKS_PER_SYS_TICK)) &
+					     sys_clock_hw_cycles_per_tick)) &
 				 RTC_MASK;
 		rtc_prev = rtc_now;
 		rtc_now = RTC_COUNTER;
