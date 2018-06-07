@@ -13,9 +13,6 @@ extern struct server_state gen_onoff_srv_user_data_root;
 extern struct server_state gen_level_srv_user_data_root;
 
 extern struct bt_mesh_model root_models[];
-// extern struct bt_mesh_model s0_models[];
-
-// extern struct bt_mesh_elem elements[];
 
 extern const struct bt_mesh_comp comp;
 

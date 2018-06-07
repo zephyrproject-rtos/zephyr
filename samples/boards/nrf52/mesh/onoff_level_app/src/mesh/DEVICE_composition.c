@@ -36,18 +36,18 @@ BT_MESH_MODEL_PUB_DEFINE(gen_level_cli_pub_root, NULL, 2 + 2 + 2);
 BT_MESH_MODEL_PUB_DEFINE(gen_onoff_srv_pub_s0, NULL, 2 + 2);
 BT_MESH_MODEL_PUB_DEFINE(gen_onoff_cli_pub_s0, NULL, 2 + 2);
 
-struct server_state   gen_onoff_srv_user_data_root = {	
-	.previous = 0xFFFFFFFF, 	// it should be anything except {0,1}
+struct server_state   gen_onoff_srv_user_data_root = {
+	.previous = 0xFFFFFFFF, 	/* it should be anything except {0,1} */
 	.model_instance = 1,
 };
 
 struct server_state   gen_level_srv_user_data_root = {
-	.previous = 0xFFFFFFFF,		// it should be anything except { -32768 to 32767}
+	.previous = 0xFFFFFFFF,		/* it should be anything except {-32768 to 32767} */
 	.model_instance = 1,
 };
 
 struct server_state   gen_onoff_srv_user_data_s0 = {
-	.previous = 0xFFFFFFFF,
+	.previous = 0xFFFFFFFF,		/* it should be anything except {0,1} */
 	.model_instance = 2,
 };
 

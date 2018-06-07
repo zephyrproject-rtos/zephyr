@@ -1,11 +1,12 @@
 #include "common.h"
 
-/*
+#ifdef OOB_AUTH_ENABLE
+
 static int output_number(bt_mesh_output_action_t action, uint32_t number)
 {
 	printk("OOB Number: %u\n", number);
 
-	//board_output_number(action, number);
+	board_output_number(action, number);
 
 	return 0;
 }
@@ -16,7 +17,8 @@ static int output_string(const char *str)
 
 	return 0;
 }
-*/
+
+#endif
 
 static void prov_complete(u16_t net_idx, u16_t addr)
 {
@@ -35,13 +37,8 @@ static const struct bt_mesh_prov prov = {
 
       #ifdef OOB_AUTH_ENABLE
 
-	// .static_val = static_oob,
-	// .static_val_len = 16,
-
 	.output_size = 6,
-	// .output_actions = BT_MESH_BLINK | BT_MESH_BEEP | BT_MESH_VIBRATE | BT_MESH_DISPLAY_NUMBER | BT_MESH_DISPLAY_STRING,
 	.output_actions = BT_MESH_DISPLAY_NUMBER | BT_MESH_DISPLAY_STRING,
-
 	.output_number = output_number,
 	.output_string = output_string,
 
@@ -69,7 +66,7 @@ void bt_ready(int err)
 		memcpy(dev_uuid, oob.addr.a.val, 6);
 	}
 
-        board_init();
+	board_init();
 
 	err = bt_mesh_init(&prov, &comp);
 
