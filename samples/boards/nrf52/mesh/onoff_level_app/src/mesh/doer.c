@@ -119,7 +119,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 			}
 		}
 
-		state_ptr->previous = state_ptr->current;	
+		state_ptr->previous = state_ptr->current;
 
 		break;
 

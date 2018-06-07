@@ -80,7 +80,7 @@ void update_light_state(void)
 	} else {
 		gpio_pin_write(led_device[0], LED0_GPIO_PIN, 1);	/* LED1 Off */
 	}
-	
+
 	if (power < 50) {
 		gpio_pin_write(led_device[2], LED2_GPIO_PIN, 0);	/* LED3 On */
 		gpio_pin_write(led_device[3], LED3_GPIO_PIN, 1);	/* LED4 Off */
