@@ -683,12 +683,14 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
  *  all peer that have notification enabled via CCC otherwise do a direct
  *  notification only the given connection.
  *
- *  The attribute object must be the so called Characteristic Value Descriptor,
- *  its usually declared with BT_GATT_DESCRIPTOR after BT_GATT_CHARACTERISTIC
- *  and before BT_GATT_CCC.
+ *  The attribute object can be the so called Characteristic Declaration,
+ *  which is usually declared with BT_GATT_CHARACTERISTIC followed by
+ *  BT_GATT_CCC, or the Characteristic Value Declaration which is automatically
+ *  created after the Characteristic Declaration when using
+ *  BT_GATT_CHARACTERISTIC.
  *
  *  @param conn Connection object.
- *  @param attr Characteristic Value Descriptor attribute.
+ *  @param attr Characteristic or Characteristic Value attribute.
  *  @param data Pointer to Attribute data.
  *  @param len Attribute value length.
  */
