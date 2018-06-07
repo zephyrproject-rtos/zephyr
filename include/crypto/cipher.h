@@ -268,4 +268,43 @@ static inline int cipher_ccm_op(struct cipher_ctx *ctx,
 	return ctx->ops.ccm_crypt_hndlr(ctx, pkt, nonce);
 }
 
+/*
+ * @brief Perform MAC operation
+ *
+ * @param[in]  ctx       Pointer to the crypto context of this op.
+ * @param[in/out]  pkt   Structure holding the Input/Output, Associated Data
+ *			 and tag buffer pointers.
+ *
+ * @return 0 on success, negative errno code on failure
+ */
+static inline int cipher_mac_op(struct cipher_ctx *ctx,
+				struct cipher_mac_pkt *pkt)
+{
+	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_CMAC, "CMAC mode "
+		 "session invoking a different mode handler");
+
+	pkt->ctx = ctx;
+	return ctx->ops.mac_crypt_hndlr(ctx, pkt);
+}
+
+static inline int cipher_prng_op(struct cipher_ctx *ctx,
+				 struct cipher_prng_pkt *pkt)
+{
+	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_PRNG_HMAC,
+		"HMAC PRNG mode session invoking a different mode handler");
+
+	pkt->ctx = ctx;
+	return ctx->ops.prng_crypt_hndlr(ctx, pkt);
+}
+
+static inline int cipher_ecc_op(struct cipher_ctx *ctx,
+				struct cipher_ecc_pkt *pkt)
+{
+	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_NONE,
+		"ECC mode session invoking a different mode handler");
+
+	pkt->ctx = ctx;
+	return ctx->ops.ecc_crypt_hndlr(ctx, pkt);
+}
+
 #endif /* ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_ */

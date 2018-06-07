@@ -21,26 +21,37 @@
 #include <misc/util.h>
 
 enum cipher_algo {
-	CRYPTO_CIPHER_ALGO_AES = 1,
+	CRYPTO_CIPHER_ALGO_PRNG,
+	CRYPTO_CIPHER_ALGO_MAC,
+	CRYPTO_CIPHER_ALGO_ECC,
+	CRYPTO_CIPHER_ALGO_AES,
 };
 
 enum cipher_op {
-	CRYPTO_CIPHER_OP_DECRYPT = 0,
-	CRYPTO_CIPHER_OP_ENCRYPT = 1,
+	CRYPTO_CIPHER_OP_DECRYPT,
+	CRYPTO_CIPHER_OP_ENCRYPT,
+	CRYPTO_CIPHER_OP_ECC_GEN_KEY,
+	CRYPTO_CIPHER_OP_ECC_GEN_SHARED_KEY,
+	CRYPTO_CIPHER_OP_ECC_VALIDATE_PUBKEY,
+	CRYPTO_CIPHER_OP_NONE,
 };
 
-/* Possible cipher mode options. More to be
- * added as required.
- */
+/* Possible cipher mode options. More to be added as required. */
 
 enum cipher_mode {
-	CRYPTO_CIPHER_MODE_ECB = 1,
-	CRYPTO_CIPHER_MODE_CBC = 2,
-	CRYPTO_CIPHER_MODE_CTR = 3,
-	CRYPTO_CIPHER_MODE_CCM = 4,
+	CRYPTO_CIPHER_MODE_NONE = 0,
+	CRYPTO_CIPHER_MODE_ECB = 1<<0,
+	CRYPTO_CIPHER_MODE_CBC = 1<<1,
+	CRYPTO_CIPHER_MODE_CTR = 1<<2,
+	CRYPTO_CIPHER_MODE_CCM = 1<<3,
+	CRYPTO_CIPHER_MODE_CMAC = 1<<4,
+	CRYPTO_CIPHER_MODE_PRNG_HMAC = 1<<5,
 };
 
 /* Forward declarations */
+struct cipher_ecc_pkt;
+struct cipher_prng_pkt;
+struct cipher_mac_pkt;
 struct cipher_aead_pkt;
 struct cipher_ctx;
 struct cipher_pkt;
@@ -59,8 +70,15 @@ typedef int (*ctr_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 typedef int (*ccm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
 			 u8_t *nonce);
 
-struct cipher_ops {
+typedef int (*mac_op_t)(struct cipher_ctx *ctx, struct cipher_mac_pkt *pkt);
 
+typedef int (*prng_op_t)(struct cipher_ctx *ctx,
+			 struct cipher_prng_pkt *pkt);
+
+typedef int (*ecc_op_t)(struct cipher_ctx *ctx,
+			struct cipher_ecc_pkt *pkt);
+
+struct cipher_ops {
 	enum cipher_mode cipher_mode;
 
 	union {
@@ -68,6 +86,9 @@ struct cipher_ops {
 		cbc_op_t	cbc_crypt_hndlr;
 		ctr_op_t	ctr_crypt_hndlr;
 		ccm_op_t	ccm_crypt_hndlr;
+		mac_op_t	mac_crypt_hndlr;
+		prng_op_t	prng_crypt_hndlr;
+		ecc_op_t	ecc_crypt_hndlr;
 	};
 };
 
@@ -103,6 +124,11 @@ struct cipher_ctx {
 		 * available to caller
 		 */
 		void *handle;
+		/* For PRNG operations */
+		struct {
+			u8_t *data;
+			size_t len;
+		} personalization;
 	} key;
 
 	/* The device driver instance this crypto context relates to. Will be
@@ -233,6 +259,57 @@ struct cipher_aead_pkt {
 	 * For a decryption op this has to be  supplied by the app.
 	 */
 	u8_t *tag;
+};
+
+struct cipher_mac_pkt {
+	/* Context this packet relates to. This can be useful to get the
+	 * session details esp for async ops. Will be populated by the
+	 * cipher_xxx_op() API based on the ctx parameter
+	 */
+	struct cipher_ctx *ctx;
+
+	u8_t *data;
+	size_t data_len;
+	bool finalize;
+};
+
+struct cipher_prng_pkt {
+	/* Context this packet relates to. This can be useful to get the
+	 * session details esp for async ops. Will be populated by the
+	 * cipher_xxx_op() API based on the ctx parameter
+	 */
+	struct cipher_ctx *ctx;
+
+	u8_t *data;
+	size_t data_len;
+
+	u8_t *additional_input;
+	size_t additional_input_len;
+
+	bool reseed;
+};
+
+enum cipher_ecc_curve {
+	CIPHER_ECC_CURVE_SECP256R1,
+};
+
+struct cipher_ecc_pkt {
+	/* Context this packet relates to. This can be useful to get the
+	 * session details esp for async ops. Will be populated by the
+	 * cipher_xxx_op() API based on the ctx parameter
+	 */
+	struct cipher_ctx *ctx;
+
+	enum cipher_ecc_curve curve;
+
+	u8_t *public_key;
+	size_t public_key_len;
+
+	u8_t *private_key;
+	size_t private_key_len;
+
+	u8_t *shared_secret;
+	size_t shared_secret_len;
 };
 
 /* Prototype for the application function to be invoked by the crypto driver

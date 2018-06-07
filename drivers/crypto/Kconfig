@@ -43,6 +43,18 @@ config SYS_LOG_CRYPTO_LEVEL
 
 	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
+config CRYPTO_MAX_SESSION
+	int "Maximum of sessions shim drivers can handle"
+	default 2
+	depends on CRYPTO_TINYCRYPT_SHIM || CRYPTO_MBEDTLS_SHIM
+	help
+	  This can be used to tweak the amount of sessions the driver
+	  can handle in parallel.
+
+choice
+	prompt "Crypto driver backend"
+	default CRYPTO_TINYCRYPT_SHIM
+
 config CRYPTO_TINYCRYPT_SHIM
 	bool "Enable TinyCrypt shim driver [EXPERIMENTAL]"
 	select TINYCRYPT
@@ -51,33 +63,64 @@ config CRYPTO_TINYCRYPT_SHIM
 	select TINYCRYPT_AES_CTR
 	select TINYCRYPT_AES_CCM
 	select TINYCRYPT_AES_CMAC
+	select TINYCRYPT_ECC_DH
+	select TINYCRYPT_SHA256
+	select TINYCRYPT_SHA256_HMAC
+	select TINYCRYPT_SHA256_HMAC_PRNG
 	help
 	  Enable TinyCrypt shim layer compliant with crypto APIs.
-
-config CRYPTO_TINYCRYPT_SHIM_MAX_SESSION
-	int "Maximum of sessions TinyCrypt shim driver can handle"
-	default 2
-	depends on CRYPTO_TINYCRYPT_SHIM
-	help
-	  This can be used to tweak the amount of sessions the driver
-	  can handle in parallel.
 
 config CRYPTO_MBEDTLS_SHIM
 	bool "Enable mbedTLS shim driver [EXPERIMENTAL]"
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
+	select MBEDTLS_ENABLE_ECP
+	select MBEDTLS_ENABLE_CMAC
+	select MBEDTLS_ENABLE_ECC_DH
+	select MBEDTLS_ENABLE_CCM
+	select MBEDTLS_ENABLE_HMAC_DRBG
+	select MBEDTLS_AES_ROM_TABLES
 	help
 	  Enable mbedTLS shim layer compliant with crypto APIs. You will need
 	  to fill in a relevant value to CONFIG_MBEDTLS_HEAP_SIZE.
 
-config CRYPTO_MBEDTLS_SHIM_MAX_SESSION
-	int "Maximum of sessions mbedTLS shim driver can handle"
-	default 2
-	depends on CRYPTO_MBEDTLS_SHIM
+config CRYPTO_ATAES132A
+	bool "Atmel ATAES132A 32k AES Serial EEPROM support"
+	depends on I2C
 	help
-	  This can be used to tweak the amount of sessions the driver
-	  can handle in parallel.
+	  Enable Atmel ATAES132A 32k AES Serial EEPROM support.
 
-source "drivers/crypto/Kconfig.ataes132a"
+endchoice
+
+if CRYPTO_ATAES132A
+
+config CRYPTO_ATAES132A_I2C_PORT_NAME
+	string "I2C master controller port name"
+	default "I2C_0"
+	help
+	  Master I2C port name through which ATAES132A chip is accessed.
+
+config CRYPTO_ATAES132A_I2C_ADDR
+	hex "ATAES132A I2C address"
+	default 0x50
+	help
+	  ATAES132A chip's I2C address.
+
+choice
+	prompt "ATAES132A I2C bus speed"
+	default CRYPTO_ATAES132A_I2C_SPEED_STANDARD
+
+config CRYPTO_ATAES132A_I2C_SPEED_STANDARD
+	bool "Standard"
+	help
+	  Standard bis speed of up to 100KHz.
+
+config CRYPTO_ATAES132A_I2C_SPEED_FAST
+	bool "Fast"
+	help
+	  Fast bus speed of up to 400KHz.
+endchoice
+
+endif # CRYPTO_ATAES132A
 
 endif # CRYPTO

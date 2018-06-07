@@ -8,6 +8,11 @@
  * @file Shim layer for TinyCrypt, making it complaint to crypto API.
  */
 
+#include <tinycrypt/aes.h>
+#include <tinycrypt/cmac_mode.h>
+#include <tinycrypt/ecc.h>
+#include <tinycrypt/ecc_dh.h>
+#include <tinycrypt/hmac_prng.h>
 #include <tinycrypt/cbc_mode.h>
 #include <tinycrypt/ctr_mode.h>
 #include <tinycrypt/ccm_mode.h>
@@ -15,15 +20,24 @@
 #include <tinycrypt/utils.h>
 #include <string.h>
 #include <crypto/cipher.h>
-#include "crypto_tc_shim_priv.h"
+#include <kernel.h>
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_CRYPTO_LEVEL
 #include <logging/sys_log.h>
 
+struct tc_shim_drv_state {
+	struct tc_aes_key_sched_struct session_key;
+	union {
+		struct tc_cmac_struct cmac_state;
+		struct tc_hmac_prng_struct prng_state;
+	};
+};
 
-#define CRYPTO_MAX_SESSION CONFIG_CRYPTO_TINYCRYPT_SHIM_MAX_SESSION
-
-static struct tc_shim_drv_state tc_driver_state[CRYPTO_MAX_SESSION];
+K_MEM_POOL_DEFINE(tc_shim_session_pool,
+	(sizeof(struct tc_shim_drv_state) + sizeof(struct k_mem_block_id)),
+	(sizeof(struct tc_shim_drv_state) + sizeof(struct k_mem_block_id)),
+	CONFIG_CRYPTO_MAX_SESSION,
+	__alignof__(struct tc_shim_drv_state));
 
 static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 			  u8_t *iv)
@@ -174,34 +188,285 @@ static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
 	return 0;
 }
 
-static int get_unused_session(void)
+static int do_mac_op(struct cipher_ctx *ctx, struct cipher_mac_pkt *pkt)
 {
-	int i;
+	struct tc_shim_drv_state *state = ctx->drv_sessn_state;
+	int r;
 
-	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
-		if (tc_driver_state[i].in_use == 0) {
-			tc_driver_state[i].in_use = 1;
-			break;
-		}
+	if (pkt->finalize) {
+		r = tc_cmac_final(pkt->data, &state->cmac_state);
+	} else {
+		r = tc_cmac_update(&state->cmac_state, pkt->data,
+				   pkt->data_len);
 	}
 
-	return i;
+	return r == TC_CRYPTO_SUCCESS ? 0 : -EIO;
 }
 
-static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
-		     enum cipher_algo algo, enum cipher_mode mode,
-		     enum cipher_op op_type)
+static int do_prng_op(struct cipher_ctx *ctx,
+		      struct cipher_prng_pkt *pkt)
 {
-	struct tc_shim_drv_state *data;
-	int idx;
+	struct tc_shim_drv_state *state = ctx->drv_sessn_state;
+	int r;
 
-	ARG_UNUSED(dev);
+	if (pkt->reseed) {
+		r = tc_hmac_prng_reseed(&state->prng_state,
+					pkt->data, pkt->data_len,
+					pkt->additional_input,
+					pkt->additional_input_len);
+	} else {
+		r = tc_hmac_prng_generate(pkt->data, pkt->data_len,
+					  &state->prng_state);
+	}
 
-	/* The shim currently supports only CBC or CTR mode for AES */
-	if (algo != CRYPTO_CIPHER_ALGO_AES) {
-		SYS_LOG_ERR("TC Shim Unsupported algo");
+	switch (r) {
+	case TC_CRYPTO_SUCCESS:
+		return 0;
+	case TC_HMAC_PRNG_RESEED_REQ:
+		return -EAGAIN;
+	default:
+		return -EIO;
+	}
+}
+
+static int do_ecc_op_gen_key(struct cipher_ctx *ctx,
+			     struct cipher_ecc_pkt *pkt)
+{
+	int r;
+
+	if (pkt->curve != CIPHER_ECC_CURVE_SECP256R1) {
 		return -EINVAL;
 	}
+	if (pkt->public_key_len != 64) {
+		return -EINVAL;
+	}
+	if (pkt->private_key_len != 32) {
+		return -EINVAL;
+	}
+
+	r = uECC_make_key(pkt->public_key,
+			  pkt->private_key,
+			  &curve_secp256r1);
+
+	return r == TC_CRYPTO_SUCCESS ? 0 : -EINVAL;
+}
+
+static int do_ecc_op_validate_pubkey(struct cipher_ctx *ctx,
+				     struct cipher_ecc_pkt *pkt)
+{
+	int r;
+
+	if (pkt->curve != CIPHER_ECC_CURVE_SECP256R1) {
+		return -EINVAL;
+	}
+	if (pkt->public_key_len != 64) {
+		return -EINVAL;
+	}
+
+	r = uECC_valid_public_key(pkt->public_key,
+				  &curve_secp256r1);
+
+	return r == 0 ? 0 : -EINVAL;
+}
+
+
+static int do_ecc_op_gen_shared_key(struct cipher_ctx *ctx,
+				    struct cipher_ecc_pkt *pkt)
+{
+	int r;
+
+	if (pkt->curve != CIPHER_ECC_CURVE_SECP256R1) {
+		return -EINVAL;
+	}
+	if (pkt->public_key_len != 64) {
+		return -EINVAL;
+	}
+	if (pkt->private_key_len != 32) {
+		return -EINVAL;
+	}
+	if (pkt->shared_secret_len != 32) {
+		return -EINVAL;
+	}
+
+	r = uECC_shared_secret(pkt->public_key,
+			       pkt->private_key,
+			       pkt->shared_secret,
+			       &curve_secp256r1);
+
+	return r == TC_CRYPTO_SUCCESS ? 0 : -EINVAL;
+}
+
+static struct tc_shim_drv_state *get_unused_session(void)
+{
+	return k_mem_pool_malloc(&tc_shim_session_pool,
+				 sizeof(struct tc_shim_drv_state));
+}
+
+static int tc_session_setup_aes(struct cipher_ctx *ctx,
+				enum cipher_mode mode,
+				enum cipher_algo algo,
+				enum cipher_op op)
+{
+	struct tc_shim_drv_state *data;
+
+	if (ctx->keylen != TC_AES_KEY_SIZE) {
+		/* TinyCrypt supports only 128 bits */
+		SYS_LOG_ERR("Unsupported key size for Tinycript shim: %d",
+			    ctx->keylen);
+		return -EINVAL;
+	}
+
+	switch (mode) {
+	case CRYPTO_CIPHER_MODE_CBC:
+		if (op == CRYPTO_CIPHER_OP_ENCRYPT) {
+			ctx->ops.cbc_crypt_hndlr = do_cbc_encrypt;
+		} else {
+			ctx->ops.cbc_crypt_hndlr = do_cbc_decrypt;
+		}
+		break;
+	case CRYPTO_CIPHER_MODE_CTR:
+		if (ctx->mode_params.ctr_info.ctr_len != 32) {
+			SYS_LOG_ERR("Tinycrypt supports only 32 bit "
+				    "counter");
+			return -EINVAL;
+		}
+		/* Same operation works for encryption/decryption */
+		ctx->ops.ctr_crypt_hndlr = do_ctr_op;
+		break;
+	case CRYPTO_CIPHER_MODE_CCM:
+		if (op == CRYPTO_CIPHER_OP_ENCRYPT) {
+			ctx->ops.ccm_crypt_hndlr = do_ccm_encrypt_mac;
+		} else {
+			ctx->ops.ccm_crypt_hndlr = do_ccm_decrypt_auth;
+		}
+		break;
+	default:
+		SYS_LOG_ERR("Unsupported mode for AES algo: %d", mode);
+		return -EINVAL;
+	}
+
+	data = get_unused_session();
+	if (!data) {
+		return -ENOSPC;
+	}
+
+	if (tc_aes128_set_encrypt_key(&data->session_key,
+				      ctx->key.bit_stream) == TC_CRYPTO_FAIL) {
+		k_free(data);
+		return -EIO;
+	}
+
+	ctx->ops.cipher_mode = mode;
+	ctx->drv_sessn_state = data;
+
+	return 0;
+}
+
+static int tc_session_setup_prng(struct cipher_ctx *ctx,
+				 enum cipher_mode mode)
+{
+	struct tc_shim_drv_state *data;
+	int r;
+
+	if (mode != CRYPTO_CIPHER_MODE_PRNG_HMAC) {
+		SYS_LOG_ERR("Only HMAC PRNG supported by TC shim driver");
+		return -EINVAL;
+	}
+
+	data = get_unused_session();
+	if (!data) {
+		return -ENOSPC;
+	}
+
+	r = tc_hmac_prng_init(&data->prng_state,
+			      ctx->key.personalization.data,
+			      ctx->key.personalization.len);
+	if (r != TC_CRYPTO_SUCCESS) {
+		k_free(data);
+		return -EIO;
+	}
+
+	ctx->ops.prng_crypt_hndlr = do_prng_op;
+	ctx->ops.cipher_mode = mode;
+	ctx->drv_sessn_state = data;
+
+	return 0;
+}
+
+static int tc_session_setup_mac(struct cipher_ctx *ctx,
+				enum cipher_mode mode)
+{
+	struct tc_shim_drv_state *data;
+	int r;
+
+	if (!(mode & CRYPTO_CIPHER_MODE_CMAC)) {
+		SYS_LOG_ERR("Only CMAC supported for MAC algorithms");
+		return -EINVAL;
+	}
+
+	data = get_unused_session();
+	if (!data) {
+		return -ENOSPC;
+	}
+
+	r = tc_cmac_setup(&data->cmac_state,
+			  ctx->key.bit_stream,
+			  &data->session_key);
+	if (r != TC_CRYPTO_SUCCESS) {
+		k_free(data);
+		return -EIO;
+	}
+
+	ctx->ops.mac_crypt_hndlr = do_mac_op;
+	ctx->ops.cipher_mode = mode;
+	ctx->drv_sessn_state = data;
+
+	return 0;
+}
+
+static int tc_session_setup_ecc(struct cipher_ctx *ctx,
+				enum cipher_mode mode,
+				enum cipher_op op)
+{
+	struct tc_shim_drv_state *data;
+
+	if (mode != CRYPTO_CIPHER_MODE_NONE) {
+		SYS_LOG_ERR("Only NONE mode supported for ECC algo");
+		return -EINVAL;
+	}
+
+	switch (op) {
+	case CRYPTO_CIPHER_OP_ECC_GEN_KEY:
+		ctx->ops.ecc_crypt_hndlr = do_ecc_op_gen_key;
+		break;
+	case CRYPTO_CIPHER_OP_ECC_GEN_SHARED_KEY:
+		ctx->ops.ecc_crypt_hndlr = do_ecc_op_gen_shared_key;
+		break;
+	case CRYPTO_CIPHER_OP_ECC_VALIDATE_PUBKEY:
+		ctx->ops.ecc_crypt_hndlr = do_ecc_op_validate_pubkey;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	data = get_unused_session();
+	if (!data) {
+		return -ENOSPC;
+	}
+
+	ctx->ops.cipher_mode = mode;
+	ctx->drv_sessn_state = data;
+
+	return 0;
+}
+
+static int tc_session_setup(struct device *dev,
+			    struct cipher_ctx *ctx,
+			    enum cipher_algo algo,
+			    enum cipher_mode mode,
+			    enum cipher_op op)
+{
+	ARG_UNUSED(dev);
 
 	/* TinyCrypt being a software library, only synchronous operations
 	 * make sense.
@@ -211,77 +476,19 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 		return -EINVAL;
 	}
 
-	if (ctx->keylen != TC_AES_KEY_SIZE) {
-		/* TinyCrypt supports only 128 bits */
-		SYS_LOG_ERR("TC Shim Unsupported key size");
-		return -EINVAL;
+	switch (algo) {
+	case CRYPTO_CIPHER_ALGO_AES:
+		return tc_session_setup_aes(ctx, mode, algo, op);
+	case CRYPTO_CIPHER_ALGO_ECC:
+		return tc_session_setup_ecc(ctx, mode, op);
+	case CRYPTO_CIPHER_ALGO_PRNG:
+		return tc_session_setup_prng(ctx, mode);
+	case CRYPTO_CIPHER_ALGO_MAC:
+		return tc_session_setup_mac(ctx, mode);
+	default:
+		SYS_LOG_ERR("Unsupported algo for Tinycrypt shim: %d", algo);
+		return -ENOTSUP;
 	}
-
-	if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
-		switch (mode) {
-		case CRYPTO_CIPHER_MODE_CBC:
-			ctx->ops.cbc_crypt_hndlr = do_cbc_encrypt;
-			break;
-		case CRYPTO_CIPHER_MODE_CTR:
-			if (ctx->mode_params.ctr_info.ctr_len != 32) {
-				SYS_LOG_ERR("Tinycrypt supports only 32 bit "
-					    "counter");
-				return -EINVAL;
-			}
-			ctx->ops.ctr_crypt_hndlr = do_ctr_op;
-			break;
-		case CRYPTO_CIPHER_MODE_CCM:
-			ctx->ops.ccm_crypt_hndlr = do_ccm_encrypt_mac;
-			break;
-		default:
-			SYS_LOG_ERR("TC Shim Unsupported mode");
-			return -EINVAL;
-		}
-	} else {
-		switch (mode) {
-		case CRYPTO_CIPHER_MODE_CBC:
-			ctx->ops.cbc_crypt_hndlr = do_cbc_decrypt;
-			break;
-		case CRYPTO_CIPHER_MODE_CTR:
-			/* Maybe validate CTR length */
-			if (ctx->mode_params.ctr_info.ctr_len != 32) {
-				SYS_LOG_ERR("Tinycrypt supports only 32 bit "
-					    "counter");
-				return -EINVAL;
-			}
-			ctx->ops.ctr_crypt_hndlr = do_ctr_op;
-			break;
-		case CRYPTO_CIPHER_MODE_CCM:
-			ctx->ops.ccm_crypt_hndlr = do_ccm_decrypt_auth;
-			break;
-		default:
-			SYS_LOG_ERR("TC Shim Unsupported mode");
-			return -EINVAL;
-		}
-
-	}
-
-	ctx->ops.cipher_mode = mode;
-
-	idx = get_unused_session();
-	if (idx == CRYPTO_MAX_SESSION) {
-		SYS_LOG_ERR("Max sessions in progress");
-		return -ENOSPC;
-	}
-
-	data = &tc_driver_state[idx];
-
-	if (tc_aes128_set_encrypt_key(&data->session_key, ctx->key.bit_stream)
-			 == TC_CRYPTO_FAIL) {
-		SYS_LOG_ERR("TC internal error in setting key");
-		tc_driver_state[idx].in_use = 0;
-
-		return -EIO;
-	}
-
-	ctx->drv_sessn_state = data;
-
-	return 0;
 }
 
 static int tc_query_caps(struct device *dev)
@@ -291,23 +498,18 @@ static int tc_query_caps(struct device *dev)
 
 static int tc_session_free(struct device *dev, struct cipher_ctx *sessn)
 {
-	struct tc_shim_drv_state *data =  sessn->drv_sessn_state;
+	struct tc_shim_drv_state *data = sessn->drv_sessn_state;
 
 	ARG_UNUSED(dev);
 	(void)memset(data, 0, sizeof(struct tc_shim_drv_state));
-	data->in_use = 0;
+	k_free(data);
 
 	return 0;
 }
 
 static int tc_shim_init(struct device *dev)
 {
-	int i;
-
 	ARG_UNUSED(dev);
-	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
-		tc_driver_state[i].in_use = 0;
-	}
 
 	return 0;
 }
