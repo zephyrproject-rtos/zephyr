@@ -419,12 +419,15 @@ static inline void net_pkt_set_priority(struct net_pkt *pkt,
 {
 	pkt->priority = priority;
 }
-#else
+#else /* NET_TC_COUNT == 1 */
 static inline u8_t net_pkt_priority(struct net_pkt *pkt)
 {
 	return 0;
 }
-#endif
+
+#define net_pkt_set_priority(...)
+
+#endif /* NET_TC_COUNT > 1 */
 
 #if defined(CONFIG_NET_VLAN)
 static inline u16_t net_pkt_vlan_tag(struct net_pkt *pkt)
