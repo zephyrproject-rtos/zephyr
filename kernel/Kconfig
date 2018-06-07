@@ -330,6 +330,10 @@ config SYSTEM_WORKQUEUE_PRIORITY
 	default -1
 	default  0 if !COOP_ENABLED
 	default -2 if COOP_ENABLED && !PREEMPT_ENABLED
+	help
+	  By default, system work queue priority is the lowest cooperative
+	  priority. This means that any work handler, once started, won't
+	  be preempted by any other thread until finished.
 
 config OFFLOAD_WORKQUEUE_STACK_SIZE
 	int "Workqueue stack size for thread offload requests"
