@@ -120,8 +120,9 @@ Board connectors:
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
-- UART_1_TX : PB6
-- UART_1_RX : PB7
+
+- UART_1_TX : PA9
+- UART_1_RX : PA10
 - UART_2_TX : PA2
 - UART_2_RX : PA3
 - I2C1_SCL : PB8
