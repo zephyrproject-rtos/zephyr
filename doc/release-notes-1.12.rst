@@ -2,8 +2,8 @@
 
 .. _zephyr_1.12:
 
-Zephyr Kernel 1.12.0 (DRAFT)
-############################
+Zephyr Kernel 1.12.0
+####################
 
 We are pleased to announce the release of Zephyr kernel version 1.12.0.
 
