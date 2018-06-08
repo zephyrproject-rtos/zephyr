@@ -37,6 +37,7 @@ sys.path.append(os.path.abspath(os.path.join(ZEPHYR_BASE, 'scripts', 'meta')))
 extensions = [
     'breathe', 'sphinx.ext.todo',
     'sphinx.ext.extlinks',
+    'sphinx.ext.autodoc',
     'zephyr.application',
 ]
 
