@@ -14,7 +14,6 @@
 
 import sys
 import os
-import shlex
 
 # Add the 'extensions' directory to sys.path, to enable finding Sphinx
 # extensions within.
