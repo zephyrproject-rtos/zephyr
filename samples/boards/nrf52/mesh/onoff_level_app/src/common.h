@@ -26,7 +26,7 @@
 #include "board.h"
 
 #include "ble_mesh.h"
-#include "DEVICE_composition.h"
+#include "device_composition.h"
 #include "publisher.h"
 #include "process_message.h"
 

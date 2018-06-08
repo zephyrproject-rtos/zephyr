@@ -9,7 +9,7 @@ target_sources(app PRIVATE
 	       src/main.c
 	       src/common.c
 	       src/mesh/ble_mesh.c
-               src/mesh/DEVICE_composition.c
+               src/mesh/device_composition.c
                src/mesh/publisher.c
                src/mesh/process_message.c
 	       )
