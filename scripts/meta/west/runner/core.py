@@ -411,8 +411,9 @@ class ZephyrBinaryRunner(abc.ABC):
 
         This routine portably:
 
-        - creates a Popen object for the `server' command which ignores SIGINT
-        - runs `client' in a subprocess while temporarily ignoring SIGINT
+        - creates a Popen object for the ``server`` command which ignores
+          SIGINT
+        - runs ``client`` in a subprocess while temporarily ignoring SIGINT
         - cleans up the server after the client exits.
 
         It's useful to e.g. open a GDB server and client.'''
