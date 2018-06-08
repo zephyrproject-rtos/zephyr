@@ -86,6 +86,76 @@ static struct net_pkt *tx_frame_list_que0[CONFIG_NET_PKT_TX_COUNT + 1];
 #define MODULO_INC(val, max) {val = (++val < max) ? val : 0; }
 
 /*
+ * Cache helpers
+ */
+
+#if __DCACHE_PRESENT == 1
+static inline void dcache_invalidate(u32_t addr, u32_t size)
+{
+	/* Make sure it is aligned to 32B */
+	u32_t start_addr = addr & (u32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
+	u32_t size_full = size + addr - start_addr;
+
+	SCB_InvalidateDCache_by_Addr((u32_t *)start_addr, size_full);
+}
+
+static inline void dcache_clean(u32_t addr, u32_t size)
+{
+	/* Make sure it is aligned to 32B */
+	u32_t start_addr = addr & (u32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
+	u32_t size_full = size + addr - start_addr;
+
+	SCB_CleanDCache_by_Addr((u32_t *)start_addr, size_full);
+}
+#else
+#define dcache_invalidate(addr, size)
+#define dcache_clean(addr, size)
+#endif
+
+/* gmac descriptiors helpers */
+
+/* Get operations */
+static inline u32_t gmac_desc_get_w0(struct gmac_desc *desc)
+{
+	dcache_invalidate((u32_t)desc, sizeof(struct gmac_desc));
+	return desc->w0;
+}
+
+static inline u32_t gmac_desc_get_w1(struct gmac_desc *desc)
+{
+	dcache_invalidate((u32_t)desc, sizeof(struct gmac_desc));
+	return desc->w1;
+}
+
+/* Set operations */
+static inline void gmac_desc_set_w0(struct gmac_desc *desc, u32_t value)
+{
+	desc->w0 = value;
+	dcache_clean((u32_t)desc, sizeof(struct gmac_desc));
+}
+
+static inline void gmac_desc_set_w1(struct gmac_desc *desc, u32_t value)
+{
+	desc->w1 = value;
+	dcache_clean((u32_t)desc, sizeof(struct gmac_desc));
+}
+
+/* Set with 'or' operations */
+static inline void gmac_desc_append_w0(struct gmac_desc *desc, u32_t value)
+{
+	u32_t old_value = gmac_desc_get_w0(desc);
+
+	gmac_desc_set_w0(desc, old_value | value);
+}
+
+static inline void gmac_desc_append_w1(struct gmac_desc *desc, u32_t value)
+{
+	u32_t old_value = gmac_desc_get_w1(desc);
+
+	gmac_desc_set_w1(desc, old_value | value);
+}
+
+/*
  * Reset ring buffer
  */
 static void ring_buf_reset(struct ring_buf *rb)
@@ -184,12 +254,14 @@ static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 		__ASSERT(rx_buf->size == CONFIG_NET_BUF_DATA_SIZE,
 			 "Incorrect length of RX data buffer");
 		/* Give ownership to GMAC and remove the wrap bit */
-		rx_desc_list->buf[i].w0 = (u32_t)rx_buf_addr & GMAC_RXW0_ADDR;
-		rx_desc_list->buf[i].w1 = 0;
+		gmac_desc_set_w0(&rx_desc_list->buf[i],
+				 (u32_t)rx_buf_addr & GMAC_RXW0_ADDR);
+		gmac_desc_set_w1(&rx_desc_list->buf[i], 0);
 	}
 
 	/* Set the wrap bit on the last descriptor */
-	rx_desc_list->buf[rx_desc_list->len - 1].w0 |= GMAC_RXW0_WRAP;
+	gmac_desc_append_w0(&rx_desc_list->buf[rx_desc_list->len - 1],
+			    GMAC_RXW0_WRAP);
 
 	return 0;
 }
@@ -205,12 +277,13 @@ static void tx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 	tx_desc_list->tail = 0;
 
 	for (int i = 0; i < tx_desc_list->len; i++) {
-		tx_desc_list->buf[i].w0 = 0;
-		tx_desc_list->buf[i].w1 = GMAC_TXW1_USED;
+		gmac_desc_set_w0(&tx_desc_list->buf[i], 0);
+		gmac_desc_set_w1(&tx_desc_list->buf[i], GMAC_TXW1_USED);
 	}
 
 	/* Set the wrap bit on the last descriptor */
-	tx_desc_list->buf[tx_desc_list->len - 1].w1 |= GMAC_TXW1_WRAP;
+	gmac_desc_append_w1(&tx_desc_list->buf[tx_desc_list->len - 1],
+			    GMAC_TXW1_WRAP);
 
 	/* Reset TX frame list */
 	ring_buf_reset(&queue->tx_frames);
@@ -225,7 +298,8 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 	struct gmac_desc *tx_desc;
 	struct net_pkt *pkt;
 
-	__ASSERT(tx_desc_list->buf[tx_desc_list->tail].w1 & GMAC_TXW1_USED,
+	__ASSERT(gmac_desc_get_w1(&tx_desc_list->buf[tx_desc_list->tail])
+		 & GMAC_TXW1_USED,
 		 "first buffer of a frame is not marked as own by GMAC");
 
 	while (tx_desc_list->tail != tx_desc_list->head) {
@@ -234,7 +308,7 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 		MODULO_INC(tx_desc_list->tail, tx_desc_list->len);
 		k_sem_give(&queue->tx_desc_sem);
 
-		if (tx_desc->w1 & GMAC_TXW1_LASTBUFFER) {
+		if (gmac_desc_get_w1(tx_desc) & GMAC_TXW1_LASTBUFFER) {
 			/* Release net buffer to the buffer pool */
 			pkt = UINT_TO_POINTER(ring_buf_get(&queue->tx_frames));
 			net_pkt_unref(pkt);
@@ -292,8 +366,10 @@ static void rx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 	queue->rx_frag_list.tail = 0;
 
 	for (int i = 0; i < queue->rx_desc_list.len; i++) {
-		queue->rx_desc_list.buf[i].w1 = 0;
-		queue->rx_desc_list.buf[i].w0 &= ~GMAC_RXW0_OWNERSHIP;
+		gmac_desc_set_w1(&queue->rx_desc_list.buf[i], 0);
+		gmac_desc_set_w0(&queue->rx_desc_list.buf[i],
+		       gmac_desc_get_w0(&queue->rx_desc_list.buf[i])
+		       & ~GMAC_RXW0_OWNERSHIP);
 	}
 
 	/* Set Receive Buffer Queue Pointer Register */
@@ -456,12 +532,13 @@ static int priority_queue_init_as_idle(Gmac *gmac, struct gmac_queue *queue)
 
 	/* Setup RX descriptor lists */
 	/* Take ownership from GMAC and set the wrap bit */
-	rx_desc_list->buf[0].w0 = GMAC_RXW0_WRAP;
-	rx_desc_list->buf[0].w1 = 0;
+	gmac_desc_set_w0(&rx_desc_list->buf[0], GMAC_RXW0_WRAP);
+	gmac_desc_set_w1(&rx_desc_list->buf[0], 0);
 	/* Setup TX descriptor lists */
-	tx_desc_list->buf[0].w0 = 0;
+	gmac_desc_set_w0(&tx_desc_list->buf[0], 0);
 	/* Take ownership from GMAC and set the wrap bit */
-	tx_desc_list->buf[0].w1 = GMAC_TXW1_USED | GMAC_TXW1_WRAP;
+	gmac_desc_set_w1(&tx_desc_list->buf[0],
+			 GMAC_TXW1_USED | GMAC_TXW1_WRAP);
 
 	/* Set Receive Buffer Queue Pointer Register */
 	gmac->GMAC_RBQBAPQ[queue->que_idx - 1] = (u32_t)rx_desc_list->buf;
@@ -485,13 +562,16 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 	u32_t frag_len;
 	u32_t frame_len = 0;
 	u16_t tail;
+	u8_t wrap;
 
 	/* Check if there exists a complete frame in RX descriptor list */
 	tail = rx_desc_list->tail;
 	rx_desc = &rx_desc_list->buf[tail];
 	frame_is_complete = false;
-	while ((rx_desc->w0 & GMAC_RXW0_OWNERSHIP) && !frame_is_complete) {
-		frame_is_complete = (bool)(rx_desc->w1 & GMAC_RXW1_EOF);
+	while ((gmac_desc_get_w0(rx_desc) & GMAC_RXW0_OWNERSHIP)
+		&& !frame_is_complete) {
+		frame_is_complete = (bool)(gmac_desc_get_w1(rx_desc)
+					   & GMAC_RXW1_EOF);
 		MODULO_INC(tail, rx_desc_list->len);
 		rx_desc = &rx_desc_list->buf[tail];
 	}
@@ -513,21 +593,25 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 	 * bit set. If SOF bit is missing recover gracefully by dropping
 	 * invalid frame.
 	 */
-	__ASSERT(rx_desc->w1 & GMAC_RXW1_SOF,
+	__ASSERT(gmac_desc_get_w1(rx_desc) & GMAC_RXW1_SOF,
 		 "First RX fragment is missing SOF bit");
 
 	/* TODO: We know already tail and head indexes of fragments containing
 	 * complete frame. Loop over those indexes, don't search for them
 	 * again.
 	 */
-	while ((rx_desc->w0 & GMAC_RXW0_OWNERSHIP) && !frame_is_complete) {
+	while ((gmac_desc_get_w0(rx_desc) & GMAC_RXW0_OWNERSHIP)
+	       && !frame_is_complete) {
 		frag = (struct net_buf *)rx_frag_list->buf[tail];
-		frag_data = (u8_t *)(rx_desc->w0 & GMAC_RXW0_ADDR);
+		frag_data =
+			(u8_t *)(gmac_desc_get_w0(rx_desc) & GMAC_RXW0_ADDR);
 		__ASSERT(frag->data == frag_data,
 			 "RX descriptor and buffer list desynchronized");
-		frame_is_complete = (bool)(rx_desc->w1 & GMAC_RXW1_EOF);
+		frame_is_complete =
+			(bool)(gmac_desc_get_w1(rx_desc) & GMAC_RXW1_EOF);
 		if (frame_is_complete) {
-			frag_len = (rx_desc->w1 & GMAC_TXW1_LEN) - frame_len;
+			frag_len = (gmac_desc_get_w1(rx_desc) & GMAC_RXW1_LEN)
+				   - frame_len;
 		} else {
 			frag_len = CONFIG_NET_BUF_DATA_SIZE;
 		}
@@ -537,7 +621,7 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 		/* Link frame fragments only if RX net buffer is valid */
 		if (rx_frame != NULL) {
 			/* Assure cache coherency after DMA write operation */
-			DCACHE_INVALIDATE(frag_data, frag_len);
+			dcache_invalidate((u32_t)frag_data, frag->size);
 
 			/* Get a new data net buffer from the buffer pool */
 			new_frag = net_pkt_get_frag(rx_frame, K_NO_WAIT);
@@ -555,19 +639,21 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 				last_frag = frag;
 				frag = new_frag;
 				rx_frag_list->buf[tail] = (u32_t)frag;
+				dcache_clean((u32_t)&rx_frag_list->buf[tail],
+					     sizeof(u32_t));
 			}
 		}
 
 		/* Update buffer descriptor status word */
-		rx_desc->w1 = 0;
+		gmac_desc_set_w1(rx_desc, 0);
 		/* Guarantee that status word is written before the address
 		 * word to avoid race condition.
 		 */
 		__DMB();  /* data memory barrier */
 		/* Update buffer descriptor address word */
-		rx_desc->w0 =
-			  ((u32_t)frag->data & GMAC_RXW0_ADDR)
-			| (tail == rx_desc_list->len-1 ? GMAC_RXW0_WRAP : 0);
+		wrap = (tail == rx_desc_list->len-1 ? GMAC_RXW0_WRAP : 0);
+		gmac_desc_set_w0(rx_desc,
+				 ((u32_t)frag->data & GMAC_RXW0_ADDR) | wrap);
 
 		MODULO_INC(tail, rx_desc_list->len);
 		rx_desc = &rx_desc_list->buf[tail];
@@ -682,7 +768,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 		frag_len = frag->len;
 
 		/* Assure cache coherency before DMA read operation */
-		DCACHE_CLEAN(frag_data, frag_len);
+		dcache_clean((u32_t)frag_data, frag->size);
 
 		k_sem_take(&queue->tx_desc_sem, K_FOREVER);
 
@@ -701,17 +787,18 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 		tx_desc = &tx_desc_list->buf[tx_desc_list->head];
 
 		/* Update buffer descriptor address word */
-		tx_desc->w0 = (u32_t)frag_data;
+		gmac_desc_set_w0(tx_desc, (u32_t)frag_data);
+
 		/* Guarantee that address word is written before the status
 		 * word to avoid race condition.
 		 */
 		__DMB();  /* data memory barrier */
 		/* Update buffer descriptor status word (clear used bit) */
-		tx_desc->w1 =
+		gmac_desc_set_w1(tx_desc,
 			  (frag_len & GMAC_TXW1_LEN)
 			| (!frag->frags ? GMAC_TXW1_LASTBUFFER : 0)
 			| (tx_desc_list->head == tx_desc_list->len - 1
-			   ? GMAC_TXW1_WRAP : 0);
+			   ? GMAC_TXW1_WRAP : 0));
 
 		/* Update descriptor position */
 		MODULO_INC(tx_desc_list->head, tx_desc_list->len);
@@ -735,7 +822,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 
 	/* Ensure the descriptor following the last one is marked as used */
 	tx_desc = &tx_desc_list->buf[tx_desc_list->head];
-	tx_desc->w1 |= GMAC_TXW1_USED;
+	gmac_desc_append_w1(tx_desc, GMAC_TXW1_USED);
 
 	/* Account for a sent frame */
 	ring_buf_put(&queue->tx_frames, POINTER_TO_UINT(pkt));
@@ -755,6 +842,7 @@ static void queue0_isr(void *arg)
 	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
 	Gmac *gmac = cfg->regs;
 	struct gmac_queue *queue = &dev_data->queue_list[0];
+	struct gmac_desc *tail_desc;
 	u32_t isr;
 
 	/* Interrupt Status Register is cleared on read */
@@ -765,8 +853,9 @@ static void queue0_isr(void *arg)
 	if (isr & GMAC_INT_RX_ERR_BITS) {
 		rx_error_handler(gmac, queue);
 	} else if (isr & GMAC_ISR_RCOMP) {
+		tail_desc = &queue->rx_desc_list.buf[queue->rx_desc_list.tail];
 		SYS_LOG_DBG("rx.w1=0x%08x, tail=%d",
-			    queue->rx_desc_list.buf[queue->rx_desc_list.tail].w1,
+			    gmac_desc_get_w1(tail_desc),
 			    queue->rx_desc_list.tail);
 		eth_rx(queue);
 	}
@@ -775,8 +864,9 @@ static void queue0_isr(void *arg)
 	if (isr & GMAC_INT_TX_ERR_BITS) {
 		tx_error_handler(gmac, queue);
 	} else if (isr & GMAC_ISR_TCOMP) {
+		tail_desc = &queue->tx_desc_list.buf[queue->tx_desc_list.tail];
 		SYS_LOG_DBG("tx.w1=0x%08x, tail=%d",
-			    queue->tx_desc_list.buf[queue->tx_desc_list.tail].w1,
+			    gmac_desc_get_w1(tail_desc),
 			    queue->tx_desc_list.tail);
 		tx_completed(gmac, queue);
 	}
