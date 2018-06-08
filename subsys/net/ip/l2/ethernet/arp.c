@@ -198,7 +198,6 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 {
 	struct arp_entry *entry, *free_entry = NULL, *non_pending = NULL;
 	struct ethernet_context *ctx;
-	struct net_buf *frag;
 	struct net_linkaddr *ll;
 	struct net_eth_hdr *hdr;
 	struct in_addr *addr;
@@ -290,22 +289,9 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 		net_sprint_ll_addr(ll->addr, sizeof(struct net_eth_addr)),
 		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src));
 
-	frag = pkt->frags;
-	while (frag) {
-		/* If there is no room for link layer header, then
-		 * just send the packet as is.
-		 */
-		if (!net_buf_headroom(frag)) {
-			frag = frag->frags;
-			continue;
-		}
-
-		hdr = net_eth_fill_header(ctx, pkt, frag,
-					  htons(NET_ETH_PTYPE_IP),
-					  ll->addr, entry->eth.addr);
-
-		frag = frag->frags;
-	}
+	net_eth_fill_header(ctx, pkt, pkt->frags,
+			    htons(NET_ETH_PTYPE_IP),
+			    ll->addr, entry->eth.addr);
 
 	return pkt;
 }
