@@ -132,7 +132,7 @@ void process_message(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		if (state->last_tid != tid) {
 			state->tid_discard = 0;
 
-		} else if (state->last_tid == tid && 
+		} else if (state->last_tid == tid &&
 			   state->tid_discard == 1) {
 			return;
 		}
@@ -149,7 +149,7 @@ void process_message(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 
 		state->current = (int16_t)tmp32;
 
-		printk("\n\r Level -> %d", state->current);
+		printk("Level -> %d\n", state->current);
 
 		if (state->model_instance == 0x01) {
 			light_state_current.power = state->current;

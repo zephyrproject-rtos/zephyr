@@ -35,14 +35,14 @@ static uint8_t dev_uuid[16];
 static const struct bt_mesh_prov prov = {
 	.uuid = dev_uuid,
 
-      #ifdef OOB_AUTH_ENABLE
+#ifdef OOB_AUTH_ENABLE
 
 	.output_size = 6,
 	.output_actions = BT_MESH_DISPLAY_NUMBER | BT_MESH_DISPLAY_STRING,
 	.output_number = output_number,
 	.output_string = output_string,
 
-      #endif
+#endif
 
 	.complete = prov_complete,
 	.reset = prov_reset,
