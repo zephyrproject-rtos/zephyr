@@ -108,14 +108,21 @@ bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 	nonce[12] = sec_ctx->level;
 
 	pkt.in_buf = decrypt_payload_len ? frame + auth_payload_len : NULL;
-	pkt.in_len = decrypt_payload_len;
-	pkt.out_buf = frame;
+	/* payload lengths without the length of the tag */
+	pkt.in_len = decrypt_payload_len -
+		     sec_ctx->dec.mode_params.ccm_info.tag_len;
+	/*
+	 * TC does not copy the header, so prevent the header from being
+	 * overwritten.
+	 */
+	pkt.out_buf = frame + auth_payload_len;
 	pkt.out_buf_max = IEEE802154_MTU - IEEE802154_MFR_LENGTH;
 
 	apkt.ad = frame;
 	apkt.ad_len = auth_payload_len;
 	apkt.tag = sec_ctx->dec.mode_params.ccm_info.tag_len ?
-		frame + auth_payload_len + decrypt_payload_len : NULL;
+		frame + auth_payload_len + decrypt_payload_len -
+		sec_ctx->dec.mode_params.ccm_info.tag_len : NULL;
 	apkt.pkt = &pkt;
 
 	ret = cipher_ccm_op(&sec_ctx->dec, &apkt, nonce);
@@ -151,12 +158,13 @@ bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 
 	pkt.in_buf = encrypt_payload_len ? frame + auth_payload_len : NULL;
 	pkt.in_len = encrypt_payload_len;
-	pkt.out_buf = frame;
+	/* Prevent the header from being overwritten */
+	pkt.out_buf = frame + auth_payload_len;
 	pkt.out_buf_max = IEEE802154_MTU - IEEE802154_MFR_LENGTH;
 
 	apkt.ad = frame;
 	apkt.ad_len = auth_payload_len;
-	apkt.tag = NULL;
+	apkt.tag = pkt.out_buf + encrypt_payload_len; /* mbedtls needs it */
 	apkt.pkt = &pkt;
 
 	ret = cipher_ccm_op(&sec_ctx->enc, &apkt, nonce);
