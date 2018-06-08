@@ -100,7 +100,7 @@ void can_stm32_tx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 	}
 
 	if ((can->TSR & CAN_TSR_RQCP1) | bus_off) {
-		data->mb0.error_flags =
+		data->mb1.error_flags =
 				can->TSR & CAN_TSR_TXOK1 ? CAN_TX_OK  :
 				can->TSR & CAN_TSR_TERR1 ? CAN_TX_ERR :
 				can->TSR & CAN_TSR_ALST1 ? CAN_TX_ARB_LOST :
@@ -342,7 +342,7 @@ int can_stm32_send(struct device *dev, struct can_msg *msg, s32_t timeout,
 		k_mutex_unlock(tx_mutex);
 		SYS_LOG_DBG("Transmit buffer full. Wait with timeout (%dms)",
 			    timeout);
-		if (k_sem_take(&data->tx_int_sem, timeout) == -EAGAIN) {
+		if (k_sem_take(&data->tx_int_sem, timeout)) {
 			return CAN_TIMEOUT;
 		}
 
@@ -365,6 +365,7 @@ int can_stm32_send(struct device *dev, struct can_msg *msg, s32_t timeout,
 	}
 
 	mb->tx_callback = callback;
+	k_sem_reset(&mb->tx_int_sem);
 
 	/* mailbix identifier register setup */
 	mailbox->TIR &= CAN_TI0R_TXRQ;
@@ -390,7 +391,6 @@ int can_stm32_send(struct device *dev, struct can_msg *msg, s32_t timeout,
 	k_mutex_unlock(tx_mutex);
 
 	if (callback == NULL) {
-		k_sem_reset(&mb->tx_int_sem);
 		k_sem_take(&mb->tx_int_sem, K_FOREVER);
 		return mb->error_flags;
 	}
@@ -741,14 +741,11 @@ static inline int can_stm32_attach(struct device *dev, void *response_ptr,
 	int filter_index_tmp = 0;
 	int filter_nr;
 
-	k_mutex_lock(&data->set_filter_mutex, K_FOREVER);
-
 	filter_nr = can_stm32_set_filter(filter, data, can, &filter_index_tmp);
 	if (filter_nr != CAN_NO_FREE_FILTER) {
 		data->rx_response[filter_index_tmp] = response_ptr;
 	}
 
-	k_mutex_unlock(&data->set_filter_mutex);
 	*filter_index = filter_index_tmp;
 	return filter_nr;
 }
@@ -760,8 +757,10 @@ int can_stm32_attach_msgq(struct device *dev, struct k_msgq *msgq,
 	int filter_index;
 	struct can_stm32_data *data = DEV_DATA(dev);
 
+	k_mutex_lock(&data->set_filter_mutex, K_FOREVER);
 	filter_nr = can_stm32_attach(dev, msgq, filter, &filter_index);
 	data->response_type |= (1ULL << filter_index);
+	k_mutex_unlock(&data->set_filter_mutex);
 	return filter_nr;
 }
 
@@ -772,8 +771,10 @@ int can_stm32_attach_isr(struct device *dev, can_rx_callback_t isr,
 	int filter_nr;
 	int filter_index;
 
+	k_mutex_lock(&data->set_filter_mutex, K_FOREVER);
 	filter_nr = can_stm32_attach(dev, isr, filter, &filter_index);
 	data->response_type &= ~(1ULL << filter_index);
+	k_mutex_unlock(&data->set_filter_mutex);
 	return filter_nr;
 }
 
