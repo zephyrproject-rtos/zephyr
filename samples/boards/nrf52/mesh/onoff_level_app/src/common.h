@@ -28,35 +28,43 @@
 #include "ble_mesh.h"
 #include "DEVICE_composition.h"
 #include "publisher.h"
-#include "doer.h"
+#include "process_message.h"
 
-/* --------------------------------------------COMPANY ID---------------------------------------------------------------- */
+/* -------------------- COMPANY ID -------------------- */
 
 #define CID_INTEL 0x0002
 
-/* --------------------------------------------GPIO---------------------------------------------------------------------- */
+/* -------------------- GPIO -------------------- */
 
 extern struct device *button_device[4];
 extern struct device *led_device[4];
 
 void gpio_init(void);
 
-/* --------------------------------------------NVS----------------------------------------------------------------------- */
+/* -------------------- NVS -------------------- */
 
 #include <nvs/nvs.h>
 
 #define NVS_LED_STATE_ID 1
 
-#define STORAGE_MAGIC 0x4d455348 /* hex for "MESH" */
+/* hex for "MESH" */
+#define STORAGE_MAGIC 0x4d455348
 
-#define NVS_SECTOR_SIZE 4096 /* Multiple of FLASH_PAGE_SIZE */
-#define NVS_SECTOR_COUNT 2 /* At least 2 sectors */
-#define NVS_STORAGE_OFFSET (FLASH_AREA_STORAGE_OFFSET - 8192) /* Start address of the filesystem in flash */
-#define NVS_MAX_ELEM_SIZE 256 /* Largest item that can be stored */
+/* Multiple of FLASH_PAGE_SIZE */
+#define NVS_SECTOR_SIZE 4096
+
+/* At least 2 sectors */
+#define NVS_SECTOR_COUNT 2
+
+/* Start address of the filesystem in flash */
+#define NVS_STORAGE_OFFSET (FLASH_AREA_STORAGE_OFFSET - 8192)
+
+/* Largest item that can be stored */
+#define NVS_MAX_ELEM_SIZE 256
 
 extern struct nvs_fs fs;
 
-/* --------------------------------------------Others-------------------------------------------------------------------- */
+/* -------------------- Others -------------------- */
 
 #define LEVEL_0   -32768
 #define LEVEL_25  -16384
