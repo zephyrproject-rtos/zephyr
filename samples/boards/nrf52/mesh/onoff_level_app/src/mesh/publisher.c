@@ -55,6 +55,6 @@ void publish(struct k_work *work)
 	}
 
 	if (err) {
-		printk("bt_mesh_model_publish: err: %d\n\r", err);
+		printk("bt_mesh_model_publish: err: %d\n", err);
 	}
 }
