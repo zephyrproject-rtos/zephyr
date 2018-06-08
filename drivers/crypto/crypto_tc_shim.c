@@ -207,13 +207,15 @@ static int do_prng_op(struct cipher_ctx *ctx,
 		      struct cipher_prng_pkt *pkt)
 {
 	struct tc_shim_drv_state *state = ctx->drv_sessn_state;
+	s64_t extra;
 	int r;
 
 	if (pkt->reseed) {
+		extra = k_uptime_get();
 		r = tc_hmac_prng_reseed(&state->prng_state,
-					pkt->data, pkt->data_len,
 					pkt->additional_input,
-					pkt->additional_input_len);
+					pkt->additional_input_len,
+					(u8_t *)&extra, sizeof(extra));
 	} else {
 		r = tc_hmac_prng_generate(pkt->data, pkt->data_len,
 					  &state->prng_state);

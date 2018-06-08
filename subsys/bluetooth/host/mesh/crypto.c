@@ -14,17 +14,15 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
-#include <tinycrypt/constants.h>
-#include <tinycrypt/utils.h>
-#include <tinycrypt/aes.h>
-#include <tinycrypt/cmac_mode.h>
-#include <tinycrypt/ccm_mode.h>
+#include <crypto/cipher.h>
 
 #include <bluetooth/mesh.h>
 #include <bluetooth/crypto.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_CRYPTO)
 #include "common/log.h"
+
+#include "common/cryptdev.h"
 
 #include "mesh.h"
 #include "crypto.h"
@@ -35,25 +33,45 @@
 int bt_mesh_aes_cmac(const u8_t key[16], struct bt_mesh_sg *sg,
 		     size_t sg_len, u8_t mac[16])
 {
-	struct tc_aes_key_sched_struct sched;
-	struct tc_cmac_struct state;
+	struct cipher_ctx ctx = {
+		.key.bit_stream = (u8_t *)key,
+		.keylen = 128 / 8,
+	};
+	struct device *dev;
+	int err;
 
-	if (tc_cmac_setup(&state, key, &sched) == TC_CRYPTO_FAIL) {
-		return -EIO;
+	dev = bt_get_cryptdev();
+	ctx.flags = cipher_query_hwcaps(dev);
+
+	err = cipher_begin_session(dev, &ctx,
+				   CRYPTO_CIPHER_ALGO_MAC,
+				   CRYPTO_CIPHER_MODE_CMAC,
+				   CRYPTO_CIPHER_OP_ENCRYPT);
+	if (err < 0) {
+		return err;
 	}
 
 	for (; sg_len; sg_len--, sg++) {
-		if (tc_cmac_update(&state, sg->data,
-				   sg->len) == TC_CRYPTO_FAIL) {
-			return -EIO;
+		err = cipher_mac_op(&ctx, &(struct cipher_mac_pkt) {
+			.finalize = false,
+			.data = (u8_t *)sg->data,
+			.data_len = sg->len,
+		});
+
+		if (err < 0) {
+			goto out;
 		}
 	}
 
-	if (tc_cmac_final(mac, &state) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
+	err = cipher_mac_op(&ctx, &(struct cipher_mac_pkt) {
+		.finalize = true,
+		.data = mac,
+	});
 
-	return 0;
+out:
+	cipher_free_session(dev, &ctx);
+
+	return err;
 }
 
 int bt_mesh_k1(const u8_t *ikm, size_t ikm_len, const u8_t salt[16],

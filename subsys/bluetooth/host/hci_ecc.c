@@ -13,10 +13,8 @@
 #include <atomic.h>
 #include <misc/stack.h>
 #include <misc/byteorder.h>
-#include <tinycrypt/constants.h>
-#include <tinycrypt/utils.h>
-#include <tinycrypt/ecc.h>
-#include <tinycrypt/ecc_dh.h>
+
+#include <crypto/cipher.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
@@ -25,6 +23,8 @@
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #include "common/log.h"
+
+#include "common/cryptdev.h"
 
 #include "hci_ecc.h"
 #ifdef CONFIG_BT_HCI_RAW
@@ -102,14 +102,37 @@ static u8_t generate_keys(void)
 {
 #if !defined(CONFIG_BT_USE_DEBUG_KEYS)
 	do {
+		struct cipher_ctx ctx;
+		struct device *dev;
 		int rc;
 
-		rc = uECC_make_key(ecc.pk, ecc.private_key, &curve_secp256r1);
-		if (rc == TC_CRYPTO_FAIL) {
-			BT_ERR("Failed to create ECC public/private pair");
+		dev = bt_get_cryptdev();
+		ctx.flags = cipher_query_hwcaps(dev);
+		rc = cipher_begin_session(dev, &ctx,
+					  CRYPTO_CIPHER_ALGO_ECC,
+					  CRYPTO_CIPHER_MODE_NONE,
+					  CRYPTO_CIPHER_OP_ECC_GEN_KEY);
+		if (rc < 0) {
+			BT_ERR("Failed to initiate cipher session");
+
 			return BT_HCI_ERR_UNSPECIFIED;
 		}
 
+		rc = cipher_ecc_op(&ctx, &(struct cipher_ecc_pkt) {
+			.curve = CIPHER_ECC_CURVE_SECP256R1,
+			.public_key = ecc.pk,
+			.public_key_len = sizeof(ecc.pk),
+			.private_key = ecc.private_key,
+			.private_key_len = sizeof(ecc.private_key),
+		});
+
+		cipher_free_session(dev, &ctx);
+
+		if (rc < 0) {
+			BT_ERR("Could not generate key");
+
+			return BT_HCI_ERR_UNSPECIFIED;
+		}
 	/* make sure generated key isn't debug key */
 	} while (memcmp(ecc.private_key, debug_private_key, 32) == 0);
 #else
@@ -145,7 +168,7 @@ static void emulate_le_p256_public_key_cmd(void)
 	evt->status = status;
 
 	if (status) {
-		(void)memset(evt->key, 0, sizeof(evt->key));
+		explicit_bzero(evt->key, sizeof(evt->key));
 	} else {
 		/* Convert X and Y coordinates from big-endian (provided
 		 * by crypto API) to little endian HCI.
@@ -159,6 +182,67 @@ static void emulate_le_p256_public_key_cmd(void)
 	bt_recv(buf);
 }
 
+static int validate_pubkey(const char *public_key, size_t public_key_len)
+{
+	struct cipher_ctx ctx;
+	struct device *dev;
+	int r;
+
+	dev = bt_get_cryptdev();
+	ctx.flags = cipher_query_hwcaps(dev);
+
+	r = cipher_begin_session(dev, &ctx,
+				 CRYPTO_CIPHER_ALGO_ECC,
+				 CRYPTO_CIPHER_MODE_NONE,
+				 CRYPTO_CIPHER_OP_ECC_VALIDATE_PUBKEY);
+	if (!r) {
+		r = cipher_ecc_op(&ctx, &(struct cipher_ecc_pkt) {
+			.curve = CIPHER_ECC_CURVE_SECP256R1,
+			.public_key = (char *)public_key,
+			.public_key_len = public_key_len,
+		});
+
+		cipher_free_session(dev, &ctx);
+	}
+
+	return r;
+}
+
+static int generate_shared_secret(const char *public_key,
+				  size_t public_key_len,
+				  const char *private_key,
+				  size_t private_key_len,
+				  char *shared_key,
+				  size_t shared_key_len)
+{
+	struct cipher_ctx ctx;
+	struct device *dev;
+	int r;
+
+	dev = bt_get_cryptdev();
+	ctx.flags = cipher_query_hwcaps(dev);
+
+	r = cipher_begin_session(dev, &ctx,
+				 CRYPTO_CIPHER_ALGO_ECC,
+				 CRYPTO_CIPHER_MODE_NONE,
+				 CRYPTO_CIPHER_OP_ECC_GEN_SHARED_KEY);
+	if (!r) {
+		r = cipher_ecc_op(&ctx, &(struct cipher_ecc_pkt) {
+			.curve = CIPHER_ECC_CURVE_SECP256R1,
+			.public_key = (char *)public_key,
+			.public_key_len = public_key_len,
+			.private_key = (char *)private_key,
+			.private_key_len = private_key_len,
+			.shared_secret = shared_key,
+			.shared_secret_len = shared_key_len,
+		});
+
+		cipher_free_session(dev, &ctx);
+	}
+
+	return r;
+}
+
 static void emulate_le_generate_dhkey(void)
 {
 	struct bt_hci_evt_le_generate_dhkey_complete *evt;
@@ -167,13 +251,14 @@ static void emulate_le_generate_dhkey(void)
 	struct net_buf *buf;
 	int ret;
 
-	ret = uECC_valid_public_key(ecc.pk, &curve_secp256r1);
+	ret = validate_pubkey(ecc.pk, sizeof(ecc.pk));
 	if (ret < 0) {
 		BT_ERR("public key is not valid (ret %d)", ret);
-		ret = TC_CRYPTO_FAIL;
 	} else {
-		ret = uECC_shared_secret(ecc.pk, ecc.private_key, ecc.dhkey,
-					 &curve_secp256r1);
+		ret = generate_shared_secret(ecc.pk, sizeof(ecc.pk),
+					     ecc.private_key,
+					     sizeof(ecc.private_key),
+					     ecc.dhkey, sizeof(ecc.dhkey));
 	}
 
 	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
@@ -187,7 +272,7 @@ static void emulate_le_generate_dhkey(void)
 
 	evt = net_buf_add(buf, sizeof(*evt));
 
-	if (ret == TC_CRYPTO_FAIL) {
+	if (ret < 0) {
 		evt->status = BT_HCI_ERR_UNSPECIFIED;
 		(void)memset(evt->dhkey, 0, sizeof(evt->dhkey));
 	} else {

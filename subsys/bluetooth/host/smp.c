@@ -25,13 +25,10 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/buf.h>
 
-#include <tinycrypt/constants.h>
-#include <tinycrypt/aes.h>
-#include <tinycrypt/utils.h>
-#include <tinycrypt/cmac_mode.h>
-
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SMP)
 #include "common/log.h"
+
+#include "common/cryptdev.h"
 
 #include "hci_core.h"
 #include "ecc.h"
@@ -337,22 +334,36 @@ static struct net_buf *smp_create_pdu(struct bt_conn *conn, u8_t op,
 static int bt_smp_aes_cmac(const u8_t *key, const u8_t *in, size_t len,
 			   u8_t *out)
 {
-	struct tc_aes_key_sched_struct sched;
-	struct tc_cmac_struct state;
+	struct cipher_ctx ctx = {
+		.key.bit_stream = (u8_t *)key, .keylen = 128 / 8
+	};
+	struct device *dev;
+	int err;
 
-	if (tc_cmac_setup(&state, key, &sched) == TC_CRYPTO_FAIL) {
-		return -EIO;
+	dev = bt_get_cryptdev();
+	ctx.flags = cipher_query_hwcaps(dev);
+	err = cipher_begin_session(dev, &ctx,
+				   CRYPTO_CIPHER_ALGO_MAC,
+				   CRYPTO_CIPHER_MODE_CMAC,
+				   CRYPTO_CIPHER_OP_ENCRYPT);
+	if (err < 0) {
+		return err;
 	}
 
-	if (tc_cmac_update(&state, in, len) == TC_CRYPTO_FAIL) {
-		return -EIO;
+	err = cipher_mac_op(&ctx, &(struct cipher_mac_pkt) {
+		.finalize = false, .data = (u8_t *)in, .data_len = len,
+	});
+	if (err < 0) {
+		goto out;
 	}
 
-	if (tc_cmac_final(out, &state) == TC_CRYPTO_FAIL) {
-		return -EIO;
-	}
+	err = cipher_mac_op(&ctx, &(struct cipher_mac_pkt) {
+		.finalize = true, .data = out
+	});
+out:
+	cipher_free_session(dev, &ctx);
 
-	return 0;
+	return err;
 }
 
 static int smp_f4(const u8_t *u, const u8_t *v, const u8_t *x,

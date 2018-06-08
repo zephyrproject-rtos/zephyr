@@ -19,11 +19,6 @@
 #include <misc/byteorder.h>
 #include <misc/stack.h>
 
-#include <tinycrypt/constants.h>
-#include <tinycrypt/aes.h>
-#include <tinycrypt/utils.h>
-#include <tinycrypt/cmac_mode.h>
-
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_RPA)
 #include "common/log.h"
 
