@@ -37,19 +37,109 @@ BT_MESH_MODEL_PUB_DEFINE(gen_onoff_srv_pub_s0, NULL, 2 + 2);
 BT_MESH_MODEL_PUB_DEFINE(gen_onoff_cli_pub_s0, NULL, 2 + 2);
 
 struct server_state   gen_onoff_srv_user_data_root = {
-	.previous = 0xFFFFFFFF, 	/* it should be anything except {0,1} */
+	.previous = 0xFFFFFFFF, /* it should be anything except {0,1} */
 	.model_instance = 1,
 };
 
 struct server_state   gen_level_srv_user_data_root = {
-	.previous = 0xFFFFFFFF,		/* it should be anything except {-32768 to 32767} */
+
+	.previous = 0xFFFFFFFF,	/* it should be anything 
+				 * except {-32768 to 32767} */
 	.model_instance = 1,
 };
 
 struct server_state   gen_onoff_srv_user_data_s0 = {
-	.previous = 0xFFFFFFFF,		/* it should be anything except {0,1} */
+	.previous = 0xFFFFFFFF,	/* it should be anything except {0,1} */
 	.model_instance = 2,
 };
+
+static void gen_onoff_get(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
+{
+	process_message(model, ctx, buf, 0x8201);
+}
+
+static void gen_onoff_set_unack(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
+{
+	process_message(model, ctx, buf, 0x8203);
+}
+
+static void gen_onoff_set(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
+{
+	gen_onoff_set_unack(model, ctx, buf);
+	gen_onoff_get(model, ctx, buf);
+}
+
+static void gen_onoff_cli_status(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
+{
+	process_message(model, ctx, buf, 0x8204);
+}
+
+static void gen_level_get(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
+{
+	process_message(model, ctx, buf, 0x8205);
+}
+
+static void gen_level_set_unack(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
+{
+	process_message(model, ctx, buf, 0x8207);
+}
+
+static void gen_level_set(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
+{
+	gen_level_set_unack(model, ctx, buf);
+	gen_level_get(model, ctx, buf);
+}
+
+static void gen_delta_set_unack(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
+{
+	process_message(model, ctx, buf, 0x820A);
+}
+
+static void gen_delta_set(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
+{
+	gen_delta_set_unack(model, ctx, buf);
+	gen_level_get(model, ctx, buf);
+}
+
+static void gen_move_set_unack(struct bt_mesh_model *model,
+			       struct bt_mesh_msg_ctx *ctx,
+			       struct net_buf_simple *buf)
+{
+	process_message(model, ctx, buf, 0x820C);
+}
+
+static void gen_move_set(struct bt_mesh_model *model,
+			 struct bt_mesh_msg_ctx *ctx,
+			 struct net_buf_simple *buf)
+{
+	gen_move_set_unack(model, ctx, buf);
+	gen_level_get(model, ctx, buf);
+}
+
+static void gen_level_cli_status(struct bt_mesh_model *model,
+			         struct bt_mesh_msg_ctx *ctx,
+			         struct net_buf_simple *buf)
+{
+	process_message(model, ctx, buf, 0x8208);
+}
 
 static const struct bt_mesh_model_op gen_onoff_srv_op[] = {
 	{ BT_MESH_MODEL_OP_2(0x82, 0x01), 0, gen_onoff_get },
@@ -80,22 +170,36 @@ static const struct bt_mesh_model_op gen_level_cli_op[] = {
 };
 
 struct bt_mesh_model root_models[] = {
+
 	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 
-	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_srv_op, &gen_onoff_srv_pub_root, &gen_onoff_srv_user_data_root),
-	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI, gen_onoff_cli_op, &gen_onoff_cli_pub_root, NULL),
+	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV,
+		      gen_onoff_srv_op, &gen_onoff_srv_pub_root,
+		      &gen_onoff_srv_user_data_root),
+	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI,
+		      gen_onoff_cli_op, &gen_onoff_cli_pub_root,
+		      NULL),
 
-	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_LEVEL_SRV, gen_level_srv_op, &gen_level_srv_pub_root, &gen_level_srv_user_data_root),
-	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_LEVEL_CLI, gen_level_cli_op, &gen_level_cli_pub_root, NULL),
+	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_LEVEL_SRV,
+		      gen_level_srv_op, &gen_level_srv_pub_root,
+		      &gen_level_srv_user_data_root),
+	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_LEVEL_CLI,
+		      gen_level_cli_op, &gen_level_cli_pub_root,
+		      NULL),
 };
 
-struct bt_mesh_model s0_models[] = {
-	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_srv_op, &gen_onoff_srv_pub_s0, &gen_onoff_srv_user_data_s0),
-	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI, gen_onoff_cli_op, &gen_onoff_cli_pub_s0, NULL),
+static struct bt_mesh_model s0_models[] = {
+
+	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, 
+		      gen_onoff_srv_op, &gen_onoff_srv_pub_s0,
+		      &gen_onoff_srv_user_data_s0),
+	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI,
+		      gen_onoff_cli_op, &gen_onoff_cli_pub_s0,
+		      NULL),
 };
 
-struct bt_mesh_elem elements[] = {
+static struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(0, root_models, BT_MESH_MODEL_NONE),
 	BT_MESH_ELEM(0, s0_models, BT_MESH_MODEL_NONE),
 };
@@ -105,67 +209,3 @@ const struct bt_mesh_comp comp = {
 	.elem = elements,
 	.elem_count = ARRAY_SIZE(elements),
 };
-
-void gen_onoff_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
-{
-	doer(model, ctx, buf, 0x8201);
-}
-
-void gen_onoff_set_unack(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
-{
-	doer(model, ctx, buf, 0x8203);
-}
-
-void gen_onoff_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
-{
-	gen_onoff_set_unack(model, ctx, buf);
-	gen_onoff_get(model, ctx, buf);
-}
-
-void gen_onoff_cli_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
-{
-	doer(model, ctx, buf, 0x8204);
-}
-
-void gen_level_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
-{
-	doer(model, ctx, buf, 0x8205);
-}
-
-void gen_level_set_unack(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
-{
-	doer(model, ctx, buf, 0x8207);
-}
-
-void gen_level_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
-{
-	gen_level_set_unack(model, ctx, buf);
-	gen_level_get(model, ctx, buf);
-}
-
-void gen_delta_set_unack(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
-{
-	doer(model, ctx, buf, 0x820A);
-}
-
-void gen_delta_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
-{
-	gen_delta_set_unack(model, ctx, buf);
-	gen_level_get(model, ctx, buf);
-}
-
-void gen_move_set_unack(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
-{
-	doer(model, ctx, buf, 0x820C);
-}
-
-void gen_move_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
-{
-	gen_move_set_unack(model, ctx, buf);
-	gen_level_get(model, ctx, buf);
-}
-
-void gen_level_cli_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
-{
-	doer(model, ctx, buf, 0x8208);
-}

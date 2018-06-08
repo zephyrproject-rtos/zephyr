@@ -6,7 +6,7 @@ static int output_number(bt_mesh_output_action_t action, uint32_t number)
 {
 	printk("OOB Number: %u\n", number);
 
-	board_output_number(action, number);
+	/* board_output_number(action, number); */
 
 	return 0;
 }
@@ -22,7 +22,7 @@ static int output_string(const char *str)
 
 static void prov_complete(u16_t net_idx, u16_t addr)
 {
-	board_prov_complete();
+	/* board_prov_complete(); */
 }
 
 static void prov_reset(void)
@@ -66,12 +66,12 @@ void bt_ready(int err)
 		memcpy(dev_uuid, oob.addr.a.val, 6);
 	}
 
-	board_init();
+	/* board_init(); */
 
 	err = bt_mesh_init(&prov, &comp);
 
 	if (err) {
-		printk("Initializing mesh failed (err %d)\n\r", err);
+		printk("Initializing mesh failed (err %d)\n", err);
 		return;
 	}
 
@@ -81,5 +81,5 @@ void bt_ready(int err)
 
 	bt_mesh_prov_enable(BT_MESH_PROV_GATT | BT_MESH_PROV_ADV);
 
-	printk("Mesh initialized\n\r");
+	printk("Mesh initialized\n");
 }

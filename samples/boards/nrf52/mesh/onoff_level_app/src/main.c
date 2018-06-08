@@ -12,24 +12,24 @@ void main(void)
 
 	if (nvs_read(&fs, NVS_LED_STATE_ID, &light_state_current, sizeof(struct light_state_t)) < 0) {
 
-		printk("\n\rentry for NVS_LED_STATE_ID is not found on NVS\n\r");
+		printk("\n\rentry for NVS_LED_STATE_ID is not found on NVS\n");
 
 		light_state_current.OnOff = 1;
 		light_state_current.power = LEVEL_100;
 	}
 
-	printk("\n\rled_on_off_status -> %d, led_level_status -> %d\n\r", light_state_current.OnOff, light_state_current.power);
+	printk("\n\rled_on_off_status -> %d, led_level_status -> %d\n", light_state_current.OnOff, light_state_current.power);
 
 	gpio_init();
 
 	update_light_state();
 
-	printk("Initializing...\n\r");
+	printk("Initializing...\n");
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);
 
 	if (err) {
-		printk("Bluetooth init failed (err %d)\n\r", err);
+		printk("Bluetooth init failed (err %d)\n", err);
 	}
 }

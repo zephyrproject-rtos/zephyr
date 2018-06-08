@@ -1,6 +1,7 @@
 #include "common.h"
 
-void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf, uint16_t opcode)
+void process_message(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+		     struct net_buf_simple *buf, uint16_t opcode)
 {
 	uint8_t tid, tmp8;
 	int16_t tmp16;
@@ -22,7 +23,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 
 		if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 
-			printk("Unable to send GEN_ONOFF_SRV Status response\n\r");
+			printk("Unable to send ONOFF_SRV Status response\n");
 		}
 
 		break;
@@ -54,7 +55,8 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 
 		if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 
-			bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x04));
+			bt_mesh_model_msg_init(msg,
+					       BT_MESH_MODEL_OP_2(0x82, 0x04));
 			net_buf_simple_add_u8(msg, state_ptr->current);
 
 			err = bt_mesh_model_publish(model);
@@ -72,7 +74,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 
 		tmp8 = net_buf_simple_pull_u8(buf);
 
-		printk("Acknownledgement from GEN_ONOFF_SRV = %u\n\r", tmp8);
+		printk("Acknownledgement from GEN_ONOFF_SRV = %u\n", tmp8);
 
 		break;
 
@@ -85,7 +87,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 		net_buf_simple_add_le16(msg, state_ptr->current);
 
 		if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
-			printk("Unable to send GEN_LEVEL_SRV Status response\n\r");
+			printk("Unable to send LEVEL_SRV Status response\n");
 		}
 
 		break;
@@ -108,7 +110,9 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 		}
 
 		if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-			bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x08));
+
+			bt_mesh_model_msg_init(msg,
+					       BT_MESH_MODEL_OP_2(0x82, 0x08));
 
 			net_buf_simple_add_le16(msg, state_ptr->current);
 
@@ -126,7 +130,7 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 	case 0x8208:	/* GEN_LEVEL_SRV_STATUS */
 
 		tmp16 = net_buf_simple_pull_le16(buf);
-		printk("Acknownledgement from GEN_LEVEL_SRV = %d\n\r", tmp16);
+		printk("Acknownledgement from GEN_LEVEL_SRV = %d\n", tmp16);
 
 		break;
 
@@ -139,7 +143,8 @@ void doer(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_b
 
 			state_ptr->tid_discard = 0;
 
-		} else if (state_ptr->last_tid == tid && state_ptr->tid_discard == 1) {
+		} else if (state_ptr->last_tid == tid && 
+			   state_ptr->tid_discard == 1) {
 
 			return;
 		}
