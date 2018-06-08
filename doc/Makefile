@@ -1,9 +1,6 @@
 # Makefile for Sphinx documentation
 #
 
-CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
-	          else if [ -x /bin/bash ]; then echo /bin/bash; \
-		            else echo sh; fi ; fi)
 # You can set these variables from the command line.
 SPHINXOPTS    ?= -q
 SPHINXBUILD   = sphinx-build
