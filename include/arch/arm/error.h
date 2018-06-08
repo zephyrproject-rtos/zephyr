@@ -15,7 +15,7 @@
 #define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ERROR_H_
 
 #include <arch/arm/syscall.h>
-#include <arch/arm/cortex_m/exc.h>
+#include <arch/arm/exc.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
