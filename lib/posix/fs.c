@@ -297,7 +297,7 @@ struct dirent *readdir(DIR *dirp)
 	memcpy(pdirent.d_name, fdirent.name, rc);
 
 	/* Make sure the name is NULL terminated */
-	pdirent.d_name[rc + 1] = '\0';
+	pdirent.d_name[rc] = '\0';
 	return &pdirent;
 }
 
