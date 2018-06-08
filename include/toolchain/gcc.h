@@ -294,6 +294,10 @@ do {                                                                    \
 #define GDATA(sym) glbl_data sym
 #define WDATA(sym) weak_data sym
 
+#elif defined(CONFIG_SPARC)
+#define GTEXT(sym) .global sym; .type sym, #function
+#define GDATA(sym) .global sym; .type sym, #object
+
 #else  /* !CONFIG_ARM && !CONFIG_ARC */
 #define GTEXT(sym) .globl sym; .type sym, @function
 #define GDATA(sym) .globl sym; .type sym, @object
@@ -413,7 +417,8 @@ do {                                                                    \
 		",%c0"                              \
 		"\n\t.type\t" #name ",@object" :  : "n"(value))
 
-#elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || defined(CONFIG_XTENSA)
+#elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) ||                        \
+	defined(CONFIG_SPARC) || defined(CONFIG_XTENSA)
 
 /* No special prefixes necessary for constants in this arch AFAICT */
 #define GEN_ABSOLUTE_SYM(name, value)		\

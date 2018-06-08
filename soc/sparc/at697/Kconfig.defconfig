@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2018 ispace, inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_AT697
+
+config SOC
+	default "at697"
+
+endif

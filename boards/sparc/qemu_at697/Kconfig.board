@@ -1,0 +1,9 @@
+#
+# Copyright (c) 2018 ispace, inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_QEMU_AT697
+	bool "AT697 LEON2 Emulation (QEMU)"
+	select QEMU_TARGET

@@ -45,6 +45,9 @@
 #else
 	OUTPUT_FORMAT("elf32-littleriscv")
 #endif
+#elif defined(CONFIG_SPARC)
+	OUTPUT_FORMAT("elf32-sparc")
+	OUTPUT_ARCH(sparc)
 #elif defined(CONFIG_XTENSA)
 	/* Not needed */
 #elif defined(CONFIG_ARCH_POSIX)
