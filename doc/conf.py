@@ -16,8 +16,7 @@ import sys
 import os
 
 if "ZEPHYR_BASE" not in os.environ:
-    sys.stderr.write("$ZEPHYR_BASE environment variable undefined.\n")
-    exit(1)
+    sys.exit("$ZEPHYR_BASE environment variable undefined.")
 ZEPHYR_BASE = os.environ["ZEPHYR_BASE"]
 
 # Add the 'extensions' directory to sys.path, to enable finding Sphinx
