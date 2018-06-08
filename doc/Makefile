@@ -20,12 +20,10 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
-.PHONY: help clean content kconfig prep html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext
+.PHONY: doxy help clean content kconfig prep html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext
 
-doxy-code:
-	$(Q)(cat zephyr.doxyfile ; echo "STRIP_FROM_PATH=${ZEPHYR_BASE}" ) | doxygen -  2>&1 | tee doc.log
-
-doxy: doxy-code
+doxy:
+	$(Q)(cat zephyr.doxyfile ; echo "STRIP_FROM_PATH=${ZEPHYR_BASE}" ) | doxygen - 2>&1 | tee doc.log
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
