@@ -1,0 +1,18 @@
+# Kconfig - SPARC architecture configuration options
+#
+# Copyright (c) 2018 ispace, inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "SPARC Options"
+	depends on SPARC
+
+config ARCH
+	default "sparc"
+
+config NUM_IRQS
+	int
+	default 15
+
+endmenu

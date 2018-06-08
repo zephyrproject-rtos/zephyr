@@ -23,6 +23,8 @@
 #include <arch/nios2/arch.h>
 #elif defined(CONFIG_RISCV)
 #include <arch/riscv/arch.h>
+#elif defined(CONFIG_SPARC)
+#include <arch/sparc/arch.h>
 #elif defined(CONFIG_XTENSA)
 #include <arch/xtensa/arch.h>
 #elif defined(CONFIG_ARCH_POSIX)

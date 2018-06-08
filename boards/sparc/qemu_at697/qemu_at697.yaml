@@ -1,0 +1,12 @@
+identifier: qemu_at697
+name: QEMU Emulation for AT697
+type: qemu
+simulation: qemu
+arch: sparc
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - cmsis_rtos_v2
+    - net
+    - bluetooth
