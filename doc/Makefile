@@ -1,10 +1,8 @@
 # Makefile for Sphinx documentation
-#
 
 # You can set these variables from the command line.
-SPHINXOPTS    ?= -q
+SPHINXOPTS   ?= -q
 SPHINXBUILD   = sphinx-build
-PAPER         =
 BUILDDIR     ?= _build
 DOC_TAG      ?= development
 
@@ -14,11 +12,9 @@ $(error The '$(SPHINXBUILD)' command was not found. Make sure you have Sphinx in
 endif
 
 # Internal variables.
-paperopt_a4     = -D latex_paper_size=a4
-paperopt_letter = -D latex_paper_size=letter
-allsphinxopts   = -d $(BUILDDIR)/doctrees $(paperopt_$(PAPER)) $(SPHINXOPTS) .
+allsphinxopts   = -d $(BUILDDIR)/doctrees $(SPHINXOPTS) .
 # the i18n builder cannot share the environment and doctrees with the others
-i18nsphinxopts  = $(paperopt_$(PAPER)) $(SPHINXOPTS) .
+i18nsphinxopts  = $(SPHINXOPTS) .
 
 .PHONY: doxy help clean content kconfig html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext
 
@@ -37,7 +33,7 @@ help:
 	@echo "  applehelp  to make an Apple Help Book"
 	@echo "  devhelp    to make HTML files and a Devhelp project"
 	@echo "  epub       to make an epub"
-	@echo "  latex      to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
+	@echo "  latex      to make LaTeX files"
 	@echo "  latexpdf   to make LaTeX files and run them through pdflatex"
 	@echo "  latexpdfja to make LaTeX files and run them through platex/dvipdfmx"
 	@echo "  text       to make text files"
