@@ -21,6 +21,8 @@
 #include "ipv6.h"
 #include "ipv4_autoconf_internal.h"
 
+#define NET_BUF_TIMEOUT K_MSEC(100)
+
 #if defined(CONFIG_NET_IPV6)
 static const struct net_eth_addr multicast_eth_addr = {
 	{ 0x33, 0x33, 0x00, 0x00, 0x00, 0x00 } };
@@ -338,23 +340,28 @@ static void set_vlan_priority(struct ethernet_context *ctx,
 #define set_vlan_priority(...)
 #endif /* CONFIG_NET_VLAN */
 
-struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
-					struct net_pkt *pkt,
-					u32_t ptype,
-					u8_t *src,
-					u8_t *dst)
+struct net_buf *net_eth_fill_header(struct ethernet_context *ctx,
+				    struct net_pkt *pkt,
+				    u32_t ptype,
+				    u8_t *src,
+				    u8_t *dst)
 {
+	struct net_buf *hdr_frag;
 	struct net_eth_hdr *hdr;
-	struct net_buf *frag = pkt->frags;
+
+	hdr_frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
+	if (!hdr_frag) {
+		return NULL;
+	}
 
 	if (IS_ENABLED(CONFIG_NET_VLAN) &&
 	    net_eth_is_vlan_enabled(ctx, net_pkt_iface(pkt))) {
 		struct net_eth_vlan_hdr *hdr_vlan;
 
-		NET_ASSERT(net_buf_headroom(frag) >=
+		NET_ASSERT(net_buf_headroom(hdr_frag) >=
 			   sizeof(struct net_eth_vlan_hdr));
 
-		hdr_vlan = (struct net_eth_vlan_hdr *)(frag->data -
+		hdr_vlan = (struct net_eth_vlan_hdr *)(hdr_frag->data -
 						       net_pkt_ll_reserve(pkt));
 
 		if (dst && ((u8_t *)&hdr_vlan->dst != dst)) {
@@ -373,29 +380,32 @@ struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
 
 		print_vlan_ll_addrs(pkt, ntohs(hdr_vlan->type),
 				    net_pkt_vlan_tci(pkt),
-				    frag->len,
+				    hdr_frag->len,
 				    &hdr_vlan->src, &hdr_vlan->dst);
+	} else {
+		NET_ASSERT(net_buf_headroom(hdr_frag) >=
+			   sizeof(struct net_eth_hdr));
 
-		return (struct net_eth_hdr *)hdr_vlan;
+		hdr = (struct net_eth_hdr *)(hdr_frag->data -
+					     net_pkt_ll_reserve(pkt));
+
+		if (dst && ((u8_t *)&hdr->dst != dst)) {
+			memcpy(&hdr->dst, dst, sizeof(struct net_eth_addr));
+		}
+
+		if (src && ((u8_t *)&hdr->src != src)) {
+			memcpy(&hdr->src, src, sizeof(struct net_eth_addr));
+		}
+
+		hdr->type = ptype;
+
+		print_ll_addrs(pkt, ntohs(hdr->type),
+			       hdr_frag->len, &hdr->src, &hdr->dst);
 	}
 
-	NET_ASSERT(net_buf_headroom(frag) >= sizeof(struct net_eth_hdr));
+	net_pkt_frag_insert(pkt, hdr_frag);
 
-	hdr = (struct net_eth_hdr *)(frag->data - net_pkt_ll_reserve(pkt));
-
-	if (dst && ((u8_t *)&hdr->dst != dst)) {
-		memcpy(&hdr->dst, dst, sizeof(struct net_eth_addr));
-	}
-
-	if (src && ((u8_t *)&hdr->src != src)) {
-		memcpy(&hdr->src, src, sizeof(struct net_eth_addr));
-	}
-
-	hdr->type = ptype;
-
-	print_ll_addrs(pkt, ntohs(hdr->type), frag->len, &hdr->src, &hdr->dst);
-
-	return hdr;
+	return hdr_frag;
 }
 
 #if defined(CONFIG_NET_IPV4_AUTO)
@@ -549,9 +559,11 @@ send_frame:
 	 * has already prepared the message to be sent.
 	 */
 	if (ptype != htons(NET_ETH_PTYPE_ARP)) {
-		net_eth_fill_header(ctx, pkt, ptype,
-				    net_pkt_lladdr_src(pkt)->addr,
-				    net_pkt_lladdr_dst(pkt)->addr);
+		if (!net_eth_fill_header(ctx, pkt, ptype,
+					 net_pkt_lladdr_src(pkt)->addr,
+					 net_pkt_lladdr_dst(pkt)->addr)) {
+			return NET_DROP;
+		}
 	}
 
 	net_if_queue_tx(iface, pkt);
