@@ -54,18 +54,61 @@ struct server_state   gen_onoff_srv_user_data_s0 = {
 	.model_instance = 2,
 };
 
+/* ----------------------- message handlers (Start) ----------------------- */
+
 static void gen_onoff_get(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	process_message(model, ctx, buf, 0x8201);
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 1 + 4);
+	struct server_state *state = model->user_data;
+
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x04));
+
+	net_buf_simple_add_u8(msg, state->current);
+
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		printk("Unable to send ONOFF_SRV Status response\n");
+	}
 }
 
 static void gen_onoff_set_unack(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	process_message(model, ctx, buf, 0x8203);
+	int err = 0;
+	struct net_buf_simple *msg = model->pub->msg;
+	struct server_state *state = model->user_data;
+
+	state->current = net_buf_simple_pull_u8(buf);
+
+	if (state->previous == state->current) {
+		return;
+	}
+
+	if (state->model_instance == 0x01) {
+		light_state_current.OnOff = state->current;
+		update_light_state();
+
+	} else if (state->model_instance == 0x02) {
+		if (state->current == 0x01) {
+			nvs_light_state_save();
+		}
+	}
+
+	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
+		bt_mesh_model_msg_init(msg,
+				       BT_MESH_MODEL_OP_2(0x82, 0x04));
+		net_buf_simple_add_u8(msg, state->current);
+
+		err = bt_mesh_model_publish(model);
+
+		if (err) {
+			printk("bt_mesh_model_publish err %d\n", err);
+		}
+	}
+
+	state->previous = state->current;
 }
 
 static void gen_onoff_set(struct bt_mesh_model *model,
@@ -80,21 +123,60 @@ static void gen_onoff_cli_status(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	process_message(model, ctx, buf, 0x8204);
+	uint8_t tmp8 = net_buf_simple_pull_u8(buf);
+	printk("Acknownledgement from GEN_ONOFF_SRV = %u\n", tmp8);
 }
 
 static void gen_level_get(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	process_message(model, ctx, buf, 0x8205);
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(10);
+	struct server_state *state = model->user_data;
+
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x08));
+
+	net_buf_simple_add_le16(msg, state->current);
+
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		printk("Unable to send LEVEL_SRV Status response\n");
+	}
 }
 
 static void gen_level_set_unack(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	process_message(model, ctx, buf, 0x8207);
+	int err;
+	struct net_buf_simple *msg = model->pub->msg;
+	struct server_state *state = model->user_data;
+
+	state->current = net_buf_simple_pull_le16(buf);
+
+	if (state->previous == state->current) {
+		return;
+	}
+
+	if (state->model_instance == 0x01) {
+		light_state_current.power = state->current;
+		update_light_state();
+	}
+
+	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
+
+		bt_mesh_model_msg_init(msg,
+				       BT_MESH_MODEL_OP_2(0x82, 0x08));
+
+		net_buf_simple_add_le16(msg, state->current);
+
+		err = bt_mesh_model_publish(model);
+
+		if (err) {
+			printk("bt_mesh_model_publish err %d\n", err);
+		}
+	}
+
+	state->previous = state->current;
 }
 
 static void gen_level_set(struct bt_mesh_model *model,
@@ -109,7 +191,54 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	process_message(model, ctx, buf, 0x820A);
+	int err;
+	struct net_buf_simple *msg = model->pub->msg;
+	struct server_state *state = model->user_data;
+
+	int32_t tmp32 = state->current + net_buf_simple_pull_le32(buf);
+	uint8_t tid = net_buf_simple_pull_u8(buf);
+
+	if (state->last_tid != tid) {
+		state->tid_discard = 0;
+	} else if (state->last_tid == tid &&
+		   state->tid_discard == 1) {
+		return;
+	}
+
+	state->last_tid = tid;
+	state->tid_discard = 1;
+
+	if (tmp32 < -32768) {
+		tmp32 = -32768;
+
+	} else if (tmp32 > 32767) {
+		tmp32 = 32767;
+	}
+
+	state->current = (int16_t)tmp32;
+
+	printk("Level -> %d\n", state->current);
+
+	if (state->model_instance == 0x01) {
+		light_state_current.power = state->current;
+		update_light_state();
+	}
+
+	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
+
+		bt_mesh_model_msg_init(msg,
+				       BT_MESH_MODEL_OP_2(0x82, 0x08));
+
+		net_buf_simple_add_le16(msg, state->current);
+
+		err = bt_mesh_model_publish(model);
+
+		if (err) {
+			printk("bt_mesh_model_publish err %d\n", err);
+		}
+	}
+
+	state->previous = state->current;
 }
 
 static void gen_delta_set(struct bt_mesh_model *model,
@@ -123,8 +252,7 @@ static void gen_delta_set(struct bt_mesh_model *model,
 static void gen_move_set_unack(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
-{
-	process_message(model, ctx, buf, 0x820C);
+{	
 }
 
 static void gen_move_set(struct bt_mesh_model *model,
@@ -139,8 +267,11 @@ static void gen_level_cli_status(struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
-	process_message(model, ctx, buf, 0x8208);
+	int16_t tmp16 = net_buf_simple_pull_le16(buf);
+	printk("Acknownledgement from GEN_LEVEL_SRV = %d\n", tmp16);
 }
+
+/* ----------------------- message handlers (End) ----------------------- */
 
 static const struct bt_mesh_model_op gen_onoff_srv_op[] = {
 	{ BT_MESH_MODEL_OP_2(0x82, 0x01), 0, gen_onoff_get },

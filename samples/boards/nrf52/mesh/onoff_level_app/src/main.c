@@ -20,7 +20,7 @@ void main(void)
 		light_state_current.power = LEVEL_100;
 	}
 
-	printk("\n\rled_on_off_status -> %d, led_level_status -> %d\n",
+	printk("led_on_off_status -> %d, led_level_status -> %d\n",
 	       light_state_current.OnOff, light_state_current.power);
 
 	gpio_init();

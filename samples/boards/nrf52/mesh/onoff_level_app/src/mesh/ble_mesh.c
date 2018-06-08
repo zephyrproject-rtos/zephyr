@@ -53,7 +53,7 @@ void bt_ready(int err)
 	struct bt_le_oob oob;
 
 	if (err) {
-		printk("Bluetooth init failed (err %d", err);
+		printk("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
 
@@ -61,7 +61,7 @@ void bt_ready(int err)
 
 	/* Use identity address as device UUID */
 	if (bt_le_oob_get_local(&oob)) {
-		printk("Identity Address unavailable");
+		printk("Identity Address unavailable\n");
 	} else {
 		memcpy(dev_uuid, oob.addr.a.val, 6);
 	}
