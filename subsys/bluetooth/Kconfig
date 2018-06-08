@@ -10,6 +10,7 @@ menu "Bluetooth"
 config BT
 	bool "Bluetooth support"
 	select NET_BUF
+	select CRYPTO
 	help
 	  This option enables Bluetooth support.
 
