@@ -16,15 +16,15 @@ config GPIO_NRF5_P0
 
 endif # GPIO_NRF5
 
-if UART_NRF5
+if UART_NRFX
 
-config UART_NRF5_GPIO_TX_PIN
+config UART_0_NRF_TX_PIN
 	default 3
 
-config UART_NRF5_GPIO_RX_PIN
+config UART_0_NRF_RX_PIN
 	default 2
 
-endif # UART_NRF5
+endif # UART_NRFX
 
 config I2C
 	def_bool y

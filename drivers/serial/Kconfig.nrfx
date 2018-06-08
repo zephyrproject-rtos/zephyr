@@ -1,0 +1,80 @@
+# Kconfig.nrfx - nrfx UART configuration
+#
+# Copyright (c) 2016 - 2018, Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig UART_NRFX
+	bool "nRF UART nrfx drivers"
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select GPIO
+	depends on SOC_FAMILY_NRF
+	help
+	  Enable support for nrfx UART drivers for nRF MCU series.
+	  Peripherals with the same instance ID cannot be used together,
+	  e.g. UART_0 and UARTE_0.
+
+if UART_NRFX
+
+choice
+	prompt "UART Port 0 Driver type"
+
+config UART_0_NRF_UART
+	bool "nRF UART 0"
+	depends on ((SOC_SERIES_NRF52X || SOC_SERIES_NRF51X) && (!SOC_NRF52810))
+	select NRF_UART_PERIPHERAL
+	help
+	  Enable nRF UART without EasyDMA on port 0.
+endchoice
+
+if UART_0_NRF_UART
+
+config UART_0_NRF_PARITY_BIT
+	bool "Enable parity bit"
+	help
+	  Enable parity bit.
+
+config UART_0_NRF_FLOW_CONTROL
+	bool "Enable flow control"
+	help
+	  Enable flow control. If selected, additionally two pins, RTS and CTS
+	  have to be configured.
+
+config UART_0_NRF_TX_PIN
+	int "TX Pin Number"
+	range 0 47 if SOC_NRF52840_QIAA
+	range 0 31
+	help
+	  The GPIO pin to use for TX.
+
+config UART_0_NRF_RX_PIN
+	int "RX Pin Number"
+	range 0 47 if SOC_NRF52840_QIAA
+	range 0 31
+	help
+	  The GPIO pin to use for RX.
+
+config UART_0_NRF_CTS_PIN
+	int "CTS Pin Number"
+	range 0 47 if SOC_NRF52840_QIAA
+	range 0 31
+	depends on UART_0_NRF_FLOW_CONTROL
+	help
+	  The GPIO pin to use for CTS.
+
+config UART_0_NRF_RTS_PIN
+	int "RTS Pin Number"
+	range 0 47 if SOC_NRF52840_QIAA
+	range 0 31
+	depends on UART_0_NRF_FLOW_CONTROL
+	help
+	  The GPIO pin to use for RTS.
+
+endif # UART_0_NRF_UART
+
+config NRF_UART_PERIPHERAL
+	bool
+
+endif # UART_NRFX
