@@ -43,8 +43,9 @@ struct server_state   gen_onoff_srv_user_data_root = {
 
 struct server_state   gen_level_srv_user_data_root = {
 
-	.previous = 0xFFFFFFFF,	/* it should be anything 
-				 * except {-32768 to 32767} */
+	.previous = 0xFFFFFFFF,	/* it should be anything
+				 * except {-32768 to 32767}
+				*/
 	.model_instance = 1,
 };
 
@@ -135,8 +136,8 @@ static void gen_move_set(struct bt_mesh_model *model,
 }
 
 static void gen_level_cli_status(struct bt_mesh_model *model,
-			         struct bt_mesh_msg_ctx *ctx,
-			         struct net_buf_simple *buf)
+				 struct bt_mesh_msg_ctx *ctx,
+				 struct net_buf_simple *buf)
 {
 	process_message(model, ctx, buf, 0x8208);
 }
@@ -191,7 +192,7 @@ struct bt_mesh_model root_models[] = {
 
 static struct bt_mesh_model s0_models[] = {
 
-	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, 
+	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV,
 		      gen_onoff_srv_op, &gen_onoff_srv_pub_s0,
 		      &gen_onoff_srv_user_data_s0),
 	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI,
