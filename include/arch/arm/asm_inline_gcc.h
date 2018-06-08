@@ -30,7 +30,7 @@ extern "C" {
 
 #else /* !_ASMLANGUAGE */
 #include <zephyr/types.h>
-#include <arch/arm/cortex_m/exc.h>
+#include <arch/arm/exc.h>
 #include <irq.h>
 
 /**

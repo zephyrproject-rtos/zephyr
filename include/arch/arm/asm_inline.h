@@ -15,9 +15,9 @@
  */
 
 #if defined(__GNUC__)
-#include <arch/arm/cortex_m/asm_inline_gcc.h>
+#include <arch/arm/asm_inline_gcc.h>
 #else
-#include <arch/arm/cortex_m/asm_inline_other.h>
+#include <arch/arm/asm_inline_other.h>
 #endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ASM_INLINE_H_ */

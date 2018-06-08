@@ -22,17 +22,18 @@
 /* ARM GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
 
-#ifdef CONFIG_CPU_CORTEX_M
-#include <arch/arm/cortex_m/exc.h>
-#include <arch/arm/cortex_m/irq.h>
-#include <arch/arm/cortex_m/error.h>
-#include <arch/arm/cortex_m/misc.h>
-#include <arch/arm/cortex_m/memory_map.h>
-#include <arch/arm/cortex_m/asm_inline.h>
+#include <arch/arm/exc.h>
+#include <arch/arm/irq.h>
+#include <arch/arm/error.h>
+#include <arch/arm/misc.h>
 #include <arch/common/sys_io.h>
 #include <arch/common/addr_types.h>
 #include <arch/common/ffs.h>
-#include <arch/arm/cortex_m/nmi.h>
+#include <arch/arm/nmi.h>
+#include <arch/arm/asm_inline.h>
+
+#ifdef CONFIG_CPU_CORTEX_M
+#include <arch/arm/cortex_m/memory_map.h>
 #endif
 
 #ifdef __cplusplus
