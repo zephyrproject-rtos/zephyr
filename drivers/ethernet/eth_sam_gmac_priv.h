@@ -15,8 +15,14 @@
 #define GMAC_MTU 1500
 #define GMAC_FRAME_SIZE_MAX (GMAC_MTU + 18)
 
+/** Cache alignment */
+#define GMAC_DCACHE_ALIGNMENT             32
 /** Memory alignment of the RX/TX Buffer Descriptor List */
+#if __DCACHE_PRESENT == 1
+#define GMAC_DESC_ALIGNMENT               GMAC_DCACHE_ALIGNMENT
+#else
 #define GMAC_DESC_ALIGNMENT               4
+#endif
 /** Total number of queues supported by GMAC hardware module */
 #define GMAC_QUEUE_NO                     3
 /** RX descriptors count for main queue */
@@ -25,20 +31,6 @@
 #define MAIN_QUEUE_TX_DESC_COUNT (CONFIG_NET_BUF_TX_COUNT + 1)
 /** RX/TX descriptors count for priority queues */
 #define PRIORITY_QUEUE_DESC_COUNT         1
-
-/* FIXME change to
- * #if __DCACHE_PRESENT == 1
- * when cache support is added
- */
-#if 0
-#define DCACHE_INVALIDATE(addr, size) \
-		SCB_InvalidateDCache_by_Addr((u32_t *)addr, size)
-#define DCACHE_CLEAN(addr, size) \
-		SCB_CleanDCache_by_Addr((u32_t *)addr, size)
-#else
-#define DCACHE_INVALIDATE(addr, size) { ; }
-#define DCACHE_CLEAN(addr, size) { ; }
-#endif
 
 /*
  * Receive buffer descriptor bit field definitions
