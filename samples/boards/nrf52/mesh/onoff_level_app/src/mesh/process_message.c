@@ -5,24 +5,20 @@ void process_message(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 {
 	uint8_t tid, tmp8;
 	int16_t tmp16;
-	int err = 0, tmp32;
-
+	s32_t err = 0, tmp32;
 	struct net_buf_simple *msg;
-
-	struct server_state *state_ptr = model->user_data;
+	struct server_state *state = model->user_data;
 
 	switch (opcode) {
-
 	case 0x8201:	/* GEN_ONOFF_SRV_GET */
 
 		msg = NET_BUF_SIMPLE(2 + 1 + 4);
 
 		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x04));
 
-		net_buf_simple_add_u8(msg, state_ptr->current);
+		net_buf_simple_add_u8(msg, state->current);
 
 		if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
-
 			printk("Unable to send ONOFF_SRV Status response\n");
 		}
 
@@ -32,32 +28,26 @@ void process_message(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 
 		msg = model->pub->msg;
 
-		tmp8 = net_buf_simple_pull_u8(buf);
+		state->current = net_buf_simple_pull_u8(buf);
 
-		state_ptr->current = tmp8;
-
-		if (state_ptr->previous == state_ptr->current) {
-
+		if (state->previous == state->current) {
 			return;
 		}
 
-		if (state_ptr->model_instance == 0x01) {
-
-			light_state_current.OnOff = state_ptr->current;
+		if (state->model_instance == 0x01) {
+			light_state_current.OnOff = state->current;
 			update_light_state();
 
-		} else if (state_ptr->model_instance == 0x02) {
-
-			if (state_ptr->current == 0x01) {
+		} else if (state->model_instance == 0x02) {
+			if (state->current == 0x01) {
 				nvs_light_state_save();
 			}
 		}
 
 		if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-
 			bt_mesh_model_msg_init(msg,
 					       BT_MESH_MODEL_OP_2(0x82, 0x04));
-			net_buf_simple_add_u8(msg, state_ptr->current);
+			net_buf_simple_add_u8(msg, state->current);
 
 			err = bt_mesh_model_publish(model);
 
@@ -66,7 +56,7 @@ void process_message(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			}
 		}
 
-		state_ptr->previous = state_ptr->current;
+		state->previous = state->current;
 
 		break;
 
@@ -84,7 +74,7 @@ void process_message(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 
 		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x08));
 
-		net_buf_simple_add_le16(msg, state_ptr->current);
+		net_buf_simple_add_le16(msg, state->current);
 
 		if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 			printk("Unable to send LEVEL_SRV Status response\n");
@@ -98,14 +88,14 @@ void process_message(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 
 		tmp16 = net_buf_simple_pull_le16(buf);
 
-		state_ptr->current = tmp16;
+		state->current = tmp16;
 
-		if (state_ptr->previous == state_ptr->current) {
+		if (state->previous == state->current) {
 			return;
 		}
 
-		if (state_ptr->model_instance == 0x01) {
-			light_state_current.power = state_ptr->current;
+		if (state->model_instance == 0x01) {
+			light_state_current.power = state->current;
 			update_light_state();
 		}
 
@@ -114,7 +104,7 @@ void process_message(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			bt_mesh_model_msg_init(msg,
 					       BT_MESH_MODEL_OP_2(0x82, 0x08));
 
-			net_buf_simple_add_le16(msg, state_ptr->current);
+			net_buf_simple_add_le16(msg, state->current);
 
 			err = bt_mesh_model_publish(model);
 
@@ -123,7 +113,7 @@ void process_message(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			}
 		}
 
-		state_ptr->previous = state_ptr->current;
+		state->previous = state->current;
 
 		break;
 
@@ -136,42 +126,37 @@ void process_message(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 
 	case 0x820A:	/* GEN_DELTA_SRV_UNACK */
 
-		tmp32 = state_ptr->current + net_buf_simple_pull_le32(buf);
+		tmp32 = state->current + net_buf_simple_pull_le32(buf);
 		tid = net_buf_simple_pull_u8(buf);
 
-		if (state_ptr->last_tid != tid) {
+		if (state->last_tid != tid) {
+			state->tid_discard = 0;
 
-			state_ptr->tid_discard = 0;
-
-		} else if (state_ptr->last_tid == tid && 
-			   state_ptr->tid_discard == 1) {
-
+		} else if (state->last_tid == tid && 
+			   state->tid_discard == 1) {
 			return;
 		}
 
-		state_ptr->last_tid = tid;
-		state_ptr->tid_discard = 1;
+		state->last_tid = tid;
+		state->tid_discard = 1;
 
 		if (tmp32 < -32768) {
-
 			tmp32 = -32768;
 
 		} else if (tmp32 > 32767) {
-
 			tmp32 = 32767;
 		}
 
-		state_ptr->current = (int16_t)tmp32;
+		state->current = (int16_t)tmp32;
 
-		printk("\n\r Level -> %d", state_ptr->current);
+		printk("\n\r Level -> %d", state->current);
 
-		if (state_ptr->model_instance == 0x01) {
-
-			light_state_current.power = state_ptr->current;
+		if (state->model_instance == 0x01) {
+			light_state_current.power = state->current;
 			update_light_state();
 		}
 
-		state_ptr->previous = state_ptr->current;
+		state->previous = state->current;
 
 		break;
 
