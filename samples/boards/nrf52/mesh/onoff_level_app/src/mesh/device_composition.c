@@ -252,7 +252,7 @@ static void gen_delta_set(struct bt_mesh_model *model,
 static void gen_move_set_unack(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
-{	
+{
 }
 
 static void gen_move_set(struct bt_mesh_model *model,
