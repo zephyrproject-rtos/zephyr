@@ -114,29 +114,22 @@ static inline void ethernet_update_length(struct net_if *iface,
 static enum net_verdict ethernet_recv(struct net_if *iface,
 				      struct net_pkt *pkt)
 {
-#if defined(CONFIG_NET_VLAN)
-	struct net_eth_vlan_hdr *hdr_vlan =
-		(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
 	struct ethernet_context *ctx = net_if_l2_data(iface);
-	bool vlan_enabled = false;
-#endif
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+	u8_t hdr_len = sizeof(struct net_eth_hdr);
+	u16_t type = ntohs(hdr->type);
 	struct net_linkaddr *lladdr;
 	sa_family_t family;
-	u16_t type = ntohs(hdr->type);
-	u8_t hdr_len = sizeof(struct net_eth_hdr);
 
-#if defined(CONFIG_NET_VLAN)
-	if (net_eth_is_vlan_enabled(ctx, iface)) {
-		if (type == NET_ETH_PTYPE_VLAN) {
-			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
-			type = ntohs(hdr_vlan->type);
-			hdr_len = sizeof(struct net_eth_vlan_hdr);
-		}
+	if (net_eth_is_vlan_enabled(ctx, iface) &&
+	    type == NET_ETH_PTYPE_VLAN) {
+		struct net_eth_vlan_hdr *hdr_vlan =
+			(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
 
-		vlan_enabled = true;
+		net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
+		type = ntohs(hdr_vlan->type);
+		hdr_len = sizeof(struct net_eth_vlan_hdr);
 	}
-#endif
 
 	switch (type) {
 	case NET_ETH_PTYPE_IP:
@@ -178,15 +171,15 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	lladdr->len = sizeof(struct net_eth_addr);
 	lladdr->type = NET_LINK_ETHERNET;
 
-#if defined(CONFIG_NET_VLAN)
-	if (vlan_enabled) {
+	if (net_eth_is_vlan_enabled(ctx, iface)) {
+		struct net_eth_vlan_hdr *hdr_vlan __unused =
+			(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+
 		print_vlan_ll_addrs(pkt, type, ntohs(hdr_vlan->vlan.tci),
 				    net_pkt_get_len(pkt),
 				    net_pkt_lladdr_src(pkt),
 				    net_pkt_lladdr_dst(pkt));
-	} else
-#endif
-	{
+	} else {
 		print_ll_addrs(pkt, type, net_pkt_get_len(pkt),
 			       net_pkt_lladdr_src(pkt),
 			       net_pkt_lladdr_dst(pkt));
@@ -340,6 +333,9 @@ static void set_vlan_priority(struct ethernet_context *ctx,
 	vlan_priority = net_priority2vlan(net_pkt_priority(pkt));
 	net_pkt_set_vlan_priority(pkt, vlan_priority);
 }
+#else
+#define set_vlan_tag(...) NET_DROP
+#define set_vlan_priority(...)
 #endif /* CONFIG_NET_VLAN */
 
 struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
@@ -351,8 +347,8 @@ struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
 	struct net_eth_hdr *hdr;
 	struct net_buf *frag = pkt->frags;
 
-#if defined(CONFIG_NET_VLAN)
-	if (net_eth_is_vlan_enabled(ctx, net_pkt_iface(pkt))) {
+	if (IS_ENABLED(CONFIG_NET_VLAN) &&
+	    net_eth_is_vlan_enabled(ctx, net_pkt_iface(pkt))) {
 		struct net_eth_vlan_hdr *hdr_vlan;
 
 		NET_ASSERT(net_buf_headroom(frag) >=
@@ -382,7 +378,6 @@ struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
 
 		return (struct net_eth_hdr *)hdr_vlan;
 	}
-#endif
 
 	NET_ASSERT(net_buf_headroom(frag) >= sizeof(struct net_eth_hdr));
 
@@ -539,15 +534,14 @@ setup_hdr:
 
 send_frame:
 
-#if defined(CONFIG_NET_VLAN)
-	if (net_eth_is_vlan_enabled(ctx, iface)) {
+	if (IS_ENABLED(CONFIG_NET_VLAN) &&
+	    net_eth_is_vlan_enabled(ctx, iface)) {
 		if (set_vlan_tag(ctx, iface, pkt) == NET_DROP) {
 			return NET_DROP;
 		}
 
 		set_vlan_priority(ctx, pkt);
 	}
-#endif /* CONFIG_NET_VLAN */
 
 	/* Then set the ethernet header. This is not done for ARP as arp.c
 	 * has already prepared the message to be sent.
@@ -565,15 +559,15 @@ send_frame:
 
 static inline u16_t ethernet_reserve(struct net_if *iface, void *unused)
 {
-#if defined(CONFIG_NET_VLAN)
-	struct ethernet_context *ctx = net_if_l2_data(iface);
-
-	if (net_eth_is_vlan_enabled(ctx, iface)) {
-		return sizeof(struct net_eth_vlan_hdr);
-	}
-#endif
-
 	ARG_UNUSED(unused);
+
+	if (IS_ENABLED(CONFIG_NET_VLAN)) {
+		struct ethernet_context *ctx = net_if_l2_data(iface);
+
+		if (net_eth_is_vlan_enabled(ctx, iface)) {
+			return sizeof(struct net_eth_vlan_hdr);
+		}
+	}
 
 	return sizeof(struct net_eth_hdr);
 }

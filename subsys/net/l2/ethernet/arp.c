@@ -234,9 +234,6 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 					  struct net_pkt *pending,
 					  struct in_addr *current_ip)
 {
-#if defined(CONFIG_NET_VLAN)
-	u16_t vlan_tag = net_eth_get_vlan_tag(iface);
-#endif
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	int eth_hdr_len = sizeof(struct net_eth_hdr);
 	struct net_pkt *pkt;
@@ -245,11 +242,10 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	struct net_eth_hdr *eth;
 	struct in_addr *my_addr;
 
-#if defined(CONFIG_NET_VLAN)
-	if (ctx->vlan_enabled && vlan_tag != NET_VLAN_TAG_UNSPEC) {
+	if (net_eth_is_vlan_enabled(ctx, iface) &&
+	    net_eth_get_vlan_tag(iface) != NET_VLAN_TAG_UNSPEC) {
 		eth_hdr_len = sizeof(struct net_eth_vlan_hdr);
 	}
-#endif
 
 	if (current_ip) {
 		/* This is the IPv4 autoconf case where we have already
@@ -279,9 +275,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 
 	hdr = NET_ARP_HDR(pkt);
 
-#if defined(CONFIG_NET_VLAN)
-	net_pkt_set_vlan_tag(pkt, vlan_tag);
-#endif
+	net_pkt_set_vlan_tag(pkt, net_eth_get_vlan_tag(iface));
 
 	eth = net_eth_fill_header(ctx, pkt, htons(NET_ETH_PTYPE_ARP),
 				  NULL, NULL);
@@ -354,11 +348,9 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 
 	ctx = net_if_l2_data(net_pkt_iface(pkt));
 
-	if (net_pkt_ll_reserve(pkt) != sizeof(struct net_eth_hdr)
-#if defined(CONFIG_NET_VLAN)
-	    && net_pkt_ll_reserve(pkt) != sizeof(struct net_eth_vlan_hdr)
-#endif
-	) {
+	if (net_pkt_ll_reserve(pkt) != sizeof(struct net_eth_hdr) &&
+	    (IS_ENABLED(CONFIG_NET_VLAN) &&
+	     net_pkt_ll_reserve(pkt) != sizeof(struct net_eth_vlan_hdr))) {
 		/* Add the ethernet header if it is missing. */
 		struct net_buf *header;
 
@@ -517,12 +509,10 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 	struct net_arp_hdr *hdr, *query;
 	struct net_eth_hdr *eth, *eth_query;
 
-#if defined(CONFIG_NET_VLAN)
-	if (ctx->vlan_enabled &&
+	if (net_eth_is_vlan_enabled(ctx, iface) &&
 	    net_eth_get_vlan_tag(iface) != NET_VLAN_TAG_UNSPEC) {
 		eth_hdr_len = sizeof(struct net_eth_vlan_hdr);
 	}
-#endif
 
 	pkt = net_pkt_get_reserve_tx(eth_hdr_len, NET_BUF_TIMEOUT);
 	if (!pkt) {
@@ -543,9 +533,7 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 	query = NET_ARP_HDR(req);
 	eth_query = NET_ETH_HDR(req);
 
-#if defined(CONFIG_NET_VLAN)
 	net_pkt_set_vlan_tag(pkt, net_pkt_vlan_tag(req));
-#endif
 
 	net_eth_fill_header(ctx, pkt, htons(NET_ETH_PTYPE_ARP),
 			    net_if_get_link_addr(iface)->addr,
