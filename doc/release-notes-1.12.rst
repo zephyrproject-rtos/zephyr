@@ -24,6 +24,18 @@ Major enhancements with this release include:
 
 The following sections provide detailed lists of changes by component.
 
+Security Vulnerability Related
+******************************
+
+* A suitably sized k_malloc() request can result in a smaller than
+  requested buffer.  Use of that buffer could result in writes to
+  unallocated memory.  Proper overflow checks were added to fix this
+  issue in k_malloc and k_calloc.
+
+  * kernel: mempool: Check for overflow in k_malloc()
+  * kernel: mempool: Always check for overflow in k_calloc()
+  * tests: mempool: Add overflow checks
+
 Kernel
 ******
 
