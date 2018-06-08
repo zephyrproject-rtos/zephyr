@@ -9,7 +9,7 @@ if BOARD_96B_CARBON_NRF51
 config BOARD
 	default "96b_carbon_nrf51"
 
-if UART_NRF5
+if UART_NRFX
 
 config GPIO
 	default y
@@ -20,6 +20,6 @@ config GPIO_NRF5
 config GPIO_NRF5_P0
 	default y
 
-endif # UART_NRF5
+endif # UART_NRFX
 
 endif # BOARD_96B_CARBON_NRF51
