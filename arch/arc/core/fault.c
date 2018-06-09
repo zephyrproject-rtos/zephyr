@@ -39,6 +39,13 @@ void _Fault(const NANO_ESF *esf)
 	code =  _ARC_V2_ECR_CODE(ecr);
 	parameter = _ARC_V2_ECR_PARAMETER(ecr);
 
+
+	/* exception raised by kernel */
+	if (vector == 0x9 && parameter == _TRAP_S_CALL_RUNTIME_EXCEPT) {
+		_NanoFatalErrorHandler(esf->r0, esf);
+		return;
+	}
+
 	printk("Exception vector: 0x%x, cause code: 0x%x, parameter 0x%x\n",
 	       vector, code, parameter);
 	printk("Address 0x%x\n", exc_addr);
