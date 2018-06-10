@@ -128,6 +128,8 @@ endif # I2C
 if ADC
 config ADC_QMSI_SS
 	def_bool y
+config ADC_0_IRQ_PRI
+	default 0
 endif
 
 if BT_H4
@@ -241,7 +243,7 @@ config AON_TIMER_QMSI
 	def_bool y
 
 config AON_TIMER_IRQ_PRI
-	default 2
+	default 0
 
 endif # COUNTER
 
