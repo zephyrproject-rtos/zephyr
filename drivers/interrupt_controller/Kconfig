@@ -119,7 +119,7 @@ config ARCV2_INTERRUPT_UNIT
 config PLIC_FE310
 	bool "SiFive Freedom E310 Platform Level Interrupt Controller (PLIC)"
 	default y
-	depends on SOC_RISCV32_FE310
+	depends on SOC_RISCV32_FE310 && !QEMU_TARGET
 	select RISCV_HAS_PLIC
 	help
 	  SiFive Freedom E310 Platform Level Interrupt Controller provides support
