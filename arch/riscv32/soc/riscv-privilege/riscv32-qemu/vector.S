@@ -1,10 +1,14 @@
 /*
  * Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
+ * Contributors: 2018 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <toolchain.h>
+
+/* exports */
+GTEXT(__start)
 
 /* imports */
 GTEXT(__reset)
@@ -19,7 +23,7 @@ GTEXT(__irq_wrapper)
  *
  * Call __irq_wrapper to handle all interrupts/exceptions/faults
  */
-SECTION_FUNC(vectors, vinit)
+SECTION_FUNC(vectors, __start)
 	.option norvc;
 
 	/*
