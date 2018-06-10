@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+ * Contributors: 2018 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +14,7 @@
  */
 
 #if defined(__GNUC__)
-#include <arch/riscv32/fe310/asm_inline_gcc.h>
+#include <arch/riscv32/riscv-privilege/asm_inline_gcc.h>
 #else
 #error "Supports only GNU C compiler"
 #endif

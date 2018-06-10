@@ -1,4 +1,1 @@
-zephyr_sources(
-  vector.S
-  fe310_idle.c
-  )
+zephyr_sources()
