@@ -1,0 +1,11 @@
+# Kconfig - RISCV32_MIV SOC implementation
+#
+# Copyright (c) 2018 Antmicro <www.antmicro.com>
+#
+
+config SOC_SERIES_RISCV32_MIV
+	bool "Microsemi Mi-V SOC implementation"
+	depends on RISCV32
+	select SOC_FAMILY_RISCV_PRIVILEGE
+	help
+	Enable support for Microsemi Mi-V SOC
