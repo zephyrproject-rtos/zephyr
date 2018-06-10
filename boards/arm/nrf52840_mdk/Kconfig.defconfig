@@ -1,0 +1,29 @@
+# Kconfig - nRF52840-MDK board configuration
+#
+# Copyright (c) 2018 makerdiary.com
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52840_MDK
+
+config BOARD
+	default "nrf52840_mdk"
+
+if USB
+
+config USB_NRF52840
+	def_bool y
+
+config USB_DEVICE_STACK
+	def_bool y
+
+endif # USB
+
+if IEEE802154
+
+config IEEE802154_NRF5
+	def_bool y
+
+endif # IEEE802154
+
+endif # BOARD_NRF52840_MDK
