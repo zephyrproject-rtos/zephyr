@@ -1,24 +1,23 @@
 /*
  * Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+ * Contributors: 2018 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @brief Platform Level Interrupt Controller (PLIC) driver
- *        for the SiFive Freedom E310 processor
+ *        for the RISC-V processors
  */
 
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <init.h>
-#include <soc.h>
+#include "plic.h"
 #include <sw_isr_table.h>
 
-#define PLIC_FE310_IRQS        (CONFIG_NUM_IRQS - RISCV_MAX_GENERIC_IRQ)
-#define PLIC_FE310_EN_SIZE     ((PLIC_FE310_IRQS >> 5) + 1)
 
-struct plic_fe310_regs_t {
+struct plic_regs_t {
 	u32_t threshold_prio;
 	u32_t claim_complete;
 };
@@ -41,13 +40,13 @@ static int save_irq;
 void riscv_plic_irq_enable(u32_t irq)
 {
 	u32_t key;
-	u32_t fe310_irq = irq - RISCV_MAX_GENERIC_IRQ;
+	u32_t plic_irq = irq - RISCV_MAX_GENERIC_IRQ;
 	volatile u32_t *en =
-		(volatile u32_t *)FE310_PLIC_IRQ_EN_BASE_ADDR;
+		(volatile u32_t *)PLIC_IRQ_EN_BASE_ADDR;
 
 	key = irq_lock();
-	en += (fe310_irq >> 5);
-	*en |= (1 << (fe310_irq & 31));
+	en += (plic_irq >> 5);
+	*en |= (1 << (plic_irq & 31));
 	irq_unlock(key);
 }
 
@@ -67,13 +66,13 @@ void riscv_plic_irq_enable(u32_t irq)
 void riscv_plic_irq_disable(u32_t irq)
 {
 	u32_t key;
-	u32_t fe310_irq = irq - RISCV_MAX_GENERIC_IRQ;
+	u32_t plic_irq = irq - RISCV_MAX_GENERIC_IRQ;
 	volatile u32_t *en =
-		(volatile u32_t *)FE310_PLIC_IRQ_EN_BASE_ADDR;
+		(volatile u32_t *)PLIC_IRQ_EN_BASE_ADDR;
 
 	key = irq_lock();
-	en += (fe310_irq >> 5);
-	*en &= ~(1 << (fe310_irq & 31));
+	en += (plic_irq >> 5);
+	*en &= ~(1 << (plic_irq & 31));
 	irq_unlock(key);
 }
 
@@ -89,11 +88,11 @@ void riscv_plic_irq_disable(u32_t irq)
 int riscv_plic_irq_is_enabled(u32_t irq)
 {
 	volatile u32_t *en =
-		(volatile u32_t *)FE310_PLIC_IRQ_EN_BASE_ADDR;
-	u32_t fe310_irq = irq - RISCV_MAX_GENERIC_IRQ;
+		(volatile u32_t *)PLIC_IRQ_EN_BASE_ADDR;
+	u32_t plic_irq = irq - RISCV_MAX_GENERIC_IRQ;
 
-	en += (fe310_irq >> 5);
-	return !!(*en & (1 << (fe310_irq & 31)));
+	en += (plic_irq >> 5);
+	return !!(*en & (1 << (plic_irq & 31)));
 }
 
 /**
@@ -110,14 +109,14 @@ int riscv_plic_irq_is_enabled(u32_t irq)
 void riscv_plic_set_priority(u32_t irq, u32_t priority)
 {
 	volatile u32_t *prio =
-		(volatile u32_t *)FE310_PLIC_PRIO_BASE_ADDR;
+		(volatile u32_t *)PLIC_PRIO_BASE_ADDR;
 
 	/* Can set priority only for PLIC-specific interrupt line */
 	if (irq <= RISCV_MAX_GENERIC_IRQ)
 		return;
 
-	if (priority > FE310_PLIC_MAX_PRIORITY)
-		priority = FE310_PLIC_MAX_PRIORITY;
+	if (priority > PLIC_MAX_PRIORITY)
+		priority = PLIC_MAX_PRIORITY;
 
 	prio += (irq - RISCV_MAX_GENERIC_IRQ);
 	*prio = priority;
@@ -138,10 +137,10 @@ int riscv_plic_get_irq(void)
 	return save_irq;
 }
 
-static void plic_fe310_irq_handler(void *arg)
+static void plic_irq_handler(void *arg)
 {
-	volatile struct plic_fe310_regs_t *regs =
-		(volatile struct plic_fe310_regs_t *)FE310_PLIC_REG_BASE_ADDR;
+	volatile struct plic_regs_t *regs =
+		(volatile struct plic_regs_t *)PLIC_REG_BASE_ADDR;
 
 	u32_t irq;
 	struct _isr_table_entry *ite;
@@ -161,7 +160,7 @@ static void plic_fe310_irq_handler(void *arg)
 	 * If the IRQ is out of range, call _irq_spurious.
 	 * A call to _irq_spurious will not return.
 	 */
-	if (irq == 0 || irq >= PLIC_FE310_IRQS)
+	if (irq == 0 || irq >= PLIC_IRQS)
 		_irq_spurious(NULL);
 
 	irq += RISCV_MAX_GENERIC_IRQ;
@@ -179,29 +178,29 @@ static void plic_fe310_irq_handler(void *arg)
 
 /**
  *
- * @brief Initialize the SiFive FE310 Platform Level Interrupt Controller
+ * @brief Initialize the Platform Level Interrupt Controller
  * @return N/A
  */
-static int plic_fe310_init(struct device *dev)
+static int plic_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	volatile u32_t *en =
-		(volatile u32_t *)FE310_PLIC_IRQ_EN_BASE_ADDR;
+		(volatile u32_t *)PLIC_IRQ_EN_BASE_ADDR;
 	volatile u32_t *prio =
-		(volatile u32_t *)FE310_PLIC_PRIO_BASE_ADDR;
-	volatile struct plic_fe310_regs_t *regs =
-		(volatile struct plic_fe310_regs_t *)FE310_PLIC_REG_BASE_ADDR;
+		(volatile u32_t *)PLIC_PRIO_BASE_ADDR;
+	volatile struct plic_regs_t *regs =
+		(volatile struct plic_regs_t *)PLIC_REG_BASE_ADDR;
 	int i;
 
 	/* Ensure that all interrupts are disabled initially */
-	for (i = 0; i < PLIC_FE310_EN_SIZE; i++) {
+	for (i = 0; i < PLIC_EN_SIZE; i++) {
 		*en = 0;
 		en++;
 	}
 
 	/* Set priority of each interrupt line to 0 initially */
-	for (i = 0; i < PLIC_FE310_IRQS; i++) {
+	for (i = 0; i < PLIC_IRQS; i++) {
 		*prio = 0;
 		prio++;
 	}
@@ -212,7 +211,7 @@ static int plic_fe310_init(struct device *dev)
 	/* Setup IRQ handler for PLIC driver */
 	IRQ_CONNECT(RISCV_MACHINE_EXT_IRQ,
 		    0,
-		    plic_fe310_irq_handler,
+		    plic_irq_handler,
 		    NULL,
 		    0);
 
@@ -222,4 +221,4 @@ static int plic_fe310_init(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(plic_fe310_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(plic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

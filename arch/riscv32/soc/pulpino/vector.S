@@ -1,10 +1,14 @@
 /*
  * Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
+ * Contributors: 2018 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <toolchain.h>
+
+/* exports */
+GTEXT(__start)
 
 /* imports */
 GTEXT(__reset)
@@ -35,7 +39,7 @@ GTEXT(__irq_wrapper)
  * ECALL Instruction 0x00000088
  * Invalid Memory Access 0x0000008C
  */
-SECTION_FUNC(vectors, vinit)
+SECTION_FUNC(vectors, __start)
 	.option norvc;
 
 	/* nop addr 0x00000000 - 0x00000058 */

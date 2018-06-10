@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+ * Contributors: 2018 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +11,7 @@
 
 #include <logging/kernel_event_logger.h>
 
-static ALWAYS_INLINE void fe310_idle(unsigned int key)
+static ALWAYS_INLINE void riscv_idle(unsigned int key)
 {
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
 	_sys_k_event_logger_enter_sleep();
@@ -34,7 +35,7 @@ static ALWAYS_INLINE void fe310_idle(unsigned int key)
  */
 void k_cpu_idle(void)
 {
-	fe310_idle(SOC_MSTATUS_IEN);
+	riscv_idle(SOC_MSTATUS_IEN);
 }
 
 /**
@@ -56,5 +57,5 @@ void k_cpu_idle(void)
  */
 void k_cpu_atomic_idle(unsigned int key)
 {
-	fe310_idle(key);
+	riscv_idle(key);
 }

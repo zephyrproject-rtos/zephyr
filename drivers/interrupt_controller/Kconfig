@@ -116,14 +116,14 @@ config ARCV2_INTERRUPT_UNIT
 	  building a processor, you can configure the processor to include an
 	  interrupt unit. The ARCv2 interrupt unit is highly programmable.
 
-config PLIC_FE310
-	bool "SiFive Freedom E310 Platform Level Interrupt Controller (PLIC)"
+config PLIC
+	bool "Platform Level Interrupt Controller (PLIC)"
 	default y
-	depends on SOC_RISCV32_FE310 && !QEMU_TARGET
+	depends on SOC_FAMILY_RISCV_PRIVILEGE && !QEMU_TARGET
 	select RISCV_HAS_PLIC
 	help
-	  SiFive Freedom E310 Platform Level Interrupt Controller provides support
-	  for external interrupt lines defined by the FE310 SOC;
+	  Platform Level Interrupt Controller provides support
+	  for external interrupt lines defined by the RISC-V SoC;
 
 config DW_ICTL
 	bool "Designware Interrupt Controller"
