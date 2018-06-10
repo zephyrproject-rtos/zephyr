@@ -1,5 +1,4 @@
 zephyr_library()
-
 zephyr_library_sources_ifdef(CONFIG_UART_ALTERA_JTAG uart_altera_jtag_hal.c)
 zephyr_library_sources_if_kconfig(uart_imx.c)
 zephyr_library_sources_if_kconfig(uart_cc32xx.c)
@@ -10,6 +9,7 @@ zephyr_library_sources_if_kconfig(uart_gecko.c)
 zephyr_library_sources_if_kconfig(uart_mcux.c)
 zephyr_library_sources_if_kconfig(uart_mcux_lpuart.c)
 zephyr_library_sources_if_kconfig(uart_mcux_lpsci.c)
+zephyr_library_sources_if_kconfig(uart_miv.c)
 zephyr_library_sources_if_kconfig(uart_msp432p4xx.c)
 zephyr_library_sources_ifdef(CONFIG_NRF_UART_PERIPHERAL uart_nrfx_uart.c)
 zephyr_library_sources_if_kconfig(uart_ns16550.c)

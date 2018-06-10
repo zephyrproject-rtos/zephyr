@@ -73,6 +73,8 @@ source "drivers/serial/Kconfig.mcux_lpsci"
 
 source "drivers/serial/Kconfig.mcux_lpuart"
 
+source "drivers/serial/Kconfig.miv"
+
 source "drivers/serial/Kconfig.imx"
 
 source "drivers/serial/Kconfig.stellaris"

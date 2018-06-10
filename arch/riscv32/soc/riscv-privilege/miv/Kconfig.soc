@@ -1,0 +1,14 @@
+# Kconfig - RISCV32_MIV configuration options
+#
+# Copyright (c) 2018 Antmicro <www.antmicro.com>
+#
+
+choice
+prompt "Microsemi Mi-V system implementation"
+depends on SOC_SERIES_RISCV32_MIV
+
+config SOC_RISCV32_MIV
+	bool "Microsemi Mi-V system implementation"
+	select ATOMIC_OPERATIONS_C
+
+endchoice

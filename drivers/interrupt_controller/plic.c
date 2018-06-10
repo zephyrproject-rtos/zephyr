@@ -7,7 +7,7 @@
 
 /**
  * @brief Platform Level Interrupt Controller (PLIC) driver
- *        for the RISC-V processors
+ *        for RISC-V processors
  */
 
 #include <kernel.h>
