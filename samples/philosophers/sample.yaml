@@ -13,26 +13,26 @@ common:
       - ".*THINKING.*"
       - ".*EATING.*"
 tests:
-  test:
+  sample.philosopher:
     tags: samples
-  test_same_prio:
+  sample.philosopher.same_prio:
     extra_args: "-DSAME_PRIO=1"
-  test_static:
+  sample.philosopher.static:
     extra_args: "-DSTATIC_OBJS=1"
-  test_semaphores:
+  sample.philosopher.semaphores:
     extra_args: "-DFORKS=SEMAPHORES"
-  test_stacks:
+  sample.philosopher.stacks:
     extra_args: "-DFORKS=STACKS"
-  test_fifos:
+  sample.philosopher.fifos:
     extra_args: "-DFORKS=FIFOS"
-  test_lifos:
+  sample.philosopher.lifos:
     extra_args: "-DFORKS=LIFOS"
-  test_preempt_only:
+  sample.philosopher.preempt_only:
     extra_configs:
       - CONFIG_NUM_PREEMPT_PRIORITIES=6
       - CONFIG_NUM_COOP_PRIORITIES=0
       - CONFIG_BT=n
-  test_coop_only:
+  sample.philosopher.coop_only:
     extra_configs:
       - CONFIG_NUM_PREEMPT_PRIORITIES=0
       - CONFIG_NUM_COOP_PRIORITIES=6
