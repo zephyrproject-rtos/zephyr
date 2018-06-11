@@ -1,0 +1,6 @@
+sample:
+  name: CAN driver sample
+tests:
+  sample.drivers.can:
+    tags: CAN
+    depends_on: can
