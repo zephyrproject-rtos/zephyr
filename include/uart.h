@@ -43,6 +43,28 @@ extern "C" {
 #define LINE_CTRL_DTR		(1 << 2)
 #define LINE_CTRL_DCD		(1 << 3)
 #define LINE_CTRL_DSR		(1 << 4)
+#define LINE_CTRL_PARITY	(1 << 5)
+#define LINE_CTRL_STOPBITS	(1 << 6)
+#define LINE_CTRL_DATABITS	(1 << 7)
+
+/* Avaliable params for LINE_CTRL_{PARITY, STOPBITS, DATABITS} */
+enum {
+	LINE_CTRL_PARITY_NONE = 0,
+	LINE_CTRL_PARITY_EVEN,
+	LINE_CTRL_PARITY_ODD,
+};
+
+enum {
+	LINE_CTRL_STOPBITS_1 = 0,
+	LINE_CTRL_STOPBITS_2,
+	LINE_CTRL_STOPBITS_1_5,
+};
+
+enum {
+	LINE_CTRL_DATABITS_8 = 0,
+	LINE_CTRL_DATABITS_7,
+	LINE_CTRL_DATABITS_9,
+};
 
 /* Common communication errors for UART.*/
 
