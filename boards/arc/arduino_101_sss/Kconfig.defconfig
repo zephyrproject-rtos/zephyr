@@ -7,7 +7,7 @@ config BOARD
 if GPIO_QMSI && BMI160 && BMI160_TRIGGER
 
 config BMI160_GPIO_DEV_NAME
-	default GPIO_QMSI_1_NAME
+	default "GPIO_1"
 
 endif # GPIO_QMSI && BMI160 && BMI160_TRIGGER
 
