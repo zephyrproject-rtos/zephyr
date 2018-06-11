@@ -76,7 +76,6 @@ if !HAS_DTS_GPIO_DEVICE
 
 config MCR20A_GPIO_IRQ_B_NAME
 	string "GPIO device used for IRQ_B output of MCR20A"
-	default GPIO_MCUX_PORTB_NAME
 
 config MCR20A_GPIO_IRQ_B_PIN
 	int "GPIO pin connected to IRQ_B output of MCR20A"
@@ -84,7 +83,6 @@ config MCR20A_GPIO_IRQ_B_PIN
 
 config MCR20A_GPIO_RESET_NAME
 	string "GPIO device used for RESET input of MCR20A"
-	default GPIO_MCUX_PORTA_NAME
 
 config MCR20A_GPIO_RESET_PIN
 	int "GPIO pin connected to RESET input of MCR20A"
