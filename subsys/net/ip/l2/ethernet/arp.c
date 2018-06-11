@@ -482,17 +482,21 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 	return NET_OK;
 }
 
-void net_arp_clear_cache(void)
+void net_arp_clear_cache(struct net_if *iface)
 {
 	int i;
 
 	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
+		if (iface && iface != arp_table[i].iface) {
+			continue;
+		}
+
 		if (arp_table[i].pending) {
 			net_pkt_unref(arp_table[i].pending);
 		}
-	}
 
-	memset(&arp_table, 0, sizeof(arp_table));
+		memset(&arp_table[i], 0, sizeof(struct arp_entry));
+	}
 }
 
 int net_arp_foreach(net_arp_cb_t cb, void *user_data)
@@ -514,5 +518,5 @@ int net_arp_foreach(net_arp_cb_t cb, void *user_data)
 
 void net_arp_init(void)
 {
-	net_arp_clear_cache();
+	net_arp_clear_cache(NULL);
 }

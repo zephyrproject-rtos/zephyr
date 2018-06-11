@@ -1279,7 +1279,7 @@ int net_shell_cmd_arp(int argc, char *argv[])
 
 	if (strcmp(argv[arg], "flush") == 0) {
 		printk("Flushing ARP cache.\n");
-		net_arp_clear_cache();
+		net_arp_clear_cache(NULL);
 		return 0;
 	}
 #else
