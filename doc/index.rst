@@ -20,7 +20,6 @@ Zephyr Project Documentation
    ``http://docs.zephyrproject.org/<version>``. The following documentation
    versions are available:
 
-   `Zephyr 1.5.0`_ | `Zephyr 1.6.1`_ | `Zephyr 1.7.1`_ | `Zephyr 1.8.0`_ |
    `Zephyr 1.9.2`_ | `Zephyr 1.10.0`_ | `Zephyr 1.11.0`_ | `Zephyr 1.12.0`_
 
 For information about the changes and additions for releases, please
@@ -67,7 +66,3 @@ Indices and Tables
 .. _Zephyr 1.11.0: http://docs.zephyrproject.org/1.11.0/
 .. _Zephyr 1.10.0: http://docs.zephyrproject.org/1.10.0/
 .. _Zephyr 1.9.2: http://docs.zephyrproject.org/1.9.0/
-.. _Zephyr 1.8.0: http://docs.zephyrproject.org/1.8.0/
-.. _Zephyr 1.7.1: http://docs.zephyrproject.org/1.7.0/
-.. _Zephyr 1.6.1: http://docs.zephyrproject.org/1.6.0/
-.. _Zephyr 1.5.0: http://docs.zephyrproject.org/1.5.0/
