@@ -652,11 +652,7 @@ void net_ipv6_addr_create_solicited_node(const struct in6_addr *src,
 {
 	dst->s6_addr[0]   = 0xFF;
 	dst->s6_addr[1]   = 0x02;
-	UNALIGNED_PUT(0, &dst->s6_addr16[1]);
-	UNALIGNED_PUT(0, &dst->s6_addr16[2]);
-	UNALIGNED_PUT(0, &dst->s6_addr16[3]);
-	UNALIGNED_PUT(0, &dst->s6_addr16[4]);
-	dst->s6_addr[10]  = 0;
+	memset(&dst->s6_addr[2], 0, 9);
 	dst->s6_addr[11]  = 0x01;
 	dst->s6_addr[12]  = 0xFF;
 	dst->s6_addr[13]  = src->s6_addr[13];
