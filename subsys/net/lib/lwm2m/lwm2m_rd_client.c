@@ -62,7 +62,7 @@
 
 #define LWM2M_RD_CLIENT_URI "rd"
 
-#define SECONDS_TO_UPDATE_EARLY	2
+#define SECONDS_TO_UPDATE_EARLY	6
 #define STATE_MACHINE_UPDATE_INTERVAL K_MSEC(500)
 
 /* Leave room for 32 hexadeciaml digits (UUID) + NULL */
@@ -640,7 +640,10 @@ static int sm_registration_done(void)
 	int ret = 0;
 	bool forced_update;
 
-	/* check for lifetime seconds - 1 so that we can update early */
+	/*
+	 * check for lifetime seconds - SECONDS_TO_UPDATE_EARLY
+	 * so that we can update early and avoid lifetime timeout
+	 */
 	if (sm_is_registered() &&
 	    (client.trigger_update ||
 	     ((client.lifetime - SECONDS_TO_UPDATE_EARLY) <=
