@@ -16,7 +16,7 @@ Major enhancements with this release include:
 - Ethernet network management interface
 - Networking traffic prioritization on a per-connection basis
 - Support for Ethernet statistical counters
-- Support for TAP net device on the the native POSIX port
+- Support for TAP net device on the native POSIX port
 - Command-line Zephyr meta-tool "west"
 - SPI slave support
 - Runtime non-volatile configuration data storage system (settings)
