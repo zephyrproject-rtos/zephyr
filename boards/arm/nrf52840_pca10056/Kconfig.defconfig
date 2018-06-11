@@ -42,4 +42,11 @@ config USB_DEVICE_STACK
 
 endif # USB
 
+if IEEE802154
+
+config IEEE802154_NRF5
+	def_bool y
+
+endif # IEEE802154
+
 endif # BOARD_NRF52840_PCA10056
