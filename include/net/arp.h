@@ -62,7 +62,7 @@ typedef void (*net_arp_cb_t)(struct arp_entry *entry,
 			     void *user_data);
 int net_arp_foreach(net_arp_cb_t cb, void *user_data);
 
-void net_arp_clear_cache(void);
+void net_arp_clear_cache(struct net_if *iface);
 void net_arp_init(void);
 
 /**
