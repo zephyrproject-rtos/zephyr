@@ -1319,21 +1319,37 @@ __syscall void *k_thread_custom_data_get(void);
 
 /* kernel clocks */
 
-#if	(MSEC_PER_SEC % sys_clock_ticks_per_sec) == 0
-
-	#define _ms_per_tick (MSEC_PER_SEC / sys_clock_ticks_per_sec)
-#else
-	/* yields horrible 64-bit math on many architectures: try to avoid */
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+#if	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC % sys_clock_ticks_per_sec) != 0
+	#define _NEED_PRECISE_TICK_MS_CONVERSION
+#elif	(MSEC_PER_SEC % sys_clock_ticks_per_sec) != 0
 	#define _NON_OPTIMIZED_TICKS_PER_SEC
+#endif
+
+#ifdef	_NON_OPTIMIZED_TICKS_PER_SEC
+	#define _NEED_PRECISE_TICK_MS_CONVERSION
+#endif
 #endif
 
 static ALWAYS_INLINE s32_t _ms_to_ticks(s32_t ms)
 {
-#ifdef _NON_OPTIMIZED_TICKS_PER_SEC
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+
+#ifdef _NEED_PRECISE_TICK_MS_CONVERSION
+	/* use 64-bit math to keep precision */
 	s64_t ms_ticks_per_sec = (s64_t)ms * sys_clock_ticks_per_sec;
+
 	return (s32_t)ceiling_fraction(ms_ticks_per_sec, MSEC_PER_SEC);
 #else
-	return (s32_t)ceiling_fraction((u32_t)ms, _ms_per_tick);
+	/* simple division keeps precision */
+	s32_t ms_per_tick = MSEC_PER_SEC / sys_clock_ticks_per_sec;
+
+	return (s32_t)ceiling_fraction(ms, ms_per_tick);
+#endif
+
+#else
+	__ASSERT(ms == 0, "ms not zero");
+	return 0;
 #endif
 }
 
@@ -1348,10 +1364,15 @@ static inline s64_t __ticks_to_ms(s64_t ticks)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
-#ifdef _NON_OPTIMIZED_TICKS_PER_SEC
-	return (MSEC_PER_SEC * (u64_t)ticks) / sys_clock_ticks_per_sec;
+#ifdef _NEED_PRECISE_TICK_MS_CONVERSION
+	/* use 64-bit math to keep precision */
+	return (u64_t)ticks * sys_clock_hw_cycles_per_tick * MSEC_PER_SEC /
+		CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 #else
-	return (u64_t)ticks * _ms_per_tick;
+	/* simple multiplication keeps precision */
+	u32_t ms_per_tick = MSEC_PER_SEC / sys_clock_ticks_per_sec;
+
+	return (u64_t)ticks * ms_per_tick;
 #endif
 
 #else
