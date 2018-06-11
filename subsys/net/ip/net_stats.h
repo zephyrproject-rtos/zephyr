@@ -27,8 +27,8 @@ extern struct net_stats net_stats;
 
 #define UPDATE_STAT_GLOBAL(cmd) (net_##cmd)
 #define UPDATE_STAT(_iface, _cmd) \
-	{ (UPDATE_STAT_GLOBAL(_cmd)); SET_STAT(_iface->_cmd); }
-
+	{ NET_ASSERT(_iface); (UPDATE_STAT_GLOBAL(_cmd)); \
+	  SET_STAT(_iface->_cmd); }
 /* Core stats */
 
 static inline void net_stats_update_processing_error(struct net_if *iface)
