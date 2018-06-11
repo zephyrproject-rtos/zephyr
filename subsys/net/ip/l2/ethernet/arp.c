@@ -221,10 +221,6 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 			return NULL;
 		}
 
-		net_eth_fill_header(ctx, pkt, header, htons(NET_ETH_PTYPE_IP),
-				    net_pkt_ll_src(pkt)->addr,
-				    net_pkt_ll_dst(pkt)->addr);
-
 		net_pkt_frag_insert(pkt, header);
 
 		net_pkt_compact(pkt);
