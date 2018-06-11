@@ -690,7 +690,7 @@ static u32_t FaultHandle(NANO_ESF *esf, int fault)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-	default:
+	default :
 		ReservedException(esf, fault);
 		break;
 	}

@@ -7,6 +7,7 @@ zephyr_library_sources(
   reset.S
   nmi_on_reset.S
   prep_c.c
+  fault.c
   scb.c
   nmi.c
   exc_manage.c
