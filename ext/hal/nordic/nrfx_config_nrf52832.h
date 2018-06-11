@@ -2138,6 +2138,30 @@
 
 // <e> NRFX_TIMER_ENABLED - nrfx_timer - TIMER periperal driver
 //==========================================================
+#ifdef CONFIG_NRFX_TIMER
+#define NRFX_TIMER_ENABLED 1
+#endif
+
+#ifdef CONFIG_NRFX_TIMER0
+#define NRFX_TIMER0_ENABLED 1
+#endif
+
+#ifdef CONFIG_NRFX_TIMER1
+#define NRFX_TIMER1_ENABLED 1
+#endif
+
+#ifdef CONFIG_NRFX_TIMER2
+#define NRFX_TIMER2_ENABLED 1
+#endif
+
+#ifdef CONFIG_NRFX_TIMER3
+#define NRFX_TIMER3_ENABLED 1
+#endif
+
+#ifdef CONFIG_NRFX_TIMER4
+#define NRFX_TIMER4_ENABLED 1
+#endif
+
 #ifndef NRFX_TIMER_ENABLED
 #define NRFX_TIMER_ENABLED 0
 #endif
