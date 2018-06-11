@@ -2147,6 +2147,8 @@
 #ifdef CONFIG_NRFX_TIMER
 #define NRFX_TIMER_ENABLED 1
 #endif
+
+
 // <q> NRFX_TIMER0_ENABLED  - Enable TIMER0 instance
 
 
