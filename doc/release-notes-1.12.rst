@@ -771,6 +771,7 @@ These GitHub issues were closed since the previous 1.11.0 tagged release:
 * :github:`8086` - tests/net/ieee802154/crypto fails on Quark SE / x86
 * :github:`8087` - tests/misc/test_build fails to build on esp32
 * :github:`8088` - tests/kernel/xip fails on QEMU riscv32 with no output
+* :github:`8090` - tests/sched/schedule_api fails to build on EMSK7d
 * :github:`8092` - tests/kernel/fatal crashes on Quark SE / ARC
 * :github:`8093` - tests/kernel/common fails to build on xtensa / ESP32
 * :github:`8094` - tests/drivers/watchdog/wdt_basic_api fails to build on esp32 / xtensa
@@ -784,6 +785,7 @@ These GitHub issues were closed since the previous 1.11.0 tagged release:
 * :github:`8132` - stm3210c_eval.dts_compiled: Warning
 * :github:`8142` - GPIO API not shown on docs.zephyrproject.org
 * :github:`8145` - samples/subsys/usb/dfu: Build failure, Reference to non-existent node or label "slot0_partition"
+* :github:`8150` - Doc: Update Zephyr security overview
 * :github:`8171` - Tests failing with a stacking error on frdm_k64f
 * :github:`8172` - Networking tests failing with an assertion on frdm_k64f
 * :github:`8180` - objcopy bug？
@@ -802,3 +804,8 @@ These GitHub issues were closed since the previous 1.11.0 tagged release:
 * :github:`8274` - Make flash doesn't work on nrf51_pca10028
 * :github:`8275` - when zephyr can support popular IDE develop?
 * :github:`8280` - [Coverity CID :186491] Memory - corruptions in /lib/posix/fs.c
+* :github:`8292` - Rework ARC exception stack
+* :github:`8298` - Failed test: kernel.alert.isr_alert_consumed (in tests/kernel/alert/) on quark_se_c1000_ss
+* :github:`8299` - Failed test: kernel.memory_pool.mpool_alloc_free_isr (in tests/kernel/mem_pool/mem_pool_api)
+* :github:`8302` - Failed test: peripheral.adc.adc on quark_se
+* :github:`8311` - tests/benchmarks/sys_kernel fails on frdm_k64f, sam_e70
