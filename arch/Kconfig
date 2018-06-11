@@ -82,6 +82,7 @@ config USERSPACE
 config PRIVILEGED_STACK_SIZE
 	int "Size of privileged stack"
 	default 256
+	default 384 if ARC
 	depends on ARCH_HAS_USERSPACE
 	help
 	  This option sets the privileged stack region size that will be used
