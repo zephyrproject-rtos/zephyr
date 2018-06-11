@@ -240,27 +240,6 @@ static void uart_stm32_isr(void *arg)
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api uart_stm32_driver_api = {
-	.poll_in = uart_stm32_poll_in,
-	.poll_out = uart_stm32_poll_out,
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.fifo_fill = uart_stm32_fifo_fill,
-	.fifo_read = uart_stm32_fifo_read,
-	.irq_tx_enable = uart_stm32_irq_tx_enable,
-	.irq_tx_disable = uart_stm32_irq_tx_disable,
-	.irq_tx_ready = uart_stm32_irq_tx_ready,
-	.irq_tx_complete = uart_stm32_irq_tx_complete,
-	.irq_rx_enable = uart_stm32_irq_rx_enable,
-	.irq_rx_disable = uart_stm32_irq_rx_disable,
-	.irq_rx_ready = uart_stm32_irq_rx_ready,
-	.irq_err_enable = uart_stm32_irq_err_enable,
-	.irq_err_disable = uart_stm32_irq_err_disable,
-	.irq_is_pending = uart_stm32_irq_is_pending,
-	.irq_update = uart_stm32_irq_update,
-	.irq_callback_set = uart_stm32_irq_callback_set,
-#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
-};
-
 static void uart_stm32_usart_set_baud_rate(struct device *dev,
 					   u32_t clock_rate, u32_t baud_rate)
 {
@@ -292,6 +271,108 @@ static void uart_stm32_lpuart_set_baud_rate(struct device *dev,
 }
 #endif
 
+static inline void uart_stm32_set_baud_rate(struct device *dev,
+					    u32_t clock_rate, u32_t baud_rate)
+{
+#ifdef CONFIG_UART_STM32_LPUART_1
+	USART_TypeDef * UartInstance = UART_STRUCT(dev);
+
+	if (IS_LPUART_INSTANCE(UartInstance)) {
+		uart_stm32_lpuart_set_baud_rate(dev, clock_rate, baud_rate);
+	} else {
+		uart_stm32_usart_set_baud_rate(dev, clock_rate, baud_rate);
+	}
+#else
+	uart_stm32_usart_set_baud_rate(dev, clock_rate, baud_rate);
+#endif
+}
+
+#ifdef CONFIG_UART_LINE_CTRL
+static int uart_stm32_line_ctrl_set(struct device *dev,
+				    u32_t ctrl, u32_t val)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	struct uart_stm32_data *data = DEV_DATA(dev);
+	int result = 0;
+
+	LL_USART_Disable(UartInstance);
+
+	switch (ctrl) {
+	case LINE_CTRL_BAUD_RATE:
+		uart_stm32_set_baud_rate(dev, data->clock_rate, val);
+		data->baud_rate = val;
+		break;
+	case LINE_CTRL_RTS:
+		if (!IS_UART_HWFLOW_INSTANCE(UartInstance)) {
+			result = -ENOTSUP;
+			goto done;
+		} else if (val) {
+			LL_USART_SetHWFlowCtrl(UartInstance,
+					       LL_USART_HWCONTROL_RTS_CTS);
+		} else {
+			LL_USART_SetHWFlowCtrl(UartInstance,
+					       LL_USART_HWCONTROL_NONE);
+		}
+		break;
+	default:
+		result = -EINVAL;
+		break;
+	}
+
+done:
+	LL_USART_Enable(UartInstance);
+	return result;
+}
+
+static int uart_stm32_line_ctrl_get(struct device *dev,
+				    u32_t ctrl, u32_t *val)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	struct uart_stm32_data *data = DEV_DATA(dev);
+
+	switch (ctrl) {
+	case LINE_CTRL_BAUD_RATE:
+		*val = data->baud_rate;
+		return 0;
+	case LINE_CTRL_RTS:
+		if (!IS_UART_HWFLOW_INSTANCE(UartInstance)) {
+			return -EINVAL;
+		}
+
+		*val = (LL_USART_GetHWFlowCtrl(UartInstance)
+			== LL_USART_HWCONTROL_RTS_CTS);
+		return 0;
+	}
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_UART_LINE_CTRL */
+
+static const struct uart_driver_api uart_stm32_driver_api = {
+	.poll_in = uart_stm32_poll_in,
+	.poll_out = uart_stm32_poll_out,
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.fifo_fill = uart_stm32_fifo_fill,
+	.fifo_read = uart_stm32_fifo_read,
+	.irq_tx_enable = uart_stm32_irq_tx_enable,
+	.irq_tx_disable = uart_stm32_irq_tx_disable,
+	.irq_tx_ready = uart_stm32_irq_tx_ready,
+	.irq_tx_complete = uart_stm32_irq_tx_complete,
+	.irq_rx_enable = uart_stm32_irq_rx_enable,
+	.irq_rx_disable = uart_stm32_irq_rx_disable,
+	.irq_rx_ready = uart_stm32_irq_rx_ready,
+	.irq_err_enable = uart_stm32_irq_err_enable,
+	.irq_err_disable = uart_stm32_irq_err_disable,
+	.irq_is_pending = uart_stm32_irq_is_pending,
+	.irq_update = uart_stm32_irq_update,
+	.irq_callback_set = uart_stm32_irq_callback_set,
+#endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
+#ifdef CONFIG_UART_LINE_CTRL
+	.line_ctrl_set = uart_stm32_line_ctrl_set,
+	.line_ctrl_get = uart_stm32_line_ctrl_get,
+#endif /* CONFIG_UART_LINE_CTRL */
+};
+
 /**
  * @brief Initialize UART channel
  *
@@ -307,9 +388,6 @@ static int uart_stm32_init(struct device *dev)
 	const struct uart_stm32_config *config = DEV_CFG(dev);
 	struct uart_stm32_data *data = DEV_DATA(dev);
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-
-	u32_t baud_rate = config->baud_rate;
-	u32_t clock_rate;
 
 	__uart_stm32_get_clock(dev);
 	/* enable clock */
@@ -331,17 +409,9 @@ static int uart_stm32_init(struct device *dev)
 	/* Get clock rate */
 	clock_control_get_rate(data->clock,
 			       (clock_control_subsys_t *)&config->pclken,
-			       &clock_rate);
+			       &data->clock_rate);
 
-#ifdef CONFIG_UART_STM32_LPUART_1
-	if (IS_LPUART_INSTANCE(UartInstance)) {
-		uart_stm32_lpuart_set_baud_rate(dev, clock_rate, baud_rate);
-	} else {
-		uart_stm32_usart_set_baud_rate(dev, clock_rate, baud_rate);
-	}
-#else
-	uart_stm32_usart_set_baud_rate(dev, clock_rate, baud_rate);
-#endif
+	uart_stm32_set_baud_rate(dev, data->clock_rate, data->baud_rate);
 
 	LL_USART_Enable(UartInstance);
 
@@ -397,10 +467,10 @@ static const struct uart_stm32_config uart_stm32_cfg_##name = {		\
 		STM32_UART_IRQ_HANDLER_FUNC(name)			\
 	},								\
 	STM32_CLOCK_UART(clock_bus, clock_enr),				\
-	.baud_rate = CONFIG_UART_STM32_##name##_BAUD_RATE		\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##name = {		\
+	.baud_rate = CONFIG_UART_STM32_##name##_BAUD_RATE,		\
 };									\
 									\
 DEVICE_AND_API_INIT(uart_stm32_##name, CONFIG_UART_STM32_##name##_NAME,	\
