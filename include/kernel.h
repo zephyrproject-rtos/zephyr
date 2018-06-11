@@ -1319,16 +1319,7 @@ __syscall void *k_thread_custom_data_get(void);
 
 /* kernel clocks */
 
-#if	(sys_clock_ticks_per_sec == 1000) || \
-	(sys_clock_ticks_per_sec == 500)  || \
-	(sys_clock_ticks_per_sec == 250)  || \
-	(sys_clock_ticks_per_sec == 125)  || \
-	(sys_clock_ticks_per_sec == 100)  || \
-	(sys_clock_ticks_per_sec == 50)   || \
-	(sys_clock_ticks_per_sec == 25)   || \
-	(sys_clock_ticks_per_sec == 20)   || \
-	(sys_clock_ticks_per_sec == 10)   || \
-	(sys_clock_ticks_per_sec == 1)
+#if	(MSEC_PER_SEC % sys_clock_ticks_per_sec) == 0
 
 	#define _ms_per_tick (MSEC_PER_SEC / sys_clock_ticks_per_sec)
 #else
