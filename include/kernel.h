@@ -1336,14 +1336,15 @@ __syscall void *k_thread_custom_data_get(void);
 	#define _NON_OPTIMIZED_TICKS_PER_SEC
 #endif
 
-#ifdef _NON_OPTIMIZED_TICKS_PER_SEC
-extern s32_t _ms_to_ticks(s32_t ms);
-#else
 static ALWAYS_INLINE s32_t _ms_to_ticks(s32_t ms)
 {
+#ifdef _NON_OPTIMIZED_TICKS_PER_SEC
+	s64_t ms_ticks_per_sec = (s64_t)ms * sys_clock_ticks_per_sec;
+	return (s32_t)ceiling_fraction(ms_ticks_per_sec, MSEC_PER_SEC);
+#else
 	return (s32_t)ceiling_fraction((u32_t)ms, _ms_per_tick);
-}
 #endif
+}
 
 /* added tick needed to account for tick in progress */
 #ifdef CONFIG_TICKLESS_KERNEL

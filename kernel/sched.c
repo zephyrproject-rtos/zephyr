@@ -84,15 +84,6 @@ static inline int _is_idle(struct k_thread *thread)
 #endif
 }
 
-#ifdef _NON_OPTIMIZED_TICKS_PER_SEC
-s32_t _ms_to_ticks(s32_t ms)
-{
-	s64_t ms_ticks_per_sec = (s64_t)ms * sys_clock_ticks_per_sec;
-
-	return (s32_t)ceiling_fraction(ms_ticks_per_sec, MSEC_PER_SEC);
-}
-#endif
-
 int _is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2)
 {
 	if (t1->base.prio < t2->base.prio) {
