@@ -13,10 +13,20 @@ menuconfig COUNTER
 
 if COUNTER
 
+config COUNTER_LOG_LEVEL
+	int "Counter log level"
+	default 0
+	range 0 4
+	help
+	  Counter logging level.
+
 source "drivers/counter/Kconfig.qmsi"
 
 source "drivers/counter/Kconfig.tmr_cmsdk_apb"
 
 source "drivers/counter/Kconfig.dtmr_cmsdk_apb"
+
+source "drivers/counter/Kconfig.nrfx"
+
 
 endif # COUNTER
