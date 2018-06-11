@@ -14,13 +14,11 @@ Samples and Demos
    net/net.rst
    bluetooth/bluetooth.rst
    sensor/*
-   grove/*
    boards/*
    mpu/*
    drivers/drivers.rst
    application_development/*
    display/*
-
 
 To add a new sample document, please use the template available under
 :file:`doc/templates/sample.tmpl`
