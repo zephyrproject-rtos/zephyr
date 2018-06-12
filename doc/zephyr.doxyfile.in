@@ -806,7 +806,8 @@ RECURSIVE              = YES
 
 EXCLUDE                = @ZEPHYR_BASE@/include/spi_legacy.h \
                          @ZEPHYR_BASE@/include/net/http_legacy.h \
-                         @ZEPHYR_BASE@/include/misc/util.h
+                         @ZEPHYR_BASE@/include/misc/util.h \
+                         @ZEPHYR_BASE@/include/cmsis_rtos_v1/cmsis_os.h
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
