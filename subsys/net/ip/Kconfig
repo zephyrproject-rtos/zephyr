@@ -7,7 +7,6 @@
 #
 
 menu "IP stack"
-	depends on NETWORKING
 
 # Hidden option
 config NET_RAW_MODE
