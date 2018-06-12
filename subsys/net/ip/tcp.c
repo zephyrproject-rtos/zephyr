@@ -1830,8 +1830,14 @@ static inline int send_syn_segment(struct net_context *context,
 {
 	struct net_pkt *pkt = NULL;
 	int ret;
+	u8_t options[NET_TCP_MAX_OPT_SIZE];
+	u8_t optionlen = 0;
 
-	ret = net_tcp_prepare_segment(context->tcp, flags, NULL, 0,
+	if (flags == NET_TCP_SYN) {
+		net_tcp_set_syn_opt(context->tcp, options, &optionlen);
+	}
+
+	ret = net_tcp_prepare_segment(context->tcp, flags, options, optionlen,
 				      local, remote, &pkt);
 	if (ret) {
 		return ret;
