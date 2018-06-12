@@ -326,11 +326,12 @@ struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
 {
 	struct net_eth_hdr *hdr;
 
-	NET_ASSERT(net_buf_headroom(frag) > sizeof(struct net_eth_addr));
-
 #if defined(CONFIG_NET_VLAN)
 	if (net_eth_is_vlan_enabled(ctx, net_pkt_iface(pkt))) {
 		struct net_eth_vlan_hdr *hdr_vlan;
+
+		NET_ASSERT(net_buf_headroom(frag) >=
+			   sizeof(struct net_eth_vlan_hdr));
 
 		hdr_vlan = (struct net_eth_vlan_hdr *)(frag->data -
 						       net_pkt_ll_reserve(pkt));
@@ -357,6 +358,8 @@ struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
 		return (struct net_eth_hdr *)hdr_vlan;
 	}
 #endif
+
+	NET_ASSERT(net_buf_headroom(frag) >= sizeof(struct net_eth_hdr));
 
 	hdr = (struct net_eth_hdr *)(frag->data - net_pkt_ll_reserve(pkt));
 
