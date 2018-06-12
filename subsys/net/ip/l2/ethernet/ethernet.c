@@ -319,12 +319,12 @@ static void set_vlan_priority(struct ethernet_context *ctx,
 
 struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
 					struct net_pkt *pkt,
-					struct net_buf *frag,
 					u32_t ptype,
 					u8_t *src,
 					u8_t *dst)
 {
 	struct net_eth_hdr *hdr;
+	struct net_buf *frag = pkt->frags;
 
 #if defined(CONFIG_NET_VLAN)
 	if (net_eth_is_vlan_enabled(ctx, net_pkt_iface(pkt))) {
@@ -498,7 +498,7 @@ setup_hdr:
 
 	/* Then set the ethernet header.
 	 */
-	net_eth_fill_header(ctx, pkt, pkt->frags, ptype,
+	net_eth_fill_header(ctx, pkt, ptype,
 			    net_pkt_ll_src(pkt)->addr,
 			    net_pkt_ll_dst(pkt)->addr);
 
