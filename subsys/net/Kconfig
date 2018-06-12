@@ -20,6 +20,7 @@ if NET_BUF
 config NET_BUF_USER_DATA_SIZE
 	int "Size of user_data available in every network buffer"
 	default 4
+	range 4 65535 if BT
 	range 0 65535
 	help
 	  Amount of memory reserved in each network buffer for user data. In

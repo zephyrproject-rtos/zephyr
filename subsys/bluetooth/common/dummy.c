@@ -25,11 +25,6 @@ BUILD_ASSERT(CONFIG_SYSTEM_WORKQUEUE_PRIORITY < 0);
  */
 BUILD_ASSERT(CONFIG_BT_HCI_TX_PRIO < CONFIG_BT_RX_PRIO);
 
-/* The Bluetooth subsystem requires network buffers to have at least 4 bytes
- * reserved for user data.
- */
-BUILD_ASSERT(CONFIG_NET_BUF_USER_DATA_SIZE >= 4);
-
 #if defined(CONFIG_BT_CTLR)
 /* The Bluetooth Controller's priority receive thread priority shall be higher
  * than the Bluetooth Host's Tx and the Controller's receive thread priority.
