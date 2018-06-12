@@ -106,6 +106,7 @@
 /drivers/adc/                             @anangl
 /drivers/bluetooth/                       @sjanc @jhedberg @Vudentz
 /drivers/can/                             @alexanderwachter
+/drivers/can/*mcp2515*                    @karstenkoenig
 /drivers/clock_control/*stm32f4*          @rsalveti @idlethread
 /drivers/counter/                         @nordic-krch
 /drivers/display/                         @vanwinkeljan
