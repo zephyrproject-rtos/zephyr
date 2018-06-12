@@ -13,6 +13,9 @@
  * the browser at host.
  */
 
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#include <logging/sys_log.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <device.h>
@@ -24,10 +27,6 @@
 #include <usb/bos.h>
 
 #include "webusb_serial.h"
-
-static volatile bool data_transmitted;
-static volatile bool data_arrived;
-static u8_t data_buf[64];
 
 /* Predefined response to control commands related to MS OS 2.0 descriptors */
 static const u8_t msos2_descriptor[] = {
@@ -259,45 +258,6 @@ int vendor_handle_req(struct usb_setup_packet *pSetup,
 	return -ENOTSUP;
 }
 
-static void interrupt_handler(struct device *dev)
-{
-	uart_irq_update(dev);
-
-	if (uart_irq_tx_ready(dev)) {
-		data_transmitted = true;
-	}
-
-	if (uart_irq_rx_ready(dev)) {
-		data_arrived = true;
-	}
-}
-
-static void write_data(struct device *dev, const u8_t *buf, int len)
-{
-	uart_irq_tx_enable(dev);
-
-	data_transmitted = false;
-	uart_fifo_fill(dev, buf, len);
-	while (data_transmitted == false)
-		;
-
-	uart_irq_tx_disable(dev);
-}
-
-static void read_and_echo_data(struct device *dev, int *bytes_read)
-{
-	while (data_arrived == false)
-		;
-
-	data_arrived = false;
-
-	/* Read all data and echo it back */
-	while ((*bytes_read = uart_fifo_read(dev,
-	    data_buf, sizeof(data_buf)))) {
-		write_data(dev, data_buf, *bytes_read);
-	}
-}
-
 /* Custom and Vendor request handlers */
 static struct webusb_req_handlers req_handlers = {
 	.custom_handler = custom_handle_req,
@@ -306,15 +266,7 @@ static struct webusb_req_handlers req_handlers = {
 
 void main(void)
 {
-	struct device *dev;
-	u32_t baudrate, dtr = 0;
-	int ret, bytes_read;
-
-	dev = device_get_binding(WEBUSB_SERIAL_PORT_NAME);
-	if (!dev) {
-		printf("WebUSB device not found\n");
-		return;
-	}
+	SYS_LOG_DBG("");
 
 	/* Set the custom and vendor request handlers */
 	webusb_register_request_handlers(&req_handlers);
@@ -322,34 +274,5 @@ void main(void)
 	usb_bos_register_cap((void *)&bos_cap_webusb);
 	usb_bos_register_cap((void *)&bos_cap_msosv2);
 
-#ifdef CONFIG_UART_LINE_CTRL
-	printf("Wait for DTR\n");
-	while (1) {
-		uart_line_ctrl_get(dev, LINE_CTRL_DTR, &dtr);
-		if (dtr) {
-			break;
-		}
-	}
-	printf("DTR set, start test\n");
-
-	/* Wait 1 sec for the host to do all settings */
-	k_busy_wait(1000000);
-
-	ret = uart_line_ctrl_get(dev, LINE_CTRL_BAUD_RATE, &baudrate);
-	if (ret) {
-		printf("Failed to get baudrate, ret code %d\n", ret);
-	} else {
-		printf("Baudrate detected: %d\n", baudrate);
-	}
-#endif
-
-	uart_irq_callback_set(dev, interrupt_handler);
-
-	/* Enable rx interrupts */
-	uart_irq_rx_enable(dev);
-
-	/* Echo the received data */
-	while (1) {
-		read_and_echo_data(dev, &bytes_read);
-	}
+	webusb_serial_init();
 }
