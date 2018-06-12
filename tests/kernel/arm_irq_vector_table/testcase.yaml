@@ -2,3 +2,4 @@ tests:
   arch.interrupt:
     filter: CONFIG_ARMV7_M_ARMV8_M_MAINLINE
     tags: arm interrupt vector_table
+    arch_whitelist: arm
