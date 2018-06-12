@@ -378,7 +378,6 @@ struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag)
  *
  * @param ctx Ethernet context
  * @param pkt Network packet
- * @param frag Ethernet header in packet
  * @param ptype Upper level protocol type (in network byte order)
  * @param src Source ethernet address
  * @param dst Destination ethernet address
@@ -387,7 +386,6 @@ struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag)
  */
 struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
 					struct net_pkt *pkt,
-					struct net_buf *frag,
 					u32_t ptype,
 					u8_t *src,
 					u8_t *dst);

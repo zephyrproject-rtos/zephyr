@@ -140,7 +140,7 @@ static inline struct net_pkt *prepare_arp(struct net_if *iface,
 	net_pkt_set_vlan_tag(pkt, vlan_tag);
 #endif
 
-	eth = net_eth_fill_header(ctx, pkt, frag, htons(NET_ETH_PTYPE_ARP),
+	eth = net_eth_fill_header(ctx, pkt, htons(NET_ETH_PTYPE_ARP),
 				  NULL, NULL);
 
 	/* If entry is not set, then we are just about to send
@@ -305,7 +305,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 		net_sprint_ll_addr(ll->addr, sizeof(struct net_eth_addr)),
 		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src));
 
-	net_eth_fill_header(ctx, pkt, pkt->frags,
+	net_eth_fill_header(ctx, pkt,
 			    htons(NET_ETH_PTYPE_IP),
 			    ll->addr, entry->eth.addr);
 
@@ -411,7 +411,7 @@ static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
 	net_pkt_set_vlan_tag(pkt, net_pkt_vlan_tag(req));
 #endif
 
-	net_eth_fill_header(ctx, pkt, frag, htons(NET_ETH_PTYPE_ARP),
+	net_eth_fill_header(ctx, pkt, htons(NET_ETH_PTYPE_ARP),
 			    net_if_get_link_addr(iface)->addr,
 			    eth_query->src.addr);
 
