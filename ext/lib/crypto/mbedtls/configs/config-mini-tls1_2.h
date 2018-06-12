@@ -73,6 +73,32 @@
 #define MBEDTLS_SSL_ALL_ALERT_MESSAGES
 #endif
 
+#if defined(CONFIG_MBEDTLS_ECP)
+#define MBEDTLS_ECP_DP_SECP256R1_ENABLED
+#define MBEDTLS_ECP_NIST_OPTIM
+#define MBEDTLS_ECP_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_AES_ROM_TABLES)
+#define MBEDTLS_AES_ROM_TABLES
+#endif
+
+#if defined(CONFIG_MBEDTLS_ENABLE_CMAC)
+#define MBEDTLS_CMAC_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_ENABLE_ECC_DH)
+#define MBEDTLS_ECDH_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_ENABLE_CCM)
+#define MBEDTLS_CCM_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_ENABLE_HMAC_DRBG)
+#define MBEDTLS_HMAC_DRBG_C
+#endif
+
 #define MBEDTLS_SSL_MAX_CONTENT_LEN  CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN
 
 #include "mbedtls/check_config.h"
