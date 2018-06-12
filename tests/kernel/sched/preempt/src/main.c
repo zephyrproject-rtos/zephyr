@@ -113,6 +113,18 @@ void wakeup_src_thread(int id)
 	while (do_sleep
 	       && !(worker_threads[id].base.thread_state & _THREAD_PENDING)) {
 		/* spin, waiting on the sleep timeout */
+#if defined(CONFIG_ARCH_POSIX)
+		/**
+		 * In the posix arch busy wait loops waiting for something to
+		 * happen need to halt the CPU due to the infinitely fast clock
+		 * assumption. (Or in plain English: otherwise you hang in this
+		 * loop. Because the posix arch emulates having 1 CPU by only
+		 * enabling 1 thread at a time. And because it assumes code
+		 * executes in 0 time: it always waits for the code to finish
+		 * and it letting the cpu sleep before letting time pass)
+		 */
+		posix_halt_cpu();
+#endif
 	}
 
 	/* We are lowest priority, SOMEONE must have run */

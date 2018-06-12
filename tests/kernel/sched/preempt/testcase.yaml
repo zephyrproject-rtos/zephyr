@@ -1,5 +1,4 @@
 tests:
   kernel.sched.preempt:
     tags: core
-    platform_exclude: native_posix
     filter: not CONFIG_SMP
