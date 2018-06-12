@@ -2314,8 +2314,8 @@ class TestSuite:
                     rowdict["passed"] = True
                     if goal.handler:
                         rowdict["handler_time"] = goal.metrics["handler_time"]
-                    rowdict["ram_size"] = goal.metrics["ram_size"]
-                    rowdict["rom_size"] = goal.metrics["rom_size"]
+                        rowdict["ram_size"] = goal.metrics["ram_size"]
+                        rowdict["rom_size"] = goal.metrics["rom_size"]
                 cw.writerow(rowdict)
 
 
