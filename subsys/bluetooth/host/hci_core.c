@@ -3657,7 +3657,7 @@ static void read_supported_commands_complete(struct net_buf *buf)
 	 * Report "LE Read Local P-256 Public Key" and "LE Generate DH Key" as
 	 * supported if TinyCrypt ECC is used for emulation.
 	 */
-	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
+	if (IS_ENABLED(CONFIG_BT_CRYPTO_DRIVER_ECC)) {
 		bt_dev.supported_commands[34] |= 0x02;
 		bt_dev.supported_commands[34] |= 0x04;
 	}
@@ -4446,7 +4446,7 @@ int bt_send(struct net_buf *buf)
 
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
-	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
+	if (IS_ENABLED(CONFIG_BT_CRYPTO_DRIVER_ECC)) {
 		return bt_hci_ecc_send(buf);
 	}
 
@@ -4685,7 +4685,7 @@ int bt_enable(bt_ready_cb_t cb)
 			0, K_NO_WAIT);
 #endif
 
-	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
+	if (IS_ENABLED(CONFIG_BT_CRYPTO_DRIVER_ECC)) {
 		bt_hci_ecc_init();
 	}
 

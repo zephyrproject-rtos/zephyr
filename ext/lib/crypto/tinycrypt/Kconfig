@@ -21,6 +21,7 @@ config TINYCRYPT_CTR_PRNG
 config TINYCRYPT_SHA256
 	bool "SHA-256 Hash function support"
 	depends on TINYCRYPT
+	default y if CRYPTO_ENABLE_SHA256
 	help
 	  This option enables support for SHA-256
 	  hash function primitive.
@@ -28,6 +29,7 @@ config TINYCRYPT_SHA256
 config TINYCRYPT_SHA256_HMAC
 	bool "HMAC (via SHA256) message auth support"
 	depends on TINYCRYPT_SHA256
+	default y if CRYPTO_ENABLE_HMAC_PRNG
 	help
 	  This option enables support for HMAC using SHA-256
 	  message authentication code.
@@ -35,6 +37,7 @@ config TINYCRYPT_SHA256_HMAC
 config TINYCRYPT_SHA256_HMAC_PRNG
 	bool "PRNG (via HMAC-SHA256) support"
 	depends on TINYCRYPT_SHA256_HMAC
+	default y if CRYPTO_ENABLE_HMAC_PRNG
 	help
 	  This option enables support for pseudo-random number
 	  generator.
@@ -43,6 +46,7 @@ config TINYCRYPT_ECC_DH
 	bool "ECC_DH anonymous key agreement protocol"
 	depends on TINYCRYPT
 	select ENTROPY_GENERATOR
+	default y if CRYPTO_ENABLE_ECC_DH
 	help
 	  This option enables support for the Elliptic curve
 	  Diffie-Hellman anonymous key agreement protocol.
@@ -64,29 +68,34 @@ config TINYCRYPT_ECC_DSA
 config TINYCRYPT_AES
 	bool "AES-128 decrypt/encrypt"
 	depends on TINYCRYPT
+	default y if CRYPTO_ENABLE_AES
 	help
 	  This option enables support for AES-128 decrypt and encrypt.
 
 config TINYCRYPT_AES_CBC
 	bool "AES-128 block cipher"
 	depends on TINYCRYPT_AES
+	default y if CRYPTO_ENABLE_AES_CBC
 	help
 	  This option enables support for AES-128 block cipher mode.
 
 config TINYCRYPT_AES_CTR
 	bool "AES-128 counter mode"
 	depends on TINYCRYPT_AES
+	default y if CRYPTO_ENABLE_AES_CTR
 	help
 	  This option enables support for AES-128 counter mode.
 
 config TINYCRYPT_AES_CCM
 	bool "AES-128 CCM mode"
 	depends on TINYCRYPT_AES
+	default y if CRYPTO_ENABLE_AES_CCM
 	help
 	  This option enables support for AES-128 CCM mode.
 
 config TINYCRYPT_AES_CMAC
 	bool "AES-128 CMAC mode"
 	depends on TINYCRYPT_AES
+	default y if CRYPTO_ENABLE_AES_CMAC
 	help
 	  This option enables support for AES-128 CMAC mode.

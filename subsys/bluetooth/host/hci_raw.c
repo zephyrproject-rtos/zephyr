@@ -94,7 +94,7 @@ int bt_send(struct net_buf *buf)
 
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
-	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
+	if (IS_ENABLED(CONFIG_BT_CRYPTO_DRIVER_ECC)) {
 		return bt_hci_ecc_send(buf);
 	}
 
@@ -115,7 +115,7 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 		return -ENODEV;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
+	if (IS_ENABLED(CONFIG_BT_CRYPTO_DRIVER_ECC)) {
 		bt_hci_ecc_init();
 	}
 

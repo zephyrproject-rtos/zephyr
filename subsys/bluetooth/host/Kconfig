@@ -130,11 +130,10 @@ config BT_HOST_CRYPTO
 	# by the controller implementation.
 	bool
 	default y if !BT_CTLR_CRYPTO
-	select TINYCRYPT
-	select TINYCRYPT_AES
-	select TINYCRYPT_SHA256
-	select TINYCRYPT_SHA256_HMAC
-	select TINYCRYPT_SHA256_HMAC_PRNG
+	select CRYPTO
+	select CRYPTO_ENABLE_AES
+	select CRYPTO_ENABLE_SHA256
+	select CRYPTO_ENABLE_HMAC_PRNG
 
 config BT_SETTINGS
 	bool "Store Bluetooth state and configuration persistently"
@@ -254,9 +253,9 @@ config BT_AUTO_PHY_UPDATE
 
 config BT_SMP
 	bool "Security Manager Protocol support"
-	select TINYCRYPT
-	select TINYCRYPT_AES
-	select TINYCRYPT_AES_CMAC
+	select CRYPTO
+	select CRYPTO_ENABLE_AES
+	select CRYPTO_ENABLE_AES_CMAC
 	select BT_RPA
 	help
 	  This option enables support for the Security Manager Protocol
@@ -302,7 +301,7 @@ config BT_FIXED_PASSKEY
 
 config BT_USE_DEBUG_KEYS
 	bool "Enable Security Manager Debug Mode"
-	depends on BT_TINYCRYPT_ECC
+	depends on BT_CRYPTO_DRIVER_ECC
 	help
 	  This option places Security Manager in a Debug Mode. In this mode
 	  predefined Diffie-Hellman private/public key pair is used as described
@@ -463,14 +462,14 @@ config BT_ID_MAX
 
 endif # BT_HCI_HOST
 
-config BT_TINYCRYPT_ECC
-	bool "Use TinyCrypt library for ECDH"
-	select TINYCRYPT
-	select TINYCRYPT_ECC_DH
+config BT_CRYPTO_DRIVER_ECC
+	bool "Use crypto driver for ECDH"
+	select CRYPTO
+	select CRYPTO_ENABLE_ECC_DH
 	depends on BT_HCI_RAW || BT_HCI_HOST
 	default y if BT_CTLR && (BT_SMP || BT_MESH_PROV)
 	help
-	  If this option is set TinyCrypt library is used for emulating the
+	  If this option is set a crypto driver is used for emulating the
 	  ECDH HCI commands and events needed by e.g. LE Secure Connections.
 	  In builds including the BLE Host, if not set the controller crypto is
 	  used for ECDH and if the controller doesn't support the required HCI

@@ -51,35 +51,28 @@ config CRYPTO_MAX_SESSION
 	  This can be used to tweak the amount of sessions the driver
 	  can handle in parallel.
 
+config CRYPTO_SHIM
+	bool
+	help
+	  Hidden option that's selected by crypto driver shims, in order to
+	  select which features will be used.
+
 choice
 	prompt "Crypto driver backend"
 	default CRYPTO_TINYCRYPT_SHIM
 
 config CRYPTO_TINYCRYPT_SHIM
-	bool "Enable TinyCrypt shim driver [EXPERIMENTAL]"
+	bool "TinyCrypt shim driver [EXPERIMENTAL]"
 	select TINYCRYPT
-	select TINYCRYPT_AES
-	select TINYCRYPT_AES_CBC
-	select TINYCRYPT_AES_CTR
-	select TINYCRYPT_AES_CCM
-	select TINYCRYPT_AES_CMAC
-	select TINYCRYPT_ECC_DH
-	select TINYCRYPT_SHA256
-	select TINYCRYPT_SHA256_HMAC
-	select TINYCRYPT_SHA256_HMAC_PRNG
+	select CRYPTO_SHIM
 	help
 	  Enable TinyCrypt shim layer compliant with crypto APIs.
 
 config CRYPTO_MBEDTLS_SHIM
-	bool "Enable mbedTLS shim driver [EXPERIMENTAL]"
+	bool "mbedTLS shim driver [EXPERIMENTAL]"
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
-	select MBEDTLS_ENABLE_ECP
-	select MBEDTLS_ENABLE_CMAC
-	select MBEDTLS_ENABLE_ECC_DH
-	select MBEDTLS_ENABLE_CCM
-	select MBEDTLS_ENABLE_HMAC_DRBG
-	select MBEDTLS_AES_ROM_TABLES
+	select CRYPTO_SHIM
 	help
 	  Enable mbedTLS shim layer compliant with crypto APIs. You will need
 	  to fill in a relevant value to CONFIG_MBEDTLS_HEAP_SIZE.
@@ -122,5 +115,38 @@ config CRYPTO_ATAES132A_I2C_SPEED_FAST
 endchoice
 
 endif # CRYPTO_ATAES132A
+
+if CRYPTO_SHIM
+
+config CRYPTO_ENABLE_AES
+	bool "Enable AES operations"
+	default y
+
+if CRYPTO_ENABLE_AES
+config CRYPTO_ENABLE_AES_CBC
+	bool "Enable CBC (block) mode for AES operations"
+
+config CRYPTO_ENABLE_AES_CTR
+	bool "Enable CTR (counter) mode for AES operations"
+
+config CRYPTO_ENABLE_AES_CCM
+	bool "Enable CCM mode for AES operations"
+
+config CRYPTO_ENABLE_AES_CMAC
+	bool "Enable CMAC with AES"
+endif # CRYPTO_ENABLE_AES
+
+config CRYPTO_ENABLE_ECC_DH
+	bool "Enable ECC-DH"
+
+config CRYPTO_ENABLE_SHA256
+	bool "Enable SHA256"
+	default y
+
+config CRYPTO_ENABLE_HMAC_PRNG
+	bool "Enable HMAC-based PRNG"
+	select CRYPTO_ENABLE_SHA256
+
+endif # CRYPTO_SHIM
 
 endif # CRYPTO

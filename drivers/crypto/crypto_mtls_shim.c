@@ -31,13 +31,23 @@
 #error "You need to define MBEDTLS_MEMORY_BUFFER_ALLOC_C"
 #endif /* MBEDTLS_MEMORY_BUFFER_ALLOC_C */
 
-#include <mbedtls/ccm.h>
 #include <mbedtls/aes.h>
+#include <mbedtls/ccm.h>
+
+#if defined(CONFIG_MBEDTLS_ENABLE_HMAC_DRBG)
 #include <mbedtls/hmac_drbg.h>
+#endif
+
+#if defined(CONFIG_MBEDTLS_ENABLE_CMAC)
 #include <mbedtls/cmac.h>
+#include <mbedtls/md.h>
+#endif
+
+#if defined(CONFIG_MBEDTLS_ENABLE_ECC_DH)
 #include <mbedtls/ecp.h>
 #include <mbedtls/bignum.h>
 #include <mbedtls/ecdh.h>
+#endif
 
 #define MTLS_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
 
@@ -45,8 +55,12 @@ struct mtls_shim_session {
 	enum cipher_algo algo;
 	union {
 		mbedtls_ccm_context mtls;
+#if defined(CONFIG_MBEDTLS_ENABLE_HMAC_DRBG)
 		mbedtls_hmac_drbg_context hmac_drbg;
+#endif
+#if defined(CONFIG_MBEDTLS_ENABLE_CMAC)
 		mbedtls_cipher_context_t cipher;
+#endif
 	};
 };
 
@@ -55,6 +69,9 @@ K_MEM_POOL_DEFINE(mtls_shim_session_pool,
 	(sizeof(struct mtls_shim_session) + sizeof(struct k_mem_block_id)),
 	CONFIG_CRYPTO_MAX_SESSION,
 	__alignof__(struct mtls_shim_session));
+
+#if defined(CONFIG_MBEDTLS_ENABLE_HMAC_DRBG) || \
+	defined(CONFIG_MBEDTLS_ENABLE_ECC_DH)
 
 static struct device *hwrng;
 
@@ -84,6 +101,7 @@ static int mtls_get_entropy_from_device(void *data,
 
 	return 0;
 }
+#endif /* CONFIG_MBEDTLS_ENABLE_HMAC_DRBG || CONFIG_MBEDTLS_ENABLE_ECC_DH */
 
 static int mtls_ccm_encrypt_auth(struct cipher_ctx *ctx,
 				 struct cipher_aead_pkt *apkt,
@@ -162,12 +180,19 @@ static void mtls_free_session(struct mtls_shim_session *session)
 	case CRYPTO_CIPHER_ALGO_AES:
 		mbedtls_ccm_free(&session->mtls);
 		break;
+
 	case CRYPTO_CIPHER_ALGO_PRNG:
+#if defined(CONFIG_MBEDTLS_ENABLE_HMAC_DRBG)
 		mbedtls_hmac_drbg_free(&session->hmac_drbg);
+#endif
 		break;
+
 	case CRYPTO_CIPHER_ALGO_MAC:
+#if defined(CONFIG_MBEDTLS_ENABLE_CMAC)
 		mbedtls_cipher_free(&session->cipher);
+#endif
 		break;
+
 	case CRYPTO_CIPHER_ALGO_ECC:
 		/* Do nothing. */
 		break;
@@ -222,6 +247,7 @@ static int mtls_session_setup_aes(struct cipher_ctx *ctx,
 	return ret;
 }
 
+#if defined(CONFIG_MBEDTLS_ENABLE_HMAC_DRBG)
 static int mtls_hmac_prng_op(struct cipher_ctx *ctx,
 			     struct cipher_prng_pkt *pkt)
 {
@@ -289,7 +315,9 @@ out:
 	mtls_free_session(session);
 	return -EINVAL;
 }
+#endif /* CONFIG_MBEDTLS_ENABLE_HMAC_DRBG */
 
+#if defined(CONFIG_MBEDTLS_ENABLE_CMAC)
 static int mtls_mac_op(struct cipher_ctx *ctx, struct cipher_mac_pkt *pkt)
 {
 	struct mtls_shim_session *session = ctx->drv_sessn_state;
@@ -377,7 +405,9 @@ static int mtls_session_setup_mac(struct cipher_ctx *ctx,
 
 	return 0;
 }
+#endif /* CONFIG_MBEDTLS_ENABLE_CMAC */
 
+#if defined(CONFIG_MBEDTLS_ENABLE_ECC_DH)
 static int mtls_ecc_gen_key(struct cipher_ctx *ctx,
 			    struct cipher_ecc_pkt *pkt)
 {
@@ -551,6 +581,7 @@ static int mtls_session_setup_ecc(struct cipher_ctx *ctx,
 
 	return 0;
 }
+#endif /* CONFIG_MBEDTLS_ENABLE_ECC_DH */
 
 static int mtls_session_setup(struct device *dev,
 			      struct cipher_ctx *ctx,
@@ -568,12 +599,18 @@ static int mtls_session_setup(struct device *dev,
 	switch (algo) {
 	case CRYPTO_CIPHER_ALGO_AES:
 		return mtls_session_setup_aes(ctx, algo, mode, op_type);
+#if defined(CONFIG_MBEDTLS_ENABLE_ECC_DH)
 	case CRYPTO_CIPHER_ALGO_ECC:
 		return mtls_session_setup_ecc(ctx, mode, op_type);
+#endif
+#if defined(CONFIG_MBEDTLS_ENABLE_HMAC_DRBG)
 	case CRYPTO_CIPHER_ALGO_PRNG:
 		return mtls_session_setup_prng(ctx, mode);
+#endif
+#if defined(CONFIG_MBEDTLS_ENABLE_CMAC)
 	case CRYPTO_CIPHER_ALGO_MAC:
 		return mtls_session_setup_mac(ctx, mode, op_type);
+#endif
 	default:
 		SYS_LOG_ERR("Unsupported algo for mbedTLS shim: %d", algo);
 		return -ENOTSUP;
@@ -598,10 +635,13 @@ static int mtls_query_caps(struct device *dev)
 
 static int mtls_shim_init(struct device *dev)
 {
+#if defined(CONFIG_MBEDTLS_ENABLE_HMAC_DRBG) || \
+	defined(CONFIG_MBEDTLS_ENABLE_ECC_DH)
 	hwrng = device_get_binding(CONFIG_ENTROPY_NAME);
 	if (!hwrng) {
 		return -ENODEV;
 	}
+#endif
 
 	return 0;
 }

@@ -8,28 +8,57 @@
  * @file Shim layer for TinyCrypt, making it complaint to crypto API.
  */
 
-#include <tinycrypt/aes.h>
-#include <tinycrypt/cmac_mode.h>
-#include <tinycrypt/ecc.h>
-#include <tinycrypt/ecc_dh.h>
-#include <tinycrypt/hmac_prng.h>
-#include <tinycrypt/cbc_mode.h>
-#include <tinycrypt/ctr_mode.h>
-#include <tinycrypt/ccm_mode.h>
-#include <tinycrypt/constants.h>
-#include <tinycrypt/utils.h>
 #include <string.h>
 #include <crypto/cipher.h>
 #include <kernel.h>
+
+#if defined(CONFIG_CRYPTO_ENABLE_AES)
+#include <tinycrypt/aes.h>
+
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CBC)
+#include <tinycrypt/cbc_mode.h>
+#endif
+
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CTR)
+#include <tinycrypt/ctr_mode.h>
+#endif
+
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CCM)
+#include <tinycrypt/ccm_mode.h>
+#endif
+
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CMAC)
+#include <tinycrypt/cmac_mode.h>
+#endif
+
+#endif /* CONFIG_CRYPTO_ENABLE_AES */
+
+#if defined(CONFIG_CRYPTO_ENABLE_ECC_DH)
+#include <tinycrypt/ecc.h>
+#include <tinycrypt/ecc_dh.h>
+#endif /* CONFIG_CRYPTO_ENABLE_ECC_EH */
+
+#if defined(CONFIG_CRYPTO_ENABLE_HMAC_PRNG)
+#include <tinycrypt/hmac_prng.h>
+#endif /* CONFIG_CRYPTO_ENABLE_HMAC_PRNG */
+
+#include <tinycrypt/constants.h>
+#include <tinycrypt/utils.h>
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_CRYPTO_LEVEL
 #include <logging/sys_log.h>
 
 struct tc_shim_drv_state {
+#if defined(CONFIG_CRYPTO_ENABLE_AES)
 	struct tc_aes_key_sched_struct session_key;
+#endif
 	union {
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CMAC)
 		struct tc_cmac_struct cmac_state;
+#endif
+#if defined(CONFIG_CRYPTO_ENABLE_HMAC_PRNG)
 		struct tc_hmac_prng_struct prng_state;
+#endif
 	};
 };
 
@@ -39,6 +68,7 @@ K_MEM_POOL_DEFINE(tc_shim_session_pool,
 	CONFIG_CRYPTO_MAX_SESSION,
 	__alignof__(struct tc_shim_drv_state));
 
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CBC)
 static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 			  u8_t *iv)
 {
@@ -86,7 +116,9 @@ static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 
 	return 0;
 }
+#endif /* CONFIG_CRYPTO_ENABLE_AES_CBC */
 
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CTR)
 static int do_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *op,
 		     u8_t *iv)
 {
@@ -111,7 +143,9 @@ static int do_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *op,
 
 	return 0;
 }
+#endif /* CONFIG_CRYPTO_ENABLE_AES_CTR */
 
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CCM)
 static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 			     struct cipher_aead_pkt *aead_op, u8_t *nonce)
 {
@@ -187,7 +221,9 @@ static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
 
 	return 0;
 }
+#endif /* CONFIG_CRYPTO_ENABLE_AES_CCM */
 
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CMAC)
 static int do_mac_op(struct cipher_ctx *ctx, struct cipher_mac_pkt *pkt)
 {
 	struct tc_shim_drv_state *state = ctx->drv_sessn_state;
@@ -202,7 +238,9 @@ static int do_mac_op(struct cipher_ctx *ctx, struct cipher_mac_pkt *pkt)
 
 	return r == TC_CRYPTO_SUCCESS ? 0 : -EIO;
 }
+#endif /* CONFIG_CRYPTO_ENABLE_AES_CMAC */
 
+#if defined(CONFIG_CRYPTO_ENABLE_HMAC_PRNG)
 static int do_prng_op(struct cipher_ctx *ctx,
 		      struct cipher_prng_pkt *pkt)
 {
@@ -230,7 +268,9 @@ static int do_prng_op(struct cipher_ctx *ctx,
 		return -EIO;
 	}
 }
+#endif /* CONFIG_CRYPTO_ENABLE_HMAC_PRNG */
 
+#if defined(CONFIG_CRYPTO_ENABLE_ECC_DH)
 static int do_ecc_op_gen_key(struct cipher_ctx *ctx,
 			     struct cipher_ecc_pkt *pkt)
 {
@@ -297,6 +337,7 @@ static int do_ecc_op_gen_shared_key(struct cipher_ctx *ctx,
 
 	return r == TC_CRYPTO_SUCCESS ? 0 : -EINVAL;
 }
+#endif /* CONFIG_CRYPTO_ENABLE_ECC_DH */
 
 static struct tc_shim_drv_state *get_unused_session(void)
 {
@@ -304,6 +345,7 @@ static struct tc_shim_drv_state *get_unused_session(void)
 				 sizeof(struct tc_shim_drv_state));
 }
 
+#if defined(CONFIG_CRYPTO_ENABLE_AES)
 static int tc_session_setup_aes(struct cipher_ctx *ctx,
 				enum cipher_mode mode,
 				enum cipher_algo algo,
@@ -319,6 +361,7 @@ static int tc_session_setup_aes(struct cipher_ctx *ctx,
 	}
 
 	switch (mode) {
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CBC)
 	case CRYPTO_CIPHER_MODE_CBC:
 		if (op == CRYPTO_CIPHER_OP_ENCRYPT) {
 			ctx->ops.cbc_crypt_hndlr = do_cbc_encrypt;
@@ -326,6 +369,9 @@ static int tc_session_setup_aes(struct cipher_ctx *ctx,
 			ctx->ops.cbc_crypt_hndlr = do_cbc_decrypt;
 		}
 		break;
+#endif
+
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CTR)
 	case CRYPTO_CIPHER_MODE_CTR:
 		if (ctx->mode_params.ctr_info.ctr_len != 32) {
 			SYS_LOG_ERR("Tinycrypt supports only 32 bit "
@@ -335,6 +381,9 @@ static int tc_session_setup_aes(struct cipher_ctx *ctx,
 		/* Same operation works for encryption/decryption */
 		ctx->ops.ctr_crypt_hndlr = do_ctr_op;
 		break;
+#endif
+
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CCM)
 	case CRYPTO_CIPHER_MODE_CCM:
 		if (op == CRYPTO_CIPHER_OP_ENCRYPT) {
 			ctx->ops.ccm_crypt_hndlr = do_ccm_encrypt_mac;
@@ -342,6 +391,8 @@ static int tc_session_setup_aes(struct cipher_ctx *ctx,
 			ctx->ops.ccm_crypt_hndlr = do_ccm_decrypt_auth;
 		}
 		break;
+#endif
+
 	default:
 		SYS_LOG_ERR("Unsupported mode for AES algo: %d", mode);
 		return -EINVAL;
@@ -363,7 +414,9 @@ static int tc_session_setup_aes(struct cipher_ctx *ctx,
 
 	return 0;
 }
+#endif /* CONFIG_CRYPTO_ENABLE_AES */
 
+#if defined(CONFIG_CRYPTO_ENABLE_HMAC_PRNG)
 static int tc_session_setup_prng(struct cipher_ctx *ctx,
 				 enum cipher_mode mode)
 {
@@ -394,7 +447,9 @@ static int tc_session_setup_prng(struct cipher_ctx *ctx,
 
 	return 0;
 }
+#endif /* CONFIG_CRYPTO_ENABLE_HMAC_PRNG */
 
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CMAC)
 static int tc_session_setup_mac(struct cipher_ctx *ctx,
 				enum cipher_mode mode)
 {
@@ -425,7 +480,9 @@ static int tc_session_setup_mac(struct cipher_ctx *ctx,
 
 	return 0;
 }
+#endif /* CONFIG_CRYPTO_ENABLE_AES_CMAC */
 
+#if defined(CONFIG_CRYPTO_ENABLE_ECC_DH)
 static int tc_session_setup_ecc(struct cipher_ctx *ctx,
 				enum cipher_mode mode,
 				enum cipher_op op)
@@ -461,6 +518,7 @@ static int tc_session_setup_ecc(struct cipher_ctx *ctx,
 
 	return 0;
 }
+#endif /* CONFIG_CRYPTO_ENABLE_ECC_EH */
 
 static int tc_session_setup(struct device *dev,
 			    struct cipher_ctx *ctx,
@@ -479,14 +537,26 @@ static int tc_session_setup(struct device *dev,
 	}
 
 	switch (algo) {
+#if defined(CONFIG_CRYPTO_ENABLE_AES)
 	case CRYPTO_CIPHER_ALGO_AES:
 		return tc_session_setup_aes(ctx, mode, algo, op);
+#endif
+
+#if defined(CONFIG_CRYPTO_ENABLE_ECC_DH)
 	case CRYPTO_CIPHER_ALGO_ECC:
 		return tc_session_setup_ecc(ctx, mode, op);
+#endif
+
+#if defined(CONFIG_CRYPTO_ENABLE_HMAC_PRNG)
 	case CRYPTO_CIPHER_ALGO_PRNG:
 		return tc_session_setup_prng(ctx, mode);
+#endif
+
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CMAC)
 	case CRYPTO_CIPHER_ALGO_MAC:
 		return tc_session_setup_mac(ctx, mode);
+#endif
+
 	default:
 		SYS_LOG_ERR("Unsupported algo for Tinycrypt shim: %d", algo);
 		return -ENOTSUP;
