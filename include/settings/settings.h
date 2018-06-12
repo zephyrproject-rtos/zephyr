@@ -73,7 +73,7 @@ enum settings_export_tgt {
  *  - val - buffer for a value.
  *  - val_len_max - size of that buffer.
  *
- * @param settings_handler::h_set Sey value handler of settings items
+ * @param settings_handler::h_set Set value handler of settings items
  * identified by keyword names. Parameters:
  *  - argc - count of item in argv, argv - array of pointers to keyword names.
  *  - val- pointer to value to be set.
