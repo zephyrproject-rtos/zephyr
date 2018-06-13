@@ -1,0 +1,8 @@
+tests:
+  kernel.threads.no-multithreading:
+    tags: core
+    filter: not CONFIG_SMP
+
+    # Pulls in GPIO by default, which needs missing APIs (why?!), but
+    # its headers won't build with GPIO disabled.
+    platform_exclude: galileo
