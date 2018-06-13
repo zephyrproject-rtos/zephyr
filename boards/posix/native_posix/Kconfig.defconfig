@@ -30,4 +30,12 @@ config FAKE_ENTROPY_NATIVE_POSIX
 
 endif # ENTROPY_GENERATOR
 
-endif
+if BT_HCI
+
+choice BT_HCI_BUS_TYPE
+	default BT_USERCHAN
+endchoice
+
+endif # BT_HCI
+
+endif # BOARD_NATIVE_POSIX
