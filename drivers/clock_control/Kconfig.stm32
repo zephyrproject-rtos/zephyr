@@ -195,7 +195,7 @@ config CLOCK_STM32_PLL_MULTIPLIER
 
 endif # SOC_SERIES_STM32F3X
 
-if SOC_SERIES_STM32F4X
+if SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
 
 config CLOCK_STM32_PLL_M_DIVISOR
 	int "Division factor for PLL VCO input clock"
@@ -239,7 +239,7 @@ config CLOCK_STM32_PLL_Q_DIVISOR
 	 need a frequency lower than or equal to 48 MHz to work correctly.
 	 Allowed values: 2-15
 
-endif # SOC_SERIES_STM32F4X
+endif # SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
 
 if SOC_SERIES_STM32L0X
 
