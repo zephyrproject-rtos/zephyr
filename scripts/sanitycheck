@@ -1096,7 +1096,11 @@ class MakeGenerator:
 
             cmd = ["make", "-k", "-j", str(JOBS), "-f", tf.name, "all"]
 
-            p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=devnull)
+            # assure language neutral environemnt
+            make_env = os.environ.copy()
+            make_env['LC_MESSAGES'] = 'C.UTF-8'
+            p = subprocess.Popen(cmd, stderr=subprocess.PIPE,
+                                 stdout=devnull, env=make_env)
 
             for line in iter(p.stderr.readline, b''):
                 line = line.decode("utf-8")
