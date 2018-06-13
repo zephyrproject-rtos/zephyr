@@ -38,8 +38,15 @@ void test_flash_area_to_sectors(void)
 
 	/* First erase the area so it's ready for use. */
 	flash_dev = device_get_binding(FLASH_DEV_NAME);
+
+	rc = flash_write_protection_set(flash_dev, false);
+	zassert_false(rc, "failed to disable flash write protection");
+
 	rc = flash_erase(flash_dev, fa->fa_off, fa->fa_size);
 	zassert_true(rc == 0, "flash area erase fail");
+
+	rc = flash_write_protection_set(flash_dev, true);
+	zassert_false(rc, "failed to enable flash write protection");
 
 	memset(wd, 0xa5, sizeof(wd));
 
