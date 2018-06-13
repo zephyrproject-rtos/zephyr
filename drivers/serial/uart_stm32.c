@@ -278,6 +278,49 @@ static void uart_stm32_lpuart_set_baud_rate(struct device *dev,
 }
 #endif
 
+static void uart_stm32_rs485_config(USART_TypeDef *UartInstance,
+				    const struct uart_stm32_config *config,
+				    u32_t baud_rate)
+{
+#ifdef CONFIG_UART_RS485_SUPPORT
+	const struct uart_device_config *uconf = &config->uconf;
+	const int max_delay = 31;
+	int period_ns, clk;
+
+	if (!IS_UART_DRIVER_ENABLE_INSTANCE(UartInstance) ||
+	    !(uconf->rs485_flags & UART_RS485_ENABLE)) {
+		return;
+	}
+
+	if (uconf->rs485_flags & UART_RS485_RTS_ON_SEND) {
+		LL_USART_SetDESignalPolarity(UartInstance,
+					     LL_USART_DE_POLARITY_LOW);
+	} else {
+		LL_USART_SetDESignalPolarity(UartInstance,
+					     LL_USART_DE_POLARITY_HIGH);
+	}
+
+	/* In USART, the DEAT and DEDT are expressed in sample time units,
+	 * calculate the sample time's period first
+	 */
+	period_ns = NSEC_PER_SEC / baud_rate / 8;
+	if (LL_USART_GetOverSampling(UartInstance)
+	    != LL_USART_OVERSAMPLING_8) {
+		period_ns /= 2;
+	}
+
+	/* DEAT is a 5 bits width register, the max valus is 31 */
+	clk = ceiling_fraction(uconf->delay_rts_before_send * NSEC_PER_USEC,
+			       period_ns);
+	LL_USART_SetDEAssertionTime(UartInstance, min(clk, max_delay));
+	clk = ceiling_fraction(uconf->delay_rts_after_send * NSEC_PER_SEC,
+			       period_ns);
+	LL_USART_SetDEDeassertionTime(UartInstance, min(clk, max_delay));
+
+	LL_USART_EnableDEMode(UartInstance);
+#endif
+}
+
 /**
  * @brief Initialize UART channel
  *
@@ -329,6 +372,8 @@ static int uart_stm32_init(struct device *dev)
 	uart_stm32_usart_set_baud_rate(dev, clock_rate, baud_rate);
 #endif
 
+	uart_stm32_rs485_config(UartInstance, config, baud_rate);
+
 	LL_USART_Enable(UartInstance);
 
 #ifdef USART_ISR_TEACK
@@ -374,6 +419,30 @@ static void uart_stm32_irq_config_func_##name(struct device *dev)	\
 #define STM32_UART_IRQ_HANDLER(name)
 #endif
 
+#ifdef CONFIG_UART_RS485_SUPPORT
+#define STM32_UART_RS485_FLAGS(name)					\
+	.rs485_flags = 0						\
+		| (CONFIG_UART_STM32_##name##_RS485_ENABLED ?		\
+			UART_RS485_ENABLE : 0)				\
+		| (CONFIG_UART_STM32_##name##_RS485_RTS_ACTIVE_LOW ?	\
+			UART_RS485_RTS_ON_SEND :			\
+			UART_RS485_RTS_AFTER_SEND),
+#define STM32_UART_RS485_DELAY_RTS_BEFORE_SEND(name)			\
+	.delay_rts_before_send = 0 +					\
+		CONFIG_UART_STM32_##name##_RS485_DELAY_RTS_BEFORE_SEND,
+#define STM32_UART_RS485_DELAY_RTS_AFTER_SEND(name)			\
+	.delay_rts_after_send = 0 +					\
+		CONFIG_UART_STM32_##name##_RS485_DELAY_RTS_AFTER_SEND,
+#else
+#define STM32_UART_RS485_FLAGS(name)					\
+	.rs485_flags = 0,
+#define STM32_UART_RS485_DELAY_RTS_BEFORE_SEND(name)			\
+	.delay_rts_before_send = 0,
+#define STM32_UART_RS485_DELAY_RTS_AFTER_SEND(name)			\
+	.delay_rts_after_send = 0,
+#endif
+
+
 #define STM32_UART_INIT(name, clock_bus, clock_enr)			\
 STM32_UART_IRQ_HANDLER_DECL(name);					\
 									\
@@ -381,6 +450,9 @@ static const struct uart_stm32_config uart_stm32_cfg_##name = {		\
 	.uconf = {							\
 		.base = (u8_t *)CONFIG_UART_STM32_##name##_BASE_ADDRESS,\
 		STM32_UART_IRQ_HANDLER_FUNC(name)			\
+		STM32_UART_RS485_FLAGS(name)				\
+		STM32_UART_RS485_DELAY_RTS_BEFORE_SEND(name)		\
+		STM32_UART_RS485_DELAY_RTS_AFTER_SEND(name)		\
 	},								\
 	STM32_CLOCK_UART(clock_bus, clock_enr),				\
 	.baud_rate = CONFIG_UART_STM32_##name##_BAUD_RATE		\
