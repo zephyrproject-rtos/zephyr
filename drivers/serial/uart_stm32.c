@@ -331,12 +331,17 @@ static int uart_stm32_init(struct device *dev)
 
 	LL_USART_Enable(UartInstance);
 
-#if !defined(CONFIG_SOC_SERIES_STM32F4X) && !defined(CONFIG_SOC_SERIES_STM32F1X)
-	/* Polling USART initialisation */
-	while ((!(LL_USART_IsActiveFlag_TEACK(UartInstance))) ||
-	      (!(LL_USART_IsActiveFlag_REACK(UartInstance))))
+#ifdef USART_ISR_TEACK
+	/* Wait until TEACK flag is set */
+	while (!(LL_USART_IsActiveFlag_TEACK(UartInstance)))
 		;
-#endif /* !CONFIG_SOC_SERIES_STM32F4X */
+#endif /* !USART_ISR_TEACK */
+
+#ifdef USART_ISR_REACK
+	/* Wait until TEACK flag is set */
+	while (!(LL_USART_IsActiveFlag_REACK(UartInstance)))
+		;
+#endif /* !USART_ISR_REACK */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->uconf.irq_config_func(dev);
