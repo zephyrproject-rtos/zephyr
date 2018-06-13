@@ -16,8 +16,15 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <string.h>
 #include <zephyr/types.h>
 #include <stdbool.h>
+
+static inline void explicit_bzero(void *ptr, size_t size)
+{
+	memset(ptr, 0, size);
+	__asm__ volatile("" : : "g"(ptr) : "memory");
+}
 
 /* Helper to pass a int as a pointer or vice-versa.
  * Those are available for 32 bits architectures:
