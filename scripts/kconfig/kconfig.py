@@ -17,28 +17,34 @@ WARNING_WHITELIST = (
     # and x86, respectively, but are set in some "shared" .conf files.
     "undefined symbol ARC_INIT",  # Issue #7977
     "undefined symbol SSE",       # Issue #7978
-
-    # Warning generated when a symbol is set more than once in a .config file.
-    # These should be investigated, but whitelist them for now.
-    "set more than once",
 )
 
-def whitelisted(warning):
-    # Returns True if 'warning' is whitelisted and shouldn't be turned into an
+def fatal(warning):
+    # Returns True if 'warning' is not whitelisted and should be turned into an
     # error
 
     for wl_warning in WARNING_WHITELIST:
         if wl_warning in warning:
-            return True
+            return False
 
-    return False
+    # Only allow enabled (printed) warnings to be fatal
+    return enabled(warning)
+
+
+def enabled(warning):
+    # Returns True if 'warning' should be printed
+
+    # Some prj.conf files seem to deliberately override settings from the board
+    # configuration (e.g. samples/bluetooth/hci_usb/prj.conf, with GPIO=y).
+    # Disable the warning about a symbol being assigned more than once.
+    return "set more than once" not in warning
 
 
 def main():
     parse_args()
 
     print("Parsing Kconfig tree in {}".format(args.kconfig_root))
-    kconf = Kconfig(args.kconfig_root)
+    kconf = Kconfig(args.kconfig_root, warn_to_stderr=False)
 
     # Enable warnings for assignments to undefined symbols
     kconf.enable_undef_warnings()
@@ -62,6 +68,12 @@ def main():
         if sym.user_value is not None:
             verify_assigned_value(sym)
 
+    # We could roll this into the loop below, but it's nice to always print all
+    # warnings, even if one of them turns out to be fatal
+    for warning in kconf.warnings:
+        if enabled(warning):
+            print(warning, file=sys.stderr)
+
     # Turn all warnings except for explicity whitelisted ones into errors. In
     # particular, this will turn assignments to undefined Kconfig variables
     # into errors.
@@ -70,11 +82,12 @@ def main():
     # value than the one it was assigned. Keep that one as just a warning for
     # now as well.
     for warning in kconf.warnings:
-        if not whitelisted(warning):
-            sys.exit("Error: Aborting due to non-whitelisted Kconfig warning "
-                     "'{}'.\nNote: If this warning doesn't point to an actual "
-                     "problem, you can add it to the whitelist at the top of "
-                     "{}.".format(warning, sys.argv[0]))
+        if fatal(warning):
+            sys.exit("Error: Aborting due to non-whitelisted Kconfig "
+                     "warning '{}'.\nNote: If this warning doesn't point "
+                     "to an actual problem, you can add it to the "
+                     "whitelist at the top of {}."
+                     .format(warning, sys.argv[0]))
 
 
     # Write the merged configuration
