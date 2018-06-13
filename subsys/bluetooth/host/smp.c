@@ -711,9 +711,19 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, u8_t status)
 		if (keys) {
 			bt_keys_clear(keys);
 		}
-	} else if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
-		if (keys) {
+
+		if (bt_auth->pairing_failed) {
+			bt_auth->pairing_failed(smp->chan.chan.conn);
+		}
+	} else {
+		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
+
+		if (bond_flag && keys) {
 			bt_keys_store(keys);
+		}
+
+		if (bt_auth->pairing_complete) {
+			bt_auth->pairing_complete(smp->chan.chan.conn, bond_flag);
 		}
 	}
 
@@ -1483,9 +1493,18 @@ static void smp_pairing_complete(struct bt_smp *smp, u8_t status)
 			sc_derive_link_key(smp);
 		}
 #endif /* CONFIG_BT_BREDR */
-		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
+		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
+
+		if (bond_flag) {
 			bt_keys_store(smp->chan.chan.conn->le.keys);
 		}
+
+		if (bt_auth->pairing_complete) {
+			bt_auth->pairing_complete(smp->chan.chan.conn,
+				bond_flag);
+		}
+	} else if (bt_auth->pairing_failed) {
+		bt_auth->pairing_failed(smp->chan.chan.conn);
 	}
 
 	smp_reset(smp);
