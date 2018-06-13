@@ -280,6 +280,7 @@ static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
  *
  * @return N/A
  */
+#ifdef CONFIG_MULTITHREADING
 static void prepare_multithreading(struct k_thread *dummy_thread)
 {
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
@@ -377,6 +378,7 @@ static void switch_to_main_thread(void)
 	_Swap(irq_lock());
 #endif
 }
+#endif /* CONFIG_MULTITHREDING */
 
 u32_t z_early_boot_rand32_get(void)
 {
@@ -434,6 +436,7 @@ extern uintptr_t __stack_chk_guard;
  */
 FUNC_NORETURN void _Cstart(void)
 {
+#ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	struct k_thread *dummy_thread = NULL;
 #else
@@ -444,6 +447,7 @@ FUNC_NORETURN void _Cstart(void)
 	struct k_thread *dummy_thread = (struct k_thread *)&dummy_thread_memory;
 
 	memset(dummy_thread_memory, 0, sizeof(dummy_thread_memory));
+#endif
 #endif
 	/*
 	 * The interrupt library needs to be initialized early since a series
@@ -466,11 +470,15 @@ FUNC_NORETURN void _Cstart(void)
 	__stack_chk_guard = z_early_boot_rand32_get();
 #endif
 
+#ifdef CONFIG_MULTITHREADING
 	prepare_multithreading(dummy_thread);
-
-	/* display boot banner */
-
 	switch_to_main_thread();
+#else
+	bg_thread_main(NULL, NULL, NULL);
+
+	while (1) {
+	}
+#endif
 
 	/*
 	 * Compiler can't tell that the above routines won't return and issues
