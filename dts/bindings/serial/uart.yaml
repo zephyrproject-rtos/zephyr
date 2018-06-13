@@ -37,4 +37,22 @@ properties:
       category: optional
       description: pinmux information for RX, TX, CTS, RTS
       generation: define
+    rs485-enabled-at-boot-time:
+      type: boolean
+      default: False
+      category: optional
+      description: Enable RS485 mode after boot
+      generation: define
+    rs485-rts-active-low:
+      type: boolean
+      default: False
+      category: optional
+      description: Driver RTS low when sending(default is high)
+      generation: define
+    rs485-rts-delay:
+      type: array
+      default: [0, 0]
+      category: optional
+      description: prop-encoded-array <a b> (default is <0,0>)
+      generation: define
 ...

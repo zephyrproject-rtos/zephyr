@@ -61,6 +61,15 @@ config UART_DRV_CMD
 
 	  Says no if not sure.
 
+config UART_RS485_SUPPORT
+	bool "Enable RS485 mode support"
+	default n
+	help
+	  This is an option to be enable RS485 half-duplex mode.
+	  Using an extern pin as RS485 chip's flow control.
+
+	  Says no if not sure.
+
 comment "Serial Drivers"
 
 source "drivers/serial/Kconfig.ns16550"
