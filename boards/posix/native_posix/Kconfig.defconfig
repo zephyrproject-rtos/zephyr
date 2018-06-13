@@ -23,4 +23,11 @@ config ETH_NATIVE_POSIX
 
 endif # NETWORKING
 
+if ENTROPY_GENERATOR
+
+config FAKE_ENTROPY_NATIVE_POSIX
+	def_bool y
+
+endif # ENTROPY_GENERATOR
+
 endif
