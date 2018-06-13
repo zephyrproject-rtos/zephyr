@@ -3568,6 +3568,15 @@ static int common_init(void)
 	hci_reset_complete(rsp);
 	net_buf_unref(rsp);
 
+	if (bt_dev.drv->setup) {
+		BT_DBG("Performing driver-specific setup");
+
+		err = bt_dev.drv->setup();
+		if (err) {
+			return err;
+		}
+	}
+
 	/* Read Local Supported Features */
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LOCAL_FEATURES, NULL, &rsp);
 	if (err) {
