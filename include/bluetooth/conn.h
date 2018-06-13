@@ -392,6 +392,22 @@ struct bt_conn_auth_cb {
 #if defined(CONFIG_BT_BREDR)
 	void (*pincode_entry)(struct bt_conn *conn, bool highsec);
 #endif
+
+	/** @brief notify that pairing process was complete.
+	 *
+	 * This callback notifies the applicaiton that the pairing process
+	 * has been completed.
+	 *
+	 * @param conn Connection object.
+	 * @param bonded pairing is bonded or not.
+	 */
+	void (*pairing_complete)(struct bt_conn *conn, bool bonded);
+
+	/** @brief notify that pairing process has failed.
+	 *
+	 * @param conn Connection object.
+	 */
+	void (*pairing_failed)(struct bt_conn *conn);
 };
 
 /** @brief Register authentication callbacks.
