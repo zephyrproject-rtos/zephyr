@@ -338,6 +338,16 @@ config BOOTLOADER_MCUBOOT
 	    * Including dts/common/mcuboot.overlay when building the Device
 	      Tree in order to place and link the image at the slot0 offset
 
+config BOOTLOADER_ESP_IDF
+	bool
+	prompt "ESP-IDF bootloader support"
+	default n
+	help
+	  This option will trigger the compilation of the ESP-IDF booloader
+	  inside the build folder.
+	  At flash time, the bootloader will be flashed with the zephyr image
+	depends on SOC_ESP32
+
 config BOOTLOADER_KEXEC
 	bool
 	prompt "Boot using Linux kexec() system call"
