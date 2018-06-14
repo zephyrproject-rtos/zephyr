@@ -11,7 +11,7 @@
 set(GENERATED_DTS_BOARD_H    ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.h)
 set(GENERATED_DTS_BOARD_CONF ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.conf)
 set_ifndef(DTS_SOURCE ${BOARD_ROOT}/boards/${ARCH}/${BOARD_FAMILY}/${BOARD}.dts)
-set_ifndef(DTS_COMMON_OVERLAYS ${PROJECT_SOURCE_DIR}/dts/common/common.dts)
+set_ifndef(DTS_COMMON_OVERLAYS ${ZEPHYR_BASE}/dts/common/common.dts)
 
 message(STATUS "Generating zephyr/include/generated/generated_dts_board.h")
 
@@ -50,14 +50,14 @@ if(CONFIG_HAS_DTS)
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
     -nostdinc
-    -I${PROJECT_SOURCE_DIR}/arch/${ARCH}/soc
-    -isystem ${PROJECT_SOURCE_DIR}/include
-    -isystem ${PROJECT_SOURCE_DIR}/dts/${ARCH}
-    -isystem ${PROJECT_SOURCE_DIR}/dts
+    -I${ZEPHYR_BASE}/arch/${ARCH}/soc
+    -isystem ${ZEPHYR_BASE}/include
+    -isystem ${ZEPHYR_BASE}/dts/${ARCH}
+    -isystem ${ZEPHYR_BASE}/dts
     -include ${AUTOCONF_H}
     ${DTC_INCLUDE_FLAG_FOR_DTS}  # include the DTS source and overlays
-    -I${PROJECT_SOURCE_DIR}/dts/common
-    -I${PROJECT_SOURCE_DIR}/drivers
+    -I${ZEPHYR_BASE}/dts/common
+    -I${ZEPHYR_BASE}/drivers
     -undef -D__DTS__
     -P
     -E ${ZEPHYR_BASE}/misc/empty_file.c
@@ -89,7 +89,7 @@ if(CONFIG_HAS_DTS)
   if(EXISTS ${DTS_BOARD_FIXUP_FILE})
     set(DTS_BOARD_FIXUP ${DTS_BOARD_FIXUP_FILE})
   endif()
-  set_ifndef(DTS_SOC_FIXUP_FILE ${PROJECT_SOURCE_DIR}/arch/${ARCH}/soc/${SOC_PATH}/dts.fixup)
+  set_ifndef(DTS_SOC_FIXUP_FILE ${ZEPHYR_BASE}/arch/${ARCH}/soc/${SOC_PATH}/dts.fixup)
   if(EXISTS ${DTS_SOC_FIXUP_FILE})
     set(DTS_SOC_FIXUP ${DTS_SOC_FIXUP_FILE})
   endif()
@@ -102,9 +102,9 @@ if(CONFIG_HAS_DTS)
     set(DTS_FIXUPS --fixup ${DTS_FIXUPS})
   endif()
 
-  set(CMD_EXTRACT_DTS_INCLUDES ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/dts/extract_dts_includes.py
+  set(CMD_EXTRACT_DTS_INCLUDES ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/extract_dts_includes.py
     --dts ${BOARD}.dts_compiled
-    --yaml ${PROJECT_SOURCE_DIR}/dts/bindings
+    --yaml ${ZEPHYR_BASE}/dts/bindings
     ${DTS_FIXUPS}
     --keyvalue ${GENERATED_DTS_BOARD_CONF}
     --include ${GENERATED_DTS_BOARD_H}

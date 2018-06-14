@@ -72,6 +72,14 @@ set(APPLICATION_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH "Application B
 set(__build_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
 
 set(PROJECT_BINARY_DIR ${__build_dir})
+
+# CMake's 'project' concept has proven to not be very useful for Zephyr
+# due in part to how Zephyr is organized and in part to it not fitting well
+# with cross compilation.
+# CMake therefore tries to rely as little as possible on project()
+# and its associated variables, e.g. PROJECT_SOURCE_DIR.
+# It is recommended to always use ZEPHYR_BASE instead of PROJECT_SOURCE_DIR
+# when trying to reference ENV${ZEPHYR_BASE}.
 set(PROJECT_SOURCE_DIR $ENV{ZEPHYR_BASE})
 
 # Convert path to use the '/' separator

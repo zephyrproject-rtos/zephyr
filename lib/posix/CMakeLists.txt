@@ -1,7 +1,7 @@
 
 add_library(PTHREAD INTERFACE)
 
-target_include_directories(PTHREAD INTERFACE ${PROJECT_SOURCE_DIR}/include/posix)
+target_include_directories(PTHREAD INTERFACE ${ZEPHYR_BASE}/include/posix)
 
 zephyr_library()
 zephyr_library_sources(pthread_common.c)

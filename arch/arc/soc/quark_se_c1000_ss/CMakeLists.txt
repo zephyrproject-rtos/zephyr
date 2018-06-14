@@ -1,5 +1,5 @@
-zephyr_library_include_directories(${PROJECT_SOURCE_DIR}/drivers)
-zephyr_include_directories(${PROJECT_SOURCE_DIR}/arch/x86/soc/intel_quark)
+zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
+zephyr_include_directories(${ZEPHYR_BASE}/arch/x86/soc/intel_quark)
 
 zephyr_cc_option(-mcpu=quarkse_em -mno-sdata)
 
