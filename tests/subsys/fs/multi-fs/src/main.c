@@ -6,6 +6,7 @@
 
 #include "test_fat.h"
 #include "test_nffs.h"
+#include "test_fs_shell.h"
 
 static struct nffs_area_desc nffs_selftest_area_descs[] = {
 	{ 0x00000000, 16 * 1024 },
@@ -39,28 +40,30 @@ static void test_teardown(void)
 void test_main(void)
 {
 	ztest_test_suite(multifs_fs_test,
-		ztest_unit_test(test_fat_mount),
-		ztest_unit_test_setup_teardown(test_nffs_mount,
-					       test_setup, test_teardown),
-		ztest_unit_test(test_fat_mkdir),
-		ztest_unit_test_setup_teardown(test_nffs_mkdir,
-					       test_setup, test_teardown),
-		ztest_unit_test(test_fat_readdir),
-		ztest_unit_test(test_fat_rmdir),
-		ztest_unit_test_setup_teardown(test_nffs_readdir,
-					       test_setup, test_teardown),
-		ztest_unit_test(test_fat_open),
-		ztest_unit_test_setup_teardown(test_nffs_open,
-					       test_setup, test_teardown),
-		ztest_unit_test(test_fat_write),
-		ztest_unit_test_setup_teardown(test_nffs_write,
-					       test_setup, test_teardown),
-		ztest_unit_test(test_fat_read),
-		ztest_unit_test(test_fat_close),
-		ztest_unit_test_setup_teardown(test_nffs_read,
-					       test_setup, test_teardown),
-		ztest_unit_test(test_fat_unlink),
-		ztest_unit_test_setup_teardown(test_nffs_unlink,
-					       test_setup, test_teardown));
+			 ztest_unit_test(test_fat_mount),
+			 ztest_unit_test_setup_teardown(test_nffs_mount,
+							test_setup, test_teardown),
+			 ztest_unit_test(test_fat_mkdir),
+			 ztest_unit_test_setup_teardown(test_nffs_mkdir,
+							test_setup, test_teardown),
+			 ztest_unit_test(test_fat_readdir),
+			 ztest_unit_test(test_fat_rmdir),
+			 ztest_unit_test_setup_teardown(test_nffs_readdir,
+							test_setup, test_teardown),
+			 ztest_unit_test(test_fat_open),
+			 ztest_unit_test_setup_teardown(test_nffs_open,
+							test_setup, test_teardown),
+			 ztest_unit_test(test_fat_write),
+			 ztest_unit_test_setup_teardown(test_nffs_write,
+							test_setup, test_teardown),
+			 ztest_unit_test(test_fat_read),
+			 ztest_unit_test(test_fat_close),
+			 ztest_unit_test_setup_teardown(test_nffs_read,
+							test_setup, test_teardown),
+			 ztest_unit_test(test_fat_unlink),
+			 ztest_unit_test_setup_teardown(test_nffs_unlink,
+							test_setup, test_teardown),
+			 ztest_unit_test(test_fs_help),
+			 ztest_unit_test(test_fs_shell_exit));
 	ztest_run_test_suite(multifs_fs_test);
 }
