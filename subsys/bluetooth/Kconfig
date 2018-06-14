@@ -35,6 +35,11 @@ config BT_CUSTOM
 
 endchoice
 
+# The Bluetooth subsystem requires the system workqueue to execute at
+# a cooperative priority.
+config SYSTEM_WORKQUEUE_PRIORITY
+	range -256 -1
+
 if BT_HCI
 
 config BT_HCI_RAW

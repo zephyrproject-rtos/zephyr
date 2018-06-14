@@ -11,13 +11,6 @@
 
 #include <zephyr.h>
 
-/* The Bluetooth subsystem requires the system workqueue to execute at a
- * cooperative priority to function correctly. If this build assert triggers
- * verify your configuration to ensure that cooperative threads are enabled
- * and that the system workqueue priority is negative (cooperative).
- */
-BUILD_ASSERT(CONFIG_SYSTEM_WORKQUEUE_PRIORITY < 0);
-
 /* The Bluetooth subsystem requires the Tx thread to execute at higher priority
  * than the Rx thread as the Tx thread needs to process the acknowledgements
  * before new Rx data is processed. This is a necessity to correctly detect
