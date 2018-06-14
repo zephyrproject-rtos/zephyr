@@ -119,7 +119,7 @@ static int spi_flash_wb_read(struct device *dev, off_t offset, void *data,
 	struct spi_flash_data *const driver_data = dev->driver_data;
 	int ret;
 
-	if (len > CONFIG_SPI_FLASH_W25QXXDV_MAX_DATA_LEN || offset < 0) {
+	if (offset < 0) {
 		return -ENODEV;
 	}
 
@@ -142,7 +142,7 @@ static int spi_flash_wb_write(struct device *dev, off_t offset,
 	u8_t reg;
 	int ret;
 
-	if (len > CONFIG_SPI_FLASH_W25QXXDV_MAX_DATA_LEN || offset < 0) {
+	if (offset < 0) {
 		return -ENOTSUP;
 	}
 

@@ -74,11 +74,4 @@ config SPI_FLASH_W25QXXDV_FLASH_SIZE
 	help
 	  This is the flash capacity in bytes.
 
-config SPI_FLASH_W25QXXDV_MAX_DATA_LEN
-	int
-	range 1 256
-	default 256
-	help
-	  Maximum transmit or receive data length in one user data frame.
-
 endif # SPI_FLASH_W25QXXDV
