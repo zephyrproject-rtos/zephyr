@@ -34,7 +34,7 @@ void console_getline_init(void)
 {
 	int i;
 
-	for (i = 0; i < sizeof(line_bufs) / sizeof(*line_bufs); i++) {
+	for (i = 0; i < ARRAY_SIZE(line_bufs); i++) {
 		k_fifo_put(&free_queue, &line_bufs[i]);
 	}
 

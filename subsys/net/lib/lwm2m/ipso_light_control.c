@@ -182,7 +182,7 @@ static int ipso_light_control_init(struct device *dev)
 
 	light_control.obj_id = IPSO_OBJECT_LIGHT_CONTROL_ID;
 	light_control.fields = fields;
-	light_control.field_count = sizeof(fields) / sizeof(*fields);
+	light_control.field_count = ARRAY_SIZE(fields);
 	light_control.max_instance_count = MAX_INSTANCE_COUNT;
 	light_control.create_cb = light_control_create;
 	lwm2m_register_obj(&light_control);

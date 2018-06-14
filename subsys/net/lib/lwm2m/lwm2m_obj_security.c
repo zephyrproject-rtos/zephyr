@@ -123,7 +123,7 @@ static int lwm2m_security_init(struct device *dev)
 
 	security.obj_id = LWM2M_OBJECT_SECURITY_ID;
 	security.fields = fields;
-	security.field_count = sizeof(fields) / sizeof(*fields);
+	security.field_count = ARRAY_SIZE(fields);
 	security.max_instance_count = MAX_INSTANCE_COUNT;
 	security.create_cb = security_create;
 	lwm2m_register_obj(&security);
