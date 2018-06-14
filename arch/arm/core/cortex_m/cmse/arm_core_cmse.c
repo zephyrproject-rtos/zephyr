@@ -7,15 +7,15 @@
 #include <zephyr.h>
 #include <cortex_m/cmse.h>
 
-int arm_cmse_mpu_region_get(u32_t addr, u8_t *p_region)
+int arm_cmse_mpu_region_get(u32_t addr)
 {
 	cmse_address_info_t addr_info =	cmse_TT((void *)addr);
 
 	if (addr_info.flags.mpu_region_valid) {
-		*p_region = addr_info.flags.mpu_region;
+		return addr_info.flags.mpu_region;
 	}
 
-	return addr_info.flags.mpu_region_valid;
+	return -EINVAL;
 }
 
 static int arm_cmse_addr_read_write_ok(u32_t addr, int force_npriv, int rw)

@@ -38,9 +38,8 @@ extern "C" {
 /**
  * @brief Get the MPU region number of an address
  *
- * Get the MPU region that the address maps to. Return non-zero
- * to indicate that a valid MPU region was retrieved, and store the
- * MPU region information in the supplied location.
+ * Return the non-negative MPU region that the address maps to,
+ * or -EINVAL to indicate that an invalid MPU region was retrieved.
  *
  * Note:
  * Obtained region is valid only if:
@@ -49,11 +48,10 @@ extern "C" {
  * - the given address matches a single, enabled MPU region
  *
  * @param addr The address for which the MPU region is requested
- * @param p_region Output pointer to the location to store the MPU region
  *
- * @return non-zero if @ref region contains a valid MPU region, otherwise 0.
-  */
-int arm_cmse_mpu_region_get(u32_t addr, u8_t *p_region);
+ * @return a valid MPU region number or -EINVAL
+ */
+int arm_cmse_mpu_region_get(u32_t addr);
 
 /**
  * @brief Read accessibility of an address
