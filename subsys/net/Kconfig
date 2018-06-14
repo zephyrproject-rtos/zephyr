@@ -91,6 +91,11 @@ config  NETWORKING
 
 if NETWORKING
 
+# The networking subsystem requires the system workqueue to execute at
+# a cooperative priority.
+config SYSTEM_WORKQUEUE_PRIORITY
+	range -256 -1
+
 source "subsys/net/Kconfig.hostname"
 
 source "subsys/net/ip/Kconfig"
