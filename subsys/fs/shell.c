@@ -17,11 +17,44 @@
 #include <inttypes.h>
 #include <limits.h>
 
+
+/* FAT */
+#ifdef CONFIG_FAT_FILESYSTEM_ELM
+#include <ff.h>
+#define FATFS_MNTP      "/RAM:"
+/* FatFs work area */
+FATFS fat_fs;
+/* mounting info */
+static struct fs_mount_t fatfs_mnt = {
+	.type = FS_FATFS,
+	.fs_data = &fat_fs,
+};
+#endif
+
+/* NFFS */
+#ifdef CONFIG_FILE_SYSTEM_NFFS
+#include <nffs/nffs.h>
+#define NFFS_MNTP       "/nffs"
+
+/* NFFS work area strcut */
+static struct nffs_flash_desc flash_desc;
+
+/* mounting info */
+static struct fs_mount_t nffs_mnt = {
+	.type = FS_NFFS,
+	.fs_data = &flash_desc,
+};
+#endif
+
 #define BUF_CNT 64
 
 #define MAX_PATH_LEN 128
 #define MAX_FILENAME_LEN 128
 #define MAX_INPUT_LEN 20
+
+
+#define SHELL_FS    "fs"
+
 
 static char cwd[MAX_PATH_LEN] = "/";
 
@@ -378,17 +411,91 @@ static int cmd_trunc(int argc, char *argv[])
 	return 0;
 }
 
+
+#if defined(CONFIG_FILE_SYSTEM_NFFS) || defined(CONFIG_FAT_FILESYSTEM_ELM)
+static int cmd_mount(int argc, char *argv[])
+{
+	int type, res;
+	char *mntpt;
+
+	if (argc != 3) {
+		return -EINVAL;
+	}
+
+	if (!strcmp(argv[1], "fat")) {
+		type = FS_FATFS;
+	} else if (!strcmp(argv[1], "nffs")) {
+		type = FS_NFFS;
+	} else {
+		return -EINVAL;
+	}
+
+	if (argv[2] != NULL) {
+		if (type == FS_FATFS) {
+#ifdef CONFIG_FAT_FILESYSTEM_ELM
+			mntpt = k_malloc(strlen(argv[2]) + 1);
+			if (mntpt == NULL) {
+				return -ENOMEM;
+			}
+			((u8_t *)mntpt)[strlen(argv[2])] = '\0';
+			memcpy(mntpt, argv[2], strlen(argv[2]));
+			fatfs_mnt.mnt_point = (const char *)mntpt;
+
+			res = fs_mount(&fatfs_mnt);
+			if (res < 0) {
+				printk("Error mounting fat fs.Error Code [%d]\n", res);
+				return res;
+			}
+			printk("Successfully mounted fat fs:%s\n", fatfs_mnt.mnt_point);
+#endif
+		} else if (type == FS_NFFS) {
+#ifdef CONFIG_FILE_SYSTEM_NFFS
+			mntpt = k_malloc(strlen(argv[2]) + 1);
+			if (mntpt == NULL) {
+				return -ENOMEM;
+			}
+			((u8_t *)mntpt)[strlen(argv[2])] = '\0';
+			memcpy(mntpt, argv[2], strlen(argv[2]));
+			nffs_mnt.mnt_point = (const char *)mntpt;
+
+			struct device *flash_dev;
+
+			flash_dev = device_get_binding(CONFIG_FS_NFFS_FLASH_DEV_NAME);
+			if (!flash_dev) {
+				printk("Error in device_get_binding, while mounting nffs fs\n");
+				return -ENODEV;
+			}
+
+			nffs_mnt.storage_dev = flash_dev;
+
+			res = fs_mount(&nffs_mnt);
+			if (res < 0) {
+				printk("Error mounting nffs fs.Error code [%d]\n", res);
+				return res;
+			}
+			printk("Successfully mounted nffs:%s\n", nffs_mnt.mnt_point);
+#endif
+		}
+	}
+	return 0;
+}
+#endif
+
+
 struct shell_cmd fs_commands[] = {
 	{ "ls",    cmd_ls,    "List files in current directory" },
 	{ "cd",    cmd_cd,    "Change working directory" },
 	{ "pwd",   cmd_pwd,   "Print current working directory" },
 	{ "mkdir", cmd_mkdir, "Create directory" },
-	{ "rm",    cmd_rm,    "Remove file"},
+	{ "rm",    cmd_rm,    "Remove file" },
 	{ "read",  cmd_read,  "Read from file" },
 	{ "write", cmd_write, "Write to file" },
 	{ "trunc", cmd_trunc, "Truncate file" },
+#if defined(CONFIG_FILE_SYSTEM_NFFS) || defined(CONFIG_FAT_FILESYSTEM_ELM)
+	{ "mount", cmd_mount, "<fs e.g: fat/nffs> <mount-point>" },
+#endif
 	{ NULL, NULL }
 };
 
 
-SHELL_REGISTER("fs", fs_commands);
+SHELL_REGISTER(SHELL_FS, fs_commands);
