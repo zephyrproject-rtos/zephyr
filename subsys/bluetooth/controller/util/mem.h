@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _MEM_H_
-#define _MEM_H_
-
 #ifndef MALIGN
 #define MALIGN(x) __attribute__((aligned(x)))
 #endif
@@ -28,5 +25,3 @@ void mem_rcopy(u8_t *dst, u8_t const *src, u16_t len);
 u8_t mem_nz(u8_t *src, u16_t len);
 
 u32_t mem_ut(void);
-
-#endif /* _MEM_H_ */

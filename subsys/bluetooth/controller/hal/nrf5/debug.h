@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _DEBUG_H_
-#define _DEBUG_H_
-
 #ifdef CONFIG_BT_CTLR_DEBUG_PINS
 #if defined(CONFIG_BOARD_NRF52840_PCA10056)
 #define DEBUG_PORT       NRF_P1
@@ -245,5 +242,3 @@
 #define DEBUG_RADIO_START_M(flag)
 
 #endif /* CONFIG_BT_CTLR_DEBUG_PINS */
-
-#endif /* _DEBUG_H_ */
