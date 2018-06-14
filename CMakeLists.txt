@@ -361,14 +361,20 @@ set(syscalls_subdirs_txt ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls_sub
 # handling. The trigger file will update when a folder is added / removed.
 set(syscalls_subdirs_trigger ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls_subdirs.trigger)
 
+if(NOT (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows))
+  set(syscalls_links --create-links ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls_links)
+endif()
+
 # When running CMake it must be ensured that all dependencies are correctly acquired.
 execute_process(
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/subfolder_list.py
-  --directory        ${ZEPHYR_BASE}/include  # Walk this directory
-  --out-file         ${syscalls_subdirs_txt} # Write this file
-  )
+  --directory        ${ZEPHYR_BASE}/include      # Walk this directory
+  --out-file         ${syscalls_subdirs_txt}     # Write file with discovered folder
+  --trigger          ${syscalls_subdirs_trigger} # Trigger file that is used for json generation
+  ${syscalls_links}                              # If defined, create symlinks for dependencies
+)
 file(STRINGS ${syscalls_subdirs_txt} PARSE_SYSCALLS_PATHS_DEPENDS)
 
 if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
@@ -383,36 +389,37 @@ else()
   # The syscall parsing depends on the folders in order to detect add/removed/modified files.
   # When a folder is removed, CMake will try to find a target that creates that dependency.
   # This command sets up the target for CMake to find.
-  # With out this code, CMake will fail with the following error:
+  # Without this code, CMake will fail with the following error:
   #   <folder> needed by '<target>', missing and no known rule to make it
   # when a folder is removed.
   add_custom_command(OUTPUT ${PARSE_SYSCALLS_PATHS_DEPENDS}
     COMMAND ${CMAKE_COMMAND} -E echo ""
     COMMENT "Preparing syscall dependency handling"
-    )
+  )
 
   add_custom_command(
     OUTPUT
-    ${syscalls_subdirs_txt}
+    ${syscalls_subdirs_trigger}
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/subfolder_list.py
     --directory        ${ZEPHYR_BASE}/include      # Walk this directory
-    --out-file         ${syscalls_subdirs_txt}     # Write this file
-    --trigger          ${syscalls_subdirs_trigger} # Trigger file that will result in CMake rerun
+    --out-file         ${syscalls_subdirs_txt}     # Write file with discovered folder
+    --trigger          ${syscalls_subdirs_trigger} # Trigger file that is used for json generation
+    ${syscalls_links}                              # If defined, create symlinks for dependencies
     DEPENDS ${PARSE_SYSCALLS_PATHS_DEPENDS}
-    )
+  )
 
-  # Ensure trigger file always exists when specifying CMake dependency.
-  if(NOT EXISTS ${syscalls_subdirs_trigger})
-    file(WRITE ${syscalls_subdirs_trigger} "")
+  # Ensure subdir file always exists when specifying CMake dependency.
+  if(NOT EXISTS ${syscalls_subdirs_txt})
+    file(WRITE ${syscalls_subdirs_txt} "")
   endif()
 
   # On other OS'es, modifying a file is reflected on the folder timestamp and hence detected
   # when using depend on directory level.
   # Thus CMake only needs to re-run when sub-directories are added / removed, which is indicated
   # using a trigger file.
-  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${syscalls_subdirs_trigger})
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${syscalls_subdirs_txt})
 endif()
 
 add_custom_command(
@@ -421,9 +428,9 @@ add_custom_command(
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/parse_syscalls.py
-  --include          ${ZEPHYR_BASE}/include # Read files from this dir
-  --json-file        ${syscalls_json}       # Write this file
-  DEPENDS ${syscalls_subdirs_txt} ${PARSE_SYSCALLS_HEADER_DEPENDS}
+  --include          ${ZEPHYR_BASE}/include        # Read files from this dir
+  --json-file        ${syscalls_json}              # Write this file
+  DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
   )
 
 add_custom_target(syscall_list_h_target DEPENDS                ${syscall_list_h})
