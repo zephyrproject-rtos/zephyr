@@ -166,7 +166,7 @@ internal mailbox use only.
     Leave this field uninitialized when receiving a message.
 
 *tx_block*
-    The descriptor for the sending thread's memory block. Set tx_block.pool_id
+    The descriptor for the sending thread's memory block. Set tx_block.data
     to :c:macro:`NULL` when sending an empty message. Leave this field
     uninitialized when sending a message buffer, or when receiving a message.
 
@@ -259,7 +259,7 @@ portion of the message isn't used.
             send_msg.info = random_value;
             send_msg.size = 0;
             send_msg.tx_data = NULL;
-            send_msg.tx_block.pool_id = NULL;
+            send_msg.tx_block.data = NULL;
             send_msg.tx_target_thread = K_ANY;
 
             /* send message and wait until a consumer receives it */
@@ -295,6 +295,7 @@ the maximum size message buffer that each thread can handle.
             send_msg.info = buffer_bytes_used;
             send_msg.size = buffer_bytes_used;
             send_msg.tx_data = buffer;
+            send_msg.tx_block.data = NULL;
             send_msg.tx_target_thread = K_ANY;
 
             /* send message and wait until a consumer receives it */
