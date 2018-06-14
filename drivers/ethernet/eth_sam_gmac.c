@@ -386,6 +386,102 @@ static void update_pkt_priority(struct gptp_hdr *hdr, struct net_pkt *pkt)
 		net_pkt_set_priority(pkt, NET_PRIORITY_IC);
 	}
 }
+
+static inline struct net_ptp_time get_ptp_event_rx_ts(Gmac *gmac)
+{
+	struct net_ptp_time ts;
+
+	ts.second = ((u64_t)(gmac->GMAC_EFRSH & 0xffff) << 32)
+			   | gmac->GMAC_EFRSL;
+	ts.nanosecond = gmac->GMAC_EFRN;
+
+	return ts;
+}
+
+static inline struct net_ptp_time get_ptp_peer_event_rx_ts(Gmac *gmac)
+{
+	struct net_ptp_time ts;
+
+	ts.second = ((u64_t)(gmac->GMAC_PEFRSH & 0xffff) << 32)
+		    | gmac->GMAC_PEFRSL;
+	ts.nanosecond = gmac->GMAC_PEFRN;
+
+	return ts;
+}
+
+static inline struct net_ptp_time get_ptp_event_tx_ts(Gmac *gmac)
+{
+	struct net_ptp_time ts;
+
+	ts.second = ((u64_t)(gmac->GMAC_EFTSH & 0xffff) << 32)
+			   | gmac->GMAC_EFTSL;
+	ts.nanosecond = gmac->GMAC_EFTN;
+
+	return ts;
+}
+
+static inline struct net_ptp_time get_ptp_peer_event_tx_ts(Gmac *gmac)
+{
+	struct net_ptp_time ts;
+
+	ts.second = ((u64_t)(gmac->GMAC_PEFTSH & 0xffff) << 32)
+		    | gmac->GMAC_PEFTSL;
+	ts.nanosecond = gmac->GMAC_PEFTN;
+
+	return ts;
+}
+
+static inline struct net_ptp_time get_current_ts(Gmac *gmac)
+{
+	struct net_ptp_time ts;
+
+	ts.second = ((u64_t)(gmac->GMAC_TSH & 0xffff) << 32) | gmac->GMAC_TSL;
+	ts.nanosecond = gmac->GMAC_TN;
+
+	return ts;
+}
+
+
+static inline void timestamp_tx_pkt(Gmac *gmac, struct gptp_hdr *hdr,
+				    struct net_pkt *pkt)
+{
+	struct net_ptp_time timestamp;
+
+	if (hdr) {
+		switch (hdr->message_type) {
+		case GPTP_SYNC_MESSAGE:
+			timestamp = get_ptp_event_tx_ts(gmac);
+			break;
+		default:
+			timestamp = get_ptp_peer_event_tx_ts(gmac);
+		}
+	} else {
+		timestamp = get_current_ts(gmac);
+	}
+
+	net_pkt_set_timestamp(pkt, &timestamp);
+}
+
+static inline void timestamp_rx_pkt(Gmac *gmac, struct gptp_hdr *hdr,
+				    struct net_pkt *pkt)
+{
+	struct net_ptp_time timestamp;
+
+	if (hdr) {
+		switch (hdr->message_type) {
+		case GPTP_SYNC_MESSAGE:
+			timestamp = get_ptp_event_rx_ts(gmac);
+			break;
+		default:
+			timestamp = get_ptp_peer_event_rx_ts(gmac);
+		}
+	} else {
+		timestamp = get_current_ts(gmac);
+	}
+
+	net_pkt_set_timestamp(pkt, &timestamp);
+}
+
 #endif
 
 static inline struct net_if *get_iface(struct eth_sam_dev_data *ctx,
@@ -417,7 +513,6 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 	struct net_pkt *pkt;
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
-	struct net_ptp_time timestamp;
 	struct gptp_hdr *hdr;
 	struct eth_sam_dev_data *dev_data =
 		CONTAINER_OF(queue, struct eth_sam_dev_data,
@@ -438,13 +533,6 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 			/* Release net buffer to the buffer pool */
 			pkt = UINT_TO_POINTER(ring_buf_get(&queue->tx_frames));
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-			timestamp.second =
-				((u64_t)(gmac->GMAC_PEFTSH & 0xffff) << 32)
-				| gmac->GMAC_PEFTSL;
-			timestamp.nanosecond = gmac->GMAC_PEFTN;
-
-			net_pkt_set_timestamp(pkt, &timestamp);
-
 #if defined(CONFIG_NET_VLAN)
 			struct net_eth_hdr *eth_hdr = NET_ETH_HDR(pkt);
 
@@ -454,6 +542,9 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 #endif
 			hdr = check_gptp_msg(get_iface(dev_data, vlan_tag),
 					     pkt);
+
+			timestamp_tx_pkt(gmac, hdr, pkt);
+
 			if (hdr && need_timestamping(hdr)) {
 				net_if_add_tx_timestamp(pkt);
 			}
@@ -916,6 +1007,7 @@ static void eth_rx(struct gmac_queue *queue)
 	struct device *const dev = net_if_get_device(dev_data->iface);
 	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
 	Gmac *gmac = cfg->regs;
+	struct gptp_hdr *hdr;
 #endif
 
 	/* More than one frame could have been received by GMAC, get all
@@ -954,16 +1046,10 @@ static void eth_rx(struct gmac_queue *queue)
 		}
 #endif
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-		struct gptp_hdr *hdr;
-		struct net_ptp_time timestamp;
-
-		timestamp.second = ((u64_t)(gmac->GMAC_PEFRSH & 0xffff) << 32)
-			| gmac->GMAC_PEFRSL;
-		timestamp.nanosecond = gmac->GMAC_PEFRN;
-
-		net_pkt_set_timestamp(rx_frame, &timestamp);
-
 		hdr = check_gptp_msg(get_iface(dev_data, vlan_tag), rx_frame);
+
+		timestamp_rx_pkt(gmac, hdr, rx_frame);
+
 		if (hdr) {
 			update_pkt_priority(hdr, rx_frame);
 		}
