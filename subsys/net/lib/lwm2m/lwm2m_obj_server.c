@@ -167,7 +167,7 @@ static int lwm2m_server_init(struct device *dev)
 
 	server.obj_id = LWM2M_OBJECT_SERVER_ID;
 	server.fields = fields;
-	server.field_count = sizeof(fields) / sizeof(*fields);
+	server.field_count = ARRAY_SIZE(fields);
 	server.max_instance_count = MAX_INSTANCE_COUNT;
 	server.create_cb = server_create;
 	lwm2m_register_obj(&server);

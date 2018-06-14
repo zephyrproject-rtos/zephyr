@@ -592,7 +592,7 @@ void test_parse_url(void)
 	unsigned int i;
 	int rv;
 
-	elements = sizeof(url_tests) / sizeof(url_tests[0]);
+	elements = ARRAY_SIZE(url_tests);
 	for (i = 0; i < elements; i++) {
 		test = &url_tests[i];
 		memset(&u, 0, sizeof(u));

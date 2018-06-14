@@ -209,7 +209,7 @@ static int ipso_temp_sensor_init(struct device *dev)
 
 	temp_sensor.obj_id = IPSO_OBJECT_TEMP_SENSOR_ID;
 	temp_sensor.fields = fields;
-	temp_sensor.field_count = sizeof(fields) / sizeof(*fields);
+	temp_sensor.field_count = ARRAY_SIZE(fields);
 	temp_sensor.max_instance_count = MAX_INSTANCE_COUNT;
 	temp_sensor.create_cb = temp_sensor_create;
 	lwm2m_register_obj(&temp_sensor);

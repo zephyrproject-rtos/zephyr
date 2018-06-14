@@ -340,7 +340,7 @@ static int lwm2m_device_init(struct device *dev)
 	/* initialize the device field data */
 	device.obj_id = LWM2M_OBJECT_DEVICE_ID;
 	device.fields = fields;
-	device.field_count = sizeof(fields) / sizeof(*fields);
+	device.field_count = ARRAY_SIZE(fields);
 	device.max_instance_count = 1;
 	device.create_cb = device_create;
 	lwm2m_register_obj(&device);

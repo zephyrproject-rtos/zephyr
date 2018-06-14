@@ -317,7 +317,7 @@ void pi_lcd_set_cursor(struct device *gpio_dev, u8_t col, u8_t row)
 {
 	size_t max_lines;
 
-	max_lines = (sizeof(lcd_data.row_offsets) / sizeof(*lcd_data.row_offsets));
+	max_lines = ARRAY_SIZE(lcd_data.row_offsets);
 	if (row >= max_lines) {
 		row = max_lines - 1;	/* Count rows starting w/0 */
 	}

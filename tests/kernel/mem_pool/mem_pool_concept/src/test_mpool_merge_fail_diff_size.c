@@ -35,7 +35,7 @@ void test_mpool_alloc_merge_failed_diff_size(void)
 		BLK_SIZE_MIN, BLK_SIZE_MIN, BLK_SIZE_MIN, BLK_SIZE_MIN,
 		BLK_SIZE_MID, BLK_SIZE_MID, BLK_SIZE_MID
 	};
-	int block_count = sizeof(block_size) / sizeof(size_t);
+	int block_count = ARRAY_SIZE(block_size);
 
 
 	for (int i = 0; i < block_count; i++) {
