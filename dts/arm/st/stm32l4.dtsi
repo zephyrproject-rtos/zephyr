@@ -289,6 +289,17 @@
 			prop_seg_phase_seg1 = <5>;
 			phase_seg2 = <6>;
 		};
+
+		rtc: rtc@40002800 {
+			compatible = "st,stm32-rtc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40002800 0x400>;
+			interrupts = <41 0>;
+			prescaler = <32768>;
+			status = "disabled";
+			label = "RTC_0";
+		};
 	};
 };
 
