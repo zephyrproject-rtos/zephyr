@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _PDU_H_
-#define _PDU_H_
-
 #define BDADDR_SIZE 6
 
 /* PDU Sizes */
@@ -414,5 +411,3 @@ struct pdu_data {
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 	} __packed;
 } __packed;
-
-#endif /* _PDU_H_ */

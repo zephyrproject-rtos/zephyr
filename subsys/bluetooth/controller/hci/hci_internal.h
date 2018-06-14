@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _HCI_CONTROLLER_H_
-#define _HCI_CONTROLLER_H_
-
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 extern s32_t    hci_hbuf_total;
 extern u32_t    hci_hbuf_sent;
@@ -43,4 +40,3 @@ int hci_acl_handle(struct net_buf *acl, struct net_buf **evt);
 void hci_acl_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf);
 void hci_num_cmplt_encode(struct net_buf *buf, u16_t handle, u8_t num);
 #endif
-#endif /* _HCI_CONTROLLER_H_ */

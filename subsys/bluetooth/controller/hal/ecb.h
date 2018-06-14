@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ECB_H_
-#define _ECB_H_
-
 typedef void (*ecb_fp) (u32_t status, u8_t *cipher_be, void *context);
 
 struct ecb {
@@ -30,5 +27,3 @@ u32_t ecb_encrypt_nonblocking(struct ecb *ecb);
 void isr_ecb(void *param);
 
 u32_t ecb_ut(void);
-
-#endif /* _ECB_H_ */

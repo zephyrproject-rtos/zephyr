@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _LL_H_
-#define _LL_H_
-
 int ll_init(struct k_sem *sem_rx);
 void ll_reset(void);
 
@@ -101,5 +98,3 @@ void ll_rx_mem_release(void **node_rx);
 void ll_timeslice_ticker_id_get(u8_t * const instance_index, u8_t * const user_id);
 void ll_radio_state_abort(void);
 u32_t ll_radio_state_is_idle(void);
-
-#endif /* _LL_H_ */

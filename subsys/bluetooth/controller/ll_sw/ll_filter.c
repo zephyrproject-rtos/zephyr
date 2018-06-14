@@ -25,7 +25,6 @@
 #include "common/log.h"
 
 #include "hal/debug.h"
-#include "pdu.h"
 
 /* Hardware whitelist */
 static struct ll_filter wl_filter;

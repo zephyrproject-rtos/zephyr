@@ -5,9 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _CTRL_H_
-#define _CTRL_H_
-
 /*****************************************************************************
  * Zephyr Kconfig defined
  ****************************************************************************/
@@ -374,5 +371,3 @@ u8_t radio_rx_fc_get(u16_t *handle);
 extern void radio_active_callback(u8_t active);
 extern void radio_event_callback(void);
 extern void ll_adv_scan_state_cb(u8_t bm);
-
-#endif
