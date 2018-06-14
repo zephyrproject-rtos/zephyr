@@ -1,6 +1,6 @@
 wheel==0.30.0
-breathe==4.7.3
-sphinx==1.6.5
+breathe==4.9.1
+sphinx==1.7.5
 docutils==0.14
 sphinx_rtd_theme
 junit2html
