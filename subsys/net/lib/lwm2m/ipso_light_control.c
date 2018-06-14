@@ -37,6 +37,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define MAX_INSTANCE_COUNT	CONFIG_LWM2M_IPSO_LIGHT_CONTROL_INSTANCE_COUNT
 
 #define LIGHT_STRING_SHORT	8
+#define LIGHT_STRING_LONG       64
 
 /* resource state variables */
 static bool on_off_value[MAX_INSTANCE_COUNT];
@@ -45,7 +46,7 @@ static s32_t on_time_value[MAX_INSTANCE_COUNT];
 static u32_t on_time_offset[MAX_INSTANCE_COUNT];
 static float32_value_t cumulative_active_value[MAX_INSTANCE_COUNT];
 static float32_value_t power_factor_value[MAX_INSTANCE_COUNT];
-static char colour[MAX_INSTANCE_COUNT][LIGHT_STRING_SHORT];
+static char colour[MAX_INSTANCE_COUNT][LIGHT_STRING_LONG];
 static char units[MAX_INSTANCE_COUNT][LIGHT_STRING_SHORT];
 
 static struct lwm2m_engine_obj light_control;
@@ -162,7 +163,7 @@ static struct lwm2m_engine_obj_inst *light_control_create(u16_t obj_inst_id)
 	INIT_OBJ_RES_DATA(res[avail], i, LIGHT_POWER_FACTOR_ID,
 		&power_factor_value[avail], sizeof(*power_factor_value));
 	INIT_OBJ_RES_DATA(res[avail], i, LIGHT_COLOUR_ID,
-		colour[avail], LIGHT_STRING_SHORT);
+		colour[avail], LIGHT_STRING_LONG);
 	INIT_OBJ_RES_DATA(res[avail], i, LIGHT_SENSOR_UNITS_ID,
 		units[avail], LIGHT_STRING_SHORT);
 
