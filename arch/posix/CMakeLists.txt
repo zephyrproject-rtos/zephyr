@@ -9,7 +9,7 @@ zephyr_compile_options(
   -MMD
   -MP
   ${ARCH_FLAG}
-  -include ${PROJECT_SOURCE_DIR}/arch/posix/include/posix_cheats.h
+  -include ${ZEPHYR_BASE}/arch/posix/include/posix_cheats.h
   )
 
 zephyr_compile_options_ifdef(CONFIG_COVERAGE

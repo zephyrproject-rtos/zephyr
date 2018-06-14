@@ -31,7 +31,7 @@ else()
   set(GENIDT_EXTRA_ARGS "")
 endif()
 
-set(GENIDT ${PROJECT_SOURCE_DIR}/scripts/gen_idt.py)
+set(GENIDT ${ZEPHYR_BASE}/scripts/gen_idt.py)
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH BRIEF_DOCS " " FULL_DOCS " ")
 set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH "i386")
@@ -134,7 +134,7 @@ if(CONFIG_X86_MMU)
     OUTPUT mmu_tables.bin
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${PROJECT_SOURCE_DIR}/scripts/gen_mmu_x86.py
+    ${ZEPHYR_BASE}/scripts/gen_mmu_x86.py
     -i mmulist.bin
     -k $<TARGET_FILE:zephyr_prebuilt>
     -o mmu_tables.bin
@@ -174,7 +174,7 @@ if(CONFIG_GDT_DYNAMIC)
     OUTPUT gdt.bin
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${PROJECT_SOURCE_DIR}/scripts/gen_gdt.py
+    ${ZEPHYR_BASE}/scripts/gen_gdt.py
     --kernel $<TARGET_FILE:zephyr_prebuilt>
     --output-gdt gdt.bin
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
