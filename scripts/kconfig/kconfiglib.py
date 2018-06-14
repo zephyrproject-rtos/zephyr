@@ -2097,7 +2097,7 @@ class Kconfig(object):
     def _parse_properties(self, node):
         # Parses and adds properties to the MenuNode 'node' (type, 'prompt',
         # 'default's, etc.) Properties are later copied up to symbols and
-        # choices in a separate pass after parsing, in _propagate_deps().
+        # choices in a separate pass after parsing, in _copy_deps_to_sc().
         #
         # An older version of this code added properties directly to symbols
         # and choices instead of to their menu nodes (and handled dependency
@@ -2113,13 +2113,6 @@ class Kconfig(object):
         # Dependencies from 'depends on'. Will get propagated to the properties
         # below.
         node.dep = self.y
-
-        # Properties added at this location. A local 'depends on' only applies
-        # to these, in case a symbol is defined in multiple locations.
-        node.defaults = []
-        node.selects = []
-        node.implies = []
-        node.ranges = []
 
         while self._next_line():
             t0 = self._next_token()
@@ -2536,17 +2529,28 @@ class Kconfig(object):
             if node.item == MENU:
                 visible_if = self._make_and(visible_if, node.visibility)
 
+            # Propagate the menu node's dependencies to each child menu node.
+            #
+            # The recursive _finalize_tree() calls assume that the current
+            # "level" in the tree has already had dependencies propagated. This
+            # makes e.g. implicit submenu creation, which needs to look ahead,
+            # easier to implement.
             self._propagate_deps(node, visible_if)
 
+            # Finalize the children
             cur = node.list
             while cur:
                 self._finalize_tree(cur, visible_if)
                 cur = cur.next
 
         elif isinstance(node.item, Symbol):
-            # The menu node is a symbol. See if we can create an implicit menu
-            # rooted at it and finalize each child in that menu if so, like for
-            # the choice/menu/if case above.
+            # Add the node's non-node-specific properties (defaults, ranges,
+            # etc.) to the Symbol
+            self._copy_deps_to_sc(node)
+
+            # See if we can create an implicit menu rooted at the Symbol and
+            # finalize each child menu node in that menu if so, like for the
+            # choice/menu/if case above
             cur = node
             while cur.next and _auto_menu_dep(node, cur.next):
                 # This also makes implicit submenu creation work recursively,
@@ -2572,17 +2576,12 @@ class Kconfig(object):
         # Empty choices (node.list None) are possible, so this needs to go
         # outside
         if isinstance(node.item, Choice):
+            # Add the node's non-node-specific properties to the choice
+            self._copy_deps_to_sc(node)
             _finalize_choice(node)
 
     def _propagate_deps(self, node, visible_if):
-        # This function combines two tasks:
-        #
-        #   1) Copy properties from menu nodes to symbols and choices
-        #
-        #   2) Propagate dependencies from 'if' and 'depends on' to all
-        #      properties
-        #
-        # See _parse_properties() as well.
+        # Propagates 'node's dependencies to its child menu nodes
 
         # If the parent node holds a Choice, we use the Choice itself as the
         # parent dependency. This makes sense as the value (mode) of the choice
@@ -2605,15 +2604,6 @@ class Kconfig(object):
             if isinstance(cur.item, (Symbol, Choice)):
                 sc = cur.item
 
-                # See the Symbol class docstring
-                sc.direct_dep = self._make_or(sc.direct_dep, dep)
-
-                # TODO: Profile this code and see if the 'if's are worthwhile.
-                # Another potential optimization would be to assign the lists
-                # from the MenuNode directly instead of using extend() in cases
-                # where a symbol/choice only has a single MenuNode (the
-                # majority of cases).
-
                 # Propagate 'visible if' dependencies to the prompt
                 if cur.prompt:
                     cur.prompt = (cur.prompt[0],
@@ -2624,44 +2614,68 @@ class Kconfig(object):
                 if cur.defaults:
                     cur.defaults = [(default, self._make_and(cond, dep))
                                     for default, cond in cur.defaults]
-                    sc.defaults.extend(cur.defaults)
 
                 # Propagate dependencies to ranges
 
                 if cur.ranges:
                     cur.ranges = [(low, high, self._make_and(cond, dep))
                                   for low, high, cond in cur.ranges]
-                    sc.ranges.extend(cur.ranges)
 
                 # Propagate dependencies to selects
 
                 if cur.selects:
                     cur.selects = [(target, self._make_and(cond, dep))
                                    for target, cond in cur.selects]
-                    sc.selects.extend(cur.selects)
-
-                    # Modify the reverse dependencies of the selected symbol
-                    for target, cond in cur.selects:
-                        target.rev_dep = self._make_or(
-                            target.rev_dep,
-                            self._make_and(sc, cond))
 
                 # Propagate dependencies to implies
 
                 if cur.implies:
                     cur.implies = [(target, self._make_and(cond, dep))
                                    for target, cond in cur.implies]
-                    sc.implies.extend(cur.implies)
-
-                    # Modify the weak reverse dependencies of the implied
-                    # symbol
-                    for target, cond in cur.implies:
-                        target.weak_rev_dep = self._make_or(
-                            target.weak_rev_dep,
-                            self._make_and(sc, cond))
 
 
             cur = cur.next
+
+    def _copy_deps_to_sc(self, node):
+        # Copies properties from the menu node 'node' up to its
+        # contained symbol or choice.
+        #
+        # This can't be rolled into _propagate_deps(), because that function
+        # traverses the menu tree roughly breadth-first order, meaning
+        # properties on symbols and choices defined in multiple locations could
+        # end up in the wrong order.
+
+        # Symbol or choice
+        sc = node.item
+
+        # See the Symbol class docstring
+        sc.direct_dep = self._make_or(sc.direct_dep, node.dep)
+
+        if node.defaults:
+            sc.defaults.extend(node.defaults)
+
+        if node.ranges:
+            sc.ranges.extend(node.ranges)
+
+        if node.selects:
+            sc.selects.extend(node.selects)
+
+            # Modify the reverse dependencies of the selected symbol
+            for target, cond in node.selects:
+                target.rev_dep = self._make_or(
+                    target.rev_dep,
+                    self._make_and(sc, cond))
+
+        if node.implies:
+            sc.implies.extend(node.implies)
+
+            # Modify the weak reverse dependencies of the implied
+            # symbol
+            for target, cond in node.implies:
+                target.weak_rev_dep = self._make_or(
+                    target.weak_rev_dep,
+                    self._make_and(sc, cond))
+
 
     #
     # Misc.
@@ -4150,6 +4164,54 @@ class MenuNode(object):
         "ranges"
     )
 
+    def __init__(self):
+        # Properties defined on this particular menu node. A local 'depends on'
+        # only applies to these, in case a symbol is defined in multiple
+        # locations.
+        self.defaults = []
+        self.selects = []
+        self.implies = []
+        self.ranges = []
+
+    def referenced(self):
+        """
+        Returns a set() of all symbols and choices referenced in the properties
+        and property conditions of this menu node.
+
+        Also includes dependencies inherited from surrounding menus and if's.
+        Choices appear in the dependencies of choice symbols.
+        """
+        res = set()
+
+        if self.prompt:
+            res |= expr_items(self.prompt[1])
+
+        if self.item == MENU:
+            res |= expr_items(self.visibility)
+
+        for value, cond in self.defaults:
+            res |= expr_items(value)
+            res |= expr_items(cond)
+
+        for value, cond in self.selects:
+            res.add(value)
+            res |= expr_items(cond)
+
+        for value, cond in self.implies:
+            res.add(value)
+            res |= expr_items(cond)
+
+        for low, high, cond in self.ranges:
+            res.add(low)
+            res.add(high)
+            res |= expr_items(cond)
+
+        # Need this to catch dependencies from a lone 'depends on' when there
+        # are no properties to propagate it to
+        res |= expr_items(self.dep)
+
+        return res
+
     def __repr__(self):
         """
         Returns a string with information about the menu node when it is
@@ -4177,8 +4239,7 @@ class MenuNode(object):
                           " tree)")
 
         else:
-            raise InternalError("unable to determine type in "
-                                "MenuNode.__repr__()")
+            _internal_error("unable to determine type in MenuNode.__repr__()")
 
         if self.prompt:
             fields.append('prompt "{}" (visibility {})'
@@ -4313,13 +4374,11 @@ class KconfigSyntaxError(Exception):
     """
     Exception raised for syntax errors.
     """
-    pass
 
 class InternalError(Exception):
     """
     Exception raised for internal errors.
     """
-    pass
 
 #
 # Public functions
@@ -4421,6 +4480,31 @@ def expr_str(expr):
     return "{} {} {}".format(expr_str(expr[1]),
                              _REL_TO_STR[expr[0]],
                              expr_str(expr[2]))
+
+def expr_items(expr):
+    """
+    Returns a set() of all items (symbols and choices) that appear in the
+    expression 'expr'.
+    """
+
+    res = set()
+
+    def rec(subexpr):
+        if isinstance(subexpr, tuple):
+            # AND, OR, NOT, or relation
+
+            rec(subexpr[1])
+
+            # NOTs only have a single operand
+            if subexpr[0] != NOT:
+                rec(subexpr[2])
+
+        else:
+            # Symbol or choice
+            res.add(subexpr)
+
+    rec(expr)
+    return res
 
 def split_expr(expr, op):
     """
@@ -4540,30 +4624,23 @@ def _visibility(sc):
 
     return vis
 
-def _make_depend_on(sym, expr):
-    # Adds 'sym' as a dependency to all symbols in 'expr'. Constant symbols in
-    # 'expr' are skipped as they can never change value anyway.
+def _make_depend_on(sc, expr):
+    # Adds 'sc' (symbol or choice) as a "dependee" to all symbols in 'expr'.
+    # Constant symbols in 'expr' are skipped as they can never change value
+    # anyway.
 
-    if not isinstance(expr, tuple):
-        if not expr.is_constant:
-            expr._dependents.add(sym)
+    if isinstance(expr, tuple):
+        # AND, OR, NOT, or relation
 
-    elif expr[0] in (AND, OR):
-        _make_depend_on(sym, expr[1])
-        _make_depend_on(sym, expr[2])
+        _make_depend_on(sc, expr[1])
 
-    elif expr[0] == NOT:
-        _make_depend_on(sym, expr[1])
+        # NOTs only have a single operand
+        if expr[0] != NOT:
+            _make_depend_on(sc, expr[2])
 
-    elif expr[0] in _RELATIONS:
-        if not expr[1].is_constant:
-            expr[1]._dependents.add(sym)
-        if not expr[2].is_constant:
-            expr[2]._dependents.add(sym)
-
-    else:
-        _internal_error("Internal error while fetching symbols from an "
-                        "expression with token stream {}.".format(expr))
+    elif not expr.is_constant:
+        # Non-constant symbol, or choice
+        expr._dependents.add(sc)
 
 def _expand(s):
     # A predefined UNAME_RELEASE symbol is expanded in one of the 'default's of
