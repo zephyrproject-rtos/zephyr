@@ -419,4 +419,11 @@ static int net_init(struct device *unused)
 	return status;
 }
 
+/* The networking subsystem requires the main thread to execute at a
+ * cooperative priority to function correctly. If this build assert triggers
+ * verify your configuration to ensure that cooperative threads are enabled
+ * and that the main thread priority is negative (cooperative).
+ */
+BUILD_ASSERT(CONFIG_MAIN_THREAD_PRIORITY < 0);
+
 SYS_INIT(net_init, POST_KERNEL, CONFIG_NET_INIT_PRIO);
