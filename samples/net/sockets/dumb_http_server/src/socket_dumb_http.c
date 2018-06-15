@@ -46,6 +46,7 @@ int main(void)
 	int serv;
 	struct sockaddr_in bind_addr;
 	static int counter;
+	int ret;
 
 	serv = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	CHECK(serv);
@@ -122,8 +123,13 @@ int main(void)
 		}
 
 close_client:
-		close(client);
-		printf("Connection from %s closed\n", addr_str);
+		ret = close(client);
+		if (ret == 0) {
+			printf("Connection from %s closed\n", addr_str);
+		} else {
+			printf("Got error %d while closing the "
+			       "socket\n", errno);
+		}
 
 #if defined(__ZEPHYR__) && defined(CONFIG_NET_BUF_POOL_USAGE)
 		struct k_mem_slab *rx, *tx;
