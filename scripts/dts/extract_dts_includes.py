@@ -23,6 +23,7 @@ from extract.edts import edts
 
 from extract.clocks import clocks
 from extract.compatible import compatible
+from extract.controller import controller
 from extract.interrupts import interrupts
 from extract.reg import reg
 from extract.flash import flash
@@ -394,6 +395,8 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
         # do extra property definition based on heuristics
         # do it here as the compatible property is mandatory
         heuristics.extract(node_address, yaml, prop, names, def_label)
+    elif '-controller' in prop:
+        controller.extract(node_address, yaml, prop, names, def_label)
     elif 'pinctrl-' in prop:
         pinctrl.extract(node_address, yaml, prop, names, def_label)
     elif 'gpio-ranges' in prop:
