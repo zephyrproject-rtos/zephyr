@@ -9,19 +9,25 @@
 #include <system_timer.h>
 #include <drivers/clock_control/nrf5_clock_control.h>
 #include <sys_clock.h>
+#include "nrf_rtc.h"
 
 /*
  * Convenience defines.
  */
 #define SYS_CLOCK_RTC          NRF_RTC1
-#define RTC_COUNTER            SYS_CLOCK_RTC->COUNTER
-#define RTC_CC_VALUE           SYS_CLOCK_RTC->CC[0]
-#define RTC_CC_EVENT           SYS_CLOCK_RTC->EVENTS_COMPARE[0]
+#define RTC_COUNTER            nrf_rtc_counter_get(SYS_CLOCK_RTC)
+#define RTC_CC_IDX             0
+#define RTC_CC_EVENT           SYS_CLOCK_RTC->EVENTS_COMPARE[RTC_CC_IDX]
 
 /* Minimum delta between current counter and CC register that the RTC is able
  * to handle
  */
+#if defined(CONFIG_SOC_SERIES_NWTSIM_NRFXX)
+#define RTC_MIN_DELTA          1
+#else
 #define RTC_MIN_DELTA          2
+#endif
+
 #define RTC_MASK               0x00FFFFFF
 /* Maximum difference for RTC counter values used. Half the maximum value is
  * selected to be able to detect overflow (a negative value has the same
@@ -56,7 +62,7 @@ static void rtc_compare_set(u32_t rtc_ticks)
 	u32_t rtc_now;
 
 	/* Try to set CC value. We assume the procedure is always successful. */
-	RTC_CC_VALUE = rtc_ticks;
+	nrf_rtc_cc_set(SYS_CLOCK_RTC, RTC_CC_IDX, rtc_ticks);
 	rtc_now = RTC_COUNTER;
 
 	/* The following checks if the CC register was set to a valid value.
@@ -249,7 +255,7 @@ u32_t _get_elapsed_program_time(void)
 
 	rtc_now = RTC_COUNTER;
 
-	/* Discard value of  RTC_COUNTER read at LFCLK transition */
+	/* Discard value of RTC_COUNTER read at LFCLK transition */
 	do {
 		/* Number of RTC cycles passed since last RTC Programing*/
 		rtc_elapsed = (rtc_now - rtc_past) & RTC_MASK;
@@ -307,7 +313,7 @@ s32_t _get_max_clock_time(void)
 	u32_t rtc_now, rtc_prev, rtc_away, sys_away = 0;
 
 	rtc_now = RTC_COUNTER;
-	/* Discard value of  RTC_COUNTER read at LFCLK transition */
+	/* Discard value of RTC_COUNTER read at LFCLK transition */
 	do {
 		rtc_away = (RTC_MASK - rtc_now);
 		rtc_away = rtc_away > RTC_HALF ? RTC_HALF : rtc_away;
@@ -350,7 +356,7 @@ u64_t _get_elapsed_clock_time(void)
 
 	rtc_now = RTC_COUNTER;
 
-	/* Discard value of  RTC_COUNTER read at LFCLK transition */
+	/* Discard value of RTC_COUNTER read at LFCLK transition */
 	do {
 		/* Calculate number of rtc cycles elapsed since RTC programing*/
 		rtc_elapsed = (rtc_now - rtc_past) & RTC_MASK;
@@ -495,9 +501,9 @@ int _sys_clock_driver_init(struct device *device)
 
 	/* TODO: replace with counter driver to access RTC */
 	SYS_CLOCK_RTC->PRESCALER = 0;
-	SYS_CLOCK_RTC->CC[0] = sys_clock_hw_cycles_per_tick;
-	SYS_CLOCK_RTC->EVTENSET = RTC_EVTENSET_COMPARE0_Msk;
-	SYS_CLOCK_RTC->INTENSET = RTC_INTENSET_COMPARE0_Msk;
+	nrf_rtc_cc_set(SYS_CLOCK_RTC, RTC_CC_IDX, sys_clock_hw_cycles_per_tick);
+	nrf_rtc_event_enable(SYS_CLOCK_RTC, RTC_EVTENSET_COMPARE0_Msk);
+	nrf_rtc_int_enable(SYS_CLOCK_RTC, RTC_INTENSET_COMPARE0_Msk);
 
 	/* Clear the event flag and possible pending interrupt */
 	RTC_CC_EVENT = 0;
@@ -506,8 +512,8 @@ int _sys_clock_driver_init(struct device *device)
 	IRQ_CONNECT(NRF5_IRQ_RTC1_IRQn, 1, rtc1_nrf5_isr, 0, 0);
 	irq_enable(NRF5_IRQ_RTC1_IRQn);
 
-	SYS_CLOCK_RTC->TASKS_CLEAR = 1;
-	SYS_CLOCK_RTC->TASKS_START = 1;
+	nrf_rtc_task_trigger(SYS_CLOCK_RTC, NRF_RTC_TASK_CLEAR);
+	nrf_rtc_task_trigger(SYS_CLOCK_RTC, NRF_RTC_TASK_START);
 
 	return 0;
 }
@@ -520,7 +526,7 @@ u32_t _timer_cycle_get_32(void)
 	u32_t rtc_now;
 
 	rtc_now = RTC_COUNTER;
-	/* Discard value of  RTC_COUNTER read at LFCLK transition */
+	/* Discard value of RTC_COUNTER read at LFCLK transition */
 	do {
 		sys_clock_tick_count = _sys_clock_tick_count;
 		elapsed_cycles = (rtc_now - (sys_clock_tick_count *
@@ -552,11 +558,12 @@ void sys_clock_disable(void)
 
 	irq_disable(NRF5_IRQ_RTC1_IRQn);
 
-	SYS_CLOCK_RTC->EVTENCLR = RTC_EVTENCLR_COMPARE0_Msk;
-	SYS_CLOCK_RTC->INTENCLR = RTC_INTENCLR_COMPARE0_Msk;
+	nrf_rtc_event_disable(SYS_CLOCK_RTC, RTC_EVTENCLR_COMPARE0_Msk);
+	nrf_rtc_int_disable(SYS_CLOCK_RTC, RTC_INTENCLR_COMPARE0_Msk);
 
-	SYS_CLOCK_RTC->TASKS_STOP = 1;
-	SYS_CLOCK_RTC->TASKS_CLEAR = 1;
+
+	nrf_rtc_task_trigger(SYS_CLOCK_RTC, NRF_RTC_TASK_STOP);
+	nrf_rtc_task_trigger(SYS_CLOCK_RTC, NRF_RTC_TASK_CLEAR);
 
 	irq_unlock(key);
 
