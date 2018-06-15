@@ -782,6 +782,39 @@ def load_yaml_descriptions(dts, yaml_dir):
     return yaml_list
 
 
+def get_reduced_dts_by_compatible(search):
+    dts = []
+    for k, v in reduced.items():
+        if 'props' in v:
+            if 'compatible' in v['props']:
+                if search in v['props']['compatible']:
+                    dts.append(reduced[k])
+    return dts
+
+
+def convent_yaml_default_value(val):
+    # convent 'boolean' type to 'int'
+    if isinstance(val, bool):
+        return int(val)
+    return val
+
+
+def insert_default_value_to_reduced(yaml_list):
+    for v in yaml_list.values():
+        if 'properties' in v:
+            properties = v['properties']
+            compatible = properties['compatible']['constraint']
+
+            for yaml_prop_k, yaml_prop_v in properties.items():
+                if 'default' in yaml_prop_v:
+                    value = convent_yaml_default_value(yaml_prop_v['default'])
+                    all_dts = get_reduced_dts_by_compatible(compatible)
+
+                    for dts_node in all_dts:
+                        if yaml_prop_k not in dts_node['props']:
+                            dts_node['props'][yaml_prop_k] = value
+
+
 def lookup_defs(defs, node, key):
     if node not in defs:
         return None
@@ -885,6 +918,7 @@ def main():
     get_chosen(dts['/'])
 
     yaml_list = load_yaml_descriptions(dts, args.yaml[0])
+    insert_default_value_to_reduced(yaml_list)
 
     defs = generate_node_definitions(yaml_list)
 
