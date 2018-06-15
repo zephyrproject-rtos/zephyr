@@ -1,21 +1,21 @@
-/**
+/*
  * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -51,15 +51,37 @@ extern "C" {
 #define NRF_CLOCK_TASK_TRIGGER (1UL)
 #define NRF_CLOCK_EVENT_CLEAR  (0UL)
 
+#if defined(NRF52810_XXAA) || \
+    defined(NRF52832_XXAA) || defined(NRF52832_XXAB) || \
+    defined(NRF52840_XXAA)
+// Enable support for external LFCLK sources. Read more in the Product Specification.
+#define NRF_CLOCK_USE_EXTERNAL_LFCLK_SOURCES
+#endif
+
 /**
  * @brief Low-frequency clock sources.
  * @details Used by LFCLKSRC, LFCLKSTAT, and LFCLKSRCCOPY registers.
  */
 typedef enum
 {
-    NRF_CLOCK_LFCLK_RC    = CLOCK_LFCLKSRC_SRC_RC,   /**< Internal 32 kHz RC oscillator. */
-    NRF_CLOCK_LFCLK_Xtal  = CLOCK_LFCLKSRC_SRC_Xtal, /**< External 32 kHz crystal. */
-    NRF_CLOCK_LFCLK_Synth = CLOCK_LFCLKSRC_SRC_Synth /**< Internal 32 kHz synthesizer from HFCLK system clock. */
+    NRF_CLOCK_LFCLK_RC    = CLOCK_LFCLKSRC_SRC_RC,    /**< Internal 32 kHz RC oscillator. */
+    NRF_CLOCK_LFCLK_Xtal  = CLOCK_LFCLKSRC_SRC_Xtal,  /**< External 32 kHz crystal. */
+    NRF_CLOCK_LFCLK_Synth = CLOCK_LFCLKSRC_SRC_Synth, /**< Internal 32 kHz synthesizer from HFCLK system clock. */
+#if defined(NRF_CLOCK_USE_EXTERNAL_LFCLK_SOURCES) || defined(__NRFX_DOXYGEN__)
+    /**
+     * External 32 kHz low swing signal. Used only with the LFCLKSRC register.
+     * For the others @ref NRF_CLOCK_LFCLK_Xtal is returned for this setting.
+     */
+    NRF_CLOCK_LFCLK_Xtal_Low_Swing = (CLOCK_LFCLKSRC_SRC_Xtal |
+        (CLOCK_LFCLKSRC_EXTERNAL_Enabled << CLOCK_LFCLKSRC_EXTERNAL_Pos)),
+    /**
+     * External 32 kHz full swing signal. Used only with the LFCLKSRC register.
+     * For the others @ref NRF_CLOCK_LFCLK_Xtal is returned for this setting.
+     */
+    NRF_CLOCK_LFCLK_Xtal_Full_Swing = (CLOCK_LFCLKSRC_SRC_Xtal |
+        (CLOCK_LFCLKSRC_BYPASS_Enabled   << CLOCK_LFCLKSRC_BYPASS_Pos) |
+        (CLOCK_LFCLKSRC_EXTERNAL_Enabled << CLOCK_LFCLKSRC_EXTERNAL_Pos)),
+#endif // defined(NRF_CLOCK_USE_EXTERNAL_LFCLK_SOURCES) || defined(__NRFX_DOXYGEN__)
 } nrf_clock_lfclk_t;
 
 /**
@@ -321,14 +343,12 @@ __STATIC_INLINE bool nrf_clock_event_check(nrf_clock_event_t event)
 
 __STATIC_INLINE void nrf_clock_lf_src_set(nrf_clock_lfclk_t source)
 {
-    NRF_CLOCK->LFCLKSRC =
-        (uint32_t)((source << CLOCK_LFCLKSRC_SRC_Pos) & CLOCK_LFCLKSRC_SRC_Msk);
+    NRF_CLOCK->LFCLKSRC = (uint32_t)(source);
 }
 
 __STATIC_INLINE nrf_clock_lfclk_t nrf_clock_lf_src_get(void)
 {
-    return (nrf_clock_lfclk_t)((NRF_CLOCK->LFCLKSRC &
-                                CLOCK_LFCLKSRC_SRC_Msk) >> CLOCK_LFCLKSRC_SRC_Pos);
+    return (nrf_clock_lfclk_t)(NRF_CLOCK->LFCLKSRC);
 }
 
 __STATIC_INLINE nrf_clock_lfclk_t nrf_clock_lf_actv_src_get(void)

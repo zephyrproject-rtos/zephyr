@@ -2,10 +2,10 @@ nrfx
 ####
 
 Origin:
-   https://github.com/NordicSemiconductor/nrfx/tree/v1.0.0
+   https://github.com/NordicSemiconductor/nrfx/tree/v1.1.0
 
 Status:
-   v1.0.0
+   v1.1.0
 
 Purpose:
    With added proper shims adapting it to Zephyr's APIs, nrfx will provide
@@ -28,7 +28,7 @@ URL:
    https://github.com/NordicSemiconductor/nrfx
 
 commit:
-   cf78ebfea1719d85cf4018fe6c08cc73fe5ec719
+   293f553ed9551c1fdfd05eac48e75bbdeb4e7290
 
 Maintained-by:
    External
@@ -37,4 +37,4 @@ License:
    BSD-3-Clause
 
 License Link:
-   https://github.com/NordicSemiconductor/nrfx/blob/v1.0.0/LICENSE
+   https://github.com/NordicSemiconductor/nrfx/blob/v1.1.0/LICENSE

@@ -266,6 +266,7 @@ static bool errata_31(void)
     }
     #endif
 
+    /* Fix should always apply. */
     return true;
 }
 
@@ -301,7 +302,8 @@ static bool errata_36(void)
         }
     }
     #endif
-    
+
+    /* Fix should always apply. */
     return true;
 }
 
@@ -344,7 +346,8 @@ static bool errata_66(void)
         }
     }
     #endif
-    
+
+    /* Fix should always apply. */
     return true;
 }
 
@@ -353,7 +356,8 @@ static bool errata_103(void)
     if ((*(uint32_t *)0x10000130ul == 0xAul) && (*(uint32_t *)0x10000134ul == 0x0ul)){
         return true;
     }
-    
+
+    /* Fix should always apply. */
     return true;
 }
 
@@ -395,7 +399,8 @@ static bool errata_136(void)
         }
     }
     #endif
-    
+
+    /* Fix should always apply. */
     return true;
 }
 
