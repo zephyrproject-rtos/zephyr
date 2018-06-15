@@ -398,7 +398,7 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
         pinctrl.extract(node_address, yaml, prop, names, def_label)
     elif 'gpio-ranges' in prop:
         gpioranges.extract(node_address, yaml, prop, names, def_label)
-    elif 'clocks' in prop:
+    elif prop.startswith(('clock', '#clock', 'assigned-clock', 'oscillator')):
         clocks.extract(node_address, yaml, prop, names, def_label)
     elif 'gpios' in prop:
         try:
