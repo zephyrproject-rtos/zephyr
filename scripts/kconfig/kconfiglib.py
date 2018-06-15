@@ -1483,7 +1483,7 @@ class Kconfig(object):
                 "likely to soon appear in the C tools as well, and simplifies "
                 "the parsing implementation (symbols no longer need to be "
                 "evaluated during parsing)."
-                .format(self._filename, self._linenr, str(e)),
+                .format(self._filename, self._linenr, e),
                 80))
 
         self._filename = filename
@@ -2060,11 +2060,11 @@ class Kconfig(object):
                 node.filename = self._filename
                 node.linenr = self._linenr
 
+                choice.nodes.append(node)
+
                 self._parse_properties(node)
                 self._parse_block(_T_ENDCHOICE, node, node)
                 node.list = node.next
-
-                choice.nodes.append(node)
 
                 prev.next = prev = node
 
@@ -2097,7 +2097,7 @@ class Kconfig(object):
     def _parse_properties(self, node):
         # Parses and adds properties to the MenuNode 'node' (type, 'prompt',
         # 'default's, etc.) Properties are later copied up to symbols and
-        # choices in a separate pass after parsing, in _copy_deps_to_sc().
+        # choices in a separate pass after parsing, in _add_props_to_sc().
         #
         # An older version of this code added properties directly to symbols
         # and choices instead of to their menu nodes (and handled dependency
@@ -2533,8 +2533,8 @@ class Kconfig(object):
             #
             # The recursive _finalize_tree() calls assume that the current
             # "level" in the tree has already had dependencies propagated. This
-            # makes e.g. implicit submenu creation, which needs to look ahead,
-            # easier to implement.
+            # makes e.g. implicit submenu creation easier, because it needs to
+            # look ahead.
             self._propagate_deps(node, visible_if)
 
             # Finalize the children
@@ -2546,7 +2546,7 @@ class Kconfig(object):
         elif isinstance(node.item, Symbol):
             # Add the node's non-node-specific properties (defaults, ranges,
             # etc.) to the Symbol
-            self._copy_deps_to_sc(node)
+            self._add_props_to_sc(node)
 
             # See if we can create an implicit menu rooted at the Symbol and
             # finalize each child menu node in that menu if so, like for the
@@ -2577,7 +2577,7 @@ class Kconfig(object):
         # outside
         if isinstance(node.item, Choice):
             # Add the node's non-node-specific properties to the choice
-            self._copy_deps_to_sc(node)
+            self._add_props_to_sc(node)
             _finalize_choice(node)
 
     def _propagate_deps(self, node, visible_if):
@@ -2636,9 +2636,9 @@ class Kconfig(object):
 
             cur = cur.next
 
-    def _copy_deps_to_sc(self, node):
-        # Copies properties from the menu node 'node' up to its
-        # contained symbol or choice.
+    def _add_props_to_sc(self, node):
+        # Copies properties from the menu node 'node' up to its contained
+        # symbol or choice.
         #
         # This can't be rolled into _propagate_deps(), because that function
         # traverses the menu tree roughly breadth-first order, meaning
