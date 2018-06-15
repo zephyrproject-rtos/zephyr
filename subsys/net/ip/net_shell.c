@@ -45,7 +45,7 @@
 #endif
 
 #if defined(CONFIG_NET_ARP)
-#include <net/arp.h>
+#include "ethernet/arp.h"
 #endif
 
 #if defined(CONFIG_NET_VLAN)

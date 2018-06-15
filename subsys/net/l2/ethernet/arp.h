@@ -1,9 +1,3 @@
-/** @file
- @brief ARP handler
-
- This is not to be included by the application.
- */
-
 /*
  * Copyright (c) 2016 Intel Corporation
  *

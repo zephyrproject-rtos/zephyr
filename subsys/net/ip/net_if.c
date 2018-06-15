@@ -16,7 +16,6 @@
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
-#include <net/arp.h>
 #include <net/net_mgmt.h>
 #include <net/ethernet.h>
 
