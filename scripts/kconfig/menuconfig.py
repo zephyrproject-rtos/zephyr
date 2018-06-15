@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# Copyright (c) 2018, Nordic Semiconductor ASA and Ulf Magnusson
+# SPDX-License-Identifier: ISC
+
 """
 Overview
 ========
@@ -95,7 +98,8 @@ from kconfiglib import Kconfig, \
                        BOOL, TRISTATE, STRING, INT, HEX, UNKNOWN, \
                        AND, OR, NOT, \
                        expr_value, split_expr, \
-                       TRI_TO_STR, TYPE_TO_STR
+                       TRI_TO_STR, TYPE_TO_STR, \
+                       standard_kconfig, standard_config_filename
 
 
 #
@@ -146,7 +150,8 @@ _JUMP_TO_HELP_LINES = """
 Type text to narrow the search. Regexes are supported (via Python's 're'
 module). The up/down cursor keys step in the list. [Enter] jumps to the
 selected symbol. [ESC] aborts the search. Type multiple space-separated
-strings/regexes to find entries that match all of them.
+strings/regexes to find entries that match all of them. Type Ctrl-F to
+view the help of the selected item without leaving the dialog.
 """[1:-1].split("\n")
 
 def _init_styles():
@@ -278,6 +283,12 @@ _expr_str_orig = kconfiglib.expr_str
 kconfiglib.expr_str = _expr_str_val
 _expr_str = _expr_str_val
 
+# Entry point when run as an executable, split out so that setuptools'
+# 'entry_points' can be used. It produces a handy menuconfig.exe launcher on
+# Windows.
+def _main():
+    menuconfig(standard_kconfig())
+
 def menuconfig(kconf):
     """
     Launches the configuration interface, returning after the user exits.
@@ -289,25 +300,28 @@ def menuconfig(kconf):
     globals()["_kconf"] = kconf
     global _config_filename
     global _show_all
+    global _conf_changed
 
 
-    _config_filename = os.environ.get("KCONFIG_CONFIG")
-    if _config_filename is None:
-        _config_filename = ".config"
-
+    _config_filename = standard_config_filename()
 
     if os.path.exists(_config_filename):
+        _conf_changed = False
         print("Using existing configuration '{}' as base"
               .format(_config_filename))
         _kconf.load_config(_config_filename)
 
-    elif kconf.defconfig_filename is not None:
-        print("Using default configuration found in '{}' as base"
-              .format(kconf.defconfig_filename))
-        _kconf.load_config(kconf.defconfig_filename)
-
     else:
-        print("Using default symbol values as base")
+        # Always prompt for save if the output configuration file doesn't exist
+        _conf_changed = True
+
+        if kconf.defconfig_filename is not None:
+            print("Using default configuration found in '{}' as base"
+                  .format(kconf.defconfig_filename))
+            _kconf.load_config(kconf.defconfig_filename)
+
+        else:
+            print("Using default symbol values as base")
 
 
     # Any visible items in the top menu?
@@ -491,7 +505,7 @@ def _menuconfig(stdscr):
             _resize_main()
 
         elif c == "?":
-            _info_dialog(_shown[_sel_node_i])
+            _info_dialog(_shown[_sel_node_i], False)
             # The terminal might have been resized while the fullscreen info
             # dialog was open
             _resize_main()
@@ -553,8 +567,6 @@ def _init():
 
     global _show_name
 
-    global _conf_changed
-
     # Looking for this in addition to KEY_BACKSPACE (which is unreliable) makes
     # backspace work with TERM=vt100. That makes it likely to work in sane
     # environments.
@@ -601,9 +613,6 @@ def _init():
 
     # Give windows their initial size
     _resize_main()
-
-    # No changes yet
-    _conf_changed = False
 
 def _resize_main():
     # Resizes the main display, with the list of symbols, etc., to fill the
@@ -1398,6 +1407,12 @@ def _draw_frame(win, title):
     win.attroff(_DIALOG_FRAME_STYLE)
 
 def _jump_to_dialog():
+    # Implements the jump-to dialog, where symbols can be looked up via
+    # incremental search and jumped to.
+    #
+    # Returns True if the user jumped to a symbol, and False if the dialog was
+    # canceled.
+
     # Search text
     s = ""
     # Previous search text
@@ -1517,16 +1532,25 @@ def _jump_to_dialog():
             if matches:
                 _jump_to(matches[sel_node_i])
                 _safe_curs_set(0)
-                return
+                return True
 
         elif c == "\x1B":  # \x1B = ESC
             _safe_curs_set(0)
-            return
+            return False
 
         elif c == curses.KEY_RESIZE:
             # We adjust the scroll so that the selected node stays visible in
             # the list when the terminal is resized, hence the 'scroll'
             # assignment
+            scroll = _resize_jump_to_dialog(
+                edit_box, matches_win, bot_sep_win, help_win,
+                sel_node_i, scroll)
+
+        elif c == "\x06":  # \x06 = Ctrl-F
+            _safe_curs_set(0)
+            _info_dialog(matches[sel_node_i], True)
+            _safe_curs_set(1)
+
             scroll = _resize_jump_to_dialog(
                 edit_box, matches_win, bot_sep_win, help_win,
                 sel_node_i, scroll)
@@ -1551,7 +1575,7 @@ def _jump_to_dialog():
             s, s_i, hscroll = _edit_text(c, s, s_i, hscroll,
                                          edit_box.getmaxyx()[1] - 2)
 
-# Obscure Python: We never pass a value for cached_search_strings, and it keeps
+# Obscure Python: We never pass a value for cached_search_nodes, and it keeps
 # pointing to the same list. This avoids a global.
 def _searched_nodes(cached_search_nodes=[]):
     # Returns a list of menu nodes to search, sorted by symbol name
@@ -1689,8 +1713,13 @@ def _draw_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
 
     edit_box.noutrefresh()
 
-def _info_dialog(node):
-    # Shows a fullscreen window with information about 'node'
+def _info_dialog(node, from_jump_to_dialog):
+    # Shows a fullscreen window with information about 'node'.
+    #
+    # If 'from_jump_to_dialog' is True, the information dialog was opened from
+    # within the jump-to-dialog. In this case, we make '/' from within the
+    # information dialog just return, to avoid a confusing recursive invocation
+    # of the jump-to-dialog.
 
     # Top row, with title and arrows point up
     top_line_win = _styled_win(_SEPARATOR_STYLE)
@@ -1745,6 +1774,22 @@ def _info_dialog(node):
         elif c in (curses.KEY_UP, "k", "K"):
             if scroll > 0:
                 scroll -= 1
+
+        elif c == "/":
+            # Support starting a search from within the information dialog
+
+            if from_jump_to_dialog:
+                # Avoid recursion
+                return
+
+            if _jump_to_dialog():
+                # Jumped to a symbol. Cancel the information dialog.
+                return
+
+            # Stay in the information dialog if the jump-to dialog was
+            # canceled. Resize it in case the terminal was resized while the
+            # fullscreen jump-to dialog was open.
+            _resize_info_dialog(top_line_win, text_win, bot_sep_win, help_win)
 
         elif c in (curses.KEY_LEFT, curses.KEY_BACKSPACE, _ERASE_CHAR,
                    "\x1B",  # \x1B = ESC
@@ -2310,9 +2355,8 @@ def _is_num(name):
     # they get their name as their value when the symbol is undefined.
 
     try:
-        int(name, 10)
+        int(name)
         return True
-
     except ValueError:
         if not name.startswith(("0x", "0X")):
             return False
@@ -2320,7 +2364,6 @@ def _is_num(name):
         try:
             int(name, 16)
             return True
-
         except ValueError:
             return False
 
@@ -2413,8 +2456,4 @@ def _convert_c_lc_ctype_to_utf8():
 _IS_WINDOWS = (platform.system() == "Windows")
 
 if __name__ == "__main__":
-    if len(sys.argv) > 2:
-        print("usage: {} [Kconfig]".format(sys.argv[0]), file=sys.stderr)
-        sys.exit(1)
-
-    menuconfig(Kconfig("Kconfig" if len(sys.argv) < 2 else sys.argv[1]))
+    _main()
