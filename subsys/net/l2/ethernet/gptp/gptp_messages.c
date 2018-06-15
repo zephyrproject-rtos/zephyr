@@ -533,6 +533,7 @@ fail:
 struct net_pkt *gptp_prepare_announce(int port)
 {
 	struct gptp_global_ds *global_ds;
+	struct gptp_default_ds *default_ds;
 	struct gptp_port_ds *port_ds;
 	struct gptp_announce *ann;
 	struct net_if *iface;
@@ -542,6 +543,7 @@ struct net_pkt *gptp_prepare_announce(int port)
 
 	NET_ASSERT((port >= GPTP_PORT_START) && (port <= GPTP_PORT_END));
 	global_ds = GPTP_GLOBAL_DS();
+	default_ds = GPTP_DEFAULT_DS();
 	iface = GPTP_PORT_IFACE(port);
 	NET_ASSERT(iface);
 
@@ -590,9 +592,29 @@ struct net_pkt *gptp_prepare_announce(int port)
 	ann->cur_utc_offset = global_ds->current_utc_offset;
 	ann->time_source = global_ds->time_source;
 
-	memcpy(&ann->root_system_id,
-	       &GPTP_PORT_BMCA_DATA(port)->master_priority.root_system_id,
-	       sizeof(struct gptp_root_system_identity));
+	switch (GPTP_PORT_BMCA_DATA(port)->info_is) {
+	case GPTP_INFO_IS_MINE:
+		ann->root_system_id.grand_master_prio1 = default_ds->priority1;
+		ann->root_system_id.grand_master_prio2 = default_ds->priority2;
+
+		memcpy(&ann->root_system_id.clk_quality,
+		       &default_ds->clk_quality,
+		       sizeof(struct gptp_clock_quality));
+
+		memcpy(&ann->root_system_id.grand_master_id,
+		       default_ds->clk_id,
+		       GPTP_CLOCK_ID_LEN);
+		break;
+	case GPTP_INFO_IS_RECEIVED:
+		memcpy(&ann->root_system_id,
+		       &GPTP_PORT_BMCA_DATA(port)->
+				master_priority.root_system_id,
+		       sizeof(struct gptp_root_system_identity));
+		break;
+	default:
+		goto fail;
+	}
+
 	ann->steps_removed = global_ds->master_steps_removed;
 	hdr->sequence_id = htons(port_ds->announce_seq_id);
 	port_ds->announce_seq_id++;
