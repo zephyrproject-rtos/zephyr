@@ -22,11 +22,13 @@ from extract.globals import *
 
 from extract.clocks import clocks
 from extract.compatible import compatible
+from extract.controller import controller
 from extract.interrupts import interrupts
 from extract.reg import reg
 from extract.flash import flash
 from extract.pinctrl import pinctrl
 from extract.gpioranges import gpioranges
+from extract.heuristics import heuristics
 from extract.default import default
 
 class Loader(yaml.Loader):
@@ -389,6 +391,11 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
         interrupts.extract(node_address, yaml, prop, names, defs, def_label)
     elif prop == 'compatible':
         compatible.extract(node_address, yaml, prop, names, defs, def_label)
+        # do extra property definition based on heuristics
+        # do it here as the compatible property is mandatory
+        heuristics.extract(node_address, yaml, prop, names, defs, def_label)
+    elif '-controller' in prop:
+        controller.extract(node_address, yaml, prop, names, defs, def_label)
     elif 'pinctrl-' in prop:
         pinctrl.extract(node_address, yaml, prop, names, defs, def_label)
     elif 'gpio-ranges' in prop:
