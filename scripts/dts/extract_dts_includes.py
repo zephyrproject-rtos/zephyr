@@ -22,6 +22,7 @@ from extract.globals import *
 from extract.edts import edts
 
 from extract.clocks import clocks
+from extract.compatible import compatible
 from extract.interrupts import interrupts
 from extract.reg import reg
 from extract.flash import flash
@@ -444,6 +445,8 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
             reg.extract(node_address, yaml, prop, names, def_label)
     elif prop == 'interrupts' or prop == 'interrupts-extended':
         interrupts.extract(node_address, yaml, prop, names, def_label)
+    elif prop == 'compatible':
+        compatible.extract(node_address, yaml, prop, names, def_label)
     elif 'pinctrl-' in prop:
         pinctrl.extract(node_address, yaml, prop, names, def_label)
     elif 'clocks' in prop:
