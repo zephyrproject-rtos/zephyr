@@ -1,0 +1,5 @@
+version: "2.0"
+
+services:
+  zephyr:
+    image: zephyrprojectrtos/test:0.1
