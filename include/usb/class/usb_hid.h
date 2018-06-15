@@ -154,6 +154,9 @@ struct hid_ops {
 void usb_hid_register_device(const u8_t *desc, size_t size,
 			     const struct hid_ops *op);
 
+/* Write to hid interrupt endpoint */
+int hid_int_ep_write(const u8_t *data, u32_t data_len, u32_t *bytes_ret);
+
 /* Initialize USB HID */
 int usb_hid_init(void);
 
