@@ -18,12 +18,14 @@
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_stats.h>
-#include <net/arp.h>
+
+#include "arp.h"
 #include "net_private.h"
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
 #define ARP_REQUEST_TIMEOUT K_SECONDS(2)
 
+static bool arp_cache_initialized;
 static struct arp_entry arp_table[CONFIG_NET_ARP_TABLE_SIZE];
 
 static inline struct arp_entry *find_entry(struct net_if *iface,
@@ -547,10 +549,16 @@ void net_arp_init(void)
 {
 	int i;
 
+	if (arp_cache_initialized) {
+		return;
+	}
+
 	net_arp_clear_cache(NULL);
 
 	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
 		k_delayed_work_init(&arp_table[i].arp_request_timer,
 				    arp_request_timeout);
 	}
+
+	arp_cache_initialized = true;
 }

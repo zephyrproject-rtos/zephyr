@@ -15,9 +15,9 @@
 #include <net/net_mgmt.h>
 #include <net/ethernet.h>
 #include <net/ethernet_mgmt.h>
-#include <net/arp.h>
 #include <net/gptp.h>
 
+#include "arp.h"
 #include "net_private.h"
 #include "ipv6.h"
 
@@ -881,6 +881,8 @@ void ethernet_init(struct net_if *iface)
 		}
 	}
 #endif
+
+	net_arp_init();
 
 	ctx->is_init = true;
 }

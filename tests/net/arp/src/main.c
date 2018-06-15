@@ -20,8 +20,9 @@
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
-#include <net/arp.h>
 #include <ztest.h>
+
+#include "arp.h"
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"

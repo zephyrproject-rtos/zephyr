@@ -25,7 +25,6 @@
 
 #include <net/net_if.h>
 #include <net/net_mgmt.h>
-#include <net/arp.h>
 #include <net/net_pkt.h>
 #include <net/net_core.h>
 #include <net/dns_resolve.h>
@@ -387,13 +386,6 @@ static inline void l3_init(void)
 	NET_DBG("Network L3 init done");
 }
 
-static inline void l2_init(void)
-{
-	net_arp_init();
-
-	NET_DBG("Network L2 init done");
-}
-
 static int net_init(struct device *unused)
 {
 	int status = 0;
@@ -406,7 +398,6 @@ static int net_init(struct device *unused)
 
 	net_context_init();
 
-	l2_init();
 	l3_init();
 
 	net_mgmt_event_init();
