@@ -1618,7 +1618,7 @@ int bt_gatt_discover(struct bt_conn *conn,
 	__ASSERT(params && params->func, "invalid parameters\n");
 	__ASSERT((params->start_handle && params->end_handle),
 		 "invalid parameters\n");
-	__ASSERT((params->start_handle < params->end_handle),
+	__ASSERT((params->start_handle <= params->end_handle),
 		 "invalid parameters\n");
 
 	if (conn->state != BT_CONN_CONNECTED) {
