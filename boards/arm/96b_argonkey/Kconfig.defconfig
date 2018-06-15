@@ -46,6 +46,36 @@ config SPI_STM32_INTERRUPT
 
 endif # SPI
 
+if I2S
+
+config I2S_STM32
+	def_bool y
+
+# configure PLLI2S to generate a I2SxCLK=128MHz
+config I2S_STM32_USE_PLLI2S_ENABLE
+	def_bool y
+
+config I2S_STM32_PLLI2S_PLLM
+	default 8
+
+config I2S_STM32_PLLI2S_PLLN
+	default 192
+
+config I2S_STM32_PLLI2S_PLLR
+	default 3
+
+config I2S_5
+	def_bool y
+
+endif # I2S
+
+if DMA
+
+config DMA_STM32F4X
+	def_bool y
+
+endif # DMA
+
 if LSM6DSL
 
 choice LSM6DSL_BUS_TYPE
