@@ -390,7 +390,7 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
         compatible.extract(node_address, yaml, prop, names, defs, def_label)
     elif 'pinctrl-' in prop:
         pinctrl.extract(node_address, yaml, prop, names, defs, def_label)
-    elif 'clocks' in prop:
+    elif prop.startswith(('clock', '#clock', 'assigned-clock', 'oscillator')):
         clocks.extract(node_address, yaml, prop, names, defs, def_label)
     elif 'gpios' in prop:
         try:

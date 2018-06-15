@@ -1,6 +1,6 @@
 #
 # Copyright (c) 2017 Linaro
-# Copyright (c) 2017 Bobby Noelte
+# Copyright (c) 2018 Bobby Noelte
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -179,3 +179,7 @@ def find_parent_prop(node_address, prop):
                         " has no " + prop + " property")
 
     return parent_prop
+
+def node_top_address(node_address):
+    address = node_address.split('/')[1]
+    return address
