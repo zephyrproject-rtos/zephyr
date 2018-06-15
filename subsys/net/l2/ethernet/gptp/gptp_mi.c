@@ -689,6 +689,16 @@ static void gptp_update_local_port_clock(void)
 		return;
 	}
 
+	if (second_diff > 0 && nanosecond_diff < 0) {
+		second_diff--;
+		nanosecond_diff = NSEC_PER_SEC + nanosecond_diff;
+	}
+
+	if (second_diff < 0 && nanosecond_diff > 0) {
+		second_diff++;
+		nanosecond_diff = -NSEC_PER_SEC + nanosecond_diff;
+	}
+
 	ptp_clock_rate_adjust(clk, port_ds->neighbor_rate_ratio);
 
 	/* If time difference is too high, set the clock value.
