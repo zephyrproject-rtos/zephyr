@@ -1,21 +1,21 @@
-/**
+/*
  * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -73,7 +73,7 @@
                                         NRF_GPIO_PIN_S0D1,          \
                                         NRF_GPIO_PIN_NOSENSE)
 
-#define HW_TIMEOUT      10000
+#define HW_TIMEOUT      100000
 
 // Control block - driver instance local data.
 typedef struct
@@ -84,13 +84,13 @@ typedef struct
     nrfx_twi_xfer_desc_t    xfer_desc;
     uint32_t                flags;
     uint8_t *               p_curr_buf;
-    uint8_t                 curr_length;
+    size_t                  curr_length;
     bool                    curr_no_stop;
     nrfx_drv_state_t        state;
     bool                    error;
     volatile bool           busy;
     bool                    repeated;
-    uint8_t                 bytes_transferred;
+    size_t                  bytes_transferred;
     bool                    hold_bus_uninit;
 } twi_control_block_t;
 
@@ -245,8 +245,8 @@ void nrfx_twi_disable(nrfx_twi_t const * p_instance)
 
 static bool twi_send_byte(NRF_TWI_Type  * p_twi,
                           uint8_t const * p_data,
-                          uint8_t         length,
-                          uint8_t       * p_bytes_transferred,
+                          size_t          length,
+                          size_t        * p_bytes_transferred,
                           bool            no_stop)
 {
     if (*p_bytes_transferred < length)
@@ -271,8 +271,8 @@ static bool twi_send_byte(NRF_TWI_Type  * p_twi,
 
 static void twi_receive_byte(NRF_TWI_Type * p_twi,
                              uint8_t      * p_data,
-                             uint8_t        length,
-                             uint8_t      * p_bytes_transferred)
+                             size_t         length,
+                             size_t       * p_bytes_transferred)
 {
     if (*p_bytes_transferred < length)
     {
@@ -295,9 +295,9 @@ static void twi_receive_byte(NRF_TWI_Type * p_twi,
 
 static bool twi_transfer(NRF_TWI_Type  * p_twi,
                          bool          * p_error,
-                         uint8_t       * p_bytes_transferred,
+                         size_t        * p_bytes_transferred,
                          uint8_t       * p_data,
-                         uint8_t         length,
+                         size_t          length,
                          bool            no_stop)
 {
     bool do_stop_check = ((*p_error) || ((*p_bytes_transferred) == length));
@@ -367,7 +367,7 @@ static bool twi_transfer(NRF_TWI_Type  * p_twi,
 static nrfx_err_t twi_tx_start_transfer(twi_control_block_t * p_cb,
                                         NRF_TWI_Type *        p_twi,
                                         uint8_t const *       p_data,
-                                        uint8_t               length,
+                                        size_t                length,
                                         bool                  no_stop)
 {
     nrfx_err_t ret_code = NRFX_SUCCESS;
@@ -435,7 +435,7 @@ static nrfx_err_t twi_tx_start_transfer(twi_control_block_t * p_cb,
 static nrfx_err_t twi_rx_start_transfer(twi_control_block_t * p_cb,
                                         NRF_TWI_Type *        p_twi,
                                         uint8_t const *       p_data,
-                                        uint8_t               length)
+                                        size_t                length)
 {
     nrfx_err_t ret_code = NRFX_SUCCESS;
     volatile int32_t hw_timeout;

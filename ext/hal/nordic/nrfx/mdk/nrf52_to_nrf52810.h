@@ -35,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 /*lint ++flb "Enter library region */
 
-/* This file is given to prevent your SW from not compiling with the name changes between nRF51 or nRF52832 and nRF52840 devices.
+/* This file is given to prevent your SW from not compiling with the name changes between nRF51 or nRF52832 and nRF52810 devices.
  * It redefines the old nRF51 or nRF52832 names into the new ones as long as the functionality is still supported. If the
  * functionality is gone, there old names are not defined, so compilation will fail. Note that also includes macros
  * from the nrf52_namechange.h file. */

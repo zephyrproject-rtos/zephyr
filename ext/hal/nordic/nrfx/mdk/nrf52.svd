@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- File naming: <vendor>_<part/series name>_svd.xml -->
 <device schemaVersion="1.1" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" noNamespaceSchemaLocation="CMSIS-SVD.xsd">
   <vendor>Nordic Semiconductor</vendor>
@@ -6066,7 +6066,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
                 <enumeratedValue>
                   <name>Neg30dBm</name>
                   <description>Deprecated enumerator -  -40 dBm</description>
-                  <value>0xD8</value>
+                  <value>0xFF</value>
                 </enumeratedValue>
                 <enumeratedValue>
                   <name>Neg40dBm</name>
@@ -13883,9 +13883,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="SPIM0">
       <name>SPIM1</name>
       <description>Serial Peripheral Interface Master with EasyDMA 1</description>
-      <groupName>SPIM</groupName>
       <baseAddress>0x40004000</baseAddress>
-      <size>32</size>
       <interrupt>
         <name>SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1</name>
         <value>4</value>
@@ -13894,9 +13892,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="SPIS0">
       <name>SPIS1</name>
       <description>SPI Slave 1</description>
-      <groupName>SPIS</groupName>
       <baseAddress>0x40004000</baseAddress>
-      <size>32</size>
       <alternatePeripheral>SPIM1</alternatePeripheral>
       <interrupt>
         <name>SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1</name>
@@ -13906,9 +13902,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="TWIM0">
       <name>TWIM1</name>
       <description>I2C compatible Two-Wire Master Interface with EasyDMA 1</description>
-      <groupName>TWIM</groupName>
       <baseAddress>0x40004000</baseAddress>
-      <size>32</size>
       <alternatePeripheral>SPIM1</alternatePeripheral>
       <interrupt>
         <name>SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1</name>
@@ -13918,9 +13912,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="TWIS0">
       <name>TWIS1</name>
       <description>I2C compatible Two-Wire Slave Interface with EasyDMA 1</description>
-      <groupName>TWIS</groupName>
       <baseAddress>0x40004000</baseAddress>
-      <size>32</size>
       <alternatePeripheral>SPIM1</alternatePeripheral>
       <interrupt>
         <name>SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1</name>
@@ -13930,9 +13922,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="SPI0">
       <name>SPI1</name>
       <description>Serial Peripheral Interface 1</description>
-      <groupName>SPI</groupName>
       <baseAddress>0x40004000</baseAddress>
-      <size>32</size>
       <alternatePeripheral>SPIM1</alternatePeripheral>
       <interrupt>
         <name>SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1</name>
@@ -13942,9 +13932,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="TWI0">
       <name>TWI1</name>
       <description>I2C compatible Two-Wire Interface 1</description>
-      <groupName>TWI</groupName>
       <baseAddress>0x40004000</baseAddress>
-      <size>32</size>
       <alternatePeripheral>SPIM1</alternatePeripheral>
       <interrupt>
         <name>SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1</name>
@@ -19589,9 +19577,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="TIMER0">
       <name>TIMER1</name>
       <description>Timer/Counter 1</description>
-      <groupName>TIMER</groupName>
       <baseAddress>0x40009000</baseAddress>
-      <size>32</size>
       <interrupt>
         <name>TIMER1</name>
         <value>9</value>
@@ -19600,9 +19586,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="TIMER0">
       <name>TIMER2</name>
       <description>Timer/Counter 2</description>
-      <groupName>TIMER</groupName>
       <baseAddress>0x4000A000</baseAddress>
-      <size>32</size>
       <interrupt>
         <name>TIMER2</name>
         <value>10</value>
@@ -22510,9 +22494,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="RTC0">
       <name>RTC1</name>
       <description>Real time counter 1</description>
-      <groupName>RTC</groupName>
       <baseAddress>0x40011000</baseAddress>
-      <size>32</size>
       <interrupt>
         <name>RTC1</name>
         <value>17</value>
@@ -26146,9 +26128,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="SWI0">
       <name>SWI1</name>
       <description>Software interrupt 1</description>
-      <groupName>SWI</groupName>
       <baseAddress>0x40015000</baseAddress>
-      <size>32</size>
       <interrupt>
         <name>SWI1_EGU1</name>
         <value>21</value>
@@ -26157,9 +26137,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="EGU0">
       <name>EGU1</name>
       <description>Event Generator Unit 1</description>
-      <groupName>EGU</groupName>
       <baseAddress>0x40015000</baseAddress>
-      <size>32</size>
       <alternatePeripheral>SWI1</alternatePeripheral>
       <interrupt>
         <name>SWI1_EGU1</name>
@@ -26169,9 +26147,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="SWI0">
       <name>SWI2</name>
       <description>Software interrupt 2</description>
-      <groupName>SWI</groupName>
       <baseAddress>0x40016000</baseAddress>
-      <size>32</size>
       <interrupt>
         <name>SWI2_EGU2</name>
         <value>22</value>
@@ -26180,9 +26156,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="EGU0">
       <name>EGU2</name>
       <description>Event Generator Unit 2</description>
-      <groupName>EGU</groupName>
       <baseAddress>0x40016000</baseAddress>
-      <size>32</size>
       <alternatePeripheral>SWI2</alternatePeripheral>
       <interrupt>
         <name>SWI2_EGU2</name>
@@ -26192,9 +26166,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="SWI0">
       <name>SWI3</name>
       <description>Software interrupt 3</description>
-      <groupName>SWI</groupName>
       <baseAddress>0x40017000</baseAddress>
-      <size>32</size>
       <interrupt>
         <name>SWI3_EGU3</name>
         <value>23</value>
@@ -26203,9 +26175,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="EGU0">
       <name>EGU3</name>
       <description>Event Generator Unit 3</description>
-      <groupName>EGU</groupName>
       <baseAddress>0x40017000</baseAddress>
-      <size>32</size>
       <alternatePeripheral>SWI3</alternatePeripheral>
       <interrupt>
         <name>SWI3_EGU3</name>
@@ -26215,9 +26185,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="SWI0">
       <name>SWI4</name>
       <description>Software interrupt 4</description>
-      <groupName>SWI</groupName>
       <baseAddress>0x40018000</baseAddress>
-      <size>32</size>
       <interrupt>
         <name>SWI4_EGU4</name>
         <value>24</value>
@@ -26226,9 +26194,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="EGU0">
       <name>EGU4</name>
       <description>Event Generator Unit 4</description>
-      <groupName>EGU</groupName>
       <baseAddress>0x40018000</baseAddress>
-      <size>32</size>
       <alternatePeripheral>SWI4</alternatePeripheral>
       <interrupt>
         <name>SWI4_EGU4</name>
@@ -26238,9 +26204,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="SWI0">
       <name>SWI5</name>
       <description>Software interrupt 5</description>
-      <groupName>SWI</groupName>
       <baseAddress>0x40019000</baseAddress>
-      <size>32</size>
       <interrupt>
         <name>SWI5_EGU5</name>
         <value>25</value>
@@ -26249,9 +26213,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="EGU0">
       <name>EGU5</name>
       <description>Event Generator Unit 5</description>
-      <groupName>EGU</groupName>
       <baseAddress>0x40019000</baseAddress>
-      <size>32</size>
       <alternatePeripheral>SWI5</alternatePeripheral>
       <interrupt>
         <name>SWI5_EGU5</name>
@@ -26261,9 +26223,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="TIMER0">
       <name>TIMER3</name>
       <description>Timer/Counter 3</description>
-      <groupName>TIMER</groupName>
       <baseAddress>0x4001A000</baseAddress>
-      <size>32</size>
       <interrupt>
         <name>TIMER3</name>
         <value>26</value>
@@ -26272,9 +26232,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="TIMER0">
       <name>TIMER4</name>
       <description>Timer/Counter 4</description>
-      <groupName>TIMER</groupName>
       <baseAddress>0x4001B000</baseAddress>
-      <size>32</size>
       <interrupt>
         <name>TIMER4</name>
         <value>27</value>
@@ -35665,9 +35623,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="PWM0">
       <name>PWM1</name>
       <description>Pulse Width Modulation Unit 1</description>
-      <groupName>PWM</groupName>
       <baseAddress>0x40021000</baseAddress>
-      <size>32</size>
       <interrupt>
         <name>PWM1</name>
         <value>33</value>
@@ -35676,9 +35632,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="PWM0">
       <name>PWM2</name>
       <description>Pulse Width Modulation Unit 2</description>
-      <groupName>PWM</groupName>
       <baseAddress>0x40022000</baseAddress>
-      <size>32</size>
       <interrupt>
         <name>PWM2</name>
         <value>34</value>
@@ -35687,9 +35641,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="SPIM0">
       <name>SPIM2</name>
       <description>Serial Peripheral Interface Master with EasyDMA 2</description>
-      <groupName>SPIM</groupName>
       <baseAddress>0x40023000</baseAddress>
-      <size>32</size>
       <interrupt>
         <name>SPIM2_SPIS2_SPI2</name>
         <value>35</value>
@@ -35698,9 +35650,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="SPIS0">
       <name>SPIS2</name>
       <description>SPI Slave 2</description>
-      <groupName>SPIS</groupName>
       <baseAddress>0x40023000</baseAddress>
-      <size>32</size>
       <alternatePeripheral>SPIM2</alternatePeripheral>
       <interrupt>
         <name>SPIM2_SPIS2_SPI2</name>
@@ -35710,9 +35660,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="SPI0">
       <name>SPI2</name>
       <description>Serial Peripheral Interface 2</description>
-      <groupName>SPI</groupName>
       <baseAddress>0x40023000</baseAddress>
-      <size>32</size>
       <alternatePeripheral>SPIM2</alternatePeripheral>
       <interrupt>
         <name>SPIM2_SPIS2_SPI2</name>
@@ -35722,9 +35670,7 @@ POSSIBILITY OF SUCH DAMAGE.\n
     <peripheral derivedFrom="RTC0">
       <name>RTC2</name>
       <description>Real time counter 2</description>
-      <groupName>RTC</groupName>
       <baseAddress>0x40024000</baseAddress>
-      <size>32</size>
       <interrupt>
         <name>RTC2</name>
         <value>36</value>

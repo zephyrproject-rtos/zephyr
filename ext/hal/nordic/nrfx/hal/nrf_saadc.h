@@ -1,21 +1,21 @@
-/**
+/*
  * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -408,6 +408,19 @@ __STATIC_INLINE void nrf_saadc_channel_input_set(uint8_t channel,
 
 
 /**
+ * @brief Function for configuring the positive input pin for a specific SAADC channel.
+ *
+ * @param[in] channel Channel number.
+ * @param[in] pselp   Positive input.
+ */
+__STATIC_INLINE void nrf_saadc_channel_pos_input_set(uint8_t channel,
+                                                     nrf_saadc_input_t pselp)
+{
+    NRF_SAADC->CH[channel].PSELP = pselp;
+}
+
+
+/**
  * @brief Function for setting the SAADC channel monitoring limits.
  *
  * @param[in] channel Channel number.
@@ -526,19 +539,44 @@ __STATIC_INLINE bool nrf_saadc_enable_check(void)
 /**
  * @brief Function for initializing the SAADC result buffer.
  *
- * @param[in] buffer Pointer to the result buffer.
- * @param[in] num    Size of buffer in words.
+ * @param[in] p_buffer Pointer to the result buffer.
+ * @param[in] size     Size of the buffer (in 16-bit samples).
  */
-__STATIC_INLINE void nrf_saadc_buffer_init(nrf_saadc_value_t * buffer, uint32_t num)
+__STATIC_INLINE void nrf_saadc_buffer_init(nrf_saadc_value_t * p_buffer,
+                                           uint32_t            size)
 {
-    NRF_SAADC->RESULT.PTR = (uint32_t)buffer;
-    NRF_SAADC->RESULT.MAXCNT = num;
+    NRF_SAADC->RESULT.PTR = (uint32_t)p_buffer;
+    NRF_SAADC->RESULT.MAXCNT = size;
 }
 
+
 /**
- * @brief Function for getting the number of buffer words transferred since last START operation.
+ * @brief Function for setting the SAADC result buffer pointer.
  *
- * @returns Number of words transferred.
+ * @param[in] p_buffer Pointer to the result buffer.
+ */
+__STATIC_INLINE void nrf_saadc_buffer_pointer_set(nrf_saadc_value_t * p_buffer)
+{
+    NRF_SAADC->RESULT.PTR = (uint32_t)p_buffer;
+}
+
+
+/**
+ * @brief Function for getting the SAADC result buffer pointer.
+ *
+ * @return Pointer to the result buffer.
+ */
+__STATIC_INLINE nrf_saadc_value_t * nrf_saadc_buffer_pointer_get(void)
+{
+    return (nrf_saadc_value_t *)NRF_SAADC->RESULT.PTR;
+}
+
+
+/**
+ * @brief Function for getting the number of samples written to the result
+ *        buffer since the previous START task.
+ *
+ * @returns Number of 16-bit samples written to the buffer.
  */
 __STATIC_INLINE uint16_t nrf_saadc_amount_get(void)
 {

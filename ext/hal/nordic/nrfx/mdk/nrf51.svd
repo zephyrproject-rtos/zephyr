@@ -6939,8 +6939,6 @@ POSSIBILITY OF SUCH DAMAGE.\n
       <version>522</version>
       <description>SPI master 1.</description>
       <baseAddress>0x40004000</baseAddress>
-      <groupName>SPI</groupName>
-      <size>32</size>
       <access>read-write</access>
       <interrupt>
         <name>SPI1_TWI1</name>
@@ -6953,8 +6951,6 @@ POSSIBILITY OF SUCH DAMAGE.\n
       <version>522</version>
       <description>Two-wire interface master 1.</description>
       <baseAddress>0x40004000</baseAddress>
-      <groupName>TWI</groupName>
-      <size>32</size>
       <access>read-write</access>
       <alternatePeripheral>SPI1</alternatePeripheral>
       <interrupt>
@@ -8874,8 +8870,6 @@ POSSIBILITY OF SUCH DAMAGE.\n
       <version>522</version>
       <description>Timer 1.</description>
       <baseAddress>0x40009000</baseAddress>
-      <groupName>TIMER</groupName>
-      <size>32</size>
       <access>read-write</access>
       <interrupt>
         <name>TIMER1</name>
@@ -8888,8 +8882,6 @@ POSSIBILITY OF SUCH DAMAGE.\n
       <version>522</version>
       <description>Timer 2.</description>
       <baseAddress>0x4000A000</baseAddress>
-      <groupName>TIMER</groupName>
-      <size>32</size>
       <access>read-write</access>
       <interrupt>
         <name>TIMER2</name>
@@ -11557,8 +11549,6 @@ POSSIBILITY OF SUCH DAMAGE.\n
       <version>522</version>
       <description>Real time counter 1.</description>
       <baseAddress>0x40011000</baseAddress>
-      <groupName>RTC</groupName>
-      <size>32</size>
       <access>read-write</access>
       <interrupt>
         <name>RTC1</name>

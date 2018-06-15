@@ -1,21 +1,21 @@
-/**
+/*
  * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -164,6 +164,9 @@ void nrfx_adc_uninit(void);
  * This function configures and enables the channel. When @ref nrfx_adc_buffer_convert is
  * called, all channels that have been enabled with this function are sampled.
  *
+ * This function can be called only when there is no conversion in progress
+ * (the ADC is not busy).
+ *
  * @note The channel instance variable @p p_channel is used by the driver as an item
  *       in a list. Therefore, it cannot be an automatic variable that is located on the stack.
  */
@@ -171,8 +174,19 @@ void nrfx_adc_channel_enable(nrfx_adc_channel_t * const p_channel);
 
 /**
  * @brief Function for disabling an ADC channel.
+ *
+ * This function can be called only when there is no conversion in progress
+ * (the ADC is not busy).
  */
 void nrfx_adc_channel_disable(nrfx_adc_channel_t * const p_channel);
+
+/**
+ * @brief Function for disabling all ADC channels.
+ *
+ * This function can be called only when there is no conversion in progress
+ * (the ADC is not busy).
+ */
+void nrfx_adc_all_channels_disable(void);
 
 /**
  * @brief Function for starting ADC sampling.

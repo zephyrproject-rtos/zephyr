@@ -46,6 +46,8 @@
 // <0=> RC
 // <1=> XTAL
 // <2=> Synth
+// <131073=> External Low Swing
+// <196609=> External Full Swing
 
 #ifndef NRFX_CLOCK_CONFIG_LF_SRC
 #define NRFX_CLOCK_CONFIG_LF_SRC 1
