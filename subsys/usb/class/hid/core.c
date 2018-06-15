@@ -17,6 +17,9 @@
 #include <usb_descriptor.h>
 #include <class/usb_hid.h>
 
+#define HID_INT_IN_EP_IDX			0
+#define HID_INT_OUT_EP_IDX			1
+
 struct usb_hid_config {
 	struct usb_if_descriptor if0;
 	struct usb_hid_descriptor if0_hid;
@@ -269,4 +272,10 @@ void usb_hid_register_device(const u8_t *desc, size_t size,
 	hid_device.report_size = size;
 
 	hid_device.ops = ops;
+}
+
+int hid_int_ep_write(const u8_t *data, u32_t data_len, u32_t *bytes_ret)
+{
+	return usb_write(hid_ep_data[HID_INT_IN_EP_IDX].ep_addr, data,
+			 data_len, bytes_ret);
 }
