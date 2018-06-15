@@ -23,7 +23,7 @@ choice
 
 config UART_0_NRF_UART
 	bool "nRF UART 0"
-	depends on ((SOC_SERIES_NRF52X || SOC_SERIES_NRF51X) && (!SOC_NRF52810))
+	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF51X
 	select NRF_UART_PERIPHERAL
 	help
 	  Enable nRF UART without EasyDMA on port 0.
