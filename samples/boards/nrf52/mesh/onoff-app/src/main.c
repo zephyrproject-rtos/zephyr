@@ -37,6 +37,7 @@
  */
 
 #include <misc/printk.h>
+#include <settings/settings.h>
 #include <misc/byteorder.h>
 #include <nrf.h>
 #include <device.h>
@@ -588,6 +589,10 @@ static void bt_ready(int err)
 	if (err) {
 		SYS_LOG_ERR("Initializing mesh failed (err %d)", err);
 		return;
+	}
+
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
 	}
 
 	bt_mesh_prov_enable(BT_MESH_PROV_GATT | BT_MESH_PROV_ADV);
