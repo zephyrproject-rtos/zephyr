@@ -61,7 +61,7 @@ are organized based on their common characteristics and on what new symbols
 they add to the configuration menus.
 
 The configuration options' information below is extracted directly from
-:program:`Kconfig` using the :file:`~/doc/scripts/genrest.py` script. Click on
+:program:`Kconfig`. Click on
 the option name in the table below for detailed information about each option.
 
 Supported Options
@@ -362,14 +362,14 @@ def write_if_updated(filename, s):
     # which trigger documentation rebuilds.
 
     try:
-        with open(filename) as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             if s == f.read():
                 return
     except OSError as e:
         if e.errno != errno.ENOENT:
             raise
 
-    with open(filename, "w") as f:
+    with open(filename, "w", encoding='utf-8') as f:
         f.write(s)
 
 
