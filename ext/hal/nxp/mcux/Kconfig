@@ -14,63 +14,53 @@ if HAS_MCUX
 
 config HAS_MCUX_ADC16
 	bool
-	default n
 	help
 	  Set if the 16-bit ADC (ADC16) module is present in the SoC.
 
 config HAS_MCUX_CCM
 	bool
-	default n
 	help
 	  Set if the clock control module (CCM) module is present in the SoC.
 
 config HAS_MCUX_FTM
 	bool
-	default n
 	help
 	  Set if the FlexTimer (FTM) module is present in the SoC.
 
 config HAS_MCUX_IGPIO
 	bool
-	default n
 	help
 	  Set if the iMX GPIO (IGPIO) module is present in the SoC.
 
 config HAS_MCUX_LPSCI
 	bool
-	default n
 	help
 	  Set if the low power uart (LPSCI) module is present in the SoC.
 
 config HAS_MCUX_LPUART
 	bool
-	default n
 	help
 	  Set if the low power uart (LPUART) module is present in the SoC.
 
 config HAS_MCUX_RNGA
 	bool
-	default n
 	help
 	  Set if the random number generator accelerator (RNGA) module is
 	  present in the SoC.
 
 config HAS_MCUX_RTC
 	bool
-	default n
 	help
 	  Set if the real time clock (RTC) modules is present in the SoC.
 
 config HAS_MCUX_SIM
 	bool
-	default n
 	help
 	  Set if the system integration module (SIM) module is present in the
 	  SoC.
 
 config HAS_MCUX_TRNG
 	bool
-	default n
 	help
 	  Set if the true random number generator (TRNG) module is present in
 	  the SoC.

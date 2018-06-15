@@ -21,8 +21,6 @@ menuconfig MCUMGR_CMD_IMG_MGMT
     select FLASH
     select MPU_ALLOW_FLASH_WRITE if CPU_HAS_MPU
     select IMG_MANAGER
-
-    default n
     help
       Enables mcumgr handlers for image management
 

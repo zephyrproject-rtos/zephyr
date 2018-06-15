@@ -13,455 +13,342 @@ if HAS_STM32CUBE
 
 config USE_STM32_HAL_ADC
 	bool
-	default n
 
 config USE_STM32_HAL_ADC_EX
 	bool
-	default n
 
 config USE_STM32_HAL_CAN
 	bool
-	default n
 
 config USE_STM32_HAL_CEC
 	bool
-	default n
 
 config USE_STM32_HAL_COMP
 	bool
-	default n
 
 config USE_STM32_HAL_CORTEX
 	bool
-	default n
 
 config USE_STM32_HAL_CRC
 	bool
-	default n
 
 config USE_STM32_HAL_CRC_EX
 	bool
-	default n
 
 config USE_STM32_HAL_CRYPT
 	bool
-	default n
 
 config USE_STM32_HAL_CRYPT_EX
 	bool
-	default n
 
 config USE_STM32_HAL_DAC
 	bool
-	default n
 
 config USE_STM32_HAL_DAC_EX
 	bool
-	default n
 
 config USE_STM32_HAL_DCMI
 	bool
-	default n
 
 config USE_STM32_HAL_DCMI_EX
 	bool
-	default n
 
 config USE_STM32_HAL_DFSDM
 	bool
-	default n
 
 config USE_STM32_HAL_DFSDM_EX
 	bool
-	default n
 
 config USE_STM32_HAL_DMA
 	bool
-	default n
 
 config USE_STM32_HAL_DMA2D
 	bool
-	default n
 
 config USE_STM32_HAL_DMA_EX
 	bool
-	default n
 
 config USE_STM32_HAL_DSI
 	bool
-	default n
 
 config USE_STM32_HAL_ETH
 	bool
-	default n
 
 config USE_STM32_HAL_FIREWALL
 	bool
-	default n
 
 config USE_STM32_HAL_FLASH
 	bool
-	default n
 
 config USE_STM32_HAL_FLASH_EX
 	bool
-	default n
 
 config USE_STM32_HAL_FLASH_RAMFUNC
 	bool
-	default n
 
 config USE_STM32_HAL_FMPI2C
 	bool
-	default n
 
 config USE_STM32_HAL_FMPI2C_EX
 	bool
-	default n
 
 config USE_STM32_HAL_GFXMMU
 	bool
-	default n
 
 config USE_STM32_HAL_GPIO
 	bool
-	default n
 
 config USE_STM32_HAL_GPIO_EX
 	bool
-	default n
 
 config USE_STM32_HAL_HASH
 	bool
-	default n
 
 config USE_STM32_HAL_HASH_EX
 	bool
-	default n
 
 config USE_STM32_HAL_HCD
 	bool
-	default n
 
 config USE_STM32_HAL_HRTIM
 	bool
-	default n
 
 config USE_STM32_HAL_I2C
 	bool
-	default n
 
 config USE_STM32_HAL_I2C_EX
 	bool
-	default n
 
 config USE_STM32_HAL_I2S
 	bool
-	default n
 
 config USE_STM32_HAL_I2S_EX
 	bool
-	default n
 
 config USE_STM32_HAL_IRDA
 	bool
-	default n
 
 config USE_STM32_HAL_IWDG
 	bool
-	default n
 
 config USE_STM32_HAL_JPEG
 	bool
-	default n
 
 config USE_STM32_HAL_LCD
 	bool
-	default n
 
 config USE_STM32_HAL_LPTIM
 	bool
-	default n
 
 config USE_STM32_HAL_LTDC
 	bool
-	default n
 
 config USE_STM32_HAL_LTDC_EX
 	bool
-	default n
 
 config USE_STM32_HAL_MDIOS
 	bool
-	default n
 
 config USE_STM32_HAL_MMC
 	bool
-	default n
 
 config USE_STM32_HAL_NAND
 	bool
-	default n
 
 config USE_STM32_HAL_NOR
 	bool
-	default n
 
 config USE_STM32_HAL_OPAMP
 	bool
-	default n
 
 config USE_STM32_HAL_OPAMP_EX
 	bool
-	default n
 
 config USE_STM32_HAL_OSPI
 	bool
-	default n
 
 config USE_STM32_HAL_PCCARD
 	bool
-	default n
 
 config USE_STM32_HAL_PCD
 	bool
-	default n
 
 config USE_STM32_HAL_PCD_EX
 	bool
-	default n
 
 config USE_STM32_HAL_PWR
 	bool
-	default n
 
 config USE_STM32_HAL_PWR_EX
 	bool
-	default n
 
 config USE_STM32_HAL_QSPI
 	bool
-	default n
 
 config USE_STM32_HAL_RCC
 	bool
-	default n
 
 config USE_STM32_HAL_RCC_EX
 	bool
-	default n
 
 config USE_STM32_HAL_RNG
 	bool
-	default n
 
 config USE_STM32_HAL_RTC
 	bool
-	default n
 
 config USE_STM32_HAL_RTC_EX
 	bool
-	default n
 
 config USE_STM32_HAL_SAI
 	bool
-	default n
 
 config USE_STM32_HAL_SAI_EX
 	bool
-	default n
 
 config USE_STM32_HAL_SD
 	bool
-	default n
 
 config USE_STM32_HAL_SDADC
 	bool
-	default n
 
 config USE_STM32_HAL_SD_EX
 	bool
-	default n
 
 config USE_STM32_HAL_SDRAM
 	bool
-	default n
 
 config USE_STM32_HAL_SMARTCARD
 	bool
-	default n
 
 config USE_STM32_HAL_SMARTCARD_EX
 	bool
-	default n
 
 config USE_STM32_HAL_SMBUS
 	bool
-	default n
 
 config USE_STM32_HAL_SPDIFRX
 	bool
-	default n
 
 config USE_STM32_HAL_SPI
 	bool
-	default n
 
 config USE_STM32_HAL_SPI_EX
 	bool
-	default n
 
 config USE_STM32_HAL_SRAM
 	bool
-	default n
 
 config USE_STM32_HAL_SWPMI
 	bool
-	default n
 
 config USE_STM32_HAL_TIM
 	bool
-	default n
 
 config USE_STM32_HAL_TIME_EX
 	bool
-	default n
 
 config USE_STM32_HAL_TIM_EX
 	bool
-	default n
 
 config USE_STM32_HAL_TSC
 	bool
-	default n
 
 config USE_STM32_HAL_UART
 	bool
-	default n
 
 config USE_STM32_HAL_UART_EX
 	bool
-	default n
 
 config USE_STM32_HAL_USART
 	bool
-	default n
 
 config USE_STM32_HAL_USART_EX
 	bool
-	default n
 
 config USE_STM32_HAL_WWDG
 	bool
-	default n
 
 config USE_STM32_LL_ADC
 	bool
-	default n
 
 config USE_STM32_LL_COMP
 	bool
-	default n
 
 config USE_STM32_LL_CRC
 	bool
-	default n
 
 config USE_STM32_LL_CRS
 	bool
-	default n
 
 config USE_STM32_LL_DAC
 	bool
-	default n
 
 config USE_STM32_LL_DMA
 	bool
-	default n
 
 config USE_STM32_LL_DMA2D
 	bool
-	default n
 
 config USE_STM32_LL_EXTI
 	bool
-	default n
 
 config USE_STM32_LL_FMC
 	bool
-	default n
 
 config USE_STM32_LL_FSMC
 	bool
-	default n
 
 config USE_STM32_LL_GPIO
 	bool
-	default n
 
 config USE_STM32_LL_HRTIM
 	bool
-	default n
 
 config USE_STM32_LL_I2C
 	bool
-	default n
 
 config USE_STM32_LL_LPTIM
 	bool
-	default n
 
 config USE_STM32_LL_LPUART
 	bool
-	default n
 
 config USE_STM32_LL_OPAMP
 	bool
-	default n
 
 config USE_STM32_LL_PWR
 	bool
-	default n
 
 config USE_STM32_LL_RCC
 	bool
-	default n
 
 config USE_STM32_LL_RNG
 	bool
-	default n
 
 config USE_STM32_LL_RTC
 	bool
-	default n
 
 config USE_STM32_LL_SDMMC
 	bool
-	default n
 
 config USE_STM32_LL_SPI
 	bool
-	default n
 
 config USE_STM32_LL_SWPMI
 	bool
-	default n
 
 config USE_STM32_LL_TIM
 	bool
-	default n
 
 config USE_STM32_LL_USART
 	bool
-	default n
 
 config USE_STM32_LL_USB
 	bool
-	default n
 
 config USE_STM32_LL_UTILS
 	bool
-	default n
 
 endif
 

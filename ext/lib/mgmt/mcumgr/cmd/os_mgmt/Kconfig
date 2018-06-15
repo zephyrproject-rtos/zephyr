@@ -19,7 +19,6 @@ menuconfig MCUMGR_CMD_OS_MGMT
     bool
     prompt "Enable mcumgr handlers for OS management"
     select REBOOT
-    default n
     help
       Enables mcumgr handlers for OS management
 
