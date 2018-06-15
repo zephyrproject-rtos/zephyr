@@ -28,6 +28,7 @@ from extract.reg import reg
 from extract.flash import flash
 from extract.pinctrl import pinctrl
 from extract.heuristics import heuristics
+from extract.gpioranges import gpioranges
 from extract.default import default
 
 class Loader(yaml.Loader):
@@ -395,6 +396,8 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
         heuristics.extract(node_address, yaml, prop, names, def_label)
     elif 'pinctrl-' in prop:
         pinctrl.extract(node_address, yaml, prop, names, def_label)
+    elif 'gpio-ranges' in prop:
+        gpioranges.extract(node_address, yaml, prop, names, def_label)
     elif 'clocks' in prop:
         clocks.extract(node_address, yaml, prop, names, def_label)
     elif 'gpios' in prop:

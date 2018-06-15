@@ -5,10 +5,23 @@
 #
 
 from extract.globals import *
+from extract.edts import *
 from extract.directive import DTDirective
 
 ##
-# @brief Manage pinctrl-x directive.
+# @brief Manage pinctrl related directives.
+#
+# Handles:
+# - pinctrl-x
+# - pinctrl-names
+#
+# Generates in EDTS:
+# - pinctrl/<index>/name           : name of the pinctrl
+# - pinctrl/<index>/pinconf/<pinconf-index>/pin-controller : device_id of
+#                                                            pin controller
+# - pinctrl/<index>/pinconf/<pinconf-index>/bias-disable        : pinconf value
+# - pinctrl/<index>/pinconf/<pinconf-index>/bias-high-impedance : ..
+# - pinctrl/<index>/pinconf/<pinconf-index>/bias-bus-hold       : ..
 #
 class DTPinCtrl(DTDirective):
 
@@ -27,45 +40,99 @@ class DTPinCtrl(DTDirective):
     #
     def extract(self, node_address, yaml, prop, names, def_label):
 
-        pinconf = reduced[node_address]['props'][prop]
-
-        prop_list = []
-        if not isinstance(pinconf, list):
-            prop_list.append(pinconf)
+        # Get pinctrl index from pinctrl-<index> directive
+        pinctrl_index = int(prop.split('-')[1])
+        # Pinctrl definition
+        pinctrl = reduced[node_address]['props'][prop]
+        # Name of this pinctrl state. Use directive if there is no name.
+        if pinctrl_index >= len(names):
+            pinctrl_name = prop
         else:
-            prop_list = list(pinconf)
+            pinctrl_name = names[pinctrl_index]
 
-        def_prefix = def_label.split('_')
+        pin_config_handles = []
+        if not isinstance(pinctrl, list):
+            pin_config_handles.append(pinctrl)
+        else:
+            pin_config_handles = list(pinctrl)
 
-        prop_def = {}
-        for p in prop_list:
-            pin_node_address = phandles[p]
-            pin_subnode = '/'.join(pin_node_address.split('/')[-1:])
-            cell_yaml = yaml[get_compat(pin_node_address)]
-            cell_prefix = 'PINMUX'
-            post_fix = []
+        # generate EDTS pinctrl
+        pinctrl_client_device_id = edts_device_id(node_address)
+        edts_insert_device_property(pinctrl_client_device_id,
+            'pinctrl/{}/name'.format(pinctrl_index), pinctrl_name)
 
-            if cell_prefix is not None:
-                post_fix.append(cell_prefix)
+        client_prop_def = {}
+        pinconf_index = 0
+        for pin_config_handle in pin_config_handles:
+            pin_config_node_address = phandles[pin_config_handle]
+            pin_controller_node_address = \
+                    '/'.join(pin_config_node_address.split('/')[:-1])
+            pin_config_subnode_prefix = \
+                            '/'.join(pin_config_node_address.split('/')[-1:])
+            pin_controller_device_id = edts_device_id(pin_controller_node_address)
+            for subnode_address in reduced:
+                if pin_config_subnode_prefix in subnode_address \
+                    and pin_config_node_address != subnode_address:
+                    # Found a subnode underneath the pin configuration node
+                    # Create pinconf defines and EDTS
+                    edts_insert_device_property(pinctrl_client_device_id,
+                        'pinctrl/{}/pinconf/{}/name' \
+                            .format(pinctrl_index, pinconf_index),
+                        subnode_address.split('/')[-1])
+                    edts_insert_device_property(pinctrl_client_device_id,
+                        'pinctrl/{}/pinconf/{}/pin-controller' \
+                            .format(pinctrl_index, pinconf_index),
+                        pin_controller_device_id)
+                    pinconf_props = reduced[subnode_address]['props'].keys()
+                    for pinconf_prop in pinconf_props:
+                        pinconf_value = reduced[subnode_address]['props'][pinconf_prop]
+                        if pinconf_prop in edts.pinconf_bool_props:
+                            pinconf_value = 1 if pinconf_value else 0
+                        elif pinconf_prop in edts.pinconf_bool_or_value_props:
+                            if isinstance(pinconf_value, bool):
+                                pinconf_value = 1 if pinconf_value else 0
+                        elif pinconf_prop in edts.pinconf_list_props:
+                            if not isinstance(pinconf_value, list):
+                                pinconf_value = [pinconf_value, ]
+                        else:
+                            # generate defines
 
-            for subnode in reduced.keys():
-                if pin_subnode in subnode and pin_node_address != subnode:
-                    # found a subnode underneath the pinmux handle
-                    pin_label = def_prefix + post_fix + subnode.split('/')[-2:]
-
-                    for i, cells in enumerate(reduced[subnode]['props']):
-                        key_label = list(pin_label) + \
-                            [cell_yaml['#cells'][0]] + [str(i)]
-                        func_label = key_label[:-2] + \
-                            [cell_yaml['#cells'][1]] + [str(i)]
-                        key_label = convert_string_to_label('_'.join(key_label))
-                        func_label = convert_string_to_label('_'.join(func_label))
-
-                        prop_def[key_label] = cells
-                        prop_def[func_label] = \
-                            reduced[subnode]['props'][cells]
-
-        insert_defs(node_address, prop_def, {})
+                            # use cell names if available
+                            # (for a pinmux node these are: pin, function)
+                            controller_compat = get_compat(pin_controller_node_address)
+                            if controller_compat is None:
+                                raise Exception("No binding or compatible missing for {}."
+                                                .format(pin_controller_node_address))
+                            controller_yaml = yaml.get(controller_compat, None)
+                            if controller_yaml is None:
+                                raise Exception("No binding for {}."
+                                                .format(controller_compat))
+                            if 'pinmux' in controller_compat:
+                                cell_prefix = 'PINMUX'
+                            else:
+                                cell_prefix = 'PINCTRL'
+                            cell_names = controller_yaml.get('#cells', None)
+                            if cell_names is None:
+                                # No cell names - use default names for pinctrl
+                                cell_names = ['pin', 'function']
+                            pin_label = self.get_label_string([def_label, \
+                                        cell_prefix] + subnode_address.split('/')[-2:] \
+                                        + [cell_names[0], str(pinconf_index)])
+                            func_label = self.get_label_string([def_label, \
+                                        cell_prefix] + subnode_address.split('/')[-2:] \
+                                        + [cell_names[1], str(pinconf_index)])
+                            client_prop_def[pin_label] = pinconf_prop
+                            client_prop_def[func_label] = pinconf_value
+                            continue
+                        # generate EDTS pinconf value
+                        edts_insert_device_property(pinctrl_client_device_id,
+                            'pinctrl/{}/pinconf/{}/{}'.format(pinctrl_index,
+                                                              pinconf_index,
+                                                              pinconf_prop),
+                            pinconf_value)
+                    pinconf_index += 1
+        # update property definitions of owning node
+        insert_defs(node_address, client_prop_def, {})
 
 ##
 # @brief Management information for pinctrl-[x].
