@@ -85,9 +85,7 @@ root element's unicast address as it is the only one that has a
 configuration server model.
 
 If meshctl is gracefully exited, it can be restarted and reconnected to
-network 0x0. The board configuration is volatile and if the board is reset,
-power cycled, or reprogrammed, it will have to be provisioned and configured
-again.
+network 0x0.
 
 The meshctl utility also supports a onoff model client that can be used to
 change the state of any LED that is bound to application key 0x1.
