@@ -8,7 +8,6 @@ config OPENAMP
 	bool
 	prompt "OpenAMP Support"
 	select LIBMETAL
-	default n
 	help
 	  This option enables the OpenAMP IPC library
 

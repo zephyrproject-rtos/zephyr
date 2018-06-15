@@ -19,7 +19,6 @@ menuconfig MCUMGR_CMD_FS_MGMT
     bool
     prompt "Enable mcumgr handlers for file management"
     depends on FILE_SYSTEM
-    default n
     help
       Enables mcumgr handlers for file management
 

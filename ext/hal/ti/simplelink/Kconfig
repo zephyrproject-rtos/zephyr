@@ -8,7 +8,6 @@ config HAS_CC3220SDK
 # Selecting ERRNO lets host driver use Zephyr's __errno
 config SIMPLELINK_HOST_DRIVER
 	bool "Build the SimpleLink WiFi Host Driver"
-	default n
 	depends on HAS_CC3220SDK
 	depends on MULTITHREADING
 	select NEWLIB_LIBC

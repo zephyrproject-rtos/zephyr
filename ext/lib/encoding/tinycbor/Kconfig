@@ -20,7 +20,6 @@
 config TINYCBOR
 	bool
 	prompt "tinyCBOR Support"
-	default n
 	help
 	  This option enables the tinyCBOR library.
 
@@ -29,21 +28,18 @@ if TINYCBOR
 config CBOR_NO_DFLT_WRITER
 	bool
 	prompt "No default writer support"
-	default n
 	help
 	  This option specifies whether a default writer exists.
 
 config CBOR_NO_DFLT_READER
 	bool
 	prompt "No default reader support"
-	default n
 	help
 	  This option specifies whether a default reader exists.
 
 config CBOR_ENCODER_NO_CHECK_USER
 	bool
 	prompt "No encoder checks for user args for validity"
-	default n
 	help
 	  This option specifies whether a check user exists for a cbor encoder.
 
@@ -57,7 +53,6 @@ config CBOR_PARSER_MAX_RECURSIONS
 config CBOR_PARSER_NO_STRICT_CHECKS
 	bool
 	prompt "No strict parser checks"
-	default n
 	help
 	  This option enables the strict parser checks.
 
@@ -65,7 +60,6 @@ config CBOR_FLOATING_POINT
 	bool
 	select NEWLIB_LIBC
 	prompt "Floating point support"
-	default n
 	help
 	  This option enables floating point support.
 
@@ -73,7 +67,6 @@ config CBOR_HALF_FLOAT_TYPE
 	bool
 	select NEWLIB_LIBC
 	prompt "Half float type support"
-	default n
 	help
 	  This option enables half float type support.
 

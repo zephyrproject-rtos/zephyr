@@ -6,11 +6,9 @@
 
 config HAS_SEGGER_RTT
 	bool
-	default n
 
 config SEGGER_SYSTEMVIEW
 	bool
 	prompt "Segger SystemView support"
-	default n
 	depends on HAS_SEGGER_RTT
 	select RTT_CONSOLE
