@@ -23,6 +23,10 @@ sh_special_args = {
     '_cwd': repository_path
 }
 
+# list_undef_kconfig_refs.py makes use of Kconfiglib
+sys.path.append(os.path.join(repository_path, "scripts/kconfig"))
+import list_undef_kconfig_refs
+
 
 def init_logs():
     global logger
@@ -93,6 +97,23 @@ def run_checkpatch(tc, commit_range):
             return 1
 
     return 0
+
+
+def run_kconfig_undef_ref_check(tc, commit_range):
+    # Parse the entire Kconfig tree, to make sure we see all symbols
+    os.environ["ENV_VAR_BOARD_DIR"] = "boards/*/*"
+    os.environ["ENV_VAR_ARCH"] = "*"
+
+    # Returns the empty string if there are no references to undefined symbols
+    msg = list_undef_kconfig_refs.report()
+    if msg:
+        failure = ET.SubElement(tc, "failure", type="failure",
+                                message="undefined Kconfig symbols")
+        failure.text = msg
+        return 1
+
+    return 0
+
 
 def verify_signed_off(tc, commit):
 
@@ -165,6 +186,10 @@ tests = {
         "checkpatch": {
             "call": run_checkpatch,
             "name": "Code style check using checkpatch",
+            },
+        "checkkconfig": {
+            "call": run_kconfig_undef_ref_check,
+            "name": "Check Kconfig files for references to undefined symbols",
             },
         "documentation": {
             "call": check_doc,
