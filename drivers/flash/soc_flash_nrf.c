@@ -68,8 +68,17 @@ static int erase_op(void *context); /* instance of flash_op_handler_t */
 static int erase_in_timeslice(u32_t addr, u32_t size);
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
 
+#if defined(CONFIG_MULTITHREADING)
 /* semaphore for locking flash resources (tickers) */
 static struct k_sem sem_lock;
+#define SYNC_INIT() k_sem_init(&sem_lock, 1, 1)
+#define SYNC_LOCK() k_sem_take(&sem_lock, K_FOREVER)
+#define SYNC_UNLOCK() k_sem_give(&sem_lock)
+#else
+#define SYNC_INIT()
+#define SYNC_LOCK()
+#define SYNC_UNLOCK()
+#endif
 
 static int write(off_t addr, const void *data, size_t len);
 static int erase(u32_t addr, u32_t size);
@@ -125,7 +134,7 @@ static int flash_nrf_write(struct device *dev, off_t addr,
 		return 0;
 	}
 
-	k_sem_take(&sem_lock, K_FOREVER);
+	SYNC_LOCK();
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 	if (ticker_is_initialized(0)) {
@@ -136,7 +145,7 @@ static int flash_nrf_write(struct device *dev, off_t addr,
 		ret = write(addr, data, len);
 	}
 
-	k_sem_give(&sem_lock);
+	SYNC_UNLOCK();
 
 	return ret;
 }
@@ -160,7 +169,7 @@ static int flash_nrf_erase(struct device *dev, off_t addr, size_t size)
 		return 0;
 	}
 
-	k_sem_take(&sem_lock, K_FOREVER);
+	SYNC_LOCK();
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 	if (ticker_is_initialized(0)) {
@@ -171,14 +180,14 @@ static int flash_nrf_erase(struct device *dev, off_t addr, size_t size)
 		ret = erase(addr, size);
 	}
 
-	k_sem_give(&sem_lock);
+	SYNC_UNLOCK();
 
 	return ret;
 }
 
 static int flash_nrf_write_protection(struct device *dev, bool enable)
 {
-	k_sem_take(&sem_lock, K_FOREVER);
+	SYNC_LOCK();
 
 	if (enable) {
 		NRF_NVMC->CONFIG = NVMC_CONFIG_WEN_Ren << NVMC_CONFIG_WEN_Pos;
@@ -187,7 +196,7 @@ static int flash_nrf_write_protection(struct device *dev, bool enable)
 	}
 	nvmc_wait_ready();
 
-	k_sem_give(&sem_lock);
+	SYNC_UNLOCK();
 
 	return 0;
 }
@@ -219,7 +228,7 @@ static int nrf_flash_init(struct device *dev)
 {
 	dev->driver_api = &flash_nrf_api;
 
-	k_sem_init(&sem_lock, 1, 1);
+	SYNC_INIT();
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 	k_sem_init(&sem_sync, 0, 1);
