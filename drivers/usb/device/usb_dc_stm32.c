@@ -457,7 +457,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 {
 	u8_t ep_idx = EP_IDX(cfg->ep_addr);
 
-	SYS_LOG_ERR("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
+	SYS_LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
 		    cfg->ep_type);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
