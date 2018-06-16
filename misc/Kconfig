@@ -152,6 +152,12 @@ config SIZE_OPTIMIZATIONS
 	  Compiler optimizations will be set to -Os independently of other
 	  options.
 
+config SPEED_OPTIMIZATIONS
+	bool "Optimize for speed"
+	help
+	  Compiler optimizations will be set to -O2 independently of other
+	  options.
+
 config DEBUG_OPTIMIZATIONS
 	bool "Optimize debugging experience"
 	help
