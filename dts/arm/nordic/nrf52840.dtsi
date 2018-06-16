@@ -106,7 +106,7 @@
 			label = "I2C_1";
 		};
 
-		usbd: usbd@0x40027000 {
+		usbd: usbd@40027000 {
 			compatible = "nordic,nrf-usbd";
 			reg = <0x40027000 0x1000>;
 			interrupts = <39 1>;
