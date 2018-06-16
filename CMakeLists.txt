@@ -222,7 +222,8 @@ if(CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT)
   endif()
 endif()
 
-zephyr_compile_options(${CONFIG_COMPILER_OPT})
+separate_arguments(CONFIG_COMPILER_OPT_AS_LIST UNIX_COMMAND ${CONFIG_COMPILER_OPT})
+zephyr_compile_options(${CONFIG_COMPILER_OPT_AS_LIST})
 
 # TODO: Include arch compiler options at this point.
 
