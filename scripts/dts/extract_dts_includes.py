@@ -18,6 +18,13 @@ import collections
 from devicetree import parse_file
 from extract.globals import *
 
+from extract.clocks import clocks
+from extract.interrupts import interrupts
+from extract.reg import reg
+from extract.flash import flash
+from extract.pinctrl import pinctrl
+from extract.default import default
+
 class Loader(yaml.Loader):
     def __init__(self, stream):
         self._root = os.path.realpath(stream.name)
@@ -56,63 +63,6 @@ class Loader(yaml.Loader):
                     filepath = os.path.join(root, filename)
         with open(filepath, 'r') as f:
             return yaml.load(f, Loader)
-
-def find_parent_irq_node(node_address):
-    address = ''
-
-    for comp in node_address.split('/')[1:]:
-        address += '/' + comp
-        if 'interrupt-parent' in reduced[address]['props']:
-            interrupt_parent = reduced[address]['props'].get(
-                'interrupt-parent')
-
-    return phandles[interrupt_parent]
-
-def extract_interrupts(node_address, yaml, prop, names, defs, def_label):
-    node = reduced[node_address]
-
-    try:
-        props = list(node['props'].get(prop))
-    except:
-        props = [node['props'].get(prop)]
-
-    irq_parent = find_parent_irq_node(node_address)
-
-    l_base = def_label.split('/')
-    index = 0
-
-    while props:
-        prop_def = {}
-        prop_alias = {}
-        l_idx = [str(index)]
-
-        try:
-            name = [convert_string_to_label(names.pop(0))]
-        except:
-            name = []
-
-        cell_yaml = yaml[get_compat(irq_parent)]
-        l_cell_prefix = ['IRQ']
-
-        for i in range(reduced[irq_parent]['props']['#interrupt-cells']):
-            l_cell_name = [cell_yaml['#cells'][i].upper()]
-            if l_cell_name == l_cell_prefix:
-                l_cell_name = []
-
-            l_fqn = '_'.join(l_base + l_cell_prefix + l_idx + l_cell_name)
-            prop_def[l_fqn] = props.pop(0)
-            if len(name):
-                alias_list = l_base + l_cell_prefix + name + l_cell_name
-                prop_alias['_'.join(alias_list)] = l_fqn
-
-            if node_address in aliases:
-                for i in aliases[node_address]:
-                    alias_label = convert_string_to_label(i)
-                    alias_list = [alias_label] + l_cell_prefix + name + l_cell_name
-                    prop_alias['_'.join(alias_list)] = l_fqn
-
-        index += 1
-        insert_defs(node_address, defs, prop_def, prop_alias)
 
 
 def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
@@ -325,50 +275,6 @@ def extract_cells(node_address, yaml, prop, prop_values, names, index, defs,
                       index + 1, defs, def_label, generic)
 
 
-def extract_pinctrl(node_address, yaml, prop, names, index, defs,
-                    def_label):
-
-    pinconf = reduced[node_address]['props'][prop]
-
-    prop_list = []
-    if not isinstance(pinconf, list):
-        prop_list.append(pinconf)
-    else:
-        prop_list = list(pinconf)
-
-    def_prefix = def_label.split('_')
-
-    prop_def = {}
-    for p in prop_list:
-        pin_node_address = phandles[p]
-        pin_subnode = '/'.join(pin_node_address.split('/')[-1:])
-        cell_yaml = yaml[get_compat(pin_node_address)]
-        cell_prefix = 'PINMUX'
-        post_fix = []
-
-        if cell_prefix is not None:
-            post_fix.append(cell_prefix)
-
-        for subnode in reduced.keys():
-            if pin_subnode in subnode and pin_node_address != subnode:
-                # found a subnode underneath the pinmux handle
-                pin_label = def_prefix + post_fix + subnode.split('/')[-2:]
-
-                for i, cells in enumerate(reduced[subnode]['props']):
-                    key_label = list(pin_label) + \
-                        [cell_yaml['#cells'][0]] + [str(i)]
-                    func_label = key_label[:-2] + \
-                        [cell_yaml['#cells'][1]] + [str(i)]
-                    key_label = convert_string_to_label('_'.join(key_label))
-                    func_label = convert_string_to_label('_'.join(func_label))
-
-                    prop_def[key_label] = cells
-                    prop_def[func_label] = \
-                        reduced[subnode]['props'][cells]
-
-    insert_defs(node_address, defs, prop_def, {})
-
-
 def extract_single(node_address, yaml, prop, key, defs, def_label):
 
     prop_def = {}
@@ -470,24 +376,17 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
         def_label += '_' + label_override
 
     if prop == 'reg':
-        extract_reg_prop(node_address, names, defs, def_label,
-                         1, prop_val.get('label', None))
-    elif prop == 'interrupts' or prop == 'interupts-extended':
-        extract_interrupts(node_address, yaml, prop, names, defs, def_label)
+        if 'partition@' in node_address:
+            # reg in partition is covered by flash handling
+            flash.extract(node_address, yaml, prop, names, defs, def_label)
+        else:
+            reg.extract(node_address, yaml, prop, names, defs, def_label)
+    elif prop == 'interrupts' or prop == 'interrupts-extended':
+        interrupts.extract(node_address, yaml, prop, names, defs, def_label)
     elif 'pinctrl-' in prop:
-        p_index = int(prop.split('-')[1])
-        extract_pinctrl(node_address, yaml, prop,
-                        names[p_index], p_index, defs, def_label)
+        pinctrl.extract(node_address, yaml, prop, names, defs, def_label)
     elif 'clocks' in prop:
-        try:
-            prop_values = list(reduced[node_address]['props'].get(prop))
-        except:
-            prop_values = reduced[node_address]['props'].get(prop)
-
-        extract_controller(node_address, yaml, prop, prop_values, 0, defs,
-                           def_label, 'clock')
-        extract_cells(node_address, yaml, prop, prop_values,
-                      names, 0, defs, def_label, 'clock')
+        clocks.extract(node_address, yaml, prop, names, defs, def_label)
     elif 'gpios' in prop:
         try:
             prop_values = list(reduced[node_address]['props'].get(prop))
@@ -499,9 +398,7 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
         extract_cells(node_address, yaml, prop, prop_values,
                       names, 0, defs, def_label, 'gpio')
     else:
-        extract_single(node_address, yaml,
-                       reduced[node_address]['props'][prop], prop,
-                       defs, def_label)
+        default.extract(node_address, yaml, prop, names, defs, def_label)
 
 
 def extract_node_include_info(reduced, root_node_address, sub_node_address,
@@ -782,16 +679,6 @@ def load_yaml_descriptions(dts, yaml_dir):
     return yaml_list
 
 
-def lookup_defs(defs, node, key):
-    if node not in defs:
-        return None
-
-    if key in defs[node]['aliases']:
-        key = defs[node]['aliases'][key]
-
-    return defs[node].get(key, None)
-
-
 def generate_node_definitions(yaml_list):
     defs = {}
     structs = {}
@@ -813,46 +700,11 @@ def generate_node_definitions(yaml_list):
         if k in chosen:
             extract_string_prop(chosen[k], None, "label", v, defs)
 
-    # This should go away via future DTDirective class
-    if 'zephyr,flash' in chosen:
-        load_defs = {}
-        node_addr = chosen['zephyr,flash']
-        flash_keys = ["label", "write-block-size", "erase-block-size"]
-
-        for key in flash_keys:
-            if key in reduced[node_addr]['props']:
-                prop = reduced[node_addr]['props'][key]
-                extract_single(node_addr, None, prop, key, defs, "FLASH")
-
-        # only compute the load offset if a code partition exists and
-        # it is not the same as the flash base address
-        if 'zephyr,code-partition' in chosen and \
-           reduced[chosen['zephyr,flash']] is not \
-           reduced[chosen['zephyr,code-partition']]:
-            part_defs = {}
-            extract_reg_prop(chosen['zephyr,code-partition'], None,
-                             part_defs, "PARTITION", 1, 'offset')
-            part_base = lookup_defs(part_defs,
-                                    chosen['zephyr,code-partition'],
-                                    'PARTITION_OFFSET')
-            load_defs['CONFIG_FLASH_LOAD_OFFSET'] = part_base
-            load_defs['CONFIG_FLASH_LOAD_SIZE'] = \
-                lookup_defs(part_defs,
-                            chosen['zephyr,code-partition'],
-                            'PARTITION_SIZE')
-        else:
-            load_defs['CONFIG_FLASH_LOAD_OFFSET'] = 0
-            load_defs['CONFIG_FLASH_LOAD_SIZE'] = 0
-    else:
-        # We will add addr/size of 0 for systems with no flash controller
-        # This is what they already do in the Kconfig options anyway
-        defs['dummy-flash'] = {
-            'CONFIG_FLASH_BASE_ADDRESS': 0,
-            'CONFIG_FLASH_SIZE': 0
-        }
-
-    if 'zephyr,flash' in chosen:
-        insert_defs(chosen['zephyr,flash'], defs, load_defs, {})
+    node_address = chosen.get('zephyr,flash', 'dummy-flash')
+    flash.extract(node_address, yaml_list, 'zephyr,flash', None, defs, 'FLASH')
+    node_address = chosen.get('zephyr,code-partition', node_address)
+    flash.extract(node_address, yaml_list, 'zephyr,code-partition', None,
+                  defs, 'FLASH')
 
     return defs
 
