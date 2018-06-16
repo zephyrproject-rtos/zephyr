@@ -12,4 +12,20 @@ gsource "arch/arm/soc/st_stm32/stm32f7/Kconfig.defconfig.stm32f7*"
 config SOC_SERIES
 	default "stm32f7"
 
+if GPIO_STM32
+
+config GPIO_STM32_PORTD
+	default y
+
+config GPIO_STM32_PORTE
+	default y
+
+config GPIO_STM32_PORTH
+	default y
+
+config GPIO_STM32_PORTI
+	default y
+
+endif # GPIO_STM32
+
 endif # SOC_SERIES_STM32F7X
