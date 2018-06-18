@@ -36,22 +36,6 @@ struct arm_mpu {
 #define ARM_MPU_BASE	0xE000ED90
 
 /* ARM MPU RASR Register */
-/* Region enable bit offset */
-#define REGION_ENABLE_OFFSET	(0)
-/* Region enable bit mask */
-#define REGION_ENABLE_MASK	(0x1 << REGION_ENABLE_OFFSET)
-/* Region size bit offset */
-#define REGION_SIZE_OFFSET	(1)
-/* Region size bit mask */
-#define REGION_SIZE_MASK	(0x1F << REGION_SIZE_OFFSET)
-/* Access permissions bit offset */
-#define ACCESS_PERMS_OFFSET	(24)
-/* Access permissions bit mask */
-#define ACCESS_PERMS_MASK	(0x7 << ACCESS_PERMS_OFFSET)
-
-
-/* eXecute Never */
-#define NOT_EXEC        (0x1 << 28)
 
 /* Privileged No Access, Unprivileged No Access */
 #define NO_ACCESS	(0x0 << 24)
@@ -90,10 +74,10 @@ struct arm_mpu {
 /* Some helper defines for common regions */
 #define REGION_USER_RAM_ATTR(size) \
 		(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | \
-		 NOT_EXEC | size | FULL_ACCESS)
+		 MPU_RASR_XN_Msk | size | FULL_ACCESS)
 #define REGION_RAM_ATTR(size) \
 		(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | \
-		 NOT_EXEC | size | P_RW_U_NA)
+		 MPU_RASR_XN_Msk | size | P_RW_U_NA)
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
 #define REGION_FLASH_ATTR(size) \
 		(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | size | \
@@ -142,8 +126,6 @@ struct arm_mpu {
 #define REGION_1G       (0x1D << 1)
 #define REGION_2G       (0x1E << 1)
 #define REGION_4G       (0x1F << 1)
-
-#define REGION_ENABLE	(1 << 0)
 
 /* Region definition data structure */
 struct arm_mpu_region {
