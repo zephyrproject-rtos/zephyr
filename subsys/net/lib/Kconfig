@@ -22,7 +22,9 @@ source "subsys/net/lib/websocket/Kconfig"
 
 endmenu
 
-menu "Network Application Support"
+menu "Network Libraries"
+
+source "subsys/net/lib/config/Kconfig"
 
 source "subsys/net/lib/app/Kconfig"
 
