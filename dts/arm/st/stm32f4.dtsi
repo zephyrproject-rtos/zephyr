@@ -191,6 +191,16 @@
 			label = "SPI_1";
 		};
 
+		rtc: rtc@40002800 {
+			compatible = "st,stm32-rtc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40002800 0x400>;
+			interrupts = <41 0>;
+			status = "disabled";
+			label = "RTC_0";
+		};
+
 		usbotg_fs: usb@50000000 {
 			compatible = "st,stm32-otgfs";
 			reg = <0x50000000 0x40000>;
