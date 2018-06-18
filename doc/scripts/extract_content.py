@@ -38,21 +38,37 @@ def get_rst_files(dir):
 
         shutil.copyfile(file, os.path.join(ZEPHYR_BASE, "doc", frel))
 
-        with open(file, encoding="utf-8") as f:
-            content = f.readlines()
-        content = [x.strip() for x in content]
-        directives = "|".join(DIRECTIVES)
-        pattern = re.compile("\s*\.\.\s+(%s)::\s+(.*)" %directives)
-        for l in content:
-            m = pattern.match(l)
-            if m:
-                inf = m.group(2)
-                ind = os.path.dirname(inf)
-                if not os.path.exists(os.path.join(ZEPHYR_BASE, "doc", dir, ind)):
-                    os.makedirs(os.path.join(ZEPHYR_BASE, "doc", dir, ind))
+        try:
+            with open(file, encoding="utf-8") as f:
+                content = f.readlines()
 
-                shutil.copyfile(os.path.join(ZEPHYR_BASE, dir, inf),
-                        os.path.join(ZEPHYR_BASE, "doc", dir, inf))
+            content = [x.strip() for x in content]
+            directives = "|".join(DIRECTIVES)
+            pattern = re.compile("\s*\.\.\s+(%s)::\s+(.*)" %directives)
+            for l in content:
+                m = pattern.match(l)
+                if m:
+                    inf = m.group(2)
+                    ind = os.path.dirname(inf)
+                    if not os.path.exists(os.path.join(ZEPHYR_BASE, "doc", dir, ind)):
+                        os.makedirs(os.path.join(ZEPHYR_BASE, "doc", dir, ind))
+
+                    try:
+                        shutil.copyfile(os.path.join(ZEPHYR_BASE, dir, inf),
+                            os.path.join(ZEPHYR_BASE, "doc", dir, inf))
+                    except FileNotFoundError:
+                        sys.stderr.write("File not found: %s\n  reference by %s\n" % (inf, file))
+
+        except UnicodeDecodeError as e:
+            sys.stderr.write(
+                "Malformed {} in {}\n"
+                "  Context: {}\n"
+                "  Problematic data: {}\n"
+                "  Reason: {}\n".format(
+                    e.encoding, file,
+                    e.object[max(e.start - 40, 0):e.end + 40],
+                    e.object[e.start:e.end],
+                    e.reason))
 
         f.close()
 
