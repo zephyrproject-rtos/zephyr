@@ -44,7 +44,7 @@ set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH})
 # to zephyr_interface, either directly or through other libraries which
 # depends upon zephyr_interface, e.g. zephyr itself.
 add_library(zephyr_interface INTERFACE)
-zephyr_link_libraries(${TOOLCHAIN_LIBS})
+zephyr_link_libraries(kernel ${TOOLCHAIN_LIBS})
 
 # zephyr is a catchall CMake library for source files that can be
 # built purely with the include paths, defines, and other compiler
@@ -721,7 +721,6 @@ set(zephyr_lnk
   ${LINKERFLAGPREFIX},--whole-archive
   ${ZEPHYR_LIBS_PROPERTY}
   ${LINKERFLAGPREFIX},--no-whole-archive
-  kernel
   ${OFFSETS_O_PATH}
   ${LINKERFLAGPREFIX},--end-group
   ${LIB_INCLUDE_DIR}
