@@ -69,28 +69,6 @@
 #define EP_TYPE_INTR PCD_EP_TYPE_INTR
 #endif
 
-#ifndef CONFIG_USB_NUM_IN_ENDPOINTS
-#define CONFIG_USB_NUM_IN_ENDPOINTS 0
-#endif /* CONFIG_USB_NUM_IN_ENDPOINTS */
-
-#ifndef CONFIG_USB_NUM_OUT_ENDPOINTS
-#define CONFIG_USB_NUM_OUT_ENDPOINTS 0
-#endif /* CONFIG_USB_NUM_OUT_ENDPOINTS */
-
-/* Total in ep number = bidirectional ep number + in ep number */
-#define NUM_IN_EP (CONFIG_USB_NUM_BIDIR_ENDPOINTS + \
-		   CONFIG_USB_NUM_IN_ENDPOINTS)
-
-/* Total out ep number = bidirectional ep number + out ep number */
-#define NUM_OUT_EP (CONFIG_USB_NUM_BIDIR_ENDPOINTS + \
-		    CONFIG_USB_NUM_OUT_ENDPOINTS)
-/*
- * Total bidirectional ep number = bidirectional ep number + (out ep number +
- * in ep number) / 2.  Because out ep number = in ep number,
- * total bidirectional ep number = total out ep number or total in ep number
- */
-#define NUM_BIDIR_EP NUM_OUT_EP
-
 /*
  * USB and USB_OTG_FS are defined in STM32Cube HAL and allows to distinguish
  * between two kind of USB DC. STM32 F0, F3, and L0 series support USB device
@@ -110,7 +88,7 @@
  * per endpoint.
  *
  */
-#define USB_BTABLE_SIZE  (8 * NUM_BIDIR_EP)
+#define USB_BTABLE_SIZE  (8 * CONFIG_USB_NUM_BIDIR_ENDPOINTS)
 
 #else /* USB_OTG_FS */
 
@@ -118,7 +96,7 @@
 #define EP_MPS USB_OTG_FS_MAX_PACKET_SIZE
 
 /* We need one RX FIFO and n TX-IN FIFOs */
-#define FIFO_NUM (1 + NUM_IN_EP)
+#define FIFO_NUM (1 + CONFIG_USB_NUM_BIDIR_ENDPOINTS)
 
 /* 4-byte words FIFO */
 #define FIFO_WORDS (CONFIG_USB_RAM_SIZE / 4)
@@ -155,9 +133,9 @@ struct usb_dc_stm32_ep_state {
 struct usb_dc_stm32_state {
 	PCD_HandleTypeDef pcd;	/* Storage for the HAL_PCD api */
 	usb_dc_status_callback status_cb; /* Status callback */
-	struct usb_dc_stm32_ep_state out_ep_state[NUM_OUT_EP];
-	struct usb_dc_stm32_ep_state in_ep_state[NUM_IN_EP];
-	u8_t ep_buf[NUM_OUT_EP][EP_MPS];
+	struct usb_dc_stm32_ep_state out_ep_state[CONFIG_USB_NUM_BIDIR_ENDPOINTS];
+	struct usb_dc_stm32_ep_state in_ep_state[CONFIG_USB_NUM_BIDIR_ENDPOINTS];
+	u8_t ep_buf[CONFIG_USB_NUM_BIDIR_ENDPOINTS][EP_MPS];
 
 #ifdef USB
 	u32_t pma_offset;
@@ -172,7 +150,7 @@ static struct usb_dc_stm32_ep_state *usb_dc_stm32_get_ep_state(u8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state_base;
 
-	if (EP_IDX(ep) >= NUM_BIDIR_EP) {
+	if (EP_IDX(ep) >= CONFIG_USB_NUM_BIDIR_ENDPOINTS) {
 		return NULL;
 	}
 
@@ -263,13 +241,13 @@ static int usb_dc_stm32_init(void)
 #ifdef USB
 	usb_dc_stm32_state.pcd.Instance = USB;
 	usb_dc_stm32_state.pcd.Init.speed = PCD_SPEED_FULL;
-	usb_dc_stm32_state.pcd.Init.dev_endpoints = NUM_BIDIR_EP;
+	usb_dc_stm32_state.pcd.Init.dev_endpoints = CONFIG_USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
 	usb_dc_stm32_state.pcd.Init.ep0_mps = PCD_EP0MPS_64;
 	usb_dc_stm32_state.pcd.Init.low_power_enable = 0;
 #else /* USB_OTG_FS */
 	usb_dc_stm32_state.pcd.Instance = USB_OTG_FS;
-	usb_dc_stm32_state.pcd.Init.dev_endpoints = NUM_BIDIR_EP;
+	usb_dc_stm32_state.pcd.Init.dev_endpoints = CONFIG_USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.speed = USB_OTG_SPEED_FULL;
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
 	usb_dc_stm32_state.pcd.Init.ep0_mps = USB_OTG_MAX_EP0_SIZE;
@@ -304,13 +282,13 @@ static int usb_dc_stm32_init(void)
 	/* Start PMA configuration for the endpoints after the BTABLE. */
 	usb_dc_stm32_state.pma_offset = USB_BTABLE_SIZE;
 
-	for (i = 0; i < NUM_IN_EP; i++) {
+	for (i = 0; i < CONFIG_USB_NUM_BIDIR_ENDPOINTS; i++) {
 		k_sem_init(&usb_dc_stm32_state.in_ep_state[i].write_sem, 1, 1);
 	}
 #else /* USB_OTG_FS */
 	/* TODO: make this dynamic (depending usage) */
 	HAL_PCDEx_SetRxFiFo(&usb_dc_stm32_state.pcd, FIFO_EP_WORDS);
-	for (i = 0; i < NUM_IN_EP; i++) {
+	for (i = 0; i < CONFIG_USB_NUM_BIDIR_ENDPOINTS; i++) {
 		HAL_PCDEx_SetTxFiFo(&usb_dc_stm32_state.pcd, i,
 				    FIFO_EP_WORDS);
 		k_sem_init(&usb_dc_stm32_state.in_ep_state[i].write_sem, 1, 1);
@@ -465,14 +443,8 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		return -1;
 	}
 
-	if (EP_IS_IN(cfg->ep_addr) && (ep_idx > CONFIG_USB_NUM_IN_ENDPOINTS)) {
-		SYS_LOG_ERR("IN endpoint index/address out of range");
-		return -1;
-	}
-
-	if (EP_IS_OUT(cfg->ep_addr) &&
-	    (ep_idx > CONFIG_USB_NUM_OUT_ENDPOINTS)) {
-		SYS_LOG_ERR("OUT endpoint index/address out of range");
+	if (ep_idx > CONFIG_USB_NUM_BIDIR_ENDPOINTS) {
+		SYS_LOG_ERR("endpoint index/address out of range");
 		return -1;
 	}
 

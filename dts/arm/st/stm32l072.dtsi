@@ -60,8 +60,6 @@
 			interrupts = <31 0>;
 			interrupt-names = "usb";
 			num-bidir-endpoints = <8>;
-			num-in-endpoints = <0>;
-			num-out-endpoints = <0>;
 			ram-size = <1024>;
 			status = "disabled";
 			label= "USB";
