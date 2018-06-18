@@ -36,6 +36,30 @@ add_custom_target(
   USES_TERMINAL
   )
 
+# Support assigning Kconfig symbols on the command-line with CMake
+# cache variables prefixed with 'CONFIG_'. This feature is
+# experimental and undocumented until it has undergone more
+# user-testing.
+unset(EXTRA_KCONFIG_OPTIONS)
+get_cmake_property(cache_variable_names CACHE_VARIABLES)
+foreach (name ${cache_variable_names})
+  if("${name}" MATCHES "^CONFIG_")
+    # When a cache variable starts with 'CONFIG_', it is assumed to be
+    # a CLI Kconfig symbol assignment.
+    set(EXTRA_KCONFIG_OPTIONS
+      "${EXTRA_KCONFIG_OPTIONS}\n${name}=${${name}}"
+      )
+  endif()
+endforeach()
+
+if(EXTRA_KCONFIG_OPTIONS)
+  set(EXTRA_KCONFIG_OPTIONS_FILE ${PROJECT_BINARY_DIR}/misc/generated/extra_kconfig_options.conf)
+  file(WRITE
+    ${EXTRA_KCONFIG_OPTIONS_FILE}
+    ${EXTRA_KCONFIG_OPTIONS}
+    )
+endif()
+
 # Bring in extra configuration files dropped in by the user or anyone else;
 # make sure they are set at the end so we can override any other setting
 file(GLOB config_files ${APPLICATION_BINARY_DIR}/*.conf)
@@ -45,6 +69,7 @@ set(
   ${BOARD_DEFCONFIG}
   ${CONF_FILE_AS_LIST}
   ${OVERLAY_CONFIG}
+  ${EXTRA_KCONFIG_OPTIONS_FILE}
   ${config_files}
 )
 
