@@ -1415,7 +1415,7 @@ static inline struct net_buf *adjust_write_offset(struct net_pkt *pkt,
 			return frag;
 		}
 
-		/* Offset is equal to fragment length. If some tailtoom exists,
+		/* Offset is equal to fragment length. If some tailroom exists,
 		 * offset start from same fragment otherwise offset starts from
 		 * beginning of next fragment.
 		 */
