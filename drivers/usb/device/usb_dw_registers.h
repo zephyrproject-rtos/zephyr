@@ -201,6 +201,10 @@ struct usb_dw_reg {
 /* USB register block base address */
 #define USB_DW ((struct usb_dw_reg *)USB_DW_BASE)
 
+#define DW_USB_IN_EP_NUM		(6)
+#define DW_USB_OUT_EP_NUM		(4)
+#define DW_USB_MAX_PACKET_SIZE		(64)
+
 #ifdef __cplusplus
 }
 #endif
