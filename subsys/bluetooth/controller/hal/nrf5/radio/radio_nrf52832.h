@@ -187,17 +187,11 @@
 #define SW_SWITCH_TIMER EVENT_TIMER
 #define SW_SWITCH_TIMER_EVTS_COMP_BASE 4
 
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-#define SW_SWITCH_TIMER_NBR 4
-#endif /* CONFIG_BOARD_NRFXX_NWTSIM */
 
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 #define SW_SWITCH_TIMER NRF_TIMER1
 #define SW_SWITCH_TIMER_EVTS_COMP_BASE 0
 
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-#define SW_SWITCH_TIMER_NBR 1
-#endif /* CONFIG_BOARD_NRFXX_NWTSIM */
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 #define SW_SWITCH_TIMER_TASK_GROUP_BASE 0
@@ -205,16 +199,13 @@
 
 static inline void hal_radio_reset(void)
 {
-#if !defined(CONFIG_BOARD_NRFXX_NWTSIM)
 	/* Anomalies 102, 106 and 107 */
 	*(volatile u32_t *)0x40001774 = ((*(volatile u32_t *)0x40001774) &
 					 0xfffffffe) | 0x01000000;
-#endif /* !CONFIG_BOARD_NRFXX_NWTSIM */
 }
 
 static inline void hal_radio_ram_prio_setup(void)
 {
-#if !defined(CONFIG_BOARD_NRFXX_NWTSIM)
 	struct {
 		u32_t volatile reserved_0[0x5a0 >> 2];
 		u32_t volatile bridge_type;
@@ -251,7 +242,6 @@ static inline void hal_radio_ram_prio_setup(void)
 	NRF_AMLI->RAMPRI.I2S     = 0xFFFFFFFFUL;
 	NRF_AMLI->RAMPRI.PDM     = 0xFFFFFFFFUL;
 	NRF_AMLI->RAMPRI.PWM     = 0xFFFFFFFFUL;
-#endif /* !CONFIG_BOARD_NRFXX_NWTSIM */
 }
 
 static inline u32_t hal_radio_phy_mode_get(u8_t phy, u8_t flags)
