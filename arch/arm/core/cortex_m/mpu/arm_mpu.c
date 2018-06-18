@@ -112,7 +112,7 @@ static void _region_init(u32_t index, u32_t region_addr,
 	/* Configure the region */
 	ARM_MPU_DEV->rbar = (region_addr & MPU_RBAR_ADDR_Msk)
 				| MPU_RBAR_VALID_Msk | index;
-	ARM_MPU_DEV->rasr = region_attr | REGION_ENABLE;
+	ARM_MPU_DEV->rasr = region_attr | MPU_RASR_ENABLE_Msk;
 	SYS_LOG_DBG("[%d] 0x%08x 0x%08x", index, region_addr, region_attr);
 }
 
@@ -184,7 +184,7 @@ static inline int _is_enabled_region(u32_t r_index)
 {
 	ARM_MPU_DEV->rnr = r_index;
 
-	return ARM_MPU_DEV->rasr & REGION_ENABLE_MASK;
+	return ARM_MPU_DEV->rasr & MPU_RASR_ENABLE_Msk;
 }
 
 /**
@@ -201,8 +201,8 @@ static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 
 	ARM_MPU_DEV->rnr = r_index;
 	r_addr_start = ARM_MPU_DEV->rbar & MPU_RBAR_ADDR_Msk;
-	r_size_lshift = ((ARM_MPU_DEV->rasr & REGION_SIZE_MASK) >>
-			REGION_SIZE_OFFSET) + 1;
+	r_size_lshift = ((ARM_MPU_DEV->rasr & MPU_RASR_SIZE_Msk) >>
+			MPU_RASR_SIZE_Pos) + 1;
 	r_addr_end = r_addr_start + (1 << r_size_lshift) - 1;
 
 	if (start >= r_addr_start && (start + size - 1) <= r_addr_end) {
@@ -223,7 +223,7 @@ static inline int _is_user_accessible_region(u32_t r_index, int write)
 	u32_t r_ap;
 
 	ARM_MPU_DEV->rnr = r_index;
-	r_ap = ARM_MPU_DEV->rasr & ACCESS_PERMS_MASK;
+	r_ap = ARM_MPU_DEV->rasr & MPU_RASR_AP_Msk;
 
 	/* always return true if this is the thread stack region */
 	if (_get_region_index_by_type(THREAD_STACK_REGION) == r_index) {
@@ -235,7 +235,7 @@ static inline int _is_user_accessible_region(u32_t r_index, int write)
 	}
 
 	/* For all user accessible permissions, their AP[1] bit is l */
-	return r_ap & (0x2 << ACCESS_PERMS_OFFSET);
+	return r_ap & (0x2 << MPU_RASR_AP_Pos);
 }
 
 /* ARM Core MPU Driver API Implementation for ARM MPU */
