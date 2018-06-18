@@ -254,6 +254,8 @@ int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
 	hcan.Init.BS2  = bs2;
 	hcan.Init.Prescaler = prescaler;
 
+	hcan.State = HAL_CAN_STATE_RESET;
+
 	hal_ret = HAL_CAN_Init(&hcan);
 	if (hal_ret != HAL_OK) {
 		SYS_LOG_ERR("HAL_CAN_Init failed: %d", hal_ret);
