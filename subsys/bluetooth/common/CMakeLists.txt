@@ -1,8 +1,7 @@
-zephyr_library()
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            log.c
+            IFDEF:${CONFIG_BT_RPA}   rpa.c
+)
 
-zephyr_library_sources(dummy.c)
-zephyr_library_sources(log.c)
-
-zephyr_library_sources_ifdef(CONFIG_BT_RPA   rpa.c)
-
-zephyr_library_link_libraries(subsys__bluetooth)
+target_sources(subsys_bluetooth PRIVATE ${PRIVATE_SOURCES})

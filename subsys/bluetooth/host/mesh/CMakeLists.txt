@@ -1,32 +1,24 @@
-zephyr_library()
-zephyr_library_link_libraries(subsys__bluetooth)
-
-zephyr_library_sources_ifdef(CONFIG_BT_MESH
-    main.c
-    adv.c
-    beacon.c
-    net.c
-    transport.c
-    crypto.c
-    access.c
-    cfg_srv.c
-    health_srv.c
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            IFDEF:${CONFIG_BT_MESH} main.c
+                                    adv.c
+                                    beacon.c
+                                    net.c
+                                    transport.c
+                                    crypto.c
+                                    access.c
+                                    cfg_srv.c
+                                    health_srv.c
+            IFDEF:${CONFIG_BT_SETTINGS}        settings.c
+            IFDEF:${CONFIG_BT_MESH_LOW_POWER}  lpn.c
+            IFDEF:${CONFIG_BT_MESH_FRIEND}     friend.c
+            IFDEF:${CONFIG_BT_MESH_PROV}       prov.c
+            IFDEF:${CONFIG_BT_MESH_PROXY}      proxy.c
+            IFDEF:${CONFIG_BT_MESH_CFG_CLI}    cfg_cli.c
+            IFDEF:${CONFIG_BT_MESH_HEALTH_CLI} health_cli.c
+            IFDEF:${CONFIG_BT_MESH_SELF_TEST}  test.c
+            IFDEF:${CONFIG_BT_MESH_SHELL}      shell.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_BT_SETTINGS settings.c)
+target_sources(subsys_bluetooth PRIVATE ${PRIVATE_SOURCES})
 
-zephyr_library_sources_ifdef(CONFIG_BT_MESH_LOW_POWER lpn.c)
-
-zephyr_library_sources_ifdef(CONFIG_BT_MESH_FRIEND friend.c)
-
-zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROV prov.c)
-
-zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROXY proxy.c)
-
-zephyr_library_sources_ifdef(CONFIG_BT_MESH_CFG_CLI cfg_cli.c)
-
-zephyr_library_sources_ifdef(CONFIG_BT_MESH_HEALTH_CLI health_cli.c)
-
-zephyr_library_sources_ifdef(CONFIG_BT_MESH_SELF_TEST test.c)
-
-zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL shell.c)

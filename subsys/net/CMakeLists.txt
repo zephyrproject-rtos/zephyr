@@ -1,15 +1,33 @@
-zephyr_library()
-zephyr_library_sources_ifdef(CONFIG_NET_BUF             buf.c)
-zephyr_library_sources_ifdef(CONFIG_NET_HOSTNAME_ENABLE hostname.c)
+add_library(subsys_net STATIC "")
+
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            IFDEF:${CONFIG_NET_BUF}             buf.c
+            IFDEF:${CONFIG_NET_HOSTNAME_ENABLE} hostname.c
+)
+
+target_sources(subsys_net PRIVATE ${PRIVATE_SOURCES})
 
 if(CONFIG_NETWORKING)
-  add_subdirectory(l2)
+  include_relative(l2/CMakeLists.txt)
 
   if(CONFIG_NET_RAW_MODE)
-    zephyr_library_sources(ip/net_pkt.c)
+    target_sources(subsys_net PRIVATE ${CMAKE_CURRENT_LIST_DIR}/ip/net_pkt.c)
   else()
-    add_subdirectory(ip)
+    include_relative(ip/CMakeLists.txt)
   endif()
 endif()
 
-add_subdirectory(lib)
+include_relative(lib/CMakeLists.txt)
+
+target_link_libraries(subsys_net PRIVATE zephyr_interface)
+target_link_libraries(zephyr_app_linking INTERFACE subsys_net)
+
+if(CONFIG_MBEDTLS)
+  target_link_libraries(mbedTLS INTERFACE zephyr_interface)
+  target_link_libraries(subsys_net PUBLIC mbedTLS)
+endif()
+
+if(CONFIG_NEWLIB_LIBC)
+  target_compile_definitions(subsys_net PRIVATE __LINUX_ERRNO_EXTENSIONS__)
+endif()

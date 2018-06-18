@@ -1,8 +1,7 @@
-zephyr_library()
-zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
-zephyr_library_compile_definitions_ifdef(
-  CONFIG_NEWLIB_LIBC __LINUX_ERRNO_EXTENSIONS__
-  )
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            IFDEF:${CONFIG_NET_L2_BT}       bluetooth.c
+            IFDEF:${CONFIG_NET_L2_BT_SHELL} bluetooth_shell.c
+)
 
-zephyr_library_sources_ifdef(CONFIG_NET_L2_BT       bluetooth.c)
-zephyr_library_sources_ifdef(CONFIG_NET_L2_BT_SHELL bluetooth_shell.c)
+target_sources(subsys_net PRIVATE ${PRIVATE_SOURCES})

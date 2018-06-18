@@ -67,7 +67,7 @@ function(zephyr_include_directories)
     if(IS_ABSOLUTE ${arg})
       set(path ${arg})
     else()
-      set(path ${CMAKE_CURRENT_SOURCE_DIR}/${arg})
+      set(path ${CMAKE_CURRENT_LIST_DIR}/${arg})
     endif()
     target_include_directories(zephyr_interface INTERFACE ${path})
   endforeach()
@@ -79,7 +79,7 @@ function(zephyr_system_include_directories)
     if(IS_ABSOLUTE ${arg})
       set(path ${arg})
     else()
-      set(path ${CMAKE_CURRENT_SOURCE_DIR}/${arg})
+      set(path ${CMAKE_CURRENT_LIST_DIR}/${arg})
     endif()
     target_include_directories(zephyr_interface SYSTEM INTERFACE ${path})
   endforeach()
@@ -414,7 +414,7 @@ function(zephyr_list)
   endif()
 
   if(${ZEPHYR_LIST_SOURCES})
-    set(LOCAL_PREPEND_PATH "${CMAKE_CURRENT_LIST_DIR}/")
+    set(LOCAL_PREPEND_STR "${CMAKE_CURRENT_LIST_DIR}/")
   endif()
 
   # Caller has specified prepend path to use instead of default.
@@ -962,6 +962,16 @@ endfunction()
 # ifdef functions are added on an as-need basis. See
 # https://cmake.org/cmake/help/latest/manual/cmake-commands.7.html for
 # a list of available functions.
+function(include_relative file)
+  include(${CMAKE_CURRENT_LIST_DIR}/${file})
+endfunction()
+
+function(include_relative_ifdef feature_toggle file)
+  if(${${feature_toggle}})
+    include_relative(${file})
+  endif()
+endfunction()
+
 function(add_subdirectory_ifdef feature_toggle dir)
   if(${${feature_toggle}})
     add_subdirectory(${dir})

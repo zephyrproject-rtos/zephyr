@@ -1,9 +1,6 @@
-zephyr_library()
+target_sources(subsys_net PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/mqtt.c
+    ${CMAKE_CURRENT_LIST_DIR}/mqtt_pkt.c
+)
 
-zephyr_library_sources(
-  mqtt_pkt.c
-  mqtt.c
-  )
-
-zephyr_link_interface_ifdef(CONFIG_MBEDTLS mbedTLS)
-zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+target_sources(subsys_net PRIVATE ${PRIVATE_SOURCES})

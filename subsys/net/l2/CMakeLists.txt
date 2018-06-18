@@ -1,23 +1,17 @@
+target_include_directories(subsys_net PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+
 if(CONFIG_NET_L2_BT OR CONFIG_NET_L2_BT_SHELL)
-  add_subdirectory(bluetooth)
+  include_relative(bluetooth/CMakeLists.txt)
 endif()
 
-if(CONFIG_NET_L2_DUMMY)
-  add_subdirectory(dummy)
-endif()
+include_relative_ifdef(CONFIG_NET_L2_DUMMY dummy/CMakeLists.txt)
 
-if(CONFIG_NET_L2_ETHERNET)
-  add_subdirectory(ethernet)
-endif()
+include_relative_ifdef(CONFIG_NET_L2_ETHERNET ethernet/CMakeLists.txt)
 
-if(CONFIG_NET_L2_IEEE802154)
-  add_subdirectory(ieee802154)
-endif()
+include_relative_ifdef(CONFIG_NET_L2_IEEE802154 ieee802154/CMakeLists.txt)
 
-if(CONFIG_NET_L2_OPENTHREAD)
-  add_subdirectory(openthread)
-endif()
+include_relative_ifdef(CONFIG_NET_L2_OPENTHREAD openthread/CMakeLists.txt)
 
 if(CONFIG_NET_L2_WIFI_MGMT OR CONFIG_NET_L2_WIFI_SHELL)
-  add_subdirectory(wifi)
+  include_relative(wifi/CMakeLists.txt)
 endif()

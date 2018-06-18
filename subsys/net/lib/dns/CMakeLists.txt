@@ -1,16 +1,11 @@
 zephyr_include_directories(.)
 
-zephyr_library()
-zephyr_library_sources(dns_pack.c)
+zephyr_list(SOURCES
+  OUTPUT PRIVATE_SOURCES
+  dns_pack.c
+  IFDEF:${CONFIG_DNS_RESOLVER}    resolve.c
+  IFDEF:${CONFIG_MDNS_RESPONDER}  mdns_responder.c
+  IFDEF:${CONFIG_LLMNR_RESPONDER} llmnr_responder.c
+)
 
-zephyr_library_sources_ifdef(CONFIG_DNS_RESOLVER resolve.c)
-
-if(CONFIG_MDNS_RESPONDER)
-  zephyr_library_sources(mdns_responder.c)
-  zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
-endif()
-
-if(CONFIG_LLMNR_RESPONDER)
-  zephyr_library_sources(llmnr_responder.c)
-  zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
-endif()
+target_sources(subsys_net PRIVATE ${PRIVATE_SOURCES})
