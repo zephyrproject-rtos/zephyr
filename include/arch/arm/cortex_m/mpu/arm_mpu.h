@@ -35,14 +35,6 @@ struct arm_mpu {
 
 #define ARM_MPU_BASE	0xE000ED90
 
-/* ARM MPU CTRL Register */
-/* Enable MPU */
-#define ARM_MPU_ENABLE		(1 << 0)
-/* Enable MPU during hard fault, NMI, and FAULTMASK handlers */
-#define ARM_MPU_HFNMIENA	(1 << 1)
-/* Enable privileged software access to the default memory map */
-#define ARM_MPU_PRIVDEFENA	(1 << 2)
-
 #define REGION_VALID	(1 << 4)
 /* ARM MPU RBAR Register */
 /* Region base address mask */

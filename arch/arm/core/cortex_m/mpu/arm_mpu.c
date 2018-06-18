@@ -248,7 +248,7 @@ void arm_core_mpu_enable(void)
 	/* Enable MPU and use the default memory map as a
 	 * background region for privileged software access.
 	 */
-	ARM_MPU_DEV->ctrl = ARM_MPU_ENABLE | ARM_MPU_PRIVDEFENA;
+	ARM_MPU_DEV->ctrl = MPU_CTRL_ENABLE_Msk | MPU_CTRL_PRIVDEFENA_Msk;
 }
 
 /**
@@ -475,7 +475,7 @@ static void _arm_mpu_config(void)
 	/* Enable MPU and use the default memory map as a
 	 * background region for privileged software access.
 	 */
-	ARM_MPU_DEV->ctrl = ARM_MPU_ENABLE | ARM_MPU_PRIVDEFENA;
+	ARM_MPU_DEV->ctrl = MPU_CTRL_ENABLE_Msk | MPU_CTRL_PRIVDEFENA_Msk;
 
 	/* Make sure that all the registers are set before proceeding */
 	__DSB();
