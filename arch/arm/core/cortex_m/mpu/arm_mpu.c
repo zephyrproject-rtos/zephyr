@@ -110,8 +110,8 @@ static void _region_init(u32_t index, u32_t region_addr,
 	/* Select the region you want to access */
 	ARM_MPU_DEV->rnr = index;
 	/* Configure the region */
-	ARM_MPU_DEV->rbar = (region_addr & REGION_BASE_ADDR_MASK)
-				| REGION_VALID | index;
+	ARM_MPU_DEV->rbar = (region_addr & MPU_RBAR_ADDR_Msk)
+				| MPU_RBAR_VALID_Msk | index;
 	ARM_MPU_DEV->rasr = region_attr | REGION_ENABLE;
 	SYS_LOG_DBG("[%d] 0x%08x 0x%08x", index, region_addr, region_attr);
 }
@@ -200,7 +200,7 @@ static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 	u32_t r_addr_end;
 
 	ARM_MPU_DEV->rnr = r_index;
-	r_addr_start = ARM_MPU_DEV->rbar & REGION_BASE_ADDR_MASK;
+	r_addr_start = ARM_MPU_DEV->rbar & MPU_RBAR_ADDR_Msk;
 	r_size_lshift = ((ARM_MPU_DEV->rasr & REGION_SIZE_MASK) >>
 			REGION_SIZE_OFFSET) + 1;
 	r_addr_end = r_addr_start + (1 << r_size_lshift) - 1;

@@ -35,11 +35,6 @@ struct arm_mpu {
 
 #define ARM_MPU_BASE	0xE000ED90
 
-#define REGION_VALID	(1 << 4)
-/* ARM MPU RBAR Register */
-/* Region base address mask */
-#define REGION_BASE_ADDR_MASK	0xFFFFFFE0
-
 /* ARM MPU RASR Register */
 /* Region enable bit offset */
 #define REGION_ENABLE_OFFSET	(0)
