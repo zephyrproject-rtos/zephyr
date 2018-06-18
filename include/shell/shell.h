@@ -9,10 +9,11 @@
 #ifndef _SHELL_H_
 #define _SHELL_H_
 
+#include <zephyr.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 struct device;
 
@@ -183,6 +184,13 @@ void shell_register_mcumgr_handler(shell_mcumgr_function_t handler, void *arg);
  *  @returns Result of the execution
  */
 int shell_exec(char *line);
+
+/** @brief Register input should be implemented by a shell method
+ *
+ * Each shell input method should implement own register function
+ */
+void shell_register_input(struct k_fifo *avail, struct k_fifo *lines,
+			  u8_t (*completion)(char *str, u8_t len));
 
 /**
 * @}

@@ -504,8 +504,8 @@ error:
 	}
 }
 
-void telnet_register_input(struct k_fifo *avail, struct k_fifo *lines,
-			   u8_t (*completion)(char *str, u8_t len))
+void shell_register_input(struct k_fifo *avail, struct k_fifo *lines,
+			  u8_t (*completion)(char *str, u8_t len))
 {
 	ARG_UNUSED(completion);
 

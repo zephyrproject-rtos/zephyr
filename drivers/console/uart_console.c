@@ -581,12 +581,18 @@ void uart_register_input(struct k_fifo *avail, struct k_fifo *lines,
 	console_input_init();
 }
 
+__weak void shell_register_input(struct k_fifo *avail, struct k_fifo *lines,
+				 u8_t (*completion)(char *str, u8_t len))
+{
+	uart_register_input(avail, lines, completion);
+}
+
 #else
 #define console_input_init(x) \
 	do {    /* nothing */ \
 	} while ((0))
-#define uart_register_input(x) \
-	do {    /* nothing */  \
+#define shell_register_input(x, y, z) \
+	do {    /* nothing */ \
 	} while ((0))
 #endif
 

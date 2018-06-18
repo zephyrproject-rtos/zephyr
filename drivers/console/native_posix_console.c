@@ -254,8 +254,8 @@ static void native_stdio_runner(void *p1, void *p2, void *p3)
 	}
 }
 
-void native_stdin_register_input(struct k_fifo *avail, struct k_fifo *lines,
-			 u8_t (*completion)(char *str, u8_t len))
+__weak void shell_register_input(struct k_fifo *avail, struct k_fifo *lines,
+				 u8_t (*completion)(char *str, u8_t len))
 {
 	avail_queue = avail;
 	lines_queue = lines;
