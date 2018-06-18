@@ -413,7 +413,8 @@ DEVICE_AND_API_INIT(uart_nrfx_uart0,
 		    uart_nrfx_init,
 		    NULL,
 		    NULL,
-		    POST_KERNEL,
+		    /* Initialize UART device before UART console. */
+		    PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_nrfx_uart_driver_api);
 
