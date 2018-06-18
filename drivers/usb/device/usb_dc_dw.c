@@ -826,19 +826,19 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		return -1;
 	}
 
-	if (cfg->ep_mps > QM_USB_MAX_PACKET_SIZE) {
+	if (cfg->ep_mps > DW_USB_MAX_PACKET_SIZE) {
 		SYS_LOG_WRN("unsupported packet size");
 		return -1;
 	}
 
 	if ((USB_DW_EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_OUT) &&
-	    (ep_idx >= QM_USB_OUT_EP_NUM)) {
+	    (ep_idx >= DW_USB_OUT_EP_NUM)) {
 		SYS_LOG_WRN("OUT endpoint address out of range");
 		return -1;
 	}
 
 	if ((USB_DW_EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_IN) &&
-	    (ep_idx >= QM_USB_IN_EP_NUM)) {
+	    (ep_idx >= DW_USB_IN_EP_NUM)) {
 		SYS_LOG_WRN("IN endpoint address out of range");
 		return -1;
 	}
