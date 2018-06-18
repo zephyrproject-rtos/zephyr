@@ -840,6 +840,19 @@ Below is a simple example :file:`CMakeList.txt`:
 
    target_sources(app PRIVATE src/main.c)
 
+CMakeCache.txt
+==============
+
+CMake uses a CMakeCache.txt file as persistent key/value string
+storage used to cache values between runs, including compile and build
+options and paths to library dependencies. This cache file is created
+when CMake is run in an empty build folder.
+
+For more details about the CMakeCache.txt file see the official CMake
+documentation `runningcmake`_ .
+
+.. _runningcmake: http://cmake.org/runningcmake/
+
 .. _application_configuration:
 
 Application Configuration
@@ -851,13 +864,15 @@ Kconfig Configuration
 =====================
 
 The initial configuration for an application is produced by merging
-configuration settings from two sources:
+configuration settings from three sources:
 
 1. A :makevar:`BOARD`-specific configuration file, stored in
    :file:`boards/ARCHITECTURE/BOARD/BOARD_defconfig` in the Zephyr base
    directory.
 
-2. One or more application-specific configuration files.
+2. Any CMakeCache entries entries that are prefixed with :makevar:`CONFIG_`.
+
+3. One or more application-specific configuration files.
 
 The application-specific configuration file(s) can be specified in any of the
 following ways. The simplest option is to just have a single :file:`prj.conf`
@@ -879,12 +894,8 @@ file.
 3. Otherwise, if a file :file:`prj.conf` exists in the application directory,
    the settings in it are used.
 
-4. Otherwise, there are no application-specific settings, and just the settings
-   in the :makevar:`BOARD`-specific configuration are used.
-
-Configuration settings that are specified in neither the :makevar:`BOARD`
-configuration file nor in the application configuration file(s) fall back on
-their default value, as given in the :file:`Kconfig` files.
+Configuration settings that have not been specified fall back on their
+default value, as given in the :file:`Kconfig` files.
 
 The merged configuration is saved in :file:`zephyr/.config` in the build
 directory.
