@@ -635,13 +635,22 @@ set(OFFSETS_O_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/offsets.dir/arch/${ARC
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
 add_library(          offsets STATIC ${OFFSETS_C_PATH})
-target_link_libraries(offsets zephyr_interface)
+target_link_libraries(offsets INTERFACE -u_OffsetAbsSyms)
 add_dependencies(     offsets
   syscall_list_h_target
   syscall_macros_h_target
   driver_validation_h_target
   kobj_types_h_target
   )
+
+# Kernel is a Zephyr interface dependency, which means everyone using zephyr_interface has an
+# indirect dependency, which for other libraries is fine.
+# However offsets does not need to link to kernel as there is no dependency.
+# Instead kernel depends on generated offset.h so to avoid a non-existing circular dependency,
+# offset lib only requires the compile options and include directories from zephyr_interface.
+target_compile_options(    offsets PRIVATE $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>)
+target_compile_definitions(offsets PRIVATE $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>)
+target_include_directories(offsets PRIVATE $<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>)
 
 add_custom_command(
   OUTPUT ${OFFSETS_H_PATH}
@@ -812,11 +821,9 @@ set_property(TARGET
 
 set(zephyr_lnk
   ${LINKERFLAGPREFIX},-Map=${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
-  -u_OffsetAbsSyms
   ${LINKERFLAGPREFIX},--whole-archive
   ${ZEPHYR_LIBS_PROPERTY}
   ${LINKERFLAGPREFIX},--no-whole-archive
-  ${OFFSETS_O_PATH}
   ${LIB_INCLUDE_DIR}
   -L${PROJECT_BINARY_DIR}
   )
