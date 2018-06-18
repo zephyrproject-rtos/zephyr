@@ -16,6 +16,7 @@ config CONSOLE_SUBSYS
 if CONSOLE_SUBSYS
 choice
 	prompt "Console 'get' function selection"
+	optional
 
 config CONSOLE_GETCHAR
 	bool "Character by character input and output"
