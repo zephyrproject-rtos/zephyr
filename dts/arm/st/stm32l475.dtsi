@@ -104,9 +104,7 @@
 			reg = <0x50000000 0x40000>;
 			interrupts = <67 0>;
 			interrupt-names = "otgfs";
-			num-bidir-endpoints = <1>;
-			num-in-endpoints = <5>;
-			num-out-endpoints = <5>;
+			num-bidir-endpoints = <6>;
 			ram-size = <1280>;
 			status = "disabled";
 			label= "OTGFS";
