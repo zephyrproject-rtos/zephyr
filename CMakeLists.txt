@@ -40,12 +40,17 @@ set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH})
 # compiler options needed by all source files. All zephyr libraries,
 # including the library named "zephyr" link with this library to
 # obtain these flags.
+# Linker flags will be propagated to executable targets which links
+# to zephyr_interface, either directly or through other libraries which
+# depends upon zephyr_interface, e.g. zephyr itself.
 add_library(zephyr_interface INTERFACE)
+zephyr_link_libraries(${TOOLCHAIN_LIBS})
 
 # zephyr is a catchall CMake library for source files that can be
 # built purely with the include paths, defines, and other compiler
 # flags that come with zephyr_interface.
 zephyr_library_named(zephyr)
+target_link_libraries(zephyr INTERFACE -u_ConfigAbsSyms)
 
 zephyr_include_directories(
   kernel/include
@@ -712,7 +717,6 @@ set_property(TARGET
 set(zephyr_lnk
   ${LINKERFLAGPREFIX},-Map=${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
   -u_OffsetAbsSyms
-  -u_ConfigAbsSyms
   ${LINKERFLAGPREFIX},--start-group
   ${LINKERFLAGPREFIX},--whole-archive
   ${ZEPHYR_LIBS_PROPERTY}
@@ -722,7 +726,6 @@ set(zephyr_lnk
   ${LINKERFLAGPREFIX},--end-group
   ${LIB_INCLUDE_DIR}
   -L${PROJECT_BINARY_DIR}
-  ${TOOLCHAIN_LIBS}
   )
 
 if(CONFIG_GEN_ISR_TABLES)
