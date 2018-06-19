@@ -98,6 +98,17 @@ enum can_mode {
 	CAN_SILENT_LOOPBACK_MODE
 };
 
+/**
+ * @brief can_state enum
+ * Defines the possible states of the CAN bus
+ */
+enum can_state {
+	CAN_ERROR_ACTIVE,
+	CAN_ERROR_PASSIVE,
+	CAN_BUS_OFF,
+	CAN_BUS_UNKNOWN
+};
+
 /*
  * Controller Area Network Identifier structure for Linux compatibility.
  *
@@ -213,6 +224,16 @@ struct zcan_filter {
 } __packed;
 
 /**
+ * @brief can bus error count structure
+ *
+ * Used to pass the bus error counters to userspace
+ */
+struct can_bus_err_cnt {
+	u8_t tx_err_cnt;
+	u8_t rx_err_cnt;
+};
+
+/**
  * @typedef can_tx_callback_t
  * @brief Define the application callback handler function signature
  *
@@ -231,6 +252,16 @@ typedef void (*can_tx_callback_t)(u32_t error_flags, void *arg);
  */
 typedef void (*can_rx_callback_t)(struct zcan_frame *msg, void *arg);
 
+/**
+ * @typedef can_state_change_isr_t
+ * @brief Defines the state change isr handler function signature
+ *
+ * @param state state of the node
+ * @param err_cnt struct with the error counter values
+ */
+typedef void(*can_state_change_isr_t)(enum can_state state,
+					  struct can_bus_err_cnt err_cnt);
+
 typedef int (*can_configure_t)(struct device *dev, enum can_mode mode,
 				u32_t bitrate);
 
@@ -247,6 +278,14 @@ typedef int (*can_attach_isr_t)(struct device *dev, can_rx_callback_t isr,
 				const struct zcan_filter *filter);
 
 typedef void (*can_detach_t)(struct device *dev, int filter_id);
+
+typedef int (*can_recover_t)(struct device *dev, s32_t timeout);
+
+typedef enum can_state (*can_get_state_t)(struct device *dev,
+					  struct can_bus_err_cnt *err_cnt);
+
+typedef void(*can_register_state_change_isr_t)(struct device *dev,
+					       can_state_change_isr_t isr);
 
 #ifndef CONFIG_CAN_WORKQ_FRAMES_BUF_CNT
 #define CONFIG_CAN_WORKQ_FRAMES_BUF_CNT 4
@@ -275,6 +314,12 @@ struct can_driver_api {
 	can_send_t send;
 	can_attach_isr_t attach_isr;
 	can_detach_t detach;
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+	can_recover_t recover;
+#endif
+	can_get_state_t get_state;
+	can_register_state_change_isr_t register_state_change_isr;
+
 };
 
 /**
@@ -475,6 +520,74 @@ static inline int z_impl_can_configure(struct device *dev, enum can_mode mode,
 		(const struct can_driver_api *)dev->driver_api;
 
 	return api->configure(dev, mode, bitrate);
+}
+
+/**
+ * @brief Get current state
+ *
+ * Returns the actual state of the CAN controller.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param err_cnt Pointer to the err_cnt destination structure or NULL.
+ *
+ * @retval  state
+ */
+__syscall enum can_state can_get_state(struct device *dev,
+				       struct can_bus_err_cnt *err_cnt);
+
+static inline
+enum can_state z_impl_can_get_state(struct device *dev,
+				    struct can_bus_err_cnt *err_cnt)
+{
+	const struct can_driver_api *api = dev->driver_api;
+
+	return api->get_state(dev, err_cnt);
+}
+
+/**
+ * @brief Recover from bus-off state
+ *
+ * Recover the CAN controller from bus-off state to error-active state.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param timeout Timeout for waiting for the recovery.
+ *
+ * @retval 0 on success.
+ * @retval CAN_TIMEOUT on timeout.
+ */
+#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+__syscall int can_recover(struct device *dev, s32_t timeout);
+
+static inline int z_impl_can_recover(struct device *dev, s32_t timeout)
+{
+	const struct can_driver_api *api = dev->driver_api;
+
+	return api->recover(dev, timeout);
+}
+#else
+/* This implementation prevents inking errors for auto recovery */
+static inline int z_impl_can_recover(struct device *dev, s32_t timeout)
+{
+	return 0;
+}
+#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+
+/**
+ * @brief Register an ISR callback for state change interrupt
+ *
+ * Only one callback can be registered per controller.
+ * Calling this function again, overrides the previos call.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param isr Pointer to ISR
+ */
+static inline
+void can_register_state_change_isr(struct device *dev,
+				   can_state_change_isr_t isr)
+{
+	const struct can_driver_api *api = dev->driver_api;
+
+	return api->register_state_change_isr(dev, isr);
 }
 
 /**
