@@ -89,9 +89,14 @@ static struct net_pkt *tx_frame_list_que0[CONFIG_NET_PKT_TX_COUNT + 1];
  * Cache helpers
  */
 
-#if __DCACHE_PRESENT == 1
+static bool dcache_enabled;
+
 static inline void dcache_invalidate(u32_t addr, u32_t size)
 {
+	if (!dcache_enabled) {
+		return;
+	}
+
 	/* Make sure it is aligned to 32B */
 	u32_t start_addr = addr & (u32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
 	u32_t size_full = size + addr - start_addr;
@@ -101,16 +106,16 @@ static inline void dcache_invalidate(u32_t addr, u32_t size)
 
 static inline void dcache_clean(u32_t addr, u32_t size)
 {
+	if (!dcache_enabled) {
+		return;
+	}
+
 	/* Make sure it is aligned to 32B */
 	u32_t start_addr = addr & (u32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
 	u32_t size_full = size + addr - start_addr;
 
 	SCB_CleanDCache_by_Addr((u32_t *)start_addr, size_full);
 }
-#else
-#define dcache_invalidate(addr, size)
-#define dcache_clean(addr, size)
-#endif
 
 /* gmac descriptiors helpers */
 
@@ -929,6 +934,9 @@ static void eth0_iface_init(struct net_if *iface)
 	if (init_done) {
 		return;
 	}
+
+	/* Check the status of data caches */
+	dcache_enabled = (SCB->CCR & SCB_CCR_DC_Msk);
 
 	/* Initialize GMAC driver, maximum frame length is 1518 bytes */
 	gmac_ncfgr_val =
