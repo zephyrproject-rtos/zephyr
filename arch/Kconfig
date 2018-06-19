@@ -62,7 +62,8 @@ config HW_STACK_PROTECTION
 	  made.
 
 config USERSPACE
-	bool "User mode threads (EXPERIMENTAL)"
+	bool "User mode threads"
+	depends on EXPERIMENTAL
 	depends on ARCH_HAS_USERSPACE
 	help
 	  When enabled, threads may be created or dropped down to user mode,

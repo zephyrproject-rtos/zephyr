@@ -268,14 +268,16 @@ menu "System Monitoring Options"
 
 config PERFORMANCE_METRICS
 	bool
-	prompt "Enable performance metrics [EXPERIMENTAL]"
+	prompt "Enable performance metrics"
+	depends on EXPERIMENTAL
 	default n
 	help
 	  Enable Performance Metrics.
 
 config BOOT_TIME_MEASUREMENT
 	bool
-	prompt "Boot time measurements [EXPERIMENTAL]"
+	prompt "Boot time measurements"
+	depends on EXPERIMENTAL
 	default n
 	depends on PERFORMANCE_METRICS
 	help

@@ -4,7 +4,8 @@
 #
 
 menuconfig WEBSOCKET
-	bool "Websocket support [EXPERIMENTAL]"
+	bool "Websocket support"
+	depends on EXPERIMENTAL
 	default n
 	depends on HTTP
 	select NET_TCP

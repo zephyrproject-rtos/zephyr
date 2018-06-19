@@ -186,7 +186,8 @@ config EXCEPTION_STACK_TRACE
 
 config OPENOCD_SUPPORT
 	bool
-	prompt "OpenOCD support [EXPERIMENTAL]"
+	prompt "OpenOCD support"
+	depends on EXPERIMENTAL
 	default n
 	select THREAD_MONITOR
 	help

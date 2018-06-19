@@ -25,8 +25,9 @@ if BT_CUSTOM
 endif
 
 config BT_NRF51_PM
-	bool "nRF51 Power Management [EXPERIMENTAL]"
+	bool "nRF51 Power Management"
 	depends on BT_H4
+	depends on EXPERIMENTAL
 	help
 	  Power Management support for Nordic BLE nRF51 chip. Allows to enable,
 	  disable the chip and handle wakeups.

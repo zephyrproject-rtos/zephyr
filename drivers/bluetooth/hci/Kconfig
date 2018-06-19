@@ -25,7 +25,8 @@ config BT_H4
 	  lines to be available.
 
 config BT_H5
-	bool "H:5 UART [EXPERIMENTAL]"
+	bool "H:5 UART"
+	depends on EXPERIMENTAL
 	select UART_INTERRUPT_DRIVEN
 	select BT_UART
 	depends on SERIAL

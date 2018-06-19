@@ -476,7 +476,8 @@ config BT_TESTING
 	  Shall only be used for testing purposes.
 
 config BT_BREDR
-	bool "Bluetooth BR/EDR support [EXPERIMENTAL]"
+	bool "Bluetooth BR/EDR support"
+	depends on EXPERIMENTAL
 	depends on BT_HCI_HOST
 	select BT_PERIPHERAL
 	select BT_CENTRAL
@@ -495,7 +496,8 @@ config BT_MAX_SCO_CONN
 	  supported. The minimum (and default) number is 1.
 
 config BT_RFCOMM
-	bool "Bluetooth RFCOMM protocol support [EXPERIMENTAL]"
+	bool "Bluetooth RFCOMM protocol support"
+	depends on EXPERIMENTAL
 	help
 	  This option enables Bluetooth RFCOMM support
 
@@ -510,19 +512,22 @@ config BT_RFCOMM_L2CAP_MTU
 	  Maximum size of L2CAP PDU for RFCOMM frames.
 
 config BT_HFP_HF
-	bool "Bluetooth Handsfree profile HF Role support [EXPERIMENTAL]"
+	bool "Bluetooth Handsfree profile HF Role support"
+	depends on EXPERIMENTAL
 	depends on PRINTK
 	select BT_RFCOMM
 	help
 	  This option enables Bluetooth HF support
 
 config BT_AVDTP
-	bool "Bluetooth AVDTP protocol support [EXPERIMENTAL]"
+	bool "Bluetooth AVDTP protocol support"
+	depends on EXPERIMENTAL
 	help
 	  This option enables Bluetooth AVDTP support
 
 config BT_A2DP
-	bool "Bluetooth A2DP Profile [EXPERIMENTAL]"
+	bool "Bluetooth A2DP Profile"
+	depends on EXPERIMENTAL
 	select BT_AVDTP
 	help
 	  This option enables the A2DP profile

@@ -290,7 +290,8 @@ config BUILD_TIMESTAMP
 
 config INT_LATENCY_BENCHMARK
 	bool
-	prompt "Interrupt latency metrics [EXPERIMENTAL]"
+	prompt "Interrupt latency metrics"
+	depends on EXPERIMENTAL
 	default n
 	depends on ARCH="x86"
 	help
@@ -312,7 +313,8 @@ config EXECUTION_BENCHMARKING
 
 config THREAD_MONITOR
 	bool
-	prompt "Thread monitoring [EXPERIMENTAL]"
+	prompt "Thread monitoring"
+	depends on EXPERIMENTAL
 	default n
 	help
 	  This option instructs the kernel to maintain a list of all threads

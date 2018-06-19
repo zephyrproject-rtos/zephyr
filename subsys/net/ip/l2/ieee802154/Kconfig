@@ -135,7 +135,8 @@ config  NET_DEBUG_L2_IEEE802154_FRAGMENT
 	default y if NET_LOG_GLOBAL
 
 config NET_L2_IEEE802154_SECURITY
-	bool "Enable IEEE 802.15.4 security [EXPERIMENTAL]"
+	bool "Enable IEEE 802.15.4 security"
+	depends on EXPERIMENTAL
 	default n
 	help
 	  Enable 802.15.4 frame security handling, in order to bring data

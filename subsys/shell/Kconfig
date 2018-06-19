@@ -10,7 +10,8 @@
 
 config CONSOLE_SHELL
 	bool
-	prompt "Enable console input handler [ Experimental ]"
+	prompt "Enable console input handler"
+	depends on EXPERIMENTAL
 	default n
 	select CONSOLE_HANDLER
 	help

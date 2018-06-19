@@ -7,6 +7,19 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+config EXPERIMENTAL
+	bool "Enable experimental/incomplete features"
+	default y
+	help
+	  Enable this option if you want to build Zephyr with incomplete
+	  and/or experimental features.
+
+	  Such features are often under heavy development and their APIs are
+	  subject to change, even if declared non-private.  Also, they might
+	  not be subject to the same kind of testing rigor applied to mature
+	  features.
+
+
 source "arch/Kconfig"
 
 source "kernel/Kconfig"
