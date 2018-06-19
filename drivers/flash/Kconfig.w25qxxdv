@@ -68,10 +68,24 @@ config SPI_FLASH_W25QXXDV_GPIO_SPI_CS_PIN
 	This option is mandatory to set which GPIO pin to use in order
 	to actually emulate the SPI CS.
 
+config SPI_FLASH_W25QXXDV_GPIO_CS_WAIT_DELAY
+	int "Delay time in us"
+	default 0
+        depends on SPI_FLASH_W25QXXDV_GPIO_SPI_CS
+	help
+	This is the wait delay (in us) to allow for CS switching to take effect
+
 config SPI_FLASH_W25QXXDV_FLASH_SIZE
 	int "Flash size in bytes"
 	default 2097152
 	help
 	  This is the flash capacity in bytes.
+
+config SPI_FLASH_W25QXXDV_DEVICE_ID
+	hex "Device ID in hex"
+	default 0x00ef4015
+	help
+	  This is the device ID of the flash chip to use, which is 0x00ef4015 for
+          the W25QXXDV
 
 endif # SPI_FLASH_W25QXXDV
