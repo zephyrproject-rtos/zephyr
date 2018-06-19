@@ -5,3 +5,11 @@
  */
 
 #include <st/stm32f429.dtsi>
+
+/ {
+	soc {
+		usbotg_fs: usb@50000000 {
+			num-bidir-endpoints = <6>;
+		};
+	};
+};
