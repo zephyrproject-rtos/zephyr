@@ -559,8 +559,8 @@ class Kconfig(object):
                  encoding="utf-8"):
         """
         Creates a new Kconfig object by parsing Kconfig files. Raises
-        KconfigSyntaxError on syntax errors. Note that Kconfig files are not
-        the same as .config files (which store configuration symbol values).
+        KconfigError on syntax errors. Note that Kconfig files are not the same
+        as .config files (which store configuration symbol values).
 
         filename (default: "Kconfig"):
           The base Kconfig file. For the Linux kernel, you'll want "Kconfig"
@@ -726,8 +726,16 @@ class Kconfig(object):
             _check_choice_sanity(choice)
 
 
-        # Build Symbol._dependents for all symbols
+        # Build Symbol._dependents for all symbols and choices
         self._build_dep()
+
+        # Check for dependency loops
+        for sym in self.defined_syms:
+            _check_dep_loop_sym(sym, False)
+
+        # Add extra dependencies from choices to choice symbols that get
+        # awkward during dependency loop detection
+        self._add_choice_deps()
 
         self._warn_for_no_prompt = True
 
@@ -1288,9 +1296,8 @@ class Kconfig(object):
     def eval_string(self, s):
         """
         Returns the tristate value of the expression 's', represented as 0, 1,
-        and 2 for n, m, and y, respectively. Raises KconfigSyntaxError if
-        syntax errors are detected in 's'. Warns if undefined symbols are
-        referenced.
+        and 2 for n, m, and y, respectively. Raises KconfigError if syntax
+        errors are detected in 's'. Warns if undefined symbols are referenced.
 
         As an example, if FOO and BAR are tristate symbols at least one of
         which has the value y, then config.eval_string("y && (FOO || BAR)")
@@ -1459,7 +1466,7 @@ class Kconfig(object):
         for _, name, _ in self._filestack:
             if name == filename:
                 # KconfigParseError might have been a better name, but too late
-                raise KconfigSyntaxError(
+                raise KconfigError(
                     "\n{}:{}: Recursive 'source' of '{}' detected. Check that "
                     "environment variables are set correctly.\n"
                     "Backtrace:\n{}"
@@ -2079,8 +2086,7 @@ class Kconfig(object):
         # End of file reached. Terminate the final node and return it.
 
         if end_token is not None:
-            raise KconfigSyntaxError("Unexpected end of file " +
-                                     self._filename)
+            raise KconfigError("Unexpected end of file " + self._filename)
 
         prev.next = None
         return prev
@@ -2485,6 +2491,17 @@ class Kconfig(object):
             for _, cond in choice.defaults:
                 _make_depend_on(choice, cond)
 
+    def _add_choice_deps(self):
+        # Choices also depend on the choice symbols themselves, because the
+        # y-mode selection of the choice might change if a choice symbol's
+        # visibility changes.
+        #
+        # We add these dependencies separately after dependency loop detection.
+        # The invalidation algorithm can handle the resulting
+        # <choice symbol> <-> <choice> dependency loops, but they make loop
+        # detection awkward.
+
+        for choice in self.choices:
             # The choice symbols themselves, because the y mode selection might
             # change if a choice symbol's visibility changes
             for sym in choice.syms:
@@ -2687,7 +2704,7 @@ class Kconfig(object):
         else:
             loc = "{}:{}: ".format(self._filename, self._linenr)
 
-        raise KconfigSyntaxError(
+        raise KconfigError(
             "{}Couldn't parse '{}': {}".format(loc, self._line.rstrip(), msg))
 
     def _open_enc(self, filename, mode):
@@ -2924,6 +2941,7 @@ class Symbol(object):
         "_cached_str_val",
         "_cached_tri_val",
         "_cached_vis",
+        "_checked",
         "_dependents",
         "_old_val",
         "_was_set",
@@ -3435,6 +3453,9 @@ class Symbol(object):
         # See Kconfig._build_dep()
         self._dependents = set()
 
+        # Used during dependency loop detection
+        self._checked = 0
+
     def _assignable(self):
         # Worker function for the 'assignable' attribute
 
@@ -3752,6 +3773,7 @@ class Choice(object):
         "_cached_assignable",
         "_cached_selection",
         "_cached_vis",
+        "_checked",
         "_dependents",
         "_was_set",
         "defaults",
@@ -3973,6 +3995,9 @@ class Choice(object):
 
         # See Kconfig._build_dep()
         self._dependents = set()
+
+        # Used during dependency loop detection
+        self._checked = 0
 
     def _assignable(self):
         # Worker function for the 'assignable' attribute
@@ -4370,10 +4395,13 @@ class MenuNode(object):
 
         return "\n".join(lines) + "\n"
 
-class KconfigSyntaxError(Exception):
+class KconfigError(Exception):
     """
-    Exception raised for syntax errors.
+    Exception raised for Kconfig-related errors.
     """
+
+# Backwards compatibility
+KconfigSyntaxError = KconfigError
 
 class InternalError(Exception):
     """
@@ -4698,7 +4726,7 @@ def _decoding_error(e, filename):
     # Gives the filename and context for UnicodeDecodeError's, which are a pain
     # to debug otherwise. 'e' is the UnicodeDecodeError object.
 
-    raise KconfigSyntaxError(
+    raise KconfigError(
         "\n"
         "Malformed {} in {}\n"
         "Context: {}\n"
@@ -4827,6 +4855,161 @@ def _finalize_choice(node):
         if sym.orig_type == UNKNOWN:
             sym.orig_type = choice.orig_type
 
+def _check_dep_loop_sym(sym, ignore_choice):
+    # Detects dependency loops using depth-first search on the dependency graph
+    # (which is calculated earlier in Kconfig._build_dep()).
+    #
+    # Algorithm:
+    #
+    #  1. Symbols/choices start out with _checked = 0, meaning unvisited.
+    #
+    #  2. When a symbol/choice is first visited, _checked is set to 1, meaning
+    #     "visited, potentially part of a dependency loop". The recursive
+    #     search then continues from the symbol/choice.
+    #
+    #  3. If we run into a symbol/choice X with _checked already set to 1,
+    #     there's a dependency loop. The loop is found on the call stack by
+    #     recording symbols while returning ("on the way back") until X is seen
+    #     again.
+    #
+    #  4. Once a symbol/choice and all its dependencies (or dependents in this
+    #     case) have been checked recursively without detecting any loops, its
+    #     _checked is set to 2, meaning "visited, not part of a dependency
+    #     loop".
+    #
+    #     This saves work if we run into the symbol/choice again in later calls
+    #     to _check_dep_loop_sym(). We just return immediately.
+    #
+    # Choices complicate things, as every choice symbol depends on every other
+    # choice symbol in a sense. When a choice is "entered" via a choice symbol
+    # X, we visit all choice symbols from the choice except X, and prevent
+    # immediately revisiting the choice with a flag (ignore_choice).
+    #
+    # Maybe there's a better way to handle this (different flags or the
+    # like...)
+
+    if not sym._checked:
+        # sym._checked == 0, unvisited
+
+        sym._checked = 1
+
+        for dep in sym._dependents:
+            # Choices show up in Symbol._dependents when the choice has the
+            # symbol in a 'prompt' or 'default' condition (e.g.
+            # 'default ... if SYM').
+            #
+            # Since we aren't entering the choice via a choice symbol, all
+            # choice symbols need to be checked, hence the None.
+            loop = _check_dep_loop_choice(dep, None) \
+                   if isinstance(dep, Choice) \
+                   else _check_dep_loop_sym(dep, False)
+
+            if loop:
+                # Dependency loop found
+                return _found_dep_loop(loop, sym)
+
+        if sym.choice and not ignore_choice:
+            loop = _check_dep_loop_choice(sym.choice, sym)
+            if loop:
+                # Dependency loop found
+                return _found_dep_loop(loop, sym)
+
+        # The symbol is not part of a dependency loop
+        sym._checked = 2
+
+        # No dependency loop found
+        return None
+
+    if sym._checked == 2:
+        # The symbol was checked earlier and is already known to not be part of
+        # a dependency loop
+        return None
+
+    # sym._checked == 1, found a dependency loop. Return the symbol as the
+    # first element in it.
+    return (sym,)
+
+def _check_dep_loop_choice(choice, skip):
+    if not choice._checked:
+        # choice._checked == 0, unvisited
+
+        choice._checked = 1
+
+        # Check for loops involving choice symbols. If we came here via a
+        # choice symbol, skip that one, as we'd get a false positive
+        # '<sym FOO> -> <choice> -> <sym FOO>' loop otherwise.
+        for sym in choice.syms:
+            if sym is not skip:
+                # Prevent the choice from being immediately re-entered via the
+                # "is a choice symbol" path by passing True
+                loop = _check_dep_loop_sym(sym, True)
+                if loop:
+                    # Dependency loop found
+                    return _found_dep_loop(loop, choice)
+
+        # The choice is not part of a dependency loop
+        choice._checked = 2
+
+        # No dependency loop found
+        return None
+
+    if choice._checked == 2:
+        # The choice was checked earlier and is already known to not be part of
+        # a dependency loop
+        return None
+
+    # choice._checked == 1, found a dependency loop. Return the choice as the
+    # first element in it.
+    return (choice,)
+
+def _found_dep_loop(loop, cur):
+    # Called "on the way back" when we know we have a loop
+
+    # Is the symbol/choice 'cur' where the loop started?
+    if cur is not loop[0]:
+        # Nope, it's just a part of the loop
+        return loop + (cur,)
+
+    # Yep, we have the entire loop. Throw an exception that shows it.
+
+    msg = "\nDependency loop\n" \
+            "===============\n\n"
+
+    for item in loop:
+        if item is not loop[0]:
+            msg += "...depends on "
+            if isinstance(item, Symbol) and item.choice:
+                msg += "the choice symbol "
+
+        msg += "{}, with definition...\n\n{}\n" \
+               .format(_name_and_loc(item), item)
+
+        # Small wart: Since we reuse the already calculated
+        # Symbol/Choice._dependents sets for recursive dependency detection, we
+        # lose information on whether a dependency came from a 'select'/'imply'
+        # condition or e.g. a 'depends on'.
+        #
+        # This might cause selecting symbols to "disappear". For example,
+        # a symbol B having 'select A if C' gives a direct dependency from A to
+        # C, since it corresponds to a reverse dependency of B && C.
+        #
+        # Always print reverse dependencies for symbols that have them to make
+        # sure information isn't lost. I wonder if there's some neat way to
+        # improve this.
+
+        if isinstance(item, Symbol):
+            if item.rev_dep is not item.kconfig.n:
+                msg += "(select-related dependencies: {})\n\n" \
+                       .format(expr_str(item.rev_dep))
+
+            if item.weak_rev_dep is not item.kconfig.n:
+                msg += "(imply-related dependencies: {})\n\n" \
+                       .format(expr_str(item.rev_dep))
+
+    msg += "...depends again on {}".format(_name_and_loc(loop[0]))
+
+    raise KconfigError(msg)
+
 def _check_sym_sanity(sym):
     # Checks various symbol properties that are handiest to check after
     # parsing. Only generates errors and warnings.
@@ -4855,7 +5038,7 @@ def _check_sym_sanity(sym):
     elif sym.orig_type in (STRING, INT, HEX):
         for default, _ in sym.defaults:
             if not isinstance(default, Symbol):
-                raise KconfigSyntaxError(
+                raise KconfigError(
                     "the {} symbol {} has a malformed default {} -- expected "
                     "a single symbol"
                     .format(TYPE_TO_STR[sym.orig_type], _name_and_loc(sym),
@@ -4937,7 +5120,7 @@ def _check_choice_sanity(choice):
 
     for default, _ in choice.defaults:
         if not isinstance(default, Symbol):
-            raise KconfigSyntaxError(
+            raise KconfigError(
                 "{} has a malformed default {}"
                 .format(_name_and_loc(choice), expr_str(default)))
 
