@@ -19,7 +19,25 @@
 /* in millisecond */
 #define SLEEPTIME  2000
 
-#define ADC_DEVICE_NAME "ADC_0"
+#if defined(CONFIG_BOARD_FRDM_K64F)
+#define ADC_DEVICE_NAME CONFIG_ADC_1_NAME
+#define CHANNEL		14
+#elif defined(CONFIG_BOARD_FRDM_KL25Z)
+#define ADC_DEVICE_NAME CONFIG_ADC_0_NAME
+#define CHANNEL		12
+#elif defined(CONFIG_BOARD_FRDM_KW41Z)
+#define ADC_DEVICE_NAME CONFIG_ADC_0_NAME
+#define CHANNEL		3
+#elif defined(CONFIG_BOARD_HEXIWEAR_K64)
+#define ADC_DEVICE_NAME CONFIG_ADC_0_NAME
+#define CHANNEL		16
+#elif defined(CONFIG_BOARD_HEXIWEAR_KW40Z)
+#define ADC_DEVICE_NAME CONFIG_ADC_0_NAME
+#define CHANNEL		1
+#else
+#define ADC_DEVICE_NAME CONFIG_ADC_0_NAME
+#define CHANNEL		10
+#endif
 
 /*
  * The analog input pin and channel number mapping
@@ -30,7 +48,7 @@
  * A3 Channel 13
  * A4 Channel 14
  */
-#define CHANNEL 10
+
 #define BUFFER_SIZE 10
 
 static u32_t seq_buffer[2][BUFFER_SIZE];
