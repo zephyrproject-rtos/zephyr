@@ -163,3 +163,7 @@
 		status = "ok";
 	};
 };
+
+&rtc {
+	status = "ok";
+};

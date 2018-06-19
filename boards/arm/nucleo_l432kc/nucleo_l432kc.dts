@@ -61,3 +61,7 @@
 	bus-speed = <250000>;
 	status = "ok";
 };
+
+&rtc {
+	status = "ok";
+};
