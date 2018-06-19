@@ -7,12 +7,13 @@
 
 /* #include <kernel_structs.h> */
 
-u64_t __noinit __start_swap_time;
-u64_t __noinit __end_swap_time;
-u64_t __noinit __start_intr_time;
-u64_t __noinit __end_intr_time;
-u64_t __noinit __start_tick_time;
-u64_t __noinit __end_tick_time;
+u64_t  __start_swap_time;
+u64_t  __end_swap_time;
+u64_t  __start_intr_time;
+u64_t  __end_intr_time;
+u64_t  __start_tick_time;
+u64_t  __end_tick_time;
+u64_t  __end_drop_to_usermode_time;
 
 /* location of the time stamps*/
 u32_t __read_swap_end_time_value;
@@ -47,7 +48,7 @@ u64_t __common_var_swap_end_time;
 void read_timer_start_of_swap(void)
 {
 	TIMING_INFO_PRE_READ();
-	__start_swap_time = (u32_t) TIMING_INFO_GET_TIMER_VALUE();
+	__start_swap_time = (u32_t) TIMING_INFO_OS_GET_TIME();
 }
 
 void read_timer_end_of_swap(void)
@@ -84,6 +85,12 @@ void read_timer_end_of_tick_handler(void)
 {
 	TIMING_INFO_PRE_READ();
 	 __end_tick_time  = (u32_t) TIMING_INFO_GET_TIMER_VALUE();
+}
+
+void read_timer_end_of_userspace_enter(void)
+{
+	TIMING_INFO_PRE_READ();
+	__end_drop_to_usermode_time  = (u32_t) TIMING_INFO_GET_TIMER_VALUE();
 }
 
 #endif /* CONFIG_ARM */
