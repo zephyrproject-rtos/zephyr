@@ -9,6 +9,7 @@ zephyr_library_sources_ifdef(
   cmsis_thread.c
   cmsis_wait.c
   cmsis_kernel.c
+  cmsis_timer.c
 )
 
 zephyr_library_link_libraries(CMSIS)
