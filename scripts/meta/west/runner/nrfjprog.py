@@ -13,11 +13,12 @@ from .core import ZephyrBinaryRunner, RunnerCaps
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for nrfjprog.'''
 
-    def __init__(self, cfg, family, softreset):
+    def __init__(self, cfg, family, softreset, snr):
         super(NrfJprogBinaryRunner, self).__init__(cfg)
         self.hex_ = cfg.kernel_hex
         self.family = family
         self.softreset = softreset
+        self.snr = snr
 
     @classmethod
     def name(cls):
@@ -35,10 +36,12 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--softreset', required=False,
                             action='store_true',
                             help='use reset instead of pinreset')
+        parser.add_argument('--snr', required=False,
+                            help='serial number of board to use')
 
     @classmethod
     def create(cls, cfg, args):
-        return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset)
+        return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset, args.snr)
 
     def get_board_snr_from_user(self):
         snrs = self.check_output(['nrfjprog', '--ids'])
@@ -76,7 +79,10 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         return snrs[value - 1]
 
     def do_run(self, command, **kwargs):
-        board_snr = self.get_board_snr_from_user()
+        if (self.snr is None):
+            board_snr = self.get_board_snr_from_user()
+        else:
+            board_snr = self.snr.lstrip("0")
 
         print('Flashing file: {}'.format(self.hex_))
         commands = [
