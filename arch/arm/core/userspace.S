@@ -93,6 +93,14 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
     /* restore r0 */
     mov r0, lr
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+    stm sp!,{r0-r3} /* Save regs r0 to r4 on stack */
+    push {lr}
+    bl read_timer_end_of_userspace_enter
+    pop {lr}
+    ldm sp!,{r0-r3} /* Load back regs ro to r4 */
+#endif /* CONFIG_EXECUTION_BENCHMARKING */
+
     /* change processor mode to unprivileged */
     mrs ip, CONTROL
     orrs ip, ip, #1
