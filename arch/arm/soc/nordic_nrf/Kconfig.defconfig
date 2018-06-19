@@ -21,7 +21,7 @@ endif # SERIAL
 
 if GPIO
 
-config GPIO_NRF5
+config GPIO_NRFX
 	default y
 
 endif # GPIO
