@@ -129,5 +129,9 @@
 				label = "PWM_14";
 			};
 		};
+
+		usbotg_fs: usb@50000000 {
+			num-bidir-endpoints = <6>;
+		};
 	};
 };

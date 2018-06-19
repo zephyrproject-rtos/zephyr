@@ -161,5 +161,9 @@
 			status = "disabled";
 			label = "UART_10";
 		};
+
+		usbotg_fs: usb@50000000 {
+			num-bidir-endpoints = <6>;
+		};
 	};
 };
