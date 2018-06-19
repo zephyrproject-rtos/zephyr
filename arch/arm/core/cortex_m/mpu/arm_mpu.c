@@ -14,8 +14,6 @@
 #include <logging/sys_log.h>
 #include <linker/linker-defs.h>
 
-#define ARM_MPU_DEV ((volatile struct arm_mpu *) ARM_MPU_BASE)
-
 static inline u8_t _get_num_regions(void)
 {
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
@@ -26,7 +24,7 @@ static inline u8_t _get_num_regions(void)
 	 */
 	return 8;
 #else
-	u32_t type = ARM_MPU_DEV->type;
+	u32_t type = MPU->TYPE;
 
 	type = (type & 0xFF00) >> 8;
 
@@ -43,11 +41,11 @@ static void _region_init(u32_t index, u32_t region_addr,
 			 u32_t region_attr)
 {
 	/* Select the region you want to access */
-	ARM_MPU_DEV->rnr = index;
+	MPU->RNR = index;
 	/* Configure the region */
-	ARM_MPU_DEV->rbar = (region_addr & MPU_RBAR_ADDR_Msk)
+	MPU->RBAR = (region_addr & MPU_RBAR_ADDR_Msk)
 				| MPU_RBAR_VALID_Msk | index;
-	ARM_MPU_DEV->rasr = region_attr | MPU_RASR_ENABLE_Msk;
+	MPU->RASR = region_attr | MPU_RASR_ENABLE_Msk;
 	SYS_LOG_DBG("[%d] 0x%08x 0x%08x", index, region_addr, region_attr);
 }
 
@@ -157,9 +155,9 @@ static inline void _disable_region(u32_t r_index)
 		_get_num_regions());
 	SYS_LOG_DBG("disable region 0x%x", r_index);
 	/* Disable region */
-	ARM_MPU_DEV->rnr = r_index;
-	ARM_MPU_DEV->rbar = 0;
-	ARM_MPU_DEV->rasr = 0;
+	MPU->RNR = r_index;
+	MPU->RBAR = 0;
+	MPU->RASR = 0;
 }
 
 /**
@@ -170,9 +168,9 @@ static inline void _disable_region(u32_t r_index)
  */
 static inline int _is_enabled_region(u32_t r_index)
 {
-	ARM_MPU_DEV->rnr = r_index;
+	MPU->RNR = r_index;
 
-	return ARM_MPU_DEV->rasr & MPU_RASR_ENABLE_Msk;
+	return MPU->RASR & MPU_RASR_ENABLE_Msk;
 }
 
 /**
@@ -187,9 +185,9 @@ static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 	u32_t r_size_lshift;
 	u32_t r_addr_end;
 
-	ARM_MPU_DEV->rnr = r_index;
-	r_addr_start = ARM_MPU_DEV->rbar & MPU_RBAR_ADDR_Msk;
-	r_size_lshift = ((ARM_MPU_DEV->rasr & MPU_RASR_SIZE_Msk) >>
+	MPU->RNR = r_index;
+	r_addr_start = MPU->RBAR & MPU_RBAR_ADDR_Msk;
+	r_size_lshift = ((MPU->RASR & MPU_RASR_SIZE_Msk) >>
 			MPU_RASR_SIZE_Pos) + 1;
 	r_addr_end = r_addr_start + (1 << r_size_lshift) - 1;
 
@@ -210,7 +208,7 @@ void arm_core_mpu_enable(void)
 	/* Enable MPU and use the default memory map as a
 	 * background region for privileged software access.
 	 */
-	ARM_MPU_DEV->ctrl = MPU_CTRL_ENABLE_Msk | MPU_CTRL_PRIVDEFENA_Msk;
+	MPU->CTRL = MPU_CTRL_ENABLE_Msk | MPU_CTRL_PRIVDEFENA_Msk;
 }
 
 /**
@@ -219,7 +217,7 @@ void arm_core_mpu_enable(void)
 void arm_core_mpu_disable(void)
 {
 	/* Disable MPU */
-	ARM_MPU_DEV->ctrl = 0;
+	MPU->CTRL = 0;
 }
 
 /**
@@ -358,8 +356,8 @@ static inline int _is_user_accessible_region(u32_t r_index, int write)
 {
 	u32_t r_ap;
 
-	ARM_MPU_DEV->rnr = r_index;
-	r_ap = ARM_MPU_DEV->rasr & MPU_RASR_AP_Msk;
+	MPU->RNR = r_index;
+	r_ap = MPU->RASR & MPU_RASR_AP_Msk;
 
 	/* always return true if this is the thread stack region */
 	if (_get_region_index_by_type(THREAD_STACK_REGION) == r_index) {
@@ -437,7 +435,7 @@ static int arm_mpu_init(struct device *arg)
 	SYS_LOG_DBG("total region count: %d", _get_num_regions());
 
 	/* Disable MPU */
-	ARM_MPU_DEV->ctrl = 0;
+	MPU->CTRL = 0;
 
 	/* Configure regions */
 	for (r_index = 0; r_index < mpu_config.num_regions; r_index++) {
@@ -449,7 +447,7 @@ static int arm_mpu_init(struct device *arg)
 	/* Enable MPU and use the default memory map as a
 	 * background region for privileged software access.
 	 */
-	ARM_MPU_DEV->ctrl = MPU_CTRL_ENABLE_Msk | MPU_CTRL_PRIVDEFENA_Msk;
+	MPU->CTRL = MPU_CTRL_ENABLE_Msk | MPU_CTRL_PRIVDEFENA_Msk;
 
 #if defined(CONFIG_APPLICATION_MEMORY)
 	u32_t index, size, region_attr;
@@ -470,7 +468,7 @@ static int arm_mpu_init(struct device *arg)
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
 	defined(CONFIG_CPU_CORTEX_M3) || \
 	defined(CONFIG_CPU_CORTEX_M4)
-	__ASSERT((ARM_MPU_DEV->type & 0xFF00) >> 8 == 8,
+	__ASSERT((MPU->TYPE & 0xFF00) >> 8 == 8,
 		"Invalid number of MPU regions\n");
 #endif
 	return 0;

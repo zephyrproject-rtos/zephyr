@@ -9,33 +9,6 @@
 #include <arch/arm/cortex_m/mpu/arm_core_mpu_dev.h>
 #include <arch/arm/cortex_m/cmsis.h>
 
-struct arm_mpu {
-	/* 0xE000ED90 MPU Type Register */
-	volatile u32_t type;
-	/* 0xE000ED94 MPU Control Register */
-	volatile u32_t ctrl;
-	/* 0xE000ED98 MPU Region Number Register */
-	volatile u32_t rnr;
-	/* 0xE000ED9C MPU Region Base Address Register */
-	volatile u32_t rbar;
-	/* 0xE000EDA0 MPU Region Attribute and Size Register */
-	volatile u32_t rasr;
-	/* 0xE000EDA4 Alias of RBAR */
-	volatile u32_t rbar_a1;
-	/* 0xE000EDA8 Alias of RASR */
-	volatile u32_t rasr_a1;
-	/* 0xE000EDAC Alias of RBAR */
-	volatile u32_t rbar_a2;
-	/* 0xE000EDB0 Alias of RASR */
-	volatile u32_t rasr_a2;
-	/* 0xE000EDB4 Alias of RBAR */
-	volatile u32_t rbar_a3;
-	/* 0xE000EDB8 Alias of RASR */
-	volatile u32_t rasr_a3;
-};
-
-#define ARM_MPU_BASE	0xE000ED90
-
 /* ARM MPU RASR Register */
 
 /* Privileged No Access, Unprivileged No Access */
