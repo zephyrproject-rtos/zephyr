@@ -41,7 +41,7 @@ loop:
 		retries--;
 
 		if (be) {
-			u8_t bo_n = sys_rand32_get() & (2 << (be + 1));
+			u8_t bo_n = sys_rand32_get() & ((1 << be) - 1);
 
 			k_busy_wait(bo_n * 20);
 		}
