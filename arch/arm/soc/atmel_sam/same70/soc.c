@@ -227,6 +227,9 @@ static int atmel_same70_init(struct device *arg)
 
 	key = irq_lock();
 
+	SCB_EnableICache();
+	SCB_EnableDCache();
+
 	/* Clear all faults */
 	_ClearFaults();
 
