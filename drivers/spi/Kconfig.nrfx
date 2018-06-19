@@ -37,7 +37,7 @@ config SPI_0_NRF_SPIM
 config SPI_0_NRF_SPIS
 	bool "nRF SPIS 0"
 	depends on SOC_SERIES_NRF52X
-	select SPI_SLAVE
+	depends on SPI_SLAVE
 	select NRFX_SPIS
 	help
 	  Enable nRF SPI Slave with EasyDMA on port 0.
@@ -124,7 +124,7 @@ config SPI_1_NRF_SPIM
 config SPI_1_NRF_SPIS
 	bool "nRF SPIS 1"
 	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF51X
-	select SPI_SLAVE
+	depends on SPI_SLAVE
 	select NRFX_SPIS
 	help
 	  Enable nRF SPI Slave with EasyDMA on port 1.
@@ -210,7 +210,7 @@ config SPI_2_NRF_SPIM
 config SPI_2_NRF_SPIS
 	bool "nRF SPIS 2"
 	depends on SOC_SERIES_NRF52X
-	select SPI_SLAVE
+	depends on SPI_SLAVE
 	select NRFX_SPIS
 	help
 	  Enable nRF SPI Slave with EasyDMA on port 2.
