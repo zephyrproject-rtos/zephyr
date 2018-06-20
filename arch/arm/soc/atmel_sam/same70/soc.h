@@ -46,6 +46,8 @@
 #include "../common/soc_pmc.h"
 #include "../common/soc_gpio.h"
 
+#include <kernel_includes.h>
+
 #endif /* _ASMLANGUAGE */
 
 /** Peripheral Hardware Request Line Identifier */
