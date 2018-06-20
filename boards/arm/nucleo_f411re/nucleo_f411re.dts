@@ -65,3 +65,7 @@
 &i2c3 {
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
+
+&rtc {
+	status = "ok";
+};
