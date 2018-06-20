@@ -7,7 +7,7 @@
 #ifndef __DT_BINDING_TI_MEM_H
 #define __DT_BINDING_TI_MEM_H
 
-#define __SIZE_K(x) (x * 1024)
+#define __SIZE_K(x) ((x) * 1024)
 
 #if defined(CONFIG_SOC_CC3220SF)
 #define DT_SFLASH_SIZE		__SIZE_K(1024)
