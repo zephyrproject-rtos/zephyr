@@ -7,6 +7,7 @@
 #define _ARM_MPU_H_
 
 #include <arch/arm/cortex_m/mpu/arm_core_mpu_dev.h>
+#include <arch/arm/cortex_m/cmsis.h>
 
 struct arm_mpu {
 	/* 0xE000ED90 MPU Type Register */
