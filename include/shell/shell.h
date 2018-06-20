@@ -9,6 +9,8 @@
 #ifndef _SHELL_H_
 #define _SHELL_H_
 
+#include <zephyr.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -184,10 +186,21 @@ void shell_register_mcumgr_handler(shell_mcumgr_function_t handler, void *arg);
  */
 int shell_exec(char *line);
 
+typedef void (*shell_register_handler_t)(struct k_fifo *avail,
+					 struct k_fifo *lines,
+					 u8_t (*completion)(char *str,
+							    u8_t len));
+
+struct shell_input {
+	sys_snode_t node;
+	shell_register_handler_t handler;
+};
+
+void shell_register_input(struct shell_input *input);
+
 /**
 * @}
 */
-
 
 #ifdef CONFIG_CONSOLE_SHELL
 int shell_run(struct device *dev);

@@ -618,6 +618,24 @@ static u8_t completion(char *line, u8_t len)
 	return common_chars - command_len + space;
 }
 
+static sys_slist_t inputs;
+
+void shell_register_input(struct shell_input *input)
+{
+	sys_slist_prepend(&inputs, &input->node);
+}
+
+static void shell_register_inputs(struct k_fifo *avail, struct k_fifo *lines,
+				  u8_t (*completion)(char *str, u8_t len))
+{
+	struct shell_input *input;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&inputs, input, node) {
+		if (input->handler) {
+			input->handler(avail, lines, completion);
+		}
+	}
+}
 
 void shell_init(const char *str)
 {
@@ -644,6 +662,9 @@ void shell_init(const char *str)
 #ifdef CONFIG_WEBSOCKET_CONSOLE
 	ws_register_input(&avail_queue, &cmds_queue, completion);
 #endif
+
+	/* Register all inputs added with API */
+	shell_register_inputs(&avail_queue, &cmds_queue, completion);
 }
 
 /** @brief Optionally register an app default cmd handler.
