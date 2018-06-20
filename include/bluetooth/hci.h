@@ -1834,7 +1834,7 @@ struct bt_hci_evt_le_chan_sel_algo {
   *
   * This function allocates a new buffer for a HCI command. It is given
   * the OpCode (encoded e.g. using the BT_OP macro) and the total length
-  * of the parameters. Opon successful return the buffer is ready to have
+  * of the parameters. Upon successful return the buffer is ready to have
   * the parameters encoded into it.
   *
   * @param opcode     Command OpCode.
@@ -1853,7 +1853,7 @@ struct net_buf *bt_hci_cmd_create(u16_t opcode, u8_t param_len);
   * return from this function the caller only knows that it was queued
   * successfully.
   *
-  * If synchronous behavior, and retreival of the Command Complete paramters
+  * If synchronous behavior, and retrieval of the Command Complete parameters
   * is desired, the bt_hci_cmd_send_sync() API should be used instead.
   *
   * @param opcode Command OpCode.
