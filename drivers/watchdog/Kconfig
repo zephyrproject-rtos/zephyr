@@ -20,7 +20,7 @@ config WDT_0_NAME
 	string "Watchdog driver instance name"
 	default "WATCHDOG_0"
 	help
-	  Set the name used by the watchdog device during registation.
+	  Set the name used by the watchdog device during registration.
 
 endif # HAS_DTS_WDT
 
