@@ -72,4 +72,11 @@ config USB_DC_STM32
 
 endif # USB
 
+if RTC
+
+config RTC_STM32
+	def_bool y
+
+endif # RTC
+
 endif # SOC_FAMILY_STM32

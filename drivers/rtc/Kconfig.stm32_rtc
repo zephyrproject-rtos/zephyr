@@ -15,7 +15,7 @@ config RTC_STM32
 	select USE_STM32_LL_EXTI
 	select NEWLIB_LIBC
 	help
-	  Build RTC driver for STM32x4 SoCs. Tested on STM32L4 series.
+	  Build RTC driver for STM32 SoCs. Tested on STM32 F4, L4 series.
 
 choice RTC_STM32_CLOCK_SRC
 	bool "RTC clock source"
