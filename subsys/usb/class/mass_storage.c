@@ -59,6 +59,9 @@
 #define THREAD_OP_WRITE_QUEUED		3
 #define THREAD_OP_WRITE_DONE		4
 
+#define MASS_STORAGE_IN_EP_ADDR		0x82
+#define MASS_STORAGE_OUT_EP_ADDR	0x01
+
 struct usb_mass_config {
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_in_ep;
@@ -82,7 +85,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_mass_config mass_cfg = {
 	.if0_in_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_MASS_STORAGE_IN_EP_ADDR,
+		.bEndpointAddress = MASS_STORAGE_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(CONFIG_MASS_STORAGE_BULK_EP_MPS),
@@ -92,7 +95,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_mass_config mass_cfg = {
 	.if0_out_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_MASS_STORAGE_OUT_EP_ADDR,
+		.bEndpointAddress = MASS_STORAGE_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(CONFIG_MASS_STORAGE_BULK_EP_MPS),
@@ -125,11 +128,11 @@ static void mass_storage_bulk_in(u8_t ep,
 static struct usb_ep_cfg_data mass_ep_data[] = {
 	{
 		.ep_cb	= mass_storage_bulk_out,
-		.ep_addr = CONFIG_MASS_STORAGE_OUT_EP_ADDR
+		.ep_addr = MASS_STORAGE_OUT_EP_ADDR
 	},
 	{
 		.ep_cb = mass_storage_bulk_in,
-		.ep_addr = CONFIG_MASS_STORAGE_IN_EP_ADDR
+		.ep_addr = MASS_STORAGE_IN_EP_ADDR
 	}
 };
 

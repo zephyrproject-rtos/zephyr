@@ -72,6 +72,10 @@
 /* Serial state notification timeout */
 #define CDC_CONTROL_SERIAL_STATE_TIMEOUT_US 100000
 
+#define CDC_ACM_INT_EP_ADDR		0x85
+#define CDC_ACM_IN_EP_ADDR		0x84
+#define CDC_ACM_OUT_EP_ADDR		0x03
+
 #define ACM_INT_EP_IDX			0
 #define ACM_OUT_EP_IDX			1
 #define ACM_IN_EP_IDX			2
@@ -159,7 +163,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_acm_config cdc_acm_cfg = {
 	.if0_int_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_CDC_ACM_INT_EP_ADDR,
+		.bEndpointAddress = CDC_ACM_INT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_INTERRUPT,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -182,7 +186,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_acm_config cdc_acm_cfg = {
 	.if1_in_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_CDC_ACM_IN_EP_ADDR,
+		.bEndpointAddress = CDC_ACM_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -193,7 +197,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_acm_config cdc_acm_cfg = {
 	.if1_out_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_CDC_ACM_OUT_EP_ADDR,
+		.bEndpointAddress = CDC_ACM_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -440,15 +444,15 @@ static void cdc_interface_config(u8_t bInterfaceNumber)
 static struct usb_ep_cfg_data cdc_acm_ep_data[] = {
 	{
 		.ep_cb	= cdc_acm_int_in,
-		.ep_addr = CONFIG_CDC_ACM_INT_EP_ADDR
+		.ep_addr = CDC_ACM_INT_EP_ADDR
 	},
 	{
 		.ep_cb	= cdc_acm_bulk_out,
-		.ep_addr = CONFIG_CDC_ACM_OUT_EP_ADDR
+		.ep_addr = CDC_ACM_OUT_EP_ADDR
 	},
 	{
 		.ep_cb = cdc_acm_bulk_in,
-		.ep_addr = CONFIG_CDC_ACM_IN_EP_ADDR
+		.ep_addr = CDC_ACM_IN_EP_ADDR
 	}
 };
 

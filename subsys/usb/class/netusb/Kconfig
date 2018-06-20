@@ -45,27 +45,6 @@ config USB_DEVICE_NETWORK_RNDIS
 
 if USB_DEVICE_NETWORK_ECM
 
-config CDC_ECM_INT_EP_ADDR
-	hex "CDC ECM Interrupt Endpoint address"
-	default 0x83
-	range 0x81 0x8F
-	help
-	  CDC ECM class interrupt endpoint address
-
-config CDC_ECM_IN_EP_ADDR
-	hex "CDC ECM BULK IN Endpoint address"
-	default 0x82
-	range 0x81 0x8F
-	help
-	  CDC ECM class IN endpoint address
-
-config CDC_ECM_OUT_EP_ADDR
-	hex "CDC ECM BULK OUT Endpoint address"
-	default 0x01
-	range 0x01 0x0F
-	help
-	  CDC ECM class OUT endpoint address
-
 config CDC_ECM_INTERRUPT_EP_MPS
 	int
 	default 16
@@ -91,16 +70,6 @@ endif # USB_DEVICE_NETWORK_ECM
 
 if USB_DEVICE_NETWORK_EEM
 
-config CDC_EEM_OUT_EP_ADDR
-	hex "CDC EEM BULK OUT Endpoint address"
-	default 0x01
-	range 0x01 0x0F
-
-config CDC_EEM_IN_EP_ADDR
-	hex "CDC EEM BULK IN Endpoint address"
-	default 0x82
-	range 0x81 0x8F
-
 config CDC_EEM_BULK_EP_MPS
 	int
 	default 64
@@ -108,27 +77,6 @@ config CDC_EEM_BULK_EP_MPS
 endif #USB_DEVICE_NETWORK_EEM
 
 if USB_DEVICE_NETWORK_RNDIS
-
-config RNDIS_INT_EP_ADDR
-	hex "RNDIS Interrupt Endpoint address"
-	default 0x83
-	range 0x81 0x8F
-	help
-	  RNDIS interrupt endpoint address
-
-config RNDIS_IN_EP_ADDR
-	hex "RNDIS BULK IN Endpoint address"
-	default 0x82
-	range 0x81 0x8F
-	help
-	  RNDIS bulk IN endpoint address
-
-config RNDIS_OUT_EP_ADDR
-	hex "RNDIS BULK OUT Endpoint address"
-	default 0x01
-	range 0x01 0x0F
-	help
-	  RNDIS bulk OUT endpoint address
 
 config RNDIS_INTERRUPT_EP_MPS
 	int

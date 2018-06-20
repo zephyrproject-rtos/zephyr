@@ -142,15 +142,15 @@ static void rndis_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status);
 static struct usb_ep_cfg_data rndis_ep_data[] = {
 	{
 		.ep_cb = rndis_int_in,
-		.ep_addr = CONFIG_RNDIS_INT_EP_ADDR
+		.ep_addr = RNDIS_INT_EP_ADDR
 	},
 	{
 		.ep_cb = rndis_bulk_out,
-		.ep_addr = CONFIG_RNDIS_OUT_EP_ADDR
+		.ep_addr = RNDIS_OUT_EP_ADDR
 	},
 	{
 		.ep_cb = rndis_bulk_in,
-		.ep_addr = CONFIG_RNDIS_IN_EP_ADDR
+		.ep_addr = RNDIS_IN_EP_ADDR
 	},
 };
 

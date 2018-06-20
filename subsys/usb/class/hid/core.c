@@ -17,6 +17,8 @@
 #include <usb_descriptor.h>
 #include <class/usb_hid.h>
 
+#define HID_INT_EP_ADDR				0x81
+
 #define HID_INT_IN_EP_IDX			0
 #define HID_INT_OUT_EP_IDX			1
 
@@ -57,7 +59,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_hid_config hid_cfg = {
 	.if0_int_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_HID_INT_EP_ADDR,
+		.bEndpointAddress = HID_INT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_INTERRUPT,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -205,7 +207,7 @@ static void hid_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 static struct usb_ep_cfg_data hid_ep_data[] = {
 	{
 		.ep_cb = hid_int_in,
-		.ep_addr = CONFIG_HID_INT_EP_ADDR
+		.ep_addr = HID_INT_EP_ADDR
 	}
 };
 
