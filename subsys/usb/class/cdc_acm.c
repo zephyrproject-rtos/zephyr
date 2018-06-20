@@ -427,12 +427,17 @@ static void cdc_acm_dev_status_cb(enum usb_dc_status_code status, u8_t *param)
 
 static void cdc_interface_config(u8_t bInterfaceNumber)
 {
-	cdc_acm_cfg.if0.bInterfaceNumber = bInterfaceNumber;
-	cdc_acm_cfg.if0_union.bControlInterface = bInterfaceNumber;
-	cdc_acm_cfg.if1.bInterfaceNumber = bInterfaceNumber + 1;
-	cdc_acm_cfg.if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
+	UNALIGNED_PUT(bInterfaceNumber,
+		      &cdc_acm_cfg.if0.bInterfaceNumber);
+	UNALIGNED_PUT(bInterfaceNumber,
+		      &cdc_acm_cfg.if0_union.bControlInterface);
+	UNALIGNED_PUT((bInterfaceNumber + 1),
+		      &cdc_acm_cfg.if1.bInterfaceNumber);
+	UNALIGNED_PUT((bInterfaceNumber + 1),
+		      &cdc_acm_cfg.if0_union.bSubordinateInterface0);
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
-	cdc_acm_cfg.iad_cdc.bFirstInterface = bInterfaceNumber;
+	UNALIGNED_PUT(bInterfaceNumber,
+		      &cdc_acm_cfg.iad_cdc.bFirstInterface);
 #endif
 }
 

@@ -646,7 +646,8 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 
 static void dfu_interface_config(u8_t bInterfaceNumber)
 {
-	dfu_cfg.if0.bInterfaceNumber = bInterfaceNumber;
+	UNALIGNED_PUT(bInterfaceNumber,
+		      &dfu_cfg.if0.bInterfaceNumber);
 }
 
 /* Configuration of the DFU Device send to the USB Driver */

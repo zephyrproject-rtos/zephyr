@@ -367,29 +367,42 @@ static void netusb_interface_config(u8_t bInterfaceNumber)
 
 	if (idx) {
 		SYS_LOG_DBG("fixup string %d", idx);
-		cdc_ecm_cfg.if0_netfun_ecm.iMACAddress = idx;
+		UNALIGNED_PUT(idx,
+			      &cdc_ecm_cfg.if0_netfun_ecm.iMACAddress);
 	}
 
-	cdc_ecm_cfg.if0.bInterfaceNumber = bInterfaceNumber;
-	cdc_ecm_cfg.if0_union.bControlInterface = bInterfaceNumber;
-	cdc_ecm_cfg.if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
-	cdc_ecm_cfg.if1_0.bInterfaceNumber = bInterfaceNumber + 1;
-	cdc_ecm_cfg.if1_1.bInterfaceNumber = bInterfaceNumber + 1;
+	UNALIGNED_PUT(bInterfaceNumber,
+		      &cdc_ecm_cfg.if0.bInterfaceNumber);
+	UNALIGNED_PUT(bInterfaceNumber,
+		      &cdc_ecm_cfg.if0_union.bControlInterface);
+	UNALIGNED_PUT((bInterfaceNumber + 1),
+		      &cdc_ecm_cfg.if0_union.bSubordinateInterface0);
+	UNALIGNED_PUT((bInterfaceNumber + 1),
+		      &cdc_ecm_cfg.if1_0.bInterfaceNumber);
+	UNALIGNED_PUT((bInterfaceNumber + 1),
+		      &cdc_ecm_cfg.if1_1.bInterfaceNumber);
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
-	cdc_ecm_cfg.iad.bFirstInterface = bInterfaceNumber;
+	UNALIGNED_PUT(bInterfaceNumber,
+		      &cdc_ecm_cfg.iad.bFirstInterface);
 #endif
 #endif
 #ifdef CONFIG_USB_DEVICE_NETWORK_RNDIS
-	rndis_cfg.if0.bInterfaceNumber = bInterfaceNumber;
-	rndis_cfg.if0_union.bControlInterface = bInterfaceNumber;
-	rndis_cfg.if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
-	rndis_cfg.if1.bInterfaceNumber = bInterfaceNumber + 1;
+	UNALIGNED_PUT(bInterfaceNumber,
+		      &rndis_cfg.if0.bInterfaceNumber);
+	UNALIGNED_PUT(bInterfaceNumber,
+		      &rndis_cfg.if0_union.bControlInterface);
+	UNALIGNED_PUT((bInterfaceNumber + 1),
+		      &rndis_cfg.if0_union.bSubordinateInterface0);
+	UNALIGNED_PUT((bInterfaceNumber + 1),
+		      &rndis_cfg.if1.bInterfaceNumber);
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
-	rndis_cfg.iad.bFirstInterface = bInterfaceNumber;
+	UNALIGNED_PUT(bInterfaceNumber,
+		      &rndis_cfg.iad.bFirstInterface);
 #endif
 #endif
 #ifdef CONFIG_USB_DEVICE_NETWORK_EEM
-	cdc_eem_cfg.if0.bInterfaceNumber = bInterfaceNumber;
+	UNALIGNED_PUT(bInterfaceNumber,
+		      &cdc_eem_cfg.if0.bInterfaceNumber);
 #endif
 }
 

@@ -818,7 +818,8 @@ static void mass_storage_status_cb(enum usb_dc_status_code status, u8_t *param)
 
 static void mass_interface_config(u8_t bInterfaceNumber)
 {
-	mass_cfg.if0.bInterfaceNumber = bInterfaceNumber;
+	UNALIGNED_PUT(bInterfaceNumber,
+		      &mass_cfg.if0.bInterfaceNumber);
 }
 
 /* Configuration of the Mass Storage Device send to the USB Driver */

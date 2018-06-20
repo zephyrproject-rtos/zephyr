@@ -247,7 +247,8 @@ static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
 				ep_cfg.ep_addr = idx;
 			}
 			if (!usb_dc_ep_check_cap(&ep_cfg)) {
-				ep_descr->bEndpointAddress = ep_cfg.ep_addr;
+				UNALIGNED_PUT(ep_cfg.ep_addr,
+					      &ep_descr->bEndpointAddress);
 				ep_data[i].ep_addr = ep_cfg.ep_addr;
 				if (ep_cfg.ep_addr & USB_EP_DIR_IN) {
 					*requested_ep |= (1 << (idx + 16));
@@ -354,12 +355,12 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 			if (str_descr_idx) {
 				ascii7_to_utf16le(head);
 			} else {
-				SYS_LOG_DBG("Now the wTotalLength is %d",
-					    (u8_t *)head - (u8_t *)cfg_descr);
-				cfg_descr->wTotalLength =
-					sys_cpu_to_le16((u8_t *)head -
-							(u8_t *)cfg_descr);
-				cfg_descr->bNumInterfaces = numof_ifaces;
+				u16_t dlen = (u8_t *)head - (u8_t *)cfg_descr;
+
+				SYS_LOG_DBG("Now the wTotalLength is %d", dlen);
+				UNALIGNED_PUT(dlen, &cfg_descr->wTotalLength);
+				UNALIGNED_PUT(numof_ifaces,
+					      &cfg_descr->bNumInterfaces);
 			}
 
 			str_descr_idx += 1;

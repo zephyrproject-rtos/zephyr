@@ -68,8 +68,8 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_hid_config hid_cfg = {
 
 static void usb_set_hid_report_size(u16_t report_desc_size)
 {
-	hid_cfg.if0_hid.subdesc[0].wDescriptorLength =
-		sys_cpu_to_le16(report_desc_size);
+	UNALIGNED_PUT(sys_cpu_to_le16(report_desc_size),
+		      &hid_cfg.if0_hid.subdesc[0].wDescriptorLength);
 }
 
 static struct hid_device_info {
@@ -211,7 +211,8 @@ static struct usb_ep_cfg_data hid_ep_data[] = {
 
 static void hid_interface_config(u8_t bInterfaceNumber)
 {
-	hid_cfg.if0.bInterfaceNumber = bInterfaceNumber;
+	UNALIGNED_PUT(bInterfaceNumber,
+		      &hid_cfg.if0.bInterfaceNumber);
 }
 
 USBD_CFG_DATA_DEFINE(hid) struct usb_cfg_data hid_config = {
