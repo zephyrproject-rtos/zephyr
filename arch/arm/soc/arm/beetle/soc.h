@@ -89,8 +89,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <device.h>
-#include <misc/util.h>
+#include <kernel_includes.h>
 
 #include "soc_pins.h"
 #include "soc_power.h"

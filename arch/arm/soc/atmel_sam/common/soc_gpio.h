@@ -13,7 +13,6 @@
 
 #include <zephyr/types.h>
 #include <soc.h>
-#include <gpio.h>
 
 /*
  * Pin flags/attributes

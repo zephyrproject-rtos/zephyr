@@ -24,11 +24,9 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <device.h>
-#include <misc/util.h>
-#include <random/rand32.h>
-
 #include <stm32f4xx.h>
+
+#include <kernel_includes.h>
 
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 #include <stm32f4xx_ll_utils.h>
