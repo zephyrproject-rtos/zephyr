@@ -1,0 +1,21 @@
+# Kconfig.leon2 - LEON2 UART configuration option
+#
+# Copyright (c) 2018 ispace, inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig UART_LEON2
+	bool "LEON2 UART driver"
+	depends on SOC_AT697
+	default y
+	select SERIAL_HAS_DRIVER
+	help
+	  Enable the LEON2 UART driver.
+
+config UART_LEON2_DEV_NAME
+	string "Port 0 Device Name"
+	default "uart0"
+	depends on UART_LEON2
+	help
+	  This is the device name for LEON2 UART
