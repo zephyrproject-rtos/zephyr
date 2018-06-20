@@ -22,30 +22,6 @@ config CDC_ACM_PORT_NAME
 	help
 	  Port name through which CDC ACM class device driver is accessed
 
-config CDC_ACM_INT_EP_ADDR
-	hex "CDC ACM Interrupt Endpoint address"
-	depends on USB_CDC_ACM
-	default 0x85
-	range 0x81 0x8f
-	help
-	  CDC ACM class interrupt endpoint address
-
-config CDC_ACM_IN_EP_ADDR
-	hex "CDC ACM BULK IN Endpoint address"
-	depends on USB_CDC_ACM
-	default 0x84
-	range 0x81 0x8f
-	help
-	  CDC ACM class IN endpoint address
-
-config CDC_ACM_OUT_EP_ADDR
-	hex "CDC ACM BULK OUT Endpoint address"
-	depends on USB_CDC_ACM
-	default 0x03
-	range 0x01 0x0f
-	help
-	  CDC ACM class OUT endpoint address
-
 config CDC_ACM_INTERRUPT_EP_MPS
 	int
 	depends on USB_CDC_ACM
@@ -95,22 +71,6 @@ config MASS_STORAGE_DISK_NAME
 	help
 	  Mass storage device disk or drive name
 
-config MASS_STORAGE_IN_EP_ADDR
-	hex
-	depends on USB_MASS_STORAGE
-	default 0x82
-	range 0x81 0x8f
-	help
-	  Mass storage device class IN endpoint address
-
-config MASS_STORAGE_OUT_EP_ADDR
-	hex
-	depends on USB_MASS_STORAGE
-	default 0x01
-	range 0x01 0x0f
-	help
-	  Mass storage device class OUT endpoint address
-
 config MASS_STORAGE_BULK_EP_MPS
 	int
 	depends on USB_MASS_STORAGE
@@ -147,30 +107,6 @@ config USB_DEVICE_BLUETOOTH
 	default n
 	help
 	  USB Bluetooth device class driver
-
-config BLUETOOTH_INT_EP_ADDR
-	hex
-	depends on USB_DEVICE_BLUETOOTH
-	default 0x81
-	range 0x81 0x8f
-	help
-	  Bluetooth device class INT endpoint address
-
-config BLUETOOTH_OUT_EP_ADDR
-	hex
-	depends on USB_DEVICE_BLUETOOTH
-	default 0x02
-	range 0x01 0x0f
-	help
-	  Bluetooth device class OUT endpoint address
-
-config BLUETOOTH_IN_EP_ADDR
-	hex
-	depends on USB_DEVICE_BLUETOOTH
-	default 0x82
-	range 0x81 0x8f
-	help
-	  Bluetooth device class IN endpoint address
 
 config BLUETOOTH_INT_EP_MPS
 	int

@@ -39,17 +39,17 @@ static struct usb_ep_cfg_data ecm_ep_data[] = {
 	/* Configuration ECM */
 	{
 		.ep_cb = ecm_int_in,
-		.ep_addr = CONFIG_CDC_ECM_INT_EP_ADDR
+		.ep_addr = CDC_ECM_INT_EP_ADDR
 	},
 	{
 		/* high-level transfer mgmt */
 		.ep_cb = usb_transfer_ep_callback,
-		.ep_addr = CONFIG_CDC_ECM_OUT_EP_ADDR
+		.ep_addr = CDC_ECM_OUT_EP_ADDR
 	},
 	{
 		/* high-level transfer mgmt */
 		.ep_cb = usb_transfer_ep_callback,
-		.ep_addr = CONFIG_CDC_ECM_IN_EP_ADDR
+		.ep_addr = CDC_ECM_IN_EP_ADDR
 	},
 };
 

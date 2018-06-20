@@ -110,7 +110,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_rndis_config rndis_cfg = {
 	.if0_int_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_RNDIS_INT_EP_ADDR,
+		.bEndpointAddress = RNDIS_INT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_INTERRUPT,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -135,7 +135,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_rndis_config rndis_cfg = {
 	.if1_in_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_RNDIS_IN_EP_ADDR,
+		.bEndpointAddress = RNDIS_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -146,7 +146,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_rndis_config rndis_cfg = {
 	.if1_out_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_RNDIS_OUT_EP_ADDR,
+		.bEndpointAddress = RNDIS_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -230,7 +230,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 	.if0_int_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_CDC_ECM_INT_EP_ADDR,
+		.bEndpointAddress = CDC_ECM_INT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_INTERRUPT,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -269,7 +269,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 	.if1_1_in_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_CDC_ECM_IN_EP_ADDR,
+		.bEndpointAddress = CDC_ECM_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -280,7 +280,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 	.if1_1_out_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_CDC_ECM_OUT_EP_ADDR,
+		.bEndpointAddress = CDC_ECM_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -329,7 +329,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_eem_config cdc_eem_cfg = {
 	.if0_in_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_CDC_EEM_IN_EP_ADDR,
+		.bEndpointAddress = CDC_EEM_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -341,7 +341,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_eem_config cdc_eem_cfg = {
 	.if0_out_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_CDC_EEM_OUT_EP_ADDR,
+		.bEndpointAddress = CDC_EEM_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(

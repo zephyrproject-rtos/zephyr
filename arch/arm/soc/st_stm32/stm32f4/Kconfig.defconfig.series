@@ -25,23 +25,6 @@ config GPIO_STM32_PORTH
 
 endif # GPIO_STM32
 
-if USB
-
-if USB_CDC_ACM
-
-config CDC_ACM_INT_EP_ADDR
-	default 0x81
-
-config CDC_ACM_IN_EP_ADDR
-	default 0x82
-
-config CDC_ACM_OUT_EP_ADDR
-	default 0x03
-
-endif # USB_CDC_ACM
-
-endif #USB
-
 if I2C_STM32
 
 config I2C_STM32_V1
