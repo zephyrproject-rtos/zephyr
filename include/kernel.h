@@ -14,27 +14,7 @@
 #define _kernel__h_
 
 #if !defined(_ASMLANGUAGE)
-#include <stddef.h>
-#include <zephyr/types.h>
-#include <limits.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <atomic.h>
-#include <errno.h>
-#include <misc/__assert.h>
-#include <sched_priq.h>
-#include <misc/dlist.h>
-#include <misc/slist.h>
-#include <misc/sflist.h>
-#include <misc/util.h>
-#include <misc/mempool_base.h>
-#include <kernel_version.h>
-#include <random/rand32.h>
-#include <kernel_arch_thread.h>
-#include <syscall.h>
-#include <misc/printk.h>
-#include <arch/cpu.h>
-#include <misc/rb.h>
+#include <kernel_includes.h>
 
 #ifdef __cplusplus
 extern "C" {
