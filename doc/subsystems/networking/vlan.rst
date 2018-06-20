@@ -11,7 +11,7 @@ partitioned and isolated computer network at the data link layer
 (OSI layer 2). For ethernet network this refers to
 `IEEE 802.1Q <https://en.wikipedia.org/wiki/IEEE_802.1Q>`_
 
-In Zephyr, each individual VLAN is modelled as a virtual network interface.
+In Zephyr, each individual VLAN is modeled as a virtual network interface.
 This means that there is an ethernet network interface that corresponds to
 a real physical ethernet port in the system. A virtual network interface is
 created for each VLAN, and this virtual network interface connects to the
