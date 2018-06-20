@@ -8,6 +8,7 @@
 config SOC_FAMILY_STM32
 	bool
 	# omit prompt to signify a "hidden" option
+	select HAS_SEGGER_RTT
 	select HAS_DTS_I2C_DEVICE if I2C
 	select HAS_DTS_SPI_DEVICE if SPI
 
