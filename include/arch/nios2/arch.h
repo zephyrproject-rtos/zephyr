@@ -32,11 +32,6 @@ extern "C" {
 #define _NANO_ERR_KERNEL_OOPS (5)       /* Kernel oops (fatal to thread) */
 #define _NANO_ERR_KERNEL_PANIC (6)	/* Kernel panic (fatal to system) */
 
-/* APIs need to support non-byte addressable architectures */
-
-#define OCTET_TO_SIZEOFUNIT(X) (X)
-#define SIZEOFUNIT_TO_OCTET(X) (X)
-
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 #include <irq.h>

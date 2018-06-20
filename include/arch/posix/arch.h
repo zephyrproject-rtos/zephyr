@@ -29,8 +29,6 @@ extern "C" {
 
 #define STACK_ALIGN 4
 #define STACK_ALIGN_SIZE 4
-#define OCTET_TO_SIZEOFUNIT(X) (X)
-#define SIZEOFUNIT_TO_OCTET(X) (X)
 
 #define _NANO_ERR_CPU_EXCEPTION (0)     /* Any unhandled exception */
 #define _NANO_ERR_INVALID_TASK_EXIT (1) /* Invalid task exit */

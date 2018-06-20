@@ -18,7 +18,7 @@
 #include "master.h"
 
 char msg[MAX_MSG];
-char data_bench[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)];
+char data_bench[MESSAGE_SIZE];
 
 #ifdef PIPE_BENCH
 struct k_pipe *test_pipes[] = {&PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF};

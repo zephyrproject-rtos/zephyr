@@ -20,11 +20,6 @@
 extern "C" {
 #endif
 
-/* APIs need to support non-byte addressable architectures */
-
-#define OCTET_TO_SIZEOFUNIT(X) (X)
-#define SIZEOFUNIT_TO_OCTET(X) (X)
-
 #include <generated_dts_board.h>
 #include <sw_isr_table.h>
 #ifdef CONFIG_CPU_ARCV2

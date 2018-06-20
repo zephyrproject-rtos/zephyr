@@ -52,7 +52,7 @@
 #define SEMA_WAIT_TIME (5000)
 /* global data */
 extern char msg[MAX_MSG];
-extern char data_bench[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)];
+extern char data_bench[MESSAGE_SIZE];
 extern struct k_pipe *test_pipes[];
 extern FILE *output_file;
 extern const char newline[];
