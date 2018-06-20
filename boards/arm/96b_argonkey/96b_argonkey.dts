@@ -102,3 +102,7 @@
 		label = "LP3943";
 	};
 };
+
+&rtc {
+	status = "ok";
+};

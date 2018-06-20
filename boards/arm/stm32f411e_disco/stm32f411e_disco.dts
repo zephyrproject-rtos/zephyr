@@ -60,3 +60,7 @@
 	pinctrl-names = "default";
 	status = "ok";
 };
+
+&rtc {
+	status = "ok";
+};

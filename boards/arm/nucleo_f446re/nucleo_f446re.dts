@@ -57,3 +57,7 @@
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
+
+&rtc {
+	status = "ok";
+};

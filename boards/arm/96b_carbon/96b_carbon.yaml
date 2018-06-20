@@ -9,6 +9,7 @@ supported:
   - gpio
   - ble
   - i2c
+  - rtc
   - spi
   - usb_device
 ram: 96

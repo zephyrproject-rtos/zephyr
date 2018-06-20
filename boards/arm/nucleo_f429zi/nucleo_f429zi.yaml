@@ -13,3 +13,4 @@ supported:
   - spi
   - gpio
   - pwm
+  - rtc
