@@ -30,11 +30,6 @@
 extern "C" {
 #endif
 
-/* APIs need to support non-byte addressable architectures */
-
-#define OCTET_TO_SIZEOFUNIT(X) (X)
-#define SIZEOFUNIT_TO_OCTET(X) (X)
-
 /* GDT layout */
 #define CODE_SEG	0x08
 #define DATA_SEG	0x10

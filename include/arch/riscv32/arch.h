@@ -36,11 +36,6 @@ extern "C" {
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN)
 
-/* APIs need to support non-byte addressable architectures */
-
-#define OCTET_TO_SIZEOFUNIT(X) (X)
-#define SIZEOFUNIT_TO_OCTET(X) (X)
-
 /* macros convert value of it's argument to a string */
 #define DO_TOSTR(s) #s
 #define TOSTR(s) DO_TOSTR(s)

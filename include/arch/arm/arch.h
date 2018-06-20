@@ -26,11 +26,6 @@ extern "C" {
 /* ARM GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
 
-/* APIs need to support non-byte addressable architectures */
-
-#define OCTET_TO_SIZEOFUNIT(X) (X)
-#define SIZEOFUNIT_TO_OCTET(X) (X)
-
 #ifdef CONFIG_CPU_CORTEX_M
 #include <arch/arm/cortex_m/exc.h>
 #include <arch/arm/cortex_m/irq.h>
