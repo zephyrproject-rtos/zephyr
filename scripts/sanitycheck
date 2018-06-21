@@ -1042,7 +1042,8 @@ class MakeGenerator:
         run_logfile = os.path.join(outdir, "run.log")
         handler_logfile = os.path.join(outdir, "handler.log")
 
-        args += ["COVERAGE=1", "EXTRA_LDFLAGS=--coverage"]
+        if options.enable_coverage:
+            args += ["COVERAGE=1", "EXTRA_LDFLAGS=--coverage"]
 
         # we handle running in the UnitHandler class
         text = (self._get_rule_header(name) +
@@ -1064,6 +1065,9 @@ class MakeGenerator:
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
         handler_logfile = os.path.join(outdir, "handler.log")
+
+        if options.enable_coverage:
+            args += ["CONFIG_COVERAGE=y"]
 
         # we handle running in the NativeHandler class
         text = (self._get_rule_header(name) +
@@ -1877,6 +1881,9 @@ class TestSuite:
                         # each other since they all try to build them
                         # simultaneously
 
+                        if plat.type == "native" and options.enable_coverage:
+                            args.append("CONFIG_COVERAGE=y")
+
                         o = os.path.join(self.outdir, plat.name, tc.path)
                         dlist[tc, plat, tc.name.split(
                             "/")[-1]] = os.path.join(o, "zephyr", ".config")
@@ -2544,9 +2551,14 @@ def parse_arguments():
         """
     )
 
+    parser.add_argument("--enable-coverage", action="store_true",
+                        help="Enable code coverage when building unit tests and"
+                        " when targeting the native_posix board")
+
     parser.add_argument("-C", "--coverage", action="store_true",
                         help="Generate coverage report for unit tests, and"
-                        " tests and samples run in native_posix.")
+                        " tests and samples run in native_posix. Implies"
+                        " --enable_coverage")
 
     return parser.parse_args()
 
@@ -2688,6 +2700,9 @@ def main():
     global VERBOSE, INLINE_LOGS, CPU_COUNTS, log_file
     global options
     options = parse_arguments()
+
+    if options.coverage:
+        options.enable_coverage = True
 
     if options.size:
         for fn in options.size:
