@@ -50,15 +50,12 @@ config NUM_IRQS
 
 config HAS_MUL_INSTRUCTION
 	bool
-	default n
 
 config HAS_DIV_INSTRUCTION
 	bool
-	default n
 
 config HAS_MULX_INSTRUCTION
 	bool
-	default n
 
 config INCLUDE_RESET_VECTOR
 	bool "Include Reset vector"
@@ -72,7 +69,6 @@ config INCLUDE_RESET_VECTOR
 
 config EXTRA_EXCEPTION_INFO
 	bool "Extra exception debug information"
-	default n
 	help
 	  Have exceptions print additional useful debugging information in
 	  human-readable form, at the expense of code size. For example,
