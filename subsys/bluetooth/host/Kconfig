@@ -307,6 +307,13 @@ config BT_GATT_CLIENT
 	help
 	  This option enables support for the GATT Client role.
 
+config BT_GATT_READ_MULTIPLE
+	bool "GATT Read Multiple Characteristic Values support"
+	default y
+	help
+	  This option enables support for the GATT Read Multiple Characteristic
+	  Values procedure.
+
 config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
 	default 1
