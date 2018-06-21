@@ -283,6 +283,7 @@ int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 	return err;
 }
 
+#if defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_CONN)
 static const bt_addr_le_t *find_id_addr(const bt_addr_le_t *addr)
 {
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
@@ -299,6 +300,7 @@ static const bt_addr_le_t *find_id_addr(const bt_addr_le_t *addr)
 
 	return addr;
 }
+#endif /* CONFIG_BT_OBSERVER || CONFIG_BT_CONN */
 
 static int set_advertise_enable(bool enable)
 {
@@ -425,6 +427,7 @@ static int le_set_private_addr(void)
 }
 #endif
 
+#if defined(CONFIG_BT_OBSERVER)
 static int set_le_scan_enable(u8_t enable)
 {
 	struct bt_hci_cp_le_set_scan_enable *cp;
@@ -460,6 +463,7 @@ static int set_le_scan_enable(u8_t enable)
 
 	return 0;
 }
+#endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CONN)
 static void hci_acl(struct net_buf *buf)
@@ -914,7 +918,9 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 done:
 	bt_conn_unref(conn);
-	bt_le_scan_update(false);
+	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+		bt_le_scan_update(false);
+	}
 }
 
 static void le_legacy_conn_complete(struct net_buf *buf)
@@ -2432,7 +2438,10 @@ static int hci_id_add(const bt_addr_le_t *addr, u8_t val[16])
 
 int bt_id_add(struct bt_keys *keys)
 {
-	bool adv_enabled, scan_enabled;
+	bool adv_enabled;
+#if defined(CONFIG_BT_OBSERVER)
+	bool scan_enabled;
+#endif /* CONFIG_BT_OBSERVER */
 	struct bt_conn *conn;
 	int err;
 
@@ -2457,10 +2466,12 @@ int bt_id_add(struct bt_keys *keys)
 		set_advertise_enable(false);
 	}
 
+#if defined(CONFIG_BT_OBSERVER)
 	scan_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING);
 	if (scan_enabled) {
 		set_le_scan_enable(BT_HCI_LE_SCAN_DISABLE);
 	}
+#endif /* CONFIG_BT_OBSERVER */
 
 	/* If there are any existing entries address resolution will be on */
 	if (bt_dev.le.rl_entries) {
@@ -2514,9 +2525,11 @@ int bt_id_add(struct bt_keys *keys)
 done:
 	addr_res_enable(BT_HCI_ADDR_RES_ENABLE);
 
+#if defined(CONFIG_BT_OBSERVER)
 	if (scan_enabled) {
 		set_le_scan_enable(BT_HCI_LE_SCAN_ENABLE);
 	}
+#endif /* CONFIG_BT_OBSERVER */
 
 	if (adv_enabled) {
 		set_advertise_enable(true);
@@ -2533,7 +2546,10 @@ static void keys_add_id(struct bt_keys *keys)
 int bt_id_del(struct bt_keys *keys)
 {
 	struct bt_hci_cp_le_rem_dev_from_rl *cp;
-	bool adv_enabled, scan_enabled;
+	bool adv_enabled;
+#if defined(CONFIG_BT_OBSERVER)
+	bool scan_enabled;
+#endif /* CONFIG_BT_OBSERVER */
 	struct bt_conn *conn;
 	struct net_buf *buf;
 	int err;
@@ -2559,10 +2575,12 @@ int bt_id_del(struct bt_keys *keys)
 		set_advertise_enable(false);
 	}
 
+#if defined(CONFIG_BT_OBSERVER)
 	scan_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING);
 	if (scan_enabled) {
 		set_le_scan_enable(BT_HCI_LE_SCAN_DISABLE);
 	}
+#endif /* CONFIG_BT_OBSERVER */
 
 	err = addr_res_enable(BT_HCI_ADDR_RES_DISABLE);
 	if (err) {
@@ -2601,9 +2619,11 @@ done:
 		addr_res_enable(BT_HCI_ADDR_RES_ENABLE);
 	}
 
+#if defined(CONFIG_BT_OBSERVER)
 	if (scan_enabled) {
 		set_le_scan_enable(BT_HCI_LE_SCAN_ENABLE);
 	}
+#endif /* CONFIG_BT_OBSERVER */
 
 	if (adv_enabled) {
 		set_advertise_enable(true);
@@ -2998,6 +3018,7 @@ static void hci_cmd_status(struct net_buf *buf)
 	}
 }
 
+#if defined(CONFIG_BT_OBSERVER)
 static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 {
 	struct bt_hci_cp_le_set_scan_param set_param;
@@ -3191,6 +3212,7 @@ static void le_adv_report(struct net_buf *buf)
 		net_buf_pull(buf, info->length + sizeof(rssi));
 	}
 }
+#endif /* CONFIG_BT_OBSERVER */
 
 static void hci_le_meta_event(struct net_buf *buf)
 {
@@ -3235,9 +3257,11 @@ static void hci_le_meta_event(struct net_buf *buf)
 	case BT_HCI_EVT_LE_GENERATE_DHKEY_COMPLETE:
 		le_dhkey_complete(buf);
 		break;
+#if defined(CONFIG_BT_OBSERVER)
 	case BT_HCI_EVT_LE_ADVERTISING_REPORT:
 		le_adv_report(buf);
 		break;
+#endif /* CONFIG_BT_OBSERVER */
 	default:
 		BT_WARN("Unhandled LE event 0x%02x len %u: %s",
 			evt->subevent, buf->len, bt_hex(buf->data, buf->len));
@@ -4560,7 +4584,9 @@ static int bt_init(void)
 
 	bt_monitor_send(BT_MONITOR_OPEN_INDEX, NULL, 0);
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-	bt_le_scan_update(false);
+	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
+		bt_le_scan_update(false);
+	}
 
 	return 0;
 }
@@ -4905,6 +4931,7 @@ int bt_le_adv_stop(void)
 	return 0;
 }
 
+#if defined(CONFIG_BT_OBSERVER)
 static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 {
 	if (param->type != BT_HCI_LE_SCAN_PASSIVE &&
@@ -4982,6 +5009,7 @@ int bt_le_scan_stop(void)
 
 	return bt_le_scan_update(false);
 }
+#endif /* CONFIG_BT_OBSERVER */
 
 struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
 {
