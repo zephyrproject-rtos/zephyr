@@ -6,7 +6,6 @@
 
 config SOC_FAMILY_QUARK
 	bool
-	default n
 
 if SOC_FAMILY_QUARK
 config SOC_FAMILY

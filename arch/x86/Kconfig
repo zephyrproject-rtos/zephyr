@@ -51,7 +51,6 @@ menu "Processor Capabilities"
 
 config X86_IAMCU
 	bool
-	default n
 	prompt "IAMCU calling convention"
 	help
 	  The IAMCU calling convention changes the X86 C calling convention to
@@ -64,7 +63,6 @@ config X86_IAMCU
 menu "Memory Management"
 config X86_MMU
 	bool
-	default n
 	prompt "Enable Memory Management Unit"
 	help
 	  This options enables the memory management unit present in x86. Enabling
@@ -73,7 +71,6 @@ config X86_MMU
 config X86_PAE_MODE
 	bool
 	depends on X86_MMU
-	default n
 	prompt "Enable PAE page tables"
 	help
 	  When selected the Page address extension mode is enabled. The PAE
@@ -144,7 +141,6 @@ config SSE
 	bool
 	prompt "SSE registers"
 	depends on FLOAT
-	default n
 	help
 	  This option enables the use of SSE registers by threads.
 
@@ -152,7 +148,6 @@ config SSE_FP_MATH
 	bool
 	prompt "Compiler-generated SSEx instructions"
 	depends on SSE
-	default n
 	help
 	  This option allows the compiler to generate SSEx instructions for
 	  performing floating point math. This can greatly improve performance
@@ -189,7 +184,6 @@ config ISA_IA32
 config IA32_LEGACY_IO_PORTS
 	bool
 	prompt "Support IA32 legacy IO ports"
-	default n
 	depends on ISA_IA32
 	help
 	  This option enables IA32 legacy IO ports. Note these are much slower
@@ -228,7 +222,6 @@ config CLFLUSH_INSTRUCTION_SUPPORTED
 	bool
 	prompt "CLFLUSH instruction supported"
 	depends on !CLFLUSH_DETECT && CACHE_FLUSHING
-	default n
 	help
 	  An implementation of sys_cache_flush() that uses CLFLUSH is made
 	  available, instead of the one using WBINVD.
@@ -241,7 +234,6 @@ config CLFLUSH_DETECT
 	bool
 	prompt "Detect support of CLFLUSH instruction at runtime"
 	depends on CACHE_FLUSHING
-	default n
 	help
 	  This option should be enabled if it is not known in advance whether the
 	  CPU supports the CLFLUSH instruction or not.
@@ -260,7 +252,6 @@ config ARCH_CACHE_FLUSH_DETECT
 
 config CACHE_FLUSHING
 	bool
-	default n
 	prompt "Enable cache flushing mechanism"
 	help
 	  This links in the sys_cache_flush() function. A mechanism for flushing the
@@ -269,7 +260,6 @@ config CACHE_FLUSHING
 
 config PIC_DISABLE
 	bool "Disable PIC"
-	default n
 	help
 	  This option disables all interrupts on the PIC
 
@@ -312,7 +302,6 @@ config XIP
 
 config X86_FIXED_IRQ_MAPPING
 	bool
-	default n
 	help
 	  Specify whether the current interrupt controller in use has a fixed
 	  mapping between IDT vectors and IRQ lines.

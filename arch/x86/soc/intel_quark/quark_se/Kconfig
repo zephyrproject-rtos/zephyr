@@ -24,7 +24,6 @@ config SS_RESET_VECTOR
 
 config ARC_INIT
 	bool "Quark SE ARC Kickoff"
-	default n
 	help
 	  Allows x86 processor to kickoff the ARC slave processor.
 
@@ -52,7 +51,6 @@ config SYS_LOG_ARC_INIT_LEVEL
 config ARC_GDB_ENABLE
 	bool "Allows the usage of GDB with the ARC processor."
 	depends on ARC_INIT
-	default n
 	help
 	  This option will stop the master processor from boot-strapping
 	  the ARC slave processor. This will allow GDB to halt and

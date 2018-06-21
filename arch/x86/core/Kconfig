@@ -63,7 +63,6 @@ config GDT_DYNAMIC
 	bool
 	prompt "Store GDT in RAM so that it can be modified"
 	depends on SET_GDT
-	default n
 	help
 	  This option stores the GDT in RAM instead of ROM, so that it may
 	  be modified at runtime at the expense of some memory.
