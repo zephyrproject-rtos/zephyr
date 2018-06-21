@@ -126,8 +126,7 @@ config	FAULT_DUMP
 	  0: Off.
 
 config	XIP
-	default n if UART_NSIM
-	default y
+	default y if !UART_NSIM
 
 config GEN_ISR_TABLES
 	default y
@@ -138,7 +137,6 @@ config GEN_IRQ_START_VECTOR
 config HARVARD
 	prompt "Harvard Architecture"
 	bool
-	default n
 	help
 	  The ARC CPU can be configured to have two busses;
 	  one for instruction fetching and another that serves as a data bus.
@@ -146,14 +144,12 @@ config HARVARD
 config CODE_DENSITY
 	prompt "Code Density Option"
 	bool
-	default n
 	help
 	  Enable code density option to get better code density
 
 config ARC_HAS_SECURE
 	bool
 	#  a hidden option
-	default n
 	help
 	  This option is enabled when ARC core supports secure mode
 
@@ -164,7 +160,6 @@ config ARC_MPU_ENABLE
 	bool "Enable MPU"
 	depends on CPU_HAS_MPU
 	select ARC_MPU
-	default n
 	help
 	  Enable MPU
 
@@ -175,7 +170,6 @@ endmenu
 config CACHE_LINE_SIZE_DETECT
 	bool
 	prompt "Detect d-cache line size at runtime"
-	default n
 	help
 	  This option enables querying the d-cache build register for finding
 	  the d-cache line size at the expense of taking more memory and code
@@ -195,11 +189,9 @@ config CACHE_LINE_SIZE
 
 config ARCH_CACHE_FLUSH_DETECT
 	bool
-	default n
 
 config CACHE_FLUSHING
 	bool
-	default n
 	prompt "Enable d-cache flushing mechanism"
 	help
 	  This links in the sys_cache_flush() function, which provides a
