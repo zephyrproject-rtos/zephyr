@@ -1470,6 +1470,7 @@ static u8_t att_write_cmd(struct bt_att *att, struct net_buf *buf)
 	return att_write_rsp(conn, 0, 0, handle, 0, buf->data, buf->len);
 }
 
+#if defined(CONFIG_BT_SIGNING)
 static u8_t att_signed_write_cmd(struct bt_att *att, struct net_buf *buf)
 {
 	struct bt_conn *conn = att->chan.chan.conn;
@@ -1498,6 +1499,7 @@ static u8_t att_signed_write_cmd(struct bt_att *att, struct net_buf *buf)
 	return att_write_rsp(conn, 0, 0, handle, 0, buf->data,
 			     buf->len - sizeof(struct bt_att_signature));
 }
+#endif /* CONFIG_BT_SIGNING */
 
 #if defined(CONFIG_BT_SMP)
 static int att_change_security(struct bt_conn *conn, u8_t err)
@@ -1815,11 +1817,13 @@ static const struct att_handler {
 		sizeof(struct bt_att_write_cmd),
 		ATT_COMMAND,
 		att_write_cmd },
+#if defined(CONFIG_BT_SIGNING)
 	{ BT_ATT_OP_SIGNED_WRITE_CMD,
 		(sizeof(struct bt_att_write_cmd) +
 		 sizeof(struct bt_att_signature)),
 		ATT_COMMAND,
 		att_signed_write_cmd },
+#endif /* CONFIG_BT_SIGNING */
 };
 
 static att_type_t att_op_get_type(u8_t op)
