@@ -34,11 +34,11 @@ static sys_slist_t arp_table;
 
 struct k_delayed_work arp_request_timer;
 
-static void arp_entry_cleanup(struct arp_entry *entry)
+static void arp_entry_cleanup(struct arp_entry *entry, bool pending)
 {
 	NET_DBG("%p", entry);
 
-	if (entry->pending) {
+	if (pending) {
 		NET_DBG("Releasing pending pkt %p (ref %d)",
 			entry->pending, entry->pending->ref - 1);
 		net_pkt_unref(entry->pending);
@@ -59,11 +59,8 @@ static struct arp_entry *arp_entry_find(sys_slist_t *list,
 	struct arp_entry *entry;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(list, entry, node) {
-		NET_DBG("iface %p dst %s ll %s pending %p",
-			iface, net_sprint_ipv4_addr(&entry->ip),
-			net_sprint_ll_addr((u8_t *)entry->eth.addr,
-					   sizeof(struct net_eth_addr)),
-			entry->pending);
+		NET_DBG("iface %p dst %s",
+			iface, net_sprint_ipv4_addr(&entry->ip));
 
 		if (entry->iface == iface &&
 		    net_ipv4_addr_cmp(&entry->ip, dst)) {
@@ -194,7 +191,7 @@ static void arp_request_timeout(struct k_work *work)
 			break;
 		}
 
-		arp_entry_cleanup(entry);
+		arp_entry_cleanup(entry, true);
 
 		sys_slist_remove(&arp_pending_entries, NULL, &entry->node);
 		sys_slist_append(&arp_free_entries, &entry->node);
@@ -443,8 +440,6 @@ static inline void arp_update(struct net_if *iface,
 		return;
 	}
 
-	memcpy(&entry->eth, hwaddr, sizeof(struct net_eth_addr));
-
 	/* Set the dst in the pending packet */
 	net_pkt_ll_dst(entry->pending)->len = sizeof(struct net_eth_addr);
 	net_pkt_ll_dst(entry->pending)->addr =
@@ -456,6 +451,8 @@ static inline void arp_update(struct net_if *iface,
 
 	pkt = entry->pending;
 	entry->pending = NULL;
+
+	memcpy(&entry->eth, hwaddr, sizeof(struct net_eth_addr));
 
 	/* Inserting entry into the table */
 	sys_slist_prepend(&arp_table, &entry->node);
@@ -612,7 +609,7 @@ void net_arp_clear_cache(struct net_if *iface)
 			continue;
 		}
 
-		arp_entry_cleanup(entry);
+		arp_entry_cleanup(entry, false);
 
 		sys_slist_remove(&arp_table, prev, &entry->node);
 		sys_slist_prepend(&arp_free_entries, &entry->node);
@@ -629,7 +626,7 @@ void net_arp_clear_cache(struct net_if *iface)
 			continue;
 		}
 
-		arp_entry_cleanup(entry);
+		arp_entry_cleanup(entry, true);
 
 		sys_slist_remove(&arp_pending_entries, prev, &entry->node);
 		sys_slist_prepend(&arp_free_entries, &entry->node);
