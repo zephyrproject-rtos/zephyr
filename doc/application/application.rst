@@ -1093,7 +1093,9 @@ Device Tree Overlays
 
 As described in :ref:`device-tree`, Zephyr uses Device Tree to
 describe the hardware it runs on. This section describes how you can
-modify an application build's device tree using overlay files.
+modify an application build's device tree using overlay files. For additional
+information regarding the relationship between Device Tree and Kconfig see
+:ref:`dt_vs_kconfig`.
 
 Overlay files, which customarily have the :file:`.overlay` extension,
 contain device tree fragments which add to or modify the device tree
