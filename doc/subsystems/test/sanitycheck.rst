@@ -160,8 +160,10 @@ The sanitycheck script accepts the following optional arguments:
                         to CMake. E.g "sanitycheck -x=USE_CCACHE=0" will
                         translate to "cmake -DUSE_CCACHE=0" which will
                         ultimately disable ccache.
+  --enable-coverage     Enable code coverage when building unit tests and when
+                        targeting the native_posix board
   -C, --coverage        Generate coverage report for unit tests, and tests and
-                        samples run in native_posix.
+                        samples run in native_posix. Implies --enable-coverage.
 
 
 Board Configuration
