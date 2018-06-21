@@ -38,10 +38,4 @@ properties:
       category: optional
       description: readable string describing the interrupts
       generation: define
-
-    clocks:
-      type: array
-      category: required
-      description: Clock gate control information
-      generation: define
 ...
