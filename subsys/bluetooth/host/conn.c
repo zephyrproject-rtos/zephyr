@@ -1765,7 +1765,9 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason)
 	case BT_CONN_CONNECT_SCAN:
 		conn->err = reason;
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-		bt_le_scan_update(false);
+		if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+			bt_le_scan_update(false);
+		}
 		return 0;
 	case BT_CONN_CONNECT:
 #if defined(CONFIG_BT_BREDR)
