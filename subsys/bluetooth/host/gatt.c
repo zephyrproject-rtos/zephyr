@@ -1697,6 +1697,7 @@ static int gatt_read_blob(struct bt_conn *conn,
 	return gatt_send(conn, buf, gatt_read_rsp, params, NULL);
 }
 
+#if defined(CONFIG_BT_GATT_READ_MULTIPLE)
 static void gatt_read_multiple_rsp(struct bt_conn *conn, u8_t err,
 				   const void *pdu, u16_t length,
 				   void *user_data)
@@ -1734,6 +1735,13 @@ static int gatt_read_multiple(struct bt_conn *conn,
 
 	return gatt_send(conn, buf, gatt_read_multiple_rsp, params, NULL);
 }
+#else
+static int gatt_read_multiple(struct bt_conn *conn,
+			      struct bt_gatt_read_params *params)
+{
+	return -ENOTSUP;
+}
+#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
 
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 {
