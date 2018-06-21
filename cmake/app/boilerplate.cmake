@@ -251,7 +251,8 @@ include(${ZEPHYR_BASE}/cmake/toolchain.cmake)
 
 find_package(Git QUIET)
 if(GIT_FOUND)
-  execute_process(COMMAND ${GIT_EXECUTABLE} -C ${ZEPHYR_BASE} describe
+  execute_process(COMMAND ${GIT_EXECUTABLE} describe
+    WORKING_DIRECTORY ${ZEPHYR_BASE}
     OUTPUT_VARIABLE BUILD_VERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif()
