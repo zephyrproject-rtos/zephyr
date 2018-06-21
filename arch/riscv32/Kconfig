@@ -25,20 +25,17 @@ menu "RISCV32 Processor Options"
 
 config INCLUDE_RESET_VECTOR
 	bool "Include Reset vector"
-	default n
 	help
 	  Include the reset vector stub that inits CPU and then jumps to __start
 
 config RISCV_SOC_CONTEXT_SAVE
 	bool "Enable SOC-based context saving in IRQ handler"
-	default n
 	help
 	  Enable SOC-based context saving, for SOCS which require saving of
 	  extra registers when entering an interrupt/exception
 
 config RISCV_SOC_INTERRUPT_INIT
 	bool "Enable SOC-based interrupt initialization"
-	default n
 	help
 	  Enable SOC-based interrupt initialization
 	  (call soc_interrupt_init, within _IntLibInit when enabled)
@@ -53,7 +50,6 @@ config RISCV_GENERIC_TOOLCHAIN
 
 config RISCV_HAS_CPU_IDLE
 	bool "Does SOC has CPU IDLE instruction"
-	default n
 	help
 	  Does SOC has CPU IDLE instruction
 
