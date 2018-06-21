@@ -15,9 +15,7 @@ endchoice
 if SOC_CC3220SF
 
 config CC3220SF_DEBUG
-	bool "Prepend debug header, disabling flash verification"
-	depends on XIP
-	default y if XIP
-	default n if !XIP
+	bool "Prepend debug header, disabling flash verification" if XIP
+	default XIP
 
 endif # SOC_CC3220SF

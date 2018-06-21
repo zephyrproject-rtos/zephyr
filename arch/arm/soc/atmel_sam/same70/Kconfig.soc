@@ -40,7 +40,6 @@ if SOC_SERIES_SAME70
 
 config SOC_ATMEL_SAME70_EXT_SLCK
 	bool "Use external crystal oscillator for slow clock"
-	default n
 	help
 	  Say y if you want to use external 32 kHz crystal
 	  oscillator to drive the slow clock. Note that this
@@ -53,7 +52,6 @@ config SOC_ATMEL_SAME70_EXT_SLCK
 
 config SOC_ATMEL_SAME70_EXT_MAINCK
 	bool "Use external crystal oscillator for main clock"
-	default n
 	help
 	  The main clock is being used to drive the PLL, and
 	  thus driving the processor clock.

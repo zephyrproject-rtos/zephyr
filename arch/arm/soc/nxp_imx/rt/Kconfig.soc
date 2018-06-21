@@ -41,7 +41,6 @@ config ARM_MPU_IMX_RT
 	bool "Enable MPU on i.MX RT"
 	depends on CPU_HAS_MPU
 	select ARM_MPU
-	default n
 	help
 	  Enable MPU support on NXP i.MX RT series SoCs.
 

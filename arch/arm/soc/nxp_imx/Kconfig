@@ -8,7 +8,6 @@ config SOC_FAMILY_IMX
 	bool
 	select HAS_SEGGER_RTT
 	# omit prompt to signify a "hidden" option
-	default n
 
 if SOC_FAMILY_IMX
 config SOC_FAMILY

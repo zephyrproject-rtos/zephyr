@@ -8,7 +8,6 @@
 config SOC_FAMILY_NRF
 	bool
 	# omit prompt to signify a "hidden" option
-	default n
 
 if SOC_FAMILY_NRF
 config SOC_FAMILY

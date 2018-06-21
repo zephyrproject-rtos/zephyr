@@ -6,7 +6,6 @@
 config SOC_FAMILY_SAM
 	bool
 	# omit prompt to signify a "hidden" option
-	default n
 
 if SOC_FAMILY_SAM
 

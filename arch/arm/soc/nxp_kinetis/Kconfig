@@ -9,7 +9,6 @@ config SOC_FAMILY_KINETIS
 	bool
 	select HAS_SEGGER_RTT
 	# omit prompt to signify a "hidden" option
-	default n
 
 if SOC_FAMILY_KINETIS
 config SOC_FAMILY
@@ -30,13 +29,11 @@ config SOC_PART_NUMBER
 
 config HAS_OSC
 	bool
-	default n
 	help
 	  Set if the oscillator (OSC) module is present in the SoC.
 
 config HAS_MCG
 	bool
-	default n
 	help
 	  Set if the multipurpose clock generator (MCG) module is present in the SoC.
 
@@ -44,7 +41,6 @@ config HAS_SYSMPU
 	bool "Enable MPU on NXP Kinetis"
 	depends on CPU_HAS_MPU
 	select NXP_MPU
-	default n
 	help
 	  Enable MPU support on NXP Kinetis SoCs
 

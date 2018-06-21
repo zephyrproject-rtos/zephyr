@@ -8,7 +8,6 @@
 config SOC_FAMILY_STM32
 	bool
 	# omit prompt to signify a "hidden" option
-	default n
 	select HAS_DTS_I2C_DEVICE if I2C
 	select HAS_DTS_SPI_DEVICE if SPI
 
@@ -22,7 +21,6 @@ config STM32_ARM_MPU_ENABLE
 	bool "Enable MPU on STM32"
 	depends on CPU_HAS_MPU
 	select ARM_MPU
-	default n
 	help
 	  Enable MPU support on STM32 SoCs
 
