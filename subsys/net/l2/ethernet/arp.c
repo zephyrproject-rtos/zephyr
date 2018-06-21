@@ -26,57 +26,147 @@
 #define ARP_REQUEST_TIMEOUT K_SECONDS(2)
 
 static bool arp_cache_initialized;
-static struct arp_entry arp_table[CONFIG_NET_ARP_TABLE_SIZE];
+static struct arp_entry arp_entries[CONFIG_NET_ARP_TABLE_SIZE];
 
-static inline struct arp_entry *find_entry(struct net_if *iface,
-					   struct in_addr *dst,
-					   struct arp_entry **free_entry,
-					   struct arp_entry **non_pending)
+static sys_slist_t arp_free_entries;
+static sys_slist_t arp_pending_entries;
+static sys_slist_t arp_table;
+
+static void arp_entry_cleanup(struct arp_entry *entry)
 {
-	int i;
+	NET_DBG("%p", entry);
 
-	NET_DBG("dst %s", net_sprint_ipv4_addr(dst));
+	if (entry->pending) {
+		NET_DBG("Releasing pending pkt %p (ref %d)",
+			entry->pending, entry->pending->ref - 1);
+		net_pkt_unref(entry->pending);
+		entry->pending = NULL;
 
-	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
+		k_delayed_work_cancel(&entry->arp_request_timer);
+	}
 
-		NET_DBG("[%d] iface %p dst %s ll %s pending %p", i, iface,
-			net_sprint_ipv4_addr(&arp_table[i].ip),
-			net_sprint_ll_addr((u8_t *)&arp_table[i].eth.addr,
+	entry->iface = NULL;
+
+	memset(&entry->ip, 0, sizeof(struct in_addr));
+	memset(&entry->eth, 0, sizeof(struct net_eth_addr));
+}
+
+static struct arp_entry *arp_entry_find(sys_slist_t *list,
+					struct net_if *iface,
+					struct in_addr *dst,
+					sys_snode_t **previous)
+{
+	struct arp_entry *entry;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(list, entry, node) {
+		NET_DBG("iface %p dst %s ll %s pending %p",
+			iface, net_sprint_ipv4_addr(&entry->ip),
+			net_sprint_ll_addr((u8_t *)entry->eth.addr,
 					   sizeof(struct net_eth_addr)),
-			arp_table[i].pending);
+			entry->pending);
 
-		if (arp_table[i].iface == iface &&
-		    net_ipv4_addr_cmp(&arp_table[i].ip, dst)) {
-			/* Is there already pending operation for this
-			 * IP address.
-			 */
-			if (arp_table[i].pending) {
-				NET_DBG("ARP already pending to %s ll %s",
-					net_sprint_ipv4_addr(dst),
-					net_sprint_ll_addr((u8_t *)
-						&arp_table[i].eth.addr,
-						sizeof(struct net_eth_addr)));
-				*free_entry = NULL;
-				*non_pending = NULL;
-				return NULL;
-			}
-
-			return &arp_table[i];
+		if (entry->iface == iface &&
+		    net_ipv4_addr_cmp(&entry->ip, dst)) {
+			return entry;
 		}
 
-		/* We return also the first free entry */
-		if (!*free_entry && !arp_table[i].pending &&
-		    !arp_table[i].iface) {
-			*free_entry = &arp_table[i];
-		}
-
-		/* And also first non pending entry */
-		if (!*non_pending && !arp_table[i].pending) {
-			*non_pending = &arp_table[i];
+		if (previous) {
+			*previous = &entry->node;
 		}
 	}
 
 	return NULL;
+}
+
+static inline struct arp_entry *arp_entry_find_move_first(struct net_if *iface,
+							  struct in_addr *dst)
+{
+	sys_snode_t *prev = NULL;
+	struct arp_entry *entry;
+
+	NET_DBG("dst %s", net_sprint_ipv4_addr(dst));
+
+	entry = arp_entry_find(&arp_table, iface, dst, &prev);
+	if (entry) {
+		/* Let's assume the target is going to be accessed
+		 * more than once here in a short time frame. So we
+		 * place the entry first in position into the table
+		 * in order to reduce subsequent find.
+		 */
+		if (&entry->node != sys_slist_peek_head(&arp_table)) {
+			sys_slist_remove(&arp_table, prev, &entry->node);
+			sys_slist_prepend(&arp_table, &entry->node);
+		}
+	}
+
+	return entry;
+}
+
+static inline
+struct arp_entry *arp_entry_find_pending(struct net_if *iface,
+					 struct in_addr *dst)
+{
+	NET_DBG("dst %s", net_sprint_ipv4_addr(dst));
+
+	return arp_entry_find(&arp_pending_entries, iface, dst, NULL);
+}
+
+static struct arp_entry *arp_entry_get_pending(struct net_if *iface,
+					       struct in_addr *dst)
+{
+	sys_snode_t *prev = NULL;
+	struct arp_entry *entry;
+
+	NET_DBG("dst %s", net_sprint_ipv4_addr(dst));
+
+	entry = arp_entry_find(&arp_pending_entries, iface, dst, &prev);
+	if (entry) {
+		/* We remove the entry from the pending list */
+		sys_slist_remove(&arp_pending_entries, prev, &entry->node);
+	}
+
+	return entry;
+}
+
+static struct arp_entry *arp_entry_get_free(void)
+{
+	sys_snode_t *node;
+
+	node = sys_slist_peek_head(&arp_free_entries);
+	if (!node) {
+		return NULL;
+	}
+
+	/* We remove the node from the free list */
+	sys_slist_remove(&arp_free_entries, NULL, node);
+
+	return CONTAINER_OF(node, struct arp_entry, node);
+}
+
+static struct arp_entry *arp_entry_get_last_from_table(void)
+{
+	sys_snode_t *node;
+
+	/* We assume last entry is the oldest one,
+	 * so is the preferred one to be taken out.
+	 */
+
+	node = sys_slist_peek_tail(&arp_table);
+	if (!node) {
+		return NULL;
+	}
+
+	sys_slist_find_and_remove(&arp_table, node);
+
+	return CONTAINER_OF(node, struct arp_entry, node);
+}
+
+
+static void arp_entry_register_pending(struct arp_entry *entry)
+{
+	NET_DBG("dst %s", net_sprint_ipv4_addr(&entry->ip));
+
+	sys_slist_append(&arp_pending_entries, &entry->node);
 }
 
 static inline struct in_addr *if_get_addr(struct net_if *iface)
@@ -162,6 +252,8 @@ static inline struct net_pkt *prepare_arp(struct net_if *iface,
 		memcpy(&eth->src.addr,
 		       net_if_get_link_addr(entry->iface)->addr,
 		       sizeof(struct net_eth_addr));
+
+		arp_entry_register_pending(entry);
 	} else {
 		memcpy(&eth->src.addr,
 		       net_if_get_link_addr(iface)->addr,
@@ -208,18 +300,18 @@ static void arp_request_timeout(struct k_work *work)
 					       arp_request_timer);
 
 	if (entry->pending) {
-		NET_DBG("Releasing pending pkt %p (ref %d)", entry->pending,
-			entry->pending->ref - 1);
-		net_pkt_unref(entry->pending);
-		entry->pending = NULL;
-		entry->iface = NULL;
+		arp_entry_cleanup(entry);
+
+		/* Let's put it back to free entries */
+		sys_slist_find_and_remove(&arp_pending_entries, &entry->node);
+		sys_slist_prepend(&arp_free_entries, &entry->node);
 	}
 }
 
 struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 {
-	struct arp_entry *entry, *free_entry = NULL, *non_pending = NULL;
 	struct ethernet_context *ctx;
+	struct arp_entry *entry;
 	struct net_linkaddr *ll;
 	struct net_eth_hdr *hdr;
 	struct in_addr *addr;
@@ -273,32 +365,34 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 	/* If the destination address is already known, we do not need
 	 * to send any ARP packet.
 	 */
-	entry = find_entry(net_pkt_iface(pkt),
-			   addr, &free_entry, &non_pending);
+	entry = arp_entry_find_move_first(net_pkt_iface(pkt), addr);
 	if (!entry) {
-		if (!free_entry) {
-			/* So all the slots are occupied, use the first
-			 * that can be taken.
-			 */
-			if (!non_pending) {
-				/* We cannot send the packet, the ARP
-				 * cache is full or there is already a
-				 * pending query to this IP address,
-				 * so this packet must be discarded.
-				 */
-				struct net_pkt *req;
+		struct net_pkt *req;
 
-				req = prepare_arp(net_pkt_iface(pkt),
-						  addr, NULL, pkt);
-				NET_DBG("Resending ARP %p", req);
-
-				return req;
+		entry = arp_entry_find_pending(net_pkt_iface(pkt), addr);
+		if (!entry) {
+			/* No pending, let's try to get a new entry */
+			entry = arp_entry_get_free();
+			if (!entry) {
+				/* Then let's take one from table? */
+				entry = arp_entry_get_last_from_table();
 			}
-
-			free_entry = non_pending;
+		} else {
+			/* There is a pending already */
+			entry = NULL;
 		}
 
-		return prepare_arp(net_pkt_iface(pkt), addr, free_entry, pkt);
+		req = prepare_arp(net_pkt_iface(pkt), addr, entry, pkt);
+
+		if (!entry) {
+			/* We cannot send the packet, the ARP cache is full
+			 * or there is already a pending query to this IP
+			 * address, so this packet must be discarded.
+			 */
+			NET_DBG("Resending ARP %p", req);
+		}
+
+		return req;
 	}
 
 	ll = net_if_get_link_addr(entry->iface);
@@ -314,62 +408,41 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 	return pkt;
 }
 
-static inline void send_pending(struct net_if *iface, struct net_pkt **pkt)
-{
-	struct net_pkt *pending = *pkt;
-
-	NET_DBG("dst %s pending %p frag %p",
-		net_sprint_ipv4_addr(&NET_IPV4_HDR(pending)->dst), pending,
-		pending->frags);
-
-	*pkt = NULL;
-
-	if (net_if_send_data(iface, pending) == NET_DROP) {
-		net_pkt_unref(pending);
-	}
-}
-
 static inline void arp_update(struct net_if *iface,
 			      struct in_addr *src,
 			      struct net_eth_addr *hwaddr)
 {
-	int i;
+	struct arp_entry *entry;
+	struct net_pkt *pkt;
 
 	NET_DBG("src %s", net_sprint_ipv4_addr(src));
 
-	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
-
-		NET_DBG("[%d] iface %p dst %s ll %s pending %p", i, iface,
-			net_sprint_ipv4_addr(&arp_table[i].ip),
-			net_sprint_ll_addr((u8_t *)&arp_table[i].eth.addr,
-					   sizeof(struct net_eth_addr)),
-			arp_table[i].pending);
-
-		if (arp_table[i].iface != iface ||
-		    !net_ipv4_addr_cmp(&arp_table[i].ip, src)) {
-			continue;
-		}
-
-		if (arp_table[i].pending) {
-			/* We only update the ARP cache if we were
-			 * initiating a request.
-			 */
-			k_delayed_work_cancel(&arp_table[i].arp_request_timer);
-
-			memcpy(&arp_table[i].eth, hwaddr,
-			       sizeof(struct net_eth_addr));
-
-			/* Set the dst in the pending packet */
-			net_pkt_ll_dst(arp_table[i].pending)->len =
-				sizeof(struct net_eth_addr);
-			net_pkt_ll_dst(arp_table[i].pending)->addr =
-				(u8_t *)
-				&NET_ETH_HDR(arp_table[i].pending)->dst.addr;
-
-			send_pending(iface, &arp_table[i].pending);
-		}
-
+	entry = arp_entry_get_pending(iface, src);
+	if (!entry) {
 		return;
+	}
+
+	k_delayed_work_cancel(&entry->arp_request_timer);
+
+	memcpy(&entry->eth, hwaddr, sizeof(struct net_eth_addr));
+
+	/* Set the dst in the pending packet */
+	net_pkt_ll_dst(entry->pending)->len = sizeof(struct net_eth_addr);
+	net_pkt_ll_dst(entry->pending)->addr =
+		(u8_t *) &NET_ETH_HDR(entry->pending)->dst.addr;
+
+	NET_DBG("dst %s pending %p frag %p",
+		net_sprint_ipv4_addr(&entry->ip),
+		entry->pending, entry->pending->frags);
+
+	pkt = entry->pending;
+	entry->pending = NULL;
+
+	/* Inserting entry into the table */
+	sys_slist_prepend(&arp_table, &entry->node);
+
+	if (net_if_send_data(iface, pkt) == NET_DROP) {
+		net_pkt_unref(pkt);
 	}
 }
 
@@ -495,7 +568,8 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 
 	case NET_ARP_REPLY:
 		if (net_is_my_ipv4_addr(&arp_hdr->dst_ipaddr)) {
-			arp_update(net_pkt_iface(pkt), &arp_hdr->src_ipaddr,
+			arp_update(net_pkt_iface(pkt),
+				   &arp_hdr->src_ipaddr,
 				   &arp_hdr->src_hwaddr);
 		}
 		break;
@@ -508,38 +582,49 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 
 void net_arp_clear_cache(struct net_if *iface)
 {
-	int i;
+	sys_snode_t *prev = NULL;
+	struct arp_entry *entry, *next;
 
-	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
-		if (iface && iface != arp_table[i].iface) {
+	NET_DBG("Flushing ARP table");
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&arp_table, entry, next, node) {
+		if (iface && iface != entry->iface) {
+			prev = &entry->node;
 			continue;
 		}
 
-		if (arp_table[i].pending) {
-			net_pkt_unref(arp_table[i].pending);
-			k_delayed_work_cancel(&arp_table[i].arp_request_timer);
+		arp_entry_cleanup(entry);
+
+		sys_slist_remove(&arp_table, prev, &entry->node);
+		sys_slist_prepend(&arp_free_entries, &entry->node);
+	}
+
+	prev = NULL;
+
+	NET_DBG("Flushing ARP pending requests");
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&arp_pending_entries,
+					  entry, next, node) {
+		if (iface && iface != entry->iface) {
+			prev = &entry->node;
+			continue;
 		}
 
-		arp_table[i].pending = NULL;
-		arp_table[i].iface = NULL;
+		arp_entry_cleanup(entry);
 
-		memset(&arp_table[i].ip, 0, sizeof(arp_table[i].ip));
-		memset(&arp_table[i].eth, 0, sizeof(arp_table[i].eth));
+		sys_slist_remove(&arp_pending_entries, prev, &entry->node);
+		sys_slist_prepend(&arp_free_entries, &entry->node);
 	}
 }
 
 int net_arp_foreach(net_arp_cb_t cb, void *user_data)
 {
-	int i, ret = 0;
+	int ret = 0;
+	struct arp_entry *entry;
 
-	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
-		if (!arp_table[i].iface) {
-			continue;
-		}
-
+	SYS_SLIST_FOR_EACH_CONTAINER(&arp_table, entry, node) {
 		ret++;
-
-		cb(&arp_table[i], user_data);
+		cb(entry, user_data);
 	}
 
 	return ret;
@@ -553,11 +638,16 @@ void net_arp_init(void)
 		return;
 	}
 
-	net_arp_clear_cache(NULL);
+	sys_slist_init(&arp_free_entries);
+	sys_slist_init(&arp_pending_entries);
+	sys_slist_init(&arp_table);
 
 	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
 		k_delayed_work_init(&arp_table[i].arp_request_timer,
 				    arp_request_timeout);
+
+		/* Inserting entry as free */
+		sys_slist_prepend(&arp_free_entries, &arp_entries[i].node);
 	}
 
 	arp_cache_initialized = true;
