@@ -548,6 +548,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 	}
 }
 
+#if defined(CONFIG_BT_CENTRAL)
 static int hci_le_create_conn(const struct bt_conn *conn)
 {
 	struct net_buf *buf;
@@ -574,6 +575,7 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
 }
+#endif /* CONFIG_BT_CENTRAL */
 
 static void hci_stack_dump(const struct k_thread *thread, void *user_data)
 {
@@ -633,10 +635,12 @@ static void hci_disconn_complete(struct net_buf *buf)
 		return;
 	}
 
+#if defined(CONFIG_BT_CENTRAL)
 	if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
 		bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 		bt_le_scan_update(false);
 	}
+#endif /* CONFIG_BT_CENTRAL */
 
 	bt_conn_unref(conn);
 
@@ -1181,6 +1185,7 @@ static void le_conn_update_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+#if defined(CONFIG_BT_CENTRAL)
 static void check_pending_conn(const bt_addr_le_t *id_addr,
 			       const bt_addr_le_t *addr, u8_t evtype)
 {
@@ -1240,6 +1245,7 @@ failed:
 	bt_conn_unref(conn);
 	bt_le_scan_update(false);
 }
+#endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 static int set_flow_control(void)
@@ -3175,9 +3181,9 @@ static void le_adv_report(struct net_buf *buf)
 			net_buf_simple_restore(&buf->b, &state);
 		}
 
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CENTRAL)
 		check_pending_conn(&id_addr, &info->addr, info->evt_type);
-#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_CENTRAL */
 
 		/* Get next report iteration by moving pointer to right offset
 		 * in buf according to spec 4.2, Vol 2, Part E, 7.7.65.2.
