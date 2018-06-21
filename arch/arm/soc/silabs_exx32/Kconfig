@@ -7,7 +7,6 @@
 config SOC_FAMILY_EXX32
 	bool
 	# omit prompt to signify a "hidden" option
-	default n
 
 if SOC_FAMILY_EXX32
 config SOC_FAMILY
@@ -26,7 +25,6 @@ config SOC_PART_NUMBER
 
 config HAS_CMU
 	bool
-	default n
 	help
 	  Set if the clock management unit (CMU) is present in the SoC.
 

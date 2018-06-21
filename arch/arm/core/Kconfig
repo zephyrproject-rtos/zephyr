@@ -9,14 +9,12 @@
 config CPU_CORTEX
 	bool
 	# Omit prompt to signify "hidden" option
-	default n
 	help
 	  This option signifies the use of a CPU of the Cortex family.
 
 config CPU_CORTEX_M
 	bool
 	# Omit prompt to signify "hidden" option
-	default n
 	select CPU_CORTEX
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	select HAS_CMSIS
@@ -30,7 +28,6 @@ config CPU_CORTEX_M
 config CPU_HAS_SYSTICK
 	bool
 	# Omit prompt to signify "hidden" option
-	default n
 	help
 	  This option is enabled when the CPU has systick timer implemented.
 
@@ -38,7 +35,6 @@ config BUILTIN_STACK_GUARD
 	bool "Thread Stack Guards based on built-in ARM stack limit checking"
 	depends on CPU_CORTEX_M_HAS_SPLIM
 	select THREAD_STACK_INFO
-	default n
 	help
 	  Enable Thread/Interrupt Stack Guards via built-in Stack Pointer
 	  limit checking. The functionality must be supported by HW.
@@ -61,7 +57,6 @@ config ARM_STACK_PROTECTION
 config ARM_SECURE_FIRMWARE
 	bool
 	depends on ARMV8_M_SE
-	default n
 	help
 	  This option indicates that we are building a Zephyr image that
 	  is intended to execute in Secure state. The option is only
@@ -83,7 +78,6 @@ config ARM_NONSECURE_FIRMWARE
 	bool
 	depends on !ARM_SECURE_FIRMWARE
 	depends on ARMV8_M_SE
-	default n
 	help
 	  This option indicates that we are building a Zephyr image that
 	  is intended to execute in Non-Secure state. Execution of this

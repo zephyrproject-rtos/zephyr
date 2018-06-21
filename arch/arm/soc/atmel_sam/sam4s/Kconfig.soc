@@ -17,7 +17,6 @@ if SOC_SERIES_SAM4S
 
 config SOC_ATMEL_SAM4S_EXT_SLCK
 	bool "Atmel SAM4S to use external crystal oscillator for slow clock"
-	default n
 	help
 	  Says y if you want to use external 32 kHz crystal
 	  oscillator to drive the slow clock. Note that this
@@ -30,7 +29,6 @@ config SOC_ATMEL_SAM4S_EXT_SLCK
 
 config SOC_ATMEL_SAM4S_EXT_MAINCK
 	bool "Atmel SAM4S to use external crystal oscillator for main clock"
-	default n
 	help
 	  The main clock is being used to drive the PLL, and
 	  thus driving the processor clock.

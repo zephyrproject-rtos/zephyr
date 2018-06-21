@@ -4,7 +4,6 @@
 config SOC_FAMILY_TISIMPLELINK
 	bool
 	# omit prompt to signify a "hidden" option
-	default n
 
 if SOC_FAMILY_TISIMPLELINK
 config SOC_FAMILY

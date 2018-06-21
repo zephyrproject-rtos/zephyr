@@ -37,7 +37,6 @@ config SOC_PART_NUMBER_LPC54XXX
 
 config SLAVE_CORE_MCUX
 	bool "Enable LPC54114 Cortex-M0 slave core"
-	default n
 	depends on HAS_MCUX
 	help
 	  Driver for slave core startup

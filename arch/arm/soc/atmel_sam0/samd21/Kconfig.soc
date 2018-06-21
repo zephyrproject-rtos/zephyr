@@ -55,7 +55,6 @@ if SOC_SERIES_SAMD21
 
 config SOC_ATMEL_SAMD_XOSC32K
 	bool "Enable the external 32 kHz crystal oscillator"
-	default n
 	help
 	  Say y to enable the external 32 kHZ crystal oscillator at
 	  startup.  This can then be selected as the main clock source
@@ -63,7 +62,6 @@ config SOC_ATMEL_SAMD_XOSC32K
 
 config SOC_ATMEL_SAMD_XOSC
 	bool "Enable the external crystal oscillator"
-	default n
 	help
 	  Say y to enable the external crystal oscillator at startup.
 

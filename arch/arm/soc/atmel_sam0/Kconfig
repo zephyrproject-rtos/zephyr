@@ -5,7 +5,6 @@
 
 config SOC_FAMILY_SAM0
 	bool
-	default n
 
 if SOC_FAMILY_SAM0
 
