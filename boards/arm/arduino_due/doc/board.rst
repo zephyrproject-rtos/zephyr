@@ -189,7 +189,7 @@ listen for output. For example, under Linux, the terminal should be
 
 .. code-block:: console
 
-   $ minicom -D /dev/ttyACM0 -o
+   $ sudo minicom -D /dev/ttyACM0 -o
 
 The -o option tells minicom not to send the modem initialization
 string.
@@ -205,7 +205,7 @@ References
 
 .. _Arduino Due website: https://www.arduino.cc/en/Main/ArduinoBoardDue
 
-.. _Atmel SAM3X8E Datasheet: http://www.atmel.com/devices/sam3x8e.aspx
+.. _Atmel SAM3X8E Datasheet: http://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-11057-32-bit-Cortex-M3-Microcontroller-SAM3X-SAM3A_Datasheet.pdf
 
 .. _bossa tool: https://github.com/shumatech/BOSSA
 
