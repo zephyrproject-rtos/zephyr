@@ -22,6 +22,48 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led@0 {
+			gpios = <&gpio0 17 GPIO_INT_ACTIVE_LOW>;
+			label = "Onboard GREEN LED 0";
+		};
+		led1: led@1 {
+			gpios = <&gpio0 18 GPIO_INT_ACTIVE_LOW>;
+			label = "Onboard GREEN LED 1";
+		};
+		led2: led@2 {
+			gpios = <&gpio0 19 GPIO_INT_ACTIVE_LOW>;
+			label = "Onboard GREEN LED 2";
+		};
+		led3: led@3 {
+			gpios = <&gpio0 20 GPIO_INT_ACTIVE_LOW>;
+			label = "Onboard GREEN LED 3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		user_button_0: button@0 {
+			label = "Push button switch 0";
+			gpios = <&gpio0 13 GPIO_PUD_PULL_UP>;
+		};
+		user_button_1: button@1 {
+			label = "Push button switch 1";
+			gpios = <&gpio0 14 GPIO_PUD_PULL_UP>;
+		};
+		user_button_2: button@2 {
+			label = "Push button switch 2";
+			gpios = <&gpio0 15 GPIO_PUD_PULL_UP>;
+		};
+		user_button_3: button@3 {
+			label = "Push button switch 3";
+			gpios = <&gpio0 16 GPIO_PUD_PULL_UP>;
+		};
+	};
 };
 
 &gpiote {
