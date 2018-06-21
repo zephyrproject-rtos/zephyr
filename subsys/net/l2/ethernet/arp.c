@@ -32,6 +32,8 @@ static sys_slist_t arp_free_entries;
 static sys_slist_t arp_pending_entries;
 static sys_slist_t arp_table;
 
+struct k_delayed_work arp_request_timer;
+
 static void arp_entry_cleanup(struct arp_entry *entry)
 {
 	NET_DBG("%p", entry);
@@ -41,8 +43,6 @@ static void arp_entry_cleanup(struct arp_entry *entry)
 			entry->pending, entry->pending->ref - 1);
 		net_pkt_unref(entry->pending);
 		entry->pending = NULL;
-
-		k_delayed_work_cancel(&entry->arp_request_timer);
 	}
 
 	entry->iface = NULL;
@@ -125,6 +125,10 @@ static struct arp_entry *arp_entry_get_pending(struct net_if *iface,
 		sys_slist_remove(&arp_pending_entries, prev, &entry->node);
 	}
 
+	if (sys_slist_is_empty(&arp_pending_entries)) {
+		k_delayed_work_cancel(&arp_request_timer);
+	}
+
 	return entry;
 }
 
@@ -167,6 +171,42 @@ static void arp_entry_register_pending(struct arp_entry *entry)
 	NET_DBG("dst %s", net_sprint_ipv4_addr(&entry->ip));
 
 	sys_slist_append(&arp_pending_entries, &entry->node);
+
+	entry->req_start = k_uptime_get();
+
+	/* Let's start the timer if necessary */
+	if (!k_delayed_work_remaining_get(&arp_request_timer)) {
+		k_delayed_work_submit(&arp_request_timer,
+				      ARP_REQUEST_TIMEOUT);
+	}
+}
+
+static void arp_request_timeout(struct k_work *work)
+{
+	s64_t current = k_uptime_get();
+	struct arp_entry *entry, *next;
+
+	ARG_UNUSED(work);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&arp_pending_entries,
+					  entry, next, node) {
+		if ((entry->req_start + ARP_REQUEST_TIMEOUT - current) > 0) {
+			break;
+		}
+
+		arp_entry_cleanup(entry);
+
+		sys_slist_remove(&arp_pending_entries, NULL, &entry->node);
+		sys_slist_append(&arp_free_entries, &entry->node);
+
+		entry = NULL;
+	}
+
+	if (entry) {
+		k_delayed_work_submit(&arp_request_timer,
+				      entry->req_start +
+				      ARP_REQUEST_TIMEOUT - current);
+	}
 }
 
 static inline struct in_addr *if_get_addr(struct net_if *iface)
@@ -244,9 +284,6 @@ static inline struct net_pkt *prepare_arp(struct net_if *iface,
 		entry->pending = net_pkt_ref(pending);
 		entry->iface = net_pkt_iface(pkt);
 
-		k_delayed_work_submit(&entry->arp_request_timer,
-				      ARP_REQUEST_TIMEOUT);
-
 		net_ipaddr_copy(&entry->ip, next_addr);
 
 		memcpy(&eth->src.addr,
@@ -290,22 +327,6 @@ static inline struct net_pkt *prepare_arp(struct net_if *iface,
 	net_buf_add(frag, sizeof(struct net_arp_hdr));
 
 	return pkt;
-}
-
-static void arp_request_timeout(struct k_work *work)
-{
-	/* This means that the ARP failed. */
-	struct arp_entry *entry = CONTAINER_OF(work,
-					       struct arp_entry,
-					       arp_request_timer);
-
-	if (entry->pending) {
-		arp_entry_cleanup(entry);
-
-		/* Let's put it back to free entries */
-		sys_slist_find_and_remove(&arp_pending_entries, &entry->node);
-		sys_slist_prepend(&arp_free_entries, &entry->node);
-	}
 }
 
 struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
@@ -421,8 +442,6 @@ static inline void arp_update(struct net_if *iface,
 	if (!entry) {
 		return;
 	}
-
-	k_delayed_work_cancel(&entry->arp_request_timer);
 
 	memcpy(&entry->eth, hwaddr, sizeof(struct net_eth_addr));
 
@@ -615,6 +634,10 @@ void net_arp_clear_cache(struct net_if *iface)
 		sys_slist_remove(&arp_pending_entries, prev, &entry->node);
 		sys_slist_prepend(&arp_free_entries, &entry->node);
 	}
+
+	if (sys_slist_is_empty(&arp_pending_entries)) {
+		k_delayed_work_cancel(&arp_request_timer);
+	}
 }
 
 int net_arp_foreach(net_arp_cb_t cb, void *user_data)
@@ -643,12 +666,11 @@ void net_arp_init(void)
 	sys_slist_init(&arp_table);
 
 	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
-		k_delayed_work_init(&arp_table[i].arp_request_timer,
-				    arp_request_timeout);
-
 		/* Inserting entry as free */
 		sys_slist_prepend(&arp_free_entries, &arp_entries[i].node);
 	}
+
+	k_delayed_work_init(&arp_request_timer, arp_request_timeout);
 
 	arp_cache_initialized = true;
 }

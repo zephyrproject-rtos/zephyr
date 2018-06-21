@@ -47,7 +47,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt);
 
 struct arp_entry {
 	sys_snode_t node;
-	struct k_delayed_work arp_request_timer;
+	s64_t req_start;
 	struct net_if *iface;
 	struct net_pkt *pending;
 	struct in_addr ip;
