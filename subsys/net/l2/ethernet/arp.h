@@ -49,9 +49,11 @@ struct arp_entry {
 	sys_snode_t node;
 	s64_t req_start;
 	struct net_if *iface;
-	struct net_pkt *pending;
 	struct in_addr ip;
-	struct net_eth_addr eth;
+	union {
+		struct net_pkt *pending;
+		struct net_eth_addr eth;
+	};
 };
 
 typedef void (*net_arp_cb_t)(struct arp_entry *entry,
