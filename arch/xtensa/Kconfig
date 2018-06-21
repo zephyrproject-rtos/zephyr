@@ -18,7 +18,6 @@ config ARCH
 config SIMULATOR_XTENSA
         bool
 	prompt "Simulator Configuration"
-	default n
 	help
 	  Specify if the board configuration should be treated as a simulator.
 
@@ -33,7 +32,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config XTENSA_NO_IPC
 	bool "Core has no IPC support"
 	select ATOMIC_OPERATIONS_C
-	default n
 	help
 	  Uncheck this if you core does not implement "SCOMPARE1" register and "s32c1i"
 	  instruction.
@@ -79,7 +77,6 @@ config IRQ_OFFLOAD_INTNUM
 config XTENSA_OMIT_HIGH_INTERRUPTS
 	bool
 	prompt "Skip generation of vectors for high priority interrupts"
-	default n
 	help
 	Setting this to y causes the interrupt vectors for "high
 	priority" Xtensa interrupts (those not masked by the EXCM bit
@@ -96,7 +93,6 @@ config XTENSA_OMIT_HIGH_INTERRUPTS
 config XTENSA_ASM2
 	bool
 	prompt "New-style Xtensa context switch & interrupt layer"
-	default n
 	select USE_SWITCH
 	help
 	This selects a new implementation of context switching and
