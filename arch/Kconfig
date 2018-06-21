@@ -92,7 +92,6 @@ config PRIVILEGED_STACK_SIZE
 
 config STACK_GROWS_UP
 	bool "Stack grows towards higher memory addresses"
-	default n
 	help
 	  Select this option if the architecture has upward growing thread
 	  stacks. This is not common.
@@ -109,7 +108,6 @@ config MAX_THREAD_BYTES
 
 config DYNAMIC_OBJECTS
 	bool "Allow kernel objects to be allocated at runtime"
-	default n
 	depends on USERSPACE
 	help
 	Enabling this option allows for kernel objects to be requested from
@@ -124,7 +122,6 @@ config DYNAMIC_OBJECTS
 config SIMPLE_FATAL_ERROR_HANDLER
 	prompt "Simple system fatal error handler"
 	bool
-	default n
 	default y if !MULTITHREADING
 	help
 	  Provides an implementation of _SysFatalErrorHandler() that hard hangs
@@ -139,7 +136,6 @@ menu "Interrupt Configuration"
 config GEN_ISR_TABLES
 	bool
 	prompt "Use generated IRQ tables"
-	default n
 	help
 	  This option controls whether a platform uses the gen_isr_tables
 	  script to generate its interrupt tables. This mechanism will create
@@ -184,7 +180,6 @@ config GEN_IRQ_START_VECTOR
 
 config IRQ_OFFLOAD
 	bool "Enable IRQ offload"
-	default n
 	help
 	  Enable irq_offload() API which allows functions to be synchronously
 	  run in interrupt context. Mainly useful for test cases.
@@ -219,7 +214,6 @@ config ARCH_HAS_THREAD_ABORT
 config SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	# Hidden
 	bool
-	default n
 	help
 	  This option signifies that the target supports the SYS_POWER_LOW_POWER_STATE
 	  configuration option.
@@ -227,7 +221,6 @@ config SYS_POWER_LOW_POWER_STATE_SUPPORTED
 config SYS_POWER_DEEP_SLEEP_SUPPORTED
 	# Hidden
 	bool
-	default n
 	help
 	  This option signifies that the target supports the SYS_POWER_DEEP_SLEEP
 	  configuration option.
@@ -235,7 +228,6 @@ config SYS_POWER_DEEP_SLEEP_SUPPORTED
 config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
 	# Hidden
 	bool
-	default n
 	help
 	  This option signifies that the target has options of bootloaders
 	  that support context restore upon resume from deep sleep
@@ -246,7 +238,6 @@ config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
 
 config CPU_HAS_FPU
 	bool
-	default n
 	help
 	  This option is enabled when the CPU has hardware floating point
 	  unit.
@@ -254,14 +245,12 @@ config CPU_HAS_FPU
 config CPU_HAS_MPU
 	bool
 	# Omit prompt to signify "hidden" option
-	default n
 	help
 	  This option is enabled when the CPU has a Memory Protection Unit (MPU).
 
 config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	bool
 	# Omit prompt to signify "hidden" option
-	default n
 	help
 	  This option is enabled when the MPU requires a power of two alignment
 	  and size for MPU regions.
@@ -273,7 +262,6 @@ depends on CPU_HAS_FPU
 config FLOAT
 	bool
 	prompt "Floating point registers"
-	default n
 	help
 	  This option allows threads to use the floating point registers.
 	  By default, only a single thread may use the registers.
@@ -285,7 +273,6 @@ config FP_SHARING
 	bool
 	prompt "Floating point register sharing"
 	depends on FLOAT
-	default n
 	help
 	  This option allows multiple threads to use the floating point
 	  registers.
