@@ -10,3 +10,7 @@ zephyr_library_sources(
 	cmdline_common.c
 	cmdline.c
 	)
+
+zephyr_ld_options(
+  -lm
+)
