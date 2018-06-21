@@ -9,7 +9,6 @@
 config SOC_FAMILY_RISCV_PRIVILEGE
 	bool
 	# omit prompt to signify a "hidden" option
-	default n
 
 config SOC_FAMILY
 	string
@@ -18,7 +17,6 @@ config SOC_FAMILY
 
 config RISCV_HAS_PLIC
 	bool "Does the SOC provide support for a Platform Level Interrupt Controller"
-	default n
 	depends on SOC_FAMILY_RISCV_PRIVILEGE
 	help
 	  Does the SOC provide support for a Platform Level Interrupt Controller
