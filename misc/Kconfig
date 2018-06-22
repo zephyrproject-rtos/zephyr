@@ -64,7 +64,6 @@ config HAVE_CUSTOM_LINKER_SCRIPT
 
 config CUSTOM_LINKER_SCRIPT
 	string "Path to custom linker script"
-	default ""
 	depends on HAVE_CUSTOM_LINKER_SCRIPT
 	help
 	  Path to the linker script to be used instead of the one define by the
@@ -79,28 +78,24 @@ config CUSTOM_LINKER_SCRIPT
 
 config CUSTOM_RODATA_LD
 	bool "Include custom-rodata.ld"
-	default n
 	help
 	  Include a customized linker script fragment for inserting additional
 	  data and linker directives into the rodata section.
 
 config CUSTOM_RWDATA_LD
 	bool "Include custom-rwdata.ld"
-	default n
 	help
 	  Include a customized linker script fragment for inserting additional
 	  data and linker directives into the data section.
 
 config CUSTOM_SECTIONS_LD
 	bool "Include custom-sections.ld"
-	default n
 	help
 	  Include a customized linker script fragment for inserting additional
 	  arbitrary sections.
 
 config LINK_WHOLE_ARCHIVE
 	bool "Allow linking with --whole-archive"
-	default n
 	help
 	  This options allows linking external libraries with the
 	  --whole-archive option to keep all symbols.
@@ -131,7 +126,6 @@ config CROSS_COMPILE
 
 config NATIVE_APPLICATION
 	bool "Build as a native host application"
-	default n
 	help
 	  Build as a native application that can run on the host and using
 	  resources and libraries provided by the host.
@@ -175,7 +169,6 @@ endchoice
 config COMPILER_OPT
 	string
 	prompt "Custom compiler options"
-	default ""
 	help
 	  This option is a free-form string that is passed to the compiler
 	  when building all parts of a project (i.e. kernel).
@@ -186,7 +179,6 @@ config COMPILER_OPT
 
 config CPLUSPLUS
 	bool "Enable C++ support for the application"
-	default n
 	help
 	  This option enables the use of applications built with C++.
 
@@ -228,7 +220,6 @@ config OUTPUT_PRINT_MEMORY_USAGE
 
 config BUILD_OUTPUT_HEX
 	bool "Build a binary in HEX format"
-	default n
 	help
 	  Build a binary in HEX format. This will build a zephyr.hex file need
 	  by some platforms.
@@ -242,21 +233,18 @@ config BUILD_OUTPUT_BIN
 
 config BUILD_OUTPUT_EXE
 	bool "Build a binary in ELF format with .exe extension"
-	default n
 	help
 	  Build a binary in ELF format that can run in the host system. This
 	  will build a zephyr.exe file.
 
 config BUILD_OUTPUT_S19
 	bool "Build a binary in S19 format"
-	default n
 	help
 	  Build a binary in S19 format. This will build a zephyr.s19 file need
 	  by some platforms.
 
 config BUILD_OUTPUT_STRIPPED
 	bool "Build a stripped binary"
-	default n
 	help
 	  Build a stripped binary. This will build a zephyr.stripped file need
 	  by some platforms.
@@ -269,14 +257,12 @@ menu "System Monitoring Options"
 config PERFORMANCE_METRICS
 	bool
 	prompt "Enable performance metrics [EXPERIMENTAL]"
-	default n
 	help
 	  Enable Performance Metrics.
 
 config BOOT_TIME_MEASUREMENT
 	bool
 	prompt "Boot time measurements [EXPERIMENTAL]"
-	default n
 	depends on PERFORMANCE_METRICS
 	help
 	  This option enables the recording of timestamps during system start
@@ -297,7 +283,6 @@ config CPU_CLOCK_FREQ_MHZ
 config STATS
 	bool
 	prompt "Statistics support"
-	default n
 	help
 	  Enable per-module event counters for troubleshooting, maintenance,
 	  and usage monitoring.  Statistics can be retrieved with the mcumgr
@@ -307,7 +292,6 @@ config STATS_NAMES
 	bool
 	prompt "Statistic names"
 	depends on STATS
-	default n
 	help
 	  Include a full name string for each statistic in the build.  If this
 	  setting is disabled, statistics are assigned generic names of the
@@ -319,7 +303,6 @@ menu "Boot Options"
 
 config IS_BOOTLOADER
 	bool "Act as a bootloader"
-	default n
 	depends on XIP
 	depends on ARM
 	help
@@ -341,7 +324,6 @@ config BOOTLOADER_SRAM_SIZE
 config BOOTLOADER_MCUBOOT
 	bool
 	prompt "MCUboot bootloader support"
-	default n
 	help
 	  This option signifies that the target uses MCUboot as a bootloader,
 	  or in other words that the image is to be chain-loaded by MCUboot.
@@ -360,7 +342,6 @@ config BOOTLOADER_KEXEC
 	bool
 	prompt "Boot using Linux kexec() system call"
 	depends on X86
-	default n
 	help
 	  This option signifies that Linux boots the kernel using kexec system call
 	  and utility. This method is used to boot the kernel over the network.
@@ -368,7 +349,6 @@ config BOOTLOADER_KEXEC
 config BOOTLOADER_UNKNOWN
 	bool
 	prompt "Generic boot loader support"
-	default n
 	depends on X86
 	help
 	  This option signifies that the target has a generic bootloader
@@ -388,7 +368,6 @@ config BOOTLOADER_CONTEXT_RESTORE
 
 config REBOOT
 	bool "Reboot functionality"
-	default n
 	select SYSTEM_CLOCK_DISABLE
 	help
 	  Enable the sys_reboot() API. Enabling this can drag in other subsystems
