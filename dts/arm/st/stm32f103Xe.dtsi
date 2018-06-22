@@ -70,6 +70,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003C00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
 			interrupts = <51 5>;
 			status = "disabled";
 		};
