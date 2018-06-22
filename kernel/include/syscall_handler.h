@@ -125,6 +125,116 @@ extern void _thread_perms_all_clear(struct k_thread *thread);
  */
 void _k_object_uninit(void *obj);
 
+/**
+ * @brief Obtain the size of a C string passed from user mode
+ *
+ * Given a C string pointer and a maximum size, obtain the true
+ * size of the string (not including the trailing NULL byte) just as
+ * if calling strnlen() on it, with the same semantics of strnlen() with
+ * respect to the return value and the maxlen parameter.
+ *
+ * Any memory protection faults triggered by the examination of the string
+ * will be safely handled and an error code returned.
+ *
+ * NOTE: Doesn't guarantee that user mode has actual access to this
+ * string, you will need to still do a Z_SYSCALL_MEMORY_READ()
+ * with the obtained size value to guarantee this.
+ *
+ * @param src String to measure size of
+ * @param maxlen Maximum number of characters to examine
+ * @param err Pointer to int, filled in with -1 on memory error, 0 on
+ *	success
+ * @return undefined on error, or strlen(src) if that is less than maxlen, or
+ *	maxlen if there were no NULL terminating characters within the
+ *	first maxlen bytes.
+ */
+static inline size_t z_user_string_nlen(const char *src, size_t maxlen,
+					int *err)
+{
+	return z_arch_user_string_nlen(src, maxlen, err);
+}
+
+/**
+ * @brief Copy data from userspace into a resource pool allocation
+ *
+ * Given a pointer and a size, allocate a similarly sized buffer in the
+ * caller's resource pool and copy all the data within it to the newly
+ * allocated buffer. This will need to be freed later with k_free().
+ *
+ * Checks are done to ensure that the current thread would have read
+ * access to the provided buffer.
+ *
+ * @param src Source memory address
+ * @param size Size of the memory buffer
+ * @return An allocated buffer with the data copied within it, or NULL
+ *	if some error condition occurred
+ */
+extern void *z_user_alloc_from_copy(void *src, size_t size);
+
+/**
+ * @brief Copy data from user mode
+ *
+ * Given a userspace pointer and a size, copies data from it into a provided
+ * destination buffer, performing checks to ensure that the caller would have
+ * appropriate access when in user mode.
+ *
+ * @param dst Destination memory buffer
+ * @param src Source memory buffer, in userspace
+ * @param size Number of bytes to copy
+ * @retval 0 On success
+ * @retval EFAULT On memory access error
+ */
+extern int z_user_from_copy(void *dst, void *src, size_t size);
+
+/**
+ * @brief Copy data to user mode
+ *
+ * Given a userspace pointer and a size, copies data to it from a provided
+ * source buffer, performing checks to ensure that the caller would have
+ * appropriate access when in user mode.
+ *
+ * @param dst Destination memory buffer, in userspace
+ * @param src Source memory buffer
+ * @param size Number of bytes to copy
+ * @retval 0 On success
+ * @retval EFAULT On memory access error
+ */
+extern int z_user_to_copy(void *dst, void *src, size_t size);
+
+/**
+ * @brief Copy a C string from userspace into a resource pool allocation
+ *
+ * Given a C string and maximum length, duplicate the string using an
+ * allocation from the calling thread's resource pool. This will need to be
+ * freed later with k_free().
+ *
+ * Checks are performed to ensure that the string is valid memory and that
+ * the caller has access to it in user mode.
+ *
+ * @param src Source string pointer, in userspace
+ * @param maxlen Maximum size of the string including trailing NULL
+ * @return The duplicated string, or NULL if an error occurred.
+ */
+extern char *z_user_string_alloc_copy(char *src, size_t maxlen);
+
+/**
+ * @brief Copy a C string from userspace into a provided buffer
+ *
+ * Given a C string and maximum length, copy the string into a buffer.
+ *
+ * Checks are performed to ensure that the string is valid memory and that
+ * the caller has access to it in user mode.
+ *
+ * @param dst Destination buffer
+ * @param src Source string pointer, in userspace
+ * @param maxlen Maximum size of the string including trailing NULL
+ * @retval 0 on success
+ * @retval EINVAL if the source string is too long with respect
+ *	to maxlen
+ * @retval EFAULT On memory access error
+ */
+extern int z_user_string_copy(char *dst, char *src, size_t maxlen);
+
 #define Z_OOPS(expr) \
 	do { \
 		if (expr) { \
