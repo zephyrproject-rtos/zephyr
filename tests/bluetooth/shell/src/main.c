@@ -23,7 +23,7 @@
 
 #include <shell/shell.h>
 
-#include <gatt/hrs.h>
+#include <bluetooth/services/hrs.h>
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 

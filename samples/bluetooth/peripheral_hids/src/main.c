@@ -22,9 +22,9 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <gatt/dis.h>
-#include <gatt/bas.h>
-#include <gatt/hog.h>
+#include <bluetooth/services/dis.h>
+#include <bluetooth/services/bas.h>
+#include <bluetooth/services/hog.h>
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),

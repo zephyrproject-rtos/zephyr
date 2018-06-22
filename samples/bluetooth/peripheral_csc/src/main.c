@@ -21,8 +21,8 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <gatt/dis.h>
-#include <gatt/bas.h>
+#include <bluetooth/services/dis.h>
+#include <bluetooth/services/bas.h>
 
 #define CSC_SUPPORTED_LOCATIONS		{ CSC_LOC_OTHER, \
 					  CSC_LOC_FRONT_WHEEL, \
