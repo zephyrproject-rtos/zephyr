@@ -21,6 +21,7 @@
 #include <arch/x86/segmentation.h>
 #include <exception.h>
 #include <inttypes.h>
+#include <exc_handle.h>
 
 __weak void _debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
 
@@ -315,9 +316,27 @@ static void dump_mmu_flags(void *addr)
 }
 #endif
 
-FUNC_NORETURN void page_fault_handler(const NANO_ESF *pEsf)
+#ifdef CONFIG_USERSPACE
+Z_EXC_DECLARE(z_arch_user_string_nlen);
+
+static const struct z_exc_handle exceptions[] = {
+	Z_EXC_HANDLE(z_arch_user_string_nlen)
+};
+#endif
+
+void page_fault_handler(NANO_ESF *pEsf)
 {
 	u32_t err, cr2;
+
+#ifdef CONFIG_USERSPACE
+	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
+		if ((void *)pEsf->eip >= exceptions[i].start &&
+		    (void *)pEsf->eip < exceptions[i].end) {
+			pEsf->eip = (unsigned int)(exceptions[i].fixup);
+			return;
+		}
+	}
+#endif
 
 	/* See Section 6.15 of the IA32 Software Developer's Manual vol 3 */
 	__asm__ ("mov %%cr2, %0" : "=r" (cr2));
@@ -335,6 +354,7 @@ FUNC_NORETURN void page_fault_handler(const NANO_ESF *pEsf)
 #endif
 
 	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, pEsf);
+	CODE_UNREACHABLE;
 }
 _EXCEPTION_CONNECT_CODE(page_fault_handler, IV_PAGE_FAULT);
 #endif /* CONFIG_EXCEPTION_DEBUG */

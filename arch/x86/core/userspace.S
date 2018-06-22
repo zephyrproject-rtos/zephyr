@@ -13,6 +13,10 @@
 /* Exports */
 GTEXT(_x86_syscall_entry_stub)
 GTEXT(_x86_userspace_enter)
+GTEXT(z_arch_user_string_nlen)
+GTEXT(z_arch_user_string_nlen_fault_start)
+GTEXT(z_arch_user_string_nlen_fault_end)
+GTEXT(z_arch_user_string_nlen_fixup)
 
 /* Imports */
 GTEXT(_k_syscall_table)
@@ -81,6 +85,46 @@ _bad_syscall:
 	mov	%esi, %eax
 	mov	$_SYSCALL_BAD, %esi
 	jmp	_id_ok
+
+
+/*
+ * size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
+ */
+SECTION_FUNC(TEXT, z_arch_user_string_nlen)
+	push	%ebp
+	mov	%esp, %ebp
+
+	/* error value, set to -1 initially. This location is -4(%ebp) */
+	push	$-1
+
+	/* Do the strlen operation, based on disassembly of minimal libc */
+	xor	%eax, %eax		/* EAX = 0, length count */
+	mov	0x8(%ebp), %edx		/* EDX base of string */
+
+	/* This code might page fault */
+strlen_loop:
+z_arch_user_string_nlen_fault_start:
+	cmpb	$0x0, (%edx, %eax, 1)	/* *(EDX + EAX) == 0? Could fault. */
+
+z_arch_user_string_nlen_fault_end:
+	je	strlen_done
+	cmp	0xc(%ebp), %eax		/* Max length reached? */
+	je	strlen_done
+	inc	%eax			/* EAX++ and loop again */
+	jmp	strlen_loop
+
+strlen_done:
+	/* Set error value to 0 since we succeeded */
+	movl	$0, -4(%ebp)
+
+z_arch_user_string_nlen_fixup:
+	/* Write error value to err pointer parameter */
+	movl	0x10(%ebp), %ecx
+	pop	%edx
+	movl	%edx, (%ecx)
+
+	pop	%ebp
+	ret
 
 
 /* FUNC_NORETURN void _x86_userspace_enter(k_thread_entry_t user_entry,
