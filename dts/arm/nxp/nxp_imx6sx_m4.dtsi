@@ -241,6 +241,18 @@
 			#gpio-cells = <2>;
 			status = "disabled";
 		};
+
+		mub:mu@4229c000 {
+			compatible = "nxp,imx-mu";
+			reg = <0x4229c000 0x4000>;
+			interrupts = <99 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "MU_B";
+			status = "disabled";
+		};
 	};
 };
 

@@ -32,4 +32,11 @@ config UART_IMX
 
 endif # SERIAL
 
+if IPM
+
+config IPM_IMX
+	def_bool y
+
+endif # IPM
+
 endif # SOC_MCIMX6X_M4
