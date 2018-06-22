@@ -13,7 +13,6 @@ config HAS_DTS_ADC
 
 config HAS_DTS_GPIO
 	bool
-	default n
 	depends on HAS_DTS
 	help
 	  This option specifies that the target platform supports device tree
@@ -21,7 +20,6 @@ config HAS_DTS_GPIO
 
 config HAS_DTS_GPIO_DEVICE
 	bool
-	default n
 	depends on HAS_DTS_GPIO
 	help
 	  This option specifies that the target platform supports device tree
@@ -29,7 +27,6 @@ config HAS_DTS_GPIO_DEVICE
 
 config HAS_DTS_I2C
 	bool
-	default n
 	depends on HAS_DTS
 	help
 	  This option specifies that the target platform supports device tree
@@ -37,7 +34,6 @@ config HAS_DTS_I2C
 
 config HAS_DTS_I2C_DEVICE
 	bool
-	default n
 	depends on HAS_DTS_I2C
 	help
 	  This option specifies that the target platform supports device tree
@@ -45,7 +41,6 @@ config HAS_DTS_I2C_DEVICE
 
 config HAS_DTS_SPI
 	bool
-	default n
 	depends on HAS_DTS
 	help
 	  This option specifies that the target platform supports device tree
@@ -53,7 +48,6 @@ config HAS_DTS_SPI
 
 config HAS_DTS_SPI_DEVICE
 	bool
-	default n
 	depends on HAS_DTS_SPI
 	help
 	  This option specifies that the target platform supports device tree
@@ -61,7 +55,6 @@ config HAS_DTS_SPI_DEVICE
 
 config HAS_DTS_SPI_PINS
 	bool
-	default n
 	help
 	  This option specifies that the target platform supports device tree
 	  configuration for pin definition of spi devices, like sensors or
@@ -69,7 +62,6 @@ config HAS_DTS_SPI_PINS
 
 config HAS_DTS_USB
 	bool
-	default n
 	depends on HAS_DTS
 	help
 	  This option specifies that the target platform supports device tree
@@ -77,7 +69,6 @@ config HAS_DTS_USB
 
 config HAS_DTS_WDT
 	bool
-	default n
 	depends on HAS_DTS
 	help
 	  This option specifies that the target platform supports device tree
