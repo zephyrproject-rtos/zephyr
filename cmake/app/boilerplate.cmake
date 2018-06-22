@@ -318,6 +318,7 @@ foreach(boilerplate_lib ${ZEPHYR_INTERFACE_LIBS_PROPERTY})
   target_link_libraries_ifdef(
     CONFIG_APP_LINK_WITH_${boilerplate_lib_upper_case}
     app
+    PUBLIC
     ${boilerplate_lib}
     )
 endforeach()
