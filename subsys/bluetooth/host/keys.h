@@ -28,7 +28,7 @@ enum {
 
 struct bt_ltk {
 	u8_t			rand[8];
-	u16_t			ediv;
+	u8_t			ediv[2];
 	u8_t			val[16];
 };
 

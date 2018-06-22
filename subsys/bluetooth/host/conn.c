@@ -785,8 +785,8 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 	}
 }
 
-int bt_conn_le_start_encryption(struct bt_conn *conn, u8_t rand[8], u16_t ediv,
-				const u8_t *ltk, size_t len)
+int bt_conn_le_start_encryption(struct bt_conn *conn, u8_t rand[8],
+				u8_t ediv[2], const u8_t *ltk, size_t len)
 {
 	struct bt_hci_cp_le_start_encryption *cp;
 	struct net_buf *buf;
@@ -799,7 +799,7 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, u8_t rand[8], u16_t ediv,
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
 	memcpy(&cp->rand, rand, sizeof(cp->rand));
-	cp->ediv = ediv;
+	memcpy(&cp->ediv, ediv, sizeof(cp->ediv));
 
 	memcpy(cp->ltk, ltk, len);
 	if (len < sizeof(cp->ltk)) {
