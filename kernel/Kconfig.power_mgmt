@@ -8,7 +8,6 @@
 menuconfig SYS_POWER_MANAGEMENT
 	bool
 	prompt "Power management"
-	default n
 	help
 	  This option enables the board to implement extra power management
 	  policies whenever the kernel becomes idle. The kernel informs the
@@ -19,7 +18,6 @@ if SYS_POWER_MANAGEMENT
 config SYS_POWER_LOW_POWER_STATE
 	bool
 	prompt "Low power state"
-	default n
 	depends on SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	help
 	  This option enables the kernel to interface with a power manager
@@ -31,7 +29,6 @@ config SYS_POWER_LOW_POWER_STATE
 config SYS_POWER_DEEP_SLEEP
 	bool
 	prompt "Deep sleep state"
-	default n
 	depends on SYS_POWER_DEEP_SLEEP_SUPPORTED
 	help
 	  This option enables the kernel to interface with a power manager
@@ -45,7 +42,6 @@ config SYS_POWER_DEEP_SLEEP
 config DEVICE_POWER_MANAGEMENT
 	bool
 	prompt "Device power management"
-	default n
 	help
 	  This option enables the device power management interface.  The
 	  interface consists of hook functions implemented by device drivers
@@ -79,7 +75,6 @@ config TICKLESS_IDLE_THRESH
 config TICKLESS_KERNEL
 	bool
 	prompt "Tickless kernel"
-	default n
 	depends on TICKLESS_IDLE
 	help
 	  This option enables a fully event driven kernel. Periodic system
@@ -102,7 +97,6 @@ config TICKLESS_KERNEL_TIME_UNIT_IN_MICRO_SECS
 config BUSY_WAIT_USES_ALTERNATE_CLOCK
 	bool
 	prompt "Busy wait uses alternate clock in tickless kernel mode"
-	default n
 	help
 	  In tickless kernel mode, the system clock will be stopped when
 	  there are no timer events programmed. If the system clock is to

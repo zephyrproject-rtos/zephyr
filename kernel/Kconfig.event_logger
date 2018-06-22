@@ -7,7 +7,6 @@
 menuconfig KERNEL_EVENT_LOGGER
 	bool
 	prompt "Enable kernel event logger features"
-	default n
 	select RING_BUFFER
 	help
 	  This feature enables the usage of the profiling logger. Provides the
@@ -26,7 +25,6 @@ config KERNEL_EVENT_LOGGER_BUFFER_SIZE
 config KERNEL_EVENT_LOGGER_DYNAMIC
 	bool
 	prompt "Kernel event logger dynamic enabling"
-	default n
 	help
 	  If enabled, kernel event logger is not logging any data to the ring buffer
 	  It is up to the application to set the appropriate flags to enable/disable the
@@ -35,7 +33,6 @@ config KERNEL_EVENT_LOGGER_DYNAMIC
 config KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
 	bool
 	prompt "Kernel event logger custom timestamp"
-	default n
 	help
 	  This flag enables the possibility to set the timer function to be used to
 	  populate kernel event logger timestamp. This has to be done at runtime by
@@ -46,14 +43,12 @@ menu "Kernel event logging points"
 config KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	bool
 	prompt "Context switch event logging point"
-	default n
 	help
 	  Enable the context switch event messages.
 
 config KERNEL_EVENT_LOGGER_INTERRUPT
 	bool
 	prompt "Interrupt event logging point"
-	default n
 	help
 	  Enable interrupt event messages. These messages provide the following
 	  information: The time when interrupts occur.
@@ -61,7 +56,6 @@ config KERNEL_EVENT_LOGGER_INTERRUPT
 config KERNEL_EVENT_LOGGER_SLEEP
 	bool
 	prompt "Sleep event logging point"
-	default n
 	depends on SYS_POWER_MANAGEMENT
 	help
 	  Enable low power condition event messages. These messages provide the
@@ -74,7 +68,6 @@ config KERNEL_EVENT_LOGGER_SLEEP
 config KERNEL_EVENT_LOGGER_THREAD
 	bool
 	prompt "Thread event logging point"
-	default n
 	help
 	  Enable thread event messages. These messages provide the following
 	  information:
