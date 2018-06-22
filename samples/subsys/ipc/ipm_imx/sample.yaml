@@ -1,0 +1,10 @@
+sample:
+    description: the sample reads the received data from the Messaging Unit
+        using the IPM and transmits it back unchanged
+    name: i.MX IPM sample
+tests:
+    test:
+        build_only: true
+        filter: CONFIG_SOC_FAMILY_IMX
+        platform_whitelist: udoo_neo_full_m4
+        tags: samples ipm
