@@ -55,7 +55,7 @@
 #endif
 
 OUTPUT_ARCH(arc)
-ENTRY(__start)
+ENTRY(CONFIG_KERNEL_ENTRY)
 
 MEMORY {
 #ifdef FLASH_START

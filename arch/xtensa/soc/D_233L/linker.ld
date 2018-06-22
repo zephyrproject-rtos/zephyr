@@ -81,7 +81,7 @@ PHDRS
 
 
 /*  Default entry point:  */
-ENTRY(_ResetVector)
+ENTRY(CONFIG_KERNEL_ENTRY)
 
 /*  Memory boundary addresses:  */
 _memmap_mem_sram_start = 0x4;
