@@ -494,7 +494,7 @@ static struct shell_module *get_completion_module(char *str,
 	 */
 	str = strchr(str, ' ');
 	if (default_module) {
-		return str ? dest : NULL;
+		return str ? NULL : dest;
 	}
 
 	if (!str) {
