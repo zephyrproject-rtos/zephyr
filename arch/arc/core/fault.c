@@ -18,6 +18,15 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <misc/printk.h>
+#include <exc_handle.h>
+
+#ifdef CONFIG_USERSPACE
+Z_EXC_DECLARE(z_arch_user_string_nlen);
+
+static const struct z_exc_handle exceptions[] = {
+	Z_EXC_HANDLE(z_arch_user_string_nlen)
+};
+#endif
 
 /*
  * @brief Fault handler
@@ -26,14 +35,24 @@
  * and is responsible only for reporting the error. Once reported, it then
  * invokes the user provided routine _SysFatalErrorHandler() which is
  * responsible for implementing the error handling policy.
- *
- * @return This function does not return.
  */
-void _Fault(const NANO_ESF *esf)
+void _Fault(NANO_ESF *esf)
 {
 	u32_t vector, code, parameter;
 	u32_t exc_addr = _arc_v2_aux_reg_read(_ARC_V2_EFA);
 	u32_t ecr = _arc_v2_aux_reg_read(_ARC_V2_ECR);
+
+#ifdef CONFIG_USERSPACE
+	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
+		u32_t start = (u32_t)exceptions[i].start;
+		u32_t end = (u32_t)exceptions[i].end;
+
+		if (esf->pc >= start && esf->pc < end) {
+			esf->pc = (u32_t)(exceptions[i].fixup);
+			return;
+		}
+	}
+#endif
 
 	vector = _ARC_V2_ECR_VECTOR(ecr);
 	code =  _ARC_V2_ECR_CODE(ecr);
