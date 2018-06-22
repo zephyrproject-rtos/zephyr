@@ -47,7 +47,6 @@ def is_num(name):
 
     try:
         int(name)
-        return True
     except ValueError:
         # Require hex constants to be prefixed with 0x in Kconfig files, so
         # that we can tell that e.g. F00 is an undefined symbol reference.
@@ -56,9 +55,10 @@ def is_num(name):
 
         try:
             int(name, 16)
-            return True
         except ValueError:
             return False
+
+    return True
 
 
 def ref_locations_str(sym):
@@ -71,7 +71,7 @@ def ref_locations_str(sym):
         nonlocal msg
 
         while node:
-            if sym in node.referenced():
+            if sym in node.referenced:
                 msg += "\n\n- Referenced at {}:{}:\n\n{}" \
                        .format(node.filename, node.linenr, node)
 
