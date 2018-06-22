@@ -18,6 +18,10 @@ _ASM_FILE_PROLOGUE
 
 GTEXT(_arm_userspace_enter)
 GTEXT(_arm_do_syscall)
+GTEXT(z_arch_user_string_nlen)
+GTEXT(z_arch_user_string_nlen_fault_start)
+GTEXT(z_arch_user_string_nlen_fault_end)
+GTEXT(z_arch_user_string_nlen_fixup)
 GDATA(_kernel)
 
 /* Imports */
@@ -192,3 +196,47 @@ dispatch_syscall:
     mov ip, r8
     orrs ip, ip, #1
     bx ip
+
+
+/*
+ * size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
+ */
+SECTION_FUNC(TEXT, z_arch_user_string_nlen)
+    push {r0, r1, r2, r4, r5, lr}
+
+    /* sp+4 is error value, init to -1 */
+    mov.w r3, #-1
+    str	r3, [sp, #4]
+
+    /* Perform string length calculation */
+    movs r3, #0		/* r3 is the counter */
+
+strlen_loop:
+z_arch_user_string_nlen_fault_start:
+    /* r0 contains the string. r5 = *(r0 + r3]). This could fault. */
+    ldrb r5, [r0, r3]
+
+z_arch_user_string_nlen_fault_end:
+    cbz	r5, strlen_done
+    cmp	r3, r1
+    beq.n strlen_done
+
+    adds r3, #1
+    b.n	strlen_loop
+
+strlen_done:
+    /* Move length calculation from r3 to r0 (return value register) */
+    mov	r0, r3
+
+    /* Clear error value since we succeeded */
+    movs r1, #0
+    str	r1, [sp, #4]
+
+z_arch_user_string_nlen_fixup:
+    /* Write error value to err pointer parameter */
+    ldr	r1, [sp, #4]
+    str	r1, [r2, #0]
+
+    add	sp, #12
+    pop	{r4, r5, pc}
+

@@ -48,6 +48,9 @@ void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *pEsf)
 {
 	switch (reason) {
+	case _NANO_ERR_HW_EXCEPTION:
+		printk("***** Hardware exception *****\n");
+		break;
 #if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_STACK_SENTINEL)
 	case _NANO_ERR_STACK_CHK_FAIL:
 		printk("***** Stack Check Fail! *****\n");
