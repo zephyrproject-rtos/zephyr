@@ -7,11 +7,12 @@ else()
   zephyr_compile_definitions(PERF_OPT)
 endif()
 
+
 if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
   if(CONFIG_X86_IAMCU)
-    zephyr_cc_option(-Qunused-arguments)
+    zephyr_compile_options(-miamcu)
   else()
-    zephyr_cc_option(-mmcu)
+    zephyr_compile_options(-Qunused-arguments)
   endif()
 
   zephyr_cc_option(
