@@ -475,6 +475,123 @@ void _k_object_uninit(void *object)
 	ko->flags &= ~K_OBJ_FLAG_INITIALIZED;
 }
 
+/*
+ * Copy to/from helper functions used in syscall handlers
+ */
+void *z_user_alloc_from_copy(void *src, size_t size)
+{
+	void *dst = NULL;
+	int key;
+
+	key = irq_lock();
+
+	/* Does the caller in user mode have access to read this memory? */
+	if (Z_SYSCALL_MEMORY_READ(src, size)) {
+		goto out_err;
+	}
+
+	dst = z_thread_malloc(size);
+	if (!dst) {
+		printk("out of thread resource pool memory (%zu)", size);
+		goto out_err;
+	}
+
+	memcpy(dst, src, size);
+out_err:
+	irq_unlock(key);
+	return dst;
+}
+
+static int user_copy(void *dst, void *src, size_t size, bool to_user)
+{
+	int ret = EFAULT;
+	int key;
+
+	key = irq_lock();
+
+	/* Does the caller in user mode have access to this memory? */
+	if (to_user ? Z_SYSCALL_MEMORY_WRITE(dst, size) :
+			Z_SYSCALL_MEMORY_READ(src, size)) {
+		goto out_err;
+	}
+
+	memcpy(dst, src, size);
+	ret = 0;
+out_err:
+	irq_unlock(key);
+	return ret;
+}
+
+int z_user_from_copy(void *dst, void *src, size_t size)
+{
+	return user_copy(dst, src, size, false);
+}
+
+int z_user_to_copy(void *dst, void *src, size_t size)
+{
+	return user_copy(dst, src, size, true);
+}
+
+char *z_user_string_alloc_copy(char *src, size_t maxlen)
+{
+	unsigned long actual_len;
+	int key, err;
+	char *ret = NULL;
+
+	key = irq_lock();
+	actual_len = z_user_string_nlen(src, maxlen, &err);
+	if (err) {
+		goto out;
+	}
+	if (actual_len == maxlen) {
+		/* Not NULL terminated */
+		printk("string too long %p (%lu)\n", src, actual_len);
+		goto out;
+	}
+	if (__builtin_uaddl_overflow(actual_len, 1, &actual_len)) {
+		printk("overflow\n");
+		goto out;
+	}
+
+	ret = z_user_alloc_from_copy(src, actual_len);
+out:
+	irq_unlock(key);
+	return ret;
+}
+
+int z_user_string_copy(char *dst, char *src, size_t maxlen)
+{
+	unsigned long actual_len;
+	int key, ret, err;
+
+	key = irq_lock();
+	actual_len = z_user_string_nlen(src, maxlen, &err);
+	if (err) {
+		ret = EFAULT;
+		goto out;
+	}
+	if (actual_len == maxlen) {
+		/* Not NULL terminated */
+		printk("string too long %p (%lu)\n", src, actual_len);
+		ret = EINVAL;
+		goto out;
+	}
+	if (__builtin_uaddl_overflow(actual_len, 1, &actual_len)) {
+		printk("overflow\n");
+		ret = EINVAL;
+		goto out;
+	}
+
+	ret = z_user_from_copy(dst, src, actual_len);
+out:
+	irq_unlock(key);
+	return ret;
+}
+
+/*
+ * Default handlers if otherwise unimplemented
+ */
+
 static u32_t handler_bad_syscall(u32_t bad_id, u32_t arg2, u32_t arg3,
 				  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
 {
