@@ -36,6 +36,7 @@
 		gpio-5 = &gpio5;
 		gpio-6 = &gpio6;
 		led0 = &red_led;
+		mu-b = &mub;
 	};
 
 	chosen {
@@ -68,5 +69,9 @@
 };
 
 &gpio6 {
+	status = "ok";
+};
+
+&mub {
 	status = "ok";
 };
