@@ -9,7 +9,6 @@ config SPI_LOOPBACK_DRV_NAME
 config SPI_LOOPBACK_CS_GPIO
 	bool "SPI port CS pin is controlled via a GPIO port during test"
 	depends on GPIO
-	default n
 
 config SPI_LOOPBACK_CS_CTRL_GPIO_DRV_NAME
 	string
