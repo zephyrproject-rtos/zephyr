@@ -28,7 +28,11 @@ properties:
       category: required
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
-
+    clocks:
+      type: array
+      category: required
+      description: Clock gate information
+      generation: define
     cs-gpios:
       type: compound
       category: optional
