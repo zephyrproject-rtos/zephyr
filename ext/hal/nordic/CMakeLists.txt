@@ -4,10 +4,6 @@ if(CONFIG_HAS_NORDIC_DRIVERS)
   add_subdirectory(drivers)
 endif()
 
-zephyr_sources_ifdef(CONFIG_SOC_SERIES_NRF51X nrfx/mdk/system_nrf51.c)
-zephyr_sources_ifdef(CONFIG_SOC_NRF52832      nrfx/mdk/system_nrf52.c)
-zephyr_sources_ifdef(CONFIG_SOC_NRF52840      nrfx/mdk/system_nrf52840.c)
-
 if(CONFIG_HAS_NRFX)
   zephyr_include_directories(nrfx)
   zephyr_include_directories(nrfx/drivers/include)
@@ -15,7 +11,11 @@ if(CONFIG_HAS_NRFX)
   zephyr_include_directories(nrfx/mdk)
   zephyr_include_directories(.)
 
-  zephyr_sources_ifdef(CONFIG_HAS_NRFX   nrfx_glue.c)
+  zephyr_sources_ifdef(CONFIG_SOC_SERIES_NRF51X nrfx/mdk/system_nrf51.c)
+  zephyr_sources_ifdef(CONFIG_SOC_NRF52832      nrfx/mdk/system_nrf52.c)
+  zephyr_sources_ifdef(CONFIG_SOC_NRF52840      nrfx/mdk/system_nrf52840.c)
+
+  zephyr_sources(nrfx_glue.c)
 
   zephyr_sources_ifdef(CONFIG_NRFX_PRS   nrfx/drivers/prs/nrfx_prs.c)
 
