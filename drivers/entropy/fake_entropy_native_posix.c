@@ -48,6 +48,18 @@ static int entropy_native_posix_get_entropy(struct device *dev, u8_t *buffer,
 	return 0;
 }
 
+static int entropy_native_posix_get_entropy_isr(struct device *dev, u8_t *buf,
+						u16_t len, u32_t flags)
+{
+	ARG_UNUSED(flags);
+
+	/*
+	 * entropy_native_posix_get_entropy() is also safe for ISRs
+	 * and always produces data.
+	 */
+	return entropy_native_posix_get_entropy(dev, buf, len);
+}
+
 static int entropy_native_posix_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -58,7 +70,8 @@ static int entropy_native_posix_init(struct device *dev)
 }
 
 static const struct entropy_driver_api entropy_native_posix_api_funcs = {
-	.get_entropy = entropy_native_posix_get_entropy
+	.get_entropy     = entropy_native_posix_get_entropy,
+	.get_entropy_isr = entropy_native_posix_get_entropy_isr
 };
 
 DEVICE_AND_API_INIT(entropy_native_posix, CONFIG_ENTROPY_NAME,
