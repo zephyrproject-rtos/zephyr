@@ -226,7 +226,7 @@ static inline struct in_addr *if_get_addr(struct net_if *iface)
 	return NULL;
 }
 
-static inline struct net_pkt *prepare_arp(struct net_if *iface,
+static inline struct net_pkt *arp_prepare(struct net_if *iface,
 					  struct in_addr *next_addr,
 					  struct arp_entry *entry,
 					  struct net_pkt *pending)
@@ -400,7 +400,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 			entry = NULL;
 		}
 
-		req = prepare_arp(net_pkt_iface(pkt), addr, entry, pkt);
+		req = arp_prepare(net_pkt_iface(pkt), addr, entry, pkt);
 
 		if (!entry) {
 			/* We cannot send the packet, the ARP cache is full
@@ -462,7 +462,7 @@ static inline void arp_update(struct net_if *iface,
 	}
 }
 
-static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
+static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 						struct net_pkt *req)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
@@ -574,7 +574,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 #endif /* CONFIG_NET_DEBUG_ARP */
 
 		/* Send reply */
-		reply = prepare_arp_reply(net_pkt_iface(pkt), pkt);
+		reply = arp_prepare_reply(net_pkt_iface(pkt), pkt);
 		if (reply) {
 			net_if_queue_tx(net_pkt_iface(reply), reply);
 		} else {
