@@ -24,5 +24,3 @@ endforeach()
 generate_inc_file_for_target(app src/index.html ${gen_dir}/index.html.gz.inc --gzip)
 generate_inc_file_for_target(app src/style.css ${gen_dir}/style.css.gz.inc --gzip)
 generate_inc_file_for_target(app src/favicon.ico ${gen_dir}/favicon.ico.gz.inc --gzip)
-
-target_link_libraries_ifdef(CONFIG_MBEDTLS app mbedTLS)
