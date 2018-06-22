@@ -10,7 +10,7 @@
  */
 
 #ifndef __ETHERNET_MGMT_H__
-#define __ETHERNET_MGMT_H_
+#define __ETHERNET_MGMT_H__
 
 #include <net/ethernet.h>
 #include <net/net_mgmt.h>
