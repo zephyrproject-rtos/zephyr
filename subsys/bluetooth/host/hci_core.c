@@ -2843,7 +2843,7 @@ static void le_ltk_request(struct net_buf *buf)
 #if !defined(CONFIG_BT_SMP_SC_ONLY)
 	if (conn->le.keys && (conn->le.keys->keys & BT_KEYS_SLAVE_LTK) &&
 	    !memcmp(conn->le.keys->slave_ltk.rand, &evt->rand, 8) &&
-	    conn->le.keys->slave_ltk.ediv == evt->ediv) {
+	    !memcmp(conn->le.keys->slave_ltk.ediv, &evt->ediv, 2)) {
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
 					sizeof(*cp));
 		if (!buf) {

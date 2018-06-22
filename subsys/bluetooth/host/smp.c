@@ -835,7 +835,7 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 		return;
 	}
 
-	keys->ltk.ediv = 0;
+	memset(keys->ltk.ediv, 0, sizeof(keys->ltk.ediv));
 	memset(keys->ltk.rand, 0, sizeof(keys->ltk.rand));
 	keys->enc_size = smp->enc_key_size;
 
@@ -1676,8 +1676,8 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 		struct bt_smp_master_ident *ident;
 		struct net_buf *buf;
 		u8_t key[16];
-		u64_t rand;
-		u16_t ediv;
+		u8_t rand[8];
+		u8_t ediv[2];
 
 		bt_rand(key, sizeof(key));
 		bt_rand(&rand, sizeof(rand));
@@ -1709,8 +1709,8 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 		}
 
 		ident = net_buf_add(buf, sizeof(*ident));
-		ident->rand = rand;
-		ident->ediv = ediv;
+		memcpy(ident->rand, rand, sizeof(ident->rand));
+		memcpy(ident->ediv, ediv, sizeof(ident->ediv));
 
 		smp_send(smp, buf, ident_sent);
 
@@ -1719,8 +1719,9 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 
 			memcpy(keys->slave_ltk.val, key,
 			       sizeof(keys->slave_ltk.val));
-			memcpy(keys->slave_ltk.rand, &rand, sizeof(rand));
-			keys->slave_ltk.ediv = ediv;
+			memcpy(keys->slave_ltk.rand, rand, sizeof(rand));
+			memcpy(keys->slave_ltk.ediv, ediv,
+			       sizeof(keys->slave_ltk.ediv));
 		}
 	}
 }
@@ -1998,6 +1999,8 @@ static u8_t legacy_pairing_random(struct bt_smp *smp)
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->role == BT_HCI_ROLE_MASTER) {
+		u8_t ediv[2], rand[8];
+
 		/* No need to store master STK */
 		err = smp_s1(smp->tk, smp->rrnd, smp->prnd, tmp);
 		if (err) {
@@ -2005,7 +2008,9 @@ static u8_t legacy_pairing_random(struct bt_smp *smp)
 		}
 
 		/* Rand and EDiv are 0 for the STK */
-		if (bt_conn_le_start_encryption(conn, 0, 0, tmp,
+		memset(ediv, 0, sizeof(ediv));
+		memset(rand, 0, sizeof(rand));
+		if (bt_conn_le_start_encryption(conn, rand, ediv, tmp,
 						get_encryption_key_size(smp))) {
 			BT_ERR("Failed to start encryption");
 			return BT_SMP_ERR_UNSPECIFIED;
@@ -2123,8 +2128,8 @@ static u8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
-		keys->ltk.ediv = req->ediv;
-		memcpy(keys->ltk.rand, &req->rand, sizeof(req->rand));
+		memcpy(keys->ltk.ediv, req->ediv, sizeof(keys->ltk.ediv));
+		memcpy(keys->ltk.rand, req->rand, sizeof(req->rand));
 
 		smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
 	}
@@ -3325,6 +3330,7 @@ static u8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    smp->chan.chan.conn->role == BT_HCI_ROLE_MASTER) {
 		u8_t e[16], r[16], enc_size;
+		u8_t ediv[2], rand[8];
 
 		memset(r, 0, sizeof(r));
 
@@ -3353,7 +3359,10 @@ static u8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 
 		enc_size = get_encryption_key_size(smp);
 
-		if (bt_conn_le_start_encryption(smp->chan.chan.conn, 0, 0,
+		/* Rand and EDiv are 0 */
+		memset(ediv, 0, sizeof(ediv));
+		memset(rand, 0, sizeof(rand));
+		if (bt_conn_le_start_encryption(smp->chan.chan.conn, rand, ediv,
 						smp->tk, enc_size) < 0) {
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
@@ -4384,7 +4393,8 @@ void bt_smp_update_keys(struct bt_conn *conn)
 		       sizeof(conn->le.keys->ltk.val));
 		memset(conn->le.keys->ltk.rand, 0,
 		       sizeof(conn->le.keys->ltk.rand));
-		conn->le.keys->ltk.ediv = 0;
+		memset(conn->le.keys->ltk.ediv, 0,
+		       sizeof(conn->le.keys->ltk.ediv));
 	}
 }
 
