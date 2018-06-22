@@ -2913,6 +2913,13 @@ class Symbol(object):
       parent dependencies are automatically propagated to the conditions of
       properties, so normally it's redundant to check the direct dependencies.
 
+    referenced:
+      A set() with all symbols and choices referenced in the properties and
+      property conditions of the symbol.
+
+      Also includes dependencies inherited from surrounding menus and if's.
+      Choices appear in the dependencies of choice symbols.
+
     env_var:
       If the Symbol has an 'option env="FOO"' option, this contains the name
       ("FOO") of the environment variable. None for symbols without no
@@ -3333,6 +3340,17 @@ class Symbol(object):
         if self.user_value is not None:
             self.user_value = None
             self._rec_invalidate_if_has_prompt()
+
+    @property
+    def referenced(self):
+        """
+        See the class documentation.
+        """
+        res = set()
+        for node in self.nodes:
+            res |= node.referenced
+
+        return res
 
     def __repr__(self):
         """
@@ -3762,6 +3780,12 @@ class Choice(object):
     direct_dep:
       See Symbol.direct_dep.
 
+    referenced:
+      A set() with all symbols referenced in the properties and property
+      conditions of the choice.
+
+      Also includes dependencies inherited from surrounding menus and if's.
+
     is_optional:
       True if the choice has the 'optional' flag set on it and can be in
       n mode.
@@ -3910,6 +3934,17 @@ class Choice(object):
         if self.user_value is not None or self.user_selection:
             self.user_value = self.user_selection = None
             self._rec_invalidate()
+
+    @property
+    def referenced(self):
+        """
+        See the class documentation.
+        """
+        res = set()
+        for node in self.nodes:
+            res |= node.referenced
+
+        return res
 
     def __repr__(self):
         """
@@ -4147,6 +4182,13 @@ class MenuNode(object):
       'visible if' dependencies are recursively propagated to the prompts of
       symbols and choices within the menu.
 
+    referenced:
+      A set() with all symbols and choices referenced in the properties and
+      property conditions of the menu node.
+
+      Also includes dependencies inherited from surrounding menus and if's.
+      Choices appear in the dependencies of choice symbols.
+
     is_menuconfig:
       Set to True if the children of the menu node should be displayed in a
       separate menu. This is the case for the following items:
@@ -4198,15 +4240,14 @@ class MenuNode(object):
         self.implies = []
         self.ranges = []
 
+    @property
     def referenced(self):
         """
-        Returns a set() of all symbols and choices referenced in the properties
-        and property conditions of this menu node.
-
-        Also includes dependencies inherited from surrounding menus and if's.
-        Choices appear in the dependencies of choice symbols.
+        See the class documentation.
         """
-        res = set()
+        # self.dep is included to catch dependencies from a lone 'depends on'
+        # when there are no properties to propagate it to
+        res = expr_items(self.dep)
 
         if self.prompt:
             res |= expr_items(self.prompt[1])
@@ -4230,10 +4271,6 @@ class MenuNode(object):
             res.add(low)
             res.add(high)
             res |= expr_items(cond)
-
-        # Need this to catch dependencies from a lone 'depends on' when there
-        # are no properties to propagate it to
-        res |= expr_items(self.dep)
 
         return res
 
