@@ -709,13 +709,10 @@ set_property(TARGET
   ${ZEPHYR_INCLUDE_DIRS}
   )
 
-get_property(E_KERNEL_ENTRY GLOBAL PROPERTY E_KERNEL_ENTRY)
-
 set(zephyr_lnk
   ${LINKERFLAGPREFIX},-Map=${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
   -u_OffsetAbsSyms
   -u_ConfigAbsSyms
-  ${E_KERNEL_ENTRY}
   ${LINKERFLAGPREFIX},--start-group
   ${LINKERFLAGPREFIX},--whole-archive
   ${ZEPHYR_LIBS_PROPERTY}

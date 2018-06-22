@@ -145,6 +145,8 @@ PHDRS
 _rom_store_table = 0;
 PROVIDE(_memmap_vecbase_reset = XCHAL_VECBASE_RESET_PADDR_SRAM);
 
+ENTRY(CONFIG_KERNEL_ENTRY)
+
 /* Various memory-map dependent cache attribute settings: */
 _memmap_cacheattr_wb_base = 0x44024000;
 _memmap_cacheattr_wt_base = 0x11021000;

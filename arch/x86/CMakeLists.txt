@@ -24,8 +24,6 @@ endif()
 zephyr_cc_option_ifdef (CONFIG_LTO         -flto)
 zephyr_cc_option_ifndef(CONFIG_SSE_FP_MATH -mno-sse)
 
-set_property(GLOBAL PROPERTY E_KERNEL_ENTRY  -e${CONFIG_KERNEL_ENTRY})
-
 if(CMAKE_VERBOSE_MAKEFILE)
   set(GENIDT_EXTRA_ARGS --verbose)
 else()

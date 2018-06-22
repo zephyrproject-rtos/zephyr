@@ -55,6 +55,7 @@ PHDRS
 
 /*  Default entry point:  */
 PROVIDE ( _ResetVector = 0x40000400 );
+ENTRY(CONFIG_KERNEL_ENTRY)
 
 _rom_store_table = 0;
 

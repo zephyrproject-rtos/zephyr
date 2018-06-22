@@ -61,6 +61,8 @@
 	#define MMU_PAGE_ALIGN
 #endif
 
+ENTRY(CONFIG_KERNEL_ENTRY)
+
 /* SECTIONS definitions */
 SECTIONS
 	{
