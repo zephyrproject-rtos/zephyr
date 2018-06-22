@@ -18,7 +18,6 @@ config JSON_LIBRARY
 config RING_BUFFER
 	bool
 	prompt "Enable ring buffers"
-	default n
 	help
 	  Enable usage of ring buffers. This is similar to kernel FIFOs but ring
 	  buffers manage their own buffer memory and can store arbitrary data.
@@ -27,7 +26,6 @@ config RING_BUFFER
 config BASE64
 	bool
 	prompt "Enable base64 encoding and decoding"
-	default n
 	help
 	  Enable base64 encoding and decoding functionality
 

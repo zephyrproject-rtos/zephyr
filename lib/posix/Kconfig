@@ -7,7 +7,6 @@
 config PTHREAD_IPC
 	bool
 	prompt "POSIX pthread IPC API"
-	default n
 	help
 	  This enables a mostly-standards-compliant implementation of
 	  the pthread mutex, condition variable and barrier IPC
@@ -41,7 +40,6 @@ config MAX_TIMER_COUNT
 config POSIX_MQUEUE
 	bool
 	prompt "Enable POSIX message queue"
-	default n
 	help
 	  This enabled POSIX message queue related APIs.
 
@@ -75,7 +73,6 @@ if FILE_SYSTEM
 config POSIX_FS
 	bool
 	prompt "Enable POSIX file system API support"
-	default n
 	help
 	  This enabled POSIX style file system related APIs.
 
