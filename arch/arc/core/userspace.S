@@ -47,9 +47,10 @@
 GTEXT(_arc_userspace_enter)
 GTEXT(_arc_do_syscall)
 GTEXT(_user_thread_entry_wrapper)
-
-
-
+GTEXT(z_arch_user_string_nlen)
+GTEXT(z_arch_user_string_nlen_fault_start)
+GTEXT(z_arch_user_string_nlen_fault_end)
+GTEXT(z_arch_user_string_nlen_fixup)
 /*
  * @brief Wrapper for _thread_entry in the case of user thread
  *
@@ -211,3 +212,56 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 	mov r6, 0
 
 	rtie
+
+
+/*
+ * size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
+ */
+SECTION_FUNC(TEXT, z_arch_user_string_nlen)
+	/* int err; */
+	sub_s sp,sp,0x4
+
+	/* Initial error value (-1 failure), store at [sp,0] */
+	mov_s r3, -1
+	st_s r3, [sp, 0]
+
+	/* Loop setup.
+	 * r12 (position locator) = s - 1
+	 * r0 (length counter return value)) = 0
+	 * lp_count = maxsize + 1
+	 * */
+	sub r12, r0, 0x1
+	mov_s r0, 0
+	add_s r1, r1, 1
+	mov lp_count, r1
+
+strlen_loop:
+z_arch_user_string_nlen_fault_start:
+	/* is the byte at ++r12 a NULL? if so, we're done. Might fault! */
+	ldb.aw r1, [r12, 1]
+
+z_arch_user_string_nlen_fault_end:
+	brne_s r1, 0, not_null
+
+strlen_done:
+	/* Success, set err to 0 */
+	mov_s r1, 0
+	st_s r1, [sp, 0]
+
+z_arch_user_string_nlen_fixup:
+	/* *err_arg = err; Pop stack and return */
+	ld_s r1, [sp, 0]
+	add_s sp, sp, 4
+	j_s.d [blink]
+	st_s r1, [r2, 0]
+
+not_null:
+	/* check if we've hit the maximum, if so we're done. */
+	brne.d.nt lp_count, 0x1, inc_len
+	sub lp_count, lp_count, 0x1
+	b_s strlen_done
+
+inc_len:
+	/* increment length measurement, loop again */
+	add_s r0, r0, 1
+	b_s strlen_loop
