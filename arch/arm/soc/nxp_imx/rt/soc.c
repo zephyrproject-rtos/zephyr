@@ -90,6 +90,11 @@ static ALWAYS_INLINE void clkInit(void)
 	CLOCK_SetDiv(kCLOCK_UartDiv, 0); /* Set UART divider to 1 */
 #endif
 
+	/* Keep the system clock running so SYSTICK can wake up the system from
+	 * wfi.
+	 */
+	CLOCK_SetMode(kCLOCK_ModeRun);
+
 }
 
 /**
