@@ -112,12 +112,12 @@ static void prepare_thread_to_run(struct k_thread *thread, void *data)
 }
 #endif /* CONFIG_POLL */
 
+#ifdef CONFIG_POLL
 static inline void handle_poll_events(struct k_queue *queue, u32_t state)
 {
-#ifdef CONFIG_POLL
 	_handle_obj_poll_events(&queue->poll_events, state);
-#endif
 }
+#endif
 
 void _impl_k_queue_cancel_wait(struct k_queue *queue)
 {

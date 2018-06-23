@@ -62,10 +62,12 @@ static inline int is_metairq(struct k_thread *thread)
 #endif
 }
 
+#if CONFIG_ASSERT
 static inline int _is_thread_dummy(struct k_thread *thread)
 {
 	return !!(thread->base.thread_state & _THREAD_DUMMY);
 }
+#endif
 
 static inline int _is_idle(struct k_thread *thread)
 {
