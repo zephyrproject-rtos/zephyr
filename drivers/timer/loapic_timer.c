@@ -233,6 +233,7 @@ static inline void divide_configuration_register_set(void)
 }
 #endif
 
+#if defined(CONFIG_TICKLESS_KERNEL) || defined(CONFIG_TICKLESS_IDLE)
 /**
  *
  * @brief Get the value from the current count register
@@ -251,6 +252,7 @@ static inline u32_t current_count_register_get(void)
 	return read_x2apic(LOAPIC_TIMER_CCR >> 4);
 #endif
 }
+#endif
 
 #if defined(CONFIG_TICKLESS_IDLE)
 /**
