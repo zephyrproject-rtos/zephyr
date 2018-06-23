@@ -172,7 +172,7 @@ static struct usb_dev_priv {
 static void usb_print_setup(struct usb_setup_packet *setup)
 {
 	/* avoid compiler warning if SYS_LOG_DBG is not defined */
-	setup = setup;
+	ARG_UNUSED(setup);
 
 	SYS_LOG_DBG("SETUP\n");
 	SYS_LOG_DBG("%x %x %x %x %x\n",
@@ -393,7 +393,7 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 	bool found = false;
 
 	/*Avoid compiler warning until this is used for something*/
-	lang_id = lang_id;
+	ARG_UNUSED(lang_id);
 
 	type = GET_DESC_TYPE(type_index);
 	index = GET_DESC_INDEX(type_index);
