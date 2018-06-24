@@ -54,16 +54,15 @@ static int gpio_sam_config(struct device *dev, int access_op, u32_t pin,
 		/* Enable the additional interrupt modes. */
 		pio->PIO_AIMER = mask;
 
-		switch (flags) {
-		case GPIO_INT_LEVEL:
-			pio->PIO_LSR = mask;
-			break;
-		case GPIO_INT_EDGE:
+		/* Set wether the interrupt is edge or level triggered. */
+		if (flags & GPIO_INT_EDGE) {
 			pio->PIO_ESR = mask;
-			break;
-		case GPIO_INT_DOUBLE_EDGE:
-			return -ENOTSUP;
-		default:
+		} else {
+			/* This is GPIO_INT_LEVEL. */
+			pio->PIO_LSR = mask;
+		}
+
+		if (flags & GPIO_INT_DOUBLE_EDGE) {
 			return -ENOTSUP;
 		}
 

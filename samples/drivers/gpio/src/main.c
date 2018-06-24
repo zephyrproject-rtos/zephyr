@@ -114,6 +114,12 @@
  *
  * An LED should be connected to pin IO4, and either a jumper cable or
  * button should be connected between IO2 and GND.
+ *
+ *
+ * SAM E70 Xplained
+ * ----------------
+ *
+ * Toggling LED0
  */
 
 #include <zephyr.h>
@@ -123,6 +129,7 @@
 #include <device.h>
 #include <gpio.h>
 #include <misc/util.h>
+#include <board.h>
 
 #if defined(CONFIG_SOC_QUARK_SE_C1000_SS)
 #define GPIO_OUT_PIN	2
@@ -148,20 +155,33 @@
 #define GPIO_OUT_PIN	4
 #define GPIO_INT_PIN	2
 #define GPIO_NAME	"GPIO_"
+#elif defined(CONFIG_BOARD_SAM_E70_XPLAINED)
+#define GPIO_OUT_PIN	LED0_GPIO_PIN
+#define GPIO_INT_PIN	SW0_GPIO_PIN
+#define GPIO_NAME	"GPIO_"
 #endif
 
 #if defined(CONFIG_GPIO_DW_0)
-#define GPIO_DRV_NAME CONFIG_GPIO_DW_0_NAME
+#define GPIO_DRV_OUTPUT_NAME CONFIG_GPIO_DW_0_NAME
+#define GPIO_DRV_INPUT_NAME CONFIG_GPIO_DW_0_NAME
 #elif defined(CONFIG_GPIO_QMSI_0) && defined(CONFIG_SOC_QUARK_SE_C1000)
-#define GPIO_DRV_NAME CONFIG_GPIO_QMSI_0_NAME
+#define GPIO_DRV_OUTPUT_NAME CONFIG_GPIO_QMSI_0_NAME
+#define GPIO_DRV_INPUT_NAME CONFIG_GPIO_QMSI_0_NAME
 #elif defined(CONFIG_GPIO_QMSI_SS_0)
-#define GPIO_DRV_NAME CONFIG_GPIO_QMSI_SS_0_NAME
+#define GPIO_DRV_OUTPUT_NAME CONFIG_GPIO_QMSI_SS_0_NAME
+#define GPIO_DRV_INPUT_NAME CONFIG_GPIO_QMSI_SS_0_NAME
 #elif defined(CONFIG_GPIO_ATMEL_SAM3)
-#define GPIO_DRV_NAME CONFIG_GPIO_ATMEL_SAM3_PORTB_DEV_NAME
+#define GPIO_DRV_OUTPUT_NAME CONFIG_GPIO_ATMEL_SAM3_PORTB_DEV_NAME
+#define GPIO_DRV_INPUT_NAME CONFIG_GPIO_ATMEL_SAM3_PORTB_DEV_NAME
 #elif defined(CONFIG_GPIO_ESP32)
-#define GPIO_DRV_NAME CONFIG_GPIO_ESP32_0_NAME
+#define GPIO_DRV_OUTPUT_NAME CONFIG_GPIO_ESP32_0_NAME
+#define GPIO_DRV_INPUT_NAME
+#elif defined(CONFIG_BOARD_SAM_E70_XPLAINED)
+#define GPIO_DRV_OUTPUT_NAME CONFIG_GPIO_SAM_PORTC_LABEL
+#define GPIO_DRV_INPUT_NAME CONFIG_GPIO_SAM_PORTA_LABEL
 #else
-#define GPIO_DRV_NAME "GPIO_0"
+#define GPIO_DRV_OUTPUT_NAME "GPIO_0"
+#define GPIO_DRV_INPUT_NAME "GPIO_0"
 #endif
 
 void gpio_callback(struct device *port,
@@ -174,30 +194,37 @@ static struct gpio_callback gpio_cb;
 
 void main(void)
 {
-	struct device *gpio_dev;
+	struct device *gpio_out_dev;
+	struct device *gpio_in_dev;
 	int ret;
 	int toggle = 1;
 
-	gpio_dev = device_get_binding(GPIO_DRV_NAME);
-	if (!gpio_dev) {
-		printk("Cannot find %s!\n", GPIO_DRV_NAME);
+	gpio_out_dev = device_get_binding(GPIO_DRV_OUTPUT_NAME);
+	if (!gpio_out_dev) {
+		printk("Cannot find %s!\n", GPIO_DRV_OUTPUT_NAME);
+		return;
+	}
+
+	gpio_in_dev = device_get_binding(GPIO_DRV_INPUT_NAME);
+	if (!gpio_in_dev) {
+		printk("Cannot find %s!\n", GPIO_DRV_INPUT_NAME);
 		return;
 	}
 
 	/* Setup GPIO output */
-	ret = gpio_pin_configure(gpio_dev, GPIO_OUT_PIN, (GPIO_DIR_OUT));
+	ret = gpio_pin_configure(gpio_out_dev, GPIO_OUT_PIN, (GPIO_DIR_OUT));
 	if (ret) {
 		printk("Error configuring " GPIO_NAME "%d!\n", GPIO_OUT_PIN);
 	}
 
 	/* Setup GPIO input, and triggers on rising edge. */
 #ifdef CONFIG_SOC_CC2650
-	ret = gpio_pin_configure(gpio_dev, GPIO_INT_PIN,
+	ret = gpio_pin_configure(gpio_in_dev, GPIO_INT_PIN,
 				 (GPIO_DIR_IN | GPIO_INT |
 				  GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH |
 				  GPIO_INT_DEBOUNCE | GPIO_PUD_PULL_UP));
 #else
-	ret = gpio_pin_configure(gpio_dev, GPIO_INT_PIN,
+	ret = gpio_pin_configure(gpio_in_dev, GPIO_INT_PIN,
 				 (GPIO_DIR_IN | GPIO_INT |
 				  GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH |
 				  GPIO_INT_DEBOUNCE));
@@ -208,12 +235,12 @@ void main(void)
 
 	gpio_init_callback(&gpio_cb, gpio_callback, BIT(GPIO_INT_PIN));
 
-	ret = gpio_add_callback(gpio_dev, &gpio_cb);
+	ret = gpio_add_callback(gpio_in_dev, &gpio_cb);
 	if (ret) {
 		printk("Cannot setup callback!\n");
 	}
 
-	ret = gpio_pin_enable_callback(gpio_dev, GPIO_INT_PIN);
+	ret = gpio_pin_enable_callback(gpio_in_dev, GPIO_INT_PIN);
 	if (ret) {
 		printk("Error enabling callback!\n");
 	}
@@ -221,7 +248,7 @@ void main(void)
 	while (1) {
 		printk("Toggling " GPIO_NAME "%d\n", GPIO_OUT_PIN);
 
-		ret = gpio_pin_write(gpio_dev, GPIO_OUT_PIN, toggle);
+		ret = gpio_pin_write(gpio_out_dev, GPIO_OUT_PIN, toggle);
 		if (ret) {
 			printk("Error set " GPIO_NAME "%d!\n", GPIO_OUT_PIN);
 		}
