@@ -1,0 +1,13 @@
+# Kconfig - DMA configuration options
+#
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig DMA_AXI_DMAC
+	bool "Enable AXI-DMAC DMA driver"
+	default n
+	help
+	  AXI-DMAC DMA driver.
