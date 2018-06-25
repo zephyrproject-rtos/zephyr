@@ -719,7 +719,6 @@ set_property(TARGET
 
 set(zephyr_lnk
   ${LINKERFLAGPREFIX},-Map=${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
-  -u_OffsetAbsSyms
   -u_ConfigAbsSyms
   ${LINKERFLAGPREFIX},--start-group
   ${LINKERFLAGPREFIX},--whole-archive
