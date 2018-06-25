@@ -211,6 +211,25 @@ void _timer_idle_enter(s32_t sys_ticks)
 
 
 #ifdef CONFIG_TICKLESS_KERNEL
+/*
+ * Set RTC Counter Compare (CC) register to max value
+ * and update the _sys_clock_tick_count.
+ */
+static inline void program_max_cycles(void)
+{
+	u32_t max_cycles = _get_max_clock_time();
+
+	_sys_clock_tick_count = _get_elapsed_clock_time();
+	/* Update rtc_past to track rtc timer count*/
+	rtc_past = (_sys_clock_tick_count *
+			sys_clock_hw_cycles_per_tick) & RTC_MASK;
+
+	/* Programe RTC compare register to generate interrupt*/
+	rtc_compare_set(rtc_past +
+			(max_cycles * sys_clock_hw_cycles_per_tick));
+
+}
+
 
 /**
  * @brief provides total systicks programmed.
@@ -339,7 +358,7 @@ void _enable_sys_clock(void)
 {
 	if (!expected_sys_ticks) {
 		/* Programe sys tick to Maximum possible value*/
-		_set_time(_get_max_clock_time());
+		program_max_cycles();
 	}
 }
 
@@ -462,6 +481,12 @@ void rtc1_nrf5_isr(void *arg)
 #endif
 
 #ifdef CONFIG_TICKLESS_KERNEL
+	if (!expected_sys_ticks) {
+		if (_sys_clock_always_on) {
+			program_max_cycles();
+		}
+		return;
+	}
 	_sys_idle_elapsed_ticks = expected_sys_ticks;
 	/* Initialize expected sys tick,
 	 * It will be later updated based on next timeout.
@@ -469,6 +494,11 @@ void rtc1_nrf5_isr(void *arg)
 	expected_sys_ticks = 0;
 	/* Anounce elapsed of _sys_idle_elapsed_ticks systicks*/
 	_sys_clock_tick_announce();
+
+	/* _sys_clock_tick_announce() could cause new programming */
+	if (!expected_sys_ticks && _sys_clock_always_on) {
+		program_max_cycles();
+	}
 #else
 	rtc_announce_set_next();
 #endif
