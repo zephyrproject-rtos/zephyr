@@ -342,11 +342,11 @@ config BOOTLOADER_ESP_IDF
 	bool
 	prompt "ESP-IDF bootloader support"
 	default n
+	depends on SOC_ESP32
 	help
 	  This option will trigger the compilation of the ESP-IDF booloader
 	  inside the build folder.
 	  At flash time, the bootloader will be flashed with the zephyr image
-	depends on SOC_ESP32
 
 config BOOTLOADER_KEXEC
 	bool
