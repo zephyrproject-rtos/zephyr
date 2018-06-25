@@ -10,11 +10,12 @@
 
 #define CID_ZEPHYR 0x0002
 
-enum lightness { ONOFF = 0x01, LEVEL, ACTUAL, LINEAR, CTL, IGNORE = 0xFF };
-enum temperature { ONOFF_t = 0x01, LEVEL_t, CTL_t, IGNORE_t = 0xFF };
+enum lightness { ONPOWERUP = 0x01, ONOFF, LEVEL, ACTUAL, LINEAR, CTL, IGNORE};
+enum temperature { ONOFF_TEMP = 0x01, LEVEL_TEMP, CTL_TEMP, IGNORE_TEMP};
 
 struct generic_onoff_state {
 	u8_t onoff;
+	u8_t previous;
 	u8_t model_instance;
 	u8_t last_tid;
 	u16_t last_tx_addr;
