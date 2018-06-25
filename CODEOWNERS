@@ -18,6 +18,7 @@
 /arch/arm/                                @MaureenHelm @galak @ioannisg
 /arch/arm/core/cortex_m/cmse/             @ioannisg
 /arch/arm/include/cortex_m/cmse.h         @ioannisg
+/arch/arm/core/cortex_r/                  @MaureenHelm @galak @ioannisg @bbolen
 /arch/common/                             @andrewboie @ioannisg @andyross
 /arch/x86_64/                             @andyross
 /soc/arc/snps_*/                          @vonhust @ruuddw
@@ -183,6 +184,7 @@
 /dts/riscv/rv32m1*                        @MaureenHelm
 /dts/riscv/riscv32-fe310.dtsi             @nategraff-sifive
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
+/dts/arm/armv7-r.dtsi                     @bbolen
 /dts/xtensa/xtensa.dtsi                   @ydamigos
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter

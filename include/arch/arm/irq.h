@@ -34,6 +34,14 @@ extern int z_arch_irq_is_enabled(unsigned int irq);
 
 extern void _IntExit(void);
 
+#if defined(CONFIG_ARMV7_R)
+static ALWAYS_INLINE void z_IntLibInit(void)
+{
+}
+#else
+extern void z_IntLibInit(void);
+#endif
+
 /* macros convert value of it's argument to a string */
 #define DO_TOSTR(s) #s
 #define TOSTR(s) DO_TOSTR(s)

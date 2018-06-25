@@ -53,6 +53,8 @@ extern "C" {
 		: "memory"); \
 	CODE_UNREACHABLE; \
 } while (false)
+#elif defined(CONFIG_ARMV7_R)
+/* Pick up the default definition in kernel.h for now */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
