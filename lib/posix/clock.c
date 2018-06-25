@@ -58,6 +58,40 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts)
 }
 
 /**
+ * @brief Set the time of the specified clock.
+ *
+ * See IEEE 1003.1.
+ *
+ * Note that only the `CLOCK_REALTIME` clock can be set using this
+ * call.
+ */
+int clock_settime(clockid_t clock_id, const struct timespec *tp)
+{
+	struct timespec base;
+	int res;
+
+	if (clock_id != CLOCK_REALTIME) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	res = clock_gettime(clock_id, &base);
+	if (res != 0) {
+		return res;
+	}
+
+	s64_t delta = (s64_t)NSEC_PER_SEC * (tp->tv_sec - base.tv_sec) +
+		(tp->tv_nsec - base.tv_nsec);
+
+	base.tv_sec = delta / NSEC_PER_SEC;
+	base.tv_nsec = delta % NSEC_PER_SEC;
+
+	rt_clock_base = base;
+
+	return 0;
+}
+
+/**
  * @brief Get current real time.
  *
  * See IEEE 1003.1
