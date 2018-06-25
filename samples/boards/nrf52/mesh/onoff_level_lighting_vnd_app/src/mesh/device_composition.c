@@ -122,11 +122,27 @@ static void state_binding(u8_t lightness, u8_t temperature)
 	float tmp;
 
 	switch (lightness) {
+	case ONPOWERUP: /* Lightness update as per Generic OnPowerUp state */
+		if (gen_onoff_srv_root_user_data.onoff == 0x00) {
+			light_lightness_srv_user_data.actual = 0;
+			light_lightness_srv_user_data.linear = 0;
+		} else if (gen_onoff_srv_root_user_data.onoff == 0x01) {
+			gen_level_srv_root_user_data.level =
+				light_lightness_srv_user_data.actual - 32768;
+
+			tmp = ((float)
+			       light_lightness_srv_user_data.actual / 65535);
+			light_lightness_srv_user_data.linear =
+				(u16_t) (65535 * tmp * tmp);
+
+			light_lightness_srv_user_data.last =
+				light_lightness_srv_user_data.actual;
+		}
+		break;
 	case ONOFF: /* Lightness update as per Generic OnOff (root) state */
 		if (gen_onoff_srv_root_user_data.onoff == 0x00) {
 			light_lightness_srv_user_data.actual = 0;
 			light_lightness_srv_user_data.linear = 0;
-			light_lightness_srv_user_data.def = 0;
 		} else if (gen_onoff_srv_root_user_data.onoff == 0x01) {
 			if (light_lightness_srv_user_data.def == 0) {
 				light_lightness_srv_user_data.actual =
@@ -204,8 +220,8 @@ static void state_binding(u8_t lightness, u8_t temperature)
 		light_lightness_srv_user_data.actual;
 
 	switch (temperature) {
-	case ONOFF_t:	/* Temp. update as per Light CTL temp. default state */
-	case CTL_t:	/* Temp. update as per Light CTL temp. state */
+	case ONOFF_TEMP:/* Temp. update as per Light CTL temp. default state */
+	case CTL_TEMP:	/* Temp. update as per Light CTL temp. state */
 		/* Mesh Model Specification 6.1.3.1.1 2nd formula start */
 		tmp = (light_ctl_srv_user_data.temp -
 		       light_ctl_srv_user_data.temp_range_min) * 65535;
@@ -214,7 +230,7 @@ static void state_binding(u8_t lightness, u8_t temperature)
 		gen_level_srv_s0_user_data.level = tmp - 32768;
 		/* 6.1.3.1.1 2nd formula end */
 		break;
-	case LEVEL_t:	/* Temp. update as per Generic Level (s0) state */
+	case LEVEL_TEMP:/* Temp. update as per Generic Level (s0) state */
 		/* Mesh Model Specification 6.1.3.1.1 1st formula start */
 		tmp = (float) (light_ctl_srv_user_data.temp_range_max -
 			       light_ctl_srv_user_data.temp_range_min) / 65535;
@@ -239,7 +255,9 @@ static void state_binding(u8_t lightness, u8_t temperature)
 
 void light_default_status_init(void)
 {
-	/* Assume vaules are retrived from Persistence Storage (Start) */
+	/* Assume vaules are retrived from Persistence Storage (Start).
+	 * These had saved by respective Setup Servers.
+	 */
 	gen_power_onoff_srv_user_data.onpowerup = 0x01;
 
 	/* Following 2 values are as per specification */
@@ -248,7 +266,12 @@ void light_default_status_init(void)
 
 	light_lightness_srv_user_data.def = 0xFFFF;
 	light_ctl_srv_user_data.temp_def = 0x0320;
+	/* (End) */
 
+	/* Assume following values are retrived from Persistence
+	 * Storage (Start).
+	 * These values had saved before power down.
+	 */
 	light_lightness_srv_user_data.last = 0xFFFF;
 	light_ctl_srv_user_data.temp_last = 0x0320;
 	/* (End) */
@@ -257,17 +280,25 @@ void light_default_status_init(void)
 
 	if (gen_power_onoff_srv_user_data.onpowerup == 0x00) {
 		gen_onoff_srv_root_user_data.onoff = 0x00;
+		state_binding(ONOFF, ONOFF_TEMP);
 	} else if (gen_power_onoff_srv_user_data.onpowerup == 0x01) {
 		gen_onoff_srv_root_user_data.onoff = 0x01;
+		state_binding(ONOFF, ONOFF_TEMP);
 	} else if (gen_power_onoff_srv_user_data.onpowerup == 0x02) {
-		/* Assume value is retrived from Persistence Storage */
+		/* Assume following values is retrived from Persistence
+		 * Storage (Start).
+		 * This value had saved before power down.
+		 */
 		gen_onoff_srv_root_user_data.onoff = 0x01;
+		/* (End) */
 
+		light_lightness_srv_user_data.actual =
+			light_lightness_srv_user_data.last;
 		light_ctl_srv_user_data.temp =
 			light_ctl_srv_user_data.temp_last;
-	}
 
-	state_binding(ONOFF, ONOFF_t);
+		state_binding(ONPOWERUP, ONOFF_TEMP);
+	}
 }
 
 /* message handlers (Start) */
@@ -314,7 +345,7 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 
 	if (state->model_instance == 0x01) {
 		/* Root element */
-		state_binding(ONOFF, ONOFF_t);
+		state_binding(ONOFF, ONOFF_TEMP);
 		update_light_state();
 	} else if (state->model_instance == 0x02) {
 		/* Secondary element */
@@ -391,11 +422,11 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 
 	if (state->model_instance == 0x01) {
 		/* Root element */
-		state_binding(LEVEL, IGNORE_t);
+		state_binding(LEVEL, IGNORE_TEMP);
 		update_light_state();
 	} else if (state->model_instance == 0x02) {
 		/* Secondary element */
-		state_binding(IGNORE, LEVEL_t);
+		state_binding(IGNORE, LEVEL_TEMP);
 		update_light_state();
 	}
 
@@ -453,11 +484,11 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 
 	if (state->model_instance == 0x01) {
 		/* Root element */
-		state_binding(LEVEL, IGNORE_t);
+		state_binding(LEVEL, IGNORE_TEMP);
 		update_light_state();
 	} else if (state->model_instance == 0x02) {
 		/* Secondary element */
-		state_binding(IGNORE, LEVEL_t);
+		state_binding(IGNORE, LEVEL_TEMP);
 		update_light_state();
 	}
 
@@ -647,7 +678,7 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
 
-	state_binding(ACTUAL, IGNORE_t);
+	state_binding(ACTUAL, IGNORE_TEMP);
 	update_light_state();
 
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
@@ -707,7 +738,7 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
 
-	state_binding(LINEAR, IGNORE_t);
+	state_binding(LINEAR, IGNORE_TEMP);
 	update_light_state();
 
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
@@ -971,7 +1002,7 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 
 	state->temp = tmp16;
 
-	state_binding(CTL, CTL_t);
+	state_binding(CTL, CTL_TEMP);
 	update_light_state();
 
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
@@ -1241,7 +1272,7 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 
 	state->temp = tmp16;
 
-	state_binding(IGNORE, CTL_t);
+	state_binding(IGNORE, CTL_TEMP);
 	update_light_state();
 
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
