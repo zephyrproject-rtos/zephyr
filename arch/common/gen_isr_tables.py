@@ -45,9 +45,8 @@ def read_intlist(intlist_path):
     include/linker/intlist.ld:
 
      struct {
-       u32_t num_isrs;
-       u32_t num_vectors; <- typically CONFIG_NUM_IRQS
-       struct _isr_list isrs[];  <- of size num_isrs
+       u32_t num_vectors;       <- typically CONFIG_NUM_IRQS
+       struct _isr_list isrs[]; <- Usually of smaller size than num_vectors
     }
 
     Followed by instances of struct _isr_list created by IRQ_CONNECT()
@@ -69,7 +68,7 @@ def read_intlist(intlist_path):
 
     prefix = endian_prefix()
 
-    intlist_header_fmt = prefix + "III"
+    intlist_header_fmt = prefix + "II"
     intlist_entry_fmt = prefix + "iiII"
 
     with open(intlist_path, "rb") as fp:
@@ -83,7 +82,6 @@ def read_intlist(intlist_path):
 
     intlist["num_vectors"]    = header[0]
     intlist["offset"]         = header[1]
-    intlist["num_isrs"]       = header[2]
 
     intlist["interrupts"] = [i for i in
             struct.iter_unpack(intlist_entry_fmt, intdata)]
@@ -213,14 +211,12 @@ def main():
     nvec = intlist["num_vectors"]
     offset = intlist["offset"]
     prefix = endian_prefix()
-    numisrs = intlist["num_isrs"]
 
     spurious_handler = "&_irq_spurious"
     sw_irq_handler   = "ISR_WRAPPER"
 
     debug('offset is ' + str(offset))
     debug('num_vectors is ' + str(nvec))
-    debug('num_isrs is ' + str(numisrs))
 
     # Set default entries in both tables
     if args.sw_isr_table:

@@ -326,11 +326,8 @@ SECTIONS
 	{
 	KEEP(*(.spurIsr))
 	KEEP(*(.spurNoErrIsr))
-	__INT_LIST_START__ = .;
-	LONG((__INT_LIST_END__ - __INT_LIST_START__) / __ISR_LIST_SIZEOF)
 	KEEP(*(.intList))
 	KEEP(*(.gnu.linkonce.intList.*))
-	__INT_LIST_END__ = .;
 	} > IDT_LIST
 
 #ifdef CONFIG_X86_MMU

@@ -77,10 +77,8 @@ GEN_OFFSET_SYM(NANO_ESF, eflags);
 /* tTaskStateSegment structure member offsets */
 
 
-/* size of the ISR_LIST structure. Used by linker scripts */
+/* size of the MMU_REGION structure. Used by linker scripts */
 
-GEN_ABSOLUTE_SYM(__ISR_LIST_SIZEOF, sizeof(ISR_LIST));
 GEN_ABSOLUTE_SYM(__MMU_REGION_SIZEOF, sizeof(struct mmu_region));
-
 
 GEN_ABS_SYM_END

@@ -52,9 +52,3 @@ struct _isr_table_entry __sw_isr_table _sw_isr_table[IRQ_TABLE_SIZE] = {
 	[0 ...(IRQ_TABLE_SIZE - 1)] = {(void *)0x42, (void *)&_irq_spurious},
 };
 #endif
-
-/* Linker needs this */
-GEN_ABS_SYM_BEGIN(isr_tables_syms)
-GEN_ABSOLUTE_SYM(__ISR_LIST_SIZEOF, sizeof(struct _isr_list));
-GEN_ABS_SYM_END
-
