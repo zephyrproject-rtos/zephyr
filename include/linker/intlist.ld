@@ -10,9 +10,8 @@
  * What we create here is a data structure:
  *
  * struct {
- *	u32_t num_isrs;
- *	u32_t num_vectors;
- *	struct _isr_list isrs[];  <- of size num_isrs
+ *	u32_t num_vectors;       <- typically CONFIG_NUM_IRQS
+ *	struct _isr_list isrs[]; <- Usually of smaller size than num_vectors
  * }
  *
  * Which indicates the memory address of the number of isrs that were
@@ -36,10 +35,7 @@
 SECTION_PROLOGUE(.intList,,)
 {
 	KEEP(*(.irq_info))
-	LONG((__INT_LIST_END__ - __INT_LIST_START__) / __ISR_LIST_SIZEOF)
-	__INT_LIST_START__ = .;
 	KEEP(*(.intList))
-	__INT_LIST_END__ = .;
 } GROUP_LINK_IN(IDT_LIST)
 #else
 /DISCARD/ :
