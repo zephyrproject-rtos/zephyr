@@ -18,6 +18,8 @@ zephyr_library_sources(
   fault_s.S
   fatal.c
   sys_fatal_error_handler.c
+  nmi.c
+  nmi_on_reset.S
 )
 
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)
