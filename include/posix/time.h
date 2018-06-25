@@ -49,18 +49,8 @@ static inline s32_t _ts_to_ms(const struct timespec *to)
 	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);
 }
 
-/**
- * @brief Set clock time.
- *
- * See IEEE 1003.1
- */
-static inline int clock_settime(clockid_t clock_id, const struct timespec *ts)
-{
-	errno = ENOSYS;
-	return -1;
-}
-
 int clock_gettime(clockid_t clock_id, struct timespec *ts);
+int clock_settime(clockid_t clock_id, const struct timespec *ts);
 /* Timer APIs */
 int timer_create(clockid_t clockId, struct sigevent *evp, timer_t *timerid);
 int timer_delete(timer_t timerid);
