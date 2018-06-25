@@ -6,6 +6,7 @@ tests:
     tags: core
     timeout: 600
   kernel.fp_sharing.x86:
+    extra_args: CONF_FILE=prj_x86.conf
     platform_whitelist: qemu_x86
     slow: true
     tags: core
