@@ -30,17 +30,25 @@
 
 	leds {
 		compatible = "gpio-leds";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		green_led: led@0 {
 			gpios = <&gpio1 2 GPIO_INT_ACTIVE_LOW>;
 			label = "User LED1";
+			reg = <0>;
 		};
 	};
 
 	gpio_keys {
 		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		user_switch_1: sw@0 {
 			gpios = <&gpio2 26 GPIO_INT_ACTIVE_LOW>;
 			label = "User SW1";
+			reg = <0>;
 		};
 	};
 };

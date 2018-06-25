@@ -31,29 +31,40 @@
 
 	leds {
 		compatible = "gpio-leds";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		red_led: led@0 {
 			gpios = <&gpiob 18 GPIO_INT_ACTIVE_LOW>;
 			label = "User LD1";
+			reg = <0>;
 		};
 		green_led: led@1 {
 			gpios = <&gpiob 19 GPIO_INT_ACTIVE_LOW>;
 			label = "User LD2";
+			reg = <1>;
 		};
 		blue_led: led@2 {
 			gpios = <&gpiod 1 GPIO_INT_ACTIVE_LOW>;
 			label = "User LD3";
+			reg = <2>;
 		};
 	};
 
 	gpio_keys {
 		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		user_button_0: button@0 {
 			label = "User SW0";
 			gpios = <&gpioa 16 GPIO_INT_ACTIVE_LOW>;
+			reg = <0>;
 		};
 		user_button_1: button@1 {
 			label = "User SW1";
 			gpios = <&gpioa 17 GPIO_INT_ACTIVE_LOW>;
+			reg = <1>;
 		};
 	};
 };
