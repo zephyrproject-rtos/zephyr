@@ -450,7 +450,7 @@ static int prepare_segment(struct net_tcp *tcp,
 		if (pkt_allocated) {
 			net_pkt_unref(pkt);
 		} else {
-			pkt->frags = tail;
+			net_pkt_frag_add(pkt, tail);
 		}
 
 		return -ENOMEM;
