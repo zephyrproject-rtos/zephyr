@@ -8,4 +8,5 @@
 config BOARD_NRF52_BLENANO2
 	bool "nRF52 BLENANO2"
 	select HAS_DTS_GPIO
+	select HAS_DTS_I2C
 	depends on SOC_NRF52832_QFAA
