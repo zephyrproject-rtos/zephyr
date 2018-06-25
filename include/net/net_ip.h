@@ -1024,6 +1024,19 @@ static inline enum net_priority net_vlan2priority(u8_t priority)
 	return vlan2priority[priority];
 }
 
+/**
+ * @brief Convert network packet priority to network packet VLAN priority.
+ *
+ * @param priority Packet priority
+ *
+ * @return VLAN priority (PCP)
+ */
+static inline u8_t net_priority2vlan(enum net_priority priority)
+{
+	/* The conversion works both ways */
+	return (u8_t)net_vlan2priority(priority);
+}
+
 #ifdef __cplusplus
 }
 #endif
