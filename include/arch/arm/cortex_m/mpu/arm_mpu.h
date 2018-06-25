@@ -19,17 +19,17 @@
 #ifdef CONFIG_USERSPACE
 #ifndef _ASMLANGUAGE
 /* Read-Write access permission attributes */
-#define K_MEM_PARTITION_P_NA_U_NA	(NO_ACCESS | NOT_EXEC)
-#define K_MEM_PARTITION_P_RW_U_RW	(P_RW_U_RW | NOT_EXEC)
-#define K_MEM_PARTITION_P_RW_U_RO	(P_RW_U_RO | NOT_EXEC)
-#define K_MEM_PARTITION_P_RW_U_NA	(P_RW_U_NA | NOT_EXEC)
-#define K_MEM_PARTITION_P_RO_U_RO	(P_RO_U_RO | NOT_EXEC)
-#define K_MEM_PARTITION_P_RO_U_NA	(P_RO_U_NA | NOT_EXEC)
+#define K_MEM_PARTITION_P_NA_U_NA	(NO_ACCESS_Msk | NOT_EXEC)
+#define K_MEM_PARTITION_P_RW_U_RW	(P_RW_U_RW_Msk | NOT_EXEC)
+#define K_MEM_PARTITION_P_RW_U_RO	(P_RW_U_RO_Msk | NOT_EXEC)
+#define K_MEM_PARTITION_P_RW_U_NA	(P_RW_U_NA_Msk | NOT_EXEC)
+#define K_MEM_PARTITION_P_RO_U_RO	(P_RO_U_RO_Msk | NOT_EXEC)
+#define K_MEM_PARTITION_P_RO_U_NA	(P_RO_U_NA_Msk | NOT_EXEC)
 
 /* Execution-allowed attributes */
-#define K_MEM_PARTITION_P_RWX_U_RWX	(P_RW_U_RW)
-#define K_MEM_PARTITION_P_RWX_U_RX	(P_RW_U_RO)
-#define K_MEM_PARTITION_P_RX_U_RX	(P_RO_U_RO)
+#define K_MEM_PARTITION_P_RWX_U_RWX	(P_RW_U_RW_Msk)
+#define K_MEM_PARTITION_P_RWX_U_RX	(P_RW_U_RO_Msk)
+#define K_MEM_PARTITION_P_RX_U_RX	(P_RO_U_RO_Msk)
 
 #define K_MEM_PARTITION_IS_WRITABLE(attr) \
 	({ \

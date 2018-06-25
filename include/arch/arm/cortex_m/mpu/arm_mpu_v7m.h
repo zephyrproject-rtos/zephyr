@@ -6,23 +6,32 @@
  */
 
 /* Privileged No Access, Unprivileged No Access */
-#define NO_ACCESS	((0x0 << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
+#define NO_ACCESS       0x0
+#define NO_ACCESS_Msk   ((NO_ACCESS << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
 /* Privileged No Access, Unprivileged No Access */
-#define P_NA_U_NA	((0x0 << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
+#define P_NA_U_NA       0x0
+#define P_NA_U_NA_Msk   ((P_NA_U_NA << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
 /* Privileged Read Write, Unprivileged No Access */
-#define P_RW_U_NA	((0x1 << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
+#define P_RW_U_NA       0x1
+#define P_RW_U_NA_Msk   ((P_RW_U_NA << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
 /* Privileged Read Write, Unprivileged Read Only */
-#define P_RW_U_RO	((0x2 << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
+#define P_RW_U_RO       0x2
+#define P_RW_U_RO_Msk   ((P_RW_U_RO << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
 /* Privileged Read Write, Unprivileged Read Write */
-#define P_RW_U_RW	((0x3 << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
+#define P_RW_U_RW       0x3
+#define P_RW_U_RW_Msk   ((P_RW_U_RW << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
 /* Privileged Read Write, Unprivileged Read Write */
-#define FULL_ACCESS	((0x3 << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
+#define FULL_ACCESS     0x3
+#define FULL_ACCESS_Msk ((FULL_ACCESS << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
 /* Privileged Read Only, Unprivileged No Access */
-#define P_RO_U_NA	((0x5 << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
+#define P_RO_U_NA       0x5
+#define P_RO_U_NA_Msk   ((P_RO_U_NA << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
 /* Privileged Read Only, Unprivileged Read Only */
-#define P_RO_U_RO	((0x6 << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
+#define P_RO_U_RO       0x6
+#define P_RO_U_RO_Msk   ((P_RO_U_RO << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
 /* Privileged Read Only, Unprivileged Read Only */
-#define RO		((0x7 << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
+#define RO              0x7
+#define RO_Msk          ((RO << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
 
 /* Attribute flag for not-allowing execution (eXecute Never) */
 #define NOT_EXEC MPU_RASR_XN_Msk
@@ -89,21 +98,22 @@
 
 /* Some helper defines for common regions */
 #define REGION_USER_RAM_ATTR(size) \
-		(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | \
-		 MPU_RASR_XN_Msk | size | FULL_ACCESS)
+	(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | \
+	MPU_RASR_XN_Msk | size | FULL_ACCESS_Msk)
 #define REGION_RAM_ATTR(size) \
-		(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | \
-		 MPU_RASR_XN_Msk | size | P_RW_U_NA)
+	(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | \
+	 MPU_RASR_XN_Msk | size | P_RW_U_NA_Msk)
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
 #define REGION_FLASH_ATTR(size) \
-		(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | size | \
-		 P_RW_U_RO)
+	(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | size | \
+		P_RW_U_RO_Msk)
 #else
 #define REGION_FLASH_ATTR(size) \
-		(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | size | RO)
+	(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | size | RO_Msk)
 #endif
-#define REGION_PPB_ATTR(size) (STRONGLY_ORDERED_SHAREABLE | size | P_RW_U_NA)
-#define REGION_IO_ATTR(size) (DEVICE_NON_SHAREABLE | size | P_RW_U_NA)
+#define REGION_PPB_ATTR(size) (STRONGLY_ORDERED_SHAREABLE | size | \
+		P_RW_U_NA_Msk)
+#define REGION_IO_ATTR(size) (DEVICE_NON_SHAREABLE | size | P_RW_U_NA_Msk)
 
 
 /* Region definition data structure */

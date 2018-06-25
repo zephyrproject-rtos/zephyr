@@ -14,6 +14,9 @@
 #include <logging/sys_log.h>
 #include <linker/linker-defs.h>
 
+/**
+ *  Get the number of supported MPU regions.
+ */
 static inline u8_t _get_num_regions(void)
 {
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
@@ -26,7 +29,7 @@ static inline u8_t _get_num_regions(void)
 #else
 	u32_t type = MPU->TYPE;
 
-	type = (type & 0xFF00) >> 8;
+	type = (type & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos;
 
 	return (u8_t)type;
 #endif
@@ -53,16 +56,22 @@ static void _region_init(u32_t index, struct arm_mpu_region *region_conf)
 	defined(CONFIG_APPLICATION_MEMORY)
 
 /**
- * The attributes referenced in this function are described at:
- * https://goo.gl/hMry3r
- * This function is private to the driver.
+ * Generate the value of the MPU Region Attribute and Size Register
+ * (MPU_RASR) that corresponds to the supplied MPU region attributes.
+ * This function is internal to the driver.
  */
 static inline u32_t _get_region_attr(u32_t xn, u32_t ap, u32_t tex,
 				     u32_t c, u32_t b, u32_t s,
 				     u32_t srd, u32_t size)
 {
-	return ((xn << 28) | (ap) | (tex << 19) | (s << 18)
-		| (c << 17) | (b << 16) | (srd << 8) | (size));
+	return (((xn << MPU_RASR_XN_Pos) & MPU_RASR_XN_Msk)
+		| ((ap << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
+		| ((tex << MPU_RASR_TEX_Pos) & MPU_RASR_TEX_Msk)
+		| ((s << MPU_RASR_S_Pos) & MPU_RASR_S_Msk)
+		| ((c << MPU_RASR_C_Pos) & MPU_RASR_C_Msk)
+		| ((b << MPU_RASR_B_Pos) & MPU_RASR_B_Msk)
+		| ((srd << MPU_RASR_SRD_Pos) & MPU_RASR_SRD_Msk)
+		| (size));
 }
 
 /**
@@ -165,9 +174,7 @@ static inline void _disable_region(u32_t r_index)
 		_get_num_regions());
 	SYS_LOG_DBG("disable region 0x%x", r_index);
 	/* Disable region */
-	MPU->RNR = r_index;
-	MPU->RBAR = 0;
-	MPU->RASR = 0;
+	ARM_MPU_ClrRegion(r_index);
 }
 
 /**
@@ -206,6 +213,19 @@ static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 	}
 
 	return 0;
+}
+
+/**
+ * This internal function returns the access permissions of an MPU region
+ * specified by its region index.
+ *
+ * Note:
+ *   The caller must provide a valid region number.
+ */
+static inline u32_t _get_region_ap(u32_t r_index)
+{
+	MPU->RNR = r_index;
+	return MPU->RASR & MPU_RASR_AP_Msk >> MPU_RASR_AP_Pos;
 }
 
 /* ARM Core MPU Driver API Implementation for ARM MPU */
@@ -362,6 +382,11 @@ int arm_core_mpu_get_max_domain_partition_regions(void)
 		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
 }
 
+/* Only a single bit is set for all user accessible permissions.
+ * In ARMv7-M MPU this is bit AP[1].
+ */
+#define MPU_USER_READ_ACCESSIBLE_Msk (P_RW_U_RO & P_RW_U_RW & P_RO_U_RO & RO)
+
 /**
  * This internal function checks if the region is user accessible or not.
  *
@@ -370,10 +395,7 @@ int arm_core_mpu_get_max_domain_partition_regions(void)
  */
 static inline int _is_user_accessible_region(u32_t r_index, int write)
 {
-	u32_t r_ap;
-
-	MPU->RNR = r_index;
-	r_ap = MPU->RASR & MPU_RASR_AP_Msk;
+	u32_t r_ap = _get_region_ap(r_index);
 
 	/* always return true if this is the thread stack region */
 	if (_get_region_index_by_type(THREAD_STACK_REGION) == r_index) {
@@ -384,8 +406,7 @@ static inline int _is_user_accessible_region(u32_t r_index, int write)
 		return r_ap == P_RW_U_RW;
 	}
 
-	/* For all user accessible permissions, their AP[1] bit is l */
-	return r_ap & (0x2 << MPU_RASR_AP_Pos);
+	return r_ap & MPU_USER_READ_ACCESSIBLE_Msk;
 }
 
 /**
@@ -485,7 +506,8 @@ static int arm_mpu_init(struct device *arg)
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
 	defined(CONFIG_CPU_CORTEX_M3) || \
 	defined(CONFIG_CPU_CORTEX_M4)
-	__ASSERT((MPU->TYPE & 0xFF00) >> 8 == 8,
+	__ASSERT(
+		(MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos == 8,
 		"Invalid number of MPU regions\n");
 #endif
 	return 0;
