@@ -16,7 +16,12 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
+#if defined(CONFIG_CPU_CORTEX_M)
 #include <arch/arm/cortex_m/cmsis.h>
+#elif defined(CONFIG_CPU_CORTEX_R)
+#include <device.h>
+#include <irq_nextlevel.h>
+#endif
 #include <sys/__assert.h>
 #include <toolchain.h>
 #include <linker/sections.h>
@@ -27,6 +32,7 @@
 
 extern void __reserved(void);
 
+#if defined(CONFIG_CPU_CORTEX_M)
 #define NUM_IRQS_PER_REG 32
 #define REG_FROM_IRQ(irq) (irq / NUM_IRQS_PER_REG)
 #define BIT_FROM_IRQ(irq) (irq % NUM_IRQS_PER_REG)
@@ -114,6 +120,74 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 		 BIT(DT_NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
 	NVIC_SetPriority((IRQn_Type)irq, prio);
 }
+
+#elif defined(CONFIG_CPU_CORTEX_R)
+
+/**
+ *
+ * @brief Enable an interrupt line
+ *
+ * Enable the interrupt. After this call, the CPU will receive interrupts for
+ * the specified <irq>.
+ *
+ * @return N/A
+ */
+void z_arch_irq_enable(unsigned int irq)
+{
+	struct device *dev = _sw_isr_table[0].arg;
+
+	irq_enable_next_level(dev, (irq >> 8) - 1);
+}
+
+/**
+ *
+ * @brief Disable an interrupt line
+ *
+ * Disable an interrupt line. After this call, the CPU will stop receiving
+ * interrupts for the specified <irq>.
+ *
+ * @return N/A
+ */
+void z_arch_irq_disable(unsigned int irq)
+{
+	struct device *dev = _sw_isr_table[0].arg;
+
+	irq_disable_next_level(dev, (irq >> 8) - 1);
+}
+
+/**
+ * @brief Return IRQ enable state
+ *
+ * @param irq IRQ line
+ * @return interrupt enable state, true or false
+ */
+int z_arch_irq_is_enabled(unsigned int irq)
+{
+	struct device *dev = _sw_isr_table[0].arg;
+
+	return irq_is_enabled_next_level(dev);
+}
+
+/**
+ * @internal
+ *
+ * @brief Set an interrupt's priority
+ *
+ * The priority is verified if ASSERT_ON is enabled. The maximum number
+ * of priority levels is a little complex, as there are some hardware
+ * priority levels which are reserved: three for various types of exceptions,
+ * and possibly one additional to support zero latency interrupts.
+ *
+ * @return N/A
+ */
+void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
+{
+	struct device *dev = _sw_isr_table[0].arg;
+
+	irq_set_priority_next_level(dev, (irq >> 8) - 1, prio, flags);
+}
+
+#endif
 
 /**
  *

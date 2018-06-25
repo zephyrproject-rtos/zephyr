@@ -23,6 +23,8 @@
 #include <kernel_internal.h>
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <arch/arm/cortex_m/cmsis.h>
+#elif defined(CONFIG_ARMV7_R)
+#include <cortex_r/stack.h>
 #endif
 
 #if defined(__GNUC__)
@@ -164,6 +166,9 @@ void _PrepC(void)
 	enable_floating_point();
 	z_bss_zero();
 	z_data_copy();
+#if defined(CONFIG_ARMV7_R) && defined(CONFIG_INIT_STACKS)
+	init_stacks();
+#endif
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	__start_time_stamp = 0U;
 #endif

@@ -178,6 +178,7 @@
 /dts/arm/nordic/                          @ioannisg @carlescufi
 /dts/arm/nxp/                             @MaureenHelm
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
+/dts/arm/armv7-r.dtsi                     @bbolen
 /dts/riscv32/rv32m1*                      @MaureenHelm
 /dts/riscv32/riscv32-litex-vexriscv.dtsi  @mateusz-holenko @kgugala @pgielda
 /dts/xtensa/xtensa.dtsi                   @ydamigos
