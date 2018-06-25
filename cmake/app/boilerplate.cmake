@@ -187,13 +187,58 @@ message(STATUS "Selected BOARD ${BOARD}")
 # Store the selected board in the cache
 set(CACHED_BOARD ${BOARD} CACHE STRING "Selected board")
 
-# Use BOARD to search zephyr/boards/** for a _defconfig file,
-# e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig. When
-# found, use that path to infer the ARCH we are building for.
-if(NOT BOARD_ROOT)
+# The BOARD_ROOT can be set from the same sources as BOARD.
+# The precedence of these sources is also as for BOARD
+#  => See description for BOARD above.
+
+# Read out the cached board_root value if present
+get_property(cached_board_root_value CACHE BOARD_ROOT PROPERTY VALUE)
+
+set(board_root_cli_argument ${cached_board_root_value}) # Either new or old
+if(board_root_cli_argument STREQUAL CACHED_BOARD_ROOT)
+  # We already have a CACHED_BOARD_ROOT so there is no new input on the CLI
+  unset(board_root_cli_argument)
+endif()
+
+set(board_app_cmake_lists ${BOARD_ROOT})
+if(cached_board_root_value STREQUAL BOARD_ROOT)
+  # The app build scripts did not set a default, The BOARD_ROOT we are
+  # reading is the cached value from the CLI
+  unset(board_root_app_cmake_lists)
+endif()
+
+if(CACHED_BOARD_ROOT)
+  # Warn the user if it looks like he is trying to change the board_root
+  # without cleaning first
+  if(board_root_cli_argument)
+    if(NOT (CACHED_BOARD_ROOT STREQUAL board_root_cli_argument))
+      message(WARNING "The build directory must be cleaned pristinely when changing the board root")
+    endif()
+  endif()
+
+  set(BOARD_ROOT ${CACHED_BOARD_ROOT})
+
+elseif(board_root_cli_argument)
+  set(BOARD_ROOT ${board_root_cli_argument})
+
+elseif(DEFINED ENV{BOARD_ROOT})
+  set(BOARD_ROOT $ENV{BOARD_ROOT})
+
+elseif(board_root_app_cmake_lists)
+  set(BOARD_ROOT ${board_root_app_cmake_lists})
+
+else()
   set(BOARD_ROOT ${ZEPHYR_BASE})
 endif()
 
+message(STATUS "Selected BOARD_ROOT ${BOARD_ROOT}")
+
+# Store the selected board_root in the cache
+set(CACHED_BOARD_ROOT ${BOARD_ROOT} CACHE STRING "Selected board root")
+
+# Use BOARD to search zephyr/boards/** for a _defconfig file,
+# e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig. When
+# found, use that path to infer the ARCH we are building for.
 find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS ${BOARD_ROOT}/boards/*/* NO_DEFAULT_PATH)
 
 assert_with_usage(BOARD_DIR "No board named '${BOARD}' found")
