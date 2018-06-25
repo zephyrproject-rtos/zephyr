@@ -670,6 +670,13 @@ static inline void net_pkt_set_ipv4_auto(struct net_pkt *pkt,
 {
 	pkt->ipv4_auto_arp_msg = is_auto_arp_msg;
 }
+#else
+static inline bool net_pkt_ipv4_auto(struct net_pkt *pkt)
+{
+	return false;
+}
+
+#define net_pkt_set_ipv4_auto(...)
 #endif
 
 #define NET_IPV6_HDR(pkt) ((struct net_ipv6_hdr *)net_pkt_ip_data(pkt))

@@ -238,7 +238,6 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	int eth_hdr_len = sizeof(struct net_eth_hdr);
 	struct net_pkt *pkt;
 	struct net_arp_hdr *hdr;
-	struct net_eth_hdr *eth;
 	struct in_addr *my_addr;
 
 	if (net_eth_is_vlan_enabled(ctx, iface) &&
@@ -252,26 +251,28 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 		 */
 		pkt = pending;
 	} else {
+		struct net_buf *frag;
+
 		pkt = net_pkt_get_reserve_tx(eth_hdr_len, NET_BUF_TIMEOUT);
 		if (!pkt) {
 			return NULL;
 		}
 
+		frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
+		if (!frag) {
+			net_pkt_unref(pkt);
+			return NULL;
+		}
+
+		net_pkt_frag_add(pkt, frag);
 		net_pkt_set_iface(pkt, iface);
-		net_pkt_set_family(pkt, AF_INET);
+		net_pkt_set_family(pkt, AF_UNSPEC);
 	}
 
 	net_pkt_set_vlan_tag(pkt, net_eth_get_vlan_tag(iface));
 
-	if(!net_eth_fill_header(ctx, pkt, htons(NET_ETH_PTYPE_ARP),
-				NULL, NULL)) {
-		net_pkt_unref(pkt);
-		return NULL;
-	}
-
 	net_buf_add(pkt->frags, sizeof(struct net_arp_hdr));
 
-	eth = NET_ETH_HDR(pkt);
 	hdr = NET_ARP_HDR(pkt);
 
 	/* If entry is not set, then we are just about to send
@@ -285,18 +286,19 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 
 		net_ipaddr_copy(&entry->ip, next_addr);
 
-		memcpy(&eth->src.addr,
-		       net_if_get_link_addr(entry->iface)->addr,
-		       sizeof(struct net_eth_addr));
+		net_pkt_lladdr_src(pkt)->addr =
+			(u8_t *)net_if_get_link_addr(entry->iface)->addr;
 
 		arp_entry_register_pending(entry);
 	} else {
-		memcpy(&eth->src.addr,
-		       net_if_get_link_addr(iface)->addr,
-		       sizeof(struct net_eth_addr));
+		net_pkt_lladdr_src(pkt)->addr =
+			(u8_t *)net_if_get_link_addr(iface)->addr;
 	}
 
-	(void)memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
+	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
+
+	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)net_eth_broadcast_addr();
+	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 
 	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
 	hdr->protocol = htons(NET_ETH_PTYPE_IP);
@@ -308,7 +310,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 
 	net_ipaddr_copy(&hdr->dst_ipaddr, next_addr);
 
-	memcpy(hdr->src_hwaddr.addr, eth->src.addr,
+	memcpy(hdr->src_hwaddr.addr, net_pkt_lladdr_src(pkt)->addr,
 	       sizeof(struct net_eth_addr));
 
 	if (entry) {
@@ -332,7 +334,6 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 {
 	struct ethernet_context *ctx;
 	struct arp_entry *entry;
-	struct net_linkaddr *ll;
 	struct in_addr *addr;
 
 	if (!pkt || !pkt->frags) {
@@ -397,20 +398,17 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 		return req;
 	}
 
-	ll = net_if_get_link_addr(entry->iface);
+	net_pkt_lladdr_src(pkt)->addr =
+		(u8_t *)net_if_get_link_addr(entry->iface)->addr;
+	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
+
+	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)&entry->eth;
+	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 
 	NET_DBG("ARP using ll %s for IP %s",
-		log_strdup(net_sprint_ll_addr(ll->addr,
+		log_strdup(net_sprint_ll_addr(net_pkt_lladdr_dst(pkt)->addr,
 					      sizeof(struct net_eth_addr))),
-		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src)));
-
-	if (!net_eth_fill_header(ctx, pkt,
-				 current_ip == NULL ?
-				 htons(NET_ETH_PTYPE_IP) :
-				 htons(NET_ETH_PTYPE_ARP),
-				 ll->addr, entry->eth.addr)) {
-		return NULL;
-	}
+		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst)));
 
 	return pkt;
 }
@@ -485,7 +483,7 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct net_arp_hdr *hdr, *query;
-	struct net_eth_hdr *eth, *eth_query;
+	struct net_eth_hdr *eth_query;
 
 	if (net_eth_is_vlan_enabled(ctx, iface) &&
 	    net_eth_get_vlan_tag(iface) != NET_VLAN_TAG_UNSPEC) {
@@ -498,20 +496,18 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 	}
 
 	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_family(pkt, AF_UNSPEC);
 
 	eth_query = NET_ETH_HDR(req);
 
-	frag = net_eth_fill_header(ctx, pkt, htons(NET_ETH_PTYPE_ARP),
-				   net_if_get_link_addr(iface)->addr,
-				   eth_query->src.addr);
+	frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
 	if (!frag) {
 		goto fail;
 	}
 
+	net_pkt_frag_add(pkt, frag);
 
 	hdr = NET_ARP_HDR(pkt);
-	eth = NET_ETH_HDR(pkt);
 	query = NET_ARP_HDR(req);
 
 	net_pkt_set_vlan_tag(pkt, net_pkt_vlan_tag(req));
@@ -524,11 +520,17 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 
 	memcpy(&hdr->dst_hwaddr.addr, &eth_query->src.addr,
 	       sizeof(struct net_eth_addr));
-	memcpy(&hdr->src_hwaddr.addr, &eth->src.addr,
+	memcpy(&hdr->src_hwaddr.addr, net_if_get_link_addr(iface)->addr,
 	       sizeof(struct net_eth_addr));
 
 	net_ipaddr_copy(&hdr->dst_ipaddr, &query->src_ipaddr);
 	net_ipaddr_copy(&hdr->src_ipaddr, &query->dst_ipaddr);
+
+	net_pkt_lladdr_src(pkt)->addr = net_if_get_link_addr(iface)->addr;
+	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
+
+	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)&hdr->dst_hwaddr.addr;
+	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 
 	net_buf_add(frag, sizeof(struct net_arp_hdr));
 
