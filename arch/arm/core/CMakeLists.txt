@@ -33,3 +33,5 @@ add_subdirectory_ifdef(CONFIG_ARM_MPU cortex_m/mpu)
 add_subdirectory_ifdef(CONFIG_CPU_CORTEX_M_HAS_CMSE cortex_m/cmse)
 add_subdirectory_ifdef(CONFIG_ARM_SECURE_FIRMWARE cortex_m/tz)
 add_subdirectory_ifdef(CONFIG_ARM_NONSECURE_FIRMWARE cortex_m/tz)
+
+add_subdirectory_ifdef(CONFIG_CPU_CORTEX_R cortex_r)

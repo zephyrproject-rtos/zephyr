@@ -52,6 +52,9 @@ typedef struct __basic_sf _basic_sf_t;
 #ifdef CONFIG_CPU_CORTEX_M
 #include <cortex_m/stack.h>
 #include <cortex_m/exc.h>
+#elif defined(CONFIG_CPU_CORTEX_R)
+#include <cortex_r/stack.h>
+#include <cortex_r/exc.h>
 #endif
 
 #ifndef _ASMLANGUAGE

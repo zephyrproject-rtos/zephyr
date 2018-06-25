@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2018 Lexmark International, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "skeleton.dtsi"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "Cortex-R";
+			reg = <0>;
+		};
+
+		core_intc: core_intc@0 {
+			compatible = "armv7-r,core-intc";
+			reg = <0x00 0x4>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+	};
+};
+
