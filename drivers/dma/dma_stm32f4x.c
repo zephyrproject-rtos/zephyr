@@ -25,11 +25,6 @@
 
 #define DMA_STM32_IRQ_PRI	CONFIG_DMA_0_IRQ_PRI
 
-#define DMA_STM32_1_RX_CHANNEL_ID	CONFIG_DMA_1_RX_SUB_CHANNEL_ID
-#define DMA_STM32_1_TX_CHANNEL_ID	CONFIG_DMA_1_TX_SUB_CHANNEL_ID
-#define DMA_STM32_2_RX_CHANNEL_ID	CONFIG_DMA_2_RX_SUB_CHANNEL_ID
-#define DMA_STM32_2_TX_CHANNEL_ID	CONFIG_DMA_2_TX_SUB_CHANNEL_ID
-
 struct dma_stm32_stream_reg {
 	/* Shared registers */
 	u32_t lisr;
@@ -61,8 +56,6 @@ static struct dma_stm32_device {
 	struct device *clk;
 	struct dma_stm32_stream stream[DMA_STM32_MAX_STREAMS];
 	bool mem2mem;
-	u8_t channel_rx;
-	u8_t channel_tx;
 } device_data[DMA_STM32_MAX_DEVS];
 
 struct dma_stm32_config {
@@ -311,7 +304,7 @@ static int dma_stm32_config_devcpy(struct device *dev, u32_t id,
 			DMA_STM32_SCR_MSIZE(src_bus_width) |
 			DMA_STM32_SCR_PBURST(dst_burst_size) |
 			DMA_STM32_SCR_MBURST(src_burst_size) |
-			DMA_STM32_SCR_REQ(ddata->channel_tx) |
+			DMA_STM32_SCR_REQ(config->dma_slot) |
 			DMA_STM32_SCR_TCIE | DMA_STM32_SCR_TEIE |
 			DMA_STM32_SCR_MINC;
 		break;
@@ -321,7 +314,7 @@ static int dma_stm32_config_devcpy(struct device *dev, u32_t id,
 			DMA_STM32_SCR_MSIZE(dst_bus_width) |
 			DMA_STM32_SCR_PBURST(src_burst_size) |
 			DMA_STM32_SCR_MBURST(dst_burst_size) |
-			DMA_STM32_SCR_REQ(ddata->channel_rx) |
+			DMA_STM32_SCR_REQ(config->dma_slot) |
 			DMA_STM32_SCR_TCIE | DMA_STM32_SCR_TEIE |
 			DMA_STM32_SCR_MINC;
 		break;
@@ -548,8 +541,6 @@ static void dma_stm32_irq_7(void *arg) { dma_stm32_irq_handler(arg, 7); }
 static void dma_stm32_1_config(struct dma_stm32_device *ddata)
 {
 	ddata->base = DMA_STM32_1_BASE;
-	ddata->channel_tx = DMA_STM32_1_TX_CHANNEL_ID;
-	ddata->channel_rx = DMA_STM32_1_RX_CHANNEL_ID;
 
 	IRQ_CONNECT(DMA1_Stream0_IRQn, DMA_STM32_IRQ_PRI,
 		    dma_stm32_irq_0, DEVICE_GET(dma_stm32_1), 0);
@@ -588,8 +579,6 @@ static void dma_stm32_2_config(struct dma_stm32_device *ddata)
 {
 	ddata->base = DMA_STM32_2_BASE;
 	ddata->mem2mem = true;
-	ddata->channel_tx = DMA_STM32_2_TX_CHANNEL_ID;
-	ddata->channel_rx = DMA_STM32_2_RX_CHANNEL_ID;
 
 	IRQ_CONNECT(DMA2_Stream0_IRQn, DMA_STM32_IRQ_PRI,
 		    dma_stm32_irq_0, DEVICE_GET(dma_stm32_2), 0);
