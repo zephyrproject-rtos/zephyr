@@ -124,10 +124,10 @@ source "subsys/bluetooth/host/mesh/Kconfig"
 
 config BT_HOST_CRYPTO
 	# Hidden option that compiles in random number generation and AES
-	# encryption support using TinyCrypt library if software-based
-	# controller is disabled.
+	# encryption support using TinyCrypt library if this is not provided
+	# by the controller implementation.
 	bool
-	default y if !BT_CTLR
+	default y if !BT_CTLR_CRYPTO
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_SHA256
