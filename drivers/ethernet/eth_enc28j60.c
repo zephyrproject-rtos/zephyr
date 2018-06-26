@@ -405,9 +405,8 @@ static void eth_enc28j60_init_phy(struct device *dev)
 	}
 }
 
-static int eth_enc28j60_tx(struct net_if *iface, struct net_pkt *pkt)
+static int eth_enc28j60_tx(struct device *dev, struct net_pkt *pkt)
 {
-	struct device *dev = net_if_get_device(iface);
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	u16_t len = net_pkt_ll_reserve(pkt) + net_pkt_get_len(pkt);
 	u16_t tx_bufaddr = ENC28J60_TXSTART;
@@ -486,8 +485,6 @@ static int eth_enc28j60_tx(struct net_if *iface, struct net_pkt *pkt)
 		LOG_ERR("TX failed!");
 		return -EIO;
 	}
-
-	net_pkt_unref(pkt);
 
 	LOG_DBG("Tx successful");
 
@@ -672,9 +669,9 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 
 static const struct ethernet_api api_funcs = {
 	.iface_api.init		= eth_enc28j60_iface_init,
-	.iface_api.send		= eth_enc28j60_tx,
 
 	.get_capabilities	= eth_enc28j60_get_capabilities,
+	.send			= eth_enc28j60_tx,
 };
 
 static int eth_enc28j60_init(struct device *dev)

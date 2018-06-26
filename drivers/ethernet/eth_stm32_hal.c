@@ -54,10 +54,9 @@ static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
 	heth->Instance->MACFFR = tmp;
 }
 
-static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
+static int eth_tx(struct device *dev, struct net_pkt *pkt)
 {
-	struct device *dev;
-	struct eth_stm32_hal_dev_data *dev_data;
+	struct eth_stm32_hal_dev_data *dev_data = DEV_DATA(dev);
 	ETH_HandleTypeDef *heth;
 	u8_t *dma_buffer;
 	int res;
@@ -65,13 +64,8 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	u16_t total_len;
 	__IO ETH_DMADescTypeDef *dma_tx_desc;
 
-	__ASSERT_NO_MSG(iface != NULL);
 	__ASSERT_NO_MSG(pkt != NULL);
 	__ASSERT_NO_MSG(pkt->frags != NULL);
-
-	dev = net_if_get_device(iface);
-	dev_data = DEV_DATA(dev);
-
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(dev_data != NULL);
 
@@ -121,8 +115,6 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 		res = -EIO;
 		goto error;
 	}
-
-	net_pkt_unref(pkt);
 
 	res = 0;
 error:
@@ -387,9 +379,9 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(struct device *dev)
 
 static const struct ethernet_api eth_api = {
 	.iface_api.init = eth_iface_init,
-	.iface_api.send = eth_tx,
 
 	.get_capabilities = eth_stm32_hal_get_capabilities,
+	.send = eth_tx,
 };
 
 static struct device DEVICE_NAME_GET(eth0_stm32_hal);

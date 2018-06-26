@@ -464,15 +464,7 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	return hdr_frag;
 }
 
-static enum net_verdict ethernet_send(struct net_if *iface,
-				      struct net_pkt *pkt)
-{
-	net_if_queue_tx(iface, pkt);
-
-	return NET_OK;
-}
-
-int net_eth_send(struct net_if *iface, struct net_pkt *pkt)
+static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct ethernet_api *api = net_if_get_device(iface)->driver_api;
 	struct ethernet_context *ctx = net_if_l2_data(iface);
@@ -538,6 +530,7 @@ int net_eth_send(struct net_if *iface, struct net_pkt *pkt)
 
 	ret = api->send(net_if_get_device(iface), pkt);
 	if (!ret) {
+		ret = net_pkt_get_len(pkt);
 		net_pkt_unref(pkt);
 	}
 

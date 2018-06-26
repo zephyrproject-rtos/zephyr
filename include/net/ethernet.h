@@ -538,8 +538,6 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 }
 #endif /* CONFIG_NET_VLAN */
 
-int net_eth_send(struct net_if *iface, struct net_pkt *pkt);
-
 /**
  * @brief Inform ethernet L2 driver that ethernet carrier is detected.
  * This happens when cable is connected.

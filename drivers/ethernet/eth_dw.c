@@ -42,9 +42,9 @@ static inline void eth_write(u32_t base_addr, u32_t offset,
 	sys_write32(val, base_addr + offset);
 }
 
-static void eth_rx(struct device *port)
+static void eth_rx(struct device *dev)
 {
-	struct eth_runtime *context = port->driver_data;
+	struct eth_runtime *context = dev->driver_data;
 	struct net_pkt *pkt;
 	u32_t frm_len;
 	int r;
@@ -164,10 +164,9 @@ static void eth_tx_data(struct eth_runtime *context, u8_t *data, u16_t len)
  *	from each fragment's data pointer.  This procedure might yield to
  *	other threads  while waiting for the DMA transfer to finish.
  */
-static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
+static int eth_tx(struct device *dev, struct net_pkt *pkt)
 {
-	struct device *port = net_if_get_device(iface);
-	struct eth_runtime *context = port->driver_data;
+	struct eth_runtime *context = dev->driver_data;
 
 	/* Ensure we're clear to transmit. */
 	eth_tx_spin_wait(context);
@@ -185,13 +184,12 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 		}
 	}
 
-	net_pkt_unref(pkt);
 	return 0;
 }
 
-static void eth_dw_isr(struct device *port)
+static void eth_dw_isr(struct device *dev)
 {
-	struct eth_runtime *context = port->driver_data;
+	struct eth_runtime *context = dev->driver_data;
 #ifdef CONFIG_SHARED_IRQ
 	u32_t int_status;
 
@@ -205,7 +203,7 @@ static void eth_dw_isr(struct device *port)
 		return;
 	}
 #endif
-	eth_rx(port);
+	eth_rx(dev);
 
 	/* Acknowledge the interrupt. */
 	eth_write(context->base_addr, REG_ADDR_STATUS,
@@ -238,9 +236,9 @@ static inline int eth_setup(struct device *dev)
 
 static int eth_initialize_internal(struct net_if *iface)
 {
-	struct device *port = net_if_get_device(iface);
-	struct eth_runtime *context = port->driver_data;
-	const struct eth_config *config = port->config->config_info;
+	struct device *dev = net_if_get_device(iface);
+	struct eth_runtime *context = dev->driver_data;
+	const struct eth_config *config = dev->config->config_info;
 	u32_t base_addr;
 
 	context->iface = iface;
@@ -317,7 +315,7 @@ static int eth_initialize_internal(struct net_if *iface)
 
 	LOG_INF("Enabled 100M full-duplex mode");
 
-	config->config_func(port);
+	config->config_func(dev);
 
 	return 0;
 }
@@ -340,16 +338,16 @@ static enum ethernet_hw_caps eth_dw_get_capabilities(struct device *dev)
 
 static const struct ethernet_api api_funcs = {
 	.iface_api.init = eth_initialize,
-	.iface_api.send = eth_tx,
 
 	.get_capabilities = eth_dw_get_capabilities,
+	.send = eth_tx,
 };
 
 /* Bindings to the plaform */
 #if CONFIG_ETH_DW_0
-static void eth_config_0_irq(struct device *port)
+static void eth_config_0_irq(struct device *dev)
 {
-	const struct eth_config *config = port->config->config_info;
+	const struct eth_config *config = dev->config->config_info;
 	struct device *shared_irq_dev;
 
 #ifdef CONFIG_ETH_DW_0_IRQ_DIRECT
@@ -360,8 +358,8 @@ static void eth_config_0_irq(struct device *port)
 #elif defined(CONFIG_ETH_DW_0_IRQ_SHARED)
 	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
 	__ASSERT(shared_irq_dev != NULL, "Failed to get eth_dw device binding");
-	shared_irq_isr_register(shared_irq_dev, (isr_t)eth_dw_isr, port);
-	shared_irq_enable(shared_irq_dev, port);
+	shared_irq_isr_register(shared_irq_dev, (isr_t)eth_dw_isr, dev);
+	shared_irq_enable(shared_irq_dev, dev);
 #endif
 }
 

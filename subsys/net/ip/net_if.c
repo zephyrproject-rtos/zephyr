@@ -148,7 +148,6 @@ static inline void net_context_send_cb(struct net_context *context,
 
 static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 {
-	const struct net_if_api *api = net_if_get_device(iface)->driver_api;
 	struct net_linkaddr *dst;
 	struct net_context *context;
 	void *context_token;
@@ -170,7 +169,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 			net_pkt_set_queued(pkt, false);
 		}
 
-		status = api->send(iface, pkt);
+		status = net_if_l2(iface)->send(iface, pkt);
 	} else {
 		/* Drop packet if interface is not up */
 		NET_WARN("iface %p is down", iface);
@@ -184,7 +183,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 		net_pkt_unref(pkt);
 	} else {
-		net_stats_update_bytes_sent(iface, pkt->total_pkt_len);
+		net_stats_update_bytes_sent(iface, status);
 	}
 
 	if (context) {
@@ -252,8 +251,8 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_context *context = net_pkt_context(pkt);
 	struct net_linkaddr *dst = net_pkt_lladdr_dst(pkt);
+	enum net_verdict verdict = NET_OK;
 	void *token = net_pkt_token(pkt);
-	enum net_verdict verdict;
 	int status = -EIO;
 
 	if (!atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
@@ -280,7 +279,7 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	 * additional checks, so let the packet through.
 	 */
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
-		goto send;
+		goto done;
 	}
 #endif
 
@@ -297,14 +296,8 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	}
 #endif
 
-#if defined(CONFIG_NET_LOOPBACK)
-send:
-#endif
-	verdict = net_if_l2(iface)->send(iface, pkt);
-
 done:
-	/* The L2 send() function can return
-	 *   NET_OK in which case packet was sent successfully. In this case
+	/*   NET_OK in which case packet has checked successfully. In this case
 	 *   the net_context callback is called after successful delivery in
 	 *   net_if_tx_thread().
 	 *
@@ -315,15 +308,19 @@ done:
 	 *   This can happen for example if we need to do IPv6 ND to figure
 	 *   out link layer address.
 	 */
-	if (context && verdict == NET_DROP) {
-		NET_DBG("Calling context send cb %p token %p verdict %d",
-			context, token, verdict);
+	if (verdict == NET_DROP) {
+		if (context) {
+			NET_DBG("Calling ctx send cb %p token %p verdict %d",
+				context, token, verdict);
+			net_context_send_cb(context, token, status);
+		}
 
-		net_context_send_cb(context, token, status);
-	}
-
-	if (verdict == NET_DROP && dst->addr) {
-		net_if_call_link_cb(iface, dst, status);
+		if (dst->addr) {
+			net_if_call_link_cb(iface, dst, status);
+		}
+	} else if (verdict == NET_OK) {
+		/* Packet is ready to be sent by L2, let's queue */
+		net_if_queue_tx(iface, pkt);
 	}
 
 	return verdict;
