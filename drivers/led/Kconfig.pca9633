@@ -1,0 +1,38 @@
+#
+# Copyright (c) 2018 Savoir-Faire Linux
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig PCA9633
+	bool "PCA9633 LED driver"
+	depends on I2C
+	default n
+	help
+	  Enable LED driver for PCA9633.
+
+	  PCA9633 LED driver has 4 channels each with multi-programmable
+	  states. Each channel can drive up to 25 mA per LED.
+
+if !HAS_DTS_I2C_DEVICE
+
+config PCA9633_DEV_NAME
+	string "PCA9633 device name"
+	default "PCA9633"
+	help
+	  Device name for PCA9633 LED driver.
+
+config PCA9633_I2C_ADDRESS
+	hex "PCA9633 I2C slave address"
+	default 0x62
+	help
+	  Specify the I2C slave address for the PCA9633 LED driver.
+
+config PCA9633_I2C_MASTER_DEV_NAME
+	string "I2C master where PCA9633 is connected"
+	default "I2C_1"
+	help
+	  Specify the device name of the I2C master device to which
+	  PCA9633 is connected.
+
+endif

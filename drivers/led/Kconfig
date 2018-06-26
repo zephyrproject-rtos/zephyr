@@ -42,5 +42,6 @@ config LED_INIT_PRIORITY
 	  System initialization priority for LED drivers.
 
 source "drivers/led/Kconfig.lp3943"
+source "drivers/led/Kconfig.pca9633"
 
 endif # LED
