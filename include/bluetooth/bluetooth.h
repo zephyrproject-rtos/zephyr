@@ -279,6 +279,23 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
  */
 int bt_le_scan_stop(void);
 
+/** @brief Helper for parsing advertising (or EIR or OOB) data.
+ *
+ *  A helper for parsing the basic data types used for Extended Inquiry
+ *  Response (EIR), Advertising Data (AD), and OOB data blocks. The most
+ *  common scenario is to call this helper on the adverstising data
+ *  received in the callback that was given to bt_le_scan_start().
+ *
+ *  @param ad        Advertising data as given to the bt_le_scan_cb_t callback.
+ *  @param func      Callback function which will be called for each element
+ *                   that's found in the data. The callback should return
+ *                   true to continue parsing, or false to stop parsing.
+ *  @param user_data User data to be passed to the callback.
+ */
+void bt_data_parse(struct net_buf_simple *ad,
+		   bool (*func)(struct bt_data *data, void *user_data),
+		   void *user_data);
+
 struct bt_le_oob {
 	/** LE address. If local privacy is enabled this is Resolvable Private
 	 *  Address.
