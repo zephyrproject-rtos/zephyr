@@ -99,6 +99,11 @@ void spi_dump_message(const u8_t *pre, u8_t *buf, u8_t size) {}
 
 #if defined(CONFIG_BT_SPI_BLUENRG)
 static struct device *cs_dev;
+/* Define a limit when reading IRQ high */
+/* It can be required to be increased for */
+/* some particular cases. */
+#define IRQ_HIGH_MAX_READ 3
+static u8_t attempts;
 #endif /* CONFIG_BT_SPI_BLUENRG */
 
 static struct device *spi_dev;
@@ -168,7 +173,7 @@ static void bt_spi_handle_vendor_evt(u8_t *rxmsg)
  * know the amount of byte to read.
  * (See section 5.2 of BlueNRG-MS datasheet)
  */
-static int bt_spi_configure_cs(void)
+static int configure_cs(void)
 {
 	cs_dev = device_get_binding(CONFIG_BT_SPI_CHIP_SELECT_DEV_NAME);
 	if (!cs_dev) {
@@ -184,20 +189,50 @@ static int bt_spi_configure_cs(void)
 	return 0;
 }
 
-static void bt_spi_kick_cs(void)
+static void kick_cs(void)
 {
 	gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
 	gpio_pin_write(cs_dev, GPIO_CS_PIN, 0);
 }
 
-static void bt_spi_release_cs(void)
+static void release_cs(void)
 {
 	gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
 }
+
+static bool irq_pin_high(void)
+{
+	u32_t pin_state;
+
+	gpio_pin_read(irq_dev, GPIO_IRQ_PIN, &pin_state);
+
+	BT_DBG("IRQ Pin: %d", pin_state);
+
+	return pin_state;
+}
+
+static void init_irq_high_loop(void)
+{
+	attempts = IRQ_HIGH_MAX_READ;
+}
+
+static bool exit_irq_high_loop(void)
+{
+	/* Limit attempts on BlueNRG-MS as we might */
+	/* enter this loop with nothing to read */
+
+	attempts--;
+
+	return attempts;
+}
+
 #else
-#define bt_spi_configure_cs(...) 0
-#define bt_spi_kick_cs(...)
-#define bt_spi_release_cs(...)
+#define configure_cs(...) 0
+#define kick_cs(...)
+#define release_cs(...)
+#define irq_pin_high(...) 0
+#define init_irq_high_loop(...)
+#define exit_irq_high_loop(...) 1
 #endif
 
 static void bt_spi_rx_thread(void)
@@ -220,69 +255,75 @@ static void bt_spi_rx_thread(void)
 		BT_DBG("");
 
 		do {
-			bt_spi_kick_cs();
-			ret = bt_spi_transceive(header_master, 5,
-						header_slave, 5);
-		} while ((header_slave[STATUS_HEADER_TOREAD] == 0 ||
-			  header_slave[STATUS_HEADER_TOREAD] == 0xFF) && !ret);
-
-		if (!ret) {
-			size = header_slave[STATUS_HEADER_TOREAD];
-
+			init_irq_high_loop();
 			do {
-				ret = bt_spi_transceive(&txmsg, size,
-							&rxmsg, size);
-			} while (rxmsg[0] == 0 && ret == 0);
-		}
+				kick_cs();
+				ret = bt_spi_transceive(header_master, 5,
+							header_slave, 5);
+			} while ((((header_slave[STATUS_HEADER_TOREAD] == 0 ||
+				  header_slave[STATUS_HEADER_TOREAD] == 0xFF) &&
+				  !ret)) && exit_irq_high_loop());
 
-		bt_spi_release_cs();
-		gpio_pin_enable_callback(irq_dev, GPIO_IRQ_PIN);
-		k_sem_give(&sem_busy);
+			if (!ret) {
+				size = header_slave[STATUS_HEADER_TOREAD];
 
-		if (ret) {
-			BT_ERR("Error %d", ret);
-			continue;
-		}
-
-		spi_dump_message("RX:ed", rxmsg, size);
-
-		switch (rxmsg[PACKET_TYPE]) {
-		case HCI_EVT:
-			switch (rxmsg[EVT_HEADER_EVENT]) {
-			case BT_HCI_EVT_VENDOR:
-				/* Vendor events are currently unsupported */
-				bt_spi_handle_vendor_evt(rxmsg);
-				continue;
-			case BT_HCI_EVT_CMD_COMPLETE:
-			case BT_HCI_EVT_CMD_STATUS:
-				buf = bt_buf_get_cmd_complete(K_FOREVER);
-				break;
-			default:
-				buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
-				break;
+				do {
+					ret = bt_spi_transceive(&txmsg, size,
+								&rxmsg, size);
+				} while (rxmsg[0] == 0 && ret == 0);
 			}
 
-			net_buf_add_mem(buf, &rxmsg[1],
-					rxmsg[EVT_HEADER_SIZE] + 2);
-			break;
-		case HCI_ACL:
-			buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
-			memcpy(&acl_hdr, &rxmsg[1], sizeof(acl_hdr));
-			net_buf_add_mem(buf, &acl_hdr, sizeof(acl_hdr));
-			net_buf_add_mem(buf, &rxmsg[5],
-					sys_le16_to_cpu(acl_hdr.len));
-			break;
-		default:
-			BT_ERR("Unknown BT buf type %d", rxmsg[0]);
-			continue;
-		}
+			release_cs();
+			gpio_pin_enable_callback(irq_dev, GPIO_IRQ_PIN);
+			k_sem_give(&sem_busy);
 
-		if (rxmsg[PACKET_TYPE] == HCI_EVT &&
-		    bt_hci_evt_is_prio(rxmsg[EVT_HEADER_EVENT])) {
-			bt_recv_prio(buf);
-		} else {
-			bt_recv(buf);
-		}
+			if (ret) {
+				BT_ERR("Error %d", ret);
+				continue;
+			}
+
+			spi_dump_message("RX:ed", rxmsg, size);
+
+			switch (rxmsg[PACKET_TYPE]) {
+			case HCI_EVT:
+				switch (rxmsg[EVT_HEADER_EVENT]) {
+				case BT_HCI_EVT_VENDOR:
+					/* Vendor events are currently unsupported */
+					bt_spi_handle_vendor_evt(rxmsg);
+					continue;
+				case BT_HCI_EVT_CMD_COMPLETE:
+				case BT_HCI_EVT_CMD_STATUS:
+					buf = bt_buf_get_cmd_complete(K_FOREVER);
+					break;
+				default:
+					buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+					break;
+				}
+
+				net_buf_add_mem(buf, &rxmsg[1],
+						rxmsg[EVT_HEADER_SIZE] + 2);
+				break;
+			case HCI_ACL:
+				buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+				memcpy(&acl_hdr, &rxmsg[1], sizeof(acl_hdr));
+				net_buf_add_mem(buf, &acl_hdr, sizeof(acl_hdr));
+				net_buf_add_mem(buf, &rxmsg[5],
+						sys_le16_to_cpu(acl_hdr.len));
+				break;
+			default:
+				BT_ERR("Unknown BT buf type %d", rxmsg[0]);
+				continue;
+			}
+
+			if (rxmsg[PACKET_TYPE] == HCI_EVT &&
+			    bt_hci_evt_is_prio(rxmsg[EVT_HEADER_EVENT])) {
+				bt_recv_prio(buf);
+			} else {
+				bt_recv(buf);
+			}
+		/* On BlueNRG-MS, host is expected to read */
+		/* as long as IRQ pin is high */
+		} while (irq_pin_high());
 	}
 }
 
@@ -326,7 +367,7 @@ static int bt_spi_send(struct net_buf *buf)
 
 	/* Poll sanity values until device has woken-up */
 	do {
-		bt_spi_kick_cs();
+		kick_cs();
 		ret = bt_spi_transceive(header, 5, rxmsg, 5);
 
 		/*
@@ -348,7 +389,7 @@ static int bt_spi_send(struct net_buf *buf)
 		} while (rxmsg[0] == 0 && !ret);
 	}
 
-	bt_spi_release_cs();
+	release_cs();
 
 	if (ret) {
 		BT_ERR("Error %d", ret);
@@ -384,6 +425,9 @@ static int bt_spi_open(void)
 
 	/* Configure IRQ pin and the IRQ call-back/handler */
 	gpio_pin_configure(irq_dev, GPIO_IRQ_PIN,
+#if defined(CONFIG_BT_SPI_BLUENRG)
+			   GPIO_PUD_PULL_DOWN |
+#endif
 			   GPIO_DIR_IN | GPIO_INT |
 			   GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH);
 
@@ -431,7 +475,7 @@ static int _bt_spi_init(struct device *unused)
 		return -EIO;
 	}
 
-	if (bt_spi_configure_cs()) {
+	if (configure_cs()) {
 		return -EIO;
 	}
 
