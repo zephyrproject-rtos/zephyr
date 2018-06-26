@@ -160,7 +160,7 @@ ETH_NET_DEVICE_INIT(eth_test_2, "eth_test_2", eth_init, &eth_context_2, NULL,
 ETH_NET_DEVICE_INIT(eth_test_3, "eth_test_3", eth_init, &eth_context_3, NULL,
 		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, 1500);
 
-u64_t timestamp_to_nsec(struct net_ptp_time *ts)
+static u64_t timestamp_to_nsec(struct net_ptp_time *ts)
 {
 	if (!ts) {
 		return 0;
@@ -403,12 +403,15 @@ static void test_ptp_clock_iface(int idx)
 
 	clk = net_eth_get_ptp_clock(eth_interfaces[idx]);
 
+	zassert_not_null(clk, "Clock not found for interface %p\n",
+			 eth_interfaces[idx]);
+
 	ptp_clock_set(clk, &tm);
 
 	orig = timestamp_to_nsec(&tm);
 
-	if (rnd_value == 0) {
-		rnd_value = NSEC_PER_SEC;
+	if (rnd_value == 0 || rnd_value < 0) {
+		rnd_value = 2;
 	}
 
 	ptp_clock_adjust(clk, rnd_value);
@@ -417,7 +420,11 @@ static void test_ptp_clock_iface(int idx)
 	ptp_clock_get(clk, &tm);
 
 	new_value = timestamp_to_nsec(&tm);
-	zassert_equal(orig + rnd_value, new_value, "Time adjust failure\n");
+
+	/* The clock value must be the same after incrementing it */
+	zassert_equal(orig + rnd_value, new_value,
+		      "Time adjust failure (%llu vs %llu)\n",
+		      orig + rnd_value, new_value);
 }
 
 static void test_ptp_clock_iface_1(void)
