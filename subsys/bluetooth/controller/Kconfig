@@ -9,7 +9,6 @@ comment "BLE Controller support"
 
 config BT_CTLR
 	bool "Bluetooth Controller"
-	select BT_RECV_IS_RX_THREAD
 	help
 	  Enables support for SoC native controller implementations.
 
@@ -23,6 +22,7 @@ choice
 
 config BT_LL_SW
 	bool "Software-based BLE Link Layer"
+	select BT_RECV_IS_RX_THREAD
 	select ENTROPY_GENERATOR
 	select ENTROPY_NRF5_RNG if SOC_FAMILY_NRF
 	select ENTROPY_NRF5_BIAS_CORRECTION if SOC_FAMILY_NRF
@@ -560,8 +560,6 @@ config BT_CTLR_PA_LNA_GPIOTE_CHAN
 	help
 	  Select the nRF5 GPIOTE channel to use for PA/LNA GPIO feature.
 
-endif # BT_LL_SW
-
 comment "BLE Controller debug configuration"
 
 config BT_CTLR_ASSERT_HANDLER
@@ -589,5 +587,7 @@ config BT_CTLR_DEBUG_PINS
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of
 	  the code.
+
+endif # BT_LL_SW
 
 endif # BT_CTLR
