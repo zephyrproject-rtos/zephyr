@@ -72,7 +72,7 @@ int sys_bitfield_find_first_clear(const unsigned long *bitmap,
 		else if (neg_bitmap == ~0UL)	/* first bit */
 			return cnt * BITS_PER_UL;
 		else
-			return cnt * BITS_PER_UL + __builtin_ffsl(neg_bitmap);
+			return cnt * BITS_PER_UL + __builtin_ffsl(neg_bitmap) - 1;
 	}
 	return -1;
 }
