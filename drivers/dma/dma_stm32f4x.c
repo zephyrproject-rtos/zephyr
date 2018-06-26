@@ -312,6 +312,7 @@ static int dma_stm32_config_devcpy(struct device *dev, u32_t id,
 			DMA_STM32_SCR_PBURST(dst_burst_size) |
 			DMA_STM32_SCR_MBURST(src_burst_size) |
 			DMA_STM32_SCR_REQ(ddata->channel_tx) |
+			DMA_STM32_SCR_TCIE | DMA_STM32_SCR_TEIE |
 			DMA_STM32_SCR_MINC;
 		break;
 	case PERIPHERAL_TO_MEMORY:
@@ -320,7 +321,9 @@ static int dma_stm32_config_devcpy(struct device *dev, u32_t id,
 			DMA_STM32_SCR_MSIZE(dst_bus_width) |
 			DMA_STM32_SCR_PBURST(src_burst_size) |
 			DMA_STM32_SCR_MBURST(dst_burst_size) |
-			DMA_STM32_SCR_REQ(ddata->channel_rx);
+			DMA_STM32_SCR_REQ(ddata->channel_rx) |
+			DMA_STM32_SCR_TCIE | DMA_STM32_SCR_TEIE |
+			DMA_STM32_SCR_MINC;
 		break;
 	default:
 		SYS_LOG_ERR("DMA error: Direction not supported: %d",
