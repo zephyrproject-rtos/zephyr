@@ -71,7 +71,8 @@ void net_arp_init(void);
  */
 
 #else /* CONFIG_NET_ARP */
-
+#define net_arp_prepare(_kt, _u1, _u2) _kt
+#define net_arp_input(_ptt) NET_OK
 #define net_arp_clear_cache(...)
 #define net_arp_init(...)
 
