@@ -7,9 +7,13 @@ zephyr_library_sources(
   ticker/ticker.c
   ll_sw/ll_addr.c
   ll_sw/ll_tx_pwr.c
-  crypto/crypto.c
   hci/hci_driver.c
   hci/hci.c
+  )
+
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CTLR_CRYPTO
+  crypto/crypto.c
   )
 
 if(CONFIG_BT_LL_SW)

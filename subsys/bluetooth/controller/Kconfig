@@ -33,6 +33,13 @@ endchoice
 
 comment "BLE Controller configuration"
 
+config BT_CTLR_CRYPTO
+	bool "Enable crypto functions in Controller"
+	default y
+	help
+	  Use random number generation and AES encryption support functions
+	  provided by the controller.
+
 config BT_CTLR_RX_PRIO_STACK_SIZE
 	# Hidden option for Controller's Co-Operative high priority Rx thread
 	# stack size.
