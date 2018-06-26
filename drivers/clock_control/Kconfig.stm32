@@ -69,6 +69,25 @@ config CLOCK_STM32_HSE_CLOCK
 	help
 	  Value of external high-speed clock (HSE).
 
+config CLOCK_STM32_MSI_RANGE
+	int "MSI frequency range"
+	depends on CLOCK_STM32_SYSCLK_SRC_MSI
+	default 8
+	help
+	  Frequency range of MSI when MSI range is provided in RCC_CR register
+	  Range 0: 100kHz
+	  Range 1: 200kHz
+	  Range 2 around 400 kHz
+	  Range 3 around 800 kHz
+	  Range 4: 1 MHz
+	  Range 5: 2 MHz
+	  Range 6: 4 MHz (reset value)
+	  Range 7: 8 MHz
+	  Range 8: 16 MHz
+	  Range 9: 24 MHz
+	  Range 10: 32 MHz
+	  Range 11: 48 MHz
+
 choice
 prompt "STM32 PLL Clock Source"
 depends on CLOCK_STM32_SYSCLK_SRC_PLL
