@@ -82,19 +82,12 @@ static int e1000_tx(struct e1000_dev *dev, void *data, size_t data_len)
 	return (dev->tx.sta & TDESC_STA_DD) ? 0 : -EIO;
 }
 
-static int e1000_send(struct net_if *iface, struct net_pkt *pkt)
+static int e1000_send(struct device *device, struct net_pkt *pkt)
 {
-	struct e1000_dev *dev = net_if_get_device(iface)->driver_data;
-
+	struct e1000_dev *dev = device->driver_data;
 	size_t len = e1000_linearize(pkt, dev->txb, sizeof(dev->txb));
 
-	int err = e1000_tx(dev, dev->txb, len);
-
-	if (!err) {
-		net_pkt_unref(pkt);
-	}
-
-	return err;
+	return e1000_tx(dev, dev->txb, len);
 }
 
 static struct net_pkt *e1000_rx(struct e1000_dev *dev)
@@ -235,8 +228,8 @@ static struct e1000_dev e1000_dev = {
 
 static const struct ethernet_api e1000_api = {
 	.iface_api.init		= e1000_init,
-	.iface_api.send		= e1000_send,
 	.get_capabilities	= e1000_caps,
+	.send			= e1000_send,
 };
 
 NET_DEVICE_INIT(eth_e1000,

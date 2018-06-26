@@ -1290,9 +1290,8 @@ static int priority2queue(enum net_priority priority)
 }
 #endif
 
-static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
+static int eth_tx(struct device *dev, struct net_pkt *pkt)
 {
-	struct device *const dev = net_if_get_device(iface);
 	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
 	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
 	Gmac *gmac = cfg->regs;
@@ -1404,6 +1403,9 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	ring_buf_put(&queue->tx_frames, POINTER_TO_UINT(pkt));
 
 	irq_unlock(key);
+
+	/* pkt is internally queued, so it requires to hold a reference */
+	net_pkt_ref(pkt);
 
 	/* Start transmission */
 	gmac->GMAC_NCR |= GMAC_NCR_TSTART;
@@ -1864,11 +1866,11 @@ static struct device *eth_sam_gmac_get_ptp_clock(struct device *dev)
 
 static const struct ethernet_api eth_api = {
 	.iface_api.init = eth0_iface_init,
-	.iface_api.send = eth_tx,
 
 	.get_capabilities = eth_sam_gmac_get_capabilities,
 	.set_config = eth_sam_gmac_set_config,
 	.get_config = eth_sam_gmac_get_config,
+	.send = eth_tx,
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	.get_ptp_clock = eth_sam_gmac_get_ptp_clock,

@@ -49,8 +49,9 @@ struct net_l2 {
 	 * This function is used by net core to push a packet to lower layer
 	 * (interface's L2), which in turn might work on the packet relevantly.
 	 * (adding proper header etc...)
+	 * Returns a negative error code, or the number of bytes sent otherwise.
 	 */
-	enum net_verdict (*send)(struct net_if *iface, struct net_pkt *pkt);
+	int (*send)(struct net_if *iface, struct net_pkt *pkt);
 
 	/**
 	 * This function is used to get the amount of bytes the net core should

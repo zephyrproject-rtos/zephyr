@@ -449,9 +449,9 @@ static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt,
 }
 #endif /* CONFIG_PTP_CLOCK_MCUX */
 
-static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
+static int eth_tx(struct device *dev, struct net_pkt *pkt)
 {
-	struct eth_context *context = net_if_get_device(iface)->driver_data;
+	struct eth_context *context = dev->driver_data;
 	const struct net_buf *frag;
 	u8_t *dst;
 	status_t status;
@@ -501,7 +501,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 				total_len);
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-	timestamped_frame = eth_get_ptp_data(iface, pkt, NULL);
+	timestamped_frame = eth_get_ptp_data(net_pkt_iface(pkt), pkt, NULL);
 	if (timestamped_frame) {
 		if (!status) {
 			ts_tx_pkt[ts_tx_wr] = net_pkt_ref(pkt);
@@ -522,8 +522,6 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 		LOG_ERR("ENET_SendFrame error: %d", (int)status);
 		return -1;
 	}
-
-	net_pkt_unref(pkt);
 
 	return 0;
 }
@@ -929,14 +927,12 @@ static struct device *eth_mcux_get_ptp_clock(struct device *dev)
 #endif
 
 static const struct ethernet_api api_funcs = {
-	.iface_api.init = eth_iface_init,
-	.iface_api.send = eth_tx,
-
-	.get_capabilities = eth_mcux_get_capabilities,
-
+	.iface_api.init		= eth_iface_init,
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-	.get_ptp_clock = eth_mcux_get_ptp_clock,
+	.get_ptp_clock		= eth_mcux_get_ptp_clock,
 #endif
+	.get_capabilities	= eth_mcux_get_capabilities,
+	.send			= eth_tx,
 };
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
