@@ -260,6 +260,10 @@ static u8_t _mod_pub_set(struct bt_mesh_model *model, u16_t pub_addr,
 	}
 
 	if (pub_addr == BT_MESH_ADDR_UNASSIGNED) {
+		if (model->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+			return STATUS_SUCCESS;
+		}
+
 		model->pub->addr = BT_MESH_ADDR_UNASSIGNED;
 		model->pub->key = 0;
 		model->pub->cred = 0;
