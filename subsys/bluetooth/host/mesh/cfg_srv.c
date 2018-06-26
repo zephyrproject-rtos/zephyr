@@ -1055,6 +1055,11 @@ static void mod_pub_get(struct bt_mesh_model *model,
 	bool vnd;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	mod_id = buf->data;
 
 	BT_DBG("elem_addr 0x%04x", elem_addr);
@@ -1098,6 +1103,11 @@ static void mod_pub_set(struct bt_mesh_model *model,
 	bool vnd;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	pub_addr = net_buf_simple_pull_le16(buf);
 	pub_app_idx = net_buf_simple_pull_le16(buf);
 	cred_flag = ((pub_app_idx >> 12) & BIT_MASK(1));
@@ -1236,6 +1246,11 @@ static void mod_pub_va_set(struct bt_mesh_model *model,
 	bool vnd;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	label_uuid = buf->data;
 	net_buf_simple_pull(buf, 16);
 
@@ -1304,6 +1319,11 @@ static void mod_pub_va_set(struct bt_mesh_model *model,
 	bool vnd;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	net_buf_simple_pull(buf, 16);
 	mod_id = net_buf_simple_pull(buf, 4);
 
@@ -1378,6 +1398,11 @@ static void mod_sub_add(struct bt_mesh_model *model,
 	int i;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	sub_addr = net_buf_simple_pull_le16(buf);
 
 	BT_DBG("elem_addr 0x%04x, sub_addr 0x%04x", elem_addr, sub_addr);
@@ -1448,6 +1473,11 @@ static void mod_sub_del(struct bt_mesh_model *model,
 	bool vnd;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	sub_addr = net_buf_simple_pull_le16(buf);
 
 	BT_DBG("elem_addr 0x%04x sub_addr 0x%04x", elem_addr, sub_addr);
@@ -1508,6 +1538,11 @@ static void mod_sub_overwrite(struct bt_mesh_model *model,
 	bool vnd;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	sub_addr = net_buf_simple_pull_le16(buf);
 
 	BT_DBG("elem_addr 0x%04x sub_addr 0x%04x", elem_addr, sub_addr);
@@ -1572,6 +1607,10 @@ static void mod_sub_del_all(struct bt_mesh_model *model,
 	bool vnd;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
 
 	BT_DBG("elem_addr 0x%04x", elem_addr);
 
@@ -1620,6 +1659,11 @@ static void mod_sub_get(struct bt_mesh_model *model,
 	int i;
 
 	addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	id = net_buf_simple_pull_le16(buf);
 
 	BT_DBG("addr 0x%04x id 0x%04x", addr, id);
@@ -1671,6 +1715,11 @@ static void mod_sub_get_vnd(struct bt_mesh_model *model,
 	int i;
 
 	addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	company = net_buf_simple_pull_le16(buf);
 	id = net_buf_simple_pull_le16(buf);
 
@@ -1729,6 +1778,11 @@ static void mod_sub_va_add(struct bt_mesh_model *model,
 	int i;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	label_uuid = buf->data;
 	net_buf_simple_pull(buf, 16);
 
@@ -1802,6 +1856,11 @@ static void mod_sub_va_del(struct bt_mesh_model *model,
 	bool vnd;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	label_uuid = buf->data;
 	net_buf_simple_pull(buf, 16);
 
@@ -1865,6 +1924,11 @@ static void mod_sub_va_overwrite(struct bt_mesh_model *model,
 	bool vnd;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	label_uuid = buf->data;
 	net_buf_simple_pull(buf, 16);
 
@@ -1926,6 +1990,11 @@ static void mod_sub_va_add(struct bt_mesh_model *model,
 	bool vnd;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	net_buf_simple_pull(buf, 16);
 
 	mod_id = buf->data;
@@ -1962,6 +2031,11 @@ static void mod_sub_va_del(struct bt_mesh_model *model,
 	bool vnd;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	net_buf_simple_pull(buf, 16);
 
 	mod_id = buf->data;
@@ -1996,6 +2070,11 @@ static void mod_sub_va_overwrite(struct bt_mesh_model *model,
 	bool vnd;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	net_buf_simple_pull(buf, 18);
 
 	mod_id = buf->data;
@@ -2397,6 +2476,11 @@ static void mod_app_bind(struct bt_mesh_model *model,
 	bool vnd;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	key_app_idx = net_buf_simple_pull_le16(buf);
 	mod_id = buf->data;
 
@@ -2449,6 +2533,11 @@ static void mod_app_unbind(struct bt_mesh_model *model,
 	bool vnd;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	key_app_idx = net_buf_simple_pull_le16(buf);
 	mod_id = buf->data;
 
@@ -2496,6 +2585,11 @@ static void mod_app_get(struct bt_mesh_model *model,
 	bool vnd;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
+	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
+		BT_WARN("Prohibited element address");
+		return;
+	}
+
 	mod_id = buf->data;
 
 	BT_DBG("elem_addr 0x%04x", elem_addr);
