@@ -913,7 +913,7 @@ class MakeGenerator:
         else:
             generator = "Unix Makefiles"
             generator_cmd = "$(MAKE)"
-            verb = "VERBOSE=1" if VERBOSE else "VERBOSE=0"
+            verb = "VERBOSE=1" if VERBOSE else ""
 
         if phase == 'running':
             return MakeGenerator.MAKE_RULE_TMPL_RUN.format(
