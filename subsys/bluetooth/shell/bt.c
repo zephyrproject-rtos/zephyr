@@ -130,43 +130,31 @@ static struct bt_sdp_record spp_rec = BT_SDP_RECORD(spp_attrs);
 
 #endif /* CONFIG_BT_RFCOMM */
 
+#define NAME_LEN 30
+
+static bool data_cb(struct bt_data *data, void *user_data)
+{
+	char *name = user_data;
+
+	switch (data->type) {
+	case BT_DATA_NAME_SHORTENED:
+	case BT_DATA_NAME_COMPLETE:
+		memcpy(name, data->data, min(data->data_len, NAME_LEN - 1));
+		return false;
+	default:
+		return true;
+	}
+}
+
 static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 			 struct net_buf_simple *buf)
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
-	char name[30];
+	char name[NAME_LEN];
 
 	memset(name, 0, sizeof(name));
 
-	while (buf->len > 1) {
-		u8_t len, type;
-
-		len = net_buf_simple_pull_u8(buf);
-		if (!len) {
-			break;
-		}
-
-		/* Check if field length is correct */
-		if (len > buf->len) {
-			break;
-		}
-
-		type = net_buf_simple_pull_u8(buf);
-		switch (type) {
-		case BT_DATA_NAME_SHORTENED:
-		case BT_DATA_NAME_COMPLETE:
-			if (len > sizeof(name) - 1) {
-				memcpy(name, buf->data, sizeof(name) - 1);
-			} else {
-				memcpy(name, buf->data, len - 1);
-			}
-			break;
-		default:
-			break;
-		}
-
-		net_buf_simple_pull(buf, len - 1);
-	}
+	bt_data_parse(buf, data_cb, name);
 
 	bt_addr_le_to_str(addr, le_addr, sizeof(le_addr));
 	printk("[DEVICE]: %s, AD evt type %u, RSSI %i %s\n", le_addr, evtype,
