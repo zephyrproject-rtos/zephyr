@@ -12,6 +12,7 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
+#include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -106,6 +107,19 @@ static struct device *cs_dev;
 static u8_t attempts;
 #endif /* CONFIG_BT_SPI_BLUENRG */
 
+#if defined(CONFIG_BT_BLUENRG_ACI)
+#define BLUENRG_ACI_WRITE_CONFIG_DATA       BT_OP(BT_OGF_VS, 0x000C)
+#define BLUENRG_ACI_WRITE_CONFIG_CMD_LL     0x2C
+#define BLUENRG_ACI_LL_MODE                 0x01
+
+struct bluenrg_aci_cmd_ll_param {
+    u8_t cmd;
+    u8_t length;
+    u8_t value;
+};
+static int bt_spi_send_aci_config_data_controller_mode(void);
+#endif /* CONFIG_BT_BLUENRG_ACI */
+
 static struct device *spi_dev;
 
 static struct spi_config spi_conf = {
@@ -159,6 +173,10 @@ static void bt_spi_handle_vendor_evt(u8_t *rxmsg)
 	switch (bt_spi_get_evt(rxmsg)) {
 	case EVT_BLUE_INITIALIZED:
 		k_sem_give(&sem_initialised);
+#if defined(CONFIG_BT_BLUENRG_ACI)
+		/* force BlueNRG to be on controller mode */
+		bt_spi_send_aci_config_data_controller_mode();
+#endif
 	default:
 		break;
 	}
@@ -234,6 +252,29 @@ static bool exit_irq_high_loop(void)
 #define init_irq_high_loop(...)
 #define exit_irq_high_loop(...) 1
 #endif
+
+#if defined(CONFIG_BT_BLUENRG_ACI)
+static int bt_spi_send_aci_config_data_controller_mode(void)
+{
+	struct bluenrg_aci_cmd_ll_param *param;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BLUENRG_ACI_WRITE_CONFIG_DATA, sizeof(*param));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	param = net_buf_add(buf, sizeof(*param));
+	param->cmd = BLUENRG_ACI_WRITE_CONFIG_CMD_LL;
+	param->length = 0x1;
+	/* Force BlueNRG-MS roles to Link Layer only mode */
+	param->value = BLUENRG_ACI_LL_MODE;
+
+	bt_hci_cmd_send(BLUENRG_ACI_WRITE_CONFIG_DATA, buf);
+
+	return 0;
+}
+#endif /* CONFIG_BT_BLUENRG_ACI */
 
 static void bt_spi_rx_thread(void)
 {
@@ -460,6 +501,9 @@ static int bt_spi_open(void)
 static const struct bt_hci_driver drv = {
 	.name		= "BT SPI",
 	.bus		= BT_HCI_DRIVER_BUS_SPI,
+#if defined(CONFIG_BT_BLUENRG_ACI)
+	.quirks		= BT_QUIRK_NO_RESET,
+#endif /* CONFIG_BT_BLUENRG_ACI */
 	.open		= bt_spi_open,
 	.send		= bt_spi_send,
 };
