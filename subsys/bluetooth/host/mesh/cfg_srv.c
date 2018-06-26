@@ -245,7 +245,7 @@ static bool app_key_is_valid(u16_t app_idx)
 
 static u8_t _mod_pub_set(struct bt_mesh_model *model, u16_t pub_addr,
 			 u16_t app_idx, u8_t cred_flag, u8_t ttl, u8_t period,
-			 u8_t retransmit)
+			 u8_t retransmit, bool store)
 {
 	if (!model->pub) {
 		return STATUS_NVAL_PUB_PARAM;
@@ -276,7 +276,7 @@ static u8_t _mod_pub_set(struct bt_mesh_model *model, u16_t pub_addr,
 			k_delayed_work_cancel(&model->pub->timer);
 		}
 
-		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
 			bt_mesh_store_mod_pub(model);
 		}
 
@@ -307,7 +307,7 @@ static u8_t _mod_pub_set(struct bt_mesh_model *model, u16_t pub_addr,
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
 		bt_mesh_store_mod_pub(model);
 	}
 
@@ -318,7 +318,7 @@ static u8_t mod_bind(struct bt_mesh_model *model, u16_t key_idx)
 {
 	int i;
 
-	BT_DBG("key_idx 0x%04x", key_idx);
+	BT_DBG("model %p key_idx 0x%03x", model, key_idx);
 
 	if (!app_key_is_valid(key_idx)) {
 		return STATUS_INVALID_APPKEY;
@@ -346,11 +346,11 @@ static u8_t mod_bind(struct bt_mesh_model *model, u16_t key_idx)
 	return STATUS_INSUFF_RESOURCES;
 }
 
-static u8_t mod_unbind(struct bt_mesh_model *model, u16_t key_idx)
+static u8_t mod_unbind(struct bt_mesh_model *model, u16_t key_idx, bool store)
 {
 	int i;
 
-	BT_DBG("model %p key_idx 0x%04x", model, key_idx);
+	BT_DBG("model %p key_idx 0x%03x store %u", model, key_idx, store);
 
 	if (!app_key_is_valid(key_idx)) {
 		return STATUS_INVALID_APPKEY;
@@ -363,13 +363,13 @@ static u8_t mod_unbind(struct bt_mesh_model *model, u16_t key_idx)
 
 		model->keys[i] = BT_MESH_KEY_UNUSED;
 
-		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
 			bt_mesh_store_mod_bind(model);
 		}
 
 		if (model->pub && model->pub->key == key_idx) {
 			_mod_pub_set(model, BT_MESH_ADDR_UNASSIGNED,
-				     0, 0, 0, 0, 0);
+				     0, 0, 0, 0, 0, store);
 		}
 	}
 
@@ -530,19 +530,28 @@ static void app_key_update(struct bt_mesh_model *model,
 	}
 }
 
+struct unbind_data {
+	u16_t app_idx;
+	bool store;
+};
+
 static void _mod_unbind(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 			bool vnd, bool primary, void *user_data)
 {
-	u16_t *key_idx = user_data;
+	struct unbind_data *data = user_data;
 
-	mod_unbind(mod, *key_idx);
+	mod_unbind(mod, data->app_idx, data->store);
 }
 
-void bt_mesh_app_key_del(struct bt_mesh_app_key *key)
+void bt_mesh_app_key_del(struct bt_mesh_app_key *key, bool store)
 {
-	bt_mesh_model_foreach(_mod_unbind, &key->app_idx);
+	struct unbind_data data = { .app_idx = key->app_idx, .store = store };
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+	BT_DBG("AppIdx 0x%03x store %u", key->app_idx, store);
+
+	bt_mesh_model_foreach(_mod_unbind, &data);
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
 		bt_mesh_clear_app_key(key);
 	}
 
@@ -582,7 +591,7 @@ static void app_key_del(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	bt_mesh_app_key_del(key);
+	bt_mesh_app_key_del(key, true);
 	status = STATUS_SUCCESS;
 
 send_status:
@@ -1127,7 +1136,7 @@ static void mod_pub_set(struct bt_mesh_model *model,
 	}
 
 	status = _mod_pub_set(mod, pub_addr, pub_app_idx, cred_flag, pub_ttl,
-			      pub_period, retransmit);
+			      pub_period, retransmit, true);
 
 send_status:
 	send_mod_pub_status(model, ctx, elem_addr, pub_addr, vnd, mod,
@@ -1270,7 +1279,7 @@ static void mod_pub_va_set(struct bt_mesh_model *model,
 	status = va_add(label_uuid, &pub_addr);
 	if (status == STATUS_SUCCESS) {
 		status = _mod_pub_set(mod, pub_addr, pub_app_idx, cred_flag,
-				      pub_ttl, pub_period, retransmit);
+				      pub_ttl, pub_period, retransmit, true);
 	}
 
 send_status:
@@ -2217,7 +2226,7 @@ static void net_key_del(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	bt_mesh_subnet_del(sub);
+	bt_mesh_subnet_del(sub, true);
 	status = STATUS_SUCCESS;
 
 send_status:
@@ -2457,7 +2466,7 @@ static void mod_app_unbind(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	status = mod_unbind(mod, key_app_idx);
+	status = mod_unbind(mod, key_app_idx, true);
 
 	if (IS_ENABLED(CONFIG_BT_TESTING) && status == STATUS_SUCCESS) {
 		bt_test_mesh_model_unbound(ctx->addr, mod, key_app_idx);
@@ -3246,7 +3255,7 @@ void bt_mesh_cfg_reset(void)
 		struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
 
 		if (sub->net_idx != BT_MESH_KEY_UNUSED) {
-			bt_mesh_subnet_del(sub);
+			bt_mesh_subnet_del(sub, true);
 		}
 	}
 
@@ -3388,14 +3397,16 @@ struct bt_mesh_cfg_srv *bt_mesh_cfg_get(void)
 	return conf;
 }
 
-void bt_mesh_subnet_del(struct bt_mesh_subnet *sub)
+void bt_mesh_subnet_del(struct bt_mesh_subnet *sub, bool store)
 {
 	int i;
+
+	BT_DBG("NetIdx 0x%03x store %u", sub->net_idx, store);
 
 	if (conf && conf->hb_pub.net_idx == sub->net_idx) {
 		hb_pub_disable(conf);
 
-		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
 			bt_mesh_store_hb_pub();
 		}
 	}
@@ -3405,7 +3416,7 @@ void bt_mesh_subnet_del(struct bt_mesh_subnet *sub)
 		struct bt_mesh_app_key *key = &bt_mesh.app_keys[i];
 
 		if (key->net_idx == sub->net_idx) {
-			bt_mesh_app_key_del(key);
+			bt_mesh_app_key_del(key, store);
 		}
 	}
 
@@ -3413,7 +3424,7 @@ void bt_mesh_subnet_del(struct bt_mesh_subnet *sub)
 		bt_mesh_friend_clear_net_idx(sub->net_idx);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
 		bt_mesh_clear_subnet(sub);
 	}
 
