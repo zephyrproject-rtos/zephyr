@@ -79,8 +79,6 @@ void bt_mesh_reset(void)
 		return;
 	}
 
-	bt_mesh_comp_unprovision();
-
 	bt_mesh.iv_index = 0;
 	bt_mesh.seq = 0;
 	bt_mesh.iv_update = 0;
@@ -116,6 +114,8 @@ void bt_mesh_reset(void)
 
 	bt_mesh_scan_disable();
 	bt_mesh_beacon_disable();
+
+	bt_mesh_comp_unprovision();
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {
 		bt_mesh_prov_reset();
