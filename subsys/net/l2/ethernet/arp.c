@@ -470,9 +470,7 @@ static void arp_update(struct net_if *iface,
 	/* Inserting entry into the table */
 	sys_slist_prepend(&arp_table, &entry->node);
 
-	if (net_if_send_data(iface, pkt) == NET_DROP) {
-		net_pkt_unref(pkt);
-	}
+	net_if_queue_tx(iface, pkt);
 }
 
 static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
