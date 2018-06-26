@@ -266,9 +266,43 @@ static bool ethernet_fill_in_dst_on_ipv4_mcast(struct net_pkt *pkt,
 
 	return false;
 }
+
+static struct net_pkt *ethernet_ll_prepare_on_ipv4(struct net_if *iface,
+						   struct net_pkt *pkt)
+{
+	if (net_pkt_ipv4_auto(pkt)) {
+		return pkt;
+	}
+
+	if (ethernet_ipv4_dst_is_broadcast_or_mcast(pkt)) {
+		return pkt;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_ARP)) {
+		struct net_pkt *arp_pkt;
+
+		arp_pkt = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
+		if (!arp_pkt) {
+			return NULL;
+		}
+
+		if (pkt != arp_pkt) {
+			NET_DBG("Sending arp pkt %p (orig %p) to iface %p",
+				arp_pkt, pkt, iface);
+			net_pkt_unref(pkt);
+			return arp_pkt;
+		}
+
+		NET_DBG("Found ARP entry, sending pkt %p to iface %p",
+			pkt, iface);
+	}
+
+	return pkt;
+}
 #else
 #define ethernet_ipv4_dst_is_broadcast_or_mcast(...) false
 #define ethernet_fill_in_dst_on_ipv4_mcast(...) false
+#define ethernet_ll_prepare_on_ipv4(...) NULL
 #endif /* CONFIG_NET_IPV4 */
 
 #ifdef CONFIG_NET_IPV6
@@ -433,98 +467,6 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 static enum net_verdict ethernet_send(struct net_if *iface,
 				      struct net_pkt *pkt)
 {
-	struct ethernet_context *ctx = net_if_l2_data(iface);
-	u16_t ptype;
-
-	/* If this is a LLDP packet, we just send it */
-	if (IS_ENABLED(CONFIG_NET_LLDP) &&
-	    ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_LLDP) {
-		ptype = htons(NET_ETH_PTYPE_LLDP);
-		goto send_frame;
-	}
-
-	if (IS_ENABLED(CONFIG_NET_ARP) &&
-	    net_pkt_family(pkt) == AF_INET &&
-	    !ethernet_ipv4_dst_is_broadcast_or_mcast(pkt)) {
-		struct net_pkt *arp_pkt;
-
-		/* Trying to send ARP message so no need to setup it twice */
-		if (net_pkt_ipv4_auto(pkt)) {
-			goto send_frame;
-		}
-
-		arp_pkt = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
-		if (!arp_pkt) {
-			return NET_DROP;
-		}
-
-		if (pkt != arp_pkt) {
-			NET_DBG("Sending arp pkt %p (orig %p) to iface %p",
-				arp_pkt, pkt, iface);
-
-			/* Either pkt went to ARP pending queue or
-			 * there was no space in the queue anymore.
-			 */
-			net_pkt_unref(pkt);
-
-			pkt = arp_pkt;
-
-			/* For ARP message, we do not touch the packet further but will
-			 * send it as it is because the arp.c has prepared the packet
-			 * already.
-			 */
-			ptype = htons(NET_ETH_PTYPE_ARP);
-		} else {
-			NET_DBG("Found ARP entry, sending pkt %p to "
-				"iface %p",
-				pkt, iface);
-
-			ptype = htons(NET_ETH_PTYPE_IP);
-		}
-
-		goto send_frame;
-	} else {
-		NET_DBG("Sending pkt %p to iface %p", pkt, iface);
-		ptype = htons(NET_ETH_PTYPE_IP);
-	}
-
-	/* If the src ll address is multicast or broadcast, then
-	 * what probably happened is that the RX buffer is used
-	 * for sending data back to recipient. We must
-	 * substitute the src address using the real ll address.
-	 */
-	if (net_eth_is_addr_broadcast((struct net_eth_addr *)
-					net_pkt_lladdr_src(pkt)->addr) ||
-	    net_eth_is_addr_multicast((struct net_eth_addr *)
-					net_pkt_lladdr_src(pkt)->addr)) {
-		net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_if(pkt)->addr;
-		net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
-	}
-
-	/* If the destination address is not set, then use broadcast
-	 * or multicast address.
-	 */
-	if (!net_pkt_lladdr_dst(pkt)->addr) {
-		net_pkt_lladdr_dst(pkt)->addr = (u8_t *)broadcast_eth_addr.addr;
-		net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
-
-		NET_DBG("Destination address was not set, using %s",
-			log_strdup(net_sprint_ll_addr(
-					   net_pkt_lladdr_dst(pkt)->addr,
-					   net_pkt_lladdr_dst(pkt)->len)));
-	}
-
-send_frame:
-
-	if (IS_ENABLED(CONFIG_NET_VLAN) &&
-	    net_eth_is_vlan_enabled(ctx, iface)) {
-		if (set_vlan_tag(ctx, iface, pkt) == NET_DROP) {
-			return NET_DROP;
-		}
-
-		set_vlan_priority(ctx, pkt);
-	}
-
 	net_if_queue_tx(iface, pkt);
 
 	return NET_OK;
@@ -535,23 +477,72 @@ int net_eth_send(struct net_if *iface, struct net_pkt *pkt)
 	const struct ethernet_api *api = net_if_get_device(iface)->driver_api;
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	u16_t ptype;
+	int ret;
 
-	if (net_pkt_family(pkt) == AF_INET) {
-		ptype = htons(NET_ETH_PTYPE_IP);
-	} else if (net_pkt_family(pkt) == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) &&
+	    net_pkt_family(pkt) == AF_INET) {
+		struct net_pkt *tmp;
+
+		tmp = ethernet_ll_prepare_on_ipv4(iface, pkt);
+		if (!tmp) {
+			ret = -ENOMEM;
+			goto error;
+		} else if (IS_ENABLED(CONFIG_NET_ARP) && tmp != pkt) {
+			/* Original pkt got queued and is replaced
+			 * by an ARP request packet.
+			 */
+			pkt = tmp;
+			ptype = htons(NET_ETH_PTYPE_ARP);
+			net_pkt_set_family(pkt, AF_INET);
+		} else {
+			ptype = htons(NET_ETH_PTYPE_IP);
+		}
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		   net_pkt_family(pkt) == AF_INET6) {
 		ptype = htons(NET_ETH_PTYPE_IPV6);
-	} else {
+	} else if (IS_ENABLED(CONFIG_NET_ARP)) {
+		/* Unktown type: Unqueued pkt is an ARP reply.
+		 */
 		ptype = htons(NET_ETH_PTYPE_ARP);
 		net_pkt_set_family(pkt, AF_INET);
+	} else {
+		ret = -ENOTSUP;
+		goto error;
+	}
+
+	/* If the ll dst addr has not been set before, let's assume
+	 * temporarly it's a broadcast one. When filling the header,
+	 * it might detect this should be multicast and act accordingly.
+	 */
+	if (!net_pkt_lladdr_dst(pkt)->addr) {
+		net_pkt_lladdr_dst(pkt)->addr = (u8_t *)broadcast_eth_addr.addr;
+		net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_VLAN) &&
+	    net_eth_is_vlan_enabled(ctx, iface)) {
+		if (set_vlan_tag(ctx, iface, pkt) == NET_DROP) {
+			ret = -EINVAL;
+			goto error;
+		}
+
+		set_vlan_priority(ctx, pkt);
 	}
 
 	/* Then set the ethernet header.
 	 */
 	if (!ethernet_fill_header(ctx, pkt, ptype)) {
-		return -ENOMEM;
+		ret = -ENOMEM;
+		goto error;
 	}
 
-	return api->send(net_if_get_device(iface), pkt);
+	ret = api->send(net_if_get_device(iface), pkt);
+	if (!ret) {
+		net_pkt_unref(pkt);
+	}
+
+error:
+	return ret;
 }
 
 static inline u16_t ethernet_reserve(struct net_if *iface, void *unused)
