@@ -337,7 +337,7 @@ static int net_key_set(int argc, char **argv, char *val)
 		}
 
 		BT_DBG("Deleting NetKeyIndex 0x%03x", net_idx);
-		bt_mesh_subnet_del(sub);
+		bt_mesh_subnet_del(sub, false);
 		return 0;
 	}
 
@@ -404,7 +404,7 @@ static int app_key_set(int argc, char **argv, char *val)
 
 		app = bt_mesh_app_key_find(app_idx);
 		if (app) {
-			bt_mesh_app_key_del(app);
+			bt_mesh_app_key_del(app, false);
 		}
 
 		return 0;
