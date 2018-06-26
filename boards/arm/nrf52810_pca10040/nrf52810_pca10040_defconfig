@@ -20,6 +20,6 @@ CONFIG_RTT_CONSOLE=y
 # additional board options
 CONFIG_GPIO_AS_PINRESET=y
 
-# bluetooth not supported yet on nRF52810
-CONFIG_BT=n
-CONFIG_BT_CTLR=n
+# Bluetooth not enabled by default on nRF52810 due to RAM limitations when
+# running the default set of kernel tests.
+# Enable this on your prj.conf to include Bluetooth support
