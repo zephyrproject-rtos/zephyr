@@ -8,7 +8,6 @@
 
 menuconfig WIFI_WINC1500
 	bool "WINC1500 driver support"
-	default n
 	select ATMEL_WINC1500
 	select WIFI_OFFLOAD
 	select NET_L2_WIFI_MGMT
@@ -41,7 +40,6 @@ config WIFI_WINC1500_SPI_FREQ
 
 config WIFI_WINC1500_GPIO_SPI_CS
 	bool "Manage SPI CS through a GPIO pin"
-	default n
 	help
 	  This option is useful if one needs to manage SPI CS through a GPIO
 	  pin to by-pass the SPI controller's CS logic.
