@@ -2785,6 +2785,241 @@ void HAL_RCCEx_SelectLSEMode(uint8_t Mode)
 
 #endif /* STM32F410xx || STM32F411xE || STM32F446xx || STM32F469xx || STM32F479xx || STM32F412Zx || STM32F412Vx || STM32F412Rx || STM32F412Cx || STM32F413xx || STM32F423xx */
 
+/** @defgroup RCCEx_Exported_Functions_Group2 Extended Clock management functions
+ *  @brief  Extended Clock management functions
+ *
+@verbatim   
+ ===============================================================================
+                ##### Extended clock management functions  #####
+ ===============================================================================
+    [..]
+    This subsection provides a set of functions allowing to control the 
+    activation or deactivation of PLLI2S, PLLSAI.
+@endverbatim
+  * @{
+  */
+
+#if defined(RCC_PLLI2S_SUPPORT)
+/**
+  * @brief  Enable PLLI2S.
+  * @param  PLLI2SInit  pointer to an RCC_PLLI2SInitTypeDef structure that
+  *         contains the configuration information for the PLLI2S
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_RCCEx_EnablePLLI2S(RCC_PLLI2SInitTypeDef  *PLLI2SInit)
+{
+  uint32_t tickstart;
+
+  /* Check for parameters */
+  assert_param(IS_RCC_PLLI2SN_VALUE(PLLI2SInit->PLLI2SN));
+  assert_param(IS_RCC_PLLI2SR_VALUE(PLLI2SInit->PLLI2SR));
+#if defined(RCC_PLLI2SCFGR_PLLI2SM)
+  assert_param(IS_RCC_PLLI2SM_VALUE(PLLI2SInit->PLLI2SM));
+#endif /* RCC_PLLI2SCFGR_PLLI2SM */
+#if defined(RCC_PLLI2SCFGR_PLLI2SP)
+  assert_param(IS_RCC_PLLI2SP_VALUE(PLLI2SInit->PLLI2SP));
+#endif /* RCC_PLLI2SCFGR_PLLI2SP */
+#if defined(RCC_PLLI2SCFGR_PLLI2SQ)
+  assert_param(IS_RCC_PLLI2SQ_VALUE(PLLI2SInit->PLLI2SQ));
+#endif /* RCC_PLLI2SCFGR_PLLI2SQ */
+
+  /* Disable the PLLI2S */
+  __HAL_RCC_PLLI2S_DISABLE();
+
+  /* Wait till PLLI2S is disabled */
+  tickstart = HAL_GetTick();
+  while(__HAL_RCC_GET_FLAG(RCC_FLAG_PLLI2SRDY) != RESET)
+  {
+    if((HAL_GetTick() - tickstart ) > PLLI2S_TIMEOUT_VALUE)
+    {
+      /* return in case of Timeout detected */
+      return HAL_TIMEOUT;
+    }
+  }
+
+  /* Configure the PLLI2S division factors */
+#if defined(STM32F446xx)
+  /* PLLI2S_VCO = f(VCO clock) = f(PLLI2S clock input) * (PLLI2SN/PLLI2SM) */
+  /* I2SPCLK = PLLI2S_VCO / PLLI2SP */
+  /* I2SQCLK = PLLI2S_VCO / PLLI2SQ */
+  /* I2SRCLK = PLLI2S_VCO / PLLI2SR */
+  __HAL_RCC_PLLI2S_CONFIG(PLLI2SInit->PLLI2SM, PLLI2SInit->PLLI2SN, \
+                          PLLI2SInit->PLLI2SP, PLLI2SInit->PLLI2SQ, PLLI2SInit->PLLI2SR);
+#elif defined(STM32F412Zx) || defined(STM32F412Vx) || defined(STM32F412Rx) || defined(STM32F412Cx) ||\
+      defined(STM32F413xx) || defined(STM32F423xx)
+  /* PLLI2S_VCO = f(VCO clock) = f(PLLI2S clock input) * (PLLI2SN/PLLI2SM)*/
+  /* I2SQCLK = PLLI2S_VCO / PLLI2SQ */
+  /* I2SRCLK = PLLI2S_VCO / PLLI2SR */
+  __HAL_RCC_PLLI2S_CONFIG(PLLI2SInit->PLLI2SM, PLLI2SInit->PLLI2SN, \
+                          PLLI2SInit->PLLI2SQ, PLLI2SInit->PLLI2SR);
+#elif defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx) || defined(STM32F439xx) ||\
+      defined(STM32F469xx) || defined(STM32F479xx)
+  /* PLLI2S_VCO = f(VCO clock) = f(PLLI2S clock input) * PLLI2SN */
+  /* I2SQCLK = PLLI2S_VCO / PLLI2SQ */
+  /* I2SRCLK = PLLI2S_VCO / PLLI2SR */
+  __HAL_RCC_PLLI2S_SAICLK_CONFIG(PLLI2SInit->PLLI2SN, PLLI2SInit->PLLI2SQ, PLLI2SInit->PLLI2SR);
+#elif defined(STM32F411xE)
+  /* PLLI2S_VCO = f(VCO clock) = f(PLLI2S clock input) * (PLLI2SN/PLLI2SM) */
+  /* I2SRCLK = PLLI2S_VCO / PLLI2SR */
+  __HAL_RCC_PLLI2S_I2SCLK_CONFIG(PLLI2SInit->PLLI2SM, PLLI2SInit->PLLI2SN, PLLI2SInit->PLLI2SR);
+#else
+  /* PLLI2S_VCO = f(VCO clock) = f(PLLI2S clock input) x PLLI2SN */
+  /* I2SRCLK = PLLI2S_VCO / PLLI2SR */
+  __HAL_RCC_PLLI2S_CONFIG(PLLI2SInit->PLLI2SN, PLLI2SInit->PLLI2SR);
+#endif /* STM32F446xx */
+
+  /* Enable the PLLI2S */
+  __HAL_RCC_PLLI2S_ENABLE();
+
+  /* Wait till PLLI2S is ready */
+  tickstart = HAL_GetTick();
+  while(__HAL_RCC_GET_FLAG(RCC_FLAG_PLLI2SRDY) == RESET)
+  {
+    if((HAL_GetTick() - tickstart ) > PLLI2S_TIMEOUT_VALUE)
+    {
+      /* return in case of Timeout detected */
+      return HAL_TIMEOUT;
+    }
+  }
+
+ return HAL_OK;
+}
+
+/**
+  * @brief  Disable PLLI2S.
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_RCCEx_DisablePLLI2S(void)
+{
+  uint32_t tickstart;
+
+  /* Disable the PLLI2S */
+  __HAL_RCC_PLLI2S_DISABLE();
+
+  /* Wait till PLLI2S is disabled */
+  tickstart = HAL_GetTick();
+  while(READ_BIT(RCC->CR, RCC_CR_PLLI2SRDY) != RESET)
+  {
+    if((HAL_GetTick() - tickstart) > PLLI2S_TIMEOUT_VALUE)
+    {
+      /* return in case of Timeout detected */
+      return HAL_TIMEOUT;
+    }
+  }
+
+  return HAL_OK;
+}
+
+#endif /* RCC_PLLI2S_SUPPORT */
+
+#if defined(RCC_PLLSAI_SUPPORT)
+/**
+  * @brief  Enable PLLSAI.
+  * @param  PLLSAIInit  pointer to an RCC_PLLSAIInitTypeDef structure that
+  *         contains the configuration information for the PLLSAI
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_RCCEx_EnablePLLSAI(RCC_PLLSAIInitTypeDef  *PLLSAIInit)
+{
+  uint32_t tickstart;
+
+  /* Check for parameters */
+  assert_param(IS_RCC_PLLSAIN_VALUE(PLLSAIInit->PLLSAIN));
+  assert_param(IS_RCC_PLLSAIQ_VALUE(PLLSAIInit->PLLSAIQ));
+#if defined(RCC_PLLSAICFGR_PLLSAIM)
+  assert_param(IS_RCC_PLLSAIM_VALUE(PLLSAIInit->PLLSAIM));
+#endif /* RCC_PLLSAICFGR_PLLSAIM */
+#if defined(RCC_PLLSAICFGR_PLLSAIP)
+  assert_param(IS_RCC_PLLSAIP_VALUE(PLLSAIInit->PLLSAIP));
+#endif /* RCC_PLLSAICFGR_PLLSAIP */
+#if defined(RCC_PLLSAICFGR_PLLSAIR)
+  assert_param(IS_RCC_PLLSAIR_VALUE(PLLSAIInit->PLLSAIR));
+#endif /* RCC_PLLSAICFGR_PLLSAIR */
+
+  /* Disable the PLLSAI */
+  __HAL_RCC_PLLSAI_DISABLE();
+
+  /* Wait till PLLSAI is disabled */
+  tickstart = HAL_GetTick();
+  while(__HAL_RCC_PLLSAI_GET_FLAG() != RESET)
+  {
+    if((HAL_GetTick() - tickstart ) > PLLSAI_TIMEOUT_VALUE)
+    {
+      /* return in case of Timeout detected */
+      return HAL_TIMEOUT;
+    }
+  }
+
+  /* Configure the PLLSAI division factors */
+#if defined(STM32F446xx)
+  /* PLLSAI_VCO = f(VCO clock) = f(PLLSAI clock input) * (PLLSAIN/PLLSAIM) */
+  /* SAIPCLK = PLLSAI_VCO / PLLSAIP */
+  /* SAIQCLK = PLLSAI_VCO / PLLSAIQ */
+  /* SAIRCLK = PLLSAI_VCO / PLLSAIR */
+  __HAL_RCC_PLLSAI_CONFIG(PLLSAIInit->PLLSAIM, PLLSAIInit->PLLSAIN, \
+                          PLLSAIInit->PLLSAIP, PLLSAIInit->PLLSAIQ, 0U);
+#elif defined(STM32F469xx) || defined(STM32F479xx)
+  /* PLLSAI_VCO = f(VCO clock) = f(PLLSAI clock input) * PLLSAIN */
+  /* SAIPCLK = PLLSAI_VCO / PLLSAIP */
+  /* SAIQCLK = PLLSAI_VCO / PLLSAIQ */
+  /* SAIRCLK = PLLSAI_VCO / PLLSAIR */
+  __HAL_RCC_PLLSAI_CONFIG(PLLSAIInit->PLLSAIN, PLLSAIInit->PLLSAIP, \
+                          PLLSAIInit->PLLSAIQ, PLLSAIInit->PLLSAIR);
+#else
+  /* PLLSAI_VCO = f(VCO clock) = f(PLLSAI clock input) x PLLSAIN */
+  /* SAIQCLK = PLLSAI_VCO / PLLSAIQ */
+  /* SAIRCLK = PLLSAI_VCO / PLLSAIR */
+  __HAL_RCC_PLLSAI_CONFIG(PLLSAIInit->PLLSAIN, PLLSAIInit->PLLSAIQ, PLLSAIInit->PLLSAIR);
+#endif /* STM32F446xx */
+
+  /* Enable the PLLSAI */
+  __HAL_RCC_PLLSAI_ENABLE();
+
+  /* Wait till PLLSAI is ready */
+  tickstart = HAL_GetTick();
+  while(__HAL_RCC_PLLSAI_GET_FLAG() == RESET)
+  {
+    if((HAL_GetTick() - tickstart ) > PLLSAI_TIMEOUT_VALUE)
+    {
+      /* return in case of Timeout detected */
+      return HAL_TIMEOUT;
+    }
+  }
+
+ return HAL_OK;
+}
+
+/**
+  * @brief  Disable PLLSAI.
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_RCCEx_DisablePLLSAI(void)
+{
+  uint32_t tickstart;
+
+  /* Disable the PLLSAI */
+  __HAL_RCC_PLLSAI_DISABLE();
+
+  /* Wait till PLLSAI is disabled */
+  tickstart = HAL_GetTick();
+  while(__HAL_RCC_PLLSAI_GET_FLAG() != RESET)
+  {
+    if((HAL_GetTick() - tickstart) > PLLSAI_TIMEOUT_VALUE)
+    {
+      /* return in case of Timeout detected */
+      return HAL_TIMEOUT;
+    }
+  }
+
+  return HAL_OK;
+}
+
+#endif /* RCC_PLLSAI_SUPPORT */
+
+/**
+  * @}
+  */
+
 #if defined(STM32F446xx)
 /**
   * @brief  Returns the SYSCLK frequency
@@ -3042,10 +3277,32 @@ HAL_StatusTypeDef HAL_RCC_DeInit(void)
 #endif /* STM32F427xx || STM32F429xx || STM32F437xx || STM32F439xx || STM32F469xx || STM32F479xx */
 
   /* Disable all interrupts */
-  CLEAR_REG(RCC->CIR);
+  CLEAR_BIT(RCC->CIR, RCC_CIR_LSIRDYIE | RCC_CIR_LSERDYIE | RCC_CIR_HSIRDYIE | RCC_CIR_HSERDYIE | RCC_CIR_PLLRDYIE);
 
-  /* Clear all flags */
-  CLEAR_REG(RCC->CSR);
+#if defined(RCC_CIR_PLLI2SRDYIE)
+  CLEAR_BIT(RCC->CIR, RCC_CIR_PLLI2SRDYIE);
+#endif /* RCC_CIR_PLLI2SRDYIE */
+
+#if defined(RCC_CIR_PLLSAIRDYIE)
+  CLEAR_BIT(RCC->CIR, RCC_CIR_PLLSAIRDYIE);
+#endif /* RCC_CIR_PLLSAIRDYIE */
+
+  /* Clear all interrupt flags */
+  SET_BIT(RCC->CIR, RCC_CIR_LSIRDYC | RCC_CIR_LSERDYC | RCC_CIR_HSIRDYC | RCC_CIR_HSERDYC | RCC_CIR_PLLRDYC | RCC_CIR_CSSC);
+
+#if defined(RCC_CIR_PLLI2SRDYC)
+  SET_BIT(RCC->CIR, RCC_CIR_PLLI2SRDYC);
+#endif /* RCC_CIR_PLLI2SRDYC */
+
+#if defined(RCC_CIR_PLLSAIRDYC)
+  SET_BIT(RCC->CIR, RCC_CIR_PLLSAIRDYC);
+#endif /* RCC_CIR_PLLSAIRDYC */
+
+  /* Clear LSION bit */
+  CLEAR_BIT(RCC->CSR, RCC_CSR_LSION);
+
+  /* Reset all CSR flags */
+  SET_BIT(RCC->CSR, RCC_CSR_RMVF);
 
   /* Update the SystemCoreClock global variable */
   SystemCoreClock = HSI_VALUE;
@@ -3257,23 +3514,33 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
   /*------------------------------ LSE Configuration -------------------------*/
   if(((RCC_OscInitStruct->OscillatorType) & RCC_OSCILLATORTYPE_LSE) == RCC_OSCILLATORTYPE_LSE)
   {
+    FlagStatus       pwrclkchanged = RESET;
+
     /* Check the parameters */
     assert_param(IS_RCC_LSE(RCC_OscInitStruct->LSEState));
 
-    /* Enable Power Clock*/
-    __HAL_RCC_PWR_CLK_ENABLE();
-
-    /* Enable write access to Backup domain */
-    PWR->CR |= PWR_CR_DBP;
-
-    /* Wait for Backup domain Write protection disable */
-    tickstart = HAL_GetTick();
-
-    while((PWR->CR & PWR_CR_DBP) == RESET)
+    /* Update LSE configuration in Backup Domain control register    */
+    /* Requires to enable write access to Backup Domain of necessary */
+    if(__HAL_RCC_PWR_IS_CLK_DISABLED())
     {
-      if((HAL_GetTick() - tickstart ) > RCC_DBP_TIMEOUT_VALUE)
+      __HAL_RCC_PWR_CLK_ENABLE();
+      pwrclkchanged = SET;
+    }
+
+    if(HAL_IS_BIT_CLR(PWR->CR, PWR_CR_DBP))
+    {
+      /* Enable write access to Backup domain */
+      SET_BIT(PWR->CR, PWR_CR_DBP);
+
+      /* Wait for Backup domain Write protection disable */
+      tickstart = HAL_GetTick();
+
+      while(HAL_IS_BIT_CLR(PWR->CR, PWR_CR_DBP))
       {
-        return HAL_TIMEOUT;
+        if((HAL_GetTick() - tickstart) > RCC_DBP_TIMEOUT_VALUE)
+        {
+          return HAL_TIMEOUT;
+        }
       }
     }
 
@@ -3307,6 +3574,12 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
           return HAL_TIMEOUT;
         }
       }
+    }
+
+    /* Restore clock configuration if changed */
+    if(pwrclkchanged == SET)
+    {
+      __HAL_RCC_PWR_CLK_DISABLE();
     }
   }
   /*-------------------------------- PLL Configuration -----------------------*/
