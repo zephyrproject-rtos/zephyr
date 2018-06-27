@@ -22,7 +22,6 @@ config CONSOLE_INPUT_MAX_LINE_LEN
 
 config CONSOLE_HAS_DRIVER
 	bool
-	default n
 	help
 	  This is an option to be enabled by console drivers to signal
 	  that some kind of console exists.
@@ -32,7 +31,6 @@ config CONSOLE_HANDLER
 	prompt "Enable console input handler"
 	depends on UART_CONSOLE
 	select UART_INTERRUPT_DRIVEN
-	default n
 	help
 	  This option enables console input handler allowing to write simple
 	  interaction between serial console and the OS.
@@ -40,7 +38,6 @@ config CONSOLE_HANDLER
 config UART_CONSOLE
 	bool
 	prompt "Use UART for console"
-	default n
 	depends on SERIAL && SERIAL_HAS_DRIVER
 	select CONSOLE_HAS_DRIVER
 	help
@@ -70,7 +67,6 @@ config UART_CONSOLE_INIT_PRIORITY
 config UART_CONSOLE_DEBUG_SERVER_HOOKS
 	bool
 	prompt "Debug server hooks in debug console"
-	default n
 	depends on UART_CONSOLE
 	help
 	  This option allows a debug server agent such as GDB to take over the
@@ -82,7 +78,6 @@ config UART_CONSOLE_DEBUG_SERVER_HOOKS
 config UART_CONSOLE_MCUMGR
 	bool
 	prompt "Enable UART console mcumgr passthrough"
-	default n
 	depends on UART_CONSOLE
 	help
 	  Enables the UART console to receive mcumgr frames for image upgrade
@@ -96,7 +91,6 @@ config USB_UART_CONSOLE
 	depends on SERIAL
 	select CONSOLE_HAS_DRIVER
 	select USB_CDC_ACM
-	default n
 	help
 	  Enable this option to use the USB UART for console output. The output
 	  can be viewed from the USB host via /dev/ttyACM* port. Note that console
@@ -107,7 +101,6 @@ config USB_UART_CONSOLE
 config USB_UART_DTR_WAIT
 	bool
 	prompt "Wait on DTR control signal"
-	default n
 	depends on USB_UART_CONSOLE
 	help
 	  Enable this option to use flow control on the console. The uart console
@@ -118,7 +111,6 @@ config RAM_CONSOLE
 	bool
 	prompt "Use RAM console"
 	select CONSOLE_HAS_DRIVER
-	default n
 	help
 	  Emit console messages to a RAM buffer "ram_console" which can
 	  be examined at runtime with a debugger. Useful in board bring-up
@@ -137,7 +129,6 @@ config RTT_CONSOLE
 	prompt "Use RTT console"
 	depends on HAS_SEGGER_RTT
 	select CONSOLE_HAS_DRIVER
-	default n
 	help
 	  Emit console messages to a RAM buffer that is then read by the
 	  Segger J-Link software and displayed on a computer in real-time.
@@ -176,7 +167,6 @@ config IPM_CONSOLE_SENDER
 	bool
 	prompt "Inter-processor Mailbox console sender"
 	select CONSOLE_HAS_DRIVER
-	default n
 	help
 	  Enable the sending side of IPM console
 
@@ -184,7 +174,6 @@ config IPM_CONSOLE_RECEIVER
 	bool
 	prompt "Inter-processor Mailbox console receiver"
 	select RING_BUFFER
-	default n
 	help
 	  Enable the receiving side of IPM console
 
@@ -212,7 +201,6 @@ config	UART_PIPE
 	bool
 	prompt "Enable pipe UART driver"
 	select UART_INTERRUPT_DRIVEN
-	default n
 	help
 	  Enable pipe UART driver. This driver allows application to communicate
 	  over UART with custom defined protocol. Driver doesn't inspect received
@@ -233,7 +221,6 @@ config UART_MCUMGR
 	bool
 	prompt "Enable mcumgr UART driver"
 	select UART_INTERRUPT_DRIVEN
-	default n
 	help
 	  Enable the mcumgr UART driver. This driver allows the application to
 	  communicate over UART using the mcumgr protocol for image upgrade and

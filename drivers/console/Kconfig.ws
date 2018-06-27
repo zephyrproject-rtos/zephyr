@@ -8,7 +8,6 @@
 
 menuconfig WEBSOCKET_CONSOLE
 	bool "Enable websocket console service"
-	default n
 	select NETWORKING
 	select NET_TCP
 	select HTTP_PARSER
@@ -95,7 +94,6 @@ config SYS_LOG_WEBSOCKET_CONSOLE_LEVEL
 config WEBSOCKET_CONSOLE_DEBUG_DEEP
 	bool "Forward output to original console handler"
 	depends on UART_CONSOLE
-	default n
 	help
 	For WS console developers only, this will forward each output to
 	original console handler. So if by chance WS console seems silent,
