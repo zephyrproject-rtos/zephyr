@@ -11,7 +11,6 @@ if SOC_FAMILY_ARM
 config TIMER_TMR_CMSDK_APB
 	bool
 	prompt "ARM CMSDK (Cortex-M System Design Kit) Timer driver"
-	default n
 	help
 	  The timers (TMR) present in the platform are used as timers.
 	  This option enables the support for the timers.
@@ -23,7 +22,6 @@ if TIMER_TMR_CMSDK_APB
 config TIMER_TMR_CMSDK_APB_0
 	bool
 	prompt "Timer 0 driver"
-	default n
 	help
 	  Enable support for Timer 0.
 
@@ -46,7 +44,6 @@ config TIMER_TMR_CMSDK_APB_0_IRQ_PRI
 config TIMER_TMR_CMSDK_APB_1
 	bool
 	prompt "Timer 1 driver"
-	default n
 	help
 	  Enable support for Timer 1.
 
@@ -69,7 +66,6 @@ endif # TIMER_TMR_CMSDK_APB
 config COUNTER_TMR_CMSDK_APB
 	bool
 	prompt "ARM CMSDK (Cortex-M System Design Kit) Counter driver"
-	default n
 	help
 	  The timers (TMR) present in the platform are used as counters.
 	  This option enables the support for the counters.
@@ -82,7 +78,6 @@ config COUNTER_TMR_CMSDK_APB_0
 	bool
 	prompt "Counter 0 driver"
 	depends on !TIMER_TMR_CMSDK_APB_0
-	default n
 	help
 	  Enable support for Counter 0.
 
@@ -99,7 +94,6 @@ config COUNTER_TMR_CMSDK_APB_1
 	bool
 	prompt "Counter 1 driver"
 	depends on !TIMER_TMR_CMSDK_APB_1
-	default n
 	help
 	  Enable support for Counter 1.
 

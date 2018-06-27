@@ -8,7 +8,6 @@
 
 menuconfig COUNTER
 	bool "Counter Drivers"
-	default n
 	help
 	  Enable support for counter and timer.
 

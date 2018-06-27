@@ -11,7 +11,6 @@ if SOC_FAMILY_ARM
 config TIMER_DTMR_CMSDK_APB
 	bool
 	prompt "ARM CMSDK (Cortex-M System Design Kit) DTMR Timer driver"
-	default n
 	help
 	  The dualtimer (DTMR) present in the platform is used as a timer.
 	  This option enables the support for the timer.
@@ -23,7 +22,6 @@ if TIMER_DTMR_CMSDK_APB
 config TIMER_DTMR_CMSDK_APB_0
 	bool
 	prompt "Timer 0 driver"
-	default n
 	help
 	  Enable support for Timer 0.
 
@@ -46,7 +44,6 @@ endif # TIMER_DTMR_CMSDK_APB
 config COUNTER_DTMR_CMSDK_APB
 	bool
 	prompt "ARM CMSDK (Cortex-M System Design Kit) DTMR Counter driver"
-	default n
 	help
 	  The dualtimer (DTMR) present in the platform is used as a counter.
 	  This option enables the support for the counter.
@@ -59,7 +56,6 @@ config COUNTER_DTMR_CMSDK_APB_0
 	bool
 	prompt "Counter 0 driver"
 	depends on !TIMER_DTMR_CMSDK_APB_0
-	default n
 	help
 	  Enable support for Counter 0.
 
