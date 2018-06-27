@@ -8,7 +8,6 @@
 menuconfig GPIO_MCUX_IGPIO
 	bool "MCUX IGPIO driver"
 	depends on GPIO && HAS_MCUX_IGPIO
-	default n
 	help
 	  Enable the MCUX IGPIO driver.
 
@@ -16,31 +15,26 @@ if GPIO_MCUX_IGPIO
 
 config GPIO_MCUX_IGPIO_1
 	bool "Port 1"
-	default n
 	help
 	  Enable Port 1.
 
 config GPIO_MCUX_IGPIO_2
 	bool "Port 2"
-	default n
 	help
 	  Enable Port 2.
 
 config GPIO_MCUX_IGPIO_3
 	bool "Port 3"
-	default n
 	help
 	  Enable Port 3.
 
 config GPIO_MCUX_IGPIO_4
 	bool "Port 4"
-	default n
 	help
 	  Enable Port 4.
 
 config GPIO_MCUX_IGPIO_5
 	bool "Port 5"
-	default n
 	help
 	  Enable Port 5.
 

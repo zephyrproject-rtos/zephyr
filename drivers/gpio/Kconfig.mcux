@@ -10,7 +10,6 @@ menuconfig GPIO_MCUX
 	bool "MCUX GPIO driver"
 	depends on GPIO && HAS_MCUX
 	select HAS_DTS_GPIO
-	default n
 	help
 	  Enable the MCUX pinmux driver.
 
@@ -19,35 +18,30 @@ if GPIO_MCUX
 config GPIO_MCUX_PORTA
 	bool "Port A"
 	depends on PINMUX_MCUX_PORTA
-	default n
 	help
 	  Enable Port A.
 
 config GPIO_MCUX_PORTB
 	bool "Port B"
 	depends on PINMUX_MCUX_PORTB
-	default n
 	help
 	  Enable Port B.
 
 config GPIO_MCUX_PORTC
 	bool "Port C"
 	depends on PINMUX_MCUX_PORTC
-	default n
 	help
 	  Enable Port C.
 
 config GPIO_MCUX_PORTD
 	bool "Port D"
 	depends on PINMUX_MCUX_PORTD
-	default n
 	help
 	  Enable Port D.
 
 config GPIO_MCUX_PORTE
 	bool "Port E"
 	depends on PINMUX_MCUX_PORTE
-	default n
 	help
 	  Enable Port E.
 

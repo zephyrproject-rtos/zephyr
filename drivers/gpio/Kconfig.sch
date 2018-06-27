@@ -9,7 +9,6 @@
 menuconfig GPIO_SCH
 	bool "Intel SCH GPIO controller"
 	depends on GPIO
-	default n
 	help
 	  Enable the SCH GPIO driver found on Intel boards
 
@@ -35,7 +34,6 @@ config GPIO_SCH_0_DEV_NAME
 
 config GPIO_SCH_1
 	bool "Enable SCH GPIO port 1"
-	default n
 	depends on GPIO_SCH
 
 config GPIO_SCH_1_DEV_NAME

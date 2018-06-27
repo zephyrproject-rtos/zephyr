@@ -8,7 +8,6 @@
 menuconfig GPIO_GECKO
 	bool "Gecko GPIO driver"
 	depends on GPIO && HAS_SILABS_GECKO
-	default n
 	help
 	  Enable the Gecko gpio driver.
 
@@ -28,7 +27,6 @@ config GPIO_GECKO_COMMON_PRI
 
 config GPIO_GECKO_PORTA
 	bool "Port A"
-	default n
 	help
 	  Enable Port A.
 
@@ -39,7 +37,6 @@ config GPIO_GECKO_PORTA_NAME
 
 config GPIO_GECKO_PORTB
 	bool "Port B"
-	default n
 	help
 	  Enable Port B.
 
@@ -50,7 +47,6 @@ config GPIO_GECKO_PORTB_NAME
 
 config GPIO_GECKO_PORTC
 	bool "Port C"
-	default n
 	help
 	  Enable Port C.
 
@@ -61,7 +57,6 @@ config GPIO_GECKO_PORTC_NAME
 
 config GPIO_GECKO_PORTD
 	bool "Port D"
-	default n
 	help
 	  Enable Port D.
 
@@ -72,7 +67,6 @@ config GPIO_GECKO_PORTD_NAME
 
 config GPIO_GECKO_PORTE
 	bool "Port E"
-	default n
 	help
 	  Enable Port E.
 
@@ -83,7 +77,6 @@ config GPIO_GECKO_PORTE_NAME
 
 config GPIO_GECKO_PORTF
 	bool "Port F"
-	default n
 	help
 	  Enable Port F.
 

@@ -6,6 +6,5 @@
 menuconfig GPIO_SAM0
 	bool "Atmel SAM0 GPIO (PORT) driver"
 	depends on GPIO && SOC_FAMILY_SAM0
-	default n
 	help
 	  Enable support for the Atmel SAM0 'PORT' GPIO controllers.

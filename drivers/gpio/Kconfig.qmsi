@@ -9,7 +9,6 @@
 menuconfig GPIO_QMSI
 	bool "QMSI GPIO driver"
 	depends on GPIO && QMSI
-	default n
 	help
 	  Enable the GPIO driver found on Intel Microcontroller
 	  boards, using the QMSI library.
@@ -17,7 +16,6 @@ menuconfig GPIO_QMSI
 menuconfig GPIO_QMSI_SS
 	bool "QMSI GPIO SS driver"
 	depends on GPIO && QMSI && ARC
-	default n
 	help
 	  Enable the GPIO driver found on Intel Microcontroller
 	  boards, on the sensor subsystem, using the QMSI library.
@@ -36,7 +34,6 @@ config GPIO_QMSI_API_REENTRANCY
 	bool
 	prompt "GPIO driver API reentrancy"
 	depends on GPIO_QMSI
-	default n
 	help
 	  Enable support for QMSI GPIO driver API reentrancy.
 
@@ -44,13 +41,11 @@ if GPIO_QMSI
 
 config GPIO_QMSI_0
 	bool "QMSI GPIO block 0"
-	default n
 	help
 	  Include support for the GPIO port 0 using QMSI.
 
 config GPIO_QMSI_1
 	bool "QMSI GPIO block 1"
-	default n
 	help
 	  Include support for the GPIO port 1 using QMSI.
 
@@ -60,13 +55,11 @@ if GPIO_QMSI_SS
 
 config GPIO_QMSI_SS_0
 	bool "QMSI GPIO SS block 0"
-	default n
 	help
 	  Include support for the GPIO SS port 0 using QMSI.
 
 config GPIO_QMSI_SS_1
 	bool "QMSI GPIO SS block 1"
-	default n
 	help
 	  Include support for the GPIO SS port 1 using QMSI.
 

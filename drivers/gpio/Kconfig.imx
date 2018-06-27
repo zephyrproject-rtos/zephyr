@@ -8,7 +8,6 @@
 menuconfig GPIO_IMX
 	bool "IMX GPIO driver"
 	depends on GPIO && HAS_IMX_GPIO
-	default n
 	help
 	  Enable the IMX GPIO driver.
 
@@ -16,43 +15,36 @@ if GPIO_IMX
 
 config GPIO_IMX_PORT_1
 	bool "Port 1"
-	default n
 	help
 	  Enable Port 1.
 
 config GPIO_IMX_PORT_2
 	bool "Port 2"
-	default n
 	help
 	  Enable Port 2.
 
 config GPIO_IMX_PORT_3
 	bool "Port 3"
-	default n
 	help
 	  Enable Port 3.
 
 config GPIO_IMX_PORT_4
 	bool "Port 4"
-	default n
 	help
 	  Enable Port 4.
 
 config GPIO_IMX_PORT_5
 	bool "Port 5"
-	default n
 	help
 	  Enable Port 5.
 
 config GPIO_IMX_PORT_6
 	bool "Port 6"
-	default n
 	help
 	  Enable Port 6.
 
 config GPIO_IMX_PORT_7
 	bool "Port 7"
-	default n
 	help
 	  Enable Port 7.
 
