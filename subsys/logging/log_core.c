@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <atomic.h>
 #include <stdio.h>
+#include <atomic.h>
 
 #ifndef CONFIG_LOG_PRINTK_MAX_STRING_LENGTH
 #define CONFIG_LOG_PRINTK_MAX_STRING_LENGTH 1
@@ -26,6 +27,8 @@ LOG_BACKEND_UART_DEFINE(log_backend_uart);
 static struct log_list_t list;
 static atomic_t initialized;
 static bool panic_mode;
+static atomic_t buffered_cnt;
+static k_tid_t proc_tid;
 
 static u32_t dummy_timestamp(void);
 static timestamp_get_t timestamp_func = dummy_timestamp;
@@ -38,9 +41,21 @@ static u32_t dummy_timestamp(void)
 static inline void msg_finalize(struct log_msg *msg,
 				struct log_msg_ids src_level)
 {
+	unsigned int key;
+
 	msg->hdr.ids = src_level;
 	msg->hdr.timestamp = timestamp_func();
-	unsigned int key = irq_lock();
+
+	if (!IS_ENABLED(CONFIG_LOG_INPLACE_PROCESS) &&
+	    CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
+		atomic_inc(&buffered_cnt);
+		if (buffered_cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
+		    proc_tid) {
+			k_wakeup(proc_tid);
+		}
+	}
+
+	key = irq_lock();
 
 	log_list_add_tail(&list, msg);
 
@@ -209,6 +224,7 @@ void log_init(void)
 	timestamp_func = timestamp_get;
 	log_output_timestamp_freq_set(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
+
 	/* Assign ids to backends. */
 	for (i = 0; i < log_backend_count_get(); i++) {
 		log_backend_id_set(log_backend_get(i),
@@ -221,6 +237,18 @@ void log_init(void)
 			   NULL,
 			   CONFIG_LOG_DEFAULT_LEVEL);
 #endif
+}
+
+void log_thread_set(k_tid_t process_tid)
+{
+	proc_tid = process_tid;
+
+	if (!IS_ENABLED(CONFIG_LOG_INPLACE_PROCESS) &&
+	    CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
+	    process_tid &&
+	    buffered_cnt >= CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
+		k_wakeup(proc_tid);
+	}
 }
 
 int log_set_timestamp_func(timestamp_get_t timestamp_getter, u32_t freq)
@@ -297,6 +325,7 @@ bool log_process(bool bypass)
 	irq_unlock(key);
 
 	if (msg != NULL) {
+		atomic_dec(&buffered_cnt);
 		msg_process(msg, bypass);
 	}
 

@@ -207,6 +207,14 @@ config LOG_INPLACE_PROCESS
 	  access to work flawlessly in that mode because one log operation can be
 	  interrupted by another one in higher priority context.
 
+config LOG_PROCESS_TRIGGER_THRESHOLD
+	int "Amount of buffered logs which triggers processing thread."
+	default 0
+	help
+	  When number of buffered messages reaches the threshold thread is waken
+	  up. Log processing thread ID is provided during log initialization.
+	  Set 0 to disable the feature.
+
 config LOG_BUFFER_SIZE
 	int "Number of bytes dedicated for the logger internal buffer."
 	default 1024
