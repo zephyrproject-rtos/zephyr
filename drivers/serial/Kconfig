@@ -9,7 +9,6 @@
 menuconfig SERIAL
 	bool
 	prompt "Serial Drivers"
-	default n
 	help
 	  Enable options for serial drivers.
 
@@ -19,7 +18,6 @@ comment "Capabilities"
 
 config SERIAL_HAS_DRIVER
 	bool
-	default n
 	help
 	  This is an option to be enabled by individual serial driver
 	  to signal that there is a serial driver. This is being used
@@ -27,7 +25,6 @@ config SERIAL_HAS_DRIVER
 
 config SERIAL_SUPPORT_INTERRUPT
 	bool
-	default n
 	help
 	  This is an option to be enabled by individual serial driver
 	  to signal that the driver and hardware supports interrupts.
@@ -35,7 +32,6 @@ config SERIAL_SUPPORT_INTERRUPT
 config UART_INTERRUPT_DRIVEN
 	bool
 	prompt "Enable UART Interrupt support"
-	default n
 	depends on SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables interrupt support for UART allowing console
@@ -43,7 +39,6 @@ config UART_INTERRUPT_DRIVEN
 
 config UART_LINE_CTRL
 	bool "Enable Serial Line Control API"
-	default n
 	help
 	  This enables the API for apps to control the serial line,
 	  such as baud rate, CTS and RTS.
@@ -54,7 +49,6 @@ config UART_LINE_CTRL
 
 config UART_DRV_CMD
 	bool "Enable driver commands API"
-	default n
 	help
 	  This enables the API to send extra commands to drivers.
 	  This allows drivers to expose hardware specific functions.

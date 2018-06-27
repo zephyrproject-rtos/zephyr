@@ -10,7 +10,6 @@ menuconfig ETH_STM32_HAL
 	bool
 	prompt "STM32 HAL Ethernet driver"
 	depends on NET_L2_ETHERNET
-	default n
 	select USE_STM32_HAL_ETH
 	help
 	  Enable STM32 HAL based Ethernet driver.

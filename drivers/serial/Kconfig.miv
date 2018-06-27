@@ -6,14 +6,12 @@
 menuconfig UART_MIV
 	bool "Mi-V serial driver"
 	depends on SOC_RISCV32_MIV
-	default n
 	select SERIAL_HAS_DRIVER
 	help
 	  This option enables the Mi-V serial driver.
 
 menuconfig UART_MIV_PORT_0
 	bool "Enable Mi-V Port 0"
-	default n
 	depends on UART_MIV
 	help
 	  This tells the driver to configure the UART port at boot, depending on

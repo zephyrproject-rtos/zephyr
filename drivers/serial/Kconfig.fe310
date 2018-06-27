@@ -8,7 +8,6 @@
 menuconfig UART_FE310
 	bool "SiFive Freedom E310 serial driver"
 	depends on SOC_RISCV32_FE310
-	default n
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
@@ -18,7 +17,6 @@ menuconfig UART_FE310
 
 menuconfig UART_FE310_PORT_0
 	bool "Enable FE310 Port 0"
-	default n
 	depends on UART_FE310
 	help
 	  This tells the driver to configure the UART port at boot, depending on
@@ -66,7 +64,6 @@ config UART_FE310_PORT_0_TXCNT_IRQ
 
 menuconfig UART_FE310_PORT_1
 	bool "Enable FE310 Port 1"
-	default n
 	depends on UART_FE310
 	help
 	  This tells the driver to configure the UART port at boot, depending on

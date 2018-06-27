@@ -8,7 +8,6 @@ menuconfig ETH_MCUX
 	bool
 	prompt "MCUX Ethernet driver"
 	depends on NET_L2_ETHERNET && HAS_MCUX
-	default n
 	help
 	  Enable MCUX Ethernet driver.  Note, this driver performs one shot PHY
 	  setup.  There is no support for PHY disconnect, reconnect or
@@ -17,7 +16,6 @@ menuconfig ETH_MCUX
 if ETH_MCUX
 config ETH_MCUX_PROMISCUOUS_MODE
 	bool "Enable promiscuous mode"
-	default n
 	help
 	  Place the Ethernet receiver in promiscuous mode. This may be useful
 	  for debugging and not needed for normal work.
@@ -31,7 +29,6 @@ config ETH_MCUX_PHY_TICK_MS
 
 config ETH_MCUX_PHY_EXTRA_DEBUG
 	bool "Enable additional detailed PHY debug"
-	default n
 	help
 	  Enable additional PHY related debug information related to
 	  PHY status polling.
@@ -54,7 +51,6 @@ config ETH_MCUX_TX_BUFFERS
 
 config ETH_MCUX_0
 	bool "MCUX Ethernet port 0"
-	default n
 	help
 	 Include port 0 driver
 

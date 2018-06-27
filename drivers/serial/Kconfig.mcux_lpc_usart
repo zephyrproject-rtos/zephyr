@@ -7,7 +7,6 @@
 menuconfig USART_MCUX_LPC
 	bool "MCUX USART driver"
 	depends on HAS_MCUX
-	default n
 	select SERIAL_HAS_DRIVER
 	help
 	  Enable the MCUX USART driver.
@@ -16,7 +15,6 @@ if USART_MCUX_LPC
 
 menuconfig USART_MCUX_LPC_0
 	bool "USART 0"
-	default n
 	help
 	  Enable USART 0.
 
