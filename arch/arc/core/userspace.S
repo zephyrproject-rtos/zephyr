@@ -163,6 +163,11 @@ _arc_go_to_user_space:
 	mov r30, 0
 	mov blink, 0
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	b _capture_value_for_benchmarking_userspace
+return_loc_userspace_enter:
+#endif /* CONFIG_EXECUTION_BENCHMARKING */
+
 	rtie
 
 /**
@@ -265,3 +270,20 @@ inc_len:
 	/* increment length measurement, loop again */
 	add_s r0, r0, 1
 	b_s strlen_loop
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	.balign 4
+_capture_value_for_benchmarking_userspace:
+	mov r1, _kernel
+	ld_s r2, [r1, _kernel_offset_to_current]
+	_save_callee_saved_regs
+	push_s blink
+
+	bl read_timer_end_of_userspace_enter
+
+	pop_s blink
+	mov r1, _kernel
+	ld_s r2, [r1, _kernel_offset_to_current]
+	_load_callee_saved_regs
+	b return_loc_userspace_enter
+#endif
