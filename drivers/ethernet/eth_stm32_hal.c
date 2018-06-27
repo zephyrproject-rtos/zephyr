@@ -74,7 +74,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 
 	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
 
-	total_len = net_pkt_ll_reserve(pkt) + net_pkt_get_len(pkt);
+	total_len = net_pkt_get_len(pkt);
 	if (total_len > ETH_TX_BUF_SIZE) {
 		LOG_ERR("PKT to big");
 		res = -EIO;
@@ -88,11 +88,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 
 	dma_buffer = (u8_t *)(dma_tx_desc->Buffer1Addr);
 
-	memcpy(dma_buffer, net_pkt_ll(pkt),
-		net_pkt_ll_reserve(pkt) + pkt->frags->len);
-	dma_buffer += net_pkt_ll_reserve(pkt) + pkt->frags->len;
-
-	frag = pkt->frags->frags;
+	frag = pkt->frags;
 	while (frag) {
 		memcpy(dma_buffer, frag->data, frag->len);
 		dma_buffer += frag->len;
