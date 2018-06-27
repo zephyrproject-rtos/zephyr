@@ -4586,6 +4586,7 @@ extern void _timer_expiration_handler(struct _timeout *t);
 #define K_THREAD_STACK_DEFINE(sym, size) _ARCH_THREAD_STACK_DEFINE(sym, size)
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 		_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size)
+#define K_THREAD_STACK_LEN(size) _ARCH_THREAD_STACK_LEN(size)
 #define K_THREAD_STACK_MEMBER(sym, size) _ARCH_THREAD_STACK_MEMBER(sym, size)
 #define K_THREAD_STACK_SIZEOF(sym) _ARCH_THREAD_STACK_SIZEOF(sym)
 static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
@@ -4623,6 +4624,19 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) sym[size]
 
 /**
+ * @brief Calculate size of stacks to be allocated in a stack array
+ *
+ * This macro calculates the size to be allocated for the stacks
+ * inside a stack array. It accepts the indicated "size" as a parameter
+ * and if required, pads some extra bytes (e.g. for MPU scenarios). Refer
+ * K_THREAD_STACK_ARRAY_DEFINE definition to see how this is used.
+ *
+ * @param size Size of the stack memory region
+ * @req K-TSTACK-001
+ */
+#define K_THREAD_STACK_LEN(size) (size)
+
+/**
  * @brief Declare a toplevel array of thread stack memory regions
  *
  * Create an array of equally sized stacks. See K_THREAD_STACK_DEFINE
@@ -4638,7 +4652,7 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  */
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __noinit \
-		__aligned(STACK_ALIGN) sym[nmemb][size]
+		__aligned(STACK_ALIGN) sym[nmemb][K_THREAD_STACK_LEN(size)]
 
 /**
  * @brief Declare an embedded stack memory region
