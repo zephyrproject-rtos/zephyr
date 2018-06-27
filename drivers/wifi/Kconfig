@@ -8,7 +8,6 @@
 
 menuconfig WIFI
 	bool "add support for WiFi Drivers"
-	default n
 
 if WIFI
 
@@ -38,7 +37,6 @@ config WIFI_INIT_PRIORITY
 
 config WIFI_OFFLOAD
 	bool "Support offloaded WiFi device drivers"
-	default n
 	select NET_OFFLOAD
 	help
 	  Enable support for Full-MAC WiFi devices.
