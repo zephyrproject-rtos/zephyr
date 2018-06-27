@@ -1,7 +1,6 @@
 config RTC_QMSI
 	bool "QMSI RTC Driver"
 	depends on QMSI
-	default n
 	help
 	  Build QMSI RTC driver.
 
@@ -10,7 +9,6 @@ if RTC_QMSI
 config RTC_QMSI_API_REENTRANCY
 	bool
 	prompt "RTC shim driver API reentrancy"
-	default n
 	help
 	  Enable support for RTC shim driver API reentrancy.
 
