@@ -10,7 +10,6 @@ menuconfig SPI_MCUX_DSPI
 	bool "MCUX SPI driver"
 	depends on HAS_MCUX && CLOCK_CONTROL
 	select HAS_DTS_SPI
-	default n
 	help
 	  Enable support for mcux spi driver.
 
