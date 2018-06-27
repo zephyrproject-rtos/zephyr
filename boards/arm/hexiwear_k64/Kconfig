@@ -9,6 +9,5 @@ if BOARD_HEXIWEAR_K64
 
 config BATTERY_SENSE
 	bool "Enable the battery sense circuit"
-	default n
 
 endif # BOARD_HEXIWEAR_K64
