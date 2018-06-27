@@ -8,7 +8,6 @@
 
 menuconfig TELNET_CONSOLE
 	bool "Enable a super basic telnet console service"
-	default n
 	select NETWORKING
 	select NET_TCP
 	help
@@ -68,7 +67,6 @@ config TELNET_CONSOLE_SEND_THRESHOLD
 
 config TELNET_CONSOLE_SUPPORT_COMMAND
 	bool "Add support for telnet commands (IAC) [Experimental]"
-	default n
 	help
 	  Current support is so limited it's not interesting to enable it.
 	  However, if proven to be needed at some point, it will be possible
@@ -108,7 +106,6 @@ config SYS_LOG_TELNET_CONSOLE_LEVEL
 config TELNET_CONSOLE_DEBUG_DEEP
 	bool "Forward output to original console handler"
 	depends on UART_CONSOLE
-	default n
 	help
 	  For telnet developers only, this will forward each output to
 	  original console handler. So if by chance telnet seems silent,
