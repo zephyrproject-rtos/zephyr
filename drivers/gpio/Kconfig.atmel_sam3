@@ -9,7 +9,6 @@
 menuconfig GPIO_ATMEL_SAM3
 	bool "Atmel SAM3 PIO Controllers"
 	depends on GPIO && SOC_SERIES_SAM3X
-	default n
 	help
 	  Enable config options to support the PIO controllers
 	  on Atmel SAM3 family processors.
@@ -20,7 +19,6 @@ if GPIO_ATMEL_SAM3
 
 config GPIO_ATMEL_SAM3_PORTA
 	bool "Enable driver for Atmel SAM3 PIO Port A"
-	default n
 	help
 	  Build the driver to utilize PIO controller Port A.
 
@@ -40,7 +38,6 @@ config GPIO_ATMEL_SAM3_PORTA_IRQ_PRI
 
 config GPIO_ATMEL_SAM3_PORTB
 	bool "Enable driver for Atmel SAM3 PIO Port B"
-	default n
 	help
 	  Build the driver to utilize PIO controller Port B.
 
@@ -60,7 +57,6 @@ config GPIO_ATMEL_SAM3_PORTB_IRQ_PRI
 
 config GPIO_ATMEL_SAM3_PORTC
 	bool "Enable driver for Atmel SAM3 PIO Port C"
-	default n
 	help
 	  Build the driver to utilize PIO controller Port C.
 
@@ -80,7 +76,6 @@ config GPIO_ATMEL_SAM3_PORTC_IRQ_PRI
 
 config GPIO_ATMEL_SAM3_PORTD
 	bool "Enable driver for Atmel SAM3 PIO Port D"
-	default n
 	help
 	  Build the driver to utilize PIO controller Port D.
 

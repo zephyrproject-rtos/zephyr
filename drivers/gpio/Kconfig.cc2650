@@ -5,7 +5,6 @@
 menuconfig GPIO_CC2650
 	bool "TI CC2650 GPIO driver"
 	depends on GPIO && SOC_SERIES_CC2650
-	default n
 	help
 	  Enable the GPIO driver on boards equipped with TI CC2650.
 

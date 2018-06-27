@@ -9,7 +9,6 @@
 menuconfig GPIO_SX1509B
 	bool "SX1509B I2C GPIO chip"
 	depends on GPIO && I2C
-	default n
 	help
 	  Enable driver for SX1509B I2C GPIO chip.
 
@@ -36,7 +35,6 @@ config GPIO_SX1509B_I2C_ADDR
 
 config GPIO_SX1509B_I2C_MASTER_DEV_NAME
 	string "I2C Master to which SX1509B GPIO chip is connected"
-	default ""
 	help
 	  Specify the device name of the I2C master device to which SX1509B
 	  chip is binded.

@@ -9,7 +9,6 @@ menuconfig GPIO_STM32
 	bool "GPIO Driver for STM32 family of MCUs"
 	depends on GPIO && SOC_FAMILY_STM32
 	select HAS_DTS_GPIO
-	default n
 	help
 	  Enable GPIO driver for STM32 line of MCUs
 
@@ -17,46 +16,35 @@ if GPIO_STM32
 
 config GPIO_STM32_PORTA
 	bool "Enable GPIO port A support"
-	default n
 
 config GPIO_STM32_PORTB
 	bool "Enable GPIO port B support"
-	default n
 
 config GPIO_STM32_PORTC
 	bool "Enable GPIO port C support"
-	default n
 
 config GPIO_STM32_PORTD
 	bool "Enable GPIO port D support"
-	default n
 
 config GPIO_STM32_PORTE
 	bool "Enable GPIO port E support"
-	default n
 
 config GPIO_STM32_PORTF
 	bool "Enable GPIO port F support"
-	default n
 
 config GPIO_STM32_PORTG
 	bool "Enable GPIO port G support"
-	default n
 
 config GPIO_STM32_PORTH
 	bool "Enable GPIO port H support"
-	default n
 
 config GPIO_STM32_PORTI
 	bool "Enable GPIO port I support"
-	default n
 
 config GPIO_STM32_PORTJ
 	bool "Enable GPIO port J support"
-	default n
 
 config GPIO_STM32_PORTK
 	bool "Enable GPIO port K support"
-	default n
 
 endif # GPIO_STM32

@@ -9,7 +9,6 @@
 menuconfig GPIO_ESP32
 	bool "ESP32 GPIO"
 	depends on GPIO && SOC_ESP32
-	default n
 	help
 	  Enables the ESP32 GPIO driver
 

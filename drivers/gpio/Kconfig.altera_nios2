@@ -9,7 +9,6 @@
 menuconfig GPIO_ALTERA_NIOS2
 	bool "Altera Nios-II PIO Controllers"
 	depends on GPIO && HAS_ALTERA_HAL
-	default n
 	help
 	  Enable config options to support the PIO controllers
 	  on Altera Nios-II family processors.
@@ -20,7 +19,6 @@ if GPIO_ALTERA_NIOS2
 
 config GPIO_ALTERA_NIOS2_OUTPUT
 	bool "Enable driver for Altera Nios-II PIO Output Port"
-	default n
 	help
 	  Build the driver to utilize PIO controller Output Port.
 
