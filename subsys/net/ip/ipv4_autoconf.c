@@ -35,8 +35,7 @@ static struct net_pkt *ipv4_autoconf_prepare_arp(struct net_if *iface)
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     BUF_ALLOC_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(0, BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
 		goto fail;
 	}
@@ -115,12 +114,9 @@ enum net_verdict net_ipv4_autoconf_input(struct net_if *iface,
 		return NET_DROP;
 	}
 
-	if (net_pkt_get_len(pkt) < (sizeof(struct net_arp_hdr) -
-				    net_pkt_ll_reserve(pkt))) {
+	if (net_pkt_get_len(pkt) < sizeof(struct net_arp_hdr)) {
 		NET_DBG("Invalid ARP header (len %zu, min %zu bytes)",
-			net_pkt_get_len(pkt),
-			sizeof(struct net_arp_hdr) -
-			net_pkt_ll_reserve(pkt));
+			net_pkt_get_len(pkt), sizeof(struct net_arp_hdr));
 		return NET_DROP;
 	}
 
