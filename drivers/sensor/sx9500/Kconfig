@@ -9,7 +9,6 @@
 menuconfig SX9500
 	bool "SX9500 I2C SAR Proximity Chip"
 	depends on I2C
-	default n
 	help
 	  Enable driver for SX9500 I2C-based SAR proximity sensor.
 

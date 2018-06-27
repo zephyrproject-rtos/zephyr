@@ -8,7 +8,6 @@
 menuconfig FXAS21002
 	bool "FXAS21002 gyroscope driver"
 	depends on I2C
-	default n
 	help
 	  Enable driver for the FXAS21002 gyroscope
 
@@ -88,7 +87,6 @@ endchoice
 
 config FXAS21002_TRIGGER
 	bool
-	default n
 
 if FXAS21002_TRIGGER
 
@@ -104,7 +102,6 @@ endif
 
 config FXAS21002_DRDY_INT1
 	bool "Data ready interrupt to INT1 pin"
-	default n
 	help
 	  Say Y to route data ready interrupt to INT1 pin. Say N to route to
 	  INT2 pin.

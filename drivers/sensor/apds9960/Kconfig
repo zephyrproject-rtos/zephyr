@@ -7,7 +7,6 @@
 menuconfig APDS9960
 	bool "APDS9960 Sensor"
 	depends on I2C
-	default n
 	help
 	  Enable driver for APDS9960 sensors.
 

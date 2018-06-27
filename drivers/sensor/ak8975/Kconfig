@@ -10,7 +10,6 @@ menuconfig AK8975
 	bool
 	prompt "AK8975 Magnetometer"
 	depends on I2C
-	default n
 	help
 	  Enable driver for AK8975 magnetometer.
 
@@ -52,7 +51,6 @@ config MPU9150
 	bool
 	prompt "Enable MPU9180 support"
 	depends on AK8975
-	default n
 	help
 	  Enable this config option if the AK8975 sensor is part of a
 	  MPU9150 chip.

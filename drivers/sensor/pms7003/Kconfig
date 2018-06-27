@@ -9,7 +9,6 @@
 menuconfig PMS7003
 	bool "PMS7003 particulate matter sensor"
 	depends on SERIAL
-	default n
 	help
 	  Enable driver for pms7003 particulate matter sensor.
 

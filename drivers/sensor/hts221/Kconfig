@@ -8,7 +8,6 @@ menuconfig HTS221
 	bool
 	prompt "HTS221 temperature and humidity sensor"
 	depends on I2C
-	default n
 	help
 	  Enable driver for HTS221 I2C-based temperature and humidity sensor.
 

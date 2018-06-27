@@ -10,7 +10,6 @@ menuconfig TEMP_NRF5
 	bool
 	prompt "nRF5 Temperature Sensor"
 	depends on SOC_FAMILY_NRF
-	default n
 	help
 	  Enable driver for nRF5 temperature sensor.
 

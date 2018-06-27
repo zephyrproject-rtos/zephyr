@@ -10,7 +10,6 @@
 menuconfig LSM6DSL
 	bool "LSM6DSL I2C/SPI accelerometer and gyroscope Chip"
 	depends on SENSOR && (I2C || SPI)
-	default n
 	help
 	  Enable driver for LSM6DSL accelerometer and gyroscope
 	  sensor.
@@ -88,7 +87,6 @@ endif #HAS_DTS_SPI_DEVICE
 
 config LSM6DSL_SPI_GPIO_CS
 	bool "LSM6DSL SPI CS through a GPIO pin"
-	default n
 	depends on LSM6DSL && LSM6DSL_SPI
 	help
 	  This option is useful if one needs to manage SPI CS through a GPIO
@@ -181,14 +179,12 @@ config LSM6DSL_THREAD_STACK_SIZE
 config LSM6DSL_ENABLE_TEMP
 	bool "Enable temperature"
 	depends on LSM6DSL
-	default n
 	help
 	  Enable/disable temperature
 
 config LSM6DSL_SENSORHUB
 	bool "Enable I2C sensorhub feature"
 	depends on LSM6DSL
-	default n
 	help
 	  Enable/disable internal sensorhub
 

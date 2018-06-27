@@ -10,7 +10,6 @@
 menuconfig LSM9DS0_MFD
 	bool "LSM9DS0 I2C accelerometer, magnetometer and temperature sensor chip"
 	depends on I2C
-	default n
 	help
 	  Enable driver for LSM9DS0 I2C-based MFD sensor.
 
@@ -56,7 +55,6 @@ config LSM9DS0_MFD_MAGN_ENABLE
 config LSM9DS0_MFD_TEMP_ENABLE
 	bool "Enable temperature sensor"
 	depends on LSM9DS0_MFD
-	default n
 	help
 	  Enable/disable temperature sensor totally by stripping everything
 	  related in driver.
@@ -120,7 +118,6 @@ endchoice
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_RUNTIME
 	bool "Enable dynamic sampling rate for accelerometer"
 	depends on LSM9DS0_MFD_ACCEL_ENABLE
-	default n
 	help
 	  Enable alteration of accelerometer sampling rate attribute at
 	  runtime.
@@ -157,7 +154,6 @@ endchoice
 config LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME
 	bool "Enable dynamic full-scale for accelerometer"
 	depends on LSM9DS0_MFD_ACCEL_ENABLE
-	default n
 	help
 	  Enable alteration of accelerometer full-scale attribute at
 	  runtime.
@@ -213,7 +209,6 @@ endchoice
 config LSM9DS0_MFD_MAGN_SAMPLING_RATE_RUNTIME
 	bool "Enable dynamic sampling rate for magnetometer"
 	depends on LSM9DS0_MFD_MAGN_ENABLE
-	default n
 	help
 	  Enable alteration of magnetometer sampling rate attribute at
 	  runtime.
@@ -246,7 +241,6 @@ endchoice
 config LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME
 	bool "Enable dynamic full-scale for magnetometer"
 	depends on LSM9DS0_MFD_MAGN_ENABLE
-	default n
 	help
 	  Enable alteration of magnetometer full-scale attribute at
 	  runtime.

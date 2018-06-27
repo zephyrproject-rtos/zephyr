@@ -9,7 +9,6 @@
 menuconfig SENSOR
 	bool
 	prompt "Sensor Drivers"
-	default n
 	help
 	  Include sensor drivers in system config
 

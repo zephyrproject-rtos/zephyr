@@ -10,7 +10,6 @@ menuconfig HDC1008
 	bool
 	prompt "HDC1008 Temperature and Humidity Sensor"
 	depends on I2C && GPIO
-	default n
 	help
 	  Enable driver for HDC1008 temperature and humidity sensors.
 
