@@ -18,7 +18,6 @@ if PCI
 config PCI_ENUMERATION
 	bool
 	prompt "Enable PCI device enumeration"
-	default n
 	help
 	  This option enables the PCI enumeration for device drivers.
 	  This might be useful along with PCI_DEBUG to find out which
@@ -29,7 +28,6 @@ config PCI_ENUMERATION
 config PCI_LEGACY_BRIDGE
 	bool
 	prompt "PCI legacy bridge device support"
-	default n
 	help
 	  This option adds support for PCI legacy bridge device, that
 	  allows direct setup of the PCI interrupt pin to IRQ number
@@ -58,7 +56,6 @@ config PCI_LEGACY_BRIDGE_DEVICE_ID
 config PCI_DEBUG
 	bool
 	prompt "Enable PCI debugging"
-	default n
 	help
 	  This options enables PCI debugging functions
 
