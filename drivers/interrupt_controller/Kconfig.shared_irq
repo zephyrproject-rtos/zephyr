@@ -9,7 +9,6 @@
 menuconfig SHARED_IRQ
 	bool
 	prompt "Shared interrupt driver"
-	default n
 	help
 	 Include shared interrupt support in system. Shared interrupt
 	 support is NOT required in most systems. If in doubt answer no.

@@ -7,7 +7,6 @@
 
 config CAVS_ICTL
 	bool "CAVS Interrupt Logic"
-	default n
 	depends on MULTI_LEVEL_INTERRUPTS
 	help
 	  These are 4 in number supporting a max of 32 interrupts each.

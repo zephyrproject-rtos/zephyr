@@ -7,7 +7,6 @@
 
 config MULTI_LEVEL_INTERRUPTS
 	bool "Multi-level Interrupts"
-	default n
 	depends on GEN_SW_ISR_TABLE
 	help
 	  Multiple levels of interrupts are normally used to increase the
@@ -26,7 +25,6 @@ config MAX_IRQ_PER_AGGREGATOR
 
 config 2ND_LEVEL_INTERRUPTS
 	bool "Second-level Interrupts"
-	default n
 	depends on MULTI_LEVEL_INTERRUPTS
 	help
 	  Second level interrupts are used to increase the number of
@@ -85,7 +83,6 @@ config 2ND_LVL_INTR_03_OFFSET
 
 config 3RD_LEVEL_INTERRUPTS
 	bool "Third-level Interrupts"
-	default n
 	depends on 2ND_LEVEL_INTERRUPTS
 	help
 	  Third level interrupts are used to increase the number of
