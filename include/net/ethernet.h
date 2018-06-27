@@ -135,7 +135,7 @@ struct ethernet_api {
 
 #if defined(CONFIG_PTP_CLOCK)
 	/** Return ptp_clock device that is tied to this ethernet device */
-	struct device *(*get_ptp_clock)(struct device *eth_dev);
+	struct device *(*get_ptp_clock)(struct device *dev);
 #endif /* CONFIG_PTP_CLOCK */
 };
 
