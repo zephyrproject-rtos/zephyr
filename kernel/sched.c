@@ -12,21 +12,21 @@
 #include <kernel_arch_func.h>
 #include <syscall_handler.h>
 
-#ifdef CONFIG_SCHED_DUMB
+#if defined(CONFIG_SCHED_DUMB)
 #define _priq_run_add		_priq_dumb_add
 #define _priq_run_remove	_priq_dumb_remove
 #define _priq_run_best		_priq_dumb_best
-#else
+#elif defined(CONFIG_SCHED_SCALABLE)
 #define _priq_run_add		_priq_rb_add
 #define _priq_run_remove	_priq_rb_remove
 #define _priq_run_best		_priq_rb_best
 #endif
 
-#ifdef CONFIG_WAITQ_FAST
+#if defined(CONFIG_WAITQ_SCALABLE)
 #define _priq_wait_add		_priq_rb_add
 #define _priq_wait_remove	_priq_rb_remove
 #define _priq_wait_best		_priq_rb_best
-#else
+#elif defined(CONFIG_WAITQ_DUMB)
 #define _priq_wait_add		_priq_dumb_add
 #define _priq_wait_remove	_priq_dumb_remove
 #define _priq_wait_best		_priq_dumb_best
@@ -275,7 +275,7 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 	}
 
 	if (wait_q) {
-#ifdef CONFIG_WAITQ_FAST
+#ifdef CONFIG_WAITQ_SCALABLE
 		thread->base.pended_on = wait_q;
 #endif
 		_priq_wait_add(&wait_q->waitq, thread);
@@ -294,7 +294,7 @@ void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 
 static _wait_q_t *pended_on(struct k_thread *thread)
 {
-#ifdef CONFIG_WAITQ_FAST
+#ifdef CONFIG_WAITQ_SCALABLE
 	__ASSERT_NO_MSG(thread->base.pended_on);
 
 	return thread->base.pended_on;
@@ -325,7 +325,7 @@ void _unpend_thread_no_timeout(struct k_thread *thread)
 		_mark_thread_as_not_pending(thread);
 	}
 
-#if defined(CONFIG_ASSERT) && defined(CONFIG_WAITQ_FAST)
+#if defined(CONFIG_ASSERT) && defined(CONFIG_WAITQ_SCALABLE)
 	thread->base.pended_on = NULL;
 #endif
 }

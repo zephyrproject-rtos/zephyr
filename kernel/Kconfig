@@ -195,23 +195,17 @@ config APPLICATION_MEMORY
 	  will have the project-level application objects and any libraries
 	  including the C library in it.
 
-config WAITQ_FAST
-	bool
-	prompt "Use scalable wait_q implementation"
+choice SCHED_ALGORITHM
+	prompt "Scheduler priority queue algorithm"
+	default SCHED_DUMB
 	help
-	  When selected, the wait_q abstraction used in IPC primitives
-	  to pend threads for wakeup later will be implemented with a
-	  balanced tree instead of a linear list.  Choose this if you
-	  expect to have many threads waiting on individual
-	  primitives, or if you have already included the red/black
-	  tree code in the build for some other purpose (in which case
-	  this results in less code size increase than the default
-	  implementation).
+	  The kernel can be built with with several choices for the
+	  ready queue implementation, offering different choices between
+	  code size, constant factor runtime overhead and performance
+	  scaling when many threads are added.
 
 config SCHED_DUMB
-	bool
-	prompt "Use a simple linked list scheduler"
-	default y
+	bool "Simple linked-list ready queue"
 	help
 	  When selected, the scheduler ready queue will be implemented
 	  as a simple unordered list, with very fast constant time
@@ -221,6 +215,51 @@ config SCHED_DUMB
 	  threads in the queue at any given time.  On most platforms
 	  (that are not otherwise using the red/black tree) this
 	  results in a savings of ~2k of code size.
+
+config SCHED_SCALABLE
+       bool "Red/black tree ready queue"
+       help
+         When selected, the scheduler ready queue will be implemented
+         as a red/black tree.  This has rather slower constant-time
+         insertion and removal overhead, and on most platforms (that
+         are not otherwise using the rbtree somehwere) requires an
+         extra ~2kb of code.  But the resulting behavior will scale
+         cleanly and quickly into the many thousands of threads.  Use
+         this on platforms where you may have MANY threads marked as
+         runnable at a given time.  Most applications don't want this.
+
+endchoice # SCHED_ALGORITHM
+
+choice WAITQ_ALGORITHM
+       prompt "Wait queue priority algorithm"
+       default WAITQ_DUMB
+       help
+         The wait_q abstraction used in IPC primitives to pend threads
+         for later wakeup shares the same backend data structure
+         choices as the scheduler, and can use the same options.
+
+config WAITQ_SCALABLE
+	bool
+	prompt "Use scalable wait_q implementation"
+	help
+	  When selected, the wait_q will be implemented with a
+	  balanced tree.  Choose this if you expect to have many
+	  threads waiting on individual primitives.  There is a ~2kb
+	  code size increase over WAITQ_DUMB (which may be shared with
+	  SCHED_SCALABLE) if the rbtree is not used elsewhere in the
+	  application, and pend/unpend operations on "small" queues
+	  will be somewhat slower (though this is not generally a
+	  performance path).
+
+config WAITQ_DUMB
+	bool
+	prompt "Simple linked-list wait_q"
+	help
+	  When selected, the wait_q will be implemented with a
+	  doubly-linked list.  Choose this if you expect to have only
+	  a few threads blocked on any single IPC primitive.
+
+endchoice # WAITQ_ALGORITHM
 
 menu "Kernel Debugging and Metrics"
 
