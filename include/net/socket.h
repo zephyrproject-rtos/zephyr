@@ -106,25 +106,57 @@ struct zsock_addrinfo {
 	char _ai_canonname[DNS_MAX_NAME_SIZE + 1];
 };
 
-int zsock_socket(int family, int type, int proto);
-int zsock_close(int sock);
-int zsock_bind(int sock, const struct sockaddr *addr, socklen_t addrlen);
-int zsock_connect(int sock, const struct sockaddr *addr, socklen_t addrlen);
-int zsock_listen(int sock, int backlog);
-int zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
-ssize_t zsock_send(int sock, const void *buf, size_t len, int flags);
-ssize_t zsock_recv(int sock, void *buf, size_t max_len, int flags);
-ssize_t zsock_sendto(int sock, const void *buf, size_t len, int flags,
-		     const struct sockaddr *dest_addr, socklen_t addrlen);
-ssize_t zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
-		       struct sockaddr *src_addr, socklen_t *addrlen);
-int zsock_fcntl(int sock, int cmd, int flags);
-int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout);
+__syscall int zsock_socket(int family, int type, int proto);
+
+__syscall int zsock_close(int sock);
+
+__syscall int zsock_bind(int sock, const struct sockaddr *addr,
+			 socklen_t addrlen);
+
+__syscall int zsock_connect(int sock, const struct sockaddr *addr,
+			    socklen_t addrlen);
+
+__syscall int zsock_listen(int sock, int backlog);
+
+__syscall int zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
+
+__syscall ssize_t zsock_sendto(int sock, const void *buf, size_t len,
+			       int flags, const struct sockaddr *dest_addr,
+			       socklen_t addrlen);
+
+static inline ssize_t zsock_send(int sock, const void *buf, size_t len,
+				 int flags)
+{
+	return zsock_sendto(sock, buf, len, flags, NULL, 0);
+}
+
+__syscall ssize_t zsock_recvfrom(int sock, void *buf, size_t max_len,
+				 int flags, struct sockaddr *src_addr,
+				 socklen_t *addrlen);
+
+static inline ssize_t zsock_recv(int sock, void *buf, size_t max_len,
+				 int flags)
+{
+	return zsock_recvfrom(sock, buf, max_len, flags, NULL, NULL);
+}
+
+__syscall int zsock_fcntl(int sock, int cmd, int flags);
+
+__syscall int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout);
+
 int zsock_getsockopt(int sock, int level, int optname,
 		     void *optval, socklen_t *optlen);
+
 int zsock_setsockopt(int sock, int level, int optname,
 		     const void *optval, socklen_t optlen);
-int zsock_inet_pton(sa_family_t family, const char *src, void *dst);
+
+__syscall int zsock_inet_pton(sa_family_t family, const char *src, void *dst);
+
+__syscall int z_zsock_getaddrinfo_internal(const char *host,
+					   const char *service,
+					   const struct zsock_addrinfo *hints,
+					   struct zsock_addrinfo *res);
+
 int zsock_getaddrinfo(const char *host, const char *service,
 		      const struct zsock_addrinfo *hints,
 		      struct zsock_addrinfo **res);
@@ -324,6 +356,8 @@ static inline void freeaddrinfo(struct zsock_addrinfo *ai)
 #ifdef __cplusplus
 }
 #endif
+
+#include <syscalls/socket.h>
 
 /**
  * @}

@@ -393,12 +393,12 @@ void test_v6_sendto_recvfrom_null_dest(void)
 void test_main(void)
 {
 	ztest_test_suite(socket_tcp,
-			 ztest_unit_test(test_v4_send_recv),
-			 ztest_unit_test(test_v6_send_recv),
-			 ztest_unit_test(test_v4_sendto_recvfrom),
-			 ztest_unit_test(test_v6_sendto_recvfrom),
-			 ztest_unit_test(test_v4_sendto_recvfrom_null_dest),
-			 ztest_unit_test(test_v6_sendto_recvfrom_null_dest));
+			 ztest_user_unit_test(test_v4_send_recv),
+			 ztest_user_unit_test(test_v6_send_recv),
+			 ztest_user_unit_test(test_v4_sendto_recvfrom),
+			 ztest_user_unit_test(test_v6_sendto_recvfrom),
+			 ztest_user_unit_test(test_v4_sendto_recvfrom_null_dest),
+			 ztest_user_unit_test(test_v6_sendto_recvfrom_null_dest));
 
 	ztest_run_test_suite(socket_tcp);
 }
