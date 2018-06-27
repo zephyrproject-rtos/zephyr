@@ -279,9 +279,9 @@ typedef struct
   */
 
 #define  SMBUS_NO_STARTSTOP                     (0x00000000U)
-#define  SMBUS_GENERATE_STOP                    I2C_CR2_STOP
-#define  SMBUS_GENERATE_START_READ              (uint32_t)(I2C_CR2_START | I2C_CR2_RD_WRN)
-#define  SMBUS_GENERATE_START_WRITE             I2C_CR2_START
+#define  SMBUS_GENERATE_STOP                    (uint32_t)(0x80000000U | I2C_CR2_STOP)
+#define  SMBUS_GENERATE_START_READ              (uint32_t)(0x80000000U | I2C_CR2_START | I2C_CR2_RD_WRN)
+#define  SMBUS_GENERATE_START_WRITE             (uint32_t)(0x80000000U | I2C_CR2_START)
 /**
   * @}
   */
