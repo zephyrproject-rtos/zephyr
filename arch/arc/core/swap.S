@@ -61,6 +61,21 @@ GDATA(_kernel)
 
 SECTION_FUNC(TEXT, __swap)
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	mov r1, _kernel
+	ld_s r2, [r1, _kernel_offset_to_current]
+	_save_callee_saved_regs
+	push_s r31
+
+	bl read_timer_start_of_swap
+
+	pop_s r31
+	mov r1, _kernel
+	ld_s r2, [r1, _kernel_offset_to_current]
+	_load_callee_saved_regs
+	st sp, [r2, _thread_offset_to_sp]
+#endif
+
 	/* interrupts are locked, interrupt key is in r0 */
 
 	mov r1, _kernel
@@ -144,6 +159,11 @@ _swap_return_from_coop:
 	/* sflag instruction is not supported in current ARC GNU */
 	.long 0x00ff302f
 #endif
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	b _capture_value_for_benchmarking
+#endif
+return_loc:
+
 	pop_s r3    /* status32 into r3 */
 	kflag r3    /* write status32 */
 
@@ -196,4 +216,24 @@ _return_from_exc:
 	ld ilink, [sp, ___isf_t_status32_OFFSET - ___isf_t_pc_OFFSET]
 	sr ilink, [_ARC_V2_ERSTATUS]
 	add_s sp, sp, ___isf_t_status32_OFFSET - ___isf_t_pc_OFFSET + 4
+
 	rtie
+
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	.balign 4
+_capture_value_for_benchmarking:
+	mov r1, _kernel
+	ld_s r2, [r1, _kernel_offset_to_current]
+	_save_callee_saved_regs
+	push_s blink
+
+	bl read_timer_end_of_swap
+
+	pop_s blink
+	mov r1, _kernel
+	ld_s r2, [r1, _kernel_offset_to_current]
+	_load_callee_saved_regs
+	st sp, [r2, _thread_offset_to_sp]
+	b return_loc
+#endif /* CONFIG_EXECUTION_BENCHMARKING */
