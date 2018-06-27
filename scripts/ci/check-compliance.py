@@ -104,15 +104,35 @@ def run_kconfig_undef_ref_check(tc, commit_range):
     os.environ["ENV_VAR_BOARD_DIR"] = "boards/*/*"
     os.environ["ENV_VAR_ARCH"] = "*"
 
-    # Returns the empty string if there are no references to undefined symbols
-    msg = list_undef_kconfig_refs.report()
-    if msg:
-        failure = ET.SubElement(tc, "failure", type="failure",
-                                message="undefined Kconfig symbols")
-        failure.text = msg
-        return 1
+    # Hack:
+    #
+    # When using 'srctree', Kconfiglib checks the current directory before
+    # checking the 'srctree' directory (only for compatibility with the C
+    # tools... this behavior is pretty bad for Kconfig files).
+    #
+    # This can cause problems for external projects that happen to run
+    # check-compliance.py from a directory that contains Kconfig files that
+    # overlap with Kconfig in the Zephyr tree (subsys/Kconfig would override
+    # the same file in the base Zephyr repo, etc.).
+    #
+    # Work around it by temporarily changing directory instead of using
+    # 'srctree'.
+    cur_dir = os.getcwd()
+    os.chdir(repository_path)
+    try:
+        # Returns the empty string if there are no references to undefined symbols
+        msg = list_undef_kconfig_refs.report()
+        if msg:
+            failure = ET.SubElement(tc, "failure", type="failure",
+                                    message="undefined Kconfig symbols")
+            failure.text = msg
+            return 1
 
-    return 0
+        return 0
+
+    finally:
+        # Restore working directory
+        os.chdir(cur_dir)
 
 
 def verify_signed_off(tc, commit):
