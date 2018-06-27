@@ -9,7 +9,6 @@
 menuconfig  IEEE802154_MCR20A
 	bool "NXP MCR20A Driver support"
 	depends on NETWORKING && SPI
-	default n
 
 if IEEE802154_MCR20A
 
@@ -47,7 +46,6 @@ endif # !HAS_DTS_SPI_DEVICE
 
 config IEEE802154_MCR20A_GPIO_SPI_CS
 	bool "Manage SPI CS through a GPIO pin"
-	default n
 	help
 	This option is useful if one needs to manage SPI CS through a GPIO
 	pin to by-pass the SPI controller's CS logic.
@@ -56,7 +54,6 @@ if !HAS_DTS_SPI_PINS
 
 config IEEE802154_MCR20A_GPIO_SPI_CS_DRV_NAME
 	string "GPIO driver's name to use to drive SPI CS through"
-	default ""
 	depends on IEEE802154_MCR20A_GPIO_SPI_CS
 	help
 	This option is mandatory to set which GPIO controller to use in order
@@ -92,7 +89,6 @@ endif # !HAS_DTS_GPIO_DEVICE
 
 config MCR20A_IS_PART_OF_KW2XD_SIP
 	bool "MCR20A device is part of KW2xD SiP"
-	default n
 	help
 	  If this option is set, the driver does not perform a hardware
 	  reset and the CLK_OUT frequency is not set, instead these settings

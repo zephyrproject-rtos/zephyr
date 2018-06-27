@@ -10,7 +10,6 @@ menuconfig IEEE802154_NRF5
 	bool "nRF52 series IEEE 802.15.4 Driver"
 	depends on NETWORKING && SOC_NRF52840
 	select HAS_NORDIC_DRIVERS
-	default n
 
 if IEEE802154_NRF5
 

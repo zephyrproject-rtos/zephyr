@@ -5,7 +5,6 @@ menuconfig IEEE802154_CC1200
 	bool "TI CC1200 Driver support"
 	depends on NETWORKING
 	select NET_L2_IEEE802154_SUB_GHZ
-	default n
 
 if IEEE802154_CC1200
 
@@ -39,7 +38,6 @@ config IEEE802154_CC1200_SPI_SLAVE
 
 config IEEE802154_CC1200_GPIO_SPI_CS
 	bool "Manage SPI CS through a GPIO pin"
-	default n
 	help
 	  This option is useful if one needs to manage SPI CS through a GPIO
 	  pin to by-pass the SPI controller's CS logic.
