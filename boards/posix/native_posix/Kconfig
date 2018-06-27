@@ -7,7 +7,6 @@ config NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME
 	bool "Slow down execution to real time"
 	depends on BOARD_NATIVE_POSIX
 	default y if !TEST
-	default n if TEST
 	help
 	  When selected the execution of the process will be slowed down to real time.
 	  (if there is a lot of load it may be slower than real time)
