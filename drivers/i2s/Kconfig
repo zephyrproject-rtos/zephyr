@@ -10,7 +10,6 @@
 menuconfig I2S
 	bool
 	prompt "I2S bus drivers"
-	default n
 	help
 	  Enable support for the I2S (Inter-IC Sound) hardware bus.
 
