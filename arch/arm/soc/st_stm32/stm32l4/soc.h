@@ -22,8 +22,8 @@
 #ifndef _ASMLANGUAGE
 
 #include <autoconf.h>
-#include <stm32l4xx.h>
 #include <kernel_includes.h>
+#include <stm32l4xx.h>
 
 #define GPIO_REG_SIZE         0x400
 /* base address for where GPIO registers start */
