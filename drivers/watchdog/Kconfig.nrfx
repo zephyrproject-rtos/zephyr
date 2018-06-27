@@ -9,6 +9,5 @@ menuconfig WDT_NRFX
 	depends on SOC_FAMILY_NRF && CLOCK_CONTROL_NRF5
 	select HAS_DTS_WDT
 	select NRFX_WDT
-	default n
 	help
 	  Enable support for nrfx WDT driver for nRF MCU series.
