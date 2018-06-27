@@ -74,7 +74,6 @@ config	SYS_LOG_SLIP_LEVEL
 
 config	SLIP_STATISTICS
 	bool "SLIP network connection statistics"
-	default n
 	help
 	  This option enables statistics support for SLIP driver.
 
@@ -88,7 +87,6 @@ config  SLIP_TAP
 
 config	SLIP_MAC_ADDR
 	string "MAC address for the interface"
-	default ""
 	help
 	  Specify a MAC address for the SLIP interface in the form of
 	  six hex 8-bit chars separated by colons (e.g.:
