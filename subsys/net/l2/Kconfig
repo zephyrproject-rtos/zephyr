@@ -91,11 +91,11 @@ config NET_L2_BT_SHELL
 	  This can be used for testing Bluetooth management commands through the
 	  console via a shell module named "net_bt".
 
-source "subsys/net/ip/l2/ethernet/Kconfig"
+source "subsys/net/l2/ethernet/Kconfig"
 
-source "subsys/net/ip/l2/ieee802154/Kconfig"
+source "subsys/net/l2/ieee802154/Kconfig"
 
-source "subsys/net/ip/l2/openthread/Kconfig"
+source "subsys/net/l2/openthread/Kconfig"
 
 config NET_L2_WIFI_MGMT
 	bool "Enable WiFi Management support"

@@ -439,8 +439,6 @@ config NET_PKT_TIMESTAMP_STACK_SIZE
 
 source "subsys/net/ip/Kconfig.stack"
 
-source "subsys/net/ip/l2/Kconfig"
-
 source "subsys/net/ip/Kconfig.mgmt"
 
 source "subsys/net/ip/Kconfig.rpl"

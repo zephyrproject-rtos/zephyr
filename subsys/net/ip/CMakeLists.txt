@@ -28,8 +28,6 @@ zephyr_library_sources_ifdef(CONFIG_NET_TCP          connection.c tcp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TRICKLE      trickle.c)
 zephyr_library_sources_ifdef(CONFIG_NET_UDP          connection.c udp.c)
 
-add_subdirectory(l2)
-
 if(CONFIG_NET_SHELL)
 zephyr_link_interface_ifdef(CONFIG_MBEDTLS mbedTLS)
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
