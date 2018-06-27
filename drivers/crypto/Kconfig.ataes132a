@@ -9,7 +9,6 @@
 menuconfig CRYPTO_ATAES132A
 	bool "Atmel ATAES132A 32k AES Serial EEPROM support"
 	depends on I2C
-	default n
 	help
 	  Enable Atmel ATAES132A 32k AES Serial EEPROM support.
 
