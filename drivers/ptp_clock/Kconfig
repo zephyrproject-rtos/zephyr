@@ -6,6 +6,5 @@
 
 menuconfig PTP_CLOCK
 	bool "Precision Time Protocol Clock driver support"
-	default n
 	help
 	  Enable options for Precision Time Protocol Clock drivers.
