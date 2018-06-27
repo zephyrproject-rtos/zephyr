@@ -37,9 +37,8 @@ config ARM_CLOCK_CONTROL_DEV_NAME
 config CLOCK_CONTROL_BEETLE_ENABLE_PLL
 	bool "Enable PLL on Beetle"
 	depends on CLOCK_CONTROL && SOC_SERIES_BEETLE
-	default n
 	help
-	  Enable PLL on Beetle (default n).
+	  Enable PLL on Beetle.
 
 	  Select n if not sure.
 

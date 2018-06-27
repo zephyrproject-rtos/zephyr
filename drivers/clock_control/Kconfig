@@ -12,7 +12,6 @@
 menuconfig CLOCK_CONTROL
 	bool
 	prompt "Hardware clock controller support"
-	default n
 	help
 	  Enable support for hardware clock controller. Such hardware can
 	  provide clock for other subsystem, and thus can be also used for
