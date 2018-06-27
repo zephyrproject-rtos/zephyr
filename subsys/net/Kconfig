@@ -93,6 +93,8 @@ if NETWORKING
 
 source "subsys/net/Kconfig.hostname"
 
+source "subsys/net/l2/Kconfig"
+
 source "subsys/net/ip/Kconfig"
 
 source "subsys/net/lib/Kconfig"

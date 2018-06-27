@@ -150,6 +150,6 @@ config NET_L2_IEEE802154_SECURITY_CRYPTO_DEV_NAME
 	  IEEE 802.15.4 soft MAC will use to run authentication, encryption and
 	  decryption operations on incoming/outgoing frames.
 
-source "subsys/net/ip/l2/ieee802154/Kconfig.radio"
+source "subsys/net/l2/ieee802154/Kconfig.radio"
 
 endif
