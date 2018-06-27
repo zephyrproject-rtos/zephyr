@@ -2,7 +2,6 @@
 menuconfig FAKE_ENTROPY_NATIVE_POSIX
 	bool "Native posix entropy driver"
 	depends on ENTROPY_GENERATOR && ARCH_POSIX
-	default n
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the test random number generator for the
