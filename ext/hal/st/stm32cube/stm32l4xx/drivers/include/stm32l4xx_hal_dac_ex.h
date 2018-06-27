@@ -43,7 +43,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal_def.h"
-           
+
 /** @addtogroup STM32L4xx_HAL_Driver
   * @{
   */
@@ -53,17 +53,17 @@
   */
 
 /* Exported types ------------------------------------------------------------*/
-   
-/** 
-  * @brief  HAL State structures definition  
-  */ 
+
+/**
+  * @brief  HAL State structures definition
+  */
 
 /* Exported constants --------------------------------------------------------*/
 
 /** @defgroup DACEx_Exported_Constants DACEx Exported Constants
   * @{
-  */ 
-    
+  */
+
 /** @defgroup DACEx_lfsrunmask_triangleamplitude DACEx lfsrunmask triangle amplitude
   * @{
   */
@@ -94,7 +94,7 @@
 
 /**
   * @}
-  */       
+  */
 
 /**
   * @}
@@ -107,7 +107,7 @@
 
 /** @defgroup DACEx_Private_Macros DACEx Private Macros
   * @{
-  */   
+  */
 #if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
 #define IS_DAC_TRIGGER(TRIGGER) (((TRIGGER) == DAC_TRIGGER_NONE) || \
                                  ((TRIGGER) == DAC_TRIGGER_T2_TRGO) || \
@@ -117,7 +117,7 @@
                                  ((TRIGGER) == DAC_TRIGGER_SOFTWARE))
 #endif     /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx */
 
-#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) 
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define IS_DAC_TRIGGER(TRIGGER) (((TRIGGER) == DAC_TRIGGER_NONE) || \
                                  ((TRIGGER) == DAC_TRIGGER_T2_TRGO) || \
                                  ((TRIGGER) == DAC_TRIGGER_T6_TRGO) || \
@@ -134,7 +134,7 @@
                                  ((TRIGGER) == DAC_TRIGGER_T7_TRGO) || \
                                  ((TRIGGER) == DAC_TRIGGER_T8_TRGO) || \
                                  ((TRIGGER) == DAC_TRIGGER_EXT_IT9) || \
-                                 ((TRIGGER) == DAC_TRIGGER_SOFTWARE))      
+                                 ((TRIGGER) == DAC_TRIGGER_SOFTWARE))
 #endif     /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx */
 
 #if defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined(STM32L4S9xx)
@@ -155,9 +155,9 @@
 #define  IS_DAC_HIGH_FREQUENCY_MODE(MODE) (((MODE) == DAC_HIGH_FREQUENCY_INTERFACE_MODE_DISABLE)         || \
                                            ((MODE) == DAC_HIGH_FREQUENCY_INTERFACE_MODE_ABOVE_80MHZ)     || \
                                            ((MODE) == DAC_HIGH_FREQUENCY_INTERFACE_MODE_AUTOMATIC))
-                                   
+
 #endif  /* STM32L4R5xx STM32L4R7xx STM32L4R9xx STM32L4S5xx STM32L4S7xx STM32L4S9xx */
-      
+
 #define IS_DAC_SAMPLETIME(TIME) ((TIME) <= 0x000003FF)
 
 #define IS_DAC_HOLDTIME(TIME)   ((TIME) <= 0x000003FF)
@@ -207,7 +207,7 @@
   * @}
   */
 
-/* Exported functions --------------------------------------------------------*/  
+/* Exported functions --------------------------------------------------------*/
 /* Extended features functions ***********************************************/
 
 /** @addtogroup DACEx_Exported_Functions
@@ -216,15 +216,15 @@
 
 /** @addtogroup DACEx_Exported_Functions_Group2
  * @{
- */    
+ */
 /* IO operation functions *****************************************************/
-  
+
 HAL_StatusTypeDef HAL_DACEx_TriangleWaveGenerate(DAC_HandleTypeDef* hdac, uint32_t Channel, uint32_t Amplitude);
 HAL_StatusTypeDef HAL_DACEx_NoiseWaveGenerate(DAC_HandleTypeDef* hdac, uint32_t Channel, uint32_t Amplitude);
 
 #if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
     defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx) || \
-    defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined(STM32L4S9xx)   
+    defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined(STM32L4S9xx)
 HAL_StatusTypeDef HAL_DACEx_DualSetValue(DAC_HandleTypeDef* hdac, uint32_t Alignment, uint32_t Data1, uint32_t Data2);
 #endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */
         /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx */
@@ -249,19 +249,19 @@ HAL_StatusTypeDef HAL_DACEx_SetUserTrimming (DAC_HandleTypeDef* hdac, DAC_Channe
 
 /** @addtogroup DACEx_Exported_Functions_Group3
   * @{
-  */ 
+  */
 /* Peripheral Control functions ***********************************************/
 
 #if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
     defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx) || \
-    defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined(STM32L4S9xx)   
+    defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined(STM32L4S9xx)
 uint32_t HAL_DACEx_DualGetValue(DAC_HandleTypeDef* hdac);
 #endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */
         /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx */
         /* STM32L4R5xx STM32L4R7xx STM32L4R9xx STM32L4S5xx STM32L4S7xx STM32L4S9xx             */
 
 uint32_t HAL_DACEx_GetTrimOffset (DAC_HandleTypeDef *hdac, uint32_t Channel);
-   
+
 /**
   * @}
   */
@@ -300,7 +300,7 @@ void DAC_DMAHalfConvCpltCh2(DMA_HandleTypeDef *hdma);
 
 #ifdef __cplusplus
 }
-#endif   
+#endif
 
 #endif /*__STM32L4xx_HAL_DAC_EX_H */
 

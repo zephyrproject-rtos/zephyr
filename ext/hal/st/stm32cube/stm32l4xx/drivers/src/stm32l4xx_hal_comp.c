@@ -85,6 +85,63 @@
       (#) For safety purpose, comparator configuration can be locked using HAL_COMP_Lock() function.
           The only way to unlock the comparator is a device hardware reset.
   
+    *** Callback registration ***
+    =============================================
+    [..]
+
+     The compilation flag USE_HAL_COMP_REGISTER_CALLBACKS, when set to 1,
+     allows the user to configure dynamically the driver callbacks.
+     Use Functions @ref HAL_COMP_RegisterCallback()
+     to register an interrupt callback.
+    [..]
+
+     Function @ref HAL_COMP_RegisterCallback() allows to register following callbacks:
+       (+) TriggerCallback       : callback for COMP trigger.
+       (+) MspInitCallback       : callback for Msp Init.
+       (+) MspDeInitCallback     : callback for Msp DeInit.
+     This function takes as parameters the HAL peripheral handle, the Callback ID
+     and a pointer to the user callback function.
+    [..]
+
+     Use function @ref HAL_COMP_UnRegisterCallback to reset a callback to the default
+     weak function.
+    [..]
+
+     @ref HAL_COMP_UnRegisterCallback takes as parameters the HAL peripheral handle,
+     and the Callback ID.
+     This function allows to reset following callbacks:
+       (+) TriggerCallback       : callback for COMP trigger.
+       (+) MspInitCallback       : callback for Msp Init.
+       (+) MspDeInitCallback     : callback for Msp DeInit.
+     [..]
+
+     By default, after the @ref HAL_COMP_Init() and when the state is @ref HAL_COMP_STATE_RESET
+     all callbacks are set to the corresponding weak functions:
+     example @ref HAL_COMP_TriggerCallback().
+     Exception done for MspInit and MspDeInit functions that are
+     reset to the legacy weak functions in the @ref HAL_COMP_Init()/ @ref HAL_COMP_DeInit() only when
+     these callbacks are null (not registered beforehand).
+    [..]
+
+     If MspInit or MspDeInit are not null, the @ref HAL_COMP_Init()/ @ref HAL_COMP_DeInit()
+     keep and use the user MspInit/MspDeInit callbacks (registered beforehand) whatever the state.
+     [..]
+
+     Callbacks can be registered/unregistered in @ref HAL_COMP_STATE_READY state only.
+     Exception done MspInit/MspDeInit functions that can be registered/unregistered
+     in @ref HAL_COMP_STATE_READY or @ref HAL_COMP_STATE_RESET state,
+     thus registered (user) MspInit/DeInit callbacks can be used during the Init/DeInit.
+    [..]
+
+     Then, the user first registers the MspInit/MspDeInit user callbacks
+     using @ref HAL_COMP_RegisterCallback() before calling @ref HAL_COMP_DeInit()
+     or @ref HAL_COMP_Init() function.
+     [..]
+
+     When the compilation flag USE_HAL_COMP_REGISTER_CALLBACKS is set to 0 or
+     not defined, the callback registration feature is not available and all callbacks
+     are set to the corresponding weak functions.
+  
   @endverbatim
   ******************************************************************************
 
@@ -149,13 +206,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal.h"
 
-#ifdef HAL_COMP_MODULE_ENABLED
-
-#if defined (COMP1) || defined (COMP2)
-
 /** @addtogroup STM32L4xx_HAL_Driver
   * @{
   */
+
+#ifdef HAL_COMP_MODULE_ENABLED
+
+#if defined (COMP1) || defined (COMP2)
 
 /** @defgroup COMP COMP
   * @brief COMP HAL module driver
@@ -248,6 +305,9 @@ HAL_StatusTypeDef HAL_COMP_Init(COMP_HandleTypeDef *hcomp)
       /* Allocate lock resource and initialize it */
       hcomp->Lock = HAL_UNLOCKED;
       
+      /* Set COMP error code to none */
+      COMP_CLEAR_ERRORCODE(hcomp);
+      
       /* Init SYSCFG and the low level hardware to access comparators */
       /* Note: HAL_COMP_Init() calls __HAL_RCC_SYSCFG_CLK_ENABLE()            */
       /*       to enable internal control clock of the comparators.           */
@@ -259,8 +319,21 @@ HAL_StatusTypeDef HAL_COMP_Init(COMP_HandleTypeDef *hcomp)
       /*       in "HAL_COMP_MspInit()".                                       */
       __HAL_RCC_SYSCFG_CLK_ENABLE();
       
+#if (USE_HAL_COMP_REGISTER_CALLBACKS == 1)
+      /* Init the COMP Callback settings */
+      hcomp->TriggerCallback = HAL_COMP_TriggerCallback; /* Legacy weak callback */
+      
+      if (hcomp->MspInitCallback == NULL)
+      {
+        hcomp->MspInitCallback = HAL_COMP_MspInit; /* Legacy weak MspInit  */
+      }
+    
+      /* Init the low level hardware */
+      hcomp->MspInitCallback(hcomp);
+#else
       /* Init the low level hardware */
       HAL_COMP_MspInit(hcomp);
+#endif /* USE_HAL_COMP_REGISTER_CALLBACKS */
     }
     
     /* Memorize voltage scaler state before initialization */
@@ -415,8 +488,18 @@ HAL_StatusTypeDef HAL_COMP_DeInit(COMP_HandleTypeDef *hcomp)
     /* Set COMP_CSR register to reset value */
     WRITE_REG(hcomp->Instance->CSR, 0x00000000U);
     
-    /* DeInit the low level hardware: SYSCFG, GPIO, CLOCK and NVIC */
+#if (USE_HAL_COMP_REGISTER_CALLBACKS == 1)
+    if (hcomp->MspDeInitCallback == NULL)
+    {
+      hcomp->MspDeInitCallback = HAL_COMP_MspDeInit; /* Legacy weak MspDeInit  */
+    }
+    
+    /* DeInit the low level hardware: GPIO, RCC clock, NVIC */
+    hcomp->MspDeInitCallback(hcomp);
+#else
+    /* DeInit the low level hardware: GPIO, RCC clock, NVIC */
     HAL_COMP_MspDeInit(hcomp);
+#endif /* USE_HAL_COMP_REGISTER_CALLBACKS */
     
     /* Set HAL COMP handle state */
     hcomp->State = HAL_COMP_STATE_RESET;
@@ -457,6 +540,166 @@ __weak void HAL_COMP_MspDeInit(COMP_HandleTypeDef *hcomp)
             the HAL_COMP_MspDeInit could be implemented in the user file
    */
 }
+
+#if (USE_HAL_COMP_REGISTER_CALLBACKS == 1)
+/**
+  * @brief  Register a User COMP Callback
+  *         To be used instead of the weak predefined callback
+  * @param  hcomp Pointer to a COMP_HandleTypeDef structure that contains
+  *                the configuration information for the specified COMP.
+  * @param  CallbackID ID of the callback to be registered
+  *         This parameter can be one of the following values:
+  *          @arg @ref HAL_COMP_TRIGGER_CB_ID Trigger callback ID
+  *          @arg @ref HAL_COMP_MSPINIT_CB_ID MspInit callback ID
+  *          @arg @ref HAL_COMP_MSPDEINIT_CB_ID MspDeInit callback ID
+  * @param  pCallback pointer to the Callback function
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_COMP_RegisterCallback(COMP_HandleTypeDef *hcomp, HAL_COMP_CallbackIDTypeDef CallbackID, pCOMP_CallbackTypeDef pCallback)
+{
+  HAL_StatusTypeDef status = HAL_OK;
+  
+  if (pCallback == NULL)
+  {
+    /* Update the error code */
+    hcomp->ErrorCode |= HAL_COMP_ERROR_INVALID_CALLBACK;
+
+    return HAL_ERROR;
+  }
+  
+  if (HAL_COMP_STATE_READY == hcomp->State)
+  {
+    switch (CallbackID)
+    {
+      case HAL_COMP_TRIGGER_CB_ID :
+        hcomp->TriggerCallback = pCallback;
+        break;
+      
+      case HAL_COMP_MSPINIT_CB_ID :
+        hcomp->MspInitCallback = pCallback;
+        break;
+      
+      case HAL_COMP_MSPDEINIT_CB_ID :
+        hcomp->MspDeInitCallback = pCallback;
+        break;
+      
+      default :
+        /* Update the error code */
+        hcomp->ErrorCode |= HAL_COMP_ERROR_INVALID_CALLBACK;
+        
+        /* Return error status */
+        status = HAL_ERROR;
+        break;
+    }
+  }
+  else if (HAL_COMP_STATE_RESET == hcomp->State)
+  {
+    switch (CallbackID)
+    {
+      case HAL_COMP_MSPINIT_CB_ID :
+        hcomp->MspInitCallback = pCallback;
+        break;
+      
+      case HAL_COMP_MSPDEINIT_CB_ID :
+        hcomp->MspDeInitCallback = pCallback;
+        break;
+      
+      default :
+        /* Update the error code */
+        hcomp->ErrorCode |= HAL_COMP_ERROR_INVALID_CALLBACK;
+        
+        /* Return error status */
+        status = HAL_ERROR;
+        break;
+    }
+  }
+  else
+  {
+    /* Update the error code */
+    hcomp->ErrorCode |= HAL_COMP_ERROR_INVALID_CALLBACK;
+    
+    /* Return error status */
+    status =  HAL_ERROR;
+  }
+  
+  return status;
+}
+
+/**
+  * @brief  Unregister a COMP Callback
+  *         COMP callback is redirected to the weak predefined callback
+  * @param  hcomp Pointer to a COMP_HandleTypeDef structure that contains
+  *                the configuration information for the specified COMP.
+  * @param  CallbackID ID of the callback to be unregistered
+  *         This parameter can be one of the following values:
+  *          @arg @ref HAL_COMP_TRIGGER_CB_ID Trigger callback ID
+  *          @arg @ref HAL_COMP_MSPINIT_CB_ID MspInit callback ID
+  *          @arg @ref HAL_COMP_MSPDEINIT_CB_ID MspDeInit callback ID
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_COMP_UnRegisterCallback(COMP_HandleTypeDef *hcomp, HAL_COMP_CallbackIDTypeDef CallbackID)
+{
+  HAL_StatusTypeDef status = HAL_OK;
+
+  if (HAL_COMP_STATE_READY == hcomp->State)
+  {
+    switch (CallbackID)
+    {
+      case HAL_COMP_TRIGGER_CB_ID :
+        hcomp->TriggerCallback = HAL_COMP_TriggerCallback;         /* Legacy weak callback */
+        break;
+      
+      case HAL_COMP_MSPINIT_CB_ID :
+        hcomp->MspInitCallback = HAL_COMP_MspInit;                 /* Legacy weak MspInit */
+        break;
+
+      case HAL_COMP_MSPDEINIT_CB_ID :
+        hcomp->MspDeInitCallback = HAL_COMP_MspDeInit;             /* Legacy weak MspDeInit */
+        break;
+
+      default :
+        /* Update the error code */
+        hcomp->ErrorCode |= HAL_COMP_ERROR_INVALID_CALLBACK;
+
+        /* Return error status */
+        status =  HAL_ERROR;
+        break;
+    }
+  }
+  else if (HAL_COMP_STATE_RESET == hcomp->State)
+  {
+    switch (CallbackID)
+    {
+      case HAL_COMP_MSPINIT_CB_ID :
+        hcomp->MspInitCallback = HAL_COMP_MspInit;                 /* Legacy weak MspInit */
+        break;
+
+      case HAL_COMP_MSPDEINIT_CB_ID :
+        hcomp->MspDeInitCallback = HAL_COMP_MspDeInit;             /* Legacy weak MspDeInit */
+        break;
+
+      default :
+        /* Update the error code */
+        hcomp->ErrorCode |= HAL_COMP_ERROR_INVALID_CALLBACK;
+
+        /* Return error status */
+        status =  HAL_ERROR;
+        break;
+    }
+  }
+  else
+  {
+    /* Update the error code */
+    hcomp->ErrorCode |= HAL_COMP_ERROR_INVALID_CALLBACK;
+
+    /* Return error status */
+    status =  HAL_ERROR;
+  }
+
+  return status;
+}
+
+#endif /* USE_HAL_COMP_REGISTER_CALLBACKS */
 
 /**
   * @}
@@ -593,7 +836,11 @@ void HAL_COMP_IRQHandler(COMP_HandleTypeDef *hcomp)
     }
     
     /* COMP trigger user callback */
+#if (USE_HAL_COMP_REGISTER_CALLBACKS == 1)
+    hcomp->TriggerCallback(hcomp);
+#else
     HAL_COMP_TriggerCallback(hcomp);
+#endif /* USE_HAL_COMP_REGISTER_CALLBACKS */
   }
 }
 
@@ -679,7 +926,7 @@ uint32_t HAL_COMP_GetOutputLevel(COMP_HandleTypeDef *hcomp)
 }
 
 /**
-  * @brief  Comparator callback.
+  * @brief  Comparator trigger callback.
   * @param  hcomp  COMP handle
   * @retval None
   */
@@ -733,8 +980,17 @@ HAL_COMP_StateTypeDef HAL_COMP_GetState(COMP_HandleTypeDef *hcomp)
 }
 
 /**
-  * @}
+  * @brief  Return the COMP error code.
+  * @param hcomp COMP handle
+  * @retval COMP error code
   */
+uint32_t HAL_COMP_GetError(COMP_HandleTypeDef *hcomp)
+{
+  /* Check the parameters */
+  assert_param(IS_COMP_ALL_INSTANCE(hcomp->Instance));
+  
+  return hcomp->ErrorCode;
+}
 
 /**
   * @}
@@ -751,5 +1007,9 @@ HAL_COMP_StateTypeDef HAL_COMP_GetState(COMP_HandleTypeDef *hcomp)
 #endif /* COMP1 || COMP2 */
 
 #endif /* HAL_COMP_MODULE_ENABLED */
+
+/**
+  * @}
+  */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

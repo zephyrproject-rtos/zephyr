@@ -48,7 +48,7 @@ extern "C" {
   * @{
   */
 
-#if defined (SWPMI1)
+#if defined(SWPMI1)
 
 /** @defgroup SWPMI_LL SWPMI
   * @{
@@ -1154,7 +1154,7 @@ void        LL_SWPMI_StructInit(LL_SWPMI_InitTypeDef *SWPMI_InitStruct);
   * @}
   */
 
-#endif /* defined (SWPMI1) */
+#endif /* SWPMI1 */
 
 /**
   * @}

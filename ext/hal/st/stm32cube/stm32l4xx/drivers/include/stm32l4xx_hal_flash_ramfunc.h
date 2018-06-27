@@ -54,39 +54,6 @@
 
 /* Exported types ------------------------------------------------------------*/ 
 /* Exported macro ------------------------------------------------------------*/
-/** 
-  * @brief  __RAM_FUNC definition
-  */ 
-#if defined ( __CC_ARM   )
-/* ARM Compiler
-   ------------
-   RAM functions are defined using the toolchain options. 
-   Functions that are executed in RAM should reside in a separate source module.
-   Using the 'Options for File' dialog you can simply change the 'Code / Const' 
-   area of a module to a memory space in physical RAM.
-   Available memory areas are declared in the 'Target' tab of the 'Options for Target'
-   dialog. 
-*/
-#define __RAM_FUNC HAL_StatusTypeDef 
-
-#elif defined ( __ICCARM__ )
-/* ICCARM Compiler
-   ---------------
-   RAM functions are defined using a specific toolchain keyword "__ramfunc". 
-*/
-#define __RAM_FUNC __ramfunc HAL_StatusTypeDef
-
-#elif defined   (  __GNUC__  )
-/* GNU Compiler
-   ------------
-  RAM functions are defined using a specific toolchain attribute 
-   "__attribute__((section(".RamFunc")))".
-*/
-#define __RAM_FUNC HAL_StatusTypeDef  __attribute__((section(".RamFunc")))
-
-#endif
-                                      
-
 /* Exported functions --------------------------------------------------------*/
 /** @addtogroup FLASH_RAMFUNC_Exported_Functions
   * @{

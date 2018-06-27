@@ -34,8 +34,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_OSPI_H
-#define __STM32L4xx_HAL_OSPI_H
+#ifndef STM32L4xx_HAL_OSPI_H
+#define STM32L4xx_HAL_OSPI_H
 
 #ifdef __cplusplus
  extern "C" {
@@ -102,7 +102,7 @@ typedef struct
 /** 
   * @brief  HAL OSPI Handle Structure definition  
   */  
-typedef struct
+typedef struct __OSPI_HandleTypeDef
 {
   OCTOSPI_TypeDef            *Instance;     /* OSPI registers base address                      */
   OSPI_InitTypeDef           Init;          /* OSPI initialization parameters                   */
@@ -113,6 +113,21 @@ typedef struct
   __IO uint32_t              State;         /* Internal state of the OSPI HAL driver            */
   __IO uint32_t              ErrorCode;     /* Error code in case of HAL driver internal error  */
   uint32_t                   Timeout;       /* Timeout used for the OSPI external device access */
+#if (USE_HAL_OSPI_REGISTER_CALLBACKS == 1)
+  void (* ErrorCallback)        (struct __OSPI_HandleTypeDef *hospi);
+  void (* AbortCpltCallback)    (struct __OSPI_HandleTypeDef *hospi);
+  void (* FifoThresholdCallback)(struct __OSPI_HandleTypeDef *hospi);
+  void (* CmdCpltCallback)      (struct __OSPI_HandleTypeDef *hospi);
+  void (* RxCpltCallback)       (struct __OSPI_HandleTypeDef *hospi);
+  void (* TxCpltCallback)       (struct __OSPI_HandleTypeDef *hospi);
+  void (* RxHalfCpltCallback)   (struct __OSPI_HandleTypeDef *hospi);
+  void (* TxHalfCpltCallback)   (struct __OSPI_HandleTypeDef *hospi);
+  void (* StatusMatchCallback)  (struct __OSPI_HandleTypeDef *hospi);
+  void (* TimeOutCallback)      (struct __OSPI_HandleTypeDef *hospi);
+
+  void (* MspInitCallback)      (struct __OSPI_HandleTypeDef *hospi);
+  void (* MspDeInitCallback)    (struct __OSPI_HandleTypeDef *hospi);
+#endif
 }OSPI_HandleTypeDef;
 
 /** 
@@ -245,6 +260,32 @@ typedef struct
                                       This parameter can be a value of @ref OSPIM_IOPort */
 }OSPIM_CfgTypeDef;
 
+#if (USE_HAL_OSPI_REGISTER_CALLBACKS == 1)
+/**
+  * @brief  HAL OSPI Callback ID enumeration definition
+  */
+typedef enum
+{
+  HAL_OSPI_ERROR_CB_ID          = 0x00U,  /*!< OSPI Error Callback ID            */
+  HAL_OSPI_ABORT_CB_ID          = 0x01U,  /*!< OSPI Abort Callback ID            */
+  HAL_OSPI_FIFO_THRESHOLD_CB_ID = 0x02U,  /*!< OSPI FIFO Threshold Callback ID   */
+  HAL_OSPI_CMD_CPLT_CB_ID       = 0x03U,  /*!< OSPI Command Complete Callback ID */
+  HAL_OSPI_RX_CPLT_CB_ID        = 0x04U,  /*!< OSPI Rx Complete Callback ID      */
+  HAL_OSPI_TX_CPLT_CB_ID        = 0x05U,  /*!< OSPI Tx Complete Callback ID      */
+  HAL_OSPI_RX_HALF_CPLT_CB_ID   = 0x06U,  /*!< OSPI Rx Half Complete Callback ID */
+  HAL_OSPI_TX_HALF_CPLT_CB_ID   = 0x07U,  /*!< OSPI Tx Half Complete Callback ID */
+  HAL_OSPI_STATUS_MATCH_CB_ID   = 0x08U,  /*!< OSPI Status Match Callback ID     */
+  HAL_OSPI_TIMEOUT_CB_ID        = 0x09U,  /*!< OSPI Timeout Callback ID          */
+  
+  HAL_OSPI_MSP_INIT_CB_ID       = 0x0AU,  /*!< OSPI MspInit Callback ID          */
+  HAL_OSPI_MSP_DEINIT_CB_ID     = 0x0BU   /*!< OSPI MspDeInit Callback ID        */
+}HAL_OSPI_CallbackIDTypeDef;
+
+/**
+  * @brief  HAL OSPI Callback pointer definition
+  */
+typedef void (*pOSPI_CallbackTypeDef)(OSPI_HandleTypeDef *hospi);
+#endif
 /**
   * @}
   */
@@ -283,6 +324,9 @@ typedef struct
 #define HAL_OSPI_ERROR_DMA                   ((uint32_t)0x00000004U)                                         /*!< DMA transfer error                         */
 #define HAL_OSPI_ERROR_INVALID_PARAM         ((uint32_t)0x00000008U)                                         /*!< Invalid parameters error                   */
 #define HAL_OSPI_ERROR_INVALID_SEQUENCE      ((uint32_t)0x00000010U)                                         /*!< Sequence of the state machine is incorrect */
+#if (USE_HAL_OSPI_REGISTER_CALLBACKS == 1)
+#define HAL_OSPI_ERROR_INVALID_CALLBACK      ((uint32_t)0x00000020U)                                         /*!< Invalid callback error                     */
+#endif
 /**
   * @}
   */ 
@@ -603,18 +647,6 @@ typedef struct
 #define HAL_OSPIM_IOPORT_1_HIGH            ((uint32_t)(OCTOSPIM_PCR_IOHEN | 0x1))                          /*!< Port 1 - IO[7:4] */
 #define HAL_OSPIM_IOPORT_2_LOW             ((uint32_t)(OCTOSPIM_PCR_IOLEN | 0x2))                          /*!< Port 2 - IO[3:0] */
 #define HAL_OSPIM_IOPORT_2_HIGH            ((uint32_t)(OCTOSPIM_PCR_IOHEN | 0x2))                          /*!< Port 2 - IO[7:4] */
-#define HAL_OSPIM_IOPORT_3_LOW             ((uint32_t)(OCTOSPIM_PCR_IOLEN | 0x3))                          /*!< Port 3 - IO[3:0] */
-#define HAL_OSPIM_IOPORT_3_HIGH            ((uint32_t)(OCTOSPIM_PCR_IOHEN | 0x3))                          /*!< Port 3 - IO[7:4] */
-#define HAL_OSPIM_IOPORT_4_LOW             ((uint32_t)(OCTOSPIM_PCR_IOLEN | 0x4))                          /*!< Port 4 - IO[3:0] */
-#define HAL_OSPIM_IOPORT_4_HIGH            ((uint32_t)(OCTOSPIM_PCR_IOHEN | 0x4))                          /*!< Port 4 - IO[7:4] */
-#define HAL_OSPIM_IOPORT_5_LOW             ((uint32_t)(OCTOSPIM_PCR_IOLEN | 0x5))                          /*!< Port 5 - IO[3:0] */
-#define HAL_OSPIM_IOPORT_5_HIGH            ((uint32_t)(OCTOSPIM_PCR_IOHEN | 0x5))                          /*!< Port 5 - IO[7:4] */
-#define HAL_OSPIM_IOPORT_6_LOW             ((uint32_t)(OCTOSPIM_PCR_IOLEN | 0x6))                          /*!< Port 6 - IO[3:0] */
-#define HAL_OSPIM_IOPORT_6_HIGH            ((uint32_t)(OCTOSPIM_PCR_IOHEN | 0x6))                          /*!< Port 6 - IO[7:4] */
-#define HAL_OSPIM_IOPORT_7_LOW             ((uint32_t)(OCTOSPIM_PCR_IOLEN | 0x7))                          /*!< Port 7 - IO[3:0] */
-#define HAL_OSPIM_IOPORT_7_HIGH            ((uint32_t)(OCTOSPIM_PCR_IOHEN | 0x7))                          /*!< Port 7 - IO[7:4] */
-#define HAL_OSPIM_IOPORT_8_LOW             ((uint32_t)(OCTOSPIM_PCR_IOLEN | 0x8))                          /*!< Port 8 - IO[3:0] */
-#define HAL_OSPIM_IOPORT_8_HIGH            ((uint32_t)(OCTOSPIM_PCR_IOHEN | 0x8))                          /*!< Port 8 - IO[7:4] */
 /**
   * @}
   */ 
@@ -630,7 +662,15 @@ typedef struct
   * @param  __HANDLE__: OSPI handle.
   * @retval None
   */
+#if (USE_HAL_OSPI_REGISTER_CALLBACKS == 1)
+#define __HAL_OSPI_RESET_HANDLE_STATE(__HANDLE__)           do {                                              \
+                                                                  (__HANDLE__)->State = HAL_OSPI_STATE_RESET; \
+                                                                  (__HANDLE__)->MspInitCallback = NULL;       \
+                                                                  (__HANDLE__)->MspDeInitCallback = NULL;     \
+                                                               } while(0)
+#else
 #define __HAL_OSPI_RESET_HANDLE_STATE(__HANDLE__)           ((__HANDLE__)->State = HAL_OSPI_STATE_RESET)
+#endif
 
 /** @brief  Enable the OSPI peripheral.
   * @param  __HANDLE__: specifies the OSPI Handle.
@@ -697,7 +737,7 @@ typedef struct
   *            @arg HAL_OSPI_FLAG_TE:   OSPI Transfer error flag
   * @retval None
   */
-#define __HAL_OSPI_GET_FLAG(__HANDLE__, __FLAG__)           ((READ_BIT((__HANDLE__)->Instance->SR, (__FLAG__)) != 0) ? SET : RESET)
+#define __HAL_OSPI_GET_FLAG(__HANDLE__, __FLAG__)           ((READ_BIT((__HANDLE__)->Instance->SR, (__FLAG__)) != 0U) ? SET : RESET)
 
 /** @brief  Clears the specified OSPI's flag status.
   * @param  __HANDLE__: specifies the OSPI Handle.
@@ -779,6 +819,11 @@ void                  HAL_OSPI_StatusMatchCallback  (OSPI_HandleTypeDef *hospi);
 /* OSPI memory-mapped mode functions */
 void                  HAL_OSPI_TimeOutCallback      (OSPI_HandleTypeDef *hospi);
 
+#if (USE_HAL_OSPI_REGISTER_CALLBACKS == 1)
+/* OSPI callback registering/unregistering */
+HAL_StatusTypeDef     HAL_OSPI_RegisterCallback     (OSPI_HandleTypeDef *hospi, HAL_OSPI_CallbackIDTypeDef CallbackID, pOSPI_CallbackTypeDef pCallback);
+HAL_StatusTypeDef     HAL_OSPI_UnRegisterCallback   (OSPI_HandleTypeDef *hospi, HAL_OSPI_CallbackIDTypeDef CallbackID);
+#endif
 /**
   * @}
   */
@@ -818,7 +863,7 @@ HAL_StatusTypeDef     HAL_OSPIM_Config              (OSPI_HandleTypeDef *hospi, 
 /**
   @cond 0
   */
-#define IS_OSPI_FIFO_THRESHOLD(THRESHOLD)  (((THRESHOLD) >= 1) && ((THRESHOLD) <= 32))
+#define IS_OSPI_FIFO_THRESHOLD(THRESHOLD)  (((THRESHOLD) >= 1U) && ((THRESHOLD) <= 32U))
 
 #define IS_OSPI_DUALQUAD_MODE(MODE)        (((MODE) == HAL_OSPI_DUALQUAD_DISABLE) || \
                                             ((MODE) == HAL_OSPI_DUALQUAD_ENABLE))
@@ -827,9 +872,9 @@ HAL_StatusTypeDef     HAL_OSPIM_Config              (OSPI_HandleTypeDef *hospi, 
                                             ((TYPE) == HAL_OSPI_MEMTYPE_MACRONIX)     || \
                                             ((TYPE) == HAL_OSPI_MEMTYPE_HYPERBUS))
 
-#define IS_OSPI_DEVICE_SIZE(SIZE)          (((SIZE) >= 1) && ((SIZE) <= 32))
+#define IS_OSPI_DEVICE_SIZE(SIZE)          (((SIZE) >= 1U) && ((SIZE) <= 32U))
 
-#define IS_OSPI_CS_HIGH_TIME(TIME)         (((TIME) >= 1) && ((TIME) <= 8))
+#define IS_OSPI_CS_HIGH_TIME(TIME)         (((TIME) >= 1U) && ((TIME) <= 8U))
 
 #define IS_OSPI_FREE_RUN_CLK(CLK)          (((CLK) == HAL_OSPI_FREERUNCLK_DISABLE) || \
                                             ((CLK) == HAL_OSPI_FREERUNCLK_ENABLE))
@@ -843,7 +888,7 @@ HAL_StatusTypeDef     HAL_OSPIM_Config              (OSPI_HandleTypeDef *hospi, 
                                             ((SIZE) == HAL_OSPI_WRAP_64_BYTES)      || \
                                             ((SIZE) == HAL_OSPI_WRAP_128_BYTES))
 
-#define IS_OSPI_CLK_PRESCALER(PRESCALER)   (((PRESCALER) >= 1) && ((PRESCALER) <= 256))
+#define IS_OSPI_CLK_PRESCALER(PRESCALER)   (((PRESCALER) >= 1U) && ((PRESCALER) <= 256U))
 
 #define IS_OSPI_SAMPLE_SHIFTING(CYCLE)     (((CYCLE) == HAL_OSPI_SAMPLE_SHIFTING_NONE)      || \
                                             ((CYCLE) == HAL_OSPI_SAMPLE_SHIFTING_HALFCYCLE))
@@ -906,12 +951,12 @@ HAL_StatusTypeDef     HAL_OSPIM_Config              (OSPI_HandleTypeDef *hospi, 
                                             ((MODE) == HAL_OSPI_DATA_4_LINES) || \
                                             ((MODE) == HAL_OSPI_DATA_8_LINES))
 
-#define IS_OSPI_NUMBER_DATA(NUMBER)        ((NUMBER) >= 1)
+#define IS_OSPI_NUMBER_DATA(NUMBER)        ((NUMBER) >= 1U)
 
 #define IS_OSPI_DATA_DTR_MODE(MODE)        (((MODE) == HAL_OSPI_DATA_DTR_DISABLE) || \
                                             ((MODE) == HAL_OSPI_DATA_DTR_ENABLE))
 
-#define IS_OSPI_DUMMY_CYCLES(NUMBER)       ((NUMBER) <= 31)
+#define IS_OSPI_DUMMY_CYCLES(NUMBER)       ((NUMBER) <= 31U)
 
 #define IS_OSPI_DQS_MODE(MODE)             (((MODE) == HAL_OSPI_DQS_DISABLE) || \
                                             ((MODE) == HAL_OSPI_DQS_ENABLE))
@@ -919,9 +964,9 @@ HAL_StatusTypeDef     HAL_OSPIM_Config              (OSPI_HandleTypeDef *hospi, 
 #define IS_OSPI_SIOO_MODE(MODE)            (((MODE) == HAL_OSPI_SIOO_INST_EVERY_CMD) || \
                                             ((MODE) == HAL_OSPI_SIOO_INST_ONLY_FIRST_CMD))
 
-#define IS_OSPI_RW_RECOVERY_TIME(NUMBER)   ((NUMBER) <= 255)
+#define IS_OSPI_RW_RECOVERY_TIME(NUMBER)   ((NUMBER) <= 255U)
 
-#define IS_OSPI_ACCESS_TIME(NUMBER)        ((NUMBER) <= 255)
+#define IS_OSPI_ACCESS_TIME(NUMBER)        ((NUMBER) <= 255U)
 
 #define IS_OSPI_WRITE_ZERO_LATENCY(MODE)   (((MODE) == HAL_OSPI_LATENCY_ON_WRITE) || \
                                             ((MODE) == HAL_OSPI_NO_LATENCY_ON_WRITE))
@@ -938,35 +983,23 @@ HAL_StatusTypeDef     HAL_OSPIM_Config              (OSPI_HandleTypeDef *hospi, 
 #define IS_OSPI_AUTOMATIC_STOP(MODE)       (((MODE) == HAL_OSPI_AUTOMATIC_STOP_ENABLE) || \
                                             ((MODE) == HAL_OSPI_AUTOMATIC_STOP_DISABLE))
 
-#define IS_OSPI_INTERVAL(INTERVAL)         ((INTERVAL) <= 0xFFFF)
+#define IS_OSPI_INTERVAL(INTERVAL)         ((INTERVAL) <= 0xFFFFU)
 
-#define IS_OSPI_STATUS_BYTES_SIZE(SIZE)    (((SIZE) >= 1) && ((SIZE) <= 4)) 
+#define IS_OSPI_STATUS_BYTES_SIZE(SIZE)    (((SIZE) >= 1U) && ((SIZE) <= 4U)) 
 
 #define IS_OSPI_TIMEOUT_ACTIVATION(MODE)   (((MODE) == HAL_OSPI_TIMEOUT_COUNTER_DISABLE) || \
                                             ((MODE) == HAL_OSPI_TIMEOUT_COUNTER_ENABLE)) 
 
-#define IS_OSPI_TIMEOUT_PERIOD(PERIOD)     ((PERIOD) <= 0xFFFF)
+#define IS_OSPI_TIMEOUT_PERIOD(PERIOD)     ((PERIOD) <= 0xFFFFU)
 
-#define IS_OSPI_CS_BOUNDARY(BOUNDARY)      ((BOUNDARY) <= 31)
+#define IS_OSPI_CS_BOUNDARY(BOUNDARY)      ((BOUNDARY) <= 31U)
 
-#define IS_OSPIM_PORT(NUMBER)              (((NUMBER) >= 1) && ((NUMBER) <= 8))
+#define IS_OSPIM_PORT(NUMBER)              (((NUMBER) >= 1U) && ((NUMBER) <= 2U))
 
 #define IS_OSPIM_IO_PORT(PORT)             (((PORT) == HAL_OSPIM_IOPORT_1_LOW)  || \
                                             ((PORT) == HAL_OSPIM_IOPORT_1_HIGH) || \
                                             ((PORT) == HAL_OSPIM_IOPORT_2_LOW)  || \
-                                            ((PORT) == HAL_OSPIM_IOPORT_2_HIGH) || \
-                                            ((PORT) == HAL_OSPIM_IOPORT_3_LOW)  || \
-                                            ((PORT) == HAL_OSPIM_IOPORT_3_HIGH) || \
-                                            ((PORT) == HAL_OSPIM_IOPORT_4_LOW)  || \
-                                            ((PORT) == HAL_OSPIM_IOPORT_4_HIGH) || \
-                                            ((PORT) == HAL_OSPIM_IOPORT_5_LOW)  || \
-                                            ((PORT) == HAL_OSPIM_IOPORT_5_HIGH) || \
-                                            ((PORT) == HAL_OSPIM_IOPORT_6_LOW)  || \
-                                            ((PORT) == HAL_OSPIM_IOPORT_6_HIGH) || \
-                                            ((PORT) == HAL_OSPIM_IOPORT_7_LOW)  || \
-                                            ((PORT) == HAL_OSPIM_IOPORT_7_HIGH) || \
-                                            ((PORT) == HAL_OSPIM_IOPORT_8_LOW)  || \
-                                            ((PORT) == HAL_OSPIM_IOPORT_8_HIGH))
+                                            ((PORT) == HAL_OSPIM_IOPORT_2_HIGH))
 /**
   @endcond
   */
@@ -987,6 +1020,6 @@ HAL_StatusTypeDef     HAL_OSPIM_Config              (OSPI_HandleTypeDef *hospi, 
 }
 #endif
 
-#endif /* __STM32L4xx_HAL_OSPI_H */
+#endif /* STM32L4xx_HAL_OSPI_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

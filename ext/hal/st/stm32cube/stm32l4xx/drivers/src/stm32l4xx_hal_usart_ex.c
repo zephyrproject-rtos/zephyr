@@ -15,13 +15,13 @@
 
     (#) FIFO mode enabling/disabling and RX/TX FIFO threshold programming.
 
-        -@- When USART operates in FIFO mode, FIFO mode must be enabled prior 
-            starting RX/TX transfers. Also RX/TX FIFO thresholds must be 
+        -@- When USART operates in FIFO mode, FIFO mode must be enabled prior
+            starting RX/TX transfers. Also RX/TX FIFO thresholds must be
             configured prior starting RX/TX transfers.
 
     (#) Slave mode enabling/disabling and NSS pin configuration.
 
-        -@- When USART operates in Slave mode, Slave mode must be enabled prior 
+        -@- When USART operates in Slave mode, Slave mode must be enabled prior
             starting RX/TX transfers.
 
   @endverbatim
@@ -70,6 +70,14 @@
 #ifdef HAL_USART_MODULE_ENABLED
 
 /* Private typedef -----------------------------------------------------------*/
+#if defined(USART_CR1_FIFOEN)
+/* UART RX FIFO depth */
+#define RX_FIFO_DEPTH 8U
+
+/* UART TX FIFO depth */
+#define TX_FIFO_DEPTH 8U
+
+#endif
 /* Private define ------------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -113,7 +121,7 @@ static void USARTEx_SetNbDataToProcess(USART_HandleTypeDef *husart);
   * @param  husart USART handle.
   * @retval None
   */
-__weak void HAL_USARTEx_RxFifoFullCallback (USART_HandleTypeDef *husart)
+__weak void HAL_USARTEx_RxFifoFullCallback(USART_HandleTypeDef *husart)
 {
   /* Prevent unused argument(s) compilation warning */
   UNUSED(husart);
@@ -128,7 +136,7 @@ __weak void HAL_USARTEx_RxFifoFullCallback (USART_HandleTypeDef *husart)
   * @param  husart USART handle.
   * @retval None
   */
-__weak void HAL_USARTEx_TxFifoEmptyCallback (USART_HandleTypeDef *husart)
+__weak void HAL_USARTEx_TxFifoEmptyCallback(USART_HandleTypeDef *husart)
 {
   /* Prevent unused argument(s) compilation warning */
   UNUSED(husart);
@@ -173,7 +181,7 @@ __weak void HAL_USARTEx_TxFifoEmptyCallback (USART_HandleTypeDef *husart)
   * @note In SPI slave mode, the USART must be enabled before starting the master
   *       communications (or between frames while the clock is stable). Otherwise,
   *       if the USART slave is enabled while the master is in the middle of a
-  *       frame, it will become desynchronized with the master. 
+  *       frame, it will become desynchronized with the master.
   * @note The data register of the slave needs to be ready before the first edge
   *       of the communication clock or before the end of the ongoing communication,
   *       otherwise the SPI slave will transmit zeros.
@@ -182,45 +190,45 @@ __weak void HAL_USARTEx_TxFifoEmptyCallback (USART_HandleTypeDef *husart)
   */
 HAL_StatusTypeDef HAL_USARTEx_EnableSlaveMode(USART_HandleTypeDef *husart)
 {
-  uint32_t tmpcr1 = 0;
+  uint32_t tmpcr1 = 0U;
 
   /* Check parameters */
   assert_param(IS_UART_SPI_SLAVE_INSTANCE(husart->Instance));
-  
+
   /* Process Locked */
   __HAL_LOCK(husart);
-  
+
   husart->State = HAL_USART_STATE_BUSY;
-  
+
   /* Save actual USART configuration */
   tmpcr1 = READ_REG(husart->Instance->CR1);
-  
+
   /* Disable USART */
   __HAL_USART_DISABLE(husart);
-  
+
   /* In SPI slave mode mode, the following bits must be kept cleared:
   - LINEN and CLKEN bit in the USART_CR2 register
   - HDSEL, SCEN and IREN bits in the USART_CR3 register.*/
   CLEAR_BIT(husart->Instance->CR2, (USART_CR2_LINEN | USART_CR2_CLKEN));
   CLEAR_BIT(husart->Instance->CR3, (USART_CR3_SCEN | USART_CR3_HDSEL | USART_CR3_IREN));
-  
+
   /* Enable SPI slave mode */
   SET_BIT(husart->Instance->CR2, USART_CR2_SLVEN);
-  
+
   /* Restore USART configuration */
   WRITE_REG(husart->Instance->CR1, tmpcr1);
- 
+
   husart->SlaveMode = USART_SLAVEMODE_ENABLE;
-  
+
   husart->State = HAL_USART_STATE_READY;
-  
+
   /* Enable USART */
   __HAL_USART_ENABLE(husart);
-  
+
   /* Process Unlocked */
   __HAL_UNLOCK(husart);
-  
-  return HAL_OK;  
+
+  return HAL_OK;
 }
 
 /**
@@ -230,36 +238,36 @@ HAL_StatusTypeDef HAL_USARTEx_EnableSlaveMode(USART_HandleTypeDef *husart)
   */
 HAL_StatusTypeDef HAL_USARTEx_DisableSlaveMode(USART_HandleTypeDef *husart)
 {
-  uint32_t tmpcr1 = 0;
+  uint32_t tmpcr1 = 0U;
 
   /* Check parameters */
   assert_param(IS_UART_SPI_SLAVE_INSTANCE(husart->Instance));
-  
+
   /* Process Locked */
   __HAL_LOCK(husart);
-  
+
   husart->State = HAL_USART_STATE_BUSY;
-  
+
   /* Save actual USART configuration */
   tmpcr1 = READ_REG(husart->Instance->CR1);
-  
+
   /* Disable USART */
   __HAL_USART_DISABLE(husart);
 
   /* Disable SPI slave mode */
   CLEAR_BIT(husart->Instance->CR2, USART_CR2_SLVEN);
-  
+
   /* Restore USART configuration */
   WRITE_REG(husart->Instance->CR1, tmpcr1);
 
   husart->SlaveMode = USART_SLAVEMODE_ENABLE;
-  
+
   husart->State = HAL_USART_STATE_READY;
-  
+
   /* Process Unlocked */
   __HAL_UNLOCK(husart);
-  
-  return HAL_OK;  
+
+  return HAL_OK;
 }
 
 /**
@@ -278,31 +286,31 @@ HAL_StatusTypeDef HAL_USARTEx_DisableSlaveMode(USART_HandleTypeDef *husart)
   */
 HAL_StatusTypeDef HAL_USARTEx_ConfigNSS(USART_HandleTypeDef *husart, uint32_t NSSConfig)
 {
-  uint32_t tmpcr1 = 0;
+  uint32_t tmpcr1 = 0U;
 
   /* Check parameters */
   assert_param(IS_UART_SPI_SLAVE_INSTANCE(husart->Instance));
   assert_param(IS_USART_NSS(NSSConfig));
-  
+
   /* Process Locked */
   __HAL_LOCK(husart);
-  
+
   husart->State = HAL_USART_STATE_BUSY;
-  
+
   /* Save actual USART configuration */
   tmpcr1 = READ_REG(husart->Instance->CR1);
-  
+
   /* Disable USART */
   __HAL_USART_DISABLE(husart);
 
   /* Program DIS_NSS bit in the USART_CR2 register */
   MODIFY_REG(husart->Instance->CR2, USART_CR2_DIS_NSS, NSSConfig);
-  
+
   /* Restore USART configuration */
   WRITE_REG(husart->Instance->CR1, tmpcr1);
- 
+
   husart->State = HAL_USART_STATE_READY;
-  
+
   /* Process Unlocked */
   __HAL_UNLOCK(husart);
 
@@ -318,37 +326,37 @@ HAL_StatusTypeDef HAL_USARTEx_ConfigNSS(USART_HandleTypeDef *husart, uint32_t NS
   */
 HAL_StatusTypeDef HAL_USARTEx_EnableFifoMode(USART_HandleTypeDef *husart)
 {
-  uint32_t tmpcr1 = 0;
-  
+  uint32_t tmpcr1 = 0U;
+
   /* Check parameters */
   assert_param(IS_UART_FIFO_INSTANCE(husart->Instance));
 
   /* Process Locked */
   __HAL_LOCK(husart);
-  
+
   husart->State = HAL_USART_STATE_BUSY;
-  
+
   /* Save actual USART configuration */
   tmpcr1 = READ_REG(husart->Instance->CR1);
-  
+
   /* Disable USART */
   __HAL_USART_DISABLE(husart);
-  
+
   /* Enable FIFO mode */
   SET_BIT(tmpcr1, USART_CR1_FIFOEN);
   husart->FifoMode = USART_FIFOMODE_ENABLE;
-  
+
   /* Restore USART configuration */
   WRITE_REG(husart->Instance->CR1, tmpcr1);
-  
+
   /* Determine the number of data to process during RX/TX ISR execution */
   USARTEx_SetNbDataToProcess(husart);
-  
+
   husart->State = HAL_USART_STATE_READY;
-  
+
   /* Process Unlocked */
   __HAL_UNLOCK(husart);
- 
+
   return HAL_OK;
 }
 
@@ -359,34 +367,34 @@ HAL_StatusTypeDef HAL_USARTEx_EnableFifoMode(USART_HandleTypeDef *husart)
   */
 HAL_StatusTypeDef HAL_USARTEx_DisableFifoMode(USART_HandleTypeDef *husart)
 {
-  uint32_t tmpcr1 = 0;
+  uint32_t tmpcr1 = 0U;
 
   /* Check parameters */
   assert_param(IS_UART_FIFO_INSTANCE(husart->Instance));
 
   /* Process Locked */
   __HAL_LOCK(husart);
-  
+
   husart->State = HAL_USART_STATE_BUSY;
-  
+
   /* Save actual USART configuration */
   tmpcr1 = READ_REG(husart->Instance->CR1);
-  
+
   /* Disable USART */
   __HAL_USART_DISABLE(husart);
-  
+
   /* Enable FIFO mode */
   CLEAR_BIT(tmpcr1, USART_CR1_FIFOEN);
   husart->FifoMode = USART_FIFOMODE_DISABLE;
-  
+
   /* Restore USART configuration */
   WRITE_REG(husart->Instance->CR1, tmpcr1);
-  
+
   husart->State = HAL_USART_STATE_READY;
-  
+
   /* Process Unlocked */
   __HAL_UNLOCK(husart);
- 
+
   return HAL_OK;
 }
 
@@ -405,37 +413,37 @@ HAL_StatusTypeDef HAL_USARTEx_DisableFifoMode(USART_HandleTypeDef *husart)
   */
 HAL_StatusTypeDef HAL_USARTEx_SetTxFifoThreshold(USART_HandleTypeDef *husart, uint32_t Threshold)
 {
-  uint32_t tmpcr1 = 0;
-  
+  uint32_t tmpcr1 = 0U;
+
   /* Check parameters */
   assert_param(IS_UART_FIFO_INSTANCE(husart->Instance));
   assert_param(IS_USART_TXFIFO_THRESHOLD(Threshold));
 
   /* Process Locked */
   __HAL_LOCK(husart);
-  
+
   husart->State = HAL_USART_STATE_BUSY;
-  
+
   /* Save actual USART configuration */
   tmpcr1 = READ_REG(husart->Instance->CR1);
-  
+
   /* Disable USART */
   __HAL_USART_DISABLE(husart);
-  
+
   /* Update TX threshold configuration */
   MODIFY_REG(husart->Instance->CR3, USART_CR3_TXFTCFG, Threshold);
-  
+
   /* Determine the number of data to process during RX/TX ISR execution */
   USARTEx_SetNbDataToProcess(husart);
-  
+
   /* Restore USART configuration */
   WRITE_REG(husart->Instance->CR1, tmpcr1);
-  
+
   husart->State = HAL_USART_STATE_READY;
-  
+
   /* Process Unlocked */
   __HAL_UNLOCK(husart);
-  
+
   return HAL_OK;
 }
 
@@ -454,37 +462,37 @@ HAL_StatusTypeDef HAL_USARTEx_SetTxFifoThreshold(USART_HandleTypeDef *husart, ui
   */
 HAL_StatusTypeDef HAL_USARTEx_SetRxFifoThreshold(USART_HandleTypeDef *husart, uint32_t Threshold)
 {
-  uint32_t tmpcr1 = 0;
-  
+  uint32_t tmpcr1 = 0U;
+
   /* Check the parameters */
   assert_param(IS_UART_FIFO_INSTANCE(husart->Instance));
   assert_param(IS_USART_RXFIFO_THRESHOLD(Threshold));
 
   /* Process Locked */
   __HAL_LOCK(husart);
-  
+
   husart->State = HAL_USART_STATE_BUSY;
-  
+
   /* Save actual USART configuration */
   tmpcr1 = READ_REG(husart->Instance->CR1);
-  
+
   /* Disable USART */
   __HAL_USART_DISABLE(husart);
-  
+
   /* Update RX threshold configuration */
   MODIFY_REG(husart->Instance->CR3, USART_CR3_RXFTCFG, Threshold);
-  
+
   /* Determine the number of data to process during RX/TX ISR execution */
   USARTEx_SetNbDataToProcess(husart);
-  
+
   /* Restore USART configuration */
   WRITE_REG(husart->Instance->CR1, tmpcr1);
-  
+
   husart->State = HAL_USART_STATE_READY;
-  
+
   /* Process Unlocked */
   __HAL_UNLOCK(husart);
-  
+
   return HAL_OK;
 }
 #endif
@@ -509,7 +517,7 @@ HAL_StatusTypeDef HAL_USARTEx_SetRxFifoThreshold(USART_HandleTypeDef *husart, ui
   * @param husart USART handle.
   * @retval None
   */
-void USARTEx_SetNbDataToProcess(USART_HandleTypeDef *husart)
+static void USARTEx_SetNbDataToProcess(USART_HandleTypeDef *husart)
 {
   uint8_t rx_fifo_depth;
   uint8_t tx_fifo_depth;
@@ -517,20 +525,20 @@ void USARTEx_SetNbDataToProcess(USART_HandleTypeDef *husart)
   uint8_t tx_fifo_threshold;
   uint8_t numerator[] = {1, 1, 1, 3, 7, 1};
   uint8_t denominator[] = {8, 4, 2, 4, 8, 1};
-  
+
   if (husart->FifoMode == USART_FIFOMODE_DISABLE)
   {
-    husart->NbTxDataToProcess = 1;
-    husart->NbRxDataToProcess = 1;
+    husart->NbTxDataToProcess = 1U;
+    husart->NbRxDataToProcess = 1U;
   }
   else
   {
-    rx_fifo_depth = 8; /* RX Fifo size */
-    tx_fifo_depth = 8; /* TX Fifo size */
-    rx_fifo_threshold = (uint8_t)(READ_BIT(husart->Instance->CR3, USART_CR3_RXFTCFG) >> USART_CR3_RXFTCFG_Pos);
-    tx_fifo_threshold = (uint8_t)(READ_BIT(husart->Instance->CR3, USART_CR3_TXFTCFG) >> USART_CR3_TXFTCFG_Pos);
-    husart->NbTxDataToProcess = (uint8_t)(tx_fifo_depth * numerator[tx_fifo_threshold])/denominator[tx_fifo_threshold];
-    husart->NbRxDataToProcess = (uint8_t)(rx_fifo_depth * numerator[rx_fifo_threshold])/denominator[rx_fifo_threshold];
+    rx_fifo_depth = RX_FIFO_DEPTH;
+    tx_fifo_depth = TX_FIFO_DEPTH;
+    rx_fifo_threshold = (READ_BIT(husart->Instance->CR3, USART_CR3_RXFTCFG) >> USART_CR3_RXFTCFG_Pos);
+    tx_fifo_threshold = (READ_BIT(husart->Instance->CR3, USART_CR3_TXFTCFG) >> USART_CR3_TXFTCFG_Pos);
+    husart->NbTxDataToProcess = (tx_fifo_depth * numerator[tx_fifo_threshold]) / denominator[tx_fifo_threshold];
+    husart->NbRxDataToProcess = (rx_fifo_depth * numerator[rx_fifo_threshold]) / denominator[rx_fifo_threshold];
   }
 }
 #endif

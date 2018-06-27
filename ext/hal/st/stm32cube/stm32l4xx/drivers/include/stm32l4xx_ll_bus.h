@@ -4,17 +4,17 @@
   * @author  MCD Application Team
   * @brief   Header file of BUS LL module.
 
-  @verbatim                
+  @verbatim
                       ##### RCC Limitations #####
   ==============================================================================
-    [..]  
-      A delay between an RCC peripheral clock enable and the effective peripheral 
-      enabling should be taken into account in order to manage the peripheral read/write 
+    [..]
+      A delay between an RCC peripheral clock enable and the effective peripheral
+      enabling should be taken into account in order to manage the peripheral read/write
       from/to registers.
       (+) This delay depends on the peripheral mapping.
         (++) AHB & APB peripherals, 1 dummy read is necessary
 
-    [..]  
+    [..]
       Workarounds:
       (#) For AHB & APB peripherals, a dummy read to the peripheral register has been
           inserted in each LL_{BUS}_GRP{x}_EnableClock() function.
@@ -325,7 +325,7 @@ extern "C" {
   *         AHB1ENR      CRCEN         LL_AHB1_GRP1_EnableClock\n
   *         AHB1ENR      TSCEN         LL_AHB1_GRP1_EnableClock\n
   *         AHB1ENR      DMA2DEN       LL_AHB1_GRP1_EnableClock\n
-  *         AHB1ENR      GFXMMUEN      LL_AHB1_GRP1_EnableClock  
+  *         AHB1ENR      GFXMMUEN      LL_AHB1_GRP1_EnableClock
   * @param  Periphs This parameter can be a combination of the following values:
   *         @arg @ref LL_AHB1_GRP1_PERIPH_DMA1
   *         @arg @ref LL_AHB1_GRP1_PERIPH_DMA2
@@ -357,7 +357,7 @@ __STATIC_INLINE void LL_AHB1_GRP1_EnableClock(uint32_t Periphs)
   *         AHB1ENR      CRCEN         LL_AHB1_GRP1_IsEnabledClock\n
   *         AHB1ENR      TSCEN         LL_AHB1_GRP1_IsEnabledClock\n
   *         AHB1ENR      DMA2DEN       LL_AHB1_GRP1_IsEnabledClock\n
-  *         AHB1ENR      GFXMMUEN      LL_AHB1_GRP1_IsEnabledClock  
+  *         AHB1ENR      GFXMMUEN      LL_AHB1_GRP1_IsEnabledClock
   * @param  Periphs This parameter can be a combination of the following values:
   *         @arg @ref LL_AHB1_GRP1_PERIPH_DMA1
   *         @arg @ref LL_AHB1_GRP1_PERIPH_DMA2
@@ -385,7 +385,7 @@ __STATIC_INLINE uint32_t LL_AHB1_GRP1_IsEnabledClock(uint32_t Periphs)
   *         AHB1ENR      CRCEN         LL_AHB1_GRP1_DisableClock\n
   *         AHB1ENR      TSCEN         LL_AHB1_GRP1_DisableClock\n
   *         AHB1ENR      DMA2DEN       LL_AHB1_GRP1_DisableClock\n
-  *         AHB1ENR      GFXMMUEN      LL_AHB1_GRP1_DisableClock  
+  *         AHB1ENR      GFXMMUEN      LL_AHB1_GRP1_DisableClock
   * @param  Periphs This parameter can be a combination of the following values:
   *         @arg @ref LL_AHB1_GRP1_PERIPH_DMA1
   *         @arg @ref LL_AHB1_GRP1_PERIPH_DMA2
@@ -412,8 +412,8 @@ __STATIC_INLINE void LL_AHB1_GRP1_DisableClock(uint32_t Periphs)
   *         AHB1RSTR     FLASHRST      LL_AHB1_GRP1_ForceReset\n
   *         AHB1RSTR     CRCRST        LL_AHB1_GRP1_ForceReset\n
   *         AHB1RSTR     TSCRST        LL_AHB1_GRP1_ForceReset\n
-  *         AHB1RSTR     DMA2DRST      LL_AHB1_GRP1_ForceReset\n 
-  *         AHB1RSTR     GFXMMURST     LL_AHB1_GRP1_ForceReset 
+  *         AHB1RSTR     DMA2DRST      LL_AHB1_GRP1_ForceReset\n
+  *         AHB1RSTR     GFXMMURST     LL_AHB1_GRP1_ForceReset
   * @param  Periphs This parameter can be a combination of the following values:
   *         @arg @ref LL_AHB1_GRP1_PERIPH_ALL
   *         @arg @ref LL_AHB1_GRP1_PERIPH_DMA1
@@ -441,8 +441,8 @@ __STATIC_INLINE void LL_AHB1_GRP1_ForceReset(uint32_t Periphs)
   *         AHB1RSTR     FLASHRST      LL_AHB1_GRP1_ReleaseReset\n
   *         AHB1RSTR     CRCRST        LL_AHB1_GRP1_ReleaseReset\n
   *         AHB1RSTR     TSCRST        LL_AHB1_GRP1_ReleaseReset\n
-  *         AHB1RSTR     DMA2DRST      LL_AHB1_GRP1_ReleaseReset\n 
-  *         AHB1RSTR     GFXMMURST     LL_AHB1_GRP1_ReleaseReset 
+  *         AHB1RSTR     DMA2DRST      LL_AHB1_GRP1_ReleaseReset\n
+  *         AHB1RSTR     GFXMMURST     LL_AHB1_GRP1_ReleaseReset
   * @param  Periphs This parameter can be a combination of the following values:
   *         @arg @ref LL_AHB1_GRP1_PERIPH_ALL
   *         @arg @ref LL_AHB1_GRP1_PERIPH_DMA1

@@ -21,14 +21,9 @@
 
     (#) FIFO mode enabling/disabling and RX/TX FIFO threshold programming.
 
-        -@- When USART operates in FIFO mode, FIFO mode must be enabled prior 
-            starting RX/TX transfers. Also RX/TX FIFO thresholds must be 
+        -@- When UART operates in FIFO mode, FIFO mode must be enabled prior
+            starting RX/TX transfers. Also RX/TX FIFO thresholds must be
             configured prior starting RX/TX transfers.
-
-    (#) Slave mode enabling/disabling and NSS pin configuration.
-
-        -@- When USART operates in Slave mode, Slave mode must be enabled prior 
-            starting RX/TX transfers.
 
   @endverbatim
   ******************************************************************************
@@ -77,12 +72,23 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+#if defined(USART_CR1_FIFOEN)
+/* UART RX FIFO depth */
+#define RX_FIFO_DEPTH 8U
+
+/* UART TX FIFO depth */
+#define TX_FIFO_DEPTH 8U
+#endif
+
 /* Private macros ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /** @defgroup UARTEx_Private_Functions UARTEx Private Functions
   * @{
   */
+#if (USE_HAL_UART_REGISTER_CALLBACKS == 1)
+extern void UART_InitCallbacksToDefault(UART_HandleTypeDef *huart);
+#endif /* USE_HAL_UART_REGISTER_CALLBACKS */
 static void UARTEx_Wakeup_AddressConfig(UART_HandleTypeDef *huart, UART_WakeUpTypeDef WakeUpSelection);
 #if defined(USART_CR1_FIFOEN)
 static void UARTEx_SetNbDataToProcess(UART_HandleTypeDef *huart);
@@ -131,10 +137,10 @@ static void UARTEx_SetNbDataToProcess(UART_HandleTypeDef *huart);
 
 @endverbatim
 
-  Depending on the frame length defined by the M1 and M0 bits (7-bit, 
-  8-bit or 9-bit), the possible UART formats are listed in the 
+  Depending on the frame length defined by the M1 and M0 bits (7-bit,
+  8-bit or 9-bit), the possible UART formats are listed in the
   following table.
-  
+
     Table 1. UART frame format.
     +-----------------------------------------------------------------------+
     |  M1 bit |  M0 bit |  PCE bit  |             UART frame                |
@@ -176,64 +182,76 @@ static void UARTEx_SetNbDataToProcess(UART_HandleTypeDef *huart);
   */
 HAL_StatusTypeDef HAL_RS485Ex_Init(UART_HandleTypeDef *huart, uint32_t Polarity, uint32_t AssertionTime, uint32_t DeassertionTime)
 {
-  uint32_t temp = 0x0;
-  
+  uint32_t temp = 0x0U;
+
   /* Check the UART handle allocation */
-  if(huart == NULL)
+  if (huart == NULL)
   {
     return HAL_ERROR;
   }
   /* Check the Driver Enable UART instance */
   assert_param(IS_UART_DRIVER_ENABLE_INSTANCE(huart->Instance));
-  
+
   /* Check the Driver Enable polarity */
   assert_param(IS_UART_DE_POLARITY(Polarity));
-  
+
   /* Check the Driver Enable assertion time */
   assert_param(IS_UART_ASSERTIONTIME(AssertionTime));
-  
+
   /* Check the Driver Enable deassertion time */
   assert_param(IS_UART_DEASSERTIONTIME(DeassertionTime));
-  
-  if(huart->gState == HAL_UART_STATE_RESET)
+
+  if (huart->gState == HAL_UART_STATE_RESET)
   {
     /* Allocate lock resource and initialize it */
     huart->Lock = HAL_UNLOCKED;
-    
+
+#if (USE_HAL_UART_REGISTER_CALLBACKS == 1)
+    UART_InitCallbacksToDefault(huart);
+
+    if (huart->MspInitCallback == NULL)
+    {
+      huart->MspInitCallback = HAL_UART_MspInit;
+    }
+
+    /* Init the low level hardware */
+    huart->MspInitCallback(huart);
+#else
     /* Init the low level hardware : GPIO, CLOCK, CORTEX */
     HAL_UART_MspInit(huart);
+#endif /* (USE_HAL_UART_REGISTER_CALLBACKS) */
   }
-  
+
   huart->gState = HAL_UART_STATE_BUSY;
-  
+
   /* Disable the Peripheral */
   __HAL_UART_DISABLE(huart);
-  
+
   /* Set the UART Communication parameters */
   if (UART_SetConfig(huart) == HAL_ERROR)
   {
     return HAL_ERROR;
   }
-  
-  if(huart->AdvancedInit.AdvFeatureInit != UART_ADVFEATURE_NO_INIT)
+
+  if (huart->AdvancedInit.AdvFeatureInit != UART_ADVFEATURE_NO_INIT)
   {
     UART_AdvFeatureConfig(huart);
   }
-  
+
   /* Enable the Driver Enable mode by setting the DEM bit in the CR3 register */
   SET_BIT(huart->Instance->CR3, USART_CR3_DEM);
-  
+
   /* Set the Driver Enable polarity */
   MODIFY_REG(huart->Instance->CR3, USART_CR3_DEP, Polarity);
-  
+
   /* Set the Driver Enable assertion and deassertion times */
   temp = (AssertionTime << UART_CR1_DEAT_ADDRESS_LSB_POS);
   temp |= (DeassertionTime << UART_CR1_DEDT_ADDRESS_LSB_POS);
-  MODIFY_REG(huart->Instance->CR1, (USART_CR1_DEDT|USART_CR1_DEAT), temp);
-  
+  MODIFY_REG(huart->Instance->CR1, (USART_CR1_DEDT | USART_CR1_DEAT), temp);
+
   /* Enable the Peripheral */
   __HAL_UART_ENABLE(huart);
-  
+
   /* TEACK and/or REACK to check before moving huart->gState and huart->RxState to Ready */
   return (UART_CheckIdleState(huart));
 }
@@ -268,7 +286,7 @@ HAL_StatusTypeDef HAL_RS485Ex_Init(UART_HandleTypeDef *huart, uint32_t Polarity,
   * @param huart UART handle.
   * @retval None
   */
- __weak void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart)
+__weak void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart)
 {
   /* Prevent unused argument(s) compilation warning */
   UNUSED(huart);
@@ -284,7 +302,7 @@ HAL_StatusTypeDef HAL_RS485Ex_Init(UART_HandleTypeDef *huart, uint32_t Polarity,
   * @param  huart UART handle.
   * @retval None
   */
-__weak void HAL_UARTEx_RxFifoFullCallback (UART_HandleTypeDef *huart)
+__weak void HAL_UARTEx_RxFifoFullCallback(UART_HandleTypeDef *huart)
 {
   /* Prevent unused argument(s) compilation warning */
   UNUSED(huart);
@@ -299,7 +317,7 @@ __weak void HAL_UARTEx_RxFifoFullCallback (UART_HandleTypeDef *huart)
   * @param  huart UART handle.
   * @retval None
   */
-__weak void HAL_UARTEx_TxFifoEmptyCallback (UART_HandleTypeDef *huart)
+__weak void HAL_UARTEx_TxFifoEmptyCallback(UART_HandleTypeDef *huart)
 {
   /* Prevent unused argument(s) compilation warning */
   UNUSED(huart);
@@ -331,9 +349,6 @@ __weak void HAL_UARTEx_TxFifoEmptyCallback (UART_HandleTypeDef *huart)
      (+) HAL_UARTEx_EnableStopMode() API enables the UART to wake up the MCU from stop mode
      (+) HAL_UARTEx_DisableStopMode() API disables the above functionality
      (+) HAL_UARTEx_WakeupCallback() called upon UART wakeup interrupt
-     (+) HAL_UARTEx_EnableSPISlaveMode() API enables the SPI slave mode
-     (+) HAL_UARTEx_DisableSPISlaveMode() API disables the SPI slave mode
-     (+) HAL_UARTEx_ConfigNSS API configures the Slave Select input pin (NSS)
      (+) HAL_UARTEx_EnableFifoMode() API enables the FIFO mode
      (+) HAL_UARTEx_DisableFifoMode() API disables the FIFO mode
      (+) HAL_UARTEx_SetTxFifoThreshold() API sets the TX FIFO threshold
@@ -345,13 +360,56 @@ __weak void HAL_UARTEx_TxFifoEmptyCallback (UART_HandleTypeDef *huart)
 
 
 
+#if defined(USART_CR3_UCESM)
+/**
+  * @brief  Keep UART Clock enabled when in Stop Mode.
+  * @note   When the USART clock source is configured to be LSE or HSI, it is possible to keep enabled
+  *         this clock during STOP mode by setting the UCESM bit in USART_CR3 control register.
+  * @note   When LPUART is used to wakeup from stop with LSE is selected as LPUART clock source, 
+  *         and desired baud rate is 9600 baud, the bit UCESM bit in LPUART_CR3 control register must be set.
+  * @param  huart UART handle.
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_UARTEx_EnableClockStopMode(UART_HandleTypeDef *huart)
+{
+  /* Process Locked */
+  __HAL_LOCK(huart);
+
+  /* Set UCESM bit */
+  SET_BIT(huart->Instance->CR3, USART_CR3_UCESM);
+
+  /* Process Unlocked */
+  __HAL_UNLOCK(huart);
+
+  return HAL_OK;
+}
+
+/**
+  * @brief  Disable UART Clock when in Stop Mode.
+  * @param  huart UART handle.
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_UARTEx_DisableClockStopMode(UART_HandleTypeDef *huart)
+{
+  /* Process Locked */
+  __HAL_LOCK(huart);
+
+  /* Clear UCESM bit */
+  CLEAR_BIT(huart->Instance->CR3, USART_CR3_UCESM);
+
+  /* Process Unlocked */
+  __HAL_UNLOCK(huart);
+
+  return HAL_OK;
+}
+#endif /* USART_CR3_UCESM */
 
 /**
   * @brief By default in multiprocessor mode, when the wake up method is set
   *        to address mark, the UART handles only 4-bit long addresses detection;
   *        this API allows to enable longer addresses detection (6-, 7- or 8-bit
   *        long).
-  * @note  Addresses detection lengths are: 6-bit address detection in 7-bit data mode, 
+  * @note  Addresses detection lengths are: 6-bit address detection in 7-bit data mode,
   *        7-bit address detection in 8-bit data mode, 8-bit address detection in 9-bit data mode.
   * @param huart         UART handle.
   * @param AddressLength This parameter can be one of the following values:
@@ -362,25 +420,25 @@ __weak void HAL_UARTEx_TxFifoEmptyCallback (UART_HandleTypeDef *huart)
 HAL_StatusTypeDef HAL_MultiProcessorEx_AddressLength_Set(UART_HandleTypeDef *huart, uint32_t AddressLength)
 {
   /* Check the UART handle allocation */
-  if(huart == NULL)
+  if (huart == NULL)
   {
     return HAL_ERROR;
   }
-  
+
   /* Check the address length parameter */
   assert_param(IS_UART_ADDRESSLENGTH_DETECT(AddressLength));
-  
+
   huart->gState = HAL_UART_STATE_BUSY;
-  
+
   /* Disable the Peripheral */
   __HAL_UART_DISABLE(huart);
-  
+
   /* Set the address length */
   MODIFY_REG(huart->Instance->CR2, USART_CR2_ADDM7, AddressLength);
-  
+
   /* Enable the Peripheral */
   __HAL_UART_ENABLE(huart);
-  
+
   /* TEACK and/or REACK to check before moving huart->gState to Ready */
   return (UART_CheckIdleState(huart));
 }
@@ -401,37 +459,37 @@ HAL_StatusTypeDef HAL_MultiProcessorEx_AddressLength_Set(UART_HandleTypeDef *hua
 HAL_StatusTypeDef HAL_UARTEx_StopModeWakeUpSourceConfig(UART_HandleTypeDef *huart, UART_WakeUpTypeDef WakeUpSelection)
 {
   HAL_StatusTypeDef status = HAL_OK;
-  uint32_t tickstart = 0;
-  
+  uint32_t tickstart = 0U;
+
   /* check the wake-up from stop mode UART instance */
   assert_param(IS_UART_WAKEUP_FROMSTOP_INSTANCE(huart->Instance));
   /* check the wake-up selection parameter */
   assert_param(IS_UART_WAKEUP_SELECTION(WakeUpSelection.WakeUpEvent));
-  
+
   /* Process Locked */
   __HAL_LOCK(huart);
-  
+
   huart->gState = HAL_UART_STATE_BUSY;
-  
+
   /* Disable the Peripheral */
   __HAL_UART_DISABLE(huart);
-  
+
   /* Set the wake-up selection scheme */
   MODIFY_REG(huart->Instance->CR3, USART_CR3_WUS, WakeUpSelection.WakeUpEvent);
-  
+
   if (WakeUpSelection.WakeUpEvent == UART_WAKEUP_ON_ADDRESS)
   {
     UARTEx_Wakeup_AddressConfig(huart, WakeUpSelection);
   }
-  
+
   /* Enable the Peripheral */
   __HAL_UART_ENABLE(huart);
-  
+
   /* Init tickstart for timeout managment*/
   tickstart = HAL_GetTick();
-  
+
   /* Wait until REACK flag is set */
-  if(UART_WaitOnFlagUntilTimeout(huart, USART_ISR_REACK, RESET, tickstart, HAL_UART_TIMEOUT_VALUE) != HAL_OK)
+  if (UART_WaitOnFlagUntilTimeout(huart, USART_ISR_REACK, RESET, tickstart, HAL_UART_TIMEOUT_VALUE) != HAL_OK)
   {
     status = HAL_TIMEOUT;
   }
@@ -440,10 +498,10 @@ HAL_StatusTypeDef HAL_UARTEx_StopModeWakeUpSourceConfig(UART_HandleTypeDef *huar
     /* Initialize the UART State */
     huart->gState = HAL_UART_STATE_READY;
   }
-  
+
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
-  
+
   return status;
 }
 
@@ -458,17 +516,13 @@ HAL_StatusTypeDef HAL_UARTEx_EnableStopMode(UART_HandleTypeDef *huart)
 {
   /* Process Locked */
   __HAL_LOCK(huart);
-  
-  huart->gState = HAL_UART_STATE_BUSY;
-  
+
   /* Set UESM bit */
   SET_BIT(huart->Instance->CR1, USART_CR1_UESM);
-  
-  huart->gState = HAL_UART_STATE_READY;
-  
+
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
-  
+
   return HAL_OK;
 }
 
@@ -481,165 +535,15 @@ HAL_StatusTypeDef HAL_UARTEx_DisableStopMode(UART_HandleTypeDef *huart)
 {
   /* Process Locked */
   __HAL_LOCK(huart);
-  
-  huart->gState = HAL_UART_STATE_BUSY;
-  
+
   /* Clear UESM bit */
   CLEAR_BIT(huart->Instance->CR1, USART_CR1_UESM);
-  
-  huart->gState = HAL_UART_STATE_READY;
-  
-  /* Process Unlocked */
-  __HAL_UNLOCK(huart);
-  
-  return HAL_OK;
-}
 
-#if defined(USART_CR2_SLVEN)
-/**
-  * @brief  Enable the SPI slave mode.
-  * @note When the UART operates in SPI slave mode, it handles data flow using
-  *       the serial interface clock derived from the external SCLK signal
-  *       provided by the external master SPI device.
-  * @note In SPI slave mode, the UART must be enabled before starting the master
-  *       communications (or between frames while the clock is stable). Otherwise,
-  *       if the UART slave is enabled while the master is in the middle of a
-  *       frame, it will become desynchronized with the master. 
-  * @note The data register of the slave needs to be ready before the first edge
-  *       of the communication clock or before the end of the ongoing communication,
-  *       otherwise the SPI slave will transmit zeros.
-  * @param huart      UART handle.
-  * @retval HAL status
-  */
-HAL_StatusTypeDef HAL_UARTEx_EnableSlaveMode(UART_HandleTypeDef *huart)
-{
-  uint32_t tmpcr1 = 0;
-
-  /* Check parameters */
-  assert_param(IS_UART_SPI_SLAVE_INSTANCE(huart->Instance));
-  
-  /* Process Locked */
-  __HAL_LOCK(huart);
-  
-  huart->gState = HAL_UART_STATE_BUSY;
-  
-  /* Save actual UART configuration */
-  tmpcr1 = READ_REG(huart->Instance->CR1);
-  
-  /* Disable UART */
-  __HAL_UART_DISABLE(huart);
-  
-  /* In SPI slave mode mode, the following bits must be kept cleared:
-  - LINEN and CLKEN bit in the USART_CR2 register
-  - HDSEL, SCEN and IREN bits in the USART_CR3 register.*/
-  CLEAR_BIT(huart->Instance->CR2, (USART_CR2_LINEN | USART_CR2_CLKEN));
-  CLEAR_BIT(huart->Instance->CR3, (USART_CR3_SCEN | USART_CR3_HDSEL | USART_CR3_IREN));
-  
-  /* Enable SPI slave mode */
-  SET_BIT(huart->Instance->CR2, USART_CR2_SLVEN);
-  
-  /* Restore UART configuration */
-  WRITE_REG(huart->Instance->CR1, tmpcr1);
- 
-  huart->SlaveMode = UART_SLAVEMODE_ENABLE;
-  
-  huart->gState = HAL_UART_STATE_READY;
-  
-  /* Enable UART */
-  __HAL_UART_ENABLE(huart);
-  
-  /* Process Unlocked */
-  __HAL_UNLOCK(huart);
-  
-  return HAL_OK;  
-}
-
-/**
-  * @brief  Disable the SPI slave mode.
-  * @param huart      UART handle.
-  * @retval HAL status
-  */
-HAL_StatusTypeDef HAL_UARTEx_DisableSlaveMode(UART_HandleTypeDef *huart)
-{
-  uint32_t tmpcr1 = 0;
-
-  /* Check parameters */
-  assert_param(IS_UART_SPI_SLAVE_INSTANCE(huart->Instance));
-  
-  /* Process Locked */
-  __HAL_LOCK(huart);
-  
-  huart->gState = HAL_UART_STATE_BUSY;
-  
-  /* Save actual UART configuration */
-  tmpcr1 = READ_REG(huart->Instance->CR1);
-  
-  /* Disable UART */
-  __HAL_UART_DISABLE(huart);
-
-  /* Disable SPI slave mode */
-  CLEAR_BIT(huart->Instance->CR2, USART_CR2_SLVEN);
-  
-  /* Restore UART configuration */
-  WRITE_REG(huart->Instance->CR1, tmpcr1);
-
-  huart->SlaveMode = UART_SLAVEMODE_ENABLE;
-  
-  huart->gState = HAL_UART_STATE_READY;
-  
-  /* Process Unlocked */
-  __HAL_UNLOCK(huart);
-  
-  return HAL_OK;  
-}
-
-/**
-  * @brief  Configure the Slave Select input pin (NSS).
-  * @note Software NSS management: SPI slave will always be selected and NSS
-  *       input pin will be ignored.
-  * @note Hardware NSS management: the SPI slave selection depends on NSS
-  *       input pin. The slave is selected when NSS is low and deselected when
-  *       NSS is high.
-  * @param huart      UART handle.
-  * @param NSSConfig   NSS configuration.
-  *          This parameter can be one of the following values:
-  *            @arg @ref UART_NSS_HARD
-  *            @arg @ref UART_NSS_SOFT
-  * @retval HAL status
-  */
-HAL_StatusTypeDef HAL_UARTEx_ConfigNSS(UART_HandleTypeDef *huart, uint32_t NSSConfig)
-{
-  uint32_t tmpcr1 = 0;
-
-  /* Check parameters */
-  assert_param(IS_UART_SPI_SLAVE_INSTANCE(huart->Instance));
-  assert_param(IS_UART_NSS(NSSConfig));
-  
-  /* Process Locked */
-  __HAL_LOCK(huart);
-  
-  huart->gState = HAL_UART_STATE_BUSY;
-  
-  /* Save actual UART configuration */
-  tmpcr1 = READ_REG(huart->Instance->CR1);
-  
-  /* Disable UART */
-  __HAL_UART_DISABLE(huart);
-
-  /* Program DIS_NSS bit in the USART_CR2 register */
-  MODIFY_REG(huart->Instance->CR2, USART_CR2_DIS_NSS, NSSConfig);
-  
-  /* Restore UART configuration */
-  WRITE_REG(huart->Instance->CR1, tmpcr1);
- 
-  huart->gState = HAL_UART_STATE_READY;
-  
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
 
   return HAL_OK;
 }
-#endif
 
 #if defined(USART_CR1_FIFOEN)
 /**
@@ -649,37 +553,37 @@ HAL_StatusTypeDef HAL_UARTEx_ConfigNSS(UART_HandleTypeDef *huart, uint32_t NSSCo
   */
 HAL_StatusTypeDef HAL_UARTEx_EnableFifoMode(UART_HandleTypeDef *huart)
 {
-  uint32_t tmpcr1 = 0;
-  
+  uint32_t tmpcr1 = 0U;
+
   /* Check parameters */
   assert_param(IS_UART_FIFO_INSTANCE(huart->Instance));
 
   /* Process Locked */
   __HAL_LOCK(huart);
-  
+
   huart->gState = HAL_UART_STATE_BUSY;
-  
+
   /* Save actual UART configuration */
   tmpcr1 = READ_REG(huart->Instance->CR1);
-  
+
   /* Disable UART */
   __HAL_UART_DISABLE(huart);
-  
+
   /* Enable FIFO mode */
   SET_BIT(tmpcr1, USART_CR1_FIFOEN);
   huart->FifoMode = UART_FIFOMODE_ENABLE;
-  
+
   /* Restore UART configuration */
   WRITE_REG(huart->Instance->CR1, tmpcr1);
-  
+
   /* Determine the number of data to process during RX/TX ISR execution */
   UARTEx_SetNbDataToProcess(huart);
-  
+
   huart->gState = HAL_UART_STATE_READY;
-  
+
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
- 
+
   return HAL_OK;
 }
 
@@ -690,34 +594,34 @@ HAL_StatusTypeDef HAL_UARTEx_EnableFifoMode(UART_HandleTypeDef *huart)
   */
 HAL_StatusTypeDef HAL_UARTEx_DisableFifoMode(UART_HandleTypeDef *huart)
 {
-  uint32_t tmpcr1 = 0;
+  uint32_t tmpcr1 = 0U;
 
   /* Check parameters */
   assert_param(IS_UART_FIFO_INSTANCE(huart->Instance));
 
   /* Process Locked */
   __HAL_LOCK(huart);
-  
+
   huart->gState = HAL_UART_STATE_BUSY;
-  
+
   /* Save actual UART configuration */
   tmpcr1 = READ_REG(huart->Instance->CR1);
-  
+
   /* Disable UART */
   __HAL_UART_DISABLE(huart);
-  
+
   /* Enable FIFO mode */
   CLEAR_BIT(tmpcr1, USART_CR1_FIFOEN);
   huart->FifoMode = UART_FIFOMODE_DISABLE;
-  
+
   /* Restore UART configuration */
   WRITE_REG(huart->Instance->CR1, tmpcr1);
-  
+
   huart->gState = HAL_UART_STATE_READY;
-  
+
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
- 
+
   return HAL_OK;
 }
 
@@ -736,37 +640,37 @@ HAL_StatusTypeDef HAL_UARTEx_DisableFifoMode(UART_HandleTypeDef *huart)
   */
 HAL_StatusTypeDef HAL_UARTEx_SetTxFifoThreshold(UART_HandleTypeDef *huart, uint32_t Threshold)
 {
-  uint32_t tmpcr1 = 0;
-  
+  uint32_t tmpcr1 = 0U;
+
   /* Check parameters */
   assert_param(IS_UART_FIFO_INSTANCE(huart->Instance));
   assert_param(IS_UART_TXFIFO_THRESHOLD(Threshold));
 
   /* Process Locked */
   __HAL_LOCK(huart);
-  
+
   huart->gState = HAL_UART_STATE_BUSY;
-  
+
   /* Save actual UART configuration */
   tmpcr1 = READ_REG(huart->Instance->CR1);
-  
+
   /* Disable UART */
   __HAL_UART_DISABLE(huart);
-  
+
   /* Update TX threshold configuration */
   MODIFY_REG(huart->Instance->CR3, USART_CR3_TXFTCFG, Threshold);
-  
+
   /* Determine the number of data to process during RX/TX ISR execution */
   UARTEx_SetNbDataToProcess(huart);
-  
+
   /* Restore UART configuration */
   WRITE_REG(huart->Instance->CR1, tmpcr1);
-  
+
   huart->gState = HAL_UART_STATE_READY;
-  
+
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
-  
+
   return HAL_OK;
 }
 
@@ -785,37 +689,37 @@ HAL_StatusTypeDef HAL_UARTEx_SetTxFifoThreshold(UART_HandleTypeDef *huart, uint3
   */
 HAL_StatusTypeDef HAL_UARTEx_SetRxFifoThreshold(UART_HandleTypeDef *huart, uint32_t Threshold)
 {
-  uint32_t tmpcr1 = 0;
-  
+  uint32_t tmpcr1 = 0U;
+
   /* Check the parameters */
   assert_param(IS_UART_FIFO_INSTANCE(huart->Instance));
   assert_param(IS_UART_RXFIFO_THRESHOLD(Threshold));
 
   /* Process Locked */
   __HAL_LOCK(huart);
-  
+
   huart->gState = HAL_UART_STATE_BUSY;
-  
+
   /* Save actual UART configuration */
   tmpcr1 = READ_REG(huart->Instance->CR1);
-  
+
   /* Disable UART */
   __HAL_UART_DISABLE(huart);
-  
+
   /* Update RX threshold configuration */
   MODIFY_REG(huart->Instance->CR3, USART_CR3_RXFTCFG, Threshold);
-  
+
   /* Determine the number of data to process during RX/TX ISR execution */
   UARTEx_SetNbDataToProcess(huart);
-  
+
   /* Restore UART configuration */
   WRITE_REG(huart->Instance->CR1, tmpcr1);
-  
+
   huart->gState = HAL_UART_STATE_READY;
-  
+
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
-  
+
   return HAL_OK;
 }
 #endif
@@ -841,10 +745,10 @@ HAL_StatusTypeDef HAL_UARTEx_SetRxFifoThreshold(UART_HandleTypeDef *huart, uint3
 static void UARTEx_Wakeup_AddressConfig(UART_HandleTypeDef *huart, UART_WakeUpTypeDef WakeUpSelection)
 {
   assert_param(IS_UART_ADDRESSLENGTH_DETECT(WakeUpSelection.AddressLength));
-  
+
   /* Set the USART address length */
   MODIFY_REG(huart->Instance->CR2, USART_CR2_ADDM7, WakeUpSelection.AddressLength);
-  
+
   /* Set the USART address node */
   MODIFY_REG(huart->Instance->CR2, USART_CR2_ADD, ((uint32_t)WakeUpSelection.Address << UART_CR2_ADDRESS_LSB_POS));
 }
@@ -857,32 +761,31 @@ static void UARTEx_Wakeup_AddressConfig(UART_HandleTypeDef *huart, UART_WakeUpTy
   * @param huart UART handle.
   * @retval None
   */
-void UARTEx_SetNbDataToProcess(UART_HandleTypeDef *huart)
+static void UARTEx_SetNbDataToProcess(UART_HandleTypeDef *huart)
 {
   uint8_t rx_fifo_depth;
   uint8_t tx_fifo_depth;
   uint8_t rx_fifo_threshold;
   uint8_t tx_fifo_threshold;
-  uint8_t numerator[] = {1, 1, 1, 3, 7, 1};
-  uint8_t denominator[] = {8, 4, 2, 4, 8, 1};
-  
+  uint8_t numerator[] = {1U, 1U, 1U, 3U, 7U, 1U};
+  uint8_t denominator[] = {8U, 4U, 2U, 4U, 8U, 1U};
+
   if (huart->FifoMode == UART_FIFOMODE_DISABLE)
   {
-    huart->NbTxDataToProcess = 1;
-    huart->NbRxDataToProcess = 1;
+    huart->NbTxDataToProcess = 1U;
+    huart->NbRxDataToProcess = 1U;
   }
   else
   {
-    rx_fifo_depth = 8; /* RX Fifo size */
-    tx_fifo_depth = 8; /* TX Fifo size */
+    rx_fifo_depth = RX_FIFO_DEPTH;
+    tx_fifo_depth = TX_FIFO_DEPTH;
     rx_fifo_threshold = (uint8_t)(READ_BIT(huart->Instance->CR3, USART_CR3_RXFTCFG) >> USART_CR3_RXFTCFG_Pos);
     tx_fifo_threshold = (uint8_t)(READ_BIT(huart->Instance->CR3, USART_CR3_TXFTCFG) >> USART_CR3_TXFTCFG_Pos);
-    huart->NbTxDataToProcess = (uint8_t)(tx_fifo_depth * numerator[tx_fifo_threshold])/denominator[tx_fifo_threshold];
-    huart->NbRxDataToProcess = (uint8_t)(rx_fifo_depth * numerator[rx_fifo_threshold])/denominator[rx_fifo_threshold];
+    huart->NbTxDataToProcess = (uint8_t)(tx_fifo_depth * numerator[tx_fifo_threshold]) / denominator[tx_fifo_threshold];
+    huart->NbRxDataToProcess = (uint8_t)(rx_fifo_depth * numerator[rx_fifo_threshold]) / denominator[rx_fifo_threshold];
   }
 }
 #endif
-
 /**
   * @}
   */

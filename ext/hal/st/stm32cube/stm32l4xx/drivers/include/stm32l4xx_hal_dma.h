@@ -95,10 +95,10 @@ typedef struct
   */
 typedef enum
 {
-  HAL_DMA_STATE_RESET             = 0x00,  /*!< DMA not yet initialized or disabled    */
-  HAL_DMA_STATE_READY             = 0x01,  /*!< DMA initialized and ready for use      */
-  HAL_DMA_STATE_BUSY              = 0x02,  /*!< DMA process is ongoing                 */
-  HAL_DMA_STATE_TIMEOUT           = 0x03,  /*!< DMA timeout state                     */
+  HAL_DMA_STATE_RESET             = 0x00U,  /*!< DMA not yet initialized or disabled    */
+  HAL_DMA_STATE_READY             = 0x01U,  /*!< DMA initialized and ready for use      */
+  HAL_DMA_STATE_BUSY              = 0x02U,  /*!< DMA process is ongoing                 */
+  HAL_DMA_STATE_TIMEOUT           = 0x03U,  /*!< DMA timeout state                     */
 }HAL_DMA_StateTypeDef;
 
 /**
@@ -106,8 +106,8 @@ typedef enum
   */
 typedef enum
 {
-  HAL_DMA_FULL_TRANSFER      = 0x00,    /*!< Full transfer     */
-  HAL_DMA_HALF_TRANSFER      = 0x01     /*!< Half Transfer     */
+  HAL_DMA_FULL_TRANSFER      = 0x00U,    /*!< Full transfer     */
+  HAL_DMA_HALF_TRANSFER      = 0x01U     /*!< Half Transfer     */
 }HAL_DMA_LevelCompleteTypeDef;
 
 
@@ -116,12 +116,11 @@ typedef enum
   */
 typedef enum
 {
-  HAL_DMA_XFER_CPLT_CB_ID          = 0x00,    /*!< Full transfer     */
-  HAL_DMA_XFER_HALFCPLT_CB_ID      = 0x01,    /*!< Half transfer     */
-  HAL_DMA_XFER_ERROR_CB_ID         = 0x02,    /*!< Error             */
-  HAL_DMA_XFER_ABORT_CB_ID         = 0x03,    /*!< Abort             */
-  HAL_DMA_XFER_ALL_CB_ID           = 0x04     /*!< All               */
-
+  HAL_DMA_XFER_CPLT_CB_ID          = 0x00U,    /*!< Full transfer     */
+  HAL_DMA_XFER_HALFCPLT_CB_ID      = 0x01U,    /*!< Half transfer     */
+  HAL_DMA_XFER_ERROR_CB_ID         = 0x02U,    /*!< Error             */
+  HAL_DMA_XFER_ABORT_CB_ID         = 0x03U,    /*!< Abort             */
+  HAL_DMA_XFER_ALL_CB_ID           = 0x04U     /*!< All               */
 }HAL_DMA_CallbackIDTypeDef;
 
 /**
@@ -169,6 +168,7 @@ typedef struct __DMA_HandleTypeDef
 #endif /* DMAMUX1 */
 
 }DMA_HandleTypeDef;
+
 /**
   * @}
   */
@@ -182,13 +182,13 @@ typedef struct __DMA_HandleTypeDef
 /** @defgroup DMA_Error_Code DMA Error Code
   * @{
   */
-#define HAL_DMA_ERROR_NONE          ((uint32_t)0x00000000U)    /*!< No error                                */
-#define HAL_DMA_ERROR_TE            ((uint32_t)0x00000001U)    /*!< Transfer error                          */
-#define HAL_DMA_ERROR_NO_XFER       ((uint32_t)0x00000004U)    /*!< Abort requested with no Xfer ongoing    */
-#define HAL_DMA_ERROR_TIMEOUT       ((uint32_t)0x00000020U)    /*!< Timeout error                           */
-#define HAL_DMA_ERROR_NOT_SUPPORTED ((uint32_t)0x00000100U)    /*!< Not supported mode                      */
-#define HAL_DMA_ERROR_SYNC          ((uint32_t)0x00000200U)    /*!< DMAMUX sync overrun  error              */
-#define HAL_DMA_ERROR_REQGEN        ((uint32_t)0x00000400U)    /*!< DMAMUX request generator overrun  error */
+#define HAL_DMA_ERROR_NONE                 0x00000000U    /*!< No error                                */
+#define HAL_DMA_ERROR_TE                   0x00000001U    /*!< Transfer error                          */
+#define HAL_DMA_ERROR_NO_XFER              0x00000004U    /*!< Abort requested with no Xfer ongoing    */
+#define HAL_DMA_ERROR_TIMEOUT              0x00000020U    /*!< Timeout error                           */
+#define HAL_DMA_ERROR_NOT_SUPPORTED        0x00000100U    /*!< Not supported mode                      */
+#define HAL_DMA_ERROR_SYNC                 0x00000200U    /*!< DMAMUX sync overrun  error              */
+#define HAL_DMA_ERROR_REQGEN               0x00000400U    /*!< DMAMUX request generator overrun  error */
 
 /**
   * @}
@@ -199,14 +199,14 @@ typedef struct __DMA_HandleTypeDef
   */
 #if !defined (DMAMUX1)
 
-#define DMA_REQUEST_0                     ((uint32_t)0x00000000)
-#define DMA_REQUEST_1                     ((uint32_t)0x00000001)
-#define DMA_REQUEST_2                     ((uint32_t)0x00000002)
-#define DMA_REQUEST_3                     ((uint32_t)0x00000003)
-#define DMA_REQUEST_4                     ((uint32_t)0x00000004)
-#define DMA_REQUEST_5                     ((uint32_t)0x00000005)
-#define DMA_REQUEST_6                     ((uint32_t)0x00000006)
-#define DMA_REQUEST_7                     ((uint32_t)0x00000007)
+#define DMA_REQUEST_0                     0U
+#define DMA_REQUEST_1                     1U
+#define DMA_REQUEST_2                     2U
+#define DMA_REQUEST_3                     3U
+#define DMA_REQUEST_4                     4U
+#define DMA_REQUEST_5                     5U
+#define DMA_REQUEST_6                     6U
+#define DMA_REQUEST_7                     7U
 
 #endif
 
@@ -339,9 +339,9 @@ typedef struct __DMA_HandleTypeDef
 /** @defgroup DMA_Data_transfer_direction DMA Data transfer direction
   * @{
   */
-#define DMA_PERIPH_TO_MEMORY         ((uint32_t)0x00000000)        /*!< Peripheral to memory direction */
-#define DMA_MEMORY_TO_PERIPH         ((uint32_t)DMA_CCR_DIR)       /*!< Memory to peripheral direction */
-#define DMA_MEMORY_TO_MEMORY         ((uint32_t)DMA_CCR_MEM2MEM)   /*!< Memory to memory direction     */
+#define DMA_PERIPH_TO_MEMORY         0x00000000U        /*!< Peripheral to memory direction */
+#define DMA_MEMORY_TO_PERIPH         DMA_CCR_DIR        /*!< Memory to peripheral direction */
+#define DMA_MEMORY_TO_MEMORY         DMA_CCR_MEM2MEM    /*!< Memory to memory direction     */
 /**
   * @}
   */
@@ -349,8 +349,8 @@ typedef struct __DMA_HandleTypeDef
 /** @defgroup DMA_Peripheral_incremented_mode DMA Peripheral incremented mode
   * @{
   */
-#define DMA_PINC_ENABLE        ((uint32_t)DMA_CCR_PINC)  /*!< Peripheral increment mode Enable */
-#define DMA_PINC_DISABLE       ((uint32_t)0x00000000)    /*!< Peripheral increment mode Disable */
+#define DMA_PINC_ENABLE              DMA_CCR_PINC  /*!< Peripheral increment mode Enable */
+#define DMA_PINC_DISABLE             0x00000000U   /*!< Peripheral increment mode Disable */
 /**
   * @}
   */
@@ -358,8 +358,8 @@ typedef struct __DMA_HandleTypeDef
 /** @defgroup DMA_Memory_incremented_mode DMA Memory incremented mode
   * @{
   */
-#define DMA_MINC_ENABLE         ((uint32_t)DMA_CCR_MINC)  /*!< Memory increment mode Enable  */
-#define DMA_MINC_DISABLE        ((uint32_t)0x00000000)    /*!< Memory increment mode Disable */
+#define DMA_MINC_ENABLE              DMA_CCR_MINC   /*!< Memory increment mode Enable  */
+#define DMA_MINC_DISABLE             0x00000000U    /*!< Memory increment mode Disable */
 /**
   * @}
   */
@@ -701,7 +701,7 @@ uint32_t             HAL_DMA_GetError(DMA_HandleTypeDef *hdma);
                                      ((DIRECTION) == DMA_MEMORY_TO_PERIPH)  || \
                                      ((DIRECTION) == DMA_MEMORY_TO_MEMORY))
 
-#define IS_DMA_BUFFER_SIZE(SIZE) (((SIZE) >= 0x1) && ((SIZE) < 0x10000))
+#define IS_DMA_BUFFER_SIZE(SIZE) (((SIZE) >= 0x1U) && ((SIZE) < 0x10000U))
 
 #define IS_DMA_PERIPHERAL_INC_STATE(STATE) (((STATE) == DMA_PINC_ENABLE) || \
                                             ((STATE) == DMA_PINC_DISABLE))

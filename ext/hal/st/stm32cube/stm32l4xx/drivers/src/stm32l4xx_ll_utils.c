@@ -335,7 +335,7 @@ ErrorStatus LL_PLL_ConfigSystemClock_MSI(LL_UTILS_PLLInitTypeDef *UTILS_PLLInitS
         case LL_RCC_MSIRANGE_3:     /* MSI = 800 KHz  */
         case LL_RCC_MSIRANGE_4:     /* MSI = 1 MHz    */
         case LL_RCC_MSIRANGE_5:     /* MSI = 2 MHz    */
-          /* PLLVCO input frequency can not in the range from 4 to 16 MHz*/
+          /* PLLVCO input frequency is not in the range from 4 to 16 MHz*/
           status = ERROR;
           break;
 

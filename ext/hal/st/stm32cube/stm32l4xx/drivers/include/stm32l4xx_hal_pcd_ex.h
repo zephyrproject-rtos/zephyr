@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_pcd_ex.h
   * @author  MCD Application Team
-  * @brief   Header file of PCD HAL module.
+  * @brief   Header file of PCD HAL Extension module.
   ******************************************************************************
   * @attention
   *
@@ -31,25 +31,21 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32L4xx_HAL_PCD_EX_H
 #define __STM32L4xx_HAL_PCD_EX_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
-
-#if defined(STM32L432xx) || defined(STM32L433xx) || defined(STM32L442xx) || defined(STM32L443xx) || \
-    defined(STM32L452xx) || defined(STM32L462xx) || \
-    defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx) || \
-    defined(STM32L496xx) || defined(STM32L4A6xx) || \
-    defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal_def.h"
-   
+
+#if defined (USB) || defined (USB_OTG_FS) || defined (USB_OTG_HS)
+
 /** @addtogroup STM32L4xx_HAL_Driver
   * @{
   */
@@ -58,23 +54,6 @@
   * @{
   */
 /* Exported types ------------------------------------------------------------*/
-typedef enum  
-{
-  PCD_LPM_L0_ACTIVE = 0x00, /* on */
-  PCD_LPM_L1_ACTIVE = 0x01, /* LPM L1 sleep */
-}PCD_LPM_MsgTypeDef;
-
-typedef enum  
-{
-  PCD_BCD_ERROR                     = 0xFF, 
-  PCD_BCD_CONTACT_DETECTION         = 0xFE,
-  PCD_BCD_STD_DOWNSTREAM_PORT       = 0xFD,
-  PCD_BCD_CHARGING_DOWNSTREAM_PORT  = 0xFC,
-  PCD_BCD_DEDICATED_CHARGING_PORT   = 0xFB,
-  PCD_BCD_DISCOVERY_COMPLETED       = 0x00,
-  
-}PCD_BCD_MsgTypeDef;
-
 /* Exported constants --------------------------------------------------------*/
 /* Exported macros -----------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
@@ -85,13 +64,13 @@ typedef enum
   * @{
   */
 
-#if defined(USB_OTG_FS)
+#if defined (USB_OTG_FS) || defined (USB_OTG_HS)
 HAL_StatusTypeDef HAL_PCDEx_SetTxFiFo(PCD_HandleTypeDef *hpcd, uint8_t fifo, uint16_t size);
 HAL_StatusTypeDef HAL_PCDEx_SetRxFiFo(PCD_HandleTypeDef *hpcd, uint16_t size);
-#endif /* USB_OTG_FS */
+#endif /* USB_OTG_FS || USB_OTG_HS */
 
 #if defined (USB)
-HAL_StatusTypeDef  HAL_PCDEx_PMAConfig(PCD_HandleTypeDef *hpcd, 
+HAL_StatusTypeDef  HAL_PCDEx_PMAConfig(PCD_HandleTypeDef *hpcd,
                                        uint16_t ep_addr,
                                        uint16_t ep_kind,
                                        uint32_t pmaadress);
@@ -106,25 +85,21 @@ void HAL_PCDEx_BCD_Callback(PCD_HandleTypeDef *hpcd, PCD_BCD_MsgTypeDef msg);
 
 /**
   * @}
-  */ 
-
-/**
-  * @}
-  */ 
-
-/**
-  * @}
-  */ 
+  */
 
 /**
   * @}
   */
 
-#endif /* STM32L432xx || STM32L433xx || STM32L442xx || STM32L443xx || */
-       /* STM32L452xx || STM32L462xx || */
-       /* STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx || */
-       /* STM32L496xx || STM32L4A6xx || */
-       /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+#endif /* defined (USB) || defined (USB_OTG_FS) || defined (USB_OTG_HS) */
 
 #ifdef __cplusplus
 }

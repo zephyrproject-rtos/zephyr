@@ -42,7 +42,115 @@
     (#) Program the Bite Rate, Tx Buffering mode, Rx Buffering mode in the Init structure.
 
     (#) Enable the SWPMI peripheral by calling the HAL_SWPMI_Init() function.
-    
+
+  [..]
+    Three operation modes are available within this driver :
+
+    *** Polling mode IO operation ***
+    =================================
+    [..]
+      (+) Send an amount of data in blocking mode using HAL_SWPMI_Transmit()
+      (+) Receive an amount of data in blocking mode using HAL_SWPMI_Receive()
+
+    *** Interrupt mode IO operation ***
+    ===================================
+    [..]
+      (+) Send an amount of data in non-blocking mode using HAL_SWPMI_Transmit_IT()
+      (+) At transmission end of transfer HAL_SWPMI_TxCpltCallback() is executed and user can
+          add his own code by customization of function pointer HAL_SWPMI_TxCpltCallback()
+      (+) Receive an amount of data in non-blocking mode using HAL_SWPMI_Receive_IT()
+      (+) At reception end of transfer HAL_SWPMI_RxCpltCallback() is executed and user can
+          add his own code by customization of function pointer HAL_SWPMI_RxCpltCallback()
+      (+) In case of flag error, HAL_SWPMI_ErrorCallback() function is executed and user can 
+          add his own code by customization of function pointer HAL_SWPMI_ErrorCallback()
+
+    *** DMA mode IO operation ***
+    =============================
+    [..]
+      (+) Send an amount of data in non-blocking mode (DMA) using HAL_SWPMI_Transmit_DMA()
+      (+) At transmission end of transfer HAL_SWPMI_TxCpltCallback() is executed and user can
+          add his own code by customization of function pointer HAL_SWPMI_TxCpltCallback()
+      (+) Receive an amount of data in non-blocking mode (DMA) using HAL_SWPMI_Receive_DMA()
+      (+) At reception end of transfer HAL_SWPMI_RxCpltCallback() is executed and user can
+          add his own code by customization of function pointer HAL_SWPMI_RxCpltCallback()
+      (+) In case of flag error, HAL_SWPMI_ErrorCallback() function is executed and user can
+          add his own code by customization of function pointer HAL_SWPMI_ErrorCallback()
+      (+) Stop the DMA Transfer using HAL_SWPMI_DMAStop()
+
+    *** SWPMI HAL driver additional function list ***
+    ===============================================
+    [..]
+      Below the list the others API available SWPMI HAL driver :
+
+      (+) HAL_SWPMI_EnableLoopback(): Enable the loopback mode for test purpose only
+      (+) HAL_SWPMI_DisableLoopback(): Disable the loopback mode
+
+    *** SWPMI HAL driver macros list ***
+    ==================================
+    [..]
+      Below the list of most used macros in SWPMI HAL driver :
+
+      (+) __HAL_SWPMI_ENABLE(): Enable the SWPMI peripheral
+      (+) __HAL_SWPMI_DISABLE(): Disable the SWPMI peripheral
+      (+) __HAL_SWPMI_ENABLE_IT(): Enable the specified SWPMI interrupts
+      (+) __HAL_SWPMI_DISABLE_IT(): Disable the specified SWPMI interrupts
+      (+) __HAL_SWPMI_GET_IT_SOURCE(): Check if the specified SWPMI interrupt source is
+          enabled or disabled
+      (+) __HAL_SWPMI_GET_FLAG(): Check whether the specified SWPMI flag is set or not
+
+    *** Callback registration ***
+    =============================
+    [..]
+      The compilation define USE_HAL_SWPMI_REGISTER_CALLBACKS when set to 1
+      allows the user to configure dynamically the driver callbacks.
+    [..]
+      Use function HAL_SWPMI_RegisterCallback() to register a user callback. It allows 
+      to register the following callbacks:
+      (+) RxCpltCallback     : SWPMI receive complete.
+      (+) RxHalfCpltCallback : SWPMI receive half complete.
+      (+) TxCpltCallback     : SWPMI transmit complete.
+      (+) TxHalfCpltCallback : SWPMI transmit half complete.
+      (+) ErrorCallback      : SWPMI error.
+      (+) MspInitCallback    : SWPMI MspInit.
+      (+) MspDeInitCallback  : SWPMI MspDeInit.
+    [..]
+    This function takes as parameters the HAL peripheral handle, the callback ID
+    and a pointer to the user callback function.
+    [..]
+    Use function HAL_SWPMI_UnRegisterCallback() to reset a callback to the default
+    weak (surcharged) function.
+    HAL_SWPMI_UnRegisterCallback() takes as parameters the HAL peripheral handle,
+    and the callback ID.
+    This function allows to reset following callbacks:
+      (+) RxCpltCallback     : SWPMI receive complete.
+      (+) RxHalfCpltCallback : SWPMI receive half complete.
+      (+) TxCpltCallback     : SWPMI transmit complete.
+      (+) TxHalfCpltCallback : SWPMI transmit half complete.
+      (+) ErrorCallback      : SWPMI error.
+      (+) MspInitCallback    : SWPMI MspInit.
+      (+) MspDeInitCallback  : SWPMI MspDeInit.
+    [..]
+    By default, after the HAL_SWPMI_Init and if the state is HAL_SWPMI_STATE_RESET
+    all callbacks are reset to the corresponding legacy weak (surcharged) functions:
+    examples HAL_SWPMI_RxCpltCallback(), HAL_SWPMI_ErrorCallback().
+    Exception done for MspInit and MspDeInit callbacks that are respectively
+    reset to the legacy weak (surcharged) functions in the HAL_SWPMI_Init
+    and HAL_SWPMI_DeInit only when these callbacks are null (not registered beforehand).
+    If not, MspInit or MspDeInit are not null, the HAL_SWPMI_Init and HAL_SWPMI_DeInit
+    keep and use the user MspInit/MspDeInit callbacks (registered beforehand).
+    [..]
+    Callbacks can be registered/unregistered in READY state only.
+    Exception done for MspInit/MspDeInit callbacks that can be registered/unregistered
+    in READY or RESET state, thus registered (user) MspInit/DeInit callbacks can be used
+    during the Init/DeInit.
+    In that case first register the MspInit/MspDeInit user callbacks
+    using HAL_SWPMI_RegisterCallback before calling @ref HAL_SWPMI_DeInit
+    or HAL_SWPMI_Init function.
+    [..]
+    When the compilation define USE_HAL_SWPMI_REGISTER_CALLBACKS is set to 0 or
+    not defined, the callback registering feature is not available
+    and weak (surcharged) callbacks are used.
+
   @endverbatim
   ******************************************************************************
   * @attention
@@ -77,13 +185,11 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal.h"
 
-#if defined(STM32L431xx) || defined(STM32L432xx) || defined(STM32L433xx) || defined(STM32L442xx) || defined(STM32L443xx) || \
-    defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx) || \
-    defined(STM32L496xx) || defined(STM32L4A6xx)
-
 /** @addtogroup STM32L4xx_HAL_Driver
   * @{
   */
+
+#if defined(SWPMI1)
 
 /** @defgroup SWPMI SWPMI
   * @brief HAL SWPMI module driver
@@ -97,7 +203,7 @@
 /** @addtogroup SWPMI_Private_Constants SWPMI Private Constants
   * @{
   */
-#define SWPMI_TIMEOUT_VALUE       ((uint32_t) 22000)
+#define SWPMI_TIMEOUT_VALUE                   22000U   /* End of transmission timeout */
 
 /**
   * @}
@@ -142,7 +248,7 @@ static HAL_StatusTypeDef SWPMI_WaitOnFlagSetUntilTimeout(SWPMI_HandleTypeDef *hs
 
 /**
   * @brief Initialize the SWPMI peripheral according to the specified parameters in the SWPMI_InitTypeDef.
-  * @param hswpmi: SWPMI handle
+  * @param hswpmi SWPMI handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SWPMI_Init(SWPMI_HandleTypeDef *hswpmi)
@@ -167,9 +273,25 @@ HAL_StatusTypeDef HAL_SWPMI_Init(SWPMI_HandleTypeDef *hswpmi)
     {
       /* Allocate lock resource and initialize it */
       hswpmi->Lock = HAL_UNLOCKED;
-    
-      /* Init the low level hardware : GPIO, CLOCK, CORTEX */
+
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+      /* Reset callback pointers to the weak predefined callbacks */
+      hswpmi->RxCpltCallback     = HAL_SWPMI_RxCpltCallback;
+      hswpmi->RxHalfCpltCallback = HAL_SWPMI_RxHalfCpltCallback;
+      hswpmi->TxCpltCallback     = HAL_SWPMI_TxCpltCallback;
+      hswpmi->TxHalfCpltCallback = HAL_SWPMI_TxHalfCpltCallback;
+      hswpmi->ErrorCallback      = HAL_SWPMI_ErrorCallback;
+
+      /* Init the low level hardware : GPIO, CLOCK, NVIC and DMA */
+      if(hswpmi->MspInitCallback == NULL)
+      {
+        hswpmi->MspInitCallback = HAL_SWPMI_MspInit;
+      }
+      hswpmi->MspInitCallback(hswpmi);
+#else
+      /* Init the low level hardware : GPIO, CLOCK, NVIC and DMA */
       HAL_SWPMI_MspInit(hswpmi);
+#endif
     }
 
     hswpmi->State = HAL_SWPMI_STATE_BUSY;
@@ -207,7 +329,7 @@ HAL_StatusTypeDef HAL_SWPMI_Init(SWPMI_HandleTypeDef *hswpmi)
     hswpmi->ErrorCode = HAL_SWPMI_ERROR_NONE;
     hswpmi->State = HAL_SWPMI_STATE_READY;
 
-    /* Enable SWPMI peripheral if not */
+    /* Enable SWPMI peripheral */
     SET_BIT(hswpmi->Instance->CR, SWPMI_CR_SWPACT);
   }
 
@@ -216,7 +338,7 @@ HAL_StatusTypeDef HAL_SWPMI_Init(SWPMI_HandleTypeDef *hswpmi)
 
 /**
   * @brief De-initialize the SWPMI peripheral.
-  * @param hswpmi: SWPMI handle
+  * @param hswpmi SWPMI handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SWPMI_DeInit(SWPMI_HandleTypeDef *hswpmi)
@@ -238,11 +360,22 @@ HAL_StatusTypeDef HAL_SWPMI_DeInit(SWPMI_HandleTypeDef *hswpmi)
     /* Disable SWPMI interface */
     CLEAR_BIT(hswpmi->Instance->CR, SWPMI_CR_SWPACT);
 
-    /* DeInit the low level hardware */
+    /* Disable Loopback mode */
+    CLEAR_BIT(hswpmi->Instance->CR, SWPMI_CR_LPBK);
+
+
+    /* DeInit the low level hardware: GPIO, CLOCK, NVIC and DMA */
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+    if(hswpmi->MspDeInitCallback == NULL)
+    {
+      hswpmi->MspDeInitCallback = HAL_SWPMI_MspDeInit;
+    }
+    hswpmi->MspDeInitCallback(hswpmi);
+#else
     HAL_SWPMI_MspDeInit(hswpmi);
+#endif
 
     hswpmi->ErrorCode = HAL_SWPMI_ERROR_NONE;
-
     hswpmi->State = HAL_SWPMI_STATE_RESET;
 
     /* Release Lock */
@@ -254,7 +387,7 @@ HAL_StatusTypeDef HAL_SWPMI_DeInit(SWPMI_HandleTypeDef *hswpmi)
 
 /**
   * @brief Initialize the SWPMI MSP.
-  * @param hswpmi: SWPMI handle
+  * @param hswpmi SWPMI handle
   * @retval None
   */
 __weak void HAL_SWPMI_MspInit(SWPMI_HandleTypeDef *hswpmi)
@@ -269,7 +402,7 @@ __weak void HAL_SWPMI_MspInit(SWPMI_HandleTypeDef *hswpmi)
 
 /**
   * @brief DeInitialize the SWPMI MSP.
-  * @param hswpmi: SWPMI handle
+  * @param hswpmi SWPMI handle
   * @retval None
   */
 __weak void HAL_SWPMI_MspDeInit(SWPMI_HandleTypeDef *hswpmi)
@@ -281,6 +414,182 @@ __weak void HAL_SWPMI_MspDeInit(SWPMI_HandleTypeDef *hswpmi)
             the HAL_SWPMI_MspDeInit can be implemented in the user file
    */
 }
+
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+/**
+  * @brief  Register a user SWPMI callback
+  *         to be used instead of the weak predefined callback.
+  * @param  hswpmi SWPMI handle.
+  * @param  CallbackID ID of the callback to be registered.
+  *         This parameter can be one of the following values:
+  *           @arg @ref HAL_SWPMI_RX_COMPLETE_CB_ID receive complete callback ID.
+  *           @arg @ref HAL_SWPMI_RX_HALFCOMPLETE_CB_ID receive half complete callback ID.
+  *           @arg @ref HAL_SWPMI_TX_COMPLETE_CB_ID transmit complete callback ID.
+  *           @arg @ref HAL_SWPMI_TX_HALFCOMPLETE_CB_ID transmit half complete callback ID.
+  *           @arg @ref HAL_SWPMI_ERROR_CB_ID error callback ID.
+  *           @arg @ref HAL_SWPMI_MSPINIT_CB_ID MSP init callback ID.
+  *           @arg @ref HAL_SWPMI_MSPDEINIT_CB_ID MSP de-init callback ID.
+  * @param  pCallback pointer to the callback function.
+  * @retval HAL status.
+  */
+HAL_StatusTypeDef HAL_SWPMI_RegisterCallback(SWPMI_HandleTypeDef        *hswpmi,
+                                           HAL_SWPMI_CallbackIDTypeDef CallbackID,
+                                           pSWPMI_CallbackTypeDef      pCallback)
+{
+  HAL_StatusTypeDef status = HAL_OK;
+
+  if(pCallback == NULL)
+  {
+    /* update the error code */
+    hswpmi->ErrorCode |= HAL_SWPMI_ERROR_INVALID_CALLBACK;
+    /* update return status */
+    status = HAL_ERROR;
+  }
+  else
+  {
+    if(hswpmi->State == HAL_SWPMI_STATE_READY)
+    {
+      switch (CallbackID)
+      {
+      case HAL_SWPMI_RX_COMPLETE_CB_ID :
+        hswpmi->RxCpltCallback = pCallback;
+        break;
+      case HAL_SWPMI_RX_HALFCOMPLETE_CB_ID :
+        hswpmi->RxHalfCpltCallback = pCallback;
+        break;
+      case HAL_SWPMI_TX_COMPLETE_CB_ID :
+        hswpmi->TxCpltCallback = pCallback;
+        break;
+      case HAL_SWPMI_TX_HALFCOMPLETE_CB_ID :
+        hswpmi->TxHalfCpltCallback = pCallback;
+        break;
+      case HAL_SWPMI_ERROR_CB_ID :
+        hswpmi->ErrorCallback = pCallback;
+        break;
+      case HAL_SWPMI_MSPINIT_CB_ID :
+        hswpmi->MspInitCallback = pCallback;
+        break;
+      case HAL_SWPMI_MSPDEINIT_CB_ID :
+        hswpmi->MspDeInitCallback = pCallback;
+        break;
+      default :
+        /* update the error code */
+        hswpmi->ErrorCode |= HAL_SWPMI_ERROR_INVALID_CALLBACK;
+        /* update return status */
+        status = HAL_ERROR;
+        break;
+      }
+    }
+    else if(hswpmi->State == HAL_SWPMI_STATE_RESET)
+    {
+      switch (CallbackID)
+      {
+      case HAL_SWPMI_MSPINIT_CB_ID :
+        hswpmi->MspInitCallback = pCallback;
+        break;
+      case HAL_SWPMI_MSPDEINIT_CB_ID :
+        hswpmi->MspDeInitCallback = pCallback;
+        break;
+      default :
+        /* update the error code */
+        hswpmi->ErrorCode |= HAL_SWPMI_ERROR_INVALID_CALLBACK;
+        /* update return status */
+        status = HAL_ERROR;
+        break;
+      }
+    }
+    else
+    {
+      /* update the error code */
+      hswpmi->ErrorCode |= HAL_SWPMI_ERROR_INVALID_CALLBACK;
+      /* update return status */
+      status = HAL_ERROR;
+    }
+  }
+  return status;
+}
+
+/**
+  * @brief  Unregister a user SWPMI callback.
+  *         SWPMI callback is redirected to the weak predefined callback.
+  * @param  hswpmi SWPMI handle.
+  * @param  CallbackID ID of the callback to be unregistered.
+  *         This parameter can be one of the following values:
+  *           @arg @ref HAL_SWPMI_RX_COMPLETE_CB_ID receive complete callback ID.
+  *           @arg @ref HAL_SWPMI_RX_HALFCOMPLETE_CB_ID receive half complete callback ID.
+  *           @arg @ref HAL_SWPMI_TX_COMPLETE_CB_ID transmit complete callback ID.
+  *           @arg @ref HAL_SWPMI_TX_HALFCOMPLETE_CB_ID transmit half complete callback ID.
+  *           @arg @ref HAL_SWPMI_ERROR_CB_ID error callback ID.
+  *           @arg @ref HAL_SWPMI_MSPINIT_CB_ID MSP init callback ID.
+  *           @arg @ref HAL_SWPMI_MSPDEINIT_CB_ID MSP de-init callback ID.
+  * @retval HAL status.
+  */
+HAL_StatusTypeDef HAL_SWPMI_UnRegisterCallback(SWPMI_HandleTypeDef        *hswpmi,
+                                             HAL_SWPMI_CallbackIDTypeDef CallbackID)
+{
+  HAL_StatusTypeDef status = HAL_OK;
+
+  if(hswpmi->State == HAL_SWPMI_STATE_READY)
+  {
+    switch (CallbackID)
+    {
+    case HAL_SWPMI_RX_COMPLETE_CB_ID :
+      hswpmi->RxCpltCallback = HAL_SWPMI_RxCpltCallback;
+      break;
+    case HAL_SWPMI_RX_HALFCOMPLETE_CB_ID :
+      hswpmi->RxHalfCpltCallback = HAL_SWPMI_RxHalfCpltCallback;
+      break;
+    case HAL_SWPMI_TX_COMPLETE_CB_ID :
+      hswpmi->TxCpltCallback = HAL_SWPMI_TxCpltCallback;
+      break;
+    case HAL_SWPMI_TX_HALFCOMPLETE_CB_ID :
+      hswpmi->TxHalfCpltCallback = HAL_SWPMI_TxHalfCpltCallback;
+      break;
+    case HAL_SWPMI_ERROR_CB_ID :
+      hswpmi->ErrorCallback = HAL_SWPMI_ErrorCallback;
+      break;
+    case HAL_SWPMI_MSPINIT_CB_ID :
+      hswpmi->MspInitCallback = HAL_SWPMI_MspInit;
+      break;
+    case HAL_SWPMI_MSPDEINIT_CB_ID :
+      hswpmi->MspDeInitCallback = HAL_SWPMI_MspDeInit;
+      break;
+    default :
+      /* update the error code */
+      hswpmi->ErrorCode |= HAL_SWPMI_ERROR_INVALID_CALLBACK;
+      /* update return status */
+      status = HAL_ERROR;
+      break;
+    }
+  }
+  else if(hswpmi->State == HAL_SWPMI_STATE_RESET)
+  {
+    switch (CallbackID)
+    {
+    case HAL_SWPMI_MSPINIT_CB_ID :
+      hswpmi->MspInitCallback = HAL_SWPMI_MspInit;
+      break;
+    case HAL_SWPMI_MSPDEINIT_CB_ID :
+      hswpmi->MspDeInitCallback = HAL_SWPMI_MspDeInit;
+      break;
+    default :
+      /* update the error code */
+      hswpmi->ErrorCode |= HAL_SWPMI_ERROR_INVALID_CALLBACK;
+      /* update return status */
+      status = HAL_ERROR;
+      break;
+    }
+  }
+  else
+  {
+    /* update the error code */
+    hswpmi->ErrorCode |= HAL_SWPMI_ERROR_INVALID_CALLBACK;
+    /* update return status */
+    status = HAL_ERROR;
+  }
+  return status;
+}
+#endif /* USE_HAL_SWPMI_REGISTER_CALLBACKS */
 
 /**
   * @}
@@ -332,22 +641,22 @@ __weak void HAL_SWPMI_MspDeInit(SWPMI_HandleTypeDef *hswpmi)
         (++) HAL_SWPMI_RxCpltCallback()
         (++) HAL_SWPMI_ErrorCallback()
 
-    (#) The capability to launch the above IO operations in loopback mode for 
-        user application verification:    
+    (#) The capability to launch the above IO operations in loopback mode for
+        user application verification:
         (++) HAL_SWPMI_EnableLoopback()
         (++) HAL_SWPMI_DisableLoopback()
-        
+
 @endverbatim
   * @{
   */
 
 /**
   * @brief  Transmit an amount of data in blocking mode.
-  * @param  hswpmi: pointer to a SWPMI_HandleTypeDef structure that contains
+  * @param  hswpmi pointer to a SWPMI_HandleTypeDef structure that contains
   *                the configuration information for SWPMI module.
-  * @param  pData: Pointer to data buffer
-  * @param  Size: Amount of data to be sent
-  * @param  Timeout: Timeout duration
+  * @param  pData Pointer to data buffer
+  * @param  Size Amount of data to be sent
+  * @param  Timeout Timeout duration
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SWPMI_Transmit(SWPMI_HandleTypeDef *hswpmi, uint32_t* pData, uint16_t Size, uint32_t Timeout)
@@ -410,6 +719,9 @@ HAL_StatusTypeDef HAL_SWPMI_Transmit(SWPMI_HandleTypeDef *hswpmi, uint32_t* pDat
       /* Wait on TXBEF flag to be able to start a second transfer */
       if(SWPMI_WaitOnFlagSetUntilTimeout(hswpmi, SWPMI_FLAG_TXBEF, tickstart, Timeout) != HAL_OK)
       {
+        /* Timeout occurred */
+        hswpmi->ErrorCode |= HAL_SWPMI_ERROR_TXBEF_TIMEOUT;
+
         status = HAL_TIMEOUT;
       }
 
@@ -444,11 +756,11 @@ HAL_StatusTypeDef HAL_SWPMI_Transmit(SWPMI_HandleTypeDef *hswpmi, uint32_t* pDat
 
 /**
   * @brief  Receive an amount of data in blocking mode.
-  * @param  hswpmi: pointer to a SWPMI_HandleTypeDef structure that contains
+  * @param  hswpmi pointer to a SWPMI_HandleTypeDef structure that contains
   *                the configuration information for SWPMI module.
-  * @param  pData: Pointer to data buffer
-  * @param  Size: Amount of data to be received
-  * @param  Timeout: Timeout duration
+  * @param  pData Pointer to data buffer
+  * @param  Size Amount of data to be received
+  * @param  Timeout Timeout duration
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SWPMI_Receive(SWPMI_HandleTypeDef *hswpmi, uint32_t *pData, uint16_t Size, uint32_t Timeout)
@@ -504,7 +816,7 @@ HAL_StatusTypeDef HAL_SWPMI_Receive(SWPMI_HandleTypeDef *hswpmi, uint32_t *pData
           }
         }
       } while(Size != 0);
-      
+
       if(status == HAL_OK)
       {
         if(HAL_IS_BIT_SET(hswpmi->Instance->ISR, SWPMI_FLAG_RXBFF))
@@ -542,10 +854,10 @@ HAL_StatusTypeDef HAL_SWPMI_Receive(SWPMI_HandleTypeDef *hswpmi, uint32_t *pData
 
 /**
   * @brief  Transmit an amount of data in non-blocking mode with interrupt.
-  * @param  hswpmi: pointer to a SWPMI_HandleTypeDef structure that contains
+  * @param  hswpmi pointer to a SWPMI_HandleTypeDef structure that contains
   *                the configuration information for SWPMI module.
-  * @param  pData: Pointer to data buffer
-  * @param  Size: Amount of data to be sent
+  * @param  pData Pointer to data buffer
+  * @param  Size Amount of data to be sent
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SWPMI_Transmit_IT(SWPMI_HandleTypeDef *hswpmi, uint32_t *pData, uint16_t Size)
@@ -597,7 +909,7 @@ HAL_StatusTypeDef HAL_SWPMI_Transmit_IT(SWPMI_HandleTypeDef *hswpmi, uint32_t *p
     else
     {
       status =  HAL_BUSY;
-      
+
       /* Process Unlocked */
       __HAL_UNLOCK(hswpmi);
     }
@@ -607,10 +919,10 @@ HAL_StatusTypeDef HAL_SWPMI_Transmit_IT(SWPMI_HandleTypeDef *hswpmi, uint32_t *p
 }
 
 /**
-  * @brief Receive an amount of data in non-blocking mode with interrupt.
-  * @param hswpmi: SWPMI handle
-  * @param pData: pointer to data buffer
-  * @param Size: amount of data to be received
+  * @brief  Receive an amount of data in non-blocking mode with interrupt.
+  * @param  hswpmi SWPMI handle
+  * @param  pData Pointer to data buffer
+  * @param  Size Amount of data to be received
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SWPMI_Receive_IT(SWPMI_HandleTypeDef *hswpmi, uint32_t *pData, uint16_t Size)
@@ -658,7 +970,7 @@ HAL_StatusTypeDef HAL_SWPMI_Receive_IT(SWPMI_HandleTypeDef *hswpmi, uint32_t *pD
     else
     {
       status = HAL_BUSY;
-      
+
       /* Process Unlocked */
       __HAL_UNLOCK(hswpmi);
     }
@@ -668,10 +980,10 @@ HAL_StatusTypeDef HAL_SWPMI_Receive_IT(SWPMI_HandleTypeDef *hswpmi, uint32_t *pD
 }
 
 /**
-  * @brief Transmit an amount of data in non-blocking mode with DMA interrupt.
-  * @param hswpmi: SWPMI handle
-  * @param pData: pointer to data buffer
-  * @param Size: amount of data to be sent
+  * @brief  Transmit an amount of data in non-blocking mode with DMA interrupt.
+  * @param  hswpmi SWPMI handle
+  * @param  pData Pointer to data buffer
+  * @param  Size Amount of data to be sent
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SWPMI_Transmit_DMA(SWPMI_HandleTypeDef *hswpmi, uint32_t *pData, uint16_t Size)
@@ -717,7 +1029,7 @@ HAL_StatusTypeDef HAL_SWPMI_Transmit_DMA(SWPMI_HandleTypeDef *hswpmi, uint32_t *
       /* Set the DMA error callback */
       hswpmi->hdmatx->XferErrorCallback = SWPMI_DMAError;
 
-      /* Enable the SWPMI transmit DMA Channel */
+      /* Enable the SWPMI transmit DMA channel */
       HAL_DMA_Start_IT(hswpmi->hdmatx, (uint32_t)hswpmi->pTxBuffPtr, (uint32_t)&hswpmi->Instance->TDR, Size);
 
       /* Process Unlocked */
@@ -733,7 +1045,7 @@ HAL_StatusTypeDef HAL_SWPMI_Transmit_DMA(SWPMI_HandleTypeDef *hswpmi, uint32_t *
     else
     {
       status = HAL_BUSY;
-      
+
       /* Process Unlocked */
       __HAL_UNLOCK(hswpmi);
     }
@@ -743,10 +1055,10 @@ HAL_StatusTypeDef HAL_SWPMI_Transmit_DMA(SWPMI_HandleTypeDef *hswpmi, uint32_t *
 }
 
 /**
-  * @brief Receive an amount of data in non-blocking mode with DMA interrupt.
-  * @param hswpmi: SWPMI handle
-  * @param pData: pointer to data buffer
-  * @param Size: amount of data to be received
+  * @brief  Receive an amount of data in non-blocking mode with DMA interrupt.
+  * @param  hswpmi SWPMI handle
+  * @param  pData Pointer to data buffer
+  * @param  Size Amount of data to be received
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SWPMI_Receive_DMA(SWPMI_HandleTypeDef *hswpmi, uint32_t *pData, uint16_t Size)
@@ -818,7 +1130,7 @@ HAL_StatusTypeDef HAL_SWPMI_Receive_DMA(SWPMI_HandleTypeDef *hswpmi, uint32_t *p
 
 /**
   * @brief Stop all DMA transfers.
-  * @param hswpmi: SWPMI handle
+  * @param hswpmi SWPMI handle
   * @retval HAL_OK
   */
 HAL_StatusTypeDef HAL_SWPMI_DMAStop(SWPMI_HandleTypeDef *hswpmi)
@@ -854,7 +1166,7 @@ HAL_StatusTypeDef HAL_SWPMI_DMAStop(SWPMI_HandleTypeDef *hswpmi)
 
 /**
   * @brief Enable the Loopback mode.
-  * @param hswpmi: SWPMI handle
+  * @param hswpmi SWPMI handle
   * @note  Loopback mode is to be used only for test purposes
   * @retval HAL_OK / HAL_BUSY
   */
@@ -865,16 +1177,14 @@ HAL_StatusTypeDef HAL_SWPMI_EnableLoopback(SWPMI_HandleTypeDef *hswpmi)
   /* Process Locked */
   __HAL_LOCK(hswpmi);
 
-  /* Check SWPMI not enabled */
-  if(READ_BIT(hswpmi->Instance->CR, SWPMI_CR_SWPACT) != RESET)
-  {
-    status = HAL_BUSY;
-  }
-  else
-  {
-    /* Set Loopback */
-    SET_BIT(hswpmi->Instance->CR, SWPMI_CR_LPBK);
-  }
+  /* Make sure the SWPMI interface is not enabled to set the loopback mode */
+  CLEAR_BIT(hswpmi->Instance->CR, SWPMI_CR_SWPACT);
+
+  /* Set Loopback */
+  SET_BIT(hswpmi->Instance->CR, SWPMI_CR_LPBK);
+
+  /* Enable SWPMI interface in loopback mode */
+  SET_BIT(hswpmi->Instance->CR, SWPMI_CR_SWPACT);
 
   /* Process Unlocked */
   __HAL_UNLOCK(hswpmi);
@@ -884,7 +1194,7 @@ HAL_StatusTypeDef HAL_SWPMI_EnableLoopback(SWPMI_HandleTypeDef *hswpmi)
 
 /**
   * @brief Disable the Loopback mode.
-  * @param hswpmi: SWPMI handle
+  * @param hswpmi SWPMI handle
   * @note  Loopback mode is to be used only for test purposes
   * @retval HAL_OK / HAL_BUSY
   */
@@ -895,16 +1205,14 @@ HAL_StatusTypeDef HAL_SWPMI_DisableLoopback(SWPMI_HandleTypeDef *hswpmi)
   /* Process Locked */
   __HAL_LOCK(hswpmi);
 
-  /* Check SWPMI not enabled */
-  if(READ_BIT(hswpmi->Instance->CR, SWPMI_CR_SWPACT) != RESET)
-  {
-    status = HAL_BUSY;
-  }
-  else
-  {
-    /* Reset Loopback */
-    CLEAR_BIT(hswpmi->Instance->CR, SWPMI_CR_LPBK);
-  }
+  /* Make sure the SWPMI interface is not enabled to reset the loopback mode */
+  CLEAR_BIT(hswpmi->Instance->CR, SWPMI_CR_SWPACT);
+
+  /* Reset Loopback */
+  CLEAR_BIT(hswpmi->Instance->CR, SWPMI_CR_LPBK);
+
+  /* Re-enable SWPMI interface in normal mode */
+  SET_BIT(hswpmi->Instance->CR, SWPMI_CR_SWPACT);
 
   /* Process Unlocked */
   __HAL_UNLOCK(hswpmi);
@@ -919,11 +1227,11 @@ HAL_StatusTypeDef HAL_SWPMI_DisableLoopback(SWPMI_HandleTypeDef *hswpmi)
 /** @defgroup SWPMI_Exported_Group3 SWPMI IRQ handler and callbacks
  *  @brief  SWPMI  IRQ handler.
  *
-@verbatim   
+@verbatim
   ==============================================================================
                       ##### SWPMI IRQ handler and callbacks  #####
-  ==============================================================================  
-[..]  This section provides SWPMI IRQ handler and callback functions called within 
+  ==============================================================================
+[..]  This section provides SWPMI IRQ handler and callback functions called within
       the IRQ handler.
 
 @endverbatim
@@ -932,7 +1240,7 @@ HAL_StatusTypeDef HAL_SWPMI_DisableLoopback(SWPMI_HandleTypeDef *hswpmi)
 
 /**
   * @brief Handle SWPMI interrupt request.
-  * @param hswpmi: SWPMI handle
+  * @param hswpmi SWPMI handle
   * @retval None
   */
 void HAL_SWPMI_IRQHandler(SWPMI_HandleTypeDef *hswpmi)
@@ -978,7 +1286,7 @@ void HAL_SWPMI_IRQHandler(SWPMI_HandleTypeDef *hswpmi)
   if(errcode != HAL_SWPMI_ERROR_NONE)
   {
     hswpmi->ErrorCode |= errcode;
-    
+
     if((errcode & HAL_SWPMI_ERROR_UDR) != RESET)
     {
       /* Check TXDMA transfer to abort */
@@ -986,11 +1294,11 @@ void HAL_SWPMI_IRQHandler(SWPMI_HandleTypeDef *hswpmi)
       {
         /* Disable DMA TX at SWPMI level */
         CLEAR_BIT(hswpmi->Instance->CR, SWPMI_CR_TXDMA);
-        
+
         /* Abort the USART DMA Tx channel */
         if(hswpmi->hdmatx != NULL)
         {
-          /* Set the SWPMI Tx DMA Abort callback : 
+          /* Set the SWPMI Tx DMA Abort callback :
              will lead to call HAL_SWPMI_ErrorCallback() at end of DMA abort procedure */
           hswpmi->hdmatx->XferAbortCallback = SWPMI_DMAAbortOnError;
           /* Abort DMA TX */
@@ -1005,7 +1313,11 @@ void HAL_SWPMI_IRQHandler(SWPMI_HandleTypeDef *hswpmi)
           /* Set the SWPMI state ready to be able to start again the process */
           hswpmi->State = HAL_SWPMI_STATE_READY;
 
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+          hswpmi->ErrorCallback(hswpmi);
+#else
           HAL_SWPMI_ErrorCallback(hswpmi);
+#endif
         }
       }
       else
@@ -1013,7 +1325,11 @@ void HAL_SWPMI_IRQHandler(SWPMI_HandleTypeDef *hswpmi)
         /* Set the SWPMI state ready to be able to start again the process */
         hswpmi->State = HAL_SWPMI_STATE_READY;
 
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+        hswpmi->ErrorCallback(hswpmi);
+#else
         HAL_SWPMI_ErrorCallback(hswpmi);
+#endif
       }
     }
     else
@@ -1023,11 +1339,11 @@ void HAL_SWPMI_IRQHandler(SWPMI_HandleTypeDef *hswpmi)
       {
         /* Disable DMA RX at SWPMI level */
         CLEAR_BIT(hswpmi->Instance->CR, SWPMI_CR_RXDMA);
-        
+
         /* Abort the USART DMA Rx channel */
         if(hswpmi->hdmarx != NULL)
         {
-          /* Set the SWPMI Rx DMA Abort callback : 
+          /* Set the SWPMI Rx DMA Abort callback :
              will lead to call HAL_SWPMI_ErrorCallback() at end of DMA abort procedure */
           hswpmi->hdmarx->XferAbortCallback = SWPMI_DMAAbortOnError;
           /* Abort DMA RX */
@@ -1042,7 +1358,11 @@ void HAL_SWPMI_IRQHandler(SWPMI_HandleTypeDef *hswpmi)
           /* Set the SWPMI state ready to be able to start again the process */
           hswpmi->State = HAL_SWPMI_STATE_READY;
 
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+          hswpmi->ErrorCallback(hswpmi);
+#else
           HAL_SWPMI_ErrorCallback(hswpmi);
+#endif
         }
       }
       else
@@ -1050,7 +1370,11 @@ void HAL_SWPMI_IRQHandler(SWPMI_HandleTypeDef *hswpmi)
         /* Set the SWPMI state ready to be able to start again the process */
         hswpmi->State = HAL_SWPMI_STATE_READY;
 
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+        hswpmi->ErrorCallback(hswpmi);
+#else
         HAL_SWPMI_ErrorCallback(hswpmi);
+#endif
       }
     }
   }
@@ -1088,7 +1412,7 @@ void HAL_SWPMI_IRQHandler(SWPMI_HandleTypeDef *hswpmi)
 
 /**
   * @brief Tx Transfer completed callback.
-  * @param hswpmi: SWPMI handle
+  * @param hswpmi SWPMI handle
   * @retval None
   */
 __weak void HAL_SWPMI_TxCpltCallback(SWPMI_HandleTypeDef *hswpmi)
@@ -1103,7 +1427,7 @@ __weak void HAL_SWPMI_TxCpltCallback(SWPMI_HandleTypeDef *hswpmi)
 
 /**
   * @brief  Tx Half Transfer completed callback.
-  * @param  hswpmi: SWPMI handle
+  * @param  hswpmi SWPMI handle
   * @retval None
   */
 __weak void HAL_SWPMI_TxHalfCpltCallback(SWPMI_HandleTypeDef *hswpmi)
@@ -1118,7 +1442,7 @@ __weak void HAL_SWPMI_TxHalfCpltCallback(SWPMI_HandleTypeDef *hswpmi)
 
 /**
   * @brief Rx Transfer completed callback.
-  * @param hswpmi: SWPMI handle
+  * @param hswpmi SWPMI handle
   * @retval None
   */
 __weak void HAL_SWPMI_RxCpltCallback(SWPMI_HandleTypeDef *hswpmi)
@@ -1133,7 +1457,7 @@ __weak void HAL_SWPMI_RxCpltCallback(SWPMI_HandleTypeDef *hswpmi)
 
 /**
   * @brief  Rx Half Transfer completed callback.
-  * @param  hswpmi: SWPMI handle
+  * @param  hswpmi SWPMI handle
   * @retval None
   */
 __weak void HAL_SWPMI_RxHalfCpltCallback(SWPMI_HandleTypeDef *hswpmi)
@@ -1148,7 +1472,7 @@ __weak void HAL_SWPMI_RxHalfCpltCallback(SWPMI_HandleTypeDef *hswpmi)
 
 /**
   * @brief SWPMI error callback.
-  * @param hswpmi: SWPMI handle
+  * @param hswpmi SWPMI handle
   * @retval None
   */
 __weak void HAL_SWPMI_ErrorCallback(SWPMI_HandleTypeDef *hswpmi)
@@ -1182,7 +1506,7 @@ __weak void HAL_SWPMI_ErrorCallback(SWPMI_HandleTypeDef *hswpmi)
 
 /**
   * @brief Return the SWPMI handle state.
-  * @param hswpmi: SWPMI handle
+  * @param hswpmi SWPMI handle
   * @retval HAL state
   */
 HAL_SWPMI_StateTypeDef HAL_SWPMI_GetState(SWPMI_HandleTypeDef *hswpmi)
@@ -1219,7 +1543,7 @@ uint32_t HAL_SWPMI_GetError(SWPMI_HandleTypeDef *hswpmi)
 /**
   * @brief Transmit an amount of data in interrupt mode.
   * @note  Function called under interruption only, once interruptions have been enabled by HAL_SWPMI_Transmit_IT()
-  * @param  hswpmi: SWPMI handle
+  * @param  hswpmi SWPMI handle
   * @retval HAL status
   */
 static HAL_StatusTypeDef SWPMI_Transmit_IT(SWPMI_HandleTypeDef *hswpmi)
@@ -1249,7 +1573,7 @@ static HAL_StatusTypeDef SWPMI_Transmit_IT(SWPMI_HandleTypeDef *hswpmi)
 
 /**
   * @brief  Wraps up transmission in non-blocking mode.
-  * @param  hswpmi: SWPMI handle
+  * @param  hswpmi SWPMI handle
   * @retval HAL status
   * @retval HAL status
   */
@@ -1269,8 +1593,12 @@ static HAL_StatusTypeDef SWPMI_EndTransmit_IT(SWPMI_HandleTypeDef *hswpmi)
   {
     hswpmi->State = HAL_SWPMI_STATE_READY;
   }
-  
+
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+  hswpmi->TxCpltCallback(hswpmi);
+#else
   HAL_SWPMI_TxCpltCallback(hswpmi);
+#endif
 
   return HAL_OK;
 }
@@ -1278,7 +1606,7 @@ static HAL_StatusTypeDef SWPMI_EndTransmit_IT(SWPMI_HandleTypeDef *hswpmi)
 /**
   * @brief Receive an amount of data in interrupt mode.
   * @note  Function called under interruption only, once interruptions have been enabled by HAL_SWPMI_Receive_IT()
-  * @param  hswpmi: SWPMI handle
+  * @param  hswpmi SWPMI handle
   * @retval HAL status
   */
 static HAL_StatusTypeDef SWPMI_Receive_IT(SWPMI_HandleTypeDef *hswpmi)
@@ -1292,7 +1620,11 @@ static HAL_StatusTypeDef SWPMI_Receive_IT(SWPMI_HandleTypeDef *hswpmi)
     if(--hswpmi->RxXferCount == 0)
     {
       /* Wait for RXBFF flag to update state */
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+      hswpmi->RxCpltCallback(hswpmi);
+#else
       HAL_SWPMI_RxCpltCallback(hswpmi);
+#endif
     }
   }
   else
@@ -1305,7 +1637,7 @@ static HAL_StatusTypeDef SWPMI_Receive_IT(SWPMI_HandleTypeDef *hswpmi)
 
 /**
   * @brief  Wraps up reception in non-blocking mode.
-  * @param  hswpmi: SWPMI handle
+  * @param  hswpmi SWPMI handle
   * @retval HAL status
   * @retval HAL status
   */
@@ -1331,7 +1663,7 @@ static HAL_StatusTypeDef SWPMI_EndReceive_IT(SWPMI_HandleTypeDef *hswpmi)
 
 /**
   * @brief  Wraps up transmission and reception in non-blocking mode.
-  * @param  hswpmi: SWPMI handle
+  * @param  hswpmi SWPMI handle
   * @retval HAL status
   * @retval HAL status
   */
@@ -1357,7 +1689,7 @@ static HAL_StatusTypeDef SWPMI_EndTransmitReceive_IT(SWPMI_HandleTypeDef *hswpmi
 
 /**
   * @brief DMA SWPMI transmit process complete callback.
-  * @param hdma: DMA handle
+  * @param hdma DMA handle
   * @retval None
   */
 static void SWPMI_DMATransmitCplt(DMA_HandleTypeDef *hdma)
@@ -1366,7 +1698,7 @@ static void SWPMI_DMATransmitCplt(DMA_HandleTypeDef *hdma)
   uint32_t tickstart = 0;
 
   /* DMA Normal mode*/
-  if((hdma->Instance->CCR & DMA_CCR_CIRC) != SET)
+  if((hdma->Instance->CCR & DMA_CCR_CIRC) == RESET)
   {
     hswpmi->TxXferCount = 0;
 
@@ -1381,7 +1713,13 @@ static void SWPMI_DMATransmitCplt(DMA_HandleTypeDef *hdma)
     if(SWPMI_WaitOnFlagSetUntilTimeout(hswpmi, SWPMI_FLAG_TXBEF, tickstart, SWPMI_TIMEOUT_VALUE) != HAL_OK)
     {
       /* Timeout occurred */
+      hswpmi->ErrorCode |= HAL_SWPMI_ERROR_TXBEF_TIMEOUT;
+      
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+      hswpmi->ErrorCallback(hswpmi);
+#else
       HAL_SWPMI_ErrorCallback(hswpmi);
+#endif
     }
     else
     {
@@ -1396,32 +1734,44 @@ static void SWPMI_DMATransmitCplt(DMA_HandleTypeDef *hdma)
         hswpmi->State = HAL_SWPMI_STATE_READY;
       }
 
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+      hswpmi->TxCpltCallback(hswpmi);
+#else
       HAL_SWPMI_TxCpltCallback(hswpmi);
+#endif
     }
   }
   /* DMA Circular mode */
   else
   {
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+    hswpmi->TxCpltCallback(hswpmi);
+#else
     HAL_SWPMI_TxCpltCallback(hswpmi);
+#endif
   }
 }
 
 /**
   * @brief DMA SWPMI transmit process half complete callback.
-  * @param hdma : DMA handle
+  * @param hdma DMA handle
   * @retval None
   */
 static void SWPMI_DMATxHalfCplt(DMA_HandleTypeDef *hdma)
 {
   SWPMI_HandleTypeDef* hswpmi = (SWPMI_HandleTypeDef*)((DMA_HandleTypeDef*)hdma)->Parent;
 
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+  hswpmi->TxHalfCpltCallback(hswpmi);
+#else
   HAL_SWPMI_TxHalfCpltCallback(hswpmi);
+#endif
 }
 
 
 /**
   * @brief DMA SWPMI receive process complete callback.
-  * @param hdma: DMA handle
+  * @param hdma DMA handle
   * @retval None
   */
 static void SWPMI_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
@@ -1447,24 +1797,32 @@ static void SWPMI_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
       hswpmi->State = HAL_SWPMI_STATE_READY;
     }
   }
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+  hswpmi->RxCpltCallback(hswpmi);
+#else
   HAL_SWPMI_RxCpltCallback(hswpmi);
+#endif
 }
 
 /**
   * @brief DMA SWPMI receive process half complete callback.
-  * @param hdma : DMA handle
+  * @param hdma DMA handle
   * @retval None
   */
 static void SWPMI_DMARxHalfCplt(DMA_HandleTypeDef *hdma)
 {
   SWPMI_HandleTypeDef* hswpmi = (SWPMI_HandleTypeDef*)((DMA_HandleTypeDef*)hdma)->Parent;
 
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+  hswpmi->RxHalfCpltCallback(hswpmi);
+#else
   HAL_SWPMI_RxHalfCpltCallback(hswpmi);
+#endif
 }
 
 /**
   * @brief DMA SWPMI communication error callback.
-  * @param hdma: DMA handle
+  * @param hdma DMA handle
   * @retval None
   */
 static void SWPMI_DMAError(DMA_HandleTypeDef *hdma)
@@ -1477,12 +1835,16 @@ static void SWPMI_DMAError(DMA_HandleTypeDef *hdma)
   hswpmi->State= HAL_SWPMI_STATE_READY;
   hswpmi->ErrorCode |= HAL_SWPMI_ERROR_DMA;
 
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+  hswpmi->ErrorCallback(hswpmi);
+#else
   HAL_SWPMI_ErrorCallback(hswpmi);
+#endif
 }
 
 /**
   * @brief DMA SWPMI communication abort callback.
-  * @param hdma: DMA handle
+  * @param hdma DMA handle
   * @retval None
   */
 static void SWPMI_DMAAbortOnError(DMA_HandleTypeDef *hdma)
@@ -1494,12 +1856,16 @@ static void SWPMI_DMAAbortOnError(DMA_HandleTypeDef *hdma)
   hswpmi->TxXferCount = 0;
   hswpmi->State= HAL_SWPMI_STATE_READY;
 
+#if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
+  hswpmi->ErrorCallback(hswpmi);
+#else
   HAL_SWPMI_ErrorCallback(hswpmi);
+#endif
 }
 
 /**
   * @brief  Handle SWPMI Communication Timeout.
-  * @param  hswpmi: SWPMI handle
+  * @param  hswpmi SWPMI handle
   * @param  Flag: specifies the SWPMI flag to check.
   * @param  Tickstart Tick start value
   * @param  Timeout timeout duration.
@@ -1517,6 +1883,7 @@ static HAL_StatusTypeDef SWPMI_WaitOnFlagSetUntilTimeout(SWPMI_HandleTypeDef *hs
     {
       if((Timeout == 0) || ((HAL_GetTick()-Tickstart) > Timeout))
       {
+        /* Set the SWPMI state ready to be able to start again the process */
         hswpmi->State = HAL_SWPMI_STATE_READY;
 
         status = HAL_TIMEOUT;
@@ -1533,16 +1900,15 @@ static HAL_StatusTypeDef SWPMI_WaitOnFlagSetUntilTimeout(SWPMI_HandleTypeDef *hs
   */
 
 #endif /* HAL_SWPMI_MODULE_ENABLED */
-/**
-  * @}
-  */
 
 /**
   * @}
   */
 
-#endif /* STM32L431xx || STM32L432xx || STM32L433xx || STM32L442xx || STM32L443xx || */
-       /* STM32L471xx || STM32L475xx || STM32L476xx || STM32L485xx || STM32L486xx || */
-       /* STM32L496xx || STM32L4A6xx */
+#endif /* SWPMI1 */
+
+/**
+  * @}
+  */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

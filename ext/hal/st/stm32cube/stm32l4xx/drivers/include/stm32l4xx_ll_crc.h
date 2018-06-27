@@ -134,7 +134,7 @@ extern "C" {
   * @param  __VALUE__ Value to be written in the register
   * @retval None
   */
-#define LL_CRC_WriteReg(__INSTANCE__, __REG__, __VALUE__) WRITE_REG(__INSTANCE__->__REG__, (__VALUE__))
+#define LL_CRC_WriteReg(__INSTANCE__, __REG__, __VALUE__) WRITE_REG(__INSTANCE__->__REG__, __VALUE__)
 
 /**
   * @brief  Read a value in CRC register
@@ -352,7 +352,10 @@ __STATIC_INLINE void LL_CRC_FeedData32(CRC_TypeDef *CRCx, uint32_t InData)
   */
 __STATIC_INLINE void LL_CRC_FeedData16(CRC_TypeDef *CRCx, uint16_t InData)
 {
-  *(uint16_t __IO *)(&CRCx->DR) = (uint16_t) InData;
+  __IO uint16_t *pReg;
+
+  pReg = (__IO uint16_t *)(__IO void *)(&CRCx->DR);
+  *pReg = InData;
 }
 
 /**
@@ -416,10 +419,11 @@ __STATIC_INLINE uint8_t LL_CRC_ReadData7(CRC_TypeDef *CRCx)
 
 /**
   * @brief  Return data stored in the Independent Data(IDR) register.
-  * @note   This register can be used as a temporary storage location for one byte.
+  * @note   This register can be used as a temporary storage location.
+  * @note   Refer to the Reference Manual to get the authorized data length in bits.
   * @rmtoll IDR          IDR           LL_CRC_Read_IDR
   * @param  CRCx CRC Instance
-  * @retval Value stored in CRC_IDR register (General-purpose 8-bit data register).
+  * @retval Value stored in CRC_IDR register
   */
 __STATIC_INLINE uint32_t LL_CRC_Read_IDR(CRC_TypeDef *CRCx)
 {
@@ -428,15 +432,20 @@ __STATIC_INLINE uint32_t LL_CRC_Read_IDR(CRC_TypeDef *CRCx)
 
 /**
   * @brief  Store data in the Independent Data(IDR) register.
-  * @note   This register can be used as a temporary storage location for one byte.
+  * @note   This register can be used as a temporary storage location.
+  * @note   Refer to the Reference Manual to get the authorized data length in bits.
   * @rmtoll IDR          IDR           LL_CRC_Write_IDR
   * @param  CRCx CRC Instance
-  * @param  InData value to be stored in CRC_IDR register (8-bit) between between Min_Data=0 and Max_Data=0xFF
+  * @param  InData value to be stored in CRC_IDR register
   * @retval None
   */
 __STATIC_INLINE void LL_CRC_Write_IDR(CRC_TypeDef *CRCx, uint32_t InData)
 {
+#if (CRC_IDR_IDR == 0x0FFU)
   *((uint8_t __IO *)(&CRCx->IDR)) = (uint8_t) InData;
+#else
+  WRITE_REG(CRCx->IDR, InData);
+#endif
 }
 /**
   * @}

@@ -176,9 +176,9 @@ typedef struct
 }RTC_AlarmTypeDef;
 
 /** 
-  * @brief  Time Handle Structure definition
+  * @brief  RTC Handle Structure definition
   */
-typedef struct
+typedef struct __RTC_HandleTypeDef
 {
   RTC_TypeDef               *Instance;  /*!< Register base address    */
 
@@ -188,7 +188,59 @@ typedef struct
 
   __IO HAL_RTCStateTypeDef  State;      /*!< Time communication state */
 
+#if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
+  void  (* AlarmAEventCallback)      ( struct __RTC_HandleTypeDef * hrtc);  /*!< RTC Alarm A Event callback         */
+
+  void  (* AlarmBEventCallback)      ( struct __RTC_HandleTypeDef * hrtc);  /*!< RTC Alarm B Event callback         */
+
+  void  (* TimeStampEventCallback)   ( struct __RTC_HandleTypeDef * hrtc);  /*!< RTC TimeStamp Event callback       */
+
+  void  (* WakeUpTimerEventCallback) ( struct __RTC_HandleTypeDef * hrtc);  /*!< RTC WakeUpTimer Event callback     */
+
+#if defined(RTC_TAMPER1_SUPPORT)
+  void  (* Tamper1EventCallback)     ( struct __RTC_HandleTypeDef * hrtc);  /*!< RTC Tamper 1 Event callback        */
+#endif /* RTC_TAMPER1_SUPPORT */
+
+  void  (* Tamper2EventCallback)     ( struct __RTC_HandleTypeDef * hrtc);  /*!< RTC Tamper 2 Event callback        */
+
+#if defined(RTC_TAMPER3_SUPPORT)
+  void  (* Tamper3EventCallback)     ( struct __RTC_HandleTypeDef * hrtc);  /*!< RTC Tamper 3 Event callback        */
+#endif /* RTC_TAMPER3_SUPPORT */
+
+  void  (* MspInitCallback)         ( struct __RTC_HandleTypeDef * hrtc);   /*!< RTC Msp Init callback              */
+
+  void  (* MspDeInitCallback)       ( struct __RTC_HandleTypeDef * hrtc);   /*!< RTC Msp DeInit callback            */
+
+#endif /* (USE_HAL_RTC_REGISTER_CALLBACKS) */
+
 }RTC_HandleTypeDef;
+
+#if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
+/**
+  * @brief  HAL LPTIM Callback ID enumeration definition
+  */
+typedef enum
+{
+  HAL_RTC_ALARM_A_EVENT_CB_ID           = 0x00U,    /*!< RTC Alarm A Event Callback ID      */
+  HAL_RTC_ALARM_B_EVENT_CB_ID           = 0x01U,    /*!< RTC Alarm B Event Callback ID      */
+  HAL_RTC_TIMESTAMP_EVENT_CB_ID         = 0x02U,    /*!< RTC TimeStamp Event Callback ID    */
+  HAL_RTC_WAKEUPTIMER_EVENT_CB_ID       = 0x03U,    /*!< RTC WakeUp Timer Event Callback ID */
+#if defined(RTC_TAMPER1_SUPPORT)
+  HAL_RTC_TAMPER1_EVENT_CB_ID           = 0x04U,    /*!< RTC Tamper 1 Callback ID           */
+#endif /* RTC_TAMPER1_SUPPORT */
+  HAL_RTC_TAMPER2_EVENT_CB_ID           = 0x05U,    /*!< RTC Tamper 2 Callback ID           */
+#if defined(RTC_TAMPER3_SUPPORT)
+  HAL_RTC_TAMPER3_EVENT_CB_ID           = 0x06U,    /*!< RTC Tamper 3 Callback ID           */
+#endif /* RTC_TAMPER3_SUPPORT */
+  HAL_RTC_MSPINIT_CB_ID                 = 0x0EU,    /*!< RTC Msp Init callback ID           */
+  HAL_RTC_MSPDEINIT_CB_ID               = 0x0FU     /*!< RTC Msp DeInit callback ID         */
+}HAL_RTC_CallbackIDTypeDef;
+
+/**
+  * @brief  HAL RTC Callback pointer definition
+  */
+typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to an RTC callback function */
+#endif /* USE_HAL_RTC_REGISTER_CALLBACKS */
 
 /**
   * @}
@@ -431,7 +483,15 @@ typedef struct
   * @param  __HANDLE__: RTC handle.
   * @retval None
   */
+#if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
+#define __HAL_RTC_RESET_HANDLE_STATE(__HANDLE__) do{\
+                                                      (__HANDLE__)->State = HAL_RTC_STATE_RESET;\
+                                                      (__HANDLE__)->MspInitCallback = NULL;\
+                                                      (__HANDLE__)->MspDeInitCallback = NULL;\
+                                                     }while(0)
+#else
 #define __HAL_RTC_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_RTC_STATE_RESET)
+#endif /* USE_HAL_RTC_REGISTER_CALLBACKS */
 
 /**
   * @brief  Disable the write protection for RTC registers.
@@ -655,6 +715,13 @@ HAL_StatusTypeDef HAL_RTC_Init(RTC_HandleTypeDef *hrtc);
 HAL_StatusTypeDef HAL_RTC_DeInit(RTC_HandleTypeDef *hrtc);
 void              HAL_RTC_MspInit(RTC_HandleTypeDef *hrtc);
 void              HAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc);
+
+/* Callbacks Register/UnRegister functions  ***********************************/
+#if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
+HAL_StatusTypeDef HAL_RTC_RegisterCallback(RTC_HandleTypeDef *hrtc, HAL_RTC_CallbackIDTypeDef CallbackID, pRTC_CallbackTypeDef pCallback);
+HAL_StatusTypeDef HAL_RTC_UnRegisterCallback(RTC_HandleTypeDef *hrtc, HAL_RTC_CallbackIDTypeDef CallbackID);
+#endif /* USE_HAL_LPTIM_REGISTER_CALLBACKS */
+
 /**
   * @}
   */
