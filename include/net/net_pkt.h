@@ -80,6 +80,7 @@ struct net_pkt {
 	struct net_ptp_time timestamp;
 #endif
 
+	u8_t *ll;       /* Link Layer Header */
 	u8_t *appdata;	/* application data starts here */
 	u8_t *next_hdr;	/* where is the next header */
 
@@ -623,9 +624,18 @@ static inline void net_pkt_set_ll_reserve(struct net_pkt *pkt, u8_t len)
 	pkt->ll_reserve = len;
 }
 
+static inline void net_pkt_set_ll(struct net_pkt *pkt, u8_t *data)
+{
+	pkt->ll = data;
+}
+
 static inline u8_t *net_pkt_ll(struct net_pkt *pkt)
 {
-	return net_pkt_ip_data(pkt) - net_pkt_ll_reserve(pkt);
+	if (!pkt->ll) {
+		return pkt->frags->data;
+	}
+
+	return pkt->ll;
 }
 
 static inline struct net_linkaddr *net_pkt_lladdr_src(struct net_pkt *pkt)
