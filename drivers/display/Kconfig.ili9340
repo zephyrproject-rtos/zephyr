@@ -9,7 +9,6 @@
 menuconfig ILI9340
 	bool "ILI9340 display driver"
 	depends on SPI
-	default n
 	help
 	Enable driver for ILI9340 display driver.
 
@@ -79,7 +78,6 @@ config ILI9340_CMD_DATA_PIN
 
 config ILI9340_GPIO_CS
 	bool "Use GPIO pin for chip select"
-	default n
 	help
 	Use GPIO pin for chips select.
 

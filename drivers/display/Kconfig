@@ -9,7 +9,6 @@
 menuconfig DISPLAY
 	bool
 	prompt "Display Drivers"
-	default n
 	help
 	  Enable display drivers
 
