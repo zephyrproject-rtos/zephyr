@@ -733,12 +733,15 @@ static inline int _arch_is_user_context(void)
 		__aligned(_STACK_BASE_ALIGN) \
 		sym[ROUND_UP((size), _STACK_SIZE_ALIGN) + _STACK_GUARD_SIZE]
 
+#define _ARCH_THREAD_STACK_LEN(size) \
+		(ROUND_UP((size), \
+			  max(_STACK_BASE_ALIGN, _STACK_SIZE_ALIGN)) + \
+		_STACK_GUARD_SIZE)
+
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __kernel_noinit \
 		__aligned(_STACK_BASE_ALIGN) \
-		sym[nmemb][ROUND_UP(size, max(_STACK_BASE_ALIGN, \
-					      _STACK_SIZE_ALIGN)) + \
-			   _STACK_GUARD_SIZE]
+		sym[nmemb][_ARCH_THREAD_STACK_LEN(size)]
 
 #define _ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element __aligned(_STACK_BASE_ALIGN) \
