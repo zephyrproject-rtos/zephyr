@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_iwdg.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   IWDG HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Independent Watchdog (IWDG) peripheral:
@@ -21,9 +19,9 @@
     (+) The IWDG is clocked by Low-Speed clock (LSI) and thus stays active even
         if the main clock fails.
 
-    (+) Once the IWDG is started, the LSI is forced ON and both can not be 
+    (+) Once the IWDG is started, the LSI is forced ON and both can not be
         disabled. The counter starts counting down from the reset value (0xFFF).
-        When it reaches the end of count value (0x000) a reset signal is 
+        When it reaches the end of count value (0x000) a reset signal is
         generated (IWDG reset).
 
     (+) Whenever the key value 0x0000 AAAA is written in the IWDG_KR register,
@@ -119,7 +117,7 @@
 /** @defgroup IWDG_Private_Defines IWDG Private Defines
   * @{
   */
-/* Status register need 5 RC LSI divided by prescaler clock to be updated. With 
+/* Status register need 5 RC LSI divided by prescaler clock to be updated. With
    higher prescaler (256), and according to HSI variation, we need to wait at
    least 6 cycles so 48 ms. */
 #define HAL_IWDG_DEFAULT_TIMEOUT            48U
@@ -166,7 +164,7 @@ HAL_StatusTypeDef HAL_IWDG_Init(IWDG_HandleTypeDef *hiwdg)
   uint32_t tickstart;
 
   /* Check the IWDG handle allocation */
-  if(hiwdg == NULL)
+  if (hiwdg == NULL)
   {
     return HAL_ERROR;
   }
@@ -190,9 +188,9 @@ HAL_StatusTypeDef HAL_IWDG_Init(IWDG_HandleTypeDef *hiwdg)
   tickstart = HAL_GetTick();
 
   /* Wait for register to be updated */
-  while(hiwdg->Instance->SR != RESET)
+  while (hiwdg->Instance->SR != RESET)
   {
-    if((HAL_GetTick() - tickstart ) > HAL_IWDG_DEFAULT_TIMEOUT)
+    if ((HAL_GetTick() - tickstart) > HAL_IWDG_DEFAULT_TIMEOUT)
     {
       return HAL_TIMEOUT;
     }

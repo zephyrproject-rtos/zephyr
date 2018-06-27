@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_rcc_ex.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of RCC HAL Extension module.
   ******************************************************************************
   * @attention
@@ -33,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F1xx_HAL_RCC_EX_H
@@ -52,7 +50,7 @@
 
 /** @addtogroup RCCEx
   * @{
-  */ 
+  */
 
 /** @addtogroup RCCEx_Private_Constants
  * @{
@@ -73,7 +71,7 @@
 #endif /* STM32F105xC || STM32F107xC */
 
 
-#define CR_REG_INDEX                 ((uint8_t)1)    
+#define CR_REG_INDEX                 ((uint8_t)1)
 
 /**
   * @}
@@ -213,15 +211,15 @@
   * @}
   */
 
-/* Exported types ------------------------------------------------------------*/ 
+/* Exported types ------------------------------------------------------------*/
 
 /** @defgroup RCCEx_Exported_Types RCCEx Exported Types
   * @{
   */
 
 #if defined(STM32F105xC) || defined(STM32F107xC)
-/** 
-  * @brief  RCC PLL2 configuration structure definition  
+/**
+  * @brief  RCC PLL2 configuration structure definition
   */
 typedef struct
 {
@@ -229,7 +227,7 @@ typedef struct
                               This parameter can be a value of @ref RCCEx_PLL2_Config */
 
   uint32_t PLL2MUL;         /*!< PLL2MUL: Multiplication factor for PLL2 VCO input clock
-                              This parameter must be a value of @ref RCCEx_PLL2_Multiplication_Factor*/        
+                              This parameter must be a value of @ref RCCEx_PLL2_Multiplication_Factor*/
 
 #if defined(STM32F105xC) || defined(STM32F107xC)
   uint32_t HSEPrediv2Value;       /*!<  The Prediv2 factor value.
@@ -240,8 +238,8 @@ typedef struct
 
 #endif /* STM32F105xC || STM32F107xC */
 
-/** 
-  * @brief  RCC Internal/External Oscillator (HSE, HSI, LSE and LSI) configuration structure definition  
+/**
+  * @brief  RCC Internal/External Oscillator (HSE, HSI, LSE and LSI) configuration structure definition
   */
 typedef struct
 {
@@ -255,37 +253,37 @@ typedef struct
 
   uint32_t HSEState;              /*!< The new state of the HSE.
                                        This parameter can be a value of @ref RCC_HSE_Config */
-                          
+
   uint32_t HSEPredivValue;       /*!<  The Prediv1 factor value (named PREDIV1 or PLLXTPRE in RM)
                                        This parameter can be a value of @ref RCCEx_Prediv1_Factor */
 
   uint32_t LSEState;              /*!<  The new state of the LSE.
                                         This parameter can be a value of @ref RCC_LSE_Config */
-                                          
+
   uint32_t HSIState;              /*!< The new state of the HSI.
                                        This parameter can be a value of @ref RCC_HSI_Config */
 
   uint32_t HSICalibrationValue;   /*!< The HSI calibration trimming value (default is RCC_HSICALIBRATION_DEFAULT).
                                        This parameter must be a number between Min_Data = 0x00 and Max_Data = 0x1F */
-                               
+
   uint32_t LSIState;              /*!<  The new state of the LSI.
                                         This parameter can be a value of @ref RCC_LSI_Config */
 
-  RCC_PLLInitTypeDef PLL;         /*!< PLL structure parameters */      
+  RCC_PLLInitTypeDef PLL;         /*!< PLL structure parameters */
 
 #if defined(STM32F105xC) || defined(STM32F107xC)
-  RCC_PLL2InitTypeDef PLL2;         /*!< PLL2 structure parameters */      
+  RCC_PLL2InitTypeDef PLL2;         /*!< PLL2 structure parameters */
 #endif /* STM32F105xC || STM32F107xC */
 } RCC_OscInitTypeDef;
 
 #if defined(STM32F105xC) || defined(STM32F107xC)
-/** 
-  * @brief  RCC PLLI2S configuration structure definition  
+/**
+  * @brief  RCC PLLI2S configuration structure definition
   */
 typedef struct
 {
   uint32_t PLLI2SMUL;         /*!< PLLI2SMUL: Multiplication factor for PLLI2S VCO input clock
-                              This parameter must be a value of @ref RCCEx_PLLI2S_Multiplication_Factor*/        
+                              This parameter must be a value of @ref RCCEx_PLLI2S_Multiplication_Factor*/
 
 #if defined(STM32F105xC) || defined(STM32F107xC)
   uint32_t HSEPrediv2Value;       /*!<  The Prediv2 factor value.
@@ -295,8 +293,8 @@ typedef struct
 } RCC_PLLI2SInitTypeDef;
 #endif /* STM32F105xC || STM32F107xC */
 
-/** 
-  * @brief  RCC extended clocks structure definition  
+/**
+  * @brief  RCC extended clocks structure definition
   */
 typedef struct
 {
@@ -306,7 +304,7 @@ typedef struct
   uint32_t RTCClockSelection;         /*!< specifies the RTC clock source.
                                        This parameter can be a value of @ref RCC_RTC_Clock_Source */
 
-  uint32_t AdcClockSelection;         /*!< ADC clock source      
+  uint32_t AdcClockSelection;         /*!< ADC clock source
                                        This parameter can be a value of @ref RCCEx_ADC_Prescaler */
 
 #if defined(STM32F103xE) || defined(STM32F103xG) || defined(STM32F105xC)\
@@ -316,9 +314,9 @@ typedef struct
 
   uint32_t I2s3ClockSelection;         /*!< I2S3 clock source
                                        This parameter can be a value of @ref RCCEx_I2S3_Clock_Source */
-  
+
 #if defined(STM32F105xC) || defined(STM32F107xC)
-  RCC_PLLI2SInitTypeDef PLLI2S;  /*!< PLL I2S structure parameters 
+  RCC_PLLI2SInitTypeDef PLLI2S;  /*!< PLL I2S structure parameters
                                       This parameter will be used only when PLLI2S is selected as Clock Source I2S2 or I2S3 */
 
 #endif /* STM32F105xC || STM32F107xC */
@@ -327,7 +325,7 @@ typedef struct
 #if defined(STM32F102x6) || defined(STM32F102xB) || defined(STM32F103x6)\
  || defined(STM32F103xB) || defined(STM32F103xE) || defined(STM32F103xG)\
  || defined(STM32F105xC) || defined(STM32F107xC)
-  uint32_t UsbClockSelection;         /*!< USB clock source      
+  uint32_t UsbClockSelection;         /*!< USB clock source
                                        This parameter can be a value of @ref RCCEx_USB_Prescaler */
 
 #endif /* STM32F102x6 || STM32F102xB || STM32F103x6 || STM32F103xB || STM32F103xE || STM32F103xG || STM32F105xC || STM32F107xC */
@@ -607,7 +605,7 @@ typedef struct
 #define RCC_IT_PLLI2SRDY                 ((uint8_t)RCC_CIR_PLL3RDYF)
 /**
   * @}
-  */  
+  */
 
 /** @defgroup RCCEx_Flag RCCEx Flag
   *        Elements values convention: 0XXYYYYYb
@@ -621,7 +619,7 @@ typedef struct
 #define RCC_FLAG_PLLI2SRDY                ((uint8_t)((CR_REG_INDEX << 5U) | RCC_CR_PLL3RDY_Pos))
 /**
   * @}
-  */ 
+  */
 #endif /* STM32F105xC || STM32F107xC*/
 
 /**
@@ -636,8 +634,8 @@ typedef struct
 /** @defgroup RCCEx_Peripheral_Clock_Enable_Disable Peripheral Clock Enable Disable
   * @brief  Enable or disable the AHB1 peripheral clock.
   * @note   After reset, the peripheral clock (used for registers read/write access)
-  *         is disabled and the application software has to enable this clock before 
-  *         using it.   
+  *         is disabled and the application software has to enable this clock before
+  *         using it.
   * @{
   */
 
@@ -739,7 +737,7 @@ typedef struct
                                           __HAL_RCC_ETHMACRX_CLK_DISABLE();    \
                                           __HAL_RCC_ETHMAC_CLK_DISABLE();      \
                                         } while(0U)
-                                     
+
 #endif /* STM32F107xC*/
 
 /**
@@ -789,9 +787,9 @@ typedef struct
 /** @defgroup RCCEx_APB1_Clock_Enable_Disable APB1 Clock Enable Disable
   * @brief  Enable or disable the Low Speed APB (APB1) peripheral clock.
   * @note   After reset, the peripheral clock (used for registers read/write access)
-  *         is disabled and the application software has to enable this clock before 
-  *         using it. 
-  * @{   
+  *         is disabled and the application software has to enable this clock before
+  *         using it.
+  * @{
   */
 
 #if defined(STM32F103x6) || defined(STM32F103xB) || defined(STM32F103xE)\
@@ -1174,9 +1172,9 @@ typedef struct
 /** @defgroup RCCEx_APB2_Clock_Enable_Disable APB2 Clock Enable Disable
   * @brief  Enable or disable the High Speed APB (APB2) peripheral clock.
   * @note   After reset, the peripheral clock (used for registers read/write access)
-  *         is disabled and the application software has to enable this clock before 
+  *         is disabled and the application software has to enable this clock before
   *         using it.
-  * @{   
+  * @{
   */
 
 #if defined(STM32F101xG) || defined(STM32F103x6) || defined(STM32F103xB)\
@@ -1401,7 +1399,7 @@ typedef struct
 /** @defgroup RCCEx_Peripheral_Clock_Force_Release Peripheral Clock Force Release
   * @brief  Force or release AHB peripheral reset.
   * @{
-  */  
+  */
 #define __HAL_RCC_AHB_FORCE_RESET()         (RCC->AHBRSTR = 0xFFFFFFFFU)
 #define __HAL_RCC_USB_OTG_FS_FORCE_RESET()       (RCC->AHBRSTR |= (RCC_AHBRSTR_OTGFSRST))
 #if defined(STM32F107xC)
@@ -1421,7 +1419,7 @@ typedef struct
 
 /** @defgroup RCCEx_APB1_Force_Release_Reset APB1 Force Release Reset
   * @brief  Force or release APB1 peripheral reset.
-  * @{   
+  * @{
   */
 
 #if defined(STM32F103x6) || defined(STM32F103xB) || defined(STM32F103xE)\
@@ -1523,7 +1521,7 @@ typedef struct
 
 /** @defgroup RCCEx_APB2_Force_Release_Reset APB2 Force Release Reset
   * @brief  Force or release APB2 peripheral reset.
-  * @{   
+  * @{
   */
 
 #if defined(STM32F101xG) || defined(STM32F103x6) || defined(STM32F103xB)\
@@ -1593,8 +1591,8 @@ typedef struct
   */
 
 /** @defgroup RCCEx_HSE_Configuration HSE Configuration
-  * @{   
-  */ 
+  * @{
+  */
 
 #if defined(STM32F105xC) || defined(STM32F107xC) || defined(STM32F100xB)\
  || defined(STM32F100xE)
@@ -1642,11 +1640,11 @@ typedef struct
 
 #if defined(STM32F105xC) || defined(STM32F107xC)
 /** @defgroup RCCEx_PLLI2S_Configuration PLLI2S Configuration
-  * @{   
-  */ 
+  * @{
+  */
 
 /** @brief Macros to enable the main PLLI2S.
-  * @note   After enabling the main PLLI2S, the application software should wait on 
+  * @note   After enabling the main PLLI2S, the application software should wait on
   *         PLLI2SRDY flag to be set indicating that PLLI2S clock is stable and can
   *         be used as system clock source.
   * @note   The main PLLI2S is disabled by hardware when entering STOP and STANDBY modes.
@@ -1660,7 +1658,7 @@ typedef struct
 
 /** @brief macros to configure the main PLLI2S multiplication factor.
   * @note   This function must be used only when the main PLLI2S is disabled.
-  *  
+  *
   * @param  __PLLI2SMUL__ specifies the multiplication factor for PLLI2S VCO output clock
   *          This parameter can be one of the following values:
   *             @arg @ref RCC_PLLI2S_MUL8 PLLI2SVCO = PLLI2S clock entry x 8
@@ -1672,7 +1670,7 @@ typedef struct
   *             @arg @ref RCC_PLLI2S_MUL14 PLLI2SVCO = PLLI2S clock entry x 14
   *             @arg @ref RCC_PLLI2S_MUL16 PLLI2SVCO = PLLI2S clock entry x 16
   *             @arg @ref RCC_PLLI2S_MUL20 PLLI2SVCO = PLLI2S clock entry x 20
-  *   
+  *
   */
 #define __HAL_RCC_PLLI2S_CONFIG(__PLLI2SMUL__)\
           MODIFY_REG(RCC->CFGR2, RCC_CFGR2_PLL3MUL,(__PLLI2SMUL__))
@@ -1686,7 +1684,7 @@ typedef struct
 /** @defgroup RCCEx_Peripheral_Configuration Peripheral Configuration
   * @brief  Macros to configure clock source of different peripherals.
   * @{
-  */  
+  */
 
 #if defined(STM32F102x6) || defined(STM32F102xB) || defined(STM32F103x6)\
  || defined(STM32F103xB) || defined(STM32F103xE) || defined(STM32F103xG)
@@ -1755,8 +1753,8 @@ typedef struct
 #if defined(STM32F105xC) || defined(STM32F107xC)
 
 /** @addtogroup RCCEx_HSE_Configuration
-  * @{   
-  */ 
+  * @{
+  */
 
 /**
   * @brief  Macro to configure the PLL2 & PLLI2S Predivision factor.
@@ -1768,7 +1766,7 @@ typedef struct
   */
 #define __HAL_RCC_HSE_PREDIV2_CONFIG(__HSE_PREDIV2_VALUE__) \
                   MODIFY_REG(RCC->CFGR2, RCC_CFGR2_PREDIV2, (uint32_t)(__HSE_PREDIV2_VALUE__))
-                  
+
 /**
   * @brief  Macro to get prediv2 factor for PLL2 & PLL3.
   */
@@ -1779,11 +1777,11 @@ typedef struct
   */
 
 /** @addtogroup RCCEx_PLLI2S_Configuration
-  * @{   
-  */ 
+  * @{
+  */
 
 /** @brief Macros to enable the main PLL2.
-  * @note   After enabling the main PLL2, the application software should wait on 
+  * @note   After enabling the main PLL2, the application software should wait on
   *         PLL2RDY flag to be set indicating that PLL2 clock is stable and can
   *         be used as system clock source.
   * @note   The main PLL2 is disabled by hardware when entering STOP and STANDBY modes.
@@ -1798,7 +1796,7 @@ typedef struct
 
 /** @brief macros to configure the main PLL2 multiplication factor.
   * @note   This function must be used only when the main PLL2 is disabled.
-  *  
+  *
   * @param  __PLL2MUL__ specifies the multiplication factor for PLL2 VCO output clock
   *          This parameter can be one of the following values:
   *             @arg @ref RCC_PLL2_MUL8 PLL2VCO = PLL2 clock entry x 8
@@ -1810,7 +1808,7 @@ typedef struct
   *             @arg @ref RCC_PLL2_MUL14 PLL2VCO = PLL2 clock entry x 14
   *             @arg @ref RCC_PLL2_MUL16 PLL2VCO = PLL2 clock entry x 16
   *             @arg @ref RCC_PLL2_MUL20 PLL2VCO = PLL2 clock entry x 20
-  *   
+  *
   */
 #define __HAL_RCC_PLL2_CONFIG(__PLL2MUL__)\
           MODIFY_REG(RCC->CFGR2, RCC_CFGR2_PLL2MUL,(__PLL2MUL__))
@@ -1822,7 +1820,7 @@ typedef struct
 /** @defgroup RCCEx_I2S_Configuration I2S Configuration
   * @brief  Macros to configure clock source of I2S peripherals.
   * @{
-  */  
+  */
 
 /** @brief  Macro to configure the I2S2 clock.
   * @param  __I2S2CLKSOURCE__ specifies the I2S2 clock source.
@@ -1911,11 +1909,11 @@ HAL_StatusTypeDef HAL_RCCEx_DisablePLL2(void);
 /**
   * @}
   */
-  
+
 /**
   * @}
   */
-  
+
 #ifdef __cplusplus
 }
 #endif

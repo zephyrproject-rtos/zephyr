@@ -2,25 +2,23 @@
   ******************************************************************************
   * @file    stm32f1xx_ll_sdmmc.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   SDIO Low Layer HAL module driver.
-  *    
-  *          This file provides firmware functions to manage the following 
+  *
+  *          This file provides firmware functions to manage the following
   *          functionalities of the SDIO peripheral:
   *           + Initialization/de-initialization functions
   *           + I/O operation functions
-  *           + Peripheral Control functions 
+  *           + Peripheral Control functions
   *           + Peripheral State functions
-  *         
+  *
   @verbatim
   ==============================================================================
                        ##### SDMMC peripheral features #####
-  ==============================================================================        
+  ==============================================================================
     [..] The SD/SDMMC MMC card host interface (SDMMC) provides an interface between the APB2
          peripheral bus and MultiMedia cards (MMCs), SD memory cards, SDMMC cards and CE-ATA
          devices.
-    
+
     [..] The SDMMC features include the following:
          (+) Full compliance with MultiMedia Card System Specification Version 4.2. Card support
              for three different databus modes: 1-bit (default), 4-bit and 8-bit
@@ -32,48 +30,48 @@
              Rev1.1)
          (+) Data transfer up to 48 MHz for the 8 bit mode
          (+) Data and command output enable signals to control external bidirectional drivers.
-                 
-   
+
+
                            ##### How to use this driver #####
   ==============================================================================
     [..]
-      This driver is a considered as a driver of service for external devices drivers 
+      This driver is a considered as a driver of service for external devices drivers
       that interfaces with the SDMMC peripheral.
-      According to the device used (SD card/ MMC card / SDMMC card ...), a set of APIs 
+      According to the device used (SD card/ MMC card / SDMMC card ...), a set of APIs
       is used in the device's driver to perform SDMMC operations and functionalities.
-   
+
       This driver is almost transparent for the final user, it is only used to implement other
       functionalities of the external device.
-   
+
     [..]
       (+) The SDIO peripheral uses two clock signals:
           (++) SDIO adapter clock (SDIOCLK = HCLK)
           (++) AHB bus clock (HCLK/2)
-       
+
           -@@- PCLK2 and SDMMC_CK clock frequencies must respect the following condition:
                Frequency(PCLK2) >= (3 / 8 x Frequency(SDMMC_CK))
-  
+
       (+) Enable/Disable peripheral clock using RCC peripheral macros related to SDMMC
           peripheral.
 
-      (+) Enable the Power ON State using the SDIO_PowerState_ON(SDIOx) 
+      (+) Enable the Power ON State using the SDIO_PowerState_ON(SDIOx)
           function and disable it using the function SDIO_PowerState_OFF(SDIOx).
-                
+
       (+) Enable/Disable the clock using the __SDIO_ENABLE()/__SDIO_DISABLE() macros.
-  
-      (+) Enable/Disable the peripheral interrupts using the macros __SDIO_ENABLE_IT(hsdio, IT) 
-          and __SDIO_DISABLE_IT(hsdio, IT) if you need to use interrupt mode. 
-  
-      (+) When using the DMA mode 
+
+      (+) Enable/Disable the peripheral interrupts using the macros __SDIO_ENABLE_IT(hsdio, IT)
+          and __SDIO_DISABLE_IT(hsdio, IT) if you need to use interrupt mode.
+
+      (+) When using the DMA mode
           (++) Configure the DMA in the MSP layer of the external device
-          (++) Active the needed channel Request 
+          (++) Active the needed channel Request
           (++) Enable the DMA using __SDIO_DMA_ENABLE() macro or Disable it using the macro
                __SDIO_DMA_DISABLE().
-  
-      (+) To control the CPSM (Command Path State Machine) and send 
-          commands to the card use the SDIO_SendCommand(), 
+
+      (+) To control the CPSM (Command Path State Machine) and send
+          commands to the card use the SDIO_SendCommand(),
           SDIO_GetCommandResponse() and SDIO_GetResponse() functions. First, user has
-          to fill the command structure (pointer to SDIO_CmdInitTypeDef) according 
+          to fill the command structure (pointer to SDIO_CmdInitTypeDef) according
           to the selected command to be sent.
           The parameters that should be filled are:
            (++) Command Argument
@@ -81,16 +79,16 @@
            (++) Command Response type
            (++) Command Wait
            (++) CPSM Status (Enable or Disable).
-  
+
           -@@- To check if the command is well received, read the SDIO_CMDRESP
               register using the SDIO_GetCommandResponse().
               The SDMMC responses registers (SDIO_RESP1 to SDIO_RESP2), use the
               SDIO_GetResponse() function.
-  
-      (+) To control the DPSM (Data Path State Machine) and send/receive 
-           data to/from the card use the SDIO_ConfigData(), SDIO_GetDataCounter(), 
+
+      (+) To control the DPSM (Data Path State Machine) and send/receive
+           data to/from the card use the SDIO_ConfigData(), SDIO_GetDataCounter(),
           SDIO_ReadFIFO(), SDIO_WriteFIFO() and SDIO_GetFIFOCount() functions.
-  
+
     *** Read Operations ***
     =======================
     [..]
@@ -103,14 +101,14 @@
            (++) Data Transfer direction: should be from card (To SDMMC)
            (++) Data Transfer mode
            (++) DPSM Status (Enable or Disable)
-                                     
+
       (#) Configure the SDMMC resources to receive the data from the card
           according to selected transfer mode (Refer to Step 8, 9 and 10).
-  
+
       (#) Send the selected Read command (refer to step 11).
-                    
+
       (#) Use the SDIO flags/interrupts to check the transfer status.
-  
+
     *** Write Operations ***
     ========================
     [..]
@@ -123,23 +121,23 @@
           (++) Data Transfer direction:  should be to card (To CARD)
           (++) Data Transfer mode
           (++) DPSM Status (Enable or Disable)
-  
-     (#) Configure the SDMMC resources to send the data to the card according to 
+
+     (#) Configure the SDMMC resources to send the data to the card according to
          selected transfer mode.
-                     
+
      (#) Send the selected Write command.
-                    
+
      (#) Use the SDIO flags/interrupts to check the transfer status.
-       
+
     *** Command management operations ***
     =====================================
     [..]
-     (#) The commands used for Read/Write//Erase operations are managed in 
-         separate functions. 
+     (#) The commands used for Read/Write//Erase operations are managed in
+         separate functions.
          Each function allows to send the needed command with the related argument,
          then check the response.
          By the same approach, you could implement a command and check the response.
-  
+
   @endverbatim
   ******************************************************************************
   * @attention
@@ -169,7 +167,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
@@ -205,15 +203,15 @@ static uint32_t SDMMC_GetCmdResp6(SDIO_TypeDef *SDIOx, uint8_t SD_CMD, uint16_t 
   * @{
   */
 
-/** @defgroup HAL_SDMMC_LL_Group1 Initialization de-initialization functions 
- *  @brief    Initialization and Configuration functions 
+/** @defgroup HAL_SDMMC_LL_Group1 Initialization de-initialization functions
+ *  @brief    Initialization and Configuration functions
  *
-@verbatim    
+@verbatim
  ===============================================================================
               ##### Initialization/de-initialization functions #####
  ===============================================================================
     [..]  This section provides functions allowing to:
- 
+
 @endverbatim
   * @{
   */
@@ -222,7 +220,7 @@ static uint32_t SDMMC_GetCmdResp6(SDIO_TypeDef *SDIOx, uint8_t SD_CMD, uint16_t 
   * @brief  Initializes the SDMMC according to the specified
   *         parameters in the SDMMC_InitTypeDef and create the associated handle.
   * @param  SDIOx: Pointer to SDMMC register base
-  * @param  Init: SDMMC initialization structure   
+  * @param  Init: SDMMC initialization structure
   * @retval HAL status
   */
 HAL_StatusTypeDef SDIO_Init(SDIO_TypeDef *SDIOx, SDIO_InitTypeDef Init)
@@ -231,13 +229,13 @@ HAL_StatusTypeDef SDIO_Init(SDIO_TypeDef *SDIOx, SDIO_InitTypeDef Init)
 
   /* Check the parameters */
   assert_param(IS_SDIO_ALL_INSTANCE(SDIOx));
-  assert_param(IS_SDIO_CLOCK_EDGE(Init.ClockEdge)); 
+  assert_param(IS_SDIO_CLOCK_EDGE(Init.ClockEdge));
   assert_param(IS_SDIO_CLOCK_BYPASS(Init.ClockBypass));
   assert_param(IS_SDIO_CLOCK_POWER_SAVE(Init.ClockPowerSave));
   assert_param(IS_SDIO_BUS_WIDE(Init.BusWide));
   assert_param(IS_SDIO_HARDWARE_FLOW_CONTROL(Init.HardwareFlowControl));
   assert_param(IS_SDIO_CLKDIV(Init.ClockDiv));
-  
+
   /* Set SDMMC configuration parameters */
   tmpreg |= (Init.ClockEdge           |\
              Init.ClockBypass         |\
@@ -245,10 +243,10 @@ HAL_StatusTypeDef SDIO_Init(SDIO_TypeDef *SDIOx, SDIO_InitTypeDef Init)
              Init.BusWide             |\
              Init.HardwareFlowControl |\
              Init.ClockDiv
-             ); 
-  
+             );
+
   /* Write to SDMMC CLKCR */
-  MODIFY_REG(SDIOx->CLKCR, CLKCR_CLEAR_MASK, tmpreg);  
+  MODIFY_REG(SDIOx->CLKCR, CLKCR_CLEAR_MASK, tmpreg);
 
   return HAL_OK;
 }
@@ -258,15 +256,15 @@ HAL_StatusTypeDef SDIO_Init(SDIO_TypeDef *SDIOx, SDIO_InitTypeDef Init)
   * @}
   */
 
-/** @defgroup HAL_SDMMC_LL_Group2 IO operation functions 
- *  @brief   Data transfers functions 
+/** @defgroup HAL_SDMMC_LL_Group2 IO operation functions
+ *  @brief   Data transfers functions
  *
-@verbatim   
+@verbatim
  ===============================================================================
                       ##### I/O operation functions #####
- ===============================================================================  
+ ===============================================================================
     [..]
-    This subsection provides a set of functions allowing to manage the SDMMC data 
+    This subsection provides a set of functions allowing to manage the SDMMC data
     transfers.
 
 @endverbatim
@@ -274,25 +272,25 @@ HAL_StatusTypeDef SDIO_Init(SDIO_TypeDef *SDIOx, SDIO_InitTypeDef Init)
   */
 
 /**
-  * @brief  Read data (word) from Rx FIFO in blocking mode (polling) 
+  * @brief  Read data (word) from Rx FIFO in blocking mode (polling)
   * @param  SDIOx: Pointer to SDMMC register base
   * @retval HAL status
   */
 uint32_t SDIO_ReadFIFO(SDIO_TypeDef *SDIOx)
 {
-  /* Read data from Rx FIFO */ 
+  /* Read data from Rx FIFO */
   return (SDIOx->FIFO);
 }
 
 /**
-  * @brief  Write data (word) to Tx FIFO in blocking mode (polling) 
+  * @brief  Write data (word) to Tx FIFO in blocking mode (polling)
   * @param  SDIOx: Pointer to SDMMC register base
   * @param  pWriteData: pointer to data to write
   * @retval HAL status
   */
 HAL_StatusTypeDef SDIO_WriteFIFO(SDIO_TypeDef *SDIOx, uint32_t *pWriteData)
-{ 
-  /* Write data to FIFO */ 
+{
+  /* Write data to FIFO */
   SDIOx->FIFO = *pWriteData;
 
   return HAL_OK;
@@ -302,15 +300,15 @@ HAL_StatusTypeDef SDIO_WriteFIFO(SDIO_TypeDef *SDIOx, uint32_t *pWriteData)
   * @}
   */
 
-/** @defgroup HAL_SDMMC_LL_Group3 Peripheral Control functions 
- *  @brief   management functions 
+/** @defgroup HAL_SDMMC_LL_Group3 Peripheral Control functions
+ *  @brief   management functions
  *
-@verbatim   
+@verbatim
  ===============================================================================
                       ##### Peripheral Control functions #####
- ===============================================================================  
+ ===============================================================================
     [..]
-    This subsection provides a set of functions allowing to control the SDMMC data 
+    This subsection provides a set of functions allowing to control the SDMMC data
     transfers.
 
 @endverbatim
@@ -318,20 +316,20 @@ HAL_StatusTypeDef SDIO_WriteFIFO(SDIO_TypeDef *SDIOx, uint32_t *pWriteData)
   */
 
 /**
-  * @brief  Set SDMMC Power state to ON. 
+  * @brief  Set SDMMC Power state to ON.
   * @param  SDIOx: Pointer to SDMMC register base
   * @retval HAL status
   */
 HAL_StatusTypeDef SDIO_PowerState_ON(SDIO_TypeDef *SDIOx)
-{  
-  /* Set power state to ON */ 
+{
+  /* Set power state to ON */
   SDIOx->POWER = SDIO_POWER_PWRCTRL;
-  
+
   return HAL_OK;
 }
 
 /**
-  * @brief  Set SDMMC Power state to OFF. 
+  * @brief  Set SDMMC Power state to OFF.
   * @param  SDIOx: Pointer to SDMMC register base
   * @retval HAL status
   */
@@ -339,36 +337,36 @@ HAL_StatusTypeDef SDIO_PowerState_OFF(SDIO_TypeDef *SDIOx)
 {
   /* Set power state to OFF */
   SDIOx->POWER = 0x00000000U;
-  
+
   return HAL_OK;
 }
 
 /**
-  * @brief  Get SDMMC Power state. 
+  * @brief  Get SDMMC Power state.
   * @param  SDIOx: Pointer to SDMMC register base
-  * @retval Power status of the controller. The returned value can be one of the 
+  * @retval Power status of the controller. The returned value can be one of the
   *         following values:
   *            - 0x00: Power OFF
   *            - 0x02: Power UP
-  *            - 0x03: Power ON 
+  *            - 0x03: Power ON
   */
-uint32_t SDIO_GetPowerState(SDIO_TypeDef *SDIOx)  
+uint32_t SDIO_GetPowerState(SDIO_TypeDef *SDIOx)
 {
   return (SDIOx->POWER & SDIO_POWER_PWRCTRL);
 }
 
 /**
   * @brief  Configure the SDMMC command path according to the specified parameters in
-  *         SDIO_CmdInitTypeDef structure and send the command 
+  *         SDIO_CmdInitTypeDef structure and send the command
   * @param  SDIOx: Pointer to SDMMC register base
-  * @param  Command: pointer to a SDIO_CmdInitTypeDef structure that contains 
+  * @param  Command: pointer to a SDIO_CmdInitTypeDef structure that contains
   *         the configuration information for the SDMMC command
   * @retval HAL status
   */
 HAL_StatusTypeDef SDIO_SendCommand(SDIO_TypeDef *SDIOx, SDIO_CmdInitTypeDef *Command)
 {
   uint32_t tmpreg = 0U;
-  
+
   /* Check the parameters */
   assert_param(IS_SDIO_CMD_INDEX(Command->CmdIndex));
   assert_param(IS_SDIO_RESPONSE(Command->Response));
@@ -383,11 +381,11 @@ HAL_StatusTypeDef SDIO_SendCommand(SDIO_TypeDef *SDIOx, SDIO_CmdInitTypeDef *Com
                        Command->Response         |\
                        Command->WaitForInterrupt |\
                        Command->CPSM);
-  
+
   /* Write to SDMMC CMD register */
-  MODIFY_REG(SDIOx->CMD, CMD_CLEAR_MASK, tmpreg); 
-  
-  return HAL_OK;  
+  MODIFY_REG(SDIOx->CMD, CMD_CLEAR_MASK, tmpreg);
+
+  return HAL_OK;
 }
 
 /**
@@ -403,13 +401,13 @@ uint8_t SDIO_GetCommandResponse(SDIO_TypeDef *SDIOx)
 
 /**
   * @brief  Return the response received from the card for the last command
-  * @param  SDIOx: Pointer to SDMMC register base    
-  * @param  Response: Specifies the SDMMC response register. 
+  * @param  SDIOx: Pointer to SDMMC register base
+  * @param  Response: Specifies the SDMMC response register.
   *          This parameter can be one of the following values:
   *            @arg SDIO_RESP1: Response Register 1
   *            @arg SDIO_RESP2: Response Register 2
   *            @arg SDIO_RESP3: Response Register 3
-  *            @arg SDIO_RESP4: Response Register 4  
+  *            @arg SDIO_RESP4: Response Register 4
   * @retval The Corresponding response register value
   */
 uint32_t SDIO_GetResponse(SDIO_TypeDef *SDIOx, uint32_t Response)
@@ -421,22 +419,22 @@ uint32_t SDIO_GetResponse(SDIO_TypeDef *SDIOx, uint32_t Response)
 
   /* Get the response */
   tmp = (uint32_t)&(SDIOx->RESP1) + Response;
-  
+
   return (*(__IO uint32_t *) tmp);
-}  
+}
 
 /**
-  * @brief  Configure the SDMMC data path according to the specified 
+  * @brief  Configure the SDMMC data path according to the specified
   *         parameters in the SDIO_DataInitTypeDef.
-  * @param  SDIOx: Pointer to SDMMC register base  
-  * @param  Data : pointer to a SDIO_DataInitTypeDef structure 
+  * @param  SDIOx: Pointer to SDMMC register base
+  * @param  Data : pointer to a SDIO_DataInitTypeDef structure
   *         that contains the configuration information for the SDMMC data.
   * @retval HAL status
   */
 HAL_StatusTypeDef SDIO_ConfigData(SDIO_TypeDef *SDIOx, SDIO_DataInitTypeDef* Data)
 {
   uint32_t tmpreg = 0U;
-  
+
   /* Check the parameters */
   assert_param(IS_SDIO_DATA_LENGTH(Data->DataLength));
   assert_param(IS_SDIO_BLOCK_SIZE(Data->DataBlockSize));
@@ -455,7 +453,7 @@ HAL_StatusTypeDef SDIO_ConfigData(SDIO_TypeDef *SDIOx, SDIO_DataInitTypeDef* Dat
                        Data->TransferDir   |\
                        Data->TransferMode  |\
                        Data->DPSM);
-  
+
   /* Write to SDMMC DCTRL */
   MODIFY_REG(SDIOx->DCTRL, DCTRL_CLEAR_MASK, tmpreg);
 
@@ -475,7 +473,7 @@ uint32_t SDIO_GetDataCounter(SDIO_TypeDef *SDIOx)
 
 /**
   * @brief  Get the FIFO data
-  * @param  SDIOx: Pointer to SDMMC register base 
+  * @param  SDIOx: Pointer to SDMMC register base
   * @retval Data received
   */
 uint32_t SDIO_GetFIFOCount(SDIO_TypeDef *SDIOx)
@@ -485,7 +483,7 @@ uint32_t SDIO_GetFIFOCount(SDIO_TypeDef *SDIOx)
 
 /**
   * @brief  Sets one of the two options of inserting read wait interval.
-  * @param  SDIOx: Pointer to SDMMC register base   
+  * @param  SDIOx: Pointer to SDMMC register base
   * @param  SDIO_ReadWaitMode: SDMMC Read Wait operation mode.
   *          This parameter can be:
   *            @arg SDIO_READ_WAIT_MODE_CLK: Read Wait control by stopping SDMMCCLK
@@ -499,8 +497,8 @@ HAL_StatusTypeDef SDIO_SetSDMMCReadWaitMode(SDIO_TypeDef *SDIOx, uint32_t SDIO_R
 
   /* Set SDMMC read wait mode */
   MODIFY_REG(SDIOx->DCTRL, SDIO_DCTRL_RWMOD, SDIO_ReadWaitMode);
-  
-  return HAL_OK;  
+
+  return HAL_OK;
 }
 
 /**
@@ -508,13 +506,13 @@ HAL_StatusTypeDef SDIO_SetSDMMCReadWaitMode(SDIO_TypeDef *SDIOx, uint32_t SDIO_R
   */
 
 
-/** @defgroup HAL_SDMMC_LL_Group4 Command management functions 
- *  @brief   Data transfers functions 
+/** @defgroup HAL_SDMMC_LL_Group4 Command management functions
+ *  @brief   Data transfers functions
  *
-@verbatim   
+@verbatim
  ===============================================================================
                    ##### Commands management functions #####
- ===============================================================================  
+ ===============================================================================
     [..]
     This subsection provides a set of functions allowing to manage the needed commands.
 
@@ -524,22 +522,22 @@ HAL_StatusTypeDef SDIO_SetSDMMCReadWaitMode(SDIO_TypeDef *SDIOx, uint32_t SDIO_R
 
 /**
   * @brief  Send the Data Block Lenght command and check the response
-  * @param  SDIOx: Pointer to SDMMC register base 
+  * @param  SDIOx: Pointer to SDMMC register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdBlockLength(SDIO_TypeDef *SDIOx, uint32_t BlockSize)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
-  /* Set Block Size for Card */ 
+
+  /* Set Block Size for Card */
   sdmmc_cmdinit.Argument         = (uint32_t)BlockSize;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_SET_BLOCKLEN;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_SET_BLOCKLEN, SDIO_CMDTIMEOUT);
 
@@ -548,22 +546,22 @@ uint32_t SDMMC_CmdBlockLength(SDIO_TypeDef *SDIOx, uint32_t BlockSize)
 
 /**
   * @brief  Send the Read Single Block command and check the response
-  * @param  SDIOx: Pointer to SDMMC register base 
+  * @param  SDIOx: Pointer to SDMMC register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdReadSingleBlock(SDIO_TypeDef *SDIOx, uint32_t ReadAdd)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
-  /* Set Block Size for Card */ 
+
+  /* Set Block Size for Card */
   sdmmc_cmdinit.Argument         = (uint32_t)ReadAdd;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_READ_SINGLE_BLOCK;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_READ_SINGLE_BLOCK, SDIO_CMDTIMEOUT);
 
@@ -572,22 +570,22 @@ uint32_t SDMMC_CmdReadSingleBlock(SDIO_TypeDef *SDIOx, uint32_t ReadAdd)
 
 /**
   * @brief  Send the Read Multi Block command and check the response
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdReadMultiBlock(SDIO_TypeDef *SDIOx, uint32_t ReadAdd)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
-  /* Set Block Size for Card */ 
+
+  /* Set Block Size for Card */
   sdmmc_cmdinit.Argument         = (uint32_t)ReadAdd;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_READ_MULT_BLOCK;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_READ_MULT_BLOCK, SDIO_CMDTIMEOUT);
 
@@ -596,22 +594,22 @@ uint32_t SDMMC_CmdReadMultiBlock(SDIO_TypeDef *SDIOx, uint32_t ReadAdd)
 
 /**
   * @brief  Send the Write Single Block command and check the response
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdWriteSingleBlock(SDIO_TypeDef *SDIOx, uint32_t WriteAdd)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
-  /* Set Block Size for Card */ 
+
+  /* Set Block Size for Card */
   sdmmc_cmdinit.Argument         = (uint32_t)WriteAdd;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_WRITE_SINGLE_BLOCK;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_WRITE_SINGLE_BLOCK, SDIO_CMDTIMEOUT);
 
@@ -620,22 +618,22 @@ uint32_t SDMMC_CmdWriteSingleBlock(SDIO_TypeDef *SDIOx, uint32_t WriteAdd)
 
 /**
   * @brief  Send the Write Multi Block command and check the response
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdWriteMultiBlock(SDIO_TypeDef *SDIOx, uint32_t WriteAdd)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
-  /* Set Block Size for Card */ 
+
+  /* Set Block Size for Card */
   sdmmc_cmdinit.Argument         = (uint32_t)WriteAdd;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_WRITE_MULT_BLOCK;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_WRITE_MULT_BLOCK, SDIO_CMDTIMEOUT);
 
@@ -644,22 +642,22 @@ uint32_t SDMMC_CmdWriteMultiBlock(SDIO_TypeDef *SDIOx, uint32_t WriteAdd)
 
 /**
   * @brief  Send the Start Address Erase command for SD and check the response
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdSDEraseStartAdd(SDIO_TypeDef *SDIOx, uint32_t StartAdd)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
-  /* Set Block Size for Card */ 
+
+  /* Set Block Size for Card */
   sdmmc_cmdinit.Argument         = (uint32_t)StartAdd;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_SD_ERASE_GRP_START;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_SD_ERASE_GRP_START, SDIO_CMDTIMEOUT);
 
@@ -668,22 +666,22 @@ uint32_t SDMMC_CmdSDEraseStartAdd(SDIO_TypeDef *SDIOx, uint32_t StartAdd)
 
 /**
   * @brief  Send the End Address Erase command for SD and check the response
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdSDEraseEndAdd(SDIO_TypeDef *SDIOx, uint32_t EndAdd)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
-  /* Set Block Size for Card */ 
+
+  /* Set Block Size for Card */
   sdmmc_cmdinit.Argument         = (uint32_t)EndAdd;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_SD_ERASE_GRP_END;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_SD_ERASE_GRP_END, SDIO_CMDTIMEOUT);
 
@@ -692,22 +690,22 @@ uint32_t SDMMC_CmdSDEraseEndAdd(SDIO_TypeDef *SDIOx, uint32_t EndAdd)
 
 /**
   * @brief  Send the Start Address Erase command and check the response
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdEraseStartAdd(SDIO_TypeDef *SDIOx, uint32_t StartAdd)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
-  /* Set Block Size for Card */ 
+
+  /* Set Block Size for Card */
   sdmmc_cmdinit.Argument         = (uint32_t)StartAdd;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_ERASE_GRP_START;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_ERASE_GRP_START, SDIO_CMDTIMEOUT);
 
@@ -716,22 +714,22 @@ uint32_t SDMMC_CmdEraseStartAdd(SDIO_TypeDef *SDIOx, uint32_t StartAdd)
 
 /**
   * @brief  Send the End Address Erase command and check the response
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdEraseEndAdd(SDIO_TypeDef *SDIOx, uint32_t EndAdd)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
-  /* Set Block Size for Card */ 
+
+  /* Set Block Size for Card */
   sdmmc_cmdinit.Argument         = (uint32_t)EndAdd;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_ERASE_GRP_END;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_ERASE_GRP_END, SDIO_CMDTIMEOUT);
 
@@ -740,22 +738,22 @@ uint32_t SDMMC_CmdEraseEndAdd(SDIO_TypeDef *SDIOx, uint32_t EndAdd)
 
 /**
   * @brief  Send the Erase command and check the response
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdErase(SDIO_TypeDef *SDIOx)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
-  /* Set Block Size for Card */ 
+
+  /* Set Block Size for Card */
   sdmmc_cmdinit.Argument         = 0U;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_ERASE;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_ERASE, SDIO_MAXERASETIMEOUT);
 
@@ -764,14 +762,14 @@ uint32_t SDMMC_CmdErase(SDIO_TypeDef *SDIOx)
 
 /**
   * @brief  Send the Stop Transfer command and check the response.
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdStopTransfer(SDIO_TypeDef *SDIOx)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
+
   /* Send CMD12 STOP_TRANSMISSION  */
   sdmmc_cmdinit.Argument         = 0U;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_STOP_TRANSMISSION;
@@ -779,7 +777,7 @@ uint32_t SDMMC_CmdStopTransfer(SDIO_TypeDef *SDIOx)
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_STOP_TRANSMISSION, 100000000U);
 
@@ -788,15 +786,15 @@ uint32_t SDMMC_CmdStopTransfer(SDIO_TypeDef *SDIOx)
 
 /**
   * @brief  Send the Select Deselect command and check the response.
-  * @param  SDIOx: Pointer to SDIO register base 
-  * @param  addr: Address of the card to be selected  
+  * @param  SDIOx: Pointer to SDIO register base
+  * @param  addr: Address of the card to be selected
   * @retval HAL status
   */
 uint32_t SDMMC_CmdSelDesel(SDIO_TypeDef *SDIOx, uint64_t Addr)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
+
   /* Send CMD7 SDMMC_SEL_DESEL_CARD */
   sdmmc_cmdinit.Argument         = (uint32_t)Addr;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_SEL_DESEL_CARD;
@@ -804,7 +802,7 @@ uint32_t SDMMC_CmdSelDesel(SDIO_TypeDef *SDIOx, uint64_t Addr)
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_SEL_DESEL_CARD, SDIO_CMDTIMEOUT);
 
@@ -813,21 +811,21 @@ uint32_t SDMMC_CmdSelDesel(SDIO_TypeDef *SDIOx, uint64_t Addr)
 
 /**
   * @brief  Send the Go Idle State command and check the response.
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdGoIdleState(SDIO_TypeDef *SDIOx)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
+
   sdmmc_cmdinit.Argument         = 0U;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_GO_IDLE_STATE;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_NO;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdError(SDIOx);
 
@@ -836,14 +834,14 @@ uint32_t SDMMC_CmdGoIdleState(SDIO_TypeDef *SDIOx)
 
 /**
   * @brief  Send the Operating Condition command and check the response.
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdOperCond(SDIO_TypeDef *SDIOx)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
+
   /* Send CMD8 to verify SD card interface operating condition */
   /* Argument: - [31:12]: Reserved (shall be set to '0')
   - [11:8]: Supply Voltage (VHS) 0x1 (Range: 2.7-3.6 V)
@@ -855,7 +853,7 @@ uint32_t SDMMC_CmdOperCond(SDIO_TypeDef *SDIOx)
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp7(SDIOx);
 
@@ -863,24 +861,24 @@ uint32_t SDMMC_CmdOperCond(SDIO_TypeDef *SDIOx)
 }
 
 /**
-  * @brief  Send the Application command to verify that that the next command 
+  * @brief  Send the Application command to verify that that the next command
   *         is an application specific com-mand rather than a standard command
   *         and check the response.
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdAppCommand(SDIO_TypeDef *SDIOx, uint32_t Argument)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
+
   sdmmc_cmdinit.Argument         = (uint32_t)Argument;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_APP_CMD;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   /* If there is a HAL_ERROR, it is a MMC card, else
   it is a SD card: SD card 2.0 (voltage range mismatch)
@@ -891,23 +889,23 @@ uint32_t SDMMC_CmdAppCommand(SDIO_TypeDef *SDIOx, uint32_t Argument)
 }
 
 /**
-  * @brief  Send the command asking the accessed card to send its operating 
+  * @brief  Send the command asking the accessed card to send its operating
   *         condition register (OCR)
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdAppOperCommand(SDIO_TypeDef *SDIOx, uint32_t SdType)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
+
   sdmmc_cmdinit.Argument         = SDMMC_VOLTAGE_WINDOW_SD | SdType;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_SD_APP_OP_COND;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp3(SDIOx);
 
@@ -916,21 +914,21 @@ uint32_t SDMMC_CmdAppOperCommand(SDIO_TypeDef *SDIOx, uint32_t SdType)
 
 /**
   * @brief  Send the Bus Width command and check the response.
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdBusWidth(SDIO_TypeDef *SDIOx, uint32_t BusWidth)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
+
   sdmmc_cmdinit.Argument         = (uint32_t)BusWidth;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_APP_SD_SET_BUSWIDTH;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_APP_SD_SET_BUSWIDTH, SDIO_CMDTIMEOUT);
 
@@ -939,14 +937,14 @@ uint32_t SDMMC_CmdBusWidth(SDIO_TypeDef *SDIOx, uint32_t BusWidth)
 
 /**
   * @brief  Send the Send SCR command and check the response.
-  * @param  SDIOx: Pointer to SDMMC register base 
+  * @param  SDIOx: Pointer to SDMMC register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdSendSCR(SDIO_TypeDef *SDIOx)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
+
   /* Send CMD51 SD_APP_SEND_SCR */
   sdmmc_cmdinit.Argument         = 0U;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_SD_APP_SEND_SCR;
@@ -954,7 +952,7 @@ uint32_t SDMMC_CmdSendSCR(SDIO_TypeDef *SDIOx)
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_SD_APP_SEND_SCR, SDIO_CMDTIMEOUT);
 
@@ -963,14 +961,14 @@ uint32_t SDMMC_CmdSendSCR(SDIO_TypeDef *SDIOx)
 
 /**
   * @brief  Send the Send CID command and check the response.
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdSendCID(SDIO_TypeDef *SDIOx)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
+
   /* Send CMD2 ALL_SEND_CID */
   sdmmc_cmdinit.Argument         = 0U;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_ALL_SEND_CID;
@@ -978,7 +976,7 @@ uint32_t SDMMC_CmdSendCID(SDIO_TypeDef *SDIOx)
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp2(SDIOx);
 
@@ -987,14 +985,14 @@ uint32_t SDMMC_CmdSendCID(SDIO_TypeDef *SDIOx)
 
 /**
   * @brief  Send the Send CSD command and check the response.
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdSendCSD(SDIO_TypeDef *SDIOx, uint32_t Argument)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
+
   /* Send CMD9 SEND_CSD */
   sdmmc_cmdinit.Argument         = (uint32_t)Argument;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_SEND_CSD;
@@ -1002,7 +1000,7 @@ uint32_t SDMMC_CmdSendCSD(SDIO_TypeDef *SDIOx, uint32_t Argument)
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp2(SDIOx);
 
@@ -1011,14 +1009,14 @@ uint32_t SDMMC_CmdSendCSD(SDIO_TypeDef *SDIOx, uint32_t Argument)
 
 /**
   * @brief  Send the Send CSD command and check the response.
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdSetRelAdd(SDIO_TypeDef *SDIOx, uint16_t *pRCA)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
+
   /* Send CMD3 SD_CMD_SET_REL_ADDR */
   sdmmc_cmdinit.Argument         = 0U;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_SET_REL_ADDR;
@@ -1026,7 +1024,7 @@ uint32_t SDMMC_CmdSetRelAdd(SDIO_TypeDef *SDIOx, uint16_t *pRCA)
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp6(SDIOx, SDMMC_CMD_SET_REL_ADDR, pRCA);
 
@@ -1035,21 +1033,21 @@ uint32_t SDMMC_CmdSetRelAdd(SDIO_TypeDef *SDIOx, uint16_t *pRCA)
 
 /**
   * @brief  Send the Status command and check the response.
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdSendStatus(SDIO_TypeDef *SDIOx, uint32_t Argument)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
+
   sdmmc_cmdinit.Argument         = (uint32_t)Argument;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_SEND_STATUS;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_SEND_STATUS, SDIO_CMDTIMEOUT);
 
@@ -1058,21 +1056,21 @@ uint32_t SDMMC_CmdSendStatus(SDIO_TypeDef *SDIOx, uint32_t Argument)
 
 /**
   * @brief  Send the Status register command and check the response.
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @retval HAL status
   */
 uint32_t SDMMC_CmdStatusRegister(SDIO_TypeDef *SDIOx)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
+
   sdmmc_cmdinit.Argument         = 0U;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_SD_APP_STATUS;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_SD_APP_STATUS, SDIO_CMDTIMEOUT);
 
@@ -1080,9 +1078,9 @@ uint32_t SDMMC_CmdStatusRegister(SDIO_TypeDef *SDIOx)
 }
 
 /**
-  * @brief  Sends host capacity support information and activates the card's 
+  * @brief  Sends host capacity support information and activates the card's
   *         initialization process. Send SDMMC_CMD_SEND_OP_COND command
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @parame Argument: Argument used for the command
   * @retval HAL status
   */
@@ -1090,14 +1088,14 @@ uint32_t SDMMC_CmdOpCondition(SDIO_TypeDef *SDIOx, uint32_t Argument)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
+
   sdmmc_cmdinit.Argument         = Argument;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_SEND_OP_COND;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp3(SDIOx);
 
@@ -1106,7 +1104,7 @@ uint32_t SDMMC_CmdOpCondition(SDIO_TypeDef *SDIOx, uint32_t Argument)
 
 /**
   * @brief  Checks switchable function and switch card function. SDMMC_CMD_HS_SWITCH comand
-  * @param  SDIOx: Pointer to SDIO register base 
+  * @param  SDIOx: Pointer to SDIO register base
   * @parame Argument: Argument used for the command
   * @retval HAL status
   */
@@ -1114,14 +1112,14 @@ uint32_t SDMMC_CmdSwitch(SDIO_TypeDef *SDIOx, uint32_t Argument)
 {
   SDIO_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
-  
+
   sdmmc_cmdinit.Argument         = Argument;
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_HS_SWITCH;
   sdmmc_cmdinit.Response         = SDIO_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDIO_WAIT_NO;
   sdmmc_cmdinit.CPSM             = SDIO_CPSM_ENABLE;
   SDIO_SendCommand(SDIOx, &sdmmc_cmdinit);
-  
+
   /* Check for error conditions */
   errorstate = SDMMC_GetCmdResp1(SDIOx, SDMMC_CMD_HS_SWITCH, SDIO_CMDTIMEOUT);
 
@@ -1132,11 +1130,11 @@ uint32_t SDMMC_CmdSwitch(SDIO_TypeDef *SDIOx, uint32_t Argument)
   * @}
   */
 
-/* Private function ----------------------------------------------------------*/  
+/* Private function ----------------------------------------------------------*/
 /** @addtogroup SD_Private_Functions
   * @{
   */
-    
+
 /**
   * @brief  Checks for error conditions for CMD0.
   * @param  hsd: SD handle
@@ -1147,70 +1145,70 @@ static uint32_t SDMMC_GetCmdError(SDIO_TypeDef *SDIOx)
   /* 8 is the number of required instructions cycles for the below loop statement.
   The SDMMC_CMDTIMEOUT is expressed in ms */
   register uint32_t count = SDIO_CMDTIMEOUT * (SystemCoreClock / 8U /1000U);
-  
+
   do
   {
     if (count-- == 0U)
     {
       return SDMMC_ERROR_TIMEOUT;
     }
-    
+
   }while(!__SDIO_GET_FLAG(SDIOx, SDIO_FLAG_CMDSENT));
-  
+
   /* Clear all the static flags */
   __SDIO_CLEAR_FLAG(SDIOx, SDIO_STATIC_FLAGS);
-  
+
   return SDMMC_ERROR_NONE;
 }
 
 /**
   * @brief  Checks for error conditions for R1 response.
   * @param  hsd: SD handle
-  * @param  SD_CMD: The sent command index  
+  * @param  SD_CMD: The sent command index
   * @retval SD Card error state
   */
 static uint32_t SDMMC_GetCmdResp1(SDIO_TypeDef *SDIOx, uint8_t SD_CMD, uint32_t Timeout)
 {
   uint32_t response_r1;
-  
+
   /* 8 is the number of required instructions cycles for the below loop statement.
   The Timeout is expressed in ms */
   register uint32_t count = Timeout * (SystemCoreClock / 8U /1000U);
-  
+
   do
   {
     if (count-- == 0U)
     {
       return SDMMC_ERROR_TIMEOUT;
     }
-    
+
   }while(!__SDIO_GET_FLAG(SDIOx, SDIO_FLAG_CCRCFAIL | SDIO_FLAG_CMDREND | SDIO_FLAG_CTIMEOUT));
-  
+
   if(__SDIO_GET_FLAG(SDIOx, SDIO_FLAG_CTIMEOUT))
   {
     __SDIO_CLEAR_FLAG(SDIOx, SDIO_FLAG_CTIMEOUT);
-    
+
     return SDMMC_ERROR_CMD_RSP_TIMEOUT;
   }
   else if(__SDIO_GET_FLAG(SDIOx, SDIO_FLAG_CCRCFAIL))
   {
     __SDIO_CLEAR_FLAG(SDIOx, SDIO_FLAG_CCRCFAIL);
-    
+
     return SDMMC_ERROR_CMD_CRC_FAIL;
   }
-  
+
   /* Check response received is of desired command */
   if(SDIO_GetCommandResponse(SDIOx) != SD_CMD)
   {
     return SDMMC_ERROR_CMD_CRC_FAIL;
   }
-  
+
   /* Clear all the static flags */
   __SDIO_CLEAR_FLAG(SDIOx, SDIO_STATIC_FLAGS);
-  
+
   /* We have received response, retrieve it for analysis  */
   response_r1 = SDIO_GetResponse(SDIOx, SDIO_RESP1);
-  
+
   if((response_r1 & SDMMC_OCR_ERRORBITS) == SDMMC_ALLZERO)
   {
     return SDMMC_ERROR_NONE;
@@ -1303,26 +1301,26 @@ static uint32_t SDMMC_GetCmdResp2(SDIO_TypeDef *SDIOx)
   /* 8 is the number of required instructions cycles for the below loop statement.
   The SDMMC_CMDTIMEOUT is expressed in ms */
   register uint32_t count = SDIO_CMDTIMEOUT * (SystemCoreClock / 8U /1000U);
-  
+
   do
   {
     if (count-- == 0U)
     {
       return SDMMC_ERROR_TIMEOUT;
     }
-    
+
   }while(!__SDIO_GET_FLAG(SDIOx, SDIO_FLAG_CCRCFAIL | SDIO_FLAG_CMDREND | SDIO_FLAG_CTIMEOUT));
-    
+
   if (__SDIO_GET_FLAG(SDIOx, SDIO_FLAG_CTIMEOUT))
   {
     __SDIO_CLEAR_FLAG(SDIOx, SDIO_FLAG_CTIMEOUT);
-    
+
     return SDMMC_ERROR_CMD_RSP_TIMEOUT;
   }
   else if (__SDIO_GET_FLAG(SDIOx, SDIO_FLAG_CCRCFAIL))
   {
     __SDIO_CLEAR_FLAG(SDIOx, SDIO_FLAG_CCRCFAIL);
-    
+
     return SDMMC_ERROR_CMD_CRC_FAIL;
   }
   else
@@ -1345,29 +1343,29 @@ static uint32_t SDMMC_GetCmdResp3(SDIO_TypeDef *SDIOx)
   /* 8 is the number of required instructions cycles for the below loop statement.
   The SDMMC_CMDTIMEOUT is expressed in ms */
   register uint32_t count = SDIO_CMDTIMEOUT * (SystemCoreClock / 8U /1000U);
-  
+
   do
   {
     if (count-- == 0U)
     {
       return SDMMC_ERROR_TIMEOUT;
     }
-    
+
   }while(!__SDIO_GET_FLAG(SDIOx, SDIO_FLAG_CCRCFAIL | SDIO_FLAG_CMDREND | SDIO_FLAG_CTIMEOUT));
-  
+
   if(__SDIO_GET_FLAG(SDIOx, SDIO_FLAG_CTIMEOUT))
   {
     __SDIO_CLEAR_FLAG(SDIOx, SDIO_FLAG_CTIMEOUT);
-    
+
     return SDMMC_ERROR_CMD_RSP_TIMEOUT;
   }
   else
- 
-  {  
+
+  {
     /* Clear all the static flags */
     __SDIO_CLEAR_FLAG(SDIOx, SDIO_STATIC_FLAGS);
   }
-  
+
   return SDMMC_ERROR_NONE;
 }
 
@@ -1375,8 +1373,8 @@ static uint32_t SDMMC_GetCmdResp3(SDIO_TypeDef *SDIOx)
   * @brief  Checks for error conditions for R6 (RCA) response.
   * @param  hsd: SD handle
   * @param  SD_CMD: The sent command index
-  * @param  pRCA: Pointer to the variable that will contain the SD card relative 
-  *         address RCA   
+  * @param  pRCA: Pointer to the variable that will contain the SD card relative
+  *         address RCA
   * @retval SD Card error state
   */
 static uint32_t SDMMC_GetCmdResp6(SDIO_TypeDef *SDIOx, uint8_t SD_CMD, uint16_t *pRCA)
@@ -1386,45 +1384,45 @@ static uint32_t SDMMC_GetCmdResp6(SDIO_TypeDef *SDIOx, uint8_t SD_CMD, uint16_t 
   /* 8 is the number of required instructions cycles for the below loop statement.
   The SDMMC_CMDTIMEOUT is expressed in ms */
   register uint32_t count = SDIO_CMDTIMEOUT * (SystemCoreClock / 8U /1000U);
-  
+
   do
   {
     if (count-- == 0U)
     {
       return SDMMC_ERROR_TIMEOUT;
     }
-    
+
   }while(!__SDIO_GET_FLAG(SDIOx, SDIO_FLAG_CCRCFAIL | SDIO_FLAG_CMDREND | SDIO_FLAG_CTIMEOUT));
-  
+
   if(__SDIO_GET_FLAG(SDIOx, SDIO_FLAG_CTIMEOUT))
   {
     __SDIO_CLEAR_FLAG(SDIOx, SDIO_FLAG_CTIMEOUT);
-    
+
     return SDMMC_ERROR_CMD_RSP_TIMEOUT;
   }
   else if(__SDIO_GET_FLAG(SDIOx, SDIO_FLAG_CCRCFAIL))
   {
     __SDIO_CLEAR_FLAG(SDIOx, SDIO_FLAG_CCRCFAIL);
-    
+
     return SDMMC_ERROR_CMD_CRC_FAIL;
   }
-  
+
   /* Check response received is of desired command */
   if(SDIO_GetCommandResponse(SDIOx) != SD_CMD)
   {
     return SDMMC_ERROR_CMD_CRC_FAIL;
   }
-  
+
   /* Clear all the static flags */
   __SDIO_CLEAR_FLAG(SDIOx, SDIO_STATIC_FLAGS);
-  
+
   /* We have received response, retrieve it.  */
   response_r1 = SDIO_GetResponse(SDIOx, SDIO_RESP1);
-  
+
   if((response_r1 & (SDMMC_R6_GENERAL_UNKNOWN_ERROR | SDMMC_R6_ILLEGAL_CMD | SDMMC_R6_COM_CRC_FAILED)) == SDMMC_ALLZERO)
   {
     *pRCA = (uint16_t) (response_r1 >> 16);
-    
+
     return SDMMC_ERROR_NONE;
   }
   else if((response_r1 & SDMMC_R6_ILLEGAL_CMD) == SDMMC_R6_ILLEGAL_CMD)
@@ -1451,32 +1449,32 @@ static uint32_t SDMMC_GetCmdResp7(SDIO_TypeDef *SDIOx)
   /* 8 is the number of required instructions cycles for the below loop statement.
   The SDIO_CMDTIMEOUT is expressed in ms */
   register uint32_t count = SDIO_CMDTIMEOUT * (SystemCoreClock / 8U /1000U);
-  
+
   do
   {
     if (count-- == 0U)
     {
       return SDMMC_ERROR_TIMEOUT;
     }
-    
+
   }while(!__SDIO_GET_FLAG(SDIOx, SDIO_FLAG_CCRCFAIL | SDIO_FLAG_CMDREND | SDIO_FLAG_CTIMEOUT));
 
   if(__SDIO_GET_FLAG(SDIOx, SDIO_FLAG_CTIMEOUT))
   {
     /* Card is SD V2.0 compliant */
     __SDIO_CLEAR_FLAG(SDIOx, SDIO_FLAG_CMDREND);
-    
+
     return SDMMC_ERROR_CMD_RSP_TIMEOUT;
   }
-  
+
   if(__SDIO_GET_FLAG(SDIOx, SDIO_FLAG_CMDREND))
   {
     /* Card is SD V2.0 compliant */
     __SDIO_CLEAR_FLAG(SDIOx, SDIO_FLAG_CMDREND);
   }
-  
+
   return SDMMC_ERROR_NONE;
-  
+
 }
 
 /**

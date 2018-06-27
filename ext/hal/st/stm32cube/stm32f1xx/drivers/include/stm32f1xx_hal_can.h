@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_can.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of CAN HAL module.
   ******************************************************************************
   * @attention
@@ -42,7 +40,7 @@
 #ifdef __cplusplus
  extern "C" {
 #endif
-     
+
 #if defined(STM32F103x6) || defined(STM32F103xB) || defined(STM32F103xE) || \
     defined(STM32F103xG) || defined(STM32F105xC) || defined(STM32F107xC)
 
@@ -123,8 +121,8 @@ typedef struct
                             This parameter can be set to ENABLE or DISABLE */
 }CAN_InitTypeDef;
 
-/** 
-  * @brief  CAN Tx message structure definition  
+/**
+  * @brief  CAN Tx message structure definition
   */
 typedef struct
 {
@@ -393,7 +391,7 @@ typedef struct
 #define CAN_FLAG_SLAK              ((uint32_t)((MSR_REGISTER_INDEX << 8U) | CAN_MSR_SLAK_BIT_POSITION))   /*!< Sleep acknowledge flag */
 #define CAN_FLAG_SLAKI             ((uint32_t)((MSR_REGISTER_INDEX << 8U) | CAN_MSR_SLAKI_BIT_POSITION))  /*!< Sleep acknowledge flag */
 
-/* @note When SLAK interrupt is disabled (SLKIE=0), no polling on SLAKI is possible. 
+/* @note When SLAK interrupt is disabled (SLKIE=0), no polling on SLAKI is possible.
          In this case the SLAK bit can be polled.*/
 
 /* Error Flags */
@@ -656,7 +654,7 @@ typedef struct
   * @retval None.
   */
 #define __HAL_CAN_FIFO_RELEASE(__HANDLE__, __FIFONUMBER__) (((__FIFONUMBER__) == CAN_FIFO0)? \
-((__HANDLE__)->Instance->RF0R = CAN_RF0R_RFOM0) : ((__HANDLE__)->Instance->RF1R = CAN_RF1R_RFOM1)) 
+((__HANDLE__)->Instance->RF0R = CAN_RF0R_RFOM0) : ((__HANDLE__)->Instance->RF1R = CAN_RF1R_RFOM1))
 
 /**
   * @brief  Cancel a transmit request.
@@ -694,7 +692,7 @@ typedef struct
   */
 
 /** @addtogroup CAN_Exported_Functions_Group1
-  * @brief    Initialization and Configuration functions 
+  * @brief    Initialization and Configuration functions
   * @{
   */
 /* Initialization and de-initialization functions *****************************/
@@ -708,7 +706,7 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* hcan);
   */
 
 /** @addtogroup CAN_Exported_Functions_Group2
-  * @brief    I/O operation functions 
+  * @brief    I/O operation functions
   * @{
   */
 /* I/O operation functions *****************************************************/
@@ -727,7 +725,7 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan);
   */
 
 /** @addtogroup CAN_Exported_Functions_Group3
-  * @brief   CAN Peripheral State functions 
+  * @brief   CAN Peripheral State functions
   * @{
   */
 /* Peripheral State and Error functions ***************************************/

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_dma.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of DMA HAL module.
   ******************************************************************************
   * @attention
@@ -65,7 +63,7 @@
   */
 typedef struct
 {
-  uint32_t Direction;                 /*!< Specifies if the data will be transferred from memory to peripheral, 
+  uint32_t Direction;                 /*!< Specifies if the data will be transferred from memory to peripheral,
                                            from memory to memory or from peripheral to memory.
                                            This parameter can be a value of @ref DMA_Data_transfer_direction */
 
@@ -110,49 +108,49 @@ typedef enum
   HAL_DMA_HALF_TRANSFER           = 0x01U     /*!< Half Transfer     */
 }HAL_DMA_LevelCompleteTypeDef;
 
-/** 
+/**
   * @brief  HAL DMA Callback ID structure definition
   */
 typedef enum
 {
   HAL_DMA_XFER_CPLT_CB_ID          = 0x00U,    /*!< Full transfer     */
   HAL_DMA_XFER_HALFCPLT_CB_ID      = 0x01U,    /*!< Half transfer     */
-  HAL_DMA_XFER_ERROR_CB_ID         = 0x02U,    /*!< Error             */ 
-  HAL_DMA_XFER_ABORT_CB_ID         = 0x03U,    /*!< Abort             */ 
-  HAL_DMA_XFER_ALL_CB_ID           = 0x04U     /*!< All               */ 
-    
+  HAL_DMA_XFER_ERROR_CB_ID         = 0x02U,    /*!< Error             */
+  HAL_DMA_XFER_ABORT_CB_ID         = 0x03U,    /*!< Abort             */
+  HAL_DMA_XFER_ALL_CB_ID           = 0x04U     /*!< All               */
+
 }HAL_DMA_CallbackIDTypeDef;
 
-/** 
+/**
   * @brief  DMA handle Structure definition
   */
 typedef struct __DMA_HandleTypeDef
 {
   DMA_Channel_TypeDef   *Instance;                       /*!< Register base address                  */
-  
-  DMA_InitTypeDef       Init;                            /*!< DMA communication parameters           */ 
-  
-  HAL_LockTypeDef       Lock;                            /*!< DMA locking object                     */  
-  
+
+  DMA_InitTypeDef       Init;                            /*!< DMA communication parameters           */
+
+  HAL_LockTypeDef       Lock;                            /*!< DMA locking object                     */
+
   HAL_DMA_StateTypeDef  State;                           /*!< DMA transfer state                     */
-  
-  void                  *Parent;                                                      /*!< Parent object state                    */  
-  
+
+  void                  *Parent;                                                      /*!< Parent object state                    */
+
   void                  (* XferCpltCallback)( struct __DMA_HandleTypeDef * hdma);     /*!< DMA transfer complete callback         */
-  
+
   void                  (* XferHalfCpltCallback)( struct __DMA_HandleTypeDef * hdma); /*!< DMA Half transfer complete callback    */
-  
+
   void                  (* XferErrorCallback)( struct __DMA_HandleTypeDef * hdma);    /*!< DMA transfer error callback            */
 
-  void                  (* XferAbortCallback)( struct __DMA_HandleTypeDef * hdma);    /*!< DMA transfer abort callback            */  
-  
+  void                  (* XferAbortCallback)( struct __DMA_HandleTypeDef * hdma);    /*!< DMA transfer abort callback            */
+
   __IO uint32_t         ErrorCode;                                                    /*!< DMA Error code                         */
 
   DMA_TypeDef            *DmaBaseAddress;                                             /*!< DMA Channel Base Address               */
-  
-  uint32_t               ChannelIndex;                                                /*!< DMA Channel Index                      */  
 
-} DMA_HandleTypeDef;    
+  uint32_t               ChannelIndex;                                                /*!< DMA Channel Index                      */
+
+} DMA_HandleTypeDef;
 /**
   * @}
   */
@@ -170,7 +168,7 @@ typedef struct __DMA_HandleTypeDef
 #define HAL_DMA_ERROR_TE                       0x00000001U    /*!< Transfer error       */
 #define HAL_DMA_ERROR_NO_XFER                  0x00000004U    /*!< no ongoing transfer  */
 #define HAL_DMA_ERROR_TIMEOUT                  0x00000020U    /*!< Timeout error        */
-#define HAL_DMA_ERROR_NOT_SUPPORTED            0x00000100U    /*!< Not supported mode                    */ 
+#define HAL_DMA_ERROR_NOT_SUPPORTED            0x00000100U    /*!< Not supported mode                    */
 /**
   * @}
   */
@@ -371,7 +369,7 @@ typedef struct __DMA_HandleTypeDef
   */
 
 /* Include DMA HAL Extension module */
-#include "stm32f1xx_hal_dma_ex.h"   
+#include "stm32f1xx_hal_dma_ex.h"
 
 /* Exported functions --------------------------------------------------------*/
 /** @addtogroup DMA_Exported_Functions
@@ -454,7 +452,7 @@ uint32_t HAL_DMA_GetError(DMA_HandleTypeDef *hdma);
 
 /**
   * @}
-  */ 
+  */
 
 /* Private functions ---------------------------------------------------------*/
 

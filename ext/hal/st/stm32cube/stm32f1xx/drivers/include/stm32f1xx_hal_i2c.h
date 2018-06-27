@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_i2c.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of I2C HAL module.
   ******************************************************************************
   * @attention
@@ -58,7 +56,7 @@
 /** @defgroup I2C_Exported_Types I2C Exported Types
   * @{
   */
-   
+
 /**
   * @brief  I2C Configuration Structure definition
   */
@@ -93,7 +91,7 @@ typedef struct
 /**
   * @brief  HAL State structure definition
   * @note  HAL I2C State value coding follow below described bitmap :
-  *          b7-b6  Error information 
+  *          b7-b6  Error information
   *             00 : No Error
   *             01 : Abort (Abort user request on going)
   *             10 : Timeout
@@ -166,30 +164,30 @@ typedef enum
 typedef struct
 {
   I2C_TypeDef                *Instance;      /*!< I2C registers base address               */
-                                             
+
   I2C_InitTypeDef            Init;           /*!< I2C communication parameters             */
-                                             
+
   uint8_t                    *pBuffPtr;      /*!< Pointer to I2C transfer buffer           */
-                                             
+
   uint16_t                   XferSize;       /*!< I2C transfer size                        */
-                                             
+
   __IO uint16_t              XferCount;      /*!< I2C transfer counter                     */
-                                             
+
   __IO uint32_t              XferOptions;    /*!< I2C transfer options                     */
-                                             
+
   __IO uint32_t              PreviousState;  /*!< I2C communication Previous state and mode
                                                   context for internal usage               */
-                                             
+
   DMA_HandleTypeDef          *hdmatx;        /*!< I2C Tx DMA handle parameters             */
-                                             
+
   DMA_HandleTypeDef          *hdmarx;        /*!< I2C Rx DMA handle parameters             */
-                                             
+
   HAL_LockTypeDef            Lock;           /*!< I2C locking object                       */
-                                             
+
   __IO HAL_I2C_StateTypeDef  State;          /*!< I2C communication state                  */
-                                             
+
   __IO HAL_I2C_ModeTypeDef   Mode;           /*!< I2C communication mode                   */
-                                             
+
   __IO uint32_t              ErrorCode;      /*!< I2C Error code                           */
 
   __IO uint32_t              Devaddress;     /*!< I2C Target device address                */
@@ -212,9 +210,9 @@ typedef struct
   */
 
 /** @defgroup I2C_Error_Code I2C Error Code
-  * @brief    I2C Error Code 
+  * @brief    I2C Error Code
   * @{
-  */ 
+  */
 #define HAL_I2C_ERROR_NONE       0x00000000U    /*!< No error           */
 #define HAL_I2C_ERROR_BERR       0x00000001U    /*!< BERR error         */
 #define HAL_I2C_ERROR_ARLO       0x00000002U    /*!< ARLO error         */
@@ -283,7 +281,7 @@ typedef struct
 /** @defgroup I2C_XferDirection_definition I2C XferDirection definition
   * @{
   */
-#define I2C_DIRECTION_RECEIVE           0x00000000U 
+#define I2C_DIRECTION_RECEIVE           0x00000000U
 #define I2C_DIRECTION_TRANSMIT          0x00000001U
 /**
   * @}
@@ -452,7 +450,7 @@ typedef struct
     (__HANDLE__)->Instance->CR1 |= I2C_CR1_PE;  \
     UNUSED(tmpreg);                             \
   } while(0U)
-    
+
 /** @brief  Enable the I2C peripheral.
   * @param  __HANDLE__: specifies the I2C Handle.
   *         This parameter can be I2Cx where x: 1 or 2  to select the I2C peripheral.
@@ -563,7 +561,9 @@ uint32_t HAL_I2C_GetError(I2C_HandleTypeDef *hi2c);
 /** @defgroup I2C_Private_Constants I2C Private Constants
   * @{
   */
-#define I2C_FLAG_MASK  0x0000FFFFU
+#define I2C_FLAG_MASK                    0x0000FFFFU
+#define I2C_MIN_PCLK_FREQ_STANDARD       2000000U     /*!< 2 MHz                     */
+#define I2C_MIN_PCLK_FREQ_FAST           4000000U     /*!< 4 MHz                     */
 /**
   * @}
   */
@@ -572,11 +572,13 @@ uint32_t HAL_I2C_GetError(I2C_HandleTypeDef *hi2c);
 /** @defgroup I2C_Private_Macros I2C Private Macros
   * @{
   */
-    
+
+#define I2C_MIN_PCLK_FREQ(__PCLK__, __SPEED__)             (((__SPEED__) <= 100000U) ? ((__PCLK__) < I2C_MIN_PCLK_FREQ_STANDARD) : ((__PCLK__) < I2C_MIN_PCLK_FREQ_FAST))
+#define I2C_CCR_CALCULATION(__PCLK__, __SPEED__, __COEFF__)     (((((__PCLK__) - 1U)/((__SPEED__) * (__COEFF__))) + 1U) & I2C_CCR_CCR)
 #define I2C_FREQRANGE(__PCLK__)                            ((__PCLK__)/1000000U)
 #define I2C_RISE_TIME(__FREQRANGE__, __SPEED__)            (((__SPEED__) <= 100000U) ? ((__FREQRANGE__) + 1U) : ((((__FREQRANGE__) * 300U) / 1000U) + 1U))
-#define I2C_SPEED_STANDARD(__PCLK__, __SPEED__)            (((((__PCLK__)/((__SPEED__) << 1U)) & I2C_CCR_CCR) < 4U)? 4U:((__PCLK__) / ((__SPEED__) << 1U)))
-#define I2C_SPEED_FAST(__PCLK__, __SPEED__, __DUTYCYCLE__) (((__DUTYCYCLE__) == I2C_DUTYCYCLE_2)? ((__PCLK__) / ((__SPEED__) * 3U)) : (((__PCLK__) / ((__SPEED__) * 25U)) | I2C_DUTYCYCLE_16_9))
+#define I2C_SPEED_STANDARD(__PCLK__, __SPEED__)            ((I2C_CCR_CALCULATION((__PCLK__), (__SPEED__), 2U) < 4U)? 4U:I2C_CCR_CALCULATION((__PCLK__), (__SPEED__), 2U))
+#define I2C_SPEED_FAST(__PCLK__, __SPEED__, __DUTYCYCLE__) (((__DUTYCYCLE__) == I2C_DUTYCYCLE_2)? I2C_CCR_CALCULATION((__PCLK__), (__SPEED__), 3U) : (I2C_CCR_CALCULATION((__PCLK__), (__SPEED__), 25U) | I2C_DUTYCYCLE_16_9))
 #define I2C_SPEED(__PCLK__, __SPEED__, __DUTYCYCLE__)      (((__SPEED__) <= 100000U)? (I2C_SPEED_STANDARD((__PCLK__), (__SPEED__))) : \
                                                                   ((I2C_SPEED_FAST((__PCLK__), (__SPEED__), (__DUTYCYCLE__)) & I2C_CCR_CCR) == 0U)? 1U : \
                                                                   ((I2C_SPEED_FAST((__PCLK__), (__SPEED__), (__DUTYCYCLE__))) | I2C_CCR_FS))

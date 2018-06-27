@@ -1,16 +1,14 @@
 /**
   ******************************************************************************
-  * @file    stm32f1xx_hal_timebase_tim_template.c 
+  * @file    stm32f1xx_hal_timebase_tim_template.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   HAL time base based on the hardware TIM Template.
-  *    
+  *
   *          This file overrides the native HAL time base functions (defined as weak)
   *          the TIM time base:
   *           + Intializes the TIM peripheral generate a Period elapsed Event each 1ms
   *           + HAL_IncTick is called inside HAL_TIM_PeriodElapsedCallback ie each 1ms
-  * 
+  *
   ******************************************************************************
   * @attention
   *
@@ -50,7 +48,7 @@
 
 /** @addtogroup HAL_TimeBase_TIM
   * @{
-  */ 
+  */
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -62,52 +60,52 @@ void TIM2_IRQHandler(void);
 /* Private functions ---------------------------------------------------------*/
 
 /**
-  * @brief  This function configures the TIM2 as a time base source. 
-  *         The time source is configured to have 1ms time base with a dedicated 
-  *         Tick interrupt priority. 
+  * @brief  This function configures the TIM2 as a time base source.
+  *         The time source is configured to have 1ms time base with a dedicated
+  *         Tick interrupt priority.
   * @note   This function is called  automatically at the beginning of program after
-  *         reset by HAL_Init() or at any time when clock is configured, by HAL_RCC_ClockConfig(). 
+  *         reset by HAL_Init() or at any time when clock is configured, by HAL_RCC_ClockConfig().
   * @param  TickPriority: Tick interrupt priority.
   * @retval HAL status
   */
-HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
+HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 {
   RCC_ClkInitTypeDef    clkconfig;
   uint32_t              uwTimclock, uwAPB1Prescaler = 0U;
   uint32_t              uwPrescalerValue = 0U;
   uint32_t              pFLatency;
-  
-    /*Configure the TIM2 IRQ priority */
-  HAL_NVIC_SetPriority(TIM2_IRQn, TickPriority ,0U);
-  
+
+  /*Configure the TIM2 IRQ priority */
+  HAL_NVIC_SetPriority(TIM2_IRQn, TickPriority, 0U);
+
   /* Enable the TIM2 global Interrupt */
   HAL_NVIC_EnableIRQ(TIM2_IRQn);
-  
+
   /* Enable TIM2 clock */
   __HAL_RCC_TIM2_CLK_ENABLE();
-  
+
   /* Get clock configuration */
   HAL_RCC_GetClockConfig(&clkconfig, &pFLatency);
-  
+
   /* Get APB1 prescaler */
   uwAPB1Prescaler = clkconfig.APB1CLKDivider;
-  
+
   /* Compute TIM2 clock */
-  if (uwAPB1Prescaler == RCC_HCLK_DIV1) 
+  if (uwAPB1Prescaler == RCC_HCLK_DIV1)
   {
     uwTimclock = HAL_RCC_GetPCLK1Freq();
   }
   else
   {
-    uwTimclock = 2*HAL_RCC_GetPCLK1Freq();
+    uwTimclock = 2 * HAL_RCC_GetPCLK1Freq();
   }
-  
+
   /* Compute the prescaler value to have TIM2 counter clock equal to 1MHz */
-  uwPrescalerValue = (uint32_t) ((uwTimclock / 1000000U) - 1U);
-  
+  uwPrescalerValue = (uint32_t)((uwTimclock / 1000000U) - 1U);
+
   /* Initialize TIM2 */
   TimHandle.Instance = TIM2;
-  
+
   /* Initialize TIMx peripheral as follow:
   + Period = [(TIM2CLK/1000) - 1]. to have a (1/1000) s time base.
   + Prescaler = (uwTimclock/1000000 - 1) to have a 1MHz counter clock.
@@ -119,12 +117,12 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
   TimHandle.Init.ClockDivision = 0U;
   TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
   TimHandle.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if(HAL_TIM_Base_Init(&TimHandle) == HAL_OK)
+  if (HAL_TIM_Base_Init(&TimHandle) == HAL_OK)
   {
     /* Start the TIM time Base generation in interrupt mode */
     return HAL_TIM_Base_Start_IT(&TimHandle);
   }
-  
+
   /* Return function status */
   return HAL_ERROR;
 }
@@ -175,10 +173,10 @@ void TIM2_IRQHandler(void)
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-  */ 
+  */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

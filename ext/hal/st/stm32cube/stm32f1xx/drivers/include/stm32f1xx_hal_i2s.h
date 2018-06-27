@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_i2s.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of I2S HAL module.
   ******************************************************************************
   * @attention
@@ -46,7 +44,7 @@
 #if defined(STM32F103xE) || defined(STM32F103xG) || defined(STM32F105xC) || defined(STM32F107xC)
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f1xx_hal_def.h"  
+#include "stm32f1xx_hal_def.h"
 
 /** @addtogroup STM32F1xx_HAL_Driver
   * @{
@@ -280,7 +278,7 @@ typedef struct __I2S_HandleTypeDef
 #define __HAL_I2S_ENABLE(__HANDLE__)    (SET_BIT((__HANDLE__)->Instance->I2SCFGR, SPI_I2SCFGR_I2SE))
 
 /** @brief  Disable the specified SPI peripheral (in I2S mode).
-  * @param  __HANDLE__: specifies the I2S Handle. 
+  * @param  __HANDLE__: specifies the I2S Handle.
   * @retval None
   */
 #define __HAL_I2S_DISABLE(__HANDLE__) (CLEAR_BIT((__HANDLE__)->Instance->I2SCFGR, SPI_I2SCFGR_I2SE))
@@ -304,9 +302,9 @@ typedef struct __I2S_HandleTypeDef
   *            @arg I2S_IT_RXNE: RX buffer not empty interrupt enable
   *            @arg I2S_IT_ERR: Error interrupt enable
   * @retval None
-  */ 
+  */
 #define __HAL_I2S_DISABLE_IT(__HANDLE__, __INTERRUPT__) (CLEAR_BIT((__HANDLE__)->Instance->CR2,(__INTERRUPT__)))
- 
+
 /** @brief  Checks if the specified I2S interrupt source is enabled or disabled.
   * @param  __HANDLE__: specifies the I2S Handle.
   *         This parameter can be I2S where x: 1, 2, or 3 to select the I2S peripheral.

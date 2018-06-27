@@ -2,10 +2,8 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_msp_template.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   HAL BSP module.
-  *          This file template is located in the HAL folder and should be copied 
+  *          This file template is located in the HAL folder and should be copied
   *          to the user folder.
   ******************************************************************************
   * @attention
@@ -34,8 +32,8 @@
   * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
-  ******************************************************************************  
-  */ 
+  ******************************************************************************
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"

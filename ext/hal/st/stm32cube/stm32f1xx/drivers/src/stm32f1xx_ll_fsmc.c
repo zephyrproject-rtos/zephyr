@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_ll_fsmc.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   FSMC Low Layer HAL module driver.
   *
   *          This file provides firmware functions to manage the following
@@ -40,7 +38,7 @@
                   data.
           (+) Independent Chip Select control for each memory bank.
           (+) Independent configuration for each memory bank.
-        
+
   @endverbatim
   ******************************************************************************
   * @attention
@@ -122,9 +120,9 @@
 @endverbatim
   * @{
   */
-       
+
 /** @addtogroup FSMC_LL_NORSRAM_Private_Functions_Group1
-  * @brief    Initialization and Configuration functions 
+  * @brief    Initialization and Configuration functions
   *
   @verbatim
   ==============================================================================
@@ -210,10 +208,10 @@ HAL_StatusTypeDef  FSMC_NORSRAM_Init(FSMC_NORSRAM_TypeDef *Device, FSMC_NORSRAM_
 }
 
 /**
-  * @brief  DeInitialize the FSMC_NORSRAM peripheral 
+  * @brief  DeInitialize the FSMC_NORSRAM peripheral
   * @param  Device: Pointer to NORSRAM device instance
   * @param  ExDevice: Pointer to NORSRAM extended mode device instance
-  * @param  Bank: NORSRAM bank number  
+  * @param  Bank: NORSRAM bank number
   * @retval HAL status
   */
 HAL_StatusTypeDef FSMC_NORSRAM_DeInit(FSMC_NORSRAM_TypeDef *Device, FSMC_NORSRAM_EXTENDED_TypeDef *ExDevice, uint32_t Bank)
@@ -234,13 +232,13 @@ HAL_StatusTypeDef FSMC_NORSRAM_DeInit(FSMC_NORSRAM_TypeDef *Device, FSMC_NORSRAM
   }
   /* FSMC_NORSRAM_BANK2, FSMC_NORSRAM_BANK3 or FSMC_NORSRAM_BANK4 */
   else
-  {   
-    Device->BTCR[Bank] = 0x000030D2U; 
+  {
+    Device->BTCR[Bank] = 0x000030D2U;
   }
-  
+
   Device->BTCR[Bank + 1U] = 0x0FFFFFFFU;
   ExDevice->BWTR[Bank]    = 0x0FFFFFFFU;
-   
+
   return HAL_OK;
 }
 
@@ -572,7 +570,7 @@ HAL_StatusTypeDef FSMC_NAND_AttributeSpace_Timing_Init(FSMC_NAND_TypeDef *Device
 
 
 /**
-  * @brief  DeInitializes the FSMC_NAND device 
+  * @brief  DeInitializes the FSMC_NAND device
   * @param  Device: Pointer to NAND device instance
   * @param  Bank: NAND bank number
   * @retval HAL status
@@ -683,13 +681,13 @@ HAL_StatusTypeDef FSMC_NAND_ECC_Disable(FSMC_NAND_TypeDef *Device, uint32_t Bank
   * @param  Device: Pointer to NAND device instance
   * @param  ECCval: Pointer to ECC value
   * @param  Bank: NAND bank number
-  * @param  Timeout: Timeout wait value  
+  * @param  Timeout: Timeout wait value
   * @retval HAL status
   */
 HAL_StatusTypeDef FSMC_NAND_GetECC(FSMC_NAND_TypeDef *Device, uint32_t *ECCval, uint32_t Bank, uint32_t Timeout)
 {
   uint32_t tickstart = 0U;
-  
+
   /* Check the parameters */
   assert_param(IS_FSMC_NAND_DEVICE(Device));
   assert_param(IS_FSMC_NAND_BANK(Bank));

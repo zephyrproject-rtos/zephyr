@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_i2s.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   I2S HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Integrated Interchip Sound (I2S) peripheral:
@@ -31,10 +29,10 @@
              and HAL_I2S_Receive_DMA() APIs:
             (+++) Declare a DMA handle structure for the Tx/Rx Channel.
             (+++) Enable the DMAx interface clock.
-            (+++) Configure the declared DMA handle structure with the required Tx/Rx parameters.                
+            (+++) Configure the declared DMA handle structure with the required Tx/Rx parameters.
             (+++) Configure the DMA Tx/Rx Channel.
             (+++) Associate the initialized DMA handle to the I2S DMA Tx/Rx handle.
-            (+++) Configure the priority and enable the NVIC for the transfer complete interrupt on the 
+            (+++) Configure the priority and enable the NVIC for the transfer complete interrupt on the
                   DMA Tx/Rx Channel.
 
    (#) Program the Mode, Standard, Data Format, MCLK Output, Audio frequency and Polarity
@@ -43,12 +41,12 @@
    -@- The specific I2S interrupts (Transmission complete interrupt,
        RXNE interrupt and Error Interrupts) will be managed using the macros
        __HAL_I2S_ENABLE_IT() and __HAL_I2S_DISABLE_IT() inside the transmit and receive process.
-   -@- The I2SxCLK source is the system clock (provided by the HSI, the HSE or the PLL, and sourcing the AHB clock). 
-       For connectivity line devices, the I2SxCLK source can be either SYSCLK or the PLL3 VCO (2 x PLL3CLK) clock 
+   -@- The I2SxCLK source is the system clock (provided by the HSI, the HSE or the PLL, and sourcing the AHB clock).
+       For connectivity line devices, the I2SxCLK source can be either SYSCLK or the PLL3 VCO (2 x PLL3CLK) clock
        in order to achieve the maximum accuracy.
    -@- Make sure that either:
-       (+@) External clock source is configured after setting correctly 
-            the define constant HSE_VALUE in the stm32f1xx_hal_conf.h file. 
+       (+@) External clock source is configured after setting correctly
+            the define constant HSE_VALUE in the stm32f1xx_hal_conf.h file.
 
    (#) Three operation modes are available within this driver :
 
@@ -111,7 +109,7 @@
      *** I2C Workarounds linked to Silicon Limitation ***
      ====================================================
      [..]
-       (@) Only the 16-bit mode with no data extension can be used when the I2S 
+       (@) Only the 16-bit mode with no data extension can be used when the I2S
            is in Master and used the PCM long synchronization mode.
 
 
@@ -188,7 +186,7 @@ static HAL_StatusTypeDef  I2S_WaitFlagStateUntilTimeout(I2S_HandleTypeDef *hi2s,
   * @{
   */
 
-/** @defgroup  I2S_Exported_Functions_Group1 Initialization and de-initialization functions 
+/** @defgroup  I2S_Exported_Functions_Group1 Initialization and de-initialization functions
   *  @brief    Initialization and Configuration functions
   *
 @verbatim
@@ -422,8 +420,8 @@ HAL_StatusTypeDef HAL_I2S_DeInit(I2S_HandleTypeDef *hi2s)
   * @}
   */
 
-/** @defgroup I2S_Exported_Functions_Group2 IO operation functions 
-  *  @brief Data transfers functions 
+/** @defgroup I2S_Exported_Functions_Group2 IO operation functions
+  *  @brief Data transfers functions
   *
 @verbatim
  ===============================================================================
@@ -1023,7 +1021,7 @@ HAL_StatusTypeDef HAL_I2S_DMAResume(I2S_HandleTypeDef *hi2s)
     /* Enable the I2S DMA Rx request */
     SET_BIT(hi2s->Instance->CR2,SPI_CR2_RXDMAEN);
   }
-  
+
   /* If the I2S peripheral is still not enabled, enable it */
   if ((hi2s->Instance->I2SCFGR & SPI_I2SCFGR_I2SE) == 0U)
   {
@@ -1166,8 +1164,8 @@ __weak void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s)
   * @}
   */
 
-/** @defgroup I2S_Exported_Functions_Group3 Peripheral State and Errors functions 
-  *  @brief   Peripheral State functions 
+/** @defgroup I2S_Exported_Functions_Group3 Peripheral State and Errors functions
+  *  @brief   Peripheral State functions
   *
 @verbatim
  ===============================================================================
@@ -1422,7 +1420,7 @@ static HAL_StatusTypeDef I2S_WaitFlagStateUntilTimeout(I2S_HandleTypeDef *hi2s, 
                                                        uint32_t Timeout)
 {
   uint32_t tickstart = HAL_GetTick();
-  
+
    /* Wait until flag is set to status*/
   while(((__HAL_I2S_GET_FLAG(hi2s, Flag)) ? SET : RESET) != State)
   {
