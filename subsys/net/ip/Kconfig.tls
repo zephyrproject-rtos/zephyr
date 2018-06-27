@@ -1,0 +1,180 @@
+# Kconfig.stack - TLS/DTLS related options
+
+#
+# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "TLS options"
+
+config NET_TLS
+	bool "TCP TLS support [EXPERIMENTAL]"
+	default n
+	depends on NET_TCP && MBEDTLS
+	help
+	  Enable TLS support for TCP connections. TLS is implemented by mbedTLS.
+
+config NET_DTLS
+	bool "UDP DTLS placeholder [EXPERIMENTAL]"
+	default n
+	depends on NET_UDP && MBEDTLS
+
+if NET_TLS || NET_DTLS
+
+menu "Supported TLS version"
+
+config TLS_VERSION_1_0
+	bool "Enable support for TLS 1.0"
+	depends on NET_TLS
+	select TLS_MAC_MD5_ENABLED
+	select TLS_MAC_SHA1_ENABLED
+	default n
+
+config TLS_VERSION_1_1
+	bool "Enable support for TLS 1.1 (DTLS 1.0)"
+	select TLS_MAC_MD5_ENABLED
+	select TLS_MAC_SHA1_ENABLED
+	default n
+
+config TLS_VERSION_1_2
+	bool "Enable support for TLS 1.2 (DTLS 1.2)"
+	default y
+
+endmenu
+
+menu "Ciphersuite configuration"
+
+comment "Supported key exchange modes"
+
+config TLS_KEY_EXCHANGE_PSK_ENABLED
+	bool "Enable the PSK based ciphersuite modes"
+	default n
+
+config TLS_KEY_EXCHANGE_DHE_PSK_ENABLED
+	bool "Enable the DHE-PSK based ciphersuite modes"
+	default n
+
+config TLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+	bool "Enable the ECDHE-PSK based ciphersuite modes"
+	default n
+
+config TLS_KEY_EXCHANGE_RSA_PSK_ENABLED
+	bool "Enable the RSA-PSK based ciphersuite modes"
+	default n
+
+config TLS_KEY_EXCHANGE_RSA_ENABLED
+	bool "Enable the RSA-only based ciphersuite modes"
+	default y
+
+config TLS_KEY_EXCHANGE_DHE_RSA_ENABLED
+	bool "Enable the DHE-RSA based ciphersuite modes"
+	default n
+
+config TLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+	bool "Enable the ECDHE-RSA based ciphersuite modes"
+	default n
+
+config TLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	bool "Enable the ECDHE-ECDSA based ciphersuite modes"
+	default n
+
+config TLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+	bool "Enable the ECDH-ECDSA based ciphersuite modes"
+	default n
+
+config TLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+	bool "Enable the ECDH-RSA based ciphersuite modes"
+	default n
+
+config TLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+	bool "Enable the ECJPAKE based ciphersuite modes"
+	default n
+
+comment "Supported cipher modes"
+
+config TLS_CIPHER_AES_ENABLED
+	bool "Enable the AES block cipher"
+	default y
+
+config TLS_CIPHER_CAMELLIA_ENABLED
+	bool "Enable the Camellia block cipher"
+	default n
+
+config TLS_CIPHER_DES_ENABLED
+	bool "Enable the DES block cipher"
+	default y
+
+config TLS_CIPHER_CCM_ENABLED
+	bool "Enable the Counter with CBC-MAC (CCM) mode for 128-bit block cipher"
+	default n
+	depends on TLS_CIPHER_AES_ENABLED || TLS_CIPHER_CAMELLIA_ENABLED
+
+config TLS_CIPHER_CBC_ENABLED
+	bool "Enable Cipher Block Chaining mode (CBC) for symmetric ciphers"
+	default y
+
+comment "Supported message authentication methods"
+
+config TLS_MAC_MD5_ENABLED
+	bool "Enable the MD5 hash algorithm"
+	default n
+	default y if TLS_VERSION_1_0 || TLS_VERSION_1_1
+
+config TLS_MAC_SHA1_ENABLED
+	bool "Enable the SHA1 hash algorithm"
+	default y
+
+config TLS_MAC_SHA256_ENABLED
+	bool "Enable the SHA-224 and SHA-256 hash algorithms"
+	default n
+	default y if TLS_VERSION_1_2
+
+config TLS_MAC_SHA512_ENABLED
+	bool "Enable the SHA-384 and SHA-512 hash algorithms"
+	default n
+
+endmenu
+
+config NET_TLS_DEBUG
+	bool "Enable TLS debug log"
+	default n
+
+config NET_TLS_MAX_CONTEXT
+	int "Maximum number of TLS/DTLS contexts"
+	default 1
+	help
+	  "This variable specifies maximum number of simultaneous TLS/DLTS connections"
+
+comment "TLS/DTLS credentials configuration"
+
+config NET_MAX_CREDENTIALS_NUMBER
+	int "Maximum number of TLS/DTLS credentials"
+	default 4
+	help
+	  "Maximum number of TLS/DTLS credentials that can be used simultaneously"
+
+config NET_TLS_PEM_CERTIFICATE_FORMAT
+	bool "Enable support for PEM certificate format"
+	default n
+	help
+	  By default only DER (binary) format of certificates is supported. Enable
+	  this option to enable support for PEM format.
+
+config NET_PRECONFIGURE_TLS_CREDENTIALS
+	bool "Use preconfigured credentials for TLS/DTLS"
+	default n
+	help
+	  Use preconfigured credentials (CA Certificate, PSK) for TLS/DTLS sessions.
+
+config NET_TLS_CREDENTIALS_FILE
+	string "TLS/DTLS credentials to preconfigure"
+	default "tls_default_credentials.h"
+	depends on NET_PRECONFIGURE_TLS_CREDENTIALS
+	help
+	  File containing default TLS/DTLS credentials to preconfigure. TODO Extend description.
+
+endif
+
+endmenu

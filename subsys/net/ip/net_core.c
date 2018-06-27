@@ -50,6 +50,8 @@
 #include "udp_internal.h"
 #include "tcp_internal.h"
 
+#include "net_tls_internal.h"
+
 #include "net_stats.h"
 
 static inline enum net_verdict process_data(struct net_pkt *pkt,
@@ -375,6 +377,7 @@ static inline void l3_init(void)
 #endif
 	net_udp_init();
 	net_tcp_init();
+	net_tls_init();
 
 	net_route_init();
 

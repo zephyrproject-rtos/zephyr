@@ -184,6 +184,8 @@ struct net_tcp;
 
 struct net_conn_handle;
 
+struct net_tls;
+
 /**
  * Note that we do not store the actual source IP address in the context
  * because the address is already be set in the network interface struct.
@@ -276,6 +278,11 @@ struct net_context {
 		struct k_fifo accept_q;
 	};
 #endif /* CONFIG_NET_SOCKETS */
+
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	/** TLS context information */
+	struct net_tls *tls;
+#endif /* CONFIG_NET_TLS || CONFIG_NET_DTLS */
 };
 
 static inline bool net_context_is_used(struct net_context *context)
@@ -778,7 +785,9 @@ int net_context_update_recv_wnd(struct net_context *context,
 				s32_t delta);
 
 enum net_context_option {
-	NET_OPT_PRIORITY = 1,
+	NET_OPT_PRIORITY         = 1,
+	NET_OPT_TLS_ENABLE       = 2,
+	NET_OPT_TLS_SEC_TAG_LIST = 3,
 };
 
 /**

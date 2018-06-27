@@ -796,7 +796,8 @@ ws_only:
 			net_pkt_frag_unref(pkt->frags);
 			pkt->frags = NULL;
 
-			cloned = net_pkt_clone(pkt, ctx->timeout);
+			cloned = net_pkt_clone(pkt, ctx->timeout,
+					       NET_PKT_CLONE_USER_DATA);
 			if (!cloned) {
 				net_pkt_unref(pkt);
 				return;

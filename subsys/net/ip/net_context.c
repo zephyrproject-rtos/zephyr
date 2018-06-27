@@ -28,6 +28,7 @@
 
 #include "connection.h"
 #include "net_private.h"
+#include "net_tls_internal.h"
 
 #include "ipv6.h"
 #include "ipv4.h"
@@ -115,6 +116,15 @@ int net_context_get(sa_family_t family,
 		    struct net_context **context)
 {
 	int i, ret = -ENOENT;
+
+#if defined(CONIFG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	bool tls = false;
+
+	if (ip_proto >= IPPROTO_TLS_1_0 && ip_proto <= IPPROTO_TLS_1_2) {
+		tls = true;
+		ip_proto = (type == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP;
+	}
+#endif
 
 #if defined(CONFIG_NET_CONTEXT_CHECK)
 
@@ -205,6 +215,14 @@ int net_context_get(sa_family_t family,
 				break;
 			}
 		}
+
+#if defined(CONIFG_NET_TLS) || defined(CONFIG_NET_DTLS)
+		if (tls) {
+			if (net_tls_enable(&contexts[i], true) < 0) {
+				break;
+			}
+		}
+#endif
 
 		contexts[i].iface = 0;
 		contexts[i].flags = 0;
@@ -340,6 +358,12 @@ int net_context_put(struct net_context *context)
 	if (net_tcp_put(context) >= 0) {
 		return 0;
 	}
+
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	if (context->tls) {
+		net_tls_enable(context, false);
+	}
+#endif /* defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS) */
 
 	net_context_unref(context);
 	return 0;
@@ -617,7 +641,7 @@ int net_context_listen(struct net_context *context, int backlog)
 #endif /* CONFIG_NET_OFFLOAD */
 
 	if (net_tcp_listen(context) >= 0) {
-		return 0;
+		return net_tls_connect(context, true);
 	}
 
 	return -EOPNOTSUPP;
@@ -767,19 +791,25 @@ int net_context_connect(struct net_context *context,
 			cb(context, 0, user_data);
 		}
 
-		return 0;
+		ret = 0;
 
+		break;
 #endif /* CONFIG_NET_UDP */
 
 	case SOCK_STREAM:
-		return net_tcp_connect(context, addr, laddr, rport, lport,
-				       timeout, cb, user_data);
+		ret = net_tcp_connect(context, addr, laddr, rport, lport,
+				      timeout, cb, user_data);
+		break;
 
 	default:
-		return -ENOTSUP;
+		ret = -ENOTSUP;
 	}
 
-	return 0;
+	if (ret < 0) {
+		return ret;
+	}
+
+	return net_tls_connect(context, false);
 }
 
 int net_context_accept(struct net_context *context,
@@ -873,6 +903,64 @@ static int create_udp_packet(struct net_context *context,
 }
 #endif /* CONFIG_NET_UDP */
 
+int net_context_output(struct net_context *context, struct net_pkt *pkt,
+		       const struct sockaddr *dst_addr)
+{
+	int ret;
+
+	switch (net_context_get_ip_proto(context)) {
+#if defined(CONFIG_NET_UDP)
+	case IPPROTO_UDP:
+		/* Bind default address and port only if UDP */
+		ret = bind_default(context);
+		if (ret) {
+			return ret;
+		}
+
+		ret = create_udp_packet(context, pkt, dst_addr, &pkt);
+		if (ret < 0) {
+			goto err;
+		}
+
+		ret = net_send_data(pkt);
+		if (ret < 0) {
+			goto err;
+		}
+		break;
+#endif /* CONFIG_NET_UDP */
+
+	case IPPROTO_TCP:
+		ret = net_tcp_queue_data(context, pkt);
+		if (ret < 0) {
+			goto err;
+		}
+
+		ret = net_tcp_send_data(context, context->send_cb,
+					net_pkt_token(pkt), context->user_data);
+		if (ret < 0) {
+			goto err;
+		}
+
+		break;
+
+	default:
+		ret = -EPROTONOSUPPORT;
+	}
+
+err:
+	if (ret < 0) {
+		if (ret == -EPROTONOSUPPORT) {
+			NET_DBG("Unknown protocol while sending packet: %d",
+				net_context_get_ip_proto(context));
+		} else {
+			NET_DBG("Could not create network packet to send (%d)",
+				ret);
+		}
+	}
+
+	return ret;
+}
+
 static int sendto(struct net_pkt *pkt,
 		  const struct sockaddr *dst_addr,
 		  socklen_t addrlen,
@@ -882,7 +970,6 @@ static int sendto(struct net_pkt *pkt,
 		  void *user_data)
 {
 	struct net_context *context = net_pkt_context(pkt);
-	int ret = 0;
 
 	if (!net_context_is_used(context)) {
 		return -EBADF;
@@ -924,6 +1011,10 @@ static int sendto(struct net_pkt *pkt,
 		return -EINVAL;
 	}
 
+	context->send_cb = cb;
+	context->user_data = user_data;
+	net_pkt_set_token(pkt, token);
+
 #if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(net_pkt_iface(pkt))) {
 		return net_offload_sendto(
@@ -933,53 +1024,17 @@ static int sendto(struct net_pkt *pkt,
 	}
 #endif /* CONFIG_NET_OFFLOAD */
 
-	switch (net_context_get_ip_proto(context)) {
-	case IPPROTO_UDP:
-#if defined(CONFIG_NET_UDP)
-		/* Bind default address and port only if UDP */
-		ret = bind_default(context);
-		if (ret) {
-			return ret;
-		}
-
-		ret = create_udp_packet(context, pkt, dst_addr, &pkt);
-#endif /* CONFIG_NET_UDP */
-		break;
-
-	case IPPROTO_TCP:
-		ret = net_tcp_queue_data(context, pkt);
-		break;
-
-	default:
-		ret = -EPROTONOSUPPORT;
-	}
-
-	if (ret < 0) {
-		if (ret == -EPROTONOSUPPORT) {
-			NET_DBG("Unknown protocol while sending packet: %d",
-				net_context_get_ip_proto(context));
-		} else {
-			NET_DBG("Could not create network packet to send (%d)",
-				ret);
-		}
-
-		return ret;
-	}
-
 	context->send_cb = cb;
 	context->user_data = user_data;
 	net_pkt_set_token(pkt, token);
 
-	switch (net_context_get_ip_proto(context)) {
-	case IPPROTO_UDP:
-		return net_send_data(pkt);
-
-	case IPPROTO_TCP:
-		return net_tcp_send_data(context, cb, token, user_data);
-
-	default:
-		return -EPROTONOSUPPORT;
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	if (context->tls) {
+		return net_tls_send(pkt);
 	}
+#endif
+
+	return net_context_output(context, pkt, dst_addr);
 }
 
 int net_context_send(struct net_pkt *pkt,
@@ -1223,6 +1278,12 @@ int net_context_recv(struct net_context *context,
 #endif /* CONFIG_NET_UDP */
 
 	case IPPROTO_TCP:
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+		if (context->tls) {
+			ret = net_tls_recv(context, cb, user_data);
+			break;
+		}
+#endif
 		ret = net_tcp_recv(context, cb, user_data);
 		break;
 
@@ -1292,6 +1353,78 @@ static int get_context_priority(struct net_context *context,
 #endif
 }
 
+static int get_context_tls_enable(struct net_context *context,
+				  void *value, size_t *len)
+{
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	if (!len || *len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	*((int *)value) = (context->tls != 0);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+static int set_context_tls_enable(struct net_context *context,
+				  const void *value, size_t len)
+{
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	bool enabled;
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	enabled = !!*(int *)value;
+
+	return net_tls_enable(context, enabled);
+#else
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_tls_sec_tag_list(struct net_context *context,
+					void *value, size_t *len)
+{
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	int ret;
+	int sec_tag_cnt;
+
+	if (!len || !value || *len % sizeof(sec_tag_t) != 0)
+		return -EINVAL;
+
+	sec_tag_cnt = *len / sizeof(sec_tag_t);
+
+	ret = net_tls_sec_tag_list_get(context, value, &sec_tag_cnt);
+	if (ret < 0)
+		return ret;
+
+	*len = sec_tag_cnt * sizeof(sec_tag_t);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif /* defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS) */
+}
+
+static int set_context_tls_sec_tag_list(struct net_context *context,
+					const void *value, size_t len)
+{
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+	if (!value || len % sizeof(sec_tag_t) != 0)
+		return -EINVAL;
+
+	return net_tls_sec_tag_list_set(context, value,
+					len / sizeof(sec_tag_t));
+#else
+	return -ENOTSUP;
+#endif /* defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS) */
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -1304,9 +1437,21 @@ int net_context_set_option(struct net_context *context,
 		return -EINVAL;
 	}
 
+	if (!value) {
+		return -EINVAL;
+	}
+
 	switch (option) {
 	case NET_OPT_PRIORITY:
 		ret = set_context_priority(context, value, len);
+		break;
+
+	case NET_OPT_TLS_ENABLE:
+		ret = set_context_tls_enable(context, value, len);
+		break;
+
+	case NET_OPT_TLS_SEC_TAG_LIST:
+		ret = set_context_tls_sec_tag_list(context, value, len);
 		break;
 	}
 
@@ -1325,9 +1470,21 @@ int net_context_get_option(struct net_context *context,
 		return -EINVAL;
 	}
 
+	if (!value) {
+		return -EINVAL;
+	}
+
 	switch (option) {
 	case NET_OPT_PRIORITY:
 		ret = get_context_priority(context, value, len);
+		break;
+
+	case NET_OPT_TLS_ENABLE:
+		ret = get_context_tls_enable(context, value, len);
+		break;
+
+	case NET_OPT_TLS_SEC_TAG_LIST:
+		ret = get_context_tls_sec_tag_list(context, value, len);
 		break;
 	}
 

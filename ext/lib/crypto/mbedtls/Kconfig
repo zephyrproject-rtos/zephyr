@@ -45,6 +45,7 @@ config MBEDTLS_CFG_FILE
 	string "mbed TLS configuration file"
 	depends on MBEDTLS_BUILTIN
 	default "config-mini-tls1_2.h"
+	default "config-tls-generic.h" if NET_TLS || NET_DTLS
 	help
 	  Use a specific mbed TLS configuration file. The default is suitable to
 	  communicate with majority of HTTPS servers on the Internet, but has

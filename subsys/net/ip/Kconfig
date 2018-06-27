@@ -248,6 +248,8 @@ config NET_DEBUG_UDP
 	help
 	  Enables UDP handler output debug messages
 
+source "subsys/net/ip/Kconfig.tls"
+
 config NET_MAX_CONN
 	int "How many network connections are supported"
 	depends on NET_UDP || NET_TCP

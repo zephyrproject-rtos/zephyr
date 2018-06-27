@@ -18,6 +18,8 @@
 #include <net/net_pkt.h>
 #include <net/socket.h>
 
+#include "sockets_tls.h"
+
 #define SOCK_EOF 1
 #define SOCK_NONBLOCK 2
 
@@ -159,7 +161,13 @@ static void zsock_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 		 */
 		header_len = net_pkt_appdata(pkt) - pkt->frags->data;
 		net_buf_pull(pkt->frags, header_len);
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+		if (!ctx->tls) {
+			net_context_update_recv_wnd(ctx, -net_pkt_appdatalen(pkt));
+		}
+#else
 		net_context_update_recv_wnd(ctx, -net_pkt_appdatalen(pkt));
+#endif
 	}
 
 	k_fifo_put(&ctx->recv_q, pkt);
@@ -443,7 +451,13 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 	} while (recv_len == 0);
 
 	if (!(flags & ZSOCK_MSG_PEEK)) {
+#if defined(CONFIG_NET_TLS) || defined(CONFIG_NET_DTLS)
+		if (!ctx->tls) {
+			net_context_update_recv_wnd(ctx, recv_len);
+		}
+#else
 		net_context_update_recv_wnd(ctx, recv_len);
+#endif
 	}
 
 	return recv_len;
@@ -576,4 +590,52 @@ int zsock_inet_pton(sa_family_t family, const char *src, void *dst)
 	} else {
 		return 0;
 	}
+}
+
+int zsock_getsockopt(int sock, int level, int optname,
+		     void *optval, socklen_t *optlen)
+{
+	int ret = 0;
+
+	if (!sock) {
+		SET_ERRNO(-ENOTSOCK);
+	}
+
+	switch (level) {
+	case SOL_TLS:
+		ret = tls_getsockopt(sock, level, optname, optval, optlen);
+		break;
+
+	default:
+		ret = -EOPNOTSUPP;
+		break;
+	}
+
+	SET_ERRNO(ret);
+
+	return 0;
+}
+
+int zsock_setsockopt(int sock, int level, int optname,
+		     const void *optval, socklen_t optlen)
+{
+	int ret = 0;
+
+	if (!sock) {
+		SET_ERRNO(-ENOTSOCK);
+	}
+
+	switch (level) {
+	case SOL_TLS:
+		ret = tls_setsockopt(sock, level, optname, optval, optlen);
+		break;
+
+	default:
+		ret = -EOPNOTSUPP;
+		break;
+	}
+
+	SET_ERRNO(ret);
+
+	return 0;
 }

@@ -3787,7 +3787,7 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	 * some other purposes, like TCP resend etc. So we need to copy
 	 * the large pkt here and do the fragmenting with the clone.
 	 */
-	clone = net_pkt_clone(pkt, BUF_ALLOC_TIMEOUT);
+	clone = net_pkt_clone(pkt, BUF_ALLOC_TIMEOUT, NET_PKT_CLONE_USER_DATA);
 	if (!clone) {
 		NET_DBG("Cannot clone %p", pkt);
 		return -ENOMEM;

@@ -20,16 +20,22 @@
 #include <net/socket.h>
 #include <kernel.h>
 #include <net/net_app.h>
+#include <net/net_tls.h>
+
+#include "tls_default_credentials.h"
 
 #endif
 
 /* HTTP server to connect to */
 #define HTTP_HOST "google.com"
 /* Port to connect to, as string */
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+#define HTTP_PORT "443"
+#else
 #define HTTP_PORT "80"
+#endif
 /* HTTP path to request */
 #define HTTP_PATH "/"
-
 
 #define SSTRLEN(s) (sizeof(s) - 1)
 #define CHECK(r) { if (r == -1) { printf("Error: " #r "\n"); exit(1); } }
@@ -74,9 +80,23 @@ int main(void)
 
 	dump_addrinfo(res);
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	sock = socket(res->ai_family, res->ai_socktype, IPPROTO_TLS_1_2);
+#else
 	sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+#endif
+
 	CHECK(sock);
 	printf("sock = %d\n", sock);
+
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	sec_tag_t sec_tag_opt[] = {
+		NET_TLS_DEFAULT_CA_CERTIFICATE_TAG,
+	};
+	CHECK(setsockopt(sock, SOL_TLS, TLS_SEC_TAG_LIST,
+			 sec_tag_opt, sizeof(sec_tag_opt)));
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
+
 	CHECK(connect(sock, res->ai_addr, res->ai_addrlen));
 	CHECK(send(sock, REQUEST, SSTRLEN(REQUEST), 0));
 
@@ -95,8 +115,10 @@ int main(void)
 		}
 
 		response[len] = 0;
-		printf("%s\n", response);
+		printf("%s", response);
 	}
+
+	printf("\n");
 
 	(void)close(sock);
 

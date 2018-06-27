@@ -1964,7 +1964,7 @@ struct net_tcp_hdr *net_pkt_tcp_data(struct net_pkt *pkt)
 	return (struct net_tcp_hdr *)(frag->data + offset);
 }
 
-struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
+struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout, int flags)
 {
 	struct net_pkt *clone;
 	struct net_buf *frag;
@@ -1981,8 +1981,15 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 
 	clone->frags = NULL;
 
-	if (pkt->frags) {
-		clone->frags = net_pkt_copy_all(pkt, 0, timeout);
+	if (flags && pkt->frags) {
+		if (flags & NET_PKT_CLONE_USER_DATA) {
+			clone->frags = net_pkt_copy_all(pkt, 0, timeout);
+		} else if (flags & NET_PKT_CLONE_HDR) {
+			clone->frags = net_pkt_copy(pkt,
+						    net_pkt_ip_hdr_len(pkt),
+						    0, timeout);
+		}
+
 		if (!clone->frags) {
 			net_pkt_unref(clone);
 			return NULL;
@@ -1996,8 +2003,10 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 	if (clone->frags) {
 		frag = net_frag_get_pos(clone, net_pkt_ip_hdr_len(pkt), &pos);
 
-		net_pkt_set_appdata(clone, frag->data + pos);
-		net_pkt_set_appdatalen(clone, net_pkt_appdatalen(pkt));
+		if (frag) {
+			net_pkt_set_appdata(clone, frag->data + pos);
+			net_pkt_set_appdatalen(clone, net_pkt_appdatalen(pkt));
+		}
 
 		/* The link header pointers are only usable if there is
 		 * a fragment that we copied because those pointers point
