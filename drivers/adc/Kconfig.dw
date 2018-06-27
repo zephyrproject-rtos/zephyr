@@ -10,7 +10,6 @@ menuconfig ADC_DW
 	bool "ARC Designware Driver"
 	depends on ARC
 	select ADC_0
-	default n
 	help
 	  Enable the driver implementation of the Designware ADC IP.
 
