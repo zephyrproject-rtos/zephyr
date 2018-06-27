@@ -101,7 +101,7 @@ static inline void dcache_invalidate(u32_t addr, u32_t size)
 	u32_t start_addr = addr & (u32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
 	u32_t size_full = size + addr - start_addr;
 
-	SCB_InvalidateDCache_by_Addr((u32_t *)start_addr, size_full);
+	SCB_InvalidateDCache_by_Addr((uint32_t *)start_addr, size_full);
 }
 
 static inline void dcache_clean(u32_t addr, u32_t size)
@@ -114,7 +114,7 @@ static inline void dcache_clean(u32_t addr, u32_t size)
 	u32_t start_addr = addr & (u32_t)~(GMAC_DCACHE_ALIGNMENT - 1);
 	u32_t size_full = size + addr - start_addr;
 
-	SCB_CleanDCache_by_Addr((u32_t *)start_addr, size_full);
+	SCB_CleanDCache_by_Addr((uint32_t *)start_addr, size_full);
 }
 
 /* gmac descriptiors helpers */
