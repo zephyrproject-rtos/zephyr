@@ -6,7 +6,6 @@
 
 menuconfig I2C_DW
 	bool "Design Ware I2C support"
-	default n
 	help
 	  Enable Design Ware I2C support on the selected board
 
@@ -18,7 +17,6 @@ config I2C_DW_CLOCK_SPEED
 
 config I2C_DW_SHARED_IRQ
 	bool
-	default n
 
 choice
 	prompt "I2C_0 Interrupts via"

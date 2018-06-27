@@ -7,7 +7,6 @@
 menuconfig I2C_QMSI
 	bool "QMSI I2C driver"
 	depends on QMSI
-	default n
 	help
 	  This option enable the QMSI I2C driver.
 
@@ -40,7 +39,6 @@ endif # I2C_QMSI
 menuconfig I2C_QMSI_SS
 	bool "QMSI I2C driver for the Sensor Subsystem"
 	depends on QMSI
-	default n
 	help
 	  This option enable the Sensor QMSI I2C driver.
 
@@ -51,11 +49,9 @@ if I2C_QMSI_SS
 
 config I2C_SS_0
 	bool "Enable I2C_SS_0"
-	default n
 
 config I2C_SS_1
 	bool "Enable I2C SS Port 1"
-	default n
 
 config I2C_SS_SDA_HOLD
 	int
