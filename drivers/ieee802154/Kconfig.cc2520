@@ -9,7 +9,6 @@
 menuconfig IEEE802154_CC2520
 	bool "TI CC2520 Driver support"
 	depends on NETWORKING
-	default n
 
 if IEEE802154_CC2520
 
@@ -43,7 +42,6 @@ config IEEE802154_CC2520_SPI_SLAVE
 
 config IEEE802154_CC2520_GPIO_SPI_CS
 	bool "Manage SPI CS through a GPIO pin"
-	default n
 	help
 	This option is useful if one needs to manage SPI CS through a GPIO
 	pin to by-pass the SPI controller's CS logic.
@@ -121,7 +119,6 @@ endif # IEEE802154_CC2520_RANDOM_MAC
 
 config IEEE802154_CC2520_CRYPTO
 	bool "Enable hardware crypto helper on cc2520"
-	default n
 	depends on NET_L2_IEEE802154_SECURITY
 	help
 	  This option will expose the hardware AES encryption from CC2520.
