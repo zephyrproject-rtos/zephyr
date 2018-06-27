@@ -147,7 +147,7 @@
 #define __HAL_PWR_UNDERDRIVE_DISABLE() (PWR->CR1 &= (uint32_t)(~PWR_CR1_UDEN))
 
 /** @brief  Check PWR flag is set or not.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __FLAG__ specifies the flag to check.
   *         This parameter can be one of the following values:
   *            @arg PWR_FLAG_ODRDY: This flag indicates that the Over-drive mode
   *                                 is ready 
@@ -164,7 +164,7 @@
 #define __HAL_PWR_CLEAR_ODRUDR_FLAG() (PWR->CSR1 |= PWR_FLAG_UDRDY)
 
 /** @brief  Check Wake Up flag is set or not.
-  * @param  __WUFLAG__: specifies the Wake Up flag to check.
+  * @param  __WUFLAG__ specifies the Wake Up flag to check.
   *          This parameter can be one of the following values:
   *            @arg PWR_WAKEUP_PIN_FLAG1: Wakeup Pin Flag for PA0
   *            @arg PWR_WAKEUP_PIN_FLAG2: Wakeup Pin Flag for PA2
@@ -176,7 +176,7 @@
 #define __HAL_PWR_GET_WAKEUP_FLAG(__WUFLAG__) (PWR->CSR2 & (__WUFLAG__))
 
 /** @brief  Clear the WakeUp pins flags.
-  * @param  __WUFLAG__: specifies the Wake Up pin flag to clear.
+  * @param  __WUFLAG__ specifies the Wake Up pin flag to clear.
   *          This parameter can be one of the following values:
   *            @arg PWR_WAKEUP_PIN_FLAG1: Wakeup Pin Flag for PA0
   *            @arg PWR_WAKEUP_PIN_FLAG2: Wakeup Pin Flag for PA2

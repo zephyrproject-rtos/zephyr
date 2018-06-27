@@ -170,10 +170,10 @@ HAL_StatusTypeDef FLASH_WaitForLastOperation(uint32_t Timeout);
 
 /**
   * @brief  Program byte, halfword, word or double word at a specified address
-  * @param  TypeProgram:  Indicate the way to program at a specified address.
+  * @param  TypeProgram  Indicate the way to program at a specified address.
   *                           This parameter can be a value of @ref FLASH_Type_Program
-  * @param  Address:  specifies the address to be programmed.
-  * @param  Data: specifies the data to be programmed
+  * @param  Address  specifies the address to be programmed.
+  * @param  Data specifies the data to be programmed
   * 
   * @retval HAL_StatusTypeDef HAL Status
   */
@@ -239,10 +239,10 @@ HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t Address, uint
 
 /**
   * @brief   Program byte, halfword, word or double word at a specified address  with interrupt enabled.
-  * @param  TypeProgram:  Indicate the way to program at a specified address.
+  * @param  TypeProgram  Indicate the way to program at a specified address.
   *                           This parameter can be a value of @ref FLASH_Type_Program
-  * @param  Address:  specifies the address to be programmed.
-  * @param  Data: specifies the data to be programmed
+  * @param  Address  specifies the address to be programmed.
+  * @param  Data specifies the data to be programmed
   * 
   * @retval HAL Status
   */
@@ -436,7 +436,7 @@ void HAL_FLASH_IRQHandler(void)
 
 /**
   * @brief  FLASH end of operation interrupt callback
-  * @param  ReturnValue: The value saved in this parameter depends on the ongoing procedure
+  * @param  ReturnValue The value saved in this parameter depends on the ongoing procedure
   *                 - Sectors Erase: Sector which has been erased (if 0xFFFFFFFF, it means that 
   *                                  all the selected sectors have been erased)
   *                 - Program      : Address which was selected for data program
@@ -454,7 +454,7 @@ __weak void HAL_FLASH_EndOfOperationCallback(uint32_t ReturnValue)
 
 /**
   * @brief  FLASH operation error interrupt callback
-  * @param  ReturnValue: The value saved in this parameter depends on the ongoing procedure
+  * @param  ReturnValue The value saved in this parameter depends on the ongoing procedure
   *                 - Sectors Erase: Sector which has been erased (if 0xFFFFFFFF, it means that 
   *                                  all the selected sectors have been erased)
   *                 - Program      : Address which was selected for data program
@@ -495,18 +495,22 @@ __weak void HAL_FLASH_OperationErrorCallback(uint32_t ReturnValue)
   */
 HAL_StatusTypeDef HAL_FLASH_Unlock(void)
 {
-  if((FLASH->CR & FLASH_CR_LOCK) != RESET)
+  HAL_StatusTypeDef status = HAL_OK;
+
+  if(READ_BIT(FLASH->CR, FLASH_CR_LOCK) != RESET)
   {
     /* Authorize the FLASH Registers access */
-    FLASH->KEYR = FLASH_KEY1;
-    FLASH->KEYR = FLASH_KEY2;
+    WRITE_REG(FLASH->KEYR, FLASH_KEY1);
+    WRITE_REG(FLASH->KEYR, FLASH_KEY2);
+
+    /* Verify Flash is unlocked */
+    if(READ_BIT(FLASH->CR, FLASH_CR_LOCK) != RESET)
+    {
+      status = HAL_ERROR;
+    }
   }
-  else
-  {
-    return HAL_ERROR;
-  }
-  
-  return HAL_OK; 
+
+  return status;
 }
 
 /**
@@ -604,7 +608,7 @@ uint32_t HAL_FLASH_GetError(void)
 
 /**
   * @brief  Wait for a FLASH operation to complete.
-  * @param  Timeout: maximum flash operationtimeout
+  * @param  Timeout maximum flash operationtimeout
   * @retval HAL Status
   */
 HAL_StatusTypeDef FLASH_WaitForLastOperation(uint32_t Timeout)
@@ -658,8 +662,8 @@ HAL_StatusTypeDef FLASH_WaitForLastOperation(uint32_t Timeout)
   * @note   If an erase and a program operations are requested simultaneously,    
   *         the erase operation is performed before the program one.
   *  
-  * @param  Address: specifies the address to be programmed.
-  * @param  Data: specifies the data to be programmed.
+  * @param  Address specifies the address to be programmed.
+  * @param  Data specifies the data to be programmed.
   * @retval None
   */
 static void FLASH_Program_DoubleWord(uint32_t Address, uint64_t Data)
@@ -690,8 +694,8 @@ static void FLASH_Program_DoubleWord(uint32_t Address, uint64_t Data)
   * @note   If an erase and a program operations are requested simultaneously,    
   *         the erase operation is performed before the program one.
   *  
-  * @param  Address: specifies the address to be programmed.
-  * @param  Data: specifies the data to be programmed.
+  * @param  Address specifies the address to be programmed.
+  * @param  Data specifies the data to be programmed.
   * @retval None
   */
 static void FLASH_Program_Word(uint32_t Address, uint32_t Data)
@@ -719,8 +723,8 @@ static void FLASH_Program_Word(uint32_t Address, uint32_t Data)
   * @note   If an erase and a program operations are requested simultaneously,    
   *         the erase operation is performed before the program one.
   *  
-  * @param  Address: specifies the address to be programmed.
-  * @param  Data: specifies the data to be programmed.
+  * @param  Address specifies the address to be programmed.
+  * @param  Data specifies the data to be programmed.
   * @retval None
   */
 static void FLASH_Program_HalfWord(uint32_t Address, uint16_t Data)
@@ -749,8 +753,8 @@ static void FLASH_Program_HalfWord(uint32_t Address, uint16_t Data)
   * @note   If an erase and a program operations are requested simultaneously,    
   *         the erase operation is performed before the program one.
   *  
-  * @param  Address: specifies the address to be programmed.
-  * @param  Data: specifies the data to be programmed.
+  * @param  Address specifies the address to be programmed.
+  * @param  Data specifies the data to be programmed.
   * @retval None
   */
 static void FLASH_Program_Byte(uint32_t Address, uint8_t Data)

@@ -1591,80 +1591,80 @@ typedef struct
  */
  
 /** @brief Reset ETH handle state
-  * @param  __HANDLE__: specifies the ETH handle.
+  * @param  __HANDLE__ specifies the ETH handle.
   * @retval None
   */
 #define __HAL_ETH_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_ETH_STATE_RESET)
 
 /** 
   * @brief  Checks whether the specified Ethernet DMA Tx Desc flag is set or not.
-  * @param  __HANDLE__: ETH Handle
-  * @param  __FLAG__: specifies the flag of TDES0 to check.
+  * @param  __HANDLE__ ETH Handle
+  * @param  __FLAG__ specifies the flag of TDES0 to check.
   * @retval the ETH_DMATxDescFlag (SET or RESET).
   */
 #define __HAL_ETH_DMATXDESC_GET_FLAG(__HANDLE__, __FLAG__)             ((__HANDLE__)->TxDesc->Status & (__FLAG__) == (__FLAG__))
 
 /**
   * @brief  Checks whether the specified Ethernet DMA Rx Desc flag is set or not.
-  * @param  __HANDLE__: ETH Handle
-  * @param  __FLAG__: specifies the flag of RDES0 to check.
+  * @param  __HANDLE__ ETH Handle
+  * @param  __FLAG__ specifies the flag of RDES0 to check.
   * @retval the ETH_DMATxDescFlag (SET or RESET).
   */
 #define __HAL_ETH_DMARXDESC_GET_FLAG(__HANDLE__, __FLAG__)             ((__HANDLE__)->RxDesc->Status & (__FLAG__) == (__FLAG__))
 
 /**
   * @brief  Enables the specified DMA Rx Desc receive interrupt.
-  * @param  __HANDLE__: ETH Handle
+  * @param  __HANDLE__ ETH Handle
   * @retval None
   */
 #define __HAL_ETH_DMARXDESC_ENABLE_IT(__HANDLE__)                          ((__HANDLE__)->RxDesc->ControlBufferSize &=(~(uint32_t)ETH_DMARXDESC_DIC))
 
 /**
   * @brief  Disables the specified DMA Rx Desc receive interrupt.
-  * @param  __HANDLE__: ETH Handle
+  * @param  __HANDLE__ ETH Handle
   * @retval None
   */
 #define __HAL_ETH_DMARXDESC_DISABLE_IT(__HANDLE__)                         ((__HANDLE__)->RxDesc->ControlBufferSize |= ETH_DMARXDESC_DIC)
 
 /**
   * @brief  Set the specified DMA Rx Desc Own bit.
-  * @param  __HANDLE__: ETH Handle
+  * @param  __HANDLE__ ETH Handle
   * @retval None
   */
 #define __HAL_ETH_DMARXDESC_SET_OWN_BIT(__HANDLE__)                           ((__HANDLE__)->RxDesc->Status |= ETH_DMARXDESC_OWN)
 
 /**
   * @brief  Returns the specified Ethernet DMA Tx Desc collision count.
-  * @param  __HANDLE__: ETH Handle                     
+  * @param  __HANDLE__ ETH Handle                     
   * @retval The Transmit descriptor collision counter value.
   */
 #define __HAL_ETH_DMATXDESC_GET_COLLISION_COUNT(__HANDLE__)                   (((__HANDLE__)->TxDesc->Status & ETH_DMATXDESC_CC) >> ETH_DMATXDESC_COLLISION_COUNTSHIFT)
 
 /**
   * @brief  Set the specified DMA Tx Desc Own bit.
-  * @param  __HANDLE__: ETH Handle
+  * @param  __HANDLE__ ETH Handle
   * @retval None
   */
 #define __HAL_ETH_DMATXDESC_SET_OWN_BIT(__HANDLE__)                       ((__HANDLE__)->TxDesc->Status |= ETH_DMATXDESC_OWN)
 
 /**
   * @brief  Enables the specified DMA Tx Desc Transmit interrupt.
-  * @param  __HANDLE__: ETH Handle                   
+  * @param  __HANDLE__ ETH Handle                   
   * @retval None
   */
 #define __HAL_ETH_DMATXDESC_ENABLE_IT(__HANDLE__)                          ((__HANDLE__)->TxDesc->Status |= ETH_DMATXDESC_IC)
 
 /**
   * @brief  Disables the specified DMA Tx Desc Transmit interrupt.
-  * @param  __HANDLE__: ETH Handle             
+  * @param  __HANDLE__ ETH Handle             
   * @retval None
   */
 #define __HAL_ETH_DMATXDESC_DISABLE_IT(__HANDLE__)                          ((__HANDLE__)->TxDesc->Status &= ~ETH_DMATXDESC_IC)
 
 /**
   * @brief  Selects the specified Ethernet DMA Tx Desc Checksum Insertion.
-  * @param  __HANDLE__: ETH Handle  
-  * @param  __CHECKSUM__: specifies is the DMA Tx desc checksum insertion.
+  * @param  __HANDLE__ ETH Handle  
+  * @param  __CHECKSUM__ specifies is the DMA Tx desc checksum insertion.
   *   This parameter can be one of the following values:
   *     @arg ETH_DMATXDESC_CHECKSUMBYPASS : Checksum bypass
   *     @arg ETH_DMATXDESC_CHECKSUMIPV4HEADER : IPv4 header checksum
@@ -1676,36 +1676,36 @@ typedef struct
 
 /**
   * @brief  Enables the DMA Tx Desc CRC.
-  * @param  __HANDLE__: ETH Handle 
+  * @param  __HANDLE__ ETH Handle 
   * @retval None
   */
 #define __HAL_ETH_DMATXDESC_CRC_ENABLE(__HANDLE__)                          ((__HANDLE__)->TxDesc->Status &= ~ETH_DMATXDESC_DC)
 
 /**
   * @brief  Disables the DMA Tx Desc CRC.
-  * @param  __HANDLE__: ETH Handle 
+  * @param  __HANDLE__ ETH Handle 
   * @retval None
   */
 #define __HAL_ETH_DMATXDESC_CRC_DISABLE(__HANDLE__)                         ((__HANDLE__)->TxDesc->Status |= ETH_DMATXDESC_DC)
 
 /**
   * @brief  Enables the DMA Tx Desc padding for frame shorter than 64 bytes.
-  * @param  __HANDLE__: ETH Handle 
+  * @param  __HANDLE__ ETH Handle 
   * @retval None
   */
 #define __HAL_ETH_DMATXDESC_SHORT_FRAME_PADDING_ENABLE(__HANDLE__)            ((__HANDLE__)->TxDesc->Status &= ~ETH_DMATXDESC_DP)
 
 /**
   * @brief  Disables the DMA Tx Desc padding for frame shorter than 64 bytes.
-  * @param  __HANDLE__: ETH Handle 
+  * @param  __HANDLE__ ETH Handle 
   * @retval None
   */
 #define __HAL_ETH_DMATXDESC_SHORT_FRAME_PADDING_DISABLE(__HANDLE__)           ((__HANDLE__)->TxDesc->Status |= ETH_DMATXDESC_DP)
 
 /** 
  * @brief  Enables the specified Ethernet MAC interrupts.
-  * @param  __HANDLE__   : ETH Handle
-  * @param  __INTERRUPT__: specifies the Ethernet MAC interrupt sources to be
+  * @param  __HANDLE__    ETH Handle
+  * @param  __INTERRUPT__ specifies the Ethernet MAC interrupt sources to be
   *   enabled or disabled.
   *   This parameter can be any combination of the following values:
   *     @arg ETH_MAC_IT_TST : Time stamp trigger interrupt 
@@ -1716,8 +1716,8 @@ typedef struct
 
 /**
   * @brief  Disables the specified Ethernet MAC interrupts.
-  * @param  __HANDLE__   : ETH Handle
-  * @param  __INTERRUPT__: specifies the Ethernet MAC interrupt sources to be
+  * @param  __HANDLE__    ETH Handle
+  * @param  __INTERRUPT__ specifies the Ethernet MAC interrupt sources to be
   *   enabled or disabled.
   *   This parameter can be any combination of the following values:
   *     @arg ETH_MAC_IT_TST : Time stamp trigger interrupt 
@@ -1728,36 +1728,36 @@ typedef struct
 
 /**
   * @brief  Initiate a Pause Control Frame (Full-duplex only).
-  * @param  __HANDLE__: ETH Handle
+  * @param  __HANDLE__ ETH Handle
   * @retval None
   */
 #define __HAL_ETH_INITIATE_PAUSE_CONTROL_FRAME(__HANDLE__)              ((__HANDLE__)->Instance->MACFCR |= ETH_MACFCR_FCBBPA)
 
 /**
   * @brief  Checks whether the Ethernet flow control busy bit is set or not.
-  * @param  __HANDLE__: ETH Handle
+  * @param  __HANDLE__ ETH Handle
   * @retval The new state of flow control busy status bit (SET or RESET).
   */
 #define __HAL_ETH_GET_FLOW_CONTROL_BUSY_STATUS(__HANDLE__)               (((__HANDLE__)->Instance->MACFCR & ETH_MACFCR_FCBBPA) == ETH_MACFCR_FCBBPA)
 
 /**
   * @brief  Enables the MAC Back Pressure operation activation (Half-duplex only).
-  * @param  __HANDLE__: ETH Handle
+  * @param  __HANDLE__ ETH Handle
   * @retval None
   */
 #define __HAL_ETH_BACK_PRESSURE_ACTIVATION_ENABLE(__HANDLE__)          ((__HANDLE__)->Instance->MACFCR |= ETH_MACFCR_FCBBPA)
 
 /**
   * @brief  Disables the MAC BackPressure operation activation (Half-duplex only).
-  * @param  __HANDLE__: ETH Handle
+  * @param  __HANDLE__ ETH Handle
   * @retval None
   */
 #define __HAL_ETH_BACK_PRESSURE_ACTIVATION_DISABLE(__HANDLE__)         ((__HANDLE__)->Instance->MACFCR &= ~ETH_MACFCR_FCBBPA)
 
 /**
   * @brief  Checks whether the specified Ethernet MAC flag is set or not.
-  * @param  __HANDLE__: ETH Handle
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __HANDLE__ ETH Handle
+  * @param  __FLAG__ specifies the flag to check.
   *   This parameter can be one of the following values:
   *     @arg ETH_MAC_FLAG_TST  : Time stamp trigger flag   
   *     @arg ETH_MAC_FLAG_MMCT : MMC transmit flag  
@@ -1770,8 +1770,8 @@ typedef struct
 
 /** 
   * @brief  Enables the specified Ethernet DMA interrupts.
-  * @param  __HANDLE__   : ETH Handle
-  * @param  __INTERRUPT__: specifies the Ethernet DMA interrupt sources to be
+  * @param  __HANDLE__    ETH Handle
+  * @param  __INTERRUPT__ specifies the Ethernet DMA interrupt sources to be
   *   enabled @ref ETH_DMA_Interrupts
   * @retval None
   */
@@ -1779,8 +1779,8 @@ typedef struct
 
 /**
   * @brief  Disables the specified Ethernet DMA interrupts.
-  * @param  __HANDLE__   : ETH Handle
-  * @param  __INTERRUPT__: specifies the Ethernet DMA interrupt sources to be
+  * @param  __HANDLE__    ETH Handle
+  * @param  __INTERRUPT__ specifies the Ethernet DMA interrupt sources to be
   *   disabled. @ref ETH_DMA_Interrupts
   * @retval None
   */
@@ -1788,32 +1788,32 @@ typedef struct
 
 /**
   * @brief  Clears the Ethernet DMA IT pending bit.
-  * @param  __HANDLE__   : ETH Handle
-  * @param  __INTERRUPT__: specifies the interrupt pending bit to clear. @ref ETH_DMA_Interrupts
+  * @param  __HANDLE__    ETH Handle
+  * @param  __INTERRUPT__ specifies the interrupt pending bit to clear. @ref ETH_DMA_Interrupts
   * @retval None
   */
 #define __HAL_ETH_DMA_CLEAR_IT(__HANDLE__, __INTERRUPT__)      ((__HANDLE__)->Instance->DMASR =(__INTERRUPT__))
 
 /**
   * @brief  Checks whether the specified Ethernet DMA flag is set or not.
-* @param  __HANDLE__: ETH Handle
-  * @param  __FLAG__: specifies the flag to check. @ref ETH_DMA_Flags
+* @param  __HANDLE__ ETH Handle
+  * @param  __FLAG__ specifies the flag to check. @ref ETH_DMA_Flags
   * @retval The new state of ETH_DMA_FLAG (SET or RESET).
   */
 #define __HAL_ETH_DMA_GET_FLAG(__HANDLE__, __FLAG__)                   (((__HANDLE__)->Instance->DMASR &( __FLAG__)) == ( __FLAG__))
 
 /**
   * @brief  Checks whether the specified Ethernet DMA flag is set or not.
-  * @param  __HANDLE__: ETH Handle
-  * @param  __FLAG__: specifies the flag to clear. @ref ETH_DMA_Flags
+  * @param  __HANDLE__ ETH Handle
+  * @param  __FLAG__ specifies the flag to clear. @ref ETH_DMA_Flags
   * @retval The new state of ETH_DMA_FLAG (SET or RESET).
   */
 #define __HAL_ETH_DMA_CLEAR_FLAG(__HANDLE__, __FLAG__)                 ((__HANDLE__)->Instance->DMASR = (__FLAG__))
 
 /**
   * @brief  Checks whether the specified Ethernet DMA overflow flag is set or not.
-  * @param  __HANDLE__: ETH Handle
-  * @param  __OVERFLOW__: specifies the DMA overflow flag to check.
+  * @param  __HANDLE__ ETH Handle
+  * @param  __OVERFLOW__ specifies the DMA overflow flag to check.
   *   This parameter can be one of the following values:
   *     @arg ETH_DMA_OVERFLOW_RXFIFOCOUNTER : Overflow for FIFO Overflows Counter
   *     @arg ETH_DMA_OVERFLOW_MISSEDFRAMECOUNTER : Overflow for Buffer Unavailable Missed Frame Counter
@@ -1823,8 +1823,8 @@ typedef struct
 
 /**
   * @brief  Set the DMA Receive status watchdog timer register value
-  * @param  __HANDLE__: ETH Handle
-  * @param  __VALUE__: DMA Receive status watchdog timer register value   
+  * @param  __HANDLE__ ETH Handle
+  * @param  __VALUE__ DMA Receive status watchdog timer register value   
   * @retval None
   */
 #define __HAL_ETH_SET_RECEIVE_WATCHDOG_TIMER(__HANDLE__, __VALUE__)       ((__HANDLE__)->Instance->DMARSWTR = (__VALUE__))
@@ -1832,7 +1832,7 @@ typedef struct
 /** 
   * @brief  Enables any unicast packet filtered by the MAC address
   *   recognition to be a wake-up frame.
-  * @param  __HANDLE__: ETH Handle.
+  * @param  __HANDLE__ ETH Handle.
   * @retval None
   */
 #define __HAL_ETH_GLOBAL_UNICAST_WAKEUP_ENABLE(__HANDLE__)               ((__HANDLE__)->Instance->MACPMTCSR |= ETH_MACPMTCSR_GU)
@@ -1840,57 +1840,57 @@ typedef struct
 /**
   * @brief  Disables any unicast packet filtered by the MAC address
   *   recognition to be a wake-up frame.
-  * @param  __HANDLE__: ETH Handle.
+  * @param  __HANDLE__ ETH Handle.
   * @retval None
   */
 #define __HAL_ETH_GLOBAL_UNICAST_WAKEUP_DISABLE(__HANDLE__)              ((__HANDLE__)->Instance->MACPMTCSR &= ~ETH_MACPMTCSR_GU)
 
 /**
   * @brief  Enables the MAC Wake-Up Frame Detection.
-  * @param  __HANDLE__: ETH Handle.
+  * @param  __HANDLE__ ETH Handle.
   * @retval None
   */
 #define __HAL_ETH_WAKEUP_FRAME_DETECTION_ENABLE(__HANDLE__)              ((__HANDLE__)->Instance->MACPMTCSR |= ETH_MACPMTCSR_WFE)
 
 /**
   * @brief  Disables the MAC Wake-Up Frame Detection.
-  * @param  __HANDLE__: ETH Handle.
+  * @param  __HANDLE__ ETH Handle.
   * @retval None
   */
 #define __HAL_ETH_WAKEUP_FRAME_DETECTION_DISABLE(__HANDLE__)             ((__HANDLE__)->Instance->MACPMTCSR &= ~ETH_MACPMTCSR_WFE)
 
 /**
   * @brief  Enables the MAC Magic Packet Detection.
-  * @param  __HANDLE__: ETH Handle.
+  * @param  __HANDLE__ ETH Handle.
   * @retval None
   */
 #define __HAL_ETH_MAGIC_PACKET_DETECTION_ENABLE(__HANDLE__)              ((__HANDLE__)->Instance->MACPMTCSR |= ETH_MACPMTCSR_MPE)
 
 /**
   * @brief  Disables the MAC Magic Packet Detection.
-  * @param  __HANDLE__: ETH Handle.
+  * @param  __HANDLE__ ETH Handle.
   * @retval None
   */
 #define __HAL_ETH_MAGIC_PACKET_DETECTION_DISABLE(__HANDLE__)             ((__HANDLE__)->Instance->MACPMTCSR &= ~ETH_MACPMTCSR_WFE)
 
 /**
   * @brief  Enables the MAC Power Down.
-  * @param  __HANDLE__: ETH Handle
+  * @param  __HANDLE__ ETH Handle
   * @retval None
   */
 #define __HAL_ETH_POWER_DOWN_ENABLE(__HANDLE__)                         ((__HANDLE__)->Instance->MACPMTCSR |= ETH_MACPMTCSR_PD)
 
 /**
   * @brief  Disables the MAC Power Down.
-  * @param  __HANDLE__: ETH Handle
+  * @param  __HANDLE__ ETH Handle
   * @retval None
   */
 #define __HAL_ETH_POWER_DOWN_DISABLE(__HANDLE__)                        ((__HANDLE__)->Instance->MACPMTCSR &= ~ETH_MACPMTCSR_PD)
 
 /**
   * @brief  Checks whether the specified Ethernet PMT flag is set or not.
-  * @param  __HANDLE__: ETH Handle.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __HANDLE__ ETH Handle.
+  * @param  __FLAG__ specifies the flag to check.
   *   This parameter can be one of the following values:
   *     @arg ETH_PMT_FLAG_WUFFRPR : Wake-Up Frame Filter Register Pointer Reset 
   *     @arg ETH_PMT_FLAG_WUFR    : Wake-Up Frame Received 
@@ -1901,14 +1901,14 @@ typedef struct
 
 /** 
   * @brief  Preset and Initialize the MMC counters to almost-full value: 0xFFFF_FFF0 (full - 16)
-  * @param   __HANDLE__: ETH Handle.
+  * @param   __HANDLE__ ETH Handle.
   * @retval None
   */
 #define __HAL_ETH_MMC_COUNTER_FULL_PRESET(__HANDLE__)                     ((__HANDLE__)->Instance->MMCCR |= (ETH_MMCCR_MCFHP | ETH_MMCCR_MCP))
 
 /**
   * @brief  Preset and Initialize the MMC counters to almost-half value: 0x7FFF_FFF0 (half - 16)
-  * @param  __HANDLE__: ETH Handle.
+  * @param  __HANDLE__ ETH Handle.
   * @retval None
   */
 #define __HAL_ETH_MMC_COUNTER_HALF_PRESET(__HANDLE__)                     do{(__HANDLE__)->Instance->MMCCR &= ~ETH_MMCCR_MCFHP;\
@@ -1916,57 +1916,57 @@ typedef struct
 
 /**
   * @brief  Enables the MMC Counter Freeze.
-  * @param  __HANDLE__: ETH Handle.
+  * @param  __HANDLE__ ETH Handle.
   * @retval None
   */
 #define __HAL_ETH_MMC_COUNTER_FREEZE_ENABLE(__HANDLE__)                  ((__HANDLE__)->Instance->MMCCR |= ETH_MMCCR_MCF)
 
 /**
   * @brief  Disables the MMC Counter Freeze.
-  * @param  __HANDLE__: ETH Handle.
+  * @param  __HANDLE__ ETH Handle.
   * @retval None
   */
 #define __HAL_ETH_MMC_COUNTER_FREEZE_DISABLE(__HANDLE__)                 ((__HANDLE__)->Instance->MMCCR &= ~ETH_MMCCR_MCF)
 
 /**
   * @brief  Enables the MMC Reset On Read.
-  * @param  __HANDLE__: ETH Handle.
+  * @param  __HANDLE__ ETH Handle.
   * @retval None
   */
 #define __HAL_ETH_ETH_MMC_RESET_ONREAD_ENABLE(__HANDLE__)                ((__HANDLE__)->Instance->MMCCR |= ETH_MMCCR_ROR)
 
 /**
   * @brief  Disables the MMC Reset On Read.
-  * @param  __HANDLE__: ETH Handle.
+  * @param  __HANDLE__ ETH Handle.
   * @retval None
   */
 #define __HAL_ETH_ETH_MMC_RESET_ONREAD_DISABLE(__HANDLE__)               ((__HANDLE__)->Instance->MMCCR &= ~ETH_MMCCR_ROR)
 
 /**
   * @brief  Enables the MMC Counter Stop Rollover.
-  * @param  __HANDLE__: ETH Handle.
+  * @param  __HANDLE__ ETH Handle.
   * @retval None
   */
 #define __HAL_ETH_ETH_MMC_COUNTER_ROLLOVER_ENABLE(__HANDLE__)            ((__HANDLE__)->Instance->MMCCR &= ~ETH_MMCCR_CSR)
 
 /**
   * @brief  Disables the MMC Counter Stop Rollover.
-  * @param  __HANDLE__: ETH Handle.
+  * @param  __HANDLE__ ETH Handle.
   * @retval None
   */
 #define __HAL_ETH_ETH_MMC_COUNTER_ROLLOVER_DISABLE(__HANDLE__)           ((__HANDLE__)->Instance->MMCCR |= ETH_MMCCR_CSR)
 
 /**
   * @brief  Resets the MMC Counters.
-  * @param   __HANDLE__: ETH Handle.
+  * @param   __HANDLE__ ETH Handle.
   * @retval None
   */
 #define __HAL_ETH_MMC_COUNTERS_RESET(__HANDLE__)                         ((__HANDLE__)->Instance->MMCCR |= ETH_MMCCR_CR)
 
 /**
   * @brief  Enables the specified Ethernet MMC Rx interrupts.
-  * @param   __HANDLE__: ETH Handle.
-  * @param  __INTERRUPT__: specifies the Ethernet MMC interrupt sources to be enabled or disabled.
+  * @param   __HANDLE__ ETH Handle.
+  * @param  __INTERRUPT__ specifies the Ethernet MMC interrupt sources to be enabled or disabled.
   *   This parameter can be one of the following values:  
   *     @arg ETH_MMC_IT_RGUF  : When Rx good unicast frames counter reaches half the maximum value 
   *     @arg ETH_MMC_IT_RFAE  : When Rx alignment error counter reaches half the maximum value 
@@ -1976,8 +1976,8 @@ typedef struct
 #define __HAL_ETH_MMC_RX_IT_ENABLE(__HANDLE__, __INTERRUPT__)               (__HANDLE__)->Instance->MMCRIMR &= ~((__INTERRUPT__) & 0xEFFFFFFF)
 /**
   * @brief  Disables the specified Ethernet MMC Rx interrupts.
-  * @param   __HANDLE__: ETH Handle.
-  * @param  __INTERRUPT__: specifies the Ethernet MMC interrupt sources to be enabled or disabled.
+  * @param   __HANDLE__ ETH Handle.
+  * @param  __INTERRUPT__ specifies the Ethernet MMC interrupt sources to be enabled or disabled.
   *   This parameter can be one of the following values: 
   *     @arg ETH_MMC_IT_RGUF  : When Rx good unicast frames counter reaches half the maximum value 
   *     @arg ETH_MMC_IT_RFAE  : When Rx alignment error counter reaches half the maximum value 
@@ -1987,8 +1987,8 @@ typedef struct
 #define __HAL_ETH_MMC_RX_IT_DISABLE(__HANDLE__, __INTERRUPT__)              (__HANDLE__)->Instance->MMCRIMR |= ((__INTERRUPT__) & 0xEFFFFFFF)
 /**
   * @brief  Enables the specified Ethernet MMC Tx interrupts.
-  * @param   __HANDLE__: ETH Handle.
-  * @param  __INTERRUPT__: specifies the Ethernet MMC interrupt sources to be enabled or disabled.
+  * @param   __HANDLE__ ETH Handle.
+  * @param  __INTERRUPT__ specifies the Ethernet MMC interrupt sources to be enabled or disabled.
   *   This parameter can be one of the following values:  
   *     @arg ETH_MMC_IT_TGF   : When Tx good frame counter reaches half the maximum value 
   *     @arg ETH_MMC_IT_TGFMSC: When Tx good multi col counter reaches half the maximum value 
@@ -1999,8 +1999,8 @@ typedef struct
 
 /**
   * @brief  Disables the specified Ethernet MMC Tx interrupts.
-  * @param   __HANDLE__: ETH Handle.
-  * @param  __INTERRUPT__: specifies the Ethernet MMC interrupt sources to be enabled or disabled.
+  * @param   __HANDLE__ ETH Handle.
+  * @param  __INTERRUPT__ specifies the Ethernet MMC interrupt sources to be enabled or disabled.
   *   This parameter can be one of the following values:  
   *     @arg ETH_MMC_IT_TGF   : When Tx good frame counter reaches half the maximum value 
   *     @arg ETH_MMC_IT_TGFMSC: When Tx good multi col counter reaches half the maximum value 
@@ -2073,15 +2073,17 @@ typedef struct
   * @brief  Enables rising/falling edge trigger to the ETH External interrupt line.
   * @retval None
   */
-#define __HAL_ETH_WAKEUP_EXTI_ENABLE_FALLINGRISING_TRIGGER()  EXTI->RTSR |= ETH_EXTI_LINE_WAKEUP;\
-                                                              EXTI->FTSR |= ETH_EXTI_LINE_WAKEUP
+#define __HAL_ETH_WAKEUP_EXTI_ENABLE_FALLINGRISING_TRIGGER()  do{EXTI->RTSR |= ETH_EXTI_LINE_WAKEUP;\
+                                                                 EXTI->FTSR |= ETH_EXTI_LINE_WAKEUP;\
+                                                                 }while(0)
 
 /**
   * @brief  Disables rising/falling edge trigger to the ETH External interrupt line.
   * @retval None
   */
-#define __HAL_ETH_WAKEUP_EXTI_DISABLE_FALLINGRISING_TRIGGER()  EXTI->RTSR &= ~(ETH_EXTI_LINE_WAKEUP);\
-                                                               EXTI->FTSR &= ~(ETH_EXTI_LINE_WAKEUP)
+#define __HAL_ETH_WAKEUP_EXTI_DISABLE_FALLINGRISING_TRIGGER()  do{EXTI->RTSR &= ~(ETH_EXTI_LINE_WAKEUP);\
+                                                                  EXTI->FTSR &= ~(ETH_EXTI_LINE_WAKEUP);\
+                                                                  }while(0)
 
 /**
   * @brief Generate a Software interrupt on selected EXTI line.

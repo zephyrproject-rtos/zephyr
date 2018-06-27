@@ -343,34 +343,34 @@ typedef struct
   */
 
 /** @brief  Reset SPDIFRX handle state
-  * @param  __HANDLE__: SPDIFRX handle.
+  * @param  __HANDLE__ SPDIFRX handle.
   * @retval None
   */
 #define __HAL_SPDIFRX_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = (uint16_t)SPDIFRX_CR_SPDIFEN)
 
 /** @brief  Disable the specified SPDIFRX peripheral (IDLE State).
-  * @param  __HANDLE__: specifies the SPDIFRX Handle. 
+  * @param  __HANDLE__ specifies the SPDIFRX Handle. 
   * @retval None
   */
 #define __HAL_SPDIFRX_IDLE(__HANDLE__) ((__HANDLE__)->Instance->CR &= SPDIFRX_STATE_IDLE)
 
 /** @brief  Enable the specified SPDIFRX peripheral (SYNC State).
-  * @param  __HANDLE__: specifies the SPDIFRX Handle. 
+  * @param  __HANDLE__ specifies the SPDIFRX Handle. 
   * @retval None
   */
 #define __HAL_SPDIFRX_SYNC(__HANDLE__) ((__HANDLE__)->Instance->CR |= SPDIFRX_STATE_SYNC)
 
 
 /** @brief  Enable the specified SPDIFRX peripheral (RCV State).
-  * @param  __HANDLE__: specifies the SPDIFRX Handle. 
+  * @param  __HANDLE__ specifies the SPDIFRX Handle. 
   * @retval None
   */
 #define __HAL_SPDIFRX_RCV(__HANDLE__) ((__HANDLE__)->Instance->CR |= SPDIFRX_STATE_RCV)
 
 
 /** @brief  Enable or disable the specified SPDIFRX interrupts.
-  * @param  __HANDLE__: specifies the SPDIFRX Handle.
-  * @param  __INTERRUPT__: specifies the interrupt source to enable or disable.
+  * @param  __HANDLE__ specifies the SPDIFRX Handle.
+  * @param  __INTERRUPT__ specifies the interrupt source to enable or disable.
   *        This parameter can be one of the following values:
   *            @arg SPDIFRX_IT_RXNE
   *            @arg SPDIFRX_IT_CSRNE
@@ -385,8 +385,8 @@ typedef struct
 #define __HAL_SPDIFRX_DISABLE_IT(__HANDLE__, __INTERRUPT__) ((__HANDLE__)->Instance->IMR &= (uint16_t)(~(__INTERRUPT__)))
  
 /** @brief  Checks if the specified SPDIFRX interrupt source is enabled or disabled.
-  * @param  __HANDLE__: specifies the SPDIFRX Handle.
-  * @param  __INTERRUPT__: specifies the SPDIFRX interrupt source to check.
+  * @param  __HANDLE__ specifies the SPDIFRX Handle.
+  * @param  __INTERRUPT__ specifies the SPDIFRX interrupt source to check.
   *          This parameter can be one of the following values:
   *            @arg SPDIFRX_IT_RXNE
   *            @arg SPDIFRX_IT_CSRNE
@@ -400,8 +400,8 @@ typedef struct
 #define __HAL_SPDIFRX_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__) ((((__HANDLE__)->Instance->IMR & (__INTERRUPT__)) == (__INTERRUPT__)) ? SET : RESET)
 
 /** @brief  Checks whether the specified SPDIFRX flag is set or not.
-  * @param  __HANDLE__: specifies the SPDIFRX Handle.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __HANDLE__ specifies the SPDIFRX Handle.
+  * @param  __FLAG__ specifies the flag to check.
   *        This parameter can be one of the following values:
   *            @arg SPDIFRX_FLAG_RXNE
   *            @arg SPDIFRX_FLAG_CSRNE
@@ -417,8 +417,8 @@ typedef struct
 #define __HAL_SPDIFRX_GET_FLAG(__HANDLE__, __FLAG__) ((((__HANDLE__)->Instance->SR) & (__FLAG__)) == (__FLAG__))
 
 /** @brief  Clears the specified SPDIFRX SR flag, in setting the proper IFCR register bit.
-  * @param  __HANDLE__: specifies the USART Handle.
-  * @param  __IT_CLEAR__: specifies the interrupt clear register flag that needs to be set
+  * @param  __HANDLE__ specifies the USART Handle.
+  * @param  __IT_CLEAR__ specifies the interrupt clear register flag that needs to be set
   *                       to clear the corresponding interrupt
   *          This parameter can be one of the following values:
   *            @arg SPDIFRX_FLAG_PERR

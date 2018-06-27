@@ -100,7 +100,7 @@ typedef struct
  */
 
 /** @brief Reset SRAM handle state
-  * @param  __HANDLE__: SRAM handle
+  * @param  __HANDLE__ SRAM handle
   * @retval None
   */
 #define __HAL_SRAM_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_SRAM_STATE_RESET)

@@ -363,29 +363,29 @@ typedef struct
   */
 
 /** @brief Reset LTDC handle state
-  * @param  __HANDLE__: specifies the LTDC handle.
+  * @param  __HANDLE__ specifies the LTDC handle.
   * @retval None
   */
 #define __HAL_LTDC_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_LTDC_STATE_RESET)
 
 /**
   * @brief  Enable the LTDC.
-  * @param  __HANDLE__: LTDC handle
+  * @param  __HANDLE__ LTDC handle
   * @retval None.
   */
 #define __HAL_LTDC_ENABLE(__HANDLE__)    ((__HANDLE__)->Instance->GCR |= LTDC_GCR_LTDCEN)
 
 /**
   * @brief  Disable the LTDC.
-  * @param  __HANDLE__: LTDC handle
+  * @param  __HANDLE__ LTDC handle
   * @retval None.
   */
 #define __HAL_LTDC_DISABLE(__HANDLE__)   ((__HANDLE__)->Instance->GCR &= ~(LTDC_GCR_LTDCEN))
 
 /**
   * @brief  Enable the LTDC Layer.
-  * @param  __HANDLE__: LTDC handle
-  * @param  __LAYER__: Specify the layer to be enabled
+  * @param  __HANDLE__ LTDC handle
+  * @param  __LAYER__ Specify the layer to be enabled
   *                     This parameter can be 0 or 1
   * @retval None.
   */
@@ -393,8 +393,8 @@ typedef struct
 
 /**
   * @brief  Disable the LTDC Layer.
-  * @param  __HANDLE__: LTDC handle
-  * @param  __LAYER__: Specify the layer to be disabled
+  * @param  __HANDLE__ LTDC handle
+  * @param  __LAYER__ Specify the layer to be disabled
   *                     This parameter can be 0 or 1
   * @retval None.
   */
@@ -402,7 +402,7 @@ typedef struct
 
 /**
   * @brief  Reload  Layer Configuration.
-  * @param  __HANDLE__: LTDC handle
+  * @param  __HANDLE__ LTDC handle
   * @retval None.
   */
 #define __HAL_LTDC_RELOAD_CONFIG(__HANDLE__)   ((__HANDLE__)->Instance->SRCR |= LTDC_SRCR_IMR)
@@ -410,8 +410,8 @@ typedef struct
 /* Interrupt & Flag management */
 /**
   * @brief  Get the LTDC pending flags.
-  * @param  __HANDLE__: LTDC handle
-  * @param  __FLAG__: Get the specified flag.
+  * @param  __HANDLE__ LTDC handle
+  * @param  __FLAG__ Get the specified flag.
   *          This parameter can be any combination of the following values:
   *            @arg LTDC_FLAG_LI: Line Interrupt flag 
   *            @arg LTDC_FLAG_FU: FIFO Underrun Interrupt flag
@@ -423,8 +423,8 @@ typedef struct
 
 /**
   * @brief  Clears the LTDC pending flags.
-  * @param  __HANDLE__: LTDC handle
-  * @param  __FLAG__: specifies the flag to clear.
+  * @param  __HANDLE__ LTDC handle
+  * @param  __FLAG__ specifies the flag to clear.
   *          This parameter can be any combination of the following values:
   *            @arg LTDC_FLAG_LI: Line Interrupt flag 
   *            @arg LTDC_FLAG_FU: FIFO Underrun Interrupt flag
@@ -436,8 +436,8 @@ typedef struct
 
 /**
   * @brief  Enables the specified LTDC interrupts.
-  * @param  __HANDLE__: LTDC handle
-  * @param __INTERRUPT__: specifies the LTDC interrupt sources to be enabled. 
+  * @param  __HANDLE__ LTDC handle
+  * @param __INTERRUPT__ specifies the LTDC interrupt sources to be enabled. 
   *          This parameter can be any combination of the following values:
   *            @arg LTDC_IT_LI: Line Interrupt flag 
   *            @arg LTDC_IT_FU: FIFO Underrun Interrupt flag
@@ -449,8 +449,8 @@ typedef struct
 
 /**
   * @brief  Disables the specified LTDC interrupts.
-  * @param  __HANDLE__: LTDC handle
-  * @param __INTERRUPT__: specifies the LTDC interrupt sources to be disabled. 
+  * @param  __HANDLE__ LTDC handle
+  * @param __INTERRUPT__ specifies the LTDC interrupt sources to be disabled. 
   *          This parameter can be any combination of the following values:
   *            @arg LTDC_IT_LI: Line Interrupt flag 
   *            @arg LTDC_IT_FU: FIFO Underrun Interrupt flag
@@ -462,8 +462,8 @@ typedef struct
 
 /**
   * @brief  Checks whether the specified LTDC interrupt has occurred or not.
-  * @param  __HANDLE__: LTDC handle
-  * @param  __INTERRUPT__: specifies the LTDC interrupt source to check.
+  * @param  __HANDLE__ LTDC handle
+  * @param  __INTERRUPT__ specifies the LTDC interrupt source to check.
   *          This parameter can be one of the following values:
   *            @arg LTDC_IT_LI: Line Interrupt flag 
   *            @arg LTDC_IT_FU: FIFO Underrun Interrupt flag

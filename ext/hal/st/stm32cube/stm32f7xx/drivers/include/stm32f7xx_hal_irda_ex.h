@@ -81,8 +81,8 @@
   * @{
   */
 /** @brief  Reports the IRDA clock source.
-  * @param  __HANDLE__: specifies the IRDA Handle
-  * @param  __CLOCKSOURCE__ : output variable
+  * @param  __HANDLE__ specifies the IRDA Handle
+  * @param  __CLOCKSOURCE__  output variable
   * @retval IRDA clocking source, written in __CLOCKSOURCE__.
   */
 #define IRDA_GETCLOCKSOURCE(__HANDLE__,__CLOCKSOURCE__)       \
@@ -171,7 +171,7 @@
 
 /** @brief  Reports the mask to apply to retrieve the received data
   *         according to the word length and to the parity bits activation.
-  * @param  __HANDLE__: specifies the IRDA Handle
+  * @param  __HANDLE__ specifies the IRDA Handle
   * @retval mask to apply to USART RDR register value.
   */    
 #define IRDA_MASK_COMPUTATION(__HANDLE__)                       \

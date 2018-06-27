@@ -53,6 +53,7 @@
 #define HAL_MODULE_ENABLED  
 #define HAL_ADC_MODULE_ENABLED  
 #define HAL_CAN_MODULE_ENABLED
+/* #define HAL_CAN_LEGACY_MODULE_ENABLED */
 #define HAL_CEC_MODULE_ENABLED  
 #define HAL_CRC_MODULE_ENABLED  
 #define HAL_CRYP_MODULE_ENABLED  
@@ -160,8 +161,8 @@
 #define  VDD_VALUE                    3300U /*!< Value of VDD in mv */
 #define  TICK_INT_PRIORITY            0x0FU /*!< tick interrupt priority */
 #define  USE_RTOS                     0U
-#define  PREFETCH_ENABLE              1U
-#define  ART_ACCLERATOR_ENABLE        1U /* To enable instruction cache and prefetch */
+#define  PREFETCH_ENABLE              1U /* To enable prefetch */
+#define  ART_ACCLERATOR_ENABLE        1U /* To enable ART Accelerator */
 
 /* ########################## Assert Selection ############################## */
 /**
@@ -273,6 +274,10 @@
 #ifdef HAL_CAN_MODULE_ENABLED
   #include "stm32f7xx_hal_can.h"
 #endif /* HAL_CAN_MODULE_ENABLED */
+
+#ifdef HAL_CAN_LEGACY_MODULE_ENABLED
+  #include "stm32f7xx_hal_can_legacy.h"
+#endif /* HAL_CAN_LEGACY_MODULE_ENABLED */
 
 #ifdef HAL_CEC_MODULE_ENABLED
   #include "stm32f7xx_hal_cec.h"
@@ -438,7 +443,7 @@
 #ifdef  USE_FULL_ASSERT
 /**
   * @brief  The assert_param macro is used for function's parameters check.
-  * @param  expr: If expr is false, it calls assert_failed function
+  * @param  expr If expr is false, it calls assert_failed function
   *         which reports the name of the source file and the source
   *         line number of the call that failed. 
   *         If expr is true, it returns no value.

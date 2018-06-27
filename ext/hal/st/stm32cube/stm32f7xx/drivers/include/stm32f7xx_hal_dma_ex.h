@@ -83,25 +83,25 @@ typedef enum
   * @brief    DMAEx channel selection 
   * @{
   */ 
-#define DMA_CHANNEL_0        ((uint32_t)0x00000000U)  /*!< DMA Channel 0 */
-#define DMA_CHANNEL_1        ((uint32_t)0x02000000U)  /*!< DMA Channel 1 */
-#define DMA_CHANNEL_2        ((uint32_t)0x04000000U)  /*!< DMA Channel 2 */
-#define DMA_CHANNEL_3        ((uint32_t)0x06000000U)  /*!< DMA Channel 3 */
-#define DMA_CHANNEL_4        ((uint32_t)0x08000000U)  /*!< DMA Channel 4 */
-#define DMA_CHANNEL_5        ((uint32_t)0x0A000000U)  /*!< DMA Channel 5 */
-#define DMA_CHANNEL_6        ((uint32_t)0x0C000000U)  /*!< DMA Channel 6 */
-#define DMA_CHANNEL_7        ((uint32_t)0x0E000000U)  /*!< DMA Channel 7 */
+#define DMA_CHANNEL_0                     0x00000000U  /*!< DMA Channel 0 */
+#define DMA_CHANNEL_1                     0x02000000U  /*!< DMA Channel 1 */
+#define DMA_CHANNEL_2                     0x04000000U  /*!< DMA Channel 2 */
+#define DMA_CHANNEL_3                     0x06000000U  /*!< DMA Channel 3 */
+#define DMA_CHANNEL_4                     0x08000000U  /*!< DMA Channel 4 */
+#define DMA_CHANNEL_5                     0x0A000000U  /*!< DMA Channel 5 */
+#define DMA_CHANNEL_6                     0x0C000000U  /*!< DMA Channel 6 */
+#define DMA_CHANNEL_7                     0x0E000000U  /*!< DMA Channel 7 */
 #if defined (STM32F722xx) || defined (STM32F723xx) || defined (STM32F732xx) || defined (STM32F733xx) ||\
     defined (STM32F765xx) || defined (STM32F767xx) || defined (STM32F769xx) || defined (STM32F777xx) ||\
     defined (STM32F779xx)
-#define DMA_CHANNEL_8        ((uint32_t)0x10000000U)  /*!< DMA Channel 8 */
-#define DMA_CHANNEL_9        ((uint32_t)0x12000000U)  /*!< DMA Channel 9 */
-#define DMA_CHANNEL_10       ((uint32_t)0x14000000U)  /*!< DMA Channel 10*/
-#define DMA_CHANNEL_11       ((uint32_t)0x16000000U)  /*!< DMA Channel 11*/
-#define DMA_CHANNEL_12       ((uint32_t)0x18000000U)  /*!< DMA Channel 12*/
-#define DMA_CHANNEL_13       ((uint32_t)0x1A000000U)  /*!< DMA Channel 13*/
-#define DMA_CHANNEL_14       ((uint32_t)0x1C000000U)  /*!< DMA Channel 14*/
-#define DMA_CHANNEL_15       ((uint32_t)0x1E000000U)  /*!< DMA Channel 15*/
+#define DMA_CHANNEL_8                     0x10000000U  /*!< DMA Channel 8 */
+#define DMA_CHANNEL_9                     0x12000000U  /*!< DMA Channel 9 */
+#define DMA_CHANNEL_10                    0x14000000U  /*!< DMA Channel 10*/
+#define DMA_CHANNEL_11                    0x16000000U  /*!< DMA Channel 11*/
+#define DMA_CHANNEL_12                    0x18000000U  /*!< DMA Channel 12*/
+#define DMA_CHANNEL_13                    0x1A000000U  /*!< DMA Channel 13*/
+#define DMA_CHANNEL_14                    0x1C000000U  /*!< DMA Channel 14*/
+#define DMA_CHANNEL_15                    0x1E000000U  /*!< DMA Channel 15*/
 #endif /* STM32F722xx || STM32F723xx || STM32F732xx || STM32F733xx || STM32F765xx || STM32F767xx ||
           STM32F769xx || STM32F777xx || STM32F779xx */
 
