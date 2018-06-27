@@ -10,7 +10,6 @@ menuconfig DHT
 	bool
 	prompt "DHT Temperature and Humidity Sensor"
 	depends on GPIO
-	default n
 	help
 	  Enable driver for the DHT temperature and humidity sensor family.
 

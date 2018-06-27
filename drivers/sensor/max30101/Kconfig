@@ -9,7 +9,6 @@ menuconfig MAX30101
 	bool
 	prompt "MAX30101 Pulse Oximeter and Heart Rate Sensor"
 	depends on I2C
-	default n
 
 if MAX30101
 
@@ -46,7 +45,6 @@ config MAX30101_SMP_AVE
 
 config MAX30101_FIFO_ROLLOVER_EN
 	bool "FIFO rolls on full"
-	default n
 	help
 	  Controls the behavior of the FIFO when the FIFO becomes completely
 	  filled with data. If set, the FIFO address rolls over to zero and the

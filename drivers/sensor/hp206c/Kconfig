@@ -8,7 +8,6 @@
 menuconfig HP206C
 	bool "HopeRF HP206C precision barometer and altimeter sensor"
 	depends on I2C
-	default n
 	help
 	  Enable HopeRF HP206C barometer and altimeter support.
 

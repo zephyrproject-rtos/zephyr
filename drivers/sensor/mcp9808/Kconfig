@@ -9,7 +9,6 @@
 menuconfig MCP9808
 	bool "MCP9808 temperature sensor"
 	depends on I2C
-	default n
 	help
 	 Enable driver for MCP9808 temperature sensor.
 

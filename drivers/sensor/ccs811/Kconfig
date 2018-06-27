@@ -10,7 +10,6 @@ menuconfig CCS811
 	bool
 	prompt "CCS811 Digital Gas Sensor"
 	depends on I2C
-	default n
 	help
 	  Enable driver for CCS811 Gas sensors.
 
@@ -58,7 +57,6 @@ config CCS811_GPIO_DEV_NAME
 config CCS811_GPIO_WAKEUP
 	bool
 	prompt "Enable GPIO Wakeup for CCS811"
-	default n
 	depends on CCS811
 	help
 	  Enable GPIO Wakeup support for CCS811
@@ -75,7 +73,6 @@ config CCS811_GPIO_WAKEUP_PIN_NUM
 config CCS811_GPIO_RESET
 	bool
 	prompt "Enable GPIO Reset for CCS811"
-	default n
 	depends on CCS811
 	help
 	  Enable GPIO Reset support for CCS811

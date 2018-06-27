@@ -9,7 +9,6 @@
 menuconfig BMI160
 	bool "Bosch BMI160 inertial measurement unit"
 	depends on SPI
-	default n
 	help
 	  Enable Bosch BMI160 inertial measurement unit that provides acceleration
 	  and angular rate measurements.

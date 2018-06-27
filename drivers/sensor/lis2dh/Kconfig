@@ -10,7 +10,6 @@ menuconfig LIS2DH
 	bool
 	prompt "LIS2DH Three Axis Accelerometer"
 	depends on I2C || SPI
-	default n
 	help
 	  Enable driver for LIS2DH SPI/I2C-based triaxial accelerometer sensor.
 

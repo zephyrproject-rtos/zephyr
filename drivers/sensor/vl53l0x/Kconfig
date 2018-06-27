@@ -10,7 +10,6 @@ menuconfig VL53L0X
 	bool
 	prompt "VL53L0X time of flight sensor"
 	depends on SENSOR && I2C
-	default n
 	select HAS_STLIB
 	help
 	  Enable driver for VL53L0X I2C-based time of flight sensor.
@@ -47,7 +46,6 @@ endif
 config VL53L0X_XSHUT_CONTROL_ENABLE
 	bool "Enable XSHUT pin control"
 	depends on VL53L0X
-	default n
 	help
 	    Enable it if XSHUT pin is controlled by host.
 

@@ -9,7 +9,6 @@
 menuconfig BMC150_MAGN
 	bool "BMC150_MAGN I2C Magnetometer Chip"
 	depends on I2C
-	default n
 	help
 	  Enable driver for BMC150 I2C-based magnetometer sensor.
 
@@ -68,21 +67,18 @@ endchoice
 config BMC150_MAGN_SAMPLING_RATE_RUNTIME
 	bool "Enable dynamic sampling rate"
 	depends on BMC150_MAGN
-	default n
 	help
 	  Enable alteration of sampling rate attribute at runtime.
 
 config BMC150_MAGN_SAMPLING_REP_XY
 	bool "Enable dynamic XY oversampling"
 	depends on BMC150_MAGN
-	default n
 	help
 	  Enable alteration of XY oversampling at runtime.
 
 config BMC150_MAGN_SAMPLING_REP_Z
 	bool "Enable dynamic Z oversampling"
 	depends on BMC150_MAGN
-	default n
 	help
 	  Enable alteration of Z oversampling at runtime.
 
@@ -91,7 +87,6 @@ endmenu
 config BMC150_MAGN_TRIGGER
 	bool "Enable triggers"
 	depends on BMC150_MAGN && GPIO
-	default n
 	help
 	  Enable triggers for BMC150 magnetometer
 
@@ -105,7 +100,6 @@ config BMC150_MAGN_TRIGGER_THREAD_STACK
 config BMC150_MAGN_TRIGGER_DRDY
 	bool "Enable data ready trigger"
 	depends on BMC150_MAGN_TRIGGER
-	default n
 	help
 	  Enable data ready interrupt for BMC150 magnetometer
 

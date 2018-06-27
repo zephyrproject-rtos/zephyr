@@ -8,7 +8,6 @@
 menuconfig FXOS8700
 	bool "FXOS8700 accelerometer/magnetometer driver"
 	depends on I2C
-	default n
 	help
 	  Enable driver for the FXOS8700 accelerometer/magnetometer
 
@@ -64,7 +63,6 @@ endchoice
 config FXOS8700_TEMP
 	bool "Enable temperature"
 	depends on FXOS8700 && (FXOS8700_MODE_MAGN || FXOS8700_MODE_HYBRID)
-	default n
 	help
 	  Enable the temperature sensor. Note that the temperature sensor is
 	  uncalibrated and its output for a given temperature may vary from one
@@ -107,7 +105,6 @@ endchoice
 config FXOS8700_TRIGGER
 	bool
 	depends on FXOS8700
-	default n
 
 if !HAS_DTS_GPIO_DEVICE
 
@@ -124,7 +121,6 @@ endif
 config FXOS8700_DRDY_INT1
 	bool "Data ready interrupt to INT1 pin"
 	depends on FXOS8700_TRIGGER
-	default n
 	help
 	  Say Y to route data ready interrupt to INT1 pin. Say N to route to
 	  INT2 pin.
@@ -143,7 +139,6 @@ config FXOS8700_THREAD_STACK_SIZE
 
 menuconfig FXOS8700_PULSE
 	bool "Pulse detection"
-	default n
 	help
 	  Enable pulse detection
 
@@ -151,7 +146,6 @@ if FXOS8700_PULSE
 
 config FXOS8700_PULSE_INT1
 	bool "Pulse interrupt to INT1 pin"
-	default n
 	help
 	  Say Y to route pulse interrupt to INT1 pin. Say N to route to INT2 pin.
 

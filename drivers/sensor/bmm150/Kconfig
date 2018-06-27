@@ -9,7 +9,6 @@
 menuconfig BMM150
 	bool "BMM150 I2C Geomagnetic Chip"
 	depends on I2C
-	default n
 	help
 	  Enable driver for BMM150 I2C-based Geomagnetic sensor.
 if BMM150
@@ -55,19 +54,16 @@ endchoice
 
 config BMM150_SAMPLING_RATE_RUNTIME
 	bool "Enable dynamic sampling rate"
-	default n
 	help
 	  Enable alteration of sampling rate attribute at runtime.
 
 config BMM150_SAMPLING_REP_XY
 	bool "Enable dynamic XY oversampling"
-	default n
 	help
 	  Enable alteration of XY oversampling at runtime.
 
 config BMM150_SAMPLING_REP_Z
 	bool "Enable dynamic Z oversampling"
-	default n
 	help
 	  Enable alteration of Z oversampling at runtime.
 
