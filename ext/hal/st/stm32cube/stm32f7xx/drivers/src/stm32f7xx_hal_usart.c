@@ -183,7 +183,7 @@ static HAL_StatusTypeDef USART_TransmitReceive_IT(USART_HandleTypeDef *husart);
 /**
   * @brief  Initializes the USART mode according to the specified
   *         parameters in the USART_InitTypeDef and create the associated handle.
-  * @param husart: USART handle
+  * @param husart USART handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_USART_Init(USART_HandleTypeDef *husart)
@@ -231,7 +231,7 @@ HAL_StatusTypeDef HAL_USART_Init(USART_HandleTypeDef *husart)
 
 /**
   * @brief DeInitializes the USART peripheral
-  * @param husart: USART handle
+  * @param husart USART handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_USART_DeInit(USART_HandleTypeDef *husart)
@@ -265,7 +265,7 @@ HAL_StatusTypeDef HAL_USART_DeInit(USART_HandleTypeDef *husart)
 
 /**
   * @brief USART MSP Init
-  * @param husart: USART handle
+  * @param husart USART handle
   * @retval None
   */
  __weak void HAL_USART_MspInit(USART_HandleTypeDef *husart)
@@ -280,7 +280,7 @@ HAL_StatusTypeDef HAL_USART_DeInit(USART_HandleTypeDef *husart)
 
 /**
   * @brief USART MSP DeInit
-  * @param husart: USART handle
+  * @param husart USART handle
   * @retval None
   */
  __weak void HAL_USART_MspDeInit(USART_HandleTypeDef *husart)
@@ -356,10 +356,10 @@ HAL_StatusTypeDef HAL_USART_DeInit(USART_HandleTypeDef *husart)
 
 /**
   * @brief  Simplex Send an amount of data in blocking mode
-  * @param  husart: USART handle
-  * @param pTxData: pointer to data buffer
-  * @param Size: amount of data to be sent
-  * @param Timeout : Timeout duration
+  * @param  husart USART handle
+  * @param pTxData pointer to data buffer
+  * @param Size amount of data to be sent
+  * @param Timeout  Timeout duration
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_USART_Transmit(USART_HandleTypeDef *husart, uint8_t *pTxData, uint16_t Size, uint32_t Timeout)
@@ -427,10 +427,10 @@ HAL_StatusTypeDef HAL_USART_Transmit(USART_HandleTypeDef *husart, uint8_t *pTxDa
 /**
   * @brief Receive an amount of data in blocking mode
   * @note To receive synchronous data, dummy data are simultaneously transmitted
-  * @param husart: USART handle
-  * @param pRxData: pointer to data buffer
-  * @param Size: amount of data to be received
-  * @param Timeout : Timeout duration
+  * @param husart USART handle
+  * @param pRxData pointer to data buffer
+  * @param Size amount of data to be received
+  * @param Timeout  Timeout duration
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_USART_Receive(USART_HandleTypeDef *husart, uint8_t *pRxData, uint16_t Size, uint32_t Timeout)
@@ -509,11 +509,11 @@ HAL_StatusTypeDef HAL_USART_Receive(USART_HandleTypeDef *husart, uint8_t *pRxDat
 
 /**
   * @brief Full-Duplex Send and Receive an amount of data in blocking mode
-  * @param husart: USART handle
-  * @param pTxData: pointer to TX data buffer
-  * @param pRxData: pointer to RX data buffer
-  * @param Size: amount of data to be sent (same amount to be received)
-  * @param Timeout : Timeout duration
+  * @param husart USART handle
+  * @param pTxData pointer to TX data buffer
+  * @param pRxData pointer to RX data buffer
+  * @param Size amount of data to be sent (same amount to be received)
+  * @param Timeout  Timeout duration
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_USART_TransmitReceive(USART_HandleTypeDef *husart, uint8_t *pTxData, uint8_t *pRxData, uint16_t Size, uint32_t Timeout)
@@ -601,9 +601,9 @@ HAL_StatusTypeDef HAL_USART_TransmitReceive(USART_HandleTypeDef *husart, uint8_t
 
 /**
   * @brief  Send an amount of data in interrupt mode
-  * @param  husart: USART handle
-  * @param pTxData: pointer to data buffer
-  * @param Size: amount of data to be sent
+  * @param  husart USART handle
+  * @param pTxData pointer to data buffer
+  * @param Size amount of data to be sent
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_USART_Transmit_IT(USART_HandleTypeDef *husart, uint8_t *pTxData, uint16_t Size)
@@ -635,7 +635,7 @@ HAL_StatusTypeDef HAL_USART_Transmit_IT(USART_HandleTypeDef *husart, uint8_t *pT
     __HAL_UNLOCK(husart);
 
     /* Enable the USART Transmit Data Register Empty Interrupt */
-    SET_BIT(husart->Instance->CR3, USART_CR3_EIE);
+    __HAL_USART_ENABLE_IT(husart, USART_IT_TXE);
 
     return HAL_OK;
   }
@@ -648,9 +648,9 @@ HAL_StatusTypeDef HAL_USART_Transmit_IT(USART_HandleTypeDef *husart, uint8_t *pT
 /**
   * @brief Receive an amount of data in blocking mode
   *        To receive synchronous data, dummy data are simultaneously transmitted
-  * @param husart: USART handle
-  * @param pRxData: pointer to data buffer
-  * @param Size: amount of data to be received
+  * @param husart USART handle
+  * @param pRxData pointer to data buffer
+  * @param Size amount of data to be received
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_USART_Receive_IT(USART_HandleTypeDef *husart, uint8_t *pRxData, uint16_t Size)
@@ -703,10 +703,10 @@ HAL_StatusTypeDef HAL_USART_Receive_IT(USART_HandleTypeDef *husart, uint8_t *pRx
 
 /**
   * @brief Full-Duplex Send and Receive an amount of data in interrupt mode
-  * @param husart: USART handle
-  * @param pTxData: pointer to TX data buffer
-  * @param pRxData: pointer to RX data buffer
-  * @param Size: amount of data to be sent (same amount to be received)
+  * @param husart USART handle
+  * @param pTxData pointer to TX data buffer
+  * @param pRxData pointer to RX data buffer
+  * @param Size amount of data to be sent (same amount to be received)
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_USART_TransmitReceive_IT(USART_HandleTypeDef *husart, uint8_t *pTxData, uint8_t *pRxData,  uint16_t Size)
@@ -759,9 +759,9 @@ HAL_StatusTypeDef HAL_USART_TransmitReceive_IT(USART_HandleTypeDef *husart, uint
 
 /**
   * @brief Send an amount of data in DMA mode
-  * @param husart: USART handle
-  * @param pTxData: pointer to data buffer
-  * @param Size: amount of data to be sent
+  * @param husart USART handle
+  * @param pTxData pointer to data buffer
+  * @param Size amount of data to be sent
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_USART_Transmit_DMA(USART_HandleTypeDef *husart, uint8_t *pTxData, uint16_t Size)
@@ -821,9 +821,9 @@ HAL_StatusTypeDef HAL_USART_Transmit_DMA(USART_HandleTypeDef *husart, uint8_t *p
 
 /**
   * @brief Receive an amount of data in DMA mode
-  * @param husart: USART handle
-  * @param pRxData: pointer to data buffer
-  * @param Size: amount of data to be received
+  * @param husart USART handle
+  * @param pRxData pointer to data buffer
+  * @param Size amount of data to be received
   * @note   When the USART parity is enabled (PCE = 1), the received data contain
   *         the parity bit (MSB position)
   * @retval HAL status
@@ -912,10 +912,10 @@ HAL_StatusTypeDef HAL_USART_Receive_DMA(USART_HandleTypeDef *husart, uint8_t *pR
 
 /**
   * @brief Full-Duplex Transmit Receive an amount of data in non blocking mode
-  * @param husart: USART handle
-  * @param pTxData: pointer to TX data buffer
-  * @param pRxData: pointer to RX data buffer
-  * @param Size: amount of data to be received/sent
+  * @param husart USART handle
+  * @param pTxData pointer to TX data buffer
+  * @param pRxData pointer to RX data buffer
+  * @param Size amount of data to be received/sent
   * @note   When the USART parity is enabled (PCE = 1) the data received contain the parity bit.
   * @retval HAL status
   */
@@ -1000,7 +1000,7 @@ HAL_StatusTypeDef HAL_USART_TransmitReceive_DMA(USART_HandleTypeDef *husart, uin
 
 /**
   * @brief Pauses the DMA Transfer.
-  * @param husart: USART handle
+  * @param husart USART handle
   * @retval None
   */
 HAL_StatusTypeDef HAL_USART_DMAPause(USART_HandleTypeDef *husart)
@@ -1037,7 +1037,7 @@ HAL_StatusTypeDef HAL_USART_DMAPause(USART_HandleTypeDef *husart)
 
 /**
   * @brief Resumes the DMA Transfer.
-  * @param husart: USART handle
+  * @param husart USART handle
   * @retval None
   */
 HAL_StatusTypeDef HAL_USART_DMAResume(USART_HandleTypeDef *husart)
@@ -1082,7 +1082,7 @@ HAL_StatusTypeDef HAL_USART_DMAResume(USART_HandleTypeDef *husart)
 
 /**
   * @brief Stops the DMA Transfer.
-  * @param husart: USART handle
+  * @param husart USART handle
   * @retval None
   */
 HAL_StatusTypeDef HAL_USART_DMAStop(USART_HandleTypeDef *husart)
@@ -1131,7 +1131,7 @@ HAL_StatusTypeDef HAL_USART_DMAStop(USART_HandleTypeDef *husart)
 
 /**
   * @brief  This function handles USART interrupt request.
-  * @param  husart: USART handle
+  * @param  husart USART handle
   * @retval None
   */
 void HAL_USART_IRQHandler(USART_HandleTypeDef *husart)
@@ -1279,7 +1279,7 @@ void HAL_USART_IRQHandler(USART_HandleTypeDef *husart)
 
 /**
   * @brief Tx Transfer completed callbacks
-  * @param husart: USART handle
+  * @param husart USART handle
   * @retval None
   */
 __weak void HAL_USART_TxCpltCallback(USART_HandleTypeDef *husart)
@@ -1294,7 +1294,7 @@ __weak void HAL_USART_TxCpltCallback(USART_HandleTypeDef *husart)
 
 /**
   * @brief  Tx Half Transfer completed callbacks.
-  * @param  husart: USART handle
+  * @param  husart USART handle
   * @retval None
   */
  __weak void HAL_USART_TxHalfCpltCallback(USART_HandleTypeDef *husart)
@@ -1309,7 +1309,7 @@ __weak void HAL_USART_TxCpltCallback(USART_HandleTypeDef *husart)
 
 /**
   * @brief  Rx Transfer completed callbacks.
-  * @param  husart: USART handle
+  * @param  husart USART handle
   * @retval None
   */
 __weak void HAL_USART_RxCpltCallback(USART_HandleTypeDef *husart)
@@ -1324,7 +1324,7 @@ __weak void HAL_USART_RxCpltCallback(USART_HandleTypeDef *husart)
 
 /**
   * @brief Rx Half Transfer completed callbacks
-  * @param husart: usart handle
+  * @param husart usart handle
   * @retval None
   */
 __weak void HAL_USART_RxHalfCpltCallback(USART_HandleTypeDef *husart)
@@ -1339,7 +1339,7 @@ __weak void HAL_USART_RxHalfCpltCallback(USART_HandleTypeDef *husart)
 
 /**
   * @brief Tx/Rx Transfers completed callback for the non-blocking process
-  * @param husart: USART handle
+  * @param husart USART handle
   * @retval None
   */
 __weak void HAL_USART_TxRxCpltCallback(USART_HandleTypeDef *husart)
@@ -1354,7 +1354,7 @@ __weak void HAL_USART_TxRxCpltCallback(USART_HandleTypeDef *husart)
 
 /**
   * @brief USART error callbacks
-  * @param husart: USART handle
+  * @param husart USART handle
   * @retval None
   */
 __weak void HAL_USART_ErrorCallback(USART_HandleTypeDef *husart)
@@ -1392,7 +1392,7 @@ __weak void HAL_USART_ErrorCallback(USART_HandleTypeDef *husart)
 
 /**
   * @brief return the USART state
-  * @param husart: USART handle
+  * @param husart USART handle
   * @retval HAL state
   */
 HAL_USART_StateTypeDef HAL_USART_GetState(USART_HandleTypeDef *husart)
@@ -1402,7 +1402,7 @@ HAL_USART_StateTypeDef HAL_USART_GetState(USART_HandleTypeDef *husart)
 
 /**
   * @brief  Return the USART error code
-  * @param  husart : pointer to a USART_HandleTypeDef structure that contains
+  * @param  husart  pointer to a USART_HandleTypeDef structure that contains
   *              the configuration information for the specified USART.
   * @retval USART Error Code
   */
@@ -1420,7 +1420,7 @@ uint32_t HAL_USART_GetError(USART_HandleTypeDef *husart)
   * @brief  Simplex Send an amount of data in non-blocking mode.
   * @note   Function called under interruption only, once
   *         interruptions have been enabled by HAL_USART_Transmit_IT().
-  * @param  husart: USART handle
+  * @param  husart USART handle
   * @retval HAL status
   * @note   The USART errors are not managed to avoid the overrun error.
   */
@@ -1467,7 +1467,7 @@ static HAL_StatusTypeDef USART_Transmit_IT(USART_HandleTypeDef *husart)
 
 /**
   * @brief  Wraps up transmission in non-blocking mode.
-  * @param  husart: pointer to a USART_HandleTypeDef structure that contains
+  * @param  husart pointer to a USART_HandleTypeDef structure that contains
   *                the configuration information for the specified USART module.
   * @retval HAL status
   */
@@ -1490,7 +1490,7 @@ static HAL_StatusTypeDef USART_EndTransmit_IT(USART_HandleTypeDef *husart)
   * @brief  Simplex Receive an amount of data in non-blocking mode.
   *         Function called under interruption only, once
   *         interruptions have been enabled by HAL_USART_Receive_IT()
-  * @param  husart: USART handle
+  * @param  husart USART handle
   * @retval HAL status
   */
 static HAL_StatusTypeDef USART_Receive_IT(USART_HandleTypeDef *husart)
@@ -1543,7 +1543,7 @@ static HAL_StatusTypeDef USART_Receive_IT(USART_HandleTypeDef *husart)
   * @brief  Full-Duplex Send receive an amount of data in full-duplex mode (non-blocking).
   *         Function called under interruption only, once
   *         interruptions have been enabled by HAL_USART_TransmitReceive_IT()
-  * @param  husart: USART handle
+  * @param  husart USART handle
   * @retval HAL status
   */
 static HAL_StatusTypeDef USART_TransmitReceive_IT(USART_HandleTypeDef *husart)
@@ -1667,7 +1667,7 @@ static HAL_StatusTypeDef USART_WaitOnFlagUntilTimeout(USART_HandleTypeDef *husar
 
 /**
   * @brief DMA USART transmit process complete callback
-  * @param  hdma: DMA handle
+  * @param  hdma DMA handle
   * @retval None
   */
 static void USART_DMATransmitCplt(DMA_HandleTypeDef *hdma)
@@ -1702,7 +1702,7 @@ static void USART_DMATransmitCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief DMA USART transmit process half complete callback
-  * @param hdma : DMA handle
+  * @param hdma  DMA handle
   * @retval None
   */
 static void USART_DMATxHalfCplt(DMA_HandleTypeDef *hdma)
@@ -1714,7 +1714,7 @@ static void USART_DMATxHalfCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief DMA USART receive process complete callback
-  * @param  hdma: DMA handle
+  * @param  hdma DMA handle
   * @retval None
   */
 static void USART_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
@@ -1765,7 +1765,7 @@ static void USART_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief DMA USART receive process half complete callback
-  * @param hdma : DMA handle
+  * @param hdma  DMA handle
   * @retval None
   */
 static void USART_DMARxHalfCplt(DMA_HandleTypeDef *hdma)
@@ -1777,7 +1777,7 @@ static void USART_DMARxHalfCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief DMA USART communication error callback
-  * @param  hdma: DMA handle
+  * @param  hdma DMA handle
   * @retval None
   */
 static void USART_DMAError(DMA_HandleTypeDef *hdma)
@@ -1810,7 +1810,7 @@ static void USART_DMAError(DMA_HandleTypeDef *hdma)
 /**
   * @brief DMA USART communication abort callback
   *        (To be called at end of DMA Abort procedure).
-  * @param hdma: DMA handle.
+  * @param hdma DMA handle.
   * @retval None
   */
 static void USART_DMAAbortOnError(DMA_HandleTypeDef *hdma)
@@ -1824,7 +1824,7 @@ static void USART_DMAAbortOnError(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  End ongoing Tx transfer on USART peripheral (following error detection or Transmit completion).
-  * @param  husart: USART handle.
+  * @param  husart USART handle.
   * @retval None
   */
 static void USART_EndTxTransfer(USART_HandleTypeDef *husart)
@@ -1838,7 +1838,7 @@ static void USART_EndTxTransfer(USART_HandleTypeDef *husart)
 
 /**
   * @brief  End ongoing Rx transfer on USART peripheral (following error detection or Reception completion).
-  * @param  husart: USART handle.
+  * @param  husart USART handle.
   * @retval None
   */
 static void USART_EndRxTransfer(USART_HandleTypeDef *husart)
@@ -1853,7 +1853,7 @@ static void USART_EndRxTransfer(USART_HandleTypeDef *husart)
 
 /**
   * @brief Configure the USART peripheral
-  * @param husart: USART handle
+  * @param husart USART handle
   * @retval None
   */
 static HAL_StatusTypeDef USART_SetConfig(USART_HandleTypeDef *husart)
@@ -1935,7 +1935,7 @@ static HAL_StatusTypeDef USART_SetConfig(USART_HandleTypeDef *husart)
 
 /**
   * @brief Check the USART Idle State
-  * @param husart: USART handle
+  * @param husart USART handle
   * @retval HAL status
   */
 static HAL_StatusTypeDef USART_CheckIdleState(USART_HandleTypeDef *husart)

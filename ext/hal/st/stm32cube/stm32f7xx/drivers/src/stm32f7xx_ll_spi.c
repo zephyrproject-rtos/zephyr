@@ -547,7 +547,7 @@ void LL_I2S_StructInit(LL_I2S_InitTypeDef *I2S_InitStruct)
   * @note   To calculate value of PrescalerLinear(I2SDIV[7:0] bits) and PrescalerParity(ODD bit)\n
   *         Check Audio frequency table and formulas inside Reference Manual (SPI/I2S).
   * @param  SPIx SPI Instance
-  * @param  PrescalerLinear value: Min_Data=0x02 and Max_Data=0xFF.
+  * @param  PrescalerLinear value Min_Data=0x02 and Max_Data=0xFF.
   * @param  PrescalerParity This parameter can be one of the following values:
   *         @arg @ref LL_I2S_PRESCALER_PARITY_EVEN
   *         @arg @ref LL_I2S_PRESCALER_PARITY_ODD

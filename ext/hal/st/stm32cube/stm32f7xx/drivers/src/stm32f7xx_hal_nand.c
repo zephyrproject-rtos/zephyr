@@ -126,10 +126,10 @@
     
 /**
   * @brief  Perform NAND memory Initialization sequence
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
-  * @param  ComSpace_Timing: pointer to Common space timing structure
-  * @param  AttSpace_Timing: pointer to Attribute space timing structure
+  * @param  ComSpace_Timing pointer to Common space timing structure
+  * @param  AttSpace_Timing pointer to Attribute space timing structure
   * @retval HAL status
   */
 HAL_StatusTypeDef  HAL_NAND_Init(NAND_HandleTypeDef *hnand, FMC_NAND_PCC_TimingTypeDef *ComSpace_Timing, FMC_NAND_PCC_TimingTypeDef *AttSpace_Timing)
@@ -168,7 +168,7 @@ HAL_StatusTypeDef  HAL_NAND_Init(NAND_HandleTypeDef *hnand, FMC_NAND_PCC_TimingT
 
 /**
   * @brief  Perform NAND memory De-Initialization sequence
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
   * @retval HAL status
   */
@@ -191,7 +191,7 @@ HAL_StatusTypeDef HAL_NAND_DeInit(NAND_HandleTypeDef *hnand)
 
 /**
   * @brief  NAND MSP Init
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
   * @retval None
   */
@@ -207,7 +207,7 @@ __weak void HAL_NAND_MspInit(NAND_HandleTypeDef *hnand)
 
 /**
   * @brief  NAND MSP DeInit
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
   * @retval None
   */
@@ -224,7 +224,7 @@ __weak void HAL_NAND_MspDeInit(NAND_HandleTypeDef *hnand)
 
 /**
   * @brief  This function handles NAND device interrupt request.
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
   * @retval HAL status
 */
@@ -274,7 +274,7 @@ void HAL_NAND_IRQHandler(NAND_HandleTypeDef *hnand)
 
 /**
   * @brief  NAND interrupt feature callback
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
   * @retval None
   */
@@ -309,9 +309,9 @@ __weak void HAL_NAND_ITCallback(NAND_HandleTypeDef *hnand)
 
 /**
   * @brief  Read the NAND memory electronic signature
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
-  * @param  pNAND_ID: NAND ID structure
+  * @param  pNAND_ID NAND ID structure
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_NAND_Read_ID(NAND_HandleTypeDef *hnand, NAND_IDTypeDef *pNAND_ID)
@@ -375,7 +375,7 @@ HAL_StatusTypeDef HAL_NAND_Read_ID(NAND_HandleTypeDef *hnand, NAND_IDTypeDef *pN
 
 /**
   * @brief  NAND memory reset
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
   * @retval HAL status
   */
@@ -413,9 +413,9 @@ HAL_StatusTypeDef HAL_NAND_Reset(NAND_HandleTypeDef *hnand)
   
 /**
   * @brief  Configure the device: Enter the physical parameters of the device
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
-  * @param  pDeviceConfig : pointer to NAND_DeviceConfigTypeDef structure
+  * @param  pDeviceConfig  pointer to NAND_DeviceConfigTypeDef structure
   * @retval HAL status
   */
 HAL_StatusTypeDef  HAL_NAND_ConfigDevice(NAND_HandleTypeDef *hnand, NAND_DeviceConfigTypeDef *pDeviceConfig)
@@ -434,11 +434,11 @@ HAL_StatusTypeDef  HAL_NAND_ConfigDevice(NAND_HandleTypeDef *hnand, NAND_DeviceC
 
 /**
   * @brief  Read Page(s) from NAND memory block (8-bits addressing)
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
-  * @param  pAddress : pointer to NAND address structure
-  * @param  pBuffer : pointer to destination read buffer
-  * @param  NumPageToRead : number of pages to read from block 
+  * @param  pAddress  pointer to NAND address structure
+  * @param  pBuffer  pointer to destination read buffer
+  * @param  NumPageToRead  number of pages to read from block 
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_NAND_Read_Page_8b(NAND_HandleTypeDef *hnand, NAND_AddressTypeDef *pAddress, uint8_t *pBuffer, uint32_t NumPageToRead)
@@ -578,11 +578,11 @@ HAL_StatusTypeDef HAL_NAND_Read_Page_8b(NAND_HandleTypeDef *hnand, NAND_AddressT
 
 /**
   * @brief  Read Page(s) from NAND memory block (16-bits addressing)
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
-  * @param  pAddress : pointer to NAND address structure
-  * @param  pBuffer : pointer to destination read buffer. pBuffer should be 16bits aligned
-  * @param  NumPageToRead : number of pages to read from block 
+  * @param  pAddress  pointer to NAND address structure
+  * @param  pBuffer  pointer to destination read buffer. pBuffer should be 16bits aligned
+  * @param  NumPageToRead  number of pages to read from block 
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_NAND_Read_Page_16b(NAND_HandleTypeDef *hnand, NAND_AddressTypeDef *pAddress, uint16_t *pBuffer, uint32_t NumPageToRead)
@@ -720,11 +720,11 @@ HAL_StatusTypeDef HAL_NAND_Read_Page_16b(NAND_HandleTypeDef *hnand, NAND_Address
 
 /**
   * @brief  Write Page(s) to NAND memory block (8-bits addressing)
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
-  * @param  pAddress : pointer to NAND address structure
-  * @param  pBuffer : pointer to source buffer to write  
-  * @param  NumPageToWrite  : number of pages to write to block 
+  * @param  pAddress  pointer to NAND address structure
+  * @param  pBuffer  pointer to source buffer to write  
+  * @param  NumPageToWrite   number of pages to write to block 
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_NAND_Write_Page_8b(NAND_HandleTypeDef *hnand, NAND_AddressTypeDef *pAddress, uint8_t *pBuffer, uint32_t NumPageToWrite)
@@ -825,12 +825,12 @@ HAL_StatusTypeDef HAL_NAND_Write_Page_8b(NAND_HandleTypeDef *hnand, NAND_Address
     *(__IO uint8_t *)((uint32_t)(deviceAddress | CMD_AREA)) = NAND_CMD_WRITE_TRUE1;
     __DSB();
     
+	/* Get tick */
+    tickstart = HAL_GetTick();
+	
     /* Read status until NAND is ready */
     while(HAL_NAND_Read_Status(hnand) != NAND_READY)
-    {
-      /* Get tick */
-      tickstart = HAL_GetTick();
-    
+    {  
       if((HAL_GetTick() - tickstart ) > NAND_WRITE_TIMEOUT)
       {
         return HAL_TIMEOUT; 
@@ -858,11 +858,11 @@ HAL_StatusTypeDef HAL_NAND_Write_Page_8b(NAND_HandleTypeDef *hnand, NAND_Address
 
 /**
   * @brief  Write Page(s) to NAND memory block (16-bits addressing)
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
-  * @param  pAddress : pointer to NAND address structure
-  * @param  pBuffer : pointer to source buffer to write. pBuffer should be 16bits aligned
-  * @param  NumPageToWrite  : number of pages to write to block 
+  * @param  pAddress  pointer to NAND address structure
+  * @param  pBuffer  pointer to source buffer to write. pBuffer should be 16bits aligned
+  * @param  NumPageToWrite   number of pages to write to block 
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_NAND_Write_Page_16b(NAND_HandleTypeDef *hnand, NAND_AddressTypeDef *pAddress, uint16_t *pBuffer, uint32_t NumPageToWrite)
@@ -963,12 +963,12 @@ HAL_StatusTypeDef HAL_NAND_Write_Page_16b(NAND_HandleTypeDef *hnand, NAND_Addres
     *(__IO uint8_t *)((uint32_t)(deviceAddress | CMD_AREA)) = NAND_CMD_WRITE_TRUE1;
     __DSB();
     
+	/* Get tick */
+    tickstart = HAL_GetTick();
+	  
     /* Read status until NAND is ready */
     while(HAL_NAND_Read_Status(hnand) != NAND_READY)
-    {
-      /* Get tick */
-      tickstart = HAL_GetTick();
-    
+    {  
       if((HAL_GetTick() - tickstart ) > NAND_WRITE_TIMEOUT)
       {
         return HAL_TIMEOUT; 
@@ -996,11 +996,11 @@ HAL_StatusTypeDef HAL_NAND_Write_Page_16b(NAND_HandleTypeDef *hnand, NAND_Addres
 
 /**
   * @brief  Read Spare area(s) from NAND memory (8-bits addressing)
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
-  * @param  pAddress : pointer to NAND address structure
-  * @param  pBuffer: pointer to source buffer to write  
-  * @param  NumSpareAreaToRead: Number of spare area to read  
+  * @param  pAddress  pointer to NAND address structure
+  * @param  pBuffer pointer to source buffer to write  
+  * @param  NumSpareAreaToRead Number of spare area to read  
   * @retval HAL status
 */
 HAL_StatusTypeDef HAL_NAND_Read_SpareArea_8b(NAND_HandleTypeDef *hnand, NAND_AddressTypeDef *pAddress, uint8_t *pBuffer, uint32_t NumSpareAreaToRead)
@@ -1145,11 +1145,11 @@ HAL_StatusTypeDef HAL_NAND_Read_SpareArea_8b(NAND_HandleTypeDef *hnand, NAND_Add
 
 /**
   * @brief  Read Spare area(s) from NAND memory (16-bits addressing)
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
-  * @param  pAddress : pointer to NAND address structure
-  * @param  pBuffer: pointer to source buffer to write. pBuffer should be 16bits aligned.
-  * @param  NumSpareAreaToRead: Number of spare area to read  
+  * @param  pAddress  pointer to NAND address structure
+  * @param  pBuffer pointer to source buffer to write. pBuffer should be 16bits aligned.
+  * @param  NumSpareAreaToRead Number of spare area to read  
   * @retval HAL status
 */
 HAL_StatusTypeDef HAL_NAND_Read_SpareArea_16b(NAND_HandleTypeDef *hnand, NAND_AddressTypeDef *pAddress, uint16_t *pBuffer, uint32_t NumSpareAreaToRead)
@@ -1294,11 +1294,11 @@ HAL_StatusTypeDef HAL_NAND_Read_SpareArea_16b(NAND_HandleTypeDef *hnand, NAND_Ad
 
 /**
   * @brief  Write Spare area(s) to NAND memory (8-bits addressing)
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
-  * @param  pAddress : pointer to NAND address structure
-  * @param  pBuffer : pointer to source buffer to write  
-  * @param  NumSpareAreaTowrite  : number of spare areas to write to block
+  * @param  pAddress  pointer to NAND address structure
+  * @param  pBuffer  pointer to source buffer to write  
+  * @param  NumSpareAreaTowrite   number of spare areas to write to block
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_NAND_Write_SpareArea_8b(NAND_HandleTypeDef *hnand, NAND_AddressTypeDef *pAddress, uint8_t *pBuffer, uint32_t NumSpareAreaTowrite)
@@ -1408,12 +1408,12 @@ HAL_StatusTypeDef HAL_NAND_Write_SpareArea_8b(NAND_HandleTypeDef *hnand, NAND_Ad
     *(__IO uint8_t *)((uint32_t)(deviceAddress | CMD_AREA)) = NAND_CMD_WRITE_TRUE1;
     __DSB();
    
+    /* Get tick */
+    tickstart = HAL_GetTick();
+	
     /* Read status until NAND is ready */
     while(HAL_NAND_Read_Status(hnand) != NAND_READY)
-    {
-      /* Get tick */
-      tickstart = HAL_GetTick();
-    
+    {  
       if((HAL_GetTick() - tickstart ) > NAND_WRITE_TIMEOUT)
       {
         return HAL_TIMEOUT; 
@@ -1441,11 +1441,11 @@ HAL_StatusTypeDef HAL_NAND_Write_SpareArea_8b(NAND_HandleTypeDef *hnand, NAND_Ad
 
 /**
   * @brief  Write Spare area(s) to NAND memory (16-bits addressing)
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
-  * @param  pAddress : pointer to NAND address structure
-  * @param  pBuffer : pointer to source buffer to write. pBuffer should be 16bits aligned.  
-  * @param  NumSpareAreaTowrite  : number of spare areas to write to block
+  * @param  pAddress  pointer to NAND address structure
+  * @param  pBuffer  pointer to source buffer to write. pBuffer should be 16bits aligned.  
+  * @param  NumSpareAreaTowrite   number of spare areas to write to block
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_NAND_Write_SpareArea_16b(NAND_HandleTypeDef *hnand, NAND_AddressTypeDef *pAddress, uint16_t *pBuffer, uint32_t NumSpareAreaTowrite)
@@ -1555,12 +1555,12 @@ HAL_StatusTypeDef HAL_NAND_Write_SpareArea_16b(NAND_HandleTypeDef *hnand, NAND_A
     *(__IO uint8_t *)((uint32_t)(deviceAddress | CMD_AREA)) = NAND_CMD_WRITE_TRUE1;
     __DSB();
    
+    /* Get tick */
+    tickstart = HAL_GetTick();
+	  
     /* Read status until NAND is ready */
     while(HAL_NAND_Read_Status(hnand) != NAND_READY)
-    {
-      /* Get tick */
-      tickstart = HAL_GetTick();
-    
+    { 
       if((HAL_GetTick() - tickstart ) > NAND_WRITE_TIMEOUT)
       {
         return HAL_TIMEOUT; 
@@ -1588,9 +1588,9 @@ HAL_StatusTypeDef HAL_NAND_Write_SpareArea_16b(NAND_HandleTypeDef *hnand, NAND_A
 
 /**
   * @brief  NAND memory Block erase 
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
-  * @param  pAddress : pointer to NAND address structure
+  * @param  pAddress  pointer to NAND address structure
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_NAND_Erase_Block(NAND_HandleTypeDef *hnand, NAND_AddressTypeDef *pAddress)
@@ -1636,9 +1636,9 @@ HAL_StatusTypeDef HAL_NAND_Erase_Block(NAND_HandleTypeDef *hnand, NAND_AddressTy
 
 /**
   * @brief  Increment the NAND memory address
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
-  * @param pAddress: pointer to NAND address structure
+  * @param pAddress pointer to NAND address structure
   * @retval The new status of the increment address operation. It can be:
   *           - NAND_VALID_ADDRESS: When the new address is valid address
   *           - NAND_INVALID_ADDRESS: When the new address is invalid address
@@ -1692,7 +1692,7 @@ uint32_t HAL_NAND_Address_Inc(NAND_HandleTypeDef *hnand, NAND_AddressTypeDef *pA
     
 /**
   * @brief  Enables dynamically NAND ECC feature.
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
   * @retval HAL status
   */    
@@ -1718,7 +1718,7 @@ HAL_StatusTypeDef  HAL_NAND_ECC_Enable(NAND_HandleTypeDef *hnand)
 
 /**
   * @brief  Disables dynamically FMC_NAND ECC feature.
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
   * @retval HAL status
   */  
@@ -1744,10 +1744,10 @@ HAL_StatusTypeDef  HAL_NAND_ECC_Disable(NAND_HandleTypeDef *hnand)
 
 /**
   * @brief  Disables dynamically NAND ECC feature.
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
-  * @param  ECCval: pointer to ECC value 
-  * @param  Timeout: maximum timeout to wait    
+  * @param  ECCval pointer to ECC value 
+  * @param  Timeout maximum timeout to wait    
   * @retval HAL status
   */
 HAL_StatusTypeDef  HAL_NAND_GetECC(NAND_HandleTypeDef *hnand, uint32_t *ECCval, uint32_t Timeout)
@@ -1794,7 +1794,7 @@ HAL_StatusTypeDef  HAL_NAND_GetECC(NAND_HandleTypeDef *hnand, uint32_t *ECCval, 
   
 /**
   * @brief  return the NAND state
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
   * @retval HAL state
   */
@@ -1805,7 +1805,7 @@ HAL_NAND_StateTypeDef HAL_NAND_GetState(NAND_HandleTypeDef *hnand)
 
 /**
   * @brief  NAND memory read status 
-  * @param  hnand: pointer to a NAND_HandleTypeDef structure that contains
+  * @param  hnand pointer to a NAND_HandleTypeDef structure that contains
   *                the configuration information for NAND module.
   * @retval NAND status
   */

@@ -587,23 +587,23 @@ typedef struct
   */
 
 /** @brief Reset SMARTCARD handle state
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   *         The Handle Instance which can be USART1 or USART2
   * @retval None
   */
 #define __HAL_SMARTCARD_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_SMARTCARD_STATE_RESET)
 
 /** @brief  Flush the Smartcard DR register 
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   *         The Handle Instance which can be USART1 or USART2.
   * @retval None
   */
 #define __HAL_SMARTCARD_FLUSH_DRREGISTER(__HANDLE__) (__HAL_SMARTCARD_SEND_REQ((__HANDLE__), SMARTCARD_RXDATA_FLUSH_REQUEST))
 
 /** @brief  Checks whether the specified Smartcard flag is set or not.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   *         The Handle Instance which can be USART1 or USART2.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __FLAG__ specifies the flag to check.
   *        This parameter can be one of the following values:
   *            @arg SMARTCARD_FLAG_REACK: Receive enable acknowledge flag
   *            @arg SMARTCARD_FLAG_TEACK: Transmit enable acknowledge flag
@@ -622,8 +622,8 @@ typedef struct
 #define __HAL_SMARTCARD_GET_FLAG(__HANDLE__, __FLAG__) (((__HANDLE__)->Instance->ISR & (__FLAG__)) == (__FLAG__))
 
 /** @brief  Clear the specified SMARTCARD pending flag.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
+  * @param  __FLAG__ specifies the flag to check.
   *          This parameter can be any combination of the following values:
   *            @arg @ref SMARTCARD_CLEAR_PEF    Parity error clear flag
   *            @arg @ref SMARTCARD_CLEAR_FEF    Framing error clear flag
@@ -641,40 +641,40 @@ typedef struct
 #define __HAL_SMARTCARD_CLEAR_FLAG(__HANDLE__, __FLAG__) ((__HANDLE__)->Instance->ICR = (__FLAG__))
 
 /** @brief  Clear the SMARTCARD PE pending flag.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   * @retval None
   */
 #define __HAL_SMARTCARD_CLEAR_PEFLAG(__HANDLE__)   __HAL_SMARTCARD_CLEAR_FLAG((__HANDLE__), SMARTCARD_CLEAR_PEF)
 
 
 /** @brief  Clear the SMARTCARD FE pending flag.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   * @retval None
   */
 #define __HAL_SMARTCARD_CLEAR_FEFLAG(__HANDLE__)   __HAL_SMARTCARD_CLEAR_FLAG((__HANDLE__), SMARTCARD_CLEAR_FEF)
 
 /** @brief  Clear the SMARTCARD NE pending flag.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   * @retval None
   */
 #define __HAL_SMARTCARD_CLEAR_NEFLAG(__HANDLE__)   __HAL_SMARTCARD_CLEAR_FLAG((__HANDLE__), SMARTCARD_CLEAR_NEF)
 
 /** @brief  Clear the SMARTCARD ORE pending flag.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   * @retval None
   */
 #define __HAL_SMARTCARD_CLEAR_OREFLAG(__HANDLE__)   __HAL_SMARTCARD_CLEAR_FLAG((__HANDLE__), SMARTCARD_CLEAR_OREF)
 
 /** @brief  Clear the SMARTCARD IDLE pending flag.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   * @retval None
   */
 #define __HAL_SMARTCARD_CLEAR_IDLEFLAG(__HANDLE__)   __HAL_SMARTCARD_CLEAR_FLAG((__HANDLE__), SMARTCARD_CLEAR_IDLEF)
 
 /** @brief  Enables the specified SmartCard interrupt.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   *         The Handle Instance which can be USART1 or USART2.
-  * @param  __INTERRUPT__: specifies the SMARTCARD interrupt to enable.
+  * @param  __INTERRUPT__ specifies the SMARTCARD interrupt to enable.
   *          This parameter can be one of the following values:
   *            @arg SMARTCARD_IT_EOBF: End Of Block interrupt
   *            @arg SMARTCARD_IT_RTOF: Receive TimeOut interrupt
@@ -689,9 +689,9 @@ typedef struct
                                                         ((((uint8_t)(__INTERRUPT__)) >> 5U) == 2U)? ((__HANDLE__)->Instance->CR2 |= (1U << ((__INTERRUPT__) & SMARTCARD_IT_MASK))): \
                                                         ((__HANDLE__)->Instance->CR3 |= (1U << ((__INTERRUPT__) & SMARTCARD_IT_MASK))))
 /** @brief  Disables the specified SmartCard interrupt.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   *         The Handle Instance which can be USART1 or USART2.
-  * @param  __INTERRUPT__: specifies the SMARTCARD interrupt to enable.
+  * @param  __INTERRUPT__ specifies the SMARTCARD interrupt to enable.
   *          This parameter can be one of the following values:
   *            @arg SMARTCARD_IT_EOBF: End Of Block interrupt
   *            @arg SMARTCARD_IT_RTOF: Receive TimeOut interrupt
@@ -707,9 +707,9 @@ typedef struct
                                                         ((__HANDLE__)->Instance->CR3 &= ~ ((uint32_t)1U << ((__INTERRUPT__) & SMARTCARD_IT_MASK))))
 
 /** @brief  Checks whether the specified SmartCard interrupt has occurred or not.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   *         The Handle Instance which can be USART1 or USART2.
-  * @param  __IT__: specifies the SMARTCARD interrupt to check.
+  * @param  __IT__ specifies the SMARTCARD interrupt to check.
   *          This parameter can be one of the following values:
   *            @arg SMARTCARD_IT_EOBF: End Of Block interrupt
   *            @arg SMARTCARD_IT_RTOF: Receive TimeOut interrupt  
@@ -725,9 +725,9 @@ typedef struct
 #define __HAL_SMARTCARD_GET_IT(__HANDLE__, __IT__) ((__HANDLE__)->Instance->ISR & ((uint32_t)1U << ((__IT__)>> 0x08U))) 
 
 /** @brief  Checks whether the specified SmartCard interrupt interrupt source is enabled.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   *         The Handle Instance which can be USART1 or USART2.
-  * @param  __IT__: specifies the SMARTCARD interrupt source to check.
+  * @param  __IT__ specifies the SMARTCARD interrupt source to check.
   *          This parameter can be one of the following values:
   *            @arg SMARTCARD_IT_EOBF: End Of Block interrupt
   *            @arg SMARTCARD_IT_RTOF: Receive TimeOut interrupt  
@@ -746,9 +746,9 @@ typedef struct
 
 
 /** @brief  Clears the specified SMARTCARD ISR flag, in setting the proper ICR register flag.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   *         The Handle Instance which can be USART1 or USART2.
-  * @param  __IT_CLEAR__: specifies the interrupt clear register flag that needs to be set
+  * @param  __IT_CLEAR__ specifies the interrupt clear register flag that needs to be set
   *                       to clear the corresponding interrupt
   *          This parameter can be one of the following values:
   *            @arg USART_CLEAR_PEF: Parity Error Clear Flag
@@ -763,9 +763,9 @@ typedef struct
 #define __HAL_SMARTCARD_CLEAR_IT(__HANDLE__, __IT_CLEAR__) ((__HANDLE__)->Instance->ICR = (uint32_t)(__IT_CLEAR__)) 
 
 /** @brief  Set a specific SMARTCARD request flag.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   *         The Handle Instance which can be USART1 or USART2.
-  * @param  __REQ__: specifies the request flag to set
+  * @param  __REQ__ specifies the request flag to set
   *          This parameter can be one of the following values:  
   *            @arg SMARTCARD_RXDATA_FLUSH_REQUEST: Receive Data flush Request 
   *            @arg SMARTCARD_TXDATA_FLUSH_REQUEST: Transmit data flush Request 
@@ -775,23 +775,23 @@ typedef struct
 #define __HAL_SMARTCARD_SEND_REQ(__HANDLE__, __REQ__) ((__HANDLE__)->Instance->RQR |= (uint32_t)(__REQ__)) 
 
 /** @brief  Enable the USART associated to the SMARTCARD Handle
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   *         The Handle Instance which can be USART1 or USART2.
   * @retval None
   */
 #define __HAL_SMARTCARD_ENABLE(__HANDLE__)               ( (__HANDLE__)->Instance->CR1 |=  USART_CR1_UE)
 
 /** @brief  Disable the USART associated to the SMARTCARD Handle
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   *         The Handle Instance which can be USART1 or USART2.
   * @retval None
   */
 #define __HAL_SMARTCARD_DISABLE(__HANDLE__)              ( (__HANDLE__)->Instance->CR1 &=  ~USART_CR1_UE)
 
 /** @brief  Macros to enable or disable the SmartCard DMA request.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   *         The Handle Instance which can be USART1 or USART2.
-  * @param  __REQUEST__: specifies the SmartCard DMA request.
+  * @param  __REQUEST__ specifies the SmartCard DMA request.
   *          This parameter can be one of the following values:
   *            @arg SMARTCARD_DMAREQ_TX: SmartCard DMA transmit request
   *            @arg SMARTCARD_DMAREQ_RX: SmartCard DMA receive request

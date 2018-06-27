@@ -100,7 +100,7 @@ typedef struct
   */
 
 /** @brief Reset SDRAM handle state
-  * @param  __HANDLE__: specifies the SDRAM handle.
+  * @param  __HANDLE__ specifies the SDRAM handle.
   * @retval None
   */
 #define __HAL_SDRAM_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_SDRAM_STATE_RESET)

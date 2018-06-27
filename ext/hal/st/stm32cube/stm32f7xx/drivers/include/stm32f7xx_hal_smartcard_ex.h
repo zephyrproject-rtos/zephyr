@@ -134,8 +134,8 @@
 /* Exported macro ------------------------------------------------------------*/
    
 /** @brief  Reports the SMARTCARD clock source.
-  * @param  __HANDLE__: specifies the USART Handle
-  * @param  __CLOCKSOURCE__ : output variable   
+  * @param  __HANDLE__ specifies the USART Handle
+  * @param  __CLOCKSOURCE__  output variable   
   * @retval the USART clocking source, written in __CLOCKSOURCE__.
   */
 #define SMARTCARD_GETCLOCKSOURCE(__HANDLE__,__CLOCKSOURCE__) \
@@ -223,7 +223,7 @@
     } while(0)
 
 /** @brief  Set the Transmission Completion flag
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   * @note  If TCBGT (Transmission Complete Before Guard Time) flag is not available or if 
   *        AdvancedInit.TxCompletionIndication is not already filled, the latter is forced 
   *        to SMARTCARD_TC (transmission completion indication when guard time has elapsed).     
@@ -249,7 +249,7 @@
 #endif 
 
 /** @brief  Return the transmission completion flag.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.
+  * @param  __HANDLE__ specifies the SMARTCARD Handle.
   * @note  Based on AdvancedInit.TxCompletionIndication setting, return TC or TCBGT flag.
   *        When TCBGT flag (Transmission Complete Before Guard Time) is not available, TC flag is
   *        reported.       
@@ -264,7 +264,7 @@
   
 /**
   * @brief Ensure that SMARTCARD frame transmission completion used flag is valid.
-  * @param __TXCOMPLETE__: SMARTCARD frame transmission completion used flag. 
+  * @param __TXCOMPLETE__ SMARTCARD frame transmission completion used flag. 
   * @retval SET (__TXCOMPLETE__ is valid) or RESET (__TXCOMPLETE__ is invalid)
   */ 
 #if defined(USART_TCBGT_SUPPORT)
