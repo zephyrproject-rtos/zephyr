@@ -8,7 +8,6 @@
 menuconfig PINMUX_MCUX
 	bool "MCUX pinmux driver"
 	depends on HAS_MCUX
-	default n
 	help
 	  Enable the MCUX pinmux driver.
 
@@ -16,7 +15,6 @@ if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA
 	bool "Port A"
-	default n
 	help
 	  Enable Port A.
 
@@ -27,7 +25,6 @@ config PINMUX_MCUX_PORTA_NAME
 
 config PINMUX_MCUX_PORTB
 	bool "Port B"
-	default n
 	help
 	  Enable Port B.
 
@@ -38,7 +35,6 @@ config PINMUX_MCUX_PORTB_NAME
 
 config PINMUX_MCUX_PORTC
 	bool "Port C"
-	default n
 	help
 	  Enable Port C.
 
@@ -49,7 +45,6 @@ config PINMUX_MCUX_PORTC_NAME
 
 config PINMUX_MCUX_PORTD
 	bool "Port D"
-	default n
 	help
 	  Enable Port D.
 
@@ -60,7 +55,6 @@ config PINMUX_MCUX_PORTD_NAME
 
 config PINMUX_MCUX_PORTE
 	bool "Port E"
-	default n
 	help
 	  Enable Port E.
 
