@@ -11,7 +11,6 @@ menuconfig SPI_STM32
 	depends on SPI && SOC_FAMILY_STM32
 	select HAS_DTS_SPI
 	select USE_STM32_LL_SPI
-	default n
 	help
 	  Enable SPI support on the STM32 family of processors.
 
@@ -24,7 +23,6 @@ config SPI_STM32_HAS_FIFO
 
 config SPI_STM32_INTERRUPT
 	bool "STM32 MCU SPI Interrupt Support"
-	default n
 	help
 	  Enable Interrupt support for the SPI Driver of STM32 family.
 
