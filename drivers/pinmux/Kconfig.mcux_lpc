@@ -8,7 +8,6 @@
 menuconfig PINMUX_MCUX_LPC
 	bool "MCUX LPC pinmux driver"
 	depends on HAS_MCUX
-	default n
 	help
 	  Enable the MCUX LPC pinmux driver.
 
@@ -16,7 +15,6 @@ if PINMUX_MCUX_LPC
 
 config PINMUX_MCUX_LPC_PORT0
 	bool "Port 0"
-	default n
 	help
 	  Enable Port 0.
 
@@ -27,7 +25,6 @@ config PINMUX_MCUX_LPC_PORT0_NAME
 
 config PINMUX_MCUX_LPC_PORT1
 	bool "Port 1"
-	default n
 	help
 	  Enable Port 1.
 

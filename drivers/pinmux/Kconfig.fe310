@@ -8,7 +8,6 @@
 menuconfig PINMUX_FE310
 	bool "SiFive Freedom E310 SOC pinmux driver"
 	depends on PINMUX && SOC_SERIES_RISCV32_FE310
-	default n
 	help
 	  Enable driver for the SiFive Freedom E310 SOC pinmux driver
 
