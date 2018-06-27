@@ -178,8 +178,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 #endif
 	case NET_ETH_PTYPE_LLDP:
 #if defined(CONFIG_NET_LLDP)
-		net_pkt_set_ll_reserve(pkt, hdr_len);
-		net_buf_pull(pkt->frags, net_pkt_ll_reserve(pkt));
+		net_pkt_set_ll(pkt, pkt->frags->data);
+		net_buf_pull(pkt->frags, hdr_len);
 		return net_lldp_recv(iface, pkt);
 #else
 		NET_DBG("LLDP Rx agent not enabled");
@@ -232,8 +232,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	ethernet_update_rx_stats(iface, pkt, net_pkt_get_len(pkt));
 
-	net_pkt_set_ll_reserve(pkt, hdr_len);
-	net_buf_pull(pkt->frags, net_pkt_ll_reserve(pkt));
+	net_pkt_set_ll(pkt, pkt->frags->data);
+	net_buf_pull(pkt->frags, hdr_len);
 
 #ifdef CONFIG_NET_ARP
 	if (family == AF_INET && type == NET_ETH_PTYPE_ARP) {
@@ -444,11 +444,7 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	    net_eth_is_vlan_enabled(ctx, net_pkt_iface(pkt))) {
 		struct net_eth_vlan_hdr *hdr_vlan;
 
-		NET_ASSERT(net_buf_headroom(hdr_frag) >=
-			   sizeof(struct net_eth_vlan_hdr));
-
-		hdr_vlan = (struct net_eth_vlan_hdr *)(hdr_frag->data -
-						       net_pkt_ll_reserve(pkt));
+		hdr_vlan = (struct net_eth_vlan_hdr *)(hdr_frag->data);
 
 		if (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr_vlan->dst) &&
 		    !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr_vlan->dst)) {
@@ -468,11 +464,7 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 				    hdr_frag->len,
 				    &hdr_vlan->src, &hdr_vlan->dst);
 	} else {
-		NET_ASSERT(net_buf_headroom(hdr_frag) >=
-			   sizeof(struct net_eth_hdr));
-
-		hdr = (struct net_eth_hdr *)(hdr_frag->data -
-					     net_pkt_ll_reserve(pkt));
+		hdr = (struct net_eth_hdr *)(hdr_frag->data);
 
 		if (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr->dst) &&
 		    !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr->dst)) {
@@ -484,12 +476,14 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 		       sizeof(struct net_eth_addr));
 
 		hdr->type = ptype;
+		net_buf_add(hdr_frag, sizeof(struct net_eth_hdr));
 
 		print_ll_addrs(pkt, ntohs(hdr->type),
 			       hdr_frag->len, &hdr->src, &hdr->dst);
 	}
 
 	net_pkt_frag_insert(pkt, hdr_frag);
+	net_pkt_set_ll(pkt, hdr_frag->data);
 
 	return hdr_frag;
 }
@@ -607,17 +601,10 @@ error:
 
 static inline u16_t ethernet_reserve(struct net_if *iface, void *unused)
 {
+	ARG_UNUSED(iface);
 	ARG_UNUSED(unused);
 
-	if (IS_ENABLED(CONFIG_NET_VLAN)) {
-		struct ethernet_context *ctx = net_if_l2_data(iface);
-
-		if (net_eth_is_vlan_enabled(ctx, iface)) {
-			return sizeof(struct net_eth_vlan_hdr);
-		}
-	}
-
-	return sizeof(struct net_eth_hdr);
+	return 0;
 }
 
 static inline int ethernet_enable(struct net_if *iface, bool state)

@@ -138,10 +138,6 @@ static void slip_writeb_esc(unsigned char c)
 static int slip_send(struct device *dev, struct net_pkt *pkt)
 {
 	struct net_buf *frag;
-#if defined(CONFIG_SLIP_TAP)
-	u16_t ll_reserve = net_pkt_ll_reserve(pkt);
-	bool send_header_once = false;
-#endif
 	u8_t *ptr;
 	u16_t i;
 	u8_t c;
@@ -156,52 +152,18 @@ static int slip_send(struct device *dev, struct net_pkt *pkt)
 	slip_writeb(SLIP_END);
 
 	for (frag = pkt->frags; frag; frag = frag->frags) {
-#if defined(CONFIG_SLIP_TAP)
-		ptr = frag->data - ll_reserve;
-
-		/* This writes ethernet header */
-		if (!send_header_once && ll_reserve) {
-			for (i = 0U; i < ll_reserve; i++) {
-				slip_writeb_esc(*ptr++);
-			}
-		}
-
-		if (net_if_get_mtu(net_pkt_iface(pkt)) >
-		    net_buf_headroom(frag)) {
-			/* Do not add link layer header if the mtu is bigger
-			 * than fragment size. The first packet needs the
-			 * link layer header always.
-			 */
-			send_header_once = true;
-			ll_reserve = 0U;
-			ptr = frag->data;
-		}
-#else
-		/* There is no ll header in tun device */
 		ptr = frag->data;
-#endif
-
 		for (i = 0U; i < frag->len; ++i) {
 			c = *ptr++;
 			slip_writeb_esc(c);
 		}
 
 		if (LOG_LEVEL >= LOG_LEVEL_DBG) {
-			int frag_count = 0;
+			LOG_DBG("sent data %d bytes", frag->len);
 
-			LOG_DBG("sent data %d bytes",
-				frag->len + net_pkt_ll_reserve(pkt));
-
-			if (frag->len + net_pkt_ll_reserve(pkt)) {
-				char msg[8 + 1];
-
-				snprintf(msg, sizeof(msg), "<slip %2d",
-					 frag_count++);
-
+			if (frag->len) {
 				LOG_HEXDUMP_DBG(net_pkt_ll(pkt),
-						frag->len +
-						net_pkt_ll_reserve(pkt),
-						msg);
+						frag->len, "<slip ");
 			}
 		}
 	}

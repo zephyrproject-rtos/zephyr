@@ -73,13 +73,6 @@ static int eth_stellaris_send(struct device *dev, struct net_pkt *pkt)
 	eth_stellaris_send_byte(dev, data_len & 0xff);
 	eth_stellaris_send_byte(dev, (data_len & 0xff00) >> 8);
 
-	/* Send the header, header is 14 bytes */
-	head_len_left = net_pkt_ll_reserve(pkt);
-	eth_hdr = net_pkt_ll(pkt);
-	for (i = 0; i < head_len_left; ++i) {
-		eth_stellaris_send_byte(dev, eth_hdr[i]);
-	}
-
 	/* Send the payload */
 	for (frag = pkt->frags; frag; frag = frag->frags) {
 		for (i = 0; i < frag->len; ++i) {

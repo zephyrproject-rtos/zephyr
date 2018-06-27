@@ -470,7 +470,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	bool timestamped_frame;
 #endif
 
-	u16_t total_len = net_pkt_ll_reserve(pkt) + net_pkt_get_len(pkt);
+	u16_t total_len = net_pkt_get_len(pkt);
 
 	k_sem_take(&context->tx_buf_sem, K_FOREVER);
 
@@ -479,18 +479,9 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	 */
 	imask = irq_lock();
 
-	/* Gather fragment buffers into flat Ethernet frame buffer
-	 * which can be fed to MCUX Ethernet functions. First
-	 * fragment is special - it contains link layer (Ethernet
-	 * in our case) headers and must be treated specially.
-	 */
+	/* Copy the fragments */
 	dst = context->frame_buf;
-	memcpy(dst, net_pkt_ll(pkt),
-	       net_pkt_ll_reserve(pkt) + pkt->frags->len);
-	dst += net_pkt_ll_reserve(pkt) + pkt->frags->len;
-
-	/* Continue with the rest of fragments (which contain only data) */
-	frag = pkt->frags->frags;
+	frag = pkt->frags;
 	while (frag) {
 		memcpy(dst, frag->data, frag->len);
 		dst += frag->len;
