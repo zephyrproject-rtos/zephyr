@@ -9,7 +9,6 @@ menuconfig USART_SAM
 	depends on SOC_FAMILY_SAM
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	default n
 	help
 	  This option enables the USARTx driver for Atmel SAM MCUs.
 
@@ -18,7 +17,6 @@ menuconfig USART_SAM
 config USART_SAM_PORT_0
 	bool "Enable USART0"
 	depends on USART_SAM
-	default n
 	help
 	  Enable USART0 at boot
 
@@ -27,7 +25,6 @@ config USART_SAM_PORT_0
 config USART_SAM_PORT_1
 	bool "Enable USART1"
 	depends on USART_SAM
-	default n
 	help
 	  Enable USART1 at boot
 
@@ -36,6 +33,5 @@ config USART_SAM_PORT_1
 config USART_SAM_PORT_2
 	bool "Enable USART2"
 	depends on USART_SAM
-	default n
 	help
 	  Enable USART2 at boot

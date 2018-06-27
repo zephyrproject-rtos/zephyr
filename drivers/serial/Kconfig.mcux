@@ -8,7 +8,6 @@
 menuconfig UART_MCUX
 	bool "MCUX uart driver"
 	depends on HAS_MCUX && CLOCK_CONTROL
-	default n
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
@@ -18,37 +17,31 @@ if UART_MCUX
 
 menuconfig UART_MCUX_0
 	bool "UART 0"
-	default n
 	help
 	  Enable UART 0.
 
 menuconfig UART_MCUX_1
 	bool "UART 1"
-	default n
 	help
 	  Enable UART 1.
 
 menuconfig UART_MCUX_2
 	bool "UART 2"
-	default n
 	help
 	  Enable UART 2.
 
 menuconfig UART_MCUX_3
 	bool "UART 3"
-	default n
 	help
 	  Enable UART 3.
 
 menuconfig UART_MCUX_4
 	bool "UART 4"
-	default n
 	help
 	  Enable UART 4.
 
 menuconfig UART_MCUX_5
 	bool "UART 5"
-	default n
 	help
 	  Enable UART 5.
 

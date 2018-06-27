@@ -7,7 +7,6 @@
 
 menuconfig UART_STM32
 	bool "STM32 MCU serial driver"
-	default n
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	depends on SOC_FAMILY_STM32
@@ -22,7 +21,6 @@ if UART_STM32
 
 config UART_STM32_PORT_1
 	bool "Enable STM32 USART1 Port"
-	default n
 	depends on UART_STM32
 	help
 	  Enable support for USART1 port in the driver.
@@ -32,7 +30,6 @@ config UART_STM32_PORT_1
 
 config UART_STM32_PORT_2
 	bool "Enable STM32 USART2 Port"
-	default n
 	depends on UART_STM32
 	help
 	  Enable support for USART2 port in the driver.
@@ -42,7 +39,6 @@ config UART_STM32_PORT_2
 
 config UART_STM32_PORT_3
 	bool "Enable STM32 USART3 Port"
-	default n
 	depends on UART_STM32
 	help
 	  Enable support for USART3 port in the driver.
@@ -52,7 +48,6 @@ config UART_STM32_PORT_3
 
 config UART_STM32_PORT_4
 	bool "Enable STM32 U(S)ART4 Port"
-	default n
 	depends on UART_STM32
 	help
 	  Enable support for U(S)ART4 port in the driver.
@@ -62,7 +57,6 @@ config UART_STM32_PORT_4
 
 config UART_STM32_PORT_5
 	bool "Enable STM32 U(S)ART5 Port"
-	default n
 	depends on UART_STM32
 	help
 	  Enable support for U(S)ART5 port in the driver.
@@ -72,7 +66,6 @@ config UART_STM32_PORT_5
 
 config UART_STM32_PORT_6
 	bool "Enable STM32 USART6 Port"
-	default n
 	depends on UART_STM32
 	help
 	  Enable support for USART6 port in the driver.
@@ -82,7 +75,6 @@ config UART_STM32_PORT_6
 
 config UART_STM32_PORT_7
 	bool "Enable STM32 U(S)ART7 Port"
-	default n
 	depends on UART_STM32
 	help
 	  Enable support for U(S)ART7 port in the driver.
@@ -92,7 +84,6 @@ config UART_STM32_PORT_7
 
 config UART_STM32_PORT_8
 	bool "Enable STM32 U(S)ART8 Port"
-	default n
 	depends on UART_STM32
 	help
 	  Enable support for U(S)ART8 port in the driver.
@@ -102,7 +93,6 @@ config UART_STM32_PORT_8
 
 config UART_STM32_PORT_9
 	bool "Enable STM32 UART9 Port"
-	default n
 	depends on UART_STM32
 	help
 	  Enable support for UART9 port in the driver.
@@ -112,7 +102,6 @@ config UART_STM32_PORT_9
 
 config UART_STM32_PORT_10
 	bool "Enable STM32 UART10 Port"
-	default n
 	depends on UART_STM32
 	help
 	  Enable support for UART10 port in the driver.
@@ -124,7 +113,6 @@ if SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X
 
 config UART_STM32_LPUART_1
 	bool "Enable STM32 LPUART1 Port"
-	default n
 	depends on UART_STM32
 	help
 	  Enable support for LPUART1 port in the driver.

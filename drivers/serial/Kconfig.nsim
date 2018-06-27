@@ -1,6 +1,5 @@
 config UART_NSIM
 	bool "UART driver for MetaWare nSim"
-	default n
 	select SERIAL_HAS_DRIVER
 	depends on SERIAL
 	help
