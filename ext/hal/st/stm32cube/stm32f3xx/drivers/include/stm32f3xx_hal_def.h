@@ -72,18 +72,19 @@ typedef enum
 } HAL_LockTypeDef;
 
 /* Exported macro ------------------------------------------------------------*/
+
+#define UNUSED(X) (void)X      /* To avoid gcc/g++ warnings */
+
 #define HAL_MAX_DELAY      0xFFFFFFFFU
 
-#define HAL_IS_BIT_SET(REG, BIT)         (((REG) & (BIT)) != RESET)
-#define HAL_IS_BIT_CLR(REG, BIT)         (((REG) & (BIT)) == RESET)
+#define HAL_IS_BIT_SET(REG, BIT)         (((REG) & (BIT)) == BIT)
+#define HAL_IS_BIT_CLR(REG, BIT)         (((REG) & (BIT)) == 0U)
 
 #define __HAL_LINKDMA(__HANDLE__, __PPP_DMA_FIELD_, __DMA_HANDLE_)                 \
                         do{                                                        \
                               (__HANDLE__)->__PPP_DMA_FIELD_ = &(__DMA_HANDLE_);   \
                               (__DMA_HANDLE_).Parent = (__HANDLE__);               \
                           } while(0U)
-
-#define UNUSED(x) ((void)(x))
 
 /** @brief Reset the Handle's State field.
   * @param __HANDLE__ specifies the Peripheral Handle.
@@ -123,7 +124,7 @@ typedef enum
                                     }while (0U)
 #endif /* USE_RTOS */
 
-#if  defined ( __GNUC__ )
+#if defined ( __GNUC__ ) && !defined (__CC_ARM) /* GNU Compiler */
   #ifndef __weak
     #define __weak   __attribute__((weak))
   #endif /* __weak */
@@ -134,7 +135,7 @@ typedef enum
 
 
 /* Macro to get variable aligned on 4-bytes, for __ICCARM__ the directive "#pragma data_alignment=4" must be used instead */
-#if defined   (__GNUC__)        /* GNU Compiler */
+#if defined ( __GNUC__ ) && !defined (__CC_ARM) /* GNU Compiler */
   #ifndef __ALIGN_END
     #define __ALIGN_END    __attribute__ ((aligned (4)))
   #endif /* __ALIGN_END */
