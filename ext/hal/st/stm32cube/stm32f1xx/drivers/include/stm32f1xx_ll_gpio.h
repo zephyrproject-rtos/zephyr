@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_ll_gpio.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of GPIO LL module.
   ******************************************************************************
   * @attention
@@ -58,15 +56,17 @@ extern "C" {
 
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-
 /* Private constants ---------------------------------------------------------*/
+
 /** @defgroup GPIO_LL_Private_Constants GPIO Private Constants
   * @{
   */
+/* Defines used for Pin Mask Initialization */
+#define GPIO_PIN_MASK_POS   8U
+#define GPIO_PIN_NB         16U
 /**
   * @}
   */
-
 
 /* Private macros ------------------------------------------------------------*/
 #if defined(USE_FULL_LL_DRIVER)
@@ -112,7 +112,7 @@ typedef struct
                               This parameter can be a value of @ref GPIO_LL_EC_PULL.
 
                               GPIO HW configuration can be modified afterwards using unitary function @ref LL_GPIO_SetPinPull().*/
-}LL_GPIO_InitTypeDef;
+} LL_GPIO_InitTypeDef;
 
 /**
   * @}
@@ -127,28 +127,28 @@ typedef struct
 /** @defgroup GPIO_LL_EC_PIN PIN
   * @{
   */
-#define LL_GPIO_PIN_0                    (GPIO_BSRR_BS0 << 8)  | 0x00000001U  /*!< Select pin 0 */
-#define LL_GPIO_PIN_1                    (GPIO_BSRR_BS1 << 8)  | 0x00000002U  /*!< Select pin 1 */
-#define LL_GPIO_PIN_2                    (GPIO_BSRR_BS2 << 8)  | 0x00000004U  /*!< Select pin 2 */
-#define LL_GPIO_PIN_3                    (GPIO_BSRR_BS3 << 8)  | 0x00000008U  /*!< Select pin 3 */
-#define LL_GPIO_PIN_4                    (GPIO_BSRR_BS4 << 8)  | 0x00000010U  /*!< Select pin 4 */
-#define LL_GPIO_PIN_5                    (GPIO_BSRR_BS5 << 8)  | 0x00000020U  /*!< Select pin 5 */
-#define LL_GPIO_PIN_6                    (GPIO_BSRR_BS6 << 8)  | 0x00000040U  /*!< Select pin 6 */
-#define LL_GPIO_PIN_7                    (GPIO_BSRR_BS7 << 8)  | 0x00000080U  /*!< Select pin 7 */
-#define LL_GPIO_PIN_8                    (GPIO_BSRR_BS8 << 8)  | 0x04000001U  /*!< Select pin 8 */
-#define LL_GPIO_PIN_9                    (GPIO_BSRR_BS9 << 8)  | 0x04000002U  /*!< Select pin 9 */
-#define LL_GPIO_PIN_10                   (GPIO_BSRR_BS10 << 8) | 0x04000004U  /*!< Select pin 10 */
-#define LL_GPIO_PIN_11                   (GPIO_BSRR_BS11 << 8) | 0x04000008U  /*!< Select pin 11 */
-#define LL_GPIO_PIN_12                   (GPIO_BSRR_BS12 << 8) | 0x04000010U  /*!< Select pin 12 */
-#define LL_GPIO_PIN_13                   (GPIO_BSRR_BS13 << 8) | 0x04000020U  /*!< Select pin 13 */
-#define LL_GPIO_PIN_14                   (GPIO_BSRR_BS14 << 8) | 0x04000040U  /*!< Select pin 14 */
-#define LL_GPIO_PIN_15                   (GPIO_BSRR_BS15 << 8) | 0x04000080U  /*!< Select pin 15 */
+#define LL_GPIO_PIN_0                    ((GPIO_BSRR_BS0  << GPIO_PIN_MASK_POS) | 0x00000001U)  /*!< Select pin 0  */
+#define LL_GPIO_PIN_1                    ((GPIO_BSRR_BS1  << GPIO_PIN_MASK_POS) | 0x00000002U)  /*!< Select pin 1  */
+#define LL_GPIO_PIN_2                    ((GPIO_BSRR_BS2  << GPIO_PIN_MASK_POS) | 0x00000004U)  /*!< Select pin 2  */
+#define LL_GPIO_PIN_3                    ((GPIO_BSRR_BS3  << GPIO_PIN_MASK_POS) | 0x00000008U)  /*!< Select pin 3  */
+#define LL_GPIO_PIN_4                    ((GPIO_BSRR_BS4  << GPIO_PIN_MASK_POS) | 0x00000010U)  /*!< Select pin 4  */
+#define LL_GPIO_PIN_5                    ((GPIO_BSRR_BS5  << GPIO_PIN_MASK_POS) | 0x00000020U)  /*!< Select pin 5  */
+#define LL_GPIO_PIN_6                    ((GPIO_BSRR_BS6  << GPIO_PIN_MASK_POS) | 0x00000040U)  /*!< Select pin 6  */
+#define LL_GPIO_PIN_7                    ((GPIO_BSRR_BS7  << GPIO_PIN_MASK_POS) | 0x00000080U)  /*!< Select pin 7  */
+#define LL_GPIO_PIN_8                    ((GPIO_BSRR_BS8  << GPIO_PIN_MASK_POS) | 0x04000001U)  /*!< Select pin 8  */
+#define LL_GPIO_PIN_9                    ((GPIO_BSRR_BS9  << GPIO_PIN_MASK_POS) | 0x04000002U)  /*!< Select pin 9  */
+#define LL_GPIO_PIN_10                   ((GPIO_BSRR_BS10 << GPIO_PIN_MASK_POS) | 0x04000004U)  /*!< Select pin 10 */
+#define LL_GPIO_PIN_11                   ((GPIO_BSRR_BS11 << GPIO_PIN_MASK_POS) | 0x04000008U)  /*!< Select pin 11 */
+#define LL_GPIO_PIN_12                   ((GPIO_BSRR_BS12 << GPIO_PIN_MASK_POS) | 0x04000010U)  /*!< Select pin 12 */
+#define LL_GPIO_PIN_13                   ((GPIO_BSRR_BS13 << GPIO_PIN_MASK_POS) | 0x04000020U)  /*!< Select pin 13 */
+#define LL_GPIO_PIN_14                   ((GPIO_BSRR_BS14 << GPIO_PIN_MASK_POS) | 0x04000040U)  /*!< Select pin 14 */
+#define LL_GPIO_PIN_15                   ((GPIO_BSRR_BS15 << GPIO_PIN_MASK_POS) | 0x04000080U)  /*!< Select pin 15 */
 #define LL_GPIO_PIN_ALL                  (LL_GPIO_PIN_0  | LL_GPIO_PIN_1  | LL_GPIO_PIN_2  | \
                                           LL_GPIO_PIN_3  | LL_GPIO_PIN_4  | LL_GPIO_PIN_5  | \
                                           LL_GPIO_PIN_6  | LL_GPIO_PIN_7  | LL_GPIO_PIN_8  | \
                                           LL_GPIO_PIN_9  | LL_GPIO_PIN_10 | LL_GPIO_PIN_11 | \
                                           LL_GPIO_PIN_12 | LL_GPIO_PIN_13 | LL_GPIO_PIN_14 | \
-                                          LL_GPIO_PIN_15) /*!< Select all pins */
+                                          LL_GPIO_PIN_15)                                      /*!< Select all pins */
 /**
   * @}
   */
@@ -156,11 +156,11 @@ typedef struct
 /** @defgroup GPIO_LL_EC_MODE Mode
   * @{
   */
-#define LL_GPIO_MODE_ANALOG                0x00000000U   /*!< Select analog mode */
-#define LL_GPIO_MODE_FLOATING              GPIO_CRL_CNF0_0   /*!< Select floating mode */
-#define LL_GPIO_MODE_INPUT                 GPIO_CRL_CNF0_1   /*!< Select input mode */
-#define LL_GPIO_MODE_OUTPUT                GPIO_CRL_MODE0_0   /*!< Select general purpose output mode */
-#define LL_GPIO_MODE_ALTERNATE             (GPIO_CRL_CNF0_1 | GPIO_CRL_MODE0_0) /*!< Select alternate function mode */
+#define LL_GPIO_MODE_ANALOG              0x00000000U       /*!< Select analog mode */
+#define LL_GPIO_MODE_FLOATING            GPIO_CRL_CNF0_0   /*!< Select floating mode */
+#define LL_GPIO_MODE_INPUT               GPIO_CRL_CNF0_1   /*!< Select input mode */
+#define LL_GPIO_MODE_OUTPUT              GPIO_CRL_MODE0_0  /*!< Select general purpose output mode */
+#define LL_GPIO_MODE_ALTERNATE           (GPIO_CRL_CNF0_1 | GPIO_CRL_MODE0_0) /*!< Select alternate function mode */
 /**
   * @}
   */
@@ -168,8 +168,8 @@ typedef struct
 /** @defgroup GPIO_LL_EC_OUTPUT Output Type
   * @{
   */
-#define LL_GPIO_OUTPUT_PUSHPULL            0x00000000U /*!< Select push-pull as output type */
-#define LL_GPIO_OUTPUT_OPENDRAIN           GPIO_CRL_CNF0_0 /*!< Select open-drain as output type */
+#define LL_GPIO_OUTPUT_PUSHPULL          0x00000000U                /*!< Select push-pull as output type */
+#define LL_GPIO_OUTPUT_OPENDRAIN         GPIO_CRL_CNF0_0            /*!< Select open-drain as output type */
 /**
   * @}
   */
@@ -177,13 +177,13 @@ typedef struct
 /** @defgroup GPIO_LL_EC_SPEED Output Speed
   * @{
   */
-#define LL_GPIO_MODE_OUTPUT_10MHz      GPIO_CRL_MODE0_0            /*!< Select Output mode, max speed 10 MHz */
-#define LL_GPIO_MODE_OUTPUT_2MHz       GPIO_CRL_MODE0_1            /*!< Select Output mode, max speed 20 MHz */
-#define LL_GPIO_MODE_OUTPUT_50MHz      GPIO_CRL_MODE0              /*!< Select Output mode, max speed 50 MHz */
+#define LL_GPIO_MODE_OUTPUT_10MHz        GPIO_CRL_MODE0_0            /*!< Select Output mode, max speed 10 MHz */
+#define LL_GPIO_MODE_OUTPUT_2MHz         GPIO_CRL_MODE0_1            /*!< Select Output mode, max speed 20 MHz */
+#define LL_GPIO_MODE_OUTPUT_50MHz        GPIO_CRL_MODE0              /*!< Select Output mode, max speed 50 MHz */
 /**
   * @}
   */
-  
+
 #define LL_GPIO_SPEED_FREQ_LOW           LL_GPIO_MODE_OUTPUT_2MHz    /*!< Select I/O low output speed    */
 #define LL_GPIO_SPEED_FREQ_MEDIUM        LL_GPIO_MODE_OUTPUT_10MHz   /*!< Select I/O medium output speed */
 #define LL_GPIO_SPEED_FREQ_HIGH          LL_GPIO_MODE_OUTPUT_50MHz   /*!< Select I/O high output speed   */
@@ -191,13 +191,13 @@ typedef struct
 /** @defgroup GPIO_LL_EC_PULL Pull Up Pull Down
   * @{
   */
-#define LL_GPIO_PULL_DOWN                  0x00000000U    /*!< Select I/O pull down */
-#define LL_GPIO_PULL_UP                    GPIO_ODR_ODR0  /*!< Select I/O pull up */
+#define LL_GPIO_PULL_DOWN                0x00000000U    /*!< Select I/O pull down */
+#define LL_GPIO_PULL_UP                  GPIO_ODR_ODR0  /*!< Select I/O pull up */
 
 /**
   * @}
   */
-  
+
 /** @defgroup GPIO_LL_EVENTOUT_PIN EVENTOUT Pin
   * @{
   */
@@ -240,13 +240,13 @@ typedef struct
 /** @defgroup GPIO_LL_EC_EXTI_PORT GPIO EXTI PORT
   * @{
   */
-#define LL_GPIO_AF_EXTI_PORTA            (uint32_t)0   /*!< EXTI PORT A */
-#define LL_GPIO_AF_EXTI_PORTB            (uint32_t)1   /*!< EXTI PORT B */
-#define LL_GPIO_AF_EXTI_PORTC            (uint32_t)2   /*!< EXTI PORT C */
-#define LL_GPIO_AF_EXTI_PORTD            (uint32_t)3   /*!< EXTI PORT D */
-#define LL_GPIO_AF_EXTI_PORTE            (uint32_t)4   /*!< EXTI PORT E */
-#define LL_GPIO_AF_EXTI_PORTF            (uint32_t)5   /*!< EXTI PORT F */
-#define LL_GPIO_AF_EXTI_PORTG            (uint32_t)6   /*!< EXTI PORT G */
+#define LL_GPIO_AF_EXTI_PORTA            0U   /*!< EXTI PORT A */
+#define LL_GPIO_AF_EXTI_PORTB            1U   /*!< EXTI PORT B */
+#define LL_GPIO_AF_EXTI_PORTC            2U   /*!< EXTI PORT C */
+#define LL_GPIO_AF_EXTI_PORTD            3U   /*!< EXTI PORT D */
+#define LL_GPIO_AF_EXTI_PORTE            4U   /*!< EXTI PORT E */
+#define LL_GPIO_AF_EXTI_PORTF            5U   /*!< EXTI PORT F */
+#define LL_GPIO_AF_EXTI_PORTG            6U   /*!< EXTI PORT G */
 /**
   * @}
   */
@@ -254,22 +254,22 @@ typedef struct
 /** @defgroup GPIO_LL_EC_EXTI_LINE GPIO EXTI LINE
   * @{
   */
-#define LL_GPIO_AF_EXTI_LINE0            (uint32_t)(0x000FU << 16 | 0)  /*!< EXTI_POSITION_0  | EXTICR[0] */
-#define LL_GPIO_AF_EXTI_LINE1            (uint32_t)(0x00F0U << 16 | 0)  /*!< EXTI_POSITION_4  | EXTICR[0] */
-#define LL_GPIO_AF_EXTI_LINE2            (uint32_t)(0x0F00U << 16 | 0)  /*!< EXTI_POSITION_8  | EXTICR[0] */
-#define LL_GPIO_AF_EXTI_LINE3            (uint32_t)(0xF000U << 16 | 0)  /*!< EXTI_POSITION_12 | EXTICR[0] */
-#define LL_GPIO_AF_EXTI_LINE4            (uint32_t)(0x000FU << 16 | 1)  /*!< EXTI_POSITION_0  | EXTICR[1] */
-#define LL_GPIO_AF_EXTI_LINE5            (uint32_t)(0x00F0U << 16 | 1)  /*!< EXTI_POSITION_4  | EXTICR[1] */
-#define LL_GPIO_AF_EXTI_LINE6            (uint32_t)(0x0F00U << 16 | 1)  /*!< EXTI_POSITION_8  | EXTICR[1] */
-#define LL_GPIO_AF_EXTI_LINE7            (uint32_t)(0xF000U << 16 | 1)  /*!< EXTI_POSITION_12 | EXTICR[1] */
-#define LL_GPIO_AF_EXTI_LINE8            (uint32_t)(0x000FU << 16 | 2)  /*!< EXTI_POSITION_0  | EXTICR[2] */
-#define LL_GPIO_AF_EXTI_LINE9            (uint32_t)(0x00F0U << 16 | 2)  /*!< EXTI_POSITION_4  | EXTICR[2] */
-#define LL_GPIO_AF_EXTI_LINE10           (uint32_t)(0x0F00U << 16 | 2)  /*!< EXTI_POSITION_8  | EXTICR[2] */
-#define LL_GPIO_AF_EXTI_LINE11           (uint32_t)(0xF000U << 16 | 2)  /*!< EXTI_POSITION_12 | EXTICR[2] */
-#define LL_GPIO_AF_EXTI_LINE12           (uint32_t)(0x000FU << 16 | 3)  /*!< EXTI_POSITION_0  | EXTICR[3] */
-#define LL_GPIO_AF_EXTI_LINE13           (uint32_t)(0x00F0U << 16 | 3)  /*!< EXTI_POSITION_4  | EXTICR[3] */
-#define LL_GPIO_AF_EXTI_LINE14           (uint32_t)(0x0F00U << 16 | 3)  /*!< EXTI_POSITION_8  | EXTICR[3] */
-#define LL_GPIO_AF_EXTI_LINE15           (uint32_t)(0xF000U << 16 | 3)  /*!< EXTI_POSITION_12 | EXTICR[3] */
+#define LL_GPIO_AF_EXTI_LINE0            (0x000FU << 16U | 0U)  /*!< EXTI_POSITION_0  | EXTICR[0] */
+#define LL_GPIO_AF_EXTI_LINE1            (0x00F0U << 16U | 0U)  /*!< EXTI_POSITION_4  | EXTICR[0] */
+#define LL_GPIO_AF_EXTI_LINE2            (0x0F00U << 16U | 0U)  /*!< EXTI_POSITION_8  | EXTICR[0] */
+#define LL_GPIO_AF_EXTI_LINE3            (0xF000U << 16U | 0U)  /*!< EXTI_POSITION_12 | EXTICR[0] */
+#define LL_GPIO_AF_EXTI_LINE4            (0x000FU << 16U | 1U)  /*!< EXTI_POSITION_0  | EXTICR[1] */
+#define LL_GPIO_AF_EXTI_LINE5            (0x00F0U << 16U | 1U)  /*!< EXTI_POSITION_4  | EXTICR[1] */
+#define LL_GPIO_AF_EXTI_LINE6            (0x0F00U << 16U | 1U)  /*!< EXTI_POSITION_8  | EXTICR[1] */
+#define LL_GPIO_AF_EXTI_LINE7            (0xF000U << 16U | 1U)  /*!< EXTI_POSITION_12 | EXTICR[1] */
+#define LL_GPIO_AF_EXTI_LINE8            (0x000FU << 16U | 2U)  /*!< EXTI_POSITION_0  | EXTICR[2] */
+#define LL_GPIO_AF_EXTI_LINE9            (0x00F0U << 16U | 2U)  /*!< EXTI_POSITION_4  | EXTICR[2] */
+#define LL_GPIO_AF_EXTI_LINE10           (0x0F00U << 16U | 2U)  /*!< EXTI_POSITION_8  | EXTICR[2] */
+#define LL_GPIO_AF_EXTI_LINE11           (0xF000U << 16U | 2U)  /*!< EXTI_POSITION_12 | EXTICR[2] */
+#define LL_GPIO_AF_EXTI_LINE12           (0x000FU << 16U | 3U)  /*!< EXTI_POSITION_0  | EXTICR[3] */
+#define LL_GPIO_AF_EXTI_LINE13           (0x00F0U << 16U | 3U)  /*!< EXTI_POSITION_4  | EXTICR[3] */
+#define LL_GPIO_AF_EXTI_LINE14           (0x0F00U << 16U | 3U)  /*!< EXTI_POSITION_8  | EXTICR[3] */
+#define LL_GPIO_AF_EXTI_LINE15           (0xF000U << 16U | 3U)  /*!< EXTI_POSITION_12 | EXTICR[3] */
 /**
   * @}
   */
@@ -357,8 +357,8 @@ typedef struct
   */
 __STATIC_INLINE void LL_GPIO_SetPinMode(GPIO_TypeDef *GPIOx, uint32_t Pin, uint32_t Mode)
 {
-  register uint32_t *pReg = (uint32_t *)((uint32_t)((uint32_t)(&GPIOx->CRL) + (Pin>>24)));
-  MODIFY_REG(*pReg, ((GPIO_CRL_CNF0|GPIO_CRL_MODE0) << (POSITION_VAL(Pin) * 4U)), (Mode << (POSITION_VAL(Pin) * 4U)));
+  register uint32_t *pReg = (uint32_t *)((uint32_t)(&GPIOx->CRL) + (Pin >> 24));
+  MODIFY_REG(*pReg, ((GPIO_CRL_CNF0 | GPIO_CRL_MODE0) << (POSITION_VAL(Pin) * 4U)), (Mode << (POSITION_VAL(Pin) * 4U)));
 }
 
 /**
@@ -397,9 +397,8 @@ __STATIC_INLINE void LL_GPIO_SetPinMode(GPIO_TypeDef *GPIOx, uint32_t Pin, uint3
   */
 __STATIC_INLINE uint32_t LL_GPIO_GetPinMode(GPIO_TypeDef *GPIOx, uint32_t Pin)
 {
-  register uint32_t *pReg = (uint32_t *)((uint32_t)((uint32_t)(&GPIOx->CRL) + (Pin>>24)));
-  return (uint32_t)(READ_BIT(*pReg,
-                             ((GPIO_CRL_CNF0|GPIO_CRL_MODE0) << (POSITION_VAL(Pin) * 4U))) >> (POSITION_VAL(Pin) * 4U));
+  register uint32_t *pReg = (uint32_t *)((uint32_t)(&GPIOx->CRL) + (Pin >> 24));
+  return (READ_BIT(*pReg, ((GPIO_CRL_CNF0 | GPIO_CRL_MODE0) << (POSITION_VAL(Pin) * 4U))) >> (POSITION_VAL(Pin) * 4U));
 }
 
 /**
@@ -436,7 +435,7 @@ __STATIC_INLINE uint32_t LL_GPIO_GetPinMode(GPIO_TypeDef *GPIOx, uint32_t Pin)
   */
 __STATIC_INLINE void LL_GPIO_SetPinSpeed(GPIO_TypeDef *GPIOx, uint32_t Pin, uint32_t  Speed)
 {
-  register uint32_t *pReg = (uint32_t *)((uint32_t)((uint32_t)(&GPIOx->CRL) + (Pin>>24)));
+  register uint32_t *pReg = (uint32_t *)((uint32_t)(&GPIOx->CRL) + (Pin >> 24));
   MODIFY_REG(*pReg, (GPIO_CRL_MODE0 << (POSITION_VAL(Pin) * 4U)),
              (Speed << (POSITION_VAL(Pin) * 4U)));
 }
@@ -474,9 +473,8 @@ __STATIC_INLINE void LL_GPIO_SetPinSpeed(GPIO_TypeDef *GPIOx, uint32_t Pin, uint
   */
 __STATIC_INLINE uint32_t LL_GPIO_GetPinSpeed(GPIO_TypeDef *GPIOx, uint32_t Pin)
 {
-  register uint32_t *pReg = (uint32_t *)((uint32_t)((uint32_t)(&GPIOx->CRL) + (Pin>>24)));
-  return (uint32_t)(READ_BIT(*pReg,
-                             (GPIO_CRL_MODE0 << (POSITION_VAL(Pin) * 4U))) >> (POSITION_VAL(Pin) * 4U));
+  register uint32_t *pReg = (uint32_t *)((uint32_t)(&GPIOx->CRL) + (Pin >> 24));
+  return (READ_BIT(*pReg, (GPIO_CRL_MODE0 << (POSITION_VAL(Pin) * 4U))) >> (POSITION_VAL(Pin) * 4U));
 }
 
 /**
@@ -511,7 +509,7 @@ __STATIC_INLINE uint32_t LL_GPIO_GetPinSpeed(GPIO_TypeDef *GPIOx, uint32_t Pin)
   */
 __STATIC_INLINE void LL_GPIO_SetPinOutputType(GPIO_TypeDef *GPIOx, uint32_t Pin, uint32_t OutputType)
 {
-  register uint32_t *pReg = (uint32_t *)((uint32_t)((uint32_t)(&GPIOx->CRL) + (Pin>>24)));
+  register uint32_t *pReg = (uint32_t *)((uint32_t)(&GPIOx->CRL) + (Pin >> 24));
   MODIFY_REG(*pReg, (GPIO_CRL_CNF0_0 << (POSITION_VAL(Pin) * 4U)),
              (OutputType << (POSITION_VAL(Pin) * 4U)));
 }
@@ -548,9 +546,8 @@ __STATIC_INLINE void LL_GPIO_SetPinOutputType(GPIO_TypeDef *GPIOx, uint32_t Pin,
   */
 __STATIC_INLINE uint32_t LL_GPIO_GetPinOutputType(GPIO_TypeDef *GPIOx, uint32_t Pin)
 {
-  register uint32_t *pReg = (uint32_t *)((uint32_t)((uint32_t)(&GPIOx->CRL) + (Pin>>24)));
-  return (uint32_t)(READ_BIT(*pReg,
-                            (GPIO_CRL_CNF0_0 << (POSITION_VAL(Pin) * 4U))) >> (POSITION_VAL(Pin) * 4U));
+  register uint32_t *pReg = (uint32_t *)((uint32_t)(&GPIOx->CRL) + (Pin >> 24));
+  return (READ_BIT(*pReg, (GPIO_CRL_CNF0_0 << (POSITION_VAL(Pin) * 4U))) >> (POSITION_VAL(Pin) * 4U));
 
 }
 
@@ -583,7 +580,7 @@ __STATIC_INLINE uint32_t LL_GPIO_GetPinOutputType(GPIO_TypeDef *GPIOx, uint32_t 
   */
 __STATIC_INLINE void LL_GPIO_SetPinPull(GPIO_TypeDef *GPIOx, uint32_t Pin, uint32_t Pull)
 {
-  MODIFY_REG(GPIOx->ODR, (Pin>>8) , Pull << (POSITION_VAL(Pin>>8)));
+  MODIFY_REG(GPIOx->ODR, (Pin >> GPIO_PIN_MASK_POS), Pull << (POSITION_VAL(Pin >> GPIO_PIN_MASK_POS)));
 }
 
 /**
@@ -614,8 +611,7 @@ __STATIC_INLINE void LL_GPIO_SetPinPull(GPIO_TypeDef *GPIOx, uint32_t Pin, uint3
   */
 __STATIC_INLINE uint32_t LL_GPIO_GetPinPull(GPIO_TypeDef *GPIOx, uint32_t Pin)
 {
-  return (uint32_t)(READ_BIT(GPIOx->ODR,
-                             (GPIO_ODR_ODR0 << (POSITION_VAL(Pin>>8)))) >> (POSITION_VAL(Pin>>8)));
+  return (READ_BIT(GPIOx->ODR, (GPIO_ODR_ODR0 << (POSITION_VAL(Pin >> GPIO_PIN_MASK_POS)))) >> (POSITION_VAL(Pin >> GPIO_PIN_MASK_POS)));
 }
 
 /**
@@ -650,9 +646,9 @@ __STATIC_INLINE uint32_t LL_GPIO_GetPinPull(GPIO_TypeDef *GPIOx, uint32_t Pin)
 __STATIC_INLINE void LL_GPIO_LockPin(GPIO_TypeDef *GPIOx, uint32_t PinMask)
 {
   __IO uint32_t temp;
-  WRITE_REG(GPIOx->LCKR, GPIO_LCKR_LCKK | ((PinMask >> 8) & 0x0000FFFFU));
-  WRITE_REG(GPIOx->LCKR, ((PinMask >>8 ) & 0x0000FFFFU));
-  WRITE_REG(GPIOx->LCKR, GPIO_LCKR_LCKK | ((PinMask>>8) & 0x0000FFFFU));
+  WRITE_REG(GPIOx->LCKR, GPIO_LCKR_LCKK | ((PinMask >> GPIO_PIN_MASK_POS) & 0x0000FFFFU));
+  WRITE_REG(GPIOx->LCKR, ((PinMask >> GPIO_PIN_MASK_POS) & 0x0000FFFFU));
+  WRITE_REG(GPIOx->LCKR, GPIO_LCKR_LCKK | ((PinMask >> GPIO_PIN_MASK_POS) & 0x0000FFFFU));
   temp = READ_REG(GPIOx->LCKR);
   (void) temp;
 }
@@ -683,7 +679,7 @@ __STATIC_INLINE void LL_GPIO_LockPin(GPIO_TypeDef *GPIOx, uint32_t PinMask)
   */
 __STATIC_INLINE uint32_t LL_GPIO_IsPinLocked(GPIO_TypeDef *GPIOx, uint32_t PinMask)
 {
-  return (READ_BIT(GPIOx->LCKR, ((PinMask >> 8 ) & 0x0000FFFFU)) == ((PinMask >>8 ) & 0x0000FFFFU));
+  return (READ_BIT(GPIOx->LCKR, ((PinMask >> GPIO_PIN_MASK_POS) & 0x0000FFFFU)) == ((PinMask >> GPIO_PIN_MASK_POS) & 0x0000FFFFU));
 }
 
 /**
@@ -713,7 +709,7 @@ __STATIC_INLINE uint32_t LL_GPIO_IsAnyPinLocked(GPIO_TypeDef *GPIOx)
   */
 __STATIC_INLINE uint32_t LL_GPIO_ReadInputPort(GPIO_TypeDef *GPIOx)
 {
-  return (uint32_t)(READ_REG(GPIOx->IDR));
+  return (READ_REG(GPIOx->IDR));
 }
 
 /**
@@ -742,7 +738,7 @@ __STATIC_INLINE uint32_t LL_GPIO_ReadInputPort(GPIO_TypeDef *GPIOx)
   */
 __STATIC_INLINE uint32_t LL_GPIO_IsInputPinSet(GPIO_TypeDef *GPIOx, uint32_t PinMask)
 {
-  return (READ_BIT(GPIOx->IDR, (PinMask >> 8 ) & 0x0000FFFFU) == ((PinMask >> 8 ) & 0x0000FFFFU));
+  return (READ_BIT(GPIOx->IDR, (PinMask >> GPIO_PIN_MASK_POS) & 0x0000FFFFU) == ((PinMask >> GPIO_PIN_MASK_POS) & 0x0000FFFFU));
 }
 
 /**
@@ -794,7 +790,7 @@ __STATIC_INLINE uint32_t LL_GPIO_ReadOutputPort(GPIO_TypeDef *GPIOx)
   */
 __STATIC_INLINE uint32_t LL_GPIO_IsOutputPinSet(GPIO_TypeDef *GPIOx, uint32_t PinMask)
 {
-  return (READ_BIT(GPIOx->ODR, (PinMask >> 8 ) & 0x0000FFFFU) == ((PinMask >> 8 ) & 0x0000FFFFU));
+  return (READ_BIT(GPIOx->ODR, (PinMask >> GPIO_PIN_MASK_POS) & 0x0000FFFFU) == ((PinMask >> GPIO_PIN_MASK_POS) & 0x0000FFFFU));
 }
 
 /**
@@ -823,7 +819,7 @@ __STATIC_INLINE uint32_t LL_GPIO_IsOutputPinSet(GPIO_TypeDef *GPIOx, uint32_t Pi
   */
 __STATIC_INLINE void LL_GPIO_SetOutputPin(GPIO_TypeDef *GPIOx, uint32_t PinMask)
 {
-  WRITE_REG(GPIOx->BSRR, (PinMask >> 8) & 0x0000FFFFU);
+  WRITE_REG(GPIOx->BSRR, (PinMask >> GPIO_PIN_MASK_POS) & 0x0000FFFFU);
 }
 
 /**
@@ -852,7 +848,7 @@ __STATIC_INLINE void LL_GPIO_SetOutputPin(GPIO_TypeDef *GPIOx, uint32_t PinMask)
   */
 __STATIC_INLINE void LL_GPIO_ResetOutputPin(GPIO_TypeDef *GPIOx, uint32_t PinMask)
 {
-  WRITE_REG(GPIOx->BRR, (PinMask >> 8 ) & 0x0000FFFFU);
+  WRITE_REG(GPIOx->BRR, (PinMask >> GPIO_PIN_MASK_POS) & 0x0000FFFFU);
 }
 
 /**
@@ -881,7 +877,7 @@ __STATIC_INLINE void LL_GPIO_ResetOutputPin(GPIO_TypeDef *GPIOx, uint32_t PinMas
   */
 __STATIC_INLINE void LL_GPIO_TogglePin(GPIO_TypeDef *GPIOx, uint32_t PinMask)
 {
-  WRITE_REG(GPIOx->ODR, READ_REG(GPIOx->ODR) ^ ((PinMask >> 8 ) & 0x0000FFFFU));
+  WRITE_REG(GPIOx->ODR, READ_REG(GPIOx->ODR) ^ ((PinMask >> GPIO_PIN_MASK_POS) & 0x0000FFFFU));
 }
 
 /**
@@ -1031,7 +1027,7 @@ __STATIC_INLINE uint32_t LL_GPIO_AF_IsEnabledRemap_USART2(void)
 __STATIC_INLINE void LL_GPIO_AF_EnableRemap_USART3(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_USART3_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_USART3_REMAP_FULLREMAP); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_USART3_REMAP_FULLREMAP);
 }
 
 /**
@@ -1043,7 +1039,7 @@ __STATIC_INLINE void LL_GPIO_AF_EnableRemap_USART3(void)
 __STATIC_INLINE void LL_GPIO_AF_RemapPartial_USART3(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_USART3_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_USART3_REMAP_PARTIALREMAP); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_USART3_REMAP_PARTIALREMAP);
 }
 
 /**
@@ -1055,7 +1051,7 @@ __STATIC_INLINE void LL_GPIO_AF_RemapPartial_USART3(void)
 __STATIC_INLINE void LL_GPIO_AF_DisableRemap_USART3(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_USART3_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_USART3_REMAP_NOREMAP); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_USART3_REMAP_NOREMAP);
 }
 #endif
 
@@ -1068,7 +1064,7 @@ __STATIC_INLINE void LL_GPIO_AF_DisableRemap_USART3(void)
 __STATIC_INLINE void LL_GPIO_AF_EnableRemap_TIM1(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_TIM1_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM1_REMAP_FULLREMAP); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM1_REMAP_FULLREMAP);
 }
 
 /**
@@ -1080,7 +1076,7 @@ __STATIC_INLINE void LL_GPIO_AF_EnableRemap_TIM1(void)
 __STATIC_INLINE void LL_GPIO_AF_RemapPartial_TIM1(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_TIM1_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM1_REMAP_PARTIALREMAP); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM1_REMAP_PARTIALREMAP);
 }
 
 /**
@@ -1092,7 +1088,7 @@ __STATIC_INLINE void LL_GPIO_AF_RemapPartial_TIM1(void)
 __STATIC_INLINE void LL_GPIO_AF_DisableRemap_TIM1(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_TIM1_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM1_REMAP_NOREMAP); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM1_REMAP_NOREMAP);
 }
 
 /**
@@ -1104,7 +1100,7 @@ __STATIC_INLINE void LL_GPIO_AF_DisableRemap_TIM1(void)
 __STATIC_INLINE void LL_GPIO_AF_EnableRemap_TIM2(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_TIM2_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM2_REMAP_FULLREMAP); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM2_REMAP_FULLREMAP);
 }
 
 /**
@@ -1116,7 +1112,7 @@ __STATIC_INLINE void LL_GPIO_AF_EnableRemap_TIM2(void)
 __STATIC_INLINE void LL_GPIO_AF_RemapPartial2_TIM2(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_TIM2_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM2_REMAP_PARTIALREMAP2); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM2_REMAP_PARTIALREMAP2);
 }
 
 /**
@@ -1128,7 +1124,7 @@ __STATIC_INLINE void LL_GPIO_AF_RemapPartial2_TIM2(void)
 __STATIC_INLINE void LL_GPIO_AF_RemapPartial1_TIM2(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_TIM2_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM2_REMAP_PARTIALREMAP1); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM2_REMAP_PARTIALREMAP1);
 }
 
 /**
@@ -1140,7 +1136,7 @@ __STATIC_INLINE void LL_GPIO_AF_RemapPartial1_TIM2(void)
 __STATIC_INLINE void LL_GPIO_AF_DisableRemap_TIM2(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_TIM2_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM2_REMAP_NOREMAP); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM2_REMAP_NOREMAP);
 }
 
 /**
@@ -1153,7 +1149,7 @@ __STATIC_INLINE void LL_GPIO_AF_DisableRemap_TIM2(void)
 __STATIC_INLINE void LL_GPIO_AF_EnableRemap_TIM3(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_TIM3_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM3_REMAP_FULLREMAP); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM3_REMAP_FULLREMAP);
 }
 
 /**
@@ -1166,7 +1162,7 @@ __STATIC_INLINE void LL_GPIO_AF_EnableRemap_TIM3(void)
 __STATIC_INLINE void LL_GPIO_AF_RemapPartial_TIM3(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_TIM3_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM3_REMAP_PARTIALREMAP); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM3_REMAP_PARTIALREMAP);
 }
 
 /**
@@ -1179,7 +1175,7 @@ __STATIC_INLINE void LL_GPIO_AF_RemapPartial_TIM3(void)
 __STATIC_INLINE void LL_GPIO_AF_DisableRemap_TIM3(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_TIM3_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM3_REMAP_NOREMAP); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_TIM3_REMAP_NOREMAP);
 }
 
 #if defined(AFIO_MAPR_TIM4_REMAP)
@@ -1228,7 +1224,7 @@ __STATIC_INLINE uint32_t LL_GPIO_AF_IsEnabledRemap_TIM4(void)
 __STATIC_INLINE void LL_GPIO_AF_RemapPartial1_CAN1(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_CAN_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_CAN_REMAP_REMAP1); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_CAN_REMAP_REMAP1);
 }
 
 /**
@@ -1240,7 +1236,7 @@ __STATIC_INLINE void LL_GPIO_AF_RemapPartial1_CAN1(void)
 __STATIC_INLINE void LL_GPIO_AF_RemapPartial2_CAN1(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_CAN_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_CAN_REMAP_REMAP2); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_CAN_REMAP_REMAP2);
 }
 
 /**
@@ -1252,7 +1248,7 @@ __STATIC_INLINE void LL_GPIO_AF_RemapPartial2_CAN1(void)
 __STATIC_INLINE void LL_GPIO_AF_RemapPartial3_CAN1(void)
 {
   CLEAR_BIT(AFIO->MAPR, AFIO_MAPR_CAN_REMAP);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_CAN_REMAP_REMAP3); 
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_CAN_REMAP_REMAP3);
 }
 #endif
 
@@ -1575,7 +1571,7 @@ __STATIC_INLINE uint32_t LL_GPIO_AF_IsEnabledRemap_ADC2_ETRGREG(void)
 __STATIC_INLINE void LL_GPIO_AF_EnableRemap_SWJ(void)
 {
   CLEAR_BIT(AFIO->MAPR,AFIO_MAPR_SWJ_CFG);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_SWJ_CFG_RESET);  
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_SWJ_CFG_RESET);
 }
 
 /**
@@ -1611,7 +1607,7 @@ __STATIC_INLINE void LL_GPIO_AF_Remap_SWJ_NOJTAG(void)
 __STATIC_INLINE void LL_GPIO_AF_DisableRemap_SWJ(void)
 {
   CLEAR_BIT(AFIO->MAPR,AFIO_MAPR_SWJ_CFG);
-  SET_BIT(AFIO->MAPR, AFIO_MAPR_SWJ_CFG_DISABLE);  
+  SET_BIT(AFIO->MAPR, AFIO_MAPR_SWJ_CFG_DISABLE);
 }
 
 #if defined(AFIO_MAPR_SPI3_REMAP)

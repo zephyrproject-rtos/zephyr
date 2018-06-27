@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_ll_utils.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   UTILS LL module driver.
   ******************************************************************************
   * @attention
@@ -269,9 +267,9 @@ void LL_SetSystemCoreClock(uint32_t HCLKFrequency)
   * @note   Function is based on the following formula:
   *         - PLL output frequency = ((HSI frequency / PREDIV) * PLLMUL)
   *         - PREDIV: Set to 2 for few devices
-  *         - PLLMUL: The application software must set correctly the PLL multiplication factor to 
+  *         - PLLMUL: The application software must set correctly the PLL multiplication factor to
   *                   not exceed 72MHz
-  * @note   FLASH latency can be modified through this function. 
+  * @note   FLASH latency can be modified through this function.
   * @param  UTILS_PLLInitStruct pointer to a @ref LL_UTILS_PLLInitTypeDef structure that contains
   *                             the configuration information for the PLL.
   * @param  UTILS_ClkInitStruct pointer to a @ref LL_UTILS_ClkInitTypeDef structure that contains
@@ -330,9 +328,9 @@ ErrorStatus LL_PLL_ConfigSystemClock_HSI(LL_UTILS_PLLInitTypeDef *UTILS_PLLInitS
   * @note   Function is based on the following formula:
   *         - PLL output frequency = ((HSI frequency / PREDIV) * PLLMUL)
   *         - PREDIV: Set to 2 for few devices
-  *         - PLLMUL: The application software must set correctly the PLL multiplication factor to 
+  *         - PLLMUL: The application software must set correctly the PLL multiplication factor to
   *                   not exceed @ref UTILS_PLL_OUTPUT_MAX
-  * @note   FLASH latency can be modified through this function. 
+  * @note   FLASH latency can be modified through this function.
   * @param  HSEFrequency Value between Min_Data = RCC_HSE_MIN and Max_Data = RCC_HSE_MAX
   * @param  HSEBypass This parameter can be one of the following values:
   *         @arg @ref LL_UTILS_HSEBYPASS_ON
@@ -568,7 +566,7 @@ static ErrorStatus UTILS_EnablePLLAndSwitchSystem(uint32_t SYSCLK_Frequency, LL_
     {
       /* Wait for PLL2 ready */
     }
-    
+
 #endif /* RCC_PLL2_SUPPORT */
     /* Enable PLL */
     LL_RCC_PLL_Enable();

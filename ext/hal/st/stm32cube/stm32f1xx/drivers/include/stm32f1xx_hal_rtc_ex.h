@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_rtc_ex.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of RTC HAL Extension module.
   ******************************************************************************
   * @attention
@@ -32,7 +30,7 @@
   * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
-  ******************************************************************************  
+  ******************************************************************************
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -52,28 +50,28 @@
 
 /** @addtogroup RTCEx
   * @{
-  */ 
+  */
 
 /** @addtogroup RTCEx_Private_Macros
   * @{
   */
-  
+
 /** @defgroup RTCEx_Alias_For_Legacy Alias define maintained for legacy
   * @{
-  */ 
+  */
 #define HAL_RTCEx_TamperTimeStampIRQHandler HAL_RTCEx_TamperIRQHandler
 
 /**
   * @}
   */
-  
+
 /** @defgroup RTCEx_IS_RTC_Definitions Private macros to check input parameters
   * @{
-  */ 
+  */
 #define IS_RTC_TAMPER(__TAMPER__) ((__TAMPER__) == RTC_TAMPER_1)
 
 #define IS_RTC_TAMPER_TRIGGER(__TRIGGER__)  (((__TRIGGER__) == RTC_TAMPERTRIGGER_LOWLEVEL) || \
-                                             ((__TRIGGER__) == RTC_TAMPERTRIGGER_HIGHLEVEL)) 
+                                             ((__TRIGGER__) == RTC_TAMPERTRIGGER_HIGHLEVEL))
 
 #if RTC_BKP_NUMBER > 10U
 #define IS_RTC_BKP(BKP)                   (((BKP) <= (uint32_t)RTC_BKP_DR10) || (((BKP) >= (uint32_t)RTC_BKP_DR11) && ((BKP) <= (uint32_t)RTC_BKP_DR42)))
@@ -89,19 +87,19 @@
 /**
   * @}
   */
-  
-/* Exported types ------------------------------------------------------------*/ 
+
+/* Exported types ------------------------------------------------------------*/
 /** @defgroup RTCEx_Exported_Types RTCEx Exported Types
   * @{
   */
-/** 
-  * @brief  RTC Tamper structure definition  
+/**
+  * @brief  RTC Tamper structure definition
   */
-typedef struct 
+typedef struct
 {
   uint32_t Tamper;                      /*!< Specifies the Tamper Pin.
                                              This parameter can be a value of @ref  RTCEx_Tamper_Pins_Definitions */
-  
+
   uint32_t Trigger;                     /*!< Specifies the Tamper Trigger.
                                              This parameter can be a value of @ref  RTCEx_Tamper_Trigger_Definitions */
 
@@ -109,13 +107,13 @@ typedef struct
 
 /**
   * @}
-  */ 
-  
+  */
+
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup RTCEx_Exported_Constants RTCEx Exported Constants
   * @{
-  */ 
-  
+  */
+
 /** @defgroup RTCEx_Tamper_Pins_Definitions Tamper Pins Definitions
   * @{
   */
@@ -125,17 +123,17 @@ typedef struct
   * @}
   */
 
-/** @defgroup RTCEx_Tamper_Trigger_Definitions Tamper Trigger Definitions 
+/** @defgroup RTCEx_Tamper_Trigger_Definitions Tamper Trigger Definitions
   * @{
-  */ 
+  */
 #define RTC_TAMPERTRIGGER_LOWLEVEL          BKP_CR_TPAL           /*!< A high level on the TAMPER pin resets all data backup registers (if TPE bit is set) */
 #define RTC_TAMPERTRIGGER_HIGHLEVEL         0x00000000U           /*!< A low level on the TAMPER pin resets all data backup registers (if TPE bit is set) */
 
 /**
   * @}
-  */  
+  */
 
-/** @defgroup RTCEx_Backup_Registers_Definitions Backup Registers Definitions 
+/** @defgroup RTCEx_Backup_Registers_Definitions Backup Registers Definitions
   * @{
   */
 #if RTC_BKP_NUMBER > 0U
@@ -150,7 +148,7 @@ typedef struct
 #define RTC_BKP_DR9                         0x00000009U
 #define RTC_BKP_DR10                        0x0000000AU
 #endif /* RTC_BKP_NUMBER > 0 */
-   
+
 #if RTC_BKP_NUMBER > 10U
 #define RTC_BKP_DR11                        0x00000010U
 #define RTC_BKP_DR12                        0x00000011U
@@ -188,17 +186,17 @@ typedef struct
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
   */
-  
+
 /* Exported macro ------------------------------------------------------------*/
 /** @defgroup RTCEx_Exported_Macros RTCEx Exported Macros
   * @{
   */
-  
+
 /**
   * @brief  Enable the RTC Tamper interrupt.
   * @param  __HANDLE__: specifies the RTC handle.
@@ -206,13 +204,13 @@ typedef struct
   *          This parameter can be any combination of the following values:
   *            @arg RTC_IT_TAMP1: Tamper A interrupt
   * @retval None
-  */   
+  */
 #define __HAL_RTC_TAMPER_ENABLE_IT(__HANDLE__, __INTERRUPT__) SET_BIT(BKP->CSR, (__INTERRUPT__))
 
 /**
   * @brief  Disable the RTC Tamper interrupt.
   * @param  __HANDLE__: specifies the RTC handle.
-  * @param  __INTERRUPT__: specifies the RTC Tamper interrupt sources to be disabled. 
+  * @param  __INTERRUPT__: specifies the RTC Tamper interrupt sources to be disabled.
   *         This parameter can be any combination of the following values:
   *            @arg RTC_IT_TAMP1: Tamper A interrupt
   * @retval None
@@ -234,7 +232,7 @@ typedef struct
   * @param  __HANDLE__: specifies the RTC handle.
   * @param  __FLAG__: specifies the RTC Tamper Flag sources to be enabled or disabled.
   *         This parameter can be:
-  *            @arg RTC_FLAG_TAMP1F      
+  *            @arg RTC_FLAG_TAMP1F
   * @retval None
   */
 #define __HAL_RTC_TAMPER_GET_FLAG(__HANDLE__, __FLAG__)       ((((BKP->CSR) & (__FLAG__)) != RESET)? SET : RESET)
@@ -254,7 +252,7 @@ typedef struct
   * @param  __HANDLE__: specifies the RTC handle.
   * @param  __FLAG__: specifies the RTC Tamper Flag sources to be enabled or disabled.
   *         This parameter can be:
-  *            @arg RTC_FLAG_TAMP1F  
+  *            @arg RTC_FLAG_TAMP1F
   * @retval None
   */
 #define __HAL_RTC_TAMPER_CLEAR_FLAG(__HANDLE__, __FLAG__)     SET_BIT(BKP->CSR, BKP_CSR_CTE | BKP_CSR_CTI)
@@ -266,13 +264,13 @@ typedef struct
   *          This parameter can be any combination of the following values:
   *            @arg RTC_IT_SEC: Second A interrupt
   * @retval None
-  */   
+  */
 #define __HAL_RTC_SECOND_ENABLE_IT(__HANDLE__, __INTERRUPT__)  SET_BIT((__HANDLE__)->Instance->CRH, (__INTERRUPT__))
 
 /**
   * @brief  Disable the RTC Second interrupt.
   * @param  __HANDLE__: specifies the RTC handle.
-  * @param  __INTERRUPT__: specifies the RTC Second interrupt sources to be disabled. 
+  * @param  __INTERRUPT__: specifies the RTC Second interrupt sources to be disabled.
   *         This parameter can be any combination of the following values:
   *            @arg RTC_IT_SEC: Second A interrupt
   * @retval None
@@ -316,13 +314,13 @@ typedef struct
   *          This parameter can be any combination of the following values:
   *            @arg RTC_IT_OW: Overflow A interrupt
   * @retval None
-  */   
+  */
 #define __HAL_RTC_OVERFLOW_ENABLE_IT(__HANDLE__, __INTERRUPT__)  SET_BIT((__HANDLE__)->Instance->CRH, (__INTERRUPT__))
 
 /**
   * @brief  Disable the RTC Overflow interrupt.
   * @param  __HANDLE__: specifies the RTC handle.
-  * @param  __INTERRUPT__: specifies the RTC Overflow interrupt sources to be disabled. 
+  * @param  __INTERRUPT__: specifies the RTC Overflow interrupt sources to be disabled.
   *         This parameter can be any combination of the following values:
   *            @arg RTC_IT_OW: Overflow A interrupt
   * @retval None
@@ -361,13 +359,13 @@ typedef struct
 
 /**
   * @}
-  */ 
+  */
 
 /* Exported functions --------------------------------------------------------*/
 /** @addtogroup RTCEx_Exported_Functions
   * @{
   */
-  
+
 /* RTC Tamper functions *****************************************/
 /** @addtogroup RTCEx_Exported_Functions_Group1
   * @{
@@ -382,7 +380,7 @@ HAL_StatusTypeDef HAL_RTCEx_PollForTamper1Event(RTC_HandleTypeDef *hrtc, uint32_
 /**
   * @}
   */
-  
+
 /* RTC Second functions *****************************************/
 /** @addtogroup RTCEx_Exported_Functions_Group2
   * @{
@@ -396,7 +394,7 @@ void              HAL_RTCEx_RTCEventErrorCallback(RTC_HandleTypeDef *hrtc);
 /**
   * @}
   */
-  
+
 /* Extension Control functions ************************************************/
 /** @addtogroup RTCEx_Exported_Functions_Group3
   * @{
@@ -407,15 +405,15 @@ uint32_t          HAL_RTCEx_BKUPRead(RTC_HandleTypeDef *hrtc, uint32_t BackupReg
 HAL_StatusTypeDef HAL_RTCEx_SetSmoothCalib(RTC_HandleTypeDef* hrtc, uint32_t SmoothCalibPeriod, uint32_t SmoothCalibPlusPulses, uint32_t SmouthCalibMinusPulsesValue);
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-  */ 
-  
+  */
+
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}

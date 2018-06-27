@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_ll_spi.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   SPI LL module driver.
   ******************************************************************************
   * @attention
@@ -449,14 +447,14 @@ ErrorStatus LL_I2S_Init(SPI_TypeDef *SPIx, LL_I2S_InitTypeDef *I2S_InitStruct)
       else /* SPI3 */
       {
         /* Get the I2S source clock value */
-        sourceclock = LL_RCC_GetI2SClockFreq(LL_RCC_I2S3_CLKSOURCE);        
+        sourceclock = LL_RCC_GetI2SClockFreq(LL_RCC_I2S3_CLKSOURCE);
       }
 #else
         /* I2S Clock source is System clock: Get System Clock frequency */
       LL_RCC_GetSystemClocksFreq(&rcc_clocks);
 
       /* Get the source clock value: based on System Clock value */
-      sourceclock = rcc_clocks.SYSCLK_Frequency;    
+      sourceclock = rcc_clocks.SYSCLK_Frequency;
 #endif /* I2S2_I2S3_CLOCK_FEATURE */
       /* Compute the Real divider depending on the MCLK output state with a floating point */
       if (I2S_InitStruct->MCLKOutput == LL_I2S_MCLK_OUTPUT_ENABLE)

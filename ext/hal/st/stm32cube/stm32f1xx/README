@@ -6,7 +6,7 @@ Origin:
    http://www.st.com/en/embedded-software/stm32cubef1.html
 
 Status:
-   version 1.6.0
+   version 1.6.1
 
 Purpose:
    ST Microelectronics official MCU package for STM32F1 series.
@@ -23,7 +23,7 @@ URL:
    http://www.st.com/en/embedded-software/stm32cubef1.html
 
 commit:
-   version 1.6.0
+   version 1.6.1
 
 Maintained-by:
    External
@@ -35,6 +35,10 @@ License Link:
    http://www.st.com/resource/en/license_agreement/dm00218346.pdf
 
 Patch List:
+
+   *Changes from official delivery:
+    -dos2unix applied
+    -trailing white spaces removed
 
    *Disable i2c HAL
      Due to conflict with zephyr i2c.h (I2C_SPEED_STANDARD and I2C_SPEED_FAST

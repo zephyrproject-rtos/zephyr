@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_ll_rcc.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   RCC LL module driver.
   ******************************************************************************
   * @attention
@@ -106,7 +104,7 @@ uint32_t RCC_PLL2_GetFreqClockFreq(void);
   * @brief  Reset the RCC clock configuration to the default reset state.
   * @note   The default reset state of the clock configuration is given below:
   *         - HSI ON and used as system clock source
-  *         - HSE PLL, PLL2, PLL3 OFF 
+  *         - HSE PLL, PLL2 & PLL3 are OFF
   *         - AHB, APB1 and APB2 prescaler set to 1.
   *         - CSS, MCO OFF
   *         - All interrupts disabled
@@ -114,77 +112,61 @@ uint32_t RCC_PLL2_GetFreqClockFreq(void);
   *         - Peripheral clocks
   *         - LSI, LSE and RTC clocks
   * @retval An ErrorStatus enumeration value:
-  *          - SUCCESS: RCC registers are de-initialized
-  *          - ERROR: not applicable
+  *         - SUCCESS: RCC registers are de-initialized
+  *         - ERROR: not applicable
   */
 ErrorStatus LL_RCC_DeInit(void)
 {
-  uint32_t vl_mask = 0U;
-
   /* Set HSION bit */
   LL_RCC_HSI_Enable();
 
-  /* Reset SW, HPRE, PPRE, MCOSEL, PLLXTPRE, PLLSRC and ADCPRE bits */
-  vl_mask = 0xFFFFFFFFU;
-  CLEAR_BIT(vl_mask, (RCC_CFGR_SW | RCC_CFGR_HPRE | RCC_CFGR_PPRE1 | RCC_CFGR_PPRE2 | RCC_CFGR_MCOSEL |\
-            RCC_CFGR_PLLXTPRE | RCC_CFGR_PLLSRC | RCC_CFGR_ADCPRE));
+  /* Wait for HSI READY bit */
+  while(LL_RCC_HSI_IsReady() != 1U)
+  {}
 
-#if defined(USB)
-  /* Reset USBPRE bit */
-  CLEAR_BIT(vl_mask, RCC_CFGR_USBPRE);
-#elif defined(USB_OTG_FS)
-  /* Reset OTGFSPRE bit */
-  CLEAR_BIT(vl_mask, RCC_CFGR_OTGFSPRE);
-#endif /* USB */
+  /* Configure HSI as system clock source */
+  LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
 
-#if defined(RCC_CFGR_PLLMULL2)
-  /* Set PLL multiplication factor to 2 */
-  vl_mask |= RCC_CFGR_PLLMULL2;
-#else
-  /* Set PLL multiplication factor to 4 */
-  vl_mask |= RCC_CFGR_PLLMULL4;
-#endif /* RCC_CFGR_PLLMULL2 */
+  /* Wait till clock switch is ready */
+  while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI)
+  {}
 
-  LL_RCC_WriteReg(CFGR, vl_mask);
+  /* Reset PLLON bit */
+  CLEAR_BIT(RCC->CR, RCC_CR_PLLON);
 
-  /* Reset HSEON, HSEBYP, CSSON, PLLON bits */
-  vl_mask = 0xFFFFFFFFU;
-  CLEAR_BIT(vl_mask, (RCC_CR_PLLON | RCC_CR_CSSON | RCC_CR_HSEON | RCC_CR_HSEBYP));
+  /* Wait for PLL READY bit to be reset */
+  while(LL_RCC_PLL_IsReady() != 0U)
+  {}
+
+  /* Reset CFGR register */
+  LL_RCC_WriteReg(CFGR, 0x00000000U);
+
+  /* Reset HSEON, HSEBYP & CSSON bits */
+  CLEAR_BIT(RCC->CR, (RCC_CR_CSSON | RCC_CR_HSEON | RCC_CR_HSEBYP));
 
 #if defined(RCC_CR_PLL2ON)
   /* Reset PLL2ON bit */
-  CLEAR_BIT(vl_mask, RCC_CR_PLL2ON);
+  CLEAR_BIT(RCC->CR, RCC_CR_PLL2ON);
 #endif /* RCC_CR_PLL2ON */
 
 #if defined(RCC_CR_PLL3ON)
   /* Reset PLL3ON bit */
-  CLEAR_BIT(vl_mask, RCC_CR_PLL3ON);
+  CLEAR_BIT(RCC->CR, RCC_CR_PLL3ON);
 #endif /* RCC_CR_PLL3ON */
-
-  LL_RCC_WriteReg(CR, vl_mask);
 
   /* Set HSITRIM bits to the reset value */
   LL_RCC_HSI_SetCalibTrimming(0x10U);
 
 #if defined(RCC_CFGR2_PREDIV1)
   /* Reset CFGR2 register */
-  vl_mask = 0x00000000U;
-
-#if defined(RCC_PLL2_SUPPORT)
-  /* Set PLL2 multiplication factor to 8 */
-  vl_mask |= RCC_CFGR2_PLL2MUL8;
-#endif /* RCC_PLL2_SUPPORT */
-
-#if defined(RCC_PLLI2S_SUPPORT)
-  /* Set PLL3 multiplication factor to 8 */
-  vl_mask |= RCC_CFGR2_PLL3MUL8;
-#endif /* RCC_PLLI2S_SUPPORT */
-
-  LL_RCC_WriteReg(CFGR2, vl_mask);
+  LL_RCC_WriteReg(CFGR2, 0x00000000U);
 #endif /* RCC_CFGR2_PREDIV1 */
 
   /* Disable all interrupts */
   LL_RCC_WriteReg(CIR, 0x00000000U);
+
+  /* Clear reset flags */
+  LL_RCC_ClearResetFlags();
 
   return SUCCESS;
 }
@@ -198,9 +180,9 @@ ErrorStatus LL_RCC_DeInit(void)
   *         and different peripheral clocks available on the device.
   * @note   If SYSCLK source is HSI, function returns values based on HSI_VALUE(**)
   * @note   If SYSCLK source is HSE, function returns values based on HSE_VALUE(***)
-  * @note   If SYSCLK source is PLL, function returns values based on 
+  * @note   If SYSCLK source is PLL, function returns values based on
   *         HSI_VALUE(**) or HSE_VALUE(***) multiplied/divided by the PLL factors.
-  * @note   (**) HSI_VALUE is a defined constant but the real value may vary 
+  * @note   (**) HSI_VALUE is a defined constant but the real value may vary
   *              depending on the variations in voltage and temperature.
   * @note   (***) HSE_VALUE is a defined constant, user has to ensure that
   *               HSE_VALUE is same as the real frequency of the crystal used.
@@ -287,7 +269,7 @@ uint32_t LL_RCC_GetUSBClockFreq(uint32_t USBxSource)
   /* USBCLK clock frequency */
   switch (LL_RCC_GetUSBClockSource(USBxSource))
   {
-#if defined(RCC_CFGR_USBPRE)  
+#if defined(RCC_CFGR_USBPRE)
     case LL_RCC_USB_CLKSOURCE_PLL:        /* PLL clock used as USB clock source */
       if (LL_RCC_PLL_IsReady())
       {
@@ -304,8 +286,8 @@ uint32_t LL_RCC_GetUSBClockFreq(uint32_t USBxSource)
       break;
 #endif /* RCC_CFGR_USBPRE */
 #if defined(RCC_CFGR_OTGFSPRE)
-    /* USBCLK = PLLVCO/2 
-              = (2 x PLLCLK) / 2 
+    /* USBCLK = PLLVCO/2
+              = (2 x PLLCLK) / 2
               = PLLCLK */
     case LL_RCC_USB_CLKSOURCE_PLL_DIV_2:        /* PLL clock used as USB clock source */
       if (LL_RCC_PLL_IsReady())
@@ -314,7 +296,7 @@ uint32_t LL_RCC_GetUSBClockFreq(uint32_t USBxSource)
       }
       break;
 
-    /* USBCLK = PLLVCO/3 
+    /* USBCLK = PLLVCO/3
               = (2 x PLLCLK) / 3 */
     case LL_RCC_USB_CLKSOURCE_PLL_DIV_3:        /* PLL clock divided by 3 used as USB clock source */
     default:

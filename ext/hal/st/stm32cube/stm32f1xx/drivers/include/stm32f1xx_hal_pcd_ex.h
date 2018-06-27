@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_pcd_ex.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of Extended PCD HAL module.
   ******************************************************************************
   * @attention
@@ -33,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F1xx_HAL_PCD_EX_H
@@ -75,7 +73,7 @@ HAL_StatusTypeDef HAL_PCDEx_SetRxFiFo(PCD_HandleTypeDef *hpcd, uint16_t size);
 #endif /* USB_OTG_FS */
 
 #if defined (USB)
-HAL_StatusTypeDef HAL_PCDEx_PMAConfig(PCD_HandleTypeDef *hpcd, 
+HAL_StatusTypeDef HAL_PCDEx_PMAConfig(PCD_HandleTypeDef *hpcd,
                                      uint16_t ep_addr,
                                      uint16_t ep_kind,
                                      uint32_t pmaadress);
@@ -96,7 +94,7 @@ void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state);
   */
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}

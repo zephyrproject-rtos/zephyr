@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_spi.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   SPI HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Serial Peripheral Interface (SPI) peripheral:
@@ -33,7 +31,7 @@
           (##) DMA Configuration if you need to use DMA process
               (+++) Declare a DMA_HandleTypeDef handle structure for the transmit or receive Channel
               (+++) Enable the DMAx clock
-              (+++) Configure the DMA handle parameters 
+              (+++) Configure the DMA handle parameters
               (+++) Configure the DMA Tx or Rx Channel
               (+++) Associate the initilalized hdma_tx(or _rx) handle to the hspi DMA Tx (or Rx) handle
               (+++) Configure the priority and enable the NVIC for the transfer complete interrupt on the DMA Tx or Rx Channel
@@ -65,7 +63,7 @@
     Using the HAL it is not possible to reach all supported SPI frequency with the differents SPI Modes,
     the following tables resume the max SPI frequency reached with data size 8bits/16bits,
     according to frequency used on APBx Peripheral Clock (fPCLK) used by the SPI instance :
-    
+
    DataSize = SPI_DATASIZE_8BIT:
    +--------------------------------------------------------------------------------------------------+
    |         |                | 2Lines Fullduplex     |     2Lines RxOnly     |        1Line          |
@@ -570,7 +568,7 @@ HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, uint8_t *pData, uint
     errorcode = HAL_TIMEOUT;
     goto error;
   }
-  
+
   /* Check Busy flag */
   if(SPI_CheckFlag_BSY(hspi, Timeout, tickstart) != HAL_OK)
   {
@@ -839,10 +837,10 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
 
   /* Init tickstart for timeout management*/
   tickstart = HAL_GetTick();
-  
+
   tmp  = hspi->State;
   tmp1 = hspi->Init.Mode;
-  
+
   if(!((tmp == HAL_SPI_STATE_READY) || \
     ((tmp1 == SPI_MODE_MASTER) && (hspi->Init.Direction == SPI_DIRECTION_2LINES) && (tmp == HAL_SPI_STATE_BUSY_RX))))
   {
@@ -907,7 +905,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
         hspi->Instance->DR = *((uint16_t *)pTxData);
         pTxData += sizeof(uint16_t);
         hspi->TxXferCount--;
-        /* Next Data is a reception (Rx). Tx not allowed */ 
+        /* Next Data is a reception (Rx). Tx not allowed */
         txallowed = 0U;
 
 #if (USE_SPI_CRC != 0U)
@@ -925,7 +923,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
         *((uint16_t *)pRxData) = hspi->Instance->DR;
         pRxData += sizeof(uint16_t);
         hspi->RxXferCount--;
-        /* Next Data is a Transmission (Tx). Tx is allowed */ 
+        /* Next Data is a Transmission (Tx). Tx is allowed */
         txallowed = 1U;
       }
       if((Timeout != HAL_MAX_DELAY) && ((HAL_GetTick()-tickstart) >=  Timeout))
@@ -951,7 +949,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
       {
         *(__IO uint8_t *)&hspi->Instance->DR = (*pTxData++);
         hspi->TxXferCount--;
-        /* Next Data is a reception (Rx). Tx not allowed */ 
+        /* Next Data is a reception (Rx). Tx not allowed */
         txallowed = 0U;
 
 #if (USE_SPI_CRC != 0U)
@@ -968,7 +966,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
       {
         (*(uint8_t *)pRxData++) = hspi->Instance->DR;
         hspi->RxXferCount--;
-        /* Next Data is a Transmission (Tx). Tx is allowed */ 
+        /* Next Data is a Transmission (Tx). Tx is allowed */
         txallowed = 1U;
       }
       if((Timeout != HAL_MAX_DELAY) && ((HAL_GetTick()-tickstart) >=  Timeout))
@@ -1023,7 +1021,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
     errorcode = HAL_TIMEOUT;
     goto error;
   }
-  
+
   /* Check Busy flag */
   if(SPI_CheckFlag_BSY(hspi, Timeout, tickstart) != HAL_OK)
   {
@@ -1037,7 +1035,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
   {
     __HAL_SPI_CLEAR_OVRFLAG(hspi);
   }
-  
+
 error :
   hspi->State = HAL_SPI_STATE_READY;
   __HAL_UNLOCK(hspi);
@@ -1247,7 +1245,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive_IT(SPI_HandleTypeDef *hspi, uint8_t *p
 
   tmp  = hspi->State;
   tmp1 = hspi->Init.Mode;
-  
+
   if(!((tmp == HAL_SPI_STATE_READY) || \
     ((tmp1 == SPI_MODE_MASTER) && (hspi->Init.Direction == SPI_DIRECTION_2LINES) && (tmp == HAL_SPI_STATE_BUSY_RX))))
   {
@@ -1628,7 +1626,7 @@ error :
   *           - Abort DMA transfer by calling HAL_DMA_Abort (in case of transfer in DMA mode)
   *           - Set handle State to READY
   * @note   This procedure is executed in blocking mode : when exiting function, Abort is considered as completed.
-  * @note   Once transfer is aborted, the __HAL_SPI_CLEAR_OVRFLAG() macro must be called in user application 
+  * @note   Once transfer is aborted, the __HAL_SPI_CLEAR_OVRFLAG() macro must be called in user application
   *         before starting new SPI receive process.
   * @retval HAL status
 */
@@ -1653,13 +1651,13 @@ HAL_StatusTypeDef HAL_SPI_Abort(SPI_HandleTypeDef *hspi)
   /* Disable the SPI DMA Tx or SPI DMA Rx request if enabled */
   if ((HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_TXDMAEN)) || (HAL_IS_BIT_SET(hspi->Instance->CR2, SPI_CR2_RXDMAEN)))
   {
-    /* Abort the SPI DMA Tx channel : use blocking DMA Abort API (no callback) */  
+    /* Abort the SPI DMA Tx channel : use blocking DMA Abort API (no callback) */
     if(hspi->hdmatx != NULL)
     {
       /* Set the SPI DMA Abort callback :
       will lead to call HAL_SPI_AbortCpltCallback() at end of DMA abort procedure */
       hspi->hdmatx->XferAbortCallback = NULL;
-      
+
       /* Abort DMA Tx Handle linked to SPI Peripheral */
       HAL_DMA_Abort(hspi->hdmatx);
 
@@ -1675,7 +1673,7 @@ HAL_StatusTypeDef HAL_SPI_Abort(SPI_HandleTypeDef *hspi)
           break;
         }
       }
-      while((hspi->Instance->SR & SPI_FLAG_TXE) == RESET);       
+      while((hspi->Instance->SR & SPI_FLAG_TXE) == RESET);
     }
     /* Abort the SPI DMA Rx channel : use blocking DMA Abort API (no callback) */
     if(hspi->hdmarx != NULL)
@@ -1683,16 +1681,16 @@ HAL_StatusTypeDef HAL_SPI_Abort(SPI_HandleTypeDef *hspi)
       /* Set the SPI DMA Abort callback :
       will lead to call HAL_SPI_AbortCpltCallback() at end of DMA abort procedure */
       hspi->hdmarx->XferAbortCallback = NULL;
-      
+
       /* Abort DMA Rx Handle linked to SPI Peripheral */
       HAL_DMA_Abort(hspi->hdmarx);
 
       /* Disable peripheral */
-      __HAL_SPI_DISABLE(hspi); 
+      __HAL_SPI_DISABLE(hspi);
 
       /* Disable Rx DMA Request */
       CLEAR_BIT(hspi->Instance->CR2, (SPI_CR2_RXDMAEN));
-      
+
     }
   }
   /* Reset Tx and Rx transfer counters */
@@ -1724,7 +1722,7 @@ HAL_StatusTypeDef HAL_SPI_Abort(SPI_HandleTypeDef *hspi)
   *           - At abort completion, call user abort complete callback
   * @note   This procedure is executed in Interrupt mode, meaning that abort procedure could be
   *         considered as completed only when user abort complete callback is executed (not when exiting function).
-  * @note   Once transfer is aborted, the __HAL_SPI_CLEAR_OVRFLAG() macro must be called in user application 
+  * @note   Once transfer is aborted, the __HAL_SPI_CLEAR_OVRFLAG() macro must be called in user application
   *         before starting new SPI receive process.
   * @retval HAL status
 */
@@ -1747,9 +1745,9 @@ HAL_StatusTypeDef HAL_SPI_Abort_IT(SPI_HandleTypeDef *hspi)
   CLEAR_BIT(hspi->Instance->CR2, SPI_CR2_ERRIE);
 
   abortcplt = 1U;
-  
+
   /* If DMA Tx and/or DMA Rx Handles are associated to SPI Handle, DMA Abort complete callbacks should be initialised
-     before any call to DMA Abort functions */  
+     before any call to DMA Abort functions */
   /* DMA Tx Handle is valid */
   if(hspi->hdmatx != NULL)
   {
@@ -1763,7 +1761,7 @@ HAL_StatusTypeDef HAL_SPI_Abort_IT(SPI_HandleTypeDef *hspi)
     {
       hspi->hdmatx->XferAbortCallback = NULL;
     }
-  }  
+  }
   /* DMA Rx Handle is valid */
   if(hspi->hdmarx != NULL)
   {
@@ -2266,7 +2264,7 @@ static void SPI_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
   /* Init tickstart for timeout management*/
   tickstart = HAL_GetTick();
 #endif /* USE_SPI_CRC */
- 
+
   if((hdma->Instance->CCR & DMA_CCR_CIRC) != DMA_CCR_CIRC)
   {
 #if (USE_SPI_CRC != 0U)
@@ -2510,7 +2508,7 @@ static void SPI_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
       return;
     }
   }
-  
+
   /* No Abort process still ongoing : All DMA channels are aborted, call user Abort Complete callback */
   hspi->RxXferCount = 0U;
   hspi->TxXferCount = 0U;
@@ -3012,7 +3010,7 @@ static void SPI_CloseRxTx_ISR(SPI_HandleTypeDef *hspi)
     }
   }
   while((hspi->Instance->SR & SPI_FLAG_TXE) == RESET);
-  
+
   /* Check the end of the transaction */
   if(SPI_CheckFlag_BSY(hspi, SPI_DEFAULT_TIMEOUT, tickstart)!=HAL_OK)
   {
@@ -3209,7 +3207,7 @@ static void SPI_AbortRx_ISR(SPI_HandleTypeDef *hspi)
   while((hspi->Instance->SR & SPI_FLAG_TXE) == RESET);
 
   /* Disable SPI Peripheral */
-  __HAL_SPI_DISABLE(hspi);    
+  __HAL_SPI_DISABLE(hspi);
 
   /* Disable TXEIE, RXNEIE and ERRIE(mode fault event, overrun error, TI frame error) interrupts */
   CLEAR_BIT(hspi->Instance->CR2, (SPI_CR2_TXEIE | SPI_CR2_RXNEIE | SPI_CR2_ERRIE));
@@ -3237,17 +3235,17 @@ static void SPI_AbortTx_ISR(SPI_HandleTypeDef *hspi)
 }
 
 /**
-  * @brief  Checks if encountered CRC error could be corresponding to wrongly detected errors 
+  * @brief  Checks if encountered CRC error could be corresponding to wrongly detected errors
   *         according to SPI instance, Device type, and revision ID.
   * @param  hspi: pointer to a SPI_HandleTypeDef structure that contains
   *               the configuration information for SPI module.
-  * @retval CRC error validity (SPI_INVALID_CRC_ERROR or SPI_VALID_CRC_ERROR).  
+  * @retval CRC error validity (SPI_INVALID_CRC_ERROR or SPI_VALID_CRC_ERROR).
 */
 __weak uint8_t SPI_ISCRCErrorValid(SPI_HandleTypeDef *hspi)
 {
   /* Prevent unused argument(s) compilation warning */
   UNUSED(hspi);
-  
+
   return (SPI_VALID_CRC_ERROR);
 }
 /**

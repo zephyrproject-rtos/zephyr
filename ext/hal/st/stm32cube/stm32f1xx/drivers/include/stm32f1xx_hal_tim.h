@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_tim.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of TIM HAL module.
   ******************************************************************************
   * @attention
@@ -84,7 +82,7 @@ typedef struct
                                         - the number of half PWM period in center-aligned mode
                                      This parameter must be a number between Min_Data = 0x00 and Max_Data = 0xFF.
                                      @note This parameter is valid only for TIM1 and TIM8. */
-									 
+									
   uint32_t AutoReloadPreload;  /*!< Specifies the auto-reload preload.
                                     This parameter can be a value of @ref TIM_AutoReloadPreload */
 } TIM_Base_InitTypeDef;
@@ -903,7 +901,7 @@ typedef struct
 
 #define IS_TIM_PWM_MODE(MODE) (((MODE) == TIM_OCMODE_PWM1) || \
                                ((MODE) == TIM_OCMODE_PWM2))
-                              
+
 #define IS_TIM_OC_MODE(MODE) (((MODE) == TIM_OCMODE_TIMING)       || \
                           ((MODE) == TIM_OCMODE_ACTIVE)           || \
                           ((MODE) == TIM_OCMODE_INACTIVE)         || \
@@ -956,7 +954,7 @@ typedef struct
 
 #define IS_TIM_ENCODER_MODE(MODE) (((MODE) == TIM_ENCODERMODE_TI1) || \
                                    ((MODE) == TIM_ENCODERMODE_TI2) || \
-                                   ((MODE) == TIM_ENCODERMODE_TI12))   
+                                   ((MODE) == TIM_ENCODERMODE_TI12))
 
 #define IS_TIM_DMA_SOURCE(SOURCE) ((((SOURCE) & 0xFFFF80FFU) == 0x00000000U) && ((SOURCE) != 0x00000000U))
 
@@ -982,9 +980,9 @@ typedef struct
 #define IS_TIM_CLOCKPRESCALER(PRESCALER) (((PRESCALER) == TIM_CLOCKPRESCALER_DIV1) || \
                                           ((PRESCALER) == TIM_CLOCKPRESCALER_DIV2) || \
                                           ((PRESCALER) == TIM_CLOCKPRESCALER_DIV4) || \
-                                          ((PRESCALER) == TIM_CLOCKPRESCALER_DIV8)) 
+                                          ((PRESCALER) == TIM_CLOCKPRESCALER_DIV8))
 
-#define IS_TIM_CLOCKFILTER(ICFILTER)       ((ICFILTER) <= 0x0FU) 
+#define IS_TIM_CLOCKFILTER(ICFILTER)       ((ICFILTER) <= 0x0FU)
 
 #define IS_TIM_CLEARINPUT_SOURCE(SOURCE) (((SOURCE) == TIM_CLEARINPUTSOURCE_ETR)      || \
                                           ((SOURCE) == TIM_CLEARINPUTSOURCE_NONE))
@@ -1320,7 +1318,7 @@ void TIM_CCxChannelCmd(TIM_TypeDef* TIMx, uint32_t Channel, uint32_t ChannelStat
   *            @arg TIM_FLAG_CC4: Capture/Compare 4 interrupt flag
   *            @arg TIM_FLAG_COM:  Commutation interrupt flag
   *            @arg TIM_FLAG_TRIGGER: Trigger interrupt flag
-  *            @arg TIM_FLAG_BREAK: Break interrupt flag   
+  *            @arg TIM_FLAG_BREAK: Break interrupt flag
   *            @arg TIM_FLAG_CC1OF: Capture/Compare 1 overcapture flag
   *            @arg TIM_FLAG_CC2OF: Capture/Compare 2 overcapture flag
   *            @arg TIM_FLAG_CC3OF: Capture/Compare 3 overcapture flag
@@ -1341,7 +1339,7 @@ void TIM_CCxChannelCmd(TIM_TypeDef* TIMx, uint32_t Channel, uint32_t ChannelStat
   *            @arg TIM_FLAG_CC4: Capture/Compare 4 interrupt flag
   *            @arg TIM_FLAG_COM:  Commutation interrupt flag
   *            @arg TIM_FLAG_TRIGGER: Trigger interrupt flag
-  *            @arg TIM_FLAG_BREAK: Break interrupt flag   
+  *            @arg TIM_FLAG_BREAK: Break interrupt flag
   *            @arg TIM_FLAG_CC1OF: Capture/Compare 1 overcapture flag
   *            @arg TIM_FLAG_CC2OF: Capture/Compare 2 overcapture flag
   *            @arg TIM_FLAG_CC3OF: Capture/Compare 3 overcapture flag
@@ -1458,7 +1456,7 @@ mode.
   *          This parameter can be one of the following value:
   *            @arg TIM_CLOCKDIVISION_DIV1: tDTS=tCK_INT
   *            @arg TIM_CLOCKDIVISION_DIV2: tDTS=2*tCK_INT
-  *            @arg TIM_CLOCKDIVISION_DIV4: tDTS=4*tCK_INT 
+  *            @arg TIM_CLOCKDIVISION_DIV4: tDTS=4*tCK_INT
   * @retval None
   */
 #define __HAL_TIM_SET_CLOCKDIVISION(__HANDLE__, __CKD__) \
@@ -1474,7 +1472,7 @@ mode.
   * @retval The clock division can be one of the following values:
   *            @arg TIM_CLOCKDIVISION_DIV1: tDTS=tCK_INT
   *            @arg TIM_CLOCKDIVISION_DIV2: tDTS=2*tCK_INT
-  *            @arg TIM_CLOCKDIVISION_DIV4: tDTS=4*tCK_INT 
+  *            @arg TIM_CLOCKDIVISION_DIV4: tDTS=4*tCK_INT
   */
 #define __HAL_TIM_GET_CLOCKDIVISION(__HANDLE__)  \
    ((__HANDLE__)->Instance->CR1 & TIM_CR1_CKD)
@@ -1558,11 +1556,11 @@ mode.
   *            @arg TIM_CHANNEL_2: TIM Channel 2 selected
   *            @arg TIM_CHANNEL_3: TIM Channel 3 selected
   *            @arg TIM_CHANNEL_4: TIM Channel 4 selected
-  * @param  __POLARITY__: Polarity for TIx source   
+  * @param  __POLARITY__: Polarity for TIx source
   *            @arg TIM_INPUTCHANNELPOLARITY_RISING: Rising Edge
   *            @arg TIM_INPUTCHANNELPOLARITY_FALLING: Falling Edge
   *            @arg TIM_INPUTCHANNELPOLARITY_BOTHEDGE: Rising and Falling Edge
-  * @note  The polarity TIM_INPUTCHANNELPOLARITY_BOTHEDGE is not authorized  for TIM Channel 4.     
+  * @note  The polarity TIM_INPUTCHANNELPOLARITY_BOTHEDGE is not authorized  for TIM Channel 4.
   * @retval None
   */
 #define __HAL_TIM_SET_CAPTUREPOLARITY(__HANDLE__, __CHANNEL__, __POLARITY__)    \

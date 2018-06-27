@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_ll_rtc.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of RTC LL module.
   ******************************************************************************
   * @attention
@@ -83,13 +81,13 @@ typedef struct
 {
   uint32_t AsynchPrescaler; /*!< Specifies the RTC Asynchronous Predivider value.
                               This parameter must be a number between Min_Data = 0x00 and Max_Data = 0xFFFFF
-                              
+
                               This feature can be modified afterwards using unitary function
                               @ref LL_RTC_SetAsynchPrescaler(). */
 
   uint32_t OutPutSource;    /*!< Specifies which signal will be routed to the RTC Tamper pin.
-                                 This parameter can be a value of @ref LL_RTC_Output_Source 
-                              
+                                 This parameter can be a value of @ref LL_RTC_Output_Source
+
                               This feature can be modified afterwards using unitary function
                               @ref LL_RTC_SetOutputSource(). */
 
@@ -197,7 +195,7 @@ typedef struct
 
 /** @defgroup RTC_LL_EC_TAMPLEVEL  Tamper Active Level
   * @{
-  */ 
+  */
 #define LL_RTC_TAMPER_ACTIVELEVEL_LOW          BKP_CR_TPAL           /*!< A high level on the TAMPER pin resets all data backup registers (if TPE bit is set) */
 #define LL_RTC_TAMPER_ACTIVELEVEL_HIGH         (0x00000000U)         /*!< A low level on the TAMPER pin resets all data backup registers (if TPE bit is set) */
 
@@ -310,7 +308,7 @@ __STATIC_INLINE uint32_t LL_RTC_GetDivider(RTC_TypeDef *RTCx)
   register uint16_t Highprescaler = 0 , Lowprescaler = 0;
   Highprescaler = READ_REG(RTCx->DIVH & RTC_DIVH_RTC_DIV);
   Lowprescaler  = READ_REG(RTCx->DIVL & RTC_DIVL_RTC_DIV);
-  
+
   return (((uint32_t) Highprescaler << 16U) | Lowprescaler);
 }
 
@@ -407,7 +405,7 @@ __STATIC_INLINE void LL_RTC_TIME_Set(RTC_TypeDef *RTCx, uint32_t TimeCounter)
 __STATIC_INLINE uint32_t LL_RTC_TIME_Get(RTC_TypeDef *RTCx)
 {
   register uint16_t high = 0, low = 0;
-  
+
   high = READ_REG(RTCx->CNTH & RTC_CNTH_RTC_CNT);
   low  = READ_REG(RTCx->CNTL & RTC_CNTL_RTC_CNT);
   return ((uint32_t)(((uint32_t) high << 16U) | low));
@@ -525,12 +523,12 @@ __STATIC_INLINE uint32_t LL_RTC_TAMPER_GetActiveLevel(BKP_TypeDef *BKPx)
   *         @arg @ref LL_RTC_BKP_DR2
   *         @arg @ref LL_RTC_BKP_DR3
   *         @arg @ref LL_RTC_BKP_DR4
-  *         @arg @ref LL_RTC_BKP_DR5 
-  *         @arg @ref LL_RTC_BKP_DR6 
-  *         @arg @ref LL_RTC_BKP_DR7 
-  *         @arg @ref LL_RTC_BKP_DR8 
-  *         @arg @ref LL_RTC_BKP_DR9 
-  *         @arg @ref LL_RTC_BKP_DR10 
+  *         @arg @ref LL_RTC_BKP_DR5
+  *         @arg @ref LL_RTC_BKP_DR6
+  *         @arg @ref LL_RTC_BKP_DR7
+  *         @arg @ref LL_RTC_BKP_DR8
+  *         @arg @ref LL_RTC_BKP_DR9
+  *         @arg @ref LL_RTC_BKP_DR10
   *         @arg @ref LL_RTC_BKP_DR11 (*)
   *         @arg @ref LL_RTC_BKP_DR12 (*)
   *         @arg @ref LL_RTC_BKP_DR13 (*)
@@ -587,12 +585,12 @@ __STATIC_INLINE void LL_RTC_BKP_SetRegister(BKP_TypeDef *BKPx, uint32_t BackupRe
   *         @arg @ref LL_RTC_BKP_DR2
   *         @arg @ref LL_RTC_BKP_DR3
   *         @arg @ref LL_RTC_BKP_DR4
-  *         @arg @ref LL_RTC_BKP_DR5 
-  *         @arg @ref LL_RTC_BKP_DR6 
-  *         @arg @ref LL_RTC_BKP_DR7 
-  *         @arg @ref LL_RTC_BKP_DR8 
-  *         @arg @ref LL_RTC_BKP_DR9 
-  *         @arg @ref LL_RTC_BKP_DR10 
+  *         @arg @ref LL_RTC_BKP_DR5
+  *         @arg @ref LL_RTC_BKP_DR6
+  *         @arg @ref LL_RTC_BKP_DR7
+  *         @arg @ref LL_RTC_BKP_DR8
+  *         @arg @ref LL_RTC_BKP_DR9
+  *         @arg @ref LL_RTC_BKP_DR10
   *         @arg @ref LL_RTC_BKP_DR11 (*)
   *         @arg @ref LL_RTC_BKP_DR12 (*)
   *         @arg @ref LL_RTC_BKP_DR13 (*)

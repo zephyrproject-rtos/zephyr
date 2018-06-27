@@ -2,21 +2,19 @@
   ******************************************************************************
   * @file    stm32f1xx_ll_bus.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of BUS LL module.
 
-  @verbatim                
+  @verbatim
                       ##### RCC Limitations #####
   ==============================================================================
-    [..]  
-      A delay between an RCC peripheral clock enable and the effective peripheral 
-      enabling should be taken into account in order to manage the peripheral read/write 
+    [..]
+      A delay between an RCC peripheral clock enable and the effective peripheral
+      enabling should be taken into account in order to manage the peripheral read/write
       from/to registers.
       (+) This delay depends on the peripheral mapping.
         (++) AHB & APB peripherals, 1 dummy read is necessary
 
-    [..]  
+    [..]
       Workarounds:
       (#) For AHB & APB peripherals, a dummy read to the peripheral register has been
           inserted in each LL_{BUS}_GRP{x}_EnableClock() function.
