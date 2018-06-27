@@ -14,10 +14,9 @@ WARNING_WHITELIST = (
     # selected. These should be investigated, but whitelist them for now.
     "unsatisfied direct dependencies",
 
-    # Assignments to certain undefined symbols. These are only defined for ARC
-    # and x86, respectively, but are set in some "shared" .conf files.
+    # This symbol is only defined for ARC, but is set in some "shared" .conf
+    # files
     "undefined symbol ARC_INIT",  # Issue #7977
-    "undefined symbol SSE",       # Issue #7978
 )
 
 def fatal(warning):
