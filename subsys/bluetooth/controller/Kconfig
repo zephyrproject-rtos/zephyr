@@ -242,6 +242,7 @@ config BT_CTLR_RL_SIZE
 
 config BT_CTLR_EXT_SCAN_FP
 	bool "LE Extended Scanner Filter Policies"
+	depends on BT_OBSERVER
 	default y
 	help
 	  Enable support for Bluetooth v4.2 LE Extended Scanner Filter Policies
