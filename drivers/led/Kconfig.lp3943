@@ -7,7 +7,6 @@
 menuconfig LP3943
 	bool "LP3943 LED driver"
 	depends on I2C
-	default n
 	help
 	  Enable LED driver for LP3943.
 
