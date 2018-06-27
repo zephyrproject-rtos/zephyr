@@ -110,6 +110,23 @@
       (++) Configure the OPAMP input AND output in analog mode using 
            HAL_GPIO_Init() to map the OPAMP output to the GPIO pin.
   
+      (#) Registrate Callbacks
+      (++) The compilation define  USE_HAL_OPAMP_REGISTER_CALLBACKS when set to 1
+           allows the user to configure dynamically the driver callbacks.
+
+      (++) Use Functions @ref HAL_OPAMP_RegisterCallback() to register a user callback,
+           it allows to register following callbacks:
+      (+++) MspInitCallback         : OPAMP MspInit.  
+      (+++) MspDeInitCallback       : OPAMP MspFeInit.
+           This function takes as parameters the HAL peripheral handle, the Callback ID
+           and a pointer to the user callback function.
+
+      (++) Use function @ref HAL_OPAMP_UnRegisterCallback() to reset a callback to the default
+           weak (surcharged) function. It allows to reset following callbacks:
+      (+++) MspInitCallback         : OPAMP MspInit.  
+      (+++) MspDeInitCallback       : OPAMP MspdeInit.
+      (+++) All Callbacks
+
       (#) Configure the OPAMP using HAL_OPAMP_Init() function:
       (++) Select the mode
       (++) Select the inverting input
@@ -299,6 +316,16 @@ HAL_StatusTypeDef HAL_OPAMP_Init(OPAMP_HandleTypeDef *hopamp)
     assert_param(IS_OPAMP_FUNCTIONAL_NORMALMODE(hopamp->Init.Mode));
     assert_param(IS_OPAMP_NONINVERTING_INPUT(hopamp->Init.NonInvertingInput));
     
+    if(hopamp->State == HAL_OPAMP_STATE_RESET)
+    {  
+#if (USE_HAL_OPAMP_REGISTER_CALLBACKS == 1)
+    if(hopamp->MspInitCallback == NULL)
+    {
+      hopamp->MspInitCallback               = HAL_OPAMP_MspInit;
+    } 
+#endif /* USE_HAL_OPAMP_REGISTER_CALLBACKS */
+    }
+    
     if ((hopamp->Init.Mode) == OPAMP_STANDALONE_MODE)
     {
       assert_param(IS_OPAMP_INVERTING_INPUT_STANDALONE(hopamp->Init.InvertingInput));
@@ -335,8 +362,12 @@ HAL_StatusTypeDef HAL_OPAMP_Init(OPAMP_HandleTypeDef *hopamp)
       hopamp->Lock = HAL_UNLOCKED;
     }
 
+#if (USE_HAL_OPAMP_REGISTER_CALLBACKS == 1)
+    hopamp->MspInitCallback(hopamp);    
+#else    
     /* Call MSP init function */
     HAL_OPAMP_MspInit(hopamp);
+#endif /* USE_HAL_OPAMP_REGISTER_CALLBACKS */
 
     /* Set operating mode */
     CLEAR_BIT(hopamp->Instance->CSR, OPAMP_CSR_CALON);
@@ -440,19 +471,25 @@ HAL_StatusTypeDef HAL_OPAMP_DeInit(OPAMP_HandleTypeDef *hopamp)
     CLEAR_BIT(hopamp->Instance->CSR, OPAMP_CSR_OPAMPxEN);
     MODIFY_REG(hopamp->Instance->CSR, OPAMP_CSR_RESET_BITS, OPAMP_CSR_RESET_VALUE);
     
+#if (USE_HAL_OPAMP_REGISTER_CALLBACKS == 1)
+  if(hopamp->MspDeInitCallback == NULL)
+  {
+    hopamp->MspDeInitCallback = HAL_OPAMP_MspDeInit;
+  }
+  /* DeInit the low level hardware */
+  hopamp->MspDeInitCallback(hopamp);
+#else
     /* DeInit the low level hardware: GPIO, CLOCK and NVIC */
     HAL_OPAMP_MspDeInit(hopamp);
-
+#endif /* USE_HAL_OPAMP_REGISTER_CALLBACKS */
     /* Update the OPAMP state*/
     hopamp->State = HAL_OPAMP_STATE_RESET;   
     
     /* Process unlocked */
     __HAL_UNLOCK(hopamp);
   }
-  
   return status;
 }
-
 
 /**
   * @brief  Initialize the OPAMP MSP.
@@ -971,6 +1008,142 @@ HAL_OPAMP_StateTypeDef HAL_OPAMP_GetState(OPAMP_HandleTypeDef *hopamp)
 /**
   * @}
   */
+
+#if (USE_HAL_OPAMP_REGISTER_CALLBACKS == 1)
+/**
+  * @brief  Register a User OPAMP Callback
+  *         To be used instead of the weak (surcharged) predefined callback 
+  * @param hopamp : OPAMP handle
+  * @param CallbackID : ID of the callback to be registered
+  *        This parameter can be one of the following values:
+  *          @arg @ref HAL_OPAMP_MSP_INIT_CB_ID       OPAMP MspInit callback ID 
+  *          @arg @ref HAL_OPAMP_MSP_DEINIT_CB_ID     OPAMP MspDeInit callback ID  
+  * @param pCallback : pointer to the Callback function
+  * @retval status
+  */
+HAL_StatusTypeDef HAL_OPAMP_RegisterCallback (OPAMP_HandleTypeDef *hopamp, HAL_OPAMP_CallbackIDTypeDef CallbackID, pOPAMP_CallbackTypeDef pCallback)
+{
+  HAL_StatusTypeDef status = HAL_OK;
+
+  if(pCallback == NULL)
+  {
+    return HAL_ERROR;
+  }
+
+  /* Process locked */
+  __HAL_LOCK(hopamp);
+  
+  if(hopamp->State == HAL_OPAMP_STATE_READY)
+  {
+    switch (CallbackID)
+    {
+    case HAL_OPAMP_MSP_INIT_CB_ID :
+      hopamp->MspInitCallback = pCallback;
+      break;
+    case HAL_OPAMP_MSP_DEINIT_CB_ID :
+      hopamp->MspDeInitCallback = pCallback;
+      break;
+    default :
+      /* update return status */
+      status =  HAL_ERROR;
+      break;
+    }
+  }
+  else if (hopamp->State == HAL_OPAMP_STATE_RESET)
+  {
+    switch (CallbackID)
+    {
+    case HAL_OPAMP_MSP_INIT_CB_ID :
+      hopamp->MspInitCallback = pCallback;
+      break;
+    case HAL_OPAMP_MSP_DEINIT_CB_ID :
+      hopamp->MspDeInitCallback = pCallback;
+      break;
+    default :
+      /* update return status */
+      status =  HAL_ERROR;
+      break;
+    }
+  }
+  else
+  {
+    /* update return status */
+    status =  HAL_ERROR;
+  }
+
+  /* Release Lock */
+  __HAL_UNLOCK(hopamp);
+  return status;
+}
+
+/**
+  * @brief  Unregister a User OPAMP Callback
+  *         OPAMP Callback is redirected to the weak (surcharged) predefined callback 
+  * @param hopamp : OPAMP handle
+  * @param CallbackID : ID of the callback to be unregistered
+  *        This parameter can be one of the following values:
+  *          @arg @ref HAL_OPAMP_MSP_INIT_CB_ID              OPAMP MSP Init Callback ID
+  *          @arg @ref HAL_OPAMP_MSP_DEINIT_CB_ID            OPAMP MSP DeInit Callback ID
+  *          @arg @ref HAL_OPAMP_ALL_CB_ID                   OPAMP All Callbacks
+  * @retval status
+  */
+
+HAL_StatusTypeDef HAL_OPAMP_UnRegisterCallback (OPAMP_HandleTypeDef *hopamp, HAL_OPAMP_CallbackIDTypeDef CallbackID)
+{
+  HAL_StatusTypeDef status = HAL_OK;
+
+  /* Process locked */
+  __HAL_LOCK(hopamp);
+  
+  if(hopamp->State == HAL_OPAMP_STATE_READY)
+  {
+    switch (CallbackID)
+    {     
+      case HAL_OPAMP_MSP_INIT_CB_ID :
+      hopamp->MspInitCallback = HAL_OPAMP_MspInit;
+      break;
+    case HAL_OPAMP_MSP_DEINIT_CB_ID :
+      hopamp->MspDeInitCallback = HAL_OPAMP_MspDeInit;
+      break;
+    case HAL_OPAMP_ALL_CB_ID :
+      hopamp->MspInitCallback = HAL_OPAMP_MspInit;
+      hopamp->MspDeInitCallback = HAL_OPAMP_MspDeInit;
+      break;
+    default :
+      /* update return status */
+      status =  HAL_ERROR;
+      break;
+    }
+  }
+  else if (hopamp->State == HAL_OPAMP_STATE_RESET)
+  {
+    switch (CallbackID)
+    {
+    case HAL_OPAMP_MSP_INIT_CB_ID :
+      hopamp->MspInitCallback = HAL_OPAMP_MspInit;
+      break;
+    case HAL_OPAMP_MSP_DEINIT_CB_ID :
+      hopamp->MspDeInitCallback = HAL_OPAMP_MspDeInit;
+      break;
+    default :
+      /* update return status */
+      status =  HAL_ERROR;
+      break;
+    }
+  }
+  else
+  {
+    /* update return status */
+    status =  HAL_ERROR;
+  }
+
+  /* Release Lock */
+  __HAL_UNLOCK(hopamp);
+  return status;
+}
+
+#endif /* USE_HAL_OPAMP_REGISTER_CALLBACKS */
+
 
 /**
   * @}

@@ -153,6 +153,14 @@ typedef struct
 #define HSI48_VALUE  48000000U  /*!< Value of the HSI48 oscillator in Hz */
 #endif /* HSI48_VALUE */
 #endif /* RCC_HSI48_SUPPORT */
+
+#if !defined  (EXTERNAL_SAI1_CLOCK_VALUE)
+#define EXTERNAL_SAI1_CLOCK_VALUE    48000U /*!< Value of the SAI1_EXTCLK external oscillator in Hz */
+#endif /* EXTERNAL_SAI1_CLOCK_VALUE */
+
+#if !defined  (EXTERNAL_SAI2_CLOCK_VALUE)
+#define EXTERNAL_SAI2_CLOCK_VALUE    48000U /*!< Value of the SAI2_EXTCLK external oscillator in Hz */
+#endif /* EXTERNAL_SAI2_CLOCK_VALUE */
 /**
   * @}
   */
@@ -2081,6 +2089,16 @@ __STATIC_INLINE void LL_RCC_HSI_DisableInStopMode(void)
 }
 
 /**
+  * @brief  Check if HSI is enabled in stop mode
+  * @rmtoll CR           HSIKERON        LL_RCC_HSI_IsEnabledInStopMode
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_RCC_HSI_IsEnabledInStopMode(void)
+{
+  return (READ_BIT(RCC->CR, RCC_CR_HSIKERON) == (RCC_CR_HSIKERON));
+}
+
+/**
   * @brief  Enable HSI oscillator
   * @rmtoll CR           HSION         LL_RCC_HSI_Enable
   * @retval None
@@ -3851,6 +3869,35 @@ __STATIC_INLINE void LL_RCC_PLL_ConfigDomain_48M(uint32_t Source, uint32_t PLLM,
 }
 
 /**
+  * @brief  Configure PLL clock source
+  * @rmtoll PLLCFGR      PLLSRC        LL_RCC_PLL_SetMainSource
+  * @param  PLLSource This parameter can be one of the following values:
+  *         @arg @ref LL_RCC_PLLSOURCE_NONE
+  *         @arg @ref LL_RCC_PLLSOURCE_MSI
+  *         @arg @ref LL_RCC_PLLSOURCE_HSI
+  *         @arg @ref LL_RCC_PLLSOURCE_HSE
+  * @retval None
+  */
+__STATIC_INLINE void LL_RCC_PLL_SetMainSource(uint32_t PLLSource)
+{
+  MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLSRC, PLLSource);
+}
+
+/**
+  * @brief  Get the oscillator used as PLL clock source.
+  * @rmtoll PLLCFGR      PLLSRC        LL_RCC_PLL_GetMainSource
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref LL_RCC_PLLSOURCE_NONE
+  *         @arg @ref LL_RCC_PLLSOURCE_MSI
+  *         @arg @ref LL_RCC_PLLSOURCE_HSI
+  *         @arg @ref LL_RCC_PLLSOURCE_HSE
+  */
+__STATIC_INLINE uint32_t LL_RCC_PLL_GetMainSource(void)
+{
+  return (uint32_t)(READ_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLSRC));
+}
+
+/**
   * @brief  Get Main PLL multiplication factor for VCO
   * @rmtoll PLLCFGR      PLLN          LL_RCC_PLL_GetN
   * @retval Between 8 and 86
@@ -3944,20 +3991,6 @@ __STATIC_INLINE uint32_t LL_RCC_PLL_GetQ(void)
 __STATIC_INLINE uint32_t LL_RCC_PLL_GetR(void)
 {
   return (uint32_t)(READ_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLR));
-}
-
-/**
-  * @brief  Get the oscillator used as PLL clock source.
-  * @rmtoll PLLCFGR      PLLSRC        LL_RCC_PLL_GetMainSource
-  * @retval Returned value can be one of the following values:
-  *         @arg @ref LL_RCC_PLLSOURCE_NONE
-  *         @arg @ref LL_RCC_PLLSOURCE_MSI
-  *         @arg @ref LL_RCC_PLLSOURCE_HSI
-  *         @arg @ref LL_RCC_PLLSOURCE_HSE
-  */
-__STATIC_INLINE uint32_t LL_RCC_PLL_GetMainSource(void)
-{
-  return (uint32_t)(READ_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLSRC));
 }
 
 /**

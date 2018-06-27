@@ -152,7 +152,7 @@ extern "C" {
 /**
   * @}
   */
-  
+
 /** @defgroup PWR_LL_EC_PVDLEVEL PVDLEVEL
   * @{
   */
@@ -359,7 +359,7 @@ __STATIC_INLINE uint32_t LL_PWR_GetRegulVoltageScaling(void)
 
 #if defined(PWR_CR5_R1MODE)
 /**
-  * @brief  Enable main regulator voltage range 1 boost mode 
+  * @brief  Enable main regulator voltage range 1 boost mode
   * @rmtoll CR5          R1MODE        LL_PWR_EnableRange1BoostMode
   * @retval None
   */
@@ -369,7 +369,7 @@ __STATIC_INLINE void LL_PWR_EnableRange1BoostMode(void)
 }
 
 /**
-  * @brief  Disable main regulator voltage range 1 boost mode 
+  * @brief  Disable main regulator voltage range 1 boost mode
   * @rmtoll CR5          R1MODE        LL_PWR_DisableRange1BoostMode
   * @retval None
   */

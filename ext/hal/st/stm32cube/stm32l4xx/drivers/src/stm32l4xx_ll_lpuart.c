@@ -93,11 +93,14 @@
 /*                - fck must be in the range [3 x baudrate, 4096 x baudrate]  */
 /*                - LPUART_BRR register value should be >= 0x300              */
 /*                - LPUART_BRR register value should be <= 0xFFFFF (20 bits)  */
-/*              Baudrate specified by the user should belong to [8, 26000000].*/
-#define IS_LL_LPUART_BAUDRATE(__BAUDRATE__) (((__BAUDRATE__) <= 26000000U) && ((__BAUDRATE__) >= 8U))
+/*              Baudrate specified by the user should belong to [8, 40000000].*/
+#define IS_LL_LPUART_BAUDRATE(__BAUDRATE__) (((__BAUDRATE__) <= 40000000U) && ((__BAUDRATE__) >= 8U))
 
 /* __VALUE__ BRR content must be greater than or equal to 0x300. */
-#define IS_LL_LPUART_BRR(__VALUE__) ((__VALUE__) >= 0x300U)
+#define IS_LL_LPUART_BRR_MIN(__VALUE__)   ((__VALUE__) >= 0x300U)
+
+/* __VALUE__ BRR content must be lower than or equal to 0xFFFFF. */
+#define IS_LL_LPUART_BRR_MAX(__VALUE__)   ((__VALUE__) <= 0x000FFFFFU)
 
 #define IS_LL_LPUART_DIRECTION(__VALUE__) (((__VALUE__) == LL_LPUART_DIRECTION_NONE) \
                                         || ((__VALUE__) == LL_LPUART_DIRECTION_RX) \
@@ -245,10 +248,13 @@ ErrorStatus LL_LPUART_Init(USART_TypeDef *LPUARTx, LL_LPUART_InitTypeDef *LPUART
                             LPUART_InitStruct->BaudRate);
 
       /* Check BRR is greater than or equal to 0x300 */
-      assert_param(IS_LL_LPUART_BRR(LPUARTx->BRR));
-    }
-#if defined(USART_PRESC_PRESCALER)
+      assert_param(IS_LL_LPUART_BRR_MIN(LPUARTx->BRR));
 
+      /* Check BRR is lower than or equal to 0xFFFF */
+      assert_param(IS_LL_LPUART_BRR_MAX(LPUARTx->BRR));
+    }
+
+#if defined(USART_PRESC_PRESCALER)
     /*---------------------------- LPUART PRESC Configuration -----------------------
      * Configure LPUARTx PRESC (Prescaler) with parameters:
      * - PrescalerValue: LPUART_PRESC_PRESCALER bits according to LPUART_InitStruct->PrescalerValue value.

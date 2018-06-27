@@ -78,19 +78,24 @@
 
 #define IS_LL_RCC_LPUART_CLKSOURCE(__VALUE__) (((__VALUE__) == LL_RCC_LPUART1_CLKSOURCE))
 
-#if defined(RCC_CCIPR_I2C2SEL)&&defined(RCC_CCIPR_I2C3SEL)
+#if defined(RCC_CCIPR_I2C2SEL) && defined(RCC_CCIPR_I2C3SEL) && defined(RCC_CCIPR2_I2C4SEL)
+#define IS_LL_RCC_I2C_CLKSOURCE(__VALUE__)    (((__VALUE__) == LL_RCC_I2C1_CLKSOURCE) \
+                                            || ((__VALUE__) == LL_RCC_I2C2_CLKSOURCE) \
+                                            || ((__VALUE__) == LL_RCC_I2C3_CLKSOURCE) \
+                                            || ((__VALUE__) == LL_RCC_I2C4_CLKSOURCE))
+#elif defined(RCC_CCIPR_I2C2SEL) && defined(RCC_CCIPR_I2C3SEL)
 #define IS_LL_RCC_I2C_CLKSOURCE(__VALUE__)    (((__VALUE__) == LL_RCC_I2C1_CLKSOURCE) \
                                             || ((__VALUE__) == LL_RCC_I2C2_CLKSOURCE) \
                                             || ((__VALUE__) == LL_RCC_I2C3_CLKSOURCE))
 
-#elif !defined(RCC_CCIPR_I2C2SEL)&&defined(RCC_CCIPR_I2C3SEL)
+#elif !defined(RCC_CCIPR_I2C2SEL) && defined(RCC_CCIPR_I2C3SEL)
 #define IS_LL_RCC_I2C_CLKSOURCE(__VALUE__)    (((__VALUE__) == LL_RCC_I2C1_CLKSOURCE) \
                                             || ((__VALUE__) == LL_RCC_I2C3_CLKSOURCE))
 
 #else
 #define IS_LL_RCC_I2C_CLKSOURCE(__VALUE__)     ((__VALUE__) == LL_RCC_I2C1_CLKSOURCE)
 
-#endif /* RCC_CCIPR_I2C2SEL && RCC_CCIPR_I2C3SEL */
+#endif /* RCC_CCIPR_I2C2SEL && RCC_CCIPR_I2C3SEL && RCC_CCIPR2_I2C4SEL */
 #define IS_LL_RCC_LPTIM_CLKSOURCE(__VALUE__)  (((__VALUE__) == LL_RCC_LPTIM1_CLKSOURCE) \
                                             || ((__VALUE__) == LL_RCC_LPTIM2_CLKSOURCE))
 
@@ -186,7 +191,7 @@ uint32_t RCC_PLLSAI2_GetFreqDomain_DSI(void);
   * @brief  Reset the RCC clock configuration to the default reset state.
   * @note   The default reset state of the clock configuration is given below:
   *         - MSI  ON and used as system clock source
-  *         - HSE, HSI, PLL and PLLSAIxSource OFF
+  *         - HSE, HSI, PLL, PLLSAI1 and PLLSAI2 OFF
   *         - AHB, APB1 and APB2 prescaler set to 1.
   *         - CSS, MCO OFF
   *         - All interrupts disabled
@@ -207,11 +212,11 @@ ErrorStatus LL_RCC_DeInit(void)
   /* Insure MSIRDY bit is set before writing default MSIRANGE value */
   while (LL_RCC_MSI_IsReady() == 0U)
   {
-    __NOP();
   }
 
   /* Set MSIRANGE default value */
   LL_RCC_MSI_SetRange(LL_RCC_MSIRANGE_6);
+
   /* Set MSITRIM bits to the reset value*/
   LL_RCC_MSI_SetCalibTrimming(0);
 
@@ -223,7 +228,7 @@ ErrorStatus LL_RCC_DeInit(void)
 
   vl_mask = 0xFFFFFFFFU;
 
-  /* Reset HSION, HSIKERON, HSIASFS, HSEON, PLLSYSON bits */
+  /* Reset HSION, HSIKERON, HSIASFS, HSEON, PLLON bits */
   CLEAR_BIT(vl_mask, (RCC_CR_HSION | RCC_CR_HSIASFS | RCC_CR_HSIKERON  | RCC_CR_HSEON |
   RCC_CR_PLLON));
 
@@ -237,6 +242,18 @@ ErrorStatus LL_RCC_DeInit(void)
 
   /* Write new mask in CR register */
   LL_RCC_WriteReg(CR, vl_mask);
+
+#if defined(RCC_PLLSAI2_SUPPORT)
+  /* Wait for PLLRDY, PLLSAI1RDY and PLLSAI2RDY bits to be reset */
+  while(READ_BIT(RCC->CR, RCC_CR_PLLRDY | RCC_CR_PLLSAI1RDY | RCC_CR_PLLSAI2RDY) != 0U)
+  {
+  }
+#else
+  /* Wait for PLLRDY, PLLSAI1RDY bits to be reset */
+  while(READ_BIT(RCC->CR, RCC_CR_PLLRDY | RCC_CR_PLLSAI1RDY) != 0U)
+  {
+  }
+#endif
 
   /* Reset PLLCFGR register */
   LL_RCC_WriteReg(PLLCFGR, 16U << RCC_PLLCFGR_PLLN_Pos);
@@ -254,6 +271,20 @@ ErrorStatus LL_RCC_DeInit(void)
 
   /* Disable all interrupts */
   LL_RCC_WriteReg(CIER, 0x00000000U);
+
+  /* Clear all interrupt flags */
+  vl_mask = RCC_CICR_LSIRDYC | RCC_CICR_LSERDYC | RCC_CICR_MSIRDYC | RCC_CICR_HSIRDYC | RCC_CICR_HSERDYC | RCC_CICR_PLLRDYC | \
+            RCC_CICR_PLLSAI1RDYC | RCC_CICR_CSSC | RCC_CICR_LSECSSC;
+#if defined(RCC_HSI48_SUPPORT)
+  vl_mask |= RCC_CICR_HSI48RDYC;
+#endif
+#if defined(RCC_PLLSAI2_SUPPORT)
+  vl_mask |= RCC_CICR_PLLSAI2RDYC;
+#endif
+  LL_RCC_WriteReg(CICR, vl_mask);
+
+  /* Clear reset flags */
+  LL_RCC_ClearResetFlags();
 
   return SUCCESS;
 }
@@ -768,7 +799,7 @@ uint32_t LL_RCC_GetLPTIMClockFreq(uint32_t LPTIMxSource)
   *         (*) value not defined in all devices.
   * @retval SAI clock frequency (in Hz)
   *         - @ref  LL_RCC_PERIPH_FREQUENCY_NO indicates that PLL is not ready
-  *         - @ref  LL_RCC_PERIPH_FREQUENCY_NA indicates that external clock is used
+
   */
 uint32_t LL_RCC_GetSAIClockFreq(uint32_t SAIxSource)
 {
@@ -806,8 +837,10 @@ uint32_t LL_RCC_GetSAIClockFreq(uint32_t SAIxSource)
         break;
 
       case LL_RCC_SAI1_CLKSOURCE_PIN:        /* External input clock used as SAI1 clock source */
+        sai_frequency = EXTERNAL_SAI1_CLOCK_VALUE;
+        break;
+
       default:
-        sai_frequency = LL_RCC_PERIPH_FREQUENCY_NA;
         break;
     }
   }
@@ -842,10 +875,12 @@ uint32_t LL_RCC_GetSAIClockFreq(uint32_t SAIxSource)
           }
           break;
 
-        case LL_RCC_SAI2_CLKSOURCE_PIN:      /* External input clock used as SAI2 clock source */
-        default:
-          sai_frequency = LL_RCC_PERIPH_FREQUENCY_NA;
-          break;
+      case LL_RCC_SAI2_CLKSOURCE_PIN:        /* External input clock used as SAI2 clock source */
+        sai_frequency = EXTERNAL_SAI2_CLOCK_VALUE;
+        break;
+
+      default:
+        break;
       }
     }
 #endif /* RCC_CCIPR_SAI2SEL */
@@ -1001,14 +1036,14 @@ uint32_t LL_RCC_GetRNGClockFreq(uint32_t RNGxSource)
 
 
 #if defined(RCC_HSI48_SUPPORT)
-    case LL_RCC_RNG_CLKSOURCE_HSI48:      /* HSI48 used as SDMMC1 clock source */
+    case LL_RCC_RNG_CLKSOURCE_HSI48:      /* HSI48 used as RNG clock source */
       if (LL_RCC_HSI48_IsReady())
       {
         rng_frequency = HSI48_VALUE;
       }
       break;
 #else
-    case LL_RCC_RNG_CLKSOURCE_NONE:       /* No clock used as SDMMC1 clock source */
+    case LL_RCC_RNG_CLKSOURCE_NONE:       /* No clock used as RNG clock source */
 #endif
     default:
       rng_frequency = LL_RCC_PERIPH_FREQUENCY_NA;

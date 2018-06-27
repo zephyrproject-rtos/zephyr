@@ -164,32 +164,32 @@ typedef struct
   * @{
   */
 
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI0                0U        /*!< Request generator Signal is EXTI0 IT    */
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI1                1U        /*!< Request generator Signal is EXTI1 IT    */
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI2                2U        /*!< Request generator Signal is EXTI2 IT    */
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI3                3U        /*!< Request generator Signal is EXTI3 IT    */
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI4                4U        /*!< Request generator Signal is EXTI4 IT    */
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI5                5U        /*!< Request generator Signal is EXTI5 IT    */
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI6                6U        /*!< Request generator Signal is EXTI6 IT    */
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI7                7U        /*!< Request generator Signal is EXTI7 IT    */
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI8                8U        /*!< Request generator Signal is EXTI8 IT    */
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI9                9U        /*!< Request generator Signal is EXTI9 IT    */
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI10              10U        /*!< Request generator Signal is EXTI10 IT   */
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI11              11U        /*!< Request generator Signal is EXTI11 IT   */
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI12              12U        /*!< Request generator Signal is EXTI12 IT   */
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI13              13U        /*!< Request generator Signal is EXTI13 IT   */
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI14              14U        /*!< Request generator Signal is EXTI14 IT   */
-#define HAL_DMAMUX1_REQUEST_GEN_EXTI15              15U        /*!< Request generator Signal is EXTI15 IT   */
-#define HAL_DMAMUX1_REQUEST_GEN_DMAMUX1_CH0_EVT     16U        /*!< Request generator Signal is DMAMUX1 Channel0 Event */
-#define HAL_DMAMUX1_REQUEST_GEN_DMAMUX1_CH1_EVT     17U        /*!< Request generator Signal is DMAMUX1 Channel1 Event */
-#define HAL_DMAMUX1_REQUEST_GEN_DMAMUX1_CH2_EVT     18U        /*!< Request generator Signal is DMAMUX1 Channel2 Event */
-#define HAL_DMAMUX1_REQUEST_GEN_DMAMUX1_CH3_EVT     19U        /*!< Request generator Signal is DMAMUX1 Channel3 Event */
-#define HAL_DMAMUX1_REQUEST_GEN_LPTIM1_OUT          20U        /*!< Request generator Signal is LPTIM1 OUT  */
-#define HAL_DMAMUX1_REQUEST_GEN_LPTIM2_OUT          21U        /*!< Request generator Signal is LPTIM2 OUT  */
-#define HAL_DMAMUX1_REQUEST_GEN_DSI_TE              22U        /*!< Request generator Signal is DSI Tearing Effect      */
-#define HAL_DMAMUX1_REQUEST_GEN_DSI_EOT             23U        /*!< Request generator Signal is DSI End of refresh      */
-#define HAL_DMAMUX1_REQUEST_GEN_DMA2D_EOT           24U        /*!< Request generator Signal is DMA2D End of Transfer   */
-#define HAL_DMAMUX1_REQUEST_GEN_LTDC_IT             25U        /*!< Request generator Signal is LTDC IT     */
+#define HAL_DMAMUX1_REQ_GEN_EXTI0                0U        /*!< Request generator Signal is EXTI0 IT    */
+#define HAL_DMAMUX1_REQ_GEN_EXTI1                1U        /*!< Request generator Signal is EXTI1 IT    */
+#define HAL_DMAMUX1_REQ_GEN_EXTI2                2U        /*!< Request generator Signal is EXTI2 IT    */
+#define HAL_DMAMUX1_REQ_GEN_EXTI3                3U        /*!< Request generator Signal is EXTI3 IT    */
+#define HAL_DMAMUX1_REQ_GEN_EXTI4                4U        /*!< Request generator Signal is EXTI4 IT    */
+#define HAL_DMAMUX1_REQ_GEN_EXTI5                5U        /*!< Request generator Signal is EXTI5 IT    */
+#define HAL_DMAMUX1_REQ_GEN_EXTI6                6U        /*!< Request generator Signal is EXTI6 IT    */
+#define HAL_DMAMUX1_REQ_GEN_EXTI7                7U        /*!< Request generator Signal is EXTI7 IT    */
+#define HAL_DMAMUX1_REQ_GEN_EXTI8                8U        /*!< Request generator Signal is EXTI8 IT    */
+#define HAL_DMAMUX1_REQ_GEN_EXTI9                9U        /*!< Request generator Signal is EXTI9 IT    */
+#define HAL_DMAMUX1_REQ_GEN_EXTI10              10U        /*!< Request generator Signal is EXTI10 IT   */
+#define HAL_DMAMUX1_REQ_GEN_EXTI11              11U        /*!< Request generator Signal is EXTI11 IT   */
+#define HAL_DMAMUX1_REQ_GEN_EXTI12              12U        /*!< Request generator Signal is EXTI12 IT   */
+#define HAL_DMAMUX1_REQ_GEN_EXTI13              13U        /*!< Request generator Signal is EXTI13 IT   */
+#define HAL_DMAMUX1_REQ_GEN_EXTI14              14U        /*!< Request generator Signal is EXTI14 IT   */
+#define HAL_DMAMUX1_REQ_GEN_EXTI15              15U        /*!< Request generator Signal is EXTI15 IT   */
+#define HAL_DMAMUX1_REQ_GEN_DMAMUX1_CH0_EVT     16U        /*!< Request generator Signal is DMAMUX1 Channel0 Event */
+#define HAL_DMAMUX1_REQ_GEN_DMAMUX1_CH1_EVT     17U        /*!< Request generator Signal is DMAMUX1 Channel1 Event */
+#define HAL_DMAMUX1_REQ_GEN_DMAMUX1_CH2_EVT     18U        /*!< Request generator Signal is DMAMUX1 Channel2 Event */
+#define HAL_DMAMUX1_REQ_GEN_DMAMUX1_CH3_EVT     19U        /*!< Request generator Signal is DMAMUX1 Channel3 Event */
+#define HAL_DMAMUX1_REQ_GEN_LPTIM1_OUT          20U        /*!< Request generator Signal is LPTIM1 OUT  */
+#define HAL_DMAMUX1_REQ_GEN_LPTIM2_OUT          21U        /*!< Request generator Signal is LPTIM2 OUT  */
+#define HAL_DMAMUX1_REQ_GEN_DSI_TE              22U        /*!< Request generator Signal is DSI Tearing Effect      */
+#define HAL_DMAMUX1_REQ_GEN_DSI_EOT             23U        /*!< Request generator Signal is DSI End of refresh      */
+#define HAL_DMAMUX1_REQ_GEN_DMA2D_EOT           24U        /*!< Request generator Signal is DMA2D End of Transfer   */
+#define HAL_DMAMUX1_REQ_GEN_LTDC_IT             25U        /*!< Request generator Signal is LTDC IT     */
 
 /**
   * @}
@@ -198,10 +198,10 @@ typedef struct
 /** @defgroup DMAEx_DMAMUX_RequestGeneneratorPolarity_selection DMAMUX RequestGeneneratorPolarity selection
   * @{
   */
-#define HAL_DMAMUX_REQUEST_GEN_NO_EVENT                        0U    /*!< block request generator events        */
-#define HAL_DMAMUX_REQUEST_GEN_RISING         DMAMUX_RGxCR_GPOL_0    /*!< generate request on rising edge events */
-#define HAL_DMAMUX_REQUEST_GEN_FALLING        DMAMUX_RGxCR_GPOL_1    /*!< generate request on falling edge events */
-#define HAL_DMAMUX_REQUEST_GEN_RISING_FALLING DMAMUX_RGxCR_GPOL      /*!< generate request on rising and falling edge events */
+#define HAL_DMAMUX_REQ_GEN_NO_EVENT                        0U    /*!< block request generator events        */
+#define HAL_DMAMUX_REQ_GEN_RISING         DMAMUX_RGxCR_GPOL_0    /*!< generate request on rising edge events */
+#define HAL_DMAMUX_REQ_GEN_FALLING        DMAMUX_RGxCR_GPOL_1    /*!< generate request on falling edge events */
+#define HAL_DMAMUX_REQ_GEN_RISING_FALLING DMAMUX_RGxCR_GPOL      /*!< generate request on rising and falling edge events */
 
 /**
   * @}
@@ -265,7 +265,7 @@ void HAL_DMAEx_MUX_IRQHandler(DMA_HandleTypeDef *hdma);
 #define IS_DMAMUX_SYNC_EVENT(EVENT) (((EVENT) == DISABLE)   || \
                                      ((EVENT) == ENABLE))
 
-#define IS_DMAMUX_REQUEST_GEN_SIGNAL_ID(SIGNAL_ID) ((SIGNAL_ID) <= HAL_DMAMUX1_REQUEST_GEN_LTDC_IT)
+#define IS_DMAMUX_REQUEST_GEN_SIGNAL_ID(SIGNAL_ID) ((SIGNAL_ID) <= HAL_DMAMUX1_REQ_GEN_LTDC_IT)
 
 #define IS_DMAMUX_REQUEST_GEN_REQUEST_NUMBER(REQUEST_NUMBER) (((REQUEST_NUMBER) > 0) && ((REQUEST_NUMBER) <= 32))
 

@@ -38,10 +38,8 @@
 #define __STM32L4xx_HAL_COMP_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
-
-#if defined (COMP1) || defined (COMP2)
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal_def.h"
@@ -50,6 +48,7 @@
 /** @addtogroup STM32L4xx_HAL_Driver
   * @{
   */
+#if defined (COMP1) || defined (COMP2)
 
 /** @addtogroup COMP
   * @{
@@ -113,13 +112,37 @@ typedef enum
 /** 
   * @brief  COMP Handle Structure definition
   */
-typedef struct
+typedef struct __COMP_HandleTypeDef
 {
   COMP_TypeDef       *Instance;       /*!< Register base address    */
   COMP_InitTypeDef   Init;            /*!< COMP required parameters */
   HAL_LockTypeDef    Lock;            /*!< Locking object           */
   __IO HAL_COMP_StateTypeDef  State;  /*!< COMP communication state */
+  __IO uint32_t      ErrorCode;       /*!< COMP error code */
+#if (USE_HAL_COMP_REGISTER_CALLBACKS == 1)
+  void (* TriggerCallback)(struct __COMP_HandleTypeDef *hcomp);   /*!< COMP trigger callback */
+  void (* MspInitCallback)(struct __COMP_HandleTypeDef *hcomp);   /*!< COMP Msp Init callback */
+  void (* MspDeInitCallback)(struct __COMP_HandleTypeDef *hcomp); /*!< COMP Msp DeInit callback */
+#endif /* USE_HAL_COMP_REGISTER_CALLBACKS */
 } COMP_HandleTypeDef;
+
+#if (USE_HAL_COMP_REGISTER_CALLBACKS == 1)
+/**
+  * @brief  HAL COMP Callback ID enumeration definition
+  */
+typedef enum
+{
+  HAL_COMP_TRIGGER_CB_ID                = 0x00U,  /*!< COMP trigger callback ID */
+  HAL_COMP_MSPINIT_CB_ID                = 0x01U,  /*!< COMP Msp Init callback ID */
+  HAL_COMP_MSPDEINIT_CB_ID              = 0x02U   /*!< COMP Msp DeInit callback ID */
+} HAL_COMP_CallbackIDTypeDef;
+
+/**
+  * @brief  HAL COMP Callback pointer definition
+  */
+typedef  void (*pCOMP_CallbackTypeDef)(COMP_HandleTypeDef *hcomp); /*!< pointer to a COMP callback function */
+
+#endif /* USE_HAL_COMP_REGISTER_CALLBACKS */
 
 /**
   * @}
@@ -128,6 +151,17 @@ typedef struct
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup COMP_Exported_Constants COMP Exported Constants
   * @{
+  */
+
+/** @defgroup COMP_Error_Code COMP Error Code
+  * @{
+  */
+#define HAL_COMP_ERROR_NONE             (0x00U)   /*!< No error */
+#if (USE_HAL_COMP_REGISTER_CALLBACKS == 1)
+#define HAL_COMP_ERROR_INVALID_CALLBACK (0x01U)   /*!< Invalid Callback error */
+#endif /* USE_HAL_COMP_REGISTER_CALLBACKS */
+/**
+  * @}
   */
 
 /** @defgroup COMP_WindowMode COMP Window Mode
@@ -189,10 +223,10 @@ typedef struct
 /** @defgroup COMP_Hysteresis COMP hysteresis
   * @{
   */
-#define COMP_HYSTERESIS_NONE           (0x00000000U)          /*!< No hysteresis */
-#define COMP_HYSTERESIS_LOW            (COMP_CSR_HYST_0)      /*!< Hysteresis level low */
-#define COMP_HYSTERESIS_MEDIUM         (COMP_CSR_HYST_1)      /*!< Hysteresis level medium */
-#define COMP_HYSTERESIS_HIGH           (COMP_CSR_HYST)        /*!< Hysteresis level high */
+#define COMP_HYSTERESIS_NONE           (0x00000000U)                        /*!< No hysteresis */
+#define COMP_HYSTERESIS_LOW            (                  COMP_CSR_HYST_0)  /*!< Hysteresis level low */
+#define COMP_HYSTERESIS_MEDIUM         (COMP_CSR_HYST_1                  )  /*!< Hysteresis level medium */
+#define COMP_HYSTERESIS_HIGH           (COMP_CSR_HYST_1 | COMP_CSR_HYST_0)  /*!< Hysteresis level high */
 /**
   * @}
   */
@@ -268,7 +302,22 @@ typedef struct
   * @param  __HANDLE__  COMP handle
   * @retval None
   */
+#if (USE_HAL_COMP_REGISTER_CALLBACKS == 1)
+#define __HAL_COMP_RESET_HANDLE_STATE(__HANDLE__) do{                                                   \
+                                                     (__HANDLE__)->State = HAL_COMP_STATE_RESET;      \
+                                                     (__HANDLE__)->MspInitCallback = NULL;            \
+                                                     (__HANDLE__)->MspDeInitCallback = NULL;          \
+                                                    } while(0)
+#else
 #define __HAL_COMP_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_COMP_STATE_RESET)
+#endif
+
+/**
+  * @brief Clear COMP error code (set it to no error code "HAL_COMP_ERROR_NONE").
+  * @param __HANDLE__ COMP handle
+  * @retval None
+  */
+#define COMP_CLEAR_ERRORCODE(__HANDLE__) ((__HANDLE__)->ErrorCode = HAL_COMP_ERROR_NONE) 
 
 /**
   * @brief  Enable the specified comparator.
@@ -667,6 +716,12 @@ HAL_StatusTypeDef HAL_COMP_Init(COMP_HandleTypeDef *hcomp);
 HAL_StatusTypeDef HAL_COMP_DeInit (COMP_HandleTypeDef *hcomp);
 void              HAL_COMP_MspInit(COMP_HandleTypeDef *hcomp);
 void              HAL_COMP_MspDeInit(COMP_HandleTypeDef *hcomp);
+
+#if (USE_HAL_COMP_REGISTER_CALLBACKS == 1)
+/* Callbacks Register/UnRegister functions  ***********************************/
+HAL_StatusTypeDef HAL_COMP_RegisterCallback(COMP_HandleTypeDef *hcomp, HAL_COMP_CallbackIDTypeDef CallbackID, pCOMP_CallbackTypeDef pCallback);
+HAL_StatusTypeDef HAL_COMP_UnRegisterCallback(COMP_HandleTypeDef *hcomp, HAL_COMP_CallbackIDTypeDef CallbackID);
+#endif /* USE_HAL_COMP_REGISTER_CALLBACKS */
 /**
   * @}
   */
@@ -699,6 +754,7 @@ void              HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp);
   * @{
   */
 HAL_COMP_StateTypeDef HAL_COMP_GetState(COMP_HandleTypeDef *hcomp);
+uint32_t              HAL_COMP_GetError(COMP_HandleTypeDef *hcomp);
 /**
   * @}
   */
@@ -710,7 +766,7 @@ HAL_COMP_StateTypeDef HAL_COMP_GetState(COMP_HandleTypeDef *hcomp);
 /**
   * @}
   */
-
+#endif /* COMP1 || COMP2 */
 /**
   * @}
   */
@@ -718,8 +774,6 @@ HAL_COMP_StateTypeDef HAL_COMP_GetState(COMP_HandleTypeDef *hcomp);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* COMP1 || COMP2 */
 
 #endif /* __STM32L4xx_HAL_COMP_H */
 

@@ -175,9 +175,9 @@ HAL_StatusTypeDef HAL_DMAEx_ConfigMuxRequestGenerator (DMA_HandleTypeDef *hdma, 
     /* Process Locked */
     __HAL_LOCK(hdma);
 
-    /* Set the request generator new parameters*/
+    /* Set the request generator new parameters */
     hdma->DMAmuxRequestGen->RGCR = pRequestGeneratorConfig->SignalID | \
-                                  ((pRequestGeneratorConfig->RequestNumber - 1U) << POSITION_VAL(DMAMUX_RGxCR_GNBREQ))| \
+                                  ((pRequestGeneratorConfig->RequestNumber - 1U) << DMAMUX_RGxCR_GNBREQ_Pos)| \
                                   pRequestGeneratorConfig->Polarity;
    /* Process UnLocked */
    __HAL_UNLOCK(hdma);

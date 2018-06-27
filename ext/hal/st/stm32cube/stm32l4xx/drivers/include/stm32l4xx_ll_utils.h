@@ -246,7 +246,7 @@ __STATIC_INLINE uint32_t LL_GetUID_Word2(void)
   */
 __STATIC_INLINE uint32_t LL_GetFlashSize(void)
 {
-  return (uint16_t)(READ_REG(*((uint32_t *)FLASHSIZE_BASE_ADDRESS)));
+  return (uint32_t)(READ_REG(*((uint32_t *)FLASHSIZE_BASE_ADDRESS)) & 0xFFFFU);
 }
 
 /**
@@ -273,7 +273,7 @@ __STATIC_INLINE uint32_t LL_GetFlashSize(void)
   */
 __STATIC_INLINE uint32_t LL_GetPackageType(void)
 {
-  return (uint8_t)(READ_REG(*((uint32_t *)PACKAGE_BASE_ADDRESS)) & 0x1FU);
+  return (uint32_t)(READ_REG(*((uint32_t *)PACKAGE_BASE_ADDRESS)) & 0x1FU);
 }
 
 /**
@@ -287,7 +287,7 @@ __STATIC_INLINE uint32_t LL_GetPackageType(void)
 /**
   * @brief  This function configures the Cortex-M SysTick source of the time base.
   * @param  HCLKFrequency HCLK frequency in Hz (can be calculated thanks to RCC helper macro)
-  * @note   When a RTOS is used, it is recommended to avoid changing the SysTick 
+  * @note   When a RTOS is used, it is recommended to avoid changing the SysTick
   *         configuration by calling this function, for a delay use rather osDelay RTOS service.
   * @param  Ticks Number of ticks
   * @retval None

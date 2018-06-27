@@ -34,8 +34,8 @@
   */ 
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_SD_H
-#define __STM32L4xx_HAL_SD_H
+#ifndef STM32L4xx_HAL_SD_H
+#define STM32L4xx_HAL_SD_H
 
 #ifdef __cplusplus
  extern "C" {
@@ -133,7 +133,7 @@ typedef struct
 /** 
   * @brief  SD handle Structure definition
   */ 
-typedef struct
+typedef struct __SD_HandleTypeDef
 {
   SD_TypeDef                   *Instance;        /*!< SD registers base address           */
   
@@ -141,11 +141,11 @@ typedef struct
   
   HAL_LockTypeDef              Lock;             /*!< SD locking object                   */
   
-  uint32_t                     *pTxBuffPtr;      /*!< Pointer to SD Tx transfer Buffer    */
+  uint8_t                      *pTxBuffPtr;      /*!< Pointer to SD Tx transfer Buffer    */
   
   uint32_t                     TxXferSize;       /*!< SD Tx Transfer size                 */
   
-  uint32_t                     *pRxBuffPtr;      /*!< Pointer to SD Rx transfer Buffer    */
+  uint8_t                      *pRxBuffPtr;      /*!< Pointer to SD Rx transfer Buffer    */
   
   uint32_t                     RxXferSize;       /*!< SD Rx Transfer size                 */
   
@@ -167,7 +167,24 @@ typedef struct
   uint32_t                     CSD[4];           /*!< SD card specific data table         */
   
   uint32_t                     CID[4];           /*!< SD card identification number table */
-  
+
+#if (USE_HAL_SD_REGISTER_CALLBACKS == 1)
+  void (* TxCpltCallback)                 (struct __SD_HandleTypeDef *hsd);
+  void (* RxCpltCallback)                 (struct __SD_HandleTypeDef *hsd);
+  void (* ErrorCallback)                  (struct __SD_HandleTypeDef *hsd);
+  void (* AbortCpltCallback)              (struct __SD_HandleTypeDef *hsd);
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+  void (* Read_DMADblBuf0CpltCallback)    (struct __SD_HandleTypeDef *hsd);
+  void (* Read_DMADblBuf1CpltCallback)    (struct __SD_HandleTypeDef *hsd);
+  void (* Write_DMADblBuf0CpltCallback)   (struct __SD_HandleTypeDef *hsd);
+  void (* Write_DMADblBuf1CpltCallback)   (struct __SD_HandleTypeDef *hsd);
+
+  void (* DriveTransceiver_1_8V_Callback) (FlagStatus status);
+#endif
+
+  void (* MspInitCallback)                (struct __SD_HandleTypeDef *hsd);
+  void (* MspDeInitCallback)              (struct __SD_HandleTypeDef *hsd);
+#endif  
 }SD_HandleTypeDef;
 
 /** 
@@ -208,7 +225,7 @@ typedef struct
   __IO uint8_t  WriteBlockPaPartial;  /*!< Partial blocks for write allowed      */
   __IO uint8_t  Reserved3;            /*!< Reserved                              */
   __IO uint8_t  ContentProtectAppli;  /*!< Content protection application        */
-  __IO uint8_t  FileFormatGrouop;     /*!< File format group                     */
+  __IO uint8_t  FileFormatGroup;      /*!< File format group                     */
   __IO uint8_t  CopyFlag;             /*!< Copy flag (OTP)                       */
   __IO uint8_t  PermWrProtect;        /*!< Permanent write protection            */
   __IO uint8_t  TempWrProtect;        /*!< Temporary write protection            */
@@ -264,6 +281,41 @@ typedef struct
   * @}
   */
 
+#if (USE_HAL_SD_REGISTER_CALLBACKS == 1)
+/** @defgroup SD_Exported_Types_Group7 SD Callback ID enumeration definition 
+  * @{
+  */
+typedef enum
+{
+  HAL_SD_TX_CPLT_CB_ID                 = 0x00U,  /*!< SD Tx Complete Callback ID                     */
+  HAL_SD_RX_CPLT_CB_ID                 = 0x01U,  /*!< SD Rx Complete Callback ID                     */
+  HAL_SD_ERROR_CB_ID                   = 0x02U,  /*!< SD Error Callback ID                           */
+  HAL_SD_ABORT_CB_ID                   = 0x03U,  /*!< SD Abort Callback ID                           */
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+  HAL_SD_READ_DMA_DBL_BUF0_CPLT_CB_ID  = 0x04U,  /*!< SD Rx DMA Double Buffer 0 Complete Callback ID */
+  HAL_SD_READ_DMA_DBL_BUF1_CPLT_CB_ID  = 0x05U,  /*!< SD Rx DMA Double Buffer 1 Complete Callback ID */
+  HAL_SD_WRITE_DMA_DBL_BUF0_CPLT_CB_ID = 0x06U,  /*!< SD Tx DMA Double Buffer 0 Complete Callback ID */
+  HAL_SD_WRITE_DMA_DBL_BUF1_CPLT_CB_ID = 0x07U,  /*!< SD Tx DMA Double Buffer 1 Complete Callback ID */
+#endif  
+
+  HAL_SD_MSP_INIT_CB_ID                = 0x10U,  /*!< SD MspInit Callback ID                         */
+  HAL_SD_MSP_DEINIT_CB_ID              = 0x11U   /*!< SD MspDeInit Callback ID                       */
+}HAL_SD_CallbackIDTypeDef;
+/** 
+  * @}
+  */
+
+/** @defgroup SD_Exported_Types_Group8 SD Callback pointer definition 
+  * @{
+  */
+typedef void (*pSD_CallbackTypeDef)           (SD_HandleTypeDef *hsd);
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+typedef void (*pSD_TransceiverCallbackTypeDef)(FlagStatus status);
+#endif
+/** 
+  * @}
+  */
+#endif
 /** 
   * @}
   */
@@ -314,6 +366,10 @@ typedef struct
 #define HAL_SD_ERROR_BUSY                     SDMMC_ERROR_BUSY                    /*!< Error when transfer process is busy                           */ 
 #define HAL_SD_ERROR_DMA                      SDMMC_ERROR_DMA                     /*!< Error while DMA transfer                                      */
 #define HAL_SD_ERROR_TIMEOUT                  SDMMC_ERROR_TIMEOUT                 /*!< Timeout error                                                 */
+
+#if (USE_HAL_SD_REGISTER_CALLBACKS == 1)
+#define HAL_SD_ERROR_INVALID_CALLBACK         SDMMC_ERROR_INVALID_PARAMETER       /*!< Invalid callback error                                        */
+#endif
                                                 
 /** 
   * @}
@@ -370,6 +426,19 @@ typedef struct
  *  @brief macros to handle interrupts and specific clock configurations
  * @{
  */
+/** @brief Reset SD handle state.
+  * @param  __HANDLE__ : SD handle.
+  * @retval None
+  */
+#if (USE_HAL_SD_REGISTER_CALLBACKS == 1)
+#define __HAL_SD_RESET_HANDLE_STATE(__HANDLE__)           do {                                              \
+                                                               (__HANDLE__)->State = HAL_SD_STATE_RESET; \
+                                                               (__HANDLE__)->MspInitCallback = NULL;       \
+                                                               (__HANDLE__)->MspDeInitCallback = NULL;     \
+                                                             } while(0)
+#else
+#define __HAL_SD_RESET_HANDLE_STATE(__HANDLE__)           ((__HANDLE__)->State = HAL_SD_STATE_RESET)
+#endif
  
 #if !defined(STM32L4R5xx) && !defined(STM32L4R7xx) && !defined(STM32L4R9xx) && !defined(STM32L4S5xx) && !defined(STM32L4S7xx) && !defined(STM32L4S9xx)
 /**
@@ -672,6 +741,17 @@ void              HAL_SD_RxCpltCallback (SD_HandleTypeDef *hsd);
 void              HAL_SD_ErrorCallback  (SD_HandleTypeDef *hsd);
 void              HAL_SD_AbortCallback  (SD_HandleTypeDef *hsd);
 
+#if (USE_HAL_SD_REGISTER_CALLBACKS == 1)
+/* SD callback registering/unregistering */
+HAL_StatusTypeDef HAL_SD_RegisterCallback  (SD_HandleTypeDef *hsd, HAL_SD_CallbackIDTypeDef CallbackID, pSD_CallbackTypeDef pCallback);
+HAL_StatusTypeDef HAL_SD_UnRegisterCallback(SD_HandleTypeDef *hsd, HAL_SD_CallbackIDTypeDef CallbackID);
+
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+HAL_StatusTypeDef HAL_SD_RegisterTransceiverCallback  (SD_HandleTypeDef *hsd, pSD_TransceiverCallbackTypeDef pCallback);
+HAL_StatusTypeDef HAL_SD_UnRegisterTransceiverCallback(SD_HandleTypeDef *hsd);
+#endif
+#endif
+
 /**
   * @}
   */
@@ -798,6 +878,6 @@ HAL_StatusTypeDef HAL_SD_Abort_IT(SD_HandleTypeDef *hsd);
 #endif
 
 
-#endif /* __STM32L4xx_HAL_SD_H */ 
+#endif /* STM32L4xx_HAL_SD_H */ 
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

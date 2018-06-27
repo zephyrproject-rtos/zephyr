@@ -161,22 +161,22 @@ typedef struct
 /** @defgroup FLASH_Error FLASH Error
   * @{
   */ 
-#define HAL_FLASH_ERROR_NONE      ((uint32_t)0x00000000)
-#define HAL_FLASH_ERROR_OP        ((uint32_t)0x00000001)
-#define HAL_FLASH_ERROR_PROG      ((uint32_t)0x00000002)
-#define HAL_FLASH_ERROR_WRP       ((uint32_t)0x00000004)
-#define HAL_FLASH_ERROR_PGA       ((uint32_t)0x00000008)
-#define HAL_FLASH_ERROR_SIZ       ((uint32_t)0x00000010)
-#define HAL_FLASH_ERROR_PGS       ((uint32_t)0x00000020)
-#define HAL_FLASH_ERROR_MIS       ((uint32_t)0x00000040)
-#define HAL_FLASH_ERROR_FAST      ((uint32_t)0x00000080)
-#define HAL_FLASH_ERROR_RD        ((uint32_t)0x00000100)
-#define HAL_FLASH_ERROR_OPTV      ((uint32_t)0x00000200)
-#define HAL_FLASH_ERROR_ECCD      ((uint32_t)0x00000400)
+#define HAL_FLASH_ERROR_NONE      0x00000000U
+#define HAL_FLASH_ERROR_OP        FLASH_FLAG_OPERR
+#define HAL_FLASH_ERROR_PROG      FLASH_FLAG_PROGERR
+#define HAL_FLASH_ERROR_WRP       FLASH_FLAG_WRPERR
+#define HAL_FLASH_ERROR_PGA       FLASH_FLAG_PGAERR
+#define HAL_FLASH_ERROR_SIZ       FLASH_FLAG_SIZERR
+#define HAL_FLASH_ERROR_PGS       FLASH_FLAG_PGSERR
+#define HAL_FLASH_ERROR_MIS       FLASH_FLAG_MISERR
+#define HAL_FLASH_ERROR_FAST      FLASH_FLAG_FASTERR
+#define HAL_FLASH_ERROR_RD        FLASH_FLAG_RDERR
+#define HAL_FLASH_ERROR_OPTV      FLASH_FLAG_OPTVERR
+#define HAL_FLASH_ERROR_ECCD      FLASH_FLAG_ECCD
 #if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
     defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L496xx) || defined (STM32L4A6xx) || \
     defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
-#define HAL_FLASH_ERROR_PEMPTY    ((uint32_t)0x00000800)
+#define HAL_FLASH_ERROR_PEMPTY    FLASH_FLAG_PEMPTY
 #endif 
 /**
   * @}
@@ -535,6 +535,15 @@ typedef struct
     defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L496xx) || defined (STM32L4A6xx) || \
     defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
 #define FLASH_FLAG_PEMPTY         FLASH_SR_PEMPTY                      /*!< FLASH Program empty */
+#define FLASH_FLAG_SR_ERRORS      (FLASH_FLAG_OPERR   | FLASH_FLAG_PROGERR | FLASH_FLAG_WRPERR | \
+                                   FLASH_FLAG_PGAERR  | FLASH_FLAG_SIZERR  | FLASH_FLAG_PGSERR | \
+                                   FLASH_FLAG_MISERR  | FLASH_FLAG_FASTERR | FLASH_FLAG_RDERR  | \
+                                   FLASH_FLAG_OPTVERR | FLASH_FLAG_PEMPTY)
+#else
+#define FLASH_FLAG_SR_ERRORS      (FLASH_FLAG_OPERR   | FLASH_FLAG_PROGERR | FLASH_FLAG_WRPERR | \
+                                   FLASH_FLAG_PGAERR  | FLASH_FLAG_SIZERR  | FLASH_FLAG_PGSERR | \
+                                   FLASH_FLAG_MISERR  | FLASH_FLAG_FASTERR | FLASH_FLAG_RDERR  | \
+                                   FLASH_FLAG_OPTVERR)
 #endif
 #define FLASH_FLAG_ECCC           FLASH_ECCR_ECCC                      /*!< FLASH ECC correction */
 #define FLASH_FLAG_ECCD           FLASH_ECCR_ECCD                      /*!< FLASH ECC detection */
@@ -695,8 +704,8 @@ typedef struct
   *     @arg FLASH_IT_ECCC: ECC Correction Interrupt
   * @retval none
   */  
-#define __HAL_FLASH_ENABLE_IT(__INTERRUPT__)    do { if((__INTERRUPT__) & FLASH_IT_ECCC) { SET_BIT(FLASH->ECCR, FLASH_ECCR_ECCIE); }\
-                                                     if((__INTERRUPT__) & (~FLASH_IT_ECCC)) { SET_BIT(FLASH->CR, ((__INTERRUPT__) & (~FLASH_IT_ECCC))); }\
+#define __HAL_FLASH_ENABLE_IT(__INTERRUPT__)    do { if(((__INTERRUPT__) & FLASH_IT_ECCC) != 0U) { SET_BIT(FLASH->ECCR, FLASH_ECCR_ECCIE); }\
+                                                     if(((__INTERRUPT__) & (~FLASH_IT_ECCC)) != 0U) { SET_BIT(FLASH->CR, ((__INTERRUPT__) & (~FLASH_IT_ECCC))); }\
                                                    } while(0)
 
 /**
@@ -709,8 +718,8 @@ typedef struct
   *     @arg FLASH_IT_ECCC: ECC Correction Interrupt
   * @retval none
   */  
-#define __HAL_FLASH_DISABLE_IT(__INTERRUPT__)   do { if((__INTERRUPT__) & FLASH_IT_ECCC) { CLEAR_BIT(FLASH->ECCR, FLASH_ECCR_ECCIE); }\
-                                                     if((__INTERRUPT__) & (~FLASH_IT_ECCC)) { CLEAR_BIT(FLASH->CR, ((__INTERRUPT__) & (~FLASH_IT_ECCC))); }\
+#define __HAL_FLASH_DISABLE_IT(__INTERRUPT__)   do { if(((__INTERRUPT__) & FLASH_IT_ECCC) != 0U) { CLEAR_BIT(FLASH->ECCR, FLASH_ECCR_ECCIE); }\
+                                                     if(((__INTERRUPT__) & (~FLASH_IT_ECCC)) != 0U) { CLEAR_BIT(FLASH->CR, ((__INTERRUPT__) & (~FLASH_IT_ECCC))); }\
                                                    } while(0)
 
 /**
@@ -734,8 +743,8 @@ typedef struct
   *     @arg FLASH_FLAG_ECCD: FLASH two ECC errors have been detected
   * @retval The new state of FLASH_FLAG (SET or RESET).
   */
-#define __HAL_FLASH_GET_FLAG(__FLAG__)          (((__FLAG__) & (FLASH_FLAG_ECCC | FLASH_FLAG_ECCD)) ? \
-                                                 (READ_BIT(FLASH->ECCR, (__FLAG__)) == (__FLAG__))  : \
+#define __HAL_FLASH_GET_FLAG(__FLAG__)          ((((__FLAG__) & (FLASH_FLAG_ECCC | FLASH_FLAG_ECCD)) != 0U) ? \
+                                                 (READ_BIT(FLASH->ECCR, (__FLAG__)) == (__FLAG__))          : \
                                                  (READ_BIT(FLASH->SR,   (__FLAG__)) == (__FLAG__)))
 
 /**
@@ -758,8 +767,8 @@ typedef struct
   *     @arg FLASH_FLAG_ALL_ERRORS: FLASH All errors flags
   * @retval None
   */
-#define __HAL_FLASH_CLEAR_FLAG(__FLAG__)        do { if((__FLAG__) & (FLASH_FLAG_ECCC | FLASH_FLAG_ECCD)) { SET_BIT(FLASH->ECCR, ((__FLAG__) & (FLASH_FLAG_ECCC | FLASH_FLAG_ECCD))); }\
-                                                     if((__FLAG__) & ~(FLASH_FLAG_ECCC | FLASH_FLAG_ECCD)) { WRITE_REG(FLASH->SR, ((__FLAG__) & ~(FLASH_FLAG_ECCC | FLASH_FLAG_ECCD))); }\
+#define __HAL_FLASH_CLEAR_FLAG(__FLAG__)        do { if(((__FLAG__) & (FLASH_FLAG_ECCC | FLASH_FLAG_ECCD)) != 0U) { SET_BIT(FLASH->ECCR, ((__FLAG__) & (FLASH_FLAG_ECCC | FLASH_FLAG_ECCD))); }\
+                                                     if(((__FLAG__) & ~(FLASH_FLAG_ECCC | FLASH_FLAG_ECCD)) != 0U) { WRITE_REG(FLASH->SR, ((__FLAG__) & ~(FLASH_FLAG_ECCC | FLASH_FLAG_ECCD))); }\
                                                    } while(0)
 /**
   * @}
@@ -823,20 +832,20 @@ uint32_t HAL_FLASH_GetError(void);
 #define FLASH_SIZE_DATA_REGISTER           ((uint32_t)0x1FFF75E0)
     
 #if defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
-#define FLASH_SIZE                         ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) == 0xFFFF)) ? (0x800 << 10) : \
-                                            (((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) << 10))
+#define FLASH_SIZE                         ((((*((uint32_t *)FLASH_SIZE_DATA_REGISTER)) == 0xFFFFU)) ? (0x800U << 10U) : \
+                                            (((*((uint32_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFFU)) << 10U))
 #elif defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
-#define FLASH_SIZE                         ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) == 0xFFFF)) ? (0x200 << 10) : \
-                                            (((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) << 10))
+#define FLASH_SIZE                         ((((*((uint32_t *)FLASH_SIZE_DATA_REGISTER)) == 0xFFFFU)) ? (0x200U << 10U) : \
+                                            (((*((uint32_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFFU)) << 10U))
 #else
-#define FLASH_SIZE                         ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) == 0xFFFF)) ? (0x400 << 10) : \
-                                            (((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) << 10))
+#define FLASH_SIZE                         ((((*((uint32_t *)FLASH_SIZE_DATA_REGISTER)) == 0xFFFFU)) ? (0x400U << 10U) : \
+                                            (((*((uint32_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFFU)) << 10U))
 #endif
 
 #if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
     defined (STM32L496xx) || defined (STM32L4A6xx) || \
     defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
-#define FLASH_BANK_SIZE                    (FLASH_SIZE >> 1)
+#define FLASH_BANK_SIZE                    (FLASH_SIZE >> 1U)
 #else
 #define FLASH_BANK_SIZE                    (FLASH_SIZE)
 #endif
@@ -881,34 +890,34 @@ uint32_t HAL_FLASH_GetError(void);
                                             ((VALUE) == FLASH_TYPEPROGRAM_FAST_AND_LAST))  
 
 #if defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
-#define IS_FLASH_MAIN_MEM_ADDRESS(ADDRESS) (((ADDRESS) >= FLASH_BASE) && ((ADDRESS) <= FLASH_BASE+0x1FFFFF))
+#define IS_FLASH_MAIN_MEM_ADDRESS(ADDRESS) (((ADDRESS) >= (FLASH_BASE)) && ((ADDRESS) <= (FLASH_BASE+0x1FFFFFU)))
 #else
-#define IS_FLASH_MAIN_MEM_ADDRESS(ADDRESS) (((ADDRESS) >= FLASH_BASE)        && ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x400) ? \
-                                            ((ADDRESS) <= FLASH_BASE+0xFFFFF) : ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x200) ? \
-                                            ((ADDRESS) <= FLASH_BASE+0x7FFFF) : ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x100) ? \
-                                            ((ADDRESS) <= FLASH_BASE+0x3FFFF) : ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x80) ? \
-                                            ((ADDRESS) <= FLASH_BASE+0x1FFFF) : ((ADDRESS) <= FLASH_BASE+0xFFFFF)))))) 
+#define IS_FLASH_MAIN_MEM_ADDRESS(ADDRESS) (((ADDRESS) >= (FLASH_BASE))         && ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFFU)) == 0x400U) ? \
+                                            ((ADDRESS) <= (FLASH_BASE+0xFFFFFU)) : ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFFU)) == 0x200U) ? \
+                                            ((ADDRESS) <= (FLASH_BASE+0x7FFFFU)) : ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFFU)) == 0x100U) ? \
+                                            ((ADDRESS) <= (FLASH_BASE+0x3FFFFU)) : ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFFU)) == 0x80U) ? \
+                                            ((ADDRESS) <= (FLASH_BASE+0x1FFFFU)) : ((ADDRESS) <= (FLASH_BASE+0xFFFFFU))))))) 
 #endif
 
-#define IS_FLASH_OTP_ADDRESS(ADDRESS)      (((ADDRESS) >= 0x1FFF7000) && ((ADDRESS) <= 0x1FFF73FF))
+#define IS_FLASH_OTP_ADDRESS(ADDRESS)      (((ADDRESS) >= 0x1FFF7000U) && ((ADDRESS) <= 0x1FFF73FFU))
 
-#define IS_FLASH_PROGRAM_ADDRESS(ADDRESS)  (IS_FLASH_MAIN_MEM_ADDRESS(ADDRESS) || IS_FLASH_OTP_ADDRESS(ADDRESS))
+#define IS_FLASH_PROGRAM_ADDRESS(ADDRESS)  ((IS_FLASH_MAIN_MEM_ADDRESS(ADDRESS)) || (IS_FLASH_OTP_ADDRESS(ADDRESS)))
 
 #if defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
-#define IS_FLASH_PAGE(PAGE)                ((PAGE) < 256)
+#define IS_FLASH_PAGE(PAGE)                ((PAGE) < 256U)
 #elif defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx) || defined(STM32L496xx) || defined(STM32L4A6xx)
-#define IS_FLASH_PAGE(PAGE)                (((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x400) ? ((PAGE) < 256) : \
-                                            ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x200) ? ((PAGE) < 128) : \
-                                            ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x100) ? ((PAGE) < 64) : \
-                                            ((PAGE) < 256)))))
+#define IS_FLASH_PAGE(PAGE)                (((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFFU)) == 0x400U) ? ((PAGE) < 256U) : \
+                                            ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFFU)) == 0x200U) ? ((PAGE) < 128U) : \
+                                            ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFFU)) == 0x100U) ? ((PAGE) < 64U)  : \
+                                            ((PAGE) < 256U)))))
 #elif defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
-#define IS_FLASH_PAGE(PAGE)                (((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x200) ? ((PAGE) < 256) : \
-                                            ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x100) ? ((PAGE) < 128) : \
-                                            ((PAGE) < 256))))
+#define IS_FLASH_PAGE(PAGE)                (((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFFU)) == 0x200U) ? ((PAGE) < 256U) : \
+                                            ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFFU)) == 0x100U) ? ((PAGE) < 128U) : \
+                                            ((PAGE) < 256U))))
 #else
-#define IS_FLASH_PAGE(PAGE)                (((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x100) ? ((PAGE) < 128) : \
-                                            ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFF)) == 0x80)  ? ((PAGE) < 64) : \
-                                            ((PAGE) < 128))))
+#define IS_FLASH_PAGE(PAGE)                (((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFFU)) == 0x100U) ? ((PAGE) < 128U) : \
+                                            ((((*((uint16_t *)FLASH_SIZE_DATA_REGISTER)) & (0x0FFFU)) == 0x80U)  ? ((PAGE) < 64U)  : \
+                                            ((PAGE) < 128U))))
 #endif
 
 #define IS_OPTIONBYTE(VALUE)               (((VALUE) <= (OPTIONBYTE_WRP | OPTIONBYTE_RDP | OPTIONBYTE_USER | OPTIONBYTE_PCROP)))
@@ -927,11 +936,11 @@ uint32_t HAL_FLASH_GetError(void);
                                             ((LEVEL) == OB_RDP_LEVEL_2)*/)
 
 #if defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
-#define IS_OB_USER_TYPE(TYPE)              (((TYPE) <= (uint32_t)0xFFFF) && ((TYPE) != 0))
+#define IS_OB_USER_TYPE(TYPE)              (((TYPE) <= (uint32_t)0xFFFFU) && ((TYPE) != 0U))
 #elif defined(STM32L471xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L485xx) || defined(STM32L486xx) || defined(STM32L496xx) || defined(STM32L4A6xx)
-#define IS_OB_USER_TYPE(TYPE)              (((TYPE) <= (uint32_t)0x1FFF) && ((TYPE) != 0))
+#define IS_OB_USER_TYPE(TYPE)              (((TYPE) <= (uint32_t)0x1FFFU) && ((TYPE) != 0U))
 #else
-#define IS_OB_USER_TYPE(TYPE)              (((TYPE) <= (uint32_t)0x7E7F) && ((TYPE) != 0) && (((TYPE)&0x0180) == 0))
+#define IS_OB_USER_TYPE(TYPE)              (((TYPE) <= (uint32_t)0x7E7FU) && ((TYPE) != 0U) && (((TYPE)&0x0180U) == 0U))
 #endif
 
 #define IS_OB_USER_BOR_LEVEL(LEVEL)        (((LEVEL) == OB_BOR_LEVEL_0) || ((LEVEL) == OB_BOR_LEVEL_1) || \
