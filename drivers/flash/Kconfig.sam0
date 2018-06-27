@@ -8,7 +8,6 @@ if FLASH && SOC_FAMILY_SAM0
 menuconfig SOC_FLASH_SAM0
 	bool
 	prompt "Atmel SAM0 flash driver"
-	default n
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	help
@@ -18,7 +17,6 @@ config SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
 	bool
 	prompt "Emulate byte-sized pages"
 	depends on SOC_FLASH_SAM0
-	default n
 	help
 	 Emulate a device with byte-sized pages by doing a
 	 read/modify/erase/write.  Needed for NFFS.

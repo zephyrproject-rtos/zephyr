@@ -47,7 +47,6 @@ config SPI_FLASH_W25QXXDV_SPI_SLAVE
 
 config SPI_FLASH_W25QXXDV_GPIO_SPI_CS
 	bool "Manage SPI CS through a GPIO pin"
-	default n
 	help
 	This option is useful if one needs to manage SPI CS through a GPIO
 	pin to by-pass the SPI controller's CS logic.
