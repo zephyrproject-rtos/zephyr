@@ -12,20 +12,26 @@ import os
 import struct
 from elf_helper import ElfHelper, kobject_to_enum
 
-kobjects = [
-    "k_alert",
-    "k_msgq",
-    "k_mutex",
-    "k_pipe",
-    "k_queue",
-    "k_poll_signal",
-    "k_sem",
-    "k_stack",
-    "k_thread",
-    "k_timer",
-    "_k_thread_stack_element",
-    "device"
-]
+# Keys in this dictionary are structs which should be recognized as kernel
+# objects. Values should either be None, or the name of a Kconfig that
+# indicates the presence of this object's definition in case it is not
+# available in all configurations.
+
+kobjects = {
+    "k_alert" : None,
+    "k_msgq" : None,
+    "k_mutex" : None,
+    "k_pipe" : None,
+    "k_queue" : None,
+    "k_poll_signal" : None,
+    "k_sem" : None,
+    "k_stack" : None,
+    "k_thread" : None,
+    "k_timer" : None,
+    "_k_thread_stack_element" : None,
+    "net_context" : "CONFIG_NETWORKING",
+    "device" : None
+    }
 
 subsystems = [
     "adc_driver_api",
@@ -169,11 +175,17 @@ def write_validation_output(fp):
 
 def write_kobj_types_output(fp):
     fp.write("/* Core kernel objects */\n")
-    for kobj in kobjects:
+    for kobj, dep in kobjects.items():
         if kobj == "device":
             continue
 
+        if dep:
+            fp.write("#ifdef %s\n" % dep)
+
         fp.write("%s,\n" % kobject_to_enum(kobj))
+
+        if dep:
+            fp.write("#endif\n")
 
     fp.write("/* Driver subsystems */\n")
     for subsystem in subsystems:
@@ -183,11 +195,16 @@ def write_kobj_types_output(fp):
 
 def write_kobj_otype_output(fp):
     fp.write("/* Core kernel objects */\n")
-    for kobj in kobjects:
+    for kobj, dep in kobjects.items():
         if kobj == "device":
             continue
 
+        if dep:
+            fp.write("#ifdef %s\n" % dep)
+
         fp.write('case %s: return "%s";\n' % (kobject_to_enum(kobj), kobj))
+        if dep:
+            fp.write("#endif\n")
 
     fp.write("/* Driver subsystems */\n")
     for subsystem in subsystems:
@@ -199,14 +216,20 @@ def write_kobj_otype_output(fp):
 
 def write_kobj_size_output(fp):
     fp.write("/* Non device/stack objects */\n")
-    for kobj in kobjects:
+    for kobj, dep in kobjects.items():
         # device handled by default case. Stacks are not currently handled,
         # if they eventually are it will be a special case.
         if kobj == "device" or kobj == "_k_thread_stack_element":
             continue
 
+        if dep:
+            fp.write("#ifdef %s\n" % dep)
+
         fp.write('case %s: return sizeof(struct %s);\n' %
                 (kobject_to_enum(kobj), kobj))
+        if dep:
+            fp.write("#endif\n")
+
 
 def parse_args():
     global args

@@ -17,6 +17,12 @@
 #include <device.h>
 #include <init.h>
 #include <logging/sys_log.h>
+#if defined(CONFIG_NETWORKING) && defined (CONFIG_DYNAMIC_OBJECTS)
+/* Used by auto-generated obj_size_get() switch body, as we need to
+ * know the size of struct net_context
+ */
+#include <net/net_context.h>
+#endif
 
 #define MAX_THREAD_BITS		(CONFIG_MAX_THREAD_BYTES * 8)
 
