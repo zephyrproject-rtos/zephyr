@@ -1,5 +1,6 @@
 tests:
   test:
     platform_whitelist: qemu_cortex_m3 qemu_x86 nrf51_pca10028
+    platform_exclude: nrf52810_pca10040
     tags: bluetooth
     harness: keyboard
