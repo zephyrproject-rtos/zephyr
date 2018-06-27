@@ -8,7 +8,6 @@
 
 menuconfig DMA_QMSI
 	bool "Enable QMSI DMA driver"
-	default n
 	depends on QMSI
 	help
 	  QMSI DMA driver.

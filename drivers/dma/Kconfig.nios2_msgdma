@@ -8,6 +8,5 @@
 config DMA_NIOS2_MSGDMA
 	bool "Nios-II  Modular Scatter-Gather DMA(MSGDMA) driver"
 	depends on HAS_ALTERA_HAL
-	default n
 	help
 	  Enable Nios-II Modular Scatter-Gather DMA(MSGDMA) driver.
