@@ -11,6 +11,7 @@ menuconfig BT_MESH
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
+	depends on BT_OBSERVER && BT_BROADCASTER
 	help
 	  This option enables Bluetooth Mesh support. The specific
 	  features that are available may depend on other features
