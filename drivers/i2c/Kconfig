@@ -11,7 +11,6 @@
 #
 menuconfig I2C
 	bool "I2C Drivers"
-	default n
 	help
 	  Enable I2C Driver Configuration
 
@@ -38,7 +37,6 @@ config SYS_LOG_I2C_LEVEL
 
 config I2C_0
 	bool "Enable I2C Port 0"
-	default n
 
 config I2C_0_NAME
 	string "Port 0 device name"
@@ -64,7 +62,6 @@ config I2C_0_IRQ_PRI
 
 config I2C_1
 	bool "Enable I2C Port 1"
-	default n
 
 config I2C_1_NAME
 	string "Port 1 device name"
@@ -90,7 +87,6 @@ config I2C_1_IRQ_PRI
 
 config I2C_2
 	bool "Enable I2C Port 2"
-	default n
 
 config I2C_2_NAME
 	string "Port 2 device name"
@@ -116,7 +112,6 @@ config I2C_2_IRQ_PRI
 
 config I2C_3
 	bool "Enable I2C Port 3"
-	default n
 
 config I2C_3_NAME
 	string "Port 3 device name"
@@ -142,7 +137,6 @@ config I2C_3_IRQ_PRI
 
 config I2C_4
 	bool "Enable I2C Port 4"
-	default n
 
 config I2C_4_NAME
 	string "Port 4 device name"
@@ -169,7 +163,6 @@ config I2C_4_IRQ_PRI
 config I2C_ATMEL_SAM3
 	bool "[deprecated] Atmel SAM3X I2C Driver"
 	depends on SOC_SERIES_SAM3X
-	default n
 	help
 	  This driver is deprecated and will be removed. Use
 	  "Atmel SAM (TWI) I2C driver" instead.
@@ -182,7 +175,6 @@ config I2C_SAM_TWIHS
 	bool "Atmel SAM (TWIHS) I2C driver"
 	depends on SOC_FAMILY_SAM
 	select HAS_DTS_I2C
-	default n
 	help
 	  Enable Atmel SAM MCU Family (TWIHS) I2C bus driver.
 
@@ -190,7 +182,6 @@ config I2C_SAM_TWI
 	bool "Atmel SAM (TWI) I2C driver"
 	depends on SOC_FAMILY_SAM
 	select HAS_DTS_I2C
-	default n
 	help
 	  Enable Atmel SAM MCU Family (TWI) I2C bus driver.
 
@@ -198,7 +189,6 @@ config I2C_MCUX
 	bool "MCUX I2C driver"
 	depends on HAS_MCUX
 	select HAS_DTS_I2C
-	default n
 	help
 	  Enable the mcux I2C driver.
 
@@ -206,20 +196,17 @@ config I2C_CC32XX
 	bool "CC32XX I2C driver"
 	depends on SOC_SERIES_CC32XX
 	select HAS_DTS_I2C
-	default n
 	help
 	  Enable the CC32XX I2C driver.
 
 config I2C_BITBANG
 	bool
-	default n
 	help
 	  Enable library used for software driven (bit banging) I2C support
 
 config I2C_NIOS2
 	bool "Nios-II I2C driver"
 	depends on HAS_ALTERA_HAL
-	default n
 	help
 	  Enable the Nios-II I2C driver.
 
