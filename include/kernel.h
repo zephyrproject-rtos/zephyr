@@ -73,7 +73,7 @@ extern "C" {
 #define K_HIGHEST_APPLICATION_THREAD_PRIO (K_HIGHEST_THREAD_PRIO)
 #define K_LOWEST_APPLICATION_THREAD_PRIO (K_LOWEST_THREAD_PRIO - 1)
 
-#ifdef CONFIG_WAITQ_FAST
+#ifdef CONFIG_WAITQ_SCALABLE
 
 typedef struct {
 	struct _priq_rb waitq;
@@ -406,7 +406,7 @@ struct _thread_base {
 		struct rbnode qnode_rb;
 	};
 
-#ifdef CONFIG_WAITQ_FAST
+#ifdef CONFIG_WAITQ_SCALABLE
 	/* wait queue on which the thread is pended (needed only for
 	 * trees, not dumb lists)
 	 */
