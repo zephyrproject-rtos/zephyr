@@ -251,6 +251,7 @@ typedef struct __FMPI2C_HandleTypeDef
 #define FMPI2C_NEXT_FRAME                  ((uint32_t)(FMPI2C_RELOAD_MODE | FMPI2C_SOFTEND_MODE))
 #define FMPI2C_FIRST_AND_LAST_FRAME        ((uint32_t)FMPI2C_AUTOEND_MODE)
 #define FMPI2C_LAST_FRAME                  ((uint32_t)FMPI2C_AUTOEND_MODE)
+#define FMPI2C_LAST_FRAME_NO_STOP          ((uint32_t)FMPI2C_SOFTEND_MODE)
 /**
   * @}
   */
@@ -662,7 +663,8 @@ uint32_t             HAL_FMPI2C_GetError(FMPI2C_HandleTypeDef *hfmpi2c);
                                                       ((REQUEST) == FMPI2C_FIRST_AND_NEXT_FRAME) || \
                                                       ((REQUEST) == FMPI2C_NEXT_FRAME)           || \
                                                       ((REQUEST) == FMPI2C_FIRST_AND_LAST_FRAME) || \
-                                                      ((REQUEST) == FMPI2C_LAST_FRAME))
+                                                      ((REQUEST) == FMPI2C_LAST_FRAME)           || \
+                                                      ((REQUEST) == FMPI2C_LAST_FRAME_NO_STOP))
 
 #define FMPI2C_RESET_CR2(__HANDLE__)                 ((__HANDLE__)->Instance->CR2 &= (uint32_t)~((uint32_t)(FMPI2C_CR2_SADD | FMPI2C_CR2_HEAD10R | FMPI2C_CR2_NBYTES | FMPI2C_CR2_RELOAD | FMPI2C_CR2_RD_WRN)))
 

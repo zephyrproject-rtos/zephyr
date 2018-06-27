@@ -865,7 +865,7 @@ HAL_StatusTypeDef FSMC_PCCARD_Init(FSMC_PCCARD_TypeDef *Device, FSMC_PCCARD_Init
   
   /* Clear TAR, TCLR, PWAITEN and PWID bits */
   tmpr &= ((uint32_t)~(FSMC_PCR4_TAR  | FSMC_PCR4_TCLR | FSMC_PCR4_PWAITEN | \
-                       FSMC_PCR4_PWID));
+                       FSMC_PCR4_PWID | FSMC_PCR4_PTYP));
   
   /* Set FSMC_PCCARD device control parameters */
   tmpr |= (uint32_t)(Init->Waitfeature               |\

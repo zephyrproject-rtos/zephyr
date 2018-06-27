@@ -6735,6 +6735,14 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk);
     defined(STM32F423xx)
 void HAL_RCCEx_SelectLSEMode(uint8_t Mode);
 #endif /* STM32F410xx || STM32F411xE || STM32F446xx || STM32F469xx || STM32F479xx || STM32F412Zx || STM32F412Vx || STM32F412Rx || STM32F412Cx || STM32F413xx || STM32F423xx */
+#if defined(RCC_PLLI2S_SUPPORT)
+HAL_StatusTypeDef HAL_RCCEx_EnablePLLI2S(RCC_PLLI2SInitTypeDef  *PLLI2SInit);
+HAL_StatusTypeDef HAL_RCCEx_DisablePLLI2S(void);
+#endif /* RCC_PLLI2S_SUPPORT */
+#if defined(RCC_PLLSAI_SUPPORT)
+HAL_StatusTypeDef HAL_RCCEx_EnablePLLSAI(RCC_PLLSAIInitTypeDef  *PLLSAIInit);
+HAL_StatusTypeDef HAL_RCCEx_DisablePLLSAI(void);
+#endif /* RCC_PLLSAI_SUPPORT */
 /**
   * @}
   */ 
