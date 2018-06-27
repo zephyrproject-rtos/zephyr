@@ -15,6 +15,7 @@
 /* Zephyr headers */
 #include <kernel.h>
 #include <net/socket.h>
+#include <syscall_handler.h>
 
 #define AI_ARR_MAX	2
 
@@ -81,9 +82,9 @@ static void dns_resolve_cb(enum dns_resolve_status status,
 }
 
 
-static int zsock_getaddrinfo_internal(const char *host, const char *service,
-				      const struct zsock_addrinfo *hints,
-				      struct zsock_addrinfo *res)
+int _impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
+				       const struct zsock_addrinfo *hints,
+				       struct zsock_addrinfo *res)
 {
 	int family = AF_UNSPEC;
 	long int port = 0;
@@ -164,6 +165,46 @@ static int zsock_getaddrinfo_internal(const char *host, const char *service,
 	return 0;
 }
 
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(z_zsock_getaddrinfo_internal, host, service, hints, res)
+{
+	struct zsock_addrinfo hints_copy;
+	char *host_copy = NULL, *service_copy = NULL;
+	u32_t ret;
+
+	if (hints) {
+		Z_OOPS(z_user_from_copy(&hints_copy, (void *)hints,
+					sizeof(hints_copy)));
+	}
+	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_WRITE(res, AI_ARR_MAX,
+					    sizeof(struct zsock_addrinfo)));
+
+	if (service) {
+		service_copy = z_user_string_alloc_copy((char *)service, 64);
+		if (!service_copy) {
+			ret = DNS_EAI_MEMORY;
+			goto out;
+		}
+	}
+
+	if (host) {
+		host_copy = z_user_string_alloc_copy((char *)host, 64);
+		if (!host_copy) {
+			ret = DNS_EAI_MEMORY;
+			goto out;
+		}
+	}
+
+	ret = _impl_z_zsock_getaddrinfo_internal(host_copy, service_copy,
+						 hints ? &hints_copy : NULL,
+						 (struct zsock_addrinfo *)res);
+out:
+	k_free(service_copy);
+	k_free(host_copy);
+
+	return ret;
+}
+#endif /* CONFIG_USERSPACE */
 
 int zsock_getaddrinfo(const char *host, const char *service,
 		      const struct zsock_addrinfo *hints,
@@ -175,7 +216,7 @@ int zsock_getaddrinfo(const char *host, const char *service,
 	if (!(*res)) {
 		return DNS_EAI_MEMORY;
 	}
-	ret = zsock_getaddrinfo_internal(host, service, hints, *res);
+	ret = z_zsock_getaddrinfo_internal(host, service, hints, *res);
 	if (ret) {
 		free(*res);
 		*res = NULL;
