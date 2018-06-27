@@ -9,6 +9,5 @@ menuconfig WDT_MCUX_WDOG
 	bool "MCUX WDOG driver"
 	depends on HAS_MCUX && CLOCK_CONTROL
 	select HAS_DTS_WDT
-	default n
 	help
 	  Enable the mcux wdog driver.
