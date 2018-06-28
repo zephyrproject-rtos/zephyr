@@ -1460,6 +1460,22 @@
 
 // <e> NRFX_RTC_ENABLED - nrfx_rtc - RTC peripheral driver
 //==========================================================
+#ifdef CONFIG_NRFX_RTC
+#define NRFX_RTC_ENABLED 1
+#endif
+
+#ifdef CONFIG_NRFX_RTC0
+#define NRFX_RTC0_ENABLED 1
+#endif
+
+#ifdef CONFIG_NRFX_RTC1
+#define NRFX_RTC1_ENABLED 1
+#endif
+
+#ifdef CONFIG_NRFX_RTC2
+#define NRFX_RTC2_ENABLED 1
+#endif
+
 #ifndef NRFX_RTC_ENABLED
 #define NRFX_RTC_ENABLED 0
 #endif
