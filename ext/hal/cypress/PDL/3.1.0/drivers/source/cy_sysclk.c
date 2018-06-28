@@ -16,7 +16,9 @@
 
 #include "cy_sysclk.h"
 #include "cy_syslib.h"
+#ifdef CONFIG_FLOAT
 #include <math.h>
+#endif
 #include <stdlib.h>
 
 #if defined(__cplusplus)
@@ -33,6 +35,7 @@ extern "C" {
 * \addtogroup group_sysclk_eco_funcs
 * \{
 */
+#ifdef CONFIG_FLOAT
 /*******************************************************************************
 * Function Name: Cy_SysClk_EcoConfigure
 ****************************************************************************//**
@@ -203,6 +206,7 @@ cy_en_sysclk_status_t Cy_SysClk_EcoEnable(uint32_t timeoutus)
     return (rtnval);
 }
 /** \} group_sysclk_eco_funcs */
+#endif /* CONFIG_FLOAT */
 
 
 /* ========================================================================== */
@@ -329,6 +333,7 @@ cy_en_clkpath_in_sources_t Cy_SysClk_ClkPathGetSource(uint32_t clkPath)
 * \snippet sysclk/sysclk_v1_10_sut_01.cydsn/main_cm4.c snippet_Cy_SysClk_FllConfigure
 *
 *******************************************************************************/
+#ifdef CONFIG_FLOAT
 cy_en_sysclk_status_t Cy_SysClk_FllConfigure(uint32_t inputFreq, uint32_t outputFreq, cy_en_fll_pll_output_mode_t outputMode)
 {
     cy_en_sysclk_status_t returnStatus = CY_SYSCLK_SUCCESS;
@@ -448,6 +453,7 @@ cy_en_sysclk_status_t Cy_SysClk_FllConfigure(uint32_t inputFreq, uint32_t output
 
     return (returnStatus);
 }
+#endif
 
 /*******************************************************************************
 * Function Name: Cy_SysClk_FllManualConfigure
