@@ -268,14 +268,6 @@ exit:
 	return len;
 }
 
-static u16_t openthread_reserve(struct net_if *iface, void *arg)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(arg);
-
-	return 0;
-}
-
 enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 					     struct net_buf *buf)
 {
@@ -352,4 +344,4 @@ static enum net_l2_flags openthread_flags(struct net_if *iface)
 }
 
 NET_L2_INIT(OPENTHREAD_L2, openthread_recv, openthread_send,
-	    openthread_reserve, NULL, openthread_flags);
+	    NULL, openthread_flags);
