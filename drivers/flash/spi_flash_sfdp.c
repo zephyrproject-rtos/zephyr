@@ -14,6 +14,10 @@
 
 #include "spi_flash_sfdp.h"
 
+#if defined(CONFIG_SPI_FLASH_MICROCHIP)
+#include "spi_flash_sfdp_microchip.h"
+#endif
+
 #include <errno.h>
 #include <string.h>
 
@@ -507,6 +511,12 @@ static int spi_flash_sfdp(struct device *dev,
 		case SFDP_FOUR_ADDR_ID:
 			r = spi_flash_sfdp_4bai(dev, phdr.addr, phdr.length);
 			break;
+#if defined(CONFIG_SPI_FLASH_MICROCHIP)
+		case SFDP_MICROCHIP_ID:
+			r = spi_flash_sfdp_microchip(dev, init_config,
+						     phdr.addr, phdr.length);
+			break;
+#endif
 		default:
 			SYS_LOG_WRN("Parameter[%d], id: %04x, "
 				    "Undefined vendor device may not work "

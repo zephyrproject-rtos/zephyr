@@ -1,0 +1,14 @@
+# Kconfig.spi.microchip - SPI Flash driver configuration options
+
+#
+# Copyright (c) 2018 Findlay Feng
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SPI_FLASH_MICROCHIP
+	bool "Microchip SFDP table"
+	depends on SPI_FLASH
+	default n
+	help
+	  Enable options for Microchip SFDP table.
