@@ -84,13 +84,11 @@ void _sys_soc_set_power_state(enum power_states state)
 /* Handle SOC specific activity after Low Power Mode Exit */
 void _sys_soc_power_state_post_ops(enum power_states state)
 {
-	/* This is placeholder for nrf52 SOC specific task.
-	 * Currently there is no nrf52 SOC specific activity to perform.
-	 */
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS:
-		break;
 	case SYS_POWER_STATE_CPU_LPS_1:
+		/* Enable interrupts */
+		__set_BASEPRI(0);
 		break;
 #if defined(CONFIG_SYS_POWER_DEEP_SLEEP)
 	case SYS_POWER_STATE_DEEP_SLEEP:
