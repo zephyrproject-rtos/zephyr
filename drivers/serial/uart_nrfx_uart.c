@@ -14,8 +14,36 @@
 
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static uart_irq_callback_t m_irq_callback; /**< Callback function pointer */
+
+static uart_irq_callback_t irq_callback; /**< Callback function pointer */
+
+/* Variable used to override the state of the TXDRDY event in the initial state
+ * of the driver. This event is not set by the hardware until a first byte is
+ * sent, and we want to use it as an indication if the transmitter is ready
+ * to accept a new byte.
+ */
+static volatile u8_t uart_sw_event_txdrdy;
+
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+
+static bool event_txdrdy_check(void)
+{
+	return (nrf_uart_event_check(NRF_UART0, NRF_UART_EVENT_TXDRDY)
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+		|| uart_sw_event_txdrdy
+#endif
+	       );
+}
+
+static void event_txdrdy_clear(void)
+{
+	nrf_uart_event_clear(NRF_UART0, NRF_UART_EVENT_TXDRDY);
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_sw_event_txdrdy = 0;
+#endif
+}
+
 
 /**
  * @brief Set the baud rate
@@ -145,13 +173,13 @@ static unsigned char uart_nrfx_poll_out(struct device *dev,
 	 */
 
 	/* reset transmitter ready state */
-	nrf_uart_event_clear(NRF_UART0, NRF_UART_EVENT_TXDRDY);
+	event_txdrdy_clear();
 
 	/* send a character */
 	nrf_uart_txd_set(NRF_UART0, (u8_t)c);
 
 	/* Wait for transmitter to be ready */
-	while (!nrf_uart_event_check(NRF_UART0, NRF_UART_EVENT_TXDRDY)) {
+	while (!event_txdrdy_check()) {
 	}
 
 	return c;
@@ -181,9 +209,10 @@ static int uart_nrfx_fifo_fill(struct device *dev,
 	u8_t num_tx = 0;
 
 	while ((len - num_tx > 0) &&
-	       nrf_uart_event_check(NRF_UART0, NRF_UART_EVENT_TXDRDY)) {
+	       event_txdrdy_check()) {
+
 		/* Clear the interrupt */
-		nrf_uart_event_clear(NRF_UART0, NRF_UART_EVENT_TXDRDY);
+		event_txdrdy_clear();
 
 		/* Send a character */
 		nrf_uart_txd_set(NRF_UART0, (u8_t)tx_data[num_tx++]);
@@ -214,19 +243,28 @@ static int uart_nrfx_fifo_read(struct device *dev,
 /** Interrupt driven transfer enabling function */
 static void uart_nrfx_irq_tx_enable(struct device *dev)
 {
+	u32_t key;
+
 	nrf_uart_int_enable(NRF_UART0, NRF_UART_INT_MASK_TXDRDY);
+
+	/* Critical section is used to avoid any UART related interrupt which
+	 * can occur after the if statement and before call of the function
+	 * forcing an interrupt.
+	 */
+	key = irq_lock();
+	if (uart_sw_event_txdrdy) {
+		/* Due to HW limitation first TXDRDY interrupt shall be
+		 * triggered by the software.
+		 */
+		NVIC_SetPendingIRQ(NRFX_IRQ_NUMBER_GET(NRF_UART0));
+	}
+	irq_unlock(key);
 }
 
 /** Interrupt driven transfer disabling function */
 static void uart_nrfx_irq_tx_disable(struct device *dev)
 {
 	nrf_uart_int_disable(NRF_UART0, NRF_UART_INT_MASK_TXDRDY);
-}
-
-/** Interrupt driven transfer ready function */
-static int uart_nrfx_irq_tx_ready(struct device *dev)
-{
-	return nrf_uart_event_check(NRF_UART0, NRF_UART_EVENT_TXDRDY);
 }
 
 /** Interrupt driven receiver enabling function */
@@ -242,9 +280,9 @@ static void uart_nrfx_irq_rx_disable(struct device *dev)
 }
 
 /** Interrupt driven transfer empty function */
-static int uart_nrfx_irq_tx_complete(struct device *dev)
+static int uart_nrfx_irq_tx_ready_complete(struct device *dev)
 {
-	return !nrf_uart_event_check(NRF_UART0, NRF_UART_EVENT_TXDRDY);
+	return event_txdrdy_check();
 }
 
 /** Interrupt driven receiver ready function */
@@ -265,18 +303,16 @@ static void uart_nrfx_irq_err_disable(struct device *dev)
 	nrf_uart_int_disable(NRF_UART0, NRF_UART_INT_MASK_ERROR);
 }
 
-
-
 /** Interrupt driven pending status function */
 static int uart_nrfx_irq_is_pending(struct device *dev)
 {
 	return ((nrf_uart_int_enable_check(NRF_UART0,
 					   NRF_UART_INT_MASK_TXDRDY) &&
-		uart_nrfx_irq_tx_ready(dev))
+		 event_txdrdy_check())
 		||
 		(nrf_uart_int_enable_check(NRF_UART0,
 					   NRF_UART_INT_MASK_RXDRDY) &&
-		uart_nrfx_irq_rx_ready(dev)));
+		 uart_nrfx_irq_rx_ready(dev)));
 }
 
 /** Interrupt driven interrupt update function */
@@ -290,7 +326,7 @@ static void uart_nrfx_irq_callback_set(struct device *dev,
 				       uart_irq_callback_t cb)
 {
 	(void)dev;
-	m_irq_callback = cb;
+	irq_callback = cb;
 }
 
 /**
@@ -306,8 +342,8 @@ static void uart_nrfx_isr(void *arg)
 {
 	struct device *dev = arg;
 
-	if (m_irq_callback) {
-		m_irq_callback(dev);
+	if (irq_callback) {
+		irq_callback(dev);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -387,13 +423,17 @@ static int uart_nrfx_init(struct device *dev)
 	/* Enable receiver and transmitter */
 	nrf_uart_enable(NRF_UART0);
 
-	nrf_uart_event_clear(NRF_UART0, NRF_UART_EVENT_TXDRDY);
 	nrf_uart_event_clear(NRF_UART0, NRF_UART_EVENT_RXDRDY);
 
 	nrf_uart_task_trigger(NRF_UART0, NRF_UART_TASK_STARTTX);
 	nrf_uart_task_trigger(NRF_UART0, NRF_UART_TASK_STARTRX);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+
+	/* Simulate that the TXDRDY event is set, so that the transmitter status
+	 * is indicated correctly.
+	 */
+	uart_sw_event_txdrdy = 1;
 
 	IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_UART0),
 		    CONFIG_UART_0_IRQ_PRI,
@@ -406,25 +446,28 @@ static int uart_nrfx_init(struct device *dev)
 	return 0;
 }
 
+/* Common function: uart_nrfx_irq_tx_ready_complete is used for two API entries
+ * because Nordic hardware does not distinguish between them.
+ */
 static const struct uart_driver_api uart_nrfx_uart_driver_api = {
-	.poll_in          = uart_nrfx_poll_in,          /** Console I/O function */
-	.poll_out         = uart_nrfx_poll_out,         /** Console I/O function */
-	.err_check        = uart_nrfx_err_check,        /** Console I/O function */
+	.poll_in          = uart_nrfx_poll_in,
+	.poll_out         = uart_nrfx_poll_out,
+	.err_check        = uart_nrfx_err_check,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.fifo_fill        = uart_nrfx_fifo_fill,        /** IRQ FIFO fill function */
-	.fifo_read        = uart_nrfx_fifo_read,        /** IRQ FIFO read function */
-	.irq_tx_enable    = uart_nrfx_irq_tx_enable,    /** IRQ transfer enabling function */
-	.irq_tx_disable   = uart_nrfx_irq_tx_disable,   /** IRQ transfer disabling function */
-	.irq_tx_ready     = uart_nrfx_irq_tx_ready,     /** IRQ transfer ready function */
-	.irq_rx_enable    = uart_nrfx_irq_rx_enable,    /** IRQ receiver enabling function */
-	.irq_rx_disable   = uart_nrfx_irq_rx_disable,   /** IRQ receiver disabling function */
-	.irq_tx_complete  = uart_nrfx_irq_tx_complete,  /** IRQ transfer complete function */
-	.irq_rx_ready     = uart_nrfx_irq_rx_ready,     /** IRQ receiver ready function */
-	.irq_err_enable   = uart_nrfx_irq_err_enable,   /** IRQ error enabling function */
-	.irq_err_disable  = uart_nrfx_irq_err_disable,  /** IRQ error disabling function */
-	.irq_is_pending   = uart_nrfx_irq_is_pending,   /** IRQ pending status function */
-	.irq_update       = uart_nrfx_irq_update,       /** IRQ interrupt update function */
-	.irq_callback_set = uart_nrfx_irq_callback_set, /** Set the callback function */
+	.fifo_fill        = uart_nrfx_fifo_fill,
+	.fifo_read        = uart_nrfx_fifo_read,
+	.irq_tx_enable    = uart_nrfx_irq_tx_enable,
+	.irq_tx_disable   = uart_nrfx_irq_tx_disable,
+	.irq_tx_ready     = uart_nrfx_irq_tx_ready_complete,
+	.irq_rx_enable    = uart_nrfx_irq_rx_enable,
+	.irq_rx_disable   = uart_nrfx_irq_rx_disable,
+	.irq_tx_complete  = uart_nrfx_irq_tx_ready_complete,
+	.irq_rx_ready     = uart_nrfx_irq_rx_ready,
+	.irq_err_enable   = uart_nrfx_irq_err_enable,
+	.irq_err_disable  = uart_nrfx_irq_err_disable,
+	.irq_is_pending   = uart_nrfx_irq_is_pending,
+	.irq_update       = uart_nrfx_irq_update,
+	.irq_callback_set = uart_nrfx_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
