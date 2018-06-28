@@ -71,10 +71,12 @@ struct _ready_q {
 	struct k_thread *cache;
 #endif
 
-#ifdef CONFIG_SCHED_DUMB
+#if defined(CONFIG_SCHED_DUMB)
 	sys_dlist_t runq;
-#else
+#elif defined(CONFIG_SCHED_SCALABLE)
 	struct _priq_rb runq;
+#elif defined(CONFIG_SCHED_MULTIQ)
+	struct _priq_mq runq;
 #endif
 };
 

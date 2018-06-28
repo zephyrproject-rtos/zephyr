@@ -44,4 +44,20 @@ void _priq_rb_add(struct _priq_rb *pq, struct k_thread *thread);
 void _priq_rb_remove(struct _priq_rb *pq, struct k_thread *thread);
 struct k_thread *_priq_rb_best(struct _priq_rb *pq);
 
+/* Traditional/textbook "multi-queue" structure.  Separate lists for a
+ * small number (max 32 here) of fixed priorities.  This corresponds
+ * to the original Zephyr scheduler.  RAM requirements are
+ * comparatively high, but performance is very fast.  Won't work with
+ * features like deadline scheduling which need large priority spaces
+ * to represet their requirements.
+ */
+struct _priq_mq {
+	sys_dlist_t queues[32];
+	unsigned int bitmask; /* bit 1<<i set if queues[i] is non-empty */
+};
+
+void _priq_mq_add(struct _priq_mq *pq, struct k_thread *thread);
+void _priq_mq_remove(struct _priq_mq *pq, struct k_thread *thread);
+struct k_thread *_priq_mq_best(struct _priq_mq *pq);
+
 #endif /* _sched_priq__h_ */

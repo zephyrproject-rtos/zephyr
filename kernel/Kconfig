@@ -217,26 +217,46 @@ config SCHED_DUMB
 	  results in a savings of ~2k of code size.
 
 config SCHED_SCALABLE
-       bool "Red/black tree ready queue"
-       help
-         When selected, the scheduler ready queue will be implemented
-         as a red/black tree.  This has rather slower constant-time
-         insertion and removal overhead, and on most platforms (that
-         are not otherwise using the rbtree somehwere) requires an
-         extra ~2kb of code.  But the resulting behavior will scale
-         cleanly and quickly into the many thousands of threads.  Use
-         this on platforms where you may have MANY threads marked as
-         runnable at a given time.  Most applications don't want this.
+	bool "Red/black tree ready queue"
+	help
+	  When selected, the scheduler ready queue will be implemented
+	  as a red/black tree.  This has rather slower constant-time
+	  insertion and removal overhead, and on most platforms (that
+	  are not otherwise using the rbtree somehwere) requires an
+	  extra ~2kb of code.  But the resulting behavior will scale
+	  cleanly and quickly into the many thousands of threads.  Use
+	  this on platforms where you may have many threads (very
+	  roughly: more than 20 or so) marked as runnable at a given
+	  time.  Most applications don't want this.
+
+config SCHED_MULTIQ
+	bool "Traditional multi-queue ready queue"
+	depends on !SCHED_DEADLINE
+	help
+	  When selected, the scheduler ready queue will be implemented
+	  as the classic/textbook array of lists, one per priority
+	  (max 32 priorities).  This corresponds to the scheduler
+	  algorithm used in Zephyr versions prior to 1.12.  It incurs
+	  only a tiny code size overhead vs. the "dumb" scheduler and
+	  runs in O(1) time in almost all circumstances with very low
+	  constant factor.  But it requires a fairly large RAM budget
+	  to store those list heads, and the limited features make it
+	  incompatible with features like deadline scheduling that
+	  need to sort threads more finely, and SMP affinity which
+	  need to traverse the list of threads.  Typical applications
+	  with small numbers of runnable threads probably want the
+	  DUMB scheduler.
 
 endchoice # SCHED_ALGORITHM
 
 choice WAITQ_ALGORITHM
-       prompt "Wait queue priority algorithm"
-       default WAITQ_DUMB
-       help
-         The wait_q abstraction used in IPC primitives to pend threads
-         for later wakeup shares the same backend data structure
-         choices as the scheduler, and can use the same options.
+	prompt "Wait queue priority algorithm"
+	default WAITQ_DUMB
+	help
+	  The wait_q abstraction used in IPC primitives to pend
+	  threads for later wakeup shares the same backend data
+	  structure choices as the scheduler, and can use the same
+	  options.
 
 config WAITQ_SCALABLE
 	bool
