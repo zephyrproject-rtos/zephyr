@@ -201,11 +201,12 @@ config LOG_INPLACE_PROCESS
 	bool "Enable in place processing"
 	help
 	  When enabled log is processed in the context of the call. It impacts
-	  performance of the system since time consuming operations are performed in
-	  the context of the log entry (e.g. high priority interrupt). When enabled
-	  LOG_BUFFER_SIZE can be reduced. Logger backends must support exclusive
-	  access to work flawlessly in that mode because one log operation can be
-	  interrupted by another one in higher priority context.
+	  performance of the system since time consuming operations are
+	  performed in the context of the log entry (e.g. high priority
+	  interrupt). When enabled LOG_BUFFER_SIZE can be reduced. Logger
+	  backends must support exclusive access to work flawlessly in that mode
+	  because one log operation can be interrupted by another one in higher
+	  priority context.
 
 config LOG_PROCESS_TRIGGER_THRESHOLD
 	int "Amount of buffered logs which triggers processing thread."
@@ -214,6 +215,23 @@ config LOG_PROCESS_TRIGGER_THRESHOLD
 	  When number of buffered messages reaches the threshold thread is waken
 	  up. Log processing thread ID is provided during log initialization.
 	  Set 0 to disable the feature.
+
+config LOG_PROCESS_THREAD
+	bool "Enable internal thread for log processing"
+	depends on MULTITHREADING
+	help
+	  When enabled thread is created by the logger subsystem. Thread is
+	  waken up periodically (see LOG_PROCESS_THREAD_SLEEP_MS) and whenever
+	  number of buffered messages exceeds the threshold (see
+	  LOG_PROCESS_TRIGGER_THR).
+
+config LOG_PROCESS_THREAD_SLEEP_MS
+	int "Set log processing thread sleep period"
+	depends on LOG_PROCESS_THREAD
+	default 1000
+	help
+	  Log processing thread sleeps for requested period given in
+	  milliseconds. When waken up, thread process any buffered messages.
 
 config LOG_BUFFER_SIZE
 	int "Number of bytes dedicated for the logger internal buffer."
