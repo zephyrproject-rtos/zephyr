@@ -247,19 +247,13 @@ void arm_core_mpu_configure_user_context(struct k_thread *thread)
 {
 	u32_t base = (u32_t)thread->stack_obj;
 	u32_t size = thread->stack_info.size;
-	u32_t index = _get_region_index_by_type(THREAD_STACK_REGION);
-	u32_t region_attr = _get_region_attr_by_type(THREAD_STACK_REGION,
-						     size);
 
 	if (!thread->arch.priv_stack_start) {
-		_disable_region(index);
+		_disable_region(_get_region_index_by_type(
+			THREAD_STACK_REGION));
 		return;
 	}
-	if (index >= _get_num_regions()) {
-		return;
-	}
-	/* configure stack */
-	_region_init(index, base, region_attr);
+	arm_core_mpu_configure(THREAD_STACK_REGION, base, size);
 }
 
 /**
