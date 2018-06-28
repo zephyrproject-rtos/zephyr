@@ -455,6 +455,54 @@ static inline void net_buf_simple_restore(struct net_buf_simple *buf,
  */
 #define NET_BUF_EXTERNAL_DATA  BIT(1)
 
+/** Flag indicating that both the buffer and its associated data pointer,
+ * point to externally allocated memory and do not come from any pool.
+ * Therefore once ref goes down to zero, the pointed  buffer and data
+ * will not need to be deallocated. This never needs to be
+ * explicitly set or unset by the net_buf API user. Such net_buf is
+ * exclusively instantiated via net_buf_standalone_setup() function..
+ */
+#define NET_BUF_STANDALONE BIT(2)
+
+/** @def NET_BUF_DEFINE
+ *  @brief Define a net_buf stack variable.
+ *
+ *  This is a helper macro which is used to define a net_buf object
+ *  on the stack.
+ *
+ *  @param _name Name of the net_buf object.
+ *  @param _size Maximum data storage for the buffer.
+ */
+#define NET_BUF_DEFINE(_name, _size)				\
+	__noinit u8_t net_buf_data_##_name[_size];		\
+	struct net_buf _name = {				\
+		.ref	= 1,					\
+		.flags	= NET_BUF_STANDALONE,			\
+		.data	= net_buf_data_##_name,			\
+		.len	= 0,					\
+		.size	= _size,				\
+		.__buf	= net_buf_data_##_name,			\
+	};
+
+/** @def NET_BUF_DEFINE_STATIC
+ *  @brief Define a static net_buf variable.
+ *
+ *  This is a helper macro which is used to define a net_buf object.
+ *
+ *  @param _name Name of the net_buf object.
+ *  @param _size Maximum data storage for the buffer.
+ */
+#define NET_BUF_DEFINE_STATIC(_name, _size)			\
+	static __noinit u8_t net_buf_data_##_name[_size];	\
+	static struct net_buf _name = {				\
+		.ref	= 1,					\
+		.flags	= NET_BUF_STANDALONE,			\
+		.data	= net_buf_data_##_name,			\
+		.len	= 0,					\
+		.size	= _size,				\
+		.__buf	= net_buf_data_##_name,			\
+	};
+
 /** @brief Network buffer representation.
   *
   * This struct is used to represent network buffers. Such buffers are
@@ -827,6 +875,26 @@ struct net_buf *net_buf_alloc_with_data_debug(struct net_buf_pool *pool,
 struct net_buf *net_buf_alloc_with_data(struct net_buf_pool *pool,
 					void *data, size_t size,
 					s32_t timeout);
+#endif
+
+/**
+ *  @brief Initialize a buffer with a data pointer, both externally allocated
+ *
+ *  Both the buffer and the pointed data are not coming from a pool.
+ *
+ *  @param buf An externally allocated buffer pointer
+ *  @param data External data pointer
+ *  @param size Amount of data the pointed data buffer if able to fit.
+ */
+#if defined(CONFIG_NET_BUF_LOG)
+void net_buf_standalone_setup_debug(struct net_buf *buf,
+				    void *data, size_t size,
+				    const char *func, int line);
+#define net_buf_standalone_setup(_buf, _data, _size)			\
+	net_buf_standalone_setup_debug(_buf, _data, _size,		\
+				       __func__, __LINE__)
+#else
+void net_buf_standalone_setup(struct net_buf *buf, void *data, size_t size);
 #endif
 
 /**

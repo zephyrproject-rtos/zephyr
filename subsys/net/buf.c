@@ -214,11 +214,13 @@ static u8_t *data_ref(struct net_buf *buf, u8_t *data)
 
 static void data_unref(struct net_buf *buf, u8_t *data)
 {
-	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+	struct net_buf_pool *pool;
 
-	if (buf->flags & NET_BUF_EXTERNAL_DATA) {
+	if (buf->flags & (NET_BUF_EXTERNAL_DATA | NET_BUF_STANDALONE)) {
 		return;
 	}
+
+	pool = net_buf_pool_get(buf->pool_id);
 
 	pool->alloc->cb->unref(buf, data);
 }
@@ -393,6 +395,22 @@ struct net_buf *net_buf_alloc_with_data(struct net_buf_pool *pool,
 }
 
 #if defined(CONFIG_NET_BUF_LOG)
+void net_buf_standalone_setup_debug(struct net_buf *buf,
+				    void *data, size_t size,
+				    const char *func, int line)
+#else
+void net_buf_standalone_setup(struct net_buf *buf, void *data, size_t size)
+#endif
+{
+	buf->ref   = 1;
+	buf->__buf = data;
+	buf->data  = data;
+	buf->size  = size;
+	buf->len   = 0;
+	buf->flags = NET_BUF_STANDALONE;
+}
+
+#if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *net_buf_get_debug(struct k_fifo *fifo, s32_t timeout,
 				  const char *func, int line)
 #else
@@ -532,6 +550,11 @@ void net_buf_unref(struct net_buf *buf)
 		buf->data = NULL;
 		buf->frags = NULL;
 
+		if (buf->flags & NET_BUF_STANDALONE) {
+			buf = frags;
+			continue;
+		}
+
 		pool = net_buf_pool_get(buf->pool_id);
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
@@ -577,7 +600,8 @@ struct net_buf *net_buf_clone(struct net_buf *buf, s32_t timeout)
 	/* If the pool supports data referencing use that. Otherwise
 	 * we need to allocate new data and make a copy.
 	 */
-	if (pool->alloc->cb->ref && !(buf->flags & NET_BUF_EXTERNAL_DATA)) {
+	if (pool->alloc->cb->ref &&
+	    !(buf->flags & (NET_BUF_EXTERNAL_DATA | NET_BUF_STANDALONE))) {
 		clone->__buf = data_ref(buf, buf->__buf);
 		clone->data = buf->data;
 		clone->len = buf->len;
