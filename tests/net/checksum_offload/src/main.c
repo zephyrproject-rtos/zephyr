@@ -163,10 +163,6 @@ static int eth_tx_offloading_disabled(struct device *dev, struct net_pkt *pkt)
 		memcpy(((struct net_eth_hdr *)net_pkt_ll(pkt))->dst.addr,
 		       lladdr, sizeof(lladdr));
 
-		pkt->frags->data -= net_pkt_ll_reserve(pkt);
-		pkt->frags->len += net_pkt_ll_reserve(pkt);
-		net_pkt_set_ll_reserve(pkt, 0);
-
 		net_pkt_ref(pkt);
 
 		if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
@@ -181,7 +177,8 @@ static int eth_tx_offloading_disabled(struct device *dev, struct net_pkt *pkt)
 	if (test_started) {
 		u16_t chksum;
 
-		chksum = net_udp_get_chksum(pkt, pkt->frags);
+		/* First frag is always ethernet header, let's skip it */
+		chksum = net_udp_get_chksum(pkt, pkt->frags->frags);
 
 		DBG("Chksum 0x%x offloading disabled\n", chksum);
 
@@ -209,7 +206,8 @@ static int eth_tx_offloading_enabled(struct device *dev, struct net_pkt *pkt)
 	if (test_started) {
 		u16_t chksum;
 
-		chksum = net_udp_get_chksum(pkt, pkt->frags);
+		/* First frag is always ethernet header, let's skip it */
+		chksum = net_udp_get_chksum(pkt, pkt->frags->frags);
 
 		DBG("Chksum 0x%x offloading enabled\n", chksum);
 

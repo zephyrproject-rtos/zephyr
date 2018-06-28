@@ -208,14 +208,16 @@ static struct net_buf *pkt_get_data(struct net_pkt *pkt, struct net_if *iface)
 	struct net_buf *frag;
 	struct net_eth_hdr *hdr;
 
-	net_pkt_set_ll_reserve(pkt, net_if_get_ll_reserve(iface, NULL));
-
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
 	if (!frag) {
 		return NULL;
 	}
 
-	hdr = (struct net_eth_hdr *)(frag->data - net_pkt_ll_reserve(pkt));
+	net_buf_add(frag, sizeof(struct net_eth_hdr));
+	net_pkt_frag_add(pkt, frag);
+	net_pkt_set_ll(pkt, frag->data);
+
+	hdr = (struct net_eth_hdr *)(net_pkt_ll(pkt));
 	hdr->type = htons(NET_ETH_PTYPE_IP);
 
 	net_ipaddr_copy(&hdr->dst, &src_addr);
@@ -283,11 +285,8 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, u32_t xid)
 	}
 
 	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_ll_reserve(pkt, net_buf_headroom(frag));
 	net_pkt_set_family(pkt, AF_INET);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
-
-	net_pkt_frag_add(pkt, frag);
 
 	/* Place the IPv4 header */
 	set_ipv4_header(pkt);
@@ -353,11 +352,8 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, u32_t xid)
 	}
 
 	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_ll_reserve(pkt, net_buf_headroom(frag));
 	net_pkt_set_family(pkt, AF_INET);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
-
-	net_pkt_frag_add(pkt, frag);
 
 	/* Place the IPv4 header */
 	set_ipv4_header(pkt);
