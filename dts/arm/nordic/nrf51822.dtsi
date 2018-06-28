@@ -39,6 +39,14 @@
 	};
 
 	soc {
+		adc: adc@40007000 {
+			compatible = "nordic,nrf-adc";
+			reg = <0x40007000 0x1000>;
+			interrupts = <7 1>;
+			status = "disabled";
+			label = "ADC_0";
+		};
+
 		uart0: uart@40002000 {
 			compatible = "nordic,nrf-uart";
 			reg = <0x40002000 0x1000>;
