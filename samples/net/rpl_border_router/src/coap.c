@@ -437,7 +437,7 @@ static void node_obs_reply(struct coap_packet *response, void *user_data)
 		rank_str[i++] = payload[offset++];
 	}
 
-	if (i > strlen(rank_str)) {
+	if (i >= strlen(rank_str)) {
 		return;
 	}
 
