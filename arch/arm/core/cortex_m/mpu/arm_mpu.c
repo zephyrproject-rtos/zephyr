@@ -16,6 +16,44 @@
 
 #define ARM_MPU_DEV ((volatile struct arm_mpu *) ARM_MPU_BASE)
 
+static inline u8_t _get_num_regions(void)
+{
+#if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
+	defined(CONFIG_CPU_CORTEX_M3) || \
+	defined(CONFIG_CPU_CORTEX_M4)
+	/* Cortex-M0+, Cortex-M3, and Cortex-M4 MCUs may
+	 * have a fixed number of 8 MPU regions.
+	 */
+	return 8;
+#else
+	u32_t type = ARM_MPU_DEV->type;
+
+	type = (type & 0xFF00) >> 8;
+
+	return (u8_t)type;
+#endif
+}
+
+/* This internal function performs MPU region initialization.
+ *
+ * Note:
+ *   The caller must provide a valid region index.
+ */
+static void _region_init(u32_t index, u32_t region_addr,
+			 u32_t region_attr)
+{
+	/* Select the region you want to access */
+	ARM_MPU_DEV->rnr = index;
+	/* Configure the region */
+	ARM_MPU_DEV->rbar = (region_addr & MPU_RBAR_ADDR_Msk)
+				| MPU_RBAR_VALID_Msk | index;
+	ARM_MPU_DEV->rasr = region_attr | MPU_RASR_ENABLE_Msk;
+	SYS_LOG_DBG("[%d] 0x%08x 0x%08x", index, region_addr, region_attr);
+}
+
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
+	defined(CONFIG_APPLICATION_MEMORY)
+
 /**
  * The attributes referenced in this function are described at:
  * https://goo.gl/hMry3r
@@ -53,17 +91,13 @@ static inline u32_t _size_to_mpu_rasr_size(u32_t size)
 	return (32 - __builtin_clz(size) - 2) << 1;
 }
 
-
 /**
  * This internal function is utilized by the MPU driver to parse the intent
  * type (i.e. THREAD_STACK_REGION) and return the correct parameter set.
  */
 static inline u32_t _get_region_attr_by_type(u32_t type, u32_t size)
 {
-#if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
-	defined(CONFIG_APPLICATION_MEMORY)
 	int region_size = _size_to_mpu_rasr_size(size);
-#endif
 
 	switch (type) {
 #ifdef CONFIG_USERSPACE
@@ -85,41 +119,6 @@ static inline u32_t _get_region_attr_by_type(u32_t type, u32_t size)
 		/* Size 0 region */
 		return 0;
 	}
-}
-
-static inline u8_t _get_num_regions(void)
-{
-#if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
-	defined(CONFIG_CPU_CORTEX_M3) || \
-	defined(CONFIG_CPU_CORTEX_M4)
-	/* Cortex-M0+, Cortex-M3, and Cortex-M4 MCUs may
-	 * have a fixed number of 8 MPU regions.
-	 */
-	return 8;
-#else
-	u32_t type = ARM_MPU_DEV->type;
-
-	type = (type & 0xFF00) >> 8;
-
-	return (u8_t)type;
-#endif
-}
-
-/* This internal function performs MPU region initialization.
- *
- * Note:
- *   The caller must provide a valid region index.
- */
-static void _region_init(u32_t index, u32_t region_addr,
-			 u32_t region_attr)
-{
-	/* Select the region you want to access */
-	ARM_MPU_DEV->rnr = index;
-	/* Configure the region */
-	ARM_MPU_DEV->rbar = (region_addr & MPU_RBAR_ADDR_Msk)
-				| MPU_RBAR_VALID_Msk | index;
-	ARM_MPU_DEV->rasr = region_attr | MPU_RASR_ENABLE_Msk;
-	SYS_LOG_DBG("[%d] 0x%08x 0x%08x", index, region_addr, region_attr);
 }
 
 /**
@@ -412,6 +411,7 @@ int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
 	return -EPERM;
 }
 #endif /* CONFIG_USERSPACE */
+#endif /* USERSPACE || MPU_STACK_GUARD || APPLICATION_MEMORY */
 
 /* ARM MPU Driver Initial Setup */
 
