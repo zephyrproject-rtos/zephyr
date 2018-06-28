@@ -98,7 +98,6 @@ struct net_pkt {
 	u16_t data_len;         /* amount of payload data that can be added */
 
 	u16_t appdatalen;
-	u8_t ll_reserve;	/* link layer header length */
 	u8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
 	u8_t transport_proto;	/* Transport protol of data, like
 				 * IPPROTO_TCP or IPPROTO_UDP. This value is
@@ -614,16 +613,6 @@ static inline void net_pkt_set_appdatalen(struct net_pkt *pkt, u16_t len)
 	pkt->appdatalen = len;
 }
 
-static inline u8_t net_pkt_ll_reserve(struct net_pkt *pkt)
-{
-	return pkt->ll_reserve;
-}
-
-static inline void net_pkt_set_ll_reserve(struct net_pkt *pkt, u8_t len)
-{
-	pkt->ll_reserve = len;
-}
-
 static inline void net_pkt_set_ll(struct net_pkt *pkt, u8_t *data)
 {
 	pkt->ll = data;
@@ -658,7 +647,6 @@ static inline void net_pkt_lladdr_swap(struct net_pkt *pkt)
 
 static inline void net_pkt_ll_clear(struct net_pkt *pkt)
 {
-	memset(net_pkt_ll(pkt), 0, net_pkt_ll_reserve(pkt));
 	net_pkt_lladdr_src(pkt)->addr = NULL;
 	net_pkt_lladdr_src(pkt)->len = 0;
 }
