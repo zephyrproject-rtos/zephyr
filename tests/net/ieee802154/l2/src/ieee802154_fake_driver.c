@@ -73,8 +73,6 @@ static int fake_tx(struct device *dev,
 		return 0;
 	}
 
-	net_pkt_set_ll_reserve(current_pkt, net_pkt_ll_reserve(pkt));
-
 	insert_frag_dummy_way(pkt);
 
 	k_sem_give(&driver_lock);

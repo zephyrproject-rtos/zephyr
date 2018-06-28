@@ -91,13 +91,6 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
-	if (net_pkt_ll_reserve(pkt) != sizeof(struct net_eth_hdr)) {
-		printk("No ethernet header in pkt %p", pkt);
-
-		send_status = -EINVAL;
-		return send_status;
-	}
-
 	hdr = (struct net_eth_hdr *)net_pkt_ll(pkt);
 
 	if (ntohs(hdr->type) == NET_ETH_PTYPE_ARP) {
@@ -180,7 +173,7 @@ static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
 	struct net_arp_hdr *hdr;
 	struct net_eth_hdr *eth;
 
-	pkt = net_pkt_get_reserve_tx(sizeof(struct net_eth_hdr), K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
 	if (!pkt) {
 		goto fail;
 	}
@@ -193,14 +186,17 @@ static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
 	net_pkt_frag_add(pkt, frag);
 	net_pkt_set_iface(pkt, iface);
 
-	hdr = NET_ARP_HDR(pkt);
-	eth = NET_ETH_HDR(pkt);
+	net_pkt_set_ll(pkt, frag->data);
+	net_buf_pull(frag, sizeof(struct net_eth_hdr));
 
-	eth->type = htons(NET_ETH_PTYPE_ARP);
+	eth = NET_ETH_HDR(pkt);
 
 	(void)memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
 	memcpy(&eth->src.addr, net_if_get_link_addr(iface)->addr,
 	       sizeof(struct net_eth_addr));
+	eth->type = htons(NET_ETH_PTYPE_ARP);
+
+	hdr = NET_ARP_HDR(pkt);
 
 	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
 	hdr->protocol = htons(NET_ETH_PTYPE_IP);
@@ -234,8 +230,7 @@ static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 	struct net_arp_hdr *hdr, *req_hdr;
 	struct net_eth_hdr *eth, *eth_req;
 
-	pkt = net_pkt_get_reserve_rx(sizeof(struct net_eth_hdr),
-				      K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 	if (!pkt) {
 		goto fail;
 	}
@@ -248,15 +243,20 @@ static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 	net_pkt_frag_add(pkt, frag);
 	net_pkt_set_iface(pkt, iface);
 
-	hdr = NET_ARP_HDR(pkt);
-	eth = NET_ETH_HDR(pkt);
 	req_hdr = NET_ARP_HDR(req);
 	eth_req = NET_ETH_HDR(req);
 
-	eth->type = htons(NET_ETH_PTYPE_ARP);
+	net_pkt_set_ll(pkt, frag->data);
+	net_buf_pull(frag, sizeof(struct net_eth_hdr));
+
+	eth = NET_ETH_HDR(pkt);
 
 	(void)memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
 	memcpy(&eth->src.addr, addr, sizeof(struct net_eth_addr));
+
+	eth->type = htons(NET_ETH_PTYPE_ARP);
+
+	hdr = NET_ARP_HDR(pkt);
 
 	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
 	hdr->protocol = htons(NET_ETH_PTYPE_IP);
@@ -289,6 +289,9 @@ static void setup_eth_header(struct net_if *iface, struct net_pkt *pkt,
 	       sizeof(struct net_eth_addr));
 
 	hdr->type = htons(type);
+
+	net_pkt_set_ll(pkt, pkt->frags->data);
+	net_buf_pull(pkt->frags, sizeof(struct net_eth_hdr));
 }
 
 struct net_arp_context net_arp_context_data;
@@ -362,7 +365,7 @@ void test_arp(void)
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	/* Application data for testing */
-	pkt = net_pkt_get_reserve_tx(sizeof(struct net_eth_hdr), K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
 
 	/**TESTPOINTS: Check if out of memory*/
 	zassert_not_null(pkt, "Out of mem TX");
@@ -380,13 +383,6 @@ void test_arp(void)
 	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
 
 	len = strlen(app_data);
-
-	if (net_pkt_ll_reserve(pkt) != sizeof(struct net_eth_hdr)) {
-		printk("LL reserve invalid, should be %zd was %d\n",
-		       sizeof(struct net_eth_hdr),
-		       net_pkt_ll_reserve(pkt));
-		zassert_true(0, "exiting");
-	}
 
 	ipv4 = (struct net_ipv4_hdr *)net_buf_add(frag,
 						  sizeof(struct net_ipv4_hdr));
@@ -539,7 +535,7 @@ void test_arp(void)
 	/* The arp request packet is now verified, create an arp reply.
 	 * The previous value of pkt is stored in arp table and is not lost.
 	 */
-	pkt = net_pkt_get_reserve_rx(sizeof(struct net_eth_hdr), K_SECONDS(1));
+	pkt = net_pkt_get_reserve_rx(0, K_SECONDS(1));
 
 	zassert_not_null(pkt, "Out of mem RX reply");
 
@@ -584,7 +580,7 @@ void test_arp(void)
 	net_pkt_unref(pkt);
 
 	/* Then feed in ARP request */
-	pkt = net_pkt_get_reserve_rx(sizeof(struct net_eth_hdr), K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 
 	/**TESTPOINTS: Check if out of memory*/
 	zassert_not_null(pkt,
@@ -600,12 +596,13 @@ void test_arp(void)
 	net_pkt_set_iface(pkt, iface);
 	send_status = -EINVAL;
 
+	setup_eth_header(iface, pkt, &hwaddr, NET_ETH_PTYPE_ARP);
+
 	arp_hdr = NET_ARP_HDR(pkt);
 	net_buf_add(frag, sizeof(struct net_arp_hdr));
 
 	net_ipaddr_copy(&arp_hdr->dst_ipaddr, &src);
 	net_ipaddr_copy(&arp_hdr->src_ipaddr, &dst);
-	setup_eth_header(iface, pkt, &hwaddr, NET_ETH_PTYPE_ARP);
 
 	pkt2 = prepare_arp_request(iface, pkt, &hwaddr);
 
@@ -645,8 +642,7 @@ void test_arp(void)
 		net_arp_foreach(arp_cb, &dst);
 		zassert_true(entry_found, "Entry not found");
 
-		pkt = net_pkt_get_reserve_rx(sizeof(struct net_eth_hdr),
-					     K_FOREVER);
+		pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 
 		zassert_not_null(pkt, "Out of mem RX request");
 

@@ -230,7 +230,6 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 		return NULL;
 	}
 
-	net_pkt_set_ll_reserve(pkt, 0);
 	net_pkt_set_iface(pkt, net_if_get_default());
 	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
 
@@ -454,8 +453,6 @@ static int test_fragment(struct net_fragment_data *data)
 		if (!rxpkt) {
 			goto end;
 		}
-
-		net_pkt_set_ll_reserve(rxpkt, 0);
 
 		dfrag = net_pkt_get_frag(rxpkt, K_FOREVER);
 		if (!dfrag) {

@@ -191,13 +191,26 @@ static void prepare_ra_message(struct net_pkt *pkt)
 	hdr->type = htons(NET_ETH_PTYPE_IPV6);
 
 	net_buf_add(frag, sizeof(struct net_eth_hdr));
-	net_pkt_set_ll_reserve(pkt, 0);
 
 	memcpy(net_buf_add(frag, sizeof(icmpv6_ra)),
 	       icmpv6_ra, sizeof(icmpv6_ra));
 }
 
-#define NET_ICMP_HDR(pkt) ((struct net_icmp_hdr *)net_pkt_icmp_data(pkt))
+static struct net_icmp_hdr *get_icmp_hdr(struct net_pkt *pkt)
+{
+	/* First frag is the ll header */
+	struct net_buf *bak = pkt->frags;
+	struct net_icmp_hdr *hdr;
+
+	pkt->frags = bak->frags;
+
+	hdr = net_pkt_icmp_data(pkt);
+
+	pkt->frags = bak;
+
+	return hdr;
+}
+
 
 static int tester_send(struct device *dev, struct net_pkt *pkt)
 {
@@ -208,7 +221,7 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
-	icmp = NET_ICMP_HDR(pkt);
+	icmp = get_icmp_hdr(pkt);
 
 	/* Reply with RA messge */
 	if (icmp->type == NET_ICMPV6_RS) {
@@ -433,8 +446,7 @@ static void test_send_ns_extra_options(void)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
@@ -467,8 +479,7 @@ static void test_send_ns_no_options(void)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
@@ -594,8 +605,7 @@ static void test_hbho_message(void)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
@@ -656,8 +666,7 @@ static void test_hbho_message_1(void)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
@@ -727,8 +736,7 @@ static void test_hbho_message_2(void)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
@@ -901,8 +909,7 @@ static void test_hbho_message_3(void)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
@@ -1016,8 +1023,7 @@ static void test_change_ll_addr(void)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, &dst),
-				     K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
