@@ -41,6 +41,18 @@ config NRFX_RTC
 config NRFX_SAADC
 	bool
 
+config NRFX_RTC
+	bool
+
+config NRFX_RTC0
+	bool
+
+config NRFX_RTC1
+	bool
+
+config NRFX_RTC2
+	bool
+
 config NRFX_SPI
 	bool
 
