@@ -83,6 +83,7 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	NRF_TIMER_Type *timer;
 	struct pwm_data *data;
 	u8_t ppi_index;
+	u32_t initpol;
 	u8_t channel;
 	u16_t div;
 	u32_t ret;
@@ -139,15 +140,25 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	/* calc div, to scale down to fit in 16 bits */
 	div = period_cycles >> 16;
 
+	/* stop timer to determine initial output value */
+	/* this will cause the current pwm period to become slightly longer */
+	timer->TASKS_STOP = 1;
+	timer->TASKS_CAPTURE[channel] = 1;
+	if (timer->CC[channel] > (pulse_cycles >> div)) {
+		initpol = 0;
+	} else {
+		initpol = 1;
+	}
+
 	timer->EVENTS_COMPARE[channel] = 0;
 	timer->EVENTS_COMPARE[config->map_size] = 0;
 
 	timer->CC[channel] = pulse_cycles >> div;
 	timer->CC[config->map_size] = period_cycles >> div;
-	timer->TASKS_CLEAR = 1;
 
-	/* configure GPIOTE, toggle with initialise output high */
-	NRF_GPIOTE->CONFIG[config->gpiote_base + channel] = 0x00130003 |
+	/* configure GPIOTE */
+	NRF_GPIOTE->CONFIG[config->gpiote_base + channel] = 0x00030003 |
+							    (initpol << 20) |
 							    (pwm << 8);
 
 	/* setup PPI */
@@ -162,7 +173,7 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 					 &(NRF_GPIOTE->TASKS_OUT[channel]);
 	NRF_PPI->CHENSET = BIT(ppi_index) | BIT(ppi_index + 1);
 
-	/* start timer, hence PWM */
+	/* restart timer, hence PWM */
 	timer->TASKS_START = 1;
 
 	/* store the pwm/pin and its param */
@@ -185,8 +196,9 @@ pin_set_pwm_off:
 	}
 
 	if (!pwm_active) {
-		/* No active PWM, stop timer */
+		/* No active PWM, stop and clear timer */
 		timer->TASKS_STOP = 1;
+		timer->TASKS_CLEAR = 1;
 	}
 
 	return 0;
