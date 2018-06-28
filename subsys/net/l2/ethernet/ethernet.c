@@ -599,14 +599,6 @@ error:
 	return ret;
 }
 
-static inline u16_t ethernet_reserve(struct net_if *iface, void *unused)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(unused);
-
-	return 0;
-}
-
 static inline int ethernet_enable(struct net_if *iface, bool state)
 {
 	const struct ethernet_api *eth =
@@ -863,8 +855,8 @@ int net_eth_vlan_disable(struct net_if *iface, u16_t tag)
 }
 #endif
 
-NET_L2_INIT(ETHERNET_L2, ethernet_recv, ethernet_send, ethernet_reserve,
-	    ethernet_enable, ethernet_flags);
+NET_L2_INIT(ETHERNET_L2, ethernet_recv, ethernet_send, ethernet_enable,
+	    ethernet_flags);
 
 static void carrier_on(struct k_work *work)
 {

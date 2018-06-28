@@ -299,14 +299,6 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 	return len;
 }
 
-static u16_t ieee802154_reserve(struct net_if *iface, void *data)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(data);
-
-	return 0;
-}
-
 static int ieee802154_enable(struct net_if *iface, bool state)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
@@ -333,7 +325,7 @@ enum net_l2_flags ieee802154_flags(struct net_if *iface)
 
 NET_L2_INIT(IEEE802154_L2,
 	    ieee802154_recv, ieee802154_send,
-	    ieee802154_reserve, ieee802154_enable, ieee802154_flags);
+	    ieee802154_enable, ieee802154_flags);
 
 void ieee802154_init(struct net_if *iface)
 {

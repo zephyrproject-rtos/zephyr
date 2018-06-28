@@ -54,13 +54,6 @@ struct net_l2 {
 	int (*send)(struct net_if *iface, struct net_pkt *pkt);
 
 	/**
-	 * This function is used to get the amount of bytes the net core should
-	 * reserve as headroom in a net packet. Such space is relevant to L2
-	 * layer only.
-	 */
-	u16_t (*reserve)(struct net_if *iface, void *data);
-
-	/**
 	 * This function is used to enable/disable traffic over a network
 	 * interface. The function returns <0 if error and >=0 if no error.
 	 */
@@ -104,13 +97,11 @@ NET_L2_DECLARE_PUBLIC(BLUETOOTH_L2);
 NET_L2_DECLARE_PUBLIC(OPENTHREAD_L2);
 #endif /* CONFIG_NET_L2_OPENTHREAD */
 
-#define NET_L2_INIT(_name, _recv_fn, _send_fn, _reserve_fn, _enable_fn, \
-		    _get_flags_fn)					\
+#define NET_L2_INIT(_name, _recv_fn, _send_fn, _enable_fn, _get_flags_fn) \
 	const struct net_l2 (NET_L2_GET_NAME(_name)) __used		\
 	__attribute__((__section__(".net_l2.init"))) = {		\
 		.recv = (_recv_fn),					\
 		.send = (_send_fn),					\
-		.reserve = (_reserve_fn),				\
 		.enable = (_enable_fn),					\
 		.get_flags = (_get_flags_fn),				\
 	}
