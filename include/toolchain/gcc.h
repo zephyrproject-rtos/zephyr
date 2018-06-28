@@ -142,7 +142,9 @@ do {                                                                    \
 
 #define popcount(x) __builtin_popcount(x)
 
+#ifndef __weak
 #define __weak __attribute__((__weak__))
+#endif
 #define __unused __attribute__((__unused__))
 
 /* Be *very* careful with this, you cannot filter out with -wno-deprecated,
