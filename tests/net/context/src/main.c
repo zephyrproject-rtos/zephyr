@@ -766,7 +766,7 @@ void timeout_thread(struct net_context *ctx, void *param2, void *param3)
 		return;
 	}
 
-	if (recv_cb_timeout_called) {
+	if (!recv_cb_timeout_called) {
 		DBG("Data received on time, recv test failed\n");
 		cb_failure = true;
 		return;
