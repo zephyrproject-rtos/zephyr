@@ -821,8 +821,6 @@ int test_header_cr_no_lf_error(int req)
 	return TC_FAIL;
 }
 
-#define RC_STR(rc)	(rc == TC_PASS ? PASS : FAIL)
-
 void test_http_header_fields(void)
 {
 	int rc;

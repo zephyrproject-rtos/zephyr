@@ -535,8 +535,6 @@ void test_robustness(void)
 	TC_PRINT("CTR PRNG robustness test succeeded\n");
 }
 
-#define RC_STR(rc)	(rc == TC_PASS ? PASS : FAIL)
-
 /*
  * Main task to test CTR PRNG
  */
@@ -551,7 +549,8 @@ void test_ctr_prng_vector(void)
 	elements = (int)sizeof(vectors) / sizeof(vectors[0]);
 	for (i = 0; i < elements; i++) {
 		rc = test_prng_vector(&vectors[i]);
-		TC_PRINT("[%s] test_prng_vector #%d\n", RC_STR(rc), i);
+		TC_PRINT("[%s] test_prng_vector #%d\n",
+			 TC_RESULT_TO_STR(rc), i);
 
 		/**TESTPOINT: Check if test passed*/
 		zassert_false(rc, "CTR PRNG vector test failed");

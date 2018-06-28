@@ -57,18 +57,23 @@
 /* stack size and priority for test suite task */
 #define TASK_STACK_SIZE (1024 * 2)
 
-#define FAIL "FAIL"
-#define PASS "PASS"
-#define SKIP "SKIP"
 #define FMT_ERROR "%s - %s@%d. "
 
 #define TC_PASS 0
 #define TC_FAIL 1
 #define TC_SKIP 2
 
+static __unused const char *TC_RESULT_STR[] = {
+	[TC_PASS] = "PASS",
+	[TC_FAIL] = "FAIL",
+	[TC_SKIP] = "SKIP",
+};
+
+#define TC_RESULT_TO_STR(result) TC_RESULT_STR[result]
+
 #define TC_ERROR(fmt, ...)                               \
 	do {                                                 \
-		PRINT_DATA(FMT_ERROR, FAIL, __func__, __LINE__); \
+		PRINT_DATA(FMT_ERROR, "FAIL", __func__, __LINE__); \
 		PRINT_DATA(fmt, ##__VA_ARGS__);                  \
 	} while (0)
 
@@ -79,13 +84,7 @@
 /* prints result and the function name */
 #define _TC_END_RESULT(result, func)					\
 	do {								\
-		if ((result) == TC_PASS) {				\
-			TC_END(result, "%s - %s\n", PASS, func);	\
-		} else if ((result) == TC_FAIL) {			\
-			TC_END(result, "%s - %s\n", FAIL, func);	\
-		} else {						\
-			TC_END(result, "%s - %s\n", SKIP, func);	\
-		}							\
+		TC_END(result, "%s - %s\n", TC_RESULT_TO_STR(result), func); \
 		PRINT_LINE;						\
 	} while (0)
 #define TC_END_RESULT(result)                           \
