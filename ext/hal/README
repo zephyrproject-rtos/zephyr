@@ -31,6 +31,11 @@ nordic
 The Nordic Semiconductor Microcontroller Development Kit (MDK) provides device
 header files for the Nordic Semiconductor nRF5 SoCs.
 
+pdl
+---
+The Cypress Peripheral Driver Library (PDL) provides device header files and
+peripheral drivers for PSoC6 SoCs.
+
 qmsi
 -------
 Intel® Quark™ Microcontroller Software Interface (QMSI) is a Hardware
