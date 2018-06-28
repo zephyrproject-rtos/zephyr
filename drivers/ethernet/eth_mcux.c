@@ -555,7 +555,7 @@ static void eth_rx(struct device *iface)
 		goto flush;
 	}
 
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		goto flush;
 	}

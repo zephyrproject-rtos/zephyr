@@ -193,7 +193,7 @@ static void eth_stellaris_rx(struct device *dev)
 	int frame_len, ret;
 
 	/* Obtain the packet to be populated. */
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Could not allocate pkt");
 		goto err_mem;

@@ -315,7 +315,7 @@ static void send_query(struct net_if *iface)
 	/* Sent to all MLDv2-capable routers */
 	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 
 	pkt = net_ipv6_create(pkt,
 			      &peer_addr,

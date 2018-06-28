@@ -1011,7 +1011,7 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 	u8_t llao_len;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, ND_NET_BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(ND_NET_BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -1840,7 +1840,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 	u8_t llao_len;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, ND_NET_BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(ND_NET_BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -1994,7 +1994,7 @@ int net_ipv6_send_rs(struct net_if *iface)
 	u8_t llao_len = 0U;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, ND_NET_BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(ND_NET_BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}

@@ -303,7 +303,7 @@ static void ecm_read_cb(u8_t ep, int size, void *priv)
 		}
 	}
 
-	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(K_FOREVER);
 	if (!pkt) {
 		LOG_ERR("no memory for network packet\n");
 		goto done;

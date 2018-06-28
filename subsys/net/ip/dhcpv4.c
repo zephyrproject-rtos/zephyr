@@ -184,7 +184,7 @@ static struct net_pkt *dhcpv4_prepare_message(struct net_if *iface, u8_t type,
 	struct net_buf *frag;
 	struct dhcp_msg *msg;
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 	net_pkt_set_iface(pkt, iface);
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
 

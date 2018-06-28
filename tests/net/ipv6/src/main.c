@@ -446,7 +446,7 @@ static void test_send_ns_extra_options(void)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
@@ -479,7 +479,7 @@ static void test_send_ns_no_options(void)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
@@ -605,7 +605,7 @@ static void test_hbho_message(void)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
@@ -666,7 +666,7 @@ static void test_hbho_message_1(void)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
@@ -736,7 +736,7 @@ static void test_hbho_message_2(void)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
@@ -909,7 +909,7 @@ static void test_hbho_message_3(void)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
@@ -1023,7 +1023,7 @@ static void test_change_ll_addr(void)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
@@ -1150,8 +1150,7 @@ static enum net_verdict recv_msg(struct in6_addr *src, struct in6_addr *dst)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
@@ -1181,8 +1180,7 @@ static int send_msg(struct in6_addr *src, struct in6_addr *dst)
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 

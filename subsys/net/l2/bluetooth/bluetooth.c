@@ -200,7 +200,7 @@ static int ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		net_buf_frags_len(buf));
 
 	/* Get packet for bearer / protocol related data */
-	pkt = net_pkt_get_reserve_rx(0, BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_rx(BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -232,7 +232,7 @@ static struct net_buf *ipsp_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	NET_DBG("Channel %p requires buffer", chan);
 
-	return net_pkt_get_reserve_rx_data(0, K_FOREVER);
+	return net_pkt_get_reserve_rx_data(K_FOREVER);
 }
 
 static struct bt_l2cap_chan_ops ipsp_ops = {

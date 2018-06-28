@@ -310,7 +310,7 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 	struct net_pkt *pkt;
 	struct net_buf *buf;
 
-	pkt = net_pkt_get_reserve_tx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_tx(K_NO_WAIT);
 	if (!pkt) {
 		return -ENOMEM;
 	}

@@ -101,7 +101,7 @@ void test_icmpv6(void)
 	net_icmpv6_register_handler(&test_handler1);
 	net_icmpv6_register_handler(&test_handler2);
 
-	pkt = net_pkt_get_reserve(&pkts_slab, 0, K_SECONDS(1));
+	pkt = net_pkt_get_reserve(&pkts_slab, K_SECONDS(1));
 	zassert_true(pkt != NULL, "Could get net_pkt from slab");
 
 	frag = net_buf_alloc(&data_pool, K_SECONDS(1));

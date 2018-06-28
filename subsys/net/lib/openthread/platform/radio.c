@@ -53,10 +53,10 @@ static u16_t channel;
 
 static void dataInit(void)
 {
-	tx_pkt = net_pkt_get_reserve_tx(0, K_NO_WAIT);
+	tx_pkt = net_pkt_get_reserve_tx(K_NO_WAIT);
 	__ASSERT_NO_MSG(tx_pkt != NULL);
 
-	tx_payload = net_pkt_get_reserve_tx_data(0, K_NO_WAIT);
+	tx_payload = net_pkt_get_reserve_tx_data(K_NO_WAIT);
 	__ASSERT_NO_MSG(tx_payload != NULL);
 
 	net_pkt_frag_insert(tx_pkt, tx_payload);
@@ -381,4 +381,3 @@ otError otPlatRadioSetTransmitPower(otInstance *aInstance, int8_t aPower)
 
 	return OT_ERROR_NONE;
 }
-

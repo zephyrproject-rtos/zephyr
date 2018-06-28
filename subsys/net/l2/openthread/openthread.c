@@ -104,7 +104,7 @@ void ot_receive_handler(otMessage *aMessage, void *context)
 	struct net_pkt *pkt;
 	struct net_buf *prev_buf = NULL;
 
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		NET_ERR("Failed to reserve net pkt");
 		goto out;

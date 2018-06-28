@@ -547,7 +547,7 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, u8_t len)
 
 	pkt_len = len - MCR20A_FCS_LENGTH;
 
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No buf available");
 		goto out;

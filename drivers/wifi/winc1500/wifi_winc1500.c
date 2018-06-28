@@ -512,7 +512,7 @@ static int winc1500_sendto(struct net_pkt *pkt,
 static int prepare_pkt(struct socket_data *sock_data)
 {
 	/* Get the frame from the buffer */
-	sock_data->rx_pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	sock_data->rx_pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!sock_data->rx_pkt) {
 		LOG_ERR("Could not allocate rx packet");
 		return -1;

@@ -86,7 +86,7 @@ static void eth_rx(struct device *dev)
 		frm_len -= sizeof(u32_t);
 	}
 
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
 		goto error;
