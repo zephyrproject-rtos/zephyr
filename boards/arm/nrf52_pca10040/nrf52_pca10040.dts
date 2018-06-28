@@ -23,6 +23,10 @@
 	};
 };
 
+&adc {
+	status ="ok";
+};
+
 &gpiote {
 	status ="ok";
 };
