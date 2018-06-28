@@ -204,6 +204,10 @@ struct net_context {
 	 */
 	atomic_t refcount;
 
+	/** Internal lock for protecting this context from multiple access.
+	 */
+	struct k_mutex lock;
+
 	/** Local IP address. Note that the values are in network byte order.
 	 */
 	struct sockaddr_ptr local;
