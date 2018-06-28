@@ -474,27 +474,6 @@ static inline const struct net_l2 * const net_if_l2(struct net_if *iface)
 enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt);
 
 /**
- * @brief Get link layer header size for this network interface
- *
- * @param iface Pointer to a network interface structure
- * @param dst_ip6 Pointer to the destination IPv6 address or NULL if not
- * relevant
- *
- * @return Return the link layer header size
- */
-static inline u16_t net_if_get_ll_reserve(struct net_if *iface,
-					  const struct in6_addr *dst_ip6)
-{
-#if defined(CONFIG_NET_OFFLOAD)
-	if (iface->if_dev->offload) {
-		return 0;
-	}
-#endif
-
-	return net_if_l2(iface)->reserve(iface, (void *)dst_ip6);
-}
-
-/**
  * @brief Get a pointer to the interface L2 private data
  *
  * @param iface a valid pointer to a network interface structure
