@@ -619,7 +619,7 @@ static inline u32_t empty_pkt_us_get(u8_t phy)
 	case BIT(0):
 		return 80;
 	case BIT(1):
-		return 40;
+		return 44;
 	case BIT(2):
 		return 720;
 	}
