@@ -635,121 +635,6 @@ static inline bool dad_failed(struct net_if *iface, struct in6_addr *addr)
 #endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
-
-/* If the reserve has changed, we need to adjust it accordingly in the
- * fragment chain. This can only happen in IEEE 802.15.4 where the link
- * layer header size can change if the destination address changes.
- * Thus we need to check it here. Note that this cannot happen for IPv4
- * as 802.15.4 supports IPv6 only.
- */
-static struct net_pkt *update_ll_reserve(struct net_pkt *pkt,
-					 struct in6_addr *addr)
-{
-	/* We need to go through all the fragments and adjust the
-	 * fragment data size.
-	 */
-	u16_t reserve, room_len, copy_len, pos;
-	struct net_buf *orig_frag, *frag;
-
-	/* No need to do anything if we are forwarding the packet
-	 * as we already know everything about the destination of
-	 * the packet, but only if both src and dest are using
-	 * same technology meaning that link address length is the same.
-	 */
-	if (net_pkt_forwarding(pkt) &&
-	    net_pkt_orig_iface(pkt) == net_pkt_iface(pkt)) {
-		return pkt;
-	}
-
-	reserve = net_if_get_ll_reserve(net_pkt_iface(pkt), addr);
-	if (reserve == net_pkt_ll_reserve(pkt)) {
-		return pkt;
-	}
-
-	NET_DBG("Adjust reserve old %d new %d",
-		net_pkt_ll_reserve(pkt), reserve);
-
-	/* Normally these debug prints are not needed so we do not print them
-	 * always. If your packets get dropped for some reason by L2, then
-	 * you can enable this block to see the IPv6 and LL addresses that
-	 * are used.
-	 */
-	if (0) {
-		NET_DBG("ll src %s",
-			log_strdup(net_sprint_ll_addr(
-					   net_pkt_lladdr_src(pkt)->addr,
-					   net_pkt_lladdr_src(pkt)->len)));
-		NET_DBG("ll dst %s",
-			log_strdup(net_sprint_ll_addr(
-					   net_pkt_lladdr_dst(pkt)->addr,
-					   net_pkt_lladdr_dst(pkt)->len)));
-		NET_DBG("ip src %s",
-			log_strdup(net_sprint_ipv6_addr(
-					   &NET_IPV6_HDR(pkt)->src)));
-		NET_DBG("ip dst %s",
-			log_strdup(net_sprint_ipv6_addr(
-					   &NET_IPV6_HDR(pkt)->dst)));
-	}
-
-	net_pkt_set_ll_reserve(pkt, reserve);
-
-	orig_frag = pkt->frags;
-	copy_len = orig_frag->len;
-	pos = 0U;
-
-	pkt->frags = NULL;
-	room_len = 0U;
-	frag = NULL;
-
-	while (orig_frag) {
-		if (!room_len) {
-			frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
-			if (!frag) {
-				net_pkt_unref(pkt);
-				net_pkt_frag_unref(orig_frag);
-				return NULL;
-			}
-
-			net_pkt_frag_add(pkt, frag);
-
-			room_len = net_buf_tailroom(frag);
-		}
-
-		if (room_len >= copy_len) {
-			memcpy(net_buf_add(frag, copy_len),
-			       orig_frag->data + pos, copy_len);
-
-			room_len -= copy_len;
-			copy_len = 0U;
-		} else {
-			memcpy(net_buf_add(frag, room_len),
-			       orig_frag->data + pos, room_len);
-
-			copy_len -= room_len;
-			pos += room_len;
-			room_len = 0U;
-		}
-
-		if (!copy_len) {
-			struct net_buf *tmp = orig_frag;
-
-			orig_frag = orig_frag->frags;
-
-			tmp->frags = NULL;
-			net_pkt_frag_unref(tmp);
-
-			if (!orig_frag) {
-				break;
-			}
-
-			copy_len = orig_frag->len;
-			pos = 0U;
-		}
-	}
-
-	return pkt;
-}
-
 static struct in6_addr *check_route(struct net_if *iface,
 				    struct in6_addr *dst,
 				    bool *try_route)
@@ -889,7 +774,7 @@ ignore_frag_error:
 			return NULL;
 		}
 
-		return update_ll_reserve(pkt, &NET_IPV6_HDR(pkt)->dst);
+		return pkt;
 	}
 
 	if (net_if_ipv6_addr_onlink(&iface,
@@ -975,7 +860,7 @@ try_send:
 		}
 #endif
 
-		return update_ll_reserve(pkt, nexthop);
+		return pkt;
 	}
 
 #if defined(CONFIG_NET_IPV6_ND)
@@ -1126,8 +1011,7 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 	u8_t llao_len;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
-				     ND_NET_BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(0, ND_NET_BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -1143,8 +1027,6 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 	net_pkt_set_iface(pkt, iface);
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-
-	net_pkt_ll_clear(pkt);
 
 	llao_len = get_llao_len(iface);
 
@@ -1958,8 +1840,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 	u8_t llao_len;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
-				     ND_NET_BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(0, ND_NET_BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -1976,8 +1857,6 @@ int net_ipv6_send_ns(struct net_if *iface,
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	net_pkt_ll_clear(pkt);
 
 	llao_len = get_llao_len(net_pkt_iface(pkt));
 
@@ -2115,8 +1994,7 @@ int net_ipv6_send_rs(struct net_if *iface)
 	u8_t llao_len = 0U;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     ND_NET_BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(0, ND_NET_BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -2132,8 +2010,6 @@ int net_ipv6_send_rs(struct net_if *iface)
 	net_pkt_set_iface(pkt, iface);
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-
-	net_pkt_ll_clear(pkt);
 
 	net_ipv6_addr_create_ll_allnodes_mcast(&NET_IPV6_HDR(pkt)->dst);
 

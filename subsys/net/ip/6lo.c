@@ -1352,12 +1352,6 @@ end:
 		pkt->frags->len - offset);
 	pkt->frags->len -= offset;
 
-	/* Copying ll part, if any */
-	if (net_pkt_ll_reserve(pkt)) {
-		memcpy(frag->data - net_pkt_ll_reserve(pkt),
-		       net_pkt_ll(pkt), net_pkt_ll_reserve(pkt));
-	}
-
 	/* Insert the fragment (this one holds uncompressed headers) */
 	net_pkt_frag_insert(pkt, frag);
 	net_pkt_compact(pkt);

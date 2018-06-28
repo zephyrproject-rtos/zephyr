@@ -324,7 +324,6 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 	net_pkt_frag_add(pkt, frag);
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_ll_reserve(pkt, net_buf_headroom(frag));
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
 	if (net_pkt_ipv6_ext_len(orig)) {
@@ -449,9 +448,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 	} else if (NET_IPV6_HDR(orig)->nexthdr == NET_IPV6_NEXTHDR_FRAG) {
 		extra_len = net_pkt_get_len(orig);
 	} else {
-		size_t space = CONFIG_NET_BUF_DATA_SIZE -
-			net_if_get_ll_reserve(iface,
-					      &NET_IPV6_HDR(orig)->dst);
+		size_t space = CONFIG_NET_BUF_DATA_SIZE;
 
 		if (reserve > space) {
 			extra_len = 0;
@@ -472,7 +469,6 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 	net_pkt_frag_add(pkt, frag);
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_ll_reserve(pkt, net_buf_headroom(frag));
 	net_pkt_set_ipv6_ext_len(pkt, 0);
 
 	setup_ipv6_header(pkt, extra_len, net_if_ipv6_get_hop_limit(iface),
@@ -551,8 +547,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 
 	src = net_if_ipv6_select_src_addr(iface, dst);
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
-				     PKT_WAIT_TIME);
+	pkt = net_pkt_get_reserve_tx(0, PKT_WAIT_TIME);
 	if (!pkt) {
 		return -ENOMEM;
 	}
