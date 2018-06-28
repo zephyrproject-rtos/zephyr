@@ -74,6 +74,20 @@ config ADC_1_IRQ_PRI
 	prompt "ADC 1 interrupt priority"
 	default 2
 
+config ADC_2
+	bool "Enable ADC 2"
+
+config ADC_2_NAME
+	string "ADC 2 Driver's name"
+	depends on ADC_2 && !HAS_DTS_ADC
+	default "ADC_2"
+
+config ADC_2_IRQ_PRI
+	int
+	depends on ADC_2 && !HAS_DTS_ADC
+	prompt "ADC 2 interrupt priority"
+	default 2
+
 source "drivers/adc/Kconfig.dw"
 
 source "drivers/adc/Kconfig.mcux"
@@ -84,4 +98,7 @@ source "drivers/adc/Kconfig.sam_afec"
 
 source "drivers/adc/Kconfig.ti_adc108s102"
 
+source "drivers/adc/Kconfig.stm32f4"
+
 endif # ADC
+

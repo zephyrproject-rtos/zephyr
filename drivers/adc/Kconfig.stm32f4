@@ -1,0 +1,373 @@
+# Kconfig - ADC configuration options
+
+#
+# Copyright (c) 2015 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ADC_STM32F4
+	bool "STM32F4 ADC driver"
+	depends on SOC_FAMILY_STM32
+	select USE_STM32_HAL_GPIO
+	select USE_STM32_HAL_GPIO_EX
+	select USE_STM32_HAL_ADC
+	select USE_STM32_HAL_ADC_EX
+	select USE_STM32_HAL_CORTEX
+	help
+		Enable the driver implementation for the stm32f4xx ADC
+
+if ADC_STM32F4
+
+	menu ADC_0
+		config ADC0_CHAN0
+			bool "channel 0 (PA0)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 0 at pin PA0
+
+		config ADC0_CHAN1
+			bool "channel 1 (PA1)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 1 at pin PA1
+
+		config ADC0_CHAN2
+			bool "channel 2 (PA2)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 2  at pin PA2
+
+		config ADC0_CHAN3
+			bool "channel 3 (PA3)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 3 at pin PA3
+
+		config ADC0_CHAN4
+			bool "channel 4 (PA4)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 4 at pin PA4
+
+		config ADC0_CHAN5
+			bool "channel 5 (PA5)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 5 at pin PA5
+
+		config ADC0_CHAN6
+			bool "channel 6 (PA6)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 6 at pin PA6
+
+		config ADC0_CHAN7
+			bool "channel 7 (PA7)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 7 at pin PA7
+
+		config ADC0_CHAN8
+			bool "channel 8 (PB0)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 8 at pin PB0
+
+		config ADC0_CHAN9
+			bool "channel 9 (PB1)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 9 at pin PB1
+
+		config ADC0_CHAN10
+			bool "channel 10 (PC0)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 10 at pin PC0
+
+		config ADC0_CHAN11
+			bool "channel 11 (PC1)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 11  at pin PC1
+
+		config ADC0_CHAN12
+			bool "channel 12 (PC2)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 12 at pin PC2
+
+		config ADC0_CHAN13
+			bool "channel 13 (PC3)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 13 at pin PC3
+
+		config ADC0_CHAN14
+			bool "channel 14 (PC4)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 14 at pin PC4
+
+		config ADC0_CHAN15
+			bool "channel 15 (PC5)"
+			default n
+			depends on ADC_0
+			help
+			  Enables ADC channel 15 at pin PC5
+
+		config ADC0_CHAN_TEMP
+			bool "channel 16 (temp)"
+			default n
+			depends on ADC_0
+			help
+				Enables ADC temperature channel
+
+		config ADC0_CHAN_VREFINT
+			bool "channel 17 (Vrefint)"
+			default n
+			depends on ADC_0
+			help
+				Enables ADC internal voltage reference channel
+
+		config ADC0_CHAN_VABT
+			bool "channel 18 (VBat)"
+			default n
+			depends on ADC_0
+			help
+				Enables ADC voltage battery channel
+	endmenu
+
+	menu ADC_1
+		config ADC1_CHAN0
+			bool "channel 0 (PA0)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 0 at pin PA0
+
+		config ADC1_CHAN1
+			bool "channel 1 (PA1)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 1 at pin PA1
+
+		config ADC1_CHAN2
+			bool "channel 2 (PA2)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 2  at pin PA2
+
+		config ADC1_CHAN3
+			bool "channel 3 (PA3)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 3 at pin PA3
+
+		config ADC1_CHAN4
+			bool "channel 4 (PA4)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 4 at pin PA4
+
+		config ADC1_CHAN5
+			bool "channel 5 (PA5)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 5 at pin PA5
+
+		config ADC1_CHAN6
+			bool "channel 6 (PA6)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 6 at pin PA6
+
+		config ADC1_CHAN7
+			bool "channel 7 (PA7)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 7 at pin PA7
+
+		config ADC1_CHAN8
+			bool "channel 8 (PB0)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 8 at pin PB0
+
+		config ADC1_CHAN9
+			bool "channel 9 (PB1)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 9 at pin PB1
+
+		config ADC1_CHAN10
+			bool "channel 10 (PC0)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 10 at pin PC0
+
+		config ADC1_CHAN11
+			bool "channel 11 (PC1)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 11  at pin PC1
+
+		config ADC1_CHAN12
+			bool "channel 12 (PC2)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 12 at pin PC2
+
+		config ADC1_CHAN13
+			bool "channel 13 (PC3)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 13 at pin PC3
+
+		config ADC1_CHAN14
+			bool "channel 14 (PC4)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 14 at pin PC4
+
+		config ADC1_CHAN15
+			bool "channel 15 (PC5)"
+			default n
+			depends on ADC_1
+			help
+			  Enables ADC channel 15 at pin PC5
+
+		config ADC1_CHAN_TEMP
+			bool "channel 16 (temp)"
+			default n
+			depends on ADC_1
+			help
+				Enables ADC temperature channel
+
+		config ADC1_CHAN_VREFINT
+			bool "channel 17 (Vrefint)"
+			default n
+			depends on ADC_1
+			help
+				Enables ADC internal voltage reference channel
+
+		config ADC1_CHAN_VABT
+			bool "channel 18 (VBat)"
+			default n
+			depends on ADC_1
+			help
+				Enables ADC voltage battery channel
+	endmenu
+
+	menu ADC_2
+		config ADC2_CHAN0
+			bool "channel 0 (PA0)"
+			default n
+			depends on ADC_2
+			help
+			  Enables ADC channel 0 at pin PA0
+
+
+		config ADC2_CHAN1
+			bool "channel 1 (PA1)"
+			default n
+			depends on ADC_2
+			help
+			  Enables ADC channel 1 at pin PA1
+
+		config ADC2_CHAN2
+			bool "channel 2 (PA2)"
+			default n
+			depends on ADC_2
+			help
+			  Enables ADC channel 2  at pin PA2
+
+		config ADC2_CHAN3
+			bool "channel 3 (PA3)"
+			default n
+			depends on ADC_2
+			help
+			  Enables ADC channel 3 at pin PA3
+
+		config ADC2_CHAN10
+			bool "channel 10 (PC0)"
+			default n
+			depends on ADC_2
+			help
+			  Enables ADC channel 10 at pin PC0
+
+		config ADC2_CHAN11
+			bool "channel 11 (PC1)"
+			default n
+			depends on ADC_2
+			help
+			  Enables ADC channel 11  at pin PC1
+
+		config ADC2_CHAN12
+			bool "channel 12 (PC2)"
+			default n
+			depends on ADC_2
+			help
+			  Enables ADC channel 12 at pin PC2
+
+		config ADC2_CHAN13
+			bool "channel 13 (PC3)"
+			default n
+			depends on ADC_2
+			help
+			  Enables ADC channel 13 at pin PC3
+
+		config ADC2_CHAN_TEMP
+			bool "channel 16 (temp)"
+			default n
+			depends on ADC_2
+			help
+				Enables ADC temperature channel
+
+		config ADC2_CHAN_VREFINT
+			bool "channel 17 (Vrefint)"
+			default n
+			depends on ADC_2
+			help
+				Enables ADC internal voltage reference channel
+
+		config ADC2_CHAN_VABT
+			bool "channel 18 (VBat)"
+			default n
+			depends on ADC_2
+			help
+				Enables ADC voltage battery channel
+	endmenu
+
+endif # ADC_STM32F4
+
