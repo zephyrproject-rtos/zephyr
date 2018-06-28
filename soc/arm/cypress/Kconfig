@@ -1,0 +1,34 @@
+#
+# Copyright (c) 2018, Cypress
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "Cypress PSoC6 MCU Selection"
+depends on SOC_SERIES_PSOC62
+
+config SOC_PSOC6_M0
+	bool "SOC_PSOC6_M0"
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_VTOR
+
+config SOC_PSOC6_M4
+	bool "SOC_PSOC6_M4"
+	select CPU_CORTEX_M4
+
+endchoice
+
+config SOC_FAMILY_PSOC6
+	bool
+	# omit prompt to signify a "hidden" option
+	default n
+
+if SOC_FAMILY_PSOC6
+config SOC_FAMILY
+	string
+	default "cypress"
+
+source "soc/arm/cypress/*/Kconfig.soc"
+
+endif # SOC_FAMILY_PSOC6
