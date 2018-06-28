@@ -819,7 +819,7 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 	struct net_buf *frag;
 	u8_t *p_buf;
 
-	pkt = net_pkt_get_reserve_tx(0, BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(BUF_TIMEOUT);
 	if (!pkt) {
 		return NULL;
 	}

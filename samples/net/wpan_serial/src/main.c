@@ -145,7 +145,7 @@ static int slip_process_byte(unsigned char c)
 #endif
 
 	if (!pkt_curr) {
-		pkt_curr = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+		pkt_curr = net_pkt_get_reserve_rx(K_NO_WAIT);
 		if (!pkt_curr) {
 			LOG_ERR("No more buffers");
 			return 0;
@@ -223,7 +223,7 @@ static void send_data(u8_t *cfg, u8_t *data, size_t len)
 	struct net_pkt *pkt;
 	struct net_buf *buf;
 
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		LOG_DBG("No pkt available");
 		return;

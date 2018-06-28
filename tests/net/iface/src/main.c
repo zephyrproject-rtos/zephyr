@@ -420,7 +420,7 @@ static bool send_iface(struct net_if *iface, int val, bool expect_fail)
 	struct net_pkt *pkt;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 	net_pkt_set_iface(pkt, iface);
 
 	net_pkt_append_all(pkt, sizeof(data), data, K_FOREVER);

@@ -146,7 +146,7 @@ static struct net_pkt *eth_rx(struct device *dev)
 	total_len = heth->RxFrameInfos.length;
 	dma_buffer = (u8_t *)heth->RxFrameInfos.buffer;
 
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
 		goto release_desc;

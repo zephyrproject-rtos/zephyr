@@ -178,7 +178,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	/* Take the first address of the network interface */
 	src = &ipv4->unicast[0].address.in_addr;
 
-	pkt = net_pkt_get_reserve_tx(0, PKT_WAIT_TIME);
+	pkt = net_pkt_get_reserve_tx(PKT_WAIT_TIME);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -255,7 +255,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 	dst = &NET_IPV4_HDR(orig)->src;
 	src = &NET_IPV4_HDR(orig)->dst;
 
-	pkt = net_pkt_get_reserve_tx(0, PKT_WAIT_TIME);
+	pkt = net_pkt_get_reserve_tx(PKT_WAIT_TIME);
 	if (!pkt) {
 		err = -ENOMEM;
 		goto drop_no_pkt;

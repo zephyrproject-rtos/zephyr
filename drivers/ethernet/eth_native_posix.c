@@ -281,7 +281,7 @@ static int read_data(struct eth_context *ctx, int fd)
 		return 0;
 	}
 
-	pkt = net_pkt_get_reserve_rx(0, NET_BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_rx(NET_BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}

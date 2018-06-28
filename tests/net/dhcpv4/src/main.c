@@ -273,7 +273,7 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, u32_t xid)
 	int bytes, remaining = sizeof(offer), pos = 0;
 	u16_t offset;
 
-	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(K_FOREVER);
 	if (!pkt) {
 		return NULL;
 	}
@@ -340,7 +340,7 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, u32_t xid)
 	int bytes, remaining = sizeof(ack), pos = 0;
 	u16_t offset;
 
-	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(K_FOREVER);
 	if (!pkt) {
 		return NULL;
 	}

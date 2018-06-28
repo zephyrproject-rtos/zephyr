@@ -490,7 +490,7 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 	pkt_len = len - KW41Z_FCS_LENGTH;
 #endif
 
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No buf available");
 		goto out;

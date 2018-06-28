@@ -246,7 +246,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	} else {
 		struct net_buf *frag;
 
-		pkt = net_pkt_get_reserve_tx(0, NET_BUF_TIMEOUT);
+		pkt = net_pkt_get_reserve_tx(NET_BUF_TIMEOUT);
 		if (!pkt) {
 			return NULL;
 		}
@@ -471,7 +471,7 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 	struct net_arp_hdr *hdr, *query;
 	struct net_eth_hdr *eth_query;
 
-	pkt = net_pkt_get_reserve_tx(0, NET_BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(NET_BUF_TIMEOUT);
 	if (!pkt) {
 		goto fail;
 	}

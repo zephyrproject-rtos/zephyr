@@ -99,7 +99,7 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 		goto out;
 	}
 
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Out of RX buffers");
 		goto out;

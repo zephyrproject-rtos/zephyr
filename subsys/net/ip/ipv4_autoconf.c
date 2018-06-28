@@ -35,7 +35,7 @@ static struct net_pkt *ipv4_autoconf_prepare_arp(struct net_if *iface)
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 
-	pkt = net_pkt_get_reserve_tx(0, BUF_ALLOC_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
 		goto fail;
 	}

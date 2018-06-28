@@ -538,7 +538,7 @@ static int eth_enc28j60_rx(struct device *dev)
 		lengthfr = frm_len;
 
 		/* Get the frame from the buffer */
-		pkt = net_pkt_get_reserve_rx(0, config->timeout);
+		pkt = net_pkt_get_reserve_rx(config->timeout);
 		if (!pkt) {
 			LOG_ERR("Could not allocate rx buffer");
 			eth_stats_update_errors_rx(context->iface);

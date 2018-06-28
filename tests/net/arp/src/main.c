@@ -173,7 +173,7 @@ static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
 	struct net_arp_hdr *hdr;
 	struct net_eth_hdr *eth;
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 	if (!pkt) {
 		goto fail;
 	}
@@ -230,7 +230,7 @@ static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 	struct net_arp_hdr *hdr, *req_hdr;
 	struct net_eth_hdr *eth, *eth_req;
 
-	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(K_FOREVER);
 	if (!pkt) {
 		goto fail;
 	}
@@ -365,7 +365,7 @@ void test_arp(void)
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	/* Application data for testing */
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 
 	/**TESTPOINTS: Check if out of memory*/
 	zassert_not_null(pkt, "Out of mem TX");
@@ -535,7 +535,7 @@ void test_arp(void)
 	/* The arp request packet is now verified, create an arp reply.
 	 * The previous value of pkt is stored in arp table and is not lost.
 	 */
-	pkt = net_pkt_get_reserve_rx(0, K_SECONDS(1));
+	pkt = net_pkt_get_reserve_rx(K_SECONDS(1));
 
 	zassert_not_null(pkt, "Out of mem RX reply");
 
@@ -580,7 +580,7 @@ void test_arp(void)
 	net_pkt_unref(pkt);
 
 	/* Then feed in ARP request */
-	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(K_FOREVER);
 
 	/**TESTPOINTS: Check if out of memory*/
 	zassert_not_null(pkt,
@@ -642,7 +642,7 @@ void test_arp(void)
 		net_arp_foreach(arp_cb, &dst);
 		zassert_true(entry_found, "Entry not found");
 
-		pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+		pkt = net_pkt_get_reserve_rx(K_FOREVER);
 
 		zassert_not_null(pkt, "Out of mem RX request");
 

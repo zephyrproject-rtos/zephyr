@@ -75,7 +75,7 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 		return;
 	}
 
-	pkt = net_pkt_get_reserve_tx(0, BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(BUF_TIMEOUT);
 	if (!pkt) {
 		return;
 	}

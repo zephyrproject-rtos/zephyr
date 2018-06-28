@@ -111,7 +111,7 @@ static void eswifi_off_read_work(struct k_work *work)
 
 	LOG_DBG("payload sz = %d", len);
 
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Cannot allocate rx packet");
 		goto done;

@@ -1224,7 +1224,7 @@ static void test_find_last_ipv6_fragment_udp(void)
 	struct net_pkt *pkt;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, ALLOC_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(ALLOC_TIMEOUT);
 	zassert_not_null(pkt, "packet");
 
 	net_pkt_set_iface(pkt, iface1);
@@ -1261,7 +1261,7 @@ static void test_find_last_ipv6_fragment_hbho_udp(void)
 	struct net_pkt *pkt;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, ALLOC_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(ALLOC_TIMEOUT);
 	zassert_not_null(pkt, "packet");
 
 	net_pkt_set_iface(pkt, iface1);
@@ -1301,7 +1301,7 @@ static void test_find_last_ipv6_fragment_hbho_1(void)
 	u8_t last_hdr;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, ALLOC_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(ALLOC_TIMEOUT);
 	zassert_not_null(pkt, "packet");
 
 	net_pkt_set_iface(pkt, iface1);
@@ -1343,7 +1343,7 @@ static void test_find_last_ipv6_fragment_hbho_2(void)
 	u8_t last_hdr;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, ALLOC_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(ALLOC_TIMEOUT);
 	zassert_not_null(pkt, "packet");
 
 	net_pkt_set_iface(pkt, iface1);
@@ -1386,7 +1386,7 @@ static void test_find_last_ipv6_fragment_hbho_3(void)
 	u8_t last_hdr;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, ALLOC_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(ALLOC_TIMEOUT);
 	zassert_not_null(pkt, "packet");
 
 	net_pkt_set_iface(pkt, iface1);
@@ -1426,7 +1426,7 @@ static void test_find_last_ipv6_fragment_hbho_frag(void)
 	struct net_pkt *pkt;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, ALLOC_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(ALLOC_TIMEOUT);
 	zassert_not_null(pkt, "packet");
 
 	net_pkt_set_iface(pkt, iface1);
@@ -1465,7 +1465,7 @@ static void test_find_last_ipv6_fragment_hbho_frag_1(void)
 	u8_t last_hdr;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, ALLOC_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(ALLOC_TIMEOUT);
 	zassert_not_null(pkt, "packet");
 
 	net_pkt_set_iface(pkt, iface1);
@@ -1512,7 +1512,7 @@ static void test_send_ipv6_fragment(void)
 
 	pkt_data_len = 0U;
 
-	pkt = net_pkt_get_reserve_tx(0, ALLOC_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(ALLOC_TIMEOUT);
 	zassert_not_null(pkt, "packet");
 
 	net_pkt_set_iface(pkt, iface1);
@@ -1574,7 +1574,7 @@ static void test_send_ipv6_fragment_large_hbho(void)
 	large_hbho = true;
 	pkt_data_len = 416U;
 
-	pkt = net_pkt_get_reserve_tx(0, ALLOC_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(ALLOC_TIMEOUT);
 	zassert_not_null(pkt, "packet");
 
 	net_pkt_set_iface(pkt, iface1);

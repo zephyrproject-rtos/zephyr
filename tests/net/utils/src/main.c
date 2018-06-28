@@ -275,10 +275,10 @@ void test_utils(void)
 	int i, chunk, datalen, total = 0;
 
 	/* Packet fits to one fragment */
-	pkt = net_pkt_get_reserve_rx(0, K_SECONDS(1));
+	pkt = net_pkt_get_reserve_rx(K_SECONDS(1));
 	zassert_not_null(pkt, "Out of mem");
 
-	frag = net_pkt_get_reserve_rx_data(0, K_SECONDS(1));
+	frag = net_pkt_get_reserve_rx_data(K_SECONDS(1));
 	zassert_not_null(frag, "Out of mem");
 
 	net_pkt_frag_add(pkt, frag);
@@ -309,10 +309,10 @@ void test_utils(void)
 	net_pkt_unref(pkt);
 
 	/* Then a case where there will be two fragments */
-	pkt = net_pkt_get_reserve_rx(0, K_SECONDS(1));
+	pkt = net_pkt_get_reserve_rx(K_SECONDS(1));
 	zassert_not_null(pkt, "Out of mem");
 
-	frag = net_pkt_get_reserve_rx_data(0, K_SECONDS(1));
+	frag = net_pkt_get_reserve_rx_data(K_SECONDS(1));
 	zassert_not_null(frag, "Out of mem");
 
 	net_pkt_frag_add(pkt, frag);
@@ -327,7 +327,7 @@ void test_utils(void)
 	frag->data[hdr_len + 2] = 0;
 	frag->data[hdr_len + 3] = 0;
 
-	frag = net_pkt_get_reserve_rx_data(0, K_SECONDS(1));
+	frag = net_pkt_get_reserve_rx_data(K_SECONDS(1));
 	zassert_not_null(frag, "Out of mem");
 
 	net_pkt_frag_add(pkt, frag);
@@ -343,10 +343,10 @@ void test_utils(void)
 	net_pkt_unref(pkt);
 
 	/* Then a case where there will be two fragments but odd data size */
-	pkt = net_pkt_get_reserve_rx(0, K_SECONDS(1));
+	pkt = net_pkt_get_reserve_rx(K_SECONDS(1));
 	zassert_not_null(pkt, "Out of mem");
 
-	frag = net_pkt_get_reserve_rx_data(0, K_SECONDS(1));
+	frag = net_pkt_get_reserve_rx_data(K_SECONDS(1));
 	zassert_not_null(frag, "Out of mem");
 
 	net_pkt_frag_add(pkt, frag);
@@ -362,7 +362,7 @@ void test_utils(void)
 	frag->data[hdr_len + 2] = 0;
 	frag->data[hdr_len + 3] = 0;
 
-	frag = net_pkt_get_reserve_rx_data(0, K_SECONDS(1));
+	frag = net_pkt_get_reserve_rx_data(K_SECONDS(1));
 	zassert_not_null(frag, "Out of mem");
 
 	net_pkt_frag_add(pkt, frag);
@@ -380,10 +380,10 @@ void test_utils(void)
 	net_pkt_unref(pkt);
 
 	/* Then a case where there will be several fragments */
-	pkt = net_pkt_get_reserve_rx(0, K_SECONDS(1));
+	pkt = net_pkt_get_reserve_rx(K_SECONDS(1));
 	zassert_not_null(frag, "Out of mem");
 
-	frag = net_pkt_get_reserve_rx_data(0, K_SECONDS(1));
+	frag = net_pkt_get_reserve_rx_data(K_SECONDS(1));
 	zassert_not_null(frag, "Out of mem");
 
 	net_pkt_frag_add(pkt, frag);
@@ -400,7 +400,7 @@ void test_utils(void)
 
 	for (i = 0; i < datalen/chunk; i++) {
 		/* Next fragments will contain the data in odd sizes */
-		frag = net_pkt_get_reserve_rx_data(0, K_SECONDS(1));
+		frag = net_pkt_get_reserve_rx_data(K_SECONDS(1));
 		zassert_not_null(frag, "Out of mem");
 
 		net_pkt_frag_add(pkt, frag);
@@ -421,7 +421,7 @@ void test_utils(void)
 		}
 	}
 	if ((datalen - total) > 0) {
-		frag = net_pkt_get_reserve_rx_data(0, K_SECONDS(1));
+		frag = net_pkt_get_reserve_rx_data(K_SECONDS(1));
 		zassert_not_null(frag, "Out of mem");
 
 		net_pkt_frag_add(pkt, frag);
@@ -455,10 +455,10 @@ void test_utils(void)
 	/* Another packet that fits to one fragment.
 	 */
 #if defined(CONFIG_NET_IPV4)
-	pkt = net_pkt_get_reserve_rx(0, K_SECONDS(1));
+	pkt = net_pkt_get_reserve_rx(K_SECONDS(1));
 	zassert_not_null(pkt, "Out of mem");
 
-	frag = net_pkt_get_reserve_rx_data(0, K_SECONDS(1));
+	frag = net_pkt_get_reserve_rx_data(K_SECONDS(1));
 	zassert_not_null(frag, "Out of mem");
 
 	net_pkt_frag_add(pkt, frag);
@@ -486,10 +486,10 @@ void test_utils(void)
 	/* Another packet that fits to one fragment and which has correct
 	 * checksum.
 	 */
-	pkt = net_pkt_get_reserve_rx(0, K_SECONDS(1));
+	pkt = net_pkt_get_reserve_rx(K_SECONDS(1));
 	zassert_not_null(pkt, "Out of mem");
 
-	frag = net_pkt_get_reserve_rx_data(0, K_SECONDS(1));
+	frag = net_pkt_get_reserve_rx_data(K_SECONDS(1));
 	zassert_not_null(frag, "Out of mem");
 
 	net_pkt_frag_add(pkt, frag);
@@ -1469,10 +1469,10 @@ void test_net_pkt_addr_parse(void)
 		struct sockaddr_in6 addr;
 		struct ipv6_test_data *data = &ipv6_test_data_set[i];
 
-		pkt = net_pkt_get_reserve_rx(0, K_SECONDS(1));
+		pkt = net_pkt_get_reserve_rx(K_SECONDS(1));
 		zassert_not_null(pkt, "Out of mem");
 
-		frag = net_pkt_get_reserve_rx_data(0, K_SECONDS(1));
+		frag = net_pkt_get_reserve_rx_data(K_SECONDS(1));
 		zassert_not_null(frag, "Out of mem");
 
 		net_pkt_frag_add(pkt, frag);
@@ -1518,10 +1518,10 @@ void test_net_pkt_addr_parse(void)
 		struct sockaddr_in addr;
 		struct ipv4_test_data *data = &ipv4_test_data_set[i];
 
-		pkt = net_pkt_get_reserve_rx(0, K_SECONDS(1));
+		pkt = net_pkt_get_reserve_rx(K_SECONDS(1));
 		zassert_not_null(pkt, "Out of mem");
 
-		frag = net_pkt_get_reserve_rx_data(0, K_SECONDS(1));
+		frag = net_pkt_get_reserve_rx_data(K_SECONDS(1));
 		zassert_not_null(frag, "Out of mem");
 
 		net_pkt_frag_add(pkt, frag);

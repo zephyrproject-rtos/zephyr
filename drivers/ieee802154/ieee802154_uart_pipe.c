@@ -125,7 +125,7 @@ static u8_t *upipe_rx(u8_t *buf, size_t *off)
 	upipe->rx_buf[upipe->rx_off++] = *buf;
 
 	if (upipe->rx_len == upipe->rx_off) {
-		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+		pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 		if (!pkt) {
 			LOG_DBG("No pkt available");
 			goto flush;

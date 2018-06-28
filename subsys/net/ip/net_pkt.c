@@ -287,7 +287,7 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 {
 	struct net_buf *frag;
 	size_t total = 0;
-	int count = 0, frag_size = 0, ll_overhead = 0;
+	int count = 0, frag_size = 0;
 
 	if (!pkt) {
 		NET_INFO("pkt %p", pkt);
@@ -303,10 +303,9 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 		total += frag->len;
 
 		frag_size = frag->size;
-		ll_overhead = net_buf_headroom(frag);
 
-		NET_INFO("[%d] frag %p len %d size %d reserve %d pool %p",
-			 count, frag, frag->len, frag_size, ll_overhead,
+		NET_INFO("[%d] frag %p len %d size %d pool %p",
+			 count, frag, frag->len, frag_size,
 			 net_buf_pool_get(frag->pool_id));
 
 		count++;
@@ -314,23 +313,20 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 		frag = frag->frags;
 	}
 
-	NET_INFO("Total data size %zu, occupied %d bytes, ll overhead %d, "
-		 "utilization %zu%%",
-		 total, count * frag_size - count * ll_overhead,
-		 count * ll_overhead, count ? (total * 100) / (count * frag_size) : 0);
+	NET_INFO("Total data size %zu, occupied %d bytes, utilization %zu%%",
+		 total, count * frag_size,
+		 count ? (total * 100) / (count * frag_size) : 0);
 }
 #endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 
 struct net_pkt *net_pkt_get_reserve_debug(struct k_mem_slab *slab,
-					  u16_t reserve_head,
 					  s32_t timeout,
 					  const char *caller,
 					  int line)
 #else /* #if NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
-				    u16_t reserve_head,
 				    s32_t timeout)
 #endif /* #if NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 {
@@ -358,22 +354,20 @@ struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
 	net_pkt_alloc_add(pkt, true, caller, line);
 
 #if NET_LOG_LEVEL == LOG_LEVEL_DBG
-	NET_DBG("%s [%u] pkt %p reserve %u ref %d (%s():%d)",
+	NET_DBG("%s [%u] pkt %p ref %d (%s():%d)",
 		slab2str(slab), k_mem_slab_num_free_get(slab),
-		pkt, reserve_head, pkt->ref, caller, line);
+		pkt, pkt->ref, caller, line);
 #endif
 	return pkt;
 }
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 struct net_buf *net_pkt_get_reserve_data_debug(struct net_buf_pool *pool,
-					       u16_t reserve_head,
 					       s32_t timeout,
 					       const char *caller,
 					       int line)
 #else /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 struct net_buf *net_pkt_get_reserve_data(struct net_buf_pool *pool,
-					 u16_t reserve_head,
 					 s32_t timeout)
 #endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 {
@@ -394,18 +388,16 @@ struct net_buf *net_pkt_get_reserve_data(struct net_buf_pool *pool,
 		return NULL;
 	}
 
-	net_buf_reserve(frag, reserve_head);
-
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 	NET_FRAG_CHECK_IF_NOT_IN_USE(frag, frag->ref + 1);
 #endif
 
 	net_pkt_alloc_add(frag, false, caller, line);
 
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_DBG("%s (%s) [%d] frag %p reserve %u ref %d (%s():%d)",
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	NET_DBG("%s (%s) [%d] frag %p ref %d (%s():%d)",
 		pool2str(pool), get_name(pool), get_frees(pool),
-		frag, reserve_head, frag->ref, caller, line);
+		frag, frag->ref, caller, line);
 #endif
 
 	return frag;
@@ -430,90 +422,74 @@ struct net_buf *net_pkt_get_frag(struct net_pkt *pkt,
 	if (context && context->data_pool) {
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 		return net_pkt_get_reserve_data_debug(context->data_pool(),
-						      0, timeout, caller, line);
+						      timeout, caller, line);
 #else
-		return net_pkt_get_reserve_data(context->data_pool(),
-						0,
-						timeout);
+		return net_pkt_get_reserve_data(context->data_pool(), timeout);
 #endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 	}
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 	if (pkt->slab == &rx_pkts) {
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-		return net_pkt_get_reserve_rx_data_debug(0, timeout,
+		return net_pkt_get_reserve_rx_data_debug(timeout,
 							 caller, line);
 #else
-		return net_pkt_get_reserve_rx_data(0,
-						   timeout);
+		return net_pkt_get_reserve_rx_data(timeout);
 #endif
 	}
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	return net_pkt_get_reserve_tx_data_debug(0, timeout,
-						 caller, line);
+	return net_pkt_get_reserve_tx_data_debug(timeout, caller, line);
 #else
-	return net_pkt_get_reserve_tx_data(0, timeout);
+	return net_pkt_get_reserve_tx_data(timeout);
 #endif
 }
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-struct net_pkt *net_pkt_get_reserve_rx_debug(u16_t reserve_head,
-					     s32_t timeout,
+struct net_pkt *net_pkt_get_reserve_rx_debug(s32_t timeout,
 					     const char *caller, int line)
 {
-	return net_pkt_get_reserve_debug(&rx_pkts, reserve_head, timeout,
-					 caller, line);
+	return net_pkt_get_reserve_debug(&rx_pkts, timeout, caller, line);
 }
 
-struct net_pkt *net_pkt_get_reserve_tx_debug(u16_t reserve_head,
-					     s32_t timeout,
+struct net_pkt *net_pkt_get_reserve_tx_debug(s32_t timeout,
 					     const char *caller, int line)
 {
-	return net_pkt_get_reserve_debug(&tx_pkts, reserve_head, timeout,
-					 caller, line);
+	return net_pkt_get_reserve_debug(&tx_pkts, timeout, caller, line);
 }
 
-struct net_buf *net_pkt_get_reserve_rx_data_debug(u16_t reserve_head,
-						  s32_t timeout,
+struct net_buf *net_pkt_get_reserve_rx_data_debug(s32_t timeout,
 						  const char *caller, int line)
 {
-	return net_pkt_get_reserve_data_debug(&rx_bufs, reserve_head,
-					      timeout, caller, line);
+	return net_pkt_get_reserve_data_debug(&rx_bufs, timeout, caller, line);
 }
 
-struct net_buf *net_pkt_get_reserve_tx_data_debug(u16_t reserve_head,
-						  s32_t timeout,
+struct net_buf *net_pkt_get_reserve_tx_data_debug(s32_t timeout,
 						  const char *caller, int line)
 {
-	return net_pkt_get_reserve_data_debug(&tx_bufs, reserve_head,
-					      timeout, caller, line);
+	return net_pkt_get_reserve_data_debug(&tx_bufs, timeout, caller, line);
 }
 
 #else /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 
-struct net_pkt *net_pkt_get_reserve_rx(u16_t reserve_head,
-				       s32_t timeout)
+struct net_pkt *net_pkt_get_reserve_rx(s32_t timeout)
 {
-	return net_pkt_get_reserve(&rx_pkts, reserve_head, timeout);
+	return net_pkt_get_reserve(&rx_pkts, timeout);
 }
 
-struct net_pkt *net_pkt_get_reserve_tx(u16_t reserve_head,
-				       s32_t timeout)
+struct net_pkt *net_pkt_get_reserve_tx(s32_t timeout)
 {
-	return net_pkt_get_reserve(&tx_pkts, reserve_head, timeout);
+	return net_pkt_get_reserve(&tx_pkts, timeout);
 }
 
-struct net_buf *net_pkt_get_reserve_rx_data(u16_t reserve_head,
-					    s32_t timeout)
+struct net_buf *net_pkt_get_reserve_rx_data(s32_t timeout)
 {
-	return net_pkt_get_reserve_data(&rx_bufs, reserve_head, timeout);
+	return net_pkt_get_reserve_data(&rx_bufs, timeout);
 }
 
-struct net_buf *net_pkt_get_reserve_tx_data(u16_t reserve_head,
-					    s32_t timeout)
+struct net_buf *net_pkt_get_reserve_tx_data(s32_t timeout)
 {
-	return net_pkt_get_reserve_data(&tx_bufs, reserve_head, timeout);
+	return net_pkt_get_reserve_data(&tx_bufs, timeout);
 }
 
 #endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
@@ -550,9 +526,9 @@ static struct net_pkt *net_pkt_get(struct k_mem_slab *slab,
 	}
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	pkt = net_pkt_get_reserve_debug(slab, 0, timeout, caller, line);
+	pkt = net_pkt_get_reserve_debug(slab, timeout, caller, line);
 #else
-	pkt = net_pkt_get_reserve(slab, 0, timeout);
+	pkt = net_pkt_get_reserve(slab, timeout);
 #endif
 	if (!pkt) {
 		return NULL;
@@ -645,9 +621,9 @@ static struct net_buf *_pkt_get_data(struct net_buf_pool *pool,
 	}
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	frag = net_pkt_get_reserve_data_debug(pool, 0, timeout, caller, line);
+	frag = net_pkt_get_reserve_data_debug(pool, timeout, caller, line);
 #else
-	frag = net_pkt_get_reserve_data(pool, 0, timeout);
+	frag = net_pkt_get_reserve_data(pool, timeout);
 #endif
 	return frag;
 }
@@ -2151,7 +2127,7 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 		return NULL;
 	}
 
-	clone = net_pkt_get_reserve(pkt->slab, 0, timeout);
+	clone = net_pkt_get_reserve(pkt->slab, timeout);
 	if (!clone) {
 		return NULL;
 	}

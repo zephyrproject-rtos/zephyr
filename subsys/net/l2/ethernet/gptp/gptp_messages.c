@@ -146,13 +146,12 @@ static struct net_pkt *setup_gptp_frame(struct net_if *iface)
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     NET_BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(NET_BUF_TIMEOUT);
 	if (!pkt) {
 		return NULL;
 	}
 
-	frag = net_pkt_get_reserve_tx_data(0, NET_BUF_TIMEOUT);
+	frag = net_pkt_get_reserve_tx_data(NET_BUF_TIMEOUT);
 	if (!frag) {
 		net_pkt_unref(pkt);
 		return NULL;

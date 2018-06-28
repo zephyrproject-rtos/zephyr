@@ -222,7 +222,7 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 	u16_t len;
 	int remaining;
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 	if (!pkt) {
 		return NULL;
 	}
@@ -495,7 +495,7 @@ reassemble:
 
 	frag = f_pkt->frags;
 	while (frag) {
-		rxpkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+		rxpkt = net_pkt_get_reserve_rx(K_FOREVER);
 		if (!rxpkt) {
 			goto end;
 		}

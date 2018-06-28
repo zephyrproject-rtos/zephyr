@@ -487,7 +487,7 @@ int net_rpl_dio_send(struct net_if *iface,
 	u16_t value;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -762,7 +762,7 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 		dst_addr = dst;
 	}
 
-	pkt = net_pkt_get_reserve_tx(0, BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -3091,7 +3091,7 @@ int net_rpl_dao_send(struct net_if *iface,
 		return -EINVAL;
 	}
 
-	pkt = net_pkt_get_reserve_tx(0, BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -3188,7 +3188,7 @@ static inline int dao_forward(struct net_if *iface,
 	struct net_pkt *pkt;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -3229,7 +3229,7 @@ static int dao_ack_send(struct in6_addr *src,
 	NET_DBG("Sending a DAO ACK with sequence number %d to %s",
 		sequence, log_strdup(net_sprint_ipv6_addr(dst)));
 
-	pkt = net_pkt_get_reserve_tx(0, BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
