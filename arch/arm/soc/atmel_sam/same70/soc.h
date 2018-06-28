@@ -46,6 +46,10 @@
 #include "../common/soc_pmc.h"
 #include "../common/soc_gpio.h"
 
+/* ARM CMSIS definitions must be included before kernel_includes.h.
+ * Therefore, it is essential to include kernel_includes.h after including
+ * core SOC-specific headers.
+ */
 #include <kernel_includes.h>
 
 #endif /* _ASMLANGUAGE */
