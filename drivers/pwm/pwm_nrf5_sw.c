@@ -118,22 +118,19 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	ppi_index = config->ppi_base + (channel << 1);
 	NRF_PPI->CHENCLR = BIT(ppi_index) | BIT(ppi_index + 1);
 
-	/* configure GPIO pin as output */
-	NRF_GPIO->DIRSET = BIT(pwm);
 	if (pulse_cycles == 0) {
 		/* 0% duty cycle, keep pin low */
-		NRF_GPIO->OUTCLR = BIT(pwm);
-
+		NRF_GPIOTE->CONFIG[config->gpiote_base + channel] = 0x00000003 |
+								    (pwm << 8);
 		goto pin_set_pwm_off;
 	} else if (pulse_cycles == period_cycles) {
 		/* 100% duty cycle, keep pin high */
-		NRF_GPIO->OUTSET = BIT(pwm);
-
+		NRF_GPIOTE->CONFIG[config->gpiote_base + channel] = 0x00100003 |
+								    (pwm << 8);
 		goto pin_set_pwm_off;
-	} else {
-		/* x% duty cycle, start PWM with pin low */
-		NRF_GPIO->OUTCLR = BIT(pwm);
 	}
+
+	/* x% duty cycle, set up timer events for triggering gpiote tasks */
 
 	/* TODO: if the assigned NRF_TIMER supports higher bit resolution,
 	 * use that info in config struct and setup accordingly.
