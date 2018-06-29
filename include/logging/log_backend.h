@@ -12,6 +12,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Logger backend interface
+ * @defgroup log_backend Logger backend interface
+ * @ingroup logger
+ * @{
+ */
+
 /* Forward declaration of the log_backend type. */
 struct log_backend;
 
@@ -183,6 +190,10 @@ static inline bool log_backend_is_active(
 	assert(backend);
 	return backend->cb->active;
 }
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

@@ -12,6 +12,21 @@
 extern "C" {
 #endif
 
+
+/**
+ * @brief Logger
+ * @defgroup logger Logger system
+ * @{
+ * @}
+ */
+
+/**
+ * @brief Logger control API
+ * @defgroup log_ctrl Logger control API
+ * @ingroup logger
+ * @{
+ */
+
 typedef u32_t (*timestamp_get_t)(void);
 
 /**
@@ -132,6 +147,10 @@ void log_backend_disable(struct log_backend const *const backend);
 #define LOG_PANIC() /* Empty */
 #define LOG_PROCESS() false
 #endif
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

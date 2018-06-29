@@ -14,6 +14,14 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Logger API
+ * @defgroup log_api Logging API
+ * @ingroup logger
+ * @{
+ */
+
+
 #define LOG_LEVEL_NONE  0
 #define LOG_LEVEL_ERR   1
 #define LOG_LEVEL_WRN   2
@@ -274,6 +282,11 @@ int log_printk(const char *fmt, va_list ap);
 #else /* LOG enabled for the module. */
 #define LOG_MODULE_REGISTER() /* Empty */
 #endif
+
+/**
+ * @}
+ */
+
 
 #ifdef __cplusplus
 }

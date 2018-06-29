@@ -15,6 +15,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Log message API
+ * @defgroup log_msg Log message API
+ * @ingroup logger
+ * @{
+ */
+
 /** @brief Maximum number of arguments in the standard log entry. */
 #define LOG_MAX_NARGS 6
 
@@ -102,7 +109,7 @@ _Static_assert(sizeof(struct log_msg_hexdump_hdr) == sizeof(u16_t),
 /** Log message header structure */
 struct log_msg_hdr {
 	atomic_t ref_cnt; /*!< Reference counter for tracking message users. */
-	union {
+	union log_msg_hdr_params {
 		struct log_msg_generic_hdr generic;
 		struct log_msg_std_hdr std;
 		struct log_msg_hexdump_hdr hexdump;
@@ -137,7 +144,7 @@ union log_msg_head_data {
 /** @brief Data part of extended log message. */
 struct log_msg_ext_head_data {
 	struct log_msg_cont *next;
-	union {
+	union log_msg_ext_head_data_data {
 		struct log_msg_std_ext_head_data std;
 		u8_t bytes[LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK];
 	} data;
@@ -148,7 +155,7 @@ struct log_msg {
 	struct log_msg *next;   /*!< Used by logger core list.*/
 	struct log_msg_hdr hdr; /*!< Message header. */
 
-	union {
+	union log_msg_data {
 		union log_msg_head_data data;
 		struct log_msg_ext_head_data ext;
 	} data;                 /*!< Message data. */
@@ -161,7 +168,7 @@ _Static_assert(sizeof(union log_msg_head_data) ==
 /** @brief Chunks following message head when message is extended. */
 struct log_msg_cont {
 	struct log_msg_cont *next; /*!< Pointer to the next chunk. */
-	union {
+	union log_msg_cont_data {
 		u32_t args[ARGS_CONT_MSG];
 		u8_t bytes[HEXDUMP_BYTES_CONT_MSG];
 	} data;
@@ -516,6 +523,10 @@ static inline struct log_msg *log_msg_create_3(const char *str,
 struct log_msg *log_msg_create_n(const char *str,
 				 u32_t *args,
 				 u32_t nargs);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
