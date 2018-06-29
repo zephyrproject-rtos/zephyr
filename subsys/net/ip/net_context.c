@@ -649,6 +649,32 @@ struct net_pkt *net_context_create_ipv4(struct net_context *context,
 }
 #endif /* CONFIG_NET_IPV4 */
 
+#if defined(CONFIG_NET_IPV6)
+struct net_pkt *net_context_create_ipv6(struct net_context *context,
+					struct net_pkt *pkt,
+					const struct in6_addr *src,
+					const struct in6_addr *dst)
+{
+	NET_ASSERT(((struct sockaddr_in6_ptr *)&context->local)->sin6_addr);
+
+	if (!src) {
+		src = ((struct sockaddr_in6_ptr *)&context->local)->sin6_addr;
+	}
+
+	if (net_is_ipv6_addr_unspecified(src)
+	    || net_is_ipv6_addr_mcast(src)) {
+		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
+						  (struct in6_addr *)dst);
+	}
+
+	return net_ipv6_create(pkt,
+			       src,
+			       dst,
+			       net_context_get_iface(context),
+			       net_context_get_ip_proto(context));
+}
+#endif /* CONFIG_NET_IPV6 */
+
 int net_context_connect(struct net_context *context,
 			const struct sockaddr *addr,
 			socklen_t addrlen,
@@ -858,7 +884,8 @@ static int create_udp_packet(struct net_context *context,
 	if (net_pkt_family(pkt) == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
 
-		pkt = net_ipv6_create(context, pkt, NULL, &addr6->sin6_addr);
+		pkt = net_context_create_ipv6(context, pkt,
+					      NULL, &addr6->sin6_addr);
 		tmp = net_udp_insert(context, pkt,
 				     net_pkt_ip_hdr_len(pkt) +
 				     net_pkt_ipv6_ext_len(pkt),
@@ -869,7 +896,7 @@ static int create_udp_packet(struct net_context *context,
 
 		pkt = tmp;
 
-		r = net_ipv6_finalize(context, pkt);
+		r = net_ipv6_finalize(pkt, net_context_get_ip_proto(context));
 	} else
 #endif /* CONFIG_NET_IPV6 */
 

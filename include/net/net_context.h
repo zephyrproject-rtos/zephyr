@@ -581,6 +581,32 @@ struct net_pkt *net_context_create_ipv4(struct net_context *context,
 #endif /* CONFIG_NET_IPV4 */
 
 /**
+ * @brief Create IPv6 packet in provided net_pkt from context
+ *
+ * @param context Network context for a connection
+ * @param pkt Network packet
+ * @param src Source address, or NULL to choose a default from context
+ * @param dst Destination IPv6 address
+ *
+ * @return Return network packet that contains the IPv6 packet.
+ */
+#if defined(CONFIG_NET_IPV6)
+struct net_pkt *net_context_create_ipv6(struct net_context *context,
+					struct net_pkt *pkt,
+					const struct in6_addr *src,
+					const struct in6_addr *dst);
+#else
+static inline
+struct net_pkt *net_context_create_ipv6(struct net_context *context,
+					struct net_pkt *pkt,
+					const struct in6_addr *src,
+					const struct in6_addr *dst)
+{
+	return NULL;
+}
+#endif /* CONFIG_NET_IPV6 */
+
+/**
  * @brief Assign a socket a local address.
  *
  * @details This is similar as BSD bind() function.
