@@ -623,6 +623,32 @@ int net_context_listen(struct net_context *context, int backlog)
 	return -EOPNOTSUPP;
 }
 
+#if defined(CONFIG_NET_IPV4)
+struct net_pkt *net_context_create_ipv4(struct net_context *context,
+					struct net_pkt *pkt,
+					const struct in_addr *src,
+					const struct in_addr *dst)
+{
+	NET_ASSERT(((struct sockaddr_in_ptr *)&context->local)->sin_addr);
+
+	if (!src) {
+		src = ((struct sockaddr_in_ptr *)&context->local)->sin_addr;
+	}
+
+	if (net_is_ipv4_addr_unspecified(src)
+	    || net_is_ipv4_addr_mcast(src)) {
+		src = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
+						  (struct in_addr *)dst);
+	}
+
+	return net_ipv4_create(pkt,
+			       src,
+			       dst,
+			       net_context_get_iface(context),
+			       net_context_get_ip_proto(context));
+}
+#endif /* CONFIG_NET_IPV4 */
+
 int net_context_connect(struct net_context *context,
 			const struct sockaddr *addr,
 			socklen_t addrlen,
@@ -851,7 +877,8 @@ static int create_udp_packet(struct net_context *context,
 	if (net_pkt_family(pkt) == AF_INET) {
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
 
-		pkt = net_ipv4_create(context, pkt, NULL, &addr4->sin_addr);
+		pkt = net_context_create_ipv4(context, pkt,
+					      NULL, &addr4->sin_addr);
 		tmp = net_udp_insert(context, pkt, net_pkt_ip_hdr_len(pkt),
 				     addr4->sin_port);
 		if (!tmp) {
@@ -860,7 +887,7 @@ static int create_udp_packet(struct net_context *context,
 
 		pkt = tmp;
 
-		r = net_ipv4_finalize(context, pkt);
+		r = net_ipv4_finalize(pkt, net_context_get_ip_proto(context));
 	} else
 #endif /* CONFIG_NET_IPV4 */
 	{
