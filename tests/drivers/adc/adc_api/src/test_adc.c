@@ -17,14 +17,36 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-/* These settings need to be defined separately for particular boards. */
+#if defined(CONFIG_BOARD_NRF51_PCA10028)
+
+#include <hal/nrf_adc.h>
 #define ADC_DEVICE_NAME		CONFIG_ADC_0_NAME
 #define ADC_RESOLUTION		10
-#define ADC_GAIN		ADC_GAIN_1_2
+#define ADC_GAIN		ADC_GAIN_1_3
 #define ADC_REFERENCE		ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID	0
-/*#define ADC_2ND_CHANNEL_ID	2*/
+#define ADC_1ST_CHANNEL_INPUT	NRF_ADC_CONFIG_INPUT_2
+#define ADC_2ND_CHANNEL_ID	2
+#define ADC_2ND_CHANNEL_INPUT	NRF_ADC_CONFIG_INPUT_3
+
+#elif defined(CONFIG_BOARD_NRF52_PCA10040) || \
+      defined(CONFIG_BOARD_NRF52840_PCA10056)
+
+#include <hal/nrf_saadc.h>
+#define ADC_DEVICE_NAME		CONFIG_ADC_0_NAME
+#define ADC_RESOLUTION		10
+#define ADC_GAIN		ADC_GAIN_1_6
+#define ADC_REFERENCE		ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 10)
+#define ADC_1ST_CHANNEL_ID	0
+#define ADC_1ST_CHANNEL_INPUT	NRF_SAADC_INPUT_AIN1
+#define ADC_2ND_CHANNEL_ID	2
+#define ADC_2ND_CHANNEL_INPUT	NRF_SAADC_INPUT_AIN2
+
+#else
+#error "Unsupported board."
+#endif
 
 #define BUFFER_SIZE  6
 static s16_t m_sample_buffer[BUFFER_SIZE];
@@ -261,7 +283,7 @@ void test_adc_sample_with_interval(void)
 /*******************************************************************************
  * test_adc_repeated_samplings
  */
-static u8_t m_samplings_done = 0;
+static u8_t m_samplings_done;
 static enum adc_action repeated_samplings_callback(
 				struct device *dev,
 				const struct adc_sequence *sequence,
