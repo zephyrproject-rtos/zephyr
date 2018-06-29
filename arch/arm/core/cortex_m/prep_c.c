@@ -24,6 +24,28 @@
 #include <arch/arm/cortex_m/cmsis.h>
 #include <string.h>
 
+#if defined(CONFIG_FLOAT)
+/* Convenience macros for configuring the
+ * Coprocessor Access Control Register (CPACR)
+ */
+
+/* CP10 Access Bits */
+#define CPACR_CP10_Pos          20U
+#define CPACR_CP10_Msk          (3UL << CPACR_CP10_Pos)
+#define CPACR_CP10_NO_ACCESS    (0UL << CPACR_CP10_Pos)
+#define CPACR_CP10_PRIV_ACCESS  (1UL << CPACR_CP10_Pos)
+#define CPACR_CP10_RESERVED     (2UL << CPACR_CP10_Pos)
+#define CPACR_CP10_FULL_ACCESS  (3UL << CPACR_CP10_Pos)
+
+/* CP11 Access Bits */
+#define CPACR_CP11_Pos          22U
+#define CPACR_CP11_Msk          (3UL << CPACR_CP11_Pos)
+#define CPACR_CP11_NO_ACCESS    (0UL << CPACR_CP11_Pos)
+#define CPACR_CP11_PRIV_ACCESS  (1UL << CPACR_CP11_Pos)
+#define CPACR_CP11_RESERVED     (2UL << CPACR_CP11_Pos)
+#define CPACR_CP11_FULL_ACCESS  (3UL << CPACR_CP11_Pos)
+#endif /* CONFIG_FLOAT */
+
 #ifdef CONFIG_CPU_CORTEX_M_HAS_VTOR
 
 #ifdef CONFIG_XIP
