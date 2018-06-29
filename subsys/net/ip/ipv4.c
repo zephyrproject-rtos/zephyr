@@ -91,8 +91,10 @@ struct net_pkt *net_ipv4_create(struct net_context *context,
 				   net_context_get_ip_proto(context));
 }
 
-int net_ipv4_finalize_raw(struct net_pkt *pkt, u8_t next_header)
+int net_ipv4_finalize(struct net_context *context, struct net_pkt *pkt)
 {
+	u8_t next_header = net_context_get_ip_proto(context);
+
 	/* Set the length of the IPv4 header */
 	size_t total_len;
 
@@ -121,12 +123,6 @@ int net_ipv4_finalize_raw(struct net_pkt *pkt, u8_t next_header)
 #endif
 
 	return 0;
-}
-
-int net_ipv4_finalize(struct net_context *context, struct net_pkt *pkt)
-{
-	return net_ipv4_finalize_raw(pkt,
-				     net_context_get_ip_proto(context));
 }
 
 const struct in_addr *net_ipv4_unspecified_address(void)
