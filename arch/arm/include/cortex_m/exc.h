@@ -26,7 +26,6 @@ extern "C" {
 
 #else
 
-#include <arch/arm/cortex_m/cmsis.h>
 #include <arch/arm/cortex_m/exc.h>
 #include <irq_offload.h>
 

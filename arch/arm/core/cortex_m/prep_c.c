@@ -21,7 +21,6 @@
 #include <toolchain.h>
 #include <linker/linker-defs.h>
 #include <kernel_internal.h>
-#include <arch/arm/cortex_m/cmsis.h>
 #include <string.h>
 
 #if defined(CONFIG_FLOAT)

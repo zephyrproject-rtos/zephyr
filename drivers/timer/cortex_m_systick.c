@@ -25,7 +25,6 @@
 #include <misc/__assert.h>
 #include <sys_clock.h>
 #include <drivers/system_timer.h>
-#include <arch/arm/cortex_m/cmsis.h>
 #include <kernel_structs.h>
 
 /* running total of timer count */

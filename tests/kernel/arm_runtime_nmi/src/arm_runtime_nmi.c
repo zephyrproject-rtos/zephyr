@@ -11,7 +11,6 @@
 #include <zephyr.h>
 #include <misc/printk.h>
 #include <misc/reboot.h>
-#include <arch/arm/cortex_m/cmsis.h>
 #include <ztest.h>
 #include <tc_util.h>
 

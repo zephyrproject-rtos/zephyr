@@ -20,7 +20,6 @@
 #include <linker/sections.h>
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <arch/arm/cortex_m/cmsis.h>
 
 /**
  *

@@ -35,7 +35,7 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 }
 
 #ifdef CONFIG_CPU_CORTEX_M
-#include <arch/arm/cortex_m/cmsis.h>
+
 /* Must clear LSB of function address to access as data. */
 #define FUNC_TO_PTR(x) (void *)((uintptr_t)(x) & ~0x1)
 /* Must set LSB of function address to call in Thumb mode. */

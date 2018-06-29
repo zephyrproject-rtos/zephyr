@@ -39,7 +39,6 @@ extern u32_t _irq_vector_table[];
 static volatile int trigger_check[TRIG_CHECK_SIZE];
 
 #if defined(CONFIG_ARM)
-#include <arch/arm/cortex_m/cmsis.h>
 
 void trigger_irq(int irq)
 {

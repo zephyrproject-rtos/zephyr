@@ -16,7 +16,6 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <arch/arm/cortex_m/cmsis.h>
 #include <misc/__assert.h>
 #include <toolchain.h>
 #include <linker/sections.h>
