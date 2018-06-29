@@ -127,7 +127,7 @@ static int shell_cmd_connect(int argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
 	static struct wifi_connect_req_params cnx_params;
-	int idx = 0;
+	int idx = 3;
 
 	if (argc < 3) {
 		return -EINVAL;
@@ -142,19 +142,18 @@ static int shell_cmd_connect(int argc, char *argv[])
 
 	argv[1][cnx_params.ssid_length + 1] = '\0';
 
-	if (strlen(argv[3]) <= 2) {
+	if ((idx < argc) && (strlen(argv[idx]) <= 2)) {
 		cnx_params.channel = atoi(argv[3]);
 		if (cnx_params.channel == 0) {
 			cnx_params.channel = WIFI_CHANNEL_ANY;
 		}
 
-		idx = 4;
+		idx++;
 	} else {
 		cnx_params.channel = WIFI_CHANNEL_ANY;
-		idx = 3;
 	}
 
-	if (idx) {
+	if (idx < argc) {
 		cnx_params.psk = argv[idx];
 		cnx_params.psk_length = strlen(argv[idx]);
 		cnx_params.security = WIFI_SECURITY_TYPE_PSK;
