@@ -20,6 +20,7 @@
 #include <net/net_ip.h>
 #include <net/net_if.h>
 
+#include <net/net_config.h>
 #include <net/net_app.h>
 
 #define NET_LOG_ENABLED 1
@@ -237,7 +238,7 @@ static void app_init(void)
 {
 	int ret;
 
-	ret = net_app_init("Test app", 0, 1);
+	ret = net_config_init("Test app", 0, 1);
 	zassert_equal(ret, 0, "app init");
 }
 

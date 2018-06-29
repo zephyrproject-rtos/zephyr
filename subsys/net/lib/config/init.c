@@ -25,7 +25,7 @@
 #include <net/net_mgmt.h>
 #include <net/dns_resolve.h>
 
-#include <net/net_app.h>
+#include <net/net_config.h>
 
 #include "ieee802154_settings.h"
 #include "bt_settings.h"
@@ -243,7 +243,7 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 		mask |= NET_EVENT_IPV6_ADDR_ADD;
 	}
 
-	if (flags & NET_APP_NEED_ROUTER) {
+	if (flags & NET_CONFIG_NEED_ROUTER) {
 		mask |= NET_EVENT_IPV6_ROUTER_ADD;
 	}
 
@@ -278,7 +278,7 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 #define setup_ipv6(...)
 #endif /* CONFIG_NET_IPV6 */
 
-int net_app_init(const char *app_info, u32_t flags, s32_t timeout)
+int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 {
 #define LOOP_DIVIDER 10
 	struct net_if *iface = net_if_get_default();
@@ -294,11 +294,11 @@ int net_app_init(const char *app_info, u32_t flags, s32_t timeout)
 		return -ENODEV;
 	}
 
-	if (flags & NET_APP_NEED_IPV6) {
+	if (flags & NET_CONFIG_NEED_IPV6) {
 		count++;
 	}
 
-	if (flags & NET_APP_NEED_IPV4) {
+	if (flags & NET_CONFIG_NEED_IPV4) {
 		count++;
 	}
 
@@ -368,20 +368,20 @@ static int init_net_app(struct device *device)
 #endif
 
 	if (IS_ENABLED(CONFIG_NET_APP_NEED_IPV6)) {
-		flags |= NET_APP_NEED_IPV6;
+		flags |= NET_CONFIG_NEED_IPV6;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_APP_NEED_IPV6_ROUTER)) {
-		flags |= NET_APP_NEED_ROUTER;
+		flags |= NET_CONFIG_NEED_ROUTER;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_APP_NEED_IPV4)) {
-		flags |= NET_APP_NEED_IPV4;
+		flags |= NET_CONFIG_NEED_IPV4;
 	}
 
 	/* Initialize the application automatically if needed */
-	ret = net_app_init("Initializing network", flags,
-			   K_SECONDS(CONFIG_NET_APP_INIT_TIMEOUT));
+	ret = net_config_init("Initializing network", flags,
+			      K_SECONDS(CONFIG_NET_APP_INIT_TIMEOUT));
 	if (ret < 0) {
 		NET_ERR("Network initialization failed (%d)", ret);
 	}
