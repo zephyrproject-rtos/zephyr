@@ -14,9 +14,7 @@
  */
 
 #include <kernel.h>
-#include <device.h>
 #include <init.h>
-#include <soc.h>
 
 #ifdef CONFIG_RUNTIME_NMI
 extern void _NmiInit(void);

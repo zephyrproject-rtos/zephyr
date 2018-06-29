@@ -6,7 +6,6 @@
 #ifndef _NRF52X_MPU_MEM_CFG_H_
 #define _NRF52X_MPU_MEM_CFG_H_
 
-#include <soc.h>
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>
 
 /* Flash Region Definitions */
