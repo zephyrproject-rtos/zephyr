@@ -13,9 +13,7 @@
  */
 
 #include <kernel.h>
-#include <device.h>
 #include <init.h>
-#include <soc.h>
 #include <cortex_m/exc.h>
 
 #ifdef CONFIG_RUNTIME_NMI
