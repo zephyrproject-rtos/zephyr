@@ -7,5 +7,4 @@
 config  BOARD_NRF52810_PCA10040
 	bool "nRF52810 PCA10040"
 	select HAS_DTS_GPIO
-	select HAS_DTS_I2C
 	depends on SOC_NRF52810_QFAA

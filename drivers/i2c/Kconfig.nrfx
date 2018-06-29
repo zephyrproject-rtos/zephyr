@@ -8,6 +8,7 @@
 menuconfig I2C_NRFX
 	bool "nRF TWI nrfx drivers"
 	depends on SOC_FAMILY_NRF
+	select HAS_DTS_I2C
 	help
 	  Enable support for nrfx TWI drivers for nRF MCU series.
 	  Peripherals with the same instance ID cannot be used together,

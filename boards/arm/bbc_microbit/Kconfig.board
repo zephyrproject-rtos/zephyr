@@ -6,5 +6,4 @@
 
 config BOARD_BBC_MICROBIT
 	bool "BBC MICRO:BIT"
-	select HAS_DTS_I2C
 	depends on SOC_NRF51822_QFAA
