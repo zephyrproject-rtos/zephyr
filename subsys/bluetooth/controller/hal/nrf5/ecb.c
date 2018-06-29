@@ -6,7 +6,9 @@
  */
 
 #include <string.h>
-#include <soc.h>
+
+#include <misc/dlist.h>
+#include <misc/mempool_base.h>
 
 #include "util/mem.h"
 #include "hal/ecb.h"

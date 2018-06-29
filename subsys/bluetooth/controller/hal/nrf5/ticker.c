@@ -6,8 +6,8 @@
  */
 
 #include <stdbool.h>
-
-#include <zephyr/types.h>
+#include <misc/dlist.h>
+#include <misc/mempool_base.h>
 
 #include "hal/cntr.h"
 
