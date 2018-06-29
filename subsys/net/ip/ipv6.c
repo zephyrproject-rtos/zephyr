@@ -692,11 +692,11 @@ const struct in6_addr *net_ipv6_unspecified_address(void)
 	return &in6addr_any;
 }
 
-struct net_pkt *net_ipv6_create_raw(struct net_pkt *pkt,
-				    const struct in6_addr *src,
-				    const struct in6_addr *dst,
-				    struct net_if *iface,
-				    u8_t next_header)
+struct net_pkt *net_ipv6_create(struct net_pkt *pkt,
+				const struct in6_addr *src,
+				const struct in6_addr *dst,
+				struct net_if *iface,
+				u8_t next_header_proto)
 {
 	struct net_buf *header;
 
@@ -721,7 +721,7 @@ struct net_pkt *net_ipv6_create_raw(struct net_pkt *pkt,
 	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, src);
 
 	net_pkt_set_ipv6_ext_len(pkt, 0);
-	NET_IPV6_HDR(pkt)->nexthdr = next_header;
+	NET_IPV6_HDR(pkt)->nexthdr = next_header_proto;
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_family(pkt, AF_INET6);
@@ -731,37 +731,14 @@ struct net_pkt *net_ipv6_create_raw(struct net_pkt *pkt,
 	return pkt;
 }
 
-struct net_pkt *net_ipv6_create(struct net_context *context,
-				struct net_pkt *pkt,
-				const struct in6_addr *src,
-				const struct in6_addr *dst)
-{
-	NET_ASSERT(((struct sockaddr_in6_ptr *)&context->local)->sin6_addr);
-
-	if (!src) {
-		src = ((struct sockaddr_in6_ptr *)&context->local)->sin6_addr;
-	}
-
-	if (net_is_ipv6_addr_unspecified(src)
-	    || net_is_ipv6_addr_mcast(src)) {
-		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						  (struct in6_addr *)dst);
-	}
-
-	return net_ipv6_create_raw(pkt,
-				   src,
-				   dst,
-				   net_context_get_iface(context),
-				   net_context_get_ip_proto(context));
-}
-
-int net_ipv6_finalize_raw(struct net_pkt *pkt, u8_t next_header)
+int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 {
 	/* Set the length of the IPv6 header */
 	size_t total_len;
 
 #if defined(CONFIG_NET_UDP) && defined(CONFIG_NET_RPL_INSERT_HBH_OPTION)
-	if (next_header != IPPROTO_TCP && next_header != IPPROTO_ICMPV6) {
+	if (next_header_proto != IPPROTO_TCP &&
+	    next_header_proto != IPPROTO_ICMPV6) {
 		/* Check if we need to add RPL header to sent UDP packet. */
 		if (net_rpl_insert_header(pkt) < 0) {
 			NET_DBG("RPL HBHO insert failed");
@@ -780,29 +757,24 @@ int net_ipv6_finalize_raw(struct net_pkt *pkt, u8_t next_header)
 	NET_IPV6_HDR(pkt)->len[1] = total_len & 0xff;
 
 #if defined(CONFIG_NET_UDP)
-	if (next_header == IPPROTO_UDP &&
+	if (next_header_proto == IPPROTO_UDP &&
 	    net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
 		net_udp_set_chksum(pkt, pkt->frags);
 	} else
 #endif
 
 #if defined(CONFIG_NET_TCP)
-	if (next_header == IPPROTO_TCP &&
+	if (next_header_proto == IPPROTO_TCP &&
 	    net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
 		net_tcp_set_chksum(pkt, pkt->frags);
 	} else
 #endif
 
-	if (next_header == IPPROTO_ICMPV6) {
+	if (next_header_proto == IPPROTO_ICMPV6) {
 		net_icmpv6_set_chksum(pkt, pkt->frags);
 	}
 
 	return 0;
-}
-
-int net_ipv6_finalize(struct net_context *context, struct net_pkt *pkt)
-{
-	return net_ipv6_finalize_raw(pkt, net_context_get_ip_proto(context));
 }
 
 #if defined(CONFIG_NET_IPV6_DAD)
@@ -2813,11 +2785,11 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, &dst),
 				     K_FOREVER);
 
-	pkt = net_ipv6_create_raw(pkt,
-				  net_if_ipv6_select_src_addr(iface, &dst),
-				  &dst,
-				  iface,
-				  NET_IPV6_NEXTHDR_HBHO);
+	pkt = net_ipv6_create(pkt,
+			      net_if_ipv6_select_src_addr(iface, &dst),
+			      &dst,
+			      iface,
+			      NET_IPV6_NEXTHDR_HBHO);
 
 	NET_IPV6_HDR(pkt)->hop_limit = 1; /* RFC 3810 ch 7.4 */
 
@@ -2849,7 +2821,7 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 	/* Insert the actual multicast record(s) here */
 	net_pkt_frag_add(pkt, frags);
 
-	ret = net_ipv6_finalize_raw(pkt, NET_IPV6_NEXTHDR_HBHO);
+	ret = net_ipv6_finalize(pkt, NET_IPV6_NEXTHDR_HBHO);
 	if (ret < 0) {
 		goto drop;
 	}
@@ -3663,7 +3635,7 @@ static int send_ipv6_fragment(struct net_if *iface,
 	ipv6->frags = NULL;
 
 	/* Update the extension length metadata so that upper layer checksum
-	 * will be calculated properly by net_ipv6_finalize_raw().
+	 * will be calculated properly by net_ipv6_finalize().
 	 */
 	net_pkt_set_ipv6_ext_len(ipv6,
 				 net_pkt_ipv6_ext_len(pkt) +
@@ -3720,7 +3692,7 @@ static int send_ipv6_fragment(struct net_if *iface,
 	/* Note that we must not calculate possible UDP/TCP/ICMPv6 checksum
 	 * as that is already calculated in the non-fragmented packet.
 	 */
-	ret = net_ipv6_finalize_raw(ipv6, NET_IPV6_NEXTHDR_FRAG);
+	ret = net_ipv6_finalize(ipv6, NET_IPV6_NEXTHDR_FRAG);
 	if (ret < 0) {
 		NET_DBG("Cannot create IPv6 packet (%d)", ret);
 		goto free_pkts;

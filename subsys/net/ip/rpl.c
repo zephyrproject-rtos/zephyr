@@ -490,7 +490,7 @@ int net_rpl_dio_send(struct net_if *iface,
 		dst_addr = dst;
 	}
 
-	pkt = net_ipv6_create_raw(pkt, src, dst_addr, iface, IPPROTO_ICMPV6);
+	pkt = net_ipv6_create(pkt, src, dst_addr, iface, IPPROTO_ICMPV6);
 
 	net_pkt_set_iface(pkt, iface);
 
@@ -581,7 +581,7 @@ int net_rpl_dio_send(struct net_if *iface,
 			dag->prefix_info.length);
 	}
 
-	ret = net_ipv6_finalize_raw(pkt, IPPROTO_ICMPV6);
+	ret = net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
 	if (ret < 0) {
 		net_pkt_unref(pkt);
 		return ret;
@@ -749,7 +749,7 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 
 	src = net_if_ipv6_select_src_addr(iface, dst_addr);
 
-	pkt = net_ipv6_create_raw(pkt, src, dst_addr, iface, IPPROTO_ICMPV6);
+	pkt = net_ipv6_create(pkt, src, dst_addr, iface, IPPROTO_ICMPV6);
 
 	net_pkt_set_iface(pkt, iface);
 
@@ -762,7 +762,7 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 			 &pos, 0);
 	net_pkt_write_u8(pkt, pkt->frags, pos, &pos, 0);
 
-	ret = net_ipv6_finalize_raw(pkt, IPPROTO_ICMPV6);
+	ret = net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
 	if (ret < 0) {
 		net_pkt_unref(pkt);
 		return ret;
@@ -3071,7 +3071,7 @@ int net_rpl_dao_send(struct net_if *iface,
 		return -ENOMEM;
 	}
 
-	pkt = net_ipv6_create_raw(pkt, src, dst, iface, IPPROTO_ICMPV6);
+	pkt = net_ipv6_create(pkt, src, dst, iface, IPPROTO_ICMPV6);
 
 	net_pkt_set_iface(pkt, iface);
 
@@ -3113,7 +3113,7 @@ int net_rpl_dao_send(struct net_if *iface,
 	net_pkt_append_u8(pkt, 0); /* path seq */
 	net_pkt_append_u8(pkt, lifetime);
 
-	ret = net_ipv6_finalize_raw(pkt, IPPROTO_ICMPV6);
+	ret = net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
 	if (ret < 0) {
 		net_pkt_unref(pkt);
 		return ret;
@@ -3204,7 +3204,7 @@ static int dao_ack_send(struct in6_addr *src,
 		return -ENOMEM;
 	}
 
-	pkt = net_ipv6_create_raw(pkt, src, dst, iface, IPPROTO_ICMPV6);
+	pkt = net_ipv6_create(pkt, src, dst, iface, IPPROTO_ICMPV6);
 
 	net_pkt_set_iface(pkt, iface);
 
@@ -3215,7 +3215,7 @@ static int dao_ack_send(struct in6_addr *src,
 	net_pkt_append_u8(pkt, sequence);
 	net_pkt_append_u8(pkt, status); /* status */
 
-	ret = net_ipv6_finalize_raw(pkt, IPPROTO_ICMPV6);
+	ret = net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
 	if (ret < 0) {
 		net_pkt_unref(pkt);
 		return ret;

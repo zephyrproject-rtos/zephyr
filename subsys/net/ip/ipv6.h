@@ -132,30 +132,15 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
  * @param src Source IPv6 address
  * @param dst Destination IPv6 address
  * @param iface Network interface
- * @param next_header Protocol type of the next header after IPv6 header.
+ * @param next_header_proto Protocol type of the next header after IPv6 header.
  *
  * @return Return network packet that contains the IPv6 packet.
  */
-struct net_pkt *net_ipv6_create_raw(struct net_pkt *pkt,
-				    const struct in6_addr *src,
-				    const struct in6_addr *dst,
-				    struct net_if *iface,
-				    u8_t next_header);
-
-/**
- * @brief Create IPv6 packet in provided net_pkt.
- *
- * @param context Network context for a connection
- * @param pkt Network packet
- * @param src_addr Source address, or NULL to choose a default from context
- * @param dst_addr Destination IPv6 address
- *
- * @return Return network packet that contains the IPv6 packet.
- */
-struct net_pkt *net_ipv6_create(struct net_context *context,
-				struct net_pkt *pkt,
-				const struct in6_addr *src_addr,
-				const struct in6_addr *dst_addr);
+struct net_pkt *net_ipv6_create(struct net_pkt *pkt,
+				const struct in6_addr *src,
+				const struct in6_addr *dst,
+				struct net_if *iface,
+				u8_t next_header_proto);
 
 /**
  * @brief Finalize IPv6 packet. It should be called right before
@@ -164,24 +149,11 @@ struct net_pkt *net_ipv6_create(struct net_context *context,
  * packet and calculate the higher protocol checksum if needed.
  *
  * @param pkt Network packet
- * @param next_header Protocol type of the next header after IPv6 header.
+ * @param next_header_proto Protocol type of the next header after IPv6 header.
  *
  * @return Return 0 on Success, < 0 on Failure.
  */
-int net_ipv6_finalize_raw(struct net_pkt *pkt, u8_t next_header);
-
-/**
- * @brief Finalize IPv6 packet. It should be called right before
- * sending the packet and after all the data has been added into
- * the packet. This function will set the length of the
- * packet and calculate the higher protocol checksum if needed.
- *
- * @param context Network context for a connection
- * @param pkt Network packet
- *
- * @return Return 0 on Success, < 0 on Failure.
- */
-int net_ipv6_finalize(struct net_context *context, struct net_pkt *pkt);
+int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto);
 
 #if defined(CONFIG_NET_IPV6_MLD)
 /**

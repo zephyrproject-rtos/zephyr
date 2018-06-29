@@ -316,11 +316,11 @@ static void send_query(struct net_if *iface)
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, &dst),
 				     K_FOREVER);
 
-	pkt = net_ipv6_create_raw(pkt,
-				  &peer_addr,
-				  &dst,
-				  iface,
-				  NET_IPV6_NEXTHDR_HBHO);
+	pkt = net_ipv6_create(pkt,
+			      &peer_addr,
+			      &dst,
+			      iface,
+			      NET_IPV6_NEXTHDR_HBHO);
 
 	NET_IPV6_HDR(pkt)->hop_limit = 1; /* RFC 3810 ch 7.4 */
 
@@ -352,7 +352,7 @@ static void send_query(struct net_if *iface)
 	net_pkt_append_be16(pkt, 0); /* Resv, S, QRV and QQIC */
 	net_pkt_append_be16(pkt, 0); /* number of addresses */
 
-	net_ipv6_finalize_raw(pkt, NET_IPV6_NEXTHDR_HBHO);
+	net_ipv6_finalize(pkt, NET_IPV6_NEXTHDR_HBHO);
 
 	net_pkt_set_iface(pkt, iface);
 

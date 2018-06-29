@@ -367,7 +367,8 @@ static int finalize_segment(struct net_context *context, struct net_pkt *pkt)
 #endif
 #if defined(CONFIG_NET_IPV6)
 	if (net_pkt_family(pkt) == AF_INET6) {
-		return net_ipv6_finalize(context, pkt);
+		return net_ipv6_finalize(pkt,
+					 net_context_get_ip_proto(context));
 	}
 #endif
 	{
@@ -422,7 +423,7 @@ static int prepare_segment(struct net_tcp *tcp,
 #endif
 #if defined(CONFIG_NET_IPV6)
 	if (net_pkt_family(pkt) == AF_INET6) {
-		net_ipv6_create(tcp->context, pkt,
+		net_context_create_ipv6(tcp->context, pkt,
 				net_sin6_ptr(segment->src_addr)->sin6_addr,
 				&(net_sin6(segment->dst_addr)->sin6_addr));
 		dst_port = net_sin6(segment->dst_addr)->sin6_port;
