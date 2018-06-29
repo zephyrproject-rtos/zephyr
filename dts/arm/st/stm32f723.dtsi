@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2018 Aurelien Jarno
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/stm32f7.dtsi>
