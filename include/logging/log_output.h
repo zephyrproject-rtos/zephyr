@@ -12,6 +12,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Log output API
+ * @defgroup log_output Log output API
+ * @ingroup logger
+ * @{
+ */
+
 /** @brief Flag forcing ANSI escape code colors, red (errors), yellow
  *         (warnings).
  */
@@ -57,6 +64,11 @@ void log_output_msg_process(struct log_msg *msg,
  * @param freq Frequency in Hz.
  */
 void log_output_timestamp_freq_set(u32_t freq);
+
+/**
+ * @}
+ */
+
 
 #ifdef __cplusplus
 }

@@ -6,3 +6,4 @@ Logging
 
    system_log
    kernel_event_logger
+   logger
