@@ -31,10 +31,10 @@ static int wifi_connect(u32_t mgmt_request, struct net_if *iface,
 	    (params->ssid_length == 0) ||
 	    ((params->security == WIFI_SECURITY_TYPE_PSK) &&
 	     ((params->psk_length < 8) || (params->psk_length > 64) ||
-	      (params->psk_length == 0))) ||
+	      (params->psk_length == 0) || !params->psk)) ||
 	    ((params->channel != WIFI_CHANNEL_ANY) &&
 	     (params->channel > WIFI_CHANNEL_MAX)) ||
-	    !params->ssid || !params->psk) {
+	    !params->ssid) {
 		return -EINVAL;
 	}
 
