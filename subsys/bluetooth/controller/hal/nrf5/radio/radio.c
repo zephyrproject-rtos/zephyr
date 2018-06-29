@@ -4,7 +4,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <soc.h>
+
+#include <misc/dlist.h>
+#include <misc/mempool_base.h>
+#include <toolchain.h>
 
 #include "util/mem.h"
 #include "hal/ccm.h"
