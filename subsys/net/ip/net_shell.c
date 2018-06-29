@@ -199,9 +199,13 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	printk("Link addr : %s\n",
-	       net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
-				  net_if_get_link_addr(iface)->len));
+	if (net_if_get_link_addr(iface) &&
+	    net_if_get_link_addr(iface)->addr) {
+		printk("Link addr : %s\n",
+		       net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
+					  net_if_get_link_addr(iface)->len));
+	}
+
 	printk("MTU       : %d\n", net_if_get_mtu(iface));
 
 #if defined(CONFIG_NET_VLAN)
