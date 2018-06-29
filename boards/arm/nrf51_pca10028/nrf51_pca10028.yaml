@@ -7,5 +7,6 @@ toolchain:
   - gnuarmemb
 ram: 32
 supported:
+  - adc
   - ble
   - nvs
