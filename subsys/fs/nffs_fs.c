@@ -524,6 +524,17 @@ static int nffs_rename(struct fs_mount_t *mountp, const char *from,
 	return translate_error(rc);
 }
 
+static bool get_flash_size_cb(const struct flash_pages_info *info, void *data)
+{
+	struct nffs_flash_desc *flash_desc = data;
+
+	if (flash_desc->area_offset + flash_desc->area_size == info->start_offset) {
+		flash_desc->area_size += info->size;
+	}
+
+	return true;
+}
+
 static int nffs_mount(struct fs_mount_t *mountp)
 {
 	struct nffs_flash_desc *flash_desc =
@@ -539,6 +550,9 @@ static int nffs_mount(struct fs_mount_t *mountp)
 	flash_desc->sector_count = flash_get_page_count(flash_dev);
 	flash_desc->area_offset = FLASH_AREA_STORAGE_OFFSET;
 	flash_desc->area_size = FLASH_AREA_STORAGE_SIZE;
+	if (flash_desc->area_size == 0) {
+		flash_page_foreach(flash_dev, get_flash_size_cb, flash_desc);
+	}
 
 	rc = nffs_misc_reset();
 	if (rc) {
