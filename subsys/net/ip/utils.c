@@ -322,6 +322,9 @@ int net_addr_pton(sa_family_t family, const char *src,
 			for (; i < expected_groups; i++) {
 				UNALIGNED_PUT(0, &addr->s6_addr16[i]);
 			}
+			if (i == expected_groups) {
+				return -EINVAL;
+			}
 
 			tmp = strrchr(src, ':');
 			if (src == tmp && (expected_groups == 6 || !src[1])) {
