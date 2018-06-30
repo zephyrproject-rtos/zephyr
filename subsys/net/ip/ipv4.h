@@ -60,19 +60,6 @@ struct net_pkt *net_ipv4_create(struct net_context *context,
  * the packet. This function will set the length of the
  * packet and calculate the higher protocol checksum if needed.
  *
- * @param pkt Network packet
- * @param next_header Protocol type of the next header after IPv4 header.
- *
- * @return Return 0 on Success, < 0 on Failure.
- */
-int net_ipv4_finalize_raw(struct net_pkt *pkt, u8_t next_header);
-
-/**
- * @brief Finalize IPv4 packet. It should be called right before
- * sending the packet and after all the data has been added into
- * the packet. This function will set the length of the
- * packet and calculate the higher protocol checksum if needed.
- *
  * @param context Network context for a connection
  * @param pkt Network packet
  *
