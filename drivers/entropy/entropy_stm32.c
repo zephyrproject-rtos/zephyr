@@ -17,8 +17,8 @@
 #include <clock_control.h>
 #include <clock_control/stm32_clock_control.h>
 
-#if !defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(CONFIG_SOC_SERIES_STM32F4X)
-#error RNG only available on STM32F4 and STM32L4 series
+#if !defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(CONFIG_SOC_SERIES_STM32F4X) && !defined(CONFIG_SOC_SERIES_STM32F7X)
+#error RNG only available on STM32F4, STM32F7 and STM32L4 series
 #elif defined(CONFIG_SOC_STM32F401XE)
 #error RNG not available on STM32F401 based SoCs
 #elif defined(CONFIG_SOC_STM32F411XE)
