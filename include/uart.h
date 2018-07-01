@@ -80,6 +80,13 @@ typedef void (*uart_irq_callback_t)(struct device *port);
  */
 typedef void (*uart_irq_config_func_t)(struct device *port);
 
+/* Avaliable RS485 flags */
+#define UART_RS485_ENABLE		(1 << 0) /* If enabled */
+#define UART_RS485_RTS_ON_SEND		(1 << 1) /* Logical level for */
+						 /* RTS pin when sending */
+#define UART_RS485_RTS_AFTER_SEND	(1 << 2) /* Logical level for */
+						 /* RTS pin after sent */
+
 /**
  * @brief UART device configuration.
  *
@@ -87,6 +94,9 @@ typedef void (*uart_irq_config_func_t)(struct device *port);
  * @param base Memory mapped base address
  * @param regs Register address
  * @param sys_clk_freq System clock frequency in Hz
+ * @param rs485_flags RS485 feature flags
+ * @param delay_rts_before_send Delay before send(microseconds)
+ * @param delay_rts_after_send Delay after send(microseconds)
  */
 struct uart_device_config {
 	union {
@@ -104,6 +114,10 @@ struct uart_device_config {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t	irq_config_func;
 #endif
+
+	u32_t rs485_flags;
+	u32_t delay_rts_before_send;
+	u32_t delay_rts_after_send;
 };
 
 /** @brief Driver API structure. */
