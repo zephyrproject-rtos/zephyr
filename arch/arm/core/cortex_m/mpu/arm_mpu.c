@@ -37,16 +37,16 @@ static inline u8_t _get_num_regions(void)
  * Note:
  *   The caller must provide a valid region index.
  */
-static void _region_init(u32_t index, u32_t region_addr,
-			 u32_t region_attr)
+static void _region_init(u32_t index, struct arm_mpu_region *region_conf)
 {
 	/* Select the region you want to access */
 	MPU->RNR = index;
 	/* Configure the region */
-	MPU->RBAR = (region_addr & MPU_RBAR_ADDR_Msk)
+	MPU->RBAR = (region_conf->base & MPU_RBAR_ADDR_Msk)
 				| MPU_RBAR_VALID_Msk | index;
-	MPU->RASR = region_attr | MPU_RASR_ENABLE_Msk;
-	SYS_LOG_DBG("[%d] 0x%08x 0x%08x", index, region_addr, region_attr);
+	MPU->RASR = region_conf->attr | MPU_RASR_ENABLE_Msk;
+	SYS_LOG_DBG("[%d] 0x%08x 0x%08x",
+		index, region_conf->base, region_conf->attr);
 }
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
@@ -229,15 +229,18 @@ void arm_core_mpu_disable(void)
  */
 void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 {
+	struct arm_mpu_region region_conf;
+
 	SYS_LOG_DBG("Region info: 0x%x 0x%x", base, size);
 	u32_t region_index = _get_region_index_by_type(type);
-	u32_t region_attr = _get_region_attr_by_type(type, size);
+	region_conf.attr = _get_region_attr_by_type(type, size);
+	region_conf.base = base;
 
 	if (region_index >= _get_num_regions()) {
 		return;
 	}
 
-	_region_init(region_index, base, region_attr);
+	_region_init(region_index, &region_conf);
 }
 
 #if defined(CONFIG_USERSPACE)
@@ -263,9 +266,9 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 {
 	u32_t region_index =
 		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
-	u32_t region_attr;
 	u32_t num_partitions;
 	struct k_mem_partition *pparts;
+	struct arm_mpu_region region_conf;
 
 	if (mem_domain) {
 		SYS_LOG_DBG("configure domain: %p", mem_domain);
@@ -281,9 +284,10 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 		if (num_partitions && pparts->size) {
 			SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
 				    region_index, pparts->start, pparts->size);
-			region_attr = pparts->attr |
+			region_conf.base = pparts->start;
+			region_conf.attr = pparts->attr |
 				      _size_to_mpu_rasr_size(pparts->size);
-			_region_init(region_index, pparts->start, region_attr);
+			_region_init(region_index, &region_conf);
 			num_partitions--;
 		} else {
 			_disable_region(region_index);
@@ -303,7 +307,7 @@ void arm_core_mpu_configure_mem_partition(u32_t part_index,
 {
 	u32_t region_index =
 		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
-	u32_t region_attr;
+	struct arm_mpu_region region_conf;
 
 	SYS_LOG_DBG("configure partition index: %u", part_index);
 
@@ -311,9 +315,10 @@ void arm_core_mpu_configure_mem_partition(u32_t part_index,
 		(region_index + part_index < _get_num_regions())) {
 		SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
 			    region_index + part_index, part->start, part->size);
-		region_attr = part->attr | _size_to_mpu_rasr_size(part->size);
-		_region_init(region_index + part_index, part->start,
-			     region_attr);
+		region_conf.attr = part->attr |
+			_size_to_mpu_rasr_size(part->size);
+		region_conf.base = part->start;
+		_region_init(region_index + part_index, &region_conf);
 	} else {
 		_disable_region(region_index + part_index);
 	}
@@ -439,9 +444,7 @@ static int arm_mpu_init(struct device *arg)
 
 	/* Configure regions */
 	for (r_index = 0; r_index < mpu_config.num_regions; r_index++) {
-		_region_init(r_index,
-			     mpu_config.mpu_regions[r_index].base,
-			     mpu_config.mpu_regions[r_index].attr);
+		_region_init(r_index, &mpu_config.mpu_regions[r_index]);
 	}
 
 	/* Enable MPU and use the default memory map as a
@@ -450,14 +453,17 @@ static int arm_mpu_init(struct device *arg)
 	MPU->CTRL = MPU_CTRL_ENABLE_Msk | MPU_CTRL_PRIVDEFENA_Msk;
 
 #if defined(CONFIG_APPLICATION_MEMORY)
-	u32_t index, size, region_attr;
+	u32_t index, size;
+	struct arm_mpu_region region_conf;
 
 	/* configure app data portion */
 	index = _get_region_index_by_type(THREAD_APP_DATA_REGION);
 	size = (u32_t)&__app_ram_end - (u32_t)&__app_ram_start;
-	region_attr = _get_region_attr_by_type(THREAD_APP_DATA_REGION, size);
+	region_conf.attr =
+		_get_region_attr_by_type(THREAD_APP_DATA_REGION, size);
+	region_conf.base = (u32_t)&__app_ram_start;
 	if (size > 0) {
-		_region_init(index, (u32_t)&__app_ram_start, region_attr);
+		_region_init(index, &region_conf);
 	}
 #endif
 	/* Make sure that all the registers are set before proceeding */
