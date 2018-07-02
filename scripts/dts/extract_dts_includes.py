@@ -15,6 +15,7 @@ import re
 import yaml
 import argparse
 import collections
+from copy import deepcopy
 
 from devicetree import parse_file
 from extract.globals import *
@@ -439,12 +440,17 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                     if re.match(k + '$', c):
 
                         if 'pinctrl-' in c:
-                            names = node['props'].get('pinctrl-names', [])
+                            names = deepcopy(node['props'].get(
+                                                        'pinctrl-names', []))
                         else:
-                            names = node['props'].get(c[:-1] + '-names', [])
-                            if not names:
-                                names = node['props'].get(c + '-names', [])
-
+                            if not c.endswith("-names"):
+                                names = deepcopy(node['props'].get(
+                                                        c[:-1] + '-names', []))
+                                if not names:
+                                    names = deepcopy(node['props'].get(
+                                                            c + '-names', []))
+                            else:
+                                names = []
                         if not isinstance(names, list):
                             names = [names]
 
