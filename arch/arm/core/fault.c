@@ -38,6 +38,12 @@
 	} while ((0))
 #endif
 
+
+#if defined(CONFIG_NXP_MPU)
+#define EMN(edr)   (((edr) & SYSMPU_EDR_EMN_MASK) >> SYSMPU_EDR_EMN_SHIFT)
+#define EACD(edr)  (((edr) & SYSMPU_EDR_EACD_MASK) >> SYSMPU_EDR_EACD_SHIFT)
+#endif
+
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 
 /* Exception Return (EXC_RETURN) is provided in LR upon exception entry.
@@ -349,6 +355,32 @@ static void _BusFault(const NANO_ESF *esf, int fromHardFault)
 		PR_EXC("  Floating-point lazy state preservation error\n");
 	}
 #endif /* !defined(CONFIG_ARMV7_M_ARMV8_M_FP) */
+
+#if defined(CONFIG_NXP_MPU)
+	u32_t sperr = SYSMPU->CESR & SYSMPU_CESR_SPERR_MASK;
+	u32_t mask = BIT(31);
+	int i;
+
+	if (sperr) {
+		for (i = 0; i < SYSMPU_EAR_COUNT; i++, mask >>= 1) {
+			if (!(sperr & mask)) {
+				continue;
+			}
+			STORE_xFAR(edr, SYSMPU->SP[i].EDR);
+			STORE_xFAR(ear, SYSMPU->SP[i].EAR);
+
+			PR_EXC("  NXP MPU error, port %d\n", i);
+			PR_EXC("    Mode: %s, %s Address: 0x%x\n",
+			       edr & BIT(2) ? "Supervisor" : "User",
+			       edr & BIT(1) ? "Data" : "Instruction",
+			       ear);
+			PR_EXC("    Type: %s, Master: %d, Regions: 0x%x\n",
+			       edr & BIT(0) ? "Write" : "Read",
+			       EMN(edr), EACD(edr));
+		}
+		SYSMPU->CESR &= ~sperr;
+	}
+#endif /* CONFIG_NXP_MPU */
 
 #if defined(CONFIG_ARMV8_M_MAINLINE)
 	/* clear BSFR sticky bits */
