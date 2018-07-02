@@ -127,9 +127,6 @@ static void state_binding(u8_t lightness, u8_t temperature)
 			light_lightness_srv_user_data.actual = 0;
 			light_lightness_srv_user_data.linear = 0;
 		} else if (gen_onoff_srv_root_user_data.onoff == 0x01) {
-			gen_level_srv_root_user_data.level =
-				light_lightness_srv_user_data.actual - 32768;
-
 			tmp = ((float)
 			       light_lightness_srv_user_data.actual / 65535);
 			light_lightness_srv_user_data.linear =
@@ -152,9 +149,6 @@ static void state_binding(u8_t lightness, u8_t temperature)
 					light_lightness_srv_user_data.def;
 			}
 
-			gen_level_srv_root_user_data.level =
-				light_lightness_srv_user_data.actual - 32768;
-
 			tmp = ((float)
 			       light_lightness_srv_user_data.actual / 65535);
 			light_lightness_srv_user_data.linear =
@@ -176,9 +170,6 @@ static void state_binding(u8_t lightness, u8_t temperature)
 			light_lightness_srv_user_data.actual;
 		break;
 	case ACTUAL: /* Lightness update as per Light Lightness Actual state */
-		gen_level_srv_root_user_data.level =
-			light_lightness_srv_user_data.actual - 32768;
-
 		tmp = ((float) light_lightness_srv_user_data.actual / 65535);
 		light_lightness_srv_user_data.linear =
 			(u16_t) (65535 * tmp * tmp);
@@ -192,18 +183,12 @@ static void state_binding(u8_t lightness, u8_t temperature)
 			sqrt(((float) light_lightness_srv_user_data.linear /
 			      65535));
 
-		gen_level_srv_root_user_data.level =
-			light_lightness_srv_user_data.actual - 32768;
-
 		light_lightness_srv_user_data.last =
 			light_lightness_srv_user_data.actual;
 		break;
 	case CTL: /* Lightness update as per Light CTL Lightness state */
 		light_lightness_srv_user_data.actual =
 			light_ctl_srv_user_data.lightness;
-
-		gen_level_srv_root_user_data.level =
-			light_lightness_srv_user_data.actual - 32768;
 
 		tmp = ((float) light_lightness_srv_user_data.actual / 65535);
 		light_lightness_srv_user_data.linear =
@@ -215,6 +200,9 @@ static void state_binding(u8_t lightness, u8_t temperature)
 	default:
 		break;
 	}
+
+	gen_level_srv_root_user_data.level =
+		light_lightness_srv_user_data.actual - 32768;
 
 	light_ctl_srv_user_data.lightness =
 		light_lightness_srv_user_data.actual;
