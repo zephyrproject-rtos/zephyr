@@ -37,6 +37,14 @@ config NET_SOCKETS_SOCKOPT_TLS
 	  Enable TLS socket option support which automatically establishes
 	  a TLS connection to the remote host.
 
+config NET_SOCKETS_TLS_MAX_CONTEXTS
+	int "Maximum number of TLS/DTLS contexts"
+	default 1
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  "This variable specifies maximum number of TLS/DTLS contexts that can
+	   be allocated at the same time."
+
 config NET_DEBUG_SOCKETS
 	bool "Debug BSD Sockets compatible API calls"
 	default y if NET_LOG_GLOBAL
