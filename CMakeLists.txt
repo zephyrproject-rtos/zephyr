@@ -428,13 +428,20 @@ else()
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${syscalls_subdirs_txt})
 endif()
 
+# SYSCALL_INCLUDE_DIRECTORY will include the directories that needs to be
+# searched for syscall declarations if CONFIG_APPLICATION_DEFINED_SYSCALL is set
+if(CONFIG_APPLICATION_DEFINED_SYSCALL)
+  set(SYSCALL_INCLUDE_DIRECTORY --include ${APPLICATION_SOURCE_DIR})
+endif()
+
 add_custom_command(
   OUTPUT
   ${syscalls_json}
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/parse_syscalls.py
-  --include          ${ZEPHYR_BASE}/include        # Read files from this dir
+   --include          ${ZEPHYR_BASE}/include        # Read files from this dir
+  ${SYSCALL_INCLUDE_DIRECTORY}
   --json-file        ${syscalls_json}              # Write this file
   DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
   )

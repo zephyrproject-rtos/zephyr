@@ -94,27 +94,28 @@ def analyze_fn(match_group, fn):
     return (fn, handler, invocation, sys_id, table_entry)
 
 
-def analyze_headers(base_path):
+def analyze_headers(multiple_directories):
     ret = []
 
-    for root, dirs, files in os.walk(base_path):
-        for fn in files:
+    for base_path in multiple_directories:
+        for root, dirs, files in os.walk(base_path):
+            for fn in files:
 
-            # toolchain/common.h has the definition of __syscall which we
-            # don't want to trip over
-            path = os.path.join(root, fn)
-            if not fn.endswith(".h") or path.endswith(os.path.join(os.sep, 'toolchain', 'common.h')):
-                continue
+                # toolchain/common.h has the definition of __syscall which we
+                # don't want to trip over
+                path = os.path.join(root, fn)
+                if not fn.endswith(".h") or path.endswith(os.path.join(os.sep, 'toolchain', 'common.h')):
+                    continue
 
-            with open(path, "r", encoding="utf-8") as fp:
-                try:
-                    result = [analyze_fn(mo.groups(), fn)
-                              for mo in api_regex.finditer(fp.read())]
-                except Exception:
-                    sys.stderr.write("While parsing %s\n" % fn)
-                    raise
+                with open(path, "r", encoding="utf-8") as fp:
+                    try:
+                        result = [analyze_fn(mo.groups(), fn)
+                                  for mo in api_regex.finditer(fp.read())]
+                    except Exception:
+                        sys.stderr.write("While parsing %s\n" % fn)
+                        raise
 
-            ret.extend(result)
+                    ret.extend(result)
 
     return ret
 
@@ -125,7 +126,7 @@ def parse_args():
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("-i", "--include", required=True,
+    parser.add_argument("-i", "--include", required=True, action='append',
                         help="Base include directory")
     parser.add_argument(
         "-j", "--json-file", required=True,
