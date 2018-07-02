@@ -55,26 +55,10 @@ struct net_icmp_hdr *net_icmpv4_set_hdr(struct net_pkt *pkt,
 struct net_icmp_hdr *net_icmpv4_get_hdr(struct net_pkt *pkt,
 					struct net_icmp_hdr *hdr)
 {
-	struct net_icmp_hdr *icmp_hdr;
-	struct net_buf *frag;
-	u16_t pos;
-
-	icmp_hdr = net_pkt_icmp_data(pkt);
-	if (net_icmp_header_fits(pkt, icmp_hdr)) {
-		return icmp_hdr;
-	}
-
-	frag = net_frag_read_u8(pkt->frags, net_pkt_ip_hdr_len(pkt), &pos,
-				&hdr->type);
-	frag = net_frag_read_u8(frag, pos, &pos, &hdr->code);
-	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->chksum),
-			     (u8_t *)&hdr->chksum);
-	if (!frag) {
-		NET_ASSERT(frag);
-		return NULL;
-	}
-
-	return hdr;
+	size_t hlen = sizeof(struct net_icmp_hdr);
+	size_t bytes_read = net_frag_linearize((u8_t *) hdr, hlen, pkt,
+						net_pkt_ip_hdr_len(pkt), hlen);
+	return bytes_read == hlen ? hdr : NULL;
 }
 
 struct net_buf *net_icmpv4_set_chksum(struct net_pkt *pkt,
