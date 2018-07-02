@@ -10,6 +10,7 @@
 
 menu "Debug libraries"
 
+source "ext/debug/ctf/Kconfig"
 source "ext/debug/segger/Kconfig"
 
 endmenu

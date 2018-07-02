@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2018 Oticon A/S
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config CTF
+	bool
+	prompt "Tracing via Common Trace Format support"
+	default n
+	select THREAD_MONITOR
+	select TRACING
+
+config CTF_BOTTOM_POSIX
+	bool
+	prompt "CTF backed by POSIX fwrite"
+	default n
+	depends on CTF
