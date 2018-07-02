@@ -247,7 +247,7 @@ static inline int i2c_read(struct device *dev, u8_t *buf,
  */
 static inline int i2c_burst_read(struct device *dev, u16_t dev_addr,
 				 u8_t start_addr, u8_t *buf,
-				 u8_t num_bytes)
+				 u32_t num_bytes)
 {
 	struct i2c_msg msg[2];
 
@@ -279,7 +279,7 @@ static inline int i2c_burst_read(struct device *dev, u16_t dev_addr,
  */
 static inline int i2c_burst_write(struct device *dev, u16_t dev_addr,
 				  u8_t start_addr, u8_t *buf,
-				  u8_t num_bytes)
+				  u32_t num_bytes)
 {
 	struct i2c_msg msg[2];
 
@@ -388,7 +388,7 @@ static inline int i2c_reg_update_byte(struct device *dev, u8_t dev_addr,
  */
 static inline int i2c_burst_read16(struct device *dev, u16_t dev_addr,
 				   u16_t start_addr, u8_t *buf,
-				   u8_t num_bytes)
+				   u32_t num_bytes)
 {
 	u8_t addr_buffer[2];
 	struct i2c_msg msg[2];
@@ -423,7 +423,7 @@ static inline int i2c_burst_read16(struct device *dev, u16_t dev_addr,
  */
 static inline int i2c_burst_write16(struct device *dev, u16_t dev_addr,
 				    u16_t start_addr, u8_t *buf,
-				    u8_t num_bytes)
+				    u32_t num_bytes)
 {
 	u8_t addr_buffer[2];
 	struct i2c_msg msg[2];
@@ -537,7 +537,7 @@ static inline int i2c_reg_update16(struct device *dev, u16_t dev_addr,
 static inline int i2c_burst_read_addr(struct device *dev, u16_t dev_addr,
 				      u8_t *start_addr,
 				      const u8_t addr_size,
-				      u8_t *buf, u8_t num_bytes)
+				      u8_t *buf, u32_t num_bytes)
 {
 	struct i2c_msg msg[2];
 
@@ -572,7 +572,7 @@ static inline int i2c_burst_read_addr(struct device *dev, u16_t dev_addr,
 static inline int i2c_burst_write_addr(struct device *dev, u16_t dev_addr,
 				       u8_t *start_addr,
 				       const u8_t addr_size,
-				       u8_t *buf, u8_t num_bytes)
+				       u8_t *buf, u32_t num_bytes)
 {
 	struct i2c_msg msg[2];
 
