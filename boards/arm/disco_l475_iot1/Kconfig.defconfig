@@ -116,6 +116,9 @@ choice BT_HCI_BUS_TYPE
 	default BT_SPI
 endchoice
 
+config BT_SPI_BLUENRG
+	default y
+
 config BT_BLUENRG_ACI
 	default y
 # Disable Flow control

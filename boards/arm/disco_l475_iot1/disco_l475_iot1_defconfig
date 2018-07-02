@@ -39,9 +39,6 @@ CONFIG_I2C=y
 # enable SPI
 CONFIG_SPI=y
 
-# bluetooth
-CONFIG_BT_SPI_BLUENRG=y
-
 # sensors configuration
 CONFIG_LIS3MDL_TRIGGER_NONE=y
 CONFIG_HTS221_TRIGGER_NONE=y
