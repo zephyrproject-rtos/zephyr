@@ -80,7 +80,7 @@ build:
          if [ "$MATRIX_BUILD" = "1" ]; then
             gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml;
             lcov --capture --directory sanity-out/native_posix/ --directory sanity-out/unit_testing/ --output-file lcov.pre.info -q --rc lcov_branch_coverage=1;
-            lcov -q --remove lcov.pre.info mylib.c --remove lcov.pre.info ext/\* --remove lcov.pre.info *generated* -o lcov.info --rc lcov_branch_coverage=1;
+            lcov -q --remove lcov.pre.info mylib.c --remove lcov.pre.info tests/\* --remove lcov.pre.info samples/\* --remove lcov.pre.info ext/\* --remove lcov.pre.info *generated* -o lcov.info --rc lcov_branch_coverage=1;
             rm lcov.pre.info;
             rm -rf sanity-out out-2nd-pass;
             bash <(curl -s https://codecov.io/bash) -f "lcov.info" -X coveragepy -X fixes;
@@ -105,7 +105,7 @@ build:
          if [ "$MATRIX_BUILD" = "1" ]; then
             gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml;
             lcov --capture --directory sanity-out/native_posix/ --directory sanity-out/unit_testing/ --output-file lcov.pre.info -q --rc lcov_branch_coverage=1;
-            lcov -q --remove lcov.pre.info mylib.c --remove lcov.pre.info ext/\* --remove lcov.pre.info *generated* -o lcov.info --rc lcov_branch_coverage=1;
+            lcov -q --remove lcov.pre.info mylib.c --remove lcov.pre.info tests/\* --remove lcov.pre.info samples/\* --remove lcov.pre.info ext/\* --remove lcov.pre.info *generated* -o lcov.info --rc lcov_branch_coverage=1;
             rm lcov.pre.info;
             rm -rf sanity-out out-2nd-pass;
             bash <(curl -s https://codecov.io/bash) -f "lcov.info" -X coveragepy -X fixes;
