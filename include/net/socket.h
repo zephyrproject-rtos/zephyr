@@ -76,67 +76,134 @@ int zsock_getaddrinfo(const char *host, const char *service,
 		      const struct zsock_addrinfo *hints,
 		      struct zsock_addrinfo **res);
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+
+int ztls_socket(int family, int type, int proto);
+int ztls_close(int sock);
+int ztls_bind(int sock, const struct sockaddr *addr, socklen_t addrlen);
+int ztls_connect(int sock, const struct sockaddr *addr, socklen_t addrlen);
+int ztls_listen(int sock, int backlog);
+int ztls_accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
+ssize_t ztls_send(int sock, const void *buf, size_t len, int flags);
+ssize_t ztls_recv(int sock, void *buf, size_t max_len, int flags);
+ssize_t ztls_sendto(int sock, const void *buf, size_t len, int flags,
+		    const struct sockaddr *dest_addr, socklen_t addrlen);
+ssize_t ztls_recvfrom(int sock, void *buf, size_t max_len, int flags,
+		      struct sockaddr *src_addr, socklen_t *addrlen);
+int ztls_fcntl(int sock, int cmd, int flags);
+int ztls_poll(struct zsock_pollfd *fds, int nfds, int timeout);
+
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
+
 #if defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
 static inline int socket(int family, int type, int proto)
 {
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	return ztls_socket(family, type, proto);
+#else
 	return zsock_socket(family, type, proto);
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 }
 
 static inline int close(int sock)
 {
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	return ztls_close(sock);
+#else
 	return zsock_close(sock);
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 }
 
 static inline int bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
 {
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	return ztls_bind(sock, addr, addrlen);
+#else
 	return zsock_bind(sock, addr, addrlen);
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 }
 
 static inline int connect(int sock, const struct sockaddr *addr,
 			  socklen_t addrlen)
 {
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	return ztls_connect(sock, addr, addrlen);
+#else
 	return zsock_connect(sock, addr, addrlen);
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 }
 
 static inline int listen(int sock, int backlog)
 {
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	return ztls_listen(sock, backlog);
+#else
 	return zsock_listen(sock, backlog);
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 }
 
 static inline int accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 {
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	return ztls_accept(sock, addr, addrlen);
+#else
 	return zsock_accept(sock, addr, addrlen);
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 }
 
 static inline ssize_t send(int sock, const void *buf, size_t len, int flags)
 {
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	return ztls_send(sock, buf, len, flags);
+#else
 	return zsock_send(sock, buf, len, flags);
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 }
 
 static inline ssize_t recv(int sock, void *buf, size_t max_len, int flags)
 {
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	return ztls_recv(sock, buf, max_len, flags);
+#else
 	return zsock_recv(sock, buf, max_len, flags);
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 }
 
 /* This conflicts with fcntl.h, so code must include fcntl.h before socket.h: */
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+#define fcntl ztls_fcntl
+#else
 #define fcntl zsock_fcntl
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 
 static inline ssize_t sendto(int sock, const void *buf, size_t len, int flags,
 			     const struct sockaddr *dest_addr,
 			     socklen_t addrlen)
 {
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	return ztls_sendto(sock, buf, len, flags, dest_addr, addrlen);
+#else
 	return zsock_sendto(sock, buf, len, flags, dest_addr, addrlen);
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 }
 
 static inline ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags,
 			       struct sockaddr *src_addr, socklen_t *addrlen)
 {
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	return ztls_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
+#else
 	return zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 }
 
 static inline int poll(struct zsock_pollfd *fds, int nfds, int timeout)
 {
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	return ztls_poll(fds, nfds, timeout);
+#else
 	return zsock_poll(fds, nfds, timeout);
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 }
 
 #define pollfd zsock_pollfd
