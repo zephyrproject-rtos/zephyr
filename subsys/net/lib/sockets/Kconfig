@@ -30,6 +30,13 @@ config NET_SOCKETS_POLL_MAX
 	help
 	  Maximum number of entries supported for poll() call.
 
+config NET_SOCKETS_SOCKOPT_TLS
+	bool "Enable TCP TLS socket option support [EXPERIMENTAL]"
+	default n
+	help
+	  Enable TLS socket option support which automatically establishes
+	  a TLS connection to the remote host.
+
 config NET_DEBUG_SOCKETS
 	bool "Debug BSD Sockets compatible API calls"
 	default y if NET_LOG_GLOBAL
