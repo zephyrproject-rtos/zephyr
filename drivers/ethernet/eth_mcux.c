@@ -563,6 +563,17 @@ static void generate_mac(u8_t *mac_addr)
 	/* Locally administered, unicast */
 	mac_addr[5] = ((entropy >> 0) & 0xfc) | 0x02;
 }
+#elif defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC)
+static void generate_mac(u8_t *mac_addr)
+{
+	/* Trivially "hash" up to 128 bits of MCU unique identifier */
+	u32_t id = SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL;
+
+	mac_addr[3] = id >> 8;
+	mac_addr[4] = id >> 16;
+	/* Locally administered, unicast */
+	mac_addr[5] = ((id >> 0) & 0xfc) | 0x02;
+}
 #endif
 
 static int eth_0_init(struct device *dev)
@@ -598,7 +609,8 @@ static int eth_0_init(struct device *dev)
 	enet_config.macSpecialConfig |= kENET_ControlPromiscuousEnable;
 #endif
 
-#if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
+#if defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC) || \
+    defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
 	generate_mac(context->mac_addr);
 #endif
 
@@ -717,7 +729,7 @@ static struct eth_context eth_0_context = {
 		0x00,
 		0x04,
 		0x9f,
-#if !defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
+#if defined(CONFIG_ETH_MCUX_0_MANUAL_MAC)
 		CONFIG_ETH_MCUX_0_MAC3,
 		CONFIG_ETH_MCUX_0_MAC4,
 		CONFIG_ETH_MCUX_0_MAC5

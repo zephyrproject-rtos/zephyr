@@ -70,14 +70,31 @@ config ETH_MCUX_0_IRQ_PRI
 	help
 	  IRQ priority
 
+choice ETH_MCUX_0_MAC_SELECT
+	prompt "MAC address"
+	help
+	  Choose how to configure MAC address.
+
+config ETH_MCUX_0_UNIQUE_MAC
+	bool "Stable MAC address"
+	help
+	  Generate MAC address from MCU's unique identification register.
+
 config ETH_MCUX_0_RANDOM_MAC
 	bool "Random MAC address"
-	depends on ETH_MCUX_0 && ENTROPY_GENERATOR
-	default y
 	help
-	  Generate a random MAC address dynamically.
+	  Generate a random MAC address dynamically on each reboot.
+	  Note that using this choice and rebooting a board may leave
+	  stale MAC address in peers' ARP caches and lead to issues and
+	  delays in communication. (Use "ip neigh flush all" on Linux
+	  peers to clear ARP cache.)
 
-if ETH_MCUX_0 && ! ETH_MCUX_0_RANDOM_MAC
+config ETH_MCUX_0_MANUAL_MAC
+	bool "Manual MAC address"
+
+endchoice
+
+if ETH_MCUX_0_MANUAL_MAC
 
 config ETH_MCUX_0_MAC3
 	hex "MAC Address Byte 3"
