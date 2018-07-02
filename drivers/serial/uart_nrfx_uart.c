@@ -17,6 +17,10 @@
 static uart_irq_callback_t m_irq_callback; /**< Callback function pointer */
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+u32_t device_power_state;
+#endif
+
 /**
  * @brief Set the baud rate
  *
@@ -97,6 +101,59 @@ static int baudrate_set(struct device *dev, u32_t baudrate)
 
 	return 0;
 }
+
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+
+static void uart_nrfx_set_power_state(struct device *dev, u32_t power_state)
+{
+	device_power_state = power_state;
+}
+
+static u32_t uart_nrfx_get_power_state(struct device *dev)
+{
+	return device_power_state;
+}
+
+static int uart_nrfx_low_power_device(struct device *dev)
+{
+	if (device_busy_check(dev)) {
+		return -EBUSY;
+	}
+
+	nrf_uart_disable(NRF_UART0);
+
+	uart_nrfx_set_power_state(dev, DEVICE_PM_LOW_POWER_STATE);
+
+	return 0;
+}
+
+static int uart_nrfx_resume_device_from_low_power(struct device *dev)
+{
+	nrf_uart_enable(NRF_UART0);
+
+	uart_nrfx_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
+	return 0;
+}
+
+static int uart_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
+				void *context)
+{
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		if (*((u32_t *)context) == DEVICE_PM_LOW_POWER_STATE) {
+			return uart_nrfx_low_power_device(dev);
+		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			return uart_nrfx_resume_device_from_low_power(dev);
+		}
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((u32_t *)context) = uart_nrfx_get_power_state(dev);
+		return 0;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 /**
  * @brief Poll the device for input.
@@ -180,6 +237,8 @@ static int uart_nrfx_fifo_fill(struct device *dev,
 {
 	u8_t num_tx = 0;
 
+	device_busy_set(dev);
+
 	while ((len - num_tx > 0) &&
 	       nrf_uart_event_check(NRF_UART0, NRF_UART_EVENT_TXDRDY)) {
 		/* Clear the interrupt */
@@ -198,6 +257,8 @@ static int uart_nrfx_fifo_read(struct device *dev,
 			       const int size)
 {
 	u8_t num_rx = 0;
+
+	device_busy_set(dev);
 
 	while ((size - num_rx > 0) &&
 	       nrf_uart_event_check(NRF_UART0, NRF_UART_EVENT_RXDRDY)) {
@@ -272,11 +333,11 @@ static int uart_nrfx_irq_is_pending(struct device *dev)
 {
 	return ((nrf_uart_int_enable_check(NRF_UART0,
 					   NRF_UART_INT_MASK_TXDRDY) &&
-		uart_nrfx_irq_tx_ready(dev))
+		 uart_nrfx_irq_tx_ready(dev))
 		||
 		(nrf_uart_int_enable_check(NRF_UART0,
 					   NRF_UART_INT_MASK_RXDRDY) &&
-		uart_nrfx_irq_rx_ready(dev)));
+		 uart_nrfx_irq_rx_ready(dev)));
 }
 
 /** Interrupt driven interrupt update function */
@@ -309,6 +370,8 @@ static void uart_nrfx_isr(void *arg)
 	if (m_irq_callback) {
 		m_irq_callback(dev);
 	}
+
+	device_busy_clear(dev);
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
@@ -371,12 +434,12 @@ static int uart_nrfx_init(struct device *dev)
 			   NRF_UART_PARITY_INCLUDED,
 #else
 			   NRF_UART_PARITY_EXCLUDED,
-#endif /* CONFIG_UART_0_NRF_PARITY_BIT */
+#endif  /* CONFIG_UART_0_NRF_PARITY_BIT */
 #ifdef CONFIG_UART_0_NRF_FLOW_CONTROL
 			   NRF_UART_HWFC_ENABLED);
 #else
 			   NRF_UART_HWFC_DISABLED);
-#endif /* CONFIG_UART_0_NRF_PARITY_BIT */
+#endif  /* CONFIG_UART_0_NRF_PARITY_BIT */
 
 	/* Set baud rate */
 	err = baudrate_set(dev, CONFIG_UART_0_BAUD_RATE);
@@ -401,6 +464,10 @@ static int uart_nrfx_init(struct device *dev)
 		    DEVICE_GET(uart_nrfx_uart0),
 		    0);
 	irq_enable(NRFX_IRQ_NUMBER_GET(NRF_UART0));
+#endif
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	uart_nrfx_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 #endif
 
 	return 0;
@@ -428,13 +495,14 @@ static const struct uart_driver_api uart_nrfx_uart_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-DEVICE_AND_API_INIT(uart_nrfx_uart0,
-		    CONFIG_UART_0_NAME,
-		    uart_nrfx_init,
-		    NULL,
-		    NULL,
-		    /* Initialize UART device before UART console. */
-		    PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &uart_nrfx_uart_driver_api);
+DEVICE_DEFINE(uart_nrfx_uart0,
+	      CONFIG_UART_0_NAME,
+	      uart_nrfx_init,
+	      uart_nrfx_pm_control,
+	      NULL,
+	      NULL,
+	      /* Initialize UART device before UART console. */
+	      PRE_KERNEL_1,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+	      &uart_nrfx_uart_driver_api);
 
