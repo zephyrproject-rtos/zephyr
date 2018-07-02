@@ -4,7 +4,7 @@ tests:
   test:
     filter: CONFIG_HAS_SEGGER_RTT
     tags: debug tracing
-    min_ram: 13
+    min_ram: 18
     harness: console
     harness_config:
       type: one_line
