@@ -17,5 +17,6 @@ config  SOC_SERIES_NRF51X
 	select XIP
 	select HAS_CMSIS
 	select HAS_NRFX
+	select HAS_SEGGER_RTT
 	help
 	  Enable support for NRF51 MCU series
