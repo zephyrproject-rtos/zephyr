@@ -1335,20 +1335,20 @@ static const struct bt_mesh_model_op gen_level_cli_op[] = {
 
 /* Mapping of message handlers for Generic Power OnOff Server (0x1006) */
 static const struct bt_mesh_model_op gen_power_onoff_srv_op[] = {
-	{ BT_MESH_MODEL_OP_2(0x82, 0x11), 2, gen_onpowerup_get },
+	{ BT_MESH_MODEL_OP_2(0x82, 0x11), 0, gen_onpowerup_get },
 	BT_MESH_MODEL_OP_END,
 };
 
 /* Mapping of message handlers for Generic Power OnOff Setup Server (0x1007) */
 static const struct bt_mesh_model_op gen_power_onoff_setup_srv_op[] = {
-	{ BT_MESH_MODEL_OP_2(0x82, 0x13), 2, gen_onpowerup_set },
-	{ BT_MESH_MODEL_OP_2(0x82, 0x14), 2, gen_onpowerup_set_unack },
+	{ BT_MESH_MODEL_OP_2(0x82, 0x13), 1, gen_onpowerup_set },
+	{ BT_MESH_MODEL_OP_2(0x82, 0x14), 1, gen_onpowerup_set_unack },
 	BT_MESH_MODEL_OP_END,
 };
 
 /* Mapping of message handlers for Generic Power OnOff Client (0x1008) */
 static const struct bt_mesh_model_op gen_power_onoff_cli_op[] = {
-	{ BT_MESH_MODEL_OP_2(0x82, 0x12), 2, gen_onpowerup_status },
+	{ BT_MESH_MODEL_OP_2(0x82, 0x12), 1, gen_onpowerup_status },
 	BT_MESH_MODEL_OP_END,
 };
 
@@ -1411,7 +1411,7 @@ static const struct bt_mesh_model_op light_ctl_cli_op[] = {
 	{ BT_MESH_MODEL_OP_2(0x82, 0x60), 4, light_ctl_status },
 	{ BT_MESH_MODEL_OP_2(0x82, 0x63), 5, light_ctl_temp_range_status },
 	{ BT_MESH_MODEL_OP_2(0x82, 0x66), 4, light_ctl_temp_status },
-	{ BT_MESH_MODEL_OP_2(0x82, 0x68), 4, light_ctl_default_status },
+	{ BT_MESH_MODEL_OP_2(0x82, 0x68), 6, light_ctl_default_status },
 	BT_MESH_MODEL_OP_END,
 };
 
@@ -1425,7 +1425,7 @@ static const struct bt_mesh_model_op light_ctl_temp_srv_op[] = {
 
 /* Mapping of message handlers for Vendor (0x4321) */
 static const struct bt_mesh_model_op vnd_ops[] = {
-	{ BT_MESH_MODEL_OP_3(0x00, CID_ZEPHYR), 0, vnd_msg_handler },
+	{ BT_MESH_MODEL_OP_3(0x00, CID_ZEPHYR), 2, vnd_msg_handler },
 	BT_MESH_MODEL_OP_END,
 };
 
