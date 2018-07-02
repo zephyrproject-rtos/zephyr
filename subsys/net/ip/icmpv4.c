@@ -373,15 +373,25 @@ void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler)
 	sys_slist_find_and_remove(&handlers, &handler->node);
 }
 
-enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
-				  u8_t type, u8_t code)
+enum net_verdict net_icmpv4_input(struct net_pkt *pkt)
 {
 	struct net_icmpv4_handler *cb;
+	struct net_icmp_hdr hdr, *icmp_hdr;
+
+	icmp_hdr = net_icmpv4_get_hdr(pkt, &hdr);
+	if (!icmp_hdr) {
+		NET_DBG("NULL ICMPv4 header - dropping");
+		return NET_DROP;
+	}
+
+	NET_DBG("ICMPv4 packet received type %d code %d",
+		icmp_hdr->type, icmp_hdr->code);
 
 	net_stats_update_icmp_recv(net_pkt_iface(pkt));
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
-		if (cb->type == type && (cb->code == code || cb->code == 0)) {
+		if (cb->type == icmp_hdr->type &&
+				(cb->code == icmp_hdr->code || cb->code == 0)) {
 			return cb->handler(pkt);
 		}
 	}
