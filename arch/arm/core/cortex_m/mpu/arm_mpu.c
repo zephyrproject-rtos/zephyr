@@ -120,6 +120,16 @@ static inline u32_t _get_region_attr_by_type(u32_t type, u32_t size)
 }
 
 /**
+ * This internal function is utilized by the MPU driver to combine a given
+ * MPU attribute configuration and region size and return the correct
+ * parameter set.
+ */
+static inline u32_t _get_region_attr_by_conf(u32_t attr, u32_t size)
+{
+	return attr | _size_to_mpu_rasr_size(size);
+}
+
+/**
  * This internal function is utilized by the MPU driver to parse the intent
  * type (i.e. THREAD_STACK_REGION) and return the correct region index.
  */
@@ -285,8 +295,9 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 			SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
 				    region_index, pparts->start, pparts->size);
 			region_conf.base = pparts->start;
-			region_conf.attr = pparts->attr |
-				      _size_to_mpu_rasr_size(pparts->size);
+			region_conf.attr =
+				_get_region_attr_by_conf(pparts->attr,
+					pparts->size);
 			_region_init(region_index, &region_conf);
 			num_partitions--;
 		} else {
@@ -315,8 +326,8 @@ void arm_core_mpu_configure_mem_partition(u32_t part_index,
 		(region_index + part_index < _get_num_regions())) {
 		SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
 			    region_index + part_index, part->start, part->size);
-		region_conf.attr = part->attr |
-			_size_to_mpu_rasr_size(part->size);
+		region_conf.attr =
+			_get_region_attr_by_conf(part->attr, part->size);
 		region_conf.base = part->start;
 		_region_init(region_index + part_index, &region_conf);
 	} else {
