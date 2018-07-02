@@ -557,19 +557,13 @@ static void gen_onpowerup_set_unack(struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
-	u8_t tid, tmp8;
+	u8_t tmp8;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_onpowerup_state *state = model->user_data;
 
 	tmp8 = net_buf_simple_pull_u8(buf);
-	tid = net_buf_simple_pull_u8(buf);
 
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
-		return;
-	}
-
-	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	/* Here, Model specification is silent about tid implementation */
 
 	if (tmp8 > 0x02) {
 		return;
@@ -807,19 +801,12 @@ static void light_lightness_default_set_unack(struct bt_mesh_model *model,
 					      struct bt_mesh_msg_ctx *ctx,
 					      struct net_buf_simple *buf)
 {
-	u8_t tid;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
 	state->def = net_buf_simple_pull_le16(buf);
-	tid = net_buf_simple_pull_u8(buf);
 
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
-		return;
-	}
-
-	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	/* Here, Model specification is silent about tid implementation */
 
 	/* Do some work here to save value of state->def on SoC flash */
 
@@ -850,25 +837,13 @@ static void light_lightness_range_set_unack(struct bt_mesh_model *model,
 					    struct bt_mesh_msg_ctx *ctx,
 					    struct net_buf_simple *buf)
 {
-	/* u8_t tid; */
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
 	state->lightness_range_min = net_buf_simple_pull_le16(buf);
 	state->lightness_range_max = net_buf_simple_pull_le16(buf);
 
-	/* Here, Model specification is silent about tid implementation.
-	 *
-	 * tid = net_buf_simple_pull_u8(buf);
-	 *
-	 * if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
-	 *	return;
-	 * }
-	 *
-	 * state->last_tid = tid;
-	 * state->last_tx_addr = ctx->addr;
-	 *
-	 */
+	/* Here, Model specification is silent about tid implementation */
 
 	/* Do some work here to save values of
 	 * state->lightness_range_min & state->lightness_range_max
@@ -881,6 +856,7 @@ static void light_lightness_range_set_unack(struct bt_mesh_model *model,
 		bt_mesh_model_msg_init(msg,
 				       BT_MESH_MODEL_OP_2(0x82, 0x58));
 
+		net_buf_simple_add_u8(msg, state->status_code);
 		net_buf_simple_add_le16(msg, state->lightness_range_min);
 		net_buf_simple_add_le16(msg, state->lightness_range_max);
 
@@ -936,7 +912,10 @@ static void light_lightness_range_status(struct bt_mesh_model *model,
 					 struct bt_mesh_msg_ctx *ctx,
 					 struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (range_min) = %04x",
+	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (status code) = %02x",
+	       net_buf_simple_pull_u8(buf));
+
+	printk("  (range_min) = %04x",
 	       net_buf_simple_pull_le16(buf));
 
 	printk("  (range_max) = %04x\n",
@@ -1061,7 +1040,6 @@ static void light_ctl_default_set_unack(struct bt_mesh_model *model,
 					struct bt_mesh_msg_ctx *ctx,
 					struct net_buf_simple *buf)
 {
-	/* u8_t tid; */
 	u16_t tmp16;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
@@ -1114,7 +1092,6 @@ static void light_ctl_temp_range_set_unack(struct bt_mesh_model *model,
 					   struct bt_mesh_msg_ctx *ctx,
 					   struct net_buf_simple *buf)
 {
-	/* u8_t tid; */
 	u16_t tmp[2];
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
@@ -1182,7 +1159,10 @@ static void light_ctl_temp_range_status(struct bt_mesh_model *model,
 					struct bt_mesh_msg_ctx *ctx,
 					struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_CTL_SRV (temp_range_min) = %04x",
+	printk("Acknownledgement from LIGHT_CTL_SRV (status code) = %02x",
+	       net_buf_simple_pull_u8(buf));
+
+	printk("  (temp_range_min) = %04x",
 	       net_buf_simple_pull_le16(buf));
 
 	printk("  (temp_range_max) = %04x\n",
