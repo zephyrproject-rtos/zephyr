@@ -111,23 +111,6 @@ const struct in_addr *net_ipv4_broadcast_address(void)
 	return &addr;
 }
 
-static inline enum net_verdict process_icmpv4_pkt(struct net_pkt *pkt,
-						  struct net_ipv4_hdr *ipv4)
-{
-	struct net_icmp_hdr hdr, *icmp_hdr;
-
-	icmp_hdr = net_icmpv4_get_hdr(pkt, &hdr);
-	if (!icmp_hdr) {
-		NET_DBG("NULL ICMPv4 header - dropping");
-		return NET_DROP;
-	}
-
-	NET_DBG("ICMPv4 packet received type %d code %d",
-		icmp_hdr->type, icmp_hdr->code);
-
-	return net_icmpv4_input(pkt, icmp_hdr->type, icmp_hdr->code);
-}
-
 enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 {
 	struct net_ipv4_hdr *hdr = NET_IPV4_HDR(pkt);
@@ -173,7 +156,7 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 
 	switch (hdr->proto) {
 	case IPPROTO_ICMP:
-		verdict = process_icmpv4_pkt(pkt, hdr);
+		verdict = net_icmpv4_input(pkt);
 		break;
 	case IPPROTO_UDP:
 		verdict = net_conn_input(IPPROTO_UDP, pkt);

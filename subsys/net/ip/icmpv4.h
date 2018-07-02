@@ -73,8 +73,7 @@ void net_icmpv4_register_handler(struct net_icmpv4_handler *handler);
 
 void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler);
 
-enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
-				  u8_t type, u8_t code);
+enum net_verdict net_icmpv4_input(struct net_pkt *pkt);
 
 struct net_icmp_hdr *net_icmpv4_get_hdr(struct net_pkt *pkt,
 					struct net_icmp_hdr *hdr);
