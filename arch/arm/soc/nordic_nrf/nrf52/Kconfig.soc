@@ -183,17 +183,14 @@ depends on SOC_SERIES_NRF52X
 config SOC_NRF52810_QFAA
 	bool "NRF52810_QFAA"
 	select SOC_NRF52810
-	select HAS_SEGGER_RTT
 
 config SOC_NRF52832_QFAA
 	bool "NRF52832_QFAA"
 	select SOC_NRF52832
-	select HAS_SEGGER_RTT
 
 config SOC_NRF52840_QIAA
 	bool "NRF52840_QIAA"
 	select SOC_NRF52840
-	select HAS_SEGGER_RTT
 
 endchoice
 
