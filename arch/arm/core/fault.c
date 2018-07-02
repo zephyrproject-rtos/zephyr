@@ -18,6 +18,11 @@
 #include <kernel_structs.h>
 #include <inttypes.h>
 
+/* Convenience defines for accessing the Fault Status registers. */
+#define SCB_UFSR  (*((__IOM u16_t *) &SCB->CFSR + 1))
+#define SCB_BFSR  (*((__IOM u8_t *) &SCB->CFSR + 1))
+#define SCB_MMFSR (*((__IOM u8_t *) &SCB->CFSR))
+
 #ifdef CONFIG_PRINTK
 #include <misc/printk.h>
 #define PR_EXC(...) printk(__VA_ARGS__)

@@ -12,7 +12,10 @@
 #ifndef _ARM_BEETLE_SOC_H_
 #define _ARM_BEETLE_SOC_H_
 
+#include <generated_dts_board.h>
+
 #include "soc_irq.h"
+
 
 /*
  * The bit definitions below are used to enable/disable the following
@@ -95,6 +98,7 @@
  */
 #include <kernel_includes.h>
 
+#include "soc_cmsis.h"
 #include "soc_pins.h"
 #include "soc_power.h"
 #include "soc_registers.h"

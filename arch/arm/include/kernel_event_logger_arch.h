@@ -16,7 +16,6 @@
 extern "C" {
 #endif
 
-#include "arch/arm/cortex_m/cmsis.h"
 /**
  * @brief Get the identification of the current interrupt.
  *

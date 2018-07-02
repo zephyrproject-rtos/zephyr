@@ -8,7 +8,6 @@
 #include <init.h>
 #include <kernel.h>
 #include <soc.h>
-#include <arch/arm/cortex_m/cmsis.h>
 #include <arch/arm/cortex_m/mpu/nxp_mpu.h>
 #include <logging/sys_log.h>
 #include <misc/__assert.h>

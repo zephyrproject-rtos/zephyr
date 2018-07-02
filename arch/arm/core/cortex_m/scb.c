@@ -17,7 +17,6 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <misc/util.h>
-#include <arch/arm/cortex_m/cmsis.h>
 
 #if defined(CONFIG_SOC_TI_LM3S6965_QEMU)
 /*

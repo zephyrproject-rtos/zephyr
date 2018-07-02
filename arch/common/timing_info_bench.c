@@ -22,7 +22,7 @@ u64_t __common_var_swap_end_time;
  * Kernel stats dedicated timer is used to measure kernel stats
  */
 #if defined(CONFIG_NRF_RTC_TIMER)
-#include <arch/arm/cortex_m/cmsis.h>
+
 /* To get current count of timer, first 1 need to be written into
  * Capture Register and Current Count will be copied into corresponding
  * current count register.
@@ -37,7 +37,7 @@ u64_t __common_var_swap_end_time;
 #define TIMING_INFO_OS_GET_TIME()  k_cycle_get_32()
 
 #ifdef CONFIG_ARM
-#include <arch/arm/cortex_m/cmsis.h>
+
 #define TIMING_INFO_GET_TIMER_VALUE()   SysTick->VAL
 #endif	/* CONFIG_ARM */
 
