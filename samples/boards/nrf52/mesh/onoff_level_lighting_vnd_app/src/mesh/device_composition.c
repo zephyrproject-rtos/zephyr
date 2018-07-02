@@ -41,28 +41,28 @@ static struct bt_mesh_health_srv health_srv = {
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
 /* Definitions of models publication context (Start) */
-BT_MESH_MODEL_PUB_DEFINE(gen_onoff_srv_pub_root, NULL, 2 + 2);
-BT_MESH_MODEL_PUB_DEFINE(gen_onoff_cli_pub_root, NULL, 2 + 2);
+BT_MESH_MODEL_PUB_DEFINE(gen_onoff_srv_pub_root, NULL, 2 + 3);
+BT_MESH_MODEL_PUB_DEFINE(gen_onoff_cli_pub_root, NULL, 2 + 4);
 
-BT_MESH_MODEL_PUB_DEFINE(gen_level_srv_pub_root, NULL, 2 + 2);
-BT_MESH_MODEL_PUB_DEFINE(gen_level_cli_pub_root, NULL, 2 + 4);
+BT_MESH_MODEL_PUB_DEFINE(gen_level_srv_pub_root, NULL, 2 + 5);
+BT_MESH_MODEL_PUB_DEFINE(gen_level_cli_pub_root, NULL, 2 + 7);
 
-BT_MESH_MODEL_PUB_DEFINE(gen_power_onoff_srv_pub, NULL, 2 + 2);
-BT_MESH_MODEL_PUB_DEFINE(gen_power_onoff_cli_pub, NULL, 2 + 2);
+BT_MESH_MODEL_PUB_DEFINE(gen_power_onoff_srv_pub, NULL, 2 + 1);
+BT_MESH_MODEL_PUB_DEFINE(gen_power_onoff_cli_pub, NULL, 2 + 1);
 
 BT_MESH_MODEL_PUB_DEFINE(light_lightness_srv_pub, NULL, 2 + 5);
-BT_MESH_MODEL_PUB_DEFINE(light_lightness_cli_pub, NULL, 2 + 2);
+BT_MESH_MODEL_PUB_DEFINE(light_lightness_cli_pub, NULL, 2 + 5);
 
-BT_MESH_MODEL_PUB_DEFINE(light_ctl_srv_pub, NULL, 2 + 6);
-BT_MESH_MODEL_PUB_DEFINE(light_ctl_cli_pub, NULL, 2 + 4);
+BT_MESH_MODEL_PUB_DEFINE(light_ctl_srv_pub, NULL, 2 + 9);
+BT_MESH_MODEL_PUB_DEFINE(light_ctl_cli_pub, NULL, 2 + 9);
 
-BT_MESH_MODEL_PUB_DEFINE(vnd_pub, NULL, 2 + 2);
+BT_MESH_MODEL_PUB_DEFINE(vnd_pub, NULL, 3 + 2);
 
-BT_MESH_MODEL_PUB_DEFINE(gen_onoff_srv_pub_s0, NULL, 2 + 2);
-BT_MESH_MODEL_PUB_DEFINE(gen_onoff_cli_pub_s0, NULL, 2 + 2);
+BT_MESH_MODEL_PUB_DEFINE(gen_onoff_srv_pub_s0, NULL, 2 + 3);
+BT_MESH_MODEL_PUB_DEFINE(gen_onoff_cli_pub_s0, NULL, 2 + 4);
 
-BT_MESH_MODEL_PUB_DEFINE(gen_level_srv_pub_s0, NULL, 2 + 2);
-BT_MESH_MODEL_PUB_DEFINE(gen_level_cli_pub_s0, NULL, 2 + 2 + 2);
+BT_MESH_MODEL_PUB_DEFINE(gen_level_srv_pub_s0, NULL, 2 + 5);
+BT_MESH_MODEL_PUB_DEFINE(gen_level_cli_pub_s0, NULL, 2 + 7);
 /* Definitions of models publication context (End) */
 
 /* Definitions of models user data (Start) */
