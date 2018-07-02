@@ -249,6 +249,13 @@ config BUILD_OUTPUT_STRIPPED
 	  Build a stripped binary. This will build a zephyr.stripped file need
 	  by some platforms.
 
+config APPLICATION_DEFINED_SYSCALL
+	bool "Scan application folder for any syscall definition"
+	default n
+	help
+	  Scan additional folders inside application source folder
+	  for application defined syscalls.
+
 endmenu
 endmenu
 
