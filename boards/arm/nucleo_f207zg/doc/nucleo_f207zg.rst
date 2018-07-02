@@ -11,6 +11,7 @@ with a wide range of connectivity support and configurations. Here are
 some highlights of the Nucleo F207ZG board:
 
 - STM32 microcontroller in LQFP144 package
+- Ethernet compliant with IEEE-802.3-2002
 - Two types of extension resources:
 
   - ST Zio connector including: support for Arduino* Uno V3 connectivity
@@ -59,7 +60,9 @@ Nucleo F207ZG provides the following hardware components:
 - SDIO
 - USB 2.0 OTG FS
 - DMA Controller
+- 10/100 Ethernet MAC with dedicated DMA
 - CRC calculation unit
+- True random number generator
 
 More information about STM32F207ZG can be found here:
 
@@ -82,6 +85,8 @@ The Zephyr nucleo_207zg board configuration supports the following hardware feat
 | PINMUX    | on-chip    | pinmux                              |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
+| ETHERNET  | on-chip    | Ethernet                            |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
@@ -124,6 +129,7 @@ For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
+- ETH : PA1, PA2, PA7, PB13, PC1, PC4, PC5, PG11, PG13
 - USER_PB : PC13
 - LD1 : PB0
 - LD2 : PB7
