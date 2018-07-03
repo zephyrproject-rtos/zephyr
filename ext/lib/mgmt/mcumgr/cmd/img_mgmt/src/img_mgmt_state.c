@@ -251,7 +251,11 @@ img_mgmt_state_read(struct mgmt_ctxt *ctxt)
 int
 img_mgmt_state_write(struct mgmt_ctxt *ctxt)
 {
-    uint8_t hash[IMAGE_HASH_LEN];
+    /*
+     * We add 1 to the 32-byte hash buffer as _cbor_value_copy_string() adds
+     * a null character at the end of the buffer.
+     */
+    uint8_t hash[IMAGE_HASH_LEN + 1];
     size_t hash_len;
     bool confirm;
     int slot;
