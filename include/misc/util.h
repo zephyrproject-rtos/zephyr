@@ -124,6 +124,16 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 #endif
 #endif
 
+/**
+ * @brief Macro sets or clears bit depending on boolean value
+ *
+ * @param var Variable to be altered
+ * @param bit Bit number
+ * @param set Value 0 clears bit, any other value sets bit
+ */
+#define WRITE_BIT(var, bit, set) \
+	((var) = (set) ? ((var) | BIT(bit)) : ((var) & ~BIT(bit)))
+
 #define BIT_MASK(n) (BIT(n) - 1)
 
 /**
