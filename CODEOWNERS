@@ -14,7 +14,7 @@ arch/arm/soc/st_stm32/stm32f4/*          @rsalveti @idlethread
 arch/arm/soc/ti_simplelink/cc32xx        @GAnthony
 arch/arm/soc/ti_simplelink/msp432p4xx    @Mani-Sadhasivam
 arch/nios2/                              @andrewboie @ramakrishnapallala
-arch/posix/                              @aescolar-ot
+arch/posix/                              @aescolar
 arch/riscv32/                            @fractalclone @kgugala @pgielda
 arch/x86/                                @andrewboie @ramakrishnapallala
 arch/x86/core/*                          @andrewboie
@@ -49,7 +49,7 @@ boards/arm/olimexino_stm32/              @ydamigos
 boards/arm/stm32f3_disco/                @ydamigos
 boards/nios2/                            @ramakrishnapallala
 boards/nios2/altera_max10/               @ramakrishnapallala
-boards/posix/                            @aescolar-ot
+boards/posix/                            @aescolar
 boards/riscv32/                          @fractalclone @kgugala @pgielda
 boards/x86/                              @andrewboie @nashif
 boards/x86/arduino_101/                  @nashif
@@ -65,7 +65,7 @@ doc/subsystems/bluetooth/                @sjanc @jhedberg @Vudentz
 drivers/*/*mcux*                         @MaureenHelm
 drivers/*/*qmsi*                         @nashif
 drivers/*/*stm32*                        @erwango
-drivers/*/*native_posix*                 @aescolar-ot
+drivers/*/*native_posix*                 @aescolar
 drivers/adc/                             @anangl
 drivers/bluetooth/                       @sjanc @jhedberg @Vudentz
 drivers/clock_control/*stm32f4*          @rsalveti @idlethread
