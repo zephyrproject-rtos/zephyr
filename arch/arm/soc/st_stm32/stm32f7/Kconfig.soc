@@ -11,5 +11,7 @@ depends on SOC_SERIES_STM32F7X
 
 config SOC_STM32F746XG
 	bool "STM32F746XG"
+config SOC_STM32F769NI
+	bool "STM32F769NI"
 
 endchoice
