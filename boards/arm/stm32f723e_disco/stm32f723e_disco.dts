@@ -61,6 +61,19 @@
 	status = "ok";
 };
 
+
+&i2c1 {
+	status = "ok";
+};
+
+&i2c2 {
+	status = "ok";
+};
+
+&i2c3 {
+	status = "ok";
+};
+
 &usbotg_fs {
 	status = "ok";
 };
