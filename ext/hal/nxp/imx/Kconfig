@@ -28,4 +28,9 @@ config HAS_IMX_GPIO
 	help
 	  Set if the GPIO module is present in the SoC.
 
+config HAS_IMX_I2C
+	bool
+	help
+	  Set if the I2C module is present in the SoC.
+
 endif # HAS_IMX_HAL

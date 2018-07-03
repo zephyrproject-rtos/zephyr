@@ -12,3 +12,4 @@ endif()
 
 zephyr_sources_ifdef(CONFIG_UART_IMX                uart_imx.c)
 zephyr_sources_ifdef(CONFIG_GPIO_IMX                gpio_imx.c)
+zephyr_sources_ifdef(CONFIG_I2C_IMX                  i2c_imx.c)
