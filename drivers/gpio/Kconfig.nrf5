@@ -8,6 +8,7 @@
 menuconfig GPIO_NRF5
 	bool "Nordic Semiconductor nRF5x-based GPIO driver"
 	depends on GPIO && SOC_FAMILY_NRF
+	select HAS_DTS_GPIO if SOC_SERIES_NRF52X
 	help
 	  Enable GPIO driver for nRF5 line of MCUs.
 
