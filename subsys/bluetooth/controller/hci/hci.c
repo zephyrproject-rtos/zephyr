@@ -595,10 +595,10 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[39] |= BIT(2);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-#if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_TINYCRYPT_ECC)
+#if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_CRYPTO_DRIVER_ECC)
 	/* LE Read Local P256 Public Key and LE Generate DH Key*/
 	rp->commands[34] |= BIT(1) | BIT(2);
-#endif /* CONFIG_BT_HCI_RAW && CONFIG_BT_TINYCRYPT_ECC */
+#endif /* CONFIG_BT_HCI_RAW && CONFIG_BT_CRYPTO_DRIVER_ECC */
 
 	/* LE Read TX Power. */
 	rp->commands[38] |= BIT(7);

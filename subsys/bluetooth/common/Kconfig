@@ -28,8 +28,8 @@ config BT_HCI_VS_EXT_DETECT
 config BT_RPA
 	# Virtual/hidden option
 	bool
-	select TINYCRYPT
-	select TINYCRYPT_AES
+	select CRYPTO
+	select CRYPTO_ENABLE_AES
 	default n
 
 config BT_DEBUG

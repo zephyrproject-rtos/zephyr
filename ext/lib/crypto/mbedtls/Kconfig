@@ -141,4 +141,20 @@ config APP_LINK_WITH_MBEDTLS
 	  disabled if the include paths for MBEDTLS are causing aliasing
 	  issues for 'app'.
 
-endif
+config MBEDTLS_ENABLE_CMAC
+	bool "Enable cipher based message authentication code (CMAC)"
+	default y if CRYPTO_ENABLE_AES_CMAC
+
+config MBEDTLS_ENABLE_ECC_DH
+	bool "Enable key exchange with elliptic curves (ECC DH)"
+	default y if CRYPTO_ENABLE_ECC_DH
+
+config MBEDTLS_ENABLE_HMAC_DRBG
+	bool "Enable random number generator using HMAC"
+	default y if CRYPTO_ENABLE_HMAC_PRNG
+
+config MBEDTLS_ROM_TABLES
+	bool "Store tables in ROM to reduce RAM footprint/increase performance"
+	default y
+
+endif # CONFIG_MBEDTLS
