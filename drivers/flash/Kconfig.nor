@@ -1,0 +1,87 @@
+#
+# Copyright (c) 2018 Savoir-Faire Linux.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+
+menuconfig SPI_NOR
+	bool
+	prompt "SPI NOR Flash"
+	select FLASH_HAS_DRIVER_ENABLED
+	depends on SPI && FLASH
+
+if SPI_NOR
+
+config SPI_NOR_DRV_NAME
+	string
+	prompt "SPI flash device name"
+	default "SPI_NOR"
+	help
+	  This option is mandatory to identify the NOR chip and retrieve its
+	  characterics.
+	  it actually supports the following NOR chips:
+	   - W25Q80
+	   - W25Q16
+	   - W25Q32
+	   - S25FL216K
+
+config SPI_NOR_SPI_NAME
+	string
+	prompt "SPI controller device name"
+	default ""
+
+config SPI_NOR_INIT_PRIORITY
+	int
+	default 80
+	help
+	  Device driver initialization priority.
+	  Device is connected to SPI bus, it has to
+	  be initialized after SPI driver.
+
+config SPI_NOR_SPI_FREQ_0
+	int "SPI system frequency"
+	default 8000000
+	help
+	  This option sets the SPI controller's frequency. Beware this value
+	  depends on the SPI controller being used and also on the system
+	  clock.
+
+config SPI_NOR_SPI_SLAVE
+	int "SPI slave linked to SPI flash"
+	help
+	  This option sets the SPI slave number the SPI controller has to switch
+	  to when dealing with SPI NOR flash chip.
+
+config SPI_NOR_GPIO_SPI_CS
+	bool "Manage SPI CS through a GPIO pin"
+	default n
+	help
+	This option is useful if one needs to manage SPI CS through a GPIO
+	pin to by-pass the SPI controller's CS logic.
+
+config SPI_NOR_GPIO_SPI_CS_DRV_NAME
+	string "GPIO driver's name to use to drive SPI CS through"
+	default ""
+	depends on SPI_NOR_GPIO_SPI_CS
+	help
+	This option is mandatory to set which GPIO controller to use in order
+	to actually emulate the SPI CS.
+
+config SPI_NOR_GPIO_SPI_CS_PIN
+	int "GPIO PIN to use to drive SPI CS through"
+	default 0
+	depends on SPI_NOR_GPIO_SPI_CS
+	help
+	This option is mandatory to set which GPIO pin to use in order
+	to actually emulate the SPI CS.
+
+config SPI_NOR_GPIO_SPI_CS_WAIT_DELAY
+	int "Delay time in us"
+	default 0
+        depends on SPI_NOR_GPIO_SPI_CS
+	help
+	This is the wait delay (in us) to allow for CS switching to take effect
+
+
+endif # SPI_NOR
