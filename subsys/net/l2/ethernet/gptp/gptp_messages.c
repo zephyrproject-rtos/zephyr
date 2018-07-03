@@ -118,11 +118,59 @@ out:
 	}
 }
 
-struct net_pkt *gptp_prepare_sync(int port)
+static struct net_buf *setup_ethernet_frame(struct net_pkt *pkt,
+					    struct net_if *iface)
 {
 	int eth_len = sizeof(struct net_eth_hdr);
-	struct gptp_port_ds *port_ds;
 	struct net_eth_hdr *eth;
+	struct net_buf *frag;
+
+#if defined(CONFIG_NET_GPTP_VLAN)
+	bool vlan_enabled;
+
+	vlan_enabled = net_eth_get_vlan_status(iface);
+	if (vlan_enabled) {
+		eth_len = sizeof(struct net_eth_vlan_hdr);
+	}
+#endif
+
+	frag = net_pkt_get_reserve_tx_data(eth_len, NET_BUF_TIMEOUT);
+	if (!frag) {
+		return NULL;
+	}
+
+	net_pkt_frag_add(pkt, frag);
+	net_pkt_set_iface(pkt, iface);
+	net_pkt_set_family(pkt, AF_UNSPEC);
+	net_pkt_set_ll_reserve(pkt, eth_len);
+
+	eth = NET_ETH_HDR(pkt);
+
+#if defined(CONFIG_NET_GPTP_VLAN)
+	if (vlan_enabled) {
+		struct net_eth_vlan_hdr *hdr_vlan;
+
+		hdr_vlan = (struct net_eth_vlan_hdr *)eth;
+		hdr_vlan->vlan.tpid = htons(NET_ETH_PTYPE_VLAN);
+		hdr_vlan->vlan.tci = htons(net_eth_get_vlan_tag(iface));
+		hdr_vlan->type = htons(NET_ETH_PTYPE_PTP);
+	} else
+#endif
+	{
+		eth->type = htons(NET_ETH_PTYPE_PTP);
+	}
+
+	memcpy(&eth->src.addr, net_if_get_link_addr(iface)->addr,
+	       sizeof(struct net_eth_addr));
+	memcpy(&eth->dst.addr, &gptp_multicast_eth_addr,
+	       sizeof(struct net_eth_addr));
+
+	return frag;
+}
+
+struct net_pkt *gptp_prepare_sync(int port)
+{
+	struct gptp_port_ds *port_ds;
 	struct gptp_sync *sync;
 	struct net_if *iface;
 	struct net_pkt *pkt;
@@ -138,22 +186,16 @@ struct net_pkt *gptp_prepare_sync(int port)
 		goto fail;
 	}
 
-	frag = net_pkt_get_reserve_tx_data(eth_len, NET_BUF_TIMEOUT);
+	frag = setup_ethernet_frame(pkt, iface);
 	if (!frag) {
 		goto fail;
 	}
 
-	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_UNSPEC);
 	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
-
-	net_pkt_set_ll_reserve(pkt, eth_len);
 
 	port_ds = GPTP_PORT_DS(port);
 	sync = GPTP_SYNC(pkt);
 	hdr = GPTP_HDR(pkt);
-	eth = NET_ETH_HDR(pkt);
 
 	/*
 	 * Header configuration.
@@ -177,14 +219,6 @@ struct net_pkt *gptp_prepare_sync(int port)
 	hdr->reserved1 = 0;
 	hdr->reserved2 = 0;
 
-	/* Ethernet configuration. */
-	eth->type = htons(NET_ETH_PTYPE_PTP);
-
-	memcpy(&eth->src.addr, net_if_get_link_addr(iface)->addr,
-	       sizeof(struct net_eth_addr));
-	memcpy(&eth->dst.addr, &gptp_multicast_eth_addr,
-	       sizeof(struct net_eth_addr));
-
 	/* PTP configuration. */
 	memset(&sync->reserved, 0, sizeof(sync->reserved));
 
@@ -205,10 +239,8 @@ fail:
 
 struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 {
-	int eth_len = sizeof(struct net_eth_hdr);
 	struct gptp_hdr *hdr, *sync_hdr;
 	struct gptp_port_ds *port_ds;
-	struct net_eth_hdr *eth;
 	struct net_if *iface;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
@@ -223,21 +255,16 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 		goto fail;
 	}
 
-	frag = net_pkt_get_reserve_tx_data(eth_len, NET_BUF_TIMEOUT);
+	frag = setup_ethernet_frame(pkt, iface);
 	if (!frag) {
 		goto fail;
 	}
 
-	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_UNSPEC);
-	net_pkt_set_ll_reserve(pkt, eth_len);
 	net_pkt_set_priority(pkt, NET_PRIORITY_IC);
 
 	port_ds = GPTP_PORT_DS(port);
 	hdr = GPTP_HDR(pkt);
 	sync_hdr = GPTP_HDR(sync);
-	eth = NET_ETH_HDR(pkt);
 
 	/*
 	 * Header configuration.
@@ -262,14 +289,6 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 	hdr->reserved1 = 0;
 	hdr->reserved2 = 0;
 
-	/* Ethernet configuration. */
-	eth->type = htons(NET_ETH_PTYPE_PTP);
-
-	memcpy(&eth->src.addr, net_if_get_link_addr(iface)->addr,
-	       sizeof(struct net_eth_addr));
-	memcpy(&eth->dst.addr, &gptp_multicast_eth_addr,
-	       sizeof(struct net_eth_addr));
-
 	/* PTP configuration will be set by the MDSyncSend state machine. */
 
 	net_buf_add(frag, sizeof(struct gptp_hdr) +
@@ -287,10 +306,8 @@ fail:
 
 struct net_pkt *gptp_prepare_pdelay_req(int port)
 {
-	int eth_len = sizeof(struct net_eth_hdr);
 	struct gptp_pdelay_req *req;
 	struct gptp_port_ds *port_ds;
-	struct net_eth_hdr *eth;
 	struct net_if *iface;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
@@ -305,21 +322,16 @@ struct net_pkt *gptp_prepare_pdelay_req(int port)
 		goto fail;
 	}
 
-	frag = net_pkt_get_reserve_tx_data(eth_len, NET_BUF_TIMEOUT);
+	frag = setup_ethernet_frame(pkt, iface);
 	if (!frag) {
 		goto fail;
 	}
 
-	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_UNSPEC);
-	net_pkt_set_ll_reserve(pkt, eth_len);
 	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
 
 	port_ds = GPTP_PORT_DS(port);
 	req = GPTP_PDELAY_REQ(pkt);
 	hdr = GPTP_HDR(pkt);
-	eth = NET_ETH_HDR(pkt);
 
 	/* Header configuration. */
 	hdr->transport_specific = GPTP_TRANSPORT_802_1_AS;
@@ -345,14 +357,6 @@ struct net_pkt *gptp_prepare_pdelay_req(int port)
 	memcpy(&hdr->port_id.clk_id,
 	       &port_ds->port_id.clk_id, GPTP_CLOCK_ID_LEN);
 
-	/* Ethernet configuration. */
-	eth->type = htons(NET_ETH_PTYPE_PTP);
-
-	memcpy(&eth->src.addr, net_if_get_link_addr(iface)->addr,
-	       sizeof(struct net_eth_addr));
-	memcpy(&eth->dst.addr, &gptp_multicast_eth_addr,
-	       sizeof(struct net_eth_addr));
-
 	/* PTP configuration. */
 	memset(&req->reserved1, 0, sizeof(req->reserved1));
 	memset(&req->reserved2, 0, sizeof(req->reserved2));
@@ -377,9 +381,7 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 					 struct net_pkt *req)
 {
 	struct net_if *iface = net_pkt_iface(req);
-	int eth_len = sizeof(struct net_eth_hdr);
 	struct gptp_pdelay_resp *pdelay_resp;
-	struct net_eth_hdr *eth, *eth_query;
 	struct gptp_pdelay_req *pdelay_req;
 	struct gptp_hdr *hdr, *query;
 	struct gptp_port_ds *port_ds;
@@ -391,26 +393,20 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 		goto fail;
 	}
 
-	frag = net_pkt_get_reserve_tx_data(eth_len, NET_BUF_TIMEOUT);
+	frag = setup_ethernet_frame(pkt, iface);
 	if (!frag) {
 		goto fail;
 	}
 
-	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET);
-	net_pkt_set_ll_reserve(pkt, eth_len);
 	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
 
 	port_ds = GPTP_PORT_DS(port);
 
 	pdelay_resp = GPTP_PDELAY_RESP(pkt);
 	hdr = GPTP_HDR(pkt);
-	eth = NET_ETH_HDR(pkt);
 
 	pdelay_req = GPTP_PDELAY_REQ(req);
 	query = GPTP_HDR(req);
-	eth_query = NET_ETH_HDR(req);
 
 	/* Header configuration. */
 	hdr->transport_specific = GPTP_TRANSPORT_802_1_AS;
@@ -435,14 +431,6 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 
 	memcpy(&hdr->port_id.clk_id, &port_ds->port_id.clk_id,
 	       GPTP_CLOCK_ID_LEN);
-
-	/* Ethernet configuration. */
-	eth->type = htons(NET_ETH_PTYPE_PTP);
-
-	memcpy(&eth->dst.addr, &gptp_multicast_eth_addr,
-	       sizeof(struct net_eth_addr));
-	memcpy(&eth->src.addr, net_if_get_link_addr(iface)->addr,
-	       sizeof(struct net_eth_addr));
 
 	/* PTP configuration. */
 	pdelay_resp->req_receipt_ts_secs_high = 0;
@@ -469,9 +457,7 @@ struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
 					      struct net_pkt *resp)
 {
 	struct net_if *iface = net_pkt_iface(resp);
-	int eth_len = sizeof(struct net_eth_hdr);
 	struct gptp_pdelay_resp_follow_up *follow_up;
-	struct net_eth_hdr *eth, *eth_query;
 	struct gptp_pdelay_resp *pdelay_resp;
 	struct gptp_hdr *hdr, *resp_hdr;
 	struct gptp_port_ds *port_ds;
@@ -483,26 +469,20 @@ struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
 		goto fail;
 	}
 
-	frag = net_pkt_get_reserve_tx_data(eth_len, NET_BUF_TIMEOUT);
+	frag = setup_ethernet_frame(pkt, iface);
 	if (!frag) {
 		goto fail;
 	}
 
-	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET);
-	net_pkt_set_ll_reserve(pkt, eth_len);
 	net_pkt_set_priority(pkt, NET_PRIORITY_IC);
 
 	port_ds = GPTP_PORT_DS(port);
 
 	follow_up = GPTP_PDELAY_RESP_FOLLOWUP(pkt);
 	hdr = GPTP_HDR(pkt);
-	eth = NET_ETH_HDR(pkt);
 
 	pdelay_resp = GPTP_PDELAY_RESP(resp);
 	resp_hdr = GPTP_HDR(resp);
-	eth_query = NET_ETH_HDR(resp);
 
 	/* Header configuration. */
 	hdr->transport_specific = GPTP_TRANSPORT_802_1_AS;
@@ -528,14 +508,6 @@ struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
 	memcpy(&hdr->port_id.clk_id, &port_ds->port_id.clk_id,
 	       GPTP_CLOCK_ID_LEN);
 
-	/* Ethernet configuration. */
-	eth->type = htons(NET_ETH_PTYPE_PTP);
-
-	memcpy(&eth->dst.addr, &gptp_multicast_eth_addr,
-	       sizeof(struct net_eth_addr));
-	memcpy(&eth->src.addr, net_if_get_link_addr(iface)->addr,
-	       sizeof(struct net_eth_addr));
-
 	/* PTP configuration. */
 	follow_up->resp_orig_ts_secs_high = 0;
 	follow_up->resp_orig_ts_secs_low = 0;
@@ -560,11 +532,9 @@ fail:
 
 struct net_pkt *gptp_prepare_announce(int port)
 {
-	int eth_len = sizeof(struct net_eth_hdr);
 	struct gptp_global_ds *global_ds;
 	struct gptp_port_ds *port_ds;
 	struct gptp_announce *ann;
-	struct net_eth_hdr *eth;
 	struct net_if *iface;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
@@ -580,29 +550,16 @@ struct net_pkt *gptp_prepare_announce(int port)
 		goto fail;
 	}
 
-	frag = net_pkt_get_reserve_tx_data(eth_len, NET_BUF_TIMEOUT);
+	frag = setup_ethernet_frame(pkt, iface);
 	if (!frag) {
 		goto fail;
 	}
 
-	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET);
-	net_pkt_set_ll_reserve(pkt, eth_len);
 	net_pkt_set_priority(pkt, NET_PRIORITY_IC);
 
-	eth = NET_ETH_HDR(pkt);
 	hdr = GPTP_HDR(pkt);
 	ann = GPTP_ANNOUNCE(pkt);
 	port_ds = GPTP_PORT_DS(port);
-
-	/* Ethernet configuration. */
-	eth->type = htons(NET_ETH_PTYPE_PTP);
-
-	memcpy(&eth->src.addr, net_if_get_link_addr(iface)->addr,
-	       sizeof(struct net_eth_addr));
-	memcpy(&eth->dst.addr, &gptp_multicast_eth_addr,
-	       sizeof(struct net_eth_addr));
 
 	hdr->message_type = GPTP_ANNOUNCE_MESSAGE;
 	hdr->transport_specific = GPTP_TRANSPORT_802_1_AS;

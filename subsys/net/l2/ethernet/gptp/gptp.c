@@ -11,6 +11,7 @@
 
 #include <net/net_pkt.h>
 #include <ptp_clock.h>
+#include <net/ethernet_mgmt.h>
 
 #include <net/gptp.h>
 
@@ -37,6 +38,7 @@ NET_STACK_DEFINE(GPTP, gptp_stack, CONFIG_NET_GPTP_STACK_SIZE,
 		CONFIG_NET_GPTP_STACK_SIZE);
 K_FIFO_DEFINE(gptp_rx_queue);
 
+static k_tid_t tid;
 static struct k_thread gptp_thread_data;
 struct gptp_domain gptp_domain;
 
@@ -561,6 +563,19 @@ static void gptp_add_port(struct net_if *iface, void *user_data)
 		return;
 	}
 
+#if defined(CONFIG_NET_GPTP_VLAN)
+	if (CONFIG_NET_GPTP_VLAN_TAG >= 0 &&
+	    CONFIG_NET_GPTP_VLAN_TAG < NET_VLAN_TAG_UNSPEC) {
+		struct net_if *vlan_iface;
+
+		vlan_iface = net_eth_get_vlan_iface(iface,
+						    CONFIG_NET_GPTP_VLAN_TAG);
+		if (vlan_iface != iface) {
+			return;
+		}
+	}
+#endif /* CONFIG_NET_GPTP_VLAN */
+
 	/* Check if interface has a PTP clock. */
 	clk = net_eth_get_ptp_clock(iface);
 	if (clk) {
@@ -869,15 +884,141 @@ int gptp_get_port_data(struct gptp_domain *domain,
 	return 0;
 }
 
-void net_gptp_init(void)
+static void init_ports(void)
 {
-	gptp_domain.default_ds.nb_ports = 0;
 	net_if_foreach(gptp_add_port, &gptp_domain.default_ds.nb_ports);
 
 	/* Only initialize the state machine once the ports are known. */
 	gptp_init_state_machine();
 
-	k_thread_create(&gptp_thread_data, gptp_stack, sizeof(gptp_stack),
-			(k_thread_entry_t)gptp_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(5), 0, 0);
+	tid = k_thread_create(&gptp_thread_data, gptp_stack,
+			      sizeof(gptp_stack),
+			      (k_thread_entry_t)gptp_thread,
+			      NULL, NULL, NULL, K_PRIO_COOP(5), 0, 0);
+}
+
+#if defined(CONFIG_NET_GPTP_VLAN)
+static struct net_mgmt_event_callback vlan_cb;
+
+struct vlan_work {
+	struct k_work work;
+	struct net_if *iface;
+} vlan;
+
+static void disable_port(int port)
+{
+	GPTP_GLOBAL_DS()->selected_role[port] = GPTP_PORT_DISABLED;
+
+	gptp_state_machine();
+}
+
+static void vlan_enabled(struct k_work *work)
+{
+	struct vlan_work *vlan = CONTAINER_OF(work,
+					      struct vlan_work,
+					      work);
+	if (tid) {
+		int port;
+
+		port = gptp_get_port_number(vlan->iface);
+		if (port < 0) {
+			NET_DBG("No port found for iface %p", vlan->iface);
+			return;
+		}
+
+		GPTP_GLOBAL_DS()->selected_role[port] = GPTP_PORT_SLAVE;
+
+		gptp_state_machine();
+	} else {
+		init_ports();
+	}
+}
+
+static void vlan_disabled(struct k_work *work)
+{
+	struct vlan_work *vlan = CONTAINER_OF(work,
+					      struct vlan_work,
+					      work);
+	int port;
+
+	port = gptp_get_port_number(vlan->iface);
+	if (port < 0) {
+		NET_DBG("No port found for iface %p", vlan->iface);
+		return;
+	}
+
+	disable_port(port);
+}
+
+static void vlan_event_handler(struct net_mgmt_event_callback *cb,
+			       u32_t mgmt_event,
+			       struct net_if *iface)
+{
+	u16_t tag;
+
+	if (mgmt_event != NET_EVENT_ETHERNET_VLAN_TAG_ENABLED &&
+	    mgmt_event != NET_EVENT_ETHERNET_VLAN_TAG_DISABLED) {
+		return;
+	}
+
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+	if (!cb->info) {
+		return;
+	}
+
+	tag = *((u16_t *)cb->info);
+	if (tag != CONFIG_NET_GPTP_VLAN_TAG) {
+		return;
+	}
+
+	vlan.iface = iface;
+
+	if (mgmt_event == NET_EVENT_ETHERNET_VLAN_TAG_ENABLED) {
+		/* We found the right tag, now start gPTP for this interface */
+		k_work_init(&vlan.work, vlan_enabled);
+
+		NET_DBG("VLAN tag %d %s for iface %p", tag, "enabled", iface);
+	} else {
+		k_work_init(&vlan.work, vlan_disabled);
+
+		NET_DBG("VLAN tag %d %s for iface %p", tag, "disabled", iface);
+	}
+
+	k_work_submit(&vlan.work);
+#else
+	NET_WARN("VLAN event but tag info missing!");
+
+	ARG_UNUSED(tag);
+#endif
+}
+
+static void setup_vlan_events_listener(void)
+{
+	net_mgmt_init_event_callback(&vlan_cb, vlan_event_handler,
+				     NET_EVENT_ETHERNET_VLAN_TAG_ENABLED |
+				     NET_EVENT_ETHERNET_VLAN_TAG_DISABLED);
+	net_mgmt_add_event_callback(&vlan_cb);
+}
+#endif /* CONFIG_NET_GPTP_VLAN */
+
+void net_gptp_init(void)
+{
+	gptp_domain.default_ds.nb_ports = 0;
+
+#if defined(CONFIG_NET_GPTP_VLAN)
+	/* If user has enabled gPTP over VLAN support, then we start gPTP
+	 * support after we have received correct "VLAN tag enabled" event.
+	 */
+	if (CONFIG_NET_GPTP_VLAN_TAG >= 0 &&
+	    CONFIG_NET_GPTP_VLAN_TAG < NET_VLAN_TAG_UNSPEC) {
+		setup_vlan_events_listener();
+	} else {
+		NET_WARN("VLAN tag %d set but the value is not valid.",
+			 CONFIG_NET_GPTP_VLAN_TAG);
+
+		init_ports();
+	}
+#else
+	init_ports();
+#endif
 }
