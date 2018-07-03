@@ -40,6 +40,9 @@ struct tls_context {
 	/** Secure protocol version running on TLS context. */
 	enum net_ip_protocol_secure tls_version;
 
+	/** Socket flags passed to a socket call. */
+	int flags;
+
 #if defined(CONFIG_MBEDTLS)
 	/** mbedTLS context. */
 	mbedtls_ssl_context ssl;
@@ -189,6 +192,21 @@ static struct tls_context *tls_alloc(void)
 	return tls;
 }
 
+/* Allocate new TLS context and copy the content from the source context. */
+static struct tls_context *tls_clone(struct tls_context *source_tls)
+{
+	struct tls_context *target_tls;
+
+	target_tls = tls_alloc();
+	if (!target_tls) {
+		return NULL;
+	}
+
+	target_tls->tls_version = source_tls->tls_version;
+
+	return target_tls;
+}
+
 /* Release TLS context. */
 static int tls_release(struct tls_context *tls)
 {
@@ -210,12 +228,134 @@ static int tls_release(struct tls_context *tls)
 	return 0;
 }
 
+static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
+{
+	int sock = POINTER_TO_INT(ctx);
+	ssize_t sent;
+
+	sent = zsock_sendto(sock, buf, len,
+			    ((struct net_context *)ctx)->tls->flags,
+			    NULL, 0);
+	if (sent < 0) {
+		if (errno == EAGAIN) {
+			return MBEDTLS_ERR_SSL_WANT_WRITE;
+		}
+
+		return MBEDTLS_ERR_NET_SEND_FAILED;
+	}
+
+	return sent;
+}
+
+static int tls_rx(void *ctx, unsigned char *buf, size_t len)
+{
+	int sock = POINTER_TO_INT(ctx);
+	ssize_t received;
+
+	received = zsock_recvfrom(sock, buf, len,
+				  ((struct net_context *)ctx)->tls->flags,
+				  NULL, 0);
+	if (received < 0) {
+		if (errno == EAGAIN) {
+			return MBEDTLS_ERR_SSL_WANT_READ;
+		}
+
+		return MBEDTLS_ERR_NET_RECV_FAILED;
+	}
+
+	return received;
+}
+
+static int tls_mbedtls_set_credentials(struct tls_context *tls)
+{
+	/* TODO Temporary solution to verify communication */
+	mbedtls_ssl_conf_authmode(&tls->config, MBEDTLS_SSL_VERIFY_NONE);
+
+	return 0;
+}
+
+static int tls_mbedtls_handshake(struct net_context *context)
+{
+	int ret;
+
+	/* We do not want to use any socket flags during the handshake. */
+	context->tls->flags = 0;
+
+	/* TODO For simplicity, TLS handshake blocks the socket even for
+	 * non-blocking socket. Non-blocking behavior for handshake can
+	 * be implemented later.
+	 */
+	while ((ret = mbedtls_ssl_handshake(&context->tls->ssl)) != 0) {
+		if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
+		    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+			continue;
+		}
+
+		NET_ERR("TLS handshake error: -%x", -ret);
+		ret = -ECONNABORTED;
+		break;
+	}
+
+	return ret;
+}
+
+static int tls_mbedtls_init(struct net_context *context, bool is_server)
+{
+	int role, type, ret;
+
+	role = is_server ? MBEDTLS_SSL_IS_SERVER : MBEDTLS_SSL_IS_CLIENT;
+
+	type = (net_context_get_type(context) == SOCK_STREAM) ?
+		MBEDTLS_SSL_TRANSPORT_STREAM :
+		MBEDTLS_SSL_TRANSPORT_DATAGRAM;
+
+	mbedtls_ssl_set_bio(&context->tls->ssl, context, tls_tx, tls_rx, NULL);
+
+	ret = mbedtls_ssl_config_defaults(&context->tls->config, role, type,
+					  MBEDTLS_SSL_PRESET_DEFAULT);
+	if (ret != 0) {
+		/* According to mbedTLS API documentation,
+		 * mbedtls_ssl_config_defaults can fail due to memory
+		 * allocation failure
+		 */
+		return -ENOMEM;
+	}
+
+	mbedtls_ssl_conf_rng(&context->tls->config,
+			     mbedtls_ctr_drbg_random,
+			     &tls_ctr_drbg);
+
+	ret = tls_mbedtls_set_credentials(context->tls);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = mbedtls_ssl_setup(&context->tls->ssl,
+				&context->tls->config);
+	if (ret != 0) {
+		/* According to mbedTLS API documentation,
+		 * mbedtls_ssl_setup can fail due to memory allocation failure
+		 */
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
 int ztls_socket(int family, int type, int proto)
 {
 	enum net_ip_protocol_secure tls_proto = 0;
 	int sock, ret, err;
 
 	if (proto  >= IPPROTO_TLS_1_0 && proto <= IPPROTO_TLS_1_2) {
+		/* Currently DTLS is not supported,
+		 * so do not allow to create datagram socket
+		 */
+		if (type == SOCK_DGRAM) {
+			errno = ENOTSUP;
+			return -1;
+		}
+
 		tls_proto = proto;
 		proto = (type == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP;
 	}
@@ -256,6 +396,10 @@ int ztls_close(int sock)
 	int ret, err = 0;
 
 	if (context->tls) {
+		/* Try to send close notification. */
+		context->tls->flags = 0;
+		(void)mbedtls_ssl_close_notify(&context->tls->ssl);
+
 		err = tls_release(context->tls);
 	}
 
@@ -281,7 +425,32 @@ int ztls_bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
 
 int ztls_connect(int sock, const struct sockaddr *addr, socklen_t addrlen)
 {
-	return zsock_connect(sock, addr, addrlen);
+	int ret;
+	struct net_context *context = INT_TO_POINTER(sock);
+
+	ret = zsock_connect(sock, addr, addrlen);
+	if (ret < 0) {
+		/* errno will be propagated */
+		return -1;
+	}
+
+	if (context->tls) {
+		ret = tls_mbedtls_init(context, false);
+		if (ret < 0) {
+			goto error;
+		}
+
+		ret = tls_mbedtls_handshake(context);
+		if (ret < 0) {
+			goto error;
+		}
+	}
+
+	return 0;
+
+error:
+	errno = -ret;
+	return -1;
 }
 
 int ztls_listen(int sock, int backlog)
@@ -291,7 +460,49 @@ int ztls_listen(int sock, int backlog)
 
 int ztls_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 {
-	return zsock_accept(sock, addr, addrlen);
+	int child_sock, ret, err;
+	struct net_context *parent_context = INT_TO_POINTER(sock);
+	struct net_context *child_context = NULL;
+
+	child_sock = zsock_accept(sock, addr, addrlen);
+	if (child_sock < 0) {
+		/* errno will be propagated */
+		return -1;
+	}
+
+	if (parent_context->tls) {
+		child_context = INT_TO_POINTER(child_sock);
+
+		child_context->tls = tls_clone(parent_context->tls);
+		if (!child_context->tls) {
+			ret = -ENOMEM;
+			goto error;
+		}
+
+		ret = tls_mbedtls_init(child_context, true);
+		if (ret < 0) {
+			goto error;
+		}
+
+		ret = tls_mbedtls_handshake(child_context);
+		if (ret < 0) {
+			goto error;
+		}
+	}
+
+	return child_sock;
+
+error:
+	if (child_context && child_context->tls) {
+		err = tls_release(child_context->tls);
+		__ASSERT(err == 0, "TLS context release failed");
+	}
+
+	err = zsock_close(child_sock);
+	__ASSERT(err == 0, "Child socket close failed");
+
+	errno = -ret;
+	return -1;
 }
 
 ssize_t ztls_send(int sock, const void *buf, size_t len, int flags)
