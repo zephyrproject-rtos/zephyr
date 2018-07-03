@@ -4,6 +4,7 @@ type: mcu
 arch: arc
 toolchain:
   - zephyr
+  - xtools
 ram: 24
 supported:
   - adc

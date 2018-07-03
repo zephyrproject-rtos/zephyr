@@ -12,6 +12,7 @@ set(CROSS_COMPILE_TARGET_nios2 nios2-zephyr-elf)
 set(CROSS_COMPILE_TARGET_riscv32 riscv32-zephyr-elf)
 set(CROSS_COMPILE_TARGET_mips mipsel-zephyr-elf)
 set(CROSS_COMPILE_TARGET_xtensa xtensa-zephyr-elf)
+set(CROSS_COMPILE_TARGET_arc arc-zephyr-elf)
 
 
 set(CROSS_COMPILE_TARGET     ${CROSS_COMPILE_TARGET_${ARCH}})
