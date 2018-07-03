@@ -651,6 +651,18 @@ u16_t net_eth_get_vlan_tag(struct net_if *iface)
 	return NET_VLAN_TAG_UNSPEC;
 }
 
+bool net_eth_get_vlan_status(struct net_if *iface)
+{
+	struct ethernet_context *ctx = net_if_l2_data(iface);
+
+	if (ctx->vlan_enabled &&
+	    net_eth_get_vlan_tag(iface) != NET_VLAN_TAG_UNSPEC) {
+		return true;
+	}
+
+	return false;
+}
+
 static struct ethernet_vlan *get_vlan(struct ethernet_context *ctx,
 				      struct net_if *iface,
 				      u16_t vlan_tag)
