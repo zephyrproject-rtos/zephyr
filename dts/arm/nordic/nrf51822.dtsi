@@ -46,6 +46,24 @@
 			label = "UART_0";
 		};
 
+		gpiote: gpiote@40006000 {
+			compatible = "nordic,nrf5-gpiote";
+			reg = <0x40006000 0x1000>;
+			interrupts = <6 1>;
+			interrupt-names = "gpiote";
+			status = "disabled";
+			label = "GPIOTE_0";
+		};
+
+		gpio0: gpio@50000000 {
+			compatible = "nordic,nrf5-gpio";
+			gpio-controller;
+			reg = <0x50000000 0x800>;
+			#gpio-cells = <2>;
+			label = "GPIO_0";
+			status = "disabled";
+		};
+
 		i2c0: i2c@40003000 {
 			compatible = "nordic,nrf5-i2c";
 			#address-cells = <1>;
