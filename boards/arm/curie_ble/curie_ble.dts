@@ -19,6 +19,14 @@
 	};
 };
 
+&gpiote {
+	status ="ok";
+};
+
+&gpio0 {
+	status ="ok";
+};
+
 &uart0 {
 	current-speed = <1000000>;
 	status = "ok";

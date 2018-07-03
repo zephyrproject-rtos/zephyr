@@ -8,7 +8,7 @@
 menuconfig GPIO_NRF5
 	bool "Nordic Semiconductor nRF5x-based GPIO driver"
 	depends on GPIO && SOC_FAMILY_NRF
-	select HAS_DTS_GPIO if SOC_SERIES_NRF52X
+	select HAS_DTS_GPIO
 	help
 	  Enable GPIO driver for nRF5 line of MCUs.
 
@@ -24,44 +24,6 @@ config GPIO_NRF5_P1
 	depends on SOC_NRF52840
 	help
 	  Enable nRF5 GPIO port P1 config options.
-
-if !HAS_DTS_GPIO
-
-config GPIO_NRF5_P0_DEV_NAME
-	string "GPIO Port P0 Device Name"
-	depends on GPIO_NRF5_P0
-	default "GPIO_0"
-	help
-	  Specify the device name to be used for the GPIO port.
-
-config GPIO_NRF5_P1_DEV_NAME
-	string "GPIO Port P1 Device Name"
-	depends on GPIO_NRF5_P1
-	default "GPIO_1"
-	help
-	  Specify the device name to be used for the GPIO port.
-
-config GPIOTE_NRF5_IRQ_PRI
-	int "GPIOTE interrupt priority"
-	depends on GPIO_NRF5_P0 || GPIO_NRF5_P1
-	range 0 2 if SOC_SERIES_NRF51X
-	range 0 5 if SOC_SERIES_NRF52X
-	default 2 if SOC_SERIES_NRF51X
-	default 5 if SOC_SERIES_NRF52X
-	help
-	  nRF5 GPIOTE IRQ priority.
-
-config GPIOTE_NRF5_IRQ
-	int "GPIOTE interrupt number"
-	depends on GPIO_NRF5_P0 || GPIO_NRF5_P1
-	range 6 6 if SOC_SERIES_NRF51X
-	range 6 6 if SOC_SERIES_NRF52X
-	default 6 if SOC_SERIES_NRF51X
-	default 6 if SOC_SERIES_NRF52X
-	help
-	  nRF5 GPIOTE IRQ priority.
-
-endif # !HAS_DTS_GPIO
 
 config GPIO_NRF5_INIT_PRIORITY
 	int "nRF5 GPIO initialization priority"
