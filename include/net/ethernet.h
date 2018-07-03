@@ -369,6 +369,15 @@ struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag);
 bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
 			     struct net_if *iface);
 
+/**
+ * @brief Get VLAN status for a given network interface (enabled or not).
+ *
+ * @param iface Network interface
+ *
+ * @return True if VLAN is enabled for this network interface, false if not.
+ */
+bool net_eth_get_vlan_status(struct net_if *iface);
+
 #define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn,		 \
 			    data, cfg_info, prio, api, mtu)		 \
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,		 \
@@ -403,6 +412,11 @@ static inline
 struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag)
 {
 	return NULL;
+}
+
+static inline bool net_eth_get_vlan_status(struct net_if *iface)
+{
+	return false;
 }
 #endif /* CONFIG_NET_VLAN */
 
