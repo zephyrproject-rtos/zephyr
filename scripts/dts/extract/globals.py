@@ -5,13 +5,16 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import sys
 from collections import defaultdict
+import edtsdatabase
 
 # globals
 phandles = {}
 aliases = defaultdict(list)
 chosen = {}
 reduced = {}
+edts = edtsdatabase.EDTSDatabase()
 
 regs_config = {
     'zephyr,flash' : 'CONFIG_FLASH',
