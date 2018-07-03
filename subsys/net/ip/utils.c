@@ -344,6 +344,10 @@ int net_addr_pton(sa_family_t family, const char *src,
 				if (*tmp == ':') {
 					i--;
 				}
+
+				if (i < 0) {
+					return -EINVAL;
+				}
 			} while (tmp-- != src);
 
 			src++;
