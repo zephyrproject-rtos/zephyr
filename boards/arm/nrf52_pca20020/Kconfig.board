@@ -8,5 +8,4 @@ config  BOARD_NRF52_PCA20020
 	bool "nRF52 PCA20020"
 	select GPIO
 	select HAS_DTS_I2C_DEVICE
-	select HAS_DTS_GPIO
 	depends on SOC_NRF52832_QFAA
