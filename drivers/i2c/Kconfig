@@ -192,6 +192,13 @@ config I2C_MCUX
 	help
 	  Enable the mcux I2C driver.
 
+config I2C_IMX
+	bool "i.MX I2C driver"
+	depends on HAS_IMX_I2C
+	select HAS_DTS_I2C
+	help
+	  Enable the i.MX I2C driver.
+
 config I2C_CC32XX
 	bool "CC32XX I2C driver"
 	depends on SOC_SERIES_CC32XX
