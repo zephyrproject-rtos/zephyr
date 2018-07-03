@@ -80,6 +80,8 @@ struct ethernet_req_params {
 enum net_event_ethernet_cmd {
 	NET_EVENT_ETHERNET_CMD_CARRIER_ON = 1,
 	NET_EVENT_ETHERNET_CMD_CARRIER_OFF,
+	NET_EVENT_ETHERNET_CMD_VLAN_TAG_ENABLED,
+	NET_EVENT_ETHERNET_CMD_VLAN_TAG_DISABLED,
 };
 
 #define NET_EVENT_ETHERNET_CARRIER_ON					\
@@ -88,12 +90,20 @@ enum net_event_ethernet_cmd {
 #define NET_EVENT_ETHERNET_CARRIER_OFF					\
 	(_NET_ETHERNET_EVENT | NET_EVENT_ETHERNET_CMD_CARRIER_OFF)
 
+#define NET_EVENT_ETHERNET_VLAN_TAG_ENABLED				\
+	(_NET_ETHERNET_EVENT | NET_EVENT_ETHERNET_CMD_VLAN_TAG_ENABLED)
+
+#define NET_EVENT_ETHERNET_VLAN_TAG_DISABLED				\
+	(_NET_ETHERNET_EVENT | NET_EVENT_ETHERNET_CMD_VLAN_TAG_DISABLED)
+
 struct net_if;
 
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
 void ethernet_mgmt_raise_carrier_on_event(struct net_if *iface);
 
 void ethernet_mgmt_raise_carrier_off_event(struct net_if *iface);
+void ethernet_mgmt_raise_vlan_enabled_event(struct net_if *iface, u16_t tag);
+void ethernet_mgmt_raise_vlan_disabled_event(struct net_if *iface, u16_t tag);
 #else
 static inline void ethernet_mgmt_raise_carrier_on_event(struct net_if *iface)
 {
@@ -103,6 +113,20 @@ static inline void ethernet_mgmt_raise_carrier_on_event(struct net_if *iface)
 static inline void ethernet_mgmt_raise_carrier_off_event(struct net_if *iface)
 {
 	ARG_UNUSED(iface);
+}
+
+static inline void ethernet_mgmt_raise_vlan_enabled_event(struct net_if *iface,
+							  u16_t tag)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(tag);
+}
+
+static inline void ethernet_mgmt_raise_vlan_disabled_event(struct net_if *iface,
+							   u16_t tag)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(tag);
 }
 #endif
 /**

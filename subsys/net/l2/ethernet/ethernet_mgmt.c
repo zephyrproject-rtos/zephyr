@@ -121,3 +121,24 @@ void ethernet_mgmt_raise_carrier_off_event(struct net_if *iface)
 {
 	net_mgmt_event_notify(NET_EVENT_ETHERNET_CARRIER_OFF, iface);
 }
+
+void ethernet_mgmt_raise_vlan_enabled_event(struct net_if *iface, u16_t tag)
+{
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+	net_mgmt_event_notify_with_info(NET_EVENT_ETHERNET_VLAN_TAG_ENABLED,
+					iface, &tag, sizeof(tag));
+#else
+	net_mgmt_event_notify(NET_EVENT_ETHERNET_VLAN_TAG_ENABLED,
+			      iface);
+#endif
+}
+
+void ethernet_mgmt_raise_vlan_disabled_event(struct net_if *iface, u16_t tag)
+{
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+	net_mgmt_event_notify_with_info(NET_EVENT_ETHERNET_VLAN_TAG_DISABLED,
+					iface, &tag, sizeof(tag));
+#else
+	net_mgmt_event_notify(NET_EVENT_ETHERNET_VLAN_TAG_DISABLED, iface);
+#endif
+}
