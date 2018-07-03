@@ -717,6 +717,8 @@ int net_eth_vlan_enable(struct net_if *iface, u16_t tag)
 			ctx->vlan_enabled = NET_VLAN_MAX_COUNT;
 		}
 
+		ethernet_mgmt_raise_vlan_enabled_event(iface, tag);
+
 		return 0;
 	}
 
@@ -752,6 +754,8 @@ int net_eth_vlan_disable(struct net_if *iface, u16_t tag)
 	if (eth->vlan_setup) {
 		eth->vlan_setup(net_if_get_device(iface), iface, tag, false);
 	}
+
+	ethernet_mgmt_raise_vlan_disabled_event(iface, tag);
 
 	ctx->vlan_enabled--;
 	if (ctx->vlan_enabled < 0) {
