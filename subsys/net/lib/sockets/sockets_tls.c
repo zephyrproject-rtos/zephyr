@@ -57,6 +57,29 @@ static struct tls_context tls_contexts[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
 /* A mutex for protecting TLS context allocation. */
 static struct k_mutex context_lock;
 
+#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_DEBUG_SOCKETS)
+static void tls_debug(void *ctx, int level, const char *file,
+		      int line, const char *str)
+{
+	const char *p, *basename;
+
+	ARG_UNUSED(ctx);
+
+	if (!file || !str) {
+		return;
+	}
+
+	/* Extract basename from file */
+	for (p = basename = file; *p != '\0'; p++) {
+		if (*p == '/' || *p == '\\') {
+			basename = p + 1;
+		}
+	}
+
+	NET_DBG("%s:%04d: |%d| %s", basename, line, level, str);
+}
+#endif /* defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_TLS_DEBUG) */
+
 #if defined(CONFIG_ENTROPY_HAS_DRIVER)
 static int tls_entropy_func(void *ctx, unsigned char *buf, size_t len)
 {
@@ -122,6 +145,10 @@ static int tls_init(struct device *unused)
 		return -EFAULT;
 	}
 
+#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_DEBUG_SOCKETS)
+	mbedtls_debug_set_threshold(CONFIG_MBEDTLS_DEBUG_LEVEL);
+#endif
+
 	return 0;
 }
 
@@ -151,6 +178,10 @@ static struct tls_context *tls_alloc(void)
 	if (tls) {
 		mbedtls_ssl_init(&tls->ssl);
 		mbedtls_ssl_config_init(&tls->config);
+
+#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_DEBUG_SOCKETS)
+		mbedtls_ssl_conf_dbg(&tls->config, tls_debug, NULL);
+#endif
 	} else {
 		NET_WARN("Failed to allocate TLS context");
 	}
