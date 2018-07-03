@@ -49,20 +49,78 @@ struct tls_context {
 #endif /* CONFIG_MBEDTLS */
 };
 
+static mbedtls_ctr_drbg_context tls_ctr_drbg;
+
 /* A global pool of TLS contexts. */
 static struct tls_context tls_contexts[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
 
 /* A mutex for protecting TLS context allocation. */
 static struct k_mutex context_lock;
 
+#if defined(CONFIG_ENTROPY_HAS_DRIVER)
+static int tls_entropy_func(void *ctx, unsigned char *buf, size_t len)
+{
+	return entropy_get_entropy(ctx, buf, len);
+}
+#else
+static int tls_entropy_func(void *ctx, unsigned char *buf, size_t len)
+{
+	ARG_UNUSED(ctx);
+
+	size_t i = len / 4;
+	u32_t val;
+
+	while (i--) {
+		val = sys_rand32_get();
+		UNALIGNED_PUT(val, (u32_t *)buf);
+		buf += 4;
+	}
+
+	i = len & 0x3;
+	val = sys_rand32_get();
+	while (i--) {
+		*buf++ = val;
+		val >>= 8;
+	}
+
+	return 0;
+}
+#endif /* defined(CONFIG_ENTROPY_HAS_DRIVER) */
+
 /* Initialize TLS internals. */
 static int tls_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
+	int ret;
+	static const unsigned char drbg_seed[] = "zephyr";
+	struct device *dev = NULL;
+
+#if defined(CONFIG_ENTROPY_HAS_DRIVER)
+	dev = device_get_binding(CONFIG_ENTROPY_NAME);
+
+	if (!dev) {
+		NET_ERR("Failed to obtain entropy device");
+		return -ENODEV;
+	}
+#else
+	NET_WARN("No entropy device on the system, "
+		 "TLS communication may be insecure!");
+#endif /* defined(CONFIG_ENTROPY_HAS_DRIVER) */
+
 	memset(tls_contexts, 0, sizeof(tls_contexts));
 
 	k_mutex_init(&context_lock);
+
+	mbedtls_ctr_drbg_init(&tls_ctr_drbg);
+
+	ret = mbedtls_ctr_drbg_seed(&tls_ctr_drbg, tls_entropy_func, dev,
+				    drbg_seed, sizeof(drbg_seed));
+	if (ret != 0) {
+		mbedtls_ctr_drbg_free(&tls_ctr_drbg);
+		NET_ERR("TLS entropy source initialization failed");
+		return -EFAULT;
+	}
 
 	return 0;
 }
