@@ -354,6 +354,12 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 			if (str_descr_idx) {
 				ascii7_to_utf16le(head);
 			} else {
+				if (!cfg_descr) {
+					SYS_LOG_ERR("Incomplete device "
+						    "descriptor");
+					return -1;
+				}
+
 				SYS_LOG_DBG("Now the wTotalLength is %d",
 					    (u8_t *)head - (u8_t *)cfg_descr);
 				cfg_descr->wTotalLength =
