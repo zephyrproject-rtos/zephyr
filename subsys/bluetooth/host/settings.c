@@ -110,12 +110,18 @@ static int set(int argc, char **argv, char *val)
 	if (!strcmp(argv[0], "id")) {
 		len = sizeof(bt_dev.id_addr);
 		settings_bytes_from_str(val, &bt_dev.id_addr, &len);
-		if (len != sizeof(bt_dev.id_addr)) {
+		if (len < sizeof(bt_dev.id_addr[0])) {
 			BT_ERR("Invalid length ID address in storage");
-			bt_addr_le_copy(&bt_dev.id_addr, BT_ADDR_LE_ANY);
+			memset(bt_dev.id_addr, 0, sizeof(bt_dev.id_addr));
+			bt_dev.id_count = 0;
 		} else {
-			BT_DBG("ID Addr set to %s",
-			       bt_addr_le_str(&bt_dev.id_addr));
+			int i;
+
+			bt_dev.id_count = len / sizeof(bt_dev.id_addr[0]);
+			for (i = 0; i < bt_dev.id_count; i++) {
+				BT_DBG("ID Addr %d %s", i,
+				       bt_addr_le_str(&bt_dev.id_addr[i]));
+			}
 		}
 
 		return 0;
@@ -136,11 +142,11 @@ static int set(int argc, char **argv, char *val)
 	if (!strcmp(argv[0], "irk")) {
 		len = sizeof(bt_dev.irk);
 		settings_bytes_from_str(val, bt_dev.irk, &len);
-		if (len != sizeof(bt_dev.irk)) {
+		if (len < sizeof(bt_dev.irk[0])) {
 			BT_ERR("Invalid length IRK in storage");
 			memset(bt_dev.irk, 0, sizeof(bt_dev.irk));
 		} else {
-			BT_DBG("IRK set to %s", bt_hex(bt_dev.irk, 16));
+			BT_DBG("IRK set to %s", bt_hex(bt_dev.irk[0], 16));
 		}
 
 		return 0;
@@ -157,16 +163,18 @@ static void generate_static_addr(void)
 
 	BT_DBG("Generating new static random address");
 
-	if (bt_addr_le_create_static(&bt_dev.id_addr)) {
+	if (bt_addr_le_create_static(&bt_dev.id_addr[0])) {
 		BT_ERR("Failed to generate static addr");
 		return;
 	}
 
+	bt_dev.id_count = 1;
 	bt_set_static_addr();
 
-	BT_DBG("New ID Addr: %s", bt_addr_le_str(&bt_dev.id_addr));
+	BT_DBG("New ID Addr: %s", bt_addr_le_str(&bt_dev.id_addr[0]));
 
-	str = settings_str_from_bytes(&bt_dev.id_addr, sizeof(bt_dev.id_addr),
+	str = settings_str_from_bytes(&bt_dev.id_addr[0],
+				      sizeof(bt_dev.id_addr[0]),
 				      buf, sizeof(buf));
 	if (!str) {
 		BT_ERR("Unable to encode ID Addr as value");
@@ -209,8 +217,8 @@ static int commit(void)
 
 	BT_DBG("");
 
-	if (!bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_ANY) ||
-	    !bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_NONE)) {
+	if (!bt_addr_le_cmp(&bt_dev.id_addr[0], BT_ADDR_LE_ANY) ||
+	    !bt_addr_le_cmp(&bt_dev.id_addr[0], BT_ADDR_LE_NONE)) {
 		generate_static_addr();
 	}
 

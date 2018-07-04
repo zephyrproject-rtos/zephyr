@@ -83,13 +83,14 @@ void bt_conn_unref(struct bt_conn *conn);
  *
  *  Look up an existing connection based on the remote address.
  *
+ *  @param id   Local identity (in most cases BT_ID_DEFAULT).
  *  @param peer Remote address.
  *
  *  @return Connection object or NULL if not found. The caller gets a
  *  new reference to the connection object which must be released with
  *  bt_conn_unref() once done using the object.
  */
-struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer);
+struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer);
 
 /** @brief Get destination (peer) address of a connection.
  *
@@ -134,6 +135,7 @@ enum {
  *
  *  @param type Connection Type
  *  @param role Connection Role
+ *  @param id Which local identity the connection was created with
  *  @param le LE Connection specific Info
  *  @param br BR/EDR Connection specific Info
  */
@@ -141,6 +143,8 @@ struct bt_conn_info {
 	u8_t type;
 
 	u8_t role;
+
+	u8_t id;
 
 	union {
 		struct bt_conn_le_info le;

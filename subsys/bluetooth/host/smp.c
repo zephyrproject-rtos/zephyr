@@ -723,7 +723,7 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, u8_t status)
 	 */
 	bt_addr_copy(&addr.a, &conn->br.dst);
 	addr.type = BT_ADDR_LE_PUBLIC;
-	keys = bt_keys_find_addr(&addr);
+	keys = bt_keys_find_addr(conn->id, &addr);
 
 	if (status) {
 		if (keys) {
@@ -832,7 +832,7 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 	bt_addr_copy(&addr.a, &conn->br.dst);
 	addr.type = BT_ADDR_LE_PUBLIC;
 
-	keys = bt_keys_get_type(BT_KEYS_LTK_P256, &addr);
+	keys = bt_keys_get_type(BT_KEYS_LTK_P256, conn->id, &addr);
 	if (!keys) {
 		BT_ERR("No keys space for %s", bt_addr_le_str(&addr));
 		return;
@@ -890,7 +890,7 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 	bt_addr_copy(&addr.a, &conn->br.dst);
 	addr.type = BT_ADDR_LE_PUBLIC;
 
-	keys = bt_keys_get_addr(&addr);
+	keys = bt_keys_get_addr(conn->id, &addr);
 	if (!keys) {
 		BT_ERR("No keys space for %s", bt_addr_le_str(&addr));
 		return;
@@ -924,7 +924,7 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 		}
 
 		id_addr_info = net_buf_add(buf, sizeof(*id_addr_info));
-		bt_addr_le_copy(&id_addr_info->addr, &bt_dev.id_addr);
+		bt_addr_le_copy(&id_addr_info->addr, &bt_dev.id_addr[conn->id]);
 
 		smp_br_send(smp, buf, id_sent);
 	}
@@ -1144,7 +1144,7 @@ static u8_t smp_br_ident_info(struct bt_smp_br *smp, struct net_buf *buf)
 	bt_addr_copy(&addr.a, &conn->br.dst);
 	addr.type = BT_ADDR_LE_PUBLIC;
 
-	keys = bt_keys_get_type(BT_KEYS_IRK, &addr);
+	keys = bt_keys_get_type(BT_KEYS_IRK, conn->id, &addr);
 	if (!keys) {
 		BT_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
 		return BT_SMP_ERR_UNSPECIFIED;
@@ -1214,7 +1214,7 @@ static u8_t smp_br_signing_info(struct bt_smp_br *smp, struct net_buf *buf)
 	bt_addr_copy(&addr.a, &conn->br.dst);
 	addr.type = BT_ADDR_LE_PUBLIC;
 
-	keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, &addr);
+	keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, conn->id, &addr);
 	if (!keys) {
 		BT_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
 		return BT_SMP_ERR_UNSPECIFIED;
@@ -1808,7 +1808,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 		}
 
 		id_addr_info = net_buf_add(buf, sizeof(*id_addr_info));
-		bt_addr_le_copy(&id_addr_info->addr, &bt_dev.id_addr);
+		bt_addr_le_copy(&id_addr_info->addr, &bt_dev.id_addr[conn->id]);
 
 		smp_send(smp, buf, id_sent);
 	}
@@ -1924,7 +1924,7 @@ static u8_t legacy_request_tk(struct bt_smp *smp)
 	 * distributed in new pairing. This is to avoid replacing authenticated
 	 * keys with unauthenticated ones.
 	  */
-	keys = bt_keys_find_addr(&conn->le.dst);
+	keys = bt_keys_find_addr(conn->id, &conn->le.dst);
 	if (keys && (keys->flags & BT_KEYS_AUTHENTICATED) &&
 	    smp->method == JUST_WORKS) {
 		BT_ERR("JustWorks failed, authenticated keys present");
@@ -2141,7 +2141,7 @@ static u8_t smp_encrypt_info(struct bt_smp *smp, struct net_buf *buf)
 		struct bt_conn *conn = smp->chan.chan.conn;
 		struct bt_keys *keys;
 
-		keys = bt_keys_get_type(BT_KEYS_LTK, &conn->le.dst);
+		keys = bt_keys_get_type(BT_KEYS_LTK, conn->id, &conn->le.dst);
 		if (!keys) {
 			BT_ERR("Unable to get keys for %s",
 			       bt_addr_le_str(&conn->le.dst));
@@ -2166,7 +2166,7 @@ static u8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
 		struct bt_smp_master_ident *req = (void *)buf->data;
 		struct bt_keys *keys;
 
-		keys = bt_keys_get_type(BT_KEYS_LTK, &conn->le.dst);
+		keys = bt_keys_get_type(BT_KEYS_LTK, conn->id, &conn->le.dst);
 		if (!keys) {
 			BT_ERR("Unable to get keys for %s",
 			       bt_addr_le_str(&conn->le.dst));
@@ -3028,7 +3028,7 @@ static u8_t smp_ident_info(struct bt_smp *smp, struct net_buf *buf)
 		struct bt_conn *conn = smp->chan.chan.conn;
 		struct bt_keys *keys;
 
-		keys = bt_keys_get_type(BT_KEYS_IRK, &conn->le.dst);
+		keys = bt_keys_get_type(BT_KEYS_IRK, conn->id, &conn->le.dst);
 		if (!keys) {
 			BT_ERR("Unable to get keys for %s",
 			       bt_addr_le_str(&conn->le.dst));
@@ -3060,7 +3060,7 @@ static u8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 		const bt_addr_le_t *dst;
 		struct bt_keys *keys;
 
-		keys = bt_keys_get_type(BT_KEYS_IRK, &conn->le.dst);
+		keys = bt_keys_get_type(BT_KEYS_IRK, conn->id, &conn->le.dst);
 		if (!keys) {
 			BT_ERR("Unable to get keys for %s",
 			       bt_addr_le_str(&conn->le.dst));
@@ -3130,7 +3130,8 @@ static u8_t smp_signing_info(struct bt_smp *smp, struct net_buf *buf)
 		struct bt_smp_signing_info *req = (void *)buf->data;
 		struct bt_keys *keys;
 
-		keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, &conn->le.dst);
+		keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, conn->id,
+					&conn->le.dst);
 		if (!keys) {
 			BT_ERR("Unable to get keys for %s",
 			       bt_addr_le_str(&conn->le.dst));
@@ -3183,9 +3184,10 @@ static u8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 			goto pair;
 		}
 	} else {
-		conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256, &conn->le.dst);
+		conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256, conn->id,
+					     &conn->le.dst);
 		if (!conn->le.keys) {
-			conn->le.keys = bt_keys_find(BT_KEYS_LTK,
+			conn->le.keys = bt_keys_find(BT_KEYS_LTK, conn->id,
 						     &conn->le.dst);
 		}
 	}
@@ -3725,7 +3727,7 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 	/* Store signature incl. count */
 	memcpy(sig, net_buf_tail(buf) - sizeof(sig), sizeof(sig));
 
-	keys = bt_keys_find(BT_KEYS_REMOTE_CSRK, &conn->le.dst);
+	keys = bt_keys_find(BT_KEYS_REMOTE_CSRK, conn->id, &conn->le.dst);
 	if (!keys) {
 		BT_ERR("Unable to find Remote CSRK for %s",
 		       bt_addr_le_str(&conn->le.dst));
@@ -3764,7 +3766,7 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 	u32_t cnt;
 	int err;
 
-	keys = bt_keys_find(BT_KEYS_LOCAL_CSRK, &conn->le.dst);
+	keys = bt_keys_find(BT_KEYS_LOCAL_CSRK, conn->id, &conn->le.dst);
 	if (!keys) {
 		BT_ERR("Unable to find local CSRK for %s",
 		       bt_addr_le_str(&conn->le.dst));
@@ -4420,7 +4422,7 @@ void bt_smp_update_keys(struct bt_conn *conn)
 		bt_keys_clear(conn->le.keys);
 	}
 
-	conn->le.keys = bt_keys_get_addr(&conn->le.dst);
+	conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
 	if (!conn->le.keys) {
 		BT_ERR("Unable to get keys for %s",
 		       bt_addr_le_str(&conn->le.dst));

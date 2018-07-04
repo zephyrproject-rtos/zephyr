@@ -137,7 +137,7 @@ static void connect(u8_t *data, u16_t len)
 	struct channel *chan;
 	int err;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail;
 	}

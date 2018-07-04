@@ -103,8 +103,12 @@ struct bt_dev_br {
 
 /* State tracking for the local Bluetooth controller */
 struct bt_dev {
-	/* Local Identity Address */
-	bt_addr_le_t		id_addr;
+	/* Local Identity Address(es) */
+	bt_addr_le_t		id_addr[CONFIG_BT_ID_MAX];
+	u8_t                    id_count;
+
+	/* ID Address used for advertising */
+	u8_t                    adv_id;
 
 	/* Current local Random Address */
 	bt_addr_le_t		random_addr;
@@ -159,7 +163,7 @@ struct bt_dev {
 
 #if defined(CONFIG_BT_PRIVACY)
 	/* Local Identity Resolving Key */
-	u8_t			irk[16];
+	u8_t			irk[CONFIG_BT_ID_MAX][16];
 
 	/* Work used for RPA rotation */
 	struct k_delayed_work rpa_update;
@@ -180,7 +184,7 @@ bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 
 int bt_le_scan_update(bool fast_scan);
 
-bool bt_addr_le_is_bonded(const bt_addr_le_t *addr);
+bool bt_addr_le_is_bonded(u8_t id, const bt_addr_le_t *addr);
 
 int bt_send(struct net_buf *buf);
 

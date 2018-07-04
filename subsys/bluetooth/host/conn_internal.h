@@ -88,6 +88,9 @@ struct bt_conn {
 
 	ATOMIC_DEFINE(flags, BT_CONN_NUM_FLAGS);
 
+	/* Which local identity address this connection uses */
+	u8_t                    id;
+
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	bt_security_t		sec_level;
 	bt_security_t		required_sec_level;
