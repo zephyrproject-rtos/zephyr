@@ -180,12 +180,18 @@ static inline int _get_region_attr_by_type(arm_mpu_region_attr_t *p_attr,
 
 /**
  * This internal function is utilized by the MPU driver to combine a given
- * MPU attribute configuration and region size and return the correct
+ * MPU RAM attribute configuration and region size and return the correct
  * parameter set.
  */
-static inline u32_t _get_region_attr_by_conf(u32_t attr, u32_t size)
+static inline void _get_ram_region_attr_by_conf(arm_mpu_region_attr_t *p_attr,
+	u32_t attr, u32_t base, u32_t size)
 {
-	return attr | _size_to_mpu_rasr_size(size);
+	/* in ARMv7-M MPU the base address is not required
+	 * to determine region attributes
+	 */
+	(void) base;
+
+	p_attr->rasr = attr | _size_to_mpu_rasr_size(size);
 }
 
 /**
@@ -346,9 +352,8 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 			SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
 				    region_index, pparts->start, pparts->size);
 			region_conf.base = pparts->start;
-			region_conf.attr =
-				_get_region_attr_by_conf(pparts->attr,
-					pparts->size);
+			_get_ram_region_attr_by_conf(&region_conf.attr,
+				pparts->attr,	pparts->start, pparts->size);
 			_region_init(region_index, &region_conf);
 			num_partitions--;
 		} else {
@@ -377,8 +382,8 @@ void arm_core_mpu_configure_mem_partition(u32_t part_index,
 		(region_index + part_index < _get_num_regions())) {
 		SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
 			    region_index + part_index, part->start, part->size);
-		region_conf.attr =
-			_get_region_attr_by_conf(part->attr, part->size);
+		_get_ram_region_attr_by_conf(&region_conf.attr,
+			part->attr, part->start, part->size);
 		region_conf.base = part->start;
 		_region_init(region_index + part_index, &region_conf);
 	} else {
