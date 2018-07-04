@@ -375,7 +375,7 @@ static void gen_level_get(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(10);
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 2 + 4);
 	struct generic_level_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
@@ -670,7 +670,7 @@ static void light_lightness_get(struct bt_mesh_model *model,
 				struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(10);
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 2 + 4);
 	struct light_lightness_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x4E));
@@ -730,7 +730,7 @@ static void light_lightness_linear_get(struct bt_mesh_model *model,
 				       struct bt_mesh_msg_ctx *ctx,
 				       struct net_buf_simple *buf)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(10);
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 2 + 4);
 	struct light_lightness_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x52));
@@ -790,7 +790,7 @@ static void light_lightness_last_get(struct bt_mesh_model *model,
 				     struct bt_mesh_msg_ctx *ctx,
 				     struct net_buf_simple *buf)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(10);
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 2 + 4);
 	struct light_lightness_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x54));
@@ -806,7 +806,7 @@ static void light_lightness_default_get(struct bt_mesh_model *model,
 					struct bt_mesh_msg_ctx *ctx,
 					struct net_buf_simple *buf)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(10);
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 2 + 4);
 	struct light_lightness_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x56));
@@ -822,7 +822,7 @@ static void light_lightness_range_get(struct bt_mesh_model *model,
 				      struct bt_mesh_msg_ctx *ctx,
 				      struct net_buf_simple *buf)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(10);
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 5 + 4);
 	struct light_lightness_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x58));
@@ -967,7 +967,7 @@ static void light_ctl_get(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(10);
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 4 + 4);
 	struct light_ctl_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x60));
@@ -1043,7 +1043,7 @@ static void light_ctl_temp_range_get(struct bt_mesh_model *model,
 				     struct bt_mesh_msg_ctx *ctx,
 				     struct net_buf_simple *buf)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(10);
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 5 + 4);
 	struct light_ctl_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x63));
@@ -1061,7 +1061,7 @@ static void light_ctl_default_get(struct bt_mesh_model *model,
 				  struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(10);
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 6 + 4);
 	struct light_ctl_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x68));
@@ -1239,7 +1239,7 @@ static void light_ctl_temp_get(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(10);
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 4 + 4);
 	struct light_ctl_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x66));
