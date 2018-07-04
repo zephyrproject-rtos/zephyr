@@ -1,0 +1,20 @@
+# Kconfig - STM32F769I DISCOVERY board configuration
+#
+# Copyright (c) 2018 Yong Jin
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_STM32F769I_DISCO
+
+config BOARD
+	default "stm32f769i_disco"
+
+if UART_CONSOLE
+
+config UART_STM32_PORT_1
+	default y
+
+endif # UART_CONSOLE
+
+endif # BOARD_STM32F769I_DISCO
