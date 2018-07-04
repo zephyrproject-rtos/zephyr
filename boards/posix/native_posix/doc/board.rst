@@ -199,7 +199,20 @@ code multiple times and get the exact same result. Instrumenting the
 code does not affect its execution.
 
 To ease debugging you may want to compile your code without optimizations
-(e.g., -O0).
+(e.g., -O0) by setting (:option:`CONFIG_NO_OPTIMIZATIONS`)
+
+Address Sanitizer (ASan)
+========================
+
+You can also build Zephyr with `Address Sanitizer`_. To do this, set
+(:option:`CONFIG_ASAN`), for ex., in the application project file, or in the
+cmake command line invocation.
+
+Note that you will need the ASan library installed in your system.
+In Debian/Ubuntu this is `libasan1`.
+
+.. _Address Sanitizer:
+   https://github.com/google/sanitizers/wiki/AddressSanitizer
 
 Rationale for this port
 ***********************
