@@ -93,4 +93,13 @@ typedef struct {
 #define MPU_RASR_ENABLE_Pos                 0U
 #define MPU_RASR_ENABLE_Msk                (1UL /*<< MPU_RASR_ENABLE_Pos*/)
 
+#define MPU_TYPE_DREGION_Pos                8U
+#define MPU_TYPE_DREGION_Msk               (0xFFUL << MPU_TYPE_DREGION_Pos)
+
+static inline void ARM_MPU_ClrRegion(u32_t index)
+{
+	MPU->RNR = index;
+	MPU->RASR = 0U;
+}
+
 #endif /* CONFIG_ARM_MPU */

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #
 # Copyright (c) 2017, Linaro Limited
+# Copyright (c) 2018, Bobby Noelte
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -480,12 +481,26 @@ def yaml_traverse_inherited(node):
     ``inherits`` section is searched for and used as node base when found.
     Base values are then overloaded by node values
     Additionally, 'id' key of 'inherited' dict is converted to 'node_type'
+    and some consistency checks are done.
     :param node:
     :return: node
     """
 
+    # do some consistency checks. Especially id is needed for further
+    # processing. title must be first to check.
+    if 'title' not in node:
+        # If 'title' is missing, make fault finding more easy.
+        # Give a hint what node we are looking at.
+        print("extract_dts_includes.py: node without 'title' -", node)
+    for prop in ('title', 'id', 'version', 'description'):
+        if prop not in node:
+            node[prop] = "<unknown {}>".format(prop)
+            print("extract_dts_includes.py: '{}' property missing".format(prop),
+                  "in '{}' binding. Using '{}'.".format(node['title'], node[prop]))
+
     if 'node_type' not in node:
-        node['node_type'] = []
+        node['node_type'] = [node['id'],]
+
     if 'inherits' in node:
         if isinstance(node['inherits'], list):
             inherits_list  = node['inherits']
@@ -493,23 +508,26 @@ def yaml_traverse_inherited(node):
             inherits_list  = [node['inherits'],]
         node.pop('inherits')
         for inherits in inherits_list:
-            if 'id' in inherits:
-                node['node_type'].append(inherits['id'])
-                inherits.pop('id')
-            # title, description, version of inherited node are overwritten
-            # by intention. Remove to prevent dct_merge to complain about
-            # duplicates.
-            if 'title' in inherits and 'title' in node:
-                inherits.pop('title')
-            if 'version' in inherits and 'version' in node:
-                inherits.pop('version')
-            if 'description' in inherits and 'description' in node:
-                inherits.pop('description')
-
             if 'inherits' in inherits:
                 inherits = yaml_traverse_inherited(inherits)
-                if 'node_type' in inherits:
-                    node['node_type'].extend(inherits['node_type'])
+            if 'node_type' in inherits:
+                node['node_type'].extend(inherits['node_type'])
+            else:
+                if 'id' not in inherits:
+                    inherits['id'] = "<unknown id>"
+                    title = inherits.get('title', "<unknown title>")
+                    print("extract_dts_includes.py: 'id' property missing in",
+                          "'{}' binding. Using '{}'.".format(title,
+                                                             inherits['id']))
+                node['node_type'].append(inherits['id'])
+            # id, node_type, title, description, version of inherited node
+            # are overwritten by intention. Remove to prevent dct_merge to
+            # complain about duplicates.
+            inherits.pop('id')
+            inherits.pop('node_type', None)
+            inherits.pop('title', None)
+            inherits.pop('version', None)
+            inherits.pop('description', None)
             dict_merge(inherits, node)
             node = inherits
     return node

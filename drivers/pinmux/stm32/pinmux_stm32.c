@@ -42,6 +42,15 @@ static const u32_t ports_enable[STM32_PORTS_MAX] = {
 #ifdef GPIOH_BASE
 	STM32_PERIPH_GPIOH,
 #endif
+#ifdef GPIOI_BASE
+	STM32_PERIPH_GPIOI,
+#endif
+#ifdef GPIOJ_BASE
+	STM32_PERIPH_GPIOJ,
+#endif
+#ifdef GPIOK_BASE
+	STM32_PERIPH_GPIOK,
+#endif	
 };
 
 /**

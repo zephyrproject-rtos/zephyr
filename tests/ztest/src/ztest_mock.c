@@ -144,15 +144,17 @@ static void insert_value(struct parameter *param, const char *fn,
 {
 	struct parameter *value;
 
-	value = find_and_delete_value(param, fn, name);
-	if (!value) {
-		value = alloc_parameter();
-	}
-
+	value = alloc_parameter();
 	value->fn = fn;
 	value->name = name;
 	value->value = val;
 
+	/* Seek to end of linked list to ensure correct discovery order in find_and_delete_value */
+	while (param->next) {
+		param = param->next;
+	}
+
+	/* Append to end of linked list */
 	value->next = param->next;
 	param->next = value;
 }
