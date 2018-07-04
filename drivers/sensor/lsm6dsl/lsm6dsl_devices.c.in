@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+
+/**
+ * @code{.codegen}
+ * codegen.import_module('devicedeclare')
+ *
+ * device_data = ('lsm6dsl_data')
+ *
+ * device_config_spi = ('lsm6dsl_config',
+ * """
+ *      .comm_master_dev_name = "${get_parent().get_property('label')}",
+ *      .irq_gpio_port = "${get_controller('irq-gpios/0').get_property('label')}",
+ *      .irq_gpio_pin = ${get_property('irq-gpios/0/pin')},
+ *      .cs_gpio_port = "${get_controller('cs-gpios/0').get_property('label')}",
+ *      .cs_gpio_pin = ${get_property('cs-gpios/0/pin')},
+ *      .frequency = ${get_property('spi-max-frequency')},
+ * """)
+ *
+ * device_config_i2c = ('lsm6dsl_config',
+ * """
+ *      .comm_master_dev_name = "${get_parent().get_property('label')}",
+ *      .i2c_slave_addr = ${get_reg_addr()}
+ * """)
+ *
+ * devicedeclare.device_declare('st,lsm6dsl-spi',
+ * 'CONFIG_SENSOR_INIT_PRIORITY',
+ * 'POST_KERNEL',
+ *  None,
+ * 'lsm6dsl_init',
+ * 'lsm6dsl_api_funcs',
+ * device_data,
+ * device_config_spi
+ * )
+ *
+ * devicedeclare.device_declare('st,lsm6dsl',
+ * 'CONFIG_SENSOR_INIT_PRIORITY',
+ * 'POST_KERNEL',
+ *  None,
+ * 'lsm6dsl_init',
+ * 'lsm6dsl_api_funcs',
+ * device_data,
+ * device_config_i2c
+ * )
+ *
+ * @endcode{.codegen}
+ */
+/** @code{.codeins}@endcode */

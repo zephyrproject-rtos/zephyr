@@ -772,13 +772,6 @@ static int lsm6dsl_init_chip(struct device *dev)
 	return 0;
 }
 
-static struct lsm6dsl_config lsm6dsl_config = {
-#ifdef CONFIG_LSM6DSL_SPI
-	.comm_master_dev_name = CONFIG_LSM6DSL_SPI_MASTER_DEV_NAME,
-#else
-	.comm_master_dev_name = CONFIG_LSM6DSL_I2C_MASTER_DEV_NAME,
-#endif
-};
 
 static int lsm6dsl_init(struct device *dev)
 {
@@ -795,6 +788,12 @@ static int lsm6dsl_init(struct device *dev)
 #ifdef CONFIG_LSM6DSL_SPI
 	lsm6dsl_spi_init(dev);
 #else
+	data->i2c_addr = config->i2c_slave_addr;
+	if (!data->i2c_addr) {
+		SYS_LOG_DBG("I2C slave address not provided");
+		return -EINVAL;
+	}
+
 	lsm6dsl_i2c_init(dev);
 #endif
 
@@ -821,8 +820,4 @@ static int lsm6dsl_init(struct device *dev)
 }
 
 
-static struct lsm6dsl_data lsm6dsl_data;
-
-DEVICE_AND_API_INIT(lsm6dsl, CONFIG_LSM6DSL_DEV_NAME, lsm6dsl_init,
-		    &lsm6dsl_data, &lsm6dsl_config, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY, &lsm6dsl_api_funcs);
+#include <lsm6dsl_devices.c>

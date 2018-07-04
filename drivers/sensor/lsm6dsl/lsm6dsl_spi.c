@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+
 #include <string.h>
 #include <spi.h>
 #include "lsm6dsl.h"

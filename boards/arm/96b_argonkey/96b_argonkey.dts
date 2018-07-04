@@ -63,6 +63,7 @@
 		compatible = "st,lsm6dsl-spi";
 		reg = <1>;
 		spi-max-frequency = <1000000>;
+		cs-gpios = <&gpioc 2 0>;
 		irq-gpios = <&gpiob 1 0>;
 		label = "LSM6DSL_SPI";
 	};

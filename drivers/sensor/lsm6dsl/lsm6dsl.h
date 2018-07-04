@@ -605,6 +605,15 @@
 
 struct lsm6dsl_config {
 	char *comm_master_dev_name;
+#ifdef CONFIG_LSM6DSL_SPI
+	char *irq_gpio_port;
+	u32_t irq_gpio_pin;
+	char *cs_gpio_port;
+	u32_t cs_gpio_pin;
+	u32_t frequency;
+#else
+	u16_t i2c_slave_addr;
+#endif
 };
 
 struct lsm6dsl_data;
@@ -622,6 +631,7 @@ struct lsm6dsl_transfer_function {
 
 struct lsm6dsl_data {
 	struct device *comm_master;
+	u16_t i2c_addr;
 	int accel_sample_x;
 	int accel_sample_y;
 	int accel_sample_z;
