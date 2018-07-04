@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2018 Yong Jin
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f769.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F769I DISCOVERY board";
+	compatible = "st,stm32f769I-disco", "st,stm32f769";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led_1:led@0 {
+			gpios = <&gpioj 13 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+		green_led_2:led@1 {
+			gpios = <&gpioj 5 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+		green_led_3:led@2 {
+			gpios = <&gpioa 12 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+		red_led_4:led@3 {
+			gpios = <&gpiod 4 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button@0 {
+			label = "User";
+			gpios = <&gpioa 0 GPIO_INT_ACTIVE_HIGH>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led_1;
+		led1 = &green_led_2;
+		led2 = &green_led_3;
+		led3 = &red_led_4;
+		sw0 = &user_button;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart6 {
+	current-speed = <115200>;
+	pinctrl-names = "default";
+	status = "ok";
+};
