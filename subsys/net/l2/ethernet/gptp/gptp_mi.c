@@ -211,7 +211,8 @@ void gptp_mi_init_state_machine(void)
 {
 	int port;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START;
+	     port < (GPTP_PORT_START + CONFIG_NET_GPTP_NUM_PORTS); port++) {
 		gptp_mi_init_port_sync_sync_rcv_sm(port);
 		gptp_mi_init_port_sync_sync_send_sm(port);
 		gptp_mi_init_port_announce_rcv_sm(port);
