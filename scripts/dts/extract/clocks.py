@@ -101,7 +101,7 @@ class DTClocks(DTDirective):
             return "clk{}".format(clock_input_index)
         return clock_names[clock_input_index]
 
-    def _extract_consumer(self, node_address, yaml, clocks, names, defs, def_label):
+    def _extract_consumer(self, node_address, yaml, clocks, names, def_label):
 
         clock_consumer = reduced[node_address]
         clock_consumer_compat = get_compat(node_address)
@@ -222,7 +222,7 @@ class DTClocks(DTDirective):
                             prop_alias[clock_alias_label] = clock_label
                 # ------ legacy end
 
-                insert_defs(node_address, defs, prop_def, prop_alias)
+                insert_defs(node_address, prop_def, prop_alias)
 
                 clock_cell_index = 0
                 clock_index += 1
@@ -231,9 +231,9 @@ class DTClocks(DTDirective):
             clock_label = self.get_label_string([clock_consumer_label, \
                                                  'CLOCK', "COUNT"])
             prop_def[clock_label] = str(clock_index)
-            insert_defs(node_address, defs, prop_def, {})
+            insert_defs(node_address, prop_def, {})
 
-    def _extract_assigned(self, node_address, yaml, clocks, names, defs, def_label):
+    def _extract_assigned(self, node_address, yaml, clocks, names, def_label):
 
         clock_consumer = reduced[node_address]
         clock_consumer_label = self.get_node_label_string(node_address)
@@ -293,13 +293,12 @@ class DTClocks(DTDirective):
                     clock_label_prefix + ["CONSUMER"])
                 prop_def[clock_label] = clock_consumer_label
 
-                insert_defs(clock_provider_node_address, defs,
-                            prop_def, prop_alias)
+                insert_defs(clock_provider_node_address, prop_def, prop_alias)
 
                 clock_cell_index = 0
                 clock_index += 1
 
-    def _extract_provider(self, node_address, yaml, prop_list, names, defs, def_label):
+    def _extract_provider(self, node_address, yaml, prop_list, names, def_label):
 
         clock_provider_def = {}
         clock_provider = reduced[node_address]
@@ -349,11 +348,11 @@ class DTClocks(DTDirective):
         clock_label = self.get_label_string([clock_provider_label,
             "CLOCK", "OUTPUT", "COUNT"])
         clock_provider_def[clock_label] = str(output_count)
-        insert_defs(node_address, defs, clock_provider_def, {})
+        insert_defs(node_address, clock_provider_def, {})
         # top node clock count
         clock_label = self.get_label_string([top_node_label, "CLOCK", "COUNT"])
         top_node_def[clock_label] = str(len(self._clocks))
-        insert_defs(top_node_address, defs, top_node_def, {})
+        insert_defs(top_node_address, top_node_def, {})
 
     ##
     # @brief Extract clocks related directives
@@ -393,10 +392,9 @@ class DTClocks(DTDirective):
     # @param yaml YAML definition for the owning node.
     # @param prop clockxxx property name
     # @param names (unused)
-    # @param[out] defs Property definitions for each node address
     # @param def_label Define label string of node owning the directive.
     #
-    def extract(self, node_address, yaml, prop, names, defs, def_label):
+    def extract(self, node_address, yaml, prop, names, def_label):
 
         properties = reduced[node_address]['props'][prop]
 
@@ -408,22 +406,22 @@ class DTClocks(DTDirective):
 
         if prop == 'clocks':
             # indicator for clock consumers
-            self._extract_consumer(node_address, yaml, prop_list, names, defs, def_label)
+            self._extract_consumer(node_address, yaml, prop_list, names, def_label)
         elif prop in ('clock-names', 'clock-ranges'):
             # covered by _extract_consumer
             pass
         elif prop == '#clock-cells':
             # indicator for clock providers
-            self._extract_provider(node_address, yaml, prop_list, names, defs, def_label)
+            self._extract_provider(node_address, yaml, prop_list, names, def_label)
         elif prop in ('clock-output-names', 'clock-indices'):
             # covered by _extract_provider
             pass
         elif prop in ('clock-frequency', 'clock-accuracy', 'oscillator'):
             # use default extraction
-            default.extract(node_address, yaml, prop, names, defs, def_label)
+            default.extract(node_address, yaml, prop, names, def_label)
         elif prop in 'assigned-clocks':
             # indicator for assigned clocks
-            self._extract_assigned(node_address, yaml, prop_list, names, defs, def_label)
+            self._extract_assigned(node_address, yaml, prop_list, names, def_label)
         elif prop in ('assigned-clock-parents', 'assigned-clock-rates'):
             # covered by _extract_assigned
             pass

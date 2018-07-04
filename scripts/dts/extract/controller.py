@@ -28,11 +28,10 @@ class DTController(DTDirective):
     # @param yaml YAML definition for the owning node.
     # @param prop <device>-controller property name
     # @param names (unused)
-    # @param[out] defs Property definitions for each node address
     # @param def_label Define label string of node owning the
     #                  <device>-controller definition.
     #
-    def extract(self, node_address, yaml, prop, names, defs, def_label):
+    def extract(self, node_address, yaml, prop, names, def_label):
 
         # <device>-controller definition
         device = prop.replace('-controller', '')
@@ -66,7 +65,7 @@ class DTController(DTDirective):
         controller_label = self.get_label_string([top_node_label, device,
                                     "CONTROLLER", "COUNT"])
         top_node_def[controller_label] = str(len(self._controllers[top_node_address][device]))
-        insert_defs(top_node_address, defs, top_node_def, {})
+        insert_defs(top_node_address, top_node_def, {})
 
 ##
 # @brief Management information for [device]-controller.

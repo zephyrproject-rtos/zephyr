@@ -28,10 +28,9 @@ class DTGpioRanges(DTDirective):
     # @param yaml YAML definition for the owning node.
     # @param prop gpio-ranges property name
     # @param names (unused)
-    # @param[out] defs Property definitions for each node address
     # @param def_label Define label string of node owning the gio-ranges definition.
     #
-    def extract(self, node_address, yaml, prop, names, defs, def_label):
+    def extract(self, node_address, yaml, prop, names, def_label):
 
         # gpio-ranges definition
         gpio_ranges = reduced[node_address]['props'][prop]
@@ -94,7 +93,7 @@ class DTGpioRanges(DTDirective):
                 # -count of ranges
                 prop_def[index_label] = str(self._data[index_label])
 
-                insert_defs(pin_controller_node_address, defs, prop_def, {})
+                insert_defs(pin_controller_node_address, prop_def, {})
 
                 # gpio device - gpio range info
                 ###############################
@@ -123,7 +122,7 @@ class DTGpioRanges(DTDirective):
                 # -count of ranges
                 prop_def[index_label] = str(self._data[index_label])
 
-                insert_defs(node_address, defs, prop_def, {})
+                insert_defs(node_address, prop_def, {})
 
                 gio_range_cell = 0
 

@@ -38,11 +38,10 @@ class DTCompatible(DTDirective):
     # @param yaml YAML definition for the owning node.
     # @param prop compatible property name
     # @param names (unused)
-    # @param[out] defs Property definitions for each node address
     # @param def_label Define label string of node owning the
     #                  compatible definition.
     #
-    def extract(self, node_address, yaml, prop, names, defs, def_label):
+    def extract(self, node_address, yaml, prop, names, def_label):
 
         # compatible definition
         compatible = reduced[node_address]['props'][prop]
@@ -82,7 +81,7 @@ class DTCompatible(DTDirective):
         prop_def[index_label] = self._data[index_label]
 
         # update node of compatible directive with compatible info
-        insert_defs(node_address, defs, prop_def, {})
+        insert_defs(node_address, prop_def, {})
 
         # update soc node with compatible info
         prop_def = {}
@@ -93,7 +92,7 @@ class DTCompatible(DTDirective):
         index_label = self.get_label_string( \
                                 [compatible_node_label, "COUNT"])
         prop_def[index_label] = len(self._compatible)
-        insert_defs(compatible_node_address, defs, prop_def, {})
+        insert_defs(compatible_node_address, prop_def, {})
 
 ##
 # @brief Management information for compatible.

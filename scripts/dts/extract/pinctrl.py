@@ -595,11 +595,10 @@ class DTPinCtrl(DTDirective):
     # @param yaml YAML definition for the owning node.
     # @param prop pinctrl-x key
     # @param names Names assigned to pinctrl state pinctrl-<index>.
-    # @param[out] defs Property definitions for each node address
     # @param def_label Define label string of client node owning the pinctrl
     #                  definition.
     #
-    def extract(self, node_address, yaml, prop, names, defs, def_label):
+    def extract(self, node_address, yaml, prop, names, def_label):
 
         # Get pinctrl index from pinctrl-<index> directive
         pinctrl_index = int(prop.split('-')[1])
@@ -698,9 +697,9 @@ class DTPinCtrl(DTDirective):
                         label = self.get_label_string([label_prefix, pinconf_prop])
                         pin_controller_prop_def[label] = pinconf
             # update property definitions of related pin controller node
-            insert_defs(pin_controller_node_address, defs, pin_controller_prop_def, {})
+            insert_defs(pin_controller_node_address, pin_controller_prop_def, {})
         # update property definitions of owning node
-        insert_defs(node_address, defs, client_prop_def, {})
+        insert_defs(node_address, client_prop_def, {})
 
 ##
 # @brief Management information for pinctrl-[x].
