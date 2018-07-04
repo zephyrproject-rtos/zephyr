@@ -8,6 +8,7 @@
 #include <st/stm32f7-pinctrl.dtsi>
 #include <st/mem.h>
 #include <dt-bindings/clock/stm32_clock.h>
+#include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
 / {
 	cpus {
@@ -201,6 +202,45 @@
 			interrupts = <83 0>;
 			status = "disabled";
 			label = "UART_8";
+		};
+
+		i2c1: i2c@40005400 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40005400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00200000>;
+			interrupts = <31 0>, <32 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label = "I2C_1";
+		};
+
+		i2c2: i2c@40005800 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40005800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00400000>;
+			interrupts = <33 0>, <34 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label = "I2C_2";
+		};
+
+		i2c3: i2c@40005C00 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40005C00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
+			interrupts = <72 0>, <73 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label = "I2C_3";
 		};
 
 		usbotg_fs: usb@50000000 {
