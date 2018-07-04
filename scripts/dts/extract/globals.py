@@ -12,6 +12,8 @@ phandles = {}
 aliases = defaultdict(list)
 chosen = {}
 reduced = {}
+defs = {}
+structs = {}
 
 regs_config = {
     'zephyr,flash' : 'CONFIG_FLASH',
@@ -118,7 +120,7 @@ def get_phandles(root, name, handles):
                 get_phandles(v, name + k, handles)
 
 
-def insert_defs(node_address, defs, new_defs, new_aliases):
+def insert_defs(node_address, new_defs, new_aliases):
     if node_address in defs:
         if 'aliases' in defs[node_address]:
             defs[node_address]['aliases'].update(new_aliases)
