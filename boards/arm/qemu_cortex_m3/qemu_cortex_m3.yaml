@@ -6,6 +6,7 @@ arch: arm
 toolchain:
   - zephyr
   - gccarmemb
+  - xtools
 supported:
   - netif:slip
 ram: 64

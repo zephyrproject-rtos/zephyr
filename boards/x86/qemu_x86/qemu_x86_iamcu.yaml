@@ -4,6 +4,7 @@ type: qemu
 arch: x86
 toolchain:
   - zephyr
+  - xtools
 testing:
   ignore_tags:
      - net

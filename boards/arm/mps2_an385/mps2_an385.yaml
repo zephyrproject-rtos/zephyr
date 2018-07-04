@@ -5,3 +5,4 @@ arch: arm
 toolchain:
   - zephyr
   - gccarmemb
+  - xtools
