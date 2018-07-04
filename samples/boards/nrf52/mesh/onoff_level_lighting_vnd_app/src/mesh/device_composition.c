@@ -127,13 +127,13 @@ static void state_binding(u8_t lightness, u8_t temperature)
 			light_lightness_srv_user_data.actual = 0;
 			light_lightness_srv_user_data.linear = 0;
 		} else if (gen_onoff_srv_root_user_data.onoff == 0x01) {
+			light_lightness_srv_user_data.actual =
+				light_lightness_srv_user_data.last;
+
 			tmp = ((float)
 			       light_lightness_srv_user_data.actual / 65535);
 			light_lightness_srv_user_data.linear =
 				(u16_t) (65535 * tmp * tmp);
-
-			light_lightness_srv_user_data.last =
-				light_lightness_srv_user_data.actual;
 		}
 		break;
 	case ONOFF: /* Lightness update as per Generic OnOff (root) state */
@@ -198,6 +198,7 @@ static void state_binding(u8_t lightness, u8_t temperature)
 			light_lightness_srv_user_data.actual;
 		break;
 	default:
+		goto jump;
 		break;
 	}
 
@@ -207,6 +208,13 @@ static void state_binding(u8_t lightness, u8_t temperature)
 	light_ctl_srv_user_data.lightness =
 		light_lightness_srv_user_data.actual;
 
+	if (light_lightness_srv_user_data.actual == 0) {
+		gen_onoff_srv_root_user_data.onoff = 0;
+	} else {
+		gen_onoff_srv_root_user_data.onoff = 1;
+	}
+
+jump:
 	switch (temperature) {
 	case ONOFF_TEMP:/* Temp. update as per Light CTL temp. default state */
 	case CTL_TEMP:	/* Temp. update as per Light CTL temp. state */
@@ -229,15 +237,6 @@ static void state_binding(u8_t lightness, u8_t temperature)
 		break;
 	default:
 		break;
-	}
-
-	light_ctl_srv_user_data.temp_last =
-		light_ctl_srv_user_data.temp;
-
-	if (light_lightness_srv_user_data.actual == 0) {
-		gen_onoff_srv_root_user_data.onoff = 0;
-	} else {
-		gen_onoff_srv_root_user_data.onoff = 1;
 	}
 }
 
@@ -280,8 +279,6 @@ void light_default_status_init(void)
 		gen_onoff_srv_root_user_data.onoff = 0x01;
 		/* (End) */
 
-		light_lightness_srv_user_data.actual =
-			light_lightness_srv_user_data.last;
 		light_ctl_srv_user_data.temp =
 			light_ctl_srv_user_data.temp_last;
 
@@ -539,7 +536,7 @@ static void gen_onpowerup_get(struct bt_mesh_model *model,
 	net_buf_simple_add_u8(msg, state->onpowerup);
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
-		printk("Unable to send ONOFF_SRV Status response\n");
+		printk("Unable to send POWERONOFF_SRV Status response\n");
 	}
 }
 
@@ -608,7 +605,7 @@ static void vnd_get(struct bt_mesh_model *model,
 	net_buf_simple_add_le32(msg, state->response);
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
-		printk("Unable to send VENDOR's Status response\n");
+		printk("Unable to send VENDOR Status response\n");
 	}
 }
 
