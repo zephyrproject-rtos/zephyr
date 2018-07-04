@@ -843,7 +843,7 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		return;
 	}
 
-	conn->handle   = handle;
+	conn->handle = handle;
 	bt_addr_le_copy(&conn->le.dst, &id_addr);
 	conn->le.interval = sys_le16_to_cpu(evt->interval);
 	conn->le.latency = sys_le16_to_cpu(evt->latency);
@@ -878,7 +878,6 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 			set_advertise_enable(true);
 		}
-
 	}
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
