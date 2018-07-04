@@ -38,6 +38,7 @@ struct generic_onpowerup_state {
 struct vendor_state {
 	int current;
 	int previous;
+	u32_t response;
 	u8_t model_instance;
 	u8_t last_tid;
 	u16_t last_tx_addr;

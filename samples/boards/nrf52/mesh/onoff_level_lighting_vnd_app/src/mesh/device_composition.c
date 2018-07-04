@@ -56,7 +56,7 @@ BT_MESH_MODEL_PUB_DEFINE(light_lightness_cli_pub, NULL, 2 + 5);
 BT_MESH_MODEL_PUB_DEFINE(light_ctl_srv_pub, NULL, 2 + 9);
 BT_MESH_MODEL_PUB_DEFINE(light_ctl_cli_pub, NULL, 2 + 9);
 
-BT_MESH_MODEL_PUB_DEFINE(vnd_pub, NULL, 3 + 2);
+BT_MESH_MODEL_PUB_DEFINE(vnd_pub, NULL, 3 + 6);
 
 BT_MESH_MODEL_PUB_DEFINE(gen_onoff_srv_pub_s0, NULL, 2 + 3);
 BT_MESH_MODEL_PUB_DEFINE(gen_onoff_cli_pub_s0, NULL, 2 + 4);
@@ -595,9 +595,26 @@ static void gen_onpowerup_set(struct bt_mesh_model *model,
 }
 
 /* Vendor Model message handlers*/
-static void vnd_msg_handler(struct bt_mesh_model *model,
-			    struct bt_mesh_msg_ctx *ctx,
-			    struct net_buf_simple *buf)
+static void vnd_get(struct bt_mesh_model *model,
+		    struct bt_mesh_msg_ctx *ctx,
+		    struct net_buf_simple *buf)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(3 + 6 + 4);
+	struct vendor_state *state = model->user_data;
+
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_3(0x03, CID_ZEPHYR));
+
+	net_buf_simple_add_le16(msg, state->current);
+	net_buf_simple_add_le32(msg, state->response);
+
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		printk("Unable to send VENDOR's Status response\n");
+	}
+}
+
+static void vnd_set_unack(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
 {
 	union {
 		u8_t buffer[2];
@@ -612,6 +629,11 @@ static void vnd_msg_handler(struct bt_mesh_model *model,
 		return;
 	}
 
+	state->current = var.tmp16;
+
+	/* This is dummy response for demo purpose */
+	state->response = 0xA578FEB3;
+
 	printk("Vendor model message = %04x\n", var.tmp16);
 
 	if (var.buffer[0] == 1) {
@@ -623,6 +645,24 @@ static void vnd_msg_handler(struct bt_mesh_model *model,
 	}
 
 	state->previous = var.tmp16;
+}
+
+static void vnd_set(struct bt_mesh_model *model,
+		    struct bt_mesh_msg_ctx *ctx,
+		    struct net_buf_simple *buf)
+{
+	vnd_set_unack(model, ctx, buf);
+	vnd_get(model, ctx, buf);
+}
+
+static void vnd_status(struct bt_mesh_model *model,
+		       struct bt_mesh_msg_ctx *ctx,
+		       struct net_buf_simple *buf)
+{
+	printk("Acknownledgement from Vendor (cmd) = %04x",
+	       net_buf_simple_pull_le16(buf));
+
+	printk("  (response) = %08x\n", net_buf_simple_pull_le32(buf));
 }
 
 /* Light Lightness Server message handlers */
@@ -1393,7 +1433,10 @@ static const struct bt_mesh_model_op light_ctl_temp_srv_op[] = {
 
 /* Mapping of message handlers for Vendor (0x4321) */
 static const struct bt_mesh_model_op vnd_ops[] = {
-	{ BT_MESH_MODEL_OP_3(0x00, CID_ZEPHYR), 2, vnd_msg_handler },
+	{ BT_MESH_MODEL_OP_3(0x00, CID_ZEPHYR), 0, vnd_get },
+	{ BT_MESH_MODEL_OP_3(0x01, CID_ZEPHYR), 2, vnd_set },
+	{ BT_MESH_MODEL_OP_3(0x02, CID_ZEPHYR), 2, vnd_set_unack },
+	{ BT_MESH_MODEL_OP_3(0x03, CID_ZEPHYR), 6, vnd_status },
 	BT_MESH_MODEL_OP_END,
 };
 
