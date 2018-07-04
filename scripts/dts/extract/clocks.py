@@ -19,7 +19,7 @@ class DTClocks(DTDirective):
     def __init__(self):
         pass
 
-    def _extract_consumer(self, node_address, yaml, clocks, names, defs, def_label):
+    def _extract_consumer(self, node_address, yaml, clocks, names, def_label):
 
         clock_consumer = reduced[node_address]
         clock_consumer_compat = get_compat(node_address)
@@ -112,7 +112,7 @@ class DTClocks(DTDirective):
                                 alias, clock_cell_name, index])
                             prop_alias[clock_alias_label] = clock_label
 
-                insert_defs(node_address, defs, prop_def, prop_alias)
+                insert_defs(node_address, prop_def, prop_alias)
 
                 clock_cell_index = 0
                 clock_index += 1
@@ -124,10 +124,9 @@ class DTClocks(DTDirective):
     # @param yaml YAML definition for the owning node.
     # @param prop clockxxx property name
     # @param names (unused)
-    # @param[out] defs Property definitions for each node address
     # @param def_label Define label string of node owning the directive.
     #
-    def extract(self, node_address, yaml, prop, names, defs, def_label):
+    def extract(self, node_address, yaml, prop, names, def_label):
 
         properties = reduced[node_address]['props'][prop]
 
@@ -139,7 +138,7 @@ class DTClocks(DTDirective):
 
         if prop == 'clocks':
             # indicator for clock consumers
-            self._extract_consumer(node_address, yaml, prop_list, names, defs, def_label)
+            self._extract_consumer(node_address, yaml, prop_list, names, def_label)
         else:
             raise Exception(
                 "DTClocks.extract called with unexpected directive ({})."
