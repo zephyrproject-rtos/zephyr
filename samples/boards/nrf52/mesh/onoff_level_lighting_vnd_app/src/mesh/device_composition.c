@@ -198,7 +198,7 @@ static void state_binding(u8_t lightness, u8_t temperature)
 			light_lightness_srv_user_data.actual;
 		break;
 	default:
-		goto jump;
+		goto update_temp;
 		break;
 	}
 
@@ -214,7 +214,7 @@ static void state_binding(u8_t lightness, u8_t temperature)
 		gen_onoff_srv_root_user_data.onoff = 1;
 	}
 
-jump:
+update_temp:
 	switch (temperature) {
 	case ONOFF_TEMP:/* Temp. update as per Light CTL temp. default state */
 	case CTL_TEMP:	/* Temp. update as per Light CTL temp. state */
