@@ -9,13 +9,6 @@ if BOARD_NRF52_ADAFRUIT_FEATHER
 config BOARD
 	default "nrf52_adafruit_feather"
 
-if GPIO_NRF5
-
-config GPIO_NRF5_P0
-	default y
-
-endif # GPIO_NRF5
-
 if UART_NRFX
 
 config UART_0_NRF_TX_PIN
