@@ -75,6 +75,26 @@ static const struct json_obj_descr obj_array_descr[] = {
 				 elt_descr, ARRAY_SIZE(elt_descr)),
 };
 
+
+struct array {
+	struct elt objects;
+};
+
+struct obj_array_array {
+	struct array objects_array[4];
+	size_t objects_array_len;
+};
+
+static const struct json_obj_descr array_descr[] = {
+	JSON_OBJ_DESCR_OBJECT(struct array, objects, elt_descr),
+};
+
+static const struct json_obj_descr array_array_descr[] = {
+	JSON_OBJ_DESCR_ARRAY_ARRAY(struct obj_array_array, objects_array, 4,
+				   objects_array_len, array_descr,
+				   ARRAY_SIZE(array_descr)),
+};
+
 static void test_json_encoding(void)
 {
 	struct test_struct ts = {
@@ -190,6 +210,28 @@ static void test_json_decoding(void)
 	zassert_true(!strcmp(ts.xnother_nexx.nested_string,
 			     "no escape necessary"),
 		     "Named nested string decoded correctly");
+}
+
+static void test_json_decoding_array_array(void)
+{
+	int ret;
+	struct obj_array_array obj_array_array_ts;
+	char encoded[] = "{\"objects_array\":["
+			  "[{\"height\":168,\"name\":\"Simón Bolívar\"}],"
+			  "[{\"height\":173,\"name\":\"Pelé\"}],"
+			  "[{\"height\":195,\"name\":\"Usain Bolt\"}]]"
+			  "}";
+
+	ret = json_obj_parse(encoded, sizeof(encoded),
+			     array_array_descr,
+			     ARRAY_SIZE(array_array_descr),
+			     &obj_array_array_ts);
+
+	zassert_equal(ret, 1, "Encoding array of object returned no errors");
+	zassert_true(!strcmp(obj_array_array_ts.objects_array[1].objects.name,
+			 "Pelé"), "String decoded correctly");
+	zassert_equal(obj_array_array_ts.objects_array[2].objects.height, 195,
+		      "Usain Bolt height decoded correctly");
 }
 
 static void test_json_obj_arr_encoding(void)
@@ -457,6 +499,7 @@ void test_main(void)
 	ztest_test_suite(lib_json_test,
 			 ztest_unit_test(test_json_encoding),
 			 ztest_unit_test(test_json_decoding),
+			 ztest_unit_test(test_json_decoding_array_array),
 			 ztest_unit_test(test_json_obj_arr_encoding),
 			 ztest_unit_test(test_json_obj_arr_decoding),
 			 ztest_unit_test(test_json_invalid_unicode),
