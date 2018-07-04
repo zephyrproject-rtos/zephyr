@@ -52,8 +52,6 @@ source "drivers/gpio/Kconfig.atmel_sam3"
 
 source "drivers/gpio/Kconfig.stm32"
 
-source "drivers/gpio/Kconfig.nrf5"
-
 source "drivers/gpio/Kconfig.nrfx"
 
 source "drivers/gpio/Kconfig.cmsdk_ahb"
