@@ -122,6 +122,15 @@ static struct webusb_bos_desc {
 	}
 };
 
+/* In a case linker places data in a different order */
+static struct webusb_bos_desc_2 {
+	struct usb_bos_descriptor bos;
+	struct usb_bos_platform_descriptor platform_msos;
+	struct usb_bos_capability_msos capability_data_msos;
+	struct usb_bos_platform_descriptor platform_webusb;
+	struct usb_bos_capability_webusb capability_data_webusb;
+} __packed webusb_bos_descriptor_2;
+
 USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_webusb {
 	struct usb_bos_platform_descriptor platform;
 	struct usb_bos_capability_webusb cap;
@@ -196,13 +205,16 @@ static void test_usb_bos_macros(void)
 
 	hexdump((void *)hdr, len);
 	hexdump((void *)&webusb_bos_descriptor, len);
+	hexdump((void *)&webusb_bos_descriptor_2, len);
 
 	zassert_true(len ==
 		     sizeof(struct usb_bos_descriptor) +
 		     sizeof(cap_webusb) +
 		     sizeof(cap_msosv2),
 		     "Incorrect calculated length");
-	zassert_true(!memcmp(hdr, &webusb_bos_descriptor, len), "Wrong data");
+	zassert_true(!memcmp(hdr, &webusb_bos_descriptor, len) ||
+		     !memcmp(hdr, &webusb_bos_descriptor_2, len),
+		     "Wrong data");
 }
 
 static void test_usb_bos(void)
@@ -222,13 +234,33 @@ static void test_usb_bos(void)
 
 	zassert_true(!ret, "Return code failed");
 	zassert_equal(len, sizeof(webusb_bos_descriptor), "Wrong length");
-	zassert_true(!memcmp(data, &webusb_bos_descriptor, len),
+	zassert_true(!memcmp(data, &webusb_bos_descriptor, len) ||
+		     !memcmp(data, &webusb_bos_descriptor_2, len),
 		     "Wrong data");
 }
 
 /*test case main entry*/
 void test_main(void)
 {
+	/* Prepare webusb_bos_descriptor_2 */
+	memcpy(&webusb_bos_descriptor_2.bos,
+	       &webusb_bos_descriptor.bos,
+	       sizeof(struct usb_bos_descriptor));
+
+	memcpy(&webusb_bos_descriptor_2.platform_msos,
+	       &webusb_bos_descriptor.platform_msos,
+	       sizeof(struct usb_bos_platform_descriptor));
+	memcpy(&webusb_bos_descriptor_2.capability_data_msos,
+	       &webusb_bos_descriptor.capability_data_msos,
+	       sizeof(struct usb_bos_capability_msos));
+
+	memcpy(&webusb_bos_descriptor_2.platform_webusb,
+	       &webusb_bos_descriptor.platform_webusb,
+	       sizeof(struct usb_bos_platform_descriptor));
+	memcpy(&webusb_bos_descriptor_2.capability_data_webusb,
+	       &webusb_bos_descriptor.capability_data_webusb,
+	       sizeof(struct usb_bos_capability_webusb));
+
 	ztest_test_suite(test_osdesc,
 			 ztest_unit_test(test_usb_bos_macros),
 			 ztest_unit_test(test_usb_bos));
