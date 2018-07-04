@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016-2018 Intel Corporation
+ * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,32 +29,27 @@
 extern "C" {
 #endif
 
-struct counter_alarm_callback;
+struct counter_alarm_cfg;
 
 /** @brief Alarm callback
  *
  * @param dev     Pointer to the device structure for the driver instance.
- * @param cb      Original structure owning this handler.
- * @param counter Counter value that triggered the callback.
+ * @param cfg     Original structure owning this handler.
+ * @param ticks   Counter value that triggered the callback.
  */
-typedef void (*counter_alarm_callback_handler_t)(struct device *dev,
-					 struct counter_alarm_callback *cb,
-					 u32_t counter);
+typedef void (*counter_alarm_callback_t)(struct device *dev,
+					 const struct counter_alarm_cfg *cfg,
+					 u32_t ticks);
 
 /** @brief Alarm callback structure.
  *
- * Used to set an alarm. *
+ * Used to set an alarm.
  * Beware such structure should not be allocated on stack.
  */
-struct counter_alarm_callback {
-	u8_t channel_id; /*!< Channel ID. Number of channels is driver
-			  * dependent.
-			  */
-
-	bool absolute; /*!< If true ticks are treated as absolute value, else
-			*   it is relative to the counter reading performed
-			*   during the call.
-			*/
+struct counter_alarm_cfg {
+	counter_alarm_callback_t handler; /*!< handler called on alarm
+					   *   (cannot be NULL).
+					   */
 
 	u32_t ticks; /*!< In case of absolute flag is set, maximal value that
 		      *   can be set equals wrap value (counter_get_wrap).
@@ -64,55 +60,56 @@ struct counter_alarm_callback {
 		      *   counter implementation may count asynchronous events.
 		      */
 
-	u32_t period; /*!< If non-zero alarm is repeated. If counter is clock
-		       *   driven then period can be converted to microseconds
-		       *   (see @ref counter_ticks_to_us). Alternatively,
-		       *   counter implementation may count asynchronous events.
-		       */
+	u8_t channel_id; /*!< Channel ID. Number of channels is driver
+			  * dependent.
+			  */
 
-	counter_alarm_callback_handler_t handler; /*!< handler called on alarm
-						   *   (cannot be NULL).
-						   */
+	bool absolute; /*!< If true ticks are treated as absolute value, else
+			*   it is relative to the counter reading performed
+			*   during the call.
+			*/
 };
 
-struct counter_wrap_callback;
-
-typedef void (*counter_wrap_callback_handler_t)(struct device *dev,
-					struct counter_wrap_callback *cb);
-
-/** @brief Wrap callback structure.
+/** @brief Wrap callback
  *
- * Used to set an overflow. *
- * Beware such structure should not be allocated on stack.
+ * @param dev       Pointer to the device structure for the driver instance.
+ * @param user_data User data provided in counter_set_wrap_alarm.
  */
-struct counter_wrap_callback {
-	u32_t ticks; /*!< If counter is clock driven then period can be
-		      *   converted to microseconds (see
-		      *   @ref counter_ticks_to_us). Alternatively, counter
-		      *   implementation may count asynchronous events.
-		      */
-	counter_wrap_callback_handler_t handler; /*!< handler called on wrapping
-						  *   (can be NULL).
-						  */
+typedef void (*counter_wrap_callback_t)(struct device *dev, void *user_data);
+
+/** @brief Structure with generic counter features. */
+struct counter_config_info {
+	u32_t max_wrap; /*!< Maximal (default) wrap value on which counter is
+			 *   reset (cleared or reloaded).
+			 */
+
+	u32_t freq; /*!< Frequency of the source clock if synchronous events
+		     *   are counted.
+		     */
+
+	bool count_up; /*!< Flag indicating direction of the counter. If true
+			*   counter is counting up else counting down.
+			*/
+
+	u8_t channels; /*!< Number of channels that can be used for setting
+			*   alarm, see @ref counter_set_alarm.
+			*/
+};
 
 typedef int (*counter_api_start)(struct device *dev);
 typedef int (*counter_api_stop)(struct device *dev);
 typedef u32_t (*counter_api_read)(struct device *dev);
 typedef int (*counter_api_set_alarm)(struct device *dev,
-				     struct counter_alarm_callback *cb);
+				const struct counter_alarm_cfg *alarm_cfg);
 typedef int (*counter_api_disable_alarm)(struct device *dev,
-				     struct counter_alarm_callback *cb);
-
+				const struct counter_alarm_cfg *alarm_cfg);
 typedef int (*counter_api_set_wrap_alarm)(struct device *dev,
-					  struct counter_wrap_callback *cb);
-
+					  u32_t ticks,
+					  counter_wrap_callback_t callback,
+					  void *user_data);
 typedef u32_t (*counter_api_get_pending_int)(struct device *dev);
-typedef u32_t (*counter_api_us_to_ticks)(struct device *dev, u64_t us);
-typedef u64_t (*counter_api_ticks_to_us)(struct device *dev, u32_t ticks);
-typedef u32_t (*counter_api_get_max_wrap)(struct device *dev);
 typedef u32_t (*counter_api_get_wrap)(struct device *dev);
 typedef u32_t (*counter_api_get_max_relative_alarm)(struct device *dev);
-typedef bool (*counter_api_count_up)(struct device *dev);
 
 struct counter_driver_api {
 	counter_api_start start;
@@ -122,19 +119,12 @@ struct counter_driver_api {
 	counter_api_disable_alarm disable_alarm;
 	counter_api_set_wrap_alarm set_wrap_alarm;
 	counter_api_get_pending_int get_pending_int;
-	counter_api_us_to_ticks us_to_ticks;
-	counter_api_ticks_to_us ticks_to_us;
-	counter_api_get_max_wrap get_max_wrap;
 	counter_api_get_wrap get_wrap;
 	counter_api_get_max_relative_alarm get_max_relative_alarm;
-	counter_api_count_up count_up;
 };
 
 /**
  * @brief Start counter device in free running mode.
- *
- * Start the counter device. The counter initial value is set to zero. Counter
- * wraps at 0xffffffff.
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
@@ -156,7 +146,7 @@ static inline int _impl_counter_start(struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
- * @retval -ENODEV if the device doesn't support stopping the
+ * @retval -ENOTSUP if the device doesn't support stopping the
  *                        counter.
  */
 __syscall int counter_stop(struct device *dev);
@@ -191,67 +181,69 @@ static inline u32_t _impl_counter_read(struct device *dev)
  * relative request, Maximal value can be retrieved using
  * counter_get_max_relative_alarm.
  *
- * @param dev	Pointer to the device structure for the driver instance.
- * @param cb	Alarm callback.
+ * @param dev		Pointer to the device structure for the driver instance.
+ * @param alarm_cfg	Alarm configuration.
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP if the counter was not started yet.
- * @retval -ENODEV if the device doesn't support interrupt (e.g. free
- *                        running counters).
- * @retval -ENOTSUP if request is not supported.
+ * @retval -ENOTSUP if request is not supported (device does not support
+ *		    interrupts or requested channel) or the counter was not
+ *		    started yet.
  * @retval -EINVAL if alarm settings are invalid.
- * @retval Negative errno code if failure.
  */
 static inline int counter_set_alarm(struct device *dev,
-				    struct counter_alarm_callback *cb)
+				    const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 
-	return api->set_alarm(dev, cb);
+	return api->set_alarm(dev, alarm_cfg);
 }
 
 /**
  * @brief Disable an alarm.
  *
- * @param dev	Pointer to the device structure for the driver instance.
- * @param cb	Alarm callback.
+ * @param dev		Pointer to the device structure for the driver instance.
+ * @param alarm_cfg	Alarm configuration. It must be the same address as the
+ *			one used for @ref counter_set_alarm.
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP if the counter was not started yet.
- * @retval -ENOTSUP if request is not supported.
- * @retval Negative errno code if failure.
+ * @retval -ENOTSUP if request is not supported or the counter was not started
+ *		    yet.
  */
 static inline int counter_disable_alarm(struct device *dev,
-					struct counter_alarm_callback *cb)
+				const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 
-	return api->disable_alarm(dev, cb);
+	return api->disable_alarm(dev, alarm_cfg);
 }
 
 /**
  * @brief Set alarm on counter wrap.
  *
- * Resets counter to 0 if counter counts up or to wrap value if counter counts
- * down. On wrap callback is periodically called and counter is reset.
+ * Function sets wrap value and resets the counter to 0 or wrap value
+ * depending on counter direction. On wrap, callback is periodically called and
+ * counter is reset. Wrap value can only be changed when there is no active
+ * alarm.
  *
- * @param dev Pointer to the device structure for the driver instance.
- * @param cb  Callback structure. If NULL counter wrapping is reset to initial
- *	      state.
+ * @param dev		Pointer to the device structure for the driver instance.
+ * @param ticks		Wrap value.
+ * @param callback	Callback function. Can be NULL.
+ * @param user_data	User data passed to callback function. Not valid if
+ *			callback is NULL.
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP if the counter was not started yet.
- * @retval -ENODEV if the device doesn't support interrupt (e.g. free
- *                        running counters).
+ * @retval -ENOTSUP if request is not supported (e.g. wrap value cannot be
+ *		    changed).
  * @retval -EBUSY if any alarm is active.
- * @retval Negative errno code if failure.
  */
 static inline int counter_set_wrap_alarm(struct device *dev,
-					 struct counter_wrap_callback *cb)
+					 u32_t ticks,
+					 counter_wrap_callback_t callback,
+					 void *user_data)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 
-	return api->set_wrap_alarm(dev, cb);
+	return api->set_wrap_alarm(dev, ticks, callback, user_data);
 }
 
 /**
@@ -264,7 +256,7 @@ static inline int counter_set_wrap_alarm(struct device *dev,
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval 1 if the counter any interrupt is pending.
+ * @retval 1 if any counter interrupt is pending.
  * @retval 0 if no counter interrupt is pending.
  */
 __syscall int counter_get_pending_int(struct device *dev);
@@ -284,13 +276,12 @@ static inline int _impl_counter_get_pending_int(struct device *dev)
  *
  * @return Converted ticks. Ticks will be saturated if exceed 32 bits.
  */
-__syscall u32_t counter_us_to_ticks(struct device *dev, u64_t us);
-
-static inline u32_t _impl_counter_us_to_ticks(struct device *dev, u64_t us)
+static inline u32_t counter_us_to_ticks(const struct device *dev, u64_t us)
 {
-	const struct counter_driver_api *api = dev->driver_api;
+	const struct counter_config_info *config = dev->config->config_info;
+	u64_t ticks = (us * config->freq) / USEC_PER_SEC;
 
-	return api->us_to_ticks(dev, us);
+	return (ticks > (u64_t)UINT32_MAX) ? UINT32_MAX : ticks;
 }
 
 /**
@@ -301,13 +292,11 @@ static inline u32_t _impl_counter_us_to_ticks(struct device *dev, u64_t us)
  *
  * @return Converted microseconds.
  */
-__syscall u64_t counter_ticks_to_us(struct device *dev, u32_t ticks);
-
-static inline u64_t _impl_counter_ticks_to_us(struct device *dev, u32_t ticks)
+static inline u64_t counter_ticks_to_us(const struct device *dev, u32_t ticks)
 {
-	const struct counter_driver_api *api = dev->driver_api;
+	const struct counter_config_info *config = dev->config->config_info;
 
-	return api->ticks_to_us(dev, ticks);
+	return ((u64_t)ticks * USEC_PER_SEC) / config->freq;
 }
 
 /**
@@ -317,13 +306,11 @@ static inline u64_t _impl_counter_ticks_to_us(struct device *dev, u32_t ticks)
  *
  * @return Max wrap value.
  */
-__syscall u32_t counter_get_max_wrap(struct device *dev);
-
-static inline u32_t _impl_counter_get_max_wrap(struct device *dev)
+static inline u32_t counter_get_max_wrap(const struct device *dev)
 {
-	const struct counter_driver_api *api = dev->driver_api;
+	const struct counter_config_info *config = dev->config->config_info;
 
-	return api->get_max_wrap(dev);
+	return config->max_wrap;
 }
 
 /**
@@ -367,14 +354,27 @@ static inline u32_t _impl_counter_get_max_relative_alarm(struct device *dev)
  * @retval true if counter is counting up.
  * @retval false if counter is counting down.
  */
-__syscall bool counter_count_up(struct device *dev);
-
-static inline bool _impl_counter_count_up(struct device *dev)
+static inline bool counter_count_up(const struct device *dev)
 {
-	const struct counter_driver_api *api = dev->driver_api;
+	const struct counter_config_info *config = dev->config->config_info;
 
-	return api->count_up(dev);
+	return config->count_up;
 }
+
+/**
+ * @brief Function to get number of alarm channels.
+ *
+ * @param[in]  dev    Pointer to the device structure for the driver instance.
+ *
+ * @return Number of alarm channels.
+ */
+static inline u8_t counter_get_num_of_channels(const struct device *dev)
+{
+	const struct counter_config_info *config = dev->config->config_info;
+
+	return config->channels;
+}
+
 #ifdef __cplusplus
 }
 #endif
