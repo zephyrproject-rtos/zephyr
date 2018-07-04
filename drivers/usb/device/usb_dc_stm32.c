@@ -622,7 +622,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		return -EINVAL;
 	}
 
-	ret = k_sem_take(&ep_state->write_sem, 1000);
+	ret = k_sem_take(&ep_state->write_sem, K_NO_WAIT);
 	if (ret) {
 		SYS_LOG_ERR("Unable to write ep 0x%02x (%d)", ep, ret);
 		return ret;
