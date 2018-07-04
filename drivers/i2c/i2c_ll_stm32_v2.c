@@ -117,7 +117,14 @@ void stm32_i2c_event_isr(void *arg)
 error:
 	LL_I2C_DisableIT_TX(i2c);
 	LL_I2C_DisableIT_RX(i2c);
-	data->current.is_err = 1;
+
+	if (LL_I2C_IsActiveFlag_NACK(i2c)) {
+		LL_I2C_ClearFlag_NACK(i2c);
+		data->current.is_nack = 1;
+	} else {
+		data->current.is_err = 1;
+	}
+
 	k_sem_give(&data->device_sync_sem);
 }
 
@@ -128,12 +135,7 @@ void stm32_i2c_error_isr(void *arg)
 	struct i2c_stm32_data *data = DEV_DATA((struct device *)arg);
 	I2C_TypeDef *i2c = cfg->i2c;
 
-	if (LL_I2C_IsActiveFlag_NACK(i2c)) {
-		LL_I2C_ClearFlag_NACK(i2c);
-		data->current.is_nack = 1;
-	} else {
-		data->current.is_err = 1;
-	}
+	data->current.is_err = 1;
 
 	k_sem_give(&data->device_sync_sem);
 }
