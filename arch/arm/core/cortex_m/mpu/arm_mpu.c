@@ -82,25 +82,6 @@ void arm_core_mpu_disable(void)
 	defined(CONFIG_APPLICATION_MEMORY)
 
 /**
- * Generate the value of the MPU Region Attribute and Size Register
- * (MPU_RASR) that corresponds to the supplied MPU region attributes.
- * This function is internal to the driver.
- */
-static inline u32_t _get_region_attr(u32_t xn, u32_t ap, u32_t tex,
-				     u32_t c, u32_t b, u32_t s,
-				     u32_t srd, u32_t size)
-{
-	return (((xn << MPU_RASR_XN_Pos) & MPU_RASR_XN_Msk)
-		| ((ap << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
-		| ((tex << MPU_RASR_TEX_Pos) & MPU_RASR_TEX_Msk)
-		| ((s << MPU_RASR_S_Pos) & MPU_RASR_S_Msk)
-		| ((c << MPU_RASR_C_Pos) & MPU_RASR_C_Msk)
-		| ((b << MPU_RASR_B_Pos) & MPU_RASR_B_Msk)
-		| ((srd << MPU_RASR_SRD_Pos) & MPU_RASR_SRD_Msk)
-		| (size));
-}
-
-/**
  * This internal function converts the region size to
  * the SIZE field value of MPU_RASR.
  *
@@ -125,36 +106,75 @@ static inline u32_t _size_to_mpu_rasr_size(u32_t size)
 	}
 
 	return ((32 - __builtin_clz(size - 1) - 2 + 1) << MPU_RASR_SIZE_Pos) &
-			MPU_RASR_SIZE_Msk;
+		MPU_RASR_SIZE_Msk;
+}
+
+/**
+ * Generate the value of the MPU Region Attribute and Size Register
+ * (MPU_RASR) that corresponds to the supplied MPU region attributes.
+ * This function is internal to the driver.
+ */
+static inline u32_t _get_region_attr(u32_t xn, u32_t ap, u32_t tex,
+				     u32_t c, u32_t b, u32_t s,
+				     u32_t srd, u32_t region_size)
+{
+	int size = _size_to_mpu_rasr_size(region_size);
+
+	return (((xn << MPU_RASR_XN_Pos) & MPU_RASR_XN_Msk)
+		| ((ap << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
+		| ((tex << MPU_RASR_TEX_Pos) & MPU_RASR_TEX_Msk)
+		| ((s << MPU_RASR_S_Pos) & MPU_RASR_S_Msk)
+		| ((c << MPU_RASR_C_Pos) & MPU_RASR_C_Msk)
+		| ((b << MPU_RASR_B_Pos) & MPU_RASR_B_Msk)
+		| ((srd << MPU_RASR_SRD_Pos) & MPU_RASR_SRD_Msk)
+		| (size));
+}
+
+/**
+ * This internal function allocates default RAM cache-ability, share-ability
+ * and execution allowance attributes along with the requested access
+ * permissions and size.
+ */
+static inline void _get_mpu_ram_region_attr(arm_mpu_region_attr_t *p_attr,
+	u32_t ap, u32_t base, u32_t size)
+{
+	/* in ARMv7-M MPU the base address is not required
+	 * to determine region attributes.
+	 */
+	(void) base;
+
+	p_attr->rasr = _get_region_attr(1, ap, 1, 1, 1, 1, 0, size);
 }
 
 /**
  * This internal function is utilized by the MPU driver to parse the intent
- * type (i.e. THREAD_STACK_REGION) and return the correct parameter set.
+ * type (i.e. THREAD_STACK_REGION) and to fill-in the correct parameter
+ * set to the provided attribute structure.
+ *
+ * @return 0 on Success, otherwise return -EINVAL.
  */
-static inline u32_t _get_region_attr_by_type(u32_t type, u32_t size)
+static inline int _get_region_attr_by_type(arm_mpu_region_attr_t *p_attr,
+	u32_t type, u32_t base, u32_t size)
 {
-	int region_size = _size_to_mpu_rasr_size(size);
-
 	switch (type) {
 #ifdef CONFIG_USERSPACE
 	case THREAD_STACK_REGION:
-		return _get_region_attr(1, P_RW_U_RW, 1, 1, 1,
-					1, 0, region_size);
+		_get_mpu_ram_region_attr(p_attr, P_RW_U_RW, base, size);
+		return 0;
 #endif
 #ifdef CONFIG_MPU_STACK_GUARD
 	case THREAD_STACK_GUARD_REGION:
-		return _get_region_attr(1, P_RO_U_NA, 1, 1, 1,
-					1, 0, region_size);
+		_get_mpu_ram_region_attr(p_attr, P_RO_U_NA, base, size);
+		return 0;
 #endif
 #ifdef CONFIG_APPLICATION_MEMORY
 	case THREAD_APP_DATA_REGION:
-		return _get_region_attr(1, P_RW_U_RW, 1, 1, 1,
-					1, 0, region_size);
+		_get_mpu_ram_region_attr(p_attr, P_RW_U_RW, base, size);
+		return 0;
 #endif
 	default:
 		/* Size 0 region */
-		return 0;
+		return -EINVAL;
 	}
 }
 
@@ -271,7 +291,10 @@ void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 
 	SYS_LOG_DBG("Region info: 0x%x 0x%x", base, size);
 	u32_t region_index = _get_region_index_by_type(type);
-	region_conf.attr = _get_region_attr_by_type(type, size);
+
+	if (_get_region_attr_by_type(&region_conf.attr, type, base, size)) {
+		return;
+	}
 	region_conf.base = base;
 
 	if (region_index >= _get_num_regions()) {
@@ -493,8 +516,8 @@ static int arm_mpu_init(struct device *arg)
 	/* configure app data portion */
 	index = _get_region_index_by_type(THREAD_APP_DATA_REGION);
 	size = (u32_t)&__app_ram_end - (u32_t)&__app_ram_start;
-	region_conf.attr =
-		_get_region_attr_by_type(THREAD_APP_DATA_REGION, size);
+	_get_region_attr_by_type(&region_conf.attr, THREAD_APP_DATA_REGION,
+			(u32_t)&__app_ram_start, size);
 	region_conf.base = (u32_t)&__app_ram_start;
 	if (size > 0) {
 		_region_init(index, &region_conf);
