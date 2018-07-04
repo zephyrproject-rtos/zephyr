@@ -4967,6 +4967,7 @@ inline void *operator new[](size_t size, void *ptr)
 
 #endif /* defined(CONFIG_CPLUSPLUS) && defined(__cplusplus) */
 
+#include <tracing.h>
 #include <syscalls/kernel.h>
 
 #endif /* !_ASMLANGUAGE */

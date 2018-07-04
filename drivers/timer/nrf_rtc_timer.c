@@ -472,6 +472,7 @@ void rtc1_nrf5_isr(void *arg)
 	extern void read_timer_start_of_tick_handler(void);
 	read_timer_start_of_tick_handler();
 #endif
+	sys_trace_isr_enter();
 
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (!expected_sys_ticks) {
@@ -500,6 +501,7 @@ void rtc1_nrf5_isr(void *arg)
 	extern void read_timer_end_of_tick_handler(void);
 	read_timer_end_of_tick_handler();
 #endif
+	sys_trace_isr_exit();
 
 }
 
