@@ -12,6 +12,7 @@
 #ifdef CONFIG_KERNEL_EVENT_LOGGER
 #include <logging/kernel_event_logger.h>
 #endif /* CONFIG_KERNEL_EVENT_LOGGER */
+#include <tracing.h>
 
 #ifdef CONFIG_MULTITHREADING
 #define _VALID_PRIO(prio, entry_point) \
@@ -224,6 +225,8 @@ static inline void _ready_thread(struct k_thread *thread)
 	if (_is_thread_ready(thread)) {
 		_add_thread_to_ready_q(thread);
 	}
+
+	sys_trace_thread_ready(thread);
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_THREAD
 	_sys_k_event_logger_thread_ready(thread);

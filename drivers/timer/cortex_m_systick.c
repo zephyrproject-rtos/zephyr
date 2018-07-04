@@ -224,6 +224,7 @@ void _timer_int_handler(void *unused)
 	extern void _sys_k_event_logger_interrupt(void);
 	_sys_k_event_logger_interrupt();
 #endif
+	sys_trace_isr_enter();
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	s32_t numIdleTicks;

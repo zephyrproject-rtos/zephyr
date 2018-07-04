@@ -107,22 +107,25 @@ extern void _arch_isr_direct_pm(void);
 #define _ARCH_ISR_DIRECT_PM() do { } while (0)
 #endif
 
-#if defined(CONFIG_KERNEL_EVENT_LOGGER_SLEEP) || \
-	defined(CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT)
 #define _ARCH_ISR_DIRECT_HEADER() _arch_isr_direct_header()
 extern void _arch_isr_direct_header(void);
-#else
-#define _ARCH_ISR_DIRECT_HEADER() do { } while (0)
-#endif
 
 #define _ARCH_ISR_DIRECT_FOOTER(swap) _arch_isr_direct_footer(swap)
 
 /* arch/arm/core/exc_exit.S */
 extern void _IntExit(void);
 
+#ifdef CONFIG_TRACING
+extern void sys_trace_isr_exit_to_scheduler(void);
+#endif
+
 static inline void _arch_isr_direct_footer(int maybe_swap)
 {
 	if (maybe_swap) {
+
+#ifdef CONFIG_TRACING
+		sys_trace_isr_exit_to_scheduler();
+#endif
 		_IntExit();
 	}
 }

@@ -33,6 +33,10 @@ extern void _sys_k_event_logger_context_switch(void);
 void _smp_reacquire_global_lock(struct k_thread *thread);
 void _smp_release_global_lock(struct k_thread *thread);
 
+#ifdef CONFIG_TRACING
+extern void sys_trace_thread_switched_out(void);
+#endif
+
 /* context switching and scheduling-related routines */
 #ifdef CONFIG_USE_SWITCH
 
@@ -55,6 +59,10 @@ static inline unsigned int _Swap(unsigned int key)
 
 	_check_stack_sentinel();
 	_update_time_slice_before_swap();
+
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_out();
+#endif
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	_sys_k_event_logger_context_switch();
@@ -80,6 +88,10 @@ static inline unsigned int _Swap(unsigned int key)
 		ret = _current->swap_retval;
 	}
 
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_in();
+#endif
+
 	irq_unlock(key);
 
 	return ret;
@@ -91,10 +103,19 @@ extern unsigned int __swap(unsigned int key);
 
 static inline unsigned int _Swap(unsigned int key)
 {
+	unsigned int ret;
 	_check_stack_sentinel();
 	_update_time_slice_before_swap();
 
-	return __swap(key);
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_out();
+#endif
+	ret = __swap(key);
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_in();
+#endif
+
+	return ret;
 }
 #endif
 

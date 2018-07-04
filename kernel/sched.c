@@ -371,6 +371,7 @@ void _thread_priority_set(struct k_thread *thread, int prio)
 			thread->base.prio = prio;
 		}
 	}
+	sys_trace_thread_priority_set(thread);
 
 	if (need_sched) {
 		_reschedule(irq_lock());

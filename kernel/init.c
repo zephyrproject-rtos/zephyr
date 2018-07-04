@@ -31,6 +31,7 @@
 #include <kswap.h>
 #include <entropy.h>
 #include <logging/log_ctrl.h>
+#include <tracing.h>
 
 /* kernel build timestamp items */
 #define BUILD_TIMESTAMP "BUILD: " __DATE__ " " __TIME__
@@ -334,12 +335,16 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 			  MAIN_STACK_SIZE, bg_thread_main,
 			  NULL, NULL, NULL,
 			  CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL);
+
+	sys_trace_thread_create(_main_thread);
+
 	_mark_thread_as_started(_main_thread);
 	_ready_thread(_main_thread);
 
 #ifdef CONFIG_MULTITHREADING
 	init_idle_thread(_idle_thread, _idle_stack);
 	_kernel.cpus[0].idle_thread = _idle_thread;
+	sys_trace_thread_create(_idle_thread);
 #endif
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
