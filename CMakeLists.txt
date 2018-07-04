@@ -695,19 +695,9 @@ endforeach()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
-if(CONFIG_APPLICATION_MEMORY)
-  # Objects default to being in kernel space, and then we exclude
-  # certain items.
-  set(kernel_object_file_list
-    ${ZEPHYR_LIBS_PROPERTY}
-    kernel
-    )
-  list(
-    REMOVE_ITEM
-    kernel_object_file_list
-    app
-    )
+get_property(LINKER_SCRIPT_DEFINES GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
 
+if(CONFIG_APPLICATION_MEMORY)
   # The zephyr libraries in zephyr/lib/ and zephyr/test/ belong in
   # userspace.
 
@@ -727,71 +717,87 @@ if(CONFIG_APPLICATION_MEMORY)
   # prefixed with lib__ or test__ and will end up in the wrong address
   # space.
   set(application_space_dirs
-    lib
-    tests
+    libapp\.a
+    liblib.*\.a
+    libtests.*\.a
     )
-  foreach(f ${kernel_object_file_list})
-    foreach(app_dir ${application_space_dirs})
-      if(${f} MATCHES "^${app_dir}__") # Begins with ${app_dir}__, e.g. lib__libc
-        list(
-          REMOVE_ITEM
-          kernel_object_file_list
-          ${f}
-          )
-      endif()
-    endforeach()
-  endforeach()
+  set(KERNEL_OBJECTS_H ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/kernel_objects.h)
+  set(IMACROS_KERNEL_OBJECTS_H -imacros ${KERNEL_OBJECTS_H})
 
-  # Create a list ks, with relative paths to kernel space libs.
-  foreach(f ${kernel_object_file_list})
-    get_target_property(target_name       ${f} NAME)
-    get_target_property(target_binary_dir ${f} BINARY_DIR)
+  add_custom_command(OUTPUT ${KERNEL_OBJECTS_H}
+    COMMAND ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/gen_kernel_objects.py
+    -i '$<TARGET_PROPERTY:memory_space_kernel,COMPILE_DEFINITIONS>'
+    -o ${KERNEL_OBJECTS_H}
+    -e '${application_space_dirs}'
+    COMMENT "Populating ${KERNEL_OBJECTS_H} with files for kernel space"
+  )
+endif(CONFIG_APPLICATION_MEMORY)
 
-    string(REPLACE
-      ${PROJECT_BINARY_DIR}
-      ""
-      fixed_path
-      ${target_binary_dir}
-      )
+# Declare MPU userspace dependencies before the linker scripts to make
+# sure the order of dependencies are met
+if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
+  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APP_SHARED_MEM )
+    set(APP_SMEM_DEP app_smem_linker)
+  endif()
+  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_ARC AND CONFIG_APPLICATION_MEMORY)
+    set(ALIGN_SIZING_DEP app_sizing_prebuilt linker_app_sizing_script)
+  endif()
+  if(CONFIG_ARM)
+    set(PRIV_STACK_DEP priv_stacks_prebuilt)
+  endif()
+endif()
 
-    # Append / if not empty
-    if(fixed_path)
-      set(fixed_path "${fixed_path}/")
-    endif()
+function(construct_add_custom_command_for_linker_pass linker_output_name output_variable)
+  set(linker_cmd_file_name ${linker_output_name}.cmd)
 
-    # Cut off leading / if present
-    if(fixed_path MATCHES "^/.+")
-      string(SUBSTRING ${fixed_path} 1 -1 fixed_path)
-    endif()
+  if (${linker_output_name} MATCHES "^linker_pass_final$")
+    set(LINKER_PASS_DEFINE -DLINKER_PASS2)
+  else()
+    set(LINKER_PASS_DEFINE "")
+  endif()
 
-    set(fixed_path "${fixed_path}lib${target_name}.a")
+  # Different generators deal with depfiles differently.
+  if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+    # Note that the IMPLICIT_DEPENDS option is currently supported only
+    # for Makefile generators and will be ignored by other generators.
+    set(LINKER_SCRIPT_DEP IMPLICIT_DEPENDS C ${LINKER_SCRIPT})
+  elseif(CMAKE_GENERATOR STREQUAL "Ninja")
+    # Using DEPFILE with other generators than Ninja is an error.
+    set(LINKER_SCRIPT_DEP DEPFILE ${PROJECT_BINARY_DIR}/${linker_cmd_file_name}.dep)
+  else()
+    # TODO: How would the linker script dependencies work for non-linker
+    # script generators.
+    message(STATUS "Warning; this generator is not well supported. The
+  Linker script may not be regenerated when it should.")
+    set(LINKER_SCRIPT_DEP "")
+  endif()
 
-    if(CMAKE_GENERATOR STREQUAL "Ninja")
-      # Ninja invokes the linker from the root of the build directory
-      # (APPLICATION_BINARY_DIR) instead of from the build/zephyr
-      # directory (PROJECT_BINARY_DIR). So for linker-defs.h to get
-      # the correct path we need to prefix with zephyr/.
-      set(fixed_path "zephyr/${fixed_path}")
-    endif()
+  set(${output_variable}
+    OUTPUT ${linker_cmd_file_name}
+    DEPENDS ${LINKER_SCRIPT}
+    ${KERNEL_OBJECTS_H}
+    ${LINKER_SCRIPT_DEP}
+    COMMAND ${CMAKE_C_COMPILER}
+    -x assembler-with-cpp
+    ${NOSTDINC_F}
+    ${NOSYSDEF_CFLAG}
+    -MD -MF ${linker_cmd_file_name}.dep -MT ${BASE_NAME}/${linker_cmd_file_name}
+    ${IMACROS_KERNEL_OBJECTS_H}
+    ${ZEPHYR_INCLUDES}
+    ${LINKER_SCRIPT_DEFINES}
+    ${LINKER_PASS_DEFINE}
+    -E ${LINKER_SCRIPT}
+    -P # Prevent generation of debug `#line' directives.
+    -o ${linker_cmd_file_name}
+    VERBATIM
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    COMMAND_EXPAND_LISTS
+    PARENT_SCOPE
+    )
+endfunction()
 
-    list(APPEND ks ${fixed_path})
-  endforeach()
-
-  # We are done constructing kernel_object_file_list, now we inject
-  # this list into the linker script through the define
-  # KERNELSPACE_OBJECT_FILES
-  set(def -DKERNELSPACE_OBJECT_FILES=)
-  foreach(f ${ks})
-    set(def "${def} ${f}")
-  endforeach()
-  set_property(GLOBAL APPEND PROPERTY
-	PROPERTY_LINKER_SCRIPT_DEFINES
-	${def}
-	)
-endif() # CONFIG_APPLICATION_MEMORY
-
-
-
+get_filename_component(BASE_NAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 construct_add_custom_command_for_linker_pass(linker custom_command)
 add_custom_command(
   ${custom_command}
@@ -1093,6 +1099,8 @@ endif()
 get_property(GKOF GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES)
 get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
 
+get_property(TOPT GLOBAL PROPERTY TOPT)
+set_ifndef(  TOPT -T)
 
 get_property(CSTD GLOBAL PROPERTY CSTD)
 set_ifndef(CSTD c99)

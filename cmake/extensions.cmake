@@ -451,6 +451,70 @@ function(zephyr_list)
   set(${ZEPHYR_LIST_OUTPUT} ${LOCAL_LIST} PARENT_SCOPE)
 endfunction(zephyr_list)
 
+# Function for setting a zephyr specific property on a target
+#
+# The function takes the following arguments:
+# param[in] TARGET <target>       Target on which the command operation
+# param[in] MEMORY_SPACE <kernel> Property specifying that target should be
+#                                 placed at specific memory location in final
+#                                 executable.
+#                                 Currently supported locations are: kernel.
+#                                 Note: Requires CONFIG_APPLICATION_MEMORY to
+#                                       be enabled in KConfig to be active
+#
+# Example uses:
+# zephyr_set_property(TARGET zephyr MEMORY_SPACE kernel)
+#
+function(zephyr_set_property)
+  set(single_args  TARGET MEMORY_SPACE)
+  cmake_parse_arguments(ZEPHYR_SET_PROPERTY "" "${single_args}" "" ${ARGN} )
+
+  # Caller has specified output variable to use.
+  if(NOT ZEPHYR_SET_PROPERTY_TARGET)
+    message(FATAL_ERROR "TARGET not specified.")
+  endif()
+
+  if(ZEPHYR_SET_PROPERTY_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "Unknown argument(s): ${ZEPHYR_SET_PROPERTY_UNPARSED_ARGUMENTS}")
+  endif()
+
+  if(ZEPHYR_SET_PROPERTY_MEMORY_SPACE)
+    if(NOT (${ZEPHYR_SET_PROPERTY_MEMORY_SPACE} STREQUAL kernel))
+      message(FATAL_ERROR "Argument MEMORY_SPACE followed by invalid value:\
+                         \"${ZEPHYR_SET_PROPERTY_MEMORY_SPACE}\".\n\
+                          Valid values are: <kernel>.")
+    endif()
+    get_target_property(target_binary_dir
+                        ${ZEPHYR_SET_PROPERTY_TARGET}
+                        BINARY_DIR)
+
+    if(CMAKE_GENERATOR STREQUAL "Ninja")
+      # Ninja invokes the linker from the root of the build directory
+      # (APPLICATION_BINARY_DIR) instead of from the build/zephyr
+      # directory (PROJECT_BINARY_DIR). So for linker-defs.h to get
+      # the correct path we need to prefix with zephyr/.
+      set(strip_path ${APPLICATION_BINARY_DIR})
+    else()
+      set(strip_path ${PROJECT_BINARY_DIR})
+    endif()
+
+    if(NOT (target_binary_dir STREQUAL strip_path))
+      string(REGEX REPLACE
+        ${strip_path}[/]*
+        ""
+        fixed_path
+        ${target_binary_dir}
+        )
+      set(fixed_path ${fixed_path}/ )
+    endif()
+
+    set_property(TARGET memory_space_${ZEPHYR_SET_PROPERTY_MEMORY_SPACE}
+                 APPEND PROPERTY
+                 COMPILE_DEFINITIONS
+                 ${fixed_path}$<TARGET_FILE_NAME:${ZEPHYR_SET_PROPERTY_TARGET}>)
+  endif(ZEPHYR_SET_PROPERTY_MEMORY_SPACE)
+endfunction(zephyr_set_property)
+
 function(zephyr_link_interface interface)
   target_link_libraries(${interface} INTERFACE zephyr_interface)
 endfunction()
@@ -513,6 +577,8 @@ endfunction()
 # need to be included in the build.
 function(zephyr_append_cmake_library library)
   set_property(GLOBAL APPEND PROPERTY ZEPHYR_LIBS ${library})
+  # For Zephyr appended libraries we set the memory space to kernel.
+  zephyr_set_property(TARGET ${library} MEMORY_SPACE kernel)
 endfunction()
 
 # 1.2.1 zephyr_interface_library_*

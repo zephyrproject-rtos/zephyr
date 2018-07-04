@@ -55,3 +55,4 @@ target_sources_ifdef(
 add_dependencies(kernel offsets_h)
 
 target_link_libraries(kernel zephyr_interface offsets)
+zephyr_set_property(TARGET kernel MEMORY_SPACE kernel)
