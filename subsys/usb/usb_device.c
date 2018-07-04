@@ -1441,6 +1441,12 @@ static int vendor_handler(struct usb_setup_packet *pSetup,
 	SYS_LOG_DBG("bRequest 0x%x, wIndex 0x%x",
 		    pSetup->bRequest, pSetup->wIndex);
 
+	if (usb_os_desc_enabled()) {
+		if (!usb_handle_os_desc_feature(pSetup, len, data)) {
+			return 0;
+		}
+	}
+
 	for (size_t i = 0; i < size; i++) {
 		iface = &(__usb_data_start[i].interface);
 		if_descr = __usb_data_start[i].interface_descriptor;
