@@ -18,9 +18,6 @@ static int device_count;
 static char device_ordered_list[DEVICE_POLICY_MAX];
 static char device_retval[DEVICE_POLICY_MAX];
 
-extern int nrf_gpiote_interrupt_enable(uint32_t mask);
-extern void nrf_gpiote_clear_port_event(void);
-
 /* Initialize and configure GPIO */
 void gpio_setup(void)
 {
@@ -34,12 +31,10 @@ void gpio_setup(void)
 	/* Configure button 2 as wake source from deep sleep */
 	gpio_pin_configure(gpiob, BUTTON_2, GPIO_DIR_IN
 				| GPIO_PUD_PULL_UP
+				| GPIO_INT | GPIO_INT_LEVEL
 				| GPIO_CFG_SENSE_LOW);
 
-	nrf_gpiote_clear_port_event();
-	/* Enable GPIOTE Port Event */
-	nrf_gpiote_interrupt_enable(GPIOTE_INTENSET_PORT_Msk);
-	NVIC_EnableIRQ(GPIOTE_IRQn);
+	gpio_pin_enable_callback(gpiob, BUTTON_2);
 }
 
 void suspend_devices(void)

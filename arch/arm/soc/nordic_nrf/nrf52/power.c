@@ -11,7 +11,6 @@
 #include <soc_power.h>
 #include <nrf_power.h>
 
-extern void nrf_gpiote_clear_port_event(void);
 #if defined(CONFIG_SYS_POWER_DEEP_SLEEP)
 /* System_OFF is deepest Power state available, On exiting from this
  * state CPU including all peripherals reset
@@ -55,8 +54,6 @@ static void _low_power_mode(enum power_states state)
 
 	/* Issue __WFE*/
 	_issue_low_power_command();
-	/* Clear the Port Event */
-	nrf_gpiote_clear_port_event();
 }
 
 /* Invoke Low Power/System Off specific Tasks */

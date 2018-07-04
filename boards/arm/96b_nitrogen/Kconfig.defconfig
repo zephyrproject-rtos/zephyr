@@ -9,13 +9,6 @@ if BOARD_96B_NITROGEN
 config BOARD
 	default "96b_nitrogen"
 
-if GPIO_NRF5
-
-config GPIO_NRF5_P0
-	default y
-
-endif # GPIO_NRF5
-
 if UART_NRFX
 
 config UART_0_NRF_TX_PIN
