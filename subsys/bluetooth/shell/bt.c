@@ -823,7 +823,7 @@ static int cmd_disconnect(int argc, char *argv[])
 			return 0;
 		}
 
-		conn = bt_conn_lookup_addr_le(&addr);
+		conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &addr);
 	}
 
 	if (!conn) {
@@ -885,7 +885,7 @@ static int cmd_select(int argc, char *argv[])
 		return 0;
 	}
 
-	conn = bt_conn_lookup_addr_le(&addr);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &addr);
 	if (!conn) {
 		printk("No matching connection found\n");
 		return 0;
@@ -930,7 +930,7 @@ static int cmd_oob(int argc, char *argv[])
 	struct bt_le_oob oob;
 	int err;
 
-	err = bt_le_oob_get_local(&oob);
+	err = bt_le_oob_get_local(BT_ID_DEFAULT, &oob);
 	if (err) {
 		printk("OOB data failed\n");
 		return 0;
@@ -955,7 +955,7 @@ static int cmd_clear(int argc, char *argv[])
 	}
 
 	if (strcmp(argv[1], "all") == 0) {
-		err = bt_unpair(NULL);
+		err = bt_unpair(BT_ID_DEFAULT, NULL);
 		if (err) {
 			printk("Failed to clear pairings (err %d)\n", err);
 		} else {
@@ -982,7 +982,7 @@ static int cmd_clear(int argc, char *argv[])
 		return 0;
 	}
 
-	err = bt_unpair(&addr);
+	err = bt_unpair(BT_ID_DEFAULT, &addr);
 	if (err) {
 		printk("Failed to clear pairing (err %d)\n", err);
 	} else {

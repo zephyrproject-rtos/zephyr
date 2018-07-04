@@ -382,6 +382,14 @@ config BT_DEVICE_APPEARANCE
 	  consult the following link:
 	  https://www.bluetooth.com/specifications/assigned-numbers
 
+config BT_ID_MAX
+	int "Maximum number of local identities"
+	range 1 10
+	default 1
+	help
+	  Maximum number of supported local identity addresses. For most
+	  products this is safe to leave as the default value (1).
+
 endif # BT_HCI_HOST
 
 config BT_TINYCRYPT_ECC

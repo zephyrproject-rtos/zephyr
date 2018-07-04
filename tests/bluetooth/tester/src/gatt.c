@@ -884,7 +884,7 @@ static void exchange_mtu(u8_t *data, u16_t len)
 {
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail;
 	}
@@ -966,7 +966,7 @@ static void disc_prim_uuid(u8_t *data, u16_t len)
 	const struct gatt_disc_prim_uuid_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1054,7 +1054,7 @@ static void find_included(u8_t *data, u16_t len)
 	const struct gatt_find_included_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1136,7 +1136,7 @@ static void disc_all_chrc(u8_t *data, u16_t len)
 	const struct gatt_disc_all_chrc_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1175,7 +1175,7 @@ static void disc_chrc_uuid(u8_t *data, u16_t len)
 	const struct gatt_disc_chrc_uuid_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1261,7 +1261,7 @@ static void disc_all_desc(u8_t *data, u16_t len)
 	const struct gatt_disc_all_desc_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1336,7 +1336,7 @@ static void read(u8_t *data, u16_t len)
 	const struct gatt_read_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1375,7 +1375,7 @@ static void read_long(u8_t *data, u16_t len)
 	const struct gatt_read_long_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1420,7 +1420,7 @@ static void read_multiple(u8_t *data, u16_t len)
 		handles[i] = sys_le16_to_cpu(cmd->handles[i]);
 	}
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1459,7 +1459,7 @@ static void write_without_rsp(u8_t *data, u16_t len, u8_t op,
 	struct bt_conn *conn;
 	u8_t status = BTP_STATUS_SUCCESS;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		status = BTP_STATUS_FAILED;
 		goto rsp;
@@ -1491,7 +1491,7 @@ static void write(u8_t *data, u16_t len)
 	const struct gatt_write_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail;
 	}
@@ -1527,7 +1527,7 @@ static void write_long(u8_t *data, u16_t len)
 	const struct gatt_write_long_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail;
 	}
@@ -1675,7 +1675,7 @@ static void config_subscription(u8_t *data, u16_t len, u16_t op)
 	u16_t ccc_handle = sys_le16_to_cpu(cmd->ccc_handle);
 	u8_t status;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX,
 			   BTP_STATUS_FAILED);

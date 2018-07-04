@@ -893,9 +893,10 @@ static int start_security(struct bt_conn *conn)
 	{
 		if (!conn->le.keys) {
 			conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256,
-						     &conn->le.dst);
+						     conn->id, &conn->le.dst);
 			if (!conn->le.keys) {
 				conn->le.keys = bt_keys_find(BT_KEYS_LTK,
+							     conn->id,
 							     &conn->le.dst);
 			}
 		}
@@ -1577,7 +1578,7 @@ int bt_conn_addr_le_cmp(const struct bt_conn *conn, const bt_addr_le_t *peer)
 	return bt_addr_le_cmp(peer, &conn->le.init_addr);
 }
 
-struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
+struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer)
 {
 	int i;
 
@@ -1590,7 +1591,8 @@ struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer)
 			continue;
 		}
 
-		if (!bt_conn_addr_le_cmp(&conns[i], peer)) {
+		if (conns[i].id == id &&
+		    !bt_conn_addr_le_cmp(&conns[i], peer)) {
 			return bt_conn_ref(&conns[i]);
 		}
 	}
@@ -1667,6 +1669,7 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 {
 	info->type = conn->type;
 	info->role = conn->role;
+	info->id = conn->id;
 
 	switch (conn->type) {
 	case BT_CONN_TYPE_LE:
@@ -1815,7 +1818,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 		return NULL;
 	}
 
-	conn = bt_conn_lookup_addr_le(peer);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, peer);
 	if (conn) {
 		switch (conn->state) {
 		case BT_CONN_CONNECT_SCAN:
@@ -1834,6 +1837,9 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 	if (!conn) {
 		return NULL;
 	}
+
+	/* Only default identity supported for now */
+	conn->id = BT_ID_DEFAULT;
 
 	/* Set initial address - will be updated later if necessary. */
 	bt_addr_le_copy(&conn->le.resp_addr, peer);
@@ -1856,7 +1862,7 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr,
 		return -EINVAL;
 	}
 
-	conn = bt_conn_lookup_addr_le(addr);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, addr);
 	if (!conn) {
 		conn = bt_conn_add_le(addr);
 		if (!conn) {
@@ -1865,6 +1871,9 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr,
 	}
 
 	if (param) {
+		/* Only default identity is supported */
+		conn->id = BT_ID_DEFAULT;
+
 		bt_conn_set_param_le(conn, param);
 
 		if (!atomic_test_and_set_bit(conn->flags,
@@ -2131,6 +2140,8 @@ int bt_conn_init(void)
 
 			if (atomic_test_bit(conn->flags,
 					    BT_CONN_AUTO_CONNECT)) {
+				/* Only the default identity is supported */
+				conn->id = BT_ID_DEFAULT;
 				bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 			}
 		}

@@ -63,7 +63,7 @@ void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	/* Use identity address as device UUID */
-	if (bt_le_oob_get_local(&oob)) {
+	if (bt_le_oob_get_local(BT_ID_DEFAULT, &oob)) {
 		printk("Identity Address unavailable\n");
 	} else {
 		memcpy(dev_uuid, oob.addr.a.val, 6);

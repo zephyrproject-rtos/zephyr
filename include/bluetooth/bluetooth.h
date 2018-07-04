@@ -29,6 +29,14 @@
 extern "C" {
 #endif
 
+/** @def BT_ID_DEFAULT
+ *
+ *  Convenience macro for specifying the default identity. This helps
+ *  make the code more readable, especially when only one identity is
+ *  supported.
+ */
+#define BT_ID_DEFAULT 0
+
 /**
  * @brief Generic Access Profile
  * @defgroup bt_gap Generic Access Profile
@@ -161,6 +169,9 @@ enum {
 
 /** LE Advertising Parameters. */
 struct bt_le_adv_param {
+	/** Local identity */
+	u8_t  id;
+
 	/** Bit-field of advertising options */
 	u8_t  options;
 
@@ -343,9 +354,10 @@ struct bt_le_oob {
  * Address that is valid for CONFIG_BT_RPA_TIMEOUT seconds. This address
  * will be used for advertising, active scanning and connection creation.
  *
+ * @param id  Local identity, in most cases BT_ID_DEFAULT.
  * @param oob LE related information
  */
-int bt_le_oob_get_local(struct bt_le_oob *oob);
+int bt_le_oob_get_local(u8_t id, struct bt_le_oob *oob);
 
 /** @brief BR/EDR discovery result structure */
 struct bt_br_discovery_result {
@@ -538,12 +550,13 @@ int bt_br_set_connectable(bool enable);
 
 /** Clear pairing information.
   *
+  * @param id    Local identity (mostly just BT_ID_DEFAULT).
   * @param addr  Remote address, NULL or BT_ADDR_LE_ANY to clear all remote
   *              devices.
   *
   * @return 0 on success or negative error value on failure.
   */
-int bt_unpair(const bt_addr_le_t *addr);
+int bt_unpair(u8_t id, const bt_addr_le_t *addr);
 
 /**
  * @}
