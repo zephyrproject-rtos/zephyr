@@ -28,7 +28,6 @@ config I2C_STM32_V2
 	select USE_STM32_LL_I2C
 	select USE_STM32_LL_RCC if SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X
 	select I2C_STM32_INTERRUPT if I2C_SLAVE
-	default n
 	help
 	  Enable I2C support on the STM32 F0, F3, F7 and L4X family of processors.
 	  This driver also supports the L0 series.
