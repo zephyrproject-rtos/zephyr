@@ -1450,9 +1450,10 @@ static int vendor_handler(struct usb_setup_packet *pSetup,
 	for (size_t i = 0; i < size; i++) {
 		iface = &(__usb_data_start[i].interface);
 		if_descr = __usb_data_start[i].interface_descriptor;
-		if ((iface->vendor_handler) &&
-		    (if_descr->bInterfaceNumber == pSetup->wIndex)) {
-			return iface->vendor_handler(pSetup, len, data);
+		if (iface->vendor_handler) {
+			if (!iface->vendor_handler(pSetup, len, data)) {
+				return 0;
+			}
 		}
 	}
 
