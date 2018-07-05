@@ -20,6 +20,9 @@
 #include <linker/linker-tool.h>
 
 #define RAMABLE_REGION dram0_0_seg :dram0_0_phdr
+/** "ROMABLE_REGION" name is used to be compatible with common-*.ld scripts.
+	However, due to the esp32 architecture, it is mapped to the instruction
+	ram area */
 #define ROMABLE_REGION iram0_0_seg :iram0_0_phdr
 
 PROVIDE ( __stack = 0x3ffe3f20 );
@@ -37,8 +40,8 @@ PROVIDE ( esp32_rom_ets_set_appcpu_boot_addr = 0x4000689c );
 MEMORY
 {
   iram0_0_seg(RX): org = 0x40080000, len = 0x20000
-  iram0_2_seg(RX): org = 0x400D0018, len = 0x330000
-  dram0_0_seg(RW): org = 0x3FFB0000, len = 0x50000
+  iram0_2_seg(RX): org = 0x400D0018, len = 0x330000-18
+  dram0_0_seg(RW): org = 0x3FFB0000, len = 0x2c200
   drom0_0_seg(R): org = 0x3F400010, len = 0x800000
   rtc_iram_seg(RWX): org = 0x400C0000, len = 0x2000
   rtc_slow_seg(RW): org = 0x50000000, len = 0x1000
@@ -138,16 +141,20 @@ SECTIONS
     _iram_start = ABSOLUTE(0);
   } GROUP_LINK_IN(ROMABLE_REGION)
 
-#include <linker/common-ram.ld>
-#include <linker/common-rom.ld>
 
-  SECTION_PROLOGUE(_TEXT_SECTION_NAME, , ALIGN(4))
+
+  .iram0.text :
   {
     /* Code marked as running out of IRAM */
     _iram_text_start = ABSOLUTE(.);
     *(.iram1 .iram1.*)
+
+    *(.literal.*_int_handler .text.*_int_handler)
+    *(.literal.*_irq_spurious .text.*_irq_spurious)
+    *(.literal.*i2c_esp32_isr .text.*i2c_esp32_isr)
+
+    kernel/libkernel.a(.literal .text .literal.* .text.*)
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
-    *(.literal .text .literal.* .text.*)
     _iram_text_end = ABSOLUTE(.);
   } GROUP_LINK_IN(ROMABLE_REGION)
 
@@ -202,12 +209,23 @@ SECTIONS
     *(.dynamic)
     *(.gnu.version_d)
     . = ALIGN(4);               /* this table MUST be 4-byte aligned */
+
+    __devconfig_start = .;
+    *(".devconfig.*")
+    KEEP(*(SORT_BY_NAME(".devconfig*")))
+    __devconfig_end = .;
+
+    __net_l2_start = .;
+    *(".net_l2.init")
+    KEEP(*(SORT_BY_NAME(".net_l2.init*")))
+    __net_l2_end = .;
+
     _rodata_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
 
   /* Shared RAM */
-  SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
+  .dram0.bss (NOLOAD) :
   {
     . = ALIGN (8);
     _bss_start = ABSOLUTE(.);
@@ -241,4 +259,18 @@ SECTIONS
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <linker/intlist.ld>
 #endif
+
+  .flash.text :
+  {
+    _irom_text_start = ABSOLUTE(.);
+    *(.literal .text .literal.* .text.* .stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
+    *(.irom0.text) /* catch stray ICACHE_RODATA_ATTR */
+    *(.fini.literal)
+    *(.fini)
+    *(.gnu.version)
+    _irom_text_end = ABSOLUTE(.);
+  } >iram0_2_seg
+
+#include <linker/common-ram.ld>
+
 }
