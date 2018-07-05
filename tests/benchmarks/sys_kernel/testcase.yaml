@@ -2,4 +2,5 @@ tests:
   benchmark.kernel:
     arch_exclude: nios2 riscv32 xtensa
     min_ram: 32
+    platform_exclude: arduino_due
     tags: benchmark
