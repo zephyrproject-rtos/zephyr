@@ -51,9 +51,9 @@ endchoice
 
 config SEGGER_RTT_MODE
 	int 
-	default 0 if SEGGER_RTT_MODE_NO_BLOCK_SKIP
+	default 0
 	default 1 if SEGGER_RTT_MODE_NO_BLOCK_TRIM
-	default 2
+	default 2 if SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL
 
 config SEGGER_RTT_MEMCPY_USE_BYTELOOP
 	bool "Use a simple byte-loop instead of standard memcpy"
