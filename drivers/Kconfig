@@ -23,7 +23,7 @@ source "drivers/serial/Kconfig"
 
 source "drivers/interrupt_controller/Kconfig"
 
-source "drivers/timer/Kconfig"
+source "drivers/systimer/Kconfig"
 
 source "drivers/entropy/Kconfig"
 
@@ -63,7 +63,7 @@ source "drivers/flash/Kconfig"
 
 source "drivers/sensor/Kconfig"
 
-source "drivers/counter/Kconfig"
+source "drivers/timer/Kconfig"
 
 source "drivers/dma/Kconfig"
 
