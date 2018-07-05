@@ -190,7 +190,7 @@ static void abort_connection(struct net_tcp *tcp)
 {
 	struct net_context *ctx = tcp->context;
 
-	NET_DBG("[%p] segment retransmission exceeds %d, resetting context %p",
+	NET_DBG_ERR("[%p] segment retransmission exceeds %d, resetting context %p",
 		tcp, CONFIG_NET_TCP_RETRY_COUNT, ctx);
 
 	if (ctx->recv_cb) {
@@ -229,11 +229,11 @@ static void tcp_retry_expired(struct k_work *work)
 		net_pkt_set_queued(pkt, true);
 
 		if (net_tcp_send_pkt(pkt) < 0 && !is_6lo_technology(pkt)) {
-			NET_DBG("retry %u: [%p] pkt %p send failed",
+			NET_DBG_ERR("retry %u: [%p] pkt %p send failed",
 				tcp->retry_timeout_shift, tcp, pkt);
 			net_pkt_unref(pkt);
 		} else {
-			NET_DBG("retry %u: [%p] sent pkt %p",
+			NET_DBG_ERR("retry %u: [%p] sent pkt %p",
 				tcp->retry_timeout_shift, tcp, pkt);
 			if (IS_ENABLED(CONFIG_NET_STATISTICS_TCP) &&
 			    !is_6lo_technology(pkt)) {
@@ -432,7 +432,7 @@ static int prepare_segment(struct net_tcp *tcp,
 	} else
 #endif
 	{
-		NET_DBG("[%p] Protocol family %d not supported", tcp,
+		NET_DBG_ERR("[%p] Protocol family %d not supported", tcp,
 			net_pkt_family(pkt));
 
 		if (pkt_allocated) {
@@ -977,7 +977,7 @@ int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
 
 			ret = net_tcp_send_pkt(pkt);
 			if (ret < 0 && !is_6lo_technology(pkt)) {
-				NET_DBG("[%p] pkt %p not sent (%d)",
+				NET_DBG_ERR("[%p] pkt %p not sent (%d)",
 					context->tcp, pkt, ret);
 				net_pkt_unref(pkt);
 			}
@@ -1108,7 +1108,7 @@ static void validate_state_transition(enum net_tcp_state current,
 	};
 
 	if (!(valid_transitions[current] & 1 << new)) {
-		NET_DBG("Invalid state transition: %s (%d) => %s (%d)",
+		NET_DBG_ERR("Invalid state transition: %s (%d) => %s (%d)",
 			net_tcp_state_str(current), current,
 			net_tcp_state_str(new), new);
 	}
@@ -1517,7 +1517,7 @@ static void backlog_ack_timeout(struct k_work *work)
 	struct tcp_backlog_entry *backlog =
 		CONTAINER_OF(work, struct tcp_backlog_entry, ack_timer);
 
-	NET_DBG("Did not receive ACK in %dms", ACK_TIMEOUT);
+	NET_DBG_ERR("Did not receive ACK in %dms", ACK_TIMEOUT);
 
 	/* TODO: If net_context is bound to unspecified IPv6 address
 	 * and some port number, local address is not available.
@@ -1692,7 +1692,7 @@ static void handle_fin_timeout(struct k_work *work)
 	struct net_tcp *tcp =
 		CONTAINER_OF(work, struct net_tcp, fin_timer);
 
-	NET_DBG("Did not receive FIN in %dms", FIN_TIMEOUT);
+	NET_DBG_ERR("Did not receive FIN in %dms", FIN_TIMEOUT);
 
 	net_context_unref(tcp->context);
 }
@@ -1702,7 +1702,7 @@ static void handle_ack_timeout(struct k_work *work)
 	/* This means that we did not receive ACK response in time. */
 	struct net_tcp *tcp = CONTAINER_OF(work, struct net_tcp, ack_timer);
 
-	NET_DBG("Did not receive ACK in %dms while in %s", ACK_TIMEOUT,
+	NET_DBG_ERR("Did not receive ACK in %dms while in %s", ACK_TIMEOUT,
 		net_tcp_state_str(net_tcp_get_state(tcp)));
 
 	if (net_tcp_get_state(tcp) == NET_TCP_LAST_ACK) {
@@ -2119,7 +2119,7 @@ NET_CONN_CB(tcp_synack_received)
 		net_context_set_iface(context, net_pkt_iface(pkt));
 		break;
 	default:
-		NET_DBG("Context %p in wrong state %d",
+		NET_DBG_ERR("Context %p in wrong state %d",
 			context, net_tcp_get_state(context->tcp));
 		return NET_DROP;
 	}
@@ -2166,14 +2166,14 @@ NET_CONN_CB(tcp_synack_received)
 
 		if (net_pkt_get_src_addr(
 			pkt, &remote_addr, sizeof(remote_addr)) < 0) {
-			NET_DBG("Cannot parse remote address"
+			NET_DBG_ERR("Cannot parse remote address"
 				" from received pkt");
 			return NET_DROP;
 		}
 
 		if (net_pkt_get_dst_addr(
 			pkt, &local_addr, sizeof(local_addr)) < 0) {
-			NET_DBG("Cannot parse local address from received pkt");
+			NET_DBG_ERR("Cannot parse local address from received pkt");
 			return NET_DROP;
 		}
 
@@ -2187,7 +2187,7 @@ NET_CONN_CB(tcp_synack_received)
 				       context,
 				       &context->conn_handler);
 		if (ret < 0) {
-			NET_DBG("Cannot register TCP handler (%d)", ret);
+			NET_DBG_ERR("Cannot register TCP handler (%d)", ret);
 			send_reset(context, &local_addr, &remote_addr);
 			return NET_DROP;
 		}
@@ -2279,7 +2279,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 		}
 		break;
 	default:
-		NET_DBG("Context %p in wrong state %d",
+		NET_DBG_ERR("Context %p in wrong state %d",
 			context, tcp->state);
 		return NET_DROP;
 	}
@@ -2294,12 +2294,12 @@ NET_CONN_CB(tcp_syn_rcvd)
 	}
 
 	if (net_pkt_get_src_addr(pkt, &remote_addr, sizeof(remote_addr)) < 0) {
-		NET_DBG("Cannot parse remote address from received pkt");
+		NET_DBG_ERR("Cannot parse remote address from received pkt");
 		return NET_DROP;
 	}
 
 	if (net_pkt_get_dst_addr(pkt, &local_addr, sizeof(local_addr)) < 0) {
-		NET_DBG("Cannot parse local address from received pkt");
+		NET_DBG_ERR("Cannot parse local address from received pkt");
 		return NET_DROP;
 	}
 
@@ -2336,9 +2336,9 @@ NET_CONN_CB(tcp_syn_rcvd)
 		r = tcp_backlog_syn(pkt, context, tcp_opts.mss);
 		if (r < 0) {
 			if (r == -EADDRINUSE) {
-				NET_DBG("TCP connection already exists");
+				NET_DBG_ERR("TCP connection already exists");
 			} else {
-				NET_DBG("No free TCP backlog entries");
+				NET_DBG_ERR("No free TCP backlog entries");
 			}
 
 			return NET_DROP;
@@ -2380,7 +2380,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 		net_tcp_print_recv_info("ACK", pkt, tcp_hdr->src_port);
 
 		if (!context->tcp->accept_cb) {
-			NET_DBG("No accept callback, connection reset.");
+			NET_DBG_ERR("No accept callback, connection reset.");
 			goto reset;
 		}
 
@@ -2390,14 +2390,14 @@ NET_CONN_CB(tcp_syn_rcvd)
 				      SOCK_STREAM, IPPROTO_TCP,
 				      &new_context);
 		if (ret < 0) {
-			NET_DBG("Cannot get accepted context, "
+			NET_DBG_ERR("Cannot get accepted context, "
 				"connection reset");
 			goto conndrop;
 		}
 
 		ret = tcp_backlog_ack(pkt, new_context);
 		if (ret < 0) {
-			NET_DBG("Cannot find context from TCP backlog");
+			NET_DBG_ERR("Cannot find context from TCP backlog");
 
 			net_context_unref(new_context);
 
@@ -2407,7 +2407,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 		ret = net_context_bind(new_context, &local_addr,
 				       sizeof(local_addr));
 		if (ret < 0) {
-			NET_DBG("Cannot bind accepted context, "
+			NET_DBG_ERR("Cannot bind accepted context, "
 				"connection reset");
 			net_context_unref(new_context);
 			goto conndrop;
@@ -2426,7 +2426,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 			       new_context,
 			       &new_context->conn_handler);
 		if (ret < 0) {
-			NET_DBG("Cannot register accepted TCP handler (%d)",
+			NET_DBG_ERR("Cannot register accepted TCP handler (%d)",
 				ret);
 			net_context_unref(new_context);
 			goto conndrop;
@@ -2487,7 +2487,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 	NET_ASSERT(context->tcp);
 
 	if (net_tcp_get_state(context->tcp) != NET_TCP_LISTEN) {
-		NET_DBG("Context %p in wrong state %d, should be %d",
+		NET_DBG_ERR("Context %p in wrong state %d, should be %d",
 			context, context->tcp->state, NET_TCP_LISTEN);
 		return -EINVAL;
 	}

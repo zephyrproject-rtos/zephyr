@@ -50,6 +50,18 @@ extern "C" {
 #define NET_ERR(fmt, ...) SYS_LOG_ERR(fmt, ##__VA_ARGS__)
 #define NET_WARN(fmt, ...) SYS_LOG_WRN(fmt, ##__VA_ARGS__)
 #define NET_INFO(fmt, ...) SYS_LOG_INF(fmt,  ##__VA_ARGS__)
+
+/* NET_DBG_ERR() is resolved to either NET_DBG() or NET_ERR()
+ * depending on the config option, and thus a way to promote
+ * logging which is "debug" in production mode to "error" when
+ * debugging.
+ */
+#if defined(CONFIG_SYS_LOG_DBG_ERR)
+#define NET_DBG_ERR(fmt, ...) NET_ERR(fmt, ##__VA_ARGS__)
+#else
+#define NET_DBG_ERR(fmt, ...) NET_DBG(fmt, ##__VA_ARGS__)
+#endif /* CONFIG_SYS_LOG_DBG_ERR */
+
 #define NET_ASSERT(cond) do {				     \
 		if (!(cond)) {					     \
 			NET_ERR("{assert: '" #cond "' failed}");     \
@@ -62,6 +74,7 @@ extern "C" {
 #else /* NET_LOG_ENABLED */
 #define NET_DBG(...)
 #define NET_ERR(...)
+#define NET_DBG_ERR(...)
 #define NET_INFO(...)
 #define NET_WARN(...)
 #define NET_ASSERT(...)

@@ -30,6 +30,22 @@ config SYS_LOG_NET_LEVEL
 	  3 INFO, write SYS_LOG_INF in addition to previous levels
 	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
+config SYS_LOG_DBG_ERR
+	bool "Make certain IP stack conditions have ERR logging instead of DBG"
+	help
+	  There are some conditions which may happen (usually rarely)
+	  during normal TCP/IP operation, but otherwise affect TCP/IP
+	  flow considerably. An example of this is TCP FIN timeout -
+	  we have little choice but to completely close connection on
+	  our side, yet there can be a case that the peer didn't receive
+	  the FIN indeed, and think that connection is open. If such
+	  conditions occur frequently instead of rarely, they may
+	  mean an issue somewhere in the TCP/IP flow, so having them
+	  logged in clear manner may help with debugging. Such conditions
+	  are logged using special NET_DBG_ERR() macro. If this option
+	  is inactive, it will be equivalent to NET_DBG(). And if this
+	  options is active - to NET_ERR().
+
 config NET_LOG_GLOBAL
 	bool "Enable global network stack logging"
 	select NET_DEBUG_CORE
