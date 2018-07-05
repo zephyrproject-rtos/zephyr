@@ -103,7 +103,7 @@ static bool gptp_handle_critical_msg(struct net_if *iface, struct net_pkt *pkt)
 	case GPTP_PATH_DELAY_REQ_MESSAGE:
 		if (GPTP_CHECK_LEN(pkt, GPTP_PDELAY_REQ_LEN)) {
 			NET_WARN("Invalid length for %s packet "
-				 "should have %zd bytes but has %lu bytes",
+				 "should have %zd bytes but has %zd bytes",
 				 "PDELAY_REQ",
 				 GPTP_PDELAY_REQ_LEN,
 				 GPTP_PACKET_LEN(pkt));
@@ -155,7 +155,7 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 	case GPTP_SYNC_MESSAGE:
 		if (GPTP_CHECK_LEN(pkt, GPTP_SYNC_LEN)) {
 			NET_WARN("Invalid length for %s packet "
-				 "should have %zd bytes but has %lu bytes",
+				 "should have %zd bytes but has %zd bytes",
 				 "SYNC",
 				 GPTP_SYNC_LEN,
 				 GPTP_PACKET_LEN(pkt));
@@ -197,7 +197,7 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 	case GPTP_PATH_DELAY_RESP_MESSAGE:
 		if (GPTP_CHECK_LEN(pkt, GPTP_PDELAY_RESP_LEN)) {
 			NET_WARN("Invalid length for %s packet "
-				 "should have %zd bytes but has %lu bytes",
+				 "should have %zd bytes but has %zd bytes",
 				 "PDELAY_RESP",
 				 GPTP_PDELAY_RESP_LEN,
 				 GPTP_PACKET_LEN(pkt));
@@ -222,7 +222,7 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 	case GPTP_FOLLOWUP_MESSAGE:
 		if (GPTP_CHECK_LEN(pkt, GPTP_FOLLOW_UP_LEN)) {
 			NET_WARN("Invalid length for %s packet "
-				 "should have %zd bytes but has %lu bytes",
+				 "should have %zd bytes but has %zd bytes",
 				 "FOLLOWUP",
 				 GPTP_FOLLOW_UP_LEN,
 				 GPTP_PACKET_LEN(pkt));
@@ -248,7 +248,7 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 	case GPTP_PATH_DELAY_FOLLOWUP_MESSAGE:
 		if (GPTP_CHECK_LEN(pkt, GPTP_PDELAY_RESP_FUP_LEN)) {
 			NET_WARN("Invalid length for %s packet "
-				 "should have %zd bytes but has %lu bytes",
+				 "should have %zd bytes but has %zd bytes",
 				 "PDELAY_FOLLOWUP",
 				 GPTP_PDELAY_RESP_FUP_LEN,
 				 GPTP_PACKET_LEN(pkt));
@@ -275,7 +275,7 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 	case GPTP_ANNOUNCE_MESSAGE:
 		if (GPTP_ANNOUNCE_CHECK_LEN(pkt)) {
 			NET_WARN("Invalid length for %s packet "
-				 "should have %zd bytes but has %lu bytes",
+				 "should have %zd bytes but has %zd bytes",
 				 "ANNOUNCE",
 				 GPTP_ANNOUNCE_LEN(pkt),
 				 GPTP_PACKET_LEN(pkt));
@@ -301,7 +301,7 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 	case GPTP_SIGNALING_MESSAGE:
 		if (GPTP_CHECK_LEN(pkt, GPTP_SIGNALING_LEN)) {
 			NET_WARN("Invalid length for %s packet "
-				 "should have %zd bytes but has %lu bytes",
+				 "should have %zd bytes but has %zd bytes",
 				 "SIGNALING",
 				 GPTP_SIGNALING_LEN,
 				 GPTP_PACKET_LEN(pkt));
