@@ -34,7 +34,7 @@ struct net_icmp_hdr *net_icmpv4_set_hdr(struct net_pkt *pkt,
 	u16_t pos;
 
 	icmp_hdr = net_pkt_icmp_data(pkt);
-	if (net_icmp_header_fits(pkt, icmp_hdr)) {
+	if (net_icmp_header_fits(pkt, icmp_hdr) && (hdr == icmp_hdr)) {
 		return icmp_hdr;
 	}
 
