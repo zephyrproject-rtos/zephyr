@@ -600,5 +600,71 @@ int ztls_fcntl(int sock, int cmd, int flags)
 
 int ztls_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 {
-	return zsock_poll(fds, nfds, timeout);
+	bool has_mbedtls_data = false;
+	struct zsock_pollfd *pfd;
+	struct net_context *context;
+	int i, ret;
+
+	/* There might be some decrypted but unread data pending on mbedTLS,
+	 * check for that.
+	 */
+	for (pfd = fds, i = nfds; i--; pfd++) {
+		/* Per POSIX, negative fd's are just ignored */
+		if (pfd->fd < 0) {
+			continue;
+		}
+
+		if (pfd->events & ZSOCK_POLLIN) {
+			context = INT_TO_POINTER(pfd->fd);
+			if (!context->tls) {
+				continue;
+			}
+
+			if (mbedtls_ssl_get_bytes_avail(
+					&context->tls->ssl) > 0) {
+				has_mbedtls_data = true;
+				break;
+			}
+		}
+	}
+
+	/* If there is no data waiting on any of mbedTLS contexts,
+	 * just do regular poll.
+	 */
+	if (!has_mbedtls_data) {
+		return zsock_poll(fds, nfds, timeout);
+	}
+
+	/* Otherwise, poll with no timeout, and update respective revents. */
+	ret = zsock_poll(fds, nfds, K_NO_WAIT);
+	if (ret < 0) {
+		/* errno will be propagated */
+		return -1;
+	}
+
+	/* Another pass, this time updating revents. */
+	for (pfd = fds, i = nfds; i--; pfd++) {
+		/* Per POSIX, negative fd's are just ignored */
+		if (pfd->fd < 0) {
+			continue;
+		}
+
+		if (pfd->events & ZSOCK_POLLIN) {
+			context = INT_TO_POINTER(pfd->fd);
+			if (!context->tls) {
+				continue;
+			}
+
+			if (mbedtls_ssl_get_bytes_avail(
+					&context->tls->ssl) > 0) {
+				if (pfd->revents == 0) {
+					ret++;
+				}
+
+				pfd->revents |= ZSOCK_POLLIN;
+			}
+		}
+	}
+
+	return ret;
 }
