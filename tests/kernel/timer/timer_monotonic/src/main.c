@@ -33,7 +33,20 @@ int test_frequency(void)
 	return 0;
 }
 
-
+/**
+ * @brief Test monotonic timer
+ *
+ * Validates monotonic timer's clock calibration.
+ *
+ * It reads the System clock’s h/w timer frequency value continuously
+ * using k_cycle_get_32() to verify its working and correctiveness.
+ * It also checks system tick frequency by checking the delta error
+ * between generated and system clock provided HW cycles per sec values.
+ *
+ * @ingroup kernel_timer_tests
+ *
+ * @see k_cycle_get_32(), sys_clock_hw_cycles_per_sec
+ */
 void test_timer(void)
 {
 	u32_t t_last, t_now, i, errors;
