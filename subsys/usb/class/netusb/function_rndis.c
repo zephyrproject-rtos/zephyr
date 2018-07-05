@@ -86,7 +86,7 @@ static struct __rndis {
 	u8_t mac[6];
 	u8_t media_status;
 } rndis = {
-	.mac =  { 0x00, 0x11, 0x22, 0x33, 0x44, 0x66 },
+	.mac =  { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x01 },
 	.mtu = 1500, /* Ethernet frame */
 	.media_status = RNDIS_OBJECT_ID_MEDIA_DISCONNECTED,
 	.state = UNINITIALIZED,
