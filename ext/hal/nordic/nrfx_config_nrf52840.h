@@ -956,34 +956,34 @@
 
 // <e> NRFX_PWM_ENABLED - nrfx_pwm - PWM peripheral driver
 //==========================================================
-#ifndef CONFIG_NRFX_PWM
+#ifdef CONFIG_NRFX_PWM
 #define NRFX_PWM_ENABLED 1
 #endif
 // <q> NRFX_PWM0_ENABLED  - Enable PWM0 instance
 
 
-#ifndef CONFIG_PWM_0
+#ifdef CONFIG_PWM_0
 #define NRFX_PWM0_ENABLED 1
 #endif
 
 // <q> NRFX_PWM1_ENABLED  - Enable PWM1 instance
 
 
-#ifndef CONFIG_PWM_1
+#ifdef CONFIG_PWM_1
 #define NRFX_PWM1_ENABLED 1
 #endif
 
 // <q> NRFX_PWM2_ENABLED  - Enable PWM2 instance
 
 
-#ifndef CONFIG_PWM_2
+#ifdef CONFIG_PWM_2
 #define NRFX_PWM2_ENABLED 1
 #endif
 
 // <q> NRFX_PWM3_ENABLED  - Enable PWM3 instance
 
 
-#ifndef CONFIG_PWM_3
+#ifdef CONFIG_PWM_3
 #define NRFX_PWM3_ENABLED 1
 #endif
 
