@@ -120,8 +120,6 @@ zephyr_compile_options(
 )
 
 zephyr_compile_options(
-  $<$<COMPILE_LANGUAGE:C>:-std=c99>
-
   $<$<COMPILE_LANGUAGE:CXX>:-std=c++11>
   $<$<COMPILE_LANGUAGE:CXX>:-fcheck-new>
   $<$<COMPILE_LANGUAGE:CXX>:-ffunction-sections>
@@ -991,6 +989,13 @@ get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
 
 get_property(TOPT GLOBAL PROPERTY TOPT)
 set_ifndef(  TOPT -T)
+
+get_property(CSTD GLOBAL PROPERTY CSTD)
+set_ifndef(CSTD c99)
+
+zephyr_compile_options(
+  $<$<COMPILE_LANGUAGE:C>:-std=${CSTD}>
+)
 
 configure_file(
      $ENV{ZEPHYR_BASE}/include/arch/arm/cortex_m/scripts/app_data_alignment.ld
