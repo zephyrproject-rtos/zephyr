@@ -1,0 +1,4 @@
+tests:
+  peripheral.counter:
+    tags: drivers
+    depends_on: counter
