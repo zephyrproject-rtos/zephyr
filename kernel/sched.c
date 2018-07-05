@@ -498,15 +498,8 @@ void _reschedule(u32_t key)
 		goto noswap;
 	}
 
-#ifdef CONFIG_SMP
 	(void)_Swap(key);
 	return;
-#else
-	if (_get_next_ready_thread() != _current) {
-		(void)_Swap(key);
-		return;
-	}
-#endif
 
  noswap:
 	irq_unlock(key);
