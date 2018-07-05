@@ -258,6 +258,16 @@ static inline u64_t _syscall_ret64_invoke1(u32_t arg1, u32_t call_id)
 	_arch_syscall_invoke2(arg1, (u32_t)&ret, call_id);
 	return ret;
 }
+
+static inline u64_t _syscall_ret64_invoke2(u32_t arg1, u32_t arg2,
+					   u32_t call_id)
+{
+	u64_t ret;
+
+	_arch_syscall_invoke3(arg1, arg2, (u32_t)&ret, call_id);
+	return ret;
+}
+
 #endif /* CONFIG_USERSPACE */
 
 #ifdef __cplusplus
