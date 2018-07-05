@@ -146,7 +146,16 @@ void stack_thread2(void)
 	irq_unlock(key);
 }
 
-
+/**
+ *
+ * @brief test the kernel fatal error handling works correctly
+ *
+ * Manually trigger the crash with various ways and check that the kernel is
+ * handling that properly or not. Also the crash reason should match.
+ *
+ * Check for stack sentinel feature by overflowing the thread's stack and check
+ * for the exception.
+ */
 void test_fatal(void)
 {
 	rv = TC_PASS;
