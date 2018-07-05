@@ -43,3 +43,10 @@ Patch List:
     Impacted files:
      drivers/include/stm32f4xx_hal_conf.h
     ST Bug tracker ID: NA. Not a stm32cube issue
+
+   *Add correct shifting to I2SR field in PLLI2SCFGR register
+     The I2SR field should be shifted by RCC_PLLI2SCFGR_PLLI2SR_Pos when the PLLI2SCFGR register
+     is read or written.
+    Impacted files:
+     drivers/include/stm32f4xx_ll_rcc.h
+    ST Bug tracker ID: 50086
