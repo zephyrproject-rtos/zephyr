@@ -19,6 +19,11 @@
 	defined(CONFIG_CPU_CORTEX_M4) || \
 	defined(CONFIG_CPU_CORTEX_M7)
 #include <arm_mpu_v7_internal.h>
+#elif defined(CONFIG_CPU_CORTEX_M23) || \
+	defined(CONFIG_CPU_CORTEX_M33)
+#include <arm_mpu_v8_internal.h>
+#else
+#error "Unsupported ARM CPU"
 #endif
 
 /**
@@ -318,6 +323,9 @@ static int arm_mpu_init(struct device *arg)
 	SYS_LOG_DBG("total region count: %d", _get_num_regions());
 
 	arm_core_mpu_disable();
+
+	/* Architecture-specific configuration */
+	_mpu_init();
 
 	/* Configure regions */
 	for (r_index = 0; r_index < mpu_config.num_regions; r_index++) {

@@ -6,4 +6,5 @@ zephyr_library_sources_if_kconfig(               nxp_mpu.c)
 
 zephyr_library_include_directories(
   .
+  ../../../include/cortex_m
 )
