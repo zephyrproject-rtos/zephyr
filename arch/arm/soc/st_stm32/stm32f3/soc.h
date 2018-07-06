@@ -25,11 +25,13 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <device.h>
-#include <misc/util.h>
-#include <random/rand32.h>
-
 #include <stm32f3xx.h>
+
+/* ARM CMSIS definitions must be included before kernel_includes.h.
+ * Therefore, it is essential to include kernel_includes.h after including
+ * core SOC-specific headers.
+ */
+#include <kernel_includes.h>
 
 #ifdef CONFIG_SERIAL_HAS_DRIVER
 #include <stm32f3xx_ll_usart.h>
