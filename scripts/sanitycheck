@@ -313,7 +313,7 @@ class Handler:
         self.timeout = instance.test.timeout
         self.sourcedir = instance.test.code_location
         self.outdir = instance.outdir
-        self.handler_log = os.path.join(self.outdir, "handler.log")
+        self.log = os.path.join(self.outdir, "handler.log")
         self.returncode = 0
         self.set_state("running", {})
 
@@ -340,7 +340,7 @@ class DeviceHandler(Handler):
         super().__init__(instance)
 
     def monitor_serial(self, ser, harness):
-        log_out_fp = open(self.handler_log, "wt")
+        log_out_fp = open(self.log, "wt")
 
         while ser.isOpen():
             try:
@@ -427,7 +427,7 @@ class NativeHandler(Handler):
         self.valgrind = False
 
     def _output_reader(self, proc, harness):
-        log_out_fp = open(self.handler_log, "wt")
+        log_out_fp = open(self.log, "wt")
         for line in iter(proc.stdout.readline, b''):
             verbose("NATIVE: {0}".format(line.decode('utf-8').rstrip()))
             log_out_fp.write(line.decode('utf-8'))
@@ -489,7 +489,7 @@ class UnitHandler(Handler):
     def handle(self):
         out_state = "failed"
 
-        with open(self.handler_log, "wt") as hl:
+        with open(self.log, "wt") as hl:
             try:
                 binary = os.path.join(self.outdir, "testbinary")
                 command = [binary]
@@ -629,7 +629,7 @@ class QEMUHandler(Handler):
         if os.path.exists(self.pid_fn):
             os.unlink(self.pid_fn)
 
-        self.log_fn = self.handler_log
+        self.log_fn = self.log
 
         harness_import = HarnessImporter(instance.test.harness.capitalize())
         harness = harness_import.instance
@@ -974,6 +974,7 @@ class MakeGenerator:
         self.goals[name] = MakeGoal( name, text, None, self.logfile, build_logfile, None, None)
 
     def add_goal(self, instance, type, args, make_args=""):
+
         """Add a goal to build a Zephyr project and then run it using a handler
 
         The generated make goal invokes Make twice, the first time it will
@@ -991,7 +992,6 @@ class MakeGenerator:
 
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
-        handler_logfile = os.path.join(outdir, "handler.log")
 
         if not os.path.exists(outdir):
             os.makedirs(outdir)
@@ -1005,7 +1005,6 @@ class MakeGenerator:
             handler = UnitHandler(instance)
         elif type == "device":
             handler = DeviceHandler(instance)
-
 
         if options.enable_coverage:
             args += ["COVERAGE=1", "EXTRA_LDFLAGS=--coverage"]
@@ -1025,7 +1024,7 @@ class MakeGenerator:
         text += self._get_rule_footer(name)
 
         self.goals[name] = MakeGoal(name, text, handler, self.logfile, build_logfile,
-                                    run_logfile, handler_logfile)
+                                    run_logfile, handler.log if handler else None)
 
 
     def add_test_instance(self, ti, extra_args=[]):
@@ -1050,13 +1049,10 @@ class MakeGenerator:
         type = None
         if ti.platform.qemu_support and do_run:
             type = "qemu"
-
         elif ti.test.type == "unit":
             type = "unit"
-
         elif ti.platform.type == "native" and do_run:
             type = "native"
-
         elif options.device_testing and (not ti.build_only) and (not options.build_only):
             type = "device"
 
@@ -1125,7 +1121,7 @@ class MakeGenerator:
                         if goal.handler:
                             if hasattr(goal.handler, "handle"):
                                 goal.handler.handle()
-                                goal.handler_log = goal.handler.handler_log
+                                goal.handler_log = goal.handler.log
 
                             thread_status, metrics = goal.handler.get_state()
                             goal.metrics.update(metrics)
