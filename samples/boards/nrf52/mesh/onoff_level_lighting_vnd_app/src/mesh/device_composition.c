@@ -76,9 +76,7 @@ struct generic_level_state gen_level_srv_root_user_data = {
 
 struct generic_onpowerup_state gen_power_onoff_srv_user_data;
 
-struct light_lightness_state light_lightness_srv_user_data = {
-	.lightness_range_max = 0xFFFF,
-};
+struct light_lightness_state light_lightness_srv_user_data;
 
 struct light_ctl_state light_ctl_srv_user_data;
 
@@ -126,6 +124,8 @@ static void state_binding(u8_t lightness, u8_t temperature)
 		if (gen_onoff_srv_root_user_data.onoff == 0x00) {
 			light_lightness_srv_user_data.actual = 0;
 			light_lightness_srv_user_data.linear = 0;
+			gen_level_srv_root_user_data.level = -32768;
+			light_ctl_srv_user_data.lightness = 0;
 		} else if (gen_onoff_srv_root_user_data.onoff == 0x01) {
 			light_lightness_srv_user_data.actual =
 				light_lightness_srv_user_data.last;
@@ -134,12 +134,20 @@ static void state_binding(u8_t lightness, u8_t temperature)
 			       light_lightness_srv_user_data.actual / 65535);
 			light_lightness_srv_user_data.linear =
 				(u16_t) (65535 * tmp * tmp);
+
+			gen_level_srv_root_user_data.level =
+				light_lightness_srv_user_data.actual - 32768;
+
+			light_ctl_srv_user_data.lightness =
+				light_lightness_srv_user_data.actual;
 		}
 		break;
 	case ONOFF: /* Lightness update as per Generic OnOff (root) state */
 		if (gen_onoff_srv_root_user_data.onoff == 0x00) {
 			light_lightness_srv_user_data.actual = 0;
 			light_lightness_srv_user_data.linear = 0;
+			gen_level_srv_root_user_data.level = -32768;
+			light_ctl_srv_user_data.lightness = 0;
 		} else if (gen_onoff_srv_root_user_data.onoff == 0x01) {
 			if (light_lightness_srv_user_data.def == 0) {
 				light_lightness_srv_user_data.actual =
@@ -156,7 +164,16 @@ static void state_binding(u8_t lightness, u8_t temperature)
 
 			light_lightness_srv_user_data.last =
 				light_lightness_srv_user_data.actual;
+
+			gen_level_srv_root_user_data.level =
+				light_lightness_srv_user_data.actual - 32768;
+
+			light_ctl_srv_user_data.lightness =
+				light_lightness_srv_user_data.actual;
 		}
+
+		goto update_temp;
+
 		break;
 	case LEVEL: /* Lightness update as per Generic Level (root) state */
 		light_lightness_srv_user_data.actual =
@@ -168,6 +185,9 @@ static void state_binding(u8_t lightness, u8_t temperature)
 
 		light_lightness_srv_user_data.last =
 			light_lightness_srv_user_data.actual;
+
+		light_ctl_srv_user_data.lightness =
+			light_lightness_srv_user_data.actual;
 		break;
 	case ACTUAL: /* Lightness update as per Light Lightness Actual state */
 		tmp = ((float) light_lightness_srv_user_data.actual / 65535);
@@ -175,6 +195,12 @@ static void state_binding(u8_t lightness, u8_t temperature)
 			(u16_t) (65535 * tmp * tmp);
 
 		light_lightness_srv_user_data.last =
+			light_lightness_srv_user_data.actual;
+
+		gen_level_srv_root_user_data.level =
+			light_lightness_srv_user_data.actual - 32768;
+
+		light_ctl_srv_user_data.lightness =
 			light_lightness_srv_user_data.actual;
 		break;
 	case LINEAR: /* Lightness update as per Light Lightness Linear state */
@@ -184,6 +210,12 @@ static void state_binding(u8_t lightness, u8_t temperature)
 			      65535));
 
 		light_lightness_srv_user_data.last =
+			light_lightness_srv_user_data.actual;
+
+		gen_level_srv_root_user_data.level =
+			light_lightness_srv_user_data.actual - 32768;
+
+		light_ctl_srv_user_data.lightness =
 			light_lightness_srv_user_data.actual;
 		break;
 	case CTL: /* Lightness update as per Light CTL Lightness state */
@@ -196,17 +228,14 @@ static void state_binding(u8_t lightness, u8_t temperature)
 
 		light_lightness_srv_user_data.last =
 			light_lightness_srv_user_data.actual;
+
+		gen_level_srv_root_user_data.level =
+			light_lightness_srv_user_data.actual - 32768;
 		break;
 	default:
 		goto update_temp;
 		break;
 	}
-
-	gen_level_srv_root_user_data.level =
-		light_lightness_srv_user_data.actual - 32768;
-
-	light_ctl_srv_user_data.lightness =
-		light_lightness_srv_user_data.actual;
 
 	if (light_lightness_srv_user_data.actual == 0) {
 		gen_onoff_srv_root_user_data.onoff = 0;
@@ -247,11 +276,14 @@ void light_default_status_init(void)
 	 */
 	gen_power_onoff_srv_user_data.onpowerup = 0x01;
 
+	light_lightness_srv_user_data.lightness_range_min = 0x0001;
+	light_lightness_srv_user_data.lightness_range_max = 0xFFFF;
+	light_lightness_srv_user_data.def = 0xFFFF;
+
 	/* Following 2 values are as per specification */
 	light_ctl_srv_user_data.temp_range_min = 0x0320;
 	light_ctl_srv_user_data.temp_range_max = 0x4E20;
 
-	light_lightness_srv_user_data.def = 0xFFFF;
 	light_ctl_srv_user_data.temp_def = 0x0320;
 	/* (End) */
 
@@ -354,8 +386,13 @@ static void gen_onoff_set(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
+	struct generic_onoff_state *state = model->user_data;
+
 	gen_onoff_set_unack(model, ctx, buf);
-	gen_onoff_get(model, ctx, buf);
+
+	if (state->onoff <= 0x01) {
+		gen_onoff_get(model, ctx, buf);
+	}
 }
 
 /* Generic OnOff Client message handlers */
@@ -447,20 +484,31 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_level_state *state = model->user_data;
 
-	tmp32 = state->level + net_buf_simple_pull_le32(buf);
+	state->current_delta = net_buf_simple_pull_le32(buf);
 	tid = net_buf_simple_pull_u8(buf);
 
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
-		return;
+		if (state->current_delta == state->last_delta) {
+			return;
+		}
+
+		tmp32 = state->current_delta - state->last_delta;
+	} else {
+		tmp32 = state->current_delta;
 	}
 
+	state->last_delta = state->current_delta;
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
 
+	tmp32 = state->level + tmp32;
+
 	if (tmp32 < -32768) {
 		tmp32 = -32768;
+		state->last_delta = 0;
 	} else if (tmp32 > 32767) {
 		tmp32 = 32767;
+		state->last_delta = 0;
 	}
 
 	state->level = tmp32;
@@ -587,8 +635,13 @@ static void gen_onpowerup_set(struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
+	struct generic_onpowerup_state *state = model->user_data;
+
 	gen_onpowerup_set_unack(model, ctx, buf);
-	gen_onpowerup_get(model, ctx, buf);
+
+	if (state->onpowerup <= 0x02) {
+		gen_onpowerup_get(model, ctx, buf);
+	}
 }
 
 /* Vendor Model message handlers*/
@@ -684,10 +737,11 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 				      struct net_buf_simple *buf)
 {
 	u8_t tid;
+	u16_t tmp16;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
-	state->actual = net_buf_simple_pull_le16(buf);
+	tmp16 = net_buf_simple_pull_le16(buf);
 	tid = net_buf_simple_pull_u8(buf);
 
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
@@ -696,6 +750,16 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
+
+	if (tmp16 < state->lightness_range_min && tmp16 > 0) {
+		tmp16 = state->lightness_range_min;
+	}
+
+	if (tmp16 > state->lightness_range_max) {
+		tmp16 = state->lightness_range_max;
+	}
+
+	state->actual = tmp16;
 
 	state_binding(ACTUAL, IGNORE_TEMP);
 	update_light_state();
@@ -838,12 +902,23 @@ static void light_lightness_default_set_unack(struct bt_mesh_model *model,
 					      struct bt_mesh_msg_ctx *ctx,
 					      struct net_buf_simple *buf)
 {
+	u16_t tmp16;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
-	state->def = net_buf_simple_pull_le16(buf);
+	tmp16 = net_buf_simple_pull_le16(buf);
 
 	/* Here, Model specification is silent about tid implementation */
+
+	if (tmp16 < state->lightness_range_min && tmp16 > 0) {
+		tmp16 = state->lightness_range_min;
+	}
+
+	if (tmp16 > state->lightness_range_max) {
+		tmp16 = state->lightness_range_max;
+	}
+
+	state->def = tmp16;
 
 	/* Do some work here to save value of state->def on SoC flash */
 
@@ -874,13 +949,29 @@ static void light_lightness_range_set_unack(struct bt_mesh_model *model,
 					    struct bt_mesh_msg_ctx *ctx,
 					    struct net_buf_simple *buf)
 {
+	u16_t min, max;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
-	state->lightness_range_min = net_buf_simple_pull_le16(buf);
-	state->lightness_range_max = net_buf_simple_pull_le16(buf);
+	min = net_buf_simple_pull_le16(buf);
+	max = net_buf_simple_pull_le16(buf);
 
 	/* Here, Model specification is silent about tid implementation */
+
+	if (min <= max && min != 0 && max != 0) {
+		state->status_code = 0x00;
+
+		state->lightness_range_min = min;
+		state->lightness_range_max = max;
+	} else if (max < min) {
+		/* The provided value for Range Max cannot be set */
+		state->status_code = 0x02;
+	}
+
+	if (min == 0) {
+		/* The provided value for Range Min cannot be set */
+		state->status_code = 0x01;
+	}
 
 	/* Do some work here to save values of
 	 * state->lightness_range_min & state->lightness_range_max
@@ -982,12 +1073,12 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 				struct net_buf_simple *buf)
 {
 	u8_t tid;
-	u16_t tmp16;
+	u16_t light, temp;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
 
-	state->lightness = net_buf_simple_pull_le16(buf);
-	tmp16 = net_buf_simple_pull_le16(buf);
+	light = net_buf_simple_pull_le16(buf);
+	temp = net_buf_simple_pull_le16(buf);
 	state->delta_uv = (int16_t) net_buf_simple_pull_le16(buf);
 	tid = net_buf_simple_pull_u8(buf);
 
@@ -998,13 +1089,22 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
 
-	if (tmp16 < state->temp_range_min) {
-		tmp16 = state->temp_range_min;
-	} else if (tmp16 > state->temp_range_max) {
-		tmp16 = state->temp_range_max;
+	if (light < light_lightness_srv_user_data.lightness_range_min &&
+	    light > 0) {
+		light = light_lightness_srv_user_data.lightness_range_min;
+	} else if (temp > light_lightness_srv_user_data.lightness_range_max) {
+		light = light_lightness_srv_user_data.lightness_range_max;
 	}
 
-	state->temp = tmp16;
+	state->lightness = light;
+
+	if (temp < state->temp_range_min) {
+		temp = state->temp_range_min;
+	} else if (temp > state->temp_range_max) {
+		temp = state->temp_range_max;
+	}
+
+	state->temp = temp;
 
 	state_binding(CTL, CTL_TEMP);
 	update_light_state();
@@ -1077,23 +1177,32 @@ static void light_ctl_default_set_unack(struct bt_mesh_model *model,
 					struct bt_mesh_msg_ctx *ctx,
 					struct net_buf_simple *buf)
 {
-	u16_t tmp16;
+	u16_t light, temp;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
 
-	state->lightness_def = net_buf_simple_pull_le16(buf);
-	tmp16 = net_buf_simple_pull_le16(buf);
+	light = net_buf_simple_pull_le16(buf);
+	temp = net_buf_simple_pull_le16(buf);
 	state->delta_uv_def = (int16_t) net_buf_simple_pull_le16(buf);
 
 	/* Here, Model specification is silent about tid implementation */
 
-	if (tmp16 < state->temp_range_min) {
-		tmp16 = state->temp_range_min;
-	} else if (tmp16 > state->temp_range_max) {
-		tmp16 = state->temp_range_max;
+	if (light < light_lightness_srv_user_data.lightness_range_min &&
+	    light > 0) {
+		light = light_lightness_srv_user_data.lightness_range_min;
+	} else if (temp > light_lightness_srv_user_data.lightness_range_max) {
+		light = light_lightness_srv_user_data.lightness_range_max;
 	}
 
-	state->temp = tmp16;
+	state->lightness_def = light;
+
+	if (temp < state->temp_range_min) {
+		temp = state->temp_range_min;
+	} else if (temp > state->temp_range_max) {
+		temp = state->temp_range_max;
+	}
+
+	state->temp_def = temp;
 
 	/* Do some work here to save values of
 	 * state->lightness_def, state->temp_Def & state->delta_uv_def
@@ -1129,26 +1238,37 @@ static void light_ctl_temp_range_set_unack(struct bt_mesh_model *model,
 					   struct bt_mesh_msg_ctx *ctx,
 					   struct net_buf_simple *buf)
 {
-	u16_t tmp[2];
+	u16_t min, max;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
 
-	tmp[0] = net_buf_simple_pull_le16(buf);
-	tmp[1] = net_buf_simple_pull_le16(buf);
+	min = net_buf_simple_pull_le16(buf);
+	max = net_buf_simple_pull_le16(buf);
 
 	/* Here, Model specification is silent about tid implementation */
 
+	state->status_code = 0x00;
+
 	/* This is as per 6.1.3.1 in Mesh Model Specification */
-	if (tmp[0] < 0x0320) {
-		tmp[0] = 0x0320;
+	if (min < 0x0320 && min > 0x4E20) {
+		/* The provided value for Range Min cannot be set */
+		state->status_code = 0x01;
 	}
 
-	if (tmp[1] > 0x4E20) {
-		tmp[1] = 0x4E20;
+	if (max > 0x4E20 && max < 0x0320) {
+		/* The provided value for Range Max cannot be set */
+		state->status_code = 0x02;
 	}
 
-	state->temp_range_min = tmp[0];
-	state->temp_range_max = tmp[1];
+	if (state->status_code == 0x00) {
+		if (min <= max) {
+			state->temp_range_min = min;
+			state->temp_range_max = max;
+		} else if (max < min) {
+			/* The provided value for Range Max cannot be set */
+			state->status_code = 0x02;
+		}
+	}
 
 	/* Do some work here to save values of
 	 * state->temp_range_min & state->temp_range_min
