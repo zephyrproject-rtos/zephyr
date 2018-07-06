@@ -5,6 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Global MPU configuration at system initialization. */
+static void _mpu_init(void)
+{
+	/* No specific configuration at init for ARMv7-M MPU. */
+}
 
 /* This internal function performs MPU region initialization.
  *
