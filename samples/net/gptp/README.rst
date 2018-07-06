@@ -37,11 +37,11 @@ Follow these steps to build the gPTP sample application:
    :goals: build
    :compact:
 
-The net-shell command "net gptp" will print out general gPTP information.
-For port 1, the command "net gptp 1" will print detailed information about
+The net-shell command "**net gptp**" will print out general gPTP information.
+For port 1, the command "**net gptp 1**" will print detailed information about
 port 1 statistics etc. Note that executing the shell command could affect
-the timing of the gPTP packets and the grandmaster might mark the device
-as non AS capable and disable it.
+the timing of the sent or received gPTP packets and the grandmaster might
+mark the device as non AS capable and disable it.
 
 Setting up Linux Host
 =====================
@@ -62,10 +62,11 @@ After downloading the source code, compile it like this in Linux:
     mkdir build
     cd build
     cmake ..
+    make
     cp daemons/gptp/gptp_cfg.ini build/daemons/gptp/
     cd build/daemons/gptp
 
-Edit the gptp_cfg.ini file and set the neighborPropDelayThresh to 10000
+Edit the :file:`gptp_cfg.ini` file and set the neighborPropDelayThresh to 10000
 as the default value 800 is too low if you run the gPTP in FRDM-K64F.
 
 Then execute the daemon with correct network interface and the configuration
@@ -75,7 +76,7 @@ file.
 
     sudo ./gptp enp0s25 -F gptp_cfg.ini
 
-Note that here the example network interface enp0s25 is the name of the
+Note that here the example network interface **enp0s25** is the name of the
 non-VLAN network interface that is connected to your Zephyr device.
 
 If everything is configured correctly, you should see following kind of
@@ -107,4 +108,5 @@ If Zephyr syncs properly with gptp daemon, then this is printed:
     STATUS   : GPTP [13:01:25:965] AsCapable: Enabled
 
 By default gPTP in Zephyr will not print any gPTP debug messages to console.
-One can enable debug prints by setting CONFIG_NET_DEBUG_GPTP=y in config file.
+One can enable debug prints by setting :option:`CONFIG_NET_DEBUG_GPTP` in
+the config file.
