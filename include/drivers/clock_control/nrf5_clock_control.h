@@ -48,15 +48,7 @@
 #endif
 
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
-struct usbd_power_nrf5_api {
-	void (*usb_power_int_enable)(bool enable);
-	bool (*vbusdet_get)(void);
-	bool (*outrdy_get)(void);
-};
-
-void nrf5_power_usb_power_int_enable(struct device *dev, bool enable);
-bool nrf5_power_clock_usb_vbusdet(struct device *dev);
-bool nrf5_power_clock_usb_outrdy(struct device *dev);
+void nrf5_power_usb_power_int_enable(bool enable);
 #endif
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF5_CLOCK_CONTROL_H_ */
