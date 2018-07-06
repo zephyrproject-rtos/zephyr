@@ -1,3 +1,5 @@
+.. _gptp-support:
+
 gPTP stack for Zephyr
 #####################
 
@@ -58,7 +60,8 @@ Testing
 *******
 
 The stack has been informally tested using the OpenAVB gPTP and
-Linux ptp4l daemons.
+Linux ptp4l daemons. The :ref:`gptp-sample` sample application from the Zephyr
+source distribution can be used for testing.
 
 .. _IEEE 802.1AS-2011 standard:
    https://standards.ieee.org/findstds/standard/802.1AS-2011.html
