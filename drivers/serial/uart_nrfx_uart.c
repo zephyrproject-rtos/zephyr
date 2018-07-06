@@ -9,8 +9,8 @@
  */
 
 #include <uart.h>
-#include <gpio.h>
 #include <hal/nrf_uart.h>
+#include <hal/nrf_gpio.h>
 
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -362,25 +362,15 @@ DEVICE_DECLARE(uart_nrfx_uart0);
  */
 static int uart_nrfx_init(struct device *dev)
 {
-	struct device *gpio_dev;
 	int err;
-
-	gpio_dev = device_get_binding(CONFIG_GPIO_NRF5_P0_DEV_NAME);
-
-	__ASSERT(gpio_dev,
-		 "UART init failed. Cannot find %s",
-		 CONFIG_GPIO_NRF5_P0_DEV_NAME);
 
 	/* Setting default height state of the TX PIN to avoid glitches
 	 * on the line during peripheral activation/deactivation.
 	 */
-	gpio_pin_write(gpio_dev, CONFIG_UART_0_NRF_TX_PIN, 1);
-	gpio_pin_configure(gpio_dev,
-			   CONFIG_UART_0_NRF_TX_PIN,
-			   GPIO_DIR_OUT);
-	gpio_pin_configure(gpio_dev,
-			   CONFIG_UART_0_NRF_RX_PIN,
-			   GPIO_DIR_IN);
+	nrf_gpio_pin_write(CONFIG_UART_0_NRF_TX_PIN, 1);
+	nrf_gpio_cfg_output(CONFIG_UART_0_NRF_TX_PIN);
+
+	nrf_gpio_cfg_input(CONFIG_UART_0_NRF_RX_PIN, NRF_GPIO_PIN_NOPULL);
 
 	nrf_uart_txrx_pins_set(NRF_UART0,
 			       CONFIG_UART_0_NRF_TX_PIN,
@@ -390,13 +380,11 @@ static int uart_nrfx_init(struct device *dev)
 	/* Setting default height state of the RTS PIN to avoid glitches
 	 * on the line during peripheral activation/deactivation.
 	 */
-	gpio_pin_write(gpio_dev, CONFIG_UART_0_NRF_RTS_PIN, 1);
-	gpio_pin_configure(gpio_dev,
-			   CONFIG_UART_0_NRF_RTS_PIN,
-			   GPIO_DIR_OUT);
-	gpio_pin_configure(gpio_dev,
-			   CONFIG_UART_0_NRF_CTS_PIN,
-			   GPIO_DIR_IN);
+	nrf_gpio_pin_write(CONFIG_UART_0_NRF_RTS_PIN, 1);
+	nrf_gpio_cfg_output(CONFIG_UART_0_NRF_RTS_PIN);
+
+	nrf_gpio_cfg_input(CONFIG_UART_0_NRF_CTS_PIN, NRF_GPIO_PIN_NOPULL);
+
 	nrf_uart_hwfc_pins_set(NRF_UART0,
 			       CONFIG_UART_0_NRF_RTS_PIN,
 			       CONFIG_UART_0_NRF_CTS_PIN);
