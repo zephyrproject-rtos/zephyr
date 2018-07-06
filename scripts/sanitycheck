@@ -302,6 +302,7 @@ class Handler:
         """
         self.lock = threading.Lock()
         self.state = "waiting"
+        self.run = False
         self.metrics = {}
         self.metrics["handler_time"] = 0
         self.metrics["ram_size"] = 0
@@ -618,6 +619,7 @@ class QEMUHandler(Handler):
         super().__init__(instance)
 
         self.results = {}
+        self.run = True
 
         # We pass this to QEMU which looks for fifos with .in and .out
         # suffixes.
@@ -946,18 +948,9 @@ class MakeGenerator:
     def _get_rule_footer(self, name):
         return MakeGenerator.GOAL_FOOTER_TMPL.format(goal=name)
 
-    def _add_goal(self, outdir):
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
-
-    def add_instance_build_goal(self, instance, args, buildlog, make_args=""):
-
-        self.add_build_goal(instance.name, instance.test.code_location,
-                instance.outdir, args, buildlog, make_args)
-
     def add_build_goal(self, name, directory, outdir,
                        args, buildlog, make_args=""):
-        """Add a goal to invoke a Kbuild session
+        """Add a goal to invoke a build session
 
         @param name A unique string name for this build goal. The results
             dictionary returned by execute() will be keyed by this name.
@@ -968,46 +961,28 @@ class MakeGenerator:
         @param args Extra command line arguments to pass to 'cmake', typically
             environment variables or specific Make goals
         """
-        self._add_goal(outdir)
-        build_logfile = os.path.join(outdir, buildlog)
-        text = (
-            self._get_rule_header(name) +
-            self._get_sub_make(
-                name,
-                "building",
-                directory,
-                outdir,
-                build_logfile,
-                args,
-                make_args=make_args) +
-            self._get_rule_footer(name))
-        self.goals[name] = MakeGoal(
-            name,
-            text,
-            None,
-            self.logfile,
-            build_logfile,
-            None,
-            None)
 
-    def add_qemu_goal(self, instance, args):
-        """Add a goal to build a Zephyr project and then run it under QEMU
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+
+        build_logfile = os.path.join(outdir, buildlog)
+        text = self._get_rule_header(name)
+        text +=  self._get_sub_make(name, "building", directory, outdir, build_logfile,
+                args, make_args=make_args)
+        text += self._get_rule_footer(name)
+
+        self.goals[name] = MakeGoal( name, text, None, self.logfile, build_logfile, None, None)
+
+    def add_goal(self, instance, type, args, make_args=""):
+        """Add a goal to build a Zephyr project and then run it using a handler
 
         The generated make goal invokes Make twice, the first time it will
         build the default goal, and the second will invoke the 'qemu' goal.
-        The output of the QEMU session will be monitored, and terminated
+        The output of the handler session will be monitored, and terminated
         either upon pass/fail result of the test program, or the timeout
         is reached.
 
-        @param name A unique string name for this build goal. The results
-            dictionary returned by execute() will be keyed by this name.
-        @param directory Absolute path to working directory, will be passed
-            to make -C
-        @param outdir Absolute path to output directory, will be passed to
-            Kbuild via -O=<path>
         @param args Extra cache entries to define in CMake.
-        @param timeout Maximum length of time QEMU session should be allowed
-            to run before automatically killing it. Default is 30 seconds.
         """
 
         name = instance.name
@@ -1017,87 +992,41 @@ class MakeGenerator:
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
         handler_logfile = os.path.join(outdir, "handler.log")
-        self._add_goal(outdir)
 
-        qemu_handler = QEMUHandler(instance)
-        args.append("QEMU_PIPE=%s" % qemu_handler.get_fifo())
-        text = (self._get_rule_header(name) +
-                self._get_sub_make(name, "building", directory,
-                                   outdir, build_logfile, args) +
-                self._get_sub_make(name, "running", directory,
-                                   outdir, run_logfile,
-                                   args, make_args="run") +
-                self._get_rule_footer(name))
-        self.goals[name] = MakeGoal(name, text, qemu_handler, self.logfile, build_logfile,
-                                    run_logfile, handler_logfile)
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
 
-    def add_unit_goal(self, instance, args, timeout=30):
-        outdir = instance.outdir
-        timeout = instance.test.timeout
-        name = instance.name
-        directory = instance.test.code_location
+        handler = None
+        if type == "qemu":
+            handler = QEMUHandler(instance)
+        elif type == "native":
+            handler = NativeHandler(instance)
+        elif type == "unit":
+            handler = UnitHandler(instance)
+        elif type == "device":
+            handler = DeviceHandler(instance)
 
-        self._add_goal(outdir)
-        build_logfile = os.path.join(outdir, "build.log")
-        run_logfile = os.path.join(outdir, "run.log")
-        handler_logfile = os.path.join(outdir, "handler.log")
 
         if options.enable_coverage:
             args += ["COVERAGE=1", "EXTRA_LDFLAGS=--coverage"]
-
-        # we handle running in the UnitHandler class
-        text = (self._get_rule_header(name) +
-                self._get_sub_make(name, "building", directory,
-                                   outdir, build_logfile, args) +
-                self._get_rule_footer(name))
-        unit_handler = UnitHandler(instance)
-        self.goals[name] = MakeGoal(name, text, unit_handler, self.logfile, build_logfile,
-                                    run_logfile, handler_logfile)
-
-    def add_native_goal(self, instance, args):
-
-        outdir = instance.outdir
-        timeout = instance.test.timeout
-        name = instance.name
-        directory = instance.test.code_location
-
-        self._add_goal(outdir)
-        build_logfile = os.path.join(outdir, "build.log")
-        run_logfile = os.path.join(outdir, "run.log")
-        handler_logfile = os.path.join(outdir, "handler.log")
-
-        if options.enable_coverage:
             args += ["CONFIG_COVERAGE=y"]
 
-        # we handle running in the NativeHandler class
+        if type == 'qemu':
+            args.append("QEMU_PIPE=%s" % handler.get_fifo())
+
         text = (self._get_rule_header(name) +
                 self._get_sub_make(name, "building", directory,
-                                   outdir, build_logfile, args) +
-                self._get_rule_footer(name))
-        native_handler = NativeHandler(instance)
-        self.goals[name] = MakeGoal(name, text, native_handler, self.logfile, build_logfile,
-                                    run_logfile, handler_logfile)
+                                   outdir, build_logfile, args, make_args=make_args))
+        if handler and handler.run:
+            text += self._get_sub_make(name, "running", directory,
+                                   outdir, run_logfile,
+                                   args, make_args="run")
 
-    def add_device_goal(self, instance, args):
+        text += self._get_rule_footer(name)
 
-        outdir = instance.outdir
-        timeout = instance.test.timeout
-        name = instance.name
-        directory = instance.test.code_location
-
-        self._add_goal(outdir)
-        build_logfile = os.path.join(outdir, "build.log")
-        run_logfile = os.path.join(outdir, "run.log")
-        handler_logfile = os.path.join(outdir, "handler.log")
-
-        # we handle running in the NativeHandler class
-        text = (self._get_rule_header(name) +
-                self._get_sub_make(name, "building", directory,
-                                   outdir, build_logfile, args) +
-                self._get_rule_footer(name))
-        handler = DeviceHandler(instance)
         self.goals[name] = MakeGoal(name, text, handler, self.logfile, build_logfile,
                                     run_logfile, handler_logfile)
+
 
     def add_test_instance(self, ti, extra_args=[]):
         """Add a goal to build/test a TestInstance object
@@ -1117,20 +1046,21 @@ class MakeGenerator:
         do_build_only = ti.build_only or options.build_only
         do_run = (not do_build_only) and do_run_slow
 
+        # FIXME: Need refactoring and cleanup
+        type = None
         if ti.platform.qemu_support and do_run:
-            self.add_qemu_goal(ti, args)
+            type = "qemu"
 
         elif ti.test.type == "unit":
-            self.add_unit_goal(ti, args)
+            type = "unit"
 
         elif ti.platform.type == "native" and do_run:
-            self.add_native_goal(ti, args)
+            type = "native"
 
         elif options.device_testing and (not ti.build_only) and (not options.build_only):
-            self.add_device_goal(ti, args)
+            type = "device"
 
-        else:
-            self.add_instance_build_goal(ti, args, "build.log")
+        self.add_goal(ti, type, args)
 
     def execute(self, callback_fn=None, context=None):
         """Execute all the registered build goals
@@ -1885,14 +1815,10 @@ class TestSuite:
                             args.append("CONFIG_COVERAGE=y")
 
                         o = os.path.join(self.outdir, plat.name, tc.path)
-                        dlist[tc, plat, tc.name.split(
-                            "/")[-1]] = os.path.join(o, "zephyr", ".config")
-                        goal = "_".join([plat.name, "_".join(
-                            tc.name.split("/")), "config-sanitycheck"])
-                        mg.add_build_goal(goal,
-                                os.path.join(ZEPHYR_BASE, tc.code_location),
-                                o, args,
-                                "config-sanitycheck.log", make_args="config-sanitycheck")
+                        dlist[tc, plat, tc.name.split("/")[-1]] = os.path.join(o, "zephyr", ".config")
+                        goal = "_".join([plat.name, "_".join(tc.name.split("/")), "config-sanitycheck"])
+                        mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.code_location),
+                                o, args, "config-sanitycheck.log", make_args="config-sanitycheck")
 
         info("Building testcase defconfigs...")
         results = mg.execute(defconfig_cb)
