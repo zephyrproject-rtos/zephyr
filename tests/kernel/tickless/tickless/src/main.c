@@ -49,9 +49,9 @@ typedef u64_t _timer_res_t;
 /* timestamp routines */
 #define _TIMESTAMP_OPEN()
 #if defined(CONFIG_ARCH_POSIX)
-#define _TIMESTAMP_READ()	(posix_get_hw_cycle())
+#define _TIMESTAMP_READ()       (posix_get_hw_cycle())
 #else
-#define _TIMESTAMP_READ()	(_tsc_read())
+#define _TIMESTAMP_READ()       (_tsc_read())
 #endif
 #define _TIMESTAMP_CLOSE()
 
@@ -70,9 +70,9 @@ extern void _timestamp_open(void);
 extern u32_t _timestamp_read(void);
 extern void _timestamp_close(void);
 
-#define _TIMESTAMP_OPEN()	(_timestamp_open())
-#define _TIMESTAMP_READ()	(_timestamp_read())
-#define _TIMESTAMP_CLOSE()	(_timestamp_close())
+#define _TIMESTAMP_OPEN()       (_timestamp_open())
+#define _TIMESTAMP_READ()       (_timestamp_read())
+#define _TIMESTAMP_CLOSE()      (_timestamp_close())
 
 #else
 #error "Unknown target"
@@ -130,7 +130,7 @@ void ticklessTestThread(void)
 
 #if defined(CONFIG_X86) || defined(CONFIG_ARC)
 	printk("Calibrated time stamp period = 0x%x%x\n",
-		   (u32_t)(cal_tsc >> 32), (u32_t)(cal_tsc & 0xFFFFFFFFLL));
+	       (u32_t)(cal_tsc >> 32), (u32_t)(cal_tsc & 0xFFFFFFFFLL));
 #elif defined(CONFIG_ARCH_POSIX)
 	printk("Calibrated time stamp period = %llu\n", cal_tsc);
 #elif defined(CONFIG_ARM)
@@ -175,9 +175,9 @@ void ticklessTestThread(void)
 
 #if defined(CONFIG_X86) || defined(CONFIG_ARC)
 	printk("diff  time stamp: 0x%x%x\n",
-		   (u32_t)(diff_tsc >> 32), (u32_t)(diff_tsc & 0xFFFFFFFFULL));
+	       (u32_t)(diff_tsc >> 32), (u32_t)(diff_tsc & 0xFFFFFFFFULL));
 	printk("Cal   time stamp: 0x%x%x\n",
-		   (u32_t)(cal_tsc >> 32), (u32_t)(cal_tsc & 0xFFFFFFFFLL));
+	       (u32_t)(cal_tsc >> 32), (u32_t)(cal_tsc & 0xFFFFFFFFLL));
 #elif defined(CONFIG_ARCH_POSIX)
 	printk("diff  time stamp: %llu\n", diff_tsc);
 	printk("Cal   time stamp: %llu\n", cal_tsc);
@@ -199,13 +199,26 @@ void ticklessTestThread(void)
 	printk("variance in time stamp diff: %d percent\n", (s32_t)diff_per);
 
 	zassert_equal(diff_ticks, SLEEP_TICKS,
-			"* TEST FAILED. TICK COUNT INCORRECT *");
+		      "* TEST FAILED. TICK COUNT INCORRECT *");
 
 	/* release the timer, if necessary */
 	_TIMESTAMP_CLOSE();
 
 }
+/**
+ * @brief Tests to verify tickless feature
+ *
+ * @defgroup kernel_tickless_tests Tickless
+ * @ingroup all_tests
+ * @{
+ */
 
+/**
+ * @brief Test to verify tickless functionality
+ *
+ * @details Test verifies tickless_idle and tickless
+ * functionality
+ */
 void test_tickless(void)
 {
 	k_thread_create(&thread_tickless, thread_tickless_stack,
@@ -216,9 +229,12 @@ void test_tickless(void)
 	k_sleep(4000);
 }
 
+/**
+ * @}
+ */
 void test_main(void)
 {
 	ztest_test_suite(tickless,
-			ztest_unit_test(test_tickless));
+			 ztest_unit_test(test_tickless));
 	ztest_run_test_suite(tickless);
 }
