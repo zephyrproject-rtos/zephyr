@@ -13,7 +13,7 @@
 #include <hal/nrf_gpio.h>
 
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 
 static uart_irq_callback_t irq_callback; /**< Callback function pointer */
 
@@ -24,13 +24,13 @@ static uart_irq_callback_t irq_callback; /**< Callback function pointer */
  */
 static volatile u8_t uart_sw_event_txdrdy;
 
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_0_INTERRUPT_DRIVEN */
 
 
 static bool event_txdrdy_check(void)
 {
 	return (nrf_uart_event_check(NRF_UART0, NRF_UART_EVENT_TXDRDY)
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 		|| uart_sw_event_txdrdy
 #endif
 	       );
@@ -39,7 +39,7 @@ static bool event_txdrdy_check(void)
 static void event_txdrdy_clear(void)
 {
 	nrf_uart_event_clear(NRF_UART0, NRF_UART_EVENT_TXDRDY);
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 	uart_sw_event_txdrdy = 0;
 #endif
 }
@@ -205,7 +205,7 @@ static int uart_nrfx_err_check(struct device *dev)
 }
 
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 
 /** Interrupt driven FIFO fill function */
 static int uart_nrfx_fifo_fill(struct device *dev,
@@ -352,7 +352,7 @@ static void uart_nrfx_isr(void *arg)
 		irq_callback(dev);
 	}
 }
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_0_INTERRUPT_DRIVEN */
 
 DEVICE_DECLARE(uart_nrfx_uart0);
 
@@ -422,7 +422,7 @@ static int uart_nrfx_init(struct device *dev)
 	nrf_uart_task_trigger(NRF_UART0, NRF_UART_TASK_STARTTX);
 	nrf_uart_task_trigger(NRF_UART0, NRF_UART_TASK_STARTRX);
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 
 	/* Simulate that the TXDRDY event is set, so that the transmitter status
 	 * is indicated correctly.
@@ -447,7 +447,7 @@ static const struct uart_driver_api uart_nrfx_uart_driver_api = {
 	.poll_in          = uart_nrfx_poll_in,
 	.poll_out         = uart_nrfx_poll_out,
 	.err_check        = uart_nrfx_err_check,
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 	.fifo_fill        = uart_nrfx_fifo_fill,
 	.fifo_read        = uart_nrfx_fifo_read,
 	.irq_tx_enable    = uart_nrfx_irq_tx_enable,
@@ -462,7 +462,7 @@ static const struct uart_driver_api uart_nrfx_uart_driver_api = {
 	.irq_is_pending   = uart_nrfx_irq_is_pending,
 	.irq_update       = uart_nrfx_irq_update,
 	.irq_callback_set = uart_nrfx_irq_callback_set,
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_UART_0_INTERRUPT_DRIVEN */
 };
 
 DEVICE_AND_API_INIT(uart_nrfx_uart0,
@@ -474,4 +474,3 @@ DEVICE_AND_API_INIT(uart_nrfx_uart0,
 		    PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_nrfx_uart_driver_api);
-
