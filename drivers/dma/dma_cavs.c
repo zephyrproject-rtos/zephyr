@@ -84,7 +84,7 @@ static void dw_dma_isr(void *arg)
 	dw_write(dev_cfg->base, DW_CLEAR_BLOCK, status_block);
 	dw_write(dev_cfg->base, DW_CLEAR_TFR, status_tfr);
 
-	/* Dispatch ISRs for channels depending upon the bit set */
+	/* Dispatch callbacks for channels depending upon the bit set */
 	while (status_block) {
 		channel = find_lsb_set(status_block) - 1;
 		status_block &= ~(1 << channel);
@@ -96,7 +96,8 @@ static void dw_dma_isr(void *arg)
 			 * freed in the user callback function once
 			 * all the blocks are transferred.
 			 */
-			chan_data->dma_blkcallback(chan_data->blkcallback_arg, channel, 0);
+			chan_data->dma_blkcallback(chan_data->blkcallback_arg,
+					channel, 0);
 		}
 	}
 
@@ -104,10 +105,9 @@ static void dw_dma_isr(void *arg)
 		channel = find_lsb_set(status_tfr) - 1;
 		status_tfr &= ~(1 << channel);
 		chan_data = &dev_data->chan[channel];
-		k_free(chan_data->lli);
-		chan_data->lli = NULL;
 		if (chan_data->dma_tfrcallback) {
-			chan_data->dma_tfrcallback(chan_data->tfrcallback_arg, channel, 0);
+			chan_data->dma_tfrcallback(chan_data->tfrcallback_arg,
+					channel, 0);
 		}
 	}
 }
@@ -116,14 +116,12 @@ static int dw_dma_config(struct device *dev, u32_t channel,
 			 struct dma_config *cfg)
 {
 	struct dw_dma_dev_data *const dev_data = DEV_DATA(dev);
+	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct dma_chan_data *chan_data;
 	struct dma_block_config *cfg_blocks;
-	u32_t cnt;
 	u32_t m_size;
 	u32_t tr_width;
-
-	struct dw_lli2 *lli_desc;
-	struct dw_lli2 *lli_desc_tail;
+	u32_t ctrl_lo;
 
 	if (channel >= DW_MAX_CHAN) {
 		return -EINVAL;
@@ -138,122 +136,75 @@ static int dw_dma_config(struct device *dev, u32_t channel,
 		return -EINVAL;
 	}
 
+	cfg_blocks = cfg->head_block;
+
+	if ((cfg_blocks->next_block) || (cfg->block_count > 1)) {
+		/*
+		 * return error since the application may have allocated
+		 * memory for the buffers that may be lost when the DMA
+		 * driver discards the buffers provided in the linked blocks
+		 */
+		LOG_ERR("block_count > 1 not supported");
+		return -EINVAL;
+	}
+
 	chan_data = &dev_data->chan[channel];
 
 	/* default channel config */
 	chan_data->direction = cfg->channel_direction;
-	chan_data->cfg_lo = DW_CFG_LOW_DEF;
-	chan_data->cfg_hi = DW_CFG_LOW_DEF;
 
 	/* data_size = (2 ^ tr_width) */
 	tr_width = find_msb_set(cfg->source_data_size) - 1;
-	LOG_DBG("tr_width=%d", tr_width);
+	LOG_DBG("Ch%u: tr_width=%d", channel, tr_width);
 
 	/* burst_size = (2 ^ msize) */
 	m_size = find_msb_set(cfg->source_burst_length) - 1;
-	LOG_DBG("m_size=%d", m_size);
+	LOG_DBG("Ch%u: m_size=%d", channel, m_size);
 
-	cfg_blocks = cfg->head_block;
+	ctrl_lo = DW_CTLL_SRC_WIDTH(tr_width) | DW_CTLL_DST_WIDTH(tr_width);
+	ctrl_lo |= DW_CTLL_SRC_MSIZE(m_size) | DW_CTLL_DST_MSIZE(m_size);
 
-	/* Allocate space for the linked list */
-	chan_data->lli = (struct dw_lli2 *)k_malloc(sizeof(struct dw_lli2)
-							* (cfg->block_count));
-	if (chan_data->lli == NULL) {
-		LOG_ERR("not enough memory\n");
-		return -ENOMEM;
-	}
+	/* enable interrupt */
+	ctrl_lo |= DW_CTLL_INT_EN;
 
-	(void)memset(chan_data->lli, 0,
-		     (sizeof(struct dw_lli2) * cfg->block_count));
-	lli_desc = chan_data->lli;
-	lli_desc_tail = lli_desc + cfg->block_count - 1;
-
-	/* initialize descriptors */
-	cnt = cfg->block_count;
-
-	do {
-		lli_desc->ctrl_lo |= DW_CTLL_SRC_WIDTH(tr_width);
-		lli_desc->ctrl_lo |= DW_CTLL_DST_WIDTH(tr_width);
-		lli_desc->ctrl_lo |= DW_CTLL_SRC_MSIZE(m_size);
-		lli_desc->ctrl_lo |= DW_CTLL_DST_MSIZE(m_size);
-
-		/* enable interrupt */
-		lli_desc->ctrl_lo |= DW_CTLL_INT_EN;
-
-		switch (cfg->channel_direction) {
+	switch (cfg->channel_direction) {
 
 		case MEMORY_TO_MEMORY:
-			lli_desc->ctrl_lo |= DW_CTLL_FC_M2M;
-			lli_desc->ctrl_lo |= DW_CTLL_SRC_INC | DW_CTLL_DST_INC;
+			ctrl_lo |= DW_CTLL_FC_M2M;
+			ctrl_lo |= DW_CTLL_SRC_INC | DW_CTLL_DST_INC;
 			break;
 
 		case MEMORY_TO_PERIPHERAL:
-			lli_desc->ctrl_lo |= DW_CTLL_FC_M2P;
-			lli_desc->ctrl_lo |= DW_CTLL_SRC_INC | DW_CTLL_DST_FIX;
+			ctrl_lo |= DW_CTLL_FC_M2P;
+			ctrl_lo |= DW_CTLL_SRC_INC | DW_CTLL_DST_FIX;
 
 			/* Assign a hardware handshaking interface (0-15) to the
 			 * destination of channel
 			 */
-			chan_data->cfg_hi |=
-				DW_CFGH_DST_PER(cfg->dma_slot);
+			dw_write(dev_cfg->base, DW_CFG_HIGH(channel),
+					DW_CFGH_DST_PER(cfg->dma_slot));
 			break;
 
 		case PERIPHERAL_TO_MEMORY:
-			lli_desc->ctrl_lo |= DW_CTLL_FC_P2M;
-			lli_desc->ctrl_lo |= DW_CTLL_SRC_FIX | DW_CTLL_DST_INC;
+			ctrl_lo |= DW_CTLL_FC_P2M;
+			ctrl_lo |= DW_CTLL_SRC_FIX | DW_CTLL_DST_INC;
 
 			/* Assign a hardware handshaking interface (0-15) to the
 			 * source of channel
 			 */
-			chan_data->cfg_hi |=
-				DW_CFGH_SRC_PER(cfg->dma_slot);
+			dw_write(dev_cfg->base, DW_CFG_HIGH(channel),
+					DW_CFGH_SRC_PER(cfg->dma_slot));
 			break;
 
 		default:
 			LOG_ERR("channel_direction %d is not supported",
 				    cfg->channel_direction);
 			return -EINVAL;
-		}
-
-		lli_desc->sar = cfg_blocks->source_address;
-		lli_desc->dar = cfg_blocks->dest_address;
-
-		/* Block size */
-		lli_desc->ctrl_hi = DW_CFG_CLASS(
-				dev_data->channel_data->chan[channel].class) |
-				cfg_blocks->block_size;
-
-		/* set next descriptor in list */
-		lli_desc->llp = (u32_t)(lli_desc + 1);
-		lli_desc->ctrl_lo |= DW_CTLL_LLP_S_EN | DW_CTLL_LLP_D_EN;
-
-		/* next descriptor */
-		lli_desc++;
-		cfg_blocks = cfg_blocks->next_block;
-		cnt--;
-	} while (cfg_blocks && cnt);
-
-	/* check if application requests circular list */
-	if (cfg_blocks) {
-		/*
-		 * if the last block was pointing to another block, then
-		 * it means the application is requesting a circular list
-		 */
-		lli_desc_tail->llp = (u32_t)chan_data->lli;
-	} else {
-		lli_desc_tail->llp = 0x0;
-		lli_desc_tail->ctrl_lo &=
-			~(DW_CTLL_LLP_S_EN | DW_CTLL_LLP_D_EN);
 	}
 
-#ifdef CONFIG_DCACHE_WRITEBACK
-	/* Flush the cache so that the descriptors are written to the memory.
-	 * If this is not done, DMA engine will read the old stale data at
-	 * that location and hence the DMA operation will not succeed.
-	 */
-	dcache_writeback_region(chan_data->lli,
-			sizeof(struct dw_lli2) * cfg->block_count);
-#endif
+	/* channel needs started from scratch, so write SARn, DARn */
+	dw_write(dev_cfg->base, DW_SAR(channel), cfg_blocks->source_address);
+	dw_write(dev_cfg->base, DW_DAR(channel), cfg_blocks->dest_address);
 
 	/* Configure a callback appropriately depending on whether the
 	 * interrupt is requested at the end of transaction completion or
@@ -262,32 +213,11 @@ static int dw_dma_config(struct device *dev, u32_t channel,
 	if (cfg->complete_callback_en) {
 		chan_data->dma_blkcallback = cfg->dma_callback;
 		chan_data->blkcallback_arg = cfg->callback_arg;
+		dw_write(dev_cfg->base, DW_MASK_BLOCK, INT_UNMASK(channel));
 	} else {
 		chan_data->dma_tfrcallback = cfg->dma_callback;
 		chan_data->tfrcallback_arg = cfg->callback_arg;
-	}
-
-	return 0;
-}
-
-static int dw_dma_transfer_start(struct device *dev, u32_t channel)
-{
-	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct dw_dma_dev_data *const dev_data = DEV_DATA(dev);
-	struct dma_chan_data *chan_data;
-
-	if (channel >= DW_MAX_CHAN) {
-		return -EINVAL;
-	}
-
-	chan_data = &dev_data->chan[channel];
-
-	if (chan_data->dma_tfrcallback) {
 		dw_write(dev_cfg->base, DW_MASK_TFR, INT_UNMASK(channel));
-	}
-
-	if (chan_data->dma_blkcallback) {
-		dw_write(dev_cfg->base, DW_MASK_BLOCK, INT_UNMASK(channel));
 	}
 
 	dw_write(dev_cfg->base, DW_MASK_ERR, INT_UNMASK(channel));
@@ -301,25 +231,47 @@ static int dw_dma_transfer_start(struct device *dev, u32_t channel)
 	dw_write(dev_cfg->base, DW_CLEAR_DST_TRAN, 0x1 << channel);
 	dw_write(dev_cfg->base, DW_CLEAR_ERR, 0x1 << channel);
 
-	if (chan_data->lli->llp) {
-		/* LLP mode - only write LLP pointer */
-		dw_write(dev_cfg->base, DW_LLP(channel), (u32_t)chan_data->lli);
-	} else {
-		/* single transfer, must set zero */
-		dw_write(dev_cfg->base, DW_LLP(channel), 0);
-	}
-
-	/* channel needs started from scratch, so write SARn, DARn */
-	dw_write(dev_cfg->base, DW_SAR(channel), chan_data->lli->sar);
-	dw_write(dev_cfg->base, DW_DAR(channel), chan_data->lli->dar);
+	/* single transfer, must set zero */
+	dw_write(dev_cfg->base, DW_LLP(channel), 0);
 
 	/* program CTLn */
-	dw_write(dev_cfg->base, DW_CTRL_LOW(channel), chan_data->lli->ctrl_lo);
-	dw_write(dev_cfg->base, DW_CTRL_HIGH(channel), chan_data->lli->ctrl_hi);
+	dw_write(dev_cfg->base, DW_CTRL_LOW(channel), ctrl_lo);
+	dw_write(dev_cfg->base, DW_CTRL_HIGH(channel),
+		DW_CFG_CLASS(dev_data->channel_data->chan[channel].class) |
+		cfg_blocks->block_size);
 
 	/* write channel config */
-	dw_write(dev_cfg->base, DW_CFG_LOW(channel), chan_data->cfg_lo);
-	dw_write(dev_cfg->base, DW_CFG_HIGH(channel), chan_data->cfg_hi);
+	dw_write(dev_cfg->base, DW_CFG_LOW(channel), DW_CFG_LOW_DEF);
+
+	return 0;
+}
+
+static int dw_dma_reload(struct device *dev, u32_t channel,
+		u32_t src, u32_t dst, size_t size)
+{
+	struct dw_dma_dev_data *const dev_data = DEV_DATA(dev);
+	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
+
+	if (channel >= DW_MAX_CHAN) {
+		return -EINVAL;
+	}
+
+	dw_write(dev_cfg->base, DW_SAR(channel), src);
+	dw_write(dev_cfg->base, DW_DAR(channel), dst);
+	dw_write(dev_cfg->base, DW_CTRL_HIGH(channel),
+		DW_CFG_CLASS(dev_data->channel_data->chan[channel].class) |
+		size);
+
+	return 0;
+}
+
+static int dw_dma_transfer_start(struct device *dev, u32_t channel)
+{
+	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
+
+	if (channel >= DW_MAX_CHAN) {
+		return -EINVAL;
+	}
 
 	/* enable the channel */
 	dw_write(dev_cfg->base, DW_DMA_CHAN_EN, CHAN_ENABLE(channel));
@@ -334,11 +286,6 @@ static int dw_dma_transfer_stop(struct device *dev, u32_t channel)
 	if (channel >= DW_MAX_CHAN) {
 		return -EINVAL;
 	}
-
-	/* mask block, transfer and error interrupts for channel */
-	dw_write(dev_cfg->base, DW_MASK_TFR, INT_MASK(channel));
-	dw_write(dev_cfg->base, DW_MASK_BLOCK, INT_MASK(channel));
-	dw_write(dev_cfg->base, DW_MASK_ERR, INT_MASK(channel));
 
 	/* disable the channel */
 	dw_write(dev_cfg->base, DW_DMA_CHAN_EN, CHAN_DISABLE(channel));
@@ -408,6 +355,7 @@ static int dw_dma0_initialize(struct device *dev)
 
 static const struct dma_driver_api dw_dma_driver_api = {
 	.config = dw_dma_config,
+	.reload = dw_dma_reload,
 	.start = dw_dma_transfer_start,
 	.stop = dw_dma_transfer_stop,
 };
