@@ -53,6 +53,7 @@ config USB_NRF52840
 	depends on SOC_NRF52840
 	select USB_DEVICE_DRIVER
 	select HAS_DTS_USB
+	select NRFX_USBD
 	help
 	  nRF52840 USB Device Controller Driver
 
