@@ -113,6 +113,9 @@ can be disabled if not needed.
   currently not supported by the websocket API.
   See :ref:`websocket-server-sample` for information how to use the API.
 
+* **Time Sensitive Networking.** The gPTP (generalized Precision Time Protocol)
+  is supported. See :ref:`gptp-support` for more details.
+
 Additionally these network technologies (link layers) are supported in
 Zephyr OS v1.7 and later:
 
