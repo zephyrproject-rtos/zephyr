@@ -47,3 +47,10 @@ Patch List:
     Impacted files:
      drivers/include/stm32f7xx_ll_spi.h
     ST Bug tracker ID: 13359
+
+   *Add correct shifting to I2SR field in PLLI2SCFGR register
+     The I2SR field should be shifted by RCC_PLLI2SCFGR_PLLI2SR_Pos when the PLLI2SCFGR register
+     is read or written.
+    Impacted files:
+     drivers/include/stm32f7xx_ll_rcc.h
+    ST Bug tracker ID: 50108
