@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_L2_ETHERNET)
-#define SYS_LOG_DOMAIN "net/ethernet"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_ethernet
+#define NET_LOG_LEVEL CONFIG_NET_L2_ETHERNET_LOG_LEVEL
 
 #include <net/net_core.h>
 #include <net/net_l2.h>
@@ -50,9 +48,8 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 	memcpy(mac_addr->addr + 2, &ipv6_addr->s6_addr[12], 4);
 }
 
-#if defined(CONFIG_NET_DEBUG_L2_ETHERNET)
 #define print_ll_addrs(pkt, type, len, src, dst)			   \
-	do {								   \
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {				   \
 		char out[sizeof("xx:xx:xx:xx:xx:xx")];			   \
 									   \
 		snprintk(out, sizeof(out), "%s",			   \
@@ -64,10 +61,10 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 			net_sprint_ll_addr((dst)->addr,			   \
 					   sizeof(struct net_eth_addr)),   \
 			type, (size_t)len);				   \
-	} while (0)
+	}
 
 #define print_vlan_ll_addrs(pkt, type, tci, len, src, dst)		   \
-	do {								   \
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {				   \
 		char out[sizeof("xx:xx:xx:xx:xx:xx")];			   \
 									   \
 		snprintk(out, sizeof(out), "%s",			   \
@@ -81,11 +78,7 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 					   sizeof(struct net_eth_addr)),   \
 			type, net_eth_vlan_get_vid(tci),		   \
 			net_eth_vlan_get_pcp(tci), (size_t)len);	   \
-	} while (0)
-#else
-#define print_ll_addrs(...)
-#define print_vlan_ll_addrs(...)
-#endif /* CONFIG_NET_DEBUG_L2_ETHERNET */
+	}
 
 static inline void ethernet_update_length(struct net_if *iface,
 					  struct net_pkt *pkt)

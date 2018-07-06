@@ -180,11 +180,13 @@ config NET_TCP_CHECKSUM
 	  Enables TCP handler to check TCP checksum. If the checksum is invalid,
 	  then the packet is discarded.
 
-config NET_DEBUG_TCP
-	bool "Debug TCP"
-	depends on NET_TCP && NET_LOG
-	help
-	  Enables TCP handler output debug messages
+if NET_TCP
+module = NET_TCP
+module-dep = NET_LOG
+module-str = Log level for TCP
+module-help = Enables TCP handler output debug messages
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_TCP
 
 config NET_TCP_BACKLOG_SIZE
 	int "Number of simultaneous incoming TCP connections"
@@ -267,11 +269,13 @@ config NET_UDP_CHECKSUM
 	  Enables UDP handler to check UDP checksum. If the checksum is invalid,
 	  then the packet is discarded.
 
-config NET_DEBUG_UDP
-	bool "Debug UDP"
-	depends on NET_UDP && NET_LOG
-	help
-	  Enables UDP handler output debug messages
+if NET_UDP
+module = NET_UDP
+module-dep = NET_LOG
+module-str = Log level for UDP
+module-help = Enables UDP handler output debug messages
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_UDP
 
 config NET_MAX_CONN
 	int "How many network connections are supported"
@@ -353,11 +357,13 @@ config NET_TRICKLE
 	  Normally this is enabled automatically if needed,
 	  so say 'n' if unsure.
 
-config NET_DEBUG_TRICKLE
-	bool "Debug Trickle algorithm"
-	depends on NET_TRICKLE && NET_LOG
-	help
-	  Enables Trickle library output debug messages
+if NET_TRICKLE
+module = NET_TRICKLE
+module-dep = NET_LOG
+module-str = Log level for Trickle algorithm
+module-help = Enables Trickle library output debug messages
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_TRICKLE
 
 endif # NET_RAW_MODE
 
@@ -477,12 +483,12 @@ config NET_OFFLOAD
 	help
 	  Enables TCP/IP stack to be offload to a co-processor.
 
-config NET_DEBUG_NET_OFFLOAD
-	bool "Debug Net Offload Layer"
-	default y if NET_LOG_GLOBAL
-	depends on NET_LOG
-	depends on NET_OFFLOAD
-	help
-	  Enables offload TCP/IP stack output debug messages.
+if NET_OFFLOAD
+module = NET_OFFLOAD
+module-dep = NET_LOG
+module-str = Log level for offload layer
+module-help = Enables offload layer to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_OFFLOAD
 
 endmenu

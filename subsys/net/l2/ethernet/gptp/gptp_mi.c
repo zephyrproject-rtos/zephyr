@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_GPTP)
-#define SYS_LOG_DOMAIN "net/gptp"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_gptp_mi
+#define NET_LOG_LEVEL CONFIG_NET_GPTP_LOG_LEVEL
 
 #include <ptp_clock.h>
 
@@ -16,8 +14,6 @@
 #include "gptp_state.h"
 #include "gptp_private.h"
 
-#if defined(CONFIG_NET_DEBUG_GPTP) &&			\
-	(CONFIG_SYS_LOG_NET_LEVEL > SYS_LOG_LEVEL_INFO)
 static const char * const state2str(enum gptp_port_state state)
 {
 	switch (state) {
@@ -43,7 +39,6 @@ static const char * const state2str(enum gptp_port_state state)
 
 	return "<unknown>";
 }
-#endif
 
 void gptp_change_port_state(int port, enum gptp_port_state state)
 {

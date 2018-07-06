@@ -54,10 +54,11 @@ config NET_MGMT_EVENT_INFO
 	  and listeners will then be able to get it. Such information depends
 	  on the type of event.
 
-config NET_DEBUG_MGMT_EVENT
-	bool "Enable debug output on Net MGMT event core"
-	help
-	  Add debug messages output on how Net MGMT events are handled.
+module = NET_MGMT_EVENT
+module-dep = NET_LOG
+module-str = Log level for network management event core
+module-help = Enable debug messages output for network management events.
+source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_DEBUG_MGMT_EVENT_STACK
 	bool "Enable stack analysis output on Net MGMT event core"

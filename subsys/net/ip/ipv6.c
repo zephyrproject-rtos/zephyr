@@ -8,15 +8,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_IPV6)
-#define SYS_LOG_DOMAIN "net/ipv6"
-#define NET_LOG_ENABLED 1
+#define LOG_MODULE_NAME net_ipv6
+#define NET_LOG_LEVEL CONFIG_NET_IPV6_LOG_LEVEL
 
 /* By default this prints too much data, set the value to 1 to see
  * neighbor cache contents.
  */
 #define NET_DEBUG_NBR 0
-#endif
 
 #include <errno.h>
 #include <stdlib.h>

@@ -228,7 +228,6 @@ enum net_addr_type {
 	NET_ADDR_OVERRIDABLE,
 } __packed;
 
-#if NET_LOG_ENABLED > 0
 static inline const char *net_addr_type2str(enum net_addr_type type)
 {
 	switch (type) {
@@ -247,14 +246,6 @@ static inline const char *net_addr_type2str(enum net_addr_type type)
 
 	return "<unknown>";
 }
-#else /* NET_LOG_ENABLED */
-static inline const char *net_addr_type2str(enum net_addr_type type)
-{
-	ARG_UNUSED(type);
-
-	return NULL;
-}
-#endif /* NET_LOG_ENABLED */
 
 /** What is the current state of the network address */
 enum net_addr_state {

@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_l2_dummy
+#define NET_LOG_LEVEL LOG_LEVEL_NONE
+
 #include <net/net_core.h>
 #include <net/net_l2.h>
 #include <net/net_if.h>

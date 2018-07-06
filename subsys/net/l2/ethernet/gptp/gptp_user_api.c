@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_GPTP)
-#define SYS_LOG_DOMAIN "net/gptp"
-#endif
+#define LOG_MODULE_NAME net_gptp_api
+#define NET_LOG_LEVEL CONFIG_NET_GPTP_LOG_LEVEL
 
 #include <ptp_clock.h>
 #include <net/gptp.h>

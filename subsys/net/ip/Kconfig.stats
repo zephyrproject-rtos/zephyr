@@ -13,6 +13,12 @@ menuconfig NET_STATISTICS
 
 if NET_STATISTICS
 
+module = NET_STATISTICS
+module-dep = NET_LOG
+module-str = Log level for network statistics
+module-help = Enables statistics module to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
 config NET_STATISTICS_PER_INTERFACE
 	bool "Collect statistics per network interface"
 	default y

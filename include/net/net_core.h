@@ -35,23 +35,31 @@ extern "C" {
 
 /* Network subsystem logging helpers */
 
-#if defined(NET_LOG_ENABLED)
-#if !defined(SYS_LOG_DOMAIN)
-#define SYS_LOG_DOMAIN "net"
-#endif /* !SYS_LOG_DOMAIN */
+#if !defined(LOG_LEVEL)
+#if !defined(NET_LOG_LEVEL)
+#define NET_LOG_LEVEL CONFIG_NET_DEFAULT_LOG_LEVEL
+#endif /* !NET_LOG_LEVEL */
 
-#undef SYS_LOG_LEVEL
-#ifndef NET_SYS_LOG_LEVEL
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_NET_LEVEL
-#else
-#define SYS_LOG_LEVEL NET_SYS_LOG_LEVEL
-#endif /* !NET_SYS_LOG_LEVEL */
+#if NET_LOG_LEVEL > CONFIG_NET_MAX_LOG_LEVEL
+#undef NET_LOG_LEVEL
+#define NET_LOG_LEVEL CONFIG_NET_MAX_LOG_LEVEL
+#endif /* NET_LOG_LEVEL > CONFIG_NET_MAX_LOG_LEVEL */
 
-#define NET_DBG(fmt, ...) SYS_LOG_DBG("(%p): " fmt, k_current_get(), \
-				      ##__VA_ARGS__)
-#define NET_ERR(fmt, ...) SYS_LOG_ERR(fmt, ##__VA_ARGS__)
-#define NET_WARN(fmt, ...) SYS_LOG_WRN(fmt, ##__VA_ARGS__)
-#define NET_INFO(fmt, ...) SYS_LOG_INF(fmt,  ##__VA_ARGS__)
+#define LOG_LEVEL NET_LOG_LEVEL
+#endif /* !LOG_LEVEL */
+
+#if defined(NET_LOG_LEVEL)
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+#endif /* NET_LOG_LEVEL */
+
+#define NET_DBG(fmt, ...) LOG_DBG("(%p): %s: " fmt, k_current_get(), \
+				  __func__, ##__VA_ARGS__)
+#define NET_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
+#define NET_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
+#define NET_INFO(fmt, ...) LOG_INF(fmt,  ##__VA_ARGS__)
+
 #define NET_ASSERT(cond) do {				     \
 		if (!(cond)) {					     \
 			NET_ERR("{assert: '" #cond "' failed}");     \
@@ -61,14 +69,6 @@ extern "C" {
 			NET_ERR("{assert: '" #cond "' failed} " fmt, \
 				##__VA_ARGS__);			     \
 		} } while (false)
-#else /* NET_LOG_ENABLED */
-#define NET_DBG(...)
-#define NET_ERR(...)
-#define NET_INFO(...)
-#define NET_WARN(...)
-#define NET_ASSERT(...)
-#define NET_ASSERT_INFO(...)
-#endif /* NET_LOG_ENABLED */
 
 #include <kernel.h>
 
@@ -77,7 +77,6 @@ struct net_pkt;
 struct net_context;
 struct net_if;
 
-#include <logging/sys_log.h>
 #include <string.h>
 
 /**

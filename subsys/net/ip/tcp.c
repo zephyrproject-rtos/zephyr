@@ -13,10 +13,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_TCP)
-#define SYS_LOG_DOMAIN "net/tcp"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_tcp
+#define NET_LOG_LEVEL CONFIG_NET_TCP_LOG_LEVEL
 
 #include <kernel.h>
 #include <string.h>
@@ -102,7 +100,6 @@ struct tcp_segment {
 	const struct sockaddr *dst_addr;
 };
 
-#if defined(CONFIG_NET_DEBUG_TCP) && (CONFIG_SYS_LOG_NET_LEVEL > 2)
 static char upper_if_set(char chr, bool set)
 {
 	if (set) {
@@ -117,6 +114,10 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	u32_t rel_ack, ack;
 	u8_t flags;
+
+	if (NET_LOG_LEVEL < LOG_LEVEL_DBG) {
+		return;
+	}
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
 	if (!tcp_hdr) {
@@ -152,9 +153,6 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 		sys_get_be16(tcp_hdr->wnd),
 		ntohs(tcp_hdr->chksum));
 }
-#else
-#define net_tcp_trace(...)
-#endif /* CONFIG_NET_DEBUG_TCP */
 
 static inline u32_t retry_timeout(const struct net_tcp *tcp)
 {
@@ -773,7 +771,7 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 
 const char *net_tcp_state_str(enum net_tcp_state state)
 {
-#if defined(CONFIG_NET_DEBUG_TCP) || defined(CONFIG_NET_SHELL)
+#if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) || defined(CONFIG_NET_SHELL)
 	switch (state) {
 	case NET_TCP_CLOSED:
 		return "CLOSED";
@@ -798,9 +796,9 @@ const char *net_tcp_state_str(enum net_tcp_state state)
 	case NET_TCP_CLOSING:
 		return "CLOSING";
 	}
-#else /* CONFIG_NET_DEBUG_TCP */
+#else
 	ARG_UNUSED(state);
-#endif /* CONFIG_NET_DEBUG_TCP */
+#endif
 
 	return "";
 }
@@ -1111,7 +1109,7 @@ void net_tcp_init(void)
 {
 }
 
-#if defined(CONFIG_NET_DEBUG_TCP)
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static void validate_state_transition(enum net_tcp_state current,
 				      enum net_tcp_state new)
 {
@@ -1151,7 +1149,14 @@ static void validate_state_transition(enum net_tcp_state current,
 			net_tcp_state_str(new), new);
 	}
 }
-#endif /* CONFIG_NET_DEBUG_TCP */
+#else
+static inline void validate_state_transition(enum net_tcp_state current,
+					     enum net_tcp_state new)
+{
+	ARG_UNUSED(current);
+	ARG_UNUSED(new);
+}
+#endif
 
 void net_tcp_change_state(struct net_tcp *tcp,
 			  enum net_tcp_state new_state)
@@ -1169,9 +1174,7 @@ void net_tcp_change_state(struct net_tcp *tcp,
 		tcp, net_tcp_state_str(tcp->state), tcp->state,
 		net_tcp_state_str(new_state), new_state);
 
-#if defined(CONFIG_NET_DEBUG_TCP)
 	validate_state_transition(tcp->state, new_state);
-#endif /* CONFIG_NET_DEBUG_TCP */
 
 	tcp->state = new_state;
 
@@ -1271,7 +1274,7 @@ struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
 		/* If the pkt is compressed, then this is the typical outcome
 		 * so no use printing error in this case.
 		 */
-		if (IS_ENABLED(CONFIG_NET_DEBUG_TCP) &&
+		if ((NET_LOG_LEVEL >= LOG_LEVEL_DBG) &&
 		    !is_6lo_technology(pkt)) {
 			NET_ASSERT(frag);
 		}
@@ -1817,9 +1820,8 @@ int net_tcp_unref(struct net_context *context)
 
 /** **/
 
-#if defined(CONFIG_NET_DEBUG_CONTEXT)
 #define net_tcp_print_recv_info(str, pkt, port)				\
-	do {								\
+	if (IS_ENABLED(CONFIG_NET_TCP_LOG_LEVEL_DBG)) {			\
 		if (net_context_get_family(context) == AF_INET6) {	\
 			NET_DBG("%s received from %s port %d", str,	\
 				net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src),\
@@ -1829,10 +1831,10 @@ int net_tcp_unref(struct net_context *context)
 				net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src),\
 				ntohs(port));				\
 		}							\
-	} while (0)
+	}
 
 #define net_tcp_print_send_info(str, pkt, port)				\
-	do {								\
+	if (IS_ENABLED(CONFIG_NET_TCP_LOG_LEVEL_DBG)) {			\
 		struct net_context *ctx = net_pkt_context(pkt);		\
 		if (net_context_get_family(ctx) == AF_INET6) {		\
 			NET_DBG("%s sent to %s port %d", str,		\
@@ -1843,16 +1845,11 @@ int net_tcp_unref(struct net_context *context)
 				net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst),\
 				ntohs(port));				\
 		}							\
-	} while (0)
-
-#else
-#define net_tcp_print_recv_info(...)
-#define net_tcp_print_send_info(...)
-#endif /* CONFIG_NET_DEBUG_CONTEXT */
+	}
 
 static void print_send_info(struct net_pkt *pkt, const char *msg)
 {
-	if (IS_ENABLED(CONFIG_NET_DEBUG_CONTEXT)) {
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		struct net_tcp_hdr hdr, *tcp_hdr;
 
 		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);

@@ -15,11 +15,11 @@ menuconfig NET_GPTP
 
 if NET_GPTP
 
-config NET_DEBUG_GPTP
-	bool "Enable Debug Information for gPTP"
-	depends on NET_LOG
-	help
-	  Enable logs for the gPTP stack.
+module = NET_GPTP
+module-dep = NET_LOG
+module-str = Log level for gPTP
+module-help = Enable logs for the gPTP stack.
+source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_GPTP_GM_CAPABLE
 	bool "Enable IEEE 802.1AS GrandMaster Capability"

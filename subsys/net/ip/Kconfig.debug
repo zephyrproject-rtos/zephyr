@@ -8,91 +8,65 @@
 
 menuconfig NET_LOG
 	bool "Enable network stack logging and debugging"
-	select SYS_LOG
+	select LOG
 	help
 	  Enable logging in various parts of the network stack.
 	  Specific debugging options to other sub-menus will be unlocked
 	  as well (IPv6, IPv4, ...).
 
-if NET_LOG
+module = NET_DEFAULT
+module-dep = NET_LOG
+module-def = LOG_LEVEL_ERR
+module-str=Default network stack logging level
+module-help=Default log level if the user has not specified one.
+source "subsys/net/Kconfig.template.log_config.default.net"
 
-config SYS_LOG_NET_LEVEL
-	int "Network Stack Logging level"
-	default 1
-	depends on SYS_LOG
-	range 0 4
-	help
-	  Sets log level for the network stack.
-	  Levels are:
-	  0 OFF, do not write
-	  1 ERROR, only write SYS_LOG_ERR
-	  2 WARNING, write SYS_LOG_WRN in addition to previous level
-	  3 INFO, write SYS_LOG_INF in addition to previous levels
-	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+module = NET_MAX
+module-dep = NET_LOG
+module-def = LOG_LEVEL_DBG
+module-str = Max network stack logging level
+module-help = Max log level. This overrides individual networking log levels.
+source "subsys/net/Kconfig.template.log_config.default.net"
 
-config NET_LOG_GLOBAL
-	bool "Enable global network stack logging"
-	select NET_DEBUG_CORE
-	select NET_DEBUG_IF
-	select NET_DEBUG_UTILS
-	select NET_DEBUG_CONTEXT
-	select NET_DEBUG_NET_PKT
-	select NET_DEBUG_CONN
-	select NET_DEBUG_ROUTE if NET_ROUTE
-	select NET_DEBUG_IPV6 if NET_IPV6
-	select NET_DEBUG_ICMPV6 if NET_IPV6
-	select NET_DEBUG_IPV6_NBR_CACHE if NET_IPV6
-	select NET_DEBUG_6LO if NET_6LO
-	select NET_DEBUG_IPV4 if NET_IPV4
-	select NET_DEBUG_ICMPV4 if NET_IPV4
-	select NET_DEBUG_DHCPV4 if NET_DHCPV4
-	select NET_DEBUG_UDP if NET_UDP
-	select NET_DEBUG_TCP if NET_TCP
-	select NET_DEBUG_RPL if NET_RPL
-	select NET_DEBUG_TRICKLE if NET_TRICKLE
-	select NET_DEBUG_MGMT_EVENT if NET_MGMT
-	select NET_DEBUG_MGMT_EVENT_STACK if NET_MGMT_EVENT
-	help
-	  By default, logging will apply only on enabled CONFIG_NET_DEBUG_*
-	  options, on which CONFIG_SYS_LOG_NET_LEVEL would be applied.
-	  However, if you want all the network stack logging enabled at once,
-	  use this option. Beware logging takes a lot of ROM/RAM and kills
-	  execution timing so it can affect your use case.
+module = NET_CORE
+module-dep = NET_LOG
+module-str = Log level for core IP stack
+module-help = Enables core network stack code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
-config NET_DEBUG_CORE
-	bool "Debug core IP stack"
-	help
-	  Enables core network stack code part to output debug messages
+module = NET_IF
+module-dep = NET_LOG
+module-str = Log level for network interface code
+module-help = Enables network interface code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
-config NET_DEBUG_IF
-	bool "Debug network interface code"
-	help
-	  Enables network interface code part to output debug messages
+module = NET_TC
+module-dep = NET_LOG
+module-str = Log level for network traffic class code
+module-help = Enables network traffic class code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
-config NET_DEBUG_TC
-	bool "Debug network traffic class code"
-	help
-	  Enables network traffic class code part to output debug messages
+module = NET_UTILS
+module-dep = NET_LOG
+module-str = Log level for utility functions in IP stack
+module-help = Enables utility functions to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
-config NET_DEBUG_UTILS
-	bool "Debug utility functions in IP stack"
-	help
-	  Enables utility functions to output debug messages
+module = NET_CONTEXT
+module-dep = NET_LOG
+module-str = Log level for network context allocation
+module-help = Enables printing of network context allocations and frees.
+source "subsys/net/Kconfig.template.log_config.net"
 
-config NET_DEBUG_CONTEXT
-	bool "Debug network context allocation"
-	help
-	  Enables printing of network context allocations and frees.
+module = NET_PKT
+module-dep = NET_LOG
+module-str = Log level for network packet and buffer allocation
+module-help = Enables debug of network packet and buffer allocations and frees.
+source "subsys/net/Kconfig.template.log_config.net"
 
-config NET_DEBUG_NET_PKT
-	bool "Debug network packet and buffer allocation"
-	select NET_BUF_POOL_USAGE
-	help
-	  Enables collection of network packet and buffer allocations and frees.
-
+if NET_PKT_LOG_LEVEL >= 4
 config NET_DEBUG_NET_PKT_ALL
 	bool "Debug network packet and buffer individual allocation"
-	depends on NET_DEBUG_NET_PKT
 	help
 	  Enables printing of network packet and buffer allocations and frees for
 	  each allocation. This can produce lot of output so it is disabled by
@@ -101,21 +75,20 @@ config NET_DEBUG_NET_PKT_ALL
 config NET_DEBUG_NET_PKT_EXTERNALS
 	int "How many external network packet allocations"
 	default 0
-	depends on NET_DEBUG_NET_PKT
 	help
 	  How many external net_pkt objects are there in user specific pools.
 	  This value is used when allocating space for tracking the
 	  memory allocations.
+endif
 
-config NET_DEBUG_CONN
-	bool "Debug connection handling"
-	help
-	  Enables connection debug messages
+module = NET_CONN
+module-dep = NET_LOG
+module-str = Log level for UDP/TCP connection handling
+module-help = Enables UDP/TCP connection debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
-config NET_DEBUG_ROUTE
-	bool "Debug route management"
-	depends on NET_ROUTE
-	help
-	  Enables routing engine debug messages
-
-endif # NET_LOG
+module = NET_ROUTE
+module-dep = NET_LOG
+module-str = Log level for route management
+module-help = Enables routing engine debug messages.
+source "subsys/net/Kconfig.template.log_config.net"

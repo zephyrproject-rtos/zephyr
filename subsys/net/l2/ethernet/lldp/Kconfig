@@ -18,12 +18,11 @@ config NET_LLDP
 
 if NET_LLDP
 
-config NET_DEBUG_LLDP
-	bool "Debug LLDP"
-	depends on NET_LOG
-	default n
-	help
-	  Enables core LLDP code part to output debug messages.
+module = NET_LLDP
+module-dep = NET_LOG
+module-str = Log level for LLDP
+module-help = Enables core LLDP code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
 #
 # LLDP Tx state machine config

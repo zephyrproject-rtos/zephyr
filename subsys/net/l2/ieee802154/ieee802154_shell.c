@@ -8,6 +8,9 @@
  * @brief IEEE 802.15.4 shell module
  */
 
+#define LOG_MODULE_NAME net_ieee802154_shell
+#define NET_LOG_LEVEL CONFIG_NET_L2_IEEE802154_LOG_LEVEL
+
 #include <zephyr.h>
 #include <stdio.h>
 #include <stdlib.h>

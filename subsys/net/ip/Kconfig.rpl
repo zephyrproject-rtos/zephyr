@@ -274,10 +274,10 @@ config NET_STATISTICS_RPL
 	help
 	  Keep track of RPL related statistics
 
-config  NET_DEBUG_RPL
-	bool "Debug RPL"
-	depends on NET_RPL && NET_LOG
-	help
-	  Enables RPL output debug messages
+module = NET_RPL
+module-dep = NET_LOG
+module-str = Log level for RPL
+module-help = Enables RPL output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
 endif # NET_RPL

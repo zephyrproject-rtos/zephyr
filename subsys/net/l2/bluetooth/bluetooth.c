@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_L2_BT)
-#define SYS_LOG_DOMAIN "net/bt"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_bt
+#define NET_LOG_LEVEL CONFIG_NET_L2_BT_LOG_LEVEL
 
 #include <kernel.h>
 #include <toolchain.h>
@@ -122,24 +120,22 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 	struct net_linkaddr ll;
 	struct in6_addr in6;
 
-#if defined(CONFIG_NET_DEBUG_L2_BT)
-	char src[BT_ADDR_LE_STR_LEN];
-	char dst[BT_ADDR_LE_STR_LEN];
-#endif
-
 	if (bt_conn_get_info(chan->conn, &info) < 0) {
 		NET_ERR("Unable to get connection info");
 		bt_l2cap_chan_disconnect(chan);
 		return;
 	}
 
-#if defined(CONFIG_NET_DEBUG_L2_BT)
-	bt_addr_le_to_str(info.le.src, src, sizeof(src));
-	bt_addr_le_to_str(info.le.dst, dst, sizeof(dst));
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		char src[BT_ADDR_LE_STR_LEN];
+		char dst[BT_ADDR_LE_STR_LEN];
 
-	NET_DBG("Channel %p Source %s connected to Destination %s", chan,
-		src, dst);
-#endif
+		bt_addr_le_to_str(info.le.src, src, sizeof(src));
+		bt_addr_le_to_str(info.le.dst, dst, sizeof(dst));
+
+		NET_DBG("Channel %p Source %s connected to Destination %s",
+			chan, src, dst);
+	}
 
 	/* Swap bytes since net APIs expect big endian address */
 	sys_memcpy_swap(ctxt->src.val, info.le.src->a.val, sizeof(ctxt->src));
@@ -364,10 +360,7 @@ static bool eir_found(u8_t type, const u8_t *data, u8_t data_len,
 		      void *user_data)
 {
 	int i;
-#if defined(CONFIG_NET_DEBUG_L2_BT)
-	bt_addr_le_t *addr = user_data;
-	char dev[BT_ADDR_LE_STR_LEN];
-#endif
+
 	if (type != BT_DATA_UUID16_SOME && type != BT_DATA_UUID16_ALL) {
 		return false;
 	}
@@ -387,10 +380,13 @@ static bool eir_found(u8_t type, const u8_t *data, u8_t data_len,
 			continue;
 		}
 
-#if defined(CONFIG_NET_DEBUG_L2_BT)
-		bt_addr_le_to_str(addr, dev, sizeof(dev));
-		NET_DBG("[DEVICE]: %s", dev);
-#endif
+		if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+			bt_addr_le_t *addr = user_data;
+			char dev[BT_ADDR_LE_STR_LEN];
+
+			bt_addr_le_to_str(addr, dev, sizeof(dev));
+			NET_DBG("[DEVICE]: %s", dev);
+		}
 
 		/* TODO: Notify device address found */
 		net_mgmt_event_notify(NET_EVENT_BT_SCAN_RESULT,
@@ -510,13 +506,15 @@ static int bt_disconnect(u32_t mgmt_request, struct net_if *iface,
 static void connected(struct bt_conn *conn, u8_t err)
 {
 	if (err) {
-#if defined(CONFIG_NET_DEBUG_L2_BT)
-		char addr[BT_ADDR_LE_STR_LEN];
+		if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+			char addr[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+			bt_addr_le_to_str(bt_conn_get_dst(conn), addr,
+					  sizeof(addr));
 
-		NET_ERR("Failed to connect to %s (%u)\n", addr, err);
-#endif
+			NET_ERR("Failed to connect to %s (%u)\n", addr, err);
+		}
+
 		return;
 	}
 
@@ -530,19 +528,16 @@ static void connected(struct bt_conn *conn, u8_t err)
 
 static void disconnected(struct bt_conn *conn, u8_t reason)
 {
-#if defined(CONFIG_NET_DEBUG_L2_BT)
-	char addr[BT_ADDR_LE_STR_LEN];
-#endif
-
 	if (conn != default_conn) {
 		return;
 	}
 
-#if defined(CONFIG_NET_DEBUG_L2_BT)
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		char addr[BT_ADDR_LE_STR_LEN];
+		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	NET_DBG("Disconnected: %s (reason %u)\n", addr, reason);
-#endif
+		NET_DBG("Disconnected: %s (reason %u)\n", addr, reason);
+	}
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;

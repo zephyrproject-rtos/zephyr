@@ -38,10 +38,8 @@
  * SUCH DAMAGE.
  */
 
-#if defined(CONFIG_NET_DEBUG_RPL)
-#define SYS_LOG_DOMAIN "net/rpl"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_rpl
+#define NET_LOG_LEVEL CONFIG_NET_RPL_LOG_LEVEL
 
 #include <kernel.h>
 #include <limits.h>
@@ -218,7 +216,6 @@ NET_NBR_POOL_INIT(net_rpl_neighbor_pool, CONFIG_NET_RPL_MAX_PARENTS,
 NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 		   net_rpl_neighbor_table_clear);
 
-#if defined(CONFIG_NET_DEBUG_RPL)
 #define net_rpl_info(pkt, req)						\
 	do {								\
 		NET_DBG("Received %s from %s to %s", req,		\
@@ -238,11 +235,6 @@ NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 		NET_DBG("Send DAO with prefix %s from %s to %s",	  \
 			prf, net_sprint_ipv6_addr(src), out);		  \
 	} while (0)
-
-#else /* CONFIG_NET_DEBUG_RPL */
-#define net_rpl_info(...)
-#define net_rpl_dao_info(...)
-#endif /* CONFIG_NET_DEBUG_RPL */
 
 static void new_dio_interval(struct net_rpl_instance *instance);
 
@@ -356,7 +348,7 @@ int net_rpl_foreach_parent(net_rpl_parent_cb_t cb, void *user_data)
 	return ret;
 }
 
-#if defined(CONFIG_NET_DEBUG_RPL) && (CONFIG_SYS_LOG_NET_LEVEL > 3)
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static void net_rpl_print_parents(void)
 {
 	struct net_rpl_parent *parent;
@@ -405,7 +397,7 @@ static void net_rpl_print_parents(void)
 }
 #else
 #define net_rpl_print_parents(...)
-#endif /* CONFIG_NET_DEBUG_RPL */
+#endif
 
 struct net_route_entry *net_rpl_add_route(struct net_rpl_dag *dag,
 					  struct net_if *iface,
@@ -1498,9 +1490,7 @@ static void net_rpl_nullify_parent(struct net_if *iface,
 				   struct net_rpl_parent *parent)
 {
 	struct net_rpl_dag *dag = parent->dag;
-#if defined(CONFIG_NET_DEBUG_RPL) && (CONFIG_SYS_LOG_NET_LEVEL > 3)
 	struct in6_addr *addr = net_rpl_get_parent_addr(iface, parent);
-#endif
 
 	/* This function can be called when the preferred parent is NULL,
 	 * so we need to handle this condition properly.
@@ -1534,11 +1524,6 @@ static void net_rpl_remove_parent(struct net_if *iface,
 				  struct net_rpl_parent *parent,
 				  struct net_nbr *nbr)
 {
-#if defined(CONFIG_NET_DEBUG_RPL)
-	struct in6_addr *addr;
-	struct net_linkaddr_storage *lladdr;
-#endif
-
 	NET_ASSERT(iface);
 
 	if (!nbr) {
@@ -1548,13 +1533,16 @@ static void net_rpl_remove_parent(struct net_if *iface,
 		}
 	}
 
-#if defined(CONFIG_NET_DEBUG_RPL)
-	addr = net_rpl_get_parent_addr(iface, parent);
-	lladdr = net_nbr_get_lladdr(nbr->idx);
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		struct in6_addr *addr;
+		struct net_linkaddr_storage *lladdr;
 
-	NET_DBG("Removing parent %s [%s]", net_sprint_ipv6_addr(addr),
-		net_sprint_ll_addr(lladdr->addr, lladdr->len));
-#endif /* CONFIG_NET_DEBUG_RPL */
+		addr = net_rpl_get_parent_addr(iface, parent);
+		lladdr = net_nbr_get_lladdr(nbr->idx);
+
+		NET_DBG("Removing parent %s [%s]", net_sprint_ipv6_addr(addr),
+			net_sprint_ll_addr(lladdr->addr, lladdr->len));
+	}
 
 	net_rpl_nullify_parent(iface, parent);
 	nbr_free(nbr);
@@ -2023,10 +2011,6 @@ static bool net_rpl_process_parent_event(struct net_if *iface,
 {
 	bool ret = true;
 
-#if defined(CONFIG_NET_DEBUG_RPL)
-	u16_t old_rank = instance->current_dag->rank;
-#endif
-
 	if (!acceptable_rank(parent->dag, parent->rank)) {
 		/* The candidate parent is no longer valid: the rank increase
 		 * resulting from the choice of it as a parent would be too
@@ -2052,29 +2036,33 @@ static bool net_rpl_process_parent_event(struct net_if *iface,
 		return false;
 	}
 
-#if defined(CONFIG_NET_DEBUG_RPL)
-	if (NET_RPL_DAG_RANK(old_rank, instance) !=
-	    NET_RPL_DAG_RANK(instance->current_dag->rank, instance)) {
-		NET_DBG("Moving in the instance from rank %u to %u",
-			NET_RPL_DAG_RANK(old_rank, instance),
-			NET_RPL_DAG_RANK(instance->current_dag->rank,
-					 instance));
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		u16_t old_rank = instance->current_dag->rank;
 
-		if (instance->current_dag->rank != NET_RPL_INFINITE_RANK) {
-			NET_DBG("The preferred parent is %s (rank %u)",
-				net_sprint_ipv6_addr(
-					net_rpl_get_parent_addr(iface,
-						instance->current_dag->
-						preferred_parent)),
-
-				NET_RPL_DAG_RANK(instance->current_dag->
-						 preferred_parent->rank,
+		if (NET_RPL_DAG_RANK(old_rank, instance) !=
+		    NET_RPL_DAG_RANK(instance->current_dag->rank, instance)) {
+			NET_DBG("Moving in the instance from rank %u to %u",
+				NET_RPL_DAG_RANK(old_rank, instance),
+				NET_RPL_DAG_RANK(instance->current_dag->rank,
 						 instance));
-		} else {
-			NET_DBG("We don't have any parent");
+
+			if (instance->current_dag->rank !=
+						       NET_RPL_INFINITE_RANK) {
+				NET_DBG("The preferred parent is %s (rank %u)",
+					net_sprint_ipv6_addr(
+						net_rpl_get_parent_addr(iface,
+							instance->current_dag->
+							preferred_parent)),
+
+					NET_RPL_DAG_RANK(
+						instance->current_dag->
+						preferred_parent->rank,
+						instance));
+			} else {
+				NET_DBG("We don't have any parent");
+			}
 		}
 	}
-#endif /* CONFIG_NET_DEBUG_RPL */
 
 	return ret;
 }
@@ -3531,7 +3519,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 			if (dag->preferred_parent) {
 				r = forwarding_dao(instance, dag,
 						   pkt, sequence, flags,
-#if defined(CONFIG_NET_DEBUG_RPL)
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 						   "Forwarding no-path DAO to "
 						   "parent"
 #else

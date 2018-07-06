@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_GPTP)
-#define SYS_LOG_DOMAIN "net/gptp"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_gptp_msg
+#define NET_LOG_LEVEL CONFIG_NET_GPTP_LOG_LEVEL
 
 #include <net/net_if.h>
 
@@ -26,11 +24,9 @@ static bool ts_cb_registered;
 static const struct net_eth_addr gptp_multicast_eth_addr = {
 	{ 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e } };
 
-#define NET_GPTP_INFO(msg, pkt) do {					\
-	if (IS_ENABLED(NET_LOG_ENABLED)) {				\
+#define NET_GPTP_INFO(msg, pkt)						\
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {				\
 		struct gptp_hdr *hdr = GPTP_HDR(pkt);			\
-									\
-		ARG_UNUSED(hdr);					\
 									\
 		if (hdr->message_type == GPTP_ANNOUNCE_MESSAGE) {	\
 			struct gptp_announce *ann = GPTP_ANNOUNCE(pkt);	\
@@ -52,8 +48,7 @@ static const struct net_eth_addr gptp_multicast_eth_addr = {
 			NET_DBG("Sending %s seq %d pkt %p", msg,	\
 				ntohs(hdr->sequence_id), pkt);		\
 		}							\
-	}								\
-} while (0)
+	}
 
 static void gptp_sync_timestamp_callback(struct net_pkt *pkt)
 {

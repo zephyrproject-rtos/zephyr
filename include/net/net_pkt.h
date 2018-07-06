@@ -704,7 +704,7 @@ static inline void net_pkt_set_src_ipv6_addr(struct net_pkt *pkt)
 	NET_BUF_POOL_DEFINE(name, count, CONFIG_NET_BUF_DATA_SIZE,	\
 			    CONFIG_NET_BUF_USER_DATA_SIZE, NULL)
 
-#if defined(CONFIG_NET_DEBUG_NET_PKT)
+#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 
 /* Debug versions of the net_pkt functions that are used when tracking
  * buffer usage.
@@ -821,7 +821,7 @@ void net_pkt_frag_insert_debug(struct net_pkt *pkt, struct net_buf *frag,
  */
 void net_pkt_print_frags(struct net_pkt *pkt);
 
-#else /* CONFIG_NET_DEBUG_NET_PKT */
+#else /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 #define net_pkt_print_frags(...)
 
@@ -1052,7 +1052,7 @@ void net_pkt_frag_add(struct net_pkt *pkt, struct net_buf *frag);
  */
 void net_pkt_frag_insert(struct net_pkt *pkt, struct net_buf *frag);
 
-#endif /* CONFIG_NET_DEBUG_NET_PKT */
+#endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 /**
  * @brief Copy a packet fragment list while reserving some extra space
@@ -1850,7 +1850,7 @@ int net_pkt_get_dst_addr(struct net_pkt *pkt,
 			 struct sockaddr *addr,
 			 socklen_t addrlen);
 
-#if defined(CONFIG_NET_DEBUG_NET_PKT)
+#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 /**
  * @brief Debug helper to print out the buffer allocations
  */
@@ -1872,7 +1872,7 @@ const char *net_pkt_pool2str(struct net_buf_pool *pool);
 
 #else
 #define net_pkt_print(...)
-#endif /* CONFIG_NET_DEBUG_NET_PKT */
+#endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 /**
  * @}

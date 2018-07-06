@@ -174,7 +174,6 @@ static inline u16_t net_calc_chksum_tcp(struct net_pkt *pkt)
 	return net_calc_chksum(pkt, IPPROTO_TCP);
 }
 
-#if NET_LOG_ENABLED > 0
 static inline char *net_sprint_ll_addr(const u8_t *ll, u8_t ll_len)
 {
 	static char buf[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
@@ -187,7 +186,7 @@ static inline void _hexdump(const u8_t *packet, size_t length, u8_t reserve)
 	char output[sizeof("xxxxyyyy xxxxyyyy")];
 	int n = 0, k = 0;
 	u8_t byte;
-#if defined(CONFIG_SYS_LOG) && (SYS_LOG_LEVEL > SYS_LOG_LEVEL_OFF)
+#if defined(CONFIG_LOG) && (NET_LOG_LEVEL >= LOG_LEVEL_DBG)
 	u8_t r = reserve;
 #endif
 
@@ -198,7 +197,7 @@ static inline void _hexdump(const u8_t *packet, size_t length, u8_t reserve)
 
 		byte = *packet++;
 
-#if defined(CONFIG_SYS_LOG) && (SYS_LOG_LEVEL > SYS_LOG_LEVEL_OFF)
+#if defined(CONFIG_LOG) && (NET_LOG_LEVEL >= LOG_LEVEL_DBG)
 		if (reserve) {
 			if (r) {
 				printk(SYS_LOG_COLOR_YELLOW);
@@ -250,11 +249,11 @@ static inline void net_hexdump(const char *str,
 			       const u8_t *packet, size_t length)
 {
 	if (!length) {
-		SYS_LOG_DBG("%s zero-length packet", str);
+		LOG_DBG("%s zero-length packet", str);
 		return;
 	}
 
-	printk("%s\n", str);
+	LOG_DBG("%s", str);
 
 	_hexdump(packet, length, 0);
 }
@@ -308,20 +307,3 @@ static inline void net_print_frags(const char *str, struct net_pkt *pkt)
 
 	printk("\n");
 }
-
-#else /* NET_LOG_ENABLED */
-
-static inline char *net_sprint_ll_addr(const u8_t *ll, u8_t ll_len)
-{
-	ARG_UNUSED(ll);
-	ARG_UNUSED(ll_len);
-
-	return NULL;
-}
-
-#define net_hexdump(...)
-#define net_hexdump_frags(...)
-
-#define net_print_frags(...)
-
-#endif /* NET_LOG_ENABLED */
