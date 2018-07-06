@@ -27,10 +27,10 @@ config NET_HOSTNAME_UNIQUE
 	  hostname. For example, zephyr00005e005357 could be the hostname
 	  if this	setting is enabled.
 
-config  NET_DEBUG_HOSTNAME
-	bool "Debug hostname configuration"
-	depends on NET_LOG
-	help
-	  Enables hostname configuration functions to output debug messages
+module = NET_HOSTNAME
+module-dep = NET_LOG
+module-str = Log level for hostname configuration
+module-help = Enables hostname configuration code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
 endif

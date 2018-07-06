@@ -6,10 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_IPV6_NBR_CACHE)
-#define SYS_LOG_DOMAIN "net/nbr"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_nbr
+#define NET_LOG_LEVEL CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL
 
 #include <errno.h>
 
@@ -21,14 +19,14 @@
 
 NET_NBR_LLADDR_INIT(net_neighbor_lladdr, CONFIG_NET_IPV6_MAX_NEIGHBORS);
 
-#if defined(CONFIG_NET_DEBUG_IPV6_NBR_CACHE)
+#if defined(CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL_DBG)
 void net_nbr_unref_debug(struct net_nbr *nbr, const char *caller, int line)
 #define net_nbr_unref(nbr) net_nbr_unref_debug(nbr, __func__, __LINE__)
 #else
 void net_nbr_unref(struct net_nbr *nbr)
 #endif
 {
-#if defined(CONFIG_NET_DEBUG_IPV6_NBR_CACHE)
+#if defined(CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL_DBG)
 	NET_DBG("nbr %p ref %u (%s():%d)", nbr, nbr->ref - 1, caller, line);
 #else
 	NET_DBG("nbr %p ref %u", nbr, nbr->ref - 1);
@@ -42,14 +40,14 @@ void net_nbr_unref(struct net_nbr *nbr)
 	}
 }
 
-#if defined(CONFIG_NET_DEBUG_IPV6_NBR_CACHE)
+#if defined(CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL_DBG)
 struct net_nbr *net_nbr_ref_debug(struct net_nbr *nbr, const char *caller,
 				  int line)
 #else
 struct net_nbr *net_nbr_ref(struct net_nbr *nbr)
 #endif
 {
-#if defined(CONFIG_NET_DEBUG_IPV6_NBR_CACHE)
+#if defined(CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL_DBG)
 	NET_DBG("nbr %p ref %u (%s():%d)", nbr, nbr->ref + 1, caller, line);
 #else
 	NET_DBG("nbr %p ref %u", nbr, nbr->ref + 1);
@@ -206,24 +204,27 @@ void net_nbr_clear_table(struct net_nbr_table *table)
 	}
 }
 
-#if defined(CONFIG_NET_DEBUG_IPV6_NBR_CACHE)
 void net_nbr_print(struct net_nbr_table *table)
 {
-	int i;
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		int i;
 
-	for (i = 0; i < table->nbr_count; i++) {
-		struct net_nbr *nbr = get_nbr(table->nbr, i);
+		for (i = 0; i < table->nbr_count; i++) {
+			struct net_nbr *nbr = get_nbr(table->nbr, i);
 
-		if (!nbr->ref) {
-			continue;
+			if (!nbr->ref) {
+				continue;
+			}
+
+			NET_DBG("[%d] nbr %p data %p ref %d iface %p idx %d "
+				"ll %s",
+				i, nbr, nbr->data, nbr->ref, nbr->iface,
+				nbr->idx,
+				nbr->idx == NET_NBR_LLADDR_UNKNOWN ?
+				"<unknown>" :
+				net_sprint_ll_addr(
+				    net_neighbor_lladdr[nbr->idx].lladdr.addr,
+				    net_neighbor_lladdr[nbr->idx].lladdr.len));
 		}
-
-		NET_DBG("[%d] nbr %p data %p ref %d iface %p idx %d ll %s",
-			i, nbr, nbr->data, nbr->ref, nbr->iface, nbr->idx,
-			nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "<unknown>" :
-			net_sprint_ll_addr(
-				net_neighbor_lladdr[nbr->idx].lladdr.addr,
-				net_neighbor_lladdr[nbr->idx].lladdr.len));
 	}
 }
-#endif /* CONFIG_NET_DEBUG_IPV6_NBR_CACHE */

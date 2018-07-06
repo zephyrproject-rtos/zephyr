@@ -8,15 +8,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_IPV6)
-#define SYS_LOG_DOMAIN "net/ipv6-nbr"
-#define NET_LOG_ENABLED 1
+#define LOG_MODULE_NAME net_ipv6_nbr
+#define NET_LOG_LEVEL CONFIG_NET_IPV6_LOG_LEVEL
 
 /* By default this prints too much data, set the value to 1 to see
  * neighbor cache contents.
  */
 #define NET_DEBUG_NBR 0
-#endif
 
 #include <errno.h>
 #include <stdlib.h>
@@ -430,10 +428,9 @@ static struct net_nbr *nbr_new(struct net_if *iface,
 	return nbr;
 }
 
-#if defined(CONFIG_NET_DEBUG_IPV6)
-static inline void dbg_update_neighbor_lladdr(struct net_linkaddr *new_lladdr,
-				struct net_linkaddr_storage *old_lladdr,
-				struct in6_addr *addr)
+static void dbg_update_neighbor_lladdr(struct net_linkaddr *new_lladdr,
+				       struct net_linkaddr_storage *old_lladdr,
+				       struct in6_addr *addr)
 {
 	char out[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
 
@@ -446,9 +443,9 @@ static inline void dbg_update_neighbor_lladdr(struct net_linkaddr *new_lladdr,
 		out);
 }
 
-static inline void dbg_update_neighbor_lladdr_raw(u8_t *new_lladdr,
-				struct net_linkaddr_storage *old_lladdr,
-				struct in6_addr *addr)
+static void dbg_update_neighbor_lladdr_raw(u8_t *new_lladdr,
+				       struct net_linkaddr_storage *old_lladdr,
+				       struct in6_addr *addr)
 {
 	struct net_linkaddr lladdr = {
 		.len = old_lladdr->len,
@@ -485,17 +482,6 @@ static inline void dbg_update_neighbor_lladdr_raw(u8_t *new_lladdr,
 
 #define dbg_addr_sent_tgt(pkt_str, src, dst, tgt)		\
 	dbg_addr_with_tgt("Sent", pkt_str, src, dst, tgt)
-#else
-#define dbg_update_neighbor_lladdr(...)
-#define dbg_update_neighbor_lladdr_raw(...)
-#define dbg_addr(...)
-#define dbg_addr_recv(...)
-#define dbg_addr_sent(...)
-
-#define dbg_addr_with_tgt(...)
-#define dbg_addr_recv_tgt(...)
-#define dbg_addr_sent_tgt(...)
-#endif /* CONFIG_NET_DEBUG_IPV6 */
 
 struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 				 struct in6_addr *addr,
@@ -1208,18 +1194,21 @@ static void ns_routing_info(struct net_pkt *pkt,
 			    struct in6_addr *nexthop,
 			    struct in6_addr *tgt)
 {
-#if defined(CONFIG_NET_DEBUG_IPV6) && (CONFIG_SYS_LOG_NET_LEVEL > 3)
-	char out[NET_IPV6_ADDR_LEN];
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		char out[NET_IPV6_ADDR_LEN];
 
-	snprintk(out, sizeof(out), "%s", net_sprint_ipv6_addr(nexthop));
+		snprintk(out, sizeof(out), "%s",
+			 net_sprint_ipv6_addr(nexthop));
 
-	if (net_ipv6_addr_cmp(nexthop, tgt)) {
-		NET_DBG("Routing to %s iface %p", out, net_pkt_iface(pkt));
-	} else {
-		NET_DBG("Routing to %s via %s iface %p",
-			net_sprint_ipv6_addr(tgt), out, net_pkt_iface(pkt));
+		if (net_ipv6_addr_cmp(nexthop, tgt)) {
+			NET_DBG("Routing to %s iface %p", out,
+				net_pkt_iface(pkt));
+		} else {
+			NET_DBG("Routing to %s via %s iface %p",
+				net_sprint_ipv6_addr(tgt), out,
+				net_pkt_iface(pkt));
+		}
 	}
-#endif
 }
 
 static enum net_verdict handle_ns_input(struct net_pkt *pkt)

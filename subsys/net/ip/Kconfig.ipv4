@@ -47,30 +47,32 @@ config NET_IPV4_AUTO
 	help
 	  Enables IPv4 auto IP address configuration (see RFC 3927)
 
-if NET_LOG
+module = NET_IPV4
+module-dep = NET_LOG
+module-str = Log level for core IPv4
+module-help = Enables core IPv4 code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
-config NET_DEBUG_IPV4
-	bool "Debug core IPv4"
-	help
-	  Enables core IPv4 code part to output debug messages
+module = NET_ICMPV4
+module-dep = NET_LOG
+module-str = Log level for ICMPv4
+module-help = Enables ICMPv4 code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
-config NET_DEBUG_ICMPV4
-	bool "Debug ICMPv4"
-	help
-	  Enables ICMPv4 code part to output debug messages
+if NET_DHCPV4
+module = NET_DHCPV4
+module-dep = NET_LOG
+module-str = Log level for DHCPv4 client
+module-help = Enable debug diagnostic from DHCPV4 client.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_DHCPV4
 
-config NET_DEBUG_DHCPV4
-	bool "Debug DHCPv4 client"
-	depends on NET_DHCPV4
-	help
-	  Enable debug diagnostic from DHCPV4 client.
-
-config NET_DEBUG_IPV4_AUTOCONF
-	bool "Debug IPv4 autoconf client"
-	depends on NET_IPV4_AUTO
-	help
-	  Enable debug diagnostic from IPv4 autoconf client.
-
-endif # NET_LOG
+if NET_IPV4_AUTO
+module = NET_IPV4_AUTO
+module-dep = NET_LOG
+module-str = Log level for IPv4 autoconf client
+module-help = Enable debug diagnostic from IPv4 autoconf client.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_IPV4_AUTO
 
 endif # NET_IPV4

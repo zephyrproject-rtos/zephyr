@@ -23,13 +23,11 @@ config NET_L2_IEEE802154_SUB_GHZ
 	  logic in L2 code for channel management. This option is automatically
 	  selected when relevant device driver is enabled.
 
-config NET_DEBUG_L2_IEEE802154
-	bool "Enable IEEE 802.15.4 stack debug messages"
-	default y if NET_LOG_GLOBAL
-	depends on NET_LOG
-	help
-	  Enable it if you want to see what's happening. Only useful
-	  for developers.
+module = NET_L2_IEEE802154
+module-dep = NET_LOG
+module-str = Log level for IEEE 802.15.4
+module-help = Enables IEEE 802.15.4 code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET
 	bool "Enable IEEE 802.15.4 packet display"
@@ -124,7 +122,7 @@ config NET_L2_IEEE802154_REASSEMBLY_TIMEOUT
 config  NET_DEBUG_L2_IEEE802154_FRAGMENT
 	bool "Enable debug support for IEEE 802.15.4 fragmentation"
 	depends on NET_L2_IEEE802154_FRAGMENT && NET_LOG
-	default y if NET_LOG_GLOBAL
+	default y if NET_L2_IEEE802154_LOG_LEVEL_DBG
 
 config NET_L2_IEEE802154_SECURITY
 	bool "Enable IEEE 802.15.4 security [EXPERIMENTAL]"

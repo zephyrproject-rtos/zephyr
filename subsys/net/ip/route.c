@@ -9,10 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_ROUTE)
-#define SYS_LOG_DOMAIN "net/route"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_route
+#define NET_LOG_LEVEL CONFIG_NET_ROUTE_LOG_LEVEL
 
 #include <kernel.h>
 #include <limits.h>
@@ -146,7 +144,6 @@ struct net_nbr *net_route_get_nbr(struct net_route_entry *route)
 	return NULL;
 }
 
-#if defined(CONFIG_NET_DEBUG_ROUTE)
 void net_routes_print(void)
 {
 	int i;
@@ -158,11 +155,11 @@ void net_routes_print(void)
 			continue;
 		}
 
-		NET_DBG("[%d] %p %d addr %s/%d iface %p idx %d "
-			"ll %s",
+		NET_DBG("[%d] %p %d addr %s/%d",
 			i, nbr, nbr->ref,
 			net_sprint_ipv6_addr(&net_route_data(nbr)->addr),
-			net_route_data(nbr)->prefix_len,
+			net_route_data(nbr)->prefix_len);
+		NET_DBG("    iface %p idx %d ll %s",
 			nbr->iface, nbr->idx,
 			nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "?" :
 			net_sprint_ll_addr(
@@ -170,9 +167,6 @@ void net_routes_print(void)
 				net_nbr_get_lladdr(nbr->idx)->len));
 	}
 }
-#else
-#define net_routes_print(...)
-#endif /* CONFIG_NET_DEBUG_ROUTE */
 
 static inline void nbr_free(struct net_nbr *nbr)
 {
@@ -236,9 +230,9 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 	return 0;
 }
 
-#if defined(CONFIG_NET_DEBUG_ROUTE)
+
 #define net_route_info(str, route, dst)					\
-	do {								\
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {				\
 		struct in6_addr *naddr = net_route_get_nexthop(route);	\
 									\
 		NET_ASSERT_INFO(naddr, "Unknown nexthop address");	\
@@ -247,9 +241,6 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 			net_sprint_ipv6_addr(dst),			\
 			net_sprint_ipv6_addr(naddr), route->iface);	\
 	} while (0)
-#else
-#define net_route_info(...)
-#endif /* CONFIG_NET_DEBUG_ROUTE */
 
 /* Route was accessed, so place it in front of the routes list */
 static inline void update_route_access(struct net_route_entry *route)
@@ -359,8 +350,8 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 		route = CONTAINER_OF(last,
 				     struct net_route_entry,
 				     node);
-#if defined(CONFIG_NET_DEBUG_ROUTE)
-		do {
+
+		if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
 			struct in6_addr *tmp;
 			struct net_linkaddr_storage *llstorage;
 
@@ -376,8 +367,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 					net_sprint_ll_addr(llstorage->addr,
 							   llstorage->len));
 			}
-		} while (0);
-#endif /* CONFIG_NET_DEBUG_ROUTE */
+		}
 
 		net_route_del(route);
 

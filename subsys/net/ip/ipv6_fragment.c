@@ -8,15 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_IPV6)
-#define SYS_LOG_DOMAIN "net/ipv6-frag"
-#define NET_LOG_ENABLED 1
-
-/* By default this prints too much data, set the value to 1 to see
- * neighbor cache contents.
- */
-#define NET_DEBUG_NBR 0
-#endif
+#define LOG_MODULE_NAME net_ipv6_frag
+#define NET_LOG_LEVEL CONFIG_NET_IPV6_LOG_LEVEL
 
 #include <errno.h>
 #include <net/net_core.h>

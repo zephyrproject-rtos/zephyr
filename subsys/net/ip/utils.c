@@ -9,10 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_UTILS)
-#define SYS_LOG_DOMAIN "net/utils"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_utils
+#define NET_LOG_LEVEL CONFIG_NET_UTILS_LOG_LEVEL
 
 #include <stdlib.h>
 #include <zephyr/types.h>
