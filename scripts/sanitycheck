@@ -308,6 +308,9 @@ class Handler:
         self.metrics["ram_size"] = 0
         self.metrics["rom_size"] = 0
 
+        self.binary = None
+        self.runner = None
+
         self.name = instance.name
         self.instance = instance
         self.timeout = instance.test.timeout
@@ -329,6 +332,66 @@ class Handler:
         self.lock.release()
         return ret
 
+class BinaryHandler(Handler):
+    def __init__(self, instance):
+        """Constructor
+
+        @param instance Test Instance
+        """
+        super().__init__(instance)
+
+        self.valgrind = False
+
+    def _output_reader(self, proc, harness):
+        log_out_fp = open(self.log, "wt")
+        for line in iter(proc.stdout.readline, b''):
+            verbose("OUTPUT: {0}".format(line.decode('utf-8').rstrip()))
+            log_out_fp.write(line.decode('utf-8'))
+            log_out_fp.flush()
+            harness.handle(line.decode('utf-8').rstrip())
+            if harness.state:
+                proc.terminate()
+                break
+
+        log_out_fp.close()
+
+    def handle(self):
+        out_state = "failed"
+
+        harness_name = self.instance.test.harness.capitalize()
+        harness_import = HarnessImporter(harness_name)
+        harness = harness_import.instance
+        harness.configure(self.instance)
+
+        command = [self.binary]
+
+        if shutil.which("valgrind") and self.valgrind:
+            command = ["valgrind", "--error-exitcode=2",
+                       "--leak-check=full"] + command
+
+        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
+            t = threading.Thread(target=self._output_reader, args=(proc, harness, ))
+            t.start()
+            t.join(self.timeout)
+            if t.is_alive():
+                proc.terminate()
+                out_state = "timeout"
+                t.join()
+
+            proc.wait()
+            self.returncode = proc.returncode
+            if proc.returncode != 0:
+                out_state = "failed"
+
+        if options.enable_coverage:
+            returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir,
+                "gcov", self.sourcedir, "-b", "-s", self.outdir], shell=True)
+
+        self.instance.results = harness.tests
+        if harness.state:
+            self.set_state(harness.state, {})
+        else:
+            self.set_state(out_state, {})
 
 class DeviceHandler(Handler):
 
@@ -415,105 +478,6 @@ class DeviceHandler(Handler):
             self.set_state(harness.state, {})
         else:
             self.set_state(out_state, {})
-
-class NativeHandler(Handler):
-    def __init__(self, instance):
-        """Constructor
-
-        @param instance Test Instance
-        """
-        super().__init__(instance)
-
-        self.valgrind = False
-
-    def _output_reader(self, proc, harness):
-        log_out_fp = open(self.log, "wt")
-        for line in iter(proc.stdout.readline, b''):
-            verbose("NATIVE: {0}".format(line.decode('utf-8').rstrip()))
-            log_out_fp.write(line.decode('utf-8'))
-            log_out_fp.flush()
-            harness.handle(line.decode('utf-8').rstrip())
-            if harness.state:
-                proc.terminate()
-                break
-
-        log_out_fp.close()
-
-    def handle(self):
-        out_state = "failed"
-
-        harness_name = self.instance.test.harness.capitalize()
-        harness_import = HarnessImporter(harness_name)
-        harness = harness_import.instance
-        harness.configure(self.instance)
-
-        binary = os.path.join(self.outdir, "zephyr", "zephyr.exe")
-        command = [binary]
-        if shutil.which("valgrind") and self.valgrind:
-            command = ["valgrind", "--error-exitcode=2",
-                       "--leak-check=full"] + command
-
-        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
-            t = threading.Thread(target=self._output_reader, args=(proc, harness, ))
-            t.start()
-            t.join(self.timeout)
-            if t.is_alive():
-                proc.terminate()
-                out_state = "timeout"
-                t.join()
-
-            proc.wait()
-            self.returncode = proc.returncode
-            if proc.returncode != 0:
-                out_state = "failed"
-
-        returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-b", "-s", self.outdir], shell=True)
-
-
-        self.instance.results = harness.tests
-        if harness.state:
-            self.set_state(harness.state, {})
-        else:
-            self.set_state(out_state, {})
-
-
-class UnitHandler(Handler):
-    def __init__(self, instance):
-        """Constructor
-
-        @param instance Test instance
-        """
-        super().__init__(instance)
-
-
-    def handle(self):
-        out_state = "failed"
-
-        with open(self.log, "wt") as hl:
-            try:
-                binary = os.path.join(self.outdir, "testbinary")
-                command = [binary]
-                if shutil.which("valgrind"):
-                    command = ["valgrind", "--error-exitcode=2",
-                               "--leak-check=full"] + command
-                returncode = subprocess.call(command, timeout=self.timeout,
-                                             stdout=hl, stderr=hl)
-                self.returncode = returncode
-                if returncode != 0:
-                    if self.returncode == 1:
-                        out_state = "failed"
-                    else:
-                        out_state = "failed valgrind"
-                else:
-                    out_state = "passed"
-            except subprocess.TimeoutExpired:
-                out_state = "timeout"
-                self.returncode = 1
-
-        returncode = subprocess.call(
-            ["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-s", self.outdir], shell=True)
-
-        self.set_state(out_state, {})
 
 
 class QEMUHandler(Handler):
@@ -1000,9 +964,11 @@ class MakeGenerator:
         if type == "qemu":
             handler = QEMUHandler(instance)
         elif type == "native":
-            handler = NativeHandler(instance)
+            handler = BinaryHandler(instance)
+            handler.binary = os.path.join(outdir, "zephyr", "zephyr.exe")
         elif type == "unit":
-            handler = UnitHandler(instance)
+            handler = BinaryHandler(instance)
+            handler.binary = os.path.join(outdir, "testbinary")
         elif type == "device":
             handler = DeviceHandler(instance)
 
