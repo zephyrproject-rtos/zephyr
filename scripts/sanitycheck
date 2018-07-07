@@ -309,7 +309,7 @@ class Handler:
         self.metrics["rom_size"] = 0
 
         self.binary = None
-        self.runner = None
+        self.call_make_run = False
 
         self.name = instance.name
         self.instance = instance
@@ -363,7 +363,14 @@ class BinaryHandler(Handler):
         harness = harness_import.instance
         harness.configure(self.instance)
 
-        command = [self.binary]
+        if self.call_make_run:
+            if options.ninja:
+                generator_cmd = "ninja"
+            else:
+                generator_cmd = "make"
+            command = [generator_cmd, "-C", self.outdir, "run"]
+        else:
+            command = [self.binary]
 
         if shutil.which("valgrind") and self.valgrind:
             command = ["valgrind", "--error-exitcode=2",
@@ -387,6 +394,10 @@ class BinaryHandler(Handler):
             returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir,
                 "gcov", self.sourcedir, "-b", "-s", self.outdir], shell=True)
 
+        # FIME: This is needed when killing the simulator, the console is
+        # garbled and needs to be reset. Did not find a better way to do that.
+
+        subprocess.call(["stty", "sane"])
         self.instance.results = harness.tests
         if harness.state:
             self.set_state(harness.state, {})
@@ -966,6 +977,9 @@ class MakeGenerator:
         elif type == "native":
             handler = BinaryHandler(instance)
             handler.binary = os.path.join(outdir, "zephyr", "zephyr.exe")
+        elif type == "nsim":
+            handler = BinaryHandler(instance)
+            handler.call_make_run = True
         elif type == "unit":
             handler = BinaryHandler(instance)
             handler.binary = os.path.join(outdir, "testbinary")
@@ -1019,6 +1033,8 @@ class MakeGenerator:
             type = "unit"
         elif ti.platform.type == "native" and do_run:
             type = "native"
+        elif ti.platform.simulation == "nsim" and do_run:
+            type = "nsim"
         elif options.device_testing and (not ti.build_only) and (not options.build_only):
             type = "device"
 
