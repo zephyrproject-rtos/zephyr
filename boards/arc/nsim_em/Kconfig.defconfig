@@ -1,0 +1,7 @@
+
+if BOARD_NSIM_EM
+
+config BOARD
+	default "nsim_em"
+
+endif # BOARD_NSIM_EM
