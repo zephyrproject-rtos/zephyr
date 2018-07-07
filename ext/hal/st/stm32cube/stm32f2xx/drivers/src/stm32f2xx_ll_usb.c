@@ -200,14 +200,16 @@ HAL_StatusTypeDef USB_DevInit (USB_OTG_GlobalTypeDef *USBx, USB_OTG_CfgTypeDef c
 {
   uint32_t i = 0U;
 
-  /*Activate VBUS Sensing B */
-  USBx->GCCFG |= USB_OTG_GCCFG_VBUSBSEN;
-  
   if (cfg.vbus_sensing_enable == 0U)
   {
     USBx->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
   }
-   
+  else
+  {
+    /* Activate VBUS Sensing B */
+    USBx->GCCFG |= USB_OTG_GCCFG_VBUSBSEN;
+  }
+
   /* Restart the Phy Clock */
   USBx_PCGCCTL = 0U;
 
