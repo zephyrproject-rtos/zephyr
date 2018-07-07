@@ -55,6 +55,10 @@
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DRIVER_LEVEL
 #include <logging/sys_log.h>
 
+#if defined(CONFIG_USB_BASE_ADDRESS) && defined(CONFIG_USB_HS_BASE_ADDRES)
+#error "Only one interface should be enabled at a time, OTG FS or OTG HS"
+#endif
+
 /*
  * USB LL API provides the EP_TYPE_* defines. STM32Cube does not
  * provide USB LL API for STM32F0, STM32F3 and STM32L0 families.
@@ -93,7 +97,11 @@
 #else /* USB_OTG_FS */
 
 #define EP0_MPS USB_OTG_MAX_EP0_SIZE
+#ifdef CONFIG_USB_HS_BASE_ADDRESS
+#define EP_MPS USB_OTG_HS_MAX_PACKET_SIZE
+#else
 #define EP_MPS USB_OTG_FS_MAX_PACKET_SIZE
+#endif /* CONFIG_USB_HS_BASE_ADDRESS */
 
 /* We need one RX FIFO and n TX-IN FIFOs */
 #define FIFO_NUM (1 + CONFIG_USB_NUM_BIDIR_ENDPOINTS)
@@ -173,9 +181,15 @@ static int usb_dc_stm32_clock_enable(void)
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	struct stm32_pclken pclken = {
 
+#ifdef CONFIG_USB_HS_BASE_ADDRESS
+		.bus = STM32_CLOCK_BUS_AHB1,
+		.enr = LL_AHB1_GRP1_PERIPH_OTGHS
+#else /* CONFIG_USB_HS_BASE_ADDRESS */
+
 #ifdef USB
 		.bus = STM32_CLOCK_BUS_APB1,
 		.enr = LL_APB1_GRP1_PERIPH_USB,
+
 #else /* USB_OTG_FS */
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
@@ -187,6 +201,8 @@ static int usb_dc_stm32_clock_enable(void)
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
 #endif /* USB */
+
+#endif /* CONFIG_USB_HS_BASE_ADDRESS */
 	};
 
 	/*
@@ -230,6 +246,20 @@ static int usb_dc_stm32_clock_enable(void)
 
 	clock_control_on(clk, (clock_control_subsys_t *)&pclken);
 
+#ifdef CONFIG_USB_HS_BASE_ADDRESS
+
+
+#ifdef USB_HS_PHYC
+	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
+#else
+	/* Disable ULPI interface (for external high-speed PHY) clock */
+	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
+#endif /* USB_HS_PHYC */
+
+#endif /* CONFIG_USB_HS_BASE_ADDRESS */
+
 	return 0;
 }
 
@@ -246,10 +276,18 @@ static int usb_dc_stm32_init(void)
 	usb_dc_stm32_state.pcd.Init.ep0_mps = PCD_EP0MPS_64;
 	usb_dc_stm32_state.pcd.Init.low_power_enable = 0;
 #else /* USB_OTG_FS */
+#ifdef CONFIG_USB_HS_BASE_ADDRESS
+	usb_dc_stm32_state.pcd.Instance = USB_OTG_HS;
+#else
 	usb_dc_stm32_state.pcd.Instance = USB_OTG_FS;
+#endif
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = CONFIG_USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.speed = USB_OTG_SPEED_FULL;
+#ifdef USB_HS_PHYC
+	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
+#else
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
+#endif /* USB_HS_PHYC */
 	usb_dc_stm32_state.pcd.Init.ep0_mps = USB_OTG_MAX_EP0_SIZE;
 	usb_dc_stm32_state.pcd.Init.vbus_sensing_enable = DISABLE;
 
