@@ -155,6 +155,61 @@ static void nxp_mcimx7_i2c_config(void)
 }
 #endif /* CONFIG_I2C_IMX */
 
+#ifdef CONFIG_PWM_IMX
+static void nxp_mcimx7_pwm_config(void)
+{
+
+#ifdef CONFIG_PWM_1
+	/* We need to grasp board pwm exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapPwm1,
+			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
+			false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootPwm1, ccmRootmuxPwmOsc24m, 0, 0);
+	/* Enable pwm clock */
+	CCM_EnableRoot(CCM, ccmRootPwm1);
+	CCM_ControlGate(CCM, ccmCcgrGatePwm1, ccmClockNeededAll);
+#endif /* #ifdef CONFIG_PWM_1 */
+
+#ifdef CONFIG_PWM_2
+	/* We need to grasp board pwm exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapPwm2,
+			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
+			false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootPwm2, ccmRootmuxPwmOsc24m, 0, 0);
+	/* Enable pwm clock */
+	CCM_EnableRoot(CCM, ccmRootPwm2);
+	CCM_ControlGate(CCM, ccmCcgrGatePwm2, ccmClockNeededAll);
+#endif /* #ifdef CONFIG_PWM_2 */
+
+#ifdef CONFIG_PWM_3
+	/* We need to grasp board pwm exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapPwm3,
+			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
+			false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootPwm3, ccmRootmuxPwmOsc24m, 0, 0);
+	/* Enable pwm clock */
+	CCM_EnableRoot(CCM, ccmRootPwm3);
+	CCM_ControlGate(CCM, ccmCcgrGatePwm3, ccmClockNeededAll);
+#endif /* #ifdef CONFIG_PWM_3 */
+
+#ifdef CONFIG_PWM_4
+	/* We need to grasp board pwm exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapPwm4,
+			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
+			false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootPwm4, ccmRootmuxPwmOsc24m, 0, 0);
+	/* Enable pwm clock */
+	CCM_EnableRoot(CCM, ccmRootPwm4);
+	CCM_ControlGate(CCM, ccmCcgrGatePwm4, ccmClockNeededAll);
+#endif /* #ifdef CONFIG_PWM_4 */
+
+}
+#endif /* CONFIG_PWM_IMX */
+
 static int nxp_mcimx7_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
@@ -176,6 +231,10 @@ static int nxp_mcimx7_init(struct device *arg)
 #ifdef CONFIG_I2C_IMX
 	nxp_mcimx7_i2c_config();
 #endif /* CONFIG_I2C_IMX */
+
+#ifdef CONFIG_PWM_IMX
+	nxp_mcimx7_pwm_config();
+#endif /* CONFIG_PWM_IMX */
 
 	return 0;
 }
