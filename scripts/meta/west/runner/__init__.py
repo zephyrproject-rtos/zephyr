@@ -17,6 +17,7 @@ from . import esp32
 from . import jlink
 from . import nios2
 from . import nrfjprog
+from . import nsim
 from . import openocd
 from . import pyocd
 from . import qemu
