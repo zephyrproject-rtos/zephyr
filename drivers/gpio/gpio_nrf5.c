@@ -300,6 +300,25 @@ static int gpio_nrf5_enable_callback(struct device *dev,
 		gpiote->EVENTS_IN[i] = 0;
 		/* enable interrupt for the GPIOTE channel */
 		gpiote->INTENSET = BIT(i);
+	} else if (access_op == GPIO_ACCESS_BY_PORT) {
+		u32_t gcm = gpiote_chan_mask;
+		volatile NRF_GPIOTE_Type *gpiote = (void *)NRF_GPIOTE_BASE;
+		struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
+		int port = GPIO_PORT(dev);
+		int i = 0;
+
+		while (gcm) {
+			if (GPIOTE_CFG_PORT_GET(gpiote->CONFIG[i]) == port) {
+				pin = GPIOTE_CFG_PIN_GET(gpiote->CONFIG[i]);
+				data->pin_callback_enables |= BIT(pin);
+				/* clear event before any interrupt triggers */
+				gpiote->EVENTS_IN[i] = 0;
+				/* enable interrupt for the GPIOTE channel */
+				gpiote->INTENSET = BIT(i);
+			}
+			gcm >>= 1;
+			i++;
+		}
 	} else {
 		return -ENOTSUP;
 	}
@@ -324,6 +343,23 @@ static int gpio_nrf5_disable_callback(struct device *dev,
 		data->pin_callback_enables &= ~(BIT(pin));
 		/* disable interrupt for the GPIOTE channel */
 		gpiote->INTENCLR = BIT(i);
+	} else if (access_op == GPIO_ACCESS_BY_PORT) {
+		u32_t gcm = gpiote_chan_mask;
+		volatile NRF_GPIOTE_Type *gpiote = (void *)NRF_GPIOTE_BASE;
+		struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
+		int port = GPIO_PORT(dev);
+		int i = 0;
+
+		while (gcm) {
+			if (GPIOTE_CFG_PORT_GET(gpiote->CONFIG[i]) == port) {
+				pin = GPIOTE_CFG_PIN_GET(gpiote->CONFIG[i]);
+				data->pin_callback_enables &= ~(BIT(pin));
+				/* disable interrupt for the GPIOTE channel */
+				gpiote->INTENCLR = BIT(i);
+			}
+			gcm >>= 1;
+			i++;
+		}
 	} else {
 		return -ENOTSUP;
 	}
