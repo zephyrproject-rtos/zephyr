@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_NSIM
+
+choice
+prompt "ARC EM Starter Kit Core Selection"
+default SOC_NSIM_EM
+
+config SOC_NSIM_EM
+	bool "Synopsys ARC EM of nsim"
+	select CPU_HAS_MPU
+	select CPU_HAS_FPU
+
+config SOC_NSIM_SEM
+	bool "Synopsys ARC SEM of nsim"
+	select CPU_HAS_MPU
+	select CPU_HAS_FPU
+	select ARC_HAS_SECURE
+
+endchoice
+
+endif #SOC_NSIM
