@@ -519,7 +519,7 @@ static struct shell_module *get_completion_module(char *str,
 	str = strchr(str, ' ');
 
 	/* only two parameters are possibles in case of no default module */
-	return str ? dest : NULL;
+	return str ? NULL : dest;
 }
 
 static u8_t completion(char *line, u8_t len)
