@@ -39,6 +39,8 @@ struct gpio_nrf5_data {
 	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
 	u32_t pin_callback_enables;
+	/* GPIO pin polarity is inverted. */
+	u32_t pin_inverted_enables;
 };
 
 /* convenience defines for GPIO */
@@ -139,6 +141,7 @@ static int gpio_nrf5_config(struct device *dev,
 	};
 	volatile NRF_GPIOTE_Type *gpiote = (void *)NRF_GPIOTE_BASE;
 	volatile NRF_GPIO_Type *gpio = GPIO_STRUCT(dev);
+	struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 
@@ -183,6 +186,12 @@ static int gpio_nrf5_config(struct device *dev,
 					      GPIO_INPUT_CONNECT |
 					      GPIO_DIR_INPUT);
 		}
+
+		if ((flags & GPIO_POL_MASK) == GPIO_POL_INV) {
+			data->pin_inverted_enables |= BIT(pin);
+		} else {
+			data->pin_inverted_enables &= ~BIT(pin);
+		}
 	} else {
 		return -ENOTSUP;
 	}
@@ -208,7 +217,8 @@ static int gpio_nrf5_config(struct device *dev,
 		if (flags & GPIO_INT_EDGE) {
 			if (flags & GPIO_INT_DOUBLE_EDGE) {
 				config |= GPIOTE_CFG_POL_TOGG;
-			} else if (flags & GPIO_INT_ACTIVE_HIGH) {
+			} else if (((flags & GPIO_INT_ACTIVE_HIGH) != 0) ^
+				   ((flags & GPIO_POL_MASK) == GPIO_POL_INV)) {
 				config |= GPIOTE_CFG_POL_L2H;
 			} else {
 				config |= GPIOTE_CFG_POL_H2L;
@@ -232,11 +242,12 @@ static int gpio_nrf5_read(struct device *dev,
 			  int access_op, u32_t pin, u32_t *value)
 {
 	volatile NRF_GPIO_Type *gpio = GPIO_STRUCT(dev);
+	struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		*value = (gpio->IN >> pin) & 0x1;
+		*value = ((gpio->IN ^ data->pin_inverted_enables) >> pin) & 0x1;
 	} else {
-		*value = gpio->IN;
+		*value = gpio->IN ^ data->pin_inverted_enables;
 	}
 	return 0;
 }
@@ -245,15 +256,17 @@ static int gpio_nrf5_write(struct device *dev,
 			   int access_op, u32_t pin, u32_t value)
 {
 	volatile NRF_GPIO_Type *gpio = GPIO_STRUCT(dev);
+	struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		if (value) { /* 1 */
+		if ((value != 0) ^
+		    ((data->pin_inverted_enables & BIT(pin)) != 0)) { /* 1 */
 			gpio->OUTSET = BIT(pin);
 		} else { /* 0 */
 			gpio->OUTCLR = BIT(pin);
 		}
 	} else {
-		gpio->OUT = value;
+		gpio->OUT = value ^ data->pin_inverted_enables;
 	}
 	return 0;
 }
