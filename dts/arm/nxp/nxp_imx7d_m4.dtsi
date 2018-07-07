@@ -246,6 +246,42 @@
 			label = "I2C_4";
 			status = "disabled";
 		};
+
+		pwm1: pwm@30660000 {
+			compatible = "fsl,imx7d-pwm";
+			reg = <0x30660000 0x10000>;
+			interrupts = <81 0>;
+			prescaler = <0>;
+			label = "PWM_1";
+			status = "disabled";
+		};
+
+		pwm2: pwm@30670000 {
+			compatible = "fsl,imx7d-pwm";
+			reg = <0x30670000 0x10000>;
+			interrupts = <82 0>;
+			prescaler = <0>;
+			label = "PWM_2";
+			status = "disabled";
+		};
+
+		pwm3: pwm@30680000 {
+			compatible = "fsl,imx7d-pwm";
+			reg = <0x30680000 0x10000>;
+			interrupts = <83 0>;
+			prescaler = <0>;
+			label = "PWM_3";
+			status = "disabled";
+		};
+
+		pwm4: pwm@30690000 {
+			compatible = "fsl,imx7d-pwm";
+			reg = <0x30690000 0x10000>;
+			interrupts = <84 0>;
+			prescaler = <0>;
+			label = "PWM_4";
+			status = "disabled";
+		};
 	};
 };
 
