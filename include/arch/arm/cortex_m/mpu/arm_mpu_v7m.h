@@ -101,9 +101,6 @@
 #define REGION_4G       REGION_SIZE(4GB)
 
 /* Some helper defines for common regions */
-#define REGION_USER_RAM_ATTR(size) \
-	(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | \
-	MPU_RASR_XN_Msk | size | FULL_ACCESS_Msk)
 #define REGION_RAM_ATTR(size) \
 	(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | \
 	 MPU_RASR_XN_Msk | size | P_RW_U_NA_Msk)
