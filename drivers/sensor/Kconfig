@@ -37,6 +37,8 @@ config SENSOR_INIT_PRIORITY
 
 comment "Device Drivers"
 
+source "drivers/sensor/adt7420/Kconfig"
+
 source "drivers/sensor/adxl362/Kconfig"
 
 source "drivers/sensor/ak8975/Kconfig"
