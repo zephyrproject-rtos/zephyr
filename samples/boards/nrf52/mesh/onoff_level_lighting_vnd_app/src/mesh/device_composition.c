@@ -80,9 +80,7 @@ struct light_lightness_state light_lightness_srv_user_data;
 
 struct light_ctl_state light_ctl_srv_user_data;
 
-struct vendor_state vnd_user_data = {
-	.previous = 0xFFFFFFFF,
-};
+struct vendor_state vnd_user_data;
 
 struct generic_onoff_state gen_onoff_srv_s0_user_data = {
 	.model_instance = 2,
@@ -676,35 +674,33 @@ static void vnd_set_unack(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	union {
-		u8_t buffer[2];
-		u16_t tmp16;
-	} var;
-
+	u8_t tid;
+	int current;
 	struct vendor_state *state = model->user_data;
 
-	var.tmp16 = net_buf_simple_pull_le16(buf);
+	current = net_buf_simple_pull_le16(buf);
+	tid = net_buf_simple_pull_u8(buf);
 
-	if (state->previous == var.tmp16) {
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
 		return;
 	}
 
-	state->current = var.tmp16;
+	state->last_tid = tid;
+	state->last_tx_addr = ctx->addr;
+	state->current = current;
 
 	/* This is dummy response for demo purpose */
 	state->response = 0xA578FEB3;
 
-	printk("Vendor model message = %04x\n", var.tmp16);
+	printk("Vendor model message = %04x\n", state->current);
 
-	if (var.buffer[0] == 1) {
+	if (state->current == 1) {
 		/* LED2 On */
 		gpio_pin_write(led_device[1], LED1_GPIO_PIN, 0);
 	} else {
 		/* LED2 Off */
 		gpio_pin_write(led_device[1], LED1_GPIO_PIN, 1);
 	}
-
-	state->previous = var.tmp16;
 }
 
 static void vnd_set(struct bt_mesh_model *model,
@@ -1537,8 +1533,8 @@ static const struct bt_mesh_model_op light_ctl_temp_srv_op[] = {
 /* Mapping of message handlers for Vendor (0x4321) */
 static const struct bt_mesh_model_op vnd_ops[] = {
 	{ BT_MESH_MODEL_OP_3(0x00, CID_ZEPHYR), 0, vnd_get },
-	{ BT_MESH_MODEL_OP_3(0x01, CID_ZEPHYR), 2, vnd_set },
-	{ BT_MESH_MODEL_OP_3(0x02, CID_ZEPHYR), 2, vnd_set_unack },
+	{ BT_MESH_MODEL_OP_3(0x01, CID_ZEPHYR), 3, vnd_set },
+	{ BT_MESH_MODEL_OP_3(0x02, CID_ZEPHYR), 3, vnd_set_unack },
 	{ BT_MESH_MODEL_OP_3(0x03, CID_ZEPHYR), 6, vnd_status },
 	BT_MESH_MODEL_OP_END,
 };

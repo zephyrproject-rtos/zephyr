@@ -45,7 +45,7 @@ void publish(struct k_work *work)
 #else
 		bt_mesh_model_msg_init(vnd_models[0].pub->msg,
 				       BT_MESH_MODEL_OP_3(0x02, CID_ZEPHYR));
-		net_buf_simple_add_le16(vnd_models[0].pub->msg, 0xFF01);
+		net_buf_simple_add_le16(vnd_models[0].pub->msg, 0x0001);
 		net_buf_simple_add_u8(vnd_models[0].pub->msg, tid_vnd++);
 		err = bt_mesh_model_publish(&vnd_models[0]);
 #endif
@@ -61,7 +61,7 @@ void publish(struct k_work *work)
 #else
 		bt_mesh_model_msg_init(vnd_models[0].pub->msg,
 				       BT_MESH_MODEL_OP_3(0x02, CID_ZEPHYR));
-		net_buf_simple_add_le16(vnd_models[0].pub->msg, 0xFF00);
+		net_buf_simple_add_le16(vnd_models[0].pub->msg, 0x0000);
 		net_buf_simple_add_u8(vnd_models[0].pub->msg, tid_vnd++);
 		err = bt_mesh_model_publish(&vnd_models[0]);
 #endif
