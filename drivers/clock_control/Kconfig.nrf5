@@ -12,10 +12,11 @@ menuconfig CLOCK_CONTROL_NRF5
 	  Enable support for the Nordic Semiconductor nRF5x series SoC clock
 	  driver.
 
+if CLOCK_CONTROL_NRF5
+
 config CLOCK_CONTROL_NRF5_IRQ_PRIORITY
 	int
 	prompt "Power Clock Interrupt Priority"
-	depends on CLOCK_CONTROL_NRF5
 	range 0 7
 	default 1
 	help
@@ -24,19 +25,16 @@ config CLOCK_CONTROL_NRF5_IRQ_PRIORITY
 config CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME
 	string
 	prompt "NRF5 16MHz clock device name"
-	depends on CLOCK_CONTROL_NRF5
 	default "clk_m16src"
 
 config CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME
 	string
 	prompt "NRF5 32KHz clock device name"
-	depends on CLOCK_CONTROL_NRF5
 	default "clk_k32src"
 
 choice
 	prompt "32KHz clock source"
 	default CLOCK_CONTROL_NRF5_K32SRC_XTAL
-	depends on CLOCK_CONTROL_NRF5
 
 config CLOCK_CONTROL_NRF5_K32SRC_RC
 	bool
@@ -48,11 +46,20 @@ config CLOCK_CONTROL_NRF5_K32SRC_XTAL
 
 endchoice
 
+config CLOCK_CONTROL_NRF5_K32SRC_BLOCKING
+	bool
+	prompt "Blocking 32KHz crystal oscillator startup"
+	depends on CLOCK_CONTROL_NRF5_K32SRC_XTAL
+	help
+	  Clock control driver will spin wait in CPU sleep until 32KHz
+	  crystal oscillator starts up. If not enabled, RC oscillator will
+	  initially start running and automatically switch to crystal when
+	  ready.
+
 choice
 	prompt "32KHz clock accuracy"
 	default CLOCK_CONTROL_NRF5_K32SRC_500PPM if CLOCK_CONTROL_NRF5_K32SRC_RC
 	default CLOCK_CONTROL_NRF5_K32SRC_20PPM
-	depends on CLOCK_CONTROL_NRF5
 
 config CLOCK_CONTROL_NRF5_K32SRC_500PPM
 	bool
@@ -87,3 +94,5 @@ config CLOCK_CONTROL_NRF5_K32SRC_20PPM
 	prompt "0 ppm to 20 ppm"
 
 endchoice
+
+endif # CLOCK_CONTROL_NRF5

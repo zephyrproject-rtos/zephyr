@@ -145,8 +145,11 @@ static int _m16src_stop(struct device *dev, clock_control_subsys_t sub_system)
 static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 {
 	u32_t lf_clk_src;
-	u32_t intenset;
 	u32_t imask;
+
+#if defined(CONFIG_CLOCK_CONTROL_NRF5_K32SRC_BLOCKING)
+	u32_t intenset;
+#endif /* CONFIG_CLOCK_CONTROL_NRF5_K32SRC_BLOCKING */
 
 	/* If the LF clock is already started, but wasn't initialized with
 	 * this function, allow it to run once. This is needed because if a
@@ -170,16 +173,18 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 
 	irq_unlock(imask);
 
-	irq_disable(POWER_CLOCK_IRQn);
-
+	/* Clear events if any */
 	NRF_CLOCK->EVENTS_LFCLKSTARTED = 0;
-
-	intenset = NRF_CLOCK->INTENSET;
-	nrf_clock_int_enable(NRF_CLOCK_INT_LF_STARTED_MASK);
 
 	/* Set LF Clock Source */
 	lf_clk_src = POINTER_TO_UINT(sub_system);
 	NRF_CLOCK->LFCLKSRC = lf_clk_src;
+
+#if defined(CONFIG_CLOCK_CONTROL_NRF5_K32SRC_BLOCKING)
+	irq_disable(POWER_CLOCK_IRQn);
+
+	intenset = NRF_CLOCK->INTENSET;
+	nrf_clock_int_enable(NRF_CLOCK_INT_LF_STARTED_MASK);
 
 	/* Start and spin-wait until clock settles */
 	nrf_clock_task_trigger(NRF_CLOCK_TASK_LFCLKSTART);
@@ -199,6 +204,13 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 	NVIC_ClearPendingIRQ(POWER_CLOCK_IRQn);
 
 	irq_enable(POWER_CLOCK_IRQn);
+
+#else /* !CONFIG_CLOCK_CONTROL_NRF5_K32SRC_BLOCKING */
+	/* NOTE: LFCLK will initially start running from the LFRC if LFXO is
+	 *       selected.
+	 */
+	nrf_clock_task_trigger(NRF_CLOCK_TASK_LFCLKSTART);
+#endif /* !CONFIG_CLOCK_CONTROL_NRF5_K32SRC_BLOCKING */
 
 	/* If RC selected, calibrate and start timer for consecutive
 	 * calibrations.
