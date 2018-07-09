@@ -163,6 +163,9 @@ struct bt_dev {
 	/* Work used for RPA rotation */
 	struct k_delayed_work rpa_update;
 #endif
+
+	/* Local Name */
+	char			name[CONFIG_BT_DEVICE_NAME_MAX];
 };
 
 extern struct bt_dev bt_dev;

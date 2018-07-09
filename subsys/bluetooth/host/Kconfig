@@ -334,6 +334,17 @@ config BT_SCAN_WITH_IDENTITY
 	  disclosing local identity information. However, if the use case
 	  requires disclosing it then enable this option.
 
+config BT_DEVICE_NAME_MAX
+	int "Maximum size in bytes for device name"
+	default 28
+	default 0 if !BT_SETTINGS
+	range 0 248
+	help
+	  Bluetooth device name storage size. Storage can be up to 248 bytes
+	  long (excluding NULL termination). 0 means that no storage space is
+	  allocated for device name in which case the device name cannot be
+	  changed at runtime.
+
 config BT_DEVICE_NAME
 	string "Bluetooth device name"
 	default "Zephyr"
