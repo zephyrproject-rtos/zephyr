@@ -3,9 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#define SYS_LOG_DOMAIN "ETH DW"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ETHERNET_LEVEL
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME eth_dw
+#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <board.h>
 #include <device.h>
@@ -51,19 +53,19 @@ static void eth_rx(struct device *port)
 	 * process the received frame or an error that may have occurred.
 	 */
 	if (context->rx_desc.own) {
-		SYS_LOG_ERR("Spurious receive interrupt from Ethernet MAC");
+		LOG_ERR("Spurious receive interrupt from Ethernet MAC");
 		return;
 	}
 
 	if (context->rx_desc.err_summary) {
-		SYS_LOG_ERR("Error receiving frame: RDES0 = %08x, RDES1 = %08x",
+		LOG_ERR("Error receiving frame: RDES0 = %08x, RDES1 = %08x",
 			context->rx_desc.rdes0, context->rx_desc.rdes1);
 		goto release_desc;
 	}
 
 	frm_len = context->rx_desc.frm_len;
 	if (frm_len > sizeof(context->rx_buf)) {
-		SYS_LOG_ERR("Frame too large: %u", frm_len);
+		LOG_ERR("Frame too large: %u", frm_len);
 		goto release_desc;
 	}
 
@@ -77,7 +79,7 @@ static void eth_rx(struct device *port)
 	 * received frame length by exactly 4 bytes.
 	 */
 	if (frm_len < sizeof(u32_t)) {
-		SYS_LOG_ERR("Frame too small: %u", frm_len);
+		LOG_ERR("Frame too small: %u", frm_len);
 		goto release_desc;
 	} else {
 		frm_len -= sizeof(u32_t);
@@ -85,20 +87,20 @@ static void eth_rx(struct device *port)
 
 	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 	if (!pkt) {
-		SYS_LOG_ERR("Failed to obtain RX buffer");
+		LOG_ERR("Failed to obtain RX buffer");
 		goto release_desc;
 	}
 
 	if (!net_pkt_append_all(pkt, frm_len, (u8_t *)context->rx_buf,
 				K_NO_WAIT)) {
-		SYS_LOG_ERR("Failed to append RX buffer to context buffer");
+		LOG_ERR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
 		goto release_desc;
 	}
 
 	r = net_recv_data(context->iface, pkt);
 	if (r < 0) {
-		SYS_LOG_ERR("Failed to enqueue frame into RX queue: %d", r);
+		LOG_ERR("Failed to enqueue frame into RX queue: %d", r);
 		net_pkt_unref(pkt);
 	}
 
@@ -132,9 +134,9 @@ static void eth_tx_data(struct eth_runtime *context, u8_t *data, u16_t len)
 #ifdef CONFIG_NET_DEBUG_L2_ETHERNET
 	/* Check whether an error occurred transmitting the previous frame. */
 	if (context->tx_desc.err_summary) {
-		SYS_LOG_ERR("Error transmitting frame: TDES0 = %08x,"
-			    "TDES1 = %08x", context->tx_desc.tdes0,
-			    context->tx_desc.tdes1);
+		LOG_ERR("Error transmitting frame: TDES0 = %08x,"
+			"TDES1 = %08x", context->tx_desc.tdes0,
+			context->tx_desc.tdes1);
 	}
 #endif
 
@@ -313,7 +315,7 @@ static int eth_initialize_internal(struct net_if *iface)
 		  /* Place the receiver state machine in the Running state. */
 		  OP_MODE_1_START_RX);
 
-	SYS_LOG_INF("Enabled 100M full-duplex mode");
+	LOG_INF("Enabled 100M full-duplex mode");
 
 	config->config_func(port);
 
@@ -325,7 +327,7 @@ static void eth_initialize(struct net_if *iface)
 	int r = eth_initialize_internal(iface);
 
 	if (r < 0) {
-		SYS_LOG_ERR("Could not initialize ethernet device: %d", r);
+		LOG_ERR("Could not initialize ethernet device: %d", r);
 	}
 }
 
