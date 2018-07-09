@@ -85,11 +85,17 @@ config  NETWORKING
 	select NET_BUF
 	select POLL
 	select ENTROPY_GENERATOR
+	select COOP_ENABLED
 	default n
 	help
 	  This option enabled generic link layer and IP networking support.
 
 if NETWORKING
+
+# The networking subsystem requires the system workqueue to execute at
+# a cooperative priority.
+config SYSTEM_WORKQUEUE_PRIORITY
+	range -256 -1
 
 source "subsys/net/Kconfig.hostname"
 
