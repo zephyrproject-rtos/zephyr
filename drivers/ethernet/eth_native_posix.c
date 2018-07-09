@@ -11,10 +11,12 @@
  * connectivity between host and Zephyr.
  */
 
-#define SYS_LOG_DOMAIN "eth-posix"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ETHERNET_LEVEL
+#define LOG_MODULE_NAME eth_posix
+#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
-#include <logging/sys_log.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
 #include <stdio.h>
 
 #include <kernel.h>
@@ -239,11 +241,11 @@ static int eth_send(struct net_if *iface, struct net_pkt *pkt)
 
 	update_gptp(iface, pkt, true);
 
-	SYS_LOG_DBG("Send pkt %p len %d", pkt, count);
+	LOG_DBG("Send pkt %p len %d", pkt, count);
 
 	ret = eth_write_data(ctx->dev_fd, ctx->send, count);
 	if (ret < 0) {
-		SYS_LOG_DBG("Cannot send pkt %p (%d)", pkt, ret);
+		LOG_DBG("Cannot send pkt %p (%d)", pkt, ret);
 	} else {
 		net_pkt_unref(pkt);
 	}
@@ -359,7 +361,7 @@ static int read_data(struct eth_context *ctx, int fd)
 		}
 	}
 
-	SYS_LOG_DBG("Recv pkt %p len %d", pkt, pkt_len);
+	LOG_DBG("Recv pkt %p len %d", pkt, pkt_len);
 
 	update_gptp(iface, pkt, false);
 
@@ -374,7 +376,7 @@ static void eth_rx(struct eth_context *ctx)
 {
 	int ret;
 
-	SYS_LOG_DBG("Starting ZETH RX thread");
+	LOG_DBG("Starting ZETH RX thread");
 
 	while (1) {
 		if (net_if_is_up(ctx->iface)) {
@@ -433,8 +435,8 @@ static void eth_iface_init(struct net_if *iface)
 	if (CONFIG_ETH_NATIVE_POSIX_MAC_ADDR[0] != 0) {
 		if (net_bytes_from_str(ctx->mac_addr, sizeof(ctx->mac_addr),
 				       CONFIG_ETH_NATIVE_POSIX_MAC_ADDR) < 0) {
-			SYS_LOG_ERR("Invalid MAC address %s",
-				    CONFIG_ETH_NATIVE_POSIX_MAC_ADDR);
+			LOG_ERR("Invalid MAC address %s",
+				CONFIG_ETH_NATIVE_POSIX_MAC_ADDR);
 		}
 	}
 #endif
@@ -446,8 +448,7 @@ static void eth_iface_init(struct net_if *iface)
 
 	ctx->dev_fd = eth_iface_create(ctx->if_name, false);
 	if (ctx->dev_fd < 0) {
-		SYS_LOG_ERR("Cannot create %s (%d)", ctx->if_name,
-			    ctx->dev_fd);
+		LOG_ERR("Cannot create %s (%d)", ctx->if_name, ctx->dev_fd);
 	} else {
 		/* Create a thread that will handle incoming data from host */
 		create_rx_handler(ctx);

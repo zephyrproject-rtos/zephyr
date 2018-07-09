@@ -34,12 +34,14 @@
 /* Zephyr include files. Be very careful here and only include minimum
  * things needed.
  */
-#define SYS_LOG_DOMAIN "eth-posix-adapt"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ETHERNET_LEVEL
+#define LOG_MODULE_NAME eth_posix_adapt
+#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/types.h>
 #include <sys_clock.h>
-#include <logging/sys_log.h>
 
 #if defined(CONFIG_NET_GPTP)
 #include <net/gptp.h>
