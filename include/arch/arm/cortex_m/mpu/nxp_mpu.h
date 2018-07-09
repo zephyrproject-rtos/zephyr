@@ -119,6 +119,8 @@
 
 #define REGION_DEBUG_ATTR  MPU_REGION_SU
 
+#define REGION_BACKGROUND_ATTR	MPU_REGION_SU_RW
+
 /* Region definition data structure */
 struct nxp_mpu_region {
 	/* Region Base Address */
