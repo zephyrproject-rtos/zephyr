@@ -60,13 +60,13 @@ extern "C" {
 	log_0(_str, _src_level)
 
 #define _LOG_INTERNAL_1(_src_level, _str, _arg0) \
-	log_1(_str, (u32_t)_arg0, _src_level)
+	log_1(_str, (u32_t)(_arg0), _src_level)
 
 #define _LOG_INTERNAL_2(_src_level, _str, _arg0, _arg1)	\
-	log_2(_str, (u32_t)_arg0, (u32_t)_arg1, _src_level)
+	log_2(_str, (u32_t)(_arg0), (u32_t)(_arg1), _src_level)
 
 #define _LOG_INTERNAL_3(_src_level, _str, _arg0, _arg1, _arg2) \
-	log_3(_str, (u32_t)_arg0, (u32_t)_arg1, (u32_t)_arg2, _src_level)
+	log_3(_str, (u32_t)(_arg0), (u32_t)(_arg1), (u32_t)(_arg2), _src_level)
 
 #define __LOG_ARG_CAST(_x) (u32_t)(_x),
 
