@@ -10,12 +10,16 @@
 
 #define CID_ZEPHYR 0x0002
 
-enum lightness { ONPOWERUP = 0x01, ONOFF, LEVEL, ACTUAL, LINEAR, CTL, IGNORE};
-enum temperature { ONOFF_TEMP = 0x01, LEVEL_TEMP, CTL_TEMP, IGNORE_TEMP};
+/* Refer 7.2 of Mesh Model Specification */
+#define RANGE_SUCCESSFULLY_UPDATED	0x00
+#define CANNOT_SET_RANGE_MIN		0x01
+#define CANNOT_SET_RANGE_MAX		0x02
+
+enum lightness { ONPOWERUP = 0x01, ONOFF, LEVEL, ACTUAL, LINEAR, CTL, IGNORE };
+enum temperature { ONOFF_TEMP = 0x01, LEVEL_TEMP, CTL_TEMP, IGNORE_TEMP };
 
 struct generic_onoff_state {
 	u8_t onoff;
-	u8_t previous;
 	u8_t model_instance;
 	u8_t last_tid;
 	u16_t last_tx_addr;
@@ -23,6 +27,8 @@ struct generic_onoff_state {
 
 struct generic_level_state {
 	int level;
+	int last_level;
+	s32_t last_delta;
 	u8_t model_instance;
 	u8_t last_tid;
 	u16_t last_tx_addr;
