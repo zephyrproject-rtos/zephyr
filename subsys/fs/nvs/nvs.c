@@ -10,161 +10,127 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <nvs/nvs.h>
+#include <crc8.h>
 #include "nvs_priv.h"
 
-/* basic calculation routines */
-
-static inline size_t get_wbs_aligned_len(struct nvs_fs *fs, size_t len)
+/* basic routines */
+/* _nvs_al_size returns size aligned to fs->write_block_size */
+static inline size_t _nvs_al_size(struct nvs_fs *fs, size_t len)
 {
 	if (fs->write_block_size <= 1) {
 		return len;
 	}
 	return (len + (fs->write_block_size - 1)) & ~(fs->write_block_size - 1);
 }
+/* end basic routines */
 
-size_t get_wbs_aligned_entry_len(struct nvs_fs *fs, size_t len)
+/* flash routines */
+/* basic aligned flash write to nvs address */
+static int _nvs_flash_al_wrt(struct nvs_fs *fs, u32_t addr, const void *data,
+		      size_t len)
 {
-	if (len < 0x80) {
-		return get_wbs_aligned_len(fs, len + sizeof(u16_t)
-					   + 2*sizeof(u8_t));
+	int rc;
+	off_t offset;
+	size_t blen;
+	u8_t buf[fs->write_block_size];
+
+	offset = fs->offset;
+	offset += fs->sector_size * (addr >> ADDR_SECT_SHIFT);
+	offset += addr & ADDR_OFFS_MASK;
+
+	rc = flash_write_protection_set(fs->flash_device, 0);
+	if (rc) {
+		/* flash protection set error */
+		return rc;
 	}
-	return get_wbs_aligned_len(fs, len + sizeof(u16_t)
-				   + 2*sizeof(u16_t));
-}
-
-void _nvs_addr_advance(struct nvs_fs *fs, off_t *addr, size_t step)
-{
-	off_t fs_size = fs->sector_count * fs->sector_size;
-
-	*addr += step;
-	if (*addr >= fs_size) {
-		*addr -= fs_size;
+	blen = len & ~(fs->write_block_size);
+	rc = flash_write(fs->flash_device, offset, data, blen);
+	if (rc) {
+		/* flash write error */
+		return rc;
 	}
-}
-void _nvs_addr_decrease(struct nvs_fs *fs, off_t *addr, size_t step)
-{
-	*addr -= step;
-	if (*addr < 0) {
-		*addr += (fs->sector_count * fs->sector_size);
-	}
-}
-
-/* length is encoded in:
- *  1 byte if len < 128 byte: 0 b6 .. b0
- *  2 byte if len >= 128 byte 1 b14 .. b8 | b7 .. b0
- * _nvs_decode_length returns the number of byte used and updates the length
- * _nvs_decode_length is used to determine if the flash is unwritten, therefor
- * _nvs_decode_length returns 0xffff if the data in buf[0] and buf[1] is 0xff.
- */
-size_t _nvs_decode_length(u8_t *buf, size_t *len)
-{
-	if (buf[0] & 0x80) {
-		if (buf[0] == 0xff && buf[1] == 0xff) {
-			return 0xffff;
+	len -= blen;
+	offset += blen;
+	data += blen;
+	if (len) {
+		memcpy(buf, data, len);
+		memset(buf + len, 0xff, fs->write_block_size - len);
+		rc = flash_write(fs->flash_device, offset, buf,
+				 fs->write_block_size);
+		if (rc) {
+			/* flash write error */
+			return rc;
 		}
-		*len = (buf[1] & 0xff) | ((buf[0]&0x7f) << 8);
-		return sizeof(u16_t);
-	}
-	*len = buf[0];
-	return sizeof(u8_t);
-}
-/* length is encoded in:
- *  1 byte if len < 128 byte
- *  2 byte if len >= 128 byte
- * _nvs_encode_length returns the number of byte used and fills the buffer
- * _nvs_encode_length returns 0xffff if the len is larger then NVS_MAX_LEN
- */
-size_t _nvs_encode_length(u8_t *buf, size_t len)
-{
-	if (len < 0x80) {
-		buf[0] = len;
-		return sizeof(u8_t);
-	}
-	if (len > NVS_MAX_LEN) {
-		return 0xffff;
-	}
-	buf[1] = len & 0xff;
-	buf[0] = ((len >> 8) & 0x7f) | 0x80;
-	return sizeof(u16_t);
-}
-
-/* end basic calculation routines */
-
-/* basic flash routines */
-
-/* basic flash write */
-int _nvs_flash_write(struct nvs_fs *fs, off_t offset, const void *data,
-		     size_t len)
-{
-	int rc;
-
-	rc = flash_write_protection_set(fs->flash_device, 0);
-	if (rc) {
-		/* flash protection set error */
-		return rc;
-	}
-	rc = flash_write(fs->flash_device, fs->offset + offset, data, len);
-	if (rc) {
-		return rc;
-	}
-
-	(void) flash_write_protection_set(fs->flash_device, 1);
-	return 0;
-}
-
-/* basic flash read */
-int _nvs_flash_read(struct nvs_fs *fs, off_t offset, void *data,
-		     size_t len)
-{
-	int rc;
-
-	rc = flash_read(fs->flash_device, fs->offset + offset, data, len);
-	if (rc) {
-		return rc;
-	}
-	return 0;
-}
-
-/* basic flash erase */
-int _nvs_flash_erase(struct nvs_fs *fs, off_t offset, size_t len)
-{
-	int rc;
-
-	rc = flash_write_protection_set(fs->flash_device, 0);
-	if (rc) {
-		/* flash protection set error */
-		return rc;
-	}
-	SYS_LOG_DBG("Erasing flash at %"PRIx32", len %d", offset, len);
-	rc = flash_erase(fs->flash_device, fs->offset + offset, len);
-	if (rc) {
-		/* flash erase error */
-		return rc;
 	}
 	(void) flash_write_protection_set(fs->flash_device, 1);
 	return 0;
+}
+
+/* basic flash read from nvs address */
+static int _nvs_flash_rd(struct nvs_fs *fs, u32_t addr, void *data,
+		  size_t len)
+{
+	int rc;
+	off_t offset;
+
+	offset = fs->offset;
+	offset += fs->sector_size * (addr >> ADDR_SECT_SHIFT);
+	offset += addr & ADDR_OFFS_MASK;
+
+	rc = flash_read(fs->flash_device, offset, data, len);
+	return rc;
+
+}
+
+/* allocation entry write */
+static int _nvs_flash_ate_wrt(struct nvs_fs *fs, const struct nvs_ate *entry)
+{
+	int rc;
+
+	rc = _nvs_flash_al_wrt(fs, fs->ate_wra, entry,
+			       sizeof(struct nvs_ate));
+	fs->ate_wra -= _nvs_al_size(fs, sizeof(struct nvs_ate));
+
+	return rc;
+}
+
+/* data write */
+static int _nvs_flash_data_wrt(struct nvs_fs *fs, const void *data, size_t len)
+{
+	int rc;
+
+	rc = _nvs_flash_al_wrt(fs, fs->data_wra, data, len);
+	fs->data_wra += _nvs_al_size(fs, len);
+
+	return rc;
+}
+
+/* flash ate read */
+static int _nvs_flash_ate_rd(struct nvs_fs *fs, u32_t addr,
+			     struct nvs_ate *entry)
+{
+	return _nvs_flash_rd(fs, addr, entry, sizeof(struct nvs_ate));
 }
 
 /* end of basic flash routines */
 
 /* advanced flash routines */
 
-/* _nvs_flash_block_cmp compares the data in flash at offset to data
- * in blocks of size fs->write_block_size
+/* _nvs_flash_block_cmp compares the data in flash at addr to data
+ * in blocks of size NVS_BLOCK_SIZE aligned to fs->write_block_size
  * returns 0 if equal, 1 if not equal, errcode if error
  */
-int _nvs_flash_block_cmp(struct nvs_fs *fs, off_t offset, const void *data,
-		   size_t len)
+static int _nvs_flash_block_cmp(struct nvs_fs *fs, u32_t addr, const void *data,
+			 size_t len)
 {
 	int rc;
 	size_t bytes_to_cmp, block_size;
-	u8_t buf[fs->write_block_size];
+	u8_t buf[NVS_BLOCK_SIZE];
 
-	block_size = sizeof(buf);
-
+	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1);
 	while (len) {
 		bytes_to_cmp = min(block_size, len);
-		rc = _nvs_flash_read(fs, offset, buf, bytes_to_cmp);
+		rc = _nvs_flash_rd(fs, addr, buf, bytes_to_cmp);
 		if (rc) {
 			return rc;
 		}
@@ -173,469 +139,378 @@ int _nvs_flash_block_cmp(struct nvs_fs *fs, off_t offset, const void *data,
 			return 1;
 		}
 		len -= bytes_to_cmp;
-		offset += bytes_to_cmp;
+		addr += bytes_to_cmp;
 		data += bytes_to_cmp;
 	}
 	return 0;
 }
 
-/* _nvs_flash_cmp_const compares the data in flash at offset to a constant
+/* _nvs_flash_cmp_const compares the data in flash at addr to a constant
  * value. returns 0 if all data in flash is equal to value, 1 if not equal,
  * errcode if error
  */
-int _nvs_flash_cmp_const(struct nvs_fs *fs, off_t offset, u8_t value,
+static int _nvs_flash_cmp_const(struct nvs_fs *fs, u32_t addr, u8_t value,
 			       size_t len)
 {
 	int rc;
 	size_t bytes_to_cmp, block_size;
-	u8_t buf[fs->write_block_size];
-	u8_t cmp[fs->write_block_size];
+	u8_t cmp[NVS_BLOCK_SIZE];
 
-	block_size = sizeof(buf);
+	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1);
 	memset(cmp, value, block_size);
 	while (len) {
 		bytes_to_cmp = min(block_size, len);
-		rc = _nvs_flash_read(fs, offset, buf, bytes_to_cmp);
+		rc = _nvs_flash_block_cmp(fs, addr, cmp, bytes_to_cmp);
 		if (rc) {
 			return rc;
 		}
-		rc = memcmp(cmp, buf, bytes_to_cmp);
-		if (rc) {
-			return 1;
-		}
 		len -= bytes_to_cmp;
-		offset += bytes_to_cmp;
+		addr += bytes_to_cmp;
 	}
 	return 0;
 }
 
-/* flash block move: move a block at offset to the current write location
- * and updates the write location, len should be multiple of
- * fs->write_block_size.
+/* flash block move: move a block at addr to the current data write location
+ * and updates the data write location.
  */
-int _nvs_flash_block_move(struct nvs_fs *fs, off_t offset, size_t len)
+static int _nvs_flash_block_move(struct nvs_fs *fs, u32_t addr, size_t len)
 {
 	int rc;
 	size_t bytes_to_copy, block_size;
-	u8_t buf[fs->write_block_size];
-	off_t write_location;
+	u8_t buf[NVS_BLOCK_SIZE];
 
-	write_location = fs->write_location;
-
-	block_size = sizeof(buf);
+	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1);
 
 	while (len) {
 		bytes_to_copy =	min(block_size, len);
-		rc = _nvs_flash_read(fs, offset, buf, bytes_to_copy);
-
+		rc = _nvs_flash_rd(fs, addr, buf, bytes_to_copy);
 		if (rc) {
 			return rc;
 		}
-		rc = _nvs_flash_write(fs, write_location, buf,
-				      bytes_to_copy);
+		rc = _nvs_flash_data_wrt(fs, buf, bytes_to_copy);
 		if (rc) {
 			return rc;
 		}
 		len -= bytes_to_copy;
-		offset += bytes_to_copy;
-		write_location += bytes_to_copy;
+		addr += bytes_to_copy;
 	}
-	/* update fs->write_location when all writes are successful */
-	_nvs_addr_advance(fs, &fs->write_location, len);
-
-	return 0;
-}
-
-/* store an entry in flash at location offset */
-int _nvs_flash_wrt_entry(struct nvs_fs *fs, u16_t id, const void *data,
-			 size_t len)
-{
-	int rc;
-	off_t offset;
-	size_t padding, flash_len, length_cnt, byte_cnt, blen, flen;
-	u8_t lenstr[2], ilenstr[2];
-	u8_t buf[fs->write_block_size];
-
-	offset = fs->write_location;
-
-	/* create the length string to be written at start and end */
-	length_cnt = _nvs_encode_length(lenstr, len);
-
-	if (length_cnt > 2) {
-		return -EINVAL;
-	}
-
-	if (length_cnt == 1) {
-		ilenstr[0] = lenstr[0];
-	} else {
-		ilenstr[0] = lenstr[1];
-		ilenstr[1] = lenstr[0];
-	}
-
-	/* calculate the entry length in flash */
-	flash_len = get_wbs_aligned_entry_len(fs, len);
-
-	/* calculate the padding length */
-	padding = flash_len - len - sizeof(u16_t) - 2*length_cnt;
-
-	memcpy(buf, lenstr, length_cnt);
-	byte_cnt = length_cnt;
-
-	blen = (len + byte_cnt) &  ~(fs->write_block_size - 1);
-	if (blen) {
-		/* there is at least one write_block_size buffer to be
-		 * written to flash, fill it with start of data
-		 */
-		flen = fs->write_block_size - byte_cnt;
-		memcpy(buf + byte_cnt, data, flen);
-		rc = _nvs_flash_write(fs, offset, buf,
-					  fs->write_block_size);
-		if (rc) {
-			/* flash write or verify error */
-			goto err;
-		}
-		byte_cnt = 0;
-		offset += fs->write_block_size;
-		blen -= fs->write_block_size;
-		len -= flen;
-		data += flen;
-	}
-	if (blen) {
-		/* there is more data to be written, do it in one write */
-		rc = _nvs_flash_write(fs, offset, data, blen);
-		if (rc) {
-			/* flash write or verify error */
-			goto err;
-		}
-		offset += blen;
-		len -= blen;
-		data += blen;
-	}
-	blen = (len + padding) &  ~(fs->write_block_size - 1);
-	if (len) {
-		/* there still is some data left that needs to be written */
-		memcpy(buf + byte_cnt, data, len);
-		byte_cnt += len;
-		data += len;
-		len -= len;
-	}
-	if (blen) {
-		/* the padding is split up over two write blocks */
-		flen = fs->write_block_size - byte_cnt;
-		memset(buf + byte_cnt, 0xff, flen);
-		rc = _nvs_flash_write(fs, offset, buf,
-					  fs->write_block_size);
-		if (rc) {
-			/* flash write or verify error */
-			goto err;
-		}
-		byte_cnt = 0;
-		offset += fs->write_block_size;
-		padding -= flen;
-	}
-	if (padding) {
-		/* there is still some padding to be added */
-		memset(buf + byte_cnt, 0xff, padding);
-		byte_cnt += padding;
-	}
-
-	/* add id at the end */
-	memcpy(buf + byte_cnt, (u8_t *)&id, sizeof(u16_t));
-	byte_cnt += sizeof(u16_t);
-
-	/* add ilenstr at the end */
-	memcpy(buf+byte_cnt, ilenstr, length_cnt);
-	byte_cnt += length_cnt;
-
-	rc = _nvs_flash_write(fs, offset, buf, fs->write_block_size);
-	if (rc) {
-		/* flash write or verify error */
-		goto err;
-	}
-
-	_nvs_addr_advance(fs, &fs->write_location, flash_len);
-
-	return 0;
-
-err:
-	/* lock the filesystem */
-	fs->locked = true;
-	SYS_LOG_ERR("File system is locked");
-	return rc;
-}
-/* read the length from flash at location offset (at start of item),
- * returns 0xffff in len if the read length fields are ff and ff
- */
-int _nvs_flash_rd_len_start(struct nvs_fs *fs, off_t offset, size_t *len)
-{
-	int rc;
-	u8_t lenstr[sizeof(u16_t)];
-	size_t len_size;
-	off_t addr;
-
-	addr = offset;
-	rc = _nvs_flash_read(fs, addr, lenstr, sizeof(u16_t));
-	if (rc) {
-		return rc;
-	}
-	len_size = _nvs_decode_length(lenstr, len);
-	if (len_size == 0xffff) {
-		*len = 0xffff;
-	}
-	return 0;
-}
-
-/* read the length and from flash just before location offset (at end of
- * item), returns 0xffff in len and id if the read flash fields are ff.
- */
-int _nvs_flash_rd_len_end(struct nvs_fs *fs, off_t offset, size_t *len)
-{
-	int rc;
-	u8_t lenstr[sizeof(u16_t)], ilenstr[sizeof(u16_t)];
-	size_t len_size;
-	off_t addr;
-
-	addr = offset;
-	_nvs_addr_decrease(fs, &addr, sizeof(u16_t));
-	rc = _nvs_flash_read(fs, addr, ilenstr, sizeof(u16_t));
-	if (rc) {
-		return rc;
-	}
-	lenstr[0] = ilenstr[1];
-	lenstr[1] = ilenstr[0];
-	len_size = _nvs_decode_length(lenstr, len);
-	if (len_size == 0xffff) {
-		*len = 0xffff;
-	}
-	return 0;
-}
-
-/* read the length and id from flash just before location offset (at end of
- * item), returns 0xffff in len and id if the read flash fields are ff.
- */
-int _nvs_flash_rd_len_id_end(struct nvs_fs *fs, off_t offset, u16_t *id,
-			     size_t *len)
-{
-	int rc;
-	off_t addr;
-
-	addr = offset;
-	rc = _nvs_flash_rd_len_end(fs, addr, len);
-	if (rc) {
-		return rc;
-	}
-	if (*len == 0xffff) {
-		*id = NVS_ID_EMPTY;
-		return 0;
-	}
-	if (*len < 128) {
-		_nvs_addr_decrease(fs, &addr, sizeof(u8_t) + sizeof(u16_t));
-	} else {
-		_nvs_addr_decrease(fs, &addr, sizeof(u16_t) + sizeof(u16_t));
-	}
-	rc = _nvs_flash_read(fs, addr, id, sizeof(u16_t));
-	return rc;
-}
-
-/* read the data from flash, the offset is the start of the entry
- * first read the length from flash as partial reading of the data can be
- * requested
- */
-ssize_t _nvs_flash_read_data(struct nvs_fs *fs, off_t offset, void *data,
-			     size_t len)
-{
-	int rc;
-	u8_t lenstr[sizeof(u16_t)];
-	size_t len_size;
-	size_t len_flash;
-	off_t addr;
-
-	addr = offset;
-	rc = _nvs_flash_read(fs, addr, lenstr, sizeof(u16_t));
-	if (rc) {
-		return rc;
-	}
-	len_size = _nvs_decode_length(lenstr, &len_flash);
-
-	if (len_size > 2) {
-		return -EINVAL;
-	}
-	_nvs_addr_advance(fs, &addr, len_size);
-	rc = _nvs_flash_read(fs, addr, data, len);
-	return rc;
-}
-
-/* end of advanced flash routines */
-
-/* end of flash routines */
-
-/* jump to previous item from offset updates offset, id, len. Does not update
- * when offset when empty ID is found.
- * return 0 when OK, errcode if error.
- */
-int _nvs_entry_decrease(struct nvs_fs *fs, off_t *offset, u16_t *id,
-			size_t *len)
-{
-	int rc;
-	size_t flash_size;
-
-	rc = _nvs_flash_rd_len_id_end(fs, *offset, id, len);
-	if (rc) {
-		return rc;
-	}
-	if (*id == NVS_ID_EMPTY) {
-		return 0;
-	}
-	/* set the address to the start of the data */
-	flash_size = get_wbs_aligned_entry_len(fs, *len);
-	_nvs_addr_decrease(fs, offset, flash_size);
 	return 0;
 }
 
 /* erase a sector by first checking it is used and then erasing if required
  * return 0 if OK, errorcode on error.
  */
-int _nvs_sector_erase(struct nvs_fs *fs, off_t offset)
+static int _nvs_flash_erase_sector(struct nvs_fs *fs, u32_t addr)
 {
 	int rc;
+	off_t offset;
 
-	offset &= ~(fs->sector_size - 1);
-	rc = _nvs_flash_cmp_const(fs, offset, 0xff, fs->sector_size);
-	if (rc < 0) {
+	addr &= ADDR_SECT_MASK;
+	rc = _nvs_flash_cmp_const(fs, addr, 0xff, fs->sector_size);
+	if (rc <= 0) {
+		/* flash error or empty sector */
 		return rc;
 	}
+
+	offset = fs->offset;
+	offset += fs->sector_size * (addr >> ADDR_SECT_SHIFT);
+
+	rc = flash_write_protection_set(fs->flash_device, 0);
 	if (rc) {
-		rc = _nvs_flash_erase(fs, offset, fs->sector_size);
-		if (rc) {
-			return rc;
-		}
+		/* flash protection set error */
+		return rc;
 	}
+	SYS_LOG_DBG("Erasing flash at %"PRIx32", len %d",
+		    offset, fs->sector_size);
+	rc = flash_erase(fs->flash_device, offset, fs->sector_size);
+	if (rc) {
+		/* flash erase error */
+		return rc;
+	}
+	(void) flash_write_protection_set(fs->flash_device, 1);
 	return 0;
 }
 
-/* _nvs_sector_check does a check of the sector in flash.*end is pointing to
- * the start of the sector. _nvs_sector_check updates *end with the next write
- * location, calculates the range that is in use .
- * return 0 if OK, errorcode on error.
+/* crc update on allocation entry */
+static void _nvs_ate_crc8_update(struct nvs_ate *entry)
+{
+	u8_t crc8;
+
+	entry->crc8 = 0xff;
+	crc8 = crc8_ccitt(0xff, entry, sizeof(struct nvs_ate));
+	entry->crc8 = crc8;
+}
+
+/* crc check on allocation entry
+ * returns 0 if OK, 1 on crc fail
  */
-int _nvs_sector_check(struct nvs_fs *fs, off_t *end, size_t *range)
+static int _nvs_ate_crc8_check(struct nvs_ate *entry)
+{
+	u8_t crc8;
+
+	crc8 = entry->crc8;
+	_nvs_ate_crc8_update(entry);
+	if (crc8 == entry->crc8) {
+		return 0;
+	}
+	/* set back the original crc8 if different */
+	entry->crc8 = crc8;
+	return 1;
+}
+
+/* store an entry in flash */
+static int _nvs_flash_wrt_entry(struct nvs_fs *fs, u16_t id, const void *data,
+			size_t len)
 {
 	int rc;
-	size_t len1, len2, entry_len, buf_size;
-	off_t addr, start;
+	struct nvs_ate entry;
+	size_t ate_size;
 
-	start = *end;
-	*range = 0;
+	ate_size = _nvs_al_size(fs, sizeof(struct nvs_ate));
 
-	/* walk trough from begin to end update *end and *range */
-	addr = start;
+	entry.id = id;
+	entry.offset = (u16_t)(fs->data_wra & ADDR_OFFS_MASK);
+	entry.len = (u16_t)len;
+	entry.part = 0xff;
+
+	_nvs_ate_crc8_update(&entry);
+
+	rc = _nvs_flash_data_wrt(fs, data, len);
+	if (rc) {
+		return rc;
+	}
+	rc = _nvs_flash_ate_wrt(fs, &entry);
+	if (rc) {
+		return rc;
+	}
+
+	if (len != 0) {
+		fs->free_space -= _nvs_al_size(fs, len);
+		fs->free_space -= ate_size;
+	}
+	return 0;
+}
+/* end of flash routines */
+
+/* walking through allocation entry list, from newest to oldest entries
+ * read ate from addr, modify addr to the previous ate
+ */
+static int _nvs_prev_ate(struct nvs_fs *fs, u32_t *addr, struct nvs_ate *ate)
+{
+	int rc;
+	size_t ate_size;
+
+	ate_size = _nvs_al_size(fs, sizeof(struct nvs_ate));
+
+	rc = _nvs_flash_ate_rd(fs, *addr, ate);
+	if (rc) {
+		return rc;
+	}
+
 	while (1) {
-		rc = _nvs_flash_rd_len_start(fs, addr, &len1);
-		if (rc) {
-			return rc;
-		}
-		if (len1 == 0xffff) {
+		*addr += ate_size;
+		if (((*addr) & ADDR_OFFS_MASK) != fs->sector_size)  {
 			break;
 		}
-		entry_len = get_wbs_aligned_entry_len(fs, len1);
-		/* avoid doing read over sector boundary */
-		if (*range + entry_len > fs->sector_size) {
+		/* last ate in sector, do jump to previous sector */
+		if (((*addr) >> ADDR_SECT_SHIFT) == 0) {
+			*addr += (fs->sector_count << ADDR_SECT_SHIFT);
+		}
+		(*addr) -= (1 << ADDR_SECT_SHIFT);
+		while (1) {
+			*addr -= ate_size;
+			rc = _nvs_flash_cmp_const(fs, *addr, 0xff, ate_size);
+			if (!rc) {
+				break;
+			}
+			rc = _nvs_flash_cmp_const(fs, *addr, 0x00, ate_size);
+			if (!rc) {
+				break;
+			}
+		}
+		/* stop after stepping through all sectors */
+		if (*addr == fs->ate_wra) {
 			break;
 		}
-		_nvs_addr_advance(fs, &addr, entry_len);
-		rc = _nvs_flash_rd_len_end(fs, addr, &len2);
-		if (len1 != len2) {
-			break;
-		}
-		*end = addr;
-		*range += entry_len;
-		if (*range == fs->sector_size) {
-			return 0;
-		}
-	}
-
-	/* check from *end to sector end if everything is 0xff, decrement
-	 * *range until it is set to the last location that is 0xff
-	 */
-	buf_size = max(fs->write_block_size, NVS_MIN_WRITE_BLOCK_SIZE);
-	*range = fs->sector_size;
-	addr = start + fs->sector_size;
-	while (addr > *end) {
-		addr -= buf_size;
-		rc = _nvs_flash_cmp_const(fs, addr, 0xff, buf_size);
-		if (rc < 0) {
-			return rc;
-		}
-		if (rc) {
-			break;
-		}
-		*range -= buf_size;
 	}
 	return 0;
 }
 
-/* garbage collection: the entry sector has been updated to point to the sector
- * just after the sector being gc'ed
+static void _nvs_sector_advance(struct nvs_fs *fs, u32_t *addr)
+{
+	*addr += (1 << ADDR_SECT_SHIFT);
+	if ((*addr >> ADDR_SECT_SHIFT) == fs->sector_count) {
+		*addr -= (fs->sector_count << ADDR_SECT_SHIFT);
+	}
+}
+
+/* allocation entry close (this closes the current sector) by writing all
+ * zeros at fs->ate_wra.
  */
-int _nvs_gc(struct nvs_fs *fs)
+static int _nvs_sector_close(struct nvs_fs *fs)
 {
 	int rc;
-	off_t wlk_addr, wlk_last_addr, stop_addr;
-	u16_t wlk_id, wlk_last_id;
-	size_t wlk_len, wlk_last_len, jmp_len;
+	u8_t buf[sizeof(struct nvs_ate)];
+	size_t ate_size;
+
+	ate_size = sizeof(struct nvs_ate);
+
+	memset(buf, 0, ate_size);
+
+	rc = _nvs_flash_al_wrt(fs, fs->ate_wra, buf, ate_size);
+	if (rc) {
+		return rc;
+	}
+
+	fs->ate_wra &= ADDR_SECT_MASK;
+	fs->ate_wra += (fs->sector_size - ate_size);
+	_nvs_sector_advance(fs, &fs->ate_wra);
+
+	fs->data_wra = fs->ate_wra & ADDR_SECT_MASK;
+
+	return 0;
+}
 
 
-	wlk_addr = fs->entry_location;
-	stop_addr = wlk_addr;
-	_nvs_addr_decrease(fs, &stop_addr, fs->sector_size);
+/* garbage collection: the address ate_wra has been updated to the new sector
+ * that has just been started. The data to gc is in the sector after this new
+ * sector.
+ */
+static int _nvs_gc(struct nvs_fs *fs)
+{
+	int rc;
+	struct nvs_ate gc_ate, wlk_ate;
+	u32_t gc_addr, wlk_addr, wlk_prev_addr, data_addr, sec_addr;
+	size_t ate_size;
 
-	/* Go backwards through the gc sector until we reach the start of
-	 * the sector
-	 */
-	while (wlk_addr != stop_addr) {
+	ate_size = _nvs_al_size(fs, sizeof(struct nvs_ate));
 
-		rc = _nvs_entry_decrease(fs, &wlk_addr, &wlk_id, &wlk_len);
+	gc_addr = (fs->ate_wra & ADDR_SECT_MASK) + fs->sector_size - ate_size;
+	_nvs_sector_advance(fs, &gc_addr);
+	sec_addr = gc_addr;
+
+	while (1) {
+		/* if the sector is empty don't do gc */
+		rc = _nvs_flash_cmp_const(fs, gc_addr, 0xff, ate_size);
+		if (!rc) {
+			break;
+		}
+		/* if sector end is reached stop gc */
+		rc = _nvs_flash_cmp_const(fs, gc_addr, 0x00, ate_size);
+		if (!rc) {
+			break;
+		}
+		rc = _nvs_flash_ate_rd(fs, gc_addr, &gc_ate);
 		if (rc) {
-			goto err;
+			return rc;
 		}
-		if (wlk_id != NVS_ID_JUMP) {
-			wlk_last_addr = fs->write_location;
-			while (wlk_last_addr != wlk_addr) {
-				rc = _nvs_entry_decrease(fs, &wlk_last_addr,
-						&wlk_last_id, &wlk_last_len);
-				if (wlk_last_id == wlk_id) {
-					break;
-				}
+		wlk_addr = fs->ate_wra;
+		while (1) {
+			wlk_prev_addr = wlk_addr;
+			rc = _nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
+			if (rc) {
+				return rc;
 			}
-			if ((wlk_last_addr == wlk_addr) && (wlk_len)) {
-				SYS_LOG_DBG("Moving entry: id %d", wlk_id);
-				jmp_len = get_wbs_aligned_entry_len(fs,
-								    wlk_len);
-				rc = _nvs_flash_block_move(fs, wlk_addr,
-							   jmp_len);
-				if (rc) {
-					goto err;
-				}
+			/* if ate with same id is reached and it has valid crc8
+			 * we might need to copy.
+			 */
+			if ((wlk_ate.id == gc_ate.id) &&
+			    (!_nvs_ate_crc8_check(&wlk_ate))) {
+				break;
 			}
 		}
+		/* if walk has reached the same address as gc_addr copy is
+		 * needed unless it is a deleted item.
+		 */
+		if ((wlk_prev_addr == gc_addr) && gc_ate.len) {
+			/* copy needed */
+			SYS_LOG_DBG("Moving %d, len %d", gc_ate.id, gc_ate.len);
+
+			data_addr = (gc_addr & ADDR_SECT_MASK);
+			data_addr += gc_ate.offset;
+
+			gc_ate.offset = (u16_t)(fs->data_wra & ADDR_OFFS_MASK);
+			_nvs_ate_crc8_update(&gc_ate);
+
+			rc = _nvs_flash_block_move(fs, data_addr, gc_ate.len);
+			if (rc) {
+				return rc;
+			}
+
+			rc = _nvs_flash_ate_wrt(fs, &gc_ate);
+			if (rc) {
+				return rc;
+			}
+		}
+		gc_addr -= ate_size;
+	}
+	rc = _nvs_flash_erase_sector(fs, sec_addr);
+	if (rc) {
+		return rc;
 	}
 	return 0;
-err:
-	/* lock the filesystem */
-	fs->locked = true;
-	SYS_LOG_ERR("File system is locked");
-	return rc;
+}
 
+static int _nvs_update_free_space(struct nvs_fs *fs)
+{
+
+	int rc;
+	struct nvs_ate step_ate, wlk_ate;
+	u32_t step_addr, wlk_addr;
+	size_t ate_size;
+
+	ate_size = _nvs_al_size(fs, sizeof(struct nvs_ate));
+
+	fs->free_space = 0;
+	for (u16_t i = 1; i < fs->sector_count; i++) {
+		fs->free_space += (fs->sector_size - ate_size);
+	}
+
+	step_addr = fs->ate_wra;
+
+	while (1) {
+		rc = _nvs_prev_ate(fs, &step_addr, &step_ate);
+		if (rc) {
+			return rc;
+		}
+
+		wlk_addr = fs->ate_wra;
+
+		while (1) {
+			rc = _nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
+			if (rc) {
+				return rc;
+			}
+			if ((wlk_ate.id == step_ate.id) ||
+			    (wlk_addr == fs->ate_wra)) {
+				break;
+			}
+
+		}
+
+		if ((wlk_addr == step_addr) && step_ate.len &&
+		    (!_nvs_ate_crc8_check(&step_ate))) {
+			/* count needed */
+			fs->free_space -= _nvs_al_size(fs, step_ate.len);
+			fs->free_space -= ate_size;
+		}
+
+		if (step_addr == fs->ate_wra) {
+			break;
+		}
+
+	}
+	return 0;
 }
 
 int nvs_clear(struct nvs_fs *fs)
 {
-	int rc, i;
+	int rc;
 	off_t addr;
 
-	for (i = 0; i < fs->sector_count; i++) {
-		addr = i * fs->sector_size;
-		rc = _nvs_sector_erase(fs, addr);
+	for (u16_t i = 0; i < fs->sector_count; i++) {
+		addr = i << ADDR_SECT_SHIFT;
+		rc = _nvs_flash_erase_sector(fs, addr);
 		if (rc) {
 			return rc;
 		}
@@ -645,120 +520,106 @@ int nvs_clear(struct nvs_fs *fs)
 
 int nvs_reinit(struct nvs_fs *fs)
 {
-	int rc, i = 0;
-	bool end_found;
-	size_t sector_range, len;
-	off_t addr, stop_addr;
-	u16_t id;
-	u8_t zeros[fs->write_block_size];
+	int rc;
+	size_t ate_size, empty_len;
+	struct nvs_ate ate;
+	u32_t addr;
 
 
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
 
-	end_found = false;
+	ate_size = _nvs_al_size(fs, sizeof(struct nvs_ate));
 
 	/* step through the sectors to find the last sector */
-	while (i < fs->sector_count) {
-		addr = i * fs->sector_size;
-		rc = _nvs_sector_check(fs, &addr, &sector_range);
+	for (u16_t i = 0; i < fs->sector_count; i++) {
+		addr = (i << ADDR_SECT_SHIFT) + fs->sector_size - ate_size;
+		fs->ate_wra = addr;
+		rc = _nvs_prev_ate(fs, &addr, &ate);
 		if (rc) {
 			goto end;
 		}
-		if ((sector_range) && (addr < ((i+1) * fs->sector_size))) {
-			fs->write_location = addr;
-			end_found = true;
+		rc = _nvs_flash_cmp_const(fs, addr - ate_size, 0x00, ate_size);
+		if (!rc) {
+			/* we are just before (or after) sector end */
+			continue;
+		}
+		rc = _nvs_flash_cmp_const(fs, addr - ate_size, 0xff, ate_size);
+		if (!rc) {
 			break;
 		}
-		i++;
 	}
 
-	/* step back from fs->write_location to find start */
-	if (end_found) {
-		stop_addr = fs->write_location & ~(fs->sector_size - 1);
-		_nvs_addr_advance(fs, &stop_addr, fs->sector_size);
-		while (addr != stop_addr) {
-			rc = _nvs_entry_decrease(fs, &addr, &id, &len);
-			if (rc) {
-				goto end;
-			}
-			if (id == NVS_ID_EMPTY) {
-				break;
-			}
-		}
-		fs->entry_location = addr;
-	}
+	fs->ate_wra = addr;
+	fs->data_wra = addr & ADDR_SECT_MASK;
 
-	/* if there is no started sector or reninit of a locked fs is requested
-	 * clear the fs and reinitialize it.
+	/* Normally addr points to a location that does not contain all ff, so
+	 * ate_size needs to be substracted to get ate_wra. However there is an
+	 * exception, when addr is the very end of a sector; then we keep
+	 * fs->ate_wra.
 	 */
-	if ((!end_found) || (fs->locked)) {
-		/* only empty sectors or reinit of locked fs -> clear the fs */
-		SYS_LOG_DBG("(Re)Initializing sectors");
-		rc = nvs_clear(fs);
-		if (rc) {
-			goto end;
-		}
-		fs->write_location = 0;
-		fs->entry_location = 0;
-		fs->locked = false;
-
-		rc = 0;
+	rc = _nvs_flash_cmp_const(fs, addr, 0xff, ate_size);
+	if (rc < 0) {
 		goto end;
 	}
-
-	/* In case of a difference between the range and fs->write_location
-	 * the errors are corrected by writing jumps of length zero at
-	 * fs->write_location until the error is corrected. All data is
-	 * set to zero.
-	 */
-	addr = (fs->write_location &  ~(fs->sector_size - 1));
-	_nvs_addr_advance(fs, &addr, sector_range);
-	if (addr != fs->write_location) {
-		SYS_LOG_DBG("Correcting fs error");
-		len = fs->write_block_size - sizeof(u16_t) - 2*sizeof(u8_t);
-		memset(zeros, 0, sizeof(zeros));
-		while (fs->write_location != addr) {
-			_nvs_flash_write(fs, fs->write_location, zeros,
-					 fs->write_block_size);
-			_nvs_addr_advance(fs, &fs->write_location,
-					  fs->write_block_size);
-		}
-	}
-
-	/* one sector should always be empty, unless power was cut during
-	 * then the next sector after fs->write_location will be
-	 * fs->entry_location. Check if this is the case and restart garbage
-	 * collection by clearing the fs->write_location sector and restart gc
-	 * on the entry sector.
-	 */
-	addr = fs->write_location & ~(fs->sector_size - 1);
-	_nvs_addr_advance(fs, &addr, fs->sector_size);
-	if (addr == fs->entry_location) {
-		SYS_LOG_DBG("Erasing last added sector and restarting gc");
-		addr = fs->write_location;
-		/* erase the last added sector */
-		rc = _nvs_sector_erase(fs, addr);
+	if (rc) {
+		/* fs->ate_wra not at sector end */
+		fs->ate_wra -= ate_size;
+		rc = _nvs_flash_ate_rd(fs, addr, &ate);
 		if (rc) {
 			goto end;
 		}
-		_nvs_addr_advance(fs, &fs->entry_location, fs->sector_size);
+		if (!_nvs_ate_crc8_check(&ate)) {
+		/* crc8 is ok, complete write of ate was performed */
+			fs->data_wra += ate.offset;
+			fs->data_wra += _nvs_al_size(fs, ate.len);
+		}
+	}
+
+	/* possible data write after last ate write, update data_wra */
+	while (1) {
+		empty_len = fs->ate_wra - fs->data_wra;
+		if (!empty_len) {
+			break;
+		}
+		rc = _nvs_flash_cmp_const(fs, fs->data_wra, 0xff, empty_len);
+		if (rc < 0) {
+			goto end;
+		}
+		if (!rc) {
+			break;
+		}
+		fs->data_wra += fs->write_block_size;
+	}
+
+	/* if the sector after the write sector is not empty gc was interrupted
+	 * we need to restart gc, first erase the sector before restarting gc
+	 * otherwise the data may not fit into the sector.
+	 */
+	addr = fs->ate_wra & ADDR_SECT_MASK;
+	_nvs_sector_advance(fs, &addr);
+	rc = _nvs_flash_cmp_const(fs, addr, 0xff, fs->sector_size);
+	if (rc < 0) {
+		goto end;
+	}
+	if (rc) {
+		/* the sector after fs->ate_wrt is not empty */
+		rc = _nvs_flash_erase_sector(fs, fs->ate_wra);
+		if (rc) {
+			goto end;
+		}
+		fs->ate_wra &= ADDR_SECT_MASK;
+		fs->ate_wra += (fs->sector_size - ate_size);
+		fs->data_wra = (fs->ate_wra & ADDR_SECT_MASK);
 		rc = _nvs_gc(fs);
 		if (rc) {
 			goto end;
 		}
-		_nvs_addr_advance(fs, &addr, fs->sector_size);
-		rc = _nvs_sector_erase(fs, addr);
-		goto end;
 	}
 
-	rc = 0;
+	rc = _nvs_update_free_space(fs);
 
 end:
 	k_mutex_unlock(&fs->nvs_lock);
-	if (rc) {
-		fs->locked = true;
-		SYS_LOG_ERR("File system is locked");
-	}
 	return rc;
 }
 
@@ -766,7 +627,6 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 {
 
 	int rc;
-	u16_t max_item_len;
 
 	k_mutex_init(&fs->nvs_lock);
 
@@ -777,189 +637,134 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 	}
 
 	fs->write_block_size = flash_get_write_block_size(fs->flash_device);
-	if (fs->write_block_size < NVS_MIN_WRITE_BLOCK_SIZE) {
-		fs->write_block_size = NVS_MIN_WRITE_BLOCK_SIZE;
-	}
 
-	/* check the sector size, should be power of 2 */
-	if (!((fs->sector_size != 0) &&
-	     !(fs->sector_size & (fs->sector_size - 1)))) {
-		SYS_LOG_ERR("Configuration error - sector size");
-		return -EINVAL;
-	}
 	/* check the number of sectors, it should be at least 2 */
 	if (fs->sector_count < 2) {
 		SYS_LOG_ERR("Configuration error - sector count");
 		return -EINVAL;
 	}
-	/* check the maximum item size, it should be at least smaller than the
-	 * sector_size - sector close (min length = 0)
-	 */
-	max_item_len = fs->sector_size - get_wbs_aligned_entry_len(fs, 0);
 
-	if (fs->max_len > max_item_len) {
-		SYS_LOG_ERR("Configuration error - max item size");
-		return -EINVAL;
-	}
-
-	fs->entry_location = 0;
 	fs->locked = false;
 	rc = nvs_reinit(fs);
 	if (rc) {
 		return rc;
 	}
 
-	SYS_LOG_INF("maximum storage length %d byte", fs->max_len);
-	SYS_LOG_INF("write-align: %d, write-addr: %"PRIx32"",
-		fs->write_block_size, fs->write_location);
+	SYS_LOG_INF("%d Sectors of %d byte", fs->sector_count, fs->sector_size);
+	SYS_LOG_INF("alloc wra: %d-%"PRIx32"",
+		    (fs->ate_wra >> ADDR_SECT_SHIFT),
+		    (fs->ate_wra & ADDR_OFFS_MASK));
+	SYS_LOG_INF("data wra: %d-%"PRIx32"",
+		    (fs->data_wra >> ADDR_SECT_SHIFT),
+		    (fs->data_wra & ADDR_OFFS_MASK));
+	SYS_LOG_INF("Free space: %d", fs->free_space);
 
 	return 0;
-}
-
-int nvs_append(struct nvs_fs *fs, u16_t id, size_t len)
-{
-	int rc;
-	size_t ext_len, free_len;
-
-	rc = 0;
-
-	/* the free space should be big enough to always leave a sector
-	 * end, which is of length 0.
-	 */
-	ext_len = get_wbs_aligned_entry_len(fs, len) +
-		  get_wbs_aligned_entry_len(fs, 0);
-
-	free_len = fs->sector_size -
-		   (fs->write_location & (fs->sector_size - 1));
-
-	if (free_len < ext_len) {
-		rc = NVS_STATUS_NOSPACE;
-		goto err;
-	}
-	return 0;
-
-err:
-	return rc;
-}
-
-/* rotate the nvs, frees the next sector (based on fs->write_location) */
-int nvs_rotate(struct nvs_fs *fs)
-{
-	int rc;
-	off_t offset;
-	size_t len;
-	u8_t buf[fs->write_block_size];
-
-	rc = 0;
-
-	len = fs->sector_size - (fs->write_location & (fs->sector_size - 1));
-	/* fill previous sector with data to jump to the next sector
-	 */
-	memset(buf, 0xff, fs->write_block_size);
-	while (len) {
-		_nvs_flash_wrt_entry(fs, NVS_ID_JUMP, buf, 0);
-		len -= fs->write_block_size;
-	}
-
-	/* fs->write_location is allready pointing to new sector for writing */
-	offset = (fs->write_location & ~(fs->sector_size - 1));
-
-	/* data copy is required if the sector after the new sector is the
-	 * entry sector.
-	 */
-	_nvs_addr_advance(fs, &offset, fs->sector_size);
-	if (offset == fs->entry_location) {
-		SYS_LOG_DBG("Garbage collection...");
-		_nvs_addr_advance(fs, &fs->entry_location, fs->sector_size);
-		rc = _nvs_gc(fs);
-		if (rc) {
-			goto err;
-		}
-		rc = _nvs_sector_erase(fs, offset);
-		if (rc) {
-			goto err;
-		}
-	}
-	return 0;
-
-err:
-	/* lock the file system */
-	fs->locked = true;
-	SYS_LOG_ERR("File system is locked");
-	return rc;
 }
 
 ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 {
-	int rc;
-	int rot_cnt = 0;
-#if IS_ENABLED(CONFIG_NVS_PROTECT_FLASH)
-	u16_t wlk_id;
-	size_t wlk_len;
-	off_t wlk_addr, stop_addr;
-#endif
+	int rc, gc_count;
+	size_t ate_size, data_size;
+	struct nvs_ate wlk_ate;
+	u32_t wlk_addr, rd_addr, freed_space;
+	u16_t sector_freespace;
 
-	if ((id == NVS_ID_EMPTY) || (id == NVS_ID_JUMP) ||
-	    (len > fs->max_len) || ((len > 0) && (data == NULL))) {
+	ate_size = _nvs_al_size(fs, sizeof(struct nvs_ate));
+	data_size = _nvs_al_size(fs, len);
+
+
+	if ((len > (fs->sector_size - 2*ate_size)) ||
+	    ((len > 0) && (data == NULL))) {
 		return -EINVAL;
 	}
+
 	if (fs->locked) {
 		return -EROFS;
 	}
 
-#if IS_ENABLED(CONFIG_NVS_PROTECT_FLASH)
-	wlk_addr = fs->write_location;
-	stop_addr = fs->entry_location;
-	while (wlk_addr != stop_addr) {
-		rc = _nvs_entry_decrease(fs, &wlk_addr, &wlk_id, &wlk_len);
-		if (rc) {
-			goto err;
-		}
-		if (wlk_id != NVS_ID_JUMP) {
-			if (wlk_id == id) {
-				if (wlk_len == len) {
-					rc = _nvs_flash_block_cmp(fs, wlk_addr,
-								  data, len);
-					if (!rc) {
-						return len;
-					}
-				}
-				break;
-			}
-		}
-	}
-#endif
-	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
+	/* find latest entry with same id */
+	wlk_addr = fs->ate_wra;
+	rd_addr = wlk_addr;
+	freed_space = 0;
+
 	while (1) {
-		rc = nvs_append(fs, id, len);
+		rd_addr = wlk_addr;
+		rc = _nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
 		if (rc) {
-			if (rc == NVS_STATUS_NOSPACE) {
-				if (rot_cnt == fs->sector_count) {
-					fs->locked = true;
-					rc = -EROFS;
-					goto err;
-				}
-				if (nvs_rotate(fs)) {
-					goto err;
-				}
-				rot_cnt++;
-			} else {
-				rc = -ENOSPC;
-				goto err;
-			}
-		} else {
+			return rc;
+		}
+		if ((wlk_ate.id == id) && (!_nvs_ate_crc8_check(&wlk_ate))) {
+			break;
+		}
+		if (wlk_addr == fs->ate_wra) {
 			break;
 		}
 	}
 
-	_nvs_flash_wrt_entry(fs, id, data, len);
-	if (rc) {
-		goto err;
+	if (wlk_addr != fs->ate_wra) {
+		/* previous entry found */
+		rd_addr &= ADDR_SECT_MASK;
+		rd_addr += wlk_ate.offset;
+
+		if (len == 0) {
+			/* do not try to compare with empty data */
+			if (wlk_ate.len == 0) {
+				return 0;
+			}
+		} else {
+			/* compare the data and if equal return 0 */
+			rc = _nvs_flash_block_cmp(fs, rd_addr, data, len);
+			if (rc <= 0) {
+				return rc;
+			}
+		}
+		/* data different, calculate freed space */
+		freed_space = _nvs_al_size(fs, wlk_ate.len);
+		freed_space += ate_size;
 	}
 
-	return len;
-err:
+	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
+
+	fs->free_space += freed_space;
+	if (fs->free_space < (data_size + ate_size)) {
+		rc = -ENOSPC;
+		goto end;
+	}
+
+	gc_count = 0;
+	while (1) {
+		if (gc_count == fs->sector_count) {
+			rc = -EROFS;
+			goto end;
+		}
+		sector_freespace = fs->ate_wra - fs->data_wra;
+		if (sector_freespace >= data_size + ate_size) {
+			rc = _nvs_flash_wrt_entry(fs, id, data, len);
+			if (rc) {
+				goto end;
+			}
+			break;
+		}
+		rc = _nvs_sector_close(fs);
+		if (rc) {
+			goto end;
+		}
+		rc = _nvs_gc(fs);
+		if (rc) {
+			goto end;
+		}
+		gc_count++;
+	}
+	rc = len;
+end:
 	k_mutex_unlock(&fs->nvs_lock);
+	if (rc < 0) {
+		fs->free_space -= freed_space;
+	}
+	if (rc == -EROFS) {
+		fs->locked = true;
+	}
 	return rc;
 }
 
@@ -972,38 +777,49 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, u16_t id, void *data, size_t len,
 		  u16_t cnt)
 {
 	int rc;
-	off_t wlk_addr, stop_addr;
-	size_t wlk_len;
-	u16_t wlk_id, cnt_his;
+	u32_t wlk_addr, rd_addr;
+	u16_t cnt_his;
+	struct nvs_ate wlk_ate;
+	size_t ate_size;
 
-	if ((id == NVS_ID_EMPTY) || (id == NVS_ID_JUMP) ||
-	    (len > fs->max_len)) {
+	ate_size = _nvs_al_size(fs, sizeof(struct nvs_ate));
+
+	if (len > (fs->sector_size - 2*ate_size)) {
 		return -EINVAL;
 	}
+
 	cnt_his = 0;
 
-	wlk_addr = fs->write_location;
-	stop_addr = fs->entry_location;
-	while ((wlk_addr != stop_addr) && (cnt_his <= cnt)) {
-		rc = _nvs_entry_decrease(fs, &wlk_addr, &wlk_id, &wlk_len);
+	wlk_addr = fs->ate_wra;
+	rd_addr = wlk_addr;
+
+	while (cnt_his <= cnt) {
+		rd_addr = wlk_addr;
+		rc = _nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
 		if (rc) {
 			goto err;
 		}
-		if (wlk_id != NVS_ID_JUMP) {
-			if (wlk_id == id) {
-				cnt_his++;
-			}
+		if ((wlk_ate.id == id) &&  (!_nvs_ate_crc8_check(&wlk_ate))) {
+			cnt_his++;
+		}
+		if (wlk_addr == fs->ate_wra) {
+			break;
 		}
 	}
-	if (((wlk_addr == stop_addr) && (wlk_id != id))
-	    || (wlk_len == 0) || (cnt_his < cnt)) {
+
+	if (((wlk_addr == fs->ate_wra) && (wlk_ate.id != id)) ||
+	    (wlk_ate.len == 0) || (cnt_his < cnt)) {
 		return -ENOENT;
 	}
-	rc = _nvs_flash_read_data(fs, wlk_addr, data, len);
+
+	rd_addr &= ADDR_SECT_MASK;
+	rd_addr += wlk_ate.offset;
+	rc = _nvs_flash_rd(fs, rd_addr, data, min(len, wlk_ate.len));
 	if (rc) {
 		goto err;
 	}
-	return wlk_len;
+
+	return wlk_ate.len;
 
 err:
 	return rc;

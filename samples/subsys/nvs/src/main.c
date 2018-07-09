@@ -50,13 +50,10 @@
 #define NVS_STORAGE_OFFSET FLASH_AREA_STORAGE_OFFSET /* Start address of the
 						      * filesystem in flash
 						      */
-#define NVS_MAX_ELEM_SIZE 256 /* Largest item that can be stored */
-
 static struct nvs_fs fs = {
 	.sector_size = NVS_SECTOR_SIZE,
 	.sector_count = NVS_SECTOR_COUNT,
 	.offset = NVS_STORAGE_OFFSET,
-	.max_len = NVS_MAX_ELEM_SIZE,
 };
 
 /* 1000 msec = 1 sec */
@@ -70,6 +67,7 @@ static struct nvs_fs fs = {
 #define RBT_CNT_ID 3
 #define STRING_ID 4
 #define LONG_ID 5
+
 
 void main(void)
 {
@@ -175,8 +173,6 @@ void main(void)
 			nvs_write(&fs, LONG_ID, &longarray, sizeof(longarray));
 		}
 	}
-
-
 
 	cnt = 5;
 	while (1) {
