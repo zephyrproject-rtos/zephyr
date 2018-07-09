@@ -210,6 +210,39 @@ static void std_print(struct log_msg *msg,
 		      log_msg_arg_get(msg, 4),
 		      log_msg_arg_get(msg, 5));
 		break;
+	case 7:
+		print(ctx, str,
+		      log_msg_arg_get(msg, 0),
+		      log_msg_arg_get(msg, 1),
+		      log_msg_arg_get(msg, 2),
+		      log_msg_arg_get(msg, 3),
+		      log_msg_arg_get(msg, 4),
+		      log_msg_arg_get(msg, 5),
+		      log_msg_arg_get(msg, 6));
+		break;
+	case 8:
+		print(ctx, str,
+		      log_msg_arg_get(msg, 0),
+		      log_msg_arg_get(msg, 1),
+		      log_msg_arg_get(msg, 2),
+		      log_msg_arg_get(msg, 3),
+		      log_msg_arg_get(msg, 4),
+		      log_msg_arg_get(msg, 5),
+		      log_msg_arg_get(msg, 6),
+		      log_msg_arg_get(msg, 7));
+		break;
+	case 9:
+		print(ctx, str,
+		      log_msg_arg_get(msg, 0),
+		      log_msg_arg_get(msg, 1),
+		      log_msg_arg_get(msg, 2),
+		      log_msg_arg_get(msg, 3),
+		      log_msg_arg_get(msg, 4),
+		      log_msg_arg_get(msg, 5),
+		      log_msg_arg_get(msg, 6),
+		      log_msg_arg_get(msg, 7),
+		      log_msg_arg_get(msg, 8));
+		break;
 	}
 }
 
