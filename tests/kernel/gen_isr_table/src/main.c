@@ -87,14 +87,14 @@ ISR_DIRECT_DECLARE(isr2)
 
 void isr3(void *param)
 {
-	printk("isr3 ran with parameter %p\n", param);
+	printk("%s ran with parameter %p\n", __func__, param);
 	trigger_check[ISR3_OFFSET]++;
 }
 
 
 void isr4(void *param)
 {
-	printk("isr4 ran with parameter %p\n", param);
+	printk("%s ran with parameter %p\n", __func__, param);
 	trigger_check[ISR4_OFFSET]++;
 }
 
@@ -181,6 +181,25 @@ static int check_sw_isr(void *isr, u32_t arg, int offset)
 	return 0;
 }
 #endif
+
+/**
+ * @ingroup kernel_interrupt_tests
+ * @brief test to validate gen_isr_table
+ *
+ * @details initialize two normal and two direct interrupt handler using
+ * IRQ_CONNECT and IRQ_DIRECT_CONNECT api respectively.
+ * For ‘direct’ interrupts, address of handler function will be placed in
+ * the irq vector table. And for 'regular' interrupts , the address of the
+ * common software isr table is placed in the irq vector table.
+ * Software ISR table is an array of struct _isr_table_entry.
+ * And each entry contains the pointer to isr and the corresponding parameters.
+ *
+ * At the end according to architecture, we manually trigger the interrupt.
+ * And all irq handler should get called.
+ *
+ * @see IRQ_DIRECT_CONNECT(), IRQ_CONNECT(), irq_enable()
+ *
+ */
 
 void main(void)
 {
