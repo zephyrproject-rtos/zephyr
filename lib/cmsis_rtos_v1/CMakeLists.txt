@@ -11,6 +11,7 @@ zephyr_library_sources_ifdef(
   cmsis_kernel.c
   cmsis_timer.c
   cmsis_mutex.c
+  cmsis_semaphore.c
 )
 
 zephyr_library_link_libraries(CMSIS)

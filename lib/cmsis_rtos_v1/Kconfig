@@ -46,6 +46,14 @@ config CMSIS_MUTEX_MAX_COUNT
 	help
 	  Mention maximum number of mutexes in CMSIS compliant application.
 
+config CMSIS_SEMAPHORE_MAX_COUNT
+	int
+	prompt "Maximum semaphore count in CMSIS application"
+	default 5
+	range 0 255
+	help
+	  Mention maximum number of semaphores in CMSIS compliant application.
+
 config NUM_PREEMPT_PRIORITIES
 	int
 	default 7
