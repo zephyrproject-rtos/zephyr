@@ -46,7 +46,6 @@ struct ccc_store {
 static sys_slist_t subscriptions;
 #endif /* CONFIG_BT_GATT_CLIENT */
 
-static const char *gap_name = CONFIG_BT_DEVICE_NAME;
 static const u16_t gap_appearance = CONFIG_BT_DEVICE_APPEARANCE;
 
 static sys_slist_t db;
@@ -54,9 +53,40 @@ static sys_slist_t db;
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, u16_t len, u16_t offset)
 {
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, gap_name,
-				 strlen(gap_name));
+	const char *name = attr->user_data;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, name,
+				 strlen(name));
 }
+
+#if CONFIG_BT_DEVICE_NAME_MAX > 0
+
+static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 const void *buf, u16_t len, u16_t offset,
+			 u8_t flags)
+{
+	char value[CONFIG_BT_DEVICE_NAME_MAX] = {};
+
+	if (flags & BT_GATT_WRITE_FLAG_PREPARE) {
+		return len;
+	}
+
+	if (offset) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	if (len >= sizeof(value)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
+
+	memcpy(value, buf, len);
+
+	bt_set_name(value);
+
+	return len;
+}
+
+#endif /* CONFIG_BT_DEVICE_NAME */
 
 static ssize_t read_appearance(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
@@ -70,8 +100,17 @@ static ssize_t read_appearance(struct bt_conn *conn,
 
 static struct bt_gatt_attr gap_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
+#if CONFIG_BT_DEVICE_NAME_MAX > 0
+	/* Require pairing for writes to device name */
+	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT,
+			       read_name, write_name, bt_dev.name),
+#else
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ,
-			       BT_GATT_PERM_READ, read_name, NULL, NULL),
+			       BT_GATT_PERM_READ, read_name, NULL,
+			       CONFIG_BT_DEVICE_NAME),
+#endif
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, BT_GATT_CHRC_READ,
 			       BT_GATT_PERM_READ, read_appearance, NULL, NULL),
 };
