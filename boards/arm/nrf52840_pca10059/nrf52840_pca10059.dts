@@ -1,0 +1,129 @@
+/*
+ * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840.dtsi>
+
+/ {
+	model = "Nordic PCA10059 Dev Kit";
+	compatible = "nordic,pca10059-dk", "nordic,nrf52840-qiaa",
+		     "nordic,nrf52840";
+
+	chosen {
+		zephyr,console = &uart0;
+#ifdef CONFIG_MCUMGR_SMP_UART
+		zephyr,uart-mcumgr = &uart0;
+#endif
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	led_0 {
+		compatible = "gpio-leds";
+		led0_green: green {
+			gpios = <&gpio0 6 GPIO_INT_ACTIVE_LOW>;
+			label = "Onboard green LED 0";
+		};
+	};
+
+	led_1 {
+		compatible = "gpio-leds";
+		led1_red: red {
+			gpios = <&gpio0 8 GPIO_INT_ACTIVE_LOW>;
+			label = "Onboard red LED 1";
+		};
+		led1_green: green {
+			gpios = <&gpio1 9 GPIO_INT_ACTIVE_LOW>;
+			label = "Onboard green LED 1";
+		};
+		led1_blue: blue {
+			gpios = <&gpio0 12 GPIO_INT_ACTIVE_LOW>;
+			label = "Onboard blue LED 1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		user_button_0: button@0 {
+			label = "Push button switch 0";
+			gpios = <&gpio1 6 GPIO_PUD_PULL_UP>;
+		};
+	};
+};
+
+&gpiote {
+	status ="ok";
+};
+
+&gpio0 {
+	status ="ok";
+};
+
+&gpio1 {
+	status ="ok";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "ok";
+};
+
+&i2c0 {
+	status = "ok";
+	sda-pin = <26>;
+	scl-pin = <27>;
+};
+
+&i2c1 {
+	status = "ok";
+	sda-pin = <30>;
+	scl-pin = <31>;
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@e0000 {
+			label = "mcuboot";
+			reg = <0x0000e0000 0x0001a000>;
+		};
+		slot0_partition: partition@1000 {
+			label = "image-0";
+			reg = <0x00001000 0x000060000>;
+		};
+		slot1_partition: partition@61000 {
+			label = "image-1";
+			reg = <0x0061000 0x000060000>;
+		};
+		scratch_partition: partition@c1000 {
+			label = "image-scratch";
+			reg = <0x000c1000 0x0001f000>;
+		};
+
+#if defined(CONFIG_FS_FLASH_STORAGE_PARTITION)
+		storage_partition: partition@fa000 {
+			label = "storage";
+			reg = <0x000fa000 0x00004000>;
+		};
+#endif
+	};
+};
+
+&usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "ok";
+};
