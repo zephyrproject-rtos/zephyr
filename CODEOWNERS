@@ -80,7 +80,7 @@ drivers/interrupt_controller/*           @andrewboie
 drivers/led/*                            @Mani-Sadhasivam
 drivers/led_strip/*                      @mbolivar
 drivers/pinmux/stm32/*                   @rsalveti @idlethread
-drivers/sensor/*                         @bogdan-davidoaia
+drivers/sensor/                          @bogdan-davidoaia @MaureenHelm
 drivers/serial/uart_altera_jtag_hal.c    @ramakrishnapallala
 drivers/serial/uart_riscv_qemu.c         @fractalclone @kgugala @pgielda
 drivers/net/slip.c                       @jukkar @tbursztyka
