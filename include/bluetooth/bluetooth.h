@@ -56,6 +56,24 @@ typedef void (*bt_ready_cb_t)(int err);
  */
 int bt_enable(bt_ready_cb_t cb);
 
+/** @brief Set Bluetooth Device Name
+ *
+ *  Set Bluetooth GAP Device Name.
+ *
+ *  @param name New name
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_set_name(const char *name);
+
+/** @brief Get Bluetooth Device Name
+ *
+ *  Get Bluetooth GAP Device Name.
+ *
+ *  @return Bluetooth Device Name
+ */
+const char *bt_get_name(void);
+
 /** @brief Set the local Identity Address
  *
  *  Allows setting the local Identity Address from the application.
