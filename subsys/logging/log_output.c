@@ -6,6 +6,7 @@
 
 #include <logging/log_output.h>
 #include <logging/log_ctrl.h>
+#include <assert.h>
 #include <ctype.h>
 
 #define HEXDUMP_BYTES_IN_LINE 8
@@ -309,15 +310,17 @@ static void hexdump_print(struct log_msg *msg,
 static void raw_string_print(struct log_msg *msg,
 			     struct log_output_ctx *ctx)
 {
+	assert(ctx->length);
+
 	size_t offset = 0;
 	size_t length;
 
-	while (length > 0) {
+	do {
 		length = ctx->length;
 		log_msg_hexdump_data_get(msg, ctx->data, &length, offset);
 		offset += length;
 		ctx->func(ctx->data, length, ctx->ctx);
-	}
+	} while (length > 0);
 
 	print(ctx, "\r");
 }
