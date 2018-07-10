@@ -60,21 +60,21 @@
 
 #define W25QXXDV_SECTOR_MASK     (0xFFF)
 
-/* ID comands */
+/* ID commands */
 #define W25QXXDV_CMD_RDID        0x9F
 #define W25QXXDV_CMD_RES         0xAB
 #define W25QXXDV_CMD_REMS        0x90
 #define W25QXXDV_CMD_QPIID       0xAF
 #define W25QXXDV_CMD_UNID        0x4B
 
-/*Register comands */
+/*Register commands */
 #define W25QXXDV_CMD_WRSR        0x01
 #define W25QXXDV_CMD_RDSR        0x05
 #define W25QXXDV_CMD_RDSR2       0x35
 #define W25QXXDV_CMD_WRSCUR      0x2F
 #define W25QXXDV_CMD_RDSCUR      0x48
 
-/* READ comands */
+/* READ commands */
 #define W25QXXDV_CMD_READ        0x03
 #define W25QXXDV_CMD_2READ       0xBB
 #define W25QXXDV_CMD_4READ       0xEB
@@ -83,33 +83,33 @@
 #define W25QXXDV_CMD_QREAD       0x6B
 #define W25QXXDV_CMD_RDSFDP      0x5A
 
-/* Program comands */
+/* Program commands */
 #define W25QXXDV_CMD_WREN        0x06
 #define W25QXXDV_CMD_WRDI        0x04
 #define W25QXXDV_CMD_PP          0x02
 #define W25QXXDV_CMD_4PP         0x32
 #define W25QXXDV_CMD_WRENVSR     0x50
 
-/* Erase comands */
+/* Erase commands */
 #define W25QXXDV_CMD_SE          0x20
 #define W25QXXDV_CMD_BE32K       0x52
 #define W25QXXDV_CMD_BE          0xD8
 #define W25QXXDV_CMD_CE          0x60
 
-/* Mode setting comands */
+/* Mode setting commands */
 #define W25QXXDV_CMD_DP          0xB9
 #define W25QXXDV_CMD_RDP         0xAB
 
-/* Reset comands */
+/* Reset commands */
 #define W25QXXDV_CMD_RSTEN       0x66
 #define W25QXXDV_CMD_RST         0x99
 #define W25QXXDV_CMD_RSTQIO      0xF5
 
-/* Security comands */
+/* Security commands */
 #define W25QXXDV_CMD_ERSR        0x44
 #define W25QXXDV_CMD_PRSR        0x42
 
-/* Suspend/Resume comands */
+/* Suspend/Resume commands */
 #define W25QXXDV_CMD_PGM_ERS_S   0x75
 #define W25QXXDV_CMD_PGM_ERS_R   0x7A
 
