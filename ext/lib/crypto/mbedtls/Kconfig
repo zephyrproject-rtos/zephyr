@@ -44,12 +44,14 @@ endchoice
 config MBEDTLS_CFG_FILE
 	string "mbed TLS configuration file"
 	depends on MBEDTLS_BUILTIN
-	default "config-mini-tls1_2.h"
+	default "config-tls-generic.h"
 	help
-	  Use a specific mbed TLS configuration file. The default is suitable to
-	  communicate with majority of HTTPS servers on the Internet, but has
-	  relatively many features enabled. To optimize resources for special
-	  TLS usage, an alternative config may be selected.
+	  Use a specific mbed TLS configuration file. The default config file
+	  file can be tweaked with Kconfig. The default configuration is
+	  suitable to communicate with majority of HTTPS servers on the Internet,
+	  but has relatively many features enabled. To optimize resources for
+	  special TLS usage, use available Kconfig options, or select an
+	  alternative config.
 
 if MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"
 source "ext/lib/crypto/mbedtls/Kconfig.tls-generic"
