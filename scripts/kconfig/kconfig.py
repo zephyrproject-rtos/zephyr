@@ -12,7 +12,7 @@ from kconfiglib import Kconfig, Symbol, BOOL, STRING, TRISTATE, TRI_TO_STR
 WARNING_WHITELIST = (
     # Warning generated when a symbol with unsatisfied dependencies is being
     # selected. These should be investigated, but whitelist them for now.
-    "unsatisfied direct dependencies",
+    "y-selected",
 
     # This symbol is only defined for ARC, but is set in some "shared" .conf
     # files
