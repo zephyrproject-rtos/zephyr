@@ -23,8 +23,9 @@ static u8_t k32src_initialized;
 
 static int _m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 {
-	u32_t imask;
 	bool blocking;
+	u32_t imask;
+	u32_t stat;
 
 	/* If the clock is already started then just increment refcount.
 	 * If the start and stop don't happen in pairs, a rollover will
@@ -94,7 +95,8 @@ hf_already_started:
 	 */
 	__ASSERT_NO_MSG(m16src_ref);
 
-	if (NRF_CLOCK->HFCLKSTAT & CLOCK_HFCLKSTAT_STATE_Msk) {
+	stat = CLOCK_HFCLKSTAT_SRC_Xtal | CLOCK_HFCLKSTAT_STATE_Msk;
+	if ((NRF_CLOCK->HFCLKSTAT & stat) == stat) {
 		return 0;
 	} else {
 		return -EINPROGRESS;
@@ -146,6 +148,7 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 {
 	u32_t lf_clk_src;
 	u32_t imask;
+	u32_t stat;
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF5_K32SRC_BLOCKING)
 	u32_t intenset;
@@ -246,7 +249,9 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 	}
 
 lf_already_started:
-	if (NRF_CLOCK->LFCLKSTAT & CLOCK_LFCLKSTAT_STATE_Msk) {
+	stat = (NRF_CLOCK->LFCLKSRCCOPY & CLOCK_LFCLKSRCCOPY_SRC_Msk) |
+	       CLOCK_LFCLKSTAT_STATE_Msk;
+	if ((NRF_CLOCK->LFCLKSTAT & stat) == stat) {
 		return 0;
 	} else {
 		return -EINPROGRESS;
