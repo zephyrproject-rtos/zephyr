@@ -19,13 +19,6 @@
 #include "nrf_common.h"
 #include "gpio_utils.h"
 
-#if defined(CONFIG_SOC_SERIES_NRF51X)
-#define GPIOTE_CHAN_COUNT (4)
-#elif defined(CONFIG_SOC_SERIES_NRF52X)
-#define GPIOTE_CHAN_COUNT (8)
-#else
-#error "Platform not defined."
-#endif
 #define GPIO_PIN_CNF_SENSE_Invalid	0x01
 
 /* GPIO structure for nRF5X. More detailed description of each register can be found in nrf5X.h */
@@ -66,7 +59,9 @@ struct _gpiote {
 };
 
 /*@todo: move GPIOTE channel management to a separate module */
-static u32_t gpiote_chan_mask;
+/* Reserve channels below the base index */
+#define GPIOTE_CH_BASE CONFIG_GPIO_NRF5_GPIOTE_CHAN_BASE
+static u32_t gpiote_chan_mask = BIT_MASK(GPIOTE_CH_BASE);
 
 /** Configuration data */
 struct gpio_nrf5_config {
@@ -155,7 +150,7 @@ static int gpiote_find_channel(struct device *dev, u32_t pin, u32_t port)
 	volatile struct _gpiote *gpiote = (void *)NRF_GPIOTE_BASE;
 	int i;
 
-	for (i = 0; i < GPIOTE_CHAN_COUNT; i++) {
+	for (i = GPIOTE_CH_BASE; i < GPIOTE_CH_NUM; i++) {
 		if ((gpiote_chan_mask & BIT(i)) &&
 		    (GPIOTE_CFG_PIN_GET(gpiote->CONFIG[i]) == pin) &&
 		    (GPIOTE_CFG_PORT_GET(gpiote->CONFIG[i]) == port)) {
@@ -233,6 +228,20 @@ static int gpio_nrf5_config(struct device *dev,
 		u32_t config = 0;
 		u32_t port = GPIO_PORT(dev);
 
+		/* check if already allocated to replace */
+		int i = gpiote_find_channel(dev, pin, port);
+
+		if (i < 0) {
+			if (popcount(gpiote_chan_mask) == GPIOTE_CH_NUM) {
+				return -EIO;
+			}
+
+			/* allocate a GPIOTE channel */
+			i = find_lsb_set(~gpiote_chan_mask) - 1;
+			gpiote_chan_mask |= BIT(i);
+		}
+
+		/* configure GPIOTE channel */
 		if (flags & GPIO_INT_EDGE) {
 			if (flags & GPIO_INT_DOUBLE_EDGE) {
 				config |= GPIOTE_CFG_POL_TOGG;
@@ -245,21 +254,6 @@ static int gpio_nrf5_config(struct device *dev,
 			/*@todo: use SENSE for this? */
 			return -ENOTSUP;
 		}
-		if (popcount(gpiote_chan_mask) == GPIOTE_CHAN_COUNT) {
-			return -EIO;
-		}
-
-		/* check if already allocated to replace */
-		int i = gpiote_find_channel(dev, pin, port);
-
-		if (i < 0) {
-			/* allocate a GPIOTE channel */
-			i = find_lsb_set(~gpiote_chan_mask) - 1;
-		}
-
-		gpiote_chan_mask |= BIT(i);
-
-		/* configure GPIOTE channel */
 		config |= GPIOTE_CFG_EVT;
 		config |= GPIOTE_CFG_PIN(pin);
 		config |= GPIOTE_CFG_PORT(port);
@@ -389,7 +383,7 @@ static void gpio_nrf5_port_isr(void *arg)
 	u32_t enabled_int;
 	int i;
 
-	for (i = 0; i < GPIOTE_CHAN_COUNT; i++) {
+	for (i = GPIOTE_CH_BASE; i < GPIOTE_CH_NUM; i++) {
 		if (gpiote->EVENTS_IN[i]) {
 			int port = GPIOTE_CFG_PORT_GET(gpiote->CONFIG[i]);
 			int pin = GPIOTE_CFG_PIN_GET(gpiote->CONFIG[i]);

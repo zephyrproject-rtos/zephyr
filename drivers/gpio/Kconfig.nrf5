@@ -14,16 +14,16 @@ menuconfig GPIO_NRF5
 
 if GPIO_NRF5
 
-config GPIO_NRF5_INIT_PRIORITY
-	int "nRF5 GPIO initialization priority"
-	default 40
-	help
-	  Initialization priority for nRF5 GPIO.
-
 config GPIO_NRF5_P0
 	bool "nRF5x GPIO Port P0"
 	help
 	  Enable nRF5 GPIO port P0 config options.
+
+config GPIO_NRF5_P1
+	bool "nRF5x GPIO Port P1"
+	depends on SOC_NRF52840
+	help
+	  Enable nRF5 GPIO port P1 config options.
 
 if !HAS_DTS_GPIO
 
@@ -33,16 +33,6 @@ config GPIO_NRF5_P0_DEV_NAME
 	default "GPIO_0"
 	help
 	  Specify the device name to be used for the GPIO port.
-
-endif # !HAS_DTS_GPIO
-
-config GPIO_NRF5_P1
-	bool "nRF5x GPIO Port P1"
-	depends on SOC_NRF52840
-	help
-	  Enable nRF5 GPIO port P1 config options.
-
-if !HAS_DTS_GPIO
 
 config GPIO_NRF5_P1_DEV_NAME
 	string "GPIO Port P1 Device Name"
@@ -72,5 +62,19 @@ config GPIOTE_NRF5_IRQ
 	  nRF5 GPIOTE IRQ priority.
 
 endif # !HAS_DTS_GPIO
+
+config GPIO_NRF5_INIT_PRIORITY
+	int "nRF5 GPIO initialization priority"
+	default 40
+	help
+	  Initialization priority for nRF5 GPIO.
+
+config GPIO_NRF5_GPIOTE_CHAN_BASE
+	# hidden
+	int
+	default 0
+	default 1 if (BT_CTLR_GPIO_PA || BT_CTLR_GPIO_LNA)
+	default 3 if PWM_NRF5_SW
+	default 4 if (BT_CTLR_GPIO_PA || BT_CTLR_GPIO_LNA) && PWM_NRF5_SW
 
 endif # GPIO_NRF5
