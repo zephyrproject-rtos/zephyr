@@ -67,11 +67,11 @@ config HTTP_CLIENT_NETWORK_TIMEOUT
 	  Default network activity timeout in seconds.  This setting is used
 	  for TCP connection timeout.
 
-config  NET_DEBUG_HTTP
-	bool "Debug HTTP"
-	depends on HTTP && NET_LOG
-	help
-	  Enables HTTP output debug messages
+module=HTTP
+module-dep=NET_LOG
+module-str=Log level for HTTP
+module-help=Enables routing engine debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
 config  NET_DEBUG_HTTP_CONN
 	bool "Debug HTTP connections"
