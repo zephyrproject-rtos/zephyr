@@ -7,6 +7,13 @@
 #if defined(CONFIG_USB_DEVICE_OS_DESC)
 #define USB_OSDESC_EXTENDED_COMPAT_ID	0x04
 
+/*
+ * Devices supporting Microsoft OS Descriptors store special string
+ * descriptor at fixed index (0xEE). It is read when a new device is
+ * attached to a computer for the first time.
+ */
+#define USB_OSDESC_STRING_DESC_INDEX	0xEE
+
 struct usb_os_descriptor {
 	u8_t *string;
 	size_t string_len;

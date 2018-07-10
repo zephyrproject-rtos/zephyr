@@ -25,7 +25,7 @@ int usb_handle_os_desc(struct usb_setup_packet *setup,
 	}
 
 	if (GET_DESC_TYPE(setup->wValue) == DESC_STRING &&
-	    GET_DESC_INDEX(setup->wValue) == 0xEE) {
+	    GET_DESC_INDEX(setup->wValue) == USB_OSDESC_STRING_DESC_INDEX) {
 		SYS_LOG_DBG("MS OS Descriptor string read");
 		*data = os_desc->string;
 		*len = os_desc->string_len;
