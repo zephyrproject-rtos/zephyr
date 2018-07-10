@@ -24,8 +24,6 @@
 #include <gatt/dis.h>
 #include <gatt/bas.h>
 
-#define DEVICE_NAME				CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN				(sizeof(DEVICE_NAME) - 1)
 #define SENSOR_1_NAME				"Temperature Sensor 1"
 #define SENSOR_2_NAME				"Temperature Sensor 2"
 #define SENSOR_3_NAME				"Humidity Sensor"
@@ -364,10 +362,6 @@ static const struct bt_data ad[] = {
 	/* TODO: Include Service Data AD */
 };
 
-static struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
-};
-
 static void connected(struct bt_conn *conn, u8_t err)
 {
 	if (err) {
@@ -400,8 +394,7 @@ static void bt_ready(int err)
 	bas_init();
 	dis_init(CONFIG_SOC, "ACME");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
-			      sd, ARRAY_SIZE(sd));
+	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;

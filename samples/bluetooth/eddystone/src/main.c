@@ -21,8 +21,6 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 #define NUMBER_OF_SLOTS 1
 #define EDS_VERSION 0x00
 #define EDS_URL_READ_OFFSET 2
@@ -38,11 +36,6 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_UUID128_ALL,
 		      0x95, 0xe2, 0xed, 0xeb, 0x1b, 0xa0, 0x39, 0x8a,
 		      0xdf, 0x4b, 0xd3, 0x8e, 0x00, 0x75, 0xc8, 0xa3),
-};
-
-/* Set Scan Response data */
-static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
 };
 
 /* Eddystone Service Variables */
@@ -439,11 +432,11 @@ static int eds_slot_restart(struct eds_slot *slot, u8_t type)
 
 	if (type == EDS_TYPE_NONE) {
 		/* Restore connectable if slot */
-		err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
-				      sd, ARRAY_SIZE(sd));
+		err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad),
+				      NULL, 0);
 	} else {
-		err = bt_le_adv_start(BT_LE_ADV_NCONN, slot->ad,
-				      ARRAY_SIZE(slot->ad), sd, ARRAY_SIZE(sd));
+		err = bt_le_adv_start(BT_LE_ADV_NCONN_NAME, slot->ad,
+				      ARRAY_SIZE(slot->ad), NULL, 0);
 	}
 
 	if (err) {
@@ -638,8 +631,7 @@ static void bt_ready(int err)
 	bt_gatt_service_register(&eds_svc);
 
 	/* Start advertising */
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
-			      sd, ARRAY_SIZE(sd));
+	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;
