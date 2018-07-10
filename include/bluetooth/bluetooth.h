@@ -154,6 +154,9 @@ enum {
 	 *           must be taken when using this option.
 	 */
 	BT_LE_ADV_OPT_USE_IDENTITY = BIT(2),
+
+	/* Advertise using GAP device name */
+	BT_LE_ADV_OPT_USE_NAME = BIT(3),
 };
 
 /** LE Advertising Parameters. */
