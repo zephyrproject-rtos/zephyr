@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_SNTP)
-#define SYS_LOG_DOMAIN "net/sntp"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_sntp
+#define NET_LOG_LEVEL CONFIG_SNTP_LOG_LEVEL
 
 #include <net/sntp.h>
 #include "sntp_pkt.h"
