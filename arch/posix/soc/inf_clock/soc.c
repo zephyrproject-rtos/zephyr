@@ -213,6 +213,20 @@ void posix_boot_cpu(void)
 	}
 }
 
+static void run_native_exit_tasks(void)
+{
+	extern void (*__native_exit_tasks_start[])(void);
+	extern void (*__native_exit_tasks_end[])(void);
+
+	void (**fptr)(void);
+	for (fptr = __native_exit_tasks_start; fptr < __native_exit_tasks_end;
+		fptr++) {
+		if (*fptr) {
+			(*fptr)();
+		}
+	}
+}
+
 /**
  * Clean up all memory allocated by the SOC and POSIX core
  *
@@ -230,6 +244,7 @@ void posix_soc_clean_up(void)
 	if (cpu_halted) {
 
 		posix_core_clean_up();
+		run_native_exit_tasks();
 
 	} else if (soc_terminate == false) {
 
