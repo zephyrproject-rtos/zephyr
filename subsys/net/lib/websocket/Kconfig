@@ -13,9 +13,10 @@ menuconfig WEBSOCKET
 
 if WEBSOCKET
 
-config NET_DEBUG_WEBSOCKET
-	bool "Debug websocket library"
-	help
-	  Enables websocket library to output debug messages
+module=WEBSOCKET
+module-dep=NET_LOG
+module-str=Log level for weboscket library
+module-help=Enables websocket library to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
 endif # WEBSOCKET
