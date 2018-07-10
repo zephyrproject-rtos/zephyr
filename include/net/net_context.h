@@ -283,6 +283,11 @@ struct net_context {
 	struct tls_context *tls;
 #endif /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
 #endif /* CONFIG_NET_SOCKETS */
+
+#if defined(CONFIG_NET_OFFLOAD)
+	/** context for use by offload drivers */
+	void *offload_context;
+#endif /* CONFIG_NET_OFFLOAD */
 };
 
 static inline bool net_context_is_used(struct net_context *context)
