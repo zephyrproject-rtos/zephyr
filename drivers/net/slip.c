@@ -11,9 +11,12 @@
  * host and qemu. The host will need to run tunslip process.
  */
 
-#define SYS_LOG_DOMAIN "slip"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SLIP_LEVEL
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME slip
+#define LOG_LEVEL CONFIG_SLIP_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
 #include <stdio.h>
 
 #include <kernel.h>
@@ -94,62 +97,6 @@ static const struct net_lldpdu lldpdu = {
 #define lldpdu_ptr NULL
 #endif /* CONFIG_NET_LLDP */
 
-#if SYS_LOG_LEVEL >= SYS_LOG_LEVEL_DEBUG
-#if defined(CONFIG_SYS_LOG_SHOW_COLOR)
-#define COLOR_OFF     "\x1B[0m"
-#define COLOR_YELLOW  "\x1B[0;33m"
-#else
-#define COLOR_OFF     ""
-#define COLOR_YELLOW  ""
-#endif
-
-static void hexdump(const char *str, const u8_t *packet,
-		    size_t length, size_t ll_reserve)
-{
-	int n = 0;
-
-	if (!length) {
-		SYS_LOG_DBG("%s zero-length packet", str);
-		return;
-	}
-
-	while (length--) {
-		if (n % 16 == 0) {
-			printf("%s %08X ", str, n);
-		}
-
-#if defined(CONFIG_SYS_LOG_SHOW_COLOR)
-		if (n < ll_reserve) {
-			printf(COLOR_YELLOW);
-		} else {
-			printf(COLOR_OFF);
-		}
-#endif
-		printf("%02X ", *packet++);
-
-#if defined(CONFIG_SYS_LOG_SHOW_COLOR)
-		if (n < ll_reserve) {
-			printf(COLOR_OFF);
-		}
-#endif
-		n++;
-		if (n % 8 == 0) {
-			if (n % 16 == 0) {
-				printf("\n");
-			} else {
-				printf(" ");
-			}
-		}
-	}
-
-	if (n % 16) {
-		printf("\n");
-	}
-}
-#else
-#define hexdump(slip, str, packet, length, ll_reserve)
-#endif
-
 static inline void slip_writeb(unsigned char c)
 {
 	u8_t buf[1] = { c };
@@ -207,10 +154,6 @@ static int slip_send(struct net_if *iface, struct net_pkt *pkt)
 	slip_writeb(SLIP_END);
 
 	for (frag = pkt->frags; frag; frag = frag->frags) {
-#if SYS_LOG_LEVEL >= SYS_LOG_LEVEL_DEBUG
-		int frag_count = 0;
-#endif
-
 #if defined(CONFIG_SLIP_TAP)
 		ptr = frag->data - ll_reserve;
 
@@ -240,19 +183,24 @@ static int slip_send(struct net_if *iface, struct net_pkt *pkt)
 			slip_writeb_esc(c);
 		}
 
-#if SYS_LOG_LEVEL >= SYS_LOG_LEVEL_DEBUG
-		SYS_LOG_DBG("sent data %d bytes",
-			    frag->len + net_pkt_ll_reserve(pkt));
-		if (frag->len + net_pkt_ll_reserve(pkt)) {
-			char msg[8 + 1];
+		if (LOG_LEVEL >= LOG_LEVEL_DBG) {
+			int frag_count = 0;
 
-			snprintf(msg, sizeof(msg), "<slip %2d", frag_count++);
+			LOG_DBG("sent data %d bytes",
+				frag->len + net_pkt_ll_reserve(pkt));
 
-			hexdump(msg, net_pkt_ll(pkt),
-				frag->len + net_pkt_ll_reserve(pkt),
-				net_pkt_ll_reserve(pkt));
+			if (frag->len + net_pkt_ll_reserve(pkt)) {
+				char msg[8 + 1];
+
+				snprintf(msg, sizeof(msg), "<slip %2d",
+					 frag_count++);
+
+				LOG_HEXDUMP_DBG(net_pkt_ll(pkt),
+						frag->len +
+						net_pkt_ll_reserve(pkt),
+						msg);
+			}
 		}
-#endif
 	}
 
 	net_pkt_unref(pkt);
@@ -372,15 +320,14 @@ static inline int slip_input_byte(struct slip_context *slip,
 
 			slip->rx = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 			if (!slip->rx) {
-				SYS_LOG_ERR("[%p] cannot allocate pkt",
-					    slip);
+				LOG_ERR("[%p] cannot allocate pkt", slip);
 				return 0;
 			}
 
 			slip->last = net_pkt_get_frag(slip->rx, K_NO_WAIT);
 			if (!slip->last) {
-				SYS_LOG_ERR("[%p] cannot allocate 1st data frag",
-					    slip);
+				LOG_ERR("[%p] cannot allocate 1st data frag",
+					slip);
 				net_pkt_unref(slip->rx);
 				slip->rx = NULL;
 				return 0;
@@ -407,8 +354,7 @@ static inline int slip_input_byte(struct slip_context *slip,
 
 		frag = net_pkt_get_reserve_rx_data(0, K_NO_WAIT);
 		if (!frag) {
-			SYS_LOG_ERR("[%p] cannot allocate next data frag",
-				    slip);
+			LOG_ERR("[%p] cannot allocate next data frag", slip);
 			net_pkt_unref(slip->rx);
 			slip->rx = NULL;
 			slip->last = NULL;
@@ -448,24 +394,29 @@ static u8_t *recv_cb(u8_t *buf, size_t *off)
 
 	for (i = 0; i < *off; i++) {
 		if (slip_input_byte(slip, buf[i])) {
-#if SYS_LOG_LEVEL >= SYS_LOG_LEVEL_DEBUG
-			struct net_buf *frag = slip->rx->frags;
-			int bytes = net_buf_frags_len(frag);
-			int count = 0;
 
-			while (bytes && frag) {
-				char msg[8 + 1];
+			if (LOG_LEVEL >= LOG_LEVEL_DBG) {
+				struct net_buf *frag = slip->rx->frags;
+				int bytes = net_buf_frags_len(frag);
+				int count = 0;
 
-				snprintf(msg, sizeof(msg), ">slip %2d", count);
+				while (bytes && frag) {
+					char msg[8 + 1];
 
-				hexdump(msg, frag->data, frag->len, 0);
+					snprintf(msg, sizeof(msg),
+						 ">slip %2d", count);
 
-				frag = frag->frags;
-				count++;
+					LOG_HEXDUMP_DBG(frag->data, frag->len,
+							msg);
+
+					frag = frag->frags;
+					count++;
+				}
+
+				LOG_DBG("[%p] received data %d bytes", slip,
+					bytes);
 			}
 
-			SYS_LOG_DBG("[%p] received data %d bytes", slip, bytes);
-#endif
 			process_msg(slip);
 			break;
 		}
@@ -480,14 +431,14 @@ static int slip_init(struct device *dev)
 {
 	struct slip_context *slip = dev->driver_data;
 
-	SYS_LOG_DBG("[%p] dev %p", slip, dev);
+	LOG_DBG("[%p] dev %p", slip, dev);
 
 	slip->state = STATE_OK;
 	slip->rx = NULL;
 	slip->first = false;
 
 #if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_IPV4)
-	SYS_LOG_DBG("ARP enabled");
+	LOG_DBG("ARP enabled");
 #endif
 
 	uart_pipe_register(slip->buf, sizeof(slip->buf), recv_cb);
