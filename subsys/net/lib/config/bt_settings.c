@@ -6,6 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_config_bt
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
+
 #include <zephyr.h>
 #include <errno.h>
 

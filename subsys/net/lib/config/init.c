@@ -6,11 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_APP)
-#define SYS_LOG_DOMAIN "net/app"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_config
+#define NET_LOG_LEVEL CONFIG_NET_CONFIG_LOG_LEVEL
 
 #include <zephyr.h>
 #include <init.h>
@@ -40,7 +37,7 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 				  u32_t mgmt_event,
 				  struct net_if *iface)
 {
-#if defined(CONFIG_NET_DEBUG_APP) && CONFIG_SYS_LOG_NET_LEVEL > 2
+#if NET_LOG_LEVEL > 2
 	char hr_addr[NET_IPV4_ADDR_LEN];
 #endif
 	int i;
@@ -57,7 +54,7 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 			continue;
 		}
 
-#if defined(CONFIG_NET_DEBUG_APP) && CONFIG_SYS_LOG_NET_LEVEL > 2
+#if NET_LOG_LEVEL > 2
 		NET_INFO("IPv4 address: %s",
 			 net_addr_ntop(AF_INET, &if_addr->address.in_addr,
 				       hr_addr, sizeof(hr_addr)));
@@ -102,7 +99,7 @@ static void setup_dhcpv4(struct net_if *iface)
 
 static void setup_ipv4(struct net_if *iface)
 {
-#if defined(CONFIG_NET_DEBUG_APP) && CONFIG_SYS_LOG_NET_LEVEL > 2
+#if NET_LOG_LEVEL > 2
 	char hr_addr[NET_IPV4_ADDR_LEN];
 #endif
 	struct in_addr addr;
@@ -133,7 +130,7 @@ static void setup_ipv4(struct net_if *iface)
 	net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
 #endif
 
-#if defined(CONFIG_NET_DEBUG_APP) && CONFIG_SYS_LOG_NET_LEVEL > 2
+#if NET_LOG_LEVEL > 2
 	NET_INFO("IPv4 address: %s",
 		 net_addr_ntop(AF_INET, &addr, hr_addr, sizeof(hr_addr)));
 #endif
@@ -198,7 +195,7 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 	}
 
 	if (mgmt_event == NET_EVENT_IPV6_DAD_SUCCEED) {
-#if defined(CONFIG_NET_DEBUG_APP) && CONFIG_SYS_LOG_NET_LEVEL > 2
+#if NET_LOG_LEVEL > 2
 		char hr_addr[NET_IPV6_ADDR_LEN];
 #endif
 		struct net_if_addr *ifaddr;
@@ -211,7 +208,7 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 			return;
 		}
 
-#if defined(CONFIG_NET_DEBUG_APP) && CONFIG_SYS_LOG_NET_LEVEL > 2
+#if NET_LOG_LEVEL > 2
 		NET_INFO("IPv6 address: %s",
 			 net_addr_ntop(AF_INET6, &laddr, hr_addr,
 				       NET_IPV6_ADDR_LEN));
