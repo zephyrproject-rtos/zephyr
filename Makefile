@@ -2,16 +2,9 @@
 # Top level makefile for things not covered by cmake
 #
 
-ifeq ($(VERBOSE),1)
-  Q =
-else
-  Q = @
-endif
-
-MAKEFLAGS += --no-print-directory
-export Q
+BUILDDIR ?= doc/_build
 
 # Documentation targets
 # ---------------------------------------------------------------------------
 htmldocs:
-	$(Q)$(MAKE) -C doc htmldocs
+	mkdir -p ${BUILDDIR} && cmake -G"Unix Makefiles" -B${BUILDDIR} -Hdoc/ && make -s -C ${BUILDDIR} htmldocs
