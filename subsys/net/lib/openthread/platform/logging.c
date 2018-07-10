@@ -10,9 +10,10 @@
 
 #include <openthread/platform/logging.h>
 
-#define SYS_LOG_DOMAIN "openthread"
-#define SYS_LOG_LEVEL 4
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME net_openthread
+#define LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "platform-zephyr.h"
 
@@ -38,16 +39,16 @@ void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion,
 
 	switch (aLogLevel) {
 	case OT_LOG_LEVEL_CRIT:
-		SYS_LOG_ERR("%s", logString);
+		LOG_ERR("%s", logString);
 		break;
 	case OT_LOG_LEVEL_WARN:
-		SYS_LOG_WRN("%s", logString);
+		LOG_WRN("%s", logString);
 		break;
 	case OT_LOG_LEVEL_INFO:
-		SYS_LOG_INF("%s", logString);
+		LOG_INF("%s", logString);
 		break;
 	case OT_LOG_LEVEL_DEBG:
-		SYS_LOG_DBG("%s", logString);
+		LOG_DBG("%s", logString);
 		break;
 	default:
 		break;
