@@ -46,9 +46,10 @@ static inline void msg_finalize(struct log_msg *msg,
 	msg->hdr.ids = src_level;
 	msg->hdr.timestamp = timestamp_func();
 
+	atomic_inc(&buffered_cnt);
+
 	if (!IS_ENABLED(CONFIG_LOG_INPLACE_PROCESS) &&
 	    CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
-		atomic_inc(&buffered_cnt);
 		if (buffered_cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
 		    proc_tid) {
 			k_wakeup(proc_tid);
@@ -224,7 +225,6 @@ void log_init(void)
 	timestamp_func = timestamp_get;
 	log_output_timestamp_freq_set(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
-
 	/* Assign ids to backends. */
 	for (i = 0; i < log_backend_count_get(); i++) {
 		log_backend_id_set(log_backend_get(i),
@@ -239,7 +239,7 @@ void log_init(void)
 #endif
 }
 
-void log_thread_set(k_tid_t process_tid)
+static void thread_set(k_tid_t process_tid)
 {
 	proc_tid = process_tid;
 
@@ -248,6 +248,15 @@ void log_thread_set(k_tid_t process_tid)
 	    process_tid &&
 	    buffered_cnt >= CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
 		k_wakeup(proc_tid);
+	}
+}
+
+void log_thread_set(k_tid_t process_tid)
+{
+	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
+		assert(0);
+	} else {
+		thread_set(process_tid);
 	}
 }
 
@@ -330,6 +339,11 @@ bool log_process(bool bypass)
 	}
 
 	return (log_list_head_peek(&list) != NULL);
+}
+
+u32_t log_buffered_cnt(void)
+{
+	return buffered_cnt;
 }
 
 u32_t log_src_cnt_get(u32_t domain_id)
@@ -444,13 +458,10 @@ u32_t log_filter_get(struct log_backend const *const backend,
 }
 
 #ifdef CONFIG_LOG_PROCESS_THREAD
-
-#define STACKSIZE 768
-
 static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 {
 	log_init();
-	log_thread_set(k_current_get());
+	thread_set(k_current_get());
 
 	while (1) {
 		if (log_process(false) == false) {
@@ -459,7 +470,7 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	}
 }
 
-K_THREAD_DEFINE(log_process_thread, STACKSIZE, log_process_thread_func,
-		NULL, NULL, NULL,
-		K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+K_THREAD_DEFINE(log_process_thread, CONFIG_LOG_PROCESS_THREAD_STACK_SIZE,
+		log_process_thread_func, NULL, NULL, NULL,
+		CONFIG_LOG_PROCESS_THREAD_PRIO, 0, K_NO_WAIT);
 #endif /* CONFIG_LOG_PROCESS_THREAD */

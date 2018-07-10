@@ -194,11 +194,19 @@ static void external_log_system_showcase(void)
 	ext_log_system_foo();
 }
 
+static void wait_on_log_flushed(void)
+{
+	while (log_buffered_cnt()) {
+		k_sleep(5);
+	}
+}
+
 void log_demo_thread(void *dummy1, void *dummy2, void *dummy3)
 {
-	const u32_t sleep_period = CONFIG_LOG_PROCESS_THREAD_SLEEP_MS + 100;
+	k_sleep(100);
 
 	(void)log_set_timestamp_func(timestamp_get, timestamp_freq());
+
 	module_logging_showcase();
 
 	instance_logging_showcase();
@@ -218,20 +226,19 @@ void log_demo_thread(void *dummy1, void *dummy2, void *dummy3)
 		       log_source_id_get(INST2_NAME),
 		       CONFIG_LOG_DEFAULT_LEVEL);
 
-	/* Ensuring that log thread will process. */
-	k_sleep(sleep_period);
+	wait_on_log_flushed();
 
 	severity_levels_showcase();
-	/* Ensuring that log thread will process. */
-	k_sleep(sleep_period);
+
+	wait_on_log_flushed();
 
 	performance_showcase();
-	/* Ensuring that log thread will process. */
-	k_sleep(sleep_period);
+
+	wait_on_log_flushed();
 
 	external_log_system_showcase();
-	/* Ensuring that log thread will process. */
-	k_sleep(sleep_period);
+
+	wait_on_log_flushed();
 }
 
 K_THREAD_DEFINE(log_demo_thread_id, STACKSIZE, log_demo_thread,

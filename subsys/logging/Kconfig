@@ -214,7 +214,8 @@ config LOG_PROCESS_TRIGGER_THRESHOLD
 	help
 	  When number of buffered messages reaches the threshold thread is waken
 	  up. Log processing thread ID is provided during log initialization.
-	  Set 0 to disable the feature.
+	  Set 0 to disable the feature. If LOG_PROCESS_THREAD is enabled then
+	  this threshold is used by the internal thread.
 
 config LOG_PROCESS_THREAD
 	bool "Enable internal thread for log processing"
@@ -225,13 +226,29 @@ config LOG_PROCESS_THREAD
 	  number of buffered messages exceeds the threshold (see
 	  LOG_PROCESS_TRIGGER_THR).
 
+if LOG_PROCESS_THREAD
+
 config LOG_PROCESS_THREAD_SLEEP_MS
-	int "Set log processing thread sleep period"
-	depends on LOG_PROCESS_THREAD
+	int "Set internal log processing thread sleep period"
 	default 1000
 	help
 	  Log processing thread sleeps for requested period given in
 	  milliseconds. When waken up, thread process any buffered messages.
+
+config LOG_PROCESS_THREAD_PRIO
+	int "Priority of the log internal thread"
+	default -2
+	help
+	  Change with care since log processing can be time consuming thus it
+	  should be on low priority.
+
+config LOG_PROCESS_THREAD_STACK_SIZE
+	int "Stack size for the internal log processing thread"
+	default 768
+	help
+	  Set the internal stack size for log processing thread.
+
+endif
 
 config LOG_BUFFER_SIZE
 	int "Number of bytes dedicated for the logger internal buffer."
