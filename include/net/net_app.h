@@ -416,7 +416,7 @@ struct net_app_ctx {
 	/** User data pointer */
 	void *user_data;
 
-#if defined(CONFIG_NET_DEBUG_APP)
+#if CONFIG_NET_APP_LOG_LEVEL >= LOG_LEVEL_DBG
 	/** Used when debugging with net-shell */
 	sys_snode_t node;
 #endif
@@ -983,11 +983,9 @@ int net_app_server_tls(struct net_app_ctx *ctx,
  * @}
  */
 
-#if defined(CONFIG_NET_DEBUG_APP)
 typedef void (*net_app_ctx_cb_t)(struct net_app_ctx *ctx, void *user_data);
 void net_app_server_foreach(net_app_ctx_cb_t cb, void *user_data);
 void net_app_client_foreach(net_app_ctx_cb_t cb, void *user_data);
-#endif /* CONFIG_NET_DEBUG_APP */
 
 #ifdef __cplusplus
 }

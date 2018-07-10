@@ -1114,7 +1114,7 @@ int net_shell_cmd_allocs(int argc, char *argv[])
 	return 0;
 }
 
-#if (CONFIG_NET_LOG_LEVEL_APP >= LOG_LEVEL_DBG) && \
+#if (CONFIG_NET_APP_LOG_LEVEL >= LOG_LEVEL_DBG) && \
 	(defined(CONFIG_NET_APP_SERVER) || defined(CONFIG_NET_APP_CLIENT))
 
 #if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
@@ -1317,7 +1317,7 @@ int net_shell_cmd_app(int argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-#if CONFIG_NET_LOG_LEVEL_APP >= LOG_LEVEL_DBG
+#if CONFIG_NET_APP_LOG_LEVEL >= LOG_LEVEL_DBG
 	int i = 0;
 
 	if (IS_ENABLED(CONFIG_NET_APP_SERVER)) {

@@ -17,11 +17,11 @@ menuconfig NET_APP
 
 if NET_APP
 
-config NET_DEBUG_APP
-	bool "Debug net app library"
-	default y if NET_LOG_GLOBAL
-	help
-	  Enables net app library to output debug messages
+module=NET_APP
+module-dep=NET_LOG
+module-str=Log level for net_app library
+module-help=Enables net app library to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_APP_SERVER
 	bool "Enable server support"
