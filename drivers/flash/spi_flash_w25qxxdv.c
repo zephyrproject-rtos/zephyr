@@ -308,14 +308,25 @@ static int spi_flash_wb_erase(struct device *dev, off_t offset, size_t size)
 	return ret;
 }
 
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+static struct flash_pages_layout dev_layout;
+
+static void flash_wb_pages_layout(struct device *dev,
+				  const struct flash_pages_layout **layout,
+				  size_t *layout_size)
+{
+	*layout = &dev_layout;
+	*layout_size = 1;
+}
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
 static const struct flash_driver_api spi_flash_api = {
 	.read = spi_flash_wb_read,
 	.write = spi_flash_wb_write,
 	.erase = spi_flash_wb_erase,
 	.write_protection = spi_flash_wb_write_protection_set,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	.page_layout = (flash_api_pages_layout)
-		       flash_page_layout_not_implemented,
+	.page_layout = flash_wb_pages_layout,
 #endif
 	.write_block_size = 1,
 };
@@ -359,6 +370,16 @@ static int spi_flash_init(struct device *dev)
 	if (!ret) {
 		dev->driver_api = &spi_flash_api;
 	}
+
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+	/*
+	 * Note: we use the sector size rather than the page size as some
+	 * modules that consumes the flash page layout assume the page
+	 * size is the minimal size they can erase.
+	 */
+	dev_layout.pages_count = (CONFIG_SPI_FLASH_W25QXXDV_FLASH_SIZE / W25QXXDV_SECTOR_SIZE);
+	dev_layout.pages_size = W25QXXDV_SECTOR_SIZE;
+#endif
 
 	return ret;
 }
