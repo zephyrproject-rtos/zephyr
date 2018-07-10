@@ -10,10 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_DNS_RESOLVE)
-#define SYS_LOG_DOMAIN "dns/resolve"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_dns_resolve
+#define NET_LOG_LEVEL CONFIG_DNS_RESOLVER_LOG_LEVEL
 
 #include <zephyr/types.h>
 #include <string.h>
