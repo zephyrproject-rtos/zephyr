@@ -6,11 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_APP)
-#define SYS_LOG_DOMAIN "net/app"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_app_server
+#define NET_LOG_LEVEL CONFIG_NET_APP_LOG_LEVEL
 
 #include <zephyr.h>
 #include <string.h>
@@ -29,7 +26,7 @@
 static void new_client(struct net_context *net_ctx,
 		       const struct sockaddr *addr)
 {
-#if defined(CONFIG_NET_DEBUG_APP) && (CONFIG_SYS_LOG_NET_LEVEL > 2)
+#if NET_LOG_LEVEL >= LOG_LEVEL_WRN
 #if defined(CONFIG_NET_IPV6)
 #define PORT_STR sizeof("[]:xxxxx")
 	char buf[NET_IPV6_ADDR_LEN + PORT_STR];
@@ -41,7 +38,7 @@ static void new_client(struct net_context *net_ctx,
 	NET_INFO("Connection from %s (%p)",
 		 _net_app_sprint_ipaddr(buf, sizeof(buf), addr),
 		 net_ctx);
-#endif /* CONFIG_NET_DEBUG_APP */
+#endif
 }
 
 static int get_avail_net_ctx(struct net_app_ctx *ctx)
@@ -291,7 +288,7 @@ fail:
 static inline void new_server(struct net_app_ctx *ctx,
 			      const char *server_banner)
 {
-#if defined(CONFIG_NET_DEBUG_APP) && (CONFIG_SYS_LOG_NET_LEVEL > 2)
+#if NET_LOG_LEVEL >= LOG_LEVEL_WRN
 #if defined(CONFIG_NET_IPV6)
 #define PORT_STR sizeof("[]:xxxxx")
 	char buf[NET_IPV6_ADDR_LEN + PORT_STR];
@@ -311,7 +308,7 @@ static inline void new_server(struct net_app_ctx *ctx,
 		 _net_app_sprint_ipaddr(buf, sizeof(buf), &ctx->ipv4.local),
 		 ctx);
 #endif
-#endif /* CONFIG_NET_DEBUG_APP */
+#endif
 }
 
 static struct net_context *find_net_ctx(struct net_app_ctx *ctx,
