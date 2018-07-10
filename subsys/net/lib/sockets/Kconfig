@@ -96,11 +96,10 @@ config NET_SOCKETS_OFFLOAD
 	  See NET_OFFLOAD for a more deeply integrated approach which offloads
 	  from the net_context() API within the Zephyr IP stack.
 
-config NET_DEBUG_SOCKETS
-	bool "Debug BSD Sockets compatible API calls"
-	default y if NET_LOG_GLOBAL
-	help
-	  Enables logging for sockets code. (Logging level is defined by
-	  SYS_LOG_NET_LEVEL setting).
+module=NET_SOCKETS
+module-dep=NET_LOG
+module-str=Log level for BSD sockets compatible API calls
+module-help=Enables logging for sockets code.
+source "subsys/net/Kconfig.template.log_config.net"
 
 endif # NET_SOCKETS
