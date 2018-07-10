@@ -146,6 +146,39 @@ static int spi_flash_wb_read(struct device *dev, off_t offset, void *data,
 	return ret;
 }
 
+static int spi_flash_wb_write_protection_set_with_lock(struct device *dev,
+						       bool enable, bool lock)
+{
+	struct spi_flash_data *const driver_data = dev->driver_data;
+	u8_t reg = 0U;
+	int ret;
+
+	if (lock) {
+		SYNC_LOCK();
+	}
+
+	wait_for_flash_idle(dev);
+
+	if (enable) {
+		reg = W25QXXDV_CMD_WRDI;
+	} else {
+		reg = W25QXXDV_CMD_WREN;
+	}
+
+	ret = spi_flash_wb_reg_write(dev, reg);
+
+	if (lock) {
+		SYNC_UNLOCK();
+	}
+
+	return ret;
+}
+
+static int spi_flash_wb_write_protection_set(struct device *dev, bool enable)
+{
+	return spi_flash_wb_write_protection_set_with_lock(dev, enable, true);
+}
+
 static int spi_flash_wb_write(struct device *dev, off_t offset,
 			      const void *data, size_t len)
 {
@@ -175,29 +208,6 @@ static int spi_flash_wb_write(struct device *dev, off_t offset,
 	 */
 	ret = spi_flash_wb_access(driver_data, W25QXXDV_CMD_PP,
 				  true, offset, (void *)data, len, true);
-
-	SYNC_UNLOCK();
-
-	return ret;
-}
-
-static int spi_flash_wb_write_protection_set(struct device *dev, bool enable)
-{
-	struct spi_flash_data *const driver_data = dev->driver_data;
-	u8_t reg = 0U;
-	int ret;
-
-	SYNC_LOCK();
-
-	wait_for_flash_idle(dev);
-
-	if (enable) {
-		reg = W25QXXDV_CMD_WRDI;
-	} else {
-		reg = W25QXXDV_CMD_WREN;
-	}
-
-	ret = spi_flash_wb_reg_write(dev, reg);
 
 	SYNC_UNLOCK();
 
