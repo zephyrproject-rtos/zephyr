@@ -12,6 +12,7 @@ depends on !NATIVE_APPLICATION
 config NEWLIB_LIBC
 	bool "Build with newlib c library"
 	depends on !X86_64
+	default y
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.
