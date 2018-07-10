@@ -25,6 +25,8 @@ endif()
 # used by the network stack
 zephyr_compile_definitions(__LINUX_ERRNO_EXTENSIONS__)
 
+zephyr_compile_options(-include ${ZEPHYR_BASE}/include/zephyr/newlib_types.h)
+
 zephyr_link_libraries(
   m
   c
