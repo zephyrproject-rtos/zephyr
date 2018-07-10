@@ -16,8 +16,6 @@
 #include <sensor.h>
 #include <zephyr.h>
 
-#define DEVICE_NAME			"Environmental Sensor"
-#define DEVICE_NAME_LEN			(sizeof(DEVICE_NAME) - 1)
 #define TEMPERATURE_CUD			"Temperature"
 #define HUMIDITY_CUD			"Humidity"
 #define PRESSURE_CUD			"Pressure"
@@ -72,10 +70,6 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 };
 
-static struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
-};
-
 static void bt_ready(int err)
 {
 	if (err) {
@@ -85,8 +79,7 @@ static void bt_ready(int err)
 
 	bt_gatt_service_register(&env_svc);
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
-			      sd, ARRAY_SIZE(sd));
+	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;

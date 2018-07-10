@@ -24,8 +24,6 @@
 #define SCAN_TIMEOUT     K_SECONDS(2)
 
 #define APPEARANCE       0
-#define DEVICE_NAME      CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN  (sizeof(DEVICE_NAME) - 1)
 
 #define PONG_SVC_UUID	0x90, 0x6c, 0x55, 0x0f, 0xee, 0x6f, 0x4d, 0x0d, \
 			0xa1, 0x7e, 0x24, 0x4e, 0x38, 0xea, 0x4f, 0xf9
@@ -42,10 +40,6 @@ static struct bt_gatt_subscribe_params subscribe_param;
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID128_ALL, PONG_SVC_UUID),
-};
-
-static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
 };
 
 static struct bt_conn *default_conn;
@@ -468,8 +462,8 @@ static void ble_timeout(struct k_work *work)
 		k_delayed_work_submit(&ble_work, K_NO_WAIT);
 		break;
 	case BLE_ADV_START:
-		err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
-				      sd, ARRAY_SIZE(sd));
+		err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad),
+				      NULL, 0);
 		if (err) {
 			printk("Advertising failed to start (err %d)\n", err);
 			return;
