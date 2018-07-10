@@ -556,7 +556,8 @@ config BT_CTLR_PA_LNA_GPIOTE_CHAN
 	# Hidden "nRF5 GPIO PA/LNA GPIOTE Channel"
 	depends on SOC_FAMILY_NRF && (BT_CTLR_GPIO_PA || BT_CTLR_GPIO_LNA)
 	int
-	default 3
+	default 0
+	default 3 if PWM_NRF5_SW
 	help
 	  Select the nRF5 GPIOTE channel to use for PA/LNA GPIO feature.
 
