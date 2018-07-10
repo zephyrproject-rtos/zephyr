@@ -109,6 +109,14 @@ be processed by printk. Longer strings are trimmed.
 the log macro call. Note that it can lead to errors when logger is used in the
 interrupt context.
 
+:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`: When number of buffered log
+messages reaches the threshold dedicated thread (see :cpp:func:`log_thread_set`)
+is waken up. If :option:`CONFIG_LOG_PROCESS_THREAD` is enabled then this
+threshold is used by the internal thread.
+
+:option:`CONFIG_LOG_PROCESS_THREAD`: When enabled, logger is creating own thread
+which handles log processing.
+
 :option:`CONFIG_LOG_BUFFER_SIZE`: Number of bytes dedicated for the logger
 message pool. Single message capable of storing standard log with up to 3
 arguments or hexdump message with 12 bytes of data take 32 bytes.
@@ -220,6 +228,13 @@ the logger. If run time filtering is enabled the :cpp:func:`log_filter_set` can
 be used to change maximal severity level for given module. Module is identified
 by source ID and domain ID. Source ID can be retrieved if source name is known
 by iterating through all registered sources.
+
+If logger is processed from a thread then it is possible to enable a feature
+which will wake up processing thread when certain amount of log messages are
+buffered (see :option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`). It is also
+possible to enable internal logger thread (see
+:option:`CONFIG_LOG_PROCESS_THREAD`). In that case logger thread is initialized
+and log messages are processed implicitly.
 
 .. _log_panic:
 
