@@ -280,6 +280,39 @@ int log_printk(const char *fmt, va_list ap);
 #endif /*CONFIG_LOG_RUNTIME_FILTERING*/
 
 #else /* LOG enabled for the module. */
+/* No logging, so set the macros to do nothing */
+#undef LOG_ERR
+#define LOG_ERR(...)
+#undef LOG_WRN
+#define LOG_WRN(...)
+#undef LOG_INF
+#define LOG_INF(...)
+#undef LOG_DBG
+#define LOG_DBG(...)
+#undef LOG_INST_ERR
+#define LOG_INST_ERR(_log_inst, ...)
+#undef LOG_INST_WRN
+#define LOG_INST_WRN(_log_inst, ...)
+#undef LOG_INST_INF
+#define LOG_INST_INF(_log_inst, ...)
+#undef LOG_INST_DBG
+#define LOG_INST_DBG(_log_inst, ...)
+#undef LOG_HEXDUMP_ERR
+#define LOG_HEXDUMP_ERR(data, length)
+#undef LOG_HEXDUMP_WRN
+#define LOG_HEXDUMP_WRN(data, length)
+#undef LOG_HEXDUMP_INF
+#define LOG_HEXDUMP_INF(data, length)
+#undef LOG_HEXDUMP_DBG
+#define LOG_HEXDUMP_DBG(data, length)
+#undef LOG_INST_HEXDUMP_ERR
+#define LOG_INST_HEXDUMP_ERR(_log_inst, data, length)
+#undef LOG_INST_HEXDUMP_WRN
+#define LOG_INST_HEXDUMP_WRN(_log_inst, data, length)
+#undef LOG_INST_HEXDUMP_INF
+#define LOG_INST_HEXDUMP_INF(_log_inst, data, length)
+#undef LOG_INST_HEXDUMP_DBG
+#define LOG_INST_HEXDUMP_DBG(_log_inst, _data, _length)
 #define LOG_MODULE_REGISTER() /* Empty */
 #endif
 
