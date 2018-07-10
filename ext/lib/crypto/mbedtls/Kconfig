@@ -51,6 +51,10 @@ config MBEDTLS_CFG_FILE
 	  relatively many features enabled. To optimize resources for special
 	  TLS usage, an alternative config may be selected.
 
+if MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"
+source "ext/lib/crypto/mbedtls/Kconfig.tls-generic"
+endif
+
 config MBEDTLS_SSL_MAX_CONTENT_LEN
 	int "Max payload size for TLS protocol message"
 	default 1500
