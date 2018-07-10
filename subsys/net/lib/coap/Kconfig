@@ -62,8 +62,10 @@ config COAP_INIT_ACK_TIMEOUT_MS
 	help
 	  This value is used as a base value to retry pending CoAP packets.
 
-config NET_DEBUG_COAP
-	bool "Debug COAP"
-	depends on COAP && NET_LOG
-	help
-	  Enables CoaP output debug messages
+if COAP
+module=COAP
+module-dep=NET_LOG
+module-str=Log level for CoAP
+module-help=Enables CoAP debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # COAP
