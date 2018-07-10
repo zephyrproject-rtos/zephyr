@@ -108,11 +108,11 @@ config DNS_NUM_CONCUR_QUERIES
 	  This defines how many concurrent DNS queries can be generated using
 	  same DNS context. Normally 1 is a good default value.
 
-config NET_DEBUG_DNS_RESOLVE
-	bool "Debug DNS resolver"
-	default y if NET_LOG_GLOBAL
-	help
-	  Enables DNS resolver code to output debug messages
+module=DNS_RESOLVER
+module-dep=NET_LOG
+module-str=Log level for DNS resolver
+module-help=Enables DNS resolver code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
 endif # DNS_RESOLVER
 
@@ -143,11 +143,11 @@ config MDNS_RESPONDER_INIT_PRIO
 	  Note that if NET_CONFIG_AUTO_INIT is enabled, then this value
 	  should be bigger than its value.
 
-config NET_DEBUG_MDNS_RESPONDER
-	bool "Debug mDNS responder"
-	default y if NET_LOG_GLOBAL
-	help
-	  Enables mDNS responder code to output debug messages
+module=MDNS_RESPONDER
+module-dep=NET_LOG
+module-str=Log level for mDNS responder
+module-help=Enables mDNS responder code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
 config MDNS_RESOLVER_ADDITIONAL_BUF_CTR
 	int "Additional DNS buffers"
@@ -188,11 +188,11 @@ config LLMNR_RESPONDER_INIT_PRIO
 	  Note that if NET_CONFIG_AUTO_INIT is enabled, then this value
 	  should be bigger than its value.
 
-config NET_DEBUG_LLMNR_RESPONDER
-	bool "Debug LLMNR responder"
-	default y if NET_LOG_GLOBAL
-	help
-	  Enables LLMNR responder code to output debug messages
+module=LLMNR_RESPONDER
+module-dep=NET_LOG
+module-str=Log level for LLMNR responder
+module-help=Enables LLMNR responder code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
 config LLMNR_RESOLVER_ADDITIONAL_BUF_CTR
 	int "Additional DNS buffers"
