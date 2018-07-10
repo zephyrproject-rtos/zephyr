@@ -18,6 +18,7 @@
 #include "ll.h"
 
 #if defined(CONFIG_SOC_FAMILY_NRF)
+#include <drivers/clock_control/nrf5_clock_control.h>
 #include <drivers/entropy/nrf5_entropy.h>
 #endif /* CONFIG_SOC_FAMILY_NRF */
 
@@ -160,6 +161,8 @@ static struct {
 
 	u32_t ticks_anchor;
 	u32_t remainder_anchor;
+
+	u8_t  is_k32src_stable;
 
 	u8_t  volatile ticker_id_prepare;
 	u8_t  volatile ticker_id_event;
@@ -4613,6 +4616,28 @@ static void mayfly_xtal_stop(void *params)
 
 	DEBUG_RADIO_CLOSE(0);
 }
+
+#define DRV_NAME CONFIG_CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME
+#define K32SRC   CLOCK_CONTROL_NRF5_K32SRC
+static void k32src_wait(void)
+{
+	if (!_radio.is_k32src_stable) {
+		struct device *clk_k32;
+
+		_radio.is_k32src_stable = 1;
+
+		clk_k32 = device_get_binding(DRV_NAME);
+		LL_ASSERT(clk_k32);
+
+		while (clock_control_on(clk_k32, (void *)K32SRC)) {
+			DEBUG_CPU_SLEEP(1);
+			cpu_sleep();
+			DEBUG_CPU_SLEEP(0);
+		}
+	}
+}
+#undef K32SRC
+#undef DRV_NAME
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 #define XON_BITMASK BIT(31) /* XTAL has been retained from previous prepare */
@@ -10140,6 +10165,9 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		conn->rssi_sample_count = 0;
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
+		/* wait for stable 32KHz clock */
+		k32src_wait();
+
 		_radio.advertiser.conn = conn;
 	} else {
 		conn = NULL;
@@ -10618,6 +10646,9 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	conn->rssi_reported = 0x7F;
 	conn->rssi_sample_count = 0;
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
+
+	/* wait for stable 32KHz clock */
+	k32src_wait();
 
 	_radio.scanner.conn = conn;
 
