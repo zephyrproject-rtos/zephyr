@@ -4754,6 +4754,20 @@ int bt_set_name(const char *name)
 
 	strncpy(bt_dev.name, name, sizeof(bt_dev.name));
 
+	/* Update advertising name if in use */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING_NAME)) {
+		struct bt_data sd[] = { BT_DATA(BT_DATA_NAME_COMPLETE, name,
+						strlen(name)) };
+
+		set_ad(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, sd, ARRAY_SIZE(sd));
+
+		/* Make sure the new name is set */
+		if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+			set_advertise_enable(false);
+			set_advertise_enable(true);
+		}
+	}
+
 	return 0;
 #else
 	return -ENOMEM;
@@ -4842,6 +4856,21 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 	err = set_ad(BT_HCI_OP_LE_SET_ADV_DATA, ad, ad_len);
 	if (err) {
 		return err;
+	}
+
+	if (param->options & BT_LE_ADV_OPT_USE_NAME) {
+		const char *name;
+
+		/* Cannot use name if sd is set */
+		if (sd) {
+			return -EINVAL;
+		}
+
+		name = bt_get_name();
+
+		sd = (&(struct bt_data)BT_DATA(BT_DATA_NAME_COMPLETE, name,
+					       strlen(name)));
+		sd_len = 1;
 	}
 
 	/*
@@ -4939,6 +4968,10 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 
 	if (!(param->options & BT_LE_ADV_OPT_ONE_TIME)) {
 		atomic_set_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING);
+	}
+
+	if (param->options & BT_LE_ADV_OPT_USE_NAME) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_ADVERTISING_NAME);
 	}
 
 	return 0;
