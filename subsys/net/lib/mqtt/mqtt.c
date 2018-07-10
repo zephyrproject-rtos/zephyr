@@ -747,6 +747,9 @@ int mqtt_parser(struct mqtt_ctx *ctx, struct net_pkt *rx)
 	case MQTT_SUBACK:
 		rc = mqtt_rx_suback(ctx, data);
 		break;
+	case MQTT_UNSUBACK:
+		rc = mqtt_rx_unsuback(ctx, data);
+		break;
 	default:
 		rc = -EINVAL;
 		break;
