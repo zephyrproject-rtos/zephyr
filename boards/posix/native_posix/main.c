@@ -37,7 +37,7 @@ void posix_exit(int exit_code)
 	 */
 	posix_soc_clean_up();
 	hwm_cleanup();
-	exit(exit_code);
+	exit(max_exit_code);
 }
 
 /**
