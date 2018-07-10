@@ -56,19 +56,11 @@ config	SLIP_MTU
 	  data into net_buf's. The actual SLIP connection
 	  does not use this value.
 
-config	SYS_LOG_SLIP_LEVEL
-	int "SLIP driver log level"
-	depends on SYS_LOG && SLIP
-	default 0
-	range 0 4
-	help
-	  Sets log level for SLIP driver.
-	  Levels are:
-	  0 OFF, do not write
-	  1 ERROR, only write SYS_LOG_ERR
-	  2 WARNING, write SYS_LOG_WRN in addition to previous level
-	  3 INFO, write SYS_LOG_INF in addition to previous levels
-	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+module=SLIP
+module-dep=LOG
+module-str=Log level for slip driver
+module-help=Sets log level for slip driver.
+source "subsys/net/Kconfig.template.log_config.net"
 
 config	SLIP_STATISTICS
 	bool "SLIP network connection statistics"
