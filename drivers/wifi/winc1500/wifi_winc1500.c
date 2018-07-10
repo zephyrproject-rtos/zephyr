@@ -306,13 +306,13 @@ static int winc1500_get(sa_family_t family,
 		return -1;
 	}
 
-	(*context)->user_data = (void *)(sint32)socket(family, type, 0);
-	if ((*context)->user_data < 0) {
+	(*context)->offload_context = (void *)(sint32)socket(family, type, 0);
+	if ((*context)->offload_context < 0) {
 		SYS_LOG_ERR("socket error!");
 		return -1;
 	}
 
-	sd = &w1500_data.socket_data[(int)(*context)->user_data];
+	sd = &w1500_data.socket_data[(int)(*context)->offload_context];
 
 	k_sem_init(&sd->wait_sem, 0, 1);
 
@@ -328,7 +328,7 @@ static int winc1500_bind(struct net_context *context,
 			 const struct sockaddr *addr,
 			 socklen_t addrlen)
 {
-	SOCKET socket = (int)context->user_data;
+	SOCKET socket = (int)context->offload_context;
 	int ret;
 
 	/* FIXME atmel winc1500 don't support bind on null port */
@@ -336,7 +336,8 @@ static int winc1500_bind(struct net_context *context,
 		return 0;
 	}
 
-	ret = bind((int)context->user_data, (struct sockaddr *)addr, addrlen);
+	ret = bind((int)context->offload_context, (struct sockaddr *)addr,
+		   addrlen);
 	if (ret) {
 		SYS_LOG_ERR("bind error %d %s!",
 			    ret, socket_message_to_string(ret));
@@ -358,10 +359,10 @@ static int winc1500_bind(struct net_context *context,
  */
 static int winc1500_listen(struct net_context *context, int backlog)
 {
-	SOCKET socket = (int)context->user_data;
+	SOCKET socket = (int)context->offload_context;
 	int ret;
 
-	ret = listen((int)context->user_data, backlog);
+	ret = listen((int)context->offload_context, backlog);
 	if (ret) {
 		SYS_LOG_ERR("listen error %d %s!",
 			    ret, socket_error_string(ret));
@@ -387,7 +388,7 @@ static int winc1500_connect(struct net_context *context,
 			    s32_t timeout,
 			    void *user_data)
 {
-	SOCKET socket = (int)context->user_data;
+	SOCKET socket = (int)context->offload_context;
 	int ret;
 
 	w1500_data.socket_data[socket].connect_cb = cb;
@@ -418,7 +419,7 @@ static int winc1500_accept(struct net_context *context,
 			   s32_t timeout,
 			   void *user_data)
 {
-	SOCKET socket = (int)context->user_data;
+	SOCKET socket = (int)context->offload_context;
 	int ret;
 
 	w1500_data.socket_data[socket].accept_cb = cb;
@@ -453,7 +454,7 @@ static int winc1500_send(struct net_pkt *pkt,
 			 void *user_data)
 {
 	struct net_context *context = pkt->context;
-	SOCKET socket = (int)context->user_data;
+	SOCKET socket = (int)context->offload_context;
 	bool first_frag;
 	struct net_buf *frag;
 	int ret;
@@ -502,7 +503,7 @@ static int winc1500_sendto(struct net_pkt *pkt,
 			   void *user_data)
 {
 	struct net_context *context = pkt->context;
-	SOCKET socket = (int)context->user_data;
+	SOCKET socket = (int)context->offload_context;
 	bool first_frag;
 	struct net_buf *frag;
 	int ret;
@@ -572,7 +573,7 @@ static int winc1500_recv(struct net_context *context,
 			 s32_t timeout,
 			 void *user_data)
 {
-	SOCKET socket = (int) context->user_data;
+	SOCKET socket = (int) context->offload_context;
 	int ret;
 
 	ret = prepare_pkt(&w1500_data.socket_data[socket]);
@@ -899,7 +900,7 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 		if (ret < 0) {
 			SYS_LOG_ERR("Cannot get new net context for ACCEPT");
 		} else {
-			a_sd->context->user_data =
+			a_sd->context->offload_context =
 				(void *)((int)accept_msg->sock);
 
 			sd->accept_cb(a_sd->context,
