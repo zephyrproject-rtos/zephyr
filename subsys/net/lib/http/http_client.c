@@ -4,15 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_HTTP)
 #if defined(CONFIG_HTTPS)
-#define SYS_LOG_DOMAIN "https/client"
+#define LOG_MODULE_NAME net_https_client
 #else
-#define SYS_LOG_DOMAIN "http/client"
+#define LOG_MODULE_NAME net_http_client
 #endif
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define NET_LOG_LEVEL CONFIG_HTTP_LOG_LEVEL
 
 #include <zephyr.h>
 #include <string.h>
@@ -168,7 +165,6 @@ out:
 	return ret;
 }
 
-#if defined(CONFIG_NET_DEBUG_HTTP)
 static void sprint_addr(char *buf, int len,
 			sa_family_t family,
 			struct sockaddr *addr)
@@ -181,27 +177,28 @@ static void sprint_addr(char *buf, int len,
 		NET_DBG("Invalid protocol family");
 	}
 }
-#endif
 
 static inline void print_info(struct http_ctx *ctx,
 			      enum http_method method)
 {
-#if defined(CONFIG_NET_DEBUG_HTTP)
-	char local[NET_IPV6_ADDR_LEN];
-	char remote[NET_IPV6_ADDR_LEN];
+	if (NET_LOG_LEVEL >= LOG_LEVEL_INF) {
+		char local[NET_IPV6_ADDR_LEN];
+		char remote[NET_IPV6_ADDR_LEN];
 
-	sprint_addr(local, NET_IPV6_ADDR_LEN,
-		    ctx->app_ctx.default_ctx->local.sa_family,
-		    &ctx->app_ctx.default_ctx->local);
+		sprint_addr(local, NET_IPV6_ADDR_LEN,
+			    ctx->app_ctx.default_ctx->local.sa_family,
+			    &ctx->app_ctx.default_ctx->local);
 
-	sprint_addr(remote, NET_IPV6_ADDR_LEN,
-		    ctx->app_ctx.default_ctx->remote.sa_family,
-		    &ctx->app_ctx.default_ctx->remote);
+		sprint_addr(remote, NET_IPV6_ADDR_LEN,
+			    ctx->app_ctx.default_ctx->remote.sa_family,
+			    &ctx->app_ctx.default_ctx->remote);
 
-	NET_DBG("HTTP %s (%s) %s -> %s port %d",
-		http_method_str(method), ctx->http.req.host, local, remote,
-		ntohs(net_sin(&ctx->app_ctx.default_ctx->remote)->sin_port));
-#endif
+		NET_DBG("HTTP %s (%s) %s -> %s port %d",
+			http_method_str(method), ctx->http.req.host, local,
+			remote,
+			ntohs(net_sin(&ctx->app_ctx.default_ctx->remote)->
+			      sin_port));
+	}
 }
 
 int http_client_send_req(struct http_ctx *ctx,
@@ -273,21 +270,21 @@ out:
 
 static void print_header_field(size_t len, const char *str)
 {
-#if defined(CONFIG_NET_DEBUG_HTTP)
+	if (NET_LOG_LEVEL >= LOG_LEVEL_INF) {
 #define MAX_OUTPUT_LEN 128
-	char output[MAX_OUTPUT_LEN];
+		char output[MAX_OUTPUT_LEN];
 
-	/* The value of len does not count \0 so we need to increase it
-	 * by one.
-	 */
-	if ((len + 1) > sizeof(output)) {
-		len = sizeof(output) - 1;
+		/* The value of len does not count \0 so we need to increase it
+		 * by one.
+		 */
+		if ((len + 1) > sizeof(output)) {
+			len = sizeof(output) - 1;
+		}
+
+		snprintk(output, len + 1, "%s", str);
+
+		NET_DBG("[%zd] %s", len, output);
 	}
-
-	snprintk(output, len + 1, "%s", str);
-
-	NET_DBG("[%zd] %s", len, output);
-#endif
 }
 
 static int on_url(struct http_parser *parser, const char *at, size_t length)
@@ -435,16 +432,15 @@ static int on_headers_complete(struct http_parser *parser)
 
 static int on_message_begin(struct http_parser *parser)
 {
-#if defined(CONFIG_NET_DEBUG_HTTP) && (CONFIG_SYS_LOG_NET_LEVEL > 2)
-	struct http_ctx *ctx = CONTAINER_OF(parser,
-					    struct http_ctx,
-					    http.parser);
+	if (NET_LOG_LEVEL >= LOG_LEVEL_INF) {
+		struct http_ctx *ctx = CONTAINER_OF(parser,
+						    struct http_ctx,
+						    http.parser);
 
-	NET_DBG("-- HTTP %s response (headers) --",
-		http_method_str(ctx->http.req.method));
-#else
-	ARG_UNUSED(parser);
-#endif
+		NET_DBG("-- HTTP %s response (headers) --",
+			http_method_str(ctx->http.req.method));
+	}
+
 	return 0;
 }
 
