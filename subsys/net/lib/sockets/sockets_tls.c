@@ -5,10 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_SOCKETS)
-#define SYS_LOG_DOMAIN "net/tls"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_sock_tls
+#define NET_LOG_LEVEL CONFIG_NET_SOCKETS_LOG_LEVEL
 
 #include <stdbool.h>
 
@@ -145,7 +143,7 @@ static struct k_mutex context_lock;
 #define IS_LISTENING(context) (net_context_get_state(context) == \
 			       NET_CONTEXT_LISTENING)
 
-#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_DEBUG_SOCKETS)
+#if defined(MBEDTLS_DEBUG_C) && (NET_LOG_LEVEL >= LOG_LEVEL_DBG)
 static void tls_debug(void *ctx, int level, const char *file,
 		      int line, const char *str)
 {
@@ -279,7 +277,7 @@ static int tls_init(struct device *unused)
 		return -EFAULT;
 	}
 
-#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_DEBUG_SOCKETS)
+#if defined(MBEDTLS_DEBUG_C) && (NET_LOG_LEVEL >= LOG_LEVEL_DBG)
 	mbedtls_debug_set_threshold(CONFIG_MBEDTLS_DEBUG_LEVEL);
 #endif
 
@@ -322,7 +320,7 @@ static struct tls_context *tls_alloc(void)
 		mbedtls_pk_init(&tls->priv_key);
 #endif
 
-#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_DEBUG_SOCKETS)
+#if defined(MBEDTLS_DEBUG_C) && (NET_LOG_LEVEL >= LOG_LEVEL_DBG)
 		mbedtls_ssl_conf_dbg(&tls->config, tls_debug, NULL);
 #endif
 	} else {
