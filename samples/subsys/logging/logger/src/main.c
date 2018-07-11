@@ -172,7 +172,8 @@ static void performance_showcase(void)
 	u32_t window = 2;
 
 	do {
-		LOG_INF("performance test - log message %d", cnt++);
+		LOG_INF("performance test - log message %d", cnt);
+		cnt++;
 		current_timestamp = timestamp_get();
 	} while (current_timestamp < (start_timestamp + window));
 
@@ -191,12 +192,9 @@ static void external_log_system_showcase(void)
 
 void main(void)
 {
-	int err = LOG_INIT();
+	LOG_INIT();
 
-	if (err == 0) {
-		err = log_set_timestamp_func(timestamp_get, timestamp_freq());
-	}
-
+	int err = log_set_timestamp_func(timestamp_get, timestamp_freq());
 	(void)err;
 
 	module_logging_showcase();
