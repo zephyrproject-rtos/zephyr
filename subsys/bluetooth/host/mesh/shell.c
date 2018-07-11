@@ -438,7 +438,7 @@ static int cmd_reset(int argc, char *argv[])
 
 static u8_t str2u8(const char *str)
 {
-	if (isdigit(str[0])) {
+	if (isdigit((unsigned char)str[0])) {
 		return strtoul(str, NULL, 0);
 	}
 
