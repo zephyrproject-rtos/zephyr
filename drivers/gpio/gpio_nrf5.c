@@ -21,26 +21,6 @@
 
 #define GPIO_PIN_CNF_SENSE_Invalid	0x01
 
-/* GPIOTE structure for nRF5X. More detailed description of each register can be found in nrf5X.h */
-struct _gpiote {
-	__O u32_t  TASKS_OUT[8];
-	__I u32_t  RESERVED0[4];
-
-	__O u32_t  TASKS_SET[8];
-	__I u32_t  RESERVED1[4];
-
-	__O u32_t  TASKS_CLR[8];
-	__I u32_t  RESERVED2[32];
-	__IO u32_t EVENTS_IN[8];
-	__I u32_t  RESERVED3[23];
-	__IO u32_t EVENTS_PORT;
-	__I u32_t  RESERVED4[97];
-	__IO u32_t INTENSET;
-	__IO u32_t INTENCLR;
-	__I u32_t  RESERVED5[129];
-	__IO u32_t CONFIG[8];
-};
-
 /*@todo: move GPIOTE channel management to a separate module */
 /* Reserve channels below the base index */
 #define GPIOTE_CH_BASE CONFIG_GPIO_NRF5_GPIOTE_CHAN_BASE
@@ -130,7 +110,7 @@ struct gpio_nrf5_data {
 
 static int gpiote_find_channel(struct device *dev, u32_t pin, u32_t port)
 {
-	volatile struct _gpiote *gpiote = (void *)NRF_GPIOTE_BASE;
+	volatile NRF_GPIOTE_Type *gpiote = (void *)NRF_GPIOTE_BASE;
 	int i;
 
 	for (i = GPIOTE_CH_BASE; i < GPIOTE_CH_NUM; i++) {
@@ -157,7 +137,7 @@ static int gpio_nrf5_config(struct device *dev,
 		{0, 0, 0, 0},
 		{GPIO_DRIVE_D0S1, GPIO_DRIVE_D0H1, 0, GPIO_DRIVE_S0S1}
 	};
-	volatile struct _gpiote *gpiote = (void *)NRF_GPIOTE_BASE;
+	volatile NRF_GPIOTE_Type *gpiote = (void *)NRF_GPIOTE_BASE;
 	volatile NRF_GPIO_Type *gpio = GPIO_STRUCT(dev);
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
@@ -292,7 +272,7 @@ static int gpio_nrf5_enable_callback(struct device *dev,
 				    int access_op, u32_t pin)
 {
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		volatile struct _gpiote *gpiote = (void *)NRF_GPIOTE_BASE;
+		volatile NRF_GPIOTE_Type *gpiote = (void *)NRF_GPIOTE_BASE;
 		struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
 		int port = GPIO_PORT(dev);
 		int i;
@@ -318,7 +298,7 @@ static int gpio_nrf5_disable_callback(struct device *dev,
 				     int access_op, u32_t pin)
 {
 	if (access_op == GPIO_ACCESS_BY_PIN) {
-		volatile struct _gpiote *gpiote = (void *)NRF_GPIOTE_BASE;
+		volatile NRF_GPIOTE_Type *gpiote = (void *)NRF_GPIOTE_BASE;
 		struct gpio_nrf5_data *data = DEV_GPIO_DATA(dev);
 		int port = GPIO_PORT(dev);
 		int i;
@@ -354,7 +334,7 @@ DEVICE_DECLARE(gpio_nrf5_P1);
  */
 static void gpio_nrf5_port_isr(void *arg)
 {
-	volatile struct _gpiote *gpiote = (void *)NRF_GPIOTE_BASE;
+	volatile NRF_GPIOTE_Type *gpiote = (void *)NRF_GPIOTE_BASE;
 	struct gpio_nrf5_data *data;
 #if defined(CONFIG_GPIO_NRF5_P0)
 	u32_t int_status_p0 = 0;
