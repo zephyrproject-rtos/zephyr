@@ -31,13 +31,10 @@ struct driver_map_entry {
 	const char * const name;
 };
 
+#define FLASH_DEV_FOO(i, _) {i, FLASH_DEV_ ## i ## _NAME},
+
 static const struct driver_map_entry  flash_drivers_map[] = {
-#ifdef DT_FLASH_DEV_NAME /* SoC embedded flash driver */
-	{SOC_FLASH_0_ID, DT_FLASH_DEV_NAME},
-#endif
-#ifdef CONFIG_SPI_FLASH_W25QXXDV
-	{SPI_FLASH_0_ID, CONFIG_SPI_FLASH_W25QXXDV_DRV_NAME},
-#endif
+	UTIL_LISTIFY(FLASH_DEV_NUM, FLASH_DEV_FOO, ~)
 };
 
 const struct flash_area *flash_map;

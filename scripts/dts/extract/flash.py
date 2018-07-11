@@ -10,6 +10,11 @@ from extract.directive import DTDirective
 from extract.default import default
 from extract.reg import reg
 
+flash_dev_label_prefix = {
+    "soc-nv-flash":"soc_flash",
+    "serial-flash":"spi_flash"
+}
+
 ##
 # @brief Manage flash directives.
 #
@@ -18,6 +23,63 @@ class DTFlash(DTDirective):
     def __init__(self):
         # Node of the flash
         self._flash_node = None
+        self._flash_dev = {}
+
+    def _extract_flash_dev(self, node_address, yaml, prop, def_label):
+        prop_def = {}
+        prop_alias = {}
+
+        if node_address != 'dummy-flash':
+            dev_type = get_compat(node_address)
+
+        if 'flash-controller@' in node_address:
+            controller_address = ''
+            for comp in node_address.split('/')[1:-1]:
+                controller_address += '/' + comp
+                if 'flash-controller@' in controller_address:
+                    node_address = controller_address
+                    break
+
+        if node_address != 'dummy-flash':
+            node = reduced[node_address]
+
+            if 'label' in node['props']:
+                name = "\"{}\"".format(node['props']['label'])
+            else:
+                name = "\"{}\"".format(node['label'])
+
+            if name in self._flash_dev:
+                index = self._flash_dev[name]['id']
+                type_index = self._flash_dev[name]['type_index']
+            else:
+                index = len(self._flash_dev)
+                type_index = 0
+
+                for dev in self._flash_dev:
+                    if self._flash_dev[dev]['type'] == dev_type:
+                        type_index = type_index + 1
+
+                self._flash_dev[name] = {'id': index,
+                                         'node': node,
+                                         'type': dev_type,
+                                         'type_index':type_index}
+
+            label = self.get_label_string([def_label, str(index), 'name'])
+            prop_def[label] = name
+
+            if dev_type in flash_dev_label_prefix:
+                dev_label = self.get_label_string(
+                    [flash_dev_label_prefix[dev_type], str(type_index), 'id'])
+            else:
+                dev_label = self.get_label_string(
+                    ['flash', str(type_index), 'id'])
+
+            prop_def[dev_label] = index
+
+        label = self.get_label_string([def_label, 'num'])
+        prop_def[label] = len(self._flash_dev)
+
+        insert_defs(def_label, prop_def, prop_alias)
 
     def extract_partition(self, node_address):
         prop_def = {}
@@ -129,6 +191,9 @@ class DTFlash(DTDirective):
         elif prop == 'zephyr,code-partition':
             # indicator for code_partition
             self._extract_code_partition(node_address, yaml, prop, def_label)
+        elif prop == 'zephyr,flash_map':
+            # indicator for flash_map
+            self._extract_flash_dev(node_address, yaml, prop, def_label)
         else:
             raise Exception(
                 "DTFlash.extract called with unexpected directive ({})."

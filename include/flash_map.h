@@ -33,9 +33,6 @@ extern "C" {
 #include <stddef.h>
 #include <sys/types.h>
 
-#define SOC_FLASH_0_ID 0	/* device_id for SoC flash memory driver */
-#define SPI_FLASH_0_ID 1	/* device_id for external SPI flash driver */
-
 struct flash_area {
 	u8_t fa_id;
 	u8_t fa_device_id;
