@@ -21,23 +21,6 @@
 
 #define GPIO_PIN_CNF_SENSE_Invalid	0x01
 
-/* GPIO structure for nRF5X. More detailed description of each register can be found in nrf5X.h */
-struct _gpio {
-	__I  u32_t RESERVED0[321];
-	__IO u32_t OUT;
-	__IO u32_t OUTSET;
-	__IO u32_t OUTCLR;
-
-	__I u32_t  IN;
-	__IO u32_t DIR;
-	__IO u32_t DIRSET;
-	__IO u32_t DIRCLR;
-	__IO u32_t LATCH;
-	__IO u32_t DETECTMODE;
-	__I u32_t  RESERVED1[118];
-	__IO u32_t PIN_CNF[32];
-};
-
 /* GPIOTE structure for nRF5X. More detailed description of each register can be found in nrf5X.h */
 struct _gpiote {
 	__O u32_t  TASKS_OUT[8];
@@ -84,7 +67,7 @@ struct gpio_nrf5_data {
 #define DEV_GPIO_DATA(dev) \
 	((struct gpio_nrf5_data * const)(dev)->driver_data)
 #define GPIO_STRUCT(dev) \
-	((volatile struct _gpio *)(DEV_GPIO_CFG(dev))->gpio_base_addr)
+	((volatile NRF_GPIO_Type *)(DEV_GPIO_CFG(dev))->gpio_base_addr)
 #define GPIO_PORT(dev) \
 	(DEV_GPIO_CFG(dev)->gpio_port)
 
@@ -175,7 +158,7 @@ static int gpio_nrf5_config(struct device *dev,
 		{GPIO_DRIVE_D0S1, GPIO_DRIVE_D0H1, 0, GPIO_DRIVE_S0S1}
 	};
 	volatile struct _gpiote *gpiote = (void *)NRF_GPIOTE_BASE;
-	volatile struct _gpio *gpio = GPIO_STRUCT(dev);
+	volatile NRF_GPIO_Type *gpio = GPIO_STRUCT(dev);
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 
@@ -268,7 +251,7 @@ static int gpio_nrf5_config(struct device *dev,
 static int gpio_nrf5_read(struct device *dev,
 			  int access_op, u32_t pin, u32_t *value)
 {
-	volatile struct _gpio *gpio = GPIO_STRUCT(dev);
+	volatile NRF_GPIO_Type *gpio = GPIO_STRUCT(dev);
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		*value = (gpio->IN >> pin) & 0x1;
@@ -281,7 +264,7 @@ static int gpio_nrf5_read(struct device *dev,
 static int gpio_nrf5_write(struct device *dev,
 			   int access_op, u32_t pin, u32_t value)
 {
-	volatile struct _gpio *gpio = GPIO_STRUCT(dev);
+	volatile NRF_GPIO_Type *gpio = GPIO_STRUCT(dev);
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		if (value) { /* 1 */
