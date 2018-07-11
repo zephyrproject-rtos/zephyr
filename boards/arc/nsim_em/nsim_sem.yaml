@@ -1,4 +1,4 @@
-identifier: nsim_em
+identifier: nsim_sem
 name: SEM Nsim simulator
 type: mcu
 arch: arc
