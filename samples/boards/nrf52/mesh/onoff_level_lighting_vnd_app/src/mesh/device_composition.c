@@ -65,14 +65,12 @@ BT_MESH_MODEL_PUB_DEFINE(gen_level_srv_pub_s0, NULL, 2 + 5);
 BT_MESH_MODEL_PUB_DEFINE(gen_level_cli_pub_s0, NULL, 2 + 7);
 /* Definitions of models publication context (End) */
 
-/* Definitions of models user data (Start) */
-struct generic_onoff_state gen_onoff_srv_root_user_data = {
-	.model_instance = 1,
-};
+static struct bt_mesh_elem elements[];
 
-struct generic_level_state gen_level_srv_root_user_data = {
-	.model_instance = 1,
-};
+/* Definitions of models user data (Start) */
+struct generic_onoff_state gen_onoff_srv_root_user_data;
+
+struct generic_level_state gen_level_srv_root_user_data;
 
 struct generic_onpowerup_state gen_power_onoff_srv_user_data;
 
@@ -82,13 +80,9 @@ struct light_ctl_state light_ctl_srv_user_data;
 
 struct vendor_state vnd_user_data;
 
-struct generic_onoff_state gen_onoff_srv_s0_user_data = {
-	.model_instance = 2,
-};
+struct generic_onoff_state gen_onoff_srv_s0_user_data;
 
-struct generic_level_state gen_level_srv_s0_user_data = {
-	.model_instance = 2,
-};
+struct generic_level_state gen_level_srv_s0_user_data;
 /* Definitions of models user data (End) */
 
 #define MINDIFF 2.25e-308
@@ -119,12 +113,12 @@ static void state_binding(u8_t lightness, u8_t temperature)
 
 	switch (lightness) {
 	case ONPOWERUP: /* Lightness update as per Generic OnPowerUp state */
-		if (gen_onoff_srv_root_user_data.onoff == 0x00) {
+		if (gen_onoff_srv_root_user_data.onoff == STATE_OFF) {
 			light_lightness_srv_user_data.actual = 0;
 			light_lightness_srv_user_data.linear = 0;
 			gen_level_srv_root_user_data.level = -32768;
 			light_ctl_srv_user_data.lightness = 0;
-		} else if (gen_onoff_srv_root_user_data.onoff == 0x01) {
+		} else if (gen_onoff_srv_root_user_data.onoff == STATE_ON) {
 			light_lightness_srv_user_data.actual =
 				light_lightness_srv_user_data.last;
 
@@ -141,12 +135,12 @@ static void state_binding(u8_t lightness, u8_t temperature)
 		}
 		break;
 	case ONOFF: /* Lightness update as per Generic OnOff (root) state */
-		if (gen_onoff_srv_root_user_data.onoff == 0x00) {
+		if (gen_onoff_srv_root_user_data.onoff == STATE_OFF) {
 			light_lightness_srv_user_data.actual = 0;
 			light_lightness_srv_user_data.linear = 0;
 			gen_level_srv_root_user_data.level = -32768;
 			light_ctl_srv_user_data.lightness = 0;
-		} else if (gen_onoff_srv_root_user_data.onoff == 0x01) {
+		} else if (gen_onoff_srv_root_user_data.onoff == STATE_ON) {
 			if (light_lightness_srv_user_data.def == 0) {
 				light_lightness_srv_user_data.actual =
 					light_lightness_srv_user_data.last;
@@ -236,9 +230,9 @@ static void state_binding(u8_t lightness, u8_t temperature)
 	}
 
 	if (light_lightness_srv_user_data.actual == 0) {
-		gen_onoff_srv_root_user_data.onoff = 0;
+		gen_onoff_srv_root_user_data.onoff = STATE_OFF;
 	} else {
-		gen_onoff_srv_root_user_data.onoff = 1;
+		gen_onoff_srv_root_user_data.onoff = STATE_ON;
 	}
 
 update_temp:
@@ -272,41 +266,41 @@ void light_default_status_init(void)
 	/* Assume vaules are retrived from Persistence Storage (Start).
 	 * These had saved by respective Setup Servers.
 	 */
-	gen_power_onoff_srv_user_data.onpowerup = 0x01;
+	gen_power_onoff_srv_user_data.onpowerup = STATE_DEFAULT;
 
-	light_lightness_srv_user_data.lightness_range_min = 0x0001;
-	light_lightness_srv_user_data.lightness_range_max = 0xFFFF;
-	light_lightness_srv_user_data.def = 0xFFFF;
+	light_lightness_srv_user_data.lightness_range_min = LIGHTNESS_MIN;
+	light_lightness_srv_user_data.lightness_range_max = LIGHTNESS_MAX;
+	light_lightness_srv_user_data.def = LIGHTNESS_MAX;
 
 	/* Following 2 values are as per specification */
-	light_ctl_srv_user_data.temp_range_min = 0x0320;
-	light_ctl_srv_user_data.temp_range_max = 0x4E20;
+	light_ctl_srv_user_data.temp_range_min = TEMP_MIN;
+	light_ctl_srv_user_data.temp_range_max = TEMP_MAX;
 
-	light_ctl_srv_user_data.temp_def = 0x0320;
+	light_ctl_srv_user_data.temp_def = TEMP_MIN;
 	/* (End) */
 
 	/* Assume following values are retrived from Persistence
 	 * Storage (Start).
 	 * These values had saved before power down.
 	 */
-	light_lightness_srv_user_data.last = 0xFFFF;
-	light_ctl_srv_user_data.temp_last = 0x0320;
+	light_lightness_srv_user_data.last = LIGHTNESS_MAX;
+	light_ctl_srv_user_data.temp_last = TEMP_MIN;
 	/* (End) */
 
 	light_ctl_srv_user_data.temp = light_ctl_srv_user_data.temp_def;
 
-	if (gen_power_onoff_srv_user_data.onpowerup == 0x00) {
-		gen_onoff_srv_root_user_data.onoff = 0x00;
+	if (gen_power_onoff_srv_user_data.onpowerup == STATE_OFF) {
+		gen_onoff_srv_root_user_data.onoff = STATE_OFF;
 		state_binding(ONOFF, ONOFF_TEMP);
-	} else if (gen_power_onoff_srv_user_data.onpowerup == 0x01) {
-		gen_onoff_srv_root_user_data.onoff = 0x01;
+	} else if (gen_power_onoff_srv_user_data.onpowerup == STATE_DEFAULT) {
+		gen_onoff_srv_root_user_data.onoff = STATE_ON;
 		state_binding(ONOFF, ONOFF_TEMP);
-	} else if (gen_power_onoff_srv_user_data.onpowerup == 0x02) {
+	} else if (gen_power_onoff_srv_user_data.onpowerup == STATE_RESTORE) {
 		/* Assume following values is retrived from Persistence
 		 * Storage (Start).
 		 * This value had saved before power down.
 		 */
-		gen_onoff_srv_root_user_data.onoff = 0x01;
+		gen_onoff_srv_root_user_data.onoff = STATE_ON;
 		/* (End) */
 
 		light_ctl_srv_user_data.temp =
@@ -347,14 +341,14 @@ static bool onoff_set_unack(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
-		if (tmp8 > 0x01) {
+		if (tmp8 > STATE_ON) {
 			return false;
 		}
 
 		return true;
 	}
 
-	if (tmp8 > 0x01) {
+	if (tmp8 > STATE_ON) {
 		return false;
 	}
 
@@ -362,12 +356,13 @@ static bool onoff_set_unack(struct bt_mesh_model *model,
 	state->last_tx_addr = ctx->addr;
 	state->onoff = tmp8;
 
-	if (state->model_instance == 0x01) {
+	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		/* Root element */
 		state_binding(ONOFF, ONOFF_TEMP);
 		update_light_state();
-	} else if (state->model_instance == 0x02) {
+	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
 		/* Secondary element */
+		printk("Hello World\n");
 	}
 
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
@@ -449,11 +444,11 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 
 	state->level = level;
 
-	if (state->model_instance == 0x01) {
+	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		/* Root element */
 		state_binding(LEVEL, IGNORE_TEMP);
 		update_light_state();
-	} else if (state->model_instance == 0x02) {
+	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
 		/* Secondary element */
 		state_binding(IGNORE, LEVEL_TEMP);
 		update_light_state();
@@ -518,11 +513,11 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 
 	printk("Level -> %d\n", state->level);
 
-	if (state->model_instance == 0x01) {
+	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		/* Root element */
 		state_binding(LEVEL, IGNORE_TEMP);
 		update_light_state();
-	} else if (state->model_instance == 0x02) {
+	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
 		/* Secondary element */
 		state_binding(IGNORE, LEVEL_TEMP);
 		update_light_state();
@@ -613,7 +608,7 @@ static bool onpowerup_set_unack(struct bt_mesh_model *model,
 
 	/* Here, Model specification is silent about tid implementation */
 
-	if (tmp8 > 0x02) {
+	if (tmp8 > STATE_RESTORE) {
 		return false;
 	}
 	state->onpowerup = tmp8;
@@ -694,7 +689,7 @@ static void vnd_set_unack(struct bt_mesh_model *model,
 
 	printk("Vendor model message = %04x\n", state->current);
 
-	if (state->current == 1) {
+	if (state->current == STATE_ON) {
 		/* LED2 On */
 		gpio_pin_write(led_device[1], LED1_GPIO_PIN, 0);
 	} else {
@@ -1231,12 +1226,12 @@ static void light_ctl_temp_range_set_unack(struct bt_mesh_model *model,
 	state->status_code = RANGE_SUCCESSFULLY_UPDATED;
 
 	/* This is as per 6.1.3.1 in Mesh Model Specification */
-	if (min < 0x0320 && min > 0x4E20) {
+	if (min < TEMP_MIN && min > TEMP_MAX) {
 		/* The provided value for Range Min cannot be set */
 		state->status_code = CANNOT_SET_RANGE_MIN;
 	}
 
-	if (max > 0x4E20 && max < 0x0320) {
+	if (max > TEMP_MAX && max < TEMP_MIN) {
 		/* The provided value for Range Max cannot be set */
 		state->status_code = CANNOT_SET_RANGE_MAX;
 	}

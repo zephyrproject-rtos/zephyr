@@ -101,7 +101,7 @@ void update_light_state(void)
 
 	printk("power-> %d, color-> %d\n", power, color);
 
-	if (gen_onoff_srv_root_user_data.onoff == 0x01) {
+	if (gen_onoff_srv_root_user_data.onoff == STATE_ON) {
 		/* LED1 On */
 		gpio_pin_write(led_device[0], LED0_GPIO_PIN, 0);
 	} else {
