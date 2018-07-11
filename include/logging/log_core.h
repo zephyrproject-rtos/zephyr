@@ -166,18 +166,23 @@ extern "C" {
 /******************************************************************************/
 /****************** Macros for standard logging *******************************/
 /******************************************************************************/
-#define __LOG(_level, _id, _filter, ...)			   \
-	do {							   \
-		if (_LOG_CONST_LEVEL_CHECK(_level) &&		   \
-		    (_level <= LOG_RUNTIME_FILTER(_filter))) {	   \
-			struct log_msg_ids src_level = {	   \
-				.level = _level,		   \
-				.source_id = _id,		   \
-				.domain_id = CONFIG_LOG_DOMAIN_ID  \
-			};					   \
-			log_printf_arg_checker(__VA_ARGS__);	   \
-			__LOG_INTERNAL(src_level, __VA_ARGS__);	   \
-		}						   \
+#define __LOG(_level, _id, _filter, ...)				   \
+	do {								   \
+		if (_LOG_CONST_LEVEL_CHECK(_level) &&			   \
+		    (_level <= LOG_RUNTIME_FILTER(_filter))) {		   \
+			struct log_msg_ids src_level = {		   \
+				.level = _level,			   \
+				.source_id = _id,			   \
+				.domain_id = CONFIG_LOG_DOMAIN_ID	   \
+			};						   \
+			__LOG_INTERNAL(src_level, __VA_ARGS__);		   \
+		} else {						   \
+			/* arg checker evaluated when log is filtered out  \
+			 * to ensure that __VA_ARGS__ are evaluated only   \
+			 * once giving always same side effects.	   \
+			 */						   \
+			log_printf_arg_checker(__VA_ARGS__);		   \
+		}							   \
 	} while (0)
 
 #define _LOG(_level, ...)			       \
