@@ -157,6 +157,20 @@ void _arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2,
  *            architecture specific.
  */
 extern FUNC_NORETURN void _arch_syscall_oops(void *ssf);
+
+/**
+ * @brief Safely take the length of a potentially bad string
+ *
+ * This must not fault, instead the err parameter must have -1 written to it.
+ * This function otherwise should work exactly like libc strnlen(). On success
+ * *err should be set to 0.
+ *
+ * @param s String to measure
+ * @param maxlen Max length of the string
+ * @param err Error value to write
+ * @return Length of the string, not counting NULL byte, up to maxsize
+ */
+extern size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err);
 #endif /* CONFIG_USERSPACE */
 
 /**
