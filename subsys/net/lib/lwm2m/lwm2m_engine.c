@@ -845,7 +845,7 @@ static int atof32(const char *input, float32_value_t *out)
 		return 0;
 	}
 
-	while (*(++pos) && base > 1 && isdigit(*pos)) {
+	while (*(++pos) && base > 1 && isdigit((unsigned char)*pos)) {
 		out->val2 = out->val2 * 10 + (*pos - '0');
 		base /= 10;
 	}
@@ -1209,7 +1209,7 @@ static int string_to_path(char *pathstr, struct lwm2m_obj_path *path,
 	for (i = 0; i <= end_index; i++) {
 		/* search for first numeric */
 		if (tokstart == -1) {
-			if (!isdigit(pathstr[i])) {
+			if (!isdigit((unsigned char)pathstr[i])) {
 				continue;
 			}
 
