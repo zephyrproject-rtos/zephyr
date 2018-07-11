@@ -191,6 +191,8 @@ static void tdelayed_work_cancel(void *data)
 
 /*test cases*/
 /**
+ * @brief Test work queue start before submit
+ *
  * @ingroup kernel_workqueue_tests
  *
  * @see k_work_q_start()
@@ -203,9 +205,12 @@ void test_workq_start_before_submit(void)
 }
 
 /**
+ * @brief Test work submission to work queue
+ *
  * @ingroup kernel_workqueue_tests
  *
- * @see k_work_init(), k_work_pending(), k_work_submit_to_queue(), k_work_submit()
+ * @see k_work_init(), k_work_pending(), k_work_submit_to_queue(),
+ * k_work_submit()
  */
 void test_work_submit_to_queue_thread(void)
 {
@@ -217,9 +222,12 @@ void test_work_submit_to_queue_thread(void)
 }
 
 /**
+ * @brief Test submission of work to multiple queues
+ *
  * @ingroup kernel_workqueue_tests
  *
- * @see k_delayed_work_init(), k_delayed_work_submit_to_queue(), k_delayed_work_submit()
+ * @see k_delayed_work_init(), k_delayed_work_submit_to_queue(),
+ * k_delayed_work_submit()
  */
 void test_work_submit_to_multipleq(void)
 {
@@ -231,9 +239,12 @@ void test_work_submit_to_multipleq(void)
 }
 
 /**
+ * @brief Test work queue resubmission
+ *
  * @ingroup kernel_workqueue_tests
  *
- * @see k_queue_remove(), k_delayed_work_init(), k_delayed_work_submit_to_queue()
+ * @see k_queue_remove(), k_delayed_work_init(),
+ * k_delayed_work_submit_to_queue()
  */
 void test_work_resubmit_to_queue(void)
 {
@@ -243,6 +254,8 @@ void test_work_resubmit_to_queue(void)
 }
 
 /**
+ * @brief Test work submission to queue from ISR context
+ *
  * @ingroup kernel_workqueue_tests
  *
  * @see k_work_init(), k_work_pending(), k_work_submit_to_queue(), k_work_submit()
@@ -257,6 +270,8 @@ void test_work_submit_to_queue_isr(void)
 }
 
 /**
+ * @brief Test work submission to queue
+ *
  * @ingroup kernel_workqueue_tests
  *
  * @see k_work_init(), k_work_pending(), k_work_submit_to_queue(), k_work_submit()
@@ -271,6 +286,8 @@ void test_work_submit_thread(void)
 }
 
 /**
+ * @brief Test work submission from ISR context
+ *
  * @ingroup kernel_workqueue_tests
  *
  * @see k_work_init(), k_work_pending(), k_work_submit_to_queue(), k_work_submit()
@@ -285,6 +302,8 @@ void test_work_submit_isr(void)
 }
 
 /**
+ * @brief Test delayed work submission to queue
+ *
  * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init(), k_work_pending(),
@@ -301,6 +320,8 @@ void test_delayed_work_submit_to_queue_thread(void)
 }
 
 /**
+ * @brief Test delayed work submission to queue in ISR context
+ *
  * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init(), k_work_pending(),
@@ -317,6 +338,8 @@ void test_delayed_work_submit_to_queue_isr(void)
 }
 
 /**
+ * @brief Test delayed work submission
+ *
  * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init(), k_work_pending(),
@@ -333,6 +356,8 @@ void test_delayed_work_submit_thread(void)
 }
 
 /**
+ * @brief Test delayed work submission from ISR context
+ *
  * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init(), k_work_pending(),
@@ -349,6 +374,8 @@ void test_delayed_work_submit_isr(void)
 }
 
 /**
+ * @brief Test delayed work cancel from work queue
+ *
  * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_cancel(), k_work_pending()
@@ -364,6 +391,8 @@ void test_delayed_work_cancel_from_queue_thread(void)
 }
 
 /**
+ * @brief Test delayed work cancel from work queue from ISR context
+ *
  * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_cancel(), k_work_pending()
@@ -379,6 +408,8 @@ void test_delayed_work_cancel_from_queue_isr(void)
 }
 
 /**
+ * @brief Test delayed work cancel
+ *
  * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_cancel(), k_work_pending()
@@ -394,6 +425,8 @@ void test_delayed_work_cancel_thread(void)
 }
 
 /**
+ * @brief Test delayed work cancel from ISR context
+ *
  * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_cancel(), k_work_pending()
