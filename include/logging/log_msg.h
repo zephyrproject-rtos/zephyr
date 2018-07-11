@@ -182,6 +182,9 @@ union log_msg_chunk {
 
 extern struct k_mem_slab log_msg_pool;
 
+/** @brief Function for initialization of the log message pool. */
+void log_msg_pool_init(void);
+
 /** @brief Function for indicating that message is in use.
  *
  *  @details Message can be used (read) by multiple users. Internal reference

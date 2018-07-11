@@ -114,9 +114,8 @@ static void log_setup(bool backend2_enable)
 {
 	stamp = 0;
 
-	zassert_equal(0,
-		      log_init(),
-		      "Expects successful initialization.");
+	log_init();
+
 	zassert_equal(0, log_set_timestamp_func(timestamp_get, 0),
 		      "Expects successful timestamp function setting.");
 

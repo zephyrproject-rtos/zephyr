@@ -29,12 +29,18 @@ extern "C" {
 
 typedef u32_t (*timestamp_get_t)(void);
 
-/**
- * @brief Function for initializing logger core.
+/** @brief Function system initialization of the logger.
  *
- * @return 0 on success or error.
+ * Function is called during start up to allow logging before user can
+ * explicitly initialize the logger.
  */
-int log_init(void);
+void log_core_init(void);
+
+/**
+ * @brief Function for user initialization of the logger.
+ *
+ */
+void log_init(void);
 
 /**
  * @brief Function for providing timestamp function.
@@ -138,7 +144,7 @@ void log_backend_enable(struct log_backend const *const backend,
  */
 void log_backend_disable(struct log_backend const *const backend);
 
-#if defined(CONFIG_LOG) && CONFIG_LOG
+#if CONFIG_LOG
 #define LOG_INIT() log_init()
 #define LOG_PANIC() log_panic()
 #define LOG_PROCESS() log_process(false)
