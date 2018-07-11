@@ -483,9 +483,6 @@ static int uarte_instance_init(struct device *dev,
 
 #if UARTE_INTERRUPT_DRIVEN
 	if (interrupts_active) {
-
-		irq_enable(NRFX_IRQ_NUMBER_GET(uarte));
-
 		/* Set ENDTX event by requesting fake (zero-length) transfer.
 		 * Pointer to RAM variable (data->tx_buffer) is set because
 		 * otherwise such operation may result in HardFault or RAM
@@ -502,37 +499,37 @@ static int uarte_instance_init(struct device *dev,
 	return 0;
 }
 
-#define UART_NRF_UARTE_DEVICE(idx)					\
-	DEVICE_DECLARE(uart_nrfx_uarte##idx);				\
-	UARTE_##idx##_CREATE_TX_BUFF;					\
-	static struct uarte_nrfx_data uarte_##idx##_data = {		\
-		UARTE_##idx##_DATA_INIT					\
-	};								\
-	static const struct uarte_nrfx_config uarte_##idx##_config = {	\
-		.uarte_regs = (NRF_UARTE_Type *)NRF_UARTE##idx,		\
-		UARTE_##idx##_CONFIG_INIT				\
-	};								\
-	static int uarte_##idx##_init(struct device *dev)		\
-	{								\
-		const struct uarte_init_config init_config = {		\
-			.pseltxd = CONFIG_UART_##idx##_NRF_TX_PIN,	\
-			.pselrxd = CONFIG_UART_##idx##_NRF_RX_PIN,	\
-			UARTE_##idx##_NRF_HWFC_CONFIG			\
-			.parity = UARTE_##idx##_NRF_PARITY_BIT,		\
-			.baudrate = CONFIG_UART_##idx##_BAUD_RATE	\
-		};							\
-		UARTE_##idx##_INTERRUPTS_INIT();			\
-		return uarte_instance_init(dev,				\
-				&init_config,				\
-				UARTE_##idx##_INTERRUPT_DRIVEN);	\
-	}								\
-	DEVICE_AND_API_INIT(uart_nrfx_uarte##idx,			\
-			CONFIG_UART_##idx##_NAME,			\
-			uarte_##idx##_init,				\
-			&uarte_##idx##_data,				\
-			&uarte_##idx##_config,				\
-			PRE_KERNEL_1,					\
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+#define UART_NRF_UARTE_DEVICE(idx)					  \
+	DEVICE_DECLARE(uart_nrfx_uarte##idx);				  \
+	UARTE_##idx##_CREATE_TX_BUFF;					  \
+	static struct uarte_nrfx_data uarte_##idx##_data = {		  \
+		UARTE_##idx##_DATA_INIT					  \
+	};								  \
+	static const struct uarte_nrfx_config uarte_##idx##_config = {	  \
+		.uarte_regs = (NRF_UARTE_Type *)CONFIG_UART_##idx##_BASE, \
+		UARTE_##idx##_CONFIG_INIT				  \
+	};								  \
+	static int uarte_##idx##_init(struct device *dev)		  \
+	{								  \
+		const struct uarte_init_config init_config = {		  \
+			.pseltxd = CONFIG_UART_##idx##_NRF_TX_PIN,	  \
+			.pselrxd = CONFIG_UART_##idx##_NRF_RX_PIN,	  \
+			UARTE_##idx##_NRF_HWFC_CONFIG			  \
+			.parity = UARTE_##idx##_NRF_PARITY_BIT,		  \
+			.baudrate = CONFIG_UART_##idx##_BAUD_RATE	  \
+		};							  \
+		UARTE_##idx##_INTERRUPTS_INIT();			  \
+		return uarte_instance_init(dev,				  \
+				&init_config,				  \
+				UARTE_##idx##_INTERRUPT_DRIVEN);	  \
+	}								  \
+	DEVICE_AND_API_INIT(uart_nrfx_uarte##idx,			  \
+			CONFIG_UART_##idx##_NAME,			  \
+			uarte_##idx##_init,				  \
+			&uarte_##idx##_data,				  \
+			&uarte_##idx##_config,				  \
+			PRE_KERNEL_1,					  \
+			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		  \
 			&uart_nrfx_uarte_driver_api)
 
 #define UARTE_NRF_HWFC_ENABLED(idx)				\
@@ -549,7 +546,8 @@ static int uarte_instance_init(struct device *dev,
 		CONFIG_UART_##idx##_IRQ_PRI,			\
 		uarte_nrfx_isr,					\
 		DEVICE_GET(uart_nrfx_uarte##idx),		\
-		0)
+		0);						\
+	irq_enable(CONFIG_UART_##idx##_IRQ_NUM)
 
 #define UARTE_TX_BUFFER_SIZE(idx)				\
 	CONFIG_UART_##idx##_NRF_TX_BUFFER_SIZE <		\
@@ -626,3 +624,4 @@ static int uarte_instance_init(struct device *dev,
 
 	UART_NRF_UARTE_DEVICE(1);
 #endif /* CONFIG_UART_1_NRF_UARTE */
+

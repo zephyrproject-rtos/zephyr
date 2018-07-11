@@ -13,6 +13,8 @@
 #include <hal/nrf_gpio.h>
 
 
+static NRF_UART_Type *const uart0_addr = (NRF_UART_Type *)CONFIG_UART_0_BASE;
+
 #ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 
 static uart_irq_callback_t irq_callback; /**< Callback function pointer */
@@ -29,7 +31,7 @@ static volatile u8_t uart_sw_event_txdrdy;
 
 static bool event_txdrdy_check(void)
 {
-	return (nrf_uart_event_check(NRF_UART0, NRF_UART_EVENT_TXDRDY)
+	return (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_TXDRDY)
 #ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 		|| uart_sw_event_txdrdy
 #endif
@@ -38,7 +40,7 @@ static bool event_txdrdy_check(void)
 
 static void event_txdrdy_clear(void)
 {
-	nrf_uart_event_clear(NRF_UART0, NRF_UART_EVENT_TXDRDY);
+	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
 #ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 	uart_sw_event_txdrdy = 0;
 #endif
@@ -127,7 +129,7 @@ static int baudrate_set(struct device *dev, u32_t baudrate)
 		return -EINVAL;
 	}
 
-	nrf_uart_baudrate_set(NRF_UART0, nrf_baudrate);
+	nrf_uart_baudrate_set(uart0_addr, nrf_baudrate);
 
 	return 0;
 }
@@ -143,15 +145,15 @@ static int baudrate_set(struct device *dev, u32_t baudrate)
 
 static int uart_nrfx_poll_in(struct device *dev, unsigned char *c)
 {
-	if (!nrf_uart_event_check(NRF_UART0, NRF_UART_EVENT_RXDRDY)) {
+	if (!nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_RXDRDY)) {
 		return -1;
 	}
 
 	/* Clear the interrupt */
-	nrf_uart_event_clear(NRF_UART0, NRF_UART_EVENT_RXDRDY);
+	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_RXDRDY);
 
 	/* got a character */
-	*c = nrf_uart_rxd_get(NRF_UART0);
+	*c = nrf_uart_rxd_get(uart0_addr);
 
 	return 0;
 }
@@ -182,7 +184,7 @@ static unsigned char uart_nrfx_poll_out(struct device *dev,
 	event_txdrdy_clear();
 
 	/* send a character */
-	nrf_uart_txd_set(NRF_UART0, (u8_t)c);
+	nrf_uart_txd_set(uart0_addr, (u8_t)c);
 
 	/* Wait for transmitter to be ready */
 	while (!event_txdrdy_check()) {
@@ -196,9 +198,9 @@ static int uart_nrfx_err_check(struct device *dev)
 {
 	u32_t error = 0;
 
-	if (nrf_uart_event_check(NRF_UART0, NRF_UART_EVENT_ERROR)) {
+	if (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_ERROR)) {
 		/* register bitfields maps to the defines in uart.h */
-		error = nrf_uart_errorsrc_get_and_clear(NRF_UART0);
+		error = nrf_uart_errorsrc_get_and_clear(uart0_addr);
 	}
 
 	return error;
@@ -221,7 +223,7 @@ static int uart_nrfx_fifo_fill(struct device *dev,
 		event_txdrdy_clear();
 
 		/* Send a character */
-		nrf_uart_txd_set(NRF_UART0, (u8_t)tx_data[num_tx++]);
+		nrf_uart_txd_set(uart0_addr, (u8_t)tx_data[num_tx++]);
 	}
 
 	return (int)num_tx;
@@ -235,12 +237,12 @@ static int uart_nrfx_fifo_read(struct device *dev,
 	u8_t num_rx = 0;
 
 	while ((size - num_rx > 0) &&
-	       nrf_uart_event_check(NRF_UART0, NRF_UART_EVENT_RXDRDY)) {
+	       nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_RXDRDY)) {
 		/* Clear the interrupt */
-		nrf_uart_event_clear(NRF_UART0, NRF_UART_EVENT_RXDRDY);
+		nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_RXDRDY);
 
 		/* Receive a character */
-		rx_data[num_rx++] = (u8_t)nrf_uart_rxd_get(NRF_UART0);
+		rx_data[num_rx++] = (u8_t)nrf_uart_rxd_get(uart0_addr);
 	}
 
 	return num_rx;
@@ -251,7 +253,7 @@ static void uart_nrfx_irq_tx_enable(struct device *dev)
 {
 	u32_t key;
 
-	nrf_uart_int_enable(NRF_UART0, NRF_UART_INT_MASK_TXDRDY);
+	nrf_uart_int_enable(uart0_addr, NRF_UART_INT_MASK_TXDRDY);
 
 	/* Critical section is used to avoid any UART related interrupt which
 	 * can occur after the if statement and before call of the function
@@ -262,7 +264,7 @@ static void uart_nrfx_irq_tx_enable(struct device *dev)
 		/* Due to HW limitation first TXDRDY interrupt shall be
 		 * triggered by the software.
 		 */
-		NVIC_SetPendingIRQ(NRFX_IRQ_NUMBER_GET(NRF_UART0));
+		NVIC_SetPendingIRQ(CONFIG_UART_0_IRQ_NUM);
 	}
 	irq_unlock(key);
 }
@@ -270,19 +272,19 @@ static void uart_nrfx_irq_tx_enable(struct device *dev)
 /** Interrupt driven transfer disabling function */
 static void uart_nrfx_irq_tx_disable(struct device *dev)
 {
-	nrf_uart_int_disable(NRF_UART0, NRF_UART_INT_MASK_TXDRDY);
+	nrf_uart_int_disable(uart0_addr, NRF_UART_INT_MASK_TXDRDY);
 }
 
 /** Interrupt driven receiver enabling function */
 static void uart_nrfx_irq_rx_enable(struct device *dev)
 {
-	nrf_uart_int_enable(NRF_UART0, NRF_UART_INT_MASK_RXDRDY);
+	nrf_uart_int_enable(uart0_addr, NRF_UART_INT_MASK_RXDRDY);
 }
 
 /** Interrupt driven receiver disabling function */
 static void uart_nrfx_irq_rx_disable(struct device *dev)
 {
-	nrf_uart_int_disable(NRF_UART0, NRF_UART_INT_MASK_RXDRDY);
+	nrf_uart_int_disable(uart0_addr, NRF_UART_INT_MASK_RXDRDY);
 }
 
 /** Interrupt driven transfer empty function */
@@ -294,29 +296,29 @@ static int uart_nrfx_irq_tx_ready_complete(struct device *dev)
 /** Interrupt driven receiver ready function */
 static int uart_nrfx_irq_rx_ready(struct device *dev)
 {
-	return nrf_uart_event_check(NRF_UART0, NRF_UART_EVENT_RXDRDY);
+	return nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_RXDRDY);
 }
 
 /** Interrupt driven error enabling function */
 static void uart_nrfx_irq_err_enable(struct device *dev)
 {
-	nrf_uart_int_enable(NRF_UART0, NRF_UART_INT_MASK_ERROR);
+	nrf_uart_int_enable(uart0_addr, NRF_UART_INT_MASK_ERROR);
 }
 
 /** Interrupt driven error disabling function */
 static void uart_nrfx_irq_err_disable(struct device *dev)
 {
-	nrf_uart_int_disable(NRF_UART0, NRF_UART_INT_MASK_ERROR);
+	nrf_uart_int_disable(uart0_addr, NRF_UART_INT_MASK_ERROR);
 }
 
 /** Interrupt driven pending status function */
 static int uart_nrfx_irq_is_pending(struct device *dev)
 {
-	return ((nrf_uart_int_enable_check(NRF_UART0,
+	return ((nrf_uart_int_enable_check(uart0_addr,
 					   NRF_UART_INT_MASK_TXDRDY) &&
 		 event_txdrdy_check())
 		||
-		(nrf_uart_int_enable_check(NRF_UART0,
+		(nrf_uart_int_enable_check(uart0_addr,
 					   NRF_UART_INT_MASK_RXDRDY) &&
 		 uart_nrfx_irq_rx_ready(dev)));
 }
@@ -378,7 +380,7 @@ static int uart_nrfx_init(struct device *dev)
 
 	nrf_gpio_cfg_input(CONFIG_UART_0_NRF_RX_PIN, NRF_GPIO_PIN_NOPULL);
 
-	nrf_uart_txrx_pins_set(NRF_UART0,
+	nrf_uart_txrx_pins_set(uart0_addr,
 			       CONFIG_UART_0_NRF_TX_PIN,
 			       CONFIG_UART_0_NRF_RX_PIN);
 
@@ -391,12 +393,12 @@ static int uart_nrfx_init(struct device *dev)
 
 	nrf_gpio_cfg_input(CONFIG_UART_0_NRF_CTS_PIN, NRF_GPIO_PIN_NOPULL);
 
-	nrf_uart_hwfc_pins_set(NRF_UART0,
+	nrf_uart_hwfc_pins_set(uart0_addr,
 			       CONFIG_UART_0_NRF_RTS_PIN,
 			       CONFIG_UART_0_NRF_CTS_PIN);
 #endif /* CONFIG_UART_0_NRF_FLOW_CONTROL */
 
-	nrf_uart_configure(NRF_UART0,
+	nrf_uart_configure(uart0_addr,
 #ifdef CONFIG_UART_0_NRF_PARITY_BIT
 			   NRF_UART_PARITY_INCLUDED,
 #else
@@ -415,12 +417,12 @@ static int uart_nrfx_init(struct device *dev)
 	}
 
 	/* Enable receiver and transmitter */
-	nrf_uart_enable(NRF_UART0);
+	nrf_uart_enable(uart0_addr);
 
-	nrf_uart_event_clear(NRF_UART0, NRF_UART_EVENT_RXDRDY);
+	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_RXDRDY);
 
-	nrf_uart_task_trigger(NRF_UART0, NRF_UART_TASK_STARTTX);
-	nrf_uart_task_trigger(NRF_UART0, NRF_UART_TASK_STARTRX);
+	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTTX);
+	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTRX);
 
 #ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 
@@ -429,12 +431,12 @@ static int uart_nrfx_init(struct device *dev)
 	 */
 	uart_sw_event_txdrdy = 1;
 
-	IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_UART0),
+	IRQ_CONNECT(CONFIG_UART_0_IRQ_NUM,
 		    CONFIG_UART_0_IRQ_PRI,
 		    uart_nrfx_isr,
 		    DEVICE_GET(uart_nrfx_uart0),
 		    0);
-	irq_enable(NRFX_IRQ_NUMBER_GET(NRF_UART0));
+	irq_enable(CONFIG_UART_0_IRQ_NUM);
 #endif
 
 	return 0;
@@ -474,3 +476,4 @@ DEVICE_AND_API_INIT(uart_nrfx_uart0,
 		    PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_nrfx_uart_driver_api);
+
