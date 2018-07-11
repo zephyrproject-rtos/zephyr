@@ -49,7 +49,9 @@ int at_get_number(struct at_client *at, u32_t *val)
 
 	skip_space(at);
 
-	for (i = 0, *val = 0; isdigit(at->buf[at->pos]); at->pos++, i++) {
+	for (i = 0, *val = 0;
+	     isdigit((unsigned char)at->buf[at->pos]);
+	     at->pos++, i++) {
 		*val = *val * 10 + at->buf[at->pos] - '0';
 	}
 
@@ -505,7 +507,7 @@ int at_list_get_range(struct at_client *at, u32_t *min, u32_t *max)
 		goto out;
 	}
 
-	if (!isdigit(at->buf[at->pos])) {
+	if (!isdigit((unsigned char)at->buf[at->pos])) {
 		return -ENODATA;
 	}
 out:
