@@ -191,3 +191,7 @@ arduino_serial: &uart4 {};
 &rtc {
 	status = "ok";
 };
+
+&usbotg_fs {
+	status = "ok";
+};
