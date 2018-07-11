@@ -22,11 +22,42 @@
 LOG_BACKEND_UART_DEFINE(log_backend_uart);
 #endif
 
+#define LOG_STATE_UNINITIALIZED		0
+#define LOG_STATE_INIT_IN_PROGRESS	1
+#define LOG_STATE_INITIALIZED		2
+
 static struct log_list_t list;
 static bool panic_mode;
-static bool initialized;
-
+static atomic_t log_state;
 static timestamp_get_t timestamp_func;
+
+static int init(void);
+static bool cond_init(void);
+
+/** @brief Macro for implicit logger initialization.
+ *
+ * If logger is used before being explicitly initialized it must be
+ * initialized implicitly and preemption must be considered. First flag
+ * is checked if log is initialized. Action is performed only if logger is not
+ * yet initialized. This initial check is performed in macro for performance
+ * reasons.
+ */
+#define _COND_INIT(_return)					\
+	do {							\
+		if (log_state < LOG_STATE_INITIALIZED) {	\
+			 if (!cond_init()) {			\
+				 _return;			\
+			 }					\
+		}						\
+	} while (0)
+
+#define LOG_COND_INIT()	_COND_INIT(return)
+#define LOG_COND_INIT_PRINTK()	_COND_INIT(return 0)
+
+static u32_t null_timestamp_get(void)
+{
+	return 0;
+}
 
 static inline void msg_finalize(struct log_msg *msg,
 				struct log_msg_ids src_level)
@@ -44,13 +75,45 @@ static inline void msg_finalize(struct log_msg *msg,
 	}
 }
 
+/** @brief Function for conditional initialization.
+ *
+ * Log is initialized only if previously it was in uninit state. Otherwise
+ * log entry must be discarded.
+ *
+ * @return True if log message can be created, false if message must be dropped.
+ *
+ */
+static bool cond_init(void)
+{
+	atomic_val_t prev_log_state;
+
+	prev_log_state = atomic_inc(&log_state);
+
+	if (prev_log_state != LOG_STATE_UNINITIALIZED) {
+		/* Another initialization was interrupted, initialization may be
+		 * in progress thus it is safer to drop the log.
+		 */
+		return false;
+	}
+
+	init();
+	log_set_timestamp_func(null_timestamp_get, 1);
+
+	return true;
+}
+
 void log_0(const char *str, struct log_msg_ids src_level)
 {
-	struct log_msg *msg = log_msg_create_0(str);
+	struct log_msg *msg;
+
+	LOG_COND_INIT();
+
+	msg = log_msg_create_0(str);
 
 	if (msg == NULL) {
 		return;
 	}
+
 	msg_finalize(msg, src_level);
 }
 
@@ -58,11 +121,16 @@ void log_1(const char *str,
 	   u32_t arg0,
 	   struct log_msg_ids src_level)
 {
-	struct log_msg *msg = log_msg_create_1(str, arg0);
+	struct log_msg *msg;
+
+	LOG_COND_INIT();
+
+	msg = log_msg_create_1(str, arg0);
 
 	if (msg == NULL) {
 		return;
 	}
+
 	msg_finalize(msg, src_level);
 }
 
@@ -71,7 +139,11 @@ void log_2(const char *str,
 	   u32_t arg1,
 	   struct log_msg_ids src_level)
 {
-	struct log_msg *msg = log_msg_create_2(str, arg0, arg1);
+	struct log_msg *msg;
+
+	LOG_COND_INIT();
+
+	msg = log_msg_create_2(str, arg0, arg1);
 
 	if (msg == NULL) {
 		return;
@@ -86,7 +158,11 @@ void log_3(const char *str,
 	   u32_t arg2,
 	   struct log_msg_ids src_level)
 {
-	struct log_msg *msg = log_msg_create_3(str, arg0, arg1, arg2);
+	struct log_msg *msg;
+
+	LOG_COND_INIT();
+
+	msg = log_msg_create_3(str, arg0, arg1, arg2);
 
 	if (msg == NULL) {
 		return;
@@ -100,7 +176,11 @@ void log_n(const char *str,
 	   u32_t narg,
 	   struct log_msg_ids src_level)
 {
-	struct log_msg *msg = log_msg_create_n(str, args, narg);
+	struct log_msg *msg;
+
+	LOG_COND_INIT();
+
+	msg = log_msg_create_n(str, args, narg);
 
 	if (msg == NULL) {
 		return;
@@ -113,7 +193,11 @@ void log_hexdump(const u8_t *data,
 		 u32_t length,
 		 struct log_msg_ids src_level)
 {
-	struct log_msg *msg = log_msg_hexdump_create(data, length);
+	struct log_msg *msg;
+
+	LOG_COND_INIT();
+
+	msg = log_msg_hexdump_create(data, length);
 
 	if (msg == NULL) {
 		return;
@@ -130,9 +214,7 @@ int log_printk(const char *fmt, va_list ap)
 		struct log_msg *msg;
 		int length;
 
-		if (!initialized) {
-			log_init();
-		}
+		LOG_COND_INIT_PRINTK();
 
 		length = vsnprintf(formatted_str,
 				   sizeof(formatted_str), fmt, ap);
@@ -173,7 +255,7 @@ static u32_t timestamp_get(void)
 	return k_cycle_get_32();
 }
 
-int log_init(void)
+static int init(void)
 {
 	assert(log_backend_count_get() < LOG_FILTERS_NUM_OF_SLOTS);
 
@@ -181,17 +263,12 @@ int log_init(void)
 	timestamp_func = timestamp_get;
 	log_output_timestamp_freq_set(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
-	if (!initialized) {
-		log_list_init(&list);
+	log_list_init(&list);
 
-		/* Assign ids to backends. */
-		for (int i = 0; i < log_backend_count_get(); i++) {
-			log_backend_id_set(log_backend_get(i),
-					 i + LOG_FILTER_FIRST_BACKEND_SLOT_IDX);
-		}
-
-		panic_mode = false;
-		initialized = true;
+	/* Assign ids to backends. */
+	for (int i = 0; i < log_backend_count_get(); i++) {
+		log_backend_id_set(log_backend_get(i),
+				 i + LOG_FILTER_FIRST_BACKEND_SLOT_IDX);
 	}
 
 #ifdef CONFIG_LOG_BACKEND_UART
@@ -200,7 +277,19 @@ int log_init(void)
 			   NULL,
 			   CONFIG_LOG_DEFAULT_LEVEL);
 #endif
+	panic_mode = false;
+	atomic_inc(&log_state);
+
 	return 0;
+}
+
+int log_init(void)
+{
+	if (atomic_inc(&log_state) != LOG_STATE_UNINITIALIZED) {
+		return 0;
+	}
+
+	return init();
 }
 
 int log_set_timestamp_func(timestamp_get_t timestamp_getter, u32_t freq)
