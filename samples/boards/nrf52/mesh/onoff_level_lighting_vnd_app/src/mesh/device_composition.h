@@ -10,6 +10,17 @@
 
 #define CID_ZEPHYR 0x0002
 
+#define STATE_OFF	0x00
+#define STATE_ON	0x01
+#define STATE_DEFAULT	0x01
+#define STATE_RESTORE	0x02
+
+/* Following 4 values are as per Mesh Model specification */
+#define LIGHTNESS_MIN	0x0001
+#define LIGHTNESS_MAX	0xFFFF
+#define TEMP_MIN	0x0320
+#define TEMP_MAX	0x4E20
+
 /* Refer 7.2 of Mesh Model Specification */
 #define RANGE_SUCCESSFULLY_UPDATED	0x00
 #define CANNOT_SET_RANGE_MIN		0x01
@@ -20,7 +31,6 @@ enum temperature { ONOFF_TEMP = 0x01, LEVEL_TEMP, CTL_TEMP, IGNORE_TEMP };
 
 struct generic_onoff_state {
 	u8_t onoff;
-	u8_t model_instance;
 	u8_t last_tid;
 	u16_t last_tx_addr;
 };
@@ -29,14 +39,12 @@ struct generic_level_state {
 	int level;
 	int last_level;
 	s32_t last_delta;
-	u8_t model_instance;
 	u8_t last_tid;
 	u16_t last_tx_addr;
 };
 
 struct generic_onpowerup_state {
 	u8_t onpowerup;
-	u8_t model_instance;
 	u8_t last_tid;
 	u16_t last_tx_addr;
 };
