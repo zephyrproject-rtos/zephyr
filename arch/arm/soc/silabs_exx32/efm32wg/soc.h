@@ -21,6 +21,7 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
+#include <em_bus.h>
 #include <em_common.h>
 #include <device.h>
 

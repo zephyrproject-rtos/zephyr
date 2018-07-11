@@ -1,0 +1,17 @@
+# Kconfig - EFR32FG1P MCU line
+#
+# Copyright (c) 2018 Christian Taedcke
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_EFR32FG1P
+	bool "EFR32FG1P Series MCU"
+	select HAS_SILABS_GECKO
+	select CPU_CORTEX_M4
+	select CPU_HAS_FPU
+	select SOC_FAMILY_EXX32
+	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
+	select CPU_HAS_SYSTICK
+	help
+	  Enable support for EFR32 FlexGecko MCU series

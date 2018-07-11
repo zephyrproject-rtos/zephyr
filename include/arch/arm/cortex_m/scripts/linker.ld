@@ -8,7 +8,7 @@
  * @file
  * @brief Linker command/script file
  *
- * Linker script for the Cortex-M3 platform.
+ * Linker script for the Cortex-M platforms.
  */
 
 #define _LINKER

@@ -12,6 +12,6 @@ config SOC_FAMILY
 	string
 	default "atmel_sam0"
 
-
+source arch/arm/soc/atmel_sam0/common/Kconfig.samd2x
 gsource "arch/arm/soc/atmel_sam0/*/Kconfig.soc"
-endif # SOC_FAMILY_SAM0
+endif

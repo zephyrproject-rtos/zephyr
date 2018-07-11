@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2018 Sean Nyekjaer
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <atmel/samd20.dtsi>
+
+/ {
+	model = "SAM D20 Xplained Pro";
+	compatible = "atsamd20,xpro", "atmel,samd20j18", "atmel,samd20";
+
+	chosen {
+		zephyr,console = &sercom3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&sercom0 {
+	status = "ok";
+	compatible = "atmel,sam0-spi";
+};
+
+&sercom3 {
+	status = "ok";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+};
+
+&sercom4 {
+	status = "ok";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The final 16 KiB is reserved for the application
+		 * and is used by NFFS if enabled.
+		 */
+
+#if defined(CONFIG_FS_FLASH_MAP_STORAGE)
+		storage_partition: partition@3c000 {
+			label = "storage";
+			reg = <0x0003c000 0x00004000>;
+		};
+#endif
+	};
+};

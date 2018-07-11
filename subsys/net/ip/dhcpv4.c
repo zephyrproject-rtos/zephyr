@@ -1027,15 +1027,15 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	msg = (struct dhcp_msg *)(frag->data + NET_IPV4UDPH_LEN);
 
 	NET_DBG("Received dhcp msg [op=0x%x htype=0x%x hlen=%u xid=0x%x "
-		"secs=%u flags=0x%x ciaddr=%d.%d.%d.%d yiaddr=%d.%d.%d.%d "
-		"siaddr=%d.%d.%d.%d giaddr=%d.%d.%d.%d chaddr=%s]",
+		"secs=%u flags=0x%x chaddr=%s",
 		msg->op, msg->htype, msg->hlen, ntohl(msg->xid),
-		msg->secs, msg->flags,
+		msg->secs, msg->flags, net_sprint_ll_addr(msg->chaddr, 6));
+	NET_DBG("  ciaddr=%d.%d.%d.%d yiaddr=%d.%d.%d.%d",
 		msg->ciaddr[0], msg->ciaddr[1], msg->ciaddr[2], msg->ciaddr[3],
-		msg->yiaddr[0], msg->yiaddr[1], msg->yiaddr[2], msg->yiaddr[3],
+		msg->yiaddr[0], msg->yiaddr[1], msg->yiaddr[2], msg->yiaddr[3]);
+	NET_DBG("  siaddr=%d.%d.%d.%d giaddr=%d.%d.%d.%d]",
 		msg->siaddr[0], msg->siaddr[1], msg->siaddr[2], msg->siaddr[3],
-		msg->giaddr[0], msg->giaddr[1], msg->giaddr[2], msg->giaddr[3],
-		net_sprint_ll_addr(msg->chaddr, 6));
+		msg->giaddr[0], msg->giaddr[1], msg->giaddr[2], msg->giaddr[3]);
 
 	if (!(msg->op == DHCPV4_MSG_BOOT_REPLY &&
 	      iface->config.dhcpv4.xid == ntohl(msg->xid) &&
