@@ -363,6 +363,10 @@ static int stm32_clock_control_init(struct device *dev)
 		while (LL_RCC_MSI_IsReady() != 1) {
 		/* Wait for HSI ready */
 		}
+#ifdef CONFIG_CLOCK_STM32_MSI_PLL_MODE
+		/* Enable MSI hardware auto calibration */
+		LL_RCC_MSI_EnablePLLMode();
+#endif
 	}
 
 	/* Set MSI as SYSCLCK source */
