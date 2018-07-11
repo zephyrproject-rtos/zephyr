@@ -26,6 +26,16 @@ extern "C" {
 
 #define LOG_LEVEL_BITS          3
 
+/* Conditions determining if logger is used in a module on any level. */
+#if CONFIG_LOG &&						\
+	((defined(LOG_LEVEL) && LOG_LEVEL) ||			\
+	(!defined(LOG_LEVEL) && CONFIG_LOG_DEFAULT_LEVEL))
+#define LOG_MODULE_PRESENT 1
+#else
+#define LOG_MODULE_PRESENT 0
+#endif
+
+
 /** @brief Macro for returning local level value if defined or default.
  *
  * Check @ref IS_ENABLED macro for detailed explanation of the trick.
@@ -46,6 +56,49 @@ extern "C" {
 	__LOG_RESOLVED_LEVEL3(one_or_two_args _level, _default)
 
 #define __LOG_RESOLVED_LEVEL3(ignore_this, val, ...) val
+
+
+/**
+ *  @def LOG_CONST_ID_GET
+ *  @brief Macro for getting ID of the element of the section.
+ *
+ *  @param _addr Address of the element.
+ */
+/**
+ * @def LOG_CURRENT_MODULE_ID
+ * @brief Macro for getting ID of current module.
+ */
+/**
+ * @def LOG_CURRENT_DYNAMIC_DATA_ADDR
+ * @brief Macro for getting address of dynamic structure of current module.
+ */
+#if LOG_MODULE_PRESENT
+#define LOG_CONST_ID_GET(_addr) \
+	log_const_source_id((const struct log_source_const_data *)_addr)
+
+#define LOG_CURRENT_MODULE_ID()	\
+	log_const_source_id(&LOG_ITEM_CONST_DATA(LOG_MODULE_NAME))
+
+#define LOG_CURRENT_DYNAMIC_DATA_ADDR() \
+	(&LOG_ITEM_DYNAMIC_DATA(LOG_MODULE_NAME))
+#else /* LOG_MODULE_PRESENT */
+#define LOG_CONST_ID_GET(_addr) 0
+
+#define LOG_CURRENT_MODULE_ID() 0
+
+#define LOG_CURRENT_DYNAMIC_DATA_ADDR() ((struct log_source_dynamic_data *)0)
+#endif /* LOG_MODULE_PRESENT */
+
+/** @brief Macro for getting ID of the element of the section.
+ *
+ *  @param _addr Address of the element.
+ */
+#if LOG_MODULE_PRESENT
+#define LOG_DYNAMIC_ID_GET(_addr) \
+	log_dynamic_source_id((struct log_source_dynamic_data *)_addr)
+#else
+#define LOG_DYNAMIC_ID_GET(_addr) 0
+#endif
 
 /******************************************************************************/
 /****************** Internal macros for log frontend **************************/
@@ -130,7 +183,7 @@ extern "C" {
 #define _LOG(_level, ...)			       \
 	__LOG(_level,				       \
 	      LOG_CURRENT_MODULE_ID(),		       \
-	      &LOG_ITEM_DYNAMIC_DATA(LOG_MODULE_NAME), \
+	      LOG_CURRENT_DYNAMIC_DATA_ADDR(),	       \
 	      __VA_ARGS__)
 
 #define _LOG_INSTANCE(_level, _inst, ...)		 \
@@ -161,7 +214,7 @@ extern "C" {
 #define _LOG_HEXDUMP(_level, _data, _length)		       \
 	__LOG_HEXDUMP(_level,				       \
 		      LOG_CURRENT_MODULE_ID(),		       \
-		      &LOG_ITEM_DYNAMIC_DATA(LOG_MODULE_NAME), \
+		      LOG_CURRENT_DYNAMIC_DATA_ADDR(),	       \
 		      _data, _length)
 
 #define _LOG_HEXDUMP_INSTANCE(_level, _inst, _data, _length)	 \
