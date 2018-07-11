@@ -8,54 +8,14 @@
 #include <zephyr.h>
 #include <flash_map.h>
 
-#if defined(DT_FLASH_DEV_NAME)
-#define FA_DEV_ID SOC_FLASH_0_ID
-#elif defined(CONFIG_SPI_FLASH_W25QXXDV) || defined(DT_JEDEC_SPI_NOR_0_LABEL)
-#define FA_DEV_ID SPI_FLASH_0_ID
-#endif
+#define FLASH_AREA_FOO(i, _)				\
+	{.fa_id = i,					\
+	 .fa_off = DT_FLASH_AREA_##i##_OFFSET,		\
+	 .fa_dev_name = DT_FLASH_AREA_##i##_DEV,	\
+	 .fa_size = DT_FLASH_AREA_##i##_SIZE,},
 
 const struct flash_area default_flash_map[] = {
-	/* FLASH_AREA_BOOTLOADER */
-	{
-		.fa_id = 0,
-		.fa_device_id = FA_DEV_ID,
-		.fa_off = FLASH_AREA_MCUBOOT_OFFSET,
-		.fa_size = FLASH_AREA_MCUBOOT_SIZE,
-	},
-
-	/* FLASH_AREA_IMAGE_0 */
-	{
-		.fa_id = 1,
-		.fa_device_id = FA_DEV_ID,
-		.fa_off = FLASH_AREA_IMAGE_0_OFFSET,
-		.fa_size = FLASH_AREA_IMAGE_0_SIZE,
-	},
-
-	/* FLASH_AREA_IMAGE_1 */
-	{
-		.fa_id = 2,
-		.fa_device_id = FA_DEV_ID,
-		.fa_off = FLASH_AREA_IMAGE_1_OFFSET,
-		.fa_size = FLASH_AREA_IMAGE_1_SIZE,
-	},
-
-	/* FLASH_AREA_IMAGE_SCRATCH */
-	{
-		.fa_id = 3,
-		.fa_device_id = FA_DEV_ID,
-		.fa_off = FLASH_AREA_IMAGE_SCRATCH_OFFSET,
-		.fa_size = FLASH_AREA_IMAGE_SCRATCH_SIZE,
-	},
-
-#ifdef CONFIG_FS_FLASH_STORAGE_PARTITION
-	/* FLASH_AREA_STORAGE */
-	{
-		.fa_id = 4,
-		.fa_device_id = FA_DEV_ID,
-		.fa_off = FLASH_AREA_STORAGE_OFFSET,
-		.fa_size = FLASH_AREA_STORAGE_SIZE,
-	},
-#endif
+	UTIL_LISTIFY(DT_FLASH_AREA_NUM, FLASH_AREA_FOO, ~)
 };
 
 const int flash_map_entries = ARRAY_SIZE(default_flash_map);

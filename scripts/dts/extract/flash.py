@@ -18,11 +18,79 @@ class DTFlash(DTDirective):
     def __init__(self):
         # Node of the flash
         self._flash_node = None
+        self._flash_area = {}
+
+    def _extract_partition(self, node_address):
+        prop_def = {}
+        prop_alias = {}
+        node = reduced[node_address]
+
+        partition_name = node['props']['label']
+        partition_sectors = node['props']['reg']
+
+        # Build Index based partition IDs
+        if node_address in self._flash_area:
+            area_id = self._flash_area[node_address]["id"]
+        else:
+            area_id = len(self._flash_area)
+            self._flash_area[node_address] = {'id': area_id }
+        partition_idx = str(area_id)
+
+        # Extract a per partition dev name, something like:
+        # #define DT_FLASH_AREA_1_DEV             "FLASH_CTRL"
+
+        # For now assume node_address is something like:
+        # /flash-controller@4001E000/flash@0/partitions/partition@fc000
+        # and we go up 3 levels to get the controller
+        ctrl_addr = '/' + '/'.join(node_address.split('/')[1:-3])
+
+        node = reduced[ctrl_addr]
+        name = "\"{}\"".format(node['props']['label'])
+
+        for area in self._flash_area.keys():
+            if ctrl_addr in area:
+                label = self.get_label_string(["DT_FLASH_AREA", partition_idx, "DEV"])
+                prop_def[label] = name
+
+        label = self.get_label_string(["DT_FLASH_AREA"] + [partition_name] + ["ID",])
+        prop_def[label] = area_id
+
+        label_prefix = ["DT_FLASH_AREA", partition_idx]
+
+        index = 0
+        while index < len(partition_sectors):
+            sector_index = int(index/2)
+            sector_start_offset = partition_sectors[index]
+            sector_size = partition_sectors[index + 1]
+            label = self.get_label_string(
+                label_prefix + ["OFFSET", str(sector_index)])
+            prop_def[label] = "{}".format(sector_start_offset)
+            label = self.get_label_string(
+                label_prefix + ["SIZE", str(sector_index)])
+            prop_def[label] = "{}".format(sector_size)
+            index += 2
+
+        # alias sector 0
+        label = self.get_label_string(label_prefix + ["OFFSET",])
+        prop_alias[label] = self.get_label_string(
+            label_prefix + ["OFFSET", '0'])
+        label = self.get_label_string(label_prefix + ["SIZE",])
+        prop_alias[label] = self.get_label_string(
+            label_prefix + ["SIZE", '0'])
+
+        label = self.get_label_string(["DT_FLASH_AREA", partition_idx, "LABEL"])
+        prop_def[label] = self.get_label_string([partition_name,])
+
+        prop_def["DT_FLASH_AREA_NUM"] = len(self._flash_area)
+
+        insert_defs("DT_FLASH_AREA", prop_def, prop_alias)
 
     def extract_partition(self, node_address):
         prop_def = {}
         prop_alias = {}
         node = reduced[node_address]
+
+        self._extract_partition(node_address)
 
         partition_name = node['props']['label']
         partition_sectors = node['props']['reg']
