@@ -181,6 +181,8 @@ from xml.sax.saxutils import escape
 from collections import OrderedDict
 from itertools import islice
 from functools import cmp_to_key
+from pathlib import Path
+from distutils.spawn import find_executable
 
 import logging
 from sanity_chk import scl
@@ -1034,7 +1036,8 @@ class MakeGenerator:
         elif ti.platform.type == "native" and do_run:
             type = "native"
         elif ti.platform.simulation == "nsim" and do_run:
-            type = "nsim"
+            if find_executable("nsimdrv"):
+                type = "nsim"
         elif options.device_testing and (not ti.build_only) and (not options.build_only):
             type = "device"
 
