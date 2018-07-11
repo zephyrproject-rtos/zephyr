@@ -247,30 +247,18 @@ static int init_network(void)
 
 	/* connect, disconnect and malformed may be set to NULL */
 	client_ctx.mqtt_ctx.connect = connect_cb;
-
 	client_ctx.mqtt_ctx.disconnect = disconnect_cb;
-
 	client_ctx.mqtt_ctx.malformed = malformed_cb;
-
 	client_ctx.mqtt_ctx.subscribe = subscriber_cb;
-
 	client_ctx.mqtt_ctx.unsubscribe = unsubscribe_cb;
 
 	client_ctx.mqtt_ctx.net_init_timeout = APP_NET_INIT_TIMEOUT;
-
 	client_ctx.mqtt_ctx.net_timeout = APP_TX_RX_TIMEOUT;
-
 	client_ctx.mqtt_ctx.peer_addr_str = SERVER_ADDR;
-
 	client_ctx.mqtt_ctx.peer_port = SERVER_PORT;
 
 	/* Publisher apps TX the MQTT PUBLISH msg */
 	client_ctx.mqtt_ctx.publish_rx = publish_rx_cb;
-
-	rc = mqtt_init(&client_ctx.mqtt_ctx, MQTT_APP_SUBSCRIBER);
-	if (rc != 0) {
-		goto exit_app;
-	}
 
 	/* The connect message will be sent to the MQTT server (broker).
 	 * If clean_session here is 0, the mqtt_ctx clean_session variable
@@ -292,7 +280,7 @@ static int init_network(void)
 	}
 
 	rc = mqtt_connect(&client_ctx.mqtt_ctx);
-	if (!rc) {
+	if (rc != 0) {
 		goto exit_app;
 	}
 

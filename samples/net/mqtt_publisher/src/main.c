@@ -4,14 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
-#include <net/mqtt.h>
-
-#include <net/net_context.h>
-
-#include <misc/printk.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
+
+#include <net/mqtt.h>
+
+#ifndef CONTAINER_OF
+#define CONTAINER_OF(ptr, type, member)                 \
+	(type *)((char *)ptr - offsetof(type, member))
+#endif
 
 #if defined(CONFIG_NET_L2_BT)
 #include <bluetooth/bluetooth.h>
@@ -21,6 +25,9 @@
 #include "config.h"
 
 #define CONN_TRIES 20
+
+#define USECS_PER_MSECS 1000
+#define APP_SLEEP_USECS (APP_SLEEP_MSECS * USECS_PER_MSECS)
 
 /* Container for some structures used by the MQTT publisher app. */
 struct mqtt_client_ctx {
@@ -133,14 +140,14 @@ static void connect_cb(struct mqtt_ctx *mqtt_ctx)
 
 	client_ctx = CONTAINER_OF(mqtt_ctx, struct mqtt_client_ctx, mqtt_ctx);
 
-	printk("[%s:%d]", __func__, __LINE__);
+	printf("[%s:%d]", __func__, __LINE__);
 
 	if (client_ctx->connect_data) {
-		printk(" user_data: %s",
+		printf(" user_data: %s",
 		       (const char *)client_ctx->connect_data);
 	}
 
-	printk("\n");
+	printf("\n");
 }
 
 /* The signature of this routine must match the disconnect callback declared at
@@ -152,14 +159,14 @@ static void disconnect_cb(struct mqtt_ctx *mqtt_ctx)
 
 	client_ctx = CONTAINER_OF(mqtt_ctx, struct mqtt_client_ctx, mqtt_ctx);
 
-	printk("[%s:%d]", __func__, __LINE__);
+	printf("[%s:%d]", __func__, __LINE__);
 
 	if (client_ctx->disconnect_data) {
-		printk(" user_data: %s",
+		printf(" user_data: %s",
 		       (const char *)client_ctx->disconnect_data);
 	}
 
-	printk("\n");
+	printf("\n");
 }
 
 /**
@@ -175,7 +182,7 @@ static void disconnect_cb(struct mqtt_ctx *mqtt_ctx)
  * unknown pkt_id, this routine must return an error, for example -EINVAL or
  * any negative value.
  */
-static int publish_cb(struct mqtt_ctx *mqtt_ctx, u16_t pkt_id,
+static int publish_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_id,
 		      enum mqtt_packet type)
 {
 	struct mqtt_client_ctx *client_ctx;
@@ -199,14 +206,14 @@ static int publish_cb(struct mqtt_ctx *mqtt_ctx, u16_t pkt_id,
 		str = "Invalid MQTT packet";
 	}
 
-	printk("[%s:%d] <%s> packet id: %u", __func__, __LINE__, str, pkt_id);
+	printf("[%s:%d] <%s> packet id: %u", __func__, __LINE__, str, pkt_id);
 
 	if (client_ctx->publish_data) {
-		printk(", user_data: %s",
+		printf(", user_data: %s",
 		       (const char *)client_ctx->publish_data);
 	}
 
-	printk("\n");
+	printf("\n");
 
 	return rc;
 }
@@ -215,9 +222,9 @@ static int publish_cb(struct mqtt_ctx *mqtt_ctx, u16_t pkt_id,
  * The signature of this routine must match the malformed callback declared at
  * the mqtt.h header.
  */
-static void malformed_cb(struct mqtt_ctx *mqtt_ctx, u16_t pkt_type)
+static void malformed_cb(struct mqtt_ctx *mqtt_ctx, uint16_t pkt_type)
 {
-	printk("[%s:%d] pkt_type: %u\n", __func__, __LINE__, pkt_type);
+	printf("[%s:%d] pkt_type: %u\n", __func__, __LINE__, pkt_type);
 }
 
 static char *get_mqtt_payload(enum mqtt_qos qos)
@@ -225,7 +232,7 @@ static char *get_mqtt_payload(enum mqtt_qos qos)
 #if APP_BLUEMIX_TOPIC
 	static char payload[30];
 
-	snprintk(payload, sizeof(payload), "{d:{temperature:%d}}",
+	snprintf(payload, sizeof(payload), "{d:{temperature:%d}}",
 		 (u8_t)sys_rand32_get());
 #else
 	static char payload[] = "DOORS:OPEN_QoSx";
@@ -259,13 +266,13 @@ static void prepare_mqtt_publish_msg(struct mqtt_publish_msg *pub_msg,
 	pub_msg->topic = get_mqtt_topic();
 	pub_msg->topic_len = strlen(client_ctx.pub_msg.topic);
 	/* Packet Identifier, always use different values */
-	pub_msg->pkt_id = sys_rand32_get();
+	pub_msg->pkt_id = rand();
 }
 
 #define RC_STR(rc)	((rc) == 0 ? "OK" : "ERROR")
 
 #define PRINT_RESULT(func, rc)	\
-	printk("[%s:%d] %s: %d <%s>\n", __func__, __LINE__, \
+	printf("[%s:%d] %s: %d <%s>\n", __func__, __LINE__, \
 	       (func), rc, RC_STR(rc))
 
 /* In this routine we block until the connected variable is 1 */
@@ -278,7 +285,7 @@ static int try_to_connect(struct mqtt_client_ctx *client_ctx)
 
 		rc = mqtt_tx_connect(&client_ctx->mqtt_ctx,
 				     &client_ctx->connect_msg);
-		k_sleep(APP_SLEEP_MSECS);
+		usleep(APP_SLEEP_USECS);
 		PRINT_RESULT("mqtt_tx_connect", rc);
 		if (rc != 0) {
 			continue;
@@ -374,22 +381,22 @@ connected:
 	i = 0;
 	while (i++ < APP_MAX_ITERATIONS) {
 		rc = mqtt_tx_pingreq(&client_ctx.mqtt_ctx);
-		k_sleep(APP_SLEEP_MSECS);
+		usleep(APP_SLEEP_USECS);
 		PRINT_RESULT("mqtt_tx_pingreq", rc);
 
 		prepare_mqtt_publish_msg(&client_ctx.pub_msg, MQTT_QoS0);
 		rc = mqtt_tx_publish(&client_ctx.mqtt_ctx, &client_ctx.pub_msg);
-		k_sleep(APP_SLEEP_MSECS);
+		usleep(APP_SLEEP_USECS);
 		PRINT_RESULT("mqtt_tx_publish", rc);
 
 		prepare_mqtt_publish_msg(&client_ctx.pub_msg, MQTT_QoS1);
 		rc = mqtt_tx_publish(&client_ctx.mqtt_ctx, &client_ctx.pub_msg);
-		k_sleep(APP_SLEEP_MSECS);
+		usleep(APP_SLEEP_USECS);
 		PRINT_RESULT("mqtt_tx_publish", rc);
 
 		prepare_mqtt_publish_msg(&client_ctx.pub_msg, MQTT_QoS2);
 		rc = mqtt_tx_publish(&client_ctx.mqtt_ctx, &client_ctx.pub_msg);
-		k_sleep(APP_SLEEP_MSECS);
+		usleep(APP_SLEEP_USECS);
 		PRINT_RESULT("mqtt_tx_publish", rc);
 	}
 
@@ -400,7 +407,7 @@ exit_app:
 
 	mqtt_close(&client_ctx.mqtt_ctx);
 
-	printk("\nBye!\n");
+	printf("\nBye!\n");
 }
 
 #if defined(CONFIG_NET_L2_BT)
@@ -416,7 +423,7 @@ static
 void bt_disconnect_cb(struct bt_conn *conn, u8_t reason)
 {
 	bt_connected = false;
-	printk("bt disconnected (reason %u)\n", reason);
+	printf("bt disconnected (reason %u)\n", reason);
 }
 
 static
@@ -436,25 +443,35 @@ static int network_setup(void)
 
 	rc = bt_enable(NULL);
 	if (rc) {
-		printk("bluetooth init failed\n");
+		printf("bluetooth init failed\n");
 		return rc;
 	}
 
 	bt_conn_cb_register(&bt_conn_cb);
 
-	printk("\nwaiting for bt connection: ");
+	printf("\nwaiting for bt connection: ");
 	while (bt_connected == false) {
-		k_sleep(250);
-		printk("%c\b", progress_mark[i]);
+		usleep(250 * USECS_PER_MSECS);
+		printf("%c\b", progress_mark[i]);
 		i = (i + 1) % (sizeof(progress_mark) - 1);
 	}
-	printk("\n");
+	printf("\n");
 #endif
 
 	return 0;
 }
 
+#ifndef __ZEPHYR__
+extern int async_sock_init(void);
+#endif
+
 void main(void)
 {
+#ifndef __ZEPHYR__
+	if (async_sock_init()) {
+		printf("async_sock init failed\n");
+		exit(-1);
+	}
+#endif
 	publisher();
 }
