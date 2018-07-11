@@ -42,6 +42,7 @@ struct flash_area {
 	u16_t pad16;
 	off_t fa_off;
 	size_t fa_size;
+	const char *fa_dev_name;
 };
 
 struct flash_sector {
