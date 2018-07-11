@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f407.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F407G-DISC1 board";
+	compatible = "st,stm32f407g_disc1", "st,stm32f407";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		orange_led_3: led@0 {
+			gpios = <&gpiod 13 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+		green_led_4: led@1 {
+			gpios = <&gpiod 12 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+		red_led_5: led@2 {
+			gpios = <&gpiod 14 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD5";
+		};
+		blue_led_6: led@3 {
+			gpios = <&gpiod 15 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD6";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button@0 {
+			label = "Key";
+			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_4;
+		sw0 = &user_button;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&timers2 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
+
+&usbotg_fs {
+	status = "ok";
+};

@@ -1,0 +1,27 @@
+# Kconfig - STM32F407G-DISC1 Discovery board configuration
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_STM32F407G_DISC1
+
+config BOARD
+	default "stm32f407g_disc1"
+
+if UART_CONSOLE
+
+config UART_STM32_PORT_2
+	default y
+
+endif # UART_CONSOLE
+
+if PWM
+
+config PWM_STM32_2
+	default y
+
+endif # PWM
+
+endif # BOARD_STM32F407G_DISC1

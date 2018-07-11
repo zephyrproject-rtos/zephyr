@@ -1,0 +1,11 @@
+identifier: stm32f407g_disc1
+name: STM32F407G-DISC1
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+supported:
+  - pwm
+  - gpio
+  - usb_device

@@ -1,0 +1,10 @@
+# Kconfig - STM32F407G-DISC1 Discovery board configuration
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_STM32F407G_DISC1
+	bool "STM32F407G-DISC1 Discovery Development Board"
+	depends on SOC_STM32F407XG
