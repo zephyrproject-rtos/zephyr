@@ -21,7 +21,7 @@
 #endif
 
 /* Two's complement negation check: "-N" must equal "(~N)+1" */
-#define NEG_CHECK(T, N) BUILD_ASSERT((-((T)N)) == (~((T)N))+1)
+#define NEG_CHECK(T, N) BUILD_ASSERT((-((T)N)) == (~((T)N)) + 1)
 
 /* Checks that MAX+1==MIN in the given type */
 #define ROLLOVER_CHECK(T, MAX, MIN) BUILD_ASSERT((T)((T)1 + (T)MAX) == (T)MIN)
@@ -50,7 +50,17 @@ NEG_CHECK(int, -1);
 NEG_CHECK(int, 0x80000000);
 NEG_CHECK(int, 0x7fffffff);
 ROLLOVER_CHECK(int, 2147483647, -2147483648);
+/**
+ * @addtogroup kernel_common_tests
+ * @{
+ */
 
+/**
+ * @brief Test integer arithmetic operations
+ *
+ * @details Test multiplication and division of two
+ * integers
+ */
 void test_intmath(void)
 {
 	/*
@@ -75,3 +85,6 @@ void test_intmath(void)
 	num = a / b;
 	zassert_true((num == 2368), "32-bit division failed");
 }
+/**
+ * @}
+ */

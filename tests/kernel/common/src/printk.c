@@ -57,7 +57,18 @@ static int ram_console_out(int character)
 	pos = (pos + 1) % BUF_SZ;
 	return _old_char_out(character);
 }
+/**
+ * @addtogroup kernel_common_tests
+ * @{
+ */
 
+/**
+ * @brief Test printk() functionality
+ *
+ * @see printk(), __printk_get_hook(),
+ * __printk_hook_install(), snprintk()
+ *
+ */
 void test_printk(void)
 {
 	int count;
@@ -113,3 +124,6 @@ void test_printk(void)
 	ram_console[count] = '\0';
 	zassert_true((strcmp(ram_console, expected) == 0), "snprintk failed");
 }
+/**
+ * @}
+ */
