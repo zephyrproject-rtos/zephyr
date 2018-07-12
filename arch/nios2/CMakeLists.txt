@@ -32,4 +32,4 @@ else()
 zephyr_cc_option(-mno-hw-div)
 endif()
 
-add_subdirectory(core)
+include_relative(core/CMakeLists.txt)

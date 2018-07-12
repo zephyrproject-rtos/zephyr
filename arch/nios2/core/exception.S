@@ -100,6 +100,7 @@ is_interrupt:
 	addi sp, sp, -4
 	stw r12, 0(sp)
 
+.global on_irq_stack
 on_irq_stack:
 
 	/* Enter C interrupt handling code. Value of ipending will be the
@@ -169,6 +170,7 @@ not_interrupt:
 	bne   r11, zero, is_interrupt
 #endif
 
+.global _exception_enter_fault
 _exception_enter_fault:
 	/* If we get here, the exception wasn't in interrupt or an
 	 * invocation of irq_oflload(). Let _Fault() handle it in

@@ -7,7 +7,8 @@ target_link_libraries(zephyr_app_linking INTERFACE arch_${ARCH})
 add_subdirectory(common)
 
 if( ( ${ARCH} STREQUAL arm ) OR
-    ( ${ARCH} STREQUAL arc )
+    ( ${ARCH} STREQUAL arc ) OR
+    ( ${ARCH} STREQUAL nios2 )
 )
   include_relative(${ARCH}/CMakeLists.txt)
 else()
