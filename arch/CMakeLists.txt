@@ -6,7 +6,9 @@ target_link_libraries(zephyr_app_linking INTERFACE arch_${ARCH})
 
 add_subdirectory(common)
 
-if( ${ARCH} STREQUAL arm )
+if( ( ${ARCH} STREQUAL arm ) OR
+    ( ${ARCH} STREQUAL arc )
+)
   include_relative(${ARCH}/CMakeLists.txt)
 else()
   # Not updated archs
