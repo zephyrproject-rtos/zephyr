@@ -74,20 +74,20 @@ void test_sprintf_double(void)
 	var.u1 = 0x00000000;
 	var.u2 = 0x7ff00000;    /* Bit pattern for +INF (double) */
 	sprintf(buffer, "%f", var.d);
-	zassert_true((strcmp(buffer, "+INF") == 0),
-		     "sprintf(+INF) - incorrect output '%s'\n", buffer);
+	zassert_true((strcmp(buffer, "inf") == 0),
+		     "sprintf(inf) - incorrect output '%s'\n", buffer);
 
 	var.u1 = 0x00000000;
 	var.u2 = 0xfff00000;    /* Bit pattern for -INF (double) */
 	sprintf(buffer, "%f", var.d);
-	zassert_true((strcmp(buffer, "-INF") == 0),
+	zassert_true((strcmp(buffer, "-inf") == 0),
 		     "sprintf(-INF) - incorrect output '%s'\n", buffer);
 
 	var.u1 = 0x00000000;
 	var.u2 = 0x7ff80000;    /* Bit pattern for NaN (double) */
 	sprintf(buffer, "%f", var.d);
-	zassert_true((strcmp(buffer, "NaN") == 0),
-		     "sprintf(NaN) - incorrect output '%s'\n", buffer);
+	zassert_true((strcmp(buffer, "nan") == 0),
+		     "sprintf(nan) - incorrect output '%s'\n", buffer);
 
 	var.d = 1.0;
 	sprintf(buffer, "%f", var.d);
