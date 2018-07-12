@@ -1721,7 +1721,7 @@ class TestSuite:
         discards = {}
         platform_filter = options.platform
         last_failed = options.only_failed
-        testcase_filter = options.test
+        testcase_filter = run_individual_tests
         arch_filter = options.arch
         tag_filter = options.tag
         exclude_tag = options.exclude_tag
@@ -2343,11 +2343,19 @@ def parse_arguments():
         "that have that value defined. For the <config> case, match "
         "defconfig that have that value assigned to any value. "
         "Prepend a '!' to invert the match.")
+
     parser.add_argument(
         "-s", "--test", action="append",
         help="Run only the specified test cases. These are named by "
         "<path to test project relative to "
         "--testcase-root>/<testcase.yaml section name>")
+
+    parser.add_argument(
+        "--sub-test", action="append",
+        help="Run only the specified sub-test cases and its parent. These are named by "
+        "test case name appended by test function, i.e. kernel.mutex.mutex_lock_unlock."
+        )
+
     parser.add_argument(
         "-l", "--all", action="store_true",
         help="Build/test on all platforms. Any --platform arguments "
@@ -2672,6 +2680,7 @@ def main():
     start_time = time.time()
     global VERBOSE, INLINE_LOGS, JOBS, log_file
     global options
+    global run_individual_tests
     options = parse_arguments()
 
     if options.coverage:
@@ -2759,19 +2768,37 @@ def main():
         export_tests(options.export_tests, tests)
         return
 
+    run_individual_tests = []
 
-    if options.list_tests:
+    if options.test:
+        run_individual_tests = options.test
+
+    if options.list_tests or options.sub_test:
         cnt = 0
         unq = []
+        run_individual_tests = []
         for n,tc in ts.testcases.items():
             for c in tc.cases:
+                if options.sub_test and c in options.sub_test:
+                    if tc.name not in run_individual_tests:
+                        run_individual_tests.append(tc.name)
                 unq.append(c)
 
-        for u in sorted(set(unq)):
-            cnt = cnt + 1
-            print(" - {}".format(u))
-        print("{} total.".format(cnt))
-        return
+        if options.sub_test:
+            if run_individual_tests:
+                info("Running the following tests:")
+                for t in run_individual_tests:
+                    print(" - {}".format(t))
+            else:
+                info("Tests not found")
+                return
+
+        elif options.list_tests:
+            for u in sorted(set(unq)):
+                cnt = cnt + 1
+                print(" - {}".format(u))
+            print("{} total.".format(cnt))
+            return
 
     discards = []
     if options.load_tests:
