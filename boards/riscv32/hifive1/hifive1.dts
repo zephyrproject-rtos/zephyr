@@ -1,0 +1,19 @@
+/dts-v1/;
+
+#include <riscv32-fe310.dtsi>
+
+/ {
+    chosen {
+        zephyr,console = &L15;
+    };
+};
+
+&L15 { label = "uart0"; };
+&L16 { label = "uart1"; };
+&L17 { label = "spi0"; };
+&L18 { label = "spi1"; };
+&L19 { label = "spi2"; };
+&L20 { label = "gpio0"; };
+&L21 { label = "pwm0"; };
+&L22 { label = "pwm1"; };
+&L23 { label = "pwm2"; };
