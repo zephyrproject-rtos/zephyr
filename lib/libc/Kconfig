@@ -56,4 +56,16 @@ config STDOUT_CONSOLE
 	  device, rather than suppressing it entirely. See also EARLY_CONSOLE
 	  option.
 
+# Minimal libc options
+
+config MINIMAL_LIBC_MALLOC_ARENA_SIZE
+	int
+	prompt "Size of the minimal libc malloc arena"
+	depends on !NEWLIB_LIBC
+	default 0
+	help
+	  Indicate the size of the memory arena used for minimal libc's
+	  malloc() implementation. This size value must be compatible with
+	  a sys_mem_pool definition with nmax of 1 and minsz of 16.
+
 endmenu

@@ -18,6 +18,12 @@ unsigned long int strtoul(const char *str, char **endptr, int base);
 long int strtol(const char *str, char **endptr, int base);
 int atoi(const char *s);
 
+void *malloc(size_t size);
+void free(void *ptr);
+void *calloc(size_t nmemb, size_t size);
+void *realloc(void *ptr, size_t size);
+void *reallocarray(void *ptr, size_t nmemb, size_t size);
+
 #define abs(x) ((x) < 0 ? -(x) : (x))
 
 #ifdef __cplusplus
