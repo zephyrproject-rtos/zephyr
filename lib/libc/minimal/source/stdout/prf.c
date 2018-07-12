@@ -364,8 +364,6 @@ static int _to_float(char *buf, uint64_t double_temp, int c,
 			*buf++ = '-';
 		} else
 			*buf++ = '+';
-		*buf++ = (char) ((decexp / 100) + '0');
-		decexp %= 100;
 		*buf++ = (char) ((decexp / 10) + '0');
 		decexp %= 10;
 		*buf++ = (char) (decexp + '0');
