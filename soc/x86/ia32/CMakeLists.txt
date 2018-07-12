@@ -1,5 +1,4 @@
-zephyr_library()
-zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
+target_include_directories(soc_x86 PRIVATE ${ZEPHYR_BASE}/drivers)
 
 zephyr_cc_option(-march=pentium)
 
@@ -7,4 +6,4 @@ if(CONFIG_X86_IAMCU)
   zephyr_cc_option(-msoft-float)
 endif()
 
-zephyr_library_sources(soc.c)
+target_sources(soc_x86 PRIVATE ${CMAKE_CURRENT_LIST_DIR}/soc.c)

@@ -89,7 +89,7 @@ static void init_cache_line_size(void)
 #define init_cache_line_size() do { } while ((0))
 #endif
 
-static int init_cache(struct device *unused)
+int init_cache(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
