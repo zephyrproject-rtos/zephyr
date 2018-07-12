@@ -11,6 +11,7 @@ applications on the following Linux distributions:
 * Ubuntu 16.04 LTS 64-bit
 * Fedora 25 64-bit
 * Clear Linux
+* Arch Linux (install `zephyr-sdk <https://aur.archlinux.org/packages/zephyr-sdk>`_ package from AUR)
 
 Where needed, alternative instructions are listed for specific Linux
 distributions.
