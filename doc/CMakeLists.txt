@@ -26,7 +26,7 @@ if(NOT DEFINED DOC_TAG)
 endif()
 
 # Internal variables.
-set(ALLSPHINXOPTS  -d ${CMAKE_BINARY_DIR}/doctrees ${SPHINXOPTS} .)
+set(ALLSPHINXOPTS  -d ${CMAKE_BINARY_DIR}/doctrees ${SPHINXOPTS})
 # the i18n builder cannot share the environment and doctrees with the others
 set(I18NSPHINXOPTS  ${SPHINXOPTS} .)
 
@@ -103,7 +103,7 @@ set(CONFIG_DIR ${ZEPHYR_BASE}/.known-issues/doc)
 
 add_custom_target(
   html
-  COMMAND ${SPHINXBUILD} -t ${DOC_TAG} -b html ${ALLSPHINXOPTS} ${CMAKE_BINARY_DIR}/html -w ${SPHINX_LOG} -N
+  COMMAND ${SPHINXBUILD} -w ${SPHINX_LOG} -N -t ${DOC_TAG} -b html ${ALLSPHINXOPTS} ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/html
   # Merge the Doxygen and Sphinx logs into a single file
   COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/util/fmerge.cmake ${DOC_LOG} ${DOXY_LOG} ${SPHINX_LOG}
   COMMAND ${PYTHON_EXECUTABLE} ${KI_SCRIPT} --config-dir ${CONFIG_DIR} --errors ${DOC_WARN} --warnings ${DOC_WARN} ${DOC_LOG}
