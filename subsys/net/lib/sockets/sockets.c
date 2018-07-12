@@ -24,7 +24,6 @@
 #define SET_ERRNO(x) \
 	{ int _err = x; if (_err < 0) { errno = -_err; return -1; } }
 
-static struct k_poll_event poll_events[CONFIG_NET_SOCKETS_POLL_MAX];
 
 static void zsock_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 			      int status, void *user_data);
@@ -502,6 +501,7 @@ int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 	int i;
 	int ret = 0;
 	struct zsock_pollfd *pfd;
+	struct k_poll_event poll_events[CONFIG_NET_SOCKETS_POLL_MAX];
 	struct k_poll_event *pev;
 	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
 
