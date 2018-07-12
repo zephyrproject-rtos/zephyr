@@ -1,0 +1,7 @@
+sample:
+  name: ADT7420 Sensor Sample
+tests:
+  test:
+    harness: sensor
+    tags: samples
+    depends_on: i2c
