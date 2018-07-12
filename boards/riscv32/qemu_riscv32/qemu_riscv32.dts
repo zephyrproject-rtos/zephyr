@@ -1,23 +1,19 @@
 /dts-v1/;
 
-#include <riscv32-qemu.dtsi>
+#include <riscv32-fe310.dtsi>
 
 / {
-	model = "qemu_riscv32";
-	compatible = "qemu,riscv32";
-
-	aliases {
-		uart_0 = &uart0;
-	};
-
-	chosen {
-		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
-		zephyr,console = &uart0;
-	};
+    chosen {
+        zephyr,console = &L15;
+    };
 };
 
-&uart0 {
-	status = "ok";
-	current-speed = <115200>;
-};
+&L15 { label = "uart0"; };
+&L16 { label = "uart1"; };
+&L17 { label = "spi0"; };
+&L18 { label = "spi1"; };
+&L19 { label = "spi2"; };
+&L20 { label = "gpio0"; };
+&L21 { label = "pwm0"; };
+&L22 { label = "pwm1"; };
+&L23 { label = "pwm2"; };

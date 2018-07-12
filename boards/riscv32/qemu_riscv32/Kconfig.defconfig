@@ -1,9 +1,9 @@
 if BOARD_QEMU_RISCV32
 
-config BUILD_OUTPUT_BIN
-        default n
-
 config BOARD
 	default "qemu_riscv32"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+    default 10000000
 
 endif

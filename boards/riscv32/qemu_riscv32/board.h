@@ -9,4 +9,14 @@
 
 #include <soc.h>
 
+/*
+ * UART clock configurations
+ *
+ * Define them here so that it can be replaced by global variables
+ * on other boards where the uart clock is determined dynamically
+ * following the PLL configuration
+ */
+#define uart_fe310_port_0_clk_freq    16000000
+#define uart_fe310_port_1_clk_freq    16000000
+
 #endif /* __INC_BOARD_H */
