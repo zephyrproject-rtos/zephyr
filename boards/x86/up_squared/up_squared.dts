@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#define DT_FLASH_SIZE		__SIZE_K(8912)
+#define DT_SRAM_SIZE		__SIZE_K(2097152)
+
+#include <apollo_lake.dtsi>
+
+/ {
+	model = "up_squared";
+	compatible = "intel,apollo_lake";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,bt-uart = &uart1;
+		zephyr,uart-pipe = &uart1;
+		zephyr,bt-mon-uart = &uart1;
+	};
+
+	soc {
+		uart0: uart@91524000 {
+			compatible = "ns16550";
+			reg = <0x91524000 0x1000>;
+			label = "UART_0";
+			clock-frequency = <1843200>;
+			interrupts = <4 IRQ_TYPE_LEVEL_HIGH 3>;
+			interrupt-parent = <&intc>;
+
+			status = "ok";
+			current-speed = <115200>;
+		};
+
+		uart1: uart@91522000 {
+			compatible = "ns16550";
+			reg = <0x91522000 0x1000>;
+			label = "UART_1";
+			clock-frequency = <1843200>;
+			interrupts = <5 IRQ_TYPE_LEVEL_HIGH 3>;
+			interrupt-parent = <&intc>;
+
+			status = "ok";
+			current-speed = <115200>;
+		};
+	};
+};
