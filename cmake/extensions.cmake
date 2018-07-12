@@ -590,6 +590,43 @@ function(zephyr_library_cc_option)
   endforeach()
 endfunction()
 
+function(zephyr_sources_cc_option)
+  set(multi_args SOURCES OPTIONS)
+  cmake_parse_arguments(ZEPHYR_CC_OPTIONS "" "" "${multi_args}" ${ARGN} )
+
+  if(ZEPHYR_CC_OPTIONS_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "zephyr_sources_cc_option called with unknown argument(s): \n\
+    ${ZEPHYR_CC_OPTIONS_UNPARSED_ARGUMENTS}\n\
+    Syntax is: zephyr_sources_cc_option(SOURCES src [src [...]]\n\
+                                        OPTIONS opt [opt [...]]")
+  endif()
+
+  foreach(option ${ZEPHYR_CC_OPTIONS_OPTIONS})
+    string(MAKE_C_IDENTIFIER check${option} check)
+    zephyr_check_compiler_flag(C ${option} ${check})
+
+    if(${check})
+      # The looping over each source is because zephyr currently requires
+      # cmake version 3.8.2-3.10 only support COMPILE_FLAGS on each source
+      # COMPILE_FLAGS is a string and thus on each source must fetch and
+      # update the string.
+      # Note: APPEND will not work as the string will then contain ';' later in
+      #       the process due to APPEND treating the string as a list
+      foreach(source ${ZEPHYR_CC_OPTIONS_SOURCES})
+        GET_PROPERTY( OPTIONS SOURCE ${source}
+                      PROPERTY COMPILE_FLAGS)
+        SET_PROPERTY( SOURCE ${source}
+                      PROPERTY COMPILE_FLAGS "${OPTIONS} ${option}")
+      endforeach()
+      # If updating cmake_minimum_required(...) to 3.11 or later the following
+      # simplified code can be used instead of the above foreach() loop, as
+      # COMPILE_OPTIONS is a new property  supported on sources.
+      # SET_PROPERTY( SOURCE ${ZEPHYR_CC_OPTIONS_SOURCES}
+      #               APPEND PROPERTY COMPILE_OPTIONS ${option})
+    endif()
+  endforeach()
+endfunction()
+
 # Add the existing CMake library 'library' to the global list of
 # Zephyr CMake libraries. This is done automatically by the
 # constructor but must called explicitly on CMake libraries that do

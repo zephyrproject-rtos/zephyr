@@ -1,3 +1,2 @@
-zephyr_library()
 zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
-zephyr_library_sources(soc.c)
+target_sources(soc_xtensa PRIVATE ${CMAKE_CURRENT_LIST_DIR}/soc.c)

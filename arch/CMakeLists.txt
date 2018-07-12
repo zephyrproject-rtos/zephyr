@@ -10,6 +10,7 @@ if( ( ${ARCH} STREQUAL arm ) OR
     ( ${ARCH} STREQUAL arc ) OR
     ( ${ARCH} STREQUAL posix ) OR
     ( ${ARCH} STREQUAL riscv32 ) OR
+    ( ${ARCH} STREQUAL xtensa ) OR
     ( ${ARCH} STREQUAL nios2 )
 )
   include_relative(${ARCH}/CMakeLists.txt)

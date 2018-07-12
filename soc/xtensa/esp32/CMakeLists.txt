@@ -4,4 +4,4 @@ zephyr_list(SOURCES
             soc_config.c
 )
 
-target_sources(arch_arm PRIVATE ${PRIVATE_SOURCES})
+target_sources(soc_arm PRIVATE ${PRIVATE_SOURCES})
