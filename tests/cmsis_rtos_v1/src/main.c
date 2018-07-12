@@ -15,6 +15,7 @@ extern void test_timer(void);
 extern void test_mutex(void);
 extern void test_mutex_lock_timeout(void);
 extern void test_semaphore(void);
+extern void test_mempool(void);
 
 void test_main(void)
 {
@@ -25,7 +26,8 @@ void test_main(void)
 			ztest_unit_test(test_timer),
 			ztest_unit_test(test_mutex),
 			ztest_unit_test(test_mutex_lock_timeout),
-			ztest_unit_test(test_semaphore));
+			ztest_unit_test(test_semaphore),
+			ztest_unit_test(test_mempool));
 
 	ztest_run_test_suite(test_cmsis_apis);
 }
