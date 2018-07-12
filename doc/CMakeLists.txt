@@ -50,7 +50,7 @@ add_custom_target(
     -DOUTPUT_FILE=${DOXY_LOG}
     -DERROR_FILE=${DOXY_LOG}
     -DWORKING_DIRECTORY=${CMAKE_CURRENT_SOURCE_DIR}
-    -P ${ZEPHYR_BASE}/cmake/util/process.cmake
+    -P ${ZEPHYR_BASE}/cmake/util/execute_process.cmake
 )
 
 add_custom_target(
