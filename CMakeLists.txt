@@ -66,7 +66,7 @@ zephyr_compile_definitions(
   __ZEPHYR__=1
 )
 
-if(NOT CONFIG_COVERAGE)
+if(NOT CONFIG_NO_OPTIMIZATIONS)
 zephyr_compile_definitions(
   _FORTIFY_SOURCE=2
 )
