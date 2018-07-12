@@ -229,16 +229,32 @@ static int _to_float(char *buf, uint64_t double_temp, int c,
 			*buf++ = '-';
 		}
 		if (!fract) {
-			*buf++ = 'i';
-			*buf++ = 'n';
-			*buf++ = 'f';
+			if (isupper(c)) {
+				*buf++ = 'I';
+				*buf++ = 'N';
+				*buf++ = 'F';
+			} else {
+				*buf++ = 'i';
+				*buf++ = 'n';
+				*buf++ = 'f';
+			}
 		} else {
-			*buf++ = 'n';
-			*buf++ = 'a';
-			*buf++ = 'n';
+			if (isupper(c)) {
+				*buf++ = 'N';
+				*buf++ = 'A';
+				*buf++ = 'N';
+			} else {
+				*buf++ = 'n';
+				*buf++ = 'a';
+				*buf++ = 'n';
+			}
 		}
 		*buf = 0;
 		return buf - start;
+	}
+
+	if (c == 'F') {
+		c = 'f';
 	}
 
 	if ((exp | fract) != 0) {
@@ -545,6 +561,7 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 			case 'e':
 			case 'E':
 			case 'f':
+			case 'F':
 			case 'g':
 			case 'G':
 				/* standard platforms which supports double */
