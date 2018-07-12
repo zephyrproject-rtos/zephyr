@@ -535,8 +535,9 @@ osStatus osSemaphoreDelete (osSemaphoreId semaphore_id);
 extern const osPoolDef_t os_pool_def_##name
 #else                            // define the object
 #define osPoolDef(name, no, type)   \
+K_MEM_SLAB_DEFINE(os_mem_##name, sizeof(type), no, 4); \
 const osPoolDef_t os_pool_def_##name = \
-{ (no), sizeof(type), NULL }
+{ (no), sizeof(type), &os_mem_##name }
 #endif
  
 /// \brief Access a Memory Pool definition.
