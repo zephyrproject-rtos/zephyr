@@ -1,6 +1,5 @@
 if(SOC_FAMILY)
-  add_subdirectory(${SOC_FAMILY})
+  include_relative(${SOC_FAMILY}/CMakeLists.txt)
 else()
-  add_subdirectory(${SOC_NAME})
+  include_relative(${SOC_NAME}/CMakeLists.txt)
 endif()
-
