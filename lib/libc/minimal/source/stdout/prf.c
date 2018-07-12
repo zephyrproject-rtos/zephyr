@@ -225,10 +225,10 @@ static int _to_float(char *buf, uint64_t double_temp, int c,
 
 
 	if (exp == 0x7ff) {
+		if (sign) {
+			*buf++ = '-';
+		}
 		if (!fract) {
-			if (sign) {
-				*buf++ = '-';
-			}
 			*buf++ = 'i';
 			*buf++ = 'n';
 			*buf++ = 'f';

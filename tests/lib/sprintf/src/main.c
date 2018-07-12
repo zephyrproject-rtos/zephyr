@@ -89,6 +89,12 @@ void test_sprintf_double(void)
 	zassert_true((strcmp(buffer, "nan") == 0),
 		     "sprintf(nan) - incorrect output '%s'\n", buffer);
 
+	var.u1 = 0x00000000;
+	var.u2 = 0xfff80000;    /* Bit pattern for -NaN (double) */
+	sprintf(buffer, "%f", var.d);
+	zassert_true((strcmp(buffer, "-nan") == 0),
+		     "sprintf(-nan) - incorrect output '%s'\n", buffer);
+
 	var.d = 1.0;
 	sprintf(buffer, "%f", var.d);
 	zassert_true((strcmp(buffer, "1.000000") == 0),
