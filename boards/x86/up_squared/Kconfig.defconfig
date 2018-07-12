@@ -1,0 +1,10 @@
+
+if BOARD_UP_SQUARED
+
+config BOARD
+	default "up_squared"
+
+config BUILD_OUTPUT_STRIPPED
+	def_bool y
+
+endif # BOARD_UP_SQUARED
