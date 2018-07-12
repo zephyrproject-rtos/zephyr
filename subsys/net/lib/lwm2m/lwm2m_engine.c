@@ -3124,7 +3124,8 @@ static int handle_request(struct coap_packet *request,
 	}
 
 	/* parse the URL path into components */
-	r = coap_find_options(in.in_cpkt, COAP_OPTION_URI_PATH, options, 4);
+	r = coap_find_options(in.in_cpkt, COAP_OPTION_URI_PATH, options,
+			      ARRAY_SIZE(options));
 	if (r <= 0) {
 		/* '/' is used by bootstrap-delete only */
 
