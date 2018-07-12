@@ -226,14 +226,16 @@ static int _to_float(char *buf, uint64_t double_temp, int c,
 
 	if (exp == 0x7ff) {
 		if (!fract) {
-			*buf++ = sign ? '-' : '+';
-			*buf++ = 'I';
-			*buf++ = 'N';
-			*buf++ = 'F';
+			if (sign) {
+				*buf++ = '-';
+			}
+			*buf++ = 'i';
+			*buf++ = 'n';
+			*buf++ = 'f';
 		} else {
-			*buf++ = 'N';
+			*buf++ = 'n';
 			*buf++ = 'a';
-			*buf++ = 'N';
+			*buf++ = 'n';
 		}
 		*buf = 0;
 		return buf - start;
