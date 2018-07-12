@@ -26,7 +26,17 @@
 #define CANNOT_SET_RANGE_MIN		0x01
 #define CANNOT_SET_RANGE_MAX		0x02
 
-enum lightness { ONPOWERUP = 0x01, ONOFF, LEVEL, ACTUAL, LINEAR, CTL, IGNORE };
+enum lightness {
+	ONPOWERUP = 0x01,
+	ONOFF,
+	LEVEL,
+	DELTA_LEVEL,
+	ACTUAL,
+	LINEAR,
+	CTL,
+	IGNORE
+};
+
 enum temperature { ONOFF_TEMP = 0x01, LEVEL_TEMP, CTL_TEMP, IGNORE_TEMP };
 
 struct generic_onoff_state {
