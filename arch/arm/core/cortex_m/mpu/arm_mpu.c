@@ -225,7 +225,7 @@ static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 static inline u32_t _get_region_ap(u32_t r_index)
 {
 	MPU->RNR = r_index;
-	return MPU->RASR & MPU_RASR_AP_Msk >> MPU_RASR_AP_Pos;
+	return (MPU->RASR & MPU_RASR_AP_Msk) >> MPU_RASR_AP_Pos;
 }
 
 /* ARM Core MPU Driver API Implementation for ARM MPU */
