@@ -9,9 +9,7 @@
 
 
 config CONSOLE_SHELL
-	bool
-	prompt "Enable console input handler [ Experimental ]"
-	default n
+	bool "Enable console input handler [ Experimental ]"
 	select CONSOLE_HANDLER
 	select CONSOLE_SUBSYS
 	help
@@ -21,8 +19,7 @@ config CONSOLE_SHELL
 if CONSOLE_SHELL
 
 config CONSOLE_SHELL_STACKSIZE
-	int
-	prompt "Console handler shell stack size"
+	int "Console handler shell stack size"
 	default 2000
 	help
 	  Stack size for the console handler shell.

@@ -71,8 +71,7 @@ config BT_CTLR_HCI_VS_BUILD_INFO
 
 if BT_LL_SW
 config BT_CTLR_DUP_FILTER_LEN
-	prompt "Number of addresses in the scan duplicate filter"
-	int
+	int "Number of addresses in the scan duplicate filter"
 	depends on BT_OBSERVER
 	default 16
 	help
@@ -80,8 +79,7 @@ config BT_CTLR_DUP_FILTER_LEN
 	  duplicates while scanning.
 
 config BT_CTLR_RX_BUFFERS
-	prompt "Number of Rx buffers"
-	int
+	int "Number of Rx buffers"
 	default 1
 	default 6 if BT_HCI_RAW
 	range 1 18
@@ -91,8 +89,7 @@ config BT_CTLR_RX_BUFFERS
 	  size of 1 byte can be received.
 
 config BT_CTLR_TX_BUFFERS
-	prompt "Number of Tx buffers"
-	int
+	int "Number of Tx buffers"
 	default 2
 	default 7 if BT_HCI_RAW
 	range 1 19
@@ -103,8 +100,7 @@ config BT_CTLR_TX_BUFFERS
 	  byte can be acknowledged.
 
 config BT_CTLR_TX_BUFFER_SIZE
-	prompt "Tx buffer size"
-	int
+	int "Tx buffer size"
 	range 27 16384
 	default 27
 	help
@@ -177,8 +173,7 @@ config BT_CTLR_TX_PWR_MINUS_40
 endchoice
 
 config BT_CTLR_COMPANY_ID
-	prompt "Company Id"
-	hex
+	hex "Company Id"
 	default 0x05F1
 	range 0x0000 0xFFFF
 	help
@@ -190,8 +185,7 @@ config BT_CTLR_COMPANY_ID
 	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
 
 config BT_CTLR_SUBVERSION_NUMBER
-	prompt "Subversion Number"
-	hex
+	hex "Subversion Number"
 	default 0xFFFF
 	range 0x0000 0xFFFF
 	help
@@ -231,9 +225,8 @@ config BT_CTLR_PRIVACY
 	  in the Controller.
 
 config BT_CTLR_RL_SIZE
-	prompt "LE Controller-based Privacy Resolving List size"
+	int "LE Controller-based Privacy Resolving List size"
 	depends on BT_CTLR_PRIVACY
-	int
 	default 8
 	range 1 8 if SOC_FAMILY_NRF
 	help
@@ -256,9 +249,8 @@ config BT_CTLR_DATA_LENGTH
 	  the Controller.
 
 config BT_CTLR_DATA_LENGTH_MAX
-	prompt "Maximum data length supported"
+	int "Maximum data length supported"
 	depends on BT_CTLR_DATA_LENGTH
-	int
 	default 27
 	range 27 251 if SOC_SERIES_NRF52X || BT_CTLR_DATA_LENGTH_CLEAR
 	range 27 27
@@ -351,8 +343,7 @@ config BT_CTLR_PHY_CODED
 endif # BT_CTLR_PHY
 
 config BT_CTLR_WORKER_PRIO
-	prompt "Radio and Ticker's Worker IRQ priority"
-	int
+	int "Radio and Ticker's Worker IRQ priority"
 	range 0 3 if SOC_SERIES_NRF51X
 	range 0 6 if SOC_SERIES_NRF52X
 	default 0
@@ -361,8 +352,7 @@ config BT_CTLR_WORKER_PRIO
 	  shall be less than or equal to the Ticker's Job priority value.
 
 config BT_CTLR_JOB_PRIO
-	prompt "Ticker's JOB IRQ priority"
-	int
+	int "Ticker's JOB IRQ priority"
 	range BT_CTLR_WORKER_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_WORKER_PRIO 6 if SOC_SERIES_NRF52X
 	default 0
@@ -392,9 +382,8 @@ config BT_CTLR_XTAL_ADVANCED
 	  current consumptions.
 
 config BT_CTLR_XTAL_THRESHOLD
-	prompt "Crystal shutdown threshold in uS"
+	int "Crystal shutdown threshold in uS"
 	depends on BT_CTLR_XTAL_ADVANCED
-	int
 	default 1500
 	help
 	  Configure the optimal delta in micro seconds between two consecutive
@@ -404,8 +393,7 @@ config BT_CTLR_XTAL_THRESHOLD
 config BT_CTLR_SCHED_ADVANCED
 	bool "Advanced scheduling"
 	depends on (BT_MAX_CONN != 0)
-	default y
-	default n if BT_PERIPHERAL && !BT_CENTRAL
+	default y if !(BT_PERIPHERAL && !BT_CENTRAL)
 	help
 	  Enable non-overlapping placement of observer, initiator and master
 	  roles in timespace. Uses window offset in connection updates and uses
@@ -501,8 +489,7 @@ menuconfig BT_CTLR_GPIO_PA
 if BT_CTLR_GPIO_PA
 
 config BT_CTLR_GPIO_PA_PIN
-	prompt "Power Amplifier GPIO pin number"
-	int
+	int "Power Amplifier GPIO pin number"
 	help
 	  GPIO Pin number connected to a Power Amplifier.
 
@@ -512,8 +499,7 @@ config BT_CTLR_GPIO_PA_POL_INV
 	  Enable inverted polarity (active low) for the PA pin.
 
 config BT_CTLR_GPIO_PA_OFFSET
-	prompt "Time from PA ON to Tx ready"
-	int
+	int "Time from PA ON to Tx ready"
 	default 5
 	range 0 10
 	help
@@ -532,8 +518,7 @@ menuconfig BT_CTLR_GPIO_LNA
 if BT_CTLR_GPIO_LNA
 
 config BT_CTLR_GPIO_LNA_PIN
-	prompt "Low Noise Amplifier GPIO pin number"
-	int
+	int "Low Noise Amplifier GPIO pin number"
 	help
 	  GPIO Pin number connected to a Low Noise Amplifier.
 
@@ -543,8 +528,7 @@ config BT_CTLR_GPIO_LNA_POL_INV
 	  Enable inverted polarity (active low) for the LNA pin.
 
 config BT_CTLR_GPIO_LNA_OFFSET
-	prompt "Time from LNA ON to Rx ready"
-	int
+	int "Time from LNA ON to Rx ready"
 	default 5
 	range 0 10
 	help
@@ -554,8 +538,8 @@ endif # BT_CTLR_GPIO_LNA
 
 config BT_CTLR_PA_LNA_GPIOTE_CHAN
 	# Hidden "nRF5 GPIO PA/LNA GPIOTE Channel"
-	depends on SOC_FAMILY_NRF && (BT_CTLR_GPIO_PA || BT_CTLR_GPIO_LNA)
 	int
+	depends on SOC_FAMILY_NRF && (BT_CTLR_GPIO_PA || BT_CTLR_GPIO_LNA)
 	default 0
 	default 3 if PWM_NRF5_SW
 	help

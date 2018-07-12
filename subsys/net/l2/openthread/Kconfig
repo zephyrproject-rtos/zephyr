@@ -10,8 +10,7 @@
 # OpenThread options
 #
 menuconfig NET_L2_OPENTHREAD
-	bool
-	prompt "OpenThread L2"
+	bool "OpenThread L2"
 	depends on FLASH
 	depends on FLASH_PAGE_LAYOUT
 	depends on CPLUSPLUS
@@ -23,16 +22,13 @@ if NET_L2_OPENTHREAD
 config OPENTHREAD_PLAT
 	bool
 	depends on NET_L2_OPENTHREAD
-	default n
 	help
 	  This option enables OpenThread platform
 
 if OPENTHREAD_PLAT
 
 menuconfig OPENTHREAD_DEBUG
-	bool
-	default n
-	prompt "OpenThread stack log support"
+	bool "OpenThread stack log support"
 	help
 	  This option enables log support for OpenThread
 
@@ -66,8 +62,7 @@ config	OPENTHREAD_LOG_LEVEL
 	default 4 if OPENTHREAD_LOG_LEVEL_DEBUG
 
 menuconfig OPENTHREAD_L2_DEBUG
-	bool
-	prompt "OpenThread L2 log support"
+	bool "OpenThread L2 log support"
 	help
 	  This option enables log support for OpenThread
 
@@ -89,14 +84,12 @@ config OPENTHREAD_L2_LOG_LEVEL_DEBUG
 endchoice
 
 config OPENTHREAD_L2_DEBUG_DUMP_15_4
-	bool
-	prompt "Dump 802.15.4 packets"
+	bool "Dump 802.15.4 packets"
 	help
 	  This option enables dumping of 802.15.4 packets
 
 config OPENTHREAD_L2_DEBUG_DUMP_IPV6
-	bool
-	prompt "Dump IPv6 packets"
+	bool "Dump IPv6 packets"
 	help
 	  This option enables dumping of IPv6 packets
 
@@ -111,28 +104,23 @@ config	OPENTHREAD_L2_LOG_LEVEL
 	default 4 if OPENTHREAD_L2_LOG_LEVEL_DEBUG
 
 config OPENTHREAD_THREAD_PRIORITY
-	int
-	prompt "OpenThread thread priority"
+	int "OpenThread thread priority"
 	default 8
 
 config OPENTHREAD_THREAD_STACK_SIZE
-	int
-	prompt "OpenThread thread stack size"
+	int "OpenThread thread stack size"
 	default 3072
 
 config OPENTHREAD_PKT_LIST_SIZE
-	int
-	prompt "List size for Ip6 packet buffering"
+	int "List size for Ip6 packet buffering"
 	default 10
 
 config OPENTHREAD_PANID
-	int
-	prompt "Default PAN ID"
+	int "Default PAN ID"
 	default 43981
 
 config OPENTHREAD_CHANNEL
-	int
-	prompt "Default Channel"
+	int "Default Channel"
 	default 11
 
 choice
@@ -147,38 +135,32 @@ config OPENTHREAD_MTD
 endchoice
 
 config OPENTHREAD_SHELL
-	bool
-	prompt "Enable OpenThread shell"
+	bool "Enable OpenThread shell"
 	select CONSOLE_SHELL
 	default y
 
 config OPENTHREAD_DIAG
-	bool
-	prompt "Diagnostic functions support"
+	bool "Diagnostic functions support"
 	help
 	  Enable OpenThread CLI diagnostic commands
 
 config OPENTHREAD_COMMISSIONER
-	bool
-	prompt "Commissioner functions support"
+	bool "Commissioner functions support"
 	help
 	  Enable commissioner capability in OpenThread stack
 
 config OPENTHREAD_JOINER
-	bool
-	prompt "Joiner functions support"
+	bool "Joiner functions support"
 	help
 	  Enable joiner capability in OpenThread stack
 
 config OPENTHREAD_JAM_DETECTION
-	bool
-	prompt "Jam detection support"
+	bool "Jam detection support"
 	help
 	  Enable jam detection in OpenThread stack
 
 config OT_PLAT_FLASH_PAGES_COUNT
-	int
-	prompt "Flash pages count used by OpenThread platform"
+	int "Flash pages count used by OpenThread platform"
 	default 4
 	help
 	  This option sets flash pages count used by OpenThread to store its settings. They are located at the end of flash.

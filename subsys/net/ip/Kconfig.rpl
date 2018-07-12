@@ -8,7 +8,6 @@
 
 menuconfig NET_RPL
 	bool "Enable RPL (Ripple) support"
-	default n
 	select NET_IPV6
 	select NET_IPV6_NBR_CACHE
 	select NET_ROUTE
@@ -104,7 +103,6 @@ endchoice
 config	NET_RPL_PROBING
 	bool "Enable RPL probing"
 	depends on NET_RPL
-	default n
 	help
 	  When enabled, probes will be sent periodically to keep
 	  parent link estimates up to date.
@@ -272,13 +270,11 @@ config	NET_RPL_DIS_INTERVAL
 config NET_STATISTICS_RPL
 	bool "Collect RPL statistics"
 	depends on NET_STATISTICS
-	default n
 	help
 	  Keep track of RPL related statistics
 
 config  NET_DEBUG_RPL
 	bool "Debug RPL"
-	default n
 	depends on NET_RPL && NET_LOG
 	help
 	  Enables RPL output debug messages

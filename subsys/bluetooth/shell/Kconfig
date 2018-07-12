@@ -8,7 +8,6 @@
 
 config BT_SHELL
 	bool "Enable Bluetooth shell"
-	default n
 	select CONSOLE_SHELL
 	help
 	  Activate shell module that provides Bluetooth commands to the

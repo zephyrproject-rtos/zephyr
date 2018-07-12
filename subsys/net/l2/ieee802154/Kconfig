@@ -6,7 +6,6 @@
 
 menuconfig NET_L2_IEEE802154
 	bool "Enable IEEE 802.15.4 Radio"
-	default n
 	help
 	  Add support for low rate WPAN IEEE 802.15.4 technology.
 
@@ -16,11 +15,9 @@ config NET_L2_IEEE802154_MGMT
 	bool
 	select NET_MGMT
 	select NET_MGMT_EVENT
-	default n
 
 config NET_L2_IEEE802154_SUB_GHZ
 	bool
-	default n
 	help
 	  Enable support for Sub-GHz devices. This will add a tiny bit more
 	  logic in L2 code for channel management. This option is automatically
@@ -28,7 +25,6 @@ config NET_L2_IEEE802154_SUB_GHZ
 
 config NET_DEBUG_L2_IEEE802154
 	bool "Enable IEEE 802.15.4 stack debug messages"
-	default n
 	default y if NET_LOG_GLOBAL
 	depends on NET_LOG
 	help
@@ -37,7 +33,6 @@ config NET_DEBUG_L2_IEEE802154
 
 config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET
 	bool "Enable IEEE 802.15.4 packet display"
-	default n
 	depends on NET_LOG
 	help
 	  Enable printing out in/out 802.15.4 packets. This is extremely
@@ -70,7 +65,6 @@ endif # NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET
 
 config NET_L2_IEEE802154_ACK_REPLY
 	bool "Enable IEEE 802.15.4 ACK reply logic"
-	default n
 	help
 	  Enable inner stack's logic on handling ACK request. Note that
 	  if the hw driver has an AUTOACK feature, this is then unnecessary.
@@ -95,7 +89,6 @@ endchoice
 
 config NET_L2_IEEE802154_SHELL
 	bool "Enable IEEE 802.15.4 shell module"
-	default n
 	select CONSOLE_SHELL
 	depends on NET_L2_IEEE802154_RFD
 	help
@@ -131,12 +124,10 @@ config NET_L2_IEEE802154_REASSEMBLY_TIMEOUT
 config  NET_DEBUG_L2_IEEE802154_FRAGMENT
 	bool "Enable debug support for IEEE 802.15.4 fragmentation"
 	depends on NET_L2_IEEE802154_FRAGMENT && NET_LOG
-	default n
 	default y if NET_LOG_GLOBAL
 
 config NET_L2_IEEE802154_SECURITY
 	bool "Enable IEEE 802.15.4 security [EXPERIMENTAL]"
-	default n
 	help
 	  Enable 802.15.4 frame security handling, in order to bring data
 	  confidentiality and authenticity.

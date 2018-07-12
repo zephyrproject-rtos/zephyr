@@ -7,10 +7,8 @@
 #
 
 menuconfig USB_DEVICE_STACK
-	bool
-	prompt "USB device stack"
+	bool "USB device stack"
 	depends on USB_DEVICE_DRIVER || ARCH_POSIX
-	default n
 	help
 	  Enable USB device stack.
 
@@ -72,10 +70,8 @@ config USB_DEVICE_SN
 	  USB device SerialNumber string. MUST be configured by vendor.
 
 config USB_COMPOSITE_DEVICE
-	bool
-	prompt "Enable composite device driver"
+	bool "Enable composite device driver"
 	depends on USB
-	default n
 	help
 	  Enable composite USB device driver.
 
@@ -87,9 +83,7 @@ config USB_COMPOSITE_BUFFER_SIZE
 	default 256 if USB_DEVICE_NETWORK_RNDIS
 
 config USB_DEVICE_BOS
-	bool
-	prompt "Enable USB Binary Device Object Store (BOS)"
-	default n
+	bool "Enable USB Binary Device Object Store (BOS)"
 
 config USB_DEVICE_OS_DESC
 	bool

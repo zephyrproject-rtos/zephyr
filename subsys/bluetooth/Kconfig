@@ -101,7 +101,6 @@ config BT_MAX_CONN
 if BT_CONN
 config BT_HCI_ACL_FLOW_CONTROL
 	bool "Controller to Host ACL flow control support"
-	default n
 	# Enable if building a Host-only build
 	default y if !BT_CTLR
 	# Enable if building a Controller-only build

@@ -6,7 +6,6 @@
 
 menuconfig NET_L2_ETHERNET
 	bool "Enable Ethernet support"
-	default n
 	help
 	  Add support for Ethernet, enabling selecting relevant hardware drivers.
 	  If NET_SLIP_TAP is selected, NET_L2_ETHERNET will enable to fully
@@ -16,7 +15,6 @@ if NET_L2_ETHERNET
 
 config NET_DEBUG_L2_ETHERNET
 	bool "Debug Ethernet L2 layer"
-	default n
 	default y if NET_LOG_GLOBAL
 	depends on NET_LOG
 	help
@@ -25,14 +23,12 @@ config NET_DEBUG_L2_ETHERNET
 config NET_L2_ETHERNET_MGMT
 	bool "Enable Ethernet network management interface"
 	depends on NET_MGMT && NET_MGMT_EVENT
-	default n
 	help
 	  Enable support net_mgmt Ethernet interface which can be used to
 	  configure at run-time Ethernet drivers and L2 settings.
 
 config NET_VLAN
 	bool "Enable virtual lan support"
-	default n
 	help
 	  Enables virtual lan (VLAN) support for Ethernet.
 
@@ -62,7 +58,6 @@ config NET_ARP_TABLE_SIZE
 config NET_DEBUG_ARP
 	bool "Debug IPv4 ARP"
 	depends on NET_ARP && NET_LOG
-	default n
 	default y if NET_LOG_GLOBAL
 	help
 	  Enables core ARP code part to output debug messages

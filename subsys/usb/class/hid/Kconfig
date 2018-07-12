@@ -7,9 +7,7 @@
 #
 
 config USB_DEVICE_HID
-	bool
-	prompt "USB Human Interface Device support"
-	default n
+	bool "USB Human Interface Device support"
 	help
 	  Enables USB Human Interface Device support.
 

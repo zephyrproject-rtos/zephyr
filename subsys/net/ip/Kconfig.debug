@@ -8,7 +8,6 @@
 
 menuconfig NET_LOG
 	bool "Enable network stack logging and debugging"
-	default n
 	select SYS_LOG
 	help
 	  Enable logging in various parts of the network stack.
@@ -18,8 +17,7 @@ menuconfig NET_LOG
 if NET_LOG
 
 config SYS_LOG_NET_LEVEL
-	int
-	prompt "Network Stack Logging level"
+	int "Network Stack Logging level"
 	default 1
 	depends on SYS_LOG
 	range 0 4
@@ -34,7 +32,6 @@ config SYS_LOG_NET_LEVEL
 
 config NET_LOG_GLOBAL
 	bool "Enable global network stack logging"
-	default n
 	select NET_DEBUG_CORE
 	select NET_DEBUG_IF
 	select NET_DEBUG_UTILS
@@ -64,44 +61,37 @@ config NET_LOG_GLOBAL
 
 config NET_DEBUG_CORE
 	bool "Debug core IP stack"
-	default n
 	help
 	  Enables core network stack code part to output debug messages
 
 config NET_DEBUG_IF
 	bool "Debug network interface code"
-	default n
 	help
 	  Enables network interface code part to output debug messages
 
 config NET_DEBUG_TC
 	bool "Debug network traffic class code"
-	default n
 	help
 	  Enables network traffic class code part to output debug messages
 
 config NET_DEBUG_UTILS
 	bool "Debug utility functions in IP stack"
-	default n
 	help
 	  Enables utility functions to output debug messages
 
 config NET_DEBUG_CONTEXT
 	bool "Debug network context allocation"
-	default n
 	help
 	  Enables printing of network context allocations and frees.
 
 config NET_DEBUG_NET_PKT
 	bool "Debug network packet and buffer allocation"
-	default n
 	select NET_BUF_POOL_USAGE
 	help
 	  Enables collection of network packet and buffer allocations and frees.
 
 config NET_DEBUG_NET_PKT_ALL
 	bool "Debug network packet and buffer individual allocation"
-	default n
 	depends on NET_DEBUG_NET_PKT
 	help
 	  Enables printing of network packet and buffer allocations and frees for
@@ -119,14 +109,12 @@ config NET_DEBUG_NET_PKT_EXTERNALS
 
 config NET_DEBUG_CONN
 	bool "Debug connection handling"
-	default n
 	help
 	  Enables connection debug messages
 
 config NET_DEBUG_ROUTE
 	bool "Debug route management"
 	depends on NET_ROUTE
-	default n
 	help
 	  Enables routing engine debug messages
 
