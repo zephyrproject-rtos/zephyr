@@ -5,9 +5,12 @@ zephyr_compile_options_ifndef(
   -march=IMXpulpv2
   )
 
-zephyr_sources(
-  soc_irq.S
-  vector.S
-  pulpino_irq.c
-  pulpino_idle.c
-  )
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            soc_irq.S
+            vector.S
+            pulpino_irq.c
+            pulpino_idle.c
+)
+
+target_sources(soc_riscv32 PRIVATE ${PRIVATE_SOURCES})
