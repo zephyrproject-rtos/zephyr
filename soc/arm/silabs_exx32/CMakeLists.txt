@@ -1,1 +1,1 @@
-add_subdirectory(common)
+include_relative(common/CMakeLists.txt)

@@ -1,1 +1,3 @@
-zephyr_sources(soc.c soc_gpio.c)
+target_sources(soc_arm PRIVATE ${CMAKE_CURRENT_LIST_DIR}/soc.c
+                               ${CMAKE_CURRENT_LIST_DIR}/soc_gpio.c
+)

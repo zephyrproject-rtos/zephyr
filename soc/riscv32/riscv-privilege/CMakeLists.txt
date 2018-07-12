@@ -1,2 +1,2 @@
-add_subdirectory(common)
-add_subdirectory(${SOC_SERIES})
+include_relative(common/CMakeLists.txt)
+include_relative(${SOC_SERIES}/CMakeLists.txt)

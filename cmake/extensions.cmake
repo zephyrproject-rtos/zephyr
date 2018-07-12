@@ -385,6 +385,11 @@ endmacro()
 # param[in]  IFNDEF:${KCONFIG_VAR} <item1> ... <itemN> Set the items <item1> ... <itemN> in the list
 #                                                      if ${KCONFIG_VAR} is not defined or different
 #                                                      from <y|True|1>
+# param[in]  IF_KCONFIG <item1> ... <itemN>            Set the items <item1> ... <itemN> in the list
+#                                                      if the matching KConfig value is defined and
+#                                                      <y|True|1>.
+#                                                      Can be used when <item> (directory / source
+#                                                      file) have a matching KConfig value.
 #
 # Note, items to always add must come first in list before using the keywords IFDEF or IFNDEF.
 # Note, the arguments APPEND, PREPEND_STR, OUTPUT must be specified before any file name is given.
@@ -435,15 +440,30 @@ function(zephyr_list)
     if("${arg}" MATCHES "^IFDEF:(y|True|1)$")
       # The IFDEF is y,True,1 and thus the following arguments are sources until next keyword.
       set(PARSE_ARGUMENT_ITEMS  True)
+      set(PARSE_KCONFIG_ITEMS   False)
     elseif("${arg}" MATCHES "^IFDEF:.*$")
       # The IFDEF was either not given a y,True,1 value but is empty or something else, hense, skip sources unitil next keyword.
       set(PARSE_ARGUMENT_ITEMS  False)
+      set(PARSE_KCONFIG_ITEMS   False)
     elseif("${arg}" MATCHES "^IFNDEF:(y|True|1)$")
       # The IFNDEF is y,True,1 and thus the following arguments are sources until next keyword, but IFNDEF means we shuld skip the files.
       set(PARSE_ARGUMENT_ITEMS False)
+      set(PARSE_KCONFIG_ITEMS  False)
     elseif("${arg}" MATCHES "^IFNDEF:.*$")
       # The IFNDEF was either not given a y,True,1 value but is empty or something else, so add sources until next keyword.
       set(PARSE_ARGUMENT_ITEMS True)
+      set(PARSE_KCONFIG_ITEMS  False)
+    elseif("${arg}" MATCHES "^IF_KCONFIG")
+      # IF_KCONFIG was specified, use the following values to look up corresponding KConfig setting.
+      set(PARSE_ARGUMENT_ITEMS False)
+      set(PARSE_KCONFIG_ITEMS  True)
+    elseif(PARSE_KCONFIG_ITEMS)
+      # Only for sources for now
+      get_filename_component(arg_basename ${arg} NAME_WE)
+      string(TOUPPER CONFIG_${arg_basename} UPPER_CASE_CONFIG)
+      if(${UPPER_CASE_CONFIG})
+        list(APPEND LOCAL_LIST "${LOCAL_PREPEND_STR}${arg}")
+      endif()
     elseif(PARSE_ARGUMENT_ITEMS)
       list(APPEND LOCAL_LIST "${LOCAL_PREPEND_STR}${arg}")
     endif()

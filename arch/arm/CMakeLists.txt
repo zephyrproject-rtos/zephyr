@@ -22,4 +22,4 @@ zephyr_ld_options(
   ${ARCH_FLAG}
   )
 
-add_subdirectory(core)
+include_relative(core/CMakeLists.txt)

@@ -2,13 +2,11 @@
 # garbage collect them
 zephyr_cc_option(-ffunction-sections -fdata-sections)
 
-zephyr_sources_ifdef(
-  CONFIG_GEN_ISR_TABLES
-  isr_tables.c
-  sw_isr_common.c
-  )
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            IFDEF:${CONFIG_GEN_ISR_TABLES}         isr_tables.c
+                                                   sw_isr_common.c
+            IFDEF:${CONFIG_EXECUTION_BENCHMARKING} timing_info_bench.c
+)
 
-zephyr_sources_ifdef(
-  CONFIG_EXECUTION_BENCHMARKING
-  timing_info_bench.c
-  )
+target_sources(arch_${ARCH} PRIVATE ${PRIVATE_SOURCES})

@@ -1,0 +1,10 @@
+add_library(soc_${ARCH} STATIC "")
+target_link_libraries(soc_${ARCH} PUBLIC zephyr_interface)
+target_link_libraries(zephyr_app_linking INTERFACE soc_${ARCH})
+zephyr_set_property(TARGET soc_${ARCH} MEMORY_SPACE kernel)
+
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/${ARCH}/CMakeLists.txt)
+  include(${SOC_DIR}/${ARCH}/CMakeLists.txt)
+else()
+  include(${SOC_DIR}/${ARCH}/${SOC_PATH}/CMakeLists.txt)
+endif()

@@ -1,4 +1,3 @@
-zephyr_sources(
-  soc.c
-  arm_mpu_regions.c
-  )
+target_sources(soc_arm PRIVATE ${CMAKE_CURRENT_LIST_DIR}/soc.c
+                               ${CMAKE_CURRENT_LIST_DIR}/arm_mpu_regions.c
+)

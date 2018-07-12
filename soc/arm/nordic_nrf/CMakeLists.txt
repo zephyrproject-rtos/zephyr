@@ -2,4 +2,4 @@ zephyr_include_directories(
   include
 )
 
-add_subdirectory(${SOC_SERIES})
+include_relative(${SOC_SERIES}/CMakeLists.txt)
