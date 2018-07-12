@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2018 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef CLI_TYPES_H__
+#define CLI_TYPES_H__
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+enum shell_vt100_color
+{
+	SHELL_VT100_COLOR_DEFAULT,
+	SHELL_VT100_COLOR_BLACK,
+	SHELL_VT100_COLOR_RED,
+	SHELL_VT100_COLOR_GREEN,
+	SHELL_VT100_COLOR_YELLOW,
+	SHELL_VT100_COLOR_BLUE,
+	SHELL_VT100_COLOR_MAGENTA,
+	SHELL_VT100_COLOR_CYAN,
+	SHELL_VT100_COLOR_WHITE,
+
+	VT100_COLOR_END
+};
+
+struct shell_vt100_colors
+{
+	enum shell_vt100_color_t col; /* Text color. */
+	enum shell_vt100_color_t bgcol; /* Background color. */
+};
+
+struct shell_multiline_cons
+{
+	u16_t cur_x;       /*!< horizontal cursor position in edited command line.*/
+	u16_t cur_x_end;   /*!< horizontal cursor position at the end of command.*/
+	u16_t cur_y;       /*!< vertical cursor position in edited command.*/
+	u16_t cur_y_end;   /*!< vertical cursor position at the end of command.*/
+	u16_t terminal_hei;/*!< terminal screen height.*/
+	u16_t terminal_wid;/*!< terminal screen width.*/
+	uint8_t name_len;  /*!<console name length.*/
+};
+
+struct shell_vt100_ctx
+{
+	nrf_cli_multiline_cons_t cons;
+	nrf_cli_vt100_colors_t col;
+	u16_t printed_cmd;  // printed commands counter
+};
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* CLI_TYPES_H__ */
+
