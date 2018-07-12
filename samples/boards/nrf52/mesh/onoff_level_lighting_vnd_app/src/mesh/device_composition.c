@@ -109,6 +109,7 @@ static float sqrt(float square)
 
 static void state_binding(u8_t lightness, u8_t temperature)
 {
+	u16_t tmp16;
 	float tmp;
 
 	switch (lightness) {
@@ -168,8 +169,19 @@ static void state_binding(u8_t lightness, u8_t temperature)
 
 		break;
 	case LEVEL: /* Lightness update as per Generic Level (root) state */
-		light_lightness_srv_user_data.actual =
-			gen_level_srv_root_user_data.level + 32768;
+		/* This is as per Mesh Model Specification 3.3.2.2.3 */
+		tmp16 = gen_level_srv_root_user_data.level + 32768;
+		if (tmp16 > 0 && tmp16 <
+		    light_lightness_srv_user_data.lightness_range_min) {
+			tmp16 =
+			light_lightness_srv_user_data.lightness_range_min;
+		} else if (tmp16 >
+			   light_lightness_srv_user_data.lightness_range_max) {
+			tmp16 =
+			light_lightness_srv_user_data.lightness_range_max;
+		}
+
+		light_lightness_srv_user_data.actual = tmp16;
 
 		tmp = ((float) light_lightness_srv_user_data.actual / 65535);
 		light_lightness_srv_user_data.linear =
@@ -177,6 +189,41 @@ static void state_binding(u8_t lightness, u8_t temperature)
 
 		light_lightness_srv_user_data.last =
 			light_lightness_srv_user_data.actual;
+
+		gen_level_srv_root_user_data.level =
+			light_lightness_srv_user_data.actual - 32768;
+
+		light_ctl_srv_user_data.lightness =
+			light_lightness_srv_user_data.actual;
+		break;
+	case DELTA_LEVEL: /* Lightness update as per Gen. Level (root) state */
+		/* This is as per Mesh Model Specification 3.3.2.2.3 */
+		tmp16 = gen_level_srv_root_user_data.level + 32768;
+		if (tmp16 > 0 && tmp16 <
+		    light_lightness_srv_user_data.lightness_range_min) {
+			if (gen_level_srv_root_user_data.last_delta < 0) {
+				tmp16 = 0;
+			} else {
+				tmp16 =
+				light_lightness_srv_user_data.lightness_range_min;
+			}
+		} else if (tmp16 >
+			   light_lightness_srv_user_data.lightness_range_max) {
+			tmp16 =
+			light_lightness_srv_user_data.lightness_range_max;
+		}
+
+		light_lightness_srv_user_data.actual = tmp16;
+
+		tmp = ((float) light_lightness_srv_user_data.actual / 65535);
+		light_lightness_srv_user_data.linear =
+			(u16_t) (65535 * tmp * tmp);
+
+		light_lightness_srv_user_data.last =
+			light_lightness_srv_user_data.actual;
+
+		gen_level_srv_root_user_data.level =
+			light_lightness_srv_user_data.actual - 32768;
 
 		light_ctl_srv_user_data.lightness =
 			light_lightness_srv_user_data.actual;
@@ -196,10 +243,25 @@ static void state_binding(u8_t lightness, u8_t temperature)
 			light_lightness_srv_user_data.actual;
 		break;
 	case LINEAR: /* Lightness update as per Light Lightness Linear state */
-		light_lightness_srv_user_data.actual =
-			(u16_t) 65535 *
+		tmp16 = (u16_t) 65535 *
 			sqrt(((float) light_lightness_srv_user_data.linear /
 			      65535));
+
+		if (tmp16 > 0 && tmp16 <
+		    light_lightness_srv_user_data.lightness_range_min) {
+			tmp16 =
+			light_lightness_srv_user_data.lightness_range_min;
+		} else if (tmp16 >
+			   light_lightness_srv_user_data.lightness_range_max) {
+			tmp16 =
+			light_lightness_srv_user_data.lightness_range_max;
+		}
+
+		light_lightness_srv_user_data.actual = tmp16;
+
+		tmp = ((float) light_lightness_srv_user_data.actual / 65535);
+		light_lightness_srv_user_data.linear =
+			(u16_t) (65535 * tmp * tmp);
 
 		light_lightness_srv_user_data.last =
 			light_lightness_srv_user_data.actual;
@@ -211,8 +273,19 @@ static void state_binding(u8_t lightness, u8_t temperature)
 			light_lightness_srv_user_data.actual;
 		break;
 	case CTL: /* Lightness update as per Light CTL Lightness state */
-		light_lightness_srv_user_data.actual =
-			light_ctl_srv_user_data.lightness;
+		tmp16 = light_ctl_srv_user_data.lightness;
+
+		if (tmp16 > 0 && tmp16 <
+		    light_lightness_srv_user_data.lightness_range_min) {
+			tmp16 =
+			light_lightness_srv_user_data.lightness_range_min;
+		} else if (tmp16 >
+			   light_lightness_srv_user_data.lightness_range_max) {
+			tmp16 =
+			light_lightness_srv_user_data.lightness_range_max;
+		}
+
+		light_lightness_srv_user_data.actual = tmp16;
 
 		tmp = ((float) light_lightness_srv_user_data.actual / 65535);
 		light_lightness_srv_user_data.linear =
@@ -223,6 +296,9 @@ static void state_binding(u8_t lightness, u8_t temperature)
 
 		gen_level_srv_root_user_data.level =
 			light_lightness_srv_user_data.actual - 32768;
+
+		light_ctl_srv_user_data.lightness =
+			light_lightness_srv_user_data.actual;
 		break;
 	default:
 		goto update_temp;
@@ -515,7 +591,7 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 
 	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		/* Root element */
-		state_binding(LEVEL, IGNORE_TEMP);
+		state_binding(DELTA_LEVEL, IGNORE_TEMP);
 		update_light_state();
 	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
 		/* Secondary element */
