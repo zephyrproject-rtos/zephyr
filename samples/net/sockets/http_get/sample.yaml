@@ -4,5 +4,6 @@ sample:
 tests:
   test:
     harness: net
-    min_ram: 32
+    min_flash: 160
+    min_ram: 90
     tags: net

@@ -45,7 +45,7 @@ static uint8_t download_hash[32] =
     "\xbe\x12\xfe\x40\xe1\xb2\x02\xd7\x0c\x45\x5d\x78\x4f\xbe\xc8\xcd\xb3\x38\xfe\x01\x1a\xb9\xe8\x62\x95\x81\x35\x68\x90\x6f\x60\x73";
 
 #define SSTRLEN(s) (sizeof(s) - 1)
-#define CHECK(r) { if (r == -1) { printf("Error: " #r "\n"); exit(1); } }
+#define CHECK(r) { if (r == -1) { printf("Error: " #r "\n"); } }
 
 const char *host;
 const char *port;
@@ -193,7 +193,7 @@ void download(struct addrinfo *ai, mbedtls_ssl_config *tls_conf)
 	}
 
 error:
-	(void)zstream_close(sock);
+	zstream_close(stream);
 }
 
 int main(void)
@@ -203,7 +203,6 @@ int main(void)
 	int st;
 	char *p;
 	unsigned int total_bytes = 0;
-	int resolve_attempts = 10;
 	mbedtls_ssl_config *tls_conf = NULL;
 
 	setbuf(stdout, NULL);
@@ -252,17 +251,8 @@ int main(void)
 
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-
-	while (resolve_attempts--) {
-		st = getaddrinfo(host, port, &hints, &res);
-
-		if (st == 0) {
-			break;
-		}
-
-		printf("getaddrinfo status: %d, retrying\n", st);
-		sleep(2);
-	}
+	st = getaddrinfo(host, port, &hints, &res);
+	printf("getaddrinfo status: %d\n", st);
 
 	if (st != 0) {
 		fatal("Unable to resolve address");

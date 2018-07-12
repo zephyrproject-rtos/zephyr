@@ -6,7 +6,10 @@ add_subdirectory_ifdef(CONFIG_MQTT_LIB          mqtt)
 add_subdirectory_ifdef(CONFIG_NET_APP           app)
 add_subdirectory_ifdef(CONFIG_NET_APP_SETTINGS  config)
 add_subdirectory_ifdef(CONFIG_NET_SOCKETS       sockets)
+add_subdirectory_ifdef(CONFIG_NET_SOCKETS       zstream)
 add_subdirectory_ifdef(CONFIG_WEBSOCKET         websocket)
+add_subdirectory_ifdef(CONFIG_MBEDTLS           tls_conf)
+add_subdirectory_ifdef(CONFIG_NET_ASYNC_SOCKET  async_socket)
 
 if(CONFIG_HTTP_PARSER_URL
     OR CONFIG_HTTP_PARSER

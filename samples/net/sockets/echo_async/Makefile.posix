@@ -1,4 +1,14 @@
 # This makefile builds sample for POSIX system, like Linux
 
+INC = -I$(ZEPHYR_BASE)/include
+LIBPATH = $(ZEPHYR_BASE)/subsys/net/lib/zstream
+LIBSRC = $(LIBPATH)/zstream_sock.c \
+    $(LIBPATH)/zstream_tls.c \
+    $(LIBPATH)/../tls_conf/tls_conf.c \
+
+LDLIBS = -lmbedtls -lmbedx509 -lmbedcrypto
+
+CFLAGS = -DCONFIG_MBEDTLS -DCONFIG_MBEDTLS_DEBUG_LEVEL=0
+
 socket_echo: src/socket_echo.c
-	$(CC) $^ -o $@
+	$(CC) $(INC) $(CFLAGS) $^ $(LIBSRC) $(LDLIBS) -o $@

@@ -1,0 +1,11 @@
+sample:
+  description: Zstream API big HTTP download example
+  name: big_http_download
+tests:
+  test:
+    harness: net
+    min_ram: 110
+    min_flash: 192
+    # Even with lots of RAM/flash, runs out of it
+    platform_exclude: minnowboard
+    tags: net

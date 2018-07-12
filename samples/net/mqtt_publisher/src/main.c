@@ -7,8 +7,6 @@
 #include <zephyr.h>
 #include <net/mqtt.h>
 
-#include <net/net_context.h>
-
 #include <misc/printk.h>
 #include <string.h>
 #include <errno.h>

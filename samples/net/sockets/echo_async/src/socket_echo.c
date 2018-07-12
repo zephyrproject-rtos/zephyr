@@ -25,6 +25,12 @@
 
 #endif
 
+#include <net/tls_conf.h>
+#include <net/zstream.h>
+#include <net/zstream_tls.h>
+
+#include "../../../echo_server/src/test_certs.h"
+
 /* For Zephyr, keep max number of fd's in sync with max poll() capacity */
 #ifdef CONFIG_NET_SOCKETS_POLL_MAX
 #define NUM_FDS CONFIG_NET_SOCKETS_POLL_MAX
@@ -32,11 +38,17 @@
 #define NUM_FDS 5
 #endif
 
+#define NUM_LISTEN_FDS 2
+
 #define PORT 4242
 
 /* Number of simultaneous client connections will be NUM_FDS be minus 2 */
 struct pollfd pollfds[NUM_FDS];
+struct zstream_sock streams_sock[NUM_FDS];
+struct zstream_tls streams_tls[NUM_FDS];
 int pollnum;
+static mbedtls_ssl_config *tls_conf;
+static struct ztls_cert_key_pair cert_key;
 
 static void nonblock(int fd)
 {
@@ -50,7 +62,7 @@ static void block(int fd)
 	fcntl(fd, F_SETFL, fl & ~O_NONBLOCK);
 }
 
-int pollfds_add(int fd)
+int register_sock(int fd)
 {
 	int i;
 	if (pollnum < NUM_FDS) {
@@ -66,20 +78,29 @@ int pollfds_add(int fd)
 	}
 
 found:
+	/* Don't create streams for listening sockets */
+	if (i >= NUM_LISTEN_FDS) {
+		struct zstream *stream;
+
+		zstream_sock_init(&streams_sock[i], fd);
+		stream = (struct zstream *)&streams_sock[i];
+
+		if (zstream_tls_init(&streams_tls[i], stream, tls_conf, NULL) < 0) {
+			printf("Error creating TLS connection\n");
+			return -1;
+		}
+	}
+
 	pollfds[i].fd = fd;
 	pollfds[i].events = POLLIN;
 
 	return 0;
 }
 
-void pollfds_del(int fd)
+void unregister_sock(int idx)
 {
-	for (int i = 0; i < pollnum; i++) {
-		if (pollfds[i].fd == fd) {
-			pollfds[i].fd = -1;
-			break;
-		}
-	}
+	zstream_close((struct zstream *)&streams_tls[idx]);
+	pollfds[idx].fd = -1;
 }
 
 int main(void)
@@ -99,6 +120,27 @@ int main(void)
 		.sin6_port = htons(PORT),
 		.sin6_addr = IN6ADDR_ANY_INIT,
 	};
+
+	if (ztls_get_tls_server_conf(&tls_conf) < 0) {
+		printf("Unable to initialize TLS\n");
+		return 1;
+	}
+
+	res = ztls_parse_cert_key_pair(&cert_key,
+				       rsa_example_cert_der,
+				       rsa_example_cert_der_len,
+				       rsa_example_keypair_der,
+				       rsa_example_keypair_der_len);
+	if (res < 0) {
+		printf("Unable to parse cert/privkey\n");
+		return 1;
+	}
+
+	res = ztls_conf_add_own_cert_key_pair(tls_conf, &cert_key);
+	if (res < 0) {
+		printf("Unable to set cert/privkey\n");
+		return 1;
+	}
 
 	serv4 = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	res = bind(serv4, (struct sockaddr *)&bind_addr4, sizeof(bind_addr4));
@@ -124,8 +166,8 @@ int main(void)
 	listen(serv4, 5);
 	listen(serv6, 5);
 
-	pollfds_add(serv4);
-	pollfds_add(serv6);
+	register_sock(serv4);
+	register_sock(serv6);
 
 	printf("Asynchronous TCP echo server waits for connections on port %d...\n", PORT);
 
@@ -145,7 +187,7 @@ int main(void)
 				continue;
 			}
 			int fd = pollfds[i].fd;
-			if (i < 2) {
+			if (i < NUM_LISTEN_FDS) {
 				/* If server socket */
 				int client = accept(fd, (struct sockaddr *)&client_addr,
 						    &client_addr_len);
@@ -155,23 +197,24 @@ int main(void)
 					  addr_str, sizeof(addr_str));
 				printf("Connection #%d from %s fd=%d\n", counter++,
 				       addr_str, client);
-				if (pollfds_add(client) < 0) {
-					static char msg[] = "Too many connections\n";
-					send(client, msg, sizeof(msg) - 1, 0);
+				if (register_sock(client) < 0) {
 					close(client);
 				} else {
 					nonblock(client);
 				}
 			} else {
 				char buf[128];
-				int len = recv(fd, buf, sizeof(buf), 0);
+				int len = zstream_read((struct zstream *)&streams_tls[i], buf, sizeof(buf));
 				if (len <= 0) {
 					if (len < 0) {
+						if (errno == EAGAIN) {
+							/* Underlying socket could be readable, but stream still have EAGAIN */
+							continue;
+						}
 						printf("error: recv: %d\n", errno);
 					}
 error:
-					pollfds_del(fd);
-					close(fd);
+					unregister_sock(i);
 					printf("Connection fd=%d closed\n", fd);
 				} else {
 					int out_len;
@@ -185,7 +228,7 @@ error:
 					 */
 					block(fd);
 					for (p = buf; len; len -= out_len) {
-						out_len = send(fd, p, len, 0);
+						out_len = zstream_write((struct zstream *)&streams_tls[i], p, len);
 						if (out_len < 0) {
 							printf("error: "
 							       "send: %d\n",
