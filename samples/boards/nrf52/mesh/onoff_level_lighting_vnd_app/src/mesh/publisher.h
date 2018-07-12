@@ -21,6 +21,7 @@
 #define LEVEL_U75  49152
 #define LEVEL_U100 65535
 
+void randomize_publishers_TID(void);
 void publish(struct k_work *work);
 
 #endif

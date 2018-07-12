@@ -143,4 +143,6 @@ void main(void)
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
+
+	randomize_publishers_TID();
 }
