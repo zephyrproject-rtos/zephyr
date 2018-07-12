@@ -13,6 +13,8 @@ void main(void)
 {
 	console_getline_init();
 
+	printk("Enter a line\n");
+
 	while (1) {
 		char *s = console_getline();
 
