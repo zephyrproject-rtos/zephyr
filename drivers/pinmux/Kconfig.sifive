@@ -5,16 +5,16 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig PINMUX_FE310
+menuconfig PINMUX_SIFIVE
 	bool "SiFive Freedom E310 SOC pinmux driver"
-	depends on PINMUX && SOC_SERIES_RISCV32_FE310
+	depends on PINMUX && SOC_SERIES_RISCV32_SIFIVE_FREEDOM
 	help
 	  Enable driver for the SiFive Freedom E310 SOC pinmux driver
 
-if PINMUX_FE310
+if PINMUX_SIFIVE
 
-config PINMUX_FE310_0_NAME
-	string "FE310 pinmux 0 driver name"
+config PINMUX_SIFIVE_0_NAME
+	string "SIFIVE pinmux 0 driver name"
 	default "pinmux0"
 
-endif # PINMUX_FE310
+endif # PINMUX_SIFIVE

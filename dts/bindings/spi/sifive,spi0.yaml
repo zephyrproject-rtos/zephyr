@@ -27,7 +27,7 @@ properties:
       generation: define
       category: required
 
-base_label: FE310
+base_label: SIFIVE
 use-property-label: yes
 
 ...

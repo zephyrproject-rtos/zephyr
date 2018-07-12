@@ -1,7 +1,7 @@
 
 config BOARD_QEMU_RISCV32
 	bool "QEMU RISC-V 32-bit sifive_e target"
-	depends on SOC_RISCV32_FE310
+	depends on SOC_RISCV32_SIFIVE_FREEDOM
 	select QEMU_TARGET
 	select HAS_DTS
 
