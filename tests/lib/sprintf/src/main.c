@@ -135,37 +135,37 @@ void test_sprintf_double(void)
 	/*******************/
 	var.d = 1234.0;
 	sprintf(buffer, "%e", var.d);
-	zassert_true((strcmp(buffer, "1.234000e+003") == 0),
-		     "sprintf(1.234000e+003) - incorrect "
+	zassert_true((strcmp(buffer, "1.234000e+03") == 0),
+		     "sprintf(1.234000e+03) - incorrect "
 		     "output '%s'\n", buffer);
 
 	sprintf(buffer, "%E", var.d);
-	zassert_true((strcmp(buffer, "1.234000E+003") == 0),
-		     "sprintf(1.234000E+003) - incorrect "
+	zassert_true((strcmp(buffer, "1.234000E+03") == 0),
+		     "sprintf(1.234000E+03) - incorrect "
 		     "output '%s'\n", buffer);
 
 	/*******************/
 	var.d = 0.1234;
 	sprintf(buffer, "%e", var.d);
-	zassert_true((strcmp(buffer, "1.234000e-001") == 0),
-		     "sprintf(1.234000e-001) - incorrect "
+	zassert_true((strcmp(buffer, "1.234000e-01") == 0),
+		     "sprintf(1.234000e-01) - incorrect "
 		     "output '%s'\n", buffer);
 
 	sprintf(buffer, "%E", var.d);
-	zassert_true((strcmp(buffer, "1.234000E-001") == 0),
-		     "sprintf(1.234000E-001) - incorrect "
+	zassert_true((strcmp(buffer, "1.234000E-01") == 0),
+		     "sprintf(1.234000E-01) - incorrect "
 		     "output '%s'\n", buffer);
 
 	/*******************/
 	var.d = 1234000000.0;
 	sprintf(buffer, "%g", var.d);
-	zassert_true((strcmp(buffer, "1.234e+009") == 0),
-		     "sprintf(1.234e+009) - incorrect "
+	zassert_true((strcmp(buffer, "1.234e+09") == 0),
+		     "sprintf(1.234e+09) - incorrect "
 		     "output '%s'\n", buffer);
 
 	sprintf(buffer, "%G", var.d);
-	zassert_true((strcmp(buffer, "1.234E+009") == 0),
-		     "sprintf(1.234E+009) - incorrect "
+	zassert_true((strcmp(buffer, "1.234E+09") == 0),
+		     "sprintf(1.234E+09) - incorrect "
 		     "output '%s'\n", buffer);
 }
 
