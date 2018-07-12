@@ -123,6 +123,19 @@ config OPENTHREAD_CHANNEL
 	int "Default Channel"
 	default 11
 
+config OPENTHREAD_NETWORK_NAME
+	string "Default network name"
+	default "ot_zephyr"
+	help
+	  Network name for Openthread
+
+config OPENTHREAD_XPANID
+	string "Default Extended PAN ID"
+	default "de:ad:00:be:ef:00:ca:fe"
+	help
+	  Extended PAN ID for OpenThread with
+	  format "de:ad:00:be:ef:00:ca:fe"
+
 choice
 	prompt "OpenThread device type"
 	help

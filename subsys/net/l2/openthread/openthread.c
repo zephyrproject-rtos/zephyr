@@ -284,6 +284,9 @@ enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 static int openthread_init(struct net_if *iface)
 {
 	struct openthread_context *ot_context = net_if_l2_data(iface);
+	u8_t xpanid[8];
+
+	net_bytes_from_str(xpanid, 8, (char *)CONFIG_OPENTHREAD_XPANID);
 
 	NET_DBG("openthread_init");
 
@@ -300,11 +303,14 @@ static int openthread_init(struct net_if *iface)
 
 	NET_INFO("OpenThread version: %s",
 		    otGetVersionString());
+
+	otThreadSetNetworkName(ot_context->instance, CONFIG_OPENTHREAD_NETWORK_NAME);
 	NET_INFO("Network name:   %s",
 		    otThreadGetNetworkName(ot_context->instance));
 
 	otLinkSetChannel(ot_context->instance, CONFIG_OPENTHREAD_CHANNEL);
 	otLinkSetPanId(ot_context->instance, CONFIG_OPENTHREAD_PANID);
+	otThreadSetExtendedPanId(ot_context->instance, xpanid);
 	otIp6SetEnabled(ot_context->instance, true);
 	otThreadSetEnabled(ot_context->instance, true);
 	otIp6SetReceiveFilterEnabled(ot_context->instance, true);
