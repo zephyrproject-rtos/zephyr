@@ -81,7 +81,7 @@ typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,
 typedef int (*lwm2m_engine_set_data_cb_t)(u16_t obj_inst_id,
 				       u8_t *data, u16_t data_len,
 				       bool last_block, size_t total_size);
-typedef int (*lwm2m_engine_exec_cb_t)(u16_t obj_inst_id);
+typedef int (*lwm2m_engine_user_cb_t)(u16_t obj_inst_id);
 
 
 /* LWM2M Device Object */
@@ -144,8 +144,8 @@ void lwm2m_firmware_set_write_cb(lwm2m_engine_set_data_cb_t cb);
 lwm2m_engine_set_data_cb_t lwm2m_firmware_get_write_cb(void);
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
-void lwm2m_firmware_set_update_cb(lwm2m_engine_exec_cb_t cb);
-lwm2m_engine_exec_cb_t lwm2m_firmware_get_update_cb(void);
+void lwm2m_firmware_set_update_cb(lwm2m_engine_user_cb_t cb);
+lwm2m_engine_user_cb_t lwm2m_firmware_get_update_cb(void);
 #endif
 #endif
 
@@ -205,7 +205,7 @@ int lwm2m_engine_register_pre_write_callback(char *path,
 int lwm2m_engine_register_post_write_callback(char *path,
 					      lwm2m_engine_set_data_cb_t cb);
 int lwm2m_engine_register_exec_callback(char *path,
-					lwm2m_engine_exec_cb_t cb);
+					lwm2m_engine_user_cb_t cb);
 
 /* resource data bit values */
 #define LWM2M_RES_DATA_READ_ONLY	0
