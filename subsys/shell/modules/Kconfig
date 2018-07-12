@@ -9,7 +9,6 @@
 
 config KERNEL_SHELL
 	bool "Enable kernel shell"
-	default n
 	help
 	  This shell provides access to basic kernel data like version, uptime
 	  and other useful information.

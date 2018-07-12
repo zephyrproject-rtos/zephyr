@@ -19,14 +19,12 @@ if NET_APP
 
 config NET_DEBUG_APP
 	bool "Debug net app library"
-	default n
 	default y if NET_LOG_GLOBAL
 	help
 	  Enables net app library to output debug messages
 
 config NET_APP_SERVER
 	bool "Enable server support"
-	default n
 	help
 	  Enables net app library server APIs.
 
@@ -41,13 +39,11 @@ config NET_APP_SERVER_NUM_CONN
 
 config NET_APP_CLIENT
 	bool "Enable client support"
-	default n
 	help
 	  Enables net app library client APIs.
 
 config NET_APP_TLS
 	bool "Enable TLS support for TCP applications"
-	default n
 	depends on NET_TCP
 	select MBEDTLS
 	help
@@ -57,7 +53,6 @@ config NET_APP_DTLS
 	bool "Enable DTLS support for UDP applications"
 	depends on NET_UDP
 	select MBEDTLS
-	default n
 	help
 	  Enables net app library to use DTLS for encrypted UDP communication.
 

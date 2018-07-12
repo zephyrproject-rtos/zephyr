@@ -7,9 +7,7 @@
 menu "Console"
 
 config CONSOLE_SUBSYS
-	bool
-	default n
-	prompt "Console subsystem/support routines"
+	bool "Console subsystem/support routines"
 	help
 	  Console subsystem and helper functions
 

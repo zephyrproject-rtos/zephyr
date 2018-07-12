@@ -10,17 +10,13 @@
 #
 
 menuconfig FLASH_MAP
-	bool
-	prompt "Flash map abstraction module"
-	default n
+	bool "Flash map abstraction module"
 	depends on FLASH_HAS_DRIVER_ENABLED
 	help
 	  Enable support of flash map abstraction.
 
 config FLASH_MAP_CUSTOM
-	bool
-	prompt "Custom flash map description"
-	default n
+	bool "Custom flash map description"
 	depends on FLASH_MAP
 	help
 	  This option enables custom flash map description.

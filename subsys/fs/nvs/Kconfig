@@ -7,9 +7,7 @@
 #
 
 config NVS
-	bool
-	prompt "Non-volatile Storage"
-	default n
+	bool "Non-volatile Storage"
 	select FS_FLASH_STORAGE_PARTITION
 	help
 	  Enable support of Non-volatile Storage.
@@ -17,9 +15,7 @@ config NVS
 if NVS
 
 config NVS_PROTECT_FLASH
-	bool
-	prompt "Non-volatile Storage extra flash protection"
-	default n
+	bool "Non-volatile Storage extra flash protection"
 	help
 	  Enable extra protection against unnecessary writes to flash. This
 	  enables a extra read check, if data is not changed no write is
@@ -30,14 +26,12 @@ config NVS_PROTECT_FLASH
 config NVS_LOG
 	bool "Non-volatile Storage logging"
 	select SYS_LOG
-	default n
 	help
 	  Enable logs and checks for Non-volatile Storage.
 
 if NVS_LOG
 	config NVS_LOG_LEVEL
-		int
-		prompt "Non-volatile Storage Logging level"
+		int "Non-volatile Storage Logging level"
 		depends on SYS_LOG
 		default 1
 		range 0 4

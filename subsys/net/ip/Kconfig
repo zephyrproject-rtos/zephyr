@@ -11,7 +11,6 @@ menu "IP stack"
 # Hidden option
 config NET_RAW_MODE
 	bool
-	default n
 	help
 	  This is a very specific option used to built only the very minimal
 	  part of the net stack in order to get network drivers working without
@@ -36,7 +35,6 @@ source "subsys/net/ip/Kconfig.ipv4"
 
 config NET_SHELL
 	bool "Enable network shell utilities"
-	default n
 	select CONSOLE_SHELL
 	help
 	  Activate shell module that provides network commands like
@@ -101,12 +99,10 @@ config NET_MAX_ROUTERS
 config NET_ROUTE
 	bool
 	depends on NET_IPV6_NBR_CACHE
-	default n
 	default y if NET_IPV6_NBR_CACHE
 
 config NET_ROUTING
 	bool "IP routing between interfaces"
-	default n
 	depends on NET_ROUTE
 	help
 	  Allow IPv6 routing between different network interfaces and
@@ -129,7 +125,6 @@ config	NET_MAX_NEXTHOPS
 config NET_ROUTE_MCAST
 	bool
 	depends on NET_ROUTE
-	default n
 
 config	NET_MAX_MCAST_ROUTES
 	int "Max number of multicast routing entries stored."
@@ -141,7 +136,6 @@ config	NET_MAX_MCAST_ROUTES
 
 config NET_TCP
 	bool "Enable TCP"
-	default n
 	help
 	  The value depends on your network needs.
 
@@ -155,7 +149,6 @@ config NET_TCP_CHECKSUM
 
 config NET_DEBUG_TCP
 	bool "Debug TCP"
-	default n
 	depends on NET_TCP && NET_LOG
 	help
 	  Enables TCP handler output debug messages
@@ -243,7 +236,6 @@ config NET_UDP_CHECKSUM
 
 config NET_DEBUG_UDP
 	bool "Debug UDP"
-	default n
 	depends on NET_UDP && NET_LOG
 	help
 	  Enables UDP handler output debug messages
@@ -260,7 +252,6 @@ config NET_MAX_CONN
 config NET_CONN_CACHE
 	bool "Cache network connections"
 	depends on NET_UDP || NET_TCP
-	default n
 	help
 	  Caching takes slight more memory but will speedup connection
 	  handling of UDP and TCP connections.
@@ -275,7 +266,6 @@ config NET_MAX_CONTEXTS
 
 config NET_CONTEXT_NET_PKT_POOL
 	bool "Enable net_buf TX pool / context"
-	default n
 	default y if NET_TCP && NET_6LO
 	help
 	  If enabled, then it is possible to fine-tune network packet pool
@@ -301,14 +291,12 @@ config NET_CONTEXT_CHECK
 
 config NET_CONTEXT_PRIORITY
 	bool "Add priority support to net_context"
-	default n
 	help
 	  It is possible to prioritize network traffic. This requires
 	  also traffic class support to work as expected.
 
 config NET_TEST
 	bool "Network Testing"
-	default n
 	help
 	  Used for self-contained networking tests that do not require a
 	  network device.
@@ -319,7 +307,6 @@ config NET_SLIP_TAP
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN
 	select SLIP_TAP
-	default n
 	default y if (QEMU_TARGET && !NET_TEST && !NET_L2_BT)
 	help
 	  SLIP TAP support is necessary when testing with QEMU. The host
@@ -329,14 +316,12 @@ config NET_SLIP_TAP
 
 config NET_TRICKLE
 	bool "Enable Trickle library"
-	default n
 	help
 	  Normally this is enabled automatically if needed,
 	  so say 'n' if unsure.
 
 config NET_DEBUG_TRICKLE
 	bool "Debug Trickle algorithm"
-	default n
 	depends on NET_TRICKLE && NET_LOG
 	help
 	  Enables Trickle library output debug messages
@@ -422,7 +407,6 @@ endchoice
 
 config NET_PKT_TIMESTAMP
 	bool "Enable network packet timestamp support"
-	default n
 	help
 	  Enable network packet timestamp support. This is needed for
 	  example in gPTP which needs to know how long it takes to send

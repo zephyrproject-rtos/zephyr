@@ -6,7 +6,6 @@
 
 menuconfig NET_MGMT
 	bool "Network Management API"
-	default n
 	help
 	  Add support for NM API that enables managing different aspects
 	  of the network stack as well as receiving notification on network
@@ -16,7 +15,6 @@ if NET_MGMT
 
 config NET_MGMT_EVENT
 	bool "Add support for runtime network event notifications"
-	default n
 	help
 	  This adds support for the stack to notify events towards any
 	  relevant listener. This can be necessary when application
@@ -51,7 +49,6 @@ config NET_MGMT_EVENT_QUEUE_SIZE
 
 config NET_MGMT_EVENT_INFO
 	bool "Enable passing information along with an event"
-	default n
 	help
 	  Event notifier will be able to provide information to an event,
 	  and listeners will then be able to get it. Such information depends
@@ -59,13 +56,11 @@ config NET_MGMT_EVENT_INFO
 
 config NET_DEBUG_MGMT_EVENT
 	bool "Enable debug output on Net MGMT event core"
-	default n
 	help
 	  Add debug messages output on how Net MGMT events are handled.
 
 config NET_DEBUG_MGMT_EVENT_STACK
 	bool "Enable stack analysis output on Net MGMT event core"
-	default n
 	select INIT_STACKS
 	help
 	  Add debug messages output on how much Net MGMT event stack is used.

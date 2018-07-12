@@ -6,10 +6,8 @@
 #
 
 config TEST_RANDOM_GENERATOR
-	bool
-	prompt "Non-random number generator"
+	bool "Non-random number generator"
 	depends on !ENTROPY_HAS_DRIVER
-	default n
 	help
 	  This option signifies that the kernel's random number APIs are
 	  permitted to return values that are not truly random.
@@ -22,16 +20,14 @@ choice
 	default ENTROPY_DEVICE_RANDOM_GENERATOR
 
 config X86_TSC_RANDOM_GENERATOR
-	bool
-	prompt "x86 timestamp counter based number generator"
+	bool "x86 timestamp counter based number generator"
 	depends on TEST_RANDOM_GENERATOR && X86
 	help
 	  This options enables number generator based on timestamp counter
 	  of x86 boards, obtained with rdtsc instruction.
 
 config TIMER_RANDOM_GENERATOR
-	bool
-	prompt "System timer clock based number generator"
+	bool "System timer clock based number generator"
 	depends on TEST_RANDOM_GENERATOR
 	help
 	  This options enables number generator based on system timer
@@ -39,8 +35,7 @@ config TIMER_RANDOM_GENERATOR
 	  testing only.
 
 config ENTROPY_DEVICE_RANDOM_GENERATOR
-	bool
-	prompt "Use entropy driver to generate random numbers"
+	bool "Use entropy driver to generate random numbers"
 	depends on ENTROPY_HAS_DRIVER
 	help
 	  Enables a random number generator that uses the enabled
@@ -48,8 +43,7 @@ config ENTROPY_DEVICE_RANDOM_GENERATOR
 	  numbers.
 
 config XOROSHIRO_RANDOM_GENERATOR
-	bool
-	prompt "Use Xoroshiro128+ as PRNG"
+	bool "Use Xoroshiro128+ as PRNG"
 	depends on ENTROPY_HAS_DRIVER
 	help
 	  Enables the Xoroshiro128+ pseudo-random number generator, that

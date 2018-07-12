@@ -213,8 +213,7 @@ config BT_CONN_TX_MAX
 
 config BT_ATT_ENFORCE_FLOW
 	bool "Enforce strict flow control semantics for incoming PDUs"
-	default y
-	default n if BOARD_QEMU_CORTEX_M3 || BOARD_QEMU_X86 || BOARD_NATIVE_POSIX
+	default y if !(BOARD_QEMU_CORTEX_M3 || BOARD_QEMU_X86 || BOARD_NATIVE_POSIX)
 	help
 	  Enforce flow control rules on incoming PDUs, preventing a peer
 	  from sending new requests until a previous one has been responded

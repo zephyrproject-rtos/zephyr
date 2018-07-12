@@ -6,7 +6,6 @@
 
 menuconfig LWM2M
 	bool "OMA LWM2M protocol stack"
-	default n
 	select COAP
 	select NET_APP_CLIENT
 	select HTTP_PARSER_URL
@@ -147,7 +146,6 @@ config LWM2M_NUM_BLOCK1_CONTEXT
 config LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
 	bool "Firmware Update object pull via CoAP-CoAP/HTTP proxy support"
 	depends on LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
-	default n
 	help
 	  Include support for pulling firmware file via a CoAP-CoAP/HTTP proxy.
 

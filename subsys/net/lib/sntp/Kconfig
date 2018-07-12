@@ -6,7 +6,6 @@
 
 menuconfig SNTP
 	bool "SNTP Support"
-	default n
 	select NET_APP_CLIENT
 	help
 	  Enable SNTP client library
@@ -15,7 +14,6 @@ if SNTP
 
 config NET_DEBUG_SNTP
 	bool "Debug SNTP"
-	default n
 	help
 	  Enable debug message of SNTP client library
 

@@ -6,17 +6,14 @@
 menu "Logging Options"
 
 config SYS_LOG
-	bool
-	prompt "Enable Logging"
+	bool "Enable Logging"
 	depends on PRINTK
-	default n
 	help
 	  Global switch for logging, when turned off log calls will not be
 	  executed.
 
 config SYS_LOG_SHOW_TAGS
-	bool
-	prompt "Prepend level tags to logs"
+	bool "Prepend level tags to logs"
 	depends on SYS_LOG
 	default y
 	help
@@ -24,10 +21,8 @@ config SYS_LOG_SHOW_TAGS
 	  the C code.
 
 config SYS_LOG_SHOW_COLOR
-	bool
-	prompt "Use colored logs"
+	bool "Use colored logs"
 	depends on SYS_LOG
-	default n
 	help
 	  Use color in the logs. This requires an ANSI capable terminal.
 
@@ -66,16 +61,13 @@ config SYS_LOG_OVERRIDE_LEVEL
 	  4 DEBUG, override to write SYS_LOG_DBG in addition to previous levels
 
 config SYS_LOG_EXT_HOOK
-	bool
-	prompt "Use external hook function for logging"
+	bool "Use external hook function for logging"
 	depends on SYS_LOG
-	default n
 	help
 	  Use external hook function for logging.
 
 config SYS_LOG_BACKEND_NET
 	bool "Networking syslog backend"
-	default n
 	depends on SYS_LOG && NETWORKING
 	select SYS_LOG_EXT_HOOK
 	select NET_CONTEXT_NET_PKT_POOL
@@ -251,4 +243,3 @@ config LOG_BACKEND_UART_FORMAT_TIMESTAMP
 	  When enabled timestamp is formatted to hh:mm:ss:ms,us.
 endif
 endmenu
-

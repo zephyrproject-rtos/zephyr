@@ -10,7 +10,6 @@ menu "Networking"
 
 config NET_BUF
 	bool "Network buffer support"
-	default n
 	help
 	  This option enables support for generic network protocol
 	  buffers.
@@ -29,7 +28,6 @@ config NET_BUF_USER_DATA_SIZE
 config NET_BUF_LOG
 	bool "Network buffer logging"
 	select SYS_LOG
-	default n
 	help
 	  Enable logs and checks for the generic network buffers.
 
@@ -63,7 +61,6 @@ config NET_BUF_WARN_ALLOC_INTERVAL
 config NET_BUF_SIMPLE_LOG
 	bool "Network buffer memory debugging"
 	select SYS_LOG
-	default n
 	help
 	  Enable extra debug logs and checks for the generic network buffers.
 
@@ -71,7 +68,6 @@ endif # NET_BUF_LOG
 
 config NET_BUF_POOL_USAGE
 	bool "Network buffer pool usage tracking"
-	default n
 	help
 	  Enable network buffer pool tracking. This means that:
 	  * amount of free buffers in the pool is remembered
@@ -85,7 +81,6 @@ config  NETWORKING
 	select NET_BUF
 	select POLL
 	select ENTROPY_GENERATOR
-	default n
 	help
 	  This option enabled generic link layer and IP networking support.
 

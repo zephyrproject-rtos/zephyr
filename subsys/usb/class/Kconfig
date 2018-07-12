@@ -9,9 +9,7 @@
 if USB_DEVICE_STACK
 
 config USB_CDC_ACM
-	bool
-	prompt "USB CDC ACM Device Class Driver"
-	default n
+	bool "USB CDC ACM Device Class Driver"
 	help
 	  USB CDC ACM device class driver
 
@@ -57,10 +55,8 @@ config SYS_LOG_USB_CDC_ACM_LEVEL
 	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config USB_MASS_STORAGE
-	bool
-	prompt "USB Mass Storage Device Class Driver"
+	bool "USB Mass Storage Device Class Driver"
 	select DISK_ACCESS
-	default n
 	help
 	  USB Mass Storage device class driver
 
@@ -100,11 +96,9 @@ config SYS_LOG_USB_MASS_STORAGE_LEVEL
 	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config USB_DEVICE_BLUETOOTH
-	bool
-	prompt "USB Bluetooth Device Class Driver"
+	bool "USB Bluetooth Device Class Driver"
 	select BT
 	select BT_HCI_RAW
-	default n
 	help
 	  USB Bluetooth device class driver
 
@@ -142,11 +136,9 @@ source "subsys/usb/class/netusb/Kconfig"
 source "subsys/usb/class/hid/Kconfig"
 
 config USB_DFU_CLASS
-	bool
-	prompt "USB DFU Class Driver"
-	depends on IMG_MANAGER
+	bool "USB DFU Class Driver"
 	select MPU_ALLOW_FLASH_WRITE
-	default n
+	depends on IMG_MANAGER
 	help
 	  USB DFU class driver
 

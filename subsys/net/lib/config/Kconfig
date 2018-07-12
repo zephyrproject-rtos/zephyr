@@ -57,14 +57,12 @@ config NET_APP_NEED_IPV4
 
 config NET_DEBUG_CONFIG
 	bool "Debug net config library"
-	default n
 	default y if NET_LOG_GLOBAL
 	help
 	  Enables net config library to output debug messages
 
 menuconfig NET_APP_SETTINGS
 	bool "Set network settings for applications"
-	default n
 	depends on NET_APP
 	select NET_MGMT
 	select NET_MGMT_EVENT
@@ -190,7 +188,6 @@ if NET_L2_BT
 
 config NET_APP_BT_NODE
 	bool "Enable Bluetooth node support"
-	default n
 	select NET_L2_BT_MGMT
 	help
 	  Enables application to operate in node mode which requires GATT
