@@ -2178,15 +2178,20 @@ class Kconfig(object):
                     pattern = os.path.join(os.path.dirname(self._filename),
                                            pattern)
 
-                # If $srctree is set, glob relative to it
-                if self.srctree is not None:
+                if self.srctree is None:
+                    strip_srctree = False
+                else:
+                    # $srctree set and pattern not absolute?
+                    strip_srctree = not os.path.isabs(pattern)
+
+                    # If $srctree is set, glob relative to it
                     pattern = os.path.join(self.srctree, pattern)
 
                 # Sort the glob results to ensure a consistent ordering of
                 # Kconfig symbols, which indirectly ensures a consistent
                 # ordering in e.g. .config files
                 for filename in sorted(glob.iglob(pattern)):
-                    if self.srctree is not None and not os.path.isabs(filename):
+                    if strip_srctree:
                         # Strip the $srctree prefix from the filename and let
                         # the normal $srctree logic find the file. This makes
                         # the globbed filenames appear without a $srctree
