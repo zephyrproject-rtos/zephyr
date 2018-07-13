@@ -37,6 +37,6 @@ properties:
     clocks:
       type: array
       category: required
-      description: Clock gate control information
-      generation: structures
+      description: Clock gate information
+      generation: define
 ...
