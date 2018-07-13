@@ -1328,13 +1328,24 @@ __syscall void *k_thread_custom_data_get(void);
 /* kernel clocks */
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-#if	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC % sys_clock_ticks_per_sec) != 0
+
+/*
+ * If timer frequency is known at compile time, a simple (32-bit)
+ * tick <-> ms conversion could be used for some combinations of
+ * hardware timer frequency and tick rate. Otherwise precise
+ * (64-bit) calculations are used.
+ */
+
+#if !defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+#if	(sys_clock_hw_cycles_per_sec % sys_clock_ticks_per_sec) != 0
 	#define _NEED_PRECISE_TICK_MS_CONVERSION
 #elif	(MSEC_PER_SEC % sys_clock_ticks_per_sec) != 0
 	#define _NON_OPTIMIZED_TICKS_PER_SEC
 #endif
+#endif
 
-#ifdef	_NON_OPTIMIZED_TICKS_PER_SEC
+#if	defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
+	defined(_NON_OPTIMIZED_TICKS_PER_SEC)
 	#define _NEED_PRECISE_TICK_MS_CONVERSION
 #endif
 #endif
@@ -1368,7 +1379,7 @@ static inline s64_t __ticks_to_ms(s64_t ticks)
 #ifdef _NEED_PRECISE_TICK_MS_CONVERSION
 	/* use 64-bit math to keep precision */
 	return (u64_t)ticks * sys_clock_hw_cycles_per_tick * MSEC_PER_SEC /
-		CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+		sys_clock_hw_cycles_per_sec;
 #else
 	/* simple multiplication keeps precision */
 	u32_t ms_per_tick = MSEC_PER_SEC / sys_clock_ticks_per_sec;
