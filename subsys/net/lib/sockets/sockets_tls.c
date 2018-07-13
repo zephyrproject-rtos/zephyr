@@ -420,6 +420,7 @@ int ztls_close(int sock)
 
 int ztls_bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
 {
+	/* No extra action needed here. */
 	return zsock_bind(sock, addr, addrlen);
 }
 
@@ -455,6 +456,7 @@ error:
 
 int ztls_listen(int sock, int backlog)
 {
+	/* No extra action needed here. */
 	return zsock_listen(sock, backlog);
 }
 
@@ -507,28 +509,92 @@ error:
 
 ssize_t ztls_send(int sock, const void *buf, size_t len, int flags)
 {
-	return zsock_send(sock, buf, len, flags);
+	return ztls_sendto(sock, buf, len, flags, NULL, 0);
 }
 
 ssize_t ztls_recv(int sock, void *buf, size_t max_len, int flags)
 {
-	return zsock_recv(sock, buf, max_len, flags);
+	return ztls_recvfrom(sock, buf, max_len, flags, NULL, 0);
 }
 
 ssize_t ztls_sendto(int sock, const void *buf, size_t len, int flags,
 		    const struct sockaddr *dest_addr, socklen_t addrlen)
 {
-	return zsock_sendto(sock, buf, len, flags, dest_addr, addrlen);
+	struct net_context *context = INT_TO_POINTER(sock);
+	int ret;
+
+	if (!context->tls) {
+		return zsock_sendto(sock, buf, len, flags, dest_addr, addrlen);
+	}
+
+	context->tls->flags = flags;
+
+	ret = mbedtls_ssl_write(&context->tls->ssl, buf, len);
+	if (ret >= 0) {
+		return ret;
+	}
+
+	if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
+	    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+		errno = EAGAIN;
+		return -1;
+	}
+
+	errno = EIO;
+	return -1;
 }
 
 ssize_t ztls_recvfrom(int sock, void *buf, size_t max_len, int flags,
 		      struct sockaddr *src_addr, socklen_t *addrlen)
 {
-	return zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
+	struct net_context *context = INT_TO_POINTER(sock);
+	int ret;
+
+	if (!context->tls) {
+		return zsock_recvfrom(sock, buf, max_len, flags,
+				      src_addr, addrlen);
+	}
+
+	if (flags & ZSOCK_MSG_PEEK) {
+		/* TODO mbedTLS does not support 'peeking' This could be
+		 * bypassed by having intermediate buffer for peeking
+		 */
+		errno = ENOTSUP;
+		return -1;
+	}
+
+	context->tls->flags = flags;
+
+	ret = mbedtls_ssl_read(&context->tls->ssl, buf, max_len);
+	if (ret >= 0) {
+		return ret;
+	}
+
+	if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+		/* Peer notified that it's closing the connection. */
+		return 0;
+	}
+
+	if (ret == MBEDTLS_ERR_SSL_CLIENT_RECONNECT) {
+		/* Client reconnect on the same socket is not
+		 * supported. See mbedtls_ssl_read API documentation.
+		 */
+		return 0;
+	}
+
+	if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
+	    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+		errno = EAGAIN;
+		return -1;
+	}
+
+	errno = EIO;
+	return -1;
 }
 
 int ztls_fcntl(int sock, int cmd, int flags)
 {
+	/* No extra action needed here. */
 	return zsock_fcntl(sock, cmd, flags);
 }
 
