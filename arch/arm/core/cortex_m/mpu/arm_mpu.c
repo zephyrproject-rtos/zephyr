@@ -47,9 +47,9 @@ static void _region_init(u32_t index, struct arm_mpu_region *region_conf)
 	/* Configure the region */
 	MPU->RBAR = (region_conf->base & MPU_RBAR_ADDR_Msk)
 				| MPU_RBAR_VALID_Msk | index;
-	MPU->RASR = region_conf->attr | MPU_RASR_ENABLE_Msk;
+	MPU->RASR = region_conf->attr.rasr | MPU_RASR_ENABLE_Msk;
 	SYS_LOG_DBG("[%d] 0x%08x 0x%08x",
-		index, region_conf->base, region_conf->attr);
+		index, region_conf->base, region_conf->attr.rasr);
 }
 
 /* ARM Core MPU Driver API Implementation for ARM MPU */
