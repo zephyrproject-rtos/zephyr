@@ -4847,21 +4847,73 @@ const char *bt_get_name(void)
 
 int bt_set_id_addr(const bt_addr_le_t *addr)
 {
+	bt_addr_le_t non_const_addr;
+
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		BT_ERR("Setting identity not allowed after bt_enable()");
 		return -EBUSY;
 	}
+
+	bt_addr_le_copy(&non_const_addr, addr);
+
+	return bt_id_create(&non_const_addr, NULL);
+}
+
+void bt_id_get(bt_addr_le_t *addrs, size_t *count)
+{
+	size_t to_copy = min(*count, bt_dev.id_count);
+
+	memcpy(addrs, bt_dev.id_addr, to_copy * sizeof(bt_addr_le_t));
+	*count = to_copy;
+}
+
+int bt_id_create(bt_addr_le_t *addr, u8_t *irk)
+{
+	int new_id;
 
 	if (addr->type != BT_ADDR_LE_RANDOM || !BT_ADDR_IS_STATIC(&addr->a)) {
 		BT_ERR("Only static random identity address supported");
 		return -EINVAL;
 	}
 
-	bt_addr_le_copy(&bt_dev.id_addr[0], addr);
-	atomic_set_bit(bt_dev.flags, BT_DEV_USER_ID_ADDR);
-	atomic_set_bit(bt_dev.flags, BT_DEV_ID_STATIC_RANDOM);
+	if (!IS_ENABLED(CONFIG_BT_PRIVACY) && irk) {
+		return -EINVAL;
+	}
 
-	return 0;
+	if (bt_dev.id_count == ARRAY_SIZE(bt_dev.id_addr)) {
+		return -ENOMEM;
+	}
+
+	new_id = bt_dev.id_count++;
+	if (new_id == BT_ID_DEFAULT) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_USER_ID_ADDR);
+		atomic_set_bit(bt_dev.flags, BT_DEV_ID_STATIC_RANDOM);
+	}
+
+	if (bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+		bt_addr_le_copy(&bt_dev.id_addr[new_id], addr);
+	} else {
+		bt_addr_le_create_static(&bt_dev.id_addr[new_id]);
+		bt_addr_le_copy(addr, &bt_dev.id_addr[new_id]);
+	}
+
+#if defined(CONFIG_BT_PRIVACY)
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_READY) ||
+	    new_id != BT_ID_DEFAULT) {
+		u8_t zero_irk[16] = { 0 };
+
+		if (irk && memcmp(irk, zero_irk, 16)) {
+			memcpy(&bt_dev.irk[new_id], irk, 16);
+		} else {
+			bt_rand(&bt_dev.irk[new_id], 16);
+			if (irk) {
+				memcpy(irk, &bt_dev.irk[new_id], 16);
+			}
+		}
+	}
+#endif
+
+	return new_id;
 }
 
 bool bt_addr_le_is_bonded(u8_t id, const bt_addr_le_t *addr)
