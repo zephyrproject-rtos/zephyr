@@ -3,8 +3,10 @@
 #
 
 BUILDDIR ?= doc/_build
+DOC_TAG ?= development
+SPHINXOPTS ?= -q
 
 # Documentation targets
 # ---------------------------------------------------------------------------
 htmldocs:
-	mkdir -p ${BUILDDIR} && cmake -G"Unix Makefiles" -B${BUILDDIR} -Hdoc/ && make -s -C ${BUILDDIR} htmldocs
+	mkdir -p ${BUILDDIR} && cmake -G"Unix Makefiles" -DDOC_TAG=${DOC_TAG} -DSPHINXOPTS=${SPHINXOPTS} -B${BUILDDIR} -Hdoc/ && make -s -C ${BUILDDIR} htmldocs
