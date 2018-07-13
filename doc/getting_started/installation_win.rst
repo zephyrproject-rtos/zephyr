@@ -69,7 +69,7 @@ packages from their respective websites.
 
    .. code-block:: console
 
-      choco install git python ninja dtc-msys2 gperf
+      choco install git python ninja dtc-msys2 gperf doxygen.install
 
 #. Close the Command Prompt window.
 
