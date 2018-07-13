@@ -1136,9 +1136,9 @@ static void light_ctl_get(struct bt_mesh_model *model,
 	}
 }
 
-static void light_ctl_set_unack(struct bt_mesh_model *model,
-				struct bt_mesh_msg_ctx *ctx,
-				struct net_buf_simple *buf)
+static bool light_ctl_setunack(struct bt_mesh_model *model,
+			       struct bt_mesh_msg_ctx *ctx,
+			       struct net_buf_simple *buf)
 {
 	u8_t tid;
 	u16_t lightness, temp, delta_uv;
@@ -1151,7 +1151,14 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
-		return;
+		if (temp < TEMP_MIN || temp > TEMP_MAX) {
+			return false;
+		}
+		return true;
+	}
+
+	if (temp < TEMP_MIN || temp > TEMP_MAX) {
+		return false;
 	}
 
 	state->last_tid = tid;
@@ -1187,14 +1194,24 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 			printk("bt_mesh_model_publish err %d\n", err);
 		}
 	}
+
+	return true;
+}
+
+static void light_ctl_set_unack(struct bt_mesh_model *model,
+				struct bt_mesh_msg_ctx *ctx,
+				struct net_buf_simple *buf)
+{
+	light_ctl_setunack(model, ctx, buf);
 }
 
 static void light_ctl_set(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	light_ctl_set_unack(model, ctx, buf);
-	light_ctl_get(model, ctx, buf);
+	if (light_ctl_setunack(model, ctx, buf) == true) {
+		light_ctl_get(model, ctx, buf);
+	}
 }
 
 static void light_ctl_temp_range_get(struct bt_mesh_model *model,
@@ -1234,19 +1251,23 @@ static void light_ctl_default_get(struct bt_mesh_model *model,
 }
 
 /* Light CTL Setup Server message handlers */
-static void light_ctl_default_set_unack(struct bt_mesh_model *model,
-					struct bt_mesh_msg_ctx *ctx,
-					struct net_buf_simple *buf)
+static bool light_ctl_default_setunack(struct bt_mesh_model *model,
+				       struct bt_mesh_msg_ctx *ctx,
+				       struct net_buf_simple *buf)
 {
-	u16_t temp;
+	u16_t lightness, temp, delta_uv;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
 
-	state->lightness_def = net_buf_simple_pull_le16(buf);
+	lightness = net_buf_simple_pull_le16(buf);
 	temp = net_buf_simple_pull_le16(buf);
-	state->delta_uv_def = (int16_t) net_buf_simple_pull_le16(buf);
+	delta_uv = (int16_t) net_buf_simple_pull_le16(buf);
 
 	/* Here, Model specification is silent about tid implementation */
+
+	if (temp < TEMP_MIN || temp > TEMP_MAX) {
+		return false;
+	}
 
 	if (temp < state->temp_range_min) {
 		temp = state->temp_range_min;
@@ -1254,7 +1275,9 @@ static void light_ctl_default_set_unack(struct bt_mesh_model *model,
 		temp = state->temp_range_max;
 	}
 
+	state->lightness_def = lightness;
 	state->temp_def = temp;
+	state->delta_uv_def = delta_uv;
 
 	/* Do some work here to save values of
 	 * state->lightness_def, state->temp_Def & state->delta_uv_def
@@ -1276,14 +1299,24 @@ static void light_ctl_default_set_unack(struct bt_mesh_model *model,
 			printk("bt_mesh_model_publish err %d\n", err);
 		}
 	}
+
+	return true;
+}
+
+static void light_ctl_default_set_unack(struct bt_mesh_model *model,
+					struct bt_mesh_msg_ctx *ctx,
+					struct net_buf_simple *buf)
+{
+	light_ctl_default_setunack(model, ctx, buf);
 }
 
 static void light_ctl_default_set(struct bt_mesh_model *model,
 				  struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
-	light_ctl_default_set_unack(model, ctx, buf);
-	light_ctl_default_get(model, ctx, buf);
+	if (light_ctl_default_setunack(model, ctx, buf) == true) {
+		light_ctl_default_get(model, ctx, buf);
+	}
 }
 
 static void light_ctl_temp_range_set_unack(struct bt_mesh_model *model,
@@ -1421,9 +1454,9 @@ static void light_ctl_temp_get(struct bt_mesh_model *model,
 	}
 }
 
-static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
-				     struct bt_mesh_msg_ctx *ctx,
-				     struct net_buf_simple *buf)
+static bool light_ctl_temp_setunack(struct bt_mesh_model *model,
+				    struct bt_mesh_msg_ctx *ctx,
+				    struct net_buf_simple *buf)
 {
 	u8_t tid;
 	u16_t temp, delta_uv;
@@ -1435,7 +1468,14 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
-		return;
+		if (temp < TEMP_MIN || temp > TEMP_MAX) {
+			return false;
+		}
+		return true;
+	}
+
+	if (temp < TEMP_MIN || temp > TEMP_MAX) {
+		return false;
 	}
 
 	state->last_tid = tid;
@@ -1467,14 +1507,24 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 			printk("bt_mesh_model_publish err %d\n", err);
 		}
 	}
+
+	return true;
+}
+
+static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
+				     struct bt_mesh_msg_ctx *ctx,
+				     struct net_buf_simple *buf)
+{
+	light_ctl_temp_setunack(model, ctx, buf);
 }
 
 static void light_ctl_temp_set(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
-	light_ctl_temp_set_unack(model, ctx, buf);
-	light_ctl_temp_get(model, ctx, buf);
+	if (light_ctl_temp_setunack(model, ctx, buf) == true) {
+		light_ctl_temp_get(model, ctx, buf);
+	}
 }
 
 /* message handlers (End) */
