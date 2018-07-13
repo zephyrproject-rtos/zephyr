@@ -4,6 +4,5 @@ sample:
 tests:
   test_15_4:
     harness: net
-    platform_exclude: nrf52840_pca10056 usb_kw24d512
     depends_on: ieee802154 usb_device
     tags: net ieee802154 usb
