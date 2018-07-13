@@ -59,7 +59,7 @@ Follow these steps to run the demo on your host system:
 #. Implement a web app (web page) using WebUSB API and run
    it on localhost.
 
-   See the sample at https://github.com/nagineni/webusb-serial
+   See the sample at https://github.com/finikorg/webusb-serial
 
    This sample web page demonstrate how to create and use a WebUSB
    interface, as well as demonstrate the communication between browser
