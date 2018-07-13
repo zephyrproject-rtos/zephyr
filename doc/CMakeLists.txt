@@ -19,6 +19,8 @@ endif()
 
 if(NOT DEFINED SPHINXOPTS)
   set(SPHINXOPTS -q)
+else()
+  separate_arguments(SPHINXOPTS)
 endif()
 
 if(NOT DEFINED DOC_TAG)
@@ -28,7 +30,7 @@ endif()
 # Internal variables.
 set(ALLSPHINXOPTS  -d ${CMAKE_BINARY_DIR}/doctrees ${SPHINXOPTS})
 # the i18n builder cannot share the environment and doctrees with the others
-set(I18NSPHINXOPTS  ${SPHINXOPTS} .)
+set(I18NSPHINXOPTS  ${SPHINXOPTS})
 
 set(DOXYFILE ${CMAKE_CURRENT_SOURCE_DIR}/zephyr.doxyfile)
 set(BUILD_DOXYFILE ${CMAKE_BINARY_DIR}/build.doxyfile)
