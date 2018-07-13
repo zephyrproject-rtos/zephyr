@@ -1,5 +1,6 @@
 ---
 title: Kinetis GPIO
+id: nxp,kinetis-gpio
 version: 0.1
 
 description: >
