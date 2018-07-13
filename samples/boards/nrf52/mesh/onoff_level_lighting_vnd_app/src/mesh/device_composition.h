@@ -46,8 +46,8 @@ struct generic_onoff_state {
 };
 
 struct generic_level_state {
-	int level;
-	int last_level;
+	s16_t level;
+	s16_t last_level;
 	s32_t last_delta;
 	u8_t last_tid;
 	u16_t last_tx_addr;
