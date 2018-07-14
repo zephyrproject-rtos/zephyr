@@ -2062,11 +2062,16 @@ class TestSuite:
 
         def calc_one_elf_size(name, goal):
             if not goal.failed:
-                i = self.instances[name]
-                sc = i.calculate_sizes()
-                goal.metrics["ram_size"] = sc.get_ram_size()
-                goal.metrics["rom_size"] = sc.get_rom_size()
-                goal.metrics["unrecognized"] = sc.unrecognized_sections()
+                if self.instances[name].platform.type != "native":
+                    i = self.instances[name]
+                    sc = i.calculate_sizes()
+                    goal.metrics["ram_size"] = sc.get_ram_size()
+                    goal.metrics["rom_size"] = sc.get_rom_size()
+                    goal.metrics["unrecognized"] = sc.unrecognized_sections()
+                else:
+                    goal.metrics["ram_size"] = 0
+                    goal.metrics["rom_size"] = 0
+                    goal.metrics["unrecognized"] = []
 
         mg = MakeGenerator(self.outdir)
         for i in self.instances.values():
