@@ -92,9 +92,9 @@ static void hwm_sleep_until_next_timer(void)
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (signaled_end || (device_time >= end_of_time)) {
-		posix_print_trace("\nStopped after %.3Lfs\n",
-				((long double)device_time)/1.0e6);
+	if (signaled_end || (device_time > end_of_time)) {
+		posix_print_trace("\nStopped right after %.3Lfs\n",
+				((long double)end_of_time)/1.0e6);
 
 		posix_exit(0);
 	}
