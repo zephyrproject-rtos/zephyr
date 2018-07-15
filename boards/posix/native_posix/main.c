@@ -13,10 +13,17 @@
  *   and you go for lunch in the middle of the debug session.
  *
  * This is achieved as follows:
- * The HW models run in their own simulated time. We do really not attempt
- * to link ourselves to the actual real time / wall time of the machine as this
- * would make execution indeterministic and debugging or instrumentation not
- * really possible. Although we may slow the run to real time.
+ *  The execution of native_posix is decoupled from the underlying host and its
+ *  peripherals (unless set otherwise).
+ *  In general, time in native_posix is simulated.
+ *
+ * But, native_posix can also be linked if desired to the underlying host,
+ * e.g.:You can use the provided Ethernet TAP driver, or a host BLE controller.
+ *
+ * In this case, the no-indeterminism principle is lost. Runs of native_posix
+ * will depend on the host load and the interactions with those real host
+ * peripherals.
+ *
  */
 
 #include <soc.h>

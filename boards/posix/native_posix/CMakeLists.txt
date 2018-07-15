@@ -3,6 +3,7 @@ zephyr_library_compile_definitions(_POSIX_CHEATS_H)
 zephyr_library_sources(
 	hw_models_top.c
 	timer_model.c
+	native_rtc.c
 	irq_handler.c
 	irq_ctrl.c
 	main.c
