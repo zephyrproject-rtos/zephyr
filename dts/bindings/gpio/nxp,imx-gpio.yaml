@@ -5,6 +5,7 @@
 #
 ---
 title: i.MX GPIO
+id: nxp,imx-gpio
 version: 0.1
 
 description: >

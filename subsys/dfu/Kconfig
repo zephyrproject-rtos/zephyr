@@ -12,9 +12,7 @@
 menu "DFU options"
 
 config IMG_MANAGER
-	bool
-	prompt "DFU image manager"
-	default n
+	bool "DFU image manager"
 	help
 	  Enable support for managing DFU image.
 

@@ -30,7 +30,6 @@ config BT_RPA
 	bool
 	select TINYCRYPT
 	select TINYCRYPT_AES
-	default n
 
 config BT_DEBUG
 	# Virtual/hidden option to make the conditions more intuitive

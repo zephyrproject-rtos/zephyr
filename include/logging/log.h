@@ -256,9 +256,7 @@ int log_printk(const char *fmt, va_list ap);
  * - Instance logging is used and there is no need to create module entry.
  */
 
-#if defined(LOG_MODULE_NAME) &&					 \
-	((defined(LOG_LEVEL) && (LOG_LEVEL > LOG_LEVEL_NONE)) || \
-	(!defined(LOG_LEVEL) && (CONFIG_LOG_DEFAULT_LEVEL > LOG_LEVEL_NONE)))
+#if LOG_MODULE_PRESENT
 #if CONFIG_LOG_RUNTIME_FILTERING
 #define LOG_MODULE_REGISTER()						       \
 	_LOG_CONST_ITEM_REGISTER(LOG_MODULE_NAME,			       \
@@ -279,9 +277,9 @@ int log_printk(const char *fmt, va_list ap);
 						CONFIG_LOG_DEFAULT_LEVEL))
 #endif /*CONFIG_LOG_RUNTIME_FILTERING*/
 
-#else /* LOG enabled for the module. */
+#else /* LOG_MODULE_PRESENT */
 #define LOG_MODULE_REGISTER() /* Empty */
-#endif
+#endif /* LOG_MODULE_PRESENT */
 
 /**
  * @}

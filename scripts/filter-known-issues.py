@@ -160,40 +160,16 @@ if args.errors:
 else:
     errors = None
 
-
-def report_error(data):
-    sys.stdout.write(data)
-    if errors:
-        errors.write(data)
-
-
-def report_warning(data):
-    sys.stderr.write(data)
-    if warnings:
-        warnings.write(data)
-
-
-if args.warnings:
-    warnings = open(args.warnings, "w")
-else:
-    warnings = None
-if args.errors:
-    errors = open(args.errors, "w")
-else:
-    errors = None
-
-
 def report_error(data):
     sys.stdout.write(data.decode('utf-8'))
     if errors:
-        errors.write(data)
+        errors.write(data.decode('utf-8'))
 
 
 def report_warning(data):
-    sys.stderr.write(data)
+    sys.stderr.write(data.decode('utf-8'))
     if warnings:
-        warnings.write(data)
-
+        warnings.write(data.decode('utf-8'))
 
 for filename in args.FILENAMEs:
     if os.stat(filename).st_size == 0:
@@ -252,3 +228,19 @@ for filename in args.FILENAMEs:
     except Exception as e:
         logging.error("%s: cannot load: %s", filename, e)
         raise
+
+if warnings or errors:
+    if warnings:
+        warnings.flush()
+    if errors:
+        errors.flush()
+    if ((os.path.isfile(args.warnings) and os.path.getsize(args.warnings) > 0) or
+        (os.path.isfile(args.errors) and os.path.getsize(args.errors) > 0)):
+        print("\n\nNew errors/warnings found, please fix them:\n")
+        if args.warnings:
+            print(open(args.warnings, "r").read())
+        if args.errors and (args.errors != args.warnings):
+            print(open(args.errors, "r").read())
+    else:
+        print("\n\nNo new errors/warnings.\n")
+

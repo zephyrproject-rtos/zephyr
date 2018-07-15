@@ -65,7 +65,7 @@ static bool is_subject_valid(const char *subject, size_t len)
 
 			break;
 		default:
-			if (isalnum(subject[pos])) {
+			if (isalnum((unsigned char)subject[pos])) {
 				continue;
 			}
 
@@ -85,7 +85,7 @@ static bool is_sid_valid(const char *sid, size_t len)
 	}
 
 	for (pos = 0; pos < len; pos++) {
-		if (!isalnum(sid[pos])) {
+		if (!isalnum((unsigned char)sid[pos])) {
 			return false;
 		}
 	}

@@ -77,7 +77,7 @@ static void emit(struct lexer *lexer, enum json_tokens token)
 	lexer->start = lexer->pos;
 }
 
-static char next(struct lexer *lexer)
+static int next(struct lexer *lexer)
 {
 	if (lexer->pos >= lexer->end) {
 		lexer->pos = lexer->end + 1;
@@ -98,9 +98,9 @@ static void backup(struct lexer *lexer)
 	lexer->pos--;
 }
 
-static char peek(struct lexer *lexer)
+static int peek(struct lexer *lexer)
 {
-	char chr = next(lexer);
+	int chr = next(lexer);
 
 	backup(lexer);
 
@@ -112,7 +112,7 @@ static void *lexer_string(struct lexer *lexer)
 	ignore(lexer);
 
 	while (true) {
-		char chr = next(lexer);
+		int chr = next(lexer);
 
 		if (chr == '\0') {
 			emit(lexer, JSON_TOK_ERROR);
@@ -217,7 +217,7 @@ static void *lexer_null(struct lexer *lexer)
 static void *lexer_number(struct lexer *lexer)
 {
 	while (true) {
-		char chr = next(lexer);
+		int chr = next(lexer);
 
 		if (isdigit(chr) || chr == '.') {
 			continue;
@@ -233,7 +233,7 @@ static void *lexer_number(struct lexer *lexer)
 static void *lexer_json(struct lexer *lexer)
 {
 	while (true) {
-		char chr = next(lexer);
+		int chr = next(lexer);
 
 		switch (chr) {
 		case '\0':

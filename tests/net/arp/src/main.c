@@ -561,19 +561,13 @@ void test_arp(void)
 	/* The arp request packet is now verified, create an arp reply.
 	 * The previous value of pkt is stored in arp table and is not lost.
 	 */
-	pkt = net_pkt_get_reserve_rx(sizeof(struct net_eth_hdr), K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(sizeof(struct net_eth_hdr), K_SECONDS(1));
 
-	zassert_not_null(pkt,
-		"Out of mem RX reply");
+	zassert_not_null(pkt, "Out of mem RX reply");
 
-	printk("%d pkt %p\n", __LINE__, pkt);
+	frag = net_pkt_get_frag(pkt, K_SECONDS(1));
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
-	zassert_not_null(frag,
-		"Out of mem DATA reply");
-
-	printk("%d frag %p\n", __LINE__, frag);
+	zassert_not_null(frag, "Out of mem DATA reply");
 
 	net_pkt_frag_add(pkt, frag);
 

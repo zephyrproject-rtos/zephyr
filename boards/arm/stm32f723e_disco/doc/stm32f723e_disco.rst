@@ -83,6 +83,8 @@ The Zephyr stm32f723e_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -102,6 +104,8 @@ Default Zephyr Peripheral Mapping:
 - LD1 : PA5
 - LD5 : PA7
 - LD6 : PB1
+- OTG_FS_DM : PA11
+- OTG_FS_DP : PA12
 - UART_2_TX : PA2
 - UART_2_RX : PA3
 - UART_6_TX : PC6

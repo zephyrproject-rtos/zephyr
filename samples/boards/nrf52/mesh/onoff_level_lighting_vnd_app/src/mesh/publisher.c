@@ -15,6 +15,28 @@
 
 #define GENERIC_LEVEL
 
+static bool is_randomization_of_TIDs_done;
+static u8_t tid_level;
+
+#ifndef VND_MODEL_TEST
+static u8_t tid_onoff;
+#else
+static u8_t tid_vnd;
+#endif
+
+void randomize_publishers_TID(void)
+{
+	bt_rand(&tid_level, sizeof(tid_level));
+
+#ifndef VND_MODEL_TEST
+	bt_rand(&tid_onoff, sizeof(tid_onoff));
+#else
+	bt_rand(&tid_vnd, sizeof(tid_vnd));
+#endif
+
+	is_randomization_of_TIDs_done = true;
+}
+
 static u32_t button_read(struct device *port, u32_t pin)
 {
 	u32_t val = 0;
@@ -26,13 +48,10 @@ static u32_t button_read(struct device *port, u32_t pin)
 void publish(struct k_work *work)
 {
 	int err = 0;
-	static u8_t tid_level;
 
-#ifndef VND_MODEL_TEST
-	static u8_t tid_onoff;
-#else
-	static u8_t tid_vnd;
-#endif
+	if (is_randomization_of_TIDs_done == false) {
+		return;
+	}
 
 	if (button_read(button_device[0], SW0_GPIO_PIN) == 0) {
 
@@ -45,7 +64,7 @@ void publish(struct k_work *work)
 #else
 		bt_mesh_model_msg_init(vnd_models[0].pub->msg,
 				       BT_MESH_MODEL_OP_3(0x02, CID_ZEPHYR));
-		net_buf_simple_add_le16(vnd_models[0].pub->msg, 0xFF01);
+		net_buf_simple_add_le16(vnd_models[0].pub->msg, 0x0001);
 		net_buf_simple_add_u8(vnd_models[0].pub->msg, tid_vnd++);
 		err = bt_mesh_model_publish(&vnd_models[0]);
 #endif
@@ -61,7 +80,7 @@ void publish(struct k_work *work)
 #else
 		bt_mesh_model_msg_init(vnd_models[0].pub->msg,
 				       BT_MESH_MODEL_OP_3(0x02, CID_ZEPHYR));
-		net_buf_simple_add_le16(vnd_models[0].pub->msg, 0xFF00);
+		net_buf_simple_add_le16(vnd_models[0].pub->msg, 0x0000);
 		net_buf_simple_add_u8(vnd_models[0].pub->msg, tid_vnd++);
 		err = bt_mesh_model_publish(&vnd_models[0]);
 #endif

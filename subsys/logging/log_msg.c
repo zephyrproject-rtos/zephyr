@@ -11,7 +11,14 @@
 #define MSG_SIZE sizeof(union log_msg_chunk)
 #define NUM_OF_MSGS (CONFIG_LOG_BUFFER_SIZE / MSG_SIZE)
 
-K_MEM_SLAB_DEFINE(log_msg_pool, MSG_SIZE, NUM_OF_MSGS, sizeof(u32_t));
+struct k_mem_slab log_msg_pool;
+static u8_t __noinit __aligned(sizeof(u32_t))
+		log_msg_pool_buf[CONFIG_LOG_BUFFER_SIZE];
+
+void log_msg_pool_init(void)
+{
+	k_mem_slab_init(&log_msg_pool, log_msg_pool_buf, MSG_SIZE, NUM_OF_MSGS);
+}
 
 void log_msg_get(struct log_msg *msg)
 {

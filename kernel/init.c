@@ -30,6 +30,7 @@
 #include <kernel_internal.h>
 #include <kswap.h>
 #include <entropy.h>
+#include <logging/log_ctrl.h>
 
 /* kernel build timestamp items */
 #define BUILD_TIMESTAMP "BUILD: " __DATE__ " " __TIME__
@@ -458,6 +459,10 @@ FUNC_NORETURN void _Cstart(void)
 	 */
 
 	_IntLibInit();
+
+	if (IS_ENABLED(CONFIG_LOG)) {
+		log_core_init();
+	}
 
 	/* perform any architecture-specific initialization */
 	kernel_arch_init();

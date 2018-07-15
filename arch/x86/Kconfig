@@ -196,8 +196,7 @@ config CMOV
 	  the CMOV instruction.
 
 config CACHE_LINE_SIZE_DETECT
-	bool
-	prompt "Detect cache line size at runtime"
+	bool "Detect cache line size at runtime"
 	default y
 	help
 	  This option enables querying the CPUID register for finding the cache line
@@ -208,11 +207,9 @@ config CACHE_LINE_SIZE_DETECT
 	  manually enter the value for CACHE_LINE_SIZE.
 
 config CACHE_LINE_SIZE
-	int
-	prompt "Cache line size" if !CACHE_LINE_SIZE_DETECT
-	default 0 if CACHE_LINE_SIZE_DETECT
-	default 64 if CPU_ATOM
+	int "Cache line size" if !CACHE_LINE_SIZE_DETECT
 	default 0
+	default 64 if CPU_ATOM
 	help
 	  Size in bytes of a CPU cache line.
 

@@ -124,7 +124,10 @@ static void check_results(int num_tests)
 }
 
 /**
+ * @brief Test work queue items submission sequence
+ *
  * @ingroup kernel_workqueue_tests
+ *
  * @see k_work_init(), k_work_submit()
  */
 static void test_sequence(void)
@@ -159,7 +162,10 @@ static void resubmit_work_handler(struct k_work *work)
 	}
 }
 /**
+ * @brief Test work queue item resubmission
+ *
  * @ingroup kernel_workqueue_tests
+ *
  * @see k_work_submit()
  */
 static void test_resubmit(void)
@@ -190,7 +196,10 @@ static void delayed_work_handler(struct k_work *work)
 }
 
 /**
+ * @brief Test delayed work queue init
+ *
  * @ingroup kernel_workqueue_tests
+ *
  * @see k_delayed_work_init()
  */
 static void test_delayed_init(void)
@@ -222,7 +231,10 @@ static void coop_delayed_work_main(int arg1, int arg2)
 }
 
 /**
+ * @brief Test delayed workqueue submit
+ *
  * @ingroup kernel_workqueue_tests
+ *
  * @see k_delayed_work_init(), k_delayed_work_submit()
  */
 static void test_delayed_submit(void)
@@ -253,7 +265,7 @@ static void coop_delayed_work_cancel_main(int arg1, int arg2)
 	k_delayed_work_cancel(&tests[1].work);
 
 #if defined(CONFIG_POLL)
-	k_delayed_work_submit(&tests[2].work, 0 /* Submit immeditelly */);
+	k_delayed_work_submit(&tests[2].work, 0 /* Submit immediately */);
 
 	TC_PRINT(" - Cancel pending delayed work from coop thread\n");
 	k_delayed_work_cancel(&tests[2].work);
@@ -261,8 +273,12 @@ static void coop_delayed_work_cancel_main(int arg1, int arg2)
 }
 
 /**
+ * @brief Test work queue delayed cancel
+ *
  * @ingroup kernel_workqueue_tests
- * @see k_delayed_work_init(), k_delayed_work_submit(), k_delayed_work_cancel()
+ *
+ * @see k_delayed_work_init(), k_delayed_work_submit(),
+ * k_delayed_work_cancel()
  */
 static void test_delayed_cancel(void)
 {
@@ -284,10 +300,6 @@ static void test_delayed_cancel(void)
 	check_results(0);
 }
 
-/**
- * @ingroup kernel_workqueue_tests
- * @see k_delayed_work_init(), k_delayed_work_submit()
- */
 static void delayed_resubmit_work_handler(struct k_work *work)
 {
 	struct test_item *ti = CONTAINER_OF(work, struct test_item, work);
@@ -302,7 +314,10 @@ static void delayed_resubmit_work_handler(struct k_work *work)
 }
 
 /**
+ * @brief Test delayed resubmission of work queue item
+ *
  * @ingroup kernel_workqueue_tests
+ *
  * @see k_delayed_work_init(), k_delayed_work_submit()
  */
 static void test_delayed_resubmit(void)
@@ -345,7 +360,10 @@ static void coop_delayed_work_resubmit(void)
 
 
 /**
+ * @brief Test delayed resubmission of work queue thread
+ *
  * @ingroup kernel_workqueue_tests
+ *
  * @see k_delayed_work_init()
  */
 static void test_delayed_resubmit_thread(void)
@@ -368,7 +386,10 @@ static void test_delayed_resubmit_thread(void)
 }
 
 /**
+ * @brief Test delayed work items
+ *
  * @ingroup kernel_workqueue_tests
+ *
  * @see k_delayed_work_init(), k_delayed_work_submit()
  */
 static void test_delayed(void)

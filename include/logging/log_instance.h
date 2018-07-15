@@ -109,37 +109,6 @@ static inline u32_t log_dynamic_source_id(struct log_source_dynamic_data *data)
 			sizeof(struct log_source_dynamic_data);
 }
 
-/**
- *  @def LOG_CONST_ID_GET
- *  @brief Macro for getting ID of the element of the section.
- *
- *  @param _addr Address of the element.
- */
-/**
- * @def LOG_CURRENT_MODULE_ID
- * @brief Macro for getting ID of current module.
- */
-#ifdef CONFIG_LOG
-#define LOG_CONST_ID_GET(_addr) \
-	log_const_source_id((const struct log_source_const_data *)_addr)
-#define LOG_CURRENT_MODULE_ID()	\
-	log_const_source_id(&LOG_ITEM_CONST_DATA(LOG_MODULE_NAME))
-#else
-#define LOG_CONST_ID_GET(_addr) 0
-#define LOG_CURRENT_MODULE_ID() 0
-#endif
-
-/** @brief Macro for getting ID of the element of the section.
- *
- *  @param _addr Address of the element.
- */
-#if CONFIG_LOG
-#define LOG_DYNAMIC_ID_GET(_addr) \
-	log_dynamic_source_id((struct log_source_dynamic_data *)_addr)
-#else
-#define LOG_DYNAMIC_ID_GET(_addr) 0
-#endif
-
 /******************************************************************************/
 /****************** Filtering macros ******************************************/
 /******************************************************************************/
@@ -191,15 +160,6 @@ static inline u32_t log_dynamic_source_id(struct log_source_dynamic_data *data)
 		.name = _str_name,					     \
 		.level  = (_level),					     \
 	}
-
-#if CONFIG_LOG_RUNTIME_FILTERING
-#define _LOG_DYNAMIC_ITEM_REGISTER(_name)				       \
-	struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(_name)	       \
-	__attribute__ ((section("." STRINGIFY(LOG_ITEM_DYNAMIC_DATA(_name))))) \
-	__attribute__((used))
-#else
-#define _LOG_DYNAMIC_ITEM_REGISTER(_name) /* empty */
-#endif
 
 /** @def LOG_INSTANCE_PTR_DECLARE
  * @brief Macro for declaring a logger instance pointer in the module structure.

@@ -82,18 +82,44 @@ Running the documentation processors
 The ``/doc`` directory in your cloned copy of the Zephyr project git
 repo has all the .rst source files, extra tools, and Makefile for
 generating a local copy of the Zephyr project's technical documentation.
-Assuming the local Zephyr project copy is ``~/zephyr``, here are the
-commands to generate the html content locally:
+Assuming the local Zephyr project copy is in a folder ``zephyr`` in your home
+folder, here are the commands to generate the html content locally:
 
-.. code-block:: bash
+.. code-block:: console
 
-   $ cd ~/zephyr
-   $ source zephyr-env.sh
-   $ make htmldocs
+   # On Linux/macOS
+   cd ~/zephyr
+   source zephyr-env.sh
+   mkdir -p doc/_build && cd doc/_build
+   # On Windows
+   cd %userprofile%\zephyr
+   zephyr-env.cmd
+   mkdir doc\_build & cd doc/_build
+
+   # Use cmake to configure a Ninja-based build system:
+   cmake -GNinja ..
+   # Now run ninja on the generated build system:
+   ninja htmldocs
 
 Depending on your development system, it will take about 15 minutes to
 collect and generate the HTML content.  When done, you can view the HTML
-output with your browser started at ``~/zephyr/doc/_build/html/index.html``
+output with your browser started at ``doc/_build/html/index.html``
+
+If you want to build the documentation from scratch you can use this command:
+
+.. code-block:: console
+
+   ninja pristine
+
+On Unix platforms a convenience :file:`Makefile` at the root folder
+of the Zephyr repository can be used to build the documentation directly from
+there:
+
+.. code-block:: console
+
+   cd ~/zephyr
+   source zephyr-env.sh
+   make htmldocs
 
 Filtering expected warnings
 ***************************

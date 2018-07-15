@@ -109,17 +109,17 @@ static inline u32_t _get_region_attr_by_type(u32_t type, u32_t size)
 	switch (type) {
 #ifdef CONFIG_USERSPACE
 	case THREAD_STACK_REGION:
-		return _get_region_attr(1, P_RW_U_RW, 0, 1, 0,
+		return _get_region_attr(1, P_RW_U_RW, 1, 1, 1,
 					1, 0, region_size);
 #endif
 #ifdef CONFIG_MPU_STACK_GUARD
 	case THREAD_STACK_GUARD_REGION:
-		return _get_region_attr(1, P_RO_U_NA, 0, 1, 0,
+		return _get_region_attr(1, P_RO_U_NA, 1, 1, 1,
 					1, 0, region_size);
 #endif
 #ifdef CONFIG_APPLICATION_MEMORY
 	case THREAD_APP_DATA_REGION:
-		return _get_region_attr(1, P_RW_U_RW, 0, 1, 0,
+		return _get_region_attr(1, P_RW_U_RW, 1, 1, 1,
 					1, 0, region_size);
 #endif
 	default:
@@ -225,7 +225,7 @@ static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 static inline u32_t _get_region_ap(u32_t r_index)
 {
 	MPU->RNR = r_index;
-	return MPU->RASR & MPU_RASR_AP_Msk >> MPU_RASR_AP_Pos;
+	return (MPU->RASR & MPU_RASR_AP_Msk) >> MPU_RASR_AP_Pos;
 }
 
 /* ARM Core MPU Driver API Implementation for ARM MPU */

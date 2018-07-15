@@ -20,23 +20,23 @@ static struct k_thread tdata[NUM_THREAD];
 /*sleep duration tickless*/
 #define SLEEP_TICKLESS (CONFIG_TICKLESS_IDLE_THRESH * MSEC_PER_TICK)
 /*sleep duration with tick*/
-#define SLEEP_TICKFUL ((CONFIG_TICKLESS_IDLE_THRESH-1) * MSEC_PER_TICK)
+#define SLEEP_TICKFUL ((CONFIG_TICKLESS_IDLE_THRESH - 1) * MSEC_PER_TICK)
 /*slice size is set as half of the sleep duration*/
 #define SLICE_SIZE ((CONFIG_TICKLESS_IDLE_THRESH >> 1) * MSEC_PER_TICK)
 /*align to millisecond boundary*/
 #if defined(CONFIG_ARCH_POSIX)
-#define ALIGN_MS_BOUNDARY() \
+#define ALIGN_MS_BOUNDARY()		       \
 	do {				       \
 		u32_t t = k_uptime_get_32();   \
 		while (t == k_uptime_get_32()) \
-			posix_halt_cpu();\
+			posix_halt_cpu();      \
 	} while (0)
 #else
-#define ALIGN_MS_BOUNDARY() \
-	do {\
-		u32_t t = k_uptime_get_32();\
-		while (t == k_uptime_get_32())\
-			;\
+#define ALIGN_MS_BOUNDARY()		       \
+	do {				       \
+		u32_t t = k_uptime_get_32();   \
+		while (t == k_uptime_get_32()) \
+			;		       \
 	} while (0)
 #endif
 K_SEM_DEFINE(sema, 0, NUM_THREAD);
@@ -63,8 +63,17 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 #endif
 	k_sem_give(&sema);
 }
+/**
+ * @addtogroup kernel_tickless_tests
+ * @{
+ */
 
-/*test cases*/
+/**
+ * @brief Verify system clock with and without tickless idle
+ *
+ * @details Check if system clock recovers and works as expected
+ * when tickless idle is enabled and disabled.
+ */
 void test_tickless_sysclock(void)
 {
 	volatile u32_t t0, t1;
@@ -86,6 +95,12 @@ void test_tickless_sysclock(void)
 	zassert_true((t1 - t0) >= SLEEP_TICKFUL, NULL);
 }
 
+/**
+ * @brief Verify tickless functionality with time slice
+ *
+ * @details Create threads of equal priority and enable time
+ * slice. Check if the threads execute more than a tick.
+ */
 void test_tickless_slice(void)
 {
 	k_tid_t tid[NUM_THREAD];
@@ -97,8 +112,8 @@ void test_tickless_slice(void)
 	/*create delayed threads with equal preemptive priority*/
 	for (int i = 0; i < NUM_THREAD; i++) {
 		tid[i] = k_thread_create(&tdata[i], tstack[i], STACK_SIZE,
-			thread_tslice, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(0), 0, SLICE_SIZE);
+					 thread_tslice, NULL, NULL, NULL,
+					 K_PRIO_PREEMPT(0), 0, SLICE_SIZE);
 	}
 	k_uptime_delta(&elapsed_slice);
 	/*relinquish CPU and wait for each thread to complete*/
@@ -114,11 +129,13 @@ void test_tickless_slice(void)
 	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
 }
 
-
+/**
+ * @}
+ */
 void test_main(void)
 {
 	ztest_test_suite(tickless_concept,
-		ztest_unit_test(test_tickless_sysclock),
-		ztest_unit_test(test_tickless_slice));
+			 ztest_unit_test(test_tickless_sysclock),
+			 ztest_unit_test(test_tickless_slice));
 	ztest_run_test_suite(tickless_concept);
 }

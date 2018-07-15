@@ -1,3 +1,4 @@
+add_subdirectory_ifdef(CONFIG_ADT7420		adt7420)
 add_subdirectory_ifdef(CONFIG_ADXL362		adxl362)
 add_subdirectory_ifdef(CONFIG_AK8975		ak8975)
 add_subdirectory_ifdef(CONFIG_AMG88XX		amg88xx)

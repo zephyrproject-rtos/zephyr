@@ -11,6 +11,7 @@
 #include <logging/log_output.h>
 #include <misc/printk.h>
 #include <assert.h>
+#include <atomic.h>
 #include <stdio.h>
 
 #ifndef CONFIG_LOG_PRINTK_MAX_STRING_LENGTH
@@ -23,10 +24,16 @@ LOG_BACKEND_UART_DEFINE(log_backend_uart);
 #endif
 
 static struct log_list_t list;
+static atomic_t initialized;
 static bool panic_mode;
-static bool initialized;
 
-static timestamp_get_t timestamp_func;
+static u32_t dummy_timestamp(void);
+static timestamp_get_t timestamp_func = dummy_timestamp;
+
+static u32_t dummy_timestamp(void)
+{
+	return 0;
+}
 
 static inline void msg_finalize(struct log_msg *msg,
 				struct log_msg_ids src_level)
@@ -130,10 +137,6 @@ int log_printk(const char *fmt, va_list ap)
 		struct log_msg *msg;
 		int length;
 
-		if (!initialized) {
-			log_init();
-		}
-
 		length = vsnprintf(formatted_str,
 				   sizeof(formatted_str), fmt, ap);
 
@@ -173,25 +176,43 @@ static u32_t timestamp_get(void)
 	return k_cycle_get_32();
 }
 
-int log_init(void)
+void log_core_init(void)
+{
+	log_msg_pool_init();
+	log_list_init(&list);
+
+	/* No backends attached so far but set default level as a filter for
+	 * any source of logging in the system. When backends are attached later
+	 * logs will be filtered out during processing.
+	 */
+	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
+		for (int i = 0; i < log_sources_count(); i++) {
+			u32_t *filters = log_dynamic_filters_get(i);
+
+			LOG_FILTER_SLOT_SET(filters,
+					    LOG_FILTER_AGGR_SLOT_IDX,
+					    CONFIG_LOG_DEFAULT_LEVEL);
+		}
+	}
+}
+
+void log_init(void)
 {
 	assert(log_backend_count_get() < LOG_FILTERS_NUM_OF_SLOTS);
+	int i;
+
+	if (atomic_inc(&initialized)) {
+		return;
+	}
 
 	/* Set default timestamp. */
 	timestamp_func = timestamp_get;
 	log_output_timestamp_freq_set(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
-	if (!initialized) {
-		log_list_init(&list);
-
-		/* Assign ids to backends. */
-		for (int i = 0; i < log_backend_count_get(); i++) {
-			log_backend_id_set(log_backend_get(i),
-					 i + LOG_FILTER_FIRST_BACKEND_SLOT_IDX);
-		}
-
-		panic_mode = false;
-		initialized = true;
+	/* Assign ids to backends. */
+	for (i = 0; i < log_backend_count_get(); i++) {
+		log_backend_id_set(log_backend_get(i),
+				   i + LOG_FILTER_FIRST_BACKEND_SLOT_IDX);
 	}
 
 #ifdef CONFIG_LOG_BACKEND_UART
@@ -200,7 +221,6 @@ int log_init(void)
 			   NULL,
 			   CONFIG_LOG_DEFAULT_LEVEL);
 #endif
-	return 0;
 }
 
 int log_set_timestamp_func(timestamp_get_t timestamp_getter, u32_t freq)

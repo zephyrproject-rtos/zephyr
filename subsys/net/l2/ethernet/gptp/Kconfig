@@ -9,7 +9,6 @@ menuconfig NET_GPTP
 	depends on NET_L2_ETHERNET
 	select NET_PKT_TIMESTAMP
 	select PTP_CLOCK
-	default n
 	help
 	  Enable gPTP driver that send and receives gPTP packets
 	  and handles network packet timestamps.
@@ -18,7 +17,6 @@ if NET_GPTP
 
 config NET_DEBUG_GPTP
 	bool "Enable Debug Information for gPTP"
-	default n
 	depends on NET_LOG
 	help
 	  Enable logs for the gPTP stack.
@@ -32,7 +30,6 @@ config NET_GPTP_NUM_PORTS
 
 config NET_GPTP_VLAN
 	bool "Run gPTP over VLAN link"
-	default n
 	depends on NET_VLAN
 	select NET_L2_ETHERNET_MGMT
 	select NET_MGMT_EVENT
@@ -118,7 +115,6 @@ config NET_GPTP_PATH_TRACE_ELEMENTS
 
 config NET_GPTP_STATISTICS
 	bool "Collect gPTP statistics"
-	default n
 	help
 	  Enable this if you need to collect gPTP statistics. The statistics
 	  can be seen in net-shell if needed.

@@ -90,7 +90,7 @@ static int timestamp_print(struct log_msg *msg,
 
 	if (!format) {
 		length = print(ctx, "[%08lu] ", timestamp);
-	} else {
+	} else if (freq) {
 		u32_t reminder;
 		u32_t seconds;
 		u32_t hours;
@@ -111,6 +111,8 @@ static int timestamp_print(struct log_msg *msg,
 
 		length = print(ctx, "[%02d:%02d:%02d.%03d,%03d] ",
 			       hours, mins, seconds, ms, us);
+	} else {
+		length = 0;
 	}
 
 	return length;
