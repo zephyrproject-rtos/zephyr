@@ -71,11 +71,6 @@ add_custom_target(
 )
 
 add_custom_target(
-  htmldocs
-  DEPENDS doxy html
-)
-
-add_custom_target(
   content
   COMMAND ${PYTHON_EXECUTABLE} scripts/extract_content.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
@@ -102,15 +97,23 @@ add_custom_target(
 
 set(KI_SCRIPT ${ZEPHYR_BASE}/scripts/filter-known-issues.py)
 set(CONFIG_DIR ${ZEPHYR_BASE}/.known-issues/doc)
+set(SPHINX_CMD COMMAND ${SPHINXBUILD} -w ${SPHINX_LOG} -N -t ${DOC_TAG} -b html ${ALLSPHINXOPTS} ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_CURRENT_BINARY_DIR}/html)
 
 add_custom_target(
   html
-  COMMAND ${SPHINXBUILD} -w ${SPHINX_LOG} -N -t ${DOC_TAG} -b html ${ALLSPHINXOPTS} ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_CURRENT_BINARY_DIR}/html
+  ${SPHINX_CMD}
   # Merge the Doxygen and Sphinx logs into a single file
   COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/util/fmerge.cmake ${DOC_LOG} ${DOXY_LOG} ${SPHINX_LOG}
   COMMAND ${PYTHON_EXECUTABLE} ${KI_SCRIPT} --config-dir ${CONFIG_DIR} --errors ${DOC_WARN} --warnings ${DOC_WARN} ${DOC_LOG}
   COMMAND ${CMAKE_COMMAND} -E remove_directory samples
   COMMAND ${CMAKE_COMMAND} -E remove_directory boards
-  DEPENDS doxy content kconfig
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
 )
+
+add_dependencies(html content doxy kconfig)
+
+add_custom_target(
+  htmldocs
+)
+add_dependencies(htmldocs html)
+
