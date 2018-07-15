@@ -29,6 +29,12 @@ endif()
 
 # Internal variables.
 set(ALLSPHINXOPTS  -d ${CMAKE_CURRENT_BINARY_DIR}/doctrees ${SPHINXOPTS})
+if("-q" IN_LIST ALLSPHINXOPTS)
+  set(SPHINX_USES_TERMINAL )
+else()
+  set(SPHINX_USES_TERMINAL USES_TERMINAL)
+endif()
+
 # the i18n builder cannot share the environment and doctrees with the others
 set(I18NSPHINXOPTS  ${SPHINXOPTS})
 
@@ -108,6 +114,7 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E remove_directory samples
   COMMAND ${CMAKE_COMMAND} -E remove_directory boards
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+  ${SPHINX_USES_TERMINAL}
 )
 
 add_dependencies(html content doxy kconfig)
