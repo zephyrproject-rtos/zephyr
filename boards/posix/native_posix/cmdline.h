@@ -13,6 +13,9 @@ extern "C" {
 
 struct args_t {
 	double stop_at;
+	double rtc_offset;
+	double rt_drift;
+	double rt_ratio;
 #if defined(CONFIG_FAKE_ENTROPY_NATIVE_POSIX)
 	u32_t seed;
 #endif
