@@ -149,6 +149,9 @@ _exc_return:
 #endif
 
 _exc_return_from_exc:
+	ld_s r0, [sp, ___isf_t_pc_OFFSET]
+	sr r0, [_ARC_V2_ERET]
+
 	_pop_irq_stack_frame
 	ld sp, [saved_value]
 	rtie
