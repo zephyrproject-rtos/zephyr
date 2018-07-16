@@ -100,16 +100,15 @@ folder, here are the commands to generate the html content locally:
    cmake -GNinja ..
    # Now run ninja on the generated build system:
    ninja htmldocs
+   # If you modify or add .rst files, run ninja again:
+   ninja htmldocs
 
-Depending on your development system, it will take about 15 minutes to
+Depending on your development system, it will take up to 15 minutes to
 collect and generate the HTML content.  When done, you can view the HTML
 output with your browser started at ``doc/_build/html/index.html``
 
-If you want to build the documentation from scratch you can use this command:
-
-.. code-block:: console
-
-   ninja pristine
+If you want to build the documentation from scratch just delete the contents
+of the build folder and run ``cmake`` and then ``ninja`` again.
 
 On Unix platforms a convenience :file:`Makefile` at the root folder
 of the Zephyr repository can be used to build the documentation directly from
