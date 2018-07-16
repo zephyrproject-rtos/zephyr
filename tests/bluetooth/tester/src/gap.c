@@ -607,7 +607,7 @@ static void unpair(const u8_t *data, u16_t len)
 		goto rsp;
 	}
 keys:
-	err = bt_unpair(&addr);
+	err = bt_unpair(BT_ID_DEFAULT, &addr);
 
 	status = err < 0 ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS;
 rsp:
