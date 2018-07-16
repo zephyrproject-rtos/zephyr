@@ -30,6 +30,9 @@
 #elif defined(CONFIG_BOARD_HEXIWEAR_K64)
 #define PWM_DRIVER	GREEN_PWM_NAME
 #define PWM_CHANNEL	GREEN_PWM_CHANNEL
+#elif defined(CONFIG_BOARD_COLIBRI_IMX7D_M4)
+#define PWM_DRIVER	PWM_1_LABEL
+#define PWM_CHANNEL	0
 #else
 #error "Choose supported PWM driver"
 #endif
