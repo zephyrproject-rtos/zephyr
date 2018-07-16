@@ -20,14 +20,12 @@ extern "C" {
 #define GP0_BIT_SLEEP_READY BIT(0)
 
 enum power_states {
-	SYS_POWER_STATE_CPU_LPS,       /* C2LP state */
+	SYS_POWER_STATE_CPU_LPS,       /* C1 state */
 	SYS_POWER_STATE_CPU_LPS_1,     /* C2 state */
-	SYS_POWER_STATE_CPU_LPS_2,     /* C1 state */
-	SYS_POWER_STATE_DEEP_SLEEP,    /* DEEP SLEEP state */
-	SYS_POWER_STATE_DEEP_SLEEP_1,  /* SLEEP state */
-	SYS_POWER_STATE_DEEP_SLEEP_2,  /* Multicore support for
-					* DEEP_SLEEP state.
-					*/
+	SYS_POWER_STATE_CPU_LPS_2,     /* C2LP state */
+	SYS_POWER_STATE_DEEP_SLEEP,    /* SLEEP state */
+	SYS_POWER_STATE_DEEP_SLEEP_1,  /* SLEEP state with LPMODE enabled */
+
 	SYS_POWER_STATE_MAX
 };
 
@@ -38,13 +36,13 @@ enum power_states {
  * to put the processor into available power states.
  *
  * Wake up considerations:
- * SYS_POWER_STATE_CPU_LPS_2: Any interrupt works as wake event.
+ * SYS_POWER_STATE_CPU_LPS: Any interrupt works as wake event.
  *
  * SYS_POWER_STATE_CPU_LPS_1: Any interrupt works as wake event except
  * if the core enters LPSS where SYS_POWER_STATE_DEEP_SLEEP wake events
  * applies.
  *
- * SYS_POWER_STATE_CPU_LPS: Any interrupt works as wake event except the
+ * SYS_POWER_STATE_CPU_LPS_2: Any interrupt works as wake event except the
  * PIC timer which is gated. If the core enters LPSS only
  * SYS_POWER_STATE_DEEP_SLEEP wake events applies.
  *
@@ -52,9 +50,6 @@ enum power_states {
  * the SoC. This consists of the Counter, RTC, GPIO 1 and AIO Comparator.
  *
  * SYS_POWER_STATE_DEEP_SLEEP_1: Only Always-On peripherals can wake up
- * the SoC. This consists of the Counter, RTC, GPIO 1 and AIO Comparator.
- *
- * SYS_POWER_STATE_DEEP_SLEEP_2: Only Always-On peripherals can wake up
  * the SoC. This consists of the Counter, RTC, GPIO 1 and AIO Comparator.
  */
 void _sys_soc_set_power_state(enum power_states state);
