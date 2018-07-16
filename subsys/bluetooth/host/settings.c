@@ -169,7 +169,7 @@ static void generate_static_addr(void)
 	}
 
 	bt_dev.id_count = 1;
-	bt_set_static_addr();
+	bt_set_static_addr(&bt_dev.id_addr[0]);
 
 	BT_DBG("New ID Addr: %s", bt_addr_le_str(&bt_dev.id_addr[0]));
 
