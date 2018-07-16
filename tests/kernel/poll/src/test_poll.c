@@ -21,6 +21,25 @@ static __kernel struct k_sem no_wait_sem;
 static __kernel struct k_fifo no_wait_fifo;
 static __kernel struct k_poll_signal no_wait_signal;
 
+/**
+ * @brief Test cases to verify poll
+ *
+ * @defgroup kernel_poll_tests Poll tests
+ *
+ * @ingroup all_tests
+ *
+ * @{
+ * @}
+ */
+
+/**
+ * @brief Test poll events with no wait
+ *
+ * @ingroup kernel_poll_tests
+ *
+ * @see K_POLL_EVENT_INITIALIZER(), k_poll_signal_init(),
+ * k_poll_signal(), k_poll_signal_check()
+ */
 void test_poll_no_wait(void)
 {
 	struct fifo_msg msg = { NULL, FIFO_MSG_VALUE }, *msg_ptr;
@@ -83,7 +102,7 @@ void test_poll_no_wait(void)
 static K_SEM_DEFINE(wait_sem, 0, 1);
 static K_FIFO_DEFINE(wait_fifo);
 static __kernel struct k_poll_signal wait_signal =
-		K_POLL_SIGNAL_INITIALIZER(wait_signal);
+	K_POLL_SIGNAL_INITIALIZER(wait_signal);
 
 struct fifo_msg wait_msg = { NULL, FIFO_MSG_VALUE };
 
@@ -121,6 +140,13 @@ static void poll_wait_helper(void *use_fifo, void *p2, void *p3)
 	k_poll_signal(&wait_signal, SIGNAL_RESULT);
 }
 
+/**
+ * @brief Test polling with wait
+ *
+ * @ingroup kernel_poll_tests
+ *
+ * @see k_poll_signal_init(), k_poll()
+ */
 void test_poll_wait(void)
 {
 	const int main_low_prio = 10;
@@ -315,6 +341,13 @@ static void multi(void *p1, void *p2, void *p3)
 
 static K_SEM_DEFINE(multi_ready_sem, 1, 1);
 
+/**
+ * @brief Test polling of multiple events
+ *
+ * @ingroup kernel_poll_tests
+ *
+ * @see K_POLL_EVENT_INITIALIZER(), k_poll()
+ */
 void test_poll_multi(void)
 {
 	int old_prio = k_thread_priority_get(k_current_get());
