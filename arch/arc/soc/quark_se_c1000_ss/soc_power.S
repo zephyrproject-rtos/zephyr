@@ -15,7 +15,7 @@ GTEXT(_sys_soc_resume_from_deep_sleep)
 GTEXT(_power_restore_cpu_context)
 GTEXT(_power_soc_sleep)
 GTEXT(_power_soc_deep_sleep)
-GTEXT(_power_soc_deep_sleep_2)
+GTEXT(_power_soc_lpss_mode)
 
 #define GPS0_REGISTER  0xb0800100
 #define GP0_REGISTER 0xb0800114
@@ -73,7 +73,7 @@ SECTION_FUNC(TEXT, _power_soc_deep_sleep)
 	j @qm_power_soc_deep_sleep
 	/* Does not return */
 
-SECTION_FUNC(TEXT, _power_soc_deep_sleep_2)
+SECTION_FUNC(TEXT, _power_soc_lpss_mode)
 	/*
 	 * Setup 'sleep' instruction operand.
 	 */

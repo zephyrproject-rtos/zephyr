@@ -20,15 +20,12 @@ extern "C" {
 #define GP0_BIT_SLEEP_READY BIT(0)
 
 enum power_states {
-	SYS_POWER_STATE_CPU_LPS,       /* SS2 with LPSS enabled state */
+	SYS_POWER_STATE_CPU_LPS,       /* SS1 state with Timer ON */
 	SYS_POWER_STATE_CPU_LPS_1,     /* SS2 state */
-	SYS_POWER_STATE_CPU_LPS_2,     /* SS1 state with Timer ON */
-	SYS_POWER_STATE_DEEP_SLEEP,    /* DEEP SLEEP state */
+	SYS_POWER_STATE_DEEP_SLEEP,    /* SS2 with LPSS enabled state */
 	SYS_POWER_STATE_DEEP_SLEEP_1,  /* SLEEP state */
-	SYS_POWER_STATE_DEEP_SLEEP_2,  /* Multicore DEEP SLEEP state.
-					* Execution context is saved
-					* and core enters in LPS state.
-					*/
+	SYS_POWER_STATE_DEEP_SLEEP_2,  /* SLEEP state with LPMODE enabled */
+
 	SYS_POWER_STATE_MAX
 };
 
@@ -41,12 +38,12 @@ enum power_states {
  * Wake up considerations:
  * -----------------------
  *
- * SYS_POWER_STATE_CPU_LPS_2: Any interrupt works as wake event.
+ * SYS_POWER_STATE_CPU_LPS: Any interrupt works as wake event.
  *
  * SYS_POWER_STATE_CPU_LPS_1: Any interrupt works as wake event except
  * the ARC TIMER which is disabled.
  *
- * SYS_POWER_STATE_CPU_LPS: SYS_POWER_STATE_DEEP_SLEEP wake events applies.
+ * SYS_POWER_STATE_CPU_LPS_2: SYS_POWER_STATE_DEEP_SLEEP wake events applies.
  *
  * SYS_POWER_STATE_DEEP_SLEEP: Only Always-On peripherals can wake up
  * the SoC. This consists of the Counter, RTC, GPIO 1 and AIO Comparator.
