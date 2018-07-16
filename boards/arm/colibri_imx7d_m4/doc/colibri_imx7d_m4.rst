@@ -84,6 +84,8 @@ supports the following hardware features on the Cortex M4 Core:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -114,6 +116,8 @@ was tested with the following pinmux controller configuration.
 | SODIMM_194    | I2C4_SDA        | I2C_SDA                   |
 +---------------+-----------------+---------------------------+
 | SODIMM_196    | I2C4_SCL        | I2C_SCL                   |
++---------------+-----------------+---------------------------+
+| SODIMM_59     | PWM1/GPIO1_IO08 | PWM                       |
 +---------------+-----------------+---------------------------+
 
 System Clock

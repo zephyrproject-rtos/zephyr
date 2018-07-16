@@ -58,5 +58,12 @@ config I2C_4
 
 endif # I2C_IMX
 
+if PWM_IMX
+
+config PWM_1
+	def_bool y
+
+endif # PWM_IMX
+
 
 endif # BOARD_COLIBRI_IMX7D_M4

@@ -19,6 +19,7 @@
 		led0   = &green_led;
 		sw0    = &user_switch_1;
 		i2c-4  = &i2c4;
+		pwm-1  = &pwm1;
 	};
 
 	chosen {
@@ -61,5 +62,9 @@
 };
 
 &i2c4 {
+	status = "ok";
+};
+
+&pwm1 {
 	status = "ok";
 };
