@@ -25,7 +25,7 @@ config AON_TIMER_QMSI
 	help
 	  Enable support for AON periodic timer.
 
-config AON_TIMER_QMSI_DEV_NAME
+config COUNTER_0_NAME
 	string "QMSI AON Timer Device Name"
 	depends on AON_TIMER_QMSI
 	default "AON_TIMER"
