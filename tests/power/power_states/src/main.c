@@ -21,7 +21,9 @@
 static enum power_states states_list[] = {
 	SYS_POWER_STATE_CPU_LPS,
 	SYS_POWER_STATE_CPU_LPS_1,
+#ifdef CONFIG_X86
 	SYS_POWER_STATE_CPU_LPS_2,
+#endif
 #if (CONFIG_SYS_POWER_DEEP_SLEEP)
 	SYS_POWER_STATE_DEEP_SLEEP,
 	SYS_POWER_STATE_DEEP_SLEEP_1,
@@ -62,8 +64,10 @@ static const char *state_to_string(int state)
 		return "SYS_POWER_STATE_CPU_LPS";
 	case SYS_POWER_STATE_CPU_LPS_1:
 		return "SYS_POWER_STATE_CPU_LPS_1";
+#ifdef CONFIG_X86
 	case SYS_POWER_STATE_CPU_LPS_2:
 		return "SYS_POWER_STATE_CPU_LPS_2";
+#endif
 	case SYS_POWER_STATE_DEEP_SLEEP:
 		return "SYS_POWER_STATE_DEEP_SLEEP";
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
@@ -259,7 +263,9 @@ int _sys_soc_suspend(s32_t ticks)
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS:
 	case SYS_POWER_STATE_CPU_LPS_1:
+#ifdef CONFIG_X86
 	case SYS_POWER_STATE_CPU_LPS_2:
+#endif
 		/*
 		 * A wake event is needed in the following cases:
 		 *
@@ -321,7 +327,9 @@ void _sys_soc_resume(void)
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS:
 	case SYS_POWER_STATE_CPU_LPS_1:
+#ifdef CONFIG_X86
 	case SYS_POWER_STATE_CPU_LPS_2:
+#endif
 		if (!post_ops_done) {
 			post_ops_done = 1;
 			printk("Exiting %s state\n", state_to_string(state));
@@ -383,7 +391,8 @@ static void build_suspend_device_list(void)
 
 void main(void)
 {
-	printk("Quark SE: Power Management sample application\n");
+	printk("Quark SE(%s): Power Management sample application\n",
+								CONFIG_ARCH);
 
 #if (CONFIG_RTC)
 	setup_rtc();
