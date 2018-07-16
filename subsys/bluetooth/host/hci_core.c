@@ -4722,18 +4722,25 @@ static int set_ad(u16_t hci_op, const struct bt_ad *ad, size_t ad_len)
 		const struct bt_data *data = ad[c].data;
 
 		for (i = 0; i < ad[c].len; i++) {
+			int len = data[i].data_len;
+			u8_t type = data[i].type;
+
 			/* Check if ad fit in the remaining buffer */
-			if (set_data->len + data[i].data_len + 2 > 31) {
-				net_buf_unref(buf);
-				return -EINVAL;
+			if (set_data->len + len + 2 > 31) {
+				len = 31 - (set_data->len + 2);
+				if (type != BT_DATA_NAME_COMPLETE || !len) {
+					net_buf_unref(buf);
+					return -EINVAL;
+				}
+				type = BT_DATA_NAME_SHORTENED;
 			}
 
-			set_data->data[set_data->len++] = data[i].data_len + 1;
-			set_data->data[set_data->len++] = data[i].type;
+			set_data->data[set_data->len++] = len + 1;
+			set_data->data[set_data->len++] = type;
 
 			memcpy(&set_data->data[set_data->len], data[i].data,
-			       data[i].data_len);
-			set_data->len += data[i].data_len;
+			       len);
+			set_data->len += len;
 		}
 	}
 
