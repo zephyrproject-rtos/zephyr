@@ -214,8 +214,9 @@ static struct k_sem poll_wait_sem;
 struct cdc_acm_dev_data_t {
 	/* USB device status code */
 	enum usb_dc_status_code usb_status;
-	/* Callback function pointer */
-	uart_irq_callback_t	cb;
+	/* Callback function pointer/arg */
+	uart_irq_callback_user_data_t cb;
+	void *cb_data;
 	/* Tx ready status. Signals when */
 	u8_t tx_ready;
 	u8_t rx_ready;                 /* Rx ready status */
@@ -307,7 +308,7 @@ static void cdc_acm_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	k_sem_give(&poll_wait_sem);
 	/* Call callback only if tx irq ena */
 	if (dev_data->cb && dev_data->tx_irq_ena) {
-		dev_data->cb(cdc_acm_dev);
+		dev_data->cb(dev_data->cb_data);
 	}
 }
 
@@ -361,7 +362,7 @@ static void cdc_acm_bulk_out(u8_t ep,
 	dev_data->rx_ready = 1;
 	/* Call callback only if rx irq ena */
 	if (dev_data->cb && dev_data->rx_irq_ena) {
-		dev_data->cb(cdc_acm_dev);
+		dev_data->cb(dev_data->cb_data);
 	}
 }
 
@@ -744,11 +745,13 @@ static int cdc_acm_irq_update(struct device *dev)
  * @return N/A
  */
 static void cdc_acm_irq_callback_set(struct device *dev,
-				     uart_irq_callback_t cb)
+				     uart_irq_callback_user_data_t cb,
+				     void *cb_data)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	dev_data->cb = cb;
+	dev_data->cb_data = cb_data;
 }
 
 #ifdef CONFIG_UART_LINE_CTRL

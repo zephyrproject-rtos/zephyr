@@ -25,7 +25,8 @@ struct uarte_nrfx_data {
 	u8_t rx_data;
 
 #ifdef UARTE_INTERRUPT_DRIVEN
-	uart_irq_callback_t cb; /**< Callback function pointer */
+	uart_irq_callback_user_data_t cb; /**< Callback function pointer */
+	void *cb_data; /**< Callback function arg */
 	u8_t *tx_buffer;
 #endif /* UARTE_INTERRUPT_DRIVEN */
 };
@@ -84,7 +85,7 @@ static void uarte_nrfx_isr(void *arg)
 	const struct uarte_nrfx_data *data = get_dev_data(dev);
 
 	if (data->cb) {
-		data->cb(dev);
+		data->cb(data->cb_data);
 	}
 }
 #endif /* UARTE_INTERRUPT_DRIVEN */
@@ -405,11 +406,13 @@ static int uarte_nrfx_irq_update(struct device *dev)
 
 /** Set the callback function */
 static void uarte_nrfx_irq_callback_set(struct device *dev,
-					uart_irq_callback_t cb)
+					uart_irq_callback_user_data_t cb,
+					void *cb_data)
 {
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 
 	data->cb = cb;
+	data->cb_data = cb_data;
 }
 #endif /* UARTE_INTERRUPT_DRIVEN */
 

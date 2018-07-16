@@ -46,14 +46,16 @@ static int uart_qmsi_init(struct device *dev);
 
 #ifndef CONFIG_DEVICE_POWER_MANAGEMENT
 struct uart_qmsi_drv_data {
-	uart_irq_callback_t user_cb;
+	uart_irq_callback_user_data_t user_cb;
+	void *cb_data;
 	u8_t iir_cache;
 };
 
 #define uart_qmsi_set_power_state(...)
 #else
 struct uart_qmsi_drv_data {
-	uart_irq_callback_t user_cb;
+	uart_irq_callback_user_data_t user_cb;
+	void *cb_data;
 	u8_t iir_cache;
 	u32_t device_power_state;
 	qm_uart_context_t ctx;
@@ -348,11 +350,13 @@ static int uart_qmsi_irq_update(struct device *dev)
 }
 
 static void uart_qmsi_irq_callback_set(struct device *dev,
-				       uart_irq_callback_t cb)
+				       uart_irq_callback_user_data_t cb,
+				       void *cb_data)
 {
 	struct uart_qmsi_drv_data *drv_data = dev->driver_data;
 
 	drv_data->user_cb = cb;
+	drv_data->cb_data = cb_data;
 }
 
 static void uart_qmsi_isr(void *arg)
@@ -361,7 +365,7 @@ static void uart_qmsi_isr(void *arg)
 	struct uart_qmsi_drv_data *drv_data = dev->driver_data;
 
 	if (drv_data->user_cb)
-		drv_data->user_cb(dev);
+		drv_data->user_cb(drv_data->cb_data);
 
 	device_busy_clear(dev);
 }

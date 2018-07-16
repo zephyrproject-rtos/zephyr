@@ -65,8 +65,18 @@ extern "C" {
 #define UART_ERROR_BREAK    (1 << 3)
 
 /**
+ * @typedef uart_irq_callback_user_data_t
+ * @brief Define the application callback function signature for
+ * uart_irq_callback_user_data_set() function.
+ *
+ * @param user_data Arbitrary user data.
+ */
+typedef void (*uart_irq_callback_user_data_t)(void *user_data);
+
+/**
  * @typedef uart_irq_callback_t
- * @brief Define the application callback function signature for UART.
+ * @brief Define the application callback function signature for legacy
+ * uart_irq_callback_set().
  *
  * @param port Device struct for the UART device.
  */
@@ -156,8 +166,10 @@ struct uart_driver_api {
 	/** Interrupt driven interrupt update function */
 	int (*irq_update)(struct device *dev);
 
-	/** Set the callback function */
-	void (*irq_callback_set)(struct device *dev, uart_irq_callback_t cb);
+	/** Set the irq callback function */
+	void (*irq_callback_set)(struct device *dev,
+				 uart_irq_callback_user_data_t cb,
+				 void *user_data);
 
 #endif
 
@@ -565,7 +577,32 @@ static inline int _impl_uart_irq_update(struct device *dev)
  * @brief Set the IRQ callback function pointer.
  *
  * This sets up the callback for IRQ. When an IRQ is triggered,
- * the specified function will be called.
+ * the specified function will be called with specified user data.
+ *
+ * @param dev UART device structure.
+ * @param cb Pointer to the callback function.
+ * @param user_data Data to pass to callback function.
+ *
+ * @return N/A
+ */
+static inline void uart_irq_callback_user_data_set(
+					struct device *dev,
+					uart_irq_callback_user_data_t cb,
+					void *user_data)
+{
+	const struct uart_driver_api *api =
+		(const struct uart_driver_api *)dev->driver_api;
+
+	if ((api != NULL) && (api->irq_callback_set != NULL)) {
+		api->irq_callback_set(dev, cb, user_data);
+	}
+}
+
+/**
+ * @brief Set the IRQ callback function pointer (legacy).
+ *
+ * This sets up the callback for IRQ. When an IRQ is triggered,
+ * the specified function will be called with the device pointer.
  *
  * @param dev UART device structure.
  * @param cb Pointer to the callback function.
@@ -575,12 +612,8 @@ static inline int _impl_uart_irq_update(struct device *dev)
 static inline void uart_irq_callback_set(struct device *dev,
 					 uart_irq_callback_t cb)
 {
-	const struct uart_driver_api *api =
-		(const struct uart_driver_api *)dev->driver_api;
-
-	if ((api != NULL) && (api->irq_callback_set != NULL)) {
-		api->irq_callback_set(dev, cb);
-	}
+	uart_irq_callback_user_data_set(dev, (uart_irq_callback_user_data_t)cb,
+					dev);
 }
 
 #endif

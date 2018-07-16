@@ -23,7 +23,8 @@ struct mcux_lpsci_config {
 
 struct mcux_lpsci_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_callback_t callback;
+	uart_irq_callback_user_data_t callback;
+	void *cb_data;
 #endif
 };
 
@@ -210,11 +211,13 @@ static int mcux_lpsci_irq_update(struct device *dev)
 }
 
 static void mcux_lpsci_irq_callback_set(struct device *dev,
-				       uart_irq_callback_t cb)
+				       uart_irq_callback_user_data_t cb,
+				       void *cb_data)
 {
 	struct mcux_lpsci_data *data = dev->driver_data;
 
 	data->callback = cb;
+	data->cb_data = cb_data;
 }
 
 static void mcux_lpsci_isr(void *arg)
@@ -223,7 +226,7 @@ static void mcux_lpsci_isr(void *arg)
 	struct mcux_lpsci_data *data = dev->driver_data;
 
 	if (data->callback) {
-		data->callback(dev);
+		data->callback(data->cb_data);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

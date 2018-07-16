@@ -63,7 +63,8 @@ struct uart_cmsdk_apb {
 struct uart_cmsdk_apb_dev_data {
 	u32_t baud_rate;	/* Baud rate */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_callback_t irq_cb;
+	uart_irq_callback_user_data_t irq_cb;
+	void *irq_cb_data;
 #endif
 	/* UART Clock control in Active State */
 	const struct arm_clock_control_t uart_cc_as;
@@ -392,9 +393,11 @@ static int uart_cmsdk_apb_irq_update(struct device *dev)
  * @return N/A
  */
 static void uart_cmsdk_apb_irq_callback_set(struct device *dev,
-					    uart_irq_callback_t cb)
+					    uart_irq_callback_user_data_t cb,
+					    void *cb_data)
 {
 	DEV_DATA(dev)->irq_cb = cb;
+	DEV_DATA(dev)->irq_cb_data = cb_data;
 }
 
 /**
@@ -417,7 +420,7 @@ void uart_cmsdk_apb_isr(void *arg)
 
 	/* Verify if the callback has been registered */
 	if (data->irq_cb) {
-		data->irq_cb(dev);
+		data->irq_cb(data->irq_cb_data);
 	}
 }
 

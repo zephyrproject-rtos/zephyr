@@ -58,7 +58,8 @@ struct uart_fe310_device_config {
 
 struct uart_fe310_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_callback_t callback;
+	uart_irq_callback_user_data_t callback;
+	void *cb_data;
 #endif
 };
 
@@ -309,11 +310,13 @@ static int uart_fe310_irq_update(struct device *dev)
  * @return N/A
  */
 static void uart_fe310_irq_callback_set(struct device *dev,
-					uart_irq_callback_t cb)
+					uart_irq_callback_user_data_t cb,
+					void *cb_data)
 {
 	struct uart_fe310_data *data = DEV_DATA(dev);
 
 	data->callback = cb;
+	data->cb_data = cb_data;
 }
 
 static void uart_fe310_irq_handler(void *arg)
@@ -322,7 +325,7 @@ static void uart_fe310_irq_handler(void *arg)
 	struct uart_fe310_data *data = DEV_DATA(dev);
 
 	if (data->callback)
-		data->callback(dev);
+		data->callback(data->cb_data);
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
