@@ -22,16 +22,6 @@
 #define DPORT_APPCPU_CTRL_B    _REG(DPORT_BASE, 0x030)
 #define DPORT_APPCPU_CTRL_C    _REG(DPORT_BASE, 0x034)
 
-/* Two fields with same naming conventions live in two different
- * registers and have different widths...
- */
-#define RTC_CNTL_SW_STALL_APPCPU_C0  (0x03 << 0)  /* reg: OPTIONS0 */
-#define RTC_CNTL_SW_STALL_APPCPU_C1  (0x3f << 20) /* reg: SW_CPU_STALL */
-
-#define DPORT_APPCPU_CLKGATE_EN  BIT(0)
-#define DPORT_APPCPU_RUNSTALL    BIT(0)
-#define DPORT_APPCPU_RESETTING   BIT(0)
-
 struct cpustart_rec {
 	int cpu;
 	void (*fn)(int, void *);

@@ -5,7 +5,7 @@
  */
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <soc/dport_reg.h>
+#include "soc.h"
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
 #include <xtensa/config/core-isa.h>
