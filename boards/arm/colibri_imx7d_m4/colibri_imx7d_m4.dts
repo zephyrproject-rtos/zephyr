@@ -49,7 +49,7 @@
 &uart2 {
 	status = "ok";
 	current-speed = <115200>;
-	modem-mode = <1>;
+	modem-mode = <64>;
 };
 
 &gpio1 {
