@@ -14,6 +14,9 @@
  */
 
 #include <ztest.h>
+#include <kernel_structs.h>
+#include <kernel.h>
+
 extern void test_threads_spawn_params(void);
 extern void test_threads_spawn_priority(void);
 extern void test_threads_spawn_delay(void);
@@ -58,7 +61,7 @@ void test_systhreads_idle(void)
 	k_sleep(100);
 	/** TESTPOINT: check working thread priority should */
 	zassert_true(k_thread_priority_get(k_current_get()) <
-			K_IDLE_PRIO, NULL);
+		     K_IDLE_PRIO, NULL);
 }
 
 static void customdata_entry(void *p1, void *p2, void *p3)
@@ -112,6 +115,44 @@ void test_customdata_get_set_preempt(void)
 	k_thread_abort(tid);
 }
 
+#ifndef CONFIG_ARCH_HAS_USERSPACE
+static void umode_entry(void *thread_id, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	if (!_is_thread_essential() &&
+	    (k_current_get() == (k_tid_t)thread_id)) {
+		ztest_test_pass();
+	} else {
+		zassert_unreachable("User thread is essential or thread"
+				    " structure is corrupted\n");
+	}
+}
+
+/**
+ * @ingroup kernel_thread_tests
+ * @brief Test k_thread_user_mode_enter() to cover when userspace
+ * is not supported/enabled
+ * @see k_thread_user_mode_enter()
+ */
+void test_user_mode(void)
+{
+	_thread_essential_set();
+
+	zassert_true(_is_thread_essential(), "Thread isn't set"
+		     " as essential\n");
+
+	k_thread_user_mode_enter((k_thread_entry_t)umode_entry,
+				 k_current_get(), NULL, NULL);
+}
+#else
+void test_user_mode(void)
+{
+	ztest_test_skip();
+}
+#endif
+
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &tdata, tstack, NULL);
@@ -137,7 +178,8 @@ void test_main(void)
 			 ztest_unit_test(test_systhreads_idle),
 			 ztest_unit_test(test_customdata_get_set_coop),
 			 ztest_user_unit_test(test_customdata_get_set_preempt),
-			 ztest_unit_test(test_k_thread_foreach)
+			 ztest_unit_test(test_k_thread_foreach),
+			 ztest_unit_test(test_user_mode)
 			 );
 
 	ztest_run_test_suite(threads_lifecycle);
