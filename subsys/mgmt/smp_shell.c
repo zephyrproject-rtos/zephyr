@@ -71,7 +71,7 @@ static int smp_shell_init(struct device *dev)
 	ARG_UNUSED(dev);
 
 	zephyr_smp_transport_init(&smp_shell_transport, smp_shell_tx_pkt,
-				  smp_shell_get_mtu);
+				  smp_shell_get_mtu, NULL, NULL);
 	shell_register_mcumgr_handler(smp_shell_rx_line, NULL);
 
 	return 0;

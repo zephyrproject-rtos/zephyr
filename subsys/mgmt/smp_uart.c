@@ -92,7 +92,7 @@ static int smp_uart_init(struct device *dev)
 	ARG_UNUSED(dev);
 
 	zephyr_smp_transport_init(&smp_uart_transport, smp_uart_tx_pkt,
-				  smp_uart_get_mtu);
+				  smp_uart_get_mtu, NULL, NULL);
 	uart_mcumgr_register(smp_uart_rx_frag);
 
 	return 0;
