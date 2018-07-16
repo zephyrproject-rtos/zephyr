@@ -22,7 +22,7 @@ config CLFLUSH_DETECT
 if UART_NS16550
 
 config UART_NS16550_PCI
-	def_bool n
+	def_bool y if PCI
 
 config UART_NS16550_PORT_0
 	def_bool y
@@ -31,6 +31,9 @@ if UART_NS16550_PORT_0
 
 config UART_NS16550_PORT_0_OPTIONS
 	default 0
+
+config UART_NS16550_PORT_0_PCI
+	def_bool y if PCI
 
 endif # UART_NS16550_PORT_0
 
@@ -42,7 +45,30 @@ if UART_NS16550_PORT_1
 config UART_NS16550_PORT_1_OPTIONS
 	default 0
 
+config UART_NS16550_PORT_1_PCI
+	def_bool y if PCI
+
 endif # UART_NS16550_PORT_1
+
+if UART_NS16550_PORT_2
+
+config UART_NS16550_PORT_2_OPTIONS
+	default 0
+
+config UART_NS16550_PORT_2_PCI
+	def_bool y if PCI
+
+endif # UART_NS16550_PORT_2
+
+if UART_NS16550_PORT_3
+
+config UART_NS16550_PORT_3_OPTIONS
+	default 0
+
+config UART_NS16550_PORT_3_PCI
+	def_bool y if PCI
+
+endif # UART_NS16550_PORT_3
 
 endif # UART_NS16550
 
