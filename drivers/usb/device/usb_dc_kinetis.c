@@ -572,7 +572,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		    const u32_t data_len, u32_t * const ret_bytes)
 {
 	u8_t ep_idx = EP_ADDR2IDX(ep);
-	bool odd = dev_data.ep_ctrl[ep_idx].status.in_odd;
+	u8_t odd = dev_data.ep_ctrl[ep_idx].status.in_odd;
 	u8_t bd_idx = get_bdt_idx(ep, odd);
 	u8_t *bufp = (u8_t *)bdt[bd_idx].buf_addr;
 	u32_t len_to_send = data_len;
