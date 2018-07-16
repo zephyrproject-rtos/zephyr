@@ -42,6 +42,33 @@ typedef int zephyr_smp_transport_out_fn(struct zephyr_smp_transport *zst,
  */
 typedef uint16_t zephyr_smp_transport_get_mtu_fn(const struct net_buf *nb);
 
+/** @typedef zephyr_smp_transport_ud_copy_fn
+ * @brief SMP copy buffer user_data function for Zephyr.
+ *
+ * The supplied src net_buf should contain a user_data that cannot be copied
+ * using regular memcpy function (e.g., the BLE transport net_buf user_data
+ * stores the connection reference that has to be incremented when is going
+ * to be used by another buffer).
+ *
+ * @param dst                   Source buffer user_data pointer.
+ * @param src                   Destination buffer user_data pointer.
+ *
+ * @return                      0 on success, MGMT_ERR_[...] code on failure.
+ */
+typedef int zephyr_smp_transport_ud_copy_fn(struct net_buf *dst,
+					    const struct net_buf *src);
+
+/** @typedef zephyr_smp_transport_ud_free_fn
+ * @brief SMP free buffer user_data function for Zephyr.
+ *
+ * This function frees net_buf user data, because some transports store
+ * connection-specific information in the net_buf user data (e.g., the BLE
+ * transport stores the connection reference that has to be decreased).
+ *
+ * @param nb                    Contains a user_data pointer to be free'd.
+ */
+typedef void zephyr_smp_transport_ud_free_fn(void *ud);
+
 /**
  * @brief Provides Zephyr-specific functionality for sending SMP responses.
  */
@@ -54,6 +81,8 @@ struct zephyr_smp_transport {
 
 	zephyr_smp_transport_out_fn *zst_output;
 	zephyr_smp_transport_get_mtu_fn *zst_get_mtu;
+	zephyr_smp_transport_ud_copy_fn *zst_ud_copy;
+	zephyr_smp_transport_ud_free_fn *zst_ud_free;
 };
 
 /**
@@ -62,12 +91,16 @@ struct zephyr_smp_transport {
  * @param zst                   The transport to construct.
  * @param output_func           The transport's send function.
  * @param get_mtu_func          The transport's get-MTU function.
+ * @param ud_copy_func          The transport buffer user_data copy function.
+ * @param ud_free_func          The transport buffer user_data free function.
  *
  * @return                      0 on success, MGMT_ERR_[...] code on failure.
  */
 void zephyr_smp_transport_init(struct zephyr_smp_transport *zst,
 			       zephyr_smp_transport_out_fn *output_func,
-			       zephyr_smp_transport_get_mtu_fn *get_mtu_func);
+			       zephyr_smp_transport_get_mtu_fn *get_mtu_func,
+			       zephyr_smp_transport_ud_copy_fn *ud_copy_func,
+			       zephyr_smp_transport_ud_free_fn *ud_free_func);
 
 /**
  * @brief Enqueues an incoming SMP request packet for processing.

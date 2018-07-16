@@ -36,6 +36,7 @@ zephyr_smp_alloc_rsp(const void *req, void *arg)
 	const struct net_buf_pool *pool;
 	const struct net_buf *req_nb;
 	struct net_buf *rsp_nb;
+	struct zephyr_smp_transport *zst = arg;
 
 	req_nb = req;
 
@@ -44,10 +45,14 @@ zephyr_smp_alloc_rsp(const void *req, void *arg)
 		return NULL;
 	}
 
-	pool = net_buf_pool_get(req_nb->pool_id);
-	memcpy(net_buf_user_data(rsp_nb),
-	       net_buf_user_data((void *)req_nb),
-	       sizeof(req_nb->user_data));
+	if (zst->zst_ud_copy) {
+		zst->zst_ud_copy(rsp_nb, req_nb);
+	} else {
+		pool = net_buf_pool_get(req_nb->pool_id);
+		memcpy(net_buf_user_data(rsp_nb),
+		       net_buf_user_data((void *)req_nb),
+		       sizeof(req_nb->user_data));
+	}
 
 	return rsp_nb;
 }
@@ -80,7 +85,7 @@ zephyr_smp_trim_front(void *buf, size_t len, void *arg)
  *     struct net_buf *rsp;
  *     // [...]
  *     while (rsp != NULL) {
- *         frag = zephyr_smp_split_frag(&rsp, get_mtu());
+ *         frag = zephyr_smp_split_frag(&rsp, zst, get_mtu());
  *         if (frag == NULL) {
  *             net_buf_unref(nb);
  *             return SYS_ENOMEM;
@@ -93,13 +98,14 @@ zephyr_smp_trim_front(void *buf, size_t len, void *arg)
  *                                  fragment data is removed.  If the packet
  *                                  constitutes a single fragment, this gets
  *                                  set to NULL on success.
+ * @param arg                   The zephyr SMP transport pointer.
  * @param mtu                   The maximum payload size of a fragment.
  *
  * @return                      The next fragment to send on success;
  *                              NULL on failure.
  */
 static struct net_buf *
-zephyr_smp_split_frag(struct net_buf **nb, u16_t mtu)
+zephyr_smp_split_frag(struct net_buf **nb, void *arg, u16_t mtu)
 {
 	struct net_buf *frag;
 	struct net_buf *src;
@@ -110,7 +116,7 @@ zephyr_smp_split_frag(struct net_buf **nb, u16_t mtu)
 		*nb = NULL;
 		frag = src;
 	} else {
-		frag = zephyr_smp_alloc_rsp(src, NULL);
+		frag = zephyr_smp_alloc_rsp(src, arg);
 
 		/* Copy fragment payload into new buffer. */
 		net_buf_add_mem(frag, src->data, mtu);
@@ -176,7 +182,7 @@ zephyr_smp_tx_rsp(struct smp_streamer *ns, void *rsp, void *arg)
 
 	i = 0;
 	while (nb != NULL) {
-		frag = zephyr_smp_split_frag(&nb, mtu);
+		frag = zephyr_smp_split_frag(&nb, zst, mtu);
 		if (frag == NULL) {
 			return MGMT_ERR_ENOMEM;
 		}
@@ -193,6 +199,16 @@ zephyr_smp_tx_rsp(struct smp_streamer *ns, void *rsp, void *arg)
 static void
 zephyr_smp_free_buf(void *buf, void *arg)
 {
+	struct zephyr_smp_transport *zst = arg;
+
+	if (!buf) {
+		return;
+	}
+
+	if (zst->zst_ud_free) {
+		zst->zst_ud_free(net_buf_user_data((struct net_buf *)buf));
+	}
+
 	mcumgr_buf_free(buf);
 }
 
@@ -265,11 +281,15 @@ zephyr_smp_handle_reqs(struct k_work *work)
 void
 zephyr_smp_transport_init(struct zephyr_smp_transport *zst,
 			  zephyr_smp_transport_out_fn *output_func,
-			  zephyr_smp_transport_get_mtu_fn *get_mtu_func)
+			  zephyr_smp_transport_get_mtu_fn *get_mtu_func,
+			  zephyr_smp_transport_ud_copy_fn *ud_copy_func,
+			  zephyr_smp_transport_ud_free_fn *ud_free_func)
 {
 	*zst = (struct zephyr_smp_transport) {
 		.zst_output = output_func,
 		.zst_get_mtu = get_mtu_func,
+		.zst_ud_copy = ud_copy_func,
+		.zst_ud_free = ud_free_func,
 	};
 
 	k_work_init(&zst->zst_work, zephyr_smp_handle_reqs);
