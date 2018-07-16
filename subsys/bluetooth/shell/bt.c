@@ -42,6 +42,8 @@
 
 #define BT_SHELL_MODULE "bt"
 
+static u8_t selected_id = BT_ID_DEFAULT;
+
 #if defined(CONFIG_BT_CONN)
 struct bt_conn *default_conn;
 
@@ -609,6 +611,105 @@ static int cmd_name(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_id_create(int argc, char *argv[])
+{
+	bt_addr_le_t addr;
+	int err;
+
+	if (argc > 1) {
+		err = str2bt_addr_le(argv[1], "random", &addr);
+		if (err) {
+			printk("Invalid address\n");
+			return err;
+		}
+	} else {
+		bt_addr_le_copy(&addr, BT_ADDR_LE_ANY);
+	}
+
+	err = bt_id_create(&addr, NULL);
+	if (err < 0) {
+		printk("Creating new ID failed (err %d)\n", err);
+		return 0;
+	}
+
+	printk("New identity (%d) created: %s\n", err, bt_addr_le_str(&addr));
+
+	return 0;
+}
+
+static int cmd_id_reset(int argc, char *argv[])
+{
+	bt_addr_le_t addr;
+	u8_t id;
+	int err;
+
+	if (argc < 2) {
+		printk("Identity identifier not specified\n");
+		return -EINVAL;
+	}
+
+	id = strtol(argv[1], NULL, 10);
+
+	if (argc > 2) {
+		err = str2bt_addr_le(argv[2], "random", &addr);
+		if (err) {
+			printk("Invalid address\n");
+			return err;
+		}
+	} else {
+		bt_addr_le_copy(&addr, BT_ADDR_LE_ANY);
+	}
+
+	err = bt_id_reset(id, &addr, NULL);
+	if (err < 0) {
+		printk("Resetting ID %u failed (err %d)\n", id, err);
+		return 0;
+	}
+
+	printk("Identity %u reset: %s\n", id, bt_addr_le_str(&addr));
+
+	return 0;
+}
+
+static int cmd_id_show(int argc, char *argv[])
+{
+	bt_addr_le_t addrs[CONFIG_BT_ID_MAX];
+	size_t i, count = CONFIG_BT_ID_MAX;
+
+	bt_id_get(addrs, &count);
+
+	for (i = 0; i < count; i++) {
+		printk("%s%zu: %s\n", i == selected_id ? "*" : " ", i,
+		       bt_addr_le_str(&addrs[i]));
+	}
+
+	return 0;
+}
+
+static int cmd_id_select(int argc, char *argv[])
+{
+	bt_addr_le_t addrs[CONFIG_BT_ID_MAX];
+	size_t count = CONFIG_BT_ID_MAX;
+	u8_t id;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	id = strtol(argv[1], NULL, 10);
+
+	bt_id_get(addrs, &count);
+	if (count <= id) {
+		printk("Invalid identity\n");
+		return 0;
+	}
+
+	printk("Selected identity: %s\n", bt_addr_le_str(&addrs[id]));
+	selected_id = id;
+
+	return 0;
+}
+
 static void cmd_active_scan_on(int dups)
 {
 	int err;
@@ -724,6 +825,7 @@ static int cmd_advertise(int argc, char *argv[])
 		return 0;
 	}
 
+	param.id = selected_id;
 	param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
 	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
 
@@ -823,7 +925,7 @@ static int cmd_disconnect(int argc, char *argv[])
 			return 0;
 		}
 
-		conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &addr);
+		conn = bt_conn_lookup_addr_le(selected_id, &addr);
 	}
 
 	if (!conn) {
@@ -930,7 +1032,7 @@ static int cmd_oob(int argc, char *argv[])
 	struct bt_le_oob oob;
 	int err;
 
-	err = bt_le_oob_get_local(BT_ID_DEFAULT, &oob);
+	err = bt_le_oob_get_local(selected_id, &oob);
 	if (err) {
 		printk("OOB data failed\n");
 		return 0;
@@ -955,7 +1057,7 @@ static int cmd_clear(int argc, char *argv[])
 	}
 
 	if (strcmp(argv[1], "all") == 0) {
-		err = bt_unpair(BT_ID_DEFAULT, NULL);
+		err = bt_unpair(selected_id, NULL);
 		if (err) {
 			printk("Failed to clear pairings (err %d)\n", err);
 		} else {
@@ -982,7 +1084,7 @@ static int cmd_clear(int argc, char *argv[])
 		return 0;
 	}
 
-	err = bt_unpair(BT_ID_DEFAULT, &addr);
+	err = bt_unpair(selected_id, &addr);
 	if (err) {
 		printk("Failed to clear pairing (err %d)\n", err);
 	} else {
@@ -2034,6 +2136,10 @@ static const struct shell_cmd bt_commands[] = {
 #if defined(CONFIG_BT_HCI)
 	{ "hci-cmd", cmd_hci_cmd, "<ogf> <ocf> [data]" },
 #endif
+	{ "id-create", cmd_id_create, "[addr]" },
+	{ "id-reset", cmd_id_reset, "<id> [addr]" },
+	{ "id-show", cmd_id_show, HELP_NONE },
+	{ "id-select", cmd_id_select, "<id>" },
 	{ "name", cmd_name, "[name]" },
 	{ "scan", cmd_scan,
 	  "<value: on, passive, off> <dup filter: dups, nodups>" },
