@@ -4193,20 +4193,8 @@ int bt_addr_le_create_static(bt_addr_le_t *addr)
 	return 0;
 }
 
-int bt_set_static_addr(const bt_addr_le_t *addr)
+int bt_setup_id_addr(void)
 {
-	if (addr->type != BT_ADDR_LE_RANDOM || !BT_ADDR_IS_STATIC(&addr->a)) {
-		BT_ERR("Only static random address supported as identity");
-		return -EINVAL;
-	}
-
-	return set_random_address(&addr->a);
-}
-
-static int setup_id_addr(void)
-{
-	int err;
-
 #if defined(CONFIG_BT_HCI_VS_EXT)
 	/* Check for VS_Read_Static_Addresses support. Only read the
 	 * addresses if the user has not already configured one or
@@ -4215,7 +4203,7 @@ static int setup_id_addr(void)
 	if (!bt_dev.id_count && (bt_dev.vs_commands[1] & BIT(0))) {
 		struct bt_hci_rp_vs_read_static_addrs *rp;
 		struct net_buf *rsp;
-		int i;
+		int err, i;
 
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_STATIC_ADDRS,
 					   NULL, &rsp);
@@ -4234,7 +4222,7 @@ static int setup_id_addr(void)
 		net_buf_unref(rsp);
 
 		if (bt_dev.id_count) {
-			return bt_set_static_addr(&bt_dev.id_addr[0]);
+			return set_random_address(&bt_dev.id_addr[0].a);
 		}
 
 		BT_WARN("No static addresses stored in controller");
@@ -4245,21 +4233,7 @@ static int setup_id_addr(void)
 generate:
 #endif
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		BT_DBG("Expecing identity addr to be handled by settings");
-		return 0;
-	} else {
-		err = bt_addr_le_create_static(&bt_dev.id_addr[0]);
-		if (err) {
-			return err;
-		}
-
-		bt_dev.id_count = 1;
-		BT_WARN("Using temporary static random address %s",
-			bt_addr_str(&bt_dev.id_addr[0].a));
-
-		return bt_set_static_addr(&bt_dev.id_addr[0]);
-	}
+	return bt_id_create(NULL, NULL);
 }
 
 #if defined(CONFIG_BT_DEBUG)
@@ -4454,17 +4428,14 @@ static int hci_init(void)
 	hci_vs_init();
 #endif
 
-	if (!bt_addr_le_cmp(&bt_dev.id_addr[0], BT_ADDR_LE_ANY) ||
-	    !bt_addr_le_cmp(&bt_dev.id_addr[0], BT_ADDR_LE_NONE)) {
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS) && !bt_dev.id_count) {
 		BT_DBG("No public address. Trying to set static random.");
-		err = setup_id_addr();
+		err = bt_setup_id_addr();
 		if (err) {
 			BT_ERR("Unable to set identity address");
 			return err;
 		}
-	}
 
-	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_dev_show_info();
 	}
 
@@ -4618,6 +4589,12 @@ static int bt_init(void)
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
 		bt_le_scan_update(false);
+	}
+
+	if (bt_dev.id_count > 0) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_PRESET_ID);
+	} else if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		BT_WARN("No ID address. Expecting one to come from storage.");
 	}
 
 	return 0;
@@ -4863,7 +4840,8 @@ int bt_id_create(bt_addr_le_t *addr, u8_t *irk)
 {
 	int new_id;
 
-	if (addr->type != BT_ADDR_LE_RANDOM || !BT_ADDR_IS_STATIC(&addr->a)) {
+	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY) &&
+	    (addr->type != BT_ADDR_LE_RANDOM || !BT_ADDR_IS_STATIC(&addr->a))) {
 		BT_ERR("Only static random identity address supported");
 		return -EINVAL;
 	}
@@ -4877,20 +4855,22 @@ int bt_id_create(bt_addr_le_t *addr, u8_t *irk)
 	}
 
 	new_id = bt_dev.id_count++;
-	if (new_id == BT_ID_DEFAULT) {
+	if (new_id == BT_ID_DEFAULT &&
+	    !atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		atomic_set_bit(bt_dev.flags, BT_DEV_USER_ID_ADDR);
 	}
 
-	if (bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
 		bt_addr_le_copy(&bt_dev.id_addr[new_id], addr);
 	} else {
 		bt_addr_le_create_static(&bt_dev.id_addr[new_id]);
-		bt_addr_le_copy(addr, &bt_dev.id_addr[new_id]);
+		if (addr) {
+			bt_addr_le_copy(addr, &bt_dev.id_addr[new_id]);
+		}
 	}
 
 #if defined(CONFIG_BT_PRIVACY)
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_READY) ||
-	    new_id != BT_ID_DEFAULT) {
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		u8_t zero_irk[16] = { 0 };
 
 		if (irk && memcmp(irk, zero_irk, 16)) {
@@ -4903,6 +4883,14 @@ int bt_id_create(bt_addr_le_t *addr, u8_t *irk)
 		}
 	}
 #endif
+	/* Only store if stack was already initialized. Before initialization
+	 * we don't know the flash content, so it's potentially harmful to
+	 * try to write anything there.
+	 */
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_READY);
+		bt_settings_save_id();
+	}
 
 	return new_id;
 }

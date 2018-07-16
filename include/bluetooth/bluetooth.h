@@ -132,10 +132,11 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
  *  If an insufficient amount of identities were recovered the app may then
  *  call bt_id_create() to create new ones.
  *
- *  @param addr Address to use for the new identity. If initialized to
- *              BT_ADDR_LE_ANY the stack will generate a new static
+ *  @param addr Address to use for the new identity. If NULL or initialized
+ *              to BT_ADDR_LE_ANY the stack will generate a new static
  *              random address for the identity and copy it to the given
- *              parameter upon return from this function.
+ *              parameter upon return from this function (in case the
+ *              parameter was non-NULL).
  *  @param irk  Identity Resolving Key (16 bytes) to be used with this
  *              identity. If set to all zeroes or NULL, the stack will
  *              generate a random IRK for the identity and copy it back
