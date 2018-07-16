@@ -48,7 +48,7 @@ properties:
     modem-mode:
      type: int
      category: required
-     description: Set the UART Port to modem mode 0 (dce) 1 (dte)
+     description: Set the UART Port to modem mode 0 (dce) 64 (dte)
      generation: define
 
 ...

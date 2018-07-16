@@ -74,7 +74,7 @@ static int uart_imx_init(struct device *dev)
 	UART_Init(uart, &initConfig);
 
 	/* Set UART build-in hardware FIFO Watermark. */
-	UART_SetTxFifoWatermark(uart, 1);
+	UART_SetTxFifoWatermark(uart, 2);
 	UART_SetRxFifoWatermark(uart, 1);
 
 	/* restore interrupt state */
