@@ -52,6 +52,32 @@ static void _region_init(u32_t index, struct arm_mpu_region *region_conf)
 		index, region_conf->base, region_conf->attr);
 }
 
+/* ARM Core MPU Driver API Implementation for ARM MPU */
+
+/**
+ * @brief enable the MPU
+ */
+void arm_core_mpu_enable(void)
+{
+	/* Enable MPU and use the default memory map as a
+	 * background region for privileged software access.
+	 */
+	MPU->CTRL = MPU_CTRL_ENABLE_Msk | MPU_CTRL_PRIVDEFENA_Msk;
+
+	/* Make sure that all the registers are set before proceeding */
+	__DSB();
+	__ISB();
+}
+
+/**
+ * @brief disable the MPU
+ */
+void arm_core_mpu_disable(void)
+{
+	/* Disable MPU */
+	MPU->CTRL = 0;
+}
+
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
 	defined(CONFIG_APPLICATION_MEMORY)
 
@@ -226,28 +252,6 @@ static inline u32_t _get_region_ap(u32_t r_index)
 {
 	MPU->RNR = r_index;
 	return (MPU->RASR & MPU_RASR_AP_Msk) >> MPU_RASR_AP_Pos;
-}
-
-/* ARM Core MPU Driver API Implementation for ARM MPU */
-
-/**
- * @brief enable the MPU
- */
-void arm_core_mpu_enable(void)
-{
-	/* Enable MPU and use the default memory map as a
-	 * background region for privileged software access.
-	 */
-	MPU->CTRL = MPU_CTRL_ENABLE_Msk | MPU_CTRL_PRIVDEFENA_Msk;
-}
-
-/**
- * @brief disable the MPU
- */
-void arm_core_mpu_disable(void)
-{
-	/* Disable MPU */
-	MPU->CTRL = 0;
 }
 
 /**
@@ -471,18 +475,12 @@ static int arm_mpu_init(struct device *arg)
 
 	SYS_LOG_DBG("total region count: %d", _get_num_regions());
 
-	/* Disable MPU */
-	MPU->CTRL = 0;
+	arm_core_mpu_disable();
 
 	/* Configure regions */
 	for (r_index = 0; r_index < mpu_config.num_regions; r_index++) {
 		_region_init(r_index, &mpu_config.mpu_regions[r_index]);
 	}
-
-	/* Enable MPU and use the default memory map as a
-	 * background region for privileged software access.
-	 */
-	MPU->CTRL = MPU_CTRL_ENABLE_Msk | MPU_CTRL_PRIVDEFENA_Msk;
 
 #if defined(CONFIG_APPLICATION_MEMORY)
 	u32_t index, size;
@@ -498,9 +496,8 @@ static int arm_mpu_init(struct device *arg)
 		_region_init(index, &region_conf);
 	}
 #endif
-	/* Make sure that all the registers are set before proceeding */
-	__DSB();
-	__ISB();
+
+	arm_core_mpu_enable();
 
 	/* Sanity check for number of regions in Cortex-M0+, M3, and M4. */
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
