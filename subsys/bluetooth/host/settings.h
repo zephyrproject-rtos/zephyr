@@ -31,4 +31,6 @@ void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 			    bt_addr_le_t *addr, const char *key);
 int bt_settings_decode_key(char *key, bt_addr_le_t *addr);
 
+void bt_settings_save_id(void);
+
 int bt_settings_init(void);
