@@ -17,7 +17,8 @@ static NRF_UART_Type *const uart0_addr = (NRF_UART_Type *)CONFIG_UART_0_BASE;
 
 #ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 
-static uart_irq_callback_t irq_callback; /**< Callback function pointer */
+static uart_irq_callback_user_data_t irq_callback; /**< Callback function pointer */
+static void *irq_cb_data; /**< Callback function arg */
 
 /* Variable used to override the state of the TXDRDY event in the initial state
  * of the driver. This event is not set by the hardware until a first byte is
@@ -357,10 +358,12 @@ static int uart_nrfx_irq_update(struct device *dev)
 
 /** Set the callback function */
 static void uart_nrfx_irq_callback_set(struct device *dev,
-				       uart_irq_callback_t cb)
+				       uart_irq_callback_user_data_t cb,
+				       void *cb_data)
 {
 	(void)dev;
 	irq_callback = cb;
+	irq_cb_data = cb_data;
 }
 
 /**
@@ -374,10 +377,10 @@ static void uart_nrfx_irq_callback_set(struct device *dev,
  */
 static void uart_nrfx_isr(void *arg)
 {
-	struct device *dev = arg;
+	ARG_UNUSED(arg);
 
 	if (irq_callback) {
-		irq_callback(dev);
+		irq_callback(irq_cb_data);
 	}
 }
 #endif /* CONFIG_UART_0_INTERRUPT_DRIVEN */

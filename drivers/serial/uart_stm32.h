@@ -26,7 +26,8 @@ struct uart_stm32_data {
 	/* clock device */
 	struct device *clock;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_callback_t user_cb;
+	uart_irq_callback_user_data_t user_cb;
+	void *user_data;
 #endif
 };
 

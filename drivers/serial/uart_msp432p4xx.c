@@ -21,7 +21,8 @@ struct uart_msp432p4xx_dev_data_t {
 	/* UART config structure */
 	eUSCI_UART_Config uartConfig;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_callback_t cb; /**< Callback function pointer */
+	uart_irq_callback_user_data_t cb; /**< Callback function pointer */
+	void *cb_data;  /**< Callback function arg */
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
@@ -299,11 +300,13 @@ static int uart_msp432p4xx_irq_update(struct device *dev)
 }
 
 static void uart_msp432p4xx_irq_callback_set(struct device *dev,
-					 uart_irq_callback_t cb)
+					 uart_irq_callback_user_data_t cb,
+					 void *cb_data)
 {
 	struct uart_msp432p4xx_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	dev_data->cb = cb;
+	dev_data->cb_data = cb_data;
 }
 
 /**
@@ -326,7 +329,7 @@ static void uart_msp432p4xx_isr(void *arg)
 						(unsigned long)config->base);
 
 	if (dev_data->cb) {
-		dev_data->cb(dev);
+		dev_data->cb(dev_data->cb_data);
 	}
 	/*
 	 * Clear interrupts only after cb called, as Zephyr UART clients expect
