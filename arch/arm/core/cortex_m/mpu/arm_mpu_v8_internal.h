@@ -62,7 +62,7 @@ static void _region_init(u32_t index, struct arm_mpu_region *region_conf)
 static inline void _get_mpu_ram_region_attr(arm_mpu_region_attr_t *p_attr,
 	u32_t ap, u32_t base, u32_t size)
 {
-	p_attr->rbar = ((1 << MPU_RBAR_XN_Pos) & MPU_RBAR_XN_Msk)
+	p_attr->rbar = ((1UL << MPU_RBAR_XN_Pos) & MPU_RBAR_XN_Msk)
 		| ((ap << MPU_RBAR_AP_Pos) & MPU_RBAR_AP_Msk);
 	p_attr->mair_idx = MPU_MAIR_INDEX_SRAM;
 	p_attr->r_limit = REGION_LIMIT_ADDR(base, size);
