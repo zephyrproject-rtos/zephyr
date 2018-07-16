@@ -156,6 +156,12 @@ config UART_NS16550_PORT_1_DLF
 	help
 	  Value for DLF register.
 
+config UART_NS16550_PORT_1_PCI
+	bool "Port 1 is PCI-based"
+	depends on UART_NS16550_PCI && UART_NS16550_PORT_1
+	help
+	  Obtain port information from PCI.
+
 # ---------- Port 2 ----------
 
 menuconfig UART_NS16550_PORT_2
