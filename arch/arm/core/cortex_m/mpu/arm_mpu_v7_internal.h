@@ -54,7 +54,7 @@ static inline u32_t _size_to_mpu_rasr_size(u32_t size)
 	 * round_up_to_next_power_of_two() properly. We handle
 	 * it separately here.
 	 */
-	if (size > (1 << 31)) {
+	if (size > (1UL << 31)) {
 		return REGION_4G;
 	}
 
@@ -144,7 +144,7 @@ static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 	r_addr_start = MPU->RBAR & MPU_RBAR_ADDR_Msk;
 	r_size_lshift = ((MPU->RASR & MPU_RASR_SIZE_Msk) >>
 			MPU_RASR_SIZE_Pos) + 1;
-	r_addr_end = r_addr_start + (1 << r_size_lshift) - 1;
+	r_addr_end = r_addr_start + (1UL << r_size_lshift) - 1;
 
 	if (start >= r_addr_start && (start + size - 1) <= r_addr_end) {
 		return 1;
