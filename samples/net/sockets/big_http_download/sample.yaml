@@ -3,6 +3,7 @@ sample:
   name: big_http_download
 tests:
   test:
+    platform_exclude: esp32
     harness: net
     min_ram: 32
     tags: net
