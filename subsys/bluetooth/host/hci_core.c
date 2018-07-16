@@ -1232,15 +1232,17 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 
 		bt_addr_le_copy(&conn->le.init_addr, &bt_dev.random_addr);
 	} else {
+		const bt_addr_le_t *addr = &bt_dev.id_addr[conn->id];
+
 		/* If Static Random address is used as Identity address we
 		 * need to restore it before creating connection. Otherwise
 		 * NRPA used for active scan could be used for connection.
 		 */
-		if (atomic_test_bit(bt_dev.flags, BT_DEV_ID_STATIC_RANDOM)) {
-			set_random_address(&bt_dev.id_addr[conn->id].a);
+		if (addr->type == BT_ADDR_LE_RANDOM) {
+			set_random_address(&addr->a);
 		}
 
-		bt_addr_le_copy(&conn->le.init_addr, &bt_dev.id_addr[conn->id]);
+		bt_addr_le_copy(&conn->le.init_addr, addr);
 	}
 
 	bt_addr_le_copy(&conn->le.resp_addr, addr);
@@ -4191,24 +4193,14 @@ int bt_addr_le_create_static(bt_addr_le_t *addr)
 	return 0;
 }
 
-int bt_set_static_addr(void)
+int bt_set_static_addr(const bt_addr_le_t *addr)
 {
-	int err;
-
-	if (bt_dev.id_addr[0].type != BT_ADDR_LE_RANDOM ||
-	    (bt_dev.id_addr[0].a.val[5] & 0xc0) != 0xc0) {
+	if (addr->type != BT_ADDR_LE_RANDOM || !BT_ADDR_IS_STATIC(&addr->a)) {
 		BT_ERR("Only static random address supported as identity");
 		return -EINVAL;
 	}
 
-	err = set_random_address(&bt_dev.id_addr[0].a);
-	if (err) {
-		return err;
-	}
-
-	atomic_set_bit(bt_dev.flags, BT_DEV_ID_STATIC_RANDOM);
-
-	return 0;
+	return set_random_address(&addr->a);
 }
 
 static int setup_id_addr(void)
@@ -4242,7 +4234,7 @@ static int setup_id_addr(void)
 		net_buf_unref(rsp);
 
 		if (bt_dev.id_count) {
-			return bt_set_static_addr();
+			return bt_set_static_addr(&bt_dev.id_addr[0]);
 		}
 
 		BT_WARN("No static addresses stored in controller");
@@ -4266,7 +4258,7 @@ generate:
 		BT_WARN("Using temporary static random address %s",
 			bt_addr_str(&bt_dev.id_addr[0].a));
 
-		return bt_set_static_addr();
+		return bt_set_static_addr(&bt_dev.id_addr[0]);
 	}
 }
 
@@ -4887,7 +4879,6 @@ int bt_id_create(bt_addr_le_t *addr, u8_t *irk)
 	new_id = bt_dev.id_count++;
 	if (new_id == BT_ID_DEFAULT) {
 		atomic_set_bit(bt_dev.flags, BT_DEV_USER_ID_ADDR);
-		atomic_set_bit(bt_dev.flags, BT_DEV_ID_STATIC_RANDOM);
 	}
 
 	if (bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
@@ -5054,8 +5045,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 			 * is enabled. Otherwise NRPA used for active scan
 			 * could be used for advertising.
 			 */
-			if (atomic_test_bit(bt_dev.flags,
-					    BT_DEV_ID_STATIC_RANDOM)) {
+			if (id_addr->type == BT_ADDR_LE_RANDOM) {
 				set_random_address(&id_addr->a);
 			}
 
@@ -5065,8 +5055,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		set_param.type = BT_LE_ADV_IND;
 	} else {
 		if (param->options & BT_LE_ADV_OPT_USE_IDENTITY) {
-			if (atomic_test_bit(bt_dev.flags,
-					    BT_DEV_ID_STATIC_RANDOM)) {
+			if (id_addr->type == BT_ADDR_LE_RANDOM) {
 				err = set_random_address(&id_addr->a);
 			}
 
