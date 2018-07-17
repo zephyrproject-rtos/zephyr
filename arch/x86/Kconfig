@@ -47,6 +47,16 @@ config CPU_MINUTEIA
 	help
 	  This option signifies the use of a CPU from the Minute IA family.
 
+config CPU_APOLLO_LAKE
+	# Hidden
+	bool
+	select CMOV
+	select CPU_HAS_FPU
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU
+	help
+	  This option signifies the use of a CPU from the Apollo Lake family.
+
 menu "Processor Capabilities"
 
 config X86_IAMCU

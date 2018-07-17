@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2017-2018 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+#include <dt-bindings/interrupt-controller/intel-ioapic.h>
+
+#define __SIZE_K(x) (x * 1024)
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "apollo_lake";
+			reg = <0>;
+		};
+
+		intc: ioapic@fec00000  {
+			compatible = "intel,ioapic";
+			reg = <0xfec00000 0x100000>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+	};
+
+	flash0: flash@100000{
+		reg = <0x00100000 DT_FLASH_SIZE>;
+	};
+
+	sram0: memory@400000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x00400000 DT_SRAM_SIZE>;
+	};
+
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+	};
+};
