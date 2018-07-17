@@ -57,7 +57,7 @@ static void tsema_thread_isr(struct k_sem *psem)
  */
 
 /**
- *
+ * @brief Test synchronization of threads with semaphore
  * @see k_sem_init(), #K_SEM_DEFINE(x)
  */
 void test_sema_thread2thread(void)
@@ -72,7 +72,7 @@ void test_sema_thread2thread(void)
 }
 
 /**
- *
+ * @brief Test synchronization between thread and irq
  * @see k_sem_init(), #K_SEM_DEFINE(x)
  */
 void test_sema_thread2isr(void)
@@ -86,7 +86,7 @@ void test_sema_thread2isr(void)
 }
 
 /**
- *
+ * @brief Test k_sem_reset() API
  * @see k_sem_reset()
  */
 void test_sema_reset(void)
@@ -104,7 +104,7 @@ void test_sema_reset(void)
 }
 
 /**
- *
+ * @brief Test k_sem_count_get() API
  * @see k_sem_count_get()
  */
 void test_sema_count_get(void)
