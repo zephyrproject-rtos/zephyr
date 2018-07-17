@@ -6,8 +6,15 @@
 set -e
 
 JOBS=5
-HEAD="bac5d1a64ab4191058a8fd4c05f6b3b339e249e7"
+HEAD="grub-2.02"
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+if [ "x$1" == "x" ]; then
+  echo "Usage: $0 [i386|x86_64]"
+  exit 1
+fi
+
+TARGET_ARCH=$1
 
 prepare() {
   if [[ ! -d ./src ]]; then
@@ -24,11 +31,12 @@ build() {
   pushd src
 
   ./autogen.sh
-  ./configure --with-platform=efi --target=i386
+  ./configure --with-platform=efi --target=${TARGET_ARCH}
 
   make -j${JOBS}
 
-  ./grub-mkimage -p /EFI/BOOT -d ./grub-core/ -O i386-efi -o grub.efi \
+  ./grub-mkimage -p /EFI/BOOT -d ./grub-core/ -O ${TARGET_ARCH}-efi \
+           -o grub_${TARGET_ARCH}.efi \
             boot efifwsetup efi_gop efinet efi_uga lsefimmap lsefi lsefisystab \
             exfat fat multiboot2 multiboot terminal part_msdos part_gpt normal \
             all_video aout configfile echo file fixvideo fshelp gfxterm gfxmenu \
@@ -40,7 +48,7 @@ build() {
 
 setup() {
   mkdir -p bin
-  cp src/grub.efi bin/
+  cp src/grub_${TARGET_ARCH}.efi bin/
 }
 
 cleanup() {
