@@ -29,6 +29,7 @@
 #endif
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_hci_driver
 #include "common/log.h"
 
 #include "util/util.h"

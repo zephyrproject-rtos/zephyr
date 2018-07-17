@@ -24,6 +24,7 @@
 #include <bluetooth/hci_driver.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_GATT)
+#define LOG_MODULE_NAME bt_gatt
 #include "common/log.h"
 
 #include "hci_core.h"

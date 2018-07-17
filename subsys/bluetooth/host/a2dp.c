@@ -23,6 +23,7 @@
 #include <bluetooth/a2dp.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_A2DP)
+#define LOG_MODULE_NAME bt_a2dp
 #include "common/log.h"
 
 #include "hci_core.h"

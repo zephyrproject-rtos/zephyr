@@ -13,6 +13,7 @@
 #include <errno.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_nrf51_pm
 #include "common/log.h"
 
 #define NBLE_SWDIO_PIN	6

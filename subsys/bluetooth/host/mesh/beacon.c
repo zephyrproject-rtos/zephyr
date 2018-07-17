@@ -16,6 +16,7 @@
 #include <bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_BEACON)
+#define LOG_MODULE_NAME bt_mesh_beacon
 #include "common/log.h"
 
 #include "adv.h"

@@ -21,7 +21,9 @@
 #include <bluetooth/l2cap.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_RFCOMM)
-/* FIXME: #include "common/log.h" */
+#define LOG_MODULE_NAME bt_rfcomm
+#include "common/log.h"
+
 #include <bluetooth/rfcomm.h>
 
 #include "hci_core.h"

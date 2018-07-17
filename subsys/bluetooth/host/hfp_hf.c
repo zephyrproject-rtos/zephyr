@@ -15,7 +15,9 @@
 #include <bluetooth/conn.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HFP_HF)
-/* FIXME: #include "common/log.h" */
+#define LOG_MODULE_NAME bt_hfp_hf
+#include "common/log.h"
+
 #include <bluetooth/rfcomm.h>
 #include <bluetooth/hfp_hf.h>
 

@@ -16,6 +16,7 @@
 #include <bluetooth/hci.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_KEYS)
+#define LOG_MODULE_NAME bt_keys_br
 #include "common/log.h"
 
 #include "hci_core.h"

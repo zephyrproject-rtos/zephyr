@@ -13,6 +13,7 @@
 #include <bluetooth/conn.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SETTINGS)
+#define LOG_MODULE_NAME bt_settings
 #include "common/log.h"
 
 #include "hci_core.h"

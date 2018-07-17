@@ -44,6 +44,7 @@
 #include "ll_filter.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_llsw_ctrl
 #include "common/log.h"
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)

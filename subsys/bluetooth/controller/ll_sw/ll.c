@@ -17,6 +17,7 @@
 #include <bluetooth/hci.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_llsw_ll
 #include "common/log.h"
 
 #include "hal/cpu.h"
