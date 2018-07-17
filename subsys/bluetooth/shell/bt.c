@@ -620,10 +620,6 @@ static const struct bt_data ad_discov[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 };
 
-static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
-};
-
 static int cmd_advertise(int argc, char *argv[])
 {
 	struct bt_le_adv_param param;
@@ -649,13 +645,10 @@ static int cmd_advertise(int argc, char *argv[])
 	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
 
 	if (!strcmp(argv[1], "on")) {
-		param.options = BT_LE_ADV_OPT_CONNECTABLE;
-		scan_rsp = sd;
-		scan_rsp_len = ARRAY_SIZE(sd);
+		param.options = (BT_LE_ADV_OPT_CONNECTABLE |
+				 BT_LE_ADV_OPT_USE_NAME);
 	} else if (!strcmp(argv[1], "scan")) {
-		param.options = 0;
-		scan_rsp = sd;
-		scan_rsp_len = ARRAY_SIZE(sd);
+		param.options = BT_LE_ADV_OPT_USE_NAME;
 	} else if (!strcmp(argv[1], "nconn")) {
 		param.options = 0;
 		scan_rsp = NULL;
