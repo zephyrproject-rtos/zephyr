@@ -6,7 +6,7 @@
 
 #include <logging/sys_log.h>
 
-void syslog_hook_default(const char *fmt, ...)
+void __attribute__((weak)) syslog_hook_default(const char *fmt, ...)
 {
 	(void)(fmt);  /* Prevent warning about unused argument */
 }
