@@ -110,6 +110,35 @@ u32_t mayfly_enqueue(u8_t caller_id, u8_t callee_id, u8_t chain,
 	return 0;
 }
 
+static void dequeue(u8_t callee_id, u8_t caller_id, memq_link_t *link,
+		    struct mayfly *m)
+{
+	u8_t req;
+
+	req = m->_req;
+	if (!((req - m->_ack) & 0x01)) {
+		u8_t ack;
+
+		/* dequeue mayfly struct */
+		memq_dequeue(mft[callee_id][caller_id].tail,
+			     &mft[callee_id][caller_id].head,
+			     0);
+
+		/* release link into dequeued mayfly struct */
+		m->_link = link;
+
+		/* reset mayfly state to idle */
+		ack = m->_ack;
+		m->_ack = req;
+
+		/* re-insert, if re-pended */
+		if ((m->_req - ack) & 0x01) {
+			m->_ack = ack;
+			memq_enqueue(link, m, &mft[callee_id][callee_id].tail);
+		}
+	}
+}
+
 void mayfly_run(u8_t callee_id)
 {
 	u8_t disable = 0;
@@ -128,11 +157,9 @@ void mayfly_run(u8_t callee_id)
 				 (void **)&m);
 		while (link) {
 			u8_t state;
-			u8_t req;
 
 			/* execute work if ready */
-			req = m->_req;
-			state = (req - m->_ack) & 0x03;
+			state = (m->_req - m->_ack) & 0x03;
 			if (state == 1) {
 				/* mark mayfly as ran */
 				m->_ack--;
@@ -142,18 +169,7 @@ void mayfly_run(u8_t callee_id)
 			}
 
 			/* dequeue if not re-pended */
-			req = m->_req;
-			if (((req - m->_ack) & 0x03) != 1) {
-				memq_dequeue(mft[callee_id][caller_id].tail,
-					     &mft[callee_id][caller_id].head,
-					     0);
-
-				/* release link into dequeued mayfly struct */
-				m->_link = link;
-
-				/* reset mayfly state to idle */
-				m->_ack = req;
-			}
+			dequeue(callee_id, caller_id, link, m);
 
 			/* fetch next mayfly in callee queue, if any */
 			link = memq_peek(mft[callee_id][caller_id].head,
