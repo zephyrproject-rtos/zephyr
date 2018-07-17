@@ -245,7 +245,7 @@ static void _test_kernel_cpu_idle(int atomic)
 			k_cpu_idle();
 		}
 		/* calculating milliseconds per tick*/
-		tms += sys_clock_us_per_tick / USEC_PER_MSEC;
+		tms += __ticks_to_ms(1);
 		tms2 = k_uptime_get_32();
 		zassert_false(tms2 < tms, "Bad ms per tick value computed,"
 			      "got %d which is less than %d\n",
