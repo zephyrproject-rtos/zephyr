@@ -1,0 +1,49 @@
+#
+# Kconfig - Apollo Lake SoC configuration options
+#
+# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_APOLLO_LAKE
+
+config SOC
+	default "apollo_lake"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 150000000 if LOAPIC_TIMER
+	default 25000000  if HPET_TIMER
+
+config CLFLUSH_DETECT
+	def_bool y if CACHE_FLUSHING
+
+if UART_NS16550
+
+config UART_NS16550_PCI
+	def_bool n
+
+config UART_NS16550_PORT_0
+	def_bool y
+
+if UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_0_OPTIONS
+	default 0
+
+endif # UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_1
+	def_bool y
+
+if UART_NS16550_PORT_1
+
+config UART_NS16550_PORT_1_OPTIONS
+	default 0
+
+endif # UART_NS16550_PORT_1
+
+endif # UART_NS16550
+
+endif # SOC_APOLLO_LAKE
