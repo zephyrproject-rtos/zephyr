@@ -17,6 +17,7 @@ extern "C" {
 #include "rdc_defs_imx7d.h"
 #include "ccm_imx7d.h"
 #include "clock_freq.h"
+#include "soc_clk_freq.h"
 
 #define RDC_DOMAIN_PERM_NONE  (0x0)
 #define RDC_DOMAIN_PERM_W     (0x1)
