@@ -61,6 +61,8 @@ boards/xtensa/                           @andrewboie @ramakrishnapallala
 cmake/                                   @nashif @SebastianBoe
 /CMakeLists.txt                          @nashif @SebastianBoe
 doc/                                     @dbkinder
+doc/CMakeLists.txt                       @carlescufi
+doc/scripts/*                            @carlescufi
 doc/subsystems/bluetooth/                @sjanc @jhedberg @Vudentz
 drivers/*/*mcux*                         @MaureenHelm
 drivers/*/*qmsi*                         @nashif
