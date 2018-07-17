@@ -526,6 +526,23 @@ static int cmd_init(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_name(int argc, char *argv[])
+{
+	int err;
+
+	if (argc < 2) {
+		printk("Bluetooth Local Name: %s\n", bt_get_name());
+		return 0;
+	}
+
+	err = bt_set_name(argv[1]);
+	if (err) {
+		printk("Unable to set name %s (err %d)", argv[1], err);
+	}
+
+	return 0;
+}
+
 static void cmd_active_scan_on(int dups)
 {
 	int err;
@@ -1909,6 +1926,7 @@ static int cmd_bredr_sdp_find_record(int argc, char *argv[])
 
 static const struct shell_cmd bt_commands[] = {
 	{ "init", cmd_init, HELP_ADDR_LE },
+	{ "name", cmd_name, "[name]" },
 	{ "scan", cmd_scan,
 	  "<value: on, passive, off> <dup filter: dups, nodups>" },
 	{ "advertise", cmd_advertise,
