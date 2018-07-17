@@ -4,14 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * @brief test delay during boot
- *
- * This module verifies the delay specified during boot.
- */
-
 #include <ztest.h>
 
+/**
+ * @brief Test delay during boot
+ * @defgroup kernel_bootdelay_tests Init
+ * @ingroup all_tests
+ * @{
+ */
+
+/**
+ * @brief This module verifies the delay specified during boot.
+ * @see k_cycle_get_32, #SYS_CLOCK_HW_CYCLES_TO_NS64(X)
+ */
 void verify_bootdelay(void)
 {
 	u32_t current_cycles = k_cycle_get_32();
@@ -21,6 +26,10 @@ void verify_bootdelay(void)
 		     (CONFIG_BOOT_DELAY * NSEC_PER_USEC * USEC_PER_MSEC),
 		     "boot delay not executed");
 }
+
+/**
+ * @}
+ */
 
 /*test case main entry*/
 void test_main(void)
