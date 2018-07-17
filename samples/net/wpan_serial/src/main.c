@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2016-2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -494,7 +494,7 @@ static bool init_ieee802154(void)
 {
 	LOG_INF("Initialize ieee802.15.4");
 
-	ieee802154_dev = device_get_binding(CONFIG_IEEE802154_CC2520_DRV_NAME);
+	ieee802154_dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
 	if (!ieee802154_dev) {
 		LOG_ERR("Cannot get CC250 device");
 		return false;
