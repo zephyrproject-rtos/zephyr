@@ -36,13 +36,17 @@ s32_t _sys_idle_threshold_ticks = CONFIG_TICKLESS_IDLE_THRESH;
  */
 unsigned char _sys_pm_idle_exit_notify;
 
+#if defined(CONFIG_SYS_POWER_LOW_POWER_STATE)
 void __attribute__((weak)) _sys_soc_resume(void)
 {
 }
+#endif
 
+#if defined(CONFIG_SYS_POWER_DEEP_SLEEP)
 void __attribute__((weak)) _sys_soc_resume_from_deep_sleep(void)
 {
 }
+#endif
 
 /**
  *
