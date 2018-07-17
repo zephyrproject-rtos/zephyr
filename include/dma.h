@@ -164,12 +164,16 @@ struct dma_config {
 typedef int (*dma_api_config)(struct device *dev, u32_t channel,
 			      struct dma_config *config);
 
+typedef int (*dma_api_reload)(struct device *dev, u32_t channel,
+		u32_t src, u32_t dst, size_t size);
+
 typedef int (*dma_api_start)(struct device *dev, u32_t channel);
 
 typedef int (*dma_api_stop)(struct device *dev, u32_t channel);
 
 struct dma_driver_api {
 	dma_api_config config;
+	dma_api_reload reload;
 	dma_api_start start;
 	dma_api_stop stop;
 };
@@ -194,6 +198,27 @@ static inline int dma_config(struct device *dev, u32_t channel,
 	const struct dma_driver_api *api = dev->driver_api;
 
 	return api->config(dev, channel, config);
+}
+
+/**
+ * @brief Reload buffer(s) for a DMA channel
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param channel Numeric identification of the channel to configure
+ *                selected channel
+ * @param src     source address for the DMA transfer
+ * @param dst     destination address for the DMA transfer
+ * @param size    size of DMA transfer
+ *
+ * @retval 0 if successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int dma_reload(struct device *dev, u32_t channel,
+		u32_t src, u32_t dst, size_t size)
+{
+	const struct dma_driver_api *api = dev->driver_api;
+
+	return api->reload(dev, channel, src, dst, size);
 }
 
 /**
