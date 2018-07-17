@@ -30,8 +30,8 @@
 
 #define HW_CYCLES_TO_USEC(__hw_cycle__) \
 	( \
-		((u64_t)(__hw_cycle__) * (u64_t)sys_clock_us_per_tick) / \
-		((u64_t)sys_clock_hw_cycles_per_tick) \
+		((u64_t)(__hw_cycle__) * (u64_t)USEC_PER_SEC) / \
+		((u64_t)sys_clock_hw_cycles_per_sec) \
 	)
 
 #define HW_CYCLES_TO_SEC(__hw_cycle__) \
@@ -42,8 +42,8 @@
 
 #define USEC_TO_HW_CYCLES(__usec__) \
 	( \
-		((u64_t)(__usec__) * (u64_t)sys_clock_hw_cycles_per_tick) / \
-		((u64_t)sys_clock_us_per_tick) \
+		((u64_t)(__usec__) * (u64_t)sys_clock_hw_cycles_per_sec) / \
+		((u64_t)USEC_PER_SEC) \
 	)
 
 #define SEC_TO_HW_CYCLES(__sec__) \

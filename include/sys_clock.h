@@ -21,6 +21,7 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
+#include <toolchain.h>
 #include <zephyr/types.h>
 
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && \
@@ -46,8 +47,10 @@ extern int sys_clock_hw_cycles_per_sec;
 /*
  * sys_clock_us_per_tick global variable represents a number
  * of microseconds in one OS timer tick
+ *
+ * Note: This variable is deprecated and will be removed soon!
  */
-extern int sys_clock_us_per_tick;
+__deprecated extern int sys_clock_us_per_tick;
 
 /*
  * sys_clock_hw_cycles_per_tick global variable represents a number
@@ -75,8 +78,7 @@ extern int sys_clock_hw_cycles_per_tick;
 
 /* SYS_CLOCK_HW_CYCLES_TO_NS64 converts CPU clock cycles to nanoseconds */
 #define SYS_CLOCK_HW_CYCLES_TO_NS64(X) \
-	(((u64_t)(X) * sys_clock_us_per_tick * NSEC_PER_USEC) / \
-	 sys_clock_hw_cycles_per_tick)
+	(((u64_t)(X) * NSEC_PER_SEC) / sys_clock_hw_cycles_per_sec)
 
 /*
  * SYS_CLOCK_HW_CYCLES_TO_NS_AVG converts CPU clock cycles to nanoseconds
