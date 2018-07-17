@@ -621,24 +621,32 @@ static u32_t _FaultDump(const NANO_ESF *esf, int fault)
 
 /**
  *
- * @brief Fault handler
+ * @brief ARM Fault handler
  *
  * This routine is called when fatal error conditions are detected by hardware
- * and is responsible only for reporting the error. Once reported, it then
- * invokes the user provided routine _SysFatalErrorHandler() which is
- * responsible for implementing the error handling policy.
+ * and is responsible for:
+ * - resetting the processor fault status registers (for the case when the
+ *   error handling policy allows the system to recover from the error),
+ * - reporting the error information,
+ * - determining the error reason to be provided as input to the user-
+ *   provided routine, _NanoFatalErrorHandler().
+ * The _NanoFatalErrorHandler() is invoked once the above operations are
+ * completed, and is responsible for implementing the error handling policy.
  *
- * Since the ESF can be either on the MSP or PSP depending if an exception or
- * interrupt was already being handled, it is passed a pointer to both and has
- * to find out on which the ESP is present.
+ * The provided ESF pointer points to the exception stack frame of the current
+ * security state. Note that the current security state might not be the actual
+ * state in which the processor was executing, when the exception occurred.
+ * The actual state may need to be determined by inspecting the EXC_RETURN
+ * value, which is provided as argument to the Fault handler.
  *
- * @param esf ESF on the stack, either MSP or PSP depending at what processor
- *            state the exception was taken.
+ * @param esf Pointer to the exception stack frame of the current security
+ * state. The stack frame may be either on the Main stack (MSP) or Process
+ * stack (PSP) depending at what execution state the exception was taken.
  *
  * @param exc_return EXC_RETURN value present in LR after exception entry.
  *
  * Note: exc_return argument shall only be used by the Fault handler if we are
- * building Secure Firmware.
+ * running a Secure Firmware.
  */
 void _Fault(const NANO_ESF *esf, u32_t exc_return)
 {
