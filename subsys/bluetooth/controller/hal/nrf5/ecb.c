@@ -13,6 +13,7 @@
 #include "util/mem.h"
 #include "hal/ecb.h"
 
+#define LOG_MODULE_NAME bt_ctlr_nrf5_ecb
 #include "common/log.h"
 #include "hal/debug.h"
 

@@ -24,6 +24,7 @@
 #include <bluetooth/crypto.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_CRYPTO)
+#define LOG_MODULE_NAME bt_mesh_crypto
 #include "common/log.h"
 
 #include "mesh.h"

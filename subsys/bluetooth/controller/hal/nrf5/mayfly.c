@@ -11,6 +11,7 @@
 #include "util/memq.h"
 #include "util/mayfly.h"
 
+#define LOG_MODULE_NAME bt_ctlr_nrf5_mayfly
 #include "common/log.h"
 #include "hal/debug.h"
 

@@ -415,6 +415,7 @@ static int cmd_name(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_id_create(const struct shell *shell, size_t argc, char *argv[])
 {
+	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_t addr;
 	int err;
 
@@ -432,14 +433,15 @@ static int cmd_id_create(const struct shell *shell, size_t argc, char *argv[])
 		error(shell, "Creating new ID failed (err %d)", err);
 	}
 
-	print(shell, "New identity (%d) created: %s", err,
-	      bt_addr_le_str(&addr));
+	bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
+	print(shell, "New identity (%d) created: %s", err, addr_str);
 
 	return 0;
 }
 
 static int cmd_id_reset(const struct shell *shell, size_t argc, char *argv[])
 {
+	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_t addr;
 	u8_t id;
 	int err;
@@ -467,7 +469,8 @@ static int cmd_id_reset(const struct shell *shell, size_t argc, char *argv[])
 		return err;
 	}
 
-	print(shell, "Identity %u reset: %s", id, bt_addr_le_str(&addr));
+	bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
+	print(shell, "Identity %u reset: %s", id, addr_str);
 
 	return 0;
 }
@@ -503,8 +506,11 @@ static int cmd_id_show(const struct shell *shell, size_t argc, char *argv[])
 	bt_id_get(addrs, &count);
 
 	for (i = 0; i < count; i++) {
+		char addr_str[BT_ADDR_LE_STR_LEN];
+
+		bt_addr_le_to_str(&addrs[i], addr_str, sizeof(addr_str));
 		print(shell, "%s%zu: %s", i == selected_id ? "*" : " ", i,
-		      bt_addr_le_str(&addrs[i]));
+		      addr_str);
 	}
 
 	return 0;
@@ -512,6 +518,7 @@ static int cmd_id_show(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_id_select(const struct shell *shell, size_t argc, char *argv[])
 {
+	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_t addrs[CONFIG_BT_ID_MAX];
 	size_t count = CONFIG_BT_ID_MAX;
 	u8_t id;
@@ -530,8 +537,8 @@ static int cmd_id_select(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	print(shell, "Selected identity: %s",
-		     bt_addr_le_str(&addrs[id]));
+	bt_addr_le_to_str(&addrs[id], addr_str, sizeof(addr_str));
+	print(shell, "Selected identity: %s", addr_str);
 	selected_id = id;
 
 	return 0;

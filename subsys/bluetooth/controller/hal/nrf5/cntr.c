@@ -10,6 +10,7 @@
 
 #include "hal/cntr.h"
 
+#define LOG_MODULE_NAME bt_ctlr_cntr
 #include "common/log.h"
 #include "hal/debug.h"
 #include "nrf_rtc.h"

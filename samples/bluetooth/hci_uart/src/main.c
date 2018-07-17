@@ -27,6 +27,7 @@
 #include <bluetooth/buf.h>
 #include <bluetooth/hci_raw.h>
 
+#define LOG_MODULE_NAME hci_uart
 #include "common/log.h"
 
 static struct device *hci_uart_dev;

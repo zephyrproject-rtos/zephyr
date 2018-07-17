@@ -11,6 +11,7 @@
 
 #include <bluetooth/mesh.h>
 
+#define LOG_MODULE_NAME bt_mesh_test
 #include "common/log.h"
 
 #include "mesh.h"

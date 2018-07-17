@@ -59,7 +59,7 @@ config BT_DEBUG_LOG
 	bool "Normal printf-style to console"
 	select BT_DEBUG
 	select PRINTK
-	select SYS_LOG
+	select LOG
 	help
 	  This option enables Bluetooth debug going to standard
 	  serial console.
