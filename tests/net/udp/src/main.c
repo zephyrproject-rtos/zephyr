@@ -353,8 +353,12 @@ static bool send_ipv6_udp_msg(struct net_if *iface,
 	struct net_buf *frag;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(0, K_SECONDS(1));
+	zassert_not_null(pkt, "Out of mem");
+
+	frag = net_pkt_get_frag(pkt, K_SECONDS(1));
+	zassert_not_null(frag, "Out of mem");
+
 	net_pkt_frag_add(pkt, frag);
 
 	net_pkt_set_iface(pkt, iface);
@@ -399,8 +403,12 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 	struct net_buf *frag;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(0, K_SECONDS(1));
+	zassert_not_null(pkt, "Out of mem");
+
+	frag = net_pkt_get_frag(pkt, K_SECONDS(1));
+	zassert_not_null(frag, "Out of mem");
+
 	net_pkt_frag_add(pkt, frag);
 
 	net_pkt_set_iface(pkt, iface);
@@ -445,8 +453,12 @@ static bool send_ipv4_udp_msg(struct net_if *iface,
 	struct net_buf *frag;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(0, K_SECONDS(1));
+	zassert_not_null(pkt, "Out of mem");
+
+	frag = net_pkt_get_frag(pkt, K_SECONDS(1));
+	zassert_not_null(frag, "Out of mem");
+
 	net_pkt_frag_add(pkt, frag);
 
 	net_pkt_set_iface(pkt, iface);
