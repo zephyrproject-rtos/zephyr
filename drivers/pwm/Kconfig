@@ -40,6 +40,9 @@ config PWM_2
 config PWM_3
 	bool "Enable PWM port 3"
 
+config PWM_4
+	bool "Enable PWM port 4"
+
 source "drivers/pwm/Kconfig.pca9685"
 
 source "drivers/pwm/Kconfig.qmsi"
@@ -53,6 +56,8 @@ source "drivers/pwm/Kconfig.nrf5_sw"
 source "drivers/pwm/Kconfig.nrfx"
 
 source "drivers/pwm/Kconfig.mcux_ftm"
+
+source "drivers/pwm/Kconfig.imx"
 
 source "drivers/pwm/Kconfig.esp32"
 
