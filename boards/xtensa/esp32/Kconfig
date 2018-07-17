@@ -1,0 +1,7 @@
+config ESP32_FLASH_CACHE
+	   bool
+	   prompt "ESP32 flash cache"
+	   default n
+	   depends on BOOTLOADER_ESP_IDF
+	   help
+		This option enables flash cache.
