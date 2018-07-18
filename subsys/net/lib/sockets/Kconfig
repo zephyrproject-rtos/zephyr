@@ -33,6 +33,7 @@ config NET_SOCKETS_POLL_MAX
 config NET_SOCKETS_SOCKOPT_TLS
 	bool "Enable TCP TLS socket option support [EXPERIMENTAL]"
 	default n
+	select TLS_CREDENTIALS
 	help
 	  Enable TLS socket option support which automatically establishes
 	  a TLS connection to the remote host.
