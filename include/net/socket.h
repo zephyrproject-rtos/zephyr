@@ -61,6 +61,12 @@ struct zsock_pollfd {
  * hostname check is enforced for TLS clients.
  */
 #define TLS_HOSTNAME 2
+/* Socket option to select ciphersuites to use. It accepts and returns an array
+ * of integers with IANA assigned ciphersuite identifiers.
+ * If not set, socket will allow all ciphersuites available in the system
+ * (mebdTLS default behavior).
+ */
+#define TLS_CIPHERSUITE_LIST 3
 
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;

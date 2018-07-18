@@ -54,6 +54,16 @@ config NET_SOCKETS_TLS_MAX_CREDENTIALS
 	  This variable sets maximum number of TLS/DTLS credentials that can be
 	  used with a specific socket.
 
+config NET_SOCKETS_TLS_MAX_CIPHERSUITES
+	int "Maximum number of TLS/DTLS ciphersuites per socket"
+	default 4
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  This variable sets maximum number of TLS/DTLS ciphersuites that can
+	  be used with specific socket, if set explicitly by socket option.
+	  By default, all ciphersuites that are available in the system are
+	  available to the socket.
+
 config NET_DEBUG_SOCKETS
 	bool "Debug BSD Sockets compatible API calls"
 	default y if NET_LOG_GLOBAL

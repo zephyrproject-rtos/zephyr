@@ -60,6 +60,10 @@ struct tls_context {
 		/** Select which credentials to use with TLS. */
 		struct sec_tag_list sec_tag_list;
 
+		/** 0-terminated list of allowed ciphersuites (mbedTLS format).
+		 */
+		int ciphersuites[CONFIG_NET_SOCKETS_TLS_MAX_CIPHERSUITES + 1];
+
 		/** Information if hostname was explicitly set on a socket. */
 		bool is_hostname_set;
 	} options;
@@ -615,6 +619,64 @@ static int tls_opt_hostname_set(struct net_context *context,
 	return 0;
 }
 
+static int tls_opt_ciphersuite_list_set(struct net_context *context,
+					const void *optval, socklen_t optlen)
+{
+	int cipher_cnt;
+
+	if (!optval) {
+		return -EFAULT;
+	}
+
+	if (optlen % sizeof(int) != 0) {
+		return -EINVAL;
+	}
+
+	cipher_cnt = optlen / sizeof(int);
+
+	/* + 1 for 0-termination. */
+	if (cipher_cnt + 1 > ARRAY_SIZE(context->tls->options.ciphersuites)) {
+		return -EINVAL;
+	}
+
+	memcpy(context->tls->options.ciphersuites, optval, optlen);
+	context->tls->options.ciphersuites[cipher_cnt] = 0;
+
+	return 0;
+}
+
+static int tls_opt_ciphersuite_list_get(struct net_context *context,
+					void *optval, socklen_t *optlen)
+{
+	const int *selected_ciphers;
+	int cipher_cnt, i = 0;
+	int *ciphers = optval;
+
+	if (*optlen % sizeof(int) != 0 || *optlen == 0) {
+		return -EINVAL;
+	}
+
+	if (context->tls->options.ciphersuites[0] == 0) {
+		/* No specific ciphersuites configured, return all available. */
+		selected_ciphers = mbedtls_ssl_list_ciphersuites();
+	} else {
+		selected_ciphers = context->tls->options.ciphersuites;
+	}
+
+	cipher_cnt = *optlen / sizeof(int);
+	while (selected_ciphers[i] != 0) {
+		ciphers[i] = selected_ciphers[i];
+
+		if (++i == cipher_cnt) {
+			break;
+		}
+	}
+
+	*optlen = i * sizeof(int);
+
+	return 0;
+}
+
 int ztls_socket(int family, int type, int proto)
 {
 	enum net_ip_protocol_secure tls_proto = 0;
@@ -970,6 +1032,10 @@ int ztls_getsockopt(int sock, int level, int optname,
 		err = -ENOPROTOOPT;
 		break;
 
+	case TLS_CIPHERSUITE_LIST:
+		err = tls_opt_ciphersuite_list_get(context, optval, optlen);
+		break;
+
 	default:
 		err = -ENOPROTOOPT;
 		break;
@@ -1004,6 +1070,10 @@ int ztls_setsockopt(int sock, int level, int optname,
 
 	case TLS_HOSTNAME:
 		err = tls_opt_hostname_set(context, optval, optlen);
+		break;
+
+	case TLS_CIPHERSUITE_LIST:
+		err = tls_opt_ciphersuite_list_set(context, optval, optlen);
 		break;
 
 	default:
