@@ -256,7 +256,7 @@ uint32_t osKernelSysTick (void);
  
 /// The RTOS kernel system timer frequency in Hz
 /// \note Reflects the system timer setting and is typically defined in a configuration file.
-#define osKernelSysTickFrequency 100000000
+#define osKernelSysTickFrequency sys_clock_hw_cycles_per_sec
  
 /// Convert a microseconds value to a RTOS kernel system timer value.
 /// \param         microsec     time value in microseconds.
