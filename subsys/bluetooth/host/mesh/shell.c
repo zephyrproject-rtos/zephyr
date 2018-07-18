@@ -247,7 +247,7 @@ static void prov_reset(void)
 	printk("The local node has been reset and needs reprovisioning\n");
 }
 
-static int output_number(bt_mesh_output_action_t action, uint32_t number)
+static int output_number(bt_mesh_output_action_t action, u32_t number)
 {
 	printk("OOB Number: %u\n", number);
 	return 0;
