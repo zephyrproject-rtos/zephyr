@@ -1,0 +1,10 @@
+&i2c0 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	lp5562@30 {
+		compatible = "ti,lp5562";
+		reg = <0x30>;
+		label = "LP5562";
+	};
+};
