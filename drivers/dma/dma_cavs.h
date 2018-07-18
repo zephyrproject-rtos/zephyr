@@ -45,9 +45,11 @@ struct dma_chan_data {
 	struct dw_lli2 *lli;
 	u32_t cfg_lo;
 	u32_t cfg_hi;
-	void (*dma_blkcallback)(struct device *dev, u32_t channel,
+	void *blkcallback_arg;
+	void (*dma_blkcallback)(void *arg, u32_t channel,
 		int error_code);
-	void (*dma_tfrcallback)(struct device *dev, u32_t channel,
+	void *tfrcallback_arg;
+	void (*dma_tfrcallback)(void *arg, u32_t channel,
 		int error_code);
 };
 

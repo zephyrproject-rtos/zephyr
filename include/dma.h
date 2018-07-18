@@ -149,7 +149,7 @@ struct dma_config {
 	u32_t  dest_burst_length :   16;
 	u32_t block_count;
 	struct dma_block_config *head_block;
-	void * callback_arg;
+	void *callback_arg;
 	void (*dma_callback)(void *callback_arg, u32_t channel,
 			     int error_code);
 };
