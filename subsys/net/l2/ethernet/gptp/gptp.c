@@ -625,7 +625,7 @@ void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
 			}
 		}
 
-		if ((i + log_msg_interval) >= 96) {
+		if ((i + log_msg_interval) >= 96 || log_msg_interval > 64) {
 			/* Overflow, set maximum. */
 			interval->low = UINT64_MAX;
 			interval->high = UINT32_MAX;
