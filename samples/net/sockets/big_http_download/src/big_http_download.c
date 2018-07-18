@@ -25,6 +25,11 @@
 #include <kernel.h>
 #include <net/net_app.h>
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+#include <net/tls_credentials.h>
+#include "ca_certificate.h"
+#endif
+
 #define sleep(x) k_sleep(x * 1000)
 
 #endif
@@ -144,6 +149,19 @@ void download(struct addrinfo *ai, bool is_tls)
 	CHECK(sock);
 	printf("sock = %d\n", sock);
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	if (is_tls) {
+		sec_tag_t sec_tag_opt[] = {
+			CA_CERTIFICATE_TAG,
+		};
+		CHECK(setsockopt(sock, SOL_TLS, TLS_SEC_TAG_LIST,
+				 sec_tag_opt, sizeof(sec_tag_opt)));
+
+		CHECK(setsockopt(sock, SOL_TLS, TLS_HOSTNAME,
+				 host, strlen(host) + 1));
+	}
+#endif
+
 	CHECK(connect(sock, ai->ai_addr, ai->ai_addrlen));
 	sendall(sock, "GET /", SSTRLEN("GET /"));
 	sendall(sock, uri_path, strlen(uri_path));
@@ -206,6 +224,11 @@ int main(void)
 	unsigned int total_bytes = 0;
 	int resolve_attempts = 10;
 	bool is_tls = false;
+
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	tls_credential_add(CA_CERTIFICATE_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
+			   ca_certificate, sizeof(ca_certificate));
+#endif
 
 	setbuf(stdout, NULL);
 

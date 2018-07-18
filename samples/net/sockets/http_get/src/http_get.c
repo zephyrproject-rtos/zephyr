@@ -21,6 +21,11 @@
 #include <kernel.h>
 #include <net/net_app.h>
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+#include <net/tls_credentials.h>
+#include "ca_certificate.h"
+#endif
+
 #endif
 
 /* HTTP server to connect to */
@@ -57,6 +62,11 @@ int main(void)
 	struct addrinfo *res;
 	int st, sock;
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	tls_credential_add(CA_CERTIFICATE_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
+			   ca_certificate, sizeof(ca_certificate));
+#endif
+
 	printf("Preparing HTTP GET request for http://" HTTP_HOST
 	       ":" HTTP_PORT HTTP_PATH "\n");
 
@@ -85,6 +95,18 @@ int main(void)
 #endif
 	CHECK(sock);
 	printf("sock = %d\n", sock);
+
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	sec_tag_t sec_tag_opt[] = {
+		CA_CERTIFICATE_TAG,
+	};
+	CHECK(setsockopt(sock, SOL_TLS, TLS_SEC_TAG_LIST,
+			 sec_tag_opt, sizeof(sec_tag_opt)));
+
+	CHECK(setsockopt(sock, SOL_TLS, TLS_HOSTNAME,
+			 HTTP_HOST, sizeof(HTTP_HOST)))
+#endif
+
 	CHECK(connect(sock, res->ai_addr, res->ai_addrlen));
 	CHECK(send(sock, REQUEST, SSTRLEN(REQUEST), 0));
 
