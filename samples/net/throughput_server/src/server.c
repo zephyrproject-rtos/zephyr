@@ -15,6 +15,7 @@
 #include <zephyr.h>
 #include <linker/sections.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #include <net/net_pkt.h>
 #include <net/net_core.h>
@@ -122,17 +123,20 @@ struct net_pkt *build_reply_pkt(const char *name,
 #define PRINT_STATS_SECS 15
 #define PRINT_STATISTICS_INTERVAL K_SECONDS(PRINT_STATS_SECS)
 
+static inline s64_t cmp_val(u64_t val1, u64_t val2)
+{
+	return (s64_t)(val1 - val2);
+}
+
 static inline void stats(void)
 {
-	static s64_t next_print;
+	static u64_t next_print;
 	static bool first_print;
 	static u32_t count;
-	s64_t curr = k_uptime_get();
+	u64_t curr = k_uptime_get();
+	s64_t cmp = cmp_val(curr, next_print);
 
-	if (!next_print || (next_print < curr &&
-	    (!((curr - next_print) > PRINT_STATISTICS_INTERVAL)))) {
-		s64_t new_print;
-
+	if (!next_print || (abs(cmp) > PRINT_STATISTICS_INTERVAL)) {
 		if (!first_print) {
 			first_print = true;
 		} else {
@@ -153,14 +157,7 @@ static inline void stats(void)
 				 PRINT_STATS_SECS);
 		}
 
-		new_print = curr + PRINT_STATISTICS_INTERVAL;
-		if (new_print > curr) {
-			next_print = new_print;
-		} else {
-			/* Overflow */
-			next_print = PRINT_STATISTICS_INTERVAL -
-				(LLONG_MAX - curr);
-		}
+		next_print = curr + PRINT_STATISTICS_INTERVAL;
 
 		tp_stats.pkts.prev_recv = tp_stats.pkts.recv;
 	}
