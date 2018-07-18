@@ -126,6 +126,8 @@ struct dma_block_config {
  *     block_count  is the number of blocks used for block chaining, this
  *     depends on availability of the DMA controller.
  *
+ *     callback_arg  private argument from DMA client.
+ *
  * dma_callback is the callback function pointer. If enabled, callback function
  *              will be invoked at transfer completion or when error happens
  *              (error_code: zero-transfer success, non zero-error happens).
@@ -147,7 +149,8 @@ struct dma_config {
 	u32_t  dest_burst_length :   16;
 	u32_t block_count;
 	struct dma_block_config *head_block;
-	void (*dma_callback)(struct device *dev, u32_t channel,
+	void * callback_arg;
+	void (*dma_callback)(void *callback_arg, u32_t channel,
 			     int error_code);
 };
 
