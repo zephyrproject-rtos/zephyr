@@ -33,7 +33,7 @@ static u32_t aon_counter_qmsi_read(struct device *dev)
 {
 	u32_t value;
 
-	qm_aonc_get_value(QM_AONC_0, &value);
+	qm_aonc_get_value(QM_AONC_0, (uint32_t *)&value);
 
 	return value;
 }
