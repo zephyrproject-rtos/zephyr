@@ -48,8 +48,8 @@ struct dma_stm32_stream {
 	struct device *dev;
 	struct dma_stm32_stream_reg regs;
 	bool busy;
-
-	void (*dma_callback)(struct device *dev, u32_t id,
+	void *callback_arg;
+	void (*dma_callback)(void *arg, u32_t id,
 			     int error_code);
 };
 
@@ -249,12 +249,12 @@ static void dma_stm32_irq_handler(void *arg, u32_t id)
 	if ((irqstatus & DMA_STM32_TCI) && (config & DMA_STM32_SCR_TCIE)) {
 		dma_stm32_irq_clear(ddata, id, DMA_STM32_TCI);
 
-		stream->dma_callback(stream->dev, id, 0);
+		stream->dma_callback(stream->callback_arg, id, 0);
 	} else {
 		LOG_ERR("Internal error: IRQ status: 0x%x\n", irqstatus);
 		dma_stm32_irq_clear(ddata, id, irqstatus);
 
-		stream->dma_callback(stream->dev, id, -EIO);
+		stream->dma_callback(stream->callback_arg, id, -EIO);
 	}
 }
 
@@ -389,6 +389,7 @@ static int dma_stm32_config(struct device *dev, u32_t id,
 	stream->busy		= true;
 	stream->dma_callback	= config->dma_callback;
 	stream->direction	= config->channel_direction;
+	stream->callback_arg    = config->callback_arg;
 
 	if (stream->direction == MEMORY_TO_PERIPHERAL) {
 		regs->sm0ar = (u32_t)config->head_block->source_address;

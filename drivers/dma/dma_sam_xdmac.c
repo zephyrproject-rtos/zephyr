@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(dma_sam_xdmac)
 
 /* DMA channel configuration */
 struct sam_xdmac_channel_cfg {
+	void *callback_arg;
 	dma_callback callback;
 };
 
@@ -73,7 +74,8 @@ static void sam_xdmac_isr(void *arg)
 
 		/* Execute callback */
 		if (channel_cfg->callback) {
-			channel_cfg->callback(dev, channel, err);
+			channel_cfg->callback(channel_cfg->callback_arg,
+					channel, err);
 		}
 	}
 }
@@ -254,6 +256,7 @@ static int sam_xdmac_config(struct device *dev, u32_t channel,
 	}
 
 	dev_data->dma_channels[channel].callback = cfg->dma_callback;
+	dev_data->dma_channels[channel].callback_arg = cfg->callback_arg;
 
 	(void)memset(&transfer_cfg, 0, sizeof(transfer_cfg));
 	transfer_cfg.sa = cfg->head_block->source_address;

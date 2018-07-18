@@ -97,7 +97,7 @@ static void dw_dma_isr(void *arg)
 			 * freed in the user callback function once
 			 * all the blocks are transferred.
 			 */
-			chan_data->dma_blkcallback(dev, channel, 0);
+			chan_data->dma_blkcallback(chan_data->blkcallback_arg, channel, 0);
 		}
 	}
 
@@ -108,7 +108,7 @@ static void dw_dma_isr(void *arg)
 		k_free(chan_data->lli);
 		chan_data->lli = NULL;
 		if (chan_data->dma_tfrcallback) {
-			chan_data->dma_tfrcallback(dev, channel, 0);
+			chan_data->dma_tfrcallback(chan_data->tfrcallback_arg, channel, 0);
 		}
 	}
 }
@@ -262,8 +262,10 @@ static int dw_dma_config(struct device *dev, u32_t channel,
 	 */
 	if (cfg->complete_callback_en) {
 		chan_data->dma_blkcallback = cfg->dma_callback;
+		chan_data->blkcallback_arg = cfg->callback_arg;
 	} else {
 		chan_data->dma_tfrcallback = cfg->dma_callback;
+		chan_data->tfrcallback_arg = cfg->callback_arg;
 	}
 
 	return 0;

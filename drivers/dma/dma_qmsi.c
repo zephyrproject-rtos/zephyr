@@ -41,7 +41,7 @@ struct dma_qmsi_driver_data {
 	u32_t device_power_state;
 	qm_dma_context_t saved_ctx;
 #endif
-	void (*dma_user_callback[QM_DMA_CHANNEL_NUM])(struct device *dev,
+	void (*dma_user_callback[QM_DMA_CHANNEL_NUM])(void *arg,
 						      u32_t channel_id,
 						      int error_code);
 };
@@ -60,7 +60,8 @@ static void dma_drv_callback(void *callback_context, u32_t len,
 	channel = context->index;
 	data = context->dev->driver_data;
 
-	data->dma_user_callback[channel](context->dev, channel, error_code);
+	data->dma_user_callback[channel](data->callback_data[channel],
+			channel, error_code);
 }
 
 static int width_index(u32_t num_bytes, u32_t *index)
@@ -171,6 +172,7 @@ static int dma_qmsi_chan_config(struct device *dev, u32_t channel,
 	/* TODO: add support for using other DMA transfer types. */
 	qmsi_cfg.transfer_type = QM_DMA_TYPE_SINGLE;
 
+	data->callback_data[channel] = config->callback_arg;
 	data->dma_user_callback[channel] = config->dma_callback;
 
 	dma_context[channel].index = channel;

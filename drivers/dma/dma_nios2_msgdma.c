@@ -25,7 +25,8 @@ struct nios2_msgdma_dev_cfg {
 	alt_msgdma_standard_descriptor desc;
 	u32_t direction;
 	struct k_sem sem_lock;
-	void (*dma_callback)(struct device *dev, u32_t id,
+	void *callback_arg;
+	void (*dma_callback)(void *arg, u32_t id,
 			     int error_code);
 };
 
@@ -61,7 +62,7 @@ static void nios2_msgdma_callback(void *context)
 
 	LOG_DBG("msgdma csr status Reg: 0x%x", status);
 
-	dev_cfg->dma_callback((struct device *)context, 0, err_code);
+	dev_cfg->dma_callback(dev_cfg->callback_arg, 0, err_code);
 }
 
 static int nios2_msgdma_config(struct device *dev, u32_t channel,
@@ -103,6 +104,7 @@ static int nios2_msgdma_config(struct device *dev, u32_t channel,
 
 	k_sem_take(&dev_cfg->sem_lock, K_FOREVER);
 	dev_cfg->dma_callback = cfg->dma_callback;
+	dev_cfg->callback_arg = cfg->callback_arg;
 	dev_cfg->direction = cfg->channel_direction;
 	dma_block = cfg->head_block;
 	control =  ALTERA_MSGDMA_DESCRIPTOR_CONTROL_TRANSFER_COMPLETE_IRQ_MASK |
