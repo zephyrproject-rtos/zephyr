@@ -150,6 +150,39 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
  */
 int bt_id_create(bt_addr_le_t *addr, u8_t *irk);
 
+/** @brief Reset/reclaim an identity for reuse.
+ *
+ *  The semantics of the @a addr and @a irk parameters of this function
+ *  are the same as with bt_id_create(). The difference is the first
+ *  @a id parameter that needs to be an existing identity (if it doesn't
+ *  exist this function will return an error). When given an existing
+ *  identity this function will disconnect any connections created using it,
+ *  remove any pairing keys or other data associated with it, and then create
+ *  a new identity in the same slot, based on the @a addr and @a irk
+ *  parameters.
+ *
+ *  Note: the default identity (BT_ID_DEFAULT) cannot be reset, i.e. this
+ *  API will return an error if asked to do that.
+ *
+ *  @param id   Existing identity identifier.
+ *  @param addr Address to use for the new identity. If NULL or initialized
+ *              to BT_ADDR_LE_ANY the stack will generate a new static
+ *              random address for the identity and copy it to the given
+ *              parameter upon return from this function (in case the
+ *              parameter was non-NULL).
+ *  @param irk  Identity Resolving Key (16 bytes) to be used with this
+ *              identity. If set to all zeroes or NULL, the stack will
+ *              generate a random IRK for the identity and copy it back
+ *              to the parameter upon return from this function (in case
+ *              the parameter was non-NULL). If privacy support
+ *              (CONFIG_BT_PRIVACY) is not enabled this parameter must
+ *              be NULL.
+ *
+ *  @return Identity identifier (>= 0) in case of success, or a negative
+ *          error code on failure.
+ */
+int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk);
+
 /* Advertising API */
 
 /** Description of different data types that can be encoded into
