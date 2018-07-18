@@ -16,15 +16,16 @@
 #include <kernel.h>
 #include <net/socket.h>
 
+#define AI_ARR_MAX	2
+
 struct getaddrinfo_state {
 	const struct zsock_addrinfo *hints;
 	struct k_sem sem;
 	int status;
 	u16_t idx;
 	u16_t port;
+	struct zsock_addrinfo *ai_arr;
 };
-
-static struct zsock_addrinfo ai_arr[2];
 
 static void dns_resolve_cb(enum dns_resolve_status status,
 			   struct dns_addrinfo *info, void *user_data)
@@ -45,12 +46,12 @@ static void dns_resolve_cb(enum dns_resolve_status status,
 		return;
 	}
 
-	if (state->idx >= ARRAY_SIZE(ai_arr)) {
+	if (state->idx >= AI_ARR_MAX) {
 		NET_DBG("getaddrinfo entries overflow");
 		return;
 	}
 
-	ai = ai_arr + state->idx;
+	ai = &state->ai_arr[state->idx];
 	memcpy(&ai->_ai_addr, &info->ai_addr, info->ai_addrlen);
 	net_sin(&ai->_ai_addr)->sin_port = state->port;
 	ai->ai_addr = &ai->_ai_addr;
@@ -78,9 +79,9 @@ static void dns_resolve_cb(enum dns_resolve_status status,
 }
 
 
-int zsock_getaddrinfo(const char *host, const char *service,
-		      const struct zsock_addrinfo *hints,
-		      struct zsock_addrinfo **res)
+static int zsock_getaddrinfo_internal(const char *host, const char *service,
+				      const struct zsock_addrinfo *hints,
+				      struct zsock_addrinfo *res)
 {
 	int family = AF_UNSPEC;
 	long int port = 0;
@@ -103,10 +104,11 @@ int zsock_getaddrinfo(const char *host, const char *service,
 	ai_state.hints = hints;
 	ai_state.idx = 0;
 	ai_state.port = htons(port);
+	ai_state.ai_arr = res;
 	k_sem_init(&ai_state.sem, 0, UINT_MAX);
 
 	/* Link entries in advance */
-	ai_arr[0].ai_next = &ai_arr[1];
+	ai_state.ai_arr[0].ai_next = &ai_state.ai_arr[1];
 
 	/* Execute if AF_UNSPEC or AF_INET4 */
 	if (family != AF_INET6) {
@@ -121,7 +123,7 @@ int zsock_getaddrinfo(const char *host, const char *service,
 		}
 
 		if (ai_state.idx > 0) {
-			ai_addr = &ai_arr[ai_state.idx - 1]._ai_addr;
+			ai_addr = &ai_state.ai_arr[ai_state.idx - 1]._ai_addr;
 			net_sin(ai_addr)->sin_port = htons(port);
 		}
 	}
@@ -140,7 +142,7 @@ int zsock_getaddrinfo(const char *host, const char *service,
 		}
 
 		if (ai_state.idx > 0) {
-			ai_addr = &ai_arr[ai_state.idx - 1]._ai_addr;
+			ai_addr = &ai_state.ai_arr[ai_state.idx - 1]._ai_addr;
 			net_sin6(ai_addr)->sin6_port = htons(port);
 		}
 	}
@@ -155,9 +157,26 @@ int zsock_getaddrinfo(const char *host, const char *service,
 	}
 
 	/* Mark entry as last */
-	ai_arr[ai_state.idx - 1].ai_next = NULL;
-
-	*res = ai_arr;
+	ai_state.ai_arr[ai_state.idx - 1].ai_next = NULL;
 
 	return 0;
+}
+
+
+int zsock_getaddrinfo(const char *host, const char *service,
+		      const struct zsock_addrinfo *hints,
+		      struct zsock_addrinfo **res)
+{
+	int ret;
+
+	*res = calloc(AI_ARR_MAX, sizeof(struct zsock_addrinfo));
+	if (!(*res)) {
+		return DNS_EAI_MEMORY;
+	}
+	ret = zsock_getaddrinfo_internal(host, service, hints, *res);
+	if (ret) {
+		free(*res);
+		*res = NULL;
+	}
+	return ret;
 }
