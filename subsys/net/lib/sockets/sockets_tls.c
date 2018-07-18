@@ -59,6 +59,9 @@ struct tls_context {
 	struct {
 		/** Select which credentials to use with TLS. */
 		struct sec_tag_list sec_tag_list;
+
+		/** Information if hostname was explicitly set on a socket. */
+		bool is_hostname_set;
 	} options;
 
 #if defined(CONFIG_MBEDTLS)
@@ -241,6 +244,11 @@ static struct tls_context *tls_clone(struct tls_context *source_tls)
 
 	memcpy(&target_tls->options, &source_tls->options,
 	       sizeof(target_tls->options));
+
+	if (target_tls->options.is_hostname_set) {
+		mbedtls_ssl_set_hostname(&target_tls->ssl,
+					 source_tls->ssl.hostname);
+	}
 
 	return target_tls;
 }
@@ -521,6 +529,14 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 		return -ENOMEM;
 	}
 
+	/* For TLS clients, set hostname to empty string to enforce it's
+	 * verification - only if hostname option was not set. Otherwise
+	 * depend on user configuration.
+	 */
+	if (!is_server && !context->tls->options.is_hostname_set) {
+		mbedtls_ssl_set_hostname(&context->tls->ssl, "");
+	}
+
 	mbedtls_ssl_conf_rng(&context->tls->config,
 			     mbedtls_ctr_drbg_random,
 			     &tls_ctr_drbg);
@@ -581,6 +597,20 @@ static int tls_opt_sec_tag_list_get(struct net_context *context,
 
 	memcpy(optval, context->tls->options.sec_tag_list.sec_tags, len);
 	*optlen = len;
+
+	return 0;
+}
+
+static int tls_opt_hostname_set(struct net_context *context,
+				const void *optval, socklen_t optlen)
+{
+	ARG_UNUSED(optlen);
+
+	if (mbedtls_ssl_set_hostname(&context->tls->ssl, optval) != 0) {
+		return -EINVAL;
+	}
+
+	context->tls->options.is_hostname_set = true;
 
 	return 0;
 }
@@ -935,6 +965,11 @@ int ztls_getsockopt(int sock, int level, int optname,
 		err =  tls_opt_sec_tag_list_get(context, optval, optlen);
 		break;
 
+	case TLS_HOSTNAME:
+		/* Write-only option. */
+		err = -ENOPROTOOPT;
+		break;
+
 	default:
 		err = -ENOPROTOOPT;
 		break;
@@ -965,6 +1000,10 @@ int ztls_setsockopt(int sock, int level, int optname,
 	switch (optname) {
 	case TLS_SEC_TAG_LIST:
 		err =  tls_opt_sec_tag_list_set(context, optval, optlen);
+		break;
+
+	case TLS_HOSTNAME:
+		err = tls_opt_hostname_set(context, optval, optlen);
 		break;
 
 	default:

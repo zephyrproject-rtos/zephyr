@@ -56,6 +56,11 @@ struct zsock_pollfd {
  * specific socket
  */
 #define TLS_SEC_TAG_LIST 1
+/* Write-only socket option to set hostname. It accepts a string containing
+ * the hostname (may be NULL to disable hostname verification). By default,
+ * hostname check is enforced for TLS clients.
+ */
+#define TLS_HOSTNAME 2
 
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;
