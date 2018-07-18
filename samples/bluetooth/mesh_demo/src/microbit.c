@@ -42,7 +42,7 @@ static void button_send_pressed(struct k_work *work)
 }
 
 static void button_pressed(struct device *dev, struct gpio_callback *cb,
-			   uint32_t pins)
+			   u32_t pins)
 {
 	struct mb_display *disp = mb_display_get();
 
