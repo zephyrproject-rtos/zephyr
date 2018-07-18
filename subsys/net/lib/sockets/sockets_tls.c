@@ -13,6 +13,7 @@
 #include <stdbool.h>
 
 #include <init.h>
+#include <misc/util.h>
 #include <net/net_context.h>
 #include <net/socket.h>
 
@@ -32,6 +33,17 @@
 #include <mbedtls/debug.h>
 #endif /* CONFIG_MBEDTLS */
 
+#include "tls_internal.h"
+
+/** A list of secure tags that TLS context should use. */
+struct sec_tag_list {
+	/** An array of secure tags referencing TLS credentials. */
+	sec_tag_t sec_tags[CONFIG_NET_SOCKETS_TLS_MAX_CREDENTIALS];
+
+	/** Number of configured secure tags. */
+	int sec_tag_count;
+};
+
 /** TLS context information. */
 struct tls_context {
 	/** Information whether TLS context is used. */
@@ -42,6 +54,12 @@ struct tls_context {
 
 	/** Socket flags passed to a socket call. */
 	int flags;
+
+	/** TLS specific option values. */
+	struct {
+		/** Select which credentials to use with TLS. */
+		struct sec_tag_list sec_tag_list;
+	} options;
 
 #if defined(CONFIG_MBEDTLS)
 	/** mbedTLS context. */
@@ -204,6 +222,9 @@ static struct tls_context *tls_clone(struct tls_context *source_tls)
 
 	target_tls->tls_version = source_tls->tls_version;
 
+	memcpy(&target_tls->options, &source_tls->options,
+	       sizeof(target_tls->options));
+
 	return target_tls;
 }
 
@@ -338,6 +359,49 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 		 */
 		return -ENOMEM;
 	}
+
+	return 0;
+}
+
+static int tls_opt_sec_tag_list_set(struct net_context *context,
+				    const void *optval, socklen_t optlen)
+{
+	int sec_tag_cnt;
+
+	if (!optval) {
+		return -EFAULT;
+	}
+
+	if (optlen % sizeof(sec_tag_t) != 0) {
+		return -EINVAL;
+	}
+
+	sec_tag_cnt = optlen / sizeof(sec_tag_t);
+	if (sec_tag_cnt >
+		ARRAY_SIZE(context->tls->options.sec_tag_list.sec_tags)) {
+		return -EINVAL;
+	}
+
+	memcpy(context->tls->options.sec_tag_list.sec_tags, optval, optlen);
+	context->tls->options.sec_tag_list.sec_tag_count = sec_tag_cnt;
+
+	return 0;
+}
+
+static int tls_opt_sec_tag_list_get(struct net_context *context,
+				    void *optval, socklen_t *optlen)
+{
+	int len;
+
+	if (*optlen % sizeof(sec_tag_t) != 0 || *optlen == 0) {
+		return -EINVAL;
+	}
+
+	len = min(context->tls->options.sec_tag_list.sec_tag_count *
+		  sizeof(sec_tag_t), *optlen);
+
+	memcpy(optval, context->tls->options.sec_tag_list.sec_tags, len);
+	*optlen = len;
 
 	return 0;
 }
@@ -672,21 +736,67 @@ int ztls_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 int ztls_getsockopt(int sock, int level, int optname,
 		    void *optval, socklen_t *optlen)
 {
+	int err;
+	struct net_context *context = INT_TO_POINTER(sock);
+
 	if (level != SOL_TLS) {
 		return zsock_getsockopt(sock, level, optname, optval, optlen);
 	}
 
-	errno = -ENOPROTOOPT;
-	return -1;
+	if (!context || !context->tls) {
+		return -EBADF;
+	}
+
+	if (!optval || !optlen) {
+		return -EFAULT;
+	}
+
+	switch (optname) {
+	case TLS_SEC_TAG_LIST:
+		err =  tls_opt_sec_tag_list_get(context, optval, optlen);
+		break;
+
+	default:
+		err = -ENOPROTOOPT;
+		break;
+	}
+
+	if (err < 0) {
+		errno = -err;
+		return -1;
+	}
+
+	return 0;
 }
 
 int ztls_setsockopt(int sock, int level, int optname,
 		    const void *optval, socklen_t optlen)
 {
+	int err;
+	struct net_context *context = INT_TO_POINTER(sock);
+
 	if (level != SOL_TLS) {
 		return zsock_setsockopt(sock, level, optname, optval, optlen);
 	}
 
-	errno = -ENOPROTOOPT;
-	return -1;
+	if (!context || !context->tls) {
+		return -EBADF;
+	}
+
+	switch (optname) {
+	case TLS_SEC_TAG_LIST:
+		err =  tls_opt_sec_tag_list_set(context, optval, optlen);
+		break;
+
+	default:
+		err = -ENOPROTOOPT;
+		break;
+	}
+
+	if (err < 0) {
+		errno = -err;
+		return -1;
+	}
+
+	return 0;
 }
