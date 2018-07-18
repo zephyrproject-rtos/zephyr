@@ -13,6 +13,7 @@ zephyr_library_sources_ifdef(
   cmsis_mutex.c
   cmsis_semaphore.c
   cmsis_mempool.c
+  cmsis_mailq.c
 )
 
 zephyr_library_link_libraries(CMSIS)
