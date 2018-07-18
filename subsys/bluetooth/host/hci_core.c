@@ -4831,6 +4831,41 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count)
 	*count = to_copy;
 }
 
+static void id_create(u8_t id, bt_addr_le_t *addr, u8_t *irk)
+{
+	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+		bt_addr_le_copy(&bt_dev.id_addr[id], addr);
+	} else {
+		bt_addr_le_create_static(&bt_dev.id_addr[id]);
+		if (addr) {
+			bt_addr_le_copy(addr, &bt_dev.id_addr[id]);
+		}
+	}
+
+#if defined(CONFIG_BT_PRIVACY)
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		u8_t zero_irk[16] = { 0 };
+
+		if (irk && memcmp(irk, zero_irk, 16)) {
+			memcpy(&bt_dev.irk[id], irk, 16);
+		} else {
+			bt_rand(&bt_dev.irk[id], 16);
+			if (irk) {
+				memcpy(irk, &bt_dev.irk[id], 16);
+			}
+		}
+	}
+#endif
+	/* Only store if stack was already initialized. Before initialization
+	 * we don't know the flash content, so it's potentially harmful to
+	 * try to write anything there.
+	 */
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		bt_settings_save_id();
+	}
+}
+
 int bt_id_create(bt_addr_le_t *addr, u8_t *irk)
 {
 	int new_id;
@@ -4855,39 +4890,42 @@ int bt_id_create(bt_addr_le_t *addr, u8_t *irk)
 		atomic_set_bit(bt_dev.flags, BT_DEV_USER_ID_ADDR);
 	}
 
-	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
-		bt_addr_le_copy(&bt_dev.id_addr[new_id], addr);
-	} else {
-		bt_addr_le_create_static(&bt_dev.id_addr[new_id]);
-		if (addr) {
-			bt_addr_le_copy(addr, &bt_dev.id_addr[new_id]);
-		}
-	}
-
-#if defined(CONFIG_BT_PRIVACY)
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
-		u8_t zero_irk[16] = { 0 };
-
-		if (irk && memcmp(irk, zero_irk, 16)) {
-			memcpy(&bt_dev.irk[new_id], irk, 16);
-		} else {
-			bt_rand(&bt_dev.irk[new_id], 16);
-			if (irk) {
-				memcpy(irk, &bt_dev.irk[new_id], 16);
-			}
-		}
-	}
-#endif
-	/* Only store if stack was already initialized. Before initialization
-	 * we don't know the flash content, so it's potentially harmful to
-	 * try to write anything there.
-	 */
-	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
-	    atomic_test_bit(bt_dev.flags, BT_DEV_READY);
-		bt_settings_save_id();
-	}
+	id_create(new_id, addr, irk);
 
 	return new_id;
+}
+
+int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk)
+{
+	int err;
+
+	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY) &&
+	    (addr->type != BT_ADDR_LE_RANDOM || !BT_ADDR_IS_STATIC(&addr->a))) {
+		BT_ERR("Only static random identity address supported");
+		return -EINVAL;
+	}
+
+	if (!IS_ENABLED(CONFIG_BT_PRIVACY) && irk) {
+		return -EINVAL;
+	}
+
+	if (id == BT_ID_DEFAULT || id >= bt_dev.id_count) {
+		return -EINVAL;
+	}
+
+	if (id == bt_dev.adv_id && atomic_test_bit(bt_dev.flags,
+						   BT_DEV_ADVERTISING)) {
+		return -EBUSY;
+	}
+
+	err = bt_unpair(id, NULL);
+	if (err) {
+		return err;
+	}
+
+	id_create(id, addr, irk);
+
+	return id;
 }
 
 bool bt_addr_le_is_bonded(u8_t id, const bt_addr_le_t *addr)
