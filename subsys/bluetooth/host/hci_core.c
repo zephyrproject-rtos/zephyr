@@ -749,7 +749,7 @@ static void update_conn_param(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BT_SMP)
-static void update_pending_id(struct bt_keys *keys)
+static void update_pending_id(struct bt_keys *keys, void *data)
 {
 	if (keys->flags & BT_KEYS_ID_PENDING_ADD) {
 		keys->flags &= ~BT_KEYS_ID_PENDING_ADD;
@@ -777,7 +777,7 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 #if defined(CONFIG_BT_SMP)
 	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
-		bt_keys_foreach(BT_KEYS_IRK, update_pending_id);
+		bt_keys_foreach(BT_KEYS_IRK, update_pending_id, NULL);
 	}
 #endif
 
@@ -1303,12 +1303,12 @@ static int set_flow_control(void)
 }
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
-static int bt_clear_all_pairings(void)
+static int bt_clear_all_pairings(u8_t id)
 {
-	bt_conn_disconnect_all();
+	bt_conn_disconnect_all(id);
 
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
-		bt_keys_clear_all();
+		bt_keys_clear_all(id);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_BREDR)) {
@@ -1327,7 +1327,7 @@ int bt_unpair(u8_t id, const bt_addr_le_t *addr)
 	}
 
 	if (!addr || !bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
-		return bt_clear_all_pairings();
+		return bt_clear_all_pairings(id);
 	}
 
 	conn = bt_conn_lookup_addr_le(id, addr);
@@ -2552,7 +2552,7 @@ done:
 	return err;
 }
 
-static void keys_add_id(struct bt_keys *keys)
+static void keys_add_id(struct bt_keys *keys, void *data)
 {
 	hci_id_add(&keys->addr, keys->irk.val);
 }
@@ -2606,7 +2606,7 @@ int bt_id_del(struct bt_keys *keys)
 	if (bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 		bt_dev.le.rl_entries--;
 		keys->keys &= ~BT_KEYS_IRK;
-		bt_keys_foreach(BT_KEYS_IRK, keys_add_id);
+		bt_keys_foreach(BT_KEYS_IRK, keys_add_id, NULL);
 		goto done;
 	}
 

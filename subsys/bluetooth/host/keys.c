@@ -56,13 +56,14 @@ struct bt_keys *bt_keys_get_addr(u8_t id, const bt_addr_le_t *addr)
 	return NULL;
 }
 
-void bt_keys_foreach(int type, void (*func)(struct bt_keys *keys))
+void bt_keys_foreach(int type, void (*func)(struct bt_keys *keys, void *data),
+		     void *data)
 {
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
 		if ((key_pool[i].keys & type)) {
-			func(&key_pool[i]);
+			func(&key_pool[i], data);
 		}
 	}
 }
@@ -204,9 +205,18 @@ void bt_keys_clear(struct bt_keys *keys)
 	memset(keys, 0, sizeof(*keys));
 }
 
-void bt_keys_clear_all(void)
+static void keys_clear_id(struct bt_keys *keys, void *data)
 {
-	bt_keys_foreach(BT_KEYS_ALL, bt_keys_clear);
+	u8_t *id = data;
+
+	if (*id == keys->id) {
+		bt_keys_clear(keys);
+	}
+}
+
+void bt_keys_clear_all(u8_t id)
+{
+	bt_keys_foreach(BT_KEYS_ALL, keys_clear_id, &id);
 }
 
 #if defined(CONFIG_BT_SETTINGS)
@@ -317,7 +327,7 @@ static int keys_commit(void)
 	 * called multiple times for the same address, especially if
 	 * the keys were already removed.
 	 */
-	bt_keys_foreach(BT_KEYS_IRK, (bt_keys_func_t)bt_id_add);
+	bt_keys_foreach(BT_KEYS_IRK, (bt_keys_func_t)bt_id_add, NULL);
 
 	return 0;
 }
