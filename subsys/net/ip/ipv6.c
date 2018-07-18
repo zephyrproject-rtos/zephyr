@@ -1606,10 +1606,11 @@ send_na:
 			       tgt,
 			       flags);
 	if (!ret) {
-		NET_DBG("Cannot send NA (%d)", ret);
 		net_pkt_unref(pkt);
 		return NET_OK;
 	}
+
+	NET_DBG("Cannot send NA (%d)", ret);
 
 	return NET_DROP;
 
