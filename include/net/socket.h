@@ -49,6 +49,14 @@ struct zsock_pollfd {
  */
 #define SOL_TLS 282
 
+/* Socket options for TLS */
+
+/* Socket option to select TLS credentials to use. It accepts and returns an
+ * array of sec_tag_t that indicate which TLS credentials should be used with
+ * specific socket
+ */
+#define TLS_SEC_TAG_LIST 1
+
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;
 	int ai_flags;

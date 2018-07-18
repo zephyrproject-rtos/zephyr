@@ -46,6 +46,14 @@ config NET_SOCKETS_TLS_MAX_CONTEXTS
 	  "This variable specifies maximum number of TLS/DTLS contexts that can
 	   be allocated at the same time."
 
+config NET_SOCKETS_TLS_MAX_CREDENTIALS
+	int "Maximum number of TLS/DTLS credentials per socket"
+	default 4
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  This variable sets maximum number of TLS/DTLS credentials that can be
+	  used with a specific socket.
+
 config NET_DEBUG_SOCKETS
 	bool "Debug BSD Sockets compatible API calls"
 	default y if NET_LOG_GLOBAL
