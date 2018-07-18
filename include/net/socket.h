@@ -44,6 +44,11 @@ struct zsock_pollfd {
 #define ZSOCK_MSG_PEEK 0x02
 #define ZSOCK_MSG_DONTWAIT 0x40
 
+/* Protocol level for TLS.
+ * Here, the same socket protocol level for TLS as in Linux was used.
+ */
+#define SOL_TLS 282
+
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;
 	int ai_flags;
@@ -97,6 +102,10 @@ ssize_t ztls_recvfrom(int sock, void *buf, size_t max_len, int flags,
 		      struct sockaddr *src_addr, socklen_t *addrlen);
 int ztls_fcntl(int sock, int cmd, int flags);
 int ztls_poll(struct zsock_pollfd *fds, int nfds, int timeout);
+int ztls_getsockopt(int sock, int level, int optname,
+		    void *optval, socklen_t *optlen);
+int ztls_setsockopt(int sock, int level, int optname,
+		    const void *optval, socklen_t optlen);
 
 #endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 
@@ -221,13 +230,21 @@ static inline int poll(struct zsock_pollfd *fds, int nfds, int timeout)
 static inline int getsockopt(int sock, int level, int optname,
 			     void *optval, socklen_t *optlen)
 {
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	return ztls_getsockopt(sock, level, optname, optval, optlen);
+#else
 	return zsock_getsockopt(sock, level, optname, optval, optlen);
+#endif
 }
 
 static inline int setsockopt(int sock, int level, int optname,
 			     const void *optval, socklen_t optlen)
 {
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	return ztls_setsockopt(sock, level, optname, optval, optlen);
+#else
 	return zsock_setsockopt(sock, level, optname, optval, optlen);
+#endif
 }
 
 static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,

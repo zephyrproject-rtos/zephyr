@@ -668,3 +668,25 @@ int ztls_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 
 	return ret;
 }
+
+int ztls_getsockopt(int sock, int level, int optname,
+		    void *optval, socklen_t *optlen)
+{
+	if (level != SOL_TLS) {
+		return zsock_getsockopt(sock, level, optname, optval, optlen);
+	}
+
+	errno = -ENOPROTOOPT;
+	return -1;
+}
+
+int ztls_setsockopt(int sock, int level, int optname,
+		    const void *optval, socklen_t optlen)
+{
+	if (level != SOL_TLS) {
+		return zsock_setsockopt(sock, level, optname, optval, optlen);
+	}
+
+	errno = -ENOPROTOOPT;
+	return -1;
+}
