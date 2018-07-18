@@ -49,12 +49,16 @@ const char *bt_hex(const void *buf, size_t len)
 
 const char *bt_addr_str(const bt_addr_t *addr)
 {
-	static char bufs[2][BT_ADDR_STR_LEN];
+	static char bufs[4][BT_ADDR_STR_LEN];
+	unsigned int mask;
 	static u8_t cur;
 	char *str;
 
+	mask = irq_lock();
 	str = bufs[cur++];
 	cur %= ARRAY_SIZE(bufs);
+	irq_unlock(mask);
+
 	bt_addr_to_str(addr, str, sizeof(bufs[cur]));
 
 	return str;
@@ -62,12 +66,16 @@ const char *bt_addr_str(const bt_addr_t *addr)
 
 const char *bt_addr_le_str(const bt_addr_le_t *addr)
 {
-	static char bufs[2][BT_ADDR_LE_STR_LEN];
+	static char bufs[8][BT_ADDR_LE_STR_LEN];
+	unsigned int mask;
 	static u8_t cur;
 	char *str;
 
+	mask = irq_lock();
 	str = bufs[cur++];
 	cur %= ARRAY_SIZE(bufs);
+	irq_unlock(mask);
+
 	bt_addr_le_to_str(addr, str, sizeof(bufs[cur]));
 
 	return str;
