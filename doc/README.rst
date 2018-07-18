@@ -53,17 +53,17 @@ Our documentation processing has been tested to run with:
 * docutils version 0.14
 * sphinx_rtd_theme version 0.4.0
 
-Begin by cloning a copy of the git repository for the Zephyr project and
-setting up your development environment as described in :ref:`getting_started`
-or specifically for Ubuntu in :ref:`installation_linux`.
+In order to install the documentation tools, clone a copy of the git repository
+for the Zephyr project and set up your development environment as described in
+:ref:`getting_started`. This will ensure all the required tools are installed
+on your system.
 
-Other than ``doxygen``, the documentation tools should be installed
-using ``pip3`` (as documented in the development environment set up
-instructions).
-
-The documentation generation tools are included in the set of tools
-expected for the Zephyr build environment and so are included in
-``requirements.txt``
+.. note::
+   On Windows, the Sphinx executable ``sphinx-build.exe`` is placed in
+   the ``Scripts`` folder of your Python installation path.
+   Dependending on how you have installed Python, you may need to
+   add this folder to your ``PATH`` environment variable. Follow
+   the instructions in `Windows Python Path`_ to add those if needed.
 
 Documentation presentation theme
 ********************************
@@ -145,3 +145,4 @@ found there.
 
 .. _reStructuredText: http://sphinx-doc.org/rest.html
 .. _Sphinx: http://sphinx-doc.org/
+.. _Windows Python Path: https://docs.python.org/3/using/windows.html#finding-the-python-executable
