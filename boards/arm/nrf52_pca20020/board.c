@@ -44,12 +44,13 @@ static int pwr_ctrl_init(struct device *dev)
  * constraits.
  */
 
-#if CONFIG_BOARD_VDD_PWR_CTRL_INIT_PRIORITY <= CONFIG_GPIO_NRF5_INIT_PRIORITY
-#error GPIO_NRF5_INIT_PRIORITY must be lower than BOARD_VDD_PWR_CTRL_INIT_PRIORITY
+#if CONFIG_BOARD_VDD_PWR_CTRL_INIT_PRIORITY <= CONFIG_GPIO_NRF_INIT_PRIORITY
+#error GPIO_NRF_INIT_PRIORITY must be lower than \
+	BOARD_VDD_PWR_CTRL_INIT_PRIORITY
 #endif
 
 static const struct pwr_ctrl_cfg vdd_pwr_ctrl_cfg = {
-	.port = CONFIG_GPIO_NRF5_P0_DEV_NAME,
+	.port = CONFIG_GPIO_P0_DEV_NAME,
 	.pin = VDD_PWR_CTRL_GPIO_PIN,
 };
 
