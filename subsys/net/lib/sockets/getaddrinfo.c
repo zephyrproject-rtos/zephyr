@@ -25,7 +25,6 @@ struct getaddrinfo_state {
 };
 
 static struct zsock_addrinfo ai_arr[2];
-static struct getaddrinfo_state ai_state;
 
 static void dns_resolve_cb(enum dns_resolve_status status,
 			   struct dns_addrinfo *info, void *user_data)
@@ -88,6 +87,7 @@ int zsock_getaddrinfo(const char *host, const char *service,
 	int st1 = DNS_EAI_ADDRFAMILY, st2 = DNS_EAI_ADDRFAMILY;
 	struct sockaddr *ai_addr;
 	int ret;
+	struct getaddrinfo_state ai_state;
 
 	if (hints) {
 		family = hints->ai_family;
