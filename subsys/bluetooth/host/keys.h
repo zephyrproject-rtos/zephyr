@@ -64,7 +64,8 @@ struct bt_keys {
 				 offsetof(struct bt_keys, storage_start))
 
 typedef void (*bt_keys_func_t)(struct bt_keys *keys);
-void bt_keys_foreach(int type, bt_keys_func_t func);
+void bt_keys_foreach(int type, void (*func)(struct bt_keys *keys, void *data),
+		     void *data);
 
 struct bt_keys *bt_keys_get_addr(u8_t id, const bt_addr_le_t *addr);
 struct bt_keys *bt_keys_get_type(int type, u8_t id, const bt_addr_le_t *addr);
@@ -74,7 +75,7 @@ struct bt_keys *bt_keys_find_addr(u8_t id, const bt_addr_le_t *addr);
 
 void bt_keys_add_type(struct bt_keys *keys, int type);
 void bt_keys_clear(struct bt_keys *keys);
-void bt_keys_clear_all(void);
+void bt_keys_clear_all(u8_t id);
 
 #if defined(CONFIG_BT_SETTINGS)
 int bt_keys_store(struct bt_keys *keys);

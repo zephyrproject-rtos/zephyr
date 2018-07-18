@@ -1626,7 +1626,7 @@ struct bt_conn *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
 	return NULL;
 }
 
-void bt_conn_disconnect_all(void)
+void bt_conn_disconnect_all(u8_t id)
 {
 	int i;
 
@@ -1634,6 +1634,10 @@ void bt_conn_disconnect_all(void)
 		struct bt_conn *conn = &conns[i];
 
 		if (!atomic_get(&conn->ref)) {
+			continue;
+		}
+
+		if (conn->id != id) {
 			continue;
 		}
 
