@@ -18,8 +18,10 @@
 #include <stdio.h>
 
 #include <net/socket.h>
+#include <net/tls_credentials.h>
 
 #include "common.h"
+#include "ca_certificate.h"
 
 #define RECV_BUF_SIZE 128
 
@@ -81,12 +83,38 @@ static int start_tcp_proto(struct data *data, struct sockaddr *addr,
 {
 	int ret;
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	data->tcp.sock = socket(addr->sa_family, SOCK_STREAM, IPPROTO_TLS_1_2);
+#else
 	data->tcp.sock = socket(addr->sa_family, SOCK_STREAM, IPPROTO_TCP);
+#endif
 	if (data->tcp.sock < 0) {
 		NET_ERR("Failed to create TCP socket (%s): %d", data->proto,
 			errno);
 		return -errno;
 	}
+
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	sec_tag_t sec_tag_list[] = {
+		CA_CERTIFICATE_TAG,
+	};
+
+	ret = setsockopt(data->tcp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
+			 sec_tag_list, sizeof(sec_tag_list));
+	if (ret < 0) {
+		NET_ERR("Failed to set TLS_SEC_TAG_LIST option (%s): %d",
+			data->proto, errno);
+		ret = -errno;
+	}
+
+	ret = setsockopt(data->tcp.sock, SOL_TLS, TLS_HOSTNAME,
+			 TLS_PEER_HOSTNAME, sizeof(TLS_PEER_HOSTNAME));
+	if (ret < 0) {
+		NET_ERR("Failed to set TLS_HOSTNAME option (%s): %d",
+			data->proto, errno);
+		ret = -errno;
+	}
+#endif
 
 	ret = connect(data->tcp.sock, addr, addrlen);
 	if (ret < 0) {
