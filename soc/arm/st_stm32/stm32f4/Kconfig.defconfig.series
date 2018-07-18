@@ -32,4 +32,11 @@ config I2C_STM32_V1
 
 endif # I2C_STM32
 
+if DMA
+
+config DMA_STM32F4X
+	def_bool y
+
+endif # DMA
+
 endif # SOC_SERIES_STM32F4X
