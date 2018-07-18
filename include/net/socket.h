@@ -72,6 +72,10 @@ ssize_t zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 		       struct sockaddr *src_addr, socklen_t *addrlen);
 int zsock_fcntl(int sock, int cmd, int flags);
 int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout);
+int zsock_getsockopt(int sock, int level, int optname,
+		     void *optval, socklen_t *optlen);
+int zsock_setsockopt(int sock, int level, int optname,
+		     const void *optval, socklen_t optlen);
 int zsock_inet_pton(sa_family_t family, const char *src, void *dst);
 int zsock_getaddrinfo(const char *host, const char *service,
 		      const struct zsock_addrinfo *hints,
@@ -213,6 +217,18 @@ static inline int poll(struct zsock_pollfd *fds, int nfds, int timeout)
 
 #define MSG_PEEK ZSOCK_MSG_PEEK
 #define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
+
+static inline int getsockopt(int sock, int level, int optname,
+			     void *optval, socklen_t *optlen)
+{
+	return zsock_getsockopt(sock, level, optname, optval, optlen);
+}
+
+static inline int setsockopt(int sock, int level, int optname,
+			     const void *optval, socklen_t optlen)
+{
+	return zsock_setsockopt(sock, level, optname, optval, optlen);
+}
 
 static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 			      size_t size)
