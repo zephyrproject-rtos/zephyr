@@ -50,13 +50,8 @@ static void wdt_event_handler(void)
 static void wdt_nrf_isr(struct device *dev)
 {
 	ARG_UNUSED(dev);
-	/* We need to implement our own interrupt handler until nrfx one will
-	 * be fixed.
-	 * Clearing events also clears the reload register and has to be done
-	 * AFTER event handler.
-	 */
-	wdt_event_handler();
-	nrf_wdt_event_clear(NRF_WDT_EVENT_TIMEOUT);
+
+	nrfx_wdt_irq_handler();
 }
 
 static int wdt_nrf_setup(struct device *dev, u8_t options)
