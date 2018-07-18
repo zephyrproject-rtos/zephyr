@@ -164,6 +164,16 @@ static void _FaultShow(const NANO_ESF *esf, int fault)
 /* HardFault is used for all fault conditions on ARMv6-M. */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 
+/* Perform an assessment whether an MPU fault shall be
+ * treated as recoverable.
+ *
+ * @return 1 if error is recoverable, otherwise return 0.
+ */
+static int _MpuFaultIsRecoverable(const NANO_ESF *esf)
+{
+	return 0;
+}
+
 /**
  *
  * @brief Dump MPU fault information
@@ -175,6 +185,13 @@ static void _FaultShow(const NANO_ESF *esf, int fault)
 static u32_t _MpuFault(const NANO_ESF *esf, int fromHardFault)
 {
 	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+
+	/* Assess whether system shall ignore/recover from this MPU fault. */
+	if (_MpuFaultIsRecoverable(esf)) {
+		return _NANO_ERR_RECOVERABLE;
+	}
+
+	/* Error is not recoverable / to be ignored. */
 
 	PR_FAULT_INFO("***** MPU FAULT *****\n");
 
@@ -499,9 +516,6 @@ static u32_t _FaultHandle(const NANO_ESF *esf, int fault)
 {
 	u32_t reason = _NANO_ERR_HW_EXCEPTION;
 
-	/* Dump generic information about the fault. */
-	_FaultShow(esf, fault);
-
 	switch (fault) {
 	case 3:
 		reason = _HardFault(esf);
@@ -532,6 +546,11 @@ static u32_t _FaultHandle(const NANO_ESF *esf, int fault)
 	default:
 		_ReservedException(esf, fault);
 		break;
+	}
+
+	if (reason != _NANO_ERR_RECOVERABLE) {
+		/* Dump generic information about the fault. */
+		_FaultShow(esf, fault);
 	}
 
 	return reason;
@@ -619,7 +638,7 @@ static void _SecureStackDump(const NANO_ESF *secure_esf)
  */
 void _Fault(NANO_ESF *esf, u32_t exc_return)
 {
-	u32_t reason = _NANO_ERR_HW_EXCEPTION;
+	u32_t reason;
 	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
@@ -664,13 +683,19 @@ void _Fault(NANO_ESF *esf, u32_t exc_return)
 			}
 		}
 	}
-	reason = _FaultHandle(esf, fault);
 #else
 	(void) exc_return;
-	reason = _FaultHandle(esf, fault);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE*/
 
+	reason = _FaultHandle(esf, fault);
+
+	if (reason == _NANO_ERR_RECOVERABLE) {
+		return;
+	}
+
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
 _exit_fatal:
+#endif
 	_NanoFatalErrorHandler(reason, esf);
 }
 

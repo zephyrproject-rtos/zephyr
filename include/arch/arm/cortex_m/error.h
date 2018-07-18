@@ -30,6 +30,7 @@ extern void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
 #define _NANO_ERR_ALLOCATION_FAIL (3)   /* Kernel Allocation Failure */
 #define _NANO_ERR_KERNEL_OOPS (4)       /* Kernel oops (fatal to thread) */
 #define _NANO_ERR_KERNEL_PANIC (5)	/* Kernel panic (fatal to system) */
+#define _NANO_ERR_RECOVERABLE (6)       /* Recoverable error */
 
 #define _SVC_CALL_IRQ_OFFLOAD		1
 #define _SVC_CALL_RUNTIME_EXCEPT	2
