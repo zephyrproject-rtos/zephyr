@@ -289,7 +289,7 @@ static void link_close(bt_mesh_prov_bearer_t bearer)
 		    CONTROLLER_INDEX, (u8_t *) &ev, sizeof(ev));
 }
 
-static int output_number(bt_mesh_output_action_t action, uint32_t number)
+static int output_number(bt_mesh_output_action_t action, u32_t number)
 {
 	struct mesh_out_number_action_ev ev;
 
