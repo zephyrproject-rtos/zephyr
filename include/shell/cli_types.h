@@ -28,8 +28,8 @@ enum shell_vt100_color
 
 struct shell_vt100_colors
 {
-	enum shell_vt100_color_t col; /* Text color. */
-	enum shell_vt100_color_t bgcol; /* Background color. */
+	enum shell_vt100_color col; /* Text color. */
+	enum shell_vt100_color bgcol; /* Background color. */
 };
 
 struct shell_multiline_cons
@@ -45,8 +45,8 @@ struct shell_multiline_cons
 
 struct shell_vt100_ctx
 {
-	nrf_cli_multiline_cons_t cons;
-	nrf_cli_vt100_colors_t col;
+	struct shell_multiline_cons cons;
+	struct shell_vt100_colors col;
 	u16_t printed_cmd;  // printed commands counter
 };
 

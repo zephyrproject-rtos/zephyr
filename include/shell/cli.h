@@ -9,17 +9,24 @@
 
 #include <zephyr.h>
 #include <shell/cli_types.h>
+#include <shell/shell_history.h>
+#include <shell/shell_fprintf.h>
 #include <logging/log_backend.h>
-
-
-#include "nrf_fprintf.h"
-#include "nrf_fprintf_format.h"
+#include <misc/util.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define SHELL_RX_BUFF_SIZE 16
+
+#ifndef CONFIG_SHELL_CMD_BUFF_SIZE
+#define CONFIG_SHELL_CMD_BUFF_SIZE 0
+#endif
+
+#ifndef CONFIG_SHELL_PRINTF_BUFF_SIZE
+#define CONFIG_SHELL_PRINTF_BUFF_SIZE 0
+#endif
 
 /**
  * @defgroup shell Shell
@@ -30,6 +37,7 @@ extern "C" {
  * @{
  */
 
+struct shell_static_entry;
 
 /**
  * @brief Shell dynamic command descriptor.
@@ -55,7 +63,7 @@ struct shell_cmd_entry {
 		shell_dynamic_get dynamic_get;
 
 		/*!< Pointer to array of static commands. */
-		struct shell_static_entry_t const *entry;
+		const struct shell_static_entry *entry;
 	} u;
 };
 
@@ -88,14 +96,15 @@ struct shell_static_entry {
  * @param[in] help    Pointer to a command help string.
  * @param[in] handler Pointer to a function handler.
  */
-#define SHELL_CMD_REGISTER(syntax, subcmd, help, handler)		    \
-	static struct shell_static_entry const UTIL_CAT(shell_, syntax) =   \
-	SHELL_CMD(syntax, subcmd, help, handler);			    \
-	static const struct shell_cmd_entry UTIL_CAT(shell_cmd_,name)	    \
-	__attribute__ ((section("." STRINGIFY(UTIL_CAT(shell_cmd_,name))))) \
-	__attribute__((used)) = {					    \
-		.is_dynamic = false,					    \
-		.u.p_static = &UTIL_CAT(shell_, syntax)			    \
+#define SHELL_CMD_REGISTER(syntax, subcmd, help, handler)		       \
+	static const struct shell_static_entry UTIL_CAT(shell_, syntax) =      \
+	SHELL_CMD(syntax, subcmd, help, handler);			       \
+	static const struct shell_cmd_entry UTIL_CAT(shell_cmd_, syntax)       \
+	__attribute__ ((section("."					       \
+			STRINGIFY(UTIL_CAT(shell_root_cmd_, syntax)))))	       \
+	__attribute__((used)) = {					       \
+		.is_dynamic = false,					       \
+		.u.entry = &UTIL_CAT(shell_, syntax)			       \
 	};
 
 /**
@@ -104,12 +113,12 @@ struct shell_static_entry {
  * @param[in] name  Name of the subcommand set.
  */
 #define SHELL_CREATE_STATIC_SUBCMD_SET(name)				     \
-	static const struct shell_static_entry UTIL_CAT(shell_, name)[];     \
+	static const struct shell_static_entry shell_##name[];		     \
 	static const struct shell_cmd_entry name = {			     \
 		.is_dynamic = false,					     \
-		.u.p_static = UTIL_CAT(shell_, name)			     \
+		.u.entry = shell_##name				     \
 	};								     \
-	static const struct shell_static_entry UTIL_CAT(shell_, name))[] =
+	static const struct shell_static_entry shell_##name[] =
 
 /**
  * @brief Define ending subcommands set.
@@ -127,7 +136,7 @@ struct shell_static_entry {
 #define SHELL_CREATE_DYNAMIC_CMD(name, get) \
 	static const struct shell_cmd_entry const name = {	\
 		.is_dynamic = true,				\
-		.u.p_dynamic_get = get 				\
+		.u.dynamic_get = get 				\
 	}
 
 /**
@@ -238,18 +247,19 @@ struct shell_transport_api
 	 * @param[in] p_transport  Pointer to the transfer instance.
 	 * @param[in] p_data       Pointer to the destination buffer.
 	 * @param[in] length       Destination buffer length.
-	 * @param[in] p_cnt        Pointer to the received bytes counter.
+	 * @param[in] cnt          Pointer to the received bytes counter.
 	 *
 	 * @return Standard error code.
 	 */
 	int (*read)(const struct shell_transport *transport,
-		    void *data, size_t length, size_t *p_cnt);
+		    void *data, size_t length, size_t *cnt);
 
 };
 
 struct shell_transport
 {
 	const struct shell_transport_api *api;
+	void *ctx;
 };
 
 /**
@@ -290,13 +300,19 @@ _Static_assert(sizeof(struct shell_flags) == sizeof(u32_t), "Must fit in 32b.");
 union shell_internal
 {
 	u32_t value;
-	struct shell_flags flag;
+	struct shell_flags flags;
 };
 
+enum shell_signal {
+	SHELL_SIGNAL_RXRDY,
+	SHELL_SIGNAL_TXDONE,
+	SHELL_SIGNAL_KILL,
+	SHELL_SIGNALS
+};
 /**
  * @brief CLI instance context.
  */
-typedef struct
+struct shell_ctx
 {
 	enum shell_state state; /*!< Internal module state.*/
 	enum shell_receive_state receive_state;/*!< Escape sequence indicator.*/
@@ -321,56 +337,16 @@ typedef struct
 	/*!< Printf buffer size.*/
 	char printf_buff[CONFIG_SHELL_PRINTF_BUFF_SIZE];
 
-#if CONFIG_SHELL_STATISTICS
 	struct shell_stats statistics;
-#endif
-
-#if CONFIG_SHELL_HISTORY
-	/*some list can be used*/
-	nrf_memobj_t * p_cmd_list_head;     //!< Pointer to the head of history list.
-	nrf_memobj_t * p_cmd_list_tail;     //!< Pointer to the tail of history list.
-nrf_memobj_t * p_cmd_list_element;  //!< Pointer to an element of history list.
-#endif
 
 	volatile union shell_internal internal;   /*!< Internal CLI data.*/
-} nrf_cli_ctx_t;
+
+	struct k_poll_signal signals[SHELL_SIGNALS];
+	struct k_poll_event events[SHELL_SIGNALS];
+};
 
 extern const struct log_backend_api log_backend_shell_api;
 
-struct shell_log_backend
-{
-	struct k_msgq * queue;
-	void *context;
-};
-
-#define SHELL_LOG_BACKEND_DEF(_name, _queue_size)			\
-	struct shell_log_backend CONCAT_2(shell_log_backend,_name) = {	\
-                .queue = &CONCAT_2(_name, _queue),			\
-        };								\
-
-#define SHELL_LOG_BACKEND_PTR(_name) &CONCAT_2(_name, _log_backend)
-
-
-#if NRF_MODULE_ENABLED(NRF_CLI_HISTORY)
-/* Header consists memory for cmd length and pointer to: prev and next element. */
-#define NRF_CLI_HISTORY_HEADER_SIZE (sizeof(nrf_cli_memobj_header_t))
-
-#define NRF_CLI_HISTORY_MEM_OBJ(name)                       \
-    NRF_MEMOBJ_POOL_DEF(CONCAT_2(name, _cmd_hist_memobj),   \
-                    NRF_CLI_HISTORY_HEADER_SIZE +           \
-                    NRF_CLI_HISTORY_ELEMENT_SIZE,           \
-                    NRF_CLI_HISTORY_ELEMENT_COUNT)
-
-#define NRF_CLI_MEMOBJ_PTR(_name_) &CONCAT_2(_name_, _cmd_hist_memobj)
-#else
-#define NRF_CLI_MEMOBJ_PTR(_name_) NULL
-#define NRF_CLI_HISTORY_MEM_OBJ(name)
-#endif
-
-struct shell_history {
-	struct k_mem_slab *mem_slab;
-	sys_dlist_t list;
-};
 /**
  * @brief Shell instance internals.*/
 struct shell {
@@ -382,13 +358,15 @@ struct shell {
 	const struct k_msgq *log_queue; /*!< Log message queue.*/
 	const struct log_backend *log_backend;  /*!< Logger backend.*/
 
-	nrf_fprintf_ctx_t *fprintf_ctx;  /*!< fprintf context.*/
-	nrf_memobj_pool_t const *cmd_hist_mempool; /*!< Memory reserved for commands history.*/
-
 	struct shell_history *history;
+
+	const struct shell_fprintf *fprintf_ctx;
 
 	/*!< New line character, only allowed values: \\n and \\r.*/
 	char const newline_char;
+
+	void *stack;
+	struct k_thread *thread;
 };
 
 /**
@@ -400,29 +378,29 @@ struct shell {
  * @param[in] newline_ch        New line character - only allowed values are '\\n' or '\\r'.
  * @param[in] log_queue_size    Logger processing queue size.
  */
-#define SHELL_DEF(name, cli_prefix, transport_iface,			     \
+#define SHELL_DEF(_name, cli_prefix, transport_iface,			     \
 		  newline_ch, log_queue_size)				     \
-	static const struct shell name;					     \
-	static struct shell_ctx CONCAT_2(name, _ctx);			     \
-	NRF_FPRINTF_DEF(CONCAT_2(name, _fprintf_ctx),			     \
-			&name,						     \
-			CONCAT_2(name, _ctx).printf_buff,		     \
-			NRF_CLI_PRINTF_BUFF_SIZE,			     \
-			false,						     \
-			nrf_cli_print_stream);				     \
-	NRF_CLI_HISTORY_MEM_OBJ(name);					     \
-	K_MSGQ_DEFINE(UTIL_CAT(_name, _log_queue), sizeof(void *),	     \
-		     _queue_size, sizeof(u32_t))			     \
-	LOG_BACKEND_DEF(UTIL_CAT(_name,_log_backend), log_backend_shell_api) \
-	static nrf_cli_t const name = {					     \
+	static const struct shell _name;				     \
+	static struct shell_ctx UTIL_CAT(_name, _ctx);			     \
+	K_MSGQ_DEFINE(_name##_log_queue, sizeof(void *),		     \
+		      log_queue_size, sizeof(u32_t));			     \
+	LOG_BACKEND_DEFINE(_name##_log_backend, log_backend_shell_api);	     \
+	SHELL_HISTORY_DEFINE(_name, 128, 8);/*todo*/			     \
+	SHELL_FPRINTF_DEFINE(_name## _fprintf, &_name, 16/*todo*/,	     \
+			     true, shell_print_stream);			     \
+	static u32_t _name##_stack[CONFIG_SHELL_STACK_SIZE/sizeof(u32_t)];   \
+	static struct k_thread _name##_thread;				     \
+	static const struct shell _name = {				     \
 		.name = cli_prefix,					     \
-		.iface = p_transport_iface,				     \
-		.ctx = &CONCAT_2(name, _ctx),				     \
-		.log_queue = &UTIL_CAT(_name, _log_queue),		     \
-		.log_backend = &UTIL_CAT(_name,_log_backend),		     \
-		.fprintf_ctx = &CONCAT_2(name, _fprintf_ctx),		     \
-		.cmd_hist_mempool = NRF_CLI_MEMOBJ_PTR(name),		     \
-		.newline_char = newline_ch\
+		.iface = transport_iface,				     \
+		.ctx = &UTIL_CAT(_name, _ctx),				     \
+		.log_queue = &_name##_log_queue,			     \
+		.log_backend = &_name##_log_backend,			     \
+		.history = SHELL_HISTORY_PTR(_name),			     \
+		.fprintf_ctx = &_name##_fprintf,			     \
+		.newline_char = newline_ch,				     \
+		.stack = _name##_stack,					     \
+		.thread = &_name##_thread				     \
 	}
 
 /**
@@ -437,7 +415,7 @@ struct shell {
  * @return Standard error code.
  */
 int shell_init(const struct shell *shell, void const *transport_config,
-	       bool use_colors, bool log_backend, u8_t init_log_level);
+	       bool use_colors, bool log_backend, u32_t init_log_level);
 
 /**
  * @brief Function for uninitializing a transport layer and internal CLI state.
@@ -485,7 +463,7 @@ int shell_stop(const struct shell *shell);
  * @param[in] p_fmt Format string.
  * @param[in] ...   List of parameters to print.
  */
-void shell_fprintf(const struct shell *shell, enum shell_vt100_color_t  color,
+void shell_fprintf(const struct shell *shell, enum shell_vt100_color  color,
 		   char const *p_fmt, ...);
 
 /**
@@ -496,7 +474,6 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color_t  color,
  */
 void shell_process(const struct shell *shell);
 
-
 /**
  * @brief Option descriptor.
  */
@@ -506,7 +483,6 @@ struct shell_getopt_option
 	char const *optname_short; /*!< Option short name.*/
 	char const *optname_help; /*!< Option help string.*/
 };
-
 
 /**
  * @brief Option structure initializer @ref nrf_cli_getopt_option.
@@ -530,7 +506,7 @@ struct shell_getopt_option
  */
 static inline bool shell_help_requested(const struct shell *shell)
 {
-    return shell->ctx->internal.flag.show_help;
+	return shell->ctx->internal.flags.show_help;
 }
 
 /**
