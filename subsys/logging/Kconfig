@@ -197,6 +197,16 @@ config LOG_PRINTK_MAX_STRING_LENGTH
 	help
 	  Array is allocated on the stack.
 
+
+config LOG_PROCESS_IN_IDLE
+	bool "Enable log processing in the idle thread"
+	default y
+	depends on MULTITHREADING
+	help
+	  When enabled logs are processing the idle thread.
+
+if !LOG_PROCESS_IN_IDLE
+
 config LOG_INPLACE_PROCESS
 	bool "Enable in place processing"
 	help
@@ -209,46 +219,14 @@ config LOG_INPLACE_PROCESS
 	  priority context.
 
 config LOG_PROCESS_TRIGGER_THRESHOLD
-	int "Amount of buffered logs which triggers processing thread."
+	int "Amount of buffered logs which triggers custom processing thread."
 	default 0
 	help
 	  When number of buffered messages reaches the threshold thread is waken
-	  up. Log processing thread ID is provided during log initialization.
-	  Set 0 to disable the feature. If LOG_PROCESS_THREAD is enabled then
-	  this threshold is used by the internal thread.
+	  up. Log processing thread ID is provided using log_thread_set.
+	  Set 0 to disable the feature.
 
-config LOG_PROCESS_THREAD
-	bool "Enable internal thread for log processing"
-	depends on MULTITHREADING
-	help
-	  When enabled thread is created by the logger subsystem. Thread is
-	  waken up periodically (see LOG_PROCESS_THREAD_SLEEP_MS) and whenever
-	  number of buffered messages exceeds the threshold (see
-	  LOG_PROCESS_TRIGGER_THR).
-
-if LOG_PROCESS_THREAD
-
-config LOG_PROCESS_THREAD_SLEEP_MS
-	int "Set internal log processing thread sleep period"
-	default 1000
-	help
-	  Log processing thread sleeps for requested period given in
-	  milliseconds. When waken up, thread process any buffered messages.
-
-config LOG_PROCESS_THREAD_PRIO
-	int "Priority of the log internal thread"
-	default -2
-	help
-	  Change with care since log processing can be time consuming thus it
-	  should be on low priority.
-
-config LOG_PROCESS_THREAD_STACK_SIZE
-	int "Stack size for the internal log processing thread"
-	default 768
-	help
-	  Set the internal stack size for log processing thread.
-
-endif
+endif #!LOG_PROCESS_IN_IDLE
 
 config LOG_BUFFER_SIZE
 	int "Number of bytes dedicated for the logger internal buffer."

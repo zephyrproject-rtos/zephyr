@@ -11,6 +11,7 @@
 #include <drivers/system_timer.h>
 #include <wait_q.h>
 #include <power.h>
+#include <logging/log_ctrl.h>
 
 #if defined(CONFIG_TICKLESS_IDLE)
 /*
@@ -166,19 +167,30 @@ void idle(void *unused1, void *unused2, void *unused3)
 	__idle_time_stamp = (u64_t)k_cycle_get_32();
 #endif
 
+	LOG_INIT();
+
 #ifdef CONFIG_SMP
 	/* Simplified idle for SMP CPUs pending driver support.  The
 	 * busy waiting is needed to prevent lock contention.  Long
 	 * term we need to wake up idle CPUs with an IPI.
 	 */
 	while (1) {
-		k_busy_wait(100);
+		if (!IS_ENABLED(CONFIG_LOG_PROCESS_IN_IDLE) ||
+		    (IS_ENABLED(CONFIG_LOG_PROCESS_IN_IDLE) &&
+				    !LOG_PROCESS())) {
+			k_busy_wait(100);
+		}
+
 		k_yield();
 	}
 #else
 	for (;;) {
-		(void)irq_lock();
-		sys_power_save_idle(_get_next_timeout_expiry());
+		if (!IS_ENABLED(CONFIG_LOG_PROCESS_IN_IDLE) ||
+		    (IS_ENABLED(CONFIG_LOG_PROCESS_IN_IDLE) &&
+				    !LOG_PROCESS())) {
+			(void)irq_lock();
+			sys_power_save_idle(_get_next_timeout_expiry());
+		}
 
 		IDLE_YIELD_IF_COOP();
 	}
