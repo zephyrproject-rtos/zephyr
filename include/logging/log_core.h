@@ -231,6 +231,129 @@ extern "C" {
 		      _data,					 \
 		      _length)
 
+/******************************************************************************/
+/****************** Filtering macros ******************************************/
+/******************************************************************************/
+
+/** @brief Filter slot size. */
+#define LOG_FILTER_SLOT_SIZE LOG_LEVEL_BITS
+
+/** @brief Number of slots in one word. */
+#define LOG_FILTERS_NUM_OF_SLOTS (32 / LOG_FILTER_SLOT_SIZE)
+
+/** @brief Slot mask. */
+#define LOG_FILTER_SLOT_MASK ((1 << LOG_FILTER_SLOT_SIZE) - 1)
+
+/** @brief Bit offset of a slot.
+ *
+ *  @param _id Slot ID.
+ */
+#define LOG_FILTER_SLOT_SHIFT(_id) (LOG_FILTER_SLOT_SIZE * (_id))
+
+#define LOG_FILTER_SLOT_GET(_filters, _id) \
+	((*(_filters) >> LOG_FILTER_SLOT_SHIFT(_id)) & LOG_FILTER_SLOT_MASK)
+
+#define LOG_FILTER_SLOT_SET(_filters, _id, _filter)		     \
+	do {							     \
+		*(_filters) &= ~(LOG_FILTER_SLOT_MASK <<	     \
+				 LOG_FILTER_SLOT_SHIFT(_id));	     \
+		*(_filters) |= ((_filter) & LOG_FILTER_SLOT_MASK) << \
+			       LOG_FILTER_SLOT_SHIFT(_id);	     \
+	} while (0)
+
+#define LOG_FILTER_AGGR_SLOT_IDX 0
+
+#define LOG_FILTER_AGGR_SLOT_GET(_filters) \
+	LOG_FILTER_SLOT_GET(_filters, LOG_FILTER_AGGR_SLOT_IDX)
+
+#define LOG_FILTER_FIRST_BACKEND_SLOT_IDX 1
+
+#if CONFIG_LOG_RUNTIME_FILTERING
+#define LOG_RUNTIME_FILTER(_filter) \
+	LOG_FILTER_SLOT_GET(&(_filter)->filters, LOG_FILTER_AGGR_SLOT_IDX)
+#else
+#define LOG_RUNTIME_FILTER(_filter) LOG_LEVEL_DBG
+#endif
+
+extern struct log_source_const_data __log_const_start[0];
+extern struct log_source_const_data __log_const_end[0];
+
+/** @brief Get name of the log source.
+ *
+ * @param source_id Source ID.
+ * @return Name.
+ */
+static inline const char *log_name_get(u32_t source_id)
+{
+	return __log_const_start[source_id].name;
+}
+
+/** @brief Get compiled level of the log source.
+ *
+ * @param source_id Source ID.
+ * @return Level.
+ */
+static inline u8_t log_compiled_level_get(u32_t source_id)
+{
+	return __log_const_start[source_id].level;
+}
+
+/** @brief Get index of the log source based on the address of the constant data
+ *         associated with the source.
+ *
+ * @param data Address of the constant data.
+ *
+ * @return Source ID.
+ */
+static inline u32_t log_const_source_id(
+				const struct log_source_const_data *data)
+{
+	return ((void *)data - (void *)__log_const_start)/
+			sizeof(struct log_source_const_data);
+}
+
+/** @brief Get number of registered sources. */
+static inline u32_t log_sources_count(void)
+{
+	return log_const_source_id(__log_const_end);
+}
+
+extern struct log_source_dynamic_data __log_dynamic_start[0];
+extern struct log_source_dynamic_data __log_dynamic_end[0];
+
+/** @brief Creates name of variable and section for runtime log data.
+ *
+ *  @param _name Name.
+ */
+#define LOG_ITEM_DYNAMIC_DATA(_name) UTIL_CAT(log_dynamic_, _name)
+
+#define LOG_INSTANCE_DYNAMIC_DATA(_module_name, _inst) \
+	LOG_ITEM_DYNAMIC_DATA(LOG_INSTANCE_FULL_NAME(_module_name, _inst))
+
+/** @brief Get pointer to the filter set of the log source.
+ *
+ * @param source_id Source ID.
+ *
+ * @return Pointer to the filter set.
+ */
+static inline u32_t *log_dynamic_filters_get(u32_t source_id)
+{
+	return &__log_dynamic_start[source_id].filters;
+}
+
+/** @brief Get index of the log source based on the address of the dynamic data
+ *         associated with the source.
+ *
+ * @param data Address of the dynamic data.
+ *
+ * @return Source ID.
+ */
+static inline u32_t log_dynamic_source_id(struct log_source_dynamic_data *data)
+{
+	return ((void *)data - (void *)__log_dynamic_start)/
+			sizeof(struct log_source_dynamic_data);
+}
+
 /** @brief Dummy function to trigger log messages arguments type checking. */
 static inline __printf_like(1, 2)
 void log_printf_arg_checker(const char *fmt, ...)
