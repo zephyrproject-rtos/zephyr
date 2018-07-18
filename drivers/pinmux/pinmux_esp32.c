@@ -164,12 +164,17 @@ static int pinmux_initialize(struct device *device)
 	u32_t pin;
 
 	for (pin = 0; pin < ARRAY_SIZE(pin_mux_off); pin++) {
+#if (CONFIG_ESP32_FLASH_CACHE == 1)
 		/* pin 6 to 11 are configured for SPI by the second stage bootloader.
 		 * We should not change them, otherwise we can't access the flash
-		 * anymore. */
+		 * anymore.
+		 * These pins are only ignored during pinmux driver initialization
+		 * (= zephyr image boot-up), so anyone is still allowed to reconfigure
+		 * these pins during run-time. */
 		if (pin < 6 && pin > 11) {
 			pinmux_set(NULL, pin, 0);
 		}
+#endif
 	}
 
 	ARG_UNUSED(device);
