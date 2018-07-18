@@ -19,6 +19,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 
+#if defined(CONFIG_BT_DEBUG)
 const char *bt_hex(const void *buf, size_t len)
 {
 	static const char hex[] = "0123456789abcdef";
@@ -46,7 +47,6 @@ const char *bt_hex(const void *buf, size_t len)
 	return str;
 }
 
-#if defined(CONFIG_BT_DEBUG)
 const char *bt_addr_str(const bt_addr_t *addr)
 {
 	static char bufs[2][BT_ADDR_STR_LEN];
