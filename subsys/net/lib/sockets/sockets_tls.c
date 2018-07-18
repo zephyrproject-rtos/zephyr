@@ -66,6 +66,9 @@ struct tls_context {
 
 		/** Information if hostname was explicitly set on a socket. */
 		bool is_hostname_set;
+
+		/** Peer verification level. */
+		s8_t verify_level;
 	} options;
 
 #if defined(CONFIG_MBEDTLS)
@@ -207,6 +210,7 @@ static struct tls_context *tls_alloc(void)
 			tls = &tls_contexts[i];
 			memset(tls, 0, sizeof(*tls));
 			tls->is_used = true;
+			tls->options.verify_level = -1;
 
 			NET_DBG("Allocated TLS context, %p", tls);
 			break;
@@ -341,7 +345,6 @@ static void tls_set_ca_chain(struct tls_context *tls)
 {
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	mbedtls_ssl_conf_ca_chain(&tls->config, &tls->ca_chain, NULL);
-	mbedtls_ssl_conf_authmode(&tls->config, MBEDTLS_SSL_VERIFY_REQUIRED);
 	mbedtls_ssl_conf_cert_profile(&tls->config,
 				      &mbedtls_x509_crt_profile_default);
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
@@ -541,6 +544,14 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 		mbedtls_ssl_set_hostname(&context->tls->ssl, "");
 	}
 
+	/* If verification level was specified explicitly, set it. Otherwise,
+	 * use mbedTLS default values (required for client, none for server)
+	 */
+	if (context->tls->options.verify_level != -1) {
+		mbedtls_ssl_conf_authmode(&context->tls->config,
+					  context->tls->options.verify_level);
+	}
+
 	mbedtls_ssl_conf_rng(&context->tls->config,
 			     mbedtls_ctr_drbg_random,
 			     &tls_ctr_drbg);
@@ -692,6 +703,32 @@ static int tls_opt_ciphersuite_used_get(struct net_context *context,
 	}
 
 	*(int *)optval = mbedtls_ssl_get_ciphersuite_id(ciph);
+
+	return 0;
+}
+
+static int tls_opt_peer_verify_set(struct net_context *context,
+				   const void *optval, socklen_t optlen)
+{
+	int *peer_verify;
+
+	if (!optval) {
+		return -EFAULT;
+	}
+
+	if (optlen != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	peer_verify = (int *)optval;
+
+	if (*peer_verify != MBEDTLS_SSL_VERIFY_NONE &&
+	    *peer_verify != MBEDTLS_SSL_VERIFY_OPTIONAL &&
+	    *peer_verify != MBEDTLS_SSL_VERIFY_REQUIRED) {
+		return -EINVAL;
+	}
+
+	context->tls->options.verify_level = *peer_verify;
 
 	return 0;
 }
@@ -1059,6 +1096,11 @@ int ztls_getsockopt(int sock, int level, int optname,
 		err = tls_opt_ciphersuite_used_get(context, optval, optlen);
 		break;
 
+	case TLS_PEER_VERIFY:
+		/* Write-only option. */
+		err = -ENOPROTOOPT;
+		break;
+
 	default:
 		err = -ENOPROTOOPT;
 		break;
@@ -1102,6 +1144,10 @@ int ztls_setsockopt(int sock, int level, int optname,
 	case TLS_CIPHERSUITE_USED:
 		/* Read-only option. */
 		err = -ENOPROTOOPT;
+		break;
+
+	case TLS_PEER_VERIFY:
+		err = tls_opt_peer_verify_set(context, optval, optlen);
 		break;
 
 	default:

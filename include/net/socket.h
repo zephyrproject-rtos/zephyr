@@ -72,6 +72,16 @@ struct zsock_pollfd {
  * of chosen ciphersuite.
  */
 #define TLS_CIPHERSUITE_USED 4
+/* Write-only socket option to set peer verification level for TLS connection.
+ * This option accepts an integer with a peer verification level, compatible
+ * with mbedTLS values:
+ * 0 - none,
+ * 1 - optional
+ * 2 - required.
+ * If not set, socket will use mbedTLS defaults (none for servers, required
+ * for clients).
+ */
+#define TLS_PEER_VERIFY 5
 
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;
