@@ -5,8 +5,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+
 #define MY_PORT 4242
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+#define STACK_SIZE 4096
+#else
 #define STACK_SIZE 1024
+#endif
 #define THREAD_PRIORITY K_PRIO_COOP(8)
 #define RECV_BUFFER_SIZE 1280
 
