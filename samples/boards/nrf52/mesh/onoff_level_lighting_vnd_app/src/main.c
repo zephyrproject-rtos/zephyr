@@ -19,7 +19,7 @@ struct device *button_device[4];
 static struct k_work button_work;
 
 static void button_pressed(struct device *dev,
-			   struct gpio_callback *cb, uint32_t pins)
+			   struct gpio_callback *cb, u32_t pins)
 {
 	k_work_submit(&button_work);
 }

@@ -393,7 +393,7 @@ static void gen_onoff_status(struct bt_mesh_model *model,
 		    bt_mesh_model_elem(model)->addr, ctx->addr, state);
 }
 
-static int output_number(bt_mesh_output_action_t action, uint32_t number)
+static int output_number(bt_mesh_output_action_t action, u32_t number)
 {
 	SYS_LOG_INF("OOB Number %u", number);
 	return 0;
@@ -441,7 +441,7 @@ static uint8_t pin_to_sw(uint32_t pin_pos)
 }
 
 static void button_pressed(struct device *dev, struct gpio_callback *cb,
-			   uint32_t pin_pos)
+			   u32_t pin_pos)
 {
 	/*
 	 * One button press within a 1 second interval sends an on message

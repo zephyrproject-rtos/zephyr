@@ -15,11 +15,11 @@
 
 #include "board.h"
 
-static uint32_t oob_number;
+static u32_t oob_number;
 static struct device *gpio;
 
 static void button_pressed(struct device *dev, struct gpio_callback *cb,
-			   uint32_t pins)
+			   u32_t pins)
 {
 	struct mb_display *disp = mb_display_get();
 
@@ -42,7 +42,7 @@ static void configure_button(void)
 	gpio_add_callback(gpio, &button_cb);
 }
 
-void board_output_number(bt_mesh_output_action_t action, uint32_t number)
+void board_output_number(bt_mesh_output_action_t action, u32_t number)
 {
 	struct mb_display *disp = mb_display_get();
 	struct mb_image arrow = MB_IMAGE({ 0, 0, 1, 0, 0 },
