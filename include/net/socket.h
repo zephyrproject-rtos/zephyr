@@ -25,6 +25,7 @@
 #include <zephyr/types.h>
 #include <net/net_ip.h>
 #include <net/dns_resolve.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -233,7 +234,7 @@ static inline int getaddrinfo(const char *host, const char *service,
 
 static inline void freeaddrinfo(struct zsock_addrinfo *ai)
 {
-	ARG_UNUSED(ai);
+	free(ai);
 }
 
 #define addrinfo zsock_addrinfo
