@@ -444,6 +444,7 @@ Z_SYSCALL_HANDLER(k_thread_create,
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_MULTITHREADING */
 
+/* LCOV_EXCL_START */
 int _impl_k_thread_cancel(k_tid_t tid)
 {
 	struct k_thread *thread = tid;
@@ -467,6 +468,7 @@ int _impl_k_thread_cancel(k_tid_t tid)
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER1_SIMPLE(k_thread_cancel, K_OBJ_THREAD, struct k_thread *);
 #endif
+/* LCOV_EXCL_STOP */
 
 void _k_thread_single_suspend(struct k_thread *thread)
 {
