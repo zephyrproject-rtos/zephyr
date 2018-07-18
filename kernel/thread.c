@@ -37,9 +37,9 @@ extern struct _static_thread_data _static_thread_data_list_end[];
 	     thread_data < _static_thread_data_list_end; \
 	     thread_data++)
 
-#if defined(CONFIG_THREAD_MONITOR)
 void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 {
+#if defined(CONFIG_THREAD_MONITOR)
 	struct k_thread *thread;
 	unsigned int key;
 
@@ -56,10 +56,8 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 		user_cb(thread, user_data);
 	}
 	irq_unlock(key);
-}
-#else
-void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data) { }
 #endif
+}
 
 int k_is_in_isr(void)
 {
