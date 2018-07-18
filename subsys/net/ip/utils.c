@@ -309,11 +309,14 @@ int net_addr_pton(sa_family_t family, const char *src,
 				UNALIGNED_PUT(htons(strtol(src, NULL, 16)),
 					      &addr->s6_addr16[i]);
 				src = strchr(src, ':');
-				if (!src && i < expected_groups - 1) {
-					return -EINVAL;
+				if (src) {
+					src++;
+				} else {
+					if (i < expected_groups - 1) {
+						return -EINVAL;
+					}
 				}
 
-				src++;
 				continue;
 			}
 
@@ -363,11 +366,13 @@ int net_addr_pton(sa_family_t family, const char *src,
 				addr->s6_addr[12 + i] = strtol(src, NULL, 10);
 
 				src = strchr(src, '.');
-				if (!src && i < 3) {
-					return -EINVAL;
+				if (src) {
+					src++;
+				} else {
+					if (i < 3) {
+						return -EINVAL;
+					}
 				}
-
-				src++;
 			}
 		}
 	} else {
