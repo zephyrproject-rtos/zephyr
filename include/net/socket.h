@@ -67,6 +67,11 @@ struct zsock_pollfd {
  * (mebdTLS default behavior).
  */
 #define TLS_CIPHERSUITE_LIST 3
+/* Read-only socket option to read a ciphersuite chosen during TLS handshake.
+ * It returns an integer containing an IANA assigned ciphersuite identifier
+ * of chosen ciphersuite.
+ */
+#define TLS_CIPHERSUITE_USED 4
 
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;

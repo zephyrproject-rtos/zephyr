@@ -677,6 +677,25 @@ static int tls_opt_ciphersuite_list_get(struct net_context *context,
 	return 0;
 }
 
+static int tls_opt_ciphersuite_used_get(struct net_context *context,
+					void *optval, socklen_t *optlen)
+{
+	const char *ciph;
+
+	if (*optlen != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	ciph = mbedtls_ssl_get_ciphersuite(&context->tls->ssl);
+	if (ciph == NULL) {
+		return -ENOTCONN;
+	}
+
+	*(int *)optval = mbedtls_ssl_get_ciphersuite_id(ciph);
+
+	return 0;
+}
+
 int ztls_socket(int family, int type, int proto)
 {
 	enum net_ip_protocol_secure tls_proto = 0;
@@ -1036,6 +1055,10 @@ int ztls_getsockopt(int sock, int level, int optname,
 		err = tls_opt_ciphersuite_list_get(context, optval, optlen);
 		break;
 
+	case TLS_CIPHERSUITE_USED:
+		err = tls_opt_ciphersuite_used_get(context, optval, optlen);
+		break;
+
 	default:
 		err = -ENOPROTOOPT;
 		break;
@@ -1074,6 +1097,11 @@ int ztls_setsockopt(int sock, int level, int optname,
 
 	case TLS_CIPHERSUITE_LIST:
 		err = tls_opt_ciphersuite_list_set(context, optval, optlen);
+		break;
+
+	case TLS_CIPHERSUITE_USED:
+		/* Read-only option. */
+		err = -ENOPROTOOPT;
 		break;
 
 	default:
