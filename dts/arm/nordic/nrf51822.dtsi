@@ -47,7 +47,7 @@
 		};
 
 		gpiote: gpiote@40006000 {
-			compatible = "nordic,nrf5-gpiote";
+			compatible = "nordic,nrf-gpiote";
 			reg = <0x40006000 0x1000>;
 			interrupts = <6 1>;
 			interrupt-names = "gpiote";
@@ -56,7 +56,7 @@
 		};
 
 		gpio0: gpio@50000000 {
-			compatible = "nordic,nrf5-gpio";
+			compatible = "nordic,nrf-gpio";
 			gpio-controller;
 			reg = <0x50000000 0x800>;
 			#gpio-cells = <2>;

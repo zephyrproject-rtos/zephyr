@@ -4,19 +4,19 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
-title: NRF5 GPIO
-id: nordic,nrf5-gpio
+title: nRF GPIOTE
+id: nordic,nrf-gpiote
 version: 0.1
 
 description: >
-    This is a representation of the NRF5 GPIO nodes
+    This is a representation of the nRF GPIOTE node
 
 properties:
     compatible:
       type: string
       category: required
       description: compatible strings
-      constraint: "nordic,nrf5-gpio"
+      constraint: "nordic,nrf-gpiote"
 
     reg:
       type: int
@@ -24,15 +24,16 @@ properties:
       generation: define
       category: required
 
+    interrupts:
+      type: compound
+      category: required
+      description: required interrupts
+      generation: define
+
     label:
       type: string
       category: required
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
 
-cell_string: GPIO
-
-"#cells":
-  - pin
-  - flags
 ...
