@@ -165,14 +165,14 @@ void stop_udp(void)
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		k_thread_abort(udp6_thread_id);
 		if (conf.ipv6.udp.sock > 0) {
-			close(conf.ipv6.udp.sock);
+			(void)close(conf.ipv6.udp.sock);
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		k_thread_abort(udp4_thread_id);
 		if (conf.ipv4.udp.sock > 0) {
-			close(conf.ipv4.udp.sock);
+			(void)close(conf.ipv4.udp.sock);
 		}
 	}
 }

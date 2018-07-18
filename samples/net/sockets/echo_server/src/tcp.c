@@ -218,14 +218,14 @@ void stop_tcp(void)
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		k_thread_abort(tcp6_thread_id);
 		if (conf.ipv6.tcp.sock > 0) {
-			close(conf.ipv6.tcp.sock);
+			(void)close(conf.ipv6.tcp.sock);
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		k_thread_abort(tcp4_thread_id);
 		if (conf.ipv4.tcp.sock > 0) {
-			close(conf.ipv4.tcp.sock);
+			(void)close(conf.ipv4.tcp.sock);
 		}
 	}
 }
