@@ -707,11 +707,21 @@ static void gptp_update_local_port_clock(void)
 	if (second_diff || (second_diff == 0 &&
 			    (nanosecond_diff < -5000 ||
 			     nanosecond_diff > 5000))) {
+		bool underflow = false;
+
 		key = irq_lock();
 		ptp_clock_get(clk, &tm);
+
 		tm.second += second_diff;
+
+		if (nanosecond_diff < 0 &&
+		    tm.nanosecond < -nanosecond_diff) {
+			underflow = true;
+		}
+
 		tm.nanosecond += nanosecond_diff;
-		if (tm.nanosecond < 0) {
+
+		if (underflow) {
 			tm.second--;
 			tm.nanosecond += NSEC_PER_SEC;
 		} else if (tm.nanosecond >= NSEC_PER_SEC) {
