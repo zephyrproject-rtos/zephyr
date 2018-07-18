@@ -69,3 +69,14 @@ License:
 
 License Link:
    https://spdx.org/licenses/BSD-3-Clause.html
+
+Patch List:
+
+   * Changes from official delivery:
+     - Fix ethernet timestamping driver. The nanosecond part of the frame
+       timestamp wasn't saved.
+     - Fix PTP event packet type check. The PTP message type was incorrectly
+       checked.
+
+   * Automatically enable ENET_ENHANCEDBUFFERDESCRIPTOR_MODE in HAL if gPTP
+     support is enabled.
