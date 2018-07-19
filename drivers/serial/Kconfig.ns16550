@@ -185,3 +185,38 @@ config UART_NS16550_PORT_2_DLF
 	depends on UART_NS16550_PORT_2 && UART_NS16550_DLF
 	help
 	  Value for DLF register.
+
+config UART_NS16550_PORT_2_PCI
+	bool "Port 2 is PCI-based"
+	depends on UART_NS16550_PCI && UART_NS16550_PORT_2
+	help
+	  Obtain port information from PCI.
+
+# ---------- Port 3 ----------
+
+menuconfig UART_NS16550_PORT_3
+	bool "Enable NS16550 Port 3"
+	depends on UART_NS16550
+	help
+	  This tells the driver to configure the UART port at boot, depending on
+	  the additional configure options below.
+
+config UART_NS16550_PORT_3_OPTIONS
+	int "Port 3 Options"
+	default 0
+	depends on UART_NS16550_PORT_3
+	help
+	  Options used for port initialization.
+
+config UART_NS16550_PORT_3_DLF
+	hex "Port 3 DLF value"
+	default 0x0
+	depends on UART_NS16550_PORT_3 && UART_NS16550_DLF
+	help
+	  Value for DLF register.
+
+config UART_NS16550_PORT_3_PCI
+	bool "Port 3 is PCI-based"
+	depends on UART_NS16550_PCI && UART_NS16550_PORT_3
+	help
+	  Obtain port information from PCI.
