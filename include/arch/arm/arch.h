@@ -19,10 +19,6 @@
 /* Add include for DTS generated information */
 #include <generated_dts_board.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* ARM GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
 
@@ -38,6 +34,9 @@ extern "C" {
 #include <arch/arm/cortex_m/nmi.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Declare the STACK_ALIGN_SIZE
