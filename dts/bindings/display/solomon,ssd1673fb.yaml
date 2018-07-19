@@ -1,0 +1,53 @@
+#
+# Copyright (c) 2018, Phytec Messtechnik GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: SSD1673 250x150 EPD Display Controller
+id: solomon,ssd1673fb-spi
+version: 0.1
+
+description: >
+    This is a representation of the SSD1673 250x150 EPD Display Controller
+
+inherits:
+    !include spi-device.yaml
+
+properties:
+    compatible:
+      constraint: "solomon,ssd1673fb-spi"
+
+    height:
+      type: int
+      category: required
+      generation: Height in pixel of the panel driven by the controller
+
+    width:
+      type: int
+      category: required
+      generation: Width in pixel of the panel driven by the controller
+
+    orientation-flipped:
+      type: string
+      category: optional
+      generation: Last column address is mapped to first segment
+
+    reset-gpios:
+      type: compound
+      category: required
+      generation: define, use-prop-name
+
+    dc-gpios:
+      type: compound
+      category: required
+      generation: define, use-prop-name
+
+    busy-gpios:
+      type: compound
+      category: required
+      generation: define, use-prop-name
+
+base_label: SSD1673
+
+...
