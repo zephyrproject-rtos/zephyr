@@ -479,7 +479,7 @@ static int connect_udp(sa_family_t family, struct net_app_ctx *ctx,
 		net_context_set_option(ctx->ipv6.ctx, NET_OPT_PRIORITY,
 				       &priority, sizeof(u8_t));
 
-		net_context_get_option(ctx->ipv4.ctx, NET_OPT_PRIORITY,
+		net_context_get_option(ctx->ipv6.ctx, NET_OPT_PRIORITY,
 				       &priority, &optlen);
 	}
 #endif
