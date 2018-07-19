@@ -24,8 +24,8 @@
 static const char *const severity[] = {
 	NULL,
 	"err",
-	"warn",
-	"info",
+	"wrn",
+	"inf",
 	"dbg"
 };
 
