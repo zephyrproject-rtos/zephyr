@@ -1,0 +1,4 @@
+tests:
+  net.tls_credentials:
+    tags: net tls
+    depends_on: netif
