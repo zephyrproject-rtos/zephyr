@@ -105,17 +105,18 @@ compiled in.
 :option:`CONFIG_LOG_PRINTK_MAX_STRING_LENGTH`: Maximal string length that can
 be processed by printk. Longer strings are trimmed.
 
+:option:`CONFIG_LOG_PROCESS_IN_IDLE`: When enabled, logger is processed in idle
+thread.
+
 :option:`CONFIG_LOG_INPLACE_PROCESS`: Messages are processed in the context of
 the log macro call. Note that it can lead to errors when logger is used in the
-interrupt context.
+interrupt context. Option is valid only if :option:`CONFIG_LOG_PROCESS_IN_IDLE`
+is disabled.
 
 :option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`: When number of buffered log
 messages reaches the threshold dedicated thread (see :cpp:func:`log_thread_set`)
-is waken up. If :option:`CONFIG_LOG_PROCESS_THREAD` is enabled then this
-threshold is used by the internal thread.
-
-:option:`CONFIG_LOG_PROCESS_THREAD`: When enabled, logger is creating own thread
-which handles log processing.
+is waken up. Option is valid only if :option:`CONFIG_LOG_PROCESS_IN_IDLE` is
+disabled.
 
 :option:`CONFIG_LOG_BUFFER_SIZE`: Number of bytes dedicated for the logger
 message pool. Single message capable of storing standard log with up to 3
@@ -229,12 +230,11 @@ be used to change maximal severity level for given module. Module is identified
 by source ID and domain ID. Source ID can be retrieved if source name is known
 by iterating through all registered sources.
 
-If logger is processed from a thread then it is possible to enable a feature
+It is recommended to allow idle thread handle log processing by enabling
+:option:`CONFIG_LOG_PROCESS_IN_IDLE`. It is also possible to handle log
+processing in a custom thread. In that case, it is possible to enable a feature
 which will wake up processing thread when certain amount of log messages are
-buffered (see :option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`). It is also
-possible to enable internal logger thread (see
-:option:`CONFIG_LOG_PROCESS_THREAD`). In that case logger thread is initialized
-and log messages are processed implicitly.
+buffered (see :option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`).
 
 .. _log_panic:
 

@@ -19,6 +19,10 @@
 #define CONFIG_LOG_PRINTK_MAX_STRING_LENGTH 1
 #endif
 
+#ifndef CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD
+#define CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD 0
+#endif
+
 #ifdef CONFIG_LOG_BACKEND_UART
 #include <logging/log_backend_uart.h>
 LOG_BACKEND_UART_DEFINE(log_backend_uart);
@@ -456,21 +460,3 @@ u32_t log_filter_get(struct log_backend const *const backend,
 		return log_compiled_level_get(src_id);
 	}
 }
-
-#ifdef CONFIG_LOG_PROCESS_THREAD
-static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
-{
-	log_init();
-	thread_set(k_current_get());
-
-	while (1) {
-		if (log_process(false) == false) {
-			k_sleep(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS);
-		}
-	}
-}
-
-K_THREAD_DEFINE(log_process_thread, CONFIG_LOG_PROCESS_THREAD_STACK_SIZE,
-		log_process_thread_func, NULL, NULL, NULL,
-		CONFIG_LOG_PROCESS_THREAD_PRIO, 0, K_NO_WAIT);
-#endif /* CONFIG_LOG_PROCESS_THREAD */
