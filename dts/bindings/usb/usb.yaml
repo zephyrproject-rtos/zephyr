@@ -18,6 +18,16 @@ properties:
       description: compatible strings
       generation: define
 
+    maximum-speed:
+      type: string
+      category: optional
+      description: Configures USB controllers to work up to a specific
+                   speed. Valid arguments are "super-speed", "high-speed",
+                   "full-speed" and "low-speed". If this is not passed
+                   via DT, USB controllers should use their maximum
+                   hardware capability.
+      generation: define
+
     label:
       type: string
       category: required
