@@ -5,6 +5,7 @@
 #
 ---
 title: ARCV2 Interrupt Controller
+id: snps,arcv2-intc
 version: 0.1
 
 description: >
