@@ -100,16 +100,25 @@ SECTION_FUNC(TEXT, __swap)
 	 */
 	lr r3, [_ARC_V2_STATUS32]
 	push_s r3
-#ifdef CONFIG_ARC_STACK_CHECKING
-	/* disable stack checking during swap */
-	bclr r3, r3, _ARC_V2_STATUS32_SC_BIT
-	kflag r3
-#endif
 
 #ifdef CONFIG_ARC_HAS_SECURE
 	lr r3, [_ARC_V2_SEC_STAT]
 	push_s r3
 #endif
+
+#ifdef CONFIG_ARC_STACK_CHECKING
+#ifdef CONFIG_ARC_HAS_SECURE
+	bclr r3, r3, _ARC_V2_SEC_STAT_SSC_BIT
+	/* sflag r3 */
+	/* sflag instruction is not supported in current ARC GNU */
+	.long 0x00ff302f
+#else
+	/* disable stack checking during swap */
+	bclr r3, r3, _ARC_V2_STATUS32_SC_BIT
+	kflag r3
+#endif
+#endif
+
 	push_s blink
 
 	_save_callee_saved_regs
@@ -155,6 +164,15 @@ _swap_return_from_coop:
 	pop_s blink /* pc into blink */
 #ifdef CONFIG_ARC_HAS_SECURE
 	pop_s r3    /* pop SEC_STAT */
+#endif
+	pop_s r2    /* status32 into r2 */
+/*
+ * the above pop may happen in the unprivileged stack, but now it's
+ * kernel mode, the write to status32/sec_stat before pop may cause
+ * stack check fail.
+ */
+	kflag r2    /* write status32 */
+#ifdef CONFIG_ARC_HAS_SECURE
 	/* sflag r3 */
 	/* sflag instruction is not supported in current ARC GNU */
 	.long 0x00ff302f
@@ -163,9 +181,6 @@ _swap_return_from_coop:
 	b _capture_value_for_benchmarking
 #endif
 return_loc:
-
-	pop_s r3    /* status32 into r3 */
-	kflag r3    /* write status32 */
 
 	j_s.d [blink] /* always execute delay slot */
 	seti r1       /* delay slot */
