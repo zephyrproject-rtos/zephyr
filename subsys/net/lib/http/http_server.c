@@ -784,29 +784,27 @@ ws_only:
 			struct net_buf *hdr, *payload;
 			struct net_pkt *cloned;
 
-			ret = net_pkt_split(pkt, pkt->frags,
-					    ctx->websocket.data_waiting,
-					    &payload, &hdr,
-					    ctx->timeout);
-			if (ret < 0) {
-				net_pkt_unref(pkt);
-				return;
-			}
-
-			net_pkt_frag_unref(pkt->frags);
+			payload = pkt->frags;
 			pkt->frags = NULL;
 
 			cloned = net_pkt_clone(pkt, ctx->timeout);
 			if (!cloned) {
 				net_pkt_unref(pkt);
+				net_pkt_frag_unref(payload);
+				return;
+			}
+
+			ret = net_pkt_split(pkt, payload,
+					    ctx->websocket.data_waiting,
+					    &hdr, ctx->timeout);
+			if (ret < 0) {
+				net_pkt_unref(pkt);
+				net_pkt_frag_unref(payload);
+				net_pkt_unref(cloned);
 				return;
 			}
 
 			pkt->frags = payload;
-			payload->frags = NULL;
-
-			net_pkt_compact(pkt);
-
 			cloned->frags = hdr;
 
 			ctx->websocket.pending = cloned;

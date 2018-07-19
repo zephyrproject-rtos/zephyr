@@ -128,7 +128,7 @@ struct net_pkt {
 	};
 
 #if defined(CONFIG_NET_IPV6)
-	u8_t ipv6_ext_len;	/* length of extension headers */
+	u16_t ipv6_ext_len;	/* length of extension headers */
 	u8_t ipv6_ext_opt_len; /* IPv6 ND option length */
 
 	/* Where is the start of the last header before payload data
@@ -141,7 +141,7 @@ struct net_pkt {
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 	u16_t ipv6_fragment_offset;	/* Fragment offset of this packet */
 	u32_t ipv6_fragment_id;	/* Fragment id */
-	u8_t *ipv6_frag_hdr_start;	/* Where starts the fragment header */
+	u16_t ipv6_frag_hdr_start;	/* Where starts the fragment header */
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 #endif /* CONFIG_NET_IPV6 */
 
@@ -343,12 +343,12 @@ static inline void net_pkt_set_ipv6_ext_opt_len(struct net_pkt *pkt,
 	pkt->ipv6_ext_opt_len = len;
 }
 
-static inline u8_t net_pkt_ipv6_ext_len(struct net_pkt *pkt)
+static inline u16_t net_pkt_ipv6_ext_len(struct net_pkt *pkt)
 {
 	return pkt->ipv6_ext_len;
 }
 
-static inline void net_pkt_set_ipv6_ext_len(struct net_pkt *pkt, u8_t len)
+static inline void net_pkt_set_ipv6_ext_len(struct net_pkt *pkt, u16_t len)
 {
 	pkt->ipv6_ext_len = len;
 }
@@ -376,13 +376,13 @@ static inline void net_pkt_set_ipv6_hop_limit(struct net_pkt *pkt,
 }
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
-static inline u8_t *net_pkt_ipv6_fragment_start(struct net_pkt *pkt)
+static inline u16_t net_pkt_ipv6_fragment_start(struct net_pkt *pkt)
 {
 	return pkt->ipv6_frag_hdr_start;
 }
 
 static inline void net_pkt_set_ipv6_fragment_start(struct net_pkt *pkt,
-						   u8_t *start)
+						   u16_t start)
 {
 	pkt->ipv6_frag_hdr_start = start;
 }
@@ -1523,23 +1523,17 @@ static inline bool net_pkt_insert_be32(struct net_pkt *pkt,
 }
 
 /**
- * @brief Split a fragment to two parts at arbitrary offset.
+ * @brief Split a fragment into two parts at arbitrary offset.
  *
- * @details This will generate two new fragments (fragA and fragB) from
- * one (orig_frag). The original fragment is not modified but two new
- * fragments are allocated and returned to the caller. The original fragment
- * must be part of the packet pointed by the pkt parameter. If the len parameter
- * is larger than the amount of data in the orig fragment, then the fragA will
- * contain all the data and fragB will be empty.
+ * @details This will split packet into two parts. Original packet will be
+ * modified. Offset is relative position with input fragment. Input fragment
+ * contains first part of the split. Rest of the fragment chain is in "rest"
+ * parameter provided by caller.
  *
  * @param pkt Network packet
- * @param orig_frag Original network buffer fragment which is to be split.
- * @param len Amount of data in the first returned fragment.
- * @param fragA A fragment is returned. This will contain len bytes that
- * are copied from start of orig_frag.
- * @param fragB Another fragment is returned. This will contain remaining
- * bytes (orig_frag->len - len) from the orig_frag or NULL if all the data
- * was copied into fragA.
+ * @param frag Original network buffer fragment which is to be split.
+ * @param offset Offset relative to input fragment.
+ * @param rest Rest of the fragment chain after split.
  * @param timeout Affects the action taken should the net buf pool be empty.
  * If K_NO_WAIT, then return immediately. If K_FOREVER, then wait as long as
  * necessary. Otherwise, wait up to the specified number of milliseconds before
@@ -1547,9 +1541,23 @@ static inline bool net_pkt_insert_be32(struct net_pkt *pkt,
  *
  * @return 0 on success, <0 otherwise.
  */
-int net_pkt_split(struct net_pkt *pkt, struct net_buf *orig_frag,
-		  u16_t len, struct net_buf **fragA,
-		  struct net_buf **fragB, s32_t timeout);
+int net_pkt_split(struct net_pkt *pkt, struct net_buf *frag, u16_t offset,
+		  struct net_buf **rest, s32_t timeout);
+
+/**
+ * @brief Remove data from the packet at arbitrary offset.
+ *
+ * @details This will remove the data from arbitrary offset. Original packet
+ * will be modified.
+ *
+ * @param pkt Network packet
+ * @param offset Arbitrary offset to packet
+ * @param len Number of bytes to be removed
+ *
+ * @return 0 on success, <0 otherwise
+ *
+ */
+int net_pkt_pull(struct net_pkt *pkt, u16_t offset, u16_t len);
 
 /**
  * @brief Return the fragment and offset within it according to network
