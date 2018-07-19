@@ -24,6 +24,7 @@
 			compatible = "snps,arcv2-intc";
 			interrupt-controller;
 			#interrupt-cells = <2>;
+			reg = <0>;
 		};
 	};
 
