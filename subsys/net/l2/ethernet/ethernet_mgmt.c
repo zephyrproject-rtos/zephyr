@@ -99,8 +99,7 @@ static int ethernet_set_config(u32_t mgmt_request,
 			return -ENOTSUP;
 		}
 
-		if (params->qav_queue_param.delta_bandwidth < 0
-		    || params->qav_queue_param.delta_bandwidth > 100) {
+		if (params->qav_queue_param.delta_bandwidth > 100) {
 			return -EINVAL;
 		}
 
