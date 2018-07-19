@@ -37,17 +37,7 @@ void _impl_k_thread_abort(k_tid_t thread)
 	_k_thread_single_abort(thread);
 	_thread_monitor_exit(thread);
 
-	if (_is_in_isr()) {
-		irq_unlock(key);
-	} else {
-		if (_current == thread) {
-			(void)_Swap(key);
-			CODE_UNREACHABLE;
-		}
-
-		/* The abort handler might have altered the ready queue. */
-		_reschedule(key);
-	}
+	_reschedule(key);
 }
 #endif
 
