@@ -128,7 +128,7 @@ struct ethernet_api {
 	 * should be set by driver if statistics needs to be collected
 	 * for that driver.
 	 */
-	struct net_stats_eth *stats;
+	struct net_stats_eth *(*get_stats)(struct net_if *iface);
 #endif
 
 	/** Get the device capabilities */
