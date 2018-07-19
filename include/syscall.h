@@ -12,6 +12,7 @@
 #include <zephyr/types.h>
 #include <syscall_list.h>
 #include <syscall_macros.h>
+#include <arch/cpu.h>
 
 #ifdef __cplusplus
 extern "C" {
