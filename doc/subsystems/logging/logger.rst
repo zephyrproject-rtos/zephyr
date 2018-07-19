@@ -49,15 +49,14 @@ For each level following set of macros are available:
 There are two configuration categories: configurations per module and global
 configuration. When logging is enabled globally, it works for modules. However,
 modules can disable logging locally. Every module can specify its own logging
-level. The module must define the :c:macro:`LOG_LEVEL` macro before including
-the :file:`include/logging/log.h` header file to do so. Unless a global
-override is set, the module logging level will be honored. The global override
-can only increase the logging level. It cannot be used to lower module logging
-levels that were previously set higher. It is also possible to globally limit
-logs by providing maximal severity level present in the system, where maximal
-means lowest severity (e.g. if maximal level in the system is set to info, it
-means that errors, warnings and info levels are present but debug messages are
-excluded).
+level. The module must define the :c:macro:`LOG_LEVEL` macro before using the
+API. Unless a global override is set, the module logging level will be honored.
+The global override can only increase the logging level. It cannot be used to
+lower module logging levels that were previously set higher. It is also possible
+to globally limit logs by providing maximal severity level present in the
+system, where maximal means lowest severity (e.g. if maximal level in the system
+is set to info, it means that errors, warnings and info levels are present but
+debug messages are excluded).
 
 Each module which is using the logger must specify its unique name and
 register itself to the logger. If module consists of more than one file,
