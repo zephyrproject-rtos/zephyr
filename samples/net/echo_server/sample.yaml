@@ -10,36 +10,34 @@ tests:
     platform_whitelist: qemu_x86 sam_e70_xplained frdm_k64f
       qemu_cortex_m3 arduino_101 frdm_kw41z
   test_802154:
-    extra_args: CONF_FILE="prj_qemu_802154.conf"
+    extra_args: OVERLAY_CONFIG="overlay-qemu_802154.conf"
     platform_whitelist: qemu_x86
   test_bt:
-    extra_args: CONF_FILE="prj_bt.conf"
+    extra_args: OVERLAY_CONFIG="overlay-bt.conf"
     platform_whitelist: qemu_x86
     tags: bluetooth
   test_mcr20a:
-    extra_args: CONF_FILE="prj_frdm_k64f_mcr20a.conf"
+    extra_args: OVERLAY_CONFIG="overlay-frdm_k64f_mcr20a.conf"
     platform_whitelist: frdm_k64f
   test_nrf:
-    extra_args: CONF_FILE="prj_nrf5.conf"
     platform_whitelist: nrf52840_pca10056
   test_usbnet:
     harness: net
-    extra_args: CONF_FILE="prj_netusb.conf"
+    extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     platform_whitelist: quark_se_c1000_devboard 96b_carbon
     tags: net usb
   test_usbnet_composite:
     harness: net
-    extra_args: CONF_FILE="prj_netusb.conf"
+    extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:
       - CONFIG_USB_COMPOSITE_DEVICE=y
     platform_whitelist: quark_se_c1000_devboard 96b_carbon
     tags: net usb
   test_nrf_openthread:
-    extra_args: CONF_FILE="prj_nrf52840_ot.conf"
+    extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     platform_whitelist: nrf52840_pca10056
   test_kw41z:
-    extra_args: CONF_FILE="prj_frdm_kw41z.conf"
     platform_whitelist: frdm_kw41z
   test_kw41z_openthread:
-    extra_args: CONF_FILE="prj_frdm_kw41z_ot.conf"
+    extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     platform_whitelist: frdm_kw41z
