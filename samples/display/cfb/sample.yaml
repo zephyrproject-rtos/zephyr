@@ -1,0 +1,13 @@
+common:
+  harness: display
+  tags: display
+sample:
+  description: Character framebuffer test
+  name: cfb sample
+tests:
+  test_ssd1306:
+    extra_args: OVERLAY_CONFIG="overlay-frdm_k64f_ssd1306.conf"
+    platform_whitelist: frdm_k64f
+  test_ssd1673:
+    extra_args: OVERLAY_CONFIG="overlay-reel_board_ssd1673.conf"
+    platform_whitelist: reel_board
