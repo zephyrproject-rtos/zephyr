@@ -16,7 +16,8 @@ void stop_tcp(void);
 
 struct net_pkt *build_reply_pkt(const char *name,
 				struct net_app_ctx *ctx,
-				struct net_pkt *pkt);
+				struct net_pkt *pkt,
+				u8_t proto_len);
 void pkt_sent(struct net_app_ctx *ctx, int status,
 	      void *token, void *user_data);
 void panic(const char *msg);
