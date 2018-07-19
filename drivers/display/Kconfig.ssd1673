@@ -1,0 +1,29 @@
+# Kconfig - SSD1673 display controller configuration options
+
+#
+# Copyright (c) 2018 Phytec Messtechnik GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SSD1673
+	bool "SSD1673 display driver"
+	depends on SPI
+	help
+	  Enable driver for SSD1673 display driver.
+
+if SSD1673
+
+choice
+	prompt "EPD display"
+	default SSD1673_EPD_GDE0213B1
+	help
+	  Specify the type of EPD connected to the SSD1673 controller.
+
+config SSD1673_EPD_GDE0213B1
+	bool
+	prompt "GDE0213B1 2.13\""
+
+endchoice
+
+endif #SSD1673
