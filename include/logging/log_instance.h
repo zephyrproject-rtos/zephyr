@@ -12,12 +12,6 @@
 extern "C" {
 #endif
 
-#define LOG_LEVEL_NONE  0
-#define LOG_LEVEL_ERR   1
-#define LOG_LEVEL_WRN   2
-#define LOG_LEVEL_INF   3
-#define LOG_LEVEL_DBG   4
-
 /** @brief Constant data associated with the source of log messages. */
 struct log_source_const_data {
 	const char *name;

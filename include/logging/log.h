@@ -21,6 +21,12 @@ extern "C" {
  * @{
  */
 
+#define LOG_LEVEL_NONE  0
+#define LOG_LEVEL_ERR   1
+#define LOG_LEVEL_WRN   2
+#define LOG_LEVEL_INF   3
+#define LOG_LEVEL_DBG   4
+
 /**
  * @brief Writes an ERROR level message to the log.
  *
@@ -31,7 +37,6 @@ extern "C" {
  * followed by as many values as specifiers.
  */
 #define LOG_ERR(...)    _LOG(LOG_LEVEL_ERR, __VA_ARGS__)
-
 
 /**
  * @brief Writes a WARNING level message to the log.
@@ -242,37 +247,45 @@ extern "C" {
  */
 int log_printk(const char *fmt, va_list ap);
 
-/* Register a module unless explicitly skipped (using LOG_SKIP_MODULE_REGISTER).
- * Skipping may be used in 2 cases:
+
+#define __DYNAMIC_MODULE_REGISTER(_name)\
+	struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(_name)	\
+	__attribute__ ((section("." STRINGIFY(				\
+				     LOG_ITEM_DYNAMIC_DATA(_name))))	\
+				     )					\
+	__attribute__((used))
+
+#define _LOG_RUNTIME_MODULE_REGISTER(_name)				\
+	_LOG_EVAL(							\
+		CONFIG_LOG_RUNTIME_FILTERING,				\
+		(; __DYNAMIC_MODULE_REGISTER(_name)),			\
+		()\
+	)
+
+#define _LOG_MODULE_REGISTER(_name, level)				     \
+	const struct log_source_const_data LOG_ITEM_CONST_DATA(_name)	     \
+	__attribute__ ((section("." STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
+	__attribute__((used)) = {					     \
+		.name = STRINGIFY(_name)				     \
+	}								     \
+	_LOG_RUNTIME_MODULE_REGISTER(_name)
+
+/** @brief Macro for registering a module.
+ *
+ * Module registration can be skipped in two cases:
  * - Module consists of more than one file and must be registered only by one
  *   file.
  * - Instance logging is used and there is no need to create module entry.
+ *
+ * @note Module is registered only if LOG_LEVEL for given module is non-zero or
+ *       it is not defined and CONFIG_LOG_DEFAULT_LOG_LEVEL is non-zero.
  */
-
-#if LOG_MODULE_PRESENT
-#if CONFIG_LOG_RUNTIME_FILTERING
-#define LOG_MODULE_REGISTER()						       \
-	_LOG_CONST_ITEM_REGISTER(LOG_MODULE_NAME,			       \
-				 STRINGIFY(LOG_MODULE_NAME),		       \
-				 _LOG_RESOLVED_LEVEL(LOG_LEVEL,                \
-						CONFIG_LOG_DEFAULT_LEVEL));    \
-	struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(LOG_MODULE_NAME)  \
-	__attribute__ ((section("." STRINGIFY(				       \
-				     LOG_ITEM_DYNAMIC_DATA(LOG_MODULE_NAME)))) \
-				     )					       \
-		__attribute__((used))
-#else /*CONFIG_LOG_RUNTIME_FILTERING*/
-
-#define LOG_MODULE_REGISTER()						       \
-	_LOG_CONST_ITEM_REGISTER(LOG_MODULE_NAME,			       \
-				 STRINGIFY(LOG_MODULE_NAME),		       \
-				 _LOG_RESOLVED_LEVEL(LOG_LEVEL,                \
-						CONFIG_LOG_DEFAULT_LEVEL))
-#endif /*CONFIG_LOG_RUNTIME_FILTERING*/
-
-#else /* LOG_MODULE_PRESENT */
-#define LOG_MODULE_REGISTER() /* Empty */
-#endif /* LOG_MODULE_PRESENT */
+#define LOG_MODULE_REGISTER()						\
+	_LOG_EVAL(							\
+		_LOG_LEVEL(),						\
+		(_LOG_MODULE_REGISTER(LOG_MODULE_NAME, _LOG_LEVEL())),	\
+		()/*Empty*/						\
+	)
 
 /**
  * @}

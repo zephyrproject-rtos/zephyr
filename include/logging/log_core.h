@@ -14,27 +14,11 @@
 extern "C" {
 #endif
 
-#ifndef CONFIG_LOG_DEFAULT_LEVEL
-#define CONFIG_LOG_DEFAULT_LEVEL LOG_LEVEL_NONE
-#endif
-
-#ifndef CONFIG_LOG_MAX_LEVEL
-#define CONFIG_LOG_MAX_LEVEL LOG_LEVEL_NONE
-#endif
-
+#if !CONFIG_LOG
+#define CONFIG_LOG_DEFAULT_LEVEL 0
 #define CONFIG_LOG_DOMAIN_ID 0
-
-#define LOG_LEVEL_BITS          3
-
-/* Conditions determining if logger is used in a module on any level. */
-#if CONFIG_LOG &&						\
-	((defined(LOG_LEVEL) && LOG_LEVEL) ||			\
-	(!defined(LOG_LEVEL) && CONFIG_LOG_DEFAULT_LEVEL))
-#define LOG_MODULE_PRESENT 1
-#else
-#define LOG_MODULE_PRESENT 0
+#define CONFIG_LOG_MAX_LEVEL 0
 #endif
-
 
 /** @brief Macro for returning local level value if defined or default.
  *
@@ -53,10 +37,46 @@ extern "C" {
 #define _LOG_XXXX4 _LOG_YYYY,
 
 #define __LOG_RESOLVED_LEVEL2(one_or_two_args, _level, _default) \
-	__LOG_RESOLVED_LEVEL3(one_or_two_args _level, _default)
+	__LOG_ARG_2(one_or_two_args _level, _default)
 
-#define __LOG_RESOLVED_LEVEL3(ignore_this, val, ...) val
+#define LOG_DEBRACKET(x) x
 
+#define __LOG_ARG_2(ignore_this, val, ...) val
+#define __LOG_ARG_2_DEBRACKET(ignore_this, val, ...) LOG_DEBRACKET val
+
+/**
+ * @brief Macro for conditional code generation if provided log level allows.
+ *
+ * Macro behaves similarly to standard #if #else #endif clause. The difference is
+ * that it is evaluated when used and not when header file is included.
+ *
+ * @param _eval_level Evaluated level. If level evaluates to one of existing log
+ *		      log level (1-4) then macro evaluates to _iftrue.
+ * @param _iftrue     Code that should be inserted when evaluated to true. Note,
+ *		      that parameter must be provided in brackets.
+ * @param _iffalse    Code that should be inserted when evaluated to false.
+ *		      Note, that parameter must be provided in brackets.
+ */
+#define _LOG_EVAL(_eval_level, _iftrue, _iffalse) \
+	_LOG_EVAL1(_eval_level, _iftrue, _iffalse)
+
+#define _LOG_EVAL1(_eval_level, _iftrue, _iffalse) \
+	_LOG_EVAL2(_LOG_ZZZZ##_eval_level, _iftrue, _iffalse)
+
+#define _LOG_ZZZZ1 _LOG_YYYY,
+#define _LOG_ZZZZ2 _LOG_YYYY,
+#define _LOG_ZZZZ3 _LOG_YYYY,
+#define _LOG_ZZZZ4 _LOG_YYYY,
+
+#define _LOG_EVAL2(one_or_two_args, _iftrue, _iffalse) \
+	__LOG_ARG_2_DEBRACKET(one_or_two_args _iftrue, _iffalse)
+
+/** @brief Macro for getting log level for given module.
+ *
+ * It is evaluated to LOG_LEVEL if defined. Otherwise CONFIG_LOG_DEFAULT_LEVEL
+ * is used.
+ */
+#define _LOG_LEVEL() _LOG_RESOLVED_LEVEL(LOG_LEVEL, CONFIG_LOG_DEFAULT_LEVEL)
 
 /**
  *  @def LOG_CONST_ID_GET
@@ -64,41 +84,45 @@ extern "C" {
  *
  *  @param _addr Address of the element.
  */
+#define LOG_CONST_ID_GET(_addr)						       \
+	_LOG_EVAL(							       \
+	  _LOG_LEVEL(),							       \
+	  (log_const_source_id((const struct log_source_const_data *)_addr)),  \
+	  (0)								       \
+	)
+
 /**
  * @def LOG_CURRENT_MODULE_ID
  * @brief Macro for getting ID of current module.
  */
+#define LOG_CURRENT_MODULE_ID()						\
+	_LOG_EVAL(							\
+	  _LOG_LEVEL(),							\
+	  (log_const_source_id(&LOG_ITEM_CONST_DATA(LOG_MODULE_NAME))),	\
+	  (0)								\
+	)
+
 /**
  * @def LOG_CURRENT_DYNAMIC_DATA_ADDR
  * @brief Macro for getting address of dynamic structure of current module.
  */
-#if LOG_MODULE_PRESENT
-#define LOG_CONST_ID_GET(_addr) \
-	log_const_source_id((const struct log_source_const_data *)_addr)
-
-#define LOG_CURRENT_MODULE_ID()	\
-	log_const_source_id(&LOG_ITEM_CONST_DATA(LOG_MODULE_NAME))
-
-#define LOG_CURRENT_DYNAMIC_DATA_ADDR() \
-	(&LOG_ITEM_DYNAMIC_DATA(LOG_MODULE_NAME))
-#else /* LOG_MODULE_PRESENT */
-#define LOG_CONST_ID_GET(_addr) 0
-
-#define LOG_CURRENT_MODULE_ID() 0
-
-#define LOG_CURRENT_DYNAMIC_DATA_ADDR() ((struct log_source_dynamic_data *)0)
-#endif /* LOG_MODULE_PRESENT */
+#define LOG_CURRENT_DYNAMIC_DATA_ADDR()			\
+	_LOG_EVAL(					\
+	  _LOG_LEVEL(),					\
+	  (&LOG_ITEM_DYNAMIC_DATA(LOG_MODULE_NAME)),	\
+	  ((struct log_source_dynamic_data *)0)		\
+	)
 
 /** @brief Macro for getting ID of the element of the section.
  *
  *  @param _addr Address of the element.
  */
-#if LOG_MODULE_PRESENT
-#define LOG_DYNAMIC_ID_GET(_addr) \
-	log_dynamic_source_id((struct log_source_dynamic_data *)_addr)
-#else
-#define LOG_DYNAMIC_ID_GET(_addr) 0
-#endif
+#define LOG_DYNAMIC_ID_GET(_addr)					     \
+	_LOG_EVAL(							     \
+	  _LOG_LEVEL(),							     \
+	  (log_dynamic_source_id((struct log_source_dynamic_data *)_addr)),  \
+	  (0)								     \
+	)
 
 /******************************************************************************/
 /****************** Internal macros for log frontend **************************/
@@ -166,23 +190,22 @@ extern "C" {
 /******************************************************************************/
 /****************** Macros for standard logging *******************************/
 /******************************************************************************/
-#define __LOG(_level, _id, _filter, ...)				   \
-	do {								   \
-		if (_LOG_CONST_LEVEL_CHECK(_level) &&			   \
-		    (_level <= LOG_RUNTIME_FILTER(_filter))) {		   \
-			struct log_msg_ids src_level = {		   \
-				.level = _level,			   \
-				.source_id = _id,			   \
-				.domain_id = CONFIG_LOG_DOMAIN_ID	   \
-			};						   \
-			__LOG_INTERNAL(src_level, __VA_ARGS__);		   \
-		} else {						   \
-			/* arg checker evaluated when log is filtered out  \
-			 * to ensure that __VA_ARGS__ are evaluated only   \
-			 * once giving always same side effects.	   \
-			 */						   \
-			log_printf_arg_checker(__VA_ARGS__);		   \
-		}							   \
+#define __LOG(_level, _id, _filter, ...)				    \
+	do {								    \
+		if (_LOG_CONST_LEVEL_CHECK(_level) &&			    \
+		    (_level <= LOG_RUNTIME_FILTER(_filter))) {		    \
+			struct log_msg_ids src_level = {		    \
+				.level = _level,			    \
+				.source_id = _id,			    \
+				.domain_id = CONFIG_LOG_DOMAIN_ID	    \
+			};						    \
+			__LOG_INTERNAL(src_level, __VA_ARGS__);		    \
+		} else {						    \
+			/* arg checker evaluated when log is filtered out */\
+			/* to ensure that __VA_ARGS__ are evaluated only */ \
+			/* once giving always same side effects.*/	    \
+			log_printf_arg_checker(__VA_ARGS__);		    \
+		}							    \
 	} while (0)
 
 #define _LOG(_level, ...)			       \
@@ -234,6 +257,9 @@ extern "C" {
 /******************************************************************************/
 /****************** Filtering macros ******************************************/
 /******************************************************************************/
+
+/** @brief Number of bits used to encode log level. */
+#define LOG_LEVEL_BITS 3
 
 /** @brief Filter slot size. */
 #define LOG_FILTER_SLOT_SIZE LOG_LEVEL_BITS
