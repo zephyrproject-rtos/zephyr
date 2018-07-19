@@ -25,7 +25,6 @@ void test_dummy_device(void)
 
 	device_busy_set(dev);
 	device_busy_clear(dev);
-
 }
 
 static void test_dynamic_name(void)
@@ -69,6 +68,8 @@ void test_dummy_device_pm(void)
 	busy = device_any_busy_check();
 	zassert_true((busy == 0), NULL);
 
+	/* Set device state to DEVICE_PM_ACTIVE_STATE */
+	device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 	device_busy_set(dev);
 
 	busy = device_any_busy_check();
