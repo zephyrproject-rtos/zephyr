@@ -141,8 +141,13 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * value.
 	 */
 #ifdef CONFIG_ARC_STACK_CHECKING
+#ifdef CONFIG_ARC_HAS_SECURE
+	pInitCtx->sec_stat |= _ARC_V2_SEC_STAT_SSC;
+	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
+#else
 	pInitCtx->status32 = _ARC_V2_STATUS32_SC |
 		 _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
+#endif
 #ifdef CONFIG_USERSPACE
 	if (options & K_USER) {
 		thread->arch.u_stack_top = (u32_t)pStackMem;
