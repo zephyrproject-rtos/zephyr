@@ -1665,50 +1665,50 @@ bool net_pkt_insert(struct net_pkt *pkt, struct net_buf *frag,
 	return insert_data(pkt, frag, temp, offset, len, data, timeout);
 }
 
-int net_pkt_split(struct net_pkt *pkt, struct net_buf *orig_frag,
-		  u16_t len, struct net_buf **fragA,
-		  struct net_buf **fragB, s32_t timeout)
+int net_pkt_split(struct net_pkt *pkt, struct net_buf *frag, u16_t offset,
+		  struct net_buf **rest, s32_t timeout)
 {
-	if (!pkt || !orig_frag) {
+	struct net_buf *prev;
+
+	if (!pkt || !frag || !offset || !rest) {
 		return -EINVAL;
 	}
 
-	NET_ASSERT(fragA && fragB);
+	prev = frag;
+	*rest = NULL;
 
-	if (len == 0) {
-		*fragA = NULL;
-		*fragB = NULL;
-		return 0;
-	}
-
-	if (len > orig_frag->len) {
-		*fragA = net_pkt_get_frag(pkt, timeout);
-		if (!*fragA) {
-			return -ENOMEM;
+	while (frag) {
+		if (offset < frag->len) {
+			break;
 		}
 
-		memcpy(net_buf_add(*fragA, orig_frag->len), orig_frag->data,
-		       orig_frag->len);
+		offset -= frag->len;
+		prev = frag;
+		frag = frag->frags;
+	}
 
-		*fragB = NULL;
+	if (!frag && offset) {
+		return -EINVAL;
+	}
+
+	if (!frag && !offset) {
+		*rest = frag;
+		prev->frags = NULL;
+
 		return 0;
 	}
 
-	*fragA = net_pkt_get_frag(pkt, timeout);
-	if (!*fragA) {
+	*rest = net_pkt_get_frag(pkt, timeout);
+	if (!*rest) {
 		return -ENOMEM;
 	}
 
-	*fragB = net_pkt_get_frag(pkt, timeout);
-	if (!*fragB) {
-		net_pkt_frag_unref(*fragA);
-		*fragA = NULL;
-		return -ENOMEM;
-	}
+	memcpy(net_buf_add(*rest, frag->len - offset),
+	       frag->data + offset, frag->len - offset);
+	frag->len = offset;
 
-	memcpy(net_buf_add(*fragA, len), orig_frag->data, len);
-	memcpy(net_buf_add(*fragB, orig_frag->len - len),
-	       orig_frag->data + len, orig_frag->len - len);
+	(*rest)->frags = frag->frags;
+	frag->frags = NULL;
 
 	return 0;
 }
@@ -1827,6 +1827,100 @@ static int net_pkt_get_addr(struct net_pkt *pkt, bool is_src,
 		addr4->sin_port = port;
 	} else {
 		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+int net_pkt_pull(struct net_pkt *pkt, u16_t offset, u16_t len)
+{
+	struct net_buf *frag;
+	struct net_buf *temp;
+	struct net_buf *prev;
+	u8_t avail;
+
+	if (!pkt || !len) {
+		return -EINVAL;
+	}
+
+	prev = NULL;
+	frag = pkt->frags;
+
+	while (1) {
+		if (!frag) {
+			return -EINVAL;
+		}
+
+		if (offset < frag->len) {
+			break;
+		}
+
+		offset -= frag->len;
+		prev = frag;
+		frag = frag->frags;
+	}
+
+	/* Pull the data */
+	while (frag && len) {
+		if (!offset) {
+			if (len > frag->len) {
+				len -= frag->len;
+
+				temp = frag;
+				frag = frag->frags;
+				temp->frags = NULL;
+				offset = 0;
+
+				net_buf_unref(temp);
+
+				if (prev) {
+					prev->frags = frag;
+				} else {
+					pkt->frags = frag;
+				}
+			} else {
+				memmove(frag->data, frag->data + len,
+					frag->len - len);
+				frag->len -= len;
+				len = 0;
+
+				if (!frag->len) {
+					temp = frag;
+					frag = frag->frags;
+					temp->frags = NULL;
+
+					net_buf_unref(temp);
+
+					if (prev) {
+						prev->frags = frag;
+					} else {
+						pkt->frags = frag;
+					}
+				}
+			}
+		} else {
+			avail = frag->len - offset;
+
+			if (len > avail) {
+				frag->len = offset;
+
+				len -= avail;
+				prev = frag;
+				frag = frag->frags;
+				offset = 0;
+			} else {
+				memmove(frag->data + offset,
+					frag->data + offset + len,
+					avail - len);
+				frag->len -= len;
+				len = 0;
+			}
+		}
+	}
+
+	if (len) {
+		NET_ERR("Could not pull given length out of net packet");
+		return -EINVAL;
 	}
 
 	return 0;

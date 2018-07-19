@@ -601,90 +601,126 @@ const char *net_ipv6_nbr_state2str(enum net_ipv6_nbr_state state)
 int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_idx,
 			       u16_t *last_hdr_idx)
 {
-	struct net_ipv6_hdr *hdr = NET_IPV6_HDR(pkt);
-	struct net_buf *frag = pkt->frags;
-	int pos = 0;
-	u16_t offset, prev, tmp;
+	struct net_buf *next_hdr_frag;
+	struct net_buf *last_hdr_frag;
+	struct net_buf *frag;
+	u16_t pkt_offset;
+	u16_t offset;
+	u16_t length;
 	u8_t next_hdr;
-	u8_t length;
 	u8_t next;
 
-	next = hdr->nexthdr;
+	if (!pkt || !pkt->frags || !next_hdr_idx || !last_hdr_idx) {
+		return -EINVAL;
+	}
+
+	next = NET_IPV6_HDR(pkt)->nexthdr;
 
 	/* Initial value if no extension fragments are found */
 	*next_hdr_idx = 6;
-
-	offset = *last_hdr_idx = sizeof(struct net_ipv6_hdr);
+	*last_hdr_idx = sizeof(struct net_ipv6_hdr);
 
 	/* First check the simplest case where there is no extension headers
 	 * in the packet. There cannot be any extensions after the normal or
 	 * typical IP protocols
 	 */
 	if (next == IPPROTO_ICMPV6 || next == IPPROTO_UDP ||
-	    next == IPPROTO_TCP) {
+	    next == IPPROTO_TCP || next == NET_IPV6_NEXTHDR_NONE) {
 		return 0;
 	}
 
-	prev = pos;
+	frag = pkt->frags;
+	offset = *last_hdr_idx;
+	*next_hdr_idx = *last_hdr_idx;
+	next_hdr_frag = last_hdr_frag = frag;
 
 	while (frag) {
 		frag = net_frag_read_u8(frag, offset, &offset, &next_hdr);
-		if (!frag && offset == 0xffff) {
+		if (!frag) {
 			goto fail;
 		}
 
-		frag = net_frag_read_u8(frag, offset, &offset, &length);
-		if (!frag && offset == 0xffff) {
-			goto fail;
-		}
-
-		length = length * 8 + 8;
-
-		/* TODO: Add here more IPv6 extension headers to check */
 		switch (next) {
-		case NET_IPV6_NEXTHDR_NONE:
-			*next_hdr_idx = prev;
-			*last_hdr_idx = offset - 2;
-			goto out;
-
 		case NET_IPV6_NEXTHDR_FRAG:
-			prev = pos;
-			pos = offset - 2;
-			offset += 2 + 4;
+			frag = net_frag_skip(frag, offset, &offset, 7);
+			if (!frag) {
+				goto fail;
+			}
+
 			break;
 
 		case NET_IPV6_NEXTHDR_HBHO:
-			prev = pos;
-			pos = offset - 2;
-			offset += length - 2;
+			length = 0;
+			frag = net_frag_read_u8(frag, offset, &offset,
+						(u8_t *)&length);
+			if (!frag) {
+				goto fail;
+			}
+
+			length = length * 8 + 8;
+
+			frag = net_frag_skip(frag, offset, &offset, length - 2);
+			if (!frag) {
+				goto fail;
+			}
+
 			break;
 
+		case NET_IPV6_NEXTHDR_NONE:
 		case IPPROTO_ICMPV6:
 		case IPPROTO_UDP:
 		case IPPROTO_TCP:
-			prev = pos;
-			pos = *next_hdr_idx = offset - 2;
 			goto out;
 
 		default:
+			/* TODO: Add more IPv6 extension headers to check */
 			goto fail;
 		}
 
-		/* Get the next header value */
-		frag = net_frag_read_u8(frag, pos, &tmp, &next);
-		if (!frag && pos == 0xffff) {
-			goto fail;
-		}
+		*next_hdr_idx = *last_hdr_idx;
+		next_hdr_frag = last_hdr_frag;
+
+		*last_hdr_idx = offset;
+		last_hdr_frag = frag;
+
+		next = next_hdr;
 	}
-
-out:
-	*next_hdr_idx = prev;
-	*last_hdr_idx = offset - 2;
-
-	return 0;
 
 fail:
 	return -EINVAL;
+
+out:
+	/* Current next_hdr_idx offset is based on respective fragment, but we
+	 * need to calculate next_hdr_idx offset based on whole packet.
+	 */
+	pkt_offset = 0;
+	frag = pkt->frags;
+	while (frag) {
+		if (next_hdr_frag == frag) {
+			*next_hdr_idx += pkt_offset;
+			break;
+		}
+
+		pkt_offset += frag->len;
+		frag = frag->frags;
+	}
+
+	/* Current last_hdr_idx offset is based on respective fragment, but we
+	 * need to calculate last_hdr_idx offset based on whole packet.
+	 */
+	pkt_offset = 0;
+	frag = pkt->frags;
+	while (frag) {
+		if (last_hdr_frag == frag) {
+			*last_hdr_idx += pkt_offset;
+			break;
+		}
+
+		pkt_offset += frag->len;
+		frag = frag->frags;
+	}
+
+	return 0;
 }
 
 const struct in6_addr *net_ipv6_unspecified_address(void)
@@ -3187,6 +3223,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 {
 	struct net_pkt *pkt;
 	struct net_buf *last;
+	struct net_buf *frag;
 	u8_t next_hdr;
 	int i, len, ret;
 	u16_t pos;
@@ -3202,6 +3239,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	 */
 	for (i = 1; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
 		int removed_len;
+		int ret;
 
 		pkt = reass->pkt[i];
 
@@ -3209,16 +3247,16 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 		 * the beginning of the fragment.
 		 */
 		removed_len = net_pkt_ipv6_fragment_start(pkt) +
-			sizeof(struct net_ipv6_frag_hdr) -
-			pkt->frags->data;
+			      sizeof(struct net_ipv6_frag_hdr);
 
 		NET_DBG("Removing %d bytes from start of pkt %p",
 			removed_len, pkt->frags);
 
-		NET_ASSERT(removed_len >= (sizeof(struct net_ipv6_hdr) +
-					   sizeof(struct net_ipv6_frag_hdr)));
-
-		net_buf_pull(pkt->frags, removed_len);
+		ret = net_pkt_pull(pkt, 0, removed_len);
+		if (ret) {
+			NET_ERR("Failed to pull headers");
+			NET_ASSERT(ret != 0);
+		}
 
 		/* Attach the data to previous pkt */
 		last->frags = pkt->frags;
@@ -3237,23 +3275,23 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	 * and set the various pointers and values in packet.
 	 */
 
-	next_hdr = net_pkt_ipv6_fragment_start(pkt)[0];
+	frag = net_frag_read_u8(pkt->frags, net_pkt_ipv6_fragment_start(pkt),
+				&pos, &next_hdr);
+	if (!frag && pos == 0xFFFF) {
+		NET_ERR("Failed to read next header");
+		NET_ASSERT(frag);
+	}
 
-	/* How much data we need to move in order to get rid of the
-	 * fragmentation header.
-	 */
-	len = pkt->frags->len - sizeof(struct net_ipv6_frag_hdr) -
-		(net_pkt_ipv6_fragment_start(pkt) - pkt->frags->data);
-
-	memmove(net_pkt_ipv6_fragment_start(pkt),
-		net_pkt_ipv6_fragment_start(pkt) +
-		sizeof(struct net_ipv6_frag_hdr), len);
+	ret = net_pkt_pull(pkt, net_pkt_ipv6_fragment_start(pkt),
+			   sizeof(struct net_ipv6_frag_hdr));
+	if (ret) {
+		NET_ERR("Failed to pull fragmentation header");
+		NET_ASSERT(ret);
+	}
 
 	/* This one updates the previous header's nexthdr value */
 	net_pkt_write_u8(pkt, pkt->frags, net_pkt_ipv6_hdr_prev(pkt),
 			  &pos, next_hdr);
-
-	pkt->frags->len -= sizeof(struct net_ipv6_frag_hdr);
 
 	if (!net_pkt_compact(pkt)) {
 		NET_ERR("Cannot compact reassembly packet %p", pkt);
@@ -3367,14 +3405,14 @@ static int shift_packets(struct net_ipv6_reassembly *reass, int pos)
 static enum net_verdict handle_fragment_hdr(struct net_pkt *pkt,
 					    struct net_buf *frag,
 					    int total_len,
-					    u16_t buf_offset)
+					    u16_t buf_offset,
+					    u16_t *loc,
+					    u8_t nexthdr)
 {
 	struct net_ipv6_reassembly *reass = NULL;
 	u32_t id;
-	u16_t loc;
 	u16_t offset;
 	u16_t flag;
-	u8_t nexthdr;
 	u8_t more;
 	bool found;
 	int i;
@@ -3391,14 +3429,11 @@ static enum net_verdict handle_fragment_hdr(struct net_pkt *pkt,
 		reassembly_init_done = true;
 	}
 
-	net_pkt_set_ipv6_fragment_start(pkt, frag->data + buf_offset);
-
 	/* Each fragment has a fragment header. */
-	frag = net_frag_read_u8(frag, buf_offset, &loc, &nexthdr);
-	frag = net_frag_skip(frag, loc, &loc, 1); /* reserved */
-	frag = net_frag_read_be16(frag, loc, &loc, &flag);
-	frag = net_frag_read_be32(frag, loc, &loc, &id);
-	if (!frag && loc == 0xffff) {
+	frag = net_frag_skip(frag, buf_offset, loc, 1); /* reserved */
+	frag = net_frag_read_be16(frag, *loc, loc, &flag);
+	frag = net_frag_read_be32(frag, *loc, loc, &id);
+	if (!frag && *loc == 0xffff) {
 		goto drop;
 	}
 
@@ -3510,130 +3545,44 @@ drop:
 	return NET_DROP;
 }
 
-static int get_next_hdr(struct net_pkt *pkt, u16_t *next_hdr_idx,
-			u16_t *last_hdr_idx, u8_t *next_hdr)
-{
-	struct net_buf *buf;
-	u16_t pos;
-	int ret;
-
-	/* We need to fix the next header value so find out where
-	 * is the last IPv6 extension header. The next_hdr_idx value is
-	 * offset from the start of the 1st fragment, it is not the
-	 * actual next header value.
-	 */
-	ret = net_ipv6_find_last_ext_hdr(pkt, next_hdr_idx, last_hdr_idx);
-	if (ret < 0) {
-		NET_DBG("Cannot find the last IPv6 ext header");
-		return ret;
-	}
-
-	/* The IPv6 must fit into first fragment, otherwise the next read
-	 * will fail.
-	 */
-	if (*next_hdr_idx > pkt->frags->len) {
-		NET_DBG("IPv6 header too short (%d vs %d)", *next_hdr_idx,
-			pkt->frags->len);
-		return -EINVAL;
-	}
-
-	if (*last_hdr_idx > pkt->frags->len) {
-		NET_DBG("IPv6 header too short (%d vs %d)", *last_hdr_idx,
-			pkt->frags->len);
-		return -EINVAL;
-	}
-
-	buf = net_frag_read_u8(pkt->frags, *next_hdr_idx, &pos, next_hdr);
-	if (!buf && pos == 0xffff) {
-		NET_DBG("Next header too far (%d vs %d)", *next_hdr_idx,
-			pkt->frags->len);
-		return -EINVAL;
-	}
-
-	return 0;
-}
+#define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
 static int send_ipv6_fragment(struct net_if *iface,
 			      struct net_pkt *pkt,
-			      struct net_buf *orig,
-			      struct net_buf *prev,
-			      struct net_buf *frag,
-			      u16_t ipv6_len,
-			      u16_t offset,
-			      int len,
+			      struct net_buf **rest,
+			      u16_t ipv6_hdrs_len,
+			      u16_t fit_len,
+			      u16_t frag_offset,
 			      u8_t next_hdr,
 			      u16_t next_hdr_idx,
+			      u8_t last_hdr,
 			      u16_t last_hdr_idx,
-			      bool final,
-			      int frag_count)
+			      u16_t frag_count)
 {
-	struct net_buf *rest = NULL, *end = NULL, *orig_copy = NULL;
+	struct net_pkt *ipv6 = NULL;
+	bool final;
 	struct net_ipv6_frag_hdr hdr;
-	struct net_pkt *ipv6;
+	struct net_buf *frag;
+	struct net_buf *temp;
 	u16_t pos;
+	bool res;
 	int ret;
 
-	/* Prepare the pkt so that the IPv6 packet will be sent properly
-	 * to the device driver.
-	 */
-	if (net_pkt_context(pkt)) {
-		ipv6 = net_pkt_get_tx(net_pkt_context(pkt), FRAG_BUF_WAIT);
-	} else {
-		ipv6 = net_pkt_get_reserve_tx(
-			net_if_get_ll_reserve(iface, &NET_IPV6_HDR(pkt)->dst),
-			FRAG_BUF_WAIT);
-	}
-
+	ipv6 = net_pkt_clone(pkt, BUF_ALLOC_TIMEOUT);
 	if (!ipv6) {
-		NET_DBG("Cannot get packet (%d)", -ENOMEM);
+		NET_DBG("Cannot clone %p", ipv6);
 		return -ENOMEM;
 	}
 
-	/* How much stuff we can send from this fragment so that it will fit
-	 * into IPv6 MTU (1280 bytes).
+	/* And we need to update the last header in the IPv6 packet to point to
+	 * fragment header.
 	 */
-	if (len > 0) {
-		NET_ASSERT_INFO(len <= (NET_IPV6_MTU -
-					sizeof(struct net_ipv6_frag_hdr) -
-					ipv6_len),
-				"len %u, frag->len %d", len, frag->len);
-
-		ret = net_pkt_split(pkt, frag, len, &end, &rest,
-				    FRAG_BUF_WAIT);
-		if (ret < 0) {
-			NET_DBG("Cannot split fragment (%d)", ret);
-			goto free_pkts;
-		}
+	temp = net_pkt_write_u8(ipv6, ipv6->frags, next_hdr_idx, &pos,
+				NET_IPV6_NEXTHDR_FRAG);
+	if (!temp && pos == 0xffff) {
+		ret = -EINVAL;
+		goto fail;
 	}
-
-	/* So now the frag is split into two pieces, first one is called "end"
-	 * (as it is the end of the packet), and the second one is called
-	 * "rest" (as that part is the rest we need to still send).
-	 *
-	 * Then take out the "frag" from the list as it is now split and not
-	 * needed.
-	 */
-
-	if (rest) {
-		rest->frags = frag->frags;
-		frag->frags = NULL;
-		net_pkt_frag_unref(frag);
-	}
-
-	if (prev) {
-		prev->frags = end;
-	} else {
-		pkt->frags = end;
-	}
-
-	if (end) {
-		end->frags = NULL;
-	}
-
-	memcpy(ipv6, pkt, sizeof(struct net_pkt));
-
-	/* We must not take the fragments from the original packet (yet) */
-	ipv6->frags = NULL;
 
 	/* Update the extension length metadata so that upper layer checksum
 	 * will be calculated properly by net_ipv6_finalize().
@@ -3642,53 +3591,55 @@ static int send_ipv6_fragment(struct net_if *iface,
 				 net_pkt_ipv6_ext_len(pkt) +
 				 sizeof(struct net_ipv6_frag_hdr));
 
-	orig_copy = net_buf_clone(orig, FRAG_BUF_WAIT);
-	if (!orig_copy) {
-		ret = -ENOMEM;
-		NET_DBG("Cannot clone IPv6 header (%d)", ret);
-		goto free_pkts;
+	frag = *rest;
+	if (fit_len < net_buf_frags_len(*rest)) {
+		ret = net_pkt_split(pkt, frag, fit_len, rest, FRAG_BUF_WAIT);
+		if (ret < 0) {
+			net_buf_unref(frag);
+			goto fail;
+		}
+	} else {
+		*rest = NULL;
 	}
 
-	/* Then add the IPv6 header into the packet. */
-	net_pkt_frag_insert(ipv6, orig_copy);
+	final = false;
+	/* *rest == NULL means no more data to send */
+	if (!*rest) {
+		final = true;
+	}
 
-	/* Avoid double free if there is an error later in this function. */
-	orig_copy = NULL;
-
-	/* And we need to update the last header in the IPv6 packet to point to
-	 * fragment header.
-	 */
-	net_pkt_write_u8(ipv6, ipv6->frags, next_hdr_idx, &pos,
-			 NET_IPV6_NEXTHDR_FRAG);
-
-	NET_ASSERT(pos != next_hdr_idx);
-
+	/* Append the Fragmentation Header */
+	hdr.nexthdr = next_hdr;
 	hdr.reserved = 0;
 	hdr.id = net_pkt_ipv6_fragment_id(pkt);
-	hdr.offset = htons(((offset / 8) << 3) | !final);
-	hdr.nexthdr = next_hdr;
+	hdr.offset = htons(((frag_offset / 8) << 3) | !final);
 
-	/* Then add the fragmentation header. */
-	ret = net_pkt_insert(ipv6, ipv6->frags, last_hdr_idx,
-			     sizeof(hdr), (u8_t *)&hdr, FRAG_BUF_WAIT);
-	if (!ret) {
-		/* If we could not insert because we are already at the
-		 * end of fragment, then just append data to the end of
-		 * the IPv6 header.
-		 */
-		ret = net_pkt_append_all(ipv6, sizeof(hdr), (u8_t *)&hdr,
-					 FRAG_BUF_WAIT);
-		if (!ret) {
-			ret = -ENOMEM;
-			NET_DBG("Cannot add IPv6 frag header (%d)", ret);
-			goto free_pkts;
-		}
+	res = net_pkt_append_all(ipv6, sizeof(struct net_ipv6_frag_hdr),
+				 (u8_t *)&hdr, FRAG_BUF_WAIT);
+	if (!res) {
+		net_buf_unref(frag);
+		ret = EINVAL;
+		goto fail;
 	}
 
-	/* Tie all the fragments together to form an IPv6 packet. Then
-	 * update the length of the packet and optionally the checksum.
+	/* Attach the first part of split payload to end of the packet. And
+	 * "rest" of the packet will be sent in next iteration.
 	 */
-	net_pkt_frag_add(ipv6, pkt->frags);
+	temp = ipv6->frags;
+	while (1) {
+		if (!temp->frags) {
+			temp->frags = frag;
+			break;
+		}
+
+		temp = temp->frags;
+	}
+
+	res = net_pkt_compact(ipv6);
+	if (!res) {
+		ret = -EINVAL;
+		goto fail;
+	}
 
 	/* Note that we must not calculate possible UDP/TCP/ICMPv6 checksum
 	 * as that is already calculated in the non-fragmented packet.
@@ -3696,10 +3647,8 @@ static int send_ipv6_fragment(struct net_if *iface,
 	ret = net_ipv6_finalize(ipv6, NET_IPV6_NEXTHDR_FRAG);
 	if (ret < 0) {
 		NET_DBG("Cannot create IPv6 packet (%d)", ret);
-		goto free_pkts;
+		goto fail;
 	}
-
-	NET_DBG("Sending fragment len %zd", net_pkt_get_len(ipv6));
 
 	/* If everything has been ok so far, we can send the packet.
 	 * Note that we cannot send this re-constructed packet directly
@@ -3710,11 +3659,8 @@ static int send_ipv6_fragment(struct net_if *iface,
 	ret = net_send_data(ipv6);
 	if (ret < 0) {
 		NET_DBG("Cannot send fragment (%d)", ret);
-		goto free_pkts;
+		goto fail;
 	}
-
-	/* Then process the rest of the fragments */
-	pkt->frags = rest;
 
 	/* Let this packet to be sent and hopefully it will release
 	 * the memory that can be utilized for next sent IPv6 fragment.
@@ -3723,38 +3669,30 @@ static int send_ipv6_fragment(struct net_if *iface,
 
 	return 0;
 
-free_pkts:
-	net_pkt_unref(ipv6);
-
-	if (rest) {
-		net_pkt_frag_unref(rest);
-	}
-
-	if (orig_copy) {
-		net_pkt_frag_unref(orig_copy);
+fail:
+	if (ipv6) {
+		net_pkt_unref(ipv6);
 	}
 
 	return ret;
 }
 
-#define BUF_ALLOC_TIMEOUT K_MSEC(100)
-
 int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 				 u16_t pkt_len)
 {
-	struct net_buf *orig_ipv6 = NULL;
-	struct net_buf *prev = NULL;
-	struct net_buf *rest;
-	struct net_buf *frag;
 	struct net_pkt *clone;
-	int frag_count = 0;
-	int curr_len = 0;
-	int status = false;
-	u16_t ipv6_len = 0, offset = 0;
-	u32_t id = sys_rand32_get();
+	struct net_buf *rest;
+	struct net_buf *temp;
+	u16_t next_hdr_idx;
+	u16_t last_hdr_idx;
+	u16_t ipv6_hdrs_len;
+	u16_t frag_offset;
+	u16_t frag_count;
+	u16_t pos;
 	u8_t next_hdr;
-	u16_t next_hdr_idx, last_hdr_idx;
-	int ret;
+	u8_t last_hdr;
+	int fit_len;
+	int ret = -EINVAL;
 
 	/* We cannot touch original pkt because it might be used for
 	 * some other purposes, like TCP resend etc. So we need to copy
@@ -3767,91 +3705,72 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	}
 
 	pkt = clone;
+	net_pkt_set_ipv6_fragment_id(pkt, sys_rand32_get());
 
-	frag = pkt->frags;
-
-	ret = get_next_hdr(pkt, &next_hdr_idx, &last_hdr_idx, &next_hdr);
+	ret = net_ipv6_find_last_ext_hdr(pkt, &next_hdr_idx, &last_hdr_idx);
 	if (ret < 0) {
-		return -EINVAL;
+		goto fail;
 	}
 
-	/* Split the first fragment that contains the IPv6 header into
-	 * two pieces. The "orig_ipv6" will only contain the original IPv6
-	 * header which is copied into each fragment together with
-	 * fragmentation header.
-	 */
-	ret = net_pkt_split(pkt, frag,
-			    net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt),
-			    &orig_ipv6, &rest, FRAG_BUF_WAIT);
-	if (ret < 0) {
+	temp = net_frag_read_u8(pkt->frags, next_hdr_idx, &pos, &next_hdr);
+	if (!temp && pos == 0xffff) {
+		ret = -EINVAL;
+		goto fail;
+	}
+
+	temp = net_frag_read_u8(pkt->frags, last_hdr_idx, &pos, &last_hdr);
+	if (!temp && pos == 0xffff) {
+		ret = -EINVAL;
+		goto fail;
+	}
+
+	ipv6_hdrs_len = net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt);
+
+	ret = net_pkt_split(pkt, pkt->frags, ipv6_hdrs_len, &rest,
+			    FRAG_BUF_WAIT);
+	if (ret < 0 || ipv6_hdrs_len != net_pkt_get_len(pkt)) {
 		NET_DBG("Cannot split packet (%d)", ret);
-		return ret;
+		goto fail;
 	}
 
-	ipv6_len = net_buf_frags_len(orig_ipv6);
+	frag_count = 0;
+	frag_offset = 0;
 
-	/* We do not need the first fragment any more. The "rest" will not
-	 * have IPv6 header but it will contain the rest of the original data.
+	/* The Maximum payload can fit into each packet after IPv6 header,
+	 * Extenstion headers and Fragmentation header.
 	 */
-	rest->frags = pkt->frags->frags;
-	pkt->frags = rest;
+	fit_len = NET_IPV6_MTU - NET_IPV6_FRAGH_LEN - ipv6_hdrs_len;
+	if (fit_len <= 0) {
+		/* Must be invalid extension headers length */
+		NET_DBG("No room for IPv6 payload MTU %d hdrs_len %d",
+			NET_IPV6_MTU, NET_IPV6_FRAGH_LEN + ipv6_hdrs_len);
+		ret = -EINVAL;
+		goto fail;
+	}
 
-	frag->frags = NULL;
-	net_pkt_frag_unref(frag);
-
-	frag = pkt->frags;
-
-	net_pkt_set_ipv6_fragment_id(pkt, id);
-
-	/* Go through the fragment list, and create suitable IPv6 packet
-	 * from the data.
-	 */
-	while (frag) {
-		curr_len += frag->len;
-		if (curr_len > (NET_IPV6_MTU -
-				sizeof(struct net_ipv6_frag_hdr) - ipv6_len)) {
-			/* The fit_len var tells how much data we need send
-			 * from frag in order to fill the IPv6 MTU.
-			 */
-			int fit_len = NET_IPV6_MTU -
-				sizeof(struct net_ipv6_frag_hdr) - ipv6_len -
-				(curr_len - frag->len);
-
-			status = send_ipv6_fragment(iface, pkt, orig_ipv6,
-						    prev, frag, ipv6_len,
-						    offset, fit_len,
-						    next_hdr, next_hdr_idx,
-						    last_hdr_idx, false,
-						    frag_count);
-			if (status < 0) {
-				goto out;
-			}
-
-			offset += curr_len - (frag->len - fit_len);
-			prev = NULL;
-
-			frag = pkt->frags;
-			curr_len = 0;
-			frag_count++;
+	while (rest) {
+		ret = send_ipv6_fragment(iface, pkt, &rest, ipv6_hdrs_len,
+					 fit_len, frag_offset, next_hdr,
+					 next_hdr_idx, last_hdr, last_hdr_idx,
+					 frag_count);
+		if (ret < 0) {
+			goto fail;
 		}
 
-		prev = frag;
-		frag = frag->frags;
+		frag_count++;
+		frag_offset += fit_len;
 	}
 
-	status = send_ipv6_fragment(iface, pkt, orig_ipv6, prev, prev,
-				    ipv6_len, offset, 0, next_hdr,
-				    next_hdr_idx, last_hdr_idx, true,
-				    frag_count);
+	return 0;
 
+fail:
 	net_pkt_unref(pkt);
 
-out:
-	if (orig_ipv6) {
-		net_pkt_frag_unref(orig_ipv6);
+	if (rest) {
+		net_buf_unref(rest);
 	}
 
-	return status;
+	return ret;
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
@@ -3939,20 +3858,21 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_pkt *pkt,
 
 	/* Each extension option has type and length */
 	frag = net_frag_read_u8(frag, offset, &loc, &opt_type);
-	frag = net_frag_read_u8(frag, loc, &loc, &opt_len);
 	if (!frag && loc == 0xffff) {
 		goto drop;
+	}
+
+	if (opt_type != NET_IPV6_EXT_HDR_OPT_PAD1) {
+		frag = net_frag_read_u8(frag, loc, &loc, &opt_len);
+		if (!frag && loc == 0xffff) {
+			goto drop;
+		}
 	}
 
 	while (frag && (length < len)) {
 		switch (opt_type) {
 		case NET_IPV6_EXT_HDR_OPT_PAD1:
-			NET_DBG("PAD1 option");
 			length++;
-			/* We need to step back as the PAD1 len is only one
-			 * byte and we read already one extra byte.
-			 */
-			loc--;
 			break;
 		case NET_IPV6_EXT_HDR_OPT_PADN:
 			NET_DBG("PADN option");
@@ -3996,9 +3916,15 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_pkt *pkt,
 		}
 
 		frag = net_frag_read_u8(frag, loc, &loc, &opt_type);
-		frag = net_frag_read_u8(frag, loc, &loc, &opt_len);
 		if (!frag && loc == 0xffff) {
 			goto drop;
+		}
+
+		if (opt_type != NET_IPV6_EXT_HDR_OPT_PAD1) {
+			frag = net_frag_read_u8(frag, loc, &loc, &opt_len);
+			if (!frag && loc == 0xffff) {
+				goto drop;
+			}
 		}
 	}
 
@@ -4006,7 +3932,7 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	*pos += length;
+	*pos = loc;
 
 	*verdict = NET_CONTINUE;
 	return frag;
@@ -4134,9 +4060,11 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 	int pkt_len = (hdr->len[0] << 8) + hdr->len[1] + sizeof(*hdr);
 	struct net_buf *frag;
 	u8_t start_of_ext, prev_hdr;
-	u8_t next, next_hdr, length;
+	u8_t next, next_hdr;
 	u8_t first_option;
-	u16_t offset, total_len = 0;
+	u16_t offset;
+	u16_t length;
+	u16_t total_len = 0;
 	u8_t ext_bitmap;
 
 	if (real_len != pkt_len) {
@@ -4215,7 +4143,9 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 	frag = pkt->frags;
 	next = hdr->nexthdr;
 	first_option = next;
+	length = 0;
 	ext_bitmap = 0;
+	start_of_ext = 0;
 	offset = sizeof(struct net_ipv6_hdr);
 	prev_hdr = &NET_IPV6_HDR(pkt)->nexthdr - &NET_IPV6_HDR(pkt)->vtc;
 
@@ -4224,30 +4154,21 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 
 		if (is_upper_layer_protocol_header(next)) {
 			NET_DBG("IPv6 next header %d", next);
-			net_pkt_set_ipv6_ext_len(pkt, offset -
-						 sizeof(struct net_ipv6_hdr));
 			goto upper_proto;
 		}
 
-		start_of_ext = offset;
+		if (!start_of_ext) {
+			start_of_ext = offset;
+		}
 
 		frag = net_frag_read_u8(frag, offset, &offset, &next_hdr);
-		frag = net_frag_read_u8(frag, offset, &offset, &length);
 		if (!frag) {
 			goto drop;
 		}
 
-		length = length * 8 + 8;
-		total_len += length;
 		verdict = NET_OK;
 
-		if (next == NET_IPV6_NEXTHDR_HBHO) {
-			NET_DBG("IPv6 next header %d length %d bytes", next,
-				length);
-		} else {
-			/* There is no separate length for other headers */
-			NET_DBG("IPv6 next header %d", next);
-		}
+		NET_DBG("IPv6 next header %d", next);
 
 		switch (next) {
 		case NET_IPV6_NEXTHDR_NONE:
@@ -4259,6 +4180,15 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 			goto drop;
 
 		case NET_IPV6_NEXTHDR_HBHO:
+			frag = net_frag_read_u8(frag, offset, &offset,
+						(u8_t *)&length);
+			if (!frag) {
+				goto drop;
+			}
+
+			length = length * 8 + 8;
+			total_len += length;
+
 			/* HBH option needs to be the first one */
 			if (first_option != NET_IPV6_NEXTHDR_HBHO) {
 				goto bad_hdr;
@@ -4280,12 +4210,14 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 		case NET_IPV6_NEXTHDR_FRAG:
 			net_pkt_set_ipv6_hdr_prev(pkt, prev_hdr);
 
-			/* The fragment header does not have length field so
-			 * we need to step back two bytes and start from the
-			 * beginning of the fragment header.
-			 */
-			return handle_fragment_hdr(pkt, frag, real_len,
-						   offset - 2);
+			net_pkt_set_ipv6_fragment_start(pkt,
+							sizeof(struct
+							       net_ipv6_hdr) +
+							total_len);
+
+			total_len += 8;
+			return handle_fragment_hdr(pkt, frag, real_len, offset,
+						   &offset, next_hdr);
 #endif
 		default:
 			goto bad_hdr;
@@ -4300,10 +4232,8 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 	}
 
 upper_proto:
-	if (total_len > 0) {
-		NET_DBG("Extension len %d", total_len);
-		net_pkt_set_ipv6_ext_len(pkt, total_len);
-	}
+
+	net_pkt_set_ipv6_ext_len(pkt, total_len);
 
 	switch (next) {
 	case IPPROTO_ICMPV6:

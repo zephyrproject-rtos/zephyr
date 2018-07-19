@@ -987,89 +987,166 @@ static void test_fragment_compact(void)
 	DBG("test_fragment_compact passed\n");
 }
 
-static const char frag_data[CONFIG_NET_BUF_DATA_SIZE] = { 42 };
-
+static const char frag_data[512] = { 42 };
 static void test_fragment_split(void)
 {
-#define TEST_FRAG_COUNT (FRAG_COUNT - 2)
-#define FRAGA (FRAG_COUNT - 2)
-#define FRAGB (FRAG_COUNT - 1)
 	struct net_pkt *pkt;
-	struct net_buf *frags[FRAG_COUNT], *frag, *frag_a, *frag_b;
-	int i, total, split_a, split_b;
-	int ret, frag_size;
-
-	memset(frags, 0, FRAG_COUNT * sizeof(void *));
+	struct net_buf *rest;
+	int ret;
 
 	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
-	frag = NULL;
 
-	for (i = 0, total = 0; i < TEST_FRAG_COUNT; i++) {
-		frags[i] = net_pkt_get_reserve_rx_data(12, K_FOREVER);
+	ret = net_pkt_append(pkt, 50, (u8_t *) frag_data, K_FOREVER);
 
-		if (frag) {
-			net_buf_frag_add(frag, frags[i]);
-		}
+	zassert_false(!ret, "Failed to append data");
 
-		frag = frags[i];
+	ret = net_pkt_split(pkt, pkt->frags, 10, &rest, K_FOREVER);
 
-		/* Copy some test data in front of the fragment */
-		memcpy(net_buf_add(frags[i], sizeof(frag_data)),
-		       frag_data, sizeof(frag_data));
+	zassert_false(ret, "Failed to split net_pkt at offset 10");
+	zassert_false(!pkt->frags, "Failed to split net_pkt at offset 10");
+	zassert_false(!rest, "Failed to split net_pkt at offset 10");
 
-		total++;
-	}
+	net_pkt_unref(pkt);
+	net_buf_unref(rest);
 
-	if (total != TEST_FRAG_COUNT) {
-		printk("There should be %d fragments but was %d\n",
-		       TEST_FRAG_COUNT, total);
-		zassert_true(false, "Frags missing");
-	}
+	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 
-	frag_size = frags[0]->size;
-	zassert_true(frag_size > 0, "Invalid frag size");
+	ret = net_pkt_append(pkt, 100, (u8_t *) frag_data, K_FOREVER);
 
-	net_pkt_frag_add(pkt, frags[0]);
+	zassert_false(!ret, "Failed to append data");
 
-	frag_a = frags[FRAGA];
-	frag_b = frags[FRAGB];
+	ret = net_pkt_split(pkt, pkt->frags, 100, &rest, K_FOREVER);
 
-	zassert_is_null(frag_a, "frag_a is not NULL");
-	zassert_is_null(frag_b, "frag_b is not NULL");
+	zassert_false(ret, "Failed to split net_pkt at offset 100");
+	zassert_false(!pkt->frags,
+		      "Failed to split net_pkt at offset 100");
+	zassert_false(rest, "Failed to split net_pkt at offset 100");
 
-	split_a = frag_size * 2 / 3;
-	split_b = frag_size - split_a;
+	net_pkt_unref(pkt);
 
-	zassert_true(split_a > 0, "A size is 0");
-	zassert_true(split_a > split_b, "A is smaller than B");
+	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 
-	/* Test some error cases first */
-	ret = net_pkt_split(NULL, NULL, 1024, &frag_a, &frag_b, K_NO_WAIT);
-	zassert_equal(ret, -EINVAL, "Invalid buf pointers");
+	ret = net_pkt_append(pkt, 100, (u8_t *) frag_data, K_FOREVER);
 
-	ret = net_pkt_split(pkt, pkt->frags, CONFIG_NET_BUF_DATA_SIZE + 1,
-			    &frag_a, &frag_b, K_NO_WAIT);
-	zassert_equal(ret, 0, "Split failed");
+	zassert_false(!ret, "Failed to append data");
 
-	ret = net_pkt_split(pkt, pkt->frags, split_a,
-			     &frag_a, &frag_b, K_NO_WAIT);
-	zassert_equal(ret, 0, "Cannot split frag");
+	ret = net_pkt_split(pkt, pkt->frags, 50, &rest, K_FOREVER);
 
-	if (frag_a->len != split_a) {
-		printk("Frag_a len %d not %d\n", frag_a->len, split_a);
-		zassert_equal(frag_a->len, split_a, "Frag_a len wrong");
-	}
+	zassert_false(ret, "Failed to split net_pkt at offset 50");
+	zassert_false(!pkt->frags,
+		      "Failed to split net_pkt at offset 50");
+	zassert_false(!rest, "Failed to split net_pkt at offset 50");
 
-	if (frag_b->len != split_b) {
-		printk("Frag_b len %d not %d\n", frag_b->len, split_b);
-		zassert_true(false, "Frag_b len wrong");
-	}
+	zassert_false(net_pkt_get_len(pkt) != 50,
+		      "Failed to split net_pkt at offset 50");
+	zassert_false(net_buf_frags_len(rest) != 50,
+		      "Failed to split net_pkt at offset 50");
 
-	zassert_false(memcmp(pkt->frags->data, frag_a->data, split_a),
-		      "Frag_a data mismatch");
+	net_pkt_unref(pkt);
+	net_buf_unref(rest);
 
-	zassert_false(memcmp(pkt->frags->data + split_a, frag_b->data, split_b),
-		      "Frag_b data mismatch");
+	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+
+	ret = net_pkt_append(pkt, 350, (u8_t *) frag_data, K_FOREVER);
+
+	zassert_false(!ret, "Failed to append data");
+
+	ret = net_pkt_split(pkt, pkt->frags, 150, &rest, K_FOREVER);
+
+	zassert_false(ret, "Failed to split net_pkt at offset 150");
+	zassert_false(!pkt->frags,
+		      "Failed to split net_pkt at offset 150");
+	zassert_false(!rest, "Failed to split net_pkt at offset 150");
+
+	zassert_false(net_pkt_get_len(pkt) != 150,
+		      "Failed to split net_pkt at offset 150");
+	zassert_false(net_buf_frags_len(rest) != 200,
+		      "Failed to split net_pkt at offset 150");
+
+	net_pkt_unref(pkt);
+	net_buf_unref(rest);
+
+	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+
+	ret = net_pkt_append(pkt, 512, (u8_t *) frag_data, K_FOREVER);
+
+	zassert_false(!ret, "Failed to append data");
+
+	ret = net_pkt_split(pkt, pkt->frags, 500, &rest, K_FOREVER);
+
+	zassert_false(ret, "Failed to split net_pkt at offset 500");
+	zassert_false(!pkt->frags,
+		      "Failed to split net_pkt at offset 500");
+	zassert_false(!rest, "Failed to split net_pkt at offset 500");
+
+	zassert_false(net_pkt_get_len(pkt) != 500,
+		      "Failed to split net_pkt at offset 500");
+	zassert_false(net_buf_frags_len(rest) != 12,
+		      "Failed to split net_pkt at offset 500");
+
+	net_pkt_unref(pkt);
+	net_buf_unref(rest);
+}
+
+static const char pull_test_data[] =
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz ";
+
+static void test_pkt_pull(void)
+{
+	struct net_pkt *pkt;
+	u16_t ret;
+	int res;
+
+	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+	net_pkt_set_ll_reserve(pkt, LL_RESERVE);
+
+	ret = net_pkt_append(pkt, sizeof(pull_test_data), (u8_t *)
+			     pull_test_data, K_FOREVER);
+
+	zassert_false(!ret, "Failed to append data");
+
+	res = net_pkt_pull(pkt, 0, 10);
+
+	zassert_true(res == 0, "Failed to pull 10 bytes from offset 0");
+
+	res = net_pkt_pull(pkt, 10, 20);
+
+	zassert_true(res == 0, "Failed to pull 10 bytes from offset 0");
+
+	res = net_pkt_pull(pkt, 140, 150);
+
+	zassert_true(res == 0, "Failed to pull 10 bytes from offset 0");
+
+	res = net_pkt_pull(pkt, 42, 72);
+
+	zassert_true(res == 0, "Failed to pull 10 bytes from offset 0");
+
+	res = net_pkt_pull(pkt, 0, 42);
+
+	zassert_true(res == 0, "Failed to pull 10 bytes from offset 0");
+
+	res = net_pkt_pull(pkt, 138, 69);
+
+	zassert_true(res == 0, "Failed to pull 10 bytes from offset 0");
 }
 
 void test_main(void)
@@ -1080,7 +1157,8 @@ void test_main(void)
 			 ztest_unit_test(test_pkt_read_append),
 			 ztest_unit_test(test_pkt_read_write_insert),
 			 ztest_unit_test(test_fragment_compact),
-			 ztest_unit_test(test_fragment_split)
+			 ztest_unit_test(test_fragment_split),
+			 ztest_unit_test(test_pkt_pull)
 			 );
 
 	ztest_run_test_suite(net_pkt_tests);
