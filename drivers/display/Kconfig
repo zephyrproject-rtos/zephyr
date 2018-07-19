@@ -21,4 +21,6 @@ source "drivers/display/Kconfig.microbit"
 
 source "drivers/display/Kconfig.ili9340"
 
+source "drivers/display/Kconfig.ssd1306"
+
 endif # DISPLAY

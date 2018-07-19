@@ -1,0 +1,68 @@
+#
+# Copyright (c) 2018, Phytec Messtechnik GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: SSD1306 128x64 Dot Matrix Display Controller
+id: solomon,ssd1306fb-i2c
+version: 0.1
+
+description: >
+    This is a representation of the SSD1306 128x64 Dot Matrix Display Controller
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      constraint: "solomon,ssd1306fb-i2c"
+
+    height:
+      type: int
+      category: required
+      generation: Height in pixel of the panel driven by the controller
+
+    width:
+      type: int
+      category: required
+      generation: Width in pixel of the panel driven by the controller
+
+    segment-offset:
+      type: int
+      category: required
+      generation: 8-bit column start address for Page Addressing Mode
+
+    page-offset:
+      type: int
+      category: required
+      generation: Start address for Page Addressing Mode
+
+    display-offset:
+      type: int
+      category: required
+      generation: mapping of the display start line to one of COM0 .. COM63
+
+    segment-remap:
+      type: string
+      category: optional
+      generation: Last column address is mapped to first segment
+
+    com-invdir:
+      type: string
+      category: optional
+      generation: Scan direction is from last COM output to first COM output
+
+    prechargep:
+      type: int
+      category: required
+      generation: Duration of the pre-charge period
+
+    reset-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
+
+base_label: SSD1306
+
+...
