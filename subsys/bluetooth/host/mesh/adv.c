@@ -56,7 +56,7 @@
 
 static K_FIFO_DEFINE(adv_queue);
 static struct k_thread adv_thread_data;
-static BT_STACK_NOINIT(adv_thread_stack, ADV_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(adv_thread_stack, ADV_STACK_SIZE);
 
 static const u8_t adv_type[] = {
 	[BT_MESH_ADV_PROV]   = BT_DATA_MESH_PROV,

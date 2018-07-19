@@ -31,7 +31,7 @@
 #include "common/log.h"
 
 static struct device *hci_uart_dev;
-static BT_STACK_NOINIT(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread tx_thread_data;
 
 /* HCI command buffers */

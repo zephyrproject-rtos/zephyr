@@ -30,8 +30,8 @@
 
 #include "../util.h"
 
-static BT_STACK_NOINIT(tx_stack, 256);
-static BT_STACK_NOINIT(rx_stack, 256);
+static K_THREAD_STACK_DEFINE(tx_stack, 256);
+static K_THREAD_STACK_DEFINE(rx_stack, 256);
 
 static struct k_thread tx_thread_data;
 static struct k_thread rx_thread_data;

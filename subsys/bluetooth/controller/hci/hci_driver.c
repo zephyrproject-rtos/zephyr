@@ -49,10 +49,10 @@ static K_SEM_DEFINE(sem_prio_recv, 0, UINT_MAX);
 static K_FIFO_DEFINE(recv_fifo);
 
 struct k_thread prio_recv_thread_data;
-static BT_STACK_NOINIT(prio_recv_thread_stack,
-		       CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(prio_recv_thread_stack,
+			     CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE);
 struct k_thread recv_thread_data;
-static BT_STACK_NOINIT(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 
 #if defined(CONFIG_INIT_STACKS)
 static u32_t prio_ts;
