@@ -16,7 +16,7 @@ static struct k_thread tdata[NUM_THREAD];
 #define CONFIG_TICKLESS_IDLE_THRESH 20
 #endif
 /*millisecond per tick*/
-#define MSEC_PER_TICK (sys_clock_us_per_tick / USEC_PER_MSEC)
+#define MSEC_PER_TICK (__ticks_to_ms(1))
 /*sleep duration tickless*/
 #define SLEEP_TICKLESS (CONFIG_TICKLESS_IDLE_THRESH * MSEC_PER_TICK)
 /*sleep duration with tick*/

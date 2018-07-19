@@ -21,7 +21,6 @@
 #endif
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-int sys_clock_us_per_tick = 1000000 / sys_clock_ticks_per_sec;
 int sys_clock_hw_cycles_per_tick =
 	CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / sys_clock_ticks_per_sec;
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
@@ -29,7 +28,6 @@ int sys_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 #endif
 #else
 /* don't initialize to avoid division-by-zero error */
-int sys_clock_us_per_tick;
 int sys_clock_hw_cycles_per_tick;
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 int sys_clock_hw_cycles_per_sec;

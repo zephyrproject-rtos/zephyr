@@ -44,12 +44,6 @@ extern int sys_clock_hw_cycles_per_sec;
 #endif
 
 /*
- * sys_clock_us_per_tick global variable represents a number
- * of microseconds in one OS timer tick
- */
-extern int sys_clock_us_per_tick;
-
-/*
  * sys_clock_hw_cycles_per_tick global variable represents a number
  * of platform clock ticks in one OS timer tick.
  * sys_clock_hw_cycles_per_tick often represents a value of divider
@@ -75,8 +69,7 @@ extern int sys_clock_hw_cycles_per_tick;
 
 /* SYS_CLOCK_HW_CYCLES_TO_NS64 converts CPU clock cycles to nanoseconds */
 #define SYS_CLOCK_HW_CYCLES_TO_NS64(X) \
-	(((u64_t)(X) * sys_clock_us_per_tick * NSEC_PER_USEC) / \
-	 sys_clock_hw_cycles_per_tick)
+	(((u64_t)(X) * NSEC_PER_SEC) / sys_clock_hw_cycles_per_sec)
 
 /*
  * SYS_CLOCK_HW_CYCLES_TO_NS_AVG converts CPU clock cycles to nanoseconds
