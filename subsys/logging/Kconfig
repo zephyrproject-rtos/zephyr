@@ -210,7 +210,7 @@ config LOG_INPLACE_PROCESS
 
 config LOG_PROCESS_TRIGGER_THRESHOLD
 	int "Amount of buffered logs which triggers processing thread."
-	default 0
+	default 10
 	help
 	  When number of buffered messages reaches the threshold thread is waken
 	  up. Log processing thread ID is provided during log initialization.
@@ -220,6 +220,7 @@ config LOG_PROCESS_TRIGGER_THRESHOLD
 config LOG_PROCESS_THREAD
 	bool "Enable internal thread for log processing"
 	depends on MULTITHREADING
+	default y
 	help
 	  When enabled thread is created by the logger subsystem. Thread is
 	  waken up periodically (see LOG_PROCESS_THREAD_SLEEP_MS) and whenever
