@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if 1
-#define SYS_LOG_DOMAIN "coap-server"
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_coap_server
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 #include <errno.h>
 #include <misc/printk.h>
@@ -121,7 +118,7 @@ static void payload_dump(const char *s, struct net_buf *frag,
 	printk("payload message = %s [%u]\n", s, len);
 
 	while (frag) {
-		_hexdump(frag->data + offset, frag->len - offset, 0);
+		net_hexdump("", frag->data + offset, frag->len - offset);
 		frag = frag->frags;
 		offset = 0;
 	}
@@ -810,7 +807,7 @@ static int large_update_put(struct coap_resource *resource,
 	}
 
 	NET_INFO("**************\n");
-	NET_INFO("[ctx] current %u block_size %u total_size %u\n",
+	NET_INFO("[ctx] current %zu block_size %u total_size %zu\n",
 		 ctx.current, coap_block_size_to_bytes(ctx.block_size),
 		 ctx.total_size);
 	NET_INFO("**************\n");
