@@ -17,13 +17,13 @@
 #ifndef __INCerrnoh
 #define __INCerrnoh
 
+#include <misc/errno_private.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
-extern int *__errno(void);
-#define errno (*__errno())
+#define errno (*z_errno())
 
 /*
  * POSIX Error codes

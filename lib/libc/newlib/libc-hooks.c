@@ -11,6 +11,7 @@
 #include <linker/linker-defs.h>
 #include <misc/util.h>
 #include <kernel_internal.h>
+#include <misc/errno_private.h>
 
 #define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
 
@@ -177,4 +178,9 @@ void z_newlib_get_heap_bounds(void **base, size_t *size)
 {
 	*base = heap_base;
 	*size = MAX_HEAP_SIZE;
+}
+
+int *__errno(void)
+{
+	return z_errno();
 }

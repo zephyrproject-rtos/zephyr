@@ -538,8 +538,16 @@ struct k_thread {
 #endif
 
 #ifdef CONFIG_ERRNO
+#ifdef CONFIG_USERSPACE
+	/* Set to the lowest area in the thread stack since this needs to
+	 * be directly read/writable by user mode. Not ideal, but best we
+	 * can do until we have thread-local storage
+	 */
+	int *errno_location;
+#else
 	/** per-thread errno variable */
 	int errno_var;
+#endif
 #endif
 
 #if defined(CONFIG_THREAD_STACK_INFO)

@@ -312,6 +312,7 @@ void _setup_new_thread(struct k_thread *new_thread,
 	_k_object_init(new_thread);
 	_k_object_init(stack);
 	new_thread->stack_obj = stack;
+	new_thread->errno_location = (int *)K_THREAD_STACK_BUFFER(stack);
 
 	/* Any given thread has access to itself */
 	k_object_access_grant(new_thread, new_thread);
