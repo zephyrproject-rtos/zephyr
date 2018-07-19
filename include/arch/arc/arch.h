@@ -16,10 +16,6 @@
 #ifndef _ARC_ARCH__H_
 #define _ARC_ARCH__H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <generated_dts_board.h>
 #include <sw_isr_table.h>
 #ifdef CONFIG_CPU_ARCV2
@@ -32,6 +28,10 @@ extern "C" {
 #include <arch/arc/v2/arcv2_irq_unit.h>
 #include <arch/arc/v2/asm_inline.h>
 #include <arch/arc/v2/addr_types.h>
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 #if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
