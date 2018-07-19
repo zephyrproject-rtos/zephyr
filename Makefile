@@ -9,4 +9,4 @@ SPHINXOPTS ?= -q
 # Documentation targets
 # ---------------------------------------------------------------------------
 htmldocs:
-	mkdir -p ${BUILDDIR} && cmake -G"Unix Makefiles" -DDOC_TAG=${DOC_TAG} -DSPHINXOPTS=${SPHINXOPTS} -B${BUILDDIR} -Hdoc/ && make -s -C ${BUILDDIR} htmldocs
+	mkdir -p ${BUILDDIR} && cmake -GNinja -DDOC_TAG=${DOC_TAG} -DSPHINXOPTS=${SPHINXOPTS} -B${BUILDDIR} -Hdoc/ && ninja -C ${BUILDDIR} htmldocs
