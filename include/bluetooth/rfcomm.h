@@ -96,7 +96,7 @@ struct bt_rfcomm_dlc {
 
 	/* Stack & kernel data for TX thread */
 	struct k_thread            tx_thread;
-	BT_STACK(stack, 256);
+	K_THREAD_STACK_MEMBER(stack, 256);
 };
 
 struct bt_rfcomm_server {

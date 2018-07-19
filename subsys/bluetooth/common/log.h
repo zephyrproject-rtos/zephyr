@@ -49,9 +49,6 @@ __printf_like(2, 3) void bt_log(int prio, const char *fmt, ...);
 				 __func__, ##__VA_ARGS__)
 #define BT_INFO(fmt, ...) bt_log(BT_LOG_INFO, fmt, ##__VA_ARGS__)
 
-/* Enabling debug increases stack size requirement */
-#define BT_STACK_DEBUG_EXTRA	300
-
 #elif defined(CONFIG_BT_DEBUG_LOG)
 
 #if BT_DBG_ENABLED
@@ -76,9 +73,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define BT_INFO(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)
 
-/* Enabling debug increases stack size requirement considerably */
-#define BT_STACK_DEBUG_EXTRA	300
-
 #else
 
 static inline __printf_like(1, 2) void _bt_log_dummy(const char *fmt, ...) {};
@@ -91,19 +85,12 @@ static inline __printf_like(1, 2) void _bt_log_dummy(const char *fmt, ...) {};
 #define BT_WARN BT_DBG
 #define BT_INFO BT_DBG
 
-#define BT_STACK_DEBUG_EXTRA	0
-
 #endif
 
 #define BT_ASSERT(cond) if (!(cond)) { \
 				BT_ERR("assert: '" #cond "' failed"); \
 				k_oops(); \
 			}
-
-#define BT_STACK(name, size) \
-		K_THREAD_STACK_MEMBER(name, (size) + BT_STACK_DEBUG_EXTRA)
-#define BT_STACK_NOINIT(name, size) \
-		K_THREAD_STACK_DEFINE(name, (size) + BT_STACK_DEBUG_EXTRA)
 
 /* This helper is only available when BT_DEBUG is enabled */
 const char *bt_hex(const void *buf, size_t len);

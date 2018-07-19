@@ -99,7 +99,7 @@ static struct spi_config spi_cfg = {
 	.operation = SPI_WORD_SET(8),
 };
 static struct device *gpio_dev;
-static BT_STACK_NOINIT(bt_tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(bt_tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread bt_tx_thread_data;
 
 static K_SEM_DEFINE(sem_spi_rx, 0, 1);
