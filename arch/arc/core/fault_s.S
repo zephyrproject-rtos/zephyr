@@ -65,15 +65,6 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_dc_error)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 
 _exc_entry:
-
-#ifdef CONFIG_ARC_STACK_CHECKING
-	st r0, [saved_value]
-	/* disable stack checking */
-	lr r0, [_ARC_V2_STATUS32]
-	bclr r0, r0, _ARC_V2_STATUS32_SC_BIT
-	kflag r0
-	ld r0, [saved_value]
-#endif
 	st sp, [saved_value]
 	/*
 	 * re-use the top part of interrupt stack as exception
@@ -213,13 +204,6 @@ _do_non_syscall_trap:
 	st_s r0, [sp, ___isf_t_status32_OFFSET]
 	lr r0,[_ARC_V2_ERET]
 	st_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
-
-#ifdef CONFIG_ARC_STACK_CHECKING
-	/* disable stack checking */
-	lr r0, [_ARC_V2_STATUS32]
-	bclr r0, r0, _ARC_V2_STATUS32_SC_BIT
-	kflag r0
-#endif
 
 	ld r1, [exc_nest_count]
 	add r0, r1, 1
