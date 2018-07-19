@@ -6,7 +6,7 @@
 #
 
 menuconfig UART_GECKO
-	bool "Gecko uart driver"
+	bool "Gecko UART/USART driver"
 	depends on HAS_SILABS_GECKO
 	depends on GPIO_GECKO
 	select SERIAL_HAS_DRIVER
@@ -16,68 +16,40 @@ menuconfig UART_GECKO
 
 if UART_GECKO
 
-menuconfig UART_GECKO_0
-	bool "UART 0"
+config UART_GECKO_0
+	bool "Enable Gecko UART 0"
 	help
-	  Enable UART 0.
+	  Enable support for Gecko UART0 port in the driver. Say y here if you
+	  want to use UART0 device.
 
-if UART_GECKO_0
-
-config UART_GECKO_0_GPIO_LOC
-	int "Pin Locations"
-	range 0 3
-	depends on UART_GECKO
+config UART_GECKO_1
+	bool "Enable Gecko UART 1"
 	help
-	  The GPIO pins to use.
+	  Enable support for Gecko UART1 port in the driver. Say y here if you
+	  want to use UART1 device.
 
-endif # UART_GECKO_0
-
-menuconfig UART_GECKO_1
-	bool "UART 1"
+config USART_GECKO_0
+	bool "Enable Gecko USART 0"
 	help
-	  Enable UART 1.
+	  Enable support for Gecko USART0 port in the driver. Say y here if you
+	  want to use USART0 device.
 
-if UART_GECKO_1
-
-config UART_GECKO_1_GPIO_LOC
-	int "Pin Locations"
-	range 0 4
-	depends on UART_GECKO
+config USART_GECKO_1
+	bool "Enable Gecko USART 1"
 	help
-	  The GPIO pins to use.
+	  Enable support for Gecko USART1 port in the driver. Say y here if you
+	  want to use USART1 device.
 
-endif # UART_GECKO_1
-
-menuconfig USART_GECKO_0
-	bool "USART 0"
+config USART_GECKO_2
+	bool "Enable Gecko USART 2"
 	help
-	  Enable USART 0.
+	  Enable support for Gecko USART2 port in the driver. Say y here if you
+	  want to use USART2 device.
 
-if USART_GECKO_0
-
-config USART_GECKO_0_GPIO_LOC
-	int "Pin Locations"
-	range 0 6
-	depends on UART_GECKO
+config USART_GECKO_3
+	bool "Enable Gecko USART 3"
 	help
-	  The GPIO pins to use.
-
-endif # USART_GECKO_0
-
-menuconfig USART_GECKO_1
-	bool "USART 1"
-	help
-	  Enable USART 1.
-
-if USART_GECKO_1
-
-config USART_GECKO_1_GPIO_LOC
-	int "Pin Locations"
-	range 0 5
-	depends on UART_GECKO
-	help
-	  The GPIO pins to use.
-
-endif # USART_GECKO_1
+	  Enable support for Gecko USART3 port in the driver. Say y here if you
+	  want to use USART3 device.
 
 endif # UART_GECKO
