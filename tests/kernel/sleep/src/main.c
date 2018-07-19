@@ -20,8 +20,9 @@
 #define TEST_THREAD_PRIORITY    -4
 #define HELPER_THREAD_PRIORITY  -10
 
-#define ONE_SECOND  (MSEC_PER_SEC)
-#define TICKS_PER_MS  (MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define ONE_SECOND		(MSEC_PER_SEC)
+#define ONE_SECOND_ALIGNED	\
+	(u32_t)(__ticks_to_ms(_ms_to_ticks(ONE_SECOND) + _TICK_ALIGN))
 
 static struct k_sem test_thread_sem;
 static struct k_sem helper_thread_sem;
@@ -101,16 +102,12 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-
-	/* FIXME: one tick less to account for
-	 * one  extra tick for _TICK_ALIGN in k_sleep
-	 */
-	k_sleep(ONE_SECOND - TICKS_PER_MS);
+	k_sleep(ONE_SECOND);
 	end_tick = k_uptime_get_32();
 
-	if (!sleep_time_valid(start_tick, end_tick, ONE_SECOND)) {
+	if (!sleep_time_valid(start_tick, end_tick, ONE_SECOND_ALIGNED)) {
 		TC_ERROR(" *** k_sleep() slept for %d ticks not %d.",
-			 end_tick - start_tick, ONE_SECOND);
+			 end_tick - start_tick, ONE_SECOND_ALIGNED);
 
 		return;
 	}
@@ -120,10 +117,7 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	/* FIXME: one tick less to account for
-	 * one  extra tick for _TICK_ALIGN in k_sleep
-	 */
-	k_sleep(ONE_SECOND - TICKS_PER_MS);
+	k_sleep(ONE_SECOND);
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > 1) {
@@ -137,10 +131,7 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	/* FIXME: one tick less to account for
-	 * one  extra tick for _TICK_ALIGN in k_sleep
-	 */
-	k_sleep(ONE_SECOND - TICKS_PER_MS);
+	k_sleep(ONE_SECOND);
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > 1) {
@@ -154,11 +145,7 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-
-	/* FIXME: one tick less to account for
-	 * one  extra tick for _TICK_ALIGN in k_sleep
-	 */
-	k_sleep(ONE_SECOND - TICKS_PER_MS);           /* Task will execute */
+	k_sleep(ONE_SECOND);	/* Task will execute */
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > 1) {
@@ -237,14 +224,11 @@ void test_sleep(void)
 	TC_PRINT("Testing kernel k_sleep()\n");
 	align_to_tick_boundary();
 	start_tick = k_uptime_get_32();
-	/* FIXME: one tick less to account for
-	 * one  extra tick for _TICK_ALIGN in k_sleep
-	 */
-	k_sleep(ONE_SECOND - TICKS_PER_MS);
+	k_sleep(ONE_SECOND);
 	end_tick = k_uptime_get_32();
-	zassert_true(sleep_time_valid(start_tick, end_tick, ONE_SECOND),
+	zassert_true(sleep_time_valid(start_tick, end_tick, ONE_SECOND_ALIGNED),
 		     "k_sleep() slept for %d ticks, not %d\n",
-		     end_tick - start_tick, ONE_SECOND);
+		     end_tick - start_tick, ONE_SECOND_ALIGNED);
 
 	status = TC_PASS;
 }
