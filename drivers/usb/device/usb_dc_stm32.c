@@ -283,7 +283,7 @@ static int usb_dc_stm32_init(void)
 #endif
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = CONFIG_USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.speed = USB_OTG_SPEED_FULL;
-#ifdef USB_HS_PHYC
+#if defined(USB_HS_PHYC) && defined(CONFIG_USB_HS_BASE_ADDRESS)
 	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
 #else
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
