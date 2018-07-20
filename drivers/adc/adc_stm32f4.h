@@ -1,18 +1,21 @@
-//
-// STM32F4xx HAL ADC driver
-//
-// author: Stefan Jaritz
-// 	2018 Kokoon Technology Limited
+/*
+ * Copyright (c) 2018 Kokoon Technology Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef STM32F4_ADC_H_
 #define STM32F4_ADC_H_
 
 #include <zephyr/types.h>
 #include <adc.h>
+#include <kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+// set timeout to 1sec
+#define ADC_STM32_ADC_TIMEOUT_US (USEC_PER_SEC * 1000)
 
 //! type and enum for channel ids
 typedef enum adcChannels {
@@ -47,6 +50,7 @@ enum stm32adcErrors {
 	stm32adcError_adcHALerror,
 	stm32adcError_drvError = 100,
 	stm32adcError_configChannel,
+	stm32adcError_ADCtimeout,
 	stm32adcError_UnknownADCunit,
 };
 
@@ -61,7 +65,6 @@ typedef struct adc_drvData {
 	// handle to adc defintion
 	ADC_HandleTypeDef hadc;
 } adc_drvData_t;
-
 
 //
 // @brief ADC Initialization function.

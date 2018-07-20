@@ -1,7 +1,5 @@
-/* adc_dw.c - Designware ADC driver */
-
 /*
- * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2018 Kokoon Technology Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +25,35 @@
 
 #include "adc_stm32f4.h"
 
+typedef struct adc_stm32f4_control {
+	int initFlag;
+	int isrConnectedFlag;
+	struct k_sem adcReadSem;
+	struct adc_drvData * actDrv;
+	struct k_msgq adcVals;
+	uint16_t adcValBuff[adcChannel_max];
+} adc_stm32f4_control_t;
+
+
+static adc_stm32f4_control_t ADCcontrol = {
+	.initFlag = 0,
+	.isrConnectedFlag = 0,
+	.actDrv = NULL
+};
+
+ISR_DIRECT_DECLARE(ADC_IRQHandler)
+{
+	HAL_ADC_IRQHandler(&ADCcontrol.actDrv->hadc);
+	ISR_DIRECT_PM(); /* PM done after servicing interrupt for best latency */
+	return 1; /* We should check if scheduling decision should be made */
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
+	uint16_t v;
+	v = (uint16_t) HAL_ADC_GetValue(hadc);
+	k_msgq_put(&ADCcontrol.adcVals, &v, K_NO_WAIT);
+}
+
 #define ADC_STM32F4_SETBITMASK(bit) (1 << (bit))
 
 static void adc_stm32f4_enable(struct device *dev)
@@ -39,47 +66,54 @@ static void adc_stm32f4_enable(struct device *dev)
 static void adc_stm32f4_disable(struct device *dev)
 {
 	const struct adc_config *config = dev->config->config_info;
+	struct adc_drvData *drvData = dev->driver_data;
 
 	SYS_LOG_DBG("adc%u disable", (unsigned int)config->adcDevNum);
-
+	HAL_ADC_Stop_IT(&drvData->hadc);
 }
 
 static int adc_stm32f4_read(struct device *dev, struct adc_seq_table *seq_tbl)
 {
 	struct adc_drvData *drvData = dev->driver_data;
 	const struct adc_config *config = dev->config->config_info;
-	uint16_t val;
+
 	adc_channel_index_t i;
 	uint32_t activeChannels;
-	int rc;
 	struct adc_seq_entry * pE;
+	uint16_t val;
+	int rc;
 
-	SYS_LOG_DBG("start adc%u conversion", (unsigned int)config->adcDevNum);
+	rc = stm32adcError_None;
+	SYS_LOG_DBG("adc%u conversion", (unsigned int)config->adcDevNum);
+	k_sem_take(&ADCcontrol.adcReadSem, K_FOREVER);
+	ADCcontrol.actDrv = drvData;
 	// ok let's read for once the values
-	HAL_ADC_Start(&drvData->hadc);
-	// let's iterate through the sequence table
+	HAL_ADC_Start_IT(&drvData->hadc);
 	pE = seq_tbl->entries;
 	activeChannels = config->activeChannels;
 	i = adcChannel_0;
-	rc = stm32adcError_None;
 	while(activeChannels) {
 		if(activeChannels & 0x1) {
-			if (HAL_ADC_PollForConversion(&drvData->hadc, 100) == HAL_OK) {
-				val = HAL_ADC_GetValue(&drvData->hadc);
+			if (!k_msgq_get(&ADCcontrol.adcVals, &val,ADC_STM32_ADC_TIMEOUT_US)) {
+				*((uint16_t *) pE->buffer) = val;
+				pE++;
 			} else {
-				rc = stm32adcError_adcHALerror;
-				val = 0;
+				rc = stm32adcError_ADCtimeout;
+				*((uint16_t *) pE->buffer) = 0;
+				goto error;
 			}
-			*((uint16_t *) pE->buffer) = val;
-			pE++;
 		}
 		activeChannels >>= 1;
 		i++;
 	}
 
-	HAL_ADC_Stop(&drvData->hadc);
-
-	SYS_LOG_DBG("end adc%u conversion with rc=%i", (unsigned int)config->adcDevNum, rc);
+	HAL_ADC_Stop_IT(&drvData->hadc);
+	k_sem_give(&ADCcontrol.adcReadSem);
+	return rc;
+error:
+	HAL_ADC_Stop_IT(&drvData->hadc);
+	k_msgq_purge(&ADCcontrol.adcVals);
+	k_sem_give(&ADCcontrol.adcReadSem);
 	return rc;
 }
 
@@ -228,6 +262,22 @@ int adc_stm32f4_init(struct device *dev)
 
 	SYS_LOG_INF("init adc%u", (unsigned int)config->adcDevNum);
 
+	// init adc control structure
+	if (!ADCcontrol.initFlag) {
+		k_sem_init(&ADCcontrol.adcReadSem, 0, 1);
+		k_sem_give(&ADCcontrol.adcReadSem);
+		k_msgq_init(&ADCcontrol.adcVals, (char *)ADCcontrol.adcValBuff, sizeof(uint16_t), sizeof(ADCcontrol.adcValBuff)/sizeof(uint16_t));
+		ADCcontrol.actDrv = NULL;
+		ADCcontrol.isrConnectedFlag = 0;
+		ADCcontrol.initFlag = 1;
+	}
+
+	if(!ADCcontrol.isrConnectedFlag) {
+		IRQ_DIRECT_CONNECT(ADC_IRQn, 0, ADC_IRQHandler, 0);
+		irq_enable(ADC_IRQn);
+		ADCcontrol.isrConnectedFlag = 1;
+	}
+
 	switch(config->adcDevNum) {
 		#ifdef CONFIG_ADC_0
 		case 0:
@@ -256,7 +306,7 @@ int adc_stm32f4_init(struct device *dev)
 	drvData->hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
 	drvData->hadc.Init.Resolution = ADC_RESOLUTION_12B;
 	drvData->hadc.Init.ScanConvMode = ENABLE;
-	drvData->hadc.Init.ContinuousConvMode = ENABLE;
+	drvData->hadc.Init.ContinuousConvMode = DISABLE;
 	drvData->hadc.Init.DiscontinuousConvMode = DISABLE;
 	drvData->hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
 	drvData->hadc.Init.ExternalTrigConv = ADC_SOFTWARE_START;
@@ -264,7 +314,6 @@ int adc_stm32f4_init(struct device *dev)
 	drvData->hadc.Init.DMAContinuousRequests = DISABLE;
 	drvData->hadc.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
 	drvData->hadc.Init.NbrOfConversion = 0;
-
 	activeChannels = config->activeChannels;
 	while(activeChannels) {
 		if(activeChannels & 1) drvData->hadc.Init.NbrOfConversion++;
@@ -295,6 +344,8 @@ int adc_stm32f4_init(struct device *dev)
 		activeChannels >>= 1;
 		i++;
 	}
+
+
 	return stm32adcError_None;
 }
 

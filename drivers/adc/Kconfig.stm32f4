@@ -14,6 +14,14 @@ menuconfig ADC_STM32F4
 	select USE_STM32_HAL_ADC
 	select USE_STM32_HAL_ADC_EX
 	select USE_STM32_HAL_CORTEX
+	select USE_STM32_HAL_UART
+	select USE_STM32_HAL_DFSDM
+	select USE_STM32_HAL_DFSDM_EX
+	select USE_STM32_HAL_DMA
+	select USE_STM32_HAL_DMA_EX
+	select USE_STM32_HAL_RCC
+	select USE_STM32_HAL_RCC_EX
+
 	help
 		Enable the driver implementation for the stm32f4xx ADC
 
