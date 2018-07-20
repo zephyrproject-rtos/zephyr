@@ -1,5 +1,6 @@
 common:
   depends_on: netif
+  platform_whitelist: native_posix qemu_x86
 tests:
   net.icmpv6:
     min_ram: 16
