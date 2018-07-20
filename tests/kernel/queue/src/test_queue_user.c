@@ -9,7 +9,7 @@
 #ifdef CONFIG_USERSPACE
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
-#define LIST_LEN	5
+#define LIST_LEN        5
 
 static K_THREAD_STACK_DEFINE(child_stack, STACK_SIZE);
 static __kernel struct k_thread child_thread;
