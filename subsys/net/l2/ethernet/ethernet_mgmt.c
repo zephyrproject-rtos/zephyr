@@ -114,6 +114,13 @@ static int ethernet_set_config(u32_t mgmt_request,
 		memcpy(&config.qav_queue_param, &params->qav_queue_param,
 		       sizeof(struct ethernet_qav_queue_param));
 		type = ETHERNET_CONFIG_TYPE_QAV_IDLE_SLOPE;
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_PROMISC_MODE) {
+		if (!is_hw_caps_supported(dev, ETHERNET_PROMISC_MODE)) {
+			return -ENOTSUP;
+		}
+
+		config.promisc_mode = params->promisc_mode;
+		type = ETHERNET_CONFIG_TYPE_PROMISC_MODE;
 	} else {
 		return -EINVAL;
 	}
@@ -137,6 +144,9 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QAV_DELTA_BANDWIDTH,
 				  ethernet_set_config);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QAV_IDLE_SLOPE,
+				  ethernet_set_config);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_PROMISC_MODE,
 				  ethernet_set_config);
 
 void ethernet_mgmt_raise_carrier_on_event(struct net_if *iface)

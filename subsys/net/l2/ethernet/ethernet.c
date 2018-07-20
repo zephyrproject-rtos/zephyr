@@ -868,6 +868,20 @@ void net_eth_set_ptp_port(struct net_if *iface, int port)
 }
 #endif /* CONFIG_NET_GPTP */
 
+int net_eth_promisc_mode(struct net_if *iface, bool enable)
+{
+	struct ethernet_req_params params;
+
+	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE)) {
+		return -ENOTSUP;
+	}
+
+	params.promisc_mode = enable;
+
+	return net_mgmt(NET_REQUEST_ETHERNET_SET_PROMISC_MODE, iface,
+			&params, sizeof(struct ethernet_req_params));
+}
+
 void ethernet_init(struct net_if *iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
