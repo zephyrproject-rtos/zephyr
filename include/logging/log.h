@@ -259,14 +259,15 @@ int log_printk(const char *fmt, va_list ap);
 	_LOG_EVAL(							\
 		CONFIG_LOG_RUNTIME_FILTERING,				\
 		(; __DYNAMIC_MODULE_REGISTER(_name)),			\
-		()\
+		()							\
 	)
 
-#define _LOG_MODULE_REGISTER(_name, level)				     \
+#define _LOG_MODULE_REGISTER(_name, _level)				     \
 	const struct log_source_const_data LOG_ITEM_CONST_DATA(_name)	     \
 	__attribute__ ((section("." STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
 	__attribute__((used)) = {					     \
-		.name = STRINGIFY(_name)				     \
+		.name = STRINGIFY(_name),				     \
+		.level = _level						     \
 	}								     \
 	_LOG_RUNTIME_MODULE_REGISTER(_name)
 

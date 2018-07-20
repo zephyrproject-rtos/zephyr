@@ -39,7 +39,7 @@ extern "C" {
 #define __LOG_RESOLVED_LEVEL2(one_or_two_args, _level, _default) \
 	__LOG_ARG_2(one_or_two_args _level, _default)
 
-#define LOG_DEBRACKET(x) x
+#define LOG_DEBRACKET(...) __VA_ARGS__
 
 #define __LOG_ARG_2(ignore_this, val, ...) val
 #define __LOG_ARG_2_DEBRACKET(ignore_this, val, ...) LOG_DEBRACKET val
