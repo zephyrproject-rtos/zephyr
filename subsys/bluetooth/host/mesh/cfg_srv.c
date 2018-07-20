@@ -985,7 +985,7 @@ static void relay_set(struct bt_mesh_model *model,
 		       cfg->relay, change ? "changed" : "not changed",
 		       cfg->relay_retransmit,
 		       BT_MESH_TRANSMIT_COUNT(cfg->relay_retransmit),
-		       BT_MESH_TRANSMIT_INT(cfg->relay_retransmit))
+		       BT_MESH_TRANSMIT_INT(cfg->relay_retransmit));
 
 		sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx);
 		if ((cfg->hb_pub.feat & BT_MESH_FEAT_RELAY) && sub && change) {
