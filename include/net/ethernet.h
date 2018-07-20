@@ -78,6 +78,9 @@ enum ethernet_hw_caps {
 
 	/** IEEE 802.1Qav (credit-based shaping) supported */
 	ETHERNET_QAV			= BIT(9),
+
+	/** Promiscuous mode supported */
+	ETHERNET_PROMISC_MODE		= BIT(10),
 };
 
 enum ethernet_config_type {
@@ -87,6 +90,7 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_MAC_ADDRESS,
 	ETHERNET_CONFIG_TYPE_QAV_DELTA_BANDWIDTH,
 	ETHERNET_CONFIG_TYPE_QAV_IDLE_SLOPE,
+	ETHERNET_CONFIG_TYPE_PROMISC_MODE,
 };
 
 struct ethernet_qav_queue_param {
@@ -102,6 +106,7 @@ struct ethernet_config {
 	union {
 		bool auto_negotiation;
 		bool full_duplex;
+		bool promisc_mode;
 
 		struct {
 			bool link_10bt;
@@ -467,6 +472,15 @@ void net_eth_carrier_on(struct net_if *iface);
  * @param iface Network interface
  */
 void net_eth_carrier_off(struct net_if *iface);
+
+/**
+ * @brief Set promiscuous mode either ON or OFF.
+ *
+ * @param iface Network interface
+ *
+ * @param 0 if mode set or unset was successful, <0 otherwise.
+ */
+int net_eth_promisc_mode(struct net_if *iface, bool enable);
 
 /**
  * @brief Return PTP clock that is tied to this ethernet network interface.
