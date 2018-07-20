@@ -173,6 +173,7 @@
 			interrupt-names = "otghs", "ep1_out", "ep1_in";
 			num-bidir-endpoints = <6>;
 			ram-size = <4096>;
+			maximum-speed = "full-speed";
 			status = "disabled";
 			label= "OTGHS";
 		};
