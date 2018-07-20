@@ -524,8 +524,8 @@ config BT_RFCOMM_L2CAP_MTU
 	default BT_RX_BUF_LEN
 	default BT_L2CAP_RX_MTU if BT_HCI_ACL_FLOW_CONTROL
 	depends on BT_RFCOMM
-	range BT_RX_BUF_LEN 32767
 	range BT_L2CAP_RX_MTU 32767 if BT_HCI_ACL_FLOW_CONTROL
+	range BT_RX_BUF_LEN 32767
 	help
 	  Maximum size of L2CAP PDU for RFCOMM frames.
 
