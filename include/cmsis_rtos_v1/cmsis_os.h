@@ -203,6 +203,7 @@ typedef struct os_messageQ_def  {
   uint32_t                queue_sz;    ///< number of elements in the queue
   uint32_t                 item_sz;    ///< size of an item
   void                       *pool;    ///< memory array for messages
+  struct k_msgq              *msgq;
 } osMessageQDef_t;
  
 /// Definition structure for mail queue.
@@ -591,8 +592,10 @@ osStatus osPoolFree (osPoolId pool_id, void *block);
 extern const osMessageQDef_t os_messageQ_def_##name
 #else                            // define the object
 #define osMessageQDef(name, queue_sz, type)   \
+struct k_msgq msgq_##name; \
+static char __aligned(4) buf_##name[queue_sz * sizeof(type)]; \
 const osMessageQDef_t os_messageQ_def_##name = \
-{ (queue_sz), sizeof (type)  }
+{ (queue_sz), sizeof (type), (buf_##name), (&msgq_##name) }
 #endif
  
 /// \brief Access a Message Queue Definition.
