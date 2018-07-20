@@ -18,3 +18,5 @@ supported:
   - dma
 ram: 52
 flash: 144
+testing:
+  default: true
