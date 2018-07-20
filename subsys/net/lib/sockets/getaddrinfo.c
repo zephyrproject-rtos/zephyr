@@ -18,6 +18,8 @@
 
 #define AI_ARR_MAX	2
 
+#if defined(CONFIG_DNS_RESOLVER)
+
 struct getaddrinfo_state {
 	const struct zsock_addrinfo *hints;
 	struct k_sem sem;
@@ -180,3 +182,5 @@ int zsock_getaddrinfo(const char *host, const char *service,
 	}
 	return ret;
 }
+
+#endif
