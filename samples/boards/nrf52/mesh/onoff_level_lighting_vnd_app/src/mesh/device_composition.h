@@ -37,7 +37,12 @@ enum lightness {
 	IGNORE
 };
 
-enum temperature { ONOFF_TEMP = 0x01, LEVEL_TEMP, CTL_TEMP, IGNORE_TEMP };
+enum temperature {
+	ONOFF_TEMP = 0x01,
+	LEVEL_TEMP,
+	CTL_TEMP,
+	IGNORE_TEMP
+};
 
 struct generic_onoff_state {
 	u8_t onoff;
@@ -73,8 +78,8 @@ struct light_lightness_state {
 	u16_t def;
 
 	u8_t status_code;
-	u16_t lightness_range_min;
-	u16_t lightness_range_max;
+	u16_t light_range_min;
+	u16_t light_range_max;
 
 	u8_t last_tid;
 	u16_t last_tx_addr;
