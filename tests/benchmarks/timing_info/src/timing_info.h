@@ -104,9 +104,9 @@
 #define NANOSECS_PER_SEC (1000000000)
 #define CYCLES_PER_SEC   (16000000/(1 << NRF_TIMER2->PRESCALER))
 
-#define CYCLES_TO_NS(x)        ((x) * (NANOSECS_PER_SEC/CYCLES_PER_SEC))
-#define PRINT_STATS(x, y, z)   PRINT_F(x, (y*((SystemCoreClock)/	\
-					      CYCLES_PER_SEC)), z)
+#define CYCLES_TO_NS(x) ((x) * (NANOSECS_PER_SEC/CYCLES_PER_SEC))
+#define PRINT_STATS(x, y, z)   PRINT_F(x, (u32_t)(y*((SystemCoreClock)/	\
+							CYCLES_PER_SEC)), z)
 
 /* Configure Timer parameters */
 static inline void benchmark_timer_init(void)
