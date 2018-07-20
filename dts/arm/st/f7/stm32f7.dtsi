@@ -9,6 +9,7 @@
 #include <dt-bindings/clock/stm32_clock.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
+
 / {
 	cpus {
 		#address-cells = <1>;
@@ -457,6 +458,7 @@
 			interrupt-names = "otgfs";
 			num-bidir-endpoints = <6>;
 			ram-size = <1280>;
+			maximum-speed = "full-speed";
 			status = "disabled";
 			label = "OTGFS";
 		};
@@ -468,6 +470,7 @@
 			interrupt-names = "otghs", "ep1_out", "ep1_in";
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
+			maximum-speed = "full-speed";
 			status = "disabled";
 			label= "OTGHS";
 		};

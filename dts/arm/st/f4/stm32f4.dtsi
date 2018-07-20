@@ -199,6 +199,7 @@
 			interrupt-names = "otgfs";
 			num-bidir-endpoints = <4>;
 			ram-size = <1280>;
+			maximum-speed = "full-speed";
 			status = "disabled";
 			label= "OTGFS";
 		};
