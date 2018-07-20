@@ -161,6 +161,9 @@ enum {
 	/* interface is pointopoint */
 	NET_IF_POINTOPOINT,
 
+	/* interface is in promiscuous mode */
+	NET_IF_PROMISC,
+
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
 };
@@ -1672,6 +1675,34 @@ void net_if_call_timestamp_cb(struct net_pkt *pkt);
  */
 void net_if_add_tx_timestamp(struct net_pkt *pkt);
 #endif /* CONFIG_NET_PKT_TIMESTAMP */
+
+/**
+ * @brief Set network interface into promiscuous mode
+ *
+ * @details Note that not all network technologies will support this.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return 0 on success, <0 if error
+ */
+int net_if_set_promisc(struct net_if *iface);
+
+/**
+ * @brief Set network interface into normal mode
+ *
+ * @param iface Pointer to network interface
+ */
+void net_if_unset_promisc(struct net_if *iface);
+
+/**
+ * @brief Check if promiscuous mode is set or not.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if interface is in promisc mode,
+ *         False if interface is not in in promiscuous mode.
+ */
+bool net_if_is_promisc(struct net_if *iface);
 
 struct net_if_api {
 	void (*init)(struct net_if *iface);

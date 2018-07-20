@@ -2315,6 +2315,50 @@ done:
 	return 0;
 }
 
+int net_if_set_promisc(struct net_if *iface)
+{
+	int ret;
+
+	NET_ASSERT(iface);
+
+	/* This is currently only support for ethernet.
+	 * TODO: support also other L2 technologies.
+	 */
+#if defined(CONFIG_NET_L2_ETHERNET)
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		return -ENOTSUP;
+	}
+
+	ret = net_eth_promisc_mode(iface, true);
+	if (ret < 0) {
+		return ret;
+	}
+#else
+	return -ENOTSUP;
+#endif
+
+	ret = atomic_test_and_set_bit(iface->if_dev->flags, NET_IF_PROMISC);
+	if (ret) {
+		return -EALREADY;
+	}
+
+	return 0;
+}
+
+void net_if_unset_promisc(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	atomic_clear_bit(iface->if_dev->flags, NET_IF_PROMISC);
+}
+
+bool net_if_is_promisc(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	return atomic_test_bit(iface->if_dev->flags, NET_IF_PROMISC);
+}
+
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
 static void net_tx_ts_thread(void)
 {
