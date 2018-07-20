@@ -26,6 +26,7 @@ struct eth_fake_context {
 	bool full_duplex;
 	bool link_10bt;
 	bool link_100bt;
+	bool promisc_mode;
 };
 
 static struct eth_fake_context eth_fake_data;
@@ -57,7 +58,8 @@ static int eth_fake_send(struct net_if *iface,
 static enum ethernet_hw_caps eth_fake_get_capabilities(struct device *dev)
 {
 	return ETHERNET_AUTO_NEGOTIATION_SET | ETHERNET_LINK_10BASE_T |
-		ETHERNET_LINK_100BASE_T | ETHERNET_DUPLEX_SET | ETHERNET_QAV;
+		ETHERNET_LINK_100BASE_T | ETHERNET_DUPLEX_SET | ETHERNET_QAV |
+		ETHERNET_PROMISC_MODE;
 }
 
 static int eth_fake_set_config(struct device *dev,
@@ -111,6 +113,14 @@ static int eth_fake_set_config(struct device *dev,
 		if (config->qav_queue_param.queue_id != 0) {
 			return -EINVAL;
 		}
+
+		break;
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		if (config->promisc_mode == ctx->promisc_mode) {
+			return -EALREADY;
+		}
+
+		ctx->promisc_mode = config->promisc_mode;
 
 		break;
 	}
@@ -339,6 +349,45 @@ static void test_change_qav_params(void)
 	zassert_not_equal(ret, 0, "should not be able to set idle slope");
 }
 
+static void test_change_promisc_mode(bool mode)
+{
+	struct net_if *iface = net_if_get_default();
+	struct ethernet_req_params params;
+	int ret;
+
+	params.promisc_mode = mode;
+
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_PROMISC_MODE, iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_equal(ret, 0, "invalid promisc mode change");
+}
+
+static void test_change_promisc_mode_on(void)
+{
+	test_change_promisc_mode(true);
+}
+
+static void test_change_promisc_mode_off(void)
+{
+	test_change_promisc_mode(false);
+}
+
+static void test_change_to_same_promisc_mode(void)
+{
+	struct net_if *iface = net_if_get_default();
+	struct ethernet_req_params params;
+	int ret;
+
+	params.promisc_mode = true;
+
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_PROMISC_MODE, iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_equal(ret, -EALREADY,
+		      "invalid change to already set promisc mode");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(ethernet_mgmt_test,
@@ -351,7 +400,10 @@ void test_main(void)
 			 ztest_unit_test(test_change_unsupported_link),
 			 ztest_unit_test(test_change_duplex),
 			 ztest_unit_test(test_change_same_duplex),
-			 ztest_unit_test(test_change_qav_params));
+			 ztest_unit_test(test_change_qav_params),
+			 ztest_unit_test(test_change_promisc_mode_on),
+			 ztest_unit_test(test_change_to_same_promisc_mode),
+			 ztest_unit_test(test_change_promisc_mode_off));
 
 	ztest_run_test_suite(ethernet_mgmt_test);
 }
