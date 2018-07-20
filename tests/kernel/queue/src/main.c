@@ -30,6 +30,7 @@ void test_main(void)
 			 ztest_unit_test(test_queue_isr2thread),
 			 ztest_unit_test(test_queue_get_2threads),
 			 ztest_unit_test(test_queue_get_fail),
-			 ztest_unit_test(test_queue_loop));
+			 ztest_unit_test(test_queue_loop),
+			 ztest_unit_test(test_queue_alloc));
 	ztest_run_test_suite(queue_api);
 }
