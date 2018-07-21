@@ -24,6 +24,7 @@ class DTFlash(DTDirective):
         # Node of the flash
         self._flash_node = None
         self._flash_dev = {}
+        self._flash_area = {}
 
     def _extract_flash_dev(self, node_address, yaml, prop, def_label):
         prop_def = {}
@@ -81,6 +82,18 @@ class DTFlash(DTDirective):
 
         insert_defs(def_label, prop_def, prop_alias)
 
+        if node_address != 'dummy-flash':
+            prop_def = {}
+            prop_alias = {}
+
+            for area in self._flash_area.keys():
+                if node_address in area:
+                    label = self.get_label_string(
+                        ["FLASH_AREA", str(self._flash_area[area]["id"]), "DEV_ID"])
+                    prop_alias[label] = dev_label
+
+            insert_defs("FLASH_AREA", prop_def, prop_alias)
+
     def extract_partition(self, node_address):
         prop_def = {}
         prop_alias = {}
@@ -111,7 +124,16 @@ class DTFlash(DTDirective):
                 label_prefix + ["SIZE", str(sector_index)])
             prop_def[label] = "{}".format(sector_size)
             index += 2
-        # alias sector 0
+
+        if node_address in self._flash_area:
+            area_id = self._flash_area[node_address]["id"]
+        else:
+            area_id = len(self._flash_area)
+            self._flash_area[node_address] = {'id': area_id }
+
+        label = self.get_label_string(label_prefix + ["ID",])
+        prop_def[label] = area_id
+
         label = self.get_label_string(label_prefix + ["OFFSET",])
         prop_alias[label] = self.get_label_string(
             label_prefix + ["OFFSET", '0'])
@@ -120,6 +142,17 @@ class DTFlash(DTDirective):
             label_prefix + ["SIZE", '0'])
 
         insert_defs(node_address, prop_def, prop_alias)
+
+        prop_def = {}
+        prop_alias = {}
+
+
+        label = self.get_label_string(["FLASH_AREA", str(area_id)])
+        prop_alias[label] = self.get_label_string([partition_name,])
+        label = self.get_label_string(["FLASH_AREA", 'num'])
+        prop_def[label] = len(self._flash_area)
+
+        insert_defs("FLASH_AREA", prop_def, prop_alias)
 
     def _extract_flash(self, node_address, yaml, prop, def_label):
         load_defs = {}
