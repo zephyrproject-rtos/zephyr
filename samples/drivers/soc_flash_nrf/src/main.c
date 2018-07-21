@@ -155,7 +155,7 @@ void main(void)
 
 	if (!rc) {
 		printf("   Offset  0x%08x:\n", FLASH_TEST_OFFSET2);
-		printf("     belongs to the page %u of start offset 0x%08x\n",
+		printf("     belongs to the page %u of start offset 0x%08ld\n",
 		       info.index, info.start_offset);
 		printf("     and the size of 0x%08x B.\n", info.size);
 	} else {
@@ -166,7 +166,7 @@ void main(void)
 	rc = flash_get_page_info_by_idx(flash_dev, FLASH_TEST_PAGE_IDX, &info);
 
 	if (!rc) {
-		printf("   Page of number %u has start offset 0x%08x\n",
+		printf("   Page of number %u has start offset 0x%08ld\n",
 		       FLASH_TEST_PAGE_IDX,
 		       info.start_offset);
 		printf("     and size of 0x%08x B.\n", info.size);
