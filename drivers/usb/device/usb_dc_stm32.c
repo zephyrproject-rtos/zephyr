@@ -263,6 +263,42 @@ static int usb_dc_stm32_clock_enable(void)
 	return 0;
 }
 
+#if defined(USB_OTG_FS) || defined(USB_OTG_HS)
+static u32_t usb_dc_stm32_get_maximum_speed(void)
+{
+	/*
+	 * If max-speed is not passed via DT, set it to USB controller's
+	 * maximum hardware capability.
+	 */
+#if defined(USB_HS_PHYC) && defined(CONFIG_USB_HS_BASE_ADDRESS)
+	u32_t speed = USB_OTG_SPEED_HIGH;
+#else
+	u32_t speed = USB_OTG_SPEED_FULL;
+#endif /* USB_HS_PHYC && CONFIG_USB_HS_BASE_ADDRESS */
+
+#ifdef CONFIG_USB_MAXIMUM_SPEED
+
+	if (!strncmp(CONFIG_USB_MAXIMUM_SPEED, "high-speed", 10)) {
+		speed = USB_OTG_SPEED_HIGH;
+	} else if (!strncmp(CONFIG_USB_MAXIMUM_SPEED, "full-speed", 10)) {
+#if defined(USB_HS_PHYC) && defined(CONFIG_USB_HS_BASE_ADDRESS)
+		speed = USB_OTG_SPEED_HIGH_IN_FULL;
+#else
+		speed = USB_OTG_SPEED_FULL;
+#endif /* USB_HS_PHYC && CONFIG_USB_HS_BASE_ADDRESS */
+	} else if (!strncmp(CONFIG_USB_MAXIMUM_SPEED, "low-speed", 9)) {
+		speed = USB_OTG_SPEED_LOW;
+	} else {
+		USB_DBG("Unsupported maximum speed defined in device tree. "
+			"USB controller will default to its maximum HW "
+			"capability");
+	}
+#endif /* CONFIG_USB_MAX_SPEED */
+
+	return speed;
+}
+#endif /* USB_OTG_FS || USB_OTG_HS */
+
 static int usb_dc_stm32_init(void)
 {
 	HAL_StatusTypeDef status;
@@ -275,14 +311,14 @@ static int usb_dc_stm32_init(void)
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
 	usb_dc_stm32_state.pcd.Init.ep0_mps = PCD_EP0MPS_64;
 	usb_dc_stm32_state.pcd.Init.low_power_enable = 0;
-#else /* USB_OTG_FS */
+#else /* USB_OTG_FS || USB_OTG_HS */
 #ifdef CONFIG_USB_HS_BASE_ADDRESS
 	usb_dc_stm32_state.pcd.Instance = USB_OTG_HS;
 #else
 	usb_dc_stm32_state.pcd.Instance = USB_OTG_FS;
 #endif
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = CONFIG_USB_NUM_BIDIR_ENDPOINTS;
-	usb_dc_stm32_state.pcd.Init.speed = USB_OTG_SPEED_FULL;
+	usb_dc_stm32_state.pcd.Init.speed = usb_dc_stm32_get_maximum_speed();
 #if defined(USB_HS_PHYC) && defined(CONFIG_USB_HS_BASE_ADDRESS)
 	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
 #else
