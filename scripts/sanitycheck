@@ -1817,7 +1817,7 @@ class TestSuite:
                         continue
 
                     if (tc.tc_filter and (plat.default or all_plats or platform_filter)
-                            and toolchain in plat.supported_toolchains):
+                            and (toolchain in plat.supported_toolchains or options.force_toolchain)):
                         args = tc.extra_args[:]
                         args.append("BOARD={}".format(plat.name))
                         args.extend(extra_args)
@@ -1927,7 +1927,7 @@ class TestSuite:
                         discards[instance] = "Not in testcase toolchain whitelist"
                         continue
 
-                    if toolchain and toolchain not in plat.supported_toolchains and tc.type != 'unit':
+                    if not options.force_toolchain and toolchain and toolchain not in plat.supported_toolchains and tc.type != 'unit':
                         discards[instance] = "Not supported by the toolchain"
                         continue
 
@@ -1936,8 +1936,7 @@ class TestSuite:
                         continue
 
                     if tc.depends_on:
-                        dep_intersection = tc.depends_on.intersection(
-                            set(plat.supported))
+                        dep_intersection = tc.depends_on.intersection(set(plat.supported))
                         if dep_intersection != set(tc.depends_on):
                             discards[instance] = "No hardware support"
                             continue
@@ -2306,6 +2305,9 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.fromfile_prefix_chars = "+"
 
+    parser.add_argument("--force-toolchain", action="store_true",
+            help="Do not filter based on toolchain, use the set "
+            " toolchain unconditionally")
     parser.add_argument(
         "-p", "--platform", action="append",
         help="Platform filter for testing. This option may be used multiple "
