@@ -9,6 +9,11 @@
 #define TIMEOUT 100
 
 /*test cases*/
+/**
+ * @brief Test k_queue_get() failure scenario
+ * @ingroup kernel_queue_tests
+ * @see k_queue_get()
+ */
 void test_queue_get_fail(void)
 {
 	struct k_queue queue;
