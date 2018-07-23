@@ -1088,8 +1088,6 @@ class MakeGenerator:
                     continue
 
                 state, name, _, error = m.groups()
-                if state:
-                    verbose("State: {}".format(state))
                 if error:
                     goal = self.goals[error]
                     # Sometimes QEMU will run an image and then crash out, which
@@ -1098,7 +1096,6 @@ class MakeGenerator:
                     # Need to distinguish this case from a compilation failure.
                     if goal.handler:
                         goal.fail("handler_crash")
-                        goal.make_state = 'finished'
                     else:
                         goal.fail("build_error")
                 else:
