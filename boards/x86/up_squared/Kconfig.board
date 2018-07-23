@@ -8,3 +8,4 @@ config BOARD_UP_SQUARED
 	bool "UP Squared (Pentium/Celeron)"
 	depends on SOC_APOLLO_LAKE
 	select HAS_DTS
+	select HAS_DTS_I2C
