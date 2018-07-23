@@ -41,7 +41,7 @@ struct net_pkt *net_ipv4_create(struct net_pkt *pkt,
 
 	NET_IPV4_HDR(pkt)->vhl = 0x45;
 	NET_IPV4_HDR(pkt)->tos = 0x00;
-	NET_IPV4_HDR(pkt)->proto = 0;
+	NET_IPV4_HDR(pkt)->proto = next_header_proto;
 
 	/* User can tweak the default TTL if needed */
 	NET_IPV4_HDR(pkt)->ttl = net_pkt_ipv4_ttl(pkt);
@@ -54,8 +54,6 @@ struct net_pkt *net_ipv4_create(struct net_pkt *pkt,
 
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, dst);
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src, src);
-
-	NET_IPV4_HDR(pkt)->proto = next_header_proto;
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 	net_pkt_set_family(pkt, AF_INET);
