@@ -273,8 +273,6 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 
 	net_ipv4_finalize(pkt, IPPROTO_ICMP);
 
-	net_pkt_ll_src(pkt)->addr = net_pkt_ll_dst(orig)->addr;
-	net_pkt_ll_src(pkt)->len = net_pkt_ll_dst(orig)->len;
 	net_pkt_ll_dst(pkt)->addr = net_pkt_ll_src(orig)->addr;
 	net_pkt_ll_dst(pkt)->len = net_pkt_ll_src(orig)->len;
 
