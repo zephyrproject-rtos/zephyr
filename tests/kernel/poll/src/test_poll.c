@@ -60,6 +60,9 @@ void test_poll_no_wait(void)
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
 					 K_POLL_MODE_NOTIFY_ONLY,
 					 &no_wait_signal),
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_IGNORE,
+					 K_POLL_MODE_NOTIFY_ONLY,
+					 NULL),
 	};
 
 	/* test polling events that are already ready */
@@ -82,16 +85,20 @@ void test_poll_no_wait(void)
 	zassert_not_equal(signaled, 0, "");
 	zassert_equal(result, SIGNAL_RESULT, "");
 
+	zassert_equal(events[3].state, K_POLL_STATE_NOT_READY, "");
+
 	/* verify events are not ready anymore (user has to clear them first) */
 	events[0].state = K_POLL_STATE_NOT_READY;
 	events[1].state = K_POLL_STATE_NOT_READY;
 	events[2].state = K_POLL_STATE_NOT_READY;
+	events[3].state = K_POLL_STATE_NOT_READY;
 	k_poll_signal_reset(&no_wait_signal);
 
 	zassert_equal(k_poll(events, ARRAY_SIZE(events), 0), -EAGAIN, "");
 	zassert_equal(events[0].state, K_POLL_STATE_NOT_READY, "");
 	zassert_equal(events[1].state, K_POLL_STATE_NOT_READY, "");
 	zassert_equal(events[2].state, K_POLL_STATE_NOT_READY, "");
+	zassert_equal(events[3].state, K_POLL_STATE_NOT_READY, "");
 
 	zassert_not_equal(k_sem_take(&no_wait_sem, 0), 0, "");
 	zassert_is_null(k_fifo_get(&no_wait_fifo, 0), "");
@@ -123,6 +130,9 @@ struct k_poll_event wait_events[] = {
 	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SIGNAL,
 					K_POLL_MODE_NOTIFY_ONLY,
 					&wait_signal, TAG_2),
+	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_IGNORE,
+					K_POLL_MODE_NOTIFY_ONLY,
+					NULL),
 };
 
 static void poll_wait_helper(void *use_fifo, void *p2, void *p3)
@@ -191,10 +201,13 @@ void test_poll_wait(void)
 	zassert_equal(wait_signal.result, SIGNAL_RESULT, "");
 	zassert_equal(wait_events[2].tag, TAG_2, "");
 
+	zassert_equal(wait_events[3].state, K_POLL_STATE_NOT_READY, "");
+
 	/* verify events are not ready anymore */
 	wait_events[0].state = K_POLL_STATE_NOT_READY;
 	wait_events[1].state = K_POLL_STATE_NOT_READY;
 	wait_events[2].state = K_POLL_STATE_NOT_READY;
+	wait_events[3].state = K_POLL_STATE_NOT_READY;
 	wait_signal.signaled = 0;
 
 	zassert_equal(k_poll(wait_events, ARRAY_SIZE(wait_events),
@@ -203,6 +216,7 @@ void test_poll_wait(void)
 	zassert_equal(wait_events[0].state, K_POLL_STATE_NOT_READY, "");
 	zassert_equal(wait_events[1].state, K_POLL_STATE_NOT_READY, "");
 	zassert_equal(wait_events[2].state, K_POLL_STATE_NOT_READY, "");
+	zassert_equal(wait_events[3].state, K_POLL_STATE_NOT_READY, "");
 
 	/* tags should not have been touched */
 	zassert_equal(wait_events[0].tag, TAG_0, "");
