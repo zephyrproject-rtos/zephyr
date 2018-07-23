@@ -414,11 +414,7 @@ static inline const struct net_l2 * const net_if_l2(struct net_if *iface)
  *
  * @return verdict about the packet
  */
-static inline enum net_verdict net_if_recv_data(struct net_if *iface,
-						struct net_pkt *pkt)
-{
-	return net_if_l2(iface)->recv(iface, pkt);
-}
+enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt);
 
 /**
  * @brief Get link layer header size for this network interface
