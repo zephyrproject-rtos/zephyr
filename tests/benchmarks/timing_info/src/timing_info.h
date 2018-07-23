@@ -61,6 +61,13 @@
 #define TIMING_INFO_OS_GET_TIME()     (k_cycle_get_32())
 #define TIMING_INFO_GET_TIMER_VALUE() (_arc_v2_aux_reg_read(_ARC_V2_TMR0_COUNT))
 #define SUBTRACT_CLOCK_CYCLES(val)    ((u32_t)val)
+
+#elif CONFIG_XTENSA
+#define TIMING_INFO_PRE_READ()
+#define TIMING_INFO_OS_GET_TIME()      (k_cycle_get_32())
+#define TIMING_INFO_GET_TIMER_VALUE()  (k_cycle_get_32())
+#define SUBTRACT_CLOCK_CYCLES(val)     ((u32_t)val)
+
 #endif	/* CONFIG_NRF_RTC_TIMER */
 
 /******************************************************************************/

@@ -1,6 +1,6 @@
 tests:
   benchmark.timing.default_kernel:
-    arch_whitelist: x86 arm arc
+    arch_whitelist: x86 arm arc xtensa
     tags: benchmark
   benchmark.timing.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE

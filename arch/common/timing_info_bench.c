@@ -19,6 +19,9 @@ u64_t  __end_drop_to_usermode_time;
 u32_t __read_swap_end_time_value;
 u64_t __common_var_swap_end_time;
 
+#if CONFIG_ARM
+#include <arch/arm/cortex_m/cmsis.h>
+#endif
 #ifdef CONFIG_NRF_RTC_TIMER
 
 /* To get current count of timer, first 1 need to be written into
@@ -47,14 +50,26 @@ u64_t __common_var_swap_end_time;
 #define TIMING_INFO_OS_GET_TIME()     (k_cycle_get_32())
 #define TIMING_INFO_GET_TIMER_VALUE() (_arc_v2_aux_reg_read(_ARC_V2_TMR0_COUNT))
 #define SUBTRACT_CLOCK_CYCLES(val)    ((u32_t)val)
+
+#elif CONFIG_XTENSA
+#include <xtensa_timer.h>
+#define TIMING_INFO_PRE_READ()
+#define TIMING_INFO_OS_GET_TIME()      (k_cycle_get_32())
+#define TIMING_INFO_GET_TIMER_VALUE()  (k_cycle_get_32())
+#define SUBTRACT_CLOCK_CYCLES(val)     ((u32_t)val)
+
+#else
+/* Default case */
+#error "Benchmarks have not been implemented for this architecture"
 #endif	/* CONFIG_NRF_RTC_TIMER */
 
 
-#if defined(CONFIG_ARM) || defined(CONFIG_ARC)
 void read_timer_start_of_swap(void)
 {
-	TIMING_INFO_PRE_READ();
-	__start_swap_time = (u32_t) TIMING_INFO_OS_GET_TIME();
+	if (__read_swap_end_time_value == 1) {
+		TIMING_INFO_PRE_READ();
+		__start_swap_time = (u32_t) TIMING_INFO_OS_GET_TIME();
+	}
 }
 
 void read_timer_end_of_swap(void)
@@ -62,7 +77,7 @@ void read_timer_end_of_swap(void)
 	if (__read_swap_end_time_value == 1) {
 		TIMING_INFO_PRE_READ();
 		__read_swap_end_time_value = 2;
-		__common_var_swap_end_time = TIMING_INFO_OS_GET_TIME();
+		__common_var_swap_end_time = (u64_t)TIMING_INFO_OS_GET_TIME();
 	}
 }
 
@@ -98,5 +113,3 @@ void read_timer_end_of_userspace_enter(void)
 	TIMING_INFO_PRE_READ();
 	__end_drop_to_usermode_time  = (u32_t) TIMING_INFO_GET_TIMER_VALUE();
 }
-
-#endif /* CONFIG_ARM */
