@@ -51,6 +51,12 @@ void main(void)
 	/* mutex lock and unlock*/
 	msg_passing_bench();
 
+	/*******************************************************************/
+#ifdef CONFIG_USERSPACE
+	/* userspace related benchmarks */
+	userspace_bench();
+#endif
+
 
 	TC_PRINT("Timing Measurement  finished\n");
 
