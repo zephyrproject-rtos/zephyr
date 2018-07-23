@@ -14,9 +14,9 @@ extern void test_stack_user_pop_fail(void);
 
 K_MEM_POOL_DEFINE(test_pool, 128, 128, 2, 4);
 #else
-#define dummy_test(_name) \
-	static void _name(void) \
-	{ \
+#define dummy_test(_name)	   \
+	static void _name(void)	   \
+	{			   \
 		ztest_test_skip(); \
 	}
 
