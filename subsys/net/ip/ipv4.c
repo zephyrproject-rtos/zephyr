@@ -77,7 +77,8 @@ void net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 
 	NET_IPV4_HDR(pkt)->chksum = 0;
 
-	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt)) ||
+	    next_header_proto == IPPROTO_ICMP) {
 		NET_IPV4_HDR(pkt)->chksum = ~net_calc_chksum_ipv4(pkt);
 
 		if (IS_ENABLED(CONFIG_NET_UDP) &&
@@ -86,6 +87,8 @@ void net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 		} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 			   next_header_proto == IPPROTO_TCP) {
 			net_tcp_set_chksum(pkt, pkt->frags);
+		} else if (next_header_proto == IPPROTO_ICMP) {
+			net_icmpv4_set_chksum(pkt, pkt->frags);
 		}
 	}
 }

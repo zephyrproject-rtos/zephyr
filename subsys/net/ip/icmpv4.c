@@ -19,6 +19,7 @@
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include "net_private.h"
+#include "ipv4.h"
 #include "icmpv4.h"
 #include "net_stats.h"
 
@@ -137,35 +138,16 @@ static inline enum net_verdict handle_echo_request(struct net_pkt *pkt)
 	return NET_OK;
 }
 
-#define NET_ICMPV4_UNUSED_LEN 4
-
-static inline void setup_ipv4_header(struct net_pkt *pkt, u8_t extra_len,
-				     u8_t ttl, u8_t icmp_type,
-				     u8_t icmp_code)
+static void icmpv4_create(struct net_pkt *pkt, u8_t icmp_type, u8_t icmp_code)
 {
 	struct net_buf *frag = pkt->frags;
 	u16_t pos;
 
-	NET_IPV4_HDR(pkt)->vhl = 0x45;
-	NET_IPV4_HDR(pkt)->tos = 0x00;
-	NET_IPV4_HDR(pkt)->len[0] = 0;
-	NET_IPV4_HDR(pkt)->len[1] = sizeof(struct net_ipv4_hdr) +
-		NET_ICMPH_LEN + extra_len + NET_ICMPV4_UNUSED_LEN;
-
-	NET_IPV4_HDR(pkt)->proto = IPPROTO_ICMP;
-	NET_IPV4_HDR(pkt)->ttl = ttl;
-	NET_IPV4_HDR(pkt)->offset[0] = NET_IPV4_HDR(pkt)->offset[1] = 0;
-	NET_IPV4_HDR(pkt)->id[0] = NET_IPV4_HDR(pkt)->id[1] = 0;
-
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
-
-	NET_IPV4_HDR(pkt)->chksum = 0;
-	NET_IPV4_HDR(pkt)->chksum = ~net_calc_chksum_ipv4(pkt);
+	net_buf_add(frag, sizeof(struct net_icmp_hdr));
 
 	frag = net_pkt_write_u8(pkt, frag, net_pkt_ip_hdr_len(pkt), &pos,
 				icmp_type);
 	frag = net_pkt_write_u8(pkt, frag, pos, &pos, icmp_code);
-	net_pkt_write_be32(pkt, frag, pos, &pos, 0);
 }
 
 int net_icmpv4_send_echo_request(struct net_if *iface,
@@ -176,7 +158,6 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
 	const struct in_addr *src;
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 
 	if (!ipv4) {
 		return -EINVAL;
@@ -192,25 +173,18 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface,
 					      (const struct in6_addr *)dst),
 				     K_FOREVER);
-
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_family(pkt, AF_INET);
 	net_pkt_set_iface(pkt, iface);
 
-	net_buf_add(pkt->frags, sizeof(struct net_ipv4_hdr) +
-		    sizeof(struct net_icmp_hdr) +
-		    sizeof(struct net_icmpv4_echo_req));
+	net_ipv4_create(pkt, src, dst, iface, IPPROTO_ICMP);
 
-	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src, src);
-	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, dst);
+	icmpv4_create(pkt, NET_ICMPV4_ECHO_REQUEST, 0);
 
-	setup_ipv4_header(pkt, 0, net_if_ipv4_get_ttl(iface),
-			  NET_ICMPV4_ECHO_REQUEST, 0);
+	net_buf_add(pkt->frags, sizeof(struct net_icmpv4_echo_req));
 
 	NET_ICMPV4_ECHO_REQ(pkt)->identifier = htons(identifier);
 	NET_ICMPV4_ECHO_REQ(pkt)->sequence = htons(sequence);
+
+	net_ipv4_finalize(pkt, IPPROTO_ICMP);
 
 #if defined(CONFIG_NET_DEBUG_ICMPV4)
 	do {
@@ -224,8 +198,6 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 			net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src), out);
 	} while (0);
 #endif /* CONFIG_NET_DEBUG_ICMPV4 */
-
-	net_icmpv4_set_chksum(pkt, pkt->frags);
 
 	if (net_send_data(pkt) >= 0) {
 		net_stats_update_icmp_sent(iface);
@@ -241,12 +213,14 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 
 int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 {
+	int err = -EIO;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	struct net_if *iface = net_pkt_iface(orig);
-	size_t extra_len, reserve;
-	struct in_addr addr, *src, *dst;
-	int err = -EIO;
+	struct net_if *iface;
+	size_t copy_len;
+	const struct in_addr *src, *dst;
+
+	iface = net_pkt_iface(orig);
 
 	if (NET_IPV4_HDR(orig)->proto == IPPROTO_ICMP) {
 		struct net_icmp_hdr icmp_hdr[1];
@@ -259,67 +233,50 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 		}
 	}
 
-	iface = net_pkt_iface(orig);
+	dst = &NET_IPV4_HDR(orig)->src;
+	src = &NET_IPV4_HDR(orig)->dst;
 
-	pkt = net_pkt_get_reserve_tx(0, PKT_WAIT_TIME);
+	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface,
+					      (const struct in6_addr *)dst),
+				     PKT_WAIT_TIME);
 	if (!pkt) {
 		err = -ENOMEM;
 		goto drop_no_pkt;
 	}
 
-	reserve = sizeof(struct net_ipv4_hdr) + sizeof(struct net_icmp_hdr) +
-		NET_ICMPV4_UNUSED_LEN;
+	net_pkt_set_iface(pkt, iface);
+
+	net_ipv4_create(pkt, src, dst, iface, IPPROTO_ICMP);
+
+	icmpv4_create(pkt, type, code);
+
+	/* Appending unused part, filled with 0s */
+	net_pkt_append_be32(pkt, 0);
 
 	if (NET_IPV4_HDR(orig)->proto == IPPROTO_UDP) {
-		extra_len = sizeof(struct net_ipv4_hdr) +
+		copy_len = sizeof(struct net_ipv4_hdr) +
 			sizeof(struct net_udp_hdr);
 	} else if (NET_IPV4_HDR(orig)->proto == IPPROTO_TCP) {
-		extra_len = sizeof(struct net_ipv4_hdr);
+		copy_len = sizeof(struct net_ipv4_hdr);
 		/* FIXME, add TCP header length too */
 	} else {
-		size_t space = CONFIG_NET_BUF_DATA_SIZE -
-			net_if_get_ll_reserve(iface, NULL);
-
-		if (reserve > space) {
-			extra_len = 0;
-		} else {
-			extra_len = space - reserve;
-		}
+		copy_len = 0;
 	}
 
-	/* We need to remember the original location of source and destination
-	 * addresses as the net_pkt_copy() will mangle the original packet.
-	 */
-	src = &NET_IPV4_HDR(orig)->src;
-	dst = &NET_IPV4_HDR(orig)->dst;
-
-	/* We only copy minimal IPv4 + next header from original message.
-	 * This is so that the memory pressure is minimized.
-	 */
-	frag = net_pkt_copy(orig, extra_len, reserve, PKT_WAIT_TIME);
+	frag = net_pkt_copy(orig, copy_len, 0, PKT_WAIT_TIME);
 	if (!frag) {
 		err = -ENOMEM;
 		goto drop;
 	}
 
 	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_family(pkt, AF_INET);
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_ll_reserve(pkt, net_buf_headroom(frag));
 
-	net_ipaddr_copy(&addr, src);
-	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src, dst);
-	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
-
-	setup_ipv4_header(pkt, extra_len, net_if_ipv4_get_ttl(iface),
-			  type, code);
+	net_ipv4_finalize(pkt, IPPROTO_ICMP);
 
 	net_pkt_ll_src(pkt)->addr = net_pkt_ll_dst(orig)->addr;
 	net_pkt_ll_src(pkt)->len = net_pkt_ll_dst(orig)->len;
 	net_pkt_ll_dst(pkt)->addr = net_pkt_ll_src(orig)->addr;
 	net_pkt_ll_dst(pkt)->len = net_pkt_ll_src(orig)->len;
-
-	net_icmpv4_set_chksum(pkt, pkt->frags);
 
 #if defined(CONFIG_NET_DEBUG_ICMPV4)
 	do {
