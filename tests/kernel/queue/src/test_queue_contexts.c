@@ -125,6 +125,11 @@ static void tqueue_isr_thread(struct k_queue *pqueue)
 }
 
 /*test cases*/
+/**
+ * @brief Verify data passing between threads using queue
+ * @ingroup kernel_queue_tests
+ * @see k_queue_init(), k_queue_insert(), k_queue_append()
+ */
 void test_queue_thread2thread(void)
 {
 	/**TESTPOINT: init via k_queue_init*/
@@ -135,6 +140,11 @@ void test_queue_thread2thread(void)
 	tqueue_thread_thread(&kqueue);
 }
 
+/**
+ * @brief Verify data passing between thread and ISR
+ * @ingroup kernel_queue_tests
+ * @see k_queue_init(), k_queue_insert(), k_queue_append()
+ */
 void test_queue_thread2isr(void)
 {
 	/**TESTPOINT: init via k_queue_init*/
@@ -145,6 +155,12 @@ void test_queue_thread2isr(void)
 	tqueue_thread_isr(&kqueue);
 }
 
+/**
+ * @brief Verify data passing between ISR and thread
+ * @see k_queue_init(), k_queue_insert(), k_queue_get(),
+ * k_queue_append(), k_queue_remove()
+ * @ingroup kernel_queue_tests
+ */
 void test_queue_isr2thread(void)
 {
 	/**TESTPOINT: test k_queue_init queue*/
@@ -170,8 +186,8 @@ static void tqueue_get_2threads(struct k_queue *pqueue)
 				      K_PRIO_PREEMPT(0), 0, 0);
 
 	k_tid_t tid1 = k_thread_create(&tdata1, tstack1, STACK_SIZE,
-				      tThread_get, pqueue, NULL, NULL,
-				      K_PRIO_PREEMPT(0), 0, 0);
+				       tThread_get, pqueue, NULL, NULL,
+				       K_PRIO_PREEMPT(0), 0, 0);
 
 	/* Wait threads to initialize */
 	k_sleep(10);
@@ -187,6 +203,12 @@ static void tqueue_get_2threads(struct k_queue *pqueue)
 	k_thread_abort(tid1);
 }
 
+/**
+ * @brief Verify k_queue_get()
+ * @ingroup kernel_queue_tests
+ * @see k_queue_init(), k_queue_get(),
+ * k_queue_append(), k_queue_alloc_prepend()
+ */
 void test_queue_get_2threads(void)
 {
 	/**TESTPOINT: test k_queue_init queue*/
