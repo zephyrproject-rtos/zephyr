@@ -58,6 +58,24 @@ u64_t __common_var_swap_end_time;
 #define TIMING_INFO_GET_TIMER_VALUE()  (k_cycle_get_32())
 #define SUBTRACT_CLOCK_CYCLES(val)     ((u32_t)val)
 
+#elif CONFIG_NIOS2
+#include "altera_avalon_timer_regs.h"
+#define TIMING_INFO_PRE_READ()         \
+	(IOWR_ALTERA_AVALON_TIMER_SNAPL(TIMER_0_BASE, 10))
+
+#define TIMING_INFO_OS_GET_TIME()      (SUBTRACT_CLOCK_CYCLES(\
+	((u32_t)IORD_ALTERA_AVALON_TIMER_SNAPH(TIMER_0_BASE) << 16)\
+	| ((u32_t)IORD_ALTERA_AVALON_TIMER_SNAPL(TIMER_0_BASE))))
+
+#define TIMING_INFO_GET_TIMER_VALUE()  (\
+	((u32_t)IORD_ALTERA_AVALON_TIMER_SNAPH(TIMER_0_BASE) << 16)\
+	| ((u32_t)IORD_ALTERA_AVALON_TIMER_SNAPL(TIMER_0_BASE)))
+
+#define SUBTRACT_CLOCK_CYCLES(val)     \
+	((IORD_ALTERA_AVALON_TIMER_PERIODH(TIMER_0_BASE)	\
+	  << 16 |						\
+	  (IORD_ALTERA_AVALON_TIMER_PERIODL(TIMER_0_BASE)))	\
+	 - ((u32_t)val))
 #else
 /* Default case */
 #error "Benchmarks have not been implemented for this architecture"
