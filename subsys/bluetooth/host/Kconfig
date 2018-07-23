@@ -158,7 +158,7 @@ config BT_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
 	default 6
 	default BT_CTLR_RX_BUFFERS if BT_CTLR
-	range 2 64
+	range 1 64
 	help
 	  Number of buffers available for incoming ACL data.
 
