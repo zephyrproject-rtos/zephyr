@@ -12,9 +12,11 @@
  */
 
 #define _DEFAULT_SOURCE
+#define _XOPEN_SOURCE
 
 /* Host include files */
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
 #include <errno.h>
 #include <string.h>
@@ -88,6 +90,7 @@ static int ssystem(const char *fmt, ...)
 {
 	char cmd[255];
 	va_list ap;
+	int ret;
 
 	va_start(ap, fmt);
 	vsnprintf(cmd, sizeof(cmd), fmt, ap);
@@ -96,7 +99,9 @@ static int ssystem(const char *fmt, ...)
 	printk("%s\n", cmd);
 	fflush(stdout);
 
-	return system(cmd);
+	ret = system(cmd);
+
+	return -WEXITSTATUS(ret);
 }
 
 int eth_setup_host(const char *if_name)
