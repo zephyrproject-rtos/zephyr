@@ -6,10 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define TRANS_SEQ_AUTH_NVAL 0xffffffffffffffff
+#define TRANS_SEQ_AUTH_NVAL            0xffffffffffffffff
 
-#define BT_MESH_TX_SEG_COUNT (CONFIG_BT_MESH_ADV_BUF_COUNT - 3)
-#define BT_MESH_TX_SDU_MAX (BT_MESH_TX_SEG_COUNT * 12)
+#define BT_MESH_TX_SDU_MAX             (CONFIG_BT_MESH_TX_SEG_MAX * 12)
 
 #define TRANS_CTL_OP_MASK              ((u8_t)BIT_MASK(7))
 #define TRANS_CTL_OP(data)             ((data)[0] & TRANS_CTL_OP_MASK)
