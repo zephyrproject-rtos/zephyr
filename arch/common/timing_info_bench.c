@@ -76,6 +76,14 @@ u64_t __common_var_swap_end_time;
 	  << 16 |						\
 	  (IORD_ALTERA_AVALON_TIMER_PERIODL(TIMER_0_BASE)))	\
 	 - ((u32_t)val))
+
+
+#elif CONFIG_RISCV32
+#define TIMING_INFO_PRE_READ()
+#define TIMING_INFO_OS_GET_TIME()      (k_cycle_get_32())
+#define TIMING_INFO_GET_TIMER_VALUE()  (k_cycle_get_32())
+#define SUBTRACT_CLOCK_CYCLES(val)     ((u32_t)val)
+
 #else
 /* Default case */
 #error "Benchmarks have not been implemented for this architecture"
