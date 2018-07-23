@@ -914,7 +914,7 @@ static int create_udp_packet(struct net_context *context,
 
 		pkt = tmp;
 
-		r = net_ipv4_finalize(pkt, net_context_get_ip_proto(context));
+		net_ipv4_finalize(pkt, net_context_get_ip_proto(context));
 	} else
 #endif /* CONFIG_NET_IPV4 */
 	{
