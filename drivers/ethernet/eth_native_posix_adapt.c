@@ -166,3 +166,11 @@ int eth_clock_gettime(struct net_ptp_time *time)
 	return 0;
 }
 #endif /* CONFIG_NET_GPTP */
+
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+int eth_promisc_mode(const char *if_name, bool enable)
+{
+	return ssystem("ip link set dev %s promisc %s",
+		       if_name, enable ? "on" : "off");
+}
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */

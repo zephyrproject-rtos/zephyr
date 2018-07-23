@@ -58,6 +58,7 @@ struct eth_context {
 	int dev_fd;
 	bool init_done;
 	bool status;
+	bool promisc_mode;
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats;
@@ -429,6 +430,9 @@ enum ethernet_hw_caps eth_posix_native_get_capabilities(struct device *dev)
 #if defined(CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK)
 		| ETHERNET_PTP
 #endif
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+		| ETHERNET_PROMISC_MODE
+#endif
 		;
 }
 
@@ -450,11 +454,43 @@ static struct net_stats_eth *get_stats(struct net_if *iface)
 }
 #endif
 
+static int set_config(struct device *dev,
+		      enum ethernet_config_type type,
+		      const struct ethernet_config *config)
+{
+	int ret = 0;
+
+	if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE) &&
+	    type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
+		struct eth_context *context = dev->driver_data;
+
+		if (config->promisc_mode) {
+			if (context->promisc_mode) {
+				return -EALREADY;
+			}
+
+			context->promisc_mode = true;
+		} else {
+			if (!context->promisc_mode) {
+				return -EALREADY;
+			}
+
+			context->promisc_mode = false;
+		}
+
+		ret = eth_promisc_mode(context->if_name,
+				       context->promisc_mode);
+	}
+
+	return ret;
+}
+
 static const struct ethernet_api eth_if_api = {
 	.iface_api.init = eth_iface_init,
 	.iface_api.send = eth_send,
 
 	.get_capabilities = eth_posix_native_get_capabilities,
+	.set_config = set_config,
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = get_stats,
