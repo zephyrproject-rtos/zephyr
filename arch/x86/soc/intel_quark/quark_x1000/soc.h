@@ -93,9 +93,9 @@
 /*
  * I2C
  */
-#define I2C_DW_PCI_VENDOR_ID			0x8086
-#define I2C_DW_PCI_DEVICE_ID			0x0934
-#define I2C_DW_PCI_CLASS			0x0C
+#define I2C_DW_0_PCI_VENDOR_ID			0x8086
+#define I2C_DW_0_PCI_DEVICE_ID			0x0934
+#define I2C_DW_0_PCI_CLASS			0x0C
 
 #define I2C_DW_0_PCI_BUS			0
 #define I2C_DW_0_PCI_DEV			21
