@@ -50,6 +50,7 @@ extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
 extern void net_tc_submit_to_tx_queue(u8_t tc, struct net_pkt *pkt);
 extern void net_tc_submit_to_rx_queue(u8_t tc, struct net_pkt *pkt);
+extern enum net_verdict net_promisc_mode_input(struct net_pkt *pkt);
 
 #if defined(CONFIG_NET_GPTP)
 /**

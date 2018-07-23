@@ -421,6 +421,16 @@ config NET_PKT_TIMESTAMP_STACK_SIZE
 	  thread waits for timestamped TX frames and calls registered
 	  callbacks.
 
+config NET_PROMISCUOUS_MODE
+	bool "Enable promiscuous mode support [EXPERIMENTAL]"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_L2_ETHERNET_MGMT if NET_L2_ETHERNET
+	help
+	  Enable promiscuous mode support. This only works if the network
+	  device driver supports promiscuous mode. The user application
+	  also needs to read the promiscuous mode data.
+
 source "subsys/net/ip/Kconfig.stack"
 
 source "subsys/net/ip/Kconfig.mgmt"
