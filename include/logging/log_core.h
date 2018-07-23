@@ -200,10 +200,10 @@ extern "C" {
 				.domain_id = CONFIG_LOG_DOMAIN_ID	    \
 			};						    \
 			__LOG_INTERNAL(src_level, __VA_ARGS__);		    \
-		} else {						    \
-			/* arg checker evaluated when log is filtered out */\
-			/* to ensure that __VA_ARGS__ are evaluated only */ \
-			/* once giving always same side effects.*/	    \
+		} else if (0) {						    \
+			/* Arguments checker present but never evaluated.*/ \
+			/* Placed here to ensure that __VA_ARGS__ are*/     \
+			/* evaluated once when log is enabled.*/	    \
 			log_printf_arg_checker(__VA_ARGS__);		    \
 		}							    \
 	} while (0)
