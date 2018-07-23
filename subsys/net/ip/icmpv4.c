@@ -117,7 +117,7 @@ static inline enum net_verdict handle_echo_request(struct net_pkt *pkt)
 	icmp_hdr = net_icmpv4_get_hdr(pkt, &hdr);
 	icmp_hdr->type = NET_ICMPV4_ECHO_REPLY;
 	icmp_hdr->code = 0;
-	icmp_hdr->chksum = 0;
+
 	net_icmpv4_set_hdr(pkt, icmp_hdr);
 	net_icmpv4_set_chksum(pkt, pkt->frags);
 
