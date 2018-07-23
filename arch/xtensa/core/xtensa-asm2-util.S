@@ -220,6 +220,10 @@ xtensa_switch:
 	 * sanity.
 	 */
 	l32i a1, a2, BSA_A2_OFF
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	call4 read_timer_end_of_swap
+#endif
 	j _restore_context
 _switch_restore_pc:
 	retw

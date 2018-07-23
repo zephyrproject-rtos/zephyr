@@ -46,6 +46,11 @@ static inline unsigned int _Swap(unsigned int key)
 	struct k_thread *new_thread, *old_thread;
 	int ret = 0;
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_start_of_swap(void);
+	read_timer_start_of_swap();
+#endif
+
 	old_thread = _current;
 
 	_check_stack_sentinel();
