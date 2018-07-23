@@ -329,7 +329,7 @@ static u32_t __IoApicGet(s32_t offset)
 
 	key = irq_lock();
 
-	*((volatile char *)
+	*((volatile u32_t *)
 		(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_IND)) = (char)offset;
 	value = *((volatile u32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_DATA));
 
@@ -356,7 +356,7 @@ static void __IoApicSet(s32_t offset, u32_t value)
 
 	key = irq_lock();
 
-	*(volatile char *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_IND) = (char)offset;
+	*(volatile u32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_IND) = (char)offset;
 	*((volatile u32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_DATA)) = value;
 
 	irq_unlock(key);
