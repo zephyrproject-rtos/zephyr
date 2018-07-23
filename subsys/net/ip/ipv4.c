@@ -77,20 +77,17 @@ int net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 
 	NET_IPV4_HDR(pkt)->chksum = 0;
 
-#if defined(CONFIG_NET_UDP)
-	if (next_header_proto == IPPROTO_UDP &&
-	    net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
 		NET_IPV4_HDR(pkt)->chksum = ~net_calc_chksum_ipv4(pkt);
-		net_udp_set_chksum(pkt, pkt->frags);
+
+		if (IS_ENABLED(CONFIG_NET_UDP) &&
+		    next_header_proto == IPPROTO_UDP) {
+			net_udp_set_chksum(pkt, pkt->frags);
+		} else if (IS_ENABLED(CONFIG_NET_TCP) &&
+			   next_header_proto == IPPROTO_TCP) {
+			net_tcp_set_chksum(pkt, pkt->frags);
+		}
 	}
-#endif
-#if defined(CONFIG_NET_TCP)
-	if (next_header_proto == IPPROTO_TCP &&
-	    net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
-		NET_IPV4_HDR(pkt)->chksum = ~net_calc_chksum_ipv4(pkt);
-		net_tcp_set_chksum(pkt, pkt->frags);
-	}
-#endif
 
 	return 0;
 }
@@ -137,8 +134,8 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 
 	if (!net_is_my_ipv4_addr(&hdr->dst) &&
 	    !net_is_ipv4_addr_mcast(&hdr->dst)) {
-#if defined(CONFIG_NET_DHCPV4)
-		if (hdr->proto == IPPROTO_UDP &&
+		if (IS_ENABLED(CONFIG_NET_DHCPV4) &&
+		    hdr->proto == IPPROTO_UDP &&
 		    net_ipv4_addr_cmp(&hdr->dst,
 				      net_ipv4_broadcast_address())) {
 
@@ -147,7 +144,7 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 				return verdict;
 			}
 		}
-#endif
+
 		NET_DBG("IPv4 packet in pkt %p not for me", pkt);
 		goto drop;
 	}
