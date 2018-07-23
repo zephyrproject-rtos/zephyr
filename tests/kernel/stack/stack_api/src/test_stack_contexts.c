@@ -92,6 +92,7 @@ static void tstack_thread_isr(struct k_stack *pstack)
  */
 
 /**
+ * @brief Test to verify data passing between threads via stack
  * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
  */
 void test_stack_thread2thread(void)
@@ -106,6 +107,7 @@ void test_stack_thread2thread(void)
 
 #ifdef CONFIG_USERSPACE
 /**
+ * @brief Verifies data passing between user threads via stack
  * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
  */
 void test_stack_user_thread2thread(void)
@@ -121,6 +123,7 @@ void test_stack_user_thread2thread(void)
 #endif
 
 /**
+ * @brief Verifies data passing between thread and ISR via stack
  * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
  */
 void test_stack_thread2isr(void)
