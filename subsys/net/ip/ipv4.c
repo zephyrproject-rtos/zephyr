@@ -63,7 +63,7 @@ struct net_pkt *net_ipv4_create(struct net_pkt *pkt,
 	return pkt;
 }
 
-int net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
+void net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 {
 	/* Set the length of the IPv4 header */
 	size_t total_len;
@@ -88,8 +88,6 @@ int net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 			net_tcp_set_chksum(pkt, pkt->frags);
 		}
 	}
-
-	return 0;
 }
 
 const struct in_addr *net_ipv4_unspecified_address(void)

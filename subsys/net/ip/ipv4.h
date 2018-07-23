@@ -48,8 +48,7 @@ struct net_pkt *net_ipv4_create(struct net_pkt *pkt,
  * @param pkt Network packet
  * @param next_header_proto Protocol type of the next header after IPv4 header.
  *
- * @return Return 0 on Success, < 0 on Failure.
  */
-int net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto);
+void net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto);
 
 #endif /* __IPV4_H */
