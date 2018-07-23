@@ -193,11 +193,8 @@ static int upipe_cca(struct device *dev)
 
 static int upipe_set_channel(struct device *dev, u16_t channel)
 {
-	struct upipe_context *upipe = dev->driver_data;
-
-	if (upipe->stopped) {
-		return -EIO;
-	}
+	ARG_UNUSED(dev);
+	ARG_UNUSED(channel);
 
 	return 0;
 }
@@ -259,11 +256,8 @@ static int upipe_filter(struct device *dev,
 
 static int upipe_set_txpower(struct device *dev, s16_t dbm)
 {
-	struct upipe_context *upipe = dev->driver_data;
-
-	if (upipe->stopped) {
-		return -EIO;
-	}
+	ARG_UNUSED(dev);
+	ARG_UNUSED(dbm);
 
 	return 0;
 }
