@@ -209,6 +209,11 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	printk("MTU       : %d\n", net_if_get_mtu(iface));
 
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	printk("Promiscuous mode : %s\n",
+	       net_if_is_promisc(iface) ? "enabled" : "disabled");
+#endif
+
 #if defined(CONFIG_NET_VLAN)
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		eth_ctx = net_if_l2_data(iface);
