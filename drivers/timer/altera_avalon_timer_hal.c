@@ -19,12 +19,22 @@ static void timer_irq_handler(void *unused)
 {
 	ARG_UNUSED(unused);
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_start_of_tick_handler(void);
+	read_timer_start_of_tick_handler();
+#endif
+
 	accumulated_cycle_count += sys_clock_hw_cycles_per_tick;
 
 	/* Clear the interrupt */
 	alt_handle_irq((void *)TIMER_0_BASE, TIMER_0_IRQ);
 
 	_sys_clock_tick_announce();
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_end_of_tick_handler(void);
+	read_timer_end_of_tick_handler();
+#endif
 }
 
 int _sys_clock_driver_init(struct device *device)
