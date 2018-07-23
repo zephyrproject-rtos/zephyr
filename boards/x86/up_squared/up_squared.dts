@@ -30,7 +30,7 @@
 			reg = <0x91524000 0x1000>;
 			label = "UART_0";
 			clock-frequency = <1843200>;
-			interrupts = <4 IRQ_TYPE_LEVEL_HIGH 3>;
+			interrupts = <4 IRQ_TYPE_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
 			status = "ok";
@@ -42,7 +42,7 @@
 			reg = <0x91522000 0x1000>;
 			label = "UART_1";
 			clock-frequency = <1843200>;
-			interrupts = <5 IRQ_TYPE_LEVEL_HIGH 3>;
+			interrupts = <5 IRQ_TYPE_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
 			status = "ok";
