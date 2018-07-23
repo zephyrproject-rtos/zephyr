@@ -12,8 +12,6 @@
 #include <misc/printk.h>
 #include <assert.h>
 #include <atomic.h>
-#include <stdio.h>
-#include <atomic.h>
 
 #ifndef CONFIG_LOG_PRINTK_MAX_STRING_LENGTH
 #define CONFIG_LOG_PRINTK_MAX_STRING_LENGTH 1
@@ -151,7 +149,7 @@ int log_printk(const char *fmt, va_list ap)
 		struct log_msg *msg;
 		int length;
 
-		length = vsnprintf(formatted_str,
+		length = vsnprintk(formatted_str,
 				   sizeof(formatted_str), fmt, ap);
 
 		length = (length > sizeof(formatted_str)) ?
