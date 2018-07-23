@@ -80,5 +80,3 @@ source "drivers/flash/Kconfig.qmsi"
 source "drivers/flash/Kconfig.stm32"
 
 source "drivers/flash/Kconfig.sam0"
-
-source "drivers/flash/Kconfig.w25qxxdv"

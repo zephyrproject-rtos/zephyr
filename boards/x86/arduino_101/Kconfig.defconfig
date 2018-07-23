@@ -12,29 +12,29 @@ config SS_RESET_VECTOR
 
 if FLASH && SPI
 
-config SPI_FLASH_W25QXXDV
+config SPI_NOR
 	def_bool y
 
 config GPIO
 	def_bool y
 
-if SPI_FLASH_W25QXXDV
+if SPI_NOR
 
-config SPI_FLASH_W25QXXDV_SPI_NAME
+config SPI_NOR_SPI_NAME
 	default "SPI_0"
-config SPI_FLASH_W25QXXDV_SPI_SLAVE
+config SPI_NOR_SPI_SLAVE
 	default 1
-config SPI_FLASH_W25QXXDV_GPIO_SPI_CS
+config SPI_NOR_GPIO_SPI_CS
 	def_bool y
-config SPI_FLASH_W25QXXDV_GPIO_SPI_CS_DRV_NAME
+config SPI_NOR_GPIO_SPI_CS_DRV_NAME
 	default "GPIO_0"
-config SPI_FLASH_W25QXXDV_GPIO_SPI_CS_PIN
+config SPI_NOR_GPIO_SPI_CS_PIN
 	default 24
 
 if DISK_ACCESS_FLASH
 
 config DISK_FLASH_DEV_NAME
-	default SPI_FLASH_W25QXXDV_DRV_NAME
+	default "W25Q16"
 
 config DISK_FLASH_START
 	default 0x0
@@ -53,7 +53,7 @@ config DISK_VOLUME_SIZE
 
 endif # DISK_ACCESS_FLASH
 
-endif # SPI_FLASH_W25QXXDV
+endif # SPI_NOR
 
 endif # FLASH && SPI
 
