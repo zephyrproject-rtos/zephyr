@@ -28,6 +28,7 @@
 #include <net/dns_resolve.h>
 
 #include "dhcpv4.h"
+#include "ipv4.h"
 
 static struct net_mgmt_event_callback mgmt4_cb;
 
@@ -149,15 +150,11 @@ static inline bool dhcpv4_add_sname(struct net_pkt *pkt)
 	return true;
 }
 
-/* Setup IPv4 + UDP header */
-static bool dhcpv4_setup_header(struct net_pkt *pkt,
-				const struct in_addr *server_addr)
+/* Setup UDP header */
+static bool dhcpv4_setup_udp_header(struct net_pkt *pkt)
 {
-	struct net_ipv4_hdr *ipv4;
 	struct net_udp_hdr hdr, *udp;
 	u16_t len;
-
-	ipv4 = NET_IPV4_HDR(pkt);
 
 	udp = net_udp_get_hdr(pkt, &hdr);
 	if (!udp || udp == &hdr) {
@@ -165,30 +162,12 @@ static bool dhcpv4_setup_header(struct net_pkt *pkt,
 		return false;
 	}
 
-	len = net_pkt_get_len(pkt);
+	len = net_pkt_get_len(pkt) - NET_IPV4H_LEN;
 
-	/* Setup IPv4 header */
-	memset(ipv4, 0, sizeof(struct net_ipv4_hdr));
-
-	ipv4->vhl = 0x45;
-	ipv4->ttl = 0xFF;
-	ipv4->proto = IPPROTO_UDP;
-	ipv4->len[0] = len >> 8;
-	ipv4->len[1] = (u8_t)len;
-	ipv4->chksum = 0;
-
-	net_ipaddr_copy(&ipv4->dst, server_addr);
-
-	len -= NET_IPV4H_LEN;
 	/* Setup UDP header */
 	udp->src_port = htons(DHCPV4_CLIENT_PORT);
 	udp->dst_port = htons(DHCPV4_SERVER_PORT);
 	udp->len = htons(len);
-
-	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
-		ipv4->chksum = ~net_calc_chksum_ipv4(pkt);
-		net_udp_set_chksum(pkt, pkt->frags);
-	}
 
 	net_udp_set_hdr(pkt, udp);
 
@@ -197,25 +176,25 @@ static bool dhcpv4_setup_header(struct net_pkt *pkt,
 
 /* Prepare initial DHCPv4 message and add options as per message type */
 static struct net_pkt *dhcpv4_prepare_message(struct net_if *iface, u8_t type,
-					      const struct in_addr *ciaddr)
+					      const struct in_addr *ciaddr,
+					      const struct in_addr *server_addr)
 {
+	const struct in_addr src = INADDR_ANY_INIT;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct dhcp_msg *msg;
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
 				     K_FOREVER);
-
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
 	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET);
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
+	net_pkt_set_ipv4_ttl(pkt, 0xFF);
 
-	net_pkt_frag_add(pkt, frag);
+	net_ipv4_create(pkt, &src, server_addr, iface, IPPROTO_UDP);
 
-	/* Leave room for IPv4 + UDP headers */
-	net_buf_add(pkt->frags, NET_IPV4UDPH_LEN);
+	frag = pkt->frags;
+
+	/* Leave room for UDP header which will be filled in later */
+	net_buf_add(frag, NET_UDPH_LEN);
 
 	if (net_buf_tailroom(frag) < sizeof(struct dhcp_msg)) {
 		goto fail;
@@ -305,7 +284,8 @@ static void dhcpv4_send_request(struct net_if *iface)
 		break;
 	}
 
-	pkt = dhcpv4_prepare_message(iface, DHCPV4_MSG_TYPE_REQUEST, ciaddr);
+	pkt = dhcpv4_prepare_message(iface, DHCPV4_MSG_TYPE_REQUEST,
+				     ciaddr, server_addr);
 	if (!pkt) {
 		goto fail;
 	}
@@ -324,9 +304,11 @@ static void dhcpv4_send_request(struct net_if *iface)
 		goto fail;
 	}
 
-	if (!dhcpv4_setup_header(pkt, server_addr)) {
+	if (!dhcpv4_setup_udp_header(pkt)) {
 		goto fail;
 	}
+
+	net_ipv4_finalize(pkt, IPPROTO_UDP);
 
 	if (net_send_data(pkt) < 0) {
 		goto fail;
@@ -376,7 +358,8 @@ static void dhcpv4_send_discover(struct net_if *iface)
 
 	iface->config.dhcpv4.xid++;
 
-	pkt = dhcpv4_prepare_message(iface, DHCPV4_MSG_TYPE_DISCOVER, NULL);
+	pkt = dhcpv4_prepare_message(iface, DHCPV4_MSG_TYPE_DISCOVER,
+				     NULL, net_ipv4_broadcast_address());
 	if (!pkt) {
 		goto fail;
 	}
@@ -385,9 +368,11 @@ static void dhcpv4_send_discover(struct net_if *iface)
 		goto fail;
 	}
 
-	if (!dhcpv4_setup_header(pkt, net_ipv4_broadcast_address())) {
+	if (!dhcpv4_setup_udp_header(pkt)) {
 		goto fail;
 	}
+
+	net_ipv4_finalize(pkt, IPPROTO_UDP);
 
 	if (net_send_data(pkt) < 0) {
 		goto fail;
