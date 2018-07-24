@@ -11,11 +11,6 @@
 #include "tcp_cfg.h"
 #include "tcp.h"
 
-#include <net/net_core.h>
-#include <net/net_context.h>
-#include <net/net_pkt.h>
-#include <net/net_if.h>
-
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
 #include "mbedtls/config.h"
 #else
@@ -24,82 +19,18 @@
 
 #include "mbedtls/ssl.h"
 
-#define INET_FAMILY		AF_INET
-
-#define TCP_BUF_CTR    5
-#define TCP_BUF_SIZE   1024
-
-NET_BUF_POOL_DEFINE(tcp_msg_pool, TCP_BUF_CTR, TCP_BUF_SIZE, 0, NULL);
-
-static void tcp_received(struct net_context *context,
-			 struct net_pkt *pkt, int status, void *user_data)
-{
-	ARG_UNUSED(context);
-	struct tcp_context *ctx = user_data;
-
-	ctx->rx_pkt = pkt;
-}
-
 int tcp_tx(void *context, const unsigned char *buf, size_t size)
 {
 	struct tcp_context *ctx = context;
-	struct net_context *tcp_ctx;
-	struct net_pkt *send_pkt;
-	int rc, len;
 
-	tcp_ctx = ctx->net_ctx;
-
-	send_pkt = net_pkt_get_tx(tcp_ctx, K_FOREVER);
-	if (!send_pkt) {
-		printk("cannot create pkt\n");
-		return -EIO;
-	}
-
-	len = net_pkt_append(send_pkt, size, (u8_t *) buf, K_FOREVER);
-
-	rc = net_context_send(send_pkt, NULL, ctx->timeout, NULL, NULL);
-
-	if (rc < 0) {
-		printk("Cannot send IPv4 data to peer (%d)\n", rc);
-		net_pkt_unref(send_pkt);
-		return -EIO;
-	} else {
-		return len;
-	}
+	return send(ctx->socket, buf, size, 0);
 }
 
 int tcp_rx(void *context, unsigned char *buf, size_t size)
 {
-	struct net_buf *data = NULL;
 	struct tcp_context *ctx = context;
-	int rc;
-	u8_t *ptr;
-	int read_bytes;
-	u16_t offset;
 
-	rc = net_context_recv(ctx->net_ctx, tcp_received, K_FOREVER, ctx);
-	if (rc != 0) {
-		printk("net_context_recv failed with code:%d\n", rc);
-		return 0;
-	}
-	read_bytes = net_pkt_appdatalen(ctx->rx_pkt);
-
-	data = net_buf_alloc(&tcp_msg_pool, APP_SLEEP_MSECS);
-	if (data == NULL) {
-		net_pkt_unref(ctx->rx_pkt);
-		printk("net_buf_alloc failed\n");
-		return -EIO;
-	}
-
-	offset = net_pkt_get_len(ctx->rx_pkt) - read_bytes;
-	rc = net_frag_linear_copy(data, ctx->rx_pkt->frags, offset, read_bytes);
-	ptr = net_pkt_appdata(ctx->rx_pkt);
-	memcpy(buf, ptr, read_bytes);
-
-	net_pkt_unref(ctx->rx_pkt);
-	net_buf_unref(data);
-
-	return read_bytes;
+	return recv(ctx->socket, buf, size, 0);
 }
 
 static int set_addr(struct sockaddr *sock_addr, const char *addr,
@@ -181,15 +112,16 @@ int tcp_init(struct tcp_context *ctx, const char *server_addr,
 	sa_family_t family = AF_INET;
 #endif
 
-	rc = net_context_get(family, SOCK_STREAM, IPPROTO_TCP, &ctx->net_ctx);
-	if (rc) {
-		printk("net_context_get error\n");
+	rc = socket(family, SOCK_STREAM, IPPROTO_TCP);
+	if (rc < 0) {
+		printk("socket creation error\n");
 		return rc;
 	}
 
-	rc = net_context_bind(ctx->net_ctx, &ctx->local_sock, addr_len);
+	ctx->socket = rc;
+	rc = bind(ctx->socket, &ctx->local_sock, addr_len);
 	if (rc) {
-		printk("net_context_bind error\n");
+		printk("socket bind error\n");
 		goto lb_exit;
 	}
 
@@ -199,17 +131,15 @@ int tcp_init(struct tcp_context *ctx, const char *server_addr,
 		goto lb_exit;
 	}
 
-	rc = net_context_connect(ctx->net_ctx, &server_sock, addr_len, NULL,
-				 ctx->timeout, NULL);
+	rc = connect(ctx->socket, &server_sock, addr_len);
 	if (rc) {
-		printk("net_context_connect error\n");
+		printk("socket connect error\n");
 		goto lb_exit;
 	}
 
 	return 0;
 
 lb_exit:
-	net_context_put(ctx->net_ctx);
-
+	close(ctx->socket);
 	return rc;
 }
