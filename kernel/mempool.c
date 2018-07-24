@@ -90,7 +90,7 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 			return ret;
 		}
 
-		(void)_pend_curr_irqlock(irq_lock(), &p->wait_q, timeout);
+		_pend_curr_unlocked(&p->wait_q, timeout);
 
 		if (timeout != K_FOREVER) {
 			timeout = end - z_tick_get();

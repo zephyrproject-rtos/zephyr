@@ -103,6 +103,14 @@ static inline int _Swap(struct k_spinlock *lock, k_spinlock_key_t key)
 	return do_swap(key.key, lock, 1);
 }
 
+static inline void _Swap_unlocked(void)
+{
+	struct k_spinlock lock = {};
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	(void) _Swap(&lock, key);
+}
+
 #else /* !CONFIG_USE_SWITCH */
 
 extern int __swap(unsigned int key);
@@ -135,6 +143,11 @@ static ALWAYS_INLINE int _Swap(struct k_spinlock *lock, k_spinlock_key_t key)
 {
 	k_spin_release(lock);
 	return _Swap_irqlock(key.key);
+}
+
+static inline void _Swap_unlocked(void)
+{
+	(void) _Swap_irqlock(_arch_irq_lock());
 }
 
 #endif
