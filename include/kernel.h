@@ -2526,6 +2526,7 @@ typedef void (*k_work_handler_t)(struct k_work *work);
 struct k_work_q {
 	struct k_queue queue;
 	struct k_thread thread;
+	struct k_spinlock lock;
 };
 
 enum {
