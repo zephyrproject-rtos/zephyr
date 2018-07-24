@@ -98,12 +98,9 @@ static s32_t configure_simplelink(void)
 		return -1;
 	}
 
-	/* Remove Auto Connection Policy, to avoid multiple re-connect tries:
-	 * Note: this doesn't actually work.
-	 * NWP still issues multiple reconnects on a connection failure.
-	 */
+	/* Use Fast Connect Policy, to automatically connect to last AP: */
 	retval = sl_WlanPolicySet(SL_WLAN_POLICY_CONNECTION,
-				  SL_WLAN_CONNECTION_POLICY(0, 0, 0, 0),
+				  SL_WLAN_CONNECTION_POLICY(1, 1, 0, 0),
 				  NULL, 0);
 	ASSERT_ON_ERROR(retval, WLAN_ERROR);
 
