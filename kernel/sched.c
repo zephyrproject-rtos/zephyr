@@ -434,7 +434,7 @@ int _pend_current_thread(u32_t key, _wait_q_t *wait_q, s32_t timeout)
 	pending_current = _current;
 #endif
 	pend(_current, wait_q, timeout);
-	return _Swap(key);
+	return _Swap_irqlock(key);
 }
 
 struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
@@ -498,7 +498,7 @@ void _reschedule(u32_t key)
 		goto noswap;
 	}
 
-	(void)_Swap(key);
+	(void)_Swap_irqlock(key);
 	return;
 
  noswap:
@@ -841,10 +841,10 @@ void _impl_k_yield(void)
 	}
 
 #ifdef CONFIG_SMP
-	(void)_Swap(irq_lock());
+	(void)_Swap_irqlock(irq_lock());
 #else
 	if (_get_next_ready_thread() != _current) {
-		(void)_Swap(irq_lock());
+		(void)_Swap_irqlock(irq_lock());
 	}
 #endif
 }
@@ -878,7 +878,7 @@ s32_t _impl_k_sleep(s32_t duration)
 	_remove_thread_from_ready_q(_current);
 	_add_thread_timeout(_current, ticks);
 
-	(void)_Swap(key);
+	(void)_Swap_irqlock(key);
 
 	ticks = expected_wakeup_time - z_tick_get_32();
 	if (ticks > 0) {

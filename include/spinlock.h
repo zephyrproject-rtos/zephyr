@@ -81,4 +81,18 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 	_arch_irq_unlock(key.key);
 }
 
+/* Internal function: releases the lock, but leaves local interrupts
+ * disabled
+ */
+static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
+{
+#ifdef SPIN_VALIDATE
+	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock!");
+#endif
+#ifdef CONFIG_SMP
+	atomic_clear(&l->locked);
+#endif
+}
+
+
 #endif /* ZEPHYR_INCLUDE_SPINLOCK_H_ */
