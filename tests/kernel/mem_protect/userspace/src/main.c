@@ -709,7 +709,9 @@ void test_main(void)
 	appmem_add_thread_dom0(k_current_get());
 
 #if defined(CONFIG_ARM)
-	priv_stack_ptr = (int *)_k_priv_stack_find(ztest_thread_stack);
+	priv_stack_ptr = (int *)_k_priv_stack_find(ztest_thread_stack) -
+		MPU_GUARD_ALIGN_AND_SIZE;
+
 #endif
 	k_thread_access_grant(k_current_get(),
 			      &kthread_thread, &kthread_stack,
