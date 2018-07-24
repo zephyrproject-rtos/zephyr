@@ -1935,7 +1935,9 @@ struct net_buf *bt_conn_create_pdu(struct net_buf_pool *pool, size_t reserve)
 	}
 
 	buf = net_buf_alloc(pool, K_FOREVER);
-	__ASSERT_NO_MSG(buf);
+	if (buf == NULL) {
+		return NULL;
+	}
 
 	reserve += sizeof(struct bt_hci_acl_hdr) + CONFIG_BT_HCI_RESERVE;
 	net_buf_reserve(buf, reserve);
