@@ -153,11 +153,7 @@ static int init_twi(struct device *dev, const nrfx_twi_config_t *config)
 			    CONFIG_I2C_INIT_PRIORITY,			\
 			    &i2c_nrfx_twi_driver_api)
 
-#ifdef CONFIG_I2C_0_NRF_TWI
-I2C_NRFX_TWI_DEVICE(0);
-#endif
 
-#ifdef CONFIG_I2C_1_NRF_TWI
-I2C_NRFX_TWI_DEVICE(1);
-#endif
+#define DRIVER_INST(i, _) _EVAL(CONFIG_I2C_##i##_NRF_TWI, (I2C_NRFX_TWI_DEVICE(i);), ())
+UTIL_EVAL(UTIL_REPEAT(TWI_COUNT, DRIVER_INST, /*not used */))
 

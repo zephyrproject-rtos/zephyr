@@ -401,4 +401,21 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 #define MACRO_MAP_14(macro, a, ...) macro(a)MACRO_MAP_13(macro, __VA_ARGS__,)
 #define MACRO_MAP_15(macro, a, ...) macro(a)MACRO_MAP_14(macro, __VA_ARGS__,)
 
+
+#define _DEBRACKET(...) __VA_ARGS__
+
+#define _ARG_2_DEBRACKET(ignore_this, val, ...) _DEBRACKET val
+
+#define _EVAL(_test, _iftrue, _iffalse) \
+    _EVAL1(_test, _iftrue, _iffalse)
+
+#define _EVAL1(_test, _iftrue, _iffalse) \
+    _EVAL2(_ZZZZ##_test, _iftrue, _iffalse)
+
+#define _ZZZZ1 _LOG_YYYY,
+
+#define _EVAL2(one_or_two_args, _iftrue, _iffalse) \
+    _ARG_2_DEBRACKET(one_or_two_args _iftrue, _iffalse)
+
+
 #endif /* _UTIL__H_ */

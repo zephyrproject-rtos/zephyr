@@ -303,14 +303,6 @@ static int init_spi(struct device *dev, const nrfx_spi_config_t *config)
 			    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,	\
 			    &spi_nrfx_driver_api)
 
-#ifdef CONFIG_SPI_0_NRF_SPI
-SPI_NRFX_SPI_DEVICE(0);
-#endif
+#define DRIVER_INST(i, _) _EVAL(CONFIG_SPI_##i##_NRF_SPI, (SPI_NRFX_SPI_DEVICE(i);), ())
+UTIL_EVAL(UTIL_REPEAT(SPI_COUNT, DRIVER_INST, /*not used */))
 
-#ifdef CONFIG_SPI_1_NRF_SPI
-SPI_NRFX_SPI_DEVICE(1);
-#endif
-
-#ifdef CONFIG_SPI_2_NRF_SPI
-SPI_NRFX_SPI_DEVICE(2);
-#endif
