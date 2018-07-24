@@ -48,14 +48,6 @@ static inline void msg_finalize(struct log_msg *msg,
 
 	atomic_inc(&buffered_cnt);
 
-	if (!IS_ENABLED(CONFIG_LOG_INPLACE_PROCESS) &&
-	    CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
-		if (buffered_cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
-		    proc_tid) {
-			k_wakeup(proc_tid);
-		}
-	}
-
 	key = irq_lock();
 
 	log_list_add_tail(&list, msg);
@@ -64,6 +56,12 @@ static inline void msg_finalize(struct log_msg *msg,
 
 	if (IS_ENABLED(CONFIG_LOG_INPLACE_PROCESS) || panic_mode) {
 		(void)log_process(false);
+	} else if (!IS_ENABLED(CONFIG_LOG_INPLACE_PROCESS) &&
+		   CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
+		if (buffered_cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
+		    proc_tid) {
+			k_wakeup(proc_tid);
+		}
 	}
 }
 
