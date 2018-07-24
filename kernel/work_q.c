@@ -13,6 +13,7 @@
 
 #include <kernel_structs.h>
 #include <wait_q.h>
+#include <spinlock.h>
 #include <errno.h>
 #include <stdbool.h>
 
@@ -47,11 +48,32 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 	work->work_q = NULL;
 }
 
+static int work_cancel(struct k_delayed_work *work)
+{
+	__ASSERT(work->work_q != NULL, "");
+
+	if (k_work_pending(&work->work)) {
+		/* Remove from the queue if already submitted */
+		if (!k_queue_remove(&work->work_q->queue, &work->work)) {
+			return -EINVAL;
+		}
+	} else {
+		(void)_abort_timeout(&work->timeout);
+	}
+
+	/* Detach from workqueue */
+	work->work_q = NULL;
+
+	atomic_clear_bit(work->work.flags, K_WORK_STATE_PENDING);
+
+	return 0;
+}
+
 int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 				   struct k_delayed_work *work,
 				   s32_t delay)
 {
-	unsigned int key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&work_q->lock);
 	int err;
 
 	/* Work cannot be active in multiple queues */
@@ -62,7 +84,7 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 
 	/* Cancel if work has been submitted */
 	if (work->work_q == work_q) {
-		err = k_delayed_work_cancel(work);
+		err = work_cancel(work);
 		if (err < 0) {
 			goto done;
 		}
@@ -83,36 +105,23 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 	err = 0;
 
 done:
-	irq_unlock(key);
+	k_spin_unlock(&work_q->lock, key);
 
 	return err;
 }
 
 int k_delayed_work_cancel(struct k_delayed_work *work)
 {
-	unsigned int key = irq_lock();
-
 	if (!work->work_q) {
-		irq_unlock(key);
 		return -EINVAL;
 	}
 
-	if (k_work_pending(&work->work)) {
-		/* Remove from the queue if already submitted */
-		if (!k_queue_remove(&work->work_q->queue, &work->work)) {
-			irq_unlock(key);
-			return -EINVAL;
-		}
-	} else {
-		(void)_abort_timeout(&work->timeout);
-	}
+	struct k_spinlock *lock = &work->work_q->lock;
+	k_spinlock_key_t key = k_spin_lock(lock);
+	int ret = work_cancel(work);
 
-	/* Detach from workqueue */
-	work->work_q = NULL;
-
-	atomic_clear_bit(work->work.flags, K_WORK_STATE_PENDING);
-	irq_unlock(key);
-
-	return 0;
+	k_spin_unlock(lock, key);
+	return ret;
 }
+
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
