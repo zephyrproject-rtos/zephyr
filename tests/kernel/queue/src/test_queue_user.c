@@ -19,7 +19,7 @@ K_MEM_POOL_DEFINE(test_pool, 16, 64, 4, 4);
 
 /**
  * @brief Tests for queue
- * @defgroup kernel_queue_tests
+ * @defgroup kernel_queue_tests Queues
  * @ingroup all_tests
  * @{
  * @}
