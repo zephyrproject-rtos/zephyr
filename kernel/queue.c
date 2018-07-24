@@ -135,7 +135,7 @@ void _impl_k_queue_cancel_wait(struct k_queue *queue)
 	handle_poll_events(queue, K_POLL_STATE_CANCELLED);
 #endif /* !CONFIG_POLL */
 
-	_reschedule(key);
+	_reschedule_irqlock(key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -154,7 +154,7 @@ static s32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 
 	if (first_pending_thread != NULL) {
 		prepare_thread_to_run(first_pending_thread, data);
-		_reschedule(key);
+		_reschedule_irqlock(key);
 		return 0;
 	}
 #endif /* !CONFIG_POLL */
@@ -179,7 +179,7 @@ static s32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 	handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 #endif /* CONFIG_POLL */
 
-	_reschedule(key);
+	_reschedule_irqlock(key);
 	return 0;
 }
 
@@ -257,7 +257,7 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 	handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 #endif /* !CONFIG_POLL */
 
-	_reschedule(key);
+	_reschedule_irqlock(key);
 }
 
 void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
@@ -346,7 +346,7 @@ void *_impl_k_queue_get(struct k_queue *queue, s32_t timeout)
 	return k_queue_poll(queue, timeout);
 
 #else
-	int ret = _pend_current_thread(key, &queue->wait_q, timeout);
+	int ret = _pend_curr_irqlock(key, &queue->wait_q, timeout);
 
 	return (ret != 0) ? NULL : _current->base.swap_data;
 #endif /* CONFIG_POLL */

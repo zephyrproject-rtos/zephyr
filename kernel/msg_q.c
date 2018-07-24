@@ -127,7 +127,7 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 			/* wake up waiting thread */
 			_set_thread_return_value(pending_thread, 0);
 			_ready_thread(pending_thread);
-			_reschedule(key);
+			_reschedule_irqlock(key);
 			return 0;
 		} else {
 			/* put message in queue */
@@ -145,7 +145,7 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 	} else {
 		/* wait for put message success, failure, or timeout */
 		_current->base.swap_data = data;
-		return _pend_current_thread(key, &q->wait_q, timeout);
+		return _pend_curr_irqlock(key, &q->wait_q, timeout);
 	}
 
 	irq_unlock(key);
@@ -216,7 +216,7 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 			/* wake up waiting thread */
 			_set_thread_return_value(pending_thread, 0);
 			_ready_thread(pending_thread);
-			_reschedule(key);
+			_reschedule_irqlock(key);
 			return 0;
 		}
 		result = 0;
@@ -226,7 +226,7 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 	} else {
 		/* wait for get message success or timeout */
 		_current->base.swap_data = data;
-		return _pend_current_thread(key, &q->wait_q, timeout);
+		return _pend_curr_irqlock(key, &q->wait_q, timeout);
 	}
 
 	irq_unlock(key);
@@ -291,7 +291,7 @@ void _impl_k_msgq_purge(struct k_msgq *q)
 	q->used_msgs = 0;
 	q->read_ptr = q->write_ptr;
 
-	_reschedule(key);
+	_reschedule_irqlock(key);
 }
 
 #ifdef CONFIG_USERSPACE

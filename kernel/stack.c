@@ -112,7 +112,7 @@ void _impl_k_stack_push(struct k_stack *stack, u32_t data)
 
 		_set_thread_return_value_with_data(first_pending_thread,
 						   0, (void *)data);
-		_reschedule(key);
+		_reschedule_irqlock(key);
 		return;
 	} else {
 		*(stack->next) = data;
@@ -155,7 +155,7 @@ int _impl_k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout)
 		return -EBUSY;
 	}
 
-	result = _pend_current_thread(key, &stack->wait_q, timeout);
+	result = _pend_curr_irqlock(key, &stack->wait_q, timeout);
 	if (result == -EAGAIN) {
 		return -EAGAIN;
 	}

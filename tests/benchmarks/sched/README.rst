@@ -6,13 +6,13 @@ latencies (not scaling performance) of specific low level scheduling
 primitives independent of overhead from application or API
 abstractions.  It works very simply: a main thread creates a "partner"
 thread at a higher priority, the partner then sleeps using
-_pend_current_thread().  From this initial state:
+_pend_curr_irqlock().  From this initial state:
 
 1. The main thread calls _unpend_first_thread()
 2. The main thread calls _ready_thread()
 3. The main thread calls k_yield()
    (the kernel switches to the partner thread)
-4. The partner thread then runs and calls _pend_current_thread() again
+4. The partner thread then runs and calls _pend_curr_irqlock() again
    (the kernel switches to the main thread)
 5. The main thread returns from k_yield()
 

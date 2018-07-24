@@ -37,7 +37,7 @@ void _impl_k_thread_abort(k_tid_t thread)
 	_k_thread_single_abort(thread);
 	_thread_monitor_exit(thread);
 
-	_reschedule(key);
+	_reschedule_irqlock(key);
 }
 #endif
 

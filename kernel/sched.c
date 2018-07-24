@@ -428,13 +428,23 @@ void z_thread_timeout(struct _timeout *to)
 }
 #endif
 
-int _pend_current_thread(u32_t key, _wait_q_t *wait_q, s32_t timeout)
+int _pend_curr_irqlock(u32_t key, _wait_q_t *wait_q, s32_t timeout)
 {
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
 #endif
 	pend(_current, wait_q, timeout);
 	return _Swap_irqlock(key);
+}
+
+int _pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
+	       _wait_q_t *wait_q, s32_t timeout)
+{
+#if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
+	pending_current = _current;
+#endif
+	pend(_current, wait_q, timeout);
+	return _Swap(lock, key);
 }
 
 struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
@@ -480,29 +490,38 @@ void _thread_priority_set(struct k_thread *thread, int prio)
 	sys_trace_thread_priority_set(thread);
 
 	if (need_sched) {
-		_reschedule(irq_lock());
+		_reschedule_irqlock(irq_lock());
 	}
 }
 
-void _reschedule(u32_t key)
+static inline int resched(void)
 {
 #ifdef CONFIG_SMP
 	if (!_current_cpu->swap_ok) {
-		goto noswap;
+		return 0;
 	}
-
 	_current_cpu->swap_ok = 0;
 #endif
 
-	if (_is_in_isr()) {
-		goto noswap;
+	return !_is_in_isr();
+}
+
+void _reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
+{
+	if (resched()) {
+		_Swap(lock, key);
+	} else {
+		k_spin_unlock(lock, key);
 	}
+}
 
-	(void)_Swap_irqlock(key);
-	return;
-
- noswap:
-	irq_unlock(key);
+void _reschedule_irqlock(u32_t key)
+{
+	if (resched()) {
+		_Swap_irqlock(key);
+	} else {
+		irq_unlock(key);
+	}
 }
 
 void k_sched_lock(void)
@@ -526,7 +545,7 @@ void k_sched_unlock(void)
 	K_DEBUG("scheduler unlocked (%p:%d)\n",
 		_current, _current->base.sched_locked);
 
-	_reschedule(irq_lock());
+	_reschedule_irqlock(irq_lock());
 #endif
 }
 
@@ -922,7 +941,7 @@ void _impl_k_wakeup(k_tid_t thread)
 	if (_is_in_isr()) {
 		irq_unlock(key);
 	} else {
-		_reschedule(key);
+		_reschedule_irqlock(key);
 	}
 }
 
