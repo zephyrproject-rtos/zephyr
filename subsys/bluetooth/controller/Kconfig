@@ -196,11 +196,12 @@ comment "BLE Controller features"
 if BT_CONN
 
 config BT_CTLR_LE_ENC
-	bool
+	bool "LE Encryption"
 	depends on !BT_CTLR_DATA_LENGTH_CLEAR && !BT_CTLR_PHY_2M_NRF
 	default y
-	# Enable support for Bluetooth v4.0 LE Encryption feature in the
-	# Controller.
+	help
+	  Enable support for Bluetooth v4.0 LE Encryption feature in the
+	  Controller.
 
 config BT_CTLR_CONN_PARAM_REQ
 	bool "Connection Parameter Request"
