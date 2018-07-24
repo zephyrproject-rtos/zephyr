@@ -47,9 +47,9 @@ build:
               echo "Documentation build failed";
               exit 1;
             fi
-            if [ -s doc/doc.warnings ]; then
+            if [ -s doc/_build/doc.warnings ]; then
               echo " => New documentation warnings/errors";
-              cp doc/doc.warnings doc.warnings
+              cp doc/_build/doc.warnings doc.warnings
             fi;
             echo "- Verify commit message, coding style, doc build";
             ./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true;
