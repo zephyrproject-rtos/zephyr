@@ -1,0 +1,16 @@
+identifier: reel_board
+name: reel-board
+type: mcu
+arch: arm
+ram: 512
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - i2c
+  - spi
+  - gpio
+  - usb_device
+  - ble
+  - ieee802154
