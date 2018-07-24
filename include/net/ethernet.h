@@ -478,7 +478,9 @@ void net_eth_carrier_off(struct net_if *iface);
  *
  * @param iface Network interface
  *
- * @param 0 if mode set or unset was successful, <0 otherwise.
+ * @param enable on (true) or off (false)
+ *
+ * @return 0 if mode set or unset was successful, <0 otherwise.
  */
 int net_eth_promisc_mode(struct net_if *iface, bool enable);
 
