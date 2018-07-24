@@ -83,7 +83,7 @@ struct net_pkt *build_reply_pkt(const char *name,
 		header_len += proto_len;
 
 		ret = net_pkt_pull(pkt, 0, header_len);
-		if (!ret) {
+		if (ret != 0) {
 			net_pkt_unref(reply_pkt);
 			return NULL;
 		}
