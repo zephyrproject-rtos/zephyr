@@ -55,9 +55,9 @@ On Clear Linux:
 Installing Requirements and Dependencies
 ****************************************
 
-Install the following with either apt-get or dnf.
+Install the following required packages using either apt-get or dnf.
 
-Install the required packages in a Ubuntu host system with:
+On Ubuntu host system:
 
 .. code-block:: console
 
@@ -66,17 +66,17 @@ Install the required packages in a Ubuntu host system with:
      python3-ply python3-pip python3-setuptools python3-wheel xz-utils file \
      make gcc-multilib autoconf automake libtool
 
-Install the required packages in a Fedora host system with:
+On Fedora host system:
 
 .. code-block:: console
 
    sudo dnf group install "Development Tools" "C Development Tools and Libraries"
    sudo dnf install git cmake ninja-build gperf ccache\
-	 doxygen dfu-util dtc python3-pip \
-	 python3-ply python3-yaml dfu-util dtc python3-pykwalify \
-         glibc-devel.i686 libstdc++-devel.i686 autoconf automake libtool
+     doxygen dfu-util dtc python3-pip \
+     python3-ply python3-yaml dfu-util dtc python3-pykwalify \
+     glibc-devel.i686 libstdc++-devel.i686 autoconf automake libtool
 
-Install the required packages in a Clear Linux host system with:
+On Clear Linux host system:
 
 .. code-block:: console
 
@@ -140,6 +140,7 @@ Follow these steps to install the SDK on your Linux host system.
 
    .. code-block:: console
 
+      cd <sdk download directory>
       sh zephyr-sdk-0.9.3-setup.run
 
    .. important::
@@ -179,6 +180,11 @@ Follow these steps to install the SDK on your Linux host system.
      export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
      export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
      EOF
+
+  .. note::
+     Use ``<sdk installation directory>`` in place of ``/opt/zephyr-sdk/`` in the
+     above shown example if the SDK installation location is not default.
+
 
   .. note::
      Some Linux distributions have default CFLAGS and CXXFLAGS
