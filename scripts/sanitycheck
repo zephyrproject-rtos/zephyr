@@ -1311,6 +1311,7 @@ class Platform:
         data = scp.data
 
         self.name = data['identifier']
+        self.sanitycheck = data.get("sanitycheck", True)
         # if no RAM size is specified by the board, take a default of 128K
         self.ram = data.get("ram", 128)
         testing = data.get("testing", {})
@@ -1625,7 +1626,8 @@ class TestSuite:
                 verbose("Found plaform configuration " + fn)
                 try:
                     platform = Platform(fn)
-                    self.platforms.append(platform)
+                    if platform.sanitycheck:
+                        self.platforms.append(platform)
                 except RuntimeError as e:
                     error("E: %s: can't load: %s" % (fn, e))
                     self.load_errors += 1
