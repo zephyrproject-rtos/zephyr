@@ -21,6 +21,14 @@
 #include <atomic.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
+#include <spinlock.h>
+
+/* Single global spinlock for atomic operations.  This is fallback
+ * code, not performance sensitive.  At least by not using irq_lock()
+ * in SMP contexts we won't content with legitimate users of the
+ * global lock.
+ */
+static struct k_spinlock lock;
 
 /**
  *
@@ -45,17 +53,17 @@
 int atomic_cas(atomic_t *target, atomic_val_t old_value,
 			  atomic_val_t new_value)
 {
-	unsigned int key;
+	k_spinlock_key_t key;
 	int ret = 0;
 
-	key = irq_lock();
+	key = k_spin_lock(&lock);
 
 	if (*target == old_value) {
 		*target = new_value;
 		ret = 1;
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 
 	return ret;
 }
@@ -75,15 +83,15 @@ int atomic_cas(atomic_t *target, atomic_val_t old_value,
  */
 atomic_val_t atomic_add(atomic_t *target, atomic_val_t value)
 {
-	unsigned int key;
+	k_spinlock_key_t key;
 	atomic_val_t ret;
 
-	key = irq_lock();
+	key = k_spin_lock(&lock);
 
 	ret = *target;
 	*target += value;
 
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 
 	return ret;
 }
@@ -103,15 +111,15 @@ atomic_val_t atomic_add(atomic_t *target, atomic_val_t value)
  */
 atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value)
 {
-	unsigned int key;
+	k_spinlock_key_t key;
 	atomic_val_t ret;
 
-	key = irq_lock();
+	key = k_spin_lock(&lock);
 
 	ret = *target;
 	*target -= value;
 
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 
 	return ret;
 }
@@ -129,15 +137,15 @@ atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value)
  */
 atomic_val_t atomic_inc(atomic_t *target)
 {
-	unsigned int key;
+	k_spinlock_key_t key;
 	atomic_val_t ret;
 
-	key = irq_lock();
+	key = k_spin_lock(&lock);
 
 	ret = *target;
 	(*target)++;
 
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 
 	return ret;
 }
@@ -155,15 +163,15 @@ atomic_val_t atomic_inc(atomic_t *target)
  */
 atomic_val_t atomic_dec(atomic_t *target)
 {
-	unsigned int key;
+	k_spinlock_key_t key;
 	atomic_val_t ret;
 
-	key = irq_lock();
+	key = k_spin_lock(&lock);
 
 	ret = *target;
 	(*target)--;
 
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 
 	return ret;
 }
@@ -199,15 +207,15 @@ atomic_val_t atomic_get(const atomic_t *target)
  */
 atomic_val_t atomic_set(atomic_t *target, atomic_val_t value)
 {
-	unsigned int key;
+	k_spinlock_key_t key;
 	atomic_val_t ret;
 
-	key = irq_lock();
+	key = k_spin_lock(&lock);
 
 	ret = *target;
 	*target = value;
 
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 
 	return ret;
 }
@@ -226,15 +234,15 @@ atomic_val_t atomic_set(atomic_t *target, atomic_val_t value)
  */
 atomic_val_t atomic_clear(atomic_t *target)
 {
-	unsigned int key;
+	k_spinlock_key_t key;
 	atomic_val_t ret;
 
-	key = irq_lock();
+	key = k_spin_lock(&lock);
 
 	ret = *target;
 	*target = 0;
 
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 
 	return ret;
 }
@@ -254,15 +262,15 @@ atomic_val_t atomic_clear(atomic_t *target)
  */
 atomic_val_t atomic_or(atomic_t *target, atomic_val_t value)
 {
-	unsigned int key;
+	k_spinlock_key_t key;
 	atomic_val_t ret;
 
-	key = irq_lock();
+	key = k_spin_lock(&lock);
 
 	ret = *target;
 	*target |= value;
 
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 
 	return ret;
 }
@@ -282,15 +290,15 @@ atomic_val_t atomic_or(atomic_t *target, atomic_val_t value)
  */
 atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value)
 {
-	unsigned int key;
+	k_spinlock_key_t key;
 	atomic_val_t ret;
 
-	key = irq_lock();
+	key = k_spin_lock(&lock);
 
 	ret = *target;
 	*target ^= value;
 
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 
 	return ret;
 }
@@ -310,15 +318,15 @@ atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value)
  */
 atomic_val_t atomic_and(atomic_t *target, atomic_val_t value)
 {
-	unsigned int key;
+	k_spinlock_key_t key;
 	atomic_val_t ret;
 
-	key = irq_lock();
+	key = k_spin_lock(&lock);
 
 	ret = *target;
 	*target &= value;
 
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 
 	return ret;
 }
@@ -338,15 +346,15 @@ atomic_val_t atomic_and(atomic_t *target, atomic_val_t value)
  */
 atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value)
 {
-	unsigned int key;
+	k_spinlock_key_t key;
 	atomic_val_t ret;
 
-	key = irq_lock();
+	key = k_spin_lock(&lock);
 
 	ret = *target;
 	*target = ~(*target & value);
 
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 
 	return ret;
 }
