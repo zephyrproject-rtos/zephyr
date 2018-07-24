@@ -119,7 +119,7 @@ void _impl_k_sem_give(struct k_sem *sem)
 	sys_trace_void(SYS_TRACE_ID_SEMA_GIVE);
 	do_sem_give(sem);
 	sys_trace_end_call(SYS_TRACE_ID_SEMA_GIVE);
-	_reschedule(key);
+	_reschedule_irqlock(key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -148,7 +148,7 @@ int _impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 
 	sys_trace_end_call(SYS_TRACE_ID_SEMA_TAKE);
 
-	return _pend_current_thread(key, &sem->wait_q, timeout);
+	return _pend_curr_irqlock(key, &sem->wait_q, timeout);
 }
 
 #ifdef CONFIG_USERSPACE

@@ -48,7 +48,7 @@ static int acquire_mutex(pthread_mutex_t *m, int timeout)
 		return EINVAL;
 	}
 
-	rc = _pend_current_thread(key, &m->wait_q, timeout);
+	rc = _pend_curr_irqlock(key, &m->wait_q, timeout);
 	if (rc != 0) {
 		rc = ETIMEDOUT;
 	}
@@ -141,7 +141,7 @@ int pthread_mutex_unlock(pthread_mutex_t *m)
 			m->lock_count++;
 			_ready_thread(thread);
 			_set_thread_return_value(thread, 0);
-			_reschedule(key);
+			_reschedule_irqlock(key);
 			return 0;
 		}
 		m->owner = NULL;

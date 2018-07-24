@@ -231,7 +231,7 @@ int _impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 
 	_wait_q_t wait_q = _WAIT_Q_INIT(&wait_q);
 
-	int swap_rc = _pend_current_thread(key, &wait_q, timeout);
+	int swap_rc = _pend_curr_irqlock(key, &wait_q, timeout);
 
 	/*
 	 * Clear all event registrations. If events happen while we're in this
@@ -424,7 +424,7 @@ int _impl_k_poll_signal_raise(struct k_poll_signal *signal, int result)
 
 	int rc = signal_poll_event(poll_event, K_POLL_STATE_SIGNALED);
 
-	_reschedule(key);
+	_reschedule_irqlock(key);
 	return rc;
 }
 
