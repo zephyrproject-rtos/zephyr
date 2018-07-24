@@ -141,7 +141,7 @@ void stack_thread2(void)
 	/* Test that stack overflow check due to swap works */
 	blow_up_stack();
 	TC_PRINT("swapping...\n");
-	_Swap(irq_lock());
+	_Swap_irqlock(irq_lock());
 	TC_ERROR("should never see this\n");
 	rv = TC_FAIL;
 	irq_unlock(key);

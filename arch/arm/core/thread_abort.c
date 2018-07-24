@@ -41,7 +41,7 @@ void _impl_k_thread_abort(k_tid_t thread)
 
 	if (_current == thread) {
 		if ((SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) == 0) {
-			(void)_Swap(key);
+			(void)_Swap_irqlock(key);
 			CODE_UNREACHABLE;
 		} else {
 			SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
