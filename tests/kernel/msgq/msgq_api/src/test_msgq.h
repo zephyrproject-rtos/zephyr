@@ -17,4 +17,5 @@
 #define MSGQ_LEN 2
 #define MSG0 0xABCD
 #define MSG1 0x1234
+#define OVERFLOW_SIZE_MSG 0xDEADBEEF
 #endif /* __TEST_MSGQ_H__ */
