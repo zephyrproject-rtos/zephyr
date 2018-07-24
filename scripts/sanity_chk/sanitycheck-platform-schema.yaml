@@ -32,6 +32,8 @@ mapping:
     type: int
   "flash":
     type: int
+  "sanitycheck":
+    type: bool
   "supported":
     type: seq
     seq:
