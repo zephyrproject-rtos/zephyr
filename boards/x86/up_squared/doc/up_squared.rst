@@ -1,7 +1,7 @@
 .. _up_squared:
 
-UP Squared (Pentium/Celeron)
-############################
+UP Squared
+##########
 
 Overview
 ********
@@ -13,11 +13,20 @@ along with the following devices:
 
 * Serial Ports in Polling and Interrupt Driven Modes
 
+* I2C
+
 .. note::
-   This board configuration only works with the boards containing
-   Intel |reg| Pentium |trade| SoC, or Intel |reg| Celeron |trade| SoC.
-   The board containing Intel |reg| Atom |trade| SoC is not supported
-   by this configuration due to differences in peripherals.
+   This board configuration works on all three variants of `UP Squared`_
+   boards containing Intel |reg| Pentium |trade| SoC,
+   Intel |reg| Celeron |trade| SoC, or Intel |reg| Atom |trade| SoC.
+
+.. note::
+   This board configuration works only with the default BIOS settings.
+   Enabling/disabling LPSS devices in BIOS (under Advanced -> HAT Configurations)
+   will change the MMIO addresses of these devices, and will prevent
+   the drivers from communicating with these devices. For drivers that support
+   PCI enumeration, :option:`CONFIG_PCI` and :option:`CONFIG_PCI_ENUMERATION`
+   will allow these drivers to probe for the correct MMIO addresses.
 
 Hardware
 ********
@@ -35,16 +44,18 @@ This board supports the following hardware features:
 
 * Serial Ports in Polling and Interrupt Driven Modes
 
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| HPET      | on-chip    | system clock          |
-+-----------+------------+-----------------------+
-| APIC      | on-chip    | interrupt controller  |
-+-----------+------------+-----------------------+
-| UART      | on-chip    | serial port-polling;  |
-|           |            | serial port-interrupt |
-+-----------+------------+-----------------------+
++-----------+------------+-----------------------+-----------------+
+| Interface | Controller | Driver/Component      | PCI Enumeration |
++===========+============+=======================+=================+
+| HPET      | on-chip    | system clock          | Not Supported   |
++-----------+------------+-----------------------+-----------------+
+| APIC      | on-chip    | interrupt controller  | Not Supported   |
++-----------+------------+-----------------------+-----------------+
+| UART      | on-chip    | serial port-polling;  | Supported       |
+|           |            | serial port-interrupt |                 |
++-----------+------------+-----------------------+-----------------+
+| I2C       | on-chip    | I2C controller        | Supported       |
++-----------+------------+-----------------------+-----------------+
 
 The Zephyr kernel currently does not support other hardware features.
 
@@ -71,8 +82,27 @@ Advanced Programmable Interrupt Controller (APIC) interrupt redirection table.
 +=====+=========+==========================+
 | 2   | HPET    | timer driver             |
 +-----+---------+--------------------------+
-| 4   | UART    | serial port when used in |
+| 4   | UART_0  | serial port when used in |
 |     |         | interrupt mode           |
++-----+---------+--------------------------+
+| 5   | UART_1  | serial port when used in |
+|     |         | interrupt mode           |
++-----+---------+--------------------------+
+| 27  | I2C_0   | I2C DW driver            |
++-----+---------+--------------------------+
+| 28  | I2C_1   | I2C DW driver            |
++-----+---------+--------------------------+
+| 29  | I2C_2   | I2C DW driver            |
++-----+---------+--------------------------+
+| 30  | I2C_3   | I2C DW driver            |
++-----+---------+--------------------------+
+| 31  | I2C_4   | I2C DW driver            |
++-----+---------+--------------------------+
+| 32  | I2C_5   | I2C DW driver            |
++-----+---------+--------------------------+
+| 33  | I2C_6   | I2C DW driver            |
++-----+---------+--------------------------+
+| 34  | I2C_7   | I2C DW driver            |
 +-----+---------+--------------------------+
 
 HPET System Clock Support
