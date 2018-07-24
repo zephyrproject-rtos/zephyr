@@ -92,7 +92,7 @@ struct net_buf *net_icmpv4_set_chksum(struct net_pkt *pkt,
 	return frag;
 }
 
-static inline enum net_verdict handle_echo_request(struct net_pkt *pkt)
+static inline enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt)
 {
 	/* Note that we send the same data packets back and just swap
 	 * the addresses etc.
@@ -343,7 +343,7 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt)
 static struct net_icmpv4_handler echo_request_handler = {
 	.type = NET_ICMPV4_ECHO_REQUEST,
 	.code = 0,
-	.handler = handle_echo_request,
+	.handler = icmpv4_handle_echo_request,
 };
 
 void net_icmpv4_init(void)
