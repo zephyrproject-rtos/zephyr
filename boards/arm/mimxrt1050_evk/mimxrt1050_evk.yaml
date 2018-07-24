@@ -8,6 +8,7 @@ identifier: mimxrt1050_evk
 name: NXP MIMXRT1050-EVK
 type: mcu
 arch: arm
+sanitycheck: false
 toolchain:
   - zephyr
   - gccarmemb
