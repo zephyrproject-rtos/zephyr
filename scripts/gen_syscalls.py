@@ -168,6 +168,8 @@ def parse_args():
                         help="Read syscall information from json file")
     parser.add_argument("-d", "--syscall-dispatch", required=True,
                         help="output C system call dispatch table file")
+    parser.add_argument("-l", "--syscall-list", required=True,
+                        help="output C system call list header")
     parser.add_argument("-o", "--base-output", required=True,
                         help="Base output directory for syscall macro headers")
     args = parser.parse_args()
@@ -206,7 +208,8 @@ def main():
     ids.sort()
     ids.extend(["K_SYSCALL_BAD", "K_SYSCALL_LIMIT"])
     handler_defines = "".join([handler_template % name for name in handlers])
-    sys.stdout.write(list_template % (",\n\t".join(ids), handler_defines))
+    with open(args.syscall_list, "w") as fp:
+        fp.write(list_template % (",\n\t".join(ids), handler_defines))
 
     os.makedirs(args.base_output, exist_ok=True)
     for fn, invo_list in invocations.items():
