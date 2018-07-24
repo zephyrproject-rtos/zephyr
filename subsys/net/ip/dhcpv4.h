@@ -100,6 +100,6 @@ enum dhcpv4_msg_type {
 #define DHCPV4_INITIAL_DELAY_MIN 1
 #define DHCPV4_INITIAL_DELAY_MAX 10
 
-int dhcpv4_init(void);
+int net_dhcpv4_init(void);
 
 #endif /* __INTERNAL_DHCPV4_H */

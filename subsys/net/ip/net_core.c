@@ -405,7 +405,7 @@ static int net_init(struct device *unused)
 	init_rx_queues();
 
 #if CONFIG_NET_DHCPV4
-	status = dhcpv4_init();
+	status = net_dhcpv4_init();
 	if (status) {
 		return status;
 	}
