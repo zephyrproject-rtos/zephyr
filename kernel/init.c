@@ -390,8 +390,7 @@ static void switch_to_main_thread(void)
 	 * current fake thread is not on a wait queue or ready queue, so it
 	 * will never be rescheduled in.
 	 */
-
-	(void)_Swap_irqlock(irq_lock());
+	_Swap_unlocked();
 #endif
 }
 #endif /* CONFIG_MULTITHREADING */

@@ -490,7 +490,7 @@ void _thread_priority_set(struct k_thread *thread, int prio)
 	sys_trace_thread_priority_set(thread);
 
 	if (need_sched) {
-		_reschedule_irqlock(irq_lock());
+		_reschedule_unlocked();
 	}
 }
 
@@ -545,7 +545,7 @@ void k_sched_unlock(void)
 	K_DEBUG("scheduler unlocked (%p:%d)\n",
 		_current, _current->base.sched_locked);
 
-	_reschedule_irqlock(irq_lock());
+	_reschedule_unlocked();
 #endif
 }
 
@@ -859,13 +859,7 @@ void _impl_k_yield(void)
 		}
 	}
 
-#ifdef CONFIG_SMP
-	(void)_Swap_irqlock(irq_lock());
-#else
-	if (_get_next_ready_thread() != _current) {
-		(void)_Swap_irqlock(irq_lock());
-	}
-#endif
+	_Swap_unlocked();
 }
 
 #ifdef CONFIG_USERSPACE

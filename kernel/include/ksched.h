@@ -54,6 +54,16 @@ struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
 void idle(void *a, void *b, void *c);
 void z_time_slice(int ticks);
 
+static inline void _pend_curr_unlocked(_wait_q_t *wait_q, s32_t timeout)
+{
+	(void) _pend_curr_irqlock(_arch_irq_lock(), wait_q, timeout);
+}
+
+static inline void _reschedule_unlocked(void)
+{
+	(void) _reschedule_irqlock(_arch_irq_lock());
+}
+
 /* find which one is the next thread to run */
 /* must be called with interrupts locked */
 #ifdef CONFIG_SMP
