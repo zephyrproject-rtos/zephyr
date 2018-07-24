@@ -262,12 +262,12 @@ fail:
 /* Prepare DHCPv4 Message request and send it to peer */
 static void dhcpv4_send_request(struct net_if *iface)
 {
-	struct net_pkt *pkt;
-	u32_t timeout;
 	const struct in_addr *server_addr = net_ipv4_broadcast_address();
 	const struct in_addr *ciaddr = NULL;
 	bool with_server_id = false;
 	bool with_requested_ip = false;
+	struct net_pkt *pkt;
+	u32_t timeout;
 
 	iface->config.dhcpv4.xid++;
 
@@ -339,23 +339,24 @@ static void dhcpv4_send_request(struct net_if *iface)
 
 	iface->config.dhcpv4.attempts++;
 
-	const char *ciaddr_buf = 0;
-	static char pbuf[NET_IPV4_ADDR_LEN];
+#if defined(CONFIG_NET_DEBUG_DHCPV4)
+	do {
+		char out[NET_IPV4_ADDR_LEN] = "0.0.0.0";
 
-	if (ciaddr) {
-		ciaddr_buf = net_addr_ntop(AF_INET, ciaddr, pbuf, sizeof(pbuf));
-	} else {
-		ciaddr_buf = "0.0.0.0";
-	}
+		if (ciaddr) {
+			snprintk(out, sizeof(out), "%s",
+				 net_sprint_ipv4_addr(ciaddr));
+		}
 
-	NET_DBG("send request dst=%s xid=0x%"PRIx32" ciaddr=%s"
-		"%s%s timeout=%"PRIu32"s",
-		net_sprint_ipv4_addr(server_addr),
-		iface->config.dhcpv4.xid,
-		ciaddr_buf,
-		with_server_id ? " +server-id" : "",
-		with_requested_ip ? " +requested-ip" : "",
-		timeout);
+		NET_DBG("send request dst=%s xid=0x%"PRIx32" ciaddr=%s"
+			"%s%s timeout=%"PRIu32"s",
+			net_sprint_ipv4_addr(server_addr),
+			iface->config.dhcpv4.xid, out,
+			with_server_id ? " +server-id" : "",
+			with_requested_ip ? " +requested-ip" : "",
+			timeout);
+	} while (0);
+#endif /* CONFIG_NET_DEBUG_DHCPV4 */
 
 	return;
 
@@ -666,11 +667,11 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 		}
 #if defined(CONFIG_DNS_RESOLVER)
 		case DHCPV4_OPTIONS_DNS_SERVER: {
-			int status;
 			struct sockaddr_in dns;
 			const struct sockaddr *dns_servers[] = {
 				(struct sockaddr *)&dns, NULL
 			};
+			int status;
 
 			/* DNS server option may present 1 or more
 			 * addresses. Each 4 bytes in length. DNS
@@ -887,10 +888,10 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 					 struct net_pkt *pkt,
 					 void *user_data)
 {
+	enum dhcpv4_msg_type msg_type = 0;
 	struct dhcp_msg *msg;
 	struct net_buf *frag;
 	struct net_if *iface;
-	enum dhcpv4_msg_type msg_type = 0;
 	u8_t min;
 	u16_t pos;
 
