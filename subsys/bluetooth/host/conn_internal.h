@@ -122,6 +122,9 @@ struct bt_conn {
 		struct bt_conn_sco	sco;
 #endif
 	};
+
+	/* Connection context */
+	void *conn_ctx;
 };
 
 /* Process incoming data for a connection */

@@ -1663,10 +1663,21 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 	return &conn->le.dst;
 }
 
+int bt_conn_set_connection_link_context(struct bt_conn *conn, void *context)
+{
+	if ((conn == NULL) || (context == NULL)) {
+		return -EINVAL;
+	}
+
+	conn->conn_ctx = context;
+	return 0;
+}
+
 int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 {
 	info->type = conn->type;
 	info->role = conn->role;
+	info->conn_ctx = conn->conn_ctx;
 
 	switch (conn->type) {
 	case BT_CONN_TYPE_LE:

@@ -147,7 +147,19 @@ struct bt_conn_info {
 
 		struct bt_conn_br_info br;
 	};
+
+	void *conn_ctx;
 };
+
+/** @brief Set the connection link context
+ *
+ * @param conn Connection object.
+ * @param context Connection link context.
+ *
+ * @return Zero on success or (negative) error code on failure.
+ *
+ */
+int bt_conn_set_connection_link_context(struct bt_conn *conn, void *context);
 
 /** @brief Get connection info
  *
