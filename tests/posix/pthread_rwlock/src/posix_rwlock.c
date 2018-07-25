@@ -16,7 +16,8 @@ pthread_rwlock_t rwlock;
 static void *thread_top(void *p1)
 {
 	pthread_t pthread;
-	u32_t policy, ret = 0;
+	int policy;
+	u32_t ret = 0;
 	struct sched_param param;
 
 	pthread = (pthread_t) pthread_self();
