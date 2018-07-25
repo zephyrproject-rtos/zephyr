@@ -236,6 +236,15 @@ struct net_if_ipv4 {
 
 #if defined(CONFIG_NET_DHCPV4)
 struct net_if_dhcpv4 {
+	/** Used for timer lists */
+	sys_snode_t node;
+
+	/** Timer start */
+	s64_t timer_start;
+
+	/** Time for INIT, DISCOVER, REQUESTING, RENEWAL */
+	u32_t request_time;
+
 	u32_t xid;
 
 	/** IP address Lease time */
@@ -252,16 +261,6 @@ struct net_if_dhcpv4 {
 
 	/** Requested IP addr */
 	struct in_addr requested_ip;
-
-	/** Timer for DHCPv4 Client requests (DISCOVER, REQUEST or RENEWAL)
-	 */
-	struct k_delayed_work timer;
-
-	/** T1 (Renewal) timer */
-	struct k_delayed_work t1_timer;
-
-	/** T2 (Rebinding) timer */
-	struct k_delayed_work t2_timer;
 
 	/**
 	 *  DHCPv4 client state in the process of network
