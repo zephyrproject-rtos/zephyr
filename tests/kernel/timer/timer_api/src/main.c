@@ -366,6 +366,26 @@ void test_timer_k_define(void)
 
 	/* cleanup environment */
 	k_timer_stop(&ktimer);
+
+	init_timer_data();
+	/** TESTPOINT: init timer via k_timer_init */
+	k_timer_start(&ktimer, DURATION, PERIOD);
+
+	/* Call the k_timer_start() again to make sure that
+	 * the initial timeout request gets cancelled and new
+	 * one will get added.
+	 */
+	busy_wait_ms(DURATION / 2);
+	k_timer_start(&ktimer, DURATION, PERIOD);
+	tdata.timestamp = k_uptime_get();
+	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
+
+	/** TESTPOINT: check expire and stop times */
+	TIMER_ASSERT(tdata.expire_cnt == EXPIRE_TIMES, &ktimer);
+	TIMER_ASSERT(tdata.stop_cnt == 1, &ktimer);
+
+	/* cleanup environment */
+	k_timer_stop(&ktimer);
 }
 
 static void user_data_timer_handler(struct k_timer *timer);
