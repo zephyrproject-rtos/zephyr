@@ -135,6 +135,9 @@ static int hdc1008_init(struct device *dev)
 
 	gpio_pin_configure(drv_data->gpio, CONFIG_HDC1008_GPIO_PIN_NUM,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
+#if defined(CONFIG_HDC1008_GPIO_FLAGS)
+			   CONFIG_HDC1008_GPIO_FLAGS |
+#endif
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
 
 	gpio_init_callback(&drv_data->gpio_cb,
