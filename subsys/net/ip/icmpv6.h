@@ -133,9 +133,9 @@ const char *net_icmpv6_type2str(int icmpv6_type);
 
 struct net_icmpv6_handler {
 	sys_snode_t node;
+	icmpv6_callback_handler_t handler;
 	u8_t type;
 	u8_t code;
-	icmpv6_callback_handler_t handler;
 };
 
 /**

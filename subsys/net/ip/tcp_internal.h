@@ -145,19 +145,6 @@ struct net_tcp {
 	/** Last ACK value sent */
 	u32_t sent_ack;
 
-	/** Current retransmit period */
-	u32_t retry_timeout_shift : 5;
-	/** Flags for the TCP */
-	u32_t flags : 8;
-	/** Current TCP state */
-	u32_t state : 4;
-	/* An outbound FIN packet has been sent */
-	u32_t fin_sent : 1;
-	/* An inbound FIN packet has been received */
-	u32_t fin_rcvd : 1;
-	/** Remaining bits in this u32_t */
-	u32_t _padding : 13;
-
 	/** Accept callback to be called when the connection has been
 	 * established.
 	 */
@@ -177,6 +164,19 @@ struct net_tcp {
 	 * Send MSS for the peer
 	 */
 	u16_t send_mss;
+
+	/** Current retransmit period */
+	u32_t retry_timeout_shift : 5;
+	/** Flags for the TCP */
+	u32_t flags : 8;
+	/** Current TCP state */
+	u32_t state : 4;
+	/* An outbound FIN packet has been sent */
+	u32_t fin_sent : 1;
+	/* An inbound FIN packet has been received */
+	u32_t fin_rcvd : 1;
+	/** Remaining bits in this u32_t */
+	u32_t _padding : 13;
 };
 
 typedef void (*net_tcp_cb_t)(struct net_tcp *tcp, void *user_data);

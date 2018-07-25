@@ -212,14 +212,6 @@ struct net_context {
 	 */
 	struct sockaddr remote;
 
-	/** Option values */
-	struct {
-#if defined(CONFIG_NET_CONTEXT_PRIORITY)
-		/** Priority of the network data sent via this net_context */
-		u8_t priority;
-#endif
-	} options;
-
 	/** Connection handle */
 	struct net_conn_handle *conn_handler;
 
@@ -248,19 +240,6 @@ struct net_context {
 	net_pkt_get_pool_func_t data_pool;
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
-#if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
-	/**
-	 * Semaphore to signal synchronous recv call completion.
-	 */
-	struct k_sem recv_data_wait;
-#endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
-
-	/** Network interface assigned to this context */
-	u8_t iface;
-
-	/** Flags for the context */
-	u8_t flags;
-
 #if defined(CONFIG_NET_TCP)
 	/** TCP connection information */
 	struct net_tcp *tcp;
@@ -270,6 +249,13 @@ struct net_context {
 	/** net_app connection information */
 	void *net_app;
 #endif /* CONFIG_NET_APP */
+
+#if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
+	/**
+	 * Semaphore to signal synchronous recv call completion.
+	 */
+	struct k_sem recv_data_wait;
+#endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
 #if defined(CONFIG_NET_SOCKETS)
 	/** Per-socket packet or connection queues */
@@ -288,6 +274,20 @@ struct net_context {
 	/** context for use by offload drivers */
 	void *offload_context;
 #endif /* CONFIG_NET_OFFLOAD */
+
+	/** Option values */
+	struct {
+#if defined(CONFIG_NET_CONTEXT_PRIORITY)
+		/** Priority of the network data sent via this net_context */
+		u8_t priority;
+#endif
+	} options;
+
+	/** Network interface assigned to this context */
+	u8_t iface;
+
+	/** Flags for the context */
+	u8_t flags;
 };
 
 static inline bool net_context_is_used(struct net_context *context)
