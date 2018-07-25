@@ -42,6 +42,9 @@
  */
 #define ND_NET_BUF_TIMEOUT K_MSEC(100)
 
+/* Timeout for various buffer allocations in this file. */
+#define NET_BUF_TIMEOUT K_MSEC(50)
+
 /* Maximum reachable time value specified in RFC 4861 section
  * 6.2.1. Router Configuration Variables, AdvReachableTime
  */
@@ -739,7 +742,10 @@ struct net_pkt *net_ipv6_create(struct net_pkt *pkt,
 {
 	struct net_buf *header;
 
-	header = net_pkt_get_frag(pkt, K_FOREVER);
+	header = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
+	if (!header) {
+		return NULL;
+	}
 
 	net_pkt_frag_insert(pkt, header);
 
@@ -901,7 +907,12 @@ static struct net_pkt *update_ll_reserve(struct net_pkt *pkt,
 
 	while (orig_frag) {
 		if (!room_len) {
-			frag = net_pkt_get_frag(pkt, K_FOREVER);
+			frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
+			if (!frag) {
+				net_pkt_unref(pkt);
+				net_pkt_frag_unref(orig_frag);
+				return NULL;
+			}
 
 			net_pkt_frag_add(pkt, frag);
 
@@ -2802,6 +2813,24 @@ drop:
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
+#define append(pkt, type, value)					\
+	do {								\
+		if (!net_pkt_append_##type##_timeout(pkt, value,	\
+						     NET_BUF_TIMEOUT)) { \
+			ret = -ENOMEM;					\
+			goto drop;					\
+		}							\
+	} while (0)
+
+#define append_all(pkt, size, value)					\
+	do {								\
+		if (!net_pkt_append_all(pkt, size, value,		\
+					NET_BUF_TIMEOUT)) {		\
+			ret = -ENOMEM;					\
+			goto drop;					\
+		}							\
+	} while (0)
+
 #if defined(CONFIG_NET_IPV6_MLD)
 #define MLDv2_LEN (2 + 1 + 1 + 2 + sizeof(struct in6_addr) * 2)
 
@@ -2810,20 +2839,24 @@ static struct net_pkt *create_mldv2(struct net_pkt *pkt,
 				    u16_t record_type,
 				    u8_t num_sources)
 {
-	net_pkt_append_u8(pkt, record_type);
-	net_pkt_append_u8(pkt, 0); /* aux data len */
-	net_pkt_append_be16(pkt, num_sources); /* number of addresses */
-	net_pkt_append_all(pkt, sizeof(struct in6_addr), addr->s6_addr,
-			K_FOREVER);
+	int ret;
+
+	append(pkt, u8, record_type);
+	append(pkt, u8, 0);             /* aux data len */
+	append(pkt, be16, num_sources); /* number of addresses */
+
+	append_all(pkt, sizeof(struct in6_addr), addr->s6_addr);
 
 	if (num_sources > 0) {
 		/* All source addresses, RFC 3810 ch 3 */
-		net_pkt_append_all(pkt, sizeof(struct in6_addr),
-				net_ipv6_unspecified_address()->s6_addr,
-				K_FOREVER);
+		append_all(pkt, sizeof(struct in6_addr),
+			   net_ipv6_unspecified_address()->s6_addr);
 	}
 
 	return pkt;
+
+drop:
+	return NULL;
 }
 
 static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
@@ -2837,40 +2870,44 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, &dst),
-				     K_FOREVER);
+				     NET_BUF_TIMEOUT);
+	if (!pkt) {
+		return -ENOMEM;
+	}
 
-	pkt = net_ipv6_create(pkt,
-			      net_if_ipv6_select_src_addr(iface, &dst),
-			      &dst,
-			      iface,
-			      NET_IPV6_NEXTHDR_HBHO);
+	if (!net_ipv6_create(pkt,
+			     net_if_ipv6_select_src_addr(iface, &dst),
+			     &dst,
+			     iface,
+			     NET_IPV6_NEXTHDR_HBHO)) {
+		ret = -ENOMEM;
+		goto drop;
+	}
 
 	NET_IPV6_HDR(pkt)->hop_limit = 1; /* RFC 3810 ch 7.4 */
 
 	net_pkt_set_ipv6_hdr_prev(pkt, pkt->frags->len);
 
 	/* Add hop-by-hop option and router alert option, RFC 3810 ch 5. */
-	net_pkt_append_u8(pkt, IPPROTO_ICMPV6);
-	net_pkt_append_u8(pkt, 0); /* length (0 means 8 bytes) */
+	append(pkt, u8, IPPROTO_ICMPV6);
+	append(pkt, u8, 0);        /* length (0 means 8 bytes) */
+
+	/* IPv6 router alert option is described in RFC 2711. */
+	append(pkt, be16, 0x0502); /* RFC 2711 ch 2.1 */
+	append(pkt, be16, 0);      /* pkt contains MLD msg */
+	append(pkt, u8, 0);        /* padding */
+	append(pkt, u8, 0);        /* padding */
+
+	/* ICMPv6 header */
+	append(pkt, u8, NET_ICMPV6_MLDv2); /* type */
+	append(pkt, u8, 0);                /* code */
+	append(pkt, be16, 0);              /* chksum */
+	append(pkt, be16, 0);              /* reserved field */
 
 #define ROUTER_ALERT_LEN 8
 
-	/* IPv6 router alert option is described in RFC 2711. */
-	net_pkt_append_be16(pkt, 0x0502); /* RFC 2711 ch 2.1 */
-	net_pkt_append_be16(pkt, 0); /* pkt contains MLD msg */
-
-	net_pkt_append_u8(pkt, 0); /* padding */
-	net_pkt_append_u8(pkt, 0); /* padding */
-
-	/* ICMPv6 header */
-	net_pkt_append_u8(pkt, NET_ICMPV6_MLDv2); /* type */
-	net_pkt_append_u8(pkt, 0); /* code */
-	net_pkt_append_be16(pkt, 0); /* chksum */
-
 	pkt->frags->len = NET_IPV6ICMPH_LEN + ROUTER_ALERT_LEN;
 	net_pkt_set_iface(pkt, iface);
-
-	net_pkt_append_be16(pkt, 0); /* reserved field */
 
 	/* Insert the actual multicast record(s) here */
 	net_pkt_frag_add(pkt, frags);
@@ -2882,9 +2919,14 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 
 	net_pkt_set_ipv6_ext_len(pkt, ROUTER_ALERT_LEN);
 
-	net_pkt_write_be16(pkt, pkt->frags,
-			   NET_IPV6H_LEN + ROUTER_ALERT_LEN + 2,
-			   &pos, ntohs(~net_calc_chksum_icmpv6(pkt)));
+	if (!net_pkt_write_be16_timeout(pkt, pkt->frags,
+					NET_IPV6H_LEN + ROUTER_ALERT_LEN + 2,
+					&pos,
+					ntohs(~net_calc_chksum_icmpv6(pkt)),
+					NET_BUF_TIMEOUT)) {
+		ret = -ENOMEM;
+		goto drop;
+	}
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
@@ -2912,16 +2954,23 @@ static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,
 	int ret;
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     K_FOREVER);
+				     NET_BUF_TIMEOUT);
+	if (!pkt) {
+		return -ENOMEM;
+	}
 
-	net_pkt_append_be16(pkt, 1); /* number of records */
+	append(pkt, be16, 1); /* number of records */
 
-	pkt = create_mldv2(pkt, addr, mode, 1);
+	if (!create_mldv2(pkt, addr, mode, 1)) {
+		ret = -ENOMEM;
+		goto drop;
+	}
 
 	ret = send_mldv2_raw(iface, pkt->frags);
 
 	pkt->frags = NULL;
 
+drop:
 	net_pkt_unref(pkt);
 
 	return ret;
@@ -2982,22 +3031,28 @@ static void send_mld_report(struct net_if *iface)
 {
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	struct net_pkt *pkt;
-	int i, count = 0;
+	int i, ret, count = 0;
 
 	NET_ASSERT(ipv6);
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     K_FOREVER);
+				     NET_BUF_TIMEOUT);
+	if (!pkt) {
+		return;
+	}
 
-	net_pkt_append_u8(pkt, 0); /* This will be the record count */
+	append(pkt, u8, 0); /* This will be the record count */
 
 	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
 		if (!ipv6->mcast[i].is_used || !ipv6->mcast[i].is_joined) {
 			continue;
 		}
 
-		pkt = create_mldv2(pkt, &ipv6->mcast[i].address.in6_addr,
-				   NET_IPV6_MLDv2_MODE_IS_EXCLUDE, 0);
+		if (!create_mldv2(pkt, &ipv6->mcast[i].address.in6_addr,
+				  NET_IPV6_MLDv2_MODE_IS_EXCLUDE, 0)) {
+			goto drop;
+		}
+
 		count++;
 	}
 
@@ -3005,13 +3060,17 @@ static void send_mld_report(struct net_if *iface)
 		u16_t pos;
 
 		/* Write back the record count */
-		net_pkt_write_u8(pkt, pkt->frags, 0, &pos, count);
+		if (!net_pkt_write_u8_timeout(pkt, pkt->frags, 0, &pos,
+					      count, NET_BUF_TIMEOUT)) {
+			goto drop;
+		}
 
 		send_mldv2_raw(iface, pkt->frags);
 
 		pkt->frags = NULL;
 	}
 
+drop:
 	net_pkt_unref(pkt);
 }
 
@@ -3308,8 +3367,12 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	}
 
 	/* This one updates the previous header's nexthdr value */
-	net_pkt_write_u8(pkt, pkt->frags, net_pkt_ipv6_hdr_prev(pkt),
-			  &pos, next_hdr);
+	if (!net_pkt_write_u8_timeout(pkt, pkt->frags,
+				      net_pkt_ipv6_hdr_prev(pkt),
+				      &pos, next_hdr, NET_BUF_TIMEOUT)) {
+		net_pkt_unref(pkt);
+		return;
+	}
 
 	if (!net_pkt_compact(pkt)) {
 		NET_ERR("Cannot compact reassembly packet %p", pkt);
@@ -3594,10 +3657,16 @@ static int send_ipv6_fragment(struct net_if *iface,
 	/* And we need to update the last header in the IPv6 packet to point to
 	 * fragment header.
 	 */
-	temp = net_pkt_write_u8(ipv6, ipv6->frags, next_hdr_idx, &pos,
-				NET_IPV6_NEXTHDR_FRAG);
-	if (!temp && pos == 0xffff) {
-		ret = -EINVAL;
+	temp = net_pkt_write_u8_timeout(ipv6, ipv6->frags, next_hdr_idx, &pos,
+					NET_IPV6_NEXTHDR_FRAG,
+					BUF_ALLOC_TIMEOUT);
+	if (!temp) {
+		if (pos == 0xffff) {
+			ret = -EINVAL;
+		} else {
+			ret = -ENOMEM;
+		}
+
 		goto fail;
 	}
 

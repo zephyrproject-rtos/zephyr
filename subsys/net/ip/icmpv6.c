@@ -555,6 +555,15 @@ drop_no_pkt:
 	return err;
 }
 
+#define append(pkt, type, value)					\
+	do {								\
+		if (!net_pkt_append_##type##_timeout(pkt, value,	\
+						     PKT_WAIT_TIME)) {	\
+			ret = -ENOMEM;					\
+			goto drop;					\
+		}							\
+	} while (0)
+
 int net_icmpv6_send_echo_request(struct net_if *iface,
 				 struct in6_addr *dst,
 				 u16_t identifier,
@@ -562,27 +571,35 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 {
 	const struct in6_addr *src;
 	struct net_pkt *pkt;
+	int ret;
 
 	src = net_if_ipv6_select_src_addr(iface, dst);
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
-				     K_FOREVER);
+				     PKT_WAIT_TIME);
+	if (!pkt) {
+		return -ENOMEM;
+	}
 
-	pkt = net_ipv6_create(pkt, src, dst, iface, IPPROTO_ICMPV6);
+	if (!net_ipv6_create(pkt, src, dst, iface, IPPROTO_ICMPV6)) {
+		ret = -ENOMEM;
+		goto drop;
+	}
 
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_iface(pkt, iface);
 
-	net_pkt_append_u8(pkt, NET_ICMPV6_ECHO_REQUEST);
-	net_pkt_append_u8(pkt, 0);   /* code */
-	net_pkt_append_be16(pkt, 0); /* checksum */
-	net_pkt_append_be16(pkt, identifier);
-	net_pkt_append_be16(pkt, sequence);
+	append(pkt, u8, NET_ICMPV6_ECHO_REQUEST);
+	append(pkt, u8, 0);     /* code */
+	append(pkt, be16, 0);   /* checksum */
+	append(pkt, be16, identifier);
+	append(pkt, be16, sequence);
 
 	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, src);
 	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, dst);
 
 	if (net_ipv6_finalize(pkt, IPPROTO_ICMPV6) < 0) {
+		ret = -ENOMEM;
 		goto drop;
 	}
 
@@ -603,11 +620,13 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 		return 0;
 	}
 
+	ret = -EIO;
+
 drop:
 	net_pkt_unref(pkt);
 	net_stats_update_icmp_drop(iface);
 
-	return -EIO;
+	return ret;
 }
 
 enum net_verdict net_icmpv6_input(struct net_pkt *pkt,

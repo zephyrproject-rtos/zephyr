@@ -29,9 +29,10 @@ struct net_pkt *net_udp_append_raw(struct net_pkt *pkt,
 		       PKT_WAIT_TIME);
 	net_pkt_append(pkt, sizeof(dst_port), (u8_t *)&dst_port,
 		       PKT_WAIT_TIME);
-	net_pkt_append_be16(pkt, net_pkt_get_len(pkt) -
-			    net_pkt_ip_hdr_len(pkt) -
-			    net_pkt_ipv6_ext_len(pkt));
+	net_pkt_append_be16_timeout(pkt, net_pkt_get_len(pkt) -
+				    net_pkt_ip_hdr_len(pkt) -
+				    net_pkt_ipv6_ext_len(pkt),
+				    PKT_WAIT_TIME);
 
 	frag = net_frag_get_pos(pkt, net_pkt_ip_hdr_len(pkt) +
 				net_pkt_ipv6_ext_len(pkt) +

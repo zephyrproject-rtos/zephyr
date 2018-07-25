@@ -150,16 +150,19 @@ static inline enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt)
 	return NET_OK;
 }
 
-static void icmpv4_create(struct net_pkt *pkt, u8_t icmp_type, u8_t icmp_code)
+static struct net_buf *icmpv4_create(struct net_pkt *pkt, u8_t icmp_type,
+				     u8_t icmp_code)
 {
 	struct net_buf *frag = pkt->frags;
 	u16_t pos;
 
 	net_buf_add(frag, sizeof(struct net_icmp_hdr));
 
-	frag = net_pkt_write_u8(pkt, frag, net_pkt_ip_hdr_len(pkt), &pos,
-				icmp_type);
-	frag = net_pkt_write_u8(pkt, frag, pos, &pos, icmp_code);
+	frag = net_pkt_write_u8_timeout(pkt, frag, net_pkt_ip_hdr_len(pkt),
+					&pos, icmp_type, PKT_WAIT_TIME);
+	frag = net_pkt_write_u8_timeout(pkt, frag, pos, &pos, icmp_code,
+					PKT_WAIT_TIME);
+	return frag;
 }
 
 int net_icmpv4_send_echo_request(struct net_if *iface,
@@ -170,6 +173,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
 	const struct in_addr *src;
 	struct net_pkt *pkt;
+	int ret;
 
 	if (!ipv4) {
 		return -EINVAL;
@@ -184,12 +188,22 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	 */
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface,
 					      (const struct in6_addr *)dst),
-				     K_FOREVER);
+				     PKT_WAIT_TIME);
+	if (!pkt) {
+		return -ENOMEM;
+	}
+
 	net_pkt_set_iface(pkt, iface);
 
-	net_ipv4_create(pkt, src, dst, iface, IPPROTO_ICMP);
+	if (!net_ipv4_create(pkt, src, dst, iface, IPPROTO_ICMP)) {
+		ret = -ENOMEM;
+		goto drop;
+	}
 
-	icmpv4_create(pkt, NET_ICMPV4_ECHO_REQUEST, 0);
+	if (!icmpv4_create(pkt, NET_ICMPV4_ECHO_REQUEST, 0)) {
+		ret = -ENOMEM;
+		goto drop;
+	}
 
 	net_buf_add(pkt->frags, sizeof(struct net_icmpv4_echo_req));
 
@@ -218,10 +232,22 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 
 	net_stats_update_icmp_drop(iface);
 
+	ret = -EIO;
+
+drop:
 	net_pkt_unref(pkt);
 
-	return -EIO;
+	return ret;
 }
+
+#define append(pkt, type, value)					\
+	do {								\
+		if (!net_pkt_append_##type##_timeout(pkt, value,	\
+						     PKT_WAIT_TIME)) {	\
+			err = -ENOMEM;					\
+			goto drop;					\
+		}							\
+	} while (0)
 
 int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 {
@@ -257,12 +283,18 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 
 	net_pkt_set_iface(pkt, iface);
 
-	net_ipv4_create(pkt, src, dst, iface, IPPROTO_ICMP);
+	if (!net_ipv4_create(pkt, src, dst, iface, IPPROTO_ICMP)) {
+		err = -ENOMEM;
+		goto drop;
+	}
 
-	icmpv4_create(pkt, type, code);
+	if (!icmpv4_create(pkt, type, code)) {
+		err = -ENOMEM;
+		goto drop;
+	}
 
 	/* Appending unused part, filled with 0s */
-	net_pkt_append_be32(pkt, 0);
+	append(pkt, be32, 0);
 
 	if (NET_IPV4_HDR(orig)->proto == IPPROTO_UDP) {
 		copy_len = sizeof(struct net_ipv4_hdr) +
