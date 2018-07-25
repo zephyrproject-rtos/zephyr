@@ -13,6 +13,6 @@ config SOC
 
 config NUM_IRQS
 	int
-	default 85
+	default 86
 
 endif # SOC_STM32F411XE

@@ -13,6 +13,6 @@ config SOC
 
 config NUM_IRQS
 	int
-	default 29
+	default 31
 
 endif # SOC_STM32F051X8
