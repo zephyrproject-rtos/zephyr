@@ -71,8 +71,8 @@ int _impl_k_msgq_alloc_init(struct k_msgq *q, size_t msg_size,
 	int ret;
 	size_t total_size;
 
-	if (__builtin_umul_overflow((u32_t)msg_size, max_msgs,
-				    (u32_t *)&total_size)) {
+	if (__builtin_umul_overflow((unsigned int)msg_size, max_msgs,
+				    (unsigned int *)&total_size)) {
 		ret = -EINVAL;
 	} else {
 		buffer = z_thread_malloc(total_size);
