@@ -392,9 +392,9 @@ Z_SYSCALL_HANDLER(k_thread_create,
 	 * size and not allocated in addition to the stack size
 	 */
 	guard_size = (u32_t)K_THREAD_STACK_BUFFER(stack) - (u32_t)stack;
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!__builtin_uadd_overflow(guard_size,
-							     stack_size,
-							     &total_size),
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!__builtin_uadd_overflow((unsigned int)guard_size,
+							     (unsigned int)stack_size,
+							     (unsigned int *)&total_size),
 				    "stack size overflow (%u+%u)", stack_size,
 				    guard_size));
 #else
