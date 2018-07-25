@@ -162,7 +162,7 @@ static inline u16_t bt_spi_get_evt(u8_t *rxmsg)
 }
 
 static void bt_spi_isr(struct device *unused1, struct gpio_callback *unused2,
-		       unsigned int unused3)
+		       u32_t unused3)
 {
 	BT_DBG("");
 
