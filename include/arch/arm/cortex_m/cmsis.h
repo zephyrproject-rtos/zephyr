@@ -81,7 +81,9 @@ typedef enum {
 #error "Unknown Cortex-M device"
 #endif
 
-#define __MPU_PRESENT                  0 /* Zephyr has no MPU support */
+#ifndef __MPU_PRESENT
+#define __MPU_PRESENT             0U
+#endif
 #define __NVIC_PRIO_BITS               CONFIG_NUM_IRQ_PRIO_BITS
 #define __Vendor_SysTickConfig         0 /* Default to standard SysTick */
 #endif /* __NVIC_PRIO_BITS */
