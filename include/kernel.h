@@ -3449,6 +3449,7 @@ struct k_mbox_msg {
 struct k_mbox {
 	_wait_q_t tx_msg_queue;
 	_wait_q_t rx_msg_queue;
+	struct k_spinlock lock;
 
 	_OBJECT_TRACING_NEXT_PTR(k_mbox)
 };
