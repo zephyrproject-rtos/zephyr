@@ -145,6 +145,17 @@ Connect the EFR32-SLWSTK6061A to your host computer using the USB port and you
 should see a USB Serial Port. Use `J-Link`_ or Silicon Labs Simplicity Studio
 to flash the generated zephyr.bin.
 
+`OpenOCD`_ included in the Zephyr SDK v0.9.3 is too old and does not support the
+EFR32FG1P chip, neither does the latest OpenOCD 0.10.0 release. You will need to
+compile the newest version of the source code and install the tool yourself.
+Modify the following command if you install OpenOCD to a location different than
+the default /usr/local/.
+
+.. code-block:: console
+
+   cmake -GNinja -DBOARD=efr32_slwstk6061a -DOPENOCD=/usr/local/bin/openocd -DOPENOCD_DEFAULT_PATH=/usr/local/share/openocd/scripts ..
+   ninja flash
+
 Open a serial terminal (minicom, putty, etc.) with the following settings:
 
 - Speed: 115200
@@ -186,3 +197,6 @@ the following message:
 
 .. _J-Link-Downloads:
    https://www.segger.com/downloads/jlink
+
+.. _OpenOCD:
+    http://openocd.org/
