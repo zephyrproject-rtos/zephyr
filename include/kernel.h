@@ -1728,6 +1728,7 @@ static inline u32_t k_uptime_delta_32(s64_t *reftime)
 
 struct k_queue {
 	sys_sflist_t data_q;
+	struct k_spinlock lock;
 	union {
 		_wait_q_t wait_q;
 
