@@ -2140,6 +2140,10 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 		if (net_is_ipv6_addr_unspecified(&NET_IPV6_HDR(pkt)->src)) {
 			NET_DBG("No source address for NS");
+			if (pending) {
+				net_pkt_unref(pending);
+			}
+
 			goto drop;
 		}
 
