@@ -74,7 +74,7 @@ int file_str_cmp(const char *fname, char *string)
 {
 	int rc;
 	u32_t len;
-	u32_t rlen;
+	size_t rlen;
 	char *buf;
 	struct fs_dirent entry;
 
