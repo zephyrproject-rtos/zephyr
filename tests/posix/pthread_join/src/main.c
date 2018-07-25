@@ -18,7 +18,8 @@ int exit_count;
 void *thread_top(void *p1)
 {
 	pthread_t pthread;
-	u32_t policy, seconds;
+	int policy;
+	u32_t seconds;
 	struct sched_param param;
 
 	pthread = (pthread_t) pthread_self();
@@ -49,7 +50,7 @@ void test_pthread_join(void)
 	pthread_attr_t attr[N_THR];
 	struct sched_param schedparam;
 	pthread_t newthread[N_THR];
-	u32_t detachstate, schedpolicy = SCHED_RR;
+	int detachstate, schedpolicy = SCHED_RR;
 	void *retval;
 	size_t stack_size;
 
