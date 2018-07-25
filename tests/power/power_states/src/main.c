@@ -33,6 +33,7 @@ static enum power_states states_list[] = {
 #define TIMEOUT 5 /* in seconds */
 #define MAX_SUSPEND_DEVICE_COUNT 15
 #define NB_STATES ARRAY_SIZE(states_list)
+#define MAX_SYS_PM_STATES	5
 
 /* In Tickless Kernel mode, time is passed in milliseconds instead of ticks */
 #ifdef CONFIG_TICKLESS_KERNEL
@@ -50,6 +51,7 @@ static struct device *suspend_devices[MAX_SUSPEND_DEVICE_COUNT];
 static int suspend_device_count;
 static unsigned int current_state = NB_STATES - 1;
 static int post_ops_done = 1;
+static int test_complete;
 
 static enum power_states get_next_state(void)
 {
@@ -256,6 +258,11 @@ int _sys_soc_suspend(s32_t ticks)
 		return SYS_PM_NOT_HANDLED;
 	}
 
+	/* If test is comepleted then do not enter LPS states */
+	if (test_complete) {
+		return SYS_PM_NOT_HANDLED;
+	}
+
 	state = get_next_state();
 
 	printk("Entering %s state\n", state_to_string(state));
@@ -391,6 +398,7 @@ static void build_suspend_device_list(void)
 
 void main(void)
 {
+	int i;
 	printk("Quark SE(%s): Power Management sample application\n",
 								CONFIG_ARCH);
 
@@ -412,8 +420,11 @@ void main(void)
 	/* All our application does is putting the task to sleep so the kernel
 	 * triggers the suspend operation.
 	 */
-	while (1) {
+	for (i = 0; i < MAX_SYS_PM_STATES; i++) {
 		k_sleep(TIMEOUT * 1000);
 		printk("Back to the application\n");
 	}
+	test_complete = 1;
+
+	printk("**Power States test complete**\n");
 }
