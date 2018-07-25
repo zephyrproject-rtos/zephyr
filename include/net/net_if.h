@@ -77,6 +77,9 @@ struct net_if_addr {
  * Stores the multicast IP addresses assigned to this network interface.
  */
 struct net_if_mcast_addr {
+	/** IP address */
+	struct net_addr address;
+
 	/** Is this multicast IP address used or not */
 	u8_t is_used : 1;
 
@@ -84,9 +87,6 @@ struct net_if_mcast_addr {
 	u8_t is_joined : 1;
 
 	u8_t _unused : 6;
-
-	/** IP address */
-	struct net_addr address;
 };
 
 #if defined(CONFIG_NET_IPV6)
@@ -351,9 +351,6 @@ struct net_if_dev {
 	/** The hardware link address */
 	struct net_linkaddr link_addr;
 
-	/** The hardware MTU */
-	u16_t mtu;
-
 #if defined(CONFIG_NET_OFFLOAD)
 	/** TCP/IP Offload functions.
 	 * If non-NULL, then the TCP/IP stack is located
@@ -362,6 +359,9 @@ struct net_if_dev {
 	 */
 	struct net_offload *offload;
 #endif /* CONFIG_NET_OFFLOAD */
+
+	/** The hardware MTU */
+	u16_t mtu;
 };
 
 /**

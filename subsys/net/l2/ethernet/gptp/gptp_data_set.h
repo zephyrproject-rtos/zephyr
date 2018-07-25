@@ -173,15 +173,6 @@ struct gptp_global_ds {
 	/** Last Grand Master Phase Change. */
 	struct gptp_scaled_ns last_gm_phase_change;
 
-	/** Path trace to be sent in announce message. */
-	struct gptp_path_trace path_trace;
-
-	/** Grand Master priority vector. */
-	struct gptp_priority_vector gm_priority;
-
-	/** Previous Grand Master priority vector. */
-	struct gptp_priority_vector last_gm_priority;
-
 	/** Global flags. */
 	struct gptp_flags global_flags;
 
@@ -224,6 +215,15 @@ struct gptp_global_ds {
 	/** Selected port bit array. */
 	u32_t selected_array;
 
+	/** Path trace to be sent in announce message. */
+	struct gptp_path_trace path_trace;
+
+	/** Grand Master priority vector. */
+	struct gptp_priority_vector gm_priority;
+
+	/** Previous Grand Master priority vector. */
+	struct gptp_priority_vector last_gm_priority;
+
 	/** Steps removed from selected master. */
 	u16_t master_steps_removed;
 
@@ -252,9 +252,6 @@ struct gptp_global_ds {
  * Data Set representing capabilities of the time-aware system.
  */
 struct gptp_default_ds {
-	/** System current flags. */
-	struct gptp_flags flags;
-
 	/** Quality of the local clock. */
 	struct gptp_clock_quality clk_quality;
 
@@ -263,6 +260,9 @@ struct gptp_default_ds {
 
 	/** Clock Identity of the local clock. */
 	u8_t clk_id[GPTP_CLOCK_ID_LEN];
+
+	/** System current flags. */
+	struct gptp_flags flags;
 
 	/** Current UTC offset. */
 	u16_t cur_utc_offset;
@@ -320,9 +320,6 @@ struct gptp_current_ds {
  * Data Set representing the parent capabilities.
  */
 struct gptp_parent_ds {
-	/** Port Identity of the Master Port attached to this system. */
-	struct gptp_port_identity port_id;
-
 	/** Ratio of the frequency of the GM with the local clock. */
 	s32_t cumulative_rate_ratio;
 
@@ -331,6 +328,9 @@ struct gptp_parent_ds {
 
 	/** Clock Class of the Grand Master clock. */
 	struct gptp_clock_quality gm_clk_quality;
+
+	/** Port Identity of the Master Port attached to this system. */
+	struct gptp_port_identity port_id;
 
 	/** Primary Priority of the Grand Master clock. */
 	u8_t gm_priority1;
@@ -376,15 +376,6 @@ struct gptp_time_prop_ds {
  * Data Set representing port capabilities.
  */
 struct gptp_port_ds {
-	/** Port Identity of the port. */
-	struct gptp_port_identity port_id;
-
-	/** Sync event transmission interval for the port. */
-	struct gptp_uscaled_ns half_sync_itv;
-
-	/** Path Delay Request transmission interval for the port. */
-	struct gptp_uscaled_ns pdelay_req_itv;
-
 	/** Maximum interval between sync messages. */
 	u64_t sync_receipt_timeout_time_itv;
 
@@ -399,6 +390,15 @@ struct gptp_port_ds {
 
 	/** Estimate of the ratio of the frequency with the peer. */
 	double neighbor_rate_ratio;
+
+	/** Port Identity of the port. */
+	struct gptp_port_identity port_id;
+
+	/** Sync event transmission interval for the port. */
+	struct gptp_uscaled_ns half_sync_itv;
+
+	/** Path Delay Request transmission interval for the port. */
+	struct gptp_uscaled_ns pdelay_req_itv;
 
 	/** Maximum number of Path Delay Requests without a response. */
 	u16_t allowed_lost_responses;

@@ -104,6 +104,9 @@ struct net_pkt {
 	sys_snode_t sent_list;
 #endif
 
+	/** Reference counter */
+	u8_t ref;
+
 	u8_t sent_or_eof: 1;	/* For outgoing packet: is this sent or not
 				 * For incoming packet of a socket: last
 				 * packet before EOF
@@ -127,29 +130,6 @@ struct net_pkt {
 		u8_t ipv4_ttl;
 	};
 
-#if defined(CONFIG_NET_IPV6)
-	u16_t ipv6_ext_len;	/* length of extension headers */
-	u8_t ipv6_ext_opt_len; /* IPv6 ND option length */
-
-	/* Where is the start of the last header before payload data
-	 * in IPv6 packet. This is offset value from start of the IPv6
-	 * packet. Note that this value should be updated by who ever
-	 * adds IPv6 extension headers to the network packet.
-	 */
-	u16_t ipv6_prev_hdr_start;
-
-#if defined(CONFIG_NET_IPV6_FRAGMENT)
-	u16_t ipv6_fragment_offset;	/* Fragment offset of this packet */
-	u32_t ipv6_fragment_id;	/* Fragment id */
-	u16_t ipv6_frag_hdr_start;	/* Where starts the fragment header */
-#endif /* CONFIG_NET_IPV6_FRAGMENT */
-#endif /* CONFIG_NET_IPV6 */
-
-#if defined(CONFIG_IEEE802154)
-	u8_t ieee802154_rssi; /* Received Signal Strength Indication */
-	u8_t ieee802154_lqi;  /* Link Quality Indicator */
-#endif
-
 #if NET_TC_COUNT > 1
 	/** Network packet priority, can be left out in which case packet
 	 * is not prioritised.
@@ -165,10 +145,31 @@ struct net_pkt {
 	 */
 	u16_t vlan_tci;
 #endif /* CONFIG_NET_VLAN */
-	/* @endcond */
 
-	/** Reference counter */
-	u8_t ref;
+#if defined(CONFIG_NET_IPV6)
+	u16_t ipv6_ext_len;	/* length of extension headers */
+
+	/* Where is the start of the last header before payload data
+	 * in IPv6 packet. This is offset value from start of the IPv6
+	 * packet. Note that this value should be updated by who ever
+	 * adds IPv6 extension headers to the network packet.
+	 */
+	u16_t ipv6_prev_hdr_start;
+
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+	u16_t ipv6_fragment_offset;	/* Fragment offset of this packet */
+	u32_t ipv6_fragment_id;	/* Fragment id */
+	u16_t ipv6_frag_hdr_start;	/* Where starts the fragment header */
+#endif /* CONFIG_NET_IPV6_FRAGMENT */
+
+	u8_t ipv6_ext_opt_len; /* IPv6 ND option length */
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_IEEE802154)
+	u8_t ieee802154_rssi; /* Received Signal Strength Indication */
+	u8_t ieee802154_lqi;  /* Link Quality Indicator */
+#endif
+	/* @endcond */
 };
 
 /** @cond ignore */
