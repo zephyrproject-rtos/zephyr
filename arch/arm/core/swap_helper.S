@@ -126,9 +126,23 @@ SECTION_FUNC(TEXT, __pendsv)
     str v3, [v4, #0]
 
     /* Restore previous interrupt disable state (irq_lock key) */
+#if (defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M0)) && \
+	    _thread_offset_to_basepri > 124
+    /* Doing it this way since the offset to thread->arch.basepri can in
+     * some configurations be larger than the maximum of 124 for ldr/str
+     * immediate offsets.
+     */
+    ldr r4, =_thread_offset_to_basepri
+    adds r4, r2, r4
+
+    ldr r0, [r4]
+    movs.n r3, #0
+    str r3, [r4]
+#else
     ldr r0, [r2, #_thread_offset_to_basepri]
     movs.n r3, #0
     str r3, [r2, #_thread_offset_to_basepri]
+#endif
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     /* BASEPRI not available, previous interrupt disable state
