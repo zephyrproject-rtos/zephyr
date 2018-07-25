@@ -329,8 +329,8 @@ static void dhcpv4_send_request(struct net_if *iface)
 				 net_sprint_ipv4_addr(ciaddr));
 		}
 
-		NET_DBG("send request dst=%s xid=0x%"PRIx32" ciaddr=%s"
-			"%s%s timeout=%"PRIu32"s",
+		NET_DBG("send request dst=%s xid=0x%x ciaddr=%s"
+			"%s%s timeout=%us",
 			net_sprint_ipv4_addr(server_addr),
 			iface->config.dhcpv4.xid, out,
 			with_server_id ? " +server-id" : "",
@@ -383,7 +383,7 @@ static void dhcpv4_send_discover(struct net_if *iface)
 
 	iface->config.dhcpv4.attempts++;
 
-	NET_DBG("send discover xid=0x%"PRIx32" timeout=%"PRIu32"s",
+	NET_DBG("send discover xid=0x%x timeout=%us",
 		iface->config.dhcpv4.xid, timeout);
 
 	return;
@@ -501,8 +501,7 @@ static void dhcpv4_enter_bound(struct net_if *iface)
 	}
 
 	iface->config.dhcpv4.state = NET_DHCPV4_BOUND;
-	NET_DBG("enter state=%s renewal=%"PRIu32"s "
-		"rebinding=%"PRIu32"s",
+	NET_DBG("enter state=%s renewal=%us rebinding=%us",
 		net_dhcpv4_state_name(iface->config.dhcpv4.state),
 		renewal_time, rebinding_time);
 
@@ -1057,7 +1056,7 @@ void net_dhcpv4_start(struct net_if *iface)
 			(DHCPV4_INITIAL_DELAY_MAX - DHCPV4_INITIAL_DELAY_MIN) +
 			DHCPV4_INITIAL_DELAY_MIN;
 
-		NET_DBG("wait timeout=%"PRIu32"s", timeout);
+		NET_DBG("wait timeout=%us", timeout);
 
 		k_delayed_work_submit(&iface->config.dhcpv4.timer,
 				      K_SECONDS(timeout));
