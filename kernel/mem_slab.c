@@ -17,6 +17,8 @@
 extern struct k_mem_slab _k_mem_slab_list_start[];
 extern struct k_mem_slab _k_mem_slab_list_end[];
 
+static struct k_spinlock lock;
+
 #ifdef CONFIG_OBJECT_TRACING
 struct k_mem_slab *_trace_list_k_mem_slab;
 #endif	/* CONFIG_OBJECT_TRACING */
@@ -90,7 +92,7 @@ void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, s32_t timeout)
 {
-	unsigned int key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&lock);
 	int result;
 
 	/* block size must be word aligned */
@@ -109,31 +111,31 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, s32_t timeout)
 		result = -ENOMEM;
 	} else {
 		/* wait for a free block or timeout */
-		result = _pend_curr_irqlock(key, &slab->wait_q, timeout);
+		result = _pend_curr(&lock, key, &slab->wait_q, timeout);
 		if (result == 0) {
 			*mem = _current->base.swap_data;
 		}
 		return result;
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 
 	return result;
 }
 
 void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 {
-	int key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&lock);
 	struct k_thread *pending_thread = _unpend_first_thread(&slab->wait_q);
 
 	if (pending_thread != NULL) {
 		_set_thread_return_value_with_data(pending_thread, 0, *mem);
 		_ready_thread(pending_thread);
-		_reschedule_irqlock(key);
+		_reschedule(&lock, key);
 	} else {
 		**(char ***)mem = slab->free_list;
 		slab->free_list = *(char **)mem;
 		slab->num_used--;
-		irq_unlock(key);
+		k_spin_unlock(&lock, key);
 	}
 }
