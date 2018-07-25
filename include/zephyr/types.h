@@ -13,15 +13,15 @@
 extern "C" {
 #endif
 
-typedef signed char         s8_t;
-typedef signed short        s16_t;
-typedef signed int          s32_t;
-typedef signed long long    s64_t;
+typedef __INT8_TYPE__       s8_t;
+typedef __INT16_TYPE__      s16_t;
+typedef __INT32_TYPE__      s32_t;
+typedef __INT64_TYPE__      s64_t;
 
-typedef unsigned char       u8_t;
-typedef unsigned short      u16_t;
-typedef unsigned int        u32_t;
-typedef unsigned long long  u64_t;
+typedef __UINT8_TYPE__      u8_t;
+typedef __UINT16_TYPE__     u16_t;
+typedef __UINT32_TYPE__     u32_t;
+typedef __UINT64_TYPE__     u64_t;
 
 #ifdef __cplusplus
 }
