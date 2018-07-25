@@ -15,7 +15,7 @@
 #include <toolchain.h>
 
 #define STACK_SIZE 2048
-#define NUMBER_OF_LOOPS 5000
+#define NUMBER_OF_LOOPS 1000
 
 extern K_THREAD_STACK_DEFINE(thread_stack1, STACK_SIZE);
 extern K_THREAD_STACK_DEFINE(thread_stack2, STACK_SIZE);
