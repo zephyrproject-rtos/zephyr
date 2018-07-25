@@ -206,12 +206,15 @@ config BT_MESH_RX_SEG_MSG_COUNT
 
 config BT_MESH_RX_SDU_MAX
 	int "Maximum incoming Upper Transport Access PDU length"
-	default 384
-	range 36 384
+	default 72
+	range 24 384
 	help
-	  Maximum incoming Upper Transport Access PDU length. Leave this
-	  to the default value, unless you really need to optimize memory
-	  usage.
+	  Maximum incoming Upper Transport Access PDU length. This
+	  determines also how many segments incoming segmented messages
+	  can have. Each segment can contain 12 bytes, so this value should
+	  be set to a multiple of 12 to avoid wasted memory. The minimum
+	  requirement is 2 segments (24 bytes) whereas the maximum supported
+	  by the Mesh specification is 32 segments (384 bytes).
 
 config BT_MESH_TX_SEG_MAX
 	int "Maximum number of segments in outgoing messages"
