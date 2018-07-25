@@ -134,7 +134,8 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
  * @param iface Network interface
  * @param next_header_proto Protocol type of the next header after IPv6 header.
  *
- * @return Return network packet that contains the IPv6 packet.
+ * @return Returns the input pkt network packet (which now contains IPv6
+ * header) or NULL if network packet could not be allocated.
  */
 struct net_pkt *net_ipv6_create(struct net_pkt *pkt,
 				const struct in6_addr *src,

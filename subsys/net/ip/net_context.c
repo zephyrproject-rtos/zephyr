@@ -884,8 +884,11 @@ static int create_udp_packet(struct net_context *context,
 	if (net_pkt_family(pkt) == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
 
-		pkt = net_context_create_ipv6(context, pkt,
-					      NULL, &addr6->sin6_addr);
+		if (!net_context_create_ipv6(context, pkt,
+					     NULL, &addr6->sin6_addr)) {
+			return -ENOMEM;
+		}
+
 		tmp = net_udp_insert(context, pkt,
 				     net_pkt_ip_hdr_len(pkt) +
 				     net_pkt_ipv6_ext_len(pkt),
@@ -904,8 +907,11 @@ static int create_udp_packet(struct net_context *context,
 	if (net_pkt_family(pkt) == AF_INET) {
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
 
-		pkt = net_context_create_ipv4(context, pkt,
-					      NULL, &addr4->sin_addr);
+		if (!net_context_create_ipv4(context, pkt,
+					     NULL, &addr4->sin_addr)) {
+			return -ENOMEM;
+		}
+
 		tmp = net_udp_insert(context, pkt, net_pkt_ip_hdr_len(pkt),
 				     addr4->sin_port);
 		if (!tmp) {

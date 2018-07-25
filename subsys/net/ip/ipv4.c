@@ -27,13 +27,21 @@
 #include "tcp_internal.h"
 #include "ipv4.h"
 
+/* Timeout for various buffer allocations in this file. */
+#define NET_BUF_TIMEOUT K_MSEC(50)
+
 struct net_pkt *net_ipv4_create(struct net_pkt *pkt,
 				const struct in_addr *src,
 				const struct in_addr *dst,
 				struct net_if *iface,
 				u8_t next_header_proto)
 {
-	struct net_buf *header = net_pkt_get_frag(pkt, K_FOREVER);
+	struct net_buf *header;
+
+	header = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
+	if (!header) {
+		return NULL;
+	}
 
 	net_pkt_frag_insert(pkt, header);
 
