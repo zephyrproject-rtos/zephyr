@@ -367,7 +367,7 @@ void stm32_i2c_error_isr(void *arg)
 }
 #endif
 
-int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
+s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 			u8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
@@ -415,7 +415,7 @@ error:
 	return -EIO;
 }
 
-int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
+s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 		       u8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
@@ -485,7 +485,7 @@ static inline void msg_done(struct device *dev, unsigned int current_msg_flags)
 	}
 }
 
-int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
+s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 			u8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
@@ -522,7 +522,7 @@ error:
 	return -EIO;
 }
 
-int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
+s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 		       u8_t *next_msg_flags, uint16_t slave)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
@@ -549,7 +549,7 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 }
 #endif
 
-int stm32_i2c_configure_timing(struct device *dev, u32_t clock)
+s32_t stm32_i2c_configure_timing(struct device *dev, u32_t clock)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
