@@ -4432,6 +4432,10 @@ bool bt_smp_get_tk(struct bt_conn *conn, u8_t *tk)
 		return false;
 	}
 
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
+		return false;
+	}
+
 	enc_size = get_encryption_key_size(smp);
 
 	/*
