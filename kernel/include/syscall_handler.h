@@ -222,7 +222,7 @@ bool z_syscall_verify_msg(bool expr, const char *fmt, ...)
 		u32_t product; \
 		Z_SYSCALL_VERIFY_MSG(!__builtin_umul_overflow((u32_t)(nmemb), \
 							      (u32_t)(size), \
-							      &product), \
+							      (unsigned int *)&product), \
 				     "%ux%u array is too large", \
 				     (u32_t)(nmemb), (u32_t)(size)) ||  \
 			Z_SYSCALL_MEMORY(ptr, product, write); \
