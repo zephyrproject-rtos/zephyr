@@ -45,6 +45,13 @@
 extern struct k_mutex _k_mutex_list_start[];
 extern struct k_mutex _k_mutex_list_end[];
 
+/* We use a global spinlock here because some of the synchronization
+ * is protecting things like owner thread priorities which aren't
+ * "part of" a single k_mutex.  Should move those bits of the API
+ * under the scheduler lock so we can break this up.
+ */
+static struct k_spinlock lock;
+
 #ifdef CONFIG_OBJECT_TRACING
 
 struct k_mutex *_trace_list_k_mutex;
@@ -117,7 +124,7 @@ static void adjust_owner_prio(struct k_mutex *mutex, s32_t new_prio)
 int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 {
 	int new_prio;
-	u32_t key;
+	k_spinlock_key_t key;
 
 	sys_trace_void(SYS_TRACE_ID_MUTEX_LOCK);
 	_sched_lock();
@@ -154,7 +161,7 @@ int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 	new_prio = new_prio_for_inheritance(_current->base.prio,
 					    mutex->owner->base.prio);
 
-	key = irq_lock();
+	key = k_spin_lock(&lock);
 
 	K_DEBUG("adjusting prio up on mutex %p\n", mutex);
 
@@ -162,7 +169,7 @@ int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 		adjust_owner_prio(mutex, new_prio);
 	}
 
-	s32_t got_mutex = _pend_curr_irqlock(key, &mutex->wait_q, timeout);
+	int got_mutex = _pend_curr(&lock, key, &mutex->wait_q, timeout);
 
 	K_DEBUG("on mutex %p got_mutex value: %d\n", mutex, got_mutex);
 
@@ -188,9 +195,9 @@ int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 
 	K_DEBUG("adjusting prio down on mutex %p\n", mutex);
 
-	key = irq_lock();
+	key = k_spin_lock(&lock);
 	adjust_owner_prio(mutex, new_prio);
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 
 	k_sched_unlock();
 
@@ -208,7 +215,6 @@ Z_SYSCALL_HANDLER(k_mutex_lock, mutex, timeout)
 
 void _impl_k_mutex_unlock(struct k_mutex *mutex)
 {
-	u32_t key;
 	struct k_thread *new_owner;
 
 	__ASSERT(mutex->lock_count > 0U, "");
@@ -227,7 +233,7 @@ void _impl_k_mutex_unlock(struct k_mutex *mutex)
 		goto k_mutex_unlock_return;
 	}
 
-	key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	adjust_owner_prio(mutex, mutex->owner_orig_prio);
 
@@ -241,7 +247,7 @@ void _impl_k_mutex_unlock(struct k_mutex *mutex)
 	if (new_owner != NULL) {
 		_ready_thread(new_owner);
 
-		irq_unlock(key);
+		k_spin_unlock(&lock, key);
 
 		_set_thread_return_value(new_owner, 0);
 
@@ -253,9 +259,9 @@ void _impl_k_mutex_unlock(struct k_mutex *mutex)
 		mutex->owner_orig_prio = new_owner->base.prio;
 	} else {
 		mutex->lock_count = 0;
+		k_spin_unlock(&lock, key);
 	}
 
-	irq_unlock(key);
 
 k_mutex_unlock_return:
 	k_sched_unlock();
