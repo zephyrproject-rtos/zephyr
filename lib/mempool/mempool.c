@@ -310,7 +310,7 @@ void _sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
 void *sys_mem_pool_alloc(struct sys_mem_pool *p, size_t size)
 {
 	struct sys_mem_pool_block *blk;
-	int level, block;
+	u32_t level, block;
 	char *ret;
 
 	k_mutex_lock(p->mutex, K_FOREVER);
