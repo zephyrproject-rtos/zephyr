@@ -103,7 +103,7 @@ static inline int init_app(void)
 
 struct net_pkt *prepare_send_pkt(struct net_app_ctx *ctx,
 				 const char *name,
-				 int *expecting_len)
+				 u16_t int *expecting_len)
 {
 	struct net_pkt *send_pkt;
 

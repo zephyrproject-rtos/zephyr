@@ -18,8 +18,8 @@ struct data {
 	struct net_app_ctx *udp;
 
 	const char *proto;
-	u32_t expecting_udp;
-	u32_t expecting_tcp;
+	u16_t expecting_udp;
+	u16_t expecting_tcp;
 	u32_t received_tcp;
 };
 
@@ -49,5 +49,5 @@ void stop_tcp(void);
 
 struct net_pkt *prepare_send_pkt(struct net_app_ctx *ctx,
 				 const char *name,
-				 int *expecting_len);
+				 u16_t *expecting_len);
 void panic(const char *msg);
