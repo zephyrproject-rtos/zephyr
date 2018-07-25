@@ -29,6 +29,8 @@
  */
 #define APP_STARTUP_TIME K_SECONDS(20)
 
+#define BUF_TIMEOUT K_MSEC(100)
+
 #define APP_BANNER "Run echo server"
 
 static struct k_sem quit_lock;
@@ -66,9 +68,11 @@ struct net_pkt *build_reply_pkt(const char *name,
 		return NULL;
 	}
 
-	reply_pkt = net_app_get_net_pkt(ctx, net_pkt_family(pkt), K_FOREVER);
+	reply_pkt = net_app_get_net_pkt(ctx, net_pkt_family(pkt), BUF_TIMEOUT);
+	if (!reply_pkt) {
+		return NULL;
+	}
 
-	NET_ASSERT(reply_pkt);
 	NET_ASSERT(net_pkt_family(reply_pkt) == net_pkt_family(pkt));
 
 	recv_len = net_pkt_get_len(pkt);
@@ -91,7 +95,7 @@ struct net_pkt *build_reply_pkt(const char *name,
 
 	net_pkt_set_appdatalen(reply_pkt, net_pkt_appdatalen(pkt));
 
-	frag = net_pkt_copy_all(pkt, 0, K_FOREVER);
+	frag = net_pkt_copy_all(pkt, 0, BUF_TIMEOUT);
 	if (!frag) {
 		NET_ERR("Failed to copy all data");
 		net_pkt_unref(reply_pkt);
