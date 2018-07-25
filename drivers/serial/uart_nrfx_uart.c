@@ -180,15 +180,23 @@ static unsigned char uart_nrfx_poll_out(struct device *dev,
 	 * blue moon against hanging up the whole thread permanently
 	 */
 
-	/* reset transmitter ready state */
+	/* Reset the transmitter ready state. */
 	event_txdrdy_clear();
 
-	/* send a character */
+	/* Activate the transmitter. */
+	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTTX);
+
+	/* Send the provided character. */
 	nrf_uart_txd_set(uart0_addr, (u8_t)c);
 
-	/* Wait for transmitter to be ready */
+	/* Wait until the transmitter is ready, i.e. the character is sent. */
 	while (!event_txdrdy_check()) {
 	}
+
+	/* Deactivate the transmitter so that it does not needlessly consume
+	 * power.
+	 */
+	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPTX);
 
 	return c;
 }
@@ -253,6 +261,14 @@ static void uart_nrfx_irq_tx_enable(struct device *dev)
 {
 	u32_t key;
 
+	/* Indicate that this device started a transaction that should not be
+	 * interrupted by putting the SoC into the deep sleep mode.
+	 */
+	device_busy_set(dev);
+
+	/* Activate the transmitter. */
+	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTTX);
+
 	nrf_uart_int_enable(uart0_addr, NRF_UART_INT_MASK_TXDRDY);
 
 	/* Critical section is used to avoid any UART related interrupt which
@@ -273,6 +289,16 @@ static void uart_nrfx_irq_tx_enable(struct device *dev)
 static void uart_nrfx_irq_tx_disable(struct device *dev)
 {
 	nrf_uart_int_disable(uart0_addr, NRF_UART_INT_MASK_TXDRDY);
+
+	/* Deactivate the transmitter so that it does not needlessly consume
+	 * power.
+	 */
+	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPTX);
+
+	/* The transaction is over. It is okay to enter the deep sleep mode
+	 * if needed.
+	 */
+	device_busy_clear(dev);
 }
 
 /** Interrupt driven receiver enabling function */
@@ -416,16 +442,17 @@ static int uart_nrfx_init(struct device *dev)
 		return err;
 	}
 
-	/* Enable receiver and transmitter */
+	/* Enable the UART and activate its receiver. With the current API
+	 * the receiver needs to be active all the time. The transmitter
+	 * will be activated when there is something to send.
+	 */
 	nrf_uart_enable(uart0_addr);
 
 	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_RXDRDY);
 
-	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTTX);
 	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTRX);
 
 #ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
-
 	/* Simulate that the TXDRDY event is set, so that the transmitter status
 	 * is indicated correctly.
 	 */
@@ -467,13 +494,49 @@ static const struct uart_driver_api uart_nrfx_uart_driver_api = {
 #endif /* CONFIG_UART_0_INTERRUPT_DRIVEN */
 };
 
-DEVICE_AND_API_INIT(uart_nrfx_uart0,
-		    CONFIG_UART_0_NAME,
-		    uart_nrfx_init,
-		    NULL,
-		    NULL,
-		    /* Initialize UART device before UART console. */
-		    PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &uart_nrfx_uart_driver_api);
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static void uart_nrfx_set_power_state(u32_t new_state)
+{
+	if (new_state == DEVICE_PM_ACTIVE_STATE) {
+		nrf_uart_enable(uart0_addr);
+		nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTRX);
+	} else {
+		assert(new_state == DEVICE_PM_LOW_POWER_STATE ||
+		       new_state == DEVICE_PM_SUSPEND_STATE ||
+		       new_state == DEVICE_PM_OFF_STATE);
+		nrf_uart_disable(uart0_addr);
+	}
+}
 
+static int uart_nrfx_pm_control(struct device *dev,
+				u32_t ctrl_command,
+				void *context)
+{
+	static u32_t current_state = DEVICE_PM_ACTIVE_STATE;
+
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		u32_t new_state = *((const u32_t *)context);
+
+		if (new_state != current_state) {
+			uart_nrfx_set_power_state(new_state);
+			current_state = new_state;
+		}
+	} else {
+		assert(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		*((u32_t *)context) = current_state;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+
+DEVICE_DEFINE(uart_nrfx_uart0,
+	      CONFIG_UART_0_NAME,
+	      uart_nrfx_init,
+	      uart_nrfx_pm_control,
+	      NULL,
+	      NULL,
+	      /* Initialize UART device before UART console. */
+	      PRE_KERNEL_1,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+	      &uart_nrfx_uart_driver_api);
