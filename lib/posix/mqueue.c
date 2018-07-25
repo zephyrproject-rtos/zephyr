@@ -34,7 +34,7 @@ s64_t timespec_to_timeoutms(const struct timespec *abstime);
 static mqueue_object *find_in_list(const char *name);
 static s32_t send_message(mqueue_desc *mqd, const char *msg_ptr, size_t msg_len,
 			  s32_t timeout);
-static int receive_message(mqueue_desc *mqd, char *msg_ptr, size_t msg_len,
+static s32_t receive_message(mqueue_desc *mqd, char *msg_ptr, size_t msg_len,
 			   s32_t timeout);
 static void remove_mq(mqueue_object *msg_queue);
 
