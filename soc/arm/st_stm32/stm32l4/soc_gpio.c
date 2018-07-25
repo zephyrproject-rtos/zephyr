@@ -53,25 +53,34 @@ int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 {
 	int direction = flags & GPIO_DIR_MASK;
 	int pud = flags & GPIO_PUD_MASK;
+	int ds_low = flags & GPIO_DS_LOW_MASK;
+	int ds_high = flags & GPIO_DS_HIGH_MASK;
 
 	if (!pincfg) {
 		return -EINVAL;
 	}
 
-	if (direction == GPIO_DIR_OUT) {
-		*pincfg = STM32_MODER_OUTPUT_MODE;
+	/* pull-{up,down,float} */
+	if (pud == GPIO_PUD_PULL_UP) {
+		*pincfg = STM32_PUPDR_PULL_UP;
+	} else if (pud == GPIO_PUD_PULL_DOWN) {
+		*pincfg = STM32_PUPDR_PULL_DOWN;
 	} else {
-		/* pull-{up,down} maybe? */
-		*pincfg = STM32_MODER_INPUT_MODE;
+		/* floating */
+		*pincfg = STM32_PUPDR_NO_PULL;
+	}
 
-		if (pud == GPIO_PUD_PULL_UP) {
-			*pincfg = *pincfg | STM32_PUPDR_PULL_UP;
-		} else if (pud == GPIO_PUD_PULL_DOWN) {
-			*pincfg = *pincfg | STM32_PUPDR_PULL_DOWN;
+	if (direction == GPIO_DIR_OUT) {
+		*pincfg = *pincfg | STM32_MODER_OUTPUT_MODE;
+
+		if (ds_low == GPIO_DS_ALT_LOW ||
+		    ds_high == GPIO_DS_DISCONNECT_HIGH) {
+			*pincfg = *pincfg | STM32_OTYPER_OPEN_DRAIN;
 		} else {
-			/* floating */
-			*pincfg = *pincfg | STM32_PUPDR_NO_PULL;
+			*pincfg = *pincfg | STM32_OTYPER_PUSH_PULL;
 		}
+	} else {
+		*pincfg = *pincfg | STM32_MODER_INPUT_MODE;
 	}
 
 	return 0;
