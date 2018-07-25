@@ -34,6 +34,8 @@
 extern struct _static_thread_data _static_thread_data_list_start[];
 extern struct _static_thread_data _static_thread_data_list_end[];
 
+static struct k_spinlock lock;
+
 #define _FOREACH_STATIC_THREAD(thread_data)              \
 	for (struct _static_thread_data *thread_data =   \
 	     _static_thread_data_list_start;             \
@@ -44,7 +46,7 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 {
 #if defined(CONFIG_THREAD_MONITOR)
 	struct k_thread *thread;
-	unsigned int key;
+	k_spinlock_key_t key;
 
 	__ASSERT(user_cb != NULL, "user_cb can not be NULL");
 
@@ -54,11 +56,11 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 	 * The indirect ways are through calling k_thread_create and
 	 * k_thread_abort from user_cb.
 	 */
-	key = irq_lock();
+	key = k_spin_lock(&lock);
 	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
 		user_cb(thread, user_data);
 	}
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 #endif
 }
 
@@ -149,7 +151,7 @@ void *_impl_k_thread_custom_data_get(void)
  */
 void _thread_monitor_exit(struct k_thread *thread)
 {
-	unsigned int key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	if (thread == _kernel.threads) {
 		_kernel.threads = _kernel.threads->next_thread;
@@ -166,7 +168,7 @@ void _thread_monitor_exit(struct k_thread *thread)
 		}
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 }
 #endif
 
@@ -262,16 +264,16 @@ void _check_stack_sentinel(void)
 #ifdef CONFIG_MULTITHREADING
 void _impl_k_thread_start(struct k_thread *thread)
 {
-	int key = irq_lock(); /* protect kernel queues */
+	k_spinlock_key_t key = k_spin_lock(&lock); /* protect kernel queues */
 
 	if (_has_thread_started(thread)) {
-		irq_unlock(key);
+		k_spin_unlock(&lock, key);
 		return;
 	}
 
 	_mark_thread_as_started(thread);
 	_ready_thread(thread);
-	_reschedule_irqlock(key);
+	_reschedule(&lock, key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -287,10 +289,8 @@ static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 		k_thread_start(thread);
 	} else {
 		s32_t ticks = _TICK_ALIGN + _ms_to_ticks(delay);
-		int key = irq_lock();
 
 		_add_thread_timeout(thread, ticks);
-		irq_unlock(key);
 	}
 #else
 	ARG_UNUSED(delay);
@@ -374,11 +374,11 @@ void _setup_new_thread(struct k_thread *new_thread,
 	new_thread->entry.parameter2 = p2;
 	new_thread->entry.parameter3 = p3;
 
-	unsigned int key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	new_thread->next_thread = _kernel.threads;
 	_kernel.threads = new_thread;
-	irq_unlock(key);
+	k_spin_unlock(&lock, key);
 #endif
 #ifdef CONFIG_THREAD_NAME
 	new_thread->name = name;
@@ -534,16 +534,16 @@ void _k_thread_single_suspend(struct k_thread *thread)
 
 void _impl_k_thread_suspend(struct k_thread *thread)
 {
-	unsigned int  key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	_k_thread_single_suspend(thread);
 
 	sys_trace_thread_suspend(thread);
 
 	if (thread == _current) {
-		_reschedule_irqlock(key);
+		_reschedule(&lock, key);
 	} else {
-		irq_unlock(key);
+		k_spin_unlock(&lock, key);
 	}
 }
 
@@ -559,12 +559,12 @@ void _k_thread_single_resume(struct k_thread *thread)
 
 void _impl_k_thread_resume(struct k_thread *thread)
 {
-	unsigned int  key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	_k_thread_single_resume(thread);
 
 	sys_trace_thread_resume(thread);
-	_reschedule_irqlock(key);
+	_reschedule(&lock, key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -626,8 +626,6 @@ static void grant_static_access(void)
 
 void _init_static_threads(void)
 {
-	unsigned int  key;
-
 	_FOREACH_STATIC_THREAD(thread_data) {
 		_setup_new_thread(
 			thread_data->init_thread,
@@ -647,25 +645,24 @@ void _init_static_threads(void)
 #ifdef CONFIG_USERSPACE
 	grant_static_access();
 #endif
-	_sched_lock();
 
 	/*
-	 * Non-legacy static threads may be started immediately or after a
-	 * previously specified delay. Even though the scheduler is locked,
-	 * ticks can still be delivered and processed. Lock interrupts so
-	 * that the countdown until execution begins from the same tick.
+	 * Non-legacy static threads may be started immediately or
+	 * after a previously specified delay. Even though the
+	 * scheduler is locked, ticks can still be delivered and
+	 * processed. Take a sched lock to prevent them from running
+	 * until they are all started.
 	 *
 	 * Note that static threads defined using the legacy API have a
 	 * delay of K_FOREVER.
 	 */
-	key = irq_lock();
+	k_sched_lock();
 	_FOREACH_STATIC_THREAD(thread_data) {
 		if (thread_data->init_delay != K_FOREVER) {
 			schedule_new_thread(thread_data->init_thread,
 					    thread_data->init_delay);
 		}
 	}
-	irq_unlock(key);
 	k_sched_unlock();
 }
 #endif
