@@ -314,8 +314,7 @@ static void dhcpv4_send_request(struct net_if *iface)
 		goto fail;
 	}
 
-	timeout = DHCPV4_INITIAL_RETRY_TIMEOUT <<
-					iface->config.dhcpv4.attempts;
+	timeout = DHCPV4_INITIAL_RETRY_TIMEOUT << iface->config.dhcpv4.attempts;
 
 	k_delayed_work_submit(&iface->config.dhcpv4.timer, K_SECONDS(timeout));
 
@@ -553,10 +552,12 @@ static void dhcpv4_timeout(struct k_work *work)
 		if (iface->config.dhcpv4.attempts >=
 					DHCPV4_MAX_NUMBER_OF_ATTEMPTS) {
 			NET_DBG("too many attempts, restart");
+
 			if (!net_if_ipv4_addr_rm(iface,
 					 &iface->config.dhcpv4.requested_ip)) {
 				NET_DBG("Failed to remove addr from iface");
 			}
+
 			/* Maximum number of renewal attempts failed, so start
 			 * from the beginning.
 			 */
@@ -565,6 +566,7 @@ static void dhcpv4_timeout(struct k_work *work)
 		} else {
 			dhcpv4_send_request(iface);
 		}
+
 		break;
 	}
 }
@@ -619,6 +621,7 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 				NET_ERR("options_subnet_mask, short packet");
 				return NET_DROP;
 			}
+
 			net_if_ipv4_set_netmask(iface, &netmask);
 			NET_DBG("options_subnet_mask %s",
 				net_sprint_ipv4_addr(&netmask));
@@ -677,9 +680,10 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 				NET_ERR("options_dns, short packet");
 				return NET_DROP;
 			}
-			dns.sin_family = AF_INET;
 
+			dns.sin_family = AF_INET;
 			dns_resolve_close(dns_resolve_get_default());
+
 			status = dns_resolve_init(dns_resolve_get_default(),
 						  NULL, dns_servers);
 			if (status < 0) {
@@ -687,6 +691,7 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 					"resolve address: %d", status);
 				return NET_DROP;
 			}
+
 			break;
 		}
 #endif
@@ -700,6 +705,7 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 					&iface->config.dhcpv4.lease_time);
 			NET_DBG("options_lease_time: %u",
 				iface->config.dhcpv4.lease_time);
+
 			if (!iface->config.dhcpv4.lease_time) {
 				return NET_DROP;
 			}
@@ -715,6 +721,7 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 					&iface->config.dhcpv4.renewal_time);
 			NET_DBG("options_renewal: %u",
 				iface->config.dhcpv4.renewal_time);
+
 			if (!iface->config.dhcpv4.renewal_time) {
 				return NET_DROP;
 			}
@@ -730,6 +737,7 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 					&iface->config.dhcpv4.rebinding_time);
 			NET_DBG("options_rebinding: %u",
 				iface->config.dhcpv4.rebinding_time);
+
 			if (!iface->config.dhcpv4.rebinding_time) {
 				return NET_DROP;
 			}
@@ -803,6 +811,7 @@ static void dhcpv4_handle_msg_ack(struct net_if *iface)
 		NET_INFO("Received: %s",
 			 net_sprint_ipv4_addr(
 				 &iface->config.dhcpv4.requested_ip));
+
 		if (!net_if_ipv4_addr_add(iface,
 					  &iface->config.dhcpv4.requested_ip,
 					  NET_ADDR_DHCP,
@@ -973,7 +982,6 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 			NET_DBG("enter state=%s", net_dhcpv4_state_name(
 					iface->config.dhcpv4.state));
 		}
-
 	} else if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_DBG("Interface %p coming up", iface);
 
@@ -1084,8 +1092,8 @@ void net_dhcpv4_stop(struct net_if *iface)
 					 &iface->config.dhcpv4.requested_ip)) {
 			NET_DBG("Failed to remove addr from iface");
 		}
-		/* Fall through */
 
+		/* Fall through */
 	case NET_DHCPV4_INIT:
 	case NET_DHCPV4_SELECTING:
 	case NET_DHCPV4_REQUESTING:
