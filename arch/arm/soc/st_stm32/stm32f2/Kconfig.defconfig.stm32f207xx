@@ -13,6 +13,6 @@ config SOC
 
 config NUM_IRQS
 	int
-	default 80
+	default 81
 
 endif
