@@ -28,13 +28,12 @@ static int eth_stats_get(u32_t mgmt_request, struct net_if *iface,
 		}
 
 		eth = net_if_get_device(iface)->driver_api;
-
 		if (eth->get_stats == NULL) {
 			return -ENOENT;
 		}
 
 		len_chk = sizeof(struct net_stats_eth);
-		src = eth->get_stats(iface);
+		src = eth->get_stats(net_if_get_device(iface));
 		break;
 	}
 
