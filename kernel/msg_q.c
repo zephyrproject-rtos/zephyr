@@ -60,6 +60,7 @@ void k_msgq_init(struct k_msgq *q, char *buffer, size_t msg_size,
 	q->used_msgs = 0;
 	q->flags = 0;
 	_waitq_init(&q->wait_q);
+	q->lock = (struct k_spinlock) {};
 	SYS_TRACING_OBJ_INIT(k_msgq, q);
 
 	_k_object_init(q);
@@ -113,7 +114,7 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 {
 	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
 
-	unsigned int key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&q->lock);
 	struct k_thread *pending_thread;
 	int result;
 
@@ -127,7 +128,7 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 			/* wake up waiting thread */
 			_set_thread_return_value(pending_thread, 0);
 			_ready_thread(pending_thread);
-			_reschedule_irqlock(key);
+			_reschedule(&q->lock, key);
 			return 0;
 		} else {
 			/* put message in queue */
@@ -145,10 +146,10 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 	} else {
 		/* wait for put message success, failure, or timeout */
 		_current->base.swap_data = data;
-		return _pend_curr_irqlock(key, &q->wait_q, timeout);
+		return _pend_curr(&q->lock, key, &q->wait_q, timeout);
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&q->lock, key);
 
 	return result;
 }
@@ -188,7 +189,7 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 {
 	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
 
-	unsigned int key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&q->lock);
 	struct k_thread *pending_thread;
 	int result;
 
@@ -216,7 +217,7 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 			/* wake up waiting thread */
 			_set_thread_return_value(pending_thread, 0);
 			_ready_thread(pending_thread);
-			_reschedule_irqlock(key);
+			_reschedule(&q->lock, key);
 			return 0;
 		}
 		result = 0;
@@ -226,10 +227,10 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 	} else {
 		/* wait for get message success or timeout */
 		_current->base.swap_data = data;
-		return _pend_curr_irqlock(key, &q->wait_q, timeout);
+		return _pend_curr(&q->lock, key, &q->wait_q, timeout);
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&q->lock, key);
 
 	return result;
 }
@@ -248,7 +249,7 @@ Z_SYSCALL_HANDLER(k_msgq_get, msgq_p, data, timeout)
 
 int _impl_k_msgq_peek(struct k_msgq *q, void *data)
 {
-	unsigned int key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&q->lock);
 	int result;
 
 	if (q->used_msgs > 0) {
@@ -260,7 +261,7 @@ int _impl_k_msgq_peek(struct k_msgq *q, void *data)
 		result = -ENOMSG;
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&q->lock, key);
 
 	return result;
 }
@@ -279,7 +280,7 @@ Z_SYSCALL_HANDLER(k_msgq_peek, msgq_p, data)
 
 void _impl_k_msgq_purge(struct k_msgq *q)
 {
-	unsigned int key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&q->lock);
 	struct k_thread *pending_thread;
 
 	/* wake up any threads that are waiting to write */
@@ -291,7 +292,7 @@ void _impl_k_msgq_purge(struct k_msgq *q)
 	q->used_msgs = 0;
 	q->read_ptr = q->write_ptr;
 
-	_reschedule_irqlock(key);
+	_reschedule(&q->lock, key);
 }
 
 #ifdef CONFIG_USERSPACE

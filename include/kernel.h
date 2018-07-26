@@ -3148,6 +3148,7 @@ static inline unsigned int _impl_k_sem_count_get(struct k_sem *sem)
  */
 struct k_msgq {
 	_wait_q_t wait_q;
+	struct k_spinlock lock;
 	size_t msg_size;
 	u32_t max_msgs;
 	char *buffer_start;
