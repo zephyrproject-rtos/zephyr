@@ -271,15 +271,24 @@ int log_printk(const char *fmt, va_list ap);
 	}								     \
 	_LOG_RUNTIME_MODULE_REGISTER(_name)
 
-/** @brief Macro for registering a module.
+/**
+ * @brief Create module-specific state and register the module with Logger.
+ *
+ * This macro normally must be used after including <logging/log.h> to
+ * complete the initialization of the module.
  *
  * Module registration can be skipped in two cases:
- * - Module consists of more than one file and must be registered only by one
- *   file.
+ *
+ * - The module consists of more than one file, and another file
+ *   invokes this macro. (LOG_MODULE_DECLARE() should be used instead
+ *   in all of the module's other files.)
  * - Instance logging is used and there is no need to create module entry.
  *
- * @note Module is registered only if LOG_LEVEL for given module is non-zero or
+ * @note The module's state is defined, and the module is registered,
+ *       only if LOG_LEVEL for the current source file is non-zero or
  *       it is not defined and CONFIG_LOG_DEFAULT_LOG_LEVEL is non-zero.
+ *       In other cases, this macro has no effect.
+ * @see LOG_MODULE_DECLARE
  */
 #define LOG_MODULE_REGISTER()						\
 	_LOG_EVAL(							\
@@ -287,6 +296,44 @@ int log_printk(const char *fmt, va_list ap);
 		(_LOG_MODULE_REGISTER(LOG_MODULE_NAME, _LOG_LEVEL())),	\
 		()/*Empty*/						\
 	)
+
+#define __DYNAMIC_MODULE_DECLARE(_name)				\
+	extern struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(_name)
+
+#define _LOG_RUNTIME_MODULE_DECLARE(_name)			\
+	_LOG_EVAL(						\
+		CONFIG_LOG_RUNTIME_FILTERING,			\
+		(; __DYNAMIC_MODULE_DECLARE(_name)),		\
+		()						\
+		)
+
+#define _LOG_MODULE_DECLARE(_name, _level)				\
+	extern const struct log_source_const_data LOG_ITEM_CONST_DATA(_name) \
+	_LOG_RUNTIME_MODULE_DECLARE(_name)
+
+/**
+ * @brief Macro for declaring a log module (not registering it).
+ *
+ * Modules which are split up over multiple files must have exactly
+ * one file use LOG_MODULE_REGISTER() to create module-specific state
+ * and register the module with the logger core.
+ *
+ * The other files in the module should use this macro instead to
+ * declare that same state. (Otherwise, LOG_INF() etc. will not be
+ * able to refer to module-specific state variables.)
+ *
+ * @note The module's state is declared only if LOG_LEVEL for the
+ *       current source file is non-zero or it is not defined and
+ *       CONFIG_LOG_DEFAULT_LOG_LEVEL is non-zero.  In other cases,
+ *       this macro has no effect.
+ * @see LOG_MODULE_REGISTER
+ */
+#define LOG_MODULE_DECLARE()						\
+	_LOG_EVAL(							\
+		_LOG_LEVEL(),						\
+		(_LOG_MODULE_DECLARE(LOG_MODULE_NAME, _LOG_LEVEL())),	\
+		()							\
+		)							\
 
 /**
  * @}
