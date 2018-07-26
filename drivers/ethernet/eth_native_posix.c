@@ -48,6 +48,35 @@
 #define ETH_HDR_LEN sizeof(struct net_eth_hdr)
 #endif
 
+#if defined(CONFIG_NET_LLDP)
+static const struct net_lldpdu lldpdu = {
+	.chassis_id = {
+		.type_length = htons((LLDP_TLV_CHASSIS_ID << 9) |
+			NET_LLDP_CHASSIS_ID_TLV_LEN),
+		.subtype = CONFIG_NET_LLDP_CHASSIS_ID_SUBTYPE,
+		.value = NET_LLDP_CHASSIS_ID_VALUE
+	},
+	.port_id = {
+		.type_length = htons((LLDP_TLV_PORT_ID << 9) |
+			NET_LLDP_PORT_ID_TLV_LEN),
+		.subtype = CONFIG_NET_LLDP_PORT_ID_SUBTYPE,
+		.value = NET_LLDP_PORT_ID_VALUE
+	},
+	.ttl = {
+		.type_length = htons((LLDP_TLV_TTL << 9) |
+			NET_LLDP_TTL_TLV_LEN),
+		.ttl = htons(NET_LLDP_TTL)
+	},
+#if defined(CONFIG_NET_LLDP_END_LLDPDU_TLV_ENABLED)
+	.end_lldpdu_tlv = NET_LLDP_END_LLDPDU_VALUE
+#endif /* CONFIG_NET_LLDP_END_LLDPDU_TLV_ENABLED */
+};
+
+#define lldpdu_ptr (&lldpdu)
+#else
+#define lldpdu_ptr NULL
+#endif /* CONFIG_NET_LLDP */
+
 struct eth_context {
 	u8_t recv[_ETH_MTU + ETH_HDR_LEN];
 	u8_t send[_ETH_MTU + ETH_HDR_LEN];
@@ -381,6 +410,8 @@ static void eth_iface_init(struct net_if *iface)
 		return;
 	}
 
+	net_eth_set_lldpdu(iface, lldpdu_ptr);
+
 	ctx->init_done = true;
 
 #if defined(CONFIG_ETH_NATIVE_POSIX_RANDOM_MAC)
@@ -439,6 +470,9 @@ enum ethernet_hw_caps eth_posix_native_get_capabilities(struct device *dev)
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
 #endif
+#if defined(CONFIG_NET_LLDP)
+		| ETHERNET_LLDP
+#endif
 		;
 }
 
@@ -491,6 +525,20 @@ static int set_config(struct device *dev,
 	return ret;
 }
 
+#if defined(CONFIG_NET_VLAN)
+static int vlan_setup(struct device *dev, struct net_if *iface,
+		      u16_t tag, bool enable)
+{
+	if (enable) {
+		net_eth_set_lldpdu(iface, lldpdu_ptr);
+	} else {
+		net_eth_unset_lldpdu(iface);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_NET_VLAN */
+
 static const struct ethernet_api eth_if_api = {
 	.iface_api.init = eth_iface_init,
 	.iface_api.send = eth_send,
@@ -498,6 +546,9 @@ static const struct ethernet_api eth_if_api = {
 	.get_capabilities = eth_posix_native_get_capabilities,
 	.set_config = set_config,
 
+#if defined(CONFIG_NET_VLAN)
+	.vlan_setup = vlan_setup,
+#endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = get_stats,
 #endif
