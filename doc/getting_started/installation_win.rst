@@ -92,11 +92,6 @@ packages from their respective websites.
       of the ``--user`` flag, this makes it harder for the Command Prompt
       to find the executables in Python modules installed by ``pip3``.
 
-#. If you require pyocd, an open source python2 library for programming and
-   debugging ARM Cortex-M microcontrollers, use this command::
-
-      pip2 install -r scripts/py2-requirements.txt
-
 #. The build system should now be ready to work with any toolchain installed in
    your system. In the next step you'll find instructions for installing
    toolchains for building both x86 and ARM applications.

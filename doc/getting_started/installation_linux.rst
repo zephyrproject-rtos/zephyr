@@ -87,11 +87,6 @@ Install additional packages required for development with Zephyr::
    cd ~/zephyr  # or to your directory where zephyr is cloned
    pip3 install --user -r scripts/requirements.txt
 
-If you require pyocd, an open source python2 library for programming and
-debugging ARM Cortex-M microcontrollers, use this command::
-
-   pip2 install --user -r scripts/py2-requirements.txt
-
 CMake version 3.8.2 or higher is required. Check what version you have using
 ``cmake --version``; if you have an older version, check the backports or
 install a more recent version manually. For example, to install version

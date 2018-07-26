@@ -44,8 +44,8 @@ device. Power cycle the board, this time without holding the reset button.
 pyOCD
 *****
 
-pyOCD is an Open Source python 2.7 based library for programming and debugging
-ARM Cortex-M microcontrollers using CMSIS-DAP.
+pyOCD is an Open Source python library for programming and debugging ARM
+Cortex-M microcontrollers using CMSIS-DAP.
 
 Host Tools and Firmware
 =======================
