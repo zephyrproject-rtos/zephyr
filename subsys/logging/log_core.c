@@ -193,20 +193,55 @@ void log_core_init(void)
 	log_msg_pool_init();
 	log_list_init(&list);
 
-	/* No backends attached so far but set default level as a filter for
-	 * any source of logging in the system. When backends are attached later
-	 * logs will be filtered out during processing.
+	/*
+	 * Initialize aggregated runtime filter levels (no backends are
+	 * attached yet, so leave backend slots in each dynamic filter set
+	 * alone for now).
+	 *
+	 * Each log source's aggregated runtime level is set to match its
+	 * compile-time level. When backends are attached later on in
+	 * log_init(), they'll be initialized to the same value.
 	 */
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		for (int i = 0; i < log_sources_count(); i++) {
 			u32_t *filters = log_dynamic_filters_get(i);
+			u8_t level = log_compiled_level_get(i);
 
 			LOG_FILTER_SLOT_SET(filters,
 					    LOG_FILTER_AGGR_SLOT_IDX,
-					    CONFIG_LOG_DEFAULT_LEVEL);
+					    level);
 		}
 	}
 }
+
+/*
+ * This ifdef is needed to avoid -Werror=unused-function failures in unit tests
+ * when no backends are enabled.
+ */
+#ifdef CONFIG_LOG_BACKEND_UART
+/*
+ * Initialize a backend's runtime filters to match the compile-time
+ * settings.
+ *
+ * (Aggregated filters were already set up in log_core_init().
+ */
+static void backend_filter_init(struct log_backend const *const backend)
+{
+	u8_t level;
+	int i;
+
+	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
+		for (i = 0; i < log_sources_count(); i++) {
+			level = log_compiled_level_get(i);
+
+			log_filter_set(backend,
+				       CONFIG_LOG_DOMAIN_ID,
+				       i,
+				       level);
+		}
+	}
+}
+#endif
 
 void log_init(void)
 {
@@ -228,10 +263,9 @@ void log_init(void)
 	}
 
 #ifdef CONFIG_LOG_BACKEND_UART
+	backend_filter_init(&log_backend_uart);
 	log_backend_uart_init();
-	log_backend_enable(&log_backend_uart,
-			   NULL,
-			   CONFIG_LOG_DEFAULT_LEVEL);
+	log_backend_activate(&log_backend_uart, NULL);
 #endif
 }
 
@@ -426,8 +460,8 @@ void log_backend_enable(struct log_backend const *const backend,
 			void *ctx,
 			u32_t level)
 {
-	log_backend_activate(backend, ctx);
 	backend_filter_set(backend, level);
+	log_backend_activate(backend, ctx);
 }
 
 void log_backend_disable(struct log_backend const *const backend)
