@@ -446,9 +446,9 @@ static struct device *eth_get_ptp_clock(struct device *dev)
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *get_stats(struct net_if *iface)
+static struct net_stats_eth *get_stats(struct device *dev)
 {
-	struct eth_context *context = net_if_get_device(iface)->driver_data;
+	struct eth_context *context = dev->driver_data;
 
 	return &(context->stats);
 }
