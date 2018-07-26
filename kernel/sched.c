@@ -641,10 +641,9 @@ void _update_time_slice_before_swap(void)
 	}
 
 	u32_t remaining = _get_remaining_program_time();
-	u32_t time_slice_ticks = _ms_to_ticks(_time_slice_duration);
 
-	if (!remaining || (_time_slice_ticks < remaining)) {
-		_set_time(_time_slice_ticks);
+	if (!remaining || (_time_slice_duration < remaining)) {
+		_set_time(_time_slice_duration);
 	} else {
 		/* Account previous elapsed time and reprogram
 		 * timer with remaining time
