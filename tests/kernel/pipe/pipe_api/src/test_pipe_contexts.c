@@ -99,6 +99,7 @@ static void tpipe_thread_thread(struct k_pipe *ppipe)
 				      tThread_entry, ppipe, NULL, NULL,
 				      K_PRIO_PREEMPT(0),
 				      K_INHERIT_PERMS | K_USER, 0);
+
 	tpipe_put(ppipe);
 	k_sem_take(&end_sema, K_FOREVER);
 
@@ -116,6 +117,7 @@ static void tpipe_thread_thread(struct k_pipe *ppipe)
  */
 
 /**
+ * @brief Test pipe data passing between threads
  * @see k_pipe_init(), k_pipe_put(), #K_PIPE_DEFINE(x)
  */
 void test_pipe_thread2thread(void)
@@ -131,6 +133,7 @@ void test_pipe_thread2thread(void)
 
 #ifdef CONFIG_USERSPACE
 /**
+ * @brief Test data passing using pipes between user threads
  * @see k_pipe_init(), k_pipe_put(), #K_PIPE_DEFINE(x)
  */
 void test_pipe_user_thread2thread(void)
@@ -149,6 +152,7 @@ void test_pipe_user_thread2thread(void)
 #endif
 
 /**
+ * @brief Test pipe put of blocks
  * @see k_pipe_block_put()
  */
 void test_pipe_block_put(void)
@@ -167,6 +171,7 @@ void test_pipe_block_put(void)
 }
 
 /**
+ * @brief Test pipe block put with semaphore
  * @see k_pipe_block_put()
  */
 void test_pipe_block_put_sema(void)
@@ -186,6 +191,7 @@ void test_pipe_block_put_sema(void)
 }
 
 /**
+ * @brief Test pipe get and put
  * @see k_pipe_put(), k_pipe_get()
  */
 void test_pipe_get_put(void)
@@ -195,13 +201,16 @@ void test_pipe_get_put(void)
 				      tThread_block_put, &kpipe, NULL, NULL,
 				      K_PRIO_PREEMPT(0), 0, 0);
 
-	/*get will be executed previor to put*/
+	/*get will be executed previous to put*/
 	tpipe_get(&kpipe);
 	k_sem_take(&end_sema, K_FOREVER);
 
 	k_thread_abort(tid);
 }
-
+/**
+ * @brief Test resource pool free
+ * @see k_mem_pool_malloc()
+ */
 #ifdef CONFIG_USERSPACE
 void test_resource_pool_auto_free(void)
 {
