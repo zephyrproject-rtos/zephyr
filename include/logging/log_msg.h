@@ -74,7 +74,7 @@ struct log_msg_ids {
 	u16_t source_id : 10;   /*!< Source ID. */
 };
 
-_Static_assert(sizeof(struct log_msg_ids) == sizeof(u16_t),
+BUILD_ASSERT_MSG((sizeof(struct log_msg_ids) == sizeof(u16_t)), \
 	      "Structure must fit in 2 bytes");
 
 /** Part of log message header common to standard and hexdump log message. */
@@ -83,7 +83,7 @@ struct log_msg_generic_hdr {
 	u16_t reserved : 14;
 };
 
-_Static_assert(sizeof(struct log_msg_generic_hdr) == sizeof(u16_t),
+BUILD_ASSERT_MSG((sizeof(struct log_msg_generic_hdr) == sizeof(u16_t)), \
 	      "Structure must fit in 2 bytes");
 
 /** Part of log message header specific to standard log message. */
@@ -93,7 +93,7 @@ struct log_msg_std_hdr {
 	u16_t nargs    : 4;
 };
 
-_Static_assert(sizeof(struct log_msg_std_hdr) == sizeof(u16_t),
+BUILD_ASSERT_MSG((sizeof(struct log_msg_std_hdr) == sizeof(u16_t)), \
 	      "Structure must fit in 2 bytes");
 
 /** Part of log message header specific to hexdump log message. */
@@ -103,7 +103,7 @@ struct log_msg_hexdump_hdr {
 	u16_t length     : LOG_MSG_HEXDUMP_LENGTH_BITS;
 };
 
-_Static_assert(sizeof(struct log_msg_hexdump_hdr) == sizeof(u16_t),
+BUILD_ASSERT_MSG((sizeof(struct log_msg_hexdump_hdr) == sizeof(u16_t)), \
 	      "Structure must fit in 2 bytes");
 
 /** Log message header structure */
@@ -161,8 +161,8 @@ struct log_msg {
 	} data;                 /*!< Message data. */
 };
 
-_Static_assert(sizeof(union log_msg_head_data) ==
-	      sizeof(struct log_msg_ext_head_data),
+BUILD_ASSERT_MSG((sizeof(union log_msg_head_data) == \
+	      sizeof(struct log_msg_ext_head_data)), \
 	      "Structure must be same size");
 
 /** @brief Chunks following message head when message is extended. */
