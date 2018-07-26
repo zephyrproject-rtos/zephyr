@@ -7,6 +7,7 @@
 title: Nordic nRF5 Family I2C Master node
 id: nordic,nrf5-i2c
 version: 0.1
+generic: True
 
 description: >
     This is a representation of the Nordic nRF5 I2C node
@@ -42,6 +43,12 @@ properties:
     scl-pin:
       type: int
       description: SCL pin
+      generation: define
+      category: required
+
+    peripheral-number:
+      type: int
+      description: Periheral number in SOC
       generation: define
       category: required
 ...
