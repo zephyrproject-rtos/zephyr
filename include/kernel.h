@@ -2370,6 +2370,7 @@ struct k_lifo {
 
 struct k_stack {
 	_wait_q_t wait_q;
+	struct k_spinlock lock;
 	u32_t *base, *next, *top;
 
 	_OBJECT_TRACING_NEXT_PTR(k_stack)

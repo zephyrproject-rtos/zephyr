@@ -50,8 +50,8 @@ void k_stack_init(struct k_stack *stack, u32_t *buffer,
 		  u32_t num_entries)
 {
 	_waitq_init(&stack->wait_q);
-	stack->base = buffer;
-	stack->next = buffer;
+	stack->lock = (struct k_spinlock) {};
+	stack->next = stack->base = buffer;
 	stack->top = stack->base + num_entries;
 
 	SYS_TRACING_OBJ_INIT(k_stack, stack);
@@ -99,11 +99,11 @@ void k_stack_cleanup(struct k_stack *stack)
 void _impl_k_stack_push(struct k_stack *stack, u32_t data)
 {
 	struct k_thread *first_pending_thread;
-	u32_t key;
+	k_spinlock_key_t key;
 
 	__ASSERT(stack->next != stack->top, "stack is full");
 
-	key = irq_lock();
+	key = k_spin_lock(&stack->lock);
 
 	first_pending_thread = _unpend_first_thread(&stack->wait_q);
 
@@ -112,12 +112,12 @@ void _impl_k_stack_push(struct k_stack *stack, u32_t data)
 
 		_set_thread_return_value_with_data(first_pending_thread,
 						   0, (void *)data);
-		_reschedule_irqlock(key);
+		_reschedule(&stack->lock, key);
 		return;
 	} else {
 		*(stack->next) = data;
 		stack->next++;
-		irq_unlock(key);
+		k_spin_unlock(&stack->lock, key);
 	}
 
 }
@@ -138,24 +138,24 @@ Z_SYSCALL_HANDLER(k_stack_push, stack_p, data)
 
 int _impl_k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout)
 {
-	u32_t key;
+	k_spinlock_key_t key;
 	int result;
 
-	key = irq_lock();
+	key = k_spin_lock(&stack->lock);
 
 	if (likely(stack->next > stack->base)) {
 		stack->next--;
 		*data = *(stack->next);
-		irq_unlock(key);
+		k_spin_unlock(&stack->lock, key);
 		return 0;
 	}
 
 	if (timeout == K_NO_WAIT) {
-		irq_unlock(key);
+		k_spin_unlock(&stack->lock, key);
 		return -EBUSY;
 	}
 
-	result = _pend_curr_irqlock(key, &stack->wait_q, timeout);
+	result = _pend_curr(&stack->lock, key, &stack->wait_q, timeout);
 	if (result == -EAGAIN) {
 		return -EAGAIN;
 	}
