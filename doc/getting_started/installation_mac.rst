@@ -71,20 +71,6 @@ Install tools to build Zephyr binaries:
    If ``pip3`` does not seem to have been installed correctly use
    ``brew reinstall python3`` in order to reinstall it.
 
-If you require pyocd, an open source Python 2 library for programming and
-debugging ARM Cortex-M microcontrollers, use this command to install it using
-the macOS-bundled Python 2:
-
-.. code-block:: console
-
-   pip install --user -r scripts/py2-requirements.txt
-
-If pip for the macOS-bundled Python 2 is not installed, you can install it with:
-
-.. code-block:: console
-
-   sudo python -m ensurepip
-
 Source :file:`zephyr-env.sh` wherever you have cloned the Zephyr Git repository:
 
 .. code-block:: console

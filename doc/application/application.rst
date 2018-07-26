@@ -674,9 +674,8 @@ Create a Debugger Configuration
 RTOS Awareness
 ==============
 
-Experimental support for Zephyr RTOS awareness is implemented in `pyOCD PR
-#333`_. It is compatible with GDB PyOCD Debugging in Eclipse, but you must
-download this pull request and build pyOCD from source. You must also enable
+Support for Zephyr RTOS awareness is implemented in `pyOCD v0.11.0`_ and later.
+It is compatible with GDB PyOCD Debugging in Eclipse, but you must enable
 CONFIG_OPENOCD_SUPPORT=y in your application.
 
 CMake Details
@@ -1191,4 +1190,4 @@ project that demonstrates some of these features.
 
 .. _Eclipse IDE for C/C++ Developers: https://www.eclipse.org/downloads/packages/eclipse-ide-cc-developers/oxygen2
 .. _GNU MCU Eclipse plug-ins: https://gnu-mcu-eclipse.github.io/plugins/install/
-.. _pyOCD PR #333: https://github.com/mbedmicro/pyOCD/pull/333
+.. _pyOCD v0.11.0: https://github.com/mbedmicro/pyOCD/releases/tag/v0.11.0
