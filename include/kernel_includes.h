@@ -19,7 +19,6 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <atomic.h>
-#include <errno.h>
 #include <misc/__assert.h>
 #include <sched_priq.h>
 #include <misc/dlist.h>
