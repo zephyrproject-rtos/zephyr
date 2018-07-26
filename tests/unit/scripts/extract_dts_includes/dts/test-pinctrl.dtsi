@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2018 Bobby Noelte
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../pinctrl_test.h"
+
+/{
+	soc {
+		pinctrl0:pin-controller@40000000 {
+			device0_rx_pins_a:device0@000 {
+				rx {
+					pinmux = <1000 2000>;
+					bias-pull-up = <1000>;
+					input-enable;
+				};
+			};
+			device0_tx_pins_a:device0@001 {
+				tx {
+					pinmux = <1001 2001>;
+					bias-pull-down = <1001>;
+					output-enable;
+				};
+			};
+			device0_rx_pins_b:device0@002 {
+				rx {
+					pinmux = <1002 2002>;
+					bias-pull-up = <1002>;
+					input-enable;
+				};
+			};
+			device0_tx_pins_b:device0@003 {
+				tx {
+					pinmux = <1003 2003>;
+					bias-pull-down = <1003>;
+					output-enable;
+				};
+			};
+		};
+		pinctrl1:pin-controller@50000000 {
+			device1_rx_tx_pins_a:device1@000
+			{
+				rx_tx {
+					pins = "PIN_A", "PIN_B";
+					output-high;
+				};
+			};
+		};
+		pinmux0:pinmux@60000000 {
+			device2_rx_tx_pins_a:device2@0 {
+				rx_tx {
+					rx = <1234 5678>;
+					tx = <2345 6789>;
+				};
+			};
+		};
+	};
+};

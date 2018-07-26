@@ -1,17 +1,21 @@
 #
 # Copyright (c) 2017 Linaro
-# Copyright (c) 2017 Bobby Noelte
+# Copyright (c) 2018 Bobby Noelte
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import sys
 from collections import defaultdict
+import edtsdatabase
 
 # globals
 phandles = {}
 aliases = defaultdict(list)
 chosen = {}
 reduced = {}
+defs = {}
+edts = edtsdatabase.EDTSDatabase()
 
 regs_config = {
     'zephyr,flash' : 'CONFIG_FLASH',
@@ -118,7 +122,7 @@ def get_phandles(root, name, handles):
                 get_phandles(v, name + k, handles)
 
 
-def insert_defs(node_address, defs, new_defs, new_aliases):
+def insert_defs(node_address, new_defs, new_aliases):
     if node_address in defs:
         if 'aliases' in defs[node_address]:
             defs[node_address]['aliases'].update(new_aliases)
@@ -180,3 +184,7 @@ def find_parent_prop(node_address, prop):
                         " has no " + prop + " property")
 
     return parent_prop
+
+def node_top_address(node_address):
+    address = node_address.split('/')[1]
+    return address

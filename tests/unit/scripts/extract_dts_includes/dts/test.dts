@@ -1,0 +1,176 @@
+/dts-v1/;
+
+#include "armv7-m.dtsi"
+#include "test-pinctrl.dtsi"
+
+/{
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m3";
+			reg = <0>;
+		};
+	};
+
+	sram0:memory@20000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x20000000 (64 * 1024)>;
+	};
+
+	flash0:flash@0 {
+		reg = <0x00000000 (256 * 1024)>;
+	};
+
+	soc {
+		pinctrl0:pin-controller@40000000 {
+			pin-controller;
+			compatible = "test,pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40000000 0x1C00>;
+			status = "disabled";
+			label = PINCTRL_TEST_DEVICE0_NAME;
+		};
+
+		pinctrl1:pin-controller@50000000 {
+			pin-controller;
+			compatible = "test,pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x50000000 0x1C00>;
+			status = "disabled";
+			label = PINCTRL_TEST_DEVICE1_NAME;
+		};
+
+		pinmux0:pinmux@60000000 {
+			pin-controller;
+			compatible = "test,pinmux";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x60000000 0x1800>;
+			status = "disabled";
+			label = "LEGACY_PINMUX";
+		};
+
+		gpio0:gpio@10000000 {
+			gpio-controller;
+			compatible = "test,gpio";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x10000000 0x1800>;
+			gpio-ranges = <&pinctrl0 GPIO_PORT_PIN0 16 16>;
+			status = "disabled";
+			label = "GPIO_0";
+		};
+
+		gpio1:gpio@20000000 {
+			gpio-controller;
+			compatible = "test,gpio";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x20000000 0x1800>;
+			gpio-ranges = <&pinctrl1 GPIO_PORT_PIN0 0 16>;
+			status = "disabled";
+			label = "GPIO_1";
+		};
+
+		gpio2:gpio@30000000 {
+			gpio-controller;
+			compatible = "test,gpio";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x30000000 0x1800>;
+			gpio-ranges = <&pinctrl1 GPIO_PORT_PIN0 16 16>;
+			status = "disabled";
+			label = "GPIO_2";
+		};
+
+		device0:device@4000C000 {
+			compatible = "test,device";
+			reg = <0x4000C000 0x4c>;
+			interrupts = <5 3>;
+			status = "disabled";
+			label = "DEVICE_0";
+		};
+
+		device1:device@5000C000 {
+			compatible = "test,device";
+			reg = <0x5000C000 0x4c>;
+			interrupts = <5 3>;
+			status = "disabled";
+			label = "DEVICE_1";
+		};
+
+		device2:device@6000C000 {
+			compatible = "test,device";
+			reg = <0x6000C000 0x4c>;
+			interrupts = <5 3>;
+			status = "disabled";
+			label = "DEVICE_2";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+/{
+	model = "QEMU Cortex-M3";
+	compatible = "ti,lm3s6965evb-qemu", "ti,lm3s6965";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&pinctrl0 {
+	status = "ok";
+};
+
+&pinctrl1 {
+	status = "ok";
+};
+
+&pinmux0 {
+	status = "ok";
+};
+
+&gpio0 {
+	status = "ok";
+};
+
+&gpio1 {
+	status = "ok";
+};
+
+&gpio2 {
+	status = "ok";
+};
+
+&device0 {
+	pinctrl-0 = <&device0_rx_pins_a &device0_tx_pins_a>;
+	pinctrl-1 = <&device0_rx_pins_b &device0_tx_pins_b>;
+	pinctrl-names = "default", "shutdown";
+	status = "ok";
+	current-speed = <115200>;
+};
+
+&device1 {
+	pinctrl-0 = <&device1_rx_tx_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+	current-speed = <115200>;
+};
+
+&device2 {
+	pinctrl-0 = <&device2_rx_tx_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+	current-speed = <115200>;
+};

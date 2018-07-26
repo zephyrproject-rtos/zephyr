@@ -10,6 +10,11 @@ child:
     bus: can
 
 properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
     "#address-cells":
       type: int
       category: required
@@ -47,5 +52,5 @@ properties:
       type: array
       category: optional
       description: pinmux information for RX, TX
-      generation: structure
+      generation: define
 ...

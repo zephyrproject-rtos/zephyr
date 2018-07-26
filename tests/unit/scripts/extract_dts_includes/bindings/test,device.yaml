@@ -1,45 +1,64 @@
 ---
-title: Uart Base Structure
-id: uart
+title: Test Device
+id: test,device
 version: 0.1
 
 description: >
-    This binding gives the base structures for all UART devices
+    This binding gives a base representation of the test device
 
 properties:
     compatible:
       type: string
       category: required
       description: compatible strings
+      constraint: "test,device"
       generation: define
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device
+      generation: define
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    clocks:
+      type: array
+      category: required
+      description: Clock gate control information
+      generation: define
+
     clock-frequency:
       type: int
       category: optional
       description: Clock frequency information for UART operation
       generation: define
+
     current-speed:
       type: int
       category: required
       description: Initial baud rate setting for UART
       generation: define
-    clocks:
-      type: array
-      category: optional
-      description: Clock gate information
-      generation: define
-    label:
-      type: string
-      category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
+
     interrupt-names:
       type: stringlist
       category: optional
       description: names of required interrupts
       generation: define
+
     pinctrl-\d+:
       type: array
       category: optional
-      description: pinmux information for RX, TX, CTS, RTS
+      description: pinctrl information
       generation: define
 ...

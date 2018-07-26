@@ -1,0 +1,35 @@
+---
+title: TEST PINCTRL
+id: test,pinctrl
+version: 0.1
+
+description: >
+    This binding gives a base representation of the TEST PINCTRL device
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "test,pinctrl"
+      generation: define
+
+    pin-controller:
+      type: string
+      category: required
+      description: device controller identification
+      generation: define
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device
+      generation: define
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+...
