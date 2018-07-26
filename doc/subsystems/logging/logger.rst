@@ -333,7 +333,7 @@ When log processing is triggered, a message is removed from the list of pending
 messages.  If runtime filtering is disabled, the message is passed to all
 active backends, otherwise the message is passed to only those backends that
 have requested messages from that particular source (based on the source ID in
-the message), and security level. Once all backends are iterated, the message
+the message), and severity level. Once all backends are iterated, the message
 is considered processed by the logger, but the message may still be in use by a
 backend.
 
