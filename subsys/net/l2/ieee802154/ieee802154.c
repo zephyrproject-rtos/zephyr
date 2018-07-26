@@ -32,6 +32,8 @@
 #include "ieee802154_security.h"
 #include "ieee802154_utils.h"
 
+#define BUF_TIMEOUT K_MSEC(50)
+
 #define PKT_TITLE      "IEEE 802.15.4 packet content:"
 #define TX_PKT_TITLE   "> " PKT_TITLE
 #define RX_PKT_TITLE   "< " PKT_TITLE
@@ -75,12 +77,16 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 		return;
 	}
 
-	pkt = net_pkt_get_reserve_tx(IEEE802154_ACK_PKT_LENGTH, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(IEEE802154_ACK_PKT_LENGTH, BUF_TIMEOUT);
 	if (!pkt) {
 		return;
 	}
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
+	frag = net_pkt_get_frag(pkt, BUF_TIMEOUT);
+	if (!frag) {
+		net_pkt_unref(pkt);
+		return;
+	}
 
 	net_pkt_frag_insert(pkt, frag);
 
