@@ -3,7 +3,7 @@
 Sorry, Page Not Found
 #####################
 
-.. image:: Zephyr-Kite-in-tree.png
+.. image:: images/Zephyr-Kite-in-tree.png
    :align: right
    :scale: 30 %
 

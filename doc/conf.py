@@ -183,12 +183,12 @@ html_title = "Zephyr Project Documentation"
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = 'images/zephyr_logo_line_small.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-#html_favicon = None
+html_favicon = 'images/zp_favicon.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -363,6 +363,14 @@ html_context = {
     'show_license': html_show_license,
     'docs_title': docs_title,
     'is_release': is_release,
+    'theme_logo_only': True,
+    'current_version': version,
+    'versions': ( ("latest", "/"),
+                 ("1.12.0", "/1.12.0/"),
+                 ("1.11.0", "/1.11.0/"),
+                 ("1.10.0", "/1.10.0/"),
+                 ("1.9.2", "/1.9.0/"),
+                )
 }
 
 extlinks = {'jira': ('https://jira.zephyrproject.org/browse/%s', ''),
