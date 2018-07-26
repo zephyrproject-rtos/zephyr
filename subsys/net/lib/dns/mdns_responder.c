@@ -107,21 +107,44 @@ static int bind_ctx(struct net_context *ctx,
 	return ret;
 }
 
-static void setup_dns_hdr(struct net_pkt *pkt, u16_t answers)
+#define append(pkt, type, value)					\
+	do {								\
+		if (!net_pkt_append_##type##_timeout(pkt, value,	\
+						     BUF_ALLOC_TIMEOUT)) { \
+			ret = -ENOMEM;					\
+			goto drop;					\
+		}							\
+	} while (0)
+
+#define append_all(pkt, size, value)					\
+	do {								\
+		if (!net_pkt_append_all(pkt, size, value,		\
+					BUF_ALLOC_TIMEOUT)) {		\
+			ret = -ENOMEM;					\
+			goto drop;					\
+		}							\
+	} while (0)
+
+static int setup_dns_hdr(struct net_pkt *pkt, u16_t answers)
 {
 	u16_t flags;
+	int ret;
 
 	/* See RFC 1035, ch 4.1.1 for header details */
 
 	flags = BIT(15);  /* This is response */
 	flags |= BIT(10); /* Authoritative Answer */
 
-	net_pkt_append_be16(pkt, 0);       /* Identifier, RFC 6762 ch 18.1 */
-	net_pkt_append_be16(pkt, flags);   /* Flags and codes */
-	net_pkt_append_be16(pkt, 0);       /* Question count */
-	net_pkt_append_be16(pkt, answers); /* Answer RR count */
-	net_pkt_append_be16(pkt, 0);       /* Authority RR count */
-	net_pkt_append_be16(pkt, 0);       /* Additional RR count */
+	append(pkt, be16, 0);       /* Identifier, RFC 6762 ch 18.1 */
+	append(pkt, be16, flags);   /* Flags and codes */
+	append(pkt, be16, 0);       /* Question count */
+	append(pkt, be16, answers); /* Answer RR count */
+	append(pkt, be16, 0);       /* Authority RR count */
+	append(pkt, be16, 0);       /* Additional RR count */
+
+	ret = 0;
+drop:
+	return ret;
 }
 
 static int add_answer(struct net_pkt *pkt, enum dns_rr_type qtype,
@@ -130,6 +153,7 @@ static int add_answer(struct net_pkt *pkt, enum dns_rr_type qtype,
 {
 	char *dot = query->data;
 	char *prev = NULL;
+	int ret;
 
 	while ((dot = strchr(dot, '.'))) {
 		if (!prev) {
@@ -145,25 +169,20 @@ static int add_answer(struct net_pkt *pkt, enum dns_rr_type qtype,
 		*prev = strlen(prev) - 1;
 	}
 
-	if (!net_pkt_append_all(pkt, query->len + 1, query->data,
-				BUF_ALLOC_TIMEOUT)) {
-		return -ENOMEM;
-	}
-
-	net_pkt_append_be16(pkt, qtype);
+	append_all(pkt, query->len + 1, query->data);
+	append(pkt, be16, qtype);
 
 	/* Bit 15 tells to flush the cache */
-	net_pkt_append_be16(pkt, DNS_CLASS_IN | BIT(15));
+	append(pkt, be16, DNS_CLASS_IN | BIT(15));
 
-	net_pkt_append_be32(pkt, ttl);
-	net_pkt_append_be16(pkt, addr_len);
+	append(pkt, be32, ttl);
+	append(pkt, be16, addr_len);
+	append_all(pkt, addr_len, addr);
 
-	if (!net_pkt_append_all(pkt, addr_len, addr,
-				BUF_ALLOC_TIMEOUT)) {
-		return -ENOMEM;
-	}
+	ret = 0;
 
-	return 0;
+drop:
+	return ret;
 }
 
 static struct net_pkt *create_answer(struct net_context *ctx,
@@ -173,6 +192,7 @@ static struct net_pkt *create_answer(struct net_context *ctx,
 				     u16_t addr_len, u8_t *addr)
 {
 	struct net_pkt *pkt;
+	int ret;
 
 	pkt = net_pkt_get_tx(ctx, BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
@@ -181,11 +201,20 @@ static struct net_pkt *create_answer(struct net_context *ctx,
 
 	net_pkt_set_family(pkt, family);
 
-	setup_dns_hdr(pkt, 1);
+	if (setup_dns_hdr(pkt, 1) < 0) {
+		goto drop;
+	}
 
-	add_answer(pkt, qtype, query, MDNS_TTL, addr_len, addr);
+	ret = add_answer(pkt, qtype, query, MDNS_TTL, addr_len, addr);
+	if (ret < 0) {
+		goto drop;
+	}
 
 	return pkt;
+
+drop:
+	net_pkt_unref(pkt);
+	return NULL;
 }
 
 static int send_response(struct net_context *ctx, struct net_pkt *pkt,

@@ -657,7 +657,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 	}
 
 	ret = net_pkt_append_all(pkt, dns_data->len, dns_data->data,
-			      ctx->buf_timeout);
+				 ctx->buf_timeout);
 	if (ret < 0) {
 		ret = -ENOMEM;
 		goto quit;

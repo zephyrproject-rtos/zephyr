@@ -382,6 +382,22 @@ int coap_packet_parse(struct coap_packet *cpkt, struct net_pkt *pkt,
 	return 0;
 }
 
+#define append(pkt, type, value)					\
+	do {								\
+		if (!net_pkt_append_##type##_timeout(pkt, value,	\
+						     PKT_WAIT_TIME)) {	\
+			return -ENOMEM;					\
+		}							\
+	} while (0)
+
+#define append_all(pkt, size, value)					\
+	do {								\
+		if (!net_pkt_append_all(pkt, size, value,		\
+					PKT_WAIT_TIME)) {		\
+			return -ENOMEM;					\
+		}							\
+	} while (0)
+
 int coap_packet_init(struct coap_packet *cpkt, struct net_pkt *pkt,
 		     u8_t ver, u8_t type, u8_t tokenlen,
 		     u8_t *token, u8_t code, u16_t id)
@@ -403,9 +419,9 @@ int coap_packet_init(struct coap_packet *cpkt, struct net_pkt *pkt,
 	hdr |= (type & 0x3) << 4;
 	hdr |= tokenlen & 0xF;
 
-	net_pkt_append_u8(pkt, hdr);
-	net_pkt_append_u8(pkt, code);
-	net_pkt_append_be16(pkt, id);
+	append(pkt, u8, hdr);
+	append(pkt, u8, code);
+	append(pkt, be16, id);
 
 	if (token && tokenlen) {
 		res = net_pkt_append_all(pkt, tokenlen, token, PKT_WAIT_TIME);
@@ -906,7 +922,8 @@ struct coap_observer *coap_find_observer_by_addr(
 
 int coap_packet_append_payload_marker(struct coap_packet *cpkt)
 {
-	return net_pkt_append_u8(cpkt->pkt, COAP_MARKER) ? 0 : -EINVAL;
+	return net_pkt_append_u8_timeout(cpkt->pkt, COAP_MARKER,
+					 PKT_WAIT_TIME) ? 0 : -EINVAL;
 }
 
 int coap_packet_append_payload(struct coap_packet *cpkt, u8_t *payload,
@@ -958,18 +975,18 @@ static int encode_option(struct coap_packet *cpkt, u16_t code,
 	option_header_set_delta(&opt, opt_delta);
 	option_header_set_len(&opt, opt_len);
 
-	net_pkt_append_u8(cpkt->pkt, opt);
+	append(cpkt->pkt, u8, opt);
 
 	if (delta_size == 1) {
-		net_pkt_append_u8(cpkt->pkt, (u8_t) delta_ext);
+		append(cpkt->pkt, u8, (u8_t) delta_ext);
 	} else if (delta_size == 2) {
-		net_pkt_append_be16(cpkt->pkt, delta_ext);
+		append(cpkt->pkt, be16, delta_ext);
 	}
 
 	if (len_size == 1) {
-		net_pkt_append_u8(cpkt->pkt, (u8_t) len_ext);
+		append(cpkt->pkt, u8, (u8_t) len_ext);
 	} else if (delta_size == 2) {
-		net_pkt_append_be16(cpkt->pkt, len_ext);
+		append(cpkt->pkt, be16, len_ext);
 	}
 
 	if (len && value) {

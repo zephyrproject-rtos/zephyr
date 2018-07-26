@@ -26,6 +26,8 @@
 #include "6lo.h"
 #include "6lo_private.h"
 
+#define BUF_TIMEOUT K_MSEC(50)
+
 #define FRAG_REASSEMBLY_TIMEOUT \
 	K_SECONDS(CONFIG_NET_L2_IEEE802154_REASSEMBLY_TIMEOUT)
 #define REASS_CACHE_SIZE CONFIG_NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE
@@ -84,7 +86,7 @@ static inline struct net_buf *prepare_new_fragment(struct net_pkt *pkt,
 {
 	struct net_buf *frag;
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
+	frag = net_pkt_get_frag(pkt, BUF_TIMEOUT);
 	if (!frag) {
 		return NULL;
 	}
