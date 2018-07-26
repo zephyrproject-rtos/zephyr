@@ -83,4 +83,6 @@ source "drivers/can/Kconfig"
 
 source "drivers/modem/Kconfig"
 
+source "drivers/audio/Kconfig"
+
 endmenu
