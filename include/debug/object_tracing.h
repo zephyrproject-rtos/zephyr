@@ -27,6 +27,7 @@ extern struct k_stack    *_trace_list_k_stack;
 extern struct k_msgq     *_trace_list_k_msgq;
 extern struct k_mbox     *_trace_list_k_mbox;
 extern struct k_pipe     *_trace_list_k_pipe;
+extern struct k_queue	 *_trace_list_k_queue;
 
 /**
  * @def SYS_TRACING_HEAD
