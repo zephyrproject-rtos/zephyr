@@ -8,6 +8,8 @@
 #include <ztest.h>
 #include <debug/object_tracing.h>
 
+extern void test_obj_tracing(void);
+
 #define STSIZE 1024
 #define N_PHILOSOPHERS  5
 
@@ -49,6 +51,14 @@ static struct k_thread mon_data;
 struct k_sem forks[N_PHILOSOPHERS];
 
 K_SEM_DEFINE(f3, -5, 1);
+
+/**
+ * @brief Object Tracing Tests
+ * @defgroup kernel_objtracing_tests Object Tracing Tests
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
 
 static inline int test_thread_monitor(void)
 {
@@ -147,12 +157,13 @@ static void phil_entry(void)
 /**
  * @brief Trace the number of objects created
  *
+ * @ingroup kernel_objtracing_tests
+ *
  * @details The test uses dining philsophers problem as
  * an application that implements multiple threads that
  * are synchronized with semaphores.
- *
  */
-void test_tracing(void)
+void test_philosophers_tracing(void)
 {
 	int i;
 
@@ -176,6 +187,7 @@ void test_tracing(void)
 void test_main(void)
 {
 	ztest_test_suite(obj_tracing,
-			 ztest_unit_test(test_tracing));
+			 ztest_unit_test(test_philosophers_tracing),
+			 ztest_unit_test(test_obj_tracing));
 	ztest_run_test_suite(obj_tracing);
 }
