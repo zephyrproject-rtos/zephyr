@@ -15,6 +15,7 @@
 
 #if !defined(_ASMLANGUAGE)
 #include <kernel_includes.h>
+#include <errno.h>
 
 #ifdef __cplusplus
 extern "C" {
