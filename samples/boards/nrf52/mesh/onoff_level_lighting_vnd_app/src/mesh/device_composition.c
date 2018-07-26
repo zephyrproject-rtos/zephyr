@@ -356,6 +356,7 @@ static bool gen_onoff_setunack(struct bt_mesh_model *model,
 			       struct net_buf_simple *buf)
 {
 	u8_t tid, onoff;
+	s64_t now;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_onoff_state *state = model->user_data;
 
@@ -366,12 +367,15 @@ static bool gen_onoff_setunack(struct bt_mesh_model *model,
 		return false;
 	}
 
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
+	now = k_uptime_get();
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= 6000)) {
 		return true;
 	}
 
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
+	state->last_msg_timestamp = now;
 	state->onoff = onoff;
 
 	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
@@ -447,18 +451,22 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 {
 	u8_t tid;
 	s16_t level;
+	s64_t now;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_level_state *state = model->user_data;
 
 	level = (s16_t) net_buf_simple_pull_le16(buf);
 	tid = net_buf_simple_pull_u8(buf);
 
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
+	now = k_uptime_get();
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= 6000)) {
 		return;
 	}
 
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
+	state->last_msg_timestamp = now;
 	state->level = level;
 
 	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
@@ -500,17 +508,25 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 {
 	u8_t tid;
 	s32_t tmp32, delta;
+	s64_t now;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_level_state *state = model->user_data;
 
 	delta = (s32_t) net_buf_simple_pull_le32(buf);
 	tid = net_buf_simple_pull_u8(buf);
 
+	now = k_uptime_get();
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
-		if (state->last_delta == delta) {
+
+		if (now - state->last_msg_timestamp <= 6000) {
+			if (state->last_delta == delta) {
+				return;
+			}
+			tmp32 = state->last_level + delta;
+		} else {
 			return;
 		}
-		tmp32 = state->last_level + delta;
+
 	} else {
 		state->last_level = state->level;
 		tmp32 = state->level + delta;
@@ -519,6 +535,7 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 	state->last_delta = delta;
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
+	state->last_msg_timestamp = now;
 
 	if (tmp32 < -32768) {
 		tmp32 = -32768;
@@ -686,17 +703,21 @@ static void vnd_set_unack(struct bt_mesh_model *model,
 {
 	u8_t tid;
 	int current;
+	s64_t now;
 	struct vendor_state *state = model->user_data;
 
 	current = net_buf_simple_pull_le16(buf);
 	tid = net_buf_simple_pull_u8(buf);
 
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
+	now = k_uptime_get();
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= 6000)) {
 		return;
 	}
 
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
+	state->last_msg_timestamp = now;
 	state->current = current;
 
 	/* This is dummy response for demo purpose */
@@ -754,18 +775,22 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 {
 	u8_t tid;
 	u16_t actual;
+	s64_t now;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
 	actual = net_buf_simple_pull_le16(buf);
 	tid = net_buf_simple_pull_u8(buf);
 
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
+	now = k_uptime_get();
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= 6000)) {
 		return;
 	}
 
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
+	state->last_msg_timestamp = now;
 
 	if (actual > 0 && actual < state->light_range_min) {
 		actual = state->light_range_min;
@@ -823,18 +848,22 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 {
 	u8_t tid;
 	u16_t linear;
+	s64_t now;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
 	linear = net_buf_simple_pull_le16(buf);
 	tid = net_buf_simple_pull_u8(buf);
 
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
+	now = k_uptime_get();
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= 6000)) {
 		return;
 	}
 
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
+	state->last_msg_timestamp = now;
 	state->linear = linear;
 
 	state_binding(LINEAR, IGNORE_TEMP);
@@ -1091,6 +1120,7 @@ static bool light_ctl_setunack(struct bt_mesh_model *model,
 	u8_t tid;
 	s16_t delta_uv;
 	u16_t lightness, temp;
+	s64_t now;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
 
@@ -1103,12 +1133,15 @@ static bool light_ctl_setunack(struct bt_mesh_model *model,
 		return false;
 	}
 
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
+	now = k_uptime_get();
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= 6000)) {
 		return true;
 	}
 
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
+	state->last_msg_timestamp = now;
 
 	if (temp < state->temp_range_min) {
 		temp = state->temp_range_min;
@@ -1411,6 +1444,7 @@ static bool light_ctl_temp_setunack(struct bt_mesh_model *model,
 	u8_t tid;
 	s16_t delta_uv;
 	u16_t temp;
+	s64_t now;
 
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
@@ -1423,12 +1457,15 @@ static bool light_ctl_temp_setunack(struct bt_mesh_model *model,
 		return false;
 	}
 
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
+	now = k_uptime_get();
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= 6000)) {
 		return true;
 	}
 
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
+	state->last_msg_timestamp = now;
 
 	if (temp < state->temp_range_min) {
 		temp = state->temp_range_min;
