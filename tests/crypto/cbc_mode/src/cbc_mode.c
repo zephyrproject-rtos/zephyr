@@ -140,7 +140,7 @@ void test_sp_800_38a_encrypt_decrypt(void)
 
 	/**TESTPOINT: Check test 2*/
 	zassert_true(tc_cbc_mode_decrypt(decrypted,
-		length - TC_AES_BLOCK_SIZE, p, length, encrypted,
+		length, p, length, encrypted,
 		&a), "CBC test #2 (decryption SP 800-38a tests) failed");
 
 	result = check_result(2, plaintext, sizeof(decrypted),
