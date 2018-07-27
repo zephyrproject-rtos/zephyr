@@ -83,7 +83,9 @@ def parse_args(argv):
     return args, unknown
 
 
-def main(argv):
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
     args, unknown = parse_args(argv)
 
     for_stack_trace = 'run as "west -v ... {} ..." for a stack trace'.format(
