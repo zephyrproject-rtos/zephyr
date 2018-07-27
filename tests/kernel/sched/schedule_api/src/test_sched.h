@@ -36,5 +36,6 @@ void test_sched_is_preempt_thread(void);
 void test_slice_reset(void);
 void test_slice_scheduling(void);
 void test_priority_scheduling(void);
+void test_wakeup_expired_timer_thread(void);
 
 #endif /* __TEST_SCHED_H__ */
