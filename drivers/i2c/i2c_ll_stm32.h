@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 BayLibre, SAS
  * Copyright (c) 2017 Linaro Ltd
+ * Copyright (c) 2018 Bobby Noelte
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -18,6 +19,9 @@ struct i2c_stm32_config {
 	struct stm32_pclken pclken;
 	I2C_TypeDef *i2c;
 	u32_t bitrate;
+#if defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32F0X)
+	u32_t ll_clock_source;
+#endif
 };
 
 struct i2c_stm32_data {

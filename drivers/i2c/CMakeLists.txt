@@ -18,14 +18,11 @@ zephyr_library_sources_ifdef(CONFIG_I2C_SBCON		i2c_sbcon.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NIOS2		i2c_nios2.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_GECKO		i2c_gecko.c)
 
-zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1
-	i2c_ll_stm32_v1.c
-	i2c_ll_stm32.c
-	)
-zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2
-	i2c_ll_stm32_v2.c
-	i2c_ll_stm32.c
-	)
+zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1	i2c_ll_stm32_v1.c)
+zephyr_library_sources_codegen_ifdef(CONFIG_I2C_STM32_V1	i2c_ll_stm32.c)
+
+zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2	i2c_ll_stm32_v2.c)
+zephyr_library_sources_codegen_ifdef(CONFIG_I2C_STM32_V2	i2c_ll_stm32.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE		i2c_handlers.c)
 

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 BayLibre, SAS
  * Copyright (c) 2017 Linaro Ltd
+ * Copyright (c) 2018 Bobby Noelte
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +21,23 @@ LOG_MODULE_REGISTER(i2c_ll_stm32);
 
 #include "i2c-priv.h"
 
+#if defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32F0X)
+/*
+ * STM32F0/3 I2C's independent clock source supports only
+ * HSI and SYSCLK, not APB1. We force I2C clock source to SYSCLK.
+ * I2C2 on STM32F0 uses APB1 clock as I2C clock source
+ */
+#define LL_I2C_NO_CLOCKSOURCE 0x12345678 /* dummy value */
+#define LL_I2C_1_CLOCKSOURCE LL_RCC_I2C1_CLKSOURCE_SYSCLK
+#if defined(CONFIG_SOC_SERIES_STM32F3X)
+#define LL_I2C_2_CLOCKSOURCE LL_RCC_I2C2_CLKSOURCE_SYSCLK
+#else
+/* I2C2 on STM32F0 uses APB1 clock - can't set clock source */
+#define LL_I2C_2_CLOCKSOURCE LL_I2C_NO_CLOCKSOURCE
+#endif
+#define LL_I2C_3_CLOCKSOURCE LL_RCC_I2C3_CLKSOURCE_SYSCLK
+#endif
+
 int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
@@ -28,18 +46,24 @@ int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
 	u32_t clock = 0;
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32F0X)
-	LL_RCC_ClocksTypeDef rcc_clocks;
+	if (cfg->ll_clock_source != LL_I2C_NO_CLOCKSOURCE) {
+		LL_RCC_ClocksTypeDef rcc_clocks;
 
-	/*
-	 * STM32F0/3 I2C's independent clock source supports only
-	 * HSI and SYSCLK, not APB1. We force clock variable to
-	 * SYSCLK frequency.
-	 */
-	LL_RCC_GetSystemClocksFreq(&rcc_clocks);
-	clock = rcc_clocks.SYSCLK_Frequency;
+		/*
+		 * STM32F0/3 I2C's independent clock source supports only
+		 * HSI and SYSCLK, not APB1. We force clock variable to
+		 * SYSCLK frequency.
+		 */
+		LL_RCC_GetSystemClocksFreq(&rcc_clocks);
+		clock = rcc_clocks.SYSCLK_Frequency;
+	} else
+		/* I2C2 on STM32F0 uses APB1 clock as I2C clock source */
 #else
-	clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
+	{
+		clock_control_get_rate(
+			device_get_binding(STM32_CLOCK_CONTROL_NAME),
 			(clock_control_subsys_t *) &cfg->pclken, &clock);
+	}
 #endif /* CONFIG_SOC_SERIES_STM32F3X) || CONFIG_SOC_SERIES_STM32F0X */
 
 	data->dev_config = config;
@@ -173,32 +197,10 @@ static int i2c_stm32_init(struct device *dev)
 	clock_control_on(clock, (clock_control_subsys_t *) &cfg->pclken);
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32F0X)
-	/*
-	 * STM32F0/3 I2C's independent clock source supports only
-	 * HSI and SYSCLK, not APB1. We force I2C clock source to SYSCLK.
-	 * I2C2 on STM32F0 uses APB1 clock as I2C clock source
-	 */
-
-	switch ((u32_t)cfg->i2c) {
-#ifdef CONFIG_I2C_1
-	case DT_I2C_1_BASE_ADDRESS:
-		LL_RCC_SetI2CClockSource(LL_RCC_I2C1_CLKSOURCE_SYSCLK);
-		break;
-#endif /* CONFIG_I2C_1 */
-
-#if defined(CONFIG_SOC_SERIES_STM32F3X) && defined(CONFIG_I2C_2)
-	case DT_I2C_2_BASE_ADDRESS:
-		LL_RCC_SetI2CClockSource(LL_RCC_I2C2_CLKSOURCE_SYSCLK);
-		break;
-#endif /* CONFIG_SOC_SERIES_STM32F3X && CONFIG_I2C_2 */
-
-#ifdef CONFIG_I2C_3
-	case DT_I2C_3_BASE_ADDRESS:
-		LL_RCC_SetI2CClockSource(LL_RCC_I2C3_CLKSOURCE_SYSCLK);
-		break;
-#endif /* CONFIG_I2C_3 */
+	if (cfg->ll_clock_source != LL_I2C_NO_CLOCKSOURCE) {
+		LL_RCC_SetI2CClockSource(cfg->ll_clock_source);
 	}
-#endif /* CONFIG_SOC_SERIES_STM32F3X) || CONFIG_SOC_SERIES_STM32F0X */
+#endif
 
 	bitrate_cfg = _i2c_map_dt_bitrate(cfg->bitrate);
 
@@ -211,182 +213,66 @@ static int i2c_stm32_init(struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_I2C_1
-
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-static void i2c_stm32_irq_config_func_1(struct device *port);
-#endif
-
-static const struct i2c_stm32_config i2c_stm32_cfg_1 = {
-	.i2c = (I2C_TypeDef *)DT_I2C_1_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_I2C_1_CLOCK_BITS,
-		.bus = DT_I2C_1_CLOCK_BUS,
-	},
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-	.irq_config_func = i2c_stm32_irq_config_func_1,
-#endif
-	.bitrate = DT_I2C_1_BITRATE,
-};
-
-static struct i2c_stm32_data i2c_stm32_dev_data_1;
-
-DEVICE_AND_API_INIT(i2c_stm32_1, CONFIG_I2C_1_NAME, &i2c_stm32_init,
-		    &i2c_stm32_dev_data_1, &i2c_stm32_cfg_1,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &api_funcs);
-
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-static void i2c_stm32_irq_config_func_1(struct device *dev)
-{
-#ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
-	IRQ_CONNECT(DT_I2C_1_COMBINED_IRQ, DT_I2C_1_COMBINED_IRQ_PRI,
-		   stm32_i2c_combined_isr, DEVICE_GET(i2c_stm32_1), 0);
-	irq_enable(DT_I2C_1_COMBINED_IRQ);
-#else
-	IRQ_CONNECT(DT_I2C_1_EVENT_IRQ, DT_I2C_1_EVENT_IRQ_PRI,
-		   stm32_i2c_event_isr, DEVICE_GET(i2c_stm32_1), 0);
-	irq_enable(DT_I2C_1_EVENT_IRQ);
-
-	IRQ_CONNECT(DT_I2C_1_ERROR_IRQ, DT_I2C_1_ERROR_IRQ_PRI,
-		   stm32_i2c_error_isr, DEVICE_GET(i2c_stm32_1), 0);
-	irq_enable(DT_I2C_1_ERROR_IRQ);
-#endif
-}
-#endif
-
-#endif /* CONFIG_I2C_1 */
-
-#ifdef CONFIG_I2C_2
-
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-static void i2c_stm32_irq_config_func_2(struct device *port);
-#endif
-
-static const struct i2c_stm32_config i2c_stm32_cfg_2 = {
-	.i2c = (I2C_TypeDef *)DT_I2C_2_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_I2C_2_CLOCK_BITS,
-		.bus = DT_I2C_2_CLOCK_BUS,
-	},
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-	.irq_config_func = i2c_stm32_irq_config_func_2,
-#endif
-	.bitrate = DT_I2C_2_BITRATE,
-};
-
-static struct i2c_stm32_data i2c_stm32_dev_data_2;
-
-DEVICE_AND_API_INIT(i2c_stm32_2, CONFIG_I2C_2_NAME, &i2c_stm32_init,
-		    &i2c_stm32_dev_data_2, &i2c_stm32_cfg_2,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &api_funcs);
-
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-static void i2c_stm32_irq_config_func_2(struct device *dev)
-{
-#ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
-	IRQ_CONNECT(DT_I2C_2_COMBINED_IRQ, DT_I2C_2_COMBINED_IRQ_PRI,
-		   stm32_i2c_combined_isr, DEVICE_GET(i2c_stm32_2), 0);
-	irq_enable(DT_I2C_2_COMBINED_IRQ);
-#else
-	IRQ_CONNECT(DT_I2C_2_EVENT_IRQ, DT_I2C_2_EVENT_IRQ_PRI,
-		   stm32_i2c_event_isr, DEVICE_GET(i2c_stm32_2), 0);
-	irq_enable(DT_I2C_2_EVENT_IRQ);
-
-	IRQ_CONNECT(DT_I2C_2_ERROR_IRQ, DT_I2C_2_ERROR_IRQ_PRI,
-		   stm32_i2c_error_isr, DEVICE_GET(i2c_stm32_2), 0);
-	irq_enable(DT_I2C_2_ERROR_IRQ);
-#endif
-}
-#endif
-
-#endif /* CONFIG_I2C_2 */
-
-#ifdef CONFIG_I2C_3
-
-#ifndef I2C3_BASE
-#error "I2C_3 is not available on the platform that you selected"
-#endif /* I2C3_BASE */
-
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-static void i2c_stm32_irq_config_func_3(struct device *port);
-#endif
-
-static const struct i2c_stm32_config i2c_stm32_cfg_3 = {
-	.i2c = (I2C_TypeDef *)DT_I2C_3_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_I2C_3_CLOCK_BITS,
-		.bus = DT_I2C_3_CLOCK_BUS,
-	},
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-	.irq_config_func = i2c_stm32_irq_config_func_3,
-#endif
-	.bitrate = DT_I2C_3_BITRATE,
-};
-
-static struct i2c_stm32_data i2c_stm32_dev_data_3;
-
-DEVICE_AND_API_INIT(i2c_stm32_3, CONFIG_I2C_3_NAME, &i2c_stm32_init,
-		    &i2c_stm32_dev_data_3, &i2c_stm32_cfg_3,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &api_funcs);
-
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-static void i2c_stm32_irq_config_func_3(struct device *dev)
-{
-	IRQ_CONNECT(DT_I2C_3_EVENT_IRQ, DT_I2C_3_EVENT_IRQ_PRI,
-		   stm32_i2c_event_isr, DEVICE_GET(i2c_stm32_3), 0);
-	irq_enable(DT_I2C_3_EVENT_IRQ);
-
-	IRQ_CONNECT(DT_I2C_3_ERROR_IRQ, DT_I2C_3_ERROR_IRQ_PRI,
-		   stm32_i2c_error_isr, DEVICE_GET(i2c_stm32_3), 0);
-	irq_enable(DT_I2C_3_ERROR_IRQ);
-}
-#endif
-
-#endif /* CONFIG_I2C_3 */
-
-#ifdef CONFIG_I2C_4
-
-#ifndef I2C4_BASE
-#error "I2C_4 is not available on the platform that you selected"
-#endif /* I2C4_BASE */
-
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-static void i2c_stm32_irq_config_func_4(struct device *port);
-#endif
-
-static const struct i2c_stm32_config i2c_stm32_cfg_4 = {
-	.i2c = (I2C_TypeDef *)DT_I2C_4_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_I2C_4_CLOCK_BITS,
-		.bus = DT_I2C_4_CLOCK_BUS,
-	},
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-	.irq_config_func = i2c_stm32_irq_config_func_4,
-#endif
-	.bitrate = DT_I2C_4_BITRATE,
-};
-
-static struct i2c_stm32_data i2c_stm32_dev_data_4;
-
-DEVICE_AND_API_INIT(i2c_stm32_4, CONFIG_I2C_4_NAME, &i2c_stm32_init,
-		    &i2c_stm32_dev_data_4, &i2c_stm32_cfg_4,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &api_funcs);
-
-#ifdef CONFIG_I2C_STM32_INTERRUPT
-static void i2c_stm32_irq_config_func_4(struct device *dev)
-{
-	IRQ_CONNECT(DT_I2C_4_EVENT_IRQ, DT_I2C_4_EVENT_IRQ_PRI,
-		   stm32_i2c_event_isr, DEVICE_GET(i2c_stm32_4), 0);
-	irq_enable(DT_I2C_4_EVENT_IRQ);
-
-	IRQ_CONNECT(DT_I2C_4_ERROR_IRQ, DT_I2C_4_ERROR_IRQ_PRI,
-		   stm32_i2c_error_isr, DEVICE_GET(i2c_stm32_4), 0);
-	irq_enable(DT_I2C_4_ERROR_IRQ);
-}
-#endif
-
-#endif /* CONFIG_I2C_4 */
+/**
+ * @code{.cogeno.py}
+ * cogeno.import_module('devicedeclare')
+ *
+ * device_configs = ['CONFIG_I2C_{}'.format(x) for x in range(0, 5)]
+ * driver_names = ['I2C_{}'.format(x) for x in range(0, 5)]
+ * device_inits = 'i2c_stm32_init'
+ * device_levels = 'POST_KERNEL'
+ * device_prios = 'CONFIG_KERNEL_INIT_PRIORITY_DEVICE'
+ * device_api = 'api_funcs'
+ * device_info = \
+ * """
+ * #if CONFIG_I2C_STM32_INTERRUPT
+ * DEVICE_DECLARE(${device-name});
+ * static void ${device-config-irq}(struct device *dev)
+ * {
+ * #ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
+ *         IRQ_CONNECT(${interrupts/combined/irq}, \\
+ *                     ${interrupts/combined/priority}, \\
+ *                     stm32_i2c_combined_isr, \\
+ *                     DEVICE_GET(${device-name}), 0);
+ *         irq_enable(${interrupts/combined/irq});
+ * #else
+ *         IRQ_CONNECT(${interrupts/event/irq}, \\
+ *                     ${interrupts/event/priority}, \\
+ *                     stm32_i2c_event_isr, \\
+ *                     DEVICE_GET(${device-name}), 0);
+ *         irq_enable(${interrupts/event/irq});
+ *         IRQ_CONNECT(${interrupts/error/irq}, \\
+ *                     ${interrupts/error/priority}, \\
+ *                     stm32_i2c_error_isr, \\
+ *                     DEVICE_GET(${device-name}), 0);
+ *         irq_enable(${interrupts/error/irq});
+ * #endif
+ * }
+ * #endif
+ * static const struct i2c_stm32_config ${device-config-info} = {
+ *         .i2c = (I2C_TypeDef *)${reg/0/address/0},
+ *         .pclken.bus = ${clocks/0/bus},
+ *         .pclken.enr = ${clocks/0/bits},
+ * #if CONFIG_I2C_STM32_INTERRUPT
+ *         .irq_config_func = ${device-config-irq},
+ * #endif
+ *         .bitrate = ${clock-frequency},
+ * #if defined(CONFIG_SOC_SERIES_STM32F3X) \\
+ *             || defined(CONFIG_SOC_SERIES_STM32F0X)
+ *         .ll_clock_source = LL_${driver-name}_CLOCKSOURCE,
+ * #endif
+ * };
+ * static struct i2c_stm32_data ${device-data};
+ * """
+ *
+ * devicedeclare.device_declare_multi( \
+ *     device_configs,
+ *     driver_names,
+ *     device_inits,
+ *     device_levels,
+ *     device_prios,
+ *     device_api,
+ *     device_info)
+ * @endcode{.cogeno.py}
+ */
+/** @code{.cogeno.ins}@endcode */
