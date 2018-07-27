@@ -67,7 +67,7 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 SECTIONS
 	{
 	GROUP_START(ROMABLE_REGION)
-#ifdef CONFIG_JAILHOUSE
+#ifdef CONFIG_REALMODE
 	/* 16-bit sections */
 	. = PHYS_RAM_ADDR;
 
@@ -80,7 +80,7 @@ SECTIONS
 	. = ALIGN(8);
 
 	_image_rom_start = PHYS_LOAD_ADDR;
-#ifndef CONFIG_JAILHOUSE
+#ifndef CONFIG_REALMODE
 	_image_text_start = PHYS_LOAD_ADDR;
 #else
 	_image_text_start = .;
