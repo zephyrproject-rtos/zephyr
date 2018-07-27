@@ -23,7 +23,8 @@ void test_main(void)
 			 ztest_unit_test(test_sched_is_preempt_thread),
 			 ztest_unit_test(test_slice_reset),
 			 ztest_unit_test(test_slice_scheduling),
-			 ztest_unit_test(test_priority_scheduling)
+			 ztest_unit_test(test_priority_scheduling),
+			 ztest_unit_test(test_wakeup_expired_timer_thread)
 			 );
 	ztest_run_test_suite(threads_scheduling);
 }
