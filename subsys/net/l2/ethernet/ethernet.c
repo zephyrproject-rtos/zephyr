@@ -442,6 +442,8 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 		 * send it as it is because the arp.c has prepared the packet
 		 * already.
 		 */
+		ptype = htons(NET_ETH_PTYPE_ARP);
+
 		goto send;
 	}
 #else
@@ -500,6 +502,10 @@ setup_hdr:
 		ptype = htons(NET_ETH_PTYPE_IPV6);
 	}
 
+#ifdef CONFIG_NET_ARP
+send:
+#endif /* CONFIG_NET_ARP */
+
 #if defined(CONFIG_NET_VLAN)
 	if (net_eth_is_vlan_enabled(ctx, iface)) {
 		if (set_vlan_tag(ctx, iface, pkt) == NET_DROP) {
@@ -510,15 +516,14 @@ setup_hdr:
 	}
 #endif /* CONFIG_NET_VLAN */
 
-	/* Then set the ethernet header.
+	/* Then set the ethernet header. This is not done for ARP as arp.c
+	 * has already prepared the message to be sent.
 	 */
-	net_eth_fill_header(ctx, pkt, ptype,
-			    net_pkt_ll_src(pkt)->addr,
-			    net_pkt_ll_dst(pkt)->addr);
-
-#ifdef CONFIG_NET_ARP
-send:
-#endif /* CONFIG_NET_ARP */
+	if (ptype != htons(NET_ETH_PTYPE_ARP)) {
+		net_eth_fill_header(ctx, pkt, ptype,
+				    net_pkt_ll_src(pkt)->addr,
+				    net_pkt_ll_dst(pkt)->addr);
+	}
 
 	net_if_queue_tx(iface, pkt);
 
