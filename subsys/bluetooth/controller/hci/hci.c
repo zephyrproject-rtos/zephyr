@@ -1303,27 +1303,21 @@ static void le_set_phy(struct net_buf *buf, struct net_buf **evt)
 	}
 
 	if (cmd->all_phys & BT_HCI_LE_PHY_TX_ANY) {
-		cmd->tx_phys = mask_phys;
+		cmd->tx_phys |= mask_phys;
 	}
 	if (cmd->all_phys & BT_HCI_LE_PHY_RX_ANY) {
-		cmd->rx_phys = mask_phys;
+		cmd->rx_phys |= mask_phys;
 	}
 
-	if (!(cmd->tx_phys & 0x07) ||
-	    !(cmd->rx_phys & 0x07)) {
-		struct bt_hci_evt_cc_status *ccst;
-
-		ccst = cmd_complete(evt, sizeof(*ccst));
-		ccst->status = BT_HCI_ERR_INVALID_PARAM;
+	if ((cmd->tx_phys | cmd->rx_phys) & ~mask_phys) {
+		*evt = cmd_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 
 		return;
 	}
 
-	if ((cmd->tx_phys | cmd->rx_phys) & ~mask_phys) {
-		struct bt_hci_evt_cc_status *ccst;
-
-		ccst = cmd_complete(evt, sizeof(*ccst));
-		ccst->status = BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+	if (!(cmd->tx_phys & 0x07) ||
+	    !(cmd->rx_phys & 0x07)) {
+		*evt = cmd_status(BT_HCI_ERR_INVALID_PARAM);
 
 		return;
 	}
