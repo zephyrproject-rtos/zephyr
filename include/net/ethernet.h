@@ -144,6 +144,11 @@ struct ethernet_api {
 			  enum ethernet_config_type type,
 			  const struct ethernet_config *config);
 
+	/** Get hardware specific configuration */
+	int (*get_config)(struct device *dev,
+			  enum ethernet_config_type type,
+			  struct ethernet_config *config);
+
 #if defined(CONFIG_NET_VLAN)
 	/** The IP stack will call this function when a VLAN tag is enabled
 	 * or disabled. If enable is set to true, then the VLAN tag was added,
