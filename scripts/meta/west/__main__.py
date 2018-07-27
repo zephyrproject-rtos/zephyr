@@ -3,10 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 '''Zephyr RTOS meta-tool (west)
+
+Main entry point for running this package as a module, e.g.:
+
+py -3 west      # Windows
+python3 -m west # Unix
 '''
 
 from .main import main
-import sys
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
