@@ -8,6 +8,7 @@
 extern void test_poll_no_wait(void);
 extern void test_poll_wait(void);
 extern void test_poll_multi(void);
+extern void test_poll_threadstate(void);
 extern void test_poll_grant_access(void);
 
 K_MEM_POOL_DEFINE(test_pool, 128, 128, 4, 4);
@@ -22,6 +23,7 @@ void test_main(void)
 	ztest_test_suite(poll_api,
 			 ztest_user_unit_test(test_poll_no_wait),
 			 ztest_unit_test(test_poll_wait),
-			 ztest_unit_test(test_poll_multi));
+			 ztest_unit_test(test_poll_multi),
+			 ztest_unit_test(test_poll_threadstate));
 	ztest_run_test_suite(poll_api);
 }
