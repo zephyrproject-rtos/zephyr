@@ -81,6 +81,9 @@ enum ethernet_hw_caps {
 
 	/** Promiscuous mode supported */
 	ETHERNET_PROMISC_MODE		= BIT(10),
+
+	/** Priority queues available */
+	ETHERNET_PRIORITY_QUEUES	= BIT(11),
 };
 
 enum ethernet_config_type {
@@ -91,6 +94,7 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_QAV_DELTA_BANDWIDTH,
 	ETHERNET_CONFIG_TYPE_QAV_IDLE_SLOPE,
 	ETHERNET_CONFIG_TYPE_PROMISC_MODE,
+	ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM,
 };
 
 struct ethernet_qav_queue_param {
@@ -117,6 +121,8 @@ struct ethernet_config {
 		struct net_eth_addr mac_address;
 
 		struct ethernet_qav_queue_param qav_queue_param;
+
+		int priority_queues_num;
 	};
 /* @endcond */
 };
