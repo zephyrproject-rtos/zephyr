@@ -50,25 +50,25 @@ void posix_exit(int exit_code)
 /**
  * This is the actual main for the Linux process,
  * the Zephyr application main is renamed something else thru a define.
- *
- * Note that normally one wants to use this POSIX arch to be part of a
- * simulation engine, with some proper HW models and what not
- *
- * This is just a very simple demo which is able to run some of the sample
- * apps (hello world, synchronization, philosophers) and run the sanity-check
- * regression
  */
 int main(int argc, char *argv[])
 {
+	run_native_tasks(_NATIVE_PRE_BOOT_1_LEVEL);
 
 	native_handle_cmd_line(argc, argv);
 
+	run_native_tasks(_NATIVE_PRE_BOOT_2_LEVEL);
+
 	hwm_init();
+
+	run_native_tasks(_NATIVE_PRE_BOOT_3_LEVEL);
 
 	posix_boot_cpu();
 
+	run_native_tasks(_NATIVE_FIRST_SLEEP_LEVEL);
+
 	hwm_main_loop();
 
-	return 0;
-
+	/* This line should be unreachable */
+	return 1; /* LCOV_EXCL_LINE */
 }
