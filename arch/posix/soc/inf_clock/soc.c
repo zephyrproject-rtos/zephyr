@@ -34,6 +34,7 @@
 #include "posix_core.h"
 #include "posix_arch_internal.h"
 #include "kernel_internal.h"
+#include "soc.h"
 
 #define POSIX_ARCH_SOC_DEBUG_PRINTS 0
 
@@ -213,15 +214,34 @@ void posix_boot_cpu(void)
 	}
 }
 
-static void run_native_exit_tasks(void)
+/**
+ * @brief Run the set of special native tasks corresponding to the given level
+ *
+ * @param level One of _NATIVE_*_LEVEL as defined in soc.h
+ */
+void run_native_tasks(int level)
 {
-	extern void (*__native_exit_tasks_start[])(void);
-	extern void (*__native_exit_tasks_end[])(void);
+	extern void (*__native_PRE_BOOT_1_tasks_start[])(void);
+	extern void (*__native_PRE_BOOT_2_tasks_start[])(void);
+	extern void (*__native_PRE_BOOT_3_tasks_start[])(void);
+	extern void (*__native_FIRST_SLEEP_tasks_start[])(void);
+	extern void (*__native_ON_EXIT_tasks_start[])(void);
+	extern void (*__native_tasks_end[])(void);
+
+	static void (**native_pre_tasks[])(void) = {
+		__native_PRE_BOOT_1_tasks_start,
+		__native_PRE_BOOT_2_tasks_start,
+		__native_PRE_BOOT_3_tasks_start,
+		__native_FIRST_SLEEP_tasks_start,
+		__native_ON_EXIT_tasks_start,
+		__native_tasks_end
+	};
 
 	void (**fptr)(void);
-	for (fptr = __native_exit_tasks_start; fptr < __native_exit_tasks_end;
+
+	for (fptr = native_pre_tasks[level]; fptr < native_pre_tasks[level+1];
 		fptr++) {
-		if (*fptr) {
+		if (*fptr) { /* LCOV_EXCL_BR_LINE */
 			(*fptr)();
 		}
 	}
@@ -244,7 +264,7 @@ void posix_soc_clean_up(void)
 	if (cpu_halted) {
 
 		posix_core_clean_up();
-		run_native_exit_tasks();
+		run_native_tasks(_NATIVE_ON_EXIT_LEVEL);
 
 	} else if (soc_terminate == false) {
 

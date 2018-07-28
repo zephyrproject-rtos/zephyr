@@ -29,12 +29,7 @@ SECTIONS
 
 #include <linker/common-ram.ld>
 
-	SECTION_PROLOGUE (native_exit_tasks, (OPTIONAL),)
-	{
-		__native_exit_tasks_start = .;
-		KEEP(*(".native_exit_tasks"));
-		__native_exit_tasks_end = .;
-	}
+#include <arch/posix/native_tasks.ld>
 
  __data_ram_end = .;
 
