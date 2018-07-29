@@ -34,7 +34,7 @@ config XIP
 
 config RISCV_ROM_BASE_ADDR
 	hex
-	default 0x20001000
+	default 0x20000000
 
 config RISCV_ROM_SIZE
 	hex
