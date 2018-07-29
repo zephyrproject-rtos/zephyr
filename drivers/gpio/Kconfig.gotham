@@ -1,0 +1,20 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig GPIO_GOTHAM
+	bool "Gotham SoC GPIO driver"
+	depends on GPIO && SOC_RISCV32_GOTHAM
+	default n
+	help
+	  Enable driver for the Gotham SoC GPIO controller.
+
+	  Says n if not sure.
+
+if GPIO_GOTHAM
+
+config GPIO_GOTHAM_GPIO_NAME
+	string "GPIO driver name"
+	default "gpio0"
+
+endif # GPIO_GOTHAM
