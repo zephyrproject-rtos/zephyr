@@ -18,6 +18,8 @@ extern "C" {
 /** Configuration data */
 struct pwm_stm32_config {
 	u32_t pwm_base;
+	u8_t pwm_num_chan;
+	u8_t capture_num_chan;
 	/* clock subsystem driving this peripheral */
 	struct stm32_pclken pclken;
 };

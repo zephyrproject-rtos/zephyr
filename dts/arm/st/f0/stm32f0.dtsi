@@ -9,6 +9,8 @@
 #include <dt-bindings/clock/stm32_clock.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pwm/pwm.h>
+#include <dt-bindings/pinctrl/stm32-pinctrl.h>
 
 / {
 	cpus {
@@ -167,7 +169,7 @@
 			status = "disabled";
 			label = "TIMERS_1";
 
-			pwm {
+			timers1_pwm: pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				st,prescaler = <10000>;
@@ -183,7 +185,7 @@
 			status = "disabled";
 			label = "TIMERS_3";
 
-			pwm {
+			timers3_pwm: pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				st,prescaler = <10000>;
@@ -199,7 +201,7 @@
 			status = "disabled";
 			label = "TIMERS_6";
 
-			pwm {
+			timers6_pwm: pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				st,prescaler = <10000>;
@@ -215,7 +217,7 @@
 			status = "disabled";
 			label = "TIMERS_7";
 
-			pwm {
+			timers7_pwm: pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				st,prescaler = <10000>;
@@ -231,7 +233,7 @@
 			status = "disabled";
 			label = "TIMERS_14";
 
-			pwm {
+			timers14_pwm: pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				st,prescaler = <10000>;
@@ -247,7 +249,7 @@
 			status = "disabled";
 			label = "TIMERS_15";
 
-			pwm {
+			timers15_pwm: pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				st,prescaler = <10000>;
@@ -263,7 +265,7 @@
 			status = "disabled";
 			label = "TIMERS_16";
 
-			pwm {
+			timers16_pwm: pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				st,prescaler = <10000>;
@@ -279,7 +281,7 @@
 			status = "disabled";
 			label = "TIMERS_17";
 
-			pwm {
+			timers17_pwm: pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
 				st,prescaler = <10000>;

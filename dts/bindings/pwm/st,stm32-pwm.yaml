@@ -5,15 +5,15 @@ version: 0.1
 description: >
     This binding gives a base representation of the STM32 PWM
 
+inherits:
+    !include pwm.yaml
+
 properties:
     compatible:
       constraint: "st,stm32-pwm"
 
-    label:
-      type: string
-      category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
-      generation: define
+    "#pwm-cells":
+      constraint: 2
 
     st,prescaler:
       type: int
@@ -21,7 +21,19 @@ properties:
       description: Clock prescaler at the input of the timer
       generation: define
 
-"#cells":
+    st,pwm-num-chan:
+      type: int
+      category: optional
+      description: Number of available PWM channels. Default is 0.
+      generation: define
+
+    st,capture-num-chan:
+      type: int
+      category: optional
+      description: Number of available Capture channels. Default is 0.
+      generation: define
+
+"#pwm-cells":
   - channel
 # period in terms of nanoseconds
   - period

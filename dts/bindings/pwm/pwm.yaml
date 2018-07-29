@@ -17,6 +17,12 @@ properties:
       description: compatible strings
       generation: define
 
+    "#pwm-cells":
+      type: int
+      category: required
+      description: >
+        Number of cells used to specify a PWM.
+
     clocks:
       type: array
       category: required
@@ -27,5 +33,11 @@ properties:
       type: string
       category: required
       description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+    pinctrl-\d+:
+      type: array
+      category: optional
+      description: pinmux information for PWMx output
       generation: define
 ...
