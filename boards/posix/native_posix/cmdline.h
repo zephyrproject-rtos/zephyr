@@ -13,16 +13,6 @@
 extern "C" {
 #endif
 
-struct args_t {
-	double stop_at;
-	double rtc_offset;
-	double rt_drift;
-	double rt_ratio;
-#if defined(CONFIG_FAKE_ENTROPY_NATIVE_POSIX)
-	u32_t seed;
-#endif
-};
-
 void native_handle_cmd_line(int argc, char *argv[]);
 void native_get_cmd_line_args(int *argc, char ***argv);
 void native_get_test_cmd_line_args(int *argc, char ***argv);

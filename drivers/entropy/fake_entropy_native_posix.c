@@ -18,13 +18,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "posix_soc_if.h"
+#include "soc.h"
+#include "cmdline.h" /* native_posix command line options header */
 
 static unsigned int seed = 0x5678;
-
-void entropy_native_posix_set_seed(unsigned int seed_i)
-{
-	seed = seed_i;
-}
 
 static int entropy_native_posix_get_entropy(struct device *dev, u8_t *buffer,
 					    u16_t length)
@@ -79,3 +76,25 @@ DEVICE_AND_API_INIT(entropy_native_posix, CONFIG_ENTROPY_NAME,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_native_posix_api_funcs);
 
+static void add_fake_entropy_option(void)
+{
+	static struct args_struct_t entropy_options[] = {
+		/*
+		 * Fields:
+		 * manual, mandatory, switch,
+		 * option_name, var_name ,type,
+		 * destination, callback,
+		 * description
+		 */
+		{false, false, false,
+		"seed", "r_seed", 'u',
+		(void *)&seed, NULL,
+		"A 32-bit integer seed value for the entropy device, such as "
+		"97229 (decimal), 0x17BCD (hex), or 0275715 (octal)"},
+		ARG_TABLE_ENDMARKER
+	};
+
+	native_add_command_line_opts(entropy_options);
+}
+
+NATIVE_TASK(add_fake_entropy_option, PRE_BOOT_1, 10);

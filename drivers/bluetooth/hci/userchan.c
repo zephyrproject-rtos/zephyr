@@ -20,6 +20,9 @@
 #include <sys/socket.h>
 #include <string.h>
 
+#include "soc.h"
+#include "cmdline.h" /* native_posix command line options header */
+
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
@@ -47,6 +50,8 @@ static BT_STACK_NOINIT(rx_thread_stack,
 static struct k_thread rx_thread_data;
 
 static int uc_fd = -1;
+
+static int bt_dev_index = -1;
 
 static struct net_buf *get_rx(const u8_t *buf)
 {
@@ -216,3 +221,46 @@ static int _bt_uc_init(struct device *unused)
 }
 
 SYS_INIT(_bt_uc_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+static void cmd_bt_dev_found(char *argv, int offset)
+{
+	if (strncmp(&argv[offset], "hci", 3) || strlen(&argv[offset]) < 4) {
+		posix_print_error_and_exit("Error: Invalid Bluetooth device "
+					   "name '%s' (should be e.g. hci0)\n",
+					   &argv[offset]);
+		return;
+	}
+
+	bt_dev_index = strtol(&argv[offset + 3], NULL, 10);
+}
+
+static void add_btuserchan_arg(void)
+{
+	static struct args_struct_t btuserchan_args[] = {
+		/*
+		 * Fields:
+		 * manual, mandatory, switch,
+		 * option_name, var_name ,type,
+		 * destination, callback,
+		 * description
+		 */
+		{ false, true, false,
+		"bt-dev", "hciX", 's',
+		NULL, cmd_bt_dev_found,
+		"A local HCI device to be used for Bluetooth (e.g. hci0)" },
+		ARG_TABLE_ENDMARKER
+	};
+
+	native_add_command_line_opts(btuserchan_args);
+}
+
+static void btuserchan_check_arg(void)
+{
+	if (bt_dev_index < 0) {
+		posix_print_error_and_exit("Error: Bluetooth device missing. "
+					   "Specify one using --bt-dev=hciN\n");
+	}
+}
+
+NATIVE_TASK(add_btuserchan_arg, PRE_BOOT_1, 10);
+NATIVE_TASK(btuserchan_check_arg, PRE_BOOT_2, 10);
