@@ -9,8 +9,4 @@
 
 #include <soc.h>
 
-#if defined(CONFIG_BT_USERCHAN)
-extern int bt_dev_index;
-#endif
-
 #endif /* __INC_BOARD_H */

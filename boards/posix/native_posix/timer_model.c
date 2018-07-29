@@ -28,6 +28,8 @@
 #include "zephyr/types.h"
 #include "posix_soc_if.h"
 #include "misc/util.h"
+#include "cmdline.h"
+#include "soc.h"
 
 #define DEBUG_NP_TIMER 0
 
@@ -405,3 +407,139 @@ void hwtimer_get_pseudohost_rtc_time(u32_t *nsec, u64_t *sec)
 	*nsec = fmodl(st, 1e9);
 	*sec = st / 1e9;
 }
+
+static struct {
+	double stop_at;
+	double rtc_offset;
+	double rt_drift;
+	double rt_ratio;
+} args;
+
+static void cmd_stop_at_found(char *argv, int offset)
+{
+	ARG_UNUSED(offset);
+	if (args.stop_at < 0) {
+		posix_print_error_and_exit("Error: stop-at must be positive "
+					   "(%s)\n", argv);
+	}
+	hwm_set_end_of_time(args.stop_at*1e6);
+}
+
+static void cmd_realtime_found(char *argv, int offset)
+{
+	ARG_UNUSED(argv);
+	ARG_UNUSED(offset);
+	hwtimer_set_real_time_mode(true);
+}
+
+static void cmd_no_realtime_found(char *argv, int offset)
+{
+	ARG_UNUSED(argv);
+	ARG_UNUSED(offset);
+	hwtimer_set_real_time_mode(false);
+}
+
+static void cmd_rtcoffset_found(char *argv, int offset)
+{
+	ARG_UNUSED(argv);
+	ARG_UNUSED(offset);
+	hwtimer_set_rtc_offset(args.rtc_offset*1e6);
+}
+
+static void cmd_rt_drift_found(char *argv, int offset)
+{
+	ARG_UNUSED(argv);
+	ARG_UNUSED(offset);
+	if (!(args.rt_drift > -1)) {
+		posix_print_error_and_exit("The drift needs to be > -1. "
+					  "Please use --help for more info\n");
+	}
+	args.rt_ratio = args.rt_drift + 1;
+	hwtimer_set_rt_ratio(args.rt_ratio);
+}
+
+static void cmd_rt_ratio_found(char *argv, int offset)
+{
+	ARG_UNUSED(argv);
+	ARG_UNUSED(offset);
+	if ((args.rt_ratio <= 0)) {
+		posix_print_error_and_exit("The ratio needs to be > 0. "
+					  "Please use --help for more info\n");
+	}
+	hwtimer_set_rt_ratio(args.rt_ratio);
+}
+
+static void cmd_rtcreset_found(char *argv, int offset)
+{
+	ARG_UNUSED(argv);
+	ARG_UNUSED(offset);
+	hwtimer_reset_rtc();
+}
+
+static void native_add_time_options(void)
+{
+	static struct args_struct_t timer_options[] = {
+		/*
+		 * Fields:
+		 * manual, mandatory, switch,
+		 * option_name, var_name ,type,
+		 * destination, callback,
+		 * description
+		 */
+		{false, false, true,
+		"rt", "", 'b',
+		NULL, cmd_realtime_found,
+		"Slow down the execution to the host real time, "
+		"or a ratio of it (see --rt-ratio below)"},
+
+		{false, false, true,
+		"no-rt", "", 'b',
+		NULL, cmd_no_realtime_found,
+		"Do NOT slow down the execution to real time, but advance "
+		"Zephyr's time as fast as possible and decoupled from the host "
+		"time"},
+
+		{false, false, false,
+		"rt-drift", "dratio", 'd',
+		(void *)&args.rt_drift, cmd_rt_drift_found,
+		"Drift of the simulated clock relative to the host real time. "
+		"Normally this would be set to a value of a few ppm (e.g. 50e-6"
+		") "
+		"This option has no effect in non real time mode"
+		},
+
+		{false, false, false,
+		"rt-ratio", "ratio", 'd',
+		(void *)&args.rt_ratio, cmd_rt_ratio_found,
+		"Relative speed of the simulated time vs real time. "
+		"For ex. set to 2 to have simulated time pass at double the "
+		"speed of real time. "
+		"Note that both rt-drift & rt-ratio adjust the same clock "
+		"speed, and therefore it does not make sense to use them "
+		"simultaneously. "
+		"This option has no effect in non real time mode"
+		},
+
+		{false, false, false,
+		"rtc-offset", "time_offset", 'd',
+		(void *)&args.rtc_offset, cmd_rtcoffset_found,
+		"At boot offset the RTC clock by this amount of seconds"
+		},
+
+		{false, false, true,
+		"rtc-reset", "", 'b',
+		NULL, cmd_rtcreset_found,
+		"Start the simulated real time clock at 0. Otherwise it starts "
+		"matching the value provided by the host real time clock"},
+
+		{false, false, false,
+		 "stop_at", "time", 'd',
+		(void *)&args.stop_at, cmd_stop_at_found,
+		"In simulated seconds, when to stop automatically"},
+
+		ARG_TABLE_ENDMARKER};
+
+	native_add_command_line_opts(timer_options);
+}
+
+NATIVE_TASK(native_add_time_options, PRE_BOOT_1, 1);
