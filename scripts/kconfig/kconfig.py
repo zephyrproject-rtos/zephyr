@@ -14,9 +14,6 @@ WARNING_WHITELIST = (
     # selected. These should be investigated, but whitelist them for now.
     "y-selected",
 
-    # This symbol is only defined for ARC, but is set in some "shared" .conf
-    # files
-    "undefined symbol ARC_INIT",  # Issue #7977
 )
 
 def fatal(warning):
