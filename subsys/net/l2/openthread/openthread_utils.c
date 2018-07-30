@@ -169,6 +169,12 @@ void add_ipv6_maddr_to_zephyr(struct openthread_context *context)
 
 	for (maddress = otIp6GetMulticastAddresses(context->instance);
 	     maddress; maddress = maddress->mNext) {
+		if (net_if_ipv6_maddr_lookup(
+				(struct in6_addr *)(&maddress->mAddress),
+				&context->iface) != NULL) {
+			continue;
+		}
+
 #if CONFIG_OPENTHREAD_L2_LOG_LEVEL == SYS_LOG_LEVEL_DEBUG
 		char buf[NET_IPV6_ADDR_LEN];
 
