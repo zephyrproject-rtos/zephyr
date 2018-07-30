@@ -46,7 +46,6 @@ if SPI_DW_PORT_0_CLOCK_GATE
 
 config SPI_DW_PORT_0_CLOCK_GATE_DRV_NAME
 	string
-	default ""
 
 config SPI_DW_PORT_0_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
@@ -69,7 +68,6 @@ if SPI_DW_PORT_1_CLOCK_GATE
 
 config SPI_DW_PORT_1_CLOCK_GATE_DRV_NAME
 	string
-	default ""
 
 config SPI_DW_PORT_1_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"

@@ -72,8 +72,8 @@ config USB_COMPOSITE_DEVICE
 config USB_COMPOSITE_BUFFER_SIZE
 	int "Set buffer size for Class Handler"
 	depends on USB_COMPOSITE_DEVICE
-	default 64
 	default 256 if USB_DEVICE_NETWORK_RNDIS
+	default 64
 
 config USB_DEVICE_BOS
 	bool "Enable USB Binary Device Object Store (BOS)"

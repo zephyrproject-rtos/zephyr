@@ -276,8 +276,8 @@ config NET_DEBUG_UDP
 config NET_MAX_CONN
 	int "How many network connections are supported"
 	depends on NET_UDP || NET_TCP
-	default 4
 	default 8 if NET_IPV6 && NET_IPV4
+	default 4
 	help
 	  The value depends on your network needs. The value
 	  should include both UDP and TCP connections.
@@ -363,40 +363,40 @@ endif # NET_RAW_MODE
 
 config NET_PKT_RX_COUNT
 	int "How many packet receives can be pending at the same time"
-	default 4
 	default 14 if NET_L2_ETHERNET
+	default 4
 	help
 	  Each RX buffer will occupy smallish amount of memory.
 	  See include/net/net_pkt.h and the sizeof(struct net_pkt)
 
 config NET_PKT_TX_COUNT
 	int "How many packet sends can be pending at the same time"
-	default 4
 	default 14 if NET_L2_ETHERNET
+	default 4
 	help
 	  Each TX buffer will occupy smallish amount of memory.
 	  See include/net/net_pkt.h and the sizeof(struct net_pkt)
 
 config NET_BUF_RX_COUNT
 	int "How many network buffers are allocated for receiving data"
-	default 16
 	default 36 if NET_L2_ETHERNET
+	default 16
 	help
 	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
 	  header (sizeof(struct net_buf)) amount of data.
 
 config NET_BUF_TX_COUNT
 	int "How many network buffers are allocated for sending data"
-	default 16
 	default 36 if NET_L2_ETHERNET
+	default 16
 	help
 	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
 	  header (sizeof(struct net_buf)) amount of data.
 
 config NET_BUF_DATA_SIZE
 	int "Size of each network data fragment"
-	default 128
 	default 125 if NET_L2_IEEE802154
+	default 128
 	help
 	  This value tells what is the size of the data fragment that is
 	  received from the network.

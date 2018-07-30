@@ -12,18 +12,57 @@ endchoice
 menu "XTENSA Options"
 	depends on XTENSA
 
+menu "Specific core configuration"
+
+# Include these first so that any properties (e.g. defaults) below can be
+# overriden (by defining symbols in multiple locations)
+gsource "arch/xtensa/soc/*/Kconfig"
+
+config IRQ_OFFLOAD_INTNUM
+	int "IRQ offload SW interrupt index"
+	help
+	  The index of the software interrupt to be used for IRQ offload.
+
+	  Please note that in order for IRQ offload to work correctly the selected
+	  interrupt shall have its priority shall not exceed XCHAL_EXCM_LEVEL.
+
+config XTENSA_OMIT_HIGH_INTERRUPTS
+	bool "Skip generation of vectors for high priority interrupts"
+	help
+	  Setting this to y causes the interrupt vectors for "high
+	  priority" Xtensa interrupts (those not masked by the EXCM bit
+	  in PS) to be left ungenerated, so they can be handled by
+	  application code instead.  Note that high priority interrupts
+	  cannot safely be handled by C code anyway (they will interrupt
+	  register window exceptions, which cannot be made reentrant, so
+	  the code under the handler must not emit them), though some
+	  devices might still want to use built-in handling for things
+	  like watchdogs which do not need to return into interrupted
+	  code.  Default is "n" for legacy compatibility. Consider
+	  changing to "y" in the future.
+
+config XTENSA_ASM2
+	bool "New-style Xtensa context switch & interrupt layer"
+	select USE_SWITCH
+	help
+	  This selects a new implementation of context switching and
+	  interrupt handling.  Advantages are a much lower interrupt
+	  overhead and smaller code size, and this scheme is required
+	  for SMP.  Assumes/requires hardware that implements the
+	  register window extension, however.
+
+endmenu
+
 config ARCH
 	default "xtensa"
 
 config SIMULATOR_XTENSA
-        bool
-	prompt "Simulator Configuration"
+	bool "Simulator Configuration"
 	help
 	  Specify if the board configuration should be treated as a simulator.
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
-	prompt "Hardware clock cycles per second, 2000000 for ISS"
+	int "Hardware clock cycles per second, 2000000 for ISS"
 	default 2000000
 	range 1000000 1000000000
 	help
@@ -37,8 +76,7 @@ config XTENSA_NO_IPC
 	  instruction.
 
 config SW_ISR_TABLE
-	bool
-	prompt "Enable software interrupt handler table"
+	bool "Enable software interrupt handler table"
 	default y
 	help
 	  Enable an interrupt handler table implemented in software. This
@@ -47,8 +85,7 @@ config SW_ISR_TABLE
 	  the exception/interrupt exit stub is automatically done.
 
 config XTENSA_RESET_VECTOR
-	bool
-	prompt "Build reset vector code"
+	bool "Build reset vector code"
 	default y
 	help
 	  This option controls whether the initial reset vector code is built.
@@ -56,53 +93,10 @@ config XTENSA_RESET_VECTOR
 	  implement this in boot ROM.
 
 config XTENSA_USE_CORE_CRT1
-	bool
-	prompt "Use crt1.S from core"
+	bool "Use crt1.S from core"
 	default y
 	help
 	  SoC or boards might define their own __start by setting this setting
 	  to false.
-
-menu "Specific core configuration"
-
-config IRQ_OFFLOAD_INTNUM
-	int
-	prompt "IRQ offload SW interrupt index"
-	help
-	 The index of the software interrupt to be used for IRQ offload.
-
-	 Please note that in order for IRQ offload to work correctly the selected
-	 interrupt shall have its priority shall not exceed XCHAL_EXCM_LEVEL.
-
-config XTENSA_OMIT_HIGH_INTERRUPTS
-	bool
-	prompt "Skip generation of vectors for high priority interrupts"
-	help
-	Setting this to y causes the interrupt vectors for "high
-	priority" Xtensa interrupts (those not masked by the EXCM bit
-	in PS) to be left ungenerated, so they can be handled by
-	application code instead.  Note that high priority interrupts
-	cannot safely be handled by C code anyway (they will interrupt
-	register window exceptions, which cannot be made reentrant, so
-	the code under the handler must not emit them), though some
-	devices might still want to use built-in handling for things
-	like watchdogs which do not need to return into interrupted
-	code.  Default is "n" for legacy compatibility. Consider
-	changing to "y" in the future.
-
-config XTENSA_ASM2
-	bool
-	prompt "New-style Xtensa context switch & interrupt layer"
-	select USE_SWITCH
-	help
-	This selects a new implementation of context switching and
-	interrupt handling.  Advantages are a much lower interrupt
-	overhead and smaller code size, and this scheme is required
-	for SMP.  Assumes/requires hardware that implements the
-	register window extension, however.
-
-gsource "arch/xtensa/soc/*/Kconfig"
-
-endmenu
 
 endmenu
