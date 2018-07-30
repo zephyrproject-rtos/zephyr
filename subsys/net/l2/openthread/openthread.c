@@ -80,14 +80,23 @@ void ot_state_changed_handler(uint32_t flags, void *context)
 
 	if (flags & OT_CHANGED_IP6_ADDRESS_REMOVED) {
 		NET_DBG("Ipv6 address removed");
-		rm_ipv6_maddr_from_zephyr(ot_context);
+		rm_ipv6_addr_from_zephyr(ot_context);
 	}
 
 	if (flags & OT_CHANGED_IP6_ADDRESS_ADDED) {
 		NET_DBG("Ipv6 address added");
-		add_ipv6_maddr_to_zephyr(ot_context);
+		add_ipv6_addr_to_zephyr(ot_context);
 	}
 
+	if (flags & OT_CHANGED_IP6_MULTICAST_UNSUBSRCRIBED) {
+		NET_DBG("Ipv6 multicast address removed");
+		rm_ipv6_maddr_from_zephyr(ot_context);
+	}
+
+	if (flags & OT_CHANGED_IP6_MULTICAST_SUBSRCRIBED) {
+		NET_DBG("Ipv6 multicast address added");
+		add_ipv6_maddr_to_zephyr(ot_context);
+	}
 }
 
 void ot_receive_handler(otMessage *aMessage, void *context)
