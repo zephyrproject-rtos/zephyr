@@ -46,10 +46,6 @@ class DTReg(DTDirective):
             size_cells = reduced[address]['props'].get('#size-cells', size_cells)
 
         post_label = "BASE_ADDRESS"
-        if yaml[node_compat].get('use-property-label', False):
-            label = node['props'].get('label', None)
-            if label:
-                post_label = label
 
         index = 0
         l_base = def_label.split('/')

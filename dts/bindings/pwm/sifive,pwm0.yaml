@@ -1,0 +1,39 @@
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: SiFive PWM
+id: sifive,pwm0
+version: 0.1
+
+description: >
+    This binding gives a base representation of the SiFive PWM
+
+inherits:
+    !include pwm.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "sifive,pwm0"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+base_label: SIFIVE
+use-property-label: yes
+
+...
