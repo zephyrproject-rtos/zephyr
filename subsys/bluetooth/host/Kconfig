@@ -25,8 +25,8 @@ config BT_HCI_CMD_COUNT
 
 config BT_RX_BUF_COUNT
 	int "Number of HCI RX buffers"
-	default 10
 	default 3 if BT_RECV_IS_RX_THREAD
+	default 10
 	range 2 255
 	help
 	  Number of buffers available for incoming ACL packets or HCI events
@@ -34,9 +34,9 @@ config BT_RX_BUF_COUNT
 
 config BT_RX_BUF_LEN
 	int "Maximum supported HCI RX buffer length"
-	default 76
-	default 77 if BT_MESH_PROXY
 	default 264 if BT_BREDR
+	default 77 if BT_MESH_PROXY
+	default 76
 	range 73 2000
 	help
 	  Maximum data size for each HCI RX buffer. This size includes
@@ -48,16 +48,17 @@ config BT_RX_BUF_LEN
 	  (4 bytes) and the ACL header (also 4 bytes) which yields 73 bytes.
 
 config BT_HCI_TX_STACK_SIZE
-	# Stack size needed for executing bt_send with specified driver
 	int
-	# Even if no driver is selected the following default is still
-	# needed e.g. for unit tests.
-	default 256
 	default 256 if BT_H4
 	default 256 if BT_H5
 	default 416 if BT_SPI
 	default 640 if BT_CTLR
 	default 256 if BT_USERCHAN
+	# Even if no driver is selected the following default is still
+	# needed e.g. for unit tests.
+	default 256
+	help
+	  Stack size needed for executing bt_send with specified driver
 
 config BT_HCI_TX_PRIO
 	# Hidden option for Co-Operative Tx thread priority
@@ -73,17 +74,18 @@ config BT_WAIT_NOP
 	  This option should be selected if the controller used
 	  exhibits such behavior.
 
-# Headroom that the driver needs for sending and receiving buffers.
-# Add a new 'default' entry for each new driver.
 config BT_HCI_RESERVE
 	int
-	# Even if no driver is selected the following default is still
-	# needed e.g. for unit tests.
-	default 0
 	default 0 if BT_H4
 	default 1 if BT_H5
 	default 1 if BT_SPI
 	default 1 if BT_USERCHAN
+	# Even if no driver is selected the following default is still
+	# needed e.g. for unit tests.
+	default 0
+	help
+	  Headroom that the driver needs for sending and receiving buffers. Add a
+	  new 'default' entry for each new driver.
 
 config BT_RECV_IS_RX_THREAD
 	# Hidden option set by the HCI driver to indicate that there's
@@ -97,10 +99,10 @@ config BT_RECV_IS_RX_THREAD
 config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
 	depends on BT_HCI_HOST || BT_RECV_IS_RX_THREAD
-	default 1024
-	default 2048 if BT_SETTINGS
-	default 2048 if BT_MESH
 	default 512 if BT_HCI_RAW
+	default 2048 if BT_MESH
+	default 2048 if BT_SETTINGS
+	default 1024
 	range 512 65536 if BT_HCI_RAW
 	range 1100 65536 if BT_MESH
 	range 1024 65536
@@ -156,19 +158,19 @@ if BT_CONN
 if BT_HCI_ACL_FLOW_CONTROL
 config BT_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
-	default 6
 	default BT_CTLR_RX_BUFFERS if BT_CTLR
+	default 6
 	range 1 64
 	help
 	  Number of buffers available for incoming ACL data.
 
 config BT_L2CAP_RX_MTU
 	int "Maximum supported L2CAP MTU for incoming data"
-	default 23
-	default 65 if BT_SMP
 	default 200 if BT_BREDR
-	range 23 1300
+	default 65 if BT_SMP
+	default 23
 	range 65 1300 if BT_SMP
+	range 23 1300
 	help
 	  Maximum size of each incoming L2CAP PDU.
 endif # BT_HCI_ACL_FLOW_CONTROL
@@ -194,18 +196,18 @@ config BT_L2CAP_TX_FRAG_COUNT
 
 config BT_L2CAP_TX_MTU
 	int "Maximum supported L2CAP MTU for L2CAP TX buffers"
-	default 23
-	default 65 if BT_SMP
 	default 253 if BT_BREDR
-	range 23 2000
+	default 65 if BT_SMP
+	default 23
 	range 65 2000 if BT_SMP
+	range 23 2000
 	help
 	  Maximum L2CAP MTU for L2CAP TX buffers.
 
 config BT_CONN_TX_MAX
 	int "Maximum number of pending TX buffers"
-	default 7
 	default BT_CTLR_TX_BUFFERS if BT_CTLR
+	default 7
 	range 1 128
 	help
 	  Maximum number of pending TX buffers that have not yet
@@ -322,8 +324,8 @@ config BT_GATT_READ_MULTIPLE
 
 config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
-	default 1
 	default 0 if !BT_SMP
+	default 1
 	range 0 128
 	help
 	  Maximum number of paired Bluetooth devices. The minimum (and
@@ -540,8 +542,8 @@ config BT_RFCOMM
 
 config BT_RFCOMM_L2CAP_MTU
 	int "L2CAP MTU for RFCOMM frames"
-	default BT_RX_BUF_LEN
 	default BT_L2CAP_RX_MTU if BT_HCI_ACL_FLOW_CONTROL
+	default BT_RX_BUF_LEN
 	depends on BT_RFCOMM
 	range BT_L2CAP_RX_MTU 32767 if BT_HCI_ACL_FLOW_CONTROL
 	range BT_RX_BUF_LEN 32767

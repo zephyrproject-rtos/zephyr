@@ -30,8 +30,8 @@ config NET_RX_STACK_SIZE
 # User-assignable if NET_RPL is enabled, otherwise 0
 config NET_RX_STACK_RPL
 	int "RPL specific RX stack need" if NET_RPL
-	default 0
 	default 300 if NET_RPL
+	default 0
 	help
 	  How much extra RX stack space is required by RPL functionality.
 

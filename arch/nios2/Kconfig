@@ -13,6 +13,10 @@ endchoice
 menu "Nios II Options"
 	depends on NIOS2
 
+# Include these first so that any properties (e.g. defaults) below can be
+# overriden (by defining symbols in multiple locations)
+gsource "arch/nios2/soc/*/Kconfig"
+
 config ARCH
 	string
 	default "nios2"
@@ -108,7 +112,5 @@ config GP_ALL_DATA
 endchoice
 
 endmenu
-
-gsource "arch/nios2/soc/*/Kconfig"
 
 endmenu

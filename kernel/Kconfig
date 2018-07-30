@@ -26,8 +26,8 @@ config MULTITHREADING
 config NUM_COOP_PRIORITIES
 	int
 	prompt "Number of coop priorities" if MULTITHREADING
-	default 16
 	default 1 if !MULTITHREADING
+	default 16
 	range 0 128
 	help
 	  Number of cooperative priorities configured in the system. Gives access
@@ -56,8 +56,8 @@ config NUM_COOP_PRIORITIES
 config NUM_PREEMPT_PRIORITIES
 	int
 	prompt "Number of preemptible priorities" if MULTITHREADING
-	default 15
 	default 0 if !MULTITHREADING
+	default 15
 	range 0 128
 	help
 	  Number of preemptible priorities available in the system. Gives access
@@ -79,8 +79,8 @@ config NUM_PREEMPT_PRIORITIES
 config MAIN_THREAD_PRIORITY
 	int
 	prompt "Priority of initialization/main thread"
-	default 0
 	default -2 if !PREEMPT_ENABLED
+	default 0
 	help
 	  Priority at which the initialization thread runs, including the start
 	  of the main() function. main() can then change its priority if desired.
@@ -132,8 +132,8 @@ config SCHED_DEADLINE
 config MAIN_STACK_SIZE
 	int
 	prompt "Size of stack for initialization and main thread"
-	default 1024
 	default 512 if ZTEST
+	default 1024
 	help
 	  When the initialization is complete, the thread executing it then
 	  executes the main() routine, so as to reuse the stack used by the
@@ -144,10 +144,10 @@ config MAIN_STACK_SIZE
 config IDLE_STACK_SIZE
 	int
 	prompt "Size of stack for idle thread"
-	default 256
-	default 320 if ARC || (ARM && CPU_HAS_FPU)
-	default 512 if RISCV32
 	default 1024 if XTENSA
+	default 512 if RISCV32
+	default 320 if ARC || (ARM && CPU_HAS_FPU)
+	default 256
 	help
 	  Depending on the work that the idle task must do, most likely due to
 	  power management but possibly to other features like system event
@@ -371,9 +371,9 @@ config SYSTEM_WORKQUEUE_STACK_SIZE
 
 config SYSTEM_WORKQUEUE_PRIORITY
 	int "System workqueue priority"
-	default -1
-	default  0 if !COOP_ENABLED
 	default -2 if COOP_ENABLED && !PREEMPT_ENABLED
+	default  0 if !COOP_ENABLED
+	default -1
 	help
 	  By default, system work queue priority is the lowest cooperative
 	  priority. This means that any work handler, once started, won't

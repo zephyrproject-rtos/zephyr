@@ -80,8 +80,8 @@ config BT_CTLR_DUP_FILTER_LEN
 
 config BT_CTLR_RX_BUFFERS
 	int "Number of Rx buffers"
-	default 1
 	default 6 if BT_HCI_RAW
+	default 1
 	range 1 18
 	help
 	  Set the number of Rx PDUs to be buffered in the controller. In a 7.5ms
@@ -90,8 +90,8 @@ config BT_CTLR_RX_BUFFERS
 
 config BT_CTLR_TX_BUFFERS
 	int "Number of Tx buffers"
-	default 2
 	default 7 if BT_HCI_RAW
+	default 2
 	range 1 19
 	help
 	  Set the number of Tx PDUs to be queued for transmission in the
@@ -541,8 +541,8 @@ config BT_CTLR_PA_LNA_GPIOTE_CHAN
 	# Hidden "nRF5 GPIO PA/LNA GPIOTE Channel"
 	int
 	depends on SOC_FAMILY_NRF && (BT_CTLR_GPIO_PA || BT_CTLR_GPIO_LNA)
-	default 0
 	default 3 if PWM_NRF5_SW
+	default 0
 	help
 	  Select the nRF5 GPIOTE channel to use for PA/LNA GPIO feature.
 

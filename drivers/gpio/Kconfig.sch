@@ -24,7 +24,6 @@ config GPIO_SCH_INIT_PRIORITY
 
 config GPIO_SCH_0
 	bool "Enable SCH GPIO port 0"
-	default 0
 	depends on GPIO_SCH
 
 config GPIO_SCH_0_DEV_NAME
