@@ -1,0 +1,10 @@
+common:
+  harness: net
+  tags: net ipv4_autoconf
+  platform_whitelist: qemu_x86 native_posix
+sample:
+  description: Test IPv4 autoconf functionality
+  name: IPv4 autoconf sample app
+tests:
+  test:
+    depends_on: netif
