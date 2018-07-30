@@ -27,7 +27,9 @@ struct eth_fake_context {
 	bool link_10bt;
 	bool link_100bt;
 	bool promisc_mode;
-	int priority_queues_num;
+	struct {
+		bool qav_enabled;
+	} priority_queues[2];
 };
 
 static struct eth_fake_context eth_fake_data;
@@ -68,6 +70,7 @@ static int eth_fake_set_config(struct device *dev,
 			       const struct ethernet_config *config)
 {
 	struct eth_fake_context *ctx = dev->driver_data;
+	int priority_queues_num = ARRAY_SIZE(ctx->priority_queues);
 	int queue_id;
 
 	switch (type) {
@@ -109,11 +112,20 @@ static int eth_fake_set_config(struct device *dev,
 				     sizeof(ctx->mac_address),
 				     NET_LINK_ETHERNET);
 		break;
+	case ETHERNET_CONFIG_TYPE_QAV_STATUS:
+		queue_id = config->qav_queue_param.queue_id;
+		if (queue_id < 0 || queue_id >= priority_queues_num) {
+			return -EINVAL;
+		}
 
+		ctx->priority_queues[queue_id].qav_enabled =
+			config->qav_queue_param.enabled;
+
+		break;
 	case ETHERNET_CONFIG_TYPE_QAV_DELTA_BANDWIDTH:
 	case ETHERNET_CONFIG_TYPE_QAV_IDLE_SLOPE:
 		queue_id = config->qav_queue_param.queue_id;
-		if (queue_id < 0 || queue_id >= ctx->priority_queues_num) {
+		if (queue_id < 0 || queue_id >= priority_queues_num) {
 			return -EINVAL;
 		}
 
@@ -138,10 +150,21 @@ static int eth_fake_get_config(struct device *dev,
 			       struct ethernet_config *config)
 {
 	struct eth_fake_context *ctx = dev->driver_data;
+	int priority_queues_num = ARRAY_SIZE(ctx->priority_queues);
+	int queue_id;
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM:
-		config->priority_queues_num = ctx->priority_queues_num;
+		config->priority_queues_num = ARRAY_SIZE(ctx->priority_queues);
+		break;
+	case ETHERNET_CONFIG_TYPE_QAV_STATUS:
+		queue_id = config->qav_queue_param.queue_id;
+		if (queue_id < 0 || queue_id >= priority_queues_num) {
+			return -EINVAL;
+		}
+
+		config->qav_queue_param.enabled =
+			ctx->priority_queues[queue_id].qav_enabled;
 		break;
 	default:
 		return -ENOTSUP;
@@ -167,7 +190,6 @@ static int eth_fake_init(struct device *dev)
 	ctx->full_duplex = true;
 	ctx->link_10bt = true;
 	ctx->link_100bt = false;
-	ctx->priority_queues_num = 2;
 
 	memcpy(ctx->mac_address, mac_addr_init, 6);
 
@@ -335,12 +357,53 @@ static void test_change_qav_params(void)
 
 	zassert_not_equal(available_priority_queues, 0,
 			  "returned no priority queues");
-	zassert_equal(available_priority_queues, ctx->priority_queues_num,
+	zassert_equal(available_priority_queues,
+		      ARRAY_SIZE(ctx->priority_queues),
 		      "an invalid number of priority queues returned");
 
 	for (i = 0; i < available_priority_queues; ++i) {
-		/* Firstly - try to set correct params to a correct queue id */
+		/* Try to set correct params to a correct queue id */
 		params.qav_queue_param.queue_id = i;
+
+		/* Disable Qav for queue */
+		params.qav_queue_param.enabled = false;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_STATUS,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not disable qav");
+
+		/* Invert it to make sure the read-back value is proper */
+		params.qav_queue_param.enabled = true;
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QAV_STATUS,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not read qav status");
+
+		zassert_equal(false, params.qav_queue_param.enabled,
+			      "qav should be disabled");
+
+		/* Re-enable Qav for queue */
+		params.qav_queue_param.enabled = true;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_STATUS,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not enable qav");
+
+		/* Invert it to make sure the read-back value is proper */
+		params.qav_queue_param.enabled = false;
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QAV_STATUS,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not read qav status");
+
+		zassert_equal(true, params.qav_queue_param.enabled,
+			      "qav should be enabled");
 
 		/* Starting with delta bandwidth */
 		params.qav_queue_param.delta_bandwidth = 10;
