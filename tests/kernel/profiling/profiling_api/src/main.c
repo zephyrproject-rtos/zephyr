@@ -49,19 +49,58 @@ static void work_handler(struct k_work *w)
 	k_sem_give(&sync_sema);
 }
 
-/*test cases*/
+/**
+ * @brief Tests for kernel profiling
+ * @defgroup kernel_profiling_tests Profiling
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
+/**
+ * @brief Test stack usage through main thread
+ *
+ * This test prints the main, idle, interrupt and system workqueue
+ * stack usage through main thread.
+ *
+ * @ingroup kernel_profiling_tests
+ *
+ * @see k_thread_foreach(), stack_analyze()
+ */
 void test_call_stacks_analyze_main(void)
 {
 	TC_PRINT("from main thread:\n");
 	k_thread_foreach(tdata_dump_callback, NULL);
 }
 
+/**
+ * @brief Test stack usage through idle thread
+ *
+ * This test prints the main, idle, interrupt and system workqueue
+ * stack usage through idle thread.
+ *
+ * @ingroup kernel_profiling_tests
+ *
+ * @see k_thread_foreach(), _sys_soc_suspend(), _sys_soc_resume(),
+ * stack_analyze()
+ */
 void test_call_stacks_analyze_idle(void)
 {
 	TC_PRINT("from idle thread:\n");
 	k_sleep(SLEEP_MS);
 }
 
+/**
+ * @brief Test stack usage through system workqueue
+ *
+ * This test prints the main, idle, interrupt and system workqueue
+ * stack usage through system workqueue.
+ *
+ * @ingroup kernel_profiling_tests
+ *
+ * @see k_thread_foreach(), k_work_init(), k_work_submit(),
+ * stack_analyze()
+ */
 void test_call_stacks_analyze_workq(void)
 {
 	TC_PRINT("from workq:\n");
