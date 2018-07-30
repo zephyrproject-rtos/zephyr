@@ -96,6 +96,7 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_MAC_ADDRESS,
 	ETHERNET_CONFIG_TYPE_QAV_DELTA_BANDWIDTH,
 	ETHERNET_CONFIG_TYPE_QAV_IDLE_SLOPE,
+	ETHERNET_CONFIG_TYPE_QAV_STATUS,
 	ETHERNET_CONFIG_TYPE_PROMISC_MODE,
 	ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM,
 	ETHERNET_CONFIG_TYPE_FILTER,
@@ -104,6 +105,7 @@ enum ethernet_config_type {
 struct ethernet_qav_queue_param {
 	int queue_id;
 	union {
+		bool enabled;
 		unsigned int delta_bandwidth;
 		unsigned int idle_slope;
 	};
