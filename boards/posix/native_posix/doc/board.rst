@@ -420,13 +420,15 @@ This can be controlled with the ``--rt-ratio=<ratio>`` and ``-rt-drift=<drift>``
 command line options. Note that both of these options control the same
 underlying mechanism, and that ``drift`` is by definition equal to
 ``ratio - 1``.
+It is also possible to adjust this clock speed on the fly with
+:c:func:`native_rtc_adjust_clock()`.
 
 In this way if, for example, ``--rt-ratio=2`` is given, the simulated time
 will advance at twice the real time speed.
 Similarly if ``--rt-drift=-100e-6`` is given, the simulated time will progress
 100ppm slower than real time.
 Note that the these 2 options have no meaning when running in non real-time
-mode
+mode.
 
 How simulated time and real time relate to each other
 -----------------------------------------------------
@@ -475,25 +477,25 @@ The following peripherals are currently provided with this board:
 
   This RTC can also be set to start from time 0 with the ``--rtc-reset`` command
   line option.
-  It can also be offset by an amount with the ``--rtc-offset=<offset>`` option.
-  Note that these 2 options can be combined.
+
+  It is possible to offset the RTC clock value at boot with the
+  ``--rtc-offset=<offset>`` option,
+  or to adjust it dynamically with the function :c:func:`native_rtc_offset`.
 
   After start, this RTC advances with the simulated time, and is therefore
   affected by the simulated time speed ratio.
-  Therefore the RTC speed can be adjusted by the ``--rt-ratio`` and
-  ``--rt-drift`` command line options.
-
-  The offset and clock ratio can be dynamically adjusted using the functions
-  :c:func:`native_rtc_offset` and :c:func:`native_rtc_adjust_clock`
+  See `About time in native_posix`_ for more information.
 
   The time can be queried with the functions :c:func:`native_rtc_gettime_us`
   and :c:func:`native_rtc_gettime`. Both accept as parameter the clock source:
 
-  - ``RTC_CLOCK_BOOT``: Simulated time since boot. It cannot be offset.
-  - ``RTC_CLOCK_REALTIME``: Persistent time. Can be offset.
+  - ``RTC_CLOCK_BOOT``: It counts the simulated time passed since boot.
+    It is not subject to offset adjustments
+  - ``RTC_CLOCK_REALTIME``: RTC persistent time. It is affected by
+    offset adjustments.
   - ``RTC_CLOCK_PSEUDOHOSTREALTIME``: A version of the real host time,
     as if the host was also affected by the clock speed ratio and offset
-    adjustments performed to the simulated clock and this RTC. That is, normally
+    adjustments performed to the simulated clock and this RTC. Normally
     this value will be a couple of hundredths of microseconds ahead of the
     simulated time, depending on the host execution speed.
     This clock source should be used with care, as depending on the actual
@@ -502,7 +504,7 @@ The following peripherals are currently provided with this board:
 
 **Entropy device**:
   An entropy device based on the host :c:func:`random` API.
-  This device will generate the same sequence of random number if initialized
+  This device will generate the same sequence of random numbers if initialized
   with the same random seed.
   You can change this random seed value by using the command line option:
   ``--seed=<random_seed>`` where the value specified is a 32-bit integer
