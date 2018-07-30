@@ -1219,6 +1219,33 @@ static int cmd_auth_pairing_confirm(int argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_FIXED_PASSKEY)
+static int cmd_fixed_passkey(int argc, char *argv[])
+{
+	unsigned int passkey;
+	int err;
+
+	if (argc < 2) {
+		bt_passkey_set(BT_PASSKEY_INVALID);
+		printk("Fixed passkey cleared\n");
+		return 0;
+	}
+
+	passkey = atoi(argv[1]);
+	if (passkey > 999999) {
+		printk("Passkey should be between 0-999999\n");
+		return 0;
+	}
+
+	err = bt_passkey_set(passkey);
+	if (err) {
+		printk("Setting fixed passkey failed (err %d)\n", err);
+	}
+
+	return 0;
+}
+#endif
+
 static int cmd_auth_passkey(int argc, char *argv[])
 {
 	unsigned int passkey;
@@ -1990,6 +2017,9 @@ static const struct shell_cmd bt_commands[] = {
 	{ "auth-passkey", cmd_auth_passkey, "<passkey>" },
 	{ "auth-passkey-confirm", cmd_auth_passkey_confirm, HELP_NONE },
 	{ "auth-pairing-confirm", cmd_auth_pairing_confirm, HELP_NONE },
+#if defined(CONFIG_BT_FIXED_PASSKEY)
+	{ "fixed-passkey", cmd_fixed_passkey, "[passkey]" },
+#endif
 #if defined(CONFIG_BT_BREDR)
 	{ "auth-pincode", cmd_auth_pincode, "<pincode>" },
 #endif /* CONFIG_BT_BREDR */
