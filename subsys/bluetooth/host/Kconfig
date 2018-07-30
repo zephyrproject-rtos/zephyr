@@ -281,6 +281,13 @@ config BT_SMP_SC_ONLY
 	  Security Mode 1 Level 4 stands for authenticated LE Secure Connections
 	  pairing with encryption. Enabling this option disables legacy pairing.
 
+config BT_FIXED_PASSKEY
+	bool "Use a fixed passkey for pairing"
+	help
+	  With this option enabled, the application will be able to call the
+	  bt_passkey_set() API to set a fixed passkey. If set, the
+	  pairing_confim() callback will be called for all incoming pairings.
+
 config BT_USE_DEBUG_KEYS
 	bool "Enable Security Manager Debug Mode"
 	depends on BT_TINYCRYPT_ECC
