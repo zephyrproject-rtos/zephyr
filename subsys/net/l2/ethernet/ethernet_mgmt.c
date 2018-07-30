@@ -114,6 +114,14 @@ static int ethernet_set_config(u32_t mgmt_request,
 		memcpy(&config.qav_queue_param, &params->qav_queue_param,
 		       sizeof(struct ethernet_qav_queue_param));
 		type = ETHERNET_CONFIG_TYPE_QAV_IDLE_SLOPE;
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_QAV_STATUS) {
+		if (!is_hw_caps_supported(dev, ETHERNET_QAV)) {
+			return -ENOTSUP;
+		}
+
+		memcpy(&config.qav_queue_param, &params->qav_queue_param,
+		       sizeof(struct ethernet_qav_queue_param));
+		type = ETHERNET_CONFIG_TYPE_QAV_STATUS;
 	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_PROMISC_MODE) {
 		if (!is_hw_caps_supported(dev, ETHERNET_PROMISC_MODE)) {
 			return -ENOTSUP;
@@ -144,6 +152,9 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QAV_DELTA_BANDWIDTH,
 				  ethernet_set_config);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QAV_IDLE_SLOPE,
+				  ethernet_set_config);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QAV_STATUS,
 				  ethernet_set_config);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_PROMISC_MODE,
@@ -181,6 +192,22 @@ static int ethernet_get_config(u32_t mgmt_request,
 		}
 
 		params->priority_queues_num = config.priority_queues_num;
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_GET_QAV_STATUS) {
+		if (!is_hw_caps_supported(dev, ETHERNET_QAV)) {
+			return -ENOTSUP;
+		}
+
+		config.qav_queue_param.queue_id =
+			params->qav_queue_param.queue_id;
+
+		type = ETHERNET_CONFIG_TYPE_QAV_STATUS;
+		ret = api->get_config(dev, type, &config);
+		if (ret) {
+			return ret;
+		}
+
+		params->qav_queue_param.enabled =
+			config.qav_queue_param.enabled;
 	} else {
 		return -EINVAL;
 	}
@@ -189,6 +216,9 @@ static int ethernet_get_config(u32_t mgmt_request,
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_GET_PRIORITY_QUEUES_NUM,
+				  ethernet_get_config);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_GET_QAV_STATUS,
 				  ethernet_get_config);
 
 void ethernet_mgmt_raise_carrier_on_event(struct net_if *iface)
