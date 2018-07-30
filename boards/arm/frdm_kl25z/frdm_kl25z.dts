@@ -64,6 +64,11 @@
 
 &i2c0 {
 	status = "ok";
+	mma8451q@1d {
+		compatible = "nxp,mma8451q";
+		reg = <0x1d>;
+		label = "MMA8451Q";
+	};
 };
 
 &uart0 {
