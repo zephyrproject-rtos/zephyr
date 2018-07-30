@@ -131,11 +131,12 @@ void log_n(const char *str,
 	msg_finalize(msg, src_level);
 }
 
-void log_hexdump(const u8_t *data,
+void log_hexdump(const char *str,
+		 const u8_t *data,
 		 u32_t length,
 		 struct log_msg_ids src_level)
 {
-	struct log_msg *msg = log_msg_hexdump_create(data, length);
+	struct log_msg *msg = log_msg_hexdump_create(str, data, length);
 
 	if (msg == NULL) {
 		return;
@@ -158,7 +159,7 @@ int log_printk(const char *fmt, va_list ap)
 		length = (length > sizeof(formatted_str)) ?
 			 sizeof(formatted_str) : length;
 
-		msg = log_msg_hexdump_create(formatted_str, length);
+		msg = log_msg_hexdump_create(NULL, formatted_str, length);
 		if (!msg) {
 			return 0;
 		}

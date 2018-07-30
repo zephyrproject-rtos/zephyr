@@ -143,7 +143,7 @@ void test_log_hexdump_msg(void)
 	}
 
 	/* allocation of buffer that fits in single buffer */
-	msg = log_msg_hexdump_create(data,
+	msg = log_msg_hexdump_create("test", data,
 				     LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK - 4);
 
 	zassert_equal((used_slabs + 1),
@@ -159,7 +159,8 @@ void test_log_hexdump_msg(void)
 	used_slabs--;
 
 	/* allocation of buffer that fits in single buffer */
-	msg = log_msg_hexdump_create(data, LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK);
+	msg = log_msg_hexdump_create("test", data,
+				     LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK);
 
 	zassert_equal((used_slabs + 1),
 		      k_mem_slab_num_used_get(&log_msg_pool),
@@ -174,7 +175,7 @@ void test_log_hexdump_msg(void)
 	used_slabs--;
 
 	/* allocation of buffer that fits in 2 buffers */
-	msg = log_msg_hexdump_create(data,
+	msg = log_msg_hexdump_create("test", data,
 				     LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK + 1);
 
 	zassert_equal((used_slabs + 2),
@@ -190,7 +191,7 @@ void test_log_hexdump_msg(void)
 	used_slabs -= 2;
 
 	/* allocation of buffer that fits in 3 buffers */
-	msg = log_msg_hexdump_create(data,
+	msg = log_msg_hexdump_create("test", data,
 				     LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK +
 				     HEXDUMP_BYTES_CONT_MSG + 1);
 
@@ -223,7 +224,7 @@ void test_log_hexdump_data_get_single_chunk(void)
 
 	/* allocation of buffer that fits in single buffer */
 	wr_length = LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK - 4;
-	msg = log_msg_hexdump_create(data, wr_length);
+	msg = log_msg_hexdump_create("test", data, wr_length);
 
 	offset = 0;
 	rd_length = wr_length - 1;
@@ -322,7 +323,7 @@ void test_log_hexdump_data_get_two_chunks(void)
 
 	/* allocation of buffer that fits in two chunks. */
 	wr_length = LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK;
-	msg = log_msg_hexdump_create(data, wr_length);
+	msg = log_msg_hexdump_create("test", data, wr_length);
 
 	/* Read whole data from offset = 0*/
 	offset = 0;
@@ -415,7 +416,7 @@ void test_log_hexdump_data_get_multiple_chunks(void)
 
 	/* allocation of buffer that fits in two chunks. */
 	wr_length = 40;
-	msg = log_msg_hexdump_create(data, wr_length);
+	msg = log_msg_hexdump_create("test", data, wr_length);
 
 	/* Read whole data from offset = 0*/
 	offset = 0;

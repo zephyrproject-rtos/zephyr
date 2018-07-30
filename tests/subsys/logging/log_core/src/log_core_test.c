@@ -208,7 +208,7 @@ static void test_log_overflow(void)
 
 	LOG_INF("test");
 	LOG_INF("test");
-	LOG_HEXDUMP_INF(data, hexdump_len);
+	LOG_HEXDUMP_INF(data, hexdump_len, "test");
 
 	while (log_process(false)) {
 	}
@@ -219,7 +219,7 @@ static void test_log_overflow(void)
 	backend1_cb.exp_timestamps[2] = 3;
 
 	LOG_INF("test");
-	LOG_HEXDUMP_INF(data, max_hexdump_len+1);
+	LOG_HEXDUMP_INF(data, max_hexdump_len+1, "test");
 
 	while (log_process(false)) {
 	}

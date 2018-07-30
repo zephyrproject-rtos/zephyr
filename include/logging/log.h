@@ -136,11 +136,12 @@ extern "C" {
  * @details It's meant to report severe errors, such as those from which it's
  * not possible to recover.
  *
- * @param data   Pointer to the data to be logged.
- * @param length Length of data (in bytes).
+ * @param _data   Pointer to the data to be logged.
+ * @param _length Length of data (in bytes).
+ * @param _str    Persistent, raw string.
  */
-#define LOG_HEXDUMP_ERR(data, length) \
-	_LOG_HEXDUMP(LOG_LEVEL_ERR, data, length)
+#define LOG_HEXDUMP_ERR(_data, _length, _str) \
+	_LOG_HEXDUMP(LOG_LEVEL_ERR, _data, _length, _str)
 
 /**
  * @brief Writes a WARNING level message to the log.
@@ -148,33 +149,36 @@ extern "C" {
  * @details It's meant to register messages related to unusual situations that
  * are not necessarily errors.
  *
- * @param data   Pointer to the data to be logged.
- * @param length Length of data (in bytes).
+ * @param _data   Pointer to the data to be logged.
+ * @param _length Length of data (in bytes).
+ * @param _str    Persistent, raw string.
  */
-#define LOG_HEXDUMP_WRN(data, length) \
-	_LOG_HEXDUMP(LOG_LEVEL_WRN, data, length)
+#define LOG_HEXDUMP_WRN(_data, _length, _str) \
+	_LOG_HEXDUMP(LOG_LEVEL_WRN, _data, _length, _str)
 
 /**
  * @brief Writes an INFO level message to the log.
  *
  * @details It's meant to write generic user oriented messages.
  *
- * @param data   Pointer to the data to be logged.
- * @param length Length of data (in bytes).
+ * @param _data   Pointer to the data to be logged.
+ * @param _length Length of data (in bytes).
+ * @param _str    Persistent, raw string.
  */
-#define LOG_HEXDUMP_INF(data, length) \
-	_LOG_HEXDUMP(LOG_LEVEL_INF, data, length)
+#define LOG_HEXDUMP_INF(_data, _length, _str) \
+	_LOG_HEXDUMP(LOG_LEVEL_INF, _data, _length, _str)
 
 /**
  * @brief Writes a DEBUG level message to the log.
  *
  * @details It's meant to write developer oriented information.
  *
- * @param data   Pointer to the data to be logged.
- * @param length Length of data (in bytes).
+ * @param _data   Pointer to the data to be logged.
+ * @param _length Length of data (in bytes).
+ * @param _str    Persistent, raw string.
  */
-#define LOG_HEXDUMP_DBG(data, length) \
-	_LOG_HEXDUMP(LOG_LEVEL_DBG, data, length)
+#define LOG_HEXDUMP_DBG(_data, _length, _str) \
+	_LOG_HEXDUMP(LOG_LEVEL_DBG, _data, _length, _str)
 
 /**
  * @brief Writes an ERROR hexdump message associated with the instance to the
@@ -186,11 +190,12 @@ extern "C" {
  * severe errors, such as those from which it's not possible to recover.
  *
  * @param _log_inst   Pointer to the log structure associated with the instance.
- * @param data   Pointer to the data to be logged.
- * @param length Length of data (in bytes).
+ * @param _data       Pointer to the data to be logged.
+ * @param _length     Length of data (in bytes).
+ * @param _str        Persistent, raw string.
  */
-#define LOG_INST_HEXDUMP_ERR(_log_inst, data, length) \
-	_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_ERR, _log_inst, data, length)
+#define LOG_INST_HEXDUMP_ERR(_log_inst, _data, _length, _str) \
+	_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_ERR, _log_inst, _data, _length, _str)
 
 /**
  * @brief Writes a WARNING level hexdump message associated with the instance to
@@ -200,11 +205,12 @@ extern "C" {
  * are not necessarily errors.
  *
  * @param _log_inst   Pointer to the log structure associated with the instance.
- * @param data   Pointer to the data to be logged.
- * @param length Length of data (in bytes).
+ * @param _data       Pointer to the data to be logged.
+ * @param _length     Length of data (in bytes).
+ * @param _str        Persistent, raw string.
  */
-#define LOG_INST_HEXDUMP_WRN(_log_inst, data, length) \
-	_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_WRN, _log_inst, data, length)
+#define LOG_INST_HEXDUMP_WRN(_log_inst, _data, _length, _str) \
+	_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_WRN, _log_inst, _data, _length, _str)
 
 /**
  * @brief Writes an INFO level hexdump message associated with the instance to
@@ -213,11 +219,12 @@ extern "C" {
  * @details It's meant to write generic user oriented messages.
  *
  * @param _log_inst   Pointer to the log structure associated with the instance.
- * @param data   Pointer to the data to be logged.
- * @param length Length of data (in bytes).
+ * @param _data       Pointer to the data to be logged.
+ * @param _length     Length of data (in bytes).
+ * @param _str        Persistent, raw string.
  */
-#define LOG_INST_HEXDUMP_INF(_log_inst, data, length) \
-	_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_INF, _log_inst, data, length)
+#define LOG_INST_HEXDUMP_INF(_log_inst, _data, _length, _str) \
+	_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_INF, _log_inst, _data, _length, _str)
 
 /**
  * @brief Writes a DEBUG level hexdump message associated with the instance to
@@ -226,11 +233,12 @@ extern "C" {
  * @details It's meant to write developer oriented information.
  *
  * @param _log_inst   Pointer to the log structure associated with the instance.
- * @param _data   Pointer to the data to be logged.
- * @param _length Length of data (in bytes).
+ * @param _data       Pointer to the data to be logged.
+ * @param _length     Length of data (in bytes).
+ * @param _str        Persistent, raw string.
  */
-#define LOG_INST_HEXDUMP_DBG(_log_inst, _data, _length)	\
-	_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_DBG, _log_inst, _data, _length)
+#define LOG_INST_HEXDUMP_DBG(_log_inst, _data, _length, _str)	\
+	_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_DBG, _log_inst, _data, _length, _str)
 
 /**
  * @brief Writes an formatted string to the log.
