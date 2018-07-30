@@ -1466,7 +1466,23 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(struct device *dev)
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 		ETHERNET_PTP |
 #endif
+		ETHERNET_PRIORITY_QUEUES |
 		ETHERNET_LINK_100BASE_T;
+}
+
+static int eth_sam_gmac_get_config(struct device *dev,
+				   enum ethernet_config_type type,
+				   struct ethernet_config *config)
+{
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM:
+		config->priority_queues_num = GMAC_PRIORITY_QUEUE_NO;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
 }
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
@@ -1483,6 +1499,7 @@ static const struct ethernet_api eth_api = {
 	.iface_api.send = eth_tx,
 
 	.get_capabilities = eth_sam_gmac_get_capabilities,
+	.get_config = eth_sam_gmac_get_config,
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	.get_ptp_clock = eth_sam_gmac_get_ptp_clock,
