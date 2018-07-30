@@ -260,16 +260,15 @@ static u32_t hexdump_line_print(struct log_msg *msg,
 	log_msg_hexdump_data_get(msg, buf, &length, offset);
 
 	if (length > 0) {
-		if (offset > 0) {
-			newline_print(ctx);
-			for (int i = 0; i < prefix_offset; i++) {
-				print(ctx, " ");
-			}
+		newline_print(ctx);
+
+		for (int i = 0; i < prefix_offset; i++) {
+			print(ctx, " ");
 		}
 
 		for (int i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
 			if (i < length) {
-				print(ctx, " %02x", buf[i]);
+				print(ctx, "%02x ", buf[i]);
 			} else {
 				print(ctx, "   ");
 			}
@@ -297,6 +296,8 @@ static void hexdump_print(struct log_msg *msg,
 {
 	u32_t offset = 0;
 	u32_t length;
+
+	print(ctx, "%s", log_msg_str_get(msg));
 
 	do {
 		length = hexdump_line_print(msg, ctx, prefix_offset, offset);

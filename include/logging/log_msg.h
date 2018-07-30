@@ -74,8 +74,8 @@ struct log_msg_ids {
 	u16_t source_id : 10;   /*!< Source ID. */
 };
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_ids) == sizeof(u16_t)), \
-	      "Structure must fit in 2 bytes");
+BUILD_ASSERT_MSG((sizeof(struct log_msg_ids) == sizeof(u16_t)),
+		  "Structure must fit in 2 bytes");
 
 /** Part of log message header common to standard and hexdump log message. */
 struct log_msg_generic_hdr {
@@ -83,8 +83,8 @@ struct log_msg_generic_hdr {
 	u16_t reserved : 14;
 };
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_generic_hdr) == sizeof(u16_t)), \
-	      "Structure must fit in 2 bytes");
+BUILD_ASSERT_MSG((sizeof(struct log_msg_generic_hdr) == sizeof(u16_t)),
+		 "Structure must fit in 2 bytes");
 
 /** Part of log message header specific to standard log message. */
 struct log_msg_std_hdr {
@@ -93,8 +93,8 @@ struct log_msg_std_hdr {
 	u16_t nargs    : 4;
 };
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_std_hdr) == sizeof(u16_t)), \
-	      "Structure must fit in 2 bytes");
+BUILD_ASSERT_MSG((sizeof(struct log_msg_std_hdr) == sizeof(u16_t)),
+		 "Structure must fit in 2 bytes");
 
 /** Part of log message header specific to hexdump log message. */
 struct log_msg_hexdump_hdr {
@@ -103,8 +103,8 @@ struct log_msg_hexdump_hdr {
 	u16_t length     : LOG_MSG_HEXDUMP_LENGTH_BITS;
 };
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_hexdump_hdr) == sizeof(u16_t)), \
-	      "Structure must fit in 2 bytes");
+BUILD_ASSERT_MSG((sizeof(struct log_msg_hexdump_hdr) == sizeof(u16_t)),
+		 "Structure must fit in 2 bytes");
 
 /** Log message header structure */
 struct log_msg_hdr {
@@ -119,25 +119,9 @@ struct log_msg_hdr {
 	u32_t timestamp;        /*!< Timestamp. */
 };
 
-/** @brief Data part of head of standard log message. */
-struct log_msg_std_head_data {
-	const char *str;
-	u32_t args[LOG_MSG_NARGS_SINGLE_CHUNK];
-};
-
-/** @brief Data part of head of extended standard log message.
- *
- * @details When message is extended, head of the message contains also a
- *          pointer to the next chunk thus data part is reduced.
- */
-struct log_msg_std_ext_head_data {
-	const char *str;
-	u32_t args[LOG_MSG_NARGS_HEAD_CHUNK];
-};
-
 /** @brief Data part of log message. */
 union log_msg_head_data {
-	struct log_msg_std_head_data std;
+	u32_t args[LOG_MSG_NARGS_SINGLE_CHUNK];
 	u8_t bytes[LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK];
 };
 
@@ -145,7 +129,7 @@ union log_msg_head_data {
 struct log_msg_ext_head_data {
 	struct log_msg_cont *next;
 	union log_msg_ext_head_data_data {
-		struct log_msg_std_ext_head_data std;
+		u32_t args[LOG_MSG_NARGS_HEAD_CHUNK];
 		u8_t bytes[LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK];
 	} data;
 };
@@ -154,16 +138,16 @@ struct log_msg_ext_head_data {
 struct log_msg {
 	struct log_msg *next;   /*!< Used by logger core list.*/
 	struct log_msg_hdr hdr; /*!< Message header. */
-
+	const char *str;
 	union log_msg_data {
-		union log_msg_head_data data;
+		union log_msg_head_data single;
 		struct log_msg_ext_head_data ext;
-	} data;                 /*!< Message data. */
+	} payload;                 /*!< Message data. */
 };
 
-BUILD_ASSERT_MSG((sizeof(union log_msg_head_data) == \
-	      sizeof(struct log_msg_ext_head_data)), \
-	      "Structure must be same size");
+BUILD_ASSERT_MSG((sizeof(union log_msg_head_data) ==
+		  sizeof(struct log_msg_ext_head_data)),
+		  "Structure must be same size");
 
 /** @brief Chunks following message head when message is extended. */
 struct log_msg_cont {
@@ -171,7 +155,7 @@ struct log_msg_cont {
 	union log_msg_cont_data {
 		u32_t args[ARGS_CONT_MSG];
 		u8_t bytes[HEXDUMP_BYTES_CONT_MSG];
-	} data;
+	} payload;
 };
 
 /** @brief Log message */
@@ -307,12 +291,15 @@ const char *log_msg_str_get(struct log_msg *msg);
  *
  *  @note Allocation and partial filling is combined for performance reasons.
  *
+ * @param str		String.
  * @param data		Data.
  * @param length	Data length.
  *
  * @return Pointer to allocated head of the message or NULL
  */
-struct log_msg *log_msg_hexdump_create(const u8_t *data, u32_t length);
+struct log_msg *log_msg_hexdump_create(const char *str,
+				       const u8_t *data,
+				       u32_t length);
 
 /** @brief Put data into hexdump log message.
  *
@@ -393,7 +380,7 @@ static inline struct log_msg *_log_msg_ext_std_alloc(void)
 		}
 
 		msg->hdr.params.generic.ext = 1;
-		msg->data.ext.next = cont;
+		msg->payload.ext.next = cont;
 		cont->next = NULL;
 	}
 
@@ -413,7 +400,7 @@ static inline struct log_msg *log_msg_create_0(const char *str)
 	struct log_msg *msg = _log_msg_std_alloc();
 
 	if (msg != NULL) {
-		msg->data.data.std.str = str;
+		msg->str = str;
 	}
 
 	return msg;
@@ -438,9 +425,9 @@ static inline struct log_msg *log_msg_create_1(const char *str,
 	struct  log_msg *msg = _log_msg_std_alloc();
 
 	if (msg != NULL) {
+		msg->str = str;
 		msg->hdr.params.std.nargs = 1;
-		msg->data.data.std.str = str;
-		msg->data.data.std.args[0] = arg1;
+		msg->payload.single.args[0] = arg1;
 	}
 
 	return msg;
@@ -467,10 +454,10 @@ static inline struct log_msg *log_msg_create_2(const char *str,
 	struct  log_msg *msg = _log_msg_std_alloc();
 
 	if (msg != NULL) {
+		msg->str = str;
 		msg->hdr.params.std.nargs = 2;
-		msg->data.data.std.str = str;
-		msg->data.data.std.args[0] = arg1;
-		msg->data.data.std.args[1] = arg2;
+		msg->payload.single.args[0] = arg1;
+		msg->payload.single.args[1] = arg2;
 	}
 
 	return msg;
@@ -499,11 +486,11 @@ static inline struct log_msg *log_msg_create_3(const char *str,
 	struct  log_msg *msg = _log_msg_std_alloc();
 
 	if (msg != NULL) {
+		msg->str = str;
 		msg->hdr.params.std.nargs = 3;
-		msg->data.data.std.str = str;
-		msg->data.data.std.args[0] = arg1;
-		msg->data.data.std.args[1] = arg2;
-		msg->data.data.std.args[2] = arg3;
+		msg->payload.single.args[0] = arg1;
+		msg->payload.single.args[1] = arg2;
+		msg->payload.single.args[2] = arg3;
 	}
 
 	return msg;
