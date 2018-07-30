@@ -179,6 +179,7 @@ static int eth_send(struct net_if *iface, struct net_pkt *pkt)
 	struct eth_context *ctx = get_context(iface);
 	struct net_buf *frag;
 	int count = 0;
+	int ret;
 
 	/* First fragment contains link layer (Ethernet) headers.
 	 */
@@ -211,11 +212,14 @@ static int eth_send(struct net_if *iface, struct net_pkt *pkt)
 
 	SYS_LOG_DBG("Send pkt %p len %d", pkt, count);
 
-	eth_write_data(ctx->dev_fd, ctx->send, count);
+	ret = eth_write_data(ctx->dev_fd, ctx->send, count);
+	if (ret < 0) {
+		SYS_LOG_DBG("Cannot send pkt %p (%d)", pkt, ret);
+	} else {
+		net_pkt_unref(pkt);
+	}
 
-	net_pkt_unref(pkt);
-
-	return 0;
+	return ret < 0 ? ret : 0;
 }
 
 static int eth_init(struct device *dev)
