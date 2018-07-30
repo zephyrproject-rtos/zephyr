@@ -20,6 +20,7 @@
 #include "arp.h"
 #include "net_private.h"
 #include "ipv6.h"
+#include "ipv4_autoconf_internal.h"
 
 #if defined(CONFIG_NET_IPV6)
 static const struct net_eth_addr multicast_eth_addr = {
@@ -212,6 +213,11 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		NET_DBG("ARP packet from %s received",
 			net_sprint_ll_addr((u8_t *)hdr->src.addr,
 					   sizeof(struct net_eth_addr)));
+#ifdef CONFIG_NET_IPV4_AUTO
+		if (net_ipv4_autoconf_input(iface, pkt) == NET_DROP) {
+			return NET_DROP;
+		}
+#endif
 		return net_arp_input(pkt);
 	}
 #endif
@@ -413,7 +419,7 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 			goto setup_hdr;
 		}
 
-		arp_pkt = net_arp_prepare(pkt);
+		arp_pkt = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
 		if (!arp_pkt) {
 			return NET_DROP;
 		}

@@ -377,7 +377,7 @@ void test_arp(void)
 
 	memcpy(net_buf_add(frag, len), app_data, len);
 
-	pkt2 = net_arp_prepare(pkt);
+	pkt2 = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
 
 	/* pkt2 is the ARP packet and pkt is the IPv4 packet and it was
 	 * stored in ARP table.
@@ -497,7 +497,7 @@ void test_arp(void)
 	/* Then a case where target is not in the same subnet */
 	net_ipaddr_copy(&ipv4->dst, &dst_far);
 
-	pkt2 = net_arp_prepare(pkt);
+	pkt2 = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
 
 	zassert_not_equal((void *)(pkt2), (void *)(pkt),
 		"ARP cache should not find anything");
@@ -531,7 +531,7 @@ void test_arp(void)
 	 */
 	net_pkt_ref(pkt);
 
-	pkt2 = net_arp_prepare(pkt);
+	pkt2 = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
 
 	zassert_not_null(pkt2,
 		"ARP cache is not sending the request again");
@@ -548,7 +548,7 @@ void test_arp(void)
 	 */
 	net_pkt_ref(pkt);
 
-	pkt2 = net_arp_prepare(pkt);
+	pkt2 = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
 
 	zassert_not_null(pkt2,
 		"ARP cache did not send a req");

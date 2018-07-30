@@ -42,7 +42,9 @@ struct net_arp_hdr {
 #define NET_ARP_REQUEST 1
 #define NET_ARP_REPLY   2
 
-struct net_pkt *net_arp_prepare(struct net_pkt *pkt);
+struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
+				struct in_addr *request_ip,
+				struct in_addr *current_ip);
 enum net_verdict net_arp_input(struct net_pkt *pkt);
 
 struct arp_entry {

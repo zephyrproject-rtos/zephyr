@@ -31,6 +31,7 @@ config NET_IF_MAX_IPV4_COUNT
 config NET_IF_UNICAST_IPV4_ADDR_COUNT
 	int "Max number of unicast IPv4 addresses per network interface"
 	default 1
+	default 2 if NET_IPV4_AUTO
 
 config NET_IF_MCAST_IPV4_ADDR_COUNT
 	int "Max number of multicast IPv4 addresses per network interface"
@@ -39,6 +40,13 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
 config NET_DHCPV4
 	bool "Enable DHCPv4 client"
 	depends on NET_IPV4
+
+config NET_IPV4_AUTO
+	bool "Enable IPv4 autoconfiguration [EXPERIMENTAL]"
+	depends on NET_IPV4 && NET_ARP
+	default n
+	  help
+	  Enables IPv4 auto IP address configuration (see RFC 3927)
 
 if NET_LOG
 
@@ -57,6 +65,13 @@ config NET_DEBUG_DHCPV4
 	depends on NET_DHCPV4
 	help
 	  Enable debug diagnostic from DHCPV4 client.
+
+config NET_DEBUG_IPV4_AUTOCONF
+	bool "Debug IPv4 autoconf client"
+	depends on NET_IPV4_AUTO
+	default n
+	help
+	  Enable debug diagnostic from IPv4 autoconf client.
 
 endif # NET_LOG
 

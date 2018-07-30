@@ -22,6 +22,7 @@
 #include "net_private.h"
 #include "ipv6.h"
 #include "rpl.h"
+#include "ipv4_autoconf_internal.h"
 
 #include "net_stats.h"
 
@@ -2309,6 +2310,10 @@ done:
 	net_if_start_rs(iface);
 #endif
 
+#if defined(CONFIG_NET_IPV4_AUTO)
+	net_ipv4_autoconf_start(iface);
+#endif
+
 	net_mgmt_event_notify(NET_EVENT_IF_UP, iface);
 
 	return 0;
@@ -2319,6 +2324,10 @@ void net_if_carrier_down(struct net_if *iface)
 	NET_DBG("iface %p", iface);
 
 	atomic_clear_bit(iface->if_dev->flags, NET_IF_UP);
+
+#if defined(CONFIG_NET_IPV4_AUTO)
+	net_ipv4_autoconf_reset(iface);
+#endif
 
 	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
 }
