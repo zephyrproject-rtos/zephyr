@@ -1951,14 +1951,22 @@ int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 		return 0;
 	}
 
-	/* cancel callback should always be provided */
-	if (!cb->cancel) {
-		return -EINVAL;
-	}
-
 	if (bt_auth) {
 		return -EALREADY;
 	}
+
+	/* The cancel callback must always be provided if the app provides
+	 * interactive callbacks.
+	 */
+	if (!cb->cancel &&
+	    (cb->passkey_display || cb->passkey_entry || cb->passkey_confirm ||
+#if defined(CONFIG_BT_BREDR)
+	     cb->pincode_entry ||
+#endif
+	     cb->pairing_confirm)) {
+		return -EINVAL;
+	}
+
 
 	bt_auth = cb;
 	return 0;
