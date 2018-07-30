@@ -382,6 +382,28 @@ struct bt_conn_cb {
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
 
+/** @def BT_PASSKEY_INVALID
+ *
+ *  Special passkey value that can be used to disable a previously
+ *  set fixed passkey.
+ */
+#define BT_PASSKEY_INVALID 0xffffffff
+
+/** @brief Set a fixed passkey to be used for pairing.
+ *
+ *  This API is only available when the CONFIG_BT_FIXED_PASSKEY
+ *  configuration option has been enabled.
+ *
+ *  Sets a fixed passkey to be used for pairing. If set, the
+ *  pairing_confim() callback will be called for all incoming pairings.
+ *
+ *  @param passkey A valid passkey (0 - 999999) or BT_PASSKEY_INVALID
+ *                 to disable a previously set fixed passkey.
+ *
+ *  @return 0 on success or a negative error code on failure.
+ */
+int bt_passkey_set(unsigned int passkey);
+
 /** Authenticated pairing callback structure */
 struct bt_conn_auth_cb {
 	/** @brief Display a passkey to the user.

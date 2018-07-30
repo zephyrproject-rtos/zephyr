@@ -1967,7 +1967,6 @@ int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 		return -EINVAL;
 	}
 
-
 	bt_auth = cb;
 	return 0;
 }
