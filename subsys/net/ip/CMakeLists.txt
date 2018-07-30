@@ -15,6 +15,7 @@ zephyr_library_sources(
 
 zephyr_library_sources_ifdef(CONFIG_NET_6LO          6lo.c)
 zephyr_library_sources_ifdef(CONFIG_NET_DHCPV4       dhcpv4.c)
+zephyr_library_sources_ifdef(CONFIG_NET_IPV4_AUTO    ipv4_autoconf.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV4         icmpv4.c       ipv4.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV6         icmpv6.c nbr.c ipv6.c)
 zephyr_library_sources_ifdef(CONFIG_NET_MGMT_EVENT   net_mgmt.c)

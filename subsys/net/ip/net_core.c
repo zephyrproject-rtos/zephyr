@@ -49,6 +49,7 @@
 #include "connection.h"
 #include "udp_internal.h"
 #include "tcp_internal.h"
+#include "ipv4_autoconf_internal.h"
 
 #include "net_stats.h"
 
@@ -372,6 +373,8 @@ static inline void l3_init(void)
 	net_icmpv4_init();
 	net_icmpv6_init();
 	net_ipv6_init();
+
+	net_ipv4_autoconf_init();
 
 #if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP)
 	net_conn_init();
