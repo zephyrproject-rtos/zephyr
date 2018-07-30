@@ -100,6 +100,7 @@ enum {
 	SMP_FLAG_DHKEY_PENDING,	/* if waiting for local DHKey */
 	SMP_FLAG_DHKEY_SEND,	/* if should generate and send DHKey Check */
 	SMP_FLAG_USER,		/* if waiting for user input */
+	SMP_FLAG_DISPLAY,       /* if display_passkey() callback was called */
 	SMP_FLAG_BOND,		/* if bonding */
 	SMP_FLAG_SC_DEBUG_KEY,	/* if Secure Connection are using debug key */
 	SMP_FLAG_SEC_REQ,	/* if Security Request was sent/received */
@@ -2591,6 +2592,8 @@ static u8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 
 	BT_DBG("");
 
+	atomic_clear_bit(smp->flags, SMP_FLAG_DISPLAY);
+
 	memcpy(smp->pcnf, req->val, sizeof(smp->pcnf));
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
@@ -2969,14 +2972,11 @@ static u8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 	 */
 	ARG_UNUSED(req);
 
-	switch (smp->method) {
-	case PASSKEY_INPUT:
-	case PASSKEY_DISPLAY:
-	case PASSKEY_CONFIRM:
-		bt_auth->cancel(conn);
-		break;
-	default:
-		break;
+	if (atomic_test_and_clear_bit(smp->flags, SMP_FLAG_USER) ||
+	    atomic_test_and_clear_bit(smp->flags, SMP_FLAG_DISPLAY)) {
+		if (bt_auth && bt_auth->cancel) {
+			bt_auth->cancel(conn);
+		}
 	}
 
 	/*
@@ -3230,6 +3230,7 @@ static u8_t display_passkey(struct bt_smp *smp)
 	smp->passkey %= 1000000;
 	smp->passkey_round = 0;
 
+	atomic_set_bit(smp->flags, SMP_FLAG_DISPLAY);
 	bt_auth->passkey_display(smp->chan.chan.conn, smp->passkey);
 	smp->passkey = sys_cpu_to_le32(smp->passkey);
 
