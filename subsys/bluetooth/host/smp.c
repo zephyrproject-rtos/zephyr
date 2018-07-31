@@ -2311,6 +2311,10 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
+	if (smp_init(smp) != 0) {
+		return -ENOBUFS;
+	}
+
 	req_buf = smp_create_pdu(conn, BT_SMP_CMD_SECURITY_REQUEST,
 				 sizeof(*req));
 	if (!req_buf) {
@@ -2323,7 +2327,8 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 	/* SMP timer is not restarted for SecRequest so don't use smp_send */
 	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
 
-	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
+	atomic_set_bit(smp->flags, SMP_FLAG_SEC_REQ);
+	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
 
 	return 0;
 }
@@ -2332,7 +2337,6 @@ static u8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_smp_pairing *req = (void *)buf->data;
 	struct bt_smp_pairing *rsp;
-	int ret;
 
 	BT_DBG("");
 
@@ -2341,9 +2345,15 @@ static u8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 		return BT_SMP_ERR_ENC_KEY_SIZE;
 	}
 
-	ret = smp_init(smp);
-	if (ret) {
-		return ret;
+	/* If we already sent a security request then the SMP context
+	 * is already initialized.
+	 */
+	if (!atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ)) {
+		int ret = smp_init(smp);
+
+		if (ret) {
+			return ret;
+		}
 	}
 
 	/* Store req for later use */
@@ -3584,21 +3594,16 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 		return;
 	}
 
-	if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
-		return;
-	}
-
 	/* We were waiting for encryption but with no pairing in progress.
 	 * This can happen if paired slave sent Security Request and we
 	 * enabled encryption.
-	 *
-	 * Since it is possible that slave might sent another Security Request
-	 * eg with different AuthReq we should allow it.
 	 */
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
-		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
+		smp_reset(smp);
 		return;
 	}
+
+	atomic_clear_bit(smp->flags, SMP_FLAG_ENC_PENDING);
 
 	/* derive BR/EDR LinkKey if supported by both sides */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
