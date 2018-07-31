@@ -24,25 +24,6 @@
 #include <misc/util.h>
 #include <offsets.h>
 
-/* include platform dependent linker-defs */
-#ifdef CONFIG_X86
-/* Nothing yet to include */
-#elif defined(CONFIG_ARM)
-/* Nothing yet to include */
-#elif defined(CONFIG_ARC)
-/* Nothing yet to include */
-#elif defined(CONFIG_NIOS2)
-/* Nothing yet to include */
-#elif defined(CONFIG_RISCV32)
-/* Nothing yet to include */
-#elif defined(CONFIG_XTENSA)
-/* Nothing yet to include */
-#elif defined(CONFIG_ARCH_POSIX)
-/* Nothing yet to include */
-#else
-#error Arch not supported.
-#endif
-
 #ifdef _LINKER
 
 
