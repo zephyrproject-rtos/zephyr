@@ -797,19 +797,18 @@ Make sure to follow these steps in order.
 
       set(KCONFIG_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/Kconfig)
 
-   Make sure to include the following lines in your :file:`Kconfig` file before
-   any application-specific configuration options:
+   Structure your :file:`Kconfig` file like this:
 
    .. literalinclude:: application-kconfig.include
 
    .. note::
 
        Environment variables in ``source`` statements are expanded directly,
-       so you do not need to define a ``option env="ZEPHYR_BASE"`` Kconfig
+       so you do not need to define an ``option env="ZEPHYR_BASE"`` Kconfig
        "bounce" symbol. If you use such a symbol, it must have the same name as
        the environment variable.
 
-       See the :ref:`kconfig_extensions_and_changes` section in the
+       See the :ref:`kconfig_extensions` section in the
        :ref:`board_porting_guide` for more information.
 
 #. Now include the mandatory boilerplate that integrates the
