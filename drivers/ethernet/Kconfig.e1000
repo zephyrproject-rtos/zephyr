@@ -1,0 +1,14 @@
+# Kconfig - Intel(R) PRO/1000 Gigabit Ethernet driver configuration options
+
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ETH_E1000
+	bool
+	prompt "Intel(R) PRO/1000 Gigabit Ethernet driver"
+	depends on NET_L2_ETHERNET && PCI_ENUMERATION
+	help
+	  Enable Intel(R) PRO/1000 Gigabit Ethernet driver.
