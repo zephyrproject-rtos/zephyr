@@ -276,6 +276,7 @@ struct bt_mesh_net_tx {
 	u8_t  friend_cred:1,
 	      aszmic:1,
 	      aid:6;
+  u8_t routing;
 };
 
 extern struct bt_mesh_net bt_mesh;

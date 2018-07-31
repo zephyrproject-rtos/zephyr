@@ -33,6 +33,8 @@
 #include "foundation.h"
 #include "settings.h"
 #include "transport.h"
+#include "aodv_control_messages.h"
+#include "routing_table.h"
 
 /* The transport layer needs at least three buffers for itself to avoid
  * deadlocks. Ensure that there are a sufficient number of advertising
@@ -449,6 +451,35 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 	u8_t *ad;
 	int err;
 
+	if (IS_ENABLED(CONFIG_BT_MESH_ROUTING))
+	{
+		if((!bt_mesh_elem_find(tx->ctx->addr)) && (BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) )
+		{
+
+			struct bt_mesh_route_entry *entry=NULL;
+			view_valid_list();
+			if(bt_mesh_search_valid_destination(bt_mesh_primary_addr(),tx->ctx->addr,tx->ctx->net_idx,&entry))
+			{
+				BT_DBG("Destination Found\n");
+				bt_mesh_refresh_lifetime_valid(entry);
+			}
+			else
+			{
+				BT_DBG("Initiating Ring Search\n");
+				err=bt_mesh_trans_ring_search(tx);
+				err=bt_mesh_trans_ring_buf_alloc(tx,msg,cb,cb_data);
+				if(!err)
+				{
+					BT_DBG("Out of ring search sdu buffers");
+				}
+				return err;
+			}
+		}
+		else
+		{
+				BT_DBG("Group address == No Routing\n");
+		}
+	}
 	if (net_buf_simple_tailroom(msg) < 4) {
 		BT_ERR("Insufficient tailroom for Transport MIC");
 		return -EINVAL;
@@ -820,6 +851,22 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, u8_t hdr,
 		return 0;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_MESH_ROUTING)){
+		switch(ctl_op){
+		case TRANS_CTL_OP_RREQ:
+			if(!bt_mesh_elem_find(rx -> ctx.addr)){
+				return bt_mesh_trans_rreq_recv(rx,buf);
+			}
+		 case TRANS_CTL_OP_RREP:
+			return bt_mesh_trans_rrep_recv(rx,buf);
+		 case TRANS_CTL_OP_RWAIT:
+			 bt_mesh_trans_rwait_recv(rx,buf);
+			 return 0;
+		 case TRANS_CTL_OP_RERR:
+			 return bt_mesh_trans_rerr_recv(rx,buf);
+		}
+	}
+
 	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND) && !bt_mesh_lpn_established()) {
 		switch (ctl_op) {
 		case TRANS_CTL_OP_FRIEND_POLL:
@@ -933,32 +980,113 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
 	       tx->ctx->addr, tx->ctx->send_ttl, ctl_op);
 	BT_DBG("len %zu: %s", data_len, bt_hex(data, data_len));
 
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, tx->xmit, BUF_TIMEOUT);
-	if (!buf) {
-		BT_ERR("Out of transport buffers");
-		return -ENOBUFS;
-	}
+		if (data_len <= 11)
+		{
+			buf = bt_mesh_adv_create(BT_MESH_ADV_DATA,
+						 BT_MESH_TRANSMIT_COUNT(tx->xmit),
+						 BT_MESH_TRANSMIT_INT(tx->xmit), BUF_TIMEOUT);
+			if (!buf)
+			{
+				BT_ERR("Out of transport buffers");
+				return -ENOBUFS;
+			}
 
-	net_buf_reserve(buf, BT_MESH_NET_HDR_LEN);
+			net_buf_reserve(buf, BT_MESH_NET_HDR_LEN);
+			net_buf_add_u8(buf, TRANS_CTL_HDR(ctl_op, 0));
+			net_buf_add_mem(buf, data, data_len);
+			if (IS_ENABLED(CONFIG_BT_MESH_FRIEND))
+			{
+				if (bt_mesh_friend_enqueue_tx(tx, BT_MESH_FRIEND_PDU_SINGLE,
+							      seq_auth, &buf->b) &&
+				    BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr))
+				{
+					/* PDUs for a specific Friend should only go
+					 * out through the Friend Queue.
+					 */
+					net_buf_unref(buf);
+					return 0;
+				}
+			}
+			return bt_mesh_net_send(tx, buf, cb, cb_data);
+		}
+	 	else
+		{
+			u8_t seg_o;
+			u16_t seq_zero;
+			struct seg_tx *tx_seg;
+			u8_t segment_count=(data_len - 1) / 8; //Number of segments-1
 
-	net_buf_add_u8(buf, TRANS_CTL_HDR(ctl_op, 0));
+			int i;
+			for (tx_seg = NULL, i = 0; i < ARRAY_SIZE(seg_tx); i++) {
+				if (!seg_tx[i].nack_count)
+				{
+					tx_seg = &seg_tx[i];
+					break;
+				}
+			}
+			if (!tx_seg) {
+				BT_ERR("No multi-segment message contexts available");
+				return -EBUSY;
+			}
+			seg_o = 0;
+			tx_seg->dst = tx->ctx->addr;
+			tx_seg->seg_n = segment_count;
+			tx_seg->nack_count = tx_seg->seg_n + 1;
+			tx_seg->seq_auth = SEQ_AUTH(BT_MESH_NET_IVI_TX, bt_mesh.seq);
+			tx_seg->sub = tx->sub;
+			tx_seg->new_key = tx->sub->kr_flag;
+			tx_seg->cb = cb;
+			tx_seg->cb_data = cb_data;
+			if (tx->ctx->send_ttl == BT_MESH_TTL_DEFAULT) {
+				tx_seg->ttl = bt_mesh_default_ttl_get();
+			} else {
+				tx_seg->ttl = tx->ctx->send_ttl;
+			}
+			seq_zero = tx_seg->seq_auth & 0x1fff; //least 13 bits of SeqAuth
+			u16_t unsend=data_len;
+			for (seg_o = 0; seg_o<=segment_count; seg_o++)
+			{
+				struct net_buf *seg;
+				u16_t len;
+				int err;
+				seg = bt_mesh_adv_create(BT_MESH_ADV_DATA,
+							 BT_MESH_TRANSMIT_COUNT(tx->xmit),
+							 BT_MESH_TRANSMIT_INT(tx->xmit),
+							 BUF_TIMEOUT);
+				if (!seg)
+				{
+					BT_ERR("Out of segment buffers");
+					seg_tx_reset(tx_seg);
+					return -ENOBUFS;
+				}
+				BT_MESH_ADV(seg)->seg.attempts = SEG_RETRANSMIT_ATTEMPTS;
+				net_buf_reserve(seg, BT_MESH_NET_HDR_LEN);
+				net_buf_add_u8(seg, TRANS_CTL_HDR(ctl_op,1));
+				net_buf_add_u8(seg, (tx->aszmic << 7) | seq_zero >> 6);
+				net_buf_add_u8(seg, (((seq_zero & 0x3f) << 2) | (seg_o >> 3)));
+				net_buf_add_u8(seg, ((seg_o & 0x07) << 5) | tx_seg->seg_n);
+				len = min(unsend, 8);
 
-	net_buf_add_mem(buf, data, data_len);
-
-	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
-		if (bt_mesh_friend_enqueue_tx(tx, BT_MESH_FRIEND_PDU_SINGLE,
-					      seq_auth, &buf->b) &&
-		    BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
-			/* PDUs for a specific Friend should only go
-			 * out through the Friend Queue.
-			 */
-			net_buf_unref(buf);
+				net_buf_add_mem(seg, (char*)data+(data_len-unsend), len);
+				unsend=unsend-len;
+				tx_seg->seg[seg_o] = net_buf_ref(seg);
+				BT_DBG("Sending %u/%u", seg_o, tx_seg->seg_n);
+				err = bt_mesh_net_send(tx, seg,seg_o ? &seg_sent_cb : &first_sent_cb,tx_seg);
+				if (err)
+				{
+					BT_ERR("Sending segment failed");
+					seg_tx_reset(tx_seg);
+					return err;
+				}
+			}
+			if (!BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr))
+			{
+				//remove ack wait
+				seg_tx_reset(tx_seg);
+			}
 			return 0;
 		}
 	}
-
-	return bt_mesh_net_send(tx, buf, cb, cb_data);
-}
 
 static int send_ack(struct bt_mesh_subnet *sub, u16_t src, u16_t dst,
 		    u8_t ttl, u64_t *seq_auth, u32_t block, u8_t obo)
