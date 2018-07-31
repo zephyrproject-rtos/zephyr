@@ -14,6 +14,7 @@
 #ifndef _ARCH_ARM_CORTEXM_ERROR_H_
 #define _ARCH_ARM_CORTEXM_ERROR_H_
 
+#include <arch/arm/syscall.h>
 #include <arch/arm/cortex_m/exc.h>
 
 #ifdef __cplusplus
@@ -31,10 +32,6 @@ extern void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
 #define _NANO_ERR_KERNEL_OOPS (4)       /* Kernel oops (fatal to thread) */
 #define _NANO_ERR_KERNEL_PANIC (5)	/* Kernel panic (fatal to system) */
 #define _NANO_ERR_RECOVERABLE (6)       /* Recoverable error */
-
-#define _SVC_CALL_IRQ_OFFLOAD		1
-#define _SVC_CALL_RUNTIME_EXCEPT	2
-#define _SVC_CALL_SYSTEM_CALL		3
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 /* ARMv6 will hard-fault if SVC is called with interrupts locked. Just

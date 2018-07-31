@@ -8,7 +8,7 @@
 #include <arch/x86/asm.h>
 #include <arch/cpu.h>
 #include <offsets_short.h>
-#include <syscall.h>
+#include <arch/x86/syscall.h>
 
 /* Exports */
 GTEXT(_x86_syscall_entry_stub)
