@@ -3580,7 +3580,7 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 		return;
 	}
 
-	if (!smp || !conn->encrypt) {
+	if (!conn->encrypt) {
 		return;
 	}
 
