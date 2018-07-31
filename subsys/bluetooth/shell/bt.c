@@ -1163,6 +1163,16 @@ static struct bt_conn_auth_cb auth_cb_input = {
 	.pairing_complete = auth_pairing_complete,
 };
 
+static struct bt_conn_auth_cb auth_cb_confirm = {
+#if defined(CONFIG_BT_BREDR)
+	.pincode_entry = auth_pincode_entry,
+#endif
+	.cancel = auth_cancel,
+	.pairing_confirm = auth_pairing_confirm,
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
+};
+
 static struct bt_conn_auth_cb auth_cb_all = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = auth_passkey_entry,
@@ -1190,6 +1200,8 @@ static int cmd_auth(int argc, char *argv[])
 		bt_conn_auth_cb_register(&auth_cb_display);
 	} else if (!strcmp(argv[1], "yesno")) {
 		bt_conn_auth_cb_register(&auth_cb_display_yes_no);
+	} else if (!strcmp(argv[1], "confirm")) {
+		bt_conn_auth_cb_register(&auth_cb_confirm);
 	} else if (!strcmp(argv[1], "none")) {
 		bt_conn_auth_cb_register(NULL);
 	} else {
@@ -2038,7 +2050,7 @@ static const struct shell_cmd bt_commands[] = {
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	{ "security", cmd_security, "<security level: 0, 1, 2, 3>" },
 	{ "auth", cmd_auth,
-	  "<authentication method: all, input, display, yesno, none>" },
+	  "<auth method: all, input, display, yesno, confirm, none>" },
 	{ "auth-cancel", cmd_auth_cancel, HELP_NONE },
 	{ "auth-passkey", cmd_auth_passkey, "<passkey>" },
 	{ "auth-passkey-confirm", cmd_auth_passkey_confirm, HELP_NONE },
