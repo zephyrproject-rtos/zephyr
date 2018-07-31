@@ -4749,7 +4749,7 @@ static int set_ad(u16_t hci_op, const struct bt_ad *ad, size_t ad_len)
 
 int bt_set_name(const char *name)
 {
-#if CONFIG_BT_DEVICE_NAME_MAX > 0
+#if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	size_t len = strlen(name);
 	int err;
 
@@ -4800,7 +4800,7 @@ int bt_set_name(const char *name)
 
 const char *bt_get_name(void)
 {
-#if CONFIG_BT_DEVICE_NAME_MAX > 0
+#if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	return bt_dev.name;
 #else
 	return CONFIG_BT_DEVICE_NAME;

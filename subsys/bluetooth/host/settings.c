@@ -121,6 +121,7 @@ static int set(int argc, char **argv, char *val)
 		return 0;
 	}
 
+#if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	if (!strcmp(argv[0], "name")) {
 		len = sizeof(bt_dev.name) - 1;
 		settings_bytes_from_str(val, &bt_dev.name, &len);
@@ -129,6 +130,7 @@ static int set(int argc, char **argv, char *val)
 		BT_DBG("Name set to %s", bt_dev.name);
 		return 0;
 	}
+#endif
 
 #if defined(CONFIG_BT_PRIVACY)
 	if (!strcmp(argv[0], "irk")) {
@@ -212,7 +214,7 @@ static int commit(void)
 		generate_static_addr();
 	}
 
-#if CONFIG_BT_DEVICE_NAME_MAX > 0
+#if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	if (bt_dev.name[0] == '\0') {
 		bt_set_name(CONFIG_BT_DEVICE_NAME);
 	}

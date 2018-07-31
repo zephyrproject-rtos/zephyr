@@ -341,16 +341,28 @@ config BT_SCAN_WITH_IDENTITY
 	  disclosing local identity information. However, if the use case
 	  requires disclosing it then enable this option.
 
+config BT_DEVICE_NAME_DYNAMIC
+	bool "Allow to set Bluetooth device name on runtime"
+	help
+	  Enabling this option allows for runtime configuration of Bluetooth
+	  device name.
+
 config BT_DEVICE_NAME_MAX
 	int "Maximum size in bytes for device name"
+	depends on BT_DEVICE_NAME_DYNAMIC
 	default 28
-	default 0 if !BT_SETTINGS
-	range 0 248
+	range 2 248
 	help
 	  Bluetooth device name storage size. Storage can be up to 248 bytes
-	  long (excluding NULL termination). 0 means that no storage space is
-	  allocated for device name in which case the device name cannot be
-	  changed at runtime.
+	  long (excluding NULL termination).
+
+config BT_DEVICE_NAME_GATT_WRITABLE
+	bool "Allow to write name by remote GATT clients"
+	depends on BT_CONN && BT_DEVICE_NAME_DYNAMIC
+	default y
+	help
+	  Enabling this option allows remote GATT clients to write to device
+	  name GAP characteristic.
 
 config BT_DEVICE_NAME
 	string "Bluetooth device name"

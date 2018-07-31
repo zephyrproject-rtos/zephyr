@@ -166,7 +166,9 @@ struct bt_dev {
 #endif
 
 	/* Local Name */
+#if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	char			name[CONFIG_BT_DEVICE_NAME_MAX];
+#endif
 };
 
 extern struct bt_dev bt_dev;
