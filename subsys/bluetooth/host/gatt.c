@@ -53,13 +53,13 @@ static sys_slist_t db;
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, u16_t len, u16_t offset)
 {
-	const char *name = attr->user_data;
+	const char *name = bt_get_name();
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, name,
 				 strlen(name));
 }
 
-#if CONFIG_BT_DEVICE_NAME_MAX > 0
+#if defined(CONFIG_BT_DEVICE_NAME_GATT_WRITABLE)
 
 static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 const void *buf, u16_t len, u16_t offset,
@@ -86,7 +86,7 @@ static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-#endif /* CONFIG_BT_DEVICE_NAME */
+#endif /* CONFIG_BT_DEVICE_NAME_GATT_WRITABLE */
 
 static ssize_t read_appearance(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
@@ -100,7 +100,7 @@ static ssize_t read_appearance(struct bt_conn *conn,
 
 static struct bt_gatt_attr gap_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
-#if CONFIG_BT_DEVICE_NAME_MAX > 0
+#if defined(CONFIG_BT_DEVICE_NAME_GATT_WRITABLE)
 	/* Require pairing for writes to device name */
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
@@ -108,9 +108,8 @@ static struct bt_gatt_attr gap_attrs[] = {
 			       read_name, write_name, bt_dev.name),
 #else
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_DEVICE_NAME, BT_GATT_CHRC_READ,
-			       BT_GATT_PERM_READ, read_name, NULL,
-			       CONFIG_BT_DEVICE_NAME),
-#endif
+			       BT_GATT_PERM_READ, read_name, NULL, NULL),
+#endif /* CONFIG_BT_DEVICE_NAME_GATT_WRITABLE */
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, BT_GATT_CHRC_READ,
 			       BT_GATT_PERM_READ, read_appearance, NULL, NULL),
 };
