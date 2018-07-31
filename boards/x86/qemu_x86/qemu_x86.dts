@@ -29,6 +29,18 @@
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart1;
 	};
+
+	soc {
+		eth0: eth@febc0000 {
+			compatible = "intel,e1000";
+			reg = <0xfebc0000 0x100>;
+			label = "eth0";
+			interrupts = <11 IRQ_TYPE_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+
+			status = "ok";
+		};
+	};
 };
 
 &uart0 {
@@ -40,4 +52,3 @@
 	status = "ok";
 	current-speed = <115200>;
 };
-
