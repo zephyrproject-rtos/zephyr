@@ -546,6 +546,17 @@ void _k_object_init(void *object)
 	ko->flags |= K_OBJ_FLAG_INITIALIZED;
 }
 
+void _k_object_recycle(void *object)
+{
+	struct _k_object *ko = _k_object_find(object);
+
+	if (ko) {
+		memset(ko->perms, 0, sizeof(ko->perms));
+		_thread_perms_set(ko, k_current_get());
+		ko->flags |= K_OBJ_FLAG_INITIALIZED;
+	}
+}
+
 void _k_object_uninit(void *object)
 {
 	struct _k_object *ko;

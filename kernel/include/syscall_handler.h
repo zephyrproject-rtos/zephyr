@@ -126,6 +126,25 @@ extern void _thread_perms_all_clear(struct k_thread *thread);
 void _k_object_uninit(void *obj);
 
 /**
+ * Initialize and reset permissions to only access by the caller
+ *
+ * Intended for scenarios where objects are fetched from slab pools
+ * and may have had different permissions set during prior usage.
+ *
+ * This is only intended for pools of objects, where such objects are
+ * acquired and released to the pool. If an object has already been used,
+ * we do not want stale permission information hanging around, the object
+ * should only have permissions on the caller. Objects which are not
+ * managed by a pool-like mechanism should not use this API.
+ *
+ * The object will be marked as initialized and the calling thread
+ * granted access to it.
+ *
+ * @param object Address of the kernel object
+ */
+void _k_object_recycle(void *obj);
+
+/**
  * @brief Obtain the size of a C string passed from user mode
  *
  * Given a C string pointer and a maximum size, obtain the true
