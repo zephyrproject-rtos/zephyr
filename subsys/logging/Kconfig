@@ -295,6 +295,23 @@ config LOG_BACKEND_NATIVE_POSIX
 	help
 	  Enable backend in native_posix
 
+config LOG_BACKEND_RTT
+	bool "Enable RTT backend"
+	depends on RTT_CONSOLE
+	default y
+	help
+	  When enabled backend is using RTT to output logs.
+
+if LOG_BACKEND_RTT
+
+config LOG_BACKEND_RTT_BUFFER_SIZE
+	int "Size of the RTT Buffer"
+	default 100
+	help
+	  Define the size of the RTT Buffer
+
+endif # LOG_BACKEND_RTT
+
 config LOG_BACKEND_SHOW_COLOR
 	bool "Enable colors in the backend"
 	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX
