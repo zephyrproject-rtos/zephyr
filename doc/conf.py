@@ -183,7 +183,7 @@ html_title = "Zephyr Project Documentation"
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = 'images/zephyr_logo_line_small.png'
+html_logo = 'images/Zephyr-Kite-logo.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -225,7 +225,7 @@ html_use_index = True
 html_split_index = True
 
 # If true, links to the reST sources are added to the pages.
-#html_show_sourcelink =
+html_show_sourcelink = False
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
 html_show_sphinx = False
@@ -363,7 +363,7 @@ html_context = {
     'show_license': html_show_license,
     'docs_title': docs_title,
     'is_release': is_release,
-    'theme_logo_only': True,
+    'theme_logo_only': False,
     'current_version': version,
     'versions': ( ("latest", "/"),
                  ("1.12.0", "/1.12.0/"),
@@ -391,3 +391,4 @@ linkcheck_anchors = False
 
 def setup(app):
    app.add_stylesheet("zephyr-custom.css")
+   app.add_javascript("zephyr-custom.js")
