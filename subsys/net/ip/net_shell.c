@@ -49,7 +49,7 @@
 #include "ethernet/arp.h"
 #endif
 
-#if defined(CONFIG_NET_VLAN)
+#if defined(CONFIG_NET_L2_ETHERNET)
 #include <net/ethernet.h>
 #endif
 
@@ -175,6 +175,43 @@ static const char *iface2str(struct net_if *iface, const char **extra)
 	return "<unknown type>";
 }
 
+#if defined(CONFIG_NET_L2_ETHERNET)
+struct ethernet_capabilities {
+	enum ethernet_hw_caps capability;
+	const char * const description;
+};
+
+#define EC(cap, desc) { .capability = cap, .description = desc }
+
+static struct ethernet_capabilities eth_hw_caps[] = {
+	EC(ETHERNET_HW_TX_CHKSUM_OFFLOAD, "TX checksum offload"),
+	EC(ETHERNET_HW_RX_CHKSUM_OFFLOAD, "RX checksum offload"),
+	EC(ETHERNET_HW_VLAN,              "Virtual LAN"),
+	EC(ETHERNET_AUTO_NEGOTIATION_SET, "Auto negotiation"),
+	EC(ETHERNET_LINK_10BASE_T,        "10 Mbits"),
+	EC(ETHERNET_LINK_100BASE_T,       "100 Mbits"),
+	EC(ETHERNET_LINK_1000BASE_T,      "1 Gbits"),
+	EC(ETHERNET_DUPLEX_SET,           "Half/full duplex"),
+	EC(ETHERNET_PTP,                  "IEEE 802.1AS gPTP clock"),
+	EC(ETHERNET_QAV,                  "IEEE 802.1Qav (credit shaping)"),
+	EC(ETHERNET_PROMISC_MODE,         "Promiscuous mode"),
+	EC(ETHERNET_PRIORITY_QUEUES,      "Priority queues"),
+	EC(ETHERNET_HW_FILTERING,         "MAC address filtering"),
+};
+
+static void print_supported_ethernet_capabilities(struct net_if *iface)
+{
+	enum ethernet_hw_caps caps = net_eth_get_hw_capabilities(iface);
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(eth_hw_caps); i++) {
+		if (caps & eth_hw_caps[i].capability) {
+			printk("\t%s\n", eth_hw_caps[i].description);
+		}
+	}
+}
+#endif /* CONFIG_NET_L2_ETHERNET */
+
 static void iface_cb(struct net_if *iface, void *user_data)
 {
 #if defined(CONFIG_NET_IPV6)
@@ -272,6 +309,13 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		}
 	}
 #endif
+
+#ifdef CONFIG_NET_L2_ETHERNET
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		printk("Ethernet capabilities supported:\n");
+		print_supported_ethernet_capabilities(iface);
+	}
+#endif /* CONFIG_NET_L2_ETHERNET */
 
 #if defined(CONFIG_NET_IPV6)
 	count = 0;
