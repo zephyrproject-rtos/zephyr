@@ -15,8 +15,6 @@
 
 mainmenu "gPTP sample application"
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
-
 if NET_GPTP
 
 config NET_SAMPLE_IFACE2_MY_IPV6_ADDR
@@ -58,3 +56,6 @@ config NET_SAMPLE_IFACE3_VLAN_TAG
 	  application.
 
 endif
+
+
+source "$ZEPHYR_BASE/Kconfig.zephyr"

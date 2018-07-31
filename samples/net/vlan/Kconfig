@@ -8,8 +8,6 @@
 
 mainmenu "Networking VLAN sample application"
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
-
 config SAMPLE_VLAN_TAG
 	int "Virtual lan tag used in VLAN sample app"
 	default 100
@@ -35,3 +33,6 @@ config SAMPLE_IPV4_ADDR_2
 	string "My IPv4 address for second interface"
 	help
 	  The value depends on your network setup.
+
+
+source "$ZEPHYR_BASE/Kconfig.zephyr"
