@@ -32,6 +32,7 @@ struct spi_cs_control spi_cs = {
 #define CS_CTRL_GPIO_DRV_NAME ""
 #endif
 
+#define STACK_SIZE 512
 #define BUF_SIZE 17
 u8_t buffer_tx[] = "0123456789abcdef\0";
 u8_t buffer_rx[BUF_SIZE] = {};
@@ -306,7 +307,7 @@ static struct k_poll_event async_evt =
 				 K_POLL_MODE_NOTIFY_ONLY,
 				 &async_sig);
 static K_SEM_DEFINE(caller, 0, 1);
-K_THREAD_STACK_DEFINE(spi_async_stack, 256);
+K_THREAD_STACK_DEFINE(spi_async_stack, STACK_SIZE);
 static int result = 1;
 
 static void spi_async_call_cb(struct k_poll_event *async_evt,
@@ -425,7 +426,8 @@ void testing_spi(void)
 
 	spi_fast = spi_slow;
 
-	async_thread_id = k_thread_create(&async_thread, spi_async_stack, 256,
+	async_thread_id = k_thread_create(&async_thread,
+					  spi_async_stack, STACK_SIZE,
 					  (k_thread_entry_t)spi_async_call_cb,
 					  &async_evt, &caller, NULL,
 					  K_PRIO_COOP(7), 0, 0);
