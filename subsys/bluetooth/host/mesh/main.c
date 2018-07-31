@@ -31,6 +31,7 @@
 #include "proxy.h"
 #include "settings.h"
 #include "mesh.h"
+#include "aodv_control_messages.h"
 
 int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 		      u8_t flags, u32_t iv_index, u16_t addr,
@@ -66,6 +67,19 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 		bt_mesh_store_net();
 		bt_mesh_store_subnet(&bt_mesh.sub[0]);
 		bt_mesh_store_iv(false);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_ROUTING)) {
+		u16_t GROUP_ADDR=0xeeee;
+		struct bt_mesh_cfg_hb_pub pub = {
+		.dst = GROUP_ADDR,
+		.count = 0xff,
+		.period = 0x03,
+		.ttl = 0,
+		.feat = 0,
+		.net_idx = net_idx,
+		};
+		bt_mesh_cfg_hb_pub_set(net_idx, addr, &pub, NULL);
 	}
 
 	bt_mesh_net_start();
@@ -205,6 +219,8 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_settings_init();
 	}
-
+	if (IS_ENABLED(CONFIG_BT_MESH_ROUTING)) {
+	bt_mesh_trans_routing_init();
+	}
 	return 0;
 }

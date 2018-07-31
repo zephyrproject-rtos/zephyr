@@ -65,7 +65,7 @@
 #define CONFIG_BT_MESH_RING_BUF_COUNT 4
 
 /* RREP DEFINITIONS */
-#define RREP_SDU_MAX_SIZE 20 //FIXME : CHANGE
+#define RREP_SDU_MAX_SIZE 12
 #define RREP_GET_RSSI(buf) buf->data[0]
 #define RREP_GET_SRC_ADDR(buf) buf->data[1] + (buf->data[2] << 8)
 #define RREP_GET_DST_ADDR(buf) buf->data[3] + (buf->data[4] << 8)
@@ -383,7 +383,6 @@ static int rreq_send(struct rreq_data *data, u8_t TTL, u16_t net_idx)
  */
 static void rreq_recv_cb(struct k_timer *timer_id)
 {
-	/* TODO: ADD SEMAPHORE so this fn doesn't work with RREQ_RECEIVED */
 	/* Pull out the container of the timer to access the entry */
 	struct bt_mesh_route_entry *entry = CONTAINER_OF(timer_id, struct bt_mesh_route_entry, lifetime);
 	/* Change route status from invalid to valid */
@@ -856,7 +855,6 @@ int bt_mesh_trans_ring_search(struct bt_mesh_net_tx *tx)
  */
 static int rrep_send(struct rrep_data *data,u16_t net_idx, u16_t destination_address )
 {
-	/* TODO : check when rreq_recv is calling rrep_send */
 	struct bt_mesh_msg_ctx ctx =
 	{
 		.app_idx  = BT_MESH_KEY_UNUSED,
@@ -949,6 +947,7 @@ int bt_mesh_trans_rrep_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *bu
 	/* If the RREP is received by the RREQ originator */
 	if (data->source_address == bt_mesh_primary_addr())
 	{
+		BT_DBG("RREP source address == primary address");
 		struct bt_mesh_route_entry *found_entry = NULL;
 		if (!bt_mesh_search_valid_destination(data->source_address, data->destination_address,rx->ctx.net_idx, &found_entry) ||
 				(INRANGE(data->destination_sequence_number,found_entry->destination_sequence_number)
@@ -971,6 +970,7 @@ int bt_mesh_trans_rrep_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *bu
 			}
 			else
 			{
+				BT_DBG("Can't create valid entry");
 				return -ENOSR;
 			}
 			/* Create entry in rrep_rwait_list */
@@ -986,6 +986,7 @@ int bt_mesh_trans_rrep_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *bu
 	 */
 	else
 	{
+		BT_DBG("RREP is received by an intermediate node")
 		struct bt_mesh_route_entry *existing_entry;
 		/* Get the entry of reverse route created by RREQ */
 		if (bt_mesh_search_invalid_destination_with_range(data->destination_address,data->source_address,data->destination_number_of_elements, rx->ctx.net_idx, &existing_entry))
@@ -1019,6 +1020,9 @@ int bt_mesh_trans_rrep_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *bu
 			data->hop_count++;
 			rrep_send(data, rx -> ctx.net_idx ,existing_entry->next_hop);
 
+		}
+		else {
+			BT_DBG("Can't find a reverse entry: dropping rrep")
 		}
 	}
 	return 0;
@@ -1247,7 +1251,7 @@ bool rerr_list_search_entry(u16_t next_hop,u16_t net_idx,struct rerr_list_entry 
 		if ((iterator_entry->next_hop==next_hop) &&(iterator_entry->net_idx==net_idx))
 		{
 			k_sem_give(&rerr_list_sem);
-			*entry = iterator_entry; //FIXME entry and entry1 might later point to deleted entries by another thread
+			*entry = iterator_entry;
 			return true;
 		}
 	}

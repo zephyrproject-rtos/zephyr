@@ -379,7 +379,7 @@ bool bt_mesh_search_valid_destination_with_net_idx(u16_t source_address, u16_t d
 		    (source_address == entry1->source_address) &&
 		    (net_idx ==entry1->net_idx )) {
 			k_sem_give(&valid_list_sem);
-			*entry = entry1; //FIXME entry and entry1 might later point to a deleted entries by another thread
+			*entry = entry1;
 			return true;
 		}
 	}

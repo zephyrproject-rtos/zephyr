@@ -96,14 +96,6 @@ struct k_thread aggregation_thread;
 #define BT_MESH_MODEL_OP_SENSOR_SERIES_GET	        BT_MESH_MODEL_OP_2(0x82,0x33)
 #define BT_MESH_MODEL_OP_SENSOR_SERIES_STATUS	      BT_MESH_MODEL_OP_1(0x54)
 /* 2) Declare model functions*/
-static void overhead_data (unsigned int len)
-{
-	unsigned int n= (len-1)/8 ;       //number of segments -  1
-	unsigned int overhead =0;
-	overhead=(n+1)*(9+4+8)+len;
-	printk("[GUI] %04x-PktOverhead-%d\n",NODE_ADDR,overhead);
-	return;
-}
 static void sen_descriptor_status(struct bt_mesh_model *model,struct bt_mesh_msg_ctx *ctx,struct net_buf_simple *buf);
 static void sen_status(struct bt_mesh_model *model,struct bt_mesh_msg_ctx *ctx,struct net_buf_simple *buf);
 static void sen_column_status(struct bt_mesh_model *model,struct bt_mesh_msg_ctx *ctx,struct net_buf_simple *buf);
@@ -304,7 +296,6 @@ static void sen_status(struct bt_mesh_model *model,
 {
 	struct sensors recvd_data;
 	printk("[GUI] %04x-endE2E\n",ctx->addr);
-	//overhead_data(buf->len);
 	printk("[GUI] %04x-PktActual-%d\n",ctx->addr,buf->len);
 	bytes_recvd+=buf->len;
 	/*skipping the formalities, assuming we know format, size and did ID mapping*/
