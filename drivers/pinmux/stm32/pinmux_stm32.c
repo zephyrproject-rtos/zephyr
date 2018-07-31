@@ -29,18 +29,28 @@ static const u32_t ports_enable[STM32_PORTS_MAX] = {
 	STM32_PERIPH_GPIOC,
 #ifdef GPIOD_BASE
 	STM32_PERIPH_GPIOD,
+#else
+	STM32_PORT_NOT_AVAILABLE,
 #endif
 #ifdef GPIOE_BASE
 	STM32_PERIPH_GPIOE,
+#else
+	STM32_PORT_NOT_AVAILABLE,
 #endif
 #ifdef GPIOF_BASE
 	STM32_PERIPH_GPIOF,
+#else
+	STM32_PORT_NOT_AVAILABLE,
 #endif
 #ifdef GPIOG_BASE
 	STM32_PERIPH_GPIOG,
+#else
+	STM32_PORT_NOT_AVAILABLE,
 #endif
 #ifdef GPIOH_BASE
 	STM32_PERIPH_GPIOH,
+#else
+	STM32_PORT_NOT_AVAILABLE,
 #endif
 };
 
@@ -63,6 +73,10 @@ static int enable_port(u32_t port, struct device *clk)
 
 	pclken.bus = STM32_CLOCK_BUS_GPIO;
 	pclken.enr = ports_enable[port];
+
+	if (pclken.enr == STM32_PORT_NOT_AVAILABLE) {
+		return -EIO;
+	}
 
 	return clock_control_on(clk, (clock_control_subsys_t *) &pclken);
 }
