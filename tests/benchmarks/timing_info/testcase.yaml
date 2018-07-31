@@ -1,6 +1,6 @@
 tests:
   benchmark.timing.default_kernel:
-    arch_whitelist: x86 arm arc xtensa nios2 riscv32
+    arch_exclude: posix
     tags: benchmark
   benchmark.timing.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
