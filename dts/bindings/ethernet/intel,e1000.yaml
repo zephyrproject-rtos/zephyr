@@ -1,0 +1,31 @@
+#
+# Copyright (c) 2018 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+title: Intel E1000 Ethernet controller
+id: intel,e1000
+version: 0.1
+
+description: >
+     This is a representation of the Intel E1000 Ethernet controller
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "intel,e1000"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+...
