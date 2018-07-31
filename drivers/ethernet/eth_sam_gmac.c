@@ -651,6 +651,46 @@ static int get_mck_clock_divisor(u32_t mck)
 	return mck_divisor;
 }
 
+static int eth_sam_gmac_setup_qav(Gmac *gmac, int queue_id, bool enable)
+{
+	/* Verify queue id */
+	if (queue_id < 1 || queue_id > GMAC_PRIORITY_QUEUE_NO) {
+		return -EINVAL;
+	}
+
+	if (queue_id == 1) {
+		if (enable) {
+			gmac->GMAC_CBSCR |= GMAC_CBSCR_QAE;
+		} else {
+			gmac->GMAC_CBSCR &= ~GMAC_CBSCR_QAE;
+		}
+	} else {
+		if (enable) {
+			gmac->GMAC_CBSCR |= GMAC_CBSCR_QBE;
+		} else {
+			gmac->GMAC_CBSCR &= ~GMAC_CBSCR_QBE;
+		}
+	}
+
+	return 0;
+}
+
+static int eth_sam_gmac_get_qav_status(Gmac *gmac, int queue_id, bool *enabled)
+{
+	/* Verify queue id */
+	if (queue_id < 1 || queue_id > GMAC_PRIORITY_QUEUE_NO) {
+		return -EINVAL;
+	}
+
+	if (queue_id == 1) {
+		*enabled = gmac->GMAC_CBSCR & GMAC_CBSCR_QAE;
+	} else {
+		*enabled = gmac->GMAC_CBSCR & GMAC_CBSCR_QBE;
+	}
+
+	return 0;
+}
+
 static int eth_sam_gmac_setup_qav_idle_slope(Gmac *gmac, int queue_id,
 					     int idle_slope)
 {
@@ -1535,8 +1575,18 @@ static int eth_sam_gmac_set_config(struct device *dev,
 	int queue_id;
 	unsigned int delta_bandwidth;
 	unsigned int idle_slope;
+	bool enable;
 
 	switch (type) {
+	case ETHERNET_CONFIG_TYPE_QAV_STATUS:
+		queue_id = config->qav_queue_param.queue_id;
+
+		/* Priority queue IDs start from 1 for SAM GMAC */
+		queue_id++;
+
+		enable = config->qav_queue_param.enabled;
+
+		return eth_sam_gmac_setup_qav(gmac, queue_id, enable);
 	case ETHERNET_CONFIG_TYPE_QAV_DELTA_BANDWIDTH:
 		queue_id = config->qav_queue_param.queue_id;
 
@@ -1566,10 +1616,22 @@ static int eth_sam_gmac_get_config(struct device *dev,
 				   enum ethernet_config_type type,
 				   struct ethernet_config *config)
 {
+	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
+	Gmac *gmac = cfg->regs;
+
+	int queue_id;
+	bool *enabled;
+
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM:
 		config->priority_queues_num = GMAC_PRIORITY_QUEUE_NO;
 		break;
+	case ETHERNET_CONFIG_TYPE_QAV_STATUS:
+		/* Priority queue IDs start from 1 for SAM GMAC */
+		queue_id = config->qav_queue_param.queue_id + 1;
+		enabled = &config->qav_queue_param.enabled;
+
+		return eth_sam_gmac_get_qav_status(gmac, queue_id, enabled);
 	default:
 		return -ENOTSUP;
 	}
