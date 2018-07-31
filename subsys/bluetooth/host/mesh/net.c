@@ -906,7 +906,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 
 	/* Deliver to local network interface if necessary */
 	if (bt_mesh_fixed_group_match(tx->ctx->addr) ||
-	    bt_mesh_elem_find(tx->ctx->addr)  && (tx->routing == false) ) {
+	    (bt_mesh_elem_find(tx->ctx->addr)  && (tx->routing == false)) ) {
 		if (cb && cb->start) {
 			cb->start(0, 0, cb_data);
 		}
@@ -1328,17 +1328,17 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 	if (IS_ENABLED(CONFIG_BT_MESH_ROUTING))
 	{
 		bool relay=true;
-		if (rx.dst == BT_MESH_KEY_ANY && rx.ctl) //FIXME
+		if (rx.ctx.recv_dst == BT_MESH_KEY_ANY && rx.ctl) //FIXME
 		{
 			BT_DBG("RREQ not relaying == RREQ is dropped \n");
 			relay = false;
 		}
 		/* Routing only happens if Dst is unicast and source is not an internal element */
-		if (BT_MESH_ADDR_IS_UNICAST(rx.dst) && !bt_mesh_elem_find(rx.ctx.addr) )
+		if (BT_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) && !bt_mesh_elem_find(rx.ctx.addr) )
 		{
 			struct bt_mesh_route_entry *entry;
-			if(bt_mesh_search_valid_destination(rx.ctx.addr,rx.dst,rx.ctx.net_idx,&entry)
-				 || (rx.local_match && bt_mesh_search_valid_destination(rx.dst,rx.ctx.addr,rx.ctx.net_idx,	&entry) ) )
+			if(bt_mesh_search_valid_destination(rx.ctx.addr,rx.ctx.recv_dst,rx.ctx.net_idx,&entry)
+				 || (rx.local_match && bt_mesh_search_valid_destination(rx.ctx.recv_dst,rx.ctx.addr,rx.ctx.net_idx,	&entry) ) )
 			{
 				bt_mesh_refresh_lifetime_valid(entry);
 				BT_DBG("Destination is found == Data packet is relaying \n");
@@ -1351,22 +1351,22 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 		}
 		else
 		{
-			BT_DBG("Dst of %04x is not unicast or source is an internal element \n",rx.dst);
+			BT_DBG("Dst of %04x is not unicast or source is an internal element \n",rx.ctx.recv_dst);
 
 		}
 		 /* Relay if this was a group/virtual address, or if the destination
 			* was neither a local element nor an LPN we're Friends for.
 			*/
-		 if (((!BT_MESH_ADDR_IS_UNICAST(rx.dst)) ||
+		 if (((!BT_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst)) ||
 				 (!rx.local_match && !rx.friend_match)) && relay )
 		 {
 			net_buf_simple_restore(&buf, &state);
 			bt_mesh_net_relay(&buf, &rx);
-			BT_DBG("General , relaying data from %04x of length %u \n",rx.dst,data->len );
+			BT_DBG("General , relaying data from %04x of length %u \n",rx.ctx.recv_dst,data->len );
 		 }
 		 else
 		 {
-			BT_DBG("General , not relaying data from %04x of length %u \n",rx.dst,data->len);
+			BT_DBG("General , not relaying data from %04x of length %u \n",rx.ctx.recv_dst,data->len);
 		 }
 	}
 		else
@@ -1375,7 +1375,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 		/* Relay if this was a group/virtual address, or if the destination
 		 * was neither a local element nor an LPN we're Friends for.
 		 */
-		if (!BT_MESH_ADDR_IS_UNICAST(rx.dst) ||
+		if (!BT_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) ||
 				(!rx.local_match && !rx.friend_match))
 		{
 			net_buf_simple_restore(&buf, &state);

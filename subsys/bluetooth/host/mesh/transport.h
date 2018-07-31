@@ -26,6 +26,11 @@
 #define TRANS_CTL_OP_FRIEND_SUB_CFM    0x09
 #define TRANS_CTL_OP_HEARTBEAT         0x0a
 
+#define TRANS_CTL_OP_RREQ 						 0x0b
+#define TRANS_CTL_OP_RREP							 0x0c
+#define TRANS_CTL_OP_RWAIT						 0x0d
+#define TRANS_CTL_OP_RERR							 0x0e
+
 struct bt_mesh_ctl_friend_poll {
 	u8_t  fsn;
 } __packed;

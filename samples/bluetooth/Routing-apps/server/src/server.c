@@ -23,8 +23,7 @@
 #include <bluetooth/mesh.h>
 #include <stdio.h>
 #include <board.h>
-#include "../subsys/bluetooth/host/mesh/net.h"
-#include "../subsys/bluetooth/host/mesh/aodv_control_messages.h"
+
 
 #define CID_INTEL 	 0x0002   /*Company identifier assigned by the Bluetooth SIG*/
 #define NODE_ADDR  	 0x0003   /*Unicast Address*/
@@ -470,7 +469,7 @@ if (bt_le_oob_get_local(&oob)) {
 	//bt_mesh_prov_enable(BT_MESH_PROV_GATT | BT_MESH_PROV_ADV);
 	SYS_LOG_INF("Mesh initialized");
 
-	err = bt_mesh_provision(net_key, net_idx, flags, iv_index, seq, addr,
+	err = bt_mesh_provision(net_key, net_idx, flags, iv_index, addr,
 				dev_key);
 	if (err) {
 		printk("Provisioning failed (err %d)\n", err);

@@ -983,8 +983,7 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
 		if (data_len <= 11)
 		{
 			buf = bt_mesh_adv_create(BT_MESH_ADV_DATA,
-						 BT_MESH_TRANSMIT_COUNT(tx->xmit),
-						 BT_MESH_TRANSMIT_INT(tx->xmit), BUF_TIMEOUT);
+						 tx->xmit, BUF_TIMEOUT);
 			if (!buf)
 			{
 				BT_ERR("Out of transport buffers");
@@ -1050,9 +1049,7 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
 				u16_t len;
 				int err;
 				seg = bt_mesh_adv_create(BT_MESH_ADV_DATA,
-							 BT_MESH_TRANSMIT_COUNT(tx->xmit),
-							 BT_MESH_TRANSMIT_INT(tx->xmit),
-							 BUF_TIMEOUT);
+              tx->xmit,BUF_TIMEOUT);
 				if (!seg)
 				{
 					BT_ERR("Out of segment buffers");

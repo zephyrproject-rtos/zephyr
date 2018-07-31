@@ -349,8 +349,7 @@ if (bt_le_oob_get_local(&oob)) {
 	//bt_mesh_prov_enable(BT_MESH_PROV_GATT | BT_MESH_PROV_ADV);
 	SYS_LOG_INF("Mesh initialized");
 
-	err = bt_mesh_provision(net_key, net_idx, flags, iv_index, seq, addr,
-				dev_key);
+	err = bt_mesh_provision(net_key, net_idx, flags, iv_index,addr,dev_key);
 	if (err) {
 		printk("Provisioning failed (err %d)\n", err);
 		return;

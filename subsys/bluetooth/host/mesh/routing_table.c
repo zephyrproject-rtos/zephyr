@@ -1,4 +1,12 @@
-/** @file routing_table.c
+/** @file routing_table.c **/
+/*
+ * Copyright (c) 2018 Cairo University
+ * Copyright (c) 2018 SI-VISION Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ /*
  *  @brief Reverse and forward tables constructed by AODV.
  *
  *  @bug No known bugs.

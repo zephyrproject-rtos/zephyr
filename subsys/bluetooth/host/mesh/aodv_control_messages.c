@@ -1,4 +1,13 @@
-/** @file aodv_control_messages.c
+/** @file aodv_control_messages.c **/
+
+/*
+ * Copyright (c) 2018 Cairo University
+ * Copyright (c) 2018 SI-VISION Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
  *  @brief Routng Control Messages File
  *
  *  Bluetooth routing control messages following AODV protocol.
@@ -935,7 +944,7 @@ int bt_mesh_trans_rrep_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *bu
 	/* Testing: View received RREP  */
 	BT_DBG("RREP R 0x%01x,RREP source_address 0x%04x,RREP dst 0x%04x ", data->rssi,data->source_address,data->destination_address);
 	BT_DBG("RREP seq 0x%04x,RREP hop_count 0x%02x,RREP elem 0x%02x ", data->destination_sequence_number, data->hop_count, data->destination_number_of_elements);
-	BT_DBG("RREP Network Src 0x%02x,Network dst 0x%02x,Network recieved TTL 0x%02x ", rx->ctx.addr,rx->dst, rx->ctx.send_ttl);
+	BT_DBG("RREP Network Src 0x%02x,Network dst 0x%02x,Network recieved TTL 0x%02x ", rx->ctx.addr,rx->ctx.recv_dst, rx->ctx.send_ttl);
 
 	/* If the RREP is received by the RREQ originator */
 	if (data->source_address == bt_mesh_primary_addr())
@@ -1139,7 +1148,7 @@ void bt_mesh_trans_rwait_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *
 
 	BT_DBG("Rwait: dst 0x%04x,src 0x%04x,src_seq 0x%08x,hop_count 0x%01x ",
 	data->destination_address, data->source_address, data->source_sequence_number, data->hop_count);
-	BT_DBG("Rwait Network Src 0x%04x,dst 0x%04x,TLL 0x%02x ", rx->ctx.addr, rx->dst, rx->ctx.send_ttl);
+	BT_DBG("Rwait Network Src 0x%04x,dst 0x%04x,TLL 0x%02x ", rx->ctx.addr, rx->ctx.recv_dst, rx->ctx.send_ttl);
 
 	/* The RWAIT was received by the flooded RREQ originator */
 	if (data->source_address == bt_mesh_primary_addr())
@@ -1379,7 +1388,7 @@ int bt_mesh_trans_rerr_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *bu
 		bt_mesh_search_valid_destination_nexthop_net_idx_with_cb(destination_address,rx->ctx.addr,rx->ctx.net_idx,search_callback);
 	}
 
-	BT_DBG("received from =%04x : ", rx->dst);
+	BT_DBG("received from =%04x : ", rx->ctx.recv_dst);
 
 	/*	loop over the RERR list and send each entry	*/
 	struct rerr_list_entry* rerr_rx_entry=NULL;

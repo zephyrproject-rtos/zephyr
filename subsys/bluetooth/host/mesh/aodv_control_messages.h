@@ -1,5 +1,14 @@
-/** @file aodv_control_messages.h
- *  @brief Rouitng Control Messages File
+/** @file aodv_control_messages.h **/
+
+/*
+ * Copyright (c) 2018 Cairo University
+ * Copyright (c) 2018 SI-VISION Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ /*
+ *  @brief Routng Control Messages File
  *
  *  Bluetooth routing control messages following AODV protocol.
  *	The file contains RREQ, RREP, RWAIT and RERR data and functions.
