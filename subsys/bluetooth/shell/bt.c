@@ -1074,6 +1074,24 @@ static void auth_pairing_confirm(struct bt_conn *conn)
 	printk("Confirm pairing for %s\n", addr);
 }
 
+static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("%s with %s\n", bonded ? "Bonded" : "Paired",  addr);
+}
+
+static void auth_pairing_failed(struct bt_conn *conn)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Pairing failed with %s\n", addr);
+}
+
 #if defined(CONFIG_BT_BREDR)
 static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 {
@@ -1115,6 +1133,8 @@ static struct bt_conn_auth_cb auth_cb_display = {
 #endif
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
 };
 
 static struct bt_conn_auth_cb auth_cb_display_yes_no = {
@@ -1126,6 +1146,8 @@ static struct bt_conn_auth_cb auth_cb_display_yes_no = {
 #endif
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
 };
 
 static struct bt_conn_auth_cb auth_cb_input = {
@@ -1137,6 +1159,8 @@ static struct bt_conn_auth_cb auth_cb_input = {
 #endif
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
 };
 
 static struct bt_conn_auth_cb auth_cb_all = {
@@ -1148,6 +1172,8 @@ static struct bt_conn_auth_cb auth_cb_all = {
 #endif
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
 };
 
 static int cmd_auth(int argc, char *argv[])
