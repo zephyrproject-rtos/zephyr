@@ -24,6 +24,19 @@ TOOLCHAIN_HOME: ${TOOLCHAIN_HOME}
 ")
 endif()
 
+execute_process(
+  COMMAND ${CMAKE_C_COMPILER} --version
+  RESULT_VARIABLE ret
+  OUTPUT_QUIET
+  ERROR_QUIET
+  )
+if(ret)
+  message(FATAL_ERROR "Executing the below command failed. Are permissions set correctly?
+'${CMAKE_C_COMPILER} --version'
+"
+    )
+endif()
+
 if(CONFIG_CPLUSPLUS)
   set(cplusplus_compiler ${CROSS_COMPILE}${C++})
 else()
@@ -45,7 +58,7 @@ foreach(file_name include include-fixed)
     COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
     OUTPUT_VARIABLE _OUTPUT
     )
-  string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
+  string(REGEX REPLACE "\n" "" _OUTPUT "${_OUTPUT}")
 
   if(MSYS)
     # TODO: Remove this when
