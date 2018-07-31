@@ -53,6 +53,10 @@
 #include <net/ethernet.h>
 #endif
 
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+#include <net/ethernet_mgmt.h>
+#endif
+
 #if defined(CONFIG_NET_GPTP)
 #include <net/gptp.h>
 #include "ethernet/gptp/gptp_messages.h"
@@ -186,6 +190,10 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #endif
 	struct net_if_addr *unicast;
 	struct net_if_mcast_addr *mcast;
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+	struct ethernet_req_params params;
+	int ret;
+#endif
 	const char *extra;
 	int i, count;
 
@@ -208,6 +216,35 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	}
 
 	printk("MTU       : %d\n", net_if_get_mtu(iface));
+
+#if defined(CONFIG_NET_L2_ETHERNET_MGMT)
+	count = 0;
+	ret = net_mgmt(NET_REQUEST_ETHERNET_GET_PRIORITY_QUEUES_NUM,
+		       iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	if (!ret && params.priority_queues_num) {
+		count = params.priority_queues_num;
+		printk("Priority queues:\n");
+		for (i = 0; i < count; ++i) {
+			params.qav_queue_param.queue_id = i;
+			ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QAV_STATUS,
+				       iface,
+				       &params,
+				       sizeof(struct ethernet_req_params));
+
+			printk("\t%d: Qav ", i);
+			if (ret) {
+				printk("not supported\n");
+			} else {
+				printk("%s\n",
+				       params.qav_queue_param.enabled ?
+				       "enabled" :
+				       "disabled");
+			}
+		}
+	}
+#endif
 
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	printk("Promiscuous mode : %s\n",
