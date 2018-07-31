@@ -36,6 +36,12 @@ void alternate_thread(void)
 K_THREAD_STACK_DEFINE(alt_thread_stack_area, STACKSIZE);
 static struct k_thread alt_thread_data;
 
+/**
+ * @brief Test stack pointer randomization
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ */
 void test_stack_pt_randomization(void)
 {
 	int i;
