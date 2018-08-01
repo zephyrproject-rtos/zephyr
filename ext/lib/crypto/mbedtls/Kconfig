@@ -158,6 +158,12 @@ config MBEDTLS_ENABLE_CCM
 	default y if CRYPTO_ENABLE_AES_CCM
 	select TLS_CIPHER_CCM_ENABLED
 
+config MBEDTLS_ENABLE_CBC
+	bool "Enable cipher based message authentication code (CBC)"
+	depends on MBEDTLS_ENABLE_AES
+	default y if CRYPTO_ENABLE_AES_CBC
+	select TLS_CIPHER_CBC_ENABLED
+
 config MBEDTLS_ENABLE_CMAC
 	bool "Enable cipher based message authentication code (CMAC)"
 	depends on MBEDTLS_ENABLE_AES

@@ -53,8 +53,14 @@
 
 struct mtls_shim_session {
 	enum cipher_algo algo;
+	enum cipher_mode mode;
 	union {
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CCM)
 		mbedtls_ccm_context mtls;
+#endif
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CBC)
+		mbedtls_aes_context aes;
+#endif
 #if defined(CONFIG_MBEDTLS_ENABLE_HMAC_DRBG)
 		mbedtls_hmac_drbg_context hmac_drbg;
 #endif
@@ -103,6 +109,7 @@ static int mtls_get_entropy_from_device(void *data,
 }
 #endif /* CONFIG_MBEDTLS_ENABLE_HMAC_DRBG || CONFIG_MBEDTLS_ENABLE_ECC_DH */
 
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CCM)
 static int mtls_ccm_encrypt_auth(struct cipher_ctx *ctx,
 				 struct cipher_aead_pkt *apkt,
 				 u8_t *nonce)
@@ -159,8 +166,10 @@ static int mtls_ccm_decrypt_auth(struct cipher_ctx *ctx,
 
 	return 0;
 }
+#endif
 
-static struct mtls_shim_session *mtls_alloc_session(enum cipher_algo algo)
+static struct mtls_shim_session *mtls_alloc_session(enum cipher_algo algo,
+						    enum cipher_mode mode)
 {
 	struct mtls_shim_session *ret;
 
@@ -169,6 +178,7 @@ static struct mtls_shim_session *mtls_alloc_session(enum cipher_algo algo)
 		SYS_LOG_ERR("No free session for now");
 	} else {
 		ret->algo = algo;
+		ret->mode = mode;
 	}
 
 	return ret;
@@ -178,7 +188,14 @@ static void mtls_free_session(struct mtls_shim_session *session)
 {
 	switch (session->algo) {
 	case CRYPTO_CIPHER_ALGO_AES:
-		mbedtls_ccm_free(&session->mtls);
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CCM)
+		if (session->mode == CRYPTO_CIPHER_MODE_CCM)
+			mbedtls_ccm_free(&session->mtls);
+#endif
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CBC)
+		if (session->mode == CRYPTO_CIPHER_MODE_CBC)
+			mbedtls_aes_free(&session->aes);
+#endif
 		break;
 
 	case CRYPTO_CIPHER_ALGO_PRNG:
@@ -202,27 +219,109 @@ static void mtls_free_session(struct mtls_shim_session *session)
 	k_free(session);
 }
 
-static int mtls_session_setup_aes(struct cipher_ctx *ctx,
-				  enum cipher_algo algo,
-				  enum cipher_mode mode,
-				  enum cipher_op op_type)
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CBC)
+static int mtls_aes_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
+				u8_t *iv)
 {
-	struct mtls_shim_session *session;
 	int ret;
+	struct mtls_shim_session *session = ctx->drv_sessn_state;
 
-	if (mode != CRYPTO_CIPHER_MODE_CCM) {
-		SYS_LOG_ERR("Unsupported mode");
+	ret = mbedtls_aes_crypt_cbc(&session->aes, MBEDTLS_AES_DECRYPT,
+				    op->in_len, iv,
+				    op->in_buf,
+				    op->out_buf);
+	if (ret) {
+		SYS_LOG_ERR("Could non decrypt/auth (%d)", ret);
+
+		/*TODO: try to return relevant code depending on ret? */
 		return -EINVAL;
 	}
 
-	if (ctx->keylen != 16) {
-		SYS_LOG_ERR("%u key size is not supported", ctx->keylen);
+	op->out_len = op->in_len;
+	return 0;
+}
+
+static int mtls_aes_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
+				u8_t *iv)
+{
+	int ret;
+	u8_t iv_copy[16];
+	struct mtls_shim_session *session = ctx->drv_sessn_state;
+
+	(void)memcpy(iv_copy, iv, sizeof(iv_copy));
+
+	ret = mbedtls_aes_crypt_cbc(&session->aes, MBEDTLS_AES_ENCRYPT,
+				    op->in_len, iv_copy,
+				    op->in_buf,
+				    op->out_buf);
+	if (ret) {
+		SYS_LOG_ERR("Could non decrypt/auth (%d)", ret);
+
+		/*ToDo: try to return relevant code depending on ret? */
 		return -EINVAL;
 	}
 
-	session = mtls_alloc_session(CRYPTO_CIPHER_ALGO_AES);
+	op->out_len = op->in_len;
+
+	return 0;
+}
+
+static int mtls_session_setup_aes_cbc(struct cipher_ctx *ctx,
+				      enum cipher_algo algo,
+				      enum cipher_mode mode,
+				      enum cipher_op op_type)
+{
+	int ret;
+	struct mtls_shim_session *session;
+
+	session = mtls_alloc_session(CRYPTO_CIPHER_ALGO_AES, mode);
 	if (!session) {
 		return -ENOSPC;
+	}
+
+	mbedtls_aes_init(&session->aes);
+
+	if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
+		ctx->ops.cbc_crypt_hndlr = mtls_aes_cbc_encrypt;
+		ret = mbedtls_aes_setkey_enc(&session->aes,
+					     ctx->key.bit_stream,
+					     ctx->keylen * 8);
+	} else {
+		ctx->ops.cbc_crypt_hndlr = mtls_aes_cbc_decrypt;
+		ret = mbedtls_aes_setkey_dec(&session->aes,
+					     ctx->key.bit_stream,
+					     ctx->keylen * 8);
+	}
+
+	if (ret) {
+		SYS_LOG_ERR("Could not setup the key (%d)", ret);
+		mtls_free_session(session);
+		return -EINVAL;
+	}
+
+	ctx->drv_sessn_state = session;
+	return ret;
+}
+#endif
+
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CCM)
+static int mtls_session_setup_aes_ccm(struct cipher_ctx *ctx,
+				      enum cipher_algo algo,
+				      enum cipher_mode mode,
+				      enum cipher_op op_type)
+{
+	int ret;
+	struct mtls_shim_session *session;
+
+	session = mtls_alloc_session(CRYPTO_CIPHER_ALGO_AES, mode);
+	if (!session) {
+		return -ENOSPC;
+	}
+
+	if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
+		ctx->ops.ccm_crypt_hndlr = mtls_ccm_encrypt_auth;
+	} else {
+		ctx->ops.ccm_crypt_hndlr = mtls_ccm_decrypt_auth;
 	}
 
 	mbedtls_ccm_init(&session->mtls);
@@ -232,16 +331,43 @@ static int mtls_session_setup_aes(struct cipher_ctx *ctx,
 	if (ret) {
 		SYS_LOG_ERR("Could not setup the key (%d)", ret);
 		mtls_free_session(session);
-
 		return -EINVAL;
 	}
 
 	ctx->drv_sessn_state = session;
+	return 0;
+}
+#endif
 
-	if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
-		ctx->ops.ccm_crypt_hndlr = mtls_ccm_encrypt_auth;
-	} else {
-		ctx->ops.ccm_crypt_hndlr = mtls_ccm_decrypt_auth;
+static int mtls_session_setup_aes(struct cipher_ctx *ctx,
+				  enum cipher_algo algo,
+				  enum cipher_mode mode,
+				  enum cipher_op op_type)
+{
+	int ret = 0;
+
+	/* TODO: It does not seem necessary, mbedTLS supports bigger keys.
+	 * keeping this size due TinyCrypt compatibility.
+	 */
+	if (ctx->keylen != 16) {
+		SYS_LOG_ERR("%u key size is not supported", ctx->keylen);
+		return -EINVAL;
+	}
+
+	switch (mode) {
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CBC)
+	case CRYPTO_CIPHER_MODE_CBC:
+		ret = mtls_session_setup_aes_cbc(ctx, algo, mode, op_type);
+		break;
+#endif
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CCM)
+	case CRYPTO_CIPHER_MODE_CCM:
+		ret = mtls_session_setup_aes_ccm(ctx, algo, mode, op_type);
+		break;
+#endif
+	default:
+		SYS_LOG_ERR("Unsupported mode for AES algo: %d", mode);
+		return -EINVAL;
 	}
 
 	return ret;
@@ -287,7 +413,7 @@ static int mtls_session_setup_prng(struct cipher_ctx *ctx,
 		return -EINVAL;
 	}
 
-	session = mtls_alloc_session(CRYPTO_CIPHER_ALGO_PRNG);
+	session = mtls_alloc_session(CRYPTO_CIPHER_ALGO_PRNG, mode);
 	if (!session) {
 		return -ENOSPC;
 	}
@@ -373,7 +499,7 @@ static int mtls_session_setup_mac(struct cipher_ctx *ctx,
 		return -EINVAL;
 	}
 
-	session = mtls_alloc_session(CRYPTO_CIPHER_ALGO_MAC);
+	session = mtls_alloc_session(CRYPTO_CIPHER_ALGO_MAC, mode);
 	if (!session) {
 		return -ENOSPC;
 	}
@@ -571,7 +697,7 @@ static int mtls_session_setup_ecc(struct cipher_ctx *ctx,
 		return -EINVAL;
 	}
 
-	data = mtls_alloc_session(CRYPTO_CIPHER_ALGO_ECC);
+	data = mtls_alloc_session(CRYPTO_CIPHER_ALGO_ECC, mode);
 	if (!data) {
 		return -ENOSPC;
 	}
