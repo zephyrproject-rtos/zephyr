@@ -9,6 +9,7 @@
 #include <logging/log_output.h>
 #include <device.h>
 #include <uart.h>
+#include <assert.h>
 
 int char_out(u8_t *data, size_t length, void *ctx)
 {
@@ -23,12 +24,7 @@ int char_out(u8_t *data, size_t length, void *ctx)
 
 static u8_t buf;
 
-static struct log_output_ctx ctx = {
-	.func = char_out,
-	.data = &buf,
-	.length = 1,
-	.offset = 0
-};
+LOG_OUTPUT_DEFINE(log_output, char_out, &buf, 1);
 
 static void put(const struct log_backend *const backend,
 		struct log_msg *msg)
@@ -45,7 +41,7 @@ static void put(const struct log_backend *const backend,
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	}
 
-	log_output_msg_process(msg, &ctx, flags);
+	log_output_msg_process(&log_output, msg, flags);
 
 	log_msg_put(msg);
 
@@ -53,7 +49,12 @@ static void put(const struct log_backend *const backend,
 
 void log_backend_uart_init(void)
 {
-	ctx.ctx = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
+	struct device *dev;
+
+	dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
+	assert(dev);
+
+	log_output_ctx_set(&log_output, dev);
 }
 
 static void panic(struct log_backend const *const backend)
