@@ -200,7 +200,7 @@ void _net_app_received(struct net_context *net_ctx,
 			 * context do not call the close callback.
 			 */
 			for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
-				if (!ctx->server.net_ctxs[i]) {
+				if (ctx->server.net_ctxs[i]) {
 					close = false;
 					break;
 				}
