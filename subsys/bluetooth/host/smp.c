@@ -3177,7 +3177,12 @@ static u8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 		auth = req->auth_req & BT_SMP_AUTH_MASK;
 	}
 
-	if (!conn->le.keys) {
+	if (conn->le.keys) {
+		/* Make sure we have an LTK to encrypt with */
+		if (!(conn->le.keys->keys & (BT_KEYS_LTK_P256 | BT_KEYS_LTK))) {
+			goto pair;
+		}
+	} else {
 		conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256, &conn->le.dst);
 		if (!conn->le.keys) {
 			conn->le.keys = bt_keys_find(BT_KEYS_LTK,
