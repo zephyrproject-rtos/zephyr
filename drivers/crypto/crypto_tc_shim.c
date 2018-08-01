@@ -99,6 +99,10 @@ static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 
 	/* TinyCrypt expects the IV and cipher text to be in a contiguous
 	 * buffer for efficieny
+	 *
+	 * TODO: This requirement is bad to keep interchangeability
+	 * between different implementations. Check if IV is not
+	 * contiguous and automatically change it.
 	 */
 	if (iv != op->in_buf) {
 		SYS_LOG_ERR("TC needs contiguous iv and ciphertext");
