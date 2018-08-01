@@ -271,21 +271,20 @@ config XTENSA_SIM_CONSOLE
 	  Use simulator console to print messages.
 
 config NATIVE_POSIX_CONSOLE
-	bool
-	prompt "Use native stdin/stdout for console"
+	bool "Use the host terminal for console"
 	depends on ARCH_POSIX
 	select CONSOLE_HAS_DRIVER
 	default y
 	help
-	  Use native stdin and stdout to print messages and get input
+	  Use the host terminal (where the native_posix binary was launched) for the
+	  Zephyr console
 
 config NATIVE_POSIX_STDIN_CONSOLE
-	bool
-	prompt "Read from native stdin for console"
+	bool "Use the host terminal stdin"
 	depends on NATIVE_POSIX_CONSOLE
 	default y
 	help
-	  Use native console to get input.
+	  Feed the host terminal stdin to the Zephyr console/shell.
 
 config NATIVE_STDIN_POLL_PERIOD
 	int
@@ -304,12 +303,11 @@ config NATIVE_STDIN_PRIO
 	  Priority of the native stdin polling thread
 
 config NATIVE_POSIX_STDOUT_CONSOLE
-	bool
-	prompt "Print to native stdout"
+	bool "Print to the host terminal stdout"
 	depends on NATIVE_POSIX_CONSOLE
 	default y
 	help
-	  Use native console (stout) to print messages.
+	  Zephyr's printk messages will be directed to the host terminal stdout.
 
 config XTENSA_CONSOLE_INIT_PRIORITY
 	int
