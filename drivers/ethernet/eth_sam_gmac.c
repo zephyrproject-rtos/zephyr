@@ -1595,6 +1595,9 @@ static int eth_sam_gmac_set_qav_param(struct device *dev,
 	case ETHERNET_QAV_PARAM_TYPE_IDLE_SLOPE:
 		idle_slope = config->qav_param.idle_slope;
 
+		/* The standard uses bps, SAM GMAC uses Bps - convert now */
+		idle_slope /= 8;
+
 		return eth_sam_gmac_setup_qav_idle_slope(gmac, queue_id,
 							 idle_slope);
 	default:
