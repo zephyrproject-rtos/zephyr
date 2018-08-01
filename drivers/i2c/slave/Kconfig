@@ -12,7 +12,6 @@
 menuconfig I2C_SLAVE
 	bool "I2C Slave Drivers"
 	depends on I2C
-	default n
 	help
 	  Enable I2C Slave Driver Configuration
 

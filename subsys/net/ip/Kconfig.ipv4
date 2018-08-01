@@ -44,8 +44,7 @@ config NET_DHCPV4
 config NET_IPV4_AUTO
 	bool "Enable IPv4 autoconfiguration [EXPERIMENTAL]"
 	depends on NET_IPV4 && NET_ARP
-	default n
-	  help
+	help
 	  Enables IPv4 auto IP address configuration (see RFC 3927)
 
 if NET_LOG
@@ -69,7 +68,6 @@ config NET_DEBUG_DHCPV4
 config NET_DEBUG_IPV4_AUTOCONF
 	bool "Debug IPv4 autoconf client"
 	depends on NET_IPV4_AUTO
-	default n
 	help
 	  Enable debug diagnostic from IPv4 autoconf client.
 
