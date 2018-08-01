@@ -654,7 +654,8 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u32_t seq, u8_t hdr,
 					  rx->ctx.recv_dst, seq,
 					  BT_MESH_NET_IVI_RX(rx));
 		if (err) {
-			BT_WARN("Unable to decrypt with AppKey %u", i);
+			BT_WARN("Unable to decrypt with AppKey 0x%03x",
+				key->app_idx);
 			continue;
 
 		}
