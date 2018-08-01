@@ -135,6 +135,20 @@ commands (requires Bluetooth for networking):
    :goals: build
    :compact:
 
+WNC-M14A2A LTE-M Modem Support
+==============================
+
+To build the lwm2m-client sample for use with the WNC-M14A2A LTE-M modem
+shield do the following:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/lwm2m_client
+   :host-os: unix
+   :board: <board to use>
+   :conf: "prj.conf overlay-wncm14a2a.conf"
+   :goals: build
+   :compact:
+
 Sample output without DTLS enabled
 ==================================
 
