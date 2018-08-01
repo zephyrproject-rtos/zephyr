@@ -6,7 +6,6 @@
 
 menuconfig TLS_CREDENTIALS
 	bool "TLS credentials management"
-	default n
 	help
 	  Enable TLS credentials management subsystem.
 

@@ -9,7 +9,6 @@
 config I2C_EEPROM_SLAVE
 	bool "I2C Slave EEPROM driver"
 	depends on I2C_SLAVE
-	default n
 	help
 	  Enable virtual I2C Slave EEPROM driver
 
@@ -41,7 +40,6 @@ config I2C_EEPROM_SLAVE_0_ADDRESS
 config I2C_EEPROM_SLAVE_1
 	bool "Enable I2C Slave EEPROM driver instance 1"
 	depends on I2C_EEPROM_SLAVE
-	default n
 
 config I2C_EEPROM_SLAVE_1_SIZE
 	int "I2C Slave EEPROM 1 Size in KiB"

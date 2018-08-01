@@ -200,7 +200,7 @@ config IA32_LEGACY_IO_PORTS
 	  than memory access, so they should be used in last resort.
 
 config CMOV
-	def_bool n
+	bool
 	help
 	  This option signifies the use of an Intel CPU that supports
 	  the CMOV instruction.

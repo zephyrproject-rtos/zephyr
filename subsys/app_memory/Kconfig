@@ -1,9 +1,8 @@
-
 menu "General Kernel Options"
+
 config APP_SHARED_MEM
-	bool
-	prompt "Application shared memory with app_memory"
-	default n
+	bool "Application shared memory with app_memory"
 	help
-	 This is a wrapper around app_memory to simplify usage.
+	  This is a wrapper around app_memory to simplify usage.
+
 endmenu

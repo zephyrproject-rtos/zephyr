@@ -56,8 +56,7 @@ config TEXT_SECTION_OFFSET
 	  may require smaller or larger values.
 
 config HAVE_CUSTOM_LINKER_SCRIPT
-	prompt "Custom linker scripts provided"
-	def_bool n
+	bool "Custom linker scripts provided"
 	help
 	  Set this option if you have a custom linker script which needed to
 	  be define in CUSTOM_LINKER_SCRIPT.
@@ -251,7 +250,6 @@ config BUILD_OUTPUT_STRIPPED
 
 config APPLICATION_DEFINED_SYSCALL
 	bool "Scan application folder for any syscall definition"
-	default n
 	help
 	  Scan additional folders inside application source folder
 	  for application defined syscalls.
@@ -346,9 +344,7 @@ config BOOTLOADER_MCUBOOT
 	      Tree in order to place and link the image at the slot0 offset
 
 config BOOTLOADER_ESP_IDF
-	bool
-	prompt "ESP-IDF bootloader support"
-	default n
+	bool "ESP-IDF bootloader support"
 	depends on SOC_ESP32
 	help
 	  This option will trigger the compilation of the ESP-IDF booloader
@@ -356,9 +352,7 @@ config BOOTLOADER_ESP_IDF
 	  At flash time, the bootloader will be flashed with the zephyr image
 
 config REALMODE
-	bool
-	prompt "boot from x86 real mode"
-	default n
+	bool "boot from x86 real mode"
 	depends on X86
 	help
 	  This option enabled Zephyr to start in x86 real mode, instead of

@@ -24,15 +24,13 @@ config NET_SOCKETS_POSIX_NAMES
 	  option enabled, it will still apply only to sockets.
 
 config NET_SOCKETS_POLL_MAX
-	int
-	prompt "Max number of supported poll() entries"
+	int "Max number of supported poll() entries"
 	default 3
 	help
 	  Maximum number of entries supported for poll() call.
 
 config NET_SOCKETS_SOCKOPT_TLS
 	bool "Enable TCP TLS socket option support [EXPERIMENTAL]"
-	default n
 	select TLS_CREDENTIALS
 	help
 	  Enable TLS socket option support which automatically establishes
