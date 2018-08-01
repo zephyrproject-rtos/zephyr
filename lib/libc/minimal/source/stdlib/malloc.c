@@ -73,11 +73,20 @@ static bool size_t_mul_overflow(size_t a, size_t b, size_t *res)
 
 void *calloc(size_t nmemb, size_t size)
 {
+	void *ret;
+
 	if (size_t_mul_overflow(nmemb, size, &size)) {
 		errno = ENOMEM;
 		return NULL;
 	}
-	return malloc(size);
+
+	ret = malloc(size);
+
+	if (ret) {
+		memset(ret, 0, size);
+	}
+
+	return ret;
 }
 
 void *realloc(void *ptr, size_t requested_size)
