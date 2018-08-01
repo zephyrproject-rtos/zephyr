@@ -45,6 +45,9 @@ config MODEM_WNCM14A2A
 	select MODEM_RECEIVER
 	select NET_OFFLOAD
 	select UART_MCUX_2 if BOARD_FRDM_K64F
+	select GPIO_NRF5_P1 if SOC_NRF52840
+	select UART_1_NRF_UARTE if SOC_NRF52840
+	select UART_1_NRF_FLOW_CONTROL if SOC_NRF52840
 	help
 	  Choose this setting to enable Wistron WNC-M14A2A LTE-M modem driver.
 	  NOTE: Currently the pin settings only work with FRDM K64F shield.
