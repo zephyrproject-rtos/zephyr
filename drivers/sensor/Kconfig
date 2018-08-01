@@ -39,6 +39,8 @@ source "drivers/sensor/adt7420/Kconfig"
 
 source "drivers/sensor/adxl362/Kconfig"
 
+source "drivers/sensor/adxl372/Kconfig"
+
 source "drivers/sensor/ak8975/Kconfig"
 
 source "drivers/sensor/amg88xx/Kconfig"
