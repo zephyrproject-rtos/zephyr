@@ -1,7 +1,11 @@
-Zephyr Project
-##############
 
 .. raw:: html
+
+   <a href="https://www.zephyrproject.org">
+     <p align="center">
+       <img src="doc/images/Zephyr-Project.png">
+     </p>
+   </a>
 
    <a href="https://bestpractices.coreinfrastructure.org/projects/74"><img
    src="https://bestpractices.coreinfrastructure.org/projects/74/badge"></a>
