@@ -1,6 +1,6 @@
 /*
- * Copyright 2014-2016 Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
+ * Copyright 2017-2018 NXP
+ *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
  *
@@ -26,6 +26,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
+ * http:                 www.nxp.com
+ * mail:                 support@nxp.com
  */
 
 #ifndef __FSL_DEVICE_REGISTERS_H__
@@ -36,7 +38,9 @@
  *
  * The CPU macro should be declared in the project or makefile.
  */
-#if (defined(CPU_MIMXRT1051CVL5A) || defined(CPU_MIMXRT1051DVL6A))
+#if (defined(CPU_MIMXRT1051CVL5A) || defined(CPU_MIMXRT1051DVL6A) \
+	|| defined(CPU_MIMXRT1051CVJ5B) || defined(CPU_MIMXRT1051CVL5B) \
+	|| defined(CPU_MIMXRT1051DVL6B))
 
 #define MIMXRT1051_SERIES
 
@@ -46,7 +50,7 @@
 #include "MIMXRT1051_features.h"
 
 #else
-    #error "No valid CPU defined!"
+	#error "No valid CPU defined!"
 #endif
 
 #endif /* __FSL_DEVICE_REGISTERS_H__ */
