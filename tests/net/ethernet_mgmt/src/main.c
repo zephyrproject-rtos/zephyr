@@ -29,6 +29,8 @@ struct eth_fake_context {
 	bool promisc_mode;
 	struct {
 		bool qav_enabled;
+		int idle_slope;
+		int delta_bandwidth;
 	} priority_queues[2];
 };
 
@@ -65,6 +67,46 @@ static enum ethernet_hw_caps eth_fake_get_capabilities(struct device *dev)
 		ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES;
 }
 
+static int eth_fake_get_total_bandwidth(struct eth_fake_context *ctx)
+{
+	if (ctx->link_100bt) {
+		return 100 * 1000 * 1000 / 8;
+	}
+
+	if (ctx->link_10bt) {
+		return 10 * 1000 * 1000 / 8;
+	}
+
+	/* No link */
+	return 0;
+}
+
+static void eth_fake_recalc_qav_delta_bandwidth(struct eth_fake_context *ctx)
+{
+	int bw;
+	int i;
+
+	bw = eth_fake_get_total_bandwidth(ctx);
+
+	for (i = 0; i < ARRAY_SIZE(ctx->priority_queues); ++i) {
+		ctx->priority_queues[i].delta_bandwidth =
+			(ctx->priority_queues[i].idle_slope * 100) / bw;
+	}
+}
+
+static void eth_fake_recalc_qav_idle_slopes(struct eth_fake_context *ctx)
+{
+	int bw;
+	int i;
+
+	bw = eth_fake_get_total_bandwidth(ctx);
+
+	for (i = 0; i < ARRAY_SIZE(ctx->priority_queues); ++i) {
+		ctx->priority_queues[i].idle_slope =
+			(ctx->priority_queues[i].delta_bandwidth * bw) / 100;
+	}
+}
+
 static int eth_fake_set_config(struct device *dev,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
@@ -97,6 +139,8 @@ static int eth_fake_set_config(struct device *dev,
 			ctx->link_100bt = true;
 		}
 
+		eth_fake_recalc_qav_idle_slopes(ctx);
+
 		break;
 	case ETHERNET_CONFIG_TYPE_DUPLEX:
 		if (config->full_duplex == ctx->full_duplex) {
@@ -126,9 +170,20 @@ static int eth_fake_set_config(struct device *dev,
 			ctx->priority_queues[queue_id].qav_enabled =
 				config->qav_param.enabled;
 			break;
-		default:
-			/* Do nothing for now*/
+		case ETHERNET_QAV_PARAM_TYPE_IDLE_SLOPE:
+			ctx->priority_queues[queue_id].idle_slope =
+				config->qav_param.idle_slope;
+
+			eth_fake_recalc_qav_delta_bandwidth(ctx);
 			break;
+		case ETHERNET_QAV_PARAM_TYPE_DELTA_BANDWIDTH:
+			ctx->priority_queues[queue_id].delta_bandwidth =
+				config->qav_param.delta_bandwidth;
+
+			eth_fake_recalc_qav_idle_slopes(ctx);
+			break;
+		default:
+			return -ENOTSUP;
 		}
 
 		break;
@@ -173,9 +228,23 @@ static int eth_fake_get_config(struct device *dev,
 			config->qav_param.enabled =
 				ctx->priority_queues[queue_id].qav_enabled;
 			break;
-		default:
-			/* Do nothing for now*/
+		case ETHERNET_QAV_PARAM_TYPE_IDLE_SLOPE:
+		case ETHERNET_QAV_PARAM_TYPE_OPER_IDLE_SLOPE:
+			/* No distinction between idle slopes for fake eth */
+			config->qav_param.idle_slope =
+				ctx->priority_queues[queue_id].idle_slope;
 			break;
+		case ETHERNET_QAV_PARAM_TYPE_DELTA_BANDWIDTH:
+			config->qav_param.delta_bandwidth =
+				ctx->priority_queues[queue_id].delta_bandwidth;
+			break;
+		case ETHERNET_QAV_PARAM_TYPE_TRAFFIC_CLASS:
+			/* Default TC for BE - it doesn't really matter here */
+			config->qav_param.traffic_class =
+				net_tx_priority2tc(NET_PRIORITY_BE);
+			break;
+		default:
+			return -ENOTSUP;
 		}
 
 		break;
@@ -198,6 +267,7 @@ static struct ethernet_api eth_fake_api_funcs = {
 static int eth_fake_init(struct device *dev)
 {
 	struct eth_fake_context *ctx = dev->driver_data;
+	int i;
 
 	ctx->auto_negotiation = true;
 	ctx->full_duplex = true;
@@ -205,6 +275,20 @@ static int eth_fake_init(struct device *dev)
 	ctx->link_100bt = false;
 
 	memcpy(ctx->mac_address, mac_addr_init, 6);
+
+	/* Initialize priority queues */
+	for (i = 0; i < ARRAY_SIZE(ctx->priority_queues); ++i) {
+		ctx->priority_queues[i].qav_enabled = true;
+		if (i + 1 == ARRAY_SIZE(ctx->priority_queues)) {
+			/* 75% for the last priority queue */
+			ctx->priority_queues[i].delta_bandwidth = 75;
+		} else {
+			/* 0% for the rest */
+			ctx->priority_queues[i].delta_bandwidth = 0;
+		}
+	}
+
+	eth_fake_recalc_qav_idle_slopes(ctx);
 
 	return 0;
 }
@@ -429,6 +513,16 @@ static void test_change_qav_params(void)
 
 		zassert_equal(ret, 0, "could not set delta bandwidth");
 
+		/* Reset local value - read-back and verify it */
+		params.qav_param.delta_bandwidth = 0;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QAV_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not read delta bandwidth");
+		zassert_equal(params.qav_param.delta_bandwidth, 10,
+			      "delta bandwidth did not change");
+
 		/* And them the idle slope */
 		params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_IDLE_SLOPE;
 		params.qav_param.idle_slope = 10;
@@ -437,6 +531,27 @@ static void test_change_qav_params(void)
 			       &params, sizeof(struct ethernet_req_params));
 
 		zassert_equal(ret, 0, "could not set idle slope");
+
+		/* Reset local value - read-back and verify it */
+		params.qav_param.idle_slope = 0;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QAV_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not read idle slope");
+		zassert_equal(params.qav_param.idle_slope, 10,
+			      "idle slope did not change");
+
+		/* Oper idle slope should also be the same */
+		params.qav_param.type =
+			ETHERNET_QAV_PARAM_TYPE_OPER_IDLE_SLOPE;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QAV_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not read oper idle slope");
+		zassert_equal(params.qav_param.oper_idle_slope, 10,
+			      "oper idle slope should equal admin idle slope");
 
 		/* Now try to set incorrect params to a correct queue */
 		params.qav_param.type =
@@ -457,6 +572,23 @@ static void test_change_qav_params(void)
 		zassert_not_equal(ret, 0,
 				  "allowed to set invalid delta bandwidth");
 	}
+
+	/* Try to set read-only parameters */
+	params.qav_param.queue_id = 0;
+	params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_OPER_IDLE_SLOPE;
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_PARAM,
+		       iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_not_equal(ret, 0, "should not be able to set oper idle slope");
+
+	params.qav_param.queue_id = 0;
+	params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_TRAFFIC_CLASS;
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QAV_PARAM,
+		       iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_not_equal(ret, 0, "should not be able to set traffic class");
 
 	/* Now try to set valid parameters to an invalid queue id */
 	params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_DELTA_BANDWIDTH;
