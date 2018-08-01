@@ -92,12 +92,10 @@ struct mcuboot_img_header {
 /**
  * @brief Read the MCUboot image header information from an image bank.
  *
- * This attempts to parse the image header, which must begin at offset
- * @a bank_offset from the beginning of the flash device used by
- * MCUboot.
+ * This attempts to parse the image header,
+ * From the start of the @a area_id image.
  *
- * @param bank_offset Offset of the image header from the start of the
- *                    flash device used by MCUboot to store firmware.
+ * @param area_id flash_area ID of image bank which stores the image.
  * @param header On success, the returned header information is available
  *               in this structure.
  * @param header_size Size of the header structure passed by the caller.
@@ -105,7 +103,7 @@ struct mcuboot_img_header {
  *                    necessary information, an error is returned.
  * @return Zero on success, a negative value on error.
  */
-int boot_read_bank_header(u32_t bank_offset,
+int boot_read_bank_header(u8_t area_id,
 			  struct mcuboot_img_header *header,
 			  size_t header_size);
 
@@ -162,9 +160,9 @@ int boot_request_upgrade(int permanent);
 /**
  * @brief Erase the image Bank.
  *
- * @param bank_offset address of the image bank
+ * @param area_id flash_area ID of image bank to be erased.
  * @return 0 on success, negative errno code on fail.
  */
-int boot_erase_img_bank(u32_t bank_offset);
+int boot_erase_img_bank(u8_t area_id);
 
 #endif  /* ZEPHYR_INCLUDE_DFU_MCUBOOT_H_ */
