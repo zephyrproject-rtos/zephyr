@@ -83,8 +83,11 @@ static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 		return -EIO;
 	}
 
-	/* out_len is the same as in_len in CBC mode */
-	op->out_len = op->in_len;
+	/* out_len is the same as in_len in CBC mode,
+	 * but TinyCrypt prepends IV in the output and
+	 * it must be considered.
+	 */
+	op->out_len = op->in_len + TC_AES_BLOCK_SIZE;
 
 	return 0;
 }
@@ -111,8 +114,11 @@ static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 		return -EIO;
 	}
 
-	/* out_len is the same as in_len in CBC mode */
-	op->out_len = op->in_len;
+	/* out_len is the same as in_len in CBC mode, but
+	 * input data has IV in its beginning (TC_AES_BLOCK_SIZE)
+	 * and it's not part of the output.
+	 */
+	op->out_len = op->in_len - TC_AES_BLOCK_SIZE;
 
 	return 0;
 }
