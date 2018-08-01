@@ -75,6 +75,7 @@ static int cs_ctrl_gpio_config(void)
 	spi_cs.gpio_dev = device_get_binding(CS_CTRL_GPIO_DRV_NAME);
 	if (!spi_cs.gpio_dev) {
 		SYS_LOG_ERR("Cannot find %s!", CS_CTRL_GPIO_DRV_NAME);
+		zassert_not_null(spi_cs.gpio_dev, "Invalid gpio device");
 		return -1;
 	}
 
@@ -112,6 +113,7 @@ static int spi_complete_loop(struct device *dev, struct spi_config *spi_conf)
 	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
+		zassert_false(ret, "SPI transceive failed");
 		return ret;
 	}
 
@@ -122,6 +124,7 @@ static int spi_complete_loop(struct device *dev, struct spi_config *spi_conf)
 			    buffer_print_tx);
 		SYS_LOG_ERR("                           vs: %s",
 			    buffer_print_rx);
+		zassert_false(1, "Buffer contents are different");
 		return -1;
 	}
 
@@ -161,6 +164,7 @@ static int spi_rx_half_start(struct device *dev, struct spi_config *spi_conf)
 	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
+		zassert_false(ret, "SPI transceive failed");
 		return -1;
 	}
 
@@ -171,6 +175,7 @@ static int spi_rx_half_start(struct device *dev, struct spi_config *spi_conf)
 			    buffer_print_tx);
 		SYS_LOG_ERR("                           vs: %s",
 			    buffer_print_rx);
+		zassert_false(1, "Buffer contents are different");
 		return -1;
 	}
 
@@ -214,6 +219,7 @@ static int spi_rx_half_end(struct device *dev, struct spi_config *spi_conf)
 	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
+		zassert_false(ret, "SPI transceive failed");
 		return -1;
 	}
 
@@ -224,6 +230,7 @@ static int spi_rx_half_end(struct device *dev, struct spi_config *spi_conf)
 			    buffer_print_tx);
 		SYS_LOG_ERR("                           vs: %s",
 			    buffer_print_rx);
+		zassert_false(1, "Buffer contents are different");
 		return -1;
 	}
 
@@ -275,6 +282,7 @@ static int spi_rx_every_4(struct device *dev, struct spi_config *spi_conf)
 	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
+		zassert_false(ret, "SPI transceive failed");
 		return -1;
 	}
 
@@ -285,6 +293,7 @@ static int spi_rx_every_4(struct device *dev, struct spi_config *spi_conf)
 			    buffer_print_tx);
 		SYS_LOG_ERR("                           vs: %s",
 			    buffer_print_rx);
+		zassert_false(1, "Buffer contents are different");
 		return -1;
 	} else if (memcmp(buffer_tx + 12, buffer_rx + 4, 4)) {
 		to_display_format(buffer_tx + 12, 4, buffer_print_tx);
@@ -293,6 +302,7 @@ static int spi_rx_every_4(struct device *dev, struct spi_config *spi_conf)
 			    buffer_print_tx);
 		SYS_LOG_ERR("                           vs: %s",
 			    buffer_print_rx);
+		zassert_false(1, "Buffer contents are different");
 		return -1;
 	}
 
@@ -365,6 +375,7 @@ static int spi_async_call(struct device *dev, struct spi_config *spi_conf)
 
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
+		zassert_false(ret, "SPI transceive failed");
 		return -1;
 	}
 
@@ -372,6 +383,7 @@ static int spi_async_call(struct device *dev, struct spi_config *spi_conf)
 
 	if (result)  {
 		SYS_LOG_ERR("Call code %d", ret);
+		zassert_false(result, "SPI transceive failed");
 		return -1;
 	}
 
@@ -393,6 +405,7 @@ static int spi_resource_lock_test(struct device *lock_dev,
 
 	if (spi_release(lock_dev, spi_conf_lock)) {
 		SYS_LOG_ERR("Deadlock now?");
+		zassert_false(1, "SPI release failed");
 		return -1;
 	}
 
@@ -421,6 +434,7 @@ void testing_spi(void)
 	spi_slow = device_get_binding(SPI_DRV_NAME);
 	if (!spi_slow) {
 		SYS_LOG_ERR("Cannot find %s!\n", SPI_DRV_NAME);
+		zassert_not_null(spi_slow, "Invalid SPI device");
 		return;
 	}
 
