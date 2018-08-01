@@ -6,6 +6,9 @@ version: 0.1
 description: >
     This binding gives the base structures for all UART devices
 
+child:
+    bus: uart
+
 properties:
     clock-frequency:
       type: int
