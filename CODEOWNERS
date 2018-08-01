@@ -185,6 +185,7 @@ subsys/net/lib/mqtt/*                    @jukkar @tbursztyka
 subsys/net/lib/coap/*                    @rveerama1
 subsys/net/lib/sockets/*                 @jukkar @tbursztyka @pfalcon
 subsys/usb/                              @jfischer-phytec-iot @finikorg
+tests/boards/native_posix/*              @aescolar
 tests/bluetooth/                         @sjanc @jhedberg @Vudentz @tarunkum
 tests/posix/                             @nniranjhana
 tests/crypto/                            @lpereira @pswarnak
