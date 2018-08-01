@@ -105,6 +105,10 @@ static int ethernet_set_config(u32_t mgmt_request,
 				return -EINVAL;
 			}
 			break;
+		case ETHERNET_QAV_PARAM_TYPE_OPER_IDLE_SLOPE:
+		case ETHERNET_QAV_PARAM_TYPE_TRAFFIC_CLASS:
+			/* Read-only parameters */
+			return -EINVAL;
 		default:
 			/* No validation needed */
 			break;
@@ -192,7 +196,28 @@ static int ethernet_get_config(u32_t mgmt_request,
 			return ret;
 		}
 
-		params->qav_param.enabled = config.qav_param.enabled;
+		switch (config.qav_param.type) {
+		case ETHERNET_QAV_PARAM_TYPE_DELTA_BANDWIDTH:
+			params->qav_param.delta_bandwidth =
+				config.qav_param.delta_bandwidth;
+			break;
+		case ETHERNET_QAV_PARAM_TYPE_IDLE_SLOPE:
+			params->qav_param.idle_slope =
+				config.qav_param.idle_slope;
+			break;
+		case ETHERNET_QAV_PARAM_TYPE_OPER_IDLE_SLOPE:
+			params->qav_param.oper_idle_slope =
+				config.qav_param.oper_idle_slope;
+			break;
+		case ETHERNET_QAV_PARAM_TYPE_TRAFFIC_CLASS:
+			params->qav_param.traffic_class =
+				config.qav_param.traffic_class;
+			break;
+		case ETHERNET_QAV_PARAM_TYPE_STATUS:
+			params->qav_param.enabled = config.qav_param.enabled;
+			break;
+		}
+
 	} else {
 		return -EINVAL;
 	}
