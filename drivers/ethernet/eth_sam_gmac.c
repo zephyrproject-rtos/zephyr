@@ -694,20 +694,24 @@ static int eth_sam_gmac_get_qav_status(Gmac *gmac, int queue_id, bool *enabled)
 static int eth_sam_gmac_setup_qav_idle_slope(Gmac *gmac, int queue_id,
 					     int idle_slope)
 {
+	u32_t cbscr_val;
+
 	/* Verify queue id */
 	if (queue_id < 1 || queue_id > GMAC_PRIORITY_QUEUE_NO) {
 		return -EINVAL;
 	}
 
+	cbscr_val = gmac->GMAC_CBSISQA;
+
 	if (queue_id == 1) {
 		gmac->GMAC_CBSCR &= ~GMAC_CBSCR_QAE;
 		gmac->GMAC_CBSISQA = idle_slope;
-		gmac->GMAC_CBSCR |= GMAC_CBSCR_QAE;
 	} else {
 		gmac->GMAC_CBSCR &= ~GMAC_CBSCR_QBE;
 		gmac->GMAC_CBSISQB = idle_slope;
-		gmac->GMAC_CBSCR |= GMAC_CBSCR_QBE;
 	}
+
+	gmac->GMAC_CBSCR = cbscr_val;
 
 	return 0;
 }
@@ -783,9 +787,12 @@ static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 	 */
 #if GMAC_PRIORITY_QUEUE_NO == 1
 	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 1, 75);
+	eth_sam_gmac_setup_qav(gmac, 1, true);
 #elif GMAC_PRIORITY_QUEUE_NO == 2
 	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 1, 0);
 	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 2, 75);
+	eth_sam_gmac_setup_qav(gmac, 1, true);
+	eth_sam_gmac_setup_qav(gmac, 2, true);
 #endif
 
 	return 0;
