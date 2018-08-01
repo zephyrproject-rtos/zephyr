@@ -37,14 +37,14 @@ K_MEM_PARTITION_DEFINE(mem_domain_memory_partition,
 
 #ifdef CONFIG_X86
 K_MEM_PARTITION_DEFINE(mem_domain_memory_partition1,
-		mem_domain_buf1,
-		sizeof(mem_domain_buf1),
-		K_MEM_PARTITION_P_RO_U_RO);
+		       mem_domain_buf1,
+		       sizeof(mem_domain_buf1),
+		       K_MEM_PARTITION_P_RO_U_RO);
 #else
 K_MEM_PARTITION_DEFINE(mem_domain_memory_partition1,
-		mem_domain_buf1,
-		sizeof(mem_domain_buf1),
-		K_MEM_PARTITION_P_RW_U_RO);
+		       mem_domain_buf1,
+		       sizeof(mem_domain_buf1),
+		       K_MEM_PARTITION_P_RW_U_RO);
 #endif
 
 struct k_mem_partition *mem_domain_memory_partition_array[] = {
@@ -52,7 +52,7 @@ struct k_mem_partition *mem_domain_memory_partition_array[] = {
 };
 
 struct k_mem_partition *mem_domain_memory_partition_array1[] = {
-	    &mem_domain_memory_partition1
+	&mem_domain_memory_partition1
 };
 __kernel struct k_mem_domain mem_domain_mem_domain;
 __kernel struct k_mem_domain mem_domain1;
@@ -110,8 +110,12 @@ void mem_domain_test_1(void *tc_number, void *p2, void *p3)
 }
 
 /****************************************************************************/
-/* Test to check if the memory domain is configured and accesable
- * for userspace.
+/**
+ * @brief Check if the mem_domain is configured and accessible for userspace
+ *
+ * @ingroup kernel_memgroup_tests
+ *
+ * @see k_mem_domain_init()
  */
 void test_mem_domain_valid_access(void *p1, void *p2, void *p3)
 {
@@ -131,8 +135,13 @@ void test_mem_domain_valid_access(void *p1, void *p2, void *p3)
 }
 
 /****************************************************************************/
-/* if mem domain was not added to the thread and a access to it should
+/**
+ * @brief Test to check memory domain invalid access
+ *
+ * @details If mem domain was not added to the thread and a access to it should
  * cause a fault.
+ *
+ * @ingroup kernel_memprotect_tests
  */
 void test_mem_domain_invalid_access(void *p1, void *p2, void *p3)
 {
@@ -163,18 +172,23 @@ static void thread_entry_rw(void *p1, void *p2, void *p3)
 
 	ztest_test_pass();
 }
-/* Provide read/write access to a partition and verify access from a
- * user thread added to it
+/**
+ * @brief Test memory domain read/write access
+ *
+ * @details Provide read/write access to a partition
+ * and verify access from a user thread added to it
+ *
+ * @ingroup kernel_memprotect_tests
  */
 void test_mem_domain_partitions_user_rw(void)
 {
 	/* Initialize the memory domain */
 	k_mem_domain_init(&mem_domain_mem_domain,
-			MEM_PARTITION_INIT_NUM,
-			mem_domain_memory_partition_array);
+			  MEM_PARTITION_INIT_NUM,
+			  mem_domain_memory_partition_array);
 
 	k_mem_domain_add_thread(&mem_domain_mem_domain,
-			k_current_get());
+				k_current_get());
 
 	k_thread_user_mode_enter(thread_entry_rw, NULL, NULL, NULL);
 }
@@ -197,17 +211,23 @@ static void user_thread_entry_ro(void *p1, void *p2, void *p3)
 	mem_domain_buf1[0] = 10;
 
 	zassert_unreachable("The user thread is allowed to access a read only"
-			" partition of a memory domain");
+			    " partition of a memory domain");
 }
-
+/**
+ * @brief Test memory domain read/write access for user thread
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_mem_domain_add_thread()
+ */
 void test_mem_domain_partitions_user_ro(void)
 {
 	/* Initialize the memory domain containing the partition
 	 * with read only access privilege
 	 */
 	k_mem_domain_init(&mem_domain1,
-			MEM_PARTITION_INIT_NUM,
-			mem_domain_memory_partition_array1);
+			  MEM_PARTITION_INIT_NUM,
+			  mem_domain_memory_partition_array1);
 
 	k_mem_domain_add_thread(&mem_domain1, k_current_get());
 
@@ -215,11 +235,16 @@ void test_mem_domain_partitions_user_ro(void)
 }
 
 /****************************************************************************/
+/**
+ * @brief Test memory domain read/write access for kernel thread
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 void test_mem_domain_partitions_supervisor_rw(void)
 {
 	k_mem_domain_init(&mem_domain_mem_domain,
-			 MEM_PARTITION_INIT_NUM,
-			 mem_domain_memory_partition_array1);
+			  MEM_PARTITION_INIT_NUM,
+			  mem_domain_memory_partition_array1);
 
 	k_mem_domain_add_thread(&mem_domain_mem_domain, k_current_get());
 
@@ -306,10 +331,15 @@ void mem_domain_for_user_tc3(void *max_partitions, void *p2, void *p3)
 	ztest_test_fail();
 }
 
-/* Test case to check addition of partitions into a mem domain.
- * If the access to any of the partitions are denied it will cause failure.
- * the memory domain is not added to the thread and fault occurs when the user
- * tries to access that region.
+/**
+ * @brief Test to check addition of partitions into a mem domain.
+ *
+ * @details If the access to any of the partitions are denied
+ * it will cause failure. The memory domain is not added to
+ * the thread and fault occurs when the user tries to access
+ * that region.
+ *
+ * @ingroup kernel_memprotect_tests
  */
 void test_mem_domain_add_partitions_invalid(void *p1, void *p2, void *p3)
 {
@@ -326,7 +356,7 @@ void test_mem_domain_add_partitions_invalid(void *p1, void *p2, void *p3)
 
 	for (index = 0; (index < max_partitions) && (index < 8); index++) {
 		k_mem_domain_add_partition(&mem_domain_tc3_mem_domain,
-					   mem_domain_tc3_partition_array\
+					   mem_domain_tc3_partition_array \
 					   [index]);
 
 	}
@@ -366,8 +396,14 @@ void mem_domain_for_user_tc4(void *max_partitions, void *p2, void *p3)
 	ztest_test_pass();
 }
 
-/* Test case to check addition of parititions into a mem domain.
- * If the access to any of the partitions are denied it will cause failure.
+/**
+ * @brief Test case to check addition of parititions into a mem domain.
+ *
+ * @details If the access to any of the partitions are denied
+ * it will cause failure.
+ *
+ * @see k_mem_domain_init(), k_mem_domain_add_partition(),
+ * k_mem_domain_add_thread(), k_thread_user_mode_enter()
  */
 void test_mem_domain_add_partitions_simple(void *p1, void *p2, void *p3)
 {
@@ -381,7 +417,7 @@ void test_mem_domain_add_partitions_simple(void *p1, void *p2, void *p3)
 
 	for (index = 1; (index < max_partitions) && (index < 8); index++) {
 		k_mem_domain_add_partition(&mem_domain_tc3_mem_domain,
-					   mem_domain_tc3_partition_array\
+					   mem_domain_tc3_partition_array \
 					   [index]);
 
 	}
@@ -407,7 +443,14 @@ void mem_domain_for_user_tc5(void *p1, void *p2, void *p3)
 	mem_domain_tc3_part1[0] = 10;
 	zassert_unreachable(ERROR_STR);
 }
-/* test the remove of the partition. */
+/**
+ * @brief Test the removal of the partition
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_mem_domain_remove_partition(),
+ * k_mem_domain_add_thread(), k_thread_user_mode_enter()
+ */
 void test_mem_domain_remove_partitions_simple(void *p1, void *p2, void *p3)
 {
 	k_mem_domain_add_thread(&mem_domain_tc3_mem_domain,
@@ -441,8 +484,15 @@ void mem_domain_test_6_2(void *p1, void *p2, void *p3)
 	zassert_unreachable(ERROR_STR);
 }
 
-/* Test the removal of partitions. first check if the memory domain is
- * inherited.After that remove a partition then again check access to it.
+/**
+ * @brief Test the removal of partitions with inheritance check
+ *
+ * @details First check if the memory domain is inherited.
+ * After that remove a partition then again check access to it.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_mem_domain_remove_partition()
  */
 void test_mem_domain_remove_partitions(void *p1, void *p2, void *p3)
 {
@@ -487,9 +537,15 @@ void mem_domain_for_user_tc7(void *p1, void *p2, void *p3)
 	zassert_unreachable(ERROR_STR);
 }
 
-/* Test removal of a thread from the memory domain.
- * till now all the test suite would have tested add thread.
+/**
+ * @brief Test removal of a thread from the memory domain.
+ *
+ * @details Till now all the test suite would have tested add thread.
  * this ensures that remove is working correctly.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_mem_domain_remove_thread()
  */
 void test_mem_domain_remove_thread(void *p1, void *p2, void *p3)
 {
@@ -506,12 +562,18 @@ void test_mem_domain_remove_thread(void *p1, void *p2, void *p3)
 
 }
 /****************************************************************************/
-/* Test k_mem_domain_destroy API */
+/**
+ * @brief Test k_mem_domain_destroy API
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_mem_domain_add_thread(), k_mem_domain_destroy()
+ * */
 void test_mem_domain_destroy(void)
 {
 	k_mem_domain_init(&mem_domain1,
-			MEM_PARTITION_INIT_NUM,
-			mem_domain_memory_partition_array1);
+			  MEM_PARTITION_INIT_NUM,
+			  mem_domain_memory_partition_array1);
 
 	k_mem_domain_add_thread(&mem_domain1, k_current_get());
 
@@ -521,8 +583,8 @@ void test_mem_domain_destroy(void)
 		k_mem_domain_destroy(&mem_domain1);
 
 		zassert_true(tid->mem_domain_info.mem_domain !=
-				&mem_domain1, "The thread has reference to"
-				" memory domain which is already destroyed");
+			     &mem_domain1, "The thread has reference to"
+			     " memory domain which is already destroyed");
 	} else {
 		zassert_unreachable("k_mem_domain_add_thread() failed");
 	}

@@ -31,7 +31,7 @@ extern bool valid_fault;
 #define MEM_REGION_ALLOC (1024)
 #else
 #define MEM_REGION_ALLOC (32)
-#endif	/* CONFIG_BOARD_MPS2_AN385 */
+#endif  /* CONFIG_BOARD_MPS2_AN385 */
 
 #elif defined(CONFIG_X86)
 #define MEM_REGION_ALLOC (4096)

@@ -45,7 +45,13 @@ void kobject_user_tc1(void *p1, void *p2, void *p3)
 	k_sem_take(random_sem_type, K_FOREVER);
 }
 
-/* Test access to a invalid semaphore who's address is NULL. */
+/**
+ * @brief Test access to a invalid semaphore who's address is NULL
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_thread_access_grant(), k_thread_user_mode_enter()
+ */
 void test_kobject_access_grant(void *p1, void *p2, void *p3)
 {
 
@@ -76,7 +82,13 @@ void kobject_user_tc2(void *p1, void *p2, void *p3)
 
 }
 
-/* Test if a syscall can take a different type of kobject. */
+/**
+ * @brief Test if a syscall can take a different type of kobject
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_thread_access_grant()
+ */
 void test_syscall_invalid_kobject(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(k_current_get(),
@@ -96,7 +108,13 @@ void kobject_user_tc3(void *p1, void *p2, void *p3)
 	k_sem_give(&kobject_sem);
 }
 
-/* test if a user thread can access a k object that has not be granted to it.*/
+/**
+ * @brief Test if a user thread can access a k_object without grant
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_thread_access_grant(), k_thread_user_mode_enter()
+ */
 void test_thread_without_kobject_permission(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(k_current_get(),
@@ -119,7 +137,13 @@ void kobject_user_test4(void *p1, void *p2, void *p3)
 	k_sem_give(&kobject_sem);
 }
 
-/* Test access revoke. */
+/**
+ * @brief Test access revoke
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_thread_access_grant(), k_object_access_revoke()
+ */
 void test_kobject_revoke_access(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(k_current_get(),
@@ -167,8 +191,15 @@ void kobject_user_2_test5(void *p1, void *p2, void *p3)
 	ztest_test_pass();
 }
 
-/* Test grant access. Will grant access to another thread for the
+/**
+ * @brief Test grant access.
+ *
+ * @details Will grant access to another thread for the
  * semaphore it holds.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_thread_access_grant()
  */
 void test_kobject_grant_access_kobj(void *p1, void *p2, void *p3)
 {
@@ -190,7 +221,7 @@ void test_kobject_grant_access_kobj(void *p1, void *p2, void *p3)
 			KOBJECT_STACK_SIZE,
 			kobject_user_2_test5,
 			NULL, NULL, NULL,
-			0, K_INHERIT_PERMS|K_USER, K_NO_WAIT);
+			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
 
@@ -211,8 +242,15 @@ void kobject_user_test6(void *p1, void *p2, void *p3)
 	zassert_unreachable("k_object validation  failure");
 }
 
-/* Test access grant to thread B from thread A which doesn't have
+/**
+ * @brief Test access grant between threads
+ *
+ * @details Test access grant to thread B from thread A which doesn't have
  * required permissions.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_thread_access_grant()
  */
 void test_kobject_grant_access_kobj_invalid(void *p1, void *p2, void *p3)
 {
@@ -224,7 +262,7 @@ void test_kobject_grant_access_kobj_invalid(void *p1, void *p2, void *p3)
 			KOBJECT_STACK_SIZE,
 			kobject_user_test6,
 			NULL, NULL, NULL,
-			0, K_INHERIT_PERMS|K_USER, K_NO_WAIT);
+			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 
 	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
@@ -246,7 +284,13 @@ void kobject_user_test7(void *p1, void *p2, void *p3)
 	k_sem_give(&kobject_sem);
 }
 
-/* Test revoke permission of a k object from userspace. */
+/**
+ * @brief Test revoke permission of a k_object from userspace
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_thread_access_grant(), k_object_release()
+ */
 void test_kobject_release_from_user(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(k_current_get(),
@@ -257,7 +301,7 @@ void test_kobject_release_from_user(void *p1, void *p2, void *p3)
 			KOBJECT_STACK_SIZE,
 			kobject_user_test7,
 			NULL, NULL, NULL,
-			0, K_INHERIT_PERMS|K_USER, K_NO_WAIT);
+			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
 
@@ -281,7 +325,14 @@ void kobject_user_2_test8(void *p1, void *p2, void *p3)
 	ztest_test_pass();
 }
 
-/* Test all access grant. test the access by creating 2 new user threads.
+/**
+ * @brief Test all access grant.
+ *
+ * @details Test the access by creating 2 new user threads.i
+ *
+ * @see k_object_access_all_grant()
+ *
+ * @ingroup kernel_memprotect_tests
  */
 void test_kobject_access_all_grant(void *p1, void *p2, void *p3)
 {
@@ -328,8 +379,16 @@ void kobject_user_2_test9(void *p1, void *p2, void *p3)
 	zassert_unreachable("Failed to clear premission on a deleted thread");
 }
 
-/* if a deleted thread with some permissions is recreated with the same tid
- * Check if it still has the permissions.
+/**
+ * @brief Test access permission of a terminated thread
+ *
+ * @details If a deleted thread with some permissions is
+ * recreated with the same tid, check if it still has the
+ * permissions.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_thread_access_grant()
  */
 void test_thread_has_residual_permissions(void *p1, void *p2, void *p3)
 {
@@ -359,7 +418,14 @@ void test_thread_has_residual_permissions(void *p1, void *p2, void *p3)
 }
 
 /****************************************************************************/
-/*grant access to a valid kobject but invalid thread id */
+/**
+ * @brief Test grant access to a valid kobject but invalid thread id
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_object_access_grant(), k_object_access_revoke(),
+ * _k_object_find()
+ */
 #define ERROR_STR_TEST_10 "Access granted/revoked to invalid thread k_object"
 void test_kobject_access_grant_to_invalid_thread(void *p1, void *p2, void *p3)
 {
@@ -379,8 +445,13 @@ void test_kobject_access_grant_to_invalid_thread(void *p1, void *p2, void *p3)
 	}
 }
 /****************************************************************************/
-/* object validation checks */
-/* Test syscall on a kobject which is not present in the hash table. */
+/**
+ * @brief Object validation checks
+ *
+ * @details Test syscall on a kobject which is not present in the hash table.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 void test_kobject_access_invalid_kobject(void *p1, void *p2, void *p3)
 {
 	valid_fault = true;
@@ -392,8 +463,14 @@ void test_kobject_access_invalid_kobject(void *p1, void *p2, void *p3)
 }
 
 /****************************************************************************/
-/* object validation checks */
-/* Test syscall on a kobject which is not initialized and has no access */
+/**
+ * @brief object validation checks without init accss
+ *
+ * @details Test syscall on a kobject which is not initialized
+ * and has no access
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 void test_access_kobject_without_init_access(void *p1,
 					     void *p2, void *p3)
 {
@@ -415,7 +492,13 @@ void kobject_test_user_13(void *p1, void *p2, void *p3)
 	zassert_unreachable("_SYSCALL_OBJ implementation failure.");
 }
 
-/* Test syscall on a kobject which is not initialized and has access */
+/**
+ * @brief Test syscall on a kobject which is not initialized and has access
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_thread_access_grant()
+ */
 void test_access_kobject_without_init_with_access(void *p1,
 						  void *p2, void *p3)
 {
@@ -456,7 +539,11 @@ void kobject_test_user_1_14(void *p1, void *p2, void *p3)
 	zassert_unreachable("_SYSCALL_OBJ implementation failure.");
 
 }
-/* Try to reinitialize the k_thread object. Object validation check */
+/**
+ * @brief Test to reinitialize the k_thread object
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 void test_kobject_reinitialize_thread_kobj(void *p1, void *p2, void *p3)
 {
 	k_thread_create(&kobject_test_14_tid,
@@ -492,7 +579,11 @@ void kobject_test_user_1_15(void *p1, void *p2, void *p3)
 	k_thread_abort(k_current_get());
 
 }
-/* Try to reintialize the k_thread object. Object validation check */
+/**
+ * @brief Test thread create from a user thread
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 void test_create_new_thread_from_user(void *p1, void *p2, void *p3)
 {
 
@@ -534,9 +625,14 @@ void kobject_test_user_1_16(void *p1, void *p2, void *p3)
 	k_thread_abort(k_current_get());
 
 }
-/* Create a new thread from user and the user doesn't have access
+/**
+ * @brief Test creates new thread from usermode without stack access
+ *
+ * @details Create a new thread from user and the user doesn't have access
  * to the stack region of new thread.
  * _handler_k_thread_create validation.
+ *
+ * @ingroup kernel_memprotect_tests
  */
 void test_create_new_thread_from_user_no_access_stack(void *p1,
 						      void *p2, void *p3)
@@ -578,8 +674,13 @@ void kobject_test_user_1_17(void *p1, void *p2, void *p3)
 
 	zassert_unreachable("k_object validation failure in k thread create");
 }
-/* Create a new thread from user and use a huge stack size which overflows
- * _handler_k_thread_create validation.
+/**
+ * @brief Test to validate user thread spawning with stack overflow
+ *
+ * @details Create a new thread from user and use a huge stack
+ * size which overflows. This is _handler_k_thread_create validation.
+ *
+ * @ingroup kernel_memprotect_tests
  */
 #ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 void test_create_new_thread_from_user_invalid_stacksize(void *p1,
@@ -631,8 +732,14 @@ void kobject_test_user_1_18(void *p1, void *p2, void *p3)
 
 	zassert_unreachable("k_object validation failure in k thread create");
 }
-/* Create a new thread from user and use a stack bigger than allowed size.
- * _handler_k_thread_create validation.
+/**
+ * @brief Test to check stack overflow from user thread
+ *
+ * @details Create a new thread from user and use a stack
+ * bigger than allowed size. This is_handler_k_thread_create
+ * validation.
+ *
+ * @ingroup kernel_memprotect_tests
  */
 
 #ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
@@ -685,10 +792,11 @@ void kobject_test_user_1_19(void *p1, void *p2, void *p3)
 
 	zassert_unreachable("k_object validation failure in k thread create");
 }
-/* Create a new supervisor thread from user.
- * _handler_k_thread_create validation.
+/**
+ * @brief Test to create a new supervisor thread from user.
+ *
+ * @ingroup kernel_memprotect_tests
  */
-
 void test_create_new_supervisor_thread_from_user(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(&kobject_test_reuse_7_tid,
@@ -730,10 +838,11 @@ void kobject_test_user_1_20(void *p1, void *p2, void *p3)
 
 	zassert_unreachable("k_object validation failure in k thread create");
 }
-/* Create a new essential thread from user.
- * _handler_k_thread_create validation.
+/**
+ * @brief Create a new essential thread from user.
+ *
+ * @ingroup kernel_memprotect_tests
  */
-
 void test_create_new_essential_thread_from_user(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(&kobject_test_reuse_1_tid,
@@ -775,8 +884,12 @@ void kobject_test_user_1_21(void *p1, void *p2, void *p3)
 
 	zassert_unreachable("k_object validation failure in k thread create");
 }
-/* Create a new thread whose prority is higher than the current thread.
- * _handler_k_thread_create validation.
+/**
+ * @brief Thread creation with prority is higher than current thread
+ *
+ * @details  _handler_k_thread_create validation.
+ *
+ * @ingroup kernel_memprotect_tests
  */
 
 void test_create_new_higher_prio_thread_from_user(void *p1, void *p2, void *p3)
@@ -820,8 +933,12 @@ void kobject_test_user_1_22(void *p1, void *p2, void *p3)
 
 	zassert_unreachable("k_object validation failure in k thread create");
 }
-/* Create a new thread whose prority is invalid.
- * _handler_k_thread_create validation.
+/**
+ * @brief Create a new thread whose prority is invalid.
+ *
+ * @details _handler_k_thread_create validation.
+ *
+ * @ingroup kernel_memprotect_tests
  */
 
 void test_create_new_invalid_prio_thread_from_user(void *p1, void *p2, void *p3)
