@@ -4831,12 +4831,33 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count)
 	*count = to_copy;
 }
 
+static int id_find(const bt_addr_le_t *addr)
+{
+	u8_t id;
+
+	for (id = 0; id < bt_dev.id_count; id++) {
+		if (!bt_addr_le_cmp(addr, &bt_dev.id_addr[id])) {
+			return id;
+		}
+	}
+
+	return -ENOENT;
+}
+
 static void id_create(u8_t id, bt_addr_le_t *addr, u8_t *irk)
 {
 	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
 		bt_addr_le_copy(&bt_dev.id_addr[id], addr);
 	} else {
-		bt_addr_le_create_static(&bt_dev.id_addr[id]);
+		bt_addr_le_t new_addr;
+
+		do {
+			bt_addr_le_create_static(&new_addr);
+			/* Make sure we didn't generate a duplicate */
+		} while (id_find(&new_addr) >= 0);
+
+		bt_addr_le_copy(&bt_dev.id_addr[id], &new_addr);
+
 		if (addr) {
 			bt_addr_le_copy(addr, &bt_dev.id_addr[id]);
 		}
@@ -4870,10 +4891,16 @@ int bt_id_create(bt_addr_le_t *addr, u8_t *irk)
 {
 	int new_id;
 
-	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY) &&
-	    (addr->type != BT_ADDR_LE_RANDOM || !BT_ADDR_IS_STATIC(&addr->a))) {
-		BT_ERR("Only static random identity address supported");
-		return -EINVAL;
+	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+		if (addr->type != BT_ADDR_LE_RANDOM ||
+		    !BT_ADDR_IS_STATIC(&addr->a)) {
+			BT_ERR("Only static random identity address supported");
+			return -EINVAL;
+		}
+
+		if (id_find(addr) >= 0) {
+			return -EALREADY;
+		}
 	}
 
 	if (!IS_ENABLED(CONFIG_BT_PRIVACY) && irk) {
@@ -4899,10 +4926,16 @@ int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk)
 {
 	int err;
 
-	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY) &&
-	    (addr->type != BT_ADDR_LE_RANDOM || !BT_ADDR_IS_STATIC(&addr->a))) {
-		BT_ERR("Only static random identity address supported");
-		return -EINVAL;
+	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+		if (addr->type != BT_ADDR_LE_RANDOM ||
+		    !BT_ADDR_IS_STATIC(&addr->a)) {
+			BT_ERR("Only static random identity address supported");
+			return -EINVAL;
+		}
+
+		if (id_find(addr) >= 0) {
+			return -EALREADY;
+		}
 	}
 
 	if (!IS_ENABLED(CONFIG_BT_PRIVACY) && irk) {
