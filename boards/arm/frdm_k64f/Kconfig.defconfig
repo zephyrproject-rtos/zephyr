@@ -44,7 +44,7 @@ config PINMUX_MCUX_PORTC
 	def_bool y
 
 config PINMUX_MCUX_PORTD
-	def_bool y if SPI_0
+	def_bool y if SPI_0 || UART_MCUX_2
 
 config PINMUX_MCUX_PORTE
 	def_bool y
