@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <string.h>
 #include <flash.h>
+#include <flash_map.h>
 #include <zephyr.h>
 #include <init.h>
 
@@ -67,20 +68,17 @@ struct mcuboot_v1_raw_header {
 #define BOOT_FLAG_COPY_DONE 1
 
 #define FLASH_MIN_WRITE_SIZE FLASH_WRITE_BLOCK_SIZE
-#define FLASH_BANK0_OFFSET FLASH_AREA_IMAGE_0_OFFSET
 
 /* FLASH_AREA_IMAGE_XX_YY values used below are auto-generated thanks to DT */
-#define FLASH_BANK_SIZE FLASH_AREA_IMAGE_0_SIZE
-#define FLASH_BANK1_OFFSET FLASH_AREA_IMAGE_1_OFFSET
-#define FLASH_STATE_OFFSET (FLASH_AREA_IMAGE_SCRATCH_OFFSET +\
-			    FLASH_AREA_IMAGE_SCRATCH_SIZE)
+#define FLASH_BANK0_ID FLASH_AREA_IMAGE_0_ID
+#define FLASH_BANK1_ID FLASH_AREA_IMAGE_1_ID
 
-#define COPY_DONE_OFFS(bank_offs) (bank_offs + FLASH_BANK_SIZE -\
+#define COPY_DONE_OFFS(bank_area) ((bank_area)->fa_size -\
 				   BOOT_MAGIC_SZ - BOOT_MAX_ALIGN * 2)
 
-#define IMAGE_OK_OFFS(bank_offs) (bank_offs + FLASH_BANK_SIZE - BOOT_MAGIC_SZ -\
+#define IMAGE_OK_OFFS(bank_area) ((bank_area)->fa_size - BOOT_MAGIC_SZ -\
 				  BOOT_MAX_ALIGN)
-#define MAGIC_OFFS(bank_offs) (bank_offs + FLASH_BANK_SIZE - BOOT_MAGIC_SZ)
+#define MAGIC_OFFS(bank_area) ((bank_area)->fa_size - BOOT_MAGIC_SZ)
 
 static const u32_t boot_img_magic[4] = {
 	0xf395c277,
@@ -163,72 +161,66 @@ static const struct boot_swap_table boot_swap_tables[] = {
 };
 #define BOOT_SWAP_TABLES_COUNT (ARRAY_SIZE(boot_swap_tables))
 
-static struct device *flash_dev;
-
-static int boot_flag_offs(int flag, u32_t bank_offs, u32_t *offs)
+static int boot_flag_offs(int flag, const struct flash_area *fa, u32_t *offs)
 {
 	switch (flag) {
 	case BOOT_FLAG_COPY_DONE:
-		*offs = COPY_DONE_OFFS(bank_offs);
+		*offs = COPY_DONE_OFFS(fa);
 		return 0;
 	case BOOT_FLAG_IMAGE_OK:
-		*offs = IMAGE_OK_OFFS(bank_offs);
+		*offs = IMAGE_OK_OFFS(fa);
 		return 0;
 	default:
 		return -ENOTSUP;
 	}
 }
 
-static int boot_flash_write(off_t offs, const void *data, size_t len)
+static int boot_flag_write(int flag, u8_t bank_id)
 {
-	int rc;
-
-	rc = flash_write_protection_set(flash_dev, false);
-	if (rc) {
-		return rc;
-	}
-
-	rc = flash_write(flash_dev, offs, data, len);
-	if (rc) {
-		return rc;
-	}
-
-	rc = flash_write_protection_set(flash_dev, true);
-
-	return rc;
-}
-
-static int boot_flag_write(int flag, u32_t bank_offs)
-{
+	const struct flash_area *fa;
 	u8_t buf[FLASH_MIN_WRITE_SIZE];
 	u32_t offs;
 	int rc;
 
-	rc = boot_flag_offs(flag, bank_offs, &offs);
+	rc = flash_area_open(bank_id, &fa);
+	if (rc) {
+		return rc;
+	}
+
+	rc = boot_flag_offs(flag, fa, &offs);
 	if (rc != 0) {
+		flash_area_close(fa);
 		return rc;
 	}
 
 	(void)memset(buf, BOOT_FLAG_UNSET, sizeof(buf));
 	buf[0] = BOOT_FLAG_SET;
 
-	rc = boot_flash_write(offs, buf, sizeof(buf));
+	rc = flash_area_write(fa, offs, buf, sizeof(buf));
+	flash_area_close(fa);
 
 	return rc;
 }
 
-static int boot_flag_read(int flag, u32_t bank_offs)
+static int boot_flag_read(int flag, u8_t bank_id)
 {
+	const struct flash_area *fa;
 	u32_t offs;
 	int rc;
 	u8_t flag_val;
 
-	rc = boot_flag_offs(flag, bank_offs, &offs);
-	if (rc != 0) {
+	rc = flash_area_open(bank_id, &fa);
+	if (rc) {
 		return rc;
 	}
 
-	rc = flash_read(flash_dev, offs, &flag_val, sizeof(flag_val));
+	rc = boot_flag_offs(flag, fa, &offs);
+	if (rc != 0) {
+		flash_area_close(fa);
+		return rc;
+	}
+
+	rc = flash_area_read(fa, offs, &flag_val, sizeof(flag_val));
 	if (rc != 0) {
 		return rc;
 	}
@@ -236,42 +228,56 @@ static int boot_flag_read(int flag, u32_t bank_offs)
 	return flag_val;
 }
 
-static int boot_image_ok_read(u32_t bank_offs)
+static int boot_image_ok_read(u8_t bank_id)
 {
-	return boot_flag_read(BOOT_FLAG_IMAGE_OK, bank_offs);
+	return boot_flag_read(BOOT_FLAG_IMAGE_OK, bank_id);
 }
 
-static int boot_image_ok_write(u32_t bank_offs)
+static int boot_image_ok_write(u8_t bank_id)
 {
-	return boot_flag_write(BOOT_FLAG_IMAGE_OK, bank_offs);
+	return boot_flag_write(BOOT_FLAG_IMAGE_OK, bank_id);
 }
 
-static int boot_copy_done_read(u32_t bank_offs)
+static int boot_copy_done_read(u8_t bank_id)
 {
-	return boot_flag_read(BOOT_FLAG_COPY_DONE, bank_offs);
+	return boot_flag_read(BOOT_FLAG_COPY_DONE, bank_id);
 }
 
-static int boot_magic_write(u32_t bank_offs)
+static int boot_magic_write(u8_t bank_id)
 {
+	const struct flash_area *fa;
 	u32_t offs;
 	int rc;
 
-	offs = MAGIC_OFFS(bank_offs);
+	rc = flash_area_open(bank_id, &fa);
+	if (rc) {
+		return rc;
+	}
 
-	rc = boot_flash_write(offs, boot_img_magic, BOOT_MAGIC_SZ);
+	offs = MAGIC_OFFS(fa);
+
+	rc = flash_area_write(fa, offs, boot_img_magic, BOOT_MAGIC_SZ);
+	flash_area_close(fa);
 
 	return rc;
 }
 
-static int boot_read_v1_header(u32_t bank_offset,
+static int boot_read_v1_header(u8_t area_id,
 			       struct mcuboot_v1_raw_header *v1_raw)
 {
+	const struct flash_area *fa;
 	int rc;
+
+	rc = flash_area_open(area_id, &fa);
+	if (rc) {
+		return rc;
+	}
 
 	/*
 	 * Read and sanity-check the raw header.
 	 */
-	rc = flash_read(flash_dev, bank_offset, v1_raw, sizeof(*v1_raw));
+	rc = flash_area_read(fa, 0, v1_raw, sizeof(*v1_raw));
+	flash_area_close(fa);
 	if (rc) {
 		return rc;
 	}
@@ -302,7 +308,7 @@ static int boot_read_v1_header(u32_t bank_offset,
 	return 0;
 }
 
-int boot_read_bank_header(u32_t bank_offset,
+int boot_read_bank_header(u8_t area_id,
 			  struct mcuboot_img_header *header,
 			  size_t header_size)
 {
@@ -318,7 +324,7 @@ int boot_read_bank_header(u32_t bank_offset,
 	if (header_size < v1_min_size) {
 		return -ENOMEM;
 	}
-	rc = boot_read_v1_header(bank_offset, &v1_raw);
+	rc = boot_read_v1_header(area_id, &v1_raw);
 	if (rc) {
 		return rc;
 	}
@@ -360,14 +366,22 @@ static int boot_magic_code_check(const u32_t *magic)
 	return BOOT_MAGIC_UNSET;
 }
 
-static int boot_magic_state_read(u32_t bank_offs)
+static int boot_magic_state_read(u8_t bank_id)
 {
-	u32_t magic[4];
+	const struct flash_area *fa;
+	u32_t magic[(sizeof(u32_t) - 1 + BOOT_MAGIC_SZ) / sizeof(u32_t)];
 	u32_t offs;
 	int rc;
 
-	offs = MAGIC_OFFS(bank_offs);
-	rc = flash_read(flash_dev, offs, magic, sizeof(magic));
+	rc = flash_area_open(bank_id, &fa);
+	if (rc) {
+		return rc;
+	}
+
+	offs = MAGIC_OFFS(fa);
+	rc = flash_area_read(fa, offs, magic, BOOT_MAGIC_SZ);
+	flash_area_close(fa);
+
 	if (rc != 0) {
 		return rc;
 	}
@@ -375,25 +389,25 @@ static int boot_magic_state_read(u32_t bank_offs)
 	return boot_magic_code_check(magic);
 }
 
-static int boot_read_swap_state(u32_t bank_offs, struct boot_swap_state *state)
+static int boot_read_swap_state(u8_t bank_id, struct boot_swap_state *state)
 {
 	int rc;
 
-	rc = boot_magic_state_read(bank_offs);
+	rc = boot_magic_state_read(bank_id);
 	if (rc < 0) {
 		return rc;
 	}
 	state->magic = rc;
 
-	if (bank_offs != FLASH_AREA_IMAGE_SCRATCH_OFFSET) {
-		rc = boot_copy_done_read(bank_offs);
+	if (bank_id != FLASH_AREA_IMAGE_SCRATCH_ID) {
+		rc = boot_copy_done_read(bank_id);
 		if (rc < 0) {
 			return rc;
 		}
 		state->copy_done = rc;
 	}
 
-	rc = boot_image_ok_read(bank_offs);
+	rc = boot_image_ok_read(bank_id);
 	if (rc < 0) {
 		return rc;
 	}
@@ -410,12 +424,12 @@ int boot_swap_type(void)
 	int rc;
 	int i;
 
-	rc = boot_read_swap_state(FLASH_BANK0_OFFSET, &state_slot0);
+	rc = boot_read_swap_state(FLASH_BANK0_ID, &state_slot0);
 	if (rc != 0) {
 		return rc;
 	}
 
-	rc = boot_read_swap_state(FLASH_BANK1_OFFSET, &state_slot1);
+	rc = boot_read_swap_state(FLASH_BANK1_ID, &state_slot1);
 	if (rc != 0) {
 		return rc;
 	}
@@ -448,9 +462,9 @@ int boot_request_upgrade(int permanent)
 {
 	int rc;
 
-	rc = boot_magic_write(FLASH_BANK1_OFFSET);
+	rc = boot_magic_write(FLASH_BANK1_ID);
 	if (rc == 0 && permanent) {
-		rc = boot_image_ok_write(FLASH_BANK1_OFFSET);
+		rc = boot_image_ok_write(FLASH_BANK1_ID);
 	}
 
 	return rc;
@@ -458,50 +472,36 @@ int boot_request_upgrade(int permanent)
 
 bool boot_is_img_confirmed(void)
 {
-	return boot_image_ok_read(FLASH_BANK0_OFFSET) == BOOT_FLAG_SET;
+	return boot_image_ok_read(FLASH_BANK0_ID) == BOOT_FLAG_SET;
 }
 
 int boot_write_img_confirmed(void)
 {
 	int rc;
 
-	if (boot_image_ok_read(FLASH_BANK0_OFFSET) != BOOT_FLAG_UNSET) {
+	if (boot_image_ok_read(FLASH_BANK0_ID) != BOOT_FLAG_UNSET) {
 		/* Already confirmed. */
 		return 0;
 	}
 
-	rc = boot_image_ok_write(FLASH_BANK0_OFFSET);
+	rc = boot_image_ok_write(FLASH_BANK0_ID);
 
 	return rc;
 }
 
-int boot_erase_img_bank(u32_t bank_offset)
+int boot_erase_img_bank(u8_t area_id)
 {
+	const struct flash_area *fa;
 	int rc;
 
-	rc = flash_write_protection_set(flash_dev, false);
+	rc = flash_area_open(area_id, &fa);
 	if (rc) {
 		return rc;
 	}
 
-	rc = flash_erase(flash_dev, bank_offset, FLASH_BANK_SIZE);
-	if (rc) {
-		return rc;
-	}
+	rc = flash_area_erase(fa, 0, fa->fa_size);
 
-	rc = flash_write_protection_set(flash_dev, true);
+	flash_area_close(fa);
 
 	return rc;
 }
-
-static int boot_init(struct device *dev)
-{
-	ARG_UNUSED(dev);
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
-	if (!flash_dev) {
-		return -ENODEV;
-	}
-	return 0;
-}
-
-SYS_INIT(boot_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <flash.h>
+#include <flash_map.h>
 #include <dfu/mcuboot.h>
 
 #define BOOT_MAGIC_VAL_W0 0xf395c277
@@ -17,44 +17,32 @@
 
 void test_bank_erase(void)
 {
-	struct device *flash_dev;
+	const struct flash_area *fa;
 	u32_t temp;
-	u32_t temp2 = 0x5a;
+	u32_t temp2 = 0x5a5a5a5a;
 	off_t offs;
 	int ret;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
-
-	for (offs = FLASH_AREA_IMAGE_1_OFFSET;
-	     offs <= FLASH_AREA_IMAGE_1_OFFSET + FLASH_AREA_IMAGE_1_SIZE;
-	     offs += sizeof(temp)) {
-		ret = flash_read(flash_dev, offs, &temp, sizeof(temp));
-		zassert_true(ret == 0, "Reading from flash");
-		if (temp != 0xFFFFFFFF) {
-			ret = flash_write_protection_set(flash_dev, false);
-			zassert_true(ret == 0, "Disabling flash protection");
-
-			ret = flash_write(flash_dev, offs, &temp2,
-					  sizeof(temp));
-			zassert_true(ret == 0, "Writing to flash");
-
-			ret = flash_write_protection_set(flash_dev, true);
-			zassert_true(ret == 0, "Enabling flash protection");
-		}
-	}
-
-	zassert(boot_erase_img_bank(FLASH_AREA_IMAGE_1_OFFSET) == 0,
-		"pass", "fail");
-
-	if (!flash_dev) {
-		printf("Nordic nRF5 flash driver was not found!\n");
+	ret = flash_area_open(FLASH_AREA_IMAGE_1_ID, &fa);
+	if (ret) {
+		printf("Flash driver was not found!\n");
 		return;
 	}
 
-	for (offs = FLASH_AREA_IMAGE_1_OFFSET;
-	     offs <= FLASH_AREA_IMAGE_1_OFFSET + FLASH_AREA_IMAGE_1_SIZE;
-	     offs += sizeof(temp)) {
-		ret = flash_read(flash_dev, offs, &temp, sizeof(temp));
+	for (offs = 0; offs <= FLASH_AREA_IMAGE_1_SIZE; offs += sizeof(temp)) {
+		ret = flash_area_read(fa, offs, &temp, sizeof(temp));
+		zassert_true(ret == 0, "Reading from flash");
+		if (temp == 0xFFFFFFFF) {
+			ret = flash_area_write(fa, offs, &temp2, sizeof(temp));
+			zassert_true(ret == 0, "Writing to flash");
+		}
+	}
+
+	zassert(boot_erase_img_bank(FLASH_AREA_IMAGE_1_ID) == 0,
+		"pass", "fail");
+
+	for (offs = 0; offs <= FLASH_AREA_IMAGE_1_SIZE; offs += sizeof(temp)) {
+		ret = flash_area_read(fa, offs, &temp, sizeof(temp));
 		zassert_true(ret == 0, "Reading from flash");
 		zassert(temp == 0xFFFFFFFF, "pass", "fail");
 	}
@@ -62,7 +50,7 @@ void test_bank_erase(void)
 
 void test_request_upgrade(void)
 {
-	struct device *flash_dev;
+	const struct flash_area *fa;
 	const u32_t expectation[6] = {
 		0xffffffff,
 		0xffffffff,
@@ -74,25 +62,27 @@ void test_request_upgrade(void)
 	u32_t readout[ARRAY_SIZE(expectation)];
 	int ret;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+	ret = flash_area_open(FLASH_AREA_IMAGE_1_ID, &fa);
+	if (ret) {
+		printf("Flash driver was not found!\n");
+		return;
+	}
 
 	zassert(boot_request_upgrade(false) == 0, "pass", "fail");
 
-	ret = flash_read(flash_dev, FLASH_AREA_IMAGE_1_OFFSET +
-			 FLASH_AREA_IMAGE_1_SIZE - sizeof(expectation),
-			 &readout, sizeof(readout));
+	ret = flash_area_read(fa, FLASH_AREA_IMAGE_1_SIZE - sizeof(expectation),
+			      &readout, sizeof(readout));
 	zassert_true(ret == 0, "Read from flash");
 
 	zassert(memcmp(expectation, readout, sizeof(expectation)) == 0,
 		"pass", "fail");
 
-	boot_erase_img_bank(FLASH_AREA_IMAGE_1_OFFSET);
+	boot_erase_img_bank(FLASH_AREA_IMAGE_1_ID);
 
 	zassert(boot_request_upgrade(true) == 0, "pass", "fail");
 
-	ret = flash_read(flash_dev, FLASH_AREA_IMAGE_1_OFFSET +
-			 FLASH_AREA_IMAGE_1_SIZE - sizeof(expectation),
-			 &readout, sizeof(readout));
+	ret = flash_area_read(fa, FLASH_AREA_IMAGE_1_SIZE - sizeof(expectation),
+			      &readout, sizeof(readout));
 	zassert_true(ret == 0, "Read from flash");
 
 	zassert(memcmp(&expectation[2], &readout[2], sizeof(expectation) -
@@ -105,34 +95,29 @@ void test_write_confirm(void)
 {
 	const u32_t img_magic[4] = BOOT_MAGIC_VALUES;
 	u32_t readout[ARRAY_SIZE(img_magic)];
-	struct device *flash_dev;
+	const struct flash_area *fa;
 	int ret;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+	ret = flash_area_open(FLASH_AREA_IMAGE_0_ID, &fa);
+	if (ret) {
+		printf("Flash driver was not found!\n");
+		return;
+	}
 
-	ret = flash_read(flash_dev, FLASH_AREA_IMAGE_0_OFFSET +
-			 FLASH_AREA_IMAGE_0_SIZE - sizeof(img_magic), &readout,
-			 sizeof(img_magic));
+	ret = flash_area_read(fa, FLASH_AREA_IMAGE_0_SIZE - sizeof(img_magic),
+			      &readout, sizeof(img_magic));
 	zassert_true(ret == 0, "Read from flash");
 
 	if (memcmp(img_magic, readout, sizeof(img_magic)) != 0) {
-		ret = flash_write_protection_set(flash_dev, false);
-		zassert_true(ret == 0, "Disable flash protection");
-
-		ret = flash_write(flash_dev, FLASH_AREA_IMAGE_0_OFFSET +
-				  FLASH_AREA_IMAGE_0_SIZE - 16,
-				  img_magic, 16);
+		ret = flash_area_write(fa, FLASH_AREA_IMAGE_0_SIZE - 16,
+				       img_magic, 16);
 		zassert_true(ret == 0, "Write to flash");
-
-		ret = flash_write_protection_set(flash_dev, true);
-		zassert_true(ret == 0, "Enable flash protection");
 	}
 
 	zassert(boot_write_img_confirmed() == 0, "pass", "fail");
 
-	ret = flash_read(flash_dev, FLASH_AREA_IMAGE_0_OFFSET +
-			 FLASH_AREA_IMAGE_0_SIZE - 24, readout,
-			 sizeof(readout[0]));
+	ret = flash_area_read(fa, FLASH_AREA_IMAGE_0_SIZE - 24, readout,
+			      sizeof(readout[0]));
 	zassert_true(ret == 0, "Read from flash");
 
 	zassert_equal(1, readout[0] & 0xff, "confirmation error");
