@@ -422,6 +422,8 @@ static void eth_iface_init(struct net_if *iface)
 		create_rx_handler(ctx);
 
 		eth_setup_host(ctx->if_name);
+
+		eth_start_script(ctx->if_name);
 	}
 }
 
