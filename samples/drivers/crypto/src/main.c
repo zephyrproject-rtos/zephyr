@@ -168,8 +168,12 @@ void cbc_mode(struct device *dev)
 		return;
 	}
 
-	/* TinyCrypt keeps IV at the start of encrypted buffer */
+	/* TinyCrypt needs IV and cipher be contiguous  */
+#if defined(CONFIG_CRYPTO_MBEDTLS_SHIM)
+	if (cipher_cbc_op(&ini, &decrypt, iv)) {
+#else
 	if (cipher_cbc_op(&ini, &decrypt, encrypted)) {
+#endif
 		SYS_LOG_ERR("CBC mode DECRYPT - Failed");
 		goto out;
 	}
