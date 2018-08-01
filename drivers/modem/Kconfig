@@ -1,0 +1,49 @@
+# Kconfig - Modem configuration options
+
+#
+# Copyright (c) 2018 Foundries.io
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig MODEM
+	bool "Modem Drivers"
+	help
+	  Enable config options for modem drivers.
+
+if MODEM
+
+config MODEM_RECEIVER
+	bool "Enable modem receiver helper driver"
+	help
+	  This driver allows modem drivers to communicate over UART with custom
+	  defined protocols. Driver doesn't inspect received data and all
+	  aspects of received protocol data are handled by application via
+	  work method provided.  This driver differs from the pipe UART driver
+	  in that callbacks are executed in a different work queue and data is
+	  passed around in k_pipe structures.
+
+config MODEM_RECEIVER_MAX_CONTEXTS
+	int "Maximum number of modem receiver contexts"
+	depends on MODEM_RECEIVER
+	range 1 10
+	default 1
+	help
+	  Maximum number of modem receiver contexts to handle.  For most
+	  purposes this should stay at 1.
+
+config SYS_LOG_MODEM_LEVEL
+	int "Modem driver log level"
+	depends on SYS_LOG
+	default 0
+	range 0 4
+	help
+	  Sets log level for modem drivers.
+	  Levels are:
+	  0 OFF, do not write
+	  1 ERROR, only write SYS_LOG_ERR
+	  2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  3 INFO, write SYS_LOG_INF in addition to previous levels
+	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+endif # MODEM
