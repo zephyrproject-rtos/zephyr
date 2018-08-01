@@ -419,24 +419,30 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 			goto setup_hdr;
 		}
 
-		arp_pkt = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst, NULL);
-		if (!arp_pkt) {
-			return NET_DROP;
-		}
+		/* Trying to send ARP message so no need to setup it twice */
+		if (ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_ARP) {
+			arp_pkt = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst,
+						  NULL);
+			if (!arp_pkt) {
+				return NET_DROP;
+			}
 
-		if (pkt != arp_pkt) {
-			NET_DBG("Sending arp pkt %p (orig %p) to iface %p",
-				arp_pkt, pkt, iface);
+			if (pkt != arp_pkt) {
+				NET_DBG("Sending arp pkt %p (orig %p) to "
+					"iface %p",
+					arp_pkt, pkt, iface);
 
-			/* Either pkt went to ARP pending queue or
-			 * there was no space in the queue anymore.
-			 */
-			net_pkt_unref(pkt);
+				/* Either pkt went to ARP pending queue or
+				 * there was no space in the queue anymore.
+				 */
+				net_pkt_unref(pkt);
 
-			pkt = arp_pkt;
-		} else {
-			NET_DBG("Found ARP entry, sending pkt %p to iface %p",
-				pkt, iface);
+				pkt = arp_pkt;
+			} else {
+				NET_DBG("Found ARP entry, sending pkt %p to "
+					"iface %p",
+					pkt, iface);
+			}
 		}
 
 		net_pkt_ll_src(pkt)->addr = (u8_t *)&NET_ETH_HDR(pkt)->src;
