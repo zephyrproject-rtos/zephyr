@@ -136,7 +136,7 @@ static bool gen_onoff_setunack(struct bt_mesh_model *model,
 
 	now = k_uptime_get();
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
-	    (now - state->last_msg_timestamp <= 6000)) {
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return true;
 	}
 
@@ -271,7 +271,7 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 
 	now = k_uptime_get();
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
-	    (now - state->last_msg_timestamp <= 6000)) {
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
 
@@ -351,7 +351,7 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 	now = k_uptime_get();
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
 
-		if (now - state->last_msg_timestamp <= 6000) {
+		if (now - state->last_msg_timestamp <= K_SECONDS(6)) {
 			if (state->last_delta == delta) {
 				return;
 			}
@@ -450,7 +450,8 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
 
@@ -810,7 +811,7 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 
 	now = k_uptime_get();
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
-	    (now - state->last_msg_timestamp <= 6000)) {
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
 
@@ -913,7 +914,7 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 
 	now = k_uptime_get();
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
-	    (now - state->last_msg_timestamp <= 6000)) {
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
 
@@ -1234,7 +1235,7 @@ static bool light_ctl_setunack(struct bt_mesh_model *model,
 
 	now = k_uptime_get();
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
-	    (now - state->last_msg_timestamp <= 6000)) {
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return true;
 	}
 
@@ -1607,7 +1608,7 @@ static bool light_ctl_temp_setunack(struct bt_mesh_model *model,
 
 	now = k_uptime_get();
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
-	    (now - state->last_msg_timestamp <= 6000)) {
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return true;
 	}
 
