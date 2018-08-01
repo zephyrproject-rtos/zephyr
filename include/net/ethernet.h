@@ -94,19 +94,29 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_LINK,
 	ETHERNET_CONFIG_TYPE_DUPLEX,
 	ETHERNET_CONFIG_TYPE_MAC_ADDRESS,
-	ETHERNET_CONFIG_TYPE_QAV_DELTA_BANDWIDTH,
-	ETHERNET_CONFIG_TYPE_QAV_IDLE_SLOPE,
-	ETHERNET_CONFIG_TYPE_QAV_STATUS,
+	ETHERNET_CONFIG_TYPE_QAV_PARAM,
 	ETHERNET_CONFIG_TYPE_PROMISC_MODE,
 	ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM,
 	ETHERNET_CONFIG_TYPE_FILTER,
 };
 
-struct ethernet_qav_queue_param {
+enum ethernet_qav_param_type {
+	ETHERNET_QAV_PARAM_TYPE_DELTA_BANDWIDTH,
+	ETHERNET_QAV_PARAM_TYPE_IDLE_SLOPE,
+	ETHERNET_QAV_PARAM_TYPE_STATUS,
+};
+
+struct ethernet_qav_param {
+	/** ID of the priority queue to use */
 	int queue_id;
+	/** Type of Qav parameter */
+	enum ethernet_qav_param_type type;
 	union {
+		/** True if Qav is enabled for queue */
 		bool enabled;
+		/** Delta Bandwidth (percentage of bandwidth) */
 		unsigned int delta_bandwidth;
+		/** Idle Slope (bits per second) */
 		unsigned int idle_slope;
 	};
 };
@@ -140,7 +150,7 @@ struct ethernet_config {
 
 		struct net_eth_addr mac_address;
 
-		struct ethernet_qav_queue_param qav_queue_param;
+		struct ethernet_qav_param qav_param;
 
 		int priority_queues_num;
 

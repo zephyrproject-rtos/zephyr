@@ -93,35 +93,26 @@ static int ethernet_set_config(u32_t mgmt_request,
 		memcpy(&config.mac_address, &params->mac_address,
 		       sizeof(struct net_eth_addr));
 		type = ETHERNET_CONFIG_TYPE_MAC_ADDRESS;
-	} else if (mgmt_request ==
-			NET_REQUEST_ETHERNET_SET_QAV_DELTA_BANDWIDTH) {
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_QAV_PARAM) {
 		if (!is_hw_caps_supported(dev, ETHERNET_QAV)) {
 			return -ENOTSUP;
 		}
 
-		if (params->qav_queue_param.delta_bandwidth > 100) {
-			return -EINVAL;
+		/* Validate params which need global validating */
+		switch (params->qav_param.type) {
+		case ETHERNET_QAV_PARAM_TYPE_DELTA_BANDWIDTH:
+			if (params->qav_param.delta_bandwidth > 100) {
+				return -EINVAL;
+			}
+			break;
+		default:
+			/* No validation needed */
+			break;
 		}
 
-		memcpy(&config.qav_queue_param, &params->qav_queue_param,
-		       sizeof(struct ethernet_qav_queue_param));
-		type = ETHERNET_CONFIG_TYPE_QAV_DELTA_BANDWIDTH;
-	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_QAV_IDLE_SLOPE) {
-		if (!is_hw_caps_supported(dev, ETHERNET_QAV)) {
-			return -ENOTSUP;
-		}
-
-		memcpy(&config.qav_queue_param, &params->qav_queue_param,
-		       sizeof(struct ethernet_qav_queue_param));
-		type = ETHERNET_CONFIG_TYPE_QAV_IDLE_SLOPE;
-	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_QAV_STATUS) {
-		if (!is_hw_caps_supported(dev, ETHERNET_QAV)) {
-			return -ENOTSUP;
-		}
-
-		memcpy(&config.qav_queue_param, &params->qav_queue_param,
-		       sizeof(struct ethernet_qav_queue_param));
-		type = ETHERNET_CONFIG_TYPE_QAV_STATUS;
+		memcpy(&config.qav_param, &params->qav_param,
+		       sizeof(struct ethernet_qav_param));
+		type = ETHERNET_CONFIG_TYPE_QAV_PARAM;
 	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_PROMISC_MODE) {
 		if (!is_hw_caps_supported(dev, ETHERNET_PROMISC_MODE)) {
 			return -ENOTSUP;
@@ -148,13 +139,7 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_DUPLEX,
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_MAC_ADDRESS,
 				  ethernet_set_config);
 
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QAV_DELTA_BANDWIDTH,
-				  ethernet_set_config);
-
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QAV_IDLE_SLOPE,
-				  ethernet_set_config);
-
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QAV_STATUS,
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QAV_PARAM,
 				  ethernet_set_config);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_PROMISC_MODE,
@@ -192,22 +177,22 @@ static int ethernet_get_config(u32_t mgmt_request,
 		}
 
 		params->priority_queues_num = config.priority_queues_num;
-	} else if (mgmt_request == NET_REQUEST_ETHERNET_GET_QAV_STATUS) {
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_GET_QAV_PARAM) {
 		if (!is_hw_caps_supported(dev, ETHERNET_QAV)) {
 			return -ENOTSUP;
 		}
 
-		config.qav_queue_param.queue_id =
-			params->qav_queue_param.queue_id;
+		config.qav_param.queue_id = params->qav_param.queue_id;
+		config.qav_param.type = params->qav_param.type;
 
-		type = ETHERNET_CONFIG_TYPE_QAV_STATUS;
+		type = ETHERNET_CONFIG_TYPE_QAV_PARAM;
+
 		ret = api->get_config(dev, type, &config);
 		if (ret) {
 			return ret;
 		}
 
-		params->qav_queue_param.enabled =
-			config.qav_queue_param.enabled;
+		params->qav_param.enabled = config.qav_param.enabled;
 	} else {
 		return -EINVAL;
 	}
@@ -218,7 +203,7 @@ static int ethernet_get_config(u32_t mgmt_request,
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_GET_PRIORITY_QUEUES_NUM,
 				  ethernet_get_config);
 
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_GET_QAV_STATUS,
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_GET_QAV_PARAM,
 				  ethernet_get_config);
 
 void ethernet_mgmt_raise_carrier_on_event(struct net_if *iface)
