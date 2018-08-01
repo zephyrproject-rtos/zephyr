@@ -1,0 +1,1 @@
+zephyr_sources_ifdef(CONFIG_MODEM_RECEIVER modem_receiver.c)
