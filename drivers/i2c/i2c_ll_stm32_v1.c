@@ -171,7 +171,7 @@ static inline void handle_btf(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 	}
 }
 
-void stm32_i2c_event_isr(void *arg)
+void stm32_i2c_isr_event(void *arg)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG((struct device *)arg);
 	struct i2c_stm32_data *data = DEV_DATA((struct device *)arg);
@@ -192,7 +192,7 @@ void stm32_i2c_event_isr(void *arg)
 	}
 }
 
-void stm32_i2c_error_isr(void *arg)
+void stm32_i2c_isr_error(void *arg)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG((struct device *)arg);
 	struct i2c_stm32_data *data = DEV_DATA((struct device *)arg);

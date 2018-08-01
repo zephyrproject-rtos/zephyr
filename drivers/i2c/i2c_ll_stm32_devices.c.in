@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2018 Linaro Ltd
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @code{.codegen}
+ * codegen.import_module('devicedeclare')
+ *
+ * device_data = ('i2c_stm32_data')
+ *
+ * device_config = ('i2c_stm32_config',
+ * """
+ *	.i2c = (I2C_TypeDef *)${reg/0/address},
+ *	.pclken = {
+ *		.enr = ${clocks/0/bits},
+ *		.bus = ${clocks/0/bus},
+ *	},
+ * #ifdef CONFIG_I2C_STM32_INTERRUPT
+ *	.irq_config_func = ${device-name}_config_irq,
+ * #endif
+ *	.bitrate = ${clock-frequency},
+ * """)
+ *
+ * devicedeclare.device_declare(['st,stm32-i2c-v1','st,stm32-i2c-v2'],
+ * 'CONFIG_KERNEL_INIT_PRIORITY_DEVICE',
+ * 'POST_KERNEL',
+ * {'irq_func':'stm32_i2c_isr','irq_flag': 'CONFIG_I2C_STM32_INTERRUPT'},
+ * 'i2c_stm32_init',
+ * 'api_funcs',
+ * device_data,
+ * device_config
+ * )
+ *
+ * @endcode{.codegen}
+ */
+/** @code{.codeins}@endcode */

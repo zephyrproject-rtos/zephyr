@@ -55,10 +55,10 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg, u8_t *flg,
 s32_t stm32_i2c_configure_timing(struct device *dev, u32_t clk);
 int i2c_stm32_runtime_configure(struct device *dev, u32_t config);
 
-void stm32_i2c_event_isr(void *arg);
-void stm32_i2c_error_isr(void *arg);
+void stm32_i2c_isr_event(void *arg);
+void stm32_i2c_isr_error(void *arg);
 #ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
-void stm32_i2c_combined_isr(void *arg);
+void stm32_i2c_isr_combined(void *arg);
 #endif
 
 #ifdef CONFIG_I2C_SLAVE
