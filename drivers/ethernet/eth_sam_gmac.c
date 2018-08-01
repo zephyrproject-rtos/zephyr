@@ -1566,77 +1566,99 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(struct device *dev)
 		ETHERNET_LINK_100BASE_T;
 }
 
-static int eth_sam_gmac_set_config(struct device *dev,
-				   enum ethernet_config_type type,
-				   const struct ethernet_config *config)
+static int eth_sam_gmac_set_qav_param(struct device *dev,
+				      enum ethernet_config_type type,
+				      const struct ethernet_config *config)
 {
 	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
 	Gmac *gmac = cfg->regs;
-	int queue_id;
+	enum ethernet_qav_param_type qav_param_type;
 	unsigned int delta_bandwidth;
 	unsigned int idle_slope;
+	int queue_id;
 	bool enable;
 
-	switch (type) {
-	case ETHERNET_CONFIG_TYPE_QAV_STATUS:
-		queue_id = config->qav_queue_param.queue_id;
+	/* Priority queue IDs start from 1 for SAM GMAC */
+	queue_id = config->qav_param.queue_id + 1;
 
-		/* Priority queue IDs start from 1 for SAM GMAC */
-		queue_id++;
+	qav_param_type = config->qav_param.type;
 
-		enable = config->qav_queue_param.enabled;
-
+	switch (qav_param_type) {
+	case ETHERNET_QAV_PARAM_TYPE_STATUS:
+		enable = config->qav_param.enabled;
 		return eth_sam_gmac_setup_qav(gmac, queue_id, enable);
-	case ETHERNET_CONFIG_TYPE_QAV_DELTA_BANDWIDTH:
-		queue_id = config->qav_queue_param.queue_id;
-
-		/* Priority queue IDs start from 1 for SAM GMAC */
-		queue_id++;
-
-		delta_bandwidth = config->qav_queue_param.delta_bandwidth;
+	case ETHERNET_QAV_PARAM_TYPE_DELTA_BANDWIDTH:
+		delta_bandwidth = config->qav_param.delta_bandwidth;
 
 		return eth_sam_gmac_setup_qav_delta_bandwidth(gmac, queue_id,
 							      delta_bandwidth);
-	case ETHERNET_CONFIG_TYPE_QAV_IDLE_SLOPE:
-		queue_id = config->qav_queue_param.queue_id;
-
-		/* Priority queue IDs start from 1 for SAM GMAC */
-		queue_id++;
-
-		idle_slope = config->qav_queue_param.idle_slope;
+	case ETHERNET_QAV_PARAM_TYPE_IDLE_SLOPE:
+		idle_slope = config->qav_param.idle_slope;
 
 		return eth_sam_gmac_setup_qav_idle_slope(gmac, queue_id,
 							 idle_slope);
 	default:
-		return -ENOTSUP;
+		break;
 	}
+
+	return -ENOTSUP;
+}
+
+static int eth_sam_gmac_set_config(struct device *dev,
+				   enum ethernet_config_type type,
+				   const struct ethernet_config *config)
+{
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_QAV_PARAM:
+		return eth_sam_gmac_set_qav_param(dev, type, config);
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
+}
+
+static int eth_sam_gmac_get_qav_param(struct device *dev,
+				      enum ethernet_config_type type,
+				      struct ethernet_config *config)
+{
+	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
+	Gmac *gmac = cfg->regs;
+	enum ethernet_qav_param_type qav_param_type;
+	int queue_id;
+	bool *enabled;
+
+	/* Priority queue IDs start from 1 for SAM GMAC */
+	queue_id = config->qav_param.queue_id + 1;
+
+	qav_param_type = config->qav_param.type;
+
+	switch (qav_param_type) {
+	case ETHERNET_QAV_PARAM_TYPE_STATUS:
+		enabled = &config->qav_param.enabled;
+		return eth_sam_gmac_get_qav_status(gmac, queue_id, enabled);
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
 }
 
 static int eth_sam_gmac_get_config(struct device *dev,
 				   enum ethernet_config_type type,
 				   struct ethernet_config *config)
 {
-	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
-	Gmac *gmac = cfg->regs;
-
-	int queue_id;
-	bool *enabled;
-
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM:
 		config->priority_queues_num = GMAC_PRIORITY_QUEUE_NO;
-		break;
-	case ETHERNET_CONFIG_TYPE_QAV_STATUS:
-		/* Priority queue IDs start from 1 for SAM GMAC */
-		queue_id = config->qav_queue_param.queue_id + 1;
-		enabled = &config->qav_queue_param.enabled;
-
-		return eth_sam_gmac_get_qav_status(gmac, queue_id, enabled);
+		return 0;
+	case ETHERNET_CONFIG_TYPE_QAV_PARAM:
+		return eth_sam_gmac_get_qav_param(dev, type, config);
 	default:
-		return -ENOTSUP;
+		break;
 	}
 
-	return 0;
+	return -ENOTSUP;
 }
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)

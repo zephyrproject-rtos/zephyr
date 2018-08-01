@@ -264,8 +264,9 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		count = params.priority_queues_num;
 		printk("Priority queues:\n");
 		for (i = 0; i < count; ++i) {
-			params.qav_queue_param.queue_id = i;
-			ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QAV_STATUS,
+			params.qav_param.queue_id = i;
+			params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_STATUS;
+			ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QAV_PARAM,
 				       iface,
 				       &params,
 				       sizeof(struct ethernet_req_params));
@@ -275,7 +276,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 				printk("not supported\n");
 			} else {
 				printk("%s\n",
-				       params.qav_queue_param.enabled ?
+				       params.qav_param.enabled ?
 				       "enabled" :
 				       "disabled");
 			}
