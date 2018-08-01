@@ -234,7 +234,6 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 					  struct in_addr *next_addr,
 					  struct arp_entry *entry,
 					  struct net_pkt *pending,
-					  struct in_addr *request_ip,
 					  struct in_addr *current_ip)
 {
 #if defined(CONFIG_NET_VLAN)
@@ -259,6 +258,8 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 		 * things setup so no need to allocate new net_pkt
 		 */
 		pkt = pending;
+
+		net_buf_add(pkt->frags, sizeof(struct net_arp_hdr));
 	} else {
 		pkt = net_pkt_get_reserve_tx(eth_hdr_len, NET_BUF_TIMEOUT);
 		if (!pkt) {
@@ -378,7 +379,8 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 	/* Is the destination in the local network, if not route via
 	 * the gateway address.
 	 */
-	if (!net_if_ipv4_addr_mask_cmp(net_pkt_iface(pkt), request_ip)) {
+	if (!current_ip &&
+	    !net_if_ipv4_addr_mask_cmp(net_pkt_iface(pkt), request_ip)) {
 		struct net_if_ipv4 *ipv4 = net_pkt_iface(pkt)->config.ip.ipv4;
 
 		if (ipv4) {
@@ -417,7 +419,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 		}
 
 		req = arp_prepare(net_pkt_iface(pkt), addr, entry, pkt,
-				  request_ip, current_ip);
+				  current_ip);
 
 		if (!entry) {
 			/* We cannot send the packet, the ARP cache is full
@@ -437,7 +439,8 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src));
 
 	net_eth_fill_header(ctx, pkt,
-			    htons(NET_ETH_PTYPE_IP),
+			    current_ip == NULL ? htons(NET_ETH_PTYPE_IP) :
+						 htons(NET_ETH_PTYPE_ARP),
 			    ll->addr, entry->eth.addr);
 
 	return pkt;
