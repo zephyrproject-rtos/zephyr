@@ -103,6 +103,8 @@ enum ethernet_config_type {
 enum ethernet_qav_param_type {
 	ETHERNET_QAV_PARAM_TYPE_DELTA_BANDWIDTH,
 	ETHERNET_QAV_PARAM_TYPE_IDLE_SLOPE,
+	ETHERNET_QAV_PARAM_TYPE_OPER_IDLE_SLOPE,
+	ETHERNET_QAV_PARAM_TYPE_TRAFFIC_CLASS,
 	ETHERNET_QAV_PARAM_TYPE_STATUS,
 };
 
@@ -118,6 +120,10 @@ struct ethernet_qav_param {
 		unsigned int delta_bandwidth;
 		/** Idle Slope (bits per second) */
 		unsigned int idle_slope;
+		/** Oper Idle Slope (bits per second) */
+		unsigned int oper_idle_slope;
+		/** Traffic class the queue is bound to */
+		unsigned int traffic_class;
 	};
 };
 
