@@ -118,6 +118,13 @@
 	current-speed = <115200>;
 };
 
+#ifdef CONFIG_UART_MCUX_2
+&uart2 {
+	status = "ok";
+	current-speed = <115200>;
+};
+#endif
+
 #ifdef CONFIG_BT
 &uart3 {
 	status = "ok";
