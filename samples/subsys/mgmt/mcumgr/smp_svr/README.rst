@@ -119,7 +119,7 @@ file you built in Step 3. In the below example, the MCUboot repo is located at
         --header-size 0x200 \
         --align 8 \
         --version 1.0 \
-        --included-header \
+        --slot-size <image-slot-size> \
         <path-to-zephyr.(bin|hex)> signed.(bin|hex)
 
 The above command creates an image file called :file:`signed.(bin|hex)` in the
@@ -219,6 +219,14 @@ device.
 
 If all goes well the image will now be stored in slot-1, ready to be swapped
 into slot-0 and executed.
+
+.. note::
+
+   At the beginning of the upload process, the target might start erasing
+   the image slot, taking several dozen seconds for some targets.  This might
+   cause an NMP timeout in the management protocol tool. Use the
+   ``-t <timeout-in-seconds`` option to increase the response timeout for the
+   ``mcumgr`` command line tool if this occurs.
 
 List the images
 ---------------
