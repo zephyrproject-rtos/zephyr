@@ -28,6 +28,7 @@ choice
 
 config MCUBOOT_IMG_MANAGER
 	bool "Image manager for mcuboot"
+	select FLASH_MAP
 	help
 	  Enable support for managing DFU image downloaded using mcuboot.
 endchoice
