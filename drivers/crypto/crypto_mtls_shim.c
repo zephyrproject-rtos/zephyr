@@ -58,7 +58,8 @@ struct mtls_shim_session {
 #if defined(CONFIG_CRYPTO_ENABLE_AES_CCM)
 		mbedtls_ccm_context mtls;
 #endif
-#if defined(CONFIG_CRYPTO_ENABLE_AES_CBC)
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CBC) || \
+		defined(CONFIG_CRYPTO_ENABLE_AES_CTR)
 		mbedtls_aes_context aes;
 #endif
 #if defined(CONFIG_MBEDTLS_ENABLE_HMAC_DRBG)
@@ -192,8 +193,10 @@ static void mtls_free_session(struct mtls_shim_session *session)
 		if (session->mode == CRYPTO_CIPHER_MODE_CCM)
 			mbedtls_ccm_free(&session->mtls);
 #endif
-#if defined(CONFIG_CRYPTO_ENABLE_AES_CBC)
-		if (session->mode == CRYPTO_CIPHER_MODE_CBC)
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CBC) || \
+		defined(CONFIG_CRYPTO_ENABLE_AES_CTR)
+		if ((session->mode == CRYPTO_CIPHER_MODE_CBC) ||
+		     (session->mode == CRYPTO_CIPHER_MODE_CTR))
 			mbedtls_aes_free(&session->aes);
 #endif
 		break;
@@ -304,6 +307,63 @@ static int mtls_session_setup_aes_cbc(struct cipher_ctx *ctx,
 }
 #endif
 
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CTR)
+static int mtls_aes_ctr_crypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
+				u8_t *iv)
+{
+	int ret;
+	size_t out_len = 0;
+	u8_t nonce_counter[16] = {0};
+	u8_t stream_block[16] = {0};
+	struct mtls_shim_session *session = ctx->drv_sessn_state;
+	int ivlen = ctx->keylen - (ctx->mode_params.ctr_info.ctr_len >> 3);
+
+	(void)memcpy(nonce_counter, iv, ivlen);
+
+	ret = mbedtls_aes_crypt_ctr(&session->aes, op->in_len, &out_len,
+				    nonce_counter, stream_block,
+				    op->in_buf,
+				    op->out_buf);
+	if (ret) {
+		SYS_LOG_ERR("Could non decrypt/encrypt (%d)", ret);
+		return -EINVAL;
+	}
+	op->out_len = out_len;
+
+	return 0;
+}
+
+static int mtls_session_setup_aes_ctr(struct cipher_ctx *ctx,
+				      enum cipher_algo algo,
+				      enum cipher_mode mode,
+				      enum cipher_op op_type)
+{
+	int ret;
+	struct mtls_shim_session *session;
+
+	session = mtls_alloc_session(CRYPTO_CIPHER_ALGO_AES,
+				     CRYPTO_CIPHER_MODE_CTR);
+	if (!session) {
+		return -ENOSPC;
+	}
+
+	mbedtls_aes_init(&session->aes);
+
+	ctx->ops.ctr_crypt_hndlr = mtls_aes_ctr_crypt;
+	ret = mbedtls_aes_setkey_enc(&session->aes,
+				     ctx->key.bit_stream, ctx->keylen * 8);
+
+	if (ret) {
+		SYS_LOG_ERR("Could not setup the key (%d)", ret);
+		mtls_free_session(session);
+		return -EINVAL;
+	}
+
+	ctx->drv_sessn_state = session;
+	return ret;
+}
+#endif
+
 #if defined(CONFIG_CRYPTO_ENABLE_AES_CCM)
 static int mtls_session_setup_aes_ccm(struct cipher_ctx *ctx,
 				      enum cipher_algo algo,
@@ -358,6 +418,11 @@ static int mtls_session_setup_aes(struct cipher_ctx *ctx,
 #if defined(CONFIG_CRYPTO_ENABLE_AES_CBC)
 	case CRYPTO_CIPHER_MODE_CBC:
 		ret = mtls_session_setup_aes_cbc(ctx, algo, mode, op_type);
+		break;
+#endif
+#if defined(CONFIG_CRYPTO_ENABLE_AES_CTR)
+	case CRYPTO_CIPHER_MODE_CTR:
+		ret = mtls_session_setup_aes_ctr(ctx, algo, mode, op_type);
 		break;
 #endif
 #if defined(CONFIG_CRYPTO_ENABLE_AES_CCM)

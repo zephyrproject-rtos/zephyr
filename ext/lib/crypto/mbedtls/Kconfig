@@ -164,6 +164,12 @@ config MBEDTLS_ENABLE_CBC
 	default y if CRYPTO_ENABLE_AES_CBC
 	select TLS_CIPHER_CBC_ENABLED
 
+config MBEDTLS_ENABLE_CTR
+	bool "Enable cipher based message authentication code (CTR)"
+	depends on MBEDTLS_ENABLE_AES
+	default y if CRYPTO_ENABLE_AES_CTR
+	select TLS_CIPHER_CTR_ENABLED
+
 config MBEDTLS_ENABLE_CMAC
 	bool "Enable cipher based message authentication code (CMAC)"
 	depends on MBEDTLS_ENABLE_AES
