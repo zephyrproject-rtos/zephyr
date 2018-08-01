@@ -7,8 +7,14 @@
 #include "mem_protect.h"
 
 /* function prototypes */
-static inline void dummy_start(struct k_timer *timer) { ARG_UNUSED(timer); }
-static inline void dummy_end(struct k_timer *timer) { ARG_UNUSED(timer); }
+static inline void dummy_start(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+}
+static inline void dummy_end(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+}
 
 /* Kernel objects */
 K_THREAD_STACK_DEFINE(test_1_stack, INHERIT_STACK_SIZE);
@@ -35,6 +41,7 @@ __kernel struct k_mem_domain inherit_mem_domain;
 void access_test(void)
 {
 	u32_t msg_q_data = 0xA5A5;
+
 	/* check for all accesses  */
 	k_sem_give(&inherit_sem);
 	k_mutex_lock(&inherit_mutex, K_FOREVER);
@@ -61,6 +68,14 @@ void test_thread_1_for_SU(void *p1, void *p2, void *p3)
 	k_thread_user_mode_enter(test_thread_1_for_user, NULL, NULL, NULL);
 }
 
+/**
+ * @brief Test object permission inheritance
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_mem_domain_init(), k_mem_domain_add_thread(),
+ * k_thread_access_grant()
+ */
 void test_permission_inheritance(void *p1, void *p2, void *p3)
 {
 
