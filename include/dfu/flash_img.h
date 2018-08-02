@@ -12,9 +12,11 @@
 extern "C" {
 #endif
 
+#include <flash_map.h>
+
 struct flash_img_context {
 	u8_t buf[CONFIG_IMG_BLOCK_BUF_SIZE];
-	struct device *dev;
+	const struct flash_area *flash_area;
 	size_t bytes_written;
 	u16_t buf_bytes;
 };
@@ -23,9 +25,10 @@ struct flash_img_context {
  * @brief Initialize context needed for writing the image to the flash.
  *
  * @param ctx context to be initialized
- * @param dev flash driver to used while writing the image
+ *
+ * @return  0 on success, negative errno code on fail
  */
-void flash_img_init(struct flash_img_context *ctx, struct device *dev);
+int flash_img_init(struct flash_img_context *ctx);
 
 /**
  * @brief Read number of bytes of the image written to the flash.
