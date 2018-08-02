@@ -20,11 +20,13 @@
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <net/if.h>
 #include <time.h>
+#include "posix_trace.h"
 
 #ifdef __linux
 #include <linux/if_tun.h>
@@ -95,8 +97,7 @@ static int ssystem(const char *fmt, ...)
 	vsnprintf(cmd, sizeof(cmd), fmt, ap);
 	va_end(ap);
 
-	printk("%s\n", cmd);
-	fflush(stdout);
+	posix_print_trace("%s\n", cmd);
 
 	ret = system(cmd);
 
