@@ -6,7 +6,7 @@
 
 menuconfig I2C_SBCON
 	bool "I2C driver for ARM's SBCon two-wire serial bus interface"
-	depends on I2C && ARM
+	depends on ARM
 	select I2C_BITBANG
 
 if I2C_SBCON
