@@ -12,7 +12,6 @@
  */
 
 #define _DEFAULT_SOURCE
-#define _XOPEN_SOURCE
 
 /* Host include files */
 #include <stdio.h>
