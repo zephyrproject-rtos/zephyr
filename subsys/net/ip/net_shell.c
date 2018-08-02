@@ -618,6 +618,20 @@ static void print_eth_stats(struct net_if *iface, struct net_stats_eth *data)
 	printk("Bcast sent       : %u\n", data->broadcast.tx);
 	printk("Mcast received   : %u\n", data->multicast.rx);
 	printk("Mcast sent       : %u\n", data->multicast.tx);
+
+#if defined(CONFIG_NET_STATISTICS_ETHERNET_VENDOR)
+	if (data->vendor) {
+		printk("Vendor specific statistics for Ethernet interface %p [%d]:\n",
+			iface, net_if_get_by_iface(iface));
+		size_t i = 0;
+
+		do {
+			printk("%s : %u\n", data->vendor[i].key,
+				data->vendor[i].value);
+			i++;
+		} while (data->vendor[i].key);
+	}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET_VENDOR */
 }
 #endif /* CONFIG_NET_STATISTICS_ETHERNET && CONFIG_NET_STATISTICS_USER_API */
 
