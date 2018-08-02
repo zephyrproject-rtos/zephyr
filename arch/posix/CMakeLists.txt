@@ -2,8 +2,6 @@ zephyr_cc_option_ifdef(CONFIG_LTO -flto)
 
 zephyr_compile_options(
   -fno-freestanding
-  -Wno-undef
-  -Wno-implicit-function-declaration
   -m32
   -MMD
   -MP
