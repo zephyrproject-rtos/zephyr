@@ -14,13 +14,11 @@
  * or all its boards
  */
 
+#include "posix_trace.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-void posix_print_error_and_exit(const char *format, ...);
-void posix_print_warning(const char *format, ...);
-void posix_print_trace(const char *format, ...);
 
 void posix_halt_cpu(void);
 void posix_atomic_halt_cpu(unsigned int imask);
