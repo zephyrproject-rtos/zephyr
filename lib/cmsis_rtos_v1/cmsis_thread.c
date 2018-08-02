@@ -62,10 +62,15 @@ osThreadId osThreadCreate(const osThreadDef_t *thread_def, void *arg)
 		stacksz = CONFIG_CMSIS_THREAD_MAX_STACK_SIZE;
 	}
 
+	k_poll_signal_init(thread_def->poll_signal);
+	k_poll_event_init(thread_def->poll_event, K_POLL_TYPE_SIGNAL,
+			K_POLL_MODE_NOTIFY_ONLY, thread_def->poll_signal);
+
 	cm_thread = thread_def->cm_thread;
 	atomic_dec((atomic_t *)&thread_def->instances);
 	stk_ptr = thread_def->stack_mem;
 	prio = cmsis_to_zephyr_priority(thread_def->tpriority);
+	k_thread_custom_data_set((void *)thread_def);
 
 	tid = k_thread_create(&cm_thread[thread_def->instances],
 			stk_ptr[thread_def->instances], stacksz,
