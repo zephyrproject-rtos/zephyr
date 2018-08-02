@@ -169,6 +169,9 @@ typedef struct os_thread_def  {
   uint32_t               stacksize;    ///< stack size requirements in bytes; 0 is default stack size
   void                  *stack_mem;    ///< pointer to array of stack memory
   struct k_thread       *cm_thread;    ///< pointer to k_thread structure
+  struct k_poll_signal *poll_signal;
+  struct k_poll_event   *poll_event;
+  int32_t            signal_results;
 } osThreadDef_t;
  
 /// Timer Definition structure contains timer parameters.
@@ -283,8 +286,10 @@ extern const osThreadDef_t os_thread_def_##name
 #define osThreadDef(name, priority, instances, stacksz)  \
 static K_THREAD_STACK_ARRAY_DEFINE(stacks_##name, instances, CONFIG_CMSIS_THREAD_MAX_STACK_SIZE); \
 static struct k_thread cm_thread_##name[instances]; \
+static struct k_poll_signal wait_signal_##name; \
+static struct k_poll_event wait_events_##name; \
 static osThreadDef_t os_thread_def_##name = \
-{ (name), (priority), (instances), (stacksz), (void *)(stacks_##name), (cm_thread_##name)}
+{ (name), (priority), (instances), (stacksz), (void *)(stacks_##name), (cm_thread_##name), (&wait_signal_##name), (&wait_events_##name), 0 }
 #endif
  
 /// Access a Thread definition.

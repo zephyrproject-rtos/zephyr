@@ -15,6 +15,7 @@ zephyr_library_sources_ifdef(
   cmsis_mempool.c
   cmsis_mailq.c
   cmsis_msgq.c
+  cmsis_signal.c
 )
 
 zephyr_library_link_libraries(CMSIS)
