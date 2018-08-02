@@ -130,16 +130,6 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	bnez a0, is_interrupt
 
 	/*
-	 * If exception is not an interrupt, MEPC will contain
-	 * the instruction address, which has caused the exception.
-	 * Increment saved MEPC by 4 to prevent running into the
-	 * exception again, upon exiting the ISR.
-	 */
-	lw t0, __NANO_ESF_mepc_OFFSET(sp)
-	addi t0, t0, 4
-	sw t0, __NANO_ESF_mepc_OFFSET(sp)
-
-	/*
 	 * If the exception is the result of an ECALL, check whether to
 	 * perform a context-switch or an IRQ offload. Otherwise call _Fault
 	 * to report the exception.
@@ -153,29 +143,7 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	 * If mcause == SOC_MCAUSE_ECALL_EXP, handle system call,
 	 * otherwise handle fault
 	 */
-#ifdef CONFIG_IRQ_OFFLOAD
-	/* If not system call, jump to is_fault */
-	bne t0, t1, is_fault
-
-	/*
-	 * Determine if the system call is the result of an IRQ offloading.
-	 * Done by checking if _offload_routine is not pointing to NULL.
-	 * If NULL, jump to reschedule to perform a context-switch, otherwise,
-	 * jump to is_interrupt to handle the IRQ offload.
-	 */
-	la t0, _offload_routine
-	lw t1, 0x00(t0)
-	beqz t1, reschedule
-	bnez t1, is_interrupt
-
-is_fault:
-#else
-	/*
-	 * Go to reschedule to handle context-switch if system call,
-	 * otherwise call _Fault to handle exception
-	 */
-	beq t0, t1, reschedule
-#endif
+	beq t0, t1, is_syscall
 
 	/*
 	 * Call _Fault to handle exception.
@@ -187,6 +155,37 @@ is_fault:
 	addi a0, sp, 0
 	la ra, no_reschedule
 	tail _Fault
+
+is_syscall:
+	/*
+	 * A syscall is the result of an ecall instruction, in which case the
+	 * MEPC will contain the address of the ecall instruction.
+	 * Increment saved MEPC by 4 to prevent triggering the same ecall
+	 * again upon exiting the ISR.
+	 *
+	 * It's safe to always increment by 4, even with compressed
+	 * instructions, because the ecall instruction is always 4 bytes.
+	 */
+	lw t0, __NANO_ESF_mepc_OFFSET(sp)
+	addi t0, t0, 4
+	sw t0, __NANO_ESF_mepc_OFFSET(sp)
+
+#ifdef CONFIG_IRQ_OFFLOAD
+	/*
+	 * Determine if the system call is the result of an IRQ offloading.
+	 * Done by checking if _offload_routine is not pointing to NULL.
+	 * If NULL, jump to reschedule to perform a context-switch, otherwise,
+	 * jump to is_interrupt to handle the IRQ offload.
+	 */
+	la t0, _offload_routine
+	lw t1, 0x00(t0)
+	bnez t1, is_interrupt
+#endif
+
+	/*
+	 * Go to reschedule to handle context-switch
+	 */
+	j reschedule
 
 is_interrupt:
 	/*
