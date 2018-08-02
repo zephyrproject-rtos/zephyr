@@ -22,21 +22,23 @@ choice
 
 config SPI_0_NRF_SPI
 	bool "nRF SPI 0"
-	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF51X
+	depends on HAS_HW_NRF_SPI0
 	select NRFX_SPI
 	help
 	  Enable nRF SPI Master without EasyDMA on port 0.
 
 config SPI_0_NRF_SPIM
 	bool "nRF SPIM 0"
-	depends on SOC_NRF52840
+	# This driver is not available for nRF52832 because of the anomaly 58
+	# (SPIM: An additional byte is clocked out when RXD.MAXCNT = 1).
+	depends on HAS_HW_NRF_SPIM0 && !SOC_NRF52832
 	select NRFX_SPIM
 	help
 	  Enable nRF SPI Master with EasyDMA on port 0.
 
 config SPI_0_NRF_SPIS
 	bool "nRF SPIS 0"
-	depends on SOC_SERIES_NRF52X
+	depends on HAS_HW_NRF_SPIS0
 	depends on SPI_SLAVE
 	select NRFX_SPIS
 	help
@@ -109,21 +111,23 @@ choice
 
 config SPI_1_NRF_SPI
 	bool "nRF SPI 1"
-	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF51X
+	depends on HAS_HW_NRF_SPI1
 	select NRFX_SPI
 	help
 	  Enable nRF SPI Master without EasyDMA on port 1.
 
 config SPI_1_NRF_SPIM
 	bool "nRF SPIM 1"
-	depends on SOC_NRF52840
+	# This driver is not available for nRF52832 because of the anomaly 58
+	# (SPIM: An additional byte is clocked out when RXD.MAXCNT = 1).
+	depends on HAS_HW_NRF_SPIM1 && !SOC_NRF52832
 	select NRFX_SPIM
 	help
 	  Enable nRF SPI Master with EasyDMA on port 1.
 
 config SPI_1_NRF_SPIS
 	bool "nRF SPIS 1"
-	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF51X
+	depends on HAS_HW_NRF_SPIS1
 	depends on SPI_SLAVE
 	select NRFX_SPIS
 	help
@@ -195,21 +199,23 @@ choice
 
 config SPI_2_NRF_SPI
 	bool "nRF SPI 2"
-	depends on SOC_SERIES_NRF52X
+	depends on HAS_HW_NRF_SPI2
 	select NRFX_SPI
 	help
 	  Enable nRF SPI Master without EasyDMA on port 2.
 
 config SPI_2_NRF_SPIM
 	bool "nRF SPIM 2"
-	depends on SOC_NRF52840
+	# This driver is not available for nRF52832 because of the anomaly 58
+	# (SPIM: An additional byte is clocked out when RXD.MAXCNT = 1).
+	depends on HAS_HW_NRF_SPIM2 && !SOC_NRF52832
 	select NRFX_SPIM
 	help
 	  Enable nRF SPI Master with EasyDMA on port 2.
 
 config SPI_2_NRF_SPIS
 	bool "nRF SPIS 2"
-	depends on SOC_SERIES_NRF52X
+	depends on HAS_HW_NRF_SPIS2
 	depends on SPI_SLAVE
 	select NRFX_SPIS
 	help
@@ -277,7 +283,7 @@ if SPI_3
 
 config SPI_3_NRF_SPIM
 	bool
-	depends on SOC_NRF52840
+	depends on HAS_HW_NRF_SPIM3
 	select NRFX_SPIM
 	default y
 
