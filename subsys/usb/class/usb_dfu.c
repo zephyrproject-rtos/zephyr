@@ -43,6 +43,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <flash.h>
+#include <flash_map.h>
 #include <dfu/mcuboot.h>
 #include <dfu/flash_img.h>
 #include <misc/byteorder.h>
@@ -266,10 +267,7 @@ static struct usb_cfg_data dfu_config;
 
 /* Device data structure */
 struct dfu_data_t {
-	/* Flash device to read/write data from/to */
-	struct device *flash_dev;
-	/* Flash layout data (image-0, image-1, image-scratch) */
-	u32_t flash_addr;
+	u8_t flash_area_id;
 	u32_t flash_upload_size;
 	/* Number of bytes sent during upload */
 	u32_t bytes_sent;
@@ -288,7 +286,7 @@ struct dfu_data_t {
 static struct dfu_data_t dfu_data = {
 	.state = appIDLE,
 	.status = statusOK,
-	.flash_addr = CONFIG_FLASH_BASE_ADDRESS + FLASH_AREA_IMAGE_1_OFFSET,
+	.flash_area_id = FLASH_AREA_IMAGE_1_ID,
 	.flash_upload_size = FLASH_AREA_IMAGE_1_SIZE,
 	.alt_setting = 0,
 };
@@ -316,7 +314,11 @@ static void dfu_reset_counters(void)
 {
 	dfu_data.bytes_sent = 0;
 	dfu_data.block_nr = 0;
-	flash_img_init(&dfu_data.ctx, dfu_data.flash_dev);
+	if (flash_img_init(&dfu_data.ctx)) {
+		LOG_ERR("flash img init error");
+		dfu_data.state = dfuERROR;
+		dfu_data.status = errUNKNOWN;
+	}
 }
 
 static void dfu_flash_write(u8_t *data, size_t len)
@@ -422,15 +424,14 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		case dfuIDLE:
 			LOG_DBG("DFU_DNLOAD start");
 			dfu_reset_counters();
-			if (dfu_data.flash_addr != CONFIG_FLASH_BASE_ADDRESS
-						+ FLASH_AREA_IMAGE_1_OFFSET) {
+			if (dfu_data.flash_area_id != FLASH_AREA_IMAGE_1_ID) {
 				dfu_data.status = errWRITE;
 				dfu_data.state = dfuERROR;
 				LOG_ERR("This area can not be overwritten");
 				break;
 			}
 
-			if (boot_erase_img_bank(FLASH_AREA_IMAGE_1_OFFSET)) {
+			if (boot_erase_img_bank(FLASH_AREA_IMAGE_1_ID)) {
 				dfu_data.state = dfuERROR;
 				dfu_data.status = errERASE;
 				break;
@@ -479,10 +480,18 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			}
 
 			if (len) {
-				ret = flash_read(dfu_data.flash_dev,
-						 dfu_data.flash_addr +
-						 dfu_data.bytes_sent,
-						 dfu_data.buffer, len);
+				const struct flash_area *fa;
+
+				ret = flash_area_open(dfu_data.flash_area_id,
+						      &fa);
+				if (ret) {
+					dfu_data.state = dfuERROR;
+					dfu_data.status = errFILE;
+					break;
+				}
+				ret = flash_area_read(fa, dfu_data.bytes_sent,
+						      dfu_data.buffer, len);
+				flash_area_close(fa);
 				if (ret) {
 					dfu_data.state = dfuERROR;
 					dfu_data.status = errFILE;
@@ -614,18 +623,14 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 
 			switch (pSetup->wValue) {
 			case 0:
-				dfu_data.flash_addr =
-					CONFIG_FLASH_BASE_ADDRESS +
-					FLASH_AREA_IMAGE_0_OFFSET;
+				dfu_data.flash_area_id = FLASH_AREA_IMAGE_0_ID;
 				dfu_data.flash_upload_size =
-					FLASH_AREA_IMAGE_0_SIZE;
+				    FLASH_AREA_IMAGE_0_SIZE;
 				break;
 			case 1:
-				dfu_data.flash_addr =
-					CONFIG_FLASH_BASE_ADDRESS +
-					FLASH_AREA_IMAGE_1_OFFSET;
+				dfu_data.flash_area_id = FLASH_AREA_IMAGE_1_ID;
 				dfu_data.flash_upload_size =
-					FLASH_AREA_IMAGE_1_SIZE;
+				    FLASH_AREA_IMAGE_1_SIZE;
 				break;
 			default:
 				LOG_WRN("Invalid DFU alternate setting");
@@ -682,12 +687,6 @@ static int usb_dfu_init(struct device *dev)
 	int ret;
 
 	ARG_UNUSED(dev);
-
-	dfu_data.flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
-	if (!dfu_data.flash_dev) {
-		LOG_ERR("Flash device not found\n");
-		return -ENODEV;
-	}
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
 	dfu_config.interface.payload_data = dfu_data.buffer;
