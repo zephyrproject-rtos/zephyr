@@ -5,24 +5,23 @@
  */
 
 #include <ztest.h>
-#include <flash.h>
+#include <flash_map.h>
 #include <dfu/flash_img.h>
 
 void test_collecting(void)
 {
-	struct device *flash_dev;
+	const struct flash_area *fa;
 	struct flash_img_context ctx;
 	u32_t i, j;
 	u8_t data[5], temp, k;
+	int ret;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+	ret = flash_img_init(&ctx);
+	zassert_true(ret == 0, "Flash img init");
 
-	flash_write_protection_set(flash_dev, false);
-	flash_erase(flash_dev, FLASH_AREA_IMAGE_1_OFFSET,
-		    FLASH_AREA_IMAGE_1_SIZE);
-	flash_write_protection_set(flash_dev, true);
+	ret = flash_area_erase(ctx.flash_area, 0, ctx.flash_area->fa_size);
+	zassert_true(ret == 0, "Flash erase");
 
-	flash_img_init(&ctx, flash_dev);
 	zassert(flash_img_bytes_written(&ctx) == 0, "pass", "fail");
 
 	k = 0U;
@@ -37,10 +36,16 @@ void test_collecting(void)
 	zassert(flash_img_buffered_write(&ctx, data, 0, true) == 0, "pass",
 					 "fail");
 
+
+	ret = flash_area_open(DT_FLASH_AREA_IMAGE_1_ID, &fa);
+	if (ret) {
+		printf("Flash driver was not found!\n");
+		return;
+	}
+
 	k = 0U;
 	for (i = 0U; i < 300 * sizeof(data); i++) {
-		zassert(flash_read(flash_dev, FLASH_AREA_IMAGE_1_OFFSET + i,
-				   &temp, 1) == 0, "pass", "fail");
+		zassert(flash_area_read(fa, i, &temp, 1) == 0, "pass", "fail");
 		zassert(temp == k, "pass", "fail");
 		k++;
 	}
