@@ -72,12 +72,12 @@
 #pragma message "CONFIG_NET_BUF_DATA_SIZE should be a multiple of 64 bytes " \
 	"due to the granularity of RX DMA"
 #endif
-#endif /* !CONFIG_NET_TEST */
 
 #if (CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT + 1) * CONFIG_ETH_SAM_GMAC_QUEUES \
 	> CONFIG_NET_BUF_RX_COUNT
 #error Not enough RX buffers to allocate descriptors for each HW queue
 #endif
+#endif /* !CONFIG_NET_TEST */
 
 /* RX descriptors list */
 static struct gmac_desc rx_desc_que0[MAIN_QUEUE_RX_DESC_COUNT]
