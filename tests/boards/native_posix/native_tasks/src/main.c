@@ -6,6 +6,7 @@
 
 #include "soc.h"
 #include "kernel.h"
+#include "posix_board_if.h"
 
 /**
  * @brief Test NATIVE_TASK hook for native builds
