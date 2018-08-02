@@ -15,14 +15,18 @@ static struct k_thread tdata[NUM_THREAD];
 #ifndef CONFIG_TICKLESS_IDLE
 #define CONFIG_TICKLESS_IDLE_THRESH 20
 #endif
-/*millisecond per tick*/
-#define MSEC_PER_TICK (__ticks_to_ms(1))
 /*sleep duration tickless*/
-#define SLEEP_TICKLESS (CONFIG_TICKLESS_IDLE_THRESH * MSEC_PER_TICK)
+#define SLEEP_TICKLESS	 __ticks_to_ms(CONFIG_TICKLESS_IDLE_THRESH)
+
 /*sleep duration with tick*/
-#define SLEEP_TICKFUL ((CONFIG_TICKLESS_IDLE_THRESH - 1) * MSEC_PER_TICK)
+#define SLEEP_TICKFUL	 __ticks_to_ms(CONFIG_TICKLESS_IDLE_THRESH - 1)
+
 /*slice size is set as half of the sleep duration*/
-#define SLICE_SIZE ((CONFIG_TICKLESS_IDLE_THRESH >> 1) * MSEC_PER_TICK)
+#define SLICE_SIZE	 __ticks_to_ms(CONFIG_TICKLESS_IDLE_THRESH >> 1)
+
+/*maximum slice duration accepted by the test*/
+#define SLICE_SIZE_LIMIT __ticks_to_ms((CONFIG_TICKLESS_IDLE_THRESH >> 1) + 1)
+
 /*align to millisecond boundary*/
 #if defined(CONFIG_ARCH_POSIX)
 #define ALIGN_MS_BOUNDARY()		       \
@@ -46,11 +50,13 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 {
 	s64_t t = k_uptime_delta(&elapsed_slice);
 
-	TC_PRINT("elapsed slice %lld\n", t);
+	TC_PRINT("elapsed slice %lld, expected: <%lld, %lld>\n",
+		t, SLICE_SIZE, SLICE_SIZE_LIMIT);
+
 	/**TESTPOINT: verify slicing scheduler behaves as expected*/
 	zassert_true(t >= SLICE_SIZE, NULL);
 	/*less than one tick delay*/
-	zassert_true(t <= (SLICE_SIZE + MSEC_PER_TICK), NULL);
+	zassert_true(t <= SLICE_SIZE_LIMIT, NULL);
 
 	u32_t t32 = k_uptime_get_32();
 

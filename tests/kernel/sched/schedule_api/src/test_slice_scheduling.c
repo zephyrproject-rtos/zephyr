@@ -37,20 +37,23 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 	int thread_parameter = ((int)p1 == (NUM_THREAD - 1)) ? '\n' :
 			       ((int)p1 + 'A');
 
+	s64_t expected_slice_min = __ticks_to_ms(_ms_to_ticks(SLICE_SIZE));
+	s64_t expected_slice_max = __ticks_to_ms(_ms_to_ticks(SLICE_SIZE) + 1);
+
 	while (1) {
 		s64_t tdelta = k_uptime_delta(&elapsed_slice);
-
 		TC_PRINT("%c", thread_parameter);
 		/* Test Fails if thread exceed allocated time slice or
 		 * Any thread is scheduled out of order.
 		 */
-		zassert_true(((tdelta <= SLICE_SIZE) &&
+		zassert_true(((tdelta >= expected_slice_min) &&
+			      (tdelta <= expected_slice_max) &&
 			      ((int)p1 == thread_idx)), NULL);
 		thread_idx = (thread_idx + 1) % (NUM_THREAD);
 		u32_t t32 = k_uptime_get_32();
 
 		/* Keep the current thread busy for more than one slice,
-		 * even though,  when timeslice used up the next thread
+		 * even though, when timeslice used up the next thread
 		 * should be scheduled in.
 		 */
 		while (k_uptime_get_32() - t32 < BUSY_MS) {
@@ -104,9 +107,12 @@ void test_slice_scheduling(void)
 	while (count < ITRERATION_COUNT) {
 		k_uptime_delta(&elapsed_slice);
 
-		/* current thread (ztest native) consumed a half timeslice*/
+		/* Keep the current thread busy for more than one slice,
+		 * even though, when timeslice used up the next thread
+		 * should be scheduled in.
+		 */
 		t32 = k_uptime_get_32();
-		while (k_uptime_get_32() - t32 < SLICE_SIZE) {
+		while (k_uptime_get_32() - t32 < BUSY_MS) {
 #if defined(CONFIG_ARCH_POSIX)
 			posix_halt_cpu(); /*sleep until next irq*/
 #else
