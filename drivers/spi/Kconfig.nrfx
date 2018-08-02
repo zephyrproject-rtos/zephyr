@@ -18,7 +18,6 @@ if SPI_0 && !I2C_0
 
 choice
 	prompt "SPI Port 0 Driver type"
-	optional
 
 config SPI_0_NRF_SPI
 	bool "nRF SPI 0"
@@ -107,7 +106,6 @@ if SPI_1 && !I2C_1
 
 choice
 	prompt "SPI Port 1 Driver type"
-	optional
 
 config SPI_1_NRF_SPI
 	bool "nRF SPI 1"
@@ -195,7 +193,6 @@ if SPI_2
 
 choice
 	prompt "SPI Port 2 Driver type"
-	optional
 
 config SPI_2_NRF_SPI
 	bool "nRF SPI 2"
