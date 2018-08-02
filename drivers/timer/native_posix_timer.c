@@ -18,7 +18,7 @@
 #include "sys_clock.h"
 #include "timer_model.h"
 #include "soc.h"
-#include "posix_soc_if.h"
+#include "posix_trace.h"
 
 static u64_t tick_period; /* System tick period in number of hw cycles */
 static s64_t silent_ticks;

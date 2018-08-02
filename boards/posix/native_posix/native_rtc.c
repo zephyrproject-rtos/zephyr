@@ -11,6 +11,7 @@
 #include "native_rtc.h"
 #include "hw_models_top.h"
 #include "timer_model.h"
+#include "posix_trace.h"
 
 /**
  * Return the (simulation) time in microseconds

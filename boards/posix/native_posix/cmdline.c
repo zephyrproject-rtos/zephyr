@@ -13,6 +13,7 @@
 #include "timer_model.h"
 #include "cmdline.h"
 #include "toolchain.h"
+#include "posix_trace.h"
 
 static int s_argc, test_argc;
 static char **s_argv, **test_argv;

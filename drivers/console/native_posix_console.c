@@ -9,6 +9,7 @@
 #include "init.h"
 #include "kernel.h"
 #include "console/console.h"
+#include "posix_board_if.h"
 #include <string.h>
 #include <sys/time.h>
 #include <sys/select.h>
