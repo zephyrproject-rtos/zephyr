@@ -29,6 +29,14 @@ Intel x86, ARC, NIOS II, Tensilica Xtensa, and RISC V, and a large number of
 
 .. start_include_here
 
+Getting Started
+***************
+
+To start developing Zephyr applications refer to the `Getting Started Guide`_
+in the `Zephyr Documentation`_ pages.
+A brief introduction to Zephyr can be found in the  `Zephyr Introduction`_
+page.
+
 Community Support
 *****************
 
@@ -51,8 +59,7 @@ support systems:
 * **Zephyr Project Website**: The https://zephyrproject.org website is the
   central source of information about the Zephyr Project. On this site, you'll
   find background and current information about the project as well as all the
-  relevant links to project material.  For a quick start, refer to the
-  `Zephyr Introduction`_ and `Getting Started Guide`_.
+  relevant links to project material.
 
 * **Releases**: Source code for Zephyr kernel releases are available at
   https://zephyrproject.org/developers/#downloads. On this page,
@@ -108,6 +115,7 @@ support systems:
 
 
 .. _supported boards: http://docs.zephyrproject.org/boards/boards.html
+.. _Zephyr Documentation: http://docs.zephyrproject.org
 .. _Zephyr Introduction: http://docs.zephyrproject.org/introduction/introducing_zephyr.html
 .. _Getting Started Guide: http://docs.zephyrproject.org/getting_started/getting_started.html
 .. _Contribution Guide: http://docs.zephyrproject.org/contribute/contribute_guidelines.html
