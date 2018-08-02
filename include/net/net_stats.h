@@ -341,6 +341,13 @@ struct net_stats_eth_hw_timestamp {
 	net_stats_t tx_hwtstamp_skipped;
 };
 
+#ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
+struct net_stats_eth_vendor {
+	const char * const key;
+	u32_t value;
+};
+#endif
+
 /* Ethernet specific statistics */
 struct net_stats_eth {
 	struct net_stats_bytes bytes;
@@ -356,6 +363,10 @@ struct net_stats_eth {
 	net_stats_t tx_dropped;
 	net_stats_t tx_timeout_count;
 	net_stats_t tx_restart_queue;
+#ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
+	/** Array is terminated with an entry containing a NULL key */
+	struct net_stats_eth_vendor *vendor;
+#endif
 };
 
 #if defined(CONFIG_NET_STATISTICS_USER_API)
