@@ -4924,8 +4924,6 @@ int bt_id_create(bt_addr_le_t *addr, u8_t *irk)
 
 int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk)
 {
-	int err;
-
 	if (addr && bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
 		if (addr->type != BT_ADDR_LE_RANDOM ||
 		    !BT_ADDR_IS_STATIC(&addr->a)) {
@@ -4951,14 +4949,57 @@ int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk)
 		return -EBUSY;
 	}
 
-	err = bt_unpair(id, NULL);
-	if (err) {
-		return err;
+	if (bt_addr_le_cmp(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
+		int err;
+
+		err = bt_unpair(id, NULL);
+		if (err) {
+			return err;
+		}
 	}
 
 	id_create(id, addr, irk);
 
 	return id;
+}
+
+int bt_id_delete(u8_t id)
+{
+	int err;
+
+	if (id == BT_ID_DEFAULT || id >= bt_dev.id_count) {
+		return -EINVAL;
+	}
+
+	if (!bt_addr_le_cmp(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
+		return -EALREADY;
+	}
+
+	if (id == bt_dev.adv_id && atomic_test_bit(bt_dev.flags,
+						   BT_DEV_ADVERTISING)) {
+		return -EBUSY;
+	}
+
+	err = bt_unpair(id, NULL);
+	if (err) {
+		return err;
+	}
+
+#if defined(CONFIG_BT_PRIVACY)
+	memset(bt_dev.irk[id], 0, 16);
+#endif
+	bt_addr_le_copy(&bt_dev.id_addr[id], BT_ADDR_LE_ANY);
+
+	if (id == bt_dev.id_count - 1) {
+		bt_dev.id_count--;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		bt_settings_save_id();
+	}
+
+	return 0;
 }
 
 bool bt_addr_le_is_bonded(u8_t id, const bt_addr_le_t *addr)
@@ -4975,7 +5016,8 @@ bool bt_addr_le_is_bonded(u8_t id, const bt_addr_le_t *addr)
 
 static bool valid_adv_param(const struct bt_le_adv_param *param)
 {
-	if (param->id >= bt_dev.id_count) {
+	if (param->id >= bt_dev.id_count ||
+	    !bt_addr_le_cmp(&bt_dev.id_addr[param->id], BT_ADDR_LE_ANY)) {
 		return false;
 	}
 

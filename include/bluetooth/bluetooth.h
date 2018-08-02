@@ -105,6 +105,9 @@ int bt_set_id_addr(const bt_addr_le_t *addr);
  *  identifier that some APIs expect (such as advertising parameters) is
  *  simply the index of the identity in the @a addrs array.
  *
+ *  Note: Deleted identities may show up as BT_LE_ADDR_ANY in the returned
+ *  array.
+ *
  *  @param addrs Array where to store the configured identities.
  *  @param count Should be initialized to the array size. Once the function
  *               returns it will contain the number of returned identies.
@@ -182,6 +185,23 @@ int bt_id_create(bt_addr_le_t *addr, u8_t *irk);
  *          error code on failure.
  */
 int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk);
+
+/** @brief Delete an identity.
+ *
+ *  When given a valid identity this function will disconnect any connections
+ *  created using it, remove any pairing keys or other data associated with
+ *  it, and then flag is as deleted, so that it can not be used for any
+ *  operations. To take back into use the slot the identity was occupying the
+ *  bt_id_reset() API needs to be used.
+ *
+ *  Note: the default identity (BT_ID_DEFAULT) cannot be deleted, i.e. this
+ *  API will return an error if asked to do that.
+ *
+ *  @param id   Existing identity identifier.
+ *
+ *  @return 0 in case of success, or a negative error code on failure.
+ */
+int bt_id_delete(u8_t id);
 
 /* Advertising API */
 
