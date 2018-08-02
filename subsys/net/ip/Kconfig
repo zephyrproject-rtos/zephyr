@@ -70,6 +70,39 @@ config NET_TC_RX_COUNT
 	  handled equally. In this implementation, the higher traffic class
 	  value corresponds to lower thread priority.
 
+choice
+	prompt "Priority to traffic class mapping"
+	help
+	  Select mapping to use to map network packet priorities to traffic
+	  classes.
+
+config NET_TC_MAPPING_STRICT
+	bool "Strict priority mapping"
+	help
+	  This is the recommended default priority to traffic class mapping.
+	  Use it for implementations that do not support the credit-based
+	  sharper transmission selection algorithm.
+	  See 802.1Q, chapter 8.6.6 for more information.
+
+config NET_TC_MAPPING_SR_CLASS_A_AND_B
+	bool "SR class A and class B mapping"
+	depends on NET_TC_TX_COUNT >= 2
+	depends on NET_TC_RX_COUNT >= 2
+	help
+	  This is the recommended priority to traffic class mapping for a
+	  system that supports SR (Stream Reservation) class A and SR class B.
+	  See 802.1Q, chapter 34.5 for more information.
+
+config NET_TC_MAPPING_SR_CLASS_B_ONLY
+	bool "SR class B only mapping"
+	depends on NET_TC_TX_COUNT >= 2
+	depends on NET_TC_RX_COUNT >= 2
+	help
+	  This is the recommended priority to traffic class mapping for a
+	  system that supports SR (Stream Reservation) class B only.
+	  See 802.1Q, chapter 34.5 for more information.
+endchoice
+
 config NET_TX_DEFAULT_PRIORITY
 	int "Default network packet priority if none have been set"
 	default 1
