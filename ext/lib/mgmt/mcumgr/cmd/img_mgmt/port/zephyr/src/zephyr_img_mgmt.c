@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <flash.h>
+#include <flash_map.h>
 #include <zephyr.h>
 #include <soc.h>
 #include <init.h>
@@ -29,15 +30,13 @@
 #include <img_mgmt/img_mgmt.h>
 #include "../../../src/img_mgmt_priv.h"
 
-static struct device *zephyr_img_mgmt_flash_dev;
-static struct flash_img_context zephyr_img_mgmt_flash_ctxt;
-
 /**
  * Determines if the specified area of flash is completely unwritten.
  */
 static int
-zephyr_img_mgmt_flash_check_empty(off_t offset, size_t size, bool *out_empty)
+zephyr_img_mgmt_flash_check_empty(u8_t fa_id, bool *out_empty)
 {
+    const struct flash_area *fa;
     uint32_t data[16];
     off_t addr;
     off_t end;
@@ -45,57 +44,65 @@ zephyr_img_mgmt_flash_check_empty(off_t offset, size_t size, bool *out_empty)
     int rc;
     int i;
 
-    assert(size % 4 == 0);
+    rc = flash_area_open(fa_id, &fa);
+    if (rc != 0) {
+        return MGMT_ERR_EUNKNOWN;
+    }
 
-    end = offset + size;
-    for (addr = offset; addr < end; addr += sizeof data) {
+    assert(fa->fa_size % 4 == 0);
+
+    end = fa->fa_size;
+    for (addr = 0; addr < end; addr += sizeof data) {
         if (end - addr < sizeof data) {
             bytes_to_read = end - addr;
         } else {
             bytes_to_read = sizeof data;
         }
 
-        rc = flash_read(zephyr_img_mgmt_flash_dev, addr, data, bytes_to_read);
+        rc = flash_area_read(fa, addr, data, bytes_to_read);
         if (rc != 0) {
+            flash_area_close(fa);
             return MGMT_ERR_EUNKNOWN;
         }
 
         for (i = 0; i < bytes_to_read / 4; i++) {
             if (data[i] != 0xffffffff) {
                 *out_empty = false;
+                flash_area_close(fa);
                 return 0;
             }
         }
     }
 
     *out_empty = true;
+    flash_area_close(fa);
     return 0;
 }
 
 /**
- * Converts an offset within an image slot to an absolute address.
+ * Get flash_area ID for a image slot number.
  */
-static off_t
-zephyr_img_mgmt_abs_offset(int slot, off_t sub_offset)
+static u8_t
+zephyr_img_mgmt_flash_area_id(int slot)
 {
-    off_t slot_start;
+    u8_t fa_id;
 
     switch (slot) {
     case 0:
-        slot_start = FLASH_AREA_IMAGE_0_OFFSET;
+        fa_id = DT_FLASH_AREA_IMAGE_0_ID;
         break;
 
     case 1:
-        slot_start = FLASH_AREA_IMAGE_1_OFFSET;
+        fa_id = DT_FLASH_AREA_IMAGE_1_ID;
         break;
 
     default:
         assert(0);
-        slot_start = FLASH_AREA_IMAGE_1_OFFSET;
+        fa_id = DT_FLASH_AREA_IMAGE_1_ID;
         break;
     }
 
-    return slot_start + sub_offset;
+    return fa_id;
 }
 
 int
@@ -104,15 +111,14 @@ img_mgmt_impl_erase_slot(void)
     bool empty;
     int rc;
 
-    rc = zephyr_img_mgmt_flash_check_empty(FLASH_AREA_IMAGE_1_OFFSET,
-                                           FLASH_AREA_IMAGE_1_SIZE,
+    rc = zephyr_img_mgmt_flash_check_empty(DT_FLASH_AREA_IMAGE_1_ID,
                                            &empty);
     if (rc != 0) {
         return MGMT_ERR_EUNKNOWN;
     }
 
     if (!empty) {
-        rc = boot_erase_img_bank(FLASH_AREA_IMAGE_1_OFFSET);
+        rc = boot_erase_img_bank(DT_FLASH_AREA_IMAGE_1_ID);
         if (rc != 0) {
             return MGMT_ERR_EUNKNOWN;
         }
@@ -155,11 +161,17 @@ int
 img_mgmt_impl_read(int slot, unsigned int offset, void *dst,
                    unsigned int num_bytes)
 {
-    off_t abs_offset;
+    const struct flash_area *fa;
     int rc;
 
-    abs_offset = zephyr_img_mgmt_abs_offset(slot, offset);
-    rc = flash_read(zephyr_img_mgmt_flash_dev, abs_offset, dst, num_bytes);
+    rc = flash_area_open(zephyr_img_mgmt_flash_area_id(slot), &fa);
+    if (rc != 0) {
+        return MGMT_ERR_EUNKNOWN;
+    }
+
+    rc = flash_area_read(fa, offset, dst, num_bytes);
+    flash_area_close(fa);
+
     if (rc != 0) {
         return MGMT_ERR_EUNKNOWN;
     }
@@ -171,28 +183,55 @@ int
 img_mgmt_impl_write_image_data(unsigned int offset, const void *data,
                                unsigned int num_bytes, bool last)
 {
-    int rc;
+	int rc;
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+	static struct flash_img_context *ctx = NULL;
+#else
+	static struct flash_img_context ctx_data;
+#define ctx (&ctx_data)
+#endif
 
-    if (offset == 0) {
-        flash_img_init(&zephyr_img_mgmt_flash_ctxt, zephyr_img_mgmt_flash_dev);
-    }
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+	if (offset != 0 && ctx == NULL) {
+		return MGMT_ERR_EUNKNOWN;
+	}
+#endif
 
-    /* Cast away const. */
-    rc = flash_img_buffered_write(&zephyr_img_mgmt_flash_ctxt, (void *)data,
-                                  num_bytes, false);
-    if (rc != 0) {
-        return MGMT_ERR_EUNKNOWN;
-    }
+	if (offset == 0) {
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+		if (ctx == NULL) {
+			ctx = k_malloc(sizeof(*ctx));
 
-    if (last) {
-        rc = flash_img_buffered_write(&zephyr_img_mgmt_flash_ctxt,
-                                      NULL, 0, true);
-        if (rc != 0) {
-            return MGMT_ERR_EUNKNOWN;
-        }
-    }
+			if (ctx == NULL) {
+				return MGMT_ERR_ENOMEM;
+			}
+		}
+#endif
+		rc = flash_img_init(ctx);
 
-    return 0;
+		if (rc != 0) {
+			return MGMT_ERR_EUNKNOWN;
+		}
+	}
+
+	if (offset != ctx->bytes_written + ctx->buf_bytes) {
+		return MGMT_ERR_EUNKNOWN;
+	}
+
+	/* Cast away const. */
+	rc = flash_img_buffered_write(ctx, (void *)data, num_bytes, last);
+	if (rc != 0) {
+		return MGMT_ERR_EUNKNOWN;
+	}
+
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+	if (last) {
+		k_free(ctx);
+		ctx = NULL;
+	}
+#endif
+
+	return 0;
 }
 
 int
@@ -212,17 +251,3 @@ img_mgmt_impl_swap_type(void)
         return IMG_MGMT_SWAP_TYPE_NONE;
     }
 }
-
-static int
-zephyr_img_mgmt_init(struct device *dev)
-{
-    ARG_UNUSED(dev);
-
-    zephyr_img_mgmt_flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
-    if (zephyr_img_mgmt_flash_dev == NULL) {
-        return -ENODEV;
-    }
-    return 0;
-}
-
-SYS_INIT(zephyr_img_mgmt_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
