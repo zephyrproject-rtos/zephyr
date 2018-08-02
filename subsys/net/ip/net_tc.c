@@ -52,8 +52,8 @@ int net_tx_priority2tc(enum net_priority prio)
 	 * chapter 34.5 table 34-1
 	 *
 	 *  Priority         Acronym   Traffic types
-	 *  0 (lowest)       BK        Background
-	 *  1 (default)      BE        Best effort
+	 *  1 (lowest)       BK        Background
+	 *  0 (default)      BE        Best effort
 	 *  2                EE        Excellent effort
 	 *  3                CA        Critical applications
 	 *  4                VI        Video, < 100 ms latency and jitter
@@ -79,13 +79,13 @@ int net_tx_priority2tc(enum net_priority prio)
 		0, 0, 1, 1, 2, 2, 3, 4
 #endif
 #if NET_TC_TX_COUNT == 6
-		0, 1, 2, 2, 3, 3, 4, 5
+		1, 0, 2, 2, 3, 3, 4, 5
 #endif
 #if NET_TC_TX_COUNT == 7
-		0, 1, 2, 3, 4, 4, 5, 6
+		1, 0, 2, 3, 4, 4, 5, 6
 #endif
 #if NET_TC_TX_COUNT == 8
-		0, 1, 2, 3, 4, 5, 6, 7
+		1, 0, 2, 3, 4, 5, 6, 7
 #endif
 	};
 
@@ -105,8 +105,8 @@ int net_rx_priority2tc(enum net_priority prio)
 	 * chapter 34.5 table 34-1
 	 *
 	 *  Priority         Acronym   Traffic types
-	 *  0 (lowest)       BK        Background
-	 *  1 (default)      BE        Best effort
+	 *  1 (lowest)       BK        Background
+	 *  0 (default)      BE        Best effort
 	 *  2                EE        Excellent effort
 	 *  3                CA        Critical applications
 	 *  4                VI        Video, < 100 ms latency and jitter
@@ -132,13 +132,13 @@ int net_rx_priority2tc(enum net_priority prio)
 		0, 0, 1, 1, 2, 2, 3, 4
 #endif
 #if NET_TC_RX_COUNT == 6
-		0, 1, 2, 2, 3, 3, 4, 5
+		1, 0, 2, 2, 3, 3, 4, 5
 #endif
 #if NET_TC_RX_COUNT == 7
-		0, 1, 2, 3, 4, 4, 5, 6
+		1, 0, 2, 3, 4, 4, 5, 6
 #endif
 #if NET_TC_RX_COUNT == 8
-		0, 1, 2, 3, 4, 5, 6, 7
+		1, 0, 2, 3, 4, 5, 6, 7
 #endif
 	};
 
