@@ -152,19 +152,9 @@ rst_epilog = """
 
 # -- Options for HTML output ----------------------------------------------
 
-try:
-    import sphinx_rtd_theme
-except ImportError:
-    html_theme = 'zephyr'
-    html_theme_path = ['./themes']
-else:
-    html_theme = "sphinx_rtd_theme"
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-
-if tags.has('daily') or tags.has('release'):
-    html_theme = 'zephyr-docs-theme'
-    html_theme_path = ['./themes']
-
+import sphinx_rtd_theme
+html_theme = "sphinx_rtd_theme"
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 if tags.has('release'):
     is_release = True
@@ -186,12 +176,12 @@ html_title = "Zephyr Project Documentation"
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = 'images/Zephyr-Kite-logo.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-#html_favicon = None
+#html_favicon = 'images/zp_favicon.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -228,7 +218,7 @@ html_use_index = True
 html_split_index = True
 
 # If true, links to the reST sources are added to the pages.
-#html_show_sourcelink =
+html_show_sourcelink = False
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
 html_show_sphinx = False
@@ -366,6 +356,14 @@ html_context = {
     'show_license': html_show_license,
     'docs_title': docs_title,
     'is_release': is_release,
+    'theme_logo_only': False,
+    'current_version': version,
+    'versions': ( ("latest", "/"),
+                 ("1.12.0", "/1.12.0/"),
+                 ("1.11.0", "/1.11.0/"),
+                 ("1.10.0", "/1.10.0/"),
+                 ("1.9.2", "/1.9.0/"),
+                )
 }
 
 extlinks = {'jira': ('https://jira.zephyrproject.org/browse/%s', ''),
@@ -386,3 +384,4 @@ linkcheck_anchors = False
 
 def setup(app):
    app.add_stylesheet("zephyr-custom.css")
+   app.add_javascript("zephyr-custom.js")
