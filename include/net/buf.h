@@ -1299,6 +1299,90 @@ struct net_buf *net_buf_frag_del_debug(struct net_buf *parent,
 struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag);
 #endif
 
+/**
+ * @brief Copy len bytes from src starting from offset to dst buffer
+ *
+ * This routine assumes that dst is large enough to store @a len bytes
+ * starting from offset at src.
+ *
+ * @param dst Destination buffer
+ * @param dst_len Destination buffer max length
+ * @param src Source buffer that may be fragmented
+ * @param offset Starting point to copy from
+ * @param len Number of bytes to copy
+ * @return number of bytes copied if everything is ok
+ * @return -ENOMEM on error
+ */
+int net_buf_linearize(void *dst, size_t dst_len,
+		      struct net_buf *src, u16_t offset, u16_t len);
+
+/**
+ * @typedef net_buf_allocator_cb
+ * @brief Network buffer allocator callback.
+ *
+ * @details The allocator callback is called when net_buf_append_bytes
+ * needs to allocate a new net_buf.
+ *
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
+ * @param user_data The user data given in net_buf_append_bytes call.
+ * @return pointer to allocated net_buf or NULL on error.
+ */
+typedef struct net_buf *(*net_buf_allocator_cb)(s32_t timeout, void *user_data);
+
+/**
+ * @brief Append data to a list of net_buf
+ *
+ * @details Append data to a net_buf. If there is not enough space in the
+ * net_buf then more net_buf will be added, unless there are no free net_buf
+ * and timeout occurs.
+ *
+ * @param buf Network buffer.
+ * @param len Total length of input data
+ * @param value Data to be added
+ * @param timeout Timeout is passed to the net_buf allocator callback.
+ * @param allocate_cb When a new net_buf is required, use this callback.
+ * @param user_data A user data pointer to be supplied to the allocate_cb.
+ *        This pointer is can be anything from a mem_pool or a net_pkt, the
+ *        logic is left up to the allocate_cb function.
+ *
+ * @return Length of data actually added. This may be less than input
+ *         length if other timeout than K_FOREVER was used, and there
+ *         were no free fragments in a pool to accommodate all data.
+ */
+u16_t net_buf_append_bytes(struct net_buf *buf, u16_t len,
+			   const u8_t *value, s32_t timeout,
+			   net_buf_allocator_cb allocate_cb, void *user_data);
+
+/**
+ * @brief Skip N number of bytes in a net_buf
+ *
+ * @details Skip N number of bytes starting from fragment's offset. If the total
+ * length of data is placed in multiple fragments, this function will skip from
+ * all fragments until it reaches N number of bytes.  Any fully skipped buffers
+ * are removed from the net_buf list.
+ *
+ * @param buf Network buffer.
+ * @param len Total length of data to be skipped.
+ *
+ * @return Pointer to the fragment or
+ *         NULL and pos is 0 after successful skip,
+ *         NULL and pos is 0xffff otherwise.
+ */
+static inline struct net_buf *net_buf_skip(struct net_buf *buf, u16_t len)
+{
+	while (buf && len--) {
+		net_buf_pull_u8(buf);
+		if (!buf->len) {
+			buf = net_buf_frag_del(NULL, buf);
+		}
+	}
+
+	return buf;
+}
+
 /** @brief Calculate amount of bytes stored in fragments.
  *
  *  Calculates the total amount of data stored in the given buffer and the
