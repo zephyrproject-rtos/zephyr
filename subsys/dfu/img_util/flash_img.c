@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 #include <errno.h>
 #include <flash.h>
+#include <flash_map.h>
 #include <dfu/flash_img.h>
 #include <inttypes.h>
 
@@ -23,7 +24,7 @@ BUILD_ASSERT_MSG((CONFIG_IMG_BLOCK_BUF_SIZE % FLASH_WRITE_BLOCK_SIZE == 0),
 		 "CONFIG_IMG_BLOCK_BUF_SIZE is not a multiple of "
 		 "FLASH_WRITE_BLOCK_SIZE");
 
-static bool flash_verify(struct device *dev, off_t offset,
+static bool flash_verify(const struct flash_area *fa, off_t offset,
 			 u8_t *data, size_t len)
 {
 	size_t size;
@@ -32,7 +33,7 @@ static bool flash_verify(struct device *dev, off_t offset,
 
 	while (len) {
 		size = (len >= sizeof(temp)) ? sizeof(temp) : len;
-		rc = flash_read(dev, offset, &temp, size);
+		rc = flash_area_read(fa, offset, &temp, size);
 		if (rc) {
 			LOG_ERR("flash_read error %d offset=0x%08"PRIx32,
 				rc, offset);
@@ -53,36 +54,54 @@ static bool flash_verify(struct device *dev, off_t offset,
 	return (len == 0) ? true : false;
 }
 
-/* buffer data into block writes */
-static int flash_block_write(struct flash_img_context *ctx, off_t offset,
-			     u8_t *data, size_t len, bool finished)
+static int flash_sync(struct flash_img_context *ctx)
+{
+	int rc = 0;
+
+	if (ctx->buf_bytes < CONFIG_IMG_BLOCK_BUF_SIZE) {
+		(void)memset(ctx->buf + ctx->buf_bytes, 0xFF,
+			     CONFIG_IMG_BLOCK_BUF_SIZE - ctx->buf_bytes);
+	}
+
+	rc = flash_area_write(ctx->flash_area, ctx->bytes_written, ctx->buf,
+			      CONFIG_IMG_BLOCK_BUF_SIZE);
+	if (rc) {
+		LOG_ERR("flash_write error %d offset=0x%08" PRIx32, rc,
+			ctx->bytes_written);
+		return rc;
+	}
+
+	if (!flash_verify(ctx->flash_area, ctx->bytes_written, ctx->buf,
+			  CONFIG_IMG_BLOCK_BUF_SIZE)) {
+		return -EIO;
+	}
+
+	ctx->bytes_written += ctx->buf_bytes;
+	ctx->buf_bytes = 0;
+
+	return rc;
+}
+
+int flash_img_buffered_write(struct flash_img_context *ctx, u8_t *data,
+			     size_t len, bool flush)
 {
 	int processed = 0;
 	int rc = 0;
+	int buf_empty_bytes;
 
 	while ((len - processed) >
-	       (CONFIG_IMG_BLOCK_BUF_SIZE - ctx->buf_bytes)) {
+	       (buf_empty_bytes = CONFIG_IMG_BLOCK_BUF_SIZE - ctx->buf_bytes)) {
 		memcpy(ctx->buf + ctx->buf_bytes, data + processed,
-		       (CONFIG_IMG_BLOCK_BUF_SIZE - ctx->buf_bytes));
+		       buf_empty_bytes);
 
-		flash_write_protection_set(ctx->dev, false);
-		rc = flash_write(ctx->dev, offset + ctx->bytes_written,
-				 ctx->buf, CONFIG_IMG_BLOCK_BUF_SIZE);
-		flash_write_protection_set(ctx->dev, true);
+		ctx->buf_bytes = CONFIG_IMG_BLOCK_BUF_SIZE;
+		rc = flash_sync(ctx);
+
 		if (rc) {
-			LOG_ERR("flash_write error %d offset=0x%08"PRIx32,
-				rc, offset + ctx->bytes_written);
 			return rc;
 		}
 
-		if (!flash_verify(ctx->dev, offset + ctx->bytes_written,
-				  ctx->buf, CONFIG_IMG_BLOCK_BUF_SIZE)) {
-			return -EIO;
-		}
-
-		ctx->bytes_written += CONFIG_IMG_BLOCK_BUF_SIZE;
-		processed += (CONFIG_IMG_BLOCK_BUF_SIZE - ctx->buf_bytes);
-		ctx->buf_bytes = 0;
+		processed += buf_empty_bytes;
 	}
 
 	/* place rest of the data into ctx->buf */
@@ -92,29 +111,21 @@ static int flash_block_write(struct flash_img_context *ctx, off_t offset,
 		ctx->buf_bytes += len - processed;
 	}
 
-	if (finished && ctx->buf_bytes > 0) {
-		/* pad the rest of ctx->buf and write it out */
-		(void)memset(ctx->buf + ctx->buf_bytes, 0xFF,
-			     CONFIG_IMG_BLOCK_BUF_SIZE - ctx->buf_bytes);
+	if (!flush) {
+		return rc;
+	}
 
-		flash_write_protection_set(ctx->dev, false);
-		rc = flash_write(ctx->dev, offset + ctx->bytes_written,
-				 ctx->buf, CONFIG_IMG_BLOCK_BUF_SIZE);
-		flash_write_protection_set(ctx->dev, true);
+	if (ctx->buf_bytes > 0) {
+		/* pad the rest of ctx->buf and write it out */
+		rc = flash_sync(ctx);
+
 		if (rc) {
-			LOG_ERR("flash_write error %d offset=0x%08"PRIx32,
-				rc, offset + ctx->bytes_written);
 			return rc;
 		}
-
-		if (!flash_verify(ctx->dev, offset + ctx->bytes_written,
-				  ctx->buf, CONFIG_IMG_BLOCK_BUF_SIZE)) {
-			return -EIO;
-		}
-
-		ctx->bytes_written = ctx->bytes_written + ctx->buf_bytes;
-		ctx->buf_bytes = 0;
 	}
+
+	flash_area_close(ctx->flash_area);
+	ctx->flash_area = NULL;
 
 	return rc;
 }
@@ -124,16 +135,10 @@ size_t flash_img_bytes_written(struct flash_img_context *ctx)
 	return ctx->bytes_written;
 }
 
-void flash_img_init(struct flash_img_context *ctx, struct device *dev)
+int flash_img_init(struct flash_img_context *ctx)
 {
-	ctx->dev = dev;
 	ctx->bytes_written = 0;
 	ctx->buf_bytes = 0;
-}
-
-int flash_img_buffered_write(struct flash_img_context *ctx, u8_t *data,
-			     size_t len, bool flush)
-{
-	return flash_block_write(ctx, FLASH_AREA_IMAGE_1_OFFSET, data, len,
-				 flush);
+	return flash_area_open(FLASH_AREA_IMAGE_1_ID,
+			       (const struct flash_area **)&(ctx->flash_area));
 }
