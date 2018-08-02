@@ -17,6 +17,7 @@
 #include <kernel_structs.h>
 #include "posix_core.h"
 #include "irq.h"
+#include "kswap.h"
 
 /**
  *
