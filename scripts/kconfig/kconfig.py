@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Modified from: https://github.com/ulfalizer/Kconfiglib/blob/master/examples/merge_config.py
 import argparse
+import os
 import sys
 import textwrap
 
@@ -58,13 +59,6 @@ def main():
         kconf.load_config(config, replace=False)
 
 
-    # Write the merged configuration and the C header. This will evaluate all
-    # symbols, which might generate additional warnings, so do it before
-    # checking for warnings.
-    kconf.write_config(args.dotconfig)
-    kconf.write_autoconf(args.autoconf)
-
-
     # Print warnings for symbols whose actual value doesn't match the assigned
     # value
     for sym in kconf.defined_syms:
@@ -77,6 +71,14 @@ def main():
     for choice in kconf.choices:
         if choice.user_selection:
             verify_assigned_choice_value(choice)
+
+    # Hack: Force all symbols to be evaluated, to catch warnings generated
+    # during evaluation. Wait till the end to write the actual output files, so
+    # that we don't generate any output if there are warnings-turned-errors.
+    #
+    # Kconfiglib caches calculated symbol values internally, so this is still
+    # fast.
+    kconf.write_config(os.devnull)
 
     # We could roll this into the loop below, but it's nice to always print all
     # warnings, even if one of them turns out to be fatal
@@ -98,6 +100,11 @@ def main():
                      "to an actual problem, you can add it to the "
                      "whitelist at the top of {}."
                      .format(warning, sys.argv[0]))
+
+
+    # Write the merged configuration and the C header
+    kconf.write_config(args.dotconfig)
+    kconf.write_autoconf(args.autoconf)
 
 
 # Message printed when a promptless symbol is assigned (and doesn't get the

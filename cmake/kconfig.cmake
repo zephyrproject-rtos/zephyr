@@ -103,25 +103,30 @@ endforeach()
 # Create a new .config if it does not exists, or if the checksum of
 # the dependencies has changed
 set(merge_config_files_checksum_file ${PROJECT_BINARY_DIR}/.cmake.dotconfig.checksum)
-set(CREATE_NEW_DOTCONFIG "")
-if(NOT EXISTS ${DOTCONFIG})
-  set(CREATE_NEW_DOTCONFIG 1)
-else()
+set(CREATE_NEW_DOTCONFIG 1)
+# Check if the checksum file exists too before trying to open it, though it
+# should under normal circumstances
+if(EXISTS ${DOTCONFIG} AND EXISTS ${merge_config_file_checksum_file})
   # Read out what the checksum was previously
   file(READ
     ${merge_config_files_checksum_file}
     merge_config_files_checksum_prev
     )
-  set(CREATE_NEW_DOTCONFIG 1)
   if(
       ${merge_config_files_checksum} STREQUAL
       ${merge_config_files_checksum_prev}
       )
+    # Checksum is the same as before
     set(CREATE_NEW_DOTCONFIG 0)
   endif()
 endif()
 
 if(CREATE_NEW_DOTCONFIG)
+  file(WRITE
+    ${merge_config_files_checksum_file}
+    ${merge_config_files_checksum}
+    )
+
   set(merge_fragments ${merge_config_files})
 else()
   set(merge_fragments ${DOTCONFIG})
@@ -142,13 +147,6 @@ execute_process(
   )
 if(NOT "${ret}" STREQUAL "0")
   message(FATAL_ERROR "command failed with return code: ${ret}")
-endif()
-
-if(CREATE_NEW_DOTCONFIG)
-  file(WRITE
-    ${merge_config_files_checksum_file}
-    ${merge_config_files_checksum}
-    )
 endif()
 
 # Force CMAKE configure when the configuration files changes.
