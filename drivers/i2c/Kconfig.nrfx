@@ -24,14 +24,14 @@ choice I2C_0_NRF_TYPE
 
 config I2C_0_NRF_TWI
 	bool "nRF TWI 0"
-	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF51X
+	depends on HAS_HW_NRF_TWI0
 	select NRFX_TWI
 	help
 	  Enable nRF TWI Master without EasyDMA on port 0.
 
 config I2C_0_NRF_TWIM
 	bool "nRF TWIM 0"
-	depends on SOC_SERIES_NRF52X
+	depends on HAS_HW_NRF_TWIM0
 	select NRFX_TWIM
 	help
 	  Enable nRF TWI Master with EasyDMA on port 0.
@@ -50,14 +50,14 @@ choice I2C_1_NRF_TYPE
 
 config I2C_1_NRF_TWI
 	bool "nRF TWI 1"
-	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF51X
+	depends on HAS_HW_NRF_TWI1
 	select NRFX_TWI
 	help
 	  Enable nRF TWI Master without EasyDMA on port 1.
 
 config I2C_1_NRF_TWIM
 	bool "nRF TWIM 1"
-	depends on SOC_SERIES_NRF52X
+	depends on HAS_HW_NRF_TWIM1
 	select NRFX_TWIM
 	help
 	  Enable nRF TWI Master with EasyDMA on port 1.
