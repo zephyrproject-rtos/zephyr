@@ -671,6 +671,29 @@ static int cmd_id_reset(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_id_delete(int argc, char *argv[])
+{
+	u8_t id;
+	int err;
+
+	if (argc < 2) {
+		printk("Identity identifier not specified\n");
+		return -EINVAL;
+	}
+
+	id = strtol(argv[1], NULL, 10);
+
+	err = bt_id_delete(id);
+	if (err < 0) {
+		printk("Deleting ID %u failed (err %d)\n", id, err);
+		return 0;
+	}
+
+	printk("Identity %u deleted\n", id);
+
+	return 0;
+}
+
 static int cmd_id_show(int argc, char *argv[])
 {
 	bt_addr_le_t addrs[CONFIG_BT_ID_MAX];
@@ -2138,6 +2161,7 @@ static const struct shell_cmd bt_commands[] = {
 #endif
 	{ "id-create", cmd_id_create, "[addr]" },
 	{ "id-reset", cmd_id_reset, "<id> [addr]" },
+	{ "id-delete", cmd_id_delete, "<id>" },
 	{ "id-show", cmd_id_show, HELP_NONE },
 	{ "id-select", cmd_id_select, "<id>" },
 	{ "name", cmd_name, "[name]" },
