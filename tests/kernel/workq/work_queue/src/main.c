@@ -15,6 +15,10 @@
 /* Each work item takes 100ms */
 #define WORK_ITEM_WAIT          100
 
+/* In fact, each work item could take up to this value */
+#define WORK_ITEM_WAIT_ALIGNED	\
+	__ticks_to_ms(_ms_to_ticks(WORK_ITEM_WAIT) + _TICK_ALIGN)
+
 /*
  * Wait 50ms between work submissions, to ensure co-op and prempt
  * preempt thread submit alternatively.
@@ -139,7 +143,7 @@ static void test_sequence(void)
 	test_items_submit();
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep((NUM_TEST_ITEMS + 1) * WORK_ITEM_WAIT);
+	k_sleep(NUM_TEST_ITEMS * WORK_ITEM_WAIT_ALIGNED);
 
 	check_results(NUM_TEST_ITEMS);
 	reset_results();
@@ -179,7 +183,7 @@ static void test_resubmit(void)
 	k_work_submit(&tests[0].work.work);
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep((NUM_TEST_ITEMS + 1) * WORK_ITEM_WAIT);
+	k_sleep(NUM_TEST_ITEMS * WORK_ITEM_WAIT_ALIGNED);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);
@@ -294,7 +298,7 @@ static void test_delayed_cancel(void)
 			NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO, 0, 0);
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(2 * WORK_ITEM_WAIT);
+	k_sleep(WORK_ITEM_WAIT_ALIGNED);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(0);
@@ -331,7 +335,7 @@ static void test_delayed_resubmit(void)
 	k_delayed_work_submit(&tests[0].work, WORK_ITEM_WAIT);
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep((NUM_TEST_ITEMS + 1) * WORK_ITEM_WAIT);
+	k_sleep(NUM_TEST_ITEMS * WORK_ITEM_WAIT_ALIGNED);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);
@@ -378,7 +382,7 @@ static void test_delayed_resubmit_thread(void)
 			NULL, NULL, NULL, K_PRIO_COOP(10), 0, 0);
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(WORK_ITEM_WAIT);
+	k_sleep(WORK_ITEM_WAIT_ALIGNED);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(1);
@@ -403,7 +407,7 @@ static void test_delayed(void)
 	test_delayed_submit();
 
 	TC_PRINT(" - Waiting for delayed work to finish\n");
-	k_sleep((NUM_TEST_ITEMS + 2) * WORK_ITEM_WAIT);
+	k_sleep(NUM_TEST_ITEMS * WORK_ITEM_WAIT_ALIGNED);
 
 	TC_PRINT(" - Checking results\n");
 	check_results(NUM_TEST_ITEMS);
