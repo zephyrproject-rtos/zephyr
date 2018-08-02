@@ -22,6 +22,10 @@
 
 #include <shell/shell.h>
 
+#if defined(CONFIG_NATIVE_POSIX_CONSOLE)
+#include "drivers/console/native_posix_console.h"
+#endif
+
 #define ARGC_MAX 10
 #define COMMAND_MAX_LEN 50
 #define MODULE_NAME_MAX_LEN 20
