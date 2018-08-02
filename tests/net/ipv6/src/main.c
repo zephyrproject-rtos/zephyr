@@ -115,6 +115,7 @@ static const unsigned char ipv6_hbho[] = {
 	0x00, 0x00, 0x01, 0x00, 0x00, 0x00,             /* ...... */
 };
 
+static bool expecting_ra;
 static bool test_failed;
 static struct k_sem wait_data;
 
@@ -164,11 +165,15 @@ static void net_test_iface_init(struct net_if *iface)
  */
 static struct net_pkt *prepare_ra_message(void)
 {
+	struct ethernet_context *ctx;
+	struct net_linkaddr lladdr_src;
+	struct net_linkaddr lladdr_dst;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct net_if *iface;
 
 	iface = net_if_get_default();
+	ctx = net_if_l2_data(iface);
 
 	pkt = net_pkt_get_reserve_rx(net_if_get_ll_reserve(iface, NULL),
 				     K_FOREVER);
@@ -179,11 +184,20 @@ static struct net_pkt *prepare_ra_message(void)
 
 	net_pkt_frag_add(pkt, frag);
 
+	lladdr_dst.addr = iface->if_dev->link_addr.addr;
+	lladdr_dst.len = 6;
+
+	lladdr_src.addr = NULL;
+	lladdr_src.len = 0;
+
+	net_eth_fill_header(ctx, pkt, htons(NET_ETH_PTYPE_IPV6),
+			    lladdr_src.addr, lladdr_dst.addr);
+
+	net_buf_add(frag, net_pkt_ll_reserve(pkt));
+
 	net_pkt_set_iface(pkt, iface);
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-
-	net_pkt_ll_clear(pkt);
 
 	memcpy(net_buf_add(frag, sizeof(icmpv6_ra)),
 	       icmpv6_ra, sizeof(icmpv6_ra));
@@ -207,7 +221,12 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 	/* Reply with RA messge */
 	if (icmp->type == NET_ICMPV6_RS) {
 		net_pkt_unref(pkt);
-		pkt = prepare_ra_message();
+
+		if (expecting_ra) {
+			pkt = prepare_ra_message();
+		} else {
+			goto out;
+		}
 	}
 
 	/* Feed this data back to us */
@@ -232,8 +251,8 @@ static struct net_if_api net_test_if_api = {
 	.send = tester_send,
 };
 
-#define _ETH_L2_LAYER DUMMY_L2
-#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
+#define _ETH_L2_LAYER ETHERNET_L2
+#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
 
 NET_DEVICE_INIT(net_test_ipv6, "net_test_ipv6",
 		net_test_dev_init, &net_test_data, NULL,
@@ -519,12 +538,32 @@ static bool net_test_prefix_timeout_overflow(void)
 }
 #endif
 
+static void test_rs_message(void)
+{
+	struct net_if *iface;
+	int ret;
+
+	iface = net_if_get_default();
+
+	expecting_ra = true;
+
+	ret = net_ipv6_send_rs(iface);
+
+	zassert_equal(ret, 0, "RS sending failed (%d)", ret);
+}
+
 static void test_ra_message(void)
 {
 	struct in6_addr addr = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0x2, 0x60,
 				     0x97, 0xff, 0xfe, 0x07, 0x69, 0xea } } };
 	struct in6_addr prefix = { { { 0x3f, 0xfe, 0x05, 0x07, 0, 0, 0, 1,
 				       0, 0, 0, 0, 0, 0, 0, 0 } } };
+
+	/* We received RA message earlier, make sure that the information
+	 * in that message is placed to proper prefix and lookup info.
+	 */
+
+	expecting_ra = false;
 
 	zassert_false(!net_if_ipv6_prefix_lookup(net_if_get_default(), &prefix, 32),
 		      "Prefix %s should be here\n", net_sprint_ipv6_addr(&addr));
@@ -951,6 +990,7 @@ void test_main(void)
 			 ztest_unit_test(test_nbr_lookup_ok),
 			 ztest_unit_test(test_send_ns_extra_options),
 			 ztest_unit_test(test_send_ns_no_options),
+			 ztest_unit_test(test_rs_message),
 			 ztest_unit_test(test_ra_message),
 			 ztest_unit_test(test_hbho_message),
 			 ztest_unit_test(test_hbho_message_1),
