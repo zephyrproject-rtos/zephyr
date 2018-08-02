@@ -91,6 +91,10 @@ table.align-center {
    display: table !important;
 }
 
+/* put the table caption at the bottom, as done for figures */
+table {
+   caption-side: bottom;
+}
 
 .code-block-caption {
     color: #000;
