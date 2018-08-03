@@ -136,6 +136,7 @@ int udp_init(struct udp_context *ctx)
 	struct net_context *mcast_ctx = { 0 };
 	struct sockaddr_in6 my_addr = { 0 };
 	struct sockaddr_in6 my_mcast_addr = { 0 };
+	struct net_if_mcast_addr *mcast;
 	int rc;
 
 	k_sem_init(&ctx->rx_sem, 0, UINT_MAX);
@@ -157,6 +158,13 @@ int udp_init(struct udp_context *ctx)
 			      sizeof(struct sockaddr_in6));
 	if (rc < 0) {
 		printk("Cannot bind IPv6 UDP port %d (%d)", CLIENT_PORT, rc);
+		goto error;
+	}
+
+	mcast = net_if_ipv6_maddr_add(net_if_get_default(),
+				      &my_mcast_addr.sin6_addr);
+	if (!mcast) {
+		printk("Cannot add mcast addr\n");
 		goto error;
 	}
 
