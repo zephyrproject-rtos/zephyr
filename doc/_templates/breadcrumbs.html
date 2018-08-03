@@ -1,0 +1,14 @@
+{% extends "!breadcrumbs.html" %}
+{% block breadcrumbs %}
+  <!-- {{ docs_title }} -->
+  {# parameterize default name "Docs" in breadcrumb via docs_title in conf.py #}
+  {% if not docs_title %}
+  {% set docs_title = "Docs" %}
+  {% endif %}
+
+  <li><a href="{{ pathto(master_doc) }}">{{ docs_title }}</a> &raquo;</li>
+  {% for doc in parents %}
+     <li><a href="{{ doc.link|e }}">{{ doc.title }}</a> &raquo;</li>
+  {% endfor %}
+  <li>{{ title }}</li>
+{% endblock %}
