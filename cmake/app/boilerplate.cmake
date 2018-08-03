@@ -27,15 +27,17 @@ if(uname_output MATCHES "MSYS")
   set(MSYS 1)
 endif()
 
-# CMake version 3.8.2 is the minimum supported version. Version 3.9 is
-# supported but it introduced a warning that we do not wish to
-# show to users. Specifically, it displays a warning when an OLD
-# policy is used, but we need policy CMP0000 set to OLD to avoid
-# copy-pasting cmake_minimum_required across application
-# CMakeLists.txt files.
+# CMake version 3.8.2 is the real minimum supported version.
+#
+# Unfortunately CMake requires the toplevel CMakeLists.txt file to
+# define the required version, not even invoking it from an included
+# file, like boilerplate.cmake, is sufficient. It is however permitted
+# to have multiple invocations of cmake_minimum_required.
+#
+# Under these restraints we use a second 'cmake_minimum_required'
+# invocation in every toplevel CMakeLists.txt.
 cmake_minimum_required(VERSION 3.8.2)
 
-cmake_policy(SET CMP0000 OLD)
 cmake_policy(SET CMP0002 NEW)
 
 define_property(GLOBAL PROPERTY ZEPHYR_LIBS
