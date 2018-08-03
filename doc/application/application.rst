@@ -103,12 +103,19 @@ Follow these steps to create a new application directory. (Refer to
 
 #. Create an empty :file:`CMakeLists.txt` file in your application directory.
 
-#. Include the :file:`boilerplate.cmake` to pull in the Zephyr build system:
+#. Add boilerplate code that sets the minimum CMake version and pulls
+   in the Zephyr build system:
 
    .. code-block:: cmake
 
+      cmake_minimum_required(VERSION 3.8.2)
       include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
       project(NONE)
+
+   .. note:: cmake_minimum_required is also invoked from
+             :file:`boilerplate.cmake`. The most recent of the two
+             versions will be enforced by CMake.
+
 
 #. Place your application source code in the :file:`src` sub-directory. For
    this example, we'll assume you created a file named :file:`src/main.c`.
