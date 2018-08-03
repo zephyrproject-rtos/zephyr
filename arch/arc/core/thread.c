@@ -134,14 +134,16 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		 _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 #ifdef CONFIG_USERSPACE
 	if (options & K_USER) {
-		thread->arch.u_stack_top = (u32_t)pStackMem;
+		/* +4 bytes to reserve place for errno */
+		thread->arch.u_stack_top = (u32_t)pStackMem + 4;
 		thread->arch.u_stack_base = (u32_t)stackEnd;
 		thread->arch.k_stack_top =
 			 (u32_t)(stackEnd + STACK_GUARD_SIZE);
 		thread->arch.k_stack_base = (u32_t)
 		(stackEnd + STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE);
 	} else {
-		thread->arch.k_stack_top = (u32_t)pStackMem;
+		/* +4 bytes to reserve place for errno */
+		thread->arch.k_stack_top = (u32_t)pStackMem + 4;
 		thread->arch.k_stack_base = (u32_t)stackEnd;
 		thread->arch.u_stack_top = 0;
 		thread->arch.u_stack_base = 0;
@@ -218,12 +220,14 @@ FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
 	_current->arch.k_stack_top = _current->arch.priv_stack_start;
 	_current->arch.k_stack_base = _current->arch.priv_stack_start +
 				_current->arch.priv_stack_size;
-	_current->arch.u_stack_top = _current->stack_info.start;
+	/* +4 bytes to reserve place for errno */
+	_current->errno_location = (int *)_current->stack_info.start;
+	_current->arch.u_stack_top = _current->stack_info.start + 4;
 	_current->arch.u_stack_base = _current->stack_info.start +
 				_current->stack_info.size;
 #endif
 
-	/* possible optimizaiton: no need to load mem domain anymore */
+	/* possible optimization: no need to load mem domain anymore */
 	/* need to lock cpu here ? */
 	configure_mpu_thread(_current);
 
