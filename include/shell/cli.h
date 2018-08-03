@@ -116,7 +116,7 @@ struct shell_static_entry {
 	static const struct shell_static_entry shell_##name[];		     \
 	static const struct shell_cmd_entry name = {			     \
 		.is_dynamic = false,					     \
-		.u.entry = shell_##name				     \
+		.u.entry = shell_##name					     \
 	};								     \
 	static const struct shell_static_entry shell_##name[] =
 

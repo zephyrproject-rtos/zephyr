@@ -153,12 +153,16 @@ void shell_op_cursor_end_move(const struct shell *shell)
 
 void shell_op_left_arrow(const struct shell *shell)
 {
-	shell_op_cursor_move(shell, -1);
+	if (shell->ctx->cmd_buff_pos > 0) {
+		shell_op_cursor_move(shell, -1);
+	}
 }
 
 void shell_op_right_arrow(const struct shell *shell)
 {
-	shell_op_cursor_move(shell, 1);
+	if (shell->ctx->cmd_buff_pos < shell->ctx->cmd_buff_len) {
+		shell_op_cursor_move(shell, 1);
+	}
 }
 
 static void reprint_from_cursor(const struct shell *shell, u16_t diff)
@@ -209,10 +213,6 @@ static void data_insert(const struct shell *shell, const char *data, u16_t len)
 	shell->ctx->cmd_buff_pos += len;
 
 	shell_op_cond_next_line(shell);
-
-	if (after > 0) {
-		shell_op_cursor_position_synchronize(shell);
-	}
 }
 
 void char_replace(const struct shell *shell, char data)

@@ -47,7 +47,8 @@ LOG_MODULE_REGISTER();
 
 #define SHELL_INIT_OPTION_PRINTER	(NULL)
 
-#define SHELL_INITIAL_CURS_POS		(1u)  /* Initial cursor position is: (1, 1). */
+/* Initial cursor position is: (1, 1). */
+#define SHELL_INITIAL_CURS_POS		(1u)
 
 #define SHELL_CMD_ROOT_LVL		(0u)
 
@@ -106,9 +107,11 @@ static void cli_cmd_buffer_clear(const struct shell *shell)
 	shell->ctx->cmd_buff_len = 0;
 }
 
-/* Function sends data stream to the CLI instance. Each time before the cli_write function is called,
- * it must be ensured that IO buffer of fprintf is flushed to avoid synchronization issues.
- * For that purpose, use function transport_buffer_flush(shell) */
+/* Function sends data stream to the CLI instance. Each time before the
+ * cli_write function is called, it must be ensured that IO buffer of fprintf is
+ * flushed to avoid synchronization issues.
+ * For that purpose, use function transport_buffer_flush(shell)
+ */
 static void shell_write(const struct shell *shell, const void *data,
 			size_t length)
 {
@@ -119,7 +122,7 @@ static void shell_write(const struct shell *shell, const void *data,
 
 	while (length) {
 		int err = shell->iface->api->write(shell->iface,
-				&((uint8_t const *) data)[offset], length,
+				&((u8_t const *) data)[offset], length,
 				&tmp_cnt);
 		(void)err;
 		assert(err == 0);
@@ -159,7 +162,7 @@ static void shell_write(const struct shell *shell, const void *data,
  */
 static void cmd_get(const struct shell_cmd_entry *command, size_t lvl,
 		    size_t idx, const struct shell_static_entry **entry,
-		    struct shell_static_entry *st_entry) {
+		    struct shell_static_entry *d_entry) {
 	assert(entry != NULL);
 	assert(st_entry != NULL);
 
@@ -169,11 +172,10 @@ static void cmd_get(const struct shell_cmd_entry *command, size_t lvl,
 
 			cmd = shell_root_cmd_get(idx);
 			*entry = cmd->u.entry;
-			return;
 		} else {
 			*entry = NULL;
-			return;
 		}
+		return;
 	}
 
 	if (command == NULL) {
@@ -182,8 +184,8 @@ static void cmd_get(const struct shell_cmd_entry *command, size_t lvl,
 	}
 
 	if (command->is_dynamic) {
-		command->u.dynamic_get(idx, st_entry);
-		*entry = (st_entry->syntax != NULL) ? st_entry : NULL;
+		command->u.dynamic_get(idx, d_entry);
+		*entry = (d_entry->syntax != NULL) ? d_entry : NULL;
 	} else {
 		*entry = (command->u.entry[idx].syntax != NULL) ?
 				&command->u.entry[idx] : NULL;
@@ -364,16 +366,16 @@ static void history_handle(const struct shell *shell, bool up)
 }
 
 static const struct shell_static_entry *find_cmd(
-					      const struct shell_cmd_entry *cmd,
-					      size_t lvl,
-					      char *cmd_str)
+					     const struct shell_cmd_entry *cmd,
+					     size_t lvl,
+					     char *cmd_str,
+					     struct shell_static_entry *d_entry)
 {
 	const struct shell_static_entry *entry = NULL;
-	struct shell_static_entry d_entry;
 	size_t idx = 0;
 
 	do {
-		cmd_get(cmd, lvl, idx++, &entry, &d_entry);
+		cmd_get(cmd, lvl, idx++, &entry, d_entry);
 		if (entry && (strcmp(cmd_str, entry->syntax) == 0)) {
 			LOG_INF("match %s %s", cmd_str, entry->syntax);
 			return entry;
@@ -385,11 +387,11 @@ static const struct shell_static_entry *find_cmd(
 
 /** @brief Function for getting last valid command in list of arguments. */
 static const struct shell_static_entry *get_last_command(
-						const struct shell *shell,
-						size_t argc,
-						char * argv[],
-						size_t *match_arg,
-						bool with_handler)
+					     const struct shell *shell,
+					     size_t argc,
+					     char * argv[],
+					     size_t *match_arg,
+					     struct shell_static_entry *d_entry)
 {
 	const struct shell_cmd_entry *prev_cmd = NULL;
 	const struct shell_static_entry *entry = NULL;
@@ -397,13 +399,14 @@ static const struct shell_static_entry *get_last_command(
 	*match_arg = SHELL_CMD_ROOT_LVL;
 
 	while (*match_arg < argc) {
-		entry = find_cmd(prev_cmd, *match_arg, argv[*match_arg]);
+		entry = find_cmd(prev_cmd, *match_arg, argv[*match_arg],
+				 d_entry);
 		if (entry) {
 			prev_cmd = entry->subcmd;
 			prev_entry = entry;
 			(*match_arg)++;
 		} else {
-			entry = prev_entry;
+			entry = NULL;
 			break;
 		}
 	}
@@ -411,23 +414,31 @@ static const struct shell_static_entry *get_last_command(
 	return entry;
 }
 
-/* Prepare arguments and return number of space available for completion. */
-static u16_t shell_tab_prepare(const struct shell *shell,
-			      char **argv, size_t * argc,
-			      const struct shell_static_entry **complete_cmd,
-			      size_t *complete_arg_idx)
+static inline u16_t completion_space_get(const struct shell *shell)
 {
-	size_t search_argc;
-	u16_t compl_len = (CONFIG_SHELL_CMD_BUFF_SIZE - 1)
-				- shell->ctx->cmd_buff_len;
+	u16_t space = (CONFIG_SHELL_CMD_BUFF_SIZE - 1) -
+			shell->ctx->cmd_buff_len;
+	return space;
+}
 
-	if (!compl_len) {
-		return compl_len;
+/* Prepare arguments and return number of space available for completion. */
+static bool shell_tab_prepare(const struct shell *shell,
+			      const struct shell_static_entry **cmd,
+			      char **argv, size_t * argc,
+			      size_t *complete_arg_idx,
+			      struct shell_static_entry *d_entry)
+{
+	u16_t compl_space = completion_space_get(shell);
+	size_t search_argc;
+
+	if (compl_space == 0) {
+		return false;
 	}
 
-
-	/* If the Tab key is pressed, "history mode" must be terminated because tab and history handlers
-	 are sharing the same array: temp_buff. */
+	/* If the Tab key is pressed, "history mode" must be terminated because
+	 * tab and history handlers
+	 * are sharing the same array: temp_buff.
+	 */
 	history_mode_exit(shell);
 
 	/* Copy command from its beginning to cursor position. */
@@ -440,16 +451,31 @@ static u16_t shell_tab_prepare(const struct shell *shell,
 			      CONFIG_SHELL_ARGC_MAX);
 
 	/* If last command is not completed (followed by space) it is treated
-	 * as incompleted one.
+	 * as uncompleted one.
 	 */
-	search_argc = isspace((int)shell->ctx->cmd_buff[
-					shell->ctx->cmd_buff_pos - 1]) ?
-					*argc : *argc - 1;
+	int space = isspace((int)shell->ctx->cmd_buff[
+						shell->ctx->cmd_buff_pos - 1]);
 
-	*complete_cmd = get_last_command(shell, search_argc, argv,
-					 complete_arg_idx, false);
+	/* root command completion */
+	if ((*argc == 0) || ((space == 0) && (*argc == 1))) {
+		*complete_arg_idx = SHELL_CMD_ROOT_LVL;
+		*cmd = NULL;
+		return true;
+	}
 
-	return compl_len;
+	search_argc = space ? *argc : *argc - 1;;
+
+	*cmd = get_last_command(shell, search_argc, argv, complete_arg_idx,
+				d_entry);
+
+	/* if search_argc == 0 (empty command line) get_last_command will return
+	 * NULL tab is allowed, otherwise not.
+	 */
+	if ((*cmd == NULL) && (search_argc != 0)) {
+		return false;
+	}
+
+	return true;
 }
 
 static bool is_completion_candidate(const char *candidate,
@@ -480,7 +506,8 @@ static void find_completion_candidates(const struct shell_static_entry *cmd,
 			break;
 		}
 
-		if (is_completion_candidate(candidate->syntax, incompl_cmd, incompl_cmd_len)) {
+		if (is_completion_candidate(candidate->syntax, incompl_cmd,
+				incompl_cmd_len)) {
 			size_t slen = strlen(candidate->syntax);
 
 			*longest = (slen > *longest) ? slen : *longest;
@@ -627,19 +654,22 @@ static void partial_autocomplete(const struct shell *shell,
 
 static void shell_tab_handle(const struct shell *shell)
 {
-	size_t arg_idx;
-	u16_t compl_len;
-	size_t first;
-	size_t cnt;
-	u16_t longest;
-	const struct shell_static_entry *cmd;
-	size_t argc;
 	/* +1 reserved for NULL in function shell_make_argv */
 	char * argv[CONFIG_SHELL_ARGC_MAX + 1];
+	/* d_entry - placeholder for dynamic command */
+	struct shell_static_entry d_entry;
+	const struct shell_static_entry *cmd;
+	size_t arg_idx;
+	u16_t longest;
+	size_t first;
+	size_t argc;
+	size_t cnt;
 
-	compl_len = shell_tab_prepare(shell, argv, &argc, &cmd, &arg_idx);
 
-	if (!compl_len) {
+	bool tab_possible = shell_tab_prepare(shell, &cmd, argv, &argc,
+					      &arg_idx, &d_entry);
+
+	if (tab_possible == false) {
 		return;
 	}
 
@@ -659,7 +689,7 @@ static void shell_tab_handle(const struct shell *shell)
 
 #define SHELL_ASCII_MAX_CHAR (127u)
 static inline int ascii_filter(char const data) {
-	return (uint8_t) data > SHELL_ASCII_MAX_CHAR ?
+	return (u8_t) data > SHELL_ASCII_MAX_CHAR ?
 			-EINVAL : 0;
 }
 
@@ -856,7 +886,8 @@ static void cmd_trim(const struct shell *shell)
 }
 
 /**
- * @internal @brief Function for searching and adding commands matching to wildcard pattern.
+ * @internal @brief Function for searching and adding commands matching to
+ * wildcard pattern.
  *
  * This function is internal to shell module and shall be not called directly.
  *
@@ -885,7 +916,8 @@ static wildcard_cmd_status_t commands_expand(const struct shell *shell,
 	wildcard_cmd_status_t ret_val = WILDCARD_CMD_NO_MATCH_FOUND;
 
 	do {
-		cmd_get(cmd, cmd_lvl, cmd_idx++, &p_static_entry, &static_entry);
+		cmd_get(cmd, cmd_lvl, cmd_idx++, &p_static_entry,
+				&static_entry);
 
 		if (!p_static_entry) {
 			break;
@@ -925,7 +957,8 @@ static wildcard_cmd_status_t commands_expand(const struct shell *shell,
 
 /* Function is analyzing the command buffer to find matching commands. Next, it
  * invokes the  last recognized command which has a handler and passes the rest
- * of command buffer as arguments. */
+ * of command buffer as arguments.
+ */
 static void shell_execute(const struct shell *shell)
 {
 	char quote;
@@ -974,9 +1007,9 @@ static void shell_execute(const struct shell *shell)
 			shell->ctx->cmd_buff,
 			shell->ctx->cmd_buff_len);
 
-	/* Function shell_spaces_trim must be used instead of shell_make_argv. At this
-	 * point it is important to keep temp_buff as a one string. It will
-	 * allow to find wildcard commands easily with strstr function.
+	/* Function shell_spaces_trim must be used instead of shell_make_argv.
+	 * At this point it is important to keep temp_buff as a one string.
+	 * It will allow to find wildcard commands easily with strstr function.
 	 */
 	shell_spaces_trim(shell->ctx->temp_buff);
 
@@ -1065,7 +1098,8 @@ static void shell_execute(const struct shell *shell)
 				 * all matching commands function will add as
 				 * many as possible. Next it will continue to
 				 * search for next wildcard pattern and it will
-				 * try to add matching commands. */
+				 * try to add matching commands.
+				 */
 				status = commands_expand(shell, p_cmd, cmd_lvl,
 							 argv[cmd_lvl],
 							 &counter);
@@ -1094,18 +1128,26 @@ static void shell_execute(const struct shell *shell)
 						shell_op_cursor_end_move(shell);
 						shell_op_cond_next_line(shell);
 
-						/* An error occured, fnmatch argument cannot be followed by argument
-						 * with a handler to avoid multiple function calls. */
+						/* An error occurred, fnmatch
+						 * argument cannot be followed
+						 * by argument with a handler to
+						 * avoid multiple function
+						 * calls.
+						 */
 						shell_fprintf(shell,SHELL_ERROR,
-							      "Error: requested multiple function executions\r\n");
+							"Error: requested "
+							"multiple function "
+							"executions\r\n");
 						flag_help_clear(shell);
 
 						return;
 					}
 				}
 
-				/* Storing p_st_cmd->handler is not feasible for dynamic commands. Data will be
-				 * invalid with the next loop iteration. */
+				/* Storing p_st_cmd->handler is not feasible for
+				 * dynamic commands. Data will be invalid with
+				 * the next loop iteration.
+				 */
 				cmd_handler_lvl = cmd_lvl;
 				cmd_handler_idx = cmd_idx - 1;
 				p_cmd_low_level_entry = p_cmd;
@@ -1430,10 +1472,10 @@ void shell_fprintf(const struct shell * shell, enum shell_vt100_color color,
 
 /* Function prints a string on terminal screen with requested margin.
  * It takes care to not divide words.
- *   shell			   Pointer to CLI instance.
- *   p_str			   Pointer to string to be printed.
- *   terminal_offset	 Requested left margin.
- *   offset_first_line   Add margin to the first printed line.
+ *   shell		Pointer to CLI instance.
+ *   p_str		Pointer to string to be printed.
+ *   terminal_offset	Requested left margin.
+ *   offset_first_line	Add margin to the first printed line.
  */
 static void format_offset_string_print(const struct shell *shell,
 				       char const * str,
@@ -1585,23 +1627,25 @@ void shell_help_print(const struct shell * shell,
 					      opt_sep, opt[i].optname);
 				field_width = longest_string + tab_len;
 				shell_op_cursor_horiz_move(shell, field_width
-						- (shell_strlen(opt[i].optname_short)
-						+ shell_strlen(opt[i].optname)
-										+ tab_len
-										+ shell_strlen(
-												opt_sep)));
+					- (shell_strlen(opt[i].optname_short)
+					   + shell_strlen(opt[i].optname)
+					   + tab_len
+					   + shell_strlen(opt_sep)));
 				shell_putc(shell, ':');
-				++field_width; /* incrementing because char ':' was already printed above */
+				/* incrementing because char ':' was already
+				 * printed above
+				 */
+				++field_width;
 			} else if (opt[i].optname_short) {
 				shell_fprintf(shell, SHELL_NORMAL, "  %-*s:",
 					      longest_string,
 					      opt[i].optname_short);
-				/* tab_len + 1 == "  " and ':' from: "  %-*s:" */
+			/* tab_len + 1 == "  " and ':' from: "  %-*s:" */
 				field_width = longest_string + tab_len + 1;
 			} else if (opt[i].optname) {
 				shell_fprintf(shell, SHELL_NORMAL, "  %-*s:",
 						longest_string, opt[i].optname);
-				/* tab_len + 1 == "  " and ':' from: "  %-*s:" */
+			/* tab_len + 1 == "  " and ':' from: "  %-*s:" */
 				field_width = longest_string + tab_len + 1;
 			} else {
 				/* Do nothing. */
@@ -1681,7 +1725,7 @@ void shell_help_print(const struct shell * shell,
 #if 0
 #if SHELL_LOG_BACKEND && NRF_MODULE_ENABLED(NRF_LOG)
 
-#define SHELL_LOG_MSG_OVERFLOW_MSK ((uint32_t)7)
+#define SHELL_LOG_MSG_OVERFLOW_MSK ((u32_t)7)
 static bool cli_log_entry_process(const struct shell *shell, bool skip) {
 	nrf_log_entry_t entry;
 
@@ -1742,9 +1786,9 @@ static bool cli_log_entry_process(const struct shell *shell, bool skip) {
 		size_t memobj_offset = 0;
 		nrf_log_str_formatter_entry_params_t params;
 
-		nrf_memobj_read(entry, &header, HEADER_SIZE * sizeof(uint32_t),
+		nrf_memobj_read(entry, &header, HEADER_SIZE * sizeof(u32_t),
 				memobj_offset);
-		memobj_offset = HEADER_SIZE * sizeof(uint32_t);
+		memobj_offset = HEADER_SIZE * sizeof(u32_t);
 
 		params.timestamp = header.timestamp;
 		params.module_id = header.module_id;
@@ -1753,20 +1797,20 @@ static bool cli_log_entry_process(const struct shell *shell, bool skip) {
 
 		if (header.base.generic.type == HEADER_TYPE_STD) {
 			char const * p_log_str =
-					(char const *) ((uint32_t) header.base.std.addr);
+					(char const *) ((u32_t) header.base.std.addr);
 			params.severity =
 					(nrf_log_severity_t) header.base.std.severity;
-			uint32_t nargs = header.base.std.nargs;
-			uint32_t args[6];
+			u32_t nargs = header.base.std.nargs;
+			u32_t args[6];
 
-			nrf_memobj_read(entry, args, nargs * sizeof(uint32_t),
+			nrf_memobj_read(entry, args, nargs * sizeof(u32_t),
 					memobj_offset);
 			nrf_log_std_entry_process(p_log_str, args, nargs,
 					&params, shell->p_fprintf_ctx);
 		} else if (header.base.generic.type == HEADER_TYPE_HEXDUMP) {
-			uint32_t data_len;
-			uint8_t data_buf[8];
-			uint32_t chunk_len;
+			u32_t data_len;
+			u8_t data_buf[8];
+			u32_t chunk_len;
 
 			data_len = header.base.hexdump.len;
 			params.severity =
@@ -1819,7 +1863,7 @@ static void nrf_log_backend_cli_put(nrf_log_backend_t const * p_backend,
 		}
 #if NRF_MODULE_ENABLED(SHELL_USES_TASK_MANAGER)
 		else {
-			task_events_set((task_id_t)((uint32_t)p_backend_cli->p_context & 0x000000FF),
+			task_events_set((task_id_t)((u32_t)p_backend_cli->p_context & 0x000000FF),
 					SHELL_LOG_PENDING_TASK_EVT);
 		}
 #endif
@@ -1864,8 +1908,4 @@ static bool cli_log_entry_process(const struct shell *shell, bool skip)
 #endif // SHELL_LOG_BACKEND
 #endif
 const struct log_backend_api log_backend_shell_api;
-
-
-
-
 
