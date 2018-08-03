@@ -23,12 +23,20 @@ if(NOT ZEPHYR_TOOLCHAIN_VARIANT)
     set(ZEPHYR_TOOLCHAIN_VARIANT cross-compile)
   endif()
 endif()
+
+# Until we completely deprecate it
+if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "gccarmemb")
+  message(WARNING "gccarmemb is deprecated, please use gnuarmemb instead")
+  set(ZEPHYR_TOOLCHAIN_VARIANT "gnuarmemb")
+endif()
+
 set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT} CACHE STRING "Zephyr toolchain variant")
 assert(ZEPHYR_TOOLCHAIN_VARIANT "Zephyr toolchain variant invalid: please set the ZEPHYR_TOOLCHAIN_VARIANT-variable")
 
 if(CONFIG_ARCH_POSIX OR (ZEPHYR_TOOLCHAIN_VARIANT STREQUAL "host"))
   set(COMPILER host-gcc)
 endif()
+
 
 # Configure the toolchain based on what SDK/toolchain is in use.
 if(NOT (COMPILER STREQUAL "host-gcc"))

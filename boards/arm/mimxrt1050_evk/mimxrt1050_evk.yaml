@@ -11,6 +11,6 @@ arch: arm
 sanitycheck: false
 toolchain:
   - zephyr
-  - gccarmemb
+  - gnuarmemb
 ram: 128
 flash: 128
