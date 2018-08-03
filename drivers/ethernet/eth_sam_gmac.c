@@ -1166,9 +1166,11 @@ static void eth_rx(struct gmac_queue *queue)
 	}
 }
 
+#if (CONFIG_ETH_SAM_GMAC_QUEUES != NET_TC_TX_COUNT) || \
+	((NET_TC_TX_COUNT != NET_TC_RX_COUNT) && defined(CONFIG_NET_VLAN))
 static int priority2queue(enum net_priority priority)
 {
-	u8_t queue_priority_map[] = {
+	static const u8_t queue_priority_map[] = {
 #if CONFIG_ETH_SAM_GMAC_QUEUES == 1
 		0, 0, 0, 0, 0, 0, 0, 0
 #endif
@@ -1182,6 +1184,7 @@ static int priority2queue(enum net_priority priority)
 
 	return queue_priority_map[priority];
 }
+#endif
 
 static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 {
@@ -1197,6 +1200,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	u16_t frag_len;
 	u32_t err_tx_flushed_count_at_entry;
 	unsigned int key;
+	u8_t pkt_prio;
 
 	__ASSERT(pkt, "buf pointer is NULL");
 	__ASSERT(pkt->frags, "Frame data missing");
@@ -1204,7 +1208,15 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	SYS_LOG_DBG("ETH tx");
 
 	/* Decide which queue should be used */
-	queue = &dev_data->queue_list[priority2queue(net_pkt_priority(pkt))];
+	pkt_prio = net_pkt_priority(pkt);
+
+#if CONFIG_ETH_SAM_GMAC_QUEUES == CONFIG_NET_TC_TX_COUNT
+	/* Prefer to chose queue based on its traffic class */
+	queue = &dev_data->queue_list[net_tx_priority2tc(pkt_prio)];
+#else
+	/* If that's not possible due to config - use builtin mapping */
+	queue = &dev_data->queue_list[priority2queue(pkt_prio)];
+#endif
 
 	tx_desc_list = &queue->tx_desc_list;
 	err_tx_flushed_count_at_entry = queue->err_tx_flushed_count;
@@ -1516,8 +1528,17 @@ static void eth0_iface_init(struct net_if *iface)
 	}
 
 #if GMAC_PRIORITY_QUEUE_NO >= 1
+#if CONFIG_ETH_SAM_GMAC_QUEUES == NET_TC_RX_COUNT
+	/* If TC configuration is compatible with HW configuration, setup the
+	 * screening registers based on the DS/TC values.
+	 * Map them 1:1 - TC 0 -> Queue 0, TC 1 -> Queue 1 etc.
+	 */
+	for (i = 0; i < CONFIG_NET_TC_RX_COUNT; ++i) {
+		cfg->regs->GMAC_ST1RPQ[i] =
+			GMAC_ST1RPQ_DSTCM(i) | GMAC_ST1RPQ_QNB(i);
+	}
+#elif defined(CONFIG_NET_VLAN)
 	/* If VLAN is enabled, route packets according to VLAN priority */
-#if defined(CONFIG_NET_VLAN)
 	int j;
 
 	i = 0;
