@@ -149,19 +149,9 @@ rst_epilog = """
 
 # -- Options for HTML output ----------------------------------------------
 
-try:
-    import sphinx_rtd_theme
-except ImportError:
-    html_theme = 'zephyr'
-    html_theme_path = ['{}/doc/themes'.format(ZEPHYR_BASE)]
-else:
-    html_theme = "sphinx_rtd_theme"
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-
-if tags.has('daily') or tags.has('release'):
-    html_theme = 'zephyr-docs-theme'
-    html_theme_path = ['{}/doc/themes'.format(ZEPHYR_BASE)]
-
+import sphinx_rtd_theme
+html_theme = "sphinx_rtd_theme"
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 if tags.has('release'):
     is_release = True
