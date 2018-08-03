@@ -23,6 +23,7 @@
 
 #include <net/coap.h>
 
+#include <net/coap_link_format.h>
 #define COAP_BUF_SIZE 128
 #define COAP_LIMITED_BUF_SIZE 13
 
@@ -51,7 +52,13 @@ static void server_notify_callback(struct coap_resource *resource,
 static int server_resource_1_get(struct coap_resource *resource,
 				 struct coap_packet *request);
 
+static int well_known_core_get(struct coap_resource *resource,
+			       struct coap_packet *request);
+
 static const char * const server_resource_1_path[] = { "s", "1", NULL };
+static const char * const server_resource_2_path[] = { "s", "2", NULL };
+
+
 static struct coap_resource server_resources[] =  {
 	{ .path = server_resource_1_path,
 	  .get = server_resource_1_get,
@@ -59,12 +66,80 @@ static struct coap_resource server_resources[] =  {
 	{ },
 };
 
+static struct coap_resource server_resources_1[] =  {
+	{ .path = server_resource_2_path,
+	  .get = well_known_core_get,
+	  .post = NULL,
+	  .put = NULL,
+	  .notify = server_notify_callback },
+	{ },
+};
+
 #define MY_PORT 12345
 #define peer_addr { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
 			0, 0, 0, 0, 0, 0, 0, 0x2 } } }
+
 static struct sockaddr_in6 dummy_addr = {
 	.sin6_family = AF_INET6,
 	.sin6_addr = peer_addr };
+
+static void get_from_ip_addr(struct coap_packet *cpkt,
+			     struct sockaddr_in6 *from)
+{
+	struct net_udp_hdr hdr, *udp_hdr;
+
+	udp_hdr = net_udp_get_hdr(cpkt->pkt, &hdr);
+	if (!udp_hdr) {
+		return;
+	}
+
+	net_ipaddr_copy(&from->sin6_addr, &NET_IPV6_HDR(cpkt->pkt)->src);
+
+	from->sin6_port = udp_hdr->src_port;
+	from->sin6_family = AF_INET6;
+}
+
+static int well_known_core_get(struct coap_resource *resource,
+			       struct coap_packet *request)
+{
+	struct coap_packet response;
+	struct sockaddr_in6 from;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
+	int r;
+	int result = TC_FAIL;
+
+	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
+		goto done;
+	}
+
+	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
+	if (!frag) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_pkt_frag_add(pkt, frag);
+
+	r = coap_well_known_core_get(resource, request, &response, pkt);
+	if (r < 0) {
+		net_pkt_unref(response.pkt);
+		return r;
+	}
+
+	get_from_ip_addr(request, &from);
+
+	result = TC_PASS;
+
+done:
+	net_pkt_unref(pkt);
+
+	TC_END_RESULT(result);
+
+	return result;
+}
 
 static int test_build_empty_pdu(void)
 {
@@ -590,20 +665,7 @@ done:
 	return result;
 }
 
-static void get_from_ip_addr(struct coap_packet *cpkt,
-			     struct sockaddr_in6 *from)
-{
-	struct net_udp_hdr hdr, *udp_hdr;
 
-	udp_hdr = net_udp_get_hdr(cpkt->pkt, &hdr);
-	if (!udp_hdr) {
-		return;
-	}
-
-	net_ipaddr_copy(&from->sin6_addr, &NET_IPV6_HDR(cpkt->pkt)->src);
-	from->sin6_port = udp_hdr->src_port;
-	from->sin6_family = AF_INET6;
-}
 
 static bool ipaddr_cmp(const struct sockaddr *a, const struct sockaddr *b)
 {
@@ -762,21 +824,29 @@ static int test_observer_server(void)
 		't', 'o', 'k', 'e', 'n',
 		0x60, /* enable observe option */
 		0x51, 's', 0x01, '1', /* path */
-	};
+		0xFF, 'p', 'a', 'y', 'l', 'o', 'a', 'd', 0x00 };
+
 	u8_t not_found_request_pdu[] = {
 		0x45, 0x01, 0x12, 0x34,
 		't', 'o', 'k', 'e', 'n',
 		0x60, /* enable observe option */
 		0x51, 's', 0x01, '2', /* path */
-	};
-	struct coap_packet req;
-	struct coap_option options[4] = {};
+		0xFF, 'p', 'a', 'y', 'l', 'o', 'a', 'd', 0x00 };
+
+	struct coap_packet req, *request;
+	struct coap_option options[4];
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	u8_t opt_num = ARRAY_SIZE(options) - 1;
 	int result = TC_FAIL;
 	int r;
 
+	u16_t offset;
+	u16_t len;
+
+	struct net_buf *payloadfrag;
+
+	request = &req;
 	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
 	if (!pkt) {
 		TC_PRINT("Could not get packet from pool\n");
@@ -855,6 +925,148 @@ static int test_observer_server(void)
 		goto done;
 	}
 
+	payloadfrag = coap_packet_get_payload(request, &offset, &len);
+	if (!payloadfrag && len == 0xffff) {
+		NET_ERR("Invalid payload");
+		goto done;
+	} else if (!payloadfrag && !len) {
+		NET_INFO("Packet without payload\n");
+		goto done;
+	}
+
+	if (strcmp(payloadfrag->data + offset, "payload") != 0) {
+		goto done;
+	}
+	result = TC_PASS;
+
+done:
+	net_pkt_unref(pkt);
+
+	TC_END_RESULT(result);
+
+	return result;
+}
+
+static int test_observer_server_1(void)
+{
+	u8_t valid_request_pdu[] = {
+		0x45, 0x01, 0x12, 0x35,
+		'p', 'o', 'k', 'e', 'n',
+		0x60, /* enable observe option */
+		0x51, 's', 0x01, '2', /* path */
+		0xFF, 'p', 'a', 'y', 'l', 'o', 'a', 'd', 0x00 };
+
+	u8_t not_found_request_pdu[] = {
+		0x45, 0x01, 0x12, 0x35,
+		'p', 'o', 'k', 'e', 'n',
+		0x60, /* enable observe option */
+		0x51, 's', 0x01, '3', /* path */
+		0xFF, 'p', 'a', 'y', 'l', 'o', 'a', 'd', 0x00 };
+
+	struct coap_packet req, *request;
+	struct coap_option options[4];
+	struct net_pkt *pkt;
+	struct net_buf *frag;
+	u8_t opt_num = ARRAY_SIZE(options) - 1;
+	int result = TC_FAIL;
+	int r;
+
+	u16_t offset;
+	u16_t len;
+
+	struct net_buf *payloadfrag;
+
+	request = &req;
+	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
+		goto done;
+	}
+
+	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
+	if (!frag) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_pkt_frag_add(pkt, frag);
+
+	net_pkt_append_all(pkt, sizeof(ipv6_valid_req),
+			   (u8_t *)ipv6_valid_req, K_FOREVER);
+	net_pkt_append_all(pkt, sizeof(valid_request_pdu),
+			   (u8_t *)valid_request_pdu, K_FOREVER);
+
+	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
+
+	r = coap_packet_parse(&req, pkt, options, opt_num);
+	if (r) {
+		TC_PRINT("Could not initialize packet\n");
+		goto done;
+	}
+
+	r = coap_handle_request(&req, server_resources_1, options, opt_num);
+	if (r) {
+		TC_PRINT("Could not handle packet\n");
+		goto done;
+	}
+
+	/* Suppose some time passes */
+
+	r = coap_resource_notify(&server_resources_1[0]);
+	if (r) {
+		TC_PRINT("Could not notify resource\n");
+		goto done;
+	}
+
+	net_pkt_unref(pkt);
+
+	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
+		goto done;
+	}
+
+	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
+	if (!frag) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_pkt_frag_add(pkt, frag);
+
+	net_pkt_append_all(pkt, sizeof(ipv6_not_found_req),
+			   (u8_t *)ipv6_not_found_req, K_FOREVER);
+	net_pkt_append_all(pkt, sizeof(not_found_request_pdu),
+			   (u8_t *)not_found_request_pdu, K_FOREVER);
+
+	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
+
+	r = coap_packet_parse(&req, pkt, options, opt_num);
+	if (r) {
+		TC_PRINT("Could not initialize packet\n");
+		goto done;
+	}
+
+	r = coap_handle_request(&req, server_resources_1, options, opt_num);
+	if (r != -ENOENT) {
+		TC_PRINT("There should be no handler for this resource\n");
+		goto done;
+	}
+
+	payloadfrag = coap_packet_get_payload(request, &offset, &len);
+	if (!payloadfrag && len == 0xffff) {
+		NET_ERR("Invalid payload");
+		goto done;
+	} else if (!payloadfrag && !len) {
+		NET_INFO("Packet without payload\n");
+		goto done;
+	}
+
+	if (strcmp(payloadfrag->data + offset, "payload") != 0) {
+		goto done;
+	}
 	result = TC_PASS;
 
 done:
@@ -990,6 +1202,7 @@ static int test_observer_client(void)
 		goto done;
 	}
 
+	coap_reply_clear(reply);
 	result = TC_PASS;
 
 done:
@@ -1745,6 +1958,7 @@ static const struct {
 	{ "Test retransmission", test_retransmit_second_round, },
 	{ "Test observer server", test_observer_server, },
 	{ "Test observer client", test_observer_client, },
+	{ "Test observer server", test_observer_server_1, },
 	{ "Test block sized transfer", test_block_size, },
 	{ "Test block sized 2 transfer", test_block_2_size, },
 	{ "Test match path uri", test_match_path_uri, },
