@@ -6,6 +6,6 @@ ram: 128
 flash: 1024
 toolchain:
   - zephyr
-  - gccarmemb
+  - gnuarmemb
 supported:
   - gpio

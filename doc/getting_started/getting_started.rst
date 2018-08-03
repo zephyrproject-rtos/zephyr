@@ -191,21 +191,21 @@ Using 3rd Party Cross Compilers
 To use a 3rd party cross compiler that is not provided by the Zephyr
 SDK, follow the steps below.
 
-#. We will use the `GCC ARM Embedded`_ compiler for this example, download the
-   package suitable for your operating system from the `GCC ARM Embedded`_ website
+#. We will use the `GNU ARM Embedded`_ compiler for this example, download the
+   package suitable for your operating system from the `GNU ARM Embedded`_ website
    and extract it on your file system. This example assumes the compiler was
-   extracted to: :file:`<user folder>/gcc-arm-none-eabi-5_3-2016q1/`.
+   extracted to: :file:`<user folder>/gcc-arm-none-eabi-7-2018-q2-update/`.
 
 #. Build the example :ref:`hello_world` project, enter:
 
    .. code-block:: console
 
       # On Linux/macOS
-      export GCCARMEMB_TOOLCHAIN_PATH="~/gcc-arm-none-eabi-5_3-2016q1/"
-      export ZEPHYR_TOOLCHAIN_VARIANT=gccarmemb
+      export GNUARMEMB_TOOLCHAIN_PATH="~/gcc-arm-none-eabi-7-2018-q2-update/"
+      export ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
       # On Windows
-      set GCCARMEMB_TOOLCHAIN_PATH="%userprofile%\gcc-arm-none-eabi-5_3-2016q1\"
-      set ZEPHYR_TOOLCHAIN_VARIANT=gccarmemb
+      set GNUARMEMB_TOOLCHAIN_PATH="%userprofile%\gcc-arm-none-eabi-7-2018-q2-update\"
+      set ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -241,7 +241,7 @@ To use a custom cross compiler, follow the steps below.
    .. code-block:: console
 
       # On Linux
-      unset GCCARMEMB_TOOLCHAIN_PATH
+      unset GNUARMEMB_TOOLCHAIN_PATH
       export ZEPHYR_TOOLCHAIN_VARIANT=cross-compile
       export CROSS_COMPILE=/usr/bin/arm-none-eabi-
 
@@ -323,5 +323,5 @@ This executable can be instrumented like any other Linux process. For ex. with g
 or valgrind.
 Note that the native port is currently only tested in Linux.
 
-.. _GCC ARM Embedded: https://launchpad.net/gcc-arm-embedded
+.. _GNU ARM Embedded: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm
 .. _CMake: https://cmake.org
