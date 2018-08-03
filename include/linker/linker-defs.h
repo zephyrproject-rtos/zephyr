@@ -112,6 +112,11 @@
  * their shell commands are automatically initialized by the kernel.
  */
 
+/*
+ * APP_INPUT_SECTION should be invoked on sections that should be in
+ * 'app' space. KERNEL_INPUT_SECTION should be invoked on sections
+ * that should be in 'kernel' space.
+ */
 #ifdef CONFIG_APPLICATION_MEMORY
 
 #ifndef NUM_KERNEL_OBJECT_FILES
@@ -130,14 +135,13 @@
     UTIL_LISTIFY(NUM_KERNEL_OBJECT_FILES, X, sect)
 #define APP_INPUT_SECTION(sect)	\
     *(EXCLUDE_FILE (UTIL_LISTIFY(NUM_KERNEL_OBJECT_FILES, Y, ~)) sect)
-#define APP_SMEM_SECTION()	KEEP(*(SORT(data_smem_[_a-zA-Z0-9]*)))
 
 #else
 #define KERNEL_INPUT_SECTION(sect)	*(sect)
 #define APP_INPUT_SECTION(sect)		*(sect)
-#define APP_SMEM_SECTION()	KEEP(*(SORT(data_smem_[_a-zA-Z0-9]*)))
-#endif
+#endif /* CONFIG_APPLICATION_MEMORY */
 
+#define APP_SMEM_SECTION() KEEP(*(SORT(data_smem_[_a-zA-Z0-9]*)))
 
 #ifdef CONFIG_X86 /* LINKER FILES: defines used by linker script */
 /* Should be moved to linker-common-defs.h */
