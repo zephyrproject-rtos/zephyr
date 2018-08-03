@@ -618,15 +618,14 @@ if(CONFIG_APPLICATION_MEMORY)
     list(APPEND ks ${fixed_path})
   endforeach()
 
-  # We are done constructing kernel_object_file_list, now we inject this
-  # information into the linker script through -D's
-  list(LENGTH kernel_object_file_list NUM_KERNEL_OBJECT_FILES)
-  list(APPEND LINKER_SCRIPT_DEFINES -DNUM_KERNEL_OBJECT_FILES=${NUM_KERNEL_OBJECT_FILES})
-  set(i 0)
+  # We are done constructing kernel_object_file_list, now we inject
+  # this list into the linker script through the define
+  # KERNELSPACE_OBJECT_FILES
+  set(def -DKERNELSPACE_OBJECT_FILES=)
   foreach(f ${ks})
-    list(APPEND LINKER_SCRIPT_DEFINES -DKERNEL_OBJECT_FILE_${i}=${f})
-    math(EXPR i "${i}+1")
+    set(def "${def} ${f}")
   endforeach()
+  list(APPEND LINKER_SCRIPT_DEFINES ${def})
 endif() # CONFIG_APPLICATION_MEMORY
 
 # Declare MPU userspace dependencies before the linker scripts to make
