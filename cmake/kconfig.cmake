@@ -106,7 +106,7 @@ set(merge_config_files_checksum_file ${PROJECT_BINARY_DIR}/.cmake.dotconfig.chec
 set(CREATE_NEW_DOTCONFIG 1)
 # Check if the checksum file exists too before trying to open it, though it
 # should under normal circumstances
-if(EXISTS ${DOTCONFIG} AND EXISTS ${merge_config_file_checksum_file})
+if(EXISTS ${DOTCONFIG} AND EXISTS ${merge_config_files_checksum_file})
   # Read out what the checksum was previously
   file(READ
     ${merge_config_files_checksum_file}
