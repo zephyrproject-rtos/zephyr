@@ -617,7 +617,6 @@ void test_main(void)
 			 ztest_unit_test(user_mode_enter),
 			 ztest_user_unit_test(write_kobject_user_pipe),
 			 ztest_user_unit_test(read_kobject_user_pipe),
-			 ztest_user_unit_test(read_kobject_user_pipe),
 			 ztest_unit_test(access_other_memdomain)
 		);
 	ztest_run_test_suite(userspace);
