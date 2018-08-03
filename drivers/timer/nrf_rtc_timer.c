@@ -550,24 +550,27 @@ int _sys_clock_driver_init(struct device *device)
 
 u32_t _timer_cycle_get_32(void)
 {
+	u32_t ticked_cycles;
 	u32_t elapsed_cycles;
-	u32_t sys_clock_tick_count;
-	u32_t rtc_prev;
-	u32_t rtc_now;
 
-	rtc_now = RTC_COUNTER;
-	/* Discard value of RTC_COUNTER read at LFCLK transition */
-	do {
-		sys_clock_tick_count = _sys_clock_tick_count;
-		elapsed_cycles = (rtc_now - (sys_clock_tick_count *
-					     sys_clock_hw_cycles_per_tick)) &
-				 RTC_MASK;
-		rtc_prev = rtc_now;
-		rtc_now = RTC_COUNTER;
-	} while (rtc_now != rtc_prev);
+	/* Number of timer cycles announced as ticks so far. */
+	ticked_cycles = _sys_clock_tick_count * sys_clock_hw_cycles_per_tick;
 
-	return (sys_clock_tick_count * sys_clock_hw_cycles_per_tick) +
-	       elapsed_cycles;
+	/* Make sure that compiler will not reverse access to RTC and
+	 * _sys_clock_tick_count
+	 */
+	compiler_barrier();
+
+	/* Number of timer cycles since last announced tick we know about.
+	 *
+	 * The value of RTC_COUNTER is not reset on tick, so it will
+	 * compensate potentialy missed update of _sys_clock_tick_count
+	 * which could have happen between the ticked_cycles calculation
+	 * and the code below.
+	 */
+	elapsed_cycles = (RTC_COUNTER - ticked_cycles) & RTC_MASK;
+
+	return ticked_cycles + elapsed_cycles;
 }
 
 #ifdef CONFIG_SYSTEM_CLOCK_DISABLE
