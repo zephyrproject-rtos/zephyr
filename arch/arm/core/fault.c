@@ -141,7 +141,7 @@ static void _FaultShow(const NANO_ESF *esf, int fault)
 
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	PR_EXC("MMFSR: 0x%x, BFSR: 0x%x, UFSR: 0x%x\n",
-	       SCB_MMFSR, SCB_BFSR, SCB_MMFSR);
+	       SCB_MMFSR, SCB_BFSR, SCB_UFSR);
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 	PR_EXC("SFSR: 0x%x\n", SAU->SFSR);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
