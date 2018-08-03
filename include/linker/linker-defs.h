@@ -112,34 +112,27 @@
  * their shell commands are automatically initialized by the kernel.
  */
 
+#ifdef CONFIG_APPLICATION_MEMORY
+/*
+ * KERNELSPACE_OBJECT_FILES is a space-separated list of object files
+ * and libraries that belong in kernelspace.
+ */
+#define MAYBE_EXCLUDE_SOME_FILES EXCLUDE_FILE (KERNELSPACE_OBJECT_FILES)
+#else
+#define MAYBE_EXCLUDE_SOME_FILES
+#endif /* CONFIG_APPLICATION_MEMORY */
+
 /*
  * APP_INPUT_SECTION should be invoked on sections that should be in
  * 'app' space. KERNEL_INPUT_SECTION should be invoked on sections
  * that should be in 'kernel' space.
+ *
+ * NB: APP_INPUT_SECTION must be invoked before
+ * KERNEL_INPUT_SECTION. If it is not all sections will end up in
+ * kernelspace.
  */
-#ifdef CONFIG_APPLICATION_MEMORY
-
-#ifndef NUM_KERNEL_OBJECT_FILES
-#error "Expected NUM_KERNEL_OBJECT_FILES to be defined"
-#elif NUM_KERNEL_OBJECT_FILES > 32
-#error "Max supported kernel objects is 32."
-/* TODO: Using the preprocessor to do this was a mistake. Rewrite to
-   scale better. e.g. by aggregating the kernel objects into two
-   archives like KBuild did.*/
-#endif
-
-#define X(i, j) KERNEL_OBJECT_FILE_##i (j)
-#define Y(i, j) KERNEL_OBJECT_FILE_##i
-
-#define KERNEL_INPUT_SECTION(sect) \
-    UTIL_LISTIFY(NUM_KERNEL_OBJECT_FILES, X, sect)
-#define APP_INPUT_SECTION(sect)	\
-    *(EXCLUDE_FILE (UTIL_LISTIFY(NUM_KERNEL_OBJECT_FILES, Y, ~)) sect)
-
-#else
-#define KERNEL_INPUT_SECTION(sect)	*(sect)
-#define APP_INPUT_SECTION(sect)		*(sect)
-#endif /* CONFIG_APPLICATION_MEMORY */
+#define APP_INPUT_SECTION(sect)    *(MAYBE_EXCLUDE_SOME_FILES sect)
+#define KERNEL_INPUT_SECTION(sect) *(sect)
 
 #define APP_SMEM_SECTION() KEEP(*(SORT(data_smem_[_a-zA-Z0-9]*)))
 
