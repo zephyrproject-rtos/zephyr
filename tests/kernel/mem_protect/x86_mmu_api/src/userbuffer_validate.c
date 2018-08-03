@@ -449,81 +449,193 @@ void reset_multi_pde_flag(void)
 			   MMU_PDE_RW_MASK | MMU_PDE_US_MASK);
 }
 
+/**
+ * @brief Verify read from multiple pages of buffer with write access
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_multi_pde_buffer_readable_write(void)
 {
 	zassert_true(multi_pde_buffer_readable_write() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Verify read to multiple pages of buffer with read access
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see  _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_multi_pde_buffer_readable_read(void)
 {
 	zassert_true(multi_pde_buffer_readable_read() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Verify write to 2 pages of buffer with write access
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see  _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_multi_pde_buffer_writeable_write(void)
 {
 	zassert_true(multi_pde_buffer_writeable_write() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Read from multiple pages from buffer with write access
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see  _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_multi_pde_buffer_rw(void)
 {
 	zassert_true(multi_pde_buffer_rw() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Test to write to buffer which has read access
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_buffer_rw_read(void)
 {
 	zassert_true(buffer_rw_read() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Test to write to buffer which has write access
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_buffer_writeable_write(void)
 {
 	zassert_true(buffer_writeable_write() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Test to read from buffer with read access
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_buffer_readable_read(void)
 {
 	zassert_true(buffer_readable_read() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Test to read from a buffer with write access
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_buffer_readable_write(void)
 {
 	zassert_true(buffer_readable_write() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Verify read as user from buffer which has write access to supervisor
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_buffer_supervisor_rw(void)
 {
 	zassert_true(buffer_supervisor_rw() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Verify write to buffer which has write access to supervisor
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_buffer_supervisor_w(void)
 {
 	zassert_true(buffer_supervisor_w() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Verify write as user to buffer with write permission
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_buffer_user_rw_user(void)
 {
 	zassert_true(buffer_user_rw_user() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Verify write as user to buffer which has write from supervisor
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_buffer_user_rw_supervisor(void)
 {
 	zassert_true(buffer_user_rw_supervisor() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Verify write/user to buffer with 2 pages having write/supervisor
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_multi_page_buffer_user(void)
 {
 	zassert_true(multi_page_buffer_user() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Verify write to buffer with 2 pages having write/supervisor
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_multi_page_buffer_write_user(void)
 {
 	zassert_true(multi_page_buffer_write_user() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Verify read as user to buffer with read/supervisor access
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_multi_page_buffer_read_user(void)
 {
 	zassert_true(multi_page_buffer_read_user() == TC_PASS, NULL);
 }
 
+/**
+ * @brief Verify write to buffer with read/supervisor access
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see _arch_buffer_validate(), _x86_mmu_set_flags()
+ */
 void test_multi_page_buffer_read(void)
 {
 	zassert_true(multi_page_buffer_read() == TC_PASS, NULL);
