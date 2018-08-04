@@ -265,9 +265,12 @@ void spi_context_update_tx(struct spi_context *ctx, u8_t dfs, u32_t len)
 
 	ctx->tx_len -= len;
 	if (!ctx->tx_len) {
-		ctx->tx_count--;
-		if (ctx->tx_count) {
+		do {
 			ctx->current_tx++;
+			ctx->tx_count--;
+		} while (ctx->tx_count && ctx->current_tx->len == 0);
+
+		if (ctx->tx_count) {
 			ctx->tx_buf = ctx->current_tx->buf;
 			ctx->tx_len = ctx->current_tx->len / dfs;
 		} else {
@@ -313,9 +316,12 @@ void spi_context_update_rx(struct spi_context *ctx, u8_t dfs, u32_t len)
 
 	ctx->rx_len -= len;
 	if (!ctx->rx_len) {
-		ctx->rx_count--;
-		if (ctx->rx_count) {
+		do {
 			ctx->current_rx++;
+			ctx->rx_count--;
+		} while (ctx->rx_count && ctx->current_rx->len == 0);
+
+		if (ctx->rx_count) {
 			ctx->rx_buf = ctx->current_rx->buf;
 			ctx->rx_len = ctx->current_rx->len / dfs;
 		} else {
