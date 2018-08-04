@@ -103,7 +103,6 @@ static void gen_onoff_get(struct bt_mesh_model *model,
 	struct generic_onoff_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
-
 	net_buf_simple_add_u8(msg, state->onoff);
 
 	if (state->is_optional_para_available) {
@@ -114,7 +113,7 @@ static void gen_onoff_get(struct bt_mesh_model *model,
 	state->is_optional_para_available = 0x00;
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
-		printk("Unable to send ONOFF_SRV Status response\n");
+		printk("Unable to send GEN_ONOFF_SRV Status response\n");
 	}
 }
 
@@ -180,8 +179,7 @@ static bool gen_onoff_setunack(struct bt_mesh_model *model,
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
 
-		bt_mesh_model_msg_init(msg,
-				       BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
 		net_buf_simple_add_u8(msg, state->onoff);
 
 		err = bt_mesh_model_publish(model);
@@ -214,12 +212,12 @@ static void gen_onoff_status(struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from GEN_ONOFF_SRV = %02x\n",
-	       net_buf_simple_pull_u8(buf));
+	printk("Acknownledgement from GEN_ONOFF_SRV\n");
+	printk("Present OnOff = %02x\n", net_buf_simple_pull_u8(buf));
 
 	if (buf->len == 2) {
-		printk("TV = %02x RT = %02x\n", net_buf_simple_pull_u8(buf),
-		       net_buf_simple_pull_u8(buf));
+		printk("Target OnOff = %02x\n", net_buf_simple_pull_u8(buf));
+		printk("Remaining Time = %02x\n", net_buf_simple_pull_u8(buf));
 	}
 }
 
@@ -232,7 +230,6 @@ static void gen_level_get(struct bt_mesh_model *model,
 	struct generic_level_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
-
 	net_buf_simple_add_le16(msg, state->level);
 
 	if (state->is_optional_para_available == 0x01) {
@@ -252,7 +249,7 @@ static void gen_level_get(struct bt_mesh_model *model,
 	state->is_optional_para_available = 0x00;
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
-		printk("Unable to send LEVEL_SRV Status response\n");
+		printk("Unable to send GEN_LEVEL_SRV Status response\n");
 	}
 }
 
@@ -388,10 +385,10 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 	state->last_tx_addr = ctx->addr;
 	state->last_msg_timestamp = now;
 
-	if (tmp32 < -32768) {
-		tmp32 = -32768;
-	} else if (tmp32 > 32767) {
-		tmp32 = 32767;
+	if (tmp32 < INT16_MIN) {
+		tmp32 = INT16_MIN;
+	} else if (tmp32 > INT16_MAX) {
+		tmp32 = INT16_MAX;
 	}
 
 	state->target_level = tmp32;
@@ -415,9 +412,7 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
 
-		bt_mesh_model_msg_init(msg,
-				       BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
-
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
 		net_buf_simple_add_le16(msg, state->level);
 
 		err = bt_mesh_model_publish(model);
@@ -510,9 +505,7 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
 
-		bt_mesh_model_msg_init(msg,
-				       BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
-
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
 		net_buf_simple_add_le16(msg, state->level);
 
 		err = bt_mesh_model_publish(model);
@@ -535,12 +528,12 @@ static void gen_level_status(struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from GEN_LEVEL_SRV = %04x\n",
-	       net_buf_simple_pull_le16(buf));
+	printk("Acknownledgement from GEN_LEVEL_SRV\n");
+	printk("Present Level = %04x\n", net_buf_simple_pull_le16(buf));
 
 	if (buf->len == 3) {
-		printk("TV = %04x RT = %02x\n", net_buf_simple_pull_le16(buf),
-		       net_buf_simple_pull_u8(buf));
+		printk("Target Level = %04x\n", net_buf_simple_pull_le16(buf));
+		printk("Remaining Time = %02x\n", net_buf_simple_pull_u8(buf));
 	}
 }
 
@@ -556,7 +549,7 @@ static void gen_def_trans_time_get(struct bt_mesh_model *model,
 	net_buf_simple_add_u8(msg, state->tt);
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
-		printk("Unable to send DEF_TT_SRV Status response\n");
+		printk("Unable to send GEN_DEF_TT_SRV Status response\n");
 	}
 }
 
@@ -617,8 +610,8 @@ static void gen_def_trans_time_status(struct bt_mesh_model *model,
 				      struct bt_mesh_msg_ctx *ctx,
 				      struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from GEN_DEF_TT_SRV = %02x\n",
-	       net_buf_simple_pull_u8(buf));
+	printk("Acknownledgement from GEN_DEF_TT_SRV\n");
+	printk("Transition Time = %02x\n", net_buf_simple_pull_u8(buf));
 }
 
 /* Generic Power OnOff Server message handlers */
@@ -630,11 +623,10 @@ static void gen_onpowerup_get(struct bt_mesh_model *model,
 	struct generic_onpowerup_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x12));
-
 	net_buf_simple_add_u8(msg, state->onpowerup);
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
-		printk("Unable to send POWERONOFF_SRV Status response\n");
+		printk("Unable to send GEN_POWER_ONOFF_SRV Status response\n");
 	}
 }
 
@@ -643,8 +635,8 @@ static void gen_onpowerup_status(struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from GEN_POWER_ONOFF_SRV = %02x\n",
-	       net_buf_simple_pull_u8(buf));
+	printk("Acknownledgement from GEN_POWER_ONOFF_SRV\n");
+	printk("OnPowerUp = %02x\n", net_buf_simple_pull_u8(buf));
 }
 
 /* Generic Power OnOff Setup Server message handlers */
@@ -670,8 +662,7 @@ static bool gen_onpowerup_setunack(struct bt_mesh_model *model,
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
 
-		bt_mesh_model_msg_init(msg,
-				       BT_MESH_MODEL_OP_2(0x82, 0x12));
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x12));
 		net_buf_simple_add_u8(msg, state->onpowerup);
 
 		err = bt_mesh_model_publish(model);
@@ -708,7 +699,6 @@ static void vnd_get(struct bt_mesh_model *model,
 	struct vendor_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_3(0x03, CID_ZEPHYR));
-
 	net_buf_simple_add_le16(msg, state->current);
 	net_buf_simple_add_le32(msg, state->response);
 
@@ -766,10 +756,9 @@ static void vnd_status(struct bt_mesh_model *model,
 		       struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from Vendor (cmd) = %04x",
-	       net_buf_simple_pull_le16(buf));
-
-	printk("  (response) = %08x\n", net_buf_simple_pull_le32(buf));
+	printk("Acknownledgement from Vendor\n");
+	printk("cmd = %04x\n", net_buf_simple_pull_le16(buf));
+	printk("response = %08x\n", net_buf_simple_pull_le32(buf));
 }
 
 /* Light Lightness Server message handlers */
@@ -781,7 +770,6 @@ static void light_lightness_get(struct bt_mesh_model *model,
 	struct light_lightness_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x4E));
-
 	net_buf_simple_add_le16(msg, state->actual);
 
 	if (state->is_optional_para_available) {
@@ -856,9 +844,7 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
 
-		bt_mesh_model_msg_init(msg,
-				       BT_MESH_MODEL_OP_2(0x82, 0x4E));
-
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x4E));
 		net_buf_simple_add_le16(msg, state->actual);
 
 		err = bt_mesh_model_publish(model);
@@ -884,7 +870,6 @@ static void light_lightness_linear_get(struct bt_mesh_model *model,
 	struct light_lightness_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x52));
-
 	net_buf_simple_add_le16(msg, state->linear);
 
 	if (state->is_optional_para_available) {
@@ -952,9 +937,7 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
 
-		bt_mesh_model_msg_init(msg,
-				       BT_MESH_MODEL_OP_2(0x82, 0x52));
-
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x52));
 		net_buf_simple_add_le16(msg, state->linear);
 
 		err = bt_mesh_model_publish(model);
@@ -980,7 +963,6 @@ static void light_lightness_last_get(struct bt_mesh_model *model,
 	struct light_lightness_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x54));
-
 	net_buf_simple_add_le16(msg, state->last);
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
@@ -996,7 +978,6 @@ static void light_lightness_default_get(struct bt_mesh_model *model,
 	struct light_lightness_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x56));
-
 	net_buf_simple_add_le16(msg, state->def);
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
@@ -1012,7 +993,6 @@ static void light_lightness_range_get(struct bt_mesh_model *model,
 	struct light_lightness_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x58));
-
 	net_buf_simple_add_u8(msg, state->status_code);
 	net_buf_simple_add_le16(msg, state->light_range_min);
 	net_buf_simple_add_le16(msg, state->light_range_max);
@@ -1041,9 +1021,7 @@ static void light_lightness_default_set_unack(struct bt_mesh_model *model,
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
 
-		bt_mesh_model_msg_init(msg,
-				       BT_MESH_MODEL_OP_2(0x82, 0x56));
-
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x56));
 		net_buf_simple_add_le16(msg, state->def);
 
 		err = bt_mesh_model_publish(model);
@@ -1098,9 +1076,7 @@ static bool light_lightness_range_setunack(struct bt_mesh_model *model,
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
 
-		bt_mesh_model_msg_init(msg,
-				       BT_MESH_MODEL_OP_2(0x82, 0x58));
-
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x58));
 		net_buf_simple_add_u8(msg, state->status_code);
 		net_buf_simple_add_le16(msg, state->light_range_min);
 		net_buf_simple_add_le16(msg, state->light_range_max);
@@ -1135,12 +1111,13 @@ static void light_lightness_status(struct bt_mesh_model *model,
 				   struct bt_mesh_msg_ctx *ctx,
 				   struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (actual) = %04x\n",
-	       net_buf_simple_pull_le16(buf));
+	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (Actual)\n");
+	printk("Present Lightness = %04x\n", net_buf_simple_pull_le16(buf));
 
 	if (buf->len == 3) {
-		printk("TV = %04x RT = %02x\n", net_buf_simple_pull_le16(buf),
-		       net_buf_simple_pull_u8(buf));
+		printk("Target Lightness = %04x\n",
+		       net_buf_simple_pull_le16(buf));
+		printk("Remaining Time = %02x\n", net_buf_simple_pull_u8(buf));
 	}
 }
 
@@ -1148,12 +1125,13 @@ static void light_lightness_linear_status(struct bt_mesh_model *model,
 					  struct bt_mesh_msg_ctx *ctx,
 					  struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (linear) = %04x\n",
-	       net_buf_simple_pull_le16(buf));
+	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (Linear)\n");
+	printk("Present Lightness = %04x\n", net_buf_simple_pull_le16(buf));
 
 	if (buf->len == 3) {
-		printk("TV = %04x RT = %02x\n", net_buf_simple_pull_le16(buf),
-		       net_buf_simple_pull_u8(buf));
+		printk("Target Lightness = %04x\n",
+		       net_buf_simple_pull_le16(buf));
+		printk("Remaining Time = %02x\n", net_buf_simple_pull_u8(buf));
 	}
 }
 
@@ -1161,30 +1139,26 @@ static void light_lightness_last_status(struct bt_mesh_model *model,
 					struct bt_mesh_msg_ctx *ctx,
 					struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (last) = %04x\n",
-	       net_buf_simple_pull_le16(buf));
+	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (Last)\n");
+	printk("Lightness = %04x\n", net_buf_simple_pull_le16(buf));
 }
 
 static void light_lightness_default_status(struct bt_mesh_model *model,
 					   struct bt_mesh_msg_ctx *ctx,
 					   struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (default) = %04x\n",
-	       net_buf_simple_pull_le16(buf));
+	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (Default)\n");
+	printk("Lightness = %04x\n", net_buf_simple_pull_le16(buf));
 }
 
 static void light_lightness_range_status(struct bt_mesh_model *model,
 					 struct bt_mesh_msg_ctx *ctx,
 					 struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (status code) = %02x",
-	       net_buf_simple_pull_u8(buf));
-
-	printk("  (range_min) = %04x",
-	       net_buf_simple_pull_le16(buf));
-
-	printk("  (range_max) = %04x\n",
-	       net_buf_simple_pull_le16(buf));
+	printk("Acknownledgement from LIGHT_LIGHTNESS_SRV (Lightness Range)\n");
+	printk("Status Code = %02x\n", net_buf_simple_pull_u8(buf));
+	printk("Range Min = %04x\n", net_buf_simple_pull_le16(buf));
+	printk("Range Max = %04x\n", net_buf_simple_pull_le16(buf));
 }
 
 /* Light CTL Server message handlers */
@@ -1196,7 +1170,6 @@ static void light_ctl_get(struct bt_mesh_model *model,
 	struct light_ctl_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x60));
-
 	net_buf_simple_add_le16(msg, state->lightness);
 	net_buf_simple_add_le16(msg, state->temp);
 
@@ -1284,8 +1257,7 @@ static bool light_ctl_setunack(struct bt_mesh_model *model,
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
 
-		bt_mesh_model_msg_init(msg,
-				       BT_MESH_MODEL_OP_2(0x82, 0x60));
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x60));
 
 		/* Here, as per Model specification, status should be
 		 * made up of lightness & temperature values only
@@ -1326,7 +1298,6 @@ static void light_ctl_temp_range_get(struct bt_mesh_model *model,
 	struct light_ctl_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x63));
-
 	net_buf_simple_add_u8(msg, state->status_code);
 	net_buf_simple_add_le16(msg, state->temp_range_min);
 	net_buf_simple_add_le16(msg, state->temp_range_max);
@@ -1346,7 +1317,6 @@ static void light_ctl_default_get(struct bt_mesh_model *model,
 	struct light_ctl_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x68));
-
 	net_buf_simple_add_le16(msg, state->lightness_def);
 	net_buf_simple_add_le16(msg, state->temp_def);
 	net_buf_simple_add_le16(msg, state->delta_uv_def);
@@ -1394,9 +1364,7 @@ static bool light_ctl_default_setunack(struct bt_mesh_model *model,
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
 
-		bt_mesh_model_msg_init(msg,
-				       BT_MESH_MODEL_OP_2(0x82, 0x68));
-
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x68));
 		net_buf_simple_add_le16(msg, state->lightness_def);
 		net_buf_simple_add_le16(msg, state->temp_def);
 		net_buf_simple_add_le16(msg, state->delta_uv_def);
@@ -1463,9 +1431,7 @@ static bool light_ctl_temp_range_setunack(struct bt_mesh_model *model,
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
 
-		bt_mesh_model_msg_init(msg,
-				       BT_MESH_MODEL_OP_2(0x82, 0x63));
-
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x63));
 		net_buf_simple_add_u8(msg, state->status_code);
 		net_buf_simple_add_le16(msg, state->temp_range_min);
 		net_buf_simple_add_le16(msg, state->temp_range_max);
@@ -1500,17 +1466,17 @@ static void light_ctl_status(struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_CTL_SRV (Lightness) = %04x",
-	       net_buf_simple_pull_le16(buf));
-
-	printk("  (Temperature) = %04x\n",
+	printk("Acknownledgement from LIGHT_CTL_SRV\n");
+	printk("Present CTL Lightness = %04x\n", net_buf_simple_pull_le16(buf));
+	printk("Present CTL Temperature = %04x\n",
 	       net_buf_simple_pull_le16(buf));
 
 	if (buf->len == 5) {
-		printk("TVs (Lightness) = %04x (Temp.) = %04x RT = %02x\n",
-		       net_buf_simple_pull_le16(buf),
-		       net_buf_simple_pull_le16(buf),
-		       net_buf_simple_pull_u8(buf));
+		printk("Target CTL Lightness = %04x\n",
+		       net_buf_simple_pull_le16(buf));
+		printk("Target CTL Temperature = %04x\n",
+		       net_buf_simple_pull_le16(buf));
+		printk("Remaining Time = %02x\n", net_buf_simple_pull_u8(buf));
 	}
 }
 
@@ -1518,31 +1484,28 @@ static void light_ctl_temp_range_status(struct bt_mesh_model *model,
 					struct bt_mesh_msg_ctx *ctx,
 					struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_CTL_SRV (status code) = %02x",
-	       net_buf_simple_pull_u8(buf));
-
-	printk("  (temp_range_min) = %04x",
-	       net_buf_simple_pull_le16(buf));
-
-	printk("  (temp_range_max) = %04x\n",
-	       net_buf_simple_pull_le16(buf));
+	printk("Acknownledgement from LIGHT_CTL_SRV (Temperature Range)\n");
+	printk("Status Code = %02x\n", net_buf_simple_pull_u8(buf));
+	printk("Range Min = %04x\n", net_buf_simple_pull_le16(buf));
+	printk("Range Max = %04x\n", net_buf_simple_pull_le16(buf));
 }
 
 static void light_ctl_temp_status(struct bt_mesh_model *model,
 				  struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_CTL_TEMP_SRV (Temperature) = %04x",
+	printk("Acknownledgement from LIGHT_CTL_TEMP_SRV\n");
+	printk("Present CTL Temperature = %04x\n",
 	       net_buf_simple_pull_le16(buf));
-
-	printk("  (Delta DV) = %04x\n",
+	printk("Present CTL Delta UV = %04x\n",
 	       net_buf_simple_pull_le16(buf));
 
 	if (buf->len == 5) {
-		printk("TVs (Temp.) = %04x (Delta UV) = %04x RT = %02x\n",
-		       net_buf_simple_pull_le16(buf),
-		       net_buf_simple_pull_le16(buf),
-		       net_buf_simple_pull_u8(buf));
+		printk("Target CTL Temperature = %04x\n",
+		       net_buf_simple_pull_le16(buf));
+		printk("Target CTL Delta UV = %04x\n",
+		       net_buf_simple_pull_le16(buf));
+		printk("Remaining Time = %02x\n", net_buf_simple_pull_u8(buf));
 	}
 }
 
@@ -1550,14 +1513,10 @@ static void light_ctl_default_status(struct bt_mesh_model *model,
 				     struct bt_mesh_msg_ctx *ctx,
 				     struct net_buf_simple *buf)
 {
-	printk("Acknownledgement from LIGHT_CTL_SRV (Lightness_def) = %04x",
-	       net_buf_simple_pull_le16(buf));
-
-	printk("  (Temperature_def) = %04x",
-	       net_buf_simple_pull_le16(buf));
-
-	printk("  (Delta_UV_def) = %04x\n",
-	       net_buf_simple_pull_le16(buf));
+	printk("Acknownledgement from LIGHT_CTL_SRV (Default)\n");
+	printk("Lightness = %04x\n", net_buf_simple_pull_le16(buf));
+	printk("Temperature = %04x\n", net_buf_simple_pull_le16(buf));
+	printk("Delta UV = %04x\n", net_buf_simple_pull_le16(buf));
 }
 
 /* Light CTL Temp. Server message handlers */
@@ -1569,7 +1528,6 @@ static void light_ctl_temp_get(struct bt_mesh_model *model,
 	struct light_ctl_state *state = model->user_data;
 
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x66));
-
 	net_buf_simple_add_le16(msg, state->temp);
 	net_buf_simple_add_le16(msg, state->delta_uv);
 
@@ -1655,9 +1613,7 @@ static bool light_ctl_temp_setunack(struct bt_mesh_model *model,
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
 
-		bt_mesh_model_msg_init(msg,
-				       BT_MESH_MODEL_OP_2(0x82, 0x66));
-
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x66));
 		net_buf_simple_add_le16(msg, state->temp);
 		net_buf_simple_add_le16(msg, state->delta_uv);
 
@@ -1714,7 +1670,7 @@ static const struct bt_mesh_model_op gen_level_srv_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-/* Mapping of message handlers for Generic Level Server (0x1003) */
+/* Mapping of message handlers for Generic Level Client (0x1003) */
 static const struct bt_mesh_model_op gen_level_cli_op[] = {
 	{ BT_MESH_MODEL_OP_2(0x82, 0x08), 2, gen_level_status },
 	BT_MESH_MODEL_OP_END,
