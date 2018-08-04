@@ -66,6 +66,8 @@ clean:
 	@rm -rf reference/kconfig/*.rst
 	@rm -rf samples
 	@rm -rf boards
+	@rm -f doc.log
+	@rm -f doc.warnings
 
 htmldocs: doxy html
 
@@ -79,7 +81,8 @@ kconfig: scripts/genrest/genrest.py
 prep: doxy content kconfig
 
 html: content kconfig
-	$(Q)$(SPHINXBUILD) -t $(DOC_TAG) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	$(Q)$(SPHINXBUILD) -t $(DOC_TAG) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html 2>&1 | tee -a doc.log;
+	$(Q)./scripts/filter-doc-log.sh doc.log
 	@rm -rf samples
 	@rm -rf boards
 
