@@ -15,7 +15,7 @@ From Wikipedia:
    Tensilica Xtensa LX6 microprocessor in both dual-core and single-core
    variations.  ESP32 is created and developed by Espressif Systems, a
    Shanghai-based Chinese company, and is manufactured by TSMC using their 40nm
-   process. [1]_
+   process..
 
 The features include the following:
 
@@ -171,7 +171,6 @@ for ESP32`_.
 References
 **********
 
-.. [1] https://en.wikipedia.org/wiki/ESP32
 .. _`ESP32 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
 .. _`JTAG debugging for ESP32`: https://espressif.com/sites/default/files/documentation/jtag_debugging_for_esp32_en.pdf
 .. _`toolchain`: https://esp-idf.readthedocs.io/en/latest/get-started/index.html#get-started-setup-toochain

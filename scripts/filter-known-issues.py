@@ -185,6 +185,8 @@ def report_warning(data):
         warnings.write(data)
 
 for filename in args.FILENAMEs:
+    if os.stat(filename).st_size == 0:
+       continue  # skip empty log files
     try:
         with open(filename, "r+b") as f:
             logging.info("%s: filtering", filename)
