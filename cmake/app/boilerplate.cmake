@@ -247,6 +247,17 @@ set(CMAKE_CXX_COMPILER_FORCED 1)
 include(${ZEPHYR_BASE}/cmake/version.cmake)
 include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 include(${ZEPHYR_BASE}/cmake/kconfig.cmake)
+# DTS should be run directly after kconfig because CONFIG_ variables
+# from kconfig and dts should be available at the same time. But
+# running DTS involves running the preprocessor, so we put it behind
+# toolchain. Meaning toolchain.cmake is the only component where
+# kconfig and dts variables aren't available at the same time.
+
+# dts.cmake requires a host compiler with C preprocessor.
+# Set it now; toolchain.cmake will set it again later with cross-compiler.
+find_program(CMAKE_C_COMPILER gcc)
+include(${ZEPHYR_BASE}/cmake/dts.cmake)
+unset(CMAKE_C_COMPILER CACHE)
 include(${ZEPHYR_BASE}/cmake/toolchain.cmake)
 
 find_package(Git QUIET)
@@ -266,14 +277,6 @@ if("${SOC_SERIES}" STREQUAL "")
 else()
   set(SOC_PATH ${SOC_FAMILY}/${SOC_SERIES})
 endif()
-
-
-# DTS should be run directly after kconfig because CONFIG_ variables
-# from kconfig and dts should be available at the same time. But
-# running DTS involves running the preprocessor, so we put it behind
-# toolchain. Meaning toolchain.cmake is the only component where
-# kconfig and dts variables aren't available at the same time.
-include(${ZEPHYR_BASE}/cmake/dts.cmake)
 
 set(KERNEL_NAME ${CONFIG_KERNEL_BIN_NAME})
 
