@@ -179,10 +179,19 @@ static int i2c_imx_transfer(struct device *dev, struct i2c_msg *msgs,
 	struct i2c_imx_data *data = DEV_DATA(dev);
 	struct i2c_master_transfer *transfer = &data->transfer;
 	u8_t *buf, *buf_end;
+	u16_t timeout = UINT16_MAX;
 	int result = -EIO;
 
 	if (!num_msgs) {
 		return 0;
+	}
+
+	/* Wait until bus not busy */
+	while ((I2C_I2SR_REG(base) & i2cStatusBusBusy) && (--timeout)) {
+	}
+
+	if (timeout == 0) {
+		return result;
 	}
 
 	/* Make sure we're in a good state so slave recognises the Start */
