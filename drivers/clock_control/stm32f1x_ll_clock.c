@@ -27,7 +27,6 @@
 #undef RCC_PREDIV1_SOURCE_PLL2
 #endif /* CONFIG_CLOCK_STM32_PLL_SRC_PLL2 */
 
-
 /**
  * @brief fill in pll configuration structure
  */
@@ -50,6 +49,11 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	pllinit->PLLMul = ((CONFIG_CLOCK_STM32_PLL_MULTIPLIER - 2)
 					<< RCC_CFGR_PLLMULL_Pos);
 
+#if defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI)
+	/* If HSI is used as PLL source an automatic divisor of 2 will be
+	 * applied */
+	pllinit->Prediv = LL_RCC_PLLSOURCE_HSI_DIV_2;
+#else
 #ifdef CONFIG_SOC_STM32F10X_DENSITY_DEVICE
 	/* PLL prediv */
 #ifdef CONFIG_CLOCK_STM32_PLL_XTPRE
@@ -78,6 +82,7 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	 */
 	pllinit->Prediv = CONFIG_CLOCK_STM32_PLL_PREDIV1 - 1;
 #endif /* CONFIG_SOC_STM32F10X_DENSITY_DEVICE */
+#endif /* CONFIG_CLOCK_STM32_PLL_SRC_HSI */
 }
 
 #endif /* CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL */

@@ -559,15 +559,15 @@ static ErrorStatus UTILS_EnablePLLAndSwitchSystem(uint32_t SYSCLK_Frequency, LL_
   /* Update system clock configuration */
   if (status == SUCCESS)
   {
-#if defined(RCC_PLL2_SUPPORT)
+#if defined(RCC_PLL2_SUPPORT) && !defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI)
     /* Enable PLL2 */
     LL_RCC_PLL2_Enable();
     while (LL_RCC_PLL2_IsReady() != 1U)
     {
       /* Wait for PLL2 ready */
     }
+#endif /* RCC_PLL2_SUPPORT && !defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI) */
 
-#endif /* RCC_PLL2_SUPPORT */
     /* Enable PLL */
     LL_RCC_PLL_Enable();
     while (LL_RCC_PLL_IsReady() != 1U)
