@@ -199,6 +199,7 @@ void stm32_i2c_error_isr(void *arg)
 
 	if (LL_I2C_IsActiveFlag_AF(i2c)) {
 		LL_I2C_ClearFlag_AF(i2c);
+		LL_I2C_GenerateStopCondition(i2c);
 		data->current.is_nack = 1;
 		k_sem_give(&data->device_sync_sem);
 
@@ -346,6 +347,7 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 			}
 			if (LL_I2C_IsActiveFlag_AF(i2c)) {
 				LL_I2C_ClearFlag_AF(i2c);
+				LL_I2C_GenerateStopCondition(i2c);
 				SYS_LOG_DBG("%s: NACK", __func__);
 
 				return -EIO;
