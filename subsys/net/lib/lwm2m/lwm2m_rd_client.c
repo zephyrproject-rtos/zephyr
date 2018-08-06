@@ -777,7 +777,7 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 	ret = lwm2m_engine_start(client_ctx, peer_str, peer_port);
 	if (ret < 0) {
 		SYS_LOG_ERR("Cannot init LWM2M engine (%d)", ret);
-		goto cleanup;
+		return ret;
 	}
 
 	if (!client_ctx->net_app_ctx.default_ctx) {
@@ -793,11 +793,6 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 	SYS_LOG_INF("LWM2M Client: %s", client.ep_name);
 
 	return 0;
-
-cleanup:
-	net_app_close(&client_ctx->net_app_ctx);
-	net_app_release(&client_ctx->net_app_ctx);
-	return ret;
 }
 
 static int lwm2m_rd_client_init(struct device *dev)
