@@ -44,6 +44,13 @@ struct sec_tag_list {
 	int sec_tag_count;
 };
 
+/** Timer context for DTLS. */
+struct dtls_timing_context {
+	u32_t snapshot;
+	u32_t int_ms;
+	u32_t fin_ms;
+};
+
 /** TLS context information. */
 struct tls_context {
 	/** Information whether TLS context is used. */
@@ -73,6 +80,11 @@ struct tls_context {
 		/** DTLS role, client by default. */
 		s8_t role;
 	} options;
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	/** Context information for DTLS timing. */
+	struct dtls_timing_context dtls_timing;
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 #if defined(CONFIG_MBEDTLS)
 	/** mbedTLS context. */
@@ -155,6 +167,52 @@ static int tls_entropy_func(void *ctx, unsigned char *buf, size_t len)
 	return 0;
 }
 #endif /* defined(CONFIG_ENTROPY_HAS_DRIVER) */
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+/* mbedTLS-defined function for setting timer. */
+static void dtls_timing_set_delay(void *data, uint32_t int_ms, uint32_t fin_ms)
+{
+	struct dtls_timing_context *ctx = data;
+
+	ctx->int_ms = int_ms;
+	ctx->fin_ms = fin_ms;
+
+	if (fin_ms != 0) {
+		ctx->snapshot = k_uptime_get_32();
+	}
+}
+
+/* mbedTLS-defined function for getting timer status.
+ * The return values are specified by mbedTLS. The callback must return:
+ *   -1 if cancelled (fin_ms == 0),
+ *    0 if none of the delays have passed,
+ *    1 if only the intermediate delay has passed,
+ *    2 if the final delay has passed.
+ */
+static int dtls_timing_get_delay(void *data)
+{
+	struct dtls_timing_context *timing = data;
+	unsigned long elapsed_ms;
+
+	NET_ASSERT(timing);
+
+	if (timing->fin_ms == 0) {
+		return -1;
+	}
+
+	elapsed_ms = k_uptime_get_32() - timing->snapshot;
+
+	if (elapsed_ms >= timing->fin_ms) {
+		return 2;
+	}
+
+	if (elapsed_ms >= timing->int_ms) {
+		return 1;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 /* Initialize TLS internals. */
 static int tls_init(struct device *unused)
@@ -538,6 +596,16 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 		 */
 		return -ENOMEM;
 	}
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	if (type == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
+		/* DTLS requires timer callbacks to operate */
+		mbedtls_ssl_set_timer_cb(&context->tls->ssl,
+					 &context->tls->dtls_timing,
+					 dtls_timing_set_delay,
+					 dtls_timing_get_delay);
+	}
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 	/* For TLS clients, set hostname to empty string to enforce it's
 	 * verification - only if hostname option was not set. Otherwise
