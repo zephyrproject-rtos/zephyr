@@ -40,6 +40,7 @@ struct zsock_pollfd {
 /* Values are compatible with Linux */
 #define ZSOCK_POLLIN 1
 #define ZSOCK_POLLOUT 4
+#define ZSOCK_POLLERR 8
 
 #define ZSOCK_MSG_PEEK 0x02
 #define ZSOCK_MSG_DONTWAIT 0x40
