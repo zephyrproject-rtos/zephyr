@@ -43,6 +43,19 @@ config NET_SOCKETS_ENABLE_DTLS
 	help
 	  Enable DTLS socket support. By default only TLS over TCP is supported.
 
+config NET_SOCKETS_DTLS_TIMEOUT
+	int "Timeout value in milliseconds for DTLS connection"
+	default 5000
+	depends on NET_SOCKETS_ENABLE_DTLS
+	help
+	  This variable specifies time in milliseconds after which DTLS
+	  connection is considered dead by TLS server and DTLS resources are
+	  freed. This is needed to prevent situation when DTLS client shuts down
+	  without closing connection gracefully, which can prevent other peers
+	  from connecting. Value of 0 indicates no timeout - resources will be
+	  freed only when connection is gracefully closed by peer sending TLS
+	  notification or socket is closed.
+
 config NET_SOCKETS_TLS_MAX_CONTEXTS
 	int "Maximum number of TLS/DTLS contexts"
 	default 1
