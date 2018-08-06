@@ -11,14 +11,10 @@ tests:
       - CONFIG_MDNS_RESOLVER=y
       - CONFIG_LLMNR_RESOLVER=n
       - CONFIG_NET_DHCPV4=y
-      - CONFIG_NET_DEBUG_APP=y
-      - CONFIG_SYS_LOG_NET_LEVEL=4
     tags: mdns
   test_llmnr:
     extra_configs:
       - CONFIG_MDNS_RESOLVER=n
       - CONFIG_LLMNR_RESOLVER=y
       - CONFIG_NET_DHCPV4=y
-      - CONFIG_NET_DEBUG_APP=y
-      - CONFIG_SYS_LOG_NET_LEVEL=4
     tags: llmnr
