@@ -88,6 +88,12 @@ struct tls_context {
 
 	/** mbedTLS cookie context for DTLS */
 	mbedtls_ssl_cookie_ctx cookie;
+
+	/** DTLS peer address. */
+	struct sockaddr dtls_peer_addr;
+
+	/** DTLS peer address length. */
+	socklen_t dtls_peer_addrlen;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 #if defined(CONFIG_MBEDTLS)
@@ -357,6 +363,57 @@ static int tls_release(struct tls_context *tls)
 
 	return 0;
 }
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+static bool dtls_is_peer_addr_valid(struct net_context *context,
+				    const struct sockaddr *peer_addr,
+				    socklen_t addrlen)
+{
+	if (context->tls->dtls_peer_addrlen != addrlen ||
+	    context->tls->dtls_peer_addr.sa_family != peer_addr->sa_family) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && peer_addr->sa_family == AF_INET6) {
+		struct sockaddr_in6 *addr1 = net_sin6(peer_addr);
+		struct sockaddr_in6 *addr2 =
+				net_sin6(&context->tls->dtls_peer_addr);
+
+		return (addr1->sin6_port == addr2->sin6_port) &&
+			net_ipv6_addr_cmp(&addr1->sin6_addr, &addr2->sin6_addr);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		   peer_addr->sa_family == AF_INET) {
+		struct sockaddr_in *addr1 = net_sin(peer_addr);
+		struct sockaddr_in *addr2 =
+				net_sin(&context->tls->dtls_peer_addr);
+
+		return (addr1->sin_port == addr2->sin_port) &&
+			net_ipv4_addr_cmp(&addr1->sin_addr, &addr2->sin_addr);
+	}
+
+	return false;
+}
+
+static void dtls_peer_address_set(struct net_context *context,
+				  const struct sockaddr *peer_addr,
+				  socklen_t addrlen)
+{
+	if (addrlen <= sizeof(context->tls->dtls_peer_addr)) {
+		memcpy(&context->tls->dtls_peer_addr, peer_addr, addrlen);
+		context->tls->dtls_peer_addrlen = addrlen;
+	}
+}
+
+static void dtls_peer_address_get(struct net_context *context,
+				  struct sockaddr *peer_addr,
+				  socklen_t *addrlen)
+{
+	socklen_t len = min(context->tls->dtls_peer_addrlen, *addrlen);
+
+	memcpy(peer_addr, &context->tls->dtls_peer_addr, len);
+	*addrlen = len;
+}
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
 {
