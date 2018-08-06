@@ -132,6 +132,9 @@ static struct tls_context tls_contexts[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
 /* A mutex for protecting TLS context allocation. */
 static struct k_mutex context_lock;
 
+#define IS_LISTENING(context) (net_context_get_state(context) == \
+			       NET_CONTEXT_LISTENING)
+
 #if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_DEBUG_SOCKETS)
 static void tls_debug(void *ctx, int level, const char *file,
 		      int line, const char *str)
@@ -371,6 +374,13 @@ static int tls_release(struct tls_context *tls)
 	return 0;
 }
 
+static inline int time_left(u32_t start, u32_t timeout)
+{
+	u32_t elapsed = k_uptime_get_32() - start;
+
+	return timeout - elapsed;
+}
+
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 static bool dtls_is_peer_addr_valid(struct net_context *context,
 				    const struct sockaddr *peer_addr,
@@ -419,13 +429,6 @@ static void dtls_peer_address_get(struct net_context *context,
 
 	memcpy(peer_addr, &context->tls->dtls_peer_addr, len);
 	*addrlen = len;
-}
-
-static inline int time_left(u32_t start, u32_t timeout)
-{
-	u32_t elapsed = k_uptime_get_32() - start;
-
-	return timeout - elapsed;
 }
 
 static int dtls_tx(void *ctx, const unsigned char *buf, size_t len)
@@ -1573,13 +1576,14 @@ int ztls_fcntl(int sock, int cmd, int flags)
 
 int ztls_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 {
-	bool has_mbedtls_data = false;
+	bool retry = true;
 	struct zsock_pollfd *pfd;
 	struct net_context *context;
-	int i, ret;
+	int i, ret, remaining_time = timeout;
+	u32_t entry_time = k_uptime_get_32();
 
-	/* There might be some decrypted but unread data pending on mbedTLS,
-	 * check for that.
+	/* There might be some decrypted but unread data pending
+	 * on mbedTLS, check for that.
 	 */
 	for (pfd = fds, i = nfds; i--; pfd++) {
 		/* Per POSIX, negative fd's are just ignored */
@@ -1589,52 +1593,90 @@ int ztls_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 
 		if (pfd->events & ZSOCK_POLLIN) {
 			context = INT_TO_POINTER(pfd->fd);
-			if (!context->tls) {
+			if (!context->tls || IS_LISTENING(context)) {
 				continue;
 			}
 
+			/* There already is mbedTLS data to read, so just poll
+			 * with no timeout, to check if there has been any other
+			 * activity on sockets.
+			 */
 			if (mbedtls_ssl_get_bytes_avail(
 					&context->tls->ssl) > 0) {
-				has_mbedtls_data = true;
+				remaining_time = K_NO_WAIT;
 				break;
 			}
 		}
 	}
 
-	/* If there is no data waiting on any of mbedTLS contexts,
-	 * just do regular poll.
-	 */
-	if (!has_mbedtls_data) {
-		return zsock_poll(fds, nfds, timeout);
-	}
-
-	/* Otherwise, poll with no timeout, and update respective revents. */
-	ret = zsock_poll(fds, nfds, K_NO_WAIT);
-	if (ret < 0) {
-		/* errno will be propagated */
-		return -1;
-	}
-
-	/* Another pass, this time updating revents. */
-	for (pfd = fds, i = nfds; i--; pfd++) {
-		/* Per POSIX, negative fd's are just ignored */
-		if (pfd->fd < 0) {
-			continue;
+	while (retry) {
+		ret = zsock_poll(fds, nfds, remaining_time);
+		if (ret < 0) {
+			/* errno will be propagated. */
+			return ret;
+		} else if (ret == 0) {
+			/* Do not repeat on timeout. */
+			retry = false;
 		}
 
-		if (pfd->events & ZSOCK_POLLIN) {
-			context = INT_TO_POINTER(pfd->fd);
-			if (!context->tls) {
+		/* Make mbedTLS recalculate the data on sockets that notified
+		 * data availability, and update revents respectively.
+		 */
+		for (pfd = fds, i = nfds; i--; pfd++) {
+			/* Per POSIX, negative fd's are just ignored */
+			if (pfd->fd < 0) {
 				continue;
 			}
 
-			if (mbedtls_ssl_get_bytes_avail(
-					&context->tls->ssl) > 0) {
-				if (pfd->revents == 0) {
-					ret++;
+			if (pfd->events & ZSOCK_POLLIN) {
+				context = INT_TO_POINTER(pfd->fd);
+				if (!context->tls || IS_LISTENING(context)) {
+					continue;
 				}
 
-				pfd->revents |= ZSOCK_POLLIN;
+				if (pfd->revents & ZSOCK_POLLIN) {
+					/* EAGAIN might happen during or just
+					 * after DLTS handshake.
+					 */
+					if (recv(pfd->fd, NULL, 0,
+						 ZSOCK_MSG_DONTWAIT) < 0 &&
+					    errno != EAGAIN) {
+						/* No need to increment ret here
+						 * as POLLIN was set.
+						 */
+						pfd->revents |= ZSOCK_POLLERR;
+						continue;
+					}
+				}
+
+				if (mbedtls_ssl_get_bytes_avail(
+						&context->tls->ssl) > 0) {
+					if (pfd->revents == 0) {
+						ret++;
+					}
+
+					pfd->revents |= ZSOCK_POLLIN;
+				} else if (!sock_is_eof(context)) {
+					if (pfd->revents == ZSOCK_POLLIN) {
+						ret--;
+					}
+
+					pfd->revents &= ~ZSOCK_POLLIN;
+				}
+			}
+		}
+
+		/* If there's something to report, exit. */
+		if (ret > 0) {
+			retry = false;
+		}
+
+		if (retry && remaining_time != K_FOREVER &&
+		    remaining_time != K_NO_WAIT) {
+			/* Recalculate the timeout value. */
+			remaining_time = time_left(entry_time, timeout);
+			if (remaining_time <= 0) {
+				retry = false;
 			}
 		}
 	}
