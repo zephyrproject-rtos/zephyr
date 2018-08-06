@@ -18,8 +18,7 @@
 #include <net/net_pkt.h>
 #include <net/socket.h>
 
-#define SOCK_EOF 1
-#define SOCK_NONBLOCK 2
+#include "sockets_internal.h"
 
 #define SET_ERRNO(x) \
 	{ int _err = x; if (_err < 0) { errno = -_err; return -1; } }
@@ -27,23 +26,6 @@
 
 static void zsock_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 			      int status, void *user_data);
-
-static inline void sock_set_flag(struct net_context *ctx, u32_t mask,
-				 u32_t flag)
-{
-	u32_t val = POINTER_TO_INT(ctx->user_data);
-	val = (val & ~mask) | flag;
-	(ctx)->user_data = INT_TO_POINTER(val);
-}
-
-static inline u32_t sock_get_flag(struct net_context *ctx, u32_t mask)
-{
-	return POINTER_TO_INT(ctx->user_data) & mask;
-}
-
-#define sock_is_eof(ctx) sock_get_flag(ctx, SOCK_EOF)
-#define sock_set_eof(ctx) sock_set_flag(ctx, SOCK_EOF, SOCK_EOF)
-#define sock_is_nonblock(ctx) sock_get_flag(ctx, SOCK_NONBLOCK)
 
 static inline int _k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
 {
