@@ -18,8 +18,10 @@
 #include <stdio.h>
 
 #include <net/socket.h>
+#include <net/tls_credentials.h>
 
 #include "common.h"
+#include "certificate.h"
 
 static void process_udp4(void);
 static void process_udp6(void);
@@ -37,12 +39,41 @@ static int start_udp_proto(struct data *data, struct sockaddr *bind_addr,
 {
 	int ret;
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	data->udp.sock = socket(bind_addr->sa_family, SOCK_DGRAM,
+				IPPROTO_DTLS_1_2);
+#else
 	data->udp.sock = socket(bind_addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+#endif
 	if (data->udp.sock < 0) {
 		NET_ERR("Failed to create UDP socket (%s): %d", data->proto,
 			errno);
 		return -errno;
 	}
+
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	sec_tag_t sec_tag_list[] = {
+		SERVER_CERTIFICATE_TAG,
+	};
+	int role = 1;
+
+	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
+			 sec_tag_list, sizeof(sec_tag_list));
+	if (ret < 0) {
+		NET_ERR("Failed to set UDP secure option (%s): %d", data->proto,
+			errno);
+		ret = -errno;
+	}
+
+	/* Set role to DTLS server. */
+	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_ROLE,
+			 &role, sizeof(role));
+	if (ret < 0) {
+		NET_ERR("Failed to set DTLS role secure option (%s): %d",
+			data->proto, errno);
+		ret = -errno;
+	}
+#endif
 
 	ret = bind(data->udp.sock, bind_addr, bind_addrlen);
 	if (ret < 0) {
