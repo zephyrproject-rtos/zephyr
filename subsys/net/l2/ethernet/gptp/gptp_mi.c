@@ -168,10 +168,10 @@ static void gptp_mi_init_port_announce_rcv_sm(int port)
 
 static void gptp_mi_init_clock_master_sync_rcv_sm(void)
 {
-	struct gptp_clk_master_sync_state *cms_rcv;
+	struct gptp_clk_master_sync_rcv_state *cms_rcv;
 
 	cms_rcv = &GPTP_STATE()->clk_master_sync_receive;
-	(void)memset(cms_rcv, 0, sizeof(struct gptp_clk_master_sync_state));
+	(void)memset(cms_rcv, 0, sizeof(struct gptp_clk_master_sync_rcv_state));
 	cms_rcv->state = GPTP_CMS_RCV_INITIALIZING;
 }
 
@@ -773,7 +773,7 @@ static void gptp_mi_clk_slave_sync_state_machine(void)
 
 static void gptp_mi_clk_master_sync_rcv_state_machine(void)
 {
-	struct gptp_clk_master_sync_state *state;
+	struct gptp_clk_master_sync_rcv_state *state;
 
 	state = &GPTP_STATE()->clk_master_sync_receive;
 	switch (state->state) {
