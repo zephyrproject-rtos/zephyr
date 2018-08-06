@@ -826,6 +826,10 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 						      mbedtls_ssl_cookie_write,
 						      mbedtls_ssl_cookie_check,
 						      &context->tls->cookie);
+
+			mbedtls_ssl_conf_read_timeout(
+					&context->tls->config,
+					CONFIG_NET_SOCKETS_DTLS_TIMEOUT);
 		}
 	}
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
