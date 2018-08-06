@@ -581,15 +581,13 @@ int zsock_inet_pton(sa_family_t family, const char *src, void *dst)
 int zsock_getsockopt(int sock, int level, int optname,
 		     void *optval, socklen_t *optlen)
 {
-	SET_ERRNO(-ENOPROTOOPT);
-
-	return 0;
+	errno = ENOPROTOOPT;
+	return -1;
 }
 
 int zsock_setsockopt(int sock, int level, int optname,
 		     const void *optval, socklen_t optlen)
 {
-	SET_ERRNO(-ENOPROTOOPT);
-
-	return 0;
+	errno = ENOPROTOOPT;
+	return -1;
 }
