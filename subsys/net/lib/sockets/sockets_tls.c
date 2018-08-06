@@ -34,6 +34,7 @@
 #include <mbedtls/debug.h>
 #endif /* CONFIG_MBEDTLS */
 
+#include "sockets_internal.h"
 #include "tls_internal.h"
 
 /** A list of secure tags that TLS context should use. */
@@ -413,16 +414,116 @@ static void dtls_peer_address_get(struct net_context *context,
 	memcpy(peer_addr, &context->tls->dtls_peer_addr, len);
 	*addrlen = len;
 }
+
+static inline int time_left(u32_t start, u32_t timeout)
+{
+	u32_t elapsed = k_uptime_get_32() - start;
+
+	return timeout - elapsed;
+}
+
+static int dtls_tx(void *ctx, const unsigned char *buf, size_t len)
+{
+	int sock = POINTER_TO_INT(ctx);
+	struct net_context *context = ctx;
+	ssize_t sent;
+
+	sent = zsock_sendto(sock, buf, len, context->tls->flags,
+			    &context->tls->dtls_peer_addr,
+			    context->tls->dtls_peer_addrlen);
+	if (sent < 0) {
+		if (errno == EAGAIN) {
+			return MBEDTLS_ERR_SSL_WANT_WRITE;
+		}
+
+		return MBEDTLS_ERR_NET_SEND_FAILED;
+	}
+
+	return sent;
+}
+
+static int dtls_rx(void *ctx, unsigned char *buf, size_t len, uint32_t timeout)
+{
+	int sock = POINTER_TO_INT(ctx);
+	struct net_context *context = ctx;
+	bool is_block = !((context->tls->flags & ZSOCK_MSG_DONTWAIT) ||
+			  sock_is_nonblock(context));
+	int remaining_time = (timeout == 0) ? K_FOREVER : timeout;
+	u32_t entry_time = k_uptime_get_32();
+	socklen_t addrlen = sizeof(struct sockaddr);
+	struct sockaddr addr;
+	int err;
+	ssize_t received;
+	struct pollfd fds;
+	bool retry;
+
+	do {
+		retry = false;
+
+		/* mbedtLS does not allow blocking rx for DTLS, therefore use
+		 * poll for timeout functionality.
+		 */
+		if (is_block) {
+			fds.fd = sock;
+			fds.events = POLLIN;
+			if (zsock_poll(&fds, 1, remaining_time) == 0) {
+				return MBEDTLS_ERR_SSL_TIMEOUT;
+			}
+		}
+
+		received = zsock_recvfrom(sock, buf, len, context->tls->flags,
+					  &addr, &addrlen);
+		if (received < 0) {
+			if (errno == EAGAIN) {
+				return MBEDTLS_ERR_SSL_WANT_READ;
+			}
+
+			return MBEDTLS_ERR_NET_RECV_FAILED;
+		}
+
+		if (context->tls->dtls_peer_addrlen == 0) {
+			/* Only allow to store peer address for DTLS servers. */
+			if (context->tls->options.role
+					== MBEDTLS_SSL_IS_SERVER) {
+				dtls_peer_address_set(context, &addr, addrlen);
+
+				err = mbedtls_ssl_set_client_transport_id(
+					&context->tls->ssl,
+					(const unsigned char *)&addr, addrlen);
+				if (err < 0) {
+					return err;
+				}
+			} else {
+				/* For clients it's incorrect to receive when
+				 * no peer has been set up.
+				 */
+				return MBEDTLS_ERR_SSL_PEER_VERIFY_FAILED;
+			}
+		} else if (!dtls_is_peer_addr_valid(context, &addr, addrlen)) {
+			/* Received data from different peer, ignore it. */
+			retry = true;
+
+			if (remaining_time != K_FOREVER) {
+				/* Recalculate the timeout value. */
+				remaining_time = time_left(entry_time, timeout);
+				if (remaining_time <= 0) {
+					return MBEDTLS_ERR_SSL_TIMEOUT;
+				}
+			}
+		}
+	} while (retry);
+
+	return received;
+}
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
 {
 	int sock = POINTER_TO_INT(ctx);
+	struct net_context *context = ctx;
 	ssize_t sent;
 
-	sent = zsock_sendto(sock, buf, len,
-			    ((struct net_context *)ctx)->tls->flags,
-			    NULL, 0);
+	sent = zsock_send(sock, buf, len, context->tls->flags);
 	if (sent < 0) {
 		if (errno == EAGAIN) {
 			return MBEDTLS_ERR_SSL_WANT_WRITE;
@@ -437,11 +538,10 @@ static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
 static int tls_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	int sock = POINTER_TO_INT(ctx);
+	struct net_context *context = ctx;
 	ssize_t received;
 
-	received = zsock_recvfrom(sock, buf, len,
-				  ((struct net_context *)ctx)->tls->flags,
-				  NULL, 0);
+	received = zsock_recv(sock, buf, len, context->tls->flags);
 	if (received < 0) {
 		if (errno == EAGAIN) {
 			return MBEDTLS_ERR_SSL_WANT_READ;
@@ -652,7 +752,17 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 		MBEDTLS_SSL_TRANSPORT_STREAM :
 		MBEDTLS_SSL_TRANSPORT_DATAGRAM;
 
-	mbedtls_ssl_set_bio(&context->tls->ssl, context, tls_tx, tls_rx, NULL);
+	if (type == MBEDTLS_SSL_TRANSPORT_STREAM) {
+		mbedtls_ssl_set_bio(&context->tls->ssl, context,
+				    tls_tx, tls_rx, NULL);
+	} else {
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+		mbedtls_ssl_set_bio(&context->tls->ssl, context,
+				    dtls_tx, NULL, dtls_rx);
+#else
+		return -ENOTSUP;
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+	}
 
 	ret = mbedtls_ssl_config_defaults(&context->tls->config, role, type,
 					  MBEDTLS_SSL_PRESET_DEFAULT);
