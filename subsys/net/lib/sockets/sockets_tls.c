@@ -64,6 +64,9 @@ struct tls_context {
 	/** Socket flags passed to a socket call. */
 	int flags;
 
+	/** Information whether TLS handshake is complete or not */
+	bool tls_established;
+
 	/** TLS specific option values. */
 	struct {
 		/** Select which credentials to use with TLS. */
@@ -717,6 +720,25 @@ exit:
 	return err;
 }
 
+static int tls_mbedtls_reset(struct net_context *context)
+{
+	int ret;
+
+	ret = mbedtls_ssl_session_reset(&context->tls->ssl);
+	if (ret != 0) {
+		return ret;
+	}
+
+	context->tls->tls_established = false;
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	memset(&context->tls->dtls_peer_addr, 0,
+	       sizeof(context->tls->dtls_peer_addr));
+	context->tls->dtls_peer_addrlen = 0;
+#endif
+
+	return 0;
+}
+
 static int tls_mbedtls_handshake(struct net_context *context)
 {
 	int ret;
@@ -732,11 +754,20 @@ static int tls_mbedtls_handshake(struct net_context *context)
 		if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
 		    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 			continue;
+		} else if (ret == MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED) {
+			ret = tls_mbedtls_reset(context);
+			if (ret == 0) {
+				continue;
+			}
 		}
 
 		NET_ERR("TLS handshake error: -%x", -ret);
 		ret = -ECONNABORTED;
 		break;
+	}
+
+	if (ret == 0) {
+		context->tls->tls_established = true;
 	}
 
 	return ret;
