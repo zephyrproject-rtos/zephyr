@@ -1366,26 +1366,10 @@ ssize_t ztls_sendto(int sock, const void *buf, size_t len, int flags,
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 }
 
-ssize_t ztls_recvfrom(int sock, void *buf, size_t max_len, int flags,
-		      struct sockaddr *src_addr, socklen_t *addrlen)
+static ssize_t recvfrom_tls(struct net_context *context, void *buf,
+			    size_t max_len, int flags)
 {
-	struct net_context *context = INT_TO_POINTER(sock);
 	int ret;
-
-	if (!context->tls) {
-		return zsock_recvfrom(sock, buf, max_len, flags,
-				      src_addr, addrlen);
-	}
-
-	if (flags & ZSOCK_MSG_PEEK) {
-		/* TODO mbedTLS does not support 'peeking' This could be
-		 * bypassed by having intermediate buffer for peeking
-		 */
-		errno = ENOTSUP;
-		return -1;
-	}
-
-	context->tls->flags = flags;
 
 	ret = mbedtls_ssl_read(&context->tls->ssl, buf, max_len);
 	if (ret >= 0) {
@@ -1406,12 +1390,175 @@ ssize_t ztls_recvfrom(int sock, void *buf, size_t max_len, int flags,
 
 	if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
 	    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
-		errno = EAGAIN;
+		ret = -EAGAIN;
+	} else {
+		ret = -EIO;
+	}
+
+	errno = -ret;
+	return -1;
+}
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+static ssize_t recvfrom_dtls_client(struct net_context *context, void *buf,
+				    size_t max_len, int flags,
+				    struct sockaddr *src_addr,
+				    socklen_t *addrlen)
+{
+	int ret;
+
+	if (!context->tls->tls_established) {
+		ret = -ENOTCONN;
+		goto error;
+	}
+
+	ret = mbedtls_ssl_read(&context->tls->ssl, buf, max_len);
+	if (ret >= 0) {
+		if (src_addr && addrlen) {
+			dtls_peer_address_get(context, src_addr, addrlen);
+		}
+		return ret;
+	}
+
+	switch (ret) {
+	case MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY:
+		ret = -ECONNRESET;
+		break;
+
+	case MBEDTLS_ERR_SSL_TIMEOUT:
+		(void)mbedtls_ssl_close_notify(&context->tls->ssl);
+		ret = -ECONNABORTED;
+		break;
+
+	case MBEDTLS_ERR_SSL_WANT_READ:
+	case MBEDTLS_ERR_SSL_WANT_WRITE:
+		ret = -EAGAIN;
+		break;
+
+	default:
+		ret = -EIO;
+		break;
+	}
+
+error:
+	errno = -ret;
+	return -1;
+}
+
+static ssize_t recvfrom_dtls_server(struct net_context *context, void *buf,
+				    size_t max_len, int flags,
+				    struct sockaddr *src_addr,
+				    socklen_t *addrlen)
+{
+	int ret;
+	bool repeat;
+
+	if (!context->tls->is_initialized) {
+		ret = tls_mbedtls_init(context, true);
+		if (ret < 0) {
+			goto error;
+		}
+	}
+
+	/* Loop to enable DTLS reconnection for servers without closing
+	 * a socket.
+	 */
+	do {
+		repeat = false;
+
+		if (!context->tls->tls_established) {
+			ret = tls_mbedtls_handshake(context);
+			if (ret < 0) {
+				ret = tls_mbedtls_reset(context);
+				if (ret == 0) {
+					repeat = true;
+				} else {
+					ret = -ECONNABORTED;
+				}
+
+				continue;
+			}
+		}
+
+		ret = mbedtls_ssl_read(&context->tls->ssl, buf, max_len);
+		if (ret >= 0) {
+			if (src_addr && addrlen) {
+				dtls_peer_address_get(context, src_addr,
+						      addrlen);
+			}
+			return ret;
+		}
+
+		switch (ret) {
+		case MBEDTLS_ERR_SSL_TIMEOUT:
+			(void)mbedtls_ssl_close_notify(&context->tls->ssl);
+			/* fallthrough */
+
+		case MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY:
+		case MBEDTLS_ERR_SSL_CLIENT_RECONNECT:
+			ret = tls_mbedtls_reset(context);
+			if (ret == 0) {
+				repeat = true;
+			} else {
+				ret = -ECONNABORTED;
+			}
+			break;
+
+		case MBEDTLS_ERR_SSL_WANT_READ:
+		case MBEDTLS_ERR_SSL_WANT_WRITE:
+			ret = -EAGAIN;
+			break;
+
+		default:
+			ret = -EIO;
+			break;
+		}
+	} while (repeat);
+
+error:
+	errno = -ret;
+	return -1;
+}
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+
+ssize_t ztls_recvfrom(int sock, void *buf, size_t max_len, int flags,
+		      struct sockaddr *src_addr, socklen_t *addrlen)
+{
+	struct net_context *context = INT_TO_POINTER(sock);
+
+	if (!context->tls) {
+		return zsock_recvfrom(sock, buf, max_len, flags,
+				      src_addr, addrlen);
+	}
+
+	if (flags & ZSOCK_MSG_PEEK) {
+		/* TODO mbedTLS does not support 'peeking' This could be
+		 * bypassed by having intermediate buffer for peeking
+		 */
+		errno = ENOTSUP;
 		return -1;
 	}
 
-	errno = EIO;
+	context->tls->flags = flags;
+
+	/* TLS */
+	if (net_context_get_type(context) == SOCK_STREAM) {
+		return recvfrom_tls(context, buf, max_len, flags);
+	}
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	/* DTLS */
+	if (context->tls->options.role == MBEDTLS_SSL_IS_SERVER) {
+		return recvfrom_dtls_server(context, buf, max_len, flags,
+					    src_addr, addrlen);
+	}
+
+	return recvfrom_dtls_client(context, buf, max_len, flags,
+				    src_addr, addrlen);
+#else
+	errno = ENOTSUP;
 	return -1;
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 }
 
 int ztls_fcntl(int sock, int cmd, int flags)
