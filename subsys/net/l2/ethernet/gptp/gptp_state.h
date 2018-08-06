@@ -374,8 +374,8 @@ struct gptp_clk_slave_sync_state {
 	bool rcvd_local_clk_tick;
 };
 
-/* ClockMasterSync state machine variables. */
-struct gptp_clk_master_sync_state {
+/* ClockMasterSyncReceive state machine variables. */
+struct gptp_clk_master_sync_rcv_state {
 	/** Current state of the state machine */
 	enum gptp_cms_rcv_states state;
 
@@ -441,7 +441,7 @@ struct gptp_states {
 	struct gptp_port_role_selection_state pr_sel;
 
 	/** ClockMasterSyncReceive state machine variables. */
-	struct gptp_clk_master_sync_state clk_master_sync_receive;
+	struct gptp_clk_master_sync_rcv_state clk_master_sync_receive;
 };
 
 /**
