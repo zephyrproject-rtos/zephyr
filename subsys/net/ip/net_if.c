@@ -830,7 +830,9 @@ static void join_mcast_nodes(struct net_if *iface, struct in6_addr *addr)
 	if (flags & NET_L2_MULTICAST) {
 		join_mcast_allnodes(iface);
 
-		join_mcast_solicit_node(iface, addr);
+		if (!(flags & NET_L2_MULTICAST_SKIP_JOIN_SOLICIT_NODE)) {
+			join_mcast_solicit_node(iface, addr);
+		}
 	}
 }
 

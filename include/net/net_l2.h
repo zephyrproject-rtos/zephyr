@@ -30,6 +30,9 @@ struct net_if;
 enum net_l2_flags {
 	/** IP multicast supported */
 	NET_L2_MULTICAST			= BIT(0),
+
+	/** Do not joint solicited node multicast group */
+	NET_L2_MULTICAST_SKIP_JOIN_SOLICIT_NODE	= BIT(1),
 };
 
 struct net_l2 {
