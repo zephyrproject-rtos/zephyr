@@ -77,6 +77,16 @@ u8_t flash_area_align(const struct flash_area *fa);
 int flash_area_get_sectors(int fa_id, u32_t *count,
 			   struct flash_sector *sectors);
 
+/**
+ * Check whether given flash area has supporting flash driver
+ * in the system.
+ *
+ * @param fa Flash area.
+ *
+ * @return 1 On success. -ENODEV if no driver match.
+ */
+int flash_area_has_driver(const struct flash_area *fa);
+
 #ifdef __cplusplus
 }
 #endif
