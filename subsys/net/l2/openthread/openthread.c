@@ -360,5 +360,10 @@ int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt)
 	return -EIO;
 }
 
+static enum net_l2_flags openthread_flags(struct net_if *iface)
+{
+	return NET_L2_MULTICAST;
+}
+
 NET_L2_INIT(OPENTHREAD_L2, openthread_recv, openthread_send,
-	    openthread_reserve, NULL);
+	    openthread_reserve, NULL, openthread_flags);

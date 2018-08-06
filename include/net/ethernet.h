@@ -286,6 +286,11 @@ struct ethernet_context {
 	struct ethernet_lldp lldp[NET_VLAN_MAX_COUNT];
 #endif
 
+	/**
+	 * This tells what L2 features does ethernet support.
+	 */
+	enum net_l2_flags ethernet_l2_flags;
+
 #if defined(CONFIG_NET_GPTP)
 	/** The gPTP port number for this network device. We need to store the
 	 * port number here so that we do not need to fetch it for every
