@@ -69,6 +69,9 @@ struct tls_context {
 
 		/** Peer verification level. */
 		s8_t verify_level;
+
+		/** DTLS role, client by default. */
+		s8_t role;
 	} options;
 
 #if defined(CONFIG_MBEDTLS)
@@ -733,6 +736,30 @@ static int tls_opt_peer_verify_set(struct net_context *context,
 	return 0;
 }
 
+static int tls_opt_role_set(struct net_context *context, const void *optval,
+			    socklen_t optlen)
+{
+	int *role;
+
+	if (!optval) {
+		return -EFAULT;
+	}
+
+	if (optlen != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	role = (int *)optval;
+	if (*role != MBEDTLS_SSL_IS_CLIENT &&
+	    *role != MBEDTLS_SSL_IS_SERVER) {
+		return -EINVAL;
+	}
+
+	context->tls->options.role = *role;
+
+	return 0;
+}
+
 int ztls_socket(int family, int type, int proto)
 {
 	enum net_ip_protocol_secure tls_proto = 0;
@@ -1100,6 +1127,11 @@ int ztls_getsockopt(int sock, int level, int optname,
 		err = -ENOPROTOOPT;
 		break;
 
+	case TLS_ROLE:
+		/* Write-only option. */
+		err = -ENOPROTOOPT;
+		break;
+
 	default:
 		err = -ENOPROTOOPT;
 		break;
@@ -1147,6 +1179,10 @@ int ztls_setsockopt(int sock, int level, int optname,
 
 	case TLS_PEER_VERIFY:
 		err = tls_opt_peer_verify_set(context, optval, optlen);
+		break;
+
+	case TLS_ROLE:
+		err = tls_opt_role_set(context, optval, optlen);
 		break;
 
 	default:
