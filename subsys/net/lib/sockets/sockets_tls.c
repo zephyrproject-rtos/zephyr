@@ -29,6 +29,7 @@
 #include <mbedtls/x509.h>
 #include <mbedtls/x509_crt.h>
 #include <mbedtls/ssl.h>
+#include <mbedtls/ssl_cookie.h>
 #include <mbedtls/error.h>
 #include <mbedtls/debug.h>
 #endif /* CONFIG_MBEDTLS */
@@ -84,6 +85,9 @@ struct tls_context {
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	/** Context information for DTLS timing. */
 	struct dtls_timing_context dtls_timing;
+
+	/** mbedTLS cookie context for DTLS */
+	mbedtls_ssl_cookie_ctx cookie;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 #if defined(CONFIG_MBEDTLS)
@@ -283,6 +287,9 @@ static struct tls_context *tls_alloc(void)
 	if (tls) {
 		mbedtls_ssl_init(&tls->ssl);
 		mbedtls_ssl_config_init(&tls->config);
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+		mbedtls_ssl_cookie_init(&tls->cookie);
+#endif
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 		mbedtls_x509_crt_init(&tls->ca_chain);
 		mbedtls_x509_crt_init(&tls->own_cert);
@@ -335,6 +342,9 @@ static int tls_release(struct tls_context *tls)
 		return -EBADF;
 	}
 
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	mbedtls_ssl_cookie_free(&tls->cookie);
+#endif
 	mbedtls_ssl_config_free(&tls->config);
 	mbedtls_ssl_free(&tls->ssl);
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
@@ -604,6 +614,21 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 					 &context->tls->dtls_timing,
 					 dtls_timing_set_delay,
 					 dtls_timing_get_delay);
+
+		/* Configure cookie for DTLS server */
+		if (role == MBEDTLS_SSL_IS_SERVER) {
+			ret = mbedtls_ssl_cookie_setup(&context->tls->cookie,
+						       mbedtls_ctr_drbg_random,
+						       &tls_ctr_drbg);
+			if (ret != 0) {
+				return -ENOMEM;
+			}
+
+			mbedtls_ssl_conf_dtls_cookies(&context->tls->config,
+						      mbedtls_ssl_cookie_write,
+						      mbedtls_ssl_cookie_check,
+						      &context->tls->cookie);
+		}
 	}
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
