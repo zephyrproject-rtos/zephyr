@@ -338,6 +338,7 @@ Enable Qemu supported ethernet driver like e1000 at drivers/ethernet")
 endif()
 
 zephyr_library_named(app)
+set_property(TARGET app PROPERTY ARCHIVE_OUTPUT_DIRECTORY app)
 
 add_subdirectory(${ZEPHYR_BASE} ${__build_dir})
 
