@@ -36,6 +36,13 @@ config NET_SOCKETS_SOCKOPT_TLS
 	  Enable TLS socket option support which automatically establishes
 	  a TLS connection to the remote host.
 
+config NET_SOCKETS_ENABLE_DTLS
+	bool "Enable DTLS socket support [EXPERIMENTAL]"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	select TLS_DTLS
+	help
+	  Enable DTLS socket support. By default only TLS over TCP is supported.
+
 config NET_SOCKETS_TLS_MAX_CONTEXTS
 	int "Maximum number of TLS/DTLS contexts"
 	default 1

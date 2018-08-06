@@ -738,15 +738,14 @@ int ztls_socket(int family, int type, int proto)
 	enum net_ip_protocol_secure tls_proto = 0;
 	int sock, ret, err;
 
-	if (proto  >= IPPROTO_TLS_1_0 && proto <= IPPROTO_TLS_1_2) {
-		/* Currently DTLS is not supported,
-		 * so do not allow to create datagram socket
-		 */
+	if ((proto >= IPPROTO_TLS_1_0 && proto <= IPPROTO_TLS_1_2) ||
+	    (proto >= IPPROTO_DTLS_1_0 && proto <= IPPROTO_DTLS_1_2)) {
+#if !defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 		if (type == SOCK_DGRAM) {
 			errno = ENOTSUP;
 			return -1;
 		}
-
+#endif
 		tls_proto = proto;
 		proto = (type == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP;
 	}

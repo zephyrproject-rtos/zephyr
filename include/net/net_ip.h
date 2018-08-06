@@ -59,6 +59,8 @@ enum net_ip_protocol_secure {
 	IPPROTO_TLS_1_0 = 256,
 	IPPROTO_TLS_1_1 = 257,
 	IPPROTO_TLS_1_2 = 258,
+	IPPROTO_DTLS_1_0 = 272,
+	IPPROTO_DTLS_1_2 = 273,
 };
 
 /** Socket type */
