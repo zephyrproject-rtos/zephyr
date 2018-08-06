@@ -266,23 +266,23 @@ u32_t _get_remaining_program_time(void)
 
 u32_t _get_elapsed_program_time(void)
 {
-	u32_t rtc_now, rtc_prev, rtc_elapsed;
+	u32_t rtc_elapsed, rtc_past_copy;
 
 	if (!expected_sys_ticks) {
 		return 0;
 	}
 
-	rtc_now = RTC_COUNTER;
+	/* Read rtc_past before RTC_COUNTER */
+	rtc_past_copy = rtc_past;
 
-	/* Discard value of RTC_COUNTER read at LFCLK transition */
-	do {
-		/* Number of RTC cycles passed since last RTC Programing*/
-		rtc_elapsed = (rtc_now - rtc_past) & RTC_MASK;
-		rtc_prev = rtc_now;
-		rtc_now = RTC_COUNTER;
-	} while (rtc_prev != rtc_now);
+	/* Make sure that compiler will not reverse access to RTC and
+	 * rtc_past.
+	 */
+	compiler_barrier();
 
-	/*Convert number of Machine cycles to SYS TICS*/
+	rtc_elapsed = (RTC_COUNTER - rtc_past_copy) & RTC_MASK;
+
+	/* Convert number of Machine cycles to SYS_TICKS */
 	return (rtc_elapsed / sys_clock_hw_cycles_per_tick);
 }
 
@@ -329,22 +329,17 @@ void _set_time(u32_t time)
  */
 s32_t _get_max_clock_time(void)
 {
-	u32_t rtc_now, rtc_prev, rtc_away, sys_away = 0;
+	u32_t rtc_away, sys_away = 0;
 
-	rtc_now = RTC_COUNTER;
-	/* Discard value of RTC_COUNTER read at LFCLK transition */
-	do {
-		rtc_away = (RTC_MASK - rtc_now);
-		rtc_away = rtc_away > RTC_HALF ? RTC_HALF : rtc_away;
-		rtc_prev = rtc_now;
-		/* Calculate time to programe into RTC*/
-		rtc_now = RTC_COUNTER;
-	} while (rtc_now != rtc_prev);
+	/* Calculate time to program into RTC */
+	rtc_away = (RTC_MASK - RTC_COUNTER);
+	rtc_away = rtc_away > RTC_HALF ? RTC_HALF : rtc_away;
 
 	/* Convert RTC Ticks to SYS TICKS*/
 	if (rtc_away >= sys_clock_hw_cycles_per_tick) {
 		sys_away = rtc_away / sys_clock_hw_cycles_per_tick;
 	}
+
 	return sys_away;
 }
 
@@ -371,25 +366,23 @@ void _enable_sys_clock(void)
 u64_t _get_elapsed_clock_time(void)
 {
 	u64_t elapsed;
-	u32_t rtc_now, rtc_elapsed, rtc_prev, sys_elapsed;
+	u32_t rtc_elapsed, rtc_past_copy;
 
-	rtc_now = RTC_COUNTER;
+	/* Read _sys_clock_tick_count and rtc_past before RTC_COUNTER */
+	elapsed = _sys_clock_tick_count;
+	rtc_past_copy = rtc_past;
 
-	/* Discard value of RTC_COUNTER read at LFCLK transition */
-	do {
-		/* Calculate number of rtc cycles elapsed since RTC programing*/
-		rtc_elapsed = (rtc_now - rtc_past) & RTC_MASK;
-		elapsed = _sys_clock_tick_count;
-		rtc_prev = rtc_now;
-		rtc_now = RTC_COUNTER;
-	} while (rtc_now != rtc_prev);
+	/* Make sure that compiler will not reverse access to RTC and
+	 * variables above.
+	 */
+	compiler_barrier();
 
+	rtc_elapsed = (RTC_COUNTER - rtc_past_copy) & RTC_MASK;
 	if (rtc_elapsed >= sys_clock_hw_cycles_per_tick) {
-		/* Convert RTC cycles to SYS TICKS*/
-		sys_elapsed = rtc_elapsed / sys_clock_hw_cycles_per_tick;
-		/* Update total number of SYS_TICKS passed*/
-		elapsed += sys_elapsed;
+		/* Update total number of SYS_TICKS passed */
+		elapsed += (rtc_elapsed / sys_clock_hw_cycles_per_tick);
 	}
+
 	return elapsed;
 }
 #endif
@@ -557,7 +550,7 @@ u32_t _timer_cycle_get_32(void)
 	ticked_cycles = _sys_clock_tick_count * sys_clock_hw_cycles_per_tick;
 
 	/* Make sure that compiler will not reverse access to RTC and
-	 * _sys_clock_tick_count
+	 * _sys_clock_tick_count.
 	 */
 	compiler_barrier();
 
