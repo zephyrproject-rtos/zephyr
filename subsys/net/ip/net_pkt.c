@@ -1997,8 +1997,6 @@ struct net_tcp_hdr *net_pkt_tcp_data(struct net_pkt *pkt)
 struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 {
 	struct net_pkt *clone;
-	struct net_buf *frag;
-	u16_t pos;
 
 	if (!pkt) {
 		return NULL;
@@ -2024,11 +2022,6 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 	clone->iface = pkt->iface;
 
 	if (clone->frags) {
-		frag = net_frag_get_pos(clone, net_pkt_ip_hdr_len(pkt), &pos);
-
-		net_pkt_set_appdata(clone, frag->data + pos);
-		net_pkt_set_appdatalen(clone, net_pkt_appdatalen(pkt));
-
 		/* The link header pointers are only usable if there is
 		 * a fragment that we copied because those pointers point
 		 * to start of the fragment which we do not have right now.
@@ -2042,6 +2035,7 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 	net_pkt_set_next_hdr(clone, NULL);
 	net_pkt_set_ip_hdr_len(clone, net_pkt_ip_hdr_len(pkt));
 	net_pkt_set_vlan_tag(clone, net_pkt_vlan_tag(pkt));
+	net_pkt_set_appdatalen(clone, net_pkt_appdatalen(pkt));
 
 	net_pkt_set_family(clone, net_pkt_family(pkt));
 
