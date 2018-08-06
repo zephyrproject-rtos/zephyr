@@ -4,15 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if 1
 #if defined(CONFIG_HTTPS)
-#define SYS_LOG_DOMAIN "https-server"
+#define LOG_MODULE_NAME net_https_server_sample
 #else
-#define SYS_LOG_DOMAIN "http-server"
+#define LOG_MODULE_NAME net_http_server_sample
 #endif
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 #include <zephyr.h>
 #include <stdio.h>
