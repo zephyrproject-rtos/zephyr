@@ -473,7 +473,7 @@ function(zephyr_library_compile_options item)
   add_library(           ${lib_name} INTERFACE)
   target_compile_options(${lib_name} INTERFACE ${item} ${ARGN})
 
-  target_link_libraries(${ZEPHYR_CURRENT_LIBRARY} PUBLIC ${lib_name})
+  target_link_libraries(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${lib_name})
 endfunction()
 
 function(zephyr_library_cc_option)
