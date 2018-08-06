@@ -819,6 +819,21 @@ static inline struct in6_addr *check_global_addr(struct net_if *iface)
 	return NULL;
 }
 
+static void join_mcast_nodes(struct net_if *iface, struct in6_addr *addr)
+{
+	enum net_l2_flags flags = 0;
+
+	if (net_if_l2(iface)->get_flags) {
+		flags = net_if_l2(iface)->get_flags(iface);
+	}
+
+	if (flags & NET_L2_MULTICAST) {
+		join_mcast_allnodes(iface);
+
+		join_mcast_solicit_node(iface, addr);
+	}
+}
+
 struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 					 struct in6_addr *addr,
 					 enum net_addr_type addr_type,
@@ -860,9 +875,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 		/* The allnodes multicast group is only joined once as
 		 * net_ipv6_mcast_join() checks if we have already joined.
 		 */
-		join_mcast_allnodes(iface);
-		join_mcast_solicit_node(iface,
-					&ipv6->unicast[i].address.in6_addr);
+		join_mcast_nodes(iface, &ipv6->unicast[i].address.in6_addr);
 
 #if defined(CONFIG_NET_RPL)
 		/* Do not send DAD for global addresses */
@@ -1618,6 +1631,7 @@ u32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6)
 #define join_mcast_allnodes(...)
 #define join_mcast_solicit_node(...)
 #define leave_mcast_all(...)
+#define join_mcast_nodes(...)
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -2300,9 +2314,8 @@ done:
 	NET_DBG("Starting DAD for iface %p", iface);
 	net_if_start_dad(iface);
 #else
-	join_mcast_allnodes(iface);
-	join_mcast_solicit_node(iface,
-			&iface->config.ip.ipv6->mcast[0].address.in6_addr);
+	join_mcast_nodes(iface,
+			 &iface->config.ip.ipv6->mcast[0].address.in6_addr);
 #endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_ND)

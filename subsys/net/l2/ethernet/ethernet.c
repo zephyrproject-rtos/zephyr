@@ -575,6 +575,13 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 	return 0;
 }
 
+enum net_l2_flags ethernet_flags(struct net_if *iface)
+{
+	struct ethernet_context *ctx = net_if_l2_data(iface);
+
+	return ctx->ethernet_l2_flags;
+}
+
 #if defined(CONFIG_NET_VLAN)
 struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag)
 {
@@ -805,7 +812,7 @@ int net_eth_vlan_disable(struct net_if *iface, u16_t tag)
 #endif
 
 NET_L2_INIT(ETHERNET_L2, ethernet_recv, ethernet_send, ethernet_reserve,
-	    ethernet_enable);
+	    ethernet_enable, ethernet_flags);
 
 static void carrier_on(struct k_work *work)
 {
@@ -929,6 +936,8 @@ void ethernet_init(struct net_if *iface)
 #endif
 
 	NET_DBG("Initializing Ethernet L2 %p for iface %p", ctx, iface);
+
+	ctx->ethernet_l2_flags = NET_L2_MULTICAST;
 
 #if defined(CONFIG_NET_VLAN)
 	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN)) {
