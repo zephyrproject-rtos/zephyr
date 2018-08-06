@@ -62,11 +62,6 @@ SECTION_FUNC(TEXT, _user_thread_entry_wrapper)
 	/* start of privilege stack */
 	add blink, r5, CONFIG_PRIVILEGED_STACK_SIZE+STACK_GUARD_SIZE+16
 
-	/* r4<- start  of user stack region */
-	mov r0, _kernel
-	ld_s r1, [r0, _kernel_offset_to_current]
-	ld r4, [r1, ___thread_stack_info_t_start_OFFSET]
-
 /*
  * when CONFIG_INIT_STACKS is enable, stack will be initialized
  * in _new_thread_init.
@@ -145,6 +140,7 @@ _clear_user_stack:
 _arc_go_to_user_space:
 	lr r0, [_ARC_V2_STATUS32]
 	bset r0, r0, _ARC_V2_STATUS32_U_BIT
+	bclr r0, r0, _ARC_V2_STATUS32_AE_BIT
 
 	mov r1, _thread_entry_wrapper
 

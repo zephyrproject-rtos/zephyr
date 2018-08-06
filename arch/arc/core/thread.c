@@ -118,10 +118,14 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #if CONFIG_USERSPACE
 	if (options & K_USER) {
 		pInitCtx->pc = ((u32_t)_user_thread_entry_wrapper);
+		/* through exception return to user mode */
+		pInitCtx->status32 = _ARC_V2_STATUS32_AE;
 	} else {
+		pInitCtx->status32 = 0;
 		pInitCtx->pc = ((u32_t)_thread_entry_wrapper);
 	}
 #else
+	pInitCtx->status32 = 0;
 	pInitCtx->pc = ((u32_t)_thread_entry_wrapper);
 #endif
 
@@ -143,9 +147,9 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #ifdef CONFIG_ARC_STACK_CHECKING
 #ifdef CONFIG_ARC_HAS_SECURE
 	pInitCtx->sec_stat |= _ARC_V2_SEC_STAT_SSC;
-	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
+	pInitCtx->status32 |= _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 #else
-	pInitCtx->status32 = _ARC_V2_STATUS32_SC |
+	pInitCtx->status32 |= _ARC_V2_STATUS32_SC |
 		 _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 #endif
 #ifdef CONFIG_USERSPACE
@@ -196,7 +200,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * dst[31:6] dst[5] dst[4]       dst[3:0]
 	 *    26'd0    1    STATUS32.IE  STATUS32.E[3:0]
 	 */
-	thread->arch.intlock_key = 0x3F;
+	thread->arch.intlock_key = 0x30 | (_ARC_V2_DEF_IRQ_LEVEL & 0xf);
 	thread->arch.relinquish_cause = _CAUSE_COOP;
 	thread->callee_saved.sp =
 		(u32_t)pInitCtx - ___callee_saved_stack_t_SIZEOF;
