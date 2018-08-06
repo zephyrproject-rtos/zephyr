@@ -64,6 +64,9 @@ struct tls_context {
 	/** Socket flags passed to a socket call. */
 	int flags;
 
+	/** Information whether TLS context was initialized. */
+	bool is_initialized;
+
 	/** Information whether TLS handshake is complete or not */
 	bool tls_established;
 
@@ -743,9 +746,6 @@ static int tls_mbedtls_handshake(struct net_context *context)
 {
 	int ret;
 
-	/* We do not want to use any socket flags during the handshake. */
-	context->tls->flags = 0;
-
 	/* TODO For simplicity, TLS handshake blocks the socket even for
 	 * non-blocking socket. Non-blocking behavior for handshake can
 	 * be implemented later.
@@ -863,6 +863,8 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 		 */
 		return -ENOMEM;
 	}
+
+	context->tls->is_initialized = true;
 
 	return 0;
 }
@@ -1151,6 +1153,9 @@ int ztls_connect(int sock, const struct sockaddr *addr, socklen_t addrlen)
 				goto error;
 			}
 
+			/* Do not use any socket flags during the handshake. */
+			context->tls->flags = 0;
+
 			ret = tls_mbedtls_handshake(context);
 			if (ret < 0) {
 				goto error;
@@ -1205,6 +1210,9 @@ int ztls_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 			goto error;
 		}
 
+		/* Do not use any socket flags during the handshake. */
+		child_context->tls->flags = 0;
+
 		ret = tls_mbedtls_handshake(child_context);
 		if (ret < 0) {
 			goto error;
@@ -1236,17 +1244,10 @@ ssize_t ztls_recv(int sock, void *buf, size_t max_len, int flags)
 	return ztls_recvfrom(sock, buf, max_len, flags, NULL, 0);
 }
 
-ssize_t ztls_sendto(int sock, const void *buf, size_t len, int flags,
-		    const struct sockaddr *dest_addr, socklen_t addrlen)
+static ssize_t sendto_tls(struct net_context *context, const void *buf,
+			  size_t len, int flags)
 {
-	struct net_context *context = INT_TO_POINTER(sock);
 	int ret;
-
-	if (!context->tls) {
-		return zsock_sendto(sock, buf, len, flags, dest_addr, addrlen);
-	}
-
-	context->tls->flags = flags;
 
 	ret = mbedtls_ssl_write(&context->tls->ssl, buf, len);
 	if (ret >= 0) {
@@ -1256,11 +1257,113 @@ ssize_t ztls_sendto(int sock, const void *buf, size_t len, int flags,
 	if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
 	    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 		errno = EAGAIN;
+	} else {
+		errno = EIO;
+	}
+
+	return -1;
+}
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+static ssize_t sendto_dtls_client(struct net_context *context, const void *buf,
+				  size_t len, int flags,
+				  const struct sockaddr *dest_addr,
+				  socklen_t addrlen)
+{
+	int ret;
+
+	if (!dest_addr) {
+		/* No address provided, check if we have stored one,
+		 * otherwise return error.
+		 */
+		if (context->tls->dtls_peer_addrlen == 0) {
+			ret = -EDESTADDRREQ;
+			goto error;
+		}
+	} else if (context->tls->dtls_peer_addrlen == 0) {
+		/* Address provided and no peer address stored. */
+		dtls_peer_address_set(context, dest_addr, addrlen);
+	} else if (!dtls_is_peer_addr_valid(context, dest_addr, addrlen) != 0) {
+		/* Address provided but it does not match stored one */
+		ret = -EISCONN;
+		goto error;
+	}
+
+	if (!context->tls->is_initialized) {
+		ret = tls_mbedtls_init(context, false);
+		if (ret < 0) {
+			goto error;
+		}
+	}
+
+	if (!context->tls->tls_established) {
+		ret = tls_mbedtls_handshake(context);
+		if (ret < 0) {
+			goto error;
+		}
+	}
+
+	return sendto_tls(context, buf, len, flags);
+
+error:
+	errno = -ret;
+	return -1;
+}
+
+static ssize_t sendto_dtls_server(struct net_context *context, const void *buf,
+				  size_t len, int flags,
+				  const struct sockaddr *dest_addr,
+				  socklen_t addrlen)
+{
+	/* For DTLS server, require to have established DTLS connection
+	 * in order to send data.
+	 */
+	if (!context->tls->tls_established) {
+		errno = ENOTCONN;
 		return -1;
 	}
 
-	errno = EIO;
+	/* Check if not trying to send to other peer, which we're
+	 * not connected to.
+	 */
+	if (dest_addr &&
+	    !dtls_is_peer_addr_valid(context, dest_addr, addrlen) != 0) {
+		errno = EISCONN;
+		return -1;
+	}
+
+	return sendto_tls(context, buf, len, flags);
+}
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+
+ssize_t ztls_sendto(int sock, const void *buf, size_t len, int flags,
+		    const struct sockaddr *dest_addr, socklen_t addrlen)
+{
+	struct net_context *context = INT_TO_POINTER(sock);
+
+	if (!context->tls) {
+		return zsock_sendto(sock, buf, len, flags, dest_addr, addrlen);
+	}
+
+	context->tls->flags = flags;
+
+	/* TLS */
+	if (net_context_get_type(context) == SOCK_STREAM) {
+		return sendto_tls(context, buf, len, flags);
+	}
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+	/* DTLS */
+	if (context->tls->options.role == MBEDTLS_SSL_IS_SERVER) {
+		return sendto_dtls_server(context, buf, len, flags,
+					  dest_addr, addrlen);
+	}
+
+	return sendto_dtls_client(context, buf, len, flags, dest_addr, addrlen);
+#else
+	errno = ENOTSUP;
 	return -1;
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 }
 
 ssize_t ztls_recvfrom(int sock, void *buf, size_t max_len, int flags,
