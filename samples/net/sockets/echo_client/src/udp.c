@@ -18,8 +18,10 @@
 #include <stdio.h>
 
 #include <net/socket.h>
+#include <net/tls_credentials.h>
 
 #include "common.h"
+#include "ca_certificate.h"
 
 #define RECV_BUF_SIZE 1280
 #define UDP_SLEEP K_MSEC(150)
@@ -35,11 +37,11 @@ static int send_udp_data(struct data *data)
 		data->udp.expecting = sys_rand32_get() % ipsum_len;
 	} while (data->udp.expecting == 0);
 
+	ret = send(data->udp.sock, lorem_ipsum, data->udp.expecting, 0);
+
 	NET_DBG("%s UDP: Sent %d bytes", data->proto, data->udp.expecting);
 
 	k_delayed_work_submit(&data->udp.recv, UDP_WAIT);
-
-	ret = send(data->udp.sock, lorem_ipsum, data->udp.expecting, 0);
 
 	return ret < 0 ? -EIO : 0;
 }
@@ -85,12 +87,38 @@ static int start_udp_proto(struct data *data, struct sockaddr *addr,
 	k_delayed_work_init(&data->udp.recv, wait_reply);
 	k_delayed_work_init(&data->udp.transmit, wait_transmit);
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	data->udp.sock = socket(addr->sa_family, SOCK_DGRAM, IPPROTO_DTLS_1_2);
+#else
 	data->udp.sock = socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+#endif
 	if (data->udp.sock < 0) {
 		NET_ERR("Failed to create UDP socket (%s): %d", data->proto,
 			errno);
 		return -errno;
 	}
+
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	sec_tag_t sec_tag_list[] = {
+		CA_CERTIFICATE_TAG,
+	};
+
+	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
+			 sec_tag_list, sizeof(sec_tag_list));
+	if (ret < 0) {
+		NET_ERR("Failed to set TLS_SEC_TAG_LIST option (%s): %d",
+			data->proto, errno);
+		ret = -errno;
+	}
+
+	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_HOSTNAME,
+			 TLS_PEER_HOSTNAME, sizeof(TLS_PEER_HOSTNAME));
+	if (ret < 0) {
+		NET_ERR("Failed to set TLS_HOSTNAME option (%s): %d",
+			data->proto, errno);
+		ret = -errno;
+	}
+#endif
 
 	/* Call connect so we can use send and recv. */
 	ret = connect(data->udp.sock, addr, addrlen);
@@ -221,12 +249,18 @@ int process_udp(void)
 void stop_udp(void)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		k_delayed_work_cancel(&conf.ipv6.udp.recv);
+		k_delayed_work_cancel(&conf.ipv6.udp.transmit);
+
 		if (conf.ipv6.udp.sock > 0) {
 			(void)close(conf.ipv6.udp.sock);
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		k_delayed_work_cancel(&conf.ipv4.udp.recv);
+		k_delayed_work_cancel(&conf.ipv4.udp.transmit);
+
 		if (conf.ipv4.udp.sock > 0) {
 			(void)close(conf.ipv4.udp.sock);
 		}
