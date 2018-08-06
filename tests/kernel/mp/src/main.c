@@ -17,6 +17,16 @@ int cpu_arg;
 
 volatile int cpu_running;
 
+/**
+ * @brief Tests for multi processing
+ *
+ * @defgroup kernel_mp_tests MP Tests
+ *
+ * @ingroup all_tests
+ *
+ * @{
+ * @}
+ */
 void cpu1_fn(int key, void *arg)
 {
 	zassert_true(key, "bad irq key");
@@ -28,6 +38,13 @@ void cpu1_fn(int key, void *arg)
 	}
 }
 
+/**
+ * @brief Test to verify CPU start
+ *
+ * @ingroup kernel_mp_tests
+ *
+ * @see _arch_start_cpu()
+ */
 void test_mp_start(void)
 {
 	cpu_arg = 12345;
