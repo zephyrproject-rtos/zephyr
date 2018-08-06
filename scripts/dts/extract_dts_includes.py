@@ -583,8 +583,16 @@ def generate_keyvalue_file(defs, kv_file):
     with open(kv_file, "w") as fd:
         output_keyvalue_lines(fd, defs)
 
+def expand_generics(key, item, fd):
+    if type(item) is dict:
+        fd.write("\n/* %s */\n" % key)
+        for k in item:
+            expand_generics(k, item[k], fd)
+    else:
+        fd.write(get_key_value(key, item, 6))
 
-def output_include_lines(fd, defs, fixups):
+
+def output_include_lines(fd, defs, fixups, generics):
     compatible = reduced['/']['props']['compatible'][0]
 
     fd.write("/**************************************************\n")
@@ -643,12 +651,21 @@ def output_include_lines(fd, defs, fixups):
                         "Input file " + os.path.abspath(fixup) +
                         " does not exist.")
 
+    if generics:
+        fd.write("\n")
+        fd.write("/* Generic definitions used by drivers */ \n")
+        for g in generics:
+            expand_generics(g, generics[g], fd)
+        fd.write("\n")
+        fd.write("/* End of generic definitions */\n")
+        fd.write("\n")
+
     fd.write("#endif\n")
 
 
-def generate_include_file(defs, inc_file, fixups):
+def generate_include_file(defs, inc_file, fixups, generics):
     with open(inc_file, "w") as fd:
-        output_include_lines(fd, defs, fixups)
+        output_include_lines(fd, defs, fixups, generics)
 
 
 def load_and_parse_dts(dts_file):
@@ -726,6 +743,44 @@ def generate_node_definitions(yaml_list):
 
     return defs
 
+def generate_generic_definition(yaml_list, defs):
+    compatibles = {}
+    generics = {}
+
+    # Find all compatible bindings that have "generic" property set to True
+    for key, value in yaml_list.items():
+        if 'generic' in value and value['generic'] == True:
+            compatibles[value['id']] = {}
+            compatibles[value['id']]['count'] = 0
+
+    # Find all devices in dts matching extracted compatibles and count them
+    for k, v in reduced.items():
+        node_compat = get_compat(k)
+        if node_compat is not None and node_compat in compatibles:
+            compatibles[node_compat][k] = v
+            compatibles[node_compat][k]['dev_num'] = \
+                compatibles[node_compat]['count']
+            compatibles[node_compat]['count'] += 1
+
+    # Search for compatible devices in defines from generate_node_definitions
+    # function and create new defines in following pattern:
+    # <COMPATIBLE_STRING>_<device number>_<PROPERTY>
+    for compatible, value in compatibles.items():
+        compat_str = compatible.replace(',','_').replace('-','_').upper()
+        # Create generic_define with device count in pattern <COMPATIBLE_STRING>_COUNT
+        count =  compat_str + '_COUNT'
+        generics[compatible] = {}
+        generics[compatible][count] = value['count']
+        for node in (i for i in defs if i in value.keys()):
+            generics[compatible][node] = {}
+            for define in (i for i in defs[node] if i != 'aliases'):
+
+                x = compat_str + '_' + node.split('@')[-1].upper()
+                generic_define = compat_str + '_' + str(value[node]['dev_num'])
+                generic_define += define.split(x)[-1]
+                generics[compatible][node][generic_define] = define
+
+    return generics
 
 def parse_arguments():
     rdh = argparse.RawDescriptionHelpFormatter
@@ -758,11 +813,12 @@ def main():
 
     defs = generate_node_definitions(yaml_list)
 
+    generics = generate_generic_definition(yaml_list, defs)
+
      # generate config and include file
     generate_keyvalue_file(defs, args.keyvalue[0])
 
-    generate_include_file(defs, args.include[0], args.fixup)
-
+    generate_include_file(defs, args.include[0], args.fixup, generics)
 
 if __name__ == '__main__':
     main()

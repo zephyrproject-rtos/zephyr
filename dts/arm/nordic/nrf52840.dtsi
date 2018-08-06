@@ -95,6 +95,7 @@
 			interrupts = <3 1>;
 			status = "disabled";
 			label = "I2C_0";
+			peripheral-number = <0>;
 		};
 
 		i2c1: i2c@40004000 {
@@ -106,6 +107,7 @@
 			interrupts = <4 1>;
 			status = "disabled";
 			label = "I2C_1";
+			peripheral-number = <1>;
 		};
 
 		usbd: usbd@40027000 {

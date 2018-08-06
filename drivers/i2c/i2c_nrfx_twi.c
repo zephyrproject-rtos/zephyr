@@ -128,15 +128,19 @@ static int init_twi(struct device *dev, const nrfx_twi_config_t *config)
 	return 0;
 }
 
-#define I2C_NRFX_TWI_DEVICE(idx)					\
+#define I2C_NRFX_TWI_DEVICE(idx, periph_num)				\
 	static int twi_##idx##_init(struct device *dev)			\
 	{								\
-		IRQ_CONNECT(CONFIG_I2C_##idx##_IRQ,			\
-			    CONFIG_I2C_##idx##_IRQ_PRI,			\
-			    nrfx_isr, nrfx_twi_##idx##_irq_handler, 0);	\
+		IRQ_CONNECT(NORDIC_NRF5_I2C_##idx##_IRQ_0,		\
+			    NORDIC_NRF5_I2C_##idx##_IRQ_0_PRIORITY,	\
+			    nrfx_isr,					\
+			    NRFX_CONCAT_3(nrfx_twi_,			\
+					  periph_num,			\
+					  _irq_handler),		\
+			    0);						\
 		const nrfx_twi_config_t config = {			\
-			.scl       = CONFIG_I2C_##idx##_SCL_PIN,	\
-			.sda       = CONFIG_I2C_##idx##_SDA_PIN,	\
+			.scl       = NORDIC_NRF5_I2C_##idx##_SCL_PIN,	\
+			.sda       = NORDIC_NRF5_I2C_##idx##_SDA_PIN,	\
 			.frequency = NRF_TWI_FREQ_100K,			\
 		};							\
 		return init_twi(dev, &config);				\
@@ -145,19 +149,16 @@ static int init_twi(struct device *dev, const nrfx_twi_config_t *config)
 		.sync = _K_SEM_INITIALIZER(twi_##idx##_data.sync, 0, 1)	\
 	};								\
 	static const struct i2c_nrfx_twi_config twi_##idx##_config = {	\
-		.twi = NRFX_TWI_INSTANCE(idx)				\
+		.twi = NRFX_TWI_INSTANCE(periph_num)			\
 	};								\
-	DEVICE_AND_API_INIT(twi_##idx, CONFIG_I2C_##idx##_NAME,		\
+	DEVICE_AND_API_INIT(twi_##idx, NORDIC_NRF5_I2C_##idx##_LABEL,	\
 			    twi_##idx##_init, &twi_##idx##_data,	\
 			    &twi_##idx##_config, POST_KERNEL,		\
 			    CONFIG_I2C_INIT_PRIORITY,			\
 			    &i2c_nrfx_twi_driver_api)
 
-#ifdef CONFIG_I2C_0_NRF_TWI
-I2C_NRFX_TWI_DEVICE(0);
-#endif
-
-#ifdef CONFIG_I2C_1_NRF_TWI
-I2C_NRFX_TWI_DEVICE(1);
-#endif
-
+#define PERIPH_NUM(i) NORDIC_NRF5_I2C_##i##_PERIPHERAL_NUMBER
+#define DRIVER_INST(i, _)						\
+	_EVAL(NRFX_CONCAT_3(CONFIG_I2C_, PERIPH_NUM(i), _NRF_TWI),	\
+	      (I2C_NRFX_TWI_DEVICE(i, PERIPH_NUM(i));), ())
+UTIL_EVAL(UTIL_REPEAT(NORDIC_NRF5_I2C_COUNT, DRIVER_INST, /*not used */))
