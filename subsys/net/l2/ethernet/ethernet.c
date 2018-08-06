@@ -939,6 +939,10 @@ void ethernet_init(struct net_if *iface)
 
 	ctx->ethernet_l2_flags = NET_L2_MULTICAST;
 
+	if (net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE) {
+		ctx->ethernet_l2_flags |= NET_L2_PROMISC_MODE;
+	}
+
 #if defined(CONFIG_NET_VLAN)
 	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN)) {
 		return;

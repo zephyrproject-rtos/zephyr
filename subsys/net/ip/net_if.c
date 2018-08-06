@@ -2382,21 +2382,25 @@ done:
 
 int net_if_set_promisc(struct net_if *iface)
 {
+	enum net_l2_flags l2_flags = 0;
 	int ret;
 
 	NET_ASSERT(iface);
 
-	/* This is currently only support for ethernet.
-	 * TODO: support also other L2 technologies.
-	 */
-#if defined(CONFIG_NET_L2_ETHERNET)
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+	if (net_if_l2(iface)->get_flags) {
+		l2_flags = net_if_l2(iface)->get_flags(iface);
+	}
+
+	if (!(l2_flags & NET_L2_PROMISC_MODE)) {
 		return -ENOTSUP;
 	}
 
-	ret = net_eth_promisc_mode(iface, true);
-	if (ret < 0) {
-		return ret;
+#if defined(CONFIG_NET_L2_ETHERNET)
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		ret = net_eth_promisc_mode(iface, true);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 #else
 	return -ENOTSUP;

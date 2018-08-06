@@ -33,6 +33,9 @@ enum net_l2_flags {
 
 	/** Do not joint solicited node multicast group */
 	NET_L2_MULTICAST_SKIP_JOIN_SOLICIT_NODE	= BIT(1),
+
+	/** Is promiscuous mode supported */
+	NET_L2_PROMISC_MODE			= BIT(2),
 };
 
 struct net_l2 {
