@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if 1
-#define SYS_LOG_DOMAIN "ws-console"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_ws_console_sample
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 /* Printing debugs from this module looks funny in console so do not
  * do it unless you are debugging this module.
