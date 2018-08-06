@@ -33,3 +33,108 @@ config CONSOLE_SHELL_MAX_CMD_QUEUED
 source "subsys/shell/modules/Kconfig"
 
 endif
+
+config SHELL
+	bool "Enable shell"
+
+if SHELL
+
+config SHELL_CMD_BUFF_SIZE
+	int "Shell command buffer size"
+	default 256
+	help
+	  Maximum command size.
+
+config SHELL_PRINTF_BUFF_SIZE
+	int "Shell print buffer size"
+	default 256
+	help
+	  Maximum command size.
+
+config SHELL_STACK_SIZE
+	int "Shell thread stack size"
+	default 1024 if MULTITHREADING
+	default 0 if !MULTITHREADING
+	help
+	  Stack size for thread created for each instance.
+
+config SHELL_THREAD_PRIO
+	int "Shell thread priority"
+	depends on MULTITHREADING
+	default -2
+	help
+	  Shell thread priority.
+
+config SHELL_ARGC_MAX
+	int "Maximum words in shell command"
+	default 8
+	help
+	  Maximum number of words that can build a command.
+
+config SHELL_WILDCARD
+	bool "Enable wildcard support in shell"
+	select FNMATCH
+	help
+	  Enables using * in shell.
+
+config SHELL_ECHO_STATUS
+	bool "Enable echo on shell"
+	default y
+	help
+	  If enabled shell prints back every input byte.
+
+config SHELL_VT100_COLORS
+	bool "Enable colors in shell"
+	default y
+	help
+	  If enabled VT100 colors are used in shell (e.g. print errors in red).
+
+config SHELL_METAKEYS
+	bool "Enable metakeys"
+	default y
+	help
+	  Enables shell metakeys: Home, End, ctrl+a, ctrl+c, ctrl+e, ctrl+l,
+	  ctrl+u, ctrl+w
+
+config SHELL_HELP
+	bool "Enable help message"
+	default y
+	help
+	  Enables formatting help message when requested with '-h' or '--help'.
+	  
+config SHELL_HISTORY
+	bool "Enable history in shell"
+	default y
+	help
+	  Enable commands history. History can be accessed using up and down
+	  arrows
+
+if SHELL_HISTORY
+
+config SHELL_HISTORY_BUFFER
+	int "History buffer in bytes"
+	default 1024
+	help
+	  Number of bytes dedicated for storing executed commands.
+	
+endif #SHELL_HISTORY
+
+config SHELL_CMDS
+	bool "Enable built-in commands"
+	default y
+	help
+	  Enable built-in commands like 'clear', 'history', etc.
+	  
+config SHELL_CMDS_RESIZE
+	bool "Enable resize command"
+	depends on SHELL_CMDS
+	default y
+	help
+	  Resize command can be turned off to safe code memory (~0,5k).
+
+config SHELL_RTT
+	bool "Enable Shell over RTT"
+	depends on HAS_SEGGER_RTT
+	select RTT_CONSOLE
+	
+endif #SHELL
