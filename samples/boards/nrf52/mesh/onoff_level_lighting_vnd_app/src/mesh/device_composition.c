@@ -1335,12 +1335,12 @@ static void light_ctl_temp_range_set_unack(struct bt_mesh_model *model,
 	state->status_code = RANGE_SUCCESSFULLY_UPDATED;
 
 	/* This is as per 6.1.3.1 in Mesh Model Specification */
-	if (min < TEMP_MIN && min > TEMP_MAX) {
+	if (min < TEMP_MIN || min > TEMP_MAX) {
 		/* The provided value for Range Min cannot be set */
 		state->status_code = CANNOT_SET_RANGE_MIN;
 	}
 
-	if (max > TEMP_MAX && max < TEMP_MIN) {
+	if (max > TEMP_MAX || max < TEMP_MIN) {
 		/* The provided value for Range Max cannot be set */
 		state->status_code = CANNOT_SET_RANGE_MAX;
 	}
