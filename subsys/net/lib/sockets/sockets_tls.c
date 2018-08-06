@@ -1144,14 +1144,25 @@ int ztls_connect(int sock, const struct sockaddr *addr, socklen_t addrlen)
 	}
 
 	if (context->tls) {
-		ret = tls_mbedtls_init(context, false);
-		if (ret < 0) {
-			goto error;
-		}
+		if (net_context_get_type(context) == SOCK_STREAM) {
+			/* Do the handshake for TLS, not DTLS. */
+			ret = tls_mbedtls_init(context, false);
+			if (ret < 0) {
+				goto error;
+			}
 
-		ret = tls_mbedtls_handshake(context);
-		if (ret < 0) {
+			ret = tls_mbedtls_handshake(context);
+			if (ret < 0) {
+				goto error;
+			}
+		} else {
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+			/* Just store the address. */
+			dtls_peer_address_set(context, addr, addrlen);
+#else
+			ret = -ENOTSUP;
 			goto error;
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 		}
 	}
 
