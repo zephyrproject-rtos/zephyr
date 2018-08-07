@@ -755,33 +755,8 @@ struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
  *
  * @return Pointer to interface address, NULL if not found.
  */
-static inline
 struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
-						     struct in6_addr *addr)
-{
-	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
-	int i;
-
-	if (!ipv6) {
-		return NULL;
-	}
-
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
-		if (!ipv6->unicast[i].is_used ||
-		    ipv6->unicast[i].address.family != AF_INET6) {
-			continue;
-		}
-
-		if (net_is_ipv6_prefix(
-			    addr->s6_addr,
-			    ipv6->unicast[i].address.in6_addr.s6_addr,
-			    128)) {
-			return &ipv6->unicast[i];
-		}
-	}
-
-	return NULL;
-}
+						     struct in6_addr *addr);
 
 /**
  * @brief Add a IPv6 address to an interface
