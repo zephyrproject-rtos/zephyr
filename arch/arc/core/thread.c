@@ -75,17 +75,21 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	struct init_stack_frame *pInitCtx;
 
 #if CONFIG_USERSPACE
+/* adjust stack and stack size */
 #if CONFIG_ARC_MPU_VER == 2
 	stackSize = POW2_CEIL(STACK_SIZE_ALIGN(stackSize));
 #elif CONFIG_ARC_MPU_VER == 3
 	stackSize = ROUND_UP(stackSize, STACK_ALIGN);
 #endif
-#endif
 	stackEnd = pStackMem + stackSize;
 
-#if CONFIG_USERSPACE
+	if (options & K_USER) {
+		thread->arch.priv_stack_start =
+			(u32_t)(stackEnd + STACK_GUARD_SIZE);
+		thread->arch.priv_stack_size =
+			(u32_t)(CONFIG_PRIVILEGED_STACK_SIZE);
+	} else {
 	/* for kernel thread, the privilege stack is merged into thread stack */
-	if (!(options & K_USER)) {
 	/* if MPU_STACK_GUARD is enabled, reserve the the stack area
 	 * |---------------------|    |----------------|
 	 * |  user stack         |    | stack guard    |
@@ -98,8 +102,11 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		pStackMem += STACK_GUARD_SIZE;
 		stackSize = stackSize + CONFIG_PRIVILEGED_STACK_SIZE;
 		stackEnd += CONFIG_PRIVILEGED_STACK_SIZE + STACK_GUARD_SIZE;
+
+		thread->arch.priv_stack_start = 0;
+		thread->arch.priv_stack_size = 0;
 	}
-#endif
+
 	_new_thread_init(thread, pStackMem, stackSize, priority, options);
 
 	stackAdjEnd = stackEnd;
@@ -111,20 +118,41 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->userspace_local_data =
 		(struct _thread_userspace_local_data *)stackAdjEnd;
 #endif
+	/* carve the thread entry struct from the "base" of
+		  the user stack */
+	pInitCtx = (struct init_stack_frame *)(
+		STACK_ROUND_DOWN(stackAdjEnd) -
+		sizeof(struct init_stack_frame));
 
-	/* carve the thread entry struct from the "base" of the stack */
-	pInitCtx = (struct init_stack_frame *)(STACK_ROUND_DOWN(stackAdjEnd) -
-				       sizeof(struct init_stack_frame));
-#if CONFIG_USERSPACE
+	/* fill init context */
 	if (options & K_USER) {
-		pInitCtx->pc = ((u32_t)_user_thread_entry_wrapper);
 		/* through exception return to user mode */
 		pInitCtx->status32 = _ARC_V2_STATUS32_AE;
+		pInitCtx->pc = ((u32_t)_user_thread_entry_wrapper);
 	} else {
 		pInitCtx->status32 = 0;
 		pInitCtx->pc = ((u32_t)_thread_entry_wrapper);
 	}
-#else
+
+	/*
+	 * enable US bit, US is read as zero in user mode. This will allow use
+	 * mode sleep instructions, and it enables a form of denial-of-service
+	 * attack by putting the processor in sleep mode, but since interrupt
+	 * level/mask can't be set from user space that's not worse than
+	 * executing a loop without yielding.
+	 */
+	pInitCtx->status32 |= _ARC_V2_STATUS32_US;
+#else /* For no USERSPACE feature */
+	stackEnd = pStackMem + stackSize;
+
+	_new_thread_init(thread, pStackMem, stackSize, priority, options);
+
+	stackAdjEnd = stackEnd;
+
+	pInitCtx = (struct init_stack_frame *)(
+		STACK_ROUND_DOWN(stackAdjEnd) -
+		sizeof(struct init_stack_frame));
+
 	pInitCtx->status32 = 0;
 	pInitCtx->pc = ((u32_t)_thread_entry_wrapper);
 #endif
@@ -137,20 +165,13 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx->r1 = (u32_t)parameter1;
 	pInitCtx->r2 = (u32_t)parameter2;
 	pInitCtx->r3 = (u32_t)parameter3;
-	/*
-	 * For now set the interrupt priority to 15
-	 * we can leave interrupt enable flag set to 0 as
-	 * seti instruction in the end of the _Swap() will
-	 * enable the interrupts based on intlock_key
-	 * value.
-	 */
+
+/* stack check configuration */
 #ifdef CONFIG_ARC_STACK_CHECKING
 #ifdef CONFIG_ARC_HAS_SECURE
 	pInitCtx->sec_stat |= _ARC_V2_SEC_STAT_SSC;
-	pInitCtx->status32 |= _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 #else
-	pInitCtx->status32 |= _ARC_V2_STATUS32_SC |
-		 _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
+	pInitCtx->status32 |= _ARC_V2_STATUS32_SC;
 #endif
 #ifdef CONFIG_USERSPACE
 	if (options & K_USER) {
@@ -170,31 +191,12 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->arch.k_stack_top = (u32_t) pStackMem;
 	thread->arch.k_stack_base = (u32_t) stackEnd;
 #endif
-#else
-	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
-#endif
-
-#if CONFIG_USERSPACE
-	/*
-	 * enable US bit, US is read as zero in user mode. This will allow use
-	 * mode sleep instructions, and it enables a form of denial-of-service
-	 * attack by putting the processor in sleep mode, but since interrupt
-	 * level/mask can't be set from user space that's not worse than
-	 * executing a loop without yielding.
-	 */
-	pInitCtx->status32 |= _ARC_V2_STATUS32_US;
-
-	if (options & K_USER) {
-		thread->arch.priv_stack_start =
-			(u32_t)(stackEnd + STACK_GUARD_SIZE);
-		thread->arch.priv_stack_size =
-			(u32_t)CONFIG_PRIVILEGED_STACK_SIZE;
-	} else {
-		thread->arch.priv_stack_start = 0;
-		thread->arch.priv_stack_size = 0;
-	}
 #endif
 	/*
+	 * seti instruction in the end of the _Swap() will
+	 * enable the interrupts based on intlock_key
+	 * value.
+	 *
 	 * intlock_key is constructed based on ARCv2 ISA Programmer's
 	 * Reference Manual CLRI instruction description:
 	 * dst[31:6] dst[5] dst[4]       dst[3:0]
