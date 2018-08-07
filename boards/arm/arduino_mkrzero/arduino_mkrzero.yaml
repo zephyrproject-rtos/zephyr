@@ -1,0 +1,17 @@
+# Copyright (c) 2018, Madani Lainani.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: arduino_mkrzero
+name: Arduino MKRZero
+type: mcu
+arch: arm
+ram: 32
+flash: 256
+toolchain:
+  - zephyr
+  - gccarmemb
+supported:
+  - gpio
+  - i2c
+  - pinmux
+  - uart

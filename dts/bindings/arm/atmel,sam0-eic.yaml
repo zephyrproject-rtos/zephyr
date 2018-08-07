@@ -1,6 +1,5 @@
 ---
 title: Atmel External Interrupt Controller binding
-id: atmel,sam0-eic
 version: 0.1
 
 description: >

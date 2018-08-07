@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2018 Madani Lainani.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <atmel/samd21.dtsi>
+#include <dt-bindings/i2c/i2c.h>
+
+/ {
+	model = "Arduino MKRZero";
+	compatible = "arduino,mkrzero", "atmel,samd21g18a", "atmel,samd21";
+
+	chosen {
+		zephyr,console = &sercom5;
+		zephyr,shell-uart = &sercom5;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led_builtin;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_builtin: led_0 {
+			gpios = <&portb 8 0>;
+			label = "Built-in LED";
+		};
+	};
+};
+
+&sercom0 {
+	status = "ok";
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	rise-time-nsec = <125>;
+};
+
+&sercom5 {
+	status = "ok";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <3>;
+	txpo = <1>;
+};
+
+&portb {
+	status = "ok";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The final 16 KiB is reserved for the application
+		 * and is used by NFFS if enabled.
+		 */
+
+#if defined(CONFIG_FS_FLASH_MAP_STORAGE)
+		storage_partition: partition@3c000 {
+			label = "storage";
+			reg = <0x0003c000 0x00004000>;
+		};
+#endif
+	};
+};
+
+&eic0 {
+	status = "ok";
+};

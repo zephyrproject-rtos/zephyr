@@ -1,0 +1,54 @@
+# Copyright (c) 2018 Madani Lainani.
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_ARM=y
+CONFIG_SOC_FAMILY_SAM0=y
+CONFIG_SOC_SERIES_SAMD21=y
+CONFIG_SOC_PART_NUMBER_SAMD21G18A=y
+CONFIG_BOARD_ARDUINO_MKRZERO=y
+CONFIG_CORTEX_M_SYSTICK=y
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_SERIAL=y
+CONFIG_UART_SAM0=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+CONFIG_GPIO=y
+CONFIG_GPIO_SAM0=y
+CONFIG_WATCHDOG=y
+CONFIG_WDT_SAM0=y
+CONFIG_SOC_ATMEL_SAMD_XOSC32K=y
+CONFIG_SOC_ATMEL_SAMD_XOSC32K_AS_MAIN=y
+# CONFIG_SPI=y
+# CONFIG_SPI_SAM0=y
+
+# The below definition is not used in the SAM0 SERCOM SPI driver code. Its sole
+# purpose seems to be reflecting the board DTS configuration in the
+# configuration interface.
+# CONFIG_SPI_1=y
+CONFIG_I2C=y
+CONFIG_I2C_SAM0=y
+
+# The below definition is not used in the SAM0 SERCOM I2C driver code. Its sole
+# purpose seems to be reflecting the board DTS configuration in the
+# configuration interface.
+CONFIG_I2C_0=y
+CONFIG_PINMUX=y
+CONFIG_PINMUX_SAM0=y
+# CONFIG_USB=y
+# CONFIG_USB_DC_SAM0=y
+
+# External Interrupt Controller
+# CONFIG_EIC_SAM0=y
+
+# Map External interrupt 2 to pin A1
+# CONFIG_GPIO_SAM0_PORTB_EXTINT_2=y
+# CONFIG_GPIO_SAM0_PORTB_EXTINT_2_PIN=2
+
+# FXAS21002C gyroscope I2C address on the Adafruit Precision NXP 9-DOF breakout
+# board
+# CONFIG_FXAS21002_I2C_NAME="SERCOM0"
+# CONFIG_FXAS21002_I2C_ADDRESS=0x21
+# CONFIG_FXAS21002_RANGE=3
+
+# CONFIG_FXAS21002_GPIO_NAME="PORTB"
+# CONFIG_FXAS21002_GPIO_PIN=2

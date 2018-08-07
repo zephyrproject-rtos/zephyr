@@ -1,0 +1,8 @@
+# Kconfig - Arduino MKRZero Board configuration
+#
+# Copyright (c) 2018 Madani Lainani.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ARDUINO_MKRZERO
+	bool "Arduino MKRZero"
+	depends on SOC_PART_NUMBER_SAMD21G18A
