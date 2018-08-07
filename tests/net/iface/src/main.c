@@ -33,6 +33,7 @@
 /* Interface 1 addresses */
 static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct in_addr my_ipv4_addr1 = { { { 192, 0, 2, 1 } } };
 
 /* Interface 2 addresses */
 static struct in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 2, 0, 0, 0,
@@ -352,6 +353,14 @@ static void iface_setup(void)
 		zassert_not_null(ifaddr, "addr1");
 	}
 
+	ifaddr = net_if_ipv4_addr_add(iface1, &my_ipv4_addr1,
+				      NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv4 address %s\n",
+		       net_sprint_ipv4_addr(&my_ipv4_addr1));
+		zassert_not_null(ifaddr, "ipv4 addr1");
+	}
+
 	/* For testing purposes we need to set the adddresses preferred */
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
@@ -502,9 +511,12 @@ static void select_src_iface(void)
 	struct in6_addr dst_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 3, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x99 } } };
 	struct in6_addr in6addr_mcast1 = { { { 0x00 } } };
+	struct in_addr dst_addr_2 = { { { 192, 0, 2, 2 } } };
 
 	struct net_if_addr *ifaddr;
 	struct net_if *iface;
+	struct sockaddr_in ipv4;
+	struct sockaddr_in6 ipv6;
 
 	iface = net_if_ipv6_select_src_iface(&dst_addr1);
 	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
@@ -534,6 +546,20 @@ static void select_src_iface(void)
 	zassert_equal_ptr(iface, net_if_get_default(),
 			  "Invalid interface %p vs %p selected",
 			  iface, net_if_get_default());
+
+	net_ipaddr_copy(&ipv4.sin_addr, &dst_addr_2);
+	ipv4.sin_family = AF_INET;
+
+	iface = net_if_select_src_iface((struct sockaddr *)&ipv4);
+	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
+			  iface, iface1);
+
+	net_ipaddr_copy(&ipv6.sin6_addr, &dst_addr1);
+	ipv6.sin6_family = AF_INET6;
+
+	iface = net_if_select_src_iface((struct sockaddr *)&ipv6);
+	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
+			  iface, iface1);
 }
 
 static void check_promisc_mode_off(void)
