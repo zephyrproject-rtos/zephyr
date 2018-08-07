@@ -239,11 +239,11 @@ FUNC_NORETURN void handle_exc_##vector(const NANO_ESF *pEsf) \
 
 #define _EXC_FUNC_CODE(vector) \
 	_EXC_FUNC(vector) \
-	_EXCEPTION_CONNECT_CODE(handle_exc_##vector, vector)
+	_EXCEPTION_CONNECT_WEAK_CODE(handle_exc_##vector, vector)
 
 #define _EXC_FUNC_NOCODE(vector) \
 	_EXC_FUNC(vector) \
-	_EXCEPTION_CONNECT_NOCODE(handle_exc_##vector, vector)
+	_EXCEPTION_CONNECT_WEAK_NOCODE(handle_exc_##vector, vector)
 
 /* Necessary indirection to ensure 'vector' is expanded before we expand
  * the handle_exc_##vector

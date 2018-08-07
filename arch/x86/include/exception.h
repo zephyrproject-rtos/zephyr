@@ -41,12 +41,12 @@
  * handlers without having to #ifdef out previous instances such as in
  * arch/x86/core/fatal.c
  */
-#define __EXCEPTION_CONNECT(handler, vector, codepush) \
+#define __EXCEPTION_CONNECT(handler, vector, codepush, flag) \
 	__asm__ ( \
 	_EXCEPTION_INTLIST(vector) \
 	".pushsection .gnu.linkonce.t.exc_" STRINGIFY(vector) \
 		  "_stub, \"ax\"\n\t" \
-	".global " STRINGIFY(_EXCEPTION_STUB_NAME(handler, vector)) "\n\t" \
+	flag STRINGIFY(_EXCEPTION_STUB_NAME(handler, vector)) "\n\t" \
 	STRINGIFY(_EXCEPTION_STUB_NAME(handler, vector)) ":\n\t" \
 	"1:\n\t" \
 	codepush \
@@ -66,7 +66,7 @@
  * @param vector Vector index in the IDT
  */
 #define _EXCEPTION_CONNECT_NOCODE(handler, vector) \
-	__EXCEPTION_CONNECT(handler, vector, "push $0\n\t")
+	__EXCEPTION_CONNECT(handler, vector, "push $0\n\t", ".global ")
 
 /**
  * @brief Connect an exception handler that does expect error code
@@ -79,7 +79,38 @@
  * @param vector Vector index in the IDT
  */
 #define _EXCEPTION_CONNECT_CODE(handler, vector) \
-	__EXCEPTION_CONNECT(handler, vector, "")
+	__EXCEPTION_CONNECT(handler, vector, "", ".global ")
+
+/**
+ * @brief Connect an exception handler that doesn't expect error code
+ *
+ * Assign an exception handler to a particular vector in the IDT.
+ *
+ * Note: The symbol will be weakly defined to allow stronger symbols to
+ *       preferred by the linker.
+ *
+ * @param handler A handler function of the prototype
+ *                void handler(const NANO_ESF *esf)
+ * @param vector Vector index in the IDT
+ */
+#define _EXCEPTION_CONNECT_WEAK_NOCODE(handler, vector) \
+	__EXCEPTION_CONNECT(handler, vector, "push $0\n\t", ".weak ")
+
+/**
+ * @brief Connect an exception handler that does expect error code
+ *
+ * Assign an exception handler to a particular vector in the IDT.
+ * The error code will be accessible in esf->errorCode
+ *
+ * Note: The symbol will be weakly defined to allow stronger symbols to
+ *       preferred by the linker.
+ *
+ * @param handler A handler function of the prototype
+ *                void handler(const NANO_ESF *esf)
+ * @param vector Vector index in the IDT
+ */
+#define _EXCEPTION_CONNECT_WEAK_CODE(handler, vector) \
+	__EXCEPTION_CONNECT(handler, vector, "", ".weak ")
 
 #endif /* _ASMLANGUAGE */
 
