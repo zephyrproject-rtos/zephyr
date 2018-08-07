@@ -745,22 +745,28 @@ static int tls_mbedtls_reset(struct net_context *context)
 	return 0;
 }
 
-static int tls_mbedtls_handshake(struct net_context *context)
+static int tls_mbedtls_handshake(struct net_context *context, bool block)
 {
 	int ret;
 
-	/* TODO For simplicity, TLS handshake blocks the socket even for
-	 * non-blocking socket. Non-blocking behavior for handshake can
-	 * be implemented later.
-	 */
 	while ((ret = mbedtls_ssl_handshake(&context->tls->ssl)) != 0) {
 		if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
 		    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
-			continue;
+			if (block) {
+				continue;
+			}
+
+			ret = -EAGAIN;
+			break;
 		} else if (ret == MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED) {
 			ret = tls_mbedtls_reset(context);
 			if (ret == 0) {
-				continue;
+				if (block) {
+					continue;
+				}
+
+				ret = -EAGAIN;
+				break;
 			}
 		}
 
@@ -1163,7 +1169,10 @@ int ztls_connect(int sock, const struct sockaddr *addr, socklen_t addrlen)
 			/* Do not use any socket flags during the handshake. */
 			context->tls->flags = 0;
 
-			ret = tls_mbedtls_handshake(context);
+			/* TODO For simplicity, TLS handshake blocks the socket
+			 * even for non-blocking socket.
+			 */
+			ret = tls_mbedtls_handshake(context, true);
 			if (ret < 0) {
 				goto error;
 			}
@@ -1220,7 +1229,10 @@ int ztls_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 		/* Do not use any socket flags during the handshake. */
 		child_context->tls->flags = 0;
 
-		ret = tls_mbedtls_handshake(child_context);
+		/* TODO For simplicity, TLS handshake blocks the socket even for
+		 * non-blocking socket.
+		 */
+		ret = tls_mbedtls_handshake(child_context, true);
 		if (ret < 0) {
 			goto error;
 		}
@@ -1304,7 +1316,10 @@ static ssize_t sendto_dtls_client(struct net_context *context, const void *buf,
 	}
 
 	if (!context->tls->tls_established) {
-		ret = tls_mbedtls_handshake(context);
+		/* TODO For simplicity, TLS handshake blocks the socket even for
+		 * non-blocking socket.
+		 */
+		ret = tls_mbedtls_handshake(context, true);
 		if (ret < 0) {
 			goto error;
 		}
@@ -1459,7 +1474,8 @@ static ssize_t recvfrom_dtls_server(struct net_context *context, void *buf,
 {
 	int ret;
 	bool repeat;
-
+	bool is_block = !((flags & ZSOCK_MSG_DONTWAIT) ||
+			  sock_is_nonblock(context));
 	if (!context->tls->is_initialized) {
 		ret = tls_mbedtls_init(context, true);
 		if (ret < 0) {
@@ -1474,8 +1490,13 @@ static ssize_t recvfrom_dtls_server(struct net_context *context, void *buf,
 		repeat = false;
 
 		if (!context->tls->tls_established) {
-			ret = tls_mbedtls_handshake(context);
+			ret = tls_mbedtls_handshake(context, is_block);
 			if (ret < 0) {
+				/* In case of EAGAIN, just exit. */
+				if (ret == -EAGAIN) {
+					break;
+				}
+
 				ret = tls_mbedtls_reset(context);
 				if (ret == 0) {
 					repeat = true;
