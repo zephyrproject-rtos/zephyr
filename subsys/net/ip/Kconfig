@@ -81,7 +81,7 @@ config NET_TC_MAPPING_STRICT
 	help
 	  This is the recommended default priority to traffic class mapping.
 	  Use it for implementations that do not support the credit-based
-	  sharper transmission selection algorithm.
+	  shaper transmission selection algorithm.
 	  See 802.1Q, chapter 8.6.6 for more information.
 
 config NET_TC_MAPPING_SR_CLASS_A_AND_B

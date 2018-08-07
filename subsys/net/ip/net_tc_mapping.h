@@ -36,7 +36,7 @@
 #if defined(CONFIG_NET_TC_MAPPING_STRICT)
 
 /* This is the recommended priority to traffic class mapping for
- * implementations that do not support the credit-based sharper transmission
+ * implementations that do not support the credit-based shaper transmission
  * selection algorithm.
  * Ref: 802.1Q - chapter 8.6.6 - table 8-4
  */
