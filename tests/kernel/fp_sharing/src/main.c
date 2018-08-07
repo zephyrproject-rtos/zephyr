@@ -57,7 +57,7 @@
 #else
 #include "float_regs_x86_other.h"
 #endif /* __GNUC__ */
-#elif defined(CONFIG_CPU_CORTEX_M4)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_FP)
 #if defined(__GNUC__)
 #include "float_regs_arm_gcc.h"
 #else
