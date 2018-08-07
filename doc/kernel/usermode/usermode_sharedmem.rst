@@ -16,9 +16,9 @@ shared memory between threads.  The foundation of the implementation
 consists of memory domains and partitions. Memory partitions are created
 and used in the definition of variable to group them into a
 common space.  The memory partitions are linked to domains
-that are then assigned to a thead.  The process allows selective
+that are then assigned to a thread.  The process allows selective
 access to memory from a thread and sharing of memory between two
-threads by assigning a partion to two different domains.  By using
+threads by assigning a partition to two different domains.  By using
 the shared memory template, code to protect memory can be used
 on different platform without the application needing to implement
 specific handlers for each platform.  Note the developer should understand
@@ -36,7 +36,7 @@ linker scripts for each processor the project.
 The general usage is as follows. Define CONFIG_APP_SHARED_MEM=y in the
 proj.conf file in the project folder.  Include app_memory/app_memdomain.h
 in the userspace source file.  Mark the variable to be placed in
-a memory partition.  The two markers are for data and bss respectivly:
+a memory partition.  The two markers are for data and bss respectively:
 _app_dmem(id) and _app_bmem(id).  The id is used as the partition name.
 The resulting section name can be seen in the linker.map as
 "data_smem_id" and "data_smem_idb".
