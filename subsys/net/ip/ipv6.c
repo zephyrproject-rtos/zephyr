@@ -3765,6 +3765,8 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 		frag_offset += fit_len;
 	}
 
+	net_pkt_unref(pkt);
+
 	return 0;
 
 fail:
