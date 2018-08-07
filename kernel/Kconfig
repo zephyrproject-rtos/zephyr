@@ -222,7 +222,7 @@ config SCHED_SCALABLE
 	  When selected, the scheduler ready queue will be implemented
 	  as a red/black tree.  This has rather slower constant-time
 	  insertion and removal overhead, and on most platforms (that
-	  are not otherwise using the rbtree somehwere) requires an
+	  are not otherwise using the rbtree somewhere) requires an
 	  extra ~2kb of code.  But the resulting behavior will scale
 	  cleanly and quickly into the many thousands of threads.  Use
 	  this on platforms where you may have many threads (very

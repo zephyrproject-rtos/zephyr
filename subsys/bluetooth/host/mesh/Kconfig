@@ -156,7 +156,7 @@ config BT_MESH_ADV_BUF_COUNT
 	range 6 256
 	help
 	  Number of advertising buffers available. This should be chosen
-	  based on what kind of features the local node shoule have. E.g.
+	  based on what kind of features the local node should have. E.g.
 	  a relay will perform better the more buffers it has. Another
 	  thing to consider is outgoing segmented messages. There must
 	  be at least three more advertising buffers than the maximum
