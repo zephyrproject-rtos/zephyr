@@ -2185,6 +2185,36 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *maddr,
 }
 #endif /* CONFIG_NET_IPV4 */
 
+struct net_if *net_if_select_src_iface(const struct sockaddr *dst)
+{
+	struct net_if *iface;
+
+	if (!dst) {
+		goto out;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && dst->sa_family == AF_INET6) {
+		iface = net_if_ipv6_select_src_iface(&net_sin6(dst)->sin6_addr);
+		if (!iface) {
+			goto out;
+		}
+
+		return iface;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && dst->sa_family == AF_INET) {
+		iface = net_if_ipv4_select_src_iface(&net_sin(dst)->sin_addr);
+		if (!iface) {
+			goto out;
+		}
+
+		return iface;
+	}
+
+out:
+	return net_if_get_default();
+}
+
 enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
 	if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE) &&
