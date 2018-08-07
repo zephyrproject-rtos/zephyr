@@ -1502,8 +1502,21 @@ static inline void net_if_ipv4_set_gw(struct net_if *iface,
 
 	net_ipaddr_copy(&iface->config.ip.ipv4->gw, gw);
 }
-
+#else
+#define net_if_ipv4_select_src_iface(...) NULL
 #endif /* CONFIG_NET_IPV4 */
+
+/**
+ * @brief Get a network interface that should be used when sending
+ * IPv6 or IPv4 network data to destination.
+ *
+ * @param dst IPv6 or IPv4 destination address
+ *
+ * @return Pointer to network interface to use. Note that the function
+ * will return the default network interface if the best network interface
+ * is not found.
+ */
+struct net_if *net_if_select_src_iface(const struct sockaddr *dst);
 
 /**
  * @typedef net_if_link_callback_t
