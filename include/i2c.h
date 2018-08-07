@@ -301,7 +301,7 @@ static inline int _impl_i2c_slave_unregister(struct device *dev,
 }
 
 /**
- * @brief Intructs the I2C Slave device to register itself to the I2C Controller
+ * @brief Instructs the I2C Slave device to register itself to the I2C Controller
  *
  * This routine instructs the I2C Slave device to register itself to the I2C
  * Controller.
@@ -322,7 +322,7 @@ static inline int _impl_i2c_slave_driver_register(struct device *dev)
 }
 
 /**
- * @brief Intructs the I2C Slave device to unregister itself from the I2C
+ * @brief Instructs the I2C Slave device to unregister itself from the I2C
  * Controller
  *
  * This routine instructs the I2C Slave device to unregister itself from the I2C

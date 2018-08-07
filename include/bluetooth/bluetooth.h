@@ -313,7 +313,7 @@ int bt_le_scan_stop(void);
  *
  *  A helper for parsing the basic data types used for Extended Inquiry
  *  Response (EIR), Advertising Data (AD), and OOB data blocks. The most
- *  common scenario is to call this helper on the adverstising data
+ *  common scenario is to call this helper on the advertising data
  *  received in the callback that was given to bt_le_scan_start().
  *
  *  @param ad        Advertising data as given to the bt_le_scan_cb_t callback.
