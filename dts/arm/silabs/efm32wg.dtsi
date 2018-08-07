@@ -12,17 +12,28 @@
 		};
 	};
 
-	flash0: flash@0 {
-		compatible = "soc-nv-flash";
-		label = "FLASH_0";
-	};
-
 	sram0: memory@20000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
 	};
 
 	soc {
+		flash-controller@400c0000 {
+			compatible = "silabs,gecko-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x400c0000 0x78>;
+			interrupts = <35 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_0";
+				write-block-size = <4>;
+			};
+		};
+
 		usart0: usart@4000c000 { /* USART0 */
 			compatible = "silabs,gecko-usart";
 			reg = <0x4000c000 0x400>;

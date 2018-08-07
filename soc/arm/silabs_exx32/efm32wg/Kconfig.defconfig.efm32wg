@@ -29,4 +29,11 @@ config UART_GECKO
 
 endif # SERIAL
 
+if FLASH
+
+config SOC_FLASH_GECKO
+	def_bool y
+
+endif # FLASH
+
 endif # SOC_EFM32
