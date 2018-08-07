@@ -105,8 +105,6 @@ add_custom_target(
 
 set(KI_SCRIPT ${ZEPHYR_BASE}/scripts/filter-known-issues.py)
 set(CONFIG_DIR ${ZEPHYR_BASE}/.known-issues/doc)
-configure_file(${CMAKE_CURRENT_LIST_DIR}/conf.py ${RST_OUT}/doc/conf.py COPYONLY)
-configure_file(${CMAKE_CURRENT_LIST_DIR}/substitutions.txt ${RST_OUT}/doc/substitutions.txt COPYONLY)
 
 add_custom_target(
   html
