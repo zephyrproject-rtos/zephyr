@@ -492,6 +492,50 @@ static void send_iface1_up(void)
 	zassert_true(ret, "iface 1 up again");
 }
 
+static void select_src_iface(void)
+{
+	struct in6_addr dst_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+					  0, 0, 0, 0, 0, 0, 0, 0x2 } } };
+	struct in6_addr ll_addr1 = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
+					 0, 0, 0x09, 0x12, 0xaa, 0x29, 0x02,
+					 0x88 } } };
+	struct in6_addr dst_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 3, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x99 } } };
+	struct in6_addr in6addr_mcast1 = { { { 0x00 } } };
+
+	struct net_if_addr *ifaddr;
+	struct net_if *iface;
+
+	iface = net_if_ipv6_select_src_iface(&dst_addr1);
+	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
+			  iface, iface1);
+
+	iface = net_if_ipv6_select_src_iface(&ll_addr1);
+	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
+			  iface, iface1);
+
+	net_ipv6_addr_create(&in6addr_mcast1, 0xff02, 0, 0, 0, 0, 0, 0, 0x0002);
+
+	iface = net_if_ipv6_select_src_iface(&in6addr_mcast1);
+	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
+			  iface, iface1);
+
+	iface = net_if_ipv6_select_src_iface(&dst_addr3);
+	zassert_equal_ptr(iface, iface2, "Invalid interface %p vs %p selected",
+			  iface, iface2);
+
+	ifaddr = net_if_ipv6_addr_lookup(&ll_addr, NULL);
+	zassert_not_null(ifaddr, "No such ll_addr found");
+
+	ifaddr->addr_state = NET_ADDR_TENTATIVE;
+
+	/* We should now get default interface */
+	iface = net_if_ipv6_select_src_iface(&ll_addr1);
+	zassert_equal_ptr(iface, net_if_get_default(),
+			  "Invalid interface %p vs %p selected",
+			  iface, net_if_get_default());
+}
+
 static void check_promisc_mode_off(void)
 {
 	bool ret;
@@ -552,6 +596,7 @@ void test_main(void)
 			 ztest_unit_test(send_iface3),
 			 ztest_unit_test(send_iface1_down),
 			 ztest_unit_test(send_iface1_up),
+			 ztest_unit_test(select_src_iface),
 			 ztest_unit_test(check_promisc_mode_off),
 			 ztest_unit_test(set_promisc_mode_on),
 			 ztest_unit_test(check_promisc_mode_on),
