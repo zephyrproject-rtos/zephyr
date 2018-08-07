@@ -24,6 +24,7 @@ source "drivers/i2c/slave/Kconfig"
 source "drivers/i2c/Kconfig.gpio"
 source "drivers/i2c/Kconfig.nrfx"
 source "drivers/i2c/Kconfig.qmsi"
+source "drivers/i2c/Kconfig.sam0"
 source "drivers/i2c/Kconfig.sbcon"
 source "drivers/i2c/Kconfig.stm32"
 
