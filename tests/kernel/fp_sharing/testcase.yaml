@@ -1,7 +1,7 @@
 tests:
   kernel.fp_sharing:
     extra_args: PI_NUM_ITERATIONS=70000
-    platform_whitelist: frdm_k64f
+    platform_whitelist: frdm_k64f sam_e70_xplained
     slow: true
     tags: core
     timeout: 600

@@ -12,8 +12,8 @@
 #ifndef _FLOAT_REGS_ARM_GCC_H
 #define _FLOAT_REGS_ARM_GCC_H
 
-#if !defined(__GNUC__) || !defined(CONFIG_CPU_CORTEX_M4)
-#error __FILE__ goes only with Cortex-M4 GCC
+#if !defined(__GNUC__) || !defined(CONFIG_ARMV7_M_ARMV8_M_FP)
+#error __FILE__ goes only with Cortex-M GCC
 #endif
 
 #include <toolchain.h>
