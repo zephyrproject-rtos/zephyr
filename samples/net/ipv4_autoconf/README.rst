@@ -48,7 +48,7 @@ Build Zephyr samples/net/ipv4_autoconf application:
     :goals: build flash
     :compact:
 
-Once IPv4 LL completed probing and announcment, details are shown like this:
+Once IPv4 LL completed probing and announcement, details are shown like this:
 
 .. code-block:: console
 
