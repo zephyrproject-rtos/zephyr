@@ -62,3 +62,45 @@
 	location = <0>;
 	status = "ok";
 };
+
+&flash0 {
+	/*
+	 * If the chosen node has no zephyr,code-partition property, the
+	 * application image link uses the entire flash device. If a
+	 * zephyr,code-partition property is defined, the application link
+	 * will be restricted to that partition.
+	 *
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserve 32 kB for the bootloader */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0x00008000>;
+			read-only;
+		};
+
+		/* Reserve 96 kB for the application in slot 0 */
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x0008000 0x00018000>;
+		};
+
+		/* Reserve 96 kB for the application in slot 1 */
+		slot1_partition: partition@20000 {
+			label = "image-1";
+			reg = <0x00020000 0x00018000>;
+		};
+
+		/* Reserve 32 kB for the scratch partition */
+		scratch_partition: partition@38000 {
+			label = "image-scratch";
+			reg = <0x00038000 0x00008000>;
+		};
+	};
+};
