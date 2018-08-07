@@ -1,0 +1,16 @@
+# Kconfig - Silicon Labs Gecko flash driver config
+#
+# Copyright (c) 2018, Piotr Mienkowski
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_GECKO
+	bool "Silicon Labs Gecko flash driver"
+	depends on FLASH && SOC_FAMILY_EXX32
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enable Silicon Labs Gecko series internal flash driver.
+
+if SOC_FLASH_GECKO
+
+endif # SOC_FLASH_GECKO
