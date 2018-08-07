@@ -7,7 +7,7 @@
 menu "Console"
 
 config CONSOLE_SUBSYS
-	bool "Console subsystem/support routines"
+	bool "Console subsystem/support routines [EXPERIMENTAL]"
 	help
 	  Console subsystem and helper functions
 
