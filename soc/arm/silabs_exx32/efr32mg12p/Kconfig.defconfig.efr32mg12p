@@ -39,4 +39,11 @@ config I2C_GECKO
 
 endif # I2C
 
+if FLASH
+
+config SOC_FLASH_GECKO
+	def_bool y
+
+endif # FLASH
+
 endif # SOC_EFR32MG12P

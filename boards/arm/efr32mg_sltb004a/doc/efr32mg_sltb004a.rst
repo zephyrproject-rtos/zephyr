@@ -63,6 +63,8 @@ The efr32mg_sltb004a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
 +-----------+------------+-------------------------------------+
+| FLASH     | on-chip    | flash memory                        |
++-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |

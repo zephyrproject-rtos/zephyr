@@ -50,6 +50,8 @@ The efm32wg_stk3800oard configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
 +-----------+------------+-------------------------------------+
+| FLASH     | on-chip    | flash memory                        |
++-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
