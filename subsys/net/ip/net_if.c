@@ -1613,6 +1613,23 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 	return src;
 }
 
+struct net_if *net_if_ipv6_select_src_iface(struct in6_addr *dst)
+{
+	const struct in6_addr *src;
+	struct net_if *iface;
+
+	src = net_if_ipv6_select_src_addr(NULL, dst);
+	if (src == net_ipv6_unspecified_address()) {
+		return net_if_get_default();
+	}
+
+	if (!net_if_ipv6_addr_lookup(src, &iface)) {
+		return net_if_get_default();
+	}
+
+	return iface;
+}
+
 u32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6)
 {
 	u32_t min_reachable, max_reachable;

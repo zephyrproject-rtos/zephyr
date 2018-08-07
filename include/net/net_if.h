@@ -1220,6 +1220,17 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
 						   struct in6_addr *dst);
 
 /**
+ * @brief Get a network interface that should be used when sending
+ * IPv6 network data to destination.
+ *
+ * @param dst IPv6 destination address
+ *
+ * @return Pointer to network interface to use, NULL if no suitable interface
+ * could be found.
+ */
+struct net_if *net_if_ipv6_select_src_iface(struct in6_addr *dst);
+
+/**
  * @brief Get a IPv6 link local address in a given state.
  *
  * @param iface Interface to use. Must be a valid pointer to an interface.
@@ -1265,6 +1276,7 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr);
 struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface);
 #else
 #define net_if_ipv6_select_src_addr(...)
+#define net_if_ipv6_select_src_iface(...) NULL
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
