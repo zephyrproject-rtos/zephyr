@@ -1,0 +1,3 @@
+tests:
+  kernel.threads.dynamic:
+    tags: kernel threads userspace ignore_faults
