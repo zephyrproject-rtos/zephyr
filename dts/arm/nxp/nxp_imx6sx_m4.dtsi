@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/rdc/imx_rdc.h>
 
 / {
 	cpus {
@@ -74,6 +75,10 @@
 			compatible = "nxp,imx-uart";
 			reg = <0x42020000 0x00004000>;
 			interrupts = <26 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "UART_1";
 			status = "disabled";
 		};
@@ -82,6 +87,10 @@
 			compatible = "nxp,imx-uart";
 			reg = <0x421E8000 0x00004000>;
 			interrupts = <27 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "UART_2";
 			status = "disabled";
 		};
@@ -90,6 +99,10 @@
 			compatible = "nxp,imx-uart";
 			reg = <0x421EC000 0x00004000>;
 			interrupts = <28 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "UART_3";
 			status = "disabled";
 		};
@@ -98,6 +111,10 @@
 			compatible = "nxp,imx-uart";
 			reg = <0x421F0000 0x00004000>;
 			interrupts = <29 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "UART_4";
 			status = "disabled";
 		};
@@ -106,6 +123,10 @@
 			compatible = "nxp,imx-uart";
 			reg = <0x421F4000 0x00004000>;
 			interrupts = <30 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "UART_5";
 			status = "disabled";
 		};
@@ -114,6 +135,10 @@
 			compatible = "nxp,imx-uart";
 			reg = <0x422A0000 0x00004000>;
 			interrupts = <17 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "UART_6";
 			status = "disabled";
 		};
@@ -122,6 +147,10 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x4209C000 0x4000>;
 			interrupts = <66 0>, <67 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -132,6 +161,10 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x420A0000 0x4000>;
 			interrupts = <68 0>, <69 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -142,6 +175,10 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x420A4000 0x4000>;
 			interrupts = <70 0>, <71 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -152,6 +189,10 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x420A8000 0x4000>;
 			interrupts = <72 0>, <73 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -162,6 +203,10 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x420AC000 0x4000>;
 			interrupts = <74 0>, <74 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_5";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -172,6 +217,10 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x420B0000 0x4000>;
 			interrupts = <76 0>, <77 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_6";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -182,6 +231,10 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x420B4000 0x4000>;
 			interrupts = <78 0>, <79 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_7";
 			gpio-controller;
 			#gpio-cells = <2>;
