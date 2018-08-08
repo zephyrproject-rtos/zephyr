@@ -33,9 +33,7 @@ struct net_pkt *net_ipv4_create(struct net_pkt *pkt,
 				struct net_if *iface,
 				u8_t next_header_proto)
 {
-	struct net_buf *header;
-
-	header = net_pkt_get_frag(pkt, K_FOREVER);
+	struct net_buf *header = net_pkt_get_frag(pkt, K_FOREVER);
 
 	net_pkt_frag_insert(pkt, header);
 
@@ -154,11 +152,9 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 	case IPPROTO_ICMP:
 		verdict = net_icmpv4_input(pkt);
 		break;
-	case IPPROTO_UDP:
-		verdict = net_conn_input(IPPROTO_UDP, pkt);
-		break;
 	case IPPROTO_TCP:
-		verdict = net_conn_input(IPPROTO_TCP, pkt);
+	case IPPROTO_UDP:
+		verdict = net_conn_input(hdr->proto, pkt);
 		break;
 	}
 
