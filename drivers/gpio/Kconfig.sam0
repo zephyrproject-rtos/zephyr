@@ -1,6 +1,7 @@
 # Kconfig.sam0 - Atmel SAM0 GPIO configuration options
 #
 # Copyright (c) 2017 Google LLC.
+# Copyright (c) 2018 Madani Lainani
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig GPIO_SAM0
@@ -8,4 +9,387 @@ menuconfig GPIO_SAM0
 	depends on GPIO && SOC_FAMILY_SAM0
 	select HAS_DTS_GPIO
 	help
-	  Enable support for the Atmel SAM0 'PORT' GPIO controllers.
+	  Enable support for the Atmel SAM0 'PORT' GPIO controllers. The
+	  external interrupts configuration submenus will be available only if
+	  support for the External Interrupt Controller is enabled. The I/O
+	  pin-to-external interrupt mapping depends on both the MCU device
+	  variant pin count and the peripheral signals multiplexing to the I/O
+	  pins for the considered board. On Atmel SAMD21G for instance, both
+	  PA00 and PA16 can be assigned to external interrupt 0. On the Arduino
+	  MKRZero, which is based on this device variant, PA00 is used for
+	  another purpose which leaves the user with PA16 as the only choice for
+	  this particular external interrupt. The value 16 would thus need to be
+	  configured for external interrupt 0.
+
+config EIC_SAM0
+	bool "Atmel SAM0 series EIC driver"
+	depends on GPIO_SAM0
+	help
+	  Enable External Interrupt Controller driver for Atmel SAM0 MCUs. The
+	  actual enablement of a given external external interrupt and the
+	  assignment of an I/O pin to this interrupt is accomplished from a
+	  submenu of the GPIO driver configuration. The pin multiplexing
+	  definition for the board must be mapping the considered I/O pin to the
+	  EIC peripheral (function A).
+
+menu "PORT A external interrupts"
+	depends on EIC_SAM0
+
+config GPIO_SAM0_PORTA_EXTINT_0
+	bool "Enable external interrupt 0"
+
+config GPIO_SAM0_PORTA_EXTINT_0_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_0
+	int "External interrupt 0 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTA_EXTINT_1
+	bool "Enable external interrupt 1"
+
+config GPIO_SAM0_PORTA_EXTINT_1_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_1
+	int "External interrupt 1 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTA_EXTINT_2
+	bool "Enable external interrupt 2"
+
+config GPIO_SAM0_PORTA_EXTINT_2_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_2
+	int "External interrupt 2 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTA_EXTINT_3
+	bool "Enable external interrupt 3"
+
+config GPIO_SAM0_PORTA_EXTINT_3_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_3
+	int "External interrupt 3 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTA_EXTINT_4
+	bool "Enable external interrupt 4"
+
+config GPIO_SAM0_PORTA_EXTINT_4_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_4
+	int "External interrupt 4 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTA_EXTINT_5
+	bool "Enable external interrupt 5"
+
+config GPIO_SAM0_PORTA_EXTINT_5_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_5
+	int "External interrupt 5 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTA_EXTINT_6
+	bool "Enable external interrupt 6"
+
+config GPIO_SAM0_PORTA_EXTINT_6_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_6
+	int "External interrupt 6 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTA_EXTINT_7
+	bool "Enable external interrupt 7"
+
+config GPIO_SAM0_PORTA_EXTINT_7_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_7
+	int "External interrupt 7 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTA_EXTINT_8
+	bool "Enable external interrupt 8"
+
+config GPIO_SAM0_PORTA_EXTINT_8_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_8
+	int "External interrupt 8 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTA_EXTINT_9
+	bool "Enable external interrupt 9"
+
+config GPIO_SAM0_PORTA_EXTINT_9_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_9
+	int "External interrupt 9 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTA_EXTINT_10
+	bool "Enable external interrupt 10"
+
+config GPIO_SAM0_PORTA_EXTINT_10_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_10
+	int "External interrupt 10 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTA_EXTINT_11
+	bool "Enable external interrupt 11"
+
+config GPIO_SAM0_PORTA_EXTINT_11_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_11
+	int "External interrupt 11 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTA_EXTINT_12
+	bool "Enable external interrupt 12"
+
+config GPIO_SAM0_PORTA_EXTINT_12_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_12
+	int "External interrupt 12 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTA_EXTINT_13
+	bool "Enable external interrupt 13"
+
+config GPIO_SAM0_PORTA_EXTINT_13_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_13
+	int "External interrupt 13 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTA_EXTINT_14
+	bool "Enable external interrupt 14"
+
+config GPIO_SAM0_PORTA_EXTINT_14_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_14
+	int "External interrupt 14 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTA_EXTINT_15
+	bool "Enable external interrupt 15"
+
+config GPIO_SAM0_PORTA_EXTINT_15_PIN
+	depends on GPIO_SAM0_PORTA_EXTINT_15
+	int "External interrupt 15 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+endmenu
+
+menu "PORT B external interrupts"
+	depends on EIC_SAM0
+
+config GPIO_SAM0_PORTB_EXTINT_0
+	bool "Enable external interrupt 0"
+
+config GPIO_SAM0_PORTB_EXTINT_0_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_0
+	int "External interrupt 0 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTB_EXTINT_1
+	bool "Enable external interrupt 1"
+
+config GPIO_SAM0_PORTB_EXTINT_1_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_1
+	int "External interrupt 1 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTB_EXTINT_2
+	bool "Enable external interrupt 2"
+
+config GPIO_SAM0_PORTB_EXTINT_2_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_2
+	int "External interrupt 2 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTB_EXTINT_3
+	bool "Enable external interrupt 3"
+
+config GPIO_SAM0_PORTB_EXTINT_3_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_3
+	int "External interrupt 3 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTB_EXTINT_4
+	bool "Enable external interrupt 4"
+
+config GPIO_SAM0_PORTB_EXTINT_4_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_4
+	int "External interrupt 4 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTB_EXTINT_5
+	bool "Enable external interrupt 5"
+
+config GPIO_SAM0_PORTB_EXTINT_5_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_5
+	int "External interrupt 5 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTB_EXTINT_6
+	bool "Enable external interrupt 6"
+
+config GPIO_SAM0_PORTB_EXTINT_6_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_6
+	int "External interrupt 6 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTB_EXTINT_7
+	bool "Enable external interrupt 7"
+
+config GPIO_SAM0_PORTB_EXTINT_7_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_7
+	int "External interrupt 7 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTB_EXTINT_8
+	bool "Enable external interrupt 8"
+
+config GPIO_SAM0_PORTB_EXTINT_8_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_8
+	int "External interrupt 8 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTB_EXTINT_9
+	bool "Enable external interrupt 9"
+
+config GPIO_SAM0_PORTB_EXTINT_9_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_9
+	int "External interrupt 9 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTB_EXTINT_10
+	bool "Enable external interrupt 10"
+
+config GPIO_SAM0_PORTB_EXTINT_10_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_10
+	int "External interrupt 10 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTB_EXTINT_11
+	bool "Enable external interrupt 11"
+
+config GPIO_SAM0_PORTB_EXTINT_11_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_11
+	int "External interrupt 11 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTB_EXTINT_12
+	bool "Enable external interrupt 12"
+
+config GPIO_SAM0_PORTB_EXTINT_12_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_12
+	int "External interrupt 12 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTB_EXTINT_13
+	bool "Enable external interrupt 13"
+
+config GPIO_SAM0_PORTB_EXTINT_13_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_13
+	int "External interrupt 13 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTB_EXTINT_14
+	bool "Enable external interrupt 14"
+
+config GPIO_SAM0_PORTB_EXTINT_14_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_14
+	int "External interrupt 14 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+config GPIO_SAM0_PORTB_EXTINT_15
+	bool "Enable external interrupt 15"
+
+config GPIO_SAM0_PORTB_EXTINT_15_PIN
+	depends on GPIO_SAM0_PORTB_EXTINT_15
+	int "External interrupt 15 pin number"
+	range 0 32
+	help
+	This value depends on both MCU device variant and board features. Refer
+	to the GPIO driver help for additionnal details.
+
+endmenu

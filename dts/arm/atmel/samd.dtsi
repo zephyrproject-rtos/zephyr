@@ -134,6 +134,14 @@
 			num-bidir-endpoints = <8>;
 			label = "USB0";
 		};
+
+		eic0: eic@40001800 {
+			compatible = "atmel,sam0-eic";
+			reg = <0x40001800 0x24>;
+			interrupts = <4 0>;
+			status = "disabled";
+			label = "EIC0";
+		};
 	};
 };
 
