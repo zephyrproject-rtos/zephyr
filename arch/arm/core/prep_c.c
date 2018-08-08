@@ -21,7 +21,9 @@
 #include <toolchain.h>
 #include <linker/linker-defs.h>
 #include <kernel_internal.h>
+#if defined(CONFIG_CPU_CORTEX_M)
 #include <arch/arm/cortex_m/cmsis.h>
+#endif
 
 #if defined(__GNUC__)
 /*
