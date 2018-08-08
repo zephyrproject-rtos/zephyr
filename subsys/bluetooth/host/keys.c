@@ -319,6 +319,11 @@ static int keys_set(int argc, char **argv, char *val)
 	return 0;
 }
 
+static void id_add(struct bt_keys *keys, void *user_data)
+{
+	bt_id_add(keys);
+}
+
 static int keys_commit(void)
 {
 	BT_DBG("");
@@ -327,7 +332,7 @@ static int keys_commit(void)
 	 * called multiple times for the same address, especially if
 	 * the keys were already removed.
 	 */
-	bt_keys_foreach(BT_KEYS_IRK, (bt_keys_func_t)bt_id_add, NULL);
+	bt_keys_foreach(BT_KEYS_IRK, id_add, NULL);
 
 	return 0;
 }

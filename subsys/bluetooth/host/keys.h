@@ -63,7 +63,6 @@ struct bt_keys {
 #define BT_KEYS_STORAGE_LEN     (sizeof(struct bt_keys) - \
 				 offsetof(struct bt_keys, storage_start))
 
-typedef void (*bt_keys_func_t)(struct bt_keys *keys);
 void bt_keys_foreach(int type, void (*func)(struct bt_keys *keys, void *data),
 		     void *data);
 
