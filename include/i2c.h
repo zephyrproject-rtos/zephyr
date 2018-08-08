@@ -52,7 +52,7 @@ extern "C" {
 #define I2C_SPEED_GET(cfg) 		(((cfg) & I2C_SPEED_MASK) \
 						>> I2C_SPEED_SHIFT)
 
-/** Use 10-bit addressing. */
+/** Use 10-bit addressing. DEPRECATED - Use I2C_MSG_ADDR_10_BITS instead. */
 #define I2C_ADDR_10_BITS		(1 << 0)
 
 /** Controller to act as Master. */
@@ -63,7 +63,7 @@ extern "C" {
  */
 
 /** Slave device responds to 10-bit addressing. */
-#define I2C_SLAVE_FLAGS_ADDR_10_BITS		I2C_ADDR_10_BITS
+#define I2C_SLAVE_FLAGS_ADDR_10_BITS	(1 << 0)
 
 /*
  * I2C_MSG_* are I2C Message flags.
@@ -84,6 +84,9 @@ extern "C" {
 
 /** RESTART I2C transaction for this message. */
 #define I2C_MSG_RESTART			(1 << 2)
+
+/** Use 10-bit addressing for this message. */
+#define I2C_MSG_ADDR_10_BITS		(1 << 3)
 
 /**
  * @brief One I2C Message.
