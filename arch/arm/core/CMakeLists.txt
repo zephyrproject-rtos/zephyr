@@ -19,6 +19,7 @@ zephyr_library_sources(
   fatal.c
   nmi.c
   nmi_on_reset.S
+  prep_c.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)
