@@ -6,6 +6,7 @@
 
 import sys
 import argparse
+import math
 import pprint
 import os
 import struct
@@ -98,6 +99,14 @@ void _k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 def write_gperf_table(fp, eh, objs, static_begin, static_end):
     fp.write(header)
 
+    # Setup variables for mapping thread indexes
+    syms = eh.get_symbols()
+    thread_max_bytes = syms["CONFIG_MAX_THREAD_BYTES"]
+    thread_idx_map = {}
+
+    for i in range(0, thread_max_bytes):
+        thread_idx_map[i] = 0xFF
+
     for obj_addr, ko in objs.items():
         obj_type = ko.type_name
         # pre-initialized objects fall within this memory range, they are
@@ -117,7 +126,21 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
              "K_OBJ_FLAG_INITIALIZED" if initialized else "0",
              ko.data))
 
+        if obj_type == "K_OBJ_THREAD":
+            idx = math.floor(ko.data / 8)
+            bit = ko.data % 8
+            thread_idx_map[idx] = thread_idx_map[idx] & ~(2**bit)
+
     fp.write(footer)
+
+    # Generate the array of already mapped thread indexes
+    fp.write('\n')
+    fp.write('u8_t _thread_idx_map[%d] = {' % (thread_max_bytes))
+
+    for i in range(0, thread_max_bytes):
+        fp.write(' 0x%x, ' % (thread_idx_map[i]))
+
+    fp.write('};\n')
 
 
 driver_macro_tpl = """
