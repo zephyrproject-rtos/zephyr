@@ -278,9 +278,8 @@ static void setup_ipv4_tcp(struct net_pkt *pkt,
 
 	ipv4.vhl = 0x45;
 	ipv4.tos = 0;
-	ipv4.len[0] = 0;
-	ipv4.len[1] = NET_TCPH_LEN + sizeof(data) +
-		sizeof(struct net_ipv4_hdr);
+	ipv4.len = htons(NET_TCPH_LEN + sizeof(data) +
+				sizeof(struct net_ipv4_hdr));
 
 	ipv4.proto = IPPROTO_TCP;
 

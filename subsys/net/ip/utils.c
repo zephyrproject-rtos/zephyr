@@ -467,8 +467,7 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 	switch (net_pkt_family(pkt)) {
 #if defined(CONFIG_NET_IPV4)
 	case AF_INET:
-		upper_layer_len = (NET_IPV4_HDR(pkt)->len[0] << 8) +
-			NET_IPV4_HDR(pkt)->len[1] -
+		upper_layer_len = ntohs(NET_IPV4_HDR(pkt)->len) -
 			net_pkt_ipv6_ext_len(pkt) -
 			net_pkt_ip_hdr_len(pkt);
 

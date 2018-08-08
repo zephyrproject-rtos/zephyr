@@ -233,8 +233,7 @@ static void set_ipv4_header(struct net_pkt *pkt)
 	length = sizeof(offer) + sizeof(struct net_ipv4_hdr) +
 		 sizeof(struct net_udp_hdr);
 
-	ipv4->len[1] = length;
-	ipv4->len[0] = length >> 8;
+	ipv4->len = htons(length);
 
 	memset(ipv4->id, 0, 4); /* id and offset */
 
