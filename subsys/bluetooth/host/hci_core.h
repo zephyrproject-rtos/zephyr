@@ -192,8 +192,8 @@ u16_t bt_hci_get_cmd_opcode(struct net_buf *buf);
 
 /* Don't require everyone to include keys.h */
 struct bt_keys;
-int bt_id_add(struct bt_keys *keys);
-int bt_id_del(struct bt_keys *keys);
+void bt_id_add(struct bt_keys *keys);
+void bt_id_del(struct bt_keys *keys);
 
 int bt_setup_id_addr(void);
 

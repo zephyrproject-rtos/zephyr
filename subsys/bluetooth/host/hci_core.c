@@ -2450,7 +2450,7 @@ static int hci_id_add(const bt_addr_le_t *addr, u8_t val[16])
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_RL, buf, NULL);
 }
 
-int bt_id_add(struct bt_keys *keys)
+void bt_id_add(struct bt_keys *keys)
 {
 	bool adv_enabled;
 #if defined(CONFIG_BT_OBSERVER)
@@ -2464,7 +2464,7 @@ int bt_id_add(struct bt_keys *keys)
 	/* Nothing to be done if host-side resolving is used */
 	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 		bt_dev.le.rl_entries++;
-		return 0;
+		return;
 	}
 
 	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
@@ -2472,7 +2472,7 @@ int bt_id_add(struct bt_keys *keys)
 		atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
 		keys->flags |= BT_KEYS_ID_PENDING_ADD;
 		bt_conn_unref(conn);
-		return -EAGAIN;
+		return;
 	}
 
 	adv_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING);
@@ -2548,8 +2548,6 @@ done:
 	if (adv_enabled) {
 		set_advertise_enable(true);
 	}
-
-	return err;
 }
 
 static void keys_add_id(struct bt_keys *keys, void *data)
@@ -2557,7 +2555,7 @@ static void keys_add_id(struct bt_keys *keys, void *data)
 	hci_id_add(&keys->addr, keys->irk.val);
 }
 
-int bt_id_del(struct bt_keys *keys)
+void bt_id_del(struct bt_keys *keys)
 {
 	struct bt_hci_cp_le_rem_dev_from_rl *cp;
 	bool adv_enabled;
@@ -2573,7 +2571,7 @@ int bt_id_del(struct bt_keys *keys)
 	if (!bt_dev.le.rl_size ||
 	    bt_dev.le.rl_entries > bt_dev.le.rl_size + 1) {
 		bt_dev.le.rl_entries--;
-		return 0;
+		return;
 	}
 
 	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
@@ -2581,7 +2579,7 @@ int bt_id_del(struct bt_keys *keys)
 		atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
 		keys->flags |= BT_KEYS_ID_PENDING_DEL;
 		bt_conn_unref(conn);
-		return -EAGAIN;
+		return;
 	}
 
 	adv_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING);
@@ -2612,7 +2610,6 @@ int bt_id_del(struct bt_keys *keys)
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REM_DEV_FROM_RL, sizeof(*cp));
 	if (!buf) {
-		err = -ENOBUFS;
 		goto done;
 	}
 
@@ -2642,8 +2639,6 @@ done:
 	if (adv_enabled) {
 		set_advertise_enable(true);
 	}
-
-	return err;
 }
 
 static void update_sec_level(struct bt_conn *conn)
