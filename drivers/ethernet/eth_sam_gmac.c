@@ -1381,9 +1381,9 @@ static void eth_rx(struct gmac_queue *queue)
 		 * the used VLAN tag.
 		 */
 		{
-			struct net_eth_hdr *hdr = NET_ETH_HDR(rx_frame);
+			struct net_eth_hdr *p_hdr = NET_ETH_HDR(rx_frame);
 
-			if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
+			if (ntohs(p_hdr->type) == NET_ETH_PTYPE_VLAN) {
 				struct net_eth_vlan_hdr *hdr_vlan =
 					(struct net_eth_vlan_hdr *)
 					NET_ETH_HDR(rx_frame);
