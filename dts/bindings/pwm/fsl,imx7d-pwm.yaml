@@ -39,4 +39,10 @@ properties:
      description: Set the PWM prescale between 0 and 4096
      generation: define
 
+    rdc:
+     type: int
+     category: required
+     description: Set the RDC permission for this peripheral
+     generation: define
+
 ...
