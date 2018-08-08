@@ -651,6 +651,7 @@ static int get_mck_clock_divisor(u32_t mck)
 	return mck_divisor;
 }
 
+#if GMAC_PRIORITY_QUEUE_NO >= 1
 static int eth_sam_gmac_setup_qav(Gmac *gmac, int queue_id, bool enable)
 {
 	/* Verify queue id */
@@ -800,6 +801,7 @@ static int eth_sam_gmac_setup_qav_delta_bandwidth(Gmac *gmac, int queue_id,
 
 	return eth_sam_gmac_setup_qav_idle_slope(gmac, queue_id, idle_slope);
 }
+#endif
 
 static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 {
@@ -1651,10 +1653,13 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(struct device *dev)
 		ETHERNET_PTP |
 #endif
 		ETHERNET_PRIORITY_QUEUES |
+#if GMAC_PRIORITY_QUEUE_NO >= 1
 		ETHERNET_QAV |
+#endif
 		ETHERNET_LINK_100BASE_T;
 }
 
+#if GMAC_PRIORITY_QUEUE_NO >= 1
 static int eth_sam_gmac_set_qav_param(struct device *dev,
 				      enum ethernet_config_type type,
 				      const struct ethernet_config *config)
@@ -1695,14 +1700,17 @@ static int eth_sam_gmac_set_qav_param(struct device *dev,
 
 	return -ENOTSUP;
 }
+#endif
 
 static int eth_sam_gmac_set_config(struct device *dev,
 				   enum ethernet_config_type type,
 				   const struct ethernet_config *config)
 {
 	switch (type) {
+#if GMAC_PRIORITY_QUEUE_NO >= 1
 	case ETHERNET_CONFIG_TYPE_QAV_PARAM:
 		return eth_sam_gmac_set_qav_param(dev, type, config);
+#endif
 	default:
 		break;
 	}
@@ -1710,6 +1718,7 @@ static int eth_sam_gmac_set_config(struct device *dev,
 	return -ENOTSUP;
 }
 
+#if GMAC_PRIORITY_QUEUE_NO >= 1
 static int eth_sam_gmac_get_qav_param(struct device *dev,
 				      enum ethernet_config_type type,
 				      struct ethernet_config *config)
@@ -1757,6 +1766,7 @@ static int eth_sam_gmac_get_qav_param(struct device *dev,
 
 	return -ENOTSUP;
 }
+#endif
 
 static int eth_sam_gmac_get_config(struct device *dev,
 				   enum ethernet_config_type type,
@@ -1766,8 +1776,10 @@ static int eth_sam_gmac_get_config(struct device *dev,
 	case ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM:
 		config->priority_queues_num = GMAC_PRIORITY_QUEUE_NO;
 		return 0;
+#if GMAC_PRIORITY_QUEUE_NO >= 1
 	case ETHERNET_CONFIG_TYPE_QAV_PARAM:
 		return eth_sam_gmac_get_qav_param(dev, type, config);
+#endif
 	default:
 		break;
 	}
