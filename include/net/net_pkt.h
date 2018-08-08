@@ -120,7 +120,10 @@ struct net_pkt {
 				 * Used only if defined(CONFIG_NET_ROUTE)
 				 */
 	u8_t family     : 4;	/* IPv4 vs IPv6 */
-	u8_t _unused    : 1;
+	u8_t ipv4_auto_arp_msg : 1; /* Is this pkt IPv4 autoconf ARP message.
+				     * Used only if
+				     * defined(CONFIG_NET_IPV4_AUTO)
+				     */
 
 	union {
 		/* IPv6 hop limit or IPv4 ttl for this network packet.
@@ -637,6 +640,19 @@ static inline void net_pkt_set_ieee802154_lqi(struct net_pkt *pkt,
 					      u8_t lqi)
 {
 	pkt->ieee802154_lqi = lqi;
+}
+#endif
+
+#if defined(CONFIG_NET_IPV4_AUTO)
+static inline bool net_pkt_ipv4_auto(struct net_pkt *pkt)
+{
+	return pkt->ipv4_auto_arp_msg;
+}
+
+static inline void net_pkt_set_ipv4_auto(struct net_pkt *pkt,
+					 bool is_auto_arp_msg)
+{
+	pkt->ipv4_auto_arp_msg = is_auto_arp_msg;
 }
 #endif
 
