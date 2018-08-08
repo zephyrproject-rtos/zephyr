@@ -323,7 +323,7 @@ static int uart_sam_irq_update(struct device *dev)
 
 static void uart_sam_irq_callback_set(struct device *dev,
 				      uart_irq_callback_user_data_t cb,
-				      void *data)
+				      void *cb_data)
 {
 	struct uart_sam_dev_data *const dev_data = DEV_DATA(dev);
 
