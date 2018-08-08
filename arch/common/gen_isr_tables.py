@@ -33,13 +33,13 @@ def error(text):
     sys.stderr.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
     raise Exception()
 
-def endian_prefix():
-    if args.big_endian:
-        return ">"
-    else:
+def endian_prefix(little_endian):
+    if little_endian:
         return "<"
+    else:
+        return ">"
 
-def read_intlist(intlist_path):
+def read_intlist(intlist_path, little_endian):
     """read a binary file containing the contents of the kernel's .intList
     section. This is an instance of a header created by
     include/linker/intlist.ld:
@@ -66,7 +66,7 @@ def read_intlist(intlist_path):
 
     intlist = {}
 
-    prefix = endian_prefix()
+    prefix = endian_prefix(little_endian)
 
     intlist_header_fmt = prefix + "II"
     intlist_entry_fmt = prefix + "iiII"
@@ -103,9 +103,6 @@ def parse_args():
     parser = argparse.ArgumentParser(description = __doc__,
             formatter_class = argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("-e", "--big-endian", action="store_true",
-            help="Target encodes data in big-endian format (little endian is "
-                 "the default)")
     parser.add_argument("-d", "--debug", action="store_true",
             help="Print additional debugging information")
     parser.add_argument("-o", "--output-source", required=True,
@@ -182,6 +179,7 @@ def main():
 
     with open(args.kernel, "rb") as fp:
         kernel = ELFFile(fp)
+        little_endian = kernel.little_endian
         syms = get_symbols(kernel)
 
     if "CONFIG_MULTI_LEVEL_INTERRUPTS" in syms:
@@ -207,10 +205,10 @@ def main():
 
                 debug(str(list_3rd_lvl_offsets))
 
-    intlist = read_intlist(args.intlist)
+    intlist = read_intlist(args.intlist, little_endian)
     nvec = intlist["num_vectors"]
     offset = intlist["offset"]
-    prefix = endian_prefix()
+    prefix = endian_prefix(little_endian)
 
     spurious_handler = "&_irq_spurious"
     sw_irq_handler   = "ISR_WRAPPER"
@@ -288,4 +286,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
