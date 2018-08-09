@@ -2231,6 +2231,7 @@ static inline uint32_t remaining_lifetime(struct net_if_addr *ifaddr)
 static inline void handle_prefix_autonomous(struct net_pkt *pkt,
 			struct net_icmpv6_nd_opt_prefix_info *prefix_info)
 {
+	struct net_if *iface = net_pkt_iface(pkt);
 	struct in6_addr addr = { };
 	struct net_if_addr *ifaddr;
 
@@ -2238,9 +2239,8 @@ static inline void handle_prefix_autonomous(struct net_pkt *pkt,
 	 * setup link local address, and then copy prefix over first 8
 	 * bytes of that address.
 	 */
-	net_ipv6_addr_create_iid(&addr,
-				 net_if_get_link_addr(net_pkt_iface(pkt)));
-	memcpy(&addr, prefix_info->prefix, sizeof(prefix_info->prefix) / 2);
+	net_ipv6_addr_create_iid(&addr, net_if_get_link_addr(iface));
+	memcpy(&addr, prefix_info->prefix, sizeof(struct in6_addr) / 2);
 
 	ifaddr = net_if_ipv6_addr_lookup(&addr, NULL);
 	if (ifaddr && ifaddr->addr_type == NET_ADDR_AUTOCONF) {
@@ -2274,13 +2274,22 @@ static inline void handle_prefix_autonomous(struct net_pkt *pkt,
 	} else {
 		if (prefix_info->valid_lifetime ==
 		    NET_IPV6_ND_INFINITE_LIFETIME) {
-			net_if_ipv6_addr_add(net_pkt_iface(pkt),
-					     &addr, NET_ADDR_AUTOCONF, 0);
+			net_if_ipv6_addr_add(iface, &addr,
+					     NET_ADDR_AUTOCONF, 0);
 		} else {
-			net_if_ipv6_addr_add(net_pkt_iface(pkt),
-					     &addr, NET_ADDR_AUTOCONF,
+			net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF,
 					     prefix_info->valid_lifetime);
 		}
+	}
+
+	/* If privacy extensions are enabled, then start the procedure for that
+	 * too.
+	 */
+	if (IS_ENABLED(CONFIG_NET_IPV6_PE) && iface->pe_enabled) {
+		net_ipv6_pe_start(iface,
+				  (const struct in6_addr *)prefix_info->prefix,
+				  prefix_info->valid_lifetime,
+				  prefix_info->preferred_lifetime);
 	}
 }
 
