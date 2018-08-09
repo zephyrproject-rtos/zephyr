@@ -39,13 +39,6 @@ endchoice
 
 if SOC_SERIES_IMX_RT
 
-config ARM_MPU_IMX_RT
-	bool "Enable MPU on i.MX RT"
-	depends on CPU_HAS_MPU
-	select ARM_MPU
-	help
-	  Enable MPU support on NXP i.MX RT series SoCs.
-
 config SOC_PART_NUMBER_MIMXRT1051CVL5A
 	bool
 
