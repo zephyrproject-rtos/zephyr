@@ -16,8 +16,11 @@ menuconfig I2C_NRFX
 
 if I2C_NRFX
 
-# Nordic TWIx0 and SPIx0 instances can not be used at the same time.
-if I2C_0 && !SPI_0
+# In most Nordic SoCs the SPI and TWI peripherals with the same instance
+# number share certain resources and cannot be used at the same time.
+# In nRF52810 there are only single instances of these peripherals and
+# they are arranged in a different way so this limitation does not apply.
+if I2C_0 && (!SPI_0 || SOC_NRF52810)
 
 choice I2C_0_NRF_TYPE
 	prompt "I2C Port 0 Driver type"
@@ -40,7 +43,7 @@ config I2C_0_NRF_TWIM
 
 endchoice
 
-endif # I2C_0 && !SPI_0
+endif # I2C_0 && (!SPI_0 || SOC_NRF52810)
 
 # Nordic TWIx1 and SPIx1 instances can not be used at the same time.
 if I2C_1 && !SPI_1
