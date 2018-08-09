@@ -18,13 +18,6 @@ config SOC_FAMILY
 	string
 	default "st_stm32"
 
-config STM32_ARM_MPU_ENABLE
-	bool "Enable MPU on STM32"
-	depends on CPU_HAS_MPU
-	select ARM_MPU
-	help
-	  Enable MPU support on STM32 SoCs
-
 source "soc/arm/st_stm32/*/Kconfig.soc"
 
 endif # SOC_FAMILY_STM32
