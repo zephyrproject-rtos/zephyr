@@ -11,7 +11,7 @@
 #include <misc/printk.h>
 #include <zephyr.h>
 
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 void main(void)
 {

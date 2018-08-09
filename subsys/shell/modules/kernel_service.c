@@ -5,7 +5,7 @@
  */
 
 #include <misc/printk.h>
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 #include <init.h>
 #include <debug/object_tracing.h>
 #include <misc/reboot.h>

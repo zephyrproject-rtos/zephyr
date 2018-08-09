@@ -4,7 +4,7 @@ zephyr_include_directories_ifdef(CONFIG_CONSOLE_SHELL
 
 zephyr_sources(
   shell_service.c
-  shell.c
+  legacy_shell.c
   )
 
 add_subdirectory(modules)

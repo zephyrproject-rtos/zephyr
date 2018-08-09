@@ -12,7 +12,7 @@
 #include <zephyr.h>
 
 #include <string.h>
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>

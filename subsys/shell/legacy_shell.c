@@ -20,7 +20,7 @@
 #include <misc/util.h>
 #include "mgmt/serial.h"
 
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 #if defined(CONFIG_NATIVE_POSIX_CONSOLE)
 #include "drivers/console/native_posix_console.h"

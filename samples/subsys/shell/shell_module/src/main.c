@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <misc/printk.h>
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 #include <version.h>
 
 static int shell_cmd_ping(int argc, char *argv[])

@@ -11,7 +11,7 @@
 #include <zephyr.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 #include <misc/printk.h>
 #include <init.h>
 

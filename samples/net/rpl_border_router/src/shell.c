@@ -11,7 +11,7 @@
 #endif
 
 #include <zephyr.h>
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 #include <stdio.h>
 
 #include "../../../subsys/net/ip/rpl.h"

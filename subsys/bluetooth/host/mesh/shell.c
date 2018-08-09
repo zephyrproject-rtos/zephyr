@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <zephyr.h>
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 #include <misc/printk.h>
 
 #include <settings/settings.h>
