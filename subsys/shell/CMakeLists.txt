@@ -18,3 +18,8 @@ zephyr_sources_ifdef(
   shell_ops.c
   shell_uart.c
   )
+
+zephyr_sources_ifdef(
+  CONFIG_SHELL_HISTORY
+  shell_history.c
+)
