@@ -7,6 +7,7 @@ source "$(SOC_DIR)/$(ARCH)/*/Kconfig.soc"
 endchoice
 
 menu "Hardware Configuration"
+osource "$(SOC_DIR)/$(ARCH)/Kconfig"
 osource "$(SOC_DIR)/$(ARCH)/*/Kconfig"
 
 endmenu

@@ -22,8 +22,7 @@ config MPU_STACK_GUARD
 config ARM_MPU
 	bool "ARM MPU Support"
 	depends on !CPU_CORTEX_M0
-	depends on CPU_HAS_MPU
-	depends on SOC_FAMILY_ARM || SOC_FAMILY_STM32 || SOC_FAMILY_NRF || SOC_FAMILY_IMX || SOC_FAMILY_SAM
+	depends on CPU_HAS_ARM_MPU
 	select ARM_CORE_MPU
 	select ARCH_HAS_EXECUTABLE_PAGE_BIT
 	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT if !(ARMV8_M_BASELINE || ARMV8_M_MAINLINE)
@@ -34,8 +33,7 @@ config ARM_MPU
 
 config NXP_MPU
 	bool "NXP MPU Support"
-	depends on CPU_HAS_MPU
-	depends on SOC_FAMILY_KINETIS
+	depends on CPU_HAS_NXP_MPU
 	select ARM_CORE_MPU
 	select ARCH_HAS_EXECUTABLE_PAGE_BIT
 	help
