@@ -119,6 +119,77 @@ config NET_IPV6_RA_RDNSS
 	  Support Router Advertisement Recursive DNS Server option.
 	  See RFC 6106 for details. The value depends on your network needs.
 
+config NET_IPV6_PE_ENABLE
+	bool "Enable privacy extension (RFC 4941) support"
+	select MBEDTLS
+	help
+	  This enables IPv6 privacy extension (RFC 4941) support.
+	  The interface identifier is randomized and SLAAC addresses
+	  generated from it will expire. This requires that applications are
+	  prepared to use new IPv6 addresses when old ones will expire.
+	  Note that you should make sure that the value of config option
+	  CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT should be large enough so that
+	  two PE generated IPv6 addresses can be added to the network interface
+	  at the same time.
+
+if NET_IPV6_PE_ENABLE
+
+config NET_IPV6_PE_FILTER_PREFIX_COUNT
+	int "Size of the IPv6 prefix filter list"
+	default 0
+	help
+	  Size of the white/black filter list of IPv6 prefixes. User can
+	  set filters at runtime and it is possible to enable or disable
+	  privacy extension support according to this filter list.
+	  By default no filters are enabled.
+
+config NET_IPV6_PE_PREFER_PUBLIC_ADDRESSES
+	bool "Prefer public preferred address over temporary one"
+	help
+	  Prefer public addresses over temporary addresses.
+
+config NET_IPV6_PE_TEMP_VALID_LIFETIME
+	int "Max lifetime for temporary address (in minutes)"
+	default 10080
+	help
+	  No temporary address should ever remain valid for longer than this
+	  value. The value is in minutes. Default value is 1 week (7*24*60).
+
+config NET_IPV6_PE_TEMP_PREFERRED_LIFETIME
+	int "Max preferred lifetime for temporary address (in minutes)"
+	default 1440
+	help
+	  No temporary address should ever remain preferred for longer than this
+	  value. The value is in minutes. Default value is 1 day (24*60).
+
+config NET_IPV6_PE_REGEN_ADVANCE
+	int "Regenerate advance time units"
+	default 5
+	help
+	  A temporary address is created only if the calculated Preferred
+	  Lifetime is greater than REGEN_ADVANCE time units.
+	  The value is in seconds.
+
+config NET_IPV6_PE_MAX_DESYNC_FACTOR
+	int "Max desync factor (in minutes)"
+	default 10
+	help
+	  This is the upper bound on DESYNC_FACTOR. The value is in minutes.
+	  The value DESYNC_FACTOR is a random value (different for each client)
+	  that ensures that clients don't synchronize with each other and
+	  generate new addresses at exactly the same time.
+
+config NET_IPV6_PE_TEMP_IDGEN_RETRIES
+	int "Max amount of failed DAD attempts"
+	default 3
+	help
+	  The node MUST perform duplicate address detection (DAD) on the
+	  generated temporary address. If after TEMP_IDGEN_RETRIES consecutive
+	  attempts no non-unique address was generated then there will be no
+	  attempt to generate temporary addresses for that interface.
+
+endif
+
 config NET_6LO
 	bool "Enable 6lowpan IPv6 Compression library"
 	default y if NET_L2_IEEE802154

@@ -65,10 +65,29 @@ struct net_if_addr {
 	/** What is the current state of the address */
 	enum net_addr_state addr_state;
 
-#if defined(CONFIG_NET_IPV6_DAD) && defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_IPV6_PE_ENABLE)
+	/** Address creation time. This is used to determine if the maximum
+	 * lifetime for this address is reached or not. The value is in seconds.
+	 */
+	u32_t addr_create_time;
+
+	/** Preferred lifetime for the address in seconds.
+	 */
+	u32_t addr_preferred_lifetime;
+
+	/** Address timeout value. This is only used if DAD needs to be redone
+	 * for this address because of earlier DAD failure. This value is in
+	 * seconds.
+	 */
+	s32_t addr_timeout;
+#endif
+
+#if defined(CONFIG_NET_IPV6_DAD)
 	/** How many times we have done DAD */
 	u8_t dad_count;
 #endif
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 	/** Is the IP address valid forever */
 	u8_t is_infinite : 1;
@@ -79,7 +98,10 @@ struct net_if_addr {
 	/** Is this IP address usage limited to the subnet (mesh) or not */
 	u8_t is_mesh_local : 1;
 
-	u8_t _unused : 5;
+	/** Is this IP address temporary and generated for example by
+	 * IPv6 privacy extension (RFC 4941)
+	 */
+	u8_t is_temporary : 1;
 };
 
 /**
@@ -464,6 +486,20 @@ struct net_if {
 
 	/** Network interface instance configuration */
 	struct net_if_config config;
+
+	/** Network interface specific flags */
+	/** Enable IPv6 privacy extension (RFC 4941), this is enabled
+	 * by default if PE support is enabled in configuration.
+	 */
+	u8_t pe_enabled : 1;
+
+	/* If PE is enabled, then this tells whether public addresses
+	 * are preferred over temporary ones for this interface.
+	 */
+	u8_t pe_prefer_public : 1;
+
+	u8_t _unused : 6;
+
 } __net_if_align;
 
 /**

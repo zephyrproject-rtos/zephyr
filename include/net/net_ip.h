@@ -1406,6 +1406,47 @@ static inline u8_t net_priority2vlan(enum net_priority priority)
  */
 const char *net_family2str(sa_family_t family);
 
+#if defined(CONFIG_NET_IPV6_PE_ENABLE)
+/**
+ * @brief Add IPv6 prefix as a privacy extension filter.
+ *
+ * @details Note that the filters can be either black listing or white listing.
+ *
+ * @param addr IPv6 prefix
+ * @param is_blacklist Tells if this filter for white listing or black listing.
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_ipv6_pe_add_filter(struct in6_addr *addr, bool is_blacklist);
+
+/**
+ * @brief Delete IPv6 prefix from privacy extension filter list.
+ *
+ * @param addr IPv6 prefix
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_ipv6_pe_del_filter(struct in6_addr *addr);
+
+#else /* CONFIG_NET_IPV6_PE_ENABLE */
+
+static inline int net_ipv6_pe_add_filter(struct in6_addr *addr,
+					 bool is_blacklist)
+{
+	ARG_UNUSED(addr);
+	ARG_UNUSED(is_blacklist);
+
+	return -ENOTSUP;
+}
+
+static inline int net_ipv6_pe_del_filter(struct in6_addr *addr)
+{
+	ARG_UNUSED(addr);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_NET_IPV6_PE_ENABLE */
+
 #ifdef __cplusplus
 }
 #endif

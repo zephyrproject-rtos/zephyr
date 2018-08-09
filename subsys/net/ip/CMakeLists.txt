@@ -30,6 +30,8 @@ zephyr_library_sources_ifdef(CONFIG_NET_IPV6         icmpv6.c nbr.c
                                                      ipv6.c ipv6_nbr.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV6_MLD     ipv6_mld.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV6_FRAGMENT     ipv6_fragment.c)
+zephyr_library_sources_ifdef(CONFIG_NET_IPV6_PE_ENABLE ipv6_pe.c)
+zephyr_library_sources_ifdef(CONFIG_NET_MGMT_EVENT   net_mgmt.c)
 zephyr_library_sources_ifdef(CONFIG_NET_ROUTE        route.c)
 zephyr_library_sources_ifdef(CONFIG_NET_STATISTICS   net_stats.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TCP          connection.c tcp.c)

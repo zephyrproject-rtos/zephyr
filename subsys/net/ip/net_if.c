@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <syscall_handler.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
@@ -275,6 +276,8 @@ static inline void init_iface(struct net_if *iface)
 	NET_DBG("On iface %p", iface);
 
 	api->init(iface);
+
+	net_ipv6_pe_init(iface);
 }
 
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
@@ -867,8 +870,8 @@ static void dad_timeout(struct k_work *work)
 	}
 }
 
-static void net_if_ipv6_start_dad(struct net_if *iface,
-				  struct net_if_addr *ifaddr)
+void net_if_ipv6_start_dad(struct net_if *iface,
+			   struct net_if_addr *ifaddr)
 {
 	ifaddr->addr_state = NET_ADDR_TENTATIVE;
 
@@ -942,6 +945,7 @@ void net_if_start_dad(struct net_if *iface)
 void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr)
 {
 	struct net_if_addr *ifaddr;
+	u32_t timeout, preferred_lifetime;
 
 	ifaddr = net_if_ipv6_addr_lookup(addr, &iface);
 	if (!ifaddr) {
@@ -952,11 +956,32 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr)
 
 	sys_slist_find_and_remove(&active_dad_timers, &ifaddr->dad_node);
 
+	if (IS_ENABLED(CONFIG_NET_IPV6_PE_ENABLE)) {
+		ifaddr->dad_count++;
+
+		timeout = ifaddr->addr_timeout;
+		preferred_lifetime = ifaddr->addr_preferred_lifetime;
+
+		if (!net_ipv6_pe_check_dad(ifaddr->dad_count)) {
+			NET_ERR("Cannot generate PE address for interface %p",
+				iface);
+			iface->pe_enabled = false;
+		}
+	}
+
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_DAD_FAILED, iface,
 					&ifaddr->address.in6_addr,
 					sizeof(struct in6_addr));
 
+	/* The old address needs to be removed from the interface before we can
+	 * start new DAD for the new PE address as the amount of address slots
+	 * is limited.
+	 */
 	net_if_ipv6_addr_rm(iface, addr);
+
+	if (IS_ENABLED(CONFIG_NET_IPV6_PE_ENABLE) && iface->pe_enabled) {
+		net_ipv6_pe_start(iface, addr, timeout, preferred_lifetime);
+	}
 }
 
 static inline void iface_ipv6_dad_init(void)
@@ -1339,8 +1364,10 @@ static inline void net_if_addr_init(struct net_if_addr *ifaddr,
 				    u32_t vlifetime)
 {
 	ifaddr->is_used = true;
+	ifaddr->is_temporary = false;
 	ifaddr->address.family = AF_INET6;
 	ifaddr->addr_type = addr_type;
+
 	net_ipaddr_copy(&ifaddr->address.in6_addr, addr);
 
 	/* FIXME - set the mcast addr for this node */

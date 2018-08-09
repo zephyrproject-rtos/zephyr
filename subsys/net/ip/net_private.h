@@ -90,6 +90,12 @@ int net_context_get_timestamp(struct net_context *context,
 			      struct net_ptp_time *timestamp);
 #endif
 
+#if defined(CONFIG_NET_IPV6_PE_ENABLE)
+/* This is needed by ipv6_pe.c when privacy extension support is enabled */
+void net_if_ipv6_start_dad(struct net_if *iface,
+			   struct net_if_addr *ifaddr);
+#endif
+
 #if defined(CONFIG_NET_GPTP)
 /**
  * @brief Initialize Precision Time Protocol Layer.
