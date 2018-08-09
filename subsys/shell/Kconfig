@@ -80,6 +80,12 @@ config SHELL_ARGC_MAX
 	  If command is composed of more than defined, argument SHELL_ARGC_MAX
 	  and follwing are passed as one argument in the string.
 
+config SHELL_WILDCARD
+	bool "Enable wildcard support in shell"
+	select FNMATCH
+	help
+	  Enables using * in shell.
+
 config SHELL_ECHO_STATUS
 	bool "Enable echo on shell"
 	default y
