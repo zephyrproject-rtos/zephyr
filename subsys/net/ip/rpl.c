@@ -3172,7 +3172,7 @@ static inline int dao_forward(struct net_if *iface,
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_iface(pkt, iface);
 
-	net_icmpv6_set_chksum(pkt, pkt->frags);
+	net_icmpv6_set_chksum(pkt);
 
 	ret = net_send_data(pkt);
 	if (ret >= 0) {
