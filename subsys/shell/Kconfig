@@ -135,6 +135,17 @@ config SHELL_HISTORY_BUFFER
 
 endif #SHELL_HISTORY
 
+config SHELL_MAX_LOG_MSG_BUFFERED
+	int "Maximal number of  log messages in FIFO"
+	default 8
+	help
+	  When amount of buffered log messages exceeds this threshold oldest
+	  messages are discarded.
+
+config SHELL_STATS
+	bool "Enable shell statistics"
+	default y
+
 config SHELL_CMDS
 	bool "Enable built-in commands"
 	default y

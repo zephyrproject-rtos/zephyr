@@ -11,7 +11,7 @@
 #include <shell/shell_types.h>
 #include <shell/shell_history.h>
 #include <shell/shell_fprintf.h>
-#include <logging/log_backend.h>
+#include <shell/shell_log_backend.h>
 #include <logging/log_instance.h>
 #include <logging/log.h>
 #include <misc/util.h>
@@ -266,6 +266,19 @@ struct shell_transport {
 	void *ctx;
 };
 
+/** @brief Shell statistics structure. */
+struct shell_stats {
+	u32_t log_lost_cnt; /*!< Lost log counter.*/
+};
+
+#if CONFIG_SHELL_STATS
+#define SHELL_STATS_DEFINE(_name) static struct shell_stats _name##_stats
+#define SHELL_STATS_PTR(_name) (&(_name##_stats))
+#else
+#define SHELL_STATS_DEFINE(_name)
+#define SHELL_STATS_PTR(_name) NULL
+#endif /* CONFIG_SHELL_STATS */
+
 /*
  * @internal @brief Flags for internal shell usage.
  */
@@ -292,6 +305,7 @@ union shell_internal {
 enum shell_signal {
 	SHELL_SIGNAL_RXRDY,
 	SHELL_SIGNAL_TXDONE,
+	SHELL_SIGNAL_LOG_MSG,
 	SHELL_SIGNAL_KILL,
 	SHELL_SIGNALS
 };
@@ -344,6 +358,10 @@ struct shell {
 
 	const struct shell_fprintf *fprintf_ctx;
 
+	struct shell_stats *stats;
+
+	const struct shell_log_backend *log_backend;
+
 	LOG_INSTANCE_PTR_DECLARE(log);
 
 	/*!< New line character, only allowed values: \\n and \\r.*/
@@ -368,11 +386,14 @@ struct shell {
 	static const struct shell _name;				     \
 	static struct shell_ctx UTIL_CAT(_name, _ctx);			     \
 	static u8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];	     \
+	SHELL_LOG_BACKEND_DEFINE(_name, _name##_out_buffer,		     \
+					 CONFIG_SHELL_PRINTF_BUFF_SIZE);     \
 	SHELL_HISTORY_DEFINE(_name, 128, 8);/*todo*/			     \
 	SHELL_FPRINTF_DEFINE(_name## _fprintf, &_name, _name##_out_buffer,   \
 			     CONFIG_SHELL_PRINTF_BUFF_SIZE,		     \
 			     true, shell_print_stream);			     \
 	LOG_INSTANCE_REGISTER(shell, _name, CONFIG_SHELL_LOG_LEVEL);	      \
+	SHELL_STATS_DEFINE(_name);					     \
 	static K_THREAD_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE);\
 	static struct k_thread _name##_thread;				     \
 	static const struct shell _name = {				     \
@@ -381,6 +402,8 @@ struct shell {
 		.ctx = &UTIL_CAT(_name, _ctx),				     \
 		.history = SHELL_HISTORY_PTR(_name),			     \
 		.fprintf_ctx = &_name##_fprintf,			     \
+		.stats = SHELL_STATS_PTR(_name),			     \
+		.log_backend = SHELL_LOG_BACKEND_PTR(_name),		     \
 		LOG_INSTANCE_PTR_INIT(log, shell, _name)		     \
 		.newline_char = newline_ch,				     \
 		.thread = &_name##_thread,				     \
