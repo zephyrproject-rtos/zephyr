@@ -118,4 +118,21 @@ config SHELL_HELP_ON_WRONG_ARGUMENT_COUNT
 	bool "Enable printing help on wrong argument count"
 	default y
 
+config SHELL_HISTORY
+	bool "Enable history in shell"
+	default y
+	help
+	  Enable commands history. History can be accessed using up and down
+	  arrows
+
+if SHELL_HISTORY
+
+config SHELL_HISTORY_BUFFER
+	int "History buffer in bytes"
+	default 1024
+	help
+	  Number of bytes dedicated for storing executed commands.
+
+endif #SHELL_HISTORY
+
 endif #SHELL

@@ -265,6 +265,89 @@ static void tab_item_print(const struct shell *shell, const char *option,
 	shell_op_cursor_horiz_move(shell, diff);
 }
 
+static void history_init(const struct shell *shell)
+{
+	if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
+		return;
+	}
+
+	shell_history_init(shell->history);
+}
+
+static void history_purge(const struct shell *shell)
+{
+	if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
+		return;
+	}
+
+	shell_history_purge(shell->history);
+}
+
+static void history_mode_exit(const struct shell *shell)
+{
+	if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
+		return;
+	}
+
+	shell_history_mode_exit(shell->history);
+}
+
+static void history_put(const struct shell *shell, u8_t *line, size_t length)
+{
+	if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
+		return;
+	}
+
+	shell_history_put(shell->history, line, length);
+}
+
+static void history_handle(const struct shell *shell, bool up)
+{
+	bool history_mode;
+	size_t len;
+
+	/*optional feature */
+	if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
+		return;
+	}
+
+	/* Backup command if history is entered */
+	if (!shell_history_active(shell->history)) {
+		if (up) {
+			u16_t cmd_len = shell_strlen(shell->ctx->cmd_buff);
+
+			if (cmd_len) {
+				strcpy(shell->ctx->temp_buff,
+				       shell->ctx->cmd_buff);
+			} else {
+				shell->ctx->temp_buff[0] = '\0';
+			}
+		} else {
+			/* Pressing 'down' not in history mode has no effect. */
+			return;
+		}
+	}
+
+	/* Start by checking if history is not empty. */
+	history_mode = shell_history_get(shell->history, true,
+					 shell->ctx->cmd_buff, &len);
+
+	/* On exiting history mode print backed up command. */
+	if (!history_mode) {
+		strcpy(shell->ctx->cmd_buff, shell->ctx->temp_buff);
+		len = shell_strlen(shell->ctx->cmd_buff);
+	}
+
+	if (len) {
+		shell_op_cursor_home_move(shell);
+		clear_eos(shell);
+		shell_fprintf(shell, SHELL_NORMAL, "%s", shell->ctx->cmd_buff);
+		shell->ctx->cmd_buff_pos = len;
+		shell->ctx->cmd_buff_len = len;
+		shell_op_cond_next_line(shell);
+	}
+}
+
 static const struct shell_static_entry *find_cmd(
 					     const struct shell_cmd_entry *cmd,
 					     size_t lvl,
@@ -333,6 +416,11 @@ static bool shell_tab_prepare(const struct shell *shell,
 	if (compl_space == 0) {
 		return false;
 	}
+
+	/* If the Tab key is pressed, "history mode" must be terminated because
+	 * tab and history handlers are sharing the same array: temp_buff.
+	 */
+	history_mode_exit(shell);
 
 	/* Copy command from its beginning to cursor position. */
 	memcpy(shell->ctx->temp_buff, shell->ctx->cmd_buff,
@@ -665,6 +753,7 @@ static void shell_state_collect(const struct shell *shell)
 		case SHELL_RECEIVE_DEFAULT:
 			if (data == shell->newline_char) {
 				if (!shell->ctx->cmd_buff_len) {
+					history_mode_exit(shell);
 					cursor_next_line_move(shell);
 				} else {
 					/* Command execution */
@@ -732,6 +821,14 @@ static void shell_state_collect(const struct shell *shell)
 			}
 
 			switch (data) {
+			case 'A': /* UP arrow */
+				history_handle(shell, true);
+				break;
+
+			case 'B': /* DOWN arrow */
+				history_handle(shell, false);
+				break;
+
 			case 'C': /* RIGHT arrow */
 				shell_op_right_arrow(shell);
 				break;
@@ -837,6 +934,9 @@ static void shell_execute(const struct shell *shell)
 	memset(&shell->ctx->active_cmd, 0, sizeof(shell->ctx->active_cmd));
 
 	cmd_trim(shell);
+
+	history_put(shell, shell->ctx->cmd_buff,
+		    shell->ctx->cmd_buff_len);
 
 	/* create argument list */
 	quote = shell_make_argv(&argc, &argv[0], shell->ctx->cmd_buff,
@@ -949,6 +1049,8 @@ static int shell_instance_init(const struct shell *shell, const void *p_config,
 		return err;
 	}
 
+	history_init(shell);
+
 	memset(shell->ctx, 0, sizeof(*shell->ctx));
 
 	if (IS_ENABLED(CONFIG_SHELL_BACKSPACE_MODE_DELETE)) {
@@ -1048,6 +1150,8 @@ static int shell_instance_uninit(const struct shell *shell)
 	if (err != 0) {
 		return err;
 	}
+
+	history_purge(shell);
 
 	shell->ctx->state = SHELL_STATE_UNINITIALIZED;
 

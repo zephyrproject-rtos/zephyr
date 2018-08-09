@@ -9,6 +9,7 @@
 
 #include <zephyr.h>
 #include <shell/shell_types.h>
+#include <shell/shell_history.h>
 #include <shell/shell_fprintf.h>
 #include <logging/log_backend.h>
 #include <logging/log_instance.h>
@@ -339,6 +340,8 @@ struct shell {
 	const struct shell_transport *iface; /*!< Transport interface.*/
 	struct shell_ctx *ctx; /*!< Internal context.*/
 
+	struct shell_history *history;
+
 	const struct shell_fprintf *fprintf_ctx;
 
 	LOG_INSTANCE_PTR_DECLARE(log);
@@ -360,26 +363,28 @@ struct shell {
  *				'\\n' or '\\r'.
  * @param[in] log_queue_size    Logger processing queue size.
  */
-#define SHELL_DEFINE(_name, shell_prefix, transport_iface,		      \
-		  newline_ch, log_queue_size)				      \
-	static const struct shell _name;				      \
-	static struct shell_ctx UTIL_CAT(_name, _ctx);			      \
-	static u8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];	      \
-	SHELL_FPRINTF_DEFINE(_name## _fprintf, &_name, _name##_out_buffer,    \
-			     CONFIG_SHELL_PRINTF_BUFF_SIZE,		      \
-			     true, shell_print_stream);			      \
+#define SHELL_DEFINE(_name, shell_prefix, transport_iface,		     \
+		  newline_ch, log_queue_size)				     \
+	static const struct shell _name;				     \
+	static struct shell_ctx UTIL_CAT(_name, _ctx);			     \
+	static u8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];	     \
+	SHELL_HISTORY_DEFINE(_name, 128, 8);/*todo*/			     \
+	SHELL_FPRINTF_DEFINE(_name## _fprintf, &_name, _name##_out_buffer,   \
+			     CONFIG_SHELL_PRINTF_BUFF_SIZE,		     \
+			     true, shell_print_stream);			     \
 	LOG_INSTANCE_REGISTER(shell, _name, CONFIG_SHELL_LOG_LEVEL);	      \
-	static struct k_thread _name##_thread;				      \
-	static K_THREAD_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE); \
-	static const struct shell _name = {				      \
-		.name = shell_prefix,					      \
-		.iface = transport_iface,				      \
-		.ctx = &UTIL_CAT(_name, _ctx),				      \
-		.fprintf_ctx = &_name##_fprintf,			      \
-		LOG_INSTANCE_PTR_INIT(log, shell, _name)		      \
-		.newline_char = newline_ch,				      \
-		.thread = &_name##_thread,				      \
-		.stack = _name##_stack					      \
+	static K_THREAD_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE);\
+	static struct k_thread _name##_thread;				     \
+	static const struct shell _name = {				     \
+		.name = shell_prefix,					     \
+		.iface = transport_iface,				     \
+		.ctx = &UTIL_CAT(_name, _ctx),				     \
+		.history = SHELL_HISTORY_PTR(_name),			     \
+		.fprintf_ctx = &_name##_fprintf,			     \
+		LOG_INSTANCE_PTR_INIT(log, shell, _name)		     \
+		.newline_char = newline_ch,				     \
+		.thread = &_name##_thread,				     \
+		.stack = _name##_stack					     \
 	}
 
 /*
