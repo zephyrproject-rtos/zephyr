@@ -9,8 +9,8 @@
 
 #include <zephyr.h>
 #include <shell/shell_types.h>
+#include <shell/shell_history.h>
 #include <shell/shell_fprintf.h>
-#include <logging/log_backend.h>
 #include <logging/log_instance.h>
 #include <logging/log.h>
 #include <misc/util.h>
@@ -335,10 +335,12 @@ extern const struct log_backend_api log_backend_shell_api;
 /**
  * @brief Shell instance internals.*/
 struct shell {
-	char const *const name; //!< Terminal name.
+	char const *const name; /*!< Terminal name. */
 
 	const struct shell_transport *iface; /*!< Transport interface.*/
 	struct shell_ctx *ctx; /*!< Internal context.*/
+
+	struct shell_history *history;
 
 	const struct shell_fprintf *fprintf_ctx;
 
@@ -365,6 +367,7 @@ struct shell {
 	static const struct shell _name;				     \
 	static struct shell_ctx UTIL_CAT(_name, _ctx);			     \
 	static u8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];	     \
+	SHELL_HISTORY_DEFINE(_name, 128, 8);/*todo*/			     \
 	SHELL_FPRINTF_DEFINE(_name## _fprintf, &_name, _name##_out_buffer,   \
 			     CONFIG_SHELL_PRINTF_BUFF_SIZE,		     \
 			     true, shell_print_stream);			     \
@@ -375,6 +378,7 @@ struct shell {
 		.name = shell_prefix,					     \
 		.iface = transport_iface,				     \
 		.ctx = &UTIL_CAT(_name, _ctx),				     \
+		.history = SHELL_HISTORY_PTR(_name),			     \
 		.fprintf_ctx = &_name##_fprintf,			     \
 		LOG_INSTANCE_PTR_INIT(log, shell, _name)		     \
 		.newline_char = newline_ch,				     \
