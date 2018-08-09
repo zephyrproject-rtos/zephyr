@@ -576,8 +576,19 @@ static inline u16_t ethernet_reserve(struct net_if *iface, void *unused)
 
 static inline int ethernet_enable(struct net_if *iface, bool state)
 {
+	const struct ethernet_api *eth =
+		net_if_get_device(iface)->driver_api;
+
 	if (!state) {
 		net_arp_clear_cache(iface);
+
+		if (eth->stop) {
+			eth->stop(net_if_get_device(iface));
+		}
+	} else {
+		if (eth->start) {
+			eth->start(net_if_get_device(iface));
+		}
 	}
 
 	return 0;
