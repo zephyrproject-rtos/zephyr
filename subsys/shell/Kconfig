@@ -7,9 +7,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+menu "Shell Options"
 
-config CONSOLE_SHELL
-	bool "Enable console input handler [ Experimental ]"
+menuconfig CONSOLE_SHELL
+	bool "Enable legacy shell [ Experimental ]"
 	select CONSOLE_HANDLER
 	select CONSOLE_SUBSYS
 	help
@@ -34,7 +35,7 @@ source "subsys/shell/modules/Kconfig"
 
 endif
 
-config SHELL
+menuconfig SHELL
 	bool "Enable shell"
 	select LOG_RUNTIME_FILTERING
 	select POLL
@@ -47,7 +48,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config SHELL_STACK_SIZE
 	int "Shell thread stack size"
-	default 1024 if MULTITHREADING
+	default 2048 if MULTITHREADING
 	default 0 if !MULTITHREADING
 	help
 	  Stack size for thread created for each instance.
@@ -89,6 +90,12 @@ config SHELL_ARGC_MAX
 	  If command is composed of more than defined, argument SHELL_ARGC_MAX
 	  and following are passed as one argument in the string.
 
+config SHELL_WILDCARD
+	bool "Enable wildcard support in shell"
+	select FNMATCH
+	help
+	  Enables using * in shell.
+
 config SHELL_ECHO_STATUS
 	bool "Enable echo on shell"
 	default y
@@ -116,6 +123,7 @@ config SHELL_HELP
 
 config SHELL_HELP_ON_WRONG_ARGUMENT_COUNT
 	bool "Enable printing help on wrong argument count"
+	depends on SHELL_HELP
 	default y
 
 config SHELL_HISTORY
@@ -163,3 +171,5 @@ config SHELL_CMDS_RESIZE
 	  Resize command can be turned off to safe code memory (~0,5k).
 
 endif #SHELL
+endmenu
+
