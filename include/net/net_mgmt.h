@@ -68,6 +68,7 @@ struct net_if;
 /* Useful generic definitions */
 #define NET_MGMT_LAYER_L2		1
 #define NET_MGMT_LAYER_L3		2
+#define NET_MGMT_LAYER_L4		3
 
 /** @endcond */
 
