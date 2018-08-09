@@ -135,4 +135,20 @@ config SHELL_HISTORY_BUFFER
 
 endif #SHELL_HISTORY
 
+config SHELL_CMDS
+	bool "Enable built-in commands"
+	default y
+	help
+	  Enable built-in commands like 'clear', 'history', etc.
+
+config SHELL_CMDS_RESIZE
+	bool "Enable resize command"
+	depends on SHELL_CMDS
+	default y
+	help
+	  By default shell assumes width of a terminal screen set to 80
+	  characters. Each time terminal screen width is changed resize command
+	  must be called to ensure correct text display on the terminal screen.
+	  Resize command can be turned off to safe code memory (~0,5k).
+
 endif #SHELL
