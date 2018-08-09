@@ -155,7 +155,7 @@ cross-compilers, the Zephyr SDK also provides prebuilt host tools.
 It is, however, possible to build without the SDK.  If you are using 3rd party
 cross compilers, jump forward to `Using 3rd Party Cross Compilers`_ for
 details.  A "3rd party cross compiler" is a toolchain that the Zephyr build
-system already knows about, such as `GCC ARM Embedded`_ that we use in this
+system already knows about, such as `GNU ARM Embedded`_ that we use in this
 document.
 
 If you are going to use custom compilers, check `Using Custom Cross Compilers`_
