@@ -1,0 +1,120 @@
+# Atmel SAM MCU family Quadrature Decoder (TC) driver configuration options
+#
+# Copyright (c) 2017 comsuisse AG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig QDEC_SAM
+	bool "Atmel SAM QDEC driver"
+	depends on SOC_FAMILY_SAM
+	default n
+	help
+	  Atmel SAM MCU family Quadrature Decoder (TC) driver.
+
+# ---------- QDEC_0 ----------
+
+config QDEC_0_SAM
+	bool "Enable QDEC_0"
+	depends on QDEC_SAM
+	default n
+	help
+	  Configure QDEC_0 at boot depending on the additional options below.
+
+config QDEC_0_SAM_NAME
+	string "Device name"
+	depends on QDEC_0_SAM
+	default "QDEC_0"
+	help
+	  Device name allows user to obtain a handle to the device object
+	  required by all driver API functions. Device name has to be unique.
+
+config QDEC_0_STEPS_PER_UNIT
+	int
+	depends on QDEC_0_SAM
+	default 24
+	help
+	  Step per unit allows to set the sensor position granularity.
+	  For angular position this parameter tells the number of steps per
+	  revolution (one complete turn). For linear position number of steps
+	  per unit of length. Currently only angular position is supported.
+
+# ---------- QDEC_1 ----------
+
+config QDEC_1_SAM
+	bool "Enable QDEC_1"
+	depends on QDEC_SAM
+	default n
+	help
+	  Configure QDEC_1 at boot depending on the additional options below.
+
+config QDEC_1_SAM_NAME
+	string "Device name"
+	depends on QDEC_1_SAM
+	default "QDEC_1"
+	help
+	  Device name allows user to obtain a handle to the device object
+	  required by all driver API functions. Device name has to be unique.
+
+config QDEC_1_STEPS_PER_UNIT
+	int
+	depends on QDEC_1_SAM
+	default 24
+	help
+	  Step per unit allows to set the sensor position granularity.
+	  For angular position this parameter tells the number of steps per
+	  revolution (one complete turn). For linear position number of steps
+	  per unit of length. Currently only angular position is supported.
+
+# ---------- QDEC_2 ----------
+
+config QDEC_2_SAM
+	bool "Enable QDEC_2"
+	depends on QDEC_SAM
+	default n
+	help
+	  Configure QDEC_2 at boot depending on the additional options below.
+
+config QDEC_2_SAM_NAME
+	string "Device name"
+	depends on QDEC_2_SAM
+	default "QDEC_2"
+	help
+	  Device name allows user to obtain a handle to the device object
+	  required by all driver API functions. Device name has to be unique.
+
+config QDEC_2_STEPS_PER_UNIT
+	int
+	depends on QDEC_2_SAM
+	default 24
+	help
+	  Step per unit allows to set the sensor position granularity.
+	  For angular position this parameter tells the number of steps per
+	  revolution (one complete turn). For linear position number of steps
+	  per unit of length. Currently only angular position is supported.
+
+# ---------- QDEC_3 ----------
+
+config QDEC_3_SAM
+	bool "Enable QDEC_3"
+	depends on QDEC_SAM
+	default n
+	help
+	  Configure QDEC_3 at boot depending on the additional options below.
+
+config QDEC_3_SAM_NAME
+	string "Device name"
+	depends on QDEC_3_SAM
+	default "QDEC_3"
+	help
+	  Device name allows user to obtain a handle to the device object
+	  required by all driver API functions. Device name has to be unique.
+
+config QDEC_3_STEPS_PER_UNIT
+	int
+	depends on QDEC_3_SAM
+	default 24
+	help
+	  Step per unit allows to set the sensor position granularity.
+	  For angular position this parameter tells the number of steps per
+	  revolution (one complete turn). For linear position number of steps
+	  per unit of length. Currently only angular position is supported.
