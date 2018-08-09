@@ -36,7 +36,9 @@
 #include <init.h>
 #include <misc/printk.h>
 #include <net/net_app.h>
+#include <net/net_event.h>
 #include <net/net_ip.h>
+#include <net/net_mgmt.h>
 #include <net/net_pkt.h>
 #include <net/udp.h>
 #include <net/coap.h>
@@ -53,7 +55,8 @@
 #include "lwm2m_rd_client.h"
 #endif
 
-#define ENGINE_UPDATE_INTERVAL K_MSEC(500)
+#define ENGINE_UPDATE_INTERVAL		K_MSEC(500)
+#define ENGINE_NET_IFACE_TIMEOUT	K_SECONDS(60)
 
 #define WELL_KNOWN_CORE_PATH	"</.well-known/core>"
 
@@ -3912,8 +3915,14 @@ static int setup_cert(struct net_app_ctx *app_ctx, void *cert)
 int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 		       char *peer_str, u16_t peer_port)
 {
+	struct net_if *iface = net_if_get_default();
 	struct sockaddr client_addr;
 	int ret = 0;
+
+	if (!iface) {
+		SYS_LOG_ERR("Cannot find default network interface!");
+		return -ENETDOWN;
+	}
 
 	/* TODO: use security object for initial setup */
 
@@ -3926,6 +3935,17 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 	client_addr.sa_family = AF_INET;
 	net_sin(&client_addr)->sin_port = htons(CONFIG_LWM2M_LOCAL_PORT);
 #endif
+
+	/* wait for network interface to be up */
+	if (!net_if_is_up(iface)) {
+		ret = net_mgmt_event_wait_on_iface(iface, NET_EVENT_IF_UP,
+						   NULL, NULL,
+						   ENGINE_NET_IFACE_TIMEOUT);
+		if (ret < 0) {
+			SYS_LOG_ERR("Wait for interface error! (%d)", ret);
+			return ret;
+		}
+	}
 
 	ret = net_app_init_udp_client(&client_ctx->net_app_ctx,
 				      &client_addr, NULL,

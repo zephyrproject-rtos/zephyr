@@ -8,6 +8,8 @@ menuconfig LWM2M
 	bool "OMA LWM2M protocol stack"
 	select COAP
 	select NET_APP_CLIENT
+	select NET_MGMT
+	select NET_MGMT_EVENT
 	select HTTP_PARSER_URL
 	help
 	  This option adds logic for managing OMA LWM2M data
