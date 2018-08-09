@@ -245,6 +245,8 @@ static int fxas21002_init(struct device *dev)
 		return -EIO;
 	}
 
+	k_sem_init(&data->sem, 0, UINT_MAX);
+
 #if CONFIG_FXAS21002_TRIGGER
 	if (fxas21002_trigger_init(dev)) {
 		SYS_LOG_ERR("Could not initialize interrupts");
@@ -263,9 +265,7 @@ static int fxas21002_init(struct device *dev)
 							FXAS21002_POWER_ACTIVE,
 							config->dr);
 	k_busy_wait(transition_time);
-
-
-	k_sem_init(&data->sem, 1, UINT_MAX);
+	k_sem_give(&data->sem);
 
 	SYS_LOG_DBG("Init complete");
 
