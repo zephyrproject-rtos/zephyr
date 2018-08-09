@@ -13,7 +13,7 @@
 #include <net_private.h>
 
 #include <device.h>
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>

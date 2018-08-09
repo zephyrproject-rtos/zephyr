@@ -20,7 +20,7 @@
 #include <misc/util.h>
 #include "mgmt/serial.h"
 
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 #if defined(CONFIG_NATIVE_POSIX_CONSOLE)
 #include "drivers/console/native_posix_console.h"
@@ -244,19 +244,16 @@ static int cmd_help(int argc, char *argv[])
 			cmd = get_standalone(cmd_str);
 			if (cmd) {
 				return show_cmd_help(cmd, true);
-			} else {
-				printk("No help found for '%s'\n", cmd_str);
-				return -EINVAL;
 			}
-		} else {
-			cmd = get_module_cmd(module, cmd_str);
-			if (cmd) {
-				return show_cmd_help(cmd, true);
-			} else {
-				printk("Unknown command '%s'\n", cmd_str);
-				return -EINVAL;
-			}
+			printk("No help found for '%s'\n", cmd_str);
+			return -EINVAL;
 		}
+		cmd = get_module_cmd(module, cmd_str);
+		if (cmd) {
+			return show_cmd_help(cmd, true);
+		}
+		printk("Unknown command '%s'\n", cmd_str);
+		return -EINVAL;
 	}
 
 module_help:
