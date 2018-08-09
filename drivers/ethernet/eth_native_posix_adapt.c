@@ -191,3 +191,13 @@ int eth_promisc_mode(const char *if_name, bool enable)
 		       if_name, enable ? "on" : "off");
 }
 #endif /* CONFIG_NET_PROMISCUOUS_MODE */
+
+int eth_if_up(const char *if_name)
+{
+	return ssystem("ip link set dev %s up", if_name);
+}
+
+int eth_if_down(const char *if_name)
+{
+	return ssystem("ip link set dev %s down", if_name);
+}

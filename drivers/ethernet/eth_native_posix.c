@@ -539,12 +539,37 @@ static int vlan_setup(struct device *dev, struct net_if *iface,
 }
 #endif /* CONFIG_NET_VLAN */
 
+static int eth_start_device(struct device *dev)
+{
+	struct eth_context *context = dev->driver_data;
+	int ret;
+
+	context->status = true;
+
+	ret = eth_if_up(context->if_name);
+
+	eth_setup_host(context->if_name);
+
+	return ret;
+}
+
+static int eth_stop_device(struct device *dev)
+{
+	struct eth_context *context = dev->driver_data;
+
+	context->status = false;
+
+	return eth_if_down(context->if_name);
+}
+
 static const struct ethernet_api eth_if_api = {
 	.iface_api.init = eth_iface_init,
 	.iface_api.send = eth_send,
 
 	.get_capabilities = eth_posix_native_get_capabilities,
 	.set_config = set_config,
+	.start = eth_start_device,
+	.stop = eth_stop_device,
 
 #if defined(CONFIG_NET_VLAN)
 	.vlan_setup = vlan_setup,
