@@ -20,11 +20,16 @@ zephyr_sources_ifdef(
   )
 
 zephyr_sources_ifdef(
+  CONFIG_SHELL_CMDS
+  shell_cmds.c
+)
+
+zephyr_sources_ifdef(
   CONFIG_SHELL_HISTORY
   shell_history.c
 )
 
 zephyr_sources_ifdef(
-  CONFIG_SHELL_CMDS
-  shell_cmds.c
+  CONFIG_LOG
+  shell_log_backend.c
 )
