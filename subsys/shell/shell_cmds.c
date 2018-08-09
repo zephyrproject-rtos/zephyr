@@ -12,6 +12,11 @@
 #define SHELL_HELP_COLORS		"Toggle colored syntax."
 #define SHELL_HELP_COLORS_OFF		"Disable colored syntax."
 #define SHELL_HELP_COLORS_ON		"Enable colored syntax."
+#define SHELL_HELP_STATISTICS		"Shell statistics."
+#define SHELL_HELP_STATISTICS_SHOW	\
+	"Get shell statistics for the Logger module."
+#define SHELL_HELP_STATISTICS_RESET	\
+	"Reset shell statistics for the Logger module."
 #define SHELL_HELP_RESIZE						\
 	"Console gets terminal screen size or assumes 80 in case "	\
 	"the readout fails. It must be executed after each terminal "	\
@@ -315,6 +320,53 @@ static void cmd_history(const struct shell *shell, size_t argc, char **argv)
 	shell->ctx->temp_buff[0] = '\0';
 }
 
+static void cmd_shell_stats(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		shell_help_print(shell, NULL, 0);
+		return;
+	}
+
+	if (argc == 2) {
+		shell_fprintf(shell, SHELL_ERROR, "%s:%s%s\r\n", argv[0],
+			      SHELL_MSG_UNKNOWN_PARAMETER, argv[1]);
+		return;
+	}
+
+	(void)shell_cmd_precheck(shell, (argc <= 2), NULL, 0);
+}
+
+static void cmd_shell_stats_show(const struct shell *shell, size_t argc,
+			       char **argv)
+{
+	if (!IS_ENABLED(CONFIG_SHELL_STATS)) {
+		shell_fprintf(shell, SHELL_ERROR, "Command not supported.\r\n");
+		return;
+	}
+
+	if (!shell_cmd_precheck(shell, (argc == 1), NULL, 0)) {
+		return;
+	}
+
+	shell_fprintf(shell, SHELL_NORMAL, "Lost logs: %u\r\n",
+		      shell->stats->log_lost_cnt);
+}
+
+static void cmd_shell_stats_reset(const struct shell *shell,
+				size_t argc, char **argv)
+{
+	if (!IS_ENABLED(CONFIG_SHELL_STATS)) {
+		shell_fprintf(shell, SHELL_ERROR, "Command not supported.\r\n");
+		return;
+	}
+
+	if (!shell_cmd_precheck(shell, (argc == 1), NULL, 0)) {
+		return;
+	}
+
+	shell->stats->log_lost_cnt = 0;
+}
+
 static void cmd_resize_default(const struct shell *shell,
 				     size_t argc, char **argv)
 {
@@ -378,10 +430,20 @@ SHELL_CREATE_STATIC_SUBCMD_SET(m_sub_echo)
 	SHELL_SUBCMD_SET_END
 };
 
+SHELL_CREATE_STATIC_SUBCMD_SET(m_sub_shell_stats)
+{
+	SHELL_CMD(reset, NULL, SHELL_HELP_STATISTICS_RESET,
+							 cmd_shell_stats_reset),
+	SHELL_CMD(show, NULL, SHELL_HELP_STATISTICS_SHOW, cmd_shell_stats_show),
+	SHELL_SUBCMD_SET_END
+};
+
 SHELL_CREATE_STATIC_SUBCMD_SET(m_sub_shell)
 {
 	SHELL_CMD(colors, &m_sub_colors, SHELL_HELP_COLORS, cmd_colors),
 	SHELL_CMD(echo, &m_sub_echo, SHELL_HELP_ECHO, cmd_echo),
+	SHELL_CMD(stats, &m_sub_shell_stats, SHELL_HELP_STATISTICS,
+		  cmd_shell_stats),
 	SHELL_SUBCMD_SET_END
 };
 

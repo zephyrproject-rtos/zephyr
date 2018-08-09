@@ -1015,6 +1015,44 @@ static void shell_transport_evt_handler(enum shell_transport_evt evt_type,
 	k_poll_signal(signal, 0);
 }
 
+static void shell_current_command_erase(const struct shell *shell)
+{
+	shell_multiline_data_calc(&shell->ctx->vt100_ctx.cons,
+				  shell->ctx->cmd_buff_pos,
+				  shell->ctx->cmd_buff_len);
+	shell_op_cursor_horiz_move(shell, -shell->ctx->vt100_ctx.cons.cur_x);
+	shell_op_cursor_vert_move(shell, shell->ctx->vt100_ctx.cons.cur_y - 1);
+
+	clear_eos(shell);
+}
+
+static void shell_current_command_print(const struct shell *shell)
+{
+	shell_fprintf(shell, SHELL_INFO, "%s", shell->name);
+
+	if (flag_echo_is_set(shell)) {
+		shell_fprintf(shell, SHELL_NORMAL, "%s", shell->ctx->cmd_buff);
+		shell_op_cursor_position_synchronize(shell);
+	}
+}
+
+static void shell_log_process(const struct shell *shell)
+{
+	bool processed;
+	int signaled;
+	int result;
+
+	do {
+		shell_current_command_erase(shell);
+		processed = shell_log_backend_process(shell->log_backend);
+		shell_current_command_print(shell);
+
+		k_poll_signal_check(&shell->ctx->signals[SHELL_SIGNAL_RXRDY],
+						    &signaled, &result);
+
+	} while (processed && !signaled);
+}
+
 static int shell_instance_init(const struct shell *shell, void const *p_config,
 			       bool use_colors) {
 	assert(shell);
@@ -1033,6 +1071,10 @@ static int shell_instance_init(const struct shell *shell, void const *p_config,
 	history_init(shell);
 
 	memset(shell->ctx, 0, sizeof(*shell->ctx));
+
+	if (IS_ENABLED(CONFIG_SHELL_STATS)) {
+		shell->stats->log_lost_cnt = 0;
+	}
 
 	shell->ctx->internal.flags.tx_rdy = 1;
 	shell->ctx->internal.flags.echo = CONFIG_SHELL_ECHO_STATUS;
@@ -1084,13 +1126,23 @@ void shell_thread(void *shell_handle, void *dummy1, void *dummy2)
 			(void)shell_instance_uninit(shell);
 
 			k_thread_abort(k_current_get());
-		} else {
+		}
+
+		k_poll_signal_check(&shell->ctx->signals[SHELL_SIGNAL_LOG_MSG],
+						    &signaled, &result);
+
+		if (!signaled) {
 			/* Other signals handled together.*/
 			k_poll_signal_reset(
 				&shell->ctx->signals[SHELL_SIGNAL_RXRDY]);
 			k_poll_signal_reset(
 				&shell->ctx->signals[SHELL_SIGNAL_TXDONE]);
 			shell_process(shell);
+		} else if (IS_ENABLED(CONFIG_LOG)){
+			k_poll_signal_reset(
+				&shell->ctx->signals[SHELL_SIGNAL_LOG_MSG]);
+			/* process log msg */
+			shell_log_process(shell);
 		}
 	}
 }
@@ -1104,6 +1156,14 @@ int shell_init(const struct shell *shell, void const *transport_config,
 	err = shell_instance_init(shell, transport_config, use_colors);
 	if (err != 0) {
 		return err;
+	}
+
+	if (log_backend)
+		{
+		if (IS_ENABLED(CONFIG_LOG)) {
+			shell_log_backend_enable(shell->log_backend,
+						 (void *)shell, init_log_level);
+		}
 	}
 
 	(void)k_thread_create(shell->thread, shell->stack,
@@ -1122,6 +1182,11 @@ static int shell_instance_uninit(const struct shell *shell)
 
 	if (flag_processing_is_set(shell)) {
 		return -EBUSY;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG)) {
+		/* todo purge log queue */
+		shell_log_backend_disable(shell->log_backend);
 	}
 
 	err = shell->iface->api->uninit(shell->iface);
