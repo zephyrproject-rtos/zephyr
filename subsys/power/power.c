@@ -11,10 +11,9 @@
 #include <soc.h>
 #include "pm_policy.h"
 
-#define LOG_MODULE_NAME power
 #define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
 #include <logging/log.h>
-LOG_MODULE_REGISTER();
+LOG_MODULE_REGISTER(power);
 
 static int post_ops_done = 1;
 static enum power_states pm_state;

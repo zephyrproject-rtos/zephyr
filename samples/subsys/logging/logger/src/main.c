@@ -14,9 +14,9 @@
 #include "ext_log_system.h"
 #include "ext_log_system_adapter.h"
 
-#define LOG_MODULE_NAME main
 #include <logging/log.h>
-LOG_MODULE_REGISTER();
+
+LOG_MODULE_REGISTER(main);
 
 /* size of stack area used by each thread */
 #define STACKSIZE 1024
