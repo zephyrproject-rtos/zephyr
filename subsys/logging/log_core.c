@@ -376,9 +376,7 @@ u32_t log_src_cnt_get(u32_t domain_id)
 
 const char *log_source_name_get(u32_t domain_id, u32_t src_id)
 {
-	assert(src_id < log_sources_count());
-
-	return log_name_get(src_id);
+	return src_id < log_sources_count() ? log_name_get(src_id) : NULL;
 }
 
 static u32_t max_filter_get(u32_t filters)

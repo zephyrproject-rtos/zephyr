@@ -263,6 +263,10 @@ config LOG_DOMAIN_ID
 	help
 	  In multicore system each application/core must have unique domain ID.
 
+config LOG_CMDS
+	bool "Enable shell commands"
+	default y if SHELL
+
 config LOG_BACKEND_UART
 	bool "Enable UART backend"
 	depends on UART_CONSOLE
