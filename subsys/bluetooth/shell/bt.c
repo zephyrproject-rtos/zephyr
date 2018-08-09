@@ -28,7 +28,7 @@
 #include <bluetooth/rfcomm.h>
 #include <bluetooth/sdp.h>
 
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 #include "bt.h"
 #include "gatt.h"

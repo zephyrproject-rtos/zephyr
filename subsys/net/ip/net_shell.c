@@ -13,7 +13,7 @@
 #include <zephyr.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 #include <net/net_if.h>
 #include <net/dns_resolve.h>

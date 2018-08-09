@@ -12,7 +12,7 @@
 
 #include <zephyr.h>
 
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 

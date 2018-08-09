@@ -205,8 +205,8 @@ void shell_register_mcumgr_handler(shell_mcumgr_function_t handler, void *arg);
 int shell_exec(char *line);
 
 /**
-* @}
-*/
+ * @}
+ */
 
 
 #ifdef CONFIG_CONSOLE_SHELL
