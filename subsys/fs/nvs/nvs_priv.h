@@ -11,9 +11,7 @@
 extern "C" {
 #endif
 
-#define SYS_LOG_DOMAIN "fs/nvs"
-#define SYS_LOG_LEVEL CONFIG_NVS_LOG_LEVEL
-#include <logging/sys_log.h>
+#include <logging/log.h>
 
 /*
  * MASKS AND SHIFT FOR ADDRESSES
