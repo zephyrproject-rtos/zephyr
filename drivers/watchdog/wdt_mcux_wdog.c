@@ -9,8 +9,8 @@
 #include <clock_control.h>
 #include <fsl_wdog.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_WDT_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_LOG_WDT_LEVEL
+#include <logging/log.h>
 
 #define MIN_TIMEOUT 4
 
@@ -34,7 +34,7 @@ static int mcux_wdog_setup(struct device *dev, u8_t options)
 	WDOG_Type *base = config->base;
 
 	if (!data->timeout_valid) {
-		SYS_LOG_ERR("No valid timeouts installed");
+		LOG_ERR("No valid timeouts installed");
 		return -EINVAL;
 	}
 
@@ -45,7 +45,7 @@ static int mcux_wdog_setup(struct device *dev, u8_t options)
 		(options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0;
 
 	WDOG_Init(base, &data->wdog_config);
-	SYS_LOG_DBG("Setup the watchdog");
+	LOG_DBG("Setup the watchdog");
 
 	return 0;
 }
@@ -58,7 +58,7 @@ static int mcux_wdog_disable(struct device *dev)
 
 	WDOG_Deinit(base);
 	data->timeout_valid = false;
-	SYS_LOG_DBG("Disabled the watchdog");
+	LOG_DBG("Disabled the watchdog");
 
 	return 0;
 }
@@ -72,7 +72,7 @@ static int mcux_wdog_install_timeout(struct device *dev,
 	u32_t clock_freq;
 
 	if (data->timeout_valid) {
-		SYS_LOG_ERR("No more timeouts can be installed");
+		LOG_ERR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 
@@ -101,7 +101,7 @@ static int mcux_wdog_install_timeout(struct device *dev,
 
 	if ((data->wdog_config.timeoutValue < MIN_TIMEOUT) ||
 	    (data->wdog_config.timeoutValue < data->wdog_config.windowValue)) {
-		SYS_LOG_ERR("Invalid timeout");
+		LOG_ERR("Invalid timeout");
 		return -EINVAL;
 	}
 
@@ -119,12 +119,12 @@ static int mcux_wdog_feed(struct device *dev, int channel_id)
 	WDOG_Type *base = config->base;
 
 	if (channel_id != 0) {
-		SYS_LOG_ERR("Invalid channel id");
+		LOG_ERR("Invalid channel id");
 		return -EINVAL;
 	}
 
 	WDOG_Refresh(base);
-	SYS_LOG_DBG("Fed the watchdog");
+	LOG_DBG("Fed the watchdog");
 
 	return 0;
 }
