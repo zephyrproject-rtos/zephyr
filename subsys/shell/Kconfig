@@ -33,3 +33,89 @@ config CONSOLE_SHELL_MAX_CMD_QUEUED
 source "subsys/shell/modules/Kconfig"
 
 endif
+
+config SHELL
+	bool "Enable shell"
+	select LOG_RUNTIME_FILTERING
+	select POLL
+
+if SHELL
+
+module = SHELL
+module-str = Shell
+source "subsys/logging/Kconfig.template.log_config"
+
+config SHELL_STACK_SIZE
+	int "Shell thread stack size"
+	default 1024 if MULTITHREADING
+	default 0 if !MULTITHREADING
+	help
+	  Stack size for thread created for each instance.
+
+config SHELL_THREAD_PRIO
+	int "Shell thread priority"
+	depends on MULTITHREADING
+	default -2
+	help
+	  Shell thread priority.
+
+config SHELL_BACKSPACE_MODE_DELETE
+	bool "Default escape code for backspace is DELETE (0x7F)"
+	default y
+	help
+	  Terminals have different escape code settings for backspace button.
+	  Some terminals send code: 0x08 (backspace) other 0x7F (delete). When
+	  this option is set shell will expect 0x7F for backspace key.
+
+config SHELL_CMD_BUFF_SIZE
+	int "Shell command buffer size"
+	default 256
+	help
+	  Maximum command size.
+
+config SHELL_PRINTF_BUFF_SIZE
+	int "Shell print buffer size"
+	default 30
+	help
+	  Maximum text buffer size for fprintf function.
+	  It is working like stdio buffering in Linux systems
+	  to limit number of peripheral access calls.
+
+config SHELL_ARGC_MAX
+	int "Maximum arguments in shell command"
+	default 12
+	help
+	  Maximum number of arguments that can build a command.
+	  If command is composed of more than defined, argument SHELL_ARGC_MAX
+	  and following are passed as one argument in the string.
+
+config SHELL_ECHO_STATUS
+	bool "Enable echo on shell"
+	default y
+	help
+	  If enabled shell prints back every input byte.
+
+config SHELL_VT100_COLORS
+	bool "Enable colors in shell"
+	default y
+	help
+	  If enabled VT100 colors are used in shell (e.g. print errors in red).
+
+config SHELL_METAKEYS
+	bool "Enable metakeys"
+	default y
+	help
+	  Enables shell metakeys: Home, End, ctrl+a, ctrl+c, ctrl+e, ctrl+l,
+	  ctrl+u, ctrl+w
+
+config SHELL_HELP
+	bool "Enable help message"
+	default y
+	help
+	  Enables formatting help message when requested with '-h' or '--help'.
+
+config SHELL_HELP_ON_WRONG_ARGUMENT_COUNT
+	bool "Enable printing help on wrong argument count"
+	default y
+
+endif #SHELL
