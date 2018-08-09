@@ -31,7 +31,6 @@ config CONSOLE_SHELL_MAX_CMD_QUEUED
 	help
 	  Maximum size of the queue for input commands.
 
-source "subsys/shell/modules/Kconfig"
 
 endif
 
@@ -174,6 +173,8 @@ config SHELL_LOG_BACKEND
 	bool
 	default y if LOG
 	default n if !LOG
+
+source "subsys/shell/modules/Kconfig"
 
 endif #SHELL
 endmenu
