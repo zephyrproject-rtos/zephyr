@@ -7,4 +7,4 @@ zephyr_sources(
   soc.c
   )
 
-zephyr_sources_ifdef(CONFIG_ARM_MPU_NRF52X mpu_regions.c)
+zephyr_sources_ifdef(CONFIG_ARM_MPU mpu_regions.c)

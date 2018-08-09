@@ -199,13 +199,6 @@ config SOC_DCDC_NRF52X
 	help
 	  Enable nRF52 series System on Chip DC/DC converter.
 
-config ARM_MPU_NRF52X
-	bool "Enable MPU on nRF52"
-	depends on CPU_HAS_MPU
-	select ARM_MPU
-	help
-	  Enable MPU support on Nordic Semiconductor nRF52x series ICs.
-
 config NFCT_PINS_AS_GPIOS
 	bool "NFCT pins as GPIOs"
 	depends on SOC_NRF52832 || SOC_NRF52840
