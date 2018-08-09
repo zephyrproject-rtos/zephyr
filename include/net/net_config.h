@@ -45,6 +45,13 @@ extern "C" {
 #define NET_CONFIG_NEED_IPV4   0x00000004
 
 /**
+ * @brief Application needs IP subsystem configured and initialized, and
+ * network connectivity established. The application does not care whether
+ * the connectivity is either IPv4 or IPv6 based.
+ */
+#define NET_CONFIG_NEED_IP_CONNECTIVITY   0x00000008
+
+/**
  * @brief Initialize this network application.
  *
  * @param app_info String describing this application.

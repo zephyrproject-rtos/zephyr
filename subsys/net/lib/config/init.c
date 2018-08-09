@@ -281,6 +281,31 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 #define setup_ipv6(...)
 #endif /* CONFIG_NET_IPV6 */
 
+#if defined(CONFIG_NET_CONFIG_NEED_IP_CONNECTIVITY)
+static struct net_mgmt_event_callback mgmt_l4_cb;
+
+static void l4_event_handler(struct net_mgmt_event_callback *cb,
+			     u32_t mgmt_event, struct net_if *iface)
+{
+	if (mgmt_event != NET_EVENT_L4_CONNECTED) {
+		return;
+	}
+
+	k_sem_take(&counter, K_NO_WAIT);
+	k_sem_give(&waiter);
+}
+
+static void setup_connectivity_monitor(struct net_if *iface, u32_t flags)
+{
+	u32_t mask = NET_EVENT_L4_CONNECTED;
+
+	net_mgmt_init_event_callback(&mgmt_l4_cb, l4_event_handler, mask);
+	net_mgmt_add_event_callback(&mgmt_l4_cb);
+}
+#else
+#define setup_connectivity_monitor(...)
+#endif
+
 int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 {
 #define LOOP_DIVIDER 10
@@ -305,6 +330,10 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 		count++;
 	}
 
+	if (flags & NET_CONFIG_NEED_IP_CONNECTIVITY) {
+		count++;
+	}
+
 	k_sem_init(&counter, count, UINT_MAX);
 
 	setup_ipv4(iface);
@@ -312,6 +341,8 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 	setup_dhcpv4(iface);
 
 	setup_ipv6(iface, flags);
+
+	setup_connectivity_monitor(iface, flags);
 
 	if (timeout < 0) {
 		count = -1;
@@ -371,6 +402,10 @@ static int init_app(struct device *device)
 
 	if (IS_ENABLED(CONFIG_NET_CONFIG_NEED_IPV4)) {
 		flags |= NET_CONFIG_NEED_IPV4;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_CONFIG_NEED_IP_CONNECTIVITY)) {
+		flags |= NET_CONFIG_NEED_IP_CONNECTIVITY;
 	}
 
 	/* Initialize the application automatically if needed */

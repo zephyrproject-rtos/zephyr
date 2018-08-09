@@ -28,6 +28,14 @@ config NET_CONFIG_INIT_TIMEOUT
 	  received within this limit, then the net_config_init() call will fail
 	  during the device startup.
 
+config NET_CONFIG_NEED_IP_CONNECTIVITY
+	bool "This application wants IP network connectivity"
+	depends on NET_CONFIG_AUTO_INIT
+	depends on NET_CONNECTION_MANAGER
+	help
+	  The application needs a network connection to function properly.
+	  It does not matter whether the connection is via IPv4 or IPv6.
+
 config NET_CONFIG_NEED_IPV6
 	bool "This application wants IPv6 support"
 	depends on NET_CONFIG_AUTO_INIT
