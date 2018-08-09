@@ -126,4 +126,17 @@ config SHELL_HISTORY_BUFFER
 	
 endif #SHELL_HISTORY
 
+config SHELL_CMDS
+	bool "Enable built-in commands"
+	default y
+	help
+	  Enable built-in commands like 'clear', 'history', etc.
+	  
+config SHELL_CMDS_RESIZE
+	bool "Enable resize command"
+	depends on SHELL_CMDS
+	default y
+	help
+	  Resize command can be turned off to safe code memory (~0,5k).
+	
 endif #SHELL
