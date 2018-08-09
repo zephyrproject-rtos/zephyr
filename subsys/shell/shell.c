@@ -10,6 +10,7 @@
 #include <shell/shell.h>
 #include "shell_utils.h"
 #include "shell_ops.h"
+#include "shell_wildcard.h"
 #include "shell_vt100.h"
 #include <assert.h>
 #include <atomic.h>
@@ -381,6 +382,15 @@ static const struct shell_static_entry *get_last_command(
 	*match_arg = SHELL_CMD_ROOT_LVL;
 
 	while (*match_arg < argc) {
+
+		if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
+			/* ignore wildcard argument */
+			if (shell_wildcard_character_exist(argv[*match_arg])) {
+				(*match_arg)++;
+				continue;
+			}
+		}
+
 		entry = find_cmd(prev_cmd, *match_arg, argv[*match_arg],
 				 d_entry);
 		if (entry) {
@@ -922,6 +932,7 @@ static void shell_execute(const struct shell *shell)
 	const struct shell_cmd_entry *p_cmd = NULL;
 	size_t cmd_lvl = SHELL_CMD_ROOT_LVL;
 	size_t cmd_with_handler_lvl = 0;
+	bool wildcard_found = false;
 	size_t cmd_idx;
 	size_t argc;
 	char quote;
@@ -937,6 +948,10 @@ static void shell_execute(const struct shell *shell)
 
 	history_put(shell, shell->ctx->cmd_buff,
 		    shell->ctx->cmd_buff_len);
+
+	if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
+		shell_wildcard_prepare(shell);
+	}
 
 	/* create argument list */
 	quote = shell_make_argv(&argc, &argv[0], shell->ctx->cmd_buff,
@@ -985,6 +1000,28 @@ static void shell_execute(const struct shell *shell)
 			break;
 		}
 
+		if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
+			enum shell_wildcard_status status;
+
+			status = shell_wildcard_process(shell, p_cmd,
+							 argv[cmd_lvl]);
+			/* Wildcard character found but there is no matching
+			 * command.
+			 */
+			if (status == SHELL_WILDCARD_CMD_NO_MATCH_FOUND) {
+				break;
+			}
+
+			/* Wildcard character was not found function can process
+			 * argument.
+			 */
+			if (status != SHELL_WILDCARD_NOT_FOUND) {
+				++cmd_lvl;
+				wildcard_found = true;
+				continue;
+			}
+		}
+
 		cmd_get(p_cmd, cmd_lvl, cmd_idx++, &p_static_entry, &d_entry);
 
 		if ((cmd_idx == 0) || (p_static_entry == NULL)) {
@@ -994,6 +1031,28 @@ static void shell_execute(const struct shell *shell)
 		if (strcmp(argv[cmd_lvl], p_static_entry->syntax) == 0) {
 			/* checking if command has a handler */
 			if (p_static_entry->handler != NULL) {
+				if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
+					if (wildcard_found) {
+						shell_op_cursor_end_move(shell);
+						shell_op_cond_next_line(shell);
+
+						/* An error occurred, fnmatch
+						 * argument cannot be followed
+						 * by argument with a handler to
+						 * avoid multiple function
+						 * calls.
+						 */
+						shell_fprintf(shell,
+							      SHELL_ERROR,
+							"Error: requested"
+							" multiple function"
+							" executions\r\n");
+						help_flag_clear(shell);
+
+						return;
+					}
+				}
+
 				shell->ctx->active_cmd = *p_static_entry;
 				cmd_with_handler_lvl = cmd_lvl;
 			}
@@ -1002,6 +1061,17 @@ static void shell_execute(const struct shell *shell)
 			cmd_idx = 0;
 			p_cmd = p_static_entry->subcmd;
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
+		shell_wildcard_finalize(shell);
+		/* cmd_buffer has been overwritten by function finalize function
+		 * with all expanded commands. Hence shell_make_argv needs to
+		 * be called again.
+		 */
+		(void)shell_make_argv(&argc, &argv[0],
+				      shell->ctx->cmd_buff,
+				      CONFIG_SHELL_ARGC_MAX);
 	}
 
 	/* Executing the deepest found handler. */
