@@ -9,10 +9,9 @@
 #include <soc.h>
 #include "pm_policy.h"
 
-#define LOG_MODULE_NAME power
 #define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
 #include <logging/log.h>
-LOG_MODULE_DECLARE();
+LOG_MODULE_DECLARE(power);
 
 #ifdef CONFIG_TICKLESS_KERNEL
 #define SECS_TO_TICKS		CONFIG_TICKLESS_KERNEL_TIME_UNIT_IN_MICRO_SECS

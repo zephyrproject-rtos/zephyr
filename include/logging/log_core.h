@@ -98,7 +98,7 @@ extern "C" {
 #define LOG_CURRENT_MODULE_ID()						\
 	_LOG_EVAL(							\
 	  _LOG_LEVEL(),							\
-	  (log_const_source_id(&LOG_ITEM_CONST_DATA(LOG_MODULE_NAME))),	\
+	  (log_const_source_id(__log_current_const_data_get())),	\
 	  (0)								\
 	)
 
@@ -109,7 +109,7 @@ extern "C" {
 #define LOG_CURRENT_DYNAMIC_DATA_ADDR()			\
 	_LOG_EVAL(					\
 	  _LOG_LEVEL(),					\
-	  (&LOG_ITEM_DYNAMIC_DATA(LOG_MODULE_NAME)),	\
+	  (__log_current_dynamic_data_get()),		\
 	  ((struct log_source_dynamic_data *)0)		\
 	)
 

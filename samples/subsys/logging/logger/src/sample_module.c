@@ -7,7 +7,8 @@
 
 #define LOG_MODULE_NAME foo
 #include <logging/log.h>
-LOG_MODULE_REGISTER();
+
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 const char *sample_module_name_get(void)
 {

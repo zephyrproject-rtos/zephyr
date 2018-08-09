@@ -261,7 +261,12 @@ int log_printk(const char *fmt, va_list ap);
 	__attribute__ ((section("." STRINGIFY(				\
 				     LOG_ITEM_DYNAMIC_DATA(_name))))	\
 				     )					\
-	__attribute__((used))
+	__attribute__((used));						\
+	static inline const struct log_source_dynamic_data  *		\
+				__log_current_dynamic_data_get(void)	\
+	{								\
+		return &LOG_ITEM_DYNAMIC_DATA(_name);			\
+	}
 
 #define _LOG_RUNTIME_MODULE_REGISTER(_name)				\
 	_LOG_EVAL(							\
@@ -277,7 +282,12 @@ int log_printk(const char *fmt, va_list ap);
 		.name = STRINGIFY(_name),				     \
 		.level = _level						     \
 	}								     \
-	_LOG_RUNTIME_MODULE_REGISTER(_name)
+	_LOG_RUNTIME_MODULE_REGISTER(_name);				     \
+	static inline const struct log_source_const_data *		     \
+				__log_current_const_data_get(void)	     \
+	{								     \
+		return &LOG_ITEM_CONST_DATA(_name);			     \
+	}
 
 /**
  * @brief Create module-specific state and register the module with Logger.
@@ -298,10 +308,10 @@ int log_printk(const char *fmt, va_list ap);
  *       In other cases, this macro has no effect.
  * @see LOG_MODULE_DECLARE
  */
-#define LOG_MODULE_REGISTER()						\
+#define LOG_MODULE_REGISTER(log_module_name)				\
 	_LOG_EVAL(							\
 		_LOG_LEVEL(),						\
-		(_LOG_MODULE_REGISTER(LOG_MODULE_NAME, _LOG_LEVEL())),	\
+		(_LOG_MODULE_REGISTER(log_module_name, _LOG_LEVEL())),	\
 		()/*Empty*/						\
 	)
 
@@ -336,10 +346,10 @@ int log_printk(const char *fmt, va_list ap);
  *       this macro has no effect.
  * @see LOG_MODULE_REGISTER
  */
-#define LOG_MODULE_DECLARE()						\
+#define LOG_MODULE_DECLARE(log_module_name)				\
 	_LOG_EVAL(							\
 		_LOG_LEVEL(),						\
-		(_LOG_MODULE_DECLARE(LOG_MODULE_NAME, _LOG_LEVEL())),	\
+		(_LOG_MODULE_DECLARE(log_module_name, _LOG_LEVEL())),	\
 		()							\
 		)							\
 
