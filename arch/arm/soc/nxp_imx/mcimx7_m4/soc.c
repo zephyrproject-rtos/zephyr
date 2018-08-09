@@ -69,6 +69,13 @@ static void nxp_mcimx7_gpio_config(void)
 	CCM_ControlGate(CCM, ccmCcgrGateGpio2, ccmClockNeededRunWait);
 #endif /* CONFIG_GPIO_IMX_PORT_2 */
 
+
+#ifdef CONFIG_GPIO_IMX_PORT_7
+	RDC_SetPdapAccess(RDC, rdcPdapGpio7, GPIO_7_RDC, false, false);
+	/* Enable gpio clock gate */
+	CCM_ControlGate(CCM, ccmCcgrGateGpio7, ccmClockNeededRunWait);
+#endif /* CONFIG_GPIO_IMX_PORT_2 */
+
 }
 #endif /* CONFIG_GPIO_IMX */
 
@@ -91,6 +98,20 @@ static void nxp_mcimx7_uart_config(void)
 	CCM_ControlGate(CCM, ccmCcgrGateUart2, ccmClockNeededAll);
 #endif /* #ifdef CONFIG_UART_IMX_UART_2 */
 
+#ifdef CONFIG_UART_IMX_UART_6
+	/* We need to grasp board uart exclusively */
+	RDC_SetPdapAccess(RDC, rdcPdapUart6, UART_6_RDC, false, false);
+	/* Select clock derived from OSC clock(24M) */
+	CCM_UpdateRoot(CCM, ccmRootUart6, ccmRootmuxUartOsc24m, 0, 0);
+	/* Enable uart clock */
+	CCM_EnableRoot(CCM, ccmRootUart6);
+	/*
+	 * IC Limitation
+	 * M4 stop will cause A7 UART lose functionality
+	 * So we need UART clock all the time
+	 */
+	CCM_ControlGate(CCM, ccmCcgrGateUart6, ccmClockNeededAll);
+#endif /* #ifdef CONFIG_UART_IMX_UART_6 */
 }
 #endif /* CONFIG_UART_IMX */
 
