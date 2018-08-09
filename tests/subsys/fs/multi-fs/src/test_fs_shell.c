@@ -13,7 +13,7 @@
 #include <ztest.h>
 
 #include "test_fs_shell.h"
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 static void test_shell_exec(const char *line, int result)
 {
