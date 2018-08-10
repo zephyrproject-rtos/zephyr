@@ -20,15 +20,8 @@ extern "C" {
  * Include arch/cpu.h instead
  */
 
-#ifdef _ASMLANGUAGE
+#ifndef _ASMLANGUAGE
 
-#define _SCS_BASE_ADDR _PPB_INT_SCS
-#define _SCS_ICSR (_SCS_BASE_ADDR + 0xd04)
-#define _SCS_ICSR_PENDSV (1 << 28)
-#define _SCS_ICSR_UNPENDSV (1 << 27)
-#define _SCS_ICSR_RETTOBASE (1 << 11)
-
-#else /* !_ASMLANGUAGE */
 #include <zephyr/types.h>
 #include <arch/arm/exc.h>
 #include <irq.h>
