@@ -80,8 +80,4 @@ GEN_ABSOLUTE_SYM(K_THREAD_SIZEOF, sizeof(struct k_thread));
 /* size of the device structure. Used by linker scripts */
 GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_SIZE, sizeof(struct device));
 
-/* Access to enum values in asm code */
-GEN_ABSOLUTE_SYM(_SYSCALL_LIMIT, K_SYSCALL_LIMIT);
-GEN_ABSOLUTE_SYM(_SYSCALL_BAD, K_SYSCALL_BAD);
-
 #endif /* _kernel_offsets__h_ */

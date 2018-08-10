@@ -16,6 +16,7 @@
 #include <offsets_short.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
+#include <syscall.h>
 
 _ASM_FILE_PROLOGUE
 
@@ -387,13 +388,13 @@ _do_syscall:
     str r1, [r0, #24]   /* overwrite the LR to point to _arm_do_syscall */
 
     /* validate syscall limit, only set priv mode if valid */
-    ldr ip, =_SYSCALL_LIMIT
+    ldr ip, =K_SYSCALL_LIMIT
     cmp r6, ip
     blt valid_syscall_id
 
     /* bad syscall id.  Set arg0 to bad id and set call_id to SYSCALL_BAD */
     str r6, [r0, #0]
-    ldr r6, =_SYSCALL_BAD
+    ldr r6, =K_SYSCALL_BAD
 
 valid_syscall_id:
     /* set mode to privileged, r2 still contains value from CONTROL */

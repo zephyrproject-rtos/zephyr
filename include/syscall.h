@@ -8,11 +8,12 @@
 #ifndef _ZEPHYR_SYSCALL_H_
 #define _ZEPHYR_SYSCALL_H_
 
+#include <syscall_list.h>
+#include <arch/syscall.h>
+
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
-#include <syscall_list.h>
 #include <syscall_macros.h>
-#include <arch/syscall.h>
 
 #ifdef __cplusplus
 extern "C" {
