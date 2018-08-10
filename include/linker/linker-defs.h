@@ -22,6 +22,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <misc/util.h>
+#include <offsets.h>
 
 /* include platform dependent linker-defs */
 #ifdef CONFIG_X86
@@ -52,7 +53,7 @@
  */
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #define DEVICE_COUNT \
-	((__device_init_end - __device_init_start) / _DEVICE_STRUCT_SIZE)
+	((__device_init_end - __device_init_start) / _DEVICE_STRUCT_SIZEOF)
 #define DEV_BUSY_SZ	(((DEVICE_COUNT + 31) / 32) * 4)
 #define DEVICE_BUSY_BITFIELD()			\
 		FILL(0x00) ;			\
