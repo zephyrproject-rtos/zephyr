@@ -8,7 +8,7 @@
 #include <arch/x86/asm.h>
 #include <arch/cpu.h>
 #include <offsets_short.h>
-#include <arch/x86/syscall.h>
+#include <syscall.h>
 
 /* Exports */
 GTEXT(_x86_syscall_entry_stub)
@@ -31,7 +31,7 @@ SECTION_FUNC(TEXT, _x86_syscall_entry_stub)
 	/* call_id is in ESI. bounds-check it, must be less than
 	 * K_SYSCALL_LIMIT
 	 */
-	cmp	$_SYSCALL_LIMIT, %esi
+	cmp	$K_SYSCALL_LIMIT, %esi
 	jae	_bad_syscall
 
 _id_ok:
@@ -83,7 +83,7 @@ _bad_syscall:
 	 * anyway, it's going to generate a kernel oops
 	 */
 	mov	%esi, %eax
-	mov	$_SYSCALL_BAD, %esi
+	mov	$K_SYSCALL_BAD, %esi
 	jmp	_id_ok
 
 

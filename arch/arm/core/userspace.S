@@ -126,7 +126,7 @@ SECTION_FUNC(TEXT, _arm_do_syscall)
      * r6 contains call_id
      * r8 contains original LR
      */
-    ldr ip, =_SYSCALL_BAD
+    ldr ip, =K_SYSCALL_BAD
     cmp r6, ip
     bne valid_syscall
 
