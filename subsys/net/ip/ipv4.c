@@ -85,7 +85,7 @@ void net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 			   next_header_proto == IPPROTO_TCP) {
 			net_tcp_set_chksum(pkt, pkt->frags);
 		} else if (next_header_proto == IPPROTO_ICMP) {
-			net_icmpv4_set_chksum(pkt, pkt->frags);
+			net_icmpv4_set_chksum(pkt);
 		}
 	}
 }
