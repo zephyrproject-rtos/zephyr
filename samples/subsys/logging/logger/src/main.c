@@ -6,6 +6,7 @@
 
 #include <zephyr.h>
 #include <string.h>
+#include <stdio.h>
 #include <misc/printk.h>
 #include <logging/log_ctrl.h>
 #include <soc.h>
@@ -151,6 +152,35 @@ static void severity_levels_showcase(void)
 	LOG_DBG("Debug message example.");
 }
 
+static void log_strdup_showcase(void)
+{
+	static const char const_str[] = "const string";
+	char transient_str[] = "transient_string";
+	char *buf_str = log_malloc(CONFIG_LOG_STRDUP_MAX_STRING);
+
+	snprintf(buf_str, CONFIG_LOG_STRDUP_MAX_STRING, "test string");
+
+	printk("String logging showcase.\n");
+
+	LOG_INF("String logging example. %s, %s, %s.",
+		const_str,
+		/* Implicit string variable must be wrapped around with
+		 * LOG_STR() macro.
+		 */
+		log_str("implicit string variable"),
+		/* Transiend string must be wrapped around LOG_STRDUP() macro
+		 * which allocate a buffer and copies string into it. Allocated
+		 * buffer is freed together with associated log message.
+		 */
+		log_strdup(transient_str));
+
+	/* Overwrite transient string to showcase that log has a copy. */
+	transient_str[0] = '\0';
+
+	LOG_INF("String from buffer allocated with log_malloc: %s",
+		log_strbuf(buf_str));
+
+}
 /**
  * @brief Function demonstrates how fast data can be logged.
  *
@@ -229,6 +259,10 @@ void log_demo_thread(void *dummy1, void *dummy2, void *dummy3)
 	wait_on_log_flushed();
 
 	severity_levels_showcase();
+
+	wait_on_log_flushed();
+
+	log_strdup_showcase();
 
 	wait_on_log_flushed();
 

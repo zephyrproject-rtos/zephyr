@@ -256,11 +256,14 @@ static void test_log_arguments(void)
 	LOG_INF("test %d %d %d %d", 1, 2, 3, 4);
 	LOG_INF("test %d %d %d %d %d", 1, 2, 3, 4, 5);
 	LOG_INF("test %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6);
+	LOG_INF("test %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7);
+	LOG_INF("test %d %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7, 8);
+	LOG_INF("test %d %d %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7, 8, 9);
 
 	while (log_process(false)) {
 	}
 
-	zassert_equal(7,
+	zassert_equal(10,
 		      backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 }
@@ -293,6 +296,34 @@ static void test_log_panic(void)
 		      "Unexpected amount of messages received by the backend.");
 }
 
+/*
+ * Test checks if conversion between bitfields and structure is correct.
+ */
+static void test_metadata_handling(void)
+{
+	union log_msg_ids_u src_level;
+	u32_t metadata = _LOG_STD_METADATA(555, 3);
+
+	if (IS_ENABLED(CONFIG_DATA_ENDIANNESS_LITTLE)) {
+		/* In little endian bits can be directly casted to struct. */
+		src_level.raw = (u16_t)metadata;
+	} else {
+		src_level.ids.source_id =
+				_LOG_STD_METADATA_SOURCE_ID_GET(metadata);
+		src_level.ids.domain_id =
+				_LOG_STD_METADATA_DOMAIN_ID_GET(metadata);
+		src_level.ids.level =
+				_LOG_STD_METADATA_LEVEL_GET(metadata);
+	}
+
+	zassert_equal(src_level.ids.source_id, 555,
+		      "Unexpected source_id value.");
+	zassert_equal(src_level.ids.level, 3,
+		      "Unexpected source_id value.");
+	zassert_equal(src_level.ids.domain_id, CONFIG_LOG_DOMAIN_ID,
+		      "Unexpected source_id value.");
+}
+
 /*test case main entry*/
 void test_main(void)
 {
@@ -300,6 +331,7 @@ void test_main(void)
 			 ztest_unit_test(test_log_backend_runtime_filtering),
 			 ztest_unit_test(test_log_overflow),
 			 ztest_unit_test(test_log_arguments),
-			 ztest_unit_test(test_log_panic));
+			 ztest_unit_test(test_log_panic),
+			 ztest_unit_test(test_metadata_handling));
 	ztest_run_test_suite(test_log_list);
 }

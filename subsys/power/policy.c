@@ -91,7 +91,7 @@ int sys_pm_policy_next_state(s32_t ticks, enum power_states *pm_state)
 
 	*pm_state = pm_policy[i].pm_state;
 	LOG_DBG("pm_state: %d, min_residency: %d, idx: %d\n",
-				*pm_state, pm_policy[i].min_residency, i);
+			LOG_WRAP(*pm_state), pm_policy[i].min_residency, i);
 
 	return pm_policy[i].sys_state;
 }
