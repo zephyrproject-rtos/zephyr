@@ -68,10 +68,12 @@ struct net_if_addr {
 #endif
 
 	/** Is the IP address valid forever */
-	bool is_infinite;
+	u8_t is_infinite : 1;
 
 	/** Is this IP address used or not */
-	bool is_used;
+	u8_t is_used : 1;
+
+	u8_t _unused : 6;
 };
 
 /**
@@ -109,10 +111,12 @@ struct net_if_ipv6_prefix {
 	u8_t len;
 
 	/** Is the IP prefix valid forever */
-	bool is_infinite;
+	u8_t is_infinite : 1;
 
 	/** Is this prefix used or not */
-	bool is_used;
+	u8_t is_used : 1;
+
+	u8_t _unused : 6;
 };
 #endif /* CONFIG_NET_IPV6 */
 
@@ -132,13 +136,15 @@ struct net_if_router {
 	struct net_if *iface;
 
 	/** Is this router used or not */
-	bool is_used;
+	u8_t is_used : 1;
 
 	/** Is default router */
-	bool is_default;
+	u8_t is_default : 1;
 
 	/** Is the router valid forever */
-	bool is_infinite;
+	u8_t is_infinite : 1;
+
+	u8_t _unused : 5;
 };
 
 /*
