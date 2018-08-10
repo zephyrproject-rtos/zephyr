@@ -33,6 +33,7 @@
 #include <arch/arm/asm_inline.h>
 
 #ifdef CONFIG_CPU_CORTEX_M
+#include <arch/arm/cortex_m/cpu.h>
 #include <arch/arm/cortex_m/memory_map.h>
 #endif
 
