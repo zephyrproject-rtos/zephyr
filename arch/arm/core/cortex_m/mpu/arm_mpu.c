@@ -103,6 +103,13 @@ static inline int _get_region_attr_by_type(arm_mpu_region_attr_t *p_attr,
 		return 0;
 #endif
 	default:
+		/* Assert on MPU region types not supported in the
+		 * implementation.  If asserts are disabled, the error
+		 * can be tracked by the returned status (-EINVAL).
+		 */
+		__ASSERT(0,
+			"Failed to derive attributes for MPU region type %u\n",
+			type);
 		/* Size 0 region */
 		return -EINVAL;
 	}
