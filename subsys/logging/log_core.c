@@ -9,6 +9,7 @@
 #include <logging/log_backend.h>
 #include <logging/log_ctrl.h>
 #include <logging/log_output.h>
+#include <logging/log_backend_uart.h>
 #include <misc/printk.h>
 #include <assert.h>
 #include <atomic.h>
@@ -18,8 +19,10 @@
 #endif
 
 #ifdef CONFIG_LOG_BACKEND_UART
-#include <logging/log_backend_uart.h>
 LOG_BACKEND_UART_DEFINE(log_backend_uart);
+const struct log_backend *uart_backend = &log_backend_uart;
+#else
+const struct log_backend *uart_backend;
 #endif
 
 static struct log_list_t list;
@@ -215,11 +218,6 @@ void log_core_init(void)
 }
 
 /*
- * This ifdef is needed to avoid -Werror=unused-function failures in unit tests
- * when no backends are enabled.
- */
-#ifdef CONFIG_LOG_BACKEND_UART
-/*
  * Initialize a backend's runtime filters to match the compile-time
  * settings.
  *
@@ -241,7 +239,6 @@ static void backend_filter_init(struct log_backend const *const backend)
 		}
 	}
 }
-#endif
 
 void log_init(void)
 {
@@ -262,11 +259,11 @@ void log_init(void)
 				   i + LOG_FILTER_FIRST_BACKEND_SLOT_IDX);
 	}
 
-#ifdef CONFIG_LOG_BACKEND_UART
-	backend_filter_init(&log_backend_uart);
-	log_backend_uart_init();
-	log_backend_activate(&log_backend_uart, NULL);
-#endif
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_UART)) {
+		backend_filter_init(uart_backend);
+		log_backend_uart_init();
+		log_backend_activate(uart_backend, NULL);
+	}
 }
 
 static void thread_set(k_tid_t process_tid)
