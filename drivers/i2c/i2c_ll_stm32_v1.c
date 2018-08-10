@@ -17,8 +17,9 @@
 #include <i2c.h>
 #include "i2c_ll_stm32.h"
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(i2c_ll_stm32);
 
 #define I2C_REQUEST_WRITE	0x00
 #define I2C_REQUEST_READ	0x01
@@ -242,11 +243,10 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	if (data->current.is_nack || data->current.is_err) {
 
 		if (data->current.is_nack)
-			SYS_LOG_DBG("%s: NACK", __func__);
+			LOG_DBG("%s: NACK", __func__);
 
 		if (data->current.is_err)
-			SYS_LOG_DBG("%s: ERR %d", __func__,
-				    data->current.is_err);
+			LOG_DBG("%s: ERR %d", __func__, data->current.is_err);
 
 		data->current.is_nack = 0;
 		data->current.is_err = 0;
@@ -287,7 +287,7 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 
 	LL_I2C_DisableIT_BUF(i2c);
 	if (data->current.is_err) {
-		SYS_LOG_DBG("%s: ERR %d", __func__, data->current.is_err);
+		LOG_DBG("%s: ERR %d", __func__, data->current.is_err);
 		data->current.is_err = 0;
 		ret = -EIO;
 	}
@@ -338,7 +338,7 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 			if (LL_I2C_IsActiveFlag_AF(i2c)) {
 				LL_I2C_ClearFlag_AF(i2c);
 				LL_I2C_GenerateStopCondition(i2c);
-				SYS_LOG_DBG("%s: NACK", __func__);
+				LOG_DBG("%s: NACK", __func__);
 
 				return -EIO;
 			}
@@ -354,7 +354,7 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 			if (LL_I2C_IsActiveFlag_AF(i2c)) {
 				LL_I2C_ClearFlag_AF(i2c);
 				LL_I2C_GenerateStopCondition(i2c);
-				SYS_LOG_DBG("%s: NACK", __func__);
+				LOG_DBG("%s: NACK", __func__);
 
 				return -EIO;
 			}
@@ -424,7 +424,7 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 			if (LL_I2C_IsActiveFlag_AF(i2c)) {
 				LL_I2C_ClearFlag_AF(i2c);
 				LL_I2C_GenerateStopCondition(i2c);
-				SYS_LOG_DBG("%s: NACK", __func__);
+				LOG_DBG("%s: NACK", __func__);
 
 				return -EIO;
 			}
