@@ -392,12 +392,13 @@ static void iface_cb(struct net_if *iface, void *user_data)
 			continue;
 		}
 
-		PR("\t%s %s %s%s%s\n",
+		PR("\t%s %s %s%s%s%s\n",
 		   net_sprint_ipv6_addr(&unicast->address.in6_addr),
 		   addrtype2str(unicast->addr_type),
 		   addrstate2str(unicast->addr_state),
 		   unicast->is_infinite ? " infinite" : "",
-		   unicast->is_mesh_local ? " meshlocal" : "");
+		   unicast->is_mesh_local ? " meshlocal" : "",
+		   unicast->is_temporary ? " temporary" : "");
 		count++;
 	}
 
@@ -452,6 +453,12 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		   net_sprint_ipv6_addr(&router->address.in6_addr),
 		   router->is_infinite ? " infinite" : "");
 	}
+
+#if defined(CONFIG_NET_IPV6_PE_ENABLE)
+	printk("IPv6 privacy extension   : %s (preferring %s addresses)\n",
+	       iface->pe_enabled ? "enabled" : "disabled",
+	       iface->pe_prefer_public ? "public" : "temporary");
+#endif
 
 	if (ipv6) {
 		PR("IPv6 hop limit           : %d\n",
@@ -2332,6 +2339,26 @@ static u32_t time_diff(u32_t time1, u32_t time2)
 	return (u32_t)abs((s32_t)time1 - (s32_t)time2);
 }
 
+#if defined(CONFIG_NET_IPV6_PE_ENABLE)
+static void ipv6_pe_filter_cb(struct in6_addr *prefix, bool is_blacklist,
+			      void *user_data)
+{
+	char ipaddr[INET6_ADDRSTRLEN + 1];
+	int *count = user_data;
+
+	net_addr_ntop(AF_INET6, prefix, ipaddr, sizeof(ipaddr) - 1);
+
+	if ((*count) == 0) {
+		printk("IPv6 privacy extension %s list filters :\n",
+		       is_blacklist ? "black" : "white");
+	}
+
+	printk("[%d] %s/64\n", *count, ipaddr);
+
+	(*count)++;
+}
+#endif /* CONFIG_NET_IPV6_PE_ENABLE */
+
 static void address_lifetime_cb(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
@@ -2386,13 +2413,14 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 				 "%u", (u32_t)(remaining / 1000U));
 		}
 
-		PR("%s  \t%s\t%s    \t%s/%d\n",
+		PR("%s  \t%s\t%s    \t%s/%d%s\n",
 		       addrtype2str(ipv6->unicast[i].addr_type),
 		       addrstate2str(ipv6->unicast[i].addr_state),
 		       remaining_str,
 		       net_sprint_ipv6_addr(
 			       &ipv6->unicast[i].address.in6_addr),
-		       prefix_len);
+		       prefix_len,
+		       ipv6->unicast[i].is_temporary ? " (temporary)" : "");
 	}
 }
 #endif /* CONFIG_NET_NATIVE_IPV6 */
@@ -2401,6 +2429,15 @@ static int cmd_net_ipv6(const struct shell *shell, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_NATIVE_IPV6)
 	struct net_shell_user_data user_data;
+	int arg = 0;
+
+#if defined(CONFIG_NET_IPV6_PE_ENABLE)
+	int ret;
+#endif
+
+	if (argc > 1) {
+		goto skip_summary;
+	}
 #endif
 
 	PR("IPv6 support                              : %s\n",
@@ -2440,6 +2477,20 @@ static int cmd_net_ipv6(const struct shell *shell, size_t argc, char *argv[])
 		   "disabled");
 	}
 
+	PR("Privacy extension support                 : %s\n",
+	   IS_ENABLED(CONFIG_NET_IPV6_PE_ENABLE) ? "enabled" :
+	   "disabled");
+
+#if defined(CONFIG_NET_IPV6_PE_ENABLE)
+	ret = 0;
+
+	net_ipv6_pe_filter_foreach(ipv6_pe_filter_cb, &ret);
+
+	PR("Max number of IPv6 privacy extension filters "
+	   "                : %d\n",
+	   CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT);
+#endif
+
 	PR("Max number of IPv6 network interfaces "
 	   "in the system          : %d\n",
 	   CONFIG_NET_IF_MAX_IPV6_COUNT);
@@ -2458,7 +2509,96 @@ static int cmd_net_ipv6(const struct shell *shell, size_t argc, char *argv[])
 
 	/* Print information about address lifetime */
 	net_if_foreach(address_lifetime_cb, &user_data);
+
+	if (argc <= 1) {
+		return 0;
+	}
+
+skip_summary:
+
+	if (strcmp(argv[arg], "pe") == 0) {
+#if CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0
+		bool do_whitelisting = true;
+		struct in6_addr prefix;
+		bool do_add;
+
+		arg++;
+
+		if (!argv[arg]) {
+			PR("No sub-options given. See \"help net ipv6\" "
+			   "command for details.\n");
+			return 0;
+		}
+
+		if (strcmp(argv[arg], "add") == 0) {
+			arg++;
+			do_add = true;
+		} else if (strcmp(argv[arg], "del") == 0) {
+			arg++;
+			do_add = false;
+		} else {
+			PR("Unknown sub-option \"%s\"\n", argv[arg]);
+			return 0;
+		}
+
+		if (!argv[arg]) {
+			PR("No sub-options given. See \"help net ipv6\" "
+			   "command for details.\n");
+			return 0;
+		}
+
+		if (strcmp(argv[arg], "white") == 0) {
+			arg++;
+		} else if (strcmp(argv[arg], "black") == 0) {
+			arg++;
+			do_whitelisting = false;
+		}
+
+		if (!argv[arg]) {
+			PR("No sub-options given. See \"help net ipv6\" "
+			   "command for details.\n");
+			return 0;
+		}
+
+		ret = net_addr_pton(AF_INET6, argv[arg], &prefix);
+		if (ret < 0) {
+			PR("Invalid prefix \"%s\"\n", argv[arg]);
+			if (strstr(argv[arg], "/")) {
+				PR("Do not add the prefix length.\n");
+			}
+
+			return 0;
+		}
+
+		if (do_add) {
+			ret = net_ipv6_pe_add_filter(&prefix, !do_whitelisting);
+		} else {
+			ret = net_ipv6_pe_del_filter(&prefix);
+		}
+
+		if (ret < 0) {
+			PR("Cannot %s %s %sfilter (%d)\n",
+			   do_add ? "add" : "delete",
+			   argv[arg],
+			   do_add ?
+			   (do_whitelisting ? "whitelist " :
+			    "blacklist ") : "",
+			   ret);
+			return 0;
+		}
+
+		PR("%s %sfilter for %s\n", do_add ? "Added" : "Deleted",
+		   do_add ?
+		   (do_whitelisting ? "whitelist " : "blacklist ") : "",
+		   argv[arg]);
+#else
+		PR("IPv6 privacy extension filter support is disabled.\n");
+		PR("Set CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0 to "
+		   "enable it.\n");
 #endif
+#endif /* CONFIG_NET_NATIVE_IPV6 */
+		return 0;
+	}
 
 	return 0;
 }
@@ -3958,6 +4098,19 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_gptp,
 	SHELL_SUBCMD_SET_END
 );
 
+SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ipv6,
+	SHELL_CMD(pe, NULL,
+		  "net ipv6 pe add [black|white] <IPv6 prefix>\n"
+		  "Add IPv6 address to filter list. The black/white "
+		  "parameter tells if this is white listed (accepted) or "
+		  "black listed (declined) prefix. Default is to white list "
+		  "the prefix.\n"
+		  "ipv6 pe del <IPv6 prefix>\n"
+		  "Delete IPv6 address from filter list.",
+		  cmd_net_ipv6),
+	SHELL_SUBCMD_SET_END
+);
+
 #if !defined(NET_VLAN_MAX_COUNT)
 #define MAX_IFACE_COUNT NET_IF_MAX_CONFIGS
 #else
@@ -4231,7 +4384,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_commands,
 	SHELL_CMD(iface, &net_cmd_iface,
 		  "Print information about network interfaces.",
 		  cmd_net_iface),
-	SHELL_CMD(ipv6, NULL,
+	SHELL_CMD(ipv6, &net_cmd_ipv6,
 		  "Print information about IPv6 specific information and "
 		  "configuration.",
 		  cmd_net_ipv6),
