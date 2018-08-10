@@ -16,6 +16,7 @@
 #include <linker/sections.h>
 #include <arch/cpu.h>
 #include <swap_macros.h>
+#include <syscall.h>
 
 GTEXT(_Fault)
 GTEXT(_do_kernel_oops)
@@ -165,12 +166,12 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 	cmp ilink, _TRAP_S_CALL_SYSTEM_CALL
 	bne _do_non_syscall_trap
 /* do sys_call */
-	mov ilink, _SYSCALL_LIMIT
+	mov ilink, K_SYSCALL_LIMIT
 	cmp r6, ilink
 	blt valid_syscall_id
 
 	mov r0, r6
-	mov r6, _SYSCALL_BAD
+	mov r6, K_SYSCALL_BAD
 
 valid_syscall_id:
 #ifdef CONFIG_ARC_HAS_SECURE
