@@ -276,14 +276,39 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 		return get((struct rand *)dev_data->isr, len, buf);
 	}
 
-	while (len) {
+	if (len) {
+		u32_t intenset;
+
+		irq_disable(RNG_IRQn);
 		NRF_RNG->EVENTS_VALRDY = 0;
+
+		intenset = NRF_RNG->INTENSET;
+		nrf_rng_int_enable(NRF_RNG_INT_VALRDY_MASK);
+
 		nrf_rng_task_trigger(NRF_RNG_TASK_START);
-		while (NRF_RNG->EVENTS_VALRDY == 0) {
+
+		do {
+			while (NRF_RNG->EVENTS_VALRDY == 0) {
+				__WFE();
+				__SEV();
+				__WFE();
+			}
+
+			buf[--len] = NRF_RNG->VALUE;
+
+			NRF_RNG->EVENTS_VALRDY = 0;
+		} while (len);
+
+		nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
+
+		if (!(intenset & RNG_INTENSET_VALRDY_Msk)) {
+			nrf_rng_int_disable(NRF_RNG_INT_VALRDY_MASK);
 		}
-		buf[--len] = NRF_RNG->VALUE;
+
+		NVIC_ClearPendingIRQ(RNG_IRQn);
+
+		irq_enable(RNG_IRQn);
 	}
-	nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
 
 	return cnt;
 }
