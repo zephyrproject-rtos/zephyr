@@ -27,6 +27,8 @@ list_template = """
 #ifndef _ZEPHYR_SYSCALL_LIST_H_
 #define _ZEPHYR_SYSCALL_LIST_H_
 
+%s
+
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
@@ -34,10 +36,6 @@ list_template = """
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-enum {
-\t%s
-};
 
 %s
 
@@ -207,9 +205,14 @@ def main():
     # Listing header emitted to stdout
     ids.sort()
     ids.extend(["K_SYSCALL_BAD", "K_SYSCALL_LIMIT"])
+
+    ids_as_defines = ""
+    for i, item in enumerate(ids):
+        ids_as_defines += "#define {} {}\n".format(item, i)
+
     handler_defines = "".join([handler_template % name for name in handlers])
     with open(args.syscall_list, "w") as fp:
-        fp.write(list_template % (",\n\t".join(ids), handler_defines))
+        fp.write(list_template % (ids_as_defines, handler_defines))
 
     os.makedirs(args.base_output, exist_ok=True)
     for fn, invo_list in invocations.items():
