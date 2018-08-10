@@ -2402,6 +2402,142 @@ int net_shell_cmd_iface(int argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_NET_IPV6)
+static u32_t time_diff(u32_t time1, u32_t time2)
+{
+	return (u32_t)abs((s32_t)time1 - (s32_t)time2);
+}
+
+static void address_lifetime_cb(struct net_if *iface, void *user_data)
+{
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+	const char *extra;
+	int i;
+
+	ARG_UNUSED(user_data);
+
+	printk("\nIPv6 addresses for interface %p (%s)\n", iface,
+	       iface2str(iface, &extra));
+	printk("==========================================%s\n", extra);
+
+	if (!ipv6) {
+		printk("No IPv6 config found for this interface.\n");
+		return;
+	}
+
+	printk("Type      \tState    \tLifetime (sec)\tAddress\n");
+
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		struct net_if_ipv6_prefix *prefix;
+		char remaining_str[sizeof("01234567890")];
+		u64_t remaining;
+		u8_t prefix_len;
+
+		if (!ipv6->unicast[i].is_used ||
+		    ipv6->unicast[i].address.family != AF_INET6) {
+			continue;
+		}
+
+		remaining = (u64_t)ipv6->unicast[i].lifetime.timer_timeout +
+			(u64_t)ipv6->unicast[i].lifetime.wrap_counter *
+			(u64_t)NET_TIMEOUT_MAX_VALUE -
+			(u64_t)time_diff(k_uptime_get_32(),
+				ipv6->unicast[i].lifetime.timer_start);
+
+		prefix = net_if_ipv6_prefix_get(iface,
+					   &ipv6->unicast[i].address.in6_addr);
+		if (prefix) {
+			prefix_len = prefix->len;
+		} else {
+			prefix_len = 128;
+		}
+
+		if (ipv6->unicast[i].is_infinite) {
+			snprintk(remaining_str, sizeof(remaining_str) - 1,
+				 "infinite");
+		} else {
+			snprintk(remaining_str, sizeof(remaining_str) - 1,
+				 "%u", (u32_t)(remaining / 1000));
+		}
+
+		printk("%s  \t%s\t%s    \t%s/%d\n",
+		       addrtype2str(ipv6->unicast[i].addr_type),
+		       addrstate2str(ipv6->unicast[i].addr_state),
+		       remaining_str,
+		       net_sprint_ipv6_addr(
+			       &ipv6->unicast[i].address.in6_addr),
+		       prefix_len);
+	}
+}
+#endif /* CONFIG_NET_IPV6 */
+
+int net_shell_cmd_ipv6(int argc, char *argv[])
+{
+	int arg = 0;
+
+	if (strcmp(argv[arg], "ipv6") == 0) {
+		arg++;
+	}
+
+	if (!argv[arg]) {
+		printk("IPv6 support                              : %s\n",
+		       IS_ENABLED(CONFIG_NET_IPV6) ?
+		       "enabled" : "disabled");
+		if (!IS_ENABLED(CONFIG_NET_IPV6)) {
+			return 0;
+		}
+
+#if defined(CONFIG_NET_IPV6)
+		printk("IPv6 fragmentation support                : %s\n",
+		       IS_ENABLED(CONFIG_NET_IPV6_FRAGMENT) ? "enabled" :
+		       "disabled");
+		printk("Multicast Listener Discovery support      : %s\n",
+		       IS_ENABLED(CONFIG_NET_IPV6_MLD) ? "enabled" :
+		       "disabled");
+		printk("Neighbor cache support                    : %s\n",
+		       IS_ENABLED(CONFIG_NET_IPV6_NBR_CACHE) ? "enabled" :
+		       "disabled");
+		printk("Neighbor discovery support                : %s\n",
+		       IS_ENABLED(CONFIG_NET_IPV6_ND) ? "enabled" :
+		       "disabled");
+		printk("Duplicate address detection (DAD) support : %s\n",
+		       IS_ENABLED(CONFIG_NET_IPV6_DAD) ? "enabled" :
+		       "disabled");
+		printk("Router advertisement RDNSS option support : %s\n",
+		       IS_ENABLED(CONFIG_NET_IPV6_RA_RDNSS) ? "enabled" :
+		       "disabled");
+		printk("6lo header compression support            : %s\n",
+		       IS_ENABLED(CONFIG_NET_6LO) ? "enabled" :
+		       "disabled");
+		if (IS_ENABLED(CONFIG_NET_6LO_CONTEXT)) {
+			printk("6lo context based compression "
+			       "support     : %s\n",
+			       IS_ENABLED(CONFIG_NET_6LO_CONTEXT) ? "enabled" :
+			       "disabled");
+		}
+		printk("Max number of IPv6 network interfaces "
+		       "in the system          : %d\n",
+		       CONFIG_NET_IF_MAX_IPV6_COUNT);
+		printk("Max number of unicast IPv6 addresses "
+		       "per network interface   : %d\n",
+		       CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT);
+		printk("Max number of multicast IPv6 addresses "
+		       "per network interface : %d\n",
+		       CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT);
+		printk("Max number of IPv6 prefixes per network "
+		       "interface            : %d\n",
+		       CONFIG_NET_IF_IPV6_PREFIX_COUNT);
+
+		/* Print information about address lifetime */
+		net_if_foreach(address_lifetime_cb, NULL);
+#endif
+
+		return 0;
+	}
+
+	return 0;
+}
+
 struct ctx_info {
 	int pos;
 	bool are_external_pools;
@@ -3663,6 +3799,9 @@ static struct shell_cmd net_commands[] = {
 		"\n\tPrint information about network interfaces\n"
 		"iface up [idx]\n\tTake network interface up\n"
 		"iface down [idx]\n\tTake network interface down" },
+	{ "ipv6", net_shell_cmd_ipv6,
+		"\n\tExtra IPv6 specific information and configuration"
+	},
 	{ "mem", net_shell_cmd_mem,
 		"\n\tPrint information about network memory usage" },
 	{ "nbr", net_shell_cmd_nbr, "\n\tPrint neighbor information\n"
