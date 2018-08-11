@@ -1,0 +1,50 @@
+---
+title: STM32 External Interrupt Controller
+type: st,stm32-exti
+version: 0.1
+
+description: >
+    This binding describes the STM32 External Interrupt Controller.
+
+properties:
+    compatible:
+      category: required
+      type: string
+      description: compatible strings
+      constraint: "st,stm32-exti"
+      generation: define
+
+    interrupt-controller:
+      type: string
+      category: required
+      description: device controller identification
+      generation: define
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+    reg:
+      category: required
+      type: int
+      description: mmio register space
+      generation: define
+
+    "#interrupt-cells":
+      type: int
+      category: required
+      description: >
+        Specifies the number of cells to encode an interrupt specifier.
+      constraint: 2
+
+    interrupts:
+      type: array
+      category: optional
+      description: >
+        interrupts references to primary interrupt controller
+        (only needed for exti controller with multiple exti under
+         same parent interrupt - st,stm32-exti and st,stm32h7-exti)
+      generation: define
+...

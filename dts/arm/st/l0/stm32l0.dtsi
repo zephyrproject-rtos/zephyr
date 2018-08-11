@@ -53,6 +53,15 @@
 			label = "STM32_CLK_RCC";
 		};
 
+		exti: interrupt-controller@40010400 {
+			compatible = "st,stm32-exti";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			reg = <0x40010400 0x400>;
+			label = "EXTI_STM32";
+			status = "ok";
+		};
+
 		pinctrl: pin-controller@50000000 {
 			compatible = "st,stm32-pinmux";
 			#address-cells = <1>;
