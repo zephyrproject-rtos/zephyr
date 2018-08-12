@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_L2_BT) && defined(CONFIG_NET_APP_SETTINGS)
-int _net_app_bt_setup(void);
+#if defined(CONFIG_NET_L2_BT) && defined(CONFIG_NET_CONFIG_SETTINGS)
+int _net_config_bt_setup(void);
 #else
-#define _net_app_bt_setup(...) 0
+#define _net_config_bt_setup(...) 0
 #endif

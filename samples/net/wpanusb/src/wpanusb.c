@@ -507,7 +507,7 @@ void main(void)
 
 	SYS_LOG_INF("Start");
 
-	ieee802154_dev = device_get_binding(CONFIG_NET_APP_IEEE802154_DEV_NAME);
+	ieee802154_dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
 	if (!ieee802154_dev) {
 		SYS_LOG_ERR("Cannot get IEEE802.15.4 device");
 		return;

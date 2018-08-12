@@ -6,49 +6,49 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config NET_APP_AUTO_INIT
+config NET_CONFIG_AUTO_INIT
 	bool "Init networking support automatically during device startup"
 	default y
 	help
 	  If this option is set, then the net_app API is automatically
 	  initialized when the device is started. If you do not wish to do
-	  this, then disable this and call net_app_init() in your application.
+	  this, then disable this and call net_config_init() in your application.
 
-config NET_APP_INIT_PRIO
+config NET_CONFIG_INIT_PRIO
 	int "Startup priority for the network application init"
 	default 95
-	depends on NET_APP_AUTO_INIT
+	depends on NET_CONFIG_AUTO_INIT
 
-config NET_APP_INIT_TIMEOUT
+config NET_CONFIG_INIT_TIMEOUT
 	int "How long to wait for networking to be ready and available"
 	default 30
-	depends on NET_APP_AUTO_INIT
+	depends on NET_CONFIG_AUTO_INIT
 	help
 	  The value is in seconds. If for example IPv4 address from DHCPv4 is not
-	  received within this limit, then the net_app_init() call will fail
+	  received within this limit, then the net_config_init() call will fail
 	  during the device startup.
 
-config NET_APP_NEED_IPV6
+config NET_CONFIG_NEED_IPV6
 	bool "This application wants IPv6 support"
-	depends on NET_APP_AUTO_INIT
+	depends on NET_CONFIG_AUTO_INIT
 	select NET_IPV6
 	help
 	  The network application needs IPv6 support to function properly.
 	  This option makes sure the network application is initialized properly
 	  in order to use IPv6.
 
-config NET_APP_NEED_IPV6_ROUTER
+config NET_CONFIG_NEED_IPV6_ROUTER
 	bool "This application wants IPv6 router to exists"
-	depends on NET_APP_AUTO_INIT
+	depends on NET_CONFIG_AUTO_INIT
 	depends on NET_IPV6
 	help
 	  The network application needs IPv6 router to exists before continuing.
 	  What this means that the application wants to wait until it receives
 	  IPv6 router advertisement message before continuing.
 
-config NET_APP_NEED_IPV4
+config NET_CONFIG_NEED_IPV4
 	bool "This application wants IPv4 support"
-	depends on NET_APP_AUTO_INIT
+	depends on NET_CONFIG_AUTO_INIT
 	select NET_IPV4
 	help
 	  The network application needs IPv4 support to function properly.
@@ -61,9 +61,8 @@ config NET_DEBUG_CONFIG
 	help
 	  Enables net config library to output debug messages
 
-menuconfig NET_APP_SETTINGS
+menuconfig NET_CONFIG_SETTINGS
 	bool "Set network settings for applications"
-	depends on NET_APP
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	help
@@ -73,16 +72,16 @@ menuconfig NET_APP_SETTINGS
 	  Beware this is not meant to be used for proper
 	  provisioning but quick sampling/testing.
 
-if NET_APP_SETTINGS
+if NET_CONFIG_SETTINGS
 
 if NET_IPV6
 
-config NET_APP_MY_IPV6_ADDR
+config NET_CONFIG_MY_IPV6_ADDR
 	string "My IPv6 address"
 	help
 	  Use 2001:db8::1 here if uncertain.
 
-config NET_APP_PEER_IPV6_ADDR
+config NET_CONFIG_PEER_IPV6_ADDR
 	string "Peer IPv6 address"
 	help
 	  This is only applicable in client side applications that try
@@ -93,25 +92,25 @@ endif # NET_IPV6
 
 if NET_IPV4
 
-config NET_APP_MY_IPV4_ADDR
+config NET_CONFIG_MY_IPV4_ADDR
 	string "My IPv4 address"
 	help
 	  Use 192.0.2.1 here if uncertain.
 
-config NET_APP_MY_IPV4_NETMASK
+config NET_CONFIG_MY_IPV4_NETMASK
 	string "My IPv4 netmask"
 	default "255.255.255.0"
 	help
 	  Static netmask to use if not overridden by DHCP. Use empty value to
 	  skip setting static value.
 
-config NET_APP_MY_IPV4_GW
+config NET_CONFIG_MY_IPV4_GW
 	string "My IPv4 gateway"
 	help
 	  Static gateway to use if not overridden by DHCP. Use empty value to
 	  skip setting static value.
 
-config NET_APP_PEER_IPV4_ADDR
+config NET_CONFIG_PEER_IPV4_ADDR
 	string "Peer IPv4 address"
 	help
 	  This is only applicable in client side applications that try
@@ -122,7 +121,7 @@ endif # NET_IPV4
 
 if NET_L2_IEEE802154 || IEEE802154_RAW_MODE || NET_L2_OPENTHREAD
 
-config NET_APP_IEEE802154_DEV_NAME
+config NET_CONFIG_IEEE802154_DEV_NAME
 	string "IEEE 802.15.4 device name"
 	help
 	  The device name to get bindings from in the sample application.
@@ -131,33 +130,33 @@ endif # NET_L2_IEEE802154 || IEEE802154_RAW_MODE || NET_L2_OPENTHREAD
 
 if NET_L2_IEEE802154 || IEEE802154_RAW_MODE
 
-config NET_APP_IEEE802154_PAN_ID
+config NET_CONFIG_IEEE802154_PAN_ID
 	hex "IEEE 802.15.4 PAN ID"
 	default 0xabcd
 	help
 	  The PAN ID to use by default in the sample.
 
-config NET_APP_IEEE802154_CHANNEL
+config NET_CONFIG_IEEE802154_CHANNEL
 	int "IEEE 802.15.4 channel"
 	default 26
 	help
 	  The channel to use by default in the sample application.
 
-config NET_APP_IEEE802154_RADIO_TX_POWER
+config NET_CONFIG_IEEE802154_RADIO_TX_POWER
 	int "IEEE 802.15.4 TX power in dbm"
 	default 0
 	help
 	  The TX power to use by default in the sample application.
 	  See NET_L2_IEEE802154_RADIO_DFLT_TX_POWER for more info.
 
-config NET_APP_IEEE802154_SECURITY_KEY
+config NET_CONFIG_IEEE802154_SECURITY_KEY
 	string "IEEE 802.15.4 security key"
 	default "moooh!"
 	depends on NET_L2_IEEE802154_SECURITY
 	help
 	  The key string to use for the link-layer security part.
 
-config NET_APP_IEEE802154_SECURITY_KEY_MODE
+config NET_CONFIG_IEEE802154_SECURITY_KEY_MODE
 	int "IEEE 802.15.4 security key mode"
 	default 0
 	range 0 0
@@ -166,7 +165,7 @@ config NET_APP_IEEE802154_SECURITY_KEY_MODE
 	  The key mode to use for the link-layer security part.
 	  Only implicit mode is supported, thus 0.
 
-config NET_APP_IEEE802154_SECURITY_LEVEL
+config NET_CONFIG_IEEE802154_SECURITY_LEVEL
 	int "IEEE 802.15.4 security level (0-7)"
 	default 0
 	range 0 7
@@ -186,7 +185,7 @@ endif # NET_L2_IEEE802154 || IEEE802154_RAW_MODE
 
 if NET_L2_BT
 
-config NET_APP_BT_NODE
+config NET_CONFIG_BT_NODE
 	bool "Enable Bluetooth node support"
 	select NET_L2_BT_MGMT
 	help
@@ -195,4 +194,4 @@ config NET_APP_BT_NODE
 
 endif # NET_L2_BT
 
-endif # NET_APP_SETTINGS
+endif # NET_CONFIG_SETTINGS

@@ -149,8 +149,8 @@ board is connected to a dedicated router, it should not be needed.
 To access the internet from a Zephyr application using IPv4,
 a gateway should be set via DHCP or configured manually.
 For applications using the "Settings" part of :ref:`net_app_api`
-facility (with the config option :option:`CONFIG_NET_APP_SETTINGS` enabled),
-set the :option:`CONFIG_NET_APP_MY_IPV4_GW` option to the IP address
+facility (with the config option :option:`CONFIG_NET_CONFIG_SETTINGS` enabled),
+set the :option:`CONFIG_NET_CONFIG_MY_IPV4_GW` option to the IP address
 of the gateway. For apps not using the :ref:`net_app_api` facility, set up the
 gateway by calling the :c:func:`net_if_ipv4_set_gw` at runtime.
 

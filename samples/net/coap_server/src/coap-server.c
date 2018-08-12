@@ -1305,12 +1305,12 @@ static bool join_coap_multicast_group(void)
 		return false;
 	}
 
-#if defined(CONFIG_NET_APP_SETTINGS)
+#if defined(CONFIG_NET_CONFIG_SETTINGS)
 	if (net_addr_pton(AF_INET6,
-			  CONFIG_NET_APP_MY_IPV6_ADDR,
+			  CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 			  &my_addr) < 0) {
 		NET_ERR("Invalid IPv6 address %s",
-			CONFIG_NET_APP_MY_IPV6_ADDR);
+			CONFIG_NET_CONFIG_MY_IPV6_ADDR);
 	}
 #endif
 

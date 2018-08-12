@@ -540,22 +540,22 @@ static bool init_ieee802154(void)
 				  IEEE802154_FILTER_TYPE_IEEE_ADDR,
 				  &filter);
 
-#ifdef CONFIG_NET_APP_SETTINGS
-		SYS_LOG_INF("Set panid %x", CONFIG_NET_APP_IEEE802154_PAN_ID);
+#ifdef CONFIG_NET_CONFIG_SETTINGS
+		SYS_LOG_INF("Set panid %x", CONFIG_NET_CONFIG_IEEE802154_PAN_ID);
 
-		filter.pan_id = CONFIG_NET_APP_IEEE802154_PAN_ID;
+		filter.pan_id = CONFIG_NET_CONFIG_IEEE802154_PAN_ID;
 
 		radio_api->filter(ieee802154_dev, true,
 				  IEEE802154_FILTER_TYPE_PAN_ID,
 				  &filter);
-#endif /* CONFIG_NET_APP_SETTINGS */
+#endif /* CONFIG_NET_CONFIG_SETTINGS */
 	}
 
-#ifdef CONFIG_NET_APP_SETTINGS
-	SYS_LOG_INF("Set channel %x", CONFIG_NET_APP_IEEE802154_CHANNEL);
+#ifdef CONFIG_NET_CONFIG_SETTINGS
+	SYS_LOG_INF("Set channel %x", CONFIG_NET_CONFIG_IEEE802154_CHANNEL);
 	radio_api->set_channel(ieee802154_dev,
-			       CONFIG_NET_APP_IEEE802154_CHANNEL);
-#endif /* CONFIG_NET_APP_SETTINGS */
+			       CONFIG_NET_CONFIG_IEEE802154_CHANNEL);
+#endif /* CONFIG_NET_CONFIG_SETTINGS */
 
 	/* Start ieee802154 */
 	radio_api->start(ieee802154_dev);

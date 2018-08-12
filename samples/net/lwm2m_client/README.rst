@@ -82,7 +82,7 @@ To change the sample to use IPv4, disable IPv6 by changing these two
 configurations in ``prj.conf``::
 
     CONFIG_NET_IPV6=n
-    CONFIG_NET_APP_NEED_IPV6=n
+    CONFIG_NET_CONFIG_NEED_IPV6=n
 
 DTLS Support
 ============
