@@ -50,10 +50,15 @@ static void cmd_kernel_cycles(const struct shell *shell,
 #if defined(CONFIG_OBJECT_TRACING) && defined(CONFIG_THREAD_MONITOR)
 static void shell_tdata_dump(const struct k_thread *thread, void *user_data)
 {
+	const char *tname;
+
+	tname = k_thread_name_get((struct k_thread *)thread);
+
 	shell_fprintf((const struct shell *)user_data, SHELL_NORMAL,
-		      "%s%p:   options: 0x%x priority: %d\r\n",
+		      "%s%p %-10s:   options: 0x%x priority: %d\r\n",
 		      (thread == k_current_get()) ? "*" : " ",
 		      thread,
+		      tname ? tname : "NA",
 		      thread->base.user_options,
 		      thread->base.prio);
 }
@@ -76,7 +81,9 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 {
 	unsigned int pcnt, unused = 0;
 	unsigned int size = thread->stack_info.size;
+	const char *tname;
 
+	tname = k_thread_name_get((struct k_thread *)thread);
 	unused = stack_unused_space_get((char *)thread->stack_info.start,
 					size);
 
@@ -84,8 +91,10 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 	pcnt = ((size - unused) * 100) / size;
 
 	shell_fprintf((const struct shell *)user_data, SHELL_NORMAL,
-		"0x%08X (real size %u):\tunused %u\tusage %u / %u (%u %%)\r\n",
-		      (u32_t)thread, size, unused, size - unused, size, pcnt);
+		"0x%08X %-10s (real size %u):\tunused %u\tusage %u / %u (%u %%)\r\n",
+		      (u32_t)thread,
+		      tname ? tname : "NA",
+		      size, unused, size - unused, size, pcnt);
 }
 
 static void cmd_kernel_stacks(const struct shell *shell,
