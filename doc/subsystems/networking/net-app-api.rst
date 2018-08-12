@@ -34,32 +34,32 @@ The net-app API provides a :cpp:func:`net_app_init()` function that can
 configure the networking subsystem for the application. The following
 configuration options control this configuration:
 
-:option:`CONFIG_NET_APP_AUTO_INIT`
+:option:`CONFIG_NET_CONFIG_AUTO_INIT`
   automatically configures the system according to other configuration options.
   The user does not need to call :cpp:func:`net_app_init()` in this case as that
   function will be automatically called when the system boots. This option is
   enabled by default.
 
-:option:`CONFIG_NET_APP_INIT_TIMEOUT`
+:option:`CONFIG_NET_CONFIG_INIT_TIMEOUT`
   specifies how long to wait for the network configuration during the system
   boot. For example, if DHCPv4 is enabled, and if the IPv4 address discovery
   takes too long or the DHCPv4 server is not found, the system will resume
   booting after this number of seconds.
 
-:option:`CONFIG_NET_APP_NEED_IPV6`
+:option:`CONFIG_NET_CONFIG_NEED_IPV6`
   specifies that the application needs IPv6 connectivity. The
   :cpp:func:`net_app_init()` function will wait until it is able to setup an
   IPv6 address for the system before continuing. This means that the IPv6
   duplicate address detection (DAD) has finished and the system has properly
   setup the IPv6 address.
 
-:option:`CONFIG_NET_APP_NEED_IPV6_ROUTER`
+:option:`CONFIG_NET_CONFIG_NEED_IPV6_ROUTER`
   specifies that the application needs IPv6 router connectivity; i.e., it needs
   access to external networks (such as the Internet). The
   :cpp:func:`net_app_init()` function will wait until it receives a router
   advertisement (RA) message from the IPv6 router before continuing.
 
-:option:`CONFIG_NET_APP_NEED_IPV4`
+:option:`CONFIG_NET_CONFIG_NEED_IPV4`
   specifies that the application needs IPv4 connectivity. The
   :cpp:func:`net_app_init()` function will wait, unless a static IP address is
   configured, until it is able to setup an IPv4 address for the network
@@ -70,12 +70,12 @@ Setup
 
 Various system level network configuration options can be added to the project
 configuration file. These settings are enabled by the
-:option:`CONFIG_NET_APP_SETTINGS` configuration option. This option is disabled
+:option:`CONFIG_NET_CONFIG_SETTINGS` configuration option. This option is disabled
 by default, and other net-app options may also be disabled by default if
 generic support for the networking feature is disabled. For example, the IPv6
 net-app options are only available if generic IPv6 support is enabled.
 
-:option:`CONFIG_NET_APP_MY_IPV6_ADDR`
+:option:`CONFIG_NET_CONFIG_MY_IPV6_ADDR`
   This option sets a static IPv6 address for the system. This is typically only
   useful in device testing as normally the system should use SLAAC (IPv6
   Stateless Address Auto Configuration), which is enabled by default in the
@@ -83,17 +83,17 @@ net-app options are only available if generic IPv6 support is enabled.
   controlled by the :option:`CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT`
   configuration option.
 
-:option:`CONFIG_NET_APP_PEER_IPV6_ADDR`
+:option:`CONFIG_NET_CONFIG_PEER_IPV6_ADDR`
   This option specifies what is the peer device IPv6 address. This is only
   useful when testing client/server type applications. This peer address is
   typically used as a parameter when calling :cpp:func:`net_app_connect()`.
 
-:option:`CONFIG_NET_APP_MY_IPV4_ADDR`
+:option:`CONFIG_NET_CONFIG_MY_IPV4_ADDR`
   This option sets a static IPv4 address for the system. This is typically
   useful only in device testing as normally the system should use DHCPv4 to
   discover the IPv4 address.
 
-:option:`CONFIG_NET_APP_PEER_IPV4_ADDR`
+:option:`CONFIG_NET_CONFIG_PEER_IPV4_ADDR`
   This option specifies what is the peer device IPv4 address. This is only
   useful when testing client/server type applications. This peer address is
   typically used as a parameter when connecting to other device.
@@ -101,30 +101,30 @@ net-app options are only available if generic IPv6 support is enabled.
 The following options are only available if IEEE 802.15.4 wireless network
 technology support is enabled.
 
-:option:`CONFIG_NET_APP_IEEE802154_DEV_NAME`
+:option:`CONFIG_NET_CONFIG_IEEE802154_DEV_NAME`
   This option specifies the name of the IEEE 802.15.4 device.
 
-:option:`CONFIG_NET_APP_IEEE802154_PAN_ID`
+:option:`CONFIG_NET_CONFIG_IEEE802154_PAN_ID`
   This option specifies the used PAN identifier.
   Note that the PAN id can be changed at runtime if needed.
 
-:option:`CONFIG_NET_APP_IEEE802154_CHANNEL`
+:option:`CONFIG_NET_CONFIG_IEEE802154_CHANNEL`
   This option specifies the used radio channel.
   Note that the used channel can be changed at runtime if needed.
 
-:option:`CONFIG_NET_APP_IEEE802154_RADIO_TX_POWER`
+:option:`CONFIG_NET_CONFIG_IEEE802154_RADIO_TX_POWER`
   This option specifies the initial radio TX power level. The TX power level can
   be changed at runtime if needed.
 
-:option:`CONFIG_NET_APP_IEEE802154_SECURITY_KEY`
+:option:`CONFIG_NET_CONFIG_IEEE802154_SECURITY_KEY`
   This option specifies the initially used security key. The security key can be
   changed at runtime if needed.
 
-:option:`CONFIG_NET_APP_IEEE802154_SECURITY_KEY_MODE`
+:option:`CONFIG_NET_CONFIG_IEEE802154_SECURITY_KEY_MODE`
   This option specifies the initially used security key mode. The security key
   mode can be changed at runtime if needed.
 
-:option:`CONFIG_NET_APP_IEEE802154_SECURITY_LEVEL`
+:option:`CONFIG_NET_CONFIG_IEEE802154_SECURITY_LEVEL`
   This option specifies the initially used security level. The used security
   level can be changed at runtime if needed.
 

@@ -213,12 +213,12 @@ int udp_init(struct udp_context *ctx)
 	ctx->remaining = 0;
 	ctx->net_ctx = udp_ctx;
 
-#if defined(CONFIG_NET_APP_PEER_IPV6_ADDR)
+#if defined(CONFIG_NET_CONFIG_PEER_IPV6_ADDR)
 	if (net_addr_pton(AF_INET6,
-			  CONFIG_NET_APP_PEER_IPV6_ADDR,
+			  CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
 			  &server_addr) < 0) {
 		printk("Invalid peer IPv6 address %s",
-		       CONFIG_NET_APP_PEER_IPV6_ADDR);
+		       CONFIG_NET_CONFIG_PEER_IPV6_ADDR);
 	}
 #endif
 
@@ -264,11 +264,11 @@ int udp_init(struct udp_context *ctx)
 	ctx->remaining = 0;
 	ctx->net_ctx = udp_ctx;
 
-#if defined(CONFIG_NET_APP_PEER_IPV4_ADDR)
-	if (net_addr_pton(AF_INET, CONFIG_NET_APP_PEER_IPV4_ADDR,
+#if defined(CONFIG_NET_CONFIG_PEER_IPV4_ADDR)
+	if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR,
 			  &server_addr) < 0) {
 		printk("Invalid IPv4 address %s",
-		       CONFIG_NET_APP_PEER_IPV4_ADDR);
+		       CONFIG_NET_CONFIG_PEER_IPV4_ADDR);
 	}
 #endif
 

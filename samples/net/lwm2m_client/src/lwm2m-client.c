@@ -16,12 +16,12 @@
 
 #define APP_BANNER "Run LWM2M client"
 
-#if !defined(CONFIG_NET_APP_PEER_IPV4_ADDR)
-#define CONFIG_NET_APP_PEER_IPV4_ADDR ""
+#if !defined(CONFIG_NET_CONFIG_PEER_IPV4_ADDR)
+#define CONFIG_NET_CONFIG_PEER_IPV4_ADDR ""
 #endif
 
-#if !defined(CONFIG_NET_APP_PEER_IPV6_ADDR)
-#define CONFIG_NET_APP_PEER_IPV6_ADDR ""
+#if !defined(CONFIG_NET_CONFIG_PEER_IPV6_ADDR)
+#define CONFIG_NET_CONFIG_PEER_IPV6_ADDR ""
 #endif
 
 #define WAIT_TIME	K_SECONDS(10)
@@ -380,11 +380,11 @@ void main(void)
 #endif /* CONFIG_NET_APP_DTLS */
 
 #if defined(CONFIG_NET_IPV6)
-	ret = lwm2m_rd_client_start(&client, CONFIG_NET_APP_PEER_IPV6_ADDR,
+	ret = lwm2m_rd_client_start(&client, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
 				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD,
 				    rd_client_event);
 #elif defined(CONFIG_NET_IPV4)
-	ret = lwm2m_rd_client_start(&client, CONFIG_NET_APP_PEER_IPV4_ADDR,
+	ret = lwm2m_rd_client_start(&client, CONFIG_NET_CONFIG_PEER_IPV4_ADDR,
 				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD,
 				    rd_client_event);
 #else

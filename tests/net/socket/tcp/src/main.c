@@ -155,12 +155,12 @@ void test_v4_send_recv(void)
 	struct sockaddr addr;
 	socklen_t addrlen = sizeof(addr);
 
-	prepare_sock_v4(CONFIG_NET_APP_MY_IPV4_ADDR,
+	prepare_sock_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR,
 			ANY_PORT,
 			&c_sock,
 			&c_saddr);
 
-	prepare_sock_v4(CONFIG_NET_APP_MY_IPV4_ADDR,
+	prepare_sock_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR,
 			SERVER_PORT,
 			&s_sock,
 			&s_saddr);
@@ -195,12 +195,12 @@ void test_v6_send_recv(void)
 	struct sockaddr addr;
 	socklen_t addrlen = sizeof(addr);
 
-	prepare_sock_v6(CONFIG_NET_APP_MY_IPV6_ADDR,
+	prepare_sock_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 			ANY_PORT,
 			&c_sock,
 			&c_saddr);
 
-	prepare_sock_v6(CONFIG_NET_APP_MY_IPV6_ADDR,
+	prepare_sock_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 			SERVER_PORT,
 			&s_sock,
 			&s_saddr);
@@ -234,12 +234,12 @@ void test_v4_sendto_recvfrom(void)
 	struct sockaddr addr;
 	socklen_t addrlen = sizeof(addr);
 
-	prepare_sock_v4(CONFIG_NET_APP_MY_IPV4_ADDR,
+	prepare_sock_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR,
 			ANY_PORT,
 			&c_sock,
 			&c_saddr);
 
-	prepare_sock_v4(CONFIG_NET_APP_MY_IPV4_ADDR,
+	prepare_sock_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR,
 			SERVER_PORT,
 			&s_sock,
 			&s_saddr);
@@ -277,12 +277,12 @@ void test_v6_sendto_recvfrom(void)
 	struct sockaddr addr;
 	socklen_t addrlen = sizeof(addr);
 
-	prepare_sock_v6(CONFIG_NET_APP_MY_IPV6_ADDR,
+	prepare_sock_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 			ANY_PORT,
 			&c_sock,
 			&c_saddr);
 
-	prepare_sock_v6(CONFIG_NET_APP_MY_IPV6_ADDR,
+	prepare_sock_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 			SERVER_PORT,
 			&s_sock,
 			&s_saddr);
@@ -321,12 +321,12 @@ void test_v4_sendto_recvfrom_null_dest(void)
 	struct sockaddr addr;
 	socklen_t addrlen = sizeof(addr);
 
-	prepare_sock_v4(CONFIG_NET_APP_MY_IPV4_ADDR,
+	prepare_sock_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR,
 			ANY_PORT,
 			&c_sock,
 			&c_saddr);
 
-	prepare_sock_v4(CONFIG_NET_APP_MY_IPV4_ADDR,
+	prepare_sock_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR,
 			SERVER_PORT,
 			&s_sock,
 			&s_saddr);
@@ -361,12 +361,12 @@ void test_v6_sendto_recvfrom_null_dest(void)
 	struct sockaddr addr;
 	socklen_t addrlen = sizeof(addr);
 
-	prepare_sock_v6(CONFIG_NET_APP_MY_IPV6_ADDR,
+	prepare_sock_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 			ANY_PORT,
 			&c_sock,
 			&c_saddr);
 
-	prepare_sock_v6(CONFIG_NET_APP_MY_IPV6_ADDR,
+	prepare_sock_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 			SERVER_PORT,
 			&s_sock,
 			&s_saddr);

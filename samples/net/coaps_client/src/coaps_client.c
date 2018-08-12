@@ -412,12 +412,12 @@ static struct k_thread thread_data;
 
 static inline int init_app(void)
 {
-#if defined(CONFIG_NET_APP_MY_IPV6_ADDR)
+#if defined(CONFIG_NET_CONFIG_MY_IPV6_ADDR)
 	if (net_addr_pton(AF_INET6,
-			  CONFIG_NET_APP_MY_IPV6_ADDR,
+			  CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 			  (struct sockaddr *)&client_addr) < 0) {
 		mbedtls_printf("Invalid IPv6 address %s",
-			       CONFIG_NET_APP_MY_IPV6_ADDR);
+			       CONFIG_NET_CONFIG_MY_IPV6_ADDR);
 	}
 #endif
 	if (!net_if_ipv6_addr_add(net_if_get_default(), &client_addr,

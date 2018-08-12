@@ -248,7 +248,7 @@ static void do_mdns_ipv4_lookup(struct k_work *work)
 
 #if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_DHCPV4)
 
-#if !defined(CONFIG_NET_APP_MY_IPV4_ADDR)
+#if !defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
 #error "You need to define an IPv4 address or enable DHCPv4!"
 #endif
 
@@ -260,8 +260,8 @@ static void setup_ipv4(struct net_if *iface)
 	u16_t dns_id;
 	int ret;
 
-	if (net_addr_pton(AF_INET, CONFIG_NET_APP_MY_IPV4_ADDR, &addr)) {
-		NET_ERR("Invalid address: %s", CONFIG_NET_APP_MY_IPV4_ADDR);
+	if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &addr)) {
+		NET_ERR("Invalid address: %s", CONFIG_NET_CONFIG_MY_IPV4_ADDR);
 		return;
 	}
 
@@ -290,7 +290,7 @@ static void setup_ipv4(struct net_if *iface)
 
 #if defined(CONFIG_NET_IPV6)
 
-#if !defined(CONFIG_NET_APP_MY_IPV6_ADDR)
+#if !defined(CONFIG_NET_CONFIG_MY_IPV6_ADDR)
 #error "You need to define an IPv6 address!"
 #endif
 

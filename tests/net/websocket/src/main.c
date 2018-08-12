@@ -330,15 +330,15 @@ void test_v6_init(void)
 {
 	int ret;
 
-	ret = net_ipaddr_parse(CONFIG_NET_APP_MY_IPV6_ADDR,
-			       strlen(CONFIG_NET_APP_MY_IPV6_ADDR),
+	ret = net_ipaddr_parse(CONFIG_NET_CONFIG_MY_IPV6_ADDR,
+			       strlen(CONFIG_NET_CONFIG_MY_IPV6_ADDR),
 			       &server_addr);
 	zassert_equal(ret, 1, "cannot parse server address");
 
 	ret = net_app_init_tcp_client(&app_ctx_v6,
 				      NULL,
 				      NULL,
-				      CONFIG_NET_APP_MY_IPV6_ADDR,
+				      CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 				      80,
 				      0,
 				      NULL);
@@ -453,15 +453,15 @@ void test_v4_init(void)
 {
 	int ret;
 
-	ret = net_ipaddr_parse(CONFIG_NET_APP_MY_IPV4_ADDR,
-			       strlen(CONFIG_NET_APP_MY_IPV4_ADDR),
+	ret = net_ipaddr_parse(CONFIG_NET_CONFIG_MY_IPV4_ADDR,
+			       strlen(CONFIG_NET_CONFIG_MY_IPV4_ADDR),
 			       &server_addr);
 	zassert_equal(ret, 1, "cannot parse server address");
 
 	ret = net_app_init_tcp_client(&app_ctx_v4,
 				      NULL,
 				      NULL,
-				      CONFIG_NET_APP_MY_IPV4_ADDR,
+				      CONFIG_NET_CONFIG_MY_IPV4_ADDR,
 				      80,
 				      0,
 				      NULL);
