@@ -16,7 +16,10 @@
 #include <syscall_handler.h>
 #include <device.h>
 #include <init.h>
-#include <logging/sys_log.h>
+
+#define LOG_MODULE_NAME userspace
+#include <logging/log.h>
+LOG_MODULE_REGISTER();
 
 #define MAX_THREAD_BITS		(CONFIG_MAX_THREAD_BYTES * 8)
 
@@ -207,7 +210,7 @@ void *_impl_k_object_alloc(enum k_objects otype)
 
 	dyn_obj = z_thread_malloc(sizeof(*dyn_obj) + obj_size_get(otype));
 	if (!dyn_obj) {
-		SYS_LOG_WRN("could not allocate kernel object");
+		LOG_WRN("could not allocate kernel object");
 		return NULL;
 	}
 
