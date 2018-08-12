@@ -1357,6 +1357,32 @@ u16_t net_buf_append_bytes(struct net_buf *buf, u16_t len,
 			   net_buf_allocator_cb allocate_cb, void *user_data);
 
 /**
+ * @brief Append data to a list of net_buf and fill it with the speccified byte
+ *
+ * @details appends multiple bytes to the buffer and sets them to
+ * the specified byte, just like memset. If there is not enough space in the
+ * net_buf then more net_buf will be added, unless there are no free net_buf
+ * and timeout occurs.
+ *
+ * @param buf Network buffer.
+ * @param len Total length of data to append
+ * @param value Byte to fill the buffer with
+ * @param timeout Timeout is passed to the net_buf allocator callback.
+ * @param allocate_cb When a new net_buf is required, use this callback.
+ * @param user_data A user data pointer to be supplied to the allocate_cb.
+ *        This pointer is can be anything from a mem_pool or a net_pkt, the
+ *        logic is left up to the allocate_cb function.
+ *
+ * @return Length of data actually added. This may be less than input
+ *         length if other timeout than K_FOREVER was used, and there
+ *         were no free fragments in a pool to accommodate all data.
+ */
+u16_t net_buf_append_set_bytes(struct net_buf *buf, u16_t len,
+			       const u8_t value, s32_t timeout,
+			       net_buf_allocator_cb allocate_cb,
+			       void *user_data);
+
+/**
  * @brief Skip N number of bytes in a net_buf
  *
  * @details Skip N number of bytes starting from fragment's offset. If the total
