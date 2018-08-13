@@ -25,6 +25,8 @@ static void thread_entry(void *p1, void *p2, void *p3)
  * than the current cooperative thread. Make sure that the higher
  * priority thread will not preempt the lower priority cooperative
  * thread.
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_priority_cooperative(void)
 {
@@ -59,6 +61,8 @@ void test_priority_cooperative(void)
  * Make sure newly created thread is not preempted. Now create a
  * preemptive thread which is of priority higher than current
  * thread. Make sure newly created thread is preempted
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_priority_preemptible(void)
 {

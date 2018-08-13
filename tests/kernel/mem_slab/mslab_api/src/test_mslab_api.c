@@ -131,6 +131,8 @@ static void tmslab_used_get(void *data)
  * @details Initialize 3 memory blocks of block size 8 bytes
  * using @see k_mem_slab_init() and check if number of used blocks
  * is 0 and free blocks is equal to number of blocks initialized.
+ *
+ * @ingroup kernel_memory_slab_tests
  */
 void test_mslab_kinit(void)
 {
@@ -145,6 +147,8 @@ void test_mslab_kinit(void)
  * @details Initialize 3 memory blocks of block size 8 bytes
  * using @see K_MEM_SLAB_DEFINE() and check if number of used blocks
  * is 0 and free blocks is equal to number of blocks initialized.
+ *
+ * @ingroup kernel_memory_slab_tests
  */
 void test_mslab_kdefine(void)
 {
@@ -155,6 +159,7 @@ void test_mslab_kdefine(void)
 /**
  * @brief Verify alloc and free of blocks from mem_slab
  *
+ * @ingroup kernel_memory_slab_tests
  */
 void test_mslab_alloc_free_thread(void)
 {
@@ -168,6 +173,8 @@ void test_mslab_alloc_free_thread(void)
  * @details Allocate 3 blocks of memory from 2 memory slabs
  * respectively and check if all blocks are aligned to 8 bytes
  * and free them.
+ *
+ * @ingroup kernel_memory_slab_tests
  */
 void test_mslab_alloc_align(void)
 {
@@ -188,6 +195,8 @@ void test_mslab_alloc_align(void)
  * test case also checks if timeout has really happened by
  * checking delta period between the allocation request
  * was made and return of -EAGAIN.
+ *
+ * @ingroup kernel_memory_slab_tests
  */
 void test_mslab_alloc_timeout(void)
 {
@@ -205,6 +214,8 @@ void test_mslab_alloc_timeout(void)
  * timeout. Again checks for used block and free blocks
  * number using @see k_mem_slab_num_used_get() and
  * @see k_mem_slab_num_free_get().
+ *
+ * @ingroup kernel_memory_slab_tests
  */
 void test_mslab_used_get(void)
 {

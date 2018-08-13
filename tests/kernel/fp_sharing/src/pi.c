@@ -56,7 +56,7 @@ static volatile unsigned int calc_pi_high_count;
  *
  * @brief Entry point for the low priority pi compute task
  *
- * @return N/A
+ * @ingroup kernel_fpsharing_tests
  */
 
 void calculate_pi_low(void)
@@ -99,7 +99,7 @@ void calculate_pi_low(void)
  *
  * @brief Entry point for the high priority pi compute task
  *
- * @return N/A
+ * @ingroup kernel_fpsharing_tests
  */
 
 void calculate_pi_high(void)

@@ -26,6 +26,10 @@ SYS_MEM_POOL_DEFINE(pool, &pool_mutex, BLK_SIZE_MIN, BLK_SIZE_MAX,
 
 /**
  * @brief Verify sys_mem_pool allocation and free
+ *
+ * @ingroup kernel_memory_pool_tests
+ *
+ * @see sys_mem_pool_alloc(), sys_mem_pool_free()
  */
 void test_sys_mem_pool_alloc_free(void)
 {
@@ -58,6 +62,10 @@ void test_sys_mem_pool_alloc_free(void)
 
 /**
  * @brief Verify sys_mem_pool aligned allocation.
+ *
+ * @see sys_mem_pool_alloc(), sys_mem_pool_free()
+ *
+ * @ingroup kernel_memory_pool_tests
  */
 void test_sys_mem_pool_alloc_align4(void)
 {
@@ -82,6 +90,10 @@ void test_sys_mem_pool_alloc_align4(void)
 /**
  * @brief Verify allocation of minimum block size which
  * is 64 bytes
+ *
+ * @ingroup kernel_memory_pool_tests
+ *
+ * @see sys_mem_pool_alloc(), sys_mem_pool_free()
  */
 void test_sys_mem_pool_min_block_size(void)
 {
