@@ -86,8 +86,8 @@ static inline void setup_ipv6_header(struct net_pkt *pkt, u16_t extra_len,
 	NET_IPV6_HDR(pkt)->tcflow = 0;
 	NET_IPV6_HDR(pkt)->flow = 0;
 
-	sys_put_be16(NET_ICMPH_LEN + extra_len + NET_ICMPV6_UNUSED_LEN,
-		     NET_IPV6_HDR(pkt)->len);
+	NET_IPV6_HDR(pkt)->len = htons(NET_ICMPH_LEN + extra_len +
+					NET_ICMPV6_UNUSED_LEN);
 
 	NET_IPV6_HDR(pkt)->nexthdr = IPPROTO_ICMPV6;
 	NET_IPV6_HDR(pkt)->hop_limit = hop_limit;
@@ -334,9 +334,8 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 		goto drop_no_pkt;
 	}
 
-	payload_len = sys_get_be16(NET_IPV6_HDR(orig)->len) -
-		sizeof(NET_ICMPH_LEN) - NET_ICMPV6_UNUSED_LEN;
-
+	payload_len = ntohs(NET_IPV6_HDR(orig)->len) - sizeof(NET_ICMPH_LEN) -
+							NET_ICMPV6_UNUSED_LEN;
 	frag = net_pkt_copy_all(orig, 0, PKT_WAIT_TIME);
 	if (!frag) {
 		goto drop;

@@ -317,8 +317,7 @@ static void update_protocol_header_lengths(struct net_pkt *pkt, u16_t size)
 {
 	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
 
-	NET_IPV6_HDR(pkt)->len[0] = (size - NET_IPV6H_LEN) >> 8;
-	NET_IPV6_HDR(pkt)->len[1] = (u8_t) (size - NET_IPV6H_LEN);
+	NET_IPV6_HDR(pkt)->len = htons(size - NET_IPV6H_LEN);
 
 	if (NET_IPV6_HDR(pkt)->nexthdr == IPPROTO_UDP) {
 		struct net_udp_hdr hdr, *udp_hdr;

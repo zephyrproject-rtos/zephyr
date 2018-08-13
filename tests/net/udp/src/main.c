@@ -192,8 +192,7 @@ static void setup_ipv6_udp(struct net_pkt *pkt,
 	NET_IPV6_HDR(pkt)->vtc = 0x60;
 	NET_IPV6_HDR(pkt)->tcflow = 0;
 	NET_IPV6_HDR(pkt)->flow = 0;
-	NET_IPV6_HDR(pkt)->len[0] = 0;
-	NET_IPV6_HDR(pkt)->len[1] = NET_UDPH_LEN + strlen(payload);
+	NET_IPV6_HDR(pkt)->len = htons(NET_UDPH_LEN + strlen(payload));
 
 	NET_IPV6_HDR(pkt)->nexthdr = IPPROTO_UDP;
 	NET_IPV6_HDR(pkt)->hop_limit = 255;
@@ -256,9 +255,8 @@ static void setup_ipv6_udp_long(struct net_pkt *pkt,
 	ipv6.vtc = 0x60;
 	ipv6.tcflow = 0;
 	ipv6.flow = 0;
-	ipv6.len[0] = 0;
-	ipv6.len[1] = NET_UDPH_LEN + strlen(payload) +
-		sizeof(ipv6_hop_by_hop_ext_hdr);
+	ipv6.len = htons(NET_UDPH_LEN + strlen(payload) +
+				sizeof(ipv6_hop_by_hop_ext_hdr));
 
 	ipv6.nexthdr = 0; /* HBHO */
 	ipv6.hop_limit = 255;

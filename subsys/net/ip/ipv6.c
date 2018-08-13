@@ -786,15 +786,11 @@ int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 		}
 	}
 #endif
-
 	net_pkt_compact(pkt);
 
-	total_len = net_pkt_get_len(pkt);
+	total_len = net_pkt_get_len(pkt) - sizeof(struct net_ipv6_hdr);
 
-	total_len -= sizeof(struct net_ipv6_hdr);
-
-	NET_IPV6_HDR(pkt)->len[0] = total_len >> 8;
-	NET_IPV6_HDR(pkt)->len[1] = total_len & 0xff;
+	NET_IPV6_HDR(pkt)->len = htons(total_len);
 
 #if defined(CONFIG_NET_UDP)
 	if (next_header_proto == IPPROTO_UDP &&
@@ -1260,8 +1256,7 @@ static void setup_headers(struct net_pkt *pkt, u8_t nd6_len,
 	NET_IPV6_HDR(pkt)->vtc = 0x60;
 	NET_IPV6_HDR(pkt)->tcflow = 0;
 	NET_IPV6_HDR(pkt)->flow = 0;
-	NET_IPV6_HDR(pkt)->len[0] = 0;
-	NET_IPV6_HDR(pkt)->len[1] = NET_ICMPH_LEN + nd6_len;
+	NET_IPV6_HDR(pkt)->len = htons(NET_ICMPH_LEN + nd6_len);
 
 	NET_IPV6_HDR(pkt)->nexthdr = IPPROTO_ICMPV6;
 	NET_IPV6_HDR(pkt)->hop_limit = NET_IPV6_ND_HOP_LIMIT;
@@ -2143,11 +2138,11 @@ int net_ipv6_send_ns(struct net_if *iface,
 	}
 
 	if (is_my_address) {
+		u16_t len = ntohs(NET_IPV6_HDR(pkt)->len);
 		/* DAD */
 		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
 				net_ipv6_unspecified_address());
-
-		NET_IPV6_HDR(pkt)->len[1] -= llao_len;
+		NET_IPV6_HDR(pkt)->len = htons(len - llao_len);
 	} else {
 		if (src) {
 			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, src);
@@ -3344,8 +3339,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 
 	len = net_pkt_get_len(pkt) - sizeof(struct net_ipv6_hdr);
 
-	NET_IPV6_HDR(pkt)->len[0] = len >> 8;
-	NET_IPV6_HDR(pkt)->len[1] = len & 0xff;
+	NET_IPV6_HDR(pkt)->len = htons(len);
 
 	NET_DBG("New pkt %p IPv6 len is %d bytes", pkt, len);
 
@@ -4095,7 +4089,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 {
 	struct net_ipv6_hdr *hdr = NET_IPV6_HDR(pkt);
 	int real_len = net_pkt_get_len(pkt);
-	int pkt_len = (hdr->len[0] << 8) + hdr->len[1] + sizeof(*hdr);
+	int pkt_len = ntohs(hdr->len) + sizeof(*hdr);
 	struct net_buf *frag;
 	u8_t start_of_ext, prev_hdr;
 	u8_t next, next_hdr;
