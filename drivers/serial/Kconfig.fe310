@@ -22,23 +22,6 @@ menuconfig UART_FE310_PORT_0
 	  This tells the driver to configure the UART port at boot, depending on
 	  the additional configure options below.
 
-config UART_FE310_PORT_0_NAME
-	string "Port 0 Device Name"
-	default "uart0"
-	depends on UART_FE310_PORT_0
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
-config UART_FE310_PORT_0_BAUD_RATE
-	int "Port 0 Baud Rate"
-	default 0
-	depends on UART_FE310_PORT_0
-	help
-	  The baud rate for UART port to be set to at boot.
-
-	  Leave at 0 to skip initialization.
-
 config UART_FE310_PORT_0_IRQ_PRIORITY
 	int "Port 0 Interrupt Priority"
 	default 1
@@ -68,23 +51,6 @@ menuconfig UART_FE310_PORT_1
 	help
 	  This tells the driver to configure the UART port at boot, depending on
 	  the additional configure options below.
-
-config UART_FE310_PORT_1_NAME
-	string "Port 1 Device Name"
-	default "uart1"
-	depends on UART_FE310_PORT_1
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
-config UART_FE310_PORT_1_BAUD_RATE
-	int "Port 1 Baud Rate"
-	default 0
-	depends on UART_FE310_PORT_1
-	help
-	  The baud rate for UART port to be set to at boot.
-
-	  Leave at 0 to skip initialization.
 
 config UART_FE310_PORT_1_IRQ_PRIORITY
 	int "Port 1 Interrupt Priority"

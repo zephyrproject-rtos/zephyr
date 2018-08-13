@@ -1,0 +1,14 @@
+/dts-v1/;
+
+#include <riscv32-fe310.dtsi>
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+};
+
