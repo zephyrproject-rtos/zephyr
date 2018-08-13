@@ -15,61 +15,32 @@ extern "C" {
 #define SYS_LOG_LEVEL CONFIG_NVS_LOG_LEVEL
 #include <logging/sys_log.h>
 
-#define NVS_ID_GT(a, b) (((a) > (b)) ? ((((a)-(b)) > 0x7FFF) ? (0):(1)) : \
-	((((b)-(a)) > 0x7FFF) ? (1):(0)))
-
 /*
- * Special id values
+ * MASKS AND SHIFT FOR ADDRESSES
+ * an address in nvs is an u32_t where:
+ *   high 2 bytes represent the sector number
+ *   low 2 bytes represent the offset in a sector
  */
-#define NVS_ID_EMPTY      0xFFFF
-#define NVS_ID_SECTOR_END 0xFFFE
+#define ADDR_SECT_MASK 0xFFFF0000
+#define ADDR_SECT_SHIFT 16
+#define ADDR_OFFS_MASK 0x0000FFFF
+
 /*
  * Status return values
  */
 #define NVS_STATUS_NOSPACE 1
 
-#define NVS_MOVE_BLOCK_SIZE 8
+#define NVS_BLOCK_SIZE 8
 
-struct nvs_entry {
-	off_t data_addr; /* address in flash to write data */
-	u16_t len;       /* entry length in bytes */
-	u16_t id;        /* entry id, is 0xFFFFF when empty, set to 0xFFFE
-			  * for the last entry in a sector
-			  */
+/* Allocation Table Entry */
+struct nvs_ate {
+	u16_t id;	/* data id */
+	u16_t offset;	/* data offset in sector */
+	u16_t len;	/* data len in sector */
+	u8_t part;	/* part of a multipart data - future extension */
+	u8_t crc8;	/* crc8 check of the entry */
 };
 
-struct _nvs_sector_hdr {
-	u32_t fd_magic;
-	u16_t fd_id;
-};
-
-struct _nvs_data_hdr {
-	u16_t id;
-	u16_t len;
-};
-
-struct _nvs_data_slt {
-	u16_t crc16;
-};
-
-
-int nvs_append(struct nvs_fs *fs, struct nvs_entry *entry);
-int nvs_append_close(struct nvs_fs *fs, const struct nvs_entry *entry);
-void nvs_set_start_entry(struct nvs_fs *fs, struct nvs_entry *entry);
-int nvs_walk_entry(struct nvs_fs *fs, struct nvs_entry *entry);
-int nvs_get_first_entry(struct nvs_fs *fs, struct nvs_entry *entry);
-int nvs_get_last_entry(struct nvs_fs *fs, struct nvs_entry *entry);
-int nvs_check_crc(struct nvs_fs *fs, struct nvs_entry *entry);
-int nvs_rotate(struct nvs_fs *fs);
-int nvs_compute_crc(struct nvs_fs *fs, const struct nvs_entry *entry,
-		    u16_t *crc16);
-int nvs_flash_read(struct nvs_fs *fs, off_t offset, void *data, size_t len);
-int nvs_flash_write(struct nvs_fs *fs, off_t offset, const void *data,
-	size_t len);
-
-/**
- * @}
- */
 #ifdef __cplusplus
 }
 #endif

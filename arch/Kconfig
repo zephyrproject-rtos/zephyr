@@ -8,6 +8,13 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+# Include these first so that any properties (e.g. defaults) below can be
+# overriden (by defining symbols in multiple locations)
+
+source "boards/Kconfig"
+# $ENV_VAR_ARCH might be a glob pattern
+gsource "arch/$ENV_VAR_ARCH/Kconfig"
+
 
 choice
 	prompt "Architecture"
@@ -81,8 +88,8 @@ config USERSPACE
 
 config PRIVILEGED_STACK_SIZE
 	int "Size of privileged stack"
-	default 256
 	default 384 if ARC
+	default 256
 	depends on ARCH_HAS_USERSPACE
 	help
 	  This option sets the privileged stack region size that will be used
@@ -318,9 +325,3 @@ config BOARD
 	  The Board is the first location where we search for a linker.ld file,
 	  if not found we look for the linker file in
 	  arch/<arch>/soc/<family>/<series>
-
-
-# $ENV_VAR_ARCH might be a glob pattern
-gsource "arch/$ENV_VAR_ARCH/Kconfig"
-
-source "boards/Kconfig"

@@ -1,7 +1,5 @@
 mainmenu "Wi-Fi sample"
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
-
 if WIFI_WINC1500
 
 config WINC1500_GPIO_DRV_NAME
@@ -17,3 +15,6 @@ config WINC1500_GPIO_RESET_N
 	int "Pin number for Winc1500 RESET_N signal"
 
 endif # WIFI_WINC1500
+
+
+source "$ZEPHYR_BASE/Kconfig.zephyr"

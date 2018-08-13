@@ -40,3 +40,6 @@ tags
 .xxproject
 .envrc
 .vscode
+
+# Disables the warning about the changed behavior for Kconfig defaults
+hide-defaults-note

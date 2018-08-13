@@ -69,8 +69,8 @@ if BT_MESH_PROXY
 
 config BT_MESH_PROXY_FILTER_SIZE
 	int "Maximum number of filter entries per Proxy Client"
-	default 1
 	default 3 if BT_MESH_GATT_PROXY
+	default 1
 	range 1 32767
 	help
 	  This option specifies how many Proxy Filter entries the local

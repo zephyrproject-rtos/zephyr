@@ -160,8 +160,7 @@ config ETH_SAM_GMAC_PHY_ADDR
 
 config PTP_CLOCK_SAM_GMAC
 	bool "SAM GMAC PTP clock driver support"
-	default n
-	default y if NET_GPTP
+	default y
 	select PTP_CLOCK
 	depends on NET_GPTP
 	help

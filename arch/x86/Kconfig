@@ -16,6 +16,10 @@ endchoice
 menu "X86 Architecture Options"
 	depends on X86
 
+# Include these first so that any properties (e.g. defaults) below can be
+# overriden (by defining symbols in multiple locations)
+gsource "arch/x86/soc/*/Kconfig"
+
 config ARCH
 	default "x86"
 
@@ -218,8 +222,8 @@ config CACHE_LINE_SIZE_DETECT
 
 config CACHE_LINE_SIZE
 	int "Cache line size" if !CACHE_LINE_SIZE_DETECT
-	default 0
 	default 64 if CPU_ATOM
+	default 0
 	help
 	  Size in bytes of a CPU cache line.
 
@@ -314,7 +318,5 @@ config X86_FIXED_IRQ_MAPPING
 	  mapping between IDT vectors and IRQ lines.
 
 endmenu
-
-gsource "arch/x86/soc/*/Kconfig"
 
 endmenu
