@@ -90,16 +90,16 @@ extern void posix_exit(int exit_code);
 	}
 #endif
 
-#define __ASSERT(test, fmt, ...)                                   \
-	do {                                                       \
-		if (!(test)) {                                     \
-			printk("ASSERTION FAIL [%s] @ %s:%d:\n\t", \
-			       _STRINGIFY(test),                   \
-			       __FILE__,                           \
-			       __LINE__);                          \
-			printk(fmt, ##__VA_ARGS__);                \
-			__ASSERT_POST;                             \
-		}                                                  \
+#define __ASSERT(test, fmt, ...)                                         \
+	do {                                                             \
+		if (!(test)) {                                           \
+			(void)printk("ASSERTION FAIL [%s] @ %s:%d:\n\t", \
+			       _STRINGIFY(test),                         \
+			       __FILE__,                                 \
+			       __LINE__);                                \
+			(void)printk(fmt, ##__VA_ARGS__);                \
+			__ASSERT_POST;                                   \
+		}                                                        \
 	} while ((0))
 
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...)                \
