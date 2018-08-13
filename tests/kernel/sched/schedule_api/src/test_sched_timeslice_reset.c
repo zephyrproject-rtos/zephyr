@@ -65,6 +65,8 @@ static void thread_tslice(void *p1, void *p2, void *p3)
  *
  * @see k_sched_time_slice_set(), k_sem_reset(), k_uptime_delta(),
  * k_uptime_get_32()
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_slice_reset(void)
 {

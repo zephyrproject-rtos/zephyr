@@ -6,6 +6,16 @@
 
 #include "test_sched.h"
 
+/**
+ * @brief Test scheduling
+ *
+ * @defgroup kernel_sched_tests Scheduling Tests
+ *
+ * @ingroup all_tests
+ *
+ * @{
+ * @}
+ */
 /*test case main entry*/
 void test_main(void)
 {

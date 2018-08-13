@@ -75,6 +75,8 @@ static void thread_tslice(void *p1, void *p2, void *p3)
  * @details Create multiple preemptive threads with same priorities
  * priorities and few with same priorities and enable the time slice.
  * Ensure that each thread is given the time slice period to execute.
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_slice_scheduling(void)
 {

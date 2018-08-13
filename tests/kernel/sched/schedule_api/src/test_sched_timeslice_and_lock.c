@@ -88,6 +88,8 @@ static void thread_handler(void *p1, void *p2, void *p3)
  * @brief Validate the behavior of cooperative thread
  * when it yields
  *
+ * @ingroup kernel_sched_tests
+ *
  * @details Create 3 threads of priority -2, -1 and 0.
  * Yield the main thread which is cooperative. Check
  * if all the threads gets executed.
@@ -116,6 +118,8 @@ void test_yield_cooperative(void)
  * @details Create 3 threads of priority -2, -1 and 0. Put the main
  * thread in timeout queue by calling k_sleep() which is cooperative.
  * Check if all the threads gets executed.
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_sleep_cooperative(void)
 {
@@ -160,6 +164,8 @@ void test_busy_wait_cooperative(void)
  * executing.
  *
  * @see k_wakeup()
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_sleep_wakeup_preemptible(void)
 {
@@ -193,6 +199,8 @@ static void coop_thread(void *p1, void *p2, void *p3)
  * call should return gracefully without waking up the thread
  *
  * @see k_wakeup()
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_pending_thread_wakeup(void)
 {
@@ -226,6 +234,8 @@ void test_pending_thread_wakeup(void)
  * @details Create 3 threads with -1, 0, and 1 as priority, setup
  * time slice for threads with priority 0. Make sure the threads
  * with equal priorities are executed in time slice.
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_time_slicing_preemptible(void)
 {
@@ -259,6 +269,8 @@ void test_time_slicing_preemptible(void)
  * are not executed at that time.
  *
  * @see k_busy_wait()
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_time_slicing_disable_preemptible(void)
 {
@@ -285,6 +297,8 @@ void test_time_slicing_disable_preemptible(void)
  * @details Create 3 threads and lock the scheduler. Make sure that the
  * threads are not executed. Call k_sleep() and check if the threads
  * have executed.
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_lock_preemptible(void)
 {
@@ -318,6 +332,8 @@ void test_lock_preemptible(void)
  * and check if the threads have executed.
  *
  * @see k_sched_lock(), k_sched_unlock()
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_unlock_preemptible(void)
 {
@@ -347,6 +363,8 @@ void test_unlock_preemptible(void)
  * in pending state
  *
  * @see k_wakeup()
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_wakeup_expired_timer_thread(void)
 {

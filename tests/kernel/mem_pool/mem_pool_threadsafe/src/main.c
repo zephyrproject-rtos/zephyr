@@ -51,6 +51,8 @@ static void tmpool_api(void *p1, void *p2, void *p3)
 /**
  * @brief Test alloc and free on different priority threads
  *
+ * @ingroup kernel_memory_pool_tests
+ *
  * @details The test creates 4 threads of equal priority and
  * invokes memory pool APIs on same memory domain. Checks for
  * the synchronization of threads on the resource memory pool.

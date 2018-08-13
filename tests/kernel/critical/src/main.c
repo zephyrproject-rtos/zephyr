@@ -9,6 +9,10 @@
  *
  * @brief Offload to the Kernel offload workqueue
  *
+ * @defgroup kernel_critical_tests Critical Tests
+ *
+ * @ingroup all_tests
+ *
  * This test verifies that the kernel offload workqueue operates as
  * expected.
  *
@@ -21,6 +25,8 @@
  * This is done with time slicing both disabled and enabled to ensure that the
  * result always matches the number of times the workqueue is called.
  *
+ * @{
+ * @}
  */
 #include <zephyr.h>
 #include <linker/sections.h>
@@ -199,7 +205,10 @@ static void start_threads(void)
 /**
  * @brief Verify thread context
  *
- * Check whether variable value per-thread is saved during context switch
+ * @details Check whether variable value per-thread is saved
+ * during context switch
+ *
+ * @ingroup kernel_critical_tests
  */
 void test_critical(void)
 {
