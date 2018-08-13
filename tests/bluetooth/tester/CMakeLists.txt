@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.8.2)
 if(BOARD STREQUAL "qemu_cortex_m3")
 set(CONF_FILE qemu.conf)
 else()

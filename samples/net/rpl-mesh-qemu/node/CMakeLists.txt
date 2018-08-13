@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.8.2)
 set(BOARD qemu_cortex_m3)
 set(CONF_FILE prj_qemu.conf)
 
