@@ -1453,15 +1453,12 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 
 	net_pkt_set_ipv6_ext_opt_len(pkt, sizeof(struct net_icmpv6_ns_hdr));
 
-	ret = net_icmpv6_get_nd_opt_hdr(pkt, &nd_opt_hdr);
-	if (ret < 0) {
-		goto drop;
-	}
-
 	left_len = net_pkt_get_len(pkt) - (sizeof(struct net_ipv6_hdr) +
 					   sizeof(struct net_icmp_hdr));
 
-	while (net_pkt_ipv6_ext_opt_len(pkt) < left_len) {
+	ret = net_icmpv6_get_nd_opt_hdr(pkt, &nd_opt_hdr);
+
+	while (!ret && net_pkt_ipv6_ext_opt_len(pkt) < left_len) {
 		if (!nd_opt_hdr.len) {
 			break;
 		}
@@ -1506,9 +1503,6 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 		}
 
 		ret = net_icmpv6_get_nd_opt_hdr(pkt, &nd_opt_hdr);
-		if (ret < 0) {
-			goto drop;
-		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
@@ -2006,15 +2000,12 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 
 	net_pkt_set_ipv6_ext_opt_len(pkt, sizeof(struct net_icmpv6_na_hdr));
 
-	ret = net_icmpv6_get_nd_opt_hdr(pkt, &nd_opt_hdr);
-	if (ret < 0) {
-		goto drop;
-	}
-
 	left_len = net_pkt_get_len(pkt) - (sizeof(struct net_ipv6_hdr) +
 					   sizeof(struct net_icmp_hdr));
 
-	while (net_pkt_ipv6_ext_opt_len(pkt) < left_len) {
+	ret = net_icmpv6_get_nd_opt_hdr(pkt, &nd_opt_hdr);
+
+	while (!ret && net_pkt_ipv6_ext_opt_len(pkt) < left_len) {
 		if (!nd_opt_hdr.len) {
 			break;
 		}
@@ -2044,9 +2035,6 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 		}
 
 		ret = net_icmpv6_get_nd_opt_hdr(pkt, &nd_opt_hdr);
-		if (ret < 0) {
-			goto drop;
-		}
 	}
 
 	ifaddr = net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),
