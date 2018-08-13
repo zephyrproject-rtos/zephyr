@@ -888,7 +888,7 @@ static int tls_opt_sec_tag_list_set(struct net_context *context,
 	int sec_tag_cnt;
 
 	if (!optval) {
-		return -EFAULT;
+		return -EINVAL;
 	}
 
 	if (optlen % sizeof(sec_tag_t) != 0) {
@@ -945,7 +945,7 @@ static int tls_opt_ciphersuite_list_set(struct net_context *context,
 	int cipher_cnt;
 
 	if (!optval) {
-		return -EFAULT;
+		return -EINVAL;
 	}
 
 	if (optlen % sizeof(int) != 0) {
@@ -1022,7 +1022,7 @@ static int tls_opt_peer_verify_set(struct net_context *context,
 	int *peer_verify;
 
 	if (!optval) {
-		return -EFAULT;
+		return -EINVAL;
 	}
 
 	if (optlen != sizeof(int)) {
@@ -1048,7 +1048,7 @@ static int tls_opt_role_set(struct net_context *context, const void *optval,
 	int *role;
 
 	if (!optval) {
-		return -EFAULT;
+		return -EINVAL;
 	}
 
 	if (optlen != sizeof(int)) {
@@ -1720,7 +1720,7 @@ int ztls_getsockopt(int sock, int level, int optname,
 	}
 
 	if (!optval || !optlen) {
-		return -EFAULT;
+		return -EINVAL;
 	}
 
 	switch (optname) {
