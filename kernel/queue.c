@@ -184,17 +184,18 @@ static int queue_insert(struct k_queue *queue, void *prev, void *data,
 
 void k_queue_insert(struct k_queue *queue, void *prev, void *data)
 {
-	queue_insert(queue, prev, data, false);
+	(void)queue_insert(queue, prev, data, false);
 }
 
 void k_queue_append(struct k_queue *queue, void *data)
 {
-	queue_insert(queue, sys_sflist_peek_tail(&queue->data_q), data, false);
+	(void)queue_insert(queue, sys_sflist_peek_tail(&queue->data_q),
+			   data, false);
 }
 
 void k_queue_prepend(struct k_queue *queue, void *data)
 {
-	queue_insert(queue, NULL, data, false);
+	(void)queue_insert(queue, NULL, data, false);
 }
 
 int _impl_k_queue_alloc_append(struct k_queue *queue, void *data)
