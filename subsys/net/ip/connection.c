@@ -870,8 +870,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 			data_len = ntohs(NET_IPV4_HDR(pkt)->len);
 		} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 			   net_pkt_family(pkt) == AF_INET6) {
-			data_len = NET_IPV6_HDR(pkt)->len[0] * 256 +
-				NET_IPV6_HDR(pkt)->len[1];
+			data_len = ntohs(NET_IPV6_HDR(pkt)->len);
 		}
 
 		NET_DBG("Check %s listener for pkt %p src port %u dst port %u "

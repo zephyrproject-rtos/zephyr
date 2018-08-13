@@ -480,8 +480,8 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 #endif
 #if defined(CONFIG_NET_IPV6)
 	case AF_INET6:
-		upper_layer_len = (NET_IPV6_HDR(pkt)->len[0] << 8) +
-			NET_IPV6_HDR(pkt)->len[1] - net_pkt_ipv6_ext_len(pkt);
+		upper_layer_len = ntohs(NET_IPV6_HDR(pkt)->len) -
+			net_pkt_ipv6_ext_len(pkt);
 		sum = calc_chksum(upper_layer_len + proto,
 				  (u8_t *)&NET_IPV6_HDR(pkt)->src,
 				  2 * sizeof(struct in6_addr));

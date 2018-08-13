@@ -247,8 +247,7 @@ static void setup_ipv6_tcp(struct net_pkt *pkt,
 	ipv6.vtc = 0x60;
 	ipv6.tcflow = 0;
 	ipv6.flow = 0;
-	ipv6.len[0] = 0;
-	ipv6.len[1] = NET_TCPH_LEN + sizeof(data);
+	ipv6.len = htons(NET_TCPH_LEN + sizeof(data));
 	ipv6.nexthdr = IPPROTO_TCP;
 	ipv6.hop_limit = 255;
 
@@ -336,9 +335,8 @@ static void setup_ipv6_tcp_long(struct net_pkt *pkt,
 	ipv6.vtc = 0x60;
 	ipv6.tcflow = 0;
 	ipv6.flow = 0;
-	ipv6.len[0] = 0;
-	ipv6.len[1] = NET_TCPH_LEN + sizeof(data) +
-		sizeof(ipv6_hop_by_hop_ext_hdr);
+	ipv6.len = htons(NET_TCPH_LEN + sizeof(data) +
+				sizeof(ipv6_hop_by_hop_ext_hdr));
 
 	ipv6.nexthdr = 0; /* Hop-by-hop option */
 	ipv6.hop_limit = 255;

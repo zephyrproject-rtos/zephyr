@@ -269,7 +269,7 @@ struct net_ipv6_hdr {
 	u8_t vtc;
 	u8_t tcflow;
 	u16_t flow;
-	u8_t len[2];
+	u16_t len;
 	u8_t nexthdr;
 	u8_t hop_limit;
 	struct in6_addr src;

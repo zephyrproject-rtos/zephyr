@@ -101,9 +101,7 @@ static inline void ethernet_update_length(struct net_if *iface,
 	if (net_pkt_family(pkt) == AF_INET) {
 		len = ntohs(NET_IPV4_HDR(pkt)->len);
 	} else {
-		len = ((NET_IPV6_HDR(pkt)->len[0] << 8) +
-		       NET_IPV6_HDR(pkt)->len[1]) +
-			NET_IPV6H_LEN;
+		len = ntohs(NET_IPV6_HDR(pkt)->len) + NET_IPV6H_LEN;
 	}
 
 	if (len < NET_ETH_MINIMAL_FRAME_SIZE - sizeof(struct net_eth_hdr)) {
