@@ -347,7 +347,7 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer)
 
 	/* copy message data to buffer, then dispose of message */
 	if ((rx_msg->tx_data != NULL) && (rx_msg->size > 0)) {
-		memcpy(buffer, rx_msg->tx_data, rx_msg->size);
+		(void)memcpy(buffer, rx_msg->tx_data, rx_msg->size);
 	}
 	mbox_message_dispose(rx_msg);
 }

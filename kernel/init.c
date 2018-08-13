@@ -181,18 +181,18 @@ void _bss_zero(void)
  */
 void _data_copy(void)
 {
-	memcpy(&__data_ram_start, &__data_rom_start,
+	(void)memcpy(&__data_ram_start, &__data_rom_start,
 		 ((u32_t) &__data_ram_end - (u32_t) &__data_ram_start));
 #ifdef CONFIG_CCM_BASE_ADDRESS
-	memcpy(&__ccm_data_start, &__ccm_data_rom_start,
+	(void)memcpy(&__ccm_data_start, &__ccm_data_rom_start,
 		 ((u32_t) &__ccm_data_end - (u32_t) &__ccm_data_start));
 #endif
 #ifdef CONFIG_APP_SHARED_MEM
-	memcpy(&_app_smem_start, &_app_smem_rom_start,
+	(void)memcpy(&_app_smem_start, &_app_smem_rom_start,
 		 ((u32_t) &_app_smem_end - (u32_t) &_app_smem_start));
 #endif
 #ifdef CONFIG_APPLICATION_MEMORY
-	memcpy(&__app_data_ram_start, &__app_data_rom_start,
+	(void)memcpy(&__app_data_ram_start, &__app_data_rom_start,
 		 ((u32_t) &__app_data_ram_end - (u32_t) &__app_data_ram_start));
 #endif
 }
