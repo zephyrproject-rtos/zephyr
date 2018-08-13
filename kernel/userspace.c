@@ -597,7 +597,7 @@ void *z_user_alloc_from_copy(void *src, size_t size)
 		goto out_err;
 	}
 
-	memcpy(dst, src, size);
+	(void)memcpy(dst, src, size);
 out_err:
 	irq_unlock(key);
 	return dst;
@@ -616,7 +616,7 @@ static int user_copy(void *dst, void *src, size_t size, bool to_user)
 		goto out_err;
 	}
 
-	memcpy(dst, src, size);
+	(void)memcpy(dst, src, size);
 	ret = 0;
 out_err:
 	irq_unlock(key);

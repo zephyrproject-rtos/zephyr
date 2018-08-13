@@ -121,7 +121,7 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 		pending_thread = _unpend_first_thread(&q->wait_q);
 		if (pending_thread) {
 			/* give message to waiting thread */
-			memcpy(pending_thread->base.swap_data, data,
+			(void)memcpy(pending_thread->base.swap_data, data,
 			       q->msg_size);
 			/* wake up waiting thread */
 			_set_thread_return_value(pending_thread, 0);
@@ -130,7 +130,7 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 			return 0;
 		} else {
 			/* put message in queue */
-			memcpy(q->write_ptr, data, q->msg_size);
+			(void)memcpy(q->write_ptr, data, q->msg_size);
 			q->write_ptr += q->msg_size;
 			if (q->write_ptr == q->buffer_end) {
 				q->write_ptr = q->buffer_start;
@@ -193,7 +193,7 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 
 	if (q->used_msgs > 0) {
 		/* take first available message from queue */
-		memcpy(data, q->read_ptr, q->msg_size);
+		(void)memcpy(data, q->read_ptr, q->msg_size);
 		q->read_ptr += q->msg_size;
 		if (q->read_ptr == q->buffer_end) {
 			q->read_ptr = q->buffer_start;
@@ -204,7 +204,7 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 		pending_thread = _unpend_first_thread(&q->wait_q);
 		if (pending_thread) {
 			/* add thread's message to queue */
-			memcpy(q->write_ptr, pending_thread->base.swap_data,
+			(void)memcpy(q->write_ptr, pending_thread->base.swap_data,
 			       q->msg_size);
 			q->write_ptr += q->msg_size;
 			if (q->write_ptr == q->buffer_end) {

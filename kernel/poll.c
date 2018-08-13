@@ -272,7 +272,7 @@ Z_SYSCALL_HANDLER(k_poll, events, num_events, timeout)
 		irq_unlock(key);
 		goto oops_free;
 	}
-	memcpy(events_copy, (void *)events, bounds);
+	(void)memcpy(events_copy, (void *)events, bounds);
 	irq_unlock(key);
 
 	/* Validate what's inside events_copy */
@@ -303,7 +303,7 @@ Z_SYSCALL_HANDLER(k_poll, events, num_events, timeout)
 	}
 
 	ret = k_poll(events_copy, num_events, timeout);
-	memcpy((void *)events, events_copy, bounds);
+	(void)memcpy((void *)events, events_copy, bounds);
 out_free:
 	k_free(events_copy);
 out:
