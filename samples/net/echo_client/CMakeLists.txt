@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.8.2)
 macro(set_conf_file)
   if(EXISTS ${APPLICATION_SOURCE_DIR}/prj_${BOARD}.conf)
     set(CONF_FILE "${APPLICATION_SOURCE_DIR}/prj_${BOARD}.conf")
