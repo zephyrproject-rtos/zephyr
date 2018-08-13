@@ -28,6 +28,7 @@ kobjects = {
     "k_stack" : None,
     "k_thread" : None,
     "k_timer" : None,
+    "k_work_q" : None,
     "_k_thread_stack_element" : None,
     "net_context" : "CONFIG_NETWORKING",
     "device" : None

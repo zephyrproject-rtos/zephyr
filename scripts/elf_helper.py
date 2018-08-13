@@ -63,7 +63,7 @@ class KobjectInstance:
         # API struct address
         self.type_name = None
 
-        if self.type_obj.name == "k_thread":
+        if self.type_obj.name in ["k_thread", "k_work_q"]:
             # Assign an ID for this thread object, used to track its
             # permissions to other kernel objects
             self.data = thread_counter

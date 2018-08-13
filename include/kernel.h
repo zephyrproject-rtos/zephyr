@@ -2532,8 +2532,8 @@ typedef void (*k_work_handler_t)(struct k_work *work);
  */
 
 struct k_work_q {
+	struct k_thread thread; /* Must be first */
 	struct k_queue queue;
-	struct k_thread thread;
 };
 
 enum {
@@ -2553,6 +2553,12 @@ struct k_delayed_work {
 };
 
 extern struct k_work_q k_sys_work_q;
+
+extern void z_work_q_main(void *work_q_ptr, void *p2, void *p3);
+
+__syscall void *z_work_q_get(struct k_work_q *work_q);
+
+__syscall int z_work_q_put(struct k_work_q *work_q, void *work);
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -2598,7 +2604,6 @@ extern struct k_work_q k_sys_work_q;
 static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
 {
 	*work = (struct k_work)_K_WORK_INITIALIZER(handler);
-	_k_object_init(work);
 }
 
 /**
@@ -2620,15 +2625,19 @@ static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
  * @param work_q Address of workqueue.
  * @param work Address of work item.
  *
- * @return N/A
+ * @retval 0 success
+ * @retval -ENOMEM Insufficient thread resourece pool memory (only when
+ *         called from user mode)
  * @req K-WORK-001
  */
-static inline void k_work_submit_to_queue(struct k_work_q *work_q,
-					  struct k_work *work)
+static inline int k_work_submit_to_queue(struct k_work_q *work_q,
+					 struct k_work *work)
 {
 	if (!atomic_test_and_set_bit(work->flags, K_WORK_STATE_PENDING)) {
-		k_queue_append(&work_q->queue, work);
+		return z_work_q_put(work_q, work);
 	}
+
+	return 0;
 }
 
 /**
@@ -2669,6 +2678,50 @@ static inline int k_work_pending(struct k_work *work)
 extern void k_work_q_start(struct k_work_q *work_q,
 			   k_thread_stack_t *stack,
 			   size_t stack_size, int prio);
+
+/**
+ * @brief Start a workqueue.
+ *
+ * This routine starts workqueue @a work_q. The workqueue spawns its work
+ * processing thread, which runs forever. The created worker thread runs in
+ * user mode and inherits the caller's memory domain and kernel object
+ * permissions.
+ *
+ * @param work_q Address of workqueue.
+ * @param stack Pointer to work queue thread's stack space, as defined by
+ *		K_THREAD_STACK_DEFINE()
+ * @param stack_size Size of the work queue thread's stack (in bytes), which
+ *		should either be the same constant passed to
+ *		K_THREAD_STACK_DEFINE() or the value of K_THREAD_STACK_SIZEOF().
+ * @param prio Priority of the work queue's thread.
+ *
+ * @return N/A
+ * @req K-WORK-001
+ */
+__syscall void k_work_q_user_start(struct k_work_q *work_q,
+				   k_thread_stack_t *stack,
+				   size_t stack_size, int prio);
+
+/**
+ * @brief Grant a workqueue thread access to a kernel object
+ *
+ * The workqueue will be granted access to the object if the caller is from
+ * supervisor mode, or the caller is from user mode AND has permissions
+ * on both the object and the workqueue whose access is being granted.
+ *
+ * @param object Address of kernel object
+ * @param workq Workqueue to grant access to the object
+ */
+static inline void k_work_q_object_access_grant(void *object,
+						struct k_work_q *workq)
+{
+	/* Workqueue and its containing thread have same memory address,
+	 * this is necessary as user mode can't simply do &workq->thread,
+	 * and there is just one entry in the loopup table anyway which
+	 * represents both.
+	 */
+	k_object_access_grant(object, (struct k_thread *)workq);
+}
 
 /**
  * @brief Initialize a delayed work item.

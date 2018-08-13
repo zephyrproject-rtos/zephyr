@@ -14,46 +14,98 @@
 #include <kernel_structs.h>
 #include <wait_q.h>
 #include <errno.h>
+#include <syscall_handler.h>
 
-static void work_q_main(void *work_q_ptr, void *p2, void *p3)
+static inline bool z_is_work_q_user(struct k_work_q *work_q)
 {
-	struct k_work_q *work_q = work_q_ptr;
-
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
-	while (1) {
-		struct k_work *work;
-		k_work_handler_t handler;
-
-		work = k_queue_get(&work_q->queue, K_FOREVER);
-		if (!work) {
-			continue;
-		}
-
-		handler = work->handler;
-
-		/* Reset pending state so it can be resubmitted by handler */
-		if (atomic_test_and_clear_bit(work->flags,
-					      K_WORK_STATE_PENDING)) {
-			handler(work);
-		}
-
-		/* Make sure we don't hog up the CPU if the FIFO never (or
-		 * very rarely) gets empty.
-		 */
-		k_yield();
-	}
+	return work_q->thread.base.user_options & K_USER;
 }
 
+void *_impl_z_work_q_get(struct k_work_q *work_q)
+{
+	return k_queue_get(&work_q->queue, K_FOREVER);
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(z_work_q_get, work_q)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(work_q, K_OBJ_WORK_Q));
+
+	return (u32_t)_impl_z_work_q_get((struct k_work_q *)work_q);
+}
+#endif
+
+int _impl_z_work_q_put(struct k_work_q *work_q, void *work)
+{
+	k_queue_append(&work_q->queue, work);
+
+	return 0;
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(z_work_q_put, work_q_ptr, work)
+{
+	struct k_work_q *work_q = (struct k_work_q *)work_q_ptr;
+
+	Z_OOPS(Z_SYSCALL_OBJ(work_q, K_OBJ_WORK_Q));
+
+	/* User threads may only put stuff in a work queue that is also
+	 * running in user mode, extra paranoia if somehow a user thread
+	 * got permissions on a work_q that runs in supervisor mode.
+	 */
+	Z_OOPS(!z_is_work_q_user(work_q));
+
+	/* Using alloc_append since supervisor mode must never dereference
+	 * the work pointer itself; it gets wrapped in a container first.
+	 */
+	return k_queue_alloc_append(&work_q->queue, (void *)work);
+}
+#endif
+
+#ifdef CONFIG_MULTITHREADING
 void k_work_q_start(struct k_work_q *work_q, k_thread_stack_t *stack,
 		    size_t stack_size, int prio)
 {
 	k_queue_init(&work_q->queue);
-	k_thread_create(&work_q->thread, stack, stack_size, work_q_main,
+	k_thread_create(&work_q->thread, stack, stack_size, z_work_q_main,
 			work_q, 0, 0, prio, 0, 0);
 	_k_object_init(work_q);
 }
+
+void _impl_k_work_q_user_start(struct k_work_q *work_q, k_thread_stack_t *stack,
+			       size_t stack_size, int prio)
+{
+	k_queue_init(&work_q->queue);
+
+	/* Created worker thread will inherit object permissions and memory
+	 * domain configuration of the caller
+	 */
+	k_thread_create(&work_q->thread, stack, stack_size, z_work_q_main,
+			work_q, 0, 0, prio, K_USER | K_INHERIT_PERMS, 0);
+	k_object_access_grant(work_q, &work_q->thread);
+
+	_k_object_init(work_q);
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(k_work_q_user_start, work_q, stack, stack_size, prio)
+{
+	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(work_q, K_OBJ_WORK_Q));
+	Z_OOPS(z_thread_stack_validate((k_thread_stack_t *)stack, stack_size));
+
+	/* Check validity of prio argument; must be the same or worse priority
+	 * than the caller
+	 */
+	Z_OOPS(Z_SYSCALL_VERIFY(_is_valid_prio(prio, NULL)));
+	Z_OOPS(Z_SYSCALL_VERIFY(_is_prio_lower_or_equal(prio,
+							_current->base.prio)));
+
+	_impl_k_work_q_user_start((struct k_work_q *)work_q,
+				  (k_thread_stack_t *)stack, stack_size, prio);
+	return 0;
+}
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_MULTITHREADING */
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 static void work_timeout(struct _timeout *t)
