@@ -1669,19 +1669,19 @@ __syscall s64_t k_uptime_get(void);
  *
  * @retval prev_status Previous status of always on flag
  */
-#ifdef CONFIG_TICKLESS_KERNEL
 static inline int k_enable_sys_clock_always_on(void)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
 	int prev_status = _sys_clock_always_on;
 
 	_sys_clock_always_on = 1;
 	_enable_sys_clock();
 
 	return prev_status;
-}
 #else
-#define k_enable_sys_clock_always_on() do { } while ((0))
+	return -ENOTSUP;
 #endif
+}
 
 /**
  * @brief Disable clock always on in tickless kernel
@@ -1691,14 +1691,12 @@ static inline int k_enable_sys_clock_always_on(void)
  * scheduling. To save power, this routine should be called
  * immediately when clock is not used to track time.
  */
-#ifdef CONFIG_TICKLESS_KERNEL
 static inline void k_disable_sys_clock_always_on(void)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
 	_sys_clock_always_on = 0;
-}
-#else
-#define k_disable_sys_clock_always_on() do { } while ((0))
 #endif
+}
 
 /**
  * @brief Get system uptime (32-bit version).
