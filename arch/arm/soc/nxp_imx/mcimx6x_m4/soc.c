@@ -6,6 +6,7 @@
 
 #include <init.h>
 #include <soc.h>
+#include <dt-bindings/rdc/imx_rdc.h>
 #include <cortex_m/exc.h>
 #include "wdog_imx.h"
 
@@ -13,90 +14,64 @@
 static void SOC_RdcInit(void)
 {
 	/* Move M4 core to the configured RDC domain */
-	RDC_SetDomainID(RDC, rdcMdaM4, CONFIG_DOMAIN_ID, false);
+	RDC_SetDomainID(RDC, rdcMdaM4, M4_DOMAIN_ID, false);
 
 	/* Set access to WDOG3 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapWdog3,
-			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
+			RDC_DOMAIN_PERM(M4_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
 			false, false);
 
 #ifdef CONFIG_UART_IMX_UART_1
 	/* Set access to UART_1 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart1,
-			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
-			false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapUart1, UART_1_RDC, false, false);
 #endif /* CONFIG_UART_IMX_UART_1 */
 #ifdef CONFIG_UART_IMX_UART_2
 	/* Set access to UART_2 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart2,
-			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
-			false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapUart2, UART_2_RDC, false, false);
 #endif /* CONFIG_UART_IMX_UART_2 */
 #ifdef CONFIG_UART_IMX_UART_3
 	/* Set access to UART_3 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart3,
-			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
-			false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapUart3, UART_3_RDC, false, false);
 #endif /* CONFIG_UART_IMX_UART_3 */
 #ifdef CONFIG_UART_IMX_UART_4
 	/* Set access to UART_4 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart4,
-			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
-			false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapUart4, UART_4_RDC, false, false);
 #endif /* CONFIG_UART_IMX_UART_4 */
 #ifdef CONFIG_UART_IMX_UART_5
 	/* Set access to UART_5 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart5,
-			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
-			false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapUart5, UART_5_RDC, false, false);
 #endif /* CONFIG_UART_IMX_UART_5 */
 #ifdef CONFIG_UART_IMX_UART_6
 	/* Set access to UART_6 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart6,
-			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
-			false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapUart6, UART_6_RDC, false, false);
 #endif /* CONFIG_UART_IMX_UART_6 */
 #ifdef CONFIG_GPIO_IMX_PORT_1
 	/* Set access to GPIO_1 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio1,
-			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
-			false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio1, GPIO_1_RDC, false, false);
 #endif /* CONFIG_GPIO_IMX_PORT_1 */
 #ifdef CONFIG_GPIO_IMX_PORT_2
 	/* Set access to GPIO_2 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio2,
-			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
-			false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio2, GPIO_2_RDC, false, false);
 #endif /* CONFIG_GPIO_IMX_PORT_2 */
 #ifdef CONFIG_GPIO_IMX_PORT_3
 	/* Set access to GPIO_3 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio3,
-			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
-			false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio3, GPIO_3_RDC, false, false);
 #endif /* CONFIG_GPIO_IMX_PORT_3 */
 #ifdef CONFIG_GPIO_IMX_PORT_4
 	/* Set access to GPIO_4 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio4,
-			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
-			false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio4, GPIO_4_RDC, false, false);
 #endif /* CONFIG_GPIO_IMX_PORT_4 */
 #ifdef CONFIG_GPIO_IMX_PORT_5
 	/* Set access to GPIO_5 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio5,
-			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
-			false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio5, GPIO_5_RDC, false, false);
 #endif /* CONFIG_GPIO_IMX_PORT_5 */
 #ifdef CONFIG_GPIO_IMX_PORT_6
 	/* Set access to GPIO_6 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio6,
-			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
-			false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio6, GPIO_6_RDC, false, false);
 #endif /* CONFIG_GPIO_IMX_PORT_6 */
 #ifdef CONFIG_GPIO_IMX_PORT_7
 	/* Set access to GPIO_7 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio7,
-			RDC_DOMAIN_PERM(CONFIG_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
-			false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio7, GPIO_7_RDC, false, false);
 #endif /* CONFIG_GPIO_IMX_PORT_7 */
 }
 

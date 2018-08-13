@@ -51,6 +51,7 @@ static struct net_pkt *ipv4_autoconf_prepare_arp(struct net_if *iface)
 	net_pkt_frag_add(pkt, frag);
 	net_pkt_set_iface(pkt, iface);
 	net_pkt_set_family(pkt, AF_INET);
+	net_pkt_set_ipv4_auto(pkt, true);
 
 	return net_arp_prepare(pkt, &cfg->ipv4auto.requested_ip,
 			       &cfg->ipv4auto.current_ip);

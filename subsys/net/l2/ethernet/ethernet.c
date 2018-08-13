@@ -99,8 +99,7 @@ static inline void ethernet_update_length(struct net_if *iface,
 	 */
 
 	if (net_pkt_family(pkt) == AF_INET) {
-		len = ((NET_IPV4_HDR(pkt)->len[0] << 8) +
-		       NET_IPV4_HDR(pkt)->len[1]);
+		len = ntohs(NET_IPV4_HDR(pkt)->len);
 	} else {
 		len = ((NET_IPV6_HDR(pkt)->len[0] << 8) +
 		       NET_IPV6_HDR(pkt)->len[1]) +
@@ -402,6 +401,15 @@ struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
 	return hdr;
 }
 
+#if defined(CONFIG_NET_IPV4_AUTO)
+static inline bool is_ipv4_auto_arp_msg(struct net_pkt *pkt)
+{
+	return net_pkt_ipv4_auto(pkt);
+}
+#else
+#define is_ipv4_auto_arp_msg(...) false
+#endif
+
 static enum net_verdict ethernet_send(struct net_if *iface,
 				      struct net_pkt *pkt)
 {
@@ -431,7 +439,7 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 		}
 
 		/* Trying to send ARP message so no need to setup it twice */
-		if (ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_ARP) {
+		if (!is_ipv4_auto_arp_msg(pkt)) {
 			arp_pkt = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst,
 						  NULL);
 			if (!arp_pkt) {
@@ -568,8 +576,19 @@ static inline u16_t ethernet_reserve(struct net_if *iface, void *unused)
 
 static inline int ethernet_enable(struct net_if *iface, bool state)
 {
+	const struct ethernet_api *eth =
+		net_if_get_device(iface)->driver_api;
+
 	if (!state) {
 		net_arp_clear_cache(iface);
+
+		if (eth->stop) {
+			eth->stop(net_if_get_device(iface));
+		}
+	} else {
+		if (eth->start) {
+			eth->start(net_if_get_device(iface));
+		}
 	}
 
 	return 0;

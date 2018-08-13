@@ -21,7 +21,6 @@ config BMI160_NAME
 config BMI160_SPI_PORT_NAME
 	string "SPI master controller port name"
 	depends on BMI160
-	default ""
 	help
 	  Master SPI port name through which BMI160 chip is accessed.
 

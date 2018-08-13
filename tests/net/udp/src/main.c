@@ -318,9 +318,9 @@ static void setup_ipv4_udp(struct net_pkt *pkt,
 {
 	NET_IPV4_HDR(pkt)->vhl = 0x45;
 	NET_IPV4_HDR(pkt)->tos = 0;
-	NET_IPV4_HDR(pkt)->len[0] = 0;
-	NET_IPV4_HDR(pkt)->len[1] = NET_UDPH_LEN +
-		sizeof(struct net_ipv4_hdr) + strlen(payload);
+	NET_IPV4_HDR(pkt)->len = htons(NET_UDPH_LEN +
+					sizeof(struct net_ipv4_hdr) +
+					strlen(payload));
 
 	NET_IPV4_HDR(pkt)->proto = IPPROTO_UDP;
 

@@ -231,11 +231,16 @@ To do this, we extend the definition of ``FOO_WIDTH`` as follows, in
     Since the type of the symbol (``int``) has already been given at the first
     definition location, it does not need to be repeated here.
 
-``default`` properties from :file:`Kconfig.defconfig` files override
-``default`` properties given on the "base" definition of the symbol. Zephyr
-uses a custom Kconfig patch that makes Kconfig prefer later defaults, and
-includes any :file:`Kconfig.defconfig` file last. See the
-:ref:`zephyr-specific_kconfig_behavior_for_defaults` section.
+``default`` values in :file:`Kconfig.defconfig` files have priority over
+``default`` values given on the "base" definition of a symbol. Internally, this
+is implemented by including the :file:`Kconfig.defconfig` files first. Kconfig
+uses the first ``default`` with a satisfied condition, where an empty condition
+works like ``if y`` (is always satisfied).
+
+.. note::
+
+    ``range`` properties on ``int`` and ``hex`` symbols work the same way, and
+    can also be added or overriden in :file:`Kconfig.defconfig` files.
 
 If you want a symbol to only be user-configurable on some boards, make its base
 definition have no prompt, and then add a prompt to it in the
@@ -247,23 +252,76 @@ definition have no prompt, and then add a prompt to it in the
     the :file:`Kconfig.defconfig` file in the ``menuconfig`` interface, rather
     than at the location of the base definition of the symbol.
 
+
+Configuring choices
+-------------------
+
+There are two ways to configure a Kconfig ``choice``:
+
+1. By setting one of the choice symbols to ``y`` in :file:`BOARD_defconfig`.
+
+   .. note::
+
+       Setting one choice symbol to ``y`` automatically gives all other choice
+       symbols the value ``n``.
+
+       If multiple choice symbols are set to ``y``, only the last one set to
+       ``y`` will be honored (and the rest will get the value ``n``). This
+       allows a choice selection from a board :file:`defconfig` file to be
+       overridden from an application :file:`prj.conf` file.
+
+2. By changing the ``default`` of the choice in :file:`Kconfig.defconfig`.
+
+   As with symbols, changing the default for a choice is done by defining the
+   choice in multiple locations. For this to work, the choice must have a name.
+
+   As an example, assume that a choice has the following base definition (here,
+   the name of the choice is ``FOO``):
+
+   .. code-block:: none
+
+       choice FOO
+           bool "Foo choice"
+           default B
+
+       config A
+           bool "A"
+
+       config B
+           bool "B"
+
+       endchoice
+
+   To change the default symbol of ``FOO`` to ``A``, you would add the
+   following definition to :file:`Kconfig.defconfig`:
+
+   .. code-block:: none
+
+       choice FOO
+           default A
+       endchoice
+
+The :file:`Kconfig.defconfig` method should be used when the dependencies of
+the choice might not be satisfied. In that case, you're setting the default
+selection whenever the user makes the choice visible.
+
+
 Motivation
 ----------
 
-One motivation for this scheme is to avoid making fixed ``BOARD``-specific
-settings configurable in the ``menuconfig`` interface. If all
-configuration were done via :file:`boards/ARCHITECTURE/BOARD/BOARD_defconfig`,
-all symbols would have to be visible, as values given in
-:file:`boards/ARCHITECTURE/BOARD/BOARD_defconfig` have no effect on invisible
-symbols.
+One motivation for this configuration scheme is to avoid making fixed
+``BOARD``-specific settings configurable in the ``menuconfig`` interface. If
+all configuration were done via :file:`BOARD_defconfig`, all symbols would have
+to be visible, as values given in :file:`BOARD_defconfig` have no effect on
+invisible symbols.
 
 Having fixed settings be user-configurable might be confusing, and would allow
 the user to create broken configurations.
 
-.. _kconfig_extensions_and_changes:
+.. _kconfig_extensions:
 
-Kconfig extensions and changes
-==============================
+Kconfig extensions
+==================
 
 Zephyr uses the `Kconfiglib <https://github.com/ulfalizer/Kconfiglib>`_
 implementation of `Kconfig
@@ -359,16 +417,14 @@ The following Kconfig extensions are available:
 
       grsource "Kconfig[12]"
 
-.. _zephyr-specific_kconfig_behavior_for_defaults:
+Old Zephyr Kconfig behavior for defaults
+========================================
 
-Zephyr-specific Kconfig behavior for defaults
-=============================================
+Prior to early August 2018 (during development of Zephyr 1.13), Zephyr used a
+custom patch that made Kconfig prefer the last ``default`` with a satisfied
+condition, instead of the first one.
 
-Zephyr uses a Kconfig patch that gives later ``default``\ s precedence over
-earlier ``default``\ s. This is a significant change from standard Kconfig
-behavior, which is to pick the first ``default`` with a satisfied condition.
-
-Consider the following example:
+Consider this example:
 
 .. code-block:: none
 
@@ -380,8 +436,32 @@ Consider the following example:
         default "fourth"
         default "fifth" if n
 
-In unpatched Kconfig, this will give ``FOO`` the value ``"second"``, which is
-the first ``default`` with a satisfied condition.
-
-In Zephyr, this will give ``FOO`` the value ``"fourth"``, which is the last
+With the old behavior, ``FOO`` got the value ``"fourth"``, from the last
 ``default`` with a satisfied condition.
+
+With the new behavior, ``FOO`` gets the value ``"second"``, from the first
+``default`` with a satisfied condition. This is standard Kconfig behavior.
+
+There are two issues with the old behavior:
+
+1. It's inconsistent with how Kconfig works in other projects, which is
+   confusing.
+
+2. Due to oversights, earlier ``range`` properties were still preferred, as
+   well as earlier ``default`` properties on choices.
+
+   In addition to being inconsistent, this made it impossible to override
+   ``range`` properties and ``default`` properties on choices if the base
+   definition of the symbol/choice already had ``range``/``default``
+   properties.
+
+.. note::
+
+    If you're maintaining an external project that has symbols with multiple
+    ``default`` properties, you will need to swap the order of the ``default``
+    properties to get the same behavior as before.
+
+    If your external project is modifying symbols in the base Zephyr
+    configuration by sourcing ``Kconfig.zephyr`` and adding additional symbol
+    definitions, you might need to move the ``source`` from before the extra
+    symbol definitions to after them.

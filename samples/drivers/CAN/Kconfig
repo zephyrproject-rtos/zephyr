@@ -8,8 +8,6 @@
 
 mainmenu "Controller Area Network sample application"
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
-
 config CAN_DEV
 	string "Name of the CAN device"
 	default "CAN_1"
@@ -46,3 +44,6 @@ config LOOPBACK_MODE
 	help
 	  Set the controller to loopback mode.
 	  This allows testing without a second board.
+
+
+source "$ZEPHYR_BASE/Kconfig.zephyr"

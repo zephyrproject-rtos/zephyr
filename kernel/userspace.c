@@ -20,6 +20,12 @@
 
 #define MAX_THREAD_BITS		(CONFIG_MAX_THREAD_BYTES * 8)
 
+#ifdef CONFIG_DYNAMIC_OBJECTS
+extern u8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
+#endif
+
+static void clear_perms_cb(struct _k_object *ko, void *ctx_ptr);
+
 const char *otype_to_str(enum k_objects otype)
 {
 	/* -fdata-sections doesn't work right except in very very recent
@@ -123,10 +129,74 @@ static struct dyn_obj *dyn_object_find(void *obj)
 	return ret;
 }
 
+/**
+ * @internal
+ *
+ * @brief Allocate a new thread index for a new thread.
+ *
+ * This finds an unused thread index that can be assigned to a new
+ * thread. If too many threads have been allocated, the kernel will
+ * run out of indexes and this function will fail.
+ *
+ * Note that if an unused index is found, that index will be marked as
+ * used after return of this function.
+ *
+ * @param tidx The new thread index if successful
+ *
+ * @return 1 if successful, 0 if failed
+ **/
+static int _thread_idx_alloc(u32_t *tidx)
+{
+	int i;
+	int idx;
+	int base;
+
+	base = 0;
+	for (i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
+		idx = find_lsb_set(_thread_idx_map[i]);
+
+		if (idx) {
+			*tidx = base + (idx - 1);
+
+			sys_bitfield_clear_bit((mem_addr_t)_thread_idx_map,
+					       *tidx);
+
+			/* Clear permission from all objects */
+			_k_object_wordlist_foreach(clear_perms_cb,
+						   (void *)*tidx);
+
+			return 1;
+		}
+
+		base += 8;
+	}
+
+	return 0;
+}
+
+/**
+ * @internal
+ *
+ * @brief Free a thread index.
+ *
+ * This frees a thread index so it can be used by another
+ * thread.
+ *
+ * @param tidx The thread index to be freed
+ **/
+static void _thread_idx_free(u32_t tidx)
+{
+	/* To prevent leaked permission when index is recycled */
+	_k_object_wordlist_foreach(clear_perms_cb, (void *)tidx);
+
+	sys_bitfield_set_bit((mem_addr_t)_thread_idx_map, tidx);
+}
+
 void *_impl_k_object_alloc(enum k_objects otype)
 {
 	struct dyn_obj *dyn_obj;
 	int key;
+	u32_t tidx;
 
 	/* Stacks are not supported, we don't yet have mem pool APIs
 	 * to request memory that is aligned
@@ -145,6 +215,16 @@ void *_impl_k_object_alloc(enum k_objects otype)
 	dyn_obj->kobj.type = otype;
 	dyn_obj->kobj.flags = K_OBJ_FLAG_ALLOC;
 	memset(dyn_obj->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
+
+	/* Need to grab a new thread index for k_thread */
+	if (otype == K_OBJ_THREAD) {
+		if (!_thread_idx_alloc(&tidx)) {
+			k_free(dyn_obj);
+			return NULL;
+		}
+
+		dyn_obj->kobj.data = tidx;
+	}
 
 	/* The allocating thread implicitly gets permission on kernel objects
 	 * that it allocates
@@ -174,6 +254,10 @@ void k_object_free(void *obj)
 	if (dyn_obj) {
 		rb_remove(&obj_rb_tree, &dyn_obj->node);
 		sys_dlist_remove(&dyn_obj->obj_list);
+
+		if (dyn_obj->kobj.type == K_OBJ_THREAD) {
+			_thread_idx_free(dyn_obj->kobj.data);
+		}
 	}
 	irq_unlock(key);
 

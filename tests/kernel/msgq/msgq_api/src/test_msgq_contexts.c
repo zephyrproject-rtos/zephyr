@@ -138,86 +138,7 @@ static void msgq_isr(struct k_msgq *pmsgq)
 	/**TESTPOINT: msgq purge*/
 	purge_msgq(pmsgq);
 }
-/**
- * @addtogroup kernel_message_queue_tests
- * @{
- */
 
-/**
- * @see k_msgq_init()
- */
-void test_msgq_thread(void)
-{
-	/**TESTPOINT: init via k_msgq_init*/
-	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
-	k_sem_init(&end_sema, 0, 1);
-
-	msgq_thread(&msgq);
-	msgq_thread(&kmsgq);
-}
-
-/**
- * @see k_msgq_init()
- */
-void test_msgq_thread_overflow(void)
-{
-	/**TESTPOINT: init via k_msgq_init*/
-	k_msgq_init(&msgq, tbuffer, MSG_SIZE, 1);
-	k_sem_init(&end_sema, 0, 1);
-
-	msgq_thread_overflow(&msgq);
-	msgq_thread_overflow(&kmsgq);
-}
-
-#ifdef CONFIG_USERSPACE
-/**
- * @see k_msgq_init()
- */
-void test_msgq_user_thread(void)
-{
-	struct k_msgq *q;
-
-	q = k_object_alloc(K_OBJ_MSGQ);
-	zassert_not_null(q, "couldn't alloc message queue");
-	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN), NULL);
-	k_sem_init(&end_sema, 0, 1);
-
-	msgq_thread(q);
-}
-
-/**
- * @see k_msgq_init()
- */
-void test_msgq_user_thread_overflow(void)
-{
-	struct k_msgq *q;
-
-	q = k_object_alloc(K_OBJ_MSGQ);
-	zassert_not_null(q, "couldn't alloc message queue");
-	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, 1), NULL);
-	k_sem_init(&end_sema, 0, 1);
-
-	msgq_thread_overflow(q);
-}
-#endif /* CONFIG_USERSPACE */
-
-/**
- * @see k_msgq_init()
- */
-void test_msgq_isr(void)
-{
-	struct k_msgq stack_msgq;
-
-	/**TESTPOINT: init via k_msgq_init*/
-	k_msgq_init(&stack_msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
-
-	msgq_isr(&stack_msgq);
-	msgq_isr(&kmsgq);
-}
-
-/**
- * @see k_msgq_get()
- */
 static void thread_entry_get_data(void *p1, void *p2, void *p3)
 {
 	u32_t rx_buf[MSGQ_LEN];
@@ -230,9 +151,6 @@ static void thread_entry_get_data(void *p1, void *p2, void *p3)
 	k_sem_give(&end_sema);
 }
 
-/**
- * @see k_msgq_put()
- */
 static void pend_thread_entry(void *p1, void *p2, void *p3)
 {
 	int ret;
@@ -241,12 +159,8 @@ static void pend_thread_entry(void *p1, void *p2, void *p3)
 	zassert_equal(ret, 0, NULL);
 }
 
-/**
- * @see k_msgq_put(), k_msgq_purge()
- */
 static void msgq_thread_data_passing(struct k_msgq *pmsgq)
 {
-
 	while (k_msgq_put(pmsgq, &data[0], K_NO_WAIT) != 0) {
 	}
 
@@ -267,7 +181,90 @@ static void msgq_thread_data_passing(struct k_msgq *pmsgq)
 }
 
 /**
- * @see k_msgq_init()
+ * @addtogroup kernel_message_queue_tests
+ * @{
+ */
+
+/**
+ * @brief Test thread to thread data passing via message queue
+ * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
+ */
+void test_msgq_thread(void)
+{
+	/**TESTPOINT: init via k_msgq_init*/
+	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
+	k_sem_init(&end_sema, 0, 1);
+
+	msgq_thread(&msgq);
+	msgq_thread(&kmsgq);
+}
+
+/**
+ * @brief Test thread to thread data passing via message queue
+ * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
+ */
+void test_msgq_thread_overflow(void)
+{
+	/**TESTPOINT: init via k_msgq_init*/
+	k_msgq_init(&msgq, tbuffer, MSG_SIZE, 1);
+	k_sem_init(&end_sema, 0, 1);
+
+	msgq_thread_overflow(&msgq);
+	msgq_thread_overflow(&kmsgq);
+}
+
+#ifdef CONFIG_USERSPACE
+/**
+ * @brief Test user thread to kernel thread data passing via message queue
+ * @see k_msgq_alloc_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
+ */
+void test_msgq_user_thread(void)
+{
+	struct k_msgq *q;
+
+	q = k_object_alloc(K_OBJ_MSGQ);
+	zassert_not_null(q, "couldn't alloc message queue");
+	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN), NULL);
+	k_sem_init(&end_sema, 0, 1);
+
+	msgq_thread(q);
+}
+
+/**
+ * @brief Test thread to thread data passing via message queue
+ * @see k_msgq_alloc_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
+ */
+void test_msgq_user_thread_overflow(void)
+{
+	struct k_msgq *q;
+
+	q = k_object_alloc(K_OBJ_MSGQ);
+	zassert_not_null(q, "couldn't alloc message queue");
+	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, 1), NULL);
+	k_sem_init(&end_sema, 0, 1);
+
+	msgq_thread_overflow(q);
+}
+#endif /* CONFIG_USERSPACE */
+
+/**
+ * @brief Test thread to isr data passing via message queue
+ * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
+ */
+void test_msgq_isr(void)
+{
+	struct k_msgq stack_msgq;
+
+	/**TESTPOINT: init via k_msgq_init*/
+	k_msgq_init(&stack_msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
+
+	msgq_isr(&stack_msgq);
+	msgq_isr(&kmsgq);
+}
+
+/**
+ * @brief Test pending writer in msgq
+ * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
 void test_msgq_pend_thread(void)
 {
@@ -278,6 +275,9 @@ void test_msgq_pend_thread(void)
 }
 
 /**
+ * @brief Test k_msgq_alloc_init()
+ * @details Initialization and buffer allocation for msgq from resource
+ * pool with various parameters
  * @see k_msgq_alloc_init(), k_msgq_cleanup()
  */
 void test_msgq_alloc(void)

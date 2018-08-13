@@ -185,6 +185,12 @@ struct ethernet_api {
 	struct net_stats_eth *(*get_stats)(struct device *dev);
 #endif
 
+	/** Start the device */
+	int (*start)(struct device *dev);
+
+	/** Stop the device */
+	int (*stop)(struct device *dev);
+
 	/** Get the device capabilities */
 	enum ethernet_hw_caps (*get_capabilities)(struct device *dev);
 

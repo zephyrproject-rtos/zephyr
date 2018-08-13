@@ -94,6 +94,16 @@ Z_SYSCALL_HANDLER(to_copy, dest)
 	return z_user_to_copy((char *)dest, user_string, BUF_SIZE);
 }
 
+/**
+ * @brief Test to demonstrate usage of z_user_string_nlen()
+ *
+ * @details The test will be called from user mode and kernel
+ * mode to check the behavior of z_user_string_nlen()
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see z_user_string_nlen()
+ */
 void test_string_nlen(void)
 {
 	int err;
@@ -119,6 +129,13 @@ void test_string_nlen(void)
 	zassert_equal(err, -1, "nonsense string address did not fault");
 }
 
+/**
+ * @brief Test to verify syscall for string alloc copy
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see z_user_string_alloc_copy(), strcmp()
+ */
 void test_user_string_alloc_copy(void)
 {
 	int ret;
@@ -137,6 +154,13 @@ void test_user_string_alloc_copy(void)
 	zassert_equal(ret, 0, "string should have matched");
 }
 
+/**
+ * @brief Test sys_call for string copy
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see z_user_string_copy(), strcmp()
+ */
 void test_user_string_copy(void)
 {
 	int ret;
@@ -154,6 +178,13 @@ void test_user_string_copy(void)
 	zassert_equal(ret, 0, "string should have matched");
 }
 
+/**
+ * @brief Test to demonstrate system call for copy
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see memcpy(), z_user_to_copy()
+ */
 void test_to_copy(void)
 {
 	char buf[BUF_SIZE];

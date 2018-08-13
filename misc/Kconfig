@@ -43,8 +43,8 @@ endif
 
 config TEXT_SECTION_OFFSET
 	hex "TEXT section offset"
-	default 0
 	default 0x200 if BOOTLOADER_MCUBOOT
+	default 0
 	help
 	  If the application is built for chain-loading by a bootloader this
 	  variable is required to be set to value that leaves sufficient

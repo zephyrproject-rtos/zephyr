@@ -15,4 +15,4 @@ testing:
     - net
 toolchain:
   - zephyr
-  - gccarmemb
+  - gnuarmemb

@@ -25,6 +25,13 @@
 	{
 	*(".kobject_data.data*")
 
+#ifndef LINKER_PASS2
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	PROVIDE(_thread_idx_map = .);
+	. += CONFIG_MAX_THREAD_BYTES;
+#endif
+#endif
+
         /* This is also unpredictable in size, and has the same constraints.
          * On XIP systems this will get put at the very end of ROM.
          */

@@ -33,9 +33,7 @@ struct net_pkt *net_ipv4_create(struct net_pkt *pkt,
 				struct net_if *iface,
 				u8_t next_header_proto)
 {
-	struct net_buf *header;
-
-	header = net_pkt_get_frag(pkt, K_FOREVER);
+	struct net_buf *header = net_pkt_get_frag(pkt, K_FOREVER);
 
 	net_pkt_frag_insert(pkt, header);
 
@@ -72,8 +70,7 @@ void net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 
 	total_len = net_pkt_get_len(pkt);
 
-	NET_IPV4_HDR(pkt)->len[0] = total_len >> 8;
-	NET_IPV4_HDR(pkt)->len[1] = total_len & 0xff;
+	NET_IPV4_HDR(pkt)->len = htons(total_len);
 
 	NET_IPV4_HDR(pkt)->chksum = 0;
 
@@ -111,7 +108,7 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 {
 	struct net_ipv4_hdr *hdr = NET_IPV4_HDR(pkt);
 	int real_len = net_pkt_get_len(pkt);
-	int pkt_len = (hdr->len[0] << 8) + hdr->len[1];
+	int pkt_len = ntohs(hdr->len);
 	enum net_verdict verdict = NET_DROP;
 
 	if (real_len != pkt_len) {
@@ -154,11 +151,9 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 	case IPPROTO_ICMP:
 		verdict = net_icmpv4_input(pkt);
 		break;
-	case IPPROTO_UDP:
-		verdict = net_conn_input(IPPROTO_UDP, pkt);
-		break;
 	case IPPROTO_TCP:
-		verdict = net_conn_input(IPPROTO_TCP, pkt);
+	case IPPROTO_UDP:
+		verdict = net_conn_input(hdr->proto, pkt);
 		break;
 	}
 

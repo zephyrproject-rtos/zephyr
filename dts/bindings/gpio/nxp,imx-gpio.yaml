@@ -36,6 +36,12 @@ properties:
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
 
+    rdc:
+     type: int
+     category: required
+     description: Set the RDC permission for this peripheral
+     generation: define
+
 "#cells":
   - pin
   - flags

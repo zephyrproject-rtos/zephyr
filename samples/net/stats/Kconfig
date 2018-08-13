@@ -8,8 +8,6 @@
 
 mainmenu "Network statistics sample application"
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
-
 config SAMPLE_PERIOD
 	int "How often to print statistics (in seconds)"
 	default 30
@@ -17,3 +15,6 @@ config SAMPLE_PERIOD
 	depends on NET_STATISTICS
 	help
 	  Print statistics after every n. seconds
+
+
+source "$ZEPHYR_BASE/Kconfig.zephyr"

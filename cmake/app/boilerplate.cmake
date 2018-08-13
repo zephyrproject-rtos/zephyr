@@ -318,6 +318,24 @@ foreach(boilerplate_lib ${ZEPHYR_INTERFACE_LIBS_PROPERTY})
   target_link_libraries_ifdef(
     CONFIG_APP_LINK_WITH_${boilerplate_lib_upper_case}
     app
+    PUBLIC
     ${boilerplate_lib}
     )
 endforeach()
+
+
+if(NOT EXISTS ${ZEPHYR_BASE}/hide-defaults-note)
+    message(STATUS "\n\
+*******************************\n\
+*** NOTE TO KCONFIG AUTHORS ***\n\
+*******************************\n\
+\n\
+The behavior of Kconfig 'default' properties in Zephyr has changed. The \n\
+earliest default with a satisfied condition is now used, instead of the \n\
+last one. This is standard Kconfig behavior.\n\
+\n\
+See http://docs.zephyrproject.org/porting/board_porting.html#old-zephyr-kconfig-behavior-for-defaults.\n\
+\n\
+To get rid of this note, create a file called 'hide-defaults-note' in the \n\
+Zephyr root directory. An empty file is fine.")
+endif()

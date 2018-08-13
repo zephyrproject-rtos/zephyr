@@ -16,7 +16,6 @@ config IEEE802154_CC1200_DRV_NAME
 
 config IEEE802154_CC1200_SPI_DRV_NAME
 	string "SPI driver's name to use to access CC1200"
-	default ""
 	help
 	  This option is mandatory to set which SPI controller to use in order
 	  to actually control the CC1200 chip.
@@ -44,7 +43,6 @@ config IEEE802154_CC1200_GPIO_SPI_CS
 
 config IEEE802154_CC1200_GPIO_SPI_CS_DRV_NAME
 	string "GPIO driver's name to use to drive SPI CS through"
-	default ""
 	depends on IEEE802154_CC1200_GPIO_SPI_CS
 	help
 	  This option is mandatory to set which GPIO controller to use in order

@@ -57,8 +57,4 @@ config PWM_IMX
 
 endif # PWM
 
-config DOMAIN_ID
-	int
-	default 1
-
 endif # SOC_MCIMX7_M4
