@@ -15,11 +15,11 @@ from subprocess import CalledProcessError
 from . import log
 from .cmd import CommandContextError
 from .cmd.flash import Flash
-from .cmd.debug import Debug, DebugServer
+from .cmd.debug import Debug, DebugServer, Attach
 from .util import quote_sh_list
 
 
-COMMANDS = (Flash(), Debug(), DebugServer())
+COMMANDS = (Flash(), Debug(), DebugServer(), Attach())
 '''Supported top-level commands.'''
 
 

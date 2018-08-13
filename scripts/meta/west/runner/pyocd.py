@@ -51,7 +51,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(flash_addr=True)
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver'},
+                          flash_addr=True)
 
     @classmethod
     def do_add_parser(cls, parser):
