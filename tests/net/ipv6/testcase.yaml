@@ -1,4 +1,21 @@
+common:
+  tags: net ipv6 ipv6_pe
+  depends_on: netif
 tests:
   net.ipv6:
-    tags: net ipv6
-    depends_on: netif
+    extra_configs:
+      - CONFIG_NET_IPV6_PE_ENABLE=n
+  net.ipv6.privacy_extension.prefer_public:
+    extra_configs:
+      - CONFIG_NET_IPV6_PE_ENABLE=y
+      - CONFIG_NET_IPV6_PE_PREFER_PUBLIC_ADDRESSES=y
+      - CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT=2
+      - CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT=9
+      - CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT=7
+  net.ipv6.privacy_extension.prefer_temporary:
+    extra_configs:
+      - CONFIG_NET_IPV6_PE_ENABLE=y
+      - CONFIG_NET_IPV6_PE_PREFER_PUBLIC_ADDRESSES=n
+      - CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT=2
+      - CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT=9
+      - CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT=7
