@@ -42,7 +42,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug', 'debugserver'},
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
                           flash_addr=True)
 
     @classmethod
@@ -105,10 +105,11 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             client_cmd = (self.gdb_cmd +
                           self.tui_arg +
                           [self.elf_name] +
-                          ['-ex', 'target remote :{}'.format(self.gdb_port),
-                           '-ex', 'monitor halt',
-                           '-ex', 'monitor reset',
-                           '-ex', 'load'])
+                          ['-ex', 'target remote :{}'.format(self.gdb_port)])
+            if command == 'debug':
+                client_cmd += ['-ex', 'monitor halt',
+                               '-ex', 'monitor reset',
+                               '-ex', 'load']
             self.print_gdbserver_message()
             self.run_server_and_client(server_cmd, client_cmd)
 
