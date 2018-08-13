@@ -177,7 +177,6 @@ extern struct _kernel _kernel;
 
 #define _ready_q _kernel.ready_q
 #define _timeout_q _kernel.timeout_q
-#define _threads _kernel.threads
 
 #include <kernel_arch_func.h>
 
