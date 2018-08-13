@@ -103,6 +103,10 @@ static inline u32_t _get_region_attr(u32_t xn, u32_t ap, u32_t tex,
 /**
  * This internal function converts the region size to
  * the SIZE field value of MPU_RASR.
+ *
+ * Note: If size is not a power-of-two, it is rounded-up to the next
+ * power-of-two value, and the returned SIZE field value corresponds
+ * to that power-of-two value.
  */
 static inline u32_t _size_to_mpu_rasr_size(u32_t size)
 {
@@ -120,8 +124,8 @@ static inline u32_t _size_to_mpu_rasr_size(u32_t size)
 		return REGION_4G;
 	}
 
-	size = 1 << (32 - __builtin_clz(size - 1));
-	return (32 - __builtin_clz(size) - 2) << 1;
+	return ((32 - __builtin_clz(size - 1) - 2 + 1) << MPU_RASR_SIZE_Pos) &
+			MPU_RASR_SIZE_Msk;
 }
 
 /**
