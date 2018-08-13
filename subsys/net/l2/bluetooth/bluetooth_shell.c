@@ -10,7 +10,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 #include <misc/printk.h>
 
 #include <net/net_core.h>

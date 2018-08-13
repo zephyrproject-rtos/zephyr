@@ -104,7 +104,7 @@ u32_t log_src_cnt_get(u32_t domain_id);
  * @param domain_id Domain ID.
  * @param src_id    Source ID.
  *
- * @return Source name.
+ * @return Source name or NULL if invalid arguments.
  */
 const char *log_source_name_get(u32_t domain_id, u32_t src_id);
 
