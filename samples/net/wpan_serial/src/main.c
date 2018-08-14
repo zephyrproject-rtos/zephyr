@@ -410,6 +410,23 @@ static size_t slip_buffer(u8_t *sbuf, struct net_buf *buf)
 	return sbuf - sbuf_orig;
 }
 
+static int try_write(u8_t *data, u16_t len)
+{
+	int wrote;
+
+	while (len) {
+		wrote = uart_fifo_fill(uart_dev, data, len);
+		if (wrote <= 0) {
+			return wrote;
+		}
+
+		len -= wrote;
+		data += wrote;
+	}
+
+	return 0;
+}
+
 /**
  * TX - transmit to SLIP interface
  */
@@ -440,7 +457,8 @@ static void tx_thread(void)
 
 		/* SLIP encode and send */
 		len = slip_buffer(slip_buf, buf);
-		uart_fifo_fill(uart_dev, slip_buf, len);
+
+		try_write(slip_buf, len);
 
 		net_pkt_unref(pkt);
 
