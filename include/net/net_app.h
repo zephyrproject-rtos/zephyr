@@ -59,7 +59,7 @@ enum net_app_type {
 	NET_APP_UNSPEC = 0,
 	NET_APP_SERVER,
 	NET_APP_CLIENT,
-};
+} __packed;
 
 struct net_app_ctx;
 

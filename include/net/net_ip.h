@@ -206,7 +206,7 @@ enum net_priority {
 	NET_PRIORITY_VO = 5, /* Voice, < 10 ms latency and jitter  */
 	NET_PRIORITY_IC = 6, /* Internetwork control               */
 	NET_PRIORITY_NC = 7  /* Network control                    */
-};
+} __packed;
 
 /** IPv6/IPv4 network connection tuple */
 struct net_tuple {
@@ -229,7 +229,7 @@ enum net_addr_type {
 	NET_ADDR_DHCP,
 	NET_ADDR_MANUAL,
 	NET_ADDR_OVERRIDABLE,
-};
+} __packed;
 
 #if NET_LOG_ENABLED > 0
 static inline char *net_addr_type2str(enum net_addr_type type)
@@ -265,7 +265,7 @@ enum net_addr_state {
 	NET_ADDR_TENTATIVE = 0,
 	NET_ADDR_PREFERRED,
 	NET_ADDR_DEPRECATED,
-};
+} __packed;
 
 struct net_ipv6_hdr {
 	u8_t vtc;

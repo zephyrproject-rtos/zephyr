@@ -45,7 +45,7 @@ enum net_link_type {
 	NET_LINK_BLUETOOTH,
 	NET_LINK_ETHERNET,
 	NET_LINK_DUMMY,
-};
+} __packed;
 
 /**
  *  @brief Hardware link address structure

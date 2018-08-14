@@ -36,7 +36,7 @@ enum net_l2_flags {
 
 	/** Is promiscuous mode supported */
 	NET_L2_PROMISC_MODE			= BIT(2),
-};
+} __packed;
 
 struct net_l2 {
 	/**

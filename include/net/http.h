@@ -53,12 +53,12 @@ enum http_state {
 	  HTTP_STATE_RECEIVING_HEADER,
 	  HTTP_STATE_HEADER_RECEIVED,
 	  HTTP_STATE_OPEN,
-};
+} __packed;
 
 enum http_url_flags {
 	HTTP_URL_STANDARD = 0,
 	HTTP_URL_WEBSOCKET,
-};
+} __packed;
 
 enum http_connection_type {
 	HTTP_CONNECTION = 1,
