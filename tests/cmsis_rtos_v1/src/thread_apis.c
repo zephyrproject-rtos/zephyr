@@ -10,6 +10,8 @@
 
 #define STACKSZ		512
 
+static osPriority osPriorityDeadline = 10;
+
 /* This is used to check the thread yield functionality between 2 threads */
 static int thread_yield_check;
 
@@ -51,6 +53,7 @@ void thread2(void const *argument)
 
 void thread3(void const *argument)
 {
+	osStatus status;
 	osPriority rv;
 	osThreadId id = osThreadGetId();
 	osPriority prio = osThreadGetPriority(id);
@@ -75,6 +78,11 @@ void thread3(void const *argument)
 	zassert_equal(rv, prio,
 			"Expected priority to be changed to %d, not %d",
 			(int)prio, (int)rv);
+
+	/* Try to set unsupported priority and assert failure */
+	status = osThreadSetPriority(id, osPriorityDeadline);
+	zassert_true(status == osErrorValue,
+			"Something's wrong with osThreadSetPriority!");
 
 	/* Indication that thread3 is done with its processing */
 	thread3_state = 1;
@@ -106,6 +114,17 @@ void test_thread_prio(void)
 
 	status = osThreadTerminate(id3);
 	zassert_true(status == osOK, "Error terminating thread3");
+
+	/* Try to set priority to inactive thread and assert failure */
+	status = osThreadSetPriority(id3, osPriorityNormal);
+	zassert_true(status == osErrorResource,
+			"Something's wrong with osThreadSetPriority!");
+
+	/* Try to terminate inactive thread and assert failure */
+	status = osThreadTerminate(id3);
+	zassert_true(status == osErrorResource,
+			"Something's wrong with osThreadTerminate!");
+
 	thread3_state = 0;
 }
 
