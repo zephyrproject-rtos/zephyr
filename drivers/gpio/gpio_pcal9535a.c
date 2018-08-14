@@ -19,8 +19,8 @@
 
 #include "gpio_pcal9535a.h"
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_GPIO_PCAL9535A_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_LOG_GPIO_LEVEL
+#include <logging/log.h>
 
 /* Register definitions */
 #define REG_INPUT_PORT0			0x00
@@ -89,13 +89,13 @@ static int _read_port_regs(struct device *dev, u8_t reg,
 
 	ret = i2c_burst_read(i2c_master, i2c_addr, reg, buf->byte, 2);
 	if (ret) {
-		SYS_LOG_ERR("PCAL9535A[0x%X]: error reading register 0x%X (%d)",
-			    i2c_addr, reg, ret);
+		LOG_ERR("PCAL9535A[0x%X]: error reading register 0x%X (%d)",
+			i2c_addr, reg, ret);
 		goto error;
 	}
 
-	SYS_LOG_DBG("PCAL9535A[0x%X]: Read: REG[0x%X] = 0x%X, REG[0x%X] = 0x%X",
-		    i2c_addr, reg, buf->byte[0], (reg + 1), buf->byte[1]);
+	LOG_DBG("PCAL9535A[0x%X]: Read: REG[0x%X] = 0x%X, REG[0x%X] = 0x%X",
+		i2c_addr, reg, buf->byte[0], (reg + 1), buf->byte[1]);
 
 error:
 	return ret;
@@ -123,14 +123,14 @@ static int _write_port_regs(struct device *dev, u8_t reg,
 	u16_t i2c_addr = config->i2c_slave_addr;
 	int ret;
 
-	SYS_LOG_DBG("PCAL9535A[0x%X]: Write: REG[0x%X] = 0x%X, REG[0x%X] = "
-		    "0x%X", i2c_addr, reg, buf->byte[0], (reg + 1),
-		    buf->byte[1]);
+	LOG_DBG("PCAL9535A[0x%X]: Write: REG[0x%X] = 0x%X, REG[0x%X] = "
+		"0x%X", i2c_addr, reg, buf->byte[0], (reg + 1),
+		buf->byte[1]);
 
 	ret = i2c_burst_write(i2c_master, i2c_addr, reg, buf->byte, 2);
 	if (ret) {
-		SYS_LOG_ERR("PCAL9535A[0x%X]: error writing from register 0x%X "
-			    "(%d)", i2c_addr, reg, ret);
+		LOG_ERR("PCAL9535A[0x%X]: error writing from register 0x%X "
+			"(%d)", i2c_addr, reg, ret);
 	}
 
 	return ret;
@@ -351,7 +351,7 @@ static int gpio_pcal9535a_config(struct device *dev, int access_op,
 {
 	int ret;
 
-#if (CONFIG_SYS_LOG_GPIO_PCAL9535A_LEVEL >= SYS_LOG_LEVEL_DEBUG)
+#if (CONFIG_LOG_GPIO_LEVEL >= LOG_LEVEL_DEBUG)
 	const struct gpio_pcal9535a_config * const config =
 		dev->config->config_info;
 	u16_t i2c_addr = config->i2c_slave_addr;
@@ -363,22 +363,22 @@ static int gpio_pcal9535a_config(struct device *dev, int access_op,
 
 	ret = _setup_pin_dir(dev, access_op, pin, flags);
 	if (ret) {
-		SYS_LOG_ERR("PCAL9535A[0x%X]: error setting pin direction (%d)",
-			    i2c_addr, ret);
+		LOG_ERR("PCAL9535A[0x%X]: error setting pin direction (%d)",
+			i2c_addr, ret);
 		goto done;
 	}
 
 	ret = _setup_pin_polarity(dev, access_op, pin, flags);
 	if (ret) {
-		SYS_LOG_ERR("PCAL9535A[0x%X]: error setting pin polarity (%d)",
-			    i2c_addr, ret);
+		LOG_ERR("PCAL9535A[0x%X]: error setting pin polarity (%d)",
+			i2c_addr, ret);
 		goto done;
 	}
 
 	ret = _setup_pin_pullupdown(dev, access_op, pin, flags);
 	if (ret) {
-		SYS_LOG_ERR("PCAL9535A[0x%X]: error setting pin pull up/down "
-			    "(%d)", i2c_addr, ret);
+		LOG_ERR("PCAL9535A[0x%X]: error setting pin pull up/down "
+			"(%d)", i2c_addr, ret);
 		goto done;
 	}
 
