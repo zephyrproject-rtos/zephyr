@@ -406,6 +406,9 @@ The following Kconfig extensions are available:
 
       orsource "Kconfig[12]"
 
+- ``def_int``, ``def_hex``, and ``def_string`` keywords, which are analogous to
+  ``def_bool``. These set the type and add a ``default`` at the same time.
+
 Old Zephyr Kconfig behavior for defaults
 ========================================
 
