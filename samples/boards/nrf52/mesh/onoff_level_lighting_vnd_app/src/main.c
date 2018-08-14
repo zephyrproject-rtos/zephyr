@@ -8,11 +8,11 @@
 #include <board.h>
 #include <gpio.h>
 
-#include "common.h"
 #include "ble_mesh.h"
 #include "device_composition.h"
 #include "publisher.h"
 #include "state_binding.h"
+#include "transition.h"
 
 struct device *led_device[4];
 struct device *button_device[4];
@@ -94,25 +94,26 @@ static void gpio_init(void)
 
 void light_default_status_init(void)
 {
-	/* Assume vaules are retrived from Persistence Storage (Start).
-	 * These had saved by respective Setup Servers.
+	/* Assume following vaules are retrived from Persistence Storage
+	 * and these had saved by respective Setup Servers.
+	 * (Start)
 	 */
+	gen_def_trans_time_srv_user_data.tt = 0x00;
 	gen_power_onoff_srv_user_data.onpowerup = STATE_DEFAULT;
 
 	light_lightness_srv_user_data.light_range_min = LIGHTNESS_MIN;
 	light_lightness_srv_user_data.light_range_max = LIGHTNESS_MAX;
 	light_lightness_srv_user_data.def = LIGHTNESS_MAX;
 
-	/* Following 2 values are as per specification */
 	light_ctl_srv_user_data.temp_range_min = TEMP_MIN;
 	light_ctl_srv_user_data.temp_range_max = TEMP_MAX;
-
+	light_ctl_srv_user_data.lightness_def = LIGHTNESS_MAX;
 	light_ctl_srv_user_data.temp_def = TEMP_MIN;
 	/* (End) */
 
 	/* Assume following values are retrived from Persistence
-	 * Storage (Start).
-	 * These values had saved before power down.
+	 * Storage and these had saved before power down.
+	 * (Start)
 	 */
 	light_lightness_srv_user_data.last = LIGHTNESS_MAX;
 	light_ctl_srv_user_data.temp_last = TEMP_MIN;
@@ -120,16 +121,19 @@ void light_default_status_init(void)
 
 	light_ctl_srv_user_data.temp = light_ctl_srv_user_data.temp_def;
 
-	if (gen_power_onoff_srv_user_data.onpowerup == STATE_OFF) {
+	switch (gen_power_onoff_srv_user_data.onpowerup) {
+	case STATE_OFF:
 		gen_onoff_srv_root_user_data.onoff = STATE_OFF;
 		state_binding(ONOFF, ONOFF_TEMP);
-	} else if (gen_power_onoff_srv_user_data.onpowerup == STATE_DEFAULT) {
+		break;
+	case STATE_DEFAULT:
 		gen_onoff_srv_root_user_data.onoff = STATE_ON;
 		state_binding(ONOFF, ONOFF_TEMP);
-	} else if (gen_power_onoff_srv_user_data.onpowerup == STATE_RESTORE) {
-		/* Assume following values is retrived from Persistence
-		 * Storage (Start).
-		 * This value had saved before power down.
+		break;
+	case STATE_RESTORE:
+		/* Assume following value is retrived from Persistence
+		 * Storage and it had saved before power down.
+		 * (Start)
 		 */
 		gen_onoff_srv_root_user_data.onoff = STATE_ON;
 		/* (End) */
@@ -138,7 +142,10 @@ void light_default_status_init(void)
 			light_ctl_srv_user_data.temp_last;
 
 		state_binding(ONPOWERUP, ONOFF_TEMP);
+		break;
 	}
+
+	default_tt = gen_def_trans_time_srv_user_data.tt;
 }
 
 void update_light_state(void)
