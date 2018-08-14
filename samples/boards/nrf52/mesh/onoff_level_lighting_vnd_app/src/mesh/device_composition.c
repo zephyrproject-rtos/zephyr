@@ -66,8 +66,6 @@ BT_MESH_MODEL_PUB_DEFINE(gen_level_srv_pub_s0, NULL, 2 + 5);
 BT_MESH_MODEL_PUB_DEFINE(gen_level_cli_pub_s0, NULL, 2 + 7);
 /* Definitions of models publication context (End) */
 
-static struct bt_mesh_elem elements[];
-
 /* Definitions of models user data (Start) */
 struct generic_onoff_state gen_onoff_srv_root_user_data;
 
@@ -86,6 +84,7 @@ struct generic_onoff_state gen_onoff_srv_s0_user_data;
 struct generic_level_state gen_level_srv_s0_user_data;
 /* Definitions of models user data (End) */
 
+static struct bt_mesh_elem elements[];
 
 /* message handlers (Start) */
 
@@ -106,32 +105,32 @@ static void gen_onoff_get(struct bt_mesh_model *model,
 	}
 }
 
-static bool onoff_set_unack(struct bt_mesh_model *model,
+static bool gen_onoff_setunack(struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
-	u8_t tid, tmp8;
+	u8_t tid, onoff;
+	s64_t now;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_onoff_state *state = model->user_data;
 
-	tmp8 = net_buf_simple_pull_u8(buf);
+	onoff = net_buf_simple_pull_u8(buf);
 	tid = net_buf_simple_pull_u8(buf);
 
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
-		if (tmp8 > STATE_ON) {
-			return false;
-		}
-
-		return true;
+	if (onoff > STATE_ON) {
+		return false;
 	}
 
-	if (tmp8 > STATE_ON) {
-		return false;
+	now = k_uptime_get();
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
+		return true;
 	}
 
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
-	state->onoff = tmp8;
+	state->last_msg_timestamp = now;
+	state->onoff = onoff;
 
 	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		/* Root element */
@@ -162,14 +161,14 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 				struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
-	onoff_set_unack(model, ctx, buf);
+	gen_onoff_setunack(model, ctx, buf);
 }
 
 static void gen_onoff_set(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	if (onoff_set_unack(model, ctx, buf) == true) {
+	if (gen_onoff_setunack(model, ctx, buf) == true) {
 		gen_onoff_get(model, ctx, buf);
 	}
 }
@@ -206,19 +205,22 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 {
 	u8_t tid;
 	s16_t level;
+	s64_t now;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_level_state *state = model->user_data;
 
-	level = (int16_t) net_buf_simple_pull_le16(buf);
+	level = (s16_t) net_buf_simple_pull_le16(buf);
 	tid = net_buf_simple_pull_u8(buf);
 
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
+	now = k_uptime_get();
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
 
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
-
+	state->last_msg_timestamp = now;
 	state->level = level;
 
 	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
@@ -260,17 +262,25 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 {
 	u8_t tid;
 	s32_t tmp32, delta;
+	s64_t now;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_level_state *state = model->user_data;
 
-	delta = net_buf_simple_pull_le32(buf);
+	delta = (s32_t) net_buf_simple_pull_le32(buf);
 	tid = net_buf_simple_pull_u8(buf);
 
+	now = k_uptime_get();
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
-		if (state->last_delta == delta) {
+
+		if (now - state->last_msg_timestamp <= K_SECONDS(6)) {
+			if (state->last_delta == delta) {
+				return;
+			}
+			tmp32 = state->last_level + delta;
+		} else {
 			return;
 		}
-		tmp32 = state->last_level + delta;
+
 	} else {
 		state->last_level = state->level;
 		tmp32 = state->level + delta;
@@ -279,6 +289,7 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 	state->last_delta = delta;
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
+	state->last_msg_timestamp = now;
 
 	if (tmp32 < -32768) {
 		tmp32 = -32768;
@@ -373,22 +384,22 @@ static void gen_onpowerup_status(struct bt_mesh_model *model,
 }
 
 /* Generic Power OnOff Setup Server message handlers */
-static bool onpowerup_set_unack(struct bt_mesh_model *model,
+static bool gen_onpowerup_setunack(struct bt_mesh_model *model,
 				struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
-	u8_t tmp8;
+	u8_t onpowerup;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_onpowerup_state *state = model->user_data;
 
-	tmp8 = net_buf_simple_pull_u8(buf);
+	onpowerup = net_buf_simple_pull_u8(buf);
 
 	/* Here, Model specification is silent about tid implementation */
 
-	if (tmp8 > STATE_RESTORE) {
+	if (onpowerup > STATE_RESTORE) {
 		return false;
 	}
-	state->onpowerup = tmp8;
+	state->onpowerup = onpowerup;
 
 	/* Do some work here to save value of state->onpowerup on SoC flash */
 
@@ -412,14 +423,14 @@ static void gen_onpowerup_set_unack(struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
-	onpowerup_set_unack(model, ctx, buf);
+	gen_onpowerup_setunack(model, ctx, buf);
 }
 
 static void gen_onpowerup_set(struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	if (onpowerup_set_unack(model, ctx, buf) == true) {
+	if (gen_onpowerup_setunack(model, ctx, buf) == true) {
 		gen_onpowerup_get(model, ctx, buf);
 	}
 }
@@ -448,17 +459,21 @@ static void vnd_set_unack(struct bt_mesh_model *model,
 {
 	u8_t tid;
 	int current;
+	s64_t now;
 	struct vendor_state *state = model->user_data;
 
 	current = net_buf_simple_pull_le16(buf);
 	tid = net_buf_simple_pull_u8(buf);
 
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
+	now = k_uptime_get();
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= 6000)) {
 		return;
 	}
 
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
+	state->last_msg_timestamp = now;
 	state->current = current;
 
 	/* This is dummy response for demo purpose */
@@ -516,24 +531,26 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 {
 	u8_t tid;
 	u16_t actual;
+	s64_t now;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
 	actual = net_buf_simple_pull_le16(buf);
 	tid = net_buf_simple_pull_u8(buf);
 
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
+	now = k_uptime_get();
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
 
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
+	state->last_msg_timestamp = now;
 
-	if (actual < state->light_range_min && actual > 0) {
+	if (actual > 0 && actual < state->light_range_min) {
 		actual = state->light_range_min;
-	}
-
-	if (actual > state->light_range_max) {
+	} else if (actual > state->light_range_max) {
 		actual = state->light_range_max;
 	}
 
@@ -587,18 +604,22 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 {
 	u8_t tid;
 	u16_t linear;
+	s64_t now;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
 	linear = net_buf_simple_pull_le16(buf);
 	tid = net_buf_simple_pull_u8(buf);
 
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
+	now = k_uptime_get();
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
 
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
+	state->last_msg_timestamp = now;
 	state->linear = linear;
 
 	state_binding(LINEAR, IGNORE_TEMP);
@@ -675,6 +696,8 @@ static void light_lightness_range_get(struct bt_mesh_model *model,
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send LightLightnessRange Status response\n");
 	}
+
+	state->status_code = RANGE_SUCCESSFULLY_UPDATED;
 }
 
 /* Light Lightness Setup Server message handlers */
@@ -714,9 +737,9 @@ static void light_lightness_default_set(struct bt_mesh_model *model,
 	light_lightness_default_get(model, ctx, buf);
 }
 
-static void light_lightness_range_set_unack(struct bt_mesh_model *model,
-					    struct bt_mesh_msg_ctx *ctx,
-					    struct net_buf_simple *buf)
+static bool light_lightness_range_setunack(struct bt_mesh_model *model,
+					   struct bt_mesh_msg_ctx *ctx,
+					   struct net_buf_simple *buf)
 {
 	u16_t min, max;
 	struct net_buf_simple *msg = model->pub->msg;
@@ -727,32 +750,31 @@ static void light_lightness_range_set_unack(struct bt_mesh_model *model,
 
 	/* Here, Model specification is silent about tid implementation */
 
-	if (min == 0) {
-		/* The provided value for Range Min cannot be set */
-		state->status_code = CANNOT_SET_RANGE_MIN;
+	if (min == 0 || max == 0) {
+		return false;
 	} else {
-		if (min <= max && max != 0) {
+		if (min <= max) {
 			state->status_code = RANGE_SUCCESSFULLY_UPDATED;
 
 			state->light_range_min = min;
 			state->light_range_max = max;
+
+			/* Do some work here to save values of
+			 * state->light_range_min &
+			 * state->light_range_max
+			 * on SoC flash
+			 */
 		} else {
 			/* The provided value for Range Max cannot be set */
 			state->status_code = CANNOT_SET_RANGE_MAX;
+			return false;
 		}
 	}
-
-	/* Do some work here to save values of
-	 * state->light_range_min & state->light_range_max
-	 * on SoC flash
-	 */
 
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
 
-		bt_mesh_model_msg_init(msg,
-				       BT_MESH_MODEL_OP_2(0x82, 0x58));
-
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x58));
 		net_buf_simple_add_u8(msg, state->status_code);
 		net_buf_simple_add_le16(msg, state->light_range_min);
 		net_buf_simple_add_le16(msg, state->light_range_max);
@@ -762,14 +784,24 @@ static void light_lightness_range_set_unack(struct bt_mesh_model *model,
 			printk("bt_mesh_model_publish err %d\n", err);
 		}
 	}
+
+	return true;
+}
+
+static void light_lightness_range_set_unack(struct bt_mesh_model *model,
+					    struct bt_mesh_msg_ctx *ctx,
+					    struct net_buf_simple *buf)
+{
+	light_lightness_range_setunack(model, ctx, buf);
 }
 
 static void light_lightness_range_set(struct bt_mesh_model *model,
 				      struct bt_mesh_msg_ctx *ctx,
 				      struct net_buf_simple *buf)
 {
-	light_lightness_range_set_unack(model, ctx, buf);
-	light_lightness_range_get(model, ctx, buf);
+	if (light_lightness_range_setunack(model, ctx, buf) == true) {
+		light_lightness_range_get(model, ctx, buf);
+	}
 }
 
 /* Light Lightness Client message handlers */
@@ -842,28 +874,30 @@ static bool light_ctl_setunack(struct bt_mesh_model *model,
 			       struct net_buf_simple *buf)
 {
 	u8_t tid;
-	u16_t lightness, temp, delta_uv;
+	s16_t delta_uv;
+	u16_t lightness, temp;
+	s64_t now;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
 
 	lightness = net_buf_simple_pull_le16(buf);
 	temp = net_buf_simple_pull_le16(buf);
-	delta_uv = (int16_t) net_buf_simple_pull_le16(buf);
+	delta_uv = (s16_t) net_buf_simple_pull_le16(buf);
 	tid = net_buf_simple_pull_u8(buf);
-
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
-		if (temp < TEMP_MIN || temp > TEMP_MAX) {
-			return false;
-		}
-		return true;
-	}
 
 	if (temp < TEMP_MIN || temp > TEMP_MAX) {
 		return false;
 	}
 
+	now = k_uptime_get();
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
+		return true;
+	}
+
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
+	state->last_msg_timestamp = now;
 
 	if (temp < state->temp_range_min) {
 		temp = state->temp_range_min;
@@ -931,6 +965,8 @@ static void light_ctl_temp_range_get(struct bt_mesh_model *model,
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send LightCTL Temp Range Status response\n");
 	}
+
+	state->status_code = RANGE_SUCCESSFULLY_UPDATED;
 }
 
 static void light_ctl_default_get(struct bt_mesh_model *model,
@@ -956,13 +992,14 @@ static bool light_ctl_default_setunack(struct bt_mesh_model *model,
 				       struct bt_mesh_msg_ctx *ctx,
 				       struct net_buf_simple *buf)
 {
-	u16_t lightness, temp, delta_uv;
+	u16_t lightness, temp;
+	s16_t delta_uv;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
 
 	lightness = net_buf_simple_pull_le16(buf);
 	temp = net_buf_simple_pull_le16(buf);
-	delta_uv = (int16_t) net_buf_simple_pull_le16(buf);
+	delta_uv = (s16_t) net_buf_simple_pull_le16(buf);
 
 	/* Here, Model specification is silent about tid implementation */
 
@@ -1020,9 +1057,9 @@ static void light_ctl_default_set(struct bt_mesh_model *model,
 	}
 }
 
-static void light_ctl_temp_range_set_unack(struct bt_mesh_model *model,
-					   struct bt_mesh_msg_ctx *ctx,
-					   struct net_buf_simple *buf)
+static bool light_ctl_temp_range_setunack(struct bt_mesh_model *model,
+					  struct bt_mesh_msg_ctx *ctx,
+					  struct net_buf_simple *buf)
 {
 	u16_t min, max;
 	struct net_buf_simple *msg = model->pub->msg;
@@ -1033,40 +1070,31 @@ static void light_ctl_temp_range_set_unack(struct bt_mesh_model *model,
 
 	/* Here, Model specification is silent about tid implementation */
 
-	state->status_code = RANGE_SUCCESSFULLY_UPDATED;
-
 	/* This is as per 6.1.3.1 in Mesh Model Specification */
-	if (min < TEMP_MIN || min > TEMP_MAX) {
-		/* The provided value for Range Min cannot be set */
-		state->status_code = CANNOT_SET_RANGE_MIN;
+	if (min < TEMP_MIN || min > TEMP_MAX ||
+	    max < TEMP_MIN || max > TEMP_MAX) {
+		return false;
 	}
 
-	if (max > TEMP_MAX || max < TEMP_MIN) {
+	if (min <= max) {
+		state->status_code = RANGE_SUCCESSFULLY_UPDATED;
+		state->temp_range_min = min;
+		state->temp_range_max = max;
+
+		/* Do some work here to save values of
+		 * state->temp_range_min & state->temp_range_min
+		 * on SoC flash
+		 */
+	} else {
 		/* The provided value for Range Max cannot be set */
 		state->status_code = CANNOT_SET_RANGE_MAX;
+		return false;
 	}
-
-	if (state->status_code == RANGE_SUCCESSFULLY_UPDATED) {
-		if (min <= max) {
-			state->temp_range_min = min;
-			state->temp_range_max = max;
-		} else if (max < min) {
-			/* The provided value for Range Max cannot be set */
-			state->status_code = CANNOT_SET_RANGE_MAX;
-		}
-	}
-
-	/* Do some work here to save values of
-	 * state->temp_range_min & state->temp_range_min
-	 * on SoC flash
-	 */
 
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
 
-		bt_mesh_model_msg_init(msg,
-				       BT_MESH_MODEL_OP_2(0x82, 0x63));
-
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x63));
 		net_buf_simple_add_u8(msg, state->status_code);
 		net_buf_simple_add_le16(msg, state->temp_range_min);
 		net_buf_simple_add_le16(msg, state->temp_range_max);
@@ -1076,14 +1104,24 @@ static void light_ctl_temp_range_set_unack(struct bt_mesh_model *model,
 			printk("bt_mesh_model_publish err %d\n", err);
 		}
 	}
+
+	return true;
+}
+
+static void light_ctl_temp_range_set_unack(struct bt_mesh_model *model,
+					   struct bt_mesh_msg_ctx *ctx,
+					   struct net_buf_simple *buf)
+{
+	light_ctl_temp_range_setunack(model, ctx, buf);
 }
 
 static void light_ctl_temp_range_set(struct bt_mesh_model *model,
 				     struct bt_mesh_msg_ctx *ctx,
 				     struct net_buf_simple *buf)
 {
-	light_ctl_temp_range_set_unack(model, ctx, buf);
-	light_ctl_temp_range_get(model, ctx, buf);
+	if (light_ctl_temp_range_setunack(model, ctx, buf) == true) {
+		light_ctl_temp_range_get(model, ctx, buf);
+	}
 }
 
 /* Light CTL Client message handlers */
@@ -1160,27 +1198,30 @@ static bool light_ctl_temp_setunack(struct bt_mesh_model *model,
 				    struct net_buf_simple *buf)
 {
 	u8_t tid;
-	u16_t temp, delta_uv;
+	s16_t delta_uv;
+	u16_t temp;
+	s64_t now;
+
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
 
 	temp = net_buf_simple_pull_le16(buf);
-	delta_uv = (int16_t) net_buf_simple_pull_le16(buf);
+	delta_uv = (s16_t) net_buf_simple_pull_le16(buf);
 	tid = net_buf_simple_pull_u8(buf);
-
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
-		if (temp < TEMP_MIN || temp > TEMP_MAX) {
-			return false;
-		}
-		return true;
-	}
 
 	if (temp < TEMP_MIN || temp > TEMP_MAX) {
 		return false;
 	}
 
+	now = k_uptime_get();
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
+		return true;
+	}
+
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
+	state->last_msg_timestamp = now;	
 
 	if (temp < state->temp_range_min) {
 		temp = state->temp_range_min;

@@ -43,6 +43,7 @@ struct generic_onoff_state {
 	u8_t onoff;
 	u8_t last_tid;
 	u16_t last_tx_addr;
+	s64_t last_msg_timestamp;
 };
 
 struct generic_level_state {
@@ -51,6 +52,7 @@ struct generic_level_state {
 	s32_t last_delta;
 	u8_t last_tid;
 	u16_t last_tx_addr;
+	s64_t last_msg_timestamp;
 };
 
 struct generic_onpowerup_state {
@@ -64,6 +66,7 @@ struct vendor_state {
 	u32_t response;
 	u8_t last_tid;
 	u16_t last_tx_addr;
+	s64_t last_msg_timestamp;
 };
 
 struct light_lightness_state {
@@ -78,6 +81,7 @@ struct light_lightness_state {
 
 	u8_t last_tid;
 	u16_t last_tx_addr;
+	s64_t last_msg_timestamp;
 };
 
 struct light_ctl_state {
@@ -97,6 +101,7 @@ struct light_ctl_state {
 
 	u8_t last_tid;
 	u16_t last_tx_addr;
+	s64_t last_msg_timestamp;
 };
 
 extern struct generic_onoff_state gen_onoff_srv_root_user_data;
