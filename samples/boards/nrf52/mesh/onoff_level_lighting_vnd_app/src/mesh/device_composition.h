@@ -37,28 +37,59 @@ enum lightness {
 	IGNORE
 };
 
-enum temperature { ONOFF_TEMP = 0x01, LEVEL_TEMP, CTL_TEMP, IGNORE_TEMP };
+enum temperature {
+	ONOFF_TEMP = 0x01,
+	LEVEL_TEMP,
+	CTL_TEMP,
+	IGNORE_TEMP
+};
 
 struct generic_onoff_state {
 	u8_t onoff;
+	u8_t target_onoff;
+
 	u8_t last_tid;
 	u16_t last_tx_addr;
 	s64_t last_msg_timestamp;
+
+	u8_t tt;
+	u32_t cal_tt;
+	u8_t delay;
+	u32_t tt_counter;
+
+	u8_t is_optional_para_available;
 };
 
 struct generic_level_state {
 	s16_t level;
+	s16_t target_level;
+
 	s16_t last_level;
 	s32_t last_delta;
+
 	u8_t last_tid;
 	u16_t last_tx_addr;
 	s64_t last_msg_timestamp;
+
+	s32_t tt_delta;
+	u8_t tt;
+	u32_t cal_tt;
+	u8_t delay;
+	u32_t tt_counter;
+	u32_t tt_counter_delta;
+	u32_t tt_counter_move;
+
+	u8_t is_optional_para_available;
 };
 
 struct generic_onpowerup_state {
 	u8_t onpowerup;
 	u8_t last_tid;
 	u16_t last_tx_addr;
+};
+
+struct gen_def_trans_time_state {
+	u8_t tt;
 };
 
 struct vendor_state {
@@ -71,7 +102,11 @@ struct vendor_state {
 
 struct light_lightness_state {
 	u16_t linear;
+	u16_t target_linear;
+
 	u16_t actual;
+	u16_t target_actual;
+
 	u16_t last;
 	u16_t def;
 
@@ -82,12 +117,27 @@ struct light_lightness_state {
 	u8_t last_tid;
 	u16_t last_tx_addr;
 	s64_t last_msg_timestamp;
+
+	s32_t tt_delta_actual;
+	s32_t tt_delta_linear;
+	u8_t tt;
+	u32_t cal_tt;
+	u8_t delay;
+	u32_t tt_counter_actual;
+	u32_t tt_counter_linear;
+
+	u8_t is_optional_para_available;
 };
 
 struct light_ctl_state {
 	u16_t lightness;
+	u16_t target_lightness;
+
 	u16_t temp;
+	u16_t target_temp;
+
 	s16_t delta_uv;
+	s16_t target_delta_uv;
 
 	u8_t status_code;
 	u16_t temp_range_min;
@@ -102,10 +152,22 @@ struct light_ctl_state {
 	u8_t last_tid;
 	u16_t last_tx_addr;
 	s64_t last_msg_timestamp;
+
+	s32_t tt_lightness_delta;
+	s32_t tt_temp_delta;
+	s32_t tt_duv_delta;
+	u8_t tt;
+	u32_t cal_tt;
+	u8_t delay;
+	u32_t tt_counter;
+	u32_t tt_counter_temp;
+
+	u8_t is_optional_para_available;
 };
 
 extern struct generic_onoff_state gen_onoff_srv_root_user_data;
 extern struct generic_level_state gen_level_srv_root_user_data;
+extern struct gen_def_trans_time_state gen_def_trans_time_srv_user_data;
 extern struct generic_onpowerup_state gen_power_onoff_srv_user_data;
 extern struct light_lightness_state light_lightness_srv_user_data;
 extern struct light_ctl_state light_ctl_srv_user_data;
@@ -116,7 +178,5 @@ extern struct bt_mesh_model vnd_models[];
 extern struct bt_mesh_model s0_models[];
 
 extern const struct bt_mesh_comp comp;
-
-void light_default_status_init(void);
 
 #endif
