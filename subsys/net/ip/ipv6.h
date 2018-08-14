@@ -90,7 +90,7 @@ struct net_ipv6_nbr_data {
 	struct k_delayed_work reachable;
 
 	/** Neighbor Solicitation reply timer */
-	struct k_delayed_work send_ns;
+	s64_t send_ns;
 
 	/** State of the neighbor discovery */
 	enum net_ipv6_nbr_state state;

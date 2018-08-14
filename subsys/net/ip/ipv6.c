@@ -75,6 +75,9 @@ static void nd_reachable_timeout(struct k_work *work);
 extern void net_neighbor_data_remove(struct net_nbr *nbr);
 extern void net_neighbor_table_clear(struct net_nbr_table *table);
 
+/** Neighbor Solicitation reply timer */
+static struct k_delayed_work ipv6_ns_reply_timer;
+
 NET_NBR_POOL_INIT(net_neighbor_pool,
 		  CONFIG_NET_IPV6_MAX_NEIGHBORS,
 		  sizeof(struct net_ipv6_nbr_data),
@@ -275,7 +278,7 @@ static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
 
 static inline void nbr_clear_ns_pending(struct net_ipv6_nbr_data *data)
 {
-	k_delayed_work_cancel(&data->send_ns);
+	data->send_ns = 0;
 
 	if (data->pending) {
 		net_pkt_unref(data->pending);
@@ -327,39 +330,69 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
 
 #define NS_REPLY_TIMEOUT K_SECONDS(1)
 
-static void ns_reply_timeout(struct k_work *work)
+static void ipv6_ns_reply_timeout(struct k_work *work)
 {
-	/* We did not receive reply to a sent NS */
-	struct net_ipv6_nbr_data *data = CONTAINER_OF(work,
-						      struct net_ipv6_nbr_data,
-						      send_ns);
+	s64_t current = k_uptime_get();
+	struct net_nbr *nbr = NULL;
+	struct net_ipv6_nbr_data *data;
+	int i;
 
-	struct net_nbr *nbr = get_nbr_from_data(data);
+	ARG_UNUSED(work);
 
-	if (!nbr) {
-		NET_DBG("NS timeout but no nbr data");
-		return;
+	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		s64_t remaining;
+		nbr = get_nbr(i);
+
+		if (!nbr || !nbr->ref) {
+			continue;
+		}
+
+		data = net_ipv6_nbr_data(nbr);
+		if (!data) {
+			continue;
+		}
+
+		if (!data->send_ns) {
+			continue;
+		}
+
+		remaining = data->send_ns + NS_REPLY_TIMEOUT - current;
+
+		if (remaining > 0) {
+			if (!k_delayed_work_remaining_get(
+						&ipv6_ns_reply_timer)) {
+				k_delayed_work_submit(&ipv6_ns_reply_timer,
+						remaining);
+			}
+
+			continue;
+		}
+
+		data->send_ns = 0;
+
+		/* We did not receive reply to a sent NS */
+		if (!data->pending) {
+			/* Silently return, this is not an error as the work
+			 * cannot be cancelled in certain cases.
+			 */
+			continue;
+		}
+
+		NET_DBG("NS nbr %p pending %p timeout to %s", nbr,
+			data->pending,
+			net_sprint_ipv6_addr(
+					&NET_IPV6_HDR(data->pending)->dst));
+
+		/* To unref when pending variable was set */
+		net_pkt_unref(data->pending);
+
+		/* To unref the original pkt allocation */
+		net_pkt_unref(data->pending);
+
+		data->pending = NULL;
+
+		net_nbr_unref(nbr);
 	}
-
-	if (!data->pending) {
-		/* Silently return, this is not an error as the work
-		 * cannot be cancelled in certain cases.
-		 */
-		return;
-	}
-
-	NET_DBG("NS nbr %p pending %p timeout to %s", nbr, data->pending,
-		net_sprint_ipv6_addr(&NET_IPV6_HDR(data->pending)->dst));
-
-	/* To unref when pending variable was set */
-	net_pkt_unref(data->pending);
-
-	/* To unref the original pkt allocation */
-	net_pkt_unref(data->pending);
-
-	data->pending = NULL;
-
-	net_nbr_unref(nbr);
 }
 
 static void nbr_init(struct net_nbr *nbr, struct net_if *iface,
@@ -373,13 +406,12 @@ static void nbr_init(struct net_nbr *nbr, struct net_if *iface,
 	ipv6_nbr_set_state(nbr, state);
 	net_ipv6_nbr_data(nbr)->is_router = is_router;
 	net_ipv6_nbr_data(nbr)->pending = NULL;
+	net_ipv6_nbr_data(nbr)->send_ns = 0;
 
 #if defined(CONFIG_NET_IPV6_ND)
 	k_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
 			    nd_reachable_timeout);
 #endif
-	k_delayed_work_init(&net_ipv6_nbr_data(nbr)->send_ns,
-			    ns_reply_timeout);
 }
 
 static struct net_nbr *nbr_new(struct net_if *iface,
@@ -2198,8 +2230,13 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 		NET_DBG("Setting timeout %d for NS", NS_REPLY_TIMEOUT);
 
-		k_delayed_work_submit(&net_ipv6_nbr_data(nbr)->send_ns,
-				      NS_REPLY_TIMEOUT);
+		net_ipv6_nbr_data(nbr)->send_ns = k_uptime_get();
+
+		/* Let's start the timer if necessary */
+		if (!k_delayed_work_remaining_get(&ipv6_ns_reply_timer)) {
+			k_delayed_work_submit(&ipv6_ns_reply_timer,
+					      NS_REPLY_TIMEOUT);
+		}
 	}
 
 	dbg_addr_sent_tgt("Neighbor Solicitation",
@@ -4351,6 +4388,8 @@ void net_ipv6_init(void)
 #if defined(CONFIG_NET_IPV6_ND)
 	net_icmpv6_register_handler(&ra_input_handler);
 #endif
+	k_delayed_work_init(&ipv6_ns_reply_timer, ipv6_ns_reply_timeout);
+
 #if defined(CONFIG_NET_IPV6_MLD)
 	net_icmpv6_register_handler(&mld_query_input_handler);
 #endif
