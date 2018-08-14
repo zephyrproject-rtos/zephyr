@@ -30,6 +30,8 @@
 #include "dhcpv4.h"
 #include "ipv4.h"
 
+#define PKT_WAIT_TIME K_SECONDS(1)
+
 static sys_slist_t dhcpv4_ifaces;
 static struct k_delayed_work timeout_work;
 
@@ -128,12 +130,10 @@ static inline bool dhcpv4_add_end(struct net_pkt *pkt)
 /* File is empty ATM */
 static inline bool dhcpv4_add_file(struct net_pkt *pkt)
 {
-	u8_t len = SIZE_OF_FILE;
+	const u16_t size = SIZE_OF_FILE;
 
-	while (len-- > 0) {
-		if (!net_pkt_append_u8(pkt, 0)) {
-			return false;
-		}
+	if (net_pkt_append_memset(pkt, size, 0, PKT_WAIT_TIME) != size) {
+		return false;
 	}
 
 	return true;
@@ -142,12 +142,10 @@ static inline bool dhcpv4_add_file(struct net_pkt *pkt)
 /* SNAME is empty ATM */
 static inline bool dhcpv4_add_sname(struct net_pkt *pkt)
 {
-	u8_t len = SIZE_OF_SNAME;
+	const u16_t size = SIZE_OF_SNAME;
 
-	while (len-- > 0) {
-		if (!net_pkt_append_u8(pkt, 0)) {
-			return false;
-		}
+	if (net_pkt_append_memset(pkt, size, 0, PKT_WAIT_TIME) != size) {
+		return false;
 	}
 
 	return true;
