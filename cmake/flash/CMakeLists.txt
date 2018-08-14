@@ -67,9 +67,9 @@ if(BOARD_DEBUG_RUNNER)
     "Default runner for debugging" FORCE)
 endif()
 
-# Generate the flash, debug, debugserver targets within the build
+# Generate the flash, debug, debugserver, attach targets within the build
 # system itself.
-foreach(target flash debug debugserver)
+foreach(target flash debug debugserver attach)
   if(target STREQUAL flash)
     set(comment "Flashing ${BOARD}")
   elseif(target STREQUAL debug)
@@ -81,6 +81,8 @@ foreach(target flash debug debugserver)
       # emulation platforms, so we don't add one here
       continue()
     endif()
+  elseif(target STREQUAL attach)
+    set(comment "Debugging ${BOARD}")
   endif()
 
   # We pass --skip-rebuild here because the DEPENDS value ensures the
