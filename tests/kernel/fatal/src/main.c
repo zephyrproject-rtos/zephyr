@@ -147,14 +147,13 @@ void stack_thread2(void)
 }
 
 /**
+ * @brief Test the kernel fatal error handling works correctly
+ * @details Manually trigger the crash with various ways and check
+ * that the kernel is handling that properly or not. Also the crash reason
+ * should match. Check for stack sentinel feature by overflowing the
+ * thread's stack and check for the exception.
  *
- * @brief test the kernel fatal error handling works correctly
- *
- * Manually trigger the crash with various ways and check that the kernel is
- * handling that properly or not. Also the crash reason should match.
- *
- * Check for stack sentinel feature by overflowing the thread's stack and check
- * for the exception.
+ * @ingroup kernel_common_tests
  */
 void test_fatal(void)
 {
