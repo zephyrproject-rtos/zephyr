@@ -27,8 +27,8 @@ config NET_RPL_PREFIX
 
 choice
 	prompt "Network type"
-	default NET_RPL_L2_ANY
 	default NET_RPL_L2_IEEE802154 if NET_L2_IEEE802154
+	default NET_RPL_L2_ANY
 	help
 	  The type of the network that this RPL device is supporting.
 	  Currently all the nodes in the network need to be the same type
@@ -39,6 +39,7 @@ config NET_RPL_L2_ANY
 
 config NET_RPL_L2_IEEE802154
 	bool "IEEE 802.15.4"
+
 endchoice
 
 choice
