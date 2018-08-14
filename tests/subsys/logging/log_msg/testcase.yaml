@@ -1,4 +1,4 @@
 tests:
-  subsys.logging.log_msg:
-    tags: log_msg
+  logging.log_msg:
+    tags: log_msg logging
 
