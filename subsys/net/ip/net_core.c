@@ -30,6 +30,7 @@
 #include <net/dns_resolve.h>
 #include <net/tcp.h>
 #include <net/gptp.h>
+#include <net/lldp.h>
 
 #include "net_private.h"
 #include "net_shell.h"
@@ -131,6 +132,9 @@ static void processing_data(struct net_pkt *pkt, bool is_loopback)
 /* Things to setup after we are able to RX and TX */
 static void net_post_init(void)
 {
+#if defined(CONFIG_NET_LLDP)
+	net_lldp_init();
+#endif
 #if defined(CONFIG_NET_GPTP)
 	net_gptp_init();
 #endif

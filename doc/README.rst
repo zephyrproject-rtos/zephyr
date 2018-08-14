@@ -134,7 +134,7 @@ generation process output.
 The output from the Sphinx build is processed by the python script
 ``scripts/filter-known-issues.py`` together with a set of filter
 configuration files in the ``.known-issues/doc`` folder.  (This
-filtering is done as part of the ``doc/Makefile``.)
+filtering is done as part of the ``doc/CMakeLists.txt`` CMake listfile.)
 
 If you're contributing components included in the Zephyr API
 documentation and run across these warnings, you can include filtering

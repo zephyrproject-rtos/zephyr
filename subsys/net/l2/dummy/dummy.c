@@ -38,4 +38,10 @@ static inline u16_t dummy_reserve(struct net_if *iface, void *unused)
 	return 0;
 }
 
-NET_L2_INIT(DUMMY_L2, dummy_recv, dummy_send, dummy_reserve, NULL);
+static enum net_l2_flags dummy_flags(struct net_if *iface)
+{
+	return NET_L2_MULTICAST;
+}
+
+NET_L2_INIT(DUMMY_L2, dummy_recv, dummy_send, dummy_reserve, NULL, \
+	    dummy_flags);

@@ -22,11 +22,10 @@ class DTPinCtrl(DTDirective):
     # @param yaml YAML definition for the owning node.
     # @param prop pinctrl-x key
     # @param names Names assigned to pinctrl state pinctrl-<index>.
-    # @param[out] defs Property definitions for each node address
     # @param def_label Define label string of client node owning the pinctrl
     #                  definition.
     #
-    def extract(self, node_address, yaml, prop, names, defs, def_label):
+    def extract(self, node_address, yaml, prop, names, def_label):
 
         pinconf = reduced[node_address]['props'][prop]
 
@@ -66,7 +65,7 @@ class DTPinCtrl(DTDirective):
                         prop_def[func_label] = \
                             reduced[subnode]['props'][cells]
 
-        insert_defs(node_address, defs, prop_def, {})
+        insert_defs(node_address, prop_def, {})
 
 ##
 # @brief Management information for pinctrl-[x].

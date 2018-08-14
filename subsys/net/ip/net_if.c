@@ -721,6 +721,33 @@ struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 	return NULL;
 }
 
+struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
+						     struct in6_addr *addr)
+{
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+	int i;
+
+	if (!ipv6) {
+		return NULL;
+	}
+
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		if (!ipv6->unicast[i].is_used ||
+		    ipv6->unicast[i].address.family != AF_INET6) {
+			continue;
+		}
+
+		if (net_is_ipv6_prefix(
+			    addr->s6_addr,
+			    ipv6->unicast[i].address.in6_addr.s6_addr,
+			    128)) {
+			return &ipv6->unicast[i];
+		}
+	}
+
+	return NULL;
+}
+
 static void ipv6_addr_expired(struct k_work *work)
 {
 	struct net_if_addr *ifaddr = CONTAINER_OF(work,
@@ -819,6 +846,23 @@ static inline struct in6_addr *check_global_addr(struct net_if *iface)
 	return NULL;
 }
 
+static void join_mcast_nodes(struct net_if *iface, struct in6_addr *addr)
+{
+	enum net_l2_flags flags = 0;
+
+	if (net_if_l2(iface)->get_flags) {
+		flags = net_if_l2(iface)->get_flags(iface);
+	}
+
+	if (flags & NET_L2_MULTICAST) {
+		join_mcast_allnodes(iface);
+
+		if (!(flags & NET_L2_MULTICAST_SKIP_JOIN_SOLICIT_NODE)) {
+			join_mcast_solicit_node(iface, addr);
+		}
+	}
+}
+
 struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 					 struct in6_addr *addr,
 					 enum net_addr_type addr_type,
@@ -860,9 +904,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 		/* The allnodes multicast group is only joined once as
 		 * net_ipv6_mcast_join() checks if we have already joined.
 		 */
-		join_mcast_allnodes(iface);
-		join_mcast_solicit_node(iface,
-					&ipv6->unicast[i].address.in6_addr);
+		join_mcast_nodes(iface, &ipv6->unicast[i].address.in6_addr);
 
 #if defined(CONFIG_NET_RPL)
 		/* Do not send DAD for global addresses */
@@ -1598,6 +1640,23 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 	return src;
 }
 
+struct net_if *net_if_ipv6_select_src_iface(struct in6_addr *dst)
+{
+	const struct in6_addr *src;
+	struct net_if *iface;
+
+	src = net_if_ipv6_select_src_addr(NULL, dst);
+	if (src == net_ipv6_unspecified_address()) {
+		return net_if_get_default();
+	}
+
+	if (!net_if_ipv6_addr_lookup(src, &iface)) {
+		return net_if_get_default();
+	}
+
+	return iface;
+}
+
 u32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6)
 {
 	u32_t min_reachable, max_reachable;
@@ -1618,6 +1677,7 @@ u32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6)
 #define join_mcast_allnodes(...)
 #define join_mcast_solicit_node(...)
 #define leave_mcast_all(...)
+#define join_mcast_nodes(...)
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -2152,6 +2212,36 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *maddr,
 }
 #endif /* CONFIG_NET_IPV4 */
 
+struct net_if *net_if_select_src_iface(const struct sockaddr *dst)
+{
+	struct net_if *iface;
+
+	if (!dst) {
+		goto out;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && dst->sa_family == AF_INET6) {
+		iface = net_if_ipv6_select_src_iface(&net_sin6(dst)->sin6_addr);
+		if (!iface) {
+			goto out;
+		}
+
+		return iface;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && dst->sa_family == AF_INET) {
+		iface = net_if_ipv4_select_src_iface(&net_sin(dst)->sin_addr);
+		if (!iface) {
+			goto out;
+		}
+
+		return iface;
+	}
+
+out:
+	return net_if_get_default();
+}
+
 enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
 	if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE) &&
@@ -2300,9 +2390,8 @@ done:
 	NET_DBG("Starting DAD for iface %p", iface);
 	net_if_start_dad(iface);
 #else
-	join_mcast_allnodes(iface);
-	join_mcast_solicit_node(iface,
-			&iface->config.ip.ipv6->mcast[0].address.in6_addr);
+	join_mcast_nodes(iface,
+			 &iface->config.ip.ipv6->mcast[0].address.in6_addr);
 #endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_ND)
@@ -2367,21 +2456,25 @@ done:
 
 int net_if_set_promisc(struct net_if *iface)
 {
+	enum net_l2_flags l2_flags = 0;
 	int ret;
 
 	NET_ASSERT(iface);
 
-	/* This is currently only support for ethernet.
-	 * TODO: support also other L2 technologies.
-	 */
-#if defined(CONFIG_NET_L2_ETHERNET)
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+	if (net_if_l2(iface)->get_flags) {
+		l2_flags = net_if_l2(iface)->get_flags(iface);
+	}
+
+	if (!(l2_flags & NET_L2_PROMISC_MODE)) {
 		return -ENOTSUP;
 	}
 
-	ret = net_eth_promisc_mode(iface, true);
-	if (ret < 0) {
-		return ret;
+#if defined(CONFIG_NET_L2_ETHERNET)
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		ret = net_eth_promisc_mode(iface, true);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 #else
 	return -ENOTSUP;

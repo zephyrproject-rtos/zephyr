@@ -54,3 +54,14 @@ Patch List:
     Impacted files:
      drivers/include/stm32f7xx_ll_rcc.h
     ST Bug tracker ID: 50108
+
+
+   *Disable new CAN API and enable Legacy API
+     A new CAN API has been delivered on recent F7 stm32cube.
+     This new API breaks current CAN driver. Disable the new API and enable the
+     legacy API.
+     Disable related systematic warning message
+    Impacted files:
+     CMakeLists.txt
+     drivers/include/stm32f7xx_hal_conf.h
+     drivers/src/Legacy/stm32f7_hal_can.c

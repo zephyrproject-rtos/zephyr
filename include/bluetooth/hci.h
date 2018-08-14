@@ -40,6 +40,8 @@ typedef struct {
 } bt_addr_le_t;
 
 #define BT_ADDR_ANY     (&(bt_addr_t) { { 0, 0, 0, 0, 0, 0 } })
+#define BT_ADDR_NONE    (&(bt_addr_t) { \
+			 { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } })
 #define BT_ADDR_LE_ANY  (&(bt_addr_le_t) { 0, { { 0, 0, 0, 0, 0, 0 } } })
 #define BT_ADDR_LE_NONE (&(bt_addr_le_t) { 0, \
 			 { { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } } })

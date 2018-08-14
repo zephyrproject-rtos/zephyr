@@ -15,6 +15,8 @@ extern struct k_mem_pool mpool1;
 /**
  * @brief Test alloc and free of different blocks sizes
  *
+ * @ingroup kernel_memory_pool_tests
+ *
  * @details The test demonstrates how the request is handled
  * to allocate the minimum available size block in memory pool
  * to satisfy the requirement of the application.

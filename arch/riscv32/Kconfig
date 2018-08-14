@@ -13,6 +13,10 @@ endchoice
 menu "RISCV32 Options"
 	depends on RISCV32
 
+# Include these first so that any properties (e.g. defaults) below can be
+# overriden (by defining symbols in multiple locations)
+gsource "arch/riscv32/soc/*/Kconfig"
+
 config ARCH
 	string
 	default "riscv32"
@@ -60,7 +64,5 @@ config GEN_IRQ_VECTOR_TABLE
 	default n
 
 endmenu
-
-gsource "arch/riscv32/soc/*/Kconfig"
 
 endmenu

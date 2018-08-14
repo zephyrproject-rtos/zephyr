@@ -41,9 +41,11 @@ void test_getaddrinfo_no_host(void)
 
 void test_main(void)
 {
+	k_thread_system_pool_assign(k_current_get());
+
 	ztest_test_suite(socket_getaddrinfo,
-			 ztest_unit_test(test_getaddrinfo_ok),
-			 ztest_unit_test(test_getaddrinfo_no_host));
+			 ztest_user_unit_test(test_getaddrinfo_ok),
+			 ztest_user_unit_test(test_getaddrinfo_no_host));
 
 	ztest_run_test_suite(socket_getaddrinfo);
 }

@@ -188,7 +188,7 @@ config LOG_MAX_LEVEL
 config LOG_PRINTK
 	bool "Enable processing of printk messages."
 	help
-	  LOG_PRINTK messages are formatten in place and logged unconditionally.
+	  LOG_PRINTK messages are formatted in place and logged unconditionally.
 
 config LOG_PRINTK_MAX_STRING_LENGTH
 	int "Maximum string length supported by LOG_PRINTK"

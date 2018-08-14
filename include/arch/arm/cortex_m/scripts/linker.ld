@@ -184,6 +184,22 @@ SECTIONS
 	. = ALIGN(4);
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+#if defined CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS
+#if CONFIG_ARM_NSC_REGION_BASE_ADDRESS != 0
+       SECTION_PROLOGUE(.gnu.sgstubs,CONFIG_ARM_NSC_REGION_BASE_ADDRESS,)
+#else
+       SECTION_PROLOGUE(.gnu.sgstubs,,)
+#endif /* CONFIG_ARM_NSC_REGION_BASE_ADDRESS != 0 */
+       {
+       . = ALIGN(4);
+       __sg_start = .;
+       *(.gnu*)
+       . = ALIGN(4);
+       __sg_end = .;
+       __sg_size = __sg_end - __sg_start;
+       } GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS */
+
 	_image_rodata_end = .;
 	_image_rom_end = .;
 

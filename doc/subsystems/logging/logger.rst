@@ -79,13 +79,13 @@ Global Kconfig Options
 
 These options can be found in the following path :file:`subsys/logging/Kconfig`.
 
-:option:`CONFIG_LOG`: Global switch, turs on/off the logger.
+:option:`CONFIG_LOG`: Global switch, turns on/off the logger.
 
 :option:`CONFIG_LOG_RUNTIME_FILTERING`: Enables runtime reconfiguration of the
 logger.
 
 :option:`CONFIG_LOG_MODE_OVERFLOW`: When logger cannot allocate new message
-oldests one are discarded.
+oldest one are discarded.
 
 :option:`CONFIG_LOG_MODE_NO_OVERFLOW`: When logger cannot allocate new message
 it is discarded.
@@ -210,7 +210,7 @@ Controlling the logger
 ======================
 
 Logger can be controlled using API defined in
-:file:`include/logging/log_ctrl.h`. Logger must be initilized before it can be
+:file:`include/logging/log_ctrl.h`. Logger must be initialized before it can be
 used. Optionally, user can provide function which returns timestamp value. If
 not provided, :c:macro:`k_cycle_get_32` is used for timestamping.
 :cpp:func:`log_process` function is used to trigger processing of one log
@@ -257,7 +257,7 @@ Logger controlling API provides a function for entering into panic mode
 (:cpp:func:`log_panic`) which should be called in such situation.
 
 When :cpp:func:`log_panic()` is called, logger sends _panic_ notification to
-all active backends. It is backend reponsibility to react. Backend should
+all active backends. It is backend responsibility to react. Backend should
 switch to blocking, synchronous mode (stop using interrupts) or disable itself.
 Once all backends are notified, logger flushes all buffered messages. Since
 that moment all logs are processed in a blocking way.
@@ -316,7 +316,7 @@ that log entry. Backend slots are examined when message is process by the
 logger core to determine if message is accepted by given backend.
 
 In the example below backend 1 is set to receive errors (*slot 1*) and backend
-2 up to info level (*slot 2*). Slots 3-9 are not used. Aggregatated filter
+2 up to info level (*slot 2*). Slots 3-9 are not used. Aggregated filter
 (*slot 0*) is set to info level and up to this level message from that
 particular source will be buffered.
 

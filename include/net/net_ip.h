@@ -59,6 +59,8 @@ enum net_ip_protocol_secure {
 	IPPROTO_TLS_1_0 = 256,
 	IPPROTO_TLS_1_1 = 257,
 	IPPROTO_TLS_1_2 = 258,
+	IPPROTO_DTLS_1_0 = 272,
+	IPPROTO_DTLS_1_2 = 273,
 };
 
 /** Socket type */
@@ -196,8 +198,8 @@ extern const struct in6_addr in6addr_loopback;
 
 /** Network packet priority settings described in IEEE 802.1Q Annex I.1 */
 enum net_priority {
-	NET_PRIORITY_BK = 0, /* Background (lowest)                */
-	NET_PRIORITY_BE = 1, /* Best effort (default)              */
+	NET_PRIORITY_BK = 1, /* Background (lowest)                */
+	NET_PRIORITY_BE = 0, /* Best effort (default)              */
 	NET_PRIORITY_EE = 2, /* Excellent effort                   */
 	NET_PRIORITY_CA = 3, /* Critical applications (highest)    */
 	NET_PRIORITY_VI = 4, /* Video, < 100 ms latency and jitter */
@@ -269,7 +271,7 @@ struct net_ipv6_hdr {
 	u8_t vtc;
 	u8_t tcflow;
 	u16_t flow;
-	u8_t len[2];
+	u16_t len;
 	u8_t nexthdr;
 	u8_t hop_limit;
 	struct in6_addr src;
@@ -286,7 +288,7 @@ struct net_ipv6_frag_hdr {
 struct net_ipv4_hdr {
 	u8_t vhl;
 	u8_t tos;
-	u8_t len[2];
+	u16_t len;
 	u8_t id[2];
 	u8_t offset[2];
 	u8_t ttl;

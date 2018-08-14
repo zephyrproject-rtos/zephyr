@@ -16,6 +16,10 @@ endchoice
 menu "POSIX (native) Options"
 	depends on ARCH_POSIX
 
+# Include these first so that any properties (e.g. defaults) below can be
+# overriden (by defining symbols in multiple locations)
+gsource "arch/posix/soc/*/Kconfig"
+
 config ARCH
 	default "posix"
 
@@ -33,7 +37,5 @@ config ARCH_POSIX_RECOMMENDED_STACK_SIZE
 	  (In this architecture only part of the thread status is kept in the Zephyr
 	  thread stack, the real stack is the native underlying pthread stack.
 	  Therefore the allocated stack can be limited to this size)
-
-gsource "arch/posix/soc/*/Kconfig"
 
 endmenu

@@ -263,8 +263,8 @@ static inline void handle_timeouts(s32_t ticks)
 
 #ifdef CONFIG_TIMESLICING
 s32_t _time_slice_elapsed;
-s32_t _time_slice_duration = CONFIG_TIMESLICE_SIZE;
-int  _time_slice_prio_ceiling = CONFIG_TIMESLICE_PRIORITY;
+s32_t _time_slice_duration;
+int  _time_slice_prio_ceiling;
 
 /*
  * Always called from interrupt level, and always only from the system clock
@@ -285,7 +285,7 @@ static void handle_time_slicing(s32_t ticks)
 		return;
 	}
 
-	_time_slice_elapsed += __ticks_to_ms(ticks);
+	_time_slice_elapsed += ticks;
 	if (_time_slice_elapsed >= _time_slice_duration) {
 
 		unsigned int key;
@@ -297,8 +297,7 @@ static void handle_time_slicing(s32_t ticks)
 		irq_unlock(key);
 	}
 #ifdef CONFIG_TICKLESS_KERNEL
-	next_ts =
-	    _ms_to_ticks(_time_slice_duration - _time_slice_elapsed);
+	next_ts = _time_slice_duration - _time_slice_elapsed;
 #endif
 }
 #else

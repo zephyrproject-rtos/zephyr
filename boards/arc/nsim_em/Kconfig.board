@@ -10,5 +10,5 @@ config BOARD_NSIM_EM
 	select HAS_DTS
 	help
 	  The DesignWare ARC Nsim EM board is a virtual board based on
-	  nsim simulator. It's used to show the ARC EM core feuatures.
-	  It just has a console based on hostlink feature of nsim simulator
+	  nsim simulator. It's used to show the ARC EM core features.
+	  It just has a console based on hostlink feature of nsim simulator.

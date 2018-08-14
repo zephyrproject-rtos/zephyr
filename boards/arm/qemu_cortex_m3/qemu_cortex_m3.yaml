@@ -5,7 +5,7 @@ simulation: qemu
 arch: arm
 toolchain:
   - zephyr
-  - gccarmemb
+  - gnuarmemb
   - xtools
 supported:
   - netif:slip

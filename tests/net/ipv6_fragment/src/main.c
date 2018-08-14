@@ -1554,8 +1554,7 @@ static void test_send_ipv6_fragment(void)
 
 	zassert_equal(pkt_data_len, count * data_len, "Data size mismatch");
 
-	total_len = net_pkt_get_len(pkt);
-	total_len -= sizeof(struct net_ipv6_hdr);
+	total_len = net_pkt_get_len(pkt) - sizeof(struct net_ipv6_hdr);
 
 	DBG("Sending %zd bytes of which ext %d and data %d bytes\n",
 	    total_len, net_pkt_ipv6_ext_len(pkt), pkt_data_len);
@@ -1563,9 +1562,7 @@ static void test_send_ipv6_fragment(void)
 	zassert_equal(total_len - net_pkt_ipv6_ext_len(pkt) - 8, pkt_data_len,
 		      "Packet size invalid");
 
-	NET_IPV6_HDR(pkt)->len[0] = total_len / 256;
-	NET_IPV6_HDR(pkt)->len[1] = total_len -
-		NET_IPV6_HDR(pkt)->len[0] * 256;
+	NET_IPV6_HDR(pkt)->len = htons(total_len);
 
 	net_udp_set_chksum(pkt, pkt->frags);
 

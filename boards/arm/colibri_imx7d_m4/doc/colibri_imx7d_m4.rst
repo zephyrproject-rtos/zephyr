@@ -228,7 +228,7 @@ Debugging
 Download and install `J-Link Tools`_ and `NXP iMX7D Connect CortexM4.JLinkScript`_.
 
 To run Zephyr Binary using J-Link create the following script in order to
-get the Program Counter and Stack Pointer from zephry.bin.
+get the Program Counter and Stack Pointer from zephyr.bin.
 
 get-pc-sp.sh:
 .. code-block:: console

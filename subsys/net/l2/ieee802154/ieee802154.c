@@ -305,9 +305,16 @@ static int ieee802154_enable(struct net_if *iface, bool state)
 	return ieee802154_stop(iface);
 }
 
+enum net_l2_flags ieee802154_flags(struct net_if *iface)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+
+	return ctx->flags;
+}
+
 NET_L2_INIT(IEEE802154_L2,
 	    ieee802154_recv, ieee802154_send,
-	    ieee802154_reserve, ieee802154_enable);
+	    ieee802154_reserve, ieee802154_enable, ieee802154_flags);
 
 void ieee802154_init(struct net_if *iface)
 {
@@ -319,6 +326,7 @@ void ieee802154_init(struct net_if *iface)
 	NET_DBG("Initializing IEEE 802.15.4 stack on iface %p", iface);
 
 	ctx->channel = IEEE802154_NO_CHANNEL;
+	ctx->flags = NET_L2_MULTICAST;
 
 	ieee802154_mgmt_init(iface);
 

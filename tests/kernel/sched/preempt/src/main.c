@@ -302,6 +302,11 @@ void worker(void *p1, void *p2, void *p3)
 	}
 }
 
+/**
+ * @brief Test preemption
+ *
+ * @ingroup kernel_sched_tests
+ */
 void test_preempt(void)
 {
 	int priority;

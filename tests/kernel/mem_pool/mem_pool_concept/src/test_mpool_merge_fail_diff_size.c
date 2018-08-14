@@ -19,6 +19,8 @@ K_MEM_POOL_DEFINE(mpool3, BLK_SIZE_MIN, BLK_SIZE_MAX, BLK_NUM_MAX, BLK_ALIGN);
 /**
  * @brief Verify blocks of different sizes cannot be merged.
  *
+ * @ingroup kernel_memory_pool_tests
+ *
  * @details The merging algorithm cannot combine adjacent free blocks
  * of different sizes
  * Test steps: 1. allocate 14 blocks in different sizes

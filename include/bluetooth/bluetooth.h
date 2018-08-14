@@ -29,6 +29,14 @@
 extern "C" {
 #endif
 
+/** @def BT_ID_DEFAULT
+ *
+ *  Convenience macro for specifying the default identity. This helps
+ *  make the code more readable, especially when only one identity is
+ *  supported.
+ */
+#define BT_ID_DEFAULT 0
+
 /**
  * @brief Generic Access Profile
  * @defgroup bt_gap Generic Access Profile
@@ -88,6 +96,112 @@ const char *bt_get_name(void);
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_set_id_addr(const bt_addr_le_t *addr);
+
+/** @brief Get the currently configured identities.
+ *
+ *  Returns an array of the currently configured identity addresses. To
+ *  make sure all available identities can be retrieved, the number of
+ *  elements in the @a addrs array should be CONFIG_BT_ID_MAX. The identity
+ *  identifier that some APIs expect (such as advertising parameters) is
+ *  simply the index of the identity in the @a addrs array.
+ *
+ *  Note: Deleted identities may show up as BT_LE_ADDR_ANY in the returned
+ *  array.
+ *
+ *  @param addrs Array where to store the configured identities.
+ *  @param count Should be initialized to the array size. Once the function
+ *               returns it will contain the number of returned identies.
+ */
+void bt_id_get(bt_addr_le_t *addrs, size_t *count);
+
+/** @brief Create a new identity.
+ *
+ *  Create a new identity using the given address and IRK. This function
+ *  can be called before calling bt_enable(), in which case it can be used
+ *  to override the controller's public address (in case it has one). However,
+ *  the new identity will only be stored persistently in flash when this API
+ *  is used after bt_enable(). The reason is that the persistent settings
+ *  are loaded after bt_enable() and would therefore cause potential conflicts
+ *  with the stack blindly overwriting what's stored in flash. The identity
+ *  will also not be written to flash in case a pre-defined address is
+ *  provided, since in such a situation the app clearly has some place it got
+ *  the address from and will be able to repeat the procedure on every power
+ *  cycle, i.e. it would be redundant to also store the information in flash.
+ *
+ *  If the application wants to have the stack randomly generate identities
+ *  and store them in flash for later recovery, the way to do it would be
+ *  to first initialize the stack (using bt_enable), then call settings_load(),
+ *  and after that check with bt_id_get() how many identities were recovered.
+ *  If an insufficient amount of identities were recovered the app may then
+ *  call bt_id_create() to create new ones.
+ *
+ *  @param addr Address to use for the new identity. If NULL or initialized
+ *              to BT_ADDR_LE_ANY the stack will generate a new static
+ *              random address for the identity and copy it to the given
+ *              parameter upon return from this function (in case the
+ *              parameter was non-NULL).
+ *  @param irk  Identity Resolving Key (16 bytes) to be used with this
+ *              identity. If set to all zeroes or NULL, the stack will
+ *              generate a random IRK for the identity and copy it back
+ *              to the parameter upon return from this function (in case
+ *              the parameter was non-NULL). If privacy support
+ *              (CONFIG_BT_PRIVACY) is not enabled this parameter must
+ *              be NULL.
+ *
+ *  @return Identity identifier (>= 0) in case of success, or a negative
+ *          error code on failure.
+ */
+int bt_id_create(bt_addr_le_t *addr, u8_t *irk);
+
+/** @brief Reset/reclaim an identity for reuse.
+ *
+ *  The semantics of the @a addr and @a irk parameters of this function
+ *  are the same as with bt_id_create(). The difference is the first
+ *  @a id parameter that needs to be an existing identity (if it doesn't
+ *  exist this function will return an error). When given an existing
+ *  identity this function will disconnect any connections created using it,
+ *  remove any pairing keys or other data associated with it, and then create
+ *  a new identity in the same slot, based on the @a addr and @a irk
+ *  parameters.
+ *
+ *  Note: the default identity (BT_ID_DEFAULT) cannot be reset, i.e. this
+ *  API will return an error if asked to do that.
+ *
+ *  @param id   Existing identity identifier.
+ *  @param addr Address to use for the new identity. If NULL or initialized
+ *              to BT_ADDR_LE_ANY the stack will generate a new static
+ *              random address for the identity and copy it to the given
+ *              parameter upon return from this function (in case the
+ *              parameter was non-NULL).
+ *  @param irk  Identity Resolving Key (16 bytes) to be used with this
+ *              identity. If set to all zeroes or NULL, the stack will
+ *              generate a random IRK for the identity and copy it back
+ *              to the parameter upon return from this function (in case
+ *              the parameter was non-NULL). If privacy support
+ *              (CONFIG_BT_PRIVACY) is not enabled this parameter must
+ *              be NULL.
+ *
+ *  @return Identity identifier (>= 0) in case of success, or a negative
+ *          error code on failure.
+ */
+int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk);
+
+/** @brief Delete an identity.
+ *
+ *  When given a valid identity this function will disconnect any connections
+ *  created using it, remove any pairing keys or other data associated with
+ *  it, and then flag is as deleted, so that it can not be used for any
+ *  operations. To take back into use the slot the identity was occupying the
+ *  bt_id_reset() API needs to be used.
+ *
+ *  Note: the default identity (BT_ID_DEFAULT) cannot be deleted, i.e. this
+ *  API will return an error if asked to do that.
+ *
+ *  @param id   Existing identity identifier.
+ *
+ *  @return 0 in case of success, or a negative error code on failure.
+ */
+int bt_id_delete(u8_t id);
 
 /* Advertising API */
 
@@ -161,6 +275,9 @@ enum {
 
 /** LE Advertising Parameters. */
 struct bt_le_adv_param {
+	/** Local identity */
+	u8_t  id;
+
 	/** Bit-field of advertising options */
 	u8_t  options;
 
@@ -313,7 +430,7 @@ int bt_le_scan_stop(void);
  *
  *  A helper for parsing the basic data types used for Extended Inquiry
  *  Response (EIR), Advertising Data (AD), and OOB data blocks. The most
- *  common scenario is to call this helper on the adverstising data
+ *  common scenario is to call this helper on the advertising data
  *  received in the callback that was given to bt_le_scan_start().
  *
  *  @param ad        Advertising data as given to the bt_le_scan_cb_t callback.
@@ -343,9 +460,10 @@ struct bt_le_oob {
  * Address that is valid for CONFIG_BT_RPA_TIMEOUT seconds. This address
  * will be used for advertising, active scanning and connection creation.
  *
+ * @param id  Local identity, in most cases BT_ID_DEFAULT.
  * @param oob LE related information
  */
-int bt_le_oob_get_local(struct bt_le_oob *oob);
+int bt_le_oob_get_local(u8_t id, struct bt_le_oob *oob);
 
 /** @brief BR/EDR discovery result structure */
 struct bt_br_discovery_result {
@@ -538,12 +656,13 @@ int bt_br_set_connectable(bool enable);
 
 /** Clear pairing information.
   *
+  * @param id    Local identity (mostly just BT_ID_DEFAULT).
   * @param addr  Remote address, NULL or BT_ADDR_LE_ANY to clear all remote
   *              devices.
   *
   * @return 0 on success or negative error value on failure.
   */
-int bt_unpair(const bt_addr_le_t *addr);
+int bt_unpair(u8_t id, const bt_addr_le_t *addr);
 
 /**
  * @}

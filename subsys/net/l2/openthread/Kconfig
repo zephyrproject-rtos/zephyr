@@ -55,11 +55,11 @@ endif
 
 config	OPENTHREAD_LOG_LEVEL
 	int
-	default 0
 	default 1 if OPENTHREAD_LOG_LEVEL_ERROR
 	default 2 if OPENTHREAD_LOG_LEVEL_WARNING
 	default 3 if OPENTHREAD_LOG_LEVEL_INFO
 	default 4 if OPENTHREAD_LOG_LEVEL_DEBUG
+	default 0
 
 menuconfig OPENTHREAD_L2_DEBUG
 	bool "OpenThread L2 log support"
@@ -97,11 +97,11 @@ endif
 
 config	OPENTHREAD_L2_LOG_LEVEL
 	int
-	default 0
 	default 1 if OPENTHREAD_L2_LOG_LEVEL_ERROR
 	default 2 if OPENTHREAD_L2_LOG_LEVEL_WARNING
 	default 3 if OPENTHREAD_L2_LOG_LEVEL_INFO
 	default 4 if OPENTHREAD_L2_LOG_LEVEL_DEBUG
+	default 0
 
 config OPENTHREAD_THREAD_PRIORITY
 	int "OpenThread thread priority"

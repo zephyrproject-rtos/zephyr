@@ -16,7 +16,9 @@
 #define HAL_EVENT_TIMER_SAMPLE_CC_OFFSET 3
 #define HAL_EVENT_TIMER_SAMPLE_TASK NRF_TIMER_TASK_CAPTURE3
 
-#if defined(CONFIG_SOC_SERIES_NRF51X)
+#if defined(CONFIG_SOC_SERIES_NWTSIM_NRFXX)
+#include "radio_sim_nrfxx.h"
+#elif defined(CONFIG_SOC_SERIES_NRF51X)
 #include "radio_nrf51.h"
 #elif defined(CONFIG_SOC_NRF52810)
 #include "radio_nrf52810.h"

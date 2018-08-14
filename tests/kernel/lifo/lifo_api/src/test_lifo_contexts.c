@@ -89,7 +89,8 @@ static void tlifo_isr_thread(struct k_lifo *plifo)
  */
 
 /**
- * @see k_lifo_init(), k_lifo_put_list()
+ * @brief test thread to thread data passing via lifo
+ * @see k_fifo_init(), k_lifo_put(), k_lifo_get()
  */
 void test_lifo_thread2thread(void)
 {
@@ -102,7 +103,8 @@ void test_lifo_thread2thread(void)
 }
 
 /**
- * @see k_fifo_init(), k_lifo_put_list(), #K_LIFO_DEFINE(x)
+ * @brief test isr to thread data passing via lifo
+ * @see k_fifo_init(), k_lifo_put(), k_lifo_get()
  */
 void test_lifo_thread2isr(void)
 {
@@ -115,7 +117,8 @@ void test_lifo_thread2isr(void)
 }
 
 /**
- * @see k_fifo_init(), k_lifo_put_list(), #K_LIFO_DEFINE(x)
+ * @brief test thread to isr data passing via lifo
+ * @see k_fifo_init(), k_lifo_put(), k_lifo_get()
  */
 void test_lifo_isr2thread(void)
 {

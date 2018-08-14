@@ -55,4 +55,4 @@ add_dependencies(
 set_target_properties(mylib_lib PROPERTIES IMPORTED_LOCATION             ${MYLIB_LIB_DIR}/libmylib.a)
 set_target_properties(mylib_lib PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${MYLIB_INCLUDE_DIR})
 
-target_link_libraries(app mylib_lib)
+target_link_libraries(app PUBLIC mylib_lib)

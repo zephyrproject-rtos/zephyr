@@ -16,7 +16,6 @@ if SPI_FLASH_W25QXXDV
 config SPI_FLASH_W25QXXDV_SPI_NAME
 	string
 	prompt "SPI controller device name"
-	default ""
 
 config SPI_FLASH_W25QXXDV_DRV_NAME
 	string
@@ -53,7 +52,6 @@ config SPI_FLASH_W25QXXDV_GPIO_SPI_CS
 
 config SPI_FLASH_W25QXXDV_GPIO_SPI_CS_DRV_NAME
 	string "GPIO driver's name to use to drive SPI CS through"
-	default ""
 	depends on SPI_FLASH_W25QXXDV_GPIO_SPI_CS
 	help
 	This option is mandatory to set which GPIO controller to use in order

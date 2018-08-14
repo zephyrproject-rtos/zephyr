@@ -124,6 +124,7 @@ static inline void adv_send(struct net_buf *buf)
 		param.options = 0;
 	}
 
+	param.id = BT_ID_DEFAULT;
 	param.interval_min = ADV_SCAN_UNIT(adv_int);
 	param.interval_max = param.interval_min;
 

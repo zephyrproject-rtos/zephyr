@@ -4,10 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+gsource "arch/arm/soc/atmel_sam/*/Kconfig.defconfig.series"
+
 if SOC_FAMILY_SAM
 
 config WATCHDOG
 	def_bool y
 
 endif
-gsource "arch/arm/soc/atmel_sam/*/Kconfig.defconfig.series"

@@ -7,7 +7,7 @@ Overview
 ********
 
 This gPTP stack supports the protocol and procedures as defined in
-the `IEEE 802.1AS-2011 standard`_ (Timing and Syncronization for
+the `IEEE 802.1AS-2011 standard`_ (Timing and Synchronization for
 Time-Sensitive Applications in Bridged Local Area Networks).
 
 Supported features

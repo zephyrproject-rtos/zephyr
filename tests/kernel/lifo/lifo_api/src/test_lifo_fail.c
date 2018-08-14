@@ -15,6 +15,9 @@
  */
 
 /**
+ * @brief Test LIFO get fail
+ * @details verify zephyr k_lifo_get, it returns NULL
+ * when there is no data to read
  * @see k_lifo_init(), k_lifo_get()
  */
 void test_lifo_get_fail(void *p1, void *p2, void *p3)

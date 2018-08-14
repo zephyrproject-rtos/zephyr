@@ -23,9 +23,10 @@ sh_special_args = {
     '_cwd': repository_path
 }
 
-# list_undef_kconfig_refs.py makes use of Kconfiglib
-sys.path.append(os.path.join(repository_path, "scripts/kconfig"))
-import list_undef_kconfig_refs
+# Put the Kconfiglib path first to make sure no local Kconfiglib version is
+# used
+sys.path.insert(0, os.path.join(repository_path, "scripts/kconfig"))
+import kconfiglib
 
 
 def init_logs():
@@ -104,35 +105,25 @@ def run_kconfig_undef_ref_check(tc, commit_range):
     os.environ["ENV_VAR_BOARD_DIR"] = "boards/*/*"
     os.environ["ENV_VAR_ARCH"] = "*"
 
-    # Hack:
-    #
-    # When using 'srctree', Kconfiglib checks the current directory before
-    # checking the 'srctree' directory (only for compatibility with the C
-    # tools... this behavior is pretty bad for Kconfig files).
-    #
-    # This can cause problems for external projects that happen to run
-    # check-compliance.py from a directory that contains Kconfig files that
-    # overlap with Kconfig in the Zephyr tree (subsys/Kconfig would override
-    # the same file in the base Zephyr repo, etc.).
-    #
-    # Work around it by temporarily changing directory instead of using
-    # 'srctree'.
-    cur_dir = os.getcwd()
-    os.chdir(repository_path)
-    try:
-        # Returns the empty string if there are no references to undefined symbols
-        msg = list_undef_kconfig_refs.report()
-        if msg:
-            failure = ET.SubElement(tc, "failure", type="failure",
-                                    message="undefined Kconfig symbols")
-            failure.text = msg
-            return 1
+    # Enable strict Kconfig mode in Kconfiglib, which assumes there's just a
+    # single Kconfig tree and warns for all references to undefined symbols
+    os.environ["KCONFIG_STRICT"] = "y"
 
-        return 0
+    undef_ref_warnings = []
 
-    finally:
-        # Restore working directory
-        os.chdir(cur_dir)
+    for warning in kconfiglib.Kconfig().warnings:
+        if "undefined symbol" in warning:
+            undef_ref_warnings.append(warning)
+
+    # Generating multiple JUnit <failure>s would be neater, but Shippable only
+    # seems to display the first one
+    if undef_ref_warnings:
+        failure = ET.SubElement(tc, "failure", type="failure",
+                                message="undefined Kconfig symbols")
+        failure.text = "\n\n\n".join(undef_ref_warnings)
+        return 1
+
+    return 0
 
 
 def verify_signed_off(tc, commit):

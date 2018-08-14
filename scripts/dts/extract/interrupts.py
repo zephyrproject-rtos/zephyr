@@ -34,11 +34,10 @@ class DTInterrupts(DTDirective):
     # @param yaml YAML definition for the owning node.
     # @param prop compatible property name
     # @param names (unused)
-    # @param[out] defs Property definitions for each node address
     # @param def_label Define label string of node owning the
     #                  compatible definition.
     #
-    def extract(self, node_address, yaml, prop, names, defs, def_label):
+    def extract(self, node_address, yaml, prop, names, def_label):
 
         node = reduced[node_address]
 
@@ -83,7 +82,7 @@ class DTInterrupts(DTDirective):
                         prop_alias['_'.join(alias_list)] = l_fqn
 
             index += 1
-            insert_defs(node_address, defs, prop_def, prop_alias)
+            insert_defs(node_address, prop_def, prop_alias)
 
 ##
 # @brief Management information for interrupts.

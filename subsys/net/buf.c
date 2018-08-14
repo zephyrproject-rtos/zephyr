@@ -672,6 +672,87 @@ struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
 	return next_frag;
 }
 
+int net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
+		      u16_t offset, u16_t len)
+{
+	struct net_buf *frag;
+	u16_t to_copy;
+	u16_t copied;
+
+	if (dst_len < (size_t)len) {
+		return -ENOMEM;
+	}
+
+	frag = src;
+
+	/* clear dst */
+	memset(dst, 0, dst_len);
+
+	/* find the right fragment to start copying from */
+	while (frag && offset >= frag->len) {
+		offset -= frag->len;
+		frag = frag->frags;
+	}
+
+	/* traverse the fragment chain until len bytes are copied */
+	copied = 0;
+	while (frag && len > 0) {
+		to_copy = min(len, frag->len - offset);
+		memcpy(dst + copied, frag->data + offset, to_copy);
+
+		copied += to_copy;
+
+		/* to_copy is always <= len */
+		len -= to_copy;
+		frag = frag->frags;
+
+		/* after the first iteration, this value will be 0 */
+		offset = 0;
+	}
+
+	if (len > 0) {
+		return -ENOMEM;
+	}
+
+	return copied;
+}
+
+/* This helper routine will append multiple bytes, if there is no place for
+ * the data in current fragment then create new fragment and add it to
+ * the buffer. It assumes that the buffer has at least one fragment.
+ */
+u16_t net_buf_append_bytes(struct net_buf *buf, u16_t len,
+			   const u8_t *value, s32_t timeout,
+			   net_buf_allocator_cb allocate_cb, void *user_data)
+{
+	struct net_buf *frag = net_buf_frag_last(buf);
+	u16_t added_len = 0;
+
+	do {
+		u16_t count = min(len, net_buf_tailroom(frag));
+		void *data = net_buf_add(frag, count);
+
+		memcpy(data, value, count);
+		len -= count;
+		added_len += count;
+		value += count;
+
+		if (len == 0) {
+			return added_len;
+		}
+
+		frag = allocate_cb(timeout, user_data);
+		if (!frag) {
+			return added_len;
+		}
+
+		net_buf_frag_add(buf, frag);
+	} while (1);
+
+	/* Unreachable */
+	return 0;
+}
+
 #if defined(CONFIG_NET_BUF_SIMPLE_LOG)
 #define NET_BUF_SIMPLE_DBG(fmt, ...) NET_BUF_DBG(fmt, ##__VA_ARGS__)
 #define NET_BUF_SIMPLE_ERR(fmt, ...) NET_BUF_ERR(fmt, ##__VA_ARGS__)

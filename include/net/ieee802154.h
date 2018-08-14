@@ -43,6 +43,7 @@ struct ieee802154_security_ctx {
 
 /* This not meant to be used by any code but 802.15.4 L2 stack */
 struct ieee802154_context {
+	enum net_l2_flags flags;
 	u16_t pan_id;
 	u16_t channel;
 	struct k_sem ack_lock;

@@ -1366,8 +1366,7 @@ end:
 
 	/* Set IPv6 header and UDP (if next header is) length */
 	len = net_pkt_get_len(pkt) - NET_IPV6H_LEN;
-	ipv6->len[0] = len >> 8;
-	ipv6->len[1] = (u8_t)len;
+	ipv6->len = htons(len);
 
 	if (ipv6->nexthdr == IPPROTO_UDP && udp) {
 		udp->len = htons(len);

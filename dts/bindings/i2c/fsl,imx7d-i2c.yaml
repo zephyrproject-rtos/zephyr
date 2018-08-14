@@ -31,3 +31,9 @@ properties:
       category: required
       description: required interrupts
       generation: define
+
+    rdc:
+     type: int
+     category: required
+     description: Set the RDC permission for this peripheral
+     generation: define

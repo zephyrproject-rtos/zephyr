@@ -591,8 +591,8 @@ struct k_thread *_priq_mq_best(struct _priq_mq *pq)
 }
 
 #ifdef CONFIG_TIMESLICING
-extern s32_t _time_slice_duration;    /* Measured in ms */
-extern s32_t _time_slice_elapsed;     /* Measured in ms */
+extern s32_t _time_slice_duration;    /* Measured in ticks */
+extern s32_t _time_slice_elapsed;     /* Measured in ticks */
 extern int _time_slice_prio_ceiling;
 
 void k_sched_time_slice_set(s32_t duration_in_ms, int prio)
@@ -600,7 +600,7 @@ void k_sched_time_slice_set(s32_t duration_in_ms, int prio)
 	__ASSERT(duration_in_ms >= 0, "");
 	__ASSERT((prio >= 0) && (prio < CONFIG_NUM_PREEMPT_PRIORITIES), "");
 
-	_time_slice_duration = duration_in_ms;
+	_time_slice_duration = _ms_to_ticks(duration_in_ms);
 	_time_slice_elapsed = 0;
 	_time_slice_prio_ceiling = prio;
 }
@@ -689,6 +689,11 @@ void _sched_init(void)
 	for (int i = 0; i < ARRAY_SIZE(_kernel.ready_q.runq.queues); i++) {
 		sys_dlist_init(&_kernel.ready_q.runq.queues[i]);
 	}
+#endif
+
+#ifdef CONFIG_TIMESLICING
+	k_sched_time_slice_set(CONFIG_TIMESLICE_SIZE,
+		CONFIG_TIMESLICE_PRIORITY);
 #endif
 }
 

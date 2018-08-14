@@ -114,6 +114,23 @@ int eth_setup_host(const char *if_name)
 		       if_name);
 }
 
+int eth_start_script(const char *if_name)
+{
+	if (CONFIG_ETH_NATIVE_POSIX_STARTUP_SCRIPT[0] == '\0') {
+		return 0;
+	}
+
+	if (CONFIG_ETH_NATIVE_POSIX_STARTUP_SCRIPT_USER[0] == '\0') {
+		return ssystem("%s %s", CONFIG_ETH_NATIVE_POSIX_STARTUP_SCRIPT,
+			       if_name);
+	} else {
+		return ssystem("sudo -u %s %s %s",
+			       CONFIG_ETH_NATIVE_POSIX_STARTUP_SCRIPT_USER,
+			       CONFIG_ETH_NATIVE_POSIX_STARTUP_SCRIPT,
+			       if_name);
+	}
+}
+
 int eth_wait_data(int fd)
 {
 	struct timeval timeout;
@@ -174,3 +191,13 @@ int eth_promisc_mode(const char *if_name, bool enable)
 		       if_name, enable ? "on" : "off");
 }
 #endif /* CONFIG_NET_PROMISCUOUS_MODE */
+
+int eth_if_up(const char *if_name)
+{
+	return ssystem("ip link set dev %s up", if_name);
+}
+
+int eth_if_down(const char *if_name)
+{
+	return ssystem("ip link set dev %s down", if_name);
+}

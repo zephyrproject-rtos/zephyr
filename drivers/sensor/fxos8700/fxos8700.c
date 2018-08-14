@@ -332,6 +332,8 @@ static int fxos8700_init(struct device *dev)
 		return -EIO;
 	}
 
+	k_sem_init(&data->sem, 0, UINT_MAX);
+
 #if CONFIG_FXOS8700_TRIGGER
 	if (fxos8700_trigger_init(dev)) {
 		SYS_LOG_ERR("Could not initialize interrupts");
@@ -344,8 +346,7 @@ static int fxos8700_init(struct device *dev)
 		SYS_LOG_ERR("Could not set active");
 		return -EIO;
 	}
-
-	k_sem_init(&data->sem, 1, UINT_MAX);
+	k_sem_give(&data->sem);
 
 	SYS_LOG_DBG("Init complete");
 

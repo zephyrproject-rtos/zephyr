@@ -126,7 +126,7 @@ static void controller_info(u8_t *data, u16_t len)
 
 	memset(&rp, 0, sizeof(rp));
 
-	bt_le_oob_get_local(&oob);
+	bt_le_oob_get_local(BT_ID_DEFAULT, &oob);
 	memcpy(rp.address, &oob.addr.a, sizeof(bt_addr_t));
 	/*
 	 * If privacy is used, the device uses random type address, otherwise
@@ -465,7 +465,7 @@ static void disconnect(const u8_t *data, u16_t len)
 	struct bt_conn *conn;
 	u8_t status;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		status = BTP_STATUS_FAILED;
 		goto rsp;
@@ -563,7 +563,7 @@ static void pair(const u8_t *data, u16_t len)
 	struct bt_conn *conn;
 	u8_t status;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		status = BTP_STATUS_FAILED;
 		goto rsp;
@@ -593,7 +593,7 @@ static void unpair(const u8_t *data, u16_t len)
 	addr.type = cmd->address_type;
 	memcpy(addr.a.val, cmd->address, sizeof(addr.a.val));
 
-	conn = bt_conn_lookup_addr_le(&addr);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &addr);
 	if (!conn) {
 		goto keys;
 	}
@@ -607,7 +607,7 @@ static void unpair(const u8_t *data, u16_t len)
 		goto rsp;
 	}
 keys:
-	err = bt_unpair(&addr);
+	err = bt_unpair(BT_ID_DEFAULT, &addr);
 
 	status = err < 0 ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS;
 rsp:
@@ -620,7 +620,7 @@ static void passkey_entry(const u8_t *data, u16_t len)
 	struct bt_conn *conn;
 	u8_t status;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		status = BTP_STATUS_FAILED;
 		goto rsp;

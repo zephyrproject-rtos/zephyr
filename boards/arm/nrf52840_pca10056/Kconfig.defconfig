@@ -30,6 +30,22 @@ config UART_0_NRF_RTS_PIN
 config UART_0_NRF_CTS_PIN
 	default 7
 
+if MODEM_WNCM14A2A
+
+config UART_1_NRF_TX_PIN
+	default 46
+
+config UART_1_NRF_RX_PIN
+	default 45
+
+config UART_1_NRF_RTS_PIN
+	default 44
+
+config UART_1_NRF_CTS_PIN
+	default 47
+
+endif # MODEM_WCN14A2A
+
 endif # UART_NRFX
 
 if USB

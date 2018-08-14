@@ -121,3 +121,143 @@ tests:
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=7
       - CONFIG_NET_TC_TX_COUNT=8
+  net.traffic_class.2_sr_ab:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B=y
+      - CONFIG_NET_TC_TX_COUNT=2
+      - CONFIG_NET_TC_RX_COUNT=2
+  net.traffic_class.3_sr_ab:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B=y
+      - CONFIG_NET_TC_TX_COUNT=3
+      - CONFIG_NET_TC_RX_COUNT=3
+  net.traffic_class.4_sr_ab:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B=y
+      - CONFIG_NET_TC_TX_COUNT=4
+      - CONFIG_NET_TC_RX_COUNT=4
+  net.traffic_class.5_sr_ab:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B=y
+      - CONFIG_NET_TC_TX_COUNT=5
+      - CONFIG_NET_TC_RX_COUNT=5
+  net.traffic_class.6_sr_ab:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B=y
+      - CONFIG_NET_TC_TX_COUNT=6
+      - CONFIG_NET_TC_RX_COUNT=6
+  net.traffic_class.7_sr_ab:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B=y
+      - CONFIG_NET_TC_TX_COUNT=7
+      - CONFIG_NET_TC_RX_COUNT=7
+  net.traffic_class.8_sr_ab:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B=y
+      - CONFIG_NET_TC_TX_COUNT=8
+      - CONFIG_NET_TC_RX_COUNT=8
+  net.traffic_class.tx_2_rx_3_sr_ab:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B=y
+      - CONFIG_NET_TC_RX_COUNT=3
+      - CONFIG_NET_TC_TX_COUNT=2
+  net.traffic_class.tx_3_rx_8_sr_ab:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B=y
+      - CONFIG_NET_TC_RX_COUNT=8
+      - CONFIG_NET_TC_TX_COUNT=3
+  net.traffic_class.rx_4_tx_8_sr_ab:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B=y
+      - CONFIG_NET_TC_RX_COUNT=4
+      - CONFIG_NET_TC_TX_COUNT=8
+  net.traffic_class.rx_5_tx_7_sr_ab:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B=y
+      - CONFIG_NET_TC_RX_COUNT=5
+      - CONFIG_NET_TC_TX_COUNT=7
+  net.traffic_class.tx_6_rx_2_sr_ab:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B=y
+      - CONFIG_NET_TC_RX_COUNT=2
+      - CONFIG_NET_TC_TX_COUNT=6
+  net.traffic_class.tx_7_rx_5_sr_ab:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B=y
+      - CONFIG_NET_TC_RX_COUNT=5
+      - CONFIG_NET_TC_TX_COUNT=7
+  net.traffic_class.tx_8_rx_7_sr_ab:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B=y
+      - CONFIG_NET_TC_RX_COUNT=7
+      - CONFIG_NET_TC_TX_COUNT=8
+  net.traffic_class.2_sr_b:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY=y
+      - CONFIG_NET_TC_TX_COUNT=2
+      - CONFIG_NET_TC_RX_COUNT=2
+  net.traffic_class.3_sr_b:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY=y
+      - CONFIG_NET_TC_TX_COUNT=3
+      - CONFIG_NET_TC_RX_COUNT=3
+  net.traffic_class.4_sr_b:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY=y
+      - CONFIG_NET_TC_TX_COUNT=4
+      - CONFIG_NET_TC_RX_COUNT=4
+  net.traffic_class.5_sr_b:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY=y
+      - CONFIG_NET_TC_TX_COUNT=5
+      - CONFIG_NET_TC_RX_COUNT=5
+  net.traffic_class.6_sr_b:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY=y
+      - CONFIG_NET_TC_TX_COUNT=6
+      - CONFIG_NET_TC_RX_COUNT=6
+  net.traffic_class.7_sr_b:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY=y
+      - CONFIG_NET_TC_TX_COUNT=7
+      - CONFIG_NET_TC_RX_COUNT=7
+  net.traffic_class.8_sr_b:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY=y
+      - CONFIG_NET_TC_TX_COUNT=8
+      - CONFIG_NET_TC_RX_COUNT=8
+  net.traffic_class.tx_2_rx_3_sr_b:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY=y
+      - CONFIG_NET_TC_RX_COUNT=3
+      - CONFIG_NET_TC_TX_COUNT=2
+  net.traffic_class.tx_3_rx_8_sr_b:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY=y
+      - CONFIG_NET_TC_RX_COUNT=8
+      - CONFIG_NET_TC_TX_COUNT=3
+  net.traffic_class.rx_4_tx_8_sr_b:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY=y
+      - CONFIG_NET_TC_RX_COUNT=4
+      - CONFIG_NET_TC_TX_COUNT=8
+  net.traffic_class.rx_5_tx_7_sr_b:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY=y
+      - CONFIG_NET_TC_RX_COUNT=5
+      - CONFIG_NET_TC_TX_COUNT=7
+  net.traffic_class.tx_6_rx_2_sr_b:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY=y
+      - CONFIG_NET_TC_RX_COUNT=2
+      - CONFIG_NET_TC_TX_COUNT=6
+  net.traffic_class.tx_7_rx_5_sr_b:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY=y
+      - CONFIG_NET_TC_RX_COUNT=5
+      - CONFIG_NET_TC_TX_COUNT=7
+  net.traffic_class.tx_8_rx_7_sr_b:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY=y
+      - CONFIG_NET_TC_RX_COUNT=7
+      - CONFIG_NET_TC_TX_COUNT=8

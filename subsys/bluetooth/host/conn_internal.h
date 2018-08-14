@@ -88,6 +88,9 @@ struct bt_conn {
 
 	ATOMIC_DEFINE(flags, BT_CONN_NUM_FLAGS);
 
+	/* Which local identity address this connection uses */
+	u8_t                    id;
+
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	bt_security_t		sec_level;
 	bt_security_t		required_sec_level;
@@ -159,7 +162,7 @@ u8_t bt_conn_get_io_capa(void);
 u8_t bt_conn_ssp_get_auth(const struct bt_conn *conn);
 void bt_conn_ssp_auth(struct bt_conn *conn, u32_t passkey);
 
-void bt_conn_disconnect_all(void);
+void bt_conn_disconnect_all(u8_t id);
 
 /* Look up an existing connection */
 struct bt_conn *bt_conn_lookup_handle(u16_t handle);

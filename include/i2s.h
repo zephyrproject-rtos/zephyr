@@ -316,6 +316,8 @@ struct i2s_config {
 struct i2s_driver_api {
 	int (*configure)(struct device *dev, enum i2s_dir dir,
 			 struct i2s_config *cfg);
+	struct i2s_config *(*config_get)(struct device *dev,
+					 enum i2s_dir dir);
 	int (*read)(struct device *dev, void **mem_block, size_t *size);
 	int (*write)(struct device *dev, void *mem_block, size_t size);
 	int (*trigger)(struct device *dev, enum i2s_dir dir,
@@ -353,6 +355,22 @@ static inline int i2s_configure(struct device *dev, enum i2s_dir dir,
 }
 
 /**
+ * @brief Fetch configuration information of a host I2S controller
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param dir Stream direction: RX or TX as defined by I2S_DIR_*
+ * @retval Pointer to the structure containing configuration parameters,
+ *         or NULL if un-configured
+ */
+static inline struct i2s_config *i2s_config_get(struct device *dev,
+						enum i2s_dir dir)
+{
+	const struct i2s_driver_api *api = dev->driver_api;
+
+	return api->config_get(dev, dir);
+}
+
+/**
  * @brief Read data from the RX queue.
  *
  * Data received by the I2S interface is stored in the RX queue consisting of
@@ -383,12 +401,39 @@ static inline int i2s_configure(struct device *dev, enum i2s_dir dir,
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-static inline int i2s_read(struct device *dev, void **mem_block, size_t *size)
+static inline int i2s_read(struct device *dev, void **mem_block,
+				 size_t *size)
 {
 	const struct i2s_driver_api *api = dev->driver_api;
 
 	return api->read(dev, mem_block, size);
 }
+
+/**
+ * @brief Read data from the RX queue into a provided buffer
+ *
+ * Data received by the I2S interface is stored in the RX queue consisting of
+ * memory blocks preallocated by this function from rx_mem_slab (as defined by
+ * i2s_configure). Calling this function removes one block from the queue
+ * which is copied into the provided buffer and then freed.
+ *
+ * The provided buffer must be large enough to contain a full memory block
+ * of data, which is parameterized for the channel via i2s_configure().
+ *
+ * This function is otherwise equivalent to i2s_read().
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param buf Destination buffer for read data, which must be at least the
+ *            as large as the configured memory block size for the RX channel.
+ * @param size Pointer to the variable storing the number of bytes read.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO The interface is in NOT_READY or ERROR state and there are no
+ *         more data blocks in the RX queue.
+ * @retval -EBUSY Returned without waiting.
+ * @retval -EAGAIN Waiting period timed out.
+ */
+__syscall int i2s_buf_read(struct device *dev, void *buf, size_t *size);
 
 /**
  * @brief Write data to the TX queue.
@@ -424,6 +469,27 @@ static inline int i2s_write(struct device *dev, void *mem_block, size_t size)
 }
 
 /**
+ * @brief Write data to the TX queue from a provided buffer
+ *
+ * This function acquires a memory block from the I2S channel TX queue
+ * and copies the provided data buffer into it. It is otherwise equivalent
+ * to i2s_write().
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param buf Pointer to a buffer containing the data to transmit.
+ * @param size Number of bytes to write. This value has to be equal or smaller
+ *        than the size of the channel's TX memory block configuration.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO The interface is not in READY or RUNNING state.
+ * @retval -EBUSY Returned without waiting.
+ * @retval -EAGAIN Waiting period timed out.
+ * @retval -ENOMEM No memory in TX slab queue.
+ * @retval -EINVAL Size parameter larger than TX queue memory block.
+ */
+__syscall int i2s_buf_write(struct device *dev, void *buf, size_t size);
+
+/**
  * @brief Send a trigger command.
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -436,13 +502,18 @@ static inline int i2s_write(struct device *dev, void *mem_block, size_t size)
  *         channel cannot be allocated.
  * @retval -ENOMEM RX/TX memory block not available.
  */
-static inline int i2s_trigger(struct device *dev, enum i2s_dir dir,
-			      enum i2s_trigger_cmd cmd)
+__syscall int i2s_trigger(struct device *dev, enum i2s_dir dir,
+			  enum i2s_trigger_cmd cmd);
+
+static inline int _impl_i2s_trigger(struct device *dev, enum i2s_dir dir,
+				    enum i2s_trigger_cmd cmd)
 {
 	const struct i2s_driver_api *api = dev->driver_api;
 
 	return api->trigger(dev, dir, cmd);
 }
+
+#include <syscalls/i2s.h>
 
 #ifdef __cplusplus
 }

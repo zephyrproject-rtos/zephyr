@@ -450,7 +450,7 @@ static int prepare_segment(struct net_tcp *tcp,
 		if (pkt_allocated) {
 			net_pkt_unref(pkt);
 		} else {
-			pkt->frags = tail;
+			net_pkt_frag_add(pkt, tail);
 		}
 
 		return -ENOMEM;
@@ -2356,7 +2356,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 	 * See RFC 793 chapter 3.4 "Reset Processing" and RFC 793, page 65
 	 * for more details.
 	 */
-	if (NET_TCP_FLAGS(tcp_hdr) == NET_TCP_RST) {
+	if (NET_TCP_FLAGS(tcp_hdr) & NET_TCP_RST) {
 
 		if (tcp_backlog_rst(pkt) < 0) {
 			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));

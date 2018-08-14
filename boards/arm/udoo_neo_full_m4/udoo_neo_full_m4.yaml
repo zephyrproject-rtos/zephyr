@@ -12,4 +12,4 @@ ram: 32
 flash: 512
 toolchain:
   - zephyr
-  - gccarmemb
+  - gnuarmemb

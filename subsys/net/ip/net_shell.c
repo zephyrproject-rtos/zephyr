@@ -2183,7 +2183,7 @@ int net_shell_cmd_gptp(int argc, char *argv[])
 		char *endptr;
 		int port = strtol(argv[arg], &endptr, 10);
 
-		if (endptr != argv[arg]) {
+		if (*endptr == '\0') {
 			gptp_print_port_info(port);
 		} else {
 			printk("Not a valid gPTP port number: %s\n", argv[arg]);
@@ -2330,7 +2330,7 @@ int net_shell_cmd_iface(int argc, char *argv[])
 {
 	int arg = 0;
 	bool up = false;
-	char *endptr = NULL;
+	char *endptr;
 	struct net_if *iface;
 	int idx, ret;
 
@@ -3147,7 +3147,7 @@ int net_shell_cmd_stats(int argc, char *argv[])
 		net_shell_print_statistics_all();
 	} else {
 		struct net_if *iface;
-		char *endptr = NULL;
+		char *endptr;
 		int idx;
 
 		idx = strtol(argv[arg], &endptr, 10);
@@ -3372,6 +3372,7 @@ int net_shell_cmd_tcp(int argc, char *argv[])
 	if (argv[arg]) {
 		if (!strcmp(argv[arg], "connect")) {
 			/* tcp connect <ip> port */
+			char *endptr;
 			char *ip;
 			u16_t port;
 
@@ -3392,7 +3393,11 @@ int net_shell_cmd_tcp(int argc, char *argv[])
 				return 0;
 			}
 
-			port = strtol(argv[arg], NULL, 10);
+			port = strtol(argv[arg], &endptr, 10);
+			if (*endptr != '\0') {
+				printk("Invalid port %s\n", argv[arg]);
+				return 0;
+			}
 
 			return tcp_connect(ip, port, &tcp_ctx);
 		}
@@ -3550,6 +3555,7 @@ int net_shell_cmd_vlan(int argc, char *argv[])
 	if (!strcmp(argv[arg], "add")) {
 		/* vlan add <tag> <interface index> */
 		struct net_if *iface;
+		char *endptr;
 		u32_t iface_idx;
 
 		if (!argv[++arg]) {
@@ -3557,14 +3563,22 @@ int net_shell_cmd_vlan(int argc, char *argv[])
 			return 0;
 		}
 
-		tag = strtol(argv[arg], NULL, 10);
+		tag = strtol(argv[arg], &endptr, 10);
+		if (*endptr != '\0') {
+			printk("Invalid tag %s\n", argv[arg]);
+			return 0;
+		}
 
 		if (!argv[++arg]) {
 			printk("Network interface index missing.\n");
 			return 0;
 		}
 
-		iface_idx = strtol(argv[arg], NULL, 10);
+		iface_idx = strtol(argv[arg], &endptr, 10);
+		if (*endptr != '\0') {
+			printk("Invalid index %s\n", argv[arg]);
+			return 0;
+		}
 
 		iface = net_if_get_by_index(iface_idx);
 		if (!iface) {
@@ -3596,13 +3610,18 @@ int net_shell_cmd_vlan(int argc, char *argv[])
 
 	if (!strcmp(argv[arg], "del")) {
 		/* vlan del <tag> */
+		char *endptr;
 
 		if (!argv[++arg]) {
 			printk("VLAN tag missing.\n");
 			return 0;
 		}
 
-		tag = strtol(argv[arg], NULL, 10);
+		tag = strtol(argv[arg], &endptr, 10);
+		if (*endptr != '\0') {
+			printk("Invalid tag %s\n", argv[arg]);
+			return 0;
+		}
 
 		net_if_foreach(iface_vlan_del_cb,
 			       UINT_TO_POINTER((u32_t)tag));
