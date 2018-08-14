@@ -97,3 +97,21 @@ void _sys_soc_power_state_post_ops(enum power_states state)
 		break;
 	}
 }
+
+bool _sys_soc_is_valid_power_state(enum power_states state)
+{
+	switch (state) {
+	case SYS_POWER_STATE_CPU_LPS:
+	case SYS_POWER_STATE_CPU_LPS_1:
+#if defined(CONFIG_SYS_POWER_DEEP_SLEEP)
+	case SYS_POWER_STATE_DEEP_SLEEP:
+#endif
+		return true;
+		break;
+	default:
+		SYS_LOG_DBG("Unsupported State\n");
+		break;
+	}
+
+	return false;
+}
