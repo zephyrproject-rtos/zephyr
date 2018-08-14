@@ -10,6 +10,6 @@ if SOC_SERIES_KINETIS_KWX
 config SOC_SERIES
 	default "kwx"
 
-gsource "arch/arm/soc/nxp_kinetis/kwx/Kconfig.defconfig.mk*"
+source "arch/arm/soc/nxp_kinetis/kwx/Kconfig.defconfig.mk*"
 
 endif # SOC_SERIES_KINETIS_KWX

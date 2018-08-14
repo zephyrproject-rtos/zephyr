@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-gsource "arch/arm/soc/silabs_exx32/*/Kconfig.series"
+source "arch/arm/soc/silabs_exx32/*/Kconfig.series"

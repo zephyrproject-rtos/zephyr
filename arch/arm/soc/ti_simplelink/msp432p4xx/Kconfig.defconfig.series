@@ -7,7 +7,7 @@
 
 if SOC_SERIES_MSP432P4XX
 
-gsource "arch/arm/soc/ti_simplelink/msp432p4xx/Kconfig.defconfig.msp432p4*"
+source "arch/arm/soc/ti_simplelink/msp432p4xx/Kconfig.defconfig.msp432p4*"
 
 config SOC_SERIES
 	default "msp432p4xx"

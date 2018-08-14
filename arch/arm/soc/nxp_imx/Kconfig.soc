@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-gsource "arch/arm/soc/nxp_imx/*/Kconfig.series"
+source "arch/arm/soc/nxp_imx/*/Kconfig.series"

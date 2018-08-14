@@ -1,1 +1,1 @@
-gsource "arch/arm/soc/silabs_exx32/*/Kconfig.defconfig.series"
+source "arch/arm/soc/silabs_exx32/*/Kconfig.defconfig.series"

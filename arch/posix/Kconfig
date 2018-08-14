@@ -10,7 +10,7 @@ choice
 	prompt "POSIX Configuration Selection"
 	depends on ARCH_POSIX
 
-	gsource "arch/posix/soc/*/Kconfig.soc"
+	source "arch/posix/soc/*/Kconfig.soc"
 endchoice
 
 menu "POSIX (native) Options"
@@ -18,7 +18,9 @@ menu "POSIX (native) Options"
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overriden (by defining symbols in multiple locations)
-gsource "arch/posix/soc/*/Kconfig"
+#
+# (No SoC-specific Kconfig files as of writing, hence the optional source.)
+osource "arch/posix/soc/*/Kconfig"
 
 config ARCH
 	default "posix"

@@ -15,6 +15,6 @@ config SOC_FAMILY
 	default "nordic_nrf"
 
 source "arch/arm/soc/nordic_nrf/Kconfig.peripherals"
-gsource "arch/arm/soc/nordic_nrf/*/Kconfig.soc"
+source "arch/arm/soc/nordic_nrf/*/Kconfig.soc"
 
 endif # SOC_FAMILY_NRF

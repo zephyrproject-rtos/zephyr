@@ -16,6 +16,6 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 39
 
-gsource "arch/arm/soc/silabs_exx32/efm32wg/Kconfig.defconfig.e*"
+source "arch/arm/soc/silabs_exx32/efm32wg/Kconfig.defconfig.e*"
 
 endif # SOC_SERIES_EFM32WG

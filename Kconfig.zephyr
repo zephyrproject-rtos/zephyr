@@ -15,9 +15,9 @@
 # Board defaults should be parsed before SoC defaults, because boards usually
 # overrides SoC values.
 #
-# $ENV_VAR_ARCH and $ENV_VAR_BOARD_DIR might be glob patterns
-gsource "$ENV_VAR_BOARD_DIR/Kconfig.defconfig"
-gsource "arch/$ENV_VAR_ARCH/soc/*/Kconfig.defconfig"
+# Note: $ENV_VAR_ARCH and $ENV_VAR_BOARD_DIR might be glob patterns.
+source "$ENV_VAR_BOARD_DIR/Kconfig.defconfig"
+source "arch/$ENV_VAR_ARCH/soc/*/Kconfig.defconfig"
 
 
 source "arch/Kconfig"

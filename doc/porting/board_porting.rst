@@ -336,19 +336,18 @@ as the corresponding environment variables.
 
 .. note::
 
-    As of writing, there are plans to remove ``option env`` from the C tools as
-    well.
+    ``option env`` has been removed from the C tools in Linux 4.18 as well.
 
 The following Kconfig extensions are available:
 
-- The ``gsource`` statement, which includes each file matching a given wildcard
-  pattern.
+- The ``source`` statement supports glob patterns and includes each matching
+  file. A pattern is required to match at least one file.
 
   Consider the following example:
 
   .. code-block:: none
 
-      gsource "foo/bar/*/Kconfig"
+      source "foo/bar/*/Kconfig"
 
   If the pattern ``foo/bar/*/Kconfig`` matches the files
   :file:`foo/bar/baz/Kconfig` and :file:`foo/bar/qaz/Kconfig`, the statement
@@ -359,39 +358,25 @@ The following Kconfig extensions are available:
       source "foo/bar/baz/Kconfig"
       source "foo/bar/qaz/Kconfig"
 
-  .. note
+  .. note::
 
       The wildcard patterns accepted are the same as for the Python `glob
       <https://docs.python.org/3/library/glob.html>`_ module.
 
-  If no files match the pattern, ``gsource`` has no effect. This means that
-  ``gsource`` also functions as an "optional" include statement (similar to
-  ``-include`` in Make):
+  If no files match the pattern, an error is generated.
 
-  .. code-block:: none
-
-      gsource "foo/include-if-exists"
+  For cases where it's okay for a pattern to match no files (or for a plain
+  filename to not exist), a separate ``osource`` (*optional source*) statement
+  is available. ``osource`` is a no-op in case of no matches.
 
   .. note::
 
-     Wildcard patterns that do not include any wildcard symbols (e.g., ``*``)
-     only match exactly the filename given, and only match it if the file
-     exists.
+      ``source`` and ``osource`` are analogous to ``include`` and
+      ``-include`` in Make.
 
-  It might help to think of *g* as standing for *generalized* rather than
-  *glob* in this case.
-
-  .. note::
-
-      Only use ``gsource`` if you need it. Trying to ``source`` a non-existent
-      file produces an error, while ``gsource`` silently ignores missing files.
-      ``source`` also makes it clearer which files are being included.
-
-- The ``rsource`` statement, which includes a file specified with a relative
-  path.
-
-  The path is relative to the directory of the :file:`Kconfig` file that has
-  the ``rsource`` statement.
+- An ``rsource`` statement is available for including files specified with a
+  relative path. The path is relative to the directory of the :file:`Kconfig`
+  file that contains the ``rsource`` statement.
 
   As an example, assume that :file:`foo/Kconfig` is the top-level
   :file:`Kconfig` file, and that :file:`foo/bar/Kconfig` has the following
@@ -408,14 +393,18 @@ The following Kconfig extensions are available:
   ``rsource`` can be used to create :file:`Kconfig` "subtrees" that can be
   moved around freely.
 
-- The ``grsource`` statement, which combines ``gsource`` and ``rsource``.
+  .. note::
+
+     ``rsource`` also supports glob patterns.
+
+- An ``orsource`` statement, which combines ``osource`` and ``rsource``.
 
   For example, the following statement will include :file:`Kconfig1` and
   :file:`Kconfig2` from the current directory (if they exist):
 
   .. code-block:: none
 
-      grsource "Kconfig[12]"
+      orsource "Kconfig[12]"
 
 Old Zephyr Kconfig behavior for defaults
 ========================================
