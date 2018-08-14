@@ -150,8 +150,7 @@ config NET_DEBUG_MDNS_RESPONDER
 	  Enables mDNS responder code to output debug messages
 
 config MDNS_RESOLVER_ADDITIONAL_BUF_CTR
-	int
-	prompt "Additional DNS buffers"
+	int "Additional DNS buffers"
 	default 0
 	help
 	  Number of additional buffers available for the mDNS responder.
@@ -196,8 +195,7 @@ config NET_DEBUG_LLMNR_RESPONDER
 	  Enables LLMNR responder code to output debug messages
 
 config LLMNR_RESOLVER_ADDITIONAL_BUF_CTR
-	int
-	prompt "Additional DNS buffers"
+	int "Additional DNS buffers"
 	default 0
 	help
 	  Number of additional buffers available for the LLMNR responder.

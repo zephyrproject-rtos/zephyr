@@ -4,8 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 config CMSIS_RTOS_V1
-	bool
-	prompt "CMSIS RTOS v1 API"
+	bool "CMSIS RTOS v1 API"
 	default n
 	help
 	  This enables CMSIS RTOS v1 API support. This is an OS-integration
@@ -14,16 +13,14 @@ config CMSIS_RTOS_V1
 
 if CMSIS_RTOS_V1
 config  THREAD_CUSTOM_DATA
-	bool
-	prompt "Thread custom data"
+	bool "Thread custom data"
 	default y
 	help
 	  This option allows each thread to store 32 bits of custom data,
 	  which can be accessed using the k_thread_custom_data_xxx() APIs.
 
 config POLL
-	bool
-	prompt "Async I/O Framework"
+	bool "Async I/O Framework"
 	default y
 	help
 	  Asynchronous notification framework. Enable the k_poll() and
@@ -32,8 +29,7 @@ config POLL
 	  the availability of some kernel objects (semaphores and fifos).
 
 config CMSIS_MAX_THREAD_COUNT
-	int
-	prompt "Maximum thread count in CMSIS RTOS application"
+	int "Maximum thread count in CMSIS RTOS application"
 	default 10
 	range 0 255
 	help
@@ -42,31 +38,27 @@ config CMSIS_MAX_THREAD_COUNT
 	  related constraints.
 
 config CMSIS_THREAD_MAX_STACK_SIZE
-	int
-	prompt "Max stack size threads can be allocated in CMSIS RTOS application"
+	int "Max stack size threads can be allocated in CMSIS RTOS application"
 	default 512
 	help
 	  Mention max stack size threads can be allocated in CMSIS RTOS application.
 
 config CMSIS_TIMER_MAX_COUNT
-	int
-	prompt "Maximum timer count in CMSIS application"
+	int "Maximum timer count in CMSIS application"
 	default 5
 	range 0 255
 	help
 	  Mention maximum number of timers in CMSIS compliant application.
 
 config CMSIS_MUTEX_MAX_COUNT
-	int
-	prompt "Maximum mutex count in CMSIS application"
+	int "Maximum mutex count in CMSIS application"
 	default 5
 	range 0 255
 	help
 	  Mention maximum number of mutexes in CMSIS compliant application.
 
 config CMSIS_SEMAPHORE_MAX_COUNT
-	int
-	prompt "Maximum semaphore count in CMSIS application"
+	int "Maximum semaphore count in CMSIS application"
 	default 5
 	range 0 255
 	help

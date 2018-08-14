@@ -5,8 +5,7 @@
 #
 
 menuconfig SOC_FLASH_QMSI
-	bool
-	prompt "QMSI flash driver"
+	bool "QMSI flash driver"
 	depends on QMSI && FLASH
 	select FLASH_HAS_DRIVER_ENABLED
 	help

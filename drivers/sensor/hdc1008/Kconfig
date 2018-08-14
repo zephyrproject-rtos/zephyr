@@ -7,23 +7,20 @@
 #
 
 menuconfig HDC1008
-	bool
-	prompt "HDC1008 Temperature and Humidity Sensor"
+	bool "HDC1008 Temperature and Humidity Sensor"
 	depends on I2C && GPIO
 	help
 	  Enable driver for HDC1008 temperature and humidity sensors.
 
 config HDC1008_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "HDC1008"
 	depends on HDC1008
 	help
 	  Device name with which the HDC1008 sensor is identified.
 
 config HDC1008_I2C_ADDR
-	hex
-	prompt "I2C Address for HDC1008"
+	hex "I2C Address for HDC1008"
 	depends on HDC1008
 	default "0x40"
 	help
@@ -33,8 +30,7 @@ config HDC1008_I2C_ADDR
 	  0x43: A0 connected VDD and A1 connected to VDD.
 
 config HDC1008_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C master where HDC1008 is connected"
+	string "I2C master where HDC1008 is connected"
 	depends on HDC1008
 	default "I2C_0"
 	help
@@ -42,8 +38,7 @@ config HDC1008_I2C_MASTER_DEV_NAME
 	  HDC1008 chip is connected.
 
 config HDC1008_GPIO_DEV_NAME
-	string
-	prompt "GPIO device"
+	string "GPIO device"
 	default "GPIO_0"
 	depends on HDC1008
 	help
@@ -51,8 +46,7 @@ config HDC1008_GPIO_DEV_NAME
 	  pin is connected.
 
 config HDC1008_GPIO_PIN_NUM
-	int
-	prompt "Interrupt GPIO pin number"
+	int "Interrupt GPIO pin number"
 	default 0
 	depends on HDC1008
 	help

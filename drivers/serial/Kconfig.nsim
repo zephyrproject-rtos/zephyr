@@ -14,8 +14,7 @@ config UART_NSIM_PORT_0_NAME
 	  struct.
 
 config UART_NSIM_PORT_0_BASE_ADDR
-	hex
-	prompt "Port 0 Register Address"
+	hex "Port 0 Register Address"
 	default 0x00000000
 	depends on UART_NSIM
 	help

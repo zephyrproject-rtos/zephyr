@@ -88,8 +88,7 @@ endif # USB_DEVICE_NETWORK_RNDIS
 if USB_DEVICE_NETWORK
 
 config SYS_LOG_USB_DEVICE_NETWORK_DEBUG_LEVEL
-	int
-	prompt "USB Device Network debug log level"
+	int "USB Device Network debug log level"
 	default 1
 	help
 	  Sets log level for USB Device Network class

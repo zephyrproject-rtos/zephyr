@@ -21,8 +21,7 @@ config FLASH_HAS_PAGE_LAYOUT
 	  retrieving the layout of flash memory pages.
 
 menuconfig FLASH
-	bool
-	prompt "Flash hardware support"
+	bool "Flash hardware support"
 	help
 	  Enable support for the flash hardware.
 

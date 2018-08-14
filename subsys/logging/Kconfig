@@ -27,8 +27,7 @@ config SYS_LOG_SHOW_COLOR
 	  Use color in the logs. This requires an ANSI capable terminal.
 
 config SYS_LOG_DEFAULT_LEVEL
-	int
-	prompt "Default log level"
+	int "Default log level"
 	depends on SYS_LOG
 	default 0
 	range 0 4
@@ -43,8 +42,7 @@ config SYS_LOG_DEFAULT_LEVEL
 	  4 DEBUG, default to write SYS_LOG_DBG in addition to previous levels
 
 config SYS_LOG_OVERRIDE_LEVEL
-	int
-	prompt "Override lowest log level"
+	int "Override lowest log level"
 	depends on SYS_LOG
 	default 0
 	range 0 4

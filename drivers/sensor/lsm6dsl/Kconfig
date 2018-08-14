@@ -38,8 +38,7 @@ config LSM6DSL_DEV_NAME
 if !HAS_DTS_I2C_DEVICE
 
 config LSM6DSL_I2C_ADDR
-	hex
-	prompt "LSM6DSL I2C address"
+	hex "LSM6DSL I2C address"
 	depends on LSM6DSL && LSM6DSL_I2C
 	default 0x6A
 	range 0x6A 0x6B
@@ -119,18 +118,15 @@ choice LSM6DSL_TRIGGER_MODE
 	  Specify the type of triggering to be used by the driver.
 
 config LSM6DSL_TRIGGER_NONE
-	bool
-	prompt "No trigger"
+	bool "No trigger"
 
 config LSM6DSL_TRIGGER_GLOBAL_THREAD
-	bool
-	prompt "Use global thread"
+	bool "Use global thread"
 	depends on GPIO
 	select LSM6DSL_TRIGGER
 
 config LSM6DSL_TRIGGER_OWN_THREAD
-	bool
-	prompt "Use own thread"
+	bool "Use own thread"
 	depends on GPIO
 	select LSM6DSL_TRIGGER
 
@@ -143,16 +139,14 @@ config LSM6DSL_TRIGGER
 if !HAS_DTS_SPI_PINS
 
 config LSM6DSL_GPIO_DEV_NAME
-	string
-	prompt "GPIO device"
+	string "GPIO device"
 	depends on LSM6DSL && LSM6DSL_TRIGGER
 	help
 	  The device name of the GPIO device to which the LSM6DSL interrupt pin
 	  is connected.
 
 config LSM6DSL_GPIO_PIN_NUM
-	int
-	prompt "Interrupt GPIO pin number"
+	int "Interrupt GPIO pin number"
 	depends on LSM6DSL && LSM6DSL_TRIGGER
 	help
 	  The number of the GPIO on which the interrupt signal from the LSM6DSL
@@ -161,16 +155,14 @@ config LSM6DSL_GPIO_PIN_NUM
 endif #HAS_DTS_SPI_DEVICE
 
 config LSM6DSL_THREAD_PRIORITY
-	int
-	prompt "Thread priority"
+	int "Thread priority"
 	depends on LSM6DSL && LSM6DSL_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  Priority of thread used by the driver to handle interrupts.
 
 config LSM6DSL_THREAD_STACK_SIZE
-	int
-	prompt "Thread stack size"
+	int "Thread stack size"
 	depends on LSM6DSL && LSM6DSL_TRIGGER_OWN_THREAD
 	default 1024
 	help
@@ -213,8 +205,7 @@ menu "Attributes"
 	depends on LSM6DSL
 
 config LSM6DSL_GYRO_FS
-	int
-	prompt "Gyroscope full-scale range"
+	int "Gyroscope full-scale range"
 	depends on LSM6DSL
 	default 0
 	help
@@ -249,8 +240,7 @@ config LSM6DSL_GYRO_ODR
 	  10: 6660Hz
 
 config LSM6DSL_ACCEL_FS
-	int
-	prompt "Accelerometer full-scale range"
+	int "Accelerometer full-scale range"
 	depends on LSM6DSL
 	default 0
 	help

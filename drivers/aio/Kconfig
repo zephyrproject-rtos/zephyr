@@ -10,8 +10,7 @@
 # AIO/Comparator options
 #
 menuconfig AIO_COMPARATOR
-	bool
-	prompt "AIO/Comparator Configuration"
+	bool "AIO/Comparator Configuration"
 
 if AIO_COMPARATOR
 menuconfig AIO_COMPARATOR_QMSI

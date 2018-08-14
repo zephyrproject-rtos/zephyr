@@ -6,8 +6,7 @@
 #
 
 menuconfig PWM_IMX
-	bool
-	prompt "i.MX PWM Driver"
+	bool "i.MX PWM Driver"
 	depends on PWM
 	help
 	  Enable support for i.MX pwm driver.

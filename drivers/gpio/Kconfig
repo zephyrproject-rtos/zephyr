@@ -7,16 +7,14 @@
 #
 
 menuconfig GPIO
-	bool
-	prompt "GPIO Drivers"
+	bool "GPIO Drivers"
 	help
 	  Include GPIO drivers in system config
 
 if GPIO
 
 config SYS_LOG_GPIO_LEVEL
-	int
-	prompt "GPIO drivers log level"
+	int "GPIO drivers log level"
 	default 0
 	depends on SYS_LOG
 	help

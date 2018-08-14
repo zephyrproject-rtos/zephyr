@@ -7,15 +7,13 @@
 #
 
 menuconfig TEMP_NRF5
-	bool
-	prompt "nRF5 Temperature Sensor"
+	bool "nRF5 Temperature Sensor"
 	depends on SOC_FAMILY_NRF
 	help
 	  Enable driver for nRF5 temperature sensor.
 
 config TEMP_NRF5_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "TEMP_0"
 	depends on TEMP_NRF5
 	help

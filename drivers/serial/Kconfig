@@ -7,8 +7,7 @@
 #
 
 menuconfig SERIAL
-	bool
-	prompt "Serial Drivers"
+	bool "Serial Drivers"
 	help
 	  Enable options for serial drivers.
 
@@ -30,8 +29,7 @@ config SERIAL_SUPPORT_INTERRUPT
 	  to signal that the driver and hardware supports interrupts.
 
 config UART_INTERRUPT_DRIVEN
-	bool
-	prompt "Enable UART Interrupt support"
+	bool "Enable UART Interrupt support"
 	depends on SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables interrupt support for UART allowing console

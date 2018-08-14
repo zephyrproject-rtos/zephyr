@@ -10,8 +10,7 @@ config HAS_SEGGER_RTT
 if HAS_SEGGER_RTT
 
 config SEGGER_SYSTEMVIEW
-	bool
-	prompt "Segger SystemView support"
+	bool "Segger SystemView support"
 	select RTT_CONSOLE
 
 config SEGGER_RTT_MAX_NUM_UP_BUFFERS

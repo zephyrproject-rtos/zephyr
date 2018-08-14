@@ -28,8 +28,7 @@ config ARC_INIT
 	  Allows x86 processor to kickoff the ARC slave processor.
 
 config SYS_LOG_ARC_INIT_LEVEL
-	int
-	prompt "Quark SE Sensor Subsystem log level"
+	int "Quark SE Sensor Subsystem log level"
 	depends on SYS_LOG
 	default 0
 	help

@@ -13,9 +13,8 @@ menuconfig GPIO_SX1509B
 	  Enable driver for SX1509B I2C GPIO chip.
 
 config GPIO_SX1509B_INIT_PRIORITY
-	int
+	int "Init priority"
 	default 70
-	prompt "Init priority"
 	help
 	  Device driver initialization priority.
 

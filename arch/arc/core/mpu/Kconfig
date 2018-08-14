@@ -6,8 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 config ARC_MPU_VER
-	int
-	prompt "ARC MPU version"
+	int "ARC MPU version"
 	range 2 4
 	default 2
 	help

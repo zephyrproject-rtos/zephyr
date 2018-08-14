@@ -1,6 +1,5 @@
 menuconfig IPM
-	bool
-	prompt "IPM drivers"
+	bool "IPM drivers"
 	help
 	  Include interrupt-based inter-processor mailboxes
 	  drivers in system configuration

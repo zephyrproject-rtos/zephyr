@@ -5,8 +5,7 @@
 #
 
 menuconfig LPS25HB
-	bool
-	prompt "LPS25HB pressure and temperature"
+	bool "LPS25HB pressure and temperature"
 	depends on I2C
 	help
 	  Enable driver for LPS25HB I2C-based pressure and temperature
@@ -15,16 +14,14 @@ menuconfig LPS25HB
 if !HAS_DTS_I2C_DEVICE
 
 config LPS25HB_DEV_NAME
-	string
-	prompt "Device name"
+	string "Device name"
 	default "lps25hb"
 	depends on LPS25HB
 	help
 	  Device name with which the LPS25HB sensor is identified.
 
 config LPS25HB_I2C_ADDR
-	hex
-	prompt "I2C address"
+	hex "I2C address"
 	depends on LPS25HB
 	default "0x5C"
 	help
@@ -33,8 +30,7 @@ config LPS25HB_I2C_ADDR
 	  pin is pulled to VDD.
 
 config LPS25HB_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C master where LPS25HB is connected"
+	string "I2C master where LPS25HB is connected"
 	depends on LPS25HB
 	default "I2C_0"
 	help
@@ -47,8 +43,7 @@ menu "Attributes"
 	depends on LPS25HB
 
 config LPS25HB_SAMPLING_RATE
-	int
-	prompt "Output data rate"
+	int "Output data rate"
 	depends on LPS25HB
 	default 25
 	help

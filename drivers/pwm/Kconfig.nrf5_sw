@@ -25,8 +25,7 @@ config PWM_NRF5_SW_0_DEV_NAME
 	  PWM driver.
 
 config PWM_NRF5_SW_0_CLOCK_PRESCALER
-	int
-	prompt "Nordic Semiconductor nRF5x series S/W PWM Clock Prescaler"
+	int "Nordic Semiconductor nRF5x series S/W PWM Clock Prescaler"
 	default 0
 	range 0 9
 	help

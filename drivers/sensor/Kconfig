@@ -7,8 +7,7 @@
 #
 
 menuconfig SENSOR
-	bool
-	prompt "Sensor Drivers"
+	bool "Sensor Drivers"
 	help
 	  Include sensor drivers in system config
 
@@ -29,8 +28,7 @@ config SYS_LOG_SENSOR_LEVEL
 	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config SENSOR_INIT_PRIORITY
-	int
-	prompt "Sensor init priority"
+	int "Sensor init priority"
 	default 90
 	help
 	  Sensor initialization priority.

@@ -24,8 +24,7 @@ config PINMUX_NAME
 	  The name of the pinmux driver.
 
 config PINMUX_INIT_PRIORITY
-	int
-	prompt "Init priority"
+	int "Init priority"
 	default 45
 	depends on PINMUX
 	help

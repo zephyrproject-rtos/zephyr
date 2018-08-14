@@ -22,8 +22,7 @@ config LSM6DS0_DEV_NAME
 	default "lsm6ds0"
 
 config LSM6DS0_I2C_ADDR
-	hex
-	prompt "LSM6DS0 I2C address"
+	hex "LSM6DS0 I2C address"
 	depends on LSM6DS0
 	default 0x6B
 	help
@@ -100,8 +99,7 @@ menu "Attributes"
 	depends on LSM6DS0
 
 config LSM6DS0_GYRO_FULLSCALE
-	int
-	prompt "Gyroscope full-scale range"
+	int "Gyroscope full-scale range"
 	depends on LSM6DS0
 	default 245
 	help
@@ -110,8 +108,7 @@ config LSM6DS0_GYRO_FULLSCALE
 	  second. Valid values are 245, 500 and 2000.
 
 config LSM6DS0_GYRO_SAMPLING_RATE
-	int
-	prompt "Output data rate"
+	int "Output data rate"
 	depends on LSM6DS0
 	default 15
 	help
@@ -121,8 +118,7 @@ config LSM6DS0_GYRO_SAMPLING_RATE
 	  952.
 
 config LSM6DS0_ACCEL_FULLSCALE
-	int
-	prompt "Accelerometer full-scale range"
+	int "Accelerometer full-scale range"
 	depends on LSM6DS0
 	default 2
 	help
@@ -131,8 +127,7 @@ config LSM6DS0_ACCEL_FULLSCALE
 	  are 2, 4, 8 and 16.
 
 config LSM6DS0_ACCEL_SAMPLING_RATE
-	int
-	prompt "Output data rate"
+	int "Output data rate"
 	depends on LSM6DS0
 	default 10
 	help
