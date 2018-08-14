@@ -5,9 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_DOMAIN "fota/flash_block"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_IMG_MANAGER_LEVEL
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME fota_flash_block
+#define LOG_LEVEL CONFIG_LOG_IMG_MANAGER_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER();
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -34,15 +35,15 @@ static bool flash_verify(struct device *dev, off_t offset,
 		size = (len >= sizeof(temp)) ? sizeof(temp) : len;
 		rc = flash_read(dev, offset, &temp, size);
 		if (rc) {
-			SYS_LOG_ERR("flash_read error %d offset=0x%08"PRIx32,
-				    rc, offset);
+			LOG_ERR("flash_read error %d offset=0x%08"PRIx32,
+				rc, offset);
 			break;
 		}
 
 		if (memcmp(data, &temp, size)) {
-			SYS_LOG_ERR("offset=0x%08"PRIx32" VERIFY FAIL. "
-				    "expected: 0x%08x, actual: 0x%08x",
-				    offset, temp, *(__packed u32_t*)data);
+			LOG_ERR("offset=0x%08"PRIx32" VERIFY FAIL. "
+				"expected: 0x%08x, actual: 0x%08x",
+				offset, temp, *(__packed u32_t*)data);
 			break;
 		}
 		len -= size;
@@ -70,8 +71,8 @@ static int flash_block_write(struct flash_img_context *ctx, off_t offset,
 				 ctx->buf, CONFIG_IMG_BLOCK_BUF_SIZE);
 		flash_write_protection_set(ctx->dev, true);
 		if (rc) {
-			SYS_LOG_ERR("flash_write error %d offset=0x%08"PRIx32,
-				    rc, offset + ctx->bytes_written);
+			LOG_ERR("flash_write error %d offset=0x%08"PRIx32,
+				rc, offset + ctx->bytes_written);
 			return rc;
 		}
 
@@ -102,8 +103,8 @@ static int flash_block_write(struct flash_img_context *ctx, off_t offset,
 				 ctx->buf, CONFIG_IMG_BLOCK_BUF_SIZE);
 		flash_write_protection_set(ctx->dev, true);
 		if (rc) {
-			SYS_LOG_ERR("flash_write error %d offset=0x%08"PRIx32,
-				    rc, offset + ctx->bytes_written);
+			LOG_ERR("flash_write error %d offset=0x%08"PRIx32,
+				rc, offset + ctx->bytes_written);
 			return rc;
 		}
 
