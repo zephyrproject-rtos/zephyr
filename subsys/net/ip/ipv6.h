@@ -87,7 +87,10 @@ struct net_ipv6_nbr_data {
 	struct in6_addr addr;
 
 	/** Reachable timer. */
-	struct k_delayed_work reachable;
+	s64_t reachable;
+
+	/** Reachable timeout */
+	s32_t reachable_timeout;
 
 	/** Neighbor Solicitation reply timer */
 	s64_t send_ns;

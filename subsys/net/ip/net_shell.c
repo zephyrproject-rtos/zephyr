@@ -2543,6 +2543,9 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 	char *padding = "";
 	char *state_pad = "";
 	const char *state_str;
+#if defined(CONFIG_NET_IPV6_ND)
+	s64_t remaining;
+#endif
 
 #if defined(CONFIG_NET_L2_IEEE802154)
 	padding = "      ";
@@ -2565,7 +2568,13 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 		state_pad = "    ";
 	}
 
-	printk("[%2d] %p %p %5d/%d/%d/%d %s%s %6d  %17s%s %s\n",
+#if defined(CONFIG_NET_IPV6_ND)
+	remaining = net_ipv6_nbr_data(nbr)->reachable +
+		    net_ipv6_nbr_data(nbr)->reachable_timeout -
+		    k_uptime_get();
+#endif
+
+	printk("[%2d] %p %p %5d/%d/%d/%d %s%s %6lld  %17s%s %s\n",
 	       *count, nbr, nbr->iface,
 	       net_ipv6_nbr_data(nbr)->link_metric,
 	       nbr->ref,
@@ -2574,8 +2583,7 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 	       state_str,
 	       state_pad,
 #if defined(CONFIG_NET_IPV6_ND)
-	       k_delayed_work_remaining_get(
-		       &net_ipv6_nbr_data(nbr)->reachable),
+	       remaining > 0 ? remaining : 0,
 #else
 	       0,
 #endif

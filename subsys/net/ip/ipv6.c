@@ -62,7 +62,8 @@ const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
 const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
 
 #if defined(CONFIG_NET_IPV6_ND)
-static void nd_reachable_timeout(struct k_work *work);
+static struct k_delayed_work ipv6_nd_reachable_timer;
+static void ipv6_nd_reachable_timeout(struct k_work *work);
 #endif
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
@@ -292,7 +293,8 @@ static inline void nbr_free(struct net_nbr *nbr)
 
 	nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
 
-	k_delayed_work_cancel(&net_ipv6_nbr_data(nbr)->reachable);
+	net_ipv6_nbr_data(nbr)->reachable = 0;
+	net_ipv6_nbr_data(nbr)->reachable_timeout = 0;
 
 	net_nbr_unref(nbr);
 	net_nbr_unlink(nbr, NULL);
@@ -409,8 +411,8 @@ static void nbr_init(struct net_nbr *nbr, struct net_if *iface,
 	net_ipv6_nbr_data(nbr)->send_ns = 0;
 
 #if defined(CONFIG_NET_IPV6_ND)
-	k_delayed_work_init(&net_ipv6_nbr_data(nbr)->reachable,
-			    nd_reachable_timeout);
+	net_ipv6_nbr_data(nbr)->reachable = 0;
+	net_ipv6_nbr_data(nbr)->reachable_timeout = 0;
 #endif
 }
 
@@ -1188,9 +1190,16 @@ try_send:
 		if (net_ipv6_nbr_data(nbr)->state == NET_IPV6_NBR_STATE_STALE) {
 			ipv6_nbr_set_state(nbr, NET_IPV6_NBR_STATE_DELAY);
 
-			k_delayed_work_submit(
-				&net_ipv6_nbr_data(nbr)->reachable,
-				DELAY_FIRST_PROBE_TIME);
+			net_ipv6_nbr_data(nbr)->reachable = k_uptime_get();
+			net_ipv6_nbr_data(nbr)->reachable_timeout =
+							DELAY_FIRST_PROBE_TIME;
+
+			if (!k_delayed_work_remaining_get(
+						&ipv6_nd_reachable_timer)) {
+				k_delayed_work_submit(
+					&ipv6_nd_reachable_timer,
+					DELAY_FIRST_PROBE_TIME);
+			}
 		}
 #endif
 
@@ -1699,105 +1708,144 @@ drop:
 #endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
 #if defined(CONFIG_NET_IPV6_ND)
-static void nd_reachable_timeout(struct k_work *work)
+static void ipv6_nd_reachable_timeout(struct k_work *work)
 {
-	struct net_ipv6_nbr_data *data = CONTAINER_OF(work,
-						      struct net_ipv6_nbr_data,
-						      reachable);
-
-	struct net_nbr *nbr = get_nbr_from_data(data);
+	s64_t current = k_uptime_get();
+	struct net_nbr *nbr = NULL;
+	struct net_ipv6_nbr_data *data = NULL;
 	int ret;
+	int i;
 
-	if (!data || !nbr) {
-		NET_DBG("ND reachable timeout but no nbr data "
-			"(nbr %p data %p)", nbr, data);
-		return;
-	}
+	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		s64_t remaining;
 
-	if (net_rpl_get_interface() && nbr->iface == net_rpl_get_interface()) {
-		/* The address belongs to RPL network, no need to activate
-		 * full neighbor reachable rules in this case.
-		 * Mark the neighbor always reachable.
-		 */
-		data->state = NET_IPV6_NBR_STATE_REACHABLE;
-		return;
-	}
-
-	switch (data->state) {
-	case NET_IPV6_NBR_STATE_STATIC:
-		NET_ASSERT_INFO(false, "Static entry shall never timeout");
-		break;
-
-	case NET_IPV6_NBR_STATE_INCOMPLETE:
-		if (data->ns_count >= MAX_MULTICAST_SOLICIT) {
-			nbr_free(nbr);
-		} else {
-			data->ns_count++;
-
-			NET_DBG("nbr %p incomplete count %u", nbr,
-				data->ns_count);
-
-			ret = net_ipv6_send_ns(nbr->iface, NULL, NULL, NULL,
-					       &data->addr, false);
-			if (ret < 0) {
-				NET_DBG("Cannot send NS (%d)", ret);
-			}
+		nbr = get_nbr(i);
+		if (!nbr || !nbr->ref) {
+			continue;
 		}
-		break;
 
-	case NET_IPV6_NBR_STATE_REACHABLE:
-		data->state = NET_IPV6_NBR_STATE_STALE;
+		data = net_ipv6_nbr_data(nbr);
+		if (!data) {
+			continue;
+		}
 
-		NET_DBG("nbr %p moving %s state to STALE (%d)",
-			nbr, net_sprint_ipv6_addr(&data->addr), data->state);
-		break;
+		if (!data->reachable) {
+			continue;
+		}
 
-	case NET_IPV6_NBR_STATE_STALE:
-		NET_DBG("nbr %p removing stale address %s",
-			nbr, net_sprint_ipv6_addr(&data->addr));
-		nbr_free(nbr);
-		break;
+		remaining = data->reachable + data->reachable_timeout - current;
+		if (remaining > 0) {
+			if (!k_delayed_work_remaining_get(
+						&ipv6_nd_reachable_timer)) {
+				k_delayed_work_submit(&ipv6_nd_reachable_timer,
+						      remaining);
+			}
 
-	case NET_IPV6_NBR_STATE_DELAY:
-		data->state = NET_IPV6_NBR_STATE_PROBE;
-		data->ns_count = 0;
+			continue;
+		}
 
-		NET_DBG("nbr %p moving %s state to PROBE (%d)",
-			nbr, net_sprint_ipv6_addr(&data->addr), data->state);
+		data->reachable = 0;
 
-		/* Intentionally continuing to probe state */
+		if (net_rpl_get_interface() && nbr->iface ==
+		    net_rpl_get_interface()) {
+			/* The address belongs to RPL network, no need to
+			 * activate full neighbor reachable rules in this case.
+			 * Mark the neighbor always reachable.
+			 */
+			data->state = NET_IPV6_NBR_STATE_REACHABLE;
+			continue;
+		}
 
-	case NET_IPV6_NBR_STATE_PROBE:
-		if (data->ns_count >= MAX_UNICAST_SOLICIT) {
-			struct net_if_router *router;
+		switch (data->state) {
+		case NET_IPV6_NBR_STATE_STATIC:
+			NET_ASSERT_INFO(false, "Static entry shall never timeout");
+			break;
 
-			router = net_if_ipv6_router_lookup(nbr->iface,
-							   &data->addr);
-			if (router && !router->is_infinite) {
-				NET_DBG("nbr %p address %s PROBE ended (%d)",
-					nbr, net_sprint_ipv6_addr(&data->addr),
-					data->state);
-
-				net_if_ipv6_router_rm(router);
+		case NET_IPV6_NBR_STATE_INCOMPLETE:
+			if (data->ns_count >= MAX_MULTICAST_SOLICIT) {
 				nbr_free(nbr);
+			} else {
+				data->ns_count++;
+
+				NET_DBG("nbr %p incomplete count %u", nbr,
+					data->ns_count);
+
+				ret = net_ipv6_send_ns(nbr->iface, NULL, NULL,
+						       NULL, &data->addr,
+						       false);
+				if (ret < 0) {
+					NET_DBG("Cannot send NS (%d)", ret);
+				}
 			}
-		} else {
-			data->ns_count++;
+			break;
 
-			NET_DBG("nbr %p probe count %u", nbr,
-				data->ns_count);
+		case NET_IPV6_NBR_STATE_REACHABLE:
+			data->state = NET_IPV6_NBR_STATE_STALE;
 
-			ret = net_ipv6_send_ns(nbr->iface, NULL, NULL, NULL,
-					       &data->addr, false);
-			if (ret < 0) {
-				NET_DBG("Cannot send NS (%d)", ret);
+			NET_DBG("nbr %p moving %s state to STALE (%d)",
+				nbr, net_sprint_ipv6_addr(&data->addr),
+				data->state);
+			break;
+
+		case NET_IPV6_NBR_STATE_STALE:
+			NET_DBG("nbr %p removing stale address %s",
+				nbr, net_sprint_ipv6_addr(&data->addr));
+			nbr_free(nbr);
+			break;
+
+		case NET_IPV6_NBR_STATE_DELAY:
+			data->state = NET_IPV6_NBR_STATE_PROBE;
+			data->ns_count = 0;
+
+			NET_DBG("nbr %p moving %s state to PROBE (%d)",
+				nbr, net_sprint_ipv6_addr(&data->addr),
+				data->state);
+
+			/* Intentionally continuing to probe state */
+
+		case NET_IPV6_NBR_STATE_PROBE:
+			if (data->ns_count >= MAX_UNICAST_SOLICIT) {
+				struct net_if_router *router;
+
+				router = net_if_ipv6_router_lookup(nbr->iface,
+								   &data->addr);
+				if (router && !router->is_infinite) {
+					NET_DBG("nbr %p address %s PROBE ended (%d)",
+						nbr,
+						net_sprint_ipv6_addr(
+								&data->addr),
+						data->state);
+
+					net_if_ipv6_router_rm(router);
+					nbr_free(nbr);
+				}
+			} else {
+				data->ns_count++;
+
+				NET_DBG("nbr %p probe count %u", nbr,
+					data->ns_count);
+
+				ret = net_ipv6_send_ns(nbr->iface, NULL, NULL,
+						       NULL, &data->addr,
+						       false);
+				if (ret < 0) {
+					NET_DBG("Cannot send NS (%d)", ret);
+				}
+
+				net_ipv6_nbr_data(nbr)->reachable =
+								k_uptime_get();
+				net_ipv6_nbr_data(nbr)->reachable_timeout =
+								RETRANS_TIMER;
+
+				if (!k_delayed_work_remaining_get(
+						&ipv6_nd_reachable_timer)) {
+					k_delayed_work_submit(
+						&ipv6_nd_reachable_timer,
+						RETRANS_TIMER);
+				}
 			}
-
-			k_delayed_work_submit(
-				&net_ipv6_nbr_data(nbr)->reachable,
-				RETRANS_TIMER);
+			break;
 		}
-		break;
 	}
 }
 
@@ -1813,7 +1861,12 @@ void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
 	NET_DBG("Starting reachable timer nbr %p data %p time %d ms",
 		nbr, net_ipv6_nbr_data(nbr), time);
 
-	k_delayed_work_submit(&net_ipv6_nbr_data(nbr)->reachable, time);
+	net_ipv6_nbr_data(nbr)->reachable = k_uptime_get();
+	net_ipv6_nbr_data(nbr)->reachable_timeout = time;
+
+	if (!k_delayed_work_remaining_get(&ipv6_nd_reachable_timer)) {
+		k_delayed_work_submit(&ipv6_nd_reachable_timer, time);
+	}
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
@@ -1908,8 +1961,8 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 			net_ipv6_nbr_data(nbr)->ns_count = 0;
 
 			/* We might have active timer from PROBE */
-			k_delayed_work_cancel(
-				&net_ipv6_nbr_data(nbr)->reachable);
+			net_ipv6_nbr_data(nbr)->reachable = 0;
+			net_ipv6_nbr_data(nbr)->reachable_timeout = 0;
 
 			net_ipv6_nbr_set_reachable_timer(net_pkt_iface(pkt),
 							 nbr);
@@ -1949,8 +2002,8 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 			ipv6_nbr_set_state(nbr, NET_IPV6_NBR_STATE_REACHABLE);
 
 			/* We might have active timer from PROBE */
-			k_delayed_work_cancel(
-				&net_ipv6_nbr_data(nbr)->reachable);
+			net_ipv6_nbr_data(nbr)->reachable = 0;
+			net_ipv6_nbr_data(nbr)->reachable_timeout = 0;
 
 			net_ipv6_nbr_set_reachable_timer(net_pkt_iface(pkt),
 							 nbr);
@@ -4387,6 +4440,8 @@ void net_ipv6_init(void)
 #endif
 #if defined(CONFIG_NET_IPV6_ND)
 	net_icmpv6_register_handler(&ra_input_handler);
+	k_delayed_work_init(&ipv6_nd_reachable_timer,
+			    ipv6_nd_reachable_timeout);
 #endif
 	k_delayed_work_init(&ipv6_ns_reply_timer, ipv6_ns_reply_timeout);
 
