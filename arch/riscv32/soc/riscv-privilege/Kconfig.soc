@@ -5,4 +5,4 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-gsource "arch/riscv32/soc/riscv-privilege/*/Kconfig.series"
+source "arch/riscv32/soc/riscv-privilege/*/Kconfig.series"

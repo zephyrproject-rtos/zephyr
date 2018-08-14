@@ -15,6 +15,6 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 160
 
-gsource "arch/arm/soc/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
+source "arch/arm/soc/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 
 endif # SOC_SERIES_IMX_RT

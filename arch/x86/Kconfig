@@ -10,7 +10,7 @@ choice
 	prompt "x86 SoC Selection"
 	depends on X86
 
-	gsource "arch/x86/soc/*/Kconfig.soc"
+	source "arch/x86/soc/*/Kconfig.soc"
 endchoice
 
 menu "X86 Architecture Options"
@@ -18,7 +18,7 @@ menu "X86 Architecture Options"
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overriden (by defining symbols in multiple locations)
-gsource "arch/x86/soc/*/Kconfig"
+source "arch/x86/soc/*/Kconfig"
 
 config ARCH
 	default "x86"

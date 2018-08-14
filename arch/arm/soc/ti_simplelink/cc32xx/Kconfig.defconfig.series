@@ -3,7 +3,7 @@
 
 if SOC_SERIES_CC32XX
 
-gsource "arch/arm/soc/ti_simplelink/cc32xx/Kconfig.defconfig.cc32*"
+source "arch/arm/soc/ti_simplelink/cc32xx/Kconfig.defconfig.cc32*"
 
 config SOC_SERIES
 	default "cc32xx"

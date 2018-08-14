@@ -8,7 +8,7 @@
 
 if SOC_SERIES_BEETLE
 
-gsource "arch/arm/soc/arm/beetle/Kconfig.defconfig.beetle*"
+source "arch/arm/soc/arm/beetle/Kconfig.defconfig.beetle*"
 
 config SOC_SERIES
 	default "beetle"

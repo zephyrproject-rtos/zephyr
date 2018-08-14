@@ -16,6 +16,6 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 86
 
-gsource "arch/arm/soc/nxp_kinetis/k6x/Kconfig.defconfig.mk*"
+source "arch/arm/soc/nxp_kinetis/k6x/Kconfig.defconfig.mk*"
 
 endif # SOC_SERIES_KINETIS_K6X

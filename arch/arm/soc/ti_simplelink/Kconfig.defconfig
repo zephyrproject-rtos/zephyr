@@ -1,1 +1,1 @@
-gsource "arch/arm/soc/ti_simplelink/*/Kconfig.defconfig.series"
+source "arch/arm/soc/ti_simplelink/*/Kconfig.defconfig.series"

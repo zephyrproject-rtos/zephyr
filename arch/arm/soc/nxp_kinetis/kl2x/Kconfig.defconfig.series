@@ -10,6 +10,6 @@ if SOC_SERIES_KINETIS_KL2X
 config SOC_SERIES
 	default "kl2x"
 
-gsource "arch/arm/soc/nxp_kinetis/kl2x/Kconfig.defconfig.mk*"
+source "arch/arm/soc/nxp_kinetis/kl2x/Kconfig.defconfig.mk*"
 
 endif # SOC_SERIES_KINETIS_KL2X

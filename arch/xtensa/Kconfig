@@ -6,7 +6,7 @@
 choice
 	prompt "XTENSA core Selection"
 	depends on XTENSA
-	gsource "arch/xtensa/soc/*/Kconfig.soc"
+	source "arch/xtensa/soc/*/Kconfig.soc"
 endchoice
 
 menu "XTENSA Options"
@@ -16,7 +16,9 @@ menu "Specific core configuration"
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overriden (by defining symbols in multiple locations)
-gsource "arch/xtensa/soc/*/Kconfig"
+#
+# (No SoC-specific Kconfig files as of writing, hence the optional source.)
+osource "arch/xtensa/soc/*/Kconfig"
 
 config IRQ_OFFLOAD_INTNUM
 	int "IRQ offload SW interrupt index"

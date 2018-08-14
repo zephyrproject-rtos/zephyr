@@ -7,7 +7,7 @@
 
 if SOC_FAMILY_NRF
 
-gsource "arch/arm/soc/nordic_nrf/*/Kconfig.defconfig.series"
+source "arch/arm/soc/nordic_nrf/*/Kconfig.defconfig.series"
 
 config BUILD_OUTPUT_HEX
 	default y

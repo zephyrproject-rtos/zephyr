@@ -15,6 +15,6 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 40
 
-gsource "arch/arm/soc/nxp_lpc/lpc54xxx/Kconfig.defconfig.lp*"
+source "arch/arm/soc/nxp_lpc/lpc54xxx/Kconfig.defconfig.lp*"
 
 endif # SOC_SERIES_LPC54XXX

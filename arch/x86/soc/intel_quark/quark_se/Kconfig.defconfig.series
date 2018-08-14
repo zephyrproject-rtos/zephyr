@@ -201,7 +201,7 @@ config USB_DW_IRQ_PRI
 	default 3
 endif # USB
 
-gsource "arch/x86/soc/intel_quark/quark_se/Kconfig.defconfig.quark_se*"
-gsource "arch/x86/soc/intel_quark/quark_se/Kconfig.defconfig.curie*"
+source "arch/x86/soc/intel_quark/quark_se/Kconfig.defconfig.quark_se*"
+source "arch/x86/soc/intel_quark/quark_se/Kconfig.defconfig.curie*"
 
 endif # SOC_SERIES_QUARK_SE
