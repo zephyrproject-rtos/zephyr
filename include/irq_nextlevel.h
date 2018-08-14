@@ -23,11 +23,14 @@ extern "C" {
  */
 typedef void (*irq_next_level_func_t)(struct device *dev, unsigned int irq);
 typedef unsigned int (*irq_next_level_get_state_t)(struct device *dev);
+typedef void (*irq_next_level_priority_t)(struct device *dev,
+		unsigned int irq, unsigned int prio, u32_t flags);
 
 struct irq_next_level_api {
 	irq_next_level_func_t intr_enable;
 	irq_next_level_func_t intr_disable;
 	irq_next_level_get_state_t intr_get_state;
+	irq_next_level_priority_t intr_set_priority;
 };
 /**
  * @endcond
@@ -82,6 +85,28 @@ static inline unsigned int irq_is_enabled_next_level(struct device *dev)
 	const struct irq_next_level_api *api = dev->driver_api;
 
 	return api->intr_get_state(dev);
+}
+
+/**
+ * @brief Set IRQ priority.
+ *
+ * This routine indicates if any interrupts are enabled in the interrupt
+ * controller.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param irq IRQ to be disabled.
+ * @param prio priority for irq in the interrupt controller.
+ * @param flags controller specific flags.
+ *
+ * @return N/A
+ */
+static inline void irq_set_priority_next_level(struct device *dev, u32_t irq,
+		u32_t prio, u32_t flags)
+{
+	const struct irq_next_level_api *api = dev->driver_api;
+
+	if (api->intr_set_priority)
+		api->intr_set_priority(dev, irq, prio, flags);
 }
 
 /**
