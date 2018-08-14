@@ -7,6 +7,8 @@
 #include <kernel_structs.h>
 #include <cmsis_os.h>
 
+#define NSEC_PER_MSEC (NSEC_PER_USEC * USEC_PER_MSEC)
+
 void *k_thread_other_custom_data_get(struct k_thread *thread_id)
 {
 	return thread_id->custom_data;
@@ -69,8 +71,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 	int retval, key;
 	osEvent evt;
 	u32_t time_delta_ms, timeout = millisec;
-	u64_t time_stamp_start, time_delta_us;
-	int freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000000;
+	u64_t time_stamp_start, hwclk_cycles_delta, time_delta_ns;
 
 	if (_is_in_isr()) {
 		evt.status = osErrorISR;
@@ -136,9 +137,10 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 		 * timeout value accordingly based on the time that has
 		 * already elapsed.
 		 */
-		time_delta_us =
-			((u64_t)k_cycle_get_32() - time_stamp_start)/freq;
-		time_delta_ms = (u32_t)(time_delta_us/1000);
+		hwclk_cycles_delta = (u64_t)k_cycle_get_32() - time_stamp_start;
+		time_delta_ns =
+			(u32_t)SYS_CLOCK_HW_CYCLES_TO_NS(hwclk_cycles_delta);
+		time_delta_ms =	(u32_t)time_delta_ns/NSEC_PER_MSEC;
 
 		if (timeout > time_delta_ms) {
 			timeout -= time_delta_ms;
