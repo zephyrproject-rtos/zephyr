@@ -15,10 +15,9 @@ menuconfig GPIO_SCH
 if GPIO_SCH
 
 config GPIO_SCH_INIT_PRIORITY
-	int
+	int "Init priority"
 	depends on GPIO_SCH
 	default 60
-	prompt "Init priority"
 	help
 	  Device driver initialization priority.
 

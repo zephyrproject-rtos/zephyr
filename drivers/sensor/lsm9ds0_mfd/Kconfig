@@ -70,48 +70,37 @@ choice
 	  Specify the default sampling rate frequency for accelerometer.
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_0
-	bool
-	prompt "0 Hz (power down)"
+	bool "0 Hz (power down)"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_3_125
-	bool
-	prompt "3.125 Hz"
+	bool "3.125 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_6_25
-	bool
-	prompt "6.25 Hz"
+	bool "6.25 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_12_5
-	bool
-	prompt "12.5 Hz"
+	bool "12.5 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_25
-	bool
-	prompt "25 Hz"
+	bool "25 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_50
-	bool
-	prompt "50 Hz"
+	bool "50 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_100
-	bool
-	prompt "100 Hz"
+	bool "100 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_200
-	bool
-	prompt "200 Hz"
+	bool "200 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_400
-	bool
-	prompt "400 Hz"
+	bool "400 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_800
-	bool
-	prompt "800 Hz"
+	bool "800 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_1600
-	bool
-	prompt "1600 Hz"
+	bool "1600 Hz"
 
 endchoice
 
@@ -130,24 +119,19 @@ choice
 	  Specify the default full-scale for accelerometer.
 
 config LSM9DS0_MFD_ACCEL_FULL_SCALE_2
-	bool
-	prompt "2G"
+	bool "2G"
 
 config LSM9DS0_MFD_ACCEL_FULL_SCALE_4
-	bool
-	prompt "4G"
+	bool "4G"
 
 config LSM9DS0_MFD_ACCEL_FULL_SCALE_6
-	bool
-	prompt "6G"
+	bool "6G"
 
 config LSM9DS0_MFD_ACCEL_FULL_SCALE_8
-	bool
-	prompt "8G"
+	bool "8G"
 
 config LSM9DS0_MFD_ACCEL_FULL_SCALE_16
-	bool
-	prompt "16G"
+	bool "16G"
 
 endchoice
 
@@ -181,28 +165,22 @@ choice
 	  Specify the default sampling rate frequency for magnetometer.
 
 config LSM9DS0_MFD_MAGN_SAMPLING_RATE_3_125
-	bool
-	prompt "3.125 Hz"
+	bool "3.125 Hz"
 
 config LSM9DS0_MFD_MAGN_SAMPLING_RATE_6_25
-	bool
-	prompt "6.25 Hz"
+	bool "6.25 Hz"
 
 config LSM9DS0_MFD_MAGN_SAMPLING_RATE_12_5
-	bool
-	prompt "12.5 Hz"
+	bool "12.5 Hz"
 
 config LSM9DS0_MFD_MAGN_SAMPLING_RATE_25
-	bool
-	prompt "25 Hz"
+	bool "25 Hz"
 
 config LSM9DS0_MFD_MAGN_SAMPLING_RATE_50
-	bool
-	prompt "50 Hz"
+	bool "50 Hz"
 
 config LSM9DS0_MFD_MAGN_SAMPLING_RATE_100
-	bool
-	prompt "100 Hz"
+	bool "100 Hz"
 
 endchoice
 
@@ -221,20 +199,16 @@ choice
 	  Specify the default full-scale for magnetometer.
 
 config LSM9DS0_MFD_MAGN_FULL_SCALE_2
-	bool
-	prompt "2 Gauss"
+	bool "2 Gauss"
 
 config LSM9DS0_MFD_MAGN_FULL_SCALE_4
-	bool
-	prompt "4 Gauss"
+	bool "4 Gauss"
 
 config LSM9DS0_MFD_MAGN_FULL_SCALE_8
-	bool
-	prompt "8 Gauss"
+	bool "8 Gauss"
 
 config LSM9DS0_MFD_MAGN_FULL_SCALE_12
-	bool
-	prompt "12 Gauss"
+	bool "12 Gauss"
 
 endchoice
 

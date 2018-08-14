@@ -47,8 +47,7 @@ choice
 	  Specify the type of triggering to be used by the driver.
 
 config BMI160_TRIGGER_NONE
-	bool
-	prompt "No trigger"
+	bool "No trigger"
 
 config BMI160_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"

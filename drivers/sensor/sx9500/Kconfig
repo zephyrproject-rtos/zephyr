@@ -33,10 +33,9 @@ config SX9500_I2C_DEV_NAME
 	  connected.
 
 config SX9500_PROX_CHANNEL
-	int
+	int "Proximity channel to use"
 	default 3
 	depends on SX9500
-	prompt "Proximity channel to use"
 	help
 	  The SX9500 offers 4 separate proximity channels.  Choose which one
 	  you are using.  Valid numbers are 0 to 3.

@@ -33,8 +33,7 @@ config NET_BUF_LOG
 
 if NET_BUF_LOG
 config SYS_LOG_NET_BUF_LEVEL
-	int
-	prompt "Network buffer Logging level"
+	int "Network buffer Logging level"
 	depends on SYS_LOG
 	default 1
 	range 0 4
@@ -48,8 +47,7 @@ config SYS_LOG_NET_BUF_LEVEL
 	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config NET_BUF_WARN_ALLOC_INTERVAL
-	int
-	prompt "Interval of Network buffer allocation warnings"
+	int "Interval of Network buffer allocation warnings"
 	default 1
 	range 0 60
 	help

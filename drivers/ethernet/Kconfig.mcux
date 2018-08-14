@@ -5,8 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_MCUX
-	bool
-	prompt "MCUX Ethernet driver"
+	bool "MCUX Ethernet driver"
 	depends on NET_L2_ETHERNET && HAS_MCUX
 	help
 	  Enable MCUX Ethernet driver.  Note, this driver performs one shot PHY

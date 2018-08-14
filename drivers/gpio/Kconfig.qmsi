@@ -23,16 +23,14 @@ menuconfig GPIO_QMSI_SS
 if GPIO_QMSI || GPIO_QMSI_SS
 
 config GPIO_QMSI_INIT_PRIORITY
-	int
+	int "Init priority"
 	default 60
 	depends on GPIO_QMSI
-	prompt "Init priority"
 	help
 	  Device driver initialization priority.
 
 config GPIO_QMSI_API_REENTRANCY
-	bool
-	prompt "GPIO driver API reentrancy"
+	bool "GPIO driver API reentrancy"
 	depends on GPIO_QMSI
 	help
 	  Enable support for QMSI GPIO driver API reentrancy.

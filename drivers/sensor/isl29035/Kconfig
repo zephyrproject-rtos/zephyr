@@ -7,23 +7,20 @@
 #
 
 menuconfig ISL29035
-	bool
-	prompt "ISL29035 light sensor"
+	bool "ISL29035 light sensor"
 	depends on I2C
 	help
 	  Enable driver for the ISL29035 light sensor.
 
 config ISL29035_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "ISL29035"
 	depends on ISL29035
 	help
 	  Device name with which the ISL29035 sensor is identified.
 
 config ISL29035_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C Master"
+	string "I2C Master"
 	depends on ISL29035
 	default "I2C_0"
 	help
@@ -31,8 +28,7 @@ config ISL29035_I2C_MASTER_DEV_NAME
 	  chip is connected.
 
 config ISL29035_THREAD_PRIORITY
-	int
-	prompt "Thread priority"
+	int "Thread priority"
 	depends on ISL29035
 	default 10
 	help
@@ -47,20 +43,16 @@ choice
 	  resolution.
 
 config ISL29035_LUX_RANGE_1K
-	bool
-	prompt "1000"
+	bool "1000"
 
 config ISL29035_LUX_RANGE_4K
-	bool
-	prompt "4000"
+	bool "4000"
 
 config ISL29035_LUX_RANGE_16K
-	bool
-	prompt "16000"
+	bool "16000"
 
 config ISL29035_LUX_RANGE_64K
-	bool
-	prompt "64000"
+	bool "64000"
 
 endchoice
 
@@ -73,20 +65,16 @@ choice
 	  Lower integration time values mean lower ADC resolution.
 
 config ISL29035_INTEGRATION_TIME_26
-	bool
-	prompt "0.0256 ms"
+	bool "0.0256 ms"
 
 config ISL29035_INTEGRATION_TIME_410
-	bool
-	prompt "0.41 ms"
+	bool "0.41 ms"
 
 config ISL29035_INTEGRATION_TIME_6500
-	bool
-	prompt "6.5 ms"
+	bool "6.5 ms"
 
 config ISL29035_INTEGRATION_TIME_105K
-	bool
-	prompt "105 ms"
+	bool "105 ms"
 
 endchoice
 
@@ -99,14 +87,12 @@ choice
 	  configured either for either ambient light or infrared sensing.
 
 config ISL29035_MODE_ALS
-	bool
-	prompt "ambient light"
+	bool "ambient light"
 	help
 	  Sensing mode for ambient light spectrum.
 
 config ISL29035_MODE_IR
-	bool
-	prompt "infrared"
+	bool "infrared"
 	help
 	  Sensing mode for infrared spectrum.
 
@@ -121,18 +107,15 @@ choice
 	  Only available for ambient light sensing mode.
 
 config ISL29035_TRIGGER_NONE
-	bool
-	prompt "No trigger"
+	bool "No trigger"
 
 config ISL29035_TRIGGER_GLOBAL_THREAD
-	bool
-	prompt "Use global thread"
+	bool "Use global thread"
 	depends on GPIO
 	select ISL29035_TRIGGER
 
 config ISL29035_TRIGGER_OWN_THREAD
-	bool
-	prompt "Use own thread"
+	bool "Use own thread"
 	depends on GPIO
 	select ISL29035_TRIGGER
 
@@ -143,8 +126,7 @@ config ISL29035_TRIGGER
 	depends on ISL29035
 
 config ISL29035_GPIO_DEV_NAME
-	string
-	prompt "GPIO device"
+	string "GPIO device"
 	default "GPIO_0"
 	depends on ISL29035 && ISL29035_TRIGGER
 	help
@@ -152,8 +134,7 @@ config ISL29035_GPIO_DEV_NAME
 	  pin is connected.
 
 config ISL29035_GPIO_PIN_NUM
-	int
-	prompt "GPIO pin number"
+	int "GPIO pin number"
 	default 0
 	depends on ISL29035 && ISL29035_TRIGGER
 	help
@@ -161,16 +142,14 @@ config ISL29035_GPIO_PIN_NUM
 	  connected.
 
 config ISL29035_THREAD_PRIORITY
-	int
-	prompt "Thread priority"
+	int "Thread priority"
 	depends on ISL29035 && ISL29035_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  Priority of thread used by the driver to handle interrupts.
 
 config ISL29035_THREAD_STACK_SIZE
-	int
-	prompt "Thread stack size"
+	int "Thread stack size"
 	depends on ISL29035 && ISL29035_TRIGGER_OWN_THREAD
 	default 1024
 	help
@@ -186,19 +165,15 @@ choice
 	  to be triggered.
 
 config ISL29035_INT_PERSIST_1
-	bool
-	prompt "1"
+	bool "1"
 
 config ISL29035_INT_PERSIST_4
-	bool
-	prompt "4"
+	bool "4"
 
 config ISL29035_INT_PERSIST_8
-	bool
-	prompt "8"
+	bool "8"
 
 config ISL29035_INT_PERSIST_16
-	bool
-	prompt "16"
+	bool "16"
 
 endchoice

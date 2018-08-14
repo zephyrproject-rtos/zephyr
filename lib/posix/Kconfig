@@ -5,8 +5,7 @@
 #
 
 config PTHREAD_IPC
-	bool
-	prompt "POSIX pthread IPC API"
+	bool "POSIX pthread IPC API"
 	help
 	  This enables a mostly-standards-compliant implementation of
 	  the pthread mutex, condition variable and barrier IPC
@@ -14,54 +13,47 @@ config PTHREAD_IPC
 
 if PTHREAD_IPC
 config MAX_PTHREAD_COUNT
-	int
-	prompt "Maximum pthread count in POSIX application"
+	int "Maximum pthread count in POSIX application"
 	default 5
 	range 0 255
 	help
 	  Mention maximum number of threads in POSIX compliant application.
 
 config SEM_VALUE_MAX
-	int
-	prompt "Maximum semaphore limit"
+	int "Maximum semaphore limit"
 	default 32767
 	range 1 32767
 	help
 	  Maximum semaphore count in POSIX compliant Application.
 
 config MAX_TIMER_COUNT
-	int
-	prompt "Maximum timer count in POSIX application"
+	int "Maximum timer count in POSIX application"
 	default 5
 	range 0 255
 	help
 	  Mention maximum number of timers in POSIX compliant application.
 
 config POSIX_MQUEUE
-	bool
-	prompt "Enable POSIX message queue"
+	bool "Enable POSIX message queue"
 	help
 	  This enabled POSIX message queue related APIs.
 
 if POSIX_MQUEUE
 config	MSG_COUNT_MAX
-	int
-	prompt "Maximum number of messages in message queue"
+	int "Maximum number of messages in message queue"
 	default 16
 	help
 	  Mention maximum number of messages in message queue in POSIX compliant
 	  application.
 
 config	MSG_SIZE_MAX
-	int
-	prompt "Maximum size of a message"
+	int "Maximum size of a message"
 	default 16
 	help
 	  Mention maximum size of message in bytes.
 
 config	MQUEUE_NAMELEN_MAX
-	int
-	prompt "Maximum size of a name length"
+	int "Maximum size of a name length"
 	default 16
 	range 2 255
 	help
@@ -71,15 +63,13 @@ endif
 
 if FILE_SYSTEM
 config POSIX_FS
-	bool
-	prompt "Enable POSIX file system API support"
+	bool "Enable POSIX file system API support"
 	help
 	  This enabled POSIX style file system related APIs.
 
 if POSIX_FS
 config	POSIX_MAX_OPEN_FILES
-	int
-	prompt "Maximum number of open file descriptors"
+	int "Maximum number of open file descriptors"
 	default 16
 	help
 	  Mention maximum number of open file descriptors.

@@ -14,8 +14,7 @@ config USB_DEVICE_HID
 if USB_DEVICE_HID
 
 config HID_INTERRUPT_EP_MPS
-	int
-	prompt "USB HID Device Interrupt Endpoint size"
+	int "USB HID Device Interrupt Endpoint size"
 	default 16
 	help
 	  USB HID Device interrupt endpoint size

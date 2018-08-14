@@ -5,8 +5,7 @@
 #
 
 menuconfig KERNEL_EVENT_LOGGER
-	bool
-	prompt "Enable kernel event logger features"
+	bool "Enable kernel event logger features"
 	select RING_BUFFER
 	help
 	  This feature enables the usage of the profiling logger. Provides the
@@ -16,23 +15,20 @@ menuconfig KERNEL_EVENT_LOGGER
 
 if KERNEL_EVENT_LOGGER
 config KERNEL_EVENT_LOGGER_BUFFER_SIZE
-	int
-	prompt "Kernel event logger buffer size"
+	int "Kernel event logger buffer size"
 	default 128
 	help
 	  Buffer size in 32-bit words.
 
 config KERNEL_EVENT_LOGGER_DYNAMIC
-	bool
-	prompt "Kernel event logger dynamic enabling"
+	bool "Kernel event logger dynamic enabling"
 	help
 	  If enabled, kernel event logger is not logging any data to the ring buffer
 	  It is up to the application to set the appropriate flags to enable/disable the
 	  logging of each event type.
 
 config KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
-	bool
-	prompt "Kernel event logger custom timestamp"
+	bool "Kernel event logger custom timestamp"
 	help
 	  This flag enables the possibility to set the timer function to be used to
 	  populate kernel event logger timestamp. This has to be done at runtime by
@@ -41,21 +37,18 @@ config KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP
 menu "Kernel event logging points"
 
 config KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
-	bool
-	prompt "Context switch event logging point"
+	bool "Context switch event logging point"
 	help
 	  Enable the context switch event messages.
 
 config KERNEL_EVENT_LOGGER_INTERRUPT
-	bool
-	prompt "Interrupt event logging point"
+	bool "Interrupt event logging point"
 	help
 	  Enable interrupt event messages. These messages provide the following
 	  information: The time when interrupts occur.
 
 config KERNEL_EVENT_LOGGER_SLEEP
-	bool
-	prompt "Sleep event logging point"
+	bool "Sleep event logging point"
 	depends on SYS_POWER_MANAGEMENT
 	help
 	  Enable low power condition event messages. These messages provide the
@@ -66,8 +59,7 @@ config KERNEL_EVENT_LOGGER_SLEEP
 		- The ID of the interrupt that woke the CPU up.
 
 config KERNEL_EVENT_LOGGER_THREAD
-	bool
-	prompt "Thread event logging point"
+	bool "Thread event logging point"
 	help
 	  Enable thread event messages. These messages provide the following
 	  information:

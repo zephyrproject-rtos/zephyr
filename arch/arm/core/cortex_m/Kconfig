@@ -276,16 +276,14 @@ config DATA_ENDIANNESS_LITTLE
 	  implemented as big endian.
 
 config STACK_ALIGN_DOUBLE_WORD
-	bool
-	prompt "Align stacks on double-words (8 octets)"
+	bool "Align stacks on double-words (8 octets)"
 	default y
 	help
 	  This is needed to conform to AAPCS, the procedure call standard for
 	  the ARM. It wastes stack space.
 
 config RUNTIME_NMI
-	bool
-	prompt "Attach an NMI handler at runtime"
+	bool "Attach an NMI handler at runtime"
 	select REBOOT
 	help
 	  The kernel provides a simple NMI handler that simply hangs in a tight
@@ -294,8 +292,7 @@ config RUNTIME_NMI
 	  needed, enable this option and attach it via _NmiHandlerSet().
 
 config FAULT_DUMP
-	int
-	prompt "Fault dump level"
+	int "Fault dump level"
 	default 2
 	range 0 2
 	help
@@ -320,8 +317,7 @@ config GEN_ISR_TABLES
 	default y
 
 config ZERO_LATENCY_IRQS
-	bool
-	prompt "Enable zero-latency interrupts"
+	bool "Enable zero-latency interrupts"
 	depends on CPU_CORTEX_M_HAS_BASEPRI
 	help
 	  The kernel may reserve some of the highest interrupts priorities in
@@ -337,8 +333,7 @@ config ZERO_LATENCY_IRQS
 	  kernel functionality.
 
 config SW_VECTOR_RELAY
-	bool
-	prompt "Enable Software Vector Relay"
+	bool "Enable Software Vector Relay"
 	default y if BOOTLOADER_MCUBOOT
 	depends on ARMV6_M_ARMV8_M_BASELINE && !(CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP || CPU_CORTEX_M_HAS_VTOR)
 	help
@@ -350,8 +345,7 @@ config SW_VECTOR_RELAY
 	  relocation table mechanisms.
 
 config PLATFORM_SPECIFIC_INIT
-	bool
-	prompt "Enable platform (SOC) specific startup hook"
+	bool "Enable platform (SOC) specific startup hook"
 	help
 	  The platform specific initialization code (_PlatformInit) is executed
 	  at the beginning of the startup code (__start).

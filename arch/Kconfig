@@ -127,8 +127,7 @@ config DYNAMIC_OBJECTS
 	zero.
 
 config SIMPLE_FATAL_ERROR_HANDLER
-	prompt "Simple system fatal error handler"
-	bool
+	bool "Simple system fatal error handler"
 	default y if !MULTITHREADING
 	help
 	  Provides an implementation of _SysFatalErrorHandler() that hard hangs
@@ -141,16 +140,14 @@ menu "Interrupt Configuration"
 # Interrupt related configs
 #
 config GEN_ISR_TABLES
-	bool
-	prompt "Use generated IRQ tables"
+	bool "Use generated IRQ tables"
 	help
 	  This option controls whether a platform uses the gen_isr_tables
 	  script to generate its interrupt tables. This mechanism will create
 	  an appropriate hardware vector table and/or software IRQ table.
 
 config GEN_IRQ_VECTOR_TABLE
-	bool
-	prompt "Generate an interrupt vector table"
+	bool "Generate an interrupt vector table"
 	default y
 	depends on GEN_ISR_TABLES
 	help
@@ -162,8 +159,7 @@ config GEN_IRQ_VECTOR_TABLE
 	  supplied by the application or architecture code.
 
 config GEN_SW_ISR_TABLE
-	bool
-	prompt "Generate a software ISR table"
+	bool "Generate a software ISR table"
 	default y
 	depends on GEN_ISR_TABLES
 	help
@@ -267,8 +263,7 @@ menu "Floating Point Options"
 depends on CPU_HAS_FPU
 
 config FLOAT
-	bool
-	prompt "Floating point registers"
+	bool "Floating point registers"
 	help
 	  This option allows threads to use the floating point registers.
 	  By default, only a single thread may use the registers.
@@ -277,8 +272,7 @@ config FLOAT
 	  floating point register will get a fatal exception.
 
 config FP_SHARING
-	bool
-	prompt "Floating point register sharing"
+	bool "Floating point register sharing"
 	depends on FLOAT
 	help
 	  This option allows multiple threads to use the floating point

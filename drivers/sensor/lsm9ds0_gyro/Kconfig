@@ -18,8 +18,7 @@ config LSM9DS0_GYRO_DEV_NAME
 	default "lsm9ds0_gyro"
 
 config LSM9DS0_GYRO_I2C_ADDR
-	hex
-	prompt "LSM9DS0_GYRO I2C slave address"
+	hex "LSM9DS0_GYRO I2C slave address"
 	default 0x6A
 	depends on LSM9DS0_GYRO
 	help
@@ -47,16 +46,13 @@ choice
 	  Specify the default full-scale.
 
 config LSM9DS0_GYRO_FULLSCALE_245
-	bool
-	prompt "245 DPS"
+	bool "245 DPS"
 
 config LSM9DS0_GYRO_FULLSCALE_500
-	bool
-	prompt "500 DPS"
+	bool "500 DPS"
 
 config LSM9DS0_GYRO_FULLSCALE_2000
-	bool
-	prompt "2000 DPS"
+	bool "2000 DPS"
 
 endchoice
 
@@ -74,20 +70,16 @@ choice
 	  Specify the default sampling rate frequency.
 
 config LSM9DS0_GYRO_SAMPLING_RATE_95
-	bool
-	prompt "95 Hz"
+	bool "95 Hz"
 
 config LSM9DS0_GYRO_SAMPLING_RATE_190
-	bool
-	prompt "190 Hz"
+	bool "190 Hz"
 
 config LSM9DS0_GYRO_SAMPLING_RATE_380
-	bool
-	prompt "380 Hz"
+	bool "380 Hz"
 
 config LSM9DS0_GYRO_SAMPLING_RATE_760
-	bool
-	prompt "760 Hz"
+	bool "760 Hz"
 
 endchoice
 
@@ -123,7 +115,6 @@ config LSM9DS0_GYRO_GPIO_DRDY_DEV_NAME
 	  is connected to.
 
 config LSM9DS0_GYRO_GPIO_DRDY_INT_PIN
-	int
+	int "GPIO pin number for the data ready interrupt pin"
 	default 3
 	depends on LSM9DS0_GYRO_TRIGGER_DRDY
-	prompt "GPIO pin number for the data ready interrupt pin"

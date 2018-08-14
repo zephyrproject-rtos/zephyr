@@ -24,8 +24,7 @@ config MMA8451Q_I2C_NAME
 	default I2C_0_NAME
 
 config MMA8451Q_I2C_ADDRESS
-	hex
-	prompt "I2C address for MMA8451Q Sensor"
+	hex "I2C address for MMA8451Q Sensor"
 	depends on MMA8451Q
 	default 0x1D
 	help

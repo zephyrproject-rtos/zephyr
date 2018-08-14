@@ -59,8 +59,7 @@ config	DATA_ENDIANNESS_LITTLE
 	  implemented as big endian.
 
 config	NUM_IRQ_PRIO_LEVELS
-	int
-	prompt "Number of supported interrupt priority levels"
+	int "Number of supported interrupt priority levels"
 	range 1 16
 	help
 	  Interrupt priorities available will be 0 to NUM_IRQ_PRIO_LEVELS-1.
@@ -69,8 +68,7 @@ config	NUM_IRQ_PRIO_LEVELS
 	  The BSP must provide a valid default for proper operation.
 
 config	NUM_IRQS
-	int
-	prompt "Upper limit of interrupt numbers/IDs used"
+	int "Upper limit of interrupt numbers/IDs used"
 	range 17 256
 	help
 	  Interrupts available will be 0 to NUM_IRQS-1.
@@ -81,8 +79,7 @@ config	NUM_IRQS
 	  vector table.
 
 config	RGF_NUM_BANKS
-	int
-	prompt "Number of General Purpose Register Banks"
+	int "Number of General Purpose Register Banks"
 	depends on CPU_ARCV2
 	range 1 2
 	default 2
@@ -95,8 +92,7 @@ config	RGF_NUM_BANKS
 	  and restore general purpose registers.
 
 config ARC_FIRQ
-	bool
-	prompt "FIRQ enable"
+	bool "FIRQ enable"
 	default y
 	help
 	  Fast interrupts are supported (FIRQ). If FIRQ enabled, for interrupts
@@ -114,8 +110,7 @@ config	ARC_STACK_CHECKING
 	  enables code that allows using this debug feature
 
 config	FAULT_DUMP
-	int
-	prompt "Fault dump level"
+	int "Fault dump level"
 	default 2
 	range 0 2
 	help
@@ -139,15 +134,13 @@ config GEN_IRQ_START_VECTOR
 	default 16
 
 config HARVARD
-	prompt "Harvard Architecture"
-	bool
+	bool "Harvard Architecture"
 	help
 	  The ARC CPU can be configured to have two busses;
 	  one for instruction fetching and another that serves as a data bus.
 
 config CODE_DENSITY
-	prompt "Code Density Option"
-	bool
+	bool "Code Density Option"
 	help
 	  Enable code density option to get better code density
 
@@ -172,8 +165,7 @@ source "arch/arc/core/mpu/Kconfig"
 endmenu
 
 config CACHE_LINE_SIZE_DETECT
-	bool
-	prompt "Detect d-cache line size at runtime"
+	bool "Detect d-cache line size at runtime"
 	help
 	  This option enables querying the d-cache build register for finding
 	  the d-cache line size at the expense of taking more memory and code
@@ -183,8 +175,7 @@ config CACHE_LINE_SIZE_DETECT
 	  option and manually enter the value for CACHE_LINE_SIZE.
 
 config CACHE_LINE_SIZE
-	int
-	prompt "Cache line size" if !CACHE_LINE_SIZE_DETECT
+	int "Cache line size" if !CACHE_LINE_SIZE_DETECT
 	default 32
 	help
 	  Size in bytes of a CPU d-cache line.
@@ -195,8 +186,7 @@ config ARCH_CACHE_FLUSH_DETECT
 	bool
 
 config CACHE_FLUSHING
-	bool
-	prompt "Enable d-cache flushing mechanism"
+	bool "Enable d-cache flushing mechanism"
 	help
 	  This links in the sys_cache_flush() function, which provides a
 	  way to flush multiple lines of the d-cache.

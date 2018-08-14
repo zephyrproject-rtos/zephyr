@@ -7,15 +7,13 @@
 #
 
 menuconfig MAX44009
-	bool
-	prompt "MAX44009 Light Sensor"
+	bool "MAX44009 Light Sensor"
 	depends on I2C
 	help
 	  Enable driver for MAX44009 light sensors.
 
 config MAX44009_DRV_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "MAX44009"
 	depends on MAX44009
 	help
@@ -23,8 +21,7 @@ config MAX44009_DRV_NAME
 
 
 config MAX44009_I2C_ADDR
-	hex
-	prompt "MAX44009 I2C address"
+	hex "MAX44009 I2C address"
 	depends on MAX44009
 	default "0x4a"
 	help
@@ -34,8 +31,7 @@ config MAX44009_I2C_ADDR
 	  0x4b: A0 connected to VCC.
 
 config MAX44009_I2C_DEV_NAME
-	string
-	prompt "I2C master where MAX44009 is connected"
+	string "I2C master where MAX44009 is connected"
 	depends on MAX44009
 	default "I2C_0"
 	help

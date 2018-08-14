@@ -10,16 +10,14 @@
 # ADC options
 #
 menuconfig ADC
-	bool
-	prompt "ADC drivers"
+	bool "ADC drivers"
 	help
 	  Enable ADC (Analog to Digital Converter) driver configuration
 
 if ADC
 
 config SYS_LOG_ADC_LEVEL
-	int
-	prompt "ADC drivers log level"
+	int "ADC drivers log level"
 	depends on SYS_LOG
 	default 0
 	range 0 4
@@ -40,9 +38,8 @@ config SYS_LOG_ADC_LEVEL
 	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config ADC_INIT_PRIORITY
-	int
+	int "Init priority"
 	default 80
-	prompt "Init priority"
 	help
 	  ADC Device driver initialization priority.
 
@@ -55,9 +52,8 @@ config ADC_0_NAME
 	default "ADC_0"
 
 config ADC_0_IRQ_PRI
-	int
+	int "ADC 0 interrupt priority"
 	depends on ADC_0 && !HAS_DTS_ADC
-	prompt "ADC 0 interrupt priority"
 	default 2
 
 config ADC_1
@@ -69,9 +65,8 @@ config ADC_1_NAME
 	default "ADC_1"
 
 config ADC_1_IRQ_PRI
-	int
+	int "ADC 1 interrupt priority"
 	depends on ADC_1 && !HAS_DTS_ADC
-	prompt "ADC 1 interrupt priority"
 	default 2
 
 source "drivers/adc/Kconfig.dw"

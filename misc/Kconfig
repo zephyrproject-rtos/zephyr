@@ -166,8 +166,7 @@ config NO_OPTIMIZATIONS
 endchoice
 
 config COMPILER_OPT
-	string
-	prompt "Custom compiler options"
+	string "Custom compiler options"
 	help
 	  This option is a free-form string that is passed to the compiler
 	  when building all parts of a project (i.e. kernel).
@@ -260,14 +259,12 @@ endmenu
 menu "System Monitoring Options"
 
 config PERFORMANCE_METRICS
-	bool
-	prompt "Enable performance metrics [EXPERIMENTAL]"
+	bool "Enable performance metrics [EXPERIMENTAL]"
 	help
 	  Enable Performance Metrics.
 
 config BOOT_TIME_MEASUREMENT
-	bool
-	prompt "Boot time measurements [EXPERIMENTAL]"
+	bool "Boot time measurements [EXPERIMENTAL]"
 	depends on PERFORMANCE_METRICS
 	help
 	  This option enables the recording of timestamps during system start
@@ -277,8 +274,7 @@ config BOOT_TIME_MEASUREMENT
 	  recorded in terms of CPU clock cycles since system reset.
 
 config CPU_CLOCK_FREQ_MHZ
-	int
-	prompt "CPU Clock Frequency in MHz"
+	int "CPU Clock Frequency in MHz"
 	default 20
 	depends on BOOT_TIME_MEASUREMENT
 	help
@@ -286,16 +282,14 @@ config CPU_CLOCK_FREQ_MHZ
 	  convert Intel RDTSC timestamp to microseconds.
 
 config STATS
-	bool
-	prompt "Statistics support"
+	bool "Statistics support"
 	help
 	  Enable per-module event counters for troubleshooting, maintenance,
 	  and usage monitoring.  Statistics can be retrieved with the mcumgr
 	  management subsystem.
 
 config STATS_NAMES
-	bool
-	prompt "Statistic names"
+	bool "Statistic names"
 	depends on STATS
 	help
 	  Include a full name string for each statistic in the build.  If this
@@ -327,8 +321,7 @@ config BOOTLOADER_SRAM_SIZE
 	  bootloader that loads the Zephyr !XIP image onto SRAM.
 
 config BOOTLOADER_MCUBOOT
-	bool
-	prompt "MCUboot bootloader support"
+	bool "MCUboot bootloader support"
 	help
 	  This option signifies that the target uses MCUboot as a bootloader,
 	  or in other words that the image is to be chain-loaded by MCUboot.
@@ -359,16 +352,14 @@ config REALMODE
 	  protected mode.
 
 config BOOTLOADER_KEXEC
-	bool
-	prompt "Boot using Linux kexec() system call"
+	bool "Boot using Linux kexec() system call"
 	depends on X86
 	help
 	  This option signifies that Linux boots the kernel using kexec system call
 	  and utility. This method is used to boot the kernel over the network.
 
 config BOOTLOADER_UNKNOWN
-	bool
-	prompt "Generic boot loader support"
+	bool "Generic boot loader support"
 	depends on X86
 	help
 	  This option signifies that the target has a generic bootloader
@@ -377,8 +368,7 @@ config BOOTLOADER_UNKNOWN
 	  the board may have to do extra work to ensure a proper startup.
 
 config BOOTLOADER_CONTEXT_RESTORE
-	bool
-	prompt "Boot loader has context restore support"
+	bool "Boot loader has context restore support"
 	default y
 	depends on SYS_POWER_DEEP_SLEEP && BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
 	help

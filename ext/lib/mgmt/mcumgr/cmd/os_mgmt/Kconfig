@@ -16,16 +16,14 @@
 # Under the License.
 
 menuconfig MCUMGR_CMD_OS_MGMT
-    bool
-    prompt "Enable mcumgr handlers for OS management"
+    bool "Enable mcumgr handlers for OS management"
     select REBOOT
     help
       Enables mcumgr handlers for OS management
 
 if MCUMGR_CMD_OS_MGMT
 config OS_MGMT_RESET_MS
-    int
-    prompt "Delay before executing reset command (ms)"
+    int "Delay before executing reset command (ms)"
     default 250
     help
       When a reset command is received, the system waits this many milliseconds

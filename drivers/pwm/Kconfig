@@ -14,8 +14,7 @@ menuconfig PWM
 if PWM
 
 config SYS_LOG_PWM_LEVEL
-	int
-	prompt "PWM Driver Log level"
+	int "PWM Driver Log level"
 	depends on SYS_LOG
 	default 0
 	range 0 4

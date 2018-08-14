@@ -5,8 +5,7 @@
 #
 
 menuconfig LPS22HB
-	bool
-	prompt "LPS22HB pressure and temperature"
+	bool "LPS22HB pressure and temperature"
 	depends on I2C
 	help
 	  Enable driver for LPS22HB I2C-based pressure and temperature
@@ -15,16 +14,14 @@ menuconfig LPS22HB
 if !HAS_DTS_I2C_DEVICE
 
 config LPS22HB_DEV_NAME
-	string
-	prompt "Device name"
+	string "Device name"
 	default "LPS22HB"
 	depends on LPS22HB
 	help
 	  Device name used for LPS22HB sensor identification.
 
 config LPS22HB_I2C_ADDR
-	hex
-	prompt "I2C address"
+	hex "I2C address"
 	depends on LPS22HB
 	default 0x5D
 	range 0x5C 0x5D
@@ -34,8 +31,7 @@ config LPS22HB_I2C_ADDR
 	  pin is pulled to VDD.
 
 config LPS22HB_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C master where LPS22HB is connected"
+	string "I2C master where LPS22HB is connected"
 	depends on LPS22HB
 	default I2C_0_NAME
 	help
@@ -48,8 +44,7 @@ menu "Attributes"
 	depends on LPS22HB
 
 config LPS22HB_SAMPLING_RATE
-	int
-	prompt "Output data rate"
+	int "Output data rate"
 	depends on LPS22HB
 	default 25
 	help

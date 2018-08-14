@@ -8,8 +8,7 @@
 #
 
 menuconfig CONSOLE
-	bool
-	prompt "Console drivers"
+	bool "Console drivers"
 
 if CONSOLE
 
@@ -27,8 +26,7 @@ config CONSOLE_HAS_DRIVER
 	  that some kind of console exists.
 
 config CONSOLE_HANDLER
-	bool
-	prompt "Enable console input handler"
+	bool "Enable console input handler"
 	depends on UART_CONSOLE
 	select UART_INTERRUPT_DRIVEN
 	help
@@ -36,8 +34,7 @@ config CONSOLE_HANDLER
 	  interaction between serial console and the OS.
 
 config UART_CONSOLE
-	bool
-	prompt "Use UART for console"
+	bool "Use UART for console"
 	depends on SERIAL && SERIAL_HAS_DRIVER
 	select CONSOLE_HAS_DRIVER
 	help
@@ -55,8 +52,7 @@ config UART_CONSOLE_ON_DEV_NAME
 endif
 
 config UART_CONSOLE_INIT_PRIORITY
-	int
-	prompt "Init priority"
+	int "Init priority"
 	default 60
 	depends on UART_CONSOLE
 	help
@@ -65,8 +61,7 @@ config UART_CONSOLE_INIT_PRIORITY
 	  it uses.
 
 config UART_CONSOLE_DEBUG_SERVER_HOOKS
-	bool
-	prompt "Debug server hooks in debug console"
+	bool "Debug server hooks in debug console"
 	depends on UART_CONSOLE
 	help
 	  This option allows a debug server agent such as GDB to take over the
@@ -76,8 +71,7 @@ config UART_CONSOLE_DEBUG_SERVER_HOOKS
 	  code handle them if they are of no special significance to it.
 
 config UART_CONSOLE_MCUMGR
-	bool
-	prompt "Enable UART console mcumgr passthrough"
+	bool "Enable UART console mcumgr passthrough"
 	depends on UART_CONSOLE
 	help
 	  Enables the UART console to receive mcumgr frames for image upgrade
@@ -86,8 +80,7 @@ config UART_CONSOLE_MCUMGR
 	  (e.g., the shell).  If unset, incoming mcumgr frames are dropped.
 
 config USB_UART_CONSOLE
-	bool
-	prompt "Use USB port for console outputs"
+	bool "Use USB port for console outputs"
 	depends on SERIAL
 	select CONSOLE_HAS_DRIVER
 	select USB_CDC_ACM
@@ -99,8 +92,7 @@ config USB_UART_CONSOLE
 	  selected in conjunction with, say, USB Mass Storage.
 
 config USB_UART_DTR_WAIT
-	bool
-	prompt "Wait on DTR control signal"
+	bool "Wait on DTR control signal"
 	depends on USB_UART_CONSOLE
 	help
 	  Enable this option to use flow control on the console. The uart console
@@ -108,8 +100,7 @@ config USB_UART_DTR_WAIT
 	  Note: Disabling this might lead to missing console prints.
 
 config RAM_CONSOLE
-	bool
-	prompt "Use RAM console"
+	bool "Use RAM console"
 	select CONSOLE_HAS_DRIVER
 	help
 	  Emit console messages to a RAM buffer "ram_console" which can
@@ -125,8 +116,7 @@ config RAM_CONSOLE_BUFFER_SIZE
 	  length is exceeded.
 
 config RTT_CONSOLE
-	bool
-	prompt "Use RTT console"
+	bool "Use RTT console"
 	depends on HAS_SEGGER_RTT
 	select CONSOLE_HAS_DRIVER
 	help
@@ -164,22 +154,19 @@ config RTT_TX_RETRY_IN_INTERRUPT
 endif
 
 config IPM_CONSOLE_SENDER
-	bool
-	prompt "Inter-processor Mailbox console sender"
+	bool "Inter-processor Mailbox console sender"
 	select CONSOLE_HAS_DRIVER
 	help
 	  Enable the sending side of IPM console
 
 config IPM_CONSOLE_RECEIVER
-	bool
-	prompt "Inter-processor Mailbox console receiver"
+	bool "Inter-processor Mailbox console receiver"
 	select RING_BUFFER
 	help
 	  Enable the receiving side of IPM console
 
 config IPM_CONSOLE_STACK_SIZE
-	int
-	prompt "Stack size for IPM console receiver thread"
+	int "Stack size for IPM console receiver thread"
 	depends on IPM_CONSOLE_RECEIVER
 	default 512
 	help
@@ -188,8 +175,7 @@ config IPM_CONSOLE_STACK_SIZE
 	  stack size for these threads here.
 
 config IPM_CONSOLE_INIT_PRIORITY
-	int
-	prompt "IPM console init priority"
+	int "IPM console init priority"
 	default 60
 	depends on IPM_CONSOLE_SENDER || IPM_CONSOLE_RECEIVER
 	help
@@ -198,8 +184,7 @@ config IPM_CONSOLE_INIT_PRIORITY
 	  it uses.
 
 config	UART_PIPE
-	bool
-	prompt "Enable pipe UART driver"
+	bool "Enable pipe UART driver"
 	select UART_INTERRUPT_DRIVEN
 	help
 	  Enable pipe UART driver. This driver allows application to communicate
@@ -218,8 +203,7 @@ config UART_PIPE_ON_DEV_NAME
 endif
 
 config UART_MCUMGR
-	bool
-	prompt "Enable mcumgr UART driver"
+	bool "Enable mcumgr UART driver"
 	select UART_INTERRUPT_DRIVEN
 	help
 	  Enable the mcumgr UART driver. This driver allows the application to
@@ -240,8 +224,7 @@ config UART_MCUMGR_ON_DEV_NAME
 endif # !HAS_DTS
 
 config UART_MCUMGR_RX_BUF_SIZE
-	int
-	prompt "Size of receive buffer for mcumgr fragments received over UART, in bytes"
+	int "Size of receive buffer for mcumgr fragments received over UART, in bytes"
 	default 128
 	help
 	  Specifies the size of the mcumgr UART receive buffer, in bytes. This
@@ -249,8 +232,7 @@ config UART_MCUMGR_RX_BUF_SIZE
 	  client.
 
 config UART_MCUMGR_RX_BUF_COUNT
-	int
-	prompt "Number of receive buffers for mcumgr fragments received over UART"
+	int "Number of receive buffers for mcumgr fragments received over UART"
 	default 2
 	help
 	  Specifies the number of the mcumgr UART receive buffers.  Receive
@@ -262,8 +244,7 @@ config UART_MCUMGR_RX_BUF_COUNT
 endif # UART_MCUMGR
 
 config XTENSA_SIM_CONSOLE
-	bool
-	prompt "Use Xtensa simulator console"
+	bool "Use Xtensa simulator console"
 	depends on SIMULATOR_XTENSA
 	select CONSOLE_HAS_DRIVER
 	default y
@@ -287,16 +268,14 @@ config NATIVE_POSIX_STDIN_CONSOLE
 	  Feed the host terminal stdin to the Zephyr console/shell.
 
 config NATIVE_STDIN_POLL_PERIOD
-	int
-	prompt "Polling period for stdin"
+	int "Polling period for stdin"
 	depends on NATIVE_POSIX_STDIN_CONSOLE
 	default 20
 	help
 	  In ms, polling period for stdin
 
 config NATIVE_STDIN_PRIO
-	int
-	prompt "Priority of the stdin polling thread"
+	int "Priority of the stdin polling thread"
 	depends on NATIVE_POSIX_STDIN_CONSOLE
 	default 4
 	help
@@ -310,16 +289,14 @@ config NATIVE_POSIX_STDOUT_CONSOLE
 	  Zephyr's printk messages will be directed to the host terminal stdout.
 
 config XTENSA_CONSOLE_INIT_PRIORITY
-	int
-	prompt "Init priority"
+	int "Init priority"
 	default 60
 	depends on XTENSA_SIM_CONSOLE
 	help
 	  Device driver initialization priority.
 
 config NATIVE_POSIX_CONSOLE_INIT_PRIORITY
-	int
-	prompt "Init priority"
+	int "Init priority"
 	default 60
 	depends on NATIVE_POSIX_CONSOLE
 	help

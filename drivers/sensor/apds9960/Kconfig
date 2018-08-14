@@ -19,8 +19,7 @@ config  APDS9960_I2C_DEV_NAME
 	  chip is connected.
 
 config APDS9960_DRV_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "APDS9960"
 	depends on APDS9960
 	help

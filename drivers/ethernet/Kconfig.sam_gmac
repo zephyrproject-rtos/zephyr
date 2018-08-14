@@ -5,8 +5,7 @@
 #
 
 menuconfig ETH_SAM_GMAC
-	bool
-	prompt "Atmel SAM Ethernet driver"
+	bool "Atmel SAM Ethernet driver"
 	depends on SOC_FAMILY_SAM
 	help
 	  Enable Atmel SAM MCU Family Ethernet driver.

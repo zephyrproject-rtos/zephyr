@@ -7,23 +7,20 @@
 #
 
 menuconfig MPU6050
-	bool
-	prompt "MPU6050 Six-Axis Motion Tracking Device"
+	bool "MPU6050 Six-Axis Motion Tracking Device"
 	depends on I2C
 	help
 	  Enable driver for MPU6050 I2C-based six-axis motion tracking device.
 
 config MPU6050_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "MPU6050"
 	depends on MPU6050
 	help
 	  Device name with which the MPU6050 sensor is identified.
 
 config MPU6050_I2C_ADDR
-	hex
-	prompt "I2C address"
+	hex "I2C address"
 	depends on MPU6050
 	default 0x68
 	range 0x68 0x69
@@ -33,8 +30,7 @@ config MPU6050_I2C_ADDR
 	  is pulled to VDD.
 
 config MPU6050_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C master where MPU6050 is connected"
+	string "I2C master where MPU6050 is connected"
 	depends on MPU6050
 	default "I2C_0"
 	help
@@ -49,18 +45,15 @@ choice
 	  Specify the type of triggering to be used by the driver.
 
 config MPU6050_TRIGGER_NONE
-	bool
-	prompt "No trigger"
+	bool "No trigger"
 
 config MPU6050_TRIGGER_GLOBAL_THREAD
-	bool
-	prompt "Use global thread"
+	bool "Use global thread"
 	depends on GPIO
 	select MPU6050_TRIGGER
 
 config MPU6050_TRIGGER_OWN_THREAD
-	bool
-	prompt "Use own thread"
+	bool "Use own thread"
 	depends on GPIO
 	select MPU6050_TRIGGER
 
@@ -71,8 +64,7 @@ config MPU6050_TRIGGER
 	depends on MPU6050
 
 config MPU6050_GPIO_DEV_NAME
-	string
-	prompt "GPIO device"
+	string "GPIO device"
 	default "GPIO_0"
 	depends on MPU6050 && MPU6050_TRIGGER
 	help
@@ -80,8 +72,7 @@ config MPU6050_GPIO_DEV_NAME
 	  is connected.
 
 config MPU6050_GPIO_PIN_NUM
-	int
-	prompt "Interrupt GPIO pin number"
+	int "Interrupt GPIO pin number"
 	default 0
 	depends on MPU6050 && MPU6050_TRIGGER
 	help
@@ -89,24 +80,21 @@ config MPU6050_GPIO_PIN_NUM
 	  chip will be received.
 
 config MPU6050_THREAD_PRIORITY
-	int
-	prompt "Thread priority"
+	int "Thread priority"
 	depends on MPU6050 && MPU6050_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  Priority of thread used by the driver to handle interrupts.
 
 config MPU6050_THREAD_STACK_SIZE
-	int
-	prompt "Thread stack size"
+	int "Thread stack size"
 	depends on MPU6050 && MPU6050_TRIGGER_OWN_THREAD
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
 config MPU6050_ACCEL_FS
-	int
-	prompt "Accelerometer full-scale range"
+	int "Accelerometer full-scale range"
 	depends on MPU6050
 	default 2
 	help
@@ -115,8 +103,7 @@ config MPU6050_ACCEL_FS
 	  values are 2, 4, 8 and 16.
 
 config MPU6050_GYRO_FS
-	int
-	prompt "Gyroscope full-scale range"
+	int "Gyroscope full-scale range"
 	depends on MPU6050
 	default 250
 	help

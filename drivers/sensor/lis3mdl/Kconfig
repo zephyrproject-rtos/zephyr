@@ -5,8 +5,7 @@
 #
 
 menuconfig LIS3MDL
-	bool
-	prompt "LIS3MDL magnetometer"
+	bool "LIS3MDL magnetometer"
 	depends on I2C
 	help
 	  Enable driver for LIS3MDL I2C-based magnetometer.
@@ -14,16 +13,14 @@ menuconfig LIS3MDL
 if !HAS_DTS_I2C_DEVICE
 
 config LIS3MDL_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "LIS3MDL"
 	depends on LIS3MDL
 	help
 	  Device name with which the LIS3MDL sensor is identified.
 
 config LIS3MDL_I2C_ADDR
-	hex
-	prompt "I2C address"
+	hex "I2C address"
 	depends on LIS3MDL
 	default 0x1C
 	help
@@ -32,8 +29,7 @@ config LIS3MDL_I2C_ADDR
 	  is pulled to VDD.
 
 config LIS3MDL_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C master where LIS3MDL is connected"
+	string "I2C master where LIS3MDL is connected"
 	depends on LIS3MDL
 	default "I2C_0"
 	help
@@ -50,18 +46,15 @@ choice
 	  Specify the type of triggering to be used by the driver.
 
 config LIS3MDL_TRIGGER_NONE
-	bool
-	prompt "No trigger"
+	bool "No trigger"
 
 config LIS3MDL_TRIGGER_GLOBAL_THREAD
-	bool
-	prompt "Use global thread"
+	bool "Use global thread"
 	depends on GPIO
 	select LIS3MDL_TRIGGER
 
 config LIS3MDL_TRIGGER_OWN_THREAD
-	bool
-	prompt "Use own thread"
+	bool "Use own thread"
 	depends on GPIO
 	select LIS3MDL_TRIGGER
 
@@ -72,8 +65,7 @@ config LIS3MDL_TRIGGER
 	depends on LIS3MDL
 
 config LIS3MDL_GPIO_DEV_NAME
-	string
-	prompt "GPIO device"
+	string "GPIO device"
 	default "GPIO_0"
 	depends on LIS3MDL && LIS3MDL_TRIGGER
 	help
@@ -81,8 +73,7 @@ config LIS3MDL_GPIO_DEV_NAME
 	  are connected.
 
 config LIS3MDL_GPIO_PIN_NUM
-	int
-	prompt "Interrupt GPIO pin number"
+	int "Interrupt GPIO pin number"
 	default 0
 	depends on LIS3MDL && LIS3MDL_TRIGGER
 	help
@@ -90,24 +81,21 @@ config LIS3MDL_GPIO_PIN_NUM
 	  chip will be received.
 
 config LIS3MDL_THREAD_PRIORITY
-	int
-	prompt "Thread priority"
+	int "Thread priority"
 	depends on LIS3MDL && LIS3MDL_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  Priority of thread used by the driver to handle interrupts.
 
 config LIS3MDL_THREAD_STACK_SIZE
-	int
-	prompt "Thread stack size"
+	int "Thread stack size"
 	depends on LIS3MDL && LIS3MDL_TRIGGER_OWN_THREAD
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
 config LIS3MDL_ODR
-	string
-	prompt "Output data rate"
+	string "Output data rate"
 	depends on LIS3MDL
 	default "0.625"
 	help
@@ -116,8 +104,7 @@ config LIS3MDL_ODR
 	  40, 80, 155, 300, 560 and 1000.
 
 config LIS3MDL_FS
-	int
-	prompt "Full-scale range"
+	int "Full-scale range"
 	depends on LIS3MDL
 	default 4
 	help
