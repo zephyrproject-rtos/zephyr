@@ -253,7 +253,15 @@ static void test_thread_timeout_reply_values_wfe(void *p1, void *p2, void *p3)
 	k_fifo_put(&timeout_order_fifo, reply_packet);
 }
 
-/*test cases*/
+/**
+ * @addtogroup kernel_fifo_tests
+ * @{
+ */
+
+/**
+ * @brief Test empty fifo with timeout and K_NO_WAIT
+ * @see k_fifo_get()
+ */
 static void test_timeout_empty_fifo(void)
 {
 	void *packet;
@@ -271,6 +279,10 @@ static void test_timeout_empty_fifo(void)
 	zassert_true(packet == NULL, NULL);
 }
 
+/**
+ * @brief Test non empty fifo with timeout and K_NO_WAIT
+ * @see k_fifo_get(), k_fifo_put()
+ */
 static void test_timeout_non_empty_fifo(void)
 {
 	void *packet, *scratch_packet;
@@ -290,6 +302,16 @@ static void test_timeout_non_empty_fifo(void)
 	put_scratch_packet(scratch_packet);
 }
 
+/**
+ * @brief Test fifo with timeout and K_NO_WAIT
+ * @details In first scenario test fifo with some timeout where child thread
+ * puts data on the fifo on time. In second scenario test k_fifo_get with
+ * timeout of K_NO_WAIT and the fifo should be filled by the child thread
+ * based on the data availability on another fifo. In third scenario test
+ * k_fifo_get with timeout of K_FOREVER and the fifo should be filled by
+ * the child thread based on the data availability on another fifo.
+ * @see k_fifo_get(), k_fifo_put()
+ */
 static void test_timeout_fifo_thread(void)
 {
 	void *packet, *scratch_packet;
@@ -369,6 +391,12 @@ static void test_timeout_fifo_thread(void)
 	put_scratch_packet(scratch_packet);
 }
 
+/**
+ * @brief Test fifo with different timeouts
+ * @details test multiple threads pending on the same fifo with
+ * different timeouts
+ * @see k_fifo_get(), k_fifo_put()
+ */
 static void test_timeout_threads_pend_on_fifo(void)
 {
 	s32_t rv, test_data_size;
@@ -382,6 +410,12 @@ static void test_timeout_threads_pend_on_fifo(void)
 	zassert_equal(rv, TC_PASS, NULL);
 }
 
+/**
+ * @brief Test multiple fifos with different timeouts
+ * @details test multiple threads pending on different fifos
+ * with different timeouts
+ * @see k_fifo_get(), k_fifo_put()
+ */
 static void test_timeout_threads_pend_on_dual_fifos(void)
 {
 	s32_t rv, test_data_size;
@@ -397,6 +431,12 @@ static void test_timeout_threads_pend_on_dual_fifos(void)
 
 }
 
+/**
+ * @brief Test same fifo with different timeouts
+ * @details test multiple threads pending on the same fifo with
+ * different timeouts but getting the data in time
+ * @see k_fifo_get(), k_fifo_put()
+ */
 static void test_timeout_threads_pend_fail_on_fifo(void)
 {
 	s32_t rv, test_data_size;
@@ -411,6 +451,10 @@ static void test_timeout_threads_pend_fail_on_fifo(void)
 	zassert_equal(rv, TC_PASS, NULL);
 }
 
+/**
+ * @brief Test fifo init
+ * @see k_fifo_init(), k_fifo_put()
+ */
 static void test_timeout_setup(void)
 {
 	s32_t ii;
@@ -429,6 +473,9 @@ static void test_timeout_setup(void)
 	}
 
 }
+/**
+ * @}
+ */
 
 /*test case main entry*/
 void test_main(void)
