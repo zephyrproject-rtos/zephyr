@@ -17,8 +17,8 @@
 #include "gpio_sch.h"
 #include "gpio_utils.h"
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_GPIO_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_LOG_GPIO_LEVEL
+#include <logging/log.h>
 
 /* Define GPIO_SCH_LEGACY_IO_PORTS_ACCESS
  * inside soc.h if the GPIO controller
@@ -101,8 +101,8 @@ static void _gpio_pin_config(struct device *dev, u32_t pin, int flags)
 			active_low = 1;
 		}
 
-		SYS_LOG_DBG("Setting up pin %d to active_high %d and "
-			    "active_low %d", active_high, active_low);
+		LOG_DBG("Setting up pin %d to active_high %d and "
+			"active_low %d", active_high, active_low);
 	}
 
 	/* We store the gtpe/gtne settings. These will be used once
@@ -215,7 +215,7 @@ static void _gpio_sch_manage_callback(struct device *dev)
 	/* Start the thread only when relevant */
 	if (!sys_slist_is_empty(&gpio->callbacks) && gpio->cb_enabled) {
 		if (!gpio->poll) {
-			SYS_LOG_DBG("Starting SCH GPIO polling thread");
+			LOG_DBG("Starting SCH GPIO polling thread");
 			gpio->poll = 1;
 			k_thread_create(&gpio->polling_thread,
 					gpio->polling_stack,
@@ -314,7 +314,7 @@ static int gpio_sch_init(struct device *dev)
 
 	k_timer_init(&gpio->poll_timer, NULL, NULL);
 
-	SYS_LOG_DBG("SCH GPIO Intel Driver initialized on device: %p", dev);
+	LOG_DBG("SCH GPIO Intel Driver initialized on device: %p", dev);
 
 	return 0;
 }
