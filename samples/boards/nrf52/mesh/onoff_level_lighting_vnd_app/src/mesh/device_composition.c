@@ -11,6 +11,7 @@
 #include "common.h"
 #include "ble_mesh.h"
 #include "device_composition.h"
+#include "state_binding.h"
 
 static struct bt_mesh_cfg_srv cfg_srv = {
 	.relay = BT_MESH_RELAY_DISABLED,
@@ -85,306 +86,6 @@ struct generic_onoff_state gen_onoff_srv_s0_user_data;
 struct generic_level_state gen_level_srv_s0_user_data;
 /* Definitions of models user data (End) */
 
-#define MINDIFF 2.25e-308
-
-static float sqrt(float square)
-{
-	float root, last, diff;
-
-	root = square / 3.0;
-	diff = 1;
-
-	if (square <= 0) {
-		return 0;
-	}
-
-	do {
-		last = root;
-		root = (root + square / root) / 2.0;
-		diff = root - last;
-	} while (diff > MINDIFF || diff < -MINDIFF);
-
-	return root;
-}
-
-static void state_binding(u8_t lightness, u8_t temperature)
-{
-	u16_t tmp16;
-	float tmp;
-
-	switch (lightness) {
-	case ONPOWERUP: /* Lightness update as per Generic OnPowerUp state */
-		if (gen_onoff_srv_root_user_data.onoff == STATE_OFF) {
-			light_lightness_srv_user_data.actual = 0;
-			light_lightness_srv_user_data.linear = 0;
-			gen_level_srv_root_user_data.level = -32768;
-			light_ctl_srv_user_data.lightness = 0;
-		} else if (gen_onoff_srv_root_user_data.onoff == STATE_ON) {
-			light_lightness_srv_user_data.actual =
-				light_lightness_srv_user_data.last;
-
-			tmp = ((float)
-			       light_lightness_srv_user_data.actual / 65535);
-			light_lightness_srv_user_data.linear =
-				(u16_t) (65535 * tmp * tmp);
-
-			gen_level_srv_root_user_data.level =
-				light_lightness_srv_user_data.actual - 32768;
-
-			light_ctl_srv_user_data.lightness =
-				light_lightness_srv_user_data.actual;
-		}
-		break;
-	case ONOFF: /* Lightness update as per Generic OnOff (root) state */
-		if (gen_onoff_srv_root_user_data.onoff == STATE_OFF) {
-			light_lightness_srv_user_data.actual = 0;
-			light_lightness_srv_user_data.linear = 0;
-			gen_level_srv_root_user_data.level = -32768;
-			light_ctl_srv_user_data.lightness = 0;
-		} else if (gen_onoff_srv_root_user_data.onoff == STATE_ON) {
-			if (light_lightness_srv_user_data.def == 0) {
-				light_lightness_srv_user_data.actual =
-					light_lightness_srv_user_data.last;
-			} else {
-				light_lightness_srv_user_data.actual =
-					light_lightness_srv_user_data.def;
-			}
-
-			tmp = ((float)
-			       light_lightness_srv_user_data.actual / 65535);
-			light_lightness_srv_user_data.linear =
-				(u16_t) (65535 * tmp * tmp);
-
-			light_lightness_srv_user_data.last =
-				light_lightness_srv_user_data.actual;
-
-			gen_level_srv_root_user_data.level =
-				light_lightness_srv_user_data.actual - 32768;
-
-			light_ctl_srv_user_data.lightness =
-				light_lightness_srv_user_data.actual;
-		}
-
-		goto update_temp;
-
-		break;
-	case LEVEL: /* Lightness update as per Generic Level (root) state */
-		/* This is as per Mesh Model Specification 3.3.2.2.3 */
-		tmp16 = gen_level_srv_root_user_data.level + 32768;
-		if (tmp16 > 0 && tmp16 <
-		    light_lightness_srv_user_data.lightness_range_min) {
-			tmp16 =
-			light_lightness_srv_user_data.lightness_range_min;
-		} else if (tmp16 >
-			   light_lightness_srv_user_data.lightness_range_max) {
-			tmp16 =
-			light_lightness_srv_user_data.lightness_range_max;
-		}
-
-		light_lightness_srv_user_data.actual = tmp16;
-
-		tmp = ((float) light_lightness_srv_user_data.actual / 65535);
-		light_lightness_srv_user_data.linear =
-			(u16_t) (65535 * tmp * tmp);
-
-		light_lightness_srv_user_data.last =
-			light_lightness_srv_user_data.actual;
-
-		gen_level_srv_root_user_data.level =
-			light_lightness_srv_user_data.actual - 32768;
-
-		light_ctl_srv_user_data.lightness =
-			light_lightness_srv_user_data.actual;
-		break;
-	case DELTA_LEVEL: /* Lightness update as per Gen. Level (root) state */
-		/* This is as per Mesh Model Specification 3.3.2.2.3 */
-		tmp16 = gen_level_srv_root_user_data.level + 32768;
-		if (tmp16 > 0 && tmp16 <
-		    light_lightness_srv_user_data.lightness_range_min) {
-			if (gen_level_srv_root_user_data.last_delta < 0) {
-				tmp16 = 0;
-			} else {
-				tmp16 =
-				light_lightness_srv_user_data.lightness_range_min;
-			}
-		} else if (tmp16 >
-			   light_lightness_srv_user_data.lightness_range_max) {
-			tmp16 =
-			light_lightness_srv_user_data.lightness_range_max;
-		}
-
-		light_lightness_srv_user_data.actual = tmp16;
-
-		tmp = ((float) light_lightness_srv_user_data.actual / 65535);
-		light_lightness_srv_user_data.linear =
-			(u16_t) (65535 * tmp * tmp);
-
-		light_lightness_srv_user_data.last =
-			light_lightness_srv_user_data.actual;
-
-		gen_level_srv_root_user_data.level =
-			light_lightness_srv_user_data.actual - 32768;
-
-		light_ctl_srv_user_data.lightness =
-			light_lightness_srv_user_data.actual;
-		break;
-	case ACTUAL: /* Lightness update as per Light Lightness Actual state */
-		tmp = ((float) light_lightness_srv_user_data.actual / 65535);
-		light_lightness_srv_user_data.linear =
-			(u16_t) (65535 * tmp * tmp);
-
-		light_lightness_srv_user_data.last =
-			light_lightness_srv_user_data.actual;
-
-		gen_level_srv_root_user_data.level =
-			light_lightness_srv_user_data.actual - 32768;
-
-		light_ctl_srv_user_data.lightness =
-			light_lightness_srv_user_data.actual;
-		break;
-	case LINEAR: /* Lightness update as per Light Lightness Linear state */
-		tmp16 = (u16_t) 65535 *
-			sqrt(((float) light_lightness_srv_user_data.linear /
-			      65535));
-
-		if (tmp16 > 0 && tmp16 <
-		    light_lightness_srv_user_data.lightness_range_min) {
-			tmp16 =
-			light_lightness_srv_user_data.lightness_range_min;
-		} else if (tmp16 >
-			   light_lightness_srv_user_data.lightness_range_max) {
-			tmp16 =
-			light_lightness_srv_user_data.lightness_range_max;
-		}
-
-		light_lightness_srv_user_data.actual = tmp16;
-
-		tmp = ((float) light_lightness_srv_user_data.actual / 65535);
-		light_lightness_srv_user_data.linear =
-			(u16_t) (65535 * tmp * tmp);
-
-		light_lightness_srv_user_data.last =
-			light_lightness_srv_user_data.actual;
-
-		gen_level_srv_root_user_data.level =
-			light_lightness_srv_user_data.actual - 32768;
-
-		light_ctl_srv_user_data.lightness =
-			light_lightness_srv_user_data.actual;
-		break;
-	case CTL: /* Lightness update as per Light CTL Lightness state */
-		tmp16 = light_ctl_srv_user_data.lightness;
-
-		if (tmp16 > 0 && tmp16 <
-		    light_lightness_srv_user_data.lightness_range_min) {
-			tmp16 =
-			light_lightness_srv_user_data.lightness_range_min;
-		} else if (tmp16 >
-			   light_lightness_srv_user_data.lightness_range_max) {
-			tmp16 =
-			light_lightness_srv_user_data.lightness_range_max;
-		}
-
-		light_lightness_srv_user_data.actual = tmp16;
-
-		tmp = ((float) light_lightness_srv_user_data.actual / 65535);
-		light_lightness_srv_user_data.linear =
-			(u16_t) (65535 * tmp * tmp);
-
-		light_lightness_srv_user_data.last =
-			light_lightness_srv_user_data.actual;
-
-		gen_level_srv_root_user_data.level =
-			light_lightness_srv_user_data.actual - 32768;
-
-		light_ctl_srv_user_data.lightness =
-			light_lightness_srv_user_data.actual;
-		break;
-	default:
-		goto update_temp;
-		break;
-	}
-
-	if (light_lightness_srv_user_data.actual == 0) {
-		gen_onoff_srv_root_user_data.onoff = STATE_OFF;
-	} else {
-		gen_onoff_srv_root_user_data.onoff = STATE_ON;
-	}
-
-update_temp:
-	switch (temperature) {
-	case ONOFF_TEMP:/* Temp. update as per Light CTL temp. default state */
-	case CTL_TEMP:	/* Temp. update as per Light CTL temp. state */
-		/* Mesh Model Specification 6.1.3.1.1 2nd formula start */
-		tmp = (light_ctl_srv_user_data.temp -
-		       light_ctl_srv_user_data.temp_range_min) * 65535;
-		tmp = tmp / (light_ctl_srv_user_data.temp_range_max -
-			     light_ctl_srv_user_data.temp_range_min);
-		gen_level_srv_s0_user_data.level = tmp - 32768;
-		/* 6.1.3.1.1 2nd formula end */
-		break;
-	case LEVEL_TEMP:/* Temp. update as per Generic Level (s0) state */
-		/* Mesh Model Specification 6.1.3.1.1 1st formula start */
-		tmp = (float) (light_ctl_srv_user_data.temp_range_max -
-			       light_ctl_srv_user_data.temp_range_min) / 65535;
-		tmp = (gen_level_srv_s0_user_data.level + 32768) * tmp;
-		light_ctl_srv_user_data.temp =
-			light_ctl_srv_user_data.temp_range_min + tmp;
-		/* 6.1.3.1.1 1st formula end */
-		break;
-	default:
-		break;
-	}
-}
-
-void light_default_status_init(void)
-{
-	/* Assume vaules are retrived from Persistence Storage (Start).
-	 * These had saved by respective Setup Servers.
-	 */
-	gen_power_onoff_srv_user_data.onpowerup = STATE_DEFAULT;
-
-	light_lightness_srv_user_data.lightness_range_min = LIGHTNESS_MIN;
-	light_lightness_srv_user_data.lightness_range_max = LIGHTNESS_MAX;
-	light_lightness_srv_user_data.def = LIGHTNESS_MAX;
-
-	/* Following 2 values are as per specification */
-	light_ctl_srv_user_data.temp_range_min = TEMP_MIN;
-	light_ctl_srv_user_data.temp_range_max = TEMP_MAX;
-
-	light_ctl_srv_user_data.temp_def = TEMP_MIN;
-	/* (End) */
-
-	/* Assume following values are retrived from Persistence
-	 * Storage (Start).
-	 * These values had saved before power down.
-	 */
-	light_lightness_srv_user_data.last = LIGHTNESS_MAX;
-	light_ctl_srv_user_data.temp_last = TEMP_MIN;
-	/* (End) */
-
-	light_ctl_srv_user_data.temp = light_ctl_srv_user_data.temp_def;
-
-	if (gen_power_onoff_srv_user_data.onpowerup == STATE_OFF) {
-		gen_onoff_srv_root_user_data.onoff = STATE_OFF;
-		state_binding(ONOFF, ONOFF_TEMP);
-	} else if (gen_power_onoff_srv_user_data.onpowerup == STATE_DEFAULT) {
-		gen_onoff_srv_root_user_data.onoff = STATE_ON;
-		state_binding(ONOFF, ONOFF_TEMP);
-	} else if (gen_power_onoff_srv_user_data.onpowerup == STATE_RESTORE) {
-		/* Assume following values is retrived from Persistence
-		 * Storage (Start).
-		 * This value had saved before power down.
-		 */
-		gen_onoff_srv_root_user_data.onoff = STATE_ON;
-		/* (End) */
-
-		light_ctl_srv_user_data.temp =
-			light_ctl_srv_user_data.temp_last;
-
-		state_binding(ONPOWERUP, ONOFF_TEMP);
-	}
-}
 
 /* message handlers (Start) */
 
@@ -828,12 +529,12 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 	state->last_tid = tid;
 	state->last_tx_addr = ctx->addr;
 
-	if (actual < state->lightness_range_min && actual > 0) {
-		actual = state->lightness_range_min;
+	if (actual < state->light_range_min && actual > 0) {
+		actual = state->light_range_min;
 	}
 
-	if (actual > state->lightness_range_max) {
-		actual = state->lightness_range_max;
+	if (actual > state->light_range_max) {
+		actual = state->light_range_max;
 	}
 
 	state->actual = actual;
@@ -968,8 +669,8 @@ static void light_lightness_range_get(struct bt_mesh_model *model,
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x58));
 
 	net_buf_simple_add_u8(msg, state->status_code);
-	net_buf_simple_add_le16(msg, state->lightness_range_min);
-	net_buf_simple_add_le16(msg, state->lightness_range_max);
+	net_buf_simple_add_le16(msg, state->light_range_min);
+	net_buf_simple_add_le16(msg, state->light_range_max);
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send LightLightnessRange Status response\n");
@@ -1033,8 +734,8 @@ static void light_lightness_range_set_unack(struct bt_mesh_model *model,
 		if (min <= max && max != 0) {
 			state->status_code = RANGE_SUCCESSFULLY_UPDATED;
 
-			state->lightness_range_min = min;
-			state->lightness_range_max = max;
+			state->light_range_min = min;
+			state->light_range_max = max;
 		} else {
 			/* The provided value for Range Max cannot be set */
 			state->status_code = CANNOT_SET_RANGE_MAX;
@@ -1042,7 +743,7 @@ static void light_lightness_range_set_unack(struct bt_mesh_model *model,
 	}
 
 	/* Do some work here to save values of
-	 * state->lightness_range_min & state->lightness_range_max
+	 * state->light_range_min & state->light_range_max
 	 * on SoC flash
 	 */
 
@@ -1053,8 +754,8 @@ static void light_lightness_range_set_unack(struct bt_mesh_model *model,
 				       BT_MESH_MODEL_OP_2(0x82, 0x58));
 
 		net_buf_simple_add_u8(msg, state->status_code);
-		net_buf_simple_add_le16(msg, state->lightness_range_min);
-		net_buf_simple_add_le16(msg, state->lightness_range_max);
+		net_buf_simple_add_le16(msg, state->light_range_min);
+		net_buf_simple_add_le16(msg, state->light_range_max);
 
 		err = bt_mesh_model_publish(model);
 		if (err) {
