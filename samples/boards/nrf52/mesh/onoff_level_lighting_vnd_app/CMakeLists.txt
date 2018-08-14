@@ -10,6 +10,8 @@ target_sources(app PRIVATE
 	       src/mesh/ble_mesh.c
 	       src/mesh/device_composition.c
 	       src/mesh/publisher.c
+	       src/mesh/state_binding.c
+	       src/mesh/transition.c
 	       )
 
 zephyr_include_directories(
