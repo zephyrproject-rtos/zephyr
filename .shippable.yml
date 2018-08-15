@@ -5,7 +5,7 @@ compiler: gcc
 env:
     global:
         - SDK=0.9.3
-        - SANITYCHECK_OPTIONS=" --inline-logs --enable-coverage"
+        - SANITYCHECK_OPTIONS=" --inline-logs --enable-coverage "
         - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.3
         - ZEPHYR_TOOLCHAIN_VARIANT=zephyr
@@ -60,14 +60,14 @@ build:
             ./scripts/ci/get_modified_boards.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_boards.args;
 
             if [ -s modified_boards.args ]; then
-              ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} +modified_boards.args --save-tests test_file.txt;
+              ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} +modified_boards.args --save-tests test_file.txt || exit 1;
             fi;
             if [ -s modified_tests.args ]; then
-              ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} +modified_tests.args --save-tests test_file.txt;
+              ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} +modified_tests.args --save-tests test_file.txt || exit 1;
             fi;
             rm -f modified_tests.args modified_boards.args;
           fi;
-      - ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} --save-tests test_file.txt
+      - ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} --save-tests test_file.txt || exit 1
       - ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} --load-tests test_file.txt --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY}
       - rm test_file.txt
       - ccache -s
@@ -84,7 +84,7 @@ build:
             rm lcov.pre.info;
             rm -rf sanity-out out-2nd-pass;
             bash <(curl -s https://codecov.io/bash) -f "lcov.info" -X coveragepy -X fixes;
-            rm lcov.info;
+            rm -f lcov.info;
          else
             rm -rf sanity-out out-2nd-pass;
          fi;
@@ -109,7 +109,7 @@ build:
             rm lcov.pre.info;
             rm -rf sanity-out out-2nd-pass;
             bash <(curl -s https://codecov.io/bash) -f "lcov.info" -X coveragepy -X fixes;
-            rm lcov.info;
+            rm -f lcov.info;
          else
             rm -rf sanity-out out-2nd-pass;
          fi;
