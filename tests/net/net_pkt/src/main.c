@@ -1149,6 +1149,49 @@ static void test_pkt_pull(void)
 	zassert_true(res == 0, "Failed to pull 10 bytes from offset 0");
 }
 
+static void test_net_pkt_append_memset(void)
+{
+	struct net_pkt *pkt;
+	u8_t read_data[128];
+	u16_t cur_pos;
+	int ret;
+
+	int size = sizeof(read_data);
+
+	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+	ret = net_pkt_append_memset(pkt, 50, 0, K_FOREVER);
+	zassert_true(ret == 50, "Failed to append data");
+
+	ret = net_pkt_append_memset(pkt, 128, 255, K_FOREVER);
+	zassert_true(ret == 128, "Failed to append data");
+
+	ret = net_pkt_append_memset(pkt, 128, 0, K_FOREVER);
+	zassert_true(ret == 128, "Failed to append data");
+
+	ret = net_frag_linearize(read_data, size, pkt, 0, 50);
+	zassert_true(ret == 50, "Linearize failed failed");
+	for (cur_pos = 0; cur_pos < 50; ++cur_pos) {
+		zassert_true(read_data[cur_pos] == 0,
+			     "Byte was expected to read 0");
+	}
+
+	ret = net_frag_linearize(read_data, size, pkt, 50, 128);
+	zassert_true(ret == 128, "Linearize failed failed");
+	for (cur_pos = 0; cur_pos < 128; ++cur_pos) {
+		zassert_true(read_data[cur_pos] == 255,
+			     "Byte was expected to read 255");
+	}
+
+	ret = net_frag_linearize(read_data, size, pkt, 50 + 128, 128);
+	zassert_true(ret == 128, "Linearize failed failed");
+	for (cur_pos = 0; cur_pos < 128; ++cur_pos) {
+		zassert_true(read_data[cur_pos] == 0,
+			     "Byte was expected to read 0");
+	}
+
+	net_pkt_unref(pkt);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(net_pkt_tests,
@@ -1158,7 +1201,8 @@ void test_main(void)
 			 ztest_unit_test(test_pkt_read_write_insert),
 			 ztest_unit_test(test_fragment_compact),
 			 ztest_unit_test(test_fragment_split),
-			 ztest_unit_test(test_pkt_pull)
+			 ztest_unit_test(test_pkt_pull),
+			 ztest_unit_test(test_net_pkt_append_memset)
 			 );
 
 	ztest_run_test_suite(net_pkt_tests);

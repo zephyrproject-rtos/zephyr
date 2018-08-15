@@ -1188,6 +1188,28 @@ static inline bool net_pkt_append_all(struct net_pkt *pkt, u16_t len,
 }
 
 /**
+ * @brief Append fixed bytes of data to fragment list of a packet
+ *
+ * @details Append data to last fragment. If there is not enough space in
+ * last fragment then more data fragments will be added, unless there are
+ * no free fragments and timeout occurs.
+ *
+ * @param pkt Network packet.
+ * @param len Total length of input data
+ * @param data Byte to initialise fragment with
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
+ *
+ * @return Length of data actually added. This may be less than input
+ *         length if other timeout than K_FOREVER was used, and there
+ *         were no free fragments in a pool to accommodate all data.
+ */
+u16_t net_pkt_append_memset(struct net_pkt *pkt, u16_t len, const u8_t data,
+			    s32_t timeout);
+
+/**
  * @brief Append u8_t data to last fragment in fragment list of a packet
  *
  * @details Append data to last fragment. If there is not enough space in last
