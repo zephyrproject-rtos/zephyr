@@ -88,6 +88,8 @@ The Zephyr nucleo_207zg board configuration supports the following hardware feat
 +-----------+------------+-------------------------------------+
 | ETHERNET  | on-chip    | Ethernet                            |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -130,6 +132,8 @@ Default Zephyr Peripheral Mapping:
 ----------------------------------
 
 - ETH : PA1, PA2, PA7, PB13, PC1, PC4, PC5, PG11, PG13
+- USB_DM : PA11
+- USB_DP : PA12
 - USER_PB : PC13
 - LD1 : PB0
 - LD2 : PB7
@@ -152,6 +156,12 @@ Network interface
 -----------------
 
 Ethernet configured as the default network interface
+
+USB
+---
+Nucleo F207ZG board has a USB OTG dual-role device (DRD) controller that
+supports both device and host functions through its micro USB connector
+(USB USER). Only USB device function is supported in Zephyr at the moment.
 
 Programming and Debugging
 *************************

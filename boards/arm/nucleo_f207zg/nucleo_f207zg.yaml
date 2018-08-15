@@ -9,3 +9,4 @@ toolchain:
   - gnuarmemb
 supported:
   - gpio
+  - usb_device
