@@ -1,0 +1,20 @@
+# Kconfig.fe310 - PINMUX configuration options for SiFive Freedom SOC
+#
+# Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig PINMUX_SIFIVE
+	bool "SiFive Freedom SOC pinmux driver"
+	depends on PINMUX && SOC_SERIES_RISCV32_SIFIVE_FREEDOM
+	help
+	  Enable driver for the SiFive Freedom SOC pinmux driver
+
+if PINMUX_SIFIVE
+
+config PINMUX_SIFIVE_0_NAME
+	string "SIFIVE pinmux 0 driver name"
+	default "pinmux0"
+
+endif # PINMUX_SIFIVE

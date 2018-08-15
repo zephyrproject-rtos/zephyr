@@ -5,7 +5,7 @@
  */
 
 /**
- * @brief UART driver for the SiFive Freedom E310 Processor
+ * @brief UART driver for the SiFive Freedom Processor
  */
 
 #include <kernel.h>
@@ -31,7 +31,7 @@
  */
 #define CTRL_CNT(x)    (((x) & 0x07) << 16)
 
-struct uart_fe310_regs_t {
+struct uart_sifive_regs_t {
 	u32_t tx;
 	u32_t rx;
 	u32_t txctrl;
@@ -45,7 +45,7 @@ struct uart_fe310_regs_t {
 typedef void (*irq_cfg_func_t)(void);
 #endif
 
-struct uart_fe310_device_config {
+struct uart_sifive_device_config {
 	u32_t       port;
 	u32_t       sys_clk_freq;
 	u32_t       baud_rate;
@@ -56,7 +56,7 @@ struct uart_fe310_device_config {
 #endif
 };
 
-struct uart_fe310_data {
+struct uart_sifive_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t callback;
 	void *cb_data;
@@ -64,12 +64,12 @@ struct uart_fe310_data {
 };
 
 #define DEV_CFG(dev)						\
-	((const struct uart_fe310_device_config * const)	\
+	((const struct uart_sifive_device_config * const)	\
 	 (dev)->config->config_info)
 #define DEV_UART(dev)						\
-	((struct uart_fe310_regs_t *)(DEV_CFG(dev))->port)
+	((struct uart_sifive_regs_t *)(DEV_CFG(dev))->port)
 #define DEV_DATA(dev)						\
-	((struct uart_fe310_data * const)(dev)->driver_data)
+	((struct uart_sifive_data * const)(dev)->driver_data)
 
 /**
  * @brief Output a character in polled mode.
@@ -81,10 +81,10 @@ struct uart_fe310_data {
  *
  * @return Sent character
  */
-static unsigned char uart_fe310_poll_out(struct device *dev,
+static unsigned char uart_sifive_poll_out(struct device *dev,
 					 unsigned char c)
 {
-	volatile struct uart_fe310_regs_t *uart = DEV_UART(dev);
+	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	/* Wait while TX FIFO is full */
 	while (uart->tx & TXDATA_FULL)
@@ -103,9 +103,9 @@ static unsigned char uart_fe310_poll_out(struct device *dev,
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
-static int uart_fe310_poll_in(struct device *dev, unsigned char *c)
+static int uart_sifive_poll_in(struct device *dev, unsigned char *c)
 {
-	volatile struct uart_fe310_regs_t *uart = DEV_UART(dev);
+	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 	u32_t val = uart->rx;
 
 	if (val & RXDATA_EMPTY)
@@ -127,11 +127,11 @@ static int uart_fe310_poll_in(struct device *dev, unsigned char *c)
  *
  * @return Number of bytes sent
  */
-static int uart_fe310_fifo_fill(struct device *dev,
+static int uart_sifive_fifo_fill(struct device *dev,
 				const u8_t *tx_data,
 				int size)
 {
-	volatile struct uart_fe310_regs_t *uart = DEV_UART(dev);
+	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 	int i;
 
 	for (i = 0; i < size && !(uart->tx & TXDATA_FULL); i++)
@@ -149,11 +149,11 @@ static int uart_fe310_fifo_fill(struct device *dev,
  *
  * @return Number of bytes read
  */
-static int uart_fe310_fifo_read(struct device *dev,
+static int uart_sifive_fifo_read(struct device *dev,
 				u8_t *rx_data,
 				const int size)
 {
-	volatile struct uart_fe310_regs_t *uart = DEV_UART(dev);
+	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 	int i;
 	u32_t val;
 
@@ -176,9 +176,9 @@ static int uart_fe310_fifo_read(struct device *dev,
  *
  * @return N/A
  */
-static void uart_fe310_irq_tx_enable(struct device *dev)
+static void uart_sifive_irq_tx_enable(struct device *dev)
 {
-	volatile struct uart_fe310_regs_t *uart = DEV_UART(dev);
+	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	uart->ie |= IE_TXWM;
 }
@@ -190,9 +190,9 @@ static void uart_fe310_irq_tx_enable(struct device *dev)
  *
  * @return N/A
  */
-static void uart_fe310_irq_tx_disable(struct device *dev)
+static void uart_sifive_irq_tx_disable(struct device *dev)
 {
-	volatile struct uart_fe310_regs_t *uart = DEV_UART(dev);
+	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	uart->ie &= ~IE_TXWM;
 }
@@ -204,9 +204,9 @@ static void uart_fe310_irq_tx_disable(struct device *dev)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-static int uart_fe310_irq_tx_ready(struct device *dev)
+static int uart_sifive_irq_tx_ready(struct device *dev)
 {
-	volatile struct uart_fe310_regs_t *uart = DEV_UART(dev);
+	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	return !!(uart->ip & IE_TXWM);
 }
@@ -218,9 +218,9 @@ static int uart_fe310_irq_tx_ready(struct device *dev)
  *
  * @return 1 if nothing remains to be transmitted, 0 otherwise
  */
-static int uart_fe310_irq_tx_complete(struct device *dev)
+static int uart_sifive_irq_tx_complete(struct device *dev)
 {
-	volatile struct uart_fe310_regs_t *uart = DEV_UART(dev);
+	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	/*
 	 * No TX EMTPY flag for this controller,
@@ -236,9 +236,9 @@ static int uart_fe310_irq_tx_complete(struct device *dev)
  *
  * @return N/A
  */
-static void uart_fe310_irq_rx_enable(struct device *dev)
+static void uart_sifive_irq_rx_enable(struct device *dev)
 {
-	volatile struct uart_fe310_regs_t *uart = DEV_UART(dev);
+	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	uart->ie |= IE_RXWM;
 }
@@ -250,9 +250,9 @@ static void uart_fe310_irq_rx_enable(struct device *dev)
  *
  * @return N/A
  */
-static void uart_fe310_irq_rx_disable(struct device *dev)
+static void uart_sifive_irq_rx_disable(struct device *dev)
 {
-	volatile struct uart_fe310_regs_t *uart = DEV_UART(dev);
+	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	uart->ie &= ~IE_RXWM;
 }
@@ -264,20 +264,20 @@ static void uart_fe310_irq_rx_disable(struct device *dev)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-static int uart_fe310_irq_rx_ready(struct device *dev)
+static int uart_sifive_irq_rx_ready(struct device *dev)
 {
-	volatile struct uart_fe310_regs_t *uart = DEV_UART(dev);
+	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	return !!(uart->ip & IE_RXWM);
 }
 
 /* No error interrupt for this controller */
-static void uart_fe310_irq_err_enable(struct device *dev)
+static void uart_sifive_irq_err_enable(struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
 
-static void uart_fe310_irq_err_disable(struct device *dev)
+static void uart_sifive_irq_err_disable(struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
@@ -289,14 +289,14 @@ static void uart_fe310_irq_err_disable(struct device *dev)
  *
  * @return 1 if an IRQ is pending, 0 otherwise
  */
-static int uart_fe310_irq_is_pending(struct device *dev)
+static int uart_sifive_irq_is_pending(struct device *dev)
 {
-	volatile struct uart_fe310_regs_t *uart = DEV_UART(dev);
+	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	return !!(uart->ip & (IE_RXWM | IE_TXWM));
 }
 
-static int uart_fe310_irq_update(struct device *dev)
+static int uart_sifive_irq_update(struct device *dev)
 {
 	return 1;
 }
@@ -309,20 +309,20 @@ static int uart_fe310_irq_update(struct device *dev)
  *
  * @return N/A
  */
-static void uart_fe310_irq_callback_set(struct device *dev,
+static void uart_sifive_irq_callback_set(struct device *dev,
 					uart_irq_callback_user_data_t cb,
 					void *cb_data)
 {
-	struct uart_fe310_data *data = DEV_DATA(dev);
+	struct uart_sifive_data *data = DEV_DATA(dev);
 
 	data->callback = cb;
 	data->cb_data = cb_data;
 }
 
-static void uart_fe310_irq_handler(void *arg)
+static void uart_sifive_irq_handler(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	struct uart_fe310_data *data = DEV_DATA(dev);
+	struct uart_sifive_data *data = DEV_DATA(dev);
 
 	if (data->callback)
 		data->callback(data->cb_data);
@@ -331,10 +331,10 @@ static void uart_fe310_irq_handler(void *arg)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 
-static int uart_fe310_init(struct device *dev)
+static int uart_sifive_init(struct device *dev)
 {
-	const struct uart_fe310_device_config * const cfg = DEV_CFG(dev);
-	volatile struct uart_fe310_regs_t *uart = DEV_UART(dev);
+	const struct uart_sifive_device_config * const cfg = DEV_CFG(dev);
+	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	/* Enable TX and RX channels */
 	uart->txctrl = TXCTRL_TXEN | CTRL_CNT(cfg->rxcnt_irq);
@@ -354,102 +354,102 @@ static int uart_fe310_init(struct device *dev)
 	return 0;
 }
 
-static const struct uart_driver_api uart_fe310_driver_api = {
-	.poll_in          = uart_fe310_poll_in,
-	.poll_out         = uart_fe310_poll_out,
+static const struct uart_driver_api uart_sifive_driver_api = {
+	.poll_in          = uart_sifive_poll_in,
+	.poll_out         = uart_sifive_poll_out,
 	.err_check        = NULL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.fifo_fill        = uart_fe310_fifo_fill,
-	.fifo_read        = uart_fe310_fifo_read,
-	.irq_tx_enable    = uart_fe310_irq_tx_enable,
-	.irq_tx_disable   = uart_fe310_irq_tx_disable,
-	.irq_tx_ready     = uart_fe310_irq_tx_ready,
-	.irq_tx_complete  = uart_fe310_irq_tx_complete,
-	.irq_rx_enable    = uart_fe310_irq_rx_enable,
-	.irq_rx_disable   = uart_fe310_irq_rx_disable,
-	.irq_rx_ready     = uart_fe310_irq_rx_ready,
-	.irq_err_enable   = uart_fe310_irq_err_enable,
-	.irq_err_disable  = uart_fe310_irq_err_disable,
-	.irq_is_pending   = uart_fe310_irq_is_pending,
-	.irq_update       = uart_fe310_irq_update,
-	.irq_callback_set = uart_fe310_irq_callback_set,
+	.fifo_fill        = uart_sifive_fifo_fill,
+	.fifo_read        = uart_sifive_fifo_read,
+	.irq_tx_enable    = uart_sifive_irq_tx_enable,
+	.irq_tx_disable   = uart_sifive_irq_tx_disable,
+	.irq_tx_ready     = uart_sifive_irq_tx_ready,
+	.irq_tx_complete  = uart_sifive_irq_tx_complete,
+	.irq_rx_enable    = uart_sifive_irq_rx_enable,
+	.irq_rx_disable   = uart_sifive_irq_rx_disable,
+	.irq_rx_ready     = uart_sifive_irq_rx_ready,
+	.irq_err_enable   = uart_sifive_irq_err_enable,
+	.irq_err_disable  = uart_sifive_irq_err_disable,
+	.irq_is_pending   = uart_sifive_irq_is_pending,
+	.irq_update       = uart_sifive_irq_update,
+	.irq_callback_set = uart_sifive_irq_callback_set,
 #endif
 };
 
-#ifdef CONFIG_UART_FE310_PORT_0
+#ifdef CONFIG_UART_SIFIVE_PORT_0
 
-static struct uart_fe310_data uart_fe310_data_0;
+static struct uart_sifive_data uart_sifive_data_0;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_fe310_irq_cfg_func_0(void);
+static void uart_sifive_irq_cfg_func_0(void);
 #endif
 
-static const struct uart_fe310_device_config uart_fe310_dev_cfg_0 = {
-	.port         = CONFIG_FE310_UART_0_BASE_ADDR,
-	.sys_clk_freq = uart_fe310_port_0_clk_freq,
-	.baud_rate    = CONFIG_FE310_UART_0_CURRENT_SPEED,
-	.rxcnt_irq    = CONFIG_UART_FE310_PORT_0_RXCNT_IRQ,
-	.txcnt_irq    = CONFIG_UART_FE310_PORT_0_TXCNT_IRQ,
+static const struct uart_sifive_device_config uart_sifive_dev_cfg_0 = {
+	.port         = CONFIG_SIFIVE_UART_0_BASE_ADDR,
+	.sys_clk_freq = uart_sifive_port_0_clk_freq,
+	.baud_rate    = CONFIG_SIFIVE_UART_0_CURRENT_SPEED,
+	.rxcnt_irq    = CONFIG_UART_SIFIVE_PORT_0_RXCNT_IRQ,
+	.txcnt_irq    = CONFIG_UART_SIFIVE_PORT_0_TXCNT_IRQ,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.cfg_func     = uart_fe310_irq_cfg_func_0,
+	.cfg_func     = uart_sifive_irq_cfg_func_0,
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_fe310_0, CONFIG_FE310_UART_0_LABEL,
-		    uart_fe310_init,
-		    &uart_fe310_data_0, &uart_fe310_dev_cfg_0,
+DEVICE_AND_API_INIT(uart_sifive_0, CONFIG_SIFIVE_UART_0_LABEL,
+		    uart_sifive_init,
+		    &uart_sifive_data_0, &uart_sifive_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    (void *)&uart_fe310_driver_api);
+		    (void *)&uart_sifive_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_fe310_irq_cfg_func_0(void)
+static void uart_sifive_irq_cfg_func_0(void)
 {
-	IRQ_CONNECT(CONFIG_FE310_UART_0_IRQ_0,
-		    CONFIG_UART_FE310_PORT_0_IRQ_PRIORITY,
-		    uart_fe310_irq_handler, DEVICE_GET(uart_fe310_0),
+	IRQ_CONNECT(CONFIG_SIFIVE_UART_0_IRQ_0,
+		    CONFIG_UART_SIFIVE_PORT_0_IRQ_PRIORITY,
+		    uart_sifive_irq_handler, DEVICE_GET(uart_sifive_0),
 		    0);
 
-	irq_enable(CONFIG_FE310_UART_0_IRQ_0);
+	irq_enable(CONFIG_SIFIVE_UART_0_IRQ_0);
 }
 #endif
 
-#endif /* CONFIG_UART_FE310_PORT_0 */
+#endif /* CONFIG_UART_SIFIVE_PORT_0 */
 
-#ifdef CONFIG_UART_FE310_PORT_1
+#ifdef CONFIG_UART_SIFIVE_PORT_1
 
-static struct uart_fe310_data uart_fe310_data_1;
+static struct uart_sifive_data uart_sifive_data_1;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_fe310_irq_cfg_func_1(void);
+static void uart_sifive_irq_cfg_func_1(void);
 #endif
 
-static const struct uart_fe310_device_config uart_fe310_dev_cfg_1 = {
-	.port         = CONFIG_FE310_UART_1_BASE_ADDR,
-	.sys_clk_freq = uart_fe310_port_1_clk_freq,
-	.baud_rate    = CONFIG_FE310_UART_1_CURRENT_SPEED,
-	.rxcnt_irq    = CONFIG_UART_FE310_PORT_1_RXCNT_IRQ,
-	.txcnt_irq    = CONFIG_UART_FE310_PORT_1_TXCNT_IRQ,
+static const struct uart_sifive_device_config uart_sifive_dev_cfg_1 = {
+	.port         = CONFIG_SIFIVE_UART_1_BASE_ADDR,
+	.sys_clk_freq = uart_sifive_port_1_clk_freq,
+	.baud_rate    = CONFIG_SIFIVE_UART_1_CURRENT_SPEED,
+	.rxcnt_irq    = CONFIG_UART_SIFIVE_PORT_1_RXCNT_IRQ,
+	.txcnt_irq    = CONFIG_UART_SIFIVE_PORT_1_TXCNT_IRQ,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.cfg_func     = uart_fe310_irq_cfg_func_1,
+	.cfg_func     = uart_sifive_irq_cfg_func_1,
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_fe310_1, CONFIG_FE310_UART_1_LABEL,
-		    uart_fe310_init,
-		    &uart_fe310_data_1, &uart_fe310_dev_cfg_1,
+DEVICE_AND_API_INIT(uart_sifive_1, CONFIG_SIFIVE_UART_1_LABEL,
+		    uart_sifive_init,
+		    &uart_sifive_data_1, &uart_sifive_dev_cfg_1,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    (void *)&uart_fe310_driver_api);
+		    (void *)&uart_sifive_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_fe310_irq_cfg_func_1(void)
+static void uart_sifive_irq_cfg_func_1(void)
 {
-	IRQ_CONNECT(CONFIG_FE310_UART_1_IRQ_0,
-		    CONFIG_UART_FE310_PORT_1_IRQ_PRIORITY,
-		    uart_fe310_irq_handler, DEVICE_GET(uart_fe310_1),
+	IRQ_CONNECT(CONFIG_SIFIVE_UART_1_IRQ_0,
+		    CONFIG_UART_SIFIVE_PORT_1_IRQ_PRIORITY,
+		    uart_sifive_irq_handler, DEVICE_GET(uart_sifive_1),
 		    0);
 
-	irq_enable(CONFIG_FE310_UART_1_IRQ_0);
+	irq_enable(CONFIG_SIFIVE_UART_1_IRQ_0);
 }
 #endif
 
-#endif /* CONFIG_UART_FE310_PORT_1 */
+#endif /* CONFIG_UART_SIFIVE_PORT_1 */
