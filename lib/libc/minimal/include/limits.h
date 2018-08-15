@@ -33,20 +33,20 @@ extern "C" {
 
 #define INT_MAX     0x7FFFFFFF
 #define SHRT_MAX    0x7FFF
-#define LONG_MAX    0x7FFFFFFFl
-#define LLONG_MAX   0x7FFFFFFFFFFFFFFFll
+#define LONG_MAX    0x7FFFFFFFL
+#define LLONG_MAX   0x7FFFFFFFFFFFFFFFLL
 
 #define INT_MIN     (-INT_MAX - 1)
 #define SHRT_MIN    (-SHRT_MAX - 1)
-#define LONG_MIN    (-LONG_MAX - 1l)
-#define LLONG_MIN   (-LLONG_MAX - 1ll)
+#define LONG_MIN    (-LONG_MAX - 1L)
+#define LLONG_MIN   (-LLONG_MAX - 1LL)
 
 #define SSIZE_MAX   INT_MAX
 
 #define USHRT_MAX   0xFFFF
-#define UINT_MAX    0xFFFFFFFFu
-#define ULONG_MAX   0xFFFFFFFFul
-#define ULLONG_MAX  0xFFFFFFFFFFFFFFFFull
+#define UINT_MAX    0xFFFFFFFFU
+#define ULONG_MAX   0xFFFFFFFFUL
+#define ULLONG_MAX  0xFFFFFFFFFFFFFFFFULL
 
 #define PATH_MAX    256
 
