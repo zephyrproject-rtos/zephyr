@@ -6,9 +6,9 @@
 #include "display_ili9340.h"
 #include <drivers/display/ili9340.h>
 
-#define SYS_LOG_DOMAIN "ILI9340"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ILI9340_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_LOG_ILI9340_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(display);
 
 #include <gpio.h>
 #include <misc/byteorder.h>
@@ -36,11 +36,11 @@ int ili9340_init(struct device *dev)
 {
 	struct ili9340_data *data = (struct ili9340_data *)dev->driver_data;
 
-	SYS_LOG_DBG("Initializing display driver");
+	LOG_DBG("Initializing display driver");
 
 	data->spi_dev = device_get_binding(CONFIG_ILI9340_SPI_DEV_NAME);
 	if (data->spi_dev == NULL) {
-		SYS_LOG_ERR("Could not get SPI device for ILI9340");
+		LOG_ERR("Could not get SPI device for ILI9340");
 		return -EPERM;
 	}
 
@@ -61,7 +61,7 @@ int ili9340_init(struct device *dev)
 	data->reset_gpio =
 	    device_get_binding(CONFIG_ILI9340_RESET_GPIO_PORT_NAME);
 	if (data->reset_gpio == NULL) {
-		SYS_LOG_ERR("Could not get GPIO port for ILI9340 reset");
+		LOG_ERR("Could not get GPIO port for ILI9340 reset");
 		return -EPERM;
 	}
 
@@ -71,14 +71,14 @@ int ili9340_init(struct device *dev)
 	data->command_data_gpio =
 	    device_get_binding(CONFIG_ILI9340_CMD_DATA_GPIO_PORT_NAME);
 	if (data->command_data_gpio == NULL) {
-		SYS_LOG_ERR("Could not get GPIO port for ILI9340 command/data");
+		LOG_ERR("Could not get GPIO port for ILI9340 command/data");
 		return -EPERM;
 	}
 
 	gpio_pin_configure(data->command_data_gpio, CONFIG_ILI9340_CMD_DATA_PIN,
 			   GPIO_DIR_OUT);
 
-	SYS_LOG_DBG("Resetting display driver");
+	LOG_DBG("Resetting display driver");
 	gpio_pin_write(data->reset_gpio, CONFIG_ILI9340_RESET_PIN, 1);
 	k_sleep(1);
 	gpio_pin_write(data->reset_gpio, CONFIG_ILI9340_RESET_PIN, 0);
@@ -86,10 +86,10 @@ int ili9340_init(struct device *dev)
 	gpio_pin_write(data->reset_gpio, CONFIG_ILI9340_RESET_PIN, 1);
 	k_sleep(5);
 
-	SYS_LOG_DBG("Initializing LCD");
+	LOG_DBG("Initializing LCD");
 	ili9340_lcd_init(data);
 
-	SYS_LOG_DBG("Exiting sleep mode");
+	LOG_DBG("Exiting sleep mode");
 	ili9340_exit_sleep(data);
 
 	/* device_get_binding checks if driver_api is not zero before checking
@@ -106,7 +106,7 @@ void ili9340_write_pixel(const struct device *dev, const u16_t x, const u16_t y,
 {
 	u8_t rgb_data[] = {r, g, b};
 
-	SYS_LOG_DBG("Writing pixel @ %dx%d (x,y)", x, y);
+	LOG_DBG("Writing pixel @ %dx%d (x,y)", x, y);
 	ili9340_write_bitmap(dev, x, y, 1, 1, &rgb_data[0]);
 }
 
@@ -116,7 +116,7 @@ void ili9340_write_bitmap(const struct device *dev, const u16_t x,
 {
 	struct ili9340_data *data = (struct ili9340_data *)dev->driver_data;
 
-	SYS_LOG_DBG("Writing %dx%d (w,h) bitmap @ %dx%d (x,y)", w, h, x, y);
+	LOG_DBG("Writing %dx%d (w,h) bitmap @ %dx%d (x,y)", w, h, x, y);
 	ili9340_set_mem_area(data, x, y, w, h);
 	ili9340_transmit(data, ILI9340_CMD_MEM_WRITE, (void *)rgb_data,
 			 3 * w * h);
@@ -126,7 +126,7 @@ void ili9340_display_on(struct device *dev)
 {
 	struct ili9340_data *data = (struct ili9340_data *)dev->driver_data;
 
-	SYS_LOG_DBG("Turning display on");
+	LOG_DBG("Turning display on");
 	ili9340_transmit(data, ILI9340_CMD_DISPLAY_ON, NULL, 0);
 }
 
@@ -134,7 +134,7 @@ void ili9340_display_off(struct device *dev)
 {
 	struct ili9340_data *data = (struct ili9340_data *)dev->driver_data;
 
-	SYS_LOG_DBG("Turning display off");
+	LOG_DBG("Turning display off");
 	ili9340_transmit(data, ILI9340_CMD_DISPLAY_OFF, NULL, 0);
 }
 
