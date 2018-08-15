@@ -31,6 +31,7 @@
 #include <asm_inline.h>
 #include <exception.h>
 #include <kernel_arch_thread.h>
+#include <misc/util.h>
 
 #ifndef _ASMLANGUAGE
 #include <kernel.h>
