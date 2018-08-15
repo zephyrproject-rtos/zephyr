@@ -753,6 +753,44 @@ u16_t net_buf_append_bytes(struct net_buf *buf, u16_t len,
 	return 0;
 }
 
+/* This helper routine will append multiple bytes to the buffer and set them to
+ * the specified byte, just like memset. If there is no place for the data in
+ * current fragment then create new fragment and add it to the buffer. It
+ * assumes that the buffer has at least one fragment.
+ */
+u16_t net_buf_append_set_bytes(struct net_buf *buf, u16_t len,
+			       const u8_t value, s32_t timeout,
+			       net_buf_allocator_cb allocate_cb,
+			       void *user_data)
+{
+	struct net_buf *frag = net_buf_frag_last(buf);
+	u16_t added_len = 0;
+
+	do {
+		u16_t count = min(len, net_buf_tailroom(frag));
+		void *data = net_buf_add(frag, count);
+
+		memset(data, value, count);
+		len -= count;
+		added_len += count;
+
+		if (len == 0) {
+			return added_len;
+		}
+
+		frag = allocate_cb(timeout, user_data);
+		if (!frag) {
+			return added_len;
+		}
+
+		net_buf_frag_add(buf, frag);
+	} while (1);
+
+	/* Unreachable */
+	return 0;
+}
+
+
 #if defined(CONFIG_NET_BUF_SIMPLE_LOG)
 #define NET_BUF_SIMPLE_DBG(fmt, ...) NET_BUF_DBG(fmt, ##__VA_ARGS__)
 #define NET_BUF_SIMPLE_ERR(fmt, ...) NET_BUF_ERR(fmt, ##__VA_ARGS__)
