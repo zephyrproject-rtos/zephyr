@@ -403,8 +403,10 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_idx,
 
 #if defined(CONFIG_NET_IPV6)
 void net_ipv6_init(void);
+void net_ipv6_nbr_init(void);
 #else
 #define net_ipv6_init(...)
+#define net_ipv6_nbr_init(...)
 #endif
 
 #endif /* __IPV6_H */
