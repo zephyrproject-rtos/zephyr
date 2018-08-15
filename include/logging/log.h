@@ -298,10 +298,10 @@ int log_printk(const char *fmt, va_list ap);
  *       In other cases, this macro has no effect.
  * @see LOG_MODULE_DECLARE
  */
-#define LOG_MODULE_REGISTER(log_module_name)				\
+#define LOG_MODULE_REGISTER()						\
 	_LOG_EVAL(							\
 		_LOG_LEVEL(),						\
-		(_LOG_MODULE_REGISTER(log_module_name, _LOG_LEVEL())),	\
+		(_LOG_MODULE_REGISTER(LOG_MODULE_NAME, _LOG_LEVEL())),	\
 		()/*Empty*/						\
 	)
 
@@ -336,10 +336,10 @@ int log_printk(const char *fmt, va_list ap);
  *       this macro has no effect.
  * @see LOG_MODULE_REGISTER
  */
-#define LOG_MODULE_DECLARE(log_module_name)				\
+#define LOG_MODULE_DECLARE()						\
 	_LOG_EVAL(							\
 		_LOG_LEVEL(),						\
-		(_LOG_MODULE_DECLARE(log_module_name, _LOG_LEVEL())),	\
+		(_LOG_MODULE_DECLARE(LOG_MODULE_NAME, _LOG_LEVEL())),	\
 		()							\
 		)							\
 
