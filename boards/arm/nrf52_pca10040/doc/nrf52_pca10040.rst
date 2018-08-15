@@ -353,7 +353,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf52840_pca10056
+   :board: nrf52_pca10040
    :goals: build flash
 
 Debugging
