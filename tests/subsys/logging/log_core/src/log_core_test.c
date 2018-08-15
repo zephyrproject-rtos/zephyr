@@ -20,8 +20,7 @@
 
 #define LOG_MODULE_NAME test
 #include "logging/log.h"
-
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER();
 
 struct backend_cb {
 	size_t counter;
