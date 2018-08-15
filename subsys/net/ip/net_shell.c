@@ -2585,7 +2585,7 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 #if defined(CONFIG_NET_IPV6_ND)
 	       remaining > 0 ? remaining : 0,
 #else
-	       0,
+	       0LL,
 #endif
 	       nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "?" :
 	       net_sprint_ll_addr(
