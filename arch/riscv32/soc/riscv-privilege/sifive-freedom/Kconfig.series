@@ -1,0 +1,13 @@
+# Kconfig - RISCV32_SIFIVE_FREEDOM SOC implementation
+#
+# Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_RISCV32_SIFIVE_FREEDOM
+	bool "SiFive Freedom SOC implementation"
+	depends on RISCV32
+	select SOC_FAMILY_RISCV_PRIVILEGE
+	help
+	  Enable support for SiFive Freedom SOC

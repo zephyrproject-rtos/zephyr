@@ -5,7 +5,7 @@
  */
 
 /**
- * @brief Linker script for the SiFive Freedom E310 processor
+ * @brief Linker script for the SiFive Freedom processor
  */
 
 #include <arch/riscv32/common/linker.ld>

@@ -1,8 +1,8 @@
-if SOC_SERIES_RISCV32_FE310
+if SOC_SERIES_RISCV32_SIFIVE_FREEDOM
 
 config SOC_SERIES
 	string
-	default "fe310"
+	default "sifive-freedom"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
@@ -44,4 +44,4 @@ config RISCV_RAM_SIZE
 	hex
 	default 0x4000
 
-endif # SOC_SERIES_RISCV32_FE310
+endif # SOC_SERIES_RISCV32_SIFIVE_FREEDOM

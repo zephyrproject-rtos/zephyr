@@ -60,7 +60,7 @@ source "drivers/gpio/Kconfig.cc32xx"
 
 source "drivers/gpio/Kconfig.pulpino"
 
-source "drivers/gpio/Kconfig.fe310"
+source "drivers/gpio/Kconfig.sifive"
 
 source "drivers/gpio/Kconfig.cc2650"
 
