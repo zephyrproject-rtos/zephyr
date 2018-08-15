@@ -233,7 +233,7 @@ int http_send_chunk(struct http_ctx *ctx, const char *buf, size_t len,
 		}
 	}
 
-	ret = http_prepare_and_send(ctx, HTTP_CRLF, sizeof(HTTP_CRLF), dst,
+	ret = http_prepare_and_send(ctx, HTTP_CRLF, sizeof(HTTP_CRLF) - 1, dst,
 				    user_send_data);
 	if (ret < 0) {
 		return ret;
