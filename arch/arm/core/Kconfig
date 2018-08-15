@@ -144,7 +144,6 @@ choice
 
 config FP_HARDABI
 	bool "Floating point Hard ABI"
-	depends on FLOAT
 	help
 	  This option selects the Floating point ABI in which hardware floating
 	  point instructions are generated and uses FPU-specific calling
@@ -152,7 +151,6 @@ config FP_HARDABI
 
 config FP_SOFTABI
 	bool "Floating point Soft ABI"
-	depends on FLOAT
 	help
 	  This option selects the Floating point ABI in which hardware floating
 	  point instructions are generated but soft-float calling conventions.
