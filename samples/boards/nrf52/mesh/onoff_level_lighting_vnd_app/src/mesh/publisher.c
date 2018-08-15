@@ -17,23 +17,24 @@
 #define GENERIC_LEVEL
 
 static bool is_randomization_of_TIDs_done;
-static u8_t tid_level;
 
-#ifdef VND_MODEL_TEST
-static u8_t tid_vnd;
-#else
+#if defined(ONOFF)
 static u8_t tid_onoff;
+#elif defined(VND_MODEL_TEST)
+static u8_t tid_vnd;
 #endif
+
+static u8_t tid_level;
 
 void randomize_publishers_TID(void)
 {
-	bt_rand(&tid_level, sizeof(tid_level));
-
-#ifdef VND_MODEL_TEST
-	bt_rand(&tid_vnd, sizeof(tid_vnd));
-#else
+#if defined(ONOFF)
 	bt_rand(&tid_onoff, sizeof(tid_onoff));
+#elif defined(VND_MODEL_TEST)
+	bt_rand(&tid_vnd, sizeof(tid_vnd));
 #endif
+
+	bt_rand(&tid_level, sizeof(tid_level));
 
 	is_randomization_of_TIDs_done = true;
 }
@@ -165,7 +166,6 @@ void publish(struct k_work *work)
 		err = bt_mesh_model_publish(&root_models[16]);
 #endif
 	} else if (button_read(button_device[3], SW3_GPIO_PIN) == 0) {
-
 #if defined(GENERIC_LEVEL)
 		bt_mesh_model_msg_init(root_models[5].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_LEVEL_SET_UNACK);
