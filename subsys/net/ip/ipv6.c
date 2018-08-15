@@ -3268,10 +3268,12 @@ static bool reassembly_cancel(u32_t id,
 
 static void reassembly_info(char *str, struct net_ipv6_reassembly *reass)
 {
-	char out[NET_IPV6_ADDR_LEN];
 	int i, len;
 
+#if NET_LOG_ENABLED > 0
+	char out[NET_IPV6_ADDR_LEN];
 	snprintk(out, sizeof(out), "%s", net_sprint_ipv6_addr(&reass->dst));
+#endif
 
 	for (i = 0, len = 0; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
 		if (!reass->pkt[i]) {
