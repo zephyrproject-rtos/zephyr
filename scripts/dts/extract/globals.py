@@ -81,11 +81,11 @@ def get_compat(node_address):
         if 'props' in reduced[node_address].keys():
             compat = reduced[node_address]['props'].get('compatible')
 
-        if isinstance(compat, list):
-            compat = compat[0]
-
         if compat == None:
             compat = find_parent_prop(node_address, 'compatible')
+
+        if isinstance(compat, list):
+            compat = compat[0]
 
     except:
         pass
