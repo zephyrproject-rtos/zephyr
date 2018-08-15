@@ -32,7 +32,7 @@ int logger_put(struct log_cbuffer *logger, char *data, u32_t data_size)
 {
 	int ret;
 	u8_t size32;
-	int key;
+	unsigned int key;
 
 	size32 = (data_size + 3) / 4;
 
@@ -84,10 +84,11 @@ void test_logging(void)
 static inline void ring_buf_print(struct ring_buf *buf)
 {
 	u8_t data[512];
-	int ret, key;
+	int ret;
 	u8_t size32 = sizeof(data) / 4;
 	u16_t type;
 	u8_t val;
+	unsigned int key;
 
 	key = irq_lock();
 	ret = sys_ring_buf_get(&log_cbuffer.ring_buffer, &type, &val,

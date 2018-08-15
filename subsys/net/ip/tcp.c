@@ -309,7 +309,7 @@ int net_tcp_release(struct net_tcp *tcp)
 {
 	struct net_pkt *pkt;
 	struct net_pkt *tmp;
-	int key;
+	unsigned int key;
 
 	if (!PART_OF_ARRAY(tcp_context, tcp)) {
 		return -EINVAL;

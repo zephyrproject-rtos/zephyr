@@ -78,7 +78,7 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 				   struct k_delayed_work *work,
 				   s32_t delay)
 {
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 	int err;
 
 	/* Work cannot be active in multiple queues */
@@ -117,7 +117,7 @@ done:
 
 int k_delayed_work_cancel(struct k_delayed_work *work)
 {
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (!work->work_q) {
 		irq_unlock(key);

@@ -162,7 +162,7 @@ static inline int32_t _get_max_clock_time(void)
 
 static inline void _set_max_clock_time(void)
 {
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 	_sys_clock_tick_count = _get_elapsed_clock_time();
@@ -181,7 +181,7 @@ void _set_time(u32_t time)
 {
 	u32_t C; /*  (current) time */
 	u32_t F; /*  Time to program */
-	int key;
+	unsigned int key;
 
 	if (!time) {
 		idle_original_ticks = 0;
@@ -225,7 +225,7 @@ void _enable_sys_clock(void)
 u64_t _get_elapsed_clock_time(void)
 {
 	u32_t C;
-	int key;
+	unsigned int key;
 	u64_t total;
 	u32_t elapsed;
 

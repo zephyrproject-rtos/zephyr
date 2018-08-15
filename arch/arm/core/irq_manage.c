@@ -146,7 +146,7 @@ void _irq_spurious(void *unused)
 void _arch_isr_direct_pm(void)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	int key;
+	unsigned int key;
 
 	/* irq_lock() does what we wan for this CPU */
 	key = irq_lock();

@@ -310,7 +310,7 @@ static int uart_ns16550_init(struct device *dev)
 {
 	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
 
-	int old_level;     /* old interrupt lock level */
+	unsigned int old_level;     /* old interrupt lock level */
 	u8_t mdc = 0;
 
 	if (!ns16550_pci_uart_scan(dev)) {

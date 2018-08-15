@@ -82,7 +82,7 @@ static int nxp_lpc54114_init(struct device *arg)
 	ARG_UNUSED(arg);
 
 	/* old interrupt lock level */
-	int oldLevel;
+	unsigned int oldLevel;
 
 	/* disable interrupts */
 	oldLevel = irq_lock();

@@ -323,7 +323,7 @@ void _ioapic_int_vec_set(unsigned int irq, unsigned int vector)
 static u32_t __IoApicGet(s32_t offset)
 {
 	u32_t value; /* value */
-	int key;	/* interrupt lock level */
+	unsigned int key;	/* interrupt lock level */
 
 	/* lock interrupts to ensure indirect addressing works "atomically" */
 
@@ -350,7 +350,7 @@ static u32_t __IoApicGet(s32_t offset)
  */
 static void __IoApicSet(s32_t offset, u32_t value)
 {
-	int key; /* interrupt lock level */
+	unsigned int key; /* interrupt lock level */
 
 	/* lock interrupts to ensure indirect addressing works "atomically" */
 

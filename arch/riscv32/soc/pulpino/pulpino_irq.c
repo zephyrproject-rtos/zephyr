@@ -13,7 +13,7 @@
 
 void _arch_irq_enable(unsigned int irq)
 {
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 	/*
@@ -28,7 +28,7 @@ void _arch_irq_enable(unsigned int irq)
 
 void _arch_irq_disable(unsigned int irq)
 {
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 	PULP_IER &= ~(1 << irq);

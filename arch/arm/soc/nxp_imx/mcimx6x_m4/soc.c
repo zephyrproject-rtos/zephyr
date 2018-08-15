@@ -143,7 +143,7 @@ static int mcimx6x_m4_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	int oldLevel; /* Old interrupt lock level */
+	unsigned int oldLevel; /* Old interrupt lock level */
 
 	/* Disable interrupts */
 	oldLevel = irq_lock();

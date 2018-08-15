@@ -115,7 +115,7 @@ static struct dyn_obj *dyn_object_find(void *obj)
 {
 	struct rbnode *node;
 	struct dyn_obj *ret;
-	int key;
+	unsigned int key;
 
 	/* For any dynamically allocated kernel object, the object
 	 * pointer is just a member of the conatining struct dyn_obj,
@@ -201,7 +201,7 @@ static void _thread_idx_free(u32_t tidx)
 void *_impl_k_object_alloc(enum k_objects otype)
 {
 	struct dyn_obj *dyn_obj;
-	int key;
+	unsigned int key;
 	u32_t tidx;
 
 	/* Stacks are not supported, we don't yet have mem pool APIs
@@ -248,7 +248,7 @@ void *_impl_k_object_alloc(enum k_objects otype)
 void k_object_free(void *obj)
 {
 	struct dyn_obj *dyn_obj;
-	int key;
+	unsigned int key;
 
 	/* This function is intentionally not exposed to user mode.
 	 * There's currently no robust way to track that an object isn't
@@ -292,7 +292,7 @@ struct _k_object *_k_object_find(void *obj)
 
 void _k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 {
-	int key;
+	unsigned int key;
 	struct dyn_obj *obj, *next;
 
 	_k_object_gperf_wordlist_foreach(func, context);
@@ -393,7 +393,7 @@ void _thread_perms_clear(struct _k_object *ko, struct k_thread *thread)
 	int index = thread_index_get(thread);
 
 	if (index != -1) {
-		int key = irq_lock();
+		unsigned int key = irq_lock();
 
 		sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
 		unref_check(ko);
@@ -404,7 +404,7 @@ void _thread_perms_clear(struct _k_object *ko, struct k_thread *thread)
 static void clear_perms_cb(struct _k_object *ko, void *ctx_ptr)
 {
 	int id = (int)ctx_ptr;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	sys_bitfield_clear_bit((mem_addr_t)&ko->perms, id);
 	unref_check(ko);
@@ -582,7 +582,7 @@ void _k_object_uninit(void *object)
 void *z_user_alloc_from_copy(void *src, size_t size)
 {
 	void *dst = NULL;
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 
@@ -606,7 +606,7 @@ out_err:
 static int user_copy(void *dst, void *src, size_t size, bool to_user)
 {
 	int ret = EFAULT;
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 
@@ -636,7 +636,8 @@ int z_user_to_copy(void *dst, void *src, size_t size)
 char *z_user_string_alloc_copy(char *src, size_t maxlen)
 {
 	unsigned long actual_len;
-	int key, err;
+	int err;
+	unsigned int key;
 	char *ret = NULL;
 
 	key = irq_lock();
@@ -663,7 +664,8 @@ out:
 int z_user_string_copy(char *dst, char *src, size_t maxlen)
 {
 	unsigned long actual_len;
-	int key, ret, err;
+	int ret, err;
+	unsigned int key;
 
 	key = irq_lock();
 	actual_len = z_user_string_nlen(src, maxlen, &err);

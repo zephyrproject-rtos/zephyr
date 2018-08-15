@@ -150,7 +150,7 @@ Z_SYSCALL_HANDLER(k_timer_start, timer, duration_p, period_p)
 
 void _impl_k_timer_stop(struct k_timer *timer)
 {
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 	int inactive = (_abort_timeout(&timer->timeout) == _INACTIVE);
 
 	irq_unlock(key);

@@ -115,7 +115,8 @@ static void adjust_owner_prio(struct k_mutex *mutex, int new_prio)
 
 int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 {
-	int new_prio, key;
+	int new_prio;
+	unsigned int key;
 
 	_sched_lock();
 
@@ -200,7 +201,7 @@ Z_SYSCALL_HANDLER(k_mutex_lock, mutex, timeout)
 
 void _impl_k_mutex_unlock(struct k_mutex *mutex)
 {
-	int key;
+	unsigned int key;
 
 	__ASSERT(mutex->lock_count > 0, "");
 	__ASSERT(mutex->owner == _current, "");

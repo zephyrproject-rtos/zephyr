@@ -70,7 +70,7 @@ static int mcux_mailbox_ipm_send(struct device *d, int wait, u32_t id,
 	u32_t data32[MCUX_IPM_DATA_REGS]; /* Until we change API
 					   * to u32_t array
 					   */
-	int flags;
+	unsigned int flags;
 	int i;
 
 	ARG_UNUSED(wait);
