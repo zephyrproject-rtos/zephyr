@@ -658,13 +658,13 @@ extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
  * @brief system thread that must not abort
  * @req K-THREAD-000
  * */
-#define K_ESSENTIAL (1 << 0)
+#define K_ESSENTIAL (BIT(0))
 
 #if defined(CONFIG_FP_SHARING)
 /**
  * @brief thread uses floating point registers
  */
-#define K_FP_REGS (1 << 1)
+#define K_FP_REGS (BIT(1))
 #endif
 
 /**
@@ -673,7 +673,7 @@ extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
  * This thread has dropped from supervisor mode to user mode and consequently
  * has additional restrictions
  */
-#define K_USER (1 << 2)
+#define K_USER (BIT(2))
 
 /**
  * @brief Inherit Permissions
@@ -683,14 +683,14 @@ extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
  * permissions from the thread that created it. No effect if CONFIG_USERSPACE
  * is not enabled.
  */
-#define K_INHERIT_PERMS (1 << 3)
+#define K_INHERIT_PERMS (BIT(3))
 
 #ifdef CONFIG_X86
 /* x86 Bitmask definitions for threads user options */
 
 #if defined(CONFIG_FP_SHARING) && defined(CONFIG_SSE)
 /* thread uses SSEx (and also FP) registers */
-#define K_SSE_REGS (1 << 7)
+#define K_SSE_REGS (BIT(7))
 #endif
 #endif
 
