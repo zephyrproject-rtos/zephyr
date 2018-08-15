@@ -60,6 +60,9 @@ static bool ipv6_pe_blacklist;
 static struct in6_addr ipv6_pe_filter[CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT];
 #endif
 
+/* We need to periodically update the private address. */
+static struct k_delayed_work temp_lifetime;
+
 static bool ipv6_pe_use_this_prefix(const struct in6_addr *prefix)
 {
 #if CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0
@@ -192,6 +195,7 @@ void net_ipv6_pe_start(struct net_if *iface, const struct in6_addr *prefix,
 	struct net_if_ipv6 *ipv6;
 	struct in6_addr addr;
 	u8_t md5[128 / 8];
+	s32_t remaining;
 	int i;
 
 	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
@@ -281,6 +285,13 @@ void net_ipv6_pe_start(struct net_if *iface, const struct in6_addr *prefix,
 		iface);
 
 	net_if_ipv6_start_dad(iface, ifaddr);
+
+	remaining = k_delayed_work_remaining_get(&temp_lifetime);
+	if (remaining == 0 || remaining > K_SECONDS(vlifetime)) {
+		NET_DBG("Next check for temp addresses in %d seconds",
+			vlifetime);
+		k_delayed_work_submit(&temp_lifetime, K_SECONDS(vlifetime));
+	}
 }
 
 #if CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0
@@ -428,6 +439,61 @@ int net_ipv6_pe_filter_foreach(net_ipv6_pe_filter_cb_t cb, void *user_data)
 #endif
 }
 
+static void renewal_cb(struct net_if *iface, void *user_data)
+{
+	struct net_if_ipv6 *ipv6;
+	struct in6_addr prefix;
+	int i;
+
+	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
+		return;
+	}
+
+	if (!ipv6) {
+		return;
+	}
+
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		s32_t diff;
+
+		if (!ipv6->unicast[i].is_used ||
+		    ipv6->unicast[i].address.family != AF_INET6 ||
+		    !ipv6->unicast[i].is_temporary) {
+			continue;
+		}
+
+		/* If the address is too old, then generate a new one
+		 * and remove the old address.
+		 */
+		diff = (s32_t)(ipv6->unicast[i].addr_create_time -
+			       ((u32_t)(k_uptime_get() / 1000)));
+		diff = abs(diff);
+
+		if (diff < (TEMP_PREFERRED_LIFETIME -
+			    REGEN_ADVANCE - DESYNC_FACTOR)) {
+			continue;
+		}
+
+		net_ipaddr_copy(&prefix, &ipv6->unicast[i].address.in6_addr);
+
+		net_if_ipv6_addr_rm(iface,
+				    &ipv6->unicast[i].address.in6_addr);
+
+		memset(prefix.s6_addr + 8, 0, sizeof(prefix) - 8);
+
+		net_ipv6_pe_start(iface, &prefix,
+				  ipv6->unicast[i].addr_timeout,
+				  ipv6->unicast[i].addr_preferred_lifetime);
+	}
+}
+
+static void ipv6_pe_renew(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	net_if_foreach(renewal_cb, NULL);
+}
+
 int net_ipv6_pe_init(struct net_if *iface)
 {
 	static bool init_done;
@@ -451,6 +517,8 @@ int net_ipv6_pe_init(struct net_if *iface)
 						       lifetime);
 		init_done = true;
 	}
+
+	k_delayed_work_init(&temp_lifetime, ipv6_pe_renew);
 
 	return 0;
 }
