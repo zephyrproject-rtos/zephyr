@@ -302,7 +302,7 @@ void _setup_new_thread(struct k_thread *new_thread,
 	new_thread->entry.parameter2 = p2;
 	new_thread->entry.parameter3 = p3;
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	new_thread->next_thread = _kernel.threads;
 	_kernel.threads = new_thread;
@@ -448,7 +448,7 @@ int _impl_k_thread_cancel(k_tid_t tid)
 {
 	struct k_thread *thread = tid;
 
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	if (_has_thread_started(thread) ||
 	    !_is_thread_timeout_active(thread)) {

@@ -156,7 +156,7 @@ static int fsl_frdm_k64f_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	int oldLevel; /* old interrupt lock level */
+	unsigned int oldLevel; /* old interrupt lock level */
 #if !defined(CONFIG_HAS_SYSMPU)
 	u32_t temp_reg;
 #endif /* !CONFIG_HAS_SYSMPU */

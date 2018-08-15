@@ -64,7 +64,7 @@ static inline u32_t compute_ioregsel(unsigned int irq)
  */
 static void _mvic_rte_set(unsigned int irq, u32_t value)
 {
-	int key; /* interrupt lock level */
+	unsigned int key; /* interrupt lock level */
 	u32_t regsel;
 
 	__ASSERT(!(value & ~MVIC_IOWIN_SUPPORTED_BITS_MASK),
@@ -94,7 +94,7 @@ static void _mvic_rte_set(unsigned int irq, u32_t value)
  */
 static void _mvic_rte_update(unsigned int irq, u32_t value, u32_t mask)
 {
-	int key;
+	unsigned int key;
 	u32_t regsel, old_value, updated_value;
 
 	__ASSERT(!(value & ~MVIC_IOWIN_SUPPORTED_BITS_MASK),

@@ -55,7 +55,7 @@ static int uart_imx_init(struct device *dev)
 {
 	UART_Type *uart = UART_STRUCT(dev);
 	const struct imx_uart_config *config = dev->config->config_info;
-	int old_level;
+	unsigned int old_level;
 
 	/* disable interrupts */
 	old_level = irq_lock();

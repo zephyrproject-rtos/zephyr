@@ -662,7 +662,7 @@ s32_t gptp_uscaled_ns_to_timer_ms(struct gptp_uscaled_ns *usns)
 
 static s32_t timer_get_remaining_and_stop(struct k_timer *timer)
 {
-	int key;
+	unsigned int key;
 	s32_t timer_value;
 
 	key = irq_lock();

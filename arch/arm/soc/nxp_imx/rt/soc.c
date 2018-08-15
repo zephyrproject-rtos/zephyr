@@ -111,7 +111,7 @@ static int imxrt_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	int oldLevel; /* old interrupt lock level */
+	unsigned int oldLevel; /* old interrupt lock level */
 
 	/* disable interrupts */
 	oldLevel = irq_lock();

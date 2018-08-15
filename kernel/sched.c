@@ -263,7 +263,7 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 	 */
 	if (timeout != K_FOREVER) {
 		s32_t ticks = _TICK_ALIGN + _ms_to_ticks(timeout);
-		int key = irq_lock();
+		unsigned int key = irq_lock();
 
 		_add_thread_timeout(thread, wait_q, ticks);
 		irq_unlock(key);
@@ -839,7 +839,7 @@ Z_SYSCALL_HANDLER(k_sleep, duration)
 
 void _impl_k_wakeup(k_tid_t thread)
 {
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	/* verify first if thread is not waiting on an object */
 	if (_is_thread_pending(thread)) {

@@ -169,7 +169,7 @@ static int i2c_esp32_configure(struct device *dev, u32_t dev_config)
 {
 	const struct i2c_esp32_config *config = dev->config->config_info;
 	struct i2c_esp32_data *data = dev->driver_data;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 	u32_t v = 0;
 	int ret;
 
@@ -659,7 +659,7 @@ static int i2c_esp32_init(struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config->config_info;
 	struct i2c_esp32_data *data = dev->driver_data;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	k_sem_init(&data->fifo_sem, 1, 1);
 	k_sem_init(&data->transfer_sem, 1, 1);

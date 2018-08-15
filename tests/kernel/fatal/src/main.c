@@ -94,7 +94,7 @@ void alt_thread1(void)
 
 void alt_thread2(void)
 {
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 	k_oops();
@@ -105,7 +105,7 @@ void alt_thread2(void)
 
 void alt_thread3(void)
 {
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 	k_panic();
@@ -135,7 +135,7 @@ void stack_thread1(void)
 
 void stack_thread2(void)
 {
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	/* Test that stack overflow check due to swap works */
 	blow_up_stack();

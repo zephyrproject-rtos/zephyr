@@ -126,7 +126,7 @@ static void phil_entry(void)
 	struct k_sem *f1;       /* fork #1 */
 	struct k_sem *f2;       /* fork #2 */
 	static int myId;        /* next philosopher ID */
-	int pri = irq_lock();   /* interrupt lock level */
+	unsigned int pri = irq_lock();   /* interrupt lock level */
 	int id = myId++;        /* current philosopher ID */
 
 	irq_unlock(pri);

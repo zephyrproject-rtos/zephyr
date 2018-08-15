@@ -33,7 +33,7 @@ void _irq_spurious(void *unused)
 void _arch_irq_enable(unsigned int irq)
 {
 	u32_t ienable;
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 
@@ -49,7 +49,7 @@ void _arch_irq_enable(unsigned int irq)
 void _arch_irq_disable(unsigned int irq)
 {
 	u32_t ienable;
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 
