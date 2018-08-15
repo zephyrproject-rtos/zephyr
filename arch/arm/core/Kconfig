@@ -99,7 +99,6 @@ depends on ARM_SECURE_FIRMWARE
 config ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS
 	bool "Secure Firmware has Secure Entry functions"
 	depends on ARM_SECURE_FIRMWARE
-	default n
 	help
 	  Option indicates that ARM Secure Firmware contains
 	  Secure Entry functions that may be called from
