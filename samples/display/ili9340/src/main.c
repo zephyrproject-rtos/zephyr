@@ -10,9 +10,9 @@
 #include <string.h>
 #include <zephyr.h>
 
-#define SYS_LOG_DOMAIN "main"
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#include <logging/sys_log.h>
+#define LOG_LEVEL LOG_LEVEL_DEBUG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(main);
 
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
@@ -49,7 +49,7 @@ void main(void)
 	dev = device_get_binding("ILI9340");
 
 	if (dev == NULL) {
-		SYS_LOG_ERR("device not found.  Aborting test.");
+		LOG_ERR("Device not found. Aborting test.");
 		return;
 	}
 
@@ -57,7 +57,7 @@ void main(void)
 	buf = k_malloc(buf_size);
 
 	if (buf == NULL) {
-		SYS_LOG_ERR("Could not allocate memory.  Aborting test.");
+		LOG_ERR("Could not allocate memory. Aborting test.");
 		return;
 	}
 
