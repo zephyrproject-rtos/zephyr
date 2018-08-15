@@ -656,8 +656,12 @@ class SizeCalculator:
         with open(filename, "rb") as f:
             magic = f.read(4)
 
-        if (magic != b'\x7fELF'):
-            raise SanityRuntimeError("%s is not an ELF binary" % filename)
+        try:
+            if (magic != b'\x7fELF'):
+                raise SanityRuntimeError("%s is not an ELF binary" % filename)
+        except Exception as e:
+            print(str(e))
+            sys.exit(2)
 
         # Search for CONFIG_XIP in the ELF's list of symbols using NM and AWK.
         # GREP can not be used as it returns an error if the symbol is not
@@ -667,8 +671,13 @@ class SizeCalculator:
         is_xip_output = subprocess.check_output(
             is_xip_command, shell=True, stderr=subprocess.STDOUT).decode(
             "utf-8").strip()
-        if is_xip_output.endswith("no symbols"):
-            raise SanityRuntimeError("%s has no symbol information" % filename)
+        try:
+            if is_xip_output.endswith("no symbols"):
+                raise SanityRuntimeError("%s has no symbol information" % filename)
+        except Exception as e:
+            print(str(e))
+            sys.exit(2)
+
         self.is_xip = (len(is_xip_output) != 0)
 
         self.filename = filename
@@ -1643,8 +1652,14 @@ class TestSuite:
         self.instances = {}
 
     def get_last_failed(self):
-        if not os.path.exists(LAST_SANITY):
-            raise SanityRuntimeError("Couldn't find last sanity run.")
+
+        try:
+            if not os.path.exists(LAST_SANITY):
+                raise SanityRuntimeError("Couldn't find last sanity run.")
+        except Exception as e:
+            print(str(e))
+            sys.exit(2)
+
         result = []
         with open(LAST_SANITY, "r") as fp:
             cr = csv.DictReader(fp)
@@ -1657,9 +1672,14 @@ class TestSuite:
         return result
 
     def load_from_file(self, file):
-        if not os.path.exists(file):
-            raise SanityRuntimeError(
-                "Couldn't find input file with list of tests.")
+        try:
+            if not os.path.exists(file):
+                raise SanityRuntimeError(
+                    "Couldn't find input file with list of tests.")
+        except Exception as e:
+            print(str(e))
+            sys.exit(2)
+
         with open(file, "r") as fp:
             cr = csv.reader(fp)
             instance_list = []
@@ -1680,8 +1700,14 @@ class TestSuite:
 
         toolchain = os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT", None) or \
                     os.environ.get("ZEPHYR_GCC_VARIANT", None)
-        if not toolchain:
-            raise SanityRuntimeError("E: Variable ZEPHYR_TOOLCHAIN_VARIANT is not defined")
+
+
+        try:
+            if not toolchain:
+                raise SanityRuntimeError("E: Variable ZEPHYR_TOOLCHAIN_VARIANT is not defined")
+        except Exception as e:
+            print(str(e))
+            sys.exit(2)
 
 
         instances = []
@@ -1807,8 +1833,13 @@ class TestSuite:
         results = mg.execute(defconfig_cb)
 
         for name, goal in results.items():
-            if goal.failed:
-                raise SanityRuntimeError("Couldn't build some defconfigs")
+            try:
+                if goal.failed:
+                    raise SanityRuntimeError("Couldn't build some defconfigs")
+            except Exception as e:
+                error(str(e))
+                sys.exit(2)
+
 
         for k, out_config in dlist.items():
             test, plat, name = k
@@ -2009,8 +2040,13 @@ class TestSuite:
                 cw.writerow(rowdict)
 
     def discard_report(self, filename):
-        if self.discards is None:
-            raise SanityRuntimeError("apply_filters() hasn't been run!")
+
+        try:
+            if self.discards is None:
+                raise SanityRuntimeError("apply_filters() hasn't been run!")
+        except Exception as e:
+            error(str(e))
+            sys.exit(2)
 
         with open(filename, "wt") as csvfile:
             fieldnames = ["test", "arch", "platform", "reason"]
@@ -2028,8 +2064,12 @@ class TestSuite:
         interesting_metrics = [("ram_size", int, True),
                                ("rom_size", int, True)]
 
-        if self.goals is None:
-            raise SanityRuntimeError("execute() hasn't been run!")
+        try:
+            if self.goals is None:
+                raise SanityRuntimeError("execute() hasn't been run!")
+        except Exception as e:
+            print(str(e))
+            sys.exit(2)
 
         if not os.path.exists(filename):
             info("Cannot compare metrics, %s not found" % filename)
@@ -2143,8 +2183,12 @@ class TestSuite:
 
 
     def testcase_xunit_report(self, filename, duration):
-        if self.goals is None:
-            raise SanityRuntimeError("execute() hasn't been run!")
+        try:
+            if self.goals is None:
+                raise SanityRuntimeError("execute() hasn't been run!")
+        except Exception as e:
+            print(str(e))
+            sys.exit(2)
 
         fails = 0
         passes = 0
@@ -2214,8 +2258,12 @@ class TestSuite:
         f.close()
 
     def testcase_report(self, filename):
-        if self.goals is None:
-            raise SanityRuntimeError("execute() hasn't been run!")
+        try:
+            if self.goals is None:
+                raise SanityRuntimeError("execute() hasn't been run!")
+        except Exception as e:
+            print(str(e))
+            sys.exit(2)
 
         with open(filename, "wt") as csvfile:
             fieldnames = ["test", "arch", "platform", "passed", "status",
