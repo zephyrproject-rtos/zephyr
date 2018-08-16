@@ -390,10 +390,6 @@ static int dw_dma0_initialize(struct device *dev)
 {
 	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
 
-#ifdef CONFIG_SOC_INTEL_S1000
-	setup_ownership_dma0();
-#endif
-
 	/* Disable all channels and Channel interrupts */
 	dw_dma_setup(dev);
 
