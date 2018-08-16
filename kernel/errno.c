@@ -29,7 +29,7 @@ int *_impl_z_errno(void)
 	/* Initialized to the lowest address in the stack so the thread can
 	 * directly read/write it
 	 */
-	return _current->errno_location;
+	return &_current->userspace_local_data->errno_var;
 }
 
 Z_SYSCALL_HANDLER0_SIMPLE(z_errno);

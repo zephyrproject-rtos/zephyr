@@ -164,9 +164,19 @@ config  THREAD_CUSTOM_DATA
 	  This option allows each thread to store 32 bits of custom data,
 	  which can be accessed using the k_thread_custom_data_xxx() APIs.
 
+config THREAD_USERSPACE_LOCAL_DATA
+	bool
+	depends on USERSPACE
+
+config THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
+	bool
+	depends on THREAD_USERSPACE_LOCAL_DATA
+	default y if ARCH="arc"
+
 config ERRNO
 	bool "Enable errno support"
 	default y
+	select THREAD_USERSPACE_LOCAL_DATA if USERSPACE
 	help
 	  Enable per-thread errno in the kernel. Application and library code must
 	  include errno.h provided by the C library (libc) to use the errno
