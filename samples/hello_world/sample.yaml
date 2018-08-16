@@ -11,8 +11,5 @@ common:
       regex:
         - "Hello World! (.*)"
 tests:
-  sample.helloworld.singlethread:
-    extra_args: CONF_FILE=prj_single.conf
-    filter: not CONFIG_BT and not CONFIG_GPIO_SCH and ASSERT == 0
   sample.helloworld.multithread:
     tags: samples
