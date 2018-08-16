@@ -1457,6 +1457,11 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 		bt_l2cap_connected(conn);
 		notify_connected(conn);
+		/*
+		 * Inform the connection handle about the connection
+		 * parameters
+		 */
+		notify_le_param_updated(conn);
 		break;
 	case BT_CONN_DISCONNECTED:
 		if (conn->type == BT_CONN_TYPE_SCO) {
