@@ -1,3 +1,1 @@
-zephyr_library()
-
-zephyr_library_sources_ifdef(CONFIG_BMM150 bmm150.c)
+target_sources(drivers PRIVATE ${CMAKE_CURRENT_LIST_DIR}/bmm150.c)

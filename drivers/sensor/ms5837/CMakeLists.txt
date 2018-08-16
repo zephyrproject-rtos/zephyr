@@ -4,6 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-zephyr_sources(
-	ms5837.c
-)
+target_sources(drivers PRIVATE ${CMAKE_CURRENT_LIST_DIR}/ms5837.c)

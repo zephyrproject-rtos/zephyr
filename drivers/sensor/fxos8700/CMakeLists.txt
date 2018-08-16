@@ -4,7 +4,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-zephyr_library()
 
-zephyr_library_sources_ifdef(CONFIG_FXOS8700 fxos8700.c)
-zephyr_library_sources_ifdef(CONFIG_FXOS8700_TRIGGER fxos8700_trigger.c)
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            IFDEF:${CONFIG_FXOS8700}         fxos8700.c
+            IFDEF:${CONFIG_FXOS8700_TRIGGER} fxos8700_trigger.c
+)
+
+target_sources(drivers PRIVATE ${PRIVATE_SOURCES})

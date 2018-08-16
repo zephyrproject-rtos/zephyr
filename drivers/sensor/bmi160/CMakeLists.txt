@@ -1,4 +1,8 @@
-zephyr_library()
 
-zephyr_library_sources_ifdef(CONFIG_BMI160 bmi160.c)
-zephyr_library_sources_ifdef(CONFIG_BMI160_TRIGGER bmi160_trigger.c)
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            IFDEF:${CONFIG_BMI160}         bmi160.c
+            IFDEF:${CONFIG_BMI160_TRIGGER} bmi160_trigger.c
+)
+
+target_sources(drivers PRIVATE ${PRIVATE_SOURCES})

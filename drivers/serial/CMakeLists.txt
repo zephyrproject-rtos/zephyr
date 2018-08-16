@@ -1,33 +1,36 @@
-zephyr_library()
-zephyr_library_sources_ifdef(CONFIG_UART_ALTERA_JTAG uart_altera_jtag_hal.c)
-zephyr_library_sources_if_kconfig(uart_imx.c)
-zephyr_library_sources_if_kconfig(uart_cc32xx.c)
-zephyr_library_sources_if_kconfig(uart_cmsdk_apb.c)
-zephyr_library_sources_if_kconfig(uart_esp32.c)
-zephyr_library_sources_if_kconfig(uart_sifive.c)
-zephyr_library_sources_if_kconfig(uart_gecko.c)
-zephyr_library_sources_if_kconfig(leuart_gecko.c)
-zephyr_library_sources_if_kconfig(uart_mcux.c)
-zephyr_library_sources_if_kconfig(uart_mcux_lpuart.c)
-zephyr_library_sources_if_kconfig(uart_mcux_lpsci.c)
-zephyr_library_sources_if_kconfig(uart_miv.c)
-zephyr_library_sources_if_kconfig(uart_msp432p4xx.c)
-zephyr_library_sources_ifdef(CONFIG_NRF_UART_PERIPHERAL uart_nrfx_uart.c)
-zephyr_library_sources_ifdef(CONFIG_NRF_UARTE_PERIPHERAL uart_nrfx_uarte.c)
-zephyr_library_sources_if_kconfig(uart_ns16550.c)
-zephyr_library_sources_if_kconfig(uart_nsim.c)
-zephyr_library_sources_if_kconfig(uart_qmsi.c)
-zephyr_library_sources_if_kconfig(uart_sam.c)
-zephyr_library_sources_if_kconfig(usart_sam.c)
-zephyr_library_sources_if_kconfig(uart_stellaris.c)
-zephyr_library_sources_if_kconfig(uart_stm32.c)
-zephyr_library_sources_if_kconfig(uart_sam0.c)
-zephyr_library_sources_if_kconfig(usart_mcux_lpc.c)
-zephyr_library_sources_if_kconfig(uart_psoc6.c)
-
-zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            IFDEF:${CONFIG_UART_ALTERA_JTAG}     uart_altera_jtag_hal.c
+            IFDEF:${CONFIG_NRF_UART_PERIPHERAL}  uart_nrfx_uart.c
+            IFDEF:${CONFIG_NRF_UARTE_PERIPHERAL} uart_nrfx_uarte.c
+            IFDEF:${CONFIG_USERSPACE}            uart_handlers.c
+            IFDEF:${CONFIG_UART_NATIVE_POSIX}    uart_native_posix.c
+            IF_KCONFIG uart_imx.c
+            IF_KCONFIG uart_cc32xx.c
+            IF_KCONFIG uart_cmsdk_apb.c
+            IF_KCONFIG uart_esp32.c
+            IF_KCONFIG uart_sifive.c
+            IF_KCONFIG uart_gecko.c
+            IF_KCONFIG leuart_gecko.c
+            IF_KCONFIG uart_mcux.c
+            IF_KCONFIG uart_mcux_lpuart.c
+            IF_KCONFIG uart_mcux_lpsci.c
+            IF_KCONFIG uart_miv.c
+            IF_KCONFIG uart_msp432p4xx.c
+            IF_KCONFIG uart_ns16550.c
+            IF_KCONFIG uart_nsim.c
+            IF_KCONFIG uart_qmsi.c
+            IF_KCONFIG uart_sam.c
+            IF_KCONFIG usart_sam.c
+            IF_KCONFIG uart_stellaris.c
+            IF_KCONFIG uart_stm32.c
+            IF_KCONFIG uart_sam0.c
+            IF_KCONFIG usart_mcux_lpc.c
+            IF_KCONFIG uart_psoc6.c
+)
 
 if(CONFIG_UART_NATIVE_POSIX)
-  zephyr_library_compile_definitions(NO_POSIX_CHEATS)
-  zephyr_library_sources(uart_native_posix.c)
+  SET_SOURCE_FILES_PROPERTIES(${PRIVATE_SOURCES} PROPERTIES COMPILE_DEFINITIONS NO_POSIX_CHEATS)
 endif()
+
+target_sources(drivers PRIVATE ${PRIVATE_SOURCES})

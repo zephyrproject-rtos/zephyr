@@ -1,3 +1,1 @@
-zephyr_library()
-
-zephyr_library_sources(th02.c)
+target_sources(drivers PRIVATE ${CMAKE_CURRENT_LIST_DIR}/th02.c)

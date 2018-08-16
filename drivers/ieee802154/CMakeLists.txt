@@ -1,9 +1,3 @@
-zephyr_sources_ifdef(CONFIG_IEEE802154_CC2520 ieee802154_cc2520.c)
-zephyr_sources_ifdef(CONFIG_IEEE802154_KW41Z ieee802154_kw41z.c)
-zephyr_sources_ifdef(CONFIG_IEEE802154_UPIPE ieee802154_uart_pipe.c)
-zephyr_sources_ifdef(CONFIG_IEEE802154_MCR20A ieee802154_mcr20a.c)
-zephyr_sources_ifdef(CONFIG_IEEE802154_NRF5 ieee802154_nrf5.c)
-zephyr_sources_ifdef(CONFIG_IEEE802154_CC1200 ieee802154_cc1200.c)
 
 if(CONFIG_NET_L2_OPENTHREAD)
   # This driver calls DEVICE_INIT with the context of openthread. The
@@ -13,3 +7,14 @@ if(CONFIG_NET_L2_OPENTHREAD)
   # before all of it's header file dependencies are met.
   add_dependencies(${ZEPHYR_CURRENT_LIBRARY} ot)
 endif()
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            IFDEF:${CONFIG_IEEE802154_CC2520} ieee802154_cc2520.c
+            IFDEF:${CONFIG_IEEE802154_KW41Z}  ieee802154_kw41z.c
+            IFDEF:${CONFIG_IEEE802154_UPIPE}  ieee802154_uart_pipe.c
+            IFDEF:${CONFIG_IEEE802154_MCR20A} ieee802154_mcr20a.c
+            IFDEF:${CONFIG_IEEE802154_NRF5}   ieee802154_nrf5.c
+            IFDEF:${CONFIG_IEEE802154_CC1200} ieee802154_cc1200.c
+)
+
+target_sources(drivers PRIVATE ${PRIVATE_SOURCES})

@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-zephyr_sources_ifdef(CONFIG_LSM303DLHC_ACCEL lsm303dlhc_accel.c)
+target_sources(drivers PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lsm303dlhc_accel.c)

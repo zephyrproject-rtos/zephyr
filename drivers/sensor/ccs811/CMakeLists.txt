@@ -1,3 +1,7 @@
-zephyr_library()
 
-zephyr_library_sources_ifdef(CONFIG_CCS811 ccs811.c)
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            IFDEF:${CONFIG_CCS811} ccs811.c
+)
+
+target_sources(drivers PRIVATE ${PRIVATE_SOURCES})

@@ -1,1 +1,1 @@
-add_subdirectory_ifdef(CONFIG_USB device)
+include_relative_ifdef(CONFIG_USB device/CMakeLists.txt)

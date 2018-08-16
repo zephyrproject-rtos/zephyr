@@ -1,3 +1,3 @@
-add_subdirectory_ifdef(CONFIG_WIFI_WINC1500	winc1500)
-add_subdirectory_ifdef(CONFIG_WIFI_SIMPLELINK	simplelink)
-add_subdirectory_ifdef(CONFIG_WIFI_ESWIFI	eswifi)
+include_relative_ifdef(CONFIG_WIFI_WINC1500 winc1500/CMakeLists.txt)
+include_relative_ifdef(CONFIG_WIFI_SIMPLELINK simplelink/CMakeLists.txt)
+include_relative_ifdef(CONFIG_WIFI_ESWIFI     eswifi/CMakeLists.txt)
