@@ -1029,6 +1029,12 @@ function(include_relative_ifdef feature_toggle file)
   endif()
 endfunction()
 
+function(include_relative_if_kconfig file)
+  string(REGEX REPLACE "([\\-a-zA-Z0-9_]*)\/[\\-a-zA-Z0-9_\.]*" "CONFIG_\\1" CONFIG_VAR ${file})
+  string(TOUPPER ${CONFIG_VAR} CONFIG_VAR)
+  include_relative_ifdef(${CONFIG_VAR} ${file})
+endfunction()
+
 function(add_subdirectory_ifdef feature_toggle dir)
   if(${${feature_toggle}})
     add_subdirectory(${dir})
