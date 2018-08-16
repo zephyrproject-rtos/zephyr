@@ -6,6 +6,7 @@
 
 menuconfig WDT_NRFX
 	bool "nRF WDT nrfx driver"
+	default y
 	depends on SOC_FAMILY_NRF
 	select HAS_DTS_WDT
 	select NRFX_WDT
