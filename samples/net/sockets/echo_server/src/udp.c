@@ -66,7 +66,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *bind_addr,
 	}
 
 	/* Set role to DTLS server. */
-	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_ROLE,
+	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_DTLS_ROLE,
 			 &role, sizeof(role));
 	if (ret < 0) {
 		NET_ERR("Failed to set DTLS role secure option (%s): %d",
