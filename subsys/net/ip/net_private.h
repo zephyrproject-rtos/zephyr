@@ -52,6 +52,8 @@ extern void net_tc_submit_to_tx_queue(u8_t tc, struct net_pkt *pkt);
 extern void net_tc_submit_to_rx_queue(u8_t tc, struct net_pkt *pkt);
 extern enum net_verdict net_promisc_mode_input(struct net_pkt *pkt);
 
+char *net_sprint_addr(sa_family_t af, const void *addr);
+
 #if defined(CONFIG_NET_GPTP)
 /**
  * @brief Initialize Precision Time Protocol Layer.

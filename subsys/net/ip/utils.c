@@ -24,6 +24,16 @@
 #include <net/net_pkt.h>
 #include <net/net_core.h>
 
+char *net_sprint_addr(sa_family_t af, const void *addr)
+{
+#define NBUFS 3
+	static char buf[NBUFS][NET_IPV6_ADDR_LEN];
+	static int i;
+	char *s = buf[++i % NBUFS];
+
+	return net_addr_ntop(af, addr, s, NET_IPV6_ADDR_LEN);
+}
+
 const char *net_proto2str(enum net_ip_protocol proto)
 {
 	switch (proto) {
