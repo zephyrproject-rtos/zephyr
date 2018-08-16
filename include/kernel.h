@@ -503,6 +503,12 @@ struct _mem_domain_info {
 
 #endif /* CONFIG_USERSPACE */
 
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
+struct _thread_userspace_local_data {
+	int errno_var;
+};
+#endif
+
 /**
  * @ingroup thread_apis
  * Thread Structure
@@ -538,14 +544,12 @@ struct k_thread {
 	void *custom_data;
 #endif
 
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
+	struct _thread_userspace_local_data *userspace_local_data;
+#endif
+
 #ifdef CONFIG_ERRNO
-#ifdef CONFIG_USERSPACE
-	/* Set to the lowest area in the thread stack since this needs to
-	 * be directly read/writable by user mode. Not ideal, but best we
-	 * can do until we have thread-local storage
-	 */
-	int *errno_location;
-#else
+#ifndef CONFIG_USERSPACE
 	/** per-thread errno variable */
 	int errno_var;
 #endif

@@ -71,6 +71,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	_ASSERT_VALID_PRIO(priority, pEntry);
 
 	char *stackEnd;
+	char *stackAdjEnd;
 	struct init_stack_frame *pInitCtx;
 
 #if CONFIG_USERSPACE
@@ -101,8 +102,18 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 	_new_thread_init(thread, pStackMem, stackSize, priority, options);
 
+	stackAdjEnd = stackEnd;
+
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
+	/* reserve stack space for the userspace local data struct */
+	stackAdjEnd = (char *)STACK_ROUND_DOWN(stackEnd
+		- sizeof(*thread->userspace_local_data));
+	thread->userspace_local_data =
+		(struct _thread_userspace_local_data *)stackAdjEnd;
+#endif
+
 	/* carve the thread entry struct from the "base" of the stack */
-	pInitCtx = (struct init_stack_frame *)(STACK_ROUND_DOWN(stackEnd) -
+	pInitCtx = (struct init_stack_frame *)(STACK_ROUND_DOWN(stackAdjEnd) -
 				       sizeof(struct init_stack_frame));
 #if CONFIG_USERSPACE
 	if (options & K_USER) {

@@ -294,8 +294,28 @@ void _setup_new_thread(struct k_thread *new_thread,
 {
 	stack_size = adjust_stack_size(stack_size);
 
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
+#ifndef CONFIG_THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
+	/* reserve space on top of stack for local data */
+	stack_size = STACK_ROUND_DOWN(stack_size
+			- sizeof(*new_thread->userspace_local_data));
+#endif
+#endif
+
 	_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 		    prio, options);
+
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
+#ifndef CONFIG_THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
+	/* don't set again if the arch's own code in _new_thread() has
+	 * already set the pointer.
+	 */
+	new_thread->userspace_local_data =
+		(struct _thread_userspace_local_data *)
+		(K_THREAD_STACK_BUFFER(stack) + stack_size);
+#endif
+#endif
+
 #ifdef CONFIG_THREAD_MONITOR
 	new_thread->entry.pEntry = entry;
 	new_thread->entry.parameter1 = p1;
@@ -312,7 +332,6 @@ void _setup_new_thread(struct k_thread *new_thread,
 	_k_object_init(new_thread);
 	_k_object_init(stack);
 	new_thread->stack_obj = stack;
-	new_thread->errno_location = (int *)K_THREAD_STACK_BUFFER(stack);
 
 	/* Any given thread has access to itself */
 	k_object_access_grant(new_thread, new_thread);
