@@ -82,19 +82,63 @@
 #define SSP_MN_DIV_SIZE				(8)
 #define SSP_MN_DIV_BASE(x)		(0x00078D00 + ((x) * SSP_MN_DIV_SIZE))
 
-#define SOC_INTEL_S1000_MCK_XTAL_FREQ_HZ	38400000
+#define PDM_BASE				0x00010000
 
-/* address of I2S ownership register. We need to properly configure
- * this register in order to access the I2S registers.
- */
-#define SUE_DSP_RES_ALLOC_REG_BASE		0x00071A60
-#define SUE_DSPIOPO_REG			(SUE_DSP_RES_ALLOC_REG_BASE + 0x08)
-#define I2S_OWNSEL(x)				(0x1 << (8 + (x)))
+#define SOC_NUM_LPGPDMAC			3
+#define SOC_NUM_CHANNELS_IN_DMAC		8
 
-/* Address and bit field definition for general ownership register */
-#define DSP_RES_ALLOC_GEN_OWNER		(SUE_DSP_RES_ALLOC_REG_BASE + 0x0C)
-#define DSP_RES_ALLOC_GENO_DIOPTOSEL		(BIT(2))
-#define DSP_RES_ALLOC_GENO_MDIVOSEL		(BIT(1))
+/* SOC Resource Allocation Registers */
+#define SOC_RESOURCE_ALLOC_REG_BASE		0x00071A60
+/* bit field definition for LP GPDMA ownership register */
+#define SOC_LPGPDMAC_OWNER_DSP			\
+	(BIT(15) | BIT_MASK(SOC_NUM_CHANNELS_IN_DMAC))
+
+#define SOC_NUM_I2S_INSTANCES			4
+/* bit field definition for IO peripheral ownership register */
+#define SOC_DSPIOP_I2S_OWNSEL_DSP		\
+	(BIT_MASK(SOC_NUM_I2S_INSTANCES) << 8)
+#define SOC_DSPIOP_DMIC_OWNSEL_DSP		BIT(0)
+
+/* bit field definition for general ownership register */
+#define SOC_GENO_TIMESTAMP_OWNER_DSP		BIT(2)
+#define SOC_GENO_MNDIV_OWNER_DSP		BIT(1)
+
+struct soc_resource_alloc_regs {
+	union {
+		u16_t	lpgpdmacxo[SOC_NUM_LPGPDMAC];
+		u16_t	reserved[4];
+	};
+	u32_t	dspiopo;
+	u32_t	geno;
+};
+
+/* SOC DSP SHIM Registers */
+#define SOC_DSP_SHIM_REG_BASE			0x00071F00
+/* SOC DSP SHIM Register - Clock Control */
+#define SOC_CLKCTL_REQ_FAST_CLK			BIT(31)
+#define SOC_CLKCTL_REQ_SLOW_CLK			BIT(30)
+#define SOC_CLKCTL_OCS_FAST_CLK			BIT(2)
+/* SOC DSP SHIM Register - Power Control */
+#define SOC_PWRCTL_DISABLE_PWR_GATING_DSP0	BIT(0)
+#define SOC_PWRCTL_DISABLE_PWR_GATING_DSP1	BIT(1)
+
+struct soc_dsp_shim_regs {
+	u32_t	reserved[8];
+	u64_t	walclk;
+	u64_t	dspwctcs;
+	u64_t	dspwct0c;
+	u64_t	dspwct1c;
+	u32_t	reserved1[14];
+	u32_t	clkctl;
+	u32_t	clksts;
+	u32_t	reserved2[4];
+	u16_t	pwrctl;
+	u16_t	pwrsts;
+	u32_t	lpsctl;
+	u32_t	lpsdmas0;
+	u32_t	lpsdmas1;
+	u32_t	reserved3[22];
+};
 
 #define USB_DW_BASE				0x000A0000
 #define USB_DW_IRQ				0x00000806
@@ -110,11 +154,8 @@
 
 extern void _soc_irq_enable(u32_t irq);
 extern void _soc_irq_disable(u32_t irq);
-extern void setup_ownership_dma0(void);
-extern void setup_ownership_dma1(void);
-extern void setup_ownership_dma2(void);
 extern void dcache_writeback_region(void *addr, size_t size);
-extern void setup_ownership_i2s(void);
+extern void dcache_invalidate_region(void *addr, size_t size);
 extern u32_t soc_get_ref_clk_freq(void);
 
 #endif /* __INC_SOC_H */
