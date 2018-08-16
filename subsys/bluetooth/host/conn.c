@@ -1943,6 +1943,12 @@ struct net_buf *bt_conn_create_pdu(struct net_buf_pool *pool, size_t reserve)
 {
 	struct net_buf *buf;
 
+	/*
+	 * PDU must not be allocated from ISR as we block with 'K_FOREVER'
+	 * during the allocation
+	 */
+	__ASSERT_NO_MSG(!k_is_in_isr());
+
 	if (!pool) {
 		pool = &acl_tx_pool;
 	}
