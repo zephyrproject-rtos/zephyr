@@ -1593,12 +1593,6 @@ int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
 
 #endif /* CONFIG_BT_MESH_PB_ADV */
 
-	if (IS_ENABLED(CONFIG_BT_DEBUG)) {
-		struct bt_uuid_128 uuid = { .uuid.type = BT_UUID_TYPE_128 };
-		memcpy(uuid.val, prov->uuid, 16);
-		BT_INFO("Device UUID: %s", bt_uuid_str(&uuid.uuid));
-	}
-
 	return 0;
 }
 

@@ -13,6 +13,7 @@
 #include <net/buf.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
+#include <bluetooth/uuid.h>
 #include <bluetooth/mesh.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG)
@@ -131,6 +132,14 @@ int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 {
 	if (bt_mesh_is_provisioned()) {
 		return -EALREADY;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_DEBUG)) {
+		const struct bt_mesh_prov *prov = bt_mesh_prov_get();
+		struct bt_uuid_128 uuid = { .uuid.type = BT_UUID_TYPE_128 };
+
+		memcpy(uuid.val, prov->uuid, 16);
+		BT_INFO("Device UUID: %s", bt_uuid_str(&uuid.uuid));
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
