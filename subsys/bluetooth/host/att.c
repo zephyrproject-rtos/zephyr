@@ -1954,6 +1954,9 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, u8_t op, size_t len)
 	}
 
 	buf = bt_l2cap_create_pdu(NULL, 0);
+	if (buf == NULL) {
+		return NULL;
+	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->code = op;
