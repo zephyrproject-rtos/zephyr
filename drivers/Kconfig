@@ -83,4 +83,6 @@ source "drivers/modem/Kconfig"
 
 source "drivers/audio/Kconfig"
 
+source "drivers/neural_net/Kconfig"
+
 endmenu
