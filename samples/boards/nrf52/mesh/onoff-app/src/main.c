@@ -578,13 +578,6 @@ static void bt_ready(int err)
 
 	SYS_LOG_INF("Bluetooth initialized");
 
-	/* Use identity address as device UUID */
-	if (bt_le_oob_get_local(BT_ID_DEFAULT, &oob)) {
-		SYS_LOG_ERR("Identity Address unavailable");
-	} else {
-		memcpy(dev_uuid, oob.addr.a.val, 6);
-	}
-
 	err = bt_mesh_init(&prov, &comp);
 	if (err) {
 		SYS_LOG_ERR("Initializing mesh failed (err %d)", err);
@@ -593,6 +586,13 @@ static void bt_ready(int err)
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
+	}
+
+	/* Use identity address as device UUID */
+	if (bt_le_oob_get_local(BT_ID_DEFAULT, &oob)) {
+		SYS_LOG_ERR("Identity Address unavailable");
+	} else {
+		memcpy(dev_uuid, oob.addr.a.val, 6);
 	}
 
 	bt_mesh_prov_enable(BT_MESH_PROV_GATT | BT_MESH_PROV_ADV);
