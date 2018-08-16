@@ -2592,7 +2592,7 @@ out:
 }
 
 struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
-						  struct in6_addr *addr)
+						  const struct in6_addr *addr)
 {
 	struct net_if_ipv6_prefix *prefix = NULL;
 	struct net_if_ipv6 *ipv6;
@@ -2986,13 +2986,29 @@ static inline bool is_proper_ipv6_address(struct net_if_addr *addr)
 	return false;
 }
 
+static bool use_public_address(bool prefer_public, bool is_temporary)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV6_PE)) {
+		if (!prefer_public && is_temporary) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 						   const struct in6_addr *dst,
+						   uint8_t prefix_len,
 						   uint8_t *best_so_far)
 {
-	struct net_if_ipv6 *ipv6;
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+	struct net_if_addr *public_addr = NULL;
 	struct in6_addr *src = NULL;
-	uint8_t len;
+	uint8_t public_addr_len = 0;
+	struct in6_addr *temp_addr;
+	uint8_t len, temp_addr_len;
+	bool ret;
 
 	net_if_lock(iface);
 
@@ -3001,12 +3017,24 @@ static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 		goto out;
 	}
 
+	if (IS_ENABLED(CONFIG_NET_IPV6_PE)) {
+		temp_addr = NULL;
+		temp_addr_len = 0;
+	} else {
+		ARG_UNUSED(temp_addr);
+		ARG_UNUSED(temp_addr_len);
+	}
+
 	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (!is_proper_ipv6_address(&ipv6->unicast[i])) {
 			continue;
 		}
 
 		len = get_diff_ipv6(dst, &ipv6->unicast[i].address.in6_addr);
+		if (len >= prefix_len) {
+			len = prefix_len;
+		}
+
 		if (len >= *best_so_far) {
 			/* Mesh local address can only be selected for the same
 			 * subnet.
@@ -3016,8 +3044,35 @@ static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 				continue;
 			}
 
+			ret = use_public_address(iface->pe_prefer_public,
+						 ipv6->unicast[i].is_temporary);
+			if (!ret) {
+				temp_addr = &ipv6->unicast[i].address.in6_addr;
+				temp_addr_len = len;
+				continue;
+			}
+
+			if (!ipv6->unicast[i].is_temporary) {
+				public_addr = &ipv6->unicast[i];
+				public_addr_len = len;
+			}
+
 			*best_so_far = len;
 			src = &ipv6->unicast[i].address.in6_addr;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6_PE) && !iface->pe_prefer_public && temp_addr) {
+		if (temp_addr_len >= *best_so_far) {
+			*best_so_far = temp_addr_len;
+			src = temp_addr;
+		}
+	} else {
+		/* By default prefer always public address if found */
+		if (public_addr &&
+		    !net_ipv6_addr_cmp(&public_addr->address.in6_addr, src)) {
+			src = &public_addr->address.in6_addr;
+			*best_so_far = public_addr_len;
 		}
 	}
 
@@ -3036,15 +3091,25 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 	NET_ASSERT(dst);
 
 	if (!net_ipv6_is_ll_addr(dst) && !net_ipv6_is_addr_mcast_link(dst)) {
+		struct net_if_ipv6_prefix *prefix;
+		uint8_t prefix_len = 128;
+
+		prefix = net_if_ipv6_prefix_get(dst_iface, dst);
+		if (prefix) {
+			prefix_len = prefix->len;
+		}
+
 		/* If caller has supplied interface, then use that */
 		if (dst_iface) {
 			src = net_if_ipv6_get_best_match(dst_iface, dst,
+							 prefix_len,
 							 &best_match);
 		} else {
 			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct in6_addr *addr;
 
 				addr = net_if_ipv6_get_best_match(iface, dst,
+								  prefix_len,
 								  &best_match);
 				if (addr) {
 					src = addr;
