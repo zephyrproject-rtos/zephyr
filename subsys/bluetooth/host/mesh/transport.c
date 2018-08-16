@@ -1190,8 +1190,23 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 		return -EINVAL;
 	}
 
+	/* According to Mesh 1.0 specification:
+	 * "The SeqAuth is composed of the IV Index and the sequence number
+	 *  (SEQ) of the first segment"
+	 *
+	 * Therefore we need to calculate very first SEQ in order to find
+	 * seqAuth. We can calculate as below:
+	 *
+	 * SEQ(0) = SEQ(n) - (delta between seqZero and SEQ(n) by looking into
+	 * 14 least significant bits of SEQ(n))
+	 *
+	 * Mentioned delta shall be >= 0, if it is not then seq_auth will
+	 * be broken and it will be verified by the code below.
+	 */
 	*seq_auth = SEQ_AUTH(BT_MESH_NET_IVI_RX(net_rx),
-			     (net_rx->seq & 0xffffe000) | seq_zero);
+			     (net_rx->seq -
+			      ((((net_rx->seq & BIT_MASK(14)) - seq_zero)) &
+			       BIT_MASK(13))));
 
 	/* Look for old RX sessions */
 	rx = seg_rx_find(net_rx, seq_auth);
