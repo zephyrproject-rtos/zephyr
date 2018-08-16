@@ -429,13 +429,9 @@ static inline void dbg_update_neighbor_lladdr_raw(u8_t *new_lladdr,
 
 #define dbg_addr(action, pkt_str, src, dst)				\
 	do {								\
-		char out[NET_IPV6_ADDR_LEN];				\
-									\
-		snprintk(out, sizeof(out), "%s",			\
-			 net_sprint_ipv6_addr(dst));			\
-									\
-		NET_DBG("%s %s from %s to %s", action,			\
-			pkt_str, net_sprint_ipv6_addr(src), out);	\
+		NET_DBG("%s %s from %s to %s", action, pkt_str,		\
+			net_sprint_ipv6_addr(src),			\
+			net_sprint_ipv6_addr(dst));			\
 									\
 	} while (0)
 
@@ -447,16 +443,11 @@ static inline void dbg_update_neighbor_lladdr_raw(u8_t *new_lladdr,
 
 #define dbg_addr_with_tgt(action, pkt_str, src, dst, target)		\
 	do {								\
-		char out[NET_IPV6_ADDR_LEN];				\
-		char tgt[NET_IPV6_ADDR_LEN];				\
-									\
-		snprintk(out, sizeof(out), "%s",			\
-			 net_sprint_ipv6_addr(dst));			\
-		snprintk(tgt, sizeof(tgt), "%s",			\
-			 net_sprint_ipv6_addr(target));			\
-									\
 		NET_DBG("%s %s from %s to %s, target %s", action,	\
-			pkt_str, net_sprint_ipv6_addr(src), out, tgt);	\
+			pkt_str,					\
+			net_sprint_ipv6_addr(src),			\
+			net_sprint_ipv6_addr(dst),			\
+			net_sprint_ipv6_addr(target));			\
 									\
 	} while (0)
 
@@ -3270,11 +3261,6 @@ static void reassembly_info(char *str, struct net_ipv6_reassembly *reass)
 {
 	int i, len;
 
-#if NET_LOG_ENABLED > 0
-	char out[NET_IPV6_ADDR_LEN];
-	snprintk(out, sizeof(out), "%s", net_sprint_ipv6_addr(&reass->dst));
-#endif
-
 	for (i = 0, len = 0; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
 		if (!reass->pkt[i]) {
 			continue;
@@ -3283,8 +3269,9 @@ static void reassembly_info(char *str, struct net_ipv6_reassembly *reass)
 		len += net_pkt_get_len(reass->pkt[i]);
 	}
 
-	NET_DBG("%s id 0x%x src %s dst %s remain %d ms len %d",
-		str, reass->id, net_sprint_ipv6_addr(&reass->src), out,
+	NET_DBG("%s id 0x%x src %s dst %s remain %d ms len %d", str, reass->id,
+		net_sprint_ipv6_addr(&reass->src),
+		net_sprint_ipv6_addr(&reass->dst),
 		k_delayed_work_remaining_get(&reass->timer), len);
 }
 
@@ -4064,14 +4051,8 @@ static void no_route_info(struct net_pkt *pkt,
 			  struct in6_addr *src,
 			  struct in6_addr *dst)
 {
-#if defined(CONFIG_NET_DEBUG_IPV6) && (CONFIG_SYS_LOG_NET_LEVEL > 3)
-	char out[NET_IPV6_ADDR_LEN];
-
-	snprintk(out, sizeof(out), "%s", net_sprint_ipv6_addr(dst));
-
 	NET_DBG("Will not route pkt %p ll src %s to dst %s between interfaces",
-		pkt, net_sprint_ipv6_addr(src), out);
-#endif
+		pkt, net_sprint_ipv6_addr(src), net_sprint_ipv6_addr(dst));
 }
 
 #if defined(CONFIG_NET_ROUTE)
@@ -4164,16 +4145,9 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 		goto drop;
 	}
 
-#if defined(CONFIG_NET_DEBUG_IPV6)
-	do {
-		char out[NET_IPV6_ADDR_LEN];
-
-		snprintk(out, sizeof(out), "%s",
-			 net_sprint_ipv6_addr(&hdr->dst));
-		NET_DBG("IPv6 packet len %d received from %s to %s",
-			real_len, net_sprint_ipv6_addr(&hdr->src), out);
-	} while (0);
-#endif /* CONFIG_NET_DEBUG_IPV6 */
+	NET_DBG("IPv6 packet len %d received from %s to %s", real_len,
+		net_sprint_ipv6_addr(&hdr->src),
+		net_sprint_ipv6_addr(&hdr->dst));
 
 	if (net_is_ipv6_addr_mcast(&hdr->src)) {
 		NET_DBG("Dropping src multicast packet");

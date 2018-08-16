@@ -219,14 +219,11 @@ NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 		   net_rpl_neighbor_table_clear);
 
 #if defined(CONFIG_NET_DEBUG_RPL)
-#define net_rpl_info(pkt, req)						     \
-	do {								     \
-		char out[NET_IPV6_ADDR_LEN];				     \
-									     \
-		snprintk(out, sizeof(out), "%s",			     \
-			 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));     \
-		NET_DBG("Received %s from %s to %s", req,		     \
-			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src), out); \
+#define net_rpl_info(pkt, req)						\
+	do {								\
+		NET_DBG("Received %s from %s to %s", req,		\
+			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src),	\
+			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));	\
 	} while (0)
 
 #define net_rpl_dao_info(pkt, src, dst, prefix)				  \
@@ -242,19 +239,9 @@ NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 			prf, net_sprint_ipv6_addr(src), out);		  \
 	} while (0)
 
-#define net_rpl_dao_ack_info(pkt, src, dst, id, seq)			\
-	do {								\
-		char out[NET_IPV6_ADDR_LEN];				\
-									\
-		snprintk(out, sizeof(out), "%s",			\
-			 net_sprint_ipv6_addr(dst));			\
-		NET_DBG("Send DAO-ACK (id %d, seq %d) from %s to %s",	\
-			id, seq, net_sprint_ipv6_addr(src), out);	\
-	} while (0)
 #else /* CONFIG_NET_DEBUG_RPL */
 #define net_rpl_info(...)
 #define net_rpl_dao_info(...)
-#define net_rpl_dao_ack_info(...)
 #endif /* CONFIG_NET_DEBUG_RPL */
 
 static void new_dio_interval(struct net_rpl_instance *instance);
@@ -416,19 +403,8 @@ static void net_rpl_print_parents(void)
 				   K_SECONDS(60)));
 	}
 }
-
-#define net_route_info(str, route, addr, len, nexthop)			\
-	do {								\
-		char out[NET_IPV6_ADDR_LEN];				\
-									\
-		snprintk(out, sizeof(out), "%s",			\
-			 net_sprint_ipv6_addr(addr));			\
-		NET_DBG("%s route to %s via %s (iface %p)", str, out,	\
-			net_sprint_ipv6_addr(nexthop), route->iface);	\
-	} while (0)
 #else
 #define net_rpl_print_parents(...)
-#define net_route_info(...)
 #endif /* CONFIG_NET_DEBUG_RPL */
 
 struct net_route_entry *net_rpl_add_route(struct net_rpl_dag *dag,
@@ -455,7 +431,9 @@ struct net_route_entry *net_rpl_add_route(struct net_rpl_dag *dag,
 					   dag->instance->default_lifetime);
 	extra->route_source = NET_RPL_ROUTE_INTERNAL;
 
-	net_route_info("Added", route, addr, prefix_len, nexthop);
+	NET_DBG("Added route to %s via %s (iface %p)",
+		net_sprint_ipv6_addr(addr),
+		net_sprint_ipv6_addr(nexthop), route->iface);
 
 	return route;
 }
@@ -3282,8 +3260,11 @@ static int dao_ack_send(struct in6_addr *src,
 
 	ret = net_send_data(pkt);
 	if (ret >= 0) {
-		net_rpl_dao_ack_info(pkt, src, dst, instance->instance_id,
-				     sequence);
+
+		NET_DBG("Send DAO-ACK (id %d, seq %d) from %s to %s",
+			instance->instance_id, sequence,
+			net_sprint_ipv6_addr(src),
+			net_sprint_ipv6_addr(dst));
 
 		net_stats_update_icmp_sent(iface);
 		net_stats_update_rpl_dao_ack_sent(iface);

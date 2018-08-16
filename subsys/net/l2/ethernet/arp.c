@@ -575,19 +575,11 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 			return NET_DROP;
 		}
 
-#if defined(CONFIG_NET_DEBUG_ARP)
-		do {
-			char out[sizeof("xxx.xxx.xxx.xxx")];
-			snprintk(out, sizeof(out), "%s",
-				 net_sprint_ipv4_addr(&arp_hdr->src_ipaddr));
-			NET_DBG("ARP request from %s [%s] for %s",
-				out,
-				net_sprint_ll_addr(
-					(u8_t *)&arp_hdr->src_hwaddr,
-					arp_hdr->hwlen),
-				net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr));
-		} while (0);
-#endif /* CONFIG_NET_DEBUG_ARP */
+		NET_DBG("ARP request from %s [%s] for %s",
+			net_sprint_ipv4_addr(&arp_hdr->src_ipaddr),
+			net_sprint_ll_addr((u8_t *)&arp_hdr->src_hwaddr,
+						arp_hdr->hwlen),
+			net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr));
 
 		/* Send reply */
 		reply = arp_prepare_reply(net_pkt_iface(pkt), pkt);

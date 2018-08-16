@@ -124,16 +124,9 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 		goto drop;
 	}
 
-#if defined(CONFIG_NET_DEBUG_IPV4)
-	do {
-		char out[sizeof("xxx.xxx.xxx.xxx")];
-
-		snprintk(out, sizeof(out), "%s",
-			 net_sprint_ipv4_addr(&hdr->dst));
-		NET_DBG("IPv4 packet received from %s to %s",
-			net_sprint_ipv4_addr(&hdr->src), out);
-	} while (0);
-#endif /* CONFIG_NET_DEBUG_IPV4 */
+	NET_DBG("IPv4 packet received from %s to %s",
+		net_sprint_ipv4_addr(&hdr->src),
+		net_sprint_ipv4_addr(&hdr->dst));
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 	net_pkt_set_ipv4_ttl(pkt, NET_IPV4_HDR(pkt)->ttl);

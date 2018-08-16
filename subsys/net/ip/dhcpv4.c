@@ -319,24 +319,13 @@ static u32_t dhcpv4_send_request(struct net_if *iface)
 
 	iface->config.dhcpv4.attempts++;
 
-#if defined(CONFIG_NET_DEBUG_DHCPV4)
-	do {
-		char out[NET_IPV4_ADDR_LEN] = "0.0.0.0";
-
-		if (ciaddr) {
-			snprintk(out, sizeof(out), "%s",
-				 net_sprint_ipv4_addr(ciaddr));
-		}
-
-		NET_DBG("send request dst=%s xid=0x%x ciaddr=%s"
-			"%s%s timeout=%us",
-			net_sprint_ipv4_addr(server_addr),
-			iface->config.dhcpv4.xid, out,
-			with_server_id ? " +server-id" : "",
-			with_requested_ip ? " +requested-ip" : "",
-			timeout);
-	} while (0);
-#endif /* CONFIG_NET_DEBUG_DHCPV4 */
+	NET_DBG("send request dst=%s xid=0x%x ciaddr=%s%s%s timeout=%us",
+		net_sprint_ipv4_addr(server_addr),
+		iface->config.dhcpv4.xid,
+		net_sprint_ipv4_addr(ciaddr),
+		with_server_id ? " +server-id" : "",
+		with_requested_ip ? " +requested-ip" : "",
+		timeout);
 
 	iface->config.dhcpv4.timer_start = k_uptime_get();
 	iface->config.dhcpv4.request_time = timeout;

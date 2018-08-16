@@ -106,14 +106,9 @@ static inline enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt)
 	struct in_addr addr;
 	int ret;
 
-#if defined(CONFIG_NET_DEBUG_ICMPV4)
-	char out[sizeof("xxx.xxx.xxx.xxx")];
-
-	snprintk(out, sizeof(out), "%s",
-		 net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 	NET_DBG("Received Echo Request from %s to %s",
-		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src), out);
-#endif /* CONFIG_NET_DEBUG_ICMPV4 */
+		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src),
+		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 
 	net_ipaddr_copy(&addr, &NET_IPV4_HDR(pkt)->src);
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src,
@@ -133,12 +128,9 @@ static inline enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
-#if defined(CONFIG_NET_DEBUG_ICMPV4)
-	snprintk(out, sizeof(out), "%s",
-		 net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 	NET_DBG("Sending Echo Reply from %s to %s",
-		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src), out);
-#endif /* CONFIG_NET_DEBUG_ICMPV4 */
+		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src),
+		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 
 	if (net_send_data(pkt) < 0) {
 		net_stats_update_icmp_drop(net_pkt_iface(pkt));
@@ -212,18 +204,10 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 
 	net_ipv4_finalize(pkt, IPPROTO_ICMP);
 
-#if defined(CONFIG_NET_DEBUG_ICMPV4)
-	do {
-		char out[NET_IPV4_ADDR_LEN];
-
-		snprintk(out, sizeof(out), "%s",
-			 net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
-
-		NET_DBG("Sending ICMPv4 Echo Request type %d"
-			" from %s to %s", NET_ICMPV4_ECHO_REQUEST,
-			net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src), out);
-	} while (0);
-#endif /* CONFIG_NET_DEBUG_ICMPV4 */
+	NET_DBG("Sending ICMPv4 Echo Request type %d from %s to %s",
+		NET_ICMPV4_ECHO_REQUEST,
+		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src),
+		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 
 	if (net_send_data(pkt) >= 0) {
 		net_stats_update_icmp_sent(iface);
@@ -319,17 +303,10 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 	net_pkt_ll_dst(pkt)->addr = net_pkt_ll_src(orig)->addr;
 	net_pkt_ll_dst(pkt)->len = net_pkt_ll_src(orig)->len;
 
-#if defined(CONFIG_NET_DEBUG_ICMPV4)
-	do {
-		char out[sizeof("xxx.xxx.xxx.xxx")];
-
-		snprintk(out, sizeof(out), "%s",
-			 net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
-		NET_DBG("Sending ICMPv4 Error Message type %d code %d "
-			"from %s to %s", type, code,
-			net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src), out);
-	} while (0);
-#endif /* CONFIG_NET_DEBUG_ICMPV4 */
+	NET_DBG("Sending ICMPv4 Error Message type %d code %d from %s to %s",
+		type, code,
+		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src),
+		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 
 	if (net_send_data(pkt) >= 0) {
 		net_stats_update_icmp_sent(iface);
