@@ -3,6 +3,6 @@ sample:
 tests:
   test:
     harness: sensor
-    platform_whitelist: arduino_101_sss
+    platform_whitelist: reel_board
     tags: samples sensor
     depends_on: i2c gpio
