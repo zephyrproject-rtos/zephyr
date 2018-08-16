@@ -276,6 +276,11 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		static int ptp_iface_idx;
 		struct device *clk;
 
+		if (ud->eth_if_count >= ARRAY_SIZE(eth_interfaces)) {
+			DBG("Invalid interface %p\n", iface);
+			return;
+		}
+
 		clk = net_eth_get_ptp_clock(iface);
 		if (!clk) {
 			non_ptp_interface = ud->eth_if_count;
