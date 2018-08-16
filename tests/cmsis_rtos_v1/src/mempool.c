@@ -13,26 +13,54 @@ struct mem_block {
 	int member2;
 };
 
-osPoolDef(MemPool, 8, struct mem_block);
+#define MAX_BLOCKS 10
 
+osPoolDef(MemPool, MAX_BLOCKS, struct mem_block);
+
+/**
+ * @brief Test memory pool allocation and free
+ *
+ * @see osPoolCreate(), osPoolAlloc(), osPoolFree(),
+ * osPoolCAlloc(), memcmp()
+ */
 void test_mempool(void)
 {
+	int i;
 	osPoolId mempool_id;
-	osStatus status;
-	struct mem_block *addr;
+	struct mem_block *addr_list[MAX_BLOCKS + 1];
+	osStatus status_list[MAX_BLOCKS];
+	static struct mem_block zeroblock;
 
 	mempool_id = osPoolCreate(osPool(MemPool));
-	zassert_true(mempool_id != NULL, "mempool creation failed\n");
+	zassert_true(mempool_id != NULL, "mempool creation failed");
 
-	addr = (struct mem_block *)osPoolAlloc(mempool_id);
-	zassert_true(addr != NULL, "mempool allocation failed\n");
+	for (i = 0; i < MAX_BLOCKS; i++) {
+		addr_list[i] = (struct mem_block *)osPoolAlloc(mempool_id);
+		zassert_true(addr_list[i] != NULL, "mempool allocation failed");
+	}
 
-	status = osPoolFree(mempool_id, addr);
-	zassert_true(status == osOK, "mempool free failed\n");
+	/* All blocks in mempool are allocated, any more allocation
+	 * without free should fail
+	 */
+	addr_list[i] = (struct mem_block *)osPoolAlloc(mempool_id);
+	zassert_true(addr_list[i] == NULL, "allocation happened."
+			" Something's wrong!");
 
-	addr = (struct mem_block *)osPoolCAlloc(mempool_id);
-	zassert_true(addr != NULL, "mempool allocation failed\n");
+	for (i = 0; i < MAX_BLOCKS; i++) {
+		status_list[i] = osPoolFree(mempool_id, addr_list[i]);
+		zassert_true(status_list[i] == osOK, "mempool free failed");
+	}
 
-	status = osPoolFree(mempool_id, addr);
-	zassert_true(status == osOK, "mempool free failed\n");
+	for (i = 0; i < MAX_BLOCKS; i++) {
+		addr_list[i] = (struct mem_block *)osPoolCAlloc(mempool_id);
+		zassert_true(addr_list[i] != NULL, "mempool allocation failed");
+		zassert_true(memcmp(addr_list[i], &zeroblock,
+					sizeof(struct mem_block)) == 0,
+			     "osPoolCAlloc didn't set mempool to 0");
+	}
+
+	for (i = 0; i < MAX_BLOCKS; i++) {
+		status_list[i] = osPoolFree(mempool_id, addr_list[i]);
+		zassert_true(status_list[i] == osOK, "mempool free failed");
+	}
 }

@@ -8,6 +8,8 @@
 #include <kernel.h>
 #include <cmsis_os.h>
 
+extern void test_kernel_start(void);
+extern void test_kernel_systick(void);
 extern void test_thread_prio(void);
 extern void test_thread_apis(void);
 extern void test_thread_instances(void);
@@ -25,6 +27,8 @@ extern void test_signal_events_signalled(void);
 void test_main(void)
 {
 	ztest_test_suite(test_cmsis_apis,
+			ztest_unit_test(test_kernel_start),
+			ztest_unit_test(test_kernel_systick),
 			ztest_unit_test(test_thread_apis),
 			ztest_unit_test(test_thread_prio),
 			ztest_unit_test(test_thread_instances),
