@@ -2656,13 +2656,9 @@ static inline void _remove_ipv6_ping_handler(void)
 
 static enum net_verdict _handle_ipv6_echo_reply(struct net_pkt *pkt)
 {
-	char addr[NET_IPV6_ADDR_LEN];
-
-	snprintk(addr, sizeof(addr), "%s",
-		 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
-
 	printk("Received echo reply from %s to %s\n",
-	       net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src), addr);
+		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src),
+		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
 
 	k_sem_give(&ping_timeout);
 	_remove_ipv6_ping_handler();
@@ -2734,13 +2730,9 @@ static inline void _remove_ipv4_ping_handler(void)
 
 static enum net_verdict _handle_ipv4_echo_reply(struct net_pkt *pkt)
 {
-	char addr[NET_IPV4_ADDR_LEN];
-
-	snprintk(addr, sizeof(addr), "%s",
-		 net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
-
 	printk("Received echo reply from %s to %s\n",
-	       net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src), addr);
+		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src),
+		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
 
 	k_sem_give(&ping_timeout);
 	_remove_ipv4_ping_handler();
@@ -3000,27 +2992,24 @@ int net_shell_cmd_rpl(int argc, char *argv[])
 
 	printk("Instance DAGs   :\n");
 	for (i = 0, count = 0; i < CONFIG_NET_RPL_MAX_DAG_PER_INSTANCE; i++) {
-		char prefix[NET_IPV6_ADDR_LEN];
 
 		if (!instance->dags[i].is_used) {
 			continue;
 		}
 
-		snprintk(prefix, sizeof(prefix), "%s",
-			 net_sprint_ipv6_addr(
-				 &instance->dags[i].prefix_info.prefix));
-
 		printk("[%2d]%s %s prefix %s/%d rank %d/%d ver %d flags %c%c "
-		       "parent %p\n",
-		       ++count,
-		       &instance->dags[i] == instance->current_dag ? "*" : " ",
-		       net_sprint_ipv6_addr(&instance->dags[i].dag_id),
-		       prefix, instance->dags[i].prefix_info.length,
-		       instance->dags[i].rank, instance->dags[i].min_rank,
-		       instance->dags[i].version,
-		       instance->dags[i].is_grounded ? 'G' : 'g',
-		       instance->dags[i].is_joined ? 'J' : 'j',
-		       instance->dags[i].preferred_parent);
+			"parent %p\n",
+			++count,
+			&instance->dags[i] == instance->current_dag ? "*" : " ",
+			net_sprint_ipv6_addr(&instance->dags[i].dag_id),
+			net_sprint_ipv6_addr(
+					&instance->dags[i].prefix_info.prefix),
+			instance->dags[i].prefix_info.length,
+			instance->dags[i].rank, instance->dags[i].min_rank,
+			instance->dags[i].version,
+			instance->dags[i].is_grounded ? 'G' : 'g',
+			instance->dags[i].is_joined ? 'J' : 'j',
+			instance->dags[i].preferred_parent);
 	}
 	printk("\n");
 

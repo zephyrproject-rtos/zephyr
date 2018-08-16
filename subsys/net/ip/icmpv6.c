@@ -104,31 +104,6 @@ static inline void setup_ipv6_header(struct net_pkt *pkt, u16_t extra_len,
 	net_pkt_write(pkt, frag, pos, &pos, 4, (u8_t *)&unused, PKT_WAIT_TIME);
 }
 
-#if defined(CONFIG_NET_DEBUG_ICMPV6)
-static inline void echo_request_debug(struct net_pkt *pkt)
-{
-	char out[NET_IPV6_ADDR_LEN];
-
-	snprintk(out, sizeof(out), "%s",
-		 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
-	NET_DBG("Received Echo Request from %s to %s",
-		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src), out);
-}
-
-static inline void echo_reply_debug(struct net_pkt *pkt)
-{
-	char out[NET_IPV6_ADDR_LEN];
-
-	snprintk(out, sizeof(out), "%s",
-		 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
-	NET_DBG("Sending Echo Reply from %s to %s",
-		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src), out);
-}
-#else
-#define echo_request_debug(pkt)
-#define echo_reply_debug(pkt)
-#endif /* CONFIG_NET_DEBUG_ICMPV6 */
-
 int net_icmpv6_set_chksum(struct net_pkt *pkt)
 {
 	u16_t chksum = 0;
@@ -325,7 +300,9 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 	u16_t payload_len;
 	int ret;
 
-	echo_request_debug(orig);
+	NET_DBG("Received Echo Request from %s to %s",
+		net_sprint_ipv6_addr(&NET_IPV6_HDR(orig)->src),
+		net_sprint_ipv6_addr(&NET_IPV6_HDR(orig)->dst));
 
 	iface = net_pkt_iface(orig);
 
@@ -406,7 +383,9 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 	net_icmpv6_set_hdr(pkt, &icmp_hdr);
 	net_icmpv6_set_chksum(pkt);
 
-	echo_reply_debug(pkt);
+	NET_DBG("Sending Echo Reply from %s to %s",
+		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src),
+		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
 
 	if (net_send_data(pkt) < 0) {
 		goto drop;
@@ -530,16 +509,10 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 		goto drop;
 	}
 
-#if defined(CONFIG_NET_DEBUG_ICMPV6)
-	do {
-		char out[NET_IPV6_ADDR_LEN];
-		snprintk(out, sizeof(out), "%s",
-			 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
-		NET_DBG("Sending ICMPv6 Error Message type %d code %d param %d"
-			" from %s to %s", type, code, param,
-			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src), out);
-	} while (0);
-#endif /* CONFIG_NET_DEBUG_ICMPV6 */
+	NET_DBG("Sending ICMPv6 Error Message type %d code %d param %d"
+		" from %s to %s", type, code, param,
+		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src),
+		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
 
 	if (net_send_data(pkt) >= 0) {
 		net_stats_update_icmp_sent(iface);
@@ -603,17 +576,10 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 		goto drop;
 	}
 
-#if defined(CONFIG_NET_DEBUG_ICMPV6)
-	do {
-		char out[NET_IPV6_ADDR_LEN];
-
-		snprintk(out, sizeof(out), "%s",
-			 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
-		NET_DBG("Sending ICMPv6 Echo Request type %d"
-			" from %s to %s", NET_ICMPV6_ECHO_REQUEST,
-			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src), out);
-	} while (0);
-#endif /* CONFIG_NET_DEBUG_ICMPV6 */
+	NET_DBG("Sending ICMPv6 Echo Request type %d from %s to %s",
+		NET_ICMPV6_ECHO_REQUEST,
+		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src),
+		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
 
 	if (net_send_data(pkt) >= 0) {
 		net_stats_update_icmp_sent(iface);

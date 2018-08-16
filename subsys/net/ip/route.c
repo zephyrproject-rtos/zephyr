@@ -239,14 +239,12 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 #if defined(CONFIG_NET_DEBUG_ROUTE)
 #define net_route_info(str, route, dst)					\
 	do {								\
-		char out[NET_IPV6_ADDR_LEN];				\
 		struct in6_addr *naddr = net_route_get_nexthop(route);	\
 									\
 		NET_ASSERT_INFO(naddr, "Unknown nexthop address");	\
 									\
-		snprintk(out, sizeof(out), "%s",			\
-			 net_sprint_ipv6_addr(dst));			\
-		NET_DBG("%s route to %s via %s (iface %p)", str, out,	\
+		NET_DBG("%s route to %s via %s (iface %p)", str,	\
+			net_sprint_ipv6_addr(dst),			\
 			net_sprint_ipv6_addr(naddr), route->iface);	\
 	} while (0)
 #else
@@ -363,19 +361,16 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 				     node);
 #if defined(CONFIG_NET_DEBUG_ROUTE)
 		do {
-			char out[NET_IPV6_ADDR_LEN];
 			struct in6_addr *tmp;
 			struct net_linkaddr_storage *llstorage;
-
-			snprintk(out, sizeof(out), "%s",
-				 net_sprint_ipv6_addr(&route->addr));
 
 			tmp = net_route_get_nexthop(route);
 			nbr = net_ipv6_nbr_lookup(iface, tmp);
 			llstorage = net_nbr_get_lladdr(nbr->idx);
 
 			NET_DBG("Removing the oldest route %s via %s [%s]",
-				out, net_sprint_ipv6_addr(tmp),
+				net_sprint_ipv6_addr(&route->addr),
+				net_sprint_ipv6_addr(tmp),
 				net_sprint_ll_addr(llstorage->addr,
 						   llstorage->len));
 		} while (0);
