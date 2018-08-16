@@ -84,13 +84,14 @@ struct zsock_pollfd {
  */
 #define TLS_PEER_VERIFY 5
 /* Write-only socket option to set role for DTLS connection. This option
- * is irrelevant for TLS connections. By default, DTLS will assume client role.
+ * is irrelevant for TLS connections, as for them role is selected based on
+ * connect()/listen() usage. By default, DTLS will assume client role.
  * This option accepts an integer with a TLS role, compatible with
  * mbedTLS values:
  * 0 - client,
  * 1 - server.
  */
-#define TLS_ROLE 6
+#define TLS_DTLS_ROLE 6
 
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;

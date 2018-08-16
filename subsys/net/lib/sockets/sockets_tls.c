@@ -48,8 +48,17 @@ struct sec_tag_list {
 
 /** Timer context for DTLS. */
 struct dtls_timing_context {
+	/** Current time, stored during timer set. */
 	u32_t snapshot;
+
+	/** Intermediate delay value. For details, refer to mbedTLS API
+	 *  documentation (mbedtls_ssl_set_timer_t).
+	 */
 	u32_t int_ms;
+
+	/** Final delay value. For details, refer to mbedTLS API documentation
+	 *  (mbedtls_ssl_set_timer_t).
+	 */
 	u32_t fin_ms;
 };
 
@@ -1042,8 +1051,8 @@ static int tls_opt_peer_verify_set(struct net_context *context,
 	return 0;
 }
 
-static int tls_opt_role_set(struct net_context *context, const void *optval,
-			    socklen_t optlen)
+static int tls_opt_dtls_role_set(struct net_context *context,
+				 const void *optval, socklen_t optlen)
 {
 	int *role;
 
@@ -1071,16 +1080,27 @@ int ztls_socket(int family, int type, int proto)
 	enum net_ip_protocol_secure tls_proto = 0;
 	int sock, ret, err;
 
-	if ((proto >= IPPROTO_TLS_1_0 && proto <= IPPROTO_TLS_1_2) ||
-	    (proto >= IPPROTO_DTLS_1_0 && proto <= IPPROTO_DTLS_1_2)) {
-#if !defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-		if (type == SOCK_DGRAM) {
-			errno = ENOTSUP;
+	if (proto >= IPPROTO_TLS_1_0 && proto <= IPPROTO_TLS_1_2) {
+		if (type != SOCK_STREAM) {
+			errno = EPROTOTYPE;
 			return -1;
 		}
-#endif
+
 		tls_proto = proto;
-		proto = (type == SOCK_STREAM) ? IPPROTO_TCP : IPPROTO_UDP;
+		proto = IPPROTO_TCP;
+	} else if (proto >= IPPROTO_DTLS_1_0 && proto <= IPPROTO_DTLS_1_2) {
+#if !defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
+		errno = EPROTONOSUPPORT;
+		return -1;
+#else
+		if (type != SOCK_DGRAM) {
+			errno = EPROTOTYPE;
+			return -1;
+		}
+
+		tls_proto = proto;
+		proto = IPPROTO_UDP;
+#endif
 	}
 
 	sock = zsock_socket(family, type, proto);
@@ -1263,8 +1283,8 @@ ssize_t ztls_recv(int sock, void *buf, size_t max_len, int flags)
 	return ztls_recvfrom(sock, buf, max_len, flags, NULL, 0);
 }
 
-static ssize_t sendto_tls(struct net_context *context, const void *buf,
-			  size_t len, int flags)
+static ssize_t send_tls(struct net_context *context, const void *buf,
+			size_t len, int flags)
 {
 	int ret;
 
@@ -1325,7 +1345,7 @@ static ssize_t sendto_dtls_client(struct net_context *context, const void *buf,
 		}
 	}
 
-	return sendto_tls(context, buf, len, flags);
+	return send_tls(context, buf, len, flags);
 
 error:
 	errno = -ret;
@@ -1345,16 +1365,14 @@ static ssize_t sendto_dtls_server(struct net_context *context, const void *buf,
 		return -1;
 	}
 
-	/* Check if not trying to send to other peer, which we're
-	 * not connected to.
-	 */
+	/* Verify we are sending to a peer that we have connection with. */
 	if (dest_addr &&
 	    !dtls_is_peer_addr_valid(context, dest_addr, addrlen) != 0) {
 		errno = EISCONN;
 		return -1;
 	}
 
-	return sendto_tls(context, buf, len, flags);
+	return send_tls(context, buf, len, flags);
 }
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
@@ -1371,7 +1389,7 @@ ssize_t ztls_sendto(int sock, const void *buf, size_t len, int flags,
 
 	/* TLS */
 	if (net_context_get_type(context) == SOCK_STREAM) {
-		return sendto_tls(context, buf, len, flags);
+		return send_tls(context, buf, len, flags);
 	}
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
@@ -1388,8 +1406,8 @@ ssize_t ztls_sendto(int sock, const void *buf, size_t len, int flags,
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 }
 
-static ssize_t recvfrom_tls(struct net_context *context, void *buf,
-			    size_t max_len, int flags)
+static ssize_t recv_tls(struct net_context *context, void *buf,
+			size_t max_len, int flags)
 {
 	int ret;
 
@@ -1444,12 +1462,12 @@ static ssize_t recvfrom_dtls_client(struct net_context *context, void *buf,
 
 	switch (ret) {
 	case MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY:
-		ret = -ECONNRESET;
-		break;
+		/* Peer notified that it's closing the connection. */
+		return 0;
 
 	case MBEDTLS_ERR_SSL_TIMEOUT:
 		(void)mbedtls_ssl_close_notify(&context->tls->ssl);
-		ret = -ECONNABORTED;
+		ret = -ETIMEDOUT;
 		break;
 
 	case MBEDTLS_ERR_SSL_WANT_READ:
@@ -1571,7 +1589,7 @@ ssize_t ztls_recvfrom(int sock, void *buf, size_t max_len, int flags,
 
 	/* TLS */
 	if (net_context_get_type(context) == SOCK_STREAM) {
-		return recvfrom_tls(context, buf, max_len, flags);
+		return recv_tls(context, buf, max_len, flags);
 	}
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
@@ -1728,11 +1746,6 @@ int ztls_getsockopt(int sock, int level, int optname,
 		err =  tls_opt_sec_tag_list_get(context, optval, optlen);
 		break;
 
-	case TLS_HOSTNAME:
-		/* Write-only option. */
-		err = -ENOPROTOOPT;
-		break;
-
 	case TLS_CIPHERSUITE_LIST:
 		err = tls_opt_ciphersuite_list_get(context, optval, optlen);
 		break;
@@ -1741,17 +1754,8 @@ int ztls_getsockopt(int sock, int level, int optname,
 		err = tls_opt_ciphersuite_used_get(context, optval, optlen);
 		break;
 
-	case TLS_PEER_VERIFY:
-		/* Write-only option. */
-		err = -ENOPROTOOPT;
-		break;
-
-	case TLS_ROLE:
-		/* Write-only option. */
-		err = -ENOPROTOOPT;
-		break;
-
 	default:
+		/* Unknown or write-only option. */
 		err = -ENOPROTOOPT;
 		break;
 	}
@@ -1791,20 +1795,16 @@ int ztls_setsockopt(int sock, int level, int optname,
 		err = tls_opt_ciphersuite_list_set(context, optval, optlen);
 		break;
 
-	case TLS_CIPHERSUITE_USED:
-		/* Read-only option. */
-		err = -ENOPROTOOPT;
-		break;
-
 	case TLS_PEER_VERIFY:
 		err = tls_opt_peer_verify_set(context, optval, optlen);
 		break;
 
-	case TLS_ROLE:
-		err = tls_opt_role_set(context, optval, optlen);
+	case TLS_DTLS_ROLE:
+		err = tls_opt_dtls_role_set(context, optval, optlen);
 		break;
 
 	default:
+		/* Unknown or read-only option. */
 		err = -ENOPROTOOPT;
 		break;
 	}
