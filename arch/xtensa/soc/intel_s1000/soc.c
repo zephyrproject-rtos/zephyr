@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define SYS_LOG_LEVEL	SYS_LOG_LEVEL_INFO
+#define SYS_LOG_DOMAIN	"soc/s1000"
+
 #include <device.h>
 #include <xtensa_api.h>
 #include <xtensa/xtruntime.h>
@@ -11,6 +14,9 @@
 #include <board.h>
 #include <irq_nextlevel.h>
 #include <xtensa/hal.h>
+#include <init.h>
+
+static u32_t ref_clk_freq;
 
 void _soc_irq_enable(u32_t irq)
 {
@@ -140,20 +146,26 @@ void _soc_irq_disable(u32_t irq)
 	}
 }
 
-/* Setup DMA ownership registers */
-void setup_ownership_dma0(void)
+static inline void soc_set_resource_ownership(void)
 {
-	*(volatile u16_t *)CAVS_DMA0_OWNERSHIP_REG = 0x80FF;
-}
+	volatile struct soc_resource_alloc_regs *regs =
+		(volatile struct soc_resource_alloc_regs *)
+		SOC_RESOURCE_ALLOC_REG_BASE;
+	int index;
 
-void setup_ownership_dma1(void)
-{
-	*(volatile u16_t *)CAVS_DMA1_OWNERSHIP_REG = 0x80FF;
-}
 
-void setup_ownership_dma2(void)
-{
-	*(volatile u16_t *)CAVS_DMA2_OWNERSHIP_REG = 0x80FF;
+	/* set ownership of DMA controllers and channels */
+	for (index = 0; index < SOC_NUM_LPGPDMAC; index++) {
+		regs->lpgpdmacxo[index] = SOC_LPGPDMAC_OWNER_DSP;
+	}
+
+	/* set ownership of I2S and DMIC controllers */
+	regs->dspiopo = SOC_DSPIOP_I2S_OWNSEL_DSP |
+		SOC_DSPIOP_DMIC_OWNSEL_DSP;
+
+	/* set ownership of timestamp and M/N dividers */
+	regs->geno = SOC_GENO_TIMESTAMP_OWNER_DSP |
+		SOC_GENO_MNDIV_OWNER_DSP;
 }
 
 void dcache_writeback_region(void *addr, size_t size)
@@ -166,41 +178,54 @@ void dcache_invalidate_region(void *addr, size_t size)
 	xthal_dcache_region_invalidate(addr, size);
 }
 
-void setup_ownership_i2s(void)
-{
-	u32_t value = I2S_OWNSEL(0) | I2S_OWNSEL(1) |
-			 I2S_OWNSEL(2) | I2S_OWNSEL(3);
-	*(volatile u32_t *)SUE_DSPIOPO_REG |= value;
-
-	value = DSP_RES_ALLOC_GENO_MDIVOSEL;
-	*(volatile u32_t *)DSP_RES_ALLOC_GEN_OWNER |= value;
-}
-
 u32_t soc_get_ref_clk_freq(void)
 {
-	u32_t bootstrap;
-	static u32_t freq;
-
-	if (freq == 0) {
-		/* if bootstraps have not been read before, read them */
-
-		bootstrap = *((volatile u32_t *)SOC_S1000_GLB_CTRL_STRAPS);
-
-		bootstrap &= SOC_S1000_STRAP_REF_CLK;
-
-		switch (bootstrap) {
-		case SOC_S1000_STRAP_REF_CLK_19P2:
-			freq = 19200000;
-			break;
-		case SOC_S1000_STRAP_REF_CLK_24P576:
-			freq = 24576000;
-			break;
-		case SOC_S1000_STRAP_REF_CLK_38P4:
-		default:
-			freq = 38400000;
-			break;
-		}
-	}
-
-	return freq;
+	return ref_clk_freq;
 }
+
+static void soc_set_power_and_clock(void)
+{
+	volatile struct soc_dsp_shim_regs *regs =
+		(volatile struct soc_dsp_shim_regs *)
+		SOC_DSP_SHIM_REG_BASE;
+
+	regs->clkctl |= SOC_CLKCTL_REQ_FAST_CLK | SOC_CLKCTL_OCS_FAST_CLK;
+	regs->pwrctl |= SOC_PWRCTL_DISABLE_PWR_GATING_DSP1 |
+		SOC_PWRCTL_DISABLE_PWR_GATING_DSP0;
+}
+
+static void soc_read_bootstraps(void)
+{
+	u32_t bootstrap;
+
+	bootstrap = *((volatile u32_t *)SOC_S1000_GLB_CTRL_STRAPS);
+
+	bootstrap &= SOC_S1000_STRAP_REF_CLK;
+
+	switch (bootstrap) {
+	case SOC_S1000_STRAP_REF_CLK_19P2:
+		ref_clk_freq = 19200000;
+		break;
+	case SOC_S1000_STRAP_REF_CLK_24P576:
+		ref_clk_freq = 24576000;
+		break;
+	case SOC_S1000_STRAP_REF_CLK_38P4:
+	default:
+		ref_clk_freq = 38400000;
+		break;
+	}
+}
+
+static int soc_init(struct device *dev)
+{
+	soc_read_bootstraps();
+
+	ref_clk_freq = soc_get_ref_clk_freq();
+	SYS_LOG_INF("Reference clock frequency: %u Hz", ref_clk_freq);
+
+	soc_set_resource_ownership();
+	soc_set_power_and_clock();
+	return 0;
+}
+
+SYS_INIT(soc_init, PRE_KERNEL_1, 99);
