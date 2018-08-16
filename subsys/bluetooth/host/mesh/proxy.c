@@ -958,9 +958,6 @@ static const struct bt_data prov_ad[] = {
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x27, 0x18),
 	BT_DATA(BT_DATA_SVC_DATA16, prov_svc_data, sizeof(prov_svc_data)),
 };
-
-static struct bt_data prov_sd[2];
-static size_t prov_sd_len;
 #endif /* PB_GATT */
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
@@ -1154,6 +1151,52 @@ static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 }
 #endif /* GATT_PROXY */
 
+#if defined(CONFIG_BT_MESH_PB_GATT)
+static size_t gatt_prov_adv_create(struct bt_data prov_sd[2])
+{
+	const struct bt_mesh_prov *prov = bt_mesh_prov_get();
+	const char *name = bt_get_name();
+	size_t name_len = strlen(name);
+	size_t prov_sd_len = 0;
+	size_t sd_space = 31;
+
+	memcpy(prov_svc_data + 2, prov->uuid, 16);
+	sys_put_be16(prov->oob_info, prov_svc_data + 18);
+
+	if (prov->uri) {
+		size_t uri_len = strlen(prov->uri);
+
+		if (uri_len > 29) {
+			/* There's no way to shorten an URI */
+			BT_WARN("Too long URI to fit advertising packet");
+		} else {
+			prov_sd[0].type = BT_DATA_URI;
+			prov_sd[0].data_len = uri_len;
+			prov_sd[0].data = prov->uri;
+			sd_space -= 2 + uri_len;
+			prov_sd_len++;
+		}
+	}
+
+	if (sd_space > 2 && name_len > 0) {
+		sd_space -= 2;
+
+		if (sd_space < name_len) {
+			prov_sd[prov_sd_len].type = BT_DATA_NAME_SHORTENED;
+			prov_sd[prov_sd_len].data_len = sd_space;
+		} else {
+			prov_sd[prov_sd_len].type = BT_DATA_NAME_COMPLETE;
+			prov_sd[prov_sd_len].data_len = name_len;
+		}
+
+		prov_sd[prov_sd_len].data = name;
+		prov_sd_len++;
+	}
+
+	return prov_sd_len;
+}
+#endif /* CONFIG_BT_MESH_PB_GATT */
+
 s32_t bt_mesh_proxy_adv_start(void)
 {
 	BT_DBG("");
@@ -1165,12 +1208,16 @@ s32_t bt_mesh_proxy_adv_start(void)
 #if defined(CONFIG_BT_MESH_PB_GATT)
 	if (!bt_mesh_is_provisioned()) {
 		const struct bt_le_adv_param *param;
+		struct bt_data prov_sd[2];
+		size_t prov_sd_len;
 
 		if (prov_fast_adv) {
 			param = &fast_adv_param;
 		} else {
 			param = &slow_adv_param;
 		}
+
+		prov_sd_len = gatt_prov_adv_create(prov_sd);
 
 		if (bt_le_adv_start(param, prov_ad, ARRAY_SIZE(prov_ad),
 				    prov_sd, prov_sd_len) == 0) {
@@ -1220,44 +1267,6 @@ static struct bt_conn_cb conn_callbacks = {
 int bt_mesh_proxy_init(void)
 {
 	int i;
-#if defined(CONFIG_BT_MESH_PB_GATT)
-	const struct bt_mesh_prov *prov = bt_mesh_prov_get();
-	size_t name_len = strlen(CONFIG_BT_DEVICE_NAME);
-	size_t sd_space = 31;
-
-	memcpy(prov_svc_data + 2, prov->uuid, 16);
-	sys_put_be16(prov->oob_info, prov_svc_data + 18);
-
-	if (prov->uri) {
-		size_t uri_len = strlen(prov->uri);
-
-		if (uri_len > 29) {
-			/* There's no way to shorten an URI */
-			BT_WARN("Too long URI to fit advertising packet");
-		} else {
-			prov_sd[0].type = BT_DATA_URI;
-			prov_sd[0].data_len = uri_len;
-			prov_sd[0].data = prov->uri;
-			sd_space -= 2 + uri_len;
-			prov_sd_len++;
-		}
-	}
-
-	if (sd_space > 2 && name_len > 0) {
-		sd_space -= 2;
-
-		if (sd_space < name_len) {
-			prov_sd[prov_sd_len].type = BT_DATA_NAME_SHORTENED;
-			prov_sd[prov_sd_len].data_len = sd_space;
-		} else {
-			prov_sd[prov_sd_len].type = BT_DATA_NAME_COMPLETE;
-			prov_sd[prov_sd_len].data_len = name_len;
-		}
-
-		prov_sd[prov_sd_len].data = CONFIG_BT_DEVICE_NAME;
-		prov_sd_len++;
-	}
-#endif /* CONFIG_BT_MESH_PB_GATT */
 
 	/* Initialize the client receive buffers */
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
