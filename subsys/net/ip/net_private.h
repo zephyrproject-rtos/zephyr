@@ -198,28 +198,6 @@ static inline char *net_sprint_ipv4_addr(const struct in_addr *addr)
 #endif
 }
 
-static inline char *net_sprint_ip_addr(const struct net_addr *addr)
-{
-	switch (addr->family) {
-	case AF_INET6:
-#if defined(CONFIG_NET_IPV6)
-		return net_sprint_ipv6_addr(&addr->in6_addr);
-#else
-		break;
-#endif
-	case AF_INET:
-#if defined(CONFIG_NET_IPV4)
-		return net_sprint_ipv4_addr(&addr->in_addr);
-#else
-		break;
-#endif
-	default:
-		break;
-	}
-
-	return NULL;
-}
-
 static inline void _hexdump(const u8_t *packet, size_t length, u8_t reserve)
 {
 	char output[sizeof("xxxxyyyy xxxxyyyy")];
