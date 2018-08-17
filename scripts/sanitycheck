@@ -206,7 +206,7 @@ LAST_SANITY_XUNIT = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                                  "last_sanity.xml")
 RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                             "sanity_last_release.csv")
-CPU_COUNTS = multiprocessing.cpu_count()
+JOBS = multiprocessing.cpu_count()
 
 if os.isatty(sys.stdout.fileno()):
     TERMINAL = True
@@ -1074,7 +1074,7 @@ class MakeGenerator:
             tf.write("all: %s\n" % (" ".join(self.goals.keys())))
             tf.flush()
 
-            cmd = ["make", "-k", "-j", str(CPU_COUNTS), "-f", tf.name, "all"]
+            cmd = ["make", "-k", "-j", str(JOBS), "-f", tf.name, "all"]
 
             p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=devnull)
 
@@ -2009,7 +2009,7 @@ class TestSuite:
         self.goals = mg.execute(cb, cb_context)
 
         # Parallelize size calculation
-        executor = concurrent.futures.ThreadPoolExecutor(CPU_COUNTS)
+        executor = concurrent.futures.ThreadPoolExecutor(JOBS)
         futures = [executor.submit(calc_one_elf_size, name, goal)
                    for name, goal in self.goals.items()]
         concurrent.futures.wait(futures)
@@ -2648,7 +2648,7 @@ def generate_coverage(outdir, ignores):
 
 def main():
     start_time = time.time()
-    global VERBOSE, INLINE_LOGS, CPU_COUNTS, log_file
+    global VERBOSE, INLINE_LOGS, JOBS, log_file
     global options
     options = parse_arguments()
 
@@ -2671,13 +2671,13 @@ def main():
         log_file = open(options.log_file, "w")
 
     if options.jobs:
-        CPU_COUNTS = options.jobs
+        JOBS = options.jobs
 
-    # Decrease CPU_COUNTS for Ninja, if jobs weren't explicitly set
+    # Decrease JOBS for Ninja, if jobs weren't explicitly set
     if options.ninja and not options.jobs:
-        CPU_COUNTS = int(CPU_COUNTS * 0.75)
+        JOBS = int(JOBS * 0.75)
 
-    info("CPU_COUNTS: %d" % CPU_COUNTS);
+    info("JOBS: %d" % JOBS);
 
     if options.subset:
         subset, sets = options.subset.split("/")
