@@ -1,0 +1,7 @@
+tests:
+  kernel.version:
+    arch_exclude: posix
+    platform_exclude: qemu_x86 qemu_cortex_m3 qemu_xtensa
+                      qemu_nios2 x86_jailhouse qemu_riscv32
+                      xt-sim mps2_an385
+    tags: version header
