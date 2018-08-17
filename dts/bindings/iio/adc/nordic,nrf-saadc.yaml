@@ -1,0 +1,35 @@
+#
+# Copyright (c) 2018, Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Nordic Semiconductor nRF Family SAADC
+id: nordic,nrf-saadc
+version: 0.1
+
+description: >
+    This is a representation of the nRF SAADC node
+
+inherits:
+    !include adc.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nordic,nrf-saadc"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+...
