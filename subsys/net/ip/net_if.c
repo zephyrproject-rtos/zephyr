@@ -1225,23 +1225,61 @@ static struct net_if_ipv6_prefix *ipv6_prefix_find(struct net_if *iface,
 	return NULL;
 }
 
+static void remove_prefix_addresses(struct net_if *iface,
+				    struct net_if_ipv6 *ipv6,
+				    struct in6_addr *addr,
+				    u8_t len)
+{
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		if (!ipv6->unicast[i].is_used ||
+		    ipv6->unicast[i].address.family != AF_INET6 ||
+		    ipv6->unicast[i].addr_type != NET_ADDR_AUTOCONF) {
+			continue;
+		}
+
+		if (net_is_ipv6_prefix(
+				addr->s6_addr,
+				ipv6->unicast[i].address.in6_addr.s6_addr,
+				len)) {
+			net_if_ipv6_addr_rm(iface,
+					    &ipv6->unicast[i].address.in6_addr);
+		}
+	}
+}
+
 static inline void prefix_lf_timeout(struct k_work *work)
 {
 	struct net_if_ipv6_prefix *prefix =
 		CONTAINER_OF(work, struct net_if_ipv6_prefix, lifetime);
+	struct net_if_ipv6 *ipv6;
 
 	NET_DBG("Prefix %s/%d expired",
 		net_sprint_ipv6_addr(&prefix->prefix), prefix->len);
 
 	prefix->is_used = false;
+
+	if (net_if_config_ipv6_get(prefix->iface, &ipv6) < 0) {
+		return;
+	}
+
+	/* Remove also all auto addresses if the they have the same prefix.
+	 */
+	remove_prefix_addresses(prefix->iface, ipv6, &prefix->prefix,
+				prefix->len);
+
+	net_mgmt_event_notify(NET_EVENT_IPV6_PREFIX_DEL, prefix->iface);
 }
 
-static void net_if_ipv6_prefix_init(struct net_if_ipv6_prefix *prefix,
+static void net_if_ipv6_prefix_init(struct net_if *iface,
+				    struct net_if_ipv6_prefix *prefix,
 				    struct in6_addr *addr, u8_t len,
 				    u32_t lifetime)
 {
 	prefix->is_used = true;
 	prefix->len = len;
+	prefix->iface = iface;
 	net_ipaddr_copy(&prefix->prefix, addr);
 	k_delayed_work_init(&prefix->lifetime, prefix_lf_timeout);
 
@@ -1279,7 +1317,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 			continue;
 		}
 
-		net_if_ipv6_prefix_init(&ipv6->prefix[i], prefix,
+		net_if_ipv6_prefix_init(iface, &ipv6->prefix[i], prefix,
 					len, lifetime);
 
 		NET_DBG("[%d] interface %p prefix %s/%d added", i, iface,
@@ -1316,6 +1354,11 @@ bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
 		net_if_ipv6_prefix_unset_timer(&ipv6->prefix[i]);
 
 		ipv6->prefix[i].is_used = false;
+
+		/* Remove also all auto addresses if the they have the same
+		 * prefix.
+		 */
+		remove_prefix_addresses(iface, ipv6, addr, len);
 
 		net_mgmt_event_notify(NET_EVENT_IPV6_PREFIX_DEL, iface);
 
