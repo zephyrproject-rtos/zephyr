@@ -2290,17 +2290,26 @@ static inline void handle_prefix_onlink(struct net_pkt *pkt,
 
 #define TWO_HOURS (2 * 60 * 60)
 
+static u32_t time_diff(u32_t time1, u32_t time2)
+{
+	return (u32_t)abs((s32_t)time1 - (s32_t)time2);
+}
+
 static inline u32_t remaining_lifetime(struct net_if_addr *ifaddr)
 {
-	s32_t remaining;
+	u64_t remaining;
 
-	if (ifaddr->lifetime_timer_timeout == 0) {
+	if (ifaddr->lifetime.timer_timeout == 0) {
 		return 0;
 	}
 
-	remaining = k_uptime_get() - ifaddr->lifetime_timer_start;
+	remaining = (u64_t)ifaddr->lifetime.timer_timeout +
+		(u64_t)ifaddr->lifetime.wrap_counter *
+		(u64_t)NET_TIMEOUT_MAX_VALUE -
+		(u64_t)time_diff(k_uptime_get_32(),
+				 ifaddr->lifetime.timer_start);
 
-	return abs(remaining) / K_MSEC(1000);
+	return (u32_t)(remaining / K_MSEC(1000));
 }
 
 static inline void handle_prefix_autonomous(struct net_pkt *pkt,

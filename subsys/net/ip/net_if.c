@@ -761,76 +761,118 @@ static void address_expired(struct net_if_addr *ifaddr)
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 
 	ifaddr->addr_state = NET_ADDR_DEPRECATED;
-	ifaddr->lifetime_timer_timeout = 0;
+	ifaddr->lifetime.timer_timeout = 0;
+	ifaddr->lifetime.wrap_counter = 0;
 
 	sys_slist_find_and_remove(&active_address_lifetime_timers,
-				  &ifaddr->node);
+				  &ifaddr->lifetime.node);
 }
 
-static bool address_check_timeout(s64_t start, u32_t time, s64_t timeout)
+static bool check_timeout(u32_t start, s32_t timeout, u32_t counter,
+			  u32_t current_time)
 {
-	start += time;
-	start = abs(start);
+	if (counter > 0) {
+		return false;
+	}
 
-	if (start > timeout) {
+	if ((s32_t)((start + (u32_t)timeout) - current_time) > 0) {
 		return false;
 	}
 
 	return true;
 }
 
-static bool address_timedout(struct net_if_addr *ifaddr, s64_t timeout)
+static bool address_manage_timeout(struct net_if_addr *ifaddr,
+				   u32_t current_time, u32_t *next_wakeup)
 {
-	return address_check_timeout(ifaddr->lifetime_timer_start,
-				     ifaddr->lifetime_timer_timeout,
-				     timeout);
-}
-
-static u32_t address_manage_timeouts(struct net_if_addr *ifaddr, s64_t timeout)
-{
-	s32_t next_timeout;
-
-	if (address_timedout(ifaddr, timeout)) {
+	if (check_timeout(ifaddr->lifetime.timer_start,
+			  ifaddr->lifetime.timer_timeout,
+			  ifaddr->lifetime.wrap_counter,
+			  current_time)) {
 		address_expired(ifaddr);
-		return UINT32_MAX;
+		return true;
 	}
 
-	next_timeout = timeout - (ifaddr->lifetime_timer_start +
-				  ifaddr->lifetime_timer_timeout);
-	return abs(next_timeout);
+	if (current_time == NET_TIMEOUT_MAX_VALUE) {
+		ifaddr->lifetime.timer_start = k_uptime_get_32();
+		ifaddr->lifetime.wrap_counter--;
+	}
+
+	if (ifaddr->lifetime.wrap_counter > 0) {
+		*next_wakeup = NET_TIMEOUT_MAX_VALUE;
+	} else {
+		*next_wakeup = ifaddr->lifetime.timer_timeout;
+	}
+
+	return false;
 }
+
+#if defined(CONFIG_NET_TEST)
+static void address_lifetime_timeout(struct k_work *work);
+void net_address_lifetime_timeout(void)
+{
+	address_lifetime_timeout(NULL);
+}
+#endif
 
 static void address_lifetime_timeout(struct k_work *work)
 {
-	u32_t timeout_update = UINT32_MAX - 1;
-	s64_t timeout = k_uptime_get();
+	u64_t timeout_update = UINT64_MAX;
+	u32_t current_time = k_uptime_get_32();
+	bool found = false;
 	struct net_if_addr *current, *next;
 
 	ARG_UNUSED(work);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_address_lifetime_timers,
-					  current, next, node) {
+					  current, next, lifetime.node) {
 		u32_t next_timeout;
+		bool is_timeout;
 
-		next_timeout = address_manage_timeouts(current, timeout);
-		if (next_timeout < timeout_update) {
-			timeout_update = next_timeout;
+		is_timeout = address_manage_timeout(current, current_time,
+						    &next_timeout);
+		if (!is_timeout) {
+			if (next_timeout < timeout_update) {
+				timeout_update = next_timeout;
+				found = true;
+			}
+		}
+
+		if (current == next) {
+			break;
 		}
 	}
 
-	if (timeout_update < (UINT32_MAX - 1)) {
-		NET_DBG("Waiting for %u ms", timeout_update);
+	if (found) {
+		/* If we are near upper limit of s32_t timeout, then lower it
+		 * a bit so that kernel timeout variable will not overflow.
+		 */
+		if (timeout_update >= NET_TIMEOUT_MAX_VALUE) {
+			timeout_update = NET_TIMEOUT_MAX_VALUE;
+		}
+
+		NET_DBG("Waiting for %d ms", (s32_t)timeout_update);
 
 		k_delayed_work_submit(&address_lifetime_timer, timeout_update);
 	}
 }
 
-static void address_submit_work(u32_t timeout)
+static void address_submit_work(struct net_if_addr *ifaddr)
 {
-	if (!k_delayed_work_remaining_get(&address_lifetime_timer) ||
-	    timeout < k_delayed_work_remaining_get(&address_lifetime_timer)) {
+	s32_t remaining;
+
+	remaining = k_delayed_work_remaining_get(&address_lifetime_timer);
+	if (!remaining || (ifaddr->lifetime.wrap_counter == 0 &&
+			   ifaddr->lifetime.timer_timeout < remaining)) {
 		k_delayed_work_cancel(&address_lifetime_timer);
-		k_delayed_work_submit(&address_lifetime_timer, timeout);
+
+		if (ifaddr->lifetime.wrap_counter > 0 && remaining == 0) {
+			k_delayed_work_submit(&address_lifetime_timer,
+					      NET_TIMEOUT_MAX_VALUE);
+		} else {
+			k_delayed_work_submit(&address_lifetime_timer,
+					      ifaddr->lifetime.timer_timeout);
+		}
 
 		NET_DBG("Next wakeup in %d ms",
 			k_delayed_work_remaining_get(&address_lifetime_timer));
@@ -839,12 +881,19 @@ static void address_submit_work(u32_t timeout)
 
 static void address_start_timer(struct net_if_addr *ifaddr, u32_t vlifetime)
 {
-	sys_slist_append(&active_address_lifetime_timers, &ifaddr->node);
+	u64_t expire_timeout = K_SECONDS((u64_t)vlifetime);
 
-	ifaddr->lifetime_timer_start = k_uptime_get();
-	ifaddr->lifetime_timer_timeout = K_SECONDS(vlifetime);
+	sys_slist_append(&active_address_lifetime_timers,
+			 &ifaddr->lifetime.node);
 
-	address_submit_work(ifaddr->lifetime_timer_timeout);
+	ifaddr->lifetime.timer_start = k_uptime_get_32();
+	ifaddr->lifetime.wrap_counter = expire_timeout /
+		(u64_t)NET_TIMEOUT_MAX_VALUE;
+	ifaddr->lifetime.timer_timeout = expire_timeout -
+		(u64_t)NET_TIMEOUT_MAX_VALUE *
+		(u64_t)ifaddr->lifetime.wrap_counter;
+
+	address_submit_work(ifaddr);
 }
 
 void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
@@ -1037,7 +1086,7 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 		if (!ipv6->unicast[i].is_infinite) {
 			sys_slist_find_and_remove(
 				&active_address_lifetime_timers,
-				&ipv6->unicast[i].node);
+				&ipv6->unicast[i].lifetime.node);
 
 			if (sys_slist_is_empty(
 				    &active_address_lifetime_timers)) {
@@ -2703,6 +2752,10 @@ void net_if_init(void)
 
 	net_tc_tx_init();
 
+#if defined(CONFIG_NET_IPV6)
+	k_delayed_work_init(&address_lifetime_timer, address_lifetime_timeout);
+#endif
+
 	for (iface = __net_if_start, if_count = 0; iface != __net_if_end;
 	     iface++, if_count++) {
 		init_iface(iface);
@@ -2728,8 +2781,6 @@ void net_if_init(void)
 #endif
 
 #if defined(CONFIG_NET_IPV6)
-	k_delayed_work_init(&address_lifetime_timer, address_lifetime_timeout);
-
 	if (if_count > ARRAY_SIZE(ipv6_addresses)) {
 		NET_WARN("You have %lu IPv6 net_if addresses but %d "
 			 "network interfaces", ARRAY_SIZE(ipv6_addresses),
