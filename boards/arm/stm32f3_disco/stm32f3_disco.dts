@@ -102,3 +102,7 @@
 &usb {
 	status = "ok";
 };
+
+&rtc {
+	status = "ok";
+};
