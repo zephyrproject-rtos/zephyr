@@ -452,6 +452,19 @@ config BT_CTLR_FAST_ENC
 	  Maximum CPU time in Radio ISR will increase if this feature is
 	  selected.
 
+config BT_CTLR_TX_RETRY_DISABLE
+	bool "Disable Tx Retry"
+	help
+	  Avoid retransmission of a PDU if peer device Nack-ed a transmission
+	  in the current connection event, close the connection event so as to
+	  save current consumption on retries (in case peer has no buffers to
+	  receive new PDUs).
+
+	  Enabling this will lower power consumption, but increase transmission
+	  latencies by one connection interval as the next attempt to send a PDU
+	  would happen in the next connection event instead of repeated retries
+	  in the current connection event.
+
 config BT_CTLR_CONN_RSSI
 	bool "Connection RSSI"
 	help

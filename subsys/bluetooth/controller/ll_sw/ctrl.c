@@ -1738,10 +1738,13 @@ static inline void isr_rx_conn_phy_tx_time_set(void)
 }
 #endif /* CONFIG_BT_CTLR_PHY */
 
-static inline u8_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
+#define ERR_TERMINATE 1
+#define ERR_TX_NACK 2
+
+static inline u32_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 				       struct radio_pdu_node_tx **node_tx)
 {
-	u8_t terminate = 0;
+	u32_t ret = 0;
 
 	switch (pdu_data_tx->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
@@ -1758,7 +1761,7 @@ static inline u8_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		     pdu_data_tx->llctrl.terminate_ind.error_code);
 
 		/* Ack received, hence terminate */
-		terminate = 1;
+		ret = ERR_TERMINATE;
 		break;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -1868,7 +1871,7 @@ static inline u8_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		break;
 	}
 
-	return terminate;
+	return ret;
 }
 
 static inline struct radio_pdu_node_tx *
@@ -3338,8 +3341,7 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 {
 	struct pdu_data *pdu_data_rx;
 	struct pdu_data *pdu_data_tx;
-	u8_t terminate = 0;
-	u8_t nack = 0;
+	u32_t ret = 0;
 
 	/* Ack for transmitted data */
 	pdu_data_rx = (void *)node_rx->pdu_data;
@@ -3372,9 +3374,8 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 
 				/* process ctrl packet on tx cmplt */
 				if (pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) {
-					terminate =
-						isr_rx_conn_pkt_ack(pdu_data_tx,
-								    &node_tx);
+					ret = isr_rx_conn_pkt_ack(pdu_data_tx,
+								  &node_tx);
 				}
 			}
 
@@ -3386,14 +3387,18 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 		} else {
 			_radio.conn_curr->empty = 0;
 		}
+#if defined(CONFIG_BT_CTLR_TX_RETRY_DISABLE)
+	} else if (_radio.packet_counter != 1) {
+		ret = ERR_TX_NACK;
+#endif /* CONFIG_BT_CTLR_TX_RETRY_DISABLE */
 	}
 
 	/* local initiated disconnect procedure completed */
-	if (terminate) {
+	if (ret == ERR_TERMINATE) {
 		connection_release(_radio.conn_curr);
 		_radio.conn_curr = NULL;
 
-		return terminate;
+		return ret;
 	}
 
 	/* process received data */
@@ -3414,6 +3419,7 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 		  (_radio.fc_handle[_radio.fc_req - 1] ==
 		   _radio.conn_curr->handle)))))) {
 		u8_t ccm_rx_increment = 0;
+		u8_t nack = 0;
 
 		if (pdu_data_rx->len != 0) {
 			/* If required, wait for CCM to finish
@@ -3507,7 +3513,7 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
 static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
@@ -3520,6 +3526,7 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 	struct pdu_data *pdu_data_tx;
 	u8_t rx_enqueue = 0;
 	u8_t crc_close = 0;
+	u32_t rx_ret = 0;
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 	static u8_t s_lmin = (u8_t) -1;
@@ -3543,10 +3550,8 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 	node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;
 
 	if (crc_ok) {
-		u32_t terminate;
-
-		terminate = isr_rx_conn_pkt(node_rx, &tx_release, &rx_enqueue);
-		if (terminate) {
+		rx_ret = isr_rx_conn_pkt(node_rx, &tx_release, &rx_enqueue);
+		if (rx_ret == ERR_TERMINATE) {
 			goto isr_rx_conn_exit;
 		}
 
@@ -3609,13 +3614,23 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 	pdu_data_rx = (void *)node_rx->pdu_data;
 	_radio.state = ((_radio.state == STATE_CLOSE) || (crc_close) ||
 			((crc_ok) && (pdu_data_rx->md == 0) &&
-			 (pdu_data_tx->len == 0)) ||
+			 ((pdu_data_tx->len == 0) ||
+#if defined(CONFIG_BT_CTLR_TX_RETRY_DISABLE)
+			  (rx_ret == ERR_TX_NACK))) ||
+#else /* !CONFIG_BT_CTLR_TX_RETRY_DISABLE */
+			  (0))) ||
+#endif /* !CONFIG_BT_CTLR_TX_RETRY_DISABLE */
 			_radio.conn_curr->llcp_terminate.reason_peer) ?
 			STATE_CLOSE : STATE_TX;
 
 	if (_radio.state == STATE_CLOSE) {
 		/* Event close for master */
-		if (_radio.role == ROLE_MASTER) {
+		if ((_radio.role == ROLE_MASTER) ||
+#if defined(CONFIG_BT_CTLR_TX_RETRY_DISABLE)
+		    (rx_ret == ERR_TX_NACK)) {
+#else /* !CONFIG_BT_CTLR_TX_RETRY_DISABLE */
+		    (0)) {
+#endif /* !CONFIG_BT_CTLR_TX_RETRY_DISABLE */
 			_radio.conn_curr->empty = is_empty_pdu_tx_retry;
 
 			radio_disable();
