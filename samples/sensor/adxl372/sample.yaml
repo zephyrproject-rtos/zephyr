@@ -1,0 +1,12 @@
+sample:
+  name: ADXL372 High-g Accelerometer Sensor
+tests:
+  test:
+    harness: sensor
+    tags: samples sensor
+    depends_on: spi
+  test_i2c:
+    harness: sensor
+    tags: samples sensor
+    depends_on: i2c
+    extra_args: "CONF_FILE=prj_i2c.conf"
