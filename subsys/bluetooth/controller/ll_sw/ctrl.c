@@ -304,8 +304,8 @@ static u32_t chan_map_update(struct connection *conn,
 			     struct pdu_data *pdu_data_rx);
 
 #if defined(CONFIG_BT_CTLR_PHY)
-static inline u32_t phy_upd_ind(struct radio_pdu_node_rx *node_rx,
-				u8_t *rx_enqueue);
+static inline u8_t phy_upd_ind_recv(struct radio_pdu_node_rx *node_rx,
+				    u8_t *rx_enqueue);
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -3224,16 +3224,21 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
+	{
+		u8_t err;
+
 		if (!_radio.conn_curr->role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND,
 				 pdu_data_rx->len)) {
 			goto isr_rx_conn_unknown_rsp_send;
 		}
 
-		if (phy_upd_ind(node_rx, rx_enqueue)) {
-			_radio.conn_curr->llcp_terminate.reason_peer = 0x28;
+		err = phy_upd_ind_recv(node_rx, rx_enqueue);
+		if (err) {
+			_radio.conn_curr->llcp_terminate.reason_peer = err;
 		}
-		break;
+	}
+	break;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
@@ -9272,8 +9277,8 @@ static u32_t chan_map_update(struct connection *conn,
 }
 
 #if defined(CONFIG_BT_CTLR_PHY)
-static inline u32_t phy_upd_ind(struct radio_pdu_node_rx *node_rx,
-				u8_t *rx_enqueue)
+static inline u8_t phy_upd_ind_recv(struct radio_pdu_node_rx *node_rx,
+				    u8_t *rx_enqueue)
 {
 	struct connection *conn = _radio.conn_curr;
 	struct pdu_data_llctrl_phy_upd_ind *ind;
@@ -9317,10 +9322,13 @@ static inline u32_t phy_upd_ind(struct radio_pdu_node_rx *node_rx,
 
 	/* instant passed */
 	if (((ind->instant - conn->event_counter) & 0xffff) > 0x7fff) {
-		return 1;
+		return 0x28;
 	}
 
-	LL_ASSERT(conn->llcp_req == conn->llcp_ack);
+	/* different transaction collision */
+	if (conn->llcp_req != conn->llcp_ack) {
+		return 0x2a;
+	}
 
 	if ((conn->llcp_phy.ack != conn->llcp_phy.req) &&
 	    (conn->llcp_phy.state == LLCP_PHY_STATE_RSP_WAIT)) {
