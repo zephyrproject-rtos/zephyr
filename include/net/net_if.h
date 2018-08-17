@@ -49,8 +49,16 @@ struct net_if_addr {
 	/** IP address */
 	struct net_addr address;
 
-	/** Timer that triggers renewal */
-	struct k_delayed_work lifetime;
+#if defined(CONFIG_NET_IPV6)
+	/** Used for track timers */
+	sys_snode_t node;
+
+	/** Address lifetime timer start time */
+	s64_t lifetime_timer_start;
+
+	/** lifetime timer timeout */
+	u32_t lifetime_timer_timeout;
+#endif
 
 #if defined(CONFIG_NET_IPV6_DAD)
 	/** Duplicate address detection (DAD) timer */

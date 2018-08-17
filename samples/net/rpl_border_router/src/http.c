@@ -12,6 +12,7 @@
 
 #include <zephyr.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /* For Basic auth, we need base64 decoder which can be found
  * in mbedtls library.
@@ -497,6 +498,19 @@ out:
 	return ret;
 }
 
+static inline u32_t remaining_lifetime(struct net_if_addr *ifaddr)
+{
+	s32_t remaining;
+
+	if (ifaddr->lifetime_timer_timeout == 0) {
+		return 0;
+	}
+
+	remaining = k_uptime_get() - ifaddr->lifetime_timer_start;
+
+	return abs(remaining) / K_MSEC(1000);
+}
+
 static void append_unicast_addr(struct net_if *iface, struct user_data *data)
 {
 	char addr[NET_IPV6_ADDR_LEN], lifetime[10];
@@ -525,9 +539,8 @@ static void append_unicast_addr(struct net_if *iface, struct user_data *data)
 		if (unicast->is_infinite) {
 			snprintk(lifetime, sizeof(lifetime), "%s", "infinite");
 		} else {
-			snprintk(lifetime, sizeof(lifetime), "%d",
-				 k_delayed_work_remaining_get(
-					 &unicast->lifetime));
+			snprintk(lifetime, sizeof(lifetime), "%u",
+				 remaining_lifetime(unicast));
 		}
 
 		ret = append_and_send_data(data, false,

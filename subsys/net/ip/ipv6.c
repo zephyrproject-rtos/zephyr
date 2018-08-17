@@ -19,6 +19,7 @@
 #endif
 
 #include <errno.h>
+#include <stdlib.h>
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 #include <net/net_stats.h>
@@ -2423,9 +2424,17 @@ static inline void handle_prefix_onlink(struct net_pkt *pkt,
 
 #define TWO_HOURS (2 * 60 * 60)
 
-static inline u32_t remaining(struct k_delayed_work *work)
+static inline u32_t remaining_lifetime(struct net_if_addr *ifaddr)
 {
-	return k_delayed_work_remaining_get(work) / K_SECONDS(1);
+	s32_t remaining;
+
+	if (ifaddr->lifetime_timer_timeout == 0) {
+		return 0;
+	}
+
+	remaining = k_uptime_get() - ifaddr->lifetime_timer_start;
+
+	return abs(remaining) / K_MSEC(1000);
 }
 
 static inline void handle_prefix_autonomous(struct net_pkt *pkt,
@@ -2453,7 +2462,7 @@ static inline void handle_prefix_autonomous(struct net_pkt *pkt,
 		/* RFC 4862 ch 5.5.3 */
 		if ((prefix_info->valid_lifetime > TWO_HOURS) ||
 		    (prefix_info->valid_lifetime >
-		     remaining(&ifaddr->lifetime))) {
+		     remaining_lifetime(ifaddr))) {
 			NET_DBG("Timer updating for address %s "
 				"long lifetime %u secs",
 				net_sprint_ipv6_addr(&addr),
