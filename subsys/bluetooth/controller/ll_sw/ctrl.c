@@ -293,7 +293,7 @@ static void pdu_node_tx_release(u16_t handle,
 				struct radio_pdu_node_tx *node_tx);
 static void connection_release(struct connection *conn);
 static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason);
-static u32_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx);
+static u8_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx);
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
     defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
@@ -2427,19 +2427,24 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 	pdu_data_rx = (void *)node_rx->pdu_data;
 	switch (pdu_data_rx->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
+	{
+		u8_t err;
+
 		if (!_radio.conn_curr->role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND,
 				 pdu_data_rx->len)) {
 			goto isr_rx_conn_unknown_rsp_send;
 		}
 
-		if (conn_update(_radio.conn_curr, pdu_data_rx) == 0) {
+		err = conn_update(_radio.conn_curr, pdu_data_rx);
+		if (err) {
+			_radio.conn_curr->llcp_terminate.reason_peer = err;
+		} else {
 			/* conn param req procedure, if any, is complete */
 			_radio.conn_curr->procedure_expire = 0;
-		} else {
-			_radio.conn_curr->llcp_terminate.reason_peer = 0x28;
 		}
-		break;
+	}
+	break;
 
 	case PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND:
 		if (!_radio.conn_curr->role ||
@@ -9151,14 +9156,17 @@ static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason)
 	packet_rx_callback();
 }
 
-static u32_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx)
+static u8_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx)
 {
 	if (((pdu_data_rx->llctrl.conn_update_ind.instant -
 	      conn->event_counter) & 0xFFFF) > 0x7FFF) {
-		return 1;
+		return 0x28;
 	}
 
-	LL_ASSERT(conn->llcp_req == conn->llcp_ack);
+	/* different transaction collision */
+	if (conn->llcp_req != conn->llcp_ack) {
+		return 0x2a;
+	}
 
 	/* set mutex, if only not already set. As a master the mutex shall
 	 * be set, but a slave we accept it as new 'set' of mutex.
