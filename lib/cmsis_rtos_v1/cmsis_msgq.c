@@ -48,6 +48,8 @@ osStatus osMessagePut(osMessageQId queue_id, uint32_t info, uint32_t millisec)
 
 	if (retval == 0) {
 		return osOK;
+	} else if (retval == -EAGAIN) {
+		return osErrorTimeoutResource;
 	} else {
 		return osErrorResource;
 	}
@@ -60,7 +62,7 @@ osEvent osMessageGet(osMessageQId queue_id, uint32_t millisec)
 {
 	osMessageQDef_t *queue_def = (osMessageQDef_t *)queue_id;
 	u32_t info;
-	osEvent evt;
+	osEvent evt = {0};
 	int retval;
 
 	if (queue_def == NULL) {
@@ -78,6 +80,7 @@ osEvent osMessageGet(osMessageQId queue_id, uint32_t millisec)
 
 	if (retval == 0) {
 		evt.status = osEventMessage;
+		evt.value.v = info;
 	} else if (retval == -EAGAIN) {
 		evt.status = osEventTimeout;
 	} else if (retval == -ENOMSG) {
@@ -86,7 +89,6 @@ osEvent osMessageGet(osMessageQId queue_id, uint32_t millisec)
 		evt.status = osErrorValue;
 	}
 
-	evt.value.v = info;
 	evt.def.message_id = queue_id;
 
 	return evt;
