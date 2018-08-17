@@ -176,5 +176,18 @@
 
 			status = "disabled";
 		};
+
+		adc0: adc@80015000 {
+			compatible = "snps,dw-adc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x80015000 0x05>;
+			interrupts = <19 0>, <18 0>;
+			interrupt-names = "normal", "error";
+			interrupt-parent = <&core_intc>;
+			label = "ADC_0";
+
+			status = "disabled";
+		};
 	};
 };
