@@ -50,14 +50,17 @@ struct net_if_addr {
 	struct net_addr address;
 
 #if defined(CONFIG_NET_IPV6)
-	/** Used for track timers */
-	sys_snode_t node;
+	struct {
+		/** Used to track timers */
+		sys_snode_t node;
 
-	/** Address lifetime timer start time */
-	s64_t lifetime_timer_start;
+		/** Address lifetime timer start time */
+		u64_t timer_start;
 
-	/** lifetime timer timeout */
-	u32_t lifetime_timer_timeout;
+		/** Address lifetime timer timeout
+		 */
+		u32_t timer_timeout;
+	} lifetime;
 #endif
 
 #if defined(CONFIG_NET_IPV6_DAD)

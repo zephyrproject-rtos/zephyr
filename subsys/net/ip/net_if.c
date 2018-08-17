@@ -761,10 +761,10 @@ static void address_expired(struct net_if_addr *ifaddr)
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 
 	ifaddr->addr_state = NET_ADDR_DEPRECATED;
-	ifaddr->lifetime_timer_timeout = 0;
+	ifaddr->lifetime.timer_timeout = 0;
 
 	sys_slist_find_and_remove(&active_address_lifetime_timers,
-				  &ifaddr->node);
+				  &ifaddr->lifetime.node);
 }
 
 static bool address_check_timeout(s64_t start, u32_t time, s64_t timeout)
@@ -781,8 +781,8 @@ static bool address_check_timeout(s64_t start, u32_t time, s64_t timeout)
 
 static bool address_timedout(struct net_if_addr *ifaddr, s64_t timeout)
 {
-	return address_check_timeout(ifaddr->lifetime_timer_start,
-				     ifaddr->lifetime_timer_timeout,
+	return address_check_timeout(ifaddr->lifetime.timer_start,
+				     ifaddr->lifetime.timer_timeout,
 				     timeout);
 }
 
@@ -795,21 +795,21 @@ static u32_t address_manage_timeouts(struct net_if_addr *ifaddr, s64_t timeout)
 		return UINT32_MAX;
 	}
 
-	next_timeout = timeout - (ifaddr->lifetime_timer_start +
-				  ifaddr->lifetime_timer_timeout);
+	next_timeout = timeout - (ifaddr->lifetime.timer_start +
+				  ifaddr->lifetime.timer_timeout);
 	return abs(next_timeout);
 }
 
 static void address_lifetime_timeout(struct k_work *work)
 {
-	u32_t timeout_update = UINT32_MAX - 1;
-	s64_t timeout = k_uptime_get();
+	u32_t timeout_update = UINT32_MAX;
+	u64_t timeout = k_uptime_get();
 	struct net_if_addr *current, *next;
 
 	ARG_UNUSED(work);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_address_lifetime_timers,
-					  current, next, node) {
+					  current, next, lifetime.node) {
 		u32_t next_timeout;
 
 		next_timeout = address_manage_timeouts(current, timeout);
@@ -818,7 +818,7 @@ static void address_lifetime_timeout(struct k_work *work)
 		}
 	}
 
-	if (timeout_update < (UINT32_MAX - 1)) {
+	if (timeout_update < UINT32_MAX) {
 		NET_DBG("Waiting for %u ms", timeout_update);
 
 		k_delayed_work_submit(&address_lifetime_timer, timeout_update);
@@ -839,12 +839,13 @@ static void address_submit_work(u32_t timeout)
 
 static void address_start_timer(struct net_if_addr *ifaddr, u32_t vlifetime)
 {
-	sys_slist_append(&active_address_lifetime_timers, &ifaddr->node);
+	sys_slist_append(&active_address_lifetime_timers,
+			 &ifaddr->lifetime.node);
 
-	ifaddr->lifetime_timer_start = k_uptime_get();
-	ifaddr->lifetime_timer_timeout = K_SECONDS(vlifetime);
+	ifaddr->lifetime.timer_start = k_uptime_get();
+	ifaddr->lifetime.timer_timeout = K_SECONDS(vlifetime);
 
-	address_submit_work(ifaddr->lifetime_timer_timeout);
+	address_submit_work(ifaddr->lifetime.timer_timeout);
 }
 
 void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
@@ -1037,7 +1038,7 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 		if (!ipv6->unicast[i].is_infinite) {
 			sys_slist_find_and_remove(
 				&active_address_lifetime_timers,
-				&ipv6->unicast[i].node);
+				&ipv6->unicast[i].lifetime.node);
 
 			if (sys_slist_is_empty(
 				    &active_address_lifetime_timers)) {
