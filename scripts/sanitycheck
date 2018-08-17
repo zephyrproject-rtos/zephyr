@@ -191,11 +191,10 @@ from sanity_chk import expr_parser
 log_format = "%(levelname)s %(name)s::%(module)s.%(funcName)s():%(lineno)d: %(message)s"
 logging.basicConfig(format=log_format, level=30)
 
-if "ZEPHYR_BASE" not in os.environ:
+ZEPHYR_BASE = os.environ.get("ZEPHYR_BASE")
+if not ZEPHYR_BASE:
     sys.stderr.write("$ZEPHYR_BASE environment variable undefined.\n")
     exit(1)
-ZEPHYR_BASE = os.environ["ZEPHYR_BASE"]
-
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 
@@ -1305,7 +1304,7 @@ class Platform:
 
     yaml_platform_schema = scl.yaml_load(
         os.path.join(
-            os.environ['ZEPHYR_BASE'],
+            ZEPHYR_BASE,
             "scripts",
             "sanity_chk",
             "sanitycheck-platform-schema.yaml"))
@@ -1574,7 +1573,7 @@ class TestSuite:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
     yaml_tc_schema = scl.yaml_load(
-        os.path.join(os.environ['ZEPHYR_BASE'],
+        os.path.join(ZEPHYR_BASE,
                      "scripts", "sanity_chk", "sanitycheck-tc-schema.yaml"))
 
     def __init__(self, board_root_list, testcase_roots, outdir):
