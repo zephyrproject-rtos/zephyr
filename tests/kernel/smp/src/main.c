@@ -21,6 +21,8 @@
 #define TIMEOUT 1000
 #define EQUAL_PRIORITY 1
 #define TIME_SLICE_MS 500
+#define THREAD_DELAY 1
+
 struct k_thread t2;
 K_THREAD_STACK_DEFINE(t2_stack, T2_STACK_SIZE);
 
@@ -158,6 +160,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 	int thread_num = (int)p1;
 	int count = 0;
+
 	tinfo[thread_num].executed  = 1;
 	tinfo[thread_num].cpu_id = _arch_curr_cpu()->id;
 
@@ -167,7 +170,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 }
 
 static void spawn_threads(int prio, int thread_num,
-			  int equal_prio, k_thread_entry_t thread_entry)
+			  int equal_prio, k_thread_entry_t thread_entry, int delay)
 {
 	int i;
 
@@ -178,12 +181,18 @@ static void spawn_threads(int prio, int thread_num,
 		if (equal_prio) {
 			tinfo[i].priority = prio;
 		} else {
+			/* Increase priority for each thread */
 			tinfo[i].priority = prio - 1;
+			prio = tinfo[i].priority;
 		}
 		tinfo[i].tid = k_thread_create(&tthread[i], tstack[i],
 					       STACK_SIZE, thread_entry,
 					       (void *)i, NULL, NULL,
-					       tinfo[i].priority, 0, 0);
+					       tinfo[i].priority, 0, delay);
+		if (delay) {
+			/* Increase delay for each thread */
+			delay = delay + 10;
+		}
 	}
 }
 
@@ -220,7 +229,7 @@ void test_coop_resched_threads(void)
 	 * will not get scheduled
 	 */
 	spawn_threads(K_PRIO_COOP(10), THREADS_NUM, !EQUAL_PRIORITY,
-		      &thread_entry);
+		      &thread_entry, THREAD_DELAY);
 
 	/* Wait for some time to let other core's thread run */
 	k_busy_wait(DELAY_US);
@@ -233,7 +242,7 @@ void test_coop_resched_threads(void)
 	 */
 	for (int i = 0; i < THREADS_NUM - 1; i++) {
 		zassert_true(tinfo[i].executed == 1,
-			     "cooperative threads didn't run");
+			     "cooperative thread %d didn't run", i);
 	}
 	zassert_true(tinfo[THREADS_NUM - 1].executed == 0,
 		     "cooperative thread is preempted");
@@ -259,14 +268,14 @@ void test_preempt_resched_threads(void)
 	 * be preempted by higher ones
 	 */
 	spawn_threads(K_PRIO_PREEMPT(10), THREADS_NUM, !EQUAL_PRIORITY,
-		      &thread_entry);
+		      &thread_entry, THREAD_DELAY);
 
-	/* Wait for some time to let other core's thread run */
+	/* Wait for some time to let all threads run */
 	k_busy_wait(DELAY_US);
 
 	for (int i = 0; i < THREADS_NUM; i++) {
 		zassert_true(tinfo[i].executed == 1,
-			     "preemptive threads didn't run");
+			     "preemptive thread %d didn't run", i);
 	}
 
 	/* Abort threads created */
@@ -280,7 +289,7 @@ void test_preempt_resched_threads(void)
  * @ingroup kernel_smp_tests
  *
  * @details Spawn cooperative threads equal to number
- * of cores, so last thread would pending, call
+ * of cores, so last thread would be pending, call
  * yield() from main thread. Now, all threads must be
  * executed
  */
@@ -291,25 +300,16 @@ void test_yield_threads(void)
 	 * pending.
 	 */
 	spawn_threads(K_PRIO_COOP(10), THREADS_NUM, !EQUAL_PRIORITY,
-		      &thread_entry);
-
-	printk("Current CPU:%d\n", _arch_curr_cpu()->id);
+		      &thread_entry, !THREAD_DELAY);
 
 	k_yield();
-
 	k_busy_wait(DELAY_US);
 
-	printk("Back from yield\n");
-
 	for (int i = 0; i < THREADS_NUM; i++) {
-		printk("checking for execution of %d: %d and cpu_id = %d\n",
-		       i, tinfo[i].executed, tinfo[i].cpu_id);
 		zassert_true(tinfo[i].executed == 1,
-			     "all threads did not execute %d %d",
-			     i, tinfo[i].priority);
+			     "thread %d did not execute", i);
 
 	}
-	printk("Current CPU:%d\n", _arch_curr_cpu()->id);
 
 	abort_threads(THREADS_NUM);
 	cleanup_resources();
@@ -327,14 +327,13 @@ void test_yield_threads(void)
 void test_sleep_threads(void)
 {
 	spawn_threads(K_PRIO_COOP(10), THREADS_NUM, !EQUAL_PRIORITY,
-		      &thread_entry);
+		      &thread_entry, !THREAD_DELAY);
 
 	k_sleep(TIMEOUT);
 
 	for (int i = 0; i < THREADS_NUM; i++) {
 		zassert_true(tinfo[i].executed == 1,
-			     "all threads did not execute %d %d",
-			     i, tinfo[i].priority);
+			     "thread %d did not execute", i);
 	}
 
 	abort_threads(THREADS_NUM);
@@ -406,7 +405,7 @@ void test_wakeup_threads(void)
 {
 	/* Spawn threads to run on all remaining cores */
 	spawn_threads(K_PRIO_COOP(10), THREADS_NUM - 1, !EQUAL_PRIORITY,
-		      &thread_wakeup_entry);
+		      &thread_wakeup_entry, !THREAD_DELAY);
 
 	/* Check if all the threads have started, then call wakeup */
 	wakeup_on_start_thread(THREADS_NUM - 1);
@@ -455,4 +454,3 @@ void test_main(void)
 			 );
 	ztest_run_test_suite(smp);
 }
-
