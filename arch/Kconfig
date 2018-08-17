@@ -135,6 +135,32 @@ config SIMPLE_FATAL_ERROR_HANDLER
 	  for footprint-concerned systems. Only enable this option if you do not
 	  want debug capabilities in case of system fatal error.
 
+choice
+	prompt "Architecture logging level"
+	default ARCH_LOG_LEVEL_DBG
+
+config ARCH_LOG_LEVEL_OFF
+	bool "Off"
+config ARCH_LOG_LEVEL_ERR
+	bool "Error"
+config ARCH_LOG_LEVEL_WRN
+	bool "Warning"
+config ARCH_LOG_LEVEL_INF
+	bool "Info"
+config ARCH_LOG_LEVEL_DBG
+	bool "Debug"
+
+endchoice
+
+config ARCH_LOG_LEVEL
+	int
+	default 0 if ARCH_LOG_LEVEL_OFF
+	default 1 if ARCH_LOG_LEVEL_ERR
+	default 2 if ARCH_LOG_LEVEL_WRN
+	default 3 if ARCH_LOG_LEVEL_INF
+	default 4 if ARCH_LOG_LEVEL_DBG
+
+
 menu "Interrupt Configuration"
 #
 # Interrupt related configs
