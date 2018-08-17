@@ -124,7 +124,7 @@ osEvent osMailGet(osMailQId queue_id, uint32_t millisec)
 {
 	osMailQDef_t *queue_def = (osMailQDef_t *)queue_id;
 	struct k_mbox_msg mmsg;
-	osEvent evt;
+	osEvent evt = {0};
 	int retval;
 
 	if (queue_def == NULL) {
@@ -146,6 +146,7 @@ osEvent osMailGet(osMailQId queue_id, uint32_t millisec)
 
 	if (retval == 0) {
 		evt.status = osEventMail;
+		evt.value.p = mmsg.tx_data;
 	} else if (retval == -EAGAIN) {
 		evt.status = osEventTimeout;
 	} else if (retval == -ENOMSG) {
@@ -154,7 +155,6 @@ osEvent osMailGet(osMailQId queue_id, uint32_t millisec)
 		evt.status = osErrorValue;
 	}
 
-	evt.value.p = mmsg.tx_data;
 	evt.def.mail_id = queue_id;
 
 	return evt;
