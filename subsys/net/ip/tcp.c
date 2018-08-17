@@ -939,15 +939,14 @@ static void restart_timer(struct net_tcp *tcp)
 		tcp->flags |= NET_TCP_RETRYING;
 		tcp->retry_timeout_shift = 0;
 		k_delayed_work_submit(&tcp->retry_timer, retry_timeout(tcp));
-	} else if (CONFIG_NET_TCP_TIME_WAIT_DELAY != 0) {
-		if (tcp->fin_sent && tcp->fin_rcvd) {
-			/* We know sent_list is empty, which means if
-			 * fin_sent is true it must have been ACKd
-			 */
-			k_delayed_work_submit(&tcp->retry_timer,
-					      CONFIG_NET_TCP_TIME_WAIT_DELAY);
-			net_context_ref(tcp->context);
-		}
+	} else if (CONFIG_NET_TCP_TIME_WAIT_DELAY != 0 &&
+			(tcp->fin_sent && tcp->fin_rcvd)) {
+		/* We know sent_list is empty, which means if
+		 * fin_sent is true it must have been ACKd
+		 */
+		k_delayed_work_submit(&tcp->retry_timer,
+				      CONFIG_NET_TCP_TIME_WAIT_DELAY);
+		net_context_ref(tcp->context);
 	} else {
 		k_delayed_work_cancel(&tcp->retry_timer);
 		tcp->flags &= ~NET_TCP_RETRYING;
