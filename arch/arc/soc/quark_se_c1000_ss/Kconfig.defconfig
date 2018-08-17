@@ -128,8 +128,6 @@ endif # I2C
 if ADC
 config ADC_DW
 	def_bool y
-config ADC_0_IRQ_PRI
-	default 0
 endif
 
 if BT_H4
