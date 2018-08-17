@@ -115,6 +115,9 @@ struct net_if_ipv6_prefix {
 	/** IPv6 prefix */
 	struct in6_addr prefix;
 
+	/** Backpointer to network interface where this prefix is used */
+	struct net_if *iface;
+
 	/** Prefix length */
 	u8_t len;
 
