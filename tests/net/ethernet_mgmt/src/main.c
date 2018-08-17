@@ -89,8 +89,14 @@ static void eth_fake_recalc_qav_delta_bandwidth(struct eth_fake_context *ctx)
 	bw = eth_fake_get_total_bandwidth(ctx);
 
 	for (i = 0; i < ARRAY_SIZE(ctx->priority_queues); ++i) {
-		ctx->priority_queues[i].delta_bandwidth =
-			(ctx->priority_queues[i].idle_slope * 100) / bw;
+		if (bw == 0) {
+			ctx->priority_queues[i].delta_bandwidth = 0;
+		} else {
+			ctx->priority_queues[i].delta_bandwidth =
+				(ctx->priority_queues[i].idle_slope * 100);
+
+			ctx->priority_queues[i].delta_bandwidth /= bw;
+		}
 	}
 }
 
