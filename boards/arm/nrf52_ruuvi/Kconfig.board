@@ -1,0 +1,10 @@
+# Kconfig - nRF52 PCA10040 board configuration
+#
+# Copyright (c) 2016 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config  BOARD_NRF52_RUUVI
+	bool "nRF52 ruuvi"
+	select HAS_DTS_GPIO
+	depends on SOC_NRF52832_QFAA
