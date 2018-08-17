@@ -101,6 +101,9 @@ def run_checkpatch(tc, commit_range):
 
 
 def run_kconfig_undef_ref_check(tc, commit_range):
+    # Look up Kconfig files relative to ZEPHYR_BASE
+    os.environ["srctree"] = repository_path
+
     # Parse the entire Kconfig tree, to make sure we see all symbols
     os.environ["ENV_VAR_BOARD_DIR"] = "boards/*/*"
     os.environ["ENV_VAR_ARCH"] = "*"
