@@ -206,7 +206,7 @@ LAST_SANITY_XUNIT = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                                  "last_sanity.xml")
 RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                             "sanity_last_release.csv")
-JOBS = multiprocessing.cpu_count()
+JOBS = multiprocessing.cpu_count() * 2
 
 if os.isatty(sys.stdout.fileno()):
     TERMINAL = True
@@ -2425,7 +2425,8 @@ def parse_arguments():
         help="Only build the code, do not execute any of it in QEMU")
     parser.add_argument(
         "-j", "--jobs", type=int,
-        help="Number of jobs for building, defaults to number of CPU threads")
+        help="Number of jobs for building, defaults to number of CPU threads "
+        "overcommited by factor 2")
 
     parser.add_argument(
         "--device-testing", action="store_true",
