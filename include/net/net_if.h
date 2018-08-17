@@ -28,6 +28,7 @@
 #include <net/net_ip.h>
 #include <net/net_l2.h>
 #include <net/net_stats.h>
+#include <net/net_timeout.h>
 
 #if defined(CONFIG_NET_DHCPV4)
 #include <net/dhcpv4.h>
@@ -50,14 +51,7 @@ struct net_if_addr {
 	struct net_addr address;
 
 #if defined(CONFIG_NET_IPV6)
-	/** Used for track timers */
-	sys_snode_t node;
-
-	/** Address lifetime timer start time */
-	s64_t lifetime_timer_start;
-
-	/** lifetime timer timeout */
-	u32_t lifetime_timer_timeout;
+	struct net_timeout lifetime;
 #endif
 
 #if defined(CONFIG_NET_IPV6_DAD)
