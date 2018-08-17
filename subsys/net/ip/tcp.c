@@ -1406,6 +1406,15 @@ int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
 		opt_totlen -= optlen;
 	}
 
+	/* All options must be read/processed and option count should be zero.
+	 * If the option count is non-zero, which means there is unread options
+	 * and the option field can be malformed. Thus we shouldn't accept it.
+	 */
+	if (opt_totlen) {
+		NET_ERR("Unprocessed options left: %d", opt_totlen);
+		return -EINVAL;
+	}
+
 	return 0;
 
 error:
