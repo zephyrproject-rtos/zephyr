@@ -8,7 +8,7 @@
 #include <kernel.h>
 #include <cmsis_os.h>
 
-#define WAIT_TIME_US 1000
+#define WAIT_TIME_US 1000000
 
 /**
  * @brief Test kernel start
