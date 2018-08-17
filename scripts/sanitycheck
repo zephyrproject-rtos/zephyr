@@ -1074,18 +1074,9 @@ class MakeGenerator:
             tf.write("all: %s\n" % (" ".join(self.goals.keys())))
             tf.flush()
 
-            # Normally spawn 2x as many processes as CPUs.  Ninja,
-            # though, seems to have significant parallelism internally
-            # and results in rather high loads, so use 1.5x there to
-            # match what we see with GNU make.
-            loadmul = 2
-            if options.ninja:
-                    loadmul = 1.5
+            cmd = ["make", "-k", "-j", str(CPU_COUNTS), "-f", tf.name, "all"]
 
-            cmd = ["make", "-k", "-j",
-                   str(int(CPU_COUNTS * loadmul)), "-f", tf.name, "all"]
-            p = subprocess.Popen(cmd, stderr=subprocess.PIPE,
-                                 stdout=devnull)
+            p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=devnull)
 
             for line in iter(p.stderr.readline, b''):
                 line = line.decode("utf-8")
@@ -2434,8 +2425,7 @@ def parse_arguments():
         help="Only build the code, do not execute any of it in QEMU")
     parser.add_argument(
         "-j", "--jobs", type=int,
-        help="Number of cores to use when building, defaults to "
-        "number of CPUs * 2")
+        help="Number of jobs for building, defaults to number of CPU threads")
 
     parser.add_argument(
         "--device-testing", action="store_true",
@@ -2679,8 +2669,15 @@ def main():
     INLINE_LOGS = options.inline_logs
     if options.log_file:
         log_file = open(options.log_file, "w")
+
     if options.jobs:
         CPU_COUNTS = options.jobs
+
+    # Decrease CPU_COUNTS for Ninja, if jobs weren't explicitly set
+    if options.ninja and not options.jobs:
+        CPU_COUNTS = int(CPU_COUNTS * 0.75)
+
+    info("CPU_COUNTS: %d" % CPU_COUNTS);
 
     if options.subset:
         subset, sets = options.subset.split("/")
