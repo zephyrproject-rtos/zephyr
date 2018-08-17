@@ -65,7 +65,18 @@ struct net_if_addr {
 
 #if defined(CONFIG_NET_IPV6_DAD)
 	/** Duplicate address detection (DAD) timer */
-	struct k_delayed_work dad_timer;
+	struct {
+		/** Used to track timers */
+		sys_snode_t node;
+
+		/** DAD timer start time */
+		u64_t timer_start;
+
+		/** DAD timer timeout. The timeout value is very short, so use
+		 * 16-bit value here.
+		 */
+		u16_t timer_timeout;
+	} dad;
 #endif
 	/** How the IP address was set */
 	enum net_addr_type addr_type;
