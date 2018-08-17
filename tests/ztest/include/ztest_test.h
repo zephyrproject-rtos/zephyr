@@ -16,6 +16,10 @@
 #include <app_memory/app_memdomain.h>
 
 struct unit_test {
+	/*
+	 * If the offset of ->test changes, you need to update
+	 * ../../../scripts/get-unit-tests.py and probably others
+	 */
 	const char *name;
 	void (*test)(void);
 	void (*setup)(void);
