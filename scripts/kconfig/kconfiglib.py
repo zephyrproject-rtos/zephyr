@@ -311,10 +311,10 @@ Kconfiglib implements two Kconfig extensions related to 'source':
 'source' with relative path
 ---------------------------
 
-The library implements a custom 'rsource' statement that allows to import
-Kconfig file by specifying path relative to directory of the currently parsed
-file, instead of path relative to project root.
-This extension is not supported by Linux kernel tools (yet).
+Kconfiglib supports a custom 'rsource' statement that sources Kconfig files
+with a path relative to directory of the Kconfig file containing the 'rsource'
+statement, instead of relative to the project root. This extension is not
+supported by Linux kernel tools as of writing.
 
 Consider following directory tree:
 
@@ -330,16 +330,21 @@ Consider following directory tree:
         +--ModuleA
            +--Kconfig
 
-In above example, src/SubSystem1/Kconfig imports Kconfig for ModuleA.
-With default 'source' it looks like:
+In this example, assume that src/SubSystem1/Kconfig wants to source
+src/SubSystem1/ModuleA/Kconfig.
+
+With 'source', the following statement would be used:
 
   source "src/SubSystem1/ModuleA/Kconfig"
 
-Using 'rsource' it can be rewritten as:
+Using 'rsource', it can be rewritten as:
 
   rsource "ModuleA/Kconfig"
 
-If absolute path is given to 'rsource' then it follows behavior of 'source'.
+If an absolute path is given to 'rsource', it acts the same as 'source'.
+
+'rsource' can be used to create "position-independent" Kconfig trees that can
+be moved around freely.
 
 
 Globbed sourcing
@@ -605,19 +610,13 @@ class Kconfig(object):
           the right Kconfig is included from there (arch/$SRCARCH/Kconfig as of
           writing).
 
+          If $srctree is set, 'filename' will be looked up relative to it.
+          $srctree is also used to look up source'd files within Kconfig files.
+          See the class documentation.
+
           If you are using Kconfiglib via 'make scriptconfig', the filename of
           the base base Kconfig file will be in sys.argv[1]. It's currently
           always "Kconfig" in practice.
-
-          The $srctree environment variable is used to look up Kconfig files
-          referenced in Kconfig files if set. See the class documentation.
-
-          Note: '(o)source' statements in Kconfig files always work relative to
-          $srctree (or the current directory if $srctree is unset), even if
-          'filename' is a path with directories. This allows a subset of
-          Kconfig files to be loaded without breaking references to other
-          Kconfig files, e.g. by doing Kconfig("./sub/Kconfig"). sub/Kconfig
-          might expect to be sourced by ./Kconfig.
 
         warn (default: True):
           True if warnings related to this configuration should be generated.
@@ -732,7 +731,7 @@ class Kconfig(object):
         self.top_node.prompt = ("Main menu", self.y)
         self.top_node.parent = None
         self.top_node.dep = self.y
-        self.top_node.filename = os.path.relpath(filename, self.srctree)
+        self.top_node.filename = filename
         self.top_node.linenr = 1
 
         # Parse the Kconfig files
@@ -746,11 +745,17 @@ class Kconfig(object):
         self._filestack = []
 
         # The current parsing location
-        self._filename = os.path.relpath(filename, self.srctree)
+        self._filename = filename
         self._linenr = 0
 
         # Open the top-level Kconfig file
-        self._file = self._open(filename, "r")
+        try:
+            self._file = self._open(os.path.join(self.srctree, filename), "r")
+        except IOError as e:
+            if self.srctree:
+                print(textwrap.fill(
+                    _INIT_SRCTREE_NOTE.format(self.srctree), 80))
+            raise
 
         try:
             # Parse everything
@@ -2198,7 +2203,7 @@ class Kconfig(object):
 
                 if node.is_menuconfig and not node.prompt:
                     self._warn("the menuconfig symbol {} has no prompt"
-                               .format(_name_and_loc(node.item)))
+                               .format(_name_and_loc(sym)))
 
                 # Tricky Python semantics: This assign prev.next before prev
                 prev.next = prev = node
@@ -2927,14 +2932,15 @@ class Kconfig(object):
         # See the Symbol class docstring
         sc.direct_dep = self._make_or(sc.direct_dep, node.dep)
 
-        if node.defaults:
-            sc.defaults.extend(node.defaults)
+        sc.defaults += node.defaults
+
+        # The properties below aren't available on choices
 
         if node.ranges:
-            sc.ranges.extend(node.ranges)
+            sc.ranges += node.ranges
 
         if node.selects:
-            sc.selects.extend(node.selects)
+            sc.selects += node.selects
 
             # Modify the reverse dependencies of the selected symbol
             for target, cond in node.selects:
@@ -2943,7 +2949,7 @@ class Kconfig(object):
                     self._make_and(sc, cond))
 
         if node.implies:
-            sc.implies.extend(node.implies)
+            sc.implies += node.implies
 
             # Modify the weak reverse dependencies of the implied
             # symbol
@@ -3989,18 +3995,15 @@ class Symbol(object):
         # and menus) is selected by some other symbol. Also warn if a symbol
         # whose direct dependencies evaluate to m is selected to y.
 
-        dir_dep_val = expr_value(self.direct_dep)
-
         msg = "{} has direct dependencies {} with value {}, but is " \
               "currently being {}-selected by the following symbols:" \
               .format(_name_and_loc(self), expr_str(self.direct_dep),
-                      TRI_TO_STR[dir_dep_val],
+                      TRI_TO_STR[expr_value(self.direct_dep)],
                       TRI_TO_STR[expr_value(self.rev_dep)])
 
         # The reverse dependencies from each select are ORed together
         for select in split_expr(self.rev_dep, OR):
-            select_val = expr_value(select)
-            if select_val <= dir_dep_val:
+            if expr_value(select) <= expr_value(self.direct_dep):
                 # Only include selects that exceed the direct dependencies
                 continue
 
@@ -6011,3 +6014,12 @@ _REL_TO_STR = {
     GREATER:       ">",
     GREATER_EQUAL: ">=",
 }
+
+_INIT_SRCTREE_NOTE = """
+NOTE: Starting with Kconfiglib 10.0.0, the Kconfig filename passed to
+Kconfig.__init__() is looked up relative to the $srctree (which is set to '{}')
+instead of relative to the working directory. Previously, $srctree only applied
+to files being source'd within Kconfig files. This change makes running scripts
+out-of-tree work seamlessly, with no special coding required. Sorry for the
+backwards compatibility break!
+"""[1:]
