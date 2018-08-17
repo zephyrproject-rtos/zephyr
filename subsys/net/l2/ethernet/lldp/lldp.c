@@ -14,6 +14,8 @@
 #endif
 
 #include <errno.h>
+#include <stdlib.h>
+
 #include <net/net_core.h>
 #include <net/ethernet.h>
 #include <net/net_mgmt.h>
@@ -66,9 +68,7 @@ static void lldp_submit_work(u32_t timeout)
 static bool lldp_check_timeout(s64_t start, u32_t time, s64_t timeout)
 {
 	start += time;
-	if (start < 0) {
-		start = -start;
-	}
+	start = abs(start);
 
 	if (start > timeout) {
 		return false;
@@ -144,16 +144,23 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	}
 
 out:
+	lldp->tx_timer_start = k_uptime_get();
+
 	return ret;
 }
 
 static u32_t lldp_manage_timeouts(struct ethernet_lldp *lldp, s64_t timeout)
 {
+	s32_t next_timeout;
+
 	if (lldp_timedout(lldp, timeout)) {
 		lldp_send(lldp);
 	}
 
-	return lldp->tx_timer_timeout;
+	next_timeout = timeout - (lldp->tx_timer_start +
+				  lldp->tx_timer_timeout);
+
+	return abs(next_timeout);
 }
 
 static void lldp_tx_timeout(struct k_work *work)
@@ -173,7 +180,7 @@ static void lldp_tx_timeout(struct k_work *work)
 		}
 	}
 
-	if (timeout_update != UINT32_MAX) {
+	if (timeout_update < (UINT32_MAX - 1)) {
 		NET_DBG("Waiting for %u ms", timeout_update);
 
 		k_delayed_work_submit(&lldp_tx_timer, timeout_update);
