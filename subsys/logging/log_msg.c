@@ -241,8 +241,11 @@ static void log_msg_hexdump_data_op(struct log_msg *msg,
 	} else {
 		offset -= chunk_len;
 		chunk_len = HEXDUMP_BYTES_CONT_MSG;
+		if (cont == NULL) {
+			cont = msg->payload.ext.next;
+		}
 
-		while (offset > chunk_len) {
+		while (offset >= chunk_len) {
 			cont = cont->next;
 			offset -= chunk_len;
 		}
