@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2018 Manivannan Sadhasivam
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config LED_GPIO
+	bool "LED GPIO driver"
+	depends on GPIO
+	help
+	  Enable software driven LED using GPIO pin.
+
+# ---------- LED 0 ----------
+
+config LED_GPIO_0
+	bool "Enable LED GPIO 0"
+	depends on LED_GPIO
+	help
+	  Enable LED GPIO 0.
+
+# ---------- LED 1 ----------
+
+config LED_GPIO_1
+	bool "Enable LED GPIO 1"
+	depends on LED_GPIO
+	help
+	  Enable LED GPIO 1.
