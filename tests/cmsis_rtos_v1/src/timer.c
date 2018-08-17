@@ -52,6 +52,10 @@ void test_timer(void)
 	id1 = osTimerCreate(osTimer(Timer1), osTimerOnce, &exec1);
 	zassert_true(id1 != NULL, "error creating one-shot timer");
 
+	/* Stop the timer before start */
+	status = osTimerStop(id1);
+	zassert_true(status == osErrorResource, "error while stopping non-active timer");
+
 	timerDelay = ONESHOT_TIME;
 	status = osTimerStart(id1, timerDelay);
 	zassert_true(status == osOK, "error starting one-shot timer");
@@ -91,9 +95,7 @@ void test_timer(void)
 	zassert_true(num_periods_executed == NUM_PERIODS + 1,
 			"error setting up periodic timer");
 
-	status = osTimerStop(id2);
-	zassert_true(status == osOK, "error stopping periodic timer");
-
+	/* Delete the timer before stop */
 	status = osTimerDelete(id2);
 	zassert_true(status == osOK, "error deleting periodic timer");
 }
