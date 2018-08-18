@@ -9,16 +9,6 @@ if BOARD_REEL_BOARD
 config BOARD
 	default "reel_board"
 
-if GPIO_NRF5
-
-config GPIO_NRF5_P0
-	default y
-
-config GPIO_NRF5_P1
-	default y
-
-endif # GPIO_NRF5
-
 if UART_NRFX
 
 config UART_0_NRF_TX_PIN
