@@ -106,6 +106,10 @@ void publish(struct k_work *work)
 		net_buf_simple_add_le16(root_models[5].pub->msg, LEVEL_S25);
 		net_buf_simple_add_u8(root_models[5].pub->msg, tid_level++);
 		err = bt_mesh_model_publish(&root_models[5]);
+#elif defined(ONOFF_GET)
+		bt_mesh_model_msg_init(root_models[3].pub->msg,
+				       BT_MESH_MODEL_OP_GEN_ONOFF_GET);
+		err = bt_mesh_model_publish(&root_models[3]);
 #elif defined(GENERIC_DELTA_LEVEL)
 		bt_mesh_model_msg_init(root_models[5].pub->msg,
 				       BT_MESH_MODEL_OP_GEN_DELTA_SET_UNACK);
@@ -237,3 +241,4 @@ void publish(struct k_work *work)
 		printk("bt_mesh_model_publish: err: %d\n", err);
 	}
 }
+
