@@ -18,7 +18,7 @@
 
 static bool is_randomization_of_TIDs_done;
 
-#if defined(ONOFF)
+#if (defined(ONOFF) || defined(ONOFF_TT))
 static u8_t tid_onoff;
 #elif defined(VND_MODEL_TEST)
 static u8_t tid_vnd;
@@ -28,7 +28,7 @@ static u8_t tid_level;
 
 void randomize_publishers_TID(void)
 {
-#if defined(ONOFF)
+#if (defined(ONOFF) || defined(ONOFF_TT))
 	bt_rand(&tid_onoff, sizeof(tid_onoff));
 #elif defined(VND_MODEL_TEST)
 	bt_rand(&tid_vnd, sizeof(tid_vnd));
