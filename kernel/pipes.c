@@ -107,6 +107,9 @@ static int init_pipes_module(struct device *dev)
 	for (int i = 0; i < CONFIG_NUM_PIPE_ASYNC_MSGS; i++) {
 		async_msg[i].thread.thread_state = _THREAD_DUMMY;
 		async_msg[i].thread.swap_data = &async_msg[i].desc;
+
+		_init_thread_timeout(&async_msg[i].thread);
+
 		k_stack_push(&pipe_async_msgs, (u32_t)&async_msg[i]);
 	}
 #endif /* CONFIG_NUM_PIPE_ASYNC_MSGS > 0 */
@@ -537,6 +540,11 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 		 */
 		key = irq_lock();
 		_sched_unlock_no_reschedule();
+
+		async_desc->desc.buffer = data + num_bytes_written;
+		async_desc->desc.bytes_to_xfer =
+			bytes_to_write - num_bytes_written;
+
 		_pend_thread((struct k_thread *) &async_desc->thread,
 			     &pipe->wait_q.writers, K_FOREVER);
 		_reschedule(key);
