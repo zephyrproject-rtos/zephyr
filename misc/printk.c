@@ -40,9 +40,12 @@ static void _printk_hex_ulong(out_func_t out, void *ctx,
  * @brief Default character output routine that does nothing
  * @param c Character to swallow
  *
+ * Note this is defined as a weak symbol, allowing architecture code
+ * to override it where possible to enable very early logging.
+ *
  * @return 0
  */
-static int _nop_char_out(int c)
+ __attribute__((weak)) int z_arch_printk_char_out(int c)
 {
 	ARG_UNUSED(c);
 
@@ -50,7 +53,7 @@ static int _nop_char_out(int c)
 	return 0;
 }
 
-static int (*_char_out)(int) = _nop_char_out;
+int (*_char_out)(int) = z_arch_printk_char_out;
 
 /**
  * @brief Install the character output routine for printk
