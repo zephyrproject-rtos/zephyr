@@ -104,7 +104,6 @@ config STACK_SENTINEL
 
 config PRINTK
 	bool "Send printk() to console"
-	depends on CONSOLE_HAS_DRIVER
 	default y
 	help
 	  This option directs printk() debugging output to the supported
