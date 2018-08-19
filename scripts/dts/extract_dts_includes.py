@@ -698,6 +698,8 @@ def generate_node_definitions(yaml_list):
             if node_compat is not None and node_compat in yaml_list:
                 compats.append(node_compat)
         compatible.populate_edts(k, compats)
+        if compats:
+            reg.populate_edts(k)
 
     if defs == {}:
         raise Exception("No information parsed from dts file.")
