@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import sys
 from collections import defaultdict
 
 # globals
@@ -13,7 +14,6 @@ aliases = defaultdict(list)
 chosen = {}
 reduced = {}
 defs = {}
-structs = {}
 
 regs_config = {
     'zephyr,flash' : 'CONFIG_FLASH',
