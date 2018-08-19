@@ -6,6 +6,7 @@
 
 from extract.globals import *
 from extract.directive import DTDirective
+from extract.edts import *
 
 ##
 # @brief Manage interrupts directives.
@@ -47,7 +48,35 @@ class DTInterrupts(DTDirective):
             props = [node['props'].get(prop)]
 
         irq_parent = self._find_parent_irq_node(node_address)
+        irq_nr_cells = reduced[irq_parent]['props']['#interrupt-cells']
+        irq_cell_yaml = yaml[get_compat(irq_parent)]
+        irq_cell_names = irq_cell_yaml.get('#cells', [])
+        irq_names = node['props'].get('interrupt-names', [])
+        if not isinstance(irq_names, list):
+            irq_names = [irq_names, ]
 
+        # generate EDTS
+        device_id = edts_device_id(node_address)
+        irq_index = 0
+        irq_cell_index = 0
+        for cell in props:
+            if len(irq_names) > irq_index:
+                irq_name = irq_names[irq_index]
+            else:
+                irq_name = str(irq_index)
+            if len(irq_cell_names) > irq_cell_index:
+                irq_cell_name = irq_cell_names[irq_cell_index]
+            else:
+                irq_cell_name = str(irq_cell_index)
+            edts_insert_device_property(device_id,
+                'interrupts/{}/{}'.format(irq_name, irq_cell_name),
+                cell)
+            irq_cell_index += 1
+            if irq_cell_index >= irq_nr_cells:
+                irq_cell_index = 0
+                irq_index += 1
+
+        # generate defines
         l_base = def_label.split('/')
         index = 0
 
@@ -67,11 +96,10 @@ class DTInterrupts(DTDirective):
             except:
                 name = []
 
-            cell_yaml = yaml[get_compat(irq_parent)]
             l_cell_prefix = ['IRQ']
 
-            for i in range(reduced[irq_parent]['props']['#interrupt-cells']):
-                l_cell_name = [cell_yaml['#cells'][i].upper()]
+            for i in range(irq_nr_cells):
+                l_cell_name = [irq_cell_names[i].upper()]
                 if l_cell_name == l_cell_prefix:
                     l_cell_name = []
 
