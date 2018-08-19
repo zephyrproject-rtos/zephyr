@@ -32,6 +32,10 @@ config X86
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
 
+config X86_64
+	bool "x86_64 architecture"
+	select ATOMIC_OPERATIONS_BUILTIN
+
 config NIOS2
 	bool "Nios II Gen 2 architecture"
 	select ATOMIC_OPERATIONS_C

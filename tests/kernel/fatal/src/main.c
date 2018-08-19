@@ -46,14 +46,15 @@ static volatile int crash_reason;
  * completing the exception path; the faulting thread is never run
  * again.
  *
- * On Xtensa/asm2 the handler is running in interrupt context and on
- * the interrupt stack and needs to return through the interrupt exit
- * code.
+ * On Xtensa/asm2 and x86_64 the handler is running in interrupt
+ * context and on the interrupt stack and needs to return through the
+ * interrupt exit code.
  *
  * In both cases the thread is guaranteed never to run again once we
  * return from the _SysFatalErrorHandler().
  */
-#if !(defined(CONFIG_ARM) || defined(CONFIG_XTENSA_ASM2) || defined(CONFIG_ARC))
+#if !(defined(CONFIG_ARM) || defined(CONFIG_XTENSA_ASM2) \
+	|| defined(CONFIG_ARC) || defined(CONFIG_X86_64))
 #define ERR_IS_NORETURN 1
 #endif
 
@@ -73,7 +74,7 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 
 void alt_thread1(void)
 {
-#if defined(CONFIG_X86)
+#if defined(CONFIG_X86) || defined(CONFIG_X86_64)
 	__asm__ volatile ("ud2");
 #elif defined(CONFIG_NIOS2)
 	__asm__ volatile ("trap");

@@ -12,9 +12,9 @@ menu "Timer Drivers"
 
 config HPET_TIMER
 	bool "HPET timer"
-	depends on X86
-	select IOAPIC
-	select LOAPIC
+	depends on (X86 || X86_64)
+	select IOAPIC if X86
+	select LOAPIC if X86
 	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	select TICKLESS_CAPABLE
 	help

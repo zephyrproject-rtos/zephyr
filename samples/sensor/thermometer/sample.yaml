@@ -4,3 +4,4 @@ tests:
   test:
     tags: sensors
     harness: sensor
+    arch_exclude: x86_64   # No floating point on x86_64 yet

@@ -595,6 +595,14 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 			case 'G':
 				/* standard platforms which supports double */
 			{
+#ifdef CONFIG_X86_64
+				/* Can't use a double here because
+				 * we're operating in -mno-sse and
+				 * va_arg() will expect this to be a
+				 * register argument.
+				 */
+				double_temp = va_arg(vargs, uint64_t);
+#else
 				union {
 					double d;
 					uint64_t i;
@@ -602,6 +610,7 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 
 				u.d = (double) va_arg(vargs, double);
 				double_temp = u.i;
+#endif
 			}
 
 				c = _to_float(buf, double_temp, c, falt, fplus,
