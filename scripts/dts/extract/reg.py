@@ -6,6 +6,7 @@
 
 from extract.globals import *
 from extract.directive import DTDirective
+from extract.edts import *
 
 ##
 # @brief Manage reg directive.
@@ -34,6 +35,37 @@ class DTReg(DTDirective):
         if type(reg) is not list: reg = [ reg, ]
 
         (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_address)
+
+        # generate EDTS
+        device_id = edts_device_id(node_address)
+        reg_index = 0
+        reg_cell_index = 0
+        reg_nr_cells = nr_address_cells + nr_size_cells
+        reg_names = node['props'].get('reg-names', [])
+        # if there is a single reg-name, we get a string, not a list back
+        # turn it into a list so things are normalized
+        if not isinstance(reg_names, list):
+            reg_names = [reg_names, ]
+        for cell in reg:
+            if len(reg_names) > reg_index:
+                reg_name = reg_names[reg_index]
+            else:
+                reg_name = str(reg_index)
+            if reg_cell_index < nr_address_cells:
+                cell += translate_addr(cell, node_address,
+                        nr_address_cells, nr_size_cells)
+                edts_insert_device_property(device_id,
+                    'reg/{}/address/{}'.format(reg_name, reg_cell_index),
+                    cell)
+            else:
+                size_cell_index = reg_cell_index - nr_address_cells
+                edts_insert_device_property(device_id,
+                    'reg/{}/size/{}'.format(reg_name, size_cell_index),
+                    cell)
+            reg_cell_index += 1
+            if reg_cell_index >= reg_nr_cells:
+                reg_cell_index = 0
+                reg_index += 1
 
         # generate defines
         post_label = "BASE_ADDRESS"
