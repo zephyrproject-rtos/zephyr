@@ -6,6 +6,7 @@
 
 from extract.globals import *
 from extract.directive import DTDirective
+from extract.edts import *
 
 from extract.default import default
 from extract.reg import reg
@@ -20,12 +21,42 @@ class DTFlash(DTDirective):
         self._flash_node = None
 
     def _extract_partition(self, node_address, yaml, prop, names, def_label):
-        prop_def = {}
-        prop_alias = {}
         node = reduced[node_address]
-
         partition_name = node['props']['label']
         partition_sectors = node['props']['reg']
+
+        nr_address_cells = reduced['/']['props'].get('#address-cells')
+        nr_size_cells = reduced['/']['props'].get('#size-cells')
+        address = ''
+        for comp in node_address.split('/')[1:-1]:
+            address += '/' + comp
+            nr_address_cells = reduced[address]['props'].get(
+                '#address-cells', nr_address_cells)
+            nr_size_cells = reduced[address]['props'].get('#size-cells', nr_size_cells)
+
+        # generate EDTS
+        sector_index = 0
+        sector_cell_index = 0
+        sector_nr_cells = nr_address_cells + nr_size_cells
+        for cell in partition_sectors:
+            if sector_cell_index < nr_address_cells:
+                edts_insert_device_property(node_address,
+                    'sector/{}/offset/{}'.format(sector_index, sector_cell_index),
+                    cell)
+            else:
+                size_cell_index = sector_cell_index - nr_address_cells
+                edts_insert_device_property(node_address,
+                    'sector/{}/size/{}'.format(sector_index, size_cell_index),
+                    cell)
+            sector_cell_index += 1
+            if sector_cell_index >= sector_nr_cells:
+                sector_cell_index = 0
+                sector_index += 1
+        edts_insert_device_parent_device_property(node_address)
+
+        # generate defines
+        prop_def = {}
+        prop_alias = {}
 
         label_prefix = ["FLASH_AREA", partition_name]
         label = self.get_label_string(label_prefix + ["LABEL",])
@@ -54,6 +85,7 @@ class DTFlash(DTDirective):
         insert_defs(node_address, prop_def, prop_alias)
 
     def _extract_flash(self, node_address, yaml, prop, names, def_label):
+        # generate defines
         load_defs = {}
 
         if node_address == 'dummy-flash':
@@ -65,19 +97,24 @@ class DTFlash(DTDirective):
             }
             insert_defs(node_address, load_defs, {})
             self._flash_base_address = 0
-            return
+        else:
+            self._flash_node = reduced[node_address]
 
-        self._flash_node = reduced[node_address]
+            flash_props = ["label", "write-block-size", "erase-block-size"]
+            for prop in flash_props:
+                if prop in self._flash_node['props']:
+                    default.extract(node_address, yaml, prop, None, def_label)
+            insert_defs(node_address, load_defs, {})
 
-        flash_props = ["label", "write-block-size", "erase-block-size"]
-        for prop in flash_props:
-            if prop in self._flash_node['props']:
-                default.extract(node_address, None, prop, None, def_label)
-        insert_defs(node_address, load_defs, {})
-
-        #for address in reduced:
-        #    if address.startswith(node_address) and 'partition@' in address:
-        #        self._extract_partition(address, yaml, 'partition', None, def_label)
+        # generate EDTS
+        # - keep behind define generation to overwrite values
+        #   done by default.extract() generation
+        device_id = edts_device_id(node_address)
+        if node_address == 'dummy-flash':
+            edts_insert_device_property(device_id, 'reg/0/address/0', "0")
+            edts_insert_device_property(device_id, 'reg/0/size/0', "0")
+        else:
+            pass
 
     def _extract_code_partition(self, node_address, yaml, prop, names, def_label):
         load_defs = {}
