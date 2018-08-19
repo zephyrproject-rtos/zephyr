@@ -23,6 +23,12 @@ static inline void timestamp_serialize(void)
 	:
 	: "%eax", "%ebx", "%ecx", "%edx");
 }
+#elif defined(CONFIG_X86_64)
+static inline void timestamp_serialize(void)
+{
+	__asm__ volatile("xorq %%rax,%%rax; cpuid"
+			 ::: "rax", "rdx", "rbx", "rcx");
+}
 #elif defined(CONFIG_CPU_CORTEX_M)
 #include <arch/arm/cortex_m/cmsis.h>
 static inline void timestamp_serialize(void)

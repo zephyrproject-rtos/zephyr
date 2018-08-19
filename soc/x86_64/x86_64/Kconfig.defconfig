@@ -1,0 +1,9 @@
+if SOC_X86_64
+
+config SOC
+	default "x86_64"
+
+config USE_SWITCH
+	default y
+
+endif

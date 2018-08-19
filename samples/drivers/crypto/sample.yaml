@@ -6,7 +6,7 @@ common:
   tags: crypto
   harness: console
   min_ram: 20
-  arch_exclude: xtensa
+  arch_exclude: xtensa x86_64
 tests:
   test-mbedtls:
     min_flash: 34
