@@ -15,6 +15,7 @@ K_MEM_POOL_DEFINE(mpool, BYTES_TO_WRITE, PIPE_LEN, 1, BYTES_TO_WRITE);
 static unsigned char __aligned(4) data[] = "abcd1234$%^&PIPE";
 /**TESTPOINT: init via K_PIPE_DEFINE*/
 K_PIPE_DEFINE(kpipe, PIPE_LEN, 4);
+K_PIPE_DEFINE(khalfpipe, (PIPE_LEN / 2), 4);
 __kernel struct k_pipe pipe;
 
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
@@ -27,7 +28,7 @@ K_SEM_DEFINE(end_sema, 0, 1);
  */
 K_MEM_POOL_DEFINE(test_pool, 128, 128, 2, 4);
 
-static void tpipe_put(struct k_pipe *ppipe)
+static void tpipe_put(struct k_pipe *ppipe, int timeout)
 {
 	size_t to_wt, wt_byte = 0;
 
@@ -36,19 +37,20 @@ static void tpipe_put(struct k_pipe *ppipe)
 		to_wt = (PIPE_LEN - i) >= BYTES_TO_WRITE ?
 			BYTES_TO_WRITE : (PIPE_LEN - i);
 		zassert_false(k_pipe_put(ppipe, &data[i], to_wt,
-					 &wt_byte, 1, K_NO_WAIT), NULL);
+					 &wt_byte, 1, timeout), NULL);
 		zassert_true(wt_byte == to_wt || wt_byte == 1, NULL);
 	}
 }
 
-static void tpipe_block_put(struct k_pipe *ppipe, struct k_sem *sema)
+static void tpipe_block_put(struct k_pipe *ppipe, struct k_sem *sema,
+			    int timeout)
 {
 	struct k_mem_block block;
 
 	for (int i = 0; i < PIPE_LEN; i += BYTES_TO_WRITE) {
 		/**TESTPOINT: pipe block put*/
 		zassert_equal(k_mem_pool_alloc(&mpool, &block, BYTES_TO_WRITE,
-					       K_NO_WAIT), 0, NULL);
+					       timeout), 0, NULL);
 		memcpy(block.data, &data[i], BYTES_TO_WRITE);
 		k_pipe_block_put(ppipe, &block, BYTES_TO_WRITE, sema);
 		if (sema) {
@@ -58,7 +60,7 @@ static void tpipe_block_put(struct k_pipe *ppipe, struct k_sem *sema)
 	}
 }
 
-static void tpipe_get(struct k_pipe *ppipe)
+static void tpipe_get(struct k_pipe *ppipe, int timeout)
 {
 	unsigned char rx_data[PIPE_LEN];
 	size_t to_rd, rd_byte = 0;
@@ -69,7 +71,7 @@ static void tpipe_get(struct k_pipe *ppipe)
 		to_rd = (PIPE_LEN - i) >= BYTES_TO_READ ?
 			BYTES_TO_READ : (PIPE_LEN - i);
 		zassert_false(k_pipe_get(ppipe, &rx_data[i], to_rd,
-					 &rd_byte, 1, K_FOREVER), NULL);
+					 &rd_byte, 1, timeout), NULL);
 		zassert_true(rd_byte == to_rd || rd_byte == 1, NULL);
 	}
 	for (int i = 0; i < PIPE_LEN; i++) {
@@ -79,16 +81,16 @@ static void tpipe_get(struct k_pipe *ppipe)
 
 static void tThread_entry(void *p1, void *p2, void *p3)
 {
-	tpipe_get((struct k_pipe *)p1);
+	tpipe_get((struct k_pipe *)p1, K_FOREVER);
 	k_sem_give(&end_sema);
 
-	tpipe_put((struct k_pipe *)p1);
+	tpipe_put((struct k_pipe *)p1, K_NO_WAIT);
 	k_sem_give(&end_sema);
 }
 
 static void tThread_block_put(void *p1, void *p2, void *p3)
 {
-	tpipe_block_put((struct k_pipe *)p1, (struct k_sem *)p2);
+	tpipe_block_put((struct k_pipe *)p1, (struct k_sem *)p2, K_NO_WAIT);
 	k_sem_give(&end_sema);
 }
 
@@ -100,11 +102,11 @@ static void tpipe_thread_thread(struct k_pipe *ppipe)
 				      K_PRIO_PREEMPT(0),
 				      K_INHERIT_PERMS | K_USER, 0);
 
-	tpipe_put(ppipe);
+	tpipe_put(ppipe, K_NO_WAIT);
 	k_sem_take(&end_sema, K_FOREVER);
 
 	k_sem_take(&end_sema, K_FOREVER);
-	tpipe_get(ppipe);
+	tpipe_get(ppipe, K_FOREVER);
 
 	/* clear the spawned thread avoid side effect */
 	k_thread_abort(tid);
@@ -164,7 +166,7 @@ void test_pipe_block_put(void)
 				      K_PRIO_PREEMPT(0), 0, 0);
 
 	k_sleep(10);
-	tpipe_get(&kpipe);
+	tpipe_get(&kpipe, K_FOREVER);
 	k_sem_take(&end_sema, K_FOREVER);
 
 	k_thread_abort(tid);
@@ -184,7 +186,7 @@ void test_pipe_block_put_sema(void)
 				      tThread_block_put, &pipe, &sync_sema, NULL,
 				      K_PRIO_PREEMPT(0), 0, 0);
 	k_sleep(10);
-	tpipe_get(&pipe);
+	tpipe_get(&pipe, K_FOREVER);
 	k_sem_take(&end_sema, K_FOREVER);
 
 	k_thread_abort(tid);
@@ -202,7 +204,7 @@ void test_pipe_get_put(void)
 				      K_PRIO_PREEMPT(0), 0, 0);
 
 	/*get will be executed previous to put*/
-	tpipe_get(&kpipe);
+	tpipe_get(&kpipe, K_FOREVER);
 	k_sem_take(&end_sema, K_FOREVER);
 
 	k_thread_abort(tid);
@@ -221,6 +223,56 @@ void test_resource_pool_auto_free(void)
 	zassert_true(k_mem_pool_malloc(&test_pool, 64) != NULL, NULL);
 }
 #endif
+
+static void tThread_half_pipe_put(void *p1, void *p2, void *p3)
+{
+	tpipe_put((struct k_pipe *)p1, K_FOREVER);
+}
+
+static void tThread_half_pipe_block_put(void *p1, void *p2, void *p3)
+{
+	tpipe_block_put((struct k_pipe *)p1, (struct k_sem *)p2, K_FOREVER);
+}
+
+/**
+ * @brief Test get/put with smaller pipe buffer
+ * @see k_pipe_put(), k_pipe_get()
+ */
+void test_half_pipe_get_put(void)
+{
+	/**TESTPOINT: thread-thread data passing via pipe*/
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      tThread_half_pipe_put, &khalfpipe,
+				      NULL, NULL, K_PRIO_PREEMPT(0),
+				      K_INHERIT_PERMS | K_USER, 0);
+
+	tpipe_get(&khalfpipe, K_FOREVER);
+
+	/* clear the spawned thread avoid side effect */
+	k_thread_abort(tid);
+}
+
+/**
+ * @brief Test pipe block put with semaphore and smaller pipe buffer
+ * @see k_pipe_block_put()
+ */
+void test_half_pipe_block_put_sema(void)
+{
+	struct k_sem sync_sema;
+
+	k_sem_init(&sync_sema, 0, 1);
+
+	/**TESTPOINT: test k_pipe_block_put with semaphore*/
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      tThread_half_pipe_block_put,
+				      &khalfpipe, &sync_sema, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
+
+	k_sleep(10);
+	tpipe_get(&khalfpipe, K_FOREVER);
+
+	k_thread_abort(tid);
+}
 
 /**
  * @}
