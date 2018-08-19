@@ -6,6 +6,7 @@
 
 from extract.globals import *
 from extract.directive import DTDirective
+from extract.edts import *
 
 ##
 # @brief Manage reg directive.
@@ -14,6 +15,58 @@ class DTReg(DTDirective):
 
     def __init__(self):
         pass
+
+    ##
+    # @brief Populate EDTS register information
+    #
+    # @param node_address Address of node owning the
+    #                     reg definition.
+    #
+    def populate_edts(self, node_address):
+
+        device_id = edts_device_id(node_address)
+        node = reduced[node_address]
+
+        try:
+            reg = reduced[node_address]['props']['reg']
+        except:
+            return
+
+        try:
+            names = node['props']['reg-names']
+            if type(names) is not list: names = [ names, ]
+        except:
+            names = None
+
+        reg = deepcopy(reg)
+        # if we only have on reg we get a scalar
+        if type(reg) is not list: reg = [ reg, ]
+
+        (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_address)
+
+        index = 0
+        while reg:
+            addr = 0
+            size = 0
+
+            for x in range(nr_address_cells):
+                addr += reg.pop(0) << (32 * (nr_address_cells - x - 1))
+            for x in range(nr_size_cells):
+                size += reg.pop(0) << (32 * (nr_size_cells - x - 1))
+
+            addr += translate_addr(addr, node_address,
+                    nr_address_cells, nr_size_cells)
+
+            edts_insert_device_property(device_id,
+                'reg/{}/address'.format(index), addr)
+            if nr_size_cells:
+                edts_insert_device_property(device_id,
+                    'reg/{}/size'.format(index), size)
+            if names is not None:
+                edts_insert_device_property(device_id,
+                    'reg/{}/name'.format(index), names[index])
+
+            index += 1
 
     ##
     # @brief Extract reg directive info
