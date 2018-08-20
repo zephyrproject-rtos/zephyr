@@ -535,6 +535,41 @@ static void leave_mcast_all(struct net_if *iface)
 #define leave_mcast_all(...)
 #endif /* CONFIG_NET_IPV6_MLD */
 
+static bool timer_check_timeout(u64_t start, u32_t time, u64_t current_time)
+{
+	if ((s64_t)((start + time) - current_time) > 0) {
+		return false;
+	}
+
+	return true;
+}
+
+static bool timer_timedout(u64_t timer_start, u32_t timer_timeout,
+			   u64_t current_time)
+{
+	return timer_check_timeout(timer_start, timer_timeout, current_time);
+}
+
+typedef void (*timer_expired_cb_t)(struct net_if_addr *ifaddr);
+
+static u32_t timer_manage_timeout(struct net_if_addr *ifaddr,
+				  u64_t timer_start,
+				  u32_t timer_timeout,
+				  u64_t current_time,
+				  timer_expired_cb_t timer_expired_cb)
+{
+	s32_t next_timeout;
+
+	if (timer_timedout(timer_start, timer_timeout, current_time)) {
+		timer_expired_cb(ifaddr);
+		return UINT32_MAX;
+	}
+
+	next_timeout = current_time - (timer_start + timer_timeout);
+	return abs(next_timeout);
+}
+
+
 #if defined(CONFIG_NET_IPV6_DAD)
 #define DAD_TIMEOUT K_MSEC(100)
 
@@ -567,39 +602,6 @@ static void dad_expired(struct net_if_addr *ifaddr)
 	sys_slist_find_and_remove(&active_dad_timers, &ifaddr->dad.node);
 }
 
-static bool dad_check_timeout(s64_t start, u32_t time, s64_t timeout)
-{
-	start += time;
-	start = abs(start);
-
-	if (start > timeout) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool dad_timedout(struct net_if_addr *ifaddr, s64_t timeout)
-{
-	return dad_check_timeout(ifaddr->dad.timer_start,
-				 ifaddr->dad.timer_timeout,
-				 timeout);
-}
-
-static u32_t dad_manage_timeouts(struct net_if_addr *ifaddr, s64_t timeout)
-{
-	s32_t next_timeout;
-
-	if (dad_timedout(ifaddr, timeout)) {
-		dad_expired(ifaddr);
-		return UINT32_MAX;
-	}
-
-	next_timeout = timeout - (ifaddr->dad.timer_start +
-				  ifaddr->dad.timer_timeout);
-	return abs(next_timeout);
-}
-
 static void dad_timeout(struct k_work *work)
 {
 	u16_t timeout_update = UINT16_MAX;
@@ -612,7 +614,11 @@ static void dad_timeout(struct k_work *work)
 					  current, next, dad.node) {
 		u16_t next_timeout;
 
-		next_timeout = dad_manage_timeouts(current, timeout);
+		next_timeout = timer_manage_timeout(current,
+						    current->dad.timer_start,
+						    current->dad.timer_timeout,
+						    timeout,
+						    dad_expired);
 		if (next_timeout < timeout_update) {
 			timeout_update = next_timeout;
 		}
@@ -863,39 +869,6 @@ static void address_expired(struct net_if_addr *ifaddr)
 				  &ifaddr->lifetime.node);
 }
 
-static bool address_check_timeout(s64_t start, u32_t time, s64_t timeout)
-{
-	start += time;
-	start = abs(start);
-
-	if (start > timeout) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool address_timedout(struct net_if_addr *ifaddr, s64_t timeout)
-{
-	return address_check_timeout(ifaddr->lifetime.timer_start,
-				     ifaddr->lifetime.timer_timeout,
-				     timeout);
-}
-
-static u32_t address_manage_timeouts(struct net_if_addr *ifaddr, s64_t timeout)
-{
-	s32_t next_timeout;
-
-	if (address_timedout(ifaddr, timeout)) {
-		address_expired(ifaddr);
-		return UINT32_MAX;
-	}
-
-	next_timeout = timeout - (ifaddr->lifetime.timer_start +
-				  ifaddr->lifetime.timer_timeout);
-	return abs(next_timeout);
-}
-
 static void address_lifetime_timeout(struct k_work *work)
 {
 	u32_t timeout_update = UINT32_MAX;
@@ -908,7 +881,11 @@ static void address_lifetime_timeout(struct k_work *work)
 					  current, next, lifetime.node) {
 		u32_t next_timeout;
 
-		next_timeout = address_manage_timeouts(current, timeout);
+		next_timeout = timer_manage_timeout(current,
+					       current->lifetime.timer_start,
+					       current->lifetime.timer_timeout,
+					       timeout,
+					       address_expired);
 		if (next_timeout < timeout_update) {
 			timeout_update = next_timeout;
 		}
