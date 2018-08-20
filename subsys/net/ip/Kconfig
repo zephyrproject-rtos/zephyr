@@ -472,4 +472,17 @@ source "subsys/net/ip/Kconfig.rpl"
 
 source "subsys/net/ip/Kconfig.stats"
 
+config NET_OFFLOAD
+	bool "Offload IP stack [EXPERIMENTAL]"
+	help
+	  Enables TCP/IP stack to be offload to a co-processor.
+
+config NET_DEBUG_NET_OFFLOAD
+	bool "Debug Net Offload Layer"
+	default y if NET_LOG_GLOBAL
+	depends on NET_LOG
+	depends on NET_OFFLOAD
+	help
+	  Enables offload TCP/IP stack output debug messages.
+
 endmenu
