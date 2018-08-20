@@ -91,9 +91,10 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 	return 0;
 }
 
+static struct ud ud;
+
 static int init_vlan(void)
 {
-	struct ud ud;
 	int ret;
 
 	memset(&ud, 0, sizeof(ud));
@@ -123,11 +124,64 @@ static int init_vlan(void)
 	return 0;
 }
 
+static enum net_verdict parse_lldp(struct net_if *iface, struct net_pkt *pkt)
+{
+	size_t len = net_pkt_get_len(pkt);
+	struct net_buf *frag = pkt->frags;
+	u16_t pos = 0;
+
+	NET_DBG("iface %p Parsing LLDP, len %u", iface, len);
+
+	while (frag) {
+		u16_t type_length;
+
+		frag = net_frag_read_be16(frag, pos, &pos, &type_length);
+		if (!frag) {
+			if (type_length == 0) {
+				NET_DBG("End LLDP DU TLV");
+				break;
+			}
+
+			NET_ERR("Parsing ended, pos %u", pos);
+			break;
+		}
+
+		u16_t length = type_length & 0x1FF;
+		u8_t type = (u8_t)(type_length >> 9);
+
+		/* Skip for now data */
+		frag = net_frag_skip(frag, pos, &pos, length);
+
+		switch (type) {
+		case LLDP_TLV_CHASSIS_ID:
+			NET_DBG("Chassis ID");
+			break;
+		case LLDP_TLV_PORT_ID:
+			NET_DBG("Port ID");
+			break;
+		case LLDP_TLV_TTL:
+			NET_DBG("TTL");
+			break;
+		default:
+			NET_DBG("TLV Not parsed");
+			break;
+		}
+
+		NET_DBG("type_length %u type %u length %u pos %u",
+			type_length, type, length, pos);
+	}
+
+	/* Let stack to free the packet */
+	return NET_DROP;
+}
+
 static int init_app(void)
 {
 	if (init_vlan() < 0) {
 		NET_ERR("Cannot setup VLAN");
 	}
+
+	net_lldp_register_callback(ud.first, parse_lldp);
 
 	return 0;
 }
