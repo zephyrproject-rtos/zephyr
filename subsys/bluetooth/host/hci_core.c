@@ -765,6 +765,22 @@ static void update_pending_id(struct bt_keys *keys, void *data)
 }
 #endif
 
+static struct bt_conn *find_pending_connect(bt_addr_le_t *peer_addr)
+{
+	struct bt_conn *conn;
+
+	/*
+	 * Make lookup to check if there's a connection object in
+	 * CONNECT or DIR_ADV state associated with passed peer LE address.
+	 */
+	conn = bt_conn_lookup_state_le(peer_addr, BT_CONN_CONNECT);
+	if (conn) {
+		return conn;
+	}
+
+	return bt_conn_lookup_state_le(peer_addr, BT_CONN_CONNECT_DIR_ADV);
+}
+
 static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 {
 	u16_t handle = sys_le16_to_cpu(evt->handle);
@@ -789,12 +805,20 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		 *
 		 * Depending on error code address might not be valid anyway.
 		 */
-		conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
+		conn = find_pending_connect(NULL);
 		if (!conn) {
 			return;
 		}
 
 		conn->err = evt->status;
+
+		/*
+		 * Handle advertising timeout after high duty directed
+		 * advertising.
+		 */
+		if (conn->err == BT_HCI_ERR_ADV_TIMEOUT) {
+			atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+		}
 
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
@@ -819,11 +843,7 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		bt_addr_le_copy(&peer_addr, &evt->peer_addr);
 	}
 
-	/*
-	 * Make lookup to check if there's a connection object in
-	 * CONNECT state associated with passed peer LE address.
-	 */
-	conn = bt_conn_lookup_state_le(&id_addr, BT_CONN_CONNECT);
+	conn = find_pending_connect(&id_addr);
 
 	if (evt->role == BT_CONN_ROLE_SLAVE) {
 		/*
@@ -5017,7 +5037,7 @@ bool bt_addr_le_is_bonded(u8_t id, const bt_addr_le_t *addr)
 	}
 }
 
-static bool valid_adv_param(const struct bt_le_adv_param *param)
+static bool valid_adv_param(const struct bt_le_adv_param *param, bool dir_adv)
 {
 	if (param->id >= bt_dev.id_count ||
 	    !bt_addr_le_cmp(&bt_dev.id_addr[param->id], BT_ADDR_LE_ANY)) {
@@ -5037,25 +5057,43 @@ static bool valid_adv_param(const struct bt_le_adv_param *param)
 		}
 	}
 
-	if (param->interval_min > param->interval_max ||
-	    param->interval_min < 0x0020 || param->interval_max > 0x4000) {
-		return false;
+	if ((param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) || !dir_adv) {
+		if (param->interval_min > param->interval_max ||
+		    param->interval_min < 0x0020 ||
+		    param->interval_max > 0x4000) {
+			return false;
+		}
 	}
 
 	return true;
 }
 
-int bt_le_adv_start(const struct bt_le_adv_param *param,
-		    const struct bt_data *ad, size_t ad_len,
-		    const struct bt_data *sd, size_t sd_len)
+static inline bool ad_has_name(const struct bt_data *ad, size_t ad_len)
+{
+	int i;
+
+	for (i = 0; i < ad_len; i++) {
+		if (ad[i].type == BT_DATA_NAME_COMPLETE ||
+		    ad[i].type == BT_DATA_NAME_SHORTENED) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
+			     const struct bt_data *ad, size_t ad_len,
+			     const struct bt_data *sd, size_t sd_len,
+			     const bt_addr_le_t *peer)
 {
 	struct bt_hci_cp_le_set_adv_param set_param;
 	const bt_addr_le_t *id_addr;
 	struct net_buf *buf;
-	struct bt_ad d[2] = {};
-	int err;
+	bool dir_adv = (peer != NULL);
+	int err = 0;
 
-	if (!valid_adv_param(param)) {
+	if (!valid_adv_param(param, dir_adv)) {
 		return -EINVAL;
 	}
 
@@ -5063,53 +5101,55 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		return -EALREADY;
 	}
 
-	d[0].data = ad;
-	d[0].len = ad_len;
+	if (!dir_adv) {
+		struct bt_ad d[2] = {};
 
-	err = set_ad(BT_HCI_OP_LE_SET_ADV_DATA, d, 1);
-	if (err) {
-		return err;
-	}
+		d[0].data = ad;
+		d[0].len = ad_len;
 
-	d[0].data = sd;
-	d[0].len = sd_len;
+		err = set_ad(BT_HCI_OP_LE_SET_ADV_DATA, d, 1);
+		if (err) {
+			return err;
+		}
 
-	if (param->options & BT_LE_ADV_OPT_USE_NAME) {
-		const char *name;
+		d[0].data = sd;
+		d[0].len = sd_len;
 
-		if (sd) {
-			int i;
+		if (param->options & BT_LE_ADV_OPT_USE_NAME) {
+			const char *name;
 
-			/* Cannot use name if name is already set */
-			for (i = 0; i < sd_len; i++) {
-				if (sd[i].type == BT_DATA_NAME_COMPLETE ||
-				    sd[i].type == BT_DATA_NAME_SHORTENED) {
+			if (sd) {
+				/* Cannot use name if name is already set */
+				if (ad_has_name(sd, sd_len)) {
 					return -EINVAL;
 				}
 			}
+
+			name = bt_get_name();
+
+			d[1].data = (&(struct bt_data)BT_DATA(
+						BT_DATA_NAME_COMPLETE,
+						name, strlen(name)));
+			d[1].len = 1;
 		}
 
-		name = bt_get_name();
-
-		d[1].data = (&(struct bt_data)BT_DATA(BT_DATA_NAME_COMPLETE,
-						      name, strlen(name)));
-		d[1].len = 1;
-	}
-
-	/*
-	 * We need to set SCAN_RSP when enabling advertising type that allows
-	 * for Scan Requests.
-	 *
-	 * If any data was not provided but we enable connectable undirected
-	 * advertising sd needs to be cleared from values set by previous calls.
-	 * Clearing sd is done by calling set_ad() with NULL data and zero len.
-	 * So following condition check is unusual but correct.
-	 */
-	if (d[0].data || d[1].data ||
-	    (param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
-		err = set_ad(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, d, 2);
-		if (err) {
-			return err;
+		/*
+		 * We need to set SCAN_RSP when enabling advertising type that
+		 * allows for Scan Requests.
+		 *
+		 * If any data was not provided but we enable connectable
+		 * undirected advertising sd needs to be cleared from values set
+		 * by previous calls.
+		 * Clearing sd is done by calling set_ad() with NULL data and
+		 * zero len.
+		 * So following condition check is unusual but correct.
+		 */
+		if (d[0].data || d[1].data ||
+		    (param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
+			err = set_ad(BT_HCI_OP_LE_SET_SCAN_RSP_DATA, d, 2);
+			if (err) {
+				return err;
+			}
 		}
 	}
 
@@ -5151,7 +5191,16 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 			set_param.own_addr_type = id_addr->type;
 		}
 
-		set_param.type = BT_LE_ADV_IND;
+		if (dir_adv) {
+			if (param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) {
+				set_param.type = BT_LE_ADV_DIRECT_IND_LOW_DUTY;
+			} else {
+				set_param.type = BT_LE_ADV_DIRECT_IND;
+			}
+			set_param.direct_addr = *peer;
+		} else {
+			set_param.type = BT_LE_ADV_IND;
+		}
 	} else {
 		if (param->options & BT_LE_ADV_OPT_USE_IDENTITY) {
 			if (id_addr->type == BT_ADDR_LE_RANDOM) {
@@ -5201,6 +5250,17 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 	}
 
 	return 0;
+}
+
+int bt_le_adv_start(const struct bt_le_adv_param *param,
+		    const struct bt_data *ad, size_t ad_len,
+		    const struct bt_data *sd, size_t sd_len)
+{
+	if (param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) {
+		return -EINVAL;
+	}
+
+	return bt_le_adv_start_internal(param, ad, ad_len, sd, sd_len, NULL);
 }
 
 int bt_le_adv_stop(void)
