@@ -53,14 +53,24 @@ GTEXT(z_arch_user_string_nlen_fault_end)
 GTEXT(z_arch_user_string_nlen_fixup)
 /*
  * @brief Wrapper for _thread_entry in the case of user thread
+ * The init parameters are in privileged stack
  *
  * @return N/A
  */
 SECTION_FUNC(TEXT, _user_thread_entry_wrapper)
-	/* sp the  user stack pointer,  r0-r4 are in stack */
-	mov r5, sp
-	/* start of privilege stack */
-	add blink, r5, CONFIG_PRIVILEGED_STACK_SIZE+STACK_GUARD_SIZE+16
+	pop_s r3
+	pop_s r2
+	pop_s r1
+	pop_s r0
+/* the start of user sp is in r5 */
+	pop r5
+/* start of privilege stack in blink */
+	mov blink, sp
+
+	st.aw r0, [r5, -4]
+	st.aw r1, [r5, -4]
+	st.aw r2, [r5, -4]
+	st.aw r3, [r5, -4]
 
 /*
  * when CONFIG_INIT_STACKS is enable, stack will be initialized
@@ -140,7 +150,6 @@ _clear_user_stack:
 _arc_go_to_user_space:
 	lr r0, [_ARC_V2_STATUS32]
 	bset r0, r0, _ARC_V2_STATUS32_U_BIT
-	bclr r0, r0, _ARC_V2_STATUS32_AE_BIT
 
 	mov r1, _thread_entry_wrapper
 
