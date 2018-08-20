@@ -94,6 +94,13 @@
 #define ADC_1ST_CHANNEL_ID	1
 #define ADC_1ST_CHANNEL_INPUT	0
 
+#elif defined(CONFIG_ARC)
+#define ADC_DEVICE_NAME		CONFIG_ADC_0_NAME
+#define ADC_RESOLUTION		10
+#define ADC_GAIN		ADC_GAIN_1
+#define ADC_REFERENCE		ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
+#define ADC_1ST_CHANNEL_ID	10
 #else
 #error "Unsupported board."
 #endif
@@ -170,7 +177,14 @@ static void check_samples(int expected_count)
 static int test_task_one_channel(void)
 {
 	int ret;
+	const struct adc_sequence_options options = {
+		.interval_us     = 10,
+		.extra_samplings = 0,
+	};
 	const struct adc_sequence sequence = {
+#if defined(CONFIG_ARC)
+		.options     = &options,
+#endif
 		.channels    = BIT(ADC_1ST_CHANNEL_ID),
 		.buffer      = m_sample_buffer,
 		.buffer_size = sizeof(m_sample_buffer),
@@ -243,6 +257,9 @@ static int test_task_asynchronous_call(void)
 	int ret;
 	const struct adc_sequence_options options = {
 		.extra_samplings = 4,
+#if defined(CONFIG_ARC)
+		.interval_us     = 10UL,
+#endif
 	};
 	const struct adc_sequence sequence = {
 		.options     = &options,
@@ -382,6 +399,9 @@ static int test_task_repeated_samplings(void)
 		 * Hence, the third sampling will not take place.
 		 */
 		.extra_samplings = 2,
+#if defined(CONFIG_ARC)
+		.interval_us = 10
+#endif
 	};
 	const struct adc_sequence sequence = {
 		.options     = &options,
