@@ -52,10 +52,14 @@ static int gpiote_channel_alloc(u32_t abs_pin, nrf_gpiote_polarity_t polarity)
 		 */
 		if ((NRF_GPIOTE->CONFIG[channel] & GPIOTE_CONFIG_MODE_Msk)
 		    == GPIOTE_CONFIG_MODE_Disabled) {
+			nrf_gpiote_events_t evt =
+				offsetof(NRF_GPIOTE_Type, EVENTS_IN[channel]);
+
 			nrf_gpiote_event_configure(channel, abs_pin, polarity);
+			nrf_gpiote_event_clear(evt);
 			nrf_gpiote_event_enable(channel);
 			nrf_gpiote_int_enable(BIT(channel));
-			return channel;
+			return 0;
 		}
 	}
 
@@ -370,7 +374,8 @@ static void gpiote_event_handler(void)
 		nrf_gpiote_events_t evt =
 			offsetof(NRF_GPIOTE_Type, EVENTS_IN[i]);
 
-		if (nrf_gpiote_event_is_set(evt)) {
+		if (nrf_gpiote_int_is_enabled(BIT(i)) &&
+		    nrf_gpiote_event_is_set(evt)) {
 			u32_t abs_pin = nrf_gpiote_event_pin_get(i);
 			/* Divide absolute pin number to port and pin parts. */
 			fired_triggers[abs_pin / 32] |= BIT(abs_pin % 32);
