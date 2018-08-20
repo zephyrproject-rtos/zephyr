@@ -17,6 +17,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "snps,designware-gpio"
+      generation: define
 
     reg:
       type: int

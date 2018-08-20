@@ -19,6 +19,7 @@ properties:
       type: string
       category: required
       constraint: "wnc,m14a2a"
+      generation: define
 
     mdm-boot-mode-sel-gpios:
       type: compound

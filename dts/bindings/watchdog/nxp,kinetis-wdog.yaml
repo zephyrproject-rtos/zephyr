@@ -17,6 +17,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "nxp,kinetis-wdog"
+      generation: define
 
     reg:
       type: int

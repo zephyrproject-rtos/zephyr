@@ -16,9 +16,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "atmel,sam-i2c-twihs"
 
     reg:

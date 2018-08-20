@@ -11,9 +11,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "atmel,sam-usart"
 
     reg:

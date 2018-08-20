@@ -17,6 +17,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "nxp,lpc-mailbox"
+      generation: define
 
   reg:
       type: array

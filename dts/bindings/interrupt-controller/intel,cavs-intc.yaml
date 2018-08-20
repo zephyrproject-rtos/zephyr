@@ -11,6 +11,7 @@ properties:
       type: string
       description: compatible strings
       constraint: "intel,cavs-intc"
+      generation: define
 
   reg:
       category: required

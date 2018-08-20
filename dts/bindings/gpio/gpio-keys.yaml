@@ -17,6 +17,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "gpio-keys"
+      generation: define
 
     gpios:
       type: compound

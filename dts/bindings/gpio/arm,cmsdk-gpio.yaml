@@ -12,6 +12,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "arm,cmsdk-gpio"
+      generation: define
 
     reg:
       type: array

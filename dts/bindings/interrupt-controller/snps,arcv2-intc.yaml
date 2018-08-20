@@ -17,6 +17,7 @@ properties:
       type: string
       description: compatible strings
       constraint: "snps,arcv2-intc"
+      generation: define
 
     reg:
       category: required
