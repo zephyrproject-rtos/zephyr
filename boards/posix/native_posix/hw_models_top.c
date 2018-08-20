@@ -5,7 +5,7 @@
  */
 
 /**
- * Bare-bones HW model sufficient to run some of the sample apps
+ * Reduced set of HW models sufficient to run some of the sample apps
  * and regression tests
  */
 
@@ -93,8 +93,8 @@ static void hwm_sleep_until_next_timer(void)
 	}
 
 	if (signaled_end || (simu_time > end_of_time)) {
-		posix_print_trace("\nStopped right after %.3Lfs\n",
-				((long double)end_of_time)/1.0e6);
+		posix_print_trace("\nStopped at %.3Lfs\n",
+				((long double)simu_time)/1.0e6);
 
 		posix_exit(0);
 	}
