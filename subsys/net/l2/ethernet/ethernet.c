@@ -161,8 +161,14 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		break;
 #endif
 	case NET_ETH_PTYPE_LLDP:
-		NET_DBG("LLDP Rx agent not implemented");
+#if defined(CONFIG_NET_LLDP)
+		net_pkt_set_ll_reserve(pkt, hdr_len);
+		net_buf_pull(pkt->frags, net_pkt_ll_reserve(pkt));
+		return net_lldp_recv(iface, pkt);
+#else
+		NET_DBG("LLDP Rx agent not enabled");
 		return NET_DROP;
+#endif
 	default:
 		NET_DBG("Unknown hdr type 0x%04x iface %p", type, iface);
 		return NET_DROP;

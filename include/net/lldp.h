@@ -132,6 +132,10 @@ struct net_lldp_time_to_live_tlv {
 	uint16_t ttl;		/* Time to live */
 } __packed;
 
+/*
+ * LLDP Data Unit (LLDPDU) shall contain the following ordered TLVs
+ * as stated in "8.2 LLDPDU format" from the Spec.
+ */
 struct net_lldpdu {
 	struct net_lldp_chassis_tlv chassis_id;	/* Mandatory TLV */
 	struct net_lldp_port_tlv port_id;	/* Mandatory TLV */
@@ -157,6 +161,42 @@ int net_lldp_config(struct net_if *iface, const struct net_lldpdu *lldpdu);
  * @brief Initialize LLDP engine.
  */
 void net_lldp_init(void);
+
+/**
+ * @brief LLDP Receive packet callback
+ *
+ * Callback gets called upon receiving packet. It is responsible for
+ * freeing packet or indicating to the stack that it needs to free packet
+ * by returning correct net_verdict.
+ *
+ * Returns:
+ *  - NET_DROP, if packet was invalid, rejected or we want the stack to free it.
+ *    In this case the core stack will free the packet.
+ *  - NET_OK, if the packet was accepted, in this case the ownership of the
+ *    net_pkt goes to callback and core network stack will forget it.
+ */
+typedef enum net_verdict (*net_lldp_recv_cb_t)(struct net_if *iface,
+					       struct net_pkt *pkt);
+
+/**
+ * @brief Register LLDP Rx callback function
+ *
+ * @param iface Network interface
+ * @param cb Callback function
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int net_lldp_register_callback(struct net_if *iface, net_lldp_recv_cb_t cb);
+
+/**
+ * @brief Parse LLDP packet
+ *
+ * @param iface Network interface
+ * @param pkt Network packet
+ *
+ * @return Return the policy for network buffer
+ */
+enum net_verdict net_lldp_recv(struct net_if *iface, struct net_pkt *pkt);
 
 #endif /* CONFIG_NET_LLDP */
 
