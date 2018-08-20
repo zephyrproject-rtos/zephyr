@@ -143,6 +143,7 @@ void cmd_read_option_value(const char *str, void *dest, const char type,
 		break;
 	case 's':
 		*(char **)dest = (char *)str;
+		endptr = (char *)str + strlen(str);
 		break;
 	case 'u':
 		*(u32_t *)dest = strtoul(str, &endptr, 0);
@@ -164,7 +165,7 @@ void cmd_read_option_value(const char *str, void *dest, const char type,
 		break;
 	}
 
-	if (*endptr != 0) {
+	if (!error && *endptr != 0) {
 		error = 1;
 	}
 
