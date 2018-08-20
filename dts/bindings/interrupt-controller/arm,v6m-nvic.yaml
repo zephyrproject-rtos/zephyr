@@ -12,6 +12,7 @@ properties:
       type: string
       description: compatible strings
       constraint: "arm,v6m-nvic"
+      generation: define
 
     reg:
       category: required

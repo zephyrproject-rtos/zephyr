@@ -8,19 +8,19 @@ description: >
   This binding gives a base representation of the STM32 CCM (Core Coupled Memory)
 
 properties:
-  compatible:
-    type: string
-    category: required
-    constraint: "st,stm32-ccm"
+    compatible:
+      type: string
+      category: required
+      constraint: "st,stm32-ccm"
+      generation: define
 
-  reg:
-    type: int
-    description: mmio register space
-    generation: define
-    category: required
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
 
 base_label: CCM
 use-property-label: yes
 
 ...
-

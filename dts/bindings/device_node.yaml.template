@@ -37,6 +37,7 @@ properties:
       category: required
       type: string
       description: compatible of node
+      generation: define
 
 # reg is used to denote mmio registers
     reg:

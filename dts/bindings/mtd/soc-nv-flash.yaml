@@ -12,6 +12,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "soc-nv-flash"
+      generation: define
 
     label:
       type: string
