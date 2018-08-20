@@ -258,6 +258,9 @@ struct ethernet_lldp {
 
 	/** LLDP TX timeout */
 	u32_t tx_timer_timeout;
+
+	/** LLDP RX callback function */
+	net_lldp_recv_cb_t cb;
 };
 #endif /* CONFIG_NET_LLDP */
 
