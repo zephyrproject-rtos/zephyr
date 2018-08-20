@@ -8,6 +8,7 @@
 #define __CONSOLE_H__
 
 #include <zephyr/types.h>
+#include <kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
