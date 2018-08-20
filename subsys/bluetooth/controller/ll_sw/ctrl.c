@@ -2302,8 +2302,11 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 
 			/* No change in effective octets or time */
 			if (eff_tx_octets == _radio.conn_curr->max_tx_octets &&
+#if defined(CONFIG_BT_CTLR_PHY)
 			    eff_tx_time == _radio.conn_curr->max_tx_time &&
-			    eff_rx_time == _radio.conn_curr->max_rx_time) {
+			    eff_rx_time == _radio.conn_curr->max_rx_time &&
+#endif /* CONFIG_BT_CTLR_PHY */
+			    (1)) {
 				goto send_length_resp;
 			}
 
