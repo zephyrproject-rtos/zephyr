@@ -12,6 +12,12 @@ description: >
     This binding gives the base structures for all ADC devices
 
 properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
+
     clocks:
       type: array
       category: required

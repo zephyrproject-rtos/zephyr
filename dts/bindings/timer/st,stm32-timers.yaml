@@ -21,6 +21,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "st,stm32-timers"
+      generation: define
 
     label:
       type: string

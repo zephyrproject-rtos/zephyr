@@ -13,6 +13,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "ti,cc2650-prcm"
+      generation: define
 
     reg:
       type: array

@@ -17,6 +17,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "nordic,nrf-watchdog"
+      generation: define
 
     reg:
       type: int

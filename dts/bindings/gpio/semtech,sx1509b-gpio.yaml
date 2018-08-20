@@ -17,5 +17,4 @@ inherits:
 properties:
     compatible:
       constraint: "semtech,sx1509b"
-
 ...

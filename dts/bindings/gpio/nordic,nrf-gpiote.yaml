@@ -4,12 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
-title: nRF GPIOTE
+title: NRF5 GPIOTE
 id: nordic,nrf-gpiote
 version: 0.1
 
 description: >
-    This is a representation of the nRF GPIOTE node
+    This is a representation of the NRF GPIOTE node
 
 properties:
     compatible:
@@ -17,6 +17,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "nordic,nrf-gpiote"
+      generation: define
 
     reg:
       type: int
