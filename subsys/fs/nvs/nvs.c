@@ -43,15 +43,17 @@ static int _nvs_flash_al_wrt(struct nvs_fs *fs, u32_t addr, const void *data,
 		/* flash protection set error */
 		return rc;
 	}
-	blen = len & ~(fs->write_block_size);
-	rc = flash_write(fs->flash_device, offset, data, blen);
-	if (rc) {
-		/* flash write error */
-		return rc;
+	blen = len & ~(fs->write_block_size - 1);
+	if (blen > 0) {
+		rc = flash_write(fs->flash_device, offset, data, blen);
+		if (rc) {
+			/* flash write error */
+			return rc;
+		}
+		len -= blen;
+		offset += blen;
+		data += blen;
 	}
-	len -= blen;
-	offset += blen;
-	data += blen;
 	if (len) {
 		memcpy(buf, data, len);
 		memset(buf + len, 0xff, fs->write_block_size - len);
