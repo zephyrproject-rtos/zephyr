@@ -1,3 +1,5 @@
+add_definitions(-D__ZEPHYR_SUPERVISOR__)
+
 add_subdirectory_ifdef(CONFIG_APP_SHARED_MEM       app_memory)
 add_subdirectory(debug)
 add_subdirectory(logging)
