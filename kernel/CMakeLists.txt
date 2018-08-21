@@ -1,5 +1,7 @@
 # kernel is a normal CMake library and not a zephyr_library because it
 # should not be --whole-archive'd
+add_definitions(-D__ZEPHYR_SUPERVISOR__)
+
 add_library(kernel
   alert.c
   device.c
@@ -23,15 +25,6 @@ add_library(kernel
   version.c
   work_q.c
   smp.c
-  )
-
-# Kernel files has the macro __ZEPHYR_SUPERVISOR__ set so that it
-# optimizes the code when userspace is enabled.
-set_target_properties(
-  kernel
-  PROPERTIES
-  COMPILE_DEFINITIONS
-  __ZEPHYR_SUPERVISOR__
   )
 
 target_sources_ifdef(CONFIG_INT_LATENCY_BENCHMARK kernel PRIVATE int_latency_bench.c)
