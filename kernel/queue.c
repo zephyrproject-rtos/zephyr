@@ -131,7 +131,7 @@ void _impl_k_queue_cancel_wait(struct k_queue *queue)
 		prepare_thread_to_run(first_pending_thread, NULL);
 	}
 #else
-	handle_poll_events(queue, K_POLL_STATE_NOT_READY);
+	handle_poll_events(queue, K_POLL_STATE_CANCELLED);
 #endif /* !CONFIG_POLL */
 
 	_reschedule(key);
