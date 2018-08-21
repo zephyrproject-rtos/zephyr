@@ -3,10 +3,21 @@ if("${ARCH}" STREQUAL "x86")
 else()
   set_ifndef(QEMU_binary_suffix ${ARCH})
 endif()
+
+set(qemu_alternate_path $ENV{QEMU_BIN_PATH})
+if(qemu_alternate_path)
+find_program(
+  QEMU
+  PATHS ${qemu_alternate_path}
+  NO_DEFAULT_PATH
+  NAMES qemu-system-${QEMU_binary_suffix}
+  )
+else()
 find_program(
   QEMU
   qemu-system-${QEMU_binary_suffix}
   )
+endif()
 
 set(qemu_targets
   run
