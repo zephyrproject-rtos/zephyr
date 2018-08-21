@@ -378,6 +378,12 @@ hardware. Follow these instructions to run an application via QEMU:
 Each time you execute the run command, your application is rebuilt and run
 again.
 
+
+.. note:: The ``run`` target will use the QEMU binary available from the Zephyr
+          SDK by default. To use an alternate version of QEMU, for example the
+          version installed on your host or a custom version, set the
+          environment variable ``QEMU_BIN_PATH`` to the alternate path.
+
 .. _application_debugging:
 .. _custom_board_definition:
 
