@@ -634,11 +634,11 @@ static void gptp_mi_clk_slave_sync_compute(void)
 	sync_receipt_time += port_ds->delay_asymmetry;
 
 	global_ds->sync_receipt_time.second = sync_receipt_time / NSEC_PER_SEC;
-	global_ds->sync_receipt_time.nanosecond =
-		sync_receipt_time % NSEC_PER_SEC;
+	global_ds->sync_receipt_time.fract_nsecond =
+		(sync_receipt_time % NSEC_PER_SEC) * GPTP_POW2(16);
 	global_ds->sync_receipt_time.second += pss->precise_orig_ts.second;
-	global_ds->sync_receipt_time.nanosecond +=
-		pss->precise_orig_ts.nanosecond;
+	global_ds->sync_receipt_time.fract_nsecond +=
+		pss->precise_orig_ts.nanosecond * GPTP_POW2(16);
 
 	global_ds->sync_receipt_local_time = port_ds->delay_asymmetry;
 	global_ds->sync_receipt_local_time /= pss->rate_ratio;
@@ -681,7 +681,8 @@ static void gptp_update_local_port_clock(void)
 
 	second_diff = global_ds->sync_receipt_time.second -
 		(global_ds->sync_receipt_local_time / NSEC_PER_SEC);
-	nanosecond_diff = global_ds->sync_receipt_time.nanosecond -
+	nanosecond_diff =
+		(global_ds->sync_receipt_time.fract_nsecond / GPTP_POW2(16)) -
 		(global_ds->sync_receipt_local_time % NSEC_PER_SEC);
 
 	clk = net_eth_get_ptp_clock(GPTP_PORT_IFACE(port));
