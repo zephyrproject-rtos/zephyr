@@ -502,11 +502,11 @@ static inline u32_t remaining_lifetime(struct net_if_addr *ifaddr)
 {
 	s32_t remaining;
 
-	if (ifaddr->lifetime_timer_timeout == 0) {
+	if (ifaddr->lifetime.timer_timeout == 0) {
 		return 0;
 	}
 
-	remaining = k_uptime_get() - ifaddr->lifetime_timer_start;
+	remaining = k_uptime_get() - ifaddr->lifetime.timer_start;
 
 	return abs(remaining) / K_MSEC(1000);
 }

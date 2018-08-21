@@ -53,6 +53,14 @@ static struct k_delayed_work address_lifetime_timer;
 /* Track currently active address lifetime timers */
 static sys_slist_t active_address_lifetime_timers;
 
+#if defined(CONFIG_NET_IPV6_DAD)
+/* Timer that triggers DAD timeout */
+static struct k_delayed_work dad_timer;
+
+/* Track currently active DAD timers */
+static sys_slist_t active_dad_timers;
+#endif /* CONFIG_NET_IPV6_DAD */
+
 static struct {
 	struct net_if_ipv6 ipv6;
 	struct net_if *iface;
@@ -527,16 +535,49 @@ static void leave_mcast_all(struct net_if *iface)
 #define leave_mcast_all(...)
 #endif /* CONFIG_NET_IPV6_MLD */
 
+static bool timer_check_timeout(u64_t start, u32_t time, u64_t current_time)
+{
+	if ((s64_t)((start + time) - current_time) > 0) {
+		return false;
+	}
+
+	return true;
+}
+
+static bool timer_timedout(u64_t timer_start, u32_t timer_timeout,
+			   u64_t current_time)
+{
+	return timer_check_timeout(timer_start, timer_timeout, current_time);
+}
+
+typedef void (*timer_expired_cb_t)(struct net_if_addr *ifaddr);
+
+static u32_t timer_manage_timeout(struct net_if_addr *ifaddr,
+				  u64_t timer_start,
+				  u32_t timer_timeout,
+				  u64_t current_time,
+				  timer_expired_cb_t timer_expired_cb)
+{
+	s32_t next_timeout;
+
+	if (timer_timedout(timer_start, timer_timeout, current_time)) {
+		timer_expired_cb(ifaddr);
+		return UINT32_MAX;
+	}
+
+	next_timeout = current_time - (timer_start + timer_timeout);
+	return abs(next_timeout);
+}
+
+
 #if defined(CONFIG_NET_IPV6_DAD)
 #define DAD_TIMEOUT K_MSEC(100)
 
-static void dad_timeout(struct k_work *work)
+static void dad_expired(struct net_if_addr *ifaddr)
 {
 	/* This means that the DAD succeed. */
-	struct net_if_addr *tmp, *ifaddr = CONTAINER_OF(work,
-							struct net_if_addr,
-							dad_timer);
 	struct net_if *iface = NULL;
+	struct net_if_addr *tmp;
 
 	NET_DBG("DAD succeeded for %s",
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
@@ -555,6 +596,61 @@ static void dad_timeout(struct k_work *work)
 		 */
 		net_ipv6_nbr_rm(iface, &ifaddr->address.in6_addr);
 	}
+
+	ifaddr->dad.timer_timeout = 0;
+
+	sys_slist_find_and_remove(&active_dad_timers, &ifaddr->dad.node);
+}
+
+static void dad_timeout(struct k_work *work)
+{
+	u16_t timeout_update = UINT16_MAX;
+	u64_t timeout = k_uptime_get();
+	struct net_if_addr *current, *next;
+
+	ARG_UNUSED(work);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_dad_timers,
+					  current, next, dad.node) {
+		u16_t next_timeout;
+
+		next_timeout = timer_manage_timeout(current,
+						    current->dad.timer_start,
+						    current->dad.timer_timeout,
+						    timeout,
+						    dad_expired);
+		if (next_timeout < timeout_update) {
+			timeout_update = next_timeout;
+		}
+	}
+
+	if (timeout_update < UINT16_MAX) {
+		NET_DBG("Waiting for %u ms", timeout_update);
+
+		k_delayed_work_submit(&dad_timer, timeout_update);
+	}
+}
+
+static void dad_submit_work(u32_t timeout)
+{
+	if (!k_delayed_work_remaining_get(&dad_timer) ||
+	    timeout < k_delayed_work_remaining_get(&dad_timer)) {
+		k_delayed_work_cancel(&dad_timer);
+		k_delayed_work_submit(&dad_timer, timeout);
+
+		NET_DBG("Next wakeup in %d ms",
+			k_delayed_work_remaining_get(&dad_timer));
+	}
+}
+
+static void dad_start_timer(struct net_if_addr *ifaddr, u16_t timeout)
+{
+	sys_slist_append(&active_dad_timers, &ifaddr->dad.node);
+
+	ifaddr->dad.timer_start = k_uptime_get();
+	ifaddr->dad.timer_timeout = timeout;
+
+	dad_submit_work(ifaddr->dad.timer_timeout);
 }
 
 static void net_if_ipv6_start_dad(struct net_if *iface,
@@ -572,7 +668,7 @@ static void net_if_ipv6_start_dad(struct net_if *iface,
 		ifaddr->dad_count = 1;
 
 		if (!net_ipv6_start_dad(iface, ifaddr)) {
-			k_delayed_work_submit(&ifaddr->dad_timer, DAD_TIMEOUT);
+			dad_start_timer(ifaddr, DAD_TIMEOUT);
 		}
 	} else {
 		NET_DBG("Interface %p is down, starting DAD for %s later.",
@@ -630,7 +726,13 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr)
 		return;
 	}
 
-	k_delayed_work_cancel(&ifaddr->dad_timer);
+	ifaddr->dad.timer_timeout = 0;
+
+	sys_slist_find_and_remove(&active_dad_timers, &ifaddr->dad.node);
+
+	if (sys_slist_is_empty(&active_dad_timers)) {
+		k_delayed_work_cancel(&dad_timer);
+	}
 
 	net_mgmt_event_notify(NET_EVENT_IPV6_DAD_FAILED, iface);
 
@@ -761,64 +863,35 @@ static void address_expired(struct net_if_addr *ifaddr)
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 
 	ifaddr->addr_state = NET_ADDR_DEPRECATED;
-	ifaddr->lifetime_timer_timeout = 0;
+	ifaddr->lifetime.timer_timeout = 0;
 
 	sys_slist_find_and_remove(&active_address_lifetime_timers,
-				  &ifaddr->node);
-}
-
-static bool address_check_timeout(s64_t start, u32_t time, s64_t timeout)
-{
-	start += time;
-	start = abs(start);
-
-	if (start > timeout) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool address_timedout(struct net_if_addr *ifaddr, s64_t timeout)
-{
-	return address_check_timeout(ifaddr->lifetime_timer_start,
-				     ifaddr->lifetime_timer_timeout,
-				     timeout);
-}
-
-static u32_t address_manage_timeouts(struct net_if_addr *ifaddr, s64_t timeout)
-{
-	s32_t next_timeout;
-
-	if (address_timedout(ifaddr, timeout)) {
-		address_expired(ifaddr);
-		return UINT32_MAX;
-	}
-
-	next_timeout = timeout - (ifaddr->lifetime_timer_start +
-				  ifaddr->lifetime_timer_timeout);
-	return abs(next_timeout);
+				  &ifaddr->lifetime.node);
 }
 
 static void address_lifetime_timeout(struct k_work *work)
 {
-	u32_t timeout_update = UINT32_MAX - 1;
-	s64_t timeout = k_uptime_get();
+	u32_t timeout_update = UINT32_MAX;
+	u64_t timeout = k_uptime_get();
 	struct net_if_addr *current, *next;
 
 	ARG_UNUSED(work);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_address_lifetime_timers,
-					  current, next, node) {
+					  current, next, lifetime.node) {
 		u32_t next_timeout;
 
-		next_timeout = address_manage_timeouts(current, timeout);
+		next_timeout = timer_manage_timeout(current,
+					       current->lifetime.timer_start,
+					       current->lifetime.timer_timeout,
+					       timeout,
+					       address_expired);
 		if (next_timeout < timeout_update) {
 			timeout_update = next_timeout;
 		}
 	}
 
-	if (timeout_update < (UINT32_MAX - 1)) {
+	if (timeout_update < UINT32_MAX) {
 		NET_DBG("Waiting for %u ms", timeout_update);
 
 		k_delayed_work_submit(&address_lifetime_timer, timeout_update);
@@ -839,12 +912,13 @@ static void address_submit_work(u32_t timeout)
 
 static void address_start_timer(struct net_if_addr *ifaddr, u32_t vlifetime)
 {
-	sys_slist_append(&active_address_lifetime_timers, &ifaddr->node);
+	sys_slist_append(&active_address_lifetime_timers,
+			 &ifaddr->lifetime.node);
 
-	ifaddr->lifetime_timer_start = k_uptime_get();
-	ifaddr->lifetime_timer_timeout = K_SECONDS(vlifetime);
+	ifaddr->lifetime.timer_start = k_uptime_get();
+	ifaddr->lifetime.timer_timeout = K_SECONDS(vlifetime);
 
-	address_submit_work(ifaddr->lifetime_timer_timeout);
+	address_submit_work(ifaddr->lifetime.timer_timeout);
 }
 
 void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
@@ -889,10 +963,6 @@ static inline void net_if_addr_init(struct net_if_addr *ifaddr,
 	ifaddr->address.family = AF_INET6;
 	ifaddr->addr_type = addr_type;
 	net_ipaddr_copy(&ifaddr->address.in6_addr, addr);
-
-#if defined(CONFIG_NET_IPV6_DAD)
-	k_delayed_work_init(&ifaddr->dad_timer, dad_timeout);
-#endif
 
 	/* FIXME - set the mcast addr for this node */
 
@@ -1037,7 +1107,7 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 		if (!ipv6->unicast[i].is_infinite) {
 			sys_slist_find_and_remove(
 				&active_address_lifetime_timers,
-				&ipv6->unicast[i].node);
+				&ipv6->unicast[i].lifetime.node);
 
 			if (sys_slist_is_empty(
 				    &active_address_lifetime_timers)) {
@@ -2729,6 +2799,10 @@ void net_if_init(void)
 
 #if defined(CONFIG_NET_IPV6)
 	k_delayed_work_init(&address_lifetime_timer, address_lifetime_timeout);
+
+#if defined(CONFIG_NET_IPV6_DAD)
+	k_delayed_work_init(&dad_timer, dad_timeout);
+#endif
 
 	if (if_count > ARRAY_SIZE(ipv6_addresses)) {
 		NET_WARN("You have %lu IPv6 net_if addresses but %d "
