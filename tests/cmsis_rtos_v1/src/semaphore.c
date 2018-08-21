@@ -16,8 +16,15 @@ void thread_sema(void const *arg)
 {
 	int tokens_available;
 
+	/* Try taking semaphore immediately when it is not available */
+	tokens_available = osSemaphoreWait((osSemaphoreId)arg, 0);
+	zassert_true(tokens_available == 0,
+			"Semaphore acquired unexpectedly!");
+
+	/* Try taking semaphore after a TIMEOUT, but before release */
 	tokens_available = osSemaphoreWait((osSemaphoreId)arg, TIMEOUT - 100);
-	zassert_true(tokens_available == 0, NULL);
+	zassert_true(tokens_available == 0,
+			"Semaphore acquired unexpectedly!");
 
 	/* This delay ensures that the semaphore gets released by the other
 	 * thread in the meantime
@@ -27,11 +34,15 @@ void thread_sema(void const *arg)
 	/* Now that the semaphore is free, it should be possible to acquire
 	 * and release it.
 	 */
-	tokens_available = osSemaphoreWait((osSemaphoreId)arg, TIMEOUT);
+	tokens_available = osSemaphoreWait((osSemaphoreId)arg, 0);
 	zassert_true(tokens_available > 0, NULL);
 
 	zassert_true(osSemaphoreRelease((osSemaphoreId)arg) == osOK,
 			"Semaphore release failure");
+
+	/* Try releasing when no semaphore is obtained */
+	zassert_true(osSemaphoreRelease((osSemaphoreId)arg) == osErrorResource,
+			"Semaphore released unexpectedly!");
 }
 
 osThreadDef(thread_sema, osPriorityNormal, 1, 0);
