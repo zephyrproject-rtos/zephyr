@@ -113,11 +113,25 @@
  */
 
 #ifdef CONFIG_APPLICATION_MEMORY
-/*
- * KERNELSPACE_OBJECT_FILES is a space-separated list of object files
- * and libraries that belong in kernelspace.
- */
+
+#ifdef LD_PATH_PREFIX
+#define PREFIX LD_PATH_PREFIX
+#else
+#define PREFIX
+#endif
+
+#define KERNELSPACE_OBJECT_FILES             \
+	UTIL_CAT(PREFIX,libzephyr.a)             \
+	UTIL_CAT(PREFIX,kernel*.a)               \
+	UTIL_CAT(PREFIX,drivers*.a)				 \
+	UTIL_CAT(PREFIX,misc*.a)				 \
+	UTIL_CAT(PREFIX,boards*.a)				 \
+	UTIL_CAT(PREFIX,ext*.a)					 \
+	UTIL_CAT(PREFIX,subsys*.a)				 \
+	UTIL_CAT(PREFIX,arch*.a)
+
 #define MAYBE_EXCLUDE_SOME_FILES EXCLUDE_FILE (KERNELSPACE_OBJECT_FILES)
+
 #else
 #define MAYBE_EXCLUDE_SOME_FILES
 #endif /* CONFIG_APPLICATION_MEMORY */
