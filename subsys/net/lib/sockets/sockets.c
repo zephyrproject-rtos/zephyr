@@ -717,7 +717,8 @@ int _impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 	}
 
 	ret = k_poll(poll_events, pev - poll_events, timeout);
-	if (ret != 0 && ret != -EAGAIN) {
+	/* EAGAIN when timeout expired, EINTR when cancelled (i.e. EOF) */
+	if (ret != 0 && ret != -EAGAIN && ret != -EINTR) {
 		errno = -ret;
 		return -1;
 	}
