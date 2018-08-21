@@ -24,6 +24,9 @@
 extern "C" {
 #endif
 
+#define LLDP_TLV_GET_LENGTH(type_length)	(type_length & BIT_MASK(9))
+#define LLDP_TLV_GET_TYPE(type_length)		((u8_t)(type_length >> 9))
+
 /* LLDP Definitions */
 
 /* According to the spec, End of LLDPDU TLV value is constant. */
@@ -195,6 +198,30 @@ int net_lldp_register_callback(struct net_if *iface, net_lldp_recv_cb_t cb);
  * @return Return the policy for network buffer
  */
 enum net_verdict net_lldp_recv(struct net_if *iface, struct net_pkt *pkt);
+
+#if defined(CONFIG_NET_LLDP)
+/**
+ * @brief Set LLDP protocol data unit (LLDPDU) for the network interface.
+ *
+ * @param iface Network interface
+ *
+ * @return <0 if error, index in lldp array if iface is found there
+ */
+int net_lldp_set_lldpdu(struct net_if *iface);
+#else
+#define net_lldp_set_lldpdu(iface)
+#endif
+
+#if defined(CONFIG_NET_LLDP)
+/**
+ * @brief Unset LLDP protocol data unit (LLDPDU) for the network interface.
+ *
+ * @param iface Network interface
+ */
+void net_lldp_unset_lldpdu(struct net_if *iface);
+#else
+#define net_lldp_unset_lldpdu(iface)
+#endif
 
 #ifdef __cplusplus
 }

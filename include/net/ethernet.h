@@ -688,43 +688,6 @@ static inline int net_eth_get_ptp_port(struct net_if *iface)
 void net_eth_set_ptp_port(struct net_if *iface, int port);
 #endif /* CONFIG_NET_GPTP */
 
-struct net_lldpdu;
-
-/**
- * @brief Set LLDP protocol data unit (LLDPDU) for the network interface.
- *
- * @param iface Network interface
- * @param lldpdu LLDPDU pointer
- *
- * @return <0 if error, index in lldp array if iface is found there
- */
-#if defined(CONFIG_NET_LLDP)
-int net_eth_set_lldpdu(struct net_if *iface, const struct net_lldpdu *lldpdu);
-#else
-static inline int net_eth_set_lldpdu(struct net_if *iface,
-				     const struct net_lldpdu *lldpdu)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(lldpdu);
-
-	return -ENOTSUP;
-}
-#endif
-
-/**
- * @brief Unset LLDP protocol data unit (LLDPDU) for the network interface.
- *
- * @param iface Network interface
- */
-#if defined(CONFIG_NET_LLDP)
-void net_eth_unset_lldpdu(struct net_if *iface);
-#else
-static inline void net_eth_unset_lldpdu(struct net_if *iface)
-{
-	ARG_UNUSED(iface);
-}
-#endif
-
 #ifdef __cplusplus
 }
 #endif

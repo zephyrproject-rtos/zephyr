@@ -959,18 +959,6 @@ int net_eth_promisc_mode(struct net_if *iface, bool enable)
 			&params, sizeof(struct ethernet_req_params));
 }
 
-#if defined(CONFIG_NET_LLDP)
-int net_eth_set_lldpdu(struct net_if *iface, const struct net_lldpdu *lldpdu)
-{
-	return net_lldp_config(iface, lldpdu);
-}
-
-void net_eth_unset_lldpdu(struct net_if *iface)
-{
-	net_lldp_config(iface, NULL);
-}
-#endif
-
 void ethernet_init(struct net_if *iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
