@@ -537,10 +537,10 @@ class Kconfig(object):
       loaded matters.
     """
     __slots__ = (
-        "_defined_syms_set",
         "_encoding",
         "_functions",
         "_set_match",
+        "_unique_def_syms",
         "_unset_match",
         "_warn_for_no_prompt",
         "_warn_for_redun_assign",
@@ -766,11 +766,19 @@ class Kconfig(object):
         self.top_node.list = self.top_node.next
         self.top_node.next = None
 
-        # Projects like U-Boot and Zephyr make heavy use of being able to
-        # define a symbol in multiple locations. Removing duplicates makes a
-        # massive difference for U-Boot, speeding up parsing from ~4 seconds to
-        # ~0.6 seconds on my machine.
-        self._defined_syms_set = set(self.defined_syms)
+        # 'defined_syms' with duplicates removed, preserving order.
+        #
+        # Symbols defined in multiple locations only generate a single output
+        # line in .config files and headers, at their first definition
+        # location, so this format is handy.
+        #
+        # U-Boot and Zephyr make heavy use of being able to define a symbol in
+        # multiple locations. Iterating over '_unique_def_syms' wherever
+        # possible makes a huge performance difference for U-Boot, speeding up
+        # parsing from ~4 seconds to ~0.6 seconds on my machine.
+        #
+        # Maybe it would make sense to expose this in the API at some point.
+        self._unique_def_syms = _ordered_unique(self.defined_syms)
 
         self._parsing_kconfigs = False
 
@@ -781,7 +789,7 @@ class Kconfig(object):
         # Do sanity checks. Some of these depend on everything being
         # finalized.
 
-        for sym in self._defined_syms_set:
+        for sym in self._unique_def_syms:
             _check_sym_sanity(sym)
 
         for choice in self.choices:
@@ -795,7 +803,7 @@ class Kconfig(object):
         self._build_dep()
 
         # Check for dependency loops
-        for sym in self._defined_syms_set:
+        for sym in self._unique_def_syms:
             _check_dep_loop_sym(sym, False)
 
         # Add extra dependencies from choices to choice symbols that get
@@ -865,7 +873,7 @@ class Kconfig(object):
                 # Another benefit is that invalidation must be rock solid for
                 # it to work, making it a good test.
 
-                for sym in self._defined_syms_set:
+                for sym in self._unique_def_syms:
                     sym._was_set = False
 
                 for choice in self.choices:
@@ -987,7 +995,7 @@ class Kconfig(object):
             # If we're replacing the configuration, unset the symbols that
             # didn't get set
 
-            for sym in self._defined_syms_set:
+            for sym in self._unique_def_syms:
                 if not sym._was_set:
                     sym.unset_value()
 
@@ -1016,41 +1024,35 @@ class Kconfig(object):
         with self._open(filename, "w") as f:
             f.write(header)
 
-            # Avoid duplicates -- see write_config()
-            for sym in self._defined_syms_set:
-                sym._written = False
-
-            for sym in self._defined_syms_set:
-                if not sym._written:
-                    sym._written = True
-                    # Note: _write_to_conf is determined when the value is
-                    # calculated. This is a hidden function call due to
-                    # property magic.
-                    val = sym.str_value
-                    if sym._write_to_conf:
-                        if sym.orig_type in (BOOL, TRISTATE):
-                            if val != "n":
-                                f.write("#define {}{}{} 1\n"
-                                        .format(self.config_prefix, sym.name,
-                                                "_MODULE" if val == "m" else ""))
-
-                        elif sym.orig_type == STRING:
-                            f.write('#define {}{} "{}"\n'
+            for sym in self._unique_def_syms:
+                # Note: _write_to_conf is determined when the value is
+                # calculated. This is a hidden function call due to
+                # property magic.
+                val = sym.str_value
+                if sym._write_to_conf:
+                    if sym.orig_type in (BOOL, TRISTATE):
+                        if val != "n":
+                            f.write("#define {}{}{} 1\n"
                                     .format(self.config_prefix, sym.name,
-                                            escape(val)))
+                                            "_MODULE" if val == "m" else ""))
 
-                        elif sym.orig_type in (INT, HEX):
-                            if sym.orig_type == HEX and \
-                               not val.startswith(("0x", "0X")):
-                                val = "0x" + val
+                    elif sym.orig_type == STRING:
+                        f.write('#define {}{} "{}"\n'
+                                .format(self.config_prefix, sym.name,
+                                        escape(val)))
 
-                            f.write("#define {}{} {}\n"
-                                    .format(self.config_prefix, sym.name, val))
+                    elif sym.orig_type in (INT, HEX):
+                        if sym.orig_type == HEX and \
+                           not val.startswith(("0x", "0X")):
+                            val = "0x" + val
 
-                        else:
-                            _internal_error("Internal error while creating C "
-                                            'header: unknown type "{}".'
-                                            .format(sym.orig_type))
+                        f.write("#define {}{} {}\n"
+                                .format(self.config_prefix, sym.name, val))
+
+                    else:
+                        _internal_error("Internal error while creating C "
+                                        'header: unknown type "{}".'
+                                        .format(sym.orig_type))
 
     def write_config(self, filename,
                      header="# Generated by Kconfiglib (https://github.com/ulfalizer/Kconfiglib)\n"):
@@ -1077,39 +1079,28 @@ class Kconfig(object):
         with self._open(filename, "w") as f:
             f.write(header)
 
-            # Symbol._written is set to True when a symbol config string is
-            # fetched, so that symbols defined in multiple locations only get
-            # one .config entry. We reset it prior to writing out a new
-            # .config. It only needs to be reset for defined symbols, because
-            # undefined symbols will never be written out (because they do not
-            # appear in the menu tree rooted at Kconfig.top_node).
+            # Symbol._visited is set to True when we visit a symbol, so that
+            # symbols defined in multiple locations only get one .config entry.
+            # We reset it prior to writing out a new .config. It only needs to
+            # be reset for defined symbols, because undefined symbols will
+            # never be written out (because they do not appear in the menu tree
+            # rooted at Kconfig.top_node).
             #
             # The C tools reuse _write_to_conf for this, but we cache
             # _write_to_conf together with the value and don't invalidate
             # cached values when writing .config files, so that won't work.
-            for sym in self._defined_syms_set:
-                sym._written = False
+            #
+            # Note: The usage of _visited here is completely independent from
+            # the usage during dependency loop detection (which runs at the end
+            # of parsing). The attribute is just reused.
+            for sym in self._unique_def_syms:
+                sym._visited = False
 
-            node = self.top_node.list
-            if not node:
-                # Empty configuration
-                return
-
+            # The 'top_node' menu node itself doesn't generate any output, so
+            # it's skipped over below
+            node = self.top_node
             while 1:
-                item = node.item
-                if isinstance(item, Symbol):
-                    if not item._written:
-                        item._written = True
-                        f.write(item.config_string)
-
-                elif expr_value(node.dep) and \
-                     ((item == MENU and expr_value(node.visibility)) or
-                       item == COMMENT):
-
-                    f.write("\n#\n# {}\n#\n".format(node.prompt[0]))
-
-                # Iterative tree walk using parent pointers
-
+                # Jump to the next node with an iterative tree walk
                 if node.list:
                     node = node.list
                 elif node.next:
@@ -1122,6 +1113,21 @@ class Kconfig(object):
                             break
                     else:
                         return
+
+                # Write node
+
+                item = node.item
+
+                if isinstance(item, Symbol):
+                    if not item._visited:
+                        item._visited = True
+                        f.write(item.config_string)
+
+                elif expr_value(node.dep) and \
+                     ((item == MENU and expr_value(node.visibility)) or
+                       item == COMMENT):
+
+                    f.write("\n#\n# {}\n#\n".format(node.prompt[0]))
 
     def write_min_config(self, filename,
                          header="# Generated by Kconfiglib (https://github.com/ulfalizer/Kconfiglib)\n"):
@@ -1147,37 +1153,30 @@ class Kconfig(object):
         with self._open(filename, "w") as f:
             f.write(header)
 
-            # Avoid duplicates -- see write_config()
-            for sym in self._defined_syms_set:
-                sym._written = False
+            for sym in self._unique_def_syms:
+                # Skip symbols that cannot be changed. Only check
+                # non-choice symbols, as selects don't affect choice
+                # symbols.
+                if not sym.choice and \
+                   sym.visibility <= expr_value(sym.rev_dep):
+                    continue
 
-            for sym in self._defined_syms_set:
-                if not sym._written:
-                    sym._written = True
+                # Skip symbols whose value matches their default
+                if sym.str_value == sym._str_default():
+                    continue
 
-                    # Skip symbols that cannot be changed. Only check
-                    # non-choice symbols, as selects don't affect choice
-                    # symbols.
-                    if not sym.choice and \
-                       sym.visibility <= expr_value(sym.rev_dep):
-                        continue
+                # Skip symbols that would be selected by default in a
+                # choice, unless the choice is optional or the symbol type
+                # isn't bool (it might be possible to set the choice mode
+                # to n or the symbol to m in those cases).
+                if sym.choice and \
+                   not sym.choice.is_optional and \
+                   sym.choice._get_selection_from_defaults() is sym and \
+                   sym.orig_type == BOOL and \
+                   sym.tri_value == 2:
+                    continue
 
-                    # Skip symbols whose value matches their default
-                    if sym.str_value == sym._str_default():
-                        continue
-
-                    # Skip symbols that would be selected by default in a
-                    # choice, unless the choice is optional or the symbol type
-                    # isn't bool (it might be possible to set the choice mode
-                    # to n or the symbol to m in those cases).
-                    if sym.choice and \
-                       not sym.choice.is_optional and \
-                       sym.choice._get_selection_from_defaults() is sym and \
-                       sym.orig_type == BOOL and \
-                       sym.tri_value == 2:
-                        continue
-
-                    f.write(sym.config_string)
+                f.write(sym.config_string)
 
     def sync_deps(self, path):
         """
@@ -1250,7 +1249,7 @@ class Kconfig(object):
         # Load old values from auto.conf, if any
         self._load_old_vals()
 
-        for sym in self._defined_syms_set:
+        for sym in self._unique_def_syms:
             # Note: _write_to_conf is determined when the value is
             # calculated. This is a hidden function call due to
             # property magic.
@@ -1307,15 +1306,10 @@ class Kconfig(object):
         # by passing a flag to it, plus we only need to look at symbols here.
 
         with self._open("auto.conf", "w") as f:
-            for sym in self._defined_syms_set:
-                sym._written = False
-
-            for sym in self._defined_syms_set:
-                if not sym._written:
-                    sym._written = True
-                    if not (sym.orig_type in (BOOL, TRISTATE) and
-                            not sym.tri_value):
-                        f.write(sym.config_string)
+            for sym in self._unique_def_syms:
+                if not (sym.orig_type in (BOOL, TRISTATE) and
+                        not sym.tri_value):
+                    f.write(sym.config_string)
 
     def _load_old_vals(self):
         # Loads old symbol values from auto.conf into a dedicated
@@ -1325,7 +1319,7 @@ class Kconfig(object):
         # symbol values and restoring them later, but this is simpler and
         # faster. The C tools also use a dedicated field for this purpose.
 
-        for sym in self._defined_syms_set:
+        for sym in self._unique_def_syms:
             sym._old_val = None
 
         if not os.path.exists("auto.conf"):
@@ -1396,7 +1390,7 @@ class Kconfig(object):
             # set_value() already rejects undefined symbols, and they don't
             # need to be invalidated (because their value never changes), so we
             # can just iterate over defined symbols
-            for sym in self._defined_syms_set:
+            for sym in self._unique_def_syms:
                 sym.unset_value()
 
             for choice in self.choices:
@@ -2712,7 +2706,7 @@ class Kconfig(object):
         # Only calculate _dependents for defined symbols. Constant and
         # undefined symbols could theoretically be selected/implied, but it
         # wouldn't change their value, so it's not a true dependency.
-        for sym in self._defined_syms_set:
+        for sym in self._unique_def_syms:
             # Symbols depend on the following:
 
             # The prompt conditions
@@ -2779,7 +2773,7 @@ class Kconfig(object):
         # Undefined symbols never change value and don't need to be
         # invalidated, so we can just iterate over defined symbols.
         # Invalidating constant symbols would break things horribly.
-        for sym in self._defined_syms_set:
+        for sym in self._unique_def_syms:
             sym._invalidate()
 
         for choice in self.choices:
@@ -3296,12 +3290,11 @@ class Symbol(object):
         "_cached_str_val",
         "_cached_tri_val",
         "_cached_vis",
-        "_checked",
         "_dependents",
         "_old_val",
+        "_visited",
         "_was_set",
         "_write_to_conf",
-        "_written",
         "choice",
         "defaults",
         "direct_dep",
@@ -3813,7 +3806,6 @@ class Symbol(object):
         """
         # These attributes are always set on the instance from outside and
         # don't need defaults:
-        #   _written
         #   kconfig
         #   direct_dep
         #   is_constant
@@ -3845,8 +3837,9 @@ class Symbol(object):
         # See Kconfig._build_dep()
         self._dependents = set()
 
-        # Used during dependency loop detection
-        self._checked = 0
+        # Used during dependency loop detection and (independently) in
+        # write_config()
+        self._visited = 0
 
     def _assignable(self):
         # Worker function for the 'assignable' attribute
@@ -4173,8 +4166,8 @@ class Choice(object):
         "_cached_assignable",
         "_cached_selection",
         "_cached_vis",
-        "_checked",
         "_dependents",
+        "_visited",
         "_was_set",
         "defaults",
         "direct_dep",
@@ -4415,7 +4408,7 @@ class Choice(object):
         self._dependents = set()
 
         # Used during dependency loop detection
-        self._checked = 0
+        self._visited = 0
 
     def _assignable(self):
         # Worker function for the 'assignable' attribute
@@ -4588,7 +4581,9 @@ class MenuNode(object):
       ignored internally by Kconfiglib, except when printing symbols.
 
     filename/linenr:
-      The location where the menu node appears.
+      The location where the menu node appears. The filename is relative to
+      $srctree (or to the current directory if $srctree isn't set), except
+      absolute paths passed to 'source' and Kconfig.__init__() are preserved.
 
     kconfig:
       The Kconfig instance the menu node is from.
@@ -5164,6 +5159,15 @@ def _indentation(line):
     line = line.expandtabs()
     return len(line) - len(line.lstrip())
 
+def _ordered_unique(lst):
+    # Returns 'lst' with any duplicates removed, preserving order. This hacky
+    # version seems to be a common idiom. It relies on short-circuit evaluation
+    # and set.add() returning None, which is falsy.
+
+    seen = set()
+    seen_add = seen.add
+    return [x for x in lst if x not in seen and not seen_add(x)]
+
 def _is_base_n(s, n):
     try:
         int(s, n)
@@ -5364,20 +5368,20 @@ def _check_dep_loop_sym(sym, ignore_choice):
     #
     # Algorithm:
     #
-    #  1. Symbols/choices start out with _checked = 0, meaning unvisited.
+    #  1. Symbols/choices start out with _visited = 0, meaning unvisited.
     #
-    #  2. When a symbol/choice is first visited, _checked is set to 1, meaning
+    #  2. When a symbol/choice is first visited, _visited is set to 1, meaning
     #     "visited, potentially part of a dependency loop". The recursive
     #     search then continues from the symbol/choice.
     #
-    #  3. If we run into a symbol/choice X with _checked already set to 1,
+    #  3. If we run into a symbol/choice X with _visited already set to 1,
     #     there's a dependency loop. The loop is found on the call stack by
     #     recording symbols while returning ("on the way back") until X is seen
     #     again.
     #
     #  4. Once a symbol/choice and all its dependencies (or dependents in this
     #     case) have been checked recursively without detecting any loops, its
-    #     _checked is set to 2, meaning "visited, not part of a dependency
+    #     _visited is set to 2, meaning "visited, not part of a dependency
     #     loop".
     #
     #     This saves work if we run into the symbol/choice again in later calls
@@ -5391,10 +5395,10 @@ def _check_dep_loop_sym(sym, ignore_choice):
     # Maybe there's a better way to handle this (different flags or the
     # like...)
 
-    if not sym._checked:
-        # sym._checked == 0, unvisited
+    if not sym._visited:
+        # sym._visited == 0, unvisited
 
-        sym._checked = 1
+        sym._visited = 1
 
         for dep in sym._dependents:
             # Choices show up in Symbol._dependents when the choice has the
@@ -5418,25 +5422,25 @@ def _check_dep_loop_sym(sym, ignore_choice):
                 return _found_dep_loop(loop, sym)
 
         # The symbol is not part of a dependency loop
-        sym._checked = 2
+        sym._visited = 2
 
         # No dependency loop found
         return None
 
-    if sym._checked == 2:
+    if sym._visited == 2:
         # The symbol was checked earlier and is already known to not be part of
         # a dependency loop
         return None
 
-    # sym._checked == 1, found a dependency loop. Return the symbol as the
+    # sym._visited == 1, found a dependency loop. Return the symbol as the
     # first element in it.
     return (sym,)
 
 def _check_dep_loop_choice(choice, skip):
-    if not choice._checked:
-        # choice._checked == 0, unvisited
+    if not choice._visited:
+        # choice._visited == 0, unvisited
 
-        choice._checked = 1
+        choice._visited = 1
 
         # Check for loops involving choice symbols. If we came here via a
         # choice symbol, skip that one, as we'd get a false positive
@@ -5451,17 +5455,17 @@ def _check_dep_loop_choice(choice, skip):
                     return _found_dep_loop(loop, choice)
 
         # The choice is not part of a dependency loop
-        choice._checked = 2
+        choice._visited = 2
 
         # No dependency loop found
         return None
 
-    if choice._checked == 2:
+    if choice._visited == 2:
         # The choice was checked earlier and is already known to not be part of
         # a dependency loop
         return None
 
-    # choice._checked == 1, found a dependency loop. Return the choice as the
+    # choice._visited == 1, found a dependency loop. Return the choice as the
     # first element in it.
     return (choice,)
 
@@ -5664,6 +5668,7 @@ def _warn_choice_select_imply(sym, expr, expr_type):
         msg += "\n - " + _name_and_loc(split_expr(si, AND)[0])
 
     sym.kconfig._warn(msg)
+
 
 # Predefined preprocessor functions
 
@@ -6017,7 +6022,7 @@ _REL_TO_STR = {
 
 _INIT_SRCTREE_NOTE = """
 NOTE: Starting with Kconfiglib 10.0.0, the Kconfig filename passed to
-Kconfig.__init__() is looked up relative to the $srctree (which is set to '{}')
+Kconfig.__init__() is looked up relative to $srctree (which is set to '{}')
 instead of relative to the working directory. Previously, $srctree only applied
 to files being source'd within Kconfig files. This change makes running scripts
 out-of-tree work seamlessly, with no special coding required. Sorry for the
