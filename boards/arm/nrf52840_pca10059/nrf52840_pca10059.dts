@@ -22,38 +22,47 @@
 		zephyr,flash = &flash0;
 	};
 
-	led_0 {
+	leds {
 		compatible = "gpio-leds";
-		led0_green: green {
+		led0_green: led@0 {
 			gpios = <&gpio0 6 GPIO_INT_ACTIVE_LOW>;
-			label = "Onboard green LED 0";
+			label = "Green LED 0";
 		};
-	};
-
-	led_1 {
-		compatible = "gpio-leds";
-		led1_red: red {
+		led1_red: led@1 {
 			gpios = <&gpio0 8 GPIO_INT_ACTIVE_LOW>;
-			label = "Onboard red LED 1";
+			label = "Red LED 1";
 		};
-		led1_green: green {
+		led1_green: led@2 {
 			gpios = <&gpio1 9 GPIO_INT_ACTIVE_LOW>;
-			label = "Onboard green LED 1";
+			label = "Green LED 1";
 		};
-		led1_blue: blue {
+		led1_blue: led@3 {
 			gpios = <&gpio0 12 GPIO_INT_ACTIVE_LOW>;
-			label = "Onboard blue LED 1";
+			label = "Blue LED 1";
 		};
 	};
 
-	gpio_keys {
+	buttons {
 		compatible = "gpio-keys";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		user_button_0: button@0 {
-			label = "Push button switch 0";
+		button0: button@0 {
 			gpios = <&gpio1 6 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 0";
 		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		sw0 = &button0;
+		led0 = &led0_green;
+		led1 = &led1_red;
+		led2 = &led1_green;
+		led3 = &led1_blue;
+		led0-green = &led0_green;
+		led1-red   = &led1_red;
+		led1-green = &led1_green;
+		led1-blue  = &led1_blue;
 	};
 };
 
