@@ -27,44 +27,102 @@ from extract.flash import flash
 from extract.pinctrl import pinctrl
 from extract.default import default
 
-class Loader(yaml.Loader):
-    def __init__(self, stream):
-        self._root = os.path.realpath(stream.name)
-        super(Loader, self).__init__(stream)
-        Loader.add_constructor('!include', Loader.include)
-        Loader.add_constructor('!import',  Loader.include)
+class Bindings(yaml.Loader):
 
-    def include(self, node):
+    ##
+    # List of all yaml files available for yaml loaders
+    # of this class. Must be preset before the first
+    # load operation.
+    _files = []
+
+    ##
+    # Files that are already included.
+    # Must be reset on the load of every new binding
+    _included = []
+
+    @classmethod
+    def bindings(cls, compatibles, yaml_dirs):
+        # find unique set of compatibles across all active nodes
+        s = set()
+        for k, v in compatibles.items():
+            if isinstance(v, list):
+                for item in v:
+                    s.add(item)
+            else:
+                s.add(v)
+
+        # scan YAML files and find the ones we are interested in
+        cls._files = []
+        for yaml_dir in yaml_dirs:
+            for root, dirnames, filenames in os.walk(yaml_dir):
+                for filename in fnmatch.filter(filenames, '*.yaml'):
+                    cls._files.append(os.path.join(root, filename))
+
+        yaml_list = {}
+        file_load_list = set()
+        for file in cls._files:
+            for line in open(file, 'r'):
+                if re.search('^\s+constraint:*', line):
+                    c = line.split(':')[1].strip()
+                    c = c.strip('"')
+                    if c in s:
+                        if file not in file_load_list:
+                            file_load_list.add(file)
+                            with open(file, 'r') as yf:
+                                cls._included = []
+                                yaml_list[c] = yaml.load(yf, cls)
+        return yaml_list
+
+    def __init__(self, stream):
+        filepath = os.path.realpath(stream.name)
+        if filepath in self._included:
+            print("Error:: circular inclusion for file name '{}'".
+                  format(stream.name))
+            raise yaml.constructor.ConstructorError
+        self._included.append(filepath)
+        super(Bindings, self).__init__(stream)
+        Bindings.add_constructor('!include', Bindings._include)
+        Bindings.add_constructor('!import',  Bindings._include)
+
+    def _include(self, node):
         if isinstance(node, yaml.ScalarNode):
-            return self.extractFile(self.construct_scalar(node))
+            return self._extract_file(self.construct_scalar(node))
 
         elif isinstance(node, yaml.SequenceNode):
             result = []
             for filename in self.construct_sequence(node):
-                result.append(self.extractFile(filename))
+                result.append(self._extract_file(filename))
             return result
 
         elif isinstance(node, yaml.MappingNode):
             result = {}
             for k, v in self.construct_mapping(node).iteritems():
-                result[k] = self.extractFile(v)
+                result[k] = self._extract_file(v)
             return result
 
         else:
             print("Error:: unrecognised node type in !include statement")
             raise yaml.constructor.ConstructorError
 
-    def extractFile(self, filename):
-        filepath = os.path.join(os.path.dirname(self._root), filename)
-        if not os.path.isfile(filepath):
-            # we need to look in bindings/* directories
-            # take path and back up 1 directory and parse in '/bindings/*'
-            filepath = os.path.dirname(os.path.dirname(self._root))
-            for root, dirnames, file in os.walk(filepath):
-                if fnmatch.filter(file, filename):
-                    filepath = os.path.join(root, filename)
-        with open(filepath, 'r') as f:
-            return yaml.load(f, Loader)
+    def _extract_file(self, filename):
+        filepaths = [filepath for filepath in self._files if filepath.endswith(filename)]
+        if len(filepaths) == 0:
+            print("Error:: unknown file name '{}' in !include statement".
+                  format(filename))
+            raise yaml.constructor.ConstructorError
+        elif len(filepaths) > 1:
+            # multiple candidates for filename
+            files = []
+            for filepath in filepaths:
+                if os.path.basename(filename) == os.path.basename(filepath):
+                    files.append(filepath)
+            if len(files) > 1:
+                print("Error:: multiple candidates for file name '{}' in !include statement".
+                      format(filename), filepaths)
+                raise yaml.constructor.ConstructorError
+            filepaths = files
+        with open(filepaths[0], 'r') as f:
+            return yaml.load(f, Bindings)
 
 
 def extract_reg_prop(node_address, names, def_label, div, post_label):
@@ -663,36 +721,10 @@ def load_and_parse_dts(dts_file):
     return dts
 
 
-def load_yaml_descriptions(dts, yaml_dir):
+def load_yaml_descriptions(dts, yaml_dirs):
     compatibles = get_all_compatibles(dts['/'], '/', {})
-    # find unique set of compatibles across all active nodes
-    s = set()
-    for k, v in compatibles.items():
-        if isinstance(v, list):
-            for item in v:
-                s.add(item)
-        else:
-            s.add(v)
 
-    # scan YAML files and find the ones we are interested in
-    yaml_files = []
-    for root, dirnames, filenames in os.walk(yaml_dir):
-        for filename in fnmatch.filter(filenames, '*.yaml'):
-            yaml_files.append(os.path.join(root, filename))
-
-    yaml_list = {}
-    file_load_list = set()
-    for file in yaml_files:
-        for line in open(file, 'r'):
-            if re.search('^\s+constraint:*', line):
-                c = line.split(':')[1].strip()
-                c = c.strip('"')
-                if c in s:
-                    if file not in file_load_list:
-                        file_load_list.add(file)
-                        with open(file, 'r') as yf:
-                            yaml_list[c] = yaml.load(yf, Loader)
-
+    yaml_list = Bindings.bindings(compatibles, yaml_dirs)
     if yaml_list == {}:
         raise Exception("Missing YAML information.  Check YAML sources")
 
@@ -735,8 +767,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=rdh)
 
     parser.add_argument("-d", "--dts", nargs=1, required=True, help="DTS file")
-    parser.add_argument("-y", "--yaml", nargs=1, required=True,
-                        help="YAML file")
+    parser.add_argument("-y", "--yaml", nargs='+', required=True,
+                        help="YAML file directories, we allow multiple")
     parser.add_argument("-f", "--fixup", nargs='+',
                         help="Fixup file(s), we allow multiple")
     parser.add_argument("-i", "--include", nargs=1, required=True,
@@ -757,7 +789,7 @@ def main():
     get_aliases(dts['/'])
     get_chosen(dts['/'])
 
-    yaml_list = load_yaml_descriptions(dts, args.yaml[0])
+    yaml_list = load_yaml_descriptions(dts, args.yaml)
 
     defs = generate_node_definitions(yaml_list)
 
