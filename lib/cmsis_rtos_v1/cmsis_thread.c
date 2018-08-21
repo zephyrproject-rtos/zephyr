@@ -48,7 +48,7 @@ osThreadId osThreadCreate(const osThreadDef_t *thread_def, void *arg)
 	__ASSERT(thread_def->stacksize <= CONFIG_CMSIS_THREAD_MAX_STACK_SIZE,
 		 "invalid stack size\n");
 
-	if (thread_def->instances == 0) {
+	if ((thread_def == NULL) || (thread_def->instances == 0)) {
 		return NULL;
 	}
 
@@ -100,7 +100,7 @@ osPriority osThreadGetPriority(osThreadId thread_id)
 	k_tid_t thread = (k_tid_t)thread_id;
 	u32_t priority;
 
-	if (_is_in_isr()) {
+	if ((thread_id == NULL) || (_is_in_isr())) {
 		return osPriorityError;
 	}
 
