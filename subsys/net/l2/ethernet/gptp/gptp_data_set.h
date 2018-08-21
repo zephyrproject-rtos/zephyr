@@ -165,7 +165,7 @@ struct gptp_path_trace {
  */
 struct gptp_global_ds {
 	/** The synchronized time computed by the ClockSlave entity. */
-	struct net_ptp_time sync_receipt_time;
+	struct net_ptp_extended_time sync_receipt_time;
 
 	/** Last Grand Master Phase Change. */
 	struct gptp_scaled_ns clk_src_last_gm_phase_change;

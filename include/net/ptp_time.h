@@ -63,6 +63,54 @@ struct net_ptp_time {
 #endif
 
 /**
+ * @brief Precision Time Protocol Extended Timestamp format.
+ *
+ * This structure represents an extended timestamp according
+ * to the Precision Time Protocol standard.
+ *
+ * Seconds are encoded as 48 bits unsigned integer.
+ * Fractional nanoseconds are encoded as 48 bits, their unit
+ * is 2*(-16) ns.
+ */
+struct net_ptp_extended_time {
+	/** Seconds encoded on 48 bits. */
+	union {
+		struct {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+			u32_t low;
+			u16_t high;
+			u16_t unused;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+			u16_t unused;
+			u16_t high;
+			u32_t low;
+#else
+#error "Unknown byte order"
+#endif
+		} _sec;
+		u64_t second;
+	};
+
+	/** Fractional nanoseconds on 48 bits. */
+	union {
+		struct {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+			u32_t low;
+			u16_t high;
+			u16_t unused;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+			u16_t unused;
+			u16_t high;
+			u32_t low;
+#else
+#error "Unknown byte order"
+#endif
+		} _fns;
+		u64_t fract_nsecond;
+	};
+} __packed;
+
+/**
  * @}
  */
 
