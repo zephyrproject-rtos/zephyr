@@ -307,6 +307,53 @@ int net_lldp_config(struct net_if *iface, const struct net_lldpdu *lldpdu)
 	return 0;
 }
 
+int net_lldp_config_optional(struct net_if *iface, const u8_t *tlv, size_t len)
+{
+	struct ethernet_context *ctx = net_if_l2_data(iface);
+	int i;
+
+	i = lldp_find(ctx, iface);
+	if (i < 0) {
+		return i;
+	}
+
+	ctx->lldp[i].optional_du = tlv;
+	ctx->lldp[i].optional_len = len;
+
+	return 0;
+}
+
+static const struct net_lldpdu lldpdu = {
+	.chassis_id = {
+		.type_length = htons((LLDP_TLV_CHASSIS_ID << 9) |
+			NET_LLDP_CHASSIS_ID_TLV_LEN),
+		.subtype = CONFIG_NET_LLDP_CHASSIS_ID_SUBTYPE,
+		.value = NET_LLDP_CHASSIS_ID_VALUE
+	},
+	.port_id = {
+		.type_length = htons((LLDP_TLV_PORT_ID << 9) |
+			NET_LLDP_PORT_ID_TLV_LEN),
+		.subtype = CONFIG_NET_LLDP_PORT_ID_SUBTYPE,
+		.value = NET_LLDP_PORT_ID_VALUE
+	},
+	.ttl = {
+		.type_length = htons((LLDP_TLV_TTL << 9) |
+			NET_LLDP_TTL_TLV_LEN),
+		.ttl = htons(NET_LLDP_TTL)
+	},
+};
+
+int net_lldp_set_lldpdu(struct net_if *iface)
+{
+	return net_lldp_config(iface, &lldpdu);
+}
+
+void net_lldp_unset_lldpdu(struct net_if *iface)
+{
+	net_lldp_config(iface, NULL);
+	net_lldp_config_optional(iface, NULL, 0);
+}
+
 void net_lldp_init(void)
 {
 	k_delayed_work_init(&lldp_tx_timer, lldp_tx_timeout);
