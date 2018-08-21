@@ -85,8 +85,6 @@ osEvent osMessageGet(osMessageQId queue_id, uint32_t millisec)
 		evt.status = osEventTimeout;
 	} else if (retval == -ENOMSG) {
 		evt.status = osOK;
-	} else {
-		evt.status = osErrorValue;
 	}
 
 	evt.def.message_id = queue_id;
