@@ -548,7 +548,9 @@ static void gatt_ccc_changed(const struct bt_gatt_attr *attr,
 
 	if (value != ccc->value) {
 		ccc->value = value;
-		ccc->cfg_changed(attr, value);
+		if (ccc->cfg_changed) {
+			ccc->cfg_changed(attr, value);
+		}
 	}
 }
 
