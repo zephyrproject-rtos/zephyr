@@ -20,14 +20,15 @@ void *k_thread_other_custom_data_get(struct k_thread *thread_id)
 int32_t osSignalSet(osThreadId thread_id, int32_t signals)
 {
 	int sig, key;
-	osThreadDef_t *thread_def =
-		(osThreadDef_t *)k_thread_other_custom_data_get(
-						(struct k_thread *)thread_id);
 
-	if (_is_in_isr() || (thread_id == NULL) ||
+	if ((thread_id == NULL) || (!signals) ||
 		(signals >= (1 << (osFeature_Signals + 1)))) {
 		return 0x80000000;
 	}
+
+	osThreadDef_t *thread_def =
+		(osThreadDef_t *)k_thread_other_custom_data_get(
+						(struct k_thread *)thread_id);
 
 	key = irq_lock();
 	sig = thread_def->signal_results;
@@ -45,14 +46,15 @@ int32_t osSignalSet(osThreadId thread_id, int32_t signals)
 int32_t osSignalClear(osThreadId thread_id, int32_t signals)
 {
 	int sig, key;
-	osThreadDef_t *thread_def =
-		(osThreadDef_t *)k_thread_other_custom_data_get(
-						(struct k_thread *)thread_id);
 
-	if (_is_in_isr() || (thread_id == NULL) ||
+	if (_is_in_isr() || (thread_id == NULL) || (!signals) ||
 		(signals >= (1 << (osFeature_Signals + 1)))) {
 		return 0x80000000;
 	}
+
+	osThreadDef_t *thread_def =
+		(osThreadDef_t *)k_thread_other_custom_data_get(
+						(struct k_thread *)thread_id);
 
 	key = irq_lock();
 	sig = thread_def->signal_results;
