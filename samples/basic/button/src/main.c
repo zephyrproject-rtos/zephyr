@@ -40,11 +40,14 @@
 #endif
 
 /* change this to enable pull-up/pull-down */
+#ifndef SW0_GPIO_FLAGS
 #ifdef SW0_GPIO_PIN_PUD
-#define PULL_UP SW0_GPIO_PIN_PUD
+#define SW0_GPIO_FLAGS SW0_GPIO_PIN_PUD
 #else
-#define PULL_UP 0
+#define SW0_GPIO_FLAGS 0
 #endif
+#endif
+#define PULL_UP SW0_GPIO_FLAGS
 
 /* Sleep time */
 #define SLEEP_TIME	500
