@@ -79,6 +79,7 @@ struct rand {
 struct entropy_nrf5_dev_data {
 	struct k_sem sem_lock;
 	struct k_sem sem_sync;
+	unsigned int hw_users;
 
 	RAND_DEFINE(thr, RAND_THREAD_LEN);
 	RAND_DEFINE(isr, RAND_ISR_LEN);
@@ -87,11 +88,42 @@ struct entropy_nrf5_dev_data {
 #define DEV_DATA(dev) \
 	((struct entropy_nrf5_dev_data *)(dev)->driver_data)
 
+static void hw_start(struct entropy_nrf5_dev_data *dev_data)
+{
+	unsigned int key;
+
+	__ASSERT_NO_MSG(dev_data);
+
+	key = irq_lock();
+
+	__ASSERT_NO_MSG((dev_data->hw_users + 1) != 0u);
+	if (dev_data->hw_users++ == 0)
+		nrf_rng_task_trigger(NRF_RNG_TASK_START);
+
+	irq_unlock(key);
+}
+
+static void hw_stop(struct entropy_nrf5_dev_data *dev_data)
+{
+	unsigned int key;
+
+	__ASSERT_NO_MSG(dev_data);
+
+	key = irq_lock();
+
+	__ASSERT_NO_MSG((dev_data->hw_users - 1) != ~0u);
+	if (--dev_data->hw_users == 0)
+		nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
+
+	irq_unlock(key);
+}
+
 #pragma GCC push_options
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
 #pragma GCC optimize ("Ofast")
 #endif
-static inline u8_t get(struct rand *rng, u8_t octets, u8_t *rand)
+static u8_t get(struct entropy_nrf5_dev_data *dev_data,
+		struct rand *rng, u8_t octets, u8_t *rand)
 {
 	u8_t first, last, avail, remaining, *d, *s;
 
@@ -161,9 +193,8 @@ static inline u8_t get(struct rand *rng, u8_t octets, u8_t *rand)
 		rng->first = first;
 	}
 
-	if (remaining < rng->threshold) {
-		nrf_rng_task_trigger(NRF_RNG_TASK_START);
-	}
+	if (remaining < rng->threshold)
+		hw_start(dev_data);
 
 	return octets;
 }
@@ -225,9 +256,8 @@ static void isr_rand(void *arg)
 
 		nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
 
-		if (ret != -EBUSY) {
-			nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
-		}
+		if (ret != -EBUSY)
+			hw_stop(dev_data);
 	}
 }
 
@@ -254,8 +284,10 @@ static int entropy_nrf5_get_entropy(struct device *device, u8_t *buf, u16_t len)
 
 		while (len8) {
 			k_sem_take(&dev_data->sem_lock, K_FOREVER);
-			len8 = get((struct rand *)dev_data->thr, len8, buf);
+			len8 = get(dev_data, (struct rand *)dev_data->thr,
+				   len8, buf);
 			k_sem_give(&dev_data->sem_lock);
+
 			if (len8) {
 				/* Sleep until next interrupt */
 				k_sem_take(&dev_data->sem_sync, K_FOREVER);
@@ -273,7 +305,7 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 	u16_t cnt = len;
 
 	if (!(flags & ENTROPY_BUSYWAIT)) {
-		return get((struct rand *)dev_data->isr, len, buf);
+		return get(dev_data, (struct rand *)dev_data->isr, len, buf);
 	}
 
 	if (len) {
@@ -285,7 +317,7 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 		valrdy_int_enabled = nrf_rng_int_get(NRF_RNG_INT_VALRDY_MASK);
 		nrf_rng_int_enable(NRF_RNG_INT_VALRDY_MASK);
 
-		nrf_rng_task_trigger(NRF_RNG_TASK_START);
+		hw_start(dev_data);
 
 		do {
 			while (!nrf_rng_event_get(NRF_RNG_EVENT_VALRDY)) {
@@ -299,7 +331,7 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 			NVIC_ClearPendingIRQ(RNG_IRQn);
 		} while (len);
 
-		nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
+		hw_stop(dev_data);
 
 		if (!valrdy_int_enabled) {
 			nrf_rng_int_disable(NRF_RNG_INT_VALRDY_MASK);
@@ -329,6 +361,9 @@ static int entropy_nrf5_init(struct device *device)
 {
 	struct entropy_nrf5_dev_data *dev_data = DEV_DATA(device);
 
+	/* Set initial number of hardware users */
+	dev_data->hw_users = 0;
+
 	/* Locking semaphore initialized to 1 (unlocked) */
 	k_sem_init(&dev_data->sem_lock, 1, 1);
 	/* Synching semaphore */
@@ -348,7 +383,7 @@ static int entropy_nrf5_init(struct device *device)
 
 	nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
 	nrf_rng_int_enable(NRF_RNG_INT_VALRDY_MASK);
-	nrf_rng_task_trigger(NRF_RNG_TASK_START);
+	hw_start(dev_data);
 
 	IRQ_CONNECT(RNG_IRQn, CONFIG_ENTROPY_NRF5_PRI, isr_rand,
 		    DEVICE_GET(entropy_nrf5), 0);
@@ -359,7 +394,8 @@ static int entropy_nrf5_init(struct device *device)
 
 u8_t entropy_nrf_get_entropy_isr(struct device *dev, u8_t *buf, u8_t len)
 {
-	ARG_UNUSED(dev);
-	return get((struct rand *)entropy_nrf5_data.isr, len, buf);
+	struct entropy_nrf5_dev_data *dev_data = DEV_DATA(dev);
+
+	return get(dev_data, (struct rand *)dev_data->isr, len, buf);
 }
 
