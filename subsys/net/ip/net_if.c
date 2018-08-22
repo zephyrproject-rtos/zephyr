@@ -1538,6 +1538,39 @@ bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
 	return false;
 }
 
+struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
+						  struct in6_addr *addr)
+{
+	struct net_if_ipv6_prefix *prefix = NULL;
+	struct net_if_ipv6 *ipv6;
+	int i;
+
+	if (!iface) {
+		iface = net_if_get_default();
+	}
+
+	ipv6 = iface->config.ip.ipv6;
+	if (!ipv6) {
+		return NULL;
+	}
+
+	for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
+		if (!ipv6->prefix[i].is_used) {
+			continue;
+		}
+
+		if (net_is_ipv6_prefix(ipv6->prefix[i].prefix.s6_addr,
+				       addr->s6_addr,
+				       ipv6->prefix[i].len)) {
+			if (!prefix || prefix->len > ipv6->prefix[i].len) {
+				prefix = &ipv6->prefix[i];
+			}
+		}
+	}
+
+	return prefix;
+}
+
 struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
 						     struct in6_addr *addr,
 						     u8_t len)
