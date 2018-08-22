@@ -83,10 +83,10 @@ static struct tcp_backlog_entry {
 	{								\
 		enum net_verdict result;				\
 									\
-		net_context_ref(user_data);				\
+		/*net_context_ref(user_data);*/				\
 		result = _##name(conn, pkt, ip_hdr,			\
 				 proto_hdr, user_data);			\
-		net_context_unref(user_data);				\
+		/*net_context_unref(user_data);*/				\
 		return result;						\
 	}								\
 	static enum net_verdict _##name(struct net_conn *conn,		\
