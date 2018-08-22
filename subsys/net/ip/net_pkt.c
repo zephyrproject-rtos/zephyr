@@ -41,33 +41,33 @@
 #include "tcp_internal.h"
 #include "rpl.h"
 
-#if defined(CONFIG_NET_TCP)
-#define APP_PROTO_LEN NET_TCPH_LEN
-#else
-#if defined(CONFIG_NET_UDP)
-#define APP_PROTO_LEN NET_UDPH_LEN
-#else
-#define APP_PROTO_LEN 0
-#endif /* UDP */
-#endif /* TCP */
-
+/* Find max header size of IP protocol (IPv4 or IPv6) */
 #if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_RAW_MODE)
-#define IP_PROTO_LEN NET_IPV6H_LEN
+#define MAX_IP_PROTO_LEN NET_IPV6H_LEN
 #else
 #if defined(CONFIG_NET_IPV4)
-#define IP_PROTO_LEN NET_IPV4H_LEN
+#define MAX_IP_PROTO_LEN NET_IPV4H_LEN
 #else
 #error "Either IPv6 or IPv4 needs to be selected."
 #endif /* IPv4 */
 #endif /* IPv6 */
 
-#define EXTRA_PROTO_LEN NET_ICMPH_LEN
+/* Find max header size of "next" protocol (TCP, UDP or ICMP) */
+#if defined(CONFIG_NET_TCP)
+#define MAX_NEXT_PROTO_LEN NET_TCPH_LEN
+#else
+#if defined(CONFIG_NET_UDP)
+#define MAX_NEXT_PROTO_LEN NET_UDPH_LEN
+#else
+/* If no TCP and no UDP, apparently we still want pings to work. */
+#define MAX_NEXT_PROTO_LEN NET_ICMPH_LEN
+#endif /* UDP */
+#endif /* TCP */
 
-/* Make sure that IP + TCP/UDP header fit into one
- * fragment. This makes possible to cast a protocol header
- * struct into memory area.
+/* Make sure that IP + TCP/UDP/ICMP headers fit into one fragment. This
+ * makes possible to cast a fragment pointer to protocol header struct.
  */
-#if CONFIG_NET_BUF_DATA_SIZE < (IP_PROTO_LEN + APP_PROTO_LEN)
+#if CONFIG_NET_BUF_DATA_SIZE < (MAX_IP_PROTO_LEN + MAX_NEXT_PROTO_LEN)
 #if defined(STRING2)
 #undef STRING2
 #endif
@@ -77,7 +77,7 @@
 #define STRING2(x) #x
 #define STRING(x) STRING2(x)
 #pragma message "Data len " STRING(CONFIG_NET_BUF_DATA_SIZE)
-#pragma message "Minimum len " STRING(IP_PROTO_LEN + APP_PROTO_LEN)
+#pragma message "Minimum len " STRING(MAX_IP_PROTO_LEN + MAX_NEXT_PROTO_LEN)
 #error "Too small net_buf fragment size"
 #endif
 
