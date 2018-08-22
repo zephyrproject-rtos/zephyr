@@ -643,7 +643,7 @@ void main(void)
 	/* Initialize button count timer */
 	k_timer_init(&sw.button_timer, button_cnt_timer, NULL);
 
-	sw_device = device_get_binding(SW0_GPIO_NAME);
+	sw_device = device_get_binding(SW0_GPIO_CONTROLLER);
 	gpio_pin_configure(sw_device, SW0_GPIO_PIN,
 			  (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP));
@@ -666,10 +666,10 @@ void main(void)
 	gpio_pin_enable_callback(sw_device, SW3_GPIO_PIN);
 
 	/* Initialize LED's */
-	init_led(0, LED0_GPIO_PORT, LED0_GPIO_PIN);
-	init_led(1, LED1_GPIO_PORT, LED1_GPIO_PIN);
-	init_led(2, LED2_GPIO_PORT, LED2_GPIO_PIN);
-	init_led(3, LED3_GPIO_PORT, LED3_GPIO_PIN);
+	init_led(0, LED0_GPIO_CONTROLLER, LED0_GPIO_PIN);
+	init_led(1, LED1_GPIO_CONTROLLER, LED1_GPIO_PIN);
+	init_led(2, LED2_GPIO_CONTROLLER, LED2_GPIO_PIN);
+	init_led(3, LED3_GPIO_CONTROLLER, LED3_GPIO_PIN);
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);
