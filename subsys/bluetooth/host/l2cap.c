@@ -35,8 +35,6 @@
 #define L2CAP_LE_MAX_CREDITS		(CONFIG_BT_RX_BUF_COUNT - 1)
 #endif
 
-#define L2CAP_LE_CREDITS_THRESHOLD(_creds) (_creds / 2)
-
 #define L2CAP_LE_CID_DYN_START	0x0040
 #define L2CAP_LE_CID_DYN_END	0x007f
 #define L2CAP_LE_CID_IS_DYN(_cid) \
@@ -665,6 +663,11 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 	 */
 	chan->rx.mps = min(chan->rx.mtu + 2, L2CAP_MAX_LE_MPS);
 	k_sem_init(&chan->rx.credits, 0, UINT_MAX);
+
+	if (BT_DBG_ENABLED &&
+	    chan->rx.init_credits * chan->rx.mps < chan->rx.mtu + 2) {
+		BT_WARN("Not enough credits for a full packet");
+	}
 }
 
 static void l2cap_chan_tx_init(struct bt_l2cap_le_chan *chan)
