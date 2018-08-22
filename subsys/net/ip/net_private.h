@@ -143,8 +143,8 @@ struct net_tcp_hdr *net_tcp_header_fits(struct net_pkt *pkt,
 	return NULL;
 }
 
-void net_context_set_appdata_values(struct net_pkt *pkt,
-				    enum net_ip_protocol proto);
+void net_pkt_set_appdata_values(struct net_pkt *pkt,
+				enum net_ip_protocol proto);
 
 enum net_verdict net_context_packet_received(struct net_conn *conn,
 					     struct net_pkt *pkt,

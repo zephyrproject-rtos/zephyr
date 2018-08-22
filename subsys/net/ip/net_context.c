@@ -1106,45 +1106,6 @@ int net_context_sendto(struct net_pkt *pkt,
 	return sendto(pkt, dst_addr, addrlen, cb, timeout, token, user_data);
 }
 
-void net_context_set_appdata_values(struct net_pkt *pkt,
-				    enum net_ip_protocol proto)
-{
-	size_t total_len = net_pkt_get_len(pkt);
-	u16_t proto_len = 0;
-	struct net_buf *frag;
-	u16_t offset;
-
-	switch (proto) {
-	case IPPROTO_UDP:
-#if defined(CONFIG_NET_UDP)
-		proto_len = sizeof(struct net_udp_hdr);
-#endif /* CONFIG_NET_UDP */
-		break;
-
-	case IPPROTO_TCP:
-		proto_len = tcp_hdr_len(pkt);
-		break;
-
-	default:
-		return;
-	}
-
-	frag = net_frag_get_pos(pkt, net_pkt_ip_hdr_len(pkt) +
-				net_pkt_ipv6_ext_len(pkt) +
-				proto_len,
-				&offset);
-	if (frag) {
-		net_pkt_set_appdata(pkt, frag->data + offset);
-	}
-
-	net_pkt_set_appdatalen(pkt, total_len - net_pkt_ip_hdr_len(pkt) -
-			       net_pkt_ipv6_ext_len(pkt) - proto_len);
-
-	NET_ASSERT_INFO(net_pkt_appdatalen(pkt) < total_len,
-			"Wrong appdatalen %u, total %zu",
-			net_pkt_appdatalen(pkt), total_len);
-}
-
 enum net_verdict net_context_packet_received(struct net_conn *conn,
 					     struct net_pkt *pkt,
 					     void *user_data)
@@ -1167,7 +1128,7 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 
 	if (net_context_get_ip_proto(context) != IPPROTO_TCP) {
 		/* TCP packets get appdata earlier in tcp_established(). */
-		net_context_set_appdata_values(pkt, IPPROTO_UDP);
+		net_pkt_set_appdata_values(pkt, IPPROTO_UDP);
 	} else {
 		net_stats_update_tcp_recv(net_pkt_iface(pkt),
 					  net_pkt_appdatalen(pkt));

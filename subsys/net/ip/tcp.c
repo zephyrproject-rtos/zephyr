@@ -2047,7 +2047,7 @@ resend_ack:
 		context->tcp->fin_rcvd = 1;
 	}
 
-	net_context_set_appdata_values(pkt, IPPROTO_TCP);
+	net_pkt_set_appdata_values(pkt, IPPROTO_TCP);
 
 	data_len = net_pkt_appdatalen(pkt);
 	if (data_len > net_tcp_get_recv_wnd(context->tcp)) {
