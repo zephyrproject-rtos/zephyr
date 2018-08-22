@@ -183,7 +183,7 @@ static void ipsp_disconnected(struct bt_l2cap_chan *chan)
 #endif
 }
 
-static void ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_context *ctxt = CHAN_CTXT(chan);
 	struct net_pkt *pkt;
@@ -194,7 +194,7 @@ static void ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	/* Get packet for bearer / protocol related data */
 	pkt = net_pkt_get_reserve_rx(0, BUF_TIMEOUT);
 	if (!pkt) {
-		return;
+		return -ENOMEM;
 	}
 
 	/* Set destination address */
@@ -216,6 +216,8 @@ static void ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		NET_DBG("Packet dropped by NET stack");
 		net_pkt_unref(pkt);
 	}
+
+	return 0;
 }
 
 static struct net_buf *ipsp_alloc_buf(struct bt_l2cap_chan *chan)

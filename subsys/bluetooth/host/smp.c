@@ -1295,7 +1295,7 @@ static int smp_br_error(struct bt_smp_br *smp, u8_t reason)
 	return 0;
 }
 
-static void bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_smp_br *smp = CONTAINER_OF(chan, struct bt_smp_br, chan);
 	struct bt_smp_hdr *hdr = (void *)buf->data;
@@ -1303,7 +1303,7 @@ static void bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Too small SMP PDU received");
-		return;
+		return 0;
 	}
 
 	BT_DBG("Received SMP code 0x%02x len %u", hdr->code, buf->len);
@@ -1318,32 +1318,34 @@ static void bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	if (atomic_test_bit(smp->flags, SMP_FLAG_TIMEOUT)) {
 		BT_WARN("SMP command (code 0x%02x) received after timeout",
 			hdr->code);
-		return;
+		return 0;
 	}
 
 	if (hdr->code >= ARRAY_SIZE(br_handlers) ||
 	    !br_handlers[hdr->code].func) {
 		BT_WARN("Unhandled SMP code 0x%02x", hdr->code);
 		smp_br_error(smp, BT_SMP_ERR_CMD_NOTSUPP);
-		return;
+		return 0;
 	}
 
 	if (!atomic_test_and_clear_bit(&smp->allowed_cmds, hdr->code)) {
 		BT_WARN("Unexpected SMP code 0x%02x", hdr->code);
 		smp_br_error(smp, BT_SMP_ERR_UNSPECIFIED);
-		return;
+		return 0;
 	}
 
 	if (buf->len != br_handlers[hdr->code].expect_len) {
 		BT_ERR("Invalid len %u for code 0x%02x", buf->len, hdr->code);
 		smp_br_error(smp, BT_SMP_ERR_INVALID_PARAMS);
-		return;
+		return 0;
 	}
 
 	err = br_handlers[hdr->code].func(smp, buf);
 	if (err) {
 		smp_br_error(smp, err);
 	}
+
+	return 0;
 }
 
 static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
@@ -3489,7 +3491,7 @@ static const struct {
 	{ smp_dhkey_check,         sizeof(struct bt_smp_dhkey_check) },
 };
 
-static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan);
 	struct bt_smp_hdr *hdr = (void *)buf->data;
@@ -3497,7 +3499,7 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Too small SMP PDU received");
-		return;
+		return 0;
 	}
 
 	BT_DBG("Received SMP code 0x%02x len %u", hdr->code, buf->len);
@@ -3512,13 +3514,13 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	if (atomic_test_bit(smp->flags, SMP_FLAG_TIMEOUT)) {
 		BT_WARN("SMP command (code 0x%02x) received after timeout",
 			hdr->code);
-		return;
+		return 0;
 	}
 
 	if (hdr->code >= ARRAY_SIZE(handlers) || !handlers[hdr->code].func) {
 		BT_WARN("Unhandled SMP code 0x%02x", hdr->code);
 		smp_error(smp, BT_SMP_ERR_CMD_NOTSUPP);
-		return;
+		return 0;
 	}
 
 	if (!atomic_test_and_clear_bit(&smp->allowed_cmds, hdr->code)) {
@@ -3527,19 +3529,21 @@ static void bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		if (hdr->code != BT_SMP_CMD_PAIRING_FAIL) {
 			smp_error(smp, BT_SMP_ERR_UNSPECIFIED);
 		}
-		return;
+		return 0;
 	}
 
 	if (buf->len != handlers[hdr->code].expect_len) {
 		BT_ERR("Invalid len %u for code 0x%02x", buf->len, hdr->code);
 		smp_error(smp, BT_SMP_ERR_INVALID_PARAMS);
-		return;
+		return 0;
 	}
 
 	err = handlers[hdr->code].func(smp, buf);
 	if (err) {
 		smp_error(smp, err);
 	}
+
+	return 0;
 }
 
 static void bt_smp_pkey_ready(const u8_t *pkey)

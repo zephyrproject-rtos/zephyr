@@ -203,8 +203,14 @@ struct bt_l2cap_chan_ops {
 	 *
 	 *  @param chan The channel receiving data.
 	 *  @param buf Buffer containing incoming data.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 *  If -EINPROGRESS is returned user has to confirm once the data has
+	 *  been processed by calling bt_l2cap_chan_recv_complete passing back
+	 *  the buffer received with its original user_data which contains the
+	 *  number of segments/credits used by the packet.
 	 */
-	void (*recv)(struct bt_l2cap_chan *chan, struct net_buf *buf);
+	int (*recv)(struct bt_l2cap_chan *chan, struct net_buf *buf);
 };
 
 /** @def BT_L2CAP_CHAN_SEND_RESERVE
@@ -323,6 +329,21 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  @return Bytes sent in case of success or negative value in case of error.
  */
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
+
+/** @brief Complete receiving L2CAP channel data
+ *
+ * Complete the reception of incoming data. This shall only be called if the
+ * channel recv callback has returned -EINPROGRESS to process some incoming
+ * data. The buffer shall contain the original user_data as that is used for
+ * storing the credits/segments used by the packet.
+ *
+ * @param chan Channel object.
+ * @param buf Buffer containing the data.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan,
+				struct net_buf *buf);
 
 #ifdef __cplusplus
 }
