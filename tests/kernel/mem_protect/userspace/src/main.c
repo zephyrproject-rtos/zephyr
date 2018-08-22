@@ -689,7 +689,18 @@ void test_main(void)
 	 * Next, the app_memory must be initialized in order to
 	 * calculate size of the dynamically created subsections.
 	 */
+#if defined(CONFIG_ARC)
+	/*
+	 * appmem_init_app_memory will accees all partitions
+	 * For CONFIG_ARC_MPU_VER == 3, these partiontons are not added
+	 * into MPU now, so need to disable mpu first to do app_bss_zero()
+	 */
+	arc_core_mpu_disable();
 	appmem_init_app_memory();
+	arc_core_mpu_enable();
+#else
+	appmem_init_app_memory();
+#endif
 	/* Domain is initialized with partition part0 */
 	appmem_init_domain_dom0(part0);
 	/* Next, the partition must be added to the domain */
