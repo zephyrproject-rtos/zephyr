@@ -1965,6 +1965,10 @@ static int send_reset(struct net_context *context,
 
 /* This is called when we receive data after the connection has been
  * established. The core TCP logic is located here.
+ *
+ * Prototype:
+ * enum net_verdict tcp_established(struct net_conn *conn, struct net_pkt *pkt,
+ *                                  void *user_data)
  */
 NET_CONN_CB(tcp_established)
 {
@@ -2146,6 +2150,12 @@ clean_up:
 }
 
 
+/*
+ * Prototype:
+ * enum net_verdict tcp_synack_received(struct net_conn *conn,
+ *                                      struct net_pkt *pkt,
+ *                                      void *user_data)
+ */
 NET_CONN_CB(tcp_synack_received)
 {
 	struct net_context *context = (struct net_context *)user_data;
@@ -2295,6 +2305,10 @@ static inline void copy_pool_vars(struct net_context *new_context,
  * a packet. We need to check if we are receiving proper msg (SYN) here.
  * The ACK could also be received, in which case we have an established
  * connection.
+ *
+ * Prototype:
+ * enum net_verdict tcp_syn_rcvd(struct net_conn *conn, struct net_pkt *pkt,
+ *                               void *user_data)
  */
 NET_CONN_CB(tcp_syn_rcvd)
 {
