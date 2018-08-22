@@ -1987,6 +1987,34 @@ static inline bool k_queue_remove(struct k_queue *queue, void *data)
 }
 
 /**
+ * @brief Append an element to a queue only if it's not present already.
+ *
+ * This routine appends data item to @a queue. The first 32 bits of the
+ * data item are reserved for the kernel's use. Appending elements to k_queue
+ * relies on sys_slist_is_node_in_list which is not a constant time operation.
+ *
+ * @note Can be called by ISRs
+ *
+ * @param queue Address of the queue.
+ * @param data Address of the data item.
+ *
+ * @return true if data item was added, false if not
+ */
+static inline bool k_queue_unique_append(struct k_queue *queue, void *data)
+{
+	sys_sfnode_t *test;
+
+	SYS_SFLIST_FOR_EACH_NODE(&queue->data_q, test) {
+		if (test == (sys_sfnode_t *) data) {
+			return false;
+		}
+	}
+
+	k_queue_append(queue, data);
+	return true;
+}
+
+/**
  * @brief Query a queue to see if it has data available.
  *
  * Note that the data might be already gone by the time this function returns
