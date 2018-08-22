@@ -1699,7 +1699,7 @@ static int cmd_bredr_discovery(int argc, char *argv[])
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 static u32_t l2cap_rate;
 
-static void l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	static u32_t len;
 	static u32_t cycle_stamp;
@@ -1719,15 +1719,19 @@ static void l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		len += buf->len;
 		l2cap_rate = ((u64_t)len << 3) * 1000000000 / delta;
 	}
+
+	return 0;
 }
 
-static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	printk("Incoming data channel %p len %u\n", chan, buf->len);
 
 	if (buf->len) {
 		hexdump(buf->data, buf->len);
 	}
+
+	return 0;
 }
 
 static void l2cap_connected(struct bt_l2cap_chan *chan)
@@ -1907,9 +1911,11 @@ static int cmd_l2cap_metrics(int argc, char *argv[])
 #endif
 
 #if defined(CONFIG_BT_BREDR)
-static void l2cap_bredr_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int l2cap_bredr_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	printk("Incoming data channel %p len %u\n", chan, buf->len);
+
+	return 0;
 }
 
 static void l2cap_bredr_connected(struct bt_l2cap_chan *chan)

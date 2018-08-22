@@ -35,7 +35,7 @@ static struct net_buf *alloc_buf_cb(struct bt_l2cap_chan *chan)
 
 static u8_t recv_cb_buf[DATA_MTU + sizeof(struct l2cap_data_received_ev)];
 
-static void recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
+static int recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 {
 	struct l2cap_data_received_ev *ev = (void *) recv_cb_buf;
 	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
@@ -46,6 +46,8 @@ static void recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 
 	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_EV_DATA_RECEIVED,
 		    CONTROLLER_INDEX, recv_cb_buf, sizeof(*ev) + buf->len);
+
+	return 0;
 }
 
 static void connected_cb(struct bt_l2cap_chan *l2cap_chan)
