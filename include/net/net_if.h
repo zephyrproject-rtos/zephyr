@@ -940,6 +940,17 @@ static inline void net_if_ipv6_maddr_leave(struct net_if_mcast_addr *addr)
 }
 
 /**
+ * @brief Return prefix that corresponds to this IPv6 address.
+ *
+ * @param iface Network interface
+ * @param addr IPv6 address
+ *
+ * @return Pointer to prefix, NULL if not found.
+ */
+struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
+						  struct in6_addr *addr);
+
+/**
  * @brief Check if this IPv6 prefix belongs to this interface
  *
  * @param iface Network interface
