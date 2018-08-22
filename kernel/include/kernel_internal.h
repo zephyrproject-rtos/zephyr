@@ -171,6 +171,9 @@ extern FUNC_NORETURN void _arch_syscall_oops(void *ssf);
  * @return Length of the string, not counting NULL byte, up to maxsize
  */
 extern size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err);
+
+extern int z_thread_stack_validate(k_thread_stack_t *stack, size_t stack_size);
+
 #endif /* CONFIG_USERSPACE */
 
 /**

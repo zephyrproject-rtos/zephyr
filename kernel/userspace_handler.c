@@ -38,9 +38,18 @@ static struct _k_object *validate_any_object(void *obj)
  */
 Z_SYSCALL_HANDLER(k_object_access_grant, object, thread)
 {
-	struct _k_object *ko;
+	struct _k_object *ko, *tko;
 
-	Z_OOPS(Z_SYSCALL_OBJ_INIT(thread, K_OBJ_THREAD));
+	/* Checks everything except the object type */
+	tko = validate_any_object((void *)thread);
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(tko, "thread %p access denied",
+				    (void *)thread));
+
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(tko->type == K_OBJ_THREAD ||
+				    tko->type == K_OBJ_WORK_Q,
+				    "%p not a thread or workqueue (%d)",
+				    (void *)thread, tko->type));
+
 	ko = validate_any_object((void *)object);
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(ko, "object %p access denied",
 				    (void *)object));

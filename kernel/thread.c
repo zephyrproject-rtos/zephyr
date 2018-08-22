@@ -383,28 +383,21 @@ k_tid_t _impl_k_thread_create(struct k_thread *new_thread,
 
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_thread_create,
-		  new_thread_p, stack_p, stack_size, entry, p1, more_args)
+int z_thread_stack_validate(k_thread_stack_t *stack, size_t stack_size)
 {
-	int prio;
-	u32_t options, delay;
+	struct _k_object *stack_object;
 	u32_t total_size;
 #ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	u32_t guard_size;
 #endif
-	struct _k_object *stack_object;
-	struct k_thread *new_thread = (struct k_thread *)new_thread_p;
-	volatile struct _syscall_10_args *margs =
-		(volatile struct _syscall_10_args *)more_args;
-	k_thread_stack_t *stack = (k_thread_stack_t *)stack_p;
 
-	/* The thread and stack objects *must* be in an uninitialized state */
-	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD));
 	stack_object = _k_object_find(stack);
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!_obj_validation_check(stack_object, stack,
+	if (Z_SYSCALL_VERIFY_MSG(!_obj_validation_check(stack_object, stack,
 						K_OBJ__THREAD_STACK_ELEMENT,
 						_OBJ_INIT_FALSE),
-				    "bad stack object"));
+				    "bad stack object")) {
+		return 1;
+	}
 
 #ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	/* Verify that the stack size passed in is OK by computing the total
@@ -415,18 +408,36 @@ Z_SYSCALL_HANDLER(k_thread_create,
 	 * size and not allocated in addition to the stack size
 	 */
 	guard_size = (u32_t)K_THREAD_STACK_BUFFER(stack) - (u32_t)stack;
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!__builtin_uadd_overflow(guard_size,
+	if (Z_SYSCALL_VERIFY_MSG(!__builtin_uadd_overflow(guard_size,
 							     stack_size,
 							     &total_size),
-				    "stack size overflow (%u+%u)", stack_size,
-				    guard_size));
+				    "stack size overflow (%zu+%u)", stack_size,
+				    guard_size)) {
+		return 1;
+	}
 #else
 	total_size = stack_size;
 #endif
 	/* They really ought to be equal, make this more strict? */
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(total_size <= stack_object->data,
+	return Z_SYSCALL_VERIFY_MSG(total_size <= stack_object->data,
 				    "stack size %u is too big, max is %u",
-				    total_size, stack_object->data));
+				    total_size, stack_object->data);
+}
+
+Z_SYSCALL_HANDLER(k_thread_create,
+		  new_thread_p, stack_p, stack_size, entry, p1, more_args)
+{
+	int prio;
+	u32_t options, delay;
+
+	struct k_thread *new_thread = (struct k_thread *)new_thread_p;
+	volatile struct _syscall_10_args *margs =
+		(volatile struct _syscall_10_args *)more_args;
+	k_thread_stack_t *stack = (k_thread_stack_t *)stack_p;
+
+	/* The thread and stack objects *must* be in an uninitialized state */
+	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD));
+	Z_OOPS(z_thread_stack_validate(stack, stack_size));
 
 	/* Verify the struct containing args 6-10 */
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(margs, sizeof(*margs)));
