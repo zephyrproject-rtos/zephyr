@@ -106,8 +106,11 @@ int _impl_zsock_close(int sock)
 	 * as these are fail-free operations and we're closing
 	 * socket anyway.
 	 */
-	(void)net_context_accept(ctx, NULL, K_NO_WAIT, NULL);
-	(void)net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
+	if (net_context_get_state(ctx) == NET_CONTEXT_LISTENING) {
+		(void)net_context_accept(ctx, NULL, K_NO_WAIT, NULL);
+	} else {
+		(void)net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
+	}
 
 	zsock_flush_queue(ctx);
 
