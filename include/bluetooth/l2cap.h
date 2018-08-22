@@ -81,7 +81,7 @@ struct bt_l2cap_chan {
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	bt_l2cap_chan_state_t		state;
 	/** Remote PSM to be connected */
-	u16_t			psm;
+	u16_t				psm;
 	/** Helps match request context during CoC */
 	u8_t				ident;
 	bt_security_t			required_sec_level;
@@ -91,13 +91,13 @@ struct bt_l2cap_chan {
 /** @brief LE L2CAP Endpoint structure. */
 struct bt_l2cap_le_endpoint {
 	/** Endpoint CID */
-	u16_t			cid;
+	u16_t				cid;
 	/** Endpoint Maximum Transmission Unit */
-	u16_t			mtu;
+	u16_t				mtu;
 	/** Endpoint Maximum PDU payload Size */
-	u16_t			mps;
+	u16_t				mps;
 	/** Endpoint initial credits */
-	u16_t			init_credits;
+	u16_t				init_credits;
 	/** Endpoint credits */
 	struct k_sem			credits;
 };
@@ -133,9 +133,9 @@ struct bt_l2cap_le_chan {
 /** @brief BREDR L2CAP Endpoint structure. */
 struct bt_l2cap_br_endpoint {
 	/** Endpoint CID */
-	u16_t			cid;
+	u16_t				cid;
 	/** Endpoint Maximum Transmission Unit */
-	u16_t			mtu;
+	u16_t				mtu;
 };
 
 /** @brief BREDR L2CAP Channel structure. */
