@@ -30,6 +30,10 @@
 	status ="ok";
 };
 
+&adc {
+	status ="ok";
+};
+
 &uart0 {
 	current-speed = <115200>;
 	status = "ok";
