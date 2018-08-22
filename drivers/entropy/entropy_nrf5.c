@@ -193,7 +193,7 @@ static int isr(struct rand *rng, bool store)
 		return -EBUSY;
 	}
 
-	rng->rand[rng->last] = NRF_RNG->VALUE;
+	rng->rand[rng->last] = nrf_rng_random_value_get();
 	rng->last = last;
 
 	last = rng->last + 1;
@@ -212,7 +212,7 @@ static void isr_rand(void *arg)
 {
 	struct device *device = arg;
 
-	if (NRF_RNG->EVENTS_VALRDY) {
+	if (nrf_rng_event_get(NRF_RNG_EVENT_VALRDY)) {
 		struct entropy_nrf5_dev_data *dev_data = DEV_DATA(device);
 		int ret;
 
@@ -223,7 +223,7 @@ static void isr_rand(void *arg)
 			k_sem_give(&dev_data->sem_sync);
 		}
 
-		NRF_RNG->EVENTS_VALRDY = 0;
+		nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
 
 		if (ret != -EBUSY) {
 			nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
@@ -277,38 +277,35 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 	}
 
 	if (len) {
-		u32_t intenset;
+		u32_t valrdy_int_enabled;
 
 		irq_disable(RNG_IRQn);
-		NRF_RNG->EVENTS_VALRDY = 0;
+		nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
 
-		intenset = NRF_RNG->INTENSET;
+		valrdy_int_enabled = nrf_rng_int_get(NRF_RNG_INT_VALRDY_MASK);
 		nrf_rng_int_enable(NRF_RNG_INT_VALRDY_MASK);
 
 		nrf_rng_task_trigger(NRF_RNG_TASK_START);
 
 		do {
-			while (NRF_RNG->EVENTS_VALRDY == 0) {
+			while (!nrf_rng_event_get(NRF_RNG_EVENT_VALRDY)) {
 				__WFE();
 				__SEV();
 				__WFE();
 			}
 
-			buf[--len] = NRF_RNG->VALUE;
-
-			NRF_RNG->EVENTS_VALRDY = 0;
-
+			buf[--len] = nrf_rng_random_value_get();
+			nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
 			NVIC_ClearPendingIRQ(RNG_IRQn);
 		} while (len);
 
 		nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
 
-		if (!(intenset & RNG_INTENSET_VALRDY_Msk)) {
+		if (!valrdy_int_enabled) {
 			nrf_rng_int_disable(NRF_RNG_INT_VALRDY_MASK);
 		}
 
 		NVIC_ClearPendingIRQ(RNG_IRQn);
-
 		irq_enable(RNG_IRQn);
 	}
 
@@ -344,18 +341,18 @@ static int entropy_nrf5_init(struct device *device)
 
 	/* Enable or disable bias correction */
 	if (IS_ENABLED(CONFIG_ENTROPY_NRF5_BIAS_CORRECTION)) {
-		NRF_RNG->CONFIG |= RNG_CONFIG_DERCEN_Msk;
+		nrf_rng_error_correction_enable();
 	} else {
-		NRF_RNG->CONFIG &= ~RNG_CONFIG_DERCEN_Msk;
+		nrf_rng_error_correction_disable();
 	}
 
-	NRF_RNG->EVENTS_VALRDY = 0;
+	nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
 	nrf_rng_int_enable(NRF_RNG_INT_VALRDY_MASK);
 	nrf_rng_task_trigger(NRF_RNG_TASK_START);
 
-	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, CONFIG_ENTROPY_NRF5_PRI, isr_rand,
+	IRQ_CONNECT(RNG_IRQn, CONFIG_ENTROPY_NRF5_PRI, isr_rand,
 		    DEVICE_GET(entropy_nrf5), 0);
-	irq_enable(NRF5_IRQ_RNG_IRQn);
+	irq_enable(RNG_IRQn);
 
 	return 0;
 }
