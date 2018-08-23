@@ -77,6 +77,21 @@ class DTClocks(DTDirective):
                             clock_consumer_label, clock_cells_string,
                             clock_cell_name, str(clock_index)])
                     prop_def[clock_label] = str(cell)
+                    if clock_index == 0 and \
+                        len(clocks) == (len(clock_cells) + 1):
+                        index = ''
+                    else:
+                        index = str(clock_index)
+                    if node_address in aliases:
+                        for alias in aliases[node_address]:
+                            if clock_cells_string == clock_cell_name:
+                                clock_alias_label = self.get_label_string([
+                                    alias, clock_cells_string, index])
+                            else:
+                                clock_alias_label = self.get_label_string([
+                                    alias, clock_cells_string,
+                                    clock_cell_name, index])
+                            prop_alias[clock_alias_label] = clock_label
                     # alias
                     if i < nr_clock_cells:
                         # clocks info for first clock
