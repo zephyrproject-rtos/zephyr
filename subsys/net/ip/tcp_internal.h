@@ -29,11 +29,7 @@ extern "C" {
 /** Is this TCP context/socket used or not */
 #define NET_TCP_IN_USE BIT(0)
 
-/** Is the final segment sent */
-#define NET_TCP_FINAL_SENT BIT(1)
-
-/** Is the final segment received */
-#define NET_TCP_FINAL_RECV BIT(2)
+/* BIT(1), BIT(2) are unused and available */
 
 /** Is the socket shutdown for read/write */
 #define NET_TCP_IS_SHUTDOWN BIT(3)

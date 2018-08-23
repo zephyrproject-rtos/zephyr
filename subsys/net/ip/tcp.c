@@ -553,7 +553,6 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 	}
 
 	if (flags & NET_TCP_FIN) {
-		tcp->flags |= NET_TCP_FINAL_SENT;
 		/* RFC793 says about ACK bit: "Once a connection is
 		 * established this is always sent." as teardown
 		 * happens when connection is established, it must
