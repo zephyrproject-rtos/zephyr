@@ -68,11 +68,9 @@ int32_t osSemaphoreWait(osSemaphoreId semaphore_id, uint32_t timeout)
 	 */
 	if (status == 0) {
 		return k_sem_count_get(semaphore) + 1;
-	} else if (status == -EAGAIN) {
+	} else {
 		return 0;
 	}
-
-	return -1;
 }
 
 /**
