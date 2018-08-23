@@ -1,5 +1,10 @@
+add_library(libc STATIC "")
+target_link_libraries(libc PRIVATE zephyr_interface)
+target_link_libraries(libc PRIVATE zephyr)
+target_link_libraries(zephyr_app_linking INTERFACE libc)
+
 if(CONFIG_NEWLIB_LIBC)
-  add_subdirectory(newlib)
+  include(newlib/CMakeLists.txt)
 else()
-  add_subdirectory(minimal)
+  include(minimal/CMakeLists.txt)
 endif()

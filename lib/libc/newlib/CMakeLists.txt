@@ -1,5 +1,4 @@
-zephyr_library()
-zephyr_library_sources(libc-hooks.c)
+target_sources(libc PRIVATE ${CMAKE_CURRENT_LIST_DIR}/libc-hooks.c)
 
 # LIBC_*_DIR may or may not have been set by the toolchain. E.g. when
 # using ZEPHYR_TOOLCHAIN_VARIANT=cross-compile it will be either up to the
