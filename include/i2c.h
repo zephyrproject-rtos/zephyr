@@ -31,59 +31,59 @@ extern "C" {
  */
 
 /** I2C Standard Speed */
-#define I2C_SPEED_STANDARD		(0x1)
+#define I2C_SPEED_STANDARD              (0x1)
 
 /** I2C Fast Speed */
-#define I2C_SPEED_FAST			(0x2)
+#define I2C_SPEED_FAST                  (0x2)
 
 /** I2C Fast Plus Speed */
-#define I2C_SPEED_FAST_PLUS		(0x3)
+#define I2C_SPEED_FAST_PLUS             (0x3)
 
 /** I2C High Speed */
-#define I2C_SPEED_HIGH			(0x4)
+#define I2C_SPEED_HIGH                  (0x4)
 
 /** I2C Ultra Fast Speed */
-#define I2C_SPEED_ULTRA			(0x5)
+#define I2C_SPEED_ULTRA                 (0x5)
 
-#define I2C_SPEED_SHIFT			(1)
-#define I2C_SPEED_SET(speed)		(((speed) << I2C_SPEED_SHIFT) \
-						& I2C_SPEED_MASK)
-#define I2C_SPEED_MASK			(0x7 << I2C_SPEED_SHIFT) /* 3 bits */
-#define I2C_SPEED_GET(cfg) 		(((cfg) & I2C_SPEED_MASK) \
-						>> I2C_SPEED_SHIFT)
+#define I2C_SPEED_SHIFT                 (1)
+#define I2C_SPEED_SET(speed)            (((speed) << I2C_SPEED_SHIFT) \
+					 & I2C_SPEED_MASK)
+#define I2C_SPEED_MASK                  (0x7 << I2C_SPEED_SHIFT) /* 3 bits */
+#define I2C_SPEED_GET(cfg)              (((cfg) & I2C_SPEED_MASK) \
+					 >> I2C_SPEED_SHIFT)
 
 /** Use 10-bit addressing. */
-#define I2C_ADDR_10_BITS		(1 << 0)
+#define I2C_ADDR_10_BITS                (1 << 0)
 
 /** Controller to act as Master. */
-#define I2C_MODE_MASTER			(1 << 4)
+#define I2C_MODE_MASTER                 (1 << 4)
 
 /*
  * The following #defines are used to configure the I2C slave device
  */
 
 /** Slave device responds to 10-bit addressing. */
-#define I2C_SLAVE_FLAGS_ADDR_10_BITS		I2C_ADDR_10_BITS
+#define I2C_SLAVE_FLAGS_ADDR_10_BITS            I2C_ADDR_10_BITS
 
 /*
  * I2C_MSG_* are I2C Message flags.
  */
 
 /** Write message to I2C bus. */
-#define I2C_MSG_WRITE			(0 << 0)
+#define I2C_MSG_WRITE                   (0 << 0)
 
 /** Read message from I2C bus. */
-#define I2C_MSG_READ			(1 << 0)
+#define I2C_MSG_READ                    (1 << 0)
 
 /** @cond INTERNAL_HIDDEN */
-#define I2C_MSG_RW_MASK			(1 << 0)
+#define I2C_MSG_RW_MASK                 (1 << 0)
 /** @endcond  */
 
 /** Send STOP after this message. */
-#define I2C_MSG_STOP			(1 << 1)
+#define I2C_MSG_STOP                    (1 << 1)
 
 /** RESTART I2C transaction for this message. */
-#define I2C_MSG_RESTART			(1 << 2)
+#define I2C_MSG_RESTART                 (1 << 2)
 
 /**
  * @brief One I2C Message.
@@ -92,22 +92,22 @@ extern "C" {
  */
 struct i2c_msg {
 	/** Data buffer in bytes */
-	u8_t		*buf;
+	u8_t            *buf;
 
 	/** Length of buffer in bytes */
-	u32_t	len;
+	u32_t len;
 
 	/** Flags for this message */
-	u8_t		flags;
+	u8_t flags;
 };
 
 union __deprecated dev_config {
 	u32_t raw;
 	struct __bits {
-		u32_t        use_10_bit_addr : 1;
-		u32_t        speed : 3;
-		u32_t        is_master_device : 1;
-		u32_t        reserved : 26;
+		u32_t use_10_bit_addr : 1;
+		u32_t speed : 3;
+		u32_t is_master_device : 1;
+		u32_t reserved : 26;
 	} bits;
 };
 
@@ -120,13 +120,13 @@ union __deprecated dev_config {
 struct i2c_slave_config;
 
 typedef int (*i2c_slave_write_requested_cb_t)(
-		struct i2c_slave_config *config);
+	struct i2c_slave_config *config);
 typedef int (*i2c_slave_read_requested_cb_t)(
-		struct i2c_slave_config *config, u8_t *val);
+	struct i2c_slave_config *config, u8_t *val);
 typedef int (*i2c_slave_write_received_cb_t)(
-		struct i2c_slave_config *config, u8_t val);
+	struct i2c_slave_config *config, u8_t val);
 typedef int (*i2c_slave_read_processed_cb_t)(
-		struct i2c_slave_config *config, u8_t *val);
+	struct i2c_slave_config *config, u8_t *val);
 typedef int (*i2c_slave_stop_cb_t)(struct i2c_slave_config *config);
 
 struct i2c_slave_callbacks {
@@ -504,7 +504,7 @@ static inline int i2c_reg_read_byte(struct device *dev, u16_t dev_addr,
 static inline int i2c_reg_write_byte(struct device *dev, u16_t dev_addr,
 				     u8_t reg_addr, u8_t value)
 {
-	u8_t tx_buf[2] = {reg_addr, value};
+	u8_t tx_buf[2] = { reg_addr, value };
 
 	return i2c_write(dev, tx_buf, 2, dev_addr);
 }
@@ -862,16 +862,16 @@ struct i2c_client_config {
 	u16_t i2c_addr;
 };
 
-#define I2C_DECLARE_CLIENT_CONFIG	struct i2c_client_config i2c_client
+#define I2C_DECLARE_CLIENT_CONFIG       struct i2c_client_config i2c_client
 
-#define I2C_CLIENT(_master, _addr)		\
-	.i2c_client = {				\
-		.i2c_master = (_master),	\
-		.i2c_addr = (_addr),		\
+#define I2C_CLIENT(_master, _addr)	 \
+	.i2c_client = {			 \
+		.i2c_master = (_master), \
+		.i2c_addr = (_addr),	 \
 	}
 
-#define I2C_GET_MASTER(_conf)		((_conf)->i2c_client.i2c_master)
-#define I2C_GET_ADDR(_conf)		((_conf)->i2c_client.i2c_addr)
+#define I2C_GET_MASTER(_conf)           ((_conf)->i2c_client.i2c_master)
+#define I2C_GET_ADDR(_conf)             ((_conf)->i2c_client.i2c_addr)
 
 #ifdef __cplusplus
 }
