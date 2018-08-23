@@ -846,7 +846,14 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
  */
 static int net_tcp_queue_pkt(struct net_context *context, struct net_pkt *pkt)
 {
+	unsigned int key;
+
+	/* slist is not thread-safe, can be interrupted by retry timer and
+	 * accessed concurrently, protect against that.
+	 */
+	key = irq_lock();
 	sys_slist_append(&context->tcp->sent_list, &pkt->sent_list);
+	irq_unlock(key);
 
 	/* We need to restart retry_timer if it is stopped. */
 	if (k_delayed_work_remaining_get(&context->tcp->retry_timer) == 0) {
