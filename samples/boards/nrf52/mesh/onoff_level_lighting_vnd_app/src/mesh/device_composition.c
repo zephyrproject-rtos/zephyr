@@ -912,7 +912,7 @@ static bool light_lightness_setunack(struct bt_mesh_model *model,
 
 	state->tt_counter_actual = 0;
 	if (state->target_actual != state->actual) {
-		light_lightnes_actual_tt_values(state);
+		light_lightness_actual_tt_values(state);
 	} else {
 		return true;
 	}
@@ -1024,7 +1024,7 @@ static bool light_lightness_linear_setunack(struct bt_mesh_model *model,
 
 	state->tt_counter_linear = 0;
 	if (state->target_linear != state->linear) {
-		light_lightnes_linear_tt_values(state);
+		light_lightness_linear_tt_values(state);
 	} else {
 		return true;
 	}
