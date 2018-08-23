@@ -39,8 +39,10 @@ Source code for the Zephyr Project is maintained in the Zephyr Project's
 .. _GitHub repo: https://github.com/zephyrproject-rtos/zephyr
 
 
-Sections
-********
+.. only:: html
+
+   Sections
+   ********
 
 .. toctree::
    :maxdepth: 1
@@ -55,8 +57,10 @@ Sections
    devices/index.rst
    subsystems/subsystems.rst
 
-Indices and Tables
-******************
+.. only:: html
+
+   Indices and Tables
+   ******************
 
 * :ref:`glossary`
 

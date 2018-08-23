@@ -89,6 +89,14 @@ To build for the ARM-based Nordic nRF52 Development Kit:
   :host-os: unix
   :goals: build
 
+Install tools to build Zephyr documentation:
+
+.. code-block:: console
+
+   brew install mactex librsvg
+   tlmgr install latexmk
+   tlmgr install collection-fontsrecommended
+
 .. _setting_up_mac_toolchain:
 
 Setting Up the Toolchain
