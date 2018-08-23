@@ -395,17 +395,3 @@ static int entropy_nrf5_init(struct device *device)
 
 	return 0;
 }
-
-u8_t entropy_nrf_get_entropy_isr(struct device *dev, u8_t *buf, u8_t len)
-{
-	struct entropy_nrf5_dev_data *dev_data = DEV_DATA(dev);
-	unsigned int key;
-	u8_t retval;
-
-	key = irq_lock();
-	retval = get(dev_data, (struct rand *)dev_data->isr, len, buf);
-	irq_unlock(key);
-
-	return retval;
-}
-
