@@ -49,8 +49,11 @@ zephyr_link_libraries(kernel ${TOOLCHAIN_LIBS})
 # zephyr is a catchall CMake library for source files that can be
 # built purely with the include paths, defines, and other compiler
 # flags that come with zephyr_interface.
-zephyr_library_named(zephyr)
+add_library(zephyr STATIC "")
+set(ZEPHYR_CURRENT_LIBRARY zephyr)
+target_link_libraries(zephyr PRIVATE zephyr_interface)
 target_link_libraries(zephyr INTERFACE -u_ConfigAbsSyms)
+target_link_libraries(zephyr_app_linking INTERFACE zephyr)
 
 zephyr_include_directories(
   kernel/include
@@ -802,7 +805,8 @@ set(zephyr_lnk
   ${LINKERFLAGPREFIX},--no-whole-archive
   ${LIB_INCLUDE_DIR}
   -L${PROJECT_BINARY_DIR}
-  )
+  offsets
+)
 
 if(CONFIG_GEN_ISR_TABLES)
   if(CONFIG_GEN_SW_ISR_TABLE)

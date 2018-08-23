@@ -345,9 +345,13 @@ endif()
 add_library(zephyr_app_linking INTERFACE)
 
 add_custom_target(memory_space_kernel)
-zephyr_library_named(app)
+add_library(app STATIC "")
+target_link_libraries(app PUBLIC zephyr_interface)
+target_link_libraries(zephyr_app_linking INTERFACE app)
+set(ZEPHYR_CURRENT_LIBRARY app)
 
 add_subdirectory(${ZEPHYR_BASE} ${__build_dir})
+add_dependencies(app offsets)
 
 # Link 'app' with the Zephyr interface libraries.
 #
