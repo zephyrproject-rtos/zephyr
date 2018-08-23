@@ -4,6 +4,9 @@ if BOARD_EM_STARTERKIT
 config BOARD
 	default "em_starterkit"
 
+config CPU_ARCEM4
+	def_bool y
+
 if GPIO
 
 config GPIO_DW
@@ -47,22 +50,19 @@ endif # I2C_DW
 
 endif # I2C
 
-if UART_NS16550
+if SERIAL
 
-config UART_NS16550_PORT_0
-	def_bool n
+config UART_NS16550
+	def_bool y
+
+endif # SERIAL
+
+if UART_CONSOLE
 
 config UART_NS16550_PORT_1
 	def_bool y
 
-endif # UART_NS16550
-
-if UART_CONSOLE
-
-config UART_CONSOLE_ON_DEV_NAME
-	default "UART_1"
-
-endif
+endif # UART_CONSOLE
 
 if SPI
 
