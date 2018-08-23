@@ -347,10 +347,3 @@ static int entropy_nrf5_init(struct device *device)
 
 	return 0;
 }
-
-u8_t entropy_nrf_get_entropy_isr(struct device *dev, u8_t *buf, u8_t len)
-{
-	ARG_UNUSED(dev);
-	return rng_pool_get((struct rng_pool *)entropy_nrf5_data.isr, buf, len);
-}
-

@@ -11,6 +11,7 @@
 
 #include <soc.h>
 #include <device.h>
+#include <entropy.h>
 #include <clock_control.h>
 #include <bluetooth/hci.h>
 #include <misc/util.h>
@@ -19,7 +20,6 @@
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF)
 #include <drivers/clock_control/nrf5_clock_control.h>
-#include <drivers/entropy/nrf5_entropy.h>
 #endif /* CONFIG_SOC_COMPATIBLE_NRF */
 
 #include "hal/cpu.h"
@@ -3925,9 +3925,9 @@ static inline u32_t isr_close_adv(void)
 			u32_t ticker_status;
 			u16_t random_delay;
 
-			entropy_nrf_get_entropy_isr(_radio.entropy,
-						    (void *)&random_delay,
-						    sizeof(random_delay));
+			entropy_get_entropy_isr(_radio.entropy,
+						(void *)&random_delay,
+						sizeof(random_delay), 0);
 
 			random_delay %= HAL_TICKER_US_TO_TICKS(10000);
 			random_delay += 1;
@@ -9399,10 +9399,10 @@ static void enc_req_reused_send(struct connection *conn,
 	pdu_ctrl_tx->llctrl.enc_req.ediv[1] =
 		conn->llcp.encryption.ediv[1];
 	/* NOTE: if not sufficient random numbers, ignore waiting */
-	entropy_nrf_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_req.skdm,
-				    sizeof(pdu_ctrl_tx->llctrl.enc_req.skdm));
-	entropy_nrf_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_req.ivm,
-				    sizeof(pdu_ctrl_tx->llctrl.enc_req.ivm));
+	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_req.skdm,
+				sizeof(pdu_ctrl_tx->llctrl.enc_req.skdm), 0);
+	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_req.ivm,
+				sizeof(pdu_ctrl_tx->llctrl.enc_req.ivm), 0);
 }
 
 static u8_t enc_rsp_send(struct connection *conn)
@@ -9422,10 +9422,10 @@ static u8_t enc_rsp_send(struct connection *conn)
 			   sizeof(struct pdu_data_llctrl_enc_rsp);
 	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
 	/* NOTE: if not sufficient random numbers, ignore waiting */
-	entropy_nrf_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_rsp.skds,
-				    sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds));
-	entropy_nrf_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_rsp.ivs,
-				    sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs));
+	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_rsp.skds,
+				sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds), 0);
+	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_rsp.ivs,
+				sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs), 0);
 
 	/* things from slave stored for session key calculation */
 	memcpy(&conn->llcp.encryption.skd[8],
