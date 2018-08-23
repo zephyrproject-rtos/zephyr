@@ -332,6 +332,99 @@ void test_poll_wait(void)
 	wait_signal.signaled = 0;
 }
 
+/* verify k_poll() that waits on object which gets cancellation */
+
+static __kernel struct k_fifo cancel_fifo;
+static __kernel struct k_fifo non_cancel_fifo;
+
+static __kernel struct k_thread poll_cancel_helper_thread;
+static K_THREAD_STACK_DEFINE(poll_cancel_helper_stack, 768);
+
+static void poll_cancel_helper(void *p1, void *p2, void *p3)
+{
+	(void)p1; (void)p2; (void)p3;
+
+	static struct fifo_msg msg;
+
+	k_sleep(100);
+
+	k_fifo_cancel_wait(&cancel_fifo);
+
+	k_fifo_alloc_put(&non_cancel_fifo, &msg);
+}
+
+/**
+ * @brief Test polling of cancelled fifo
+ *
+ * @ingroup kernel_poll_tests
+ *
+ * @see k_poll(), k_fifo_cancel_wait()
+ */
+void test_poll_cancel(bool is_main_low_prio)
+{
+	const int main_low_prio = 10;
+	int old_prio = k_thread_priority_get(k_current_get());
+	int rc;
+
+	struct k_poll_event cancel_events[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+					K_POLL_MODE_NOTIFY_ONLY,
+					&cancel_fifo),
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+					K_POLL_MODE_NOTIFY_ONLY,
+					&non_cancel_fifo),
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_IGNORE,
+					K_POLL_MODE_NOTIFY_ONLY,
+					NULL),
+	};
+
+	k_fifo_init(&cancel_fifo);
+	k_fifo_init(&non_cancel_fifo);
+
+	if (is_main_low_prio) {
+		k_thread_priority_set(k_current_get(), main_low_prio);
+	}
+
+	k_thread_create(&poll_cancel_helper_thread, poll_cancel_helper_stack,
+			K_THREAD_STACK_SIZEOF(poll_cancel_helper_stack),
+			poll_cancel_helper, (void *)1, 0, 0,
+			main_low_prio - 1, K_USER | K_INHERIT_PERMS, 0);
+
+	rc = k_poll(cancel_events, ARRAY_SIZE(cancel_events), K_SECONDS(1));
+
+	k_thread_priority_set(k_current_get(), old_prio);
+
+	zassert_equal(rc, -EINTR, "");
+
+	zassert_equal(cancel_events[0].state,
+		      K_POLL_STATE_CANCELLED, "");
+
+	if (is_main_low_prio) {
+		/* If poller thread is lower priority than threads which
+		 * generate poll events, it may get multiple poll events
+		 * at once.
+		 */
+		zassert_equal(cancel_events[1].state,
+			      K_POLL_STATE_FIFO_DATA_AVAILABLE, "");
+	} else {
+		/* Otherwise, poller thread will be woken up on first
+		 * event triggered.
+		 */
+		zassert_equal(cancel_events[1].state,
+			      K_POLL_STATE_NOT_READY, "");
+	}
+}
+
+void test_poll_cancel_main_low_prio(void)
+{
+	test_poll_cancel(true);
+}
+
+void test_poll_cancel_main_high_prio(void)
+{
+	test_poll_cancel(false);
+}
+
 /* verify multiple pollers */
 static K_SEM_DEFINE(multi_sem, 0, 1);
 
@@ -499,6 +592,7 @@ void test_poll_grant_access(void)
 {
 	k_thread_access_grant(k_current_get(), &no_wait_sem, &no_wait_fifo,
 			      &no_wait_signal, &wait_sem, &wait_fifo,
+			      &cancel_fifo, &non_cancel_fifo,
 			      &wait_signal, &poll_wait_helper_thread,
 			      &poll_wait_helper_stack, &multi_sem,
 			      &multi_reply, &multi_thread, &multi_stack,
