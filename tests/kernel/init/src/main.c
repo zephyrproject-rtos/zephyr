@@ -6,6 +6,7 @@
 
 #include <ztest.h>
 
+#define NSEC_PER_MSEC (u64_t)(NSEC_PER_USEC * USEC_PER_MSEC)
 /**
  * @brief Test delay during boot
  * @defgroup kernel_bootdelay_tests Init
@@ -23,8 +24,8 @@ void verify_bootdelay(void)
 
 	/* compare this with the boot delay specified */
 	zassert_true(SYS_CLOCK_HW_CYCLES_TO_NS64(current_cycles) >=
-		     (CONFIG_BOOT_DELAY * NSEC_PER_USEC * USEC_PER_MSEC),
-		     "boot delay not executed");
+			(NSEC_PER_MSEC * CONFIG_BOOT_DELAY),
+			"boot delay not executed");
 }
 
 /**
