@@ -123,9 +123,16 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 #define BT_HCI_ERR_UNSUPP_REMOTE_FEATURE        0x1a
 #define BT_HCI_ERR_INVALID_LL_PARAM             0x1e
 #define BT_HCI_ERR_UNSPECIFIED                  0x1f
+#define BT_HCI_ERR_UNSUPP_LL_PARAM_VAL          0x20
+#define BT_HCI_ERR_LL_RESP_TIMEOUT              0x22
+#define BT_HCI_ERR_LL_PROC_COLLISION            0x23
+#define BT_HCI_ERR_INSTANT_PASSED               0x28
 #define BT_HCI_ERR_PAIRING_NOT_SUPPORTED        0x29
+#define BT_HCI_ERR_DIFF_TRANS_COLLISION         0x2a
 #define BT_HCI_ERR_UNACCEPT_CONN_PARAM          0x3b
 #define BT_HCI_ERR_ADV_TIMEOUT                  0x3c
+#define BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL         0x3d
+#define BT_HCI_ERR_CONN_FAIL_TO_ESTAB           0x3e
 
 /* EIR/AD data type definitions */
 #define BT_DATA_FLAGS                   0x01 /* AD flags */
