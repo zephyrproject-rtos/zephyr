@@ -39,6 +39,8 @@
 
 #define ALLOC_TIMEOUT K_MSEC(500)
 
+static int net_tcp_queue_pkt(struct net_context *context, struct net_pkt *pkt);
+
 /*
  * Each TCP connection needs to be tracked by net_context, so
  * we need to allocate equal number of control structures here.
@@ -205,7 +207,7 @@ static void tcp_retry_expired(struct k_work *work)
 	struct net_tcp *tcp = CONTAINER_OF(work, struct net_tcp, retry_timer);
 	struct net_pkt *pkt;
 
-	/* Double the retry period for exponential backoff and resent
+	/* Double the retry period for exponential backoff and resend
 	 * the first (only the first!) unack'd packet.
 	 */
 	if (!sys_slist_is_empty(&tcp->sent_list)) {
@@ -837,6 +839,14 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 
 	net_stats_update_tcp_sent(net_pkt_iface(pkt), data_len);
 
+	return net_tcp_queue_pkt(context, pkt);
+}
+
+/* This function is the sole point of *adding* packets to tcp->sent_list,
+ * and should remain such.
+ */
+static int net_tcp_queue_pkt(struct net_context *context, struct net_pkt *pkt)
+{
 	sys_slist_append(&context->tcp->sent_list, &pkt->sent_list);
 
 	/* We need to restart retry_timer if it is stopped. */
@@ -1016,7 +1026,6 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 	sys_slist_t *list = &ctx->tcp->sent_list;
 	sys_snode_t *head;
 	struct net_pkt *pkt;
-	u32_t seq;
 	bool valid_ack = false;
 
 	if (net_tcp_seq_greater(ack, ctx->tcp->send_seq)) {
@@ -1031,6 +1040,8 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 
 	while (!sys_slist_is_empty(list)) {
 		struct net_tcp_hdr hdr, *tcp_hdr;
+		u32_t last_seq;
+		u32_t seq_len;
 
 		head = sys_slist_peek_head(list);
 		pkt = CONTAINER_OF(head, struct net_pkt, sent_list);
@@ -1046,9 +1057,26 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 			continue;
 		}
 
-		seq = sys_get_be32(tcp_hdr->seq) + net_pkt_appdatalen(pkt) - 1;
+		seq_len = net_pkt_appdatalen(pkt);
 
-		if (!net_tcp_seq_greater(ack, seq)) {
+		/* Each of SYN and FIN flags are counted
+		 * as one sequence number.
+		 */
+		if (tcp_hdr->flags & NET_TCP_SYN) {
+			seq_len += 1;
+		}
+		if (tcp_hdr->flags & NET_TCP_FIN) {
+			seq_len += 1;
+		}
+
+		/* Last sequence number in this packet. */
+		last_seq = sys_get_be32(tcp_hdr->seq) + seq_len - 1;
+
+		/* Ack number should be strictly greater to acknowleged numbers
+		 * below it. For example, ack no. 10 acknowledges all numbers up
+		 * to and including 9.
+		 */
+		if (!net_tcp_seq_greater(ack, last_seq)) {
 			break;
 		}
 
@@ -1067,13 +1095,13 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		valid_ack = true;
 	}
 
-	/* Restart the timer on a valid inbound ACK.  This isn't quite the
-	 * same behavior as per-packet retry timers, but is close in practice
-	 * (it starts retries one timer period after the connection
+	/* Restart the timer (if needed) on a valid inbound ACK.  This isn't
+	 * quite the same behavior as per-packet retry timers, but is close in
+	 * practice (it starts retries one timer period after the connection
 	 * "got stuck") and avoids the need to track per-packet timers or
 	 * sent times.
 	 */
-	if (valid_ack && net_tcp_get_state(tcp) == NET_TCP_ESTABLISHED) {
+	if (valid_ack) {
 		restart_timer(ctx->tcp);
 	}
 
@@ -1462,6 +1490,8 @@ static void queue_fin(struct net_context *ctx)
 	if (ret || !pkt) {
 		return;
 	}
+
+	net_tcp_queue_pkt(ctx, pkt);
 
 	ret = net_tcp_send_pkt(pkt);
 	if (ret < 0) {
