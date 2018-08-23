@@ -44,6 +44,10 @@ extensions = [
     'zephyr.application',
 ]
 
+# Only use SVG converter when it is really needed, e.g. LaTeX.
+if tags.has("svgconvert"):
+    extensions.append('sphinxcontrib.rsvgconverter')
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -263,7 +267,7 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
-#'preamble': '',
+'preamble': '\setcounter{tocdepth}{2}',
 
 # Latex figure (float) alignment
 #'figure_align': 'htbp',
@@ -296,7 +300,6 @@ latex_documents = [
 
 # If false, no module index is generated.
 #latex_domain_indices = True
-
 
 # -- Options for manual page output ---------------------------------------
 
