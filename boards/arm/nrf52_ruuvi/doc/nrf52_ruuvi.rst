@@ -6,9 +6,9 @@ nRF52-ruuvi
 Overview
 ********
 
-RuuviTag is a generic sensor node, that fits perfectly with many uses.
-
-Its open-source design enables various customisation possibilities. Both the hardware and software are 100% open.
+RuuviTag is an advanced battery-operated open-source Bluetooth
+enabled sensor beacon platform capable of sending temperature, humidity,
+pressure, and motion information.
 
 .. figure:: img/ruuvitag-pcb.jpg
      :width: 442px
@@ -137,9 +137,11 @@ Programming and Debugging
 Flashing
 ========
 
-nrfjprog --family nrf52 --eraseall
-nrfjprog --family nrf52 --program firmware.hex
-nrfjprog --family nrf52 --reset
+.. code-block:: console
+
+  nrfjprog --family nrf52 --eraseall
+  nrfjprog --family nrf52 --program zephyr.hex
+  nrfjprog --family nrf52 --reset
 
 
 Debugging
@@ -152,10 +154,8 @@ Testing the LEDs and buttons in the nRF52 DK
 There are 2 samples that allow you to test that the buttons (switches) and LEDs on
 the board are working properly with Zephyr:
 
-.. code-block:: console
-
-   samples/basic/blinky
-   samples/basic/button
+* :ref:`blinky-sample`
+* :ref:`button-sample`
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in :file:`boards/arm/nrf52_pca10040/board.h`.
@@ -167,3 +167,5 @@ References
 
 .. _ruuvitag website: https://ruuvi.com
 .. _ruuvitag datasheet: https://blog.ruuvi.com/datasheet-52fb00265c60
+.. _nRF52 DK website: http://www.nordicsemi.com/eng/Products/Bluetooth-low-energy/nRF52-DK
+.. _Nordic Semiconductor Infocenter: http://infocenter.nordicsemi.com/
