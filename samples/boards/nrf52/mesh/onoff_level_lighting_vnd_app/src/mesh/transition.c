@@ -216,7 +216,7 @@ void level_tt_values(struct generic_level_state *state)
 			   tt_counter);
 }
 
-void light_lightnes_actual_tt_values(struct light_lightness_state *state)
+void light_lightness_actual_tt_values(struct light_lightness_state *state)
 {
 	u32_t tt_counter;
 
@@ -237,7 +237,7 @@ void light_lightnes_actual_tt_values(struct light_lightness_state *state)
 		 tt_counter);
 }
 
-void light_lightnes_linear_tt_values(struct light_lightness_state *state)
+void light_lightness_linear_tt_values(struct light_lightness_state *state)
 {
 	u32_t tt_counter;
 
@@ -461,7 +461,7 @@ static void light_lightness_actual_work_handler(struct k_work *work)
 {
 	struct light_lightness_state *state = &light_lightness_srv_user_data;
 
-	if (enable_transition != LIGTH_LIGHTNESS_ACTUAL_TT) {
+	if (enable_transition != LIGHT_LIGHTNESS_ACTUAL_TT) {
 		k_timer_stop(&light_lightness_actual_transition_timer);
 		return;
 	}
@@ -504,7 +504,7 @@ static void light_lightness_linear_work_handler(struct k_work *work)
 {
 	struct light_lightness_state *state = &light_lightness_srv_user_data;
 
-	if (enable_transition != LIGTH_LIGHTNESS_LINEAR_TT) {
+	if (enable_transition != LIGHT_LIGHTNESS_LINEAR_TT) {
 		k_timer_stop(&light_lightness_linear_transition_timer);
 		return;
 	}
@@ -547,7 +547,7 @@ static void light_ctl_work_handler(struct k_work *work)
 {
 	struct light_ctl_state *state = &light_ctl_srv_user_data;
 
-	if (enable_transition != LIGTH_CTL_TT) {
+	if (enable_transition != LIGHT_CTL_TT) {
 		k_timer_stop(&light_ctl_transition_timer);
 		return;
 	}
@@ -716,7 +716,7 @@ void level_temp_handler(struct generic_level_state *state)
 
 void light_lightness_actual_handler(struct light_lightness_state *state)
 {
-	enable_transition = LIGTH_LIGHTNESS_ACTUAL_TT;
+	enable_transition = LIGHT_LIGHTNESS_ACTUAL_TT;
 	state->is_new_transition_start = true;
 
 	k_timer_start(&light_lightness_actual_transition_timer,
@@ -726,7 +726,7 @@ void light_lightness_actual_handler(struct light_lightness_state *state)
 
 void light_lightness_linear_handler(struct light_lightness_state *state)
 {
-	enable_transition = LIGTH_LIGHTNESS_LINEAR_TT;
+	enable_transition = LIGHT_LIGHTNESS_LINEAR_TT;
 	state->is_new_transition_start = true;
 
 	k_timer_start(&light_lightness_linear_transition_timer,
@@ -736,7 +736,7 @@ void light_lightness_linear_handler(struct light_lightness_state *state)
 
 void light_ctl_handler(struct light_ctl_state *state)
 {
-	enable_transition = LIGTH_CTL_TT;
+	enable_transition = LIGHT_CTL_TT;
 	state->is_new_transition_start = true;
 
 	k_timer_start(&light_ctl_transition_timer, K_MSEC(5 * state->delay),

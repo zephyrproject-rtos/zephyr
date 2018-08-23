@@ -16,9 +16,9 @@ enum transition_time {
 	LEVEL_TT,
 	LEVEL_TT_DELTA,
 	LEVEL_TT_MOVE,
-	LIGTH_LIGHTNESS_ACTUAL_TT,
-	LIGTH_LIGHTNESS_LINEAR_TT,
-	LIGTH_CTL_TT,
+	LIGHT_LIGHTNESS_ACTUAL_TT,
+	LIGHT_LIGHTNESS_LINEAR_TT,
+	LIGHT_CTL_TT,
 	LEVEL_TEMP_TT,
 	LEVEL_TEMP_TT_DELTA,
 	LEVEL_TEMP_TT_MOVE,
@@ -48,8 +48,8 @@ void light_ctl_temp_calculate_rt(struct light_ctl_state *state);
 
 void onoff_tt_values(struct generic_onoff_state *state);
 void level_tt_values(struct generic_level_state *state);
-void light_lightnes_actual_tt_values(struct light_lightness_state *state);
-void light_lightnes_linear_tt_values(struct light_lightness_state *state);
+void light_lightness_actual_tt_values(struct light_lightness_state *state);
+void light_lightness_linear_tt_values(struct light_lightness_state *state);
 void light_ctl_tt_values(struct light_ctl_state *state);
 void light_ctl_temp_tt_values(struct light_ctl_state *state);
 
