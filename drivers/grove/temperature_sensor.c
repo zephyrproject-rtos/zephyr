@@ -21,10 +21,12 @@
 	#define B_CONST			4250
 #endif
 
+#define ADC_RESOLUTION 10
+
 struct gts_data {
 	struct device *adc;
-	struct adc_seq_entry sample;
-	struct adc_seq_table adc_table;
+	struct adc_sequence adc_table;
+	struct adc_channel_cfg ch10_cfg;
 	u8_t adc_buffer[4];
 };
 
@@ -78,16 +80,26 @@ static int gts_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	drv_data->sample.sampling_delay = 12;
-	drv_data->sample.channel_id =
-		CONFIG_GROVE_TEMPERATURE_SENSOR_ADC_CHANNEL;
-	drv_data->sample.buffer = drv_data->adc_buffer;
-	drv_data->sample.buffer_length = 4;
-
-	drv_data->adc_table.entries = &drv_data->sample;
-	drv_data->adc_table.num_entries = 1;
-
-	adc_enable(drv_data->adc);
+#if defined(CONFIG_ARC)
+	drv_data->ch10_cfg.channel_id =	CONFIG_GROVE_LIGHT_SENSOR_ADC_CHANNEL;
+	drv_data->ch10_cfg.differential = false;
+	drv_data->adc_table.buffer = drv_data->adc_buffer;
+	drv_data->adc_table.options->extra_samplings = 0;
+	drv_data->adc_table.options->interval_us = 12;
+	drv_data->adc_table.resolution = ADC_RESOLUTION;
+	drv_data->adc_table.buffer_size = 4;
+#else
+	/*Change following parameters according to board if necessary*/
+	drv_data->ch10_cfg.input_positive = CONFIG_GROVE_LIGHT_SENSOR_ADC_CHANNEL;
+	drv_data->ch10_cfg.channel_id =	CONFIG_GROVE_LIGHT_SENSOR_ADC_CHANNEL;
+	drv_data->ch10_cfg.differential = false;
+	drv_data->adc_table.buffer = drv_data->adc_buffer;
+	drv_data->adc_table.options->extra_sampling = 0;
+	drv_data->adc_table.options->interval_us = 12;
+	drv_data->adc_table.resolution = ADC_RESOLUTION;
+	drv_data->adc_table.buffer_size = 4;
+#endif
+	adc_channel_setup(drv_data->adc, &drv_data->ch10_cfg);
 
 	dev->driver_api = &gts_api;
 
