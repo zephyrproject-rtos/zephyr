@@ -632,6 +632,15 @@ int _is_thread_time_slicing(struct k_thread *thread)
 	return ret;
 }
 
+#ifdef CONFIG_TICKLESS_KERNEL
+void z_reset_timeslice(void)
+{
+	if (_is_thread_time_slicing(_get_next_ready_thread())) {
+		_set_time(_time_slice_duration);
+	}
+}
+#endif
+
 /* Must be called with interrupts locked */
 /* Should be called only immediately before a thread switch */
 void _update_time_slice_before_swap(void)
