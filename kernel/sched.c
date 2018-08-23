@@ -658,6 +658,21 @@ void _update_time_slice_before_swap(void)
 }
 #endif /* CONFIG_TIMESLICING */
 
+void _ready_thread(struct k_thread *thread)
+{
+	if (_is_thread_ready(thread)) {
+		_add_thread_to_ready_q(thread);
+	}
+
+#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_SMP)
+	if (_is_thread_time_slicing(_get_next_ready_thread())) {
+		_set_time(_time_slice_duration);
+	}
+#endif
+
+	sys_trace_thread_ready(thread);
+}
+
 int _unpend_all(_wait_q_t *waitq)
 {
 	int need_sched = 0;
