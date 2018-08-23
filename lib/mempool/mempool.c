@@ -82,6 +82,8 @@ void _sys_mem_pool_base_init(struct sys_mem_pool_base *p)
 	size_t buflen = p->n_max * p->max_sz, sz = p->max_sz;
 	u32_t *bits = p->buf + buflen;
 
+	p->max_inline_level = -1;
+
 	for (i = 0; i < p->n_levels; i++) {
 		int nblocks = buflen / sz;
 
