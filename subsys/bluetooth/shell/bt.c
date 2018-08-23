@@ -210,7 +210,7 @@ static void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 		break;
 #endif
 	case BT_CONN_TYPE_LE:
-		bt_addr_le_to_str(info.le.dst, addr, len);
+		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, len);
 		break;
 	}
 }
@@ -989,6 +989,44 @@ static int cmd_auto_conn(int argc, char *argv[])
 		bt_le_set_auto_conn(&addr, NULL);
 	} else {
 		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int cmd_directed_adv(int argc, char *argv[])
+{
+	int err;
+	bt_addr_le_t addr;
+	struct bt_conn *conn;
+	struct bt_le_adv_param *param = BT_LE_ADV_CONN_DIR;
+
+	if (argc < 3) {
+		return -EINVAL;
+	}
+
+	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	if (err) {
+		printk("Invalid peer address (err %d)\n", err);
+		return 0;
+	}
+
+	if (argc > 3) {
+		if (!strcmp(argv[3], "low")) {
+			param = BT_LE_ADV_CONN_DIR_LOW_DUTY;
+		} else {
+			return -EINVAL;
+		}
+	}
+
+	conn = bt_conn_create_slave_le(&addr, param);
+	if (!conn) {
+		printk("Failed to start directed advertising\n");
+	} else {
+		printk("Started directed advertising\n");
+
+		/* unref connection obj in advance as app user */
+		bt_conn_unref(conn);
 	}
 
 	return 0;
@@ -2173,6 +2211,7 @@ static const struct shell_cmd bt_commands[] = {
 	{ "connect", cmd_connect_le, HELP_ADDR_LE },
 	{ "disconnect", cmd_disconnect, HELP_NONE },
 	{ "auto-conn", cmd_auto_conn, HELP_ADDR_LE },
+	{ "directed-adv", cmd_directed_adv, HELP_ADDR_LE " [mode: low]" },
 	{ "select", cmd_select, HELP_ADDR_LE },
 	{ "conn-update", cmd_conn_update, "<min> <max> <latency> <timeout>" },
 	{ "oob", cmd_oob },
