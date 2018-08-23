@@ -81,6 +81,7 @@ set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
 # Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 
+include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 
 # The 'FindPythonInterp' that is distributed with CMake 3.8 has a bug
 # that we need to work around until we upgrade to 3.13. Until then we
@@ -336,6 +337,12 @@ Enable Qemu supported ethernet driver like e1000 at drivers/ethernet")
       )
   endif()
 endif()
+
+# zephyr_app_linking is an interface library which can be used in any scope to
+# include any library in the linking process.
+# To include a library to the linking process, use:
+# target_link_libraries(zephyr_app_linking INTERFACE <library>)
+add_library(zephyr_app_linking INTERFACE)
 
 add_custom_target(memory_space_kernel)
 zephyr_library_named(app)
