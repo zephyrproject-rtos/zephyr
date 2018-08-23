@@ -14,6 +14,8 @@
 #include <misc/byteorder.h>
 #include <zephyr.h>
 
+#include <settings/settings.h>
+
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
@@ -85,6 +87,10 @@ static void bt_ready(int err)
 	bas_init();
 	dis_init(CONFIG_SOC, "Manufacturer");
 	hog_init();
+
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
+	}
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
