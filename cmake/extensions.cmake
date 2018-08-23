@@ -423,7 +423,8 @@ endfunction()
 # not use a zephyr library constructor, but have source files that
 # need to be included in the build.
 function(zephyr_append_cmake_library library)
-  set_property(GLOBAL APPEND PROPERTY ZEPHYR_LIBS ${library})
+  target_link_libraries(zephyr_app_linking INTERFACE ${library})
+  add_dependencies(${library} offsets_h)
 endfunction()
 
 # 1.2.1 zephyr_interface_library_*

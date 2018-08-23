@@ -521,8 +521,7 @@ endforeach()
 # or tests/ as the subdirectories are ordered now.
 #
 # Another example of when the order matters is the reading and writing
-# of global properties such as ZEPHYR_LIBS or
-# GENERATED_KERNEL_OBJECT_FILES.
+# of global properties such as GENERATED_KERNEL_OBJECT_FILES.
 #
 # Arch is placed early because it defines important compiler flags
 # that must be exported to external build systems defined in
@@ -721,32 +720,6 @@ zephyr_get_include_directories_for_lang(C ZEPHYR_INCLUDES)
 
 add_subdirectory(kernel)
 
-# Read list content
-get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
-
-foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
-  # TODO: Could this become an INTERFACE property of zephyr_interface?
-  add_dependencies(${zephyr_lib} ${OFFSETS_H_TARGET})
-
-  # Verify that all (non-imported) libraries have source
-  # files. Libraries without source files are not supported because
-  # they are an indication that something has been misconfigured.
-  get_target_property(lib_imported ${zephyr_lib} IMPORTED)
-  get_target_property(lib_sources  ${zephyr_lib} SOURCES)
-  if(lib_sources STREQUAL lib_sources-NOTFOUND
-      AND (NOT (${zephyr_lib} STREQUAL app))
-      AND (NOT lib_imported)
-      )
-    # app is not checked because it's sources are added to it after
-    # this CMakeLists.txt file has been processed
-    message(FATAL_ERROR "\
-The Zephyr library '${zephyr_lib}' was created without source files. \
-Empty (non-imported) libraries are not supported. \
-Either make sure that the library has the sources it should have, \
-or make sure it is not created when it has no source files.")
-  endif()
-endforeach()
-
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
 if (CONFIG_CODE_DATA_RELOCATION)
@@ -790,7 +763,7 @@ set(zephyr_lnk
   -u_OffsetAbsSyms
   -u_ConfigAbsSyms
   ${LINKERFLAGPREFIX},--whole-archive
-  ${ZEPHYR_LIBS_PROPERTY}
+  $<TARGET_PROPERTY:zephyr_app_linking,INTERFACE_LINK_LIBRARIES>
   ${LINKERFLAGPREFIX},--no-whole-archive
   kernel
   $<TARGET_OBJECTS:${OFFSETS_LIB}>
@@ -845,7 +818,7 @@ if(CONFIG_CODE_DATA_RELOCATION)
      -i '$<TARGET_PROPERTY:code_data_relocation_target,COMPILE_DEFINITIONS>'
      -o ${MEM_RELOCATAION_LD}
      -c ${MEM_RELOCATAION_CODE}
-     DEPENDS app kernel ${ZEPHYR_LIBS_PROPERTY}
+     DEPENDS app kernel $<TARGET_PROPERTY:zephyr_app_linking,INTERFACE_LINK_LIBRARIES>
      )
 
    add_library(code_relocation_source_lib  STATIC ${MEM_RELOCATAION_CODE})
@@ -1154,7 +1127,7 @@ if(CONFIG_APP_SHARED_MEM AND CONFIG_USERSPACE)
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
     kernel
-    ${ZEPHYR_LIBS_PROPERTY}
+    $<TARGET_PROPERTY:zephyr_app_linking,INTERFACE_LINK_LIBRARIES>
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
     COMMENT "Generating app_smem linker section"
     )

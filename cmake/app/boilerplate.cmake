@@ -457,6 +457,12 @@ if(CONFIG_QEMU_TARGET)
   endif()
 endif()
 
+# zephyr_app_linking is an interface library which can be used in any scope to
+# include any library in the linking process.
+# To include a library to the linking process, use:
+# target_link_libraries(zephyr_app_linking INTERFACE <library>)
+add_library(zephyr_app_linking INTERFACE)
+
 # "app" is a CMake library containing all the application code and is
 # modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt
 # that was specified when cmake was called.
