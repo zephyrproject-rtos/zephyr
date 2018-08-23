@@ -309,7 +309,14 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 	u16_t cnt = len;
 
 	if (!(flags & ENTROPY_BUSYWAIT)) {
-		return get(dev_data, (struct rand *)dev_data->isr, len, buf);
+		unsigned int key;
+		int retval;
+
+		key = irq_lock();
+		retval = get(dev_data, (struct rand *)dev_data->isr, len, buf);
+		irq_unlock(key);
+
+		return retval;
 	}
 
 	if (len) {
@@ -392,7 +399,13 @@ static int entropy_nrf5_init(struct device *device)
 u8_t entropy_nrf_get_entropy_isr(struct device *dev, u8_t *buf, u8_t len)
 {
 	struct entropy_nrf5_dev_data *dev_data = DEV_DATA(dev);
+	unsigned int key;
+	u8_t retval;
 
-	return get(dev_data, (struct rand *)dev_data->isr, len, buf);
+	key = irq_lock();
+	retval = get(dev_data, (struct rand *)dev_data->isr, len, buf);
+	irq_unlock(key);
+
+	return retval;
 }
 
