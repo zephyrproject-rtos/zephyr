@@ -159,6 +159,17 @@ struct net_lldpdu {
 int net_lldp_config(struct net_if *iface, const struct net_lldpdu *lldpdu);
 
 /**
+ * @brief Set the Optional LLDP TLVs for a network interface.
+ *
+ * @param iface Network interface
+ * @param tlv LLDP optional TLVs following mandatory part
+ * @param len Length of the optional TLVs
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_lldp_config_optional(struct net_if *iface, const u8_t *tlv, size_t len);
+
+/**
  * @brief Initialize LLDP engine.
  */
 void net_lldp_init(void);

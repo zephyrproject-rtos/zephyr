@@ -89,6 +89,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	};
 	int ret = 0;
 	struct net_pkt *pkt;
+	size_t len;
 
 	if (!lldp->lldpdu) {
 		/* The ethernet driver has not set the lldpdu pointer */
@@ -97,18 +98,33 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		goto out;
 	}
 
-	pkt = net_pkt_alloc_with_buffer(lldp->iface, sizeof(struct net_lldpdu),
-					AF_UNSPEC, 0, BUF_ALLOC_TIMEOUT);
+	if (lldp->optional_du && lldp->optional_len) {
+		len = sizeof(struct net_lldpdu) + lldp->optional_len;
+	} else {
+		len = sizeof(struct net_lldpdu);
+	}
+
+	pkt = net_pkt_alloc_with_buffer(lldp->iface, len, AF_UNSPEC, 0,
+					BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
 		ret = -ENOMEM;
 		goto out;
 	}
 
 	if (net_pkt_write_new(pkt, (u8_t *)lldp->lldpdu,
-			       sizeof(struct net_lldpdu))) {
+			      sizeof(struct net_lldpdu))) {
 		net_pkt_unref(pkt);
 		ret = -ENOMEM;
 		goto out;
+	}
+
+	if (lldp->optional_du && lldp->optional_len) {
+		if (!net_pkt_write_new(pkt, (u8_t *)lldp->optional_du,
+				       lldp->optional_len)) {
+			net_pkt_unref(pkt);
+			ret = -ENOMEM;
+			goto out;
+		}
 	}
 
 	net_pkt_lladdr_src(pkt)->addr = net_if_get_link_addr(lldp->iface)->addr;
