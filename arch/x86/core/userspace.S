@@ -19,7 +19,7 @@ GTEXT(z_arch_user_string_nlen_fault_end)
 GTEXT(z_arch_user_string_nlen_fixup)
 
 /* Imports */
-GTEXT(_k_syscall_table)
+GDATA(_k_syscall_table)
 
 /* Landing site for syscall SW IRQ. Marshal arguments and call C function for
  * further processing. We're on the kernel stack for the invoking thread.
