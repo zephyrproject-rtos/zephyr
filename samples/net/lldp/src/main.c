@@ -17,6 +17,23 @@ LOG_MODULE_REGISTER(net_lldp_sample, LOG_LEVEL_DBG);
 #include <net/net_if.h>
 #include <net/ethernet.h>
 
+static struct lldp_system_name_tlv {
+	u16_t type_length;
+	u8_t name[4];
+} __packed tlv = {
+	.name = { 't', 'e', 's', 't' },
+};
+
+static void set_optional_tlv(struct net_if *iface)
+{
+	NET_DBG("");
+
+	tlv.type_length = htons((LLDP_TLV_SYSTEM_NAME << 9) |
+				((sizeof(tlv) - sizeof(u16_t)) & 0x01ff));
+
+	net_lldp_config_optional(iface, (u8_t *)&tlv, sizeof(tlv));
+}
+
 /* User data for the interface callback */
 struct ud {
 	struct net_if *first;
@@ -178,6 +195,7 @@ static int init_app(void)
 		LOG_ERR("Cannot setup VLAN");
 	}
 
+	set_optional_tlv(ud.first);
 	net_lldp_register_callback(ud.first, parse_lldp);
 
 	return 0;
