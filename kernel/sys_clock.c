@@ -167,8 +167,6 @@ u32_t k_uptime_delta_32(s64_t *reftime)
  * interrupt.
  */
 
-volatile int _handling_timeouts;
-
 static inline void handle_timeouts(s32_t ticks)
 {
 	sys_dlist_t expired;
@@ -197,8 +195,6 @@ static inline void handle_timeouts(s32_t ticks)
 	 * of a timeout which delta is 0, since timeouts of 0 ticks are
 	 * prohibited.
 	 */
-
-	_handling_timeouts = 1;
 
 	while (next) {
 
@@ -254,8 +250,6 @@ static inline void handle_timeouts(s32_t ticks)
 	irq_unlock(key);
 
 	_handle_expired_timeouts(&expired);
-
-	_handling_timeouts = 0;
 }
 #else
 	#define handle_timeouts(ticks) do { } while ((0))
