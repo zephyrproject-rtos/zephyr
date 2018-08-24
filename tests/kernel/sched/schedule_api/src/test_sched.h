@@ -10,11 +10,7 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#if defined(CONFIG_RISCV32) || defined(CONFIG_X86)
-#define STACK_SIZE 512
-#else
-#define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
-#endif
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 struct thread_data {
 	k_tid_t tid;
