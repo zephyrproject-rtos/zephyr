@@ -109,10 +109,9 @@ static inline void _handle_one_expired_timeout(struct _timeout *timeout)
 
 static inline void _handle_expired_timeouts(sys_dlist_t *expired)
 {
-	struct _timeout *timeout, *next;
+	struct _timeout *timeout;
 
-	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(expired, timeout, next, node) {
-		sys_dlist_remove(&timeout->node);
+	SYS_DLIST_FOR_EACH_CONTAINER(expired, timeout, node) {
 		_handle_one_expired_timeout(timeout);
 	}
 }
