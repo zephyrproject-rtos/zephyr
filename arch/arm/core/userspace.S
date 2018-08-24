@@ -25,7 +25,7 @@ GTEXT(z_arch_user_string_nlen_fixup)
 GDATA(_kernel)
 
 /* Imports */
-GTEXT(_k_syscall_table)
+GDATA(_k_syscall_table)
 
 /**
  *
