@@ -44,3 +44,7 @@
 &i2c3 {
 	status = "ok";
 };
+
+&adc0 {
+	status = "ok";
+};
