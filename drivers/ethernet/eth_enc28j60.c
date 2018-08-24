@@ -520,6 +520,15 @@ static int eth_enc28j60_rx(struct device *dev)
 		u8_t info[RSV_SIZE];
 		struct net_pkt *pkt;
 		u16_t next_packet;
+		u8_t rdptl = 0;
+		u8_t rdpth = 0;
+
+		/* remove read fifo address to packet header address */
+		eth_enc28j60_set_bank(dev, ENC28J60_REG_ERXRDPTL);
+		eth_enc28j60_read_reg(dev, ENC28J60_REG_ERXRDPTL, &rdptl);
+		eth_enc28j60_read_reg(dev, ENC28J60_REG_ERXRDPTH, &rdpth);
+		eth_enc28j60_write_reg(dev, ENC28J60_REG_ERDPTL, rdptl);
+		eth_enc28j60_write_reg(dev, ENC28J60_REG_ERDPTH, rdpth);
 
 		/* Read address for next packet */
 		eth_enc28j60_read_mem(dev, info, 2);
@@ -527,12 +536,12 @@ static int eth_enc28j60_rx(struct device *dev)
 
 		/* Errata 14. Even values in ERXRDPT
 		 * may corrupt receive buffer.
-		 */
+		 No need adjust next packet
 		if (next_packet == 0) {
 			next_packet = ENC28J60_RXEND;
 		} else if (!(next_packet & 0x01)) {
 			next_packet--;
-		}
+		}*/
 
 		/* Read reception status vector */
 		eth_enc28j60_read_mem(dev, info, 4);
