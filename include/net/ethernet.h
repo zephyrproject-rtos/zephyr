@@ -287,8 +287,14 @@ struct ethernet_lldp {
 	/** Used for track timers */
 	sys_snode_t node;
 
-	/** LLDP information element related to this network interface. */
+	/** LLDP Data Unit mandatory TLVs for the interface. */
 	const struct net_lldpdu *lldpdu;
+
+	/** LLDP Data Unit optional TLVs for the interface */
+	const u8_t *optional_du;
+
+	/** Length of the optional Data Unit TLVs */
+	size_t optional_len;
 
 	/** Network interface that has LLDP supported. */
 	struct net_if *iface;
