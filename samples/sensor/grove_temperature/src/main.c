@@ -19,7 +19,9 @@
 
 void main(void)
 {
-	struct device *dev = device_get_binding("GROVE_TEMPERATURE_SENSOR");
+	struct device *dev = device_get_binding(CONFIG_GROVE_TEMPERATURE_SENSOR_NAME);
+	struct sensor_value temp;
+	int read;
 
 	if (dev == NULL) {
 		printf("device not found.  aborting test.\n");
@@ -41,9 +43,12 @@ void main(void)
 #endif
 
 	while (1) {
-		struct sensor_value temp;
 
-		sensor_sample_fetch(dev);
+		read = sensor_sample_fetch(dev);
+		if (read) {
+			printk("sample fetch error\n");
+			continue;
+		}
 		sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
 #ifdef CONFIG_GROVE_LCD_RGB
 		char row[16];
@@ -57,14 +62,23 @@ void main(void)
 
 		/* display temperature on LCD */
 		glcd_cursor_pos_set(glcd, 0, 0);
+#ifdef CONFIG_NEWLIB_LIBC_FLOAT_PRINTF
 		sprintf(row, "T:%.2f%cC",
 			sensor_value_to_double(&temp),
 			223 /* degree symbol */);
+#else
+		sprintf(row, "T:%d%cC", temp.val1,
+			223 /* degree symbol */);
+#endif
 		glcd_print(glcd, row, strlen(row));
 
 #endif
-		printf("Temperature: %.2f C\n", sensor_value_to_double(&temp));
 
+#ifdef CONFIG_NEWLIB_LIBC_FLOAT_PRINTF
+		printf("Temperature: %.2f C\n", sensor_value_to_double(&temp));
+#else
+		printk("Temperature: %d\n", temp.val1);
+#endif
 		k_sleep(SLEEP_TIME);
 	}
 }
