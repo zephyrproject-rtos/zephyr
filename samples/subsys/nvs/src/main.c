@@ -45,7 +45,7 @@
 #include <string.h>
 #include <nvs/nvs.h>
 
-#define NVS_SECTOR_SIZE 1024 /* Multiple of FLASH_PAGE_SIZE */
+#define NVS_SECTOR_SIZE FLASH_ERASE_BLOCK_SIZE /* Multiple of FLASH_PAGE_SIZE */
 #define NVS_SECTOR_COUNT 3 /* At least 2 sectors */
 #define NVS_STORAGE_OFFSET FLASH_AREA_STORAGE_OFFSET /* Start address of the
 						      * filesystem in flash
