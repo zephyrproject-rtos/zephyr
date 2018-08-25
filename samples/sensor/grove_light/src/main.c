@@ -14,20 +14,29 @@
 
 void main(void)
 {
-	struct device *dev = device_get_binding("GROVE_LIGHT_SENSOR");
+	struct device *dev = device_get_binding(CONFIG_GROVE_LIGHT_SENSOR_NAME);
 
 	if (dev == NULL) {
 		printk("device not found.  aborting test.\n");
 		return;
 	}
 	while (1) {
+		int read;
 		struct sensor_value lux;
 
-		sensor_sample_fetch(dev);
+		read = sensor_sample_fetch(dev);
+		if (read) {
+			printk("sample fetch error %d\n", read);
+			continue;
+		}
+
 		sensor_channel_get(dev, SENSOR_CHAN_LIGHT, &lux);
 
-		printf("lux: %f\n", sensor_value_to_double(&lux));
-
+#ifdef CONFIG_NEWLIB_LIBC_FLOAT_PRINTF
+		printk("lux: %d\n", sensor_value_to_double(&lux));
+#else
+		printk("lux: %d\n", lux.val1);
+#endif
 		k_sleep(SLEEP_TIME);
 	}
 }
