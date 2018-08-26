@@ -3,23 +3,3 @@ common:
 tests:
   peripheral.adc:
     depends_on: adc
-  peripheral.adc.poll_mode:
-    extra_configs:
-      - CONFIG_ADC_QMSI_POLL=y
-    platform_whitelist: quark_se_c1000_ss_devboard
-  peripheral.adc.resolution_10:
-    extra_configs:
-      - CONFIG_ADC_QMSI_SAMPLE_WIDTH=10
-    platform_whitelist: quark_se_c1000_ss_devboard
-  peripheral.adc.resolution_12:
-    extra_configs:
-      - CONFIG_ADC_QMSI_SAMPLE_WIDTH=12
-    platform_whitelist: quark_se_c1000_ss_devboard
-  peripheral.adc.resolution_6:
-    extra_configs:
-      - CONFIG_ADC_QMSI_SAMPLE_WIDTH=6
-    platform_whitelist: quark_se_c1000_ss_devboard
-  peripheral.adc.resolution_8:
-    extra_configs:
-      - CONFIG_ADC_QMSI_SAMPLE_WIDTH=8
-    platform_whitelist: quark_se_c1000_ss_devboard
