@@ -102,7 +102,7 @@ struct log_msg *log_msg_create_n(const char *str,
 					       u32_t *args,
 					       u32_t nargs)
 {
-	struct  log_msg *msg;
+	struct  log_msg *msg = NULL;
 
 	if (nargs <= LOG_MSG_NARGS_SINGLE_CHUNK) {
 		msg = _log_msg_std_alloc();
@@ -124,7 +124,9 @@ struct log_msg *log_msg_create_n(const char *str,
 			      (nargs - LOG_MSG_NARGS_HEAD_CHUNK)*sizeof(u32_t));
 		}
 	}
-	msg->str = str;
+	if (msg != NULL) {
+		msg->str = str;
+	}
 	return msg;
 }
 
