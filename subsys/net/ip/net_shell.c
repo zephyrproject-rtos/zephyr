@@ -2544,7 +2544,8 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 	char *state_pad = "";
 	const char *state_str;
 #if defined(CONFIG_NET_IPV6_ND)
-	s64_t remaining;
+	s32_t diff;
+	s32_t remaining;
 #endif
 
 #if defined(CONFIG_NET_L2_IEEE802154)
@@ -2569,12 +2570,11 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 	}
 
 #if defined(CONFIG_NET_IPV6_ND)
-	remaining = net_ipv6_nbr_data(nbr)->reachable +
-		    net_ipv6_nbr_data(nbr)->reachable_timeout -
-		    k_uptime_get();
+	diff = k_uptime_get() - net_ipv6_nbr_data(nbr)->reachable;
+	remaining = net_ipv6_nbr_data(nbr)->reachable_timeout - abs(diff);
 #endif
 
-	printk("[%2d] %p %p %5d/%d/%d/%d %s%s %6lld  %17s%s %s\n",
+	printk("[%2d] %p %p %5d/%d/%d/%d %s%s %6d  %17s%s %s\n",
 	       *count, nbr, nbr->iface,
 	       net_ipv6_nbr_data(nbr)->link_metric,
 	       nbr->ref,
@@ -2585,7 +2585,7 @@ static void nbr_cb(struct net_nbr *nbr, void *user_data)
 #if defined(CONFIG_NET_IPV6_ND)
 	       remaining > 0 ? remaining : 0,
 #else
-	       0LL,
+	       0,
 #endif
 	       nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "?" :
 	       net_sprint_ll_addr(

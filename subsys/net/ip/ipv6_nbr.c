@@ -330,7 +330,6 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
 
 static void ipv6_ns_reply_timeout(struct k_work *work)
 {
-	s64_t current = k_uptime_get();
 	struct net_nbr *nbr = NULL;
 	struct net_ipv6_nbr_data *data;
 	int i;
@@ -338,7 +337,9 @@ static void ipv6_ns_reply_timeout(struct k_work *work)
 	ARG_UNUSED(work);
 
 	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
-		s64_t remaining;
+		s32_t diff;
+		s32_t remaining;
+
 		nbr = get_nbr(i);
 
 		if (!nbr || !nbr->ref) {
@@ -354,7 +355,8 @@ static void ipv6_ns_reply_timeout(struct k_work *work)
 			continue;
 		}
 
-		remaining = data->send_ns + NS_REPLY_TIMEOUT - current;
+		diff = k_uptime_get() - data->send_ns;
+		remaining = NS_REPLY_TIMEOUT - abs(diff);
 
 		if (remaining > 0) {
 			if (!k_delayed_work_remaining_get(
@@ -1486,14 +1488,14 @@ drop:
 #if defined(CONFIG_NET_IPV6_ND)
 static void ipv6_nd_reachable_timeout(struct k_work *work)
 {
-	s64_t current = k_uptime_get();
 	struct net_nbr *nbr = NULL;
 	struct net_ipv6_nbr_data *data = NULL;
 	int ret;
 	int i;
 
 	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
-		s64_t remaining;
+		s32_t diff;
+		s32_t remaining;
 
 		nbr = get_nbr(i);
 		if (!nbr || !nbr->ref) {
@@ -1509,7 +1511,8 @@ static void ipv6_nd_reachable_timeout(struct k_work *work)
 			continue;
 		}
 
-		remaining = data->reachable + data->reachable_timeout - current;
+		diff = k_uptime_get() - data->reachable;
+		remaining = data->reachable_timeout - abs(diff);
 		if (remaining > 0) {
 			if (!k_delayed_work_remaining_get(
 						&ipv6_nd_reachable_timer)) {
