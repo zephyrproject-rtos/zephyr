@@ -2699,10 +2699,6 @@ static int lwm2m_delete_handler(struct lwm2m_engine_obj *obj,
 				     context->path->obj_inst_id);
 }
 
-#define MATCH_NONE	0
-#define MATCH_ALL	1
-#define MATCH_SINGLE	2
-
 static int do_read_op(struct lwm2m_engine_obj *obj,
 		      struct lwm2m_engine_context *context,
 		      u16_t content_format)
@@ -2710,7 +2706,7 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 	struct lwm2m_output_context *out = context->out;
 	struct lwm2m_obj_path *path = context->path;
 	struct lwm2m_engine_obj_inst *obj_inst;
-	int ret = 0, index, match_type;
+	int ret = 0, index;
 	u8_t num_read = 0;
 	u8_t initialized;
 	struct lwm2m_engine_res_inst *res;
@@ -2745,21 +2741,6 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 			continue;
 		}
 
-		match_type = MATCH_NONE;
-		/* check obj_inst path for at least partial match */
-		if (path->obj_id == obj_inst->obj->obj_id &&
-		    path->obj_inst_id == obj_inst->obj_inst_id) {
-			if (path->level > 2) {
-				match_type = MATCH_SINGLE;
-			} else {
-				match_type = MATCH_ALL;
-			}
-		}
-
-		if (match_type == MATCH_NONE) {
-			continue;
-		}
-
 		/* save path's res_id because we may need to change it below */
 		temp_res_id = path->res_id;
 		initialized = 0;
@@ -2768,11 +2749,11 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 			res = &obj_inst->resources[index];
 
 			/*
-			 * On a MATCH_ALL loop, we need to set path's res_id
-			 * for lwm2m_read_handler to read this specific
+			 * On an entire object instance, we need to set path's
+			 * res_id for lwm2m_read_handler to read this specific
 			 * resource.
 			 */
-			if (match_type == MATCH_ALL) {
+			if (path->level <= 2) {
 				path->res_id = res->res_id;
 			} else if (path->res_id != res->res_id) {
 				continue;
@@ -2795,8 +2776,8 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 				ret = lwm2m_read_handler(obj_inst, res,
 							 obj_field, context);
 				if (ret < 0) {
-					/* ignore errors unless MATCH_SINGLE */
-					if (match_type == MATCH_SINGLE &&
+					/* ignore errors unless single read */
+					if (path->level > 2 &&
 					    !LWM2M_HAS_PERM(obj_field,
 						BIT(LWM2M_FLAG_OPTIONAL))) {
 						SYS_LOG_ERR("READ OP: %d", ret);
@@ -2807,7 +2788,7 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 			}
 
 			/* on single read break if errors */
-			if (ret < 0 && match_type == MATCH_SINGLE) {
+			if (ret < 0 && path->level > 2) {
 				break;
 			}
 
