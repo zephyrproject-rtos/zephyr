@@ -413,6 +413,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 			       u16_t format)
 {
 	struct lwm2m_engine_obj *obj = NULL;
+	struct lwm2m_engine_obj_field *obj_field = NULL;
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct observe_node *obs;
 	struct sockaddr *addr;
@@ -500,6 +501,21 @@ static int engine_add_observer(struct lwm2m_message *msg,
 				    path->obj_id, path->obj_inst_id,
 				    path->res_id);
 			return -ENOENT;
+		}
+
+		/* load object field data */
+		obj_field = lwm2m_get_engine_obj_field(obj,
+				obj_inst->resources[i].res_id);
+		if (!obj_field) {
+			SYS_LOG_ERR("unable to find obj_field: %u/%u/%u",
+				    path->obj_id, path->obj_inst_id,
+				    path->res_id);
+			return -ENOENT;
+		}
+
+		/* check for READ permission on matching resource */
+		if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_R)) {
+			return -EPERM;
 		}
 
 		ret = update_attrs(&obj_inst->resources[i], &attrs);
