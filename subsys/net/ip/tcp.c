@@ -384,6 +384,7 @@ static int prepare_segment(struct net_tcp *tcp,
 	struct net_buf *header, *tail = NULL;
 	struct net_context *context = tcp->context;
 	struct net_tcp_hdr *tcp_hdr;
+	struct net_pkt *alloc_pkt;
 	u16_t dst_port, src_port;
 	bool pkt_allocated;
 	u8_t optlen = 0;
@@ -411,9 +412,14 @@ static int prepare_segment(struct net_tcp *tcp,
 
 #if defined(CONFIG_NET_IPV4)
 	if (net_pkt_family(pkt) == AF_INET) {
-		net_context_create_ipv4(context, pkt,
-				net_sin_ptr(segment->src_addr)->sin_addr,
-				&(net_sin(segment->dst_addr)->sin_addr));
+		alloc_pkt = net_context_create_ipv4(context, pkt,
+				      net_sin_ptr(segment->src_addr)->sin_addr,
+				      &(net_sin(segment->dst_addr)->sin_addr));
+		if (!alloc_pkt) {
+			status = -ENOMEM;
+			goto fail;
+		}
+
 		dst_port = net_sin(segment->dst_addr)->sin_port;
 		src_port = ((struct sockaddr_in_ptr *)&context->local)->
 								sin_port;
@@ -422,9 +428,14 @@ static int prepare_segment(struct net_tcp *tcp,
 #endif
 #if defined(CONFIG_NET_IPV6)
 	if (net_pkt_family(pkt) == AF_INET6) {
-		net_context_create_ipv6(tcp->context, pkt,
-				net_sin6_ptr(segment->src_addr)->sin6_addr,
-				&(net_sin6(segment->dst_addr)->sin6_addr));
+		alloc_pkt = net_context_create_ipv6(tcp->context, pkt,
+				    net_sin6_ptr(segment->src_addr)->sin6_addr,
+				    &(net_sin6(segment->dst_addr)->sin6_addr));
+		if (!alloc_pkt) {
+			status = -ENOMEM;
+			goto fail;
+		}
+
 		dst_port = net_sin6(segment->dst_addr)->sin6_port;
 		src_port = ((struct sockaddr_in6_ptr *)&context->local)->
 								sin6_port;
@@ -435,25 +446,16 @@ static int prepare_segment(struct net_tcp *tcp,
 		NET_DBG("[%p] Protocol family %d not supported", tcp,
 			net_pkt_family(pkt));
 
-		if (pkt_allocated) {
-			net_pkt_unref(pkt);
-		} else {
-			pkt->frags = tail;
-		}
-
-		return -EINVAL;
+		status = -EINVAL;
+		goto fail;
 	}
 
 	header = net_pkt_get_data(context, ALLOC_TIMEOUT);
 	if (!header) {
 		NET_WARN("[%p] Unable to alloc TCP header", tcp);
-		if (pkt_allocated) {
-			net_pkt_unref(pkt);
-		} else {
-			net_pkt_frag_add(pkt, tail);
-		}
 
-		return -ENOMEM;
+		status = -ENOMEM;
+		goto fail;
 	}
 
 	net_pkt_frag_add(pkt, header);
@@ -494,6 +496,15 @@ static int prepare_segment(struct net_tcp *tcp,
 	*out_pkt = pkt;
 
 	return 0;
+
+fail:
+	if (pkt_allocated) {
+		net_pkt_unref(pkt);
+	} else {
+		pkt->frags = tail;
+	}
+
+	return status;
 }
 
 u32_t net_tcp_get_recv_wnd(const struct net_tcp *tcp)
