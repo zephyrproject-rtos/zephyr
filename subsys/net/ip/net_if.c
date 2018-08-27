@@ -53,6 +53,12 @@ static struct k_delayed_work address_lifetime_timer;
 /* Track currently active address lifetime timers */
 static sys_slist_t active_address_lifetime_timers;
 
+/* Timer that triggers IPv6 prefix lifetime */
+static struct k_delayed_work prefix_lifetime_timer;
+
+/* Track currently active IPv6 prefix lifetime timers */
+static sys_slist_t active_prefix_lifetime_timers;
+
 static struct {
 	struct net_if_ipv6 ipv6;
 	struct net_if *iface;
@@ -755,19 +761,6 @@ struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
 	return NULL;
 }
 
-static void address_expired(struct net_if_addr *ifaddr)
-{
-	NET_DBG("IPv6 address %s is deprecated",
-		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
-
-	ifaddr->addr_state = NET_ADDR_DEPRECATED;
-	ifaddr->lifetime.timer_timeout = 0;
-	ifaddr->lifetime.wrap_counter = 0;
-
-	sys_slist_find_and_remove(&active_address_lifetime_timers,
-				  &ifaddr->lifetime.node);
-}
-
 static bool check_timeout(u32_t start, s32_t timeout, u32_t counter,
 			  u32_t current_time)
 {
@@ -780,6 +773,19 @@ static bool check_timeout(u32_t start, s32_t timeout, u32_t counter,
 	}
 
 	return true;
+}
+
+static void address_expired(struct net_if_addr *ifaddr)
+{
+	NET_DBG("IPv6 address %s is deprecated",
+		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
+
+	ifaddr->addr_state = NET_ADDR_DEPRECATED;
+	ifaddr->lifetime.timer_timeout = 0;
+	ifaddr->lifetime.wrap_counter = 0;
+
+	sys_slist_find_and_remove(&active_address_lifetime_timers,
+				  &ifaddr->lifetime.node);
 }
 
 static bool address_manage_timeout(struct net_if_addr *ifaddr,
@@ -1248,6 +1254,170 @@ void net_if_mcast_monitor(struct net_if *iface,
 	}
 }
 
+static void remove_prefix_addresses(struct net_if *iface,
+				    struct net_if_ipv6 *ipv6,
+				    struct in6_addr *addr,
+				    u8_t len)
+{
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		if (!ipv6->unicast[i].is_used ||
+		    ipv6->unicast[i].address.family != AF_INET6 ||
+		    ipv6->unicast[i].addr_type != NET_ADDR_AUTOCONF) {
+			continue;
+		}
+
+		if (net_is_ipv6_prefix(
+				addr->s6_addr,
+				ipv6->unicast[i].address.in6_addr.s6_addr,
+				len)) {
+			net_if_ipv6_addr_rm(iface,
+					    &ipv6->unicast[i].address.in6_addr);
+		}
+	}
+}
+
+static void prefix_lifetime_expired(struct net_if_ipv6_prefix *ifprefix)
+{
+	struct net_if_ipv6 *ipv6;
+
+	NET_DBG("Prefix %s/%d expired",
+		net_sprint_ipv6_addr(&ifprefix->prefix), ifprefix->len);
+
+	ifprefix->is_used = false;
+
+	if (net_if_config_ipv6_get(ifprefix->iface, &ipv6) < 0) {
+		return;
+	}
+
+	/* Remove also all auto addresses if the they have the same prefix.
+	 */
+	remove_prefix_addresses(ifprefix->iface, ipv6, &ifprefix->prefix,
+				ifprefix->len);
+
+	net_mgmt_event_notify(NET_EVENT_IPV6_PREFIX_DEL, ifprefix->iface);
+}
+
+static void prefix_timer_remove(struct net_if_ipv6_prefix *ifprefix)
+{
+	NET_DBG("IPv6 prefix %s/%d removed",
+		net_sprint_ipv6_addr(&ifprefix->prefix),
+		ifprefix->len);
+
+	ifprefix->lifetime.timer_timeout = 0;
+	ifprefix->lifetime.wrap_counter = 0;
+
+	sys_slist_find_and_remove(&active_prefix_lifetime_timers,
+				  &ifprefix->lifetime.node);
+}
+
+static bool prefix_manage_timeout(struct net_if_ipv6_prefix *ifprefix,
+				  u32_t current_time, u32_t *next_wakeup)
+{
+	if (check_timeout(ifprefix->lifetime.timer_start,
+			  ifprefix->lifetime.timer_timeout,
+			  ifprefix->lifetime.wrap_counter,
+			  current_time)) {
+		prefix_lifetime_expired(ifprefix);
+		return true;
+	}
+
+	if (current_time == NET_TIMEOUT_MAX_VALUE) {
+		ifprefix->lifetime.wrap_counter--;
+	}
+
+	if (ifprefix->lifetime.wrap_counter > 0) {
+		*next_wakeup = NET_TIMEOUT_MAX_VALUE;
+	} else {
+		*next_wakeup = ifprefix->lifetime.timer_timeout;
+	}
+
+	return false;
+}
+
+static void prefix_lifetime_timeout(struct k_work *work)
+{
+	u64_t timeout_update = UINT64_MAX;
+	u32_t current_time = k_uptime_get_32();
+	bool found = false;
+	struct net_if_ipv6_prefix *current, *next;
+
+	ARG_UNUSED(work);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_prefix_lifetime_timers,
+					  current, next, lifetime.node) {
+		u32_t next_timeout;
+		bool is_timeout;
+
+		is_timeout = prefix_manage_timeout(current, current_time,
+						   &next_timeout);
+		if (!is_timeout) {
+			if (next_timeout < timeout_update) {
+				timeout_update = next_timeout;
+				found = true;
+			}
+		}
+
+		if (current == next) {
+			break;
+		}
+	}
+
+	if (found) {
+		/* If we are near upper limit of s32_t timeout, then lower it
+		 * a bit so that kernel timeout will not overflow.
+		 */
+		if (timeout_update >= NET_TIMEOUT_MAX_VALUE) {
+			timeout_update = NET_TIMEOUT_MAX_VALUE;
+		}
+
+		NET_DBG("Waiting for %d ms", (u32_t)timeout_update);
+
+		k_delayed_work_submit(&prefix_lifetime_timer, timeout_update);
+	}
+}
+
+static void prefix_submit_work(struct net_if_ipv6_prefix *ifprefix)
+{
+	s32_t remaining;
+
+	remaining = k_delayed_work_remaining_get(&prefix_lifetime_timer);
+	if (!remaining || (ifprefix->lifetime.wrap_counter == 0 &&
+			   ifprefix->lifetime.timer_timeout < remaining)) {
+		k_delayed_work_cancel(&prefix_lifetime_timer);
+
+		if (ifprefix->lifetime.wrap_counter > 0 && remaining == 0) {
+			k_delayed_work_submit(&prefix_lifetime_timer,
+					      NET_TIMEOUT_MAX_VALUE);
+		} else {
+			k_delayed_work_submit(&prefix_lifetime_timer,
+					      ifprefix->lifetime.timer_timeout);
+		}
+
+		NET_DBG("Next wakeup in %d ms",
+			k_delayed_work_remaining_get(&prefix_lifetime_timer));
+	}
+}
+
+static void prefix_start_timer(struct net_if_ipv6_prefix *ifprefix,
+			       u32_t lifetime)
+{
+	u64_t expire_timeout = K_SECONDS((u64_t)lifetime);
+
+	sys_slist_append(&active_prefix_lifetime_timers,
+			 &ifprefix->lifetime.node);
+
+	ifprefix->lifetime.timer_start = k_uptime_get_32();
+	ifprefix->lifetime.wrap_counter = expire_timeout /
+		(u64_t)NET_TIMEOUT_MAX_VALUE;
+	ifprefix->lifetime.timer_timeout = expire_timeout -
+		(u64_t)NET_TIMEOUT_MAX_VALUE *
+		(u64_t)ifprefix->lifetime.wrap_counter;
+
+	prefix_submit_work(ifprefix);
+}
+
 static struct net_if_ipv6_prefix *ipv6_prefix_find(struct net_if *iface,
 						   struct in6_addr *prefix,
 						   u8_t prefix_len)
@@ -1273,68 +1443,20 @@ static struct net_if_ipv6_prefix *ipv6_prefix_find(struct net_if *iface,
 	return NULL;
 }
 
-static void remove_prefix_addresses(struct net_if *iface,
-				    struct net_if_ipv6 *ipv6,
-				    struct in6_addr *addr,
-				    u8_t len)
-{
-	int i;
-
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
-		if (!ipv6->unicast[i].is_used ||
-		    ipv6->unicast[i].address.family != AF_INET6 ||
-		    ipv6->unicast[i].addr_type != NET_ADDR_AUTOCONF) {
-			continue;
-		}
-
-		if (net_is_ipv6_prefix(
-				addr->s6_addr,
-				ipv6->unicast[i].address.in6_addr.s6_addr,
-				len)) {
-			net_if_ipv6_addr_rm(iface,
-					    &ipv6->unicast[i].address.in6_addr);
-		}
-	}
-}
-
-static inline void prefix_lf_timeout(struct k_work *work)
-{
-	struct net_if_ipv6_prefix *prefix =
-		CONTAINER_OF(work, struct net_if_ipv6_prefix, lifetime);
-	struct net_if_ipv6 *ipv6;
-
-	NET_DBG("Prefix %s/%d expired",
-		net_sprint_ipv6_addr(&prefix->prefix), prefix->len);
-
-	prefix->is_used = false;
-
-	if (net_if_config_ipv6_get(prefix->iface, &ipv6) < 0) {
-		return;
-	}
-
-	/* Remove also all auto addresses if the they have the same prefix.
-	 */
-	remove_prefix_addresses(prefix->iface, ipv6, &prefix->prefix,
-				prefix->len);
-
-	net_mgmt_event_notify(NET_EVENT_IPV6_PREFIX_DEL, prefix->iface);
-}
-
 static void net_if_ipv6_prefix_init(struct net_if *iface,
-				    struct net_if_ipv6_prefix *prefix,
+				    struct net_if_ipv6_prefix *ifprefix,
 				    struct in6_addr *addr, u8_t len,
 				    u32_t lifetime)
 {
-	prefix->is_used = true;
-	prefix->len = len;
-	prefix->iface = iface;
-	net_ipaddr_copy(&prefix->prefix, addr);
-	k_delayed_work_init(&prefix->lifetime, prefix_lf_timeout);
+	ifprefix->is_used = true;
+	ifprefix->len = len;
+	ifprefix->iface = iface;
+	net_ipaddr_copy(&ifprefix->prefix, addr);
 
 	if (lifetime == NET_IPV6_ND_INFINITE_LIFETIME) {
-		prefix->is_infinite = true;
+		ifprefix->is_infinite = true;
 	} else {
-		prefix->is_infinite = false;
+		ifprefix->is_infinite = false;
 	}
 }
 
@@ -1343,7 +1465,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 						  u8_t len,
 						  u32_t lifetime)
 {
-	struct net_if_ipv6_prefix *if_prefix;
+	struct net_if_ipv6_prefix *ifprefix;
 	struct net_if_ipv6 *ipv6;
 	int i;
 
@@ -1351,9 +1473,9 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 		return NULL;
 	}
 
-	if_prefix = ipv6_prefix_find(iface, prefix, len);
-	if (if_prefix) {
-		return if_prefix;
+	ifprefix = ipv6_prefix_find(iface, prefix, len);
+	if (ifprefix) {
+		return ifprefix;
 	}
 
 	if (!ipv6) {
@@ -1477,29 +1599,14 @@ bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr)
 void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix *prefix,
 				  u32_t lifetime)
 {
-	/* The maximum lifetime might be shorter than expected
-	 * because we have only 32-bit int to store the value and
-	 * the timer API uses ms value. The lifetime value with
-	 * all bits set means infinite and that value is never set
-	 * to timer.
-	 */
-	u32_t timeout = K_SECONDS(lifetime);
-
-	NET_ASSERT(lifetime != 0xffffffff);
-
-	if (lifetime > (0xfffffffe / K_SECONDS(1))) {
-		timeout = 0xfffffffe;
-
-		NET_ERR("Prefix %s/%d lifetime %u overflow, "
-			"setting it to %u secs",
-			net_sprint_ipv6_addr(&prefix->prefix),
-			prefix->len,
-			lifetime, timeout / K_SECONDS(1));
+	/* No need to set a timer for infinite timeout */
+	if (lifetime == 0xffffffff) {
+		return;
 	}
 
-	NET_DBG("Prefix lifetime %u ms", timeout);
+	NET_DBG("Prefix lifetime %u sec", lifetime);
 
-	k_delayed_work_submit(&prefix->lifetime, timeout);
+	prefix_start_timer(prefix, lifetime);
 }
 
 void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix)
@@ -1508,7 +1615,7 @@ void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix)
 		return;
 	}
 
-	k_delayed_work_cancel(&prefix->lifetime);
+	prefix_timer_remove(prefix);
 }
 
 struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
@@ -2753,6 +2860,7 @@ void net_if_init(void)
 
 #if defined(CONFIG_NET_IPV6)
 	k_delayed_work_init(&address_lifetime_timer, address_lifetime_timeout);
+	k_delayed_work_init(&prefix_lifetime_timer, prefix_lifetime_timeout);
 #endif
 
 	for (iface = __net_if_start, if_count = 0; iface != __net_if_end;
