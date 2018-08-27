@@ -542,6 +542,11 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 			goto drop;
 
 		case NET_IPV6_NEXTHDR_HBHO:
+			if (ext_bitmap & NET_IPV6_EXT_HDR_BITMAP_HBHO) {
+				NET_ERR("Dropping packet with multiple HBHO");
+				goto drop;
+			}
+
 			frag = net_frag_read_u8(frag, offset, &offset,
 						(u8_t *)&length);
 			if (!frag) {
@@ -553,11 +558,6 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 
 			/* HBH option needs to be the first one */
 			if (first_option != NET_IPV6_NEXTHDR_HBHO) {
-				goto bad_hdr;
-			}
-
-			/* Hop by hop option */
-			if (ext_bitmap & NET_IPV6_EXT_HDR_BITMAP_HBHO) {
 				goto bad_hdr;
 			}
 
