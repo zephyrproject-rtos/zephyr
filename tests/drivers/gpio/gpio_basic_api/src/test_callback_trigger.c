@@ -18,6 +18,7 @@
 static struct drv_data data;
 static int cb_cnt;
 
+#if !CONFIG_PINCTRL
 static int pin_num(u32_t pins)
 {
 	int ret = 0;
@@ -27,12 +28,17 @@ static int pin_num(u32_t pins)
 	}
 	return ret;
 }
+#endif
 
 static void callback(struct device *dev,
 		     struct gpio_callback *gpio_cb, u32_t pins)
 {
 	/*= checkpoint: pins should be marked with correct pin number bit =*/
+#if CONFIG_PINCTRL
+	zassert_true(pins == PIN_IN, NULL);
+#else
 	zassert_true(pin_num(pins) == PIN_IN, NULL);
+#endif
 	TC_PRINT("callback triggered: %d\n", ++cb_cnt);
 	if (cb_cnt >= MAX_INT_CNT) {
 		struct drv_data *drv_data = CONTAINER_OF(gpio_cb,
@@ -70,7 +76,11 @@ static int test_callback(int mode)
 	}
 
 	drv_data->mode = mode;
+#if CONFIG_PINCTRL
+	gpio_init_callback(&drv_data->gpio_cb, callback, PIN_IN);
+#else
 	gpio_init_callback(&drv_data->gpio_cb, callback, BIT(PIN_IN));
+#endif
 	if (gpio_add_callback(dev, &drv_data->gpio_cb) != 0) {
 		TC_ERROR("set PIN_IN callback fail\n");
 		return TC_FAIL;

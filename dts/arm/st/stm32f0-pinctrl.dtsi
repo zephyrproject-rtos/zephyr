@@ -1,54 +1,278 @@
 /*
  * Copyright (c) 2017 RnDity Sp. z o.o.
+ * Copyright (c) 2018 Bobby Noelte
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <dt-bindings/pinctrl/stm32-pinctrl.h>
 
 / {
 	soc {
 		pinctrl: pin-controller@48000000 {
 			usart1_pins_a: usart1@0 {
-				rx_tx {
-					rx = <STM32_PIN_PB7 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUPDR_NO_PULL)>;
-					tx = <STM32_PIN_PB6 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUSHPULL_NOPULL)>;
+				rx {
+					pinmux = <PINCTRL_STM32_PINB7 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					bias-disable;
+				};
+				tx {
+					pinmux = <PINCTRL_STM32_PINB6 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					drive-push-pull;
+					bias-disable;
 				};
 			};
 			usart1_pins_b: usart1@1 {
-				rx_tx {
-					rx = <STM32_PIN_PA10 (STM32_PINMUX_ALT_FUNC_1 | STM32_PUPDR_NO_PULL)>;
-					tx = <STM32_PIN_PA9 (STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)>;
+				rx {
+					pinmux = <PINCTRL_STM32_PINA10 \
+						  PINCTRL_STM32_FUNCTION_ALT_1>;
+					bias-disable;
+				};
+				tx {
+					pinmux = <PINCTRL_STM32_PINA9 \
+						  PINCTRL_STM32_FUNCTION_ALT_1>;
+					drive-push-pull;
+					bias-disable;
 				};
 			};
 			usart2_pins_a: usart2@0 {
-				rx_tx {
-					rx = <STM32_PIN_PA3 (STM32_PINMUX_ALT_FUNC_1 | STM32_PUPDR_NO_PULL)>;
-					tx = <STM32_PIN_PA2 (STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)>;
+				rx {
+					pinmux = <PINCTRL_STM32_PINA3 \
+						  PINCTRL_STM32_FUNCTION_ALT_1>;
+					bias-disable;
+				};
+				tx {
+					pinmux = <PINCTRL_STM32_PINA2 \
+						  PINCTRL_STM32_FUNCTION_ALT_1>;
+					drive-push-pull;
+					bias-disable;
 				};
 			};
-			usart2_pins_b: usart2@1 {
-				rx_tx {
-					rx = <STM32_PIN_PA15 (STM32_PINMUX_ALT_FUNC_1 | STM32_PUPDR_NO_PULL)>;
-					tx = <STM32_PIN_PA14 (STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)>;
+			usart2_pins_d: usart2@3 {
+				rx {
+					pinmux = <PINCTRL_STM32_PIND6 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					bias-disable;
+				};
+				tx {
+					pinmux = <PINCTRL_STM32_PIND5 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					drive-push-pull;
+					bias-disable;
 				};
 			};
-			usart2_pins_d: usart2@2 {
-				rx_tx {
-					rx = <STM32_PIN_PD6 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUPDR_NO_PULL)>;
-					tx = <STM32_PIN_PD5 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUSHPULL_NOPULL)>;
+			usart8_pins_c1: usart8@21 {
+				rx {
+					pinmux = <PINCTRL_STM32_PINC3 \
+						  PINCTRL_STM32_FUNCTION_ALT_2>;
+					bias-disable;
+				};
+				tx {
+					pinmux = <PINCTRL_STM32_PINC2 \
+						  PINCTRL_STM32_FUNCTION_ALT_2>;
+					drive-push-pull;
+					bias-disable;
+				};
+			};
+			usart8_pins_c2: usart8@22 {
+				rx {
+					pinmux = <PINCTRL_STM32_PINC9 \
+						  PINCTRL_STM32_FUNCTION_ALT_1>;
+					bias-disable;
+				};
+				tx {
+					pinmux = <PINCTRL_STM32_PINC8 \
+						  PINCTRL_STM32_FUNCTION_ALT_1>;
+					drive-push-pull;
+					bias-disable;
+				};
+			};
+			i2c1_pins_a: i2c1@0 {
+				scl {
+					pinmux = <PINCTRL_STM32_PINB8 \
+						  PINCTRL_STM32_FUNCTION_ALT_1>;
+					drive-push-pull;
+					bias-disable;
+				};
+				sda {
+					pinmux = <PINCTRL_STM32_PINB9 \
+						  PINCTRL_STM32_FUNCTION_ALT_1>;
+					bias-disable;
+				};
+			};
+			i2c1_pins_b: i2c1@1 {
+				scl {
+					pinmux = <PINCTRL_STM32_PINF1 \
+						  PINCTRL_STM32_FUNCTION_ALT_1>;
+					drive-push-pull;
+					bias-disable;
+				};
+				sda {
+					pinmux = <PINCTRL_STM32_PINF0 \
+						  PINCTRL_STM32_FUNCTION_ALT_1>;
+					bias-disable;
+				};
+			};
+			i2c2_pins_a: i2c2@0 {
+				scl {
+					pinmux = <PINCTRL_STM32_PINA11 \
+						  PINCTRL_STM32_FUNCTION_ALT_5>;
+					drive-push-pull;
+					bias-disable;
+				};
+				sda {
+					pinmux = <PINCTRL_STM32_PINA12 \
+						  PINCTRL_STM32_FUNCTION_ALT_5>;
+					bias-disable;
+				};
+			};
+			i2c2_pins_b: i2c2@1 {
+				scl {
+					pinmux = <PINCTRL_STM32_PINB10 \
+						  PINCTRL_STM32_FUNCTION_ALT_1>;
+					drive-push-pull;
+					bias-disable;
+				};
+				sda {
+					pinmux = <PINCTRL_STM32_PINB11 \
+						  PINCTRL_STM32_FUNCTION_ALT_1>;
+					bias-disable;
+				};
+			};
+			spi1_master_a: spi1@0 {
+				sck {
+					pinmux = <PINCTRL_STM32_PINB3 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					drive-push-pull;
+					bias-disable;
+				};
+				miso {
+					pinmux = <PINCTRL_STM32_PINB4 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					bias-disable;
+				};
+				mosi {
+					pinmux = <PINCTRL_STM32_PINB5 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					drive-push-pull;
+					bias-disable;
+				};
+			};
+			spi1_slave_a: spi1@1 {
+				sck {
+					pinmux = <PINCTRL_STM32_PINB3 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					bias-disable;
+				};
+				miso {
+					pinmux = <PINCTRL_STM32_PINB4 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					drive-push-pull;
+					bias-disable;
+				};
+				mosi {
+					pinmux = <PINCTRL_STM32_PINB5 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					bias-disable;
+				};
+			};
+			spi1_master_b: spi1@2 {
+				sck {
+					pinmux = <PINCTRL_STM32_PINA5 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					drive-push-pull;
+					bias-disable;
+				};
+				miso {
+					pinmux = <PINCTRL_STM32_PINA6 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					bias-disable;
+				};
+				mosi {
+					pinmux = <PINCTRL_STM32_PINA2 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					drive-push-pull;
+					bias-disable;
+				};
+			};
+			spi1_slave_b: spi1@3 {
+				sck {
+					pinmux = <PINCTRL_STM32_PINA5 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					bias-disable;
+				};
+				miso {
+					pinmux = <PINCTRL_STM32_PINA6 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					drive-push-pull;
+					bias-disable;
+				};
+				mosi {
+					pinmux = <PINCTRL_STM32_PINA2 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					bias-disable;
+				};
+			};
+			spi2_master_a: spi2@0 {
+				sck {
+					pinmux = <PINCTRL_STM32_PINB13 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					drive-push-pull;
+					bias-disable;
+				};
+				miso {
+					pinmux = <PINCTRL_STM32_PINB14 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					bias-disable;
+				};
+				mosi {
+					pinmux = <PINCTRL_STM32_PINB15 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					drive-push-pull;
+					bias-disable;
+				};
+			};
+			spi2_slave_a: spi2@1 {
+				sck {
+					pinmux = <PINCTRL_STM32_PINB13 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					bias-disable;
+				};
+				miso {
+					pinmux = <PINCTRL_STM32_PINB14 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					drive-push-pull;
+					bias-disable;
+				};
+				mosi {
+					pinmux = <PINCTRL_STM32_PINB15 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					bias-disable;
 				};
 			};
 			can_pins_a: can@0 {
-				rx_tx {
-					rx = <STM32_PIN_PB8 (STM32_PINMUX_ALT_FUNC_4 | STM32_PUPDR_PULL_UP)>;
-					tx = <STM32_PIN_PB9 (STM32_PINMUX_ALT_FUNC_4 | STM32_PUPDR_NO_PULL)>;
+				rx {
+					pinmux = <PINCTRL_STM32_PINB8 \
+						  PINCTRL_STM32_FUNCTION_ALT_4>;
+					bias-pull-up;
+				};
+				tx {
+					pinmux = <PINCTRL_STM32_PINB9 \
+						  PINCTRL_STM32_FUNCTION_ALT_4>;
+					drive-push-pull;
+					bias-disable;
 				};
 			};
 			can_pins_b: can@1 {
-				rx_tx {
-					rx = <STM32_PIN_PD0 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUPDR_PULL_UP)>;
-					tx = <STM32_PIN_PD1 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUPDR_NO_PULL)>;
+				rx {
+					pinmux = <PINCTRL_STM32_PIND0 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					bias-pull-up;
+				};
+				tx {
+					pinmux = <PINCTRL_STM32_PIND1 \
+						  PINCTRL_STM32_FUNCTION_ALT_0>;
+					drive-push-pull;
+					bias-disable;
 				};
 			};
 		};

@@ -21,11 +21,19 @@ void test_gpio_pin_read_write(void)
 	struct device *dev = device_get_binding(DEV_NAME);
 
 	/* set PIN_OUT as writer */
+#if CONFIG_PINCTRL
+	TC_PRINT("device=%s, pin1=%d, pin2=%d\n", DEV_NAME,
+		 GPIO_PORT_PIN_IDX(PIN_OUT), GPIO_PORT_PIN_IDX(PIN_IN));
+#else
 	TC_PRINT("device=%s, pin1=%d, pin2=%d\n", DEV_NAME, PIN_OUT, PIN_IN);
-	gpio_pin_configure(dev, PIN_OUT, GPIO_DIR_OUT);
+#endif
+	zassert_true(gpio_pin_configure(dev, PIN_OUT, GPIO_DIR_OUT) == 0,
+		     "configure pin out fail");
 	/* set PIN_IN as reader */
-	gpio_pin_configure(dev, PIN_IN, GPIO_DIR_IN);
-	gpio_pin_disable_callback(dev, PIN_IN);
+	zassert_true(gpio_pin_configure(dev, PIN_IN, GPIO_DIR_IN) == 0,
+		     "configure pin in fail");
+	zassert_true(gpio_pin_disable_callback(dev, PIN_IN) == 0,
+		     "disable pin in callback fail");
 
 	u32_t val_write, val_read = 0;
 	int i = 0;

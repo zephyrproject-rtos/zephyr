@@ -20,7 +20,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_2: led@0 {
-			gpios = <&gpioa 5 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioa GPIO_PORT_PIN5 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 	};
@@ -29,7 +29,7 @@
 		compatible = "gpio-keys";
 		user_button: button@0 {
 			label = "User";
-			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc GPIO_PORT_PIN13 GPIO_INT_ACTIVE_LOW>;
 		};
 	};
 
@@ -39,10 +39,27 @@
 	};
 };
 
+&pinctrl {
+	status = "ok";
+};
+
+&gpioa {
+	status = "ok";
+};
+
+&gpiob {
+	status = "ok";
+};
+
+&gpioc {
+	status = "ok";
+};
+
 &usart1 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_pins_a>;
 	pinctrl-names = "default";
+	status = "ok";
 };
 
 &usart2 {
@@ -53,19 +70,34 @@
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_pins_b>;
+	pinctrl-names = "default";
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c2 {
+	pinctrl-0 = <&i2c2_pins_a>;
+	pinctrl-names = "default";
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_master_a>;
+	pinctrl-names = "default";
 	status = "ok";
 };
 
 &spi2 {
+	pinctrl-0 = <&spi2_slave_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&can1 {
+	pinctrl-0 = <&can_pins_b>;
+	pinctrl-names = "default";
+	bus-speed = <250000>;
 	status = "ok";
 };

@@ -19,12 +19,17 @@ from copy import deepcopy
 
 from devicetree import parse_file
 from extract.globals import *
+from extract.edts import edts
 
 from extract.clocks import clocks
+from extract.compatible import compatible
+from extract.controller import controller
 from extract.interrupts import interrupts
 from extract.reg import reg
 from extract.flash import flash
 from extract.pinctrl import pinctrl
+from extract.heuristics import heuristics
+from extract.gpioranges import gpioranges
 from extract.default import default
 
 class Loader(yaml.Loader):
@@ -385,9 +390,18 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
             reg.extract(node_address, yaml, prop, names, def_label)
     elif prop == 'interrupts' or prop == 'interrupts-extended':
         interrupts.extract(node_address, yaml, prop, names, def_label)
+    elif prop == 'compatible':
+        compatible.extract(node_address, yaml, prop, names, def_label)
+        # do extra property definition based on heuristics
+        # do it here as the compatible property is mandatory
+        heuristics.extract(node_address, yaml, prop, names, def_label)
+    elif '-controller' in prop:
+        controller.extract(node_address, yaml, prop, names, def_label)
     elif 'pinctrl-' in prop:
         pinctrl.extract(node_address, yaml, prop, names, def_label)
-    elif 'clocks' in prop:
+    elif 'gpio-ranges' in prop:
+        gpioranges.extract(node_address, yaml, prop, names, def_label)
+    elif prop.startswith(('clock', '#clock', 'assigned-clock', 'oscillator')):
         clocks.extract(node_address, yaml, prop, names, def_label)
     elif 'gpios' in prop:
         try:
@@ -737,6 +751,8 @@ def parse_arguments():
     parser.add_argument("-d", "--dts", nargs=1, required=True, help="DTS file")
     parser.add_argument("-y", "--yaml", nargs=1, required=True,
                         help="YAML file")
+    parser.add_argument("-e", "--edts", nargs=1, required=True,
+                        help="Generate EDTS database file for the build system")
     parser.add_argument("-f", "--fixup", nargs='+',
                         help="Fixup file(s), we allow multiple")
     parser.add_argument("-i", "--include", nargs=1, required=True,
@@ -765,6 +781,7 @@ def main():
     generate_keyvalue_file(args.keyvalue[0])
 
     generate_include_file(args.include[0], args.fixup)
+    edts.save(args.edts[0])
 
 
 if __name__ == '__main__':

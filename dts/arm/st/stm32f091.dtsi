@@ -8,6 +8,60 @@
 
 / {
 	soc {
+		usart3: serial@40004800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
+			interrupts = <29 0>;
+			status = "disabled";
+			label = "UART_3";
+		};
+
+		usart4: serial@40004C00 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004C00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
+			interrupts = <29 0>;
+			status = "disabled";
+			label = "UART_4";
+		};
+
+		usart5: serial@40005000 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40005000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
+			interrupts = <29 0>;
+			status = "disabled";
+			label = "UART_5";
+		};
+
+		usart6: serial@40011400 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40011400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000020>;
+			interrupts = <29 0>;
+			status = "disabled";
+			label = "UART_6";
+		};
+
+		usart7: serial@40011800 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40011800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000040>;
+			interrupts = <29 0>;
+			status = "disabled";
+			label = "UART_7";
+		};
+
+		usart8: serial@40011C00 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40011C00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000080>;
+			interrupts = <29 0>;
+			status = "disabled";
+			label = "UART_8";
+		};
+
 		timers2: timers@40000000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40000000 0x400>;
@@ -31,19 +85,34 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
 			interrupts = <26 3>;
 			status = "disabled";
-			label = "SPI_2";
+			label= "SPI_2";
 		};
 
-		pinctrl: pin-controller@48000000 {
+		gpioe: gpio@48001000 {
+			compatible = "st,stm32-gpio-pinctrl";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x48001000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00200000>;
+			st,bank-name = "GPIOE";
+			label = "GPIOE";
+			gpio-ranges = <&pinctrl \
+				GPIO_PORT_PIN0 PINCTRL_STM32_PINE0 16>;
+		};
 
-			gpioe: gpio@48001000 {
-				compatible = "st,stm32-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x48001000 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00200000>;
-				label = "GPIOE";
-			};
+		can1: can@40006400 {
+			compatible = "st,stm32-can";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40006400 0x400>;
+			interrupts = <30 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			status = "disabled";
+			label = "CAN_1";
+			bus-speed = <250000>;
+			sjw = <1>;
+			prop_seg_phase_seg1 = <5>;
+			phase_seg2 = <6>;
 		};
 	};
 };

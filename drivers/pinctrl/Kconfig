@@ -1,0 +1,76 @@
+# Kconfig - Pinctrl configuration options
+
+#
+# Copyright (c) 2017 Bobby Noelte
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# Pinctrl options
+#
+menuconfig PINCTRL
+	bool "PINCTRL driver"
+	default n
+
+if PINCTRL
+
+config PINCTRL_RUNTIME_DTS
+	bool "Enable run time pin configuration control based on DTS"
+	default y
+	help
+	  Supports extended pin controller functionality.
+
+	  Enable if run time pin configuration control based on
+	  device tree information is needed.
+
+config PINCTRL_PINMUX
+	bool "Enable generic PINMUX interface for pinctrl drivers"
+	default y
+	help
+	  Map PINMUX functions to PINCTRL functions.
+
+	  Enable to use the PINMUX interface with pinctrl drivers.
+	  This interface is for transition. Only use if necessary
+	  by drivers calling this interface.
+
+config PINCTRL_INIT_PRIORITY
+	int
+	prompt "Init priority"
+	default 2
+	help
+	  Pinctrl driver initialization priority.
+
+	  Pinctrl driver almost certainly should be initialized before the
+	  rest of hardware devices (which may need specific pins already
+	  configured for them).
+	  Thus, its priority should be between KERNEL_INIT_PRIORITY_DEFAULT
+	  and KERNEL_INIT_PRIORITY_DEVICE. There are exceptions to this
+	  rule for particular boards. Don't change this value unless you
+	  know what you are doing.
+
+config SYS_LOG_PINCTRL_LEVEL
+	int
+	prompt "PINCTRL Driver Log level"
+	depends on SYS_LOG
+	default 0
+	range 0 4
+	help
+	  Sets log level for PINCTRL drivers.
+
+	  Levels are:
+
+	    - 0 OFF, do not write
+
+	    - 1 ERROR, only write SYS_LOG_ERR
+
+	    - 2 WARNING, write SYS_LOG_WRN in addition to previous level
+
+	    - 3 INFO, write SYS_LOG_INF in addition to previous levels
+
+	    - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+source "drivers/pinctrl/Kconfig.stm32"
+
+
+endif # PINCTRL

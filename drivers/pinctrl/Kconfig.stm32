@@ -1,0 +1,13 @@
+# Kconfig - configuration for STM32 pinctrl
+#
+# Copyright (c) 2018 Bobby Noelte
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config PINCTRL_STM32
+	bool "Pinctrl driver for STM32 MCUs"
+	default y if PINCTRL && SOC_FAMILY_STM32
+	help
+	 Enable pin controller for STM32 MCUs
+

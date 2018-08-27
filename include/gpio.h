@@ -32,6 +32,44 @@ extern "C" {
  * @{
  */
 
+/** ---------------------------------------------------
+ * @todo Work around until all GPIO drivers support
+ *       the pin definitions
+ *  ---------------------------------------------------
+ */
+#if CONFIG_PINCTRL
+
+#include <gpio_common.h>
+#include <errno.h>
+
+/**
+ * Get pin index from port pin number.
+ *
+ * @param pin Pin number
+ * @return Pin index [0..31]
+ * @retval -EINVAL on error
+ */
+static inline int gpio_port_pin_idx(u32_t pin)
+{
+	if (!pin) {
+		return -EINVAL;
+	}
+#if defined(__GNUC__) && (__SIZEOF_INT__ == 4)
+	return 31 - __builtin_clz(pin);
+#elif defined(__GNUC__) && (__SIZEOF_LONG__ == 4)
+	return 31 - __builtin_clzl(pin);
+#else
+	int idx = 0;
+#define step(x) \
+	do { if (pin >= ((u32_t)1) << x) idx += x, pin >>= x; } while (0)
+	step(16); step(8); step(4); step(2); step(1);
+#undef step
+	return idx;
+#endif
+}
+
+#endif
+
 /** @cond INTERNAL_HIDDEN */
 #define GPIO_ACCESS_BY_PIN 0
 #define GPIO_ACCESS_BY_PORT 1

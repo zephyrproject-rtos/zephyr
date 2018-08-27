@@ -82,6 +82,8 @@ The Zephyr nucleo_f091rc board configuration supports the following hardware fea
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| PINCTRL   | on-chip    | pinctrl (includes pinmux)           |
++-----------+------------+-------------------------------------+
 | PINMUX    | on-chip    | pinmux                              |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
@@ -95,6 +97,8 @@ The Zephyr nucleo_f091rc board configuration supports the following hardware fea
 | I2C       | on-chip    | i2c controller                      |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | SPI controller                      |
++-----------+------------+-------------------------------------+
+| CAN       | on-chip    | CAN controller                      |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
@@ -110,6 +114,13 @@ input (with or without pull-up or pull-down), or as peripheral alternate functio
 GPIO pins are shared with digital or analog alternate functions. All GPIOs are high current
 capable except for analog inputs.
 
+LED
+---
+
+- LD1 / USB communication LED = ST-LINK/V2-1
+- LD2 / User LED = PA5
+- LD3 / Power LED = VCC
+
 Board connectors:
 -----------------
 .. image:: img/nucleo_f091rc_connectors.png
@@ -121,20 +132,43 @@ Board connectors:
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
-- UART_1_TX : PB6
-- UART_1_RX : PB7
-- UART_2_TX : PA2
-- UART_2_RX : PA3
-- I2C1_SCL : PB8
-- I2C1_SDA : PB9
-- I2C2_SCL : PA11
-- I2C2_SDA : PA12
-- SPI1_SCK : PB3
-- SPI1_MISO : PB4
-- SPI1_MOSI : PB5
-- SPI2_SCK : PB13
-- SPI2_MISO : PB14
-- SPI2_MOSI : PB15
++-----------+--------+------+------+
+| Signal    | GPIO   | CN7  | CN10 |
++===========+========+======+======+
+| LD2       | PA5    |      | 11   |
++-----------+--------+------+------+
+| UART_1_TX | PB6    |      |      |
++-----------+--------+------+------+
+| UART_1_RX | PB7    | 21   |      |
++-----------+--------+------+------+
+| UART_2_TX | PA2    |      | 35   |
++-----------+--------+------+------+
+| UART_2_RX | PA3    |      | 37   |
++-----------+--------+------+------+
+| I2C1_SCL  | PF1    | 31   |      |
++-----------+--------+------+------+
+| I2C1_SDA  | PF0    | 29   |      |
++-----------+--------+------+------+
+| I2C2_SCL  | PA11   |      | 14   |
++-----------+--------+------+------+
+| I2C2_SDA  | PA12   |      | 12   |
++-----------+--------+------+------+
+| SPI1_SCK  | PB3    |      | 31   |
++-----------+--------+------+------+
+| SPI1_MISO | PB4    |      | 27   |
++-----------+--------+------+------+
+| SPI1_MOSI | PB5    |      | 29   |
++-----------+--------+------+------+
+| SPI2_SCK  | PB13   |      | 30   |
++-----------+--------+------+------+
+| SPI2_MISO | PB14   |      | 28   |
++-----------+--------+------+------+
+| SPI2_MOSI | PB15   |      | 26   |
++-----------+--------+------+------+
+| CAN_TX    | PB9    |      | 5    |
++-----------+--------+------+------+
+| CAN_RX    | PB8    |      | 3    |
++-----------+--------+------+------+
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 
@@ -154,26 +188,101 @@ This interface is supported by the openocd version included in the Zephyr SDK.
 Flashing an application to Nucleo F091RC
 ----------------------------------------
 
-Here is an example for the :ref:`blinky-sample` application.
+Here is an example for the :ref:`hello_world` application.
+
+First, run your favorite terminal program to listen for output.
+
+.. code-block:: console
+
+   $ minicom -D <tty_device> -b 115200
+
+Replace :code:`<tty_device>` with the port where the Nucleo F091RC board
+can be found. For example, under Linux, :code:`/dev/ttyACM0`.
+
+Then build and flash the application in the usual way.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: nucleo_f091rc
+   :goals: build flash
+
+Debugging
+=========
+
+You can debug an application in the usual way. Here is an example for the
+:ref:`button-sample` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/button
+   :board: nucleo_f091rc
+   :maybe-skip-config:
+   :goals: debug
+
+Testing the Nucleo board
+************************
+
+Testing the button and the LED
+==============================
+
+There are 2 samples that allow you to test that the button and LED on
+the board are working properly with Zephyr:
+:ref:`blinky-sample` and :ref:`button-sample`.
+
+The button and LED definitions can be found in :file:`boards/arm/nucleo_f091rc/board.h`.
+
+You can build and flash the examples to make sure Zephyr is running correctly on
+your board. With the :ref:`blinky-sample` you will see the LED blinking every second.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
    :board: nucleo_f091rc
    :goals: build flash
 
-You will see the LED blinking every second.
+Testing GPIO
+============
 
-Debugging
-=========
+To test the GPIO with loopback to itself a test harness must be set up
+(a jumper connecting CN10 pin 27 to CN10 pin 29).
 
-You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
++--------+--------+---------+----------+
+| Signal | GPIO   | Connection on CN10 |
++========+========+=========+==========+
+| IN     | PB4    | 27      |          |
++--------+--------+---------+  jumper  +
+| OUT    | PB5    | 29      |          |
++--------+--------+---------+----------+
+
+Start your favorite terminal program to listen for output.
+Then build and flash the test application.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
+   :zephyr-app: tests/drivers/gpio/gpio_basic_api
    :board: nucleo_f091rc
-   :maybe-skip-config:
-   :goals: debug
+   :goals: build flash
+
+Testing SPI
+===========
+
+To test the SPI with loopback to itself a test harness must be set up
+(a jumper connecting CN10 pin 27 to CN10 pin 29).
+
++--------+--------+---------+----------+
+| Signal | Master | Connection on CN10 |
++========+========+=========+==========+
+| SCK    | PB3    | 31      |   open   |
++--------+--------+---------+----------+
+| MISO   | PB4    | 27      |          |
++--------+--------+---------+  jumper  +
+| MOSI   | PB5    | 29      |          |
++--------+--------+---------+----------+
+
+Start your favorite terminal program to listen for output.
+Then build and flash the test application.
+
+.. zephyr-app-commands::
+   :zephyr-app: tests/drivers/spi/spi_loopback
+   :board: nucleo_f091rc
+   :goals: build flash
 
 References
 **********

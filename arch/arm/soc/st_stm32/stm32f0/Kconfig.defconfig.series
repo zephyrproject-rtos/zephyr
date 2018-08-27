@@ -12,15 +12,8 @@ source "arch/arm/soc/st_stm32/stm32f0/Kconfig.defconfig.stm32f0*"
 config SOC_SERIES
 	default "stm32f0"
 
-if GPIO_STM32
-
-config GPIO_STM32_PORTD
+config PINCTRL
 	default y
-
-config GPIO_STM32_PORTF
-	default y
-
-endif # GPIO_STM32
 
 if I2C_STM32
 

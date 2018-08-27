@@ -1,0 +1,37 @@
+---
+title: STM32 GPIO with PINCTRL backend
+id: st,stm32-gpio-pinctrl
+version: 0.1
+
+description: >
+    This is a representation of the STM32 GPIO node using a PINCTRL backend
+
+inherits:
+    !include gpio-pinctrl.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "st,stm32-gpio-pinctrl"
+      generation: define
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: compound
+      category: required
+      description: required interrupts
+      generation: define
+
+    st,bank-name:
+      type: string
+      category: required
+      description: bank name (one of "GPIOA", "GPIOB", ...)
+      generation: define
+...

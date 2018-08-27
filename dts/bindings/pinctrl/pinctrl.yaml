@@ -1,0 +1,42 @@
+#
+# Copyright (c) 2018 Bobby Noelte
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Pinctrl Base Structure
+id: pinctrl
+version: 0.1
+
+description: >
+    This binding gives the base structures for all pin controller devices
+
+properties:
+    pin-controller:
+      type: string
+      category: required
+      description: device controller identification
+      generation: define
+
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
+
+    "#address-cells":
+      type: int
+      category: required
+      description: should be 1.
+
+    "#size-cells":
+      type: int
+      category: required
+      description: should be 0.
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for device name)
+      generation: define
+...
