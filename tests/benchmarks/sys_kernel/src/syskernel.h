@@ -28,6 +28,8 @@ extern const char sz_success[];
 extern const char sz_partial[];
 extern const char sz_fail[];
 
+extern u32_t number_of_loops;
+
 #define sz_module_title_fmt	"\nMODULE: %s"
 #define sz_module_result_fmt	"\n\nPROJECT EXECUTION %s\n"
 #define sz_module_end_fmt	"\nEND MODULE"
