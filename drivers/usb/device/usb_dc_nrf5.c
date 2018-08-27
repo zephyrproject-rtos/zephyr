@@ -1015,13 +1015,13 @@ static int hf_clock_enable(bool on, bool blocking)
 		ret = clock_control_off(clock, (void *)blocking);
 	}
 
-	if (ret) {
+	if (ret && (blocking || (ret != -EINPROGRESS))) {
 		SYS_LOG_ERR("NRF5 HF clock %s fail: %d",
 			    on ? "start" : "stop", ret);
 		return ret;
 	}
 
-	SYS_LOG_DBG("HF clock %s success", on ? "start" : "stop");
+	SYS_LOG_DBG("HF clock %s success (%d)", on ? "start" : "stop", ret);
 
 	return ret;
 }
@@ -1731,15 +1731,18 @@ int usb_dc_attach(void)
 	usbd_install_isr();
 	usbd_enable_interrupts();
 
+	/* NOTE: Non-blocking HF clock enable can return -EINPROGRESS if HF
+	 * clock start was already requested.
+	 */
 	ret = hf_clock_enable(true, false);
-	if (ret) {
+	if (ret && ret != -EINPROGRESS) {
 		goto err_clk_enable;
 	}
 
 	endpoint_ctx_init();
 	ctx->attached = true;
 
-	return ret;
+	return 0;
 
 err_clk_enable:
 	usbd_disable_interrupts();
