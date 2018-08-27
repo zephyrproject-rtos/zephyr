@@ -104,7 +104,7 @@ struct net_if_mcast_addr {
  */
 struct net_if_ipv6_prefix {
 	/** Prefix lifetime */
-	struct k_delayed_work lifetime;
+	struct net_timeout lifetime;
 
 	/** IPv6 prefix */
 	struct in6_addr prefix;
