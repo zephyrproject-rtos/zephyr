@@ -47,7 +47,6 @@ void *_get_next_switch_handle(void *interrupted);
 struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
 					      struct k_thread *from);
 void idle(void *a, void *b, void *c);
-void _ready_thread(struct k_thread *thread);
 
 /* find which one is the next thread to run */
 /* must be called with interrupts locked */
@@ -215,6 +214,16 @@ static inline int _is_valid_prio(int prio, void *entry_point)
 	}
 
 	return 1;
+}
+
+static inline void _ready_thread(struct k_thread *thread)
+{
+	if (_is_thread_ready(thread)) {
+		_add_thread_to_ready_q(thread);
+	}
+
+	sys_trace_thread_ready(thread);
+
 }
 
 static inline void _ready_one_thread(_wait_q_t *wq)
