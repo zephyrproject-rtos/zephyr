@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2017 Open Source Foundries Limited.
+ * Copyright (c) 2017 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
