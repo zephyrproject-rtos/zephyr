@@ -807,14 +807,6 @@ static bool address_manage_timeout(struct net_if_addr *ifaddr,
 	return false;
 }
 
-#if defined(CONFIG_NET_TEST)
-static void address_lifetime_timeout(struct k_work *work);
-void net_address_lifetime_timeout(void)
-{
-	address_lifetime_timeout(NULL);
-}
-#endif
-
 static void address_lifetime_timeout(struct k_work *work)
 {
 	u64_t timeout_update = UINT64_MAX;
@@ -856,6 +848,13 @@ static void address_lifetime_timeout(struct k_work *work)
 		k_delayed_work_submit(&address_lifetime_timer, timeout_update);
 	}
 }
+
+#if defined(CONFIG_NET_TEST)
+void net_address_lifetime_timeout(void)
+{
+	address_lifetime_timeout(NULL);
+}
+#endif
 
 static void address_submit_work(struct net_if_addr *ifaddr)
 {

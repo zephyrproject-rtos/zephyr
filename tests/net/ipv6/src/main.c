@@ -934,6 +934,75 @@ static void test_hbho_message_3(void)
 		      "IPv6 mismatch ext hdr length");
 }
 
+#define FIFTY_DAYS (60 * 60 * 24 * 50)
+
+/* Implemented in subsys/net/ip/net_if.c */
+extern void net_address_lifetime_timeout(void);
+
+static void test_address_lifetime(void)
+{
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0x20, 0x1 } } };
+	struct net_if *iface = net_if_get_default();
+	u32_t vlifetime = 0xffff;
+	u64_t timeout = K_SECONDS((u64_t)vlifetime);
+	struct net_if_addr *ifaddr;
+	u64_t remaining;
+	bool ret;
+
+	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF,
+				      vlifetime);
+	zassert_not_null(ifaddr, "Address with lifetime cannot be added");
+
+	/* Make sure DAD gets some time to run */
+	k_sleep(K_MSEC(200));
+
+	/* Then check that the timeout values in net_if_addr are set correctly.
+	 * Start first with smaller timeout values.
+	 */
+	zassert_equal(ifaddr->lifetime.timer_timeout, timeout,
+		      "Timer timeout set wrong (%d vs %llu)",
+		      ifaddr->lifetime.timer_timeout, timeout);
+	zassert_equal(ifaddr->lifetime.wrap_counter, 0,
+		      "Wrap counter wrong (%d)", ifaddr->lifetime.wrap_counter);
+
+	/* Then update the lifetime and check that timeout values are correct
+	 */
+	vlifetime = FIFTY_DAYS;
+	net_if_ipv6_addr_update_lifetime(ifaddr, vlifetime);
+
+	zassert_equal(ifaddr->lifetime.wrap_counter, 2,
+		      "Wrap counter wrong (%d)", ifaddr->lifetime.wrap_counter);
+	remaining = K_SECONDS((u64_t)vlifetime) -
+		NET_TIMEOUT_MAX_VALUE * (u64_t)ifaddr->lifetime.wrap_counter;
+
+	zassert_equal(remaining, ifaddr->lifetime.timer_timeout,
+		     "Remaining time wrong (%llu vs %d)", remaining,
+		      ifaddr->lifetime.timer_timeout);
+
+	/* The address should not expire */
+	net_address_lifetime_timeout();
+
+	zassert_equal(ifaddr->lifetime.wrap_counter, 2,
+		      "Wrap counter wrong (%d)", ifaddr->lifetime.wrap_counter);
+
+	ifaddr->lifetime.timer_timeout = K_MSEC(10);
+	ifaddr->lifetime.timer_start = k_uptime_get_32() - K_MSEC(10);
+	ifaddr->lifetime.wrap_counter = 0;
+
+	net_address_lifetime_timeout();
+
+	/* The address should be expired now */
+	zassert_equal(ifaddr->lifetime.timer_timeout, 0,
+		      "Timer timeout set wrong (%llu vs %llu)",
+		      ifaddr->lifetime.timer_timeout, 0);
+	zassert_equal(ifaddr->lifetime.wrap_counter, 0,
+		      "Wrap counter wrong (%d)", ifaddr->lifetime.wrap_counter);
+
+	ret = net_if_ipv6_addr_rm(iface, &addr);
+	zassert_true(ret, "Address with lifetime cannot be removed");
+}
+
 /**
  * @brief IPv6 change ll address
  */
@@ -1057,6 +1126,7 @@ void test_main(void)
 			 ztest_unit_test(test_hbho_message_1),
 			 ztest_unit_test(test_hbho_message_2),
 			 ztest_unit_test(test_hbho_message_3),
+			 ztest_unit_test(test_address_lifetime),
 			 ztest_unit_test(test_change_ll_addr),
 			 ztest_unit_test(test_prefix_timeout),
 			 ztest_unit_test(test_dad_timeout)
