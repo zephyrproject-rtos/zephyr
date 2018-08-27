@@ -175,6 +175,8 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 }
 
+/* Used to unconditionally enable interrupts when MULTITHREADING=n */
+#define Z_ARCH_INT_ENABLE() _arch_irq_unlock(0)
 
 #endif /* _ASMLANGUAGE */
 
