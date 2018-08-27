@@ -242,6 +242,16 @@ config BT_ATT_TX_MAX
 	  amount the calls will block until an existing queued PDU gets
 	  sent.
 
+config BT_AUTO_PHY_UPDATE
+	bool "Auto-initiate PHY Update Procedure"
+	default y
+	help
+	  Initiate PHY Update Procedure on connection establishment.
+
+	  Disable this if you want PHY Update Procedure feature supported but
+	  want to rely on remote device to initiate the procedure at its
+	  descretion.
+
 config BT_SMP
 	bool "Security Manager Protocol support"
 	select TINYCRYPT

@@ -901,7 +901,8 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		}
 	}
 
-	if (BT_FEAT_LE_PHY_2M(bt_dev.le.features)) {
+	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
+	    BT_FEAT_LE_PHY_2M(bt_dev.le.features)) {
 		err = hci_le_set_phy(conn);
 		if (!err) {
 			atomic_set_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE);
@@ -985,7 +986,8 @@ static void le_remote_feat_complete(struct net_buf *buf)
 		       sizeof(conn->le.features));
 	}
 
-	if (BT_FEAT_LE_PHY_2M(bt_dev.le.features) &&
+	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
+	    BT_FEAT_LE_PHY_2M(bt_dev.le.features) &&
 	    BT_FEAT_LE_PHY_2M(conn->le.features)) {
 		int err;
 
@@ -1057,7 +1059,8 @@ static void le_phy_update_complete(struct net_buf *buf)
 	BT_DBG("PHY updated: status: 0x%x, tx: %u, rx: %u",
 	       evt->status, evt->tx_phy, evt->rx_phy);
 
-	if (!atomic_test_and_clear_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE)) {
+	if (!IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) ||
+	    !atomic_test_and_clear_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE)) {
 		goto done;
 	}
 
