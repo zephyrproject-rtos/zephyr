@@ -525,36 +525,36 @@ static void test_prefix_timeout(void)
 			net_sprint_ipv6_addr(&addr), len);
 }
 
-#if 0
-/* This test has issues so disabling it temporarily */
-static bool net_test_prefix_timeout_overflow(void)
+static void test_prefix_timeout_long(void)
 {
-	struct net_if_ipv6_prefix *prefix;
-	struct in6_addr addr = { { { 0x20, 1, 0x0d, 0xb8, 0, 0, 0, 0,
-				     0, 0, 0, 0, 0, 0, 0, 1 } } };
-	int len = 64, lifetime = 0xfffffffe;
+	struct net_if_ipv6_prefix *ifprefix;
+	struct in6_addr prefix = { { { 0x20, 1, 0x0d, 0xb8, 43, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0 } } };
+	u32_t lifetime = 0xfffffffe;
+	int len = 64;
+	u64_t remaining;
+	int ret;
 
-	prefix = net_if_ipv6_prefix_add(net_if_get_default(),
-					&addr, len, lifetime);
+	ifprefix = net_if_ipv6_prefix_add(net_if_get_default(),
+					  &prefix, len, lifetime);
 
-	net_if_ipv6_prefix_set_lf(prefix, false);
-	net_if_ipv6_prefix_set_timer(prefix, lifetime);
+	net_if_ipv6_prefix_set_lf(ifprefix, false);
+	net_if_ipv6_prefix_set_timer(ifprefix, lifetime);
 
-	if (!k_sem_take(&wait_data, (lifetime * 3 / 2) * MSEC_PER_SEC)) {
-		TC_ERROR("Prefix %s/%d lock should still be there",
-			 net_sprint_ipv6_addr(&addr), len);
-		return false;
-	}
+	zassert_equal(ifprefix->lifetime.wrap_counter, 2000,
+		      "Wrap counter wrong (%d)",
+		      ifprefix->lifetime.wrap_counter);
+	remaining = K_SECONDS((u64_t)lifetime) -
+		NET_TIMEOUT_MAX_VALUE * (u64_t)ifprefix->lifetime.wrap_counter;
 
-	if (!net_if_ipv6_prefix_rm(net_if_get_default(), &addr, len)) {
-		TC_ERROR("Prefix %s/%d should have been removed",
-			 net_sprint_ipv6_addr(&addr), len);
-		return false;
-	}
+	zassert_equal(remaining, ifprefix->lifetime.timer_timeout,
+		     "Remaining time wrong (%llu vs %d)", remaining,
+		      ifprefix->lifetime.timer_timeout);
 
-	return true;
+	ret = net_if_ipv6_prefix_rm(net_if_get_default(), &prefix, len);
+	zassert_equal(ret, true, "Prefix %s/%d should have been removed",
+		      net_sprint_ipv6_addr(&prefix), len);
 }
-#endif
 
 static void test_rs_message(void)
 {
@@ -1129,6 +1129,7 @@ void test_main(void)
 			 ztest_unit_test(test_address_lifetime),
 			 ztest_unit_test(test_change_ll_addr),
 			 ztest_unit_test(test_prefix_timeout),
+			 ztest_unit_test(test_prefix_timeout_long),
 			 ztest_unit_test(test_dad_timeout)
 			 );
 	ztest_run_test_suite(test_ipv6_fn);
