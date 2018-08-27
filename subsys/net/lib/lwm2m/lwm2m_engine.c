@@ -3329,9 +3329,12 @@ static int handle_request(struct coap_packet *request,
 							accept);
 				if (r < 0) {
 					SYS_LOG_ERR("add OBSERVE error: %d", r);
+					goto error;
 				}
 			} else {
 				SYS_LOG_ERR("OBSERVE request missing token");
+				r = -EINVAL;
+				goto error;
 			}
 		} else if (observe == 1) {
 			/* remove observer */
