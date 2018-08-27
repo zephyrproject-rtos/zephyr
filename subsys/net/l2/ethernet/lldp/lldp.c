@@ -127,6 +127,17 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_NET_LLDP_END_LLDPDU_TLV_ENABLED)) {
+		u16_t tlv_end = htons(NET_LLDP_END_LLDPDU_VALUE);
+
+		if (!net_pkt_write_new(pkt, (u8_t *)&tlv_end,
+				       sizeof(tlv_end))) {
+			net_pkt_unref(pkt);
+			ret = -ENOMEM;
+			goto out;
+		}
+	}
+
 	net_pkt_lladdr_src(pkt)->addr = net_if_get_link_addr(lldp->iface)->addr;
 	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
 	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)lldp_multicast_eth_addr.addr;

@@ -141,11 +141,6 @@ struct net_lldpdu {
 	struct net_lldp_chassis_tlv chassis_id;	/* Mandatory TLV */
 	struct net_lldp_port_tlv port_id;	/* Mandatory TLV */
 	struct net_lldp_time_to_live_tlv ttl;	/* Mandatory TLV */
-
-#if defined(CONFIG_NET_LLDP_END_LLDPDU_TLV_ENABLED)
-	/** Optional End of LLDPDU TLV. Must be set to 0x0000 always. */
-	const uint16_t end_lldpdu_tlv;
-#endif /* CONFIG_NET_LLDP_END_LLDPDU_TLV_ENABLED */
 } __packed;
 
 /**
