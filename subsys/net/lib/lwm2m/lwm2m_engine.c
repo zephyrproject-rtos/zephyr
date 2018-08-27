@@ -3337,7 +3337,7 @@ static int handle_request(struct coap_packet *request,
 			/* remove observer */
 			r = engine_remove_observer(token, tkl);
 			if (r < 0) {
-				SYS_LOG_ERR("remove obserer error: %d", r);
+				SYS_LOG_ERR("remove observe error: %d", r);
 			}
 		}
 
@@ -3665,7 +3665,7 @@ static int notify_message_reply_cb(const struct coap_packet *response,
 		if (reply->tkl > 0) {
 			ret = engine_remove_observer(reply->token, reply->tkl);
 			if (ret) {
-				SYS_LOG_ERR("remove obserer error: %d", ret);
+				SYS_LOG_ERR("remove observe error: %d", ret);
 			}
 		} else {
 			SYS_LOG_ERR("notify reply missing token -- ignored.");
