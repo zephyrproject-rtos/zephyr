@@ -8,4 +8,5 @@ toolchain:
 ram: 64
 flash: 256
 supported:
+  - nvs
   - pwm
