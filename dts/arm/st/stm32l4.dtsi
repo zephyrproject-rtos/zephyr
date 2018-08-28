@@ -46,6 +46,7 @@
 				reg = <0x08000000 DT_FLASH_SIZE>;
 
 				write-block-size = <8>;
+				erase-block-size = <2048>;
 			};
 		};
 
