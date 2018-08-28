@@ -1196,7 +1196,7 @@ static inline bool net_pkt_append_all(struct net_pkt *pkt, u16_t len,
  *
  * @param pkt Network packet.
  * @param len Total length of input data
- * @param data Byte to initialise fragment with
+ * @param data Byte to initialize fragment with
  * @param timeout Affects the action taken should the net buf pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait up to the specified
