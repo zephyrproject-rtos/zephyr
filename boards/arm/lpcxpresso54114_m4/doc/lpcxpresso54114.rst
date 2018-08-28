@@ -1,7 +1,7 @@
 .. _lpcxpresso54114:
 
-NXP LPCXPRESSO54114
-#####################
+NXP LPCXPRESSO54114 (M4 Core)
+#############################
 
 Overview
 ********
@@ -127,7 +127,7 @@ You can debug an application in the usual way. Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: lpcxpresso54114
+   :board: lpcxpresso54114_m4
    :goals: debug
 
 Open a serial terminal (minicom, putty, etc.) and connect the board with the
