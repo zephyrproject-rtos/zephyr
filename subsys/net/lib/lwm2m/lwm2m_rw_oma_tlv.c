@@ -307,6 +307,55 @@ error:
 	return 0;
 }
 
+static size_t put_begin_tlv(struct lwm2m_output_context *out,
+			    struct net_buf **mark_frag, u16_t *mark_pos,
+			    u8_t *writer_flags, int writer_flag)
+{
+	/* set flags */
+	*writer_flags |= writer_flag;
+
+	/*
+	 * store position for inserting TLV when we know the length
+	 */
+	*mark_frag = out->frag;
+	*mark_pos = out->offset;
+
+	return 0;
+}
+
+static size_t put_end_tlv(struct lwm2m_output_context *out,
+			  struct net_buf *mark_frag, u16_t mark_pos,
+			  u8_t *writer_flags, u8_t writer_flag,
+			  int tlv_type, int tlv_id)
+{
+	struct oma_tlv tlv;
+	struct net_buf *tmp_frag;
+	u16_t tmp_pos;
+	u32_t len = 0;
+
+	*writer_flags &= ~writer_flag;
+
+	len = net_buf_frags_len(mark_frag) - mark_pos;
+
+	/* backup out location */
+	tmp_frag = out->frag;
+	tmp_pos = out->offset;
+
+	/* use stored location */
+	out->frag = mark_frag;
+	out->offset = mark_pos;
+
+	/* set instance length */
+	tlv_setup(&tlv, tlv_type, tlv_id, len);
+	len = oma_tlv_put(&tlv, out, NULL, true) - tlv.length;
+
+	/* restore out location + newly inserted */
+	out->frag = tmp_frag;
+	out->offset = tmp_pos + len;
+
+	return 0;
+}
+
 static size_t put_begin_ri(struct lwm2m_output_context *out,
 			   struct lwm2m_obj_path *path)
 {
@@ -317,61 +366,23 @@ static size_t put_begin_ri(struct lwm2m_output_context *out,
 		return 0;
 	}
 
-	/* set some flags in state */
-	fd->writer_flags |= WRITER_RESOURCE_INSTANCE;
-
-	/*
-	 * store position for inserting TLV when we know the length
-	 */
-	fd->mark_frag_ri = out->frag;
-	fd->mark_pos_ri = out->offset;
-	return 0;
+	return put_begin_tlv(out, &fd->mark_frag_ri, &fd->mark_pos_ri,
+			     &fd->writer_flags, WRITER_RESOURCE_INSTANCE);
 }
 
 static size_t put_end_ri(struct lwm2m_output_context *out,
 			 struct lwm2m_obj_path *path)
 {
 	struct tlv_out_formatter_data *fd;
-	struct oma_tlv tlv;
-	struct net_buf *tmp_frag;
-	u16_t tmp_pos;
-	u32_t len = 0;
 
 	fd = engine_get_out_user_data(out);
 	if (!fd) {
 		return 0;
 	}
 
-	fd->writer_flags &= ~WRITER_RESOURCE_INSTANCE;
-
-	/* loop through buffers and add lengths */
-	tmp_frag = fd->mark_frag_ri;
-	tmp_pos = fd->mark_pos_ri;
-	while (tmp_frag != out->frag) {
-		len += tmp_frag->len - tmp_pos;
-		tmp_pos = 0;
-	}
-
-	len += out->offset - tmp_pos;
-
-	/* backup out location */
-	tmp_frag = out->frag;
-	tmp_pos = out->offset;
-
-	/* use stored location */
-	out->frag = fd->mark_frag_ri;
-	out->offset = fd->mark_pos_ri;
-
-	/* update the length */
-	tlv_setup(&tlv, OMA_TLV_TYPE_MULTI_RESOURCE, path->res_id,
-		  len);
-	len = oma_tlv_put(&tlv, out, NULL, true) - tlv.length;
-
-	/* restore out location + newly inserted */
-	out->frag = tmp_frag;
-	out->offset = tmp_pos + len;
-
-	return 0;
+	return put_end_tlv(out, fd->mark_frag_ri, fd->mark_pos_ri,
+			   &fd->writer_flags, WRITER_RESOURCE_INSTANCE,
+			   OMA_TLV_TYPE_MULTI_RESOURCE, path->res_id);
 }
 
 static size_t put_s8(struct lwm2m_output_context *out,
