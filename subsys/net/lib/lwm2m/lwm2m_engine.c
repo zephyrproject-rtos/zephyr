@@ -683,18 +683,20 @@ static struct lwm2m_engine_obj_inst *get_engine_obj_inst(int obj_id,
 }
 
 static struct lwm2m_engine_obj_inst *
-next_engine_obj_inst(struct lwm2m_engine_obj_inst *last,
-		     int obj_id, int obj_inst_id)
+next_engine_obj_inst(int obj_id, int obj_inst_id)
 {
-	while (last) {
-		last = SYS_SLIST_PEEK_NEXT_CONTAINER(last, node);
-		if (last && last->obj->obj_id == obj_id &&
-		    last->obj_inst_id == obj_inst_id) {
-			return last;
+	struct lwm2m_engine_obj_inst *obj_inst, *next = NULL;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list, obj_inst,
+				     node) {
+		if (obj_inst->obj->obj_id == obj_id &&
+		    obj_inst->obj_inst_id > obj_inst_id &&
+		    (!next || next->obj_inst_id > obj_inst->obj_inst_id)) {
+			next = obj_inst;
 		}
 	}
 
-	return NULL;
+	return next;
 }
 
 int lwm2m_create_obj_inst(u16_t obj_id, u16_t obj_inst_id,
@@ -2738,7 +2740,7 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 
 	while (obj_inst) {
 		if (!obj_inst->resources || obj_inst->resource_count == 0) {
-			continue;
+			goto move_forward;
 		}
 
 		/* save path's res_id because we may need to change it below */
@@ -2804,9 +2806,14 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 			engine_put_end(out, path);
 		}
 
-		/* advance to the next object instance */
-		obj_inst = next_engine_obj_inst(obj_inst, path->obj_id,
-						path->obj_inst_id);
+move_forward:
+		if (path->level <= 1) {
+			/* advance to the next object instance */
+			obj_inst = next_engine_obj_inst(path->obj_id,
+							obj_inst->obj_inst_id);
+		} else {
+			obj_inst = NULL;
+		}
 	}
 
 	/* did not read anything even if we should have - on single item */
