@@ -25,7 +25,7 @@ config PM_CONTROL_APP
 	bool
 	prompt "Handled at Application level"
 	help
-	  This option enbles the Application to handle all the Power
+	  This option enables the Application to handle all the Power
 	  Management flows for the platform.
 
 config PM_CONTROL_OS

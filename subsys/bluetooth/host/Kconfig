@@ -250,7 +250,7 @@ config BT_AUTO_PHY_UPDATE
 
 	  Disable this if you want PHY Update Procedure feature supported but
 	  want to rely on remote device to initiate the procedure at its
-	  descretion.
+	  discretion.
 
 config BT_SMP
 	bool "Security Manager Protocol support"

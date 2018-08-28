@@ -127,7 +127,7 @@ config OPENTHREAD_NETWORK_NAME
 	string "Default network name"
 	default "ot_zephyr"
 	help
-	  Network name for Openthread
+	  Network name for OpenThread
 
 config OPENTHREAD_XPANID
 	string "Default Extended PAN ID"
