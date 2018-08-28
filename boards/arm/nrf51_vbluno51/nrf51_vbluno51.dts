@@ -30,6 +30,10 @@
 &uart0 {
 	current-speed = <115200>;
 	status = "ok";
+	tx-pin = <10>;
+	rx-pin = <11>;
+	rts-pin = <12>;
+	cts-pin = <13>;
 };
 
 &i2c0 {

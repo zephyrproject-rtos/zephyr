@@ -37,6 +37,8 @@
 	status = "ok";
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
+	tx-pin = <3>;
+	rx-pin = <2>;
 };
 
 &i2c0 {

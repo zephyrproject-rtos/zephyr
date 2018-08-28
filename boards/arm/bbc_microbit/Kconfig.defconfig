@@ -9,16 +9,6 @@ if BOARD_BBC_MICROBIT
 config BOARD
 	default "bbc_microbit"
 
-if UART_NRFX
-
-config UART_0_NRF_TX_PIN
-	default 24
-
-config UART_0_NRF_RX_PIN
-	default 25
-
-endif # UART_NRFX
-
 if I2C
 
 config I2C_NRFX

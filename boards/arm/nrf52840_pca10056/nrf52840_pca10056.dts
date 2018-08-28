@@ -96,12 +96,20 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "ok";
+	tx-pin = <6>;
+	rx-pin = <8>;
+	rts-pin = <5>;
+	cts-pin = <7>;
 };
 
 #ifdef CONFIG_UART_1_NRF_UARTE
 &uart1 {
 	current-speed = <115200>;
 	status = "ok";
+	tx-pin = <46>;
+	rx-pin = <45>;
+	rts-pin = <44>;
+	cts-pin = <47>;
 
 #ifdef CONFIG_MODEM_WNCM14A2A
 	wncm14a2a {

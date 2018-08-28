@@ -9,22 +9,6 @@ if BOARD_NRF51_VBLUNO51
 config BOARD
 	default "nrf51_vbluno51"
 
-if UART_NRFX
-
-config UART_0_NRF_TX_PIN
-	default 10
-
-config UART_0_NRF_RX_PIN
-	default 11
-
-config UART_0_NRF_RTS_PIN
-	default 12
-
-config UART_0_NRF_CTS_PIN
-	default 13
-
-endif # UART_NRFX
-
 if I2C
 
 config I2C_NRFX

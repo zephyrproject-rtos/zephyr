@@ -31,6 +31,10 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "ok";
+	tx-pin = <13>;
+	rx-pin = <15>;
+	rts-pin = <12>;
+	cts-pin = <14>;
 };
 
 &flash0 {

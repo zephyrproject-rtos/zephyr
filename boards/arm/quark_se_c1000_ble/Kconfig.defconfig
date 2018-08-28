@@ -9,20 +9,4 @@ if BOARD_QUARK_SE_C1000_BLE
 config BOARD
 	default "quark_se_c1000_ble"
 
-if UART_NRFX
-
-config UART_0_NRF_TX_PIN
-	default 9
-
-config UART_0_NRF_RX_PIN
-	default 11
-
-config UART_0_NRF_RTS_PIN
-	default 8
-
-config UART_0_NRF_CTS_PIN
-	default 10
-
-endif # UART_NRFX
-
 endif # BOARD_QUARK_SE_C1000_BLE

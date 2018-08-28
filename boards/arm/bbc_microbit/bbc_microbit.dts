@@ -29,6 +29,8 @@
 &uart0 {
 	status = "ok";
 	current-speed = <115200>;
+	tx-pin = <24>;
+	rx-pin = <25>;
 };
 
 &i2c0 {

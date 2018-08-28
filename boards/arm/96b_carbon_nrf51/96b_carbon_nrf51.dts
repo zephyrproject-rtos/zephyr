@@ -30,6 +30,8 @@
 &uart0 {
 	current-speed = <115200>;
 	status = "ok";
+	tx-pin = <29>;
+	rx-pin = <11>;
 };
 
 &spi1 {
