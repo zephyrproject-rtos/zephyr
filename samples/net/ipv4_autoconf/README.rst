@@ -49,7 +49,7 @@ steps:
    :goals: build flash
    :compact:
 
-Once IPv4 LL has completed probing and announcment, details are shown like this:
+Once IPv4 LL has completed probing and announcement, details are shown like this:
 
 .. code-block:: console
 

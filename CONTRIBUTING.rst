@@ -18,11 +18,11 @@ documentation.
   use other licensing and are clearly identified.
 
 * The Developer Certificate of Origin (DCO) process is followed to
-  ensure developers are following licensing critera for their
+  ensure developers are following licensing criteria for their
   contributions, and documented with a ``Signed-of-by`` line in commits.
 
 * Zephyr development workflow is supported on Linux, macOS, and Windows,
-  (with afew exceptions).
+  (with a few exceptions).
 
 * Source code for the project is maintained in the GitHub repo:
   https://github.com/zephyrproject-rtos/zephyr

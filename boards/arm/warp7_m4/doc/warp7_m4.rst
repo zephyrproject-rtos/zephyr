@@ -25,7 +25,7 @@ The WaRP7 Platform is composed of a CPU and IO board.
 WaRP7 IO Board
 ==============
 
-- 6-axis Acclerometer Magnetometer: NXP FXOS8700CQ (I2C4 interface)
+- 6-axis Accelerometer Magnetometer: NXP FXOS8700CQ (I2C4 interface)
 - 3-axis Gyroscope: NXP FXAS21002C (I2C4 interface)
 - Altimeter: NXP MPL3115A2 (I2C4 interface)
 - NXP NTAG NT3H1101 (I2C2 interface)
