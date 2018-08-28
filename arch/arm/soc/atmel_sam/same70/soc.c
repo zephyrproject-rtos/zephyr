@@ -227,11 +227,6 @@ static int atmel_same70_init(struct device *arg)
 
 	key = irq_lock();
 
-	SCB_EnableICache();
-	if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
-		SCB_EnableDCache();
-	}
-
 	/* Clear all faults */
 	_ClearFaults();
 
