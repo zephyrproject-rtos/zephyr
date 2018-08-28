@@ -2707,7 +2707,7 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 {
 	struct lwm2m_output_context *out = context->out;
 	struct lwm2m_obj_path *path = context->path;
-	struct lwm2m_engine_obj_inst *obj_inst;
+	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	int ret = 0, index;
 	u8_t num_read = 0;
 	u8_t initialized;
@@ -2715,7 +2715,13 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 	struct lwm2m_engine_obj_field *obj_field;
 	u16_t temp_res_id, temp_len;
 
-	obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
+	if (path->level >= 2) {
+		obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
+	} else if (path->level == 1) {
+		/* find first obj_inst with path's obj_id */
+		obj_inst = next_engine_obj_inst(path->obj_id, -1);
+	}
+
 	if (!obj_inst) {
 		return -ENOENT;
 	}
