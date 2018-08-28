@@ -147,7 +147,7 @@ void log_filter_set(struct log_backend const *const backend,
  * @brief Enable backend with initial maximum filtering level.
  *
  * @param backend	Backend instance.
- * @param ctx		User csontext.
+ * @param ctx		User context.
  * @param level		Severity level.
  */
 void log_backend_enable(struct log_backend const *const backend,
