@@ -120,7 +120,7 @@ config ARM_NSC_REGION_BASE_ADDRESS
 	  - Certain requirements/restrictions may apply regarding
 	  the size and the alignment of the starting address for
 	  a Non-Secure Callable section, depending on the available
-	  security atttribution unit (SAU or IDAU) for a given SOC.
+	  security attribution unit (SAU or IDAU) for a given SOC.
 
 config ARM_ENTRY_VENEERS_LIB_NAME
 	string "Entry Veneers symbol file"
