@@ -110,7 +110,7 @@ int bt_set_id_addr(const bt_addr_le_t *addr);
  *
  *  @param addrs Array where to store the configured identities.
  *  @param count Should be initialized to the array size. Once the function
- *               returns it will contain the number of returned identies.
+ *               returns it will contain the number of returned identities.
  */
 void bt_id_get(bt_addr_le_t *addrs, size_t *count);
 
