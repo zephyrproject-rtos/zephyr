@@ -65,3 +65,21 @@
 &rtc {
 	status = "ok";
 };
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+#if defined(CONFIG_FS_FLASH_STORAGE_PARTITION)
+		/*
+		 * Reserve the final 16 KiB for the application.
+		 */
+		storage_partition: partition@3c000 {
+			label = "storage";
+			reg = <0x0003c000 0x00004000>;
+		};
+#endif
+	};
+};
