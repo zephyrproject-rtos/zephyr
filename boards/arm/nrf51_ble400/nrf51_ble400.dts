@@ -29,4 +29,8 @@
 &uart0 {
 	current-speed = <115200>;
 	status = "ok";
+	tx-pin = <9>;
+	rx-pin = <11>;
+	rts-pin = <8>;
+	cts-pin = <10>;
 };

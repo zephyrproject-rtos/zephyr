@@ -59,36 +59,6 @@ config UART_0_NRF_FLOW_CONTROL
 	  Enable flow control. If selected, additionally two pins, RTS and CTS
 	  have to be configured.
 
-config UART_0_NRF_TX_PIN
-	int "TX Pin Number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  The GPIO pin to use for TX.
-
-config UART_0_NRF_RX_PIN
-	int "RX Pin Number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  The GPIO pin to use for RX.
-
-config UART_0_NRF_CTS_PIN
-	int "CTS Pin Number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	depends on UART_0_NRF_FLOW_CONTROL
-	help
-	  The GPIO pin to use for CTS.
-
-config UART_0_NRF_RTS_PIN
-	int "RTS Pin Number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	depends on UART_0_NRF_FLOW_CONTROL
-	help
-	  The GPIO pin to use for RTS.
-
 config UART_0_NRF_TX_BUFFER_SIZE
 	int "Size of RAM buffer"
 	depends on UART_0_NRF_UARTE

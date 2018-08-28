@@ -30,4 +30,8 @@
 &uart0 {
 	status = "ok";
 	current-speed = <1000000>;
+	tx-pin = <9>;
+	rx-pin = <11>;
+	rts-pin = <8>;
+	cts-pin = <10>;
 };

@@ -404,27 +404,33 @@ static int uart_nrfx_init(struct device *dev)
 	/* Setting default height state of the TX PIN to avoid glitches
 	 * on the line during peripheral activation/deactivation.
 	 */
-	nrf_gpio_pin_write(CONFIG_UART_0_NRF_TX_PIN, 1);
-	nrf_gpio_cfg_output(CONFIG_UART_0_NRF_TX_PIN);
+	nrf_gpio_pin_write(CONFIG_UART_0_TX_PIN, 1);
+	nrf_gpio_cfg_output(CONFIG_UART_0_TX_PIN);
 
-	nrf_gpio_cfg_input(CONFIG_UART_0_NRF_RX_PIN, NRF_GPIO_PIN_NOPULL);
+	nrf_gpio_cfg_input(CONFIG_UART_0_RX_PIN, NRF_GPIO_PIN_NOPULL);
 
 	nrf_uart_txrx_pins_set(uart0_addr,
-			       CONFIG_UART_0_NRF_TX_PIN,
-			       CONFIG_UART_0_NRF_RX_PIN);
+			       CONFIG_UART_0_TX_PIN,
+			       CONFIG_UART_0_RX_PIN);
 
 #ifdef CONFIG_UART_0_NRF_FLOW_CONTROL
+#ifndef CONFIG_UART_0_RTS_PIN
+#error Flow control for UART0 is enabled, but RTS pin is not defined.
+#endif
+#ifndef CONFIG_UART_0_CTS_PIN
+#error Flow control for UART0 is enabled, but CTS pin is not defined.
+#endif
 	/* Setting default height state of the RTS PIN to avoid glitches
 	 * on the line during peripheral activation/deactivation.
 	 */
-	nrf_gpio_pin_write(CONFIG_UART_0_NRF_RTS_PIN, 1);
-	nrf_gpio_cfg_output(CONFIG_UART_0_NRF_RTS_PIN);
+	nrf_gpio_pin_write(CONFIG_UART_0_RTS_PIN, 1);
+	nrf_gpio_cfg_output(CONFIG_UART_0_RTS_PIN);
 
-	nrf_gpio_cfg_input(CONFIG_UART_0_NRF_CTS_PIN, NRF_GPIO_PIN_NOPULL);
+	nrf_gpio_cfg_input(CONFIG_UART_0_CTS_PIN, NRF_GPIO_PIN_NOPULL);
 
 	nrf_uart_hwfc_pins_set(uart0_addr,
-			       CONFIG_UART_0_NRF_RTS_PIN,
-			       CONFIG_UART_0_NRF_CTS_PIN);
+			       CONFIG_UART_0_RTS_PIN,
+			       CONFIG_UART_0_CTS_PIN);
 #endif /* CONFIG_UART_0_NRF_FLOW_CONTROL */
 
 	nrf_uart_configure(uart0_addr,

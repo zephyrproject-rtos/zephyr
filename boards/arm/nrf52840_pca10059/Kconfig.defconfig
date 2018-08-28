@@ -9,22 +9,6 @@ if BOARD_NRF52840_PCA10059
 config BOARD
 	default "nrf52840_pca10059"
 
-if UART_NRFX
-
-config UART_0_NRF_TX_PIN
-	default 20
-
-config UART_0_NRF_RX_PIN
-	default 24
-
-config UART_0_NRF_RTS_PIN
-	default 17
-
-config UART_0_NRF_CTS_PIN
-	default 22
-
-endif # UART_NRFX
-
 if USB
 
 config USB_NRF52840
