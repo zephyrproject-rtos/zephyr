@@ -205,25 +205,14 @@ static size_t oma_tlv_put(const struct oma_tlv *tlv,
 	}
 
 	/* finally add the value */
-	if (value != NULL && tlv->length > 0) {
-		if (insert) {
-			if (!net_pkt_insert(out->out_cpkt->pkt, out->frag,
-					    out->offset, tlv->length, value,
-					    BUF_ALLOC_TIMEOUT)) {
-				/* TODO: Generate error? */
-				return 0;
-			}
-
-			out->offset += tlv->length;
-		} else {
-			out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
-						  out->offset, &out->offset,
-						  tlv->length, value,
-						  BUF_ALLOC_TIMEOUT);
-			if (!out->frag && out->offset == 0xffff) {
-				/* TODO: Generate error? */
-				return 0;
-			}
+	if (value != NULL && tlv->length > 0 && !insert) {
+		out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
+					  out->offset, &out->offset,
+					  tlv->length, value,
+					  BUF_ALLOC_TIMEOUT);
+		if (!out->frag && out->offset == 0xffff) {
+			/* TODO: Generate error? */
+			return 0;
 		}
 	}
 
