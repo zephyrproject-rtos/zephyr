@@ -7,7 +7,7 @@ Overview
 ********
 
 The tracing feature provides hooks that permits you to collect data from
-your application and allows enabled backends to visualise the inner-working of
+your application and allows enabled backends to visualize the inner-working of
 the kernel and various subsystems.
 
 Applications and supported tools can define empty macros declared in
