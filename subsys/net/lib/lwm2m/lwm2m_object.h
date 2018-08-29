@@ -261,17 +261,8 @@ struct lwm2m_output_context {
 	/* current write fragment in net_buf chain */
 	struct net_buf *frag;
 
-	/* markers for last resource inst */
-	struct net_buf *mark_frag_ri;
-
 	/* current write position in net_buf chain */
 	u16_t offset;
-
-	/* markers for last resource inst ID */
-	u16_t mark_pos_ri;
-
-	/* flags for reader/writer */
-	u8_t writer_flags;
 
 	/* private output data */
 	void *user_data;
