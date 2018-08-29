@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +47,9 @@
 
 extern const struct lwm2m_writer json_writer;
 
+int do_read_op_json(struct lwm2m_engine_obj *obj,
+		    struct lwm2m_engine_context *context,
+		    int content_format);
 int do_write_op_json(struct lwm2m_engine_obj *obj,
 		     struct lwm2m_engine_context *context);
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -333,6 +334,13 @@ const struct lwm2m_reader plain_text_reader = {
 	get_bool,
 	get_opaque
 };
+
+int do_read_op_plain_text(struct lwm2m_engine_obj *obj,
+			  struct lwm2m_engine_context *context,
+			  int content_format)
+{
+	return lwm2m_perform_read_op(obj, context, content_format);
+}
 
 int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
 			   struct lwm2m_engine_context *context)

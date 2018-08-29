@@ -2705,6 +2705,34 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 		      struct lwm2m_engine_context *context,
 		      u16_t content_format)
 {
+	switch (content_format) {
+
+	case LWM2M_FORMAT_APP_OCTET_STREAM:
+	case LWM2M_FORMAT_PLAIN_TEXT:
+	case LWM2M_FORMAT_OMA_PLAIN_TEXT:
+		return do_read_op_plain_text(obj, context, content_format);
+
+	case LWM2M_FORMAT_OMA_TLV:
+	case LWM2M_FORMAT_OMA_OLD_TLV:
+		return do_read_op_tlv(obj, context, content_format);
+
+#if defined(CONFIG_LWM2M_RW_JSON_SUPPORT)
+	case LWM2M_FORMAT_OMA_JSON:
+	case LWM2M_FORMAT_OMA_OLD_JSON:
+		return do_read_op_json(obj, context, content_format);
+#endif
+
+	default:
+		SYS_LOG_ERR("Unsupported content-format: %u", content_format);
+		return -ENOMSG;
+
+	}
+}
+
+int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
+			  struct lwm2m_engine_context *context,
+			  u16_t content_format)
+{
 	struct lwm2m_output_context *out = context->out;
 	struct lwm2m_obj_path *path = context->path;
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;

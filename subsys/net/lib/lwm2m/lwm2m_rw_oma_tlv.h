@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,6 +49,9 @@
 extern const struct lwm2m_writer oma_tlv_writer;
 extern const struct lwm2m_reader oma_tlv_reader;
 
+int do_read_op_tlv(struct lwm2m_engine_obj *obj,
+		   struct lwm2m_engine_context *context,
+		   int content_format);
 int do_write_op_tlv(struct lwm2m_engine_obj *obj,
 		    struct lwm2m_engine_context *context);
 
