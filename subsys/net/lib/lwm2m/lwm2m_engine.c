@@ -2779,6 +2779,14 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 			goto move_forward;
 		}
 
+		/* update the obj_inst_id as we move through the instances */
+		path->obj_inst_id = obj_inst->obj_inst_id;
+
+		if (path->level <= 1) {
+			/* start instance formatting */
+			engine_put_begin_oi(context->out, path);
+		}
+
 		for (index = 0; index < obj_inst->resource_count; index++) {
 			if (path->level > 2 &&
 			    path->res_id != obj_inst->resources[index].res_id) {
@@ -2800,6 +2808,9 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 			} else if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_R)) {
 				ret = -EPERM;
 			} else {
+				/* start resource formatting */
+				engine_put_begin_r(context->out, path);
+
 				/* perform read operation on this resource */
 				ret = lwm2m_read_handler(obj_inst, res,
 							 obj_field, context);
@@ -2813,6 +2824,9 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 				} else {
 					num_read += 1;
 				}
+
+				/* end resource formatting */
+				engine_put_end_r(context->out, path);
 			}
 
 			/* on single read break if errors */
@@ -2825,6 +2839,11 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 		}
 
 move_forward:
+		if (path->level <= 1) {
+			/* end instance formatting */
+			engine_put_end_oi(context->out, path);
+		}
+
 		if (path->level <= 1) {
 			/* advance to the next object instance */
 			obj_inst = next_engine_obj_inst(path->obj_id,
