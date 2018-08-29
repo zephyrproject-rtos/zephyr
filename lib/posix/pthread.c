@@ -34,9 +34,9 @@ static const pthread_attr_t init_pthread_attrs = {
 	.initialized = true,
 };
 
-/* Memory pool for pthread space */
-K_MEM_POOL_DEFINE(posix_thread_pool, sizeof(struct posix_thread),
-		  sizeof(struct posix_thread), CONFIG_MAX_PTHREAD_COUNT, 4);
+static struct posix_thread posix_thread_pool[CONFIG_MAX_PTHREAD_COUNT];
+static u32_t pthread_num;
+
 static bool is_posix_prio_valid(u32_t priority, int policy)
 {
 	if (priority >= sched_get_priority_min(policy) &&
@@ -137,28 +137,20 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	s32_t prio;
 	pthread_condattr_t cond_attr;
 	struct posix_thread *thread;
-	struct k_mem_block block;
 
 	/*
 	 * FIXME: Pthread attribute must be non-null and it provides stack
 	 * pointer and stack size. So even though POSIX 1003.1 spec accepts
 	 * attrib as NULL but zephyr needs it initialized with valid stack.
 	 */
-	if (!attr || !attr->initialized || !attr->stack || !attr->stacksize) {
+	if (!attr || !attr->initialized || !attr->stack || !attr->stacksize ||
+		(pthread_num >= CONFIG_MAX_PTHREAD_COUNT)) {
 		return EINVAL;
 	}
 
 	prio = posix_to_zephyr_priority(attr->priority, attr->schedpolicy);
 
-	if (k_mem_pool_alloc(&posix_thread_pool, &block,
-			     sizeof(struct posix_thread), 100) == 0) {
-		memset(block.data, 0, sizeof(struct posix_thread));
-		thread = block.data;
-	} else {
-		/* Insuffecient resource to create thread*/
-		return EAGAIN;
-	}
-
+	thread = &posix_thread_pool[pthread_num];
 	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & attr->flags;
 	thread->state = attr->detachstate;
 	thread->cancel_pending = 0;
@@ -166,6 +158,7 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	pthread_mutex_init(&thread->cancel_lock, NULL);
 	pthread_cond_init(&thread->state_cond, &cond_attr);
 	sys_slist_init(&thread->key_list);
+	pthread_num++;
 
 	*newthread = (pthread_t) k_thread_create(&thread->thread, attr->stack,
 						 attr->stacksize,
