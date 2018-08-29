@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -271,6 +272,9 @@ struct lwm2m_output_context {
 
 	/* flags for reader/writer */
 	u8_t writer_flags;
+
+	/* private output data */
+	void *user_data;
 };
 
 struct lwm2m_input_context {
@@ -351,6 +355,25 @@ struct lwm2m_engine_context {
 	struct lwm2m_obj_path *path;
 	u8_t operation;
 };
+
+/* output user_data management functions */
+
+static inline void engine_set_out_user_data(struct lwm2m_output_context *out,
+					    void *user_data)
+{
+	out->user_data = user_data;
+}
+
+static inline void *engine_get_out_user_data(struct lwm2m_output_context *out)
+{
+	return out->user_data;
+}
+
+static inline void
+engine_clear_out_user_data(struct lwm2m_output_context *out)
+{
+	out->user_data = NULL;
+}
 
 /* inline multi-format write / read functions */
 
