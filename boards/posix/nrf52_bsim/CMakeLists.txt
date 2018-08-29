@@ -15,7 +15,7 @@ endif()
 #That is, that the needed tag is somewhere in the past of its branch
 if(NOT DEFINED ENV{NO_NRF52_BSIM_VERSION_WARNING})
   if(GIT_FOUND) #boilerplate.cmake searches for git
-    file(STRINGS "hw_models_version" NRF52_HW_MODELS_TAG) #desired version
+    file(STRINGS "${CMAKE_CURRENT_LIST_DIR}/hw_models_version" NRF52_HW_MODELS_TAG) #desired version
     execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
       ${NRF52_HW_MODELS_TAG}
       WORKING_DIRECTORY $ENV{BSIM_COMPONENTS_PATH}/ext_NRF52_hw_models/
@@ -53,8 +53,7 @@ if(NOT DEFINED ENV{NO_NRF52_BSIM_VERSION_WARNING})
   endif()
 endif()
 
-zephyr_library()
-zephyr_library_compile_definitions(NO_POSIX_CHEATS)
+target_compile_definitions(board PRIVATE NO_POSIX_CHEATS)
 
 zephyr_include_directories(
   fake
@@ -68,17 +67,18 @@ zephyr_compile_options(
   -fshort-enums
 )
 
-zephyr_library_sources(
-	irq_handler.c
-	k_busy_wait.c
-	bstests_entry.c
-	argparse.c
-	main.c
-	time_machine.c
-	trace_hook.c
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            irq_handler.c
+            k_busy_wait.c
+            bstests_entry.c
+            argparse.c
+            main.c
+            time_machine.c
+            trace_hook.c
 )
 
-zephyr_library_include_directories(
+target_include_directories(board PUBLIC
   fake
   $ENV{BSIM_COMPONENTS_PATH}/libUtilv1/src/
   $ENV{BSIM_COMPONENTS_PATH}/libPhyComv1/src/
@@ -86,6 +86,8 @@ zephyr_library_include_directories(
   $ENV{BSIM_COMPONENTS_PATH}/ext_NRF52_hw_models/src/nrfx_hal/
   $ENV{BSIM_COMPONENTS_PATH}/libRandv2/src/
 )
+
+target_sources(board PRIVATE ${PRIVATE_SOURCES})
 
 zephyr_ld_options(
   -lm

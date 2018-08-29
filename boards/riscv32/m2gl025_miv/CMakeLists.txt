@@ -1,1 +1,1 @@
-zephyr_library_include_directories(${PROJECT_SOURCE_DIR}/drivers)
+target_include_directories(board PRIVATE ${PROJECT_SOURCE_DIR}/drivers)

@@ -1,4 +1,8 @@
-zephyr_library()
-zephyr_library_sources(pinmux.c)
-zephyr_library_sources(clock.c)
-zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            pinmux.c
+            clock.c
+)
+
+target_sources(board PRIVATE ${PRIVATE_SOURCES})
+target_include_directories(board PRIVATE ${ZEPHYR_BASE}/drivers)

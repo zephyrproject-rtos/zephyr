@@ -1,3 +1,2 @@
-zephyr_library()
-zephyr_library_sources(pinmux.c)
-zephyr_library_include_directories(${PROJECT_SOURCE_DIR}/drivers)
+target_sources(board PRIVATE ${CMAKE_CURRENT_LIST_DIR}/pinmux.c)
+target_include_directories(board PRIVATE ${ZEPHYR_BASE}/drivers)
