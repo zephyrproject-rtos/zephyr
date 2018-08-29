@@ -339,6 +339,11 @@ int do_read_op_plain_text(struct lwm2m_engine_obj *obj,
 			  struct lwm2m_engine_context *context,
 			  int content_format)
 {
+	/* Plain text can only return single resource */
+	if (context->path->level != 3) {
+		return -EPERM; /* NOT_ALLOWED */
+	}
+
 	return lwm2m_perform_read_op(obj, context, content_format);
 }
 
