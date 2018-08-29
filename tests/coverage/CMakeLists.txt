@@ -1,0 +1,1 @@
+zephyr_sources_ifdef(CONFIG_COVERAGE_GCOV coverage.c)
