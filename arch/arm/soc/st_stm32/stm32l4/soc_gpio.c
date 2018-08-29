@@ -156,7 +156,7 @@ int stm32_gpio_enable_int(int port, int pin)
 		return -EINVAL;
 	}
 
-	*reg &= STM32L4X_SYSCFG_EXTICR_PIN_MASK << ((pin % 4) * 4);
+	*reg &= ~(STM32L4X_SYSCFG_EXTICR_PIN_MASK << ((pin % 4) * 4));
 	*reg |= port << ((pin % 4) * 4);
 
 	return 0; /* Nothing to do here for STM32L4s */
