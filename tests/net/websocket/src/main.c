@@ -569,10 +569,6 @@ void test_v4_send_multi_msg(void)
 	test_send_multi_msg(&app_ctx_v4);
 }
 
-static void test_setup(void)
-{
-	return;
-}
 void test_main(void)
 {
 	ztest_test_suite(websocket,
@@ -588,7 +584,7 @@ void test_main(void)
 			 ztest_unit_test(test_v6_send_recv_6),
 			 ztest_unit_test(test_v6_send_recv_7),
 			 ztest_unit_test(test_v6_send_multi_msg),
-			 ztest_unit_test_setup_teardown(test_v6_close, test_setup, websocket_cleanup_server),
+			 ztest_unit_test(test_v6_close),
 			 ztest_unit_test(test_websocket_init_server),
 			 ztest_unit_test(test_v4_init),
 			 ztest_unit_test(test_v4_connect),
@@ -600,7 +596,7 @@ void test_main(void)
 			 ztest_unit_test(test_v4_send_recv_6),
 			 ztest_unit_test(test_v4_send_recv_7),
 			 ztest_unit_test(test_v4_send_multi_msg),
-			 ztest_unit_test_setup_teardown(test_v4_close, test_setup, websocket_cleanup_server)
+			 ztest_unit_test(test_v4_close)
 			 );
 
 	ztest_run_test_suite(websocket);

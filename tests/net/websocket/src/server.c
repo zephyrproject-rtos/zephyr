@@ -357,9 +357,3 @@ void test_websocket_init_server(void)
 
 	ws_ctx = &http_ctx;
 }
-
-void websocket_cleanup_server(void)
-{
-	http_server_disable(&http_ctx);
-	http_release(&http_ctx);
-}
