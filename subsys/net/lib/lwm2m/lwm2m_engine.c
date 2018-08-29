@@ -2734,12 +2734,12 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 			  u16_t content_format)
 {
 	struct lwm2m_output_context *out = context->out;
-	struct lwm2m_obj_path *path = context->path;
+	struct lwm2m_obj_path temp_path, *path = context->path;
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct lwm2m_engine_res_inst *res = NULL;
 	struct lwm2m_engine_obj_field *obj_field;
 	int ret = 0, index;
-	u16_t temp_res_id, temp_len;
+	u16_t temp_len;
 	u8_t num_read = 0;
 
 	if (path->level >= 2) {
@@ -2767,6 +2767,8 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 		return ret;
 	}
 
+	/* store original path values so we can change them during processing */
+	memcpy(&temp_path, path, sizeof(temp_path));
 	out->frag = coap_packet_get_payload(out->out_cpkt, &out->offset,
 					    &temp_len);
 	out->offset++;
@@ -2776,9 +2778,6 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 		if (!obj_inst->resources || obj_inst->resource_count == 0) {
 			goto move_forward;
 		}
-
-		/* save path's res_id because we may need to change it below */
-		temp_res_id = path->res_id;
 
 		for (index = 0; index < obj_inst->resource_count; index++) {
 			if (path->level > 2 &&
@@ -2825,9 +2824,6 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 			ret = 0;
 		}
 
-		/* restore path's res_id in case it was changed */
-		path->res_id = temp_res_id;
-
 move_forward:
 		if (path->level <= 1) {
 			/* advance to the next object instance */
@@ -2839,6 +2835,9 @@ move_forward:
 	}
 
 	engine_put_end(context->out, path);
+
+	/* restore original path values */
+	memcpy(path, &temp_path, sizeof(temp_path));
 
 	/* did not read anything even if we should have - on single item */
 	if (ret == 0 && num_read == 0 && path->level == 3) {
