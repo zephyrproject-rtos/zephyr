@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -465,6 +466,13 @@ const struct lwm2m_writer json_writer = {
 	put_bool,
 	NULL
 };
+
+int do_read_op_json(struct lwm2m_engine_obj *obj,
+		    struct lwm2m_engine_context *context,
+		    int content_format)
+{
+	return lwm2m_perform_read_op(obj, context, content_format);
+}
 
 static int parse_path(const u8_t *buf, u16_t buflen,
 		      struct lwm2m_obj_path *path)
