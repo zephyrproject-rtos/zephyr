@@ -254,7 +254,7 @@ static int init_network(void)
 	}
 
 	rc = mqtt_connect(&client_ctx.mqtt_ctx);
-	if (!rc) {
+	if (rc != 0) {
 		goto exit_app;
 	}
 
