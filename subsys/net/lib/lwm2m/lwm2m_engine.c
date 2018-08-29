@@ -2741,7 +2741,6 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 	int ret = 0, index;
 	u16_t temp_res_id, temp_len;
 	u8_t num_read = 0;
-	u8_t initialized;
 
 	if (path->level >= 2) {
 		obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
@@ -2771,6 +2770,7 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 	out->frag = coap_packet_get_payload(out->out_cpkt, &out->offset,
 					    &temp_len);
 	out->offset++;
+	engine_put_begin(out, path);
 
 	while (obj_inst) {
 		if (!obj_inst->resources || obj_inst->resource_count == 0) {
@@ -2779,7 +2779,6 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 
 		/* save path's res_id because we may need to change it below */
 		temp_res_id = path->res_id;
-		initialized = 0;
 
 		for (index = 0; index < obj_inst->resource_count; index++) {
 			res = &obj_inst->resources[index];
@@ -2802,12 +2801,6 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 			} else if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_R)) {
 				ret = -EPERM;
 			} else {
-				/* formatter startup if needed */
-				if (!initialized) {
-					engine_put_begin(out, path);
-					initialized = 1;
-				}
-
 				/* perform read operation on this resource */
 				ret = lwm2m_read_handler(obj_inst, res,
 							 obj_field, context);
@@ -2835,11 +2828,6 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 		/* restore path's res_id in case it was changed */
 		path->res_id = temp_res_id;
 
-		/* if we wrote anything, finish formatting */
-		if (initialized) {
-			engine_put_end(out, path);
-		}
-
 move_forward:
 		if (path->level <= 1) {
 			/* advance to the next object instance */
@@ -2849,6 +2837,8 @@ move_forward:
 			obj_inst = NULL;
 		}
 	}
+
+	engine_put_end(context->out, path);
 
 	/* did not read anything even if we should have - on single item */
 	if (ret == 0 && num_read == 0 && path->level == 3) {
