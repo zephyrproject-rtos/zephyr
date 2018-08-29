@@ -81,6 +81,8 @@ struct oma_tlv {
 };
 
 struct tlv_out_formatter_data {
+	struct net_buf *mark_frag_oi;
+	u16_t mark_pos_oi;
 	struct net_buf *mark_frag_ri;
 	u16_t mark_pos_ri;
 	u8_t writer_flags;
@@ -354,6 +356,35 @@ static size_t put_end_tlv(struct lwm2m_output_context *out,
 	out->offset = tmp_pos + len;
 
 	return 0;
+}
+
+static size_t put_begin_oi(struct lwm2m_output_context *out,
+			   struct lwm2m_obj_path *path)
+{
+	struct tlv_out_formatter_data *fd;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
+	return put_begin_tlv(out, &fd->mark_frag_oi, &fd->mark_pos_oi,
+			     &fd->writer_flags, 0);
+}
+
+static size_t put_end_oi(struct lwm2m_output_context *out,
+			 struct lwm2m_obj_path *path)
+{
+	struct tlv_out_formatter_data *fd;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
+	return put_end_tlv(out, fd->mark_frag_oi, fd->mark_pos_oi,
+			   &fd->writer_flags, 0,
+			   OMA_TLV_TYPE_OBJECT_INSTANCE, path->obj_inst_id);
 }
 
 static size_t put_begin_ri(struct lwm2m_output_context *out,
@@ -767,8 +798,8 @@ static size_t get_opaque(struct lwm2m_input_context *in,
 const struct lwm2m_writer oma_tlv_writer = {
 	NULL,
 	NULL,
-	NULL,
-	NULL,
+	put_begin_oi,
+	put_end_oi,
 	NULL,
 	NULL,
 	put_begin_ri,
