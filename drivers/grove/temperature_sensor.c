@@ -21,7 +21,7 @@
 	#define B_CONST			4250
 #endif
 
-#define ADC_RESOLUTION 10
+#define ADC_RESOLUTION 12
 
 struct gts_data {
 	struct device *adc;
