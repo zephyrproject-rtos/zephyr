@@ -2736,7 +2736,7 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 	struct lwm2m_output_context *out = context->out;
 	struct lwm2m_obj_path *path = context->path;
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
-	struct lwm2m_engine_res_inst *res;
+	struct lwm2m_engine_res_inst *res = NULL;
 	struct lwm2m_engine_obj_field *obj_field;
 	int ret = 0, index;
 	u16_t temp_res_id, temp_len;
@@ -2781,6 +2781,11 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 		temp_res_id = path->res_id;
 
 		for (index = 0; index < obj_inst->resource_count; index++) {
+			if (path->level > 2 &&
+			    path->res_id != obj_inst->resources[index].res_id) {
+				continue;
+			}
+
 			res = &obj_inst->resources[index];
 
 			/*
@@ -2788,12 +2793,7 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 			 * res_id for lwm2m_read_handler to read this specific
 			 * resource.
 			 */
-			if (path->level <= 2) {
-				path->res_id = res->res_id;
-			} else if (path->res_id != res->res_id) {
-				continue;
-			}
-
+			path->res_id = res->res_id;
 			obj_field = lwm2m_get_engine_obj_field(obj_inst->obj,
 							       res->res_id);
 			if (!obj_field) {
