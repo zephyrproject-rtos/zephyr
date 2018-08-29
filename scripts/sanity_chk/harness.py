@@ -64,7 +64,8 @@ class Test(Harness):
             "MPU FAULT",
             "Kernel Panic",
             "Kernel OOPS",
-            "BUS FAULT"
+            "BUS FAULT",
+            "CPU Page Fault"
             ]
 
     def handle(self, line):
