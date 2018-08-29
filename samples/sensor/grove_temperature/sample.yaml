@@ -3,7 +3,8 @@ sample:
 tests:
   test:
     min_flash: 33
-    platform_whitelist: arduino_101_sss arduino_due
+    platform_whitelist: arduino_101_sss quark_d2000_crb
+      arduino_due
     tags: drivers sensor grove temperature
     harness: grove
     depends_on: adc
