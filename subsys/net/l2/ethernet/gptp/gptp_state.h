@@ -114,6 +114,18 @@ enum gptp_pa_transmit_states {
 	GPTP_PA_TRANSMIT_POST_IDLE,
 } __packed;
 
+/* ClockMasterSyncOffset states. */
+enum gptp_cms_offset_states {
+	GPTP_CMS_OFFSET_INITIALIZING,
+	GPTP_CMS_OFFSET_INDICATION,
+} __packed;
+
+/* ClockMasterSyncSend states. */
+enum gptp_cms_snd_states {
+	GPTP_CMS_SND_INITIALIZING,
+	GPTP_CMS_SND_INDICATION,
+} __packed;
+
 /* ClockMasterSyncReceive states. */
 enum gptp_cms_rcv_states {
 	GPTP_CMS_RCV_INITIALIZING,
@@ -374,8 +386,35 @@ struct gptp_clk_slave_sync_state {
 	bool rcvd_local_clk_tick;
 };
 
+/* ClockMasterSyncOffset state machine variables. */
+struct gptp_clk_master_sync_offset_state {
+	/** Current state of the state machine. */
+	enum gptp_cms_offset_states state;
+
+	/** Notifies the state machine when Sync Receipt Time is received. */
+	bool rcvd_sync_receipt_time;
+};
+
+/* ClockMasterSyncSend state machine variables. */
+struct gptp_clk_master_sync_snd_state {
+	/** Time when synchronization info will be sent. */
+	struct gptp_uscaled_ns sync_send_time;
+
+	/** PortSyncSync structure transmitted by the state machine. */
+	struct gptp_mi_port_sync_sync pss_snd;
+
+	/** Current state of the state machine. */
+	enum gptp_cms_snd_states state;
+};
+
 /* ClockMasterSyncReceive state machine variables. */
 struct gptp_clk_master_sync_rcv_state {
+	/** The received ClockSourceTime.invoke parameters. Note that the
+	 * standard defines this as a pointer, but storing the struct here is
+	 * more convenient
+	 */
+	struct gptp_clk_src_time_invoke_params rcvd_clk_src_req;
+
 	/** Current state of the state machine */
 	enum gptp_cms_rcv_states state;
 
@@ -439,6 +478,12 @@ struct gptp_states {
 
 	/** PortRoleSelection state machine variables. */
 	struct gptp_port_role_selection_state pr_sel;
+
+	/** ClockMasterSyncOffset state machine variables. */
+	struct gptp_clk_master_sync_offset_state clk_master_sync_offset;
+
+	/** ClockMasterSyncSend state machine variables. */
+	struct gptp_clk_master_sync_snd_state clk_master_sync_send;
 
 	/** ClockMasterSyncReceive state machine variables. */
 	struct gptp_clk_master_sync_rcv_state clk_master_sync_receive;

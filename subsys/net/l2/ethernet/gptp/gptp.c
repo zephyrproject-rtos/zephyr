@@ -374,14 +374,19 @@ static void gptp_init_clock_ds(void)
 	/* Compute the clock identity from the first port MAC address. */
 	gptp_compute_clock_identity(GPTP_PORT_START);
 
-	/* XXX GrandMaster capability is not supported. */
-	default_ds->gm_capable = false;
-	default_ds->clk_quality.clock_class = GPTP_CLASS_SLAVE_ONLY;
+	default_ds->gm_capable = IS_ENABLED(CONFIG_NET_GPTP_GM_CAPABLE);
+	default_ds->clk_quality.clock_class = GPTP_CLASS_OTHER;
 	default_ds->clk_quality.clock_accuracy =
 		GPTP_CLOCK_ACCURACY_UNKNOWN;
 	default_ds->clk_quality.offset_scaled_log_var =
 		GPTP_OFFSET_SCALED_LOG_VAR_UNKNOWN;
-	default_ds->priority1 = GPTP_PRIORITY1_NON_GM_CAPABLE;
+
+	if (default_ds->gm_capable) {
+		default_ds->priority1 = GPTP_PRIORITY1_GM_CAPABLE;
+	} else {
+		default_ds->priority1 = GPTP_PRIORITY1_NON_GM_CAPABLE;
+	}
+
 	default_ds->priority2 = GPTP_PRIORITY2_DEFAULT;
 
 	default_ds->cur_utc_offset = 37; /* Current leap seconds TAI - UTC */
@@ -427,6 +432,8 @@ static void gptp_init_clock_ds(void)
 	global_ds->sys_flags.all = default_ds->flags.all;
 	global_ds->sys_current_utc_offset = default_ds->cur_utc_offset;
 	global_ds->sys_time_source = default_ds->time_source;
+	global_ds->clk_master_sync_itv =
+		NSEC_PER_SEC * GPTP_POW2(CONFIG_NET_GPTP_INIT_LOG_SYNC_ITV);
 }
 
 static void gptp_init_port_ds(int port)

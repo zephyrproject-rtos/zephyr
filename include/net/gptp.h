@@ -33,6 +33,7 @@ extern "C" {
 #define GPTP_OFFSET_SCALED_LOG_VAR_UNKNOWN 0x436A
 
 #define GPTP_PRIORITY1_NON_GM_CAPABLE      255
+#define GPTP_PRIORITY1_GM_CAPABLE          248
 #define GPTP_PRIORITY2_DEFAULT             248
 
 /**
@@ -209,6 +210,25 @@ struct gptp_phase_dis_cb {
 };
 
 /**
+ * @brief ClockSourceTime.invoke function parameters
+ *
+ * Parameters passed by ClockSourceTime.invoke function.
+ */
+struct gptp_clk_src_time_invoke_params {
+	/** Frequency change on the last Time Base Indicator Change. */
+	double last_gm_freq_change;
+
+	/** The time this function is invoked. */
+	struct net_ptp_extended_time src_time;
+
+	/** Phase change on the last Time Base Indicator Change. */
+	struct gptp_scaled_ns last_gm_phase_change;
+
+	/** Time Base - changed only if Phase or Frequency changes. */
+	u16_t time_base_indicator;
+};
+
+/**
  * @brief Register a phase discontinuity callback.
  *
  * @param phase_dis Caller specified handler for the callback.
@@ -278,6 +298,14 @@ void gptp_foreach_port(gptp_port_cb_t cb, void *user_data);
  * @return Pointer to domain or NULL if not found.
  */
 struct gptp_domain *gptp_get_domain(void);
+
+/**
+ * @brief This interface is used by the ClockSource entity to provide time to
+ *        the ClockMaster entity of a time-aware system.
+ *
+ * @param arg Current state and parameters of the ClockSource entity.
+ */
+void gptp_clk_src_time_invoke(struct gptp_clk_src_time_invoke_params *arg);
 
 #ifdef __cplusplus
 }

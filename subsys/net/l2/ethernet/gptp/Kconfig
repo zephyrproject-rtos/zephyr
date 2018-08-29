@@ -21,6 +21,22 @@ config NET_DEBUG_GPTP
 	help
 	  Enable logs for the gPTP stack.
 
+config NET_GPTP_GM_CAPABLE
+	bool "Enable IEEE 802.1AS GrandMaster Capability"
+	help
+	  Enable to mark the whole system as Grand Master Capable.
+
+config NET_GPTP_PROBE_CLOCK_SOURCE_ON_DEMAND
+	bool "Probe clock source on demand"
+	depends on NET_GPTP_GM_CAPABLE
+	default y
+	help
+	  This option is helpful if the driver does not fully support the
+	  ClockSourceTime.invoke function. If this is enabled, the clock
+	  source is probed when it is actually needed instead of being
+	  updated on each tick.
+	  See IEEE 802.1AS-2011, chapter 9.2 for more details.
+
 config NET_GPTP_NUM_PORTS
 	int "Number of gPTP ports"
 	default 1

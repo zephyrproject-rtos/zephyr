@@ -81,3 +81,15 @@ char *gptp_sprint_clock_id(const u8_t *clk_id, char *output, size_t output_len)
 {
 	return net_sprint_ll_addr_buf(clk_id, 8, output, output_len);
 }
+
+void gptp_clk_src_time_invoke(struct gptp_clk_src_time_invoke_params *arg)
+{
+	struct gptp_clk_master_sync_rcv_state *state;
+
+	state = &GPTP_STATE()->clk_master_sync_receive;
+
+	memcpy(&state->rcvd_clk_src_req, arg,
+	       sizeof(struct gptp_clk_src_time_invoke_params));
+
+	state->rcvd_clock_source_req = true;
+}
