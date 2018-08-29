@@ -45,6 +45,17 @@ it exists) and save. If KCONFIG_CONFIG is unset, ".config" is used.
 $srctree is supported through Kconfiglib.
 
 
+Color schemes
+=============
+
+Setting the environment variable MENUCONFIG_THEME to 'aquatic' will enable an
+alternative, less yellow, more 'make menuconfig'-like color scheme, contributed
+by Mitja Horvat (pinkfluid).
+
+See the _init_styles() function if you want to add additional themes. I'm happy
+to take them in upstream.
+
+
 Other features
 ==============
 
@@ -65,6 +76,10 @@ Other features
       * Menus and comments have information displays
 
       * Kconfig definitions are printed
+
+      * The include path is shown, listing the locations of the 'source'
+        statements that included the Kconfig file of the symbol (or other
+        item)
 
 
 Limitations
@@ -151,19 +166,17 @@ view the help of the selected item without leaving the dialog.
 """[1:-1].split("\n")
 
 def _init_styles():
+    global _PATH_STYLE
     global _SEPARATOR_STYLE
-    global _HELP_STYLE
     global _LIST_STYLE
     global _LIST_SEL_STYLE
     global _LIST_INVISIBLE_STYLE
     global _LIST_INVISIBLE_SEL_STYLE
-    global _INPUT_FIELD_STYLE
-
-    global _PATH_STYLE
-
+    global _HELP_STYLE
     global _DIALOG_FRAME_STYLE
     global _DIALOG_BODY_STYLE
-
+    global _DIALOG_EDIT_STYLE
+    global _JUMP_TO_EDIT_STYLE
     global _INFO_TEXT_STYLE
 
     # Initialize styles for different parts of the application. The arguments
@@ -181,36 +194,71 @@ def _init_styles():
     # https://blogs.msdn.microsoft.com/commandline/2017/08/02/updating-the-windows-console-colors/
     BOLD = curses.A_NORMAL if _IS_WINDOWS else curses.A_BOLD
 
+    # Default styling. Themes can override these settings below.
+
+    # Top row in the main display, with the menu path
+    PATH_STYLE               = (curses.COLOR_BLACK, curses.COLOR_WHITE,  BOLD                              )
 
     # Separator lines between windows. Also used for the top line in the symbol
     # information dialog.
-    _SEPARATOR_STYLE          = _style(curses.COLOR_BLACK, curses.COLOR_YELLOW, BOLD,            curses.A_STANDOUT)
-
-    # Edit boxes
-    _INPUT_FIELD_STYLE        = _style(curses.COLOR_WHITE, curses.COLOR_BLUE,   curses.A_NORMAL, curses.A_STANDOUT)
+    SEPARATOR_STYLE          = (curses.COLOR_BLACK, curses.COLOR_YELLOW, BOLD,            curses.A_STANDOUT)
 
     # List of items, e.g. the main display
-    _LIST_STYLE               = _style(curses.COLOR_BLACK, curses.COLOR_WHITE,  curses.A_NORMAL                   )
+    LIST_STYLE               = (curses.COLOR_BLACK, curses.COLOR_WHITE,  curses.A_NORMAL                   )
+
     # Style for the selected item
-    _LIST_SEL_STYLE           = _style(curses.COLOR_WHITE, curses.COLOR_BLUE,   curses.A_NORMAL, curses.A_STANDOUT)
+    LIST_SEL_STYLE           = (curses.COLOR_WHITE, curses.COLOR_BLUE,   BOLD,            curses.A_STANDOUT)
 
     # Like _LIST_(SEL_)STYLE, for invisible items. Used in show-all mode.
-    _LIST_INVISIBLE_STYLE     = _style(curses.COLOR_RED,   curses.COLOR_WHITE,  curses.A_NORMAL, BOLD             )
-    _LIST_INVISIBLE_SEL_STYLE = _style(curses.COLOR_RED,   curses.COLOR_BLUE,   curses.A_NORMAL, curses.A_STANDOUT)
+    LIST_INVISIBLE_STYLE     = (curses.COLOR_RED,   curses.COLOR_WHITE,  curses.A_NORMAL, BOLD             )
+    LIST_INVISIBLE_SEL_STYLE = (curses.COLOR_RED,   curses.COLOR_BLUE,   BOLD,            curses.A_STANDOUT)
 
     # Help text windows at the bottom of various fullscreen dialogs
-    _HELP_STYLE               = _style(curses.COLOR_BLACK, curses.COLOR_WHITE,  BOLD                              )
-
-    # Top row in the main display, with the menu path
-    _PATH_STYLE               = _style(curses.COLOR_BLACK, curses.COLOR_WHITE,  BOLD                              )
-
-    # Symbol information text
-    _INFO_TEXT_STYLE          = _LIST_STYLE
+    HELP_STYLE               = PATH_STYLE
 
     # Frame around dialog boxes
-    _DIALOG_FRAME_STYLE       = _style(curses.COLOR_BLACK, curses.COLOR_YELLOW, BOLD,            curses.A_STANDOUT)
+    DIALOG_FRAME_STYLE       = SEPARATOR_STYLE
+
     # Body of dialog boxes
-    _DIALOG_BODY_STYLE        = _style(curses.COLOR_WHITE, curses.COLOR_BLACK,  curses.A_NORMAL                   )
+    DIALOG_BODY_STYLE        = (curses.COLOR_WHITE, curses.COLOR_BLACK,  curses.A_NORMAL                   )
+
+    # Edit box in pop-up dialogs
+    DIALOG_EDIT_STYLE        = (curses.COLOR_WHITE, curses.COLOR_BLUE,   curses.A_NORMAL, curses.A_STANDOUT)
+
+    # Edit box in jump-to dialog
+    JUMP_TO_EDIT_STYLE       = (curses.COLOR_WHITE, curses.COLOR_BLUE,   curses.A_NORMAL,                  )
+
+    # Symbol information text
+    INFO_TEXT_STYLE          = LIST_STYLE
+
+    if os.environ.get("MENUCONFIG_THEME") == "aquatic":
+        # More 'make menuconfig'-like theme, contributed by Mitja Horvat
+        # (pinkfluid)
+        PATH_STYLE         = (curses.COLOR_CYAN,  curses.COLOR_BLUE,  BOLD                              )
+        SEPARATOR_STYLE    = (curses.COLOR_WHITE, curses.COLOR_CYAN,  BOLD,            curses.A_STANDOUT)
+        HELP_STYLE         = PATH_STYLE
+        DIALOG_FRAME_STYLE = SEPARATOR_STYLE
+        DIALOG_BODY_STYLE  = (curses.COLOR_WHITE, curses.COLOR_BLUE,  curses.A_NORMAL                   )
+        DIALOG_EDIT_STYLE  = (curses.COLOR_BLACK, curses.COLOR_WHITE, curses.A_NORMAL, curses.A_STANDOUT)
+
+    # Turn styles into attributes and store them in global variables. Doing
+    # this separately minimizes the number of curses color pairs, and shortens
+    # the style definitions a bit.
+    #
+    # Could do some locals()/globals() trickery here too, but keep it
+    # searchable.
+    _PATH_STYLE               = _style(*PATH_STYLE)
+    _SEPARATOR_STYLE          = _style(*SEPARATOR_STYLE)
+    _LIST_STYLE               = _style(*LIST_STYLE)
+    _LIST_SEL_STYLE           = _style(*LIST_SEL_STYLE)
+    _LIST_INVISIBLE_STYLE     = _style(*LIST_INVISIBLE_STYLE)
+    _LIST_INVISIBLE_SEL_STYLE = _style(*LIST_INVISIBLE_SEL_STYLE)
+    _HELP_STYLE               = _style(*HELP_STYLE)
+    _DIALOG_FRAME_STYLE       = _style(*DIALOG_FRAME_STYLE)
+    _DIALOG_BODY_STYLE        = _style(*DIALOG_BODY_STYLE)
+    _DIALOG_EDIT_STYLE        = _style(*DIALOG_EDIT_STYLE)
+    _JUMP_TO_EDIT_STYLE       = _style(*JUMP_TO_EDIT_STYLE)
+    _INFO_TEXT_STYLE          = _style(*INFO_TEXT_STYLE)
 
 
 #
@@ -268,10 +316,7 @@ def _expr_str(expr):
     # Custom expression printer that shows symbol values
     return expr_str(expr, _name_and_val_str)
 
-
-# Entry point when run as an executable, split out so that setuptools'
-# 'entry_points' can be used. It produces a handy menuconfig.exe launcher on
-# Windows.
+# Note: Used as the entry point in setup.py
 def _main():
     menuconfig(standard_kconfig())
 
@@ -343,6 +388,9 @@ def menuconfig(kconf):
 
 # Global variables used below:
 #
+#   _stdscr:
+#     stdscr from curses
+#
 #   _cur_menu:
 #     Menu node of the menu (or menuconfig symbol, or choice) currently being
 #     shown
@@ -383,9 +431,11 @@ def menuconfig(kconf):
 def _menuconfig(stdscr):
     # Logic for the main display, with the list of symbols, etc.
 
-    globals()["stdscr"] = stdscr
+    global _stdscr
     global _conf_changed
     global _show_name
+
+    _stdscr = stdscr
 
     _init()
 
@@ -434,9 +484,12 @@ def _menuconfig(stdscr):
 
             else:
                 _change_node(sel_node)
-                if _is_y_mode_choice_sym(sel_node.item):
+                if _is_y_mode_choice_sym(sel_node.item) and not sel_node.list:
                     # Immediately jump to the parent menu after making a choice
-                    # selection, like 'make menuconfig' does
+                    # selection, like 'make menuconfig' does, except if the
+                    # menu node has children (which can happen if a symbol
+                    # 'depends on' a choice symbol that immediately precedes
+                    # it).
                     _leave_menu()
 
         elif c in ("n", "N"):
@@ -607,7 +660,7 @@ def _resize_main():
 
     global _menu_scroll
 
-    screen_height, screen_width = stdscr.getmaxyx()
+    screen_height, screen_width = _stdscr.getmaxyx()
 
     _path_win.resize(1, screen_width)
     _top_sep_win.resize(1, screen_width)
@@ -689,16 +742,19 @@ def _jump_to(node):
     # parent menus before.
     _parent_screen_rows = []
 
-    # Turn on show-all mode if the node isn't visible
-    if not (node.prompt and expr_value(node.prompt[1])):
-        _show_all = True
-
     _cur_menu = _parent_menu(node)
     _shown = _shown_nodes(_cur_menu)
+    if node not in _shown:
+        # Turn on show-all mode if the node wouldn't be shown. Checking whether
+        # the node is visible instead would needlessly turn on show-all mode in
+        # an obscure case: when jumping to an invisible symbol with visible
+        # children from an implicit submenu.
+        _show_all = True
+        _shown = _shown_nodes(_cur_menu)
+
     _sel_node_i = _shown.index(node)
 
-    # Center the jumped-to node vertically, if possible
-    _menu_scroll = max(_sel_node_i - _menu_win_height()//2, 0)
+    _center_vertically()
 
 def _leave_menu():
     # Jumps to the parent menu of the current menu. Does nothing if we're in
@@ -727,8 +783,8 @@ def _leave_menu():
         _menu_scroll = max(_sel_node_i - screen_row, 0)
     else:
         # No saved parent menu locations, meaning we jumped directly to some
-        # node earlier. Just center the node vertically if possible.
-        _menu_scroll = max(_sel_node_i - _menu_win_height()//2, 0)
+        # node earlier
+        _center_vertically()
 
 def _select_next_menu_entry():
     # Selects the menu entry after the current one, adjusting the scroll if
@@ -828,6 +884,13 @@ def _toggle_show_all():
     # might be impossible if too many nodes have disappeared above the node.
     _menu_scroll = max(_sel_node_i - old_row, 0)
 
+def _center_vertically():
+    # Centers the selected node vertically, if possible
+
+    global _menu_scroll
+
+    _menu_scroll = max(_sel_node_i - _menu_win_height()//2, 0)
+
 def _draw_main():
     # Draws the "main" display, with the list of symbols, the header, and the
     # footer.
@@ -835,7 +898,7 @@ def _draw_main():
     # This could be optimized to only update the windows that have actually
     # changed, but keep it simple for now and let curses sort it out.
 
-    term_width = stdscr.getmaxyx()[1]
+    term_width = _stdscr.getmaxyx()[1]
 
 
     #
@@ -906,7 +969,11 @@ def _draw_main():
 
         node = _shown[i]
 
-        if node.prompt and expr_value(node.prompt[1]):
+        # The 'not _show_all' test avoids showing invisible items in red
+        # outside show-all mode, which could look confusing/broken. Invisible
+        # symbols show up outside show-all mode if an invisible symbol has
+        # visible children in an implicit (indented) menu.
+        if not _show_all or (node.prompt and expr_value(node.prompt[1])):
             style = _LIST_SEL_STYLE if i == _sel_node_i else _LIST_STYLE
         else:
             style = _LIST_INVISIBLE_SEL_STYLE if i == _sel_node_i else \
@@ -962,33 +1029,61 @@ def _parent_menu(node):
     return menu
 
 def _shown_nodes(menu):
-    # Returns a list of the nodes in 'menu' (see _parent_menu()) that should be
-    # shown in the menu window
-
-    res = []
+    # Returns the list of menu nodes from 'menu' (see _parent_menu()) that
+    # would be shown when entering it
 
     def rec(node):
-        nonlocal res
+        res = []
 
         while node:
-            # Show the node if its prompt is visible. For menus, also check
-            # 'visible if'. In show-all mode, show everything.
-            if _show_all or \
-               (node.prompt and expr_value(node.prompt[1]) and not \
-                (node.item == MENU and not expr_value(node.visibility))):
+            # If a node has children but doesn't have the is_menuconfig flag
+            # set, the children come from a submenu created implicitly from
+            # dependencies, and are shown (indented) in the same menu as the
+            # parent node
+            shown_children = \
+                rec(node.list) if node.list and not node.is_menuconfig else []
 
+            # Always show the node if it is the root of an implicit submenu
+            # with visible items, even when the node itself is invisible. This
+            # can happen e.g. if the symbol has an optional prompt
+            # ('prompt "foo" if COND') that is currently invisible.
+            if shown(node) or shown_children:
                 res.append(node)
 
-                # If a node has children but doesn't have the is_menuconfig
-                # flag set, the children come from a submenu created implicitly
-                # from dependencies. Show those in this menu too.
-                if node.list and not node.is_menuconfig:
-                    rec(node.list)
+            res.extend(shown_children)
 
             node = node.next
 
-    rec(menu.list)
-    return res
+        return res
+
+    def shown(node):
+        # Show the node if its prompt is visible. For menus, also check
+        # 'visible if'. In show-all mode, show everything.
+        return _show_all or \
+            (node.prompt and expr_value(node.prompt[1]) and not \
+             (node.item == MENU and not expr_value(node.visibility)))
+
+    if isinstance(menu.item, Choice):
+        # For named choices defined in multiple locations, entering the choice
+        # at a particular menu node would normally only show the choice symbols
+        # defined there (because that's what the MenuNode tree looks like).
+        #
+        # That might look confusing, and makes extending choices by defining
+        # them in multiple locations less useful. Instead, gather all the child
+        # menu nodes for all the choices whenever a choice is entered. That
+        # makes all choice symbols visible at all locations.
+        #
+        # Choices can contain non-symbol items (people do all sorts of weird
+        # stuff with them), hence the generality here. We really need to
+        # preserve the menu tree at each choice location.
+        #
+        # Note: Named choices are pretty broken in the C tools, and this is
+        # super obscure, so you probably won't find much that relies on this.
+        return [node
+                for choice_node in menu.item.nodes
+                    for node in rec(choice_node.list)]
+
+    return rec(menu.list)
 
 def _change_node(node):
     # Changes the value of the menu node 'node' if it is a symbol. Bools and
@@ -998,7 +1093,9 @@ def _change_node(node):
     if not isinstance(node.item, (Symbol, Choice)):
         return
 
-    # This will hit for invisible symbols in show-all mode
+    # This will hit for invisible symbols, which appear in show-all mode and
+    # when an invisible symbol has visible children (which can happen e.g. for
+    # symbols with optional prompts)
     if not (node.prompt and expr_value(node.prompt[1])):
         return
 
@@ -1159,7 +1256,7 @@ def _input_dialog(title, initial_text, info_text=None):
 def _resize_input_dialog(win, title, info_lines):
     # Resizes the input dialog to a size appropriate for the terminal size
 
-    screen_height, screen_width = stdscr.getmaxyx()
+    screen_height, screen_width = _stdscr.getmaxyx()
 
     win_height = 5
     if info_lines:
@@ -1185,7 +1282,7 @@ def _draw_input_dialog(win, title, info_lines, s, i, hscroll):
     # Note: Perhaps having a separate window for the input field would be nicer
     visible_s = s[hscroll:hscroll + edit_width]
     _safe_addstr(win, 2, 2, visible_s + " "*(edit_width - len(visible_s)),
-                 _INPUT_FIELD_STYLE)
+                 _DIALOG_EDIT_STYLE)
 
     for linenr, line in enumerate(info_lines):
         _safe_addstr(win, 4 + linenr, 2, line)
@@ -1350,7 +1447,7 @@ def _key_dialog(title, text, keys):
 def _resize_key_dialog(win, text):
     # Resizes the key dialog to a size appropriate for the terminal size
 
-    screen_height, screen_width = stdscr.getmaxyx()
+    screen_height, screen_width = _stdscr.getmaxyx()
 
     lines = text.split("\n")
 
@@ -1412,7 +1509,7 @@ def _jump_to_dialog():
     scroll = 0
 
     # Edit box at the top
-    edit_box = _styled_win(_INPUT_FIELD_STYLE)
+    edit_box = _styled_win(_JUMP_TO_EDIT_STYLE)
     edit_box.keypad(True)
 
     # List of matches
@@ -1581,7 +1678,7 @@ def _resize_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
     # Returns the new scroll index. We adjust the scroll if needed so that the
     # selected node stays visible.
 
-    screen_height, screen_width = stdscr.getmaxyx()
+    screen_height, screen_width = _stdscr.getmaxyx()
 
     bot_sep_win.resize(1, screen_width)
 
@@ -1687,9 +1784,8 @@ def _draw_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
         _safe_hline(edit_box, 2, 4, curses.ACS_UARROW, _N_SCROLL_ARROWS,
                     _DIALOG_FRAME_STYLE)
 
-    # Note: Perhaps having a separate window for the input field would be nicer
     visible_s = s[hscroll:hscroll + edit_width]
-    _safe_addstr(edit_box, 1, 1, visible_s, _INPUT_FIELD_STYLE)
+    _safe_addstr(edit_box, 1, 1, visible_s)
 
     _safe_move(edit_box, 1, 1 + s_i - hscroll)
 
@@ -1782,7 +1878,7 @@ def _info_dialog(node, from_jump_to_dialog):
 def _resize_info_dialog(top_line_win, text_win, bot_sep_win, help_win):
     # Resizes the info dialog to fill the terminal
 
-    screen_height, screen_width = stdscr.getmaxyx()
+    screen_height, screen_width = _stdscr.getmaxyx()
 
     top_line_win.resize(1, screen_width)
     bot_sep_win.resize(1, screen_width)
@@ -1988,15 +2084,12 @@ def _defaults_info(sc):
         if isinstance(sc, Symbol):
             s += _expr_str(val)
 
-            # Skip the value hint in these cases:
+            # Skip the tristate value hint if the expression is just a single
+            # symbol. _expr_str() already shows its value as a string.
             #
-            # - For string/int/hex symbols. The default can only be a single
-            #   symbol there, and it makes no sense to show its tristate value
-            #   (_expr_str() already shows its string value)
-            #
-            # - If the expression is just a symbol. _expr_str() already shows
-            #   its value in that case.
-            if sc.orig_type in (BOOL, TRISTATE) and isinstance(val, tuple):
+            # This also avoids showing the tristate value for string/int/hex
+            # defaults, which wouldn't make any sense.
+            if isinstance(val, tuple):
                 s += '  (={})'.format(TRI_TO_STR[expr_value(val)])
         else:
             # Don't print the value next to the symbol name for choice
@@ -2005,7 +2098,7 @@ def _defaults_info(sc):
         s += "\n"
 
         if cond is not _kconf.y:
-            s += '    Condition (={}):\n{}' \
+            s += "    Condition (={}):\n{}" \
                  .format(TRI_TO_STR[expr_value(cond)],
                          _split_expr_info(cond, 4))
 
@@ -2086,7 +2179,7 @@ def _kconfig_def_info(item):
     for node in nodes:
         s += "\n\n" \
              "At {}:{}\n" \
-             "Included via {}\n" \
+             "{}" \
              "Menu path: {}\n\n" \
              "{}" \
              .format(node.filename, node.linenr,
@@ -2097,8 +2190,13 @@ def _kconfig_def_info(item):
     return s
 
 def _include_path_info(node):
-    return " -> ".join("{}:{}".format(filename, linenr)
-                       for filename, linenr in node.include_path)
+    if not node.include_path:
+        # In the top-level Kconfig file
+        return ""
+
+    return "Included via {}\n".format(
+        " -> ".join("{}:{}".format(filename, linenr)
+                    for filename, linenr in node.include_path))
 
 def _menu_path_info(node):
     # Returns a string describing the menu path leading up to 'node'
@@ -2302,7 +2400,7 @@ def _value_str(node):
 
     tri_val_str = (" ", "M", "*")[item.tri_value]
 
-    if len(item.assignable) == 1:
+    if len(item.assignable) <= 1:
         # Pinned to a single value
         return "" if isinstance(item, Choice) else "-{}-".format(tri_val_str)
 
