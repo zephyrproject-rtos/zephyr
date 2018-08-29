@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -716,6 +717,13 @@ const struct lwm2m_reader oma_tlv_reader = {
 	get_bool,
 	get_opaque
 };
+
+int do_read_op_tlv(struct lwm2m_engine_obj *obj,
+		   struct lwm2m_engine_context *context,
+		   int content_format)
+{
+	return lwm2m_perform_read_op(obj, context, content_format);
+}
 
 static int do_write_op_tlv_dummy_read(struct lwm2m_engine_context *context)
 {
