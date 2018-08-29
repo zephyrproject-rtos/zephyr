@@ -31,11 +31,24 @@ config TEST_EXTRA_STACKSIZE
 
 config COVERAGE
 	bool "Create coverage data"
-	depends on NATIVE_APPLICATION
+	default n
 	help
 	  This option will build your application with the -coverage option
 	  which will generate data that can be used to create coverage reports.
 	  Currently this is fully supported only on the native POSIX port.
+
+if COVERAGE
+config COVERAGE_GCOV
+	bool "Create Coverage data from hardware platform"
+	select NEWLIB_LIBC
+	depends on !NATIVE_APPLICATION
+	default y
+	help
+	  This option will select the custom gcov library. The reports will
+	  be available over serial. This serial dump can be passed to
+	  gen_gcov_files.py which creates the required .gcda files. These
+	  can be read by gcov utility. For more details see gcovr.com .
+endif
 
 config TEST_USERSPACE
 	bool "Enable userspace if available"
