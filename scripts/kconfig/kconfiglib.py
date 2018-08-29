@@ -78,23 +78,38 @@ See the examples/ subdirectory for example scripts.
 Using Kconfiglib without the Makefile targets
 =============================================
 
-The make targets are only needed for a trivial reason: The Kbuild makefiles
-export environment variables which are referenced inside the Kconfig files and
-in scripts run from the Kconfig files (via e.g. 'source
-"arch/$(SRCARCH)/Kconfig" and '$(shell,...)').
+The make targets are only needed to pick up environment variables exported from
+the Kbuild makefiles and referenced inside Kconfig files, via e.g.
+'source "arch/$(SRCARCH)/Kconfig" and '$(shell,...)'.
 
-The environment variables referenced as of writing (Linux 4.2.18-rc4) are
-srctree, ARCH, SRCARCH, CC, and KERNELVERSION.
+These variables are referenced as of writing (Linux 4.18), together with sample
+values:
 
-To run Kconfiglib without the Makefile patch, you can do this:
+  srctree          (.)
+  ARCH             (x86)
+  SRCARCH          (x86)
+  KERNELVERSION    (4.18.0)
+  CC               (gcc)
+  HOSTCC           (gcc)
+  HOSTCXX          (g++)
+  CC_VERSION_TEXT  (gcc (Ubuntu 7.3.0-16ubuntu3) 7.3.0)
 
-  $ srctree=. ARCH=x86 SRCARCH=x86 CC=gcc KERNELVERSION=`make kernelversion` python(3)
+To run Kconfiglib without the Makefile patch, set the environment variables
+manually:
+
+  $ srctree=. ARCH=x86 SRCARCH=x86 KERNELVERSION=`make kernelversion` ... python(3)
   >>> import kconfiglib
   >>> kconf = kconfiglib.Kconfig()  # filename defaults to "Kconfig"
 
 Search the top-level Makefile for "Additional ARCH settings" to see other
-possibilities for ARCH and SRCARCH. Kconfiglib will print a warning if an unset
-environment variable is referenced inside the Kconfig files.
+possibilities for ARCH and SRCARCH.
+
+To see a list of all referenced environment variables together with their
+values, run this code from e.g. 'make iscriptconfig':
+
+  import os
+  for var in kconf.env_vars:
+      print(var, os.environ[var])
 
 
 Intro to symbol values
@@ -466,6 +481,37 @@ class Kconfig(object):
       A list with all comments, in the same order as they appear in the Kconfig
       files
 
+    kconfig_filenames:
+      A list with the filenames of all Kconfig files included in the
+      configuration, relative to $srctree (or relative to the current directory
+      if $srctree isn't set).
+
+      The files are listed in the order they are source'd, starting with the
+      top-level Kconfig file. If a file is source'd multiple times, it will
+      appear multiple times. Use set() to get unique filenames.
+
+      Note: Using this for incremental builds is redundant. Kconfig.sync_deps()
+      already indirectly catches any file modifications that change the
+      configuration output.
+
+    env_vars:
+      A set() with the names of all environment variables referenced in the
+      Kconfig files.
+
+      Only environment variables referenced with the preprocessor $(FOO) syntax
+      will be registered. The older $FOO syntax is only supported for backwards
+      compatibility.
+
+      Also note that $(FOO) won't be registered unless the environment variable
+      $FOO is actually set. If it isn't, $(FOO) is an expansion of an unset
+      preprocessor variable (which gives the empty string).
+
+      Another gotcha is that environment variables referenced in the values of
+      recursively expanded preprocessor variables (those defined with =) will
+      only be registered if the variable is actually used (expanded) somewhere.
+
+      The note from the 'kconfig_filenames' documentation applies here too.
+
     n/m/y:
       The predefined constant symbols n/m/y. Also available in const_syms.
 
@@ -570,6 +616,8 @@ class Kconfig(object):
         "const_syms",
         "defconfig_list",
         "defined_syms",
+        "env_vars",
+        "kconfig_filenames",
         "m",
         "mainmenu_text",
         "menus",
@@ -757,6 +805,10 @@ class Kconfig(object):
 
         # Parse the Kconfig files
 
+        # Not used internally. Provided as a convenience.
+        self.kconfig_filenames = [filename]
+        self.env_vars = set()
+
         # These implement a single line of "unget" for the parser
         self._saved_line = None
         self._has_tokens = False
@@ -810,7 +862,7 @@ class Kconfig(object):
             _check_choice_sanity(choice)
 
         if os.environ.get("KCONFIG_STRICT") == "y":
-            self._check_undefined_syms()
+            self._check_undef_syms()
 
 
         # Build Symbol._dependents for all symbols and choices
@@ -1545,6 +1597,8 @@ class Kconfig(object):
         #   self._filename (which makes it indirectly show up in
         #   MenuNode.filename). Equals full_filename for absolute paths.
 
+        self.kconfig_filenames.append(rel_filename)
+
         # The parent Kconfig files are represented as a list of
         # (<include path>, <Python 'file' object for Kconfig file>) tuples.
         #
@@ -2161,6 +2215,7 @@ class Kconfig(object):
 
         # Environment variables are tried last
         if fn in os.environ:
+            self.env_vars.add(fn)
             return os.environ[fn]
 
         return ""
@@ -2254,7 +2309,7 @@ class Kconfig(object):
                     self._warn("the menuconfig symbol {} has no prompt"
                                .format(_name_and_loc(sym)))
 
-                # Tricky Python semantics: This assign prev.next before prev
+                # Tricky Python semantics: This assigns prev.next before prev
                 prev.next = prev = node
 
             elif t0 in (_T_SOURCE, _T_RSOURCE, _T_OSOURCE, _T_ORSOURCE):
@@ -3060,11 +3115,11 @@ class Kconfig(object):
         return open(filename, "rU" if mode == "r" else mode) if _IS_PY2 else \
                open(filename, mode, encoding=self._encoding)
 
-    def _check_undefined_syms(self):
+    def _check_undef_syms(self):
         # Prints warnings for all references to undefined symbols within the
         # Kconfig files
 
-        for sym in (self.syms.viewvalues() if _IS_PY2 else self.syms.values()):
+        for sym in (self.syms.viewvalues if _IS_PY2 else self.syms.values)():
             # - sym.nodes empty means the symbol is undefined (has no
             #   definition locations)
             #
@@ -3075,34 +3130,14 @@ class Kconfig(object):
             if not sym.nodes and not _is_num(sym.name) and \
                sym.name != "MODULES":
 
-                self._warn_undefined_sym(sym)
+                msg = "undefined symbol {}:".format(sym.name)
 
-    def _warn_undefined_sym(self, sym):
-        # _check_undefined_syms() helper. Generates a warning that lists the
-        # locations where the undefined symbol 'sym' is referenced, including
-        # the referencing menu nodes in Kconfig format.
+                for node in self.node_iter():
+                    if sym in node.referenced:
+                        msg += "\n\n- Referenced at {}:{}:\n\n{}" \
+                               .format(node.filename, node.linenr, node)
 
-        referencing_nodes = []
-
-        def find_refs(node):
-            while node:
-                if sym in node.referenced:
-                    referencing_nodes.append(node)
-
-                if node.list:
-                    find_refs(node.list)
-
-                node = node.next
-
-        find_refs(self.top_node)
-
-        msg = "undefined symbol {}:".format(sym.name)
-
-        for node in referencing_nodes:
-            msg += "\n\n- Referenced at {}:{}:\n\n{}" \
-                   .format(node.filename, node.linenr, node)
-
-        self._warn(msg)
+                self._warn(msg)
 
     def _warn(self, msg, filename=None, linenr=None):
         # For printing general warnings
@@ -5028,13 +5063,8 @@ def expr_str(expr, sc_expr_str_fn=standard_sc_expr_str):
       Note that quoted values are represented as constants symbols
       (Symbol.is_constant == True).
     """
-    if isinstance(expr, (Symbol, Choice)):
+    if not isinstance(expr, tuple):
         return sc_expr_str_fn(expr)
-
-    if expr[0] == NOT:
-        if isinstance(expr[1], tuple):
-            return "!({})".format(expr_str(expr[1], sc_expr_str_fn))
-        return "!" + sc_expr_str_fn(expr[1])  # Symbol
 
     if expr[0] == AND:
         return "{} && {}".format(_parenthesize(expr[1], OR, sc_expr_str_fn),
@@ -5045,6 +5075,11 @@ def expr_str(expr, sc_expr_str_fn=standard_sc_expr_str):
         # redundant, but more readable
         return "{} || {}".format(_parenthesize(expr[1], AND, sc_expr_str_fn),
                                  _parenthesize(expr[2], AND, sc_expr_str_fn))
+
+    if expr[0] == NOT:
+        if isinstance(expr[1], tuple):
+            return "!({})".format(expr_str(expr[1], sc_expr_str_fn))
+        return "!" + sc_expr_str_fn(expr[1])  # Symbol
 
     # Relation
     #
@@ -5369,9 +5404,16 @@ def _flatten(node):
     # symbols with children from automatic menu creation) so that their
     # children appear after them instead. This gives a clean menu structure
     # with no unexpected "jumps" in the indentation.
+    #
+    # Do not flatten promptless choices (which can appear "legitimitely" if a
+    # named choice is defined in multiple locations to add on symbols). It
+    # looks confusing, and the menuconfig already shows all choice symbols if
+    # you enter the choice at some location with a prompt.
 
     while node:
-        if node.list and not node.prompt:
+        if node.list and not node.prompt and \
+           not isinstance(node.item, Choice):
+
             last_node = node.list
             while 1:
                 last_node.parent = node.parent
