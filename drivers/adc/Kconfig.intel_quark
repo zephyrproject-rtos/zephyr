@@ -1,0 +1,33 @@
+# Kconfig - ADC configuration options
+
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ADC_INTEL_QUARK_D2000
+	bool "ADC Driver for Intel Quark D2000"
+	depends on SOC_QUARK_D2000
+	select ADC_0
+	help
+	  Enable the ADC driver implementation of the Intel Quark D2000.
+
+if ADC_INTEL_QUARK_D2000
+
+config ADC_INTEL_QUARK_D2000_CALIBRATION
+	bool "Enable Calibration"
+	default y
+	help
+	  Enables ADC to run with a calibrated output at the
+	  expense of execution speed when exiting low power states.
+	  If disabled, the ADC will require the application/system-integrator
+	  to provide a calibration method.
+
+config ADC_INTEL_QUARK_D2000_CLOCK_RATIO
+	int "Clock Ratio"
+	default 200
+	help
+	  ADC Clock Ratio
+
+endif # ADC_INTEL_QUARK_D2000

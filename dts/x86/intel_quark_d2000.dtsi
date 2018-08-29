@@ -97,5 +97,17 @@
 
 			status = "disabled";
 		};
+
+		adc0: adc@b0004000 {
+			compatible = "intel,quark-d2000-adc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xB0004000 0x3F>;
+			interrupts = <9 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			label = "ADC_0";
+
+			status = "disabled";
+		};
 	};
 };
