@@ -125,8 +125,11 @@ config AON_TIMER_IRQ_PRI
 endif
 
 if ADC
-config ADC_QMSI
+config ADC_INTEL_QUARK_D2000
 	def_bool y
+config ADC_0_IRQ_PRI
+	int
+	default 2
 endif
 
 if DMA
