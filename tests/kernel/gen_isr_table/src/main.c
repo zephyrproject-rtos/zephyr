@@ -98,6 +98,7 @@ void isr4(void *param)
 	trigger_check[ISR4_OFFSET]++;
 }
 
+#ifndef CONFIG_CPU_CORTEX_M
 /* Need to turn optimization off. Otherwise compiler may generate incorrect
  * code, not knowing that trigger_irq() affects the value of trigger_check,
  * even if declared volatile.
@@ -107,11 +108,16 @@ void isr4(void *param)
  * accesses to trigger_check around calls to trigger_irq.
  */
 __attribute__((optimize("-O0")))
+#endif
 int test_irq(int offset)
 {
 #ifndef NO_TRIGGER_FROM_SW
 	TC_PRINT("triggering irq %d\n", IRQ_LINE(offset));
 	trigger_irq(IRQ_LINE(offset));
+#ifdef CONFIG_CPU_CORTEX_M
+	__DSB();
+	__ISB();
+#endif
 	if (trigger_check[offset] != 1) {
 		TC_PRINT("interrupt %d didn't run once, ran %d times\n",
 			 IRQ_LINE(offset),
