@@ -2736,12 +2736,12 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 	struct lwm2m_output_context *out = context->out;
 	struct lwm2m_obj_path *path = context->path;
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
-	int ret = 0, index;
-	u8_t num_read = 0;
-	u8_t initialized;
 	struct lwm2m_engine_res_inst *res;
 	struct lwm2m_engine_obj_field *obj_field;
+	int ret = 0, index;
 	u16_t temp_res_id, temp_len;
+	u8_t num_read = 0;
+	u8_t initialized;
 
 	if (path->level >= 2) {
 		obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
