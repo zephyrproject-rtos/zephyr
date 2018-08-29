@@ -33,6 +33,7 @@
 #include <logging/log_ctrl.h>
 #include <tracing.h>
 #include <stdbool.h>
+#include <misc/gcov.h>
 
 #define IDLE_THREAD_NAME	"idle"
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
@@ -156,6 +157,10 @@ void _bss_zero(void)
 	(void)memset(&__app_bss_start, 0,
 		     ((u32_t) &__app_bss_end - (u32_t) &__app_bss_start));
 #endif
+#ifdef CONFIG_COVERAGE_GCOV
+	(void)memset(&__gcov_bss_start, 0,
+		 ((u32_t) &__gcov_bss_end - (u32_t) &__gcov_bss_start));
+#endif
 }
 
 
@@ -251,6 +256,9 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	extern void main(void);
 
 	main();
+
+	/* Dump coverage data once the main() has exited. */
+	gcov_coverage_dump();
 
 	/* Terminate thread normally since it has no more work to do */
 	_main_thread->base.user_options &= ~K_ESSENTIAL;
@@ -453,6 +461,9 @@ extern uintptr_t __stack_chk_guard;
  */
 FUNC_NORETURN void _Cstart(void)
 {
+	/* gcov hook needed to get the coverage report.*/
+	gcov_static_init();
+
 #ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	struct k_thread *dummy_thread = NULL;
