@@ -289,6 +289,14 @@ struct lwm2m_writer {
 			    struct lwm2m_obj_path *path);
 	size_t (*put_end)(struct lwm2m_output_context *out,
 			  struct lwm2m_obj_path *path);
+	size_t (*put_begin_oi)(struct lwm2m_output_context *out,
+			       struct lwm2m_obj_path *path);
+	size_t (*put_end_oi)(struct lwm2m_output_context *out,
+			     struct lwm2m_obj_path *path);
+	size_t (*put_begin_r)(struct lwm2m_output_context *out,
+			      struct lwm2m_obj_path *path);
+	size_t (*put_end_r)(struct lwm2m_output_context *out,
+			    struct lwm2m_obj_path *path);
 	size_t (*put_begin_ri)(struct lwm2m_output_context *out,
 			       struct lwm2m_obj_path *path);
 	size_t (*put_end_ri)(struct lwm2m_output_context *out,
@@ -383,6 +391,46 @@ static inline size_t engine_put_end(struct lwm2m_output_context *out,
 {
 	if (out->writer->put_end) {
 		return out->writer->put_end(out, path);
+	}
+
+	return 0;
+}
+
+static inline size_t engine_put_begin_oi(struct lwm2m_output_context *out,
+					 struct lwm2m_obj_path *path)
+{
+	if (out->writer->put_begin_oi) {
+		return out->writer->put_begin_oi(out, path);
+	}
+
+	return 0;
+}
+
+static inline size_t engine_put_end_oi(struct lwm2m_output_context *out,
+				       struct lwm2m_obj_path *path)
+{
+	if (out->writer->put_end_oi) {
+		return out->writer->put_end_oi(out, path);
+	}
+
+	return 0;
+}
+
+static inline size_t engine_put_begin_r(struct lwm2m_output_context *out,
+					struct lwm2m_obj_path *path)
+{
+	if (out->writer->put_begin_r) {
+		return out->writer->put_begin_r(out, path);
+	}
+
+	return 0;
+}
+
+static inline size_t engine_put_end_r(struct lwm2m_output_context *out,
+				      struct lwm2m_obj_path *path)
+{
+	if (out->writer->put_end_r) {
+		return out->writer->put_end_r(out, path);
 	}
 
 	return 0;
