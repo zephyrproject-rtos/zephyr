@@ -100,6 +100,7 @@ struct json_out_formatter_data {
 	struct net_buf *mark_frag_ri;
 	u16_t mark_pos_ri;
 	u8_t writer_flags;
+	u8_t path_level;
 };
 
 /* some temporary buffer space for format conversions */
@@ -214,11 +215,18 @@ static int json_next_token(struct lwm2m_input_context *in,
 static size_t put_begin(struct lwm2m_output_context *out,
 			struct lwm2m_obj_path *path)
 {
-	int len;
+	int len = -1;
 
-	len = snprintk(json_buffer, sizeof(json_buffer),
-		       "{\"bn\":\"/%u/%u/\",\"e\":[",
-		       path->obj_id, path->obj_inst_id);
+	if (path->level >= 2) {
+		len = snprintk(json_buffer, sizeof(json_buffer),
+			       "{\"bn\":\"/%u/%u/\",\"e\":[",
+			       path->obj_id, path->obj_inst_id);
+	} else {
+		len = snprintk(json_buffer, sizeof(json_buffer),
+			       "{\"bn\":\"/%u/\",\"e\":[",
+			       path->obj_id);
+	}
+
 	if (len < 0) {
 		/* TODO: Generate error? */
 		return 0;
@@ -291,15 +299,29 @@ static size_t put_json_prefix(struct lwm2m_output_context *out,
 	}
 
 	sep = SEPARATOR(fd->writer_flags);
-	if (fd->writer_flags & WRITER_RESOURCE_INSTANCE) {
-		len = snprintk(json_buffer, sizeof(json_buffer),
-			       "%s{\"n\":\"%u/%u\",%s:",
-			       sep, path->res_id, path->res_inst_id,
-			       format);
+	if (fd->path_level >= 2) {
+		if (fd->writer_flags & WRITER_RESOURCE_INSTANCE) {
+			len = snprintk(json_buffer, sizeof(json_buffer),
+				       "%s{\"n\":\"%u/%u\",%s:",
+				       sep, path->res_id, path->res_inst_id,
+				       format);
+		} else {
+			len = snprintk(json_buffer, sizeof(json_buffer),
+				       "%s{\"n\":\"%u\",%s:",
+				       sep, path->res_id, format);
+		}
 	} else {
-		len = snprintk(json_buffer, sizeof(json_buffer),
-			       "%s{\"n\":\"%u\",%s:",
-			       sep, path->res_id, format);
+		if (fd->writer_flags & WRITER_RESOURCE_INSTANCE) {
+			len = snprintk(json_buffer, sizeof(json_buffer),
+				       "%s{\"n\":\"%u/%u/%u\",%s:",
+				       sep, path->obj_inst_id, path->res_id,
+				       path->res_inst_id, format);
+		} else {
+			len = snprintk(json_buffer, sizeof(json_buffer),
+				       "%s{\"n\":\"%u/%u\",%s:",
+				       sep, path->obj_inst_id, path->res_id,
+				       format);
+		}
 	}
 
 	if (len < 0) {
@@ -508,6 +530,8 @@ int do_read_op_json(struct lwm2m_engine_obj *obj,
 
 	memset(&fd, 0, sizeof(fd));
 	engine_set_out_user_data(context->out, &fd);
+	/* save the level for output processing */
+	fd.path_level = context->path->level;
 	ret = lwm2m_perform_read_op(obj, context, content_format);
 	engine_clear_out_user_data(context->out);
 
