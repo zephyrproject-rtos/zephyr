@@ -24,7 +24,7 @@
 		pinctrl: pin-controller@48000000 {
 			reg = <0x48000000 0x2400>;
 
-			gpioi: gpio@480002000 {
+			gpioi: gpio@48002000 {
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
