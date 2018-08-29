@@ -96,6 +96,12 @@ struct json_data {
 	u8_t value_len;
 };
 
+struct json_out_formatter_data {
+	struct net_buf *mark_frag_ri;
+	u16_t mark_pos_ri;
+	u8_t writer_flags;
+};
+
 /* some temporary buffer space for format conversions */
 static char json_buffer[64];
 
@@ -213,7 +219,6 @@ static size_t put_begin(struct lwm2m_output_context *out,
 	len = snprintk(json_buffer, sizeof(json_buffer),
 		       "{\"bn\":\"/%u/%u/\",\"e\":[",
 		       path->obj_id, path->obj_inst_id);
-	out->writer_flags = 0; /* set flags to zero */
 	if (len < 0) {
 		/* TODO: Generate error? */
 		return 0;
@@ -247,14 +252,28 @@ static size_t put_end(struct lwm2m_output_context *out,
 static size_t put_begin_ri(struct lwm2m_output_context *out,
 			   struct lwm2m_obj_path *path)
 {
-	out->writer_flags |= WRITER_RESOURCE_INSTANCE;
+	struct json_out_formatter_data *fd;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
+	fd->writer_flags |= WRITER_RESOURCE_INSTANCE;
 	return 0;
 }
 
 static size_t put_end_ri(struct lwm2m_output_context *out,
 			 struct lwm2m_obj_path *path)
 {
-	out->writer_flags &= ~WRITER_RESOURCE_INSTANCE;
+	struct json_out_formatter_data *fd;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
+	fd->writer_flags &= ~WRITER_RESOURCE_INSTANCE;
 	return 0;
 }
 
@@ -262,10 +281,17 @@ static size_t put_json_prefix(struct lwm2m_output_context *out,
 			      struct lwm2m_obj_path *path,
 			      const char *format)
 {
-	char *sep = SEPARATOR(out->writer_flags);
+	struct json_out_formatter_data *fd;
+	char *sep;
 	int len = 0;
 
-	if (out->writer_flags & WRITER_RESOURCE_INSTANCE) {
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
+	sep = SEPARATOR(fd->writer_flags);
+	if (fd->writer_flags & WRITER_RESOURCE_INSTANCE) {
 		len = snprintk(json_buffer, sizeof(json_buffer),
 			       "%s{\"n\":\"%u/%u\",%s:",
 			       sep, path->res_id, path->res_inst_id,
@@ -294,6 +320,12 @@ static size_t put_json_prefix(struct lwm2m_output_context *out,
 
 static size_t put_json_postfix(struct lwm2m_output_context *out)
 {
+	struct json_out_formatter_data *fd;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
 
 	out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
 				  out->offset, &out->offset, 1, "}",
@@ -303,7 +335,7 @@ static size_t put_json_postfix(struct lwm2m_output_context *out)
 		return 0;
 	}
 
-	out->writer_flags |= WRITER_OUTPUT_VALUE;
+	fd->writer_flags |= WRITER_OUTPUT_VALUE;
 	return 1;
 }
 
@@ -471,7 +503,15 @@ int do_read_op_json(struct lwm2m_engine_obj *obj,
 		    struct lwm2m_engine_context *context,
 		    int content_format)
 {
-	return lwm2m_perform_read_op(obj, context, content_format);
+	struct json_out_formatter_data fd;
+	int ret;
+
+	memset(&fd, 0, sizeof(fd));
+	engine_set_out_user_data(context->out, &fd);
+	ret = lwm2m_perform_read_op(obj, context, content_format);
+	engine_clear_out_user_data(context->out);
+
+	return ret;
 }
 
 static int parse_path(const u8_t *buf, u16_t buflen,
