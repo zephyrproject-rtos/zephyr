@@ -91,7 +91,7 @@
 				label = "GPIOC";
 			};
 
-			gpioh: gpio@480001c00 {
+			gpioh: gpio@48001c00 {
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
