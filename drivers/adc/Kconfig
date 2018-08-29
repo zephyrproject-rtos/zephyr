@@ -90,8 +90,6 @@ source "drivers/adc/Kconfig.mcux"
 
 source "drivers/adc/Kconfig.nrfx"
 
-source "drivers/adc/Kconfig.qmsi"
-
 source "drivers/adc/Kconfig.sam_afec"
 
 source "drivers/adc/Kconfig.ti_adc108s102"
