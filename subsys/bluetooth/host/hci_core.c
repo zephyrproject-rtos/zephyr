@@ -438,6 +438,8 @@ static int le_set_private_addr(u8_t id)
 
 static void rpa_timeout(struct k_work *work)
 {
+	int err_adv = 0, err_scan = 0;
+
 	BT_DBG("");
 
 	/* Invalidate RPA */
@@ -450,13 +452,24 @@ static void rpa_timeout(struct k_work *work)
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 		/* make sure new address is used */
 		set_advertise_enable(false);
-		le_set_private_addr(bt_dev.adv_id);
+		err_adv = le_set_private_addr(bt_dev.adv_id);
 		set_advertise_enable(true);
 	}
 
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)) {
 		/* TODO do we need to toggle scan? */
-		le_set_private_addr(BT_ID_DEFAULT);
+		err_scan = le_set_private_addr(BT_ID_DEFAULT);
+	}
+
+	/* If both advertising and scanning is active, le_set_private_addr
+	 * will fail. In this case, set back RPA_VALID so that if either of
+	 * advertising or scanning was restarted by application then
+	 * le_set_private_addr in the public API call path will not retry
+	 * set_random_address. This is needed so as to be able to stop and
+	 * restart either of the role by the application after rpa_timeout.
+	 */
+	if (err_adv || err_scan) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 	}
 }
 #else
