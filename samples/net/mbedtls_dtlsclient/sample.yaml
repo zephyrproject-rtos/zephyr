@@ -1,7 +1,0 @@
-sample:
-  name: mBED DTLS Client
-tests:
-  test:
-    harness: net
-    depends_on: netif
-    tags: net
