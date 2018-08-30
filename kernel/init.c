@@ -505,6 +505,7 @@ FUNC_NORETURN void _Cstart(void)
 	enable_interrupts();
 	bg_thread_main(NULL, NULL, NULL);
 
+	irq_lock();
 	while (1) {
 	}
 #endif
