@@ -310,33 +310,24 @@ static size_t get_opaque(struct lwm2m_input_context *in,
 }
 
 const struct lwm2m_writer plain_text_writer = {
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	put_s8,
-	put_s16,
-	put_s32,
-	put_s64,
-	put_string,
-	put_float32fix,
-	put_float64fix,
-	put_bool,
-	NULL
+	.put_s8 = put_s8,
+	.put_s16 = put_s16,
+	.put_s32 = put_s32,
+	.put_s64 = put_s64,
+	.put_string = put_string,
+	.put_float32fix = put_float32fix,
+	.put_float64fix = put_float64fix,
+	.put_bool = put_bool,
 };
 
 const struct lwm2m_reader plain_text_reader = {
-	get_s32,
-	get_s64,
-	get_string,
-	get_float32fix,
-	get_float64fix,
-	get_bool,
-	get_opaque
+	.get_s32 = get_s32,
+	.get_s64 = get_s64,
+	.get_string = get_string,
+	.get_float32fix = get_float32fix,
+	.get_float64fix = get_float64fix,
+	.get_bool = get_bool,
+	.get_opaque = get_opaque,
 };
 
 int do_read_op_plain_text(struct lwm2m_engine_obj *obj,
