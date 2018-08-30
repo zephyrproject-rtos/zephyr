@@ -537,7 +537,9 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	len = msg->len;
 	while (len) {
 		while (!LL_I2C_IsActiveFlag_RXNE(i2c)) {
-			;
+			if (LL_I2C_IsActiveFlag_NACK(i2c)) {
+				goto error;
+			}
 		}
 
 		*buf = LL_I2C_ReceiveData8(i2c);
@@ -548,6 +550,11 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	msg_done(dev, msg->flags);
 
 	return 0;
+error:
+	LL_I2C_ClearFlag_NACK(i2c);
+	LOG_DBG("%s: NACK", __func__);
+
+	return -EIO;
 }
 #endif
 
