@@ -322,7 +322,7 @@ static u32_t dhcpv4_send_request(struct net_if *iface)
 	NET_DBG("send request dst=%s xid=0x%x ciaddr=%s%s%s timeout=%us",
 		net_sprint_ipv4_addr(server_addr),
 		iface->config.dhcpv4.xid,
-		net_sprint_ipv4_addr(ciaddr),
+		ciaddr ? net_sprint_ipv4_addr(ciaddr) : "<unknown>",
 		with_server_id ? " +server-id" : "",
 		with_requested_ip ? " +requested-ip" : "",
 		timeout);
