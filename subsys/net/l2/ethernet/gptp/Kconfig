@@ -37,6 +37,77 @@ config NET_GPTP_PROBE_CLOCK_SOURCE_ON_DEMAND
 	  updated on each tick.
 	  See IEEE 802.1AS-2011, chapter 9.2 for more details.
 
+choice
+	prompt "gPTP Clock Accuracy"
+	depends on NET_GPTP
+	default NET_GPTP_CLOCK_ACCURACY_UNKNOWN
+	help
+	  Specify the accuracy of the clock. This setting should reflect
+	  the actual capabilities of the hardware.
+	  See 7.6.2.5 of IEEE 1588-2008 for more info.
+
+	config NET_GPTP_CLOCK_ACCURACY_UNKNOWN
+		bool "Unknown"
+	config NET_GPTP_CLOCK_ACCURACY_25NS
+		bool "25ns"
+	config NET_GPTP_CLOCK_ACCURACY_100NS
+		bool "100ns"
+	config NET_GPTP_CLOCK_ACCURACY_250NS
+		bool "250ns"
+	config NET_GPTP_CLOCK_ACCURACY_1US
+		bool "1us"
+	config NET_GPTP_CLOCK_ACCURACY_2_5US
+		bool "2.5us"
+	config NET_GPTP_CLOCK_ACCURACY_10US
+		bool "10us"
+	config NET_GPTP_CLOCK_ACCURACY_25US
+		bool "25us"
+	config NET_GPTP_CLOCK_ACCURACY_100US
+		bool "100us"
+	config NET_GPTP_CLOCK_ACCURACY_250US
+		bool "250us"
+	config NET_GPTP_CLOCK_ACCURACY_1MS
+		bool "1ms"
+	config NET_GPTP_CLOCK_ACCURACY_2_5MS
+		bool "1.5ms"
+	config NET_GPTP_CLOCK_ACCURACY_10MS
+		bool "10ms"
+	config NET_GPTP_CLOCK_ACCURACY_25MS
+		bool "25ms"
+	config NET_GPTP_CLOCK_ACCURACY_100MS
+		bool "100ms"
+	config NET_GPTP_CLOCK_ACCURACY_250MS
+		bool "250ms"
+	config NET_GPTP_CLOCK_ACCURACY_1S
+		bool "1s"
+	config NET_GPTP_CLOCK_ACCURACY_10S
+		bool "10s"
+	config NET_GPTP_CLOCK_ACCURACY_GT_10S
+		bool "> 10s"
+endchoice
+
+config NET_GPTP_CLOCK_ACCURACY
+	hex
+	default 0x20 if NET_GPTP_CLOCK_ACCURACY_25NS
+	default 0x21 if NET_GPTP_CLOCK_ACCURACY_100NS
+	default 0x22 if NET_GPTP_CLOCK_ACCURACY_250NS
+	default 0x23 if NET_GPTP_CLOCK_ACCURACY_1US
+	default 0x24 if NET_GPTP_CLOCK_ACCURACY_2_5US
+	default 0x25 if NET_GPTP_CLOCK_ACCURACY_10US
+	default 0x26 if NET_GPTP_CLOCK_ACCURACY_25US
+	default 0x27 if NET_GPTP_CLOCK_ACCURACY_100US
+	default 0x28 if NET_GPTP_CLOCK_ACCURACY_250US
+	default 0x29 if NET_GPTP_CLOCK_ACCURACY_1MS
+	default 0x2a if NET_GPTP_CLOCK_ACCURACY_2_5MS
+	default 0x2b if NET_GPTP_CLOCK_ACCURACY_10MS
+	default 0x2c if NET_GPTP_CLOCK_ACCURACY_25MS
+	default 0x2d if NET_GPTP_CLOCK_ACCURACY_100MS
+	default 0x2e if NET_GPTP_CLOCK_ACCURACY_250MS
+	default 0x2f if NET_GPTP_CLOCK_ACCURACY_1S
+	default 0x30 if NET_GPTP_CLOCK_ACCURACY_10S
+	default 0x31 if NET_GPTP_CLOCK_ACCURACY_GT_10S
+	default 0xfe
+
 config NET_GPTP_NUM_PORTS
 	int "Number of gPTP ports"
 	default 1

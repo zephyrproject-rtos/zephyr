@@ -28,8 +28,6 @@
 extern "C" {
 #endif
 
-#define GPTP_CLOCK_ACCURACY_UNKNOWN        0xFE
-
 #define GPTP_OFFSET_SCALED_LOG_VAR_UNKNOWN 0x436A
 
 #define GPTP_PRIORITY1_NON_GM_CAPABLE      255
