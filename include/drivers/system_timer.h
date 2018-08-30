@@ -65,8 +65,13 @@ extern int sys_clock_device_ctrl(struct device *device,
 #endif
 
 extern s32_t _sys_idle_elapsed_ticks;
+
+#ifdef CONFIG_MULTITHREADING
 #define _sys_clock_tick_announce() \
 		_nano_sys_clock_tick_announce(_sys_idle_elapsed_ticks)
+#else
+#define _sys_clock_tick_announce() /**/
+#endif
 
 /**
  * @brief Account for the tick due to the timer interrupt
