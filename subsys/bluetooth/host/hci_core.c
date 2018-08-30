@@ -375,7 +375,7 @@ static int le_set_private_addr(u8_t id)
 		return 0;
 	}
 
-	err = bt_rpa_create(bt_dev.irk[0], &rpa);
+	err = bt_rpa_create(bt_dev.irk[id], &rpa);
 	if (!err) {
 		err = set_random_address(&rpa);
 		if (!err) {
