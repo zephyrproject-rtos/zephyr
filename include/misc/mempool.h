@@ -59,7 +59,7 @@ struct sys_mem_pool_block {
 			.n_max = nmax,					\
 			.n_levels = _MPOOL_LVLS(maxsz, minsz),		\
 			.levels = _mpool_lvls_##name,			\
-			.flags = SYS_MEM_POOL_KERNEL			\
+			.flags = SYS_MEM_POOL_USER			\
 		},							\
 		.mutex = kmutex,					\
 	}

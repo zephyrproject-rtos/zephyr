@@ -23,8 +23,8 @@ struct sys_mem_pool_lvl {
 	sys_dlist_t free_list;
 };
 
-#define SYS_MEM_POOL_KERNEL	0
-#define SYS_MEM_POOL_USER	1
+#define SYS_MEM_POOL_KERNEL	BIT(0)
+#define SYS_MEM_POOL_USER	BIT(1)
 
 struct sys_mem_pool_base {
 	void *buf;
