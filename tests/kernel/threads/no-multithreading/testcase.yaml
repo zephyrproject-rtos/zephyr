@@ -6,3 +6,4 @@ tests:
     # Pulls in GPIO by default, which needs missing APIs (why?!), but
     # its headers won't build with GPIO disabled.
     platform_exclude: galileo
+    arch_exclude: xtensa
