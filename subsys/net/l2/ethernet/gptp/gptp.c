@@ -377,7 +377,7 @@ static void gptp_init_clock_ds(void)
 	default_ds->gm_capable = IS_ENABLED(CONFIG_NET_GPTP_GM_CAPABLE);
 	default_ds->clk_quality.clock_class = GPTP_CLASS_OTHER;
 	default_ds->clk_quality.clock_accuracy =
-		GPTP_CLOCK_ACCURACY_UNKNOWN;
+		CONFIG_NET_GPTP_CLOCK_ACCURACY;
 	default_ds->clk_quality.offset_scaled_log_var =
 		GPTP_OFFSET_SCALED_LOG_VAR_UNKNOWN;
 
