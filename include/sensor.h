@@ -125,6 +125,9 @@ enum sensor_channel {
 	/** Angular rotation, in degrees */
 	SENSOR_CHAN_ROTATION,
 
+	/** State of charge, percent. **/
+	SENSOR_CHAN_STATE_OF_CHARGE,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 };
