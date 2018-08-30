@@ -1402,6 +1402,12 @@ static void dtls_cleanup(struct net_app_ctx *ctx, bool cancel_timer)
 
 	/* It might be that ctx is already cleared so check it here */
 	if (ctx->dtls.ctx) {
+		/* Notify peers that we are closing. This must be called
+		 * here as the call in _net_app_ssl_mainloop() is too
+		 * late. Fixes #8605
+		 */
+		mbedtls_ssl_close_notify(&ctx->tls.mbedtls.ssl);
+
 		net_udp_unregister(ctx->dtls.ctx->conn_handler);
 		net_context_put(ctx->dtls.ctx);
 		ctx->dtls.ctx = NULL;
