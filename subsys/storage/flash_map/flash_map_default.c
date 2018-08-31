@@ -15,6 +15,7 @@
 #endif
 
 const struct flash_area default_flash_map[] = {
+#ifdef FLASH_AREA_MCUBOOT_SIZE
 	/* FLASH_AREA_BOOTLOADER */
 	{
 		.fa_id = 0,
@@ -22,7 +23,7 @@ const struct flash_area default_flash_map[] = {
 		.fa_off = FLASH_AREA_MCUBOOT_OFFSET,
 		.fa_size = FLASH_AREA_MCUBOOT_SIZE,
 	},
-
+#endif
 	/* FLASH_AREA_IMAGE_0 */
 	{
 		.fa_id = 1,
@@ -30,7 +31,7 @@ const struct flash_area default_flash_map[] = {
 		.fa_off = FLASH_AREA_IMAGE_0_OFFSET,
 		.fa_size = FLASH_AREA_IMAGE_0_SIZE,
 	},
-
+#ifdef FLASH_AREA_IMAGE_1_SIZE
 	/* FLASH_AREA_IMAGE_1 */
 	{
 		.fa_id = 2,
@@ -38,7 +39,8 @@ const struct flash_area default_flash_map[] = {
 		.fa_off = FLASH_AREA_IMAGE_1_OFFSET,
 		.fa_size = FLASH_AREA_IMAGE_1_SIZE,
 	},
-
+#endif
+#ifdef FLASH_AREA_IMAGE_SCRATCH_SIZE
 	/* FLASH_AREA_IMAGE_SCRATCH */
 	{
 		.fa_id = 3,
@@ -46,7 +48,7 @@ const struct flash_area default_flash_map[] = {
 		.fa_off = FLASH_AREA_IMAGE_SCRATCH_OFFSET,
 		.fa_size = FLASH_AREA_IMAGE_SCRATCH_SIZE,
 	},
-
+#endif
 #ifdef CONFIG_FS_FLASH_STORAGE_PARTITION
 	/* FLASH_AREA_STORAGE */
 	{
