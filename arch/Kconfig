@@ -143,6 +143,7 @@ config USERSPACE
 config PRIVILEGED_STACK_SIZE
 	int "Size of privileged stack"
 	default 512 if MPU_STACK_GUARD || BUILTIN_STACK_GUARD
+	default 512 if COVERAGE_GCOV
 	default 384 if ARC
 	default 256
 	depends on ARCH_HAS_USERSPACE

@@ -112,6 +112,11 @@ static inline int _get_region_attr_by_type(arm_mpu_region_attr_t *p_attr,
 		_get_mpu_ram_region_attr(p_attr, P_RW_U_RW, base, size);
 		return 0;
 #endif
+#ifdef CONFIG_COVERAGE_GCOV
+	case THREAD_GCOV_BSS_REGION:
+		_get_mpu_ram_region_attr(p_attr, P_RW_U_RW, base, size);
+		return 0;
+#endif
 	default:
 		/* Assert on MPU region types not supported in the
 		 * implementation.  If asserts are disabled, the error
@@ -384,6 +389,21 @@ static int arm_mpu_init(struct device *arg)
 	region_conf.base = (u32_t)&__app_ram_start;
 	if (size > 0) {
 		_region_init(index, &region_conf);
+	}
+#endif
+
+#if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
+	u32_t gcov_index, gcov_size;
+	struct arm_mpu_region gcov_region_conf;
+
+	/* configure app data portion */
+	gcov_index = _get_region_index_by_type(THREAD_GCOV_BSS_REGION);
+	gcov_size = (u32_t)&__gcov_bss_end - (u32_t)&__gcov_bss_start;
+	_get_region_attr_by_type(&gcov_region_conf.attr, THREAD_GCOV_BSS_REGION,
+			(u32_t)&__gcov_bss_start, gcov_size);
+	gcov_region_conf.base = (u32_t)&__gcov_bss_start;
+	if (gcov_size > 0) {
+		_region_init(gcov_index, &gcov_region_conf);
 	}
 #endif
 
