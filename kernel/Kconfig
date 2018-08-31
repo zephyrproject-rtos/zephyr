@@ -128,6 +128,7 @@ config SCHED_DEADLINE
 
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
+	default 2048 if COVERAGE_GCOV
 	default 512 if ZTEST
 	default 1024
 	help
@@ -139,6 +140,7 @@ config MAIN_STACK_SIZE
 
 config IDLE_STACK_SIZE
 	int "Size of stack for idle thread"
+	default 512 if COVERAGE_GCOV
 	default 1024 if XTENSA
 	default 512 if RISCV32
 	default 320 if ARC || (ARM && CPU_HAS_FPU)

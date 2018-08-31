@@ -23,14 +23,22 @@ config TEST_SHELL
 
 config TEST_EXTRA_STACKSIZE
 	int "Test function extra thread stack size"
+	default 1024 if COVERAGE_GCOV
 	default 768 if XTENSA
 	default 0
 	help
 	  Additional stack for tests on some platform where default is not
 	  enough.
 
+config HAS_COVERAGE_SUPPORT
+	bool
+	help
+	  The code coverage report generation is only available on boards
+	  with enough RAM.
+
 config COVERAGE
 	bool "Create coverage data"
+	depends on HAS_COVERAGE_SUPPORT
 	default n
 	help
 	  This option will build your application with the -coverage option
@@ -40,7 +48,6 @@ config COVERAGE
 if COVERAGE
 config COVERAGE_GCOV
 	bool "Create Coverage data from hardware platform"
-	select NEWLIB_LIBC
 	depends on !NATIVE_APPLICATION
 	default y
 	help
