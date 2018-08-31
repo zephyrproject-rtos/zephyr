@@ -16,7 +16,7 @@
 #include <irq_offload.h>
 
 #define TIMEOUT 100
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define NUM_OF_WORK 2
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);

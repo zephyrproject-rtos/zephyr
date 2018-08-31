@@ -19,7 +19,7 @@
  * @}
  */
 #define N_THREADS 2
-#define STACK_SIZE 384
+#define STACK_SIZE (384 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 static K_THREAD_STACK_ARRAY_DEFINE(stacks, N_THREADS, STACK_SIZE);
 static struct k_thread threads[N_THREADS];

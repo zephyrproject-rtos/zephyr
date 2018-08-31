@@ -7,7 +7,7 @@
 #include <ztest.h>
 #include <atomic.h>
 #define LOOP 10
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define THREAD_NUM 4
 #define SLAB_NUM 2
 #define TIMEOUT 200

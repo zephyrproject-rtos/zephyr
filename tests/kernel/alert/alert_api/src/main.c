@@ -8,7 +8,7 @@
 #include <irq_offload.h>
 
 #define TIMEOUT 100
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define PENDING_MAX 2
 #define SEM_INITIAL 0
 #define SEM_LIMIT 1

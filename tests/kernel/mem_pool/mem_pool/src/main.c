@@ -28,7 +28,7 @@
 #define  NUM_BLOCKS     64
 
 /* size of stack area used by each thread */
-#define STACKSIZE 512
+#define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 K_SEM_DEFINE(ALTERNATE_SEM, 0, 1);
 K_SEM_DEFINE(REGRESS_SEM, 0, 1);
