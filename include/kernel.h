@@ -1363,7 +1363,8 @@ static ALWAYS_INLINE s32_t _ms_to_ticks(s32_t ms)
 	/* use 64-bit math to keep precision */
 	return (s32_t)ceiling_fraction(
 		(s64_t)ms * sys_clock_hw_cycles_per_sec,
-		(s64_t)MSEC_PER_SEC * sys_clock_hw_cycles_per_tick);
+		((s64_t)MSEC_PER_SEC * sys_clock_hw_cycles_per_sec) /
+		sys_clock_ticks_per_sec);
 #else
 	/* simple division keeps precision */
 	s32_t ms_per_tick = MSEC_PER_SEC / sys_clock_ticks_per_sec;
@@ -1383,8 +1384,7 @@ static inline s64_t __ticks_to_ms(s64_t ticks)
 
 #ifdef _NEED_PRECISE_TICK_MS_CONVERSION
 	/* use 64-bit math to keep precision */
-	return (u64_t)ticks * sys_clock_hw_cycles_per_tick * MSEC_PER_SEC /
-		sys_clock_hw_cycles_per_sec;
+	return (u64_t)ticks * MSEC_PER_SEC / sys_clock_ticks_per_sec;
 #else
 	/* simple multiplication keeps precision */
 	u32_t ms_per_tick = MSEC_PER_SEC / sys_clock_ticks_per_sec;
