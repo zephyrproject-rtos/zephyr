@@ -551,6 +551,9 @@ static inline struct net_offload *net_if_offload(struct net_if *iface)
 {
 	return iface->if_dev->offload;
 }
+#else
+#define net_if_is_ip_offloaded(...) false
+#define net_if_offload(...) NULL
 #endif
 
 /**
@@ -1266,9 +1269,50 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr);
  * @return Pointer to IPv6 address, NULL if not found.
  */
 struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface);
+
 #else
-#define net_if_ipv6_select_src_addr(...)
+#define net_if_config_ipv6_get(...) -EOPNOTSUPP
+#define net_if_config_ipv6_put(...) -EOPNOTSUPP
+#define net_if_ipv6_addr_lookup(...) NULL
+#define net_if_ipv6_addr_lookup_by_iface(...) NULL
+#define net_if_ipv6_addr_add(...) NULL
+#define net_if_ipv6_addr_update_lifetime(...)
+#define net_if_ipv6_prefix_rm(...) false
+#define net_if_ipv6_maddr_add(...) NULL
+#define net_if_ipv6_maddr_rm(...) false
+#define net_if_ipv6_maddr_lookup(...) NULL
+#define net_if_mcast_mon_register(...)
+#define net_if_mcast_mon_unregister(...)
+#define net_if_mcast_monitor(...)
+#define net_if_ipv6_maddr_join(...)
+#define net_if_ipv6_maddr_is_joined(...) false
+#define net_if_ipv6_maddr_leave(...)
+#define net_if_ipv6_prefix_lookup(...) NULL
+#define net_if_ipv6_prefix_add(...)
+#define net_if_ipv6_prefix_rm(...) false
+#define net_if_ipv6_prefix_set_lf(...)
+#define net_if_ipv6_prefix_set_timer(...)
+#define net_if_ipv6_prefix_unset_timer(...)
+#define net_if_ipv6_addr_onlink(...) false
+#define net_if_ipv6_router_lookup(...) NULL
+#define net_if_ipv6_router_find_default(...) NULL
+#define net_if_ipv6_router_update_lifetime(...)
+#define net_if_ipv6_router_add(...) NULL
+#define net_if_ipv6_router_rm(...) false
+#define net_if_ipv6_get_hop_limit(...) 0
+#define net_ipv6_set_hop_limit(...)
+#define net_if_ipv6_set_base_reachable_time(...)
+#define net_if_ipv6_get_reachable_time(...) 0
+#define net_if_ipv6_calc_reachable_time(...) 0
+#define net_if_ipv6_set_reachable_time(...)
+#define net_if_ipv6_set_retrans_timer(...)
+#define net_if_ipv6_get_retrans_timer(...) 0
+#define net_if_ipv6_select_src_addr(...) NULL
 #define net_if_ipv6_select_src_iface(...) NULL
+#define net_if_ipv6_get_ll(...) NULL
+#define net_if_ipv6_get_ll_addr(...) NULL
+#define net_if_ipv6_dad_failed(...)
+#define net_if_ipv6_get_global_addr(...) NULL
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -1494,8 +1538,25 @@ static inline void net_if_ipv4_set_gw(struct net_if *iface,
 
 	net_ipaddr_copy(&iface->config.ip.ipv4->gw, gw);
 }
+
 #else
+#define net_if_config_ipv4_get(...) -EOPNOTSUPP
+#define net_if_config_ipv4_put(...) -EOPNOTSUPP
+#define net_if_ipv4_get_ttl(...) 0
+#define net_if_ipv4_addr_lookup(...) NULL
+#define net_if_ipv4_addr_add(...) NULL
+#define net_if_ipv4_addr_rm(...) false
+#define net_if_ipv4_maddr_add(...) NULL
+#define net_if_ipv4_maddr_rm(...) false
+#define net_if_ipv4_maddr_lookup(...) NULL
+#define net_if_ipv4_router_lookup(...) NULL
+#define net_if_ipv4_router_add(...) NULL
+#define net_if_ipv4_addr_mask_cmp(...) false
 #define net_if_ipv4_select_src_iface(...) NULL
+#define net_if_ipv4_select_src_addr(...) NULL
+#define net_if_ipv4_get_ll(...) NULL
+#define net_if_ipv4_set_netmask(...)
+#define net_if_ipv4_set_gw(...)
 #endif /* CONFIG_NET_IPV4 */
 
 /**
