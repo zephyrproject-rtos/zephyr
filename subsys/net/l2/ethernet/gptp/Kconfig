@@ -65,7 +65,7 @@ config NET_GPTP_INIT_LOG_PDELAY_REQ_ITV
 	help
 	  Defines the interval at which a Path Delay Request will be sent.
 	  The value is the converted in nanoseconds as follow:
-	  nanoseconds = (10^9) * 2^(16 + value)
+	  nanoseconds = (10^9) * 2^(value)
 
 config NET_GPTP_INIT_LOG_SYNC_ITV
 	int "Set initial sync interval in Log2 base"
@@ -73,7 +73,7 @@ config NET_GPTP_INIT_LOG_SYNC_ITV
 	help
 	  Defines the interval at which a Sync message will be sent.
 	  The value is the converted in nanoseconds as follow:
-	  nanoseconds = (10^9) * 2^(16 + value)
+	  nanoseconds = (10^9) * 2^(value)
 
 config NET_GPTP_INIT_LOG_ANNOUNCE_ITV
 	int "Set initial announce interval in Log2 base"
@@ -81,7 +81,7 @@ config NET_GPTP_INIT_LOG_ANNOUNCE_ITV
 	help
 	  Defines the interval at which an Announce message will be sent.
 	  The value is the converted in nanoseconds as follow:
-	  nanoseconds = (10^9) * 2^(16 + value)
+	  nanoseconds = (10^9) * 2^(value)
 
 config NET_GPTP_SYNC_RECEIPT_TIMEOUT
 	int "Number of sync intervals to wait"
