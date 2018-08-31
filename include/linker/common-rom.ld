@@ -42,17 +42,6 @@
 	}
 #endif
 
-#ifdef CONFIG_COVERAGE_GCOV
-	/* Section needed by gcov when coverage is turned on.*/
-	SECTION_PROLOGUE (gcov, (OPTIONAL),)
-	{
-		PROVIDE_HIDDEN (__init_array_start = .);
-		KEEP (*(SORT(.init_array.*)))
-		KEEP (*(.init_array*))
-		PROVIDE_HIDDEN (__init_array_end = .);
-	} GROUP_LINK_IN(ROMABLE_REGION)
-#endif  /* CONFIG_COVERAGE_GCOV */
-
 	SECTION_PROLOGUE (devconfig, (OPTIONAL),)
 	{
 		__devconfig_start = .;
@@ -105,3 +94,14 @@
 		KEEP(*(SORT_BY_NAME(".font_entry.*")))
 		__font_entry_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
+
+#ifdef CONFIG_COVERAGE_GCOV
+	/* Section needed by gcov when coverage is turned on.*/
+	SECTION_PROLOGUE (gcov, (OPTIONAL),)
+	{
+		PROVIDE_HIDDEN (__init_array_start = .);
+		KEEP (*(SORT(.init_array.*)))
+		KEEP (*(.init_array*))
+		PROVIDE_HIDDEN (__init_array_end = .);
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif  /* CONFIG_COVERAGE_GCOV */

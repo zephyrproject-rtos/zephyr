@@ -236,6 +236,12 @@ extern char _image_rodata_end[];
 extern char _vector_start[];
 extern char _vector_end[];
 
+#ifdef CONFIG_COVERAGE_GCOV
+extern char __gcov_bss_start[];
+extern char __gcov_bss_end[];
+extern char __gcov_bss_size[];
+#endif	/* CONFIG_COVERAGE_GCOV */
+
 /* end address of image, used by newlib for the heap */
 extern char _end[];
 
