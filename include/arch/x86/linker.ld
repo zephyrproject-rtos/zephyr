@@ -187,6 +187,21 @@ SECTIONS
 	/* RAMABLE_REGION */
 	GROUP_START(RAMABLE_REGION)
 
+#ifdef CONFIG_COVERAGE_GCOV
+	SECTION_PROLOGUE(_GCOV_BSS_SECTION_NAME, (NOLOAD OPTIONAL),)
+	{
+		MMU_PAGE_ALIGN
+		__gcov_bss_start = .;
+		KERNEL_INPUT_SECTION(".bss.__gcov0.*");
+		. = ALIGN(4);
+		MMU_PAGE_ALIGN
+		__gcov_bss_end = .;
+	}GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+	__gcov_bss_num_words = ((__gcov_bss_end - __gcov_bss_start) >> 2);
+	__gcov_bss_size = __gcov_bss_end - __gcov_bss_start;
+#endif /* CONFIG_COVERAGE_GCOV */
+
 	/* APP SHARED MEMORY REGION */
 	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
 	{
@@ -199,6 +214,8 @@ SECTIONS
 
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
+
+
 #ifdef CONFIG_APPLICATION_MEMORY
 	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
 	{
