@@ -80,3 +80,32 @@
 	status = "ok";
 	current-speed = <115200>;
 };
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		
+#if defined(CONFIG_FS_FLASH_STORAGE_PARTITION)
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x00000000 0x7d000>;
+		};
+
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x0007d000 0x00003000>;
+		};
+#else
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x00000000 0x80000>;
+		};
+#endif
+	};
+};
