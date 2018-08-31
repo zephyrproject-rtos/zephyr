@@ -88,6 +88,7 @@ typedef struct osaThreadDef_tag  {
   uint8_t               *tname;
   bool_t               useFloat;
 } osaThreadDef_t;
+
 /*! @brief Thread Link Definition structure .*/ 
 typedef struct osaThreadLink_tag{
   uint8_t          link[12];
@@ -139,6 +140,13 @@ typedef enum osaStatus_tag
 #define OSA_TASK_PRIORITY_MAX (0)
 #define OSA_TASK_PRIORITY_MIN (15)  
 #define SIZE_IN_UINT32_UNITS(size) (((size) + sizeof(uint32_t) - 1) / sizeof(uint32_t)) 
+
+/*!
+ * @brief To provide unified task piority for upper layer, OSA layer makes conversion.
+ */
+#define configMAX_PRIORITIES            (CONFIG_NUM_COOP_PRIORITIES)
+#define PRIORITY_OSA_TO_RTOS(osa_prio)  (K_PRIO_COOP(osa_prio))
+
 
 /*! @brief Constant to pass as timeout value in order to wait indefinitely. */
 #define osaWaitForever_c   ((uint32_t)(-1))
@@ -203,7 +211,8 @@ osaThreadDef_t os_thread_def_##name = { (name), \
                                        NULL, \
                                        (uint8_t*) #name,\
                                        (useFloat)}                                       
-#endif                                       
+#endif
+                                    
 /* Access a Thread defintion. 
  * \param         name          name of the thread definition object. 
  */
