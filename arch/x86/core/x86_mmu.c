@@ -29,6 +29,12 @@ MMU_BOOT_REGION((u32_t)&__app_ram_start, (u32_t)&__app_ram_size,
 MMU_BOOT_REGION((u32_t)&_app_smem_start, (u32_t)&_app_smem_size,
 		MMU_ENTRY_WRITE | MMU_ENTRY_USER | MMU_ENTRY_EXECUTE_DISABLE);
 #endif
+
+#ifdef CONFIG_COVERAGE_GCOV
+MMU_BOOT_REGION((u32_t)&__gcov_bss_start, (u32_t)&__gcov_bss_size,
+		MMU_ENTRY_WRITE | MMU_ENTRY_USER | MMU_ENTRY_EXECUTE_DISABLE);
+#endif
+
 /* __kernel_ram_size includes all unused memory, which is used for heaps.
  * User threads cannot access this unless granted at runtime. This is done
  * automatically for stacks.

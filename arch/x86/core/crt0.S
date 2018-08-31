@@ -334,6 +334,12 @@ __csSet:
 	movl	$__bss_num_words, %ecx	/* number of quad bytes in .bss */
 	call	_x86_bss_zero
 
+#ifdef CONFIG_COVERAGE_GCOV
+	movl	$__gcov_bss_start, %edi	/* load gcov BSS start address */
+	movl	$__gcov_bss_num_words, %ecx	/* number of quad bytes */
+	call	_x86_bss_zero
+#endif /* CONFIG_COVERAGE_GCOV */
+
 #ifdef CONFIG_APPLICATION_MEMORY
 	movl	$__app_bss_start, %edi		/* load app BSS start address */
 	movl	$__app_bss_num_words, %ecx	/* number of quad bytes */
