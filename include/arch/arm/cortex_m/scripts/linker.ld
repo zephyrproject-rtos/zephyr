@@ -328,6 +328,32 @@ SECTIONS
 	}
 #endif
 
+#ifdef CONFIG_COVERAGE_GCOV
+    SECTION_DATA_PROLOGUE(_GCOV_BSS_SECTION_NAME,(NOLOAD),)
+	{
+
+#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+       . = ALIGN( 1 << LOG2CEIL(__gcov_bss_end - __gcov_bss_start ));
+#endif /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+
+       __gcov_bss_start = .;
+       KEEP(*(".bss.__gcov0.*"));
+
+#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+       . = ALIGN( 1 << LOG2CEIL(__gcov_bss_end - __gcov_bss_start ));
+#else  /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+       . = ALIGN(4);
+#endif /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+
+       __gcov_bss_end = .;
+
+	} GROUP_LINK_IN(RAMABLE_REGION)
+
+       __gcov_bss_num_words = ((__gcov_bss_end - __gcov_bss_start) >> 2);
+       __gcov_bss_size = __gcov_bss_end - __gcov_bss_start;
+
+#endif /* CONFIG_COVERAGE_GCOV */
+
 #ifdef CONFIG_APPLICATION_MEMORY
 	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
 	{
