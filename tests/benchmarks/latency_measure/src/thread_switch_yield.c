@@ -21,7 +21,7 @@
 
 static u32_t helper_thread_iterations;
 
-#define Y_STACK_SIZE    512
+#define Y_STACK_SIZE    (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define Y_PRIORITY      10
 
 K_THREAD_STACK_DEFINE(y_stack_area, Y_STACK_SIZE);

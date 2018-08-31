@@ -5,6 +5,7 @@
  */
 
 #include <ztest.h>
+#include "test_sched.h"
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define NUM_THREAD 3

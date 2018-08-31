@@ -6,7 +6,7 @@
 #include <ztest.h>
 
 #define TIMEOUT 500
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 /**TESTPOINT: init via K_MUTEX_DEFINE*/
 K_MUTEX_DEFINE(kmutex);
