@@ -1,12 +1,2 @@
-zephyr_library()
-
-zephyr_library_include_directories(
-  # USB headers
-  #${ZEPHYR_BASE}/include/drivers/usb
-  ${ZEPHYR_BASE}/include/usb
-  ${ZEPHYR_BASE}/subsys/usb
-  )
-
-zephyr_library_sources(
-  core.c
-  )
+target_sources(subsys_usb PRIVATE ${CMAKE_CURRENT_LIST_DIR}/core.c)
+target_include_directories(subsys_usb PRIVATE ${ZEPHYR_BASE}/include/usb)

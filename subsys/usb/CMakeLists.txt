@@ -1,22 +1,22 @@
+zephyr_list(SOURCES
+            OUTPUT PRIVATE_SOURCES
+            IFDEF:${CONFIG_USB_DEVICE_STACK}   usb_device.c
+                                               usb_descriptor.c
+            IFDEF:${CONFIG_USB_DEVICE_BOS}     bos.c
+            IFDEF:${CONFIG_USB_DEVICE_OS_DESC} os_desc.c
+)
+
+if(PRIVATE_SOURCES)
+  add_library(subsys_usb STATIC "")
+  zephyr_set_property(TARGET subsys_usb MEMORY_SPACE kernel)
+  target_link_libraries(subsys_usb PRIVATE zephyr_interface)
+  target_link_libraries(zephyr_app_linking INTERFACE subsys_usb)
+  target_sources(subsys_usb PRIVATE ${PRIVATE_SOURCES})
+endif()
+
+
 if(CONFIG_USB_DEVICE_STACK)
-  zephyr_sources(
-    usb_device.c
-    usb_descriptor.c
-    )
-
   add_subdirectory(class)
-endif()
-
-if(CONFIG_USB_DEVICE_BOS)
-  zephyr_sources(
-    bos.c
-    )
-endif()
-
-if(CONFIG_USB_DEVICE_OS_DESC)
-  zephyr_sources(
-    os_desc.c
-    )
 endif()
 
 if(CONFIG_USB_DEVICE_VID EQUAL 0x2FE3)
