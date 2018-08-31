@@ -6,11 +6,11 @@
 
 #include <ztest.h>
 
-static void empty_test(void)
+static void test_empty_test(void)
 {
 }
 
-static void assert_tests(void)
+static void test_assert_tests(void)
 {
 	zassert_true(1, NULL);
 	zassert_false(0, NULL);
@@ -23,8 +23,8 @@ static void assert_tests(void)
 void test_main(void)
 {
 	ztest_test_suite(framework_tests,
-			 ztest_unit_test(empty_test),
-			 ztest_unit_test(assert_tests)
+			 ztest_unit_test(test_empty_test),
+			 ztest_unit_test(test_assert_tests)
 			 );
 
 	ztest_run_test_suite(framework_tests);
