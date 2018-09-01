@@ -20,7 +20,7 @@ config HMC5883L_NAME
 config HMC5883L_I2C_MASTER_DEV_NAME
 	string "I2C master where HMC5883L is connected"
 	depends on HMC5883L
-	default "I2C_1"
+	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which HMC5883L
 	  is connected.

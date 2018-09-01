@@ -9,5 +9,3 @@
 config BOARD_NUCLEO_L476RG
 	bool "Nucleo L476RG Development Board"
 	depends on SOC_STM32L476XG
-	select HAS_DTS
-	select HAS_DTS_I2C
