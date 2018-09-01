@@ -79,9 +79,15 @@ enum net_sock_type {
 /** IPv6 address structure */
 struct in6_addr {
 	union {
+#if defined CONFIG_NET_IPV6
 		u8_t		u6_addr8[16];
 		u16_t		u6_addr16[8]; /* In big endian */
 		u32_t		u6_addr32[4]; /* In big endian */
+#else
+		u8_t		*u6_addr8;
+		u16_t		*u6_addr16;
+		u32_t		*u6_addr32;
+#endif
 	} in6_u;
 #define s6_addr			in6_u.u6_addr8
 #define s6_addr16		in6_u.u6_addr16
@@ -162,12 +168,8 @@ struct sockaddr_storage {
 struct net_addr {
 	sa_family_t family;
 	union {
-#if defined(CONFIG_NET_IPV6)
 		struct in6_addr in6_addr;
-#endif
-#if defined(CONFIG_NET_IPV4)
 		struct in_addr in_addr;
-#endif
 	};
 };
 
