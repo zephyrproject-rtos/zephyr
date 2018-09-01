@@ -68,3 +68,16 @@
 &rtc {
 	status = "ok";
 };
+
+&i2c1 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&can1 {
+        pinctrl-0 = <&can_pins_a>;
+        pinctrl-names = "default";
+        bus-speed = <250000>;
+        status = "ok";
+};
+
