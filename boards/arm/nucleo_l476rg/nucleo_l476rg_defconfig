@@ -39,7 +39,3 @@ CONFIG_PWM=y
 
 #enable MPU
 CONFIG_STM32_ARM_MPU_ENABLE=y
-
-#enable i2c
-CONFIG_I2C_1=y
-

@@ -1,16 +1,15 @@
 /*
- * Copyright (c) 2012-2014 Wind River Systems, Inc.
+ * Copyright (c) 2018 Jose Sune Cofreros Jr.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * 08/23/2018	Jose Sune Cofreros Jr. 	Created nine degrees of freedom 
- *					sensor suit using MPU6050 and 
- *					HMC5883L.
+/**
+ * @file
+ * @brief Sample app for nine degrees of freedom sample data acquisition.
  *
- * 08/26/2018	Jose Sune Cofreros Jr.	Verified on Nucleo STM32L476RG
- *					and Intel Quark D2000.
+ * Sample app for implementing MPU6050 and HMC5883L drivers and dump their
+ * sensor data. Verified on Nucleo STM32L476RG and Intel Quark D2000.
  */
 
 #include <zephyr.h>
@@ -22,6 +21,15 @@ void main(void)
 {
 	struct device *dev1 = device_get_binding("MPU6050");
 	struct device *dev2 = device_get_binding("HMC5883L");
+
+	if (!dev1) {
+		printk("Cannot find MPU6050!\n");
+		return;
+	}
+	if (!dev2) {
+		printk("Cannot find HMC5883L!\n");
+		return;
+	}
 
 	printk("dev1 %p name %s\n", dev1, dev1->config->name);
 	printk("dev2 %p name %s\n", dev2, dev2->config->name);
