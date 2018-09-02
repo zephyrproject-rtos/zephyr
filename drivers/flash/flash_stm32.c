@@ -14,7 +14,16 @@
 
 #include "flash_stm32.h"
 
-#define STM32_FLASH_TIMEOUT	((u32_t) 0x000B0000)
+/* STM32F0: maximum erase time of 40ms for a 2K sector */
+#if defined(CONFIG_SOC_SERIES_STM32F0X)
+#define STM32_FLASH_TIMEOUT	(K_MSEC(40))
+/* STM32F4: maximum erase time of 4s for a 128K sector */
+#elif defined(CONFIG_SOC_SERIES_STM32F4X)
+#define STM32_FLASH_TIMEOUT	(K_MSEC(4000))
+/* STM32L4: maximum erase time of 24.47ms for a 2K sector */
+#elif defined(CONFIG_SOC_SERIES_STM32L4X)
+#define STM32_FLASH_TIMEOUT	(K_MSEC(25))
+#endif
 
 /*
  * This is named flash_stm32_sem_take instead of flash_stm32_lock (and
@@ -63,7 +72,7 @@ static int flash_stm32_check_status(struct device *dev)
 
 int flash_stm32_wait_flash_idle(struct device *dev)
 {
-	u32_t timeout = STM32_FLASH_TIMEOUT;
+	s64_t timeout_time = k_uptime_get() + STM32_FLASH_TIMEOUT;
 	int rc;
 
 	rc = flash_stm32_check_status(dev);
@@ -71,12 +80,10 @@ int flash_stm32_wait_flash_idle(struct device *dev)
 		return -EIO;
 	}
 
-	while ((FLASH_STM32_REGS(dev)->sr & FLASH_SR_BSY) && timeout) {
-		timeout--;
-	}
-
-	if (!timeout) {
-		return -EIO;
+	while ((FLASH_STM32_REGS(dev)->sr & FLASH_SR_BSY)) {
+		if (k_uptime_get() > timeout_time) {
+			return -EIO;
+		}
 	}
 
 	return 0;
