@@ -89,11 +89,16 @@ int flash_stm32_wait_flash_idle(struct device *dev)
 	return 0;
 }
 
-static void flash_stm32_flush_caches(struct device *dev)
+static void flash_stm32_flush_caches(struct device *dev,
+				     off_t offset, size_t len)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F0X)
 	ARG_UNUSED(dev);
+	ARG_UNUSED(offset);
+	ARG_UNUSED(len);
 #elif defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32L4X)
+	ARG_UNUSED(offset);
+	ARG_UNUSED(len);
 #if defined(CONFIG_SOC_SERIES_STM32F4X)
 	struct stm32f4x_flash *regs = FLASH_STM32_REGS(dev);
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
@@ -140,7 +145,7 @@ static int flash_stm32_erase(struct device *dev, off_t offset, size_t len)
 
 	rc = flash_stm32_block_erase_loop(dev, offset, len);
 
-	flash_stm32_flush_caches(dev);
+	flash_stm32_flush_caches(dev, offset, len);
 
 	flash_stm32_sem_give(dev);
 
