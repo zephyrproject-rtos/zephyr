@@ -99,13 +99,6 @@ static void flash_stm32_flush_caches(struct device *dev)
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
 #endif
-	if (regs->acr.val & FLASH_ACR_ICEN) {
-		regs->acr.val &= ~FLASH_ACR_ICEN;
-		regs->acr.val |= FLASH_ACR_ICRST;
-		regs->acr.val &= ~FLASH_ACR_ICRST;
-		regs->acr.val |= FLASH_ACR_ICEN;
-	}
-
 	if (regs->acr.val & FLASH_ACR_DCEN) {
 		regs->acr.val &= ~FLASH_ACR_DCEN;
 		regs->acr.val |= FLASH_ACR_DCRST;
