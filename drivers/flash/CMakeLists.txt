@@ -31,6 +31,13 @@ zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_STM32
 	)
 endif()
 
+if(CONFIG_SOC_SERIES_STM32F7X)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_STM32
+	flash_stm32.c
+	flash_stm32f7x.c
+	)
+endif()
+
 if(CONFIG_SOC_SERIES_STM32L4X)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_STM32
 	flash_stm32.c
