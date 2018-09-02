@@ -89,15 +89,16 @@ int flash_stm32_wait_flash_idle(struct device *dev)
 	return 0;
 }
 
-#if !defined(CONFIG_SOC_SERIES_STM32F0X)
 static void flash_stm32_flush_caches(struct device *dev)
 {
+#if defined(CONFIG_SOC_SERIES_STM32F0X)
+	ARG_UNUSED(dev);
+#elif defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32L4X)
 #if defined(CONFIG_SOC_SERIES_STM32F4X)
 	struct stm32f4x_flash *regs = FLASH_STM32_REGS(dev);
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
 #endif
-
 	if (regs->acr.val & FLASH_ACR_ICEN) {
 		regs->acr.val &= ~FLASH_ACR_ICEN;
 		regs->acr.val |= FLASH_ACR_ICRST;
@@ -111,8 +112,8 @@ static void flash_stm32_flush_caches(struct device *dev)
 		regs->acr.val &= ~FLASH_ACR_DCRST;
 		regs->acr.val |= FLASH_ACR_DCEN;
 	}
-}
 #endif
+}
 
 static int flash_stm32_read(struct device *dev, off_t offset, void *data,
 			    size_t len)
@@ -146,9 +147,7 @@ static int flash_stm32_erase(struct device *dev, off_t offset, size_t len)
 
 	rc = flash_stm32_block_erase_loop(dev, offset, len);
 
-#if !defined(CONFIG_SOC_SERIES_STM32F0X)
 	flash_stm32_flush_caches(dev);
-#endif
 
 	flash_stm32_sem_give(dev);
 
