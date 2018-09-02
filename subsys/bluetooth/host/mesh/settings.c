@@ -390,7 +390,6 @@ static int net_key_set(int argc, char **argv, char *val)
 static int app_key_set(int argc, char **argv, char *val)
 {
 	struct bt_mesh_app_key *app;
-	struct bt_mesh_subnet *sub;
 	struct app_key_val key;
 	u16_t app_idx;
 	int len, err;
@@ -420,12 +419,6 @@ static int app_key_set(int argc, char **argv, char *val)
 	if (len != sizeof(key)) {
 		BT_ERR("Unexpected value length (%d != %zu)", len, sizeof(key));
 		return -EINVAL;
-	}
-
-	sub = bt_mesh_subnet_get(key.net_idx);
-	if (!sub) {
-		BT_ERR("Failed to find subnet 0x%03x", key.net_idx);
-		return -ENOENT;
 	}
 
 	app = bt_mesh_app_key_find(app_idx);
