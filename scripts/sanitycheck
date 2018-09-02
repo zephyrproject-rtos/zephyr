@@ -2180,7 +2180,9 @@ class TestSuite:
                 elif ti.results[k] == 'SKIP':
                     el = ET.SubElement(
                         eleTestcase,
-                        'skipped')
+                        'skipped',
+                        type="skipped",
+                        message="Skipped")
 
         result = ET.tostring(eleTestsuites)
         f = open(report_file, 'wb')
