@@ -38,10 +38,21 @@ struct shell_cmd {
  */
 typedef const char *(*shell_prompt_function_t)(void);
 
+/** @brief Callback for custom line2argv parsing
+ *
+ * If this callback is set, command parsing for specified module works only
+ * if it is selected as default module. This is to not break other modules.
+ *
+ *  @returns Current prompt string.
+ */
+typedef size_t (*shell_line2argv_function_t)(char *str, char *argv[],
+								size_t size);
+
 struct shell_module {
 	const char *module_name;
 	const struct shell_cmd *commands;
 	shell_prompt_function_t prompt;
+	shell_line2argv_function_t line2argv;
 };
 
 /** @typedef shell_mcumgr_function_t
@@ -109,15 +120,24 @@ typedef int (*shell_mcumgr_function_t)(const char *line, void *arg);
  */
 #ifdef CONFIG_CONSOLE_SHELL
 #define SHELL_REGISTER(_name, _commands) \
-	SHELL_REGISTER_WITH_PROMPT(_name, _commands, NULL)
+	SHELL_REGISTER_WITH_PROMPT_AND_LINE2ARGV(_name, _commands, NULL, NULL)
 
 #define SHELL_REGISTER_WITH_PROMPT(_name, _commands, _prompt) \
+	SHELL_REGISTER_WITH_PROMPT_AND_LINE2ARGV(_name, _commands, _prompt, NULL)
+
+#define SHELL_REGISTER_WITH_LINE2ARGV(_name, _commands, _line2argv) \
+	SHELL_REGISTER_WITH_PROMPT_AND_LINE2ARGV(_name, _commands, NULL, \
+						 _line2argv)
+
+#define SHELL_REGISTER_WITH_PROMPT_AND_LINE2ARGV(_name, _commands, _prompt, \
+						 _line2argv) \
 	\
 	static struct shell_module (__shell__name) __used \
 	__attribute__((__section__(".shell_module_"))) = { \
 		  .module_name = _name, \
 		  .commands = _commands, \
-		  .prompt = _prompt \
+		  .prompt = _prompt, \
+		  .line2argv = _line2argv, \
 	}
 
 #define SHELL_REGISTER_COMMAND(name, callback, _help) \
