@@ -1,1 +1,0 @@
-source "arch/arm/soc/silabs_exx32/*/Kconfig.defconfig.series"

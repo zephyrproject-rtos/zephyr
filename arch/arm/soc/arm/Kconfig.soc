@@ -1,8 +1,0 @@
-# Kconfig - ARM LTD SoC configuration options
-#
-# Copyright (c) 2016 Linaro Limited
-#
-# SPDX-License-Identifier: Apache-2.0
-#
-
-source "arch/arm/soc/arm/*/Kconfig.series"

@@ -1,0 +1,11 @@
+# Kconfig.defconfig.series - TI SimpleLink Family
+#
+
+if SOC_SERIES_CC32XX
+
+source "soc/arm/ti_simplelink/cc32xx/Kconfig.defconfig.cc32*"
+
+config SOC_SERIES
+	default "cc32xx"
+
+endif # SOC_SERIES_CC32XX

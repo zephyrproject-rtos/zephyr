@@ -1,0 +1,45 @@
+# Kconfig.defconfig.series - ST Microelectronics STM32F7 MCU line
+#
+# Copyright (c) 2018 Yurii Hamann
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_STM32F7X
+
+source "soc/arm/st_stm32/stm32f7/Kconfig.defconfig.stm32f7*"
+
+config SOC_SERIES
+	default "stm32f7"
+
+if GPIO_STM32
+
+config GPIO_STM32_PORTD
+	default y
+
+config GPIO_STM32_PORTE
+	default y
+
+config GPIO_STM32_PORTH
+	default y
+
+config GPIO_STM32_PORTI
+	default y
+
+endif # GPIO_STM32
+
+if I2C_STM32
+
+config I2C_STM32_V2
+	def_bool y
+
+endif # I2C_STM32
+
+if ENTROPY_GENERATOR
+
+config ENTROPY_STM32_RNG
+	def_bool y
+
+endif # ENTROPY_GENERATOR
+
+endif # SOC_SERIES_STM32F7X
