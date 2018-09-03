@@ -154,6 +154,6 @@ config SOC_FLASH_QMSI_SYS_SIZE
 endif # SOC_FLASH_QMSI
 
 
-source "arch/x86/soc/intel_quark/quark_d2000/Kconfig.defconfig.quark_d2000"
+source "soc/x86/intel_quark/quark_d2000/Kconfig.defconfig.quark_d2000"
 
 endif # SOC_SERIES_QUARK_D2000
