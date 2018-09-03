@@ -7,7 +7,7 @@
 choice
 	prompt "Nios II configuration selection"
 	depends on NIOS2
-	source "arch/nios2/soc/*/Kconfig.soc"
+	source "soc/nios2/*/Kconfig.soc"
 endchoice
 
 menu "Nios II Options"
@@ -17,7 +17,7 @@ menu "Nios II Options"
 # overriden (by defining symbols in multiple locations)
 #
 # (No SoC-specific Kconfig files as of writing, hence the optional source.)
-osource "arch/nios2/soc/*/Kconfig"
+osource "soc/nios2/*/Kconfig"
 
 config ARCH
 	string
