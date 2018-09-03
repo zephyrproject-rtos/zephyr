@@ -50,9 +50,9 @@ zephyr_library_named(zephyr)
 zephyr_include_directories(
   kernel/include
   arch/${ARCH}/include
-  arch/${ARCH}/soc/${SOC_PATH}
-  arch/${ARCH}/soc/${SOC_PATH}/include
-  arch/${ARCH}/soc/${SOC_FAMILY}/include
+  soc/${ARCH}/${SOC_PATH}
+  soc/${ARCH}/${SOC_PATH}/include
+  soc/${ARCH}/${SOC_FAMILY}/include
   ${BOARD_DIR}
   include
   include/drivers
@@ -295,7 +295,7 @@ else()
   set(LINKER_SCRIPT ${BOARD_DIR}/linker.ld)
   if(NOT EXISTS ${LINKER_SCRIPT})
     # If not available, try an SoC specific linker file
-    set(LINKER_SCRIPT ${ZEPHYR_BASE}/arch/${ARCH}/soc/${SOC_PATH}/linker.ld)
+    set(LINKER_SCRIPT ${ZEPHYR_BASE}/soc/${ARCH}/${SOC_PATH}/linker.ld)
   endif()
 endif()
 
@@ -335,6 +335,13 @@ add_subdirectory(misc)
 # This is because source file properties are directory scoped, including the GENERATED
 # property which is set implicitly for custom command outputs
 include(misc/generated/CMakeLists.txt)
+
+if(EXISTS soc/${ARCH}/CMakeLists.txt)
+  add_subdirectory(soc/${ARCH})
+else()
+  add_subdirectory(soc/${ARCH}/${SOC_PATH})
+endif()
+
 add_subdirectory(boards)
 add_subdirectory(ext)
 add_subdirectory(subsys)
