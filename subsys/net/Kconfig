@@ -27,24 +27,17 @@ config NET_BUF_USER_DATA_SIZE
 
 config NET_BUF_LOG
 	bool "Network buffer logging"
-	select SYS_LOG
+	select LOG
 	help
 	  Enable logs and checks for the generic network buffers.
 
 if NET_BUF_LOG
-config SYS_LOG_NET_BUF_LEVEL
-	int "Network buffer Logging level"
-	depends on SYS_LOG
-	default 1
-	range 0 4
-	help
-	  Sets log level for network buffers.
-	  Levels are:
-	  0 OFF, do not write
-	  1 ERROR, only write SYS_LOG_ERR
-	  2 WARNING, write SYS_LOG_WRN in addition to previous level
-	  3 INFO, write SYS_LOG_INF in addition to previous levels
-	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+module=NET_BUF
+module-dep=LOG
+module-str=Log level for network buffer handling
+module-help=Sets log level for network buffers.
+source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_BUF_WARN_ALLOC_INTERVAL
 	int "Interval of Network buffer allocation warnings"
@@ -58,7 +51,7 @@ config NET_BUF_WARN_ALLOC_INTERVAL
 
 config NET_BUF_SIMPLE_LOG
 	bool "Network buffer memory debugging"
-	select SYS_LOG
+	select LOG
 	help
 	  Enable extra debug logs and checks for the generic network buffers.
 
