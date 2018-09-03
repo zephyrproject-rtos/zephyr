@@ -1,38 +1,22 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_lpspi_edma.h"
 
 /***********************************************************************************************************************
-* Definitons
+* Definitions
 ***********************************************************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.lpspi_edma"
+#endif
+
 /*!
 * @brief Structure definition for dspi_master_edma_private_handle_t. The structure is private.
 */
@@ -54,6 +38,15 @@ typedef struct _lpspi_slave_edma_private_handle
 /***********************************************************************************************************************
 * Prototypes
 ***********************************************************************************************************************/
+
+/*!
+* @brief Get instance number for LPSPI module.
+*
+* @param base LPSPI peripheral base address.
+* @return Return the value of LPSPI instance.
+*/
+static uint32_t LPSPI_GetInstance(LPSPI_Type *base);
+
 /*!
 * @brief EDMA_LpspiMasterCallback after the LPSPI master transfer completed by using EDMA.
 * This is not a public API.
@@ -71,34 +64,41 @@ static void EDMA_LpspiSlaveCallback(edma_handle_t *edmaHandle,
                                     void *g_lpspiEdmaPrivateHandle,
                                     bool transferDone,
                                     uint32_t tcds);
-/*!
-* @brief Get instance number for LPSPI module.
-* This is not a public API and it's extern from fsl_lpspi.c.
-* @param base LPSPI peripheral base address
-*/
-extern uint32_t LPSPI_GetInstance(LPSPI_Type *base);
-
-/*!
-* @brief Check the argument for transfer .
-* This is not a public API. It's extern from fsl_lpspi.c.
-*/
-extern bool LPSPI_CheckTransferArgument(lpspi_transfer_t *transfer, uint32_t bitsPerFrame, uint32_t bytesPerFrame);
 
 static void LPSPI_SeparateEdmaReadData(uint8_t *rxData, uint32_t readData, uint32_t bytesEachRead, bool isByteSwap);
 
 /***********************************************************************************************************************
 * Variables
 ***********************************************************************************************************************/
+/*! @brief Pointers to lpspi bases for each instance. */
+static LPSPI_Type *const s_lpspiBases[] = LPSPI_BASE_PTRS;
 
 /*! @brief Pointers to lpspi edma handles for each instance. */
-static lpspi_master_edma_private_handle_t s_lpspiMasterEdmaPrivateHandle[FSL_FEATURE_SOC_LPSPI_COUNT];
-static lpspi_slave_edma_private_handle_t s_lpspiSlaveEdmaPrivateHandle[FSL_FEATURE_SOC_LPSPI_COUNT];
+static lpspi_master_edma_private_handle_t s_lpspiMasterEdmaPrivateHandle[ARRAY_SIZE(s_lpspiBases)];
+static lpspi_slave_edma_private_handle_t s_lpspiSlaveEdmaPrivateHandle[ARRAY_SIZE(s_lpspiBases)];
 
-/*! @brief Global variable for dummy data value setting. */
-extern volatile uint8_t s_dummyData[];
 /***********************************************************************************************************************
 * Code
 ***********************************************************************************************************************/
+
+static uint32_t LPSPI_GetInstance(LPSPI_Type *base)
+{
+    uint8_t instance = 0;
+
+    /* Find the instance index from base address mappings. */
+    for (instance = 0; instance < ARRAY_SIZE(s_lpspiBases); instance++)
+    {
+        if (s_lpspiBases[instance] == base)
+        {
+            break;
+        }
+    }
+
+    assert(instance < ARRAY_SIZE(s_lpspiBases));
+
+    return instance;
+}
+
 static void LPSPI_SeparateEdmaReadData(uint8_t *rxData, uint32_t readData, uint32_t bytesEachRead, bool isByteSwap)
 {
     assert(rxData);
@@ -225,7 +225,7 @@ status_t LPSPI_MasterTransferEDMA(LPSPI_Type *base, lpspi_master_edma_handle_t *
 
     bool isThereExtraTxBytes = false;
 
-    uint8_t dummyData = s_dummyData[instance];
+    uint8_t dummyData = g_lpspiDummyData[instance];
 
     edma_transfer_config_t transferConfigRx;
     edma_transfer_config_t transferConfigTx;
@@ -657,7 +657,7 @@ status_t LPSPI_SlaveTransferEDMA(LPSPI_Type *base, lpspi_slave_edma_handle_t *ha
     uint32_t bytesPerFrame = (bitsPerFrame + 7) / 8;
     uint32_t temp = 0U;
 
-    uint8_t dummyData = s_dummyData[LPSPI_GetInstance(base)];
+    uint8_t dummyData = g_lpspiDummyData[LPSPI_GetInstance(base)];
 
     if (!LPSPI_CheckTransferArgument(transfer, bitsPerFrame, bytesPerFrame))
     {

@@ -1,59 +1,9 @@
 /*
- * Copyright (c) 2017, Freescale Semiconductor, Inc.
+ * Copyright (c) 2016, Freescale Semiconductor, Inc.
+ * Copyright (c) 2017, NXP
  * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Copyright (c) 2017, NXP Semiconductors, Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef _FSL_SNVS_HP_H_
@@ -76,17 +26,19 @@
 /*@}*/
 
 /*! @brief List of SNVS interrupts */
-typedef enum _snvs_hp_interrupt_enable
+typedef enum _snvs_hp_interrupts
 {
-    kSNVS_RTC_PeriodicInterruptEnable = 1U, /*!< RTC periodic interrupt.*/
-    kSNVS_RTC_AlarmInterruptEnable = 2U,    /*!< RTC time alarm.*/
-} snvs_hp_interrupt_enable_t;
+    kSNVS_RTC_AlarmInterrupt = SNVS_HPCR_HPTA_EN_MASK,  /*!< RTC time alarm */
+    kSNVS_RTC_PeriodicInterrupt = SNVS_HPCR_PI_EN_MASK, /*!< RTC periodic interrupt */
+} snvs_hp_interrupts_t;
 
 /*! @brief List of SNVS flags */
 typedef enum _snvs_hp_status_flags
 {
-    kSNVS_RTC_PeriodicInterruptFlag = 1U, /*!< RTC periodic interrupt flag */
-    kSNVS_RTC_AlarmInterruptFlag = 2U,    /*!< RTC time alarm flag */
+    kSNVS_RTC_AlarmInterruptFlag = SNVS_HPSR_HPTA_MASK,  /*!< RTC time alarm flag */
+    kSNVS_RTC_PeriodicInterruptFlag = SNVS_HPSR_PI_MASK, /*!< RTC periodic interrupt flag */
+    kSNVS_ZMK_ZeroFlag = SNVS_HPSR_ZMK_ZERO_MASK,        /*!< The ZMK is zero */
+    kSNVS_OTPMK_ZeroFlag = SNVS_HPSR_OTPMK_ZERO_MASK,    /*!< The OTPMK is zero */
 } snvs_hp_status_flags_t;
 
 /*! @brief Structure is used to hold the date and time */
@@ -119,6 +71,19 @@ typedef struct _snvs_hp_rtc_config
                                          Range from 0 to 15 */
 } snvs_hp_rtc_config_t;
 
+typedef enum _snvs_hp_ssm_state
+{
+    kSNVS_SSMInit = 0x00,      /*!< Init */
+    kSNVS_SSMHardFail = 0x01,  /*!< Hard Fail */
+    kSNVS_SSMSoftFail = 0x03,  /*!< Soft Fail */
+    kSNVS_SSMInitInter = 0x08, /*!< Init Intermediate (transition state between Init and Check) */
+    kSNVS_SSMCheck = 0x09,     /*!< Check */
+    kSNVS_SSMNonSecure = 0x0B, /*!< Non-Secure */
+    kSNVS_SSMTrusted = 0x0D,   /*!< Trusted */
+    kSNVS_SSMSecure = 0x0F,    /*!< Secure */
+} snvs_hp_ssm_state_t;
+
+
 /*******************************************************************************
  * API
  ******************************************************************************/
@@ -131,6 +96,22 @@ extern "C" {
  * @name Initialization and deinitialization
  * @{
  */
+
+/*!
+ * @brief Initialize the SNVS.
+ *
+ * @note This API should be called at the beginning of the application using the SNVS driver.
+ *
+ * @param base SNVS peripheral base address
+ */
+void SNVS_HP_Init(SNVS_Type *base);
+
+/*!
+ * @brief Deinitialize the SNVS.
+ *
+ * @param base SNVS peripheral base address
+ */
+void SNVS_HP_Deinit(SNVS_Type *base);
 
 /*!
  * @brief Ungates the SNVS clock and configures the peripheral for basic operation.
@@ -235,7 +216,10 @@ void SNVS_HP_RTC_TimeSynchronize(SNVS_Type *base);
  * @param mask The interrupts to enable. This is a logical OR of members of the
  *             enumeration ::snvs_interrupt_enable_t
  */
-void SNVS_HP_RTC_EnableInterrupts(SNVS_Type *base, uint32_t mask);
+static inline void SNVS_HP_RTC_EnableInterrupts(SNVS_Type *base, uint32_t mask)
+{
+    base->HPCR |= mask;
+}
 
 /*!
  * @brief Disables the selected SNVS interrupts.
@@ -244,7 +228,10 @@ void SNVS_HP_RTC_EnableInterrupts(SNVS_Type *base, uint32_t mask);
  * @param mask The interrupts to enable. This is a logical OR of members of the
  *             enumeration ::snvs_interrupt_enable_t
  */
-void SNVS_HP_RTC_DisableInterrupts(SNVS_Type *base, uint32_t mask);
+static inline void SNVS_HP_RTC_DisableInterrupts(SNVS_Type *base, uint32_t mask)
+{
+    base->HPCR &= ~mask;
+}
 
 /*!
  * @brief Gets the enabled SNVS interrupts.
@@ -280,7 +267,10 @@ uint32_t SNVS_HP_RTC_GetStatusFlags(SNVS_Type *base);
  * @param mask The status flags to clear. This is a logical OR of members of the
  *             enumeration ::snvs_status_flags_t
  */
-void SNVS_HP_RTC_ClearStatusFlags(SNVS_Type *base, uint32_t mask);
+static inline void SNVS_HP_RTC_ClearStatusFlags(SNVS_Type *base, uint32_t mask)
+{
+    base->HPSR |= mask;
+}
 
 /*! @}*/
 
@@ -314,6 +304,246 @@ static inline void SNVS_HP_RTC_StopTimer(SNVS_Type *base)
     {
     }
 }
+
+/*! @}*/
+
+/*!
+ * @brief Enable or disable master key selection.
+ *
+ * @param base SNVS peripheral base address
+ * @param enable Pass true to enable, false to disable.
+ */
+static inline void SNVS_HP_EnableMasterKeySelection(SNVS_Type *base, bool enable)
+{
+    if (enable)
+    {
+        base->HPCOMR |= SNVS_HPCOMR_MKS_EN_MASK;
+    }
+    else
+    {
+        base->HPCOMR &= (~SNVS_HPCOMR_MKS_EN_MASK);
+    }
+}
+
+/*!
+ * @brief Trigger to program Zeroizable Master Key.
+ *
+ * @param base SNVS peripheral base address
+ * @param enable Pass true to enable, false to disable.
+ */
+static inline void SNVS_HP_ProgramZeroizableMasterKey(SNVS_Type *base)
+{
+    base->HPCOMR |= SNVS_HPCOMR_PROG_ZMK_MASK;
+}
+
+/*!
+ * @brief Trigger SSM State Transition
+ *
+ * Trigger state transition of the system security monitor (SSM). It results only
+ * the following transitions of the SSM:
+ *   - Check State -> Non-Secure (when Non-Secure Boot and not in Fab Configuration)
+ *   - Check State --> Trusted (when Secure Boot or in Fab Configuration )
+ *   - Trusted State --> Secure
+ *   - Secure State --> Trusted
+ *   - Soft Fail --> Non-Secure
+ *
+ * @param base SNVS peripheral base address
+ */
+static inline void SNVS_HP_ChangeSSMState(SNVS_Type *base)
+{
+    base->HPCOMR |= SNVS_HPCOMR_SSM_ST_MASK;
+}
+
+/*!
+ * @brief Trigger Software Fatal Security Violation
+ *
+ * The result SSM state transition is:
+ *  - Check State -> Soft Fail
+ *  - Non-Secure State -> Soft Fail
+ *  - Trusted State -> Soft Fail
+ *  - Secure State -> Soft Fail
+ *
+ * @param base SNVS peripheral base address
+ */
+static inline void SNVS_HP_SetSoftwareFatalSecurityViolation(SNVS_Type *base)
+{
+    base->HPCOMR |= SNVS_HPCOMR_SW_FSV_MASK;
+}
+
+/*!
+ * @brief Trigger Software Security Violation
+ *
+ * The result SSM state transition is:
+ *  - Check -> Non-Secure
+ *  - Trusted -> Soft Fail
+ *  - Secure -> Soft Fail
+ *
+ * @param base SNVS peripheral base address
+ */
+static inline void SNVS_HP_SetSoftwareSecurityViolation(SNVS_Type *base)
+{
+    base->HPCOMR |= SNVS_HPCOMR_SW_SV_MASK;
+}
+
+/*!
+ * @brief Get current SSM State
+ *
+ * @param base SNVS peripheral base address
+ * @return Current SSM state
+ */
+static inline snvs_hp_ssm_state_t SNVS_HP_GetSSMState(SNVS_Type *base)
+{
+    return (snvs_hp_ssm_state_t)((base->HPSR & SNVS_HPSR_SSM_STATE_MASK) >> SNVS_HPSR_SSM_STATE_SHIFT);
+}
+
+/*!
+ * @brief Reset the SNVS LP section.
+ *
+ * Reset the LP section except SRTC and Time alarm.
+ *
+ * @param base SNVS peripheral base address
+ */
+static inline void SNVS_HP_ResetLP(SNVS_Type *base)
+{
+    base->HPCOMR |= SNVS_HPCOMR_LP_SWR_MASK;
+}
+
+/*!
+ * @name High Assurance Counter (HAC)
+ * @{
+ */
+
+/*!
+ * @brief Enable or disable the High Assurance Counter (HAC)
+ *
+ * @param base SNVS peripheral base address
+ * @param enable Pass true to enable, false to disable.
+ */
+static inline void SNVS_HP_EnableHighAssuranceCounter(SNVS_Type *base, bool enable)
+{
+    if (enable)
+    {
+        base->HPCOMR |= SNVS_HPCOMR_HAC_EN_MASK;
+    }
+    else
+    {
+        base->HPCOMR &= (~SNVS_HPCOMR_HAC_EN_MASK);
+    }
+}
+
+/*!
+ * @brief Start or stop the High Assurance Counter (HAC)
+ *
+ * @param base SNVS peripheral base address
+ * @param start Pass true to start, false to stop.
+ */
+static inline void SNVS_HP_StartHighAssuranceCounter(SNVS_Type *base, bool start)
+{
+    if (start)
+    {
+        base->HPCOMR &= (~SNVS_HPCOMR_HAC_STOP_MASK);
+    }
+    else
+    {
+        base->HPCOMR |= SNVS_HPCOMR_HAC_STOP_MASK;
+    }
+}
+
+/*!
+ * @brief Set the High Assurance Counter (HAC) initialize value.
+ *
+ * @param base SNVS peripheral base address
+ * @param value The initial value to set.
+ */
+static inline void SNVS_HP_SetHighAssuranceCounterInitialValue(SNVS_Type *base, uint32_t value)
+{
+    base->HPHACIVR = value;
+}
+
+/*!
+ * @brief Load the High Assurance Counter (HAC)
+ *
+ * This function loads the HAC initialize value to counter register.
+ *
+ * @param base SNVS peripheral base address
+ */
+static inline void SNVS_HP_LoadHighAssuranceCounter(SNVS_Type *base)
+{
+    base->HPCOMR |= SNVS_HPCOMR_HAC_LOAD_MASK;
+}
+
+/*!
+ * @brief Get the current High Assurance Counter (HAC) value
+ *
+ * @param base SNVS peripheral base address
+ * @return HAC currnet value.
+ */
+static inline uint32_t SNVS_HP_GetHighAssuranceCounter(SNVS_Type *base)
+{
+    return base->HPHACR;
+}
+
+/*!
+ * @brief Clear the High Assurance Counter (HAC)
+ *
+ * This function can be called in a functional or soft fail state. When the HAC
+ * is enabled:
+ *   - If the HAC is cleared in the soft fail state, the SSM transitions to the
+ * hard fail state immediately;
+ *   - If the HAC is cleared in functional state, the SSM will transition to
+ * hard fail immediately after transitioning to soft fail.
+ *
+ * @param base SNVS peripheral base address
+ */
+static inline void SNVS_HP_ClearHighAssuranceCounter(SNVS_Type *base)
+{
+    base->HPCOMR |= SNVS_HPCOMR_HAC_CLEAR_MASK;
+}
+
+/*!
+ * @brief Lock the High Assurance Counter (HAC)
+ *
+ * Once locked, the HAC initialize value could not be changed, the HAC enable
+ * status could not be changed. This could only be unlocked by system reset.
+ *
+ * @param base SNVS peripheral base address
+ */
+static inline void SNVS_HP_LockHighAssuranceCounter(SNVS_Type *base)
+{
+    base->HPLR |= SNVS_HPLR_HAC_L_MASK;
+}
+
+/*! @}*/
+
+/*!
+ * @brief Get the SNVS HP status flags.
+ *
+ * The flags are returned as the OR'ed value of @ref snvs_hp_status_flags_t.
+ *
+ * @param base SNVS peripheral base address
+ * @return The OR'ed value of status flags.
+ */
+static inline uint32_t SNVS_HP_GetStatusFlags(SNVS_Type *base)
+{
+    return base->HPSR;
+}
+
+/*!
+ * @brief Clear the SNVS HP status flags.
+ *
+ * The flags to clear are passed in as the OR'ed value of @ref snvs_hp_status_flags_t.
+ * Only these flags could be cleared using this API.
+ *  - @ref kSNVS_RTC_PeriodicInterruptFlag
+ *  - @ref kSNVS_RTC_AlarmInterruptFlag
+ *
+ * @param base SNVS peripheral base address
+ * @param mask OR'ed value of the flags to clear.
+ */
+static inline void SNVS_HP_ClearStatusFlags(SNVS_Type *base, uint32_t mask)
+{
+    base->HPSR = mask;
+}
+
 
 #if defined(__cplusplus)
 }

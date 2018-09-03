@@ -1,31 +1,9 @@
 /*
- * Copyright (c) 2017, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Copyright (c) 2016, Freescale Semiconductor, Inc.
+ * Copyright (c) 2017, NXP
+ * All rights reserved.
+ * 
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_snvs_lp.h"
@@ -33,12 +11,20 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.snvs_lp"
+#endif
+
 #define SECONDS_IN_A_DAY (86400U)
 #define SECONDS_IN_A_HOUR (3600U)
 #define SECONDS_IN_A_MINUTE (60U)
 #define DAYS_IN_A_YEAR (365U)
 #define YEAR_RANGE_START (1970U)
 #define YEAR_RANGE_END (2099U)
+
+#define SNVS_DEFAULT_PGD_VALUE (0x41736166U)
 
 /*******************************************************************************
  * Prototypes
@@ -245,6 +231,29 @@ static uint32_t SNVS_LP_GetInstance(SNVS_Type *base)
 }
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
+void SNVS_LP_Init(SNVS_Type *base)
+{
+#if (!(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && \
+     defined(SNVS_LP_CLOCKS))
+    uint32_t instance = SNVS_LP_GetInstance(base);
+    CLOCK_EnableClock(s_snvsLpClock[instance]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+    /* Power glitch detector: set the PGD value and clear the previous status. */
+    base->LPPGDR = SNVS_DEFAULT_PGD_VALUE;
+    base->LPSR = SNVS_LPSR_PGD_MASK;
+}
+
+void SNVS_LP_Deinit(SNVS_Type *base)
+{
+#if (!(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && \
+     defined(SNVS_LP_CLOCKS))
+    uint32_t instance = SNVS_LP_GetInstance(base);
+    CLOCK_DisableClock(s_snvsLpClock[instance]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+}
+
+
 void SNVS_LP_SRTC_Init(SNVS_Type *base, const snvs_lp_srtc_config_t *config)
 {
     assert(config);
@@ -404,37 +413,13 @@ uint32_t SNVS_LP_SRTC_GetStatusFlags(SNVS_Type *base)
     return flags;
 }
 
-void SNVS_LP_SRTC_ClearStatusFlags(SNVS_Type *base, uint32_t mask)
-{
-    if (mask & kSNVS_SRTC_AlarmInterruptFlag)
-    {
-        base->LPSR |= SNVS_LPSR_LPTA_MASK;
-    }
-}
-
-void SNVS_LP_SRTC_EnableInterrupts(SNVS_Type *base, uint32_t mask)
-{
-    if (mask & kSNVS_SRTC_AlarmInterruptEnable)
-    {
-        base->LPCR |= SNVS_LPCR_LPTA_EN_MASK;
-    }
-}
-
-void SNVS_LP_SRTC_DisableInterrupts(SNVS_Type *base, uint32_t mask)
-{
-    if (mask & kSNVS_SRTC_AlarmInterruptEnable)
-    {
-        base->LPCR &= ~SNVS_LPCR_LPTA_EN_MASK;
-    }
-}
-
 uint32_t SNVS_LP_SRTC_GetEnabledInterrupts(SNVS_Type *base)
 {
     uint32_t val = 0U;
 
     if (base->LPCR & SNVS_LPCR_LPTA_EN_MASK)
     {
-        val |= kSNVS_SRTC_AlarmInterruptFlag;
+        val |= kSNVS_SRTC_AlarmInterrupt;
     }
 
     return val;
@@ -619,5 +604,25 @@ void SNVS_LP_ClearExternalTamperStatus(SNVS_Type *base, snvs_lp_external_tamper_
 #endif
         default:
             break;
+    }
+}
+
+uint64_t SNVS_LP_GetMonotonicCounter(SNVS_Type *base)
+{
+    uint32_t mc_lsb, mc_msb;
+
+    mc_msb = base->LPSMCMR;
+    mc_lsb = base->LPSMCLR;
+
+    return ((uint64_t)mc_msb << 32UL) | (uint64_t)mc_lsb;
+}
+
+void SNVS_LP_WriteZeroizableMasterKey(SNVS_Type *base, uint32_t ZMKey[SNVS_ZMK_REG_COUNT])
+{
+    uint8_t i = 0;
+
+    for (i=0; i<SNVS_ZMK_REG_COUNT; i++)
+    {
+        base->LPZMKR[i] = ZMKey[i];
     }
 }

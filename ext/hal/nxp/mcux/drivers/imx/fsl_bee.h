@@ -2,30 +2,8 @@
  * Copyright 2017 NXP
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef _FSL_BEE_H_
@@ -33,21 +11,26 @@
 
 #include "fsl_common.h"
 
+/*!
+ * @addtogroup bee
+ * @{
+ */
+
 /*******************************************************************************
  * Definitions
  *******************************************************************************/
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief BEE driver version. Version 2.0.0.
+/*! @brief BEE driver version. Version 2.0.1.
  *
- * Current version: 2.0.0
+ * Current version: 2.0.1
  *
  * Change log:
- * - Version 2.0.0
+ * - Version 2.0.1
  *   - Initial version
  */
-#define FSL_BEE_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+#define FSL_BEE_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
 /*@}*/
 
 typedef enum _bee_aes_mode
@@ -62,11 +45,25 @@ typedef enum _bee_region
     kBEE_Region1 = 1U  /*!< BEE region 1 */
 } bee_region_t;
 
-typedef enum _bee_region_enable
+typedef enum _bee_ac_prot_enable
 {
-    kBEE_RegionDisabled = 0U, /*!< BEE region disabled */
-    kBEE_RegionEnabled = 1U   /*!< BEE region enabled */
-} bee_region_enable_t;
+    kBEE_AccessProtDisabled = 0U, /*!< BEE access permission control disabled */
+    kBEE_AccessProtEnabled = 1U   /*!< BEE access permission control enabled */
+} bee_ac_prot_enable;
+
+typedef enum _bee_endian_swap_enable
+{
+    kBEE_EndianSwapDisabled = 1U, /*!< BEE endian swap disabled */
+    kBEE_EndianSwapEnabled = 0U   /*!< BEE endian swap enabled */
+} bee_endian_swap_enable;
+
+typedef enum _bee_security_level
+{
+    kBEE_SecurityLevel0 = 0U, /*!< BEE security level 0 */
+    kBEE_SecurityLevel1 = 1U, /*!< BEE security level 1 */
+    kBEE_SecurityLevel2 = 2U, /*!< BEE security level 2 */
+    kBEE_SecurityLevel3 = 3U  /*!< BEE security level 3 */
+} bee_security_level;
 
 typedef enum _bee_status_flags
 {
@@ -82,11 +79,16 @@ typedef enum _bee_status_flags
 /*! @brief BEE region configuration structure. */
 typedef struct _bee_region_config
 {
-    bee_aes_mode_t mode;          /*!< AES mode used for encryption/decryption */
-    uint32_t regionBot;           /*!< Region bottom address */
-    uint32_t regionTop;           /*!< Region top address */
-    uint32_t addrOffset;          /*!< Region address offset */
-    bee_region_enable_t regionEn; /*!< Region enable/disable */
+    bee_aes_mode_t region0Mode;          /*!< AES mode used for encryption/decryption for region 0 */
+    bee_aes_mode_t region1Mode;          /*!< AES mode used for encryption/decryption for region 1 */
+    uint32_t region0AddrOffset;          /*!< Region 0 address offset */
+    uint32_t region1AddrOffset;          /*!< Region 1 address offset */
+    bee_security_level region0SecLevel;  /*!< Region 0 security level */
+    bee_security_level region1SecLevel;  /*!< Region 1 security level */
+    uint32_t region1Bot;                 /*!< Region 1 bottom address */
+    uint32_t region1Top;                 /*!< Region 1 top address */
+    bee_ac_prot_enable accessPermission; /*!< Access permission control enable/disable */
+    bee_endian_swap_enable endianSwapEn; /*!< Endian swap enable/disable */
 } bee_region_config_t;
 
 /*******************************************************************************
@@ -124,7 +126,7 @@ void BEE_Deinit(BEE_Type *base);
  */
 static inline void BEE_Enable(BEE_Type *base)
 {
-    base->CTRL |= BEE_CTRL_BEE_ENABLE_MASK | BEE_CTRL_KEY_VALID_MASK;
+    base->CTRL |= BEE_CTRL_BEE_ENABLE_MASK;
 }
 
 /*!
@@ -136,7 +138,7 @@ static inline void BEE_Enable(BEE_Type *base)
  */
 static inline void BEE_Disable(BEE_Type *base)
 {
-    base->CTRL &= ~BEE_CTRL_BEE_ENABLE_MASK | BEE_CTRL_KEY_VALID_MASK;
+    base->CTRL &= ~BEE_CTRL_BEE_ENABLE_MASK;
 }
 
 /*!
@@ -144,45 +146,62 @@ static inline void BEE_Disable(BEE_Type *base)
  *
  * Loads default values to the BEE region configuration structure. The default values are as follows:
  * @code
- *   config->mode = kBEE_AesCbcMode;
- *   config->regionBot = 0U;
- *   config->regionTop = 0U;
- *   config->addrOffset = 0xF0000000U;
- *   config->regionEn = kBEE_RegionDisabled;
+ *   config->region0Mode = kBEE_AesCtrMode;
+ *   config->region1Mode = kBEE_AesCtrMode;
+ *   config->region0AddrOffset = 0U;
+ *   config->region1AddrOffset = 0U;
+ *   config->region0SecLevel = kBEE_SecurityLevel3;
+ *   config->region1SecLevel = kBEE_SecurityLevel3;
+ *   config->region1Bot = 0U;
+ *   config->region1Top = 0U;
+ *   config->accessPermission = kBEE_AccessProtDisabled;
+ *   config->endianSwapEn = kBEE_EndianSwapEnabled;
  * @endcode
  *
- * @param config Configuration structure for BEE region.
+ * @param config Configuration structure for BEE peripheral.
  */
 void BEE_GetDefaultConfig(bee_region_config_t *config);
 
 /*!
- * @brief Sets BEE region configuration.
+ * @brief Sets BEE configuration.
  *
- * This function sets BEE region settings accorging to given configuration structure.
+ * This function sets BEE peripheral and BEE region settings accorging to given configuration structure.
  *
  * @param base BEE peripheral address.
- * @param region Selection of the BEE region to be configured.
- * @param config Configuration structure for BEE region.
+ * @param config Configuration structure for BEE.
  */
-status_t BEE_SetRegionConfig(BEE_Type *base, bee_region_t region, const bee_region_config_t *config);
+void BEE_SetConfig(BEE_Type *base, const bee_region_config_t *config);
 
 /*!
- * @brief Loads the AES key and nonce for selected region into BEE key registers.
+ * @brief Loads the AES key for selected region into BEE key registers.
  *
- * This function loads given AES key and nonce(only AES CTR mode) to BEE register for the given region.
+ * This function loads given AES key to BEE register for the given region.
+ * The key must be 32-bit aligned and stored in little-endian format.
  *
  * Please note, that eFuse BEE_KEYx_SEL must be set accordingly to be able to load and use key loaded in BEE registers.
  * Otherwise, key cannot loaded and BEE will use key from OTPMK or SW_GP2.
  *
  * @param base BEE peripheral address.
  * @param region Selection of the BEE region to be configured.
- * @param key AES key.
+ * @param key AES key (in little-endian format).
  * @param keySize Size of AES key.
- * @param nonce AES nonce.
- * @param nonceSize Size of AES nonce.
  */
 status_t BEE_SetRegionKey(
-    BEE_Type *base, bee_region_t region, const uint8_t *key, size_t keySize, const uint8_t *nonce, size_t nonceSize);
+    BEE_Type *base, bee_region_t region, const uint8_t *key, size_t keySize);
+
+/*!
+ * @brief Loads the nonce for selected region into BEE nonce registers.
+ *
+ * This function loads given nonce(only AES CTR mode) to BEE register for the given region.
+ * The nonce must be 32-bit aligned and stored in little-endian format.
+ *
+ * @param base BEE peripheral address.
+ * @param region Selection of the BEE region to be configured.
+ * @param nonce AES nonce (in little-endian format).
+ * @param nonceSize Size of AES nonce.
+ */
+status_t BEE_SetRegionNonce(
+    BEE_Type *base, bee_region_t region, const uint8_t *nonce, size_t nonceSize);
 
 /*!
  * @brief Gets the BEE status flags.
@@ -204,18 +223,6 @@ uint32_t BEE_GetStatusFlags(BEE_Type *base);
  *             enumeration ::bee_status_flags_t
  */
 void BEE_ClearStatusFlags(BEE_Type *base, uint32_t mask);
-
-/*!
- * @brief Computes offset to be set for specifed memory location.
- *
- * This function calculates offset that must be set for BEE region to access physical memory location.
- *
- * @param addressMemory Address of physical memory location.
- */
-static inline uint32_t BEE_GetOffset(uint32_t addressMemory)
-{
-    return (addressMemory >> 16);
-}
 
 #if defined(__cplusplus)
 }

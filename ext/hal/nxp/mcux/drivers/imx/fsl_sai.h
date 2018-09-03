@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef _FSL_SAI_H_
@@ -44,7 +22,7 @@
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_SAI_DRIVER_VERSION (MAKE_VERSION(2, 1, 3)) /*!< Version 2.1.3 */
+#define FSL_SAI_DRIVER_VERSION (MAKE_VERSION(2, 1, 5)) /*!< Version 2.1.5 */
 /*@}*/
 
 /*! @brief SAI return status*/
@@ -83,6 +61,20 @@ typedef enum _sai_mono_stereo
     kSAI_MonoRight,     /*!< Only Right channel have sound. */
     kSAI_MonoLeft       /*!< Only left channel have sound. */
 } sai_mono_stereo_t;
+
+/*! @brief SAI data order, MSB or LSB */
+typedef enum _sai_data_order
+{
+    kSAI_DataLSB = 0x0U, /*!< LSB bit transferred first */
+    kSAI_DataMSB         /*!< MSB bit transferred first */
+} sai_data_order_t;
+
+/*! @brief SAI clock polarity, active high or low */
+typedef enum _sai_clock_polarity
+{
+    kSAI_PolarityActiveHigh = 0x0U, /*!< Clock active high */
+    kSAI_PolarityActiveLow          /*!< Clock active low */
+} sai_clock_polarity_t;
 
 /*! @brief Synchronous or asynchronous mode */
 typedef enum _sai_sync_mode
@@ -194,7 +186,10 @@ typedef enum _sai_sample_rate
     kSAI_SampleRate32KHz = 32000U,   /*!< Sample rate 32000 Hz */
     kSAI_SampleRate44100Hz = 44100U, /*!< Sample rate 44100 Hz */
     kSAI_SampleRate48KHz = 48000U,   /*!< Sample rate 48000 Hz */
-    kSAI_SampleRate96KHz = 96000U    /*!< Sample rate 96000 Hz */
+    kSAI_SampleRate96KHz = 96000U,   /*!< Sample rate 96000 Hz */
+    kSAI_SampleRate192KHz = 192000U, /*!< Sample rate 192000 Hz */
+    kSAI_SampleRate384KHz = 384000U, /*!< Sample rate 384000 Hz */
+
 } sai_sample_rate_t;
 
 /*! @brief Audio word width */
@@ -237,6 +232,7 @@ typedef void (*sai_transfer_callback_t)(I2S_Type *base, sai_handle_t *handle, st
 /*! @brief SAI handle structure */
 struct _sai_handle
 {
+    I2S_Type *base;                               /*!< base address */
     uint32_t state;                               /*!< Transfer status */
     sai_transfer_callback_t callback;             /*!< Callback function called at transfer event*/
     void *userData;                               /*!< Callback parameter passed to callback function*/
@@ -281,7 +277,7 @@ extern "C" {
 void SAI_TxInit(I2S_Type *base, const sai_config_t *config);
 
 /*!
- * @brief Initializes the the SAI Rx peripheral.
+ * @brief Initializes the SAI Rx peripheral.
  *
  * Ungates the SAI clock, resets the module, and configures the SAI Rx with a configuration structure.
  * The configuration structure can be custom filled or set with default values by
@@ -473,6 +469,115 @@ void SAI_TxSetChannelFIFOMask(I2S_Type *base, uint8_t mask);
  */
 void SAI_RxSetChannelFIFOMask(I2S_Type *base, uint8_t mask);
 
+/*!
+ * @brief Set the Tx data order.
+ *
+ * @param base SAI base pointer
+ * @param order Data order MSB or LSB
+ */
+void SAI_TxSetDataOrder(I2S_Type *base, sai_data_order_t order);
+
+/*!
+ * @brief Set the Rx data order.
+ *
+ * @param base SAI base pointer
+ * @param order Data order MSB or LSB
+ */
+void SAI_RxSetDataOrder(I2S_Type *base, sai_data_order_t order);
+
+/*!
+ * @brief Set the Tx data order.
+ *
+ * @param base SAI base pointer
+ * @param order Data order MSB or LSB
+ */
+void SAI_TxSetBitClockPolarity(I2S_Type *base, sai_clock_polarity_t polarity);
+
+/*!
+ * @brief Set the Rx data order.
+ *
+ * @param base SAI base pointer
+ * @param order Data order MSB or LSB
+ */
+void SAI_RxSetBitClockPolarity(I2S_Type *base, sai_clock_polarity_t polarity);
+
+/*!
+ * @brief Set the Tx data order.
+ *
+ * @param base SAI base pointer
+ * @param order Data order MSB or LSB
+ */
+void SAI_TxSetFrameSyncPolarity(I2S_Type *base, sai_clock_polarity_t polarity);
+
+/*!
+ * @brief Set the Rx data order.
+ *
+ * @param base SAI base pointer
+ * @param order Data order MSB or LSB
+ */
+void SAI_RxSetFrameSyncPolarity(I2S_Type *base, sai_clock_polarity_t polarity);
+
+#if defined(FSL_FEATURE_SAI_HAS_FIFO_PACKING) && FSL_FEATURE_SAI_HAS_FIFO_PACKING
+/*!
+ * @brief Set Tx FIFO packing feature.
+ *
+ * @param base SAI base pointer.
+ * @param pack FIFO pack type. It is element of sai_fifo_packing_t.
+ */
+void SAI_TxSetFIFOPacking(I2S_Type *base, sai_fifo_packing_t pack);
+
+/*!
+* @brief Set Rx FIFO packing feature.
+*
+* @param base SAI base pointer.
+* @param pack FIFO pack type. It is element of sai_fifo_packing_t.
+*/
+void SAI_RxSetFIFOPacking(I2S_Type *base, sai_fifo_packing_t pack);
+#endif /* FSL_FEATURE_SAI_HAS_FIFO_PACKING */
+
+#if defined(FSL_FEATURE_SAI_HAS_FIFO_FUNCTION_AFTER_ERROR) && FSL_FEATURE_SAI_HAS_FIFO_FUNCTION_AFTER_ERROR
+/*!
+* @brief Set Tx FIFO error continue.
+*
+* FIFO error continue mode means SAI will keep running while FIFO error occured. If this feature
+* not enabled, SAI will hang and users need to clear FEF flag in TCSR register.
+*
+* @param base SAI base pointer.
+* @param isEnabled Is FIFO error continue enabled, true means enable, false means disable.
+*/
+static inline void SAI_TxSetFIFOErrorContinue(I2S_Type *base, bool isEnabled)
+{
+    if (isEnabled)
+    {
+        base->TCR4 |= I2S_TCR4_FCONT_MASK;
+    }
+    else
+    {
+        base->TCR4 &= ~I2S_TCR4_FCONT_MASK;
+    }
+}
+
+/*!
+* @brief Set Rx FIFO error continue.
+*
+* FIFO error continue mode means SAI will keep running while FIFO error occured. If this feature
+* not enabled, SAI will hang and users need to clear FEF flag in RCSR register.
+*
+* @param base SAI base pointer.
+* @param isEnabled Is FIFO error continue enabled, true means enable, false means disable.
+*/
+static inline void SAI_RxSetFIFOErrorContinue(I2S_Type *base, bool isEnabled)
+{
+    if (isEnabled)
+    {
+        base->RCR4 |= I2S_RCR4_FCONT_MASK;
+    }
+    else
+    {
+        base->RCR4 &= ~I2S_RCR4_FCONT_MASK;
+    }
+}
+#endif
 /*! @} */
 
 /*!
@@ -857,7 +962,7 @@ status_t SAI_TransferGetReceiveCount(I2S_Type *base, sai_handle_t *handle, size_
 void SAI_TransferAbortSend(I2S_Type *base, sai_handle_t *handle);
 
 /*!
- * @brief Aborts the the current IRQ receive.
+ * @brief Aborts the current IRQ receive.
  *
  * @note This API can be called when an interrupt non-blocking transfer initiates
  * to abort the transfer early.
