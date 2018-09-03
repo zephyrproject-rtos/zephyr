@@ -164,15 +164,6 @@ Follow these steps to install the SDK on your Linux host system.
       export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
       export ZEPHYR_SDK_INSTALL_DIR=<sdk installation directory>
 
-   .. note::
-      Some Linux distributions have default CFLAGS and CXXFLAGS
-      environment variables already set. For all distros, they need to be
-      unset to prevent these settings from interfering with cmake:
-
-      .. code-block:: console
-
-         unset CFLAGS CXXFLAGS
-
   To use the same toolchain in new sessions in the future, you can set the
   variables in the file :file:`${HOME}/.zephyrrc`, for example:
 
@@ -187,17 +178,6 @@ Follow these steps to install the SDK on your Linux host system.
      Use ``<sdk installation directory>`` in place of ``/opt/zephyr-sdk/`` in the
      above shown example if the SDK installation location is not default.
 
-
-  .. note::
-     Some Linux distributions have default CFLAGS and CXXFLAGS
-     environment variables already set. For all distros, they need to be
-     unset to prevent these settings from interfering with cmake:
-
-     .. code-block:: console
-
-        cat <<EOF >> ~/.zephyrrc
-        unset CFLAGS CXXFLAGS
-        EOF
 
 .. note:: In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT``
           variable was called ``ZEPHYR_GCC_VARIANT``.
