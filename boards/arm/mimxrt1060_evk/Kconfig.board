@@ -1,0 +1,10 @@
+#
+# Copyright (c) 2018, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_MIMXRT1060_EVK
+	bool "NXP MIMXRT1060-EVK"
+	depends on SOC_SERIES_IMX_RT
+	select SOC_PART_NUMBER_MIMXRT1062DVL6A
