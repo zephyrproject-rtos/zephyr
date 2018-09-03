@@ -6,23 +6,28 @@
 .known-issues/                           @inakypg @nashif
 arch/arc/                                @vonhust @ruuddw
 arch/arm/                                @MaureenHelm @galak
-arch/arm/soc/arm/mps2/                   @fvincenzo
-arch/arm/soc/atmel_sam/sam4s             @fallrisk
-arch/arm/soc/nxp*/                       @MaureenHelm
-arch/arm/soc/st_stm32/                   @erwango
-arch/arm/soc/st_stm32/stm32f4/           @rsalveti @idlethread
-arch/arm/soc/ti_simplelink/cc32xx        @GAnthony
-arch/arm/soc/ti_simplelink/msp432p4xx    @Mani-Sadhasivam
+soc/arm/                                 @MaureenHelm @galak
+soc/arm/arm/mps2/                        @fvincenzo
+soc/arm/atmel_sam/sam4s                  @fallrisk
+soc/arm/nxp*/                            @MaureenHelm
+soc/arm/st_stm32/                        @erwango
+soc/arm/st_stm32/stm32f4/                @rsalveti @idlethread
+soc/arm/ti_simplelink/cc32xx             @GAnthony
+soc/arm/ti_simplelink/msp432p4xx         @Mani-Sadhasivam
 arch/nios2/                              @andrewboie @ramakrishnapallala
 arch/posix/                              @aescolar
 arch/riscv32/                            @fractalclone @kgugala @pgielda
+soc/posix/                               @aescolar
+soc/riscv32/                             @fractalclone @kgugala @pgielda
 arch/x86/                                @andrewboie @ramakrishnapallala
 arch/x86/core/                           @andrewboie
 arch/x86/core/crt0.S                     @ramakrishnapallala @nashif
-arch/x86/soc/intel_quark/quark_d2000/    @nashif
-arch/x86/soc/intel_quark/quark_se/       @nashif
-arch/x86/soc/intel_quark/quark_x1000/    @nashif
+soc/x86/                                 @andrewboie @ramakrishnapallala
+soc/x86/intel_quark/quark_d2000/         @nashif
+soc/x86/intel_quark/quark_se/            @nashif
+soc/x86/intel_quark/quark_x1000/         @nashif
 arch/xtensa/                             @andrewboie @rgundi @andyross
+soc/xtensa/                              @andrewboie @rgundi @andyross
 boards/arc/                              @vonhust @ruuddw
 boards/arc/arduino_101_sss/              @nashif
 boards/arc/em_starterkit/                @vonhust
@@ -152,7 +157,7 @@ include/toolchain.h                      @andrewboie @andyross
 include/toolchain/                       @andrewboie @andyross
 include/zephyr.h                         @andrewboie @andyross
 kernel/                                  @andrewboie @andyross
-lib/posix/                            	 @ramakrishnapallala @nniranjhana
+lib/posix/                               @ramakrishnapallala @nniranjhana
 kernel/device.c                          @ramakrishnapallala @nashif
 kernel/idle.c                            @ramakrishnapallala @nashif
 samples/bluetooth/                       @sjanc @jhedberg @Vudentz
