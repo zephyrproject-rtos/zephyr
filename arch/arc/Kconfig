@@ -10,7 +10,7 @@ choice
 	prompt "ARC SoC Selection"
 	depends on ARC
 
-	source "arch/arc/soc/*/Kconfig.soc"
+	source "soc/arc/*/Kconfig.soc"
 endchoice
 
 
@@ -19,7 +19,7 @@ menu "ARC Options"
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overriden (by defining symbols in multiple locations)
-source "arch/arc/soc/*/Kconfig"
+source "soc/arc/*/Kconfig"
 
 config ARCH
 	default "arc"
