@@ -17,11 +17,8 @@
  * This might not be what you want to do in your app so caveat emptor.
  */
 
-#if 1
-#define SYS_LOG_DOMAIN "echo-client"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_echo_client
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 #include <zephyr.h>
 #include <errno.h>
