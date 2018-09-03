@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_WEBSOCKET)
-#define SYS_LOG_DOMAIN "test-ws-server"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_test_websocket
+#define NET_LOG_LEVEL CONFIG_WEBSOCKET_LOG_LEVEL
 
 #include <zephyr.h>
 #include <errno.h>
@@ -240,7 +237,6 @@ static void ws_closed(struct http_ctx *ctx,
 	NET_DBG("Connection %p closed", ctx);
 }
 
-#if defined(CONFIG_NET_DEBUG_WEBSOCKET) && (NET_SYS_LOG_LEVEL > 3)
 static const char *get_string(int str_len, const char *str)
 {
 	static char buf[64];
@@ -251,7 +247,6 @@ static const char *get_string(int str_len, const char *str)
 
 	return buf;
 }
-#endif
 
 static enum http_verdict default_handler(struct http_ctx *ctx,
 					 enum http_connection_type type,

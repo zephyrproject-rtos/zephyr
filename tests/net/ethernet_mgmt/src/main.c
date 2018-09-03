@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_test
+#define NET_LOG_LEVEL CONFIG_NET_L2_ETHERNET_LOG_LEVEL
+
 #include <zephyr.h>
 
 #include <net/net_if.h>

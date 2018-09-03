@@ -6,6 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_test
+#define NET_LOG_LEVEL CONFIG_NET_UDP_LOG_LEVEL
+
 #include <zephyr.h>
 #include <linker/sections.h>
 
@@ -26,7 +29,7 @@
 
 #include <ztest.h>
 
-#if defined(CONFIG_NET_DEBUG_UDP)
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #else
 #define DBG(fmt, ...)
@@ -34,7 +37,7 @@
 
 #include "udp_internal.h"
 
-#if defined(CONFIG_NET_DEBUG_UDP)
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #define NET_LOG_ENABLED 1
 #endif
 #include "net_private.h"

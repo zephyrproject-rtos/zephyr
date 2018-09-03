@@ -6,6 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_test
+#define NET_LOG_LEVEL CONFIG_NET_TC_LOG_LEVEL
+
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -27,7 +30,7 @@
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
 
-#if defined(CONFIG_NET_DEBUG_L2_ETHERNET)
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #else
 #define DBG(fmt, ...)
@@ -186,7 +189,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	if (test_started) {
-#if defined(CONFIG_NET_DEBUG_L2_ETHERNET)
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 		k_tid_t thread = k_current_get();
 #endif
 		int i, prio, ret;
@@ -682,7 +685,7 @@ static void recv_cb(struct net_context *context,
 		    int status,
 		    void *user_data)
 {
-#if defined(CONFIG_NET_DEBUG_L2_ETHERNET)
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 	k_tid_t thread = k_current_get();
 #endif
 	int i, prio, ret;

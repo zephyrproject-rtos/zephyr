@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_test
+#define NET_LOG_LEVEL LOG_LEVEL_WRN
+
 #include <ztest.h>
 #include <net/mqtt.h>
 
