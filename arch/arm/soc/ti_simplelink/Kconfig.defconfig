@@ -1,1 +1,0 @@
-source "arch/arm/soc/ti_simplelink/*/Kconfig.defconfig.series"

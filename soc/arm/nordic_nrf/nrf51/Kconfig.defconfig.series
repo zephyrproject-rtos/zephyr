@@ -1,0 +1,34 @@
+# Kconfig.defconfig.series - Nordic Semiconductor nRF51 MCU line
+#
+# Copyright (c) 2016 Linaro Limited
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_NRF51X
+
+source "soc/arm/nordic_nrf/nrf51/Kconfig.defconfig.nrf51*"
+
+config SOC_SERIES
+	default "nrf51"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 32768
+
+config SYS_POWER_MANAGEMENT
+	default y
+
+config NUM_IRQS
+	int
+	default 26
+
+if SENSOR
+
+config TEMP_NRF5
+	def_bool y
+
+endif # SENSOR
+
+endif # SOC_SERIES_NRF51X

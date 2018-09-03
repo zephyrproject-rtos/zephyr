@@ -135,7 +135,7 @@ CCFG ("Customer Configuration" area). A 32-bit word in this area,
 pass control to your program. You can find more information on the CCFG
 in the `CC2650 reference manual`_, section 9.1. The current CC2650 port
 for Zephyr already does this by default; if you wish to check or modify
-the CCFG content, see :file:`arch/arm/soc/ti_simplelink/cc2650/soc.c`.
+the CCFG content, see :file:`soc/arm/ti_simplelink/cc2650/soc.c`.
 
 Building
 ========
