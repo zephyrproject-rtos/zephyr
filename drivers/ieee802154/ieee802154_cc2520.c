@@ -6,9 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_IEEE802154_DRIVER_LEVEL
-#define SYS_LOG_DOMAIN "dev/cc2520"
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME ieee802154_cc2520
+#define LOG_LEVEL CONFIG_IEEE802154_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <errno.h>
 
@@ -62,21 +64,21 @@ static struct spi_cs_control cs_ctrl;
 /*********
  * DEBUG *
  ********/
-#if CONFIG_SYS_LOG_IEEE802154_DRIVER_LEVEL == 4
+#if CONFIG_IEEE802154_LOG_LEVEL == LOG_LEVEL_DBG
 static inline void _cc2520_print_gpio_config(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG("GPIOCTRL0/1/2/3/4/5 = 0x%x/0x%x/0x%x/0x%x/0x%x/0x%x",
+	LOG_DBG("GPIOCTRL0/1/2/3/4/5 = 0x%x/0x%x/0x%x/0x%x/0x%x/0x%x",
 		    read_reg_gpioctrl0(cc2520),
 		    read_reg_gpioctrl1(cc2520),
 		    read_reg_gpioctrl2(cc2520),
 		    read_reg_gpioctrl3(cc2520),
 		    read_reg_gpioctrl4(cc2520),
 		    read_reg_gpioctrl5(cc2520));
-	SYS_LOG_DBG("GPIOPOLARITY: 0x%x",
+	LOG_DBG("GPIOPOLARITY: 0x%x",
 		    read_reg_gpiopolarity(cc2520));
-	SYS_LOG_DBG("GPIOCTRL: 0x%x",
+	LOG_DBG("GPIOCTRL: 0x%x",
 		    read_reg_gpioctrl(cc2520));
 }
 
@@ -84,79 +86,75 @@ static inline void _cc2520_print_exceptions(struct cc2520_context *cc2520)
 {
 	u8_t flag = read_reg_excflag0(cc2520);
 
-	SYS_LOG_DBG("EXCFLAG0:");
+	LOG_DBG("EXCFLAG0:");
 
 	if (flag & EXCFLAG0_RF_IDLE) {
-		SYS_LOG_BACKEND_FN("RF_IDLE ");
+		LOG_DBG(" RF_IDLE");
 	}
 
 	if (flag & EXCFLAG0_TX_FRM_DONE) {
-		SYS_LOG_BACKEND_FN("TX_FRM_DONE ");
+		LOG_DBG(" TX_FRM_DONE");
 	}
 
 	if (flag & EXCFLAG0_TX_ACK_DONE) {
-		SYS_LOG_BACKEND_FN("TX_ACK_DONE ");
+		LOG_DBG(" TX_ACK_DONE");
 	}
 
 	if (flag & EXCFLAG0_TX_UNDERFLOW) {
-		SYS_LOG_BACKEND_FN("TX_UNDERFLOW ");
+		LOG_DBG(" TX_UNDERFLOW");
 	}
 
 	if (flag & EXCFLAG0_TX_OVERFLOW) {
-		SYS_LOG_BACKEND_FN("TX_OVERFLOW ");
+		LOG_DBG(" TX_OVERFLOW");
 	}
 
 	if (flag & EXCFLAG0_RX_UNDERFLOW) {
-		SYS_LOG_BACKEND_FN("RX_UNDERFLOW ");
+		LOG_DBG(" RX_UNDERFLOW");
 	}
 
 	if (flag & EXCFLAG0_RX_OVERFLOW) {
-		SYS_LOG_BACKEND_FN("RX_OVERFLOW ");
+		LOG_DBG(" RX_OVERFLOW");
 	}
 
 	if (flag & EXCFLAG0_RXENABLE_ZERO) {
-		SYS_LOG_BACKEND_FN("RXENABLE_ZERO");
+		LOG_DBG(" RXENABLE_ZERO");
 	}
-
-	SYS_LOG_BACKEND_FN("\n");
 
 	flag = read_reg_excflag1(cc2520);
 
 	SYS_LOG_DBG("EXCFLAG1:");
 
 	if (flag & EXCFLAG1_RX_FRM_DONE) {
-		SYS_LOG_BACKEND_FN("RX_FRM_DONE ");
+		LOG_DBG(" RX_FRM_DONE");
 	}
 
 	if (flag & EXCFLAG1_RX_FRM_ACCEPTED) {
-		SYS_LOG_BACKEND_FN("RX_FRM_ACCEPTED ");
+		LOG_DBG(" RX_FRM_ACCEPTED");
 	}
 
 	if (flag & EXCFLAG1_SRC_MATCH_DONE) {
-		SYS_LOG_BACKEND_FN("SRC_MATCH_DONE ");
+		LOG_DBG(" SRC_MATCH_DONE");
 	}
 
 	if (flag & EXCFLAG1_SRC_MATCH_FOUND) {
-		SYS_LOG_BACKEND_FN("SRC_MATCH_FOUND ");
+		LOG_DBG(" SRC_MATCH_FOUND");
 	}
 
 	if (flag & EXCFLAG1_FIFOP) {
-		SYS_LOG_BACKEND_FN("FIFOP ");
+		LOG_DBG(" FIFOP");
 	}
 
 	if (flag & EXCFLAG1_SFD) {
-		SYS_LOG_BACKEND_FN("SFD ");
+		LOG_DBG(" SFD");
 	}
 
 	if (flag & EXCFLAG1_DPU_DONE_L) {
-		SYS_LOG_BACKEND_FN("DPU_DONE_L ");
+		LOG_DBG(" DPU_DONE_L");
 	}
 
 	if (flag & EXCFLAG1_DPU_DONE_H) {
-		SYS_LOG_BACKEND_FN("DPU_DONE_H");
+		LOG_DBG(" DPU_DONE_H");
 	}
-
-	SYS_LOG_BACKEND_FN("\n");
 }
 
 static inline void _cc2520_print_errors(struct cc2520_context *cc2520)
@@ -166,40 +164,38 @@ static inline void _cc2520_print_errors(struct cc2520_context *cc2520)
 	SYS_LOG_DBG("EXCFLAG2:");
 
 	if (flag & EXCFLAG2_MEMADDR_ERROR) {
-		SYS_LOG_BACKEND_FN("MEMADDR_ERROR ");
+		LOG_DBG(" MEMADDR_ERROR");
 	}
 
 	if (flag & EXCFLAG2_USAGE_ERROR) {
-		SYS_LOG_BACKEND_FN("USAGE_ERROR ");
+		LOG_DBG(" USAGE_ERROR");
 	}
 
 	if (flag & EXCFLAG2_OPERAND_ERROR) {
-		SYS_LOG_BACKEND_FN("OPERAND_ERROR ");
+		LOG_DBG(" OPERAND_ERROR");
 	}
 
 	if (flag & EXCFLAG2_SPI_ERROR) {
-		SYS_LOG_BACKEND_FN("SPI_ERROR ");
+		LOG_DBG(" SPI_ERROR");
 	}
 
 	if (flag & EXCFLAG2_RF_NO_LOCK) {
-		SYS_LOG_BACKEND_FN("RF_NO_LOCK ");
+		LOG_DBG(" RF_NO_LOCK");
 	}
 
 	if (flag & EXCFLAG2_RX_FRM_ABORTED) {
-		SYS_LOG_BACKEND_FN("RX_FRM_ABORTED ");
+		LOG_DBG(" RX_FRM_ABORTED");
 	}
 
 	if (flag & EXCFLAG2_RFBUFMOV_TIMEOUT) {
-		SYS_LOG_BACKEND_FN("RFBUFMOV_TIMEOUT");
+		LOG_DBG(" RFBUFMOV_TIMEOUT");
 	}
-
-	SYS_LOG_BACKEND_FN("\n");
 }
 #else
 #define _cc2520_print_gpio_config(...)
 #define _cc2520_print_exceptions(...)
 #define _cc2520_print_errors(...)
-#endif /* CONFIG_SYS_LOG_IEEE802154_DRIVER_LEVEL == 4 */
+#endif /* CONFIG_IEEE802154_LOG_LEVEL == 4 */
 
 
 /*********************
@@ -308,12 +304,12 @@ static int _cc2520_set_pan_id(struct device *dev, u16_t pan_id)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG("0x%x", pan_id);
+	LOG_DBG("0x%x", pan_id);
 
 	pan_id = sys_le16_to_cpu(pan_id);
 
 	if (!write_mem_pan_id(cc2520, (u8_t *) &pan_id)) {
-		SYS_LOG_ERR("Failed");
+		LOG_ERR("Failed");
 		return -EIO;
 	}
 
@@ -324,12 +320,12 @@ static int _cc2520_set_short_addr(struct device *dev, u16_t short_addr)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG("0x%x", short_addr);
+	LOG_DBG("0x%x", short_addr);
 
 	short_addr = sys_le16_to_cpu(short_addr);
 
 	if (!write_mem_short_addr(cc2520, (u8_t *) &short_addr)) {
-		SYS_LOG_ERR("Failed");
+		LOG_ERR("Failed");
 		return -EIO;
 	}
 
@@ -341,11 +337,11 @@ static int _cc2520_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 	struct cc2520_context *cc2520 = dev->driver_data;
 
 	if (!write_mem_ext_addr(cc2520, (void *)ieee_addr)) {
-		SYS_LOG_ERR("Failed");
+		LOG_ERR("Failed");
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+	LOG_DBG("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		    ieee_addr[7], ieee_addr[6], ieee_addr[5], ieee_addr[4],
 		    ieee_addr[3], ieee_addr[2], ieee_addr[1], ieee_addr[0]);
 
@@ -553,7 +549,7 @@ static inline bool read_rxfifo_content(struct cc2520_context *ctx,
 	}
 
 	if (read_reg_excflag0(ctx) & EXCFLAG0_RX_UNDERFLOW) {
-		SYS_LOG_ERR("RX underflow!");
+		LOG_ERR("RX underflow!");
 		return false;
 	}
 
@@ -631,7 +627,7 @@ static void cc2520_rx(int arg)
 		k_sem_take(&cc2520->rx_lock, K_FOREVER);
 
 		if (cc2520->overflow) {
-			SYS_LOG_ERR("RX overflow!");
+			LOG_ERR("RX overflow!");
 			cc2520->overflow = false;
 
 			goto flush;
@@ -639,19 +635,19 @@ static void cc2520_rx(int arg)
 
 		pkt_len = read_rxfifo_length(cc2520) & 0x7f;
 		if (!verify_rxfifo_validity(cc2520, pkt_len)) {
-			SYS_LOG_ERR("Invalid content");
+			LOG_ERR("Invalid content");
 			goto flush;
 		}
 
 		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 		if (!pkt) {
-			SYS_LOG_ERR("No pkt available");
+			LOG_ERR("No pkt available");
 			goto flush;
 		}
 
 		pkt_frag = net_pkt_get_frag(pkt, K_NO_WAIT);
 		if (!pkt_frag) {
-			SYS_LOG_ERR("No pkt_frag available");
+			LOG_ERR("No pkt_frag available");
 			goto flush;
 		}
 
@@ -662,24 +658,24 @@ static void cc2520_rx(int arg)
 		}
 
 		if (!read_rxfifo_content(cc2520, pkt_frag, pkt_len)) {
-			SYS_LOG_ERR("No content read");
+			LOG_ERR("No content read");
 			goto flush;
 		}
 
 		if (!verify_crc(cc2520, pkt)) {
-			SYS_LOG_ERR("Bad packet CRC");
+			LOG_ERR("Bad packet CRC");
 			goto out;
 		}
 
 		if (ieee802154_radio_handle_ack(cc2520->iface, pkt) == NET_OK) {
-			SYS_LOG_DBG("ACK packet handled");
+			LOG_DBG("ACK packet handled");
 			goto out;
 		}
 
-		SYS_LOG_DBG("Caught a packet (%u)", pkt_len);
+		LOG_DBG("Caught a packet (%u)", pkt_len);
 
 		if (net_recv_data(cc2520->iface, pkt) < 0) {
-			SYS_LOG_DBG("Packet dropped by NET stack");
+			LOG_DBG("Packet dropped by NET stack");
 			goto out;
 		}
 
@@ -714,7 +710,7 @@ static int cc2520_cca(struct device *dev)
 	struct cc2520_context *cc2520 = dev->driver_data;
 
 	if (!get_cca(cc2520)) {
-		SYS_LOG_WRN("Busy");
+		LOG_WRN("Busy");
 		return -EBUSY;
 	}
 
@@ -725,7 +721,7 @@ static int cc2520_set_channel(struct device *dev, u16_t channel)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG("%u", channel);
+	LOG_DBG("%u", channel);
 
 	if (channel < 11 || channel > 26) {
 		return -EINVAL;
@@ -735,7 +731,7 @@ static int cc2520_set_channel(struct device *dev, u16_t channel)
 	channel = 11 + 5 * (channel - 11);
 
 	if (!write_reg_freqctrl(cc2520, FREQCTRL_FREQ(channel))) {
-		SYS_LOG_ERR("Failed");
+		LOG_ERR("Failed");
 		return -EIO;
 	}
 
@@ -747,7 +743,7 @@ static int cc2520_filter(struct device *dev,
 			 enum ieee802154_filter_type type,
 			 const struct ieee802154_filter *filter)
 {
-	SYS_LOG_DBG("Applying filter %u", type);
+	LOG_DBG("Applying filter %u", type);
 
 	if (!set) {
 		return -ENOTSUP;
@@ -769,7 +765,7 @@ static int cc2520_set_txpower(struct device *dev, s16_t dbm)
 	struct cc2520_context *cc2520 = dev->driver_data;
 	u8_t pwr;
 
-	SYS_LOG_DBG("%d", dbm);
+	LOG_DBG("%d", dbm);
 
 	/* See chapter 19 part 8 */
 	switch (dbm) {
@@ -810,7 +806,7 @@ static int cc2520_set_txpower(struct device *dev, s16_t dbm)
 
 	return 0;
 error:
-	SYS_LOG_ERR("Failed");
+	LOG_ERR("Failed");
 	return -EIO;
 }
 
@@ -824,17 +820,17 @@ static int cc2520_tx(struct device *dev,
 	u8_t retry = 2;
 	bool status;
 
-	SYS_LOG_DBG("%p (%u)", frag, len);
+	LOG_DBG("%p (%u)", frag, len);
 
 	if (!write_reg_excflag0(cc2520, EXCFLAG0_RESET_TX_FLAGS) ||
 	    !write_txfifo_length(cc2520, len) ||
 	    !write_txfifo_content(cc2520, frame, len)) {
-		SYS_LOG_ERR("Cannot feed in TX fifo");
+		LOG_ERR("Cannot feed in TX fifo");
 		goto error;
 	}
 
 	if (!verify_txfifo_status(cc2520, len)) {
-		SYS_LOG_ERR("Did not write properly into TX FIFO");
+		LOG_ERR("Did not write properly into TX FIFO");
 		goto error;
 	}
 
@@ -848,7 +844,7 @@ static int cc2520_tx(struct device *dev,
 		k_sem_init(&cc2520->tx_sync, 0, UINT_MAX);
 
 		if (!instruct_stxoncca(cc2520)) {
-			SYS_LOG_ERR("Cannot start transmission");
+			LOG_ERR("Cannot start transmission");
 			goto error;
 		}
 
@@ -870,7 +866,7 @@ error:
 #ifdef CONFIG_IEEE802154_CC2520_CRYPTO
 	k_sem_give(&cc2520->access_lock);
 #endif
-	SYS_LOG_ERR("No TX_FRM_DONE");
+	LOG_ERR("No TX_FRM_DONE");
 	_cc2520_print_exceptions(cc2520);
 	_cc2520_print_errors(cc2520);
 
@@ -884,12 +880,10 @@ static int cc2520_start(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG("");
-
 	if (!instruct_sxoscon(cc2520) ||
 	    !instruct_srxon(cc2520) ||
 	    !verify_osc_stabilization(cc2520)) {
-		SYS_LOG_ERR("Error starting CC2520");
+		LOG_ERR("Error starting CC2520");
 		return -EIO;
 	}
 
@@ -905,8 +899,6 @@ static int cc2520_stop(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	SYS_LOG_DBG("");
-
 	flush_rxfifo(cc2520);
 
 	enable_fifop_interrupt(cc2520, false);
@@ -914,7 +906,7 @@ static int cc2520_stop(struct device *dev)
 
 	if (!instruct_srfoff(cc2520) ||
 	    !instruct_sxoscoff(cc2520)) {
-		SYS_LOG_ERR("Error stopping CC2520");
+		LOG_ERR("Error stopping CC2520");
 		return -EIO;
 	}
 
@@ -997,7 +989,7 @@ static inline int configure_spi(struct device *dev)
 	cc2520->spi = device_get_binding(
 			CONFIG_IEEE802154_CC2520_SPI_DRV_NAME);
 	if (!cc2520->spi) {
-		SYS_LOG_ERR("Unable to get SPI device");
+		LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
 	}
 
@@ -1005,7 +997,7 @@ static inline int configure_spi(struct device *dev)
 	cs_ctrl.gpio_dev = device_get_binding(
 		CONFIG_IEEE802154_CC2520_GPIO_SPI_CS_DRV_NAME);
 	if (!cs_ctrl.gpio_dev) {
-		SYS_LOG_ERR("Unable to get GPIO SPI CS device");
+		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
@@ -1014,7 +1006,7 @@ static inline int configure_spi(struct device *dev)
 
 	cc2520->spi_cfg.cs = &cs_ctrl;
 
-	SYS_LOG_DBG("SPI GPIO CS configured on %s:%u",
+	LOG_DBG("SPI GPIO CS configured on %s:%u",
 		    CONFIG_IEEE802154_CC2520_GPIO_SPI_CS_DRV_NAME,
 		    CONFIG_IEEE802154_CC2520_GPIO_SPI_CS_PIN);
 #endif /* CONFIG_IEEE802154_CC2520_GPIO_SPI_CS */
@@ -1039,19 +1031,19 @@ static int cc2520_init(struct device *dev)
 
 	cc2520->gpios = cc2520_configure_gpios();
 	if (!cc2520->gpios) {
-		SYS_LOG_ERR("Configuring GPIOS failed");
+		LOG_ERR("Configuring GPIOS failed");
 		return -EIO;
 	}
 
 	if (configure_spi(dev) != 0) {
-		SYS_LOG_ERR("Configuring SPI failed");
+		LOG_ERR("Configuring SPI failed");
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("GPIO and SPI configured");
+	LOG_DBG("GPIO and SPI configured");
 
 	if (power_on_and_setup(dev) != 0) {
-		SYS_LOG_ERR("Configuring CC2520 failed");
+		LOG_ERR("Configuring CC2520 failed");
 		return -EIO;
 	}
 
@@ -1060,7 +1052,7 @@ static int cc2520_init(struct device *dev)
 			(k_thread_entry_t)cc2520_rx,
 			dev, NULL, NULL, K_PRIO_COOP(2), 0, 0);
 
-	SYS_LOG_INF("CC2520 initialized");
+	LOG_INF("CC2520 initialized");
 
 	return 0;
 }
@@ -1070,8 +1062,6 @@ static void cc2520_iface_init(struct net_if *iface)
 	struct device *dev = net_if_get_device(iface);
 	struct cc2520_context *cc2520 = dev->driver_data;
 	u8_t *mac = get_mac(dev);
-
-	SYS_LOG_DBG("");
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 
@@ -1156,7 +1146,7 @@ static inline bool instruct_uccm_ccm(struct cc2520_context *cc2520,
 
 	int ret;
 
-	SYS_LOG_DBG("%sCCM(P={01} K={%02x} C={%02x} N={%02x}"
+	LOG_DBG("%sCCM(P={01} K={%02x} C={%02x} N={%02x}"
 		    " A={%03x} E={%03x} F{%02x} M={%02x})",
 		    uccm ? "U" : "", key_addr, auth_crypt, nonce_addr,
 		    input_addr, output_addr, in_len, m);
@@ -1179,7 +1169,7 @@ static inline bool instruct_uccm_ccm(struct cc2520_context *cc2520,
 	k_sem_give(&cc2520->access_lock);
 
 	if (ret) {
-		SYS_LOG_ERR("%sCCM Failed", uccm ? "U" : "");
+		LOG_ERR("%sCCM Failed", uccm ? "U" : "");
 		return false;
 	}
 
@@ -1211,33 +1201,33 @@ static int insert_crypto_parameters(struct cipher_ctx *ctx,
 	u8_t m = 0;
 
 	if (!apkt->pkt->out_buf || !apkt->pkt->out_buf_max) {
-		SYS_LOG_ERR("Out buffer needs to be set");
+		LOG_ERR("Out buffer needs to be set");
 		return -EINVAL;
 	}
 
 	if (!ctx->key.bit_stream || !ctx->keylen) {
-		SYS_LOG_ERR("No key installed");
+		LOG_ERR("No key installed");
 		return -EINVAL;
 	}
 
 	if (!(ctx->flags & CAP_INPLACE_OPS)) {
-		SYS_LOG_ERR("It supports only in-place operation");
+		LOG_ERR("It supports only in-place operation");
 		return -EINVAL;
 	}
 
 	if (!apkt->ad || !apkt->ad_len) {
-		SYS_LOG_ERR("CCM needs associated data");
+		LOG_ERR("CCM needs associated data");
 		return -EINVAL;
 	}
 
 	if (apkt->pkt->in_buf && apkt->pkt->in_buf - apkt->ad_len != apkt->ad) {
-		SYS_LOG_ERR("In-place needs ad and input in same memory");
+		LOG_ERR("In-place needs ad and input in same memory");
 		return -EINVAL;
 	}
 
 	if (!apkt->pkt->in_buf) {
 		if (!ctx->mode_params.ccm_info.tag_len) {
-			SYS_LOG_ERR("Auth only needs a tag length");
+			LOG_ERR("Auth only needs a tag length");
 			return -EINVAL;
 		}
 
@@ -1267,7 +1257,7 @@ static int insert_crypto_parameters(struct cipher_ctx *ctx,
 
 	/* Writing the frame in RAM */
 	if (!_cc2520_write_ram(cc2520, CC2520_MEM_DATA, in_buf, in_len)) {
-		SYS_LOG_ERR("Cannot write the frame in RAM");
+		LOG_ERR("Cannot write the frame in RAM");
 		return -EIO;
 	}
 
@@ -1276,7 +1266,7 @@ static int insert_crypto_parameters(struct cipher_ctx *ctx,
 
 	/* Writing the key in RAM */
 	if (!_cc2520_write_ram(cc2520, CC2520_MEM_KEY, data, 16)) {
-		SYS_LOG_ERR("Cannot write the key in RAM");
+		LOG_ERR("Cannot write the key in RAM");
 		return -EIO;
 	}
 
@@ -1284,7 +1274,7 @@ static int insert_crypto_parameters(struct cipher_ctx *ctx,
 
 	/* Writing the nonce in RAM */
 	if (!_cc2520_write_ram(cc2520, CC2520_MEM_NONCE, data, 16)) {
-		SYS_LOG_ERR("Cannot write the nonce in RAM");
+		LOG_ERR("Cannot write the nonce in RAM");
 		return -EIO;
 	}
 
@@ -1300,18 +1290,18 @@ static int _cc2520_crypto_ccm(struct cipher_ctx *ctx,
 	int m;
 
 	if (!apkt || !apkt->pkt) {
-		SYS_LOG_ERR("Invalid crypto packet to operate with");
+		LOG_ERR("Invalid crypto packet to operate with");
 		return -EINVAL;
 	}
 
 	if (apkt->tag) {
-		SYS_LOG_ERR("CCM encryption does not take a tag");
+		LOG_ERR("CCM encryption does not take a tag");
 		return -EINVAL;
 	}
 
 	m = insert_crypto_parameters(ctx, apkt, ccm_nonce, &auth_crypt);
 	if (m < 0) {
-		SYS_LOG_ERR("Inserting crypto parameters failed");
+		LOG_ERR("Inserting crypto parameters failed");
 		return m;
 	}
 
@@ -1319,7 +1309,7 @@ static int _cc2520_crypto_ccm(struct cipher_ctx *ctx,
 		(m ? ctx->mode_params.ccm_info.tag_len : 0);
 
 	if (apkt->pkt->out_len > apkt->pkt->out_buf_max) {
-		SYS_LOG_ERR("Result will not fit into out buffer %u vs %u",
+		LOG_ERR("Result will not fit into out buffer %u vs %u",
 			    apkt->pkt->out_len, apkt->pkt->out_buf_max);
 		return -ENOBUFS;
 	}
@@ -1329,7 +1319,7 @@ static int _cc2520_crypto_ccm(struct cipher_ctx *ctx,
 			       0x000, apkt->ad_len, m) ||
 	    !_cc2520_read_ram(cc2520, CC2520_MEM_DATA,
 			      apkt->pkt->out_buf, apkt->pkt->out_len)) {
-		SYS_LOG_ERR("CCM or reading result from RAM failed");
+		LOG_ERR("CCM or reading result from RAM failed");
 		return -EIO;
 	}
 
@@ -1347,12 +1337,12 @@ static int _cc2520_crypto_uccm(struct cipher_ctx *ctx,
 	int m;
 
 	if (!apkt || !apkt->pkt) {
-		SYS_LOG_ERR("Invalid crypto packet to operate with");
+		LOG_ERR("Invalid crypto packet to operate with");
 		return -EINVAL;
 	}
 
 	if (ctx->mode_params.ccm_info.tag_len && !apkt->tag) {
-		SYS_LOG_ERR("In case of MIC you need to provide a tag");
+		LOG_ERR("In case of MIC you need to provide a tag");
 		return -EINVAL;
 	}
 
@@ -1368,12 +1358,12 @@ static int _cc2520_crypto_uccm(struct cipher_ctx *ctx,
 			       0x000, apkt->ad_len, m) ||
 	    !_cc2520_read_ram(cc2520, CC2520_MEM_DATA,
 			      apkt->pkt->out_buf, apkt->pkt->out_len)) {
-		SYS_LOG_ERR("UCCM or reading result from RAM failed");
+		LOG_ERR("UCCM or reading result from RAM failed");
 		return -EIO;
 	}
 
 	if (m && (!(read_reg_dpustat(cc2520) & DPUSTAT_AUTHSTAT_H))) {
-		SYS_LOG_ERR("Authentication of the frame failed");
+		LOG_ERR("Authentication of the frame failed");
 		return -EBADMSG;
 	}
 
@@ -1392,12 +1382,12 @@ static int cc2520_crypto_begin_session(struct device *dev,
 				       enum cipher_op op_type)
 {
 	if (algo != CRYPTO_CIPHER_ALGO_AES || mode != CRYPTO_CIPHER_MODE_CCM) {
-		SYS_LOG_ERR("Wrong algo (%u) or mode (%u)", algo, mode);
+		LOG_ERR("Wrong algo (%u) or mode (%u)", algo, mode);
 		return -EINVAL;
 	}
 
 	if (ctx->mode_params.ccm_info.nonce_len != 13) {
-		SYS_LOG_ERR("Nonce length erroneous (%u)",
+		LOG_ERR("Nonce length erroneous (%u)",
 			    ctx->mode_params.ccm_info.nonce_len);
 		return -EINVAL;
 	}
@@ -1427,7 +1417,7 @@ static int cc2520_crypto_free_session(struct device *dev,
 
 static int cc2520_crypto_init(struct device *dev)
 {
-	SYS_LOG_INF("CC2520 crypto part initialized");
+	LOG_INF("CC2520 crypto part initialized");
 
 	return 0;
 }

@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_IEEE802154_DRIVER_LEVEL
-#define SYS_LOG_DOMAIN "net/ieee802154/upipe/"
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME ieee802154_uart_pipe
+#define LOG_LEVEL CONFIG_IEEE802154_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <errno.h>
 
@@ -126,13 +128,13 @@ static u8_t *upipe_rx(u8_t *buf, size_t *off)
 	if (upipe->rx_len == upipe->rx_off) {
 		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 		if (!pkt) {
-			SYS_LOG_DBG("No pkt available");
+			LOG_DBG("No pkt available");
 			goto flush;
 		}
 
 		frag = net_pkt_get_frag(pkt, K_NO_WAIT);
 		if (!frag) {
-			SYS_LOG_DBG("No fragment available");
+			LOG_DBG("No fragment available");
 			goto out;
 		}
 
@@ -143,19 +145,19 @@ static u8_t *upipe_rx(u8_t *buf, size_t *off)
 
 #if defined(CONFIG_IEEE802154_UPIPE_HW_FILTER)
 		if (received_dest_addr_matched(frag->data) == false) {
-			SYS_LOG_DBG("Packet received is not addressed to me");
+			LOG_DBG("Packet received is not addressed to me");
 			goto out;
 		}
 #endif
 
 		if (ieee802154_radio_handle_ack(upipe->iface, pkt) == NET_OK) {
-			SYS_LOG_DBG("ACK packet handled");
+			LOG_DBG("ACK packet handled");
 			goto out;
 		}
 
-		SYS_LOG_DBG("Caught a packet (%u)", upipe->rx_len);
+		LOG_DBG("Caught a packet (%u)", upipe->rx_len);
 		if (net_recv_data(upipe->iface, pkt) < 0) {
-			SYS_LOG_DBG("Packet dropped by NET stack");
+			LOG_DBG("Packet dropped by NET stack");
 			goto out;
 		}
 
@@ -237,7 +239,7 @@ static int upipe_filter(struct device *dev,
 			enum ieee802154_filter_type type,
 			const struct ieee802154_filter *filter)
 {
-	SYS_LOG_DBG("Applying filter %u", type);
+	LOG_DBG("Applying filter %u", type);
 
 	if (!set) {
 		return -ENOTSUP;
@@ -271,7 +273,7 @@ static int upipe_tx(struct device *dev,
 	struct upipe_context *upipe = dev->driver_data;
 	u8_t i, data;
 
-	SYS_LOG_DBG("%p (%u)", frag, len);
+	LOG_DBG("%p (%u)", frag, len);
 
 	if (upipe->stopped) {
 		return -EIO;
@@ -356,8 +358,6 @@ static void upipe_iface_init(struct net_if *iface)
 	struct device *dev = net_if_get_device(iface);
 	struct upipe_context *upipe = dev->driver_data;
 	u8_t *mac = get_mac(dev);
-
-	SYS_LOG_DBG("");
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 
