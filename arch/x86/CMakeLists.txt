@@ -68,7 +68,6 @@ add_custom_command(
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
-add_subdirectory(soc/${SOC_PATH})
 # Must be last so that soc/ can override default exception handlers
 add_subdirectory(core)
 

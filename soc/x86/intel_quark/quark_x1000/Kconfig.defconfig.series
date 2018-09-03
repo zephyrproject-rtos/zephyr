@@ -243,5 +243,5 @@ config BT_UART_ON_DEV_NAME
 
 endif
 
-source "arch/x86/soc/intel_quark/quark_x1000/Kconfig.defconfig.quark_x1000"
+source "soc/x86/intel_quark/quark_x1000/Kconfig.defconfig.quark_x1000"
 endif # SOC_SERIES_QUARK_X1000
