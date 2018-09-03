@@ -292,7 +292,7 @@ config ARCH
 config SOC
 	string
 	help
-	  SoC name which can be found under arch/<arch>/soc/<soc name>.
+	  SoC name which can be found under soc/<arch>/<soc name>.
 	  This option holds the directory name used by the build system to locate
 	  the correct linker and header files for the SoC. This option will go away
 	  once all SoCs are using family/series structure.
@@ -300,14 +300,14 @@ config SOC
 config SOC_SERIES
 	string
 	help
-	  SoC series name which can be found under arch/<arch>/soc/<family>/<series>.
+	  SoC series name which can be found under soc/<arch>/<family>/<series>.
 	  This option holds the directory name used by the build system to locate
 	  the correct linker and header files.
 
 config SOC_FAMILY
 	string
 	help
-	  SoC family name which can be found under arch/<arch>/soc/<family>.
+	  SoC family name which can be found under soc/<arch>/<family>.
 	  This option holds the directory name used by the build system to locate
 	  the correct linker and header files.
 
@@ -318,4 +318,4 @@ config BOARD
 	  related to the board in the source tree (under boards/).
 	  The Board is the first location where we search for a linker.ld file,
 	  if not found we look for the linker file in
-	  arch/<arch>/soc/<family>/<series>
+	  soc/<arch>/<family>/<series>
