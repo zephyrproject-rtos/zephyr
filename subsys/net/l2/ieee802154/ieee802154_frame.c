@@ -8,16 +8,14 @@
 #define NET_LOG_LEVEL CONFIG_NET_L2_IEEE802154_LOG_LEVEL
 
 #define dbg_print_fs(fs)						\
-	NET_DBG("fs: %u/%u/%u/%u/%u/%u/%u/%u/%u/%u/%u - %u",		\
+	NET_DBG("fs(1): %u/%u/%u/%u/%u/%u",				\
 		fs->fc.frame_type, fs->fc.security_enabled,		\
 		fs->fc.frame_pending, fs->fc.ar, fs->fc.pan_id_comp,	\
-		fs->fc.reserved, fs->fc.seq_num_suppr, fs->fc.ie_list,	\
+		fs->fc.reserved);					\
+	NET_DBG("fs(2): %u/%u/%u/%u/%u - %u",				\
+		fs->fc.seq_num_suppr, fs->fc.ie_list,			\
 		fs->fc.dst_addr_mode, fs->fc.frame_version,		\
-		fs->fc.src_addr_mode,					\
-		fs->sequence)
-#else
-#define dbg_print_fs(...)
-#endif /* CONFIG_NET_DEBUG_L2_IEEE802154 */
+		fs->fc.src_addr_mode, fs->sequence)
 
 #include <net/net_core.h>
 #include <net/net_if.h>
