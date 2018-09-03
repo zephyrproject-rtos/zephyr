@@ -6,6 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_test
+#define NET_LOG_LEVEL CONFIG_NET_TRICKLE_LOG_LEVEL
+
 #include <zephyr/types.h>
 #include <ztest.h>
 #include <stdbool.h>
@@ -25,7 +28,7 @@
 
 #include "net_private.h"
 
-#if defined(CONFIG_NET_DEBUG_TRICKLE)
+#if defined(CONFIG_NET_TRICKLE_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #else
 #define DBG(fmt, ...)

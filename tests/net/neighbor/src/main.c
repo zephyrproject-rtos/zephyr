@@ -6,6 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_test
+#define NET_LOG_LEVEL CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL
+
 #include <ztest.h>
 #include <zephyr/types.h>
 #include <stddef.h>
