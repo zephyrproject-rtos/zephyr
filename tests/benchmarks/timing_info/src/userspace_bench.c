@@ -31,11 +31,13 @@ K_THREAD_STACK_EXTERN(my_stack_area_0);
 /* syscall needed to read timer value when in user space */
 u32_t _impl_userspace_read_timer_value(void)
 {
+	TIMING_INFO_PRE_READ();
 	return TIMING_INFO_GET_TIMER_VALUE();
 }
 
 Z_SYSCALL_HANDLER(userspace_read_timer_value)
 {
+	TIMING_INFO_PRE_READ();
 	return TIMING_INFO_GET_TIMER_VALUE();
 }
 
@@ -68,6 +70,7 @@ void test_drop_to_user_mode_1(void *p1, void *p2, void *p3)
 
 void drop_to_user_mode_thread(void *p1, void *p2, void *p3)
 {
+	TIMING_INFO_PRE_READ();
 	drop_to_user_mode_start_time = TIMING_INFO_GET_TIMER_VALUE();
 	k_thread_user_mode_enter(test_drop_to_user_mode_1, NULL, NULL, NULL);
 }
@@ -116,6 +119,7 @@ void user_thread_creation(void)
 {
 	u32_t total_user_thread_creation_time;
 
+	TIMING_INFO_PRE_READ();
 	user_thread_creation_start_time = TIMING_INFO_GET_TIMER_VALUE();
 
 	k_thread_create(&my_thread_user, my_stack_area, STACK_SIZE,
@@ -123,6 +127,7 @@ void user_thread_creation(void)
 			NULL, NULL, NULL,
 			0 /*priority*/, K_INHERIT_PERMS | K_USER, 0);
 
+	TIMING_INFO_PRE_READ();
 	user_thread_creation_end_time = TIMING_INFO_GET_TIMER_VALUE();
 	k_thread_abort(&my_thread_user);
 
@@ -150,6 +155,7 @@ int _impl_k_dummy_syscall(void)
 
 Z_SYSCALL_HANDLER(k_dummy_syscall)
 {
+	TIMING_INFO_PRE_READ();
 	syscall_overhead_end_time = TIMING_INFO_GET_TIMER_VALUE();
 	return 0;
 }
@@ -201,17 +207,21 @@ int _impl_validation_overhead_syscall(void)
 
 Z_SYSCALL_HANDLER(validation_overhead_syscall)
 {
+	TIMING_INFO_PRE_READ();
 	validation_overhead_obj_init_start_time = TIMING_INFO_GET_TIMER_VALUE();
 
 	bool status_0 = Z_SYSCALL_OBJ_INIT(&test_sema, K_OBJ_SEM);
 
+	TIMING_INFO_PRE_READ();
 	validation_overhead_obj_init_end_time = TIMING_INFO_GET_TIMER_VALUE();
 
 
+	TIMING_INFO_PRE_READ();
 	validation_overhead_obj_start_time = TIMING_INFO_GET_TIMER_VALUE();
 
 	bool status_1 = Z_SYSCALL_OBJ(&test_sema, K_OBJ_SEM);
 
+	TIMING_INFO_PRE_READ();
 	validation_overhead_obj_end_time = TIMING_INFO_GET_TIMER_VALUE();
 	return status_0 || status_1;
 }
