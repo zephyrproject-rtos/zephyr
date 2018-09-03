@@ -389,9 +389,10 @@ struct net_buf *net_pkt_get_reserve_data(struct net_buf_pool *pool,
 
 	net_pkt_alloc_add(frag, false, caller, line);
 
-	NET_DBG("%s (%s) [%d] frag %p reserve %u ref %d (%s():%d)",
+	NET_DBG("%s (%s) [%d] frag %p reserve %u",
 		pool2str(pool), get_name(pool), get_frees(pool),
-		frag, reserve_head, frag->ref, caller, line);
+		frag, reserve_head);
+	NET_DBG("  ref %d (%s():%d)", frag->ref, caller, line);
 #endif
 
 	return frag;
@@ -781,10 +782,11 @@ void net_pkt_unref(struct net_pkt *pkt)
 
 	frag = pkt->frags;
 	while (frag) {
-		NET_DBG("%s (%s) [%d] frag %p ref %d frags %p (%s():%d)",
+		NET_DBG("%s (%s) [%d] frag %p",
 			pool2str(net_buf_pool_get(frag->pool_id)),
 			get_name(net_buf_pool_get(frag->pool_id)),
-			get_frees(net_buf_pool_get(frag->pool_id)), frag,
+			get_frees(net_buf_pool_get(frag->pool_id)), frag);
+		NET_DBG("  ref %d frags %p (%s():%d)",
 			frag->ref - 1, frag->frags, caller, line);
 
 		if (!frag->ref) {
@@ -2197,14 +2199,14 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 void net_pkt_init(void)
 {
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_DBG("Allocating %u RX (%zu bytes), %u TX (%zu bytes), "
-		"%d RX data (%u bytes) and %d TX data (%u bytes) buffers",
+	NET_DBG("Allocating %u RX (%zu bytes), %u TX (%zu bytes), ",
 		k_mem_slab_num_free_get(&rx_pkts),
 		(size_t)(k_mem_slab_num_free_get(&rx_pkts) *
 			 sizeof(struct net_pkt)),
 		k_mem_slab_num_free_get(&tx_pkts),
 		(size_t)(k_mem_slab_num_free_get(&tx_pkts) *
-			 sizeof(struct net_pkt)),
+			 sizeof(struct net_pkt)));
+	NET_DBG("  %d RX data (%u bytes) and %d TX data (%u bytes) buffers",
 		get_frees(&rx_bufs), get_size(&rx_bufs),
 		get_frees(&tx_bufs), get_size(&tx_bufs));
 #endif

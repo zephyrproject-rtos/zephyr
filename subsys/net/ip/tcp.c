@@ -133,23 +133,28 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 		rel_ack = ack ? ack - tcp->sent_ack : 0;
 	}
 
-	NET_DBG("[%p] pkt %p src %u dst %u seq 0x%04x (%u) ack 0x%04x (%u/%u) "
-		"flags %c%c%c%c%c%c win %u chk 0x%04x",
+	NET_DBG("[%p] pkt %p src %u dst %u",
 		tcp, pkt,
 		ntohs(tcp_hdr->src_port),
-		ntohs(tcp_hdr->dst_port),
+		ntohs(tcp_hdr->dst_port));
+
+	NET_DBG("  seq 0x%04x (%u) ack 0x%04x (%u/%u)",
 		sys_get_be32(tcp_hdr->seq),
 		sys_get_be32(tcp_hdr->seq),
 		ack,
 		ack,
 		/* This tells how many bytes we are acking now */
-		rel_ack,
+		rel_ack);
+
+	NET_DBG("  flags %c%c%c%c%c%c",
 		upper_if_set('u', flags & NET_TCP_URG),
 		upper_if_set('a', flags & NET_TCP_ACK),
 		upper_if_set('p', flags & NET_TCP_PSH),
 		upper_if_set('r', flags & NET_TCP_RST),
 		upper_if_set('s', flags & NET_TCP_SYN),
-		upper_if_set('f', flags & NET_TCP_FIN),
+		upper_if_set('f', flags & NET_TCP_FIN));
+
+	NET_DBG("  win %u chk 0x%04x",
 		sys_get_be16(tcp_hdr->wnd),
 		ntohs(tcp_hdr->chksum));
 }

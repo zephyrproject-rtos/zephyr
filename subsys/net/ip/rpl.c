@@ -691,12 +691,13 @@ static void new_dio_interval(struct net_rpl_instance *instance)
 	instance->dio_intervals++;
 	instance->dio_recv_pkt += instance->dio_counter;
 
-	NET_DBG("rank %u.%u (%u) stats %d/%d/%d/%d %s",
+	NET_DBG("rank %u.%u (%u)",
 		NET_RPL_DAG_RANK(instance->current_dag->rank, instance),
 		((10 * (instance->current_dag->rank %
 		       instance->min_hop_rank_inc)) /
 		 instance->min_hop_rank_inc),
-		instance->current_dag->version,
+		instance->current_dag->version);
+	NET_DBG("  stats %d/%d/%d/%d %s",
 		instance->dio_intervals,
 		instance->dio_send_pkt,
 		instance->dio_recv_pkt,

@@ -942,11 +942,13 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 		"secs=%u flags=0x%x chaddr=%s",
 		msg->op, msg->htype, msg->hlen, ntohl(msg->xid),
 		msg->secs, msg->flags, net_sprint_ll_addr(msg->chaddr, 6));
-	NET_DBG("  ciaddr=%d.%d.%d.%d yiaddr=%d.%d.%d.%d",
-		msg->ciaddr[0], msg->ciaddr[1], msg->ciaddr[2], msg->ciaddr[3],
+	NET_DBG("  ciaddr=%d.%d.%d.%d",
+		msg->ciaddr[0], msg->ciaddr[1], msg->ciaddr[2], msg->ciaddr[3]);
+	NET_DBG("  yiaddr=%d.%d.%d.%d",
 		msg->yiaddr[0], msg->yiaddr[1], msg->yiaddr[2], msg->yiaddr[3]);
-	NET_DBG("  siaddr=%d.%d.%d.%d giaddr=%d.%d.%d.%d]",
-		msg->siaddr[0], msg->siaddr[1], msg->siaddr[2], msg->siaddr[3],
+	NET_DBG("  siaddr=%d.%d.%d.%d",
+		msg->siaddr[0], msg->siaddr[1], msg->siaddr[2], msg->siaddr[3]);
+	NET_DBG("  giaddr=%d.%d.%d.%d]",
 		msg->giaddr[0], msg->giaddr[1], msg->giaddr[2], msg->giaddr[3]);
 
 	if (!(msg->op == DHCPV4_MSG_BOOT_REPLY &&

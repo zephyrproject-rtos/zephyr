@@ -37,8 +37,10 @@ static const struct net_eth_addr gptp_multicast_eth_addr = {
 				output,					\
 				sizeof(output));			\
 									\
-			NET_DBG("Sending %s seq %d pkt %p GM %d/%d/0x%x/%d/%s",\
-				msg, ntohs(hdr->sequence_id), pkt,	\
+			NET_DBG("Sending %s seq %d pkt %p",\
+				msg, ntohs(hdr->sequence_id), pkt);	\
+									\
+			NET_DBG("  GM %d/%d/0x%x/%d/%s",\
 				ann->root_system_id.grand_master_prio1, \
 				ann->root_system_id.clk_quality.clock_class, \
 				ann->root_system_id.clk_quality.clock_accuracy,\
