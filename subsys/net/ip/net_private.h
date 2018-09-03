@@ -181,70 +181,6 @@ static inline char *net_sprint_ll_addr(const u8_t *ll, u8_t ll_len)
 	return net_sprint_ll_addr_buf(ll, ll_len, (char *)buf, sizeof(buf));
 }
 
-static inline void _hexdump(const u8_t *packet, size_t length, u8_t reserve)
-{
-	char output[sizeof("xxxxyyyy xxxxyyyy")];
-	int n = 0, k = 0;
-	u8_t byte;
-#if defined(CONFIG_LOG) && (NET_LOG_LEVEL >= LOG_LEVEL_DBG)
-	u8_t r = reserve;
-#endif
-
-	while (length--) {
-		if (n % 16 == 0) {
-			printk(" %08X ", n);
-		}
-
-		byte = *packet++;
-
-#if defined(CONFIG_LOG) && (NET_LOG_LEVEL >= LOG_LEVEL_DBG)
-		if (reserve) {
-			if (r) {
-				printk(SYS_LOG_COLOR_YELLOW);
-				r--;
-			} else {
-				printk(SYS_LOG_COLOR_OFF);
-			}
-		}
-#endif
-
-		printk("%02X ", byte);
-
-		if (byte < 0x20 || byte > 0x7f) {
-			output[k++] = '.';
-		} else {
-			output[k++] = byte;
-		}
-
-		n++;
-		if (n % 8 == 0) {
-			if (n % 16 == 0) {
-				output[k] = '\0';
-				printk(" [%s]\n", output);
-				k = 0;
-			} else {
-				printk(" ");
-			}
-		}
-	}
-
-	if (n % 16) {
-		int i;
-
-		output[k] = '\0';
-
-		for (i = 0; i < (16 - (n % 16)); i++) {
-			printk("   ");
-		}
-
-		if ((n % 16) < 8) {
-			printk(" "); /* one extra delimiter after 8 chars */
-		}
-
-		printk(" [%s]\n", output);
-	}
-}
-
 static inline void net_hexdump(const char *str,
 			       const u8_t *packet, size_t length)
 {
@@ -253,9 +189,7 @@ static inline void net_hexdump(const char *str,
 		return;
 	}
 
-	LOG_DBG("%s", str);
-
-	_hexdump(packet, length, 0);
+	LOG_HEXDUMP_DBG(packet, length, str);
 }
 
 
@@ -268,11 +202,13 @@ static inline void net_hexdump_frags(const char *str,
 	u8_t reserve = full ? net_pkt_ll_reserve(pkt) : 0;
 	struct net_buf *frag = pkt->frags;
 
-	printk("%s\n", str);
+	if (str && str[0]) {
+		LOG_DBG("%s", str);
+	}
 
 	while (frag) {
-		_hexdump(full ? frag->data - reserve : frag->data,
-			 frag->len + reserve, reserve);
+		LOG_HEXDUMP_DBG(full ? frag->data - reserve : frag->data,
+				frag->len + reserve, "");
 		frag = frag->frags;
 
 		if (full && reserve) {
