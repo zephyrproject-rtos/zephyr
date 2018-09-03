@@ -33,12 +33,12 @@ The default SoC for this board supported in Zephyr is the EM9D.
 This configuration is a Harvard Architecture, with a separate
 instruction bus and data bus. Instruction memory is called ICCM
 and data memory is called DCCM. The configuration file for EM9D
-is found in :file:`arch/arc/soc/snps_emsk/Kconfig.defconfig.em9d`.
+is found in :file:`soc/arc/snps_emsk/Kconfig.defconfig.em9d`.
 
 If you have a larger program, you can select the EM7D or EM11D, which gives
 access to 128KB DRAM with i-cache and d-cache. The configuration file for EM7D
-is found in :file:`arch/arc/soc/snps_emsk/Kconfig.defconfig.em7d` and EM11D is
-found in :file:`arch/arc/soc/snps_emsk/Kconfig.defconfig.em11d`.
+is found in :file:`soc/arc/snps_emsk/Kconfig.defconfig.em7d` and EM11D is
+found in :file:`soc/arc/snps_emsk/Kconfig.defconfig.em11d`.
 
 
 Hardware
