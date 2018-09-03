@@ -79,6 +79,7 @@ struct rand {
 struct entropy_nrf5_dev_data {
 	struct k_sem sem_lock;
 	struct k_sem sem_sync;
+	unsigned int hw_users;
 
 	RAND_DEFINE(thr, RAND_THREAD_LEN);
 	RAND_DEFINE(isr, RAND_ISR_LEN);
@@ -87,11 +88,59 @@ struct entropy_nrf5_dev_data {
 #define DEV_DATA(dev) \
 	((struct entropy_nrf5_dev_data *)(dev)->driver_data)
 
+static void hw_start(struct entropy_nrf5_dev_data *dev_data)
+{
+	unsigned int key;
+
+	__ASSERT_NO_MSG(dev_data);
+
+	key = irq_lock();
+
+	__ASSERT_NO_MSG((dev_data->hw_users + 1) != 0u);
+	if (dev_data->hw_users++ == 0)
+		nrf_rng_task_trigger(NRF_RNG_TASK_START);
+
+	irq_unlock(key);
+}
+
+static void hw_stop(struct entropy_nrf5_dev_data *dev_data)
+{
+	unsigned int key;
+
+	__ASSERT_NO_MSG(dev_data);
+
+	key = irq_lock();
+
+	if (dev_data->hw_users != 0)
+		if (--dev_data->hw_users == 0)
+			nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
+
+	irq_unlock(key);
+}
+
+static int random_byte_get(void)
+{
+	int retval = -EAGAIN;
+	unsigned int key;
+
+	key = irq_lock();
+
+	if (nrf_rng_event_get(NRF_RNG_EVENT_VALRDY)) {
+		retval = nrf_rng_random_value_get();
+		nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
+	}
+
+	irq_unlock(key);
+
+	return retval;
+}
+
 #pragma GCC push_options
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
 #pragma GCC optimize ("Ofast")
 #endif
-static inline u8_t get(struct rand *rng, u8_t octets, u8_t *rand)
+static u8_t get(struct entropy_nrf5_dev_data *dev_data,
+		struct rand *rng, u8_t octets, u8_t *rand)
 {
 	u8_t first, last, avail, remaining, *d, *s;
 
@@ -161,73 +210,58 @@ static inline u8_t get(struct rand *rng, u8_t octets, u8_t *rand)
 		rng->first = first;
 	}
 
-	if (remaining < rng->threshold) {
-		nrf_rng_task_trigger(NRF_RNG_TASK_START);
-	}
+	if (remaining < rng->threshold)
+		hw_start(dev_data);
 
 	return octets;
 }
 #pragma GCC pop_options
 
-static int isr(struct rand *rng, bool store)
+static int isr(struct rand *rng, u8_t byte)
 {
 	u8_t last;
 
-	if (!rng) {
-		return -ENOBUFS;
-	}
+	__ASSERT_NO_MSG(rng);
 
 	last = rng->last + 1;
-	if (last == rng->count) {
+	if (last == rng->count)
 		last = 0;
-	}
 
-	if (last == rng->first) {
-		/* this condition should not happen, but due to probable race,
-		 * new value could be generated before NRF_RNG task is stopped.
-		 */
+	if (last == rng->first)
 		return -ENOBUFS;
-	}
 
-	if (!store) {
-		return -EBUSY;
-	}
-
-	rng->rand[rng->last] = NRF_RNG->VALUE;
+	rng->rand[rng->last] = nrf_rng_random_value_get();
 	rng->last = last;
 
+	/* Check if we have room for next byte */
 	last = rng->last + 1;
-	if (last == rng->count) {
+	if (last == rng->count)
 		last = 0;
-	}
 
-	if (last == rng->first) {
-		return 0;
-	}
+	if (last == rng->first)
+		return 1;
 
-	return -EBUSY;
+	return 0;
 }
 
 static void isr_rand(void *arg)
 {
 	struct device *device = arg;
+	struct entropy_nrf5_dev_data *dev_data = DEV_DATA(device);
+	int byte;
+	int ret;
 
-	if (NRF_RNG->EVENTS_VALRDY) {
-		struct entropy_nrf5_dev_data *dev_data = DEV_DATA(device);
-		int ret;
+	byte = random_byte_get();
+	if (byte < 0)
+		return;
 
-		ret = isr((struct rand *)dev_data->isr, true);
-		if (ret != -EBUSY) {
-			ret = isr((struct rand *)dev_data->thr,
-				  (ret == -ENOBUFS));
-			k_sem_give(&dev_data->sem_sync);
-		}
+	ret = isr((struct rand *)dev_data->isr, byte);
+	if (ret < 0) {
+		ret = isr((struct rand *)dev_data->thr, byte);
+		k_sem_give(&dev_data->sem_sync);
 
-		NRF_RNG->EVENTS_VALRDY = 0;
-
-		if (ret != -EBUSY) {
-			nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
-		}
+		if (ret)
+			hw_stop(dev_data);
 	}
 }
 
@@ -254,8 +288,10 @@ static int entropy_nrf5_get_entropy(struct device *device, u8_t *buf, u16_t len)
 
 		while (len8) {
 			k_sem_take(&dev_data->sem_lock, K_FOREVER);
-			len8 = get((struct rand *)dev_data->thr, len8, buf);
+			len8 = get(dev_data, (struct rand *)dev_data->thr,
+				   len8, buf);
 			k_sem_give(&dev_data->sem_lock);
+
 			if (len8) {
 				/* Sleep until next interrupt */
 				k_sem_take(&dev_data->sem_sync, K_FOREVER);
@@ -273,40 +309,39 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 	u16_t cnt = len;
 
 	if (!(flags & ENTROPY_BUSYWAIT)) {
-		return get((struct rand *)dev_data->isr, len, buf);
+		unsigned int key;
+		int retval;
+
+		key = irq_lock();
+		retval = get(dev_data, (struct rand *)dev_data->isr, len, buf);
+		irq_unlock(key);
+
+		return retval;
 	}
 
 	if (len) {
-		u32_t intenset;
-
 		irq_disable(RNG_IRQn);
-		NRF_RNG->EVENTS_VALRDY = 0;
-
-		intenset = NRF_RNG->INTENSET;
-		nrf_rng_int_enable(NRF_RNG_INT_VALRDY_MASK);
-
-		nrf_rng_task_trigger(NRF_RNG_TASK_START);
+		hw_start(dev_data);
 
 		do {
-			while (NRF_RNG->EVENTS_VALRDY == 0) {
+			int byte;
+
+			while (!nrf_rng_event_get(NRF_RNG_EVENT_VALRDY)) {
 				__WFE();
 				__SEV();
 				__WFE();
 			}
 
-			buf[--len] = NRF_RNG->VALUE;
+			byte = random_byte_get();
+			NVIC_ClearPendingIRQ(RNG_IRQn);
 
-			NRF_RNG->EVENTS_VALRDY = 0;
+			if (byte < 0)
+				continue;
+
+			buf[--len] = byte;
 		} while (len);
 
-		nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
-
-		if (!(intenset & RNG_INTENSET_VALRDY_Msk)) {
-			nrf_rng_int_disable(NRF_RNG_INT_VALRDY_MASK);
-		}
-
-		NVIC_ClearPendingIRQ(RNG_IRQn);
-
+		hw_stop(dev_data);
 		irq_enable(RNG_IRQn);
 	}
 
@@ -330,6 +365,9 @@ static int entropy_nrf5_init(struct device *device)
 {
 	struct entropy_nrf5_dev_data *dev_data = DEV_DATA(device);
 
+	/* Set initial number of hardware users */
+	dev_data->hw_users = 0;
+
 	/* Locking semaphore initialized to 1 (unlocked) */
 	k_sem_init(&dev_data->sem_lock, 1, 1);
 	/* Synching semaphore */
@@ -342,25 +380,18 @@ static int entropy_nrf5_init(struct device *device)
 
 	/* Enable or disable bias correction */
 	if (IS_ENABLED(CONFIG_ENTROPY_NRF5_BIAS_CORRECTION)) {
-		NRF_RNG->CONFIG |= RNG_CONFIG_DERCEN_Msk;
+		nrf_rng_error_correction_enable();
 	} else {
-		NRF_RNG->CONFIG &= ~RNG_CONFIG_DERCEN_Msk;
+		nrf_rng_error_correction_disable();
 	}
 
-	NRF_RNG->EVENTS_VALRDY = 0;
+	nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
 	nrf_rng_int_enable(NRF_RNG_INT_VALRDY_MASK);
-	nrf_rng_task_trigger(NRF_RNG_TASK_START);
+	hw_start(dev_data);
 
-	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, CONFIG_ENTROPY_NRF5_PRI, isr_rand,
+	IRQ_CONNECT(RNG_IRQn, CONFIG_ENTROPY_NRF5_PRI, isr_rand,
 		    DEVICE_GET(entropy_nrf5), 0);
-	irq_enable(NRF5_IRQ_RNG_IRQn);
+	irq_enable(RNG_IRQn);
 
 	return 0;
 }
-
-u8_t entropy_nrf_get_entropy_isr(struct device *dev, u8_t *buf, u8_t len)
-{
-	ARG_UNUSED(dev);
-	return get((struct rand *)entropy_nrf5_data.isr, len, buf);
-}
-
