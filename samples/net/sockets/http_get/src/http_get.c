@@ -16,6 +16,8 @@
 #include <netdb.h>
 
 #else
+#define LOG_MODULE_NAME net_http_get
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 #include <net/socket.h>
 #include <kernel.h>
