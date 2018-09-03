@@ -21,7 +21,7 @@ The kernel supports two distinct clocks.
 
 * The 64-bit **system clock** is a counter that tracks the number of
   **ticks** that have elapsed since the kernel was initialized. The duration
-  of a tick is is configurable, and typically ranges from 1 millisecond to
+  of a tick is configurable, and typically ranges from 1 millisecond to
   100 milliseconds.
 
 The kernel also provides a number of variables that can be used
