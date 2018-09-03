@@ -67,7 +67,7 @@ static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
 			memcpy(events[i_idx].info, info, length);
 			events[i_idx].info_length = length;
 		} else {
-			NET_ERR("Event info length %u > max size %u",
+			NET_ERR("Event info length %zu > max size %zu",
 				length, NET_EVENT_INFO_MAX_SIZE);
 			k_sem_give(&net_mgmt_lock);
 
