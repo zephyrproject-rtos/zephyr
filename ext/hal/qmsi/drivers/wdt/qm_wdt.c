@@ -47,10 +47,6 @@ QM_ISR_DECLARE(qm_wdt_0_isr)
 	if (callback[QM_WDT_0]) {
 		callback[QM_WDT_0](callback_data[QM_WDT_0]);
 	}
-
-	/* Clear the interrupt by reading. */
-	QM_WDT[QM_WDT_0]->wdt_eoi;
-	QM_ISR_EOI(QM_IRQ_WDT_0_INT_VECTOR);
 }
 
 #if (NUM_WDT_CONTROLLERS > 1)

@@ -15,6 +15,7 @@
 #include "clk.h"
 #include "qm_isr.h"
 #include "qm_wdt.h"
+#include <watchdog.h>
 
 struct wdt_data {
 #ifdef CONFIG_WDT_QMSI_API_REENTRANCY
@@ -23,17 +24,12 @@ struct wdt_data {
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	u32_t device_power_state;
 #endif
+	qm_wdt_config_t qm_cfg;
+	wdt_callback_t callback;
 };
 
-#define WDT_HAS_CONTEXT_DATA \
-	(CONFIG_WDT_QMSI_API_REENTRANCY || CONFIG_DEVICE_POWER_MANAGEMENT)
-
-#if WDT_HAS_CONTEXT_DATA
 static struct wdt_data wdt_context;
 #define WDT_CONTEXT (&wdt_context)
-#else
-#define WDT_CONTEXT (NULL)
-#endif /* WDT_HAS_CONTEXT_DATA */
 
 #ifdef CONFIG_WDT_QMSI_API_REENTRANCY
 #define RP_GET(dev) (&((struct wdt_data *)(dev->driver_data))->sem)
@@ -41,33 +37,29 @@ static struct wdt_data wdt_context;
 #define RP_GET(dev) (NULL)
 #endif
 
-static void (*user_cb)(struct device *dev);
-
-static void get_config(struct device *dev, struct wdt_config *cfg)
+void wdt_handler(void *data)
 {
-	cfg->timeout = QM_WDT[QM_WDT_0]->wdt_torr;
-	cfg->mode = ((QM_WDT[QM_WDT_0]->wdt_cr & QM_WDT_CR_RMOD) >>
-			QM_WDT_CR_RMOD_OFFSET);
-	cfg->interrupt_fn = user_cb;
+	struct device *dev = data;
+	struct wdt_data *wdt_context = dev->driver_data;
+
+	wdt_context->callback(dev, 0);
 }
 
-static int set_config(struct device *dev, struct wdt_config *cfg)
+static int wdt_qmsi_setup(struct device *dev, u8_t options)
 {
 	int ret_val = 0;
-	qm_wdt_config_t qm_cfg;
 
-	user_cb = cfg->interrupt_fn;
-	qm_cfg.timeout = cfg->timeout;
-	qm_cfg.mode = (cfg->mode == WDT_MODE_RESET) ?
-			QM_WDT_MODE_RESET : QM_WDT_MODE_INTERRUPT_RESET;
-	qm_cfg.callback = (void *)user_cb;
-	qm_cfg.callback_data = dev;
+	struct wdt_data *wdt_context = dev->driver_data;
+	qm_wdt_config_t *qm_cfg = &(wdt_context->qm_cfg);
+
+	qm_cfg->callback = wdt_handler;
+	qm_cfg->callback_data = dev;
 
 	if (IS_ENABLED(CONFIG_WDT_QMSI_API_REENTRANCY)) {
 		k_sem_take(RP_GET(dev), K_FOREVER);
 	}
 
-	if (qm_wdt_set_config(QM_WDT_0, &qm_cfg)) {
+	if (qm_wdt_set_config(QM_WDT_0, qm_cfg)) {
 		ret_val = -EIO;
 		goto wdt_config_return;
 	}
@@ -84,9 +76,62 @@ wdt_config_return:
 	return ret_val;
 }
 
-static void reload(struct device *dev)
+static __attribute__((noinline)) u32_t next_pow2(u32_t x)
+{
+	if (x <= 2)
+		return x;
+
+	return (1ULL << 32) >> __builtin_clz(x - 1);
+}
+
+static u32_t get_timeout(u32_t  timeout)
+{
+	u32_t val = timeout / 2;
+	u32_t count = 0;
+
+	if (val & (val - 1))
+		val = next_pow2(val);
+
+	while (val) {
+		val = val >> 1;
+		count++;
+	}
+
+	return count - 1;
+}
+
+static int wdt_qmsi_install_timeout(struct device *dev,
+				    const struct wdt_timeout_cfg *cfg)
+{
+	struct wdt_data *wdt_context = dev->driver_data;
+	qm_wdt_config_t *qm_cfg = &(wdt_context->qm_cfg);
+
+
+	ARG_UNUSED(dev);
+
+	if (cfg->flags != WDT_FLAG_RESET_SOC) {
+		return -ENOTSUP;
+	}
+
+	if (cfg->window.min != 0 || cfg->window.max == 0) {
+		return -EINVAL;
+	}
+
+	qm_cfg->timeout =  get_timeout(cfg->window.max);
+
+	qm_cfg->mode = (cfg->callback == NULL) ?
+			QM_WDT_MODE_RESET : QM_WDT_MODE_INTERRUPT_RESET;
+
+	wdt_context->callback = cfg->callback;
+
+	return 0;
+}
+
+static int reload(struct device *dev, int channel_id)
 {
 	qm_wdt_reload(QM_WDT_0);
+
+	return 0;
 }
 
 static void enable(struct device *dev)
@@ -102,11 +147,10 @@ static int disable(struct device *dev)
 }
 
 static const struct wdt_driver_api api = {
-	.enable = enable,
+	.setup = wdt_qmsi_setup,
 	.disable = disable,
-	.get_config = get_config,
-	.set_config = set_config,
-	.reload = reload,
+	.install_timeout = wdt_qmsi_install_timeout,
+	.feed = reload,
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -184,6 +228,8 @@ static int init(struct device *dev)
 	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->wdt_0_int_mask);
 
 	wdt_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+
+	enable(dev);
 
 	return 0;
 }
