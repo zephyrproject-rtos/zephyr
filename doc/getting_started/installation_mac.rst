@@ -64,20 +64,11 @@ Install tools to build Zephyr binaries:
 .. code-block:: console
 
    brew install cmake ninja dfu-util doxygen qemu dtc python3 gperf
-   cd ~/zephyr   # or to the folder where you cloned the zephyr repo
-   pip3 install --user -r scripts/requirements.txt
+   pip3 install --user -r $ZEPHYR_BASE/scripts/requirements.txt
 
 .. note::
    If ``pip3`` does not seem to have been installed correctly use
    ``brew reinstall python3`` in order to reinstall it.
-
-Source :file:`zephyr-env.sh` wherever you have cloned the Zephyr Git repository:
-
-.. code-block:: console
-
-   unset ZEPHYR_SDK_INSTALL_DIR
-   cd <zephyr git clone location>
-   source zephyr-env.sh
 
 Finally, assuming you are using a 3rd-party toolchain you can try building the :ref:`hello_world` sample to check things out.
 
@@ -119,24 +110,14 @@ repo and run the following command::
 
 Repeat the step for all architectures you want to support in your environment.
 
-To use the toolchain with Zephyr, export the following environment variables
-and use the target location where the toolchain was installed, type:
+To use the toolchain with Zephyr create or modify :ref:`local.cmake
+<getting_started_local_cmake>` with the location where the toolchain
+was installed:
 
-.. code-block:: console
+.. code-block:: CMake
 
-   export ZEPHYR_TOOLCHAIN_VARIANT=xtools
-   export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNGNew/build/output/
-
-
-To use the same toolchain in new sessions in the future you can set the
-variables in the file :file:`${HOME}/.zephyrrc`, for example:
-
-.. code-block:: console
-
-   cat <<EOF > ~/.zephyrrc
-   export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNGNew/build/output/
-   export ZEPHYR_TOOLCHAIN_VARIANT=xtools
-   EOF
+   set(ZEPHYR_TOOLCHAIN_VARIANT xtools)
+   set(XTOOLS_TOOLCHAIN_PATH    /Volumes/CrossToolNGNew/build/output/)
 
 .. note:: In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT``
           variable was called ``ZEPHYR_GCC_VARIANT``.

@@ -87,8 +87,7 @@ On Clear Linux host system:
 
 Install additional packages required for development with Zephyr::
 
-   cd ~/zephyr  # or to your directory where zephyr is cloned
-   pip3 install --user -r scripts/requirements.txt
+   pip3 install --user -r $ZEPHYR_BASE/scripts/requirements.txt
 
 CMake version 3.8.2 or higher is required. Check what version you have using
 ``cmake --version``; if you have an older version, check the backports or
@@ -98,8 +97,8 @@ install a more recent version manually. For example, to install version
    mkdir $HOME/cmake && cd $HOME/cmake
    wget https://cmake.org/files/v3.8/cmake-3.8.2-Linux-x86_64.sh
    yes | sh cmake-3.8.2-Linux-x86_64.sh | cat
-   echo "export PATH=$PWD/cmake-3.8.2-Linux-x86_64/bin:\$PATH" >> $HOME/.zephyrrc
-   source <zephyr git clone location>/zephyr-env.sh
+   echo "export PATH=$PWD/cmake-3.8.2-Linux-x86_64/bin:\$PATH" >> $HOME/.bashrc
+   bash
    cmake --version
 
 .. _zephyr_sdk:
@@ -156,13 +155,9 @@ Follow these steps to install the SDK on your Linux host system.
    To install the SDK in the default location, you need to run the
    installation binary as root.
 
-#. To use the Zephyr SDK, export the following environment variables and
-   use the target location where SDK was installed:
+#. To use the Zephyr SDK create or modify the file :ref:`local.cmake <getting_started_local_cmake>`
+   with the following:
 
-   .. code-block:: console
-
-      export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-      export ZEPHYR_SDK_INSTALL_DIR=<sdk installation directory>
 
    .. note::
       Some Linux distributions have default CFLAGS and CXXFLAGS
@@ -176,12 +171,10 @@ Follow these steps to install the SDK on your Linux host system.
   To use the same toolchain in new sessions in the future, you can set the
   variables in the file :file:`${HOME}/.zephyrrc`, for example:
 
-  .. code-block:: console
+  .. code-block:: CMake
 
-     cat <<EOF > ~/.zephyrrc
-     export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-     export ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
-     EOF
+      set(ZEPHYR_TOOLCHAIN_VARIANT zephyr)
+      set(ZEPHYR_SDK_INSTALL_DIR   /opt/zephyr-sdk/)
 
   .. note::
      Use ``<sdk installation directory>`` in place of ``/opt/zephyr-sdk/`` in the

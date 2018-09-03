@@ -1174,3 +1174,16 @@ function(find_appropriate_cache_directory dir)
 
   set(${dir} ${local_dir} PARENT_SCOPE)
 endfunction()
+
+# Find a directory where it is appropriate to have configuration that
+# is local to this machine. e.g. installation paths.
+function(find_system_configuration_directory dir)
+  if(CMAKE_HOST_APPLE)
+    set(${dir} $ENV{HOME}/Library/Preferences PARENT_SCOPE)
+  elseif(CMAKE_HOST_WIN32)
+    set(${dir} $ENV{LOCALAPPDATA} PARENT_SCOPE)
+  else()
+    # Assume Linux when we did not detect 'mac' or 'win'
+    set(${dir} $ENV{HOME}/.config PARENT_SCOPE)
+  endif()
+endfunction()

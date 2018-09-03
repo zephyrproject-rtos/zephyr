@@ -96,7 +96,34 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 
 include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 
+# Python must be detected before extensions.cmake is used
 find_package(PythonInterp 3.4)
+
+find_system_configuration_directory(dir)
+check_if_directory_is_writeable(${dir} ok)
+if(${ok})
+  set(local_dir ${dir})
+else()
+  # It is not expected that the system configuration directory will
+  # not be writeable, but just in case, we fall back to using the
+  # repo.
+  set(local_dir ${ZEPHYR_BASE})
+endif()
+set(local_cmake ${local_dir}/zephyr/local.cmake)
+
+if(NOT (EXISTS ${local_cmake}))
+  file(
+    COPY ${ZEPHYR_BASE}/cmake/local_template.cmake
+    DESTINATION ${local_dir}/zephyr
+    )
+  file(RENAME
+    ${local_dir}/zephyr/local_template.cmake
+    ${local_cmake}
+    )
+endif()
+
+message("Using system configuration from: ${local_cmake}")
+include(${local_cmake} OPTIONAL)
 
 include(${ZEPHYR_BASE}/cmake/ccache.cmake)
 

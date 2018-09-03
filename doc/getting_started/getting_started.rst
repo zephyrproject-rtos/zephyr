@@ -6,6 +6,8 @@ Getting Started Guide
 Use this guide to get started with your :ref:`Zephyr <introducing_zephyr>`
 development.
 
+.. _getting_started_git_clone:
+
 Checking Out the Source Code Anonymously
 ****************************************
 
@@ -30,6 +32,20 @@ using Git to clone the repository anonymously. Enter:
 You have successfully checked out a copy of the source code to your local
 machine in a ``zephyr`` folder in your home directory.
 
+Zephyr development tools assume the environment variable
+``ZEPHYR_BASE`` is set to the repository path. Here are examples for
+setting this variable on our supported development platforms:
+
+.. code-block:: console
+
+   # With Linux/macOS (bash)
+   export ZEPHYR_BASE=$HOME/zephyr
+   echo "export ZEPHYR_BASE=$HOME/zephyr" >> $HOME/.bashrc
+
+   # On Windows
+   set  ZEPHYR_BASE=%USERPROFILE%\zephyr
+   setx ZEPHYR_BASE %USERPROFILE%\zephyr
+
 .. _getting_started_cmake:
 
 A brief note on the Zephyr build system
@@ -45,6 +61,24 @@ by Zephyr:
 
 Most of the examples in the Zephyr documentation use ``ninja`` as a build tool,
 but you should be able to use any generator on any of the examples listed.
+
+.. _getting_started_local_cmake:
+
+Development Environment Configuration File
+******************************************
+
+A CMake build script is used early in the configuration process to
+replace all uses of environment variables, except for ``ZEPHYR_BASE``.
+The following sections define where this :file:`local.cmake` file
+lives and what to put in it.
+
+The :file:`local.cmake` file location depends on the platform:
+
+======= ============================================
+macOS   $HOME/Library/Preferences/zephyr/local.cmake
+Windows            %LOCALAPPDATA%/zephyr/local.cmake
+Linux               $HOME/.config/zephyr/local.cmake
+======= ============================================
 
 Set Up the Development Environment
 **********************************
@@ -79,25 +113,7 @@ consult its documentation for flashing and running instructions.
 Building a Sample Application
 =============================
 
-Follow these steps to build the :ref:`hello_world` sample application
-provided with Zephyr.
-
-#. Navigate to the main project directory:
-
-   .. code-block:: console
-
-      cd zephyr
-
-#. Set up your build environment:
-
-   .. code-block:: console
-
-      # On Linux/macOS
-      source zephyr-env.sh
-      # On Windows
-      zephyr-env.cmd
-
-#. Build the :ref:`hello_world` example for the `arduino_101` board, enter:
+To build the :ref:`hello_world` example for the `arduino_101` board, enter:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -164,24 +180,22 @@ packaged, the one you compiled on your own, or the one you downloaded from the
 net.  The Zephyr build system doesn't know about them and doesn't officially
 support them.
 
-As already noted above, the SDK also includes prebuilt host tools.  To use the
-SDK's prebuilt host tools alongside a 3rd party or custom cross-compiler, keep
-the ZEPHYR_SDK_INSTALL_DIR environment variable set to the Zephyr SDK
-installation directory. To build without the Zephyr SDK's prebuilt host tools,
-the ZEPHYR_SDK_INSTALL_DIR environment variable must be unset
+As already noted above, the SDK also includes prebuilt host tools. To
+use the SDK's prebuilt host tools alongside a 3rd party or custom
+cross-compiler, keep the ``ZEPHYR_SDK_INSTALL_DIR`` variable set to the
+Zephyr SDK installation directory. To build without the Zephyr SDK's
+prebuilt host tools, the ``ZEPHYR_SDK_INSTALL_DIR`` variable must be
+unset. Check the :ref:`local.cmake <getting_started_local_cmake>` file
+and the environment to make sure it is not being set.
 
-Follow the steps below to build without the Zephyr SDK:
+To unset an environment variable do:
 
    .. code-block:: console
 
       # On Linux/macOS
       unset ZEPHYR_SDK_INSTALL_DIR
-      cd <zephyr git clone location>
-      source zephyr-env.sh
       # On Windows
       set ZEPHYR_SDK_INSTALL_DIR=
-      cd <zephyr git clone location>
-      zephyr-env.cmd
 
 .. _third_party_x_compilers:
 
@@ -196,30 +210,32 @@ SDK, follow the steps below.
    and extract it on your file system. This example assumes the compiler was
    extracted to: :file:`<user folder>/gcc-arm-none-eabi-7-2018-q2-update/`.
 
-#. Build the example :ref:`hello_world` project, enter:
+#. Enable the compiler by creating or modifying the file
+   :ref:`local.cmake <getting_started_local_cmake>` with:
 
-   .. code-block:: console
+   .. code-block:: CMake
 
       # On Linux/macOS
-      export GNUARMEMB_TOOLCHAIN_PATH="~/gcc-arm-none-eabi-7-2018-q2-update/"
-      export ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
+      set(ZEPHYR_TOOLCHAIN_VARIANT gnuarmemb)
+      set(GNUARMEMB_TOOLCHAIN_PATH $ENV{HOME}/gcc-arm-none-eabi-7-2018-q2-update/)
       # On Windows
-      set GNUARMEMB_TOOLCHAIN_PATH="%userprofile%\gcc-arm-none-eabi-7-2018-q2-update\"
-      set ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
+      set(ZEPHYR_TOOLCHAIN_VARIANT gnuarmemb)
+      set(GNUARMEMB_TOOLCHAIN_PATH $ENV{userprofile}\gcc-arm-none-eabi-7-2018-q2-update\)
+
+#. Build the example :ref:`hello_world` project, enter:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
       :board: arduino_due
       :goals: build
 
-Make sure to unset the ZEPHYR_SDK_INSTALL_DIR if you don't use the
+Make sure to unset the ``ZEPHYR_SDK_INSTALL_DIR`` if you don't use the
 SDK's host tools. See `Building without the Zephyr SDK`_ for details.
 
 It is possible to use the Zephyr SDK's host tools along with a 3rd
-party cross compiler. To do that, keep the ZEPHYR_SDK_INSTALL_DIR
-environment variable set to the Zephyr SDK installation directory.
-See `Set Up the Development Environment`_ for more details on the
-ZEPHYR_SDK_INSTALL_DIR environment variable.
+party cross compiler. To do that, keep ``ZEPHYR_SDK_INSTALL_DIR`` set to
+the Zephyr SDK installation directory.  See `Set Up the Development
+Environment`_ for more details on ``ZEPHYR_SDK_INSTALL_DIR``.
 
 Using Custom Cross Compilers
 ============================
@@ -236,14 +252,16 @@ To use a custom cross compiler, follow the steps below.
       # On Fedora or Red hat
       sudo dnf install arm-none-eabi-newlib
 
+#. Enable the compiler by creating or modifying the file
+   :ref:`local.cmake <getting_started_local_cmake>` with:
+
+   .. code-block:: CMake
+
+      # On Linux/macOS
+      set(ZEPHYR_TOOLCHAIN_VARIANT cross-compile)
+      set(CROSS_COMPILE /usr/bin/arm-none-eabi-)
+
 #. Build the example :ref:`hello_world` project, enter:
-
-   .. code-block:: console
-
-      # On Linux
-      unset GNUARMEMB_TOOLCHAIN_PATH
-      export ZEPHYR_TOOLCHAIN_VARIANT=cross-compile
-      export CROSS_COMPILE=/usr/bin/arm-none-eabi-
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -252,14 +270,14 @@ To use a custom cross compiler, follow the steps below.
 
 Note that the Zephyr build system assumes that all the tools within your
 toolchain used to compile and link your code, reside in the same directory and
-have a common prefix.  Set the ``CROSS_COMPILE`` environment variable to the
+have a common prefix.  Set the ``CROSS_COMPILE`` variable to the
 path of your toolchain's location and that common prefix. In the example above,
 gcc-arm-none-eabi is installed in ``/usr/bin/`` with the common prefix of
 ``arm-none-eabi-``.  If your toolchain is at ``/opt/mytoolchain/bin`` with the
 prefix of ``myarch-none-elf-``, it would be
-``CROSS_COMPILE=/opt/mytoolchain/bin/arch-none-elf-``.
+``set(CROSS_COMPILE /opt/mytoolchain/bin/arch-none-elf-)``.
 
-Make sure to unset the ZEPHYR_SDK_INSTALL_DIR if you don't use the SDK's host
+Make sure to unset the ``ZEPHYR_SDK_INSTALL_DIR`` if you don't use the SDK's host
 tools. See `Building without the Zephyr SDK`_ and `Set Up the Development
 Environment`_ for more details.
 

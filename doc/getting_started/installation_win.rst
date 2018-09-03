@@ -75,17 +75,13 @@ packages from their respective websites.
 
 #. Open a Command Prompt (`cmd.exe`) as a **regular user**.
 
-#. Clone a copy of the Zephyr source into your home directory using Git.
+#. Install the required Python modules, if the repository has not been
+   cloned yet see :ref:`Checking Out the Source Code
+   <getting_started_git_clone>`
 
    .. code-block:: console
 
-      cd %userprofile%
-      git clone https://github.com/zephyrproject-rtos/zephyr.git
-
-#. Install the required Python modules::
-
-      cd %userprofile%\zephyr
-      pip3 install -r scripts/requirements.txt
+      pip3 install -r %ZEPHYR_BASE%/scripts/requirements.txt
 
 .. note::
       Although pip can install packages in the user's directory by means
@@ -115,34 +111,24 @@ packages from their respective websites.
    * For ARM, install GNU ARM Embedded from the ARM developer website:
      `GNU ARM Embedded`_ (install to :file:`c:\\gnuarmemb`).
 
-#. Within the Command Prompt, set up environment variables for the installed
-   tools and for the Zephyr environment:
+#. To use the toolchain create or modify the file :ref:`local.cmake
+   <getting_started_local_cmake>` with the following:
 
    For x86:
 
-   .. code-block:: console
+   .. code-block:: CMake
 
-      set ZEPHYR_TOOLCHAIN_VARIANT=issm
-      set ISSM_INSTALLATION_PATH=c:\issm0-toolchain-windows-2017-01-25
+      set(ZEPHYR_TOOLCHAIN_VARIANT issm)
+      set(ISSM_INSTALLATION_PATH   c:\issm0-toolchain-windows-2017-01-25)
 
    Use the path where you extracted the ISSM toolchain.
 
    For ARM:
 
-   .. code-block:: console
+   .. code-block:: CMake
 
-      set ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
-      set GNUARMEMB_TOOLCHAIN_PATH=c:\gnuarmemb
-
-   To use the same toolchain in new sessions in the future you can set the
-   variables in the file :file:`%userprofile%\\zephyrrc.cmd`.
-
-   And for either, run the :file:`zephyr-env.cmd` file in order to set the
-   :makevar:`ZEPHYR_BASE` environment variable:
-
-   .. code-block:: console
-
-      zephyr-env.cmd
+      set(ZEPHYR_TOOLCHAIN_VARIANT gnuarmemb)
+      set(GNUARMEMB_TOOLCHAIN_PATH c:\gnuarmemb)
 
 .. note:: In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT``
           variable was called ``ZEPHYR_GCC_VARIANT``.
