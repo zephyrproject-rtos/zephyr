@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef _FSL_TSC_H_
@@ -42,7 +20,7 @@
 * Definitions
 ******************************************************************************/
 /*! @brief TSC driver version */
-#define FSL_TSC_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Version 2.0.0. */
+#define FSL_TSC_DRIVER_VERSION (MAKE_VERSION(2, 0, 1)) /*!< Version 2.0.1. */
 
 /*!
 * @ Controller detection mode.
@@ -180,16 +158,16 @@ typedef enum _tsc_glitch_threshold
 {
     kTSC_glitchThresholdALT0 =
         0U << TSC_DEBUG_MODE2_DE_GLITCH_SHIFT, /*!< Normal function: 0x1fff ipg clock cycles, Low power mode: 0x9 low
-                                                          power clock cycles. */
+                                                           power clock cycles. */
     kTSC_glitchThresholdALT1 =
         1U << TSC_DEBUG_MODE2_DE_GLITCH_SHIFT, /*!< Normal function: 0xfff ipg clock cycles, Low power mode: :0x7 low
-                                                          power clock cycles. */
+                                                           power clock cycles. */
     kTSC_glitchThresholdALT2 =
         2U << TSC_DEBUG_MODE2_DE_GLITCH_SHIFT, /*!< Normal function: 0x7ff ipg clock cycles, Low power mode: :0x5 low
-                                                          power clock cycles. */
+                                                           power clock cycles. */
     kTSC_glitchThresholdALT3 =
         3U << TSC_DEBUG_MODE2_DE_GLITCH_SHIFT, /*!< Normal function: 0x3 ipg clock cycles, Low
-                                                          power mode: :0x3 low power clock cycles. */
+                                                           power mode: :0x3 low power clock cycles. */
 } tsc_glitch_threshold_t;
 
 /*!
@@ -541,11 +519,4 @@ void TSC_DebugEnableDetection(TSC_Type *base, tsc_detection_mode_t detectionMode
 * @param mode TSC port mode.(pull down, pull up and 200k-pull up)
 */
 void TSC_DebugSetPortMode(TSC_Type *base, tsc_port_source_t port, tsc_port_mode_t mode);
-
-#if defined(__cplusplus)
-}
-#endif /* __cplusplus*/
-
-/*! @}*/
-
 #endif /* _FSL_TSC_H_ */

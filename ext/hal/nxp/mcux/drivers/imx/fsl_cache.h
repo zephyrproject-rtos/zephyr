@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * All rights reserved.
+ * 
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_CACHE_H_
 #define _FSL_CACHE_H_
@@ -47,15 +25,15 @@
 #define FSL_CACHE_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
 /*@}*/
 
-#if (FSL_FEATURE_SOC_L2CACHEC_COUNT > 0)
+#if defined(FSL_FEATURE_SOC_L2CACHEC_COUNT) && FSL_FEATURE_SOC_L2CACHEC_COUNT
 #ifndef FSL_SDK_DISBLE_L2CACHE_PRESENT
 #define FSL_SDK_DISBLE_L2CACHE_PRESENT   0
 #endif
-#endif /* (FSL_FEATURE_SOC_L2CACHEC_COUNT > 0) */
+#endif /* FSL_FEATURE_SOC_L2CACHEC_COUNT */
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-#if (FSL_FEATURE_SOC_L2CACHEC_COUNT > 0)
+#if defined(FSL_FEATURE_SOC_L2CACHEC_COUNT) && FSL_FEATURE_SOC_L2CACHEC_COUNT
 
 /*! @brief Number of level 2 cache controller ways. */
 typedef enum _l2cache_way_num
@@ -133,7 +111,7 @@ typedef struct _l2cache_config
     /* ------------------------ other settings -------------------------------------- */
     l2cache_writealloc_t  writeAlloc;/*!< Write allcoate force option. */     
 } l2cache_config_t;
-#endif  /* (FSL_FEATURE_SOC_L2CACHEC_COUNT > 0) */
+#endif  /* FSL_FEATURE_SOC_L2CACHEC_COUNT */
 /*******************************************************************************
  * API
  ******************************************************************************/
@@ -286,7 +264,7 @@ static inline void L1CACHE_CleanInvalidateDCacheByRange(uint32_t address, uint32
 }
 /*@}*/
 
-#if (FSL_FEATURE_SOC_L2CACHEC_COUNT > 0)
+#if defined(FSL_FEATURE_SOC_L2CACHEC_COUNT) && FSL_FEATURE_SOC_L2CACHEC_COUNT
 /*!
  * @name Control for L2 pl310 cache
  *@{
@@ -414,7 +392,7 @@ void L2CACHE_CleanInvalidateByRange(uint32_t address, uint32_t size_byte);
 void L2CACHE_LockdownByWayEnable(uint32_t masterId, uint32_t mask, bool enable);
 
 /*@}*/
-#endif /* (FSL_FEATURE_SOC_L2CACHEC_COUNT > 0) */
+#endif /* FSL_FEATURE_SOC_L2CACHEC_COUNT */
 
 /*!
  * @name Unified Cache Control for all caches (cortex-m7 L1 cache + l2 pl310)
