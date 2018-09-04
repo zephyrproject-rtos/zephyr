@@ -35,10 +35,25 @@ source "subsys/net/ip/Kconfig.ipv4"
 
 config NET_SHELL
 	bool "Enable network shell utilities"
-	select CONSOLE_SHELL
+	select SHELL
 	help
 	  Activate shell module that provides network commands like
 	  ping to the console.
+
+config NET_SHELL_DYN_CMD_COMPLETION
+	bool "Enable network shell dynamic command completion"
+	depends on NET_SHELL
+	default y
+	help
+	  Enable various net-shell command to support dynamic command
+	  completion. This means that for example the nbr command can
+	  automatically complete the neighboring IPv6 address and user
+	  does not need to type it manually.
+	  Please note that this uses more memory in order to save the
+	  dynamic command strings. For example for nbr command the
+	  increase is 320 bytes (8 neighbors * 40 bytes for IPv6 address
+	  length) by default. Other dynamic completion commands in
+	  net-shell require also some smaller amount of memory.
 
 config NET_TC_TX_COUNT
 	int "How many Tx traffic classes to have for each network device"

@@ -45,7 +45,6 @@ extern void net_if_carrier_down(struct net_if *iface);
 extern void net_context_init(void);
 enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt);
 enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt);
-extern void net_ipv6_init(void);
 extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
 extern void net_tc_submit_to_tx_queue(u8_t tc, struct net_pkt *pkt);
