@@ -314,7 +314,7 @@ static void gptp_mi_pss_rcv_compute(int port)
 	port_ds->sync_receipt_timeout_time_itv = port_ds->sync_receipt_timeout;
 	port_ds->sync_receipt_timeout_time_itv *= NSEC_PER_SEC;
 	port_ds->sync_receipt_timeout_time_itv *=
-		GPTP_POW2(16 + sync_rcv->log_msg_interval);
+		GPTP_POW2(sync_rcv->log_msg_interval);
 
 	pss->local_port_number = port;
 
@@ -322,7 +322,7 @@ static void gptp_mi_pss_rcv_compute(int port)
 
 	pss->sync_receipt_timeout_time = gptp_get_current_time_nanosecond(port);
 	pss->sync_receipt_timeout_time +=
-		(port_ds->sync_receipt_timeout_time_itv >> 16);
+		port_ds->sync_receipt_timeout_time_itv;
 
 	pss->sync_info.rate_ratio = state->rate_ratio;
 }
@@ -332,8 +332,7 @@ static void start_rcv_sync_timer(struct gptp_port_ds *port_ds,
 {
 	s32_t duration;
 
-	duration = (port_ds->sync_receipt_timeout_time_itv >> 16) /
-		(NSEC_PER_SEC / MSEC_PER_SEC);
+	duration = port_ds->sync_receipt_timeout_time_itv;
 
 	k_timer_start(&state->rcv_sync_receipt_timeout_timer, duration, 0);
 }
