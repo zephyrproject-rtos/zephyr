@@ -195,8 +195,11 @@ set(CACHED_BOARD ${BOARD} CACHE STRING "Selected board")
 if(NOT BOARD_ROOT)
   set(BOARD_ROOT ${ZEPHYR_BASE})
 endif()
+
 if(NOT SOC_ROOT)
-  set(SOC_ROOT ${ZEPHYR_BASE})
+  set(SOC_DIR ${ZEPHYR_BASE}/soc)
+else()
+  set(SOC_DIR ${SOC_ROOT}/soc)
 endif()
 
 find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS ${BOARD_ROOT}/boards/*/* NO_DEFAULT_PATH)

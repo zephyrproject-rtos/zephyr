@@ -22,6 +22,7 @@ set(ENV{KCONFIG_AUTOHEADER} ${AUTOCONF_H})
 # files for other architectures
 set(ENV{ARCH}      ${ARCH})
 set(ENV{BOARD_DIR} ${BOARD_DIR})
+set(ENV{SOC_DIR}   ${SOC_DIR})
 
 add_custom_target(
   menuconfig
