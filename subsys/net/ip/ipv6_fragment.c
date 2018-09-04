@@ -761,8 +761,8 @@ fail:
 int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 				 u16_t pkt_len)
 {
+	struct net_buf *rest = NULL;
 	struct net_pkt *clone;
-	struct net_buf *rest;
 	struct net_buf *temp;
 	u16_t next_hdr_idx;
 	u16_t last_hdr_idx;
