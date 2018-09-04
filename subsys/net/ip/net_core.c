@@ -414,6 +414,8 @@ static int net_init(struct device *unused)
 	}
 #endif
 
+	net_shell_init();
+
 	return status;
 }
 
