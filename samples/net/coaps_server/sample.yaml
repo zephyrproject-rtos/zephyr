@@ -1,7 +1,0 @@
-sample:
-  name: COAP Server with DTLS
-tests:
-  test:
-    harness: net
-    depends_on: netif
-    tags: net coap
