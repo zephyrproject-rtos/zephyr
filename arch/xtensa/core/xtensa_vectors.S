@@ -178,7 +178,6 @@
 #endif
 #endif
 
-#endif
     #ifdef XT_INTEXC_HOOKS
     /* Call interrupt hook if present to (pre)handle interrupts. */
     movi    a4, _xt_intexc_hooks
