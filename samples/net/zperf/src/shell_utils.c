@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_zperf_shell_utils
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
+
 #include <ctype.h>
 #include <misc/printk.h>
 #include <stdio.h>
