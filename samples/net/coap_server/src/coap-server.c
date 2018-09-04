@@ -737,7 +737,7 @@ static int large_get(struct coap_resource *resource,
 	size = min(coap_block_size_to_bytes(ctx.block_size),
 		   ctx.total_size - ctx.current);
 
-	memset(payload, 'A', size);
+	memset(payload, 'A', min(size, sizeof(payload)));
 
 	r = coap_packet_append_payload(&response, (u8_t *)payload, size);
 	if (r < 0) {
