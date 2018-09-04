@@ -105,6 +105,13 @@
 	};
 };
 
+&spi3 {
+	status = "ok";
+	sck-pin = <19>;
+	mosi-pin = <20>;
+	miso-pin = <21>;
+};
+
 &flash0 {
 	/*
 	 * For more information, see:

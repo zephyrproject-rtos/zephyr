@@ -87,6 +87,24 @@
 	scl-pin = <31>;
 };
 
+/*
+ * By default, not adding all available SPI instances (spi2, spi3) due to
+ * limited GPIOs available on dongle board.
+ */
+&spi0 {
+	status = "ok";
+	sck-pin = <27>;
+	mosi-pin = <26>;
+	miso-pin = <42>;
+};
+
+&spi1 {
+	status = "ok";
+	sck-pin = <31>;
+	mosi-pin = <30>;
+	miso-pin = <45>;
+};
+
 &flash0 {
 	/*
 	 * For more information, see:

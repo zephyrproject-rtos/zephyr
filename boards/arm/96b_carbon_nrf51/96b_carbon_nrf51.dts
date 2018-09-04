@@ -31,3 +31,11 @@
 	current-speed = <115200>;
 	status = "ok";
 };
+
+&spi1 {
+	status = "ok";
+	sck-pin = <7>;
+	mosi-pin = <0>;
+	miso-pin = <30>;
+	csn-pin = <25>;
+};

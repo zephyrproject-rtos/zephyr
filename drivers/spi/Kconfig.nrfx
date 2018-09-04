@@ -6,6 +6,7 @@
 menuconfig SPI_NRFX
 	bool "nRF SPI nrfx drivers"
 	depends on SOC_FAMILY_NRF
+	select HAS_DTS_SPI
 	help
 	  Enable support for nrfx SPI drivers for nRF MCU series.
 	  Peripherals with the same instance ID cannot be used together,
@@ -52,27 +53,6 @@ endchoice
 
 if SPI_0_NRF_SPI || SPI_0_NRF_SPIM || SPI_0_NRF_SPIS
 
-config SPI_0_NRF_SCK_PIN
-	int "SCK pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for SCK.
-
-config SPI_0_NRF_MOSI_PIN
-	int "MOSI pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MOSI.
-
-config SPI_0_NRF_MISO_PIN
-	int "MISO pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MISO.
-
 config SPI_0_NRF_ORC
 	hex "Over-read Character"
 	range 0x00 0xff
@@ -84,13 +64,6 @@ config SPI_0_NRF_ORC
 endif # SPI_0_NRF_SPI || SPI_0_NRF_SPIM || SPI_0_NRF_SPIS
 
 if SPI_0_NRF_SPIS
-
-config SPI_0_NRF_CSN_PIN
-	int "CSN pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for Chip Select.
 
 config SPI_0_NRF_DEF
 	hex "Default Character"
@@ -140,27 +113,6 @@ endchoice
 
 if SPI_1_NRF_SPI || SPI_1_NRF_SPIM || SPI_1_NRF_SPIS
 
-config SPI_1_NRF_SCK_PIN
-	int "SCK pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for SCK.
-
-config SPI_1_NRF_MOSI_PIN
-	int "MOSI pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MOSI.
-
-config SPI_1_NRF_MISO_PIN
-	int "MISO pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MISO.
-
 config SPI_1_NRF_ORC
 	hex "Over-read Character"
 	range 0x00 0xff
@@ -172,13 +124,6 @@ config SPI_1_NRF_ORC
 endif # SPI_1_NRF_SPI || SPI_1_NRF_SPIM || SPI_1_NRF_SPIS
 
 if SPI_1_NRF_SPIS
-
-config SPI_1_NRF_CSN_PIN
-	int "CSN pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for Chip Select.
 
 config SPI_1_NRF_DEF
 	hex "Default Character"
@@ -227,27 +172,6 @@ endchoice
 
 if SPI_2_NRF_SPI || SPI_2_NRF_SPIM || SPI_2_NRF_SPIS
 
-config SPI_2_NRF_SCK_PIN
-	int "SCK pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for SCK.
-
-config SPI_2_NRF_MOSI_PIN
-	int "MOSI pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MOSI.
-
-config SPI_2_NRF_MISO_PIN
-	int "MISO pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MISO.
-
 config SPI_2_NRF_ORC
 	hex "Over-read Character"
 	range 0x00 0xff
@@ -259,13 +183,6 @@ config SPI_2_NRF_ORC
 endif # SPI_2_NRF_SPI || SPI_2_NRF_SPIM || SPI_2_NRF_SPIS
 
 if SPI_2_NRF_SPIS
-
-config SPI_2_NRF_CSN_PIN
-	int "CSN pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for Chip Select.
 
 config SPI_2_NRF_DEF
 	hex "Default Character"
@@ -288,27 +205,6 @@ config SPI_3_NRF_SPIM
 	default y
 
 if SPI_3_NRF_SPIM
-
-config SPI_3_NRF_SCK_PIN
-	int "SCK pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for SCK
-
-config SPI_3_NRF_MOSI_PIN
-	int "MOSI pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MOSI
-
-config SPI_3_NRF_MISO_PIN
-	int "MISO pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MISO
 
 config SPI_3_NRF_ORC
 	hex "Over-read Character"

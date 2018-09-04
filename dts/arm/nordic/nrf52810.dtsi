@@ -85,6 +85,16 @@
 			label = "I2C_0";
 		};
 
+		spi0: spi@40004000 {
+			compatible = "nordic,nrf-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40004000 0x1000>;
+			interrupts = <4 1>;
+			status = "disabled";
+			label = "SPI_0";
+		};
+
 		wdt: watchdog@40010000 {
 			compatible = "nordic,nrf-watchdog";
 			reg = <0x40010000 0x1000>;
