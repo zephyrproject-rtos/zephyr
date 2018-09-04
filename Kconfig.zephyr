@@ -20,6 +20,10 @@ source "$(BOARD_DIR)/Kconfig.defconfig"
 
 source "soc/$(ARCH)/*/Kconfig.defconfig"
 
+source "boards/Kconfig"
+
+source "soc/Kconfig"
+
 source "arch/Kconfig"
 
 source "kernel/Kconfig"

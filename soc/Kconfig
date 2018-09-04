@@ -1,0 +1,12 @@
+
+choice
+	prompt "SoC/CPU/Configuration Selection"
+
+source "soc/$ENV_VAR_ARCH/*/Kconfig.soc"
+
+endchoice
+
+menu "Hardware Configuration"
+osource "soc/$ENV_VAR_ARCH/*/Kconfig"
+
+endmenu
