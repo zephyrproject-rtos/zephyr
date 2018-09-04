@@ -77,7 +77,7 @@ def main():
     # warnings, even if one of them turns out to be fatal
     for warning in kconf.warnings:
         if enabled(warning):
-            print(warning, file=sys.stderr)
+            print("\n" + warning, file=sys.stderr)
 
     # Turn all warnings except for explicity whitelisted ones into errors. In
     # particular, this will turn assignments to undefined Kconfig variables
@@ -88,13 +88,13 @@ def main():
     # now as well.
     for warning in kconf.warnings:
         if fatal(warning):
-            sys.exit(textwrap.fill(
+            sys.exit("\n" + textwrap.fill(
                 "Error: Aborting due to non-whitelisted Kconfig "
                 "warning '{}'.\nNote: If this warning doesn't point "
                 "to an actual problem, you can add it to the "
                 "whitelist at the top of {}."
                 .format(warning, sys.argv[0]),
-                100))
+                100) + "\n")
 
     # Write the merged configuration and the C header
     kconf.write_config(args.dotconfig)
@@ -144,7 +144,7 @@ def verify_assigned_sym_value(sym):
 
         # Use a large fill() width to try to avoid linebreaks in the symbol
         # reference link
-        print(textwrap.fill(msg, 100), file=sys.stderr)
+        print("\n" + textwrap.fill(msg, 100), file=sys.stderr)
 
 
 def verify_assigned_choice_value(choice):
@@ -168,7 +168,7 @@ def verify_assigned_choice_value(choice):
                           else "no symbol",
                       SYM_INFO_HINT.format(choice.user_selection.name))
 
-        print(textwrap.fill(msg, 100), file=sys.stderr)
+        print("\n" + textwrap.fill(msg, 100), file=sys.stderr)
 
 
 def name_and_loc(sym):
