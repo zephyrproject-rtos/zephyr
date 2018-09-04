@@ -359,14 +359,18 @@ static void onoff_work_handler(struct k_work *work)
 
 static void level_lightness_work_handler(struct k_work *work)
 {
+	u8_t level;
 	struct generic_level_state *state = &gen_level_srv_root_user_data;
 
 	switch (enable_transition) {
 	case LEVEL_TT:
+		level = LEVEL;
 		break;
 	case LEVEL_TT_DELTA:
+		level = DELTA_LEVEL;
 		break;
 	case LEVEL_TT_MOVE:
+		level = LEVEL;
 		break;
 	default:
 		k_timer_stop(&level_lightness_transition_timer);
@@ -377,7 +381,7 @@ static void level_lightness_work_handler(struct k_work *work)
 		state->is_new_transition_start = false;
 
 		if (state->tt_counter == 0) {
-			state_binding(LEVEL, IGNORE_TEMP);
+			state_binding(level, IGNORE_TEMP);
 			update_light_state();
 
 			k_timer_stop(&level_lightness_transition_timer);
@@ -393,14 +397,14 @@ static void level_lightness_work_handler(struct k_work *work)
 
 		state->level -= state->tt_delta;
 
-		state_binding(LEVEL, IGNORE_TEMP);
+		state_binding(level, IGNORE_TEMP);
 		update_light_state();
 	}
 
 	if (state->tt_counter == 0) {
 		state->level = state->target_level;
 
-		state_binding(LEVEL, IGNORE_TEMP);
+		state_binding(level, IGNORE_TEMP);
 		update_light_state();
 
 		k_timer_stop(&level_lightness_transition_timer);
