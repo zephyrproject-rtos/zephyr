@@ -1,15 +1,16 @@
 #
 # Copyright (c) 2018 Aapo Vienamo
+# Copyright (c) 2018 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
-title: Nordic nRF5 Family I2C Master node
-id: nordic,nrf5-i2c
+title: Nordic nRF Family I2C Master node
+id: nordic,nrf-i2c
 version: 0.1
 
 description: >
-    This is a representation of the Nordic nRF5 I2C node
+    This is a representation of the Nordic nRF I2C node
 
 inherits:
     !include i2c.yaml
@@ -19,7 +20,7 @@ properties:
       type: string
       category: required
       description: compatible strings
-      constraint: "nordic,nrf5-i2c"
+      constraint: "nordic,nrf-i2c"
 
     reg:
       type: array
