@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_zperf_tcp_send
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
+
 #include <zephyr.h>
 
 #include <errno.h>
