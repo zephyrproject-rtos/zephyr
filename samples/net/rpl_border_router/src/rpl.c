@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if 1
-#define SYS_LOG_DOMAIN "rpl-br/rpl"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_rpl_br_rpl
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 #include <zephyr.h>
 #include <stdio.h>
@@ -44,18 +41,21 @@ static bool br_join_dag(struct net_rpl_dio *dio)
 			rpl.dag_init_version = dio->version;
 			rpl.dag_has_version = true;
 		}
-#if CONFIG_SYS_LOG_NET_LEVEL > 3
 	} else {
-		char me[NET_IPV6_ADDR_LEN];
-		char other[NET_IPV6_ADDR_LEN];
+		if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+			char me[NET_IPV6_ADDR_LEN];
+			char other[NET_IPV6_ADDR_LEN];
 
-		net_addr_ntop(AF_INET6, &dio->dag_id, other,
-			      NET_IPV6_ADDR_LEN);
-		net_addr_ntop(AF_INET6, &rpl.dag_id, me, NET_IPV6_ADDR_LEN);
+			net_addr_ntop(AF_INET6, &dio->dag_id, other,
+				      NET_IPV6_ADDR_LEN);
+			net_addr_ntop(AF_INET6, &rpl.dag_id, me,
+				      NET_IPV6_ADDR_LEN);
 
-		NET_DBG("Other root %s, me %s, DIO version %d instance %d",
-			other, me, dio->version, dio->instance_id);
-#endif
+			NET_DBG("Other root %s, me %s, "
+				"DIO version %d instance %d",
+				other, me,
+				dio->version, dio->instance_id);
+		}
 	}
 
 	return 0;
@@ -118,8 +118,7 @@ bool setup_rpl(struct net_if *iface, const char *addr_prefix)
 		return false;
 	}
 
-#if CONFIG_SYS_LOG_NET_LEVEL > 3
-	{
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		char out[NET_IPV6_ADDR_LEN];
 
 		if (net_addr_ntop(AF_INET6, &rpl.prefix, out,
@@ -134,7 +133,6 @@ bool setup_rpl(struct net_if *iface, const char *addr_prefix)
 			}
 		}
 	}
-#endif
 
 	return true;
 }
