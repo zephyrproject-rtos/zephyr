@@ -50,9 +50,9 @@ zephyr_library_named(zephyr)
 zephyr_include_directories(
   kernel/include
   arch/${ARCH}/include
-  soc/${ARCH}/${SOC_PATH}
-  soc/${ARCH}/${SOC_PATH}/include
-  soc/${ARCH}/${SOC_FAMILY}/include
+  ${SOC_DIR}/${ARCH}/${SOC_PATH}
+  ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
+  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/include
   ${BOARD_DIR}
   include
   include/drivers
@@ -295,7 +295,7 @@ else()
   set(LINKER_SCRIPT ${BOARD_DIR}/linker.ld)
   if(NOT EXISTS ${LINKER_SCRIPT})
     # If not available, try an SoC specific linker file
-    set(LINKER_SCRIPT ${ZEPHYR_BASE}/soc/${ARCH}/${SOC_PATH}/linker.ld)
+    set(LINKER_SCRIPT ${SOC_DIR}/${ARCH}/${SOC_PATH}/linker.ld)
   endif()
 endif()
 
@@ -337,9 +337,9 @@ add_subdirectory(misc)
 include(misc/generated/CMakeLists.txt)
 
 if(EXISTS soc/${ARCH}/CMakeLists.txt)
-  add_subdirectory(soc/${ARCH})
+  add_subdirectory(${SOC_DIR}/${ARCH} soc/${ARCH})
 else()
-  add_subdirectory(soc/${ARCH}/${SOC_PATH})
+  add_subdirectory(${SOC_DIR}/${ARCH}/${SOC_PATH} soc/${ARCH}/${SOC_PATH})
 endif()
 
 add_subdirectory(boards)

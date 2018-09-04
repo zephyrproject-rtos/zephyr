@@ -117,6 +117,7 @@ add_custom_target(
   srctree=${ZEPHYR_BASE}
   BOARD_DIR=boards/*/*/
   ARCH=*
+  SOC_DIR=soc/
   KERNELVERSION=${PROJECT_VERSION}
   SRCARCH=x86
   ${PYTHON_EXECUTABLE} scripts/genrest.py Kconfig ${RST_OUT}/doc/reference/kconfig/
