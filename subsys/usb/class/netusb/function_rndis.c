@@ -1001,7 +1001,7 @@ static int rndis_send(struct net_pkt *pkt)
 		return -EPIPE;
 	}
 
-	net_hexdump_frags("<", pkt);
+	net_hexdump_frags("<", pkt, true);
 
 	if (!pkt->frags) {
 		return -ENODATA;
