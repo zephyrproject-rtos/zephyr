@@ -85,20 +85,22 @@ else()
       )
   endif()
 
-  execute_process(
-    COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
-    OUTPUT_VARIABLE LIBGCC_FILE_NAME
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+  if(NOT no_libgcc)
+    execute_process(
+      COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
+      OUTPUT_VARIABLE LIBGCC_FILE_NAME
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
 
-  assert_exists(LIBGCC_FILE_NAME)
+    assert_exists(LIBGCC_FILE_NAME)
 
-  get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
+    get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
 
-  assert_exists(LIBGCC_DIR)
+    assert_exists(LIBGCC_DIR)
 
-  LIST(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
-  LIST(APPEND TOOLCHAIN_LIBS gcc)
+    LIST(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
+    LIST(APPEND TOOLCHAIN_LIBS gcc)
+  endif()
 
   if(SYSROOT_DIR)
     # The toolchain has specified a sysroot dir that we can use to set
