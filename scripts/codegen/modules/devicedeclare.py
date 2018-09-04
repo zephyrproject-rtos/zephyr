@@ -183,18 +183,8 @@ def device_declare_single(device_config,
                           device_info,
                           device_defaults = {}):
     device_configured = codegen.config_property(device_config, '<not-set>')
-    if device_configured == '<not-set>' or device_configured[-1] == '0':
-        # Not configured - do not generate
-        #
-        # The generation decision must be taken by codegen here
-        # (vs. #define CONFIG_xxx) to cope with the following situation:
-        #
-        # If config is not set the device may also be not activated in the
-        # device tree. No device tree info is available in this case.
-        # An attempt to generate code without the DTS info
-        # will lead to an exception for a valid situation.
-        codegen.outl("/* !!! '{}' not configured !!! */".format(driver_name))
-        return False
+
+    codegen.outl('\n#ifdef {}\n'.format(device_config))
 
     device_id = codegen.edts().get_device_id_by_label(driver_name)
     if device_id is None:
@@ -220,6 +210,10 @@ def device_declare_single(device_config,
     # device init
     codegen.outl(_device_template_substitute(_device_and_api_init_tmpl,
                                              device_id, preset))
+
+    codegen.outl('')
+    codegen.outl('#endif /* {} */\n'.format(device_config))
+
     return True
 
 ##
