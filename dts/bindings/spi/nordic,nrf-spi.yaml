@@ -1,0 +1,60 @@
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: BSD-5-Clause-Nordic
+#
+---
+title: Nordic nRF Family SPI Master node
+id: nordic,nrf-spi
+version: 0.1
+
+description: >
+    This is a representation of the Nordic nRF SPI node
+
+inherits:
+    !include spi.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nordic,nrf-spi"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    sck-pin:
+      type: int
+      description: SCK pin
+      generation: define
+      category: required
+
+    mosi-pin:
+      type: int
+      description: MOSI pin
+      generation: define
+      category: required
+
+    miso-pin:
+      type: int
+      description: MISO pin
+      generation: define
+      category: required
+
+    csn-pin:
+      type: int
+      description: CSN pin
+      generation: define
+      category: optional
+
+...
