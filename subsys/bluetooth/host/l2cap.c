@@ -1355,6 +1355,22 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 	BT_DBG("chan %p credits %u", chan, k_sem_count_get(&chan->rx.credits));
 }
 
+static void l2cap_chan_update_credits(struct bt_l2cap_le_chan *chan,
+				      struct net_buf *buf)
+{
+	s16_t credits;
+
+	/* Restore enough credits to complete the sdu */
+	credits = ((chan->_sdu_len - net_buf_frags_len(buf)) +
+		   (chan->rx.mps - 1)) / chan->rx.mps;
+	credits -= k_sem_count_get(&chan->rx.credits);
+	if (credits <= 0) {
+		return;
+	}
+
+	l2cap_chan_send_credits(chan, buf, credits);
+}
+
 int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_l2cap_le_chan *ch = BT_L2CAP_LE_CHAN(chan);
@@ -1468,6 +1484,14 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 	}
 
 	if (net_buf_frags_len(chan->_sdu) < chan->_sdu_len) {
+		/* Give more credits if remote has run out of them, this
+		 * should only happen if the remote cannot fully utilize the
+		 * MPS for some reason.
+		 */
+		if (!k_sem_count_get(&chan->rx.credits) &&
+		    seg == chan->rx.init_credits) {
+			l2cap_chan_update_credits(chan, buf);
+		}
 		return;
 	}
 
