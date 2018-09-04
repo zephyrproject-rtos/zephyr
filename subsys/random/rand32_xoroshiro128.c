@@ -103,5 +103,5 @@ u32_t sys_rand32_get(void)
 /* In-tree entropy drivers will initialize in PRE_KERNEL_1; ensure that they're
  * initialized properly before initializing ourselves.
  */
-SYS_INIT(xoroshiro128_initialize, PRE_KERNEL_2,
+SYS_INIT(xoroshiro128_initialize, POST_KERNEL,
 	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
