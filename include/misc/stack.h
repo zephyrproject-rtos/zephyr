@@ -18,13 +18,14 @@
 static inline size_t stack_unused_space_get(const char *stack, size_t size)
 {
 	size_t unused = 0;
-	int i;
 
 #ifdef CONFIG_STACK_SENTINEL
 	/* First 4 bytes of the stack buffer reserved for the sentinel
 	 * value, it won't be 0xAAAAAAAA for thread stacks.
 	 */
-	stack += 4;
+	const unsigned char *checked_stack = (const unsigned char *)stack + 4;
+#else
+	const unsigned char *checked_stack = (const unsigned char *)stack;
 #endif
 
 	/* TODO Currently all supported platforms have stack growth down and
@@ -34,16 +35,18 @@ static inline size_t stack_unused_space_get(const char *stack, size_t size)
 	 * that correct Kconfig option is used.
 	 */
 #if defined(CONFIG_STACK_GROWS_UP)
+	int i;
 	for (i = size - 1; i >= 0; i--) {
-		if ((unsigned char)stack[i] == 0xaa) {
+		if (checked_stack[i] == 0xaaU) {
 			unused++;
 		} else {
 			break;
 		}
 	}
 #else
+	size_t i;
 	for (i = 0; i < size; i++) {
-		if ((unsigned char)stack[i] == 0xaa) {
+		if (checked_stack[i] == 0xaaU) {
 			unused++;
 		} else {
 			break;
