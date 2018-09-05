@@ -1,0 +1,15 @@
+sample:
+  description: Hello World sample, the simplest Zephyr
+    application
+  name: hello world
+  platforms: all
+common:
+    tags: samples
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello World! (.*)"
+tests:
+  sample.helloworld.multithread:
+    tags: samples

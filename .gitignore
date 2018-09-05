@@ -43,3 +43,6 @@ tags
 
 # Disables the warning about the changed behavior for Kconfig defaults
 hide-defaults-note
+cmake_ninja_wrapper.py
+.idea
+cmake-build-debug
