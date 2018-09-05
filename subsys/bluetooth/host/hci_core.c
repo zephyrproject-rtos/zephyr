@@ -261,7 +261,7 @@ int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 	cmd(buf)->sync = &sync_sem;
 
 	/* Make sure the buffer stays around until the command completes */
-	net_buf_ref(buf);
+	/* net_buf_ref(buf); */
 
 	net_buf_put(&bt_dev.cmd_tx_queue, buf);
 
