@@ -116,6 +116,11 @@ u32_t log_msg_arg_get(struct log_msg *msg, u32_t arg_idx)
 {
 	u32_t arg;
 
+	/* Return early if requested argument not present in the message. */
+	if (arg_idx >= msg->hdr.params.std.nargs) {
+		return 0;
+	}
+
 	if (msg->hdr.params.std.nargs <= LOG_MSG_NARGS_SINGLE_CHUNK) {
 		arg = msg->payload.single.args[arg_idx];
 	} else {
