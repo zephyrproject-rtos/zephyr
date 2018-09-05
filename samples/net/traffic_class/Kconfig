@@ -45,4 +45,4 @@ config SAMPLE_PEER_IPV4_ADDR_2
 	  The value depends on your network setup.
 
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
+source "$(ZEPHYR_BASE)/Kconfig.zephyr"

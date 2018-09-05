@@ -10,7 +10,7 @@
 
 mainmenu "LLDP sample application"
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
+source "$(ZEPHYR_BASE)/Kconfig.zephyr"
 
 if NET_LLDP
 
