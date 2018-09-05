@@ -276,9 +276,7 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 		_priq_wait_add(&wait_q->waitq, thread);
 	}
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_THREAD
-	_sys_k_event_logger_thread_pend(thread);
-#endif
+	sys_trace_thread_pend(thread);
 }
 
 void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
