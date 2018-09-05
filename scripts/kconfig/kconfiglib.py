@@ -971,9 +971,9 @@ class Kconfig(object):
                     if sym.orig_type in (BOOL, TRISTATE):
                         # The C implementation only checks the first character
                         # to the right of '=', for whatever reason
-                        if not ((sym.orig_type == BOOL and
+                        if not ((sym.orig_type is BOOL and
                                  val.startswith(("n", "y"))) or \
-                                (sym.orig_type == TRISTATE and
+                                (sym.orig_type is TRISTATE and
                                  val.startswith(("n", "m", "y")))):
                             self._warn("'{}' is not a valid value for the {} "
                                        "symbol {}. Assignment ignored."
@@ -1000,7 +1000,7 @@ class Kconfig(object):
                             # Set the choice's mode
                             sym.choice.set_value(val)
 
-                    elif sym.orig_type == STRING:
+                    elif sym.orig_type is STRING:
                         match = _conf_string_match(val)
                         if not match:
                             self._warn("malformed string literal in "
@@ -1102,13 +1102,13 @@ class Kconfig(object):
                                     .format(self.config_prefix, sym.name,
                                             "_MODULE" if val == "m" else ""))
 
-                    elif sym.orig_type == STRING:
+                    elif sym.orig_type is STRING:
                         f.write('#define {}{} "{}"\n'
                                 .format(self.config_prefix, sym.name,
                                         escape(val)))
 
                     elif sym.orig_type in (INT, HEX):
-                        if sym.orig_type == HEX and \
+                        if sym.orig_type is HEX and \
                            not val.startswith(("0x", "0X")):
                             val = "0x" + val
 
@@ -1152,8 +1152,8 @@ class Kconfig(object):
                     f.write(item.config_string)
 
                 elif expr_value(node.dep) and \
-                     ((item == MENU and expr_value(node.visibility)) or
-                       item == COMMENT):
+                     ((item is MENU and expr_value(node.visibility)) or
+                       item is COMMENT):
 
                     f.write("\n#\n# {}\n#\n".format(node.prompt[0]))
 
@@ -1200,7 +1200,7 @@ class Kconfig(object):
                 if sym.choice and \
                    not sym.choice.is_optional and \
                    sym.choice._get_selection_from_defaults() is sym and \
-                   sym.orig_type == BOOL and \
+                   sym.orig_type is BOOL and \
                    sym.tri_value == 2:
                     continue
 
@@ -1366,7 +1366,7 @@ class Kconfig(object):
                 if name in self.syms:
                     sym = self.syms[name]
 
-                    if sym.orig_type == STRING:
+                    if sym.orig_type is STRING:
                         match = _conf_string_match(val)
                         if not match:
                             continue
@@ -1771,9 +1771,6 @@ class Kconfig(object):
             if match:
                 # We have an identifier or keyword
 
-                # Jump past it
-                i = match.end()
-
                 # Check what it is. lookup_sym() will take care of allocating
                 # new symbols for us the first time we see them. Note that
                 # 'token' still refers to the previous token.
@@ -1783,11 +1780,20 @@ class Kconfig(object):
                 if keyword:
                     # It's a keyword
                     token = keyword
+                    # Jump past it
+                    i = match.end()
 
                 elif token not in _STRING_LEX:
                     # It's a non-const symbol, except we translate n, m, and y
                     # into the corresponding constant symbols, like the C
                     # implementation
+
+                    if "$" in name:
+                        # Macro expansion within symbol name
+                        name, s, i = self._expand_name(s, i)
+                    else:
+                        i = match.end()
+
                     token = self.const_syms[name] \
                             if name in ("n", "m", "y") else \
                             self._lookup_sym(name)
@@ -1803,17 +1809,17 @@ class Kconfig(object):
                     #
                     #   endmenu
                     token = name
+                    i = match.end()
 
             else:
-                # Neither a keyword nor a non-const symbol (except
-                # $()-expansion might still yield a non-const symbol).
+                # Neither a keyword nor a non-const symbol
 
                 # We always strip whitespace after tokens, so it is safe to
                 # assume that s[i] is the start of a token here.
                 c = s[i]
 
                 if c in "\"'":
-                    s, end_i = self._expand_str(s, i, c)
+                    s, end_i = self._expand_str(s, i)
 
                     # os.path.expandvars() and the $UNAME_RELEASE replace() is
                     # a backwards compatibility hack, which should be
@@ -1833,7 +1839,7 @@ class Kconfig(object):
                     # refer to a constant symbol named "FOO".
                     token = val \
                             if token in _STRING_LEX or \
-                                tokens[0] == _T_OPTION else \
+                                tokens[0] is _T_OPTION else \
                             self._lookup_const_sym(val)
 
                 elif s.startswith("&&", i):
@@ -1863,23 +1869,6 @@ class Kconfig(object):
                 elif c == ")":
                     token = _T_CLOSE_PAREN
                     i += 1
-
-                elif s.startswith("$(", i):
-                    s, end_i = self._expand_macro(s, i, ())
-                    val = s[i:end_i]
-                    # isspace() is False for empty strings
-                    if not val.strip():
-                        # Avoid creating a Kconfig symbol with a blank name.
-                        # It's almost guaranteed to be an error.
-                        self._parse_error("macro expanded to blank string")
-                    i = end_i
-
-                    # Compatibility with what the C implementation does. Might
-                    # be unexpected that you can reference non-constant symbols
-                    # this way though...
-                    token = self.const_syms[val] \
-                            if val in ("n", "m", "y") else \
-                            self._lookup_sym(val)
 
                 elif c == "#":
                     break
@@ -1997,7 +1986,7 @@ class Kconfig(object):
     def _check_token(self, token):
         # If the next token is 'token', removes it and returns True
 
-        if self._tokens[self._tokens_i + 1] == token:
+        if self._tokens[self._tokens_i + 1] is token:
             self._tokens_i += 1
             return True
         return False
@@ -2083,13 +2072,49 @@ class Kconfig(object):
             s, i = self._expand_macro(s, i, args)
         return s
 
-    def _expand_str(self, s, i, quote):
+    def _expand_name(self, s, i):
+        # Expands a symbol name starting at index 'i' in 's'.
+        #
+        # Returns the expanded name, the expanded 's' (including the part
+        # before the name), and the index of the first character in the next
+        # token after the name.
+
+        s, end_i = self._expand_name_iter(s, i)
+        name = s[i:end_i]
+        # isspace() is False for empty strings
+        if not name.strip():
+            # Avoid creating a Kconfig symbol with a blank name. It's almost
+            # guaranteed to be an error.
+            self._parse_error("macro expanded to blank string")
+
+        # Skip trailing whitespace
+        while end_i < len(s) and s[end_i].isspace():
+            end_i += 1
+
+        return name, s, end_i
+
+    def _expand_name_iter(self, s, i):
+        # Expands a symbol name starting at index 'i' in 's'.
+        #
+        # Returns the expanded 's' (including the part before the name) and the
+        # index of the first character after the expanded name in 's'.
+
+        while 1:
+            match = _name_special_search(s, i)
+
+            if match.group() == "$(":
+                s, i = self._expand_macro(s, match.start(), ())
+            else:
+                return (s, match.start())
+
+    def _expand_str(self, s, i):
         # Expands a quoted string starting at index 'i' in 's'. Handles both
         # backslash escapes and macro expansion.
         #
         # Returns the expanded 's' (including the part before the string) and
         # the index of the first character after the expanded string in 's'.
 
+        quote = s[i]
         i += 1  # Skip over initial "/'
         while 1:
             match = _string_special_search(s, i)
@@ -2294,7 +2319,7 @@ class Kconfig(object):
                 node = MenuNode()
                 node.kconfig = self
                 node.item = sym
-                node.is_menuconfig = (t0 == _T_MENUCONFIG)
+                node.is_menuconfig = (t0 is _T_MENUCONFIG)
                 node.prompt = node.help = node.list = None
                 node.parent = parent
                 node.filename = self._filename
@@ -2353,13 +2378,13 @@ class Kconfig(object):
 
                     self._leave_file()
 
-            elif t0 == end_token:
+            elif t0 is end_token:
                 # We have reached the end of the block. Terminate the final
                 # node and return it.
                 prev.next = None
                 return prev
 
-            elif t0 == _T_IF:
+            elif t0 is _T_IF:
                 node = MenuNode()
                 node.item = node.prompt = None
                 node.parent = parent
@@ -2373,7 +2398,7 @@ class Kconfig(object):
 
                 prev.next = prev = node
 
-            elif t0 == _T_MENU:
+            elif t0 is _T_MENU:
                 node = MenuNode()
                 node.kconfig = self
                 node.item = MENU
@@ -2393,7 +2418,7 @@ class Kconfig(object):
 
                 prev.next = prev = node
 
-            elif t0 == _T_COMMENT:
+            elif t0 is _T_COMMENT:
                 node = MenuNode()
                 node.kconfig = self
                 node.item = COMMENT
@@ -2411,7 +2436,7 @@ class Kconfig(object):
 
                 prev.next = prev = node
 
-            elif t0 == _T_CHOICE:
+            elif t0 is _T_CHOICE:
                 if self._peek_token() is None:
                     choice = Choice()
                     choice.direct_dep = self.n
@@ -2449,7 +2474,7 @@ class Kconfig(object):
 
                 prev.next = prev = node
 
-            elif t0 == _T_MAINMENU:
+            elif t0 is _T_MAINMENU:
                 self.top_node.prompt = (self._expect_str_and_eol(), self.y)
                 self.top_node.filename = self._filename
                 self.top_node.linenr = self._linenr
@@ -2502,31 +2527,31 @@ class Kconfig(object):
                 if self._peek_token() is not None:
                     self._parse_prompt(node)
 
-            elif t0 == _T_DEPENDS:
+            elif t0 is _T_DEPENDS:
                 if not self._check_token(_T_ON):
                     self._parse_error('expected "on" after "depends"')
 
                 node.dep = self._make_and(node.dep,
                                           self._expect_expr_and_eol())
 
-            elif t0 == _T_HELP:
+            elif t0 is _T_HELP:
                 self._parse_help(node)
 
-            elif t0 == _T_SELECT:
+            elif t0 is _T_SELECT:
                 if not isinstance(node.item, Symbol):
                     self._parse_error("only symbols can select")
 
                 node.selects.append((self._expect_nonconst_sym(),
                                      self._parse_cond()))
 
-            elif t0 == _T_IMPLY:
+            elif t0 is _T_IMPLY:
                 if not isinstance(node.item, Symbol):
                     self._parse_error("only symbols can imply")
 
                 node.implies.append((self._expect_nonconst_sym(),
                                      self._parse_cond()))
 
-            elif t0 == _T_DEFAULT:
+            elif t0 is _T_DEFAULT:
                 node.defaults.append((self._parse_expr(False),
                                       self._parse_cond()))
 
@@ -2536,15 +2561,15 @@ class Kconfig(object):
                 node.defaults.append((self._parse_expr(False),
                                       self._parse_cond()))
 
-            elif t0 == _T_PROMPT:
+            elif t0 is _T_PROMPT:
                 self._parse_prompt(node)
 
-            elif t0 == _T_RANGE:
+            elif t0 is _T_RANGE:
                 node.ranges.append((self._expect_sym(),
                                     self._expect_sym(),
                                     self._parse_cond()))
 
-            elif t0 == _T_OPTION:
+            elif t0 is _T_OPTION:
                 if self._check_token(_T_ENV):
                     if not self._check_token(_T_EQUAL):
                         self._parse_error('expected "=" after "env"')
@@ -2609,14 +2634,14 @@ class Kconfig(object):
                 else:
                     self._parse_error("unrecognized option")
 
-            elif t0 == _T_VISIBLE:
+            elif t0 is _T_VISIBLE:
                 if not self._check_token(_T_IF):
                     self._parse_error('expected "if" after "visible"')
 
                 node.visibility = self._make_and(node.visibility,
                                                  self._expect_expr_and_eol())
 
-            elif t0 == _T_OPTIONAL:
+            elif t0 is _T_OPTIONAL:
                 if not isinstance(node.item, Choice):
                     self._parse_error('"optional" is only valid for choices')
 
@@ -2791,11 +2816,11 @@ class Kconfig(object):
             # EQUAL, UNEQUAL, etc., so we can just use the token directly
             return (self._next_token(), token, self._expect_sym())
 
-        if token == _T_NOT:
+        if token is _T_NOT:
             # token == _T_NOT == NOT
             return (token, self._parse_factor(transform_m))
 
-        if token == _T_OPEN_PAREN:
+        if token is _T_OPEN_PAREN:
             expr_parse = self._parse_expr(transform_m)
             if self._check_token(_T_CLOSE_PAREN):
                 return expr_parse
@@ -2917,7 +2942,7 @@ class Kconfig(object):
             # The menu node is a choice, menu, or if. Finalize each child in
             # it.
 
-            if node.item == MENU:
+            if node.item is MENU:
                 visible_if = self._make_and(visible_if, node.visibility)
 
             # Propagate the menu node's dependencies to each child menu node.
@@ -3415,7 +3440,7 @@ class Symbol(object):
         """
         See the class documentation.
         """
-        if self.orig_type == TRISTATE and \
+        if self.orig_type is TRISTATE and \
            ((self.choice and self.choice.tri_value == 2) or
             not self.kconfig.modules.tri_value):
             return BOOL
@@ -3438,7 +3463,7 @@ class Symbol(object):
         # As a quirk of Kconfig, undefined symbols get their name as their
         # string value. This is why things like "FOO = bar" work for seeing if
         # FOO has the value "bar".
-        if self.orig_type == UNKNOWN:
+        if self.orig_type is UNKNOWN:
             self._cached_str_val = self.name
             return self.name
 
@@ -3528,7 +3553,7 @@ class Symbol(object):
                         # The value is rewritten to a standard form if it is
                         # clamped
                         val = str(clamp) \
-                              if self.orig_type == INT else \
+                              if self.orig_type is INT else \
                               hex(clamp)
 
                         if has_default:
@@ -3540,7 +3565,7 @@ class Symbol(object):
                                         num2str(clamp), num2str(low),
                                         num2str(high)))
 
-        elif self.orig_type == STRING:
+        elif self.orig_type is STRING:
             if vis and self.user_value is not None:
                 # If the symbol is visible and has a user value, use that
                 val = self.user_value
@@ -3572,7 +3597,7 @@ class Symbol(object):
             return self._cached_tri_val
 
         if self.orig_type not in (BOOL, TRISTATE):
-            if self.orig_type != UNKNOWN:
+            if self.orig_type is not UNKNOWN:
                 # Would take some work to give the location here
                 self.kconfig._warn(
                     "The {} symbol {} is being evaluated in a logical context "
@@ -3627,7 +3652,7 @@ class Symbol(object):
             # m is promoted to y for (1) bool symbols and (2) symbols with a
             # weak_rev_dep (from imply) of y
             if val == 1 and \
-               (self.type == BOOL or expr_value(self.weak_rev_dep) == 2):
+               (self.type is BOOL or expr_value(self.weak_rev_dep) == 2):
                 val = 2
 
         elif vis == 2:
@@ -3685,7 +3710,7 @@ class Symbol(object):
             return "{}{}={}\n" \
                    .format(self.kconfig.config_prefix, self.name, val)
 
-        if self.orig_type == STRING:
+        if self.orig_type is STRING:
             return '{}{}="{}"\n' \
                    .format(self.kconfig.config_prefix, self.name, escape(val))
 
@@ -3740,12 +3765,12 @@ class Symbol(object):
             return True
 
         # Check if the value is valid for our type
-        if not (self.orig_type == BOOL     and value in (0, 2, "n", "y")         or
-                self.orig_type == TRISTATE and value in (0, 1, 2, "n", "m", "y") or
+        if not (self.orig_type is BOOL     and value in (0, 2, "n", "y")         or
+                self.orig_type is TRISTATE and value in (0, 1, 2, "n", "m", "y") or
                 (isinstance(value, str)    and
-                 (self.orig_type == STRING                        or
-                  self.orig_type == INT and _is_base_n(value, 10) or
-                  self.orig_type == HEX and _is_base_n(value, 16)
+                 (self.orig_type is STRING                        or
+                  self.orig_type is INT and _is_base_n(value, 10) or
+                  self.orig_type is HEX and _is_base_n(value, 16)
                                         and int(value, 16) >= 0))):
 
             # Display tristate values as n, m, y in the warning
@@ -3754,15 +3779,8 @@ class Symbol(object):
                 "assignment ignored"
                 .format(TRI_TO_STR[value] if value in (0, 1, 2) else
                             "'{}'".format(value),
-                        _name_and_loc(self),
-                        TYPE_TO_STR[self.orig_type]))
+                        _name_and_loc(self), TYPE_TO_STR[self.orig_type]))
 
-            return False
-
-        if self.env_var is not None:
-            self.kconfig._warn("ignored attempt to assign user value to "
-                               "{}, which is set from the environment"
-                               .format(_name_and_loc(self)))
             return False
 
         if self.orig_type in (BOOL, TRISTATE) and value in ("n", "m", "y"):
@@ -3954,7 +3972,7 @@ class Symbol(object):
                 return (2,)
 
             if not rev_dep_val:
-                if self.type == BOOL or expr_value(self.weak_rev_dep) == 2:
+                if self.type is BOOL or expr_value(self.weak_rev_dep) == 2:
                     return (0, 2)
                 return (0, 1, 2)
 
@@ -3963,7 +3981,7 @@ class Symbol(object):
 
             # rev_dep_val == 1
 
-            if self.type == BOOL or expr_value(self.weak_rev_dep) == 2:
+            if self.type is BOOL or expr_value(self.weak_rev_dep) == 2:
                 return (2,)
             return (1, 2)
 
@@ -4063,7 +4081,7 @@ class Symbol(object):
 
                 # Transpose mod to yes if type is bool (possibly due to modules
                 # being disabled)
-                if val == 1 and self.type == BOOL:
+                if val == 1 and self.type is BOOL:
                     val = 2
 
             return TRI_TO_STR[val]
@@ -4284,7 +4302,7 @@ class Choice(object):
         """
         Returns the type of the choice. See Symbol.type.
         """
-        if self.orig_type == TRISTATE and not self.kconfig.modules.tri_value:
+        if self.orig_type is TRISTATE and not self.kconfig.modules.tri_value:
             return BOOL
 
         return self.orig_type
@@ -4314,7 +4332,7 @@ class Choice(object):
         val = min(val, self.visibility)
 
         # Promote m to y for boolean choices
-        return 2 if val == 1 and self.type == BOOL else val
+        return 2 if val == 1 and self.type is BOOL else val
 
     @property
     def assignable(self):
@@ -4365,8 +4383,8 @@ class Choice(object):
             self._was_set = True
             return True
 
-        if not ((self.orig_type == BOOL     and value in (0, 2, "n", "y")        ) or
-                (self.orig_type == TRISTATE and value in (0, 1, 2, "n", "m", "y"))):
+        if not ((self.orig_type is BOOL     and value in (0, 2, "n", "y")        ) or
+                (self.orig_type is TRISTATE and value in (0, 1, 2, "n", "m", "y"))):
 
             # Display tristate values as n, m, y in the warning
             self.kconfig._warn(
@@ -4515,8 +4533,8 @@ class Choice(object):
 
         if vis == 2:
             if not self.is_optional:
-                return (2,) if self.type == BOOL else (1, 2)
-            return (0, 2) if self.type == BOOL else (0, 1, 2)
+                return (2,) if self.type is BOOL else (1, 2)
+            return (0, 2) if self.type is BOOL else (0, 1, 2)
 
         # vis == 1
 
@@ -4733,7 +4751,7 @@ class MenuNode(object):
         if self.prompt:
             res |= expr_items(self.prompt[1])
 
-        if self.item == MENU:
+        if self.item is MENU:
             res |= expr_items(self.visibility)
 
         for value, cond in self.defaults:
@@ -4771,10 +4789,10 @@ class MenuNode(object):
                 s += " " + self.item.name
             fields.append(s)
 
-        elif self.item == MENU:
+        elif self.item is MENU:
             fields.append("menu node for menu")
 
-        elif self.item == COMMENT:
+        elif self.item is COMMENT:
             fields.append("menu node for comment")
 
         elif self.item is None:
@@ -4794,7 +4812,7 @@ class MenuNode(object):
 
         fields.append("deps " + TRI_TO_STR[expr_value(self.dep)])
 
-        if self.item == MENU:
+        if self.item is MENU:
             fields.append("'visible if' deps " + \
                           TRI_TO_STR[expr_value(self.visibility)])
 
@@ -4837,13 +4855,13 @@ class MenuNode(object):
                self._sym_choice_node_str(sc_expr_str_fn)
 
     def _menu_comment_node_str(self, sc_expr_str_fn):
-        s = '{} "{}"\n'.format("menu" if self.item == MENU else "comment",
+        s = '{} "{}"\n'.format("menu" if self.item is MENU else "comment",
                                self.prompt[0])
 
         if self.dep is not self.kconfig.y:
             s += "\tdepends on {}\n".format(expr_str(self.dep, sc_expr_str_fn))
 
-        if self.item == MENU and self.visibility is not self.kconfig.y:
+        if self.item is MENU and self.visibility is not self.kconfig.y:
             s += "\tvisible if {}\n".format(expr_str(self.visibility,
                                                      sc_expr_str_fn))
 
@@ -4869,7 +4887,7 @@ class MenuNode(object):
         else:
             lines.append("choice " + sc.name if sc.name else "choice")
 
-        if sc.orig_type != UNKNOWN:
+        if sc.orig_type is not UNKNOWN:
             indent_add(TYPE_TO_STR[sc.orig_type])
 
         if self.prompt:
@@ -4986,18 +5004,18 @@ def expr_value(expr):
     if not isinstance(expr, tuple):
         return expr.tri_value
 
-    if expr[0] == AND:
+    if expr[0] is AND:
         v1 = expr_value(expr[1])
         # Short-circuit the n case as an optimization (~5% faster
         # allnoconfig.py and allyesconfig.py, as of writing)
         return 0 if not v1 else min(v1, expr_value(expr[2]))
 
-    if expr[0] == OR:
+    if expr[0] is OR:
         v1 = expr_value(expr[1])
         # Short-circuit the y case as an optimization
         return 2 if v1 == 2 else max(v1, expr_value(expr[2]))
 
-    if expr[0] == NOT:
+    if expr[0] is NOT:
         return 2 - expr_value(expr[1])
 
     if expr[0] in _RELATIONS:
@@ -5008,7 +5026,7 @@ def expr_value(expr):
         oper, op1, op2 = expr
 
         # If both operands are strings...
-        if op1.orig_type == STRING and op2.orig_type == STRING:
+        if op1.orig_type is STRING and op2.orig_type is STRING:
             # ...then compare them lexicographically
             comp = _strcmp(op1.str_value, op2.str_value)
         else:
@@ -5020,12 +5038,12 @@ def expr_value(expr):
                 # parse as numbers
                 comp = _strcmp(op1.str_value, op2.str_value)
 
-        if   oper == EQUAL:         res = comp == 0
-        elif oper == UNEQUAL:       res = comp != 0
-        elif oper == LESS:          res = comp < 0
-        elif oper == LESS_EQUAL:    res = comp <= 0
-        elif oper == GREATER:       res = comp > 0
-        elif oper == GREATER_EQUAL: res = comp >= 0
+        if   oper is EQUAL:         res = comp == 0
+        elif oper is UNEQUAL:       res = comp != 0
+        elif oper is LESS:          res = comp < 0
+        elif oper is LESS_EQUAL:    res = comp <= 0
+        elif oper is GREATER:       res = comp > 0
+        elif oper is GREATER_EQUAL: res = comp >= 0
 
         return 2*res
 
@@ -5066,17 +5084,17 @@ def expr_str(expr, sc_expr_str_fn=standard_sc_expr_str):
     if not isinstance(expr, tuple):
         return sc_expr_str_fn(expr)
 
-    if expr[0] == AND:
+    if expr[0] is AND:
         return "{} && {}".format(_parenthesize(expr[1], OR, sc_expr_str_fn),
                                  _parenthesize(expr[2], OR, sc_expr_str_fn))
 
-    if expr[0] == OR:
+    if expr[0] is OR:
         # This turns A && B || C && D into "(A && B) || (C && D)", which is
         # redundant, but more readable
         return "{} || {}".format(_parenthesize(expr[1], AND, sc_expr_str_fn),
                                  _parenthesize(expr[2], AND, sc_expr_str_fn))
 
-    if expr[0] == NOT:
+    if expr[0] is NOT:
         if isinstance(expr[1], tuple):
             return "!({})".format(expr_str(expr[1], sc_expr_str_fn))
         return "!" + sc_expr_str_fn(expr[1])  # Symbol
@@ -5103,7 +5121,7 @@ def expr_items(expr):
             rec(subexpr[1])
 
             # NOTs only have a single operand
-            if subexpr[0] != NOT:
+            if subexpr[0] is not NOT:
                 rec(subexpr[2])
 
         else:
@@ -5148,7 +5166,7 @@ def split_expr(expr, op):
     res = []
 
     def rec(subexpr):
-        if isinstance(subexpr, tuple) and subexpr[0] == op:
+        if isinstance(subexpr, tuple) and subexpr[0] is op:
             rec(subexpr[1])
             rec(subexpr[2])
         else:
@@ -5214,18 +5232,18 @@ def _visibility(sc):
             vis = max(vis, expr_value(node.prompt[1]))
 
     if isinstance(sc, Symbol) and sc.choice:
-        if sc.choice.orig_type == TRISTATE and sc.orig_type != TRISTATE and \
-           sc.choice.tri_value != 2:
+        if sc.choice.orig_type is TRISTATE and \
+           sc.orig_type is not TRISTATE and sc.choice.tri_value != 2:
             # Non-tristate choice symbols are only visible in y mode
             return 0
 
-        if sc.orig_type == TRISTATE and vis == 1 and sc.choice.tri_value == 2:
+        if sc.orig_type is TRISTATE and vis == 1 and sc.choice.tri_value == 2:
             # Choice symbols with m visibility are not visible in y mode
             return 0
 
     # Promote m to y if we're dealing with a non-tristate (possibly due to
     # modules being disabled)
-    if vis == 1 and sc.type != TRISTATE:
+    if vis == 1 and sc.type is not TRISTATE:
         return 2
 
     return vis
@@ -5241,7 +5259,7 @@ def _make_depend_on(sc, expr):
         _make_depend_on(sc, expr[1])
 
         # NOTs only have a single operand
-        if expr[0] != NOT:
+        if expr[0] is not NOT:
             _make_depend_on(sc, expr[2])
 
     elif not expr.is_constant:
@@ -5251,7 +5269,7 @@ def _make_depend_on(sc, expr):
 def _parenthesize(expr, type_, sc_expr_str_fn):
     # expr_str() helper. Adds parentheses around expressions of type 'type_'.
 
-    if isinstance(expr, tuple) and expr[0] == type_:
+    if isinstance(expr, tuple) and expr[0] is type_:
         return "({})".format(expr_str(expr, sc_expr_str_fn))
     return expr_str(expr, sc_expr_str_fn)
 
@@ -5382,11 +5400,11 @@ def _expr_depends_on(expr, sym):
         elif left is not sym:
             return False
 
-        return (expr[0] == EQUAL and right is sym.kconfig.m or \
+        return (expr[0] is EQUAL and right is sym.kconfig.m or \
                                      right is sym.kconfig.y) or \
-               (expr[0] == UNEQUAL and right is sym.kconfig.n)
+               (expr[0] is UNEQUAL and right is sym.kconfig.n)
 
-    return expr[0] == AND and \
+    return expr[0] is AND and \
            (_expr_depends_on(expr[1], sym) or
             _expr_depends_on(expr[2], sym))
 
@@ -5461,15 +5479,15 @@ def _finalize_choice(node):
 
     # If no type is specified for the choice, its type is that of
     # the first choice item with a specified type
-    if choice.orig_type == UNKNOWN:
+    if choice.orig_type is UNKNOWN:
         for item in choice.syms:
-            if item.orig_type != UNKNOWN:
+            if item.orig_type is not UNKNOWN:
                 choice.orig_type = item.orig_type
                 break
 
     # Each choice item of UNKNOWN type gets the type of the choice
     for sym in choice.syms:
-        if sym.orig_type == UNKNOWN:
+        if sym.orig_type is UNKNOWN:
             sym.orig_type = choice.orig_type
 
 def _check_dep_loop_sym(sym, ignore_choice):
@@ -5661,7 +5679,7 @@ def _check_sym_sanity(sym):
                     .format(TYPE_TO_STR[sym.orig_type], _name_and_loc(sym),
                             expr_str(default)))
 
-            if sym.orig_type == STRING:
+            if sym.orig_type is STRING:
                 if not default.is_constant and not default.nodes and \
                    not default.name.isupper():
                     # 'default foo' on a string symbol could be either a symbol
@@ -5717,7 +5735,7 @@ def _int_hex_ok(sym, type_):
     if not sym.nodes:
         return _is_base_n(sym.name, _TYPE_TO_BASE[type_])
 
-    return sym.orig_type == type_
+    return sym.orig_type is type_
 
 def _check_choice_sanity(choice):
     # Checks various choice properties that are handiest to check after
@@ -5879,6 +5897,21 @@ STR_TO_TRI = {
 # Internal global constants (plus public expression type
 # constants)
 #
+
+# Note:
+#
+# The token and type constants below are safe to test with 'is', which is a bit
+# faster (~30% faster in a microbenchmark with Python 3 on my machine, and a
+# few % faster for total parsing time), even without assuming Python's small
+# integer optimization (which caches small integer objects). The constants end
+# up pointing to unique integer objects, and since we consistently refer to
+# them via the names below, we always get the same object.
+#
+# Client code would also need to use the names below, because the integer
+# values can change e.g. when tokens get added. Client code would usually test
+# with == too, which would be safe even in super obscure cases involving e.g.
+# pickling (where 'is' would be a bad idea anyway) and no small-integer
+# optimization.
 
 # Are we running on Python 2?
 _IS_PY2 = sys.version_info[0] < 3
@@ -6055,12 +6088,13 @@ def _re_search(regex):
 #
 # This regex will also fail to match for empty lines and comment lines.
 #
-# '$' is included to detect a variable assignment left-hand side with a $ in it
-# (which might be from a macro expansion).
+# '$' is included to detect preprocessor variable assignments with macro
+# expansions in the left-hand side.
 _command_match = _re_match(r"\s*([$A-Za-z0-9_-]+)\s*")
 
 # An identifier/keyword after the first token. Also eats trailing whitespace.
-_id_keyword_match = _re_match(r"([A-Za-z0-9_/.-]+)\s*")
+# '$' is included to detect identifiers containing macro expansions.
+_id_keyword_match = _re_match(r"([$A-Za-z0-9_/.-]+)\s*")
 
 # A fragment in the left-hand side of a preprocessor variable assignment. These
 # are the portions between macro expansions ($(foo)). Macros are supported in
@@ -6076,6 +6110,10 @@ _macro_special_search = _re_search(r"\)|,|\$\(")
 
 # Special characters/strings while expanding a string (quotes, '\', and '$(')
 _string_special_search = _re_search(r'"|\'|\\|\$\(')
+
+# Special characters/strings while expanding a symbol name. Also includes
+# end-of-line, in case the macro is the last thing on the line.
+_name_special_search = _re_search(r'[^$A-Za-z0-9_/.-]|\$\(|$')
 
 # A valid right-hand side for an assignment to a string symbol in a .config
 # file, including escaped characters. Extracts the contents.
