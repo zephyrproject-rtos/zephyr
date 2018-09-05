@@ -254,7 +254,7 @@ int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 			return -ENOBUFS;
 		}
 	} else {
-		/* Make sure the buffer stays around until the command completes */
+		/* Make sure the buffer stays around until the command completes. */
 		net_buf_ref(buf);
 	}
 
