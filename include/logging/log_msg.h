@@ -273,7 +273,8 @@ u32_t log_msg_nargs_get(struct log_msg *msg);
  * @param msg		Standard log message.
  * @param arg_idx	Argument index.
  *
- * @return Argument value.
+ * @return Argument value or 0 if arg_idx exceeds number of arguments in the
+ *	   message.
  */
 u32_t log_msg_arg_get(struct log_msg *msg, u32_t arg_idx);
 
