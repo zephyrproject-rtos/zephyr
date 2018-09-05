@@ -58,4 +58,4 @@ config NET_SAMPLE_IFACE3_VLAN_TAG
 endif
 
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
+source "$(ZEPHYR_BASE)/Kconfig.zephyr"

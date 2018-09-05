@@ -17,4 +17,4 @@ config WINC1500_GPIO_RESET_N
 endif # WIFI_WINC1500
 
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
+source "$(ZEPHYR_BASE)/Kconfig.zephyr"

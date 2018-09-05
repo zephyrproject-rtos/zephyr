@@ -46,4 +46,4 @@ config LOOPBACK_MODE
 	  This allows testing without a second board.
 
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
+source "$(ZEPHYR_BASE)/Kconfig.zephyr"

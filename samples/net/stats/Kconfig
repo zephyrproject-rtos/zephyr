@@ -17,4 +17,4 @@ config SAMPLE_PERIOD
 	  Print statistics after every n. seconds
 
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
+source "$(ZEPHYR_BASE)/Kconfig.zephyr"

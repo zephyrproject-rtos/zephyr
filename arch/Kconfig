@@ -13,7 +13,7 @@
 
 source "boards/Kconfig"
 # Note: $ARCH might be a glob pattern
-source "arch/$ARCH/Kconfig"
+source "arch/$(ARCH)/Kconfig"
 
 
 choice

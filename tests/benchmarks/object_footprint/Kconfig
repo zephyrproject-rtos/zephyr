@@ -1,6 +1,6 @@
 mainmenu "Zephyr Object Sizes"
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
+source "$(ZEPHYR_BASE)/Kconfig.zephyr"
 
 config OBJECTS_PRINTK
 	bool "use printk"

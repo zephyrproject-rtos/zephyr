@@ -2,4 +2,4 @@ mainmenu "Your Application Name"
 
 # Your application configuration options go here
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
+source "$(ZEPHYR_BASE)/Kconfig.zephyr"
