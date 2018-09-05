@@ -232,7 +232,7 @@ enum net_addr_type {
 } __packed;
 
 #if NET_LOG_ENABLED > 0
-static inline char *net_addr_type2str(enum net_addr_type type)
+static inline const char *net_addr_type2str(enum net_addr_type type)
 {
 	switch (type) {
 	case NET_ADDR_AUTOCONF:
@@ -251,7 +251,7 @@ static inline char *net_addr_type2str(enum net_addr_type type)
 	return "<unknown>";
 }
 #else /* NET_LOG_ENABLED */
-static inline char *net_addr_type2str(enum net_addr_type type)
+static inline const char *net_addr_type2str(enum net_addr_type type)
 {
 	ARG_UNUSED(type);
 
