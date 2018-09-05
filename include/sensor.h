@@ -114,6 +114,8 @@ enum sensor_channel {
 	SENSOR_CHAN_CO2,
 	/** VOC level, in parts per billion (ppb) **/
 	SENSOR_CHAN_VOC,
+	/** Gas sensor resistance in ohms. */
+	SENSOR_CHAN_GAS_RES,
 
 	/** Voltage, in volts **/
 	SENSOR_CHAN_VOLTAGE,
