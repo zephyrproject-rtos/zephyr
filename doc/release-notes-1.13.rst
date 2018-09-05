@@ -94,6 +94,36 @@ Networking
 Bluetooth
 *********
 
+* New user-friendly service population using a refreshed BT_GATT_CHARACTERISTIC
+  macro.
+* Added support for Bluetooth hardware in the native_posix board, allowing
+  developers to use the native POSIX architecture with Bluetooth.
+* Added a new helper API to parse advertising data.
+* Added a new flag, BT_LE_ADV_OPT_USE_NAME, to include the Bluetooth Device
+  Name in the advertising data.
+* Added support for fixed passkeys to use in bonding procedures.
+* Added a new Bluetooth shell command to send arbitrary HCI commands to the
+  controller.
+* Added a new feature to support multiple local identites using a single
+  controller.
+* Added a new, board-specific mesh sample for the nRF52x series that
+  implements the following models:
+
+  - Generic OnOff client and server.
+  - Generic Level client and server.
+  - Generic Power OnOff client and server.
+  - Light Lightness client and server.
+  - Light CTL client and server.
+  - Vendor Model.
+* Controller: Added a TX Power Kconfig option.
+* Controller: Use the newly available nrfx utility functions to access the
+  nRF5x hardware.
+* Controller: Multiple bugfixes.
+* Controller: Added support for the nRF52810 SoC from Nordic Semiconductor.
+* New HCI driver quirks API to support controllers that need uncommon reset
+  sequences.
+* Host: Multiple bugfixes for GATT and SMP.
+* Mesh: Multiple bugfixes.
 
 Build and Infrastructure
 ************************
