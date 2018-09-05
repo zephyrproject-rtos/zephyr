@@ -21,6 +21,7 @@
 #include <misc/sflist.h>
 #include <init.h>
 #include <syscall_handler.h>
+#include <kernel_internal.h>
 
 extern struct k_queue _k_queue_list_start[];
 extern struct k_queue _k_queue_list_end[];

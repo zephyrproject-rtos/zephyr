@@ -20,6 +20,7 @@
 #include <init.h>
 #include <syscall_handler.h>
 #include <misc/__assert.h>
+#include <kernel_internal.h>
 
 struct k_pipe_desc {
 	unsigned char *buffer;           /* Position in src/dest buffer */
