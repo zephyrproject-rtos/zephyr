@@ -525,7 +525,7 @@ int nvs_reinit(struct nvs_fs *fs)
 	int rc;
 	size_t ate_size, empty_len;
 	struct nvs_ate ate;
-	u32_t addr;
+	u32_t addr = 0;
 
 
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
