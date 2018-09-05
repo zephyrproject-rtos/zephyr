@@ -253,15 +253,15 @@ int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 		if (!buf) {
 			return -ENOBUFS;
 		}
+	} else {
+		/* Make sure the buffer stays around until the command completes */
+		net_buf_ref(buf);
 	}
 
 	BT_DBG("buf %p opcode 0x%04x len %u", buf, opcode, buf->len);
 
 	k_sem_init(&sync_sem, 0, 1);
 	cmd(buf)->sync = &sync_sem;
-
-	/* Make sure the buffer stays around until the command completes */
-	/* net_buf_ref(buf); */
 
 	net_buf_put(&bt_dev.cmd_tx_queue, buf);
 
