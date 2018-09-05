@@ -406,14 +406,9 @@ Connect to the debug server at the x86 core from a second console:
 Sensor Subsystem Core (ARC)
 ---------------------------
 
-Enable ARC INIT from the x86 core. This can be done by flashing an x86
-application that sets the ``CONFIG_ARC_INIT=y`` option, such as the booting stub
-provided with the Zephyr Test Framework, like so:
-
-.. zephyr-app-commands::
-   :zephyr-app: tests/booting/stub
-   :board: arduino_101
-   :goals: flash
+The sensor subsystem can be enabled from the x86 core (application processor).
+This can be done by flashing an application to the x86 core that sets the
+``CONFIG_ARC_INIT=y`` option.
 
 Then build the ARC application, flash it, and launch a debug server with the
 following commands:
