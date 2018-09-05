@@ -115,8 +115,8 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E env
   PYTHONPATH="${ZEPHYR_BASE}/scripts/kconfig${SEP}$ENV{PYTHONPATH}"
   srctree=${ZEPHYR_BASE}
-  ENV_VAR_BOARD_DIR=boards/*/*/
-  ENV_VAR_ARCH=*
+  BOARD_DIR=boards/*/*/
+  ARCH=*
   KERNELVERSION=${PROJECT_VERSION}
   SRCARCH=x86
   ${PYTHON_EXECUTABLE} scripts/genrest.py Kconfig ${RST_OUT}/doc/reference/kconfig/

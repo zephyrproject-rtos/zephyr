@@ -105,8 +105,8 @@ def run_kconfig_undef_ref_check(tc, commit_range):
     os.environ["srctree"] = repository_path
 
     # Parse the entire Kconfig tree, to make sure we see all symbols
-    os.environ["ENV_VAR_BOARD_DIR"] = "boards/*/*"
-    os.environ["ENV_VAR_ARCH"] = "*"
+    os.environ["BOARD_DIR"] = "boards/*/*"
+    os.environ["ARCH"] = "*"
 
     # Enable strict Kconfig mode in Kconfiglib, which assumes there's just a
     # single Kconfig tree and warns for all references to undefined symbols
