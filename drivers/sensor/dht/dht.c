@@ -39,7 +39,7 @@ static s8_t dht_measure_signal_duration(struct dht_data *drv_data,
 		gpio_pin_read(drv_data->gpio, CONFIG_DHT_GPIO_PIN_NUM, &val);
 		elapsed_cycles = k_cycle_get_32() - start_cycles;
 
-		if (elapsed_cycles >= max_wait_cycles) {
+		if (elapsed_cycles > max_wait_cycles) {
 			return -1;
 		}
 	} while (val == signal_val);
