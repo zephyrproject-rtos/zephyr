@@ -21,10 +21,34 @@ Kernel
 Architectures
 *************
 
+* arch: arm: stm32: enable instruction and data caches on STM32F7
+* arch: arm: implement ARMv8-M MPU driver
+* irq: Fix irq_lock api usage
+* arch: arm: macro API for defining non-secure entry functions
+* arch: arm: allow processor to ignore/recover from faults
+* arm: nxp: mpu: Consolidate k64 mpu regions
+* arm: Print NXP MPU error information in BusFault dump
+* arch: ARM: Change the march used by cortex-m0 and cortex-m0plus
+* arch: arm: clean up MPU code for ARM and NXP
+* arch: arm: Set Zero Latency IRQ to priority level zero
+* arch/arm: Fix locking in __pendsv
 
 Boards
 ******
 
+* Added support for the following Arm boards:
+
+  * efr32_slwstk6061a
+  * nrf52_adafruit_feather
+  * nrf52810_pca10040
+  * nrf52840_pca10059
+  * nucleo_f207zg
+  * reel_board
+  * stm32f723e_disco
+  * stm32f746g_disco
+  * stm32f769i_disco
+  * udoo_neo_full_m4
+  * warp7_m4
 
 Drivers and Sensors
 *******************
