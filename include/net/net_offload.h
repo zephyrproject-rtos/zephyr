@@ -432,6 +432,16 @@ static inline int net_offload_put(struct net_if *iface,
 }
 #endif
 
+#else
+#define net_offload_get(...) -EOPNOTSUPP
+#define net_offload_bind(...) -EOPNOTSUPP
+#define net_offload_listen(...) -EOPNOTSUPP
+#define net_offload_connect(...) -EOPNOTSUPP
+#define net_offload_accept(...) -EOPNOTSUPP
+#define net_offload_send(...) -EOPNOTSUPP
+#define net_offload_sendto(...) -EOPNOTSUPP
+#define net_offload_recv(...) -EOPNOTSUPP
+#define net_offload_put(...) -EOPNOTSUPP
 #endif /* CONFIG_NET_OFFLOAD */
 
 /**

@@ -116,82 +116,83 @@ int net_context_get(sa_family_t family,
 {
 	int i, ret = -ENOENT;
 
-#if defined(CONFIG_NET_CONTEXT_CHECK)
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_CHECK)) {
 
-#if !defined(CONFIG_NET_IPV4)
-	if (family == AF_INET) {
-		NET_ASSERT_INFO(family != AF_INET, "IPv4 disabled");
-		return -EPFNOSUPPORT;
-	}
-#endif
+		if (!IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+			NET_ASSERT_INFO(family != AF_INET, "IPv4 disabled");
+			return -EPFNOSUPPORT;
+		}
 
-#if !defined(CONFIG_NET_IPV6)
-	if (family == AF_INET6) {
-		NET_ASSERT_INFO(family != AF_INET6, "IPv6 disabled");
-		return -EPFNOSUPPORT;
-	}
-#endif
+		if (!IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+			NET_ASSERT_INFO(family != AF_INET6, "IPv6 disabled");
+			return -EPFNOSUPPORT;
+		}
 
-#if !defined(CONFIG_NET_UDP)
-	if (type == SOCK_DGRAM) {
-		NET_ASSERT_INFO(type != SOCK_DGRAM,
-				"Datagram context disabled");
-		return -EPROTOTYPE;
-	}
+		if (!IS_ENABLED(CONFIG_NET_UDP)) {
+			if (type == SOCK_DGRAM) {
+				NET_ASSERT_INFO(type != SOCK_DGRAM,
+						"Datagram context disabled");
+				return -EPROTOTYPE;
+			}
 
-	if (ip_proto == IPPROTO_UDP) {
-		NET_ASSERT_INFO(ip_proto != IPPROTO_UDP, "UDP disabled");
-		return -EPROTONOSUPPORT;
-	}
-#endif
+			if (ip_proto == IPPROTO_UDP) {
+				NET_ASSERT_INFO(ip_proto != IPPROTO_UDP,
+						"UDP disabled");
+				return -EPROTONOSUPPORT;
+			}
+		}
 
-#if !defined(CONFIG_NET_TCP)
-	if (type == SOCK_STREAM) {
-		NET_ASSERT_INFO(type != SOCK_STREAM,
-				"Stream context disabled");
-		return -EPROTOTYPE;
-	}
+		if (!IS_ENABLED(CONFIG_NET_TCP)) {
+			if (type == SOCK_STREAM) {
+				NET_ASSERT_INFO(type != SOCK_STREAM,
+						"Stream context disabled");
+				return -EPROTOTYPE;
+			}
 
-	if (ip_proto == IPPROTO_TCP) {
-		NET_ASSERT_INFO(ip_proto != IPPROTO_TCP, "TCP disabled");
-		return -EPROTONOSUPPORT;
-	}
-#endif
+			if (ip_proto == IPPROTO_TCP) {
+				NET_ASSERT_INFO(ip_proto != IPPROTO_TCP,
+						"TCP disabled");
+				return -EPROTONOSUPPORT;
+			}
+		}
 
-	if (family != AF_INET && family != AF_INET6) {
-		NET_ASSERT_INFO(family == AF_INET || family == AF_INET6,
-				"Unknown address family %d", family);
-		return -EAFNOSUPPORT;
-	}
+		if (family != AF_INET && family != AF_INET6) {
+			NET_ASSERT_INFO(family == AF_INET || family == AF_INET6,
+					"Unknown address family %d", family);
+			return -EAFNOSUPPORT;
+		}
 
-	if (type != SOCK_DGRAM && type != SOCK_STREAM) {
-		NET_ASSERT_INFO(type == SOCK_DGRAM || type == SOCK_STREAM,
-				"Unknown context type");
-		return -EPROTOTYPE;
-	}
+		if (type != SOCK_DGRAM && type != SOCK_STREAM) {
+			NET_ASSERT_INFO(type == SOCK_DGRAM ||
+					type == SOCK_STREAM,
+					"Unknown context type");
+			return -EPROTOTYPE;
+		}
 
-	if (ip_proto != IPPROTO_UDP && ip_proto != IPPROTO_TCP) {
-		NET_ASSERT_INFO(ip_proto == IPPROTO_UDP ||
-				ip_proto == IPPROTO_TCP,
-				"Unknown IP protocol %d", ip_proto);
-		return -EPROTONOSUPPORT;
-	}
+		if (ip_proto != IPPROTO_UDP && ip_proto != IPPROTO_TCP) {
+			NET_ASSERT_INFO(ip_proto == IPPROTO_UDP ||
+					ip_proto == IPPROTO_TCP,
+					"Unknown IP protocol %d", ip_proto);
+			return -EPROTONOSUPPORT;
+		}
 
-	if ((type == SOCK_STREAM && ip_proto == IPPROTO_UDP) ||
-	    (type == SOCK_DGRAM && ip_proto == IPPROTO_TCP)) {
-		NET_ASSERT_INFO(\
-			(type != SOCK_STREAM || ip_proto != IPPROTO_UDP) &&
-			(type != SOCK_DGRAM || ip_proto != IPPROTO_TCP),
-			"Context type and protocol mismatch, type %d proto %d",
-			type, ip_proto);
-		return -EOPNOTSUPP;
-	}
+		if ((type == SOCK_STREAM && ip_proto == IPPROTO_UDP) ||
+			(type == SOCK_DGRAM && ip_proto == IPPROTO_TCP)) {
+			NET_ASSERT_INFO(				\
+				(type != SOCK_STREAM ||
+					ip_proto != IPPROTO_UDP) &&
+				(type != SOCK_DGRAM ||
+					ip_proto != IPPROTO_TCP),
+				"Context type and protocol mismatch, type %d proto %d",
+				type, ip_proto);
+			return -EOPNOTSUPP;
+		}
 
-	if (!context) {
-		NET_ASSERT_INFO(context, "Invalid context");
-		return -EINVAL;
+		if (!context) {
+			NET_ASSERT_INFO(context, "Invalid context");
+			return -EINVAL;
+		}
 	}
-#endif /* CONFIG_NET_CONTEXT_CHECK */
 
 	k_sem_take(&contexts_lock, K_FOREVER);
 
@@ -217,8 +218,7 @@ int net_context_get(sa_family_t family,
 		memset(&contexts[i].remote, 0, sizeof(struct sockaddr));
 		memset(&contexts[i].local, 0, sizeof(struct sockaddr_ptr));
 
-#if defined(CONFIG_NET_IPV6)
-		if (family == AF_INET6) {
+		if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 			struct sockaddr_in6 *addr6 = (struct sockaddr_in6
 						      *)&contexts[i].local;
 			addr6->sin6_port = find_available_port(&contexts[i],
@@ -229,10 +229,8 @@ int net_context_get(sa_family_t family,
 				break;
 			}
 		}
-#endif
 
-#if defined(CONFIG_NET_IPV4)
-		if (family == AF_INET) {
+		if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 			struct sockaddr_in *addr = (struct sockaddr_in
 						      *)&contexts[i].local;
 			addr->sin_port = find_available_port(&contexts[i],
@@ -243,11 +241,10 @@ int net_context_get(sa_family_t family,
 				break;
 			}
 		}
-#endif
 
-#if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
-		k_sem_init(&contexts[i].recv_data_wait, 1, UINT_MAX);
-#endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
+		if (IS_ENABLED(CONFIG_NET_CONTEXT_SYNC_RECV)) {
+			k_sem_init(&contexts[i].recv_data_wait, 1, UINT_MAX);
+		}
 
 		contexts[i].flags |= NET_CONTEXT_IN_USE;
 		*context = &contexts[i];
@@ -258,11 +255,11 @@ int net_context_get(sa_family_t family,
 
 	k_sem_give(&contexts_lock);
 
-#if defined(CONFIG_NET_OFFLOAD)
 	/* FIXME - Figure out a way to get the correct network interface
 	 * as it is not known at this point yet.
 	 */
-	if (!ret && net_if_is_ip_offloaded(net_if_get_default())) {
+	if (IS_ENABLED(CONFIG_NET_OFFLOAD) && !ret &&
+		net_if_is_ip_offloaded(net_if_get_default())) {
 		ret = net_offload_get(net_if_get_default(),
 				      family,
 				      type,
@@ -275,7 +272,6 @@ int net_context_get(sa_family_t family,
 
 		return ret;
 	}
-#endif /* CONFIG_NET_OFFLOAD */
 
 	return ret;
 }
@@ -323,15 +319,13 @@ int net_context_put(struct net_context *context)
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_NET_OFFLOAD)
-	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
+	if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+		net_if_is_ip_offloaded(net_context_get_iface(context))) {
 		k_sem_take(&contexts_lock, K_FOREVER);
 		context->flags &= ~NET_CONTEXT_IN_USE;
 		k_sem_give(&contexts_lock);
-		return net_offload_put(
-			net_context_get_iface(context), context);
+		return net_offload_put(net_context_get_iface(context), context);
 	}
-#endif /* CONFIG_NET_OFFLOAD */
 
 	context->connect_cb = NULL;
 	context->recv_cb = NULL;
@@ -350,8 +344,7 @@ static int bind_default(struct net_context *context)
 {
 	sa_family_t family = net_context_get_family(context);
 
-#if defined(CONFIG_NET_IPV6)
-	if (family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		struct sockaddr_in6 addr6;
 
 		if (net_sin6_ptr(&context->local)->sin6_addr) {
@@ -368,10 +361,8 @@ static int bind_default(struct net_context *context)
 		return net_context_bind(context, (struct sockaddr *)&addr6,
 					sizeof(addr6));
 	}
-#endif
 
-#if defined(CONFIG_NET_IPV4)
-	if (family == AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		struct sockaddr_in addr4;
 
 		if (net_sin_ptr(&context->local)->sin_addr) {
@@ -387,7 +378,6 @@ static int bind_default(struct net_context *context)
 		return net_context_bind(context, (struct sockaddr *)&addr4,
 					sizeof(addr4));
 	}
-#endif
 
 	return -EINVAL;
 }
@@ -408,8 +398,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		return -EISCONN;
 	}
 
-#if defined(CONFIG_NET_IPV6)
-	if (addr->sa_family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == AF_INET6) {
 		struct net_if *iface = NULL;
 		struct in6_addr *ptr;
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)addr;
@@ -453,8 +442,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			return -EADDRNOTAVAIL;
 		}
 
-#if defined(CONFIG_NET_OFFLOAD)
-		if (net_if_is_ip_offloaded(iface)) {
+		if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+			net_if_is_ip_offloaded(iface)) {
 			net_context_set_iface(context, iface);
 
 			return net_offload_bind(iface,
@@ -462,7 +451,6 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 						addr,
 						addrlen);
 		}
-#endif /* CONFIG_NET_OFFLOAD */
 
 		net_context_set_iface(context, iface);
 
@@ -492,10 +480,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		return 0;
 	}
-#endif
 
-#if defined(CONFIG_NET_IPV4)
-	if (addr->sa_family == AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
 		struct sockaddr_in *addr4 = (struct sockaddr_in *)addr;
 		struct net_if *iface = NULL;
 		struct net_if_addr *ifaddr;
@@ -538,8 +524,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			return -EADDRNOTAVAIL;
 		}
 
-#if defined(CONFIG_NET_OFFLOAD)
-		if (net_if_is_ip_offloaded(iface)) {
+		if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+			net_if_is_ip_offloaded(iface)) {
 			net_context_set_iface(context, iface);
 
 			return net_offload_bind(iface,
@@ -547,7 +533,6 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 						addr,
 						addrlen);
 		}
-#endif /* CONFIG_NET_OFFLOAD */
 
 		net_context_set_iface(context, iface);
 
@@ -577,7 +562,6 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		return 0;
 	}
-#endif
 
 	return -EINVAL;
 }
