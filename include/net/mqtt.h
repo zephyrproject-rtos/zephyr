@@ -26,6 +26,7 @@
 
 #include <zephyr.h>
 #include <zephyr/types.h>
+#include <net/tls_credentials.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -312,13 +313,40 @@ struct mqtt_client;
 typedef void (*mqtt_evt_cb_t)(struct mqtt_client *client,
 			      const struct mqtt_evt *evt);
 
+/** @brief TLS configuration for secure MQTT transports. */
+struct mqtt_sec_config {
+	/** Indicates the preference for peer verification. */
+	int peer_verify;
+
+	/** Indicates the number of entries in the cipher list. */
+	u32_t cipher_count;
+
+	/** Indicates the list of ciphers to be used for the session.
+	 *  May be NULL to use the default ciphers.
+	 */
+	int *cipher_list;
+
+	/** Indicates the number of entries in the sec tag list. */
+	u32_t sec_tag_count;
+
+	/** Indicates the list of security tags to be used for the session. */
+	sec_tag_t *seg_tag_list;
+
+	/** Peer hostname for ceritificate verification.
+	 *  May be NULL to skip hostname verification.
+	 */
+	char *hostname;
+};
+
 /** @brief MQTT transport type. */
 enum mqtt_transport_type {
 	/** Use non secure TCP transport for MQTT connection. */
 	MQTT_TRANSPORT_NON_SECURE = 0x00,
 
+#if defined(CONFIG_MQTT_LIB_TLS)
 	/** Use secure TCP transport (TLS) for MQTT connection. */
 	MQTT_TRANSPORT_SECURE     = 0x01,
+#endif /* CONFIG_MQTT_LIB_TLS */
 
 	/** Shall not be used as a transport type.
 	 *  Indicator of maximum transport types possible.
@@ -340,6 +368,19 @@ struct mqtt_transport {
 			/** Socket descriptor. */
 			int sock;
 		} tcp;
+
+#if defined(CONFIG_MQTT_LIB_TLS)
+		/* TLS socket transport for MQTT */
+		struct {
+			/** Socket descriptor. */
+			int sock;
+
+			/** TLS configuration. See @ref mqtt_sec_config for
+			 *  details.
+			 */
+			struct mqtt_sec_config config;
+		} tls;
+#endif /* CONFIG_MQTT_LIB_TLS */
 	};
 };
 
