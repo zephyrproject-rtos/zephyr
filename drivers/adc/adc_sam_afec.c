@@ -212,11 +212,6 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 		return -EINVAL;
 	}
 
-	if (sequence->options->interval_us != 0) {
-		SYS_LOG_ERR("Spaced intervals not supported");
-		return -EINVAL;
-	}
-
 	u8_t num_active_channels = 0;
 	u8_t channel = 0;
 
