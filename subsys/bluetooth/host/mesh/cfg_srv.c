@@ -3327,7 +3327,7 @@ static void mod_reset(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 
 	mod_sub_list_clear(mod);
 
-	if (IS_ENABLED(BT_SETTINGS)) {
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_store_mod_sub(mod);
 	}
 }
