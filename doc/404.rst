@@ -14,9 +14,14 @@ Sorry, Page Not Found
    </noscript>
    <script type="text/javaScript">
    <!--
-   document.write("<p>Sorry, the page you requested: " +
-   "<a href=\"" + location.href + "\">" +
-   location.href + "</a> was not found on this site.</p>");
+   var strReferrer=document.referrer;
+   if (strReferrer.length > 0) {
+      document.write("<p>Sorry, the page you requested: " +
+      "<a href=\"" + strReferrer + "\">" +
+      strReferrer + "</a> was not found on this site.</p>");
+   } else {
+      document.write("<p>Sorry, the page you requested was not found on this site.</p>")
+   }
    //-->
    </script>
 
