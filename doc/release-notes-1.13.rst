@@ -53,7 +53,8 @@ Boards
 Drivers and Sensors
 *******************
 
-* adc: Introduced reworked API and updated Nordic, NXP, Atmel, and Designware drivers
+* adc: Introduced reworked API and updated Nordic, NXP, Atmel, and Designware
+  drivers
 * audio: Added TLV320DAC310x audio DAC driver
 * can: Added can support for STM32L432
 * clock_control: Added STM32F7 family clock control
@@ -90,18 +91,26 @@ Networking
 **********
 
 * Introduce system calls for BSD socket APIs.
-* Add IPv4 autoconf support. This adds support for IPv4 link-local addresses (169.254.*.*)
-* Add TLS and DTLS support to BSD socket API. They are configured via setsockopt() API.
-* Add support for IEEE 802.1AS-2011 generalized Precision Time Protocol (gPTP) for ethernet networks. A sample application is created to show how to interact with gPTP code.
-* Add support for PTP clock driver. This driver will be used by gPTP supported ethernet drivers.
+* Add IPv4 autoconf support. This adds support for IPv4 link-local addresses
+  (169.254.*.*)
+* Add TLS and DTLS support to BSD socket API. They are configured via
+  setsockopt() API.
+* Add support for IEEE 802.1AS-2011 generalized Precision Time Protocol (gPTP)
+  for ethernet networks. A sample application is created to show how to interact
+  with gPTP code.
+* Add support for PTP clock driver. This driver will be used by gPTP supported
+  ethernet drivers.
 * Add Link Layer Discovery Protocol (LLDP) TX support.
 * Add support for managing Qav credit-based shaper algorithm.
 * Add generic TX timestamping support.
 * Add carrier detection support to ethernet L2 driver.
 * Add support for having vendor specific ethernet statistics.
 * Add getter support to ethernet management interface.
-* Add promiscuous mode support to network interface. A sample application is created that shows how to use the user API for getting all network packets. The native_posix ethernet driver supports promiscuous mode at this point.
-* Add support for Link Layer Multicast Name Resolution (LLMNR). LLMNR is used in Microsoft Windows networks for local name resolution.
+* Add promiscuous mode support to network interface. A sample application is
+  created that shows how to use the user API for getting all network packets.
+  The native_posix ethernet driver supports promiscuous mode at this point.
+* Add support for Link Layer Multicast Name Resolution (LLMNR). LLMNR is used in
+  Microsoft Windows networks for local name resolution.
 * Add API to net_pkt to prefill a network packet to a pre-defined value.
 * Add IEEE 802.1Qav support to Atmel GMAC ethernet driver.
 * Add hardware TX timestamping support to Atmel GMAC ethernet driver.
@@ -109,22 +118,29 @@ Networking
 * Add gPTP support to Atmel GMAC ethernet driver.
 * Add support for TI SimpleLink WiFI offload driver.
 * Add support for randomized but stable MAC address in NXP MCUX ethernet driver.
-* Add extra prints to net-shell for ethernet based network interfaces. The supported features and priority queue information is printed.
+* Add extra prints to net-shell for ethernet based network interfaces. The
+  supported features and priority queue information is printed.
 * Add and fix string to integer conversions in net-shell.
 * Allow user to configure MAC address filters into ethernet devices.
-* Catch network interface ON and OFF events in DHCPv4 and renew address lease if we re-connected.
+* Catch network interface ON and OFF events in DHCPv4 and renew address lease if
+  we re-connected.
 * Remove forever timeouts when waiting a new network buffer to be available.
-* Relay network interface up/down command from net-shell to Linux host for native_posix ethernet driver.
-* No need to join IPv6 solicited node multicast group for Bluetooth IPSP supported nodes.
-* Allow external program to be started for native_posix ethernet driver. This allows for example startup of wireshark when zeth is created.
+* Relay network interface up/down command from net-shell to Linux host for
+  native_posix ethernet driver.
+* No need to join IPv6 solicited node multicast group for Bluetooth IPSP
+  supported nodes.
+* Allow external program to be started for native_posix ethernet driver. This
+  allows for example startup of wireshark when zeth is created.
 * Network packet priority and traffic class fixes and clarifications.
 * Lower memory consumption in net by using packed enums when applicable.
 * Correctly notify net_app server when TCP is disconnected.
-* Register OpenThread used unicast and multicast IPv6 addresses for network interface.
+* Register OpenThread used unicast and multicast IPv6 addresses for network
+  interface.
 * Enable Fast Connect policy for TI SimpleLink ethernet driver.
 * Fix ieee802154 simulator driver channel/tx power settings.
 * Handle large IPv6 packets properly.
-* Enable gPTP support in native_posix, NXP mcux and Atmel GMAC ethernet drivers. The native_posix ethernet driver gPTP support is only for testing purposes.
+* Enable gPTP support in native_posix, NXP mcux and Atmel GMAC ethernet drivers.
+  The native_posix ethernet driver gPTP support is only for testing purposes.
 * Network configuration (net_config) library split from the net_app library.
   (This change requires updating application configs to refer to corresponding
   NET_CONFIG_* options instead of NET_APP_*).
@@ -144,8 +160,10 @@ Networking
 * LWM2M cleanups and fixes.
 * Fix cache support in Atmel GMAC ethernet driver.
 * Fix NXP MCUX ethernet driver to detect carrier lost event.
-* Port native API echo-server/echo-client samples to BSD sockets API, with TLS/DTLS support.
-* Handle out-of-buf situations gracefully in echo-client and echo-server sample applications.
+* Port native API echo-server/echo-client samples to BSD sockets API, with
+  TLS/DTLS support.
+* Handle out-of-buf situations gracefully in echo-client and echo-server sample
+  applications.
 
 Bluetooth
 *********
