@@ -160,7 +160,7 @@ Bluetooth
 * Added support for fixed passkeys to use in bonding procedures.
 * Added a new Bluetooth shell command to send arbitrary HCI commands to the
   controller.
-* Added a new feature to support multiple local identites using a single
+* Added a new feature to support multiple local identities using a single
   controller.
 * Added a new, board-specific mesh sample for the nRF52x series that
   implements the following models:
@@ -174,12 +174,12 @@ Bluetooth
 * Controller: Added a TX Power Kconfig option.
 * Controller: Use the newly available nrfx utility functions to access the
   nRF5x hardware.
-* Controller: Multiple bugfixes.
+* Controller: Multiple bug fixes.
 * Controller: Added support for the nRF52810 SoC from Nordic Semiconductor.
 * New HCI driver quirks API to support controllers that need uncommon reset
   sequences.
-* Host: Multiple bugfixes for GATT and SMP.
-* Mesh: Multiple bugfixes.
+* Host: Multiple bug fixes for GATT and SMP.
+* Mesh: Multiple bug fixes.
 
 Build and Infrastructure
 ************************
@@ -195,6 +195,19 @@ HALs
 
 Documentation
 *************
+
+* Simplified and more maintainable theme applied to documentation.
+  Latest and previous four releases regenerated and published to
+  http://docs.zephyrproject.org
+* Updated contributing guidelines
+* General organization cleanup and spell check on docs including content
+  generated from Kconfig files and doxygen API comments.
+* General improvements to documentation following code,
+  implementation changes, and in support of new features, boards, and
+  samples.
+* Documentation generation now supported on Windows host systems
+  (previously only linux doc generation was supported).
+* PDF version of documentation can now be created
 
 
 Tests and Samples
