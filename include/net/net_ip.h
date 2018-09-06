@@ -902,7 +902,7 @@ int net_addr_pton(sa_family_t family, const char *src, void *dst);
  * @param family IP address family (AF_INET or AF_INET6)
  * @param src Pointer to struct in_addr if family is AF_INET or
  *        pointer to struct in6_addr if family is AF_INET6
- * @param dst IP address in a non-null terminated string
+ * @param dst Buffer for IP address as a null terminated string
  * @param size Number of bytes available in the buffer
  *
  * @return dst pointer if ok, NULL if error
