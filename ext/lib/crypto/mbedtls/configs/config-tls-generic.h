@@ -20,13 +20,13 @@
 #define MBEDTLS_NO_PLATFORM_ENTROPY
 #define MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES
 #define MBEDTLS_PLATFORM_PRINTF_ALT
+#define MBEDTLS_PLATFORM_SNPRINTF_ALT
 
 #if !defined(CONFIG_ARM)
 #define MBEDTLS_HAVE_ASM
 #endif
 
 #if defined(CONFIG_MBEDTLS_TEST)
-#define MBEDTLS_SELF_TEST
 #define MBEDTLS_DEBUG_C
 #endif
 
@@ -306,15 +306,6 @@
 
 #if defined(MBEDTLS_AES_C)
 #define MBEDTLS_CTR_DRBG_C
-#endif
-
-#if defined(MBEDTLS_SHA256_C) || defined(MBEDTLS_SHA512_C)
-#define MBEDTLS_ENTROPY_C
-#endif
-
-/* For test certificates */
-#if defined(MBEDTLS_RSA_C) || defined(MBEDTLS_ECDSA_C)
-#define MBEDTLS_CERTS_C
 #endif
 
 #if defined(CONFIG_MBEDTLS_DEBUG)
