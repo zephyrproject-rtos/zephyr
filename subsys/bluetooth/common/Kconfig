@@ -108,6 +108,21 @@ config BT_DEBUG_HCI_DRIVER
 	  Bluetooth HCI driver, including the Controller-side HCI layer
 	  when included in the build.
 
+config LOG_BT_HCI_DRIVER_LEVEL
+	int "Bluetooth HCI driver log level"
+	depends on LOG
+	default 2
+	help
+	  Sets log level for Bluetooth HCI drivers.
+
+	  Levels are:
+
+	  - 0 OFF, do not write
+	  - 1 ERROR, only write SYS_LOG_ERR
+	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
+	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
 config BT_DEBUG_RPA
 	bool "Bluetooth Resolvable Private Address (RPA) debug"
 	depends on BT_RPA

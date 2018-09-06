@@ -90,7 +90,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		
+
 #if defined(CONFIG_FS_FLASH_STORAGE_PARTITION)
 		slot0_partition: partition@c000 {
 			label = "image-0";

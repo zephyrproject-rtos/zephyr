@@ -226,7 +226,7 @@ osaStatus_t OSA_EventSet(osaEventId_t eventId, osaEventFlags_t flagsToSet)
     }
     pEventStruct = (osEventStruct_t *)eventId;
     
-    k_poll_signal(&pEventStruct->signal, flagsToSet);
+    k_poll_signal_raise(&pEventStruct->signal, flagsToSet);
 
     return osaStatus_Success;
 #else

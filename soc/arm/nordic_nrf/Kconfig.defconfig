@@ -33,4 +33,10 @@ config GPIO
 
 endif # SPI
 
+if BT_CTLR
+choice BT_LL_CHOICE
+	default BT_LL_SW
+endchoice
+endif # BT_CTLR
+
 endif # SOC_FAMILY_NRF

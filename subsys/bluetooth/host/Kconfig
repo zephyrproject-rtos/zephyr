@@ -48,11 +48,12 @@ config BT_RX_BUF_LEN
 	  (4 bytes) and the ACL header (also 4 bytes) which yields 73 bytes.
 
 config BT_HCI_TX_STACK_SIZE
-	int
+	int "BT to HCI TX stack size"
 	default 512 if BT_H4
 	default 512 if BT_H5
 	default 416 if BT_SPI
-	default 640 if BT_CTLR
+	default 640 if (BT_LL_SW || BT_LL_SW_SPLIT)
+	default 1200 if BT_LL_KW41Z
 	default 512 if BT_USERCHAN
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
@@ -102,6 +103,7 @@ config BT_RX_STACK_SIZE
 	default 512 if BT_HCI_RAW
 	default 2048 if BT_MESH
 	default 2200 if BT_SETTINGS
+	default 2048 if BT_LL_KW41Z
 	default 1024
 	range 512 65536 if BT_HCI_RAW
 	range 1100 65536 if BT_MESH
@@ -220,7 +222,7 @@ config BT_L2CAP_TX_MTU
 
 config BT_CONN_TX_MAX
 	int "Maximum number of pending TX buffers"
-	default BT_CTLR_TX_BUFFERS if BT_CTLR
+	default BT_CTLR_TX_BUFFERS if BT_CTLR && BT_LL_SW
 	default 7
 	range 1 128
 	help

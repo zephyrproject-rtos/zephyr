@@ -16,7 +16,6 @@ if BT_CTLR
 
 choice BT_LL_CHOICE
 	prompt "Bluetooth Link Layer Selection"
-	default BT_LL_SW
 	help
 	  Select the Bluetooth Link Layer to compile.
 
@@ -35,6 +34,11 @@ config BT_LL_SW_SPLIT
 	select ENTROPY_GENERATOR
 	help
 	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
+
+config BT_LL_KW41Z
+	bool "KW41Z Link Layer Library"
+	select BT_RECV_IS_RX_THREAD
+	select NEWLIB_LIBC
 
 endchoice
 
@@ -747,5 +751,7 @@ config BT_CTLR_DEBUG_PINS
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of
 	  the code.
+
+source "subsys/bluetooth/controller/hci/kw41z/Kconfig"
 
 endif # BT_CTLR

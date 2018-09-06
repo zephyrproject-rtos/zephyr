@@ -32,10 +32,11 @@ add_subdirectory(boards)
 add_subdirectory(components)
 add_subdirectory(drivers)
 
-add_subdirectory_ifdef(
-  CONFIG_IEEE802154_KW41Z
-  middleware/wireless/framework_5.3.3
-  )
+if(CONFIG_IEEE802154_KW41Z OR CONFIG_BT_LL_KW41Z)
+  add_subdirectory(
+    middleware/wireless/framework_5.3.3
+    )
+endif()
 
 enable_language(C ASM)
 

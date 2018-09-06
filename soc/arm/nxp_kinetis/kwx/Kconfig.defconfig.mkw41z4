@@ -85,6 +85,35 @@ config SOC_FLASH_MCUX
 
 endif # FLASH
 
+if BT
+
+config BT_CTLR
+	def_bool y
+
+choice BT_LL_CHOICE
+	default BT_LL_KW41Z
+endchoice
+
+config BT_HOST_CRYPTO
+	def_bool y
+
+config BT_TINYCRYPT_ECC
+	def_bool y
+
+config TINYCRYPT_ECC_DH
+	def_bool y
+
+config TINYCRYPT_AES_CCM
+	def_bool y
+
+# Needed because the BLE controller library is an IAR built library
+# with IAR debug sections that cause a ton of warnings
+choice LINKER_SECTION_OPTION_CHOICE
+	default LINKER_ORPHAN_SECTION_PLACE
+endchoice
+
+endif # BT
+
 if NETWORKING
 
 if !NET_L2_OPENTHREAD

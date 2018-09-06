@@ -207,3 +207,29 @@ program your Zephyr application to flash. It will leave you at a gdb prompt.
 
 .. _Segger J-Link OpenSDA V2.1 Firmware:
    https://www.segger.com/downloads/jlink/OpenSDA_V2_1.bin
+
+BLE Support
+***********
+
+Native BLE support in Zephyr on the NXP KW41Z SOC requires linking
+with the NXP provided BLE Link Layer Controller library. The library will need to
+be manually copied from the KW41Z SDK to this directory:
+
+	``<zephyr base>/ext/lib/ble/nxp_kinetis``
+
+Obtaining the KW41Z SDK requires setting up an account on nxp.com and
+downloading the MCUXpresso SDK for the KW41Z:
+
+.. NXP MCUXpresso Website:
+   https://mcuxpresso.nxp.com/en/welcome
+
+After signing in, follow the instructions to build and download the
+'SDK_2.2.0_FRDM-KW41Z.zip' SDK file. Copy the following library file from the zip
+file into the directory referenced above:
+
+	``<FRDM-KW41Z.zip>\middleware\wireless\bluetooth_1.2.8\controller\lib\lib_ble_kw41z_controller.a``
+
+
+.. note::
+    NXP is working on a git based deployment of this library that will
+    more seamlessly integrate into the Zephyr build system.

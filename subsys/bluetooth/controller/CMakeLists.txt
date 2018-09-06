@@ -1,23 +1,17 @@
 zephyr_library()
-zephyr_library_sources(
-  util/mem.c
-  util/memq.c
-  util/mayfly.c
-  util/util.c
-  ticker/ticker.c
-  ll_sw/ll_addr.c
-  ll_sw/ll_tx_pwr.c
-  hci/hci_driver.c
-  hci/hci.c
-  )
-
-zephyr_library_sources_ifdef(
-  CONFIG_BT_CTLR_CRYPTO
-  crypto/crypto.c
-  )
 
 if(CONFIG_BT_LL_SW)
   zephyr_library_sources(
+    util/mem.c
+    util/memq.c
+    util/mayfly.c
+    util/util.c
+    ticker/ticker.c
+    ll_sw/ll_addr.c
+    ll_sw/ll_tx_pwr.c
+    crypto/crypto.c
+    hci/hci_driver.c
+    hci/hci.c
     ll_sw/ctrl.c
     ll_sw/ll.c
     )
@@ -147,6 +141,7 @@ if(CONFIG_BT_LL_SW_SPLIT)
   endif()
 endif()
 
+
 zephyr_library_sources_ifdef(
   CONFIG_SOC_COMPATIBLE_NRF
   ll_sw/nordic/hal/nrf5/cntr.c
@@ -154,12 +149,6 @@ zephyr_library_sources_ifdef(
   ll_sw/nordic/hal/nrf5/radio/radio.c
   ll_sw/nordic/hal/nrf5/mayfly.c
   ll_sw/nordic/hal/nrf5/ticker.c
-  )
-
-zephyr_library_include_directories(
-  .
-  include
-  ll_sw
   )
 
 if(CONFIG_SOC_COMPATIBLE_NRF)
@@ -172,5 +161,33 @@ zephyr_library_compile_options_ifdef(
   CONFIG_BT_CTLR_FAST_ENC
   ${OPTIMIZE_FOR_SPEED_FLAG}
   )
+
+if (CONFIG_BT_LL_KW41Z)
+  zephyr_library_sources(
+     hci/kw41z/hci_kw41z.c
+     hci/kw41z/nxp_framework.c
+    )
+else()
+  zephyr_library_sources(
+    util/mem.c
+    util/memq.c
+    util/mayfly.c
+    util/util.c
+    ticker/ticker.c
+    ll_sw/ll_addr.c
+    ll_sw/ll_tx_pwr.c
+    crypto/crypto.c
+    hci/hci_driver.c
+    hci/hci.c
+    ll_sw/ctrl.c
+    ll_sw/ll.c
+    )
+
+  zephyr_library_include_directories(
+    .
+    include
+    ll_sw
+    )
+endif()
 
 zephyr_library_link_libraries(subsys__bluetooth)
