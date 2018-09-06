@@ -72,7 +72,7 @@ drivers/adc/                             @anangl
 drivers/bluetooth/                       @sjanc @jhedberg @Vudentz
 drivers/clock_control/*stm32f4*          @rsalveti @idlethread
 drivers/counter/                         @anangl
-drivers/ethernet/                        @jukkar @tbursztyka
+drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 drivers/flash/                           @nashif
 drivers/flash/*stm32*                    @superna9999
 drivers/gpio/*stm32*                     @rsalveti @idlethread
