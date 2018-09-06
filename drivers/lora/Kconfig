@@ -42,7 +42,7 @@ config LORA_SHELL
 
     choice
         prompt "Board UART device"
-        depends on LORA_DEVICE_USES_UART
+        depends on LORA_DEVICE_USES_UART || LORA_DEVICE_USES_UARTE
 
         config LORA_UART0
                 bool "UART0"
