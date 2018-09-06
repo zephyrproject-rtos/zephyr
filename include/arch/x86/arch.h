@@ -445,9 +445,6 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 	_do_irq_unlock();
 }
 
-/* Used to unconditionally enable interrupts when MULTITHREADING=n */
-#define Z_ARCH_INT_ENABLE() _arch_irq_unlock(0x200)
-
 /**
  * The NANO_SOFT_IRQ macro must be used as the value for the @a irq parameter
  * to NANO_CPU_INT_REGISTER when connecting to an interrupt that does not
