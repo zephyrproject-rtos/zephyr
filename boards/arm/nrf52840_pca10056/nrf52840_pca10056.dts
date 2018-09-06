@@ -40,7 +40,7 @@
 
 &uart0 {
 	compatible = "nordic,nrf-uart";
-	current-speed = <115200>;
+	current-speed = <57600>;
 	status = "ok";
 };
 

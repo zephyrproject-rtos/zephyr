@@ -1,0 +1,66 @@
+# Kconfig - Modem configuration options
+
+#
+# Copyright (c) 2018 Foundries.io
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig LORA
+	bool "LoRa Drivers"
+	help
+	  Enable config options for LoRa/LoRaWAN drivers.
+
+if LORA
+
+config LORA_DEVICE_USES_UART
+    bool
+    select UART_INTERRUPT_DRIVEN
+
+config LORA_DEVICE_USES_UARTE
+    bool
+
+config LORA_SHELL
+	bool "Enable LoRa shell utilities"
+	select CONSOLE_SHELL
+	help
+	  Activate shell module that provides functions to set device keys
+	  and useful functions for debugging.
+
+    choice
+        prompt "LoRa Device"
+
+        config LORA_DEVICE_DUMMY
+            bool "Dummy device"
+
+        config LORA_DEVICE_RN2483
+            bool "Microchip RN2483 LoRaWAN driver"
+            select LORA_DEVICE_USES_UARTE
+            help
+              Choose this setting to enable Microchip RN2483 via UART.
+    endchoice
+
+    choice
+        prompt "Board UART device"
+        depends on LORA_DEVICE_USES_UART
+
+        config LORA_UART0
+                bool "UART0"
+                depends on HW_UART0_ENABLED && !LORA_DEVICE_USES_UARTE
+
+        config LORA_UARTE0
+                bool "UARTE0"
+                depends on HW_UARTE0_ENABLED
+
+        config LORA_UARTE1
+                bool "UARTE1"
+                depends on HW_UARTE1_ENABLED
+    endchoice
+
+ comment "Please make sure that your board enables UART0, UARTE0 and/or UARTE1 peripheral"
+        depends on LORA_DEVICE_USES_UART && !(HW_UART0_ENABLED || HW_UARTE0_ENABLED || HW_UARTE1_ENABLED)
+
+ comment "You have selected a device which requires UARTE but no UARTE peripheral is enabled"
+        depends on LORA_DEVICE_USES_UARTE && !(HW_UARTE0_ENABLED || HW_UARTE1_ENABLED)
+endif # LORA
+
