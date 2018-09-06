@@ -10,6 +10,7 @@
 # See ~/zephyr/doc/dts
 set(GENERATED_DTS_BOARD_H    ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.h)
 set(GENERATED_DTS_BOARD_CONF ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.conf)
+set(GENERATED_EDTS ${PROJECT_BINARY_DIR}/edts.json)
 set_ifndef(DTS_SOURCE ${BOARD_DIR}/${BOARD}.dts)
 set_ifndef(DTS_COMMON_OVERLAYS ${ZEPHYR_BASE}/dts/common/common.dts)
 set_ifndef(DTS_APP_BINDINGS ${APPLICATION_SOURCE_DIR}/dts/bindings)
@@ -168,6 +169,7 @@ if(CONFIG_HAS_DTS)
     ${DTS_FIXUPS_WITH_FLAG}
     --keyvalue ${GENERATED_DTS_BOARD_CONF}
     --include ${GENERATED_DTS_BOARD_H}
+    --edts ${GENERATED_EDTS}
     )
 
   # Run extract_dts_includes.py to create a .conf and a header file that can be
