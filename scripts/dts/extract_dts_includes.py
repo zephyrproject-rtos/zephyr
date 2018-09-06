@@ -19,6 +19,7 @@ from copy import deepcopy
 
 from devicetree import parse_file
 from extract.globals import *
+from extract.edts import edts
 
 from extract.clocks import clocks
 from extract.compatible import compatible
@@ -711,6 +712,8 @@ def parse_arguments():
     parser.add_argument("-d", "--dts", nargs=1, required=True, help="DTS file")
     parser.add_argument("-y", "--yaml", nargs='+', required=True,
                         help="YAML file directories, we allow multiple")
+    parser.add_argument("-e", "--edts", nargs=1, required=True,
+                        help="Generate EDTS database file for the build system")
     parser.add_argument("-f", "--fixup", nargs='+',
                         help="Fixup file(s), we allow multiple")
     parser.add_argument("-i", "--include", nargs=1, required=True,
@@ -739,6 +742,7 @@ def main():
     generate_keyvalue_file(args.keyvalue[0])
 
     generate_include_file(args.include[0], args.fixup)
+    edts.save(args.edts[0])
 
 
 if __name__ == '__main__':
