@@ -53,6 +53,38 @@ Boards
 Drivers and Sensors
 *******************
 
+* adc: Introduced reworked API and updated Nordic, NXP, Atmel, and Designware drivers
+* audio: Added TLV320DAC310x audio DAC driver
+* can: Added can support for STM32L432
+* clock_control: Added STM32F7 family clock control
+* entropy: Added support for STM32F7
+* eth: Enabled gPTP support in mcux and gmac drivers
+* eth: Added promiscuous mode support to native_posix
+* eth: mcux: Added an option for randomized, but stable MAC address
+* gpio: Added STM32F7 GPIO support
+* interrupt_controller: Added STM32F7 EXTI support
+* i2c: Added support for STM32F7
+* i2c: Added i.MX shim driver
+* i2c: Implemented slave support for stm32_v2
+* i2c: Added EEPROM I2C slave driver
+* i2c: Added shims for nrfx TWI and TWIM drivers
+* i2s: Exposed i2s APIs to user mode
+* led: Added TI LP5562 and NXP PCA9633 drivers
+* modem: Added Wistron WNC-M14A2A LTE-M Modem driver
+* modem: Added modem receiver (tty) driver
+* pinmux: Added STM32F7 pinmux support
+* pwm: Added i.MX shim driver
+* pwm: Added shim for nrfx PWM HW driver
+* serial: Added power management to nRF UART driver
+* serial: Added STM32F7 UART support
+* serial: Allow to pass arbitrary user data to irq callback
+* serial: Added UARTE driver for the nRFx family
+* sensor: Added adxl372, mma8451q, adt7420 drivers
+* sensor: lis2dh: Fix I2C burst read/write operations
+* rtc: Added support for STM32
+* usb: Added support for OTG FS on STM32F2 and STM32F7
+* usb: Added High Speed support for DesignWare USB
+* wifi: Added SimpleLink WiFi Offload Driver (wifi_mgmt only)
 
 Networking
 **********
