@@ -42,9 +42,9 @@ static const u8_t hid_report_desc[] = {
 	/* USAGE (Mouse)					09 02 */
 		HID_MI_COLLECTION, COLLECTION_APPLICATION,
 		/* COLLECTION (Application)			A1 01 */
-		HID_LI_USAGE, USAGE_GEN_DESKTOP_POINTER,
+			HID_LI_USAGE, USAGE_GEN_DESKTOP_POINTER,
 		/* 	USAGE (Pointer)				09 01 */
-		HID_MI_COLLECTION, COLLECTION_PHYSICAL,
+			HID_MI_COLLECTION, COLLECTION_PHYSICAL,
 		/* 	COLLECTION (Physical)			A1 00 */
 				HID_GI_USAGE_PAGE, USAGE_GEN_BUTTON,
 		/* 		USAGE_PAGE (Button)		05 09 */
@@ -86,10 +86,10 @@ static const u8_t hid_report_desc[] = {
 		/* 		REPORT_COUNT (3)		95 03 */
 				HID_MI_INPUT, 0x06,
 		/* 		INPUT (Data,Var,Rel)		81 06 */
-				HID_MI_COLLECTION_END,
-		/* 		END_COLLECTION			C0    */
 			HID_MI_COLLECTION_END,
 		/* 	END_COLLECTION				C0    */
+		HID_MI_COLLECTION_END,
+		/* END_COLLECTION				C0    */
 };
 
 static int get_report_cb(struct usb_setup_packet *setup, s32_t *len,
