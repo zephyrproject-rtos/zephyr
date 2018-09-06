@@ -407,12 +407,14 @@ void test_mbedtls(void)
 		mbedtls_memory_buffer_alloc_status();
 #endif
 	}
+#if defined(MBEDTLS_SELF_TEST)
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
 	mbedtls_memory_buffer_alloc_free();
 	if (mbedtls_memory_buffer_alloc_self_test(v) != 0) {
 		suites_failed++;
 	}
 	suites_tested++;
+#endif
 #endif
 
 	if (v != 0) {
