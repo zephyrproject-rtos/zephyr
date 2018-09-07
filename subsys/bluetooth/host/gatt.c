@@ -100,6 +100,18 @@ static ssize_t read_appearance(struct bt_conn *conn,
 				 sizeof(appearance));
 }
 
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PRIVACY)
+static ssize_t read_central_addr_res(struct bt_conn *conn,
+				     const struct bt_gatt_attr *attr, void *buf,
+				     u16_t len, u16_t offset)
+{
+	u8_t central_addr_res = BT_GATT_CENTRAL_ADDR_RES_SUPP;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset,
+				 &central_addr_res, sizeof(central_addr_res));
+}
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_PRIVACY */
+
 static struct bt_gatt_attr gap_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
 #if defined(CONFIG_BT_DEVICE_NAME_GATT_WRITABLE)
@@ -114,6 +126,11 @@ static struct bt_gatt_attr gap_attrs[] = {
 #endif /* CONFIG_BT_DEVICE_NAME_GATT_WRITABLE */
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, BT_GATT_CHRC_READ,
 			       BT_GATT_PERM_READ, read_appearance, NULL, NULL),
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PRIVACY)
+	BT_GATT_CHARACTERISTIC(BT_UUID_CENTRAL_ADDR_RES,
+			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
+			       read_central_addr_res, NULL, NULL),
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_PRIVACY */
 };
 
 static struct bt_gatt_service gap_svc = BT_GATT_SERVICE(gap_attrs);
