@@ -387,6 +387,10 @@ struct bt_uuid_128 {
  *  @brief Barometric Pressure Trend Characteristic
  */
 #define BT_UUID_BAR_PRESSURE_TREND        BT_UUID_DECLARE_16(0x2aa3)
+/** @def BT_UUID_CENTRAL_ADDR_RES
+ *  @brief Central Address Resolution Characteristic
+ */
+#define BT_UUID_CENTRAL_ADDR_RES          BT_UUID_DECLARE_16(0x2aa6)
 /** @def BT_UUID_MESH_PROV_DATA_IN
  *  @brief Mesh Provisioning Data In
  */
