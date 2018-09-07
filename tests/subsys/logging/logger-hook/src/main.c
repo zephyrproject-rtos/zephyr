@@ -38,7 +38,7 @@ int logger_put(struct log_cbuffer *logger, char *data, u32_t data_size)
 
 	key = irq_lock();
 	ret = ring_buf_item_put(&logger->ring_buffer, 0, 0,
-			        (u32_t *)data, size32);
+				(u32_t *)data, size32);
 	irq_unlock(key);
 
 	return ret;
