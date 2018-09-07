@@ -9,18 +9,36 @@ We are pleased to announce the release of Zephyr kernel version 1.13.0.
 
 Major enhancements with this release include:
 
--
+* Extensible and Pluggable Tracing Support
+* Compartmentalized application memory organization
+* Logging System Overhaul
+* Introduce system calls for BSD socket APIs
+* Support for IEEE 802.1AS-2011 generalized Precision Time Protocol (gPTP)
+* Link Layer Discovery Protocol (LLDP) TX support
+* Support for TLS and DTLS using BSD socket API
+* Support for Link Layer Multicast Name Resolution (LLMNR)
+* Introduced reworked ADC API and updated Nordic, NXP, Atmel, and Designware
+  drivers
+* Support OS driven Power Management framework
+
 
 The following sections provide detailed lists of changes by component.
 
 Kernel
 ******
 
-* Detail
+* Remove kernel event manager, replaced by generic tracing interface
+* Enahnced Timeout and Tick handling in kernel
+* Compartmentalized application memory organization
+* Fix errno access for user mode
 
 Architectures
 *************
 
+* arch: arc: Support Synopsys nSim device simulator
+* arch: arc: improve the reset code
+* arch: arc: use a separate stack for exception handling
+* arch: arc: refactor the arc stack check support
 * arch: arm: stm32: enable instruction and data caches on STM32F7
 * arch: arm: implement ARMv8-M MPU driver
 * irq: Fix irq_lock api usage
@@ -33,9 +51,12 @@ Architectures
 * arch: arm: Set Zero Latency IRQ to priority level zero
 * arch/arm: Fix locking in __pendsv
 
-Boards
-******
+Boards & SoC Support
+********************
 
+* x86: add SoC configuration for Apollo Lake
+* x86: add support for UP Squared (Pentium/Celeron)
+* riscv32: riscv-privilege: Microsemi Mi-V support
 * Added support for the following Arm boards:
 
   * efr32_slwstk6061a
@@ -201,19 +222,37 @@ Bluetooth
 
 Build and Infrastructure
 ************************
+* Kconfig: Remove redundant 'default n' properties
+* cmake: replace PROJECT_SOURCE_DIR with ZEPHYR_BASE
+* Kconfig: Switch to improved globbing statements
 
 
 Libraries / Subsystems
 ***********************
+* Tracing: Basic support SEGGER systemview
+* Logging: Introduce a new logging subsystem
+* fs/nvs: Improved nvs for larger blocksizes
+* subsys: console: Refactor code to allow per-UART "tty" wrapper
 
 
 HALs
 ****
-
+* ext/hal: stm32cube: STM32L4: Enable legacy CAN API
+* ext: Import Atmel SAMD20 header files from ASF library
+* ext: gecko: Add Silabs Gecko SDK for EFR32FG1P SoCs
+* drivers: add i.MX I2C driver shim
+* hal: stm32f2x: Add HAL for the STM32F2x series
+* ext: stm32cube: update stm32l4xx cube version
+* ext: stm32cube: update stm32f7xx cube version
+* ext: stm32cube: update stm32f4xx cube version
+* ext: stm32cube: update stm32f3xx cube version
+* ext: stm32cube: update stm32f1xx cube version
+* ext: hal: nordic: Update nrfx to version 1.1.0
+* net: drivers: wifi: SimpleLink WiFi Offload Driver (wifi_mgmt only)
+* ext/hal/nxp/imx: Import the nxp imx6 freertos bsp
 
 Documentation
 *************
-
 * Simplified and more maintainable theme applied to documentation.
   Latest and previous four releases regenerated and published to
   http://docs.zephyrproject.org
@@ -230,6 +269,8 @@ Documentation
 
 Tests and Samples
 *****************
+* Enhanced benchmarks to support userspace
+* Improve test coverage for the kernel
 
 
 Issue Related Items
