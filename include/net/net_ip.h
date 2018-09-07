@@ -179,7 +179,11 @@ struct net_addr {
 extern const struct in6_addr in6addr_any;
 extern const struct in6_addr in6addr_loopback;
 
+/* Defined by POSIX. INET6_ADDRSTRLEN accounts for mapped IPv4 addresses. */
+#define INET_ADDRSTRLEN 16
 #define INET6_ADDRSTRLEN 46
+
+/* These are for internal usage of the stack */
 #define NET_IPV6_ADDR_LEN sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")
 #define NET_IPV4_ADDR_LEN sizeof("xxx.xxx.xxx.xxx")
 
