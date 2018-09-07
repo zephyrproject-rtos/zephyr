@@ -47,6 +47,10 @@ Architectures
 * arm: nxp: mpu: Consolidate k64 mpu regions
 * arm: Print NXP MPU error information in BusFault dump
 * arch: ARM: Change the march used by cortex-m0 and cortex-m0plus
+* arch: arm: integrate ARM CMSE with CMake
+* arch: arm: basic Arm TrustZone-M functionality for Cortex-M23 and Cortex-M33
+* arch: arm: built-in stack protection using Armv8-M SPLIM registers
+* arch: arm: API for using TT intrinsics in Secure/Non-Secure Armv8-M firmware
 * arch: arm: clean up MPU code for ARM and NXP
 * arch: arm: Set Zero Latency IRQ to priority level zero
 * arch/arm: Fix locking in __pendsv
