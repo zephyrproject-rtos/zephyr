@@ -50,6 +50,7 @@ static sys_slist_t subscriptions;
 static const u16_t gap_appearance = CONFIG_BT_DEVICE_APPEARANCE;
 
 static sys_slist_t db;
+static atomic_t init;
 
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, u16_t len, u16_t offset)
@@ -237,6 +238,10 @@ static void sc_process(struct k_work *work)
 
 void bt_gatt_init(void)
 {
+	if (!atomic_cas(&init, 0, 1)) {
+		return;
+	}
+
 	/* Register mandatory services */
 	gatt_register(&gap_svc);
 	gatt_register(&gatt_svc);
@@ -296,6 +301,9 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	__ASSERT(svc, "invalid parameters\n");
 	__ASSERT(svc->attrs, "invalid parameters\n");
 	__ASSERT(svc->attr_count, "invalid parameters\n");
+
+	/* Init GATT core services */
+	bt_gatt_init();
 
 	/* Do no allow to register mandatory services twice */
 	if (!bt_uuid_cmp(svc->attrs[0].uuid, BT_UUID_GAP) ||
