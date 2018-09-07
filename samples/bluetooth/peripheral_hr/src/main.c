@@ -20,9 +20,9 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <gatt/hrs.h>
-#include <gatt/dis.h>
-#include <gatt/bas.h>
+#include <bluetooth/services/hrs.h>
+#include <bluetooth/services/dis.h>
+#include <bluetooth/services/bas.h>
 
 struct bt_conn *default_conn;
 

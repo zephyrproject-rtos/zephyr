@@ -5,9 +5,9 @@ project(NONE)
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
   ${app_sources}
-  ../gatt/hog.c
-  ../gatt/dis.c
-  ../gatt/bas.c
+  $ENV{ZEPHYR_BASE}/subsys/bluetooth/services/hog.c
+  $ENV{ZEPHYR_BASE}/subsys/bluetooth/services/dis.c
+  $ENV{ZEPHYR_BASE}/subsys/bluetooth/services/bas.c
   )
 
 zephyr_library_include_directories($ENV{ZEPHYR_BASE}/samples/bluetooth)

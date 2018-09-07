@@ -22,10 +22,10 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <gatt/hrs.h>
-#include <gatt/dis.h>
-#include <gatt/bas.h>
-#include <gatt/cts.h>
+#include <bluetooth/services/hrs.h>
+#include <bluetooth/services/dis.h>
+#include <bluetooth/services/bas.h>
+#include <bluetooth/services/cts.h>
 
 /* Custom Service Variables */
 static struct bt_uuid_128 vnd_uuid = BT_UUID_INIT_128(

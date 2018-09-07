@@ -21,8 +21,8 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <gatt/dis.h>
-#include <gatt/bas.h>
+#include <bluetooth/services/dis.h>
+#include <bluetooth/services/bas.h>
 
 #define SENSOR_1_NAME				"Temperature Sensor 1"
 #define SENSOR_2_NAME				"Temperature Sensor 2"

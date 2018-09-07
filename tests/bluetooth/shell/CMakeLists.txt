@@ -5,4 +5,4 @@ project(NONE)
 zephyr_library_include_directories($ENV{ZEPHYR_BASE}/samples/bluetooth)
 
 target_sources(app PRIVATE src/main.c)
-target_sources_ifdef(CONFIG_BT_CONN app PRIVATE src/hrs.c)
+target_sources_ifdef(CONFIG_BT_CONN app PRIVATE $ENV{ZEPHYR_BASE}/subsys/bluetooth/services/hrs.c)

@@ -4,8 +4,8 @@ project(NONE)
 
 target_sources(app PRIVATE
   src/main.c
-  ../gatt/bas.c
-  ../gatt/dis.c
+  $ENV{ZEPHYR_BASE}/subsys/bluetooth/services/bas.c
+  $ENV{ZEPHYR_BASE}/subsys/bluetooth/services/dis.c
 )
 
 zephyr_library_include_directories($ENV{ZEPHYR_BASE}/samples/bluetooth)
