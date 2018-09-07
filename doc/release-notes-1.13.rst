@@ -20,7 +20,7 @@ Major enhancements with this release include:
 * Introduced reworked ADC API and updated Nordic, NXP, Atmel, and Designware
   drivers
 * Support OS driven Power Management framework
-
+* Basic support for Arm TrustZone in Armv8-M
 
 The following sections provide detailed lists of changes by component.
 
