@@ -23,6 +23,7 @@ extern void test_messageq(void);
 extern void test_signal_events_no_wait(void);
 extern void test_signal_events_timeout(void);
 extern void test_signal_events_signalled(void);
+extern void test_signal_events_isr(void);
 
 void test_main(void)
 {
@@ -41,7 +42,7 @@ void test_main(void)
 			ztest_unit_test(test_messageq),
 			ztest_unit_test(test_signal_events_no_wait),
 			ztest_unit_test(test_signal_events_timeout),
-			ztest_unit_test(test_signal_events_signalled));
-
+			ztest_unit_test(test_signal_events_signalled),
+			ztest_unit_test(test_signal_events_isr));
 	ztest_run_test_suite(test_cmsis_apis);
 }
