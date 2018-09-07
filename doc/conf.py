@@ -359,6 +359,7 @@ html_context = {
     'theme_logo_only': False,
     'current_version': version,
     'versions': ( ("latest", "/"),
+                 ("1.13.0", "/1.13.0/"),
                  ("1.12.0", "/1.12.0/"),
                  ("1.11.0", "/1.11.0/"),
                  ("1.10.0", "/1.10.0/"),
