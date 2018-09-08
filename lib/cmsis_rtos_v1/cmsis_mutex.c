@@ -84,8 +84,8 @@ osStatus osMutexRelease(osMutexId mutex_id)
 		return osErrorISR;
 	}
 
-	/* The mutex was not obtained before */
-	if (mutex->lock_count == 0) {
+	/* Mutex was not obtained before or was not owned by current thread */
+	if ((mutex->lock_count == 0) || (mutex->owner != _current)) {
 		return osErrorResource;
 	}
 
