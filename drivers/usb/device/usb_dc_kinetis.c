@@ -474,15 +474,14 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
 		*stalled = dev_data.ep_ctrl[ep_idx].status.in_stalled;
 	}
 
-	if (SYS_LOG_LEVEL == SYS_LOG_LEVEL_INFO) {
-		u8_t bd_idx = get_bdt_idx(ep,
-				dev_data.ep_ctrl[ep_idx].status.in_odd);
-		bd_idx = bd_idx;
-		SYS_LOG_WRN("active bd ctrl: %x", bdt[bd_idx].set.bd_ctrl);
-		bd_idx = get_bdt_idx(ep,
-				~dev_data.ep_ctrl[ep_idx].status.in_odd);
-		SYS_LOG_WRN("next bd ctrl: %x", bdt[bd_idx].set.bd_ctrl);
-	}
+#if defined(CONFIG_SYS_LOG) && (SYS_LOG_LEVEL >= SYS_LOG_LEVEL_WARNING)
+	u8_t bd_idx = get_bdt_idx(ep,
+			dev_data.ep_ctrl[ep_idx].status.in_odd);
+	SYS_LOG_WRN("active bd ctrl: %x", bdt[bd_idx].set.bd_ctrl);
+	bd_idx = get_bdt_idx(ep,
+			~dev_data.ep_ctrl[ep_idx].status.in_odd);
+	SYS_LOG_WRN("next bd ctrl: %x", bdt[bd_idx].set.bd_ctrl);
+#endif
 
 	return 0;
 }
