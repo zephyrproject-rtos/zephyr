@@ -16,10 +16,6 @@
 
 #include <st/stm32f429.dtsi>
 
-/ {
-	soc {
-		/delete-node/ &spi5;
+/delete-node/ &spi5;
 
-		/delete-node/ &spi6;
-	};
-};
+/delete-node/ &spi6;
