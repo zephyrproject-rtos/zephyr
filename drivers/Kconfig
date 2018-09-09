@@ -9,6 +9,8 @@
 
 menu "Device Drivers"
 
+source "drivers/uart_generic/Kconfig"
+
 source "drivers/lora/Kconfig"
 
 source "drivers/bluetooth/Kconfig"

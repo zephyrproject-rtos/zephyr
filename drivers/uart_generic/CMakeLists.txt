@@ -1,0 +1,1 @@
+zephyr_sources(uart_generic_dev.c uart_generic_drv.c)

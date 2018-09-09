@@ -21,7 +21,9 @@
 #include "mgmt/serial.h"
 
 #include <shell/shell.h>
-
+#ifdef CONFIG_RTT_CONSOLE
+#include <console/rtt_console.h>
+#endif
 #if defined(CONFIG_NATIVE_POSIX_CONSOLE)
 #include "drivers/console/native_posix_console.h"
 #endif
@@ -625,6 +627,10 @@ void shell_init(const char *str)
 
 	/* Register console handler */
 	console_register_line_input(&avail_queue, &cmds_queue, completion);
+
+#ifdef CONFIG_RTT_CONSOLE
+	rtt_register_input(&avail_queue, &cmds_queue, completion);
+#endif
 }
 
 /** @brief Optionally register an app default cmd handler.

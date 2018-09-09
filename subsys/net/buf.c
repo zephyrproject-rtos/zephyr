@@ -725,9 +725,11 @@ u16_t net_buf_append_bytes(struct net_buf *buf, u16_t len,
 			   const u8_t *value, s32_t timeout,
 			   net_buf_allocator_cb allocate_cb, void *user_data)
 {
+    printk("A");
 	struct net_buf *frag = net_buf_frag_last(buf);
 	u16_t added_len = 0;
-
+    printk("B");
+    while(true);
 	do {
 		u16_t count = min(len, net_buf_tailroom(frag));
 		void *data = net_buf_add(frag, count);

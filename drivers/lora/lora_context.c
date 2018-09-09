@@ -11,10 +11,13 @@ static struct lora_context_cb *callback_list;
 void lora_context_init(struct lora_context_cb *cb)
 {
     callback_list = cb;
+
+    lora_device_init();
+    /*
 #ifdef CONFIG_LORA_DEVICE_USES_UARTE
     lora_context_uart_init();
 #else
 #error No LoRa device implementation found
-#endif
+#endif*/
 }
 

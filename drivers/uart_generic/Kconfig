@@ -1,0 +1,23 @@
+# Kconfig - Modem configuration options
+
+#
+# Copyright (c) 2018 Foundries.io
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig UART_GENERIC
+	bool "Generic UART Device Drivers"
+	help
+	  Enable config options for generic UART device drivers.
+
+if UART_GENERIC
+
+config UART_SHELL
+	bool "Enable UART shell"
+	select CONSOLE_SHELL
+	help
+	  Activate shell module that provides functions to communicate with UART devices.
+
+endif # UART_GENERIC
+

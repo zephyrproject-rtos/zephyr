@@ -15,66 +15,22 @@
 #include <init.h>
 #include <rtt/SEGGER_RTT.h>
 
+#include <console/console.h>
+#include <stdio.h>
+#include <zephyr/types.h>
+#include <ctype.h>
+
 extern void __printk_hook_install(int (*fn)(int));
 extern void __stdout_hook_install(int (*fn)(int));
-
-static bool host_present;
-
-/** @brief Wait for fixed period.
- *
- */
-static void wait(void)
-{
-	if (k_is_in_isr()) {
-		if (IS_ENABLED(CONFIG_RTT_TX_RETRY_IN_INTERRUPT)) {
-			k_busy_wait(1000*CONFIG_RTT_TX_RETRY_DELAY_MS);
-		}
-	} else {
-		k_sleep(CONFIG_RTT_TX_RETRY_DELAY_MS);
-	}
-}
 
 static int rtt_console_out(int character)
 {
 	unsigned int key;
 	char c = (char)character;
-	unsigned int cnt;
-	int max_cnt = CONFIG_RTT_TX_RETRY_CNT;
 
-	do {
-		key = irq_lock();
-		cnt = SEGGER_RTT_WriteNoLock(0, &c, 1);
-		irq_unlock(key);
-
-		/* There are two possible reasons for not writing any data to
-		 * RTT:
-		 * - The host is not connected and not reading the data.
-		 * - The buffer got full and will be read by the host.
-		 * These two situations are distinguished using the following
-		 * algorithm:
-		 * At the beginning, the module assumes that the host is active,
-		 * so when no data is read, it busy waits and retries.
-		 * If, after retrying, the host reads the data, the module
-		 * assumes that the host is active. If it fails, the module
-		 * assumes that the host is inactive and stores that
-		 * information. On next call, only one attempt takes place.
-		 * The host is marked as active if the attempt is successful.
-		 */
-		if (cnt) {
-			/* byte processed - host is present. */
-			host_present = true;
-		} else if (host_present) {
-			if (max_cnt) {
-				wait();
-				max_cnt--;
-				continue;
-			} else {
-				host_present = false;
-			}
-		}
-
-		break;
-	} while (1);
+	key = irq_lock();
+	SEGGER_RTT_WriteNoLock(0, &c, 1);
+	irq_unlock(key);
 
 	return character;
 }
@@ -90,5 +46,65 @@ static int rtt_console_init(struct device *d)
 
 	return 0;
 }
+
+#ifdef CONFIG_CONSOLE_HANDLER
+
+static struct k_fifo *avail_queue;
+static struct k_fifo *lines_queue;
+static struct k_thread rtt_rx_thread;
+static K_THREAD_STACK_DEFINE(rtt_rx_stack, 1024);
+
+static void rtt_console_rx_process(void)
+{
+	struct console_input *cmd = NULL;
+	unsigned int key, count;
+
+	while (true) {
+
+		if (!cmd) {
+			cmd = k_fifo_get(avail_queue, K_FOREVER);
+		}
+
+		/*
+		 * Read and Echo back if available
+		 */
+		key = irq_lock();
+
+		/* Reserve a space for '\0' */
+		count = SEGGER_RTT_ReadNoLock(0, cmd->line, sizeof(cmd->line));
+		if (count > 0) {
+			SEGGER_RTT_WriteNoLock(0, cmd->line, count);
+		}
+
+		irq_unlock(key);
+
+		if (count > 0) {
+			/* Replace last '\n' to null */
+			cmd->line[count - 1] = '\0';
+			k_fifo_put(lines_queue, cmd);
+			cmd = NULL;
+		}
+
+		k_sleep(K_MSEC(10));
+	}
+}
+
+void rtt_register_input(struct k_fifo *avail, struct k_fifo *lines,
+						u8_t (*completion)(char *str, u8_t len))
+{
+	avail_queue = avail;
+	lines_queue = lines;
+	ARG_UNUSED(completion);
+
+	k_thread_create(&rtt_rx_thread, rtt_rx_stack,
+					K_THREAD_STACK_SIZEOF(rtt_rx_stack),
+					(k_thread_entry_t)rtt_console_rx_process,
+					NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
+}
+#else
+#define rtt_register_input(x)		\
+	do {				\
+	} while ((0))
+#endif /* CONFIG_CONSOLE_HANDLER */
 
 SYS_INIT(rtt_console_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
