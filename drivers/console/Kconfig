@@ -153,6 +153,31 @@ config RTT_TX_RETRY_IN_INTERRUPT
 
 endif
 
+config SEMIHOSTING_CONSOLE
+	bool "Use semihosting console"
+	depends on ARM
+	select CONSOLE_HAS_DRIVER
+	help
+	  Enable this option to emit console messages over a debugger with
+	  semihosting support.
+
+if SEMIHOSTING_CONSOLE
+
+config SEMIHOSTING_BUFFER_SIZE
+	int "Buffer size"
+	default 128
+	help
+	  Size of the semihosting console buffer in bytes
+
+config SEMIHOSTING_SEND_TIMEOUT_MS
+	int "Send timeout in milliseconds"
+	default 100
+	help
+	  Maximum time delay between character getting appended to the local
+	  buffer and a buffer flush.
+
+endif
+
 config IPM_CONSOLE_SENDER
 	bool "Inter-processor Mailbox console sender"
 	select CONSOLE_HAS_DRIVER
