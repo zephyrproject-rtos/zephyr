@@ -77,6 +77,7 @@ _arch_switch_to_main_thread(struct k_thread *main_thread,
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 		"cpsie i \t\n"
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+		"cpsie if \t\n"
 		"movs %%r1, #0 \n\t"
 		"msr BASEPRI, %%r1 \n\t"
 #else
