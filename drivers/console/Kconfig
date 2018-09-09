@@ -35,7 +35,7 @@ config CONSOLE_HANDLER
 
 config UART_CONSOLE
 	bool "Use UART for console"
-	depends on SERIAL && SERIAL_HAS_DRIVER
+	depends on SERIAL_HAS_DRIVER
 	select CONSOLE_HAS_DRIVER
 	help
 	  Enable this option to use one UART for console. Make sure
