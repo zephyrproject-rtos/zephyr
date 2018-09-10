@@ -14,7 +14,10 @@
 #include <device.h>
 
 struct wdt_esp32_data {
-	struct wdt_config config;
+	u32_t timeout;
+	enum wdt_mode mode;
+	wdt_callback_t callback;
+	struct device *dev;
 };
 
 static struct wdt_esp32_data shared_data;
@@ -37,11 +40,9 @@ static inline void wdt_esp32_unseal(void)
 	*reg = TIMG_WDT_WKEY_VALUE;
 }
 
-static void wdt_esp32_enable(struct device *dev)
+static void wdt_esp32_enable(void)
 {
 	volatile u32_t *reg = (u32_t *)TIMG_WDTCONFIG0_REG(1);
-
-	ARG_UNUSED(dev);
 
 	wdt_esp32_unseal();
 	*reg |= BIT(TIMG_WDT_EN_S);
@@ -64,43 +65,13 @@ static int wdt_esp32_disable(struct device *dev)
 static void adjust_timeout(u32_t timeout)
 {
 	volatile u32_t *reg;
-	enum wdt_clock_timeout_cycles cycles =
-		(enum wdt_clock_timeout_cycles)timeout;
-	u32_t ticks;
+	u32_t ticks = timeout;
 
-	/* The watchdog API in Zephyr was modeled after the QMSI drivers,
-	 * and those were modeled after the Quark MCUs.  The possible
-	 * values of enum wdt_clock_timeout_cycles maps 1:1 to what the
-	 * Quark D2000 expects.  At 32MHz, the timeout value in ms is given
-	 * by the following formula, according to the D2000 datasheet:
-	 *
-	 *                   2^(cycles + 11)
-	 *      timeout_ms = ---------------
-	 *                         1000
-	 *
-	 * (e.g. 2.048ms for 2^16 cycles, or the WDT_2_16_CYCLES value.)
-	 *
-	 * While this is sort of backwards (this should be given units of
-	 * time and converted to what the hardware expects), try to map this
-	 * value to what the ESP32 expects.  Use the same timeout value for
-	 * stages 0 and 1, regardless of the configuration mode, in order to
-	 * simplify things.
-	 */
-
-	 /* MWDT ticks every 12.5ns.  Set the prescaler to 40000, so the
-	  * counter for each watchdog stage is decremented every 0.5ms.
-	  */
 	 reg = (u32_t *)TIMG_WDTCONFIG1_REG(1);
+	/* MWDT ticks every 12.5ns.  Set the prescaler to 40000, so the
+	 * counter for each watchdog stage is decremented every 0.5ms.
+	 */
 	 *reg = 40000;
-
-	 ticks = 1<<(cycles + 2);
-
-	 /* Correct the value: this is an integer-only approximation of
-	  *    0.114074 * exp(0.67822 * cycles)
-	  * Which calculates the difference in ticks from the D2000 values to
-	  * the value calculated by the previous expression.
-	  */
-	 ticks += (1<<cycles) / 10;
 
 	 reg = (u32_t *)TIMG_WDTCONFIG2_REG(1);
 	 *reg = ticks;
@@ -111,7 +82,7 @@ static void adjust_timeout(u32_t timeout)
 
 static void wdt_esp32_isr(void *param);
 
-static void wdt_esp32_reload(struct device *dev)
+static int wdt_esp32_reload(struct device *dev, int channel_id)
 {
 	volatile u32_t *reg = (u32_t *)TIMG_WDTFEED_REG(1);
 
@@ -120,6 +91,8 @@ static void wdt_esp32_reload(struct device *dev)
 	wdt_esp32_unseal();
 	*reg = 0xABAD1DEA; /* Writing any value to WDTFEED will reload it. */
 	wdt_esp32_seal();
+
+	return 0;
 }
 
 static void set_interrupt_enabled(bool setting)
@@ -142,13 +115,13 @@ static void set_interrupt_enabled(bool setting)
 	}
 }
 
-static int wdt_esp32_set_config(struct device *dev, struct wdt_config *config)
+static int wdt_esp32_set_config(struct device *dev, u8_t options)
 {
 	struct wdt_esp32_data *data = dev->driver_data;
 	volatile u32_t *reg = (u32_t *)TIMG_WDTCONFIG0_REG(1);
 	u32_t v;
 
-	if (!config) {
+	if (!data) {
 		return -EINVAL;
 	}
 
@@ -162,14 +135,14 @@ static int wdt_esp32_set_config(struct device *dev, struct wdt_config *config)
 	v |= 7<<TIMG_WDT_SYS_RESET_LENGTH_S;
 	v |= 7<<TIMG_WDT_CPU_RESET_LENGTH_S;
 
-	if (config->mode == WDT_MODE_RESET) {
+	if (data->mode == WDT_MODE_RESET) {
 		/* Warm reset on timeout */
 		v |= TIMG_WDT_STG_SEL_RESET_SYSTEM<<TIMG_WDT_STG0_S;
 		v |= TIMG_WDT_STG_SEL_OFF<<TIMG_WDT_STG1_S;
 
 		/* Disable interrupts for this mode. */
 		v &= ~(TIMG_WDT_LEVEL_INT_EN | TIMG_WDT_EDGE_INT_EN);
-	} else if (config->mode == WDT_MODE_INTERRUPT_RESET) {
+	} else if (data->mode == WDT_MODE_INTERRUPT_RESET) {
 		/* Interrupt first, and warm reset if not reloaded */
 		v |= TIMG_WDT_STG_SEL_INT<<TIMG_WDT_STG0_S;
 		v |= TIMG_WDT_STG_SEL_RESET_SYSTEM<<TIMG_WDT_STG1_S;
@@ -183,29 +156,44 @@ static int wdt_esp32_set_config(struct device *dev, struct wdt_config *config)
 
 	wdt_esp32_unseal();
 	*reg = v;
-	adjust_timeout(config->timeout & WDT_TIMEOUT_MASK);
-	set_interrupt_enabled(config->mode == WDT_MODE_INTERRUPT_RESET);
+	adjust_timeout(data->timeout);
+	set_interrupt_enabled(data->mode == WDT_MODE_INTERRUPT_RESET);
 	wdt_esp32_seal();
 
-	wdt_esp32_reload(dev);
+	wdt_esp32_reload(dev, 0);
 
-	memcpy(&data->config, config, sizeof(*config));
 	return 0;
 }
 
-static void wdt_esp32_get_config(struct device *dev, struct wdt_config *config)
+static int wdt_esp32_install_timeout(struct device *dev,
+				    const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_esp32_data *data = dev->driver_data;
 
-	memcpy(config, &data->config, sizeof(*config));
+	ARG_UNUSED(dev);
+
+	if (cfg->flags != WDT_FLAG_RESET_SOC) {
+		return -ENOTSUP;
+	}
+
+	if (cfg->window.min != 0 || cfg->window.max == 0) {
+		return -EINVAL;
+	}
+
+	data->dev = dev;
+
+	data->timeout = cfg->window.max;
+
+	data->mode = (cfg->callback == NULL) ?
+			WDT_MODE_RESET : WDT_MODE_INTERRUPT_RESET;
+
+	data->callback = cfg->callback;
+
+	return 0;
 }
 
 static int wdt_esp32_init(struct device *dev)
 {
-	struct wdt_esp32_data *data = dev->driver_data;
-
-	(void)memset(&data->config, 0, sizeof(data->config));
-
 #ifdef CONFIG_WDT_DISABLE_AT_BOOT
 	wdt_esp32_disable(dev);
 #endif
@@ -217,15 +205,16 @@ static int wdt_esp32_init(struct device *dev)
 	esp32_rom_intr_matrix_set(0, ETS_TG1_WDT_LEVEL_INTR_SOURCE,
 				  CONFIG_WDT_ESP32_IRQ);
 
+	wdt_esp32_enable();
+
 	return 0;
 }
 
 static const struct wdt_driver_api wdt_api = {
-	.enable = wdt_esp32_enable,
+	.setup = wdt_esp32_set_config,
 	.disable = wdt_esp32_disable,
-	.get_config = wdt_esp32_get_config,
-	.set_config = wdt_esp32_set_config,
-	.reload = wdt_esp32_reload
+	.install_timeout = wdt_esp32_install_timeout,
+	.feed = wdt_esp32_reload
 };
 
 DEVICE_AND_API_INIT(wdt_esp32, CONFIG_WDT_0_NAME, wdt_esp32_init,
@@ -238,8 +227,9 @@ static void wdt_esp32_isr(void *param)
 	struct wdt_esp32_data *data = param;
 	volatile u32_t *reg = (u32_t *)TIMG_INT_CLR_TIMERS_REG(1);
 
-	if (data->config.interrupt_fn) {
-		data->config.interrupt_fn(DEVICE_GET(wdt_esp32));
+
+	if (shared_data.callback) {
+		shared_data.callback(data->dev, 0);
 	}
 
 	*reg |= TIMG_WDT_INT_CLR;
