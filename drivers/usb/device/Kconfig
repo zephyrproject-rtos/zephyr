@@ -91,4 +91,10 @@ config USB_DC_STM32_DISCONN_ENABLE
 	  Say Y if your board uses USB DISCONNECT pin to enable the
 	  pull-up resistor on USB DP.
 
+config USB_NATIVE_POSIX
+	bool "Native Posix USB Device Controller Driver"
+	select USB_DEVICE_DRIVER
+	help
+	  Native Posix USB Device Controller Driver.
+
 endif # USB
