@@ -187,6 +187,95 @@ int flash_area_get_sectors(int idx, u32_t *cnt, struct flash_sector *ret)
 
 	return flash_area_layout(idx, cnt, ret, get_sectors_cb, &data);
 }
+
+int flash_area_get_sector_info_by_offs(int fa_id, off_t offset,
+				       struct flash_sector *sector)
+{
+	struct flash_pages_info info;
+	const struct flash_area *fa = get_flash_area_from_id(fa_id);
+	struct device *dev;
+	int rc;
+
+	if (fa == NULL) {
+		return -ENODEV;
+	}
+
+	dev = get_flash_dev_from_id(fa->fa_device_id);
+
+	rc = flash_get_page_info_by_offs(dev, fa->fa_off + offset, &info);
+	if (rc) {
+		return rc;
+	}
+
+	if (sector) {
+		sector->fs_off = info.start_offset - fa->fa_off;
+		sector->fs_size = info.size;
+	}
+
+	return 0;
+}
+
+int flash_area_get_sector_info_by_idx(int fa_id, u32_t sector_index,
+				      struct flash_sector *sector)
+{
+	struct flash_pages_info info;
+	const struct flash_area *fa = get_flash_area_from_id(fa_id);
+	struct device *dev;
+	int rc;
+
+	if (fa == NULL) {
+		return -ENODEV;
+	}
+
+	dev = get_flash_dev_from_id(fa->fa_device_id);
+
+	rc = flash_get_page_info_by_offs(dev, fa->fa_off, &info);
+	if (rc) {
+		return rc;
+	}
+
+	rc = flash_get_page_info_by_idx(dev, info.index + sector_index, &info);
+	if (rc) {
+		return rc;
+	}
+
+	if (sector) {
+		sector->fs_off = info.start_offset - fa->fa_off;
+		sector->fs_size = info.size;
+	}
+
+	return 0;
+}
+
+size_t flash_area_get_sector_count(int fa_id)
+{
+	struct flash_pages_info info;
+	size_t start, end;
+	const struct flash_area *fa = get_flash_area_from_id(fa_id);
+	struct device *dev;
+
+	if (fa == NULL) {
+		return -ENODEV;
+	}
+
+	dev = get_flash_dev_from_id(fa->fa_device_id);
+
+	if (flash_get_page_info_by_offs(dev, fa->fa_off, &info) != 0) {
+		return 0;
+	}
+
+	start = info.index;
+	if (fa->fa_size == 0 ||
+	    flash_get_page_info_by_offs(dev, fa->fa_off + fa->fa_size, &info) !=
+		0) {
+		end = flash_get_page_count(dev);
+	} else {
+		end = info.index;
+	}
+
+	return end > start ? end - start : 0;
+}
+
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 int flash_area_read(const struct flash_area *fa, off_t off, void *dst,

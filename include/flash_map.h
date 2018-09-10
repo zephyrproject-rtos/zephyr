@@ -68,6 +68,7 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len);
  */
 u8_t flash_area_align(const struct flash_area *fa);
 
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 /*
  * Given flash area ID, return info about sectors within the area.
  */
@@ -83,6 +84,44 @@ int flash_area_get_sectors(int fa_id, u32_t *count,
  * @return 1 On success. -ENODEV if no driver match.
  */
 int flash_area_has_driver(const struct flash_area *fa);
+
+/**
+ *  @brief  Get the size and offset of flash sector at certain flash offset.
+ *
+ *  @param  fa_id flash area ID
+ *  @param  offset Offset within the sector
+ *  @param  sector Sector Info structure to be filled
+ *
+ *  @return  0 on success,
+ *           -EINVAL  if page of the index doesn't exist,
+ *           -ENODEV  if flash area doesn't exist.
+ */
+int flash_area_get_sector_info_by_offs(int fa_id, off_t offset,
+				       struct flash_sector *sector);
+
+/**
+ *  @brief  Get the size and offset of flash sector at certain index.
+ *
+ *  @param  fa_id flash area ID
+ *  @param  sector_index Index of the sector. Index are counted from 0.
+ *  @param  info Page Info structure to be filled
+ *
+ *  @return  0 on success,
+ *           -EINVAL  if page of the index doesn't exist,
+ *           -ENODEV  if flash area doesn't exist.
+ */
+int flash_area_get_sector_info_by_idx(int fa_id, u32_t sector_index,
+				      struct flash_sector *sector);
+
+/**
+ *  @brief  Get the total number of flash area sectors.
+ *
+ *  @param  fa_id flash area ID
+ *
+ *  @return  Number of flash area sectors.
+ */
+size_t flash_area_get_sector_count(int fa_id);
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 #ifdef __cplusplus
 }
