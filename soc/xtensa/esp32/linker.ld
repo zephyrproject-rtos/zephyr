@@ -229,6 +229,17 @@ SECTIONS
     _bss_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
+
+   SECTION_DATA_PROLOGUE(_APP_NOINIT_SECTION_NAME, (NOLOAD),)
+   {
+     . = ALIGN (8);
+     *(.app_noinit)
+     *("app_noinit.*")
+     . = ALIGN (8);
+    _app_end = ABSOLUTE(.);
+  } GROUP_LINK_IN(RAMABLE_REGION)
+
+
   SECTION_DATA_PROLOGUE(_NOINIT_SECTION_NAME, (NOLOAD),)
   {
     . = ALIGN (8);
