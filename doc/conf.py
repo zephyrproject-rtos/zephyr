@@ -64,7 +64,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Zephyr Project'
-copyright = u'2015-2017 Zephyr Project members and individual contributors.'
+copyright = u'2015-2018 Zephyr Project members and individual contributors'
 author = u'many'
 
 # The following code tries to extract the information by reading the Makefile,
@@ -225,7 +225,7 @@ html_show_sourcelink = False
 html_show_sphinx = False
 
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
-html_show_copyright = tags.has('development')
+# html_show_copyright = tags.has('development')
 
 # If true, license is shown in the HTML footer. Default is True.
 html_show_license = True
