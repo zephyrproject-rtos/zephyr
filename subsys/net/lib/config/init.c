@@ -60,16 +60,16 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 #if defined(CONFIG_NET_DEBUG_APP) && CONFIG_SYS_LOG_NET_LEVEL > 2
 		NET_INFO("IPv4 address: %s",
 			 net_addr_ntop(AF_INET, &if_addr->address.in_addr,
-				       hr_addr, NET_IPV4_ADDR_LEN));
+				       hr_addr, sizeof(hr_addr)));
 		NET_INFO("Lease time: %u seconds",
 			 iface->config.dhcpv4.lease_time);
 		NET_INFO("Subnet: %s",
 			 net_addr_ntop(AF_INET,
 				       &iface->config.ip.ipv4->netmask,
-				       hr_addr, NET_IPV4_ADDR_LEN));
+				       hr_addr, sizeof(hr_addr)));
 		NET_INFO("Router: %s",
 			 net_addr_ntop(AF_INET, &iface->config.ip.ipv4->gw,
-				       hr_addr, NET_IPV4_ADDR_LEN));
+				       hr_addr, sizeof(hr_addr)));
 #endif
 		break;
 	}
@@ -135,7 +135,7 @@ static void setup_ipv4(struct net_if *iface)
 
 #if defined(CONFIG_NET_DEBUG_APP) && CONFIG_SYS_LOG_NET_LEVEL > 2
 	NET_INFO("IPv4 address: %s",
-		 net_addr_ntop(AF_INET, &addr, hr_addr, NET_IPV4_ADDR_LEN));
+		 net_addr_ntop(AF_INET, &addr, hr_addr, sizeof(hr_addr)));
 #endif
 
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV4_NETMASK) > 1) {
