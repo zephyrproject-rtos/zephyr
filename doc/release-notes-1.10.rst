@@ -138,7 +138,7 @@ Build and Infrastructure
   either simple one-to-one translations of KBuild features or introduce
   new concepts that replace KBuild concepts. Please re-read the Getting
   Started guide
-  (http://docs.zephyrproject.org/getting_started/getting_started.html)
+  (https://docs.zephyrproject.org/getting_started/getting_started.html)
   with updated instructions for setting up and developing on your host-OS.
   You *will* need to port your own out-of-tree scripts and Makefiles to
   CMake.

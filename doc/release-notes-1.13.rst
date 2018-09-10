@@ -259,7 +259,7 @@ Documentation
 *************
 * Simplified and more maintainable theme applied to documentation.
   Latest and previous four releases regenerated and published to
-  http://docs.zephyrproject.org
+  https://docs.zephyrproject.org
 * Updated contributing guidelines
 * General organization cleanup and spell check on docs including content
   generated from Kconfig files and doxygen API comments.

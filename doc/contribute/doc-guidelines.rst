@@ -19,7 +19,7 @@ and about `Sphinx extensions`_ from their respective websites.
 .. _Sphinx extensions: http://www.sphinx-doc.org/en/stable/contents.html
 .. _reStructuredText: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html
 .. _Sphinx Inline Markup:  http://sphinx-doc.org/markup/inline.html#inline-markup
-.. _Zephyr documentation:  http://docs.zephyrproject.org
+.. _Zephyr documentation:  https://docs.zephyrproject.org
 
 This document provides a quick reference for commonly used reST and
 Sphinx-defined directives and roles used to create the documentation

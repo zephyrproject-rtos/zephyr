@@ -6,7 +6,7 @@ Zephyr documentation Generation
 These instructions will walk you through generating the Zephyr Project's
 documentation on your local system using the same documentation sources
 as we use to create the online documentation found at
-http://docs.zephyrproject.org
+https://docs.zephyrproject.org
 
 Documentation overview
 **********************
@@ -26,13 +26,13 @@ their respective websites.
 The project's documentation contains the following items:
 
 * ReStructuredText source files used to generate documentation found at the
-  http://docs.zephyrproject.org website. Most of the reStructuredText sources
+  https://docs.zephyrproject.org website. Most of the reStructuredText sources
   are found in the ``/doc`` directory, but others are stored within the
   code source tree near their specific component (such as ``/samples`` and
   ``/boards``)
 
 * Doxygen-generated material used to create all API-specific documents
-  also found at http://docs.zephyrproject.org
+  also found at https://docs.zephyrproject.org
 
 * Script-generated material for kernel configuration options based on Kconfig
   files found in the source code tree
