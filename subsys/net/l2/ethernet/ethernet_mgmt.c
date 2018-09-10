@@ -139,6 +139,26 @@ static int ethernet_set_config(uint32_t mgmt_request,
 		memcpy(&config.qav_param, &params->qav_param,
 		       sizeof(struct ethernet_qav_param));
 		type = ETHERNET_CONFIG_TYPE_QAV_PARAM;
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_QBV_PARAM) {
+		if (!is_hw_caps_supported(dev, ETHERNET_QBV)) {
+			return -ENOTSUP;
+		}
+
+		/* Validate params which need global validating */
+		if (params->qbv_param.state == ETHERNET_QBV_STATE_TYPE_OPER) {
+			/* Read-only parameters */
+			return -EINVAL;
+		}
+
+		if (params->qbv_param.type == ETHERNET_QBV_PARAM_TYPE_TIME &&
+		    (params->qbv_param.cycle_time.nanosecond >= 1000000000 ||
+		     params->qbv_param.base_time.fract_nsecond >= 1000000000)) {
+			return -EINVAL;
+		}
+
+		memcpy(&config.qbv_param, &params->qbv_param,
+		       sizeof(struct ethernet_qbv_param));
+		type = ETHERNET_CONFIG_TYPE_QBV_PARAM;
 	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_PROMISC_MODE) {
 		if (!is_hw_caps_supported(dev, ETHERNET_PROMISC_MODE)) {
 			return -ENOTSUP;
@@ -166,6 +186,9 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_MAC_ADDRESS,
 				  ethernet_set_config);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QAV_PARAM,
+				  ethernet_set_config);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QBV_PARAM,
 				  ethernet_set_config);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_PROMISC_MODE,
@@ -244,6 +267,63 @@ static int ethernet_get_config(uint32_t mgmt_request,
 			break;
 		}
 
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_GET_PORTS_NUM) {
+		type = ETHERNET_CONFIG_TYPE_PORTS_NUM;
+
+		ret = api->get_config(dev, type, &config);
+		if (ret) {
+			return ret;
+		}
+
+		params->ports_num = config.ports_num;
+
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_GET_QBV_PARAM) {
+		if (!is_hw_caps_supported(dev, ETHERNET_QBV)) {
+			return -ENOTSUP;
+		}
+
+		config.qbv_param.port_id = params->qbv_param.port_id;
+		config.qbv_param.type = params->qbv_param.type;
+		config.qbv_param.state = params->qbv_param.state;
+
+		if (config.qbv_param.type ==
+		    ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST) {
+			config.qbv_param.gate_control.row =
+				params->qbv_param.gate_control.row;
+		}
+
+		type = ETHERNET_CONFIG_TYPE_QBV_PARAM;
+
+		ret = api->get_config(dev, type, &config);
+		if (ret) {
+			return ret;
+		}
+
+		switch (config.qbv_param.type) {
+		case ETHERNET_QBV_PARAM_TYPE_STATUS:
+			params->qbv_param.enabled = config.qbv_param.enabled;
+			break;
+		case ETHERNET_QBV_PARAM_TYPE_TIME:
+			memcpy(&params->qbv_param.cycle_time,
+			       &config.qbv_param.cycle_time,
+			       sizeof(params->qbv_param.cycle_time));
+			memcpy(&params->qbv_param.base_time,
+			       &config.qbv_param.base_time,
+			       sizeof(params->qbv_param.base_time));
+			params->qbv_param.extension_time =
+				config.qbv_param.extension_time;
+			break;
+		case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST_LEN:
+			params->qbv_param.gate_control_list_len =
+				config.qbv_param.gate_control_list_len;
+			break;
+		case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST:
+			memcpy(&params->qbv_param.gate_control,
+			       &config.qbv_param.gate_control,
+			       sizeof(params->qbv_param.gate_control));
+			break;
+		}
+
 	} else {
 		return -EINVAL;
 	}
@@ -255,6 +335,12 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_GET_PRIORITY_QUEUES_NUM,
 				  ethernet_get_config);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_GET_QAV_PARAM,
+				  ethernet_get_config);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_GET_PORTS_NUM,
+				  ethernet_get_config);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_GET_QBV_PARAM,
 				  ethernet_get_config);
 
 void ethernet_mgmt_raise_carrier_on_event(struct net_if *iface)
