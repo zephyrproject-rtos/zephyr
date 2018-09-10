@@ -14,80 +14,31 @@
 #include <sensor.h>
 #include <i2c.h>
 #include <misc/__assert.h>
+#include <misc/byteorder.h>
 #include <init.h>
 #include <kernel.h>
+#include <string.h>
 
 #include "apds9960.h"
 
 static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct apds9960_data *data = dev->driver_data;
-	u8_t cmsb, clsb, rmsb, rlsb, blsb, bmsb, glsb, gmsb;
-	u8_t pdata;
-	int temp = 0;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	/* Read lower byte following by MSB  Ref: Datasheet : RGBC register */
-	temp = i2c_reg_read_byte(data->i2c, APDS9960_I2C_ADDRESS,
-			APDS9960_CDATAL_REG, &clsb);
-	if (temp < 0) {
-		return temp;
+	/* Read CRGB registers */
+	if (i2c_burst_read(data->i2c, APDS9960_I2C_ADDRESS,
+			   APDS9960_CDATAL_REG,
+			   (u8_t *)&data->sample_crgb,
+			   sizeof(data->sample_crgb))) {
+		return -EIO;
 	}
 
-	temp = i2c_reg_read_byte(data->i2c, APDS9960_I2C_ADDRESS,
-			APDS9960_CDATAH_REG, &cmsb);
-	if (temp < 0) {
-		return temp;
+	if (i2c_reg_read_byte(data->i2c, APDS9960_I2C_ADDRESS,
+			      APDS9960_PDATA_REG, &data->pdata)) {
+		return -EIO;
 	}
-
-	temp = i2c_reg_read_byte(data->i2c, APDS9960_I2C_ADDRESS,
-			APDS9960_RDATAL_REG, &rlsb);
-	if (temp < 0) {
-		return temp;
-	}
-
-	temp = i2c_reg_read_byte(data->i2c, APDS9960_I2C_ADDRESS,
-			APDS9960_RDATAH_REG, &rmsb);
-	if (temp < 0) {
-		return temp;
-	}
-
-	temp = i2c_reg_read_byte(data->i2c, APDS9960_I2C_ADDRESS,
-			APDS9960_GDATAL_REG, &glsb);
-	if (temp < 0) {
-		return temp;
-	}
-
-	temp = i2c_reg_read_byte(data->i2c, APDS9960_I2C_ADDRESS,
-			APDS9960_GDATAH_REG, &gmsb);
-	if (temp < 0) {
-		return temp;
-	}
-
-	temp = i2c_reg_read_byte(data->i2c, APDS9960_I2C_ADDRESS,
-			APDS9960_BDATAL_REG, &blsb);
-	if (temp < 0) {
-		return temp;
-	}
-
-	temp = i2c_reg_read_byte(data->i2c, APDS9960_I2C_ADDRESS,
-			APDS9960_BDATAH_REG, &bmsb);
-	if (temp < 0) {
-		return temp;
-	}
-
-	temp = i2c_reg_read_byte(data->i2c, APDS9960_I2C_ADDRESS,
-			APDS9960_PDATA_REG, &pdata);
-	if (temp < 0) {
-		return temp;
-	}
-
-	data->sample_c = (cmsb << 8) + clsb;
-	data->sample_r = (rmsb << 8) + rlsb;
-	data->sample_g = (gmsb << 8) + glsb;
-	data->sample_b = (bmsb << 8) + blsb;
-	data->pdata    = pdata;
 
 	return 0;
 }
@@ -100,19 +51,19 @@ static int apds9960_channel_get(struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_LIGHT:
-		val->val1 = data->sample_c;
+		val->val1 = sys_le16_to_cpu(data->sample_crgb[0]);
 		val->val2 = 0;
 		break;
 	case SENSOR_CHAN_RED:
-		val->val1 = data->sample_r;
+		val->val1 = sys_le16_to_cpu(data->sample_crgb[1]);
 		val->val2 = 0;
 		break;
 	case SENSOR_CHAN_GREEN:
-		val->val1 = data->sample_g;
+		val->val1 = sys_le16_to_cpu(data->sample_crgb[2]);
 		val->val2 = 0;
 		break;
 	case SENSOR_CHAN_BLUE:
-		val->val1 = data->sample_b;
+		val->val1 = sys_le16_to_cpu(data->sample_crgb[3]);
 		val->val2 = 0;
 		break;
 	case SENSOR_CHAN_PROX:
@@ -466,10 +417,7 @@ static int apds9960_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	data->sample_c = 0;
-	data->sample_r = 0;
-	data->sample_g = 0;
-	data->sample_b = 0;
+	(void)memset(data->sample_crgb, 0, sizeof(data->sample_crgb));
 	data->pdata = 0;
 
 	apds9960_sensor_setup(dev, als_gain);

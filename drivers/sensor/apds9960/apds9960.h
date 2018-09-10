@@ -263,12 +263,8 @@
 
 struct apds9960_data {
 	struct device *i2c;
-	s16_t sample_c;
-	s16_t sample_r;
-	s16_t	sample_g;
-	s16_t sample_b;
-	s8_t pdata;
-	s8_t gdata;
+	u16_t sample_crgb[4];
+	u8_t pdata;
 };
 
 #define SYS_LOG_DOMAIN "APDS9960"
