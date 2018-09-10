@@ -45,6 +45,21 @@ struct eth_fake_context {
 		int idle_slope;
 		int delta_bandwidth;
 	} priority_queues[2];
+
+	struct {
+		/* Qbv parameters */
+		struct {
+			bool gate_status[NET_TC_TX_COUNT];
+			enum ethernet_gate_state_operation operation;
+			uint32_t time_interval;
+			uint16_t row;
+		} gate_control;
+		uint32_t gate_control_list_len;
+		bool qbv_enabled;
+		struct net_ptp_extended_time base_time;
+		struct net_ptp_time cycle_time;
+		uint32_t extension_time;
+	} ports[2];
 };
 
 static struct eth_fake_context eth_fake_data;
@@ -76,7 +91,8 @@ static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev)
 {
 	return ETHERNET_AUTO_NEGOTIATION_SET | ETHERNET_LINK_10BASE_T |
 		ETHERNET_LINK_100BASE_T | ETHERNET_DUPLEX_SET | ETHERNET_QAV |
-		ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES;
+		ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES |
+		ETHERNET_QBV;
 }
 
 static int eth_fake_get_total_bandwidth(struct eth_fake_context *ctx)
@@ -131,8 +147,10 @@ static int eth_fake_set_config(const struct device *dev,
 {
 	struct eth_fake_context *ctx = dev->data;
 	int priority_queues_num = ARRAY_SIZE(ctx->priority_queues);
+	int ports_num = ARRAY_SIZE(ctx->ports);
 	enum ethernet_qav_param_type qav_param_type;
-	int queue_id;
+	enum ethernet_qbv_param_type qbv_param_type;
+	int queue_id, port_id;
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_AUTO_NEG:
@@ -205,6 +223,44 @@ static int eth_fake_set_config(const struct device *dev,
 		}
 
 		break;
+	case ETHERNET_CONFIG_TYPE_QBV_PARAM:
+		port_id = config->qbv_param.port_id;
+		qbv_param_type = config->qbv_param.type;
+
+		if (port_id < 0 || port_id >= ports_num) {
+			return -EINVAL;
+		}
+
+		switch (qbv_param_type) {
+		case ETHERNET_QBV_PARAM_TYPE_STATUS:
+			ctx->ports[port_id].qbv_enabled =
+				config->qbv_param.enabled;
+			break;
+		case ETHERNET_QBV_PARAM_TYPE_TIME:
+			memcpy(&ctx->ports[port_id].cycle_time,
+			       &config->qbv_param.cycle_time,
+			       sizeof(ctx->ports[port_id].cycle_time));
+			ctx->ports[port_id].extension_time =
+				config->qbv_param.extension_time;
+			memcpy(&ctx->ports[port_id].base_time,
+			       &config->qbv_param.base_time,
+			       sizeof(ctx->ports[port_id].base_time));
+			break;
+		case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST:
+			ctx->ports[port_id].gate_control.gate_status[0] =
+			    config->qbv_param.gate_control.gate_status[0];
+			ctx->ports[port_id].gate_control.gate_status[1] =
+			    config->qbv_param.gate_control.gate_status[1];
+			break;
+		case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST_LEN:
+			ctx->ports[port_id].gate_control_list_len =
+			    config->qbv_param.gate_control_list_len;
+			break;
+		default:
+			return -ENOTSUP;
+		}
+
+		break;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		if (config->promisc_mode == ctx->promisc_mode) {
 			return -EALREADY;
@@ -226,12 +282,17 @@ static int eth_fake_get_config(const struct device *dev,
 {
 	struct eth_fake_context *ctx = dev->data;
 	int priority_queues_num = ARRAY_SIZE(ctx->priority_queues);
+	int ports_num = ARRAY_SIZE(ctx->ports);
 	enum ethernet_qav_param_type qav_param_type;
-	int queue_id;
+	enum ethernet_qbv_param_type qbv_param_type;
+	int queue_id, port_id;
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM:
 		config->priority_queues_num = ARRAY_SIZE(ctx->priority_queues);
+		break;
+	case ETHERNET_CONFIG_TYPE_PORTS_NUM:
+		config->ports_num = ARRAY_SIZE(ctx->ports);
 		break;
 	case ETHERNET_CONFIG_TYPE_QAV_PARAM:
 		queue_id = config->qav_param.queue_id;
@@ -260,6 +321,43 @@ static int eth_fake_get_config(const struct device *dev,
 			/* Default TC for BE - it doesn't really matter here */
 			config->qav_param.traffic_class =
 				net_tx_priority2tc(NET_PRIORITY_BE);
+			break;
+		default:
+			return -ENOTSUP;
+		}
+
+		break;
+	case ETHERNET_CONFIG_TYPE_QBV_PARAM:
+		port_id = config->qbv_param.port_id;
+		qbv_param_type = config->qbv_param.type;
+
+		if (port_id < 0 || port_id >= ports_num) {
+			return -EINVAL;
+		}
+
+		switch (qbv_param_type) {
+		case ETHERNET_QBV_PARAM_TYPE_STATUS:
+			config->qbv_param.enabled =
+				ctx->ports[port_id].qbv_enabled;
+			break;
+		case ETHERNET_QBV_PARAM_TYPE_TIME:
+			memcpy(&config->qbv_param.base_time,
+			       &ctx->ports[port_id].base_time,
+			       sizeof(config->qbv_param.base_time));
+			memcpy(&config->qbv_param.cycle_time,
+			       &ctx->ports[port_id].cycle_time,
+			       sizeof(config->qbv_param.cycle_time));
+			config->qbv_param.extension_time =
+				ctx->ports[port_id].extension_time;
+			break;
+		case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST_LEN:
+			config->qbv_param.gate_control_list_len =
+				ctx->ports[port_id].gate_control_list_len;
+			break;
+		case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST:
+			memcpy(&config->qbv_param.gate_control,
+			       &ctx->ports[port_id].gate_control,
+			       sizeof(config->qbv_param.gate_control));
 			break;
 		default:
 			return -ENOTSUP;
@@ -668,6 +766,183 @@ static void test_change_qav_params(void)
 	zassert_not_equal(ret, 0, "should not be able to set idle slope");
 }
 
+static void test_change_qbv_params(void)
+{
+	struct net_if *iface = net_if_get_default();
+	const struct device *dev = net_if_get_device(iface);
+	struct eth_fake_context *ctx = dev->data;
+	struct ethernet_req_params params;
+	struct net_ptp_time cycle_time;
+	int available_ports;
+	int i;
+	int ret;
+
+	/* Try to get the number of the ports */
+	ret = net_mgmt(NET_REQUEST_ETHERNET_GET_PORTS_NUM,
+		       iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_equal(ret, 0, "could not get the number of ports (%d)", ret);
+
+	available_ports = params.ports_num;
+
+	zassert_not_equal(available_ports, 0, "returned no priority queues");
+	zassert_equal(available_ports,
+		      ARRAY_SIZE(ctx->ports),
+		      "an invalid number of ports returned");
+
+	for (i = 0; i < available_ports; ++i) {
+		/* Try to set correct params to a correct queue id */
+		params.qbv_param.port_id = i;
+
+		/* Disable Qbv for port */
+		params.qbv_param.type = ETHERNET_QBV_PARAM_TYPE_STATUS;
+		params.qbv_param.state = ETHERNET_QBV_STATE_TYPE_ADMIN;
+		params.qbv_param.enabled = false;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBV_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not disable qbv for port %d", i);
+
+		/* Invert it to make sure the read-back value is proper */
+		params.qbv_param.enabled = true;
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QBV_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not read qbv status (%d)", ret);
+
+		zassert_equal(false, params.qbv_param.enabled,
+			      "qbv should be disabled");
+
+		/* Re-enable Qbv for queue */
+		params.qbv_param.enabled = true;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBV_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not enable qbv (%d)", ret);
+
+		/* Invert it to make sure the read-back value is proper */
+		params.qbv_param.enabled = false;
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QBV_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not read qbv status (%d)", ret);
+
+		zassert_equal(true, params.qbv_param.enabled,
+			      "qbv should be enabled");
+
+		/* Then the Qbv parameter checks */
+
+		params.qbv_param.type = ETHERNET_QBV_PARAM_TYPE_TIME;
+
+		params.qbv_param.base_time.second = 10ULL;
+		params.qbv_param.base_time.fract_nsecond = 20ULL;
+		params.qbv_param.cycle_time.second = 30ULL;
+		params.qbv_param.cycle_time.nanosecond = 20;
+		params.qbv_param.extension_time = 40;
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBV_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not set base time (%d)", ret);
+
+		/* Reset local value - read-back and verify it */
+		params.qbv_param.base_time.second = 0ULL;
+		params.qbv_param.base_time.fract_nsecond = 0ULL;
+		params.qbv_param.cycle_time.second = 0ULL;
+		params.qbv_param.cycle_time.nanosecond = 0;
+		params.qbv_param.extension_time = 0;
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QBV_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not read times (%d)", ret);
+		zassert_equal(params.qbv_param.base_time.second, 10ULL,
+			      "base_time.second did not change");
+		zassert_equal(params.qbv_param.base_time.fract_nsecond, 20ULL,
+			      "base_time.fract_nsecond did not change");
+
+		cycle_time.second = 30ULL;
+		cycle_time.nanosecond = 20;
+		zassert_true(params.qbv_param.cycle_time.second == cycle_time.second &&
+			     params.qbv_param.cycle_time.nanosecond == cycle_time.nanosecond,
+			     "cycle time did not change");
+
+		zassert_equal(params.qbv_param.extension_time, 40,
+			      "extension time did not change");
+
+		params.qbv_param.type =
+			ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST;
+		params.qbv_param.gate_control.gate_status[0] = true;
+		params.qbv_param.gate_control.gate_status[1] = false;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBV_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not set gate control list (%d)",
+			      ret);
+
+		/* Reset local value - read-back and verify it */
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QBV_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not read gate control (%d)", ret);
+
+		params.qbv_param.type =
+			ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST_LEN;
+		params.qbv_param.gate_control_list_len = 1;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBV_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0,
+			      "could not set gate control list len (%d)", ret);
+
+		/* Reset local value - read-back and verify it */
+		params.qbv_param.gate_control_list_len = 0;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QBV_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0,
+			      "could not read gate control list len (%d)",
+			      ret);
+		zassert_equal(params.qbv_param.gate_control_list_len, 1,
+			      "gate control list len did not change");
+	}
+
+	/* Try to set read-only parameters */
+	params.qbv_param.state = ETHERNET_QBV_STATE_TYPE_OPER;
+	params.qbv_param.type = ETHERNET_QBV_PARAM_TYPE_TIME;
+	params.qbv_param.extension_time = 50;
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBV_PARAM,
+		       iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_not_equal(ret, 0, "allowed to set oper status parameter (%d)",
+			  ret);
+
+	params.qbv_param.state = ETHERNET_QBV_STATE_TYPE_ADMIN;
+	params.qbv_param.type = ETHERNET_QBV_PARAM_TYPE_TIME;
+	params.qbv_param.base_time.fract_nsecond = 1000000000;
+	params.qbv_param.cycle_time.nanosecond = 1000000000;
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBV_PARAM,
+		       iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_not_equal(ret, 0, "allowed to set base_time parameter (%d)",
+			  ret);
+}
+
 static void test_change_promisc_mode(bool mode)
 {
 	struct net_if *iface = default_iface;
@@ -721,6 +996,7 @@ void test_main(void)
 			 ztest_unit_test(test_change_duplex),
 			 ztest_unit_test(test_change_same_duplex),
 			 ztest_unit_test(test_change_qav_params),
+			 ztest_unit_test(test_change_qbv_params),
 			 ztest_unit_test(test_change_promisc_mode_on),
 			 ztest_unit_test(test_change_to_same_promisc_mode),
 			 ztest_unit_test(test_change_promisc_mode_off));
