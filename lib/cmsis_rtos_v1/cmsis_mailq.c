@@ -105,16 +105,17 @@ osStatus osMailPut(osMailQId queue_id, void *mail)
 		return osErrorParameter;
 	}
 
+	if (mail == NULL) {
+		return osErrorValue;
+	}
+
 	memset(&mmsg, 0, sizeof(mmsg));
 	mmsg.tx_data = mail;
 	mmsg.rx_source_thread = K_ANY;
 	mmsg.tx_target_thread = K_ANY;
 
-	if (k_mbox_put(queue_def->mbox, &mmsg, 100) == 0) {
-		return osOK;
-	} else {
-		return osErrorValue;
-	}
+	k_mbox_async_put(queue_def->mbox, &mmsg, NULL);
+	return osOK;
 }
 
 /**
