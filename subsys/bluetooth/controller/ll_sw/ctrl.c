@@ -6219,11 +6219,19 @@ static void mayfly_adv_stop(void *param)
 	node_rx->hdr.handle = 0xffff;
 	node_rx->hdr.type = NODE_RX_TYPE_CONNECTION;
 
+	struct pdu_adv *pdu_adv = (void *)&_radio.advertiser.adv_data.data
+					  [_radio.advertiser.adv_data.first][0];
+
 	/* prepare connection complete structure */
 	pdu_data_rx = (void *)node_rx->pdu_data;
 	radio_le_conn_cmplt = (void *)pdu_data_rx->lldata;
 	memset(radio_le_conn_cmplt, 0x00, sizeof(struct radio_le_conn_cmplt));
 	radio_le_conn_cmplt->status = BT_HCI_ERR_ADV_TIMEOUT;
+	radio_le_conn_cmplt->role = 0x01;
+	radio_le_conn_cmplt->peer_addr_type = pdu_adv->rx_addr;
+	memcpy(&radio_le_conn_cmplt->peer_addr[0],
+		   &pdu_adv->direct_ind.tgt_addr[0],
+		   BDADDR_SIZE);
 
 	/* enqueue connection complete structure into queue */
 	packet_rx_enqueue();

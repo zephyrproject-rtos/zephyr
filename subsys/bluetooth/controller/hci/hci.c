@@ -2414,9 +2414,15 @@ static void le_conn_complete(u8_t status, struct radio_le_conn_cmplt *radio_cc,
 		leecc = meta_evt(buf, BT_HCI_EVT_LE_ENH_CONN_COMPLETE,
 				 sizeof(*leecc));
 
+		memset(leecc, 0x00, sizeof(*leecc));
+		leecc->status = status;
+		leecc->role = radio_cc->role;
+
+		leecc->peer_addr.type = radio_cc->peer_addr_type;
+		memcpy(&leecc->peer_addr.a.val[0], &radio_cc->peer_addr[0],
+		       BDADDR_SIZE);
+
 		if (status) {
-			memset(leecc, 0x00, sizeof(*leecc));
-			leecc->status = status;
 			return;
 		}
 
@@ -2451,18 +2457,18 @@ static void le_conn_complete(u8_t status, struct radio_le_conn_cmplt *radio_cc,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 	lecc = meta_evt(buf, BT_HCI_EVT_LE_CONN_COMPLETE, sizeof(*lecc));
+	memset(lecc, 0x00, sizeof(*lecc));
 
-	if (status) {
-		memset(lecc, 0x00, sizeof(*lecc));
-		lecc->status = status;
-		return;
-	}
-
-	lecc->status = 0x00;
-	lecc->handle = sys_cpu_to_le16(handle);
+	lecc->status = status;
 	lecc->role = radio_cc->role;
 	lecc->peer_addr.type = radio_cc->peer_addr_type;
 	memcpy(&lecc->peer_addr.a.val[0], &radio_cc->peer_addr[0], BDADDR_SIZE);
+
+	if (status) {
+		return;
+	}
+
+	lecc->handle = sys_cpu_to_le16(handle);
 	lecc->interval = sys_cpu_to_le16(radio_cc->interval);
 	lecc->latency = sys_cpu_to_le16(radio_cc->latency);
 	lecc->supv_timeout = sys_cpu_to_le16(radio_cc->timeout);
