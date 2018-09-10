@@ -35,4 +35,7 @@ config PWM_STM32_2
 
 endif # PWM
 
+config I2C_1
+	default y
+
 endif # BOARD_NUCLEO_L476RG

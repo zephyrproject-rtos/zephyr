@@ -15,6 +15,8 @@
 #define LED_THREAD_STACK_SIZE 512
 #define RX_STR_THREAD_STACK_SIZE 512
 #define TX_THREAD_PRIORITY 2
+#define LED_THREAD_PRIORITY 2
+#define RX_THREAD_PRIORITY 2
 #define LED_MSG_ID (0x10)
 #define BUTTON_MSG_ID (0x01)
 #define STR_MSG_ID (0x12345)
@@ -250,7 +252,7 @@ void main(void)
 					  K_THREAD_STACK_SIZEOF(led_thread_stack),
 					  led_thread,
 					  &led_msgq, can_dev, led_gpio_dev,
-					  TX_THREAD_PRIORITY, 0, K_NO_WAIT);
+					  LED_THREAD_PRIORITY, 0, K_NO_WAIT);
 	if (!led_tid) {
 		printk("ERROR spawning led_thread\n");
 	}
@@ -260,7 +262,7 @@ void main(void)
 					  K_THREAD_STACK_SIZEOF(rx_str_thread_stack),
 					  rx_str_thread,
 					  &str_msgq, can_dev, NULL,
-					  TX_THREAD_PRIORITY, 0, K_NO_WAIT);
+					  RX_THREAD_PRIORITY, 0, K_NO_WAIT);
 	if (!str_tid) {
 		printk("ERROR spawning str_thread\n");
 	}
