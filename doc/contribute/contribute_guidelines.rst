@@ -51,7 +51,7 @@ There are some imported or reused components of the Zephyr project that
 use other licensing, as described in `Zephyr Licensing`_.
 
 .. _Zephyr Licensing:
-   http://docs.zephyrproject.org/LICENSING.html
+   https://docs.zephyrproject.org/LICENSING.html
 
 Importing code into the Zephyr OS from other projects that use a license
 other than the Apache 2.0 license needs to be fully understood in
@@ -66,7 +66,7 @@ See `Contributing non-Apache 2.0 components`_ for more information about
 this contributing and review process for imported components.
 
 .. _Contributing non-Apache 2.0 components:
-   http://docs.zephyrproject.org/contribute/contribute_non-apache.html
+   https://docs.zephyrproject.org/contribute/contribute_non-apache.html
 
 .. _DCO:
 
@@ -140,13 +140,13 @@ and how to set up your development environment as introduced in the Zephyr
 `Getting Started Guide`_.
 
 .. _Getting Started Guide:
-   http://docs.zephyrproject.org/getting_started/getting_started.html
+   https://docs.zephyrproject.org/getting_started/getting_started.html
 
 You should be familiar with common developer tools such as Git and CMake, and
 platforms such as GitHub.
 
 If you haven't already done so, you'll need to create a (free) GitHub account
-on http://github.com and have Git tools available on your development system.
+on https://github.com and have Git tools available on your development system.
 
 .. note::
    The Zephyr development workflow supports all 3 major operating systems
@@ -172,7 +172,7 @@ configurations, and a collection of subsystem tests.  All of these are
 available for developers to contribute to and enhance.
 
 .. _Source Tree Structure:
-   http://docs.zephyrproject.org/kernel/overview/source_tree.html
+   https://docs.zephyrproject.org/kernel/overview/source_tree.html
 
 Pull Requests and Issues
 ************************
