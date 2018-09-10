@@ -297,6 +297,8 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 			buf[--len] = NRF_RNG->VALUE;
 
 			NRF_RNG->EVENTS_VALRDY = 0;
+
+			NVIC_ClearPendingIRQ(RNG_IRQn);
 		} while (len);
 
 		nrf_rng_task_trigger(NRF_RNG_TASK_STOP);

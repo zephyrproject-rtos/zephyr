@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <xtensa/tie/xt_core.h>
-#include <xtensa/tie/xt_interrupt.h>
 #include <tracing.h>
 
 /*

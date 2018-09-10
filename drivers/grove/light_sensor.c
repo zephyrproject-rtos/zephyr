@@ -29,7 +29,7 @@ static struct adc_sequence adc_table = {
 	.options = &options,
 };
 
-#define ADC_RESOLUTION 8
+#define ADC_RESOLUTION 12
 
 static int gls_sample_fetch(struct device *dev, enum sensor_channel chan)
 {

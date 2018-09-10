@@ -73,12 +73,30 @@ if SPI_NRFX
 config SPI_3
 	def_bool y
 
+config SPI_NRFX_RAM_BUFFER_SIZE
+	default 8
+
 endif #SPI_NRFX
 
 if SPI_3
 
 config SPI_3_NRF_SPIM
 	def_bool y
+
+config SPI_3_IRQ_PRI
+	default 1
+
+config SPI_3_NRF_SCK_PIN
+	default 19
+
+config SPI_3_NRF_MOSI_PIN
+	default 20
+
+config SPI_3_NRF_MISO_PIN
+	default 21
+
+config SPI_3_NRF_RX_DELAY
+	default 1
 
 endif # SPI_3
 

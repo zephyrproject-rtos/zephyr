@@ -34,7 +34,7 @@ time filtering is independent for each backend and each source of log messages.
 Source of log messages can be a module or specific instance of the module.
 
 There are four severity levels available in the system: error, warning, info
-and debug. For each severity level the logger API (:file:`subsys/logging/log.h`)
+and debug. For each severity level the logger API (:file:`include/logging/log.h`)
 has set of dedicated macros. Logger API also has macros for logging data.
 
 For each level following set of macros are available:

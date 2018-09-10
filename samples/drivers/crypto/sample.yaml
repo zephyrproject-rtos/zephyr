@@ -5,7 +5,7 @@ sample:
 common:
   tags: crypto
   harness: console
-  min_ram: 16
+  min_ram: 20
 tests:
   test-mbedtls:
     min_flash: 34

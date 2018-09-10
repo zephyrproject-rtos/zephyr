@@ -58,7 +58,17 @@ static int xoroshiro128_initialize(struct device *dev)
 		return -EINVAL;
 	}
 
-	if (entropy_get_entropy(dev, (uint8_t *)&state, sizeof(state)) < 0) {
+	s32_t rc = entropy_get_entropy_isr(dev, (uint8_t *)&state,
+					   sizeof(state), ENTROPY_BUSYWAIT);
+
+	if (rc == -ENOTSUP) {
+		/* Driver does not provide an ISR-specific API, assume it can
+		 * be called from ISR context
+		 */
+		rc = entropy_get_entropy(dev, (u8_t *)&state, sizeof(state));
+	}
+
+	if (rc < 0) {
 		return -EINVAL;
 	}
 
