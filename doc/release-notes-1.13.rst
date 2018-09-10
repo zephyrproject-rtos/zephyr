@@ -2,8 +2,8 @@
 
 .. _zephyr_1.13:
 
-Zephyr Kernel 1.13.0 (DRAFT)
-############################
+Zephyr Kernel 1.13.0
+####################
 
 We are pleased to announce the release of Zephyr kernel version 1.13.0.
 
@@ -17,8 +17,8 @@ Major enhancements with this release include:
 * Link Layer Discovery Protocol (LLDP) TX support
 * Support for TLS and DTLS using BSD socket API
 * Support for Link Layer Multicast Name Resolution (LLMNR)
-* Introduced reworked ADC API and updated Nordic, NXP, Atmel, and Designware
-  drivers
+* Introduced reworked ADC API and updated Nordic, NXP, Atmel, and
+  Synopsys DesignWare drivers
 * Support OS driven Power Management framework
 * Basic support for Arm TrustZone in Armv8-M
 
@@ -28,14 +28,13 @@ Kernel
 ******
 
 * Remove kernel event manager, replaced by generic tracing interface
-* Enahnced Timeout and Tick handling in kernel
+* Enhanced Timeout and Tick handling in kernel
 * Compartmentalized application memory organization
 * Fix errno access for user mode
 
 Architectures
 *************
 
-* arch: arc: Support Synopsys nSim device simulator
 * arch: arc: improve the reset code
 * arch: arc: use a separate stack for exception handling
 * arch: arc: refactor the arc stack check support
@@ -60,6 +59,7 @@ Boards & SoC Support
 
 * x86: add SoC configuration for Apollo Lake
 * x86: add support for UP Squared (Pentium/Celeron)
+* arc: Support Synopsys ARC nSim instruction set simulator
 * riscv32: riscv-privilege: Microsemi Mi-V support
 * Added support for the following Arm boards:
 
@@ -78,8 +78,8 @@ Boards & SoC Support
 Drivers and Sensors
 *******************
 
-* adc: Introduced reworked API and updated Nordic, NXP, Atmel, and Designware
-  drivers
+* adc: Introduced reworked API and updated Nordic, NXP, Atmel, and
+  Synopsys DesignWare drivers
 * audio: Added TLV320DAC310x audio DAC driver
 * can: Added can support for STM32L432
 * clock_control: Added STM32F7 family clock control
