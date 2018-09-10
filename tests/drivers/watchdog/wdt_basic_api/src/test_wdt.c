@@ -128,7 +128,7 @@ static int test_wdt_no_callback(void)
 
 	if (m_state == WDT_TEST_STATE_CHECK_RESET) {
 		m_state = WDT_TEST_STATE_IDLE;
-		m_testcase_index++;
+		m_testcase_index = 1;
 		TC_PRINT("Testcase passed\n");
 		return TC_PASS;
 	}
@@ -288,7 +288,7 @@ static int test_wdt_bad_window_max(void)
 
 void test_wdt(void)
 {
-	if (m_testcase_index == 0) {
+	if (m_testcase_index != 1) {
 		zassert_true(test_wdt_no_callback() == TC_PASS, NULL);
 	}
 	if (m_testcase_index == 1) {
@@ -306,7 +306,6 @@ void test_wdt(void)
 		m_testcase_index++;
 	}
 	if (m_testcase_index > 3) {
-		m_testcase_index = 0;
 		m_state = WDT_TEST_STATE_IDLE;
 	}
 }
