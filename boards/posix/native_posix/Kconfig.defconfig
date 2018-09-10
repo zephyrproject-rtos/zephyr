@@ -80,3 +80,10 @@ config SDL_DISPLAY
 endif # DISPLAY
 
 endif # BOARD_NATIVE_POSIX
+
+if USB
+
+config USB_NATIVE_POSIX
+	def_bool y
+
+endif # USB
