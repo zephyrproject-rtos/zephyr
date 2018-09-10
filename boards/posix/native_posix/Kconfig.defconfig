@@ -87,3 +87,10 @@ config TRACING_CTF_BOTTOM_POSIX
 endif # TRACING_CTF
 
 endif # BOARD_NATIVE_POSIX
+
+if USB
+
+config USB_NATIVE_POSIX
+	def_bool y
+
+endif # USB
