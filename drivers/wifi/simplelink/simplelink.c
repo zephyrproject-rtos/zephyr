@@ -202,6 +202,20 @@ static struct net_offload simplelink_offload = {
 
 static void simplelink_iface_init(struct net_if *iface)
 {
+	int ret;
+
+	simplelink_data.iface = iface;
+
+	/* Initialize and configure NWP to defaults: */
+	ret = _simplelink_init(simplelink_wifi_cb);
+	if (ret) {
+		LOG_ERR("_simplelink_init failed!");
+		return;
+	}
+
+	/* Grab our MAC address: */
+	_simplelink_get_mac(simplelink_data.mac);
+
 	LOG_DBG("MAC Address %02X:%02X:%02X:%02X:%02X:%02X",
 		simplelink_data.mac[0], simplelink_data.mac[1],
 		simplelink_data.mac[2],
@@ -212,10 +226,14 @@ static void simplelink_iface_init(struct net_if *iface)
 			     sizeof(simplelink_data.mac),
 			     NET_LINK_ETHERNET);
 
-	/* Direct socket offload used instead of net offload for this driver */
+	/* Direct socket offload used instead of net offload: */
 	iface->if_dev->offload = &simplelink_offload;
 
-	simplelink_data.iface = iface;
+#ifdef CONFIG_NET_SOCKETS_OFFLOAD
+	/* Direct socket offload: */
+	socket_offload_register(&simplelink_ops);
+#endif
+
 }
 
 static const struct net_wifi_mgmt_offload simplelink_api = {
@@ -227,28 +245,11 @@ static const struct net_wifi_mgmt_offload simplelink_api = {
 
 static int simplelink_init(struct device *dev)
 {
-	int ret;
-
 	ARG_UNUSED(dev);
-
-	/* Initialize and configure NWP to defaults: */
-	ret = _simplelink_init(simplelink_wifi_cb);
-	if (ret) {
-		LOG_ERR("_simplelink_init failed!");
-		return(-EIO);
-	}
-
-	/* Grab our MAC address: */
-	_simplelink_get_mac(simplelink_data.mac);
 
 	/* We use system workqueue to deal with scan retries: */
 	k_delayed_work_init(&simplelink_data.work,
 			    simplelink_scan_work_handler);
-
-#ifdef CONFIG_NET_SOCKETS_OFFLOAD
-	/* Direct socket offload: */
-	socket_offload_register(&simplelink_ops);
-#endif
 
 	LOG_DBG("SimpleLink driver Initialized");
 
