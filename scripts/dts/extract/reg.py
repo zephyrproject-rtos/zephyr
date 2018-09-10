@@ -23,11 +23,10 @@ class DTReg(DTDirective):
     #                     reg definition.
     # @param yaml YAML definition for the owning node.
     # @param prop reg property name
-    # @param names (unused)
     # @param def_label Define label string of node owning the
     #                  compatible definition.
     #
-    def extract(self, node_address, yaml, prop, names, def_label):
+    def extract(self, node_address, yaml, prop, def_label):
 
         node = reduced[node_address]
         node_compat = get_compat(node_address)

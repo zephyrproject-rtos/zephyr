@@ -57,7 +57,7 @@ class DTClocks(DTDirective):
                 property_path_templ.format(clock_cell_name), cell)
 
 
-    def _extract_consumer(self, node_address, yaml, clocks, names, def_label):
+    def _extract_consumer(self, node_address, yaml, clocks, def_label):
 
         clock_consumer_device_id = edts_device_id(node_address)
         clock_consumer = reduced[node_address]
@@ -180,10 +180,9 @@ class DTClocks(DTDirective):
     # @param node_address Address of node owning the clockxxx definition.
     # @param yaml YAML definition for the owning node.
     # @param prop clockxxx property name
-    # @param names (unused)
     # @param def_label Define label string of node owning the directive.
     #
-    def extract(self, node_address, yaml, prop, names, def_label):
+    def extract(self, node_address, yaml, prop, def_label):
 
         properties = reduced[node_address]['props'][prop]
 
@@ -195,7 +194,7 @@ class DTClocks(DTDirective):
 
         if prop == 'clocks':
             # indicator for clock consumers
-            self._extract_consumer(node_address, yaml, prop_list, names, def_label)
+            self._extract_consumer(node_address, yaml, prop_list, def_label)
         else:
             raise Exception(
                 "DTClocks.extract called with unexpected directive ({})."

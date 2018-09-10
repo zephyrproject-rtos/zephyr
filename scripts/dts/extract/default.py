@@ -22,10 +22,9 @@ class DTDefault(DTDirective):
     # @param node_address Address of node owning the directive definition.
     # @param yaml YAML definition for the owning node.
     # @param prop property name
-    # @param names (unused)
     # @param def_label Define label string of node owning the directive.
     #
-    def extract(self, node_address, yaml, prop, names, def_label):
+    def extract(self, node_address, yaml, prop, def_label):
         prop_values = reduced[node_address]['props'][prop]
 
         # generate EDTS
