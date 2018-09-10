@@ -22,13 +22,28 @@ struct sample_data {
 #define MAIL2_DATA2	255
 #define MAIL2_DATA3	1234567
 
-osMailQDef(mail, 16, struct sample_data);
+#define TIMEOUT		500
+#define Q_LEN		5
+
+osMailQDef(mail, Q_LEN, struct sample_data);
 osMailQId  mail_id;
 
 void send_thread(void const *argument)
 {
+	int i;
 	struct sample_data *tx_ptr;
+	struct sample_data zeroblock;
 	osStatus status;
+
+	/* This is used for comparison later in the function */
+	memset(&zeroblock, 0, sizeof(struct sample_data));
+
+	status = osMailPut(mail_id, NULL);
+	zassert_true(status == osErrorValue,
+	 "Something's wrong with osMailPut. It is passing for NULL mail!");
+
+	/* Wait for mail_recv to complete initial checks */
+	osDelay(TIMEOUT);
 
 	/* Prepare and send 1st mail */
 	tx_ptr = osMailAlloc(mail_id, osWaitForever);
@@ -38,23 +53,74 @@ void send_thread(void const *argument)
 	tx_ptr->data3 = MAIL1_DATA3;
 	status = osMailPut(mail_id, tx_ptr);
 	zassert_true(status == osOK, "osMailPut failure for mail1");
-	osDelay(100);
 
-	/* Prepare and send 2nd mail */
-	tx_ptr = osMailCAlloc(mail_id, osWaitForever);
-	zassert_true(tx_ptr != NULL, "Mail2 alloc failed");
+	/* Fill the queue with blocks of mails */
+	for (i = 0; i < Q_LEN; i++) {
+
+		/* Alternately use osMailAlloc and osMailCAlloc to ensure
+		 * both the APIs are tested.
+		 */
+		if (i & 1) {
+			tx_ptr = osMailCAlloc(mail_id, osWaitForever);
+		} else {
+			tx_ptr = osMailAlloc(mail_id, osWaitForever);
+		}
+		zassert_true(tx_ptr != NULL, "Mail alloc failed");
+
+		tx_ptr->data1 = i;
+		tx_ptr->data2 = i+1;
+		tx_ptr->data3 = i+2;
+
+		status = osMailPut(mail_id, tx_ptr);
+		zassert_true(status == osOK,
+				"osMailPut failure for mail!");
+	}
+
+	/* Try allocating mail to a full queue immediately
+	 * before it is emptied out and assert failure
+	 */
+	tx_ptr = osMailAlloc(mail_id, 0);
+	zassert_true(tx_ptr == NULL, "MailAlloc passed. Something's wrong");
+	tx_ptr = osMailCAlloc(mail_id, 0);
+	zassert_true(tx_ptr == NULL, "MailCAlloc passed. Something's wrong");
+
+	/* Try allocating mail to a full queue within a duration
+	 * less than TIMEOUT, before the queue is emptied out
+	 */
+	tx_ptr = osMailAlloc(mail_id, TIMEOUT/3);
+	zassert_true(tx_ptr == NULL, "MailAlloc passed. Something's wrong");
+	tx_ptr = osMailCAlloc(mail_id, TIMEOUT/3);
+	zassert_true(tx_ptr == NULL, "MailCAlloc passed. Something's wrong");
+
+	/* Send another mail after the queue is emptied */
+	tx_ptr = osMailCAlloc(mail_id, TIMEOUT*2);
+	zassert_true(tx_ptr != NULL, "Mail alloc failed");
+	zassert_equal(memcmp(tx_ptr, &zeroblock, sizeof(struct sample_data)), 0,
+		"osMailCAlloc returned memory not initialized to 0");
+
 	tx_ptr->data1 = MAIL2_DATA1;
 	tx_ptr->data2 = MAIL2_DATA2;
 	tx_ptr->data3 = MAIL2_DATA3;
 	status = osMailPut(mail_id, tx_ptr);
-	zassert_true(status == osOK, "osMailPut failure for mail2");
+	zassert_true(status == osOK, "osMailPut failure for mail");
 }
 
 void mail_recv(void)
 {
+	int i;
 	struct sample_data  *rx_ptr;
 	osEvent  evt;
 	osStatus status;
+
+	/* Try getting mail immediately before the queue is populated */
+	evt = osMailGet(mail_id, 0);
+	zassert_true(evt.status == osOK,
+			"Something's wrong with osMailGet!");
+
+	/* Try receiving mail within a duration of TIMEOUT */
+	evt = osMailGet(mail_id, TIMEOUT);
+	zassert_true(evt.status == osEventTimeout,
+		"Something's wrong with osMailGet!");
 
 	/* Receive 1st mail */
 	evt = osMailGet(mail_id, osWaitForever);
@@ -68,7 +134,24 @@ void mail_recv(void)
 	status = osMailFree(mail_id, rx_ptr);
 	zassert_true(status == osOK, "osMailFree failure");
 
-	/* Receive 2nd mail */
+	/* Wait for queue to get filled */
+	osDelay(TIMEOUT);
+
+	/* Empty the queue */
+	for (i = 0; i < Q_LEN; i++) {
+		evt = osMailGet(mail_id, osWaitForever);
+		zassert_true(evt.status == osEventMail, "osMailGet failure");
+
+		rx_ptr = evt.value.p;
+		zassert_equal(rx_ptr->data1, i, NULL);
+		zassert_equal(rx_ptr->data2, i + 1, NULL);
+		zassert_equal(rx_ptr->data3, i + 2, NULL);
+
+		status = osMailFree(mail_id, rx_ptr);
+		zassert_true(status == osOK, "osMailFree failure");
+	}
+
+	/* Receive the next mail */
 	evt = osMailGet(mail_id, osWaitForever);
 	zassert_true(evt.status == osEventMail, "osMailGet failure");
 
