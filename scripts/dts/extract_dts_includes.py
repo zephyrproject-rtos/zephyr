@@ -439,17 +439,17 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
     if prop == 'reg':
         if 'partition@' in node_address:
             # reg in partition is covered by flash handling
-            flash.extract(node_address, yaml, prop, names, def_label)
+            flash.extract(node_address, yaml, prop, def_label)
         else:
             reg.extract(node_address, yaml, prop, names, def_label)
     elif prop == 'interrupts' or prop == 'interrupts-extended':
         interrupts.extract(node_address, yaml, prop, names, def_label)
     elif prop == 'compatible':
-        compatible.extract(node_address, yaml, prop, names, def_label)
+        compatible.extract(node_address, yaml, prop, def_label)
     elif 'pinctrl-' in prop:
-        pinctrl.extract(node_address, yaml, prop, names, def_label)
+        pinctrl.extract(node_address, yaml, prop, def_label)
     elif 'clocks' in prop:
-        clocks.extract(node_address, yaml, prop, names, def_label)
+        clocks.extract(node_address, yaml, prop, def_label)
     elif 'gpios' in prop:
         try:
             prop_values = list(reduced[node_address]['props'].get(prop))
@@ -461,7 +461,7 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
         extract_cells(node_address, yaml, prop, prop_values,
                       names, 0, def_label, 'gpio')
     else:
-        default.extract(node_address, yaml, prop, names, def_label)
+        default.extract(node_address, yaml, prop, def_label)
 
 
 def extract_node_include_info(reduced, root_node_address, sub_node_address,
@@ -757,10 +757,9 @@ def generate_node_definitions(yaml_list):
             extract_string_prop(chosen[k], None, "label", v)
 
     node_address = chosen.get('zephyr,flash', 'dummy-flash')
-    flash.extract(node_address, yaml_list, 'zephyr,flash', None, 'FLASH')
+    flash.extract(node_address, yaml_list, 'zephyr,flash', 'FLASH')
     node_address = chosen.get('zephyr,code-partition', node_address)
-    flash.extract(node_address, yaml_list, 'zephyr,code-partition', None,
-                  'FLASH')
+    flash.extract(node_address, yaml_list, 'zephyr,code-partition', 'FLASH')
 
     return defs
 
