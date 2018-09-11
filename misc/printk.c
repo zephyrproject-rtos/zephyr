@@ -266,7 +266,7 @@ static int char_out(int c, void *ctx_p)
 }
 
 #ifdef CONFIG_USERSPACE
-int vprintk(const char *fmt, va_list ap)
+void vprintk(const char *fmt, va_list ap)
 {
 	if (_is_user_context()) {
 		struct buf_out_context ctx = { 0 };
@@ -276,23 +276,18 @@ int vprintk(const char *fmt, va_list ap)
 		if (ctx.buf_count) {
 			buf_flush(&ctx);
 		}
-		return ctx.count;
 	} else {
 		struct out_context ctx = { 0 };
 
 		_vprintk(char_out, &ctx, fmt, ap);
-
-		return ctx.count;
 	}
 }
 #else
-int vprintk(const char *fmt, va_list ap)
+void vprintk(const char *fmt, va_list ap)
 {
 	struct out_context ctx = { 0 };
 
 	_vprintk(char_out, &ctx, fmt, ap);
-
-	return ctx.count;
 }
 #endif
 
@@ -331,23 +326,20 @@ Z_SYSCALL_HANDLER(k_str_out, c, n)
  *
  * @param fmt formatted string to output
  *
- * @return Number of characters printed
+ * @return N/A
  */
-int printk(const char *fmt, ...)
+void printk(const char *fmt, ...)
 {
-	int ret;
 	va_list ap;
 
 	va_start(ap, fmt);
 
 	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
-		ret = log_printk(fmt, ap);
+		log_printk(fmt, ap);
 	} else {
-		ret = vprintk(fmt, ap);
+		vprintk(fmt, ap);
 	}
 	va_end(ap);
-
-	return ret;
 }
 
 /**
