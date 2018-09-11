@@ -22,10 +22,10 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/services/bas.h>
 #include <misc/byteorder.h>
 
 #include <gatt/hrs.h>
-#include <gatt/bas.h>
 
 static struct bt_conn *default_conn;
 
@@ -109,7 +109,6 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	hrs_init(0x01);
-	bas_init();
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
@@ -143,7 +142,7 @@ static void test_con2_main(void)
 		hrs_notify();
 
 		/* Battery level simulation */
-		bas_notify();
+		bt_gatt_bas_notify();
 
 		if (notify_count++ == 1) { /* We consider it passed */
 			PASS("Testcase passed\n");

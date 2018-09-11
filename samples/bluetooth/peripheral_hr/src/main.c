@@ -21,7 +21,6 @@
 #include <bluetooth/gatt.h>
 
 #include <gatt/hrs.h>
-#include <gatt/bas.h>
 
 struct bt_conn *default_conn;
 
@@ -65,7 +64,6 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	hrs_init(0x01);
-	bas_init();
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
@@ -110,8 +108,5 @@ void main(void)
 
 		/* Heartrate measurements simulation */
 		hrs_notify();
-
-		/* Battery level simulation */
-		bas_notify();
 	}
 }

@@ -23,7 +23,6 @@
 #include <bluetooth/gatt.h>
 
 #include <gatt/hrs.h>
-#include <gatt/bas.h>
 #include <gatt/cts.h>
 
 /* Custom Service Variables */
@@ -318,9 +317,6 @@ void main(void)
 
 		/* Heartrate measurements simulation */
 		hrs_notify();
-
-		/* Battery level simulation */
-		bas_notify();
 
 		/* Vendor indication simulation */
 		if (simulate_vnd) {

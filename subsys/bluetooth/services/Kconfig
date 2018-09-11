@@ -11,6 +11,8 @@ menu "GATT Services"
 
 source "subsys/bluetooth/services/Kconfig.dis"
 
+source "subsys/bluetooth/services/Kconfig.bas"
+
 endmenu
 
-endif # BT_CONN
+endif #BT_CONN

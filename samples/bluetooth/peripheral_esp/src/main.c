@@ -21,8 +21,6 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <gatt/bas.h>
-
 #define SENSOR_1_NAME				"Temperature Sensor 1"
 #define SENSOR_2_NAME				"Temperature Sensor 2"
 #define SENSOR_3_NAME				"Humidity Sensor"
@@ -387,8 +385,6 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	bas_init();
-
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
@@ -442,8 +438,5 @@ void main(void)
 		if (simulate_temp) {
 			ess_simulate();
 		}
-
-		/* Battery level simulation */
-		bas_notify();
 	}
 }
