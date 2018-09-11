@@ -4962,49 +4962,61 @@ int bt_id_delete(u8_t id)
 	return 0;
 }
 
-int bt_setup_id_addr(void)
-{
 #if defined(CONFIG_BT_HCI_VS_EXT)
-	/* Check for VS_Read_Static_Addresses support. Only read the
-	 * addresses if the user has not already configured one or
-	 * more identities (!bt_dev.id_count).
-	 */
-	if (!bt_dev.id_count && (bt_dev.vs_commands[1] & BIT(0))) {
-		struct bt_hci_rp_vs_read_static_addrs *rp;
-		struct net_buf *rsp;
-		int err, i;
-
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_STATIC_ADDRS,
-					   NULL, &rsp);
-		if (err) {
-			BT_WARN("Failed to read static addresses");
-			goto generate;
-		}
-
-		rp = (void *)rsp->data;
-		bt_dev.id_count = min(rp->num_addrs, CONFIG_BT_ID_MAX);
-		for (i = 0; i < bt_dev.id_count; i++) {
-			bt_addr_le_t addr;
-
-			addr.type = BT_ADDR_LE_RANDOM;
-			bt_addr_copy(&addr.a, &rp->a[i].bdaddr);
-			id_create(i, &addr, NULL);
-		}
-
-		net_buf_unref(rsp);
-
-		if (bt_dev.id_count) {
-			return set_random_address(&bt_dev.id_addr[0].a);
-		}
-
-		BT_WARN("No static addresses stored in controller");
-	} else {
+static uint8_t bt_read_static_addr(bt_addr_le_t *addr)
+{
+	struct bt_hci_rp_vs_read_static_addrs *rp;
+	struct net_buf *rsp;
+	int err, i;
+	u8_t cnt;
+	if (!(bt_dev.vs_commands[1] & BIT(0))) {
 		BT_WARN("Read Static Addresses command not available");
+		return 0;
 	}
 
-generate:
-#endif
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_STATIC_ADDRS, NULL, &rsp);
+	if (err) {
+		BT_WARN("Failed to read static addresses");
+		return 0;
+	}
+	rp = (void *)rsp->data;
+	cnt = min(rp->num_addrs, CONFIG_BT_ID_MAX);
 
+	for (i = 0; i < cnt; i++) {
+		addr[i].type = BT_ADDR_LE_RANDOM;
+		bt_addr_copy(&addr[i].a, &rp->a[i].bdaddr);
+	}
+	net_buf_unref(rsp);
+	if (!cnt) {
+		BT_WARN("No static addresses stored in controller");
+	}
+	return cnt;
+}
+#elif defined(CONFIG_BT_CTLR)
+uint8_t bt_read_static_addr(bt_addr_le_t *addr);
+#endif /* CONFIG_BT_HCI_VS_EXT */
+
+int bt_setup_id_addr(void)
+{
+#if defined(CONFIG_BT_HCI_VS_EXT) || defined(CONFIG_BT_CTLR)
+	/* Only read the addresses if the user has not already configured one or
+	 * more identities (!bt_dev.id_count).
+	 */
+	if (!bt_dev.id_count) {
+		bt_addr_le_t addrs[CONFIG_BT_ID_MAX];
+
+		bt_dev.id_count = bt_read_static_addr(addrs);
+		if (bt_dev.id_count) {
+			int i;
+
+			for (i = 0; i < bt_dev.id_count; i++) {
+				id_create(i, &addrs[i], NULL);
+			}
+
+			return set_random_address(&bt_dev.id_addr[0].a);
+		}
+	}
+#endif
 	return bt_id_create(NULL, NULL);
 }
 
