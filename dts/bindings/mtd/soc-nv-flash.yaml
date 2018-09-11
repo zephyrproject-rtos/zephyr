@@ -1,6 +1,6 @@
 ---
 title: Flash base node description
-id: soc-nv-flash
+id: mtd
 version: 0.1
 
 description: >

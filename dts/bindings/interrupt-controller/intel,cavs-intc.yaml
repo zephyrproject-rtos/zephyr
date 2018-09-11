@@ -1,5 +1,6 @@
 ---
 title: CAVS Interrupt Controller
+id: interrupt-controller
 version: 0.1
 
 description: >

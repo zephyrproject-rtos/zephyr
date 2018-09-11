@@ -1,6 +1,7 @@
 ---
 # SPDX-License-Identifier: Apache-2.0
 title: TI CC2650 PRCM
+id: prcm
 version: 0.1
 
 description: >

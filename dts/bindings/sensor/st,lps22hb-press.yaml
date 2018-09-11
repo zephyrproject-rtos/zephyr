@@ -5,7 +5,7 @@
 #
 ---
 title: STMicroelectronics MEMS sensors LPS22HB
-id: st,lps22hb-press
+id: sensor
 version: 0.1
 
 description: >

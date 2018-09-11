@@ -1,6 +1,6 @@
 ---
 title: NXP PCA9633 LED Driver
-id: nxp,pca9633
+id: led
 version: 0.1
 
 description: NXP PCA9633 LED binding

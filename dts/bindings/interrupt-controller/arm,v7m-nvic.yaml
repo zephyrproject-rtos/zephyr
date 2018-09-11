@@ -1,6 +1,6 @@
 ---
 title: ARMv7-M NVIC Interrupt Controller
-id: arm,v7m-nvic
+id: interrupt-controller
 version: 0.1
 
 description: >

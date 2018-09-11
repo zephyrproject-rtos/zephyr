@@ -5,7 +5,6 @@
 #
 ---
 title: Intel QMSI i2c
-id: intel,qmsi-i2c
 version: 0.1
 
 description: >

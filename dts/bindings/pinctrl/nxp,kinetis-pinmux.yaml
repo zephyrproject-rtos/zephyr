@@ -1,6 +1,6 @@
 ---
 title: Kinetis Pinmux
-id: nxp,kinetis-pinmux
+id: pinmux
 version: 0.1
 
 description: >

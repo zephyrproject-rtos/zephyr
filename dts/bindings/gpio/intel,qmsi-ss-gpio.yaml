@@ -5,7 +5,7 @@
 #
 ---
 title: Intel QMSI SS GPIO
-id: intel,qmsi-ss-gpio
+id: gpio
 version: 0.1
 
 description: >

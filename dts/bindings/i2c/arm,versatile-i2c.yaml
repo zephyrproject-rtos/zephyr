@@ -5,7 +5,6 @@
 #
 ---
 title: ARM SBCon two-wire serial bus interface
-id: arm,versatile-i2c
 version: 0.1
 
 description: >

@@ -5,7 +5,7 @@
 #
 ---
 title: NXP SEMC
-id: nxp,imx-semc
+id: memory-controllers
 version: 0.1
 
 description: >

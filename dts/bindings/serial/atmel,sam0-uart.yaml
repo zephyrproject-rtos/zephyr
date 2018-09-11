@@ -1,6 +1,5 @@
 ---
 title: Atmel SAM0 SERCOM UART driver
-id: atmel,sam0-uart
 version: 0.1
 
 description: >

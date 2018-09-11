@@ -5,7 +5,7 @@
 #
 ---
 title: SiFive GPIO
-id: sifive,gpio0
+id: gpio
 version: 0.1
 
 description: >

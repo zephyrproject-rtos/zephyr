@@ -5,7 +5,7 @@
 #
 ---
 title: RISC-V PLIC
-id: riscv,plic0
+id: interrupt-controller
 version: 0.1
 
 description: >

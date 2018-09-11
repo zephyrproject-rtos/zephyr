@@ -1,6 +1,6 @@
 ---
 title: Atmel SERCOM binding
-id: atmel,sam0-sercom
+id: sercom
 version: 0.1
 
 description: >

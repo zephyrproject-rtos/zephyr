@@ -5,7 +5,6 @@
 #
 ---
 title: i.MX7D PWM
-id: fsl,imx7d-pwm
 version: 0.1
 
 description: >

@@ -1,6 +1,6 @@
 ---
 title: Atmel SAM GPIO PORT driver
-id: atmel,sam-gpio
+id: gpio
 version: 0.1
 
 description: >

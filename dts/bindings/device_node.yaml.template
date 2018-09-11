@@ -1,5 +1,6 @@
 ---
 title: <Title should describe what node you are describing>
+id: <zephyr generic type for the described device>
 version: 0.1
 
 description: >

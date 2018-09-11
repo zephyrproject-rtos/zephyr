@@ -1,5 +1,6 @@
 ---
 title: Intel Quark D2000 Interrupt Controller
+id: interrupt-controller
 version: 0.1
 
 description: >

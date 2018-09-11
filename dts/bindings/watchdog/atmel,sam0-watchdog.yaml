@@ -1,6 +1,6 @@
 ---
 title: Atmel SAM0 watchdog driver
-id: atmel,sam0-watchdog
+id: watchdog
 version: 0.1
 
 description: >

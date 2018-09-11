@@ -1,6 +1,6 @@
 ---
 title: STM32 RCC
-id: st,stm32-rcc
+id: clock-control
 version: 0.1
 
 description: >

@@ -5,7 +5,6 @@
 #
 ---
 title: Kinetis I2C Controller
-id: nxp,kinetis-i2c
 version: 0.1
 
 description: >

@@ -1,6 +1,6 @@
 ---
 title: ARM CMSDK TIMER
-id: arm,cmsdk-timer
+id: timer
 version: 0.1
 
 description: >

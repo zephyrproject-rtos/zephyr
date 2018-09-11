@@ -5,7 +5,6 @@
 #
 ---
 title: Intel QMSI SS i2c
-id: intel,qmsi-ss-i2c
 version: 0.1
 
 description: >
