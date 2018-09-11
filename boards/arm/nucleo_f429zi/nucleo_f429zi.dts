@@ -76,6 +76,10 @@ arduino_serial: &usart6 {};
 	status = "ok";
 };
 
+&usbotg_fs {
+	status = "ok";
+};
+
 &timers2 {
 	status = "ok";
 
