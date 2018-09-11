@@ -68,6 +68,7 @@ static inline int is_condition_met(struct k_poll_event *event, u32_t *state)
 		return 0;
 	default:
 		__ASSERT(0, "invalid event type (0x%x)\n", event->type);
+		break;
 	}
 
 	return 0;
@@ -119,6 +120,7 @@ static inline int register_event(struct k_poll_event *event,
 		break;
 	default:
 		__ASSERT(0, "invalid event type\n");
+		break;
 	}
 
 	event->poller = poller;
@@ -149,6 +151,7 @@ static inline void clear_event_registration(struct k_poll_event *event)
 		break;
 	default:
 		__ASSERT(0, "invalid event type\n");
+		break;
 	}
 }
 
