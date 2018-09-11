@@ -458,7 +458,7 @@ static void test_send_ns_extra_options(void)
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	net_pkt_ll_clear(pkt);
+	net_pkt_lladdr_clear(pkt);
 
 	memcpy(net_buf_add(frag, sizeof(icmpv6_ns_invalid)),
 	       icmpv6_ns_invalid, sizeof(icmpv6_ns_invalid));
@@ -491,7 +491,7 @@ static void test_send_ns_no_options(void)
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	net_pkt_ll_clear(pkt);
+	net_pkt_lladdr_clear(pkt);
 
 	memcpy(net_buf_add(frag, sizeof(icmpv6_ns_no_sllao)),
 	       icmpv6_ns_no_sllao, sizeof(icmpv6_ns_no_sllao));
@@ -617,7 +617,7 @@ static void test_hbho_message(void)
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	net_pkt_ll_clear(pkt);
+	net_pkt_lladdr_clear(pkt);
 
 	memcpy(net_buf_add(frag, sizeof(ipv6_hbho)),
 	       ipv6_hbho, sizeof(ipv6_hbho));
@@ -678,7 +678,7 @@ static void test_hbho_message_1(void)
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	net_pkt_ll_clear(pkt);
+	net_pkt_lladdr_clear(pkt);
 
 	net_pkt_write(pkt, pkt->frags, 0, &pos, sizeof(ipv6_hbho_1),
 		      (u8_t *)ipv6_hbho_1, K_FOREVER);
@@ -748,7 +748,7 @@ static void test_hbho_message_2(void)
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	net_pkt_ll_clear(pkt);
+	net_pkt_lladdr_clear(pkt);
 
 	net_pkt_write(pkt, pkt->frags, 0, &pos, sizeof(ipv6_hbho_2),
 		      (u8_t *)ipv6_hbho_2, K_FOREVER);
@@ -921,7 +921,7 @@ static void test_hbho_message_3(void)
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	net_pkt_ll_clear(pkt);
+	net_pkt_lladdr_clear(pkt);
 
 	net_pkt_write(pkt, pkt->frags, 0, &pos, sizeof(ipv6_hbho_3),
 		      (u8_t *)ipv6_hbho_3, K_FOREVER);
@@ -1162,7 +1162,7 @@ static enum net_verdict recv_msg(struct in6_addr *src, struct in6_addr *dst)
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	net_pkt_ll_clear(pkt);
+	net_pkt_lladdr_clear(pkt);
 
 	setup_ipv6_udp(pkt, src, dst, 4242, 4321);
 
@@ -1192,7 +1192,7 @@ static int send_msg(struct in6_addr *src, struct in6_addr *dst)
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	net_pkt_ll_clear(pkt);
+	net_pkt_lladdr_clear(pkt);
 
 	setup_ipv6_udp(pkt, src, dst, 4242, 4321);
 

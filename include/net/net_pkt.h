@@ -645,7 +645,7 @@ static inline void net_pkt_lladdr_swap(struct net_pkt *pkt)
 	net_pkt_lladdr_dst(pkt)->addr = addr;
 }
 
-static inline void net_pkt_ll_clear(struct net_pkt *pkt)
+static inline void net_pkt_lladdr_clear(struct net_pkt *pkt)
 {
 	net_pkt_lladdr_src(pkt)->addr = NULL;
 	net_pkt_lladdr_src(pkt)->len = 0;
