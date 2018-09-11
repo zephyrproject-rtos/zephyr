@@ -5,7 +5,12 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
+ram: 320
+flash: 1536
 supported:
-  - usb_device
   - pwm
+  - i2c
+  - spi
+  - gpio
+  - usb_device
   - rtc
