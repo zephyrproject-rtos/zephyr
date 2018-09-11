@@ -87,31 +87,46 @@ struct usb_setup_packet {
 };
 
 /**
- * Callback function signature for the device
+ * @brief USB Device Core Layer API
+ * @defgroup _usb_device_core_api USB Device Core API
+ * @{
+ */
+
+/**
+ * @brief Callback function signature for the device
  */
 typedef void (*usb_status_callback)(enum usb_dc_status_code status_code,
 				    u8_t *param);
 
 /**
- * Callback function signature for the USB Endpoint status
+ * @brief Callback function signature for the USB Endpoint status
  */
 typedef void (*usb_ep_callback)(u8_t ep,
-		enum usb_dc_ep_cb_status_code cb_status);
+				enum usb_dc_ep_cb_status_code cb_status);
 
 /**
+ * @brief Callback function signature for class specific requests
+ *
  * Function which handles Class specific requests corresponding to an
- * interface number specified in the device descriptor table
+ * interface number specified in the device descriptor table. For host
+ * to device direction the 'len' and 'payload_data' contain the length
+ * of the received data and the pointer to the received data respectively.
+ * For device to host class requests, 'len' and 'payload_data' should be
+ * set by the callback function with the length and the address of the
+ * data to be transmitted buffer respectively.
  */
-typedef int (*usb_request_handler) (struct usb_setup_packet *detup,
-		s32_t *transfer_len, u8_t **payload_data);
+typedef int (*usb_request_handler)(struct usb_setup_packet *setup,
+				   s32_t *transfer_len, u8_t **payload_data);
 
 /**
- * Function for interface runtime configuration
+ * @brief Function for interface runtime configuration
  */
 typedef void (*usb_interface_config)(u8_t bInterfaceNumber);
 
-/*
- * USB Endpoint Configuration
+/**
+ * @brief USB Endpoint Configuration
+ *
+ * This structure contains configuration for the endpoint.
  */
 struct usb_ep_cfg_data {
 	/**
@@ -130,7 +145,9 @@ struct usb_ep_cfg_data {
 };
 
 /**
- * USB Interface Configuration
+ * @brief USB Interface Configuration
+ *
+ * This structure contains USB interface configuration.
  */
 struct usb_interface_cfg_data {
 	/** Handler for USB Class specific Control (EP 0) communications */
@@ -140,7 +157,7 @@ struct usb_interface_cfg_data {
 	/**
 	 * The custom request handler gets a first chance at handling
 	 * the request before it is handed over to the 'chapter 9' request
-	 * handler
+	 * handler.
 	 */
 	usb_request_handler custom_handler;
 	/**
@@ -148,17 +165,17 @@ struct usb_interface_cfg_data {
 	 * Class specific command data and must be large enough to store the
 	 * largest payload associated with the largest supported Class'
 	 * command set. This data area may be used for USB IN or OUT
-	 * communications
+	 * communications.
 	 */
 	u8_t *payload_data;
 	/**
 	 * This data area, allocated by the application, is used to store
-	 * Vendor specific payload
+	 * Vendor specific payload.
 	 */
 	u8_t *vendor_data;
 };
 
-/*
+/**
  * @brief USB device configuration
  *
  * The Application instantiates this with given parameters added
@@ -190,8 +207,8 @@ struct usb_cfg_data {
 	struct usb_ep_cfg_data *endpoint;
 };
 
-/*
- * @brief configure USB controller
+/**
+ * @brief Configure USB controller
  *
  * Function to configure USB controller.
  * Configuration parameters must be valid or an error is returned
@@ -202,27 +219,31 @@ struct usb_cfg_data {
  */
 int usb_set_config(struct usb_cfg_data *config);
 
-/*
- * @brief return the USB device to it's initial state
+/**
+ * @brief Deconfigure USB controller
+ *
+ * This function returns the USB device to it's initial state
  *
  * @return 0 on success, negative errno code on fail
  */
 int usb_deconfig(void);
 
-/*
- * @brief enable USB for host/device connection
+/**
+ * @brief Enable USB for host/device connection
  *
  * Function to enable USB for host/device connection.
  * Upon success, the USB module is no longer clock gated in hardware,
  * it is now capable of transmitting and receiving on the USB bus and
  * of generating interrupts.
  *
+ * @param[in] config Pointer to configuration structure
+ *
  * @return 0 on success, negative errno code on fail.
  */
 int usb_enable(struct usb_cfg_data *config);
 
-/*
- * @brief disable the USB device.
+/**
+ * @brief Disable the USB device
  *
  * Function to disable the USB device.
  * Upon success, the specified USB interface is clock gated in hardware,
@@ -232,8 +253,8 @@ int usb_enable(struct usb_cfg_data *config);
  */
 int usb_disable(void);
 
-/*
- * @brief write data to the specified endpoint
+/**
+ * @brief Write data to the specified endpoint
  *
  * Function to write data to the specified endpoint. The supplied
  * usb_ep_callback will be called when transmission is done.
@@ -248,11 +269,10 @@ int usb_disable(void);
  *
  * @return 0 on success, negative errno code on fail
  */
-int usb_write(u8_t ep, const u8_t *data, u32_t data_len,
-		u32_t *bytes_ret);
+int usb_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *bytes_ret);
 
-/*
- * @brief read data from the specified endpoint
+/**
+ * @brief Read data from the specified endpoint
  *
  * This function is called by the Endpoint handler function, after an
  * OUT interrupt has been received for that EP. The application must
@@ -268,11 +288,10 @@ int usb_write(u8_t ep, const u8_t *data, u32_t data_len,
  *
  * @return  0 on success, negative errno code on fail
  */
-int usb_read(u8_t ep, u8_t *data, u32_t max_data_len,
-		u32_t *ret_bytes);
+int usb_read(u8_t ep, u8_t *data, u32_t max_data_len, u32_t *ret_bytes);
 
-/*
- * @brief set STALL condition on the specified endpoint
+/**
+ * @brief Set STALL condition on the specified endpoint
  *
  * This function is called by USB device class handler code to set stall
  * conditionin on endpoint.
@@ -284,9 +303,8 @@ int usb_read(u8_t ep, u8_t *data, u32_t max_data_len,
  */
 int usb_ep_set_stall(u8_t ep);
 
-
-/*
- * @brief clears STALL condition on the specified endpoint
+/**
+ * @brief Clears STALL condition on the specified endpoint
  *
  * This function is called by USB device class handler code to clear stall
  * conditionin on endpoint.
@@ -299,7 +317,7 @@ int usb_ep_set_stall(u8_t ep);
 int usb_ep_clear_stall(u8_t ep);
 
 /**
- * @brief read data from the specified endpoint
+ * @brief Read data from the specified endpoint
  *
  * This is similar to usb_ep_read, the difference being that, it doesn't
  * clear the endpoint NAKs so that the consumer is not bogged down by further
@@ -384,7 +402,6 @@ int usb_transfer(u8_t ep, u8_t *data, size_t dlen, unsigned int flags,
  * @param[in]  data         Pointer to data buffer to write-to/read-from
  * @param[in]  dlen         Size of data buffer
  * @param[in]  flags        Transfer flags
-
  *
  * @return number of bytes transferred on success, negative errno code on fail.
  */
@@ -399,6 +416,10 @@ int usb_transfer_sync(u8_t ep, u8_t *data, size_t dlen, unsigned int flags);
  * @return 0 on success, negative errno code on fail.
  */
 void usb_cancel_transfer(u8_t ep);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
