@@ -100,7 +100,7 @@ typedef struct {
 #define _OBJECT_TRACING_INIT .__next = NULL,
 #else
 #define _OBJECT_TRACING_INIT
-#define _OBJECT_TRACING_NEXT_PTR(type)
+#define _OBJECT_TRACING_NEXT_PTR(type) u8_t __dummy_next[0]
 #endif
 
 #ifdef CONFIG_POLL
