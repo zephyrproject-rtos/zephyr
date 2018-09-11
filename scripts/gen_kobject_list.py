@@ -202,14 +202,14 @@ def write_kobj_otype_output(fp):
         if dep:
             fp.write("#ifdef %s\n" % dep)
 
-        fp.write('case %s: return "%s";\n' % (kobject_to_enum(kobj), kobj))
+        fp.write('case %s: ret = "%s"; break;\n' % (kobject_to_enum(kobj), kobj))
         if dep:
             fp.write("#endif\n")
 
     fp.write("/* Driver subsystems */\n")
     for subsystem in subsystems:
         subsystem = subsystem.replace("_driver_api", "")
-        fp.write('case K_OBJ_DRIVER_%s: return "%s driver";\n' % (
+        fp.write('case K_OBJ_DRIVER_%s: ret = "%s driver"; break;\n' % (
             subsystem.upper(),
             subsystem
         ))
@@ -225,7 +225,7 @@ def write_kobj_size_output(fp):
         if dep:
             fp.write("#ifdef %s\n" % dep)
 
-        fp.write('case %s: return sizeof(struct %s);\n' %
+        fp.write('case %s: ret = sizeof(struct %s); break;\n' %
                 (kobject_to_enum(kobj), kobj))
         if dep:
             fp.write("#endif\n")
