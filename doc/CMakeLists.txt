@@ -145,8 +145,8 @@ add_custom_target(
 #
 # LaTEX section
 #
-add_custom_target(
-  latex
+add_custom_command(
+  OUTPUT ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
   COMMAND ${CMAKE_COMMAND} -E env
   ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
   ${SPHINXBUILD} -w ${SPHINX_LOG} -N -t ${DOC_TAG} -b latex -t svgconvert ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_LATEX}
@@ -155,6 +155,11 @@ add_custom_target(
   COMMAND ${PYTHON_EXECUTABLE} ${KI_SCRIPT} --config-dir ${CONFIG_DIR} --errors ${DOC_WARN} --warnings ${DOC_WARN} ${DOC_LOG}
   COMMAND ${PYTHON_EXECUTABLE} ${FIX_TEX_SCRIPT} ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+)
+
+add_custom_target(
+  latex
+  DEPENDS ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
   ${SPHINX_USES_TERMINAL}
 )
 
@@ -213,6 +218,7 @@ if(NOT ${LATEXMK} STREQUAL LATEXMK-NOTFOUND)
 
 add_custom_target(
   pdfdocs
+  DEPENDS latexdocs pdf
 )
 add_dependencies(pdfdocs pdf)
 
