@@ -43,14 +43,16 @@ extern "C" {
  * @param flash_device Flash Device
  */
 struct nvs_fs {
-	off_t offset;		/* filesystem offset in flash */
+	const off_t offset;		/* filesystem offset in flash */
+	const u16_t sector_size;	/* filesystem is divided into sectors,
+					 * sector size should be multiple of
+					 * pagesize
+					 */
+	const u16_t sector_count;	/* amount of sectors in the filesystem
+					 */
 	u32_t ate_wra;		/* next alloc table entry write address */
 	u32_t data_wra;		/* next data write address */
 	u32_t free_space;	/* free space available in file system */
-	u16_t sector_size;	/* filesystem is divided into sectors,
-				 * sector size should be multiple of pagesize
-				 */
-	u16_t sector_count;	/* amount of sectors in the filesystem */
 
 	u8_t write_block_size; /* write block size for alignment */
 	bool locked; /* the filesystem is locked after an error occurred
