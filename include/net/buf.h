@@ -1353,7 +1353,7 @@ typedef struct net_buf *(*net_buf_allocator_cb)(s32_t timeout, void *user_data);
  *         were no free fragments in a pool to accommodate all data.
  */
 u16_t net_buf_append_bytes(struct net_buf *buf, u16_t len,
-			   const u8_t *value, s32_t timeout,
+			   const void *value, s32_t timeout,
 			   net_buf_allocator_cb allocate_cb, void *user_data);
 
 /**

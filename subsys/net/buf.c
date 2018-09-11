@@ -722,7 +722,7 @@ int net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
  * the buffer. It assumes that the buffer has at least one fragment.
  */
 u16_t net_buf_append_bytes(struct net_buf *buf, u16_t len,
-			   const u8_t *value, s32_t timeout,
+			   const void *value, s32_t timeout,
 			   net_buf_allocator_cb allocate_cb, void *user_data)
 {
 	struct net_buf *frag = net_buf_frag_last(buf);
