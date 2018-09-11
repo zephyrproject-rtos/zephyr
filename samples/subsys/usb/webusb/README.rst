@@ -24,8 +24,7 @@ real usecase, implement applications based on the WebUSB API.
 Building and flashing
 *********************
 
-Refer to
-https://www.zephyrproject.org/doc/boards/x86/arduino_101/doc/board.html
+Refer to :ref:`arduino_101`
 for details on building and flashing the image into an Arduino 101.
 
 Testing with latest Google Chrome on host
