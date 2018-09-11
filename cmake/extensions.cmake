@@ -580,6 +580,7 @@ function(zephyr_append_cmake_library library)
   # For Zephyr appended libraries we set the memory space to kernel.
   zephyr_set_property(TARGET ${library} MEMORY_SPACE kernel)
   target_link_libraries(zephyr_app_linking INTERFACE ${library})
+  add_dependencies(${library} offsets_h)
 endfunction()
 
 # 1.2.1 zephyr_interface_library_*
