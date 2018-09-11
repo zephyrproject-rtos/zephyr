@@ -107,12 +107,15 @@ nrfx_err_t nrfx_qdec_init(nrfx_qdec_config_t const * p_config,
     m_qdec_event_handler = event_handler;
 
     nrf_qdec_sampleper_set(p_config->sampleper);
-    nrf_gpio_cfg_input(p_config->pselled, NRF_GPIO_PIN_NOPULL);
     nrf_gpio_cfg_input(p_config->psela, NRF_GPIO_PIN_NOPULL);
     nrf_gpio_cfg_input(p_config->pselb, NRF_GPIO_PIN_NOPULL);
+    if (p_config->pselled != NRF_QDEC_LED_NOT_CONNECTED)
+    {
+        nrf_gpio_cfg_input(p_config->pselled, NRF_GPIO_PIN_NOPULL);
+        nrf_qdec_ledpre_set(p_config->ledpre);
+        nrf_qdec_ledpol_set(p_config->ledpol);
+    }
     nrf_qdec_pio_assign(p_config->psela, p_config->pselb, p_config->pselled);
-    nrf_qdec_ledpre_set(p_config->ledpre);
-    nrf_qdec_ledpol_set(p_config->ledpol);
     nrf_qdec_shorts_enable(NRF_QDEC_SHORT_REPORTRDY_READCLRACC_MASK);
 
     if (p_config->dbfen)
