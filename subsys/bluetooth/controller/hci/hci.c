@@ -1741,6 +1741,7 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 	return 0;
 }
 
+#if defined(CONFIG_BT_HCI_VS)
 static void vs_read_version_info(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_vs_read_version_info *rp;
@@ -1951,6 +1952,7 @@ static int vendor_cmd_handle(u16_t ocf, struct net_buf *cmd,
 
 	return 0;
 }
+#endif
 
 static void data_buf_overflow(struct net_buf **buf)
 {
@@ -2009,9 +2011,11 @@ struct net_buf *hci_cmd_handle(struct net_buf *cmd)
 	case BT_OGF_LE:
 		err = controller_cmd_handle(ocf, cmd, &evt);
 		break;
+#if defined(CONFIG_BT_HCI_VS)
 	case BT_OGF_VS:
 		err = vendor_cmd_handle(ocf, cmd, &evt);
 		break;
+#endif
 	default:
 		err = -EINVAL;
 		break;
