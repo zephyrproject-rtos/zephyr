@@ -22,7 +22,6 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <gatt/bas.h>
 #include <gatt/hog.h>
 
 static const struct bt_data ad[] = {
@@ -83,7 +82,6 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	bas_init();
 	hog_init();
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
