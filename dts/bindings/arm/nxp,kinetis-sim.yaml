@@ -5,7 +5,7 @@
 #
 ---
 title: Kinetis System Integration Module (SIM)
-id: clock-controller
+type: clock-controller
 version: 0.1
 
 description: >

@@ -1,6 +1,6 @@
 ---
 title: ARM CMSDK DUALTIMER
-id: timer
+type: timer
 version: 0.1
 
 description: >

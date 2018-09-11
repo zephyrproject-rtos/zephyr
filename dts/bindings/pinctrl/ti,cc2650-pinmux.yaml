@@ -1,7 +1,7 @@
 ---
 # SPDX-License-Identifier: Apache-2.0
 title: TI CC2650 Pinmux
-id: pinmux
+type: pinmux
 version: 0.1
 
 description: >

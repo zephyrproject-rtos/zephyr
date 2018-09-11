@@ -1,6 +1,6 @@
 ---
 title: Flash Partitions
-id: mtd
+type: mtd
 version: 0.1
 
 description: >

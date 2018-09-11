@@ -5,7 +5,7 @@
 #
 ---
 title: SPI Device Base Structure
-id: spi-device
+type: spi-device
 version: 0.1
 
 description: >

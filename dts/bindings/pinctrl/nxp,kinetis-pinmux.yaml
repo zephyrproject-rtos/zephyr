@@ -1,6 +1,6 @@
 ---
 title: Kinetis Pinmux
-id: pinmux
+type: pinmux
 version: 0.1
 
 description: >

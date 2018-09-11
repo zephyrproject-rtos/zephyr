@@ -1,6 +1,6 @@
 ---
 title: STM32 PINMUX
-id: pinmux
+type: pinmux
 version: 0.1
 
 description: >

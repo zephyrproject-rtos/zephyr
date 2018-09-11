@@ -1,6 +1,6 @@
 ---
 title: CAN Base Structure
-id: can
+type: can
 version: 0.1
 
 description: >

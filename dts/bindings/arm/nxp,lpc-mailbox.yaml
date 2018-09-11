@@ -5,7 +5,7 @@
 #
 ---
 title: LPC MAILBOX
-id: mailbox
+type: mailbox
 version: 0.1
 
 description: >

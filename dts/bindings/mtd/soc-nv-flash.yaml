@@ -1,6 +1,6 @@
 ---
 title: Flash base node description
-id: mtd
+type: mtd
 version: 0.1
 
 description: >

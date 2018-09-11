@@ -5,7 +5,7 @@
 #
 ---
 title: FXOS8700 6-axis accelerometer/magnetometer
-id: sensor
+type: sensor
 version: 0.1
 
 description: >

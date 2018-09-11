@@ -5,7 +5,7 @@
 #
 ---
 title: WNC-M14A2A LTE-M Modem
-id: modem
+type: modem
 version: 0.1
 
 description: >

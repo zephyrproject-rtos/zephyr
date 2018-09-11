@@ -5,7 +5,7 @@
 #
 ---
 title: ADC Base Structure
-id: adc
+type: adc
 version: 0.1
 
 description: >

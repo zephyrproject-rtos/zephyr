@@ -5,7 +5,7 @@
 #
 ---
 title: UART Device Base Structure
-id: uart-device
+type: uart-device
 version: 0.1
 
 description: >

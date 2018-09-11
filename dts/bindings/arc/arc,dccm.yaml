@@ -5,7 +5,7 @@
 #
 ---
 title: ARC DCCM
-id: dccm
+type: dccm
 version: 0.1
 
 description: >

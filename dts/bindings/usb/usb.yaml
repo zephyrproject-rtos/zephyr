@@ -5,7 +5,7 @@
 #
 ---
 title: USB Base Structure
-id: USB
+type: USB
 version: 0.1
 
 description: >

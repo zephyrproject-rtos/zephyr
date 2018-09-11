@@ -5,7 +5,7 @@
 #
 ---
 title: GPIO LED
-id: gpio-leds
+type: gpio-leds
 version: 0.1
 
 description: >

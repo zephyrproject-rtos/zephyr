@@ -5,7 +5,7 @@
 #
 ---
 title: FXAS21002 3-axis gyroscope
-id: sensor
+type: sensor
 version: 0.1
 
 description: >

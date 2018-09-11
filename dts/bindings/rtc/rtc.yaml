@@ -5,7 +5,7 @@
 #
 ---
 title: RTC Base Structure
-id: rtc
+type: rtc
 version: 0.1
 
 description: >

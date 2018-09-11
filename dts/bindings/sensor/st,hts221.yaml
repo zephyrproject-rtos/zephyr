@@ -5,7 +5,7 @@
 #
 ---
 title: STMicroelectronics MEMS sensors HTS221
-id: sensor
+type: sensor
 version: 0.1
 
 description: >

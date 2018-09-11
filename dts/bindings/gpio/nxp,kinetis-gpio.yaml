@@ -1,6 +1,6 @@
 ---
 title: Kinetis GPIO
-id: gpio
+type: gpio
 version: 0.1
 
 description: >

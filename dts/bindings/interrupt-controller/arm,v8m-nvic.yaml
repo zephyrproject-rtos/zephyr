@@ -1,6 +1,6 @@
 ---
 title: ARMv8-M NVIC Interrupt Controller
-id: interrupt-controller
+type: interrupt-controller
 version: 0.1
 
 description: >

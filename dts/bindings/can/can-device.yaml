@@ -5,7 +5,7 @@
 #
 ---
 title: CAN Device Base Structure
-id: can-device
+type: can-device
 version: 0.1
 
 description: >

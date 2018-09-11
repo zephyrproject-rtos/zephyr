@@ -5,7 +5,7 @@
 #
 ---
 title: MMA8451Q 3-axis Accelerometer
-id: sensor
+type: sensor
 version: 0.1
 
 description: >

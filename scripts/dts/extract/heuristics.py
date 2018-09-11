@@ -41,7 +41,7 @@ class DTHeuristics(DTDirective):
 
         # Check for <device>-device that is connected to a bus
         for compat in compatible:
-            for device_type in yaml[compat].get('id', []):
+            for device_type in yaml[compat].get('type', []):
                 if not device_type.endswith('-device'):
                     continue
 
@@ -56,7 +56,7 @@ class DTHeuristics(DTDirective):
                 parent_yaml = yaml[reduced[parent_node_address] \
                                           ['props']['compatible']]
 
-                if bus_master_device_type not in parent_yaml['id']:
+                if bus_master_device_type not in parent_yaml['type']:
                     continue
 
                 # generate EDTS

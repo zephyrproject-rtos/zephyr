@@ -1,6 +1,6 @@
 ---
 title: Uart Base Structure
-id: uart
+type: uart
 version: 0.1
 
 description: >

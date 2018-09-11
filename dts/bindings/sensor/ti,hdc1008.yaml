@@ -5,7 +5,7 @@
 #
 ---
 title: HDC1008 Temperature and Humidity Sensor
-id: sensor
+type: sensor
 version: 0.1
 
 description: >

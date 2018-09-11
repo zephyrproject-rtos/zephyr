@@ -5,7 +5,7 @@
 #
 ---
 title: Nordic Semiconductor NRF watchdog driver
-id: watchdog
+type: watchdog
 version: 0.1
 
 description: >

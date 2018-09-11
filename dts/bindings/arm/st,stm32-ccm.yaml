@@ -1,7 +1,7 @@
 ---
 # SPDX-License-Identifier: Apache-2.0
 title: STM32 CCM
-id: ccm
+type: ccm
 version: 0.1
 
 description: >

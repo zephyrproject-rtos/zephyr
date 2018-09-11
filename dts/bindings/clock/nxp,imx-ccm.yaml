@@ -5,7 +5,7 @@
 #
 ---
 title: i.MX Clock Controller Module (CCM)
-id: clock-control
+type: clock-control
 version: 0.1
 
 description: >
