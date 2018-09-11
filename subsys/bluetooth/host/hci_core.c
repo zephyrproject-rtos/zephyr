@@ -4229,6 +4229,28 @@ int bt_setup_id_addr(void)
 	}
 
 generate:
+#elif defined(CONFIG_BT_CTLR) && defined(CONFIG_SOC_FAMILY_NRF)
+	if (((NRF_FICR->DEVICEADDR[0] != UINT32_MAX) ||
+	    ((NRF_FICR->DEVICEADDR[1] & UINT16_MAX) != UINT16_MAX)) &&
+	      (NRF_FICR->DEVICEADDRTYPE & 0x01)) {
+		bt_addr_t bdaddr;
+
+		sys_put_le32(NRF_FICR->DEVICEADDR[0], &bdaddr.val[0]);
+		sys_put_le16(NRF_FICR->DEVICEADDR[1], &bdaddr.val[4]);
+		/* The FICR value is a just a random number, with no knowledge
+		 * of the Bluetooth Specification requirements for random
+		 * static addresses.
+		 */
+		BT_ADDR_SET_STATIC(&bdaddr);
+
+		bt_dev.id_count = 1;
+		bt_dev.id_addr[0].type = BT_ADDR_LE_RANDOM;
+		bt_addr_copy(&bt_dev.id_addr[0].a, &bdaddr);
+
+		return set_random_address(&bdaddr);
+	} else {
+		BT_WARN("No static addresses stored in FICR");
+	}
 #endif
 
 	return bt_id_create(NULL, NULL);
