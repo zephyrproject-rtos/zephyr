@@ -7,7 +7,7 @@
 #include <st/stm32l4.dtsi>
 
 / {
-	soc {
+	soc: soc {
 		pinctrl: pin-controller@48000000 {
 
 			gpiod: gpio@48000c00 {

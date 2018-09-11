@@ -45,6 +45,10 @@
 	};
 };
 
+&soc {
+	compatible = "STM32L475XG", "simple-bus";
+};
+
 &usart1 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_pins_a>;

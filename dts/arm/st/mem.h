@@ -109,7 +109,7 @@
 #elif defined(CONFIG_SOC_STM32L073XZ)
 #define DT_FLASH_SIZE		__SIZE_K(192)
 #define DT_SRAM_SIZE		__SIZE_K(20)
-#elif defined(CONFIG_SOC_STM32L475XG)
+#elif defined(CONFIG_SOC_STM32L475XG) || defined(SOC_STM32L475XG)
 #define DT_FLASH_SIZE		__SIZE_K(1024)
 #define DT_SRAM_SIZE		__SIZE_K(96)
 #elif defined(CONFIG_SOC_STM32L476XG)
@@ -124,6 +124,9 @@
 #elif defined(CONFIG_SOC_STM32L433XC)
 #define DT_FLASH_SIZE		__SIZE_K(256)
 #define DT_SRAM_SIZE		__SIZE_K(64)
+#elif defined(CONFIG_SOC_DUMMY)
+#define DT_FLASH_SIZE		__SIZE_K(0)
+#define DT_SRAM_SIZE		__SIZE_K(0)
 #else
 #error "Flash, RAM, and CCM sizes not defined for this chip"
 #endif
