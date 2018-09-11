@@ -462,6 +462,10 @@ void _dump_object_error(int retval, void *obj, struct _k_object *ko,
 		break;
 	case -EADDRINUSE:
 		printk("%p %s in use\n", obj, otype_to_str(otype));
+		break;
+	default:
+		/* Not handled error */
+		break;
 	}
 }
 
