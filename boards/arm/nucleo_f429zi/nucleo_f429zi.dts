@@ -80,7 +80,7 @@ arduino_serial: &usart6 {};
 	status = "ok";
 };
 
-&timers2 {
+&timers1 {
 	status = "ok";
 
 	pwm {
