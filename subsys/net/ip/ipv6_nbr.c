@@ -686,11 +686,11 @@ static struct net_pkt *update_ll_reserve(struct net_pkt *pkt,
 	 */
 	if (0) {
 		NET_DBG("ll src %s",
-			net_sprint_ll_addr(net_pkt_ll_src(pkt)->addr,
-					   net_pkt_ll_src(pkt)->len));
+			net_sprint_ll_addr(net_pkt_lladdr_src(pkt)->addr,
+					   net_pkt_lladdr_src(pkt)->len));
 		NET_DBG("ll dst %s",
-			net_sprint_ll_addr(net_pkt_ll_dst(pkt)->addr,
-					   net_pkt_ll_dst(pkt)->len));
+			net_sprint_ll_addr(net_pkt_lladdr_dst(pkt)->addr,
+					   net_pkt_lladdr_dst(pkt)->len));
 		NET_DBG("ip src %s",
 			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src));
 		NET_DBG("ip dst %s",
@@ -883,7 +883,7 @@ ignore_frag_error:
 	 * contain public IPv6 address information so in that case we should
 	 * not enter this branch.
 	 */
-	if ((net_pkt_ll_dst(pkt)->addr &&
+	if ((net_pkt_lladdr_dst(pkt)->addr &&
 	     ((IS_ENABLED(CONFIG_NET_ROUTING) &&
 	      net_is_ipv6_ll_addr(&NET_IPV6_HDR(pkt)->dst)) ||
 	      !IS_ENABLED(CONFIG_NET_ROUTING))) ||
@@ -953,8 +953,8 @@ try_send:
 
 		lladdr = net_nbr_get_lladdr(nbr->idx);
 
-		net_pkt_ll_dst(pkt)->addr = lladdr->addr;
-		net_pkt_ll_dst(pkt)->len = lladdr->len;
+		net_pkt_lladdr_dst(pkt)->addr = lladdr->addr;
+		net_pkt_lladdr_dst(pkt)->len = lladdr->len;
 
 		NET_DBG("Neighbor %p addr %s", nbr,
 			net_sprint_ll_addr(lladdr->addr, lladdr->len));
@@ -1113,8 +1113,8 @@ static inline struct net_nbr *handle_ns_neighbor(struct net_pkt *pkt,
 	 * 2 * 8 bytes - 2 - padding.
 	 * The formula above needs to be adjusted.
 	 */
-	if (net_pkt_ll_src(pkt)->len < nbr_lladdr.len) {
-		nbr_lladdr.len = net_pkt_ll_src(pkt)->len;
+	if (net_pkt_lladdr_src(pkt)->len < nbr_lladdr.len) {
+		nbr_lladdr.len = net_pkt_lladdr_src(pkt)->len;
 	}
 
 	return nbr_add(pkt, &nbr_lladdr, false, NET_IPV6_NBR_STATE_INCOMPLETE);
@@ -2198,8 +2198,8 @@ static inline struct net_buf *handle_ra_neighbor(struct net_pkt *pkt,
 	llstorage.len = NET_LINK_ADDR_MAX_LENGTH;
 	lladdr.len = NET_LINK_ADDR_MAX_LENGTH;
 	lladdr.addr = llstorage.addr;
-	if (net_pkt_ll_src(pkt)->len < lladdr.len) {
-		lladdr.len = net_pkt_ll_src(pkt)->len;
+	if (net_pkt_lladdr_src(pkt)->len < lladdr.len) {
+		lladdr.len = net_pkt_lladdr_src(pkt)->len;
 	}
 
 	frag = net_frag_read(frag, offset, pos, lladdr.len, lladdr.addr);

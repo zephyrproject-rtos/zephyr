@@ -141,25 +141,25 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 	/* Upper IP stack expects the link layer address to be in
 	 * big endian format so we must swap it here.
 	 */
-	if (net_pkt_ll_src(pkt)->addr &&
-	    net_pkt_ll_src(pkt)->len == IEEE802154_EXT_ADDR_LENGTH) {
-		sys_mem_swap(net_pkt_ll_src(pkt)->addr,
-			     net_pkt_ll_src(pkt)->len);
+	if (net_pkt_lladdr_src(pkt)->addr &&
+	    net_pkt_lladdr_src(pkt)->len == IEEE802154_EXT_ADDR_LENGTH) {
+		sys_mem_swap(net_pkt_lladdr_src(pkt)->addr,
+			     net_pkt_lladdr_src(pkt)->len);
 	}
 
-	if (net_pkt_ll_dst(pkt)->addr &&
-	    net_pkt_ll_dst(pkt)->len == IEEE802154_EXT_ADDR_LENGTH) {
-		sys_mem_swap(net_pkt_ll_dst(pkt)->addr,
-			     net_pkt_ll_dst(pkt)->len);
+	if (net_pkt_lladdr_dst(pkt)->addr &&
+	    net_pkt_lladdr_dst(pkt)->len == IEEE802154_EXT_ADDR_LENGTH) {
+		sys_mem_swap(net_pkt_lladdr_dst(pkt)->addr,
+			     net_pkt_lladdr_dst(pkt)->len);
 	}
 
 	/** Uncompress will drop the current fragment. Pkt ll src/dst address
 	 * will then be wrong and must be updated according to the new fragment.
 	 */
-	src = net_pkt_ll_src(pkt)->addr ?
-		net_pkt_ll_src(pkt)->addr - net_pkt_ll(pkt) : 0;
-	dst = net_pkt_ll_dst(pkt)->addr ?
-		net_pkt_ll_dst(pkt)->addr - net_pkt_ll(pkt) : 0;
+	src = net_pkt_lladdr_src(pkt)->addr ?
+		net_pkt_lladdr_src(pkt)->addr - net_pkt_ll(pkt) : 0;
+	dst = net_pkt_lladdr_dst(pkt)->addr ?
+		net_pkt_lladdr_dst(pkt)->addr - net_pkt_ll(pkt) : 0;
 
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 	verdict = ieee802154_reassemble(pkt);
@@ -173,8 +173,8 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 		goto out;
 	}
 #endif
-	net_pkt_ll_src(pkt)->addr = src ? net_pkt_ll(pkt) + src : NULL;
-	net_pkt_ll_dst(pkt)->addr = dst ? net_pkt_ll(pkt) + dst : NULL;
+	net_pkt_lladdr_src(pkt)->addr = src ? net_pkt_ll(pkt) + src : NULL;
+	net_pkt_lladdr_dst(pkt)->addr = dst ? net_pkt_ll(pkt) + dst : NULL;
 
 	pkt_hexdump(RX_PKT_TITLE, pkt, true, false);
 out:
@@ -236,10 +236,10 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 	net_pkt_set_ll_reserve(pkt, mpdu.payload - (void *)net_pkt_ll(pkt));
 	net_buf_pull(pkt->frags, net_pkt_ll_reserve(pkt));
 
-	set_pkt_ll_addr(net_pkt_ll_src(pkt), mpdu.mhr.fs->fc.pan_id_comp,
+	set_pkt_ll_addr(net_pkt_lladdr_src(pkt), mpdu.mhr.fs->fc.pan_id_comp,
 			mpdu.mhr.fs->fc.src_addr_mode, mpdu.mhr.src_addr);
 
-	set_pkt_ll_addr(net_pkt_ll_dst(pkt), false,
+	set_pkt_ll_addr(net_pkt_lladdr_dst(pkt), false,
 			mpdu.mhr.fs->fc.dst_addr_mode, mpdu.mhr.dst_addr);
 
 	if (!ieee802154_decipher_data_frame(iface, pkt, &mpdu)) {
@@ -274,7 +274,7 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 			return NET_DROP;
 		}
 
-		if (!ieee802154_create_data_frame(ctx, net_pkt_ll_dst(pkt),
+		if (!ieee802154_create_data_frame(ctx, net_pkt_lladdr_dst(pkt),
 						  frag, reserved_space)) {
 			return NET_DROP;
 		}

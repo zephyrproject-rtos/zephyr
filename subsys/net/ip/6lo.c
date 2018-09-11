@@ -315,13 +315,13 @@ static inline u8_t compress_sa(struct net_ipv6_hdr *ipv6,
 			memcpy(&IPHC[offset], &ipv6->src.s6_addr[14], 2);
 			offset += 2;
 		} else {
-			if (!net_pkt_ll_src(pkt)) {
+			if (!net_pkt_lladdr_src(pkt)) {
 				NET_ERR("Invalid src ll address");
 				return 0;
 			}
 
-			if (net_ipv6_addr_based_on_ll(&ipv6->src,
-						      net_pkt_ll_src(pkt))) {
+			if (net_ipv6_addr_based_on_ll(
+				    &ipv6->src, net_pkt_lladdr_src(pkt))) {
 				NET_DBG("SAM_11 src address is fully elided");
 
 				/* Address is fully elided */
@@ -371,7 +371,7 @@ static inline u8_t compress_sa_ctx(struct net_ipv6_hdr *ipv6,
 		memcpy(&IPHC[offset], &ipv6->src.s6_addr[14], 2);
 		offset += 2;
 	} else if (net_ipv6_addr_based_on_ll(&ipv6->src,
-					     net_pkt_ll_src(pkt))) {
+					     net_pkt_lladdr_src(pkt))) {
 		NET_DBG("SAM_11 src address is fully elided");
 
 		/* Address is fully elided */
@@ -467,13 +467,13 @@ static inline u8_t compress_da(struct net_ipv6_hdr *ipv6,
 			memcpy(&IPHC[offset], &ipv6->dst.s6_addr[14], 2);
 			offset += 2;
 		} else {
-			if (!net_pkt_ll_dst(pkt)) {
+			if (!net_pkt_lladdr_dst(pkt)) {
 				NET_ERR("Invalid dst ll address");
 				return 0;
 			}
 
-			if (net_ipv6_addr_based_on_ll(&ipv6->dst,
-						      net_pkt_ll_dst(pkt))) {
+			if (net_ipv6_addr_based_on_ll(
+				    &ipv6->dst, net_pkt_lladdr_dst(pkt))) {
 				NET_DBG("DAM_11 dst addr fully elided");
 
 				/* Address is fully elided */
@@ -522,7 +522,7 @@ static inline u8_t compress_da_ctx(struct net_ipv6_hdr *ipv6,
 		offset += 2;
 	} else {
 		if (net_ipv6_addr_based_on_ll(&ipv6->dst,
-					      net_pkt_ll_dst(pkt))) {
+					      net_pkt_lladdr_dst(pkt))) {
 			NET_DBG("DAM_11 dst addr fully elided");
 
 			/* Address is fully elided */
@@ -909,7 +909,7 @@ static inline u8_t uncompress_sa(struct net_pkt *pkt,
 	case NET_6LO_IPHC_SAM_11:
 		NET_DBG("SAM_11 generate src addr from ll");
 
-		net_ipv6_addr_create_iid(&ipv6->src, net_pkt_ll_src(pkt));
+		net_ipv6_addr_create_iid(&ipv6->src, net_pkt_lladdr_src(pkt));
 		break;
 	}
 
@@ -955,7 +955,7 @@ static inline u8_t uncompress_sa_ctx(struct net_pkt *pkt,
 		 * the encapsulating header.
 		 * (e.g., 802.15.4 or IPv6 source address).
 		 */
-		net_ipv6_addr_create_iid(&ipv6->src, net_pkt_ll_src(pkt));
+		net_ipv6_addr_create_iid(&ipv6->src, net_pkt_lladdr_src(pkt));
 
 		/* net_ipv6_addr_create_iid will copy first 8 bytes
 		 * as link local prefix.
@@ -1066,7 +1066,7 @@ static inline u8_t uncompress_da(struct net_pkt *pkt,
 	case NET_6LO_IPHC_DAM_11:
 		NET_DBG("DAM_11 generate dst addr from ll");
 
-		net_ipv6_addr_create_iid(&ipv6->dst, net_pkt_ll_dst(pkt));
+		net_ipv6_addr_create_iid(&ipv6->dst, net_pkt_lladdr_dst(pkt));
 		break;
 	}
 
@@ -1119,7 +1119,7 @@ static inline u8_t uncompress_da_ctx(struct net_pkt *pkt,
 		 * the encapsulating header.
 		 * (e.g., 802.15.4 or IPv6 source address).
 		 */
-		net_ipv6_addr_create_iid(&ipv6->dst, net_pkt_ll_dst(pkt));
+		net_ipv6_addr_create_iid(&ipv6->dst, net_pkt_lladdr_dst(pkt));
 
 		/* net_ipv6_addr_create_iid will copy first 8 bytes
 		 * as link local prefix.

@@ -128,10 +128,10 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		goto out;
 	}
 
-	net_pkt_ll_src(pkt)->addr = net_if_get_link_addr(lldp->iface)->addr;
-	net_pkt_ll_src(pkt)->len = sizeof(struct net_eth_addr);
-	net_pkt_ll_dst(pkt)->addr = (u8_t *)lldp_multicast_eth_addr.addr;
-	net_pkt_ll_dst(pkt)->len = sizeof(struct net_eth_addr);
+	net_pkt_lladdr_src(pkt)->addr = net_if_get_link_addr(lldp->iface)->addr;
+	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
+	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)lldp_multicast_eth_addr.addr;
+	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 
 	hdr = NET_ETH_HDR(pkt);
 	hdr->type = htons(NET_ETH_PTYPE_LLDP);

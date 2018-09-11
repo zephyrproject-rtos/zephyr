@@ -162,12 +162,12 @@ static inline u32_t retry_timeout(const struct net_tcp *tcp)
 				CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 }
 
-#define is_6lo_technology(pkt)						    \
+#define is_6lo_technology(pkt)						\
 	(IS_ENABLED(CONFIG_NET_IPV6) &&	net_pkt_family(pkt) == AF_INET6 &&  \
-	 ((IS_ENABLED(CONFIG_NET_L2_BT) &&			    \
-	   net_pkt_ll_dst(pkt)->type == NET_LINK_BLUETOOTH) ||		    \
-	  (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&			    \
-	   net_pkt_ll_dst(pkt)->type == NET_LINK_IEEE802154)))
+	 ((IS_ENABLED(CONFIG_NET_L2_BT) &&				\
+	   net_pkt_lladdr_dst(pkt)->type == NET_LINK_BLUETOOTH) ||	\
+	  (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&			\
+	   net_pkt_lladdr_dst(pkt)->type == NET_LINK_IEEE802154)))
 
 /* The ref should not be done for Bluetooth and IEEE 802.15.4 which use
  * IPv6 header compression (6lo). For BT and 802.15.4 we copy the pkt

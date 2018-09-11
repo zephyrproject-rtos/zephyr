@@ -300,8 +300,8 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 
 	net_ipv4_finalize(pkt, IPPROTO_ICMP);
 
-	net_pkt_ll_dst(pkt)->addr = net_pkt_ll_src(orig)->addr;
-	net_pkt_ll_dst(pkt)->len = net_pkt_ll_src(orig)->len;
+	net_pkt_lladdr_dst(pkt)->addr = net_pkt_lladdr_src(orig)->addr;
+	net_pkt_lladdr_dst(pkt)->len = net_pkt_lladdr_src(orig)->len;
 
 	NET_DBG("Sending ICMPv4 Error Message type %d code %d from %s to %s",
 		type, code,

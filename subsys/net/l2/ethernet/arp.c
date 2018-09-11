@@ -461,8 +461,8 @@ static inline void arp_update(struct net_if *iface,
 	}
 
 	/* Set the dst in the pending packet */
-	net_pkt_ll_dst(entry->pending)->len = sizeof(struct net_eth_addr);
-	net_pkt_ll_dst(entry->pending)->addr =
+	net_pkt_lladdr_dst(entry->pending)->len = sizeof(struct net_eth_addr);
+	net_pkt_lladdr_dst(entry->pending)->addr =
 		(u8_t *) &NET_ETH_HDR(entry->pending)->dst.addr;
 
 	NET_DBG("dst %s pending %p frag %p",
