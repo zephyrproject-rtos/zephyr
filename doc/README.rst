@@ -1,6 +1,6 @@
 .. _zephyr_doc:
 
-Zephyr documentation Generation
+Zephyr Documentation Generation
 ###############################
 
 These instructions will walk you through generating the Zephyr Project's
@@ -52,6 +52,8 @@ Our documentation processing has been tested to run with:
 * Breathe version 4.9.1
 * docutils version 0.14
 * sphinx_rtd_theme version 0.4.0
+* sphinxcontrib-svg2pdfconverter version 0.1.0
+* Latexmk version version 4.56
 
 In order to install the documentation tools, clone a copy of the git repository
 for the Zephyr project and set up your development environment as described in
@@ -98,14 +100,19 @@ folder, here are the commands to generate the html content locally:
 
    # Use cmake to configure a Ninja-based build system:
    cmake -GNinja ..
-   # Now run ninja on the generated build system:
+
+   # To generate HTML output, run ninja on the generated build system:
    ninja htmldocs
    # If you modify or add .rst files, run ninja again:
    ninja htmldocs
 
+   # To generate PDF output, run ninja on the generated build system:
+   ninja pdfdocs
+
 Depending on your development system, it will take up to 15 minutes to
 collect and generate the HTML content.  When done, you can view the HTML
-output with your browser started at ``doc/_build/html/index.html``
+output with your browser started at ``doc/_build/html/index.html`` and
+the PDF file is available at ``doc/_build/pdf/zephyr.pdf``.
 
 If you want to build the documentation from scratch just delete the contents
 of the build folder and run ``cmake`` and then ``ninja`` again.
@@ -118,7 +125,12 @@ there:
 
    cd ~/zephyr
    source zephyr-env.sh
+
+   # To generate HTML output
    make htmldocs
+
+   # To generate PDF output
+   make pdfdocs
 
 Filtering expected warnings
 ***************************
