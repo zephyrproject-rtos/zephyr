@@ -297,7 +297,7 @@ static int test_task_asynchronous_call(void)
 	int ret;
 	const struct adc_sequence_options options = {
 		.extra_samplings = 4,
-		.interval_us = 10,
+		.interval_us = 30,
 	};
 	const struct adc_sequence sequence = {
 		.options     = &options,
