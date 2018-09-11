@@ -162,7 +162,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 	debug_check_packet(pkt);
 
-	dst = net_pkt_ll_dst(pkt);
+	dst = net_pkt_lladdr_dst(pkt);
 	context = net_pkt_context(pkt);
 	context_token = net_pkt_token(pkt);
 
@@ -248,7 +248,7 @@ static inline void init_iface(struct net_if *iface)
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_context *context = net_pkt_context(pkt);
-	struct net_linkaddr *dst = net_pkt_ll_dst(pkt);
+	struct net_linkaddr *dst = net_pkt_lladdr_dst(pkt);
 	void *token = net_pkt_token(pkt);
 	enum net_verdict verdict;
 	int status = -EIO;
@@ -267,9 +267,9 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	 * https://github.com/zephyrproject-rtos/zephyr/issues/3111
 	 */
 	if (!atomic_test_bit(iface->if_dev->flags, NET_IF_POINTOPOINT) &&
-	    !net_pkt_ll_src(pkt)->addr) {
-		net_pkt_ll_src(pkt)->addr = net_pkt_ll_if(pkt)->addr;
-		net_pkt_ll_src(pkt)->len = net_pkt_ll_if(pkt)->len;
+	    !net_pkt_lladdr_src(pkt)->addr) {
+		net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_if(pkt)->addr;
+		net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
 	}
 
 #if defined(CONFIG_NET_LOOPBACK)

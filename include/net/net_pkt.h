@@ -183,7 +183,7 @@ static inline struct k_work *net_pkt_work(struct net_pkt *pkt)
 }
 
 /* The interface real ll address */
-static inline struct net_linkaddr *net_pkt_ll_if(struct net_pkt *pkt)
+static inline struct net_linkaddr *net_pkt_lladdr_if(struct net_pkt *pkt)
 {
 	return net_if_get_link_addr(pkt->iface);
 }
@@ -594,29 +594,29 @@ static inline u8_t *net_pkt_ll(struct net_pkt *pkt)
 	return net_pkt_ip_data(pkt) - net_pkt_ll_reserve(pkt);
 }
 
-static inline struct net_linkaddr *net_pkt_ll_src(struct net_pkt *pkt)
+static inline struct net_linkaddr *net_pkt_lladdr_src(struct net_pkt *pkt)
 {
 	return &pkt->lladdr_src;
 }
 
-static inline struct net_linkaddr *net_pkt_ll_dst(struct net_pkt *pkt)
+static inline struct net_linkaddr *net_pkt_lladdr_dst(struct net_pkt *pkt)
 {
 	return &pkt->lladdr_dst;
+}
+
+static inline void net_pkt_lladdr_swap(struct net_pkt *pkt)
+{
+	u8_t *addr = net_pkt_lladdr_src(pkt)->addr;
+
+	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_dst(pkt)->addr;
+	net_pkt_lladdr_dst(pkt)->addr = addr;
 }
 
 static inline void net_pkt_ll_clear(struct net_pkt *pkt)
 {
 	memset(net_pkt_ll(pkt), 0, net_pkt_ll_reserve(pkt));
-	net_pkt_ll_src(pkt)->addr = NULL;
-	net_pkt_ll_src(pkt)->len = 0;
-}
-
-static inline void net_pkt_ll_swap(struct net_pkt *pkt)
-{
-	u8_t *addr = net_pkt_ll_src(pkt)->addr;
-
-	net_pkt_ll_src(pkt)->addr = net_pkt_ll_dst(pkt)->addr;
-	net_pkt_ll_dst(pkt)->addr = addr;
+	net_pkt_lladdr_src(pkt)->addr = NULL;
+	net_pkt_lladdr_src(pkt)->len = 0;
 }
 
 #if defined(CONFIG_IEEE802154) || defined(CONFIG_IEEE802154_RAW_MODE)

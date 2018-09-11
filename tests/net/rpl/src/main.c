@@ -110,8 +110,8 @@ static void set_pkt_ll_addr(struct device *dev, struct net_pkt *pkt)
 {
 	struct net_rpl_test *rpl = dev->driver_data;
 
-	struct net_linkaddr *src = net_pkt_ll_src(pkt);
-	struct net_linkaddr *dst = net_pkt_ll_dst(pkt);
+	struct net_linkaddr *src = net_pkt_lladdr_src(pkt);
+	struct net_linkaddr *dst = net_pkt_lladdr_dst(pkt);
 
 	dst->len = lladdr_src.len;
 	dst->addr = lladdr_src.addr;
@@ -135,7 +135,7 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 	data_failure = false;
 
 	if (feed_data) {
-		net_pkt_ll_swap(pkt);
+		net_pkt_lladdr_swap(pkt);
 
 		if (net_recv_data(iface, pkt) < 0) {
 			TC_ERROR("Data receive failed.");
@@ -172,7 +172,7 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 		} else {
 			/* Pass sent DIO message back to us */
 			if (msg_sending == NET_RPL_DODAG_INFO_OBJ) {
-				net_pkt_ll_swap(pkt);
+				net_pkt_lladdr_swap(pkt);
 
 				if (!net_recv_data(iface, pkt)) {
 					/* We must not unref the msg,

@@ -2828,12 +2828,12 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 	nbr = net_ipv6_nbr_lookup(net_pkt_iface(pkt),
 				  &NET_IPV6_HDR(pkt)->src);
 	if (!nbr) {
-		NET_ASSERT_INFO(net_pkt_ll_src(pkt)->len,
+		NET_ASSERT_INFO(net_pkt_lladdr_src(pkt)->len,
 				"Link layer address not set");
 
 		nbr = net_ipv6_nbr_add(net_pkt_iface(pkt),
 				       &NET_IPV6_HDR(pkt)->src,
-				       net_pkt_ll_src(pkt),
+				       net_pkt_lladdr_src(pkt),
 				       0,
 				       NET_IPV6_NBR_STATE_REACHABLE);
 		if (!nbr) {
@@ -3557,8 +3557,8 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 
 		NET_DBG("Neighbor %s [%s] already in neighbor cache",
 			net_sprint_ipv6_addr(dao_sender),
-			net_sprint_ll_addr(net_pkt_ll_src(pkt)->addr,
-					   net_pkt_ll_src(pkt)->len));
+			net_sprint_ll_addr(net_pkt_lladdr_src(pkt)->addr,
+					   net_pkt_lladdr_src(pkt)->len));
 
 		nbr_lladdr = net_nbr_get_lladdr(ipv6_nbr->idx);
 		if (!nbr_lladdr) {
@@ -3566,7 +3566,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 			return NET_DROP;
 		}
 
-		src_lladdr = net_pkt_ll_src(pkt);
+		src_lladdr = net_pkt_lladdr_src(pkt);
 		if (!src_lladdr || !src_lladdr->addr) {
 			NET_ERR("Invalid src lladdr in net pkt");
 			return NET_DROP;
@@ -3590,7 +3590,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 
 	if (!ipv6_nbr) {
 		ipv6_nbr = net_ipv6_nbr_add(net_pkt_iface(pkt), dao_sender,
-					    net_pkt_ll_src(pkt), false,
+					    net_pkt_lladdr_src(pkt), false,
 					    NET_IPV6_NBR_STATE_REACHABLE);
 		if (ipv6_nbr) {
 			/* Set reachable timer */
@@ -3599,13 +3599,15 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 
 			NET_DBG("Neighbor %s [%s] added to neighbor cache",
 				net_sprint_ipv6_addr(dao_sender),
-				net_sprint_ll_addr(net_pkt_ll_src(pkt)->addr,
-						   net_pkt_ll_src(pkt)->len));
+				net_sprint_ll_addr(
+					net_pkt_lladdr_src(pkt)->addr,
+					net_pkt_lladdr_src(pkt)->len));
 		} else {
 			NET_DBG("Out of memory, dropping DAO from %s [%s]",
 				net_sprint_ipv6_addr(dao_sender),
-				net_sprint_ll_addr(net_pkt_ll_src(pkt)->addr,
-						   net_pkt_ll_src(pkt)->len));
+				net_sprint_ll_addr(
+					net_pkt_lladdr_src(pkt)->addr,
+					net_pkt_lladdr_src(pkt)->len));
 			return NET_DROP;
 		}
 	}
@@ -4121,7 +4123,7 @@ static int net_rpl_update_header_empty(struct net_pkt *pkt)
 
 			nbr = net_nbr_lookup(&net_rpl_parents.table,
 					     net_pkt_iface(pkt),
-					     net_pkt_ll_src(pkt));
+					     net_pkt_lladdr_src(pkt));
 
 			parent = nbr_data(nbr);
 			if (parent) {
