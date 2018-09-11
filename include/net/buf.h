@@ -1314,7 +1314,7 @@ struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag);
  * @return -ENOMEM on error
  */
 int net_buf_linearize(void *dst, size_t dst_len,
-		      struct net_buf *src, u16_t offset, u16_t len);
+		      struct net_buf *src, size_t offset, size_t len);
 
 /**
  * @typedef net_buf_allocator_cb
@@ -1352,9 +1352,9 @@ typedef struct net_buf *(*net_buf_allocator_cb)(s32_t timeout, void *user_data);
  *         length if other timeout than K_FOREVER was used, and there
  *         were no free fragments in a pool to accommodate all data.
  */
-u16_t net_buf_append_bytes(struct net_buf *buf, u16_t len,
-			   const void *value, s32_t timeout,
-			   net_buf_allocator_cb allocate_cb, void *user_data);
+size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
+			    const void *value, s32_t timeout,
+			    net_buf_allocator_cb allocate_cb, void *user_data);
 
 /**
  * @brief Skip N number of bytes in a net_buf
@@ -1371,7 +1371,7 @@ u16_t net_buf_append_bytes(struct net_buf *buf, u16_t len,
  *         NULL and pos is 0 after successful skip,
  *         NULL and pos is 0xffff otherwise.
  */
-static inline struct net_buf *net_buf_skip(struct net_buf *buf, u16_t len)
+static inline struct net_buf *net_buf_skip(struct net_buf *buf, size_t len)
 {
 	while (buf && len--) {
 		net_buf_pull_u8(buf);
