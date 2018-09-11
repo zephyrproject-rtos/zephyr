@@ -170,8 +170,8 @@ def get_node_label(node_compat, node_address):
         def_label += '_' + \
                 convert_string_to_label(node_address.split('@')[-1])
     else:
-        def_label += convert_string_to_label(node_address)
-
+        def_label += '_' + \
+                convert_string_to_label(node_address.split('/')[-1])
     return def_label
 
 def find_parent_prop(node_address, prop):
