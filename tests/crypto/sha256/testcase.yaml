@@ -1,5 +1,0 @@
-tests:
-  crypto.sha256:
-    min_ram: 48
-    tags: crypto sha256
-    timeout: 600
