@@ -333,8 +333,11 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 		return err;
 	}
 
-	sc_indicate(&gatt_sc, svc->attrs[0].handle,
-		    svc->attrs[svc->attr_count - 1].handle);
+	/* Only indicate if the stack is initialized */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		sc_indicate(&gatt_sc, svc->attrs[0].handle,
+			    svc->attrs[svc->attr_count - 1].handle);
+	}
 
 	return 0;
 }
@@ -347,8 +350,11 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 		return -ENOENT;
 	}
 
-	sc_indicate(&gatt_sc, svc->attrs[0].handle,
-		    svc->attrs[svc->attr_count - 1].handle);
+	/* Only indicate if the stack is initialized */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		sc_indicate(&gatt_sc, svc->attrs[0].handle,
+			    svc->attrs[svc->attr_count - 1].handle);
+	}
 
 	return 0;
 }
