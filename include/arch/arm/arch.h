@@ -98,27 +98,6 @@ extern "C" {
 #endif
 
 /**
- * @brief Declare a toplevel thread stack memory region
- *
- * This declares a region of memory suitable for use as a thread's stack.
- *
- * This is the generic, historical definition. Align to STACK_ALIGN_SIZE and
- * put in * 'noinit' section so that it isn't zeroed at boot
- *
- * The declared symbol will always be a character array which can be passed to
- * k_thread_create, but should otherwise not be manipulated.
- *
- * It is legal to precede this definition with the 'static' keyword.
- *
- * It is NOT legal to take the sizeof(sym) and pass that to the stackSize
- * parameter of k_thread_create(), it may not be the same as the
- * 'size' parameter. Use K_THREAD_STACK_SIZEOF() instead.
- *
- * @param sym Thread stack symbol name
- * @param size Size of the stack memory region
- */
-
-/**
  * @brief Define alignment of a stack buffer
  *
  * This is used for two different things:
@@ -141,6 +120,26 @@ extern "C" {
 		1 << (31 - __builtin_clz(x) + 1) : \
 		1 << (31 - __builtin_clz(x)))
 
+/**
+ * @brief Declare a toplevel thread stack memory region
+ *
+ * This declares a region of memory suitable for use as a thread's stack.
+ *
+ * This is the generic, historical definition. Align to STACK_ALIGN_SIZE and
+ * put in * 'noinit' section so that it isn't zeroed at boot
+ *
+ * The declared symbol will always be a character array which can be passed to
+ * k_thread_create, but should otherwise not be manipulated.
+ *
+ * It is legal to precede this definition with the 'static' keyword.
+ *
+ * It is NOT legal to take the sizeof(sym) and pass that to the stackSize
+ * parameter of k_thread_create(), it may not be the same as the
+ * 'size' parameter. Use K_THREAD_STACK_SIZEOF() instead.
+ *
+ * @param sym Thread stack symbol name
+ * @param size Size of the stack memory region
+ */
 #if defined(CONFIG_USERSPACE) && \
 	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
