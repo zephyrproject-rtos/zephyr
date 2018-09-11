@@ -154,6 +154,9 @@ enum ethernet_hw_caps {
 
 	/** IEEE 802.1Qbv (scheduled traffic) supported */
 	ETHERNET_QBV			= BIT(17),
+
+	/** IEEE 802.1Qbu (frame preemption) supported */
+	ETHERNET_QBU			= BIT(18),
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -165,6 +168,7 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_MAC_ADDRESS,
 	ETHERNET_CONFIG_TYPE_QAV_PARAM,
 	ETHERNET_CONFIG_TYPE_QBV_PARAM,
+	ETHERNET_CONFIG_TYPE_QBU_PARAM,
 	ETHERNET_CONFIG_TYPE_PROMISC_MODE,
 	ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM,
 	ETHERNET_CONFIG_TYPE_FILTER,
@@ -216,6 +220,8 @@ enum ethernet_qbv_state_type {
 
 enum ethernet_gate_state_operation {
 	ETHERNET_SET_GATE_STATE,
+	ETHERNET_SET_AND_HOLD_MAC_STATE,
+	ETHERNET_SET_AND_RELEASE_MAC_STATE,
 };
 
 /** @endcond */
@@ -266,6 +272,57 @@ struct ethernet_qbv_param {
 
 /** @cond INTERNAL_HIDDEN */
 
+enum ethernet_qbu_param_type {
+	ETHERNET_QBU_PARAM_TYPE_STATUS,
+	ETHERNET_QBU_PARAM_TYPE_RELEASE_ADVANCE,
+	ETHERNET_QBU_PARAM_TYPE_HOLD_ADVANCE,
+	ETHERNET_QBU_PARAM_TYPE_PREEMPTION_STATUS_TABLE,
+
+	/* Some preemption settings are from Qbr spec. */
+	ETHERNET_QBR_PARAM_TYPE_LINK_PARTNER_STATUS,
+	ETHERNET_QBR_PARAM_TYPE_ADDITIONAL_FRAGMENT_SIZE,
+};
+
+enum ethernet_qbu_preempt_status {
+	ETHERNET_QBU_STATUS_EXPRESS,
+	ETHERNET_QBU_STATUS_PREEMPTABLE
+} __packed;
+
+/** @endcond */
+
+struct ethernet_qbu_param {
+	/** Port id */
+	int port_id;
+	/** Type of Qbu parameter */
+	enum ethernet_qbu_param_type type;
+	union {
+		/** Hold advance (nanoseconds) */
+		uint32_t hold_advance;
+
+		/** Release advance (nanoseconds) */
+		uint32_t release_advance;
+
+		/** sequence of framePreemptionAdminStatus values.
+		 */
+		enum ethernet_qbu_preempt_status
+				frame_preempt_statuses[NET_TC_TX_COUNT];
+
+		/** True if Qbu is enabled or not */
+		bool enabled;
+
+		/** Link partner status (from Qbr) */
+		bool link_partner_status;
+
+		/** Additional fragment size (from Qbr). The minimum non-final
+		 * fragment size is (additional_fragment_size + 1) * 64 octets
+		 */
+		uint8_t additional_fragment_size : 2;
+	};
+};
+
+
+/** @cond INTERNAL_HIDDEN */
+
 enum ethernet_filter_type {
 	ETHERNET_FILTER_TYPE_SRC_MAC_ADDRESS,
 	ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS,
@@ -299,6 +356,7 @@ struct ethernet_config {
 
 		struct ethernet_qav_param qav_param;
 		struct ethernet_qbv_param qbv_param;
+		struct ethernet_qbu_param qbu_param;
 
 		int priority_queues_num;
 		int ports_num;

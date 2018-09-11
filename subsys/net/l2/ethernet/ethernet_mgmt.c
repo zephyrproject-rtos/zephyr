@@ -159,6 +159,22 @@ static int ethernet_set_config(uint32_t mgmt_request,
 		memcpy(&config.qbv_param, &params->qbv_param,
 		       sizeof(struct ethernet_qbv_param));
 		type = ETHERNET_CONFIG_TYPE_QBV_PARAM;
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_QBU_PARAM) {
+		if (!is_hw_caps_supported(dev, ETHERNET_QBU)) {
+			return -ENOTSUP;
+		}
+
+		if (params->qbu_param.type ==
+		    ETHERNET_QBR_PARAM_TYPE_LINK_PARTNER_STATUS) {
+			/* Read only parameter */
+			return -EINVAL;
+		}
+
+		/* All other fields are rw */
+
+		memcpy(&config.qbu_param, &params->qbu_param,
+		       sizeof(struct ethernet_qbu_param));
+		type = ETHERNET_CONFIG_TYPE_QBU_PARAM;
 	} else if (mgmt_request == NET_REQUEST_ETHERNET_SET_PROMISC_MODE) {
 		if (!is_hw_caps_supported(dev, ETHERNET_PROMISC_MODE)) {
 			return -ENOTSUP;
@@ -189,6 +205,9 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QAV_PARAM,
 				  ethernet_set_config);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QBV_PARAM,
+				  ethernet_set_config);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_QBU_PARAM,
 				  ethernet_set_config);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_SET_PROMISC_MODE,
@@ -324,6 +343,48 @@ static int ethernet_get_config(uint32_t mgmt_request,
 			break;
 		}
 
+	} else if (mgmt_request == NET_REQUEST_ETHERNET_GET_QBU_PARAM) {
+		if (!is_hw_caps_supported(dev, ETHERNET_QBU)) {
+			return -ENOTSUP;
+		}
+
+		config.qbu_param.port_id = params->qbu_param.port_id;
+		config.qbu_param.type = params->qbu_param.type;
+
+		type = ETHERNET_CONFIG_TYPE_QBU_PARAM;
+
+		ret = api->get_config(dev, type, &config);
+		if (ret) {
+			return ret;
+		}
+
+		switch (config.qbu_param.type) {
+		case ETHERNET_QBU_PARAM_TYPE_STATUS:
+			params->qbu_param.enabled = config.qbu_param.enabled;
+			break;
+		case ETHERNET_QBU_PARAM_TYPE_RELEASE_ADVANCE:
+			params->qbu_param.release_advance =
+				config.qbu_param.release_advance;
+			break;
+		case ETHERNET_QBU_PARAM_TYPE_HOLD_ADVANCE:
+			params->qbu_param.hold_advance =
+				config.qbu_param.hold_advance;
+			break;
+		case ETHERNET_QBR_PARAM_TYPE_LINK_PARTNER_STATUS:
+			params->qbu_param.link_partner_status =
+				config.qbu_param.link_partner_status;
+			break;
+		case ETHERNET_QBR_PARAM_TYPE_ADDITIONAL_FRAGMENT_SIZE:
+			params->qbu_param.additional_fragment_size =
+				config.qbu_param.additional_fragment_size;
+			break;
+		case ETHERNET_QBU_PARAM_TYPE_PREEMPTION_STATUS_TABLE:
+			memcpy(&params->qbu_param.frame_preempt_statuses,
+			     &config.qbu_param.frame_preempt_statuses,
+			     sizeof(params->qbu_param.frame_preempt_statuses));
+			break;
+		}
+
 	} else {
 		return -EINVAL;
 	}
@@ -341,6 +402,9 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_GET_PORTS_NUM,
 				  ethernet_get_config);
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_GET_QBV_PARAM,
+				  ethernet_get_config);
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_ETHERNET_GET_QBU_PARAM,
 				  ethernet_get_config);
 
 void ethernet_mgmt_raise_carrier_on_event(struct net_if *iface)
