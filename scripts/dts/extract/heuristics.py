@@ -7,7 +7,6 @@
 from extract.globals import *
 from extract.edts import *
 from extract.directive import DTDirective
-
 from extract.default import default
 
 ##
@@ -42,7 +41,7 @@ class DTHeuristics(DTDirective):
 
         # Check for <device>-device that is connected to a bus
         for compat in compatible:
-            for device_type in yaml[compat].get('node_type', []):
+            for device_type in yaml[compat].get('id', []):
                 if not device_type.endswith('-device'):
                     continue
 
@@ -57,7 +56,7 @@ class DTHeuristics(DTDirective):
                 parent_yaml = yaml[reduced[parent_node_address] \
                                           ['props']['compatible']]
 
-                if bus_master_device_type not in parent_yaml['node_type']:
+                if bus_master_device_type not in parent_yaml['id']:
                     continue
 
                 # generate EDTS
