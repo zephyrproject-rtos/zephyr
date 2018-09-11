@@ -5,3 +5,4 @@ config BOARD_QEMU_X86
 	select QEMU_TARGET
 	select HAS_DTS_ETHERNET
 	select CPU_HAS_FPU if !X86_IAMCU
+	select HAS_COVERAGE_SUPPORT
