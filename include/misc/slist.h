@@ -252,7 +252,7 @@ static inline sys_snode_t *sys_slist_peek_tail(sys_slist_t *list)
  */
 static inline bool sys_slist_is_empty(sys_slist_t *list);
 
-Z_GENLIST_IS_EMPTY(slist);
+Z_GENLIST_IS_EMPTY(slist)
 
 /**
  * @brief Peek the next node from current node, node is not NULL
@@ -265,7 +265,7 @@ Z_GENLIST_IS_EMPTY(slist);
  */
 static inline sys_snode_t *sys_slist_peek_next_no_check(sys_snode_t *node);
 
-Z_GENLIST_PEEK_NEXT_NO_CHECK(slist, snode);
+Z_GENLIST_PEEK_NEXT_NO_CHECK(slist, snode)
 
 /**
  * @brief Peek the next node from current node
@@ -276,7 +276,7 @@ Z_GENLIST_PEEK_NEXT_NO_CHECK(slist, snode);
  */
 static inline sys_snode_t *sys_slist_peek_next(sys_snode_t *node);
 
-Z_GENLIST_PEEK_NEXT(slist, snode);
+Z_GENLIST_PEEK_NEXT(slist, snode)
 
 /**
  * @brief Prepend a node to the given list
@@ -289,7 +289,7 @@ Z_GENLIST_PEEK_NEXT(slist, snode);
 static inline void sys_slist_prepend(sys_slist_t *list,
 				     sys_snode_t *node);
 
-Z_GENLIST_PREPEND(slist, snode);
+Z_GENLIST_PREPEND(slist, snode)
 
 /**
  * @brief Append a node to the given list
@@ -302,7 +302,7 @@ Z_GENLIST_PREPEND(slist, snode);
 static inline void sys_slist_append(sys_slist_t *list,
 				    sys_snode_t *node);
 
-Z_GENLIST_APPEND(slist, snode);
+Z_GENLIST_APPEND(slist, snode)
 
 /**
  * @brief Append a list to the given list
@@ -320,7 +320,7 @@ Z_GENLIST_APPEND(slist, snode);
 static inline void sys_slist_append_list(sys_slist_t *list,
 					 void *head, void *tail);
 
-Z_GENLIST_APPEND_LIST(slist, snode);
+Z_GENLIST_APPEND_LIST(slist, snode)
 
 /**
  * @brief merge two slists, appending the second one to the first
@@ -334,7 +334,7 @@ Z_GENLIST_APPEND_LIST(slist, snode);
 static inline void sys_slist_merge_slist(sys_slist_t *list,
 					 sys_slist_t *list_to_append);
 
-Z_GENLIST_MERGE_LIST(slist);
+Z_GENLIST_MERGE_LIST(slist)
 
 /**
  * @brief Insert a node to the given list
@@ -349,7 +349,7 @@ static inline void sys_slist_insert(sys_slist_t *list,
 				    sys_snode_t *prev,
 				    sys_snode_t *node);
 
-Z_GENLIST_INSERT(slist, snode);
+Z_GENLIST_INSERT(slist, snode)
 
 /**
  * @brief Fetch and remove the first node of the given list
@@ -363,7 +363,7 @@ Z_GENLIST_INSERT(slist, snode);
  */
 static inline sys_snode_t *sys_slist_get_not_empty(sys_slist_t *list);
 
-Z_GENLIST_GET_NOT_EMPTY(slist, snode);
+Z_GENLIST_GET_NOT_EMPTY(slist, snode)
 
 /**
  * @brief Fetch and remove the first node of the given list
@@ -376,7 +376,7 @@ Z_GENLIST_GET_NOT_EMPTY(slist, snode);
  */
 static inline sys_snode_t *sys_slist_get(sys_slist_t *list);
 
-Z_GENLIST_GET(slist, snode);
+Z_GENLIST_GET(slist, snode)
 
 /**
  * @brief Remove a node
@@ -392,7 +392,7 @@ static inline void sys_slist_remove(sys_slist_t *list,
 				    sys_snode_t *prev_node,
 				    sys_snode_t *node);
 
-Z_GENLIST_REMOVE(slist, snode);
+Z_GENLIST_REMOVE(slist, snode)
 
 /**
  * @brief Find and remove a node from a list
@@ -407,7 +407,7 @@ Z_GENLIST_REMOVE(slist, snode);
 static inline bool sys_slist_find_and_remove(sys_slist_t *list,
 					     sys_snode_t *node);
 
-Z_GENLIST_FIND_AND_REMOVE(slist, snode);
+Z_GENLIST_FIND_AND_REMOVE(slist, snode)
 
 #ifdef __cplusplus
 }

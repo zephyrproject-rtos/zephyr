@@ -147,7 +147,7 @@ def analyze_fn(match_group):
     flat_args = [sys_id, func_name] + flat_args
     argslist = ", ".join(flat_args)
 
-    invocation = "%s(%s);" % (macro, argslist)
+    invocation = "%s(%s)" % (macro, argslist)
 
     handler = "_handler_" + func_name
 
