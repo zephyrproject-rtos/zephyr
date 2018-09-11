@@ -730,9 +730,9 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 
 	do {
 		u16_t count = min(len, net_buf_tailroom(frag));
-		void *data = net_buf_add(frag, count);
 
-		memcpy(data, value, count);
+		net_buf_add_mem(frag, value, count);
+
 		len -= count;
 		added_len += count;
 		value += count;
