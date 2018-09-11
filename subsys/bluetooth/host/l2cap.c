@@ -1400,8 +1400,9 @@ int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return 0;
 }
 
-static struct net_buf *l2cap_alloc_frag(struct bt_l2cap_le_chan *chan)
+static struct net_buf *l2cap_alloc_frag(s32_t timeout, void *user_data)
 {
+	struct bt_l2cap_le_chan *chan = user_data;
 	struct net_buf *frag = NULL;
 
 	frag = chan->chan.ops->alloc_buf(&chan->chan);
@@ -1410,8 +1411,6 @@ static struct net_buf *l2cap_alloc_frag(struct bt_l2cap_le_chan *chan)
 	}
 
 	BT_DBG("frag %p tailroom %zu", frag, net_buf_tailroom(frag));
-
-	net_buf_frag_add(chan->_sdu, frag);
 
 	return frag;
 }
@@ -1441,7 +1440,6 @@ static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 				   struct net_buf *buf)
 {
-	struct net_buf *frag;
 	u16_t len;
 	u16_t seg = 0;
 
@@ -1462,25 +1460,13 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 
 	BT_DBG("chan %p seg %d len %zu", chan, seg, net_buf_frags_len(buf));
 
-	/* Jump to last fragment */
-	frag = net_buf_frag_last(chan->_sdu);
-
-	while (buf->len) {
-		/* Check if there is any space left in the current fragment */
-		if (!net_buf_tailroom(frag)) {
-			frag = l2cap_alloc_frag(chan);
-			if (!frag) {
-				BT_ERR("Unable to store SDU");
-				bt_l2cap_chan_disconnect(&chan->chan);
-				return;
-			}
-		}
-
-		len = min(net_buf_tailroom(frag), buf->len);
-		net_buf_add_mem(frag, buf->data, len);
-		net_buf_pull(buf, len);
-
-		BT_DBG("frag %p len %u", frag, frag->len);
+	/* Append received segment to SDU */
+	len = net_buf_append_bytes(chan->_sdu, buf->len, buf->data, K_NO_WAIT,
+				   l2cap_alloc_frag, chan);
+	if (len != buf->len) {
+		BT_ERR("Unable to store SDU");
+		bt_l2cap_chan_disconnect(&chan->chan);
+		return;
 	}
 
 	if (net_buf_frags_len(chan->_sdu) < chan->_sdu_len) {
