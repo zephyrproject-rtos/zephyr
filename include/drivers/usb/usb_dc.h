@@ -23,50 +23,78 @@
  * USB endpoint direction and number.
  */
 
-#define	USB_EP_DIR_MASK	0x80
-#define	USB_EP_DIR_IN	0x80
-#define	USB_EP_DIR_OUT	0x00
+#define USB_EP_DIR_MASK		0x80
+#define USB_EP_DIR_IN		0x80
+#define USB_EP_DIR_OUT		0x00
 
 /**
- * USB Driver Status Codes
+ * @brief USB Device Controller API
+ * @defgroup _usb_device_controller_api USB Device Controller API
+ * @{
+ */
+
+/**
+ * @brief USB Driver Status Codes
+ *
+ * Status codes reported by the registered device status callback.
  */
 enum usb_dc_status_code {
-	USB_DC_ERROR,        /* USB error reported by the controller */
-	USB_DC_RESET,        /* USB reset */
-	/* USB connection established, hardware enumeration is completed */
+	/** USB error reported by the controller */
+	USB_DC_ERROR,
+	/** USB reset */
+	USB_DC_RESET,
+	/** USB connection established, hardware enumeration is completed */
 	USB_DC_CONNECTED,
-	USB_DC_CONFIGURED,   /* USB configuration done */
-	USB_DC_DISCONNECTED, /* USB connection lost */
-	USB_DC_SUSPEND,      /* USB connection suspended by the HOST */
-	USB_DC_RESUME,       /* USB connection resumed by the HOST */
-	USB_DC_INTERFACE,    /* USB interface selected */
-	USB_DC_SET_HALT,     /* Set Feature ENDPOINT_HALT received */
-	USB_DC_CLEAR_HALT,   /* Clear Feature ENDPOINT_HALT received */
-	USB_DC_UNKNOWN       /* Initial USB connection status */
+	/** USB configuration done */
+	USB_DC_CONFIGURED,
+	/** USB connection lost */
+	USB_DC_DISCONNECTED,
+	/** USB connection suspended by the HOST */
+	USB_DC_SUSPEND,
+	/** USB connection resumed by the HOST */
+	USB_DC_RESUME,
+	/** USB interface selected */
+	USB_DC_INTERFACE,
+	/** Set Feature ENDPOINT_HALT received */
+	USB_DC_SET_HALT,
+	/** Clear Feature ENDPOINT_HALT received */
+	USB_DC_CLEAR_HALT,
+	/** Initial USB connection status */
+	USB_DC_UNKNOWN
 };
 
 /**
- * USB Endpoint Callback Status Codes
+ * @brief USB Endpoint Callback Status Codes
+ *
+ * Status Codes reported by the registered endpoint callback.
  */
 enum usb_dc_ep_cb_status_code {
-	USB_DC_EP_SETUP,    /* SETUP received */
-	/* Out transaction on this EP, data is available for read */
+	/** SETUP received */
+	USB_DC_EP_SETUP,
+	/** Out transaction on this EP, data is available for read */
 	USB_DC_EP_DATA_OUT,
-	USB_DC_EP_DATA_IN,  /* In transaction done on this EP */
+	/** In transaction done on this EP */
+	USB_DC_EP_DATA_IN
 };
 
 /**
- * USB Endpoint type
+ * @brief USB Endpoint type
  */
 enum usb_dc_ep_type {
-	USB_DC_EP_CONTROL = 0,  /* Control type endpoint */
-	USB_DC_EP_ISOCHRONOUS,  /* Isochronous type endpoint */
-	USB_DC_EP_BULK,         /* Bulk type endpoint */
-	USB_DC_EP_INTERRUPT     /* Interrupt type endpoint  */
+	/** Control type endpoint */
+	USB_DC_EP_CONTROL = 0,
+	/** Isochronous type endpoint */
+	USB_DC_EP_ISOCHRONOUS,
+	/** Bulk type endpoint */
+	USB_DC_EP_BULK,
+	/** Interrupt type endpoint  */
+	USB_DC_EP_INTERRUPT
 };
 
 /**
- * USB Endpoint Configuration.
+ * @brief USB Endpoint Configuration.
+ *
+ * Structure containing the USB endpoint configuration.
  */
 struct usb_dc_ep_cfg_data {
 	/** The number associated with the EP in the device
@@ -75,15 +103,19 @@ struct usb_dc_ep_cfg_data {
 	 *       OUT EP = 0x00 | \<endpoint number\>
 	 */
 	u8_t ep_addr;
-	u16_t ep_mps;             /** Endpoint max packet size */
-	enum usb_dc_ep_type ep_type; /** Endpoint type */
+	/** Endpoint max packet size */
+	u16_t ep_mps;
+	/** Endpoint type. May be Bulk, Interrupt or Control. Isochronous
+	 *  endpoints are not supported for now.
+	 */
+	enum usb_dc_ep_type ep_type;
 };
 
 /**
  * Callback function signature for the USB Endpoint status
  */
 typedef void (*usb_dc_ep_callback)(u8_t ep,
-	enum usb_dc_ep_cb_status_code cb_status);
+				   enum usb_dc_ep_cb_status_code cb_status);
 
 /**
  * Callback function signature for the device
@@ -92,7 +124,7 @@ typedef void (*usb_dc_status_callback)(enum usb_dc_status_code cb_status,
 				       u8_t *param);
 
 /**
- * @brief attach USB for device connection
+ * @brief Attach USB for device connection
  *
  * Function to attach USB for device connection. Upon success, the USB PLL
  * is enabled, and the USB device is now capable of transmitting and receiving
@@ -103,7 +135,7 @@ typedef void (*usb_dc_status_callback)(enum usb_dc_status_code cb_status,
 int usb_dc_attach(void);
 
 /**
- * @brief detach the USB device
+ * @brief Detach the USB device
  *
  * Function to detach the USB device. Upon success, the USB hardware PLL
  * is powered down and USB communication is disabled.
@@ -113,7 +145,7 @@ int usb_dc_attach(void);
 int usb_dc_detach(void);
 
 /**
- * @brief reset the USB device
+ * @brief Reset the USB device
  *
  * This function returns the USB device and firmware back to it's initial state.
  * N.B. the USB PLL is handled by the usb_detach function
@@ -123,21 +155,22 @@ int usb_dc_detach(void);
 int usb_dc_reset(void);
 
 /**
- * @brief set USB device address
+ * @brief Set USB device address
  *
- * @param[in] addr device address
+ * @param[in] addr Device address
  *
  * @return 0 on success, negative errno code on fail.
  */
 int usb_dc_set_address(const u8_t addr);
 
 /**
- * @brief set USB device controller status callback
+ * @brief Set USB device controller status callback
  *
  * Function to set USB device controller status callback. The registered
  * callback is used to report changes in the status of the device controller.
+ * The status code are described by the usb_dc_status_code enumeration.
  *
- * @param[in] cb callback function
+ * @param[in] cb Callback function
  *
  * @return 0 on success, negative errno code on fail.
  */
@@ -159,7 +192,7 @@ int usb_dc_set_status_callback(const usb_dc_status_callback cb);
 int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg);
 
 /**
- * @brief configure endpoint
+ * @brief Configure endpoint
  *
  * Function to configure an endpoint. usb_dc_ep_cfg_data structure provides
  * the endpoint configuration parameters: endpoint address, endpoint maximum
@@ -172,7 +205,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg);
 int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg);
 
 /**
- * @brief set stall condition for the selected endpoint
+ * @brief Set stall condition for the selected endpoint
  *
  * @param[in] ep Endpoint address corresponding to the one
  *               listed in the device configuration table
@@ -182,7 +215,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg);
 int usb_dc_ep_set_stall(const u8_t ep);
 
 /**
- * @brief clear stall condition for the selected endpoint
+ * @brief Clear stall condition for the selected endpoint
  *
  * @param[in] ep Endpoint address corresponding to the one
  *               listed in the device configuration table
@@ -192,7 +225,7 @@ int usb_dc_ep_set_stall(const u8_t ep);
 int usb_dc_ep_clear_stall(const u8_t ep);
 
 /**
- * @brief check if selected endpoint is stalled
+ * @brief Check if the selected endpoint is stalled
  *
  * @param[in]  ep       Endpoint address corresponding to the one
  *                      listed in the device configuration table
@@ -203,7 +236,7 @@ int usb_dc_ep_clear_stall(const u8_t ep);
 int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled);
 
 /**
- * @brief halt the selected endpoint
+ * @brief Halt the selected endpoint
  *
  * @param[in] ep Endpoint address corresponding to the one
  *               listed in the device configuration table
@@ -213,7 +246,7 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled);
 int usb_dc_ep_halt(const u8_t ep);
 
 /**
- * @brief enable the selected endpoint
+ * @brief Enable the selected endpoint
  *
  * Function to enable the selected endpoint. Upon success interrupts are
  * enabled for the corresponding endpoint and the endpoint is ready for
@@ -227,7 +260,7 @@ int usb_dc_ep_halt(const u8_t ep);
 int usb_dc_ep_enable(const u8_t ep);
 
 /**
- * @brief disable the selected endpoint
+ * @brief Disable the selected endpoint
  *
  * Function to disable the selected endpoint. Upon success interrupts are
  * disabled for the corresponding endpoint and the endpoint is no longer able
@@ -241,7 +274,9 @@ int usb_dc_ep_enable(const u8_t ep);
 int usb_dc_ep_disable(const u8_t ep);
 
 /**
- * @brief flush the selected endpoint
+ * @brief Flush the selected endpoint
+ *
+ * This function flushes the FIFOs for the selected endpoint.
  *
  * @param[in] ep Endpoint address corresponding to the one
  *               listed in the device configuration table
@@ -251,29 +286,30 @@ int usb_dc_ep_disable(const u8_t ep);
 int usb_dc_ep_flush(const u8_t ep);
 
 /**
- * @brief write data to the specified endpoint
+ * @brief Write data to the specified endpoint
  *
- * This function is called to write data to the specified endpoint. The supplied
- * usb_ep_callback function will be called when data is transmitted out.
+ * This function is called to write data to the specified endpoint. The
+ * supplied usb_ep_callback function will be called when data is transmitted
+ * out.
  *
  * @param[in]  ep        Endpoint address corresponding to the one
  *                       listed in the device configuration table
- * @param[in]  data      pointer to data to write
- * @param[in]  data_len  length of data requested to write. This may
+ * @param[in]  data      Pointer to data to write
+ * @param[in]  data_len  Length of the data requested to write. This may
  *                       be zero for a zero length status packet.
- * @param[out] ret_bytes bytes scheduled for transmission. This value
+ * @param[out] ret_bytes Bytes scheduled for transmission. This value
  *                       may be NULL if the application expects all
  *                       bytes to be written
  *
  * @return 0 on success, negative errno code on fail.
  */
 int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
-		const u32_t data_len, u32_t * const ret_bytes);
+		    const u32_t data_len, u32_t * const ret_bytes);
 
 /**
- * @brief read data from the specified endpoint
+ * @brief Read data from the specified endpoint
  *
- * This function is called by the Endpoint handler function, after an OUT
+ * This function is called by the endpoint handler function, after an OUT
  * interrupt has been received for that EP. The application must only call this
  * function through the supplied usb_ep_callback function. This function clears
  * the ENDPOINT NAK, if all data in the endpoint FIFO has been read,
@@ -281,8 +317,8 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
  *
  * @param[in]  ep           Endpoint address corresponding to the one
  *                          listed in the device configuration table
- * @param[in]  data         pointer to data buffer to write to
- * @param[in]  max_data_len max length of data to read
+ * @param[in]  data         Pointer to data buffer to write to
+ * @param[in]  max_data_len Max length of data to read
  * @param[out] read_bytes   Number of bytes read. If data is NULL and
  *                          max_data_len is 0 the number of bytes
  *                          available for read should be returned.
@@ -290,25 +326,26 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
  * @return 0 on success, negative errno code on fail.
  */
 int usb_dc_ep_read(const u8_t ep, u8_t *const data,
-		const u32_t max_data_len, u32_t *const read_bytes);
+		   const u32_t max_data_len, u32_t *const read_bytes);
 
 /**
- * @brief set callback function for the specified endpoint
+ * @brief Set callback function for the specified endpoint
  *
  * Function to set callback function for notification of data received and
  * available to application or transmit done on the selected endpoint,
- * NULL if callback not required by application code.
+ * NULL if callback not required by application code. The callback status
+ * code is described by usb_dc_ep_cb_status_code.
  *
  * @param[in] ep Endpoint address corresponding to the one
  *               listed in the device configuration table
- * @param[in] cb callback function
+ * @param[in] cb Callback function
  *
  * @return 0 on success, negative errno code on fail.
  */
 int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb);
 
 /**
- * @brief read data from the specified endpoint
+ * @brief Read data from the specified endpoint
  *
  * This is similar to usb_dc_ep_read, the difference being that, it doesn't
  * clear the endpoint NAKs so that the consumer is not bogged down by further
@@ -317,8 +354,8 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb);
  *
  * @param[in]  ep           Endpoint address corresponding to the one
  *                          listed in the device configuration table
- * @param[in]  data         pointer to data buffer to write to
- * @param[in]  max_data_len max length of data to read
+ * @param[in]  data         Pointer to data buffer to write to
+ * @param[in]  max_data_len Max length of data to read
  * @param[out] read_bytes   Number of bytes read. If data is NULL and
  *                          max_data_len is 0 the number of bytes
  *                          available for read should be returned.
@@ -328,13 +365,12 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb);
 int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 			u32_t *read_bytes);
 
-
 /**
  * @brief Continue reading data from the endpoint
  *
  * Clear the endpoint NAK and enable the endpoint to accept more data
  * from the host. Usually called after usb_dc_ep_read_wait() when the consumer
- * is fine to accept more data. Thus these calls together acts as flow control
+ * is fine to accept more data. Thus these calls together act as a flow control
  * mechanism.
  *
  * @param[in]  ep           Endpoint address corresponding to the one
@@ -350,8 +386,12 @@ int usb_dc_ep_read_continue(u8_t ep);
  * @param[in]  ep           Endpoint address corresponding to the one
  *                          listed in the device configuration table
  *
- * @return enpoint max packet size (mps)
+ * @return Enpoint max packet size (mps)
  */
 int usb_dc_ep_mps(u8_t ep);
+
+/**
+ * @}
+ */
 
 #endif /* __USB_DC_H__ */
