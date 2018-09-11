@@ -59,6 +59,15 @@ struct eth_fake_context {
 		struct net_ptp_extended_time base_time;
 		struct net_ptp_time cycle_time;
 		uint32_t extension_time;
+
+		/* Qbu parameters */
+		uint32_t hold_advance;
+		uint32_t release_advance;
+		enum ethernet_qbu_preempt_status
+				frame_preempt_statuses[NET_TC_TX_COUNT];
+		bool qbu_enabled;
+		bool link_partner_status;
+		uint8_t additional_fragment_size : 2;
 	} ports[2];
 };
 
@@ -92,7 +101,7 @@ static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev)
 	return ETHERNET_AUTO_NEGOTIATION_SET | ETHERNET_LINK_10BASE_T |
 		ETHERNET_LINK_100BASE_T | ETHERNET_DUPLEX_SET | ETHERNET_QAV |
 		ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES |
-		ETHERNET_QBV;
+		ETHERNET_QBV | ETHERNET_QBU;
 }
 
 static int eth_fake_get_total_bandwidth(struct eth_fake_context *ctx)
@@ -150,6 +159,7 @@ static int eth_fake_set_config(const struct device *dev,
 	int ports_num = ARRAY_SIZE(ctx->ports);
 	enum ethernet_qav_param_type qav_param_type;
 	enum ethernet_qbv_param_type qbv_param_type;
+	enum ethernet_qbu_param_type qbu_param_type;
 	int queue_id, port_id;
 
 	switch (type) {
@@ -261,6 +271,45 @@ static int eth_fake_set_config(const struct device *dev,
 		}
 
 		break;
+	case ETHERNET_CONFIG_TYPE_QBU_PARAM:
+		port_id = config->qbu_param.port_id;
+		qbu_param_type = config->qbu_param.type;
+
+		if (port_id < 0 || port_id >= ports_num) {
+			return -EINVAL;
+		}
+
+		switch (qbu_param_type) {
+		case ETHERNET_QBU_PARAM_TYPE_STATUS:
+			ctx->ports[port_id].qbu_enabled =
+				config->qbu_param.enabled;
+			break;
+		case ETHERNET_QBU_PARAM_TYPE_RELEASE_ADVANCE:
+			ctx->ports[port_id].release_advance =
+				config->qbu_param.release_advance;
+			break;
+		case ETHERNET_QBU_PARAM_TYPE_HOLD_ADVANCE:
+			ctx->ports[port_id].hold_advance =
+				config->qbu_param.hold_advance;
+			break;
+		case ETHERNET_QBR_PARAM_TYPE_LINK_PARTNER_STATUS:
+			ctx->ports[port_id].link_partner_status =
+				config->qbu_param.link_partner_status;
+			break;
+		case ETHERNET_QBR_PARAM_TYPE_ADDITIONAL_FRAGMENT_SIZE:
+			ctx->ports[port_id].additional_fragment_size =
+				config->qbu_param.additional_fragment_size;
+			break;
+		case ETHERNET_QBU_PARAM_TYPE_PREEMPTION_STATUS_TABLE:
+			memcpy(&ctx->ports[port_id].frame_preempt_statuses,
+			   &config->qbu_param.frame_preempt_statuses,
+			   sizeof(ctx->ports[port_id].frame_preempt_statuses));
+			break;
+		default:
+			return -ENOTSUP;
+		}
+
+		break;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		if (config->promisc_mode == ctx->promisc_mode) {
 			return -EALREADY;
@@ -285,6 +334,7 @@ static int eth_fake_get_config(const struct device *dev,
 	int ports_num = ARRAY_SIZE(ctx->ports);
 	enum ethernet_qav_param_type qav_param_type;
 	enum ethernet_qbv_param_type qbv_param_type;
+	enum ethernet_qbu_param_type qbu_param_type;
 	int queue_id, port_id;
 
 	switch (type) {
@@ -358,6 +408,45 @@ static int eth_fake_get_config(const struct device *dev,
 			memcpy(&config->qbv_param.gate_control,
 			       &ctx->ports[port_id].gate_control,
 			       sizeof(config->qbv_param.gate_control));
+			break;
+		default:
+			return -ENOTSUP;
+		}
+
+		break;
+	case ETHERNET_CONFIG_TYPE_QBU_PARAM:
+		port_id = config->qbu_param.port_id;
+		qbu_param_type = config->qbu_param.type;
+
+		if (port_id < 0 || port_id >= ports_num) {
+			return -EINVAL;
+		}
+
+		switch (qbu_param_type) {
+		case ETHERNET_QBU_PARAM_TYPE_STATUS:
+			config->qbu_param.enabled =
+				ctx->ports[port_id].qbu_enabled;
+			break;
+		case ETHERNET_QBU_PARAM_TYPE_RELEASE_ADVANCE:
+			config->qbu_param.release_advance =
+				ctx->ports[port_id].release_advance;
+			break;
+		case ETHERNET_QBU_PARAM_TYPE_HOLD_ADVANCE:
+			config->qbu_param.hold_advance =
+				ctx->ports[port_id].hold_advance;
+			break;
+		case ETHERNET_QBR_PARAM_TYPE_LINK_PARTNER_STATUS:
+			config->qbu_param.link_partner_status =
+				ctx->ports[port_id].link_partner_status;
+			break;
+		case ETHERNET_QBR_PARAM_TYPE_ADDITIONAL_FRAGMENT_SIZE:
+			config->qbu_param.additional_fragment_size =
+				ctx->ports[port_id].additional_fragment_size;
+			break;
+		case ETHERNET_QBU_PARAM_TYPE_PREEMPTION_STATUS_TABLE:
+			memcpy(&config->qbu_param.frame_preempt_statuses,
+			     &ctx->ports[port_id].frame_preempt_statuses,
+			     sizeof(config->qbu_param.frame_preempt_statuses));
 			break;
 		default:
 			return -ENOTSUP;
@@ -943,6 +1032,207 @@ static void test_change_qbv_params(void)
 			  ret);
 }
 
+static void test_change_qbu_params(void)
+{
+	struct net_if *iface = net_if_get_default();
+	const struct device *dev = net_if_get_device(iface);
+	struct eth_fake_context *ctx = dev->data;
+	struct ethernet_req_params params;
+	int available_ports;
+	int i, j;
+	int ret;
+
+	/* Try to get the number of the ports */
+	ret = net_mgmt(NET_REQUEST_ETHERNET_GET_PORTS_NUM,
+		       iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_equal(ret, 0, "could not get the number of ports (%d)", ret);
+
+	available_ports = params.ports_num;
+
+	zassert_not_equal(available_ports, 0, "returned no priority queues");
+	zassert_equal(available_ports,
+		      ARRAY_SIZE(ctx->ports),
+		      "an invalid number of ports returned");
+
+	for (i = 0; i < available_ports; ++i) {
+		/* Try to set correct params to a correct queue id */
+		params.qbu_param.port_id = i;
+
+		/* Disable Qbu for port */
+		params.qbu_param.type = ETHERNET_QBU_PARAM_TYPE_STATUS;
+		params.qbu_param.enabled = false;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBU_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not disable qbu for port %d (%d)",
+			      i, ret);
+
+		/* Invert it to make sure the read-back value is proper */
+		params.qbu_param.enabled = true;
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QBU_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not read qbu status (%d)", ret);
+
+		zassert_equal(false, params.qbu_param.enabled,
+			      "qbu should be disabled");
+
+		/* Re-enable Qbu for queue */
+		params.qbu_param.enabled = true;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBU_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not enable qbu (%d)", ret);
+
+		/* Invert it to make sure the read-back value is proper */
+		params.qbu_param.enabled = false;
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QBU_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not read qbu status (%d)", ret);
+
+		zassert_equal(true, params.qbu_param.enabled,
+			      "qbu should be enabled");
+
+		/* Then the Qbu parameter checks */
+
+		params.qbu_param.type = ETHERNET_QBU_PARAM_TYPE_RELEASE_ADVANCE;
+		params.qbu_param.release_advance = 10;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBU_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not set release advance (%d)",
+			      ret);
+
+		/* Reset local value - read-back and verify it */
+		params.qbu_param.release_advance = 0;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QBU_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not read release advance (%d)",
+			      ret);
+		zassert_equal(params.qbu_param.release_advance, 10,
+			      "release_advance did not change");
+
+		/* And them the hold advance */
+		params.qbu_param.type = ETHERNET_QBU_PARAM_TYPE_HOLD_ADVANCE;
+		params.qbu_param.hold_advance = 20;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBU_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not set hold advance (%d)", ret);
+
+		/* Reset local value - read-back and verify it */
+		params.qbu_param.hold_advance = 0;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QBU_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not read hold advance (%d)", ret);
+		zassert_equal(params.qbu_param.hold_advance, 20,
+			      "hold advance did not change");
+
+		params.qbu_param.type =
+			ETHERNET_QBR_PARAM_TYPE_LINK_PARTNER_STATUS;
+		params.qbu_param.link_partner_status = true;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBU_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, -EINVAL,
+			      "could set link partner status (%d)", ret);
+
+		/* Reset local value - read-back and verify it */
+		params.qbu_param.link_partner_status = false;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QBU_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0,
+			      "could not read link partner status (%d)", ret);
+		zassert_equal(params.qbu_param.link_partner_status, false,
+			      "link partner status changed");
+
+		params.qbu_param.type =
+			ETHERNET_QBR_PARAM_TYPE_ADDITIONAL_FRAGMENT_SIZE;
+		params.qbu_param.additional_fragment_size = 2;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBU_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0,
+			      "could not set additional frag size (%d)", ret);
+
+		/* Reset local value - read-back and verify it */
+		params.qbu_param.additional_fragment_size = 1;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QBU_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0,
+			      "could not read additional frag size (%d)", ret);
+		zassert_equal(params.qbu_param.additional_fragment_size, 2,
+			      "additional fragment size did not change");
+
+		params.qbu_param.type =
+			ETHERNET_QBU_PARAM_TYPE_PREEMPTION_STATUS_TABLE;
+
+		for (j = 0;
+		     j < ARRAY_SIZE(params.qbu_param.frame_preempt_statuses);
+		     j++) {
+			/* Set the preempt status for different priorities.
+			 */
+			params.qbu_param.frame_preempt_statuses[j] =
+				j % 2 ? ETHERNET_QBU_STATUS_EXPRESS :
+					ETHERNET_QBU_STATUS_PREEMPTABLE;
+		}
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_QBU_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0,
+			      "could not set frame preempt status (%d)", ret);
+
+		/* Reset local value - read-back and verify it */
+		for (j = 0;
+		     j < ARRAY_SIZE(params.qbu_param.frame_preempt_statuses);
+		     j++) {
+			params.qbu_param.frame_preempt_statuses[j] =
+				j % 2 ? ETHERNET_QBU_STATUS_PREEMPTABLE :
+					ETHERNET_QBU_STATUS_EXPRESS;
+		}
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_QBU_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0,
+			      "could not read frame preempt status (%d)", ret);
+
+		for (j = 0;
+		     j < ARRAY_SIZE(params.qbu_param.frame_preempt_statuses);
+		     j++) {
+			zassert_equal(
+				params.qbu_param.frame_preempt_statuses[j],
+				j % 2 ? ETHERNET_QBU_STATUS_EXPRESS :
+					ETHERNET_QBU_STATUS_PREEMPTABLE,
+			      "frame preempt status did not change");
+		}
+	}
+}
+
 static void test_change_promisc_mode(bool mode)
 {
 	struct net_if *iface = default_iface;
@@ -997,6 +1287,7 @@ void test_main(void)
 			 ztest_unit_test(test_change_same_duplex),
 			 ztest_unit_test(test_change_qav_params),
 			 ztest_unit_test(test_change_qbv_params),
+			 ztest_unit_test(test_change_qbu_params),
 			 ztest_unit_test(test_change_promisc_mode_on),
 			 ztest_unit_test(test_change_to_same_promisc_mode),
 			 ztest_unit_test(test_change_promisc_mode_off));
