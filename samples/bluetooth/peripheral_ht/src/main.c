@@ -19,9 +19,9 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/services/bas.h>
 
 #include <gatt/hts.h>
-#include <gatt/bas.h>
 
 struct bt_conn *default_conn;
 
@@ -68,7 +68,6 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	hts_init();
-	bas_init();
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
@@ -91,6 +90,19 @@ static void auth_cancel(struct bt_conn *conn)
 static struct bt_conn_auth_cb auth_cb_display = {
 	.cancel = auth_cancel,
 };
+
+static void bas_notify(void)
+{
+	u8_t battery_level = bt_gatt_bas_get_battery_level();
+
+	battery_level--;
+
+	if (!battery_level) {
+		battery_level = 100U;
+	}
+
+	bt_gatt_bas_set_battery_level(battery_level);
+}
 
 void main(void)
 {
