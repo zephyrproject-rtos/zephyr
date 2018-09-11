@@ -13,3 +13,8 @@ common:
 tests:
   sample.helloworld:
     tags: introduction
+  sample.helloworld.semihosting:
+    extra_args: CONF_FILE=prj_semihosting.conf
+    filter: CONFIG_ARM
+    arch_whitelist: arm
+    platform_exclude: qemu_cortex_m3

@@ -10,6 +10,7 @@ prints 'Hello World' to the console. This application can be built into modes:
 
 * single thread
 * multi threading
+* semihosting
 
 Building and Running
 ********************
@@ -34,6 +35,24 @@ single thread: :file:`prj_single.conf`:
    :conf: prj_single.conf
    :goals: run
    :compact:
+
+To build the semihosting version (ARM boards only), use the supplied
+configuration file for semihosting: :file:`prj_semihosting.conf`:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: stm32f072b_disco
+   :conf: prj_semihosting.conf
+   :goals: debug
+   :compact:
+
+To enable semihosting output, run the following in your GDB session:
+
+.. code-block:: console
+
+    (gdb) monitor arm semihosting enable
+    semihosting is enabled
 
 Sample Output
 =============
