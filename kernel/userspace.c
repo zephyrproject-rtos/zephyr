@@ -34,6 +34,7 @@ static void clear_perms_cb(struct _k_object *ko, void *ctx_ptr);
 
 const char *otype_to_str(enum k_objects otype)
 {
+	const char *ret;
 	/* -fdata-sections doesn't work right except in very very recent
 	 * GCC and these literal strings would appear in the binary even if
 	 * otype_to_str was omitted by the linker
@@ -45,12 +46,14 @@ const char *otype_to_str(enum k_objects otype)
 	 */
 #include <otype-to-str.h>
 	default:
-		return "?";
+		ret = "?";
+		break;
 	}
 #else
 	ARG_UNUSED(otype);
 	return NULL;
 #endif
+	return ret;
 }
 
 struct perm_ctx {
@@ -94,11 +97,16 @@ static sys_dlist_t obj_list = SYS_DLIST_STATIC_INIT(&obj_list);
 
 static size_t obj_size_get(enum k_objects otype)
 {
+	size_t ret;
+
 	switch (otype) {
 #include <otype-to-size.h>
 	default:
-		return sizeof(struct device);
+		ret = sizeof(struct device);
+		break;
 	}
+
+	return ret;
 }
 
 static int node_lessthan(struct rbnode *a, struct rbnode *b)
@@ -342,6 +350,7 @@ static void unref_check(struct _k_object *ko)
 		k_stack_cleanup((struct k_stack *)ko->name);
 		break;
 	default:
+		/* Nothing to do */
 		break;
 	}
 
