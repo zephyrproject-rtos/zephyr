@@ -9,5 +9,8 @@ supported:
   - i2c
   - hts221
   - pwm
+  - gpio
+  - ble
+  - spi
 ram: 96
 flash: 1024

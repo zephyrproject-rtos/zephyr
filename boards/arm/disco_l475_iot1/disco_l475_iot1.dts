@@ -46,6 +46,10 @@
 	};
 };
 
+arduino_i2c: &i2c1 {};
+arduino_spi: &spi1 {};
+arduino_serial: &uart4 {};
+
 &usart1 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_pins_a>;
@@ -56,6 +60,13 @@
 &usart2 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart2_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&uart4 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart4_pins_a>;
 	pinctrl-names = "default";
 	status = "ok";
 };
