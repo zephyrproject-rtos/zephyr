@@ -682,13 +682,14 @@ struct notify_data {
 	int err;
 	u16_t type;
 	const struct bt_gatt_attr *attr;
+	bt_gatt_notify_complete_func_t func;
 	const void *data;
 	u16_t len;
 	struct bt_gatt_indicate_params *params;
 };
 
 static int gatt_notify(struct bt_conn *conn, u16_t handle, const void *data,
-		       size_t len)
+		       size_t len, bt_gatt_notify_complete_func_t cb)
 {
 	struct net_buf *buf;
 	struct bt_att_notify *nfy;
@@ -707,7 +708,7 @@ static int gatt_notify(struct bt_conn *conn, u16_t handle, const void *data,
 	net_buf_add(buf, len);
 	memcpy(nfy->value, data, len);
 
-	bt_l2cap_send(conn, BT_L2CAP_CID_ATT, buf);
+	bt_l2cap_send_cb(conn, BT_L2CAP_CID_ATT, buf, cb);
 
 	return 0;
 }
@@ -866,7 +867,8 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 			err = gatt_indicate(conn, data->params);
 		} else {
 			err = gatt_notify(conn, data->attr->handle,
-					  data->data, data->len);
+					  data->data, data->len,
+					  data->func);
 		}
 
 		bt_conn_unref(conn);
@@ -881,12 +883,14 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_CONTINUE;
 }
 
-int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		   const void *data, u16_t len)
+int bt_gatt_notify_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+		      const void *data, u16_t len,
+		      bt_gatt_notify_complete_func_t func)
 {
 	struct notify_data nfy;
 
-	__ASSERT(attr && attr->handle, "invalid parameters\n");
+	__ASSERT(attr && attr->handle,
+		 "invalid parameters\n");
 
 	/* Check if attribute is a characteristic then adjust the handle */
 	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC)) {
@@ -900,11 +904,13 @@ int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	}
 
 	if (conn) {
-		return gatt_notify(conn, attr->handle, data, len);
+		return gatt_notify(conn, attr->handle, data,
+				   len, func);
 	}
 
 	nfy.err = -ENOTCONN;
 	nfy.attr = attr;
+	nfy.func = func;
 	nfy.type = BT_GATT_CCC_NOTIFY;
 	nfy.data = data;
 	nfy.len = len;
