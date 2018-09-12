@@ -269,7 +269,7 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 		return NULL;
 	}
 
-	memset(&tcp_context[i], 0, sizeof(struct net_tcp));
+	(void)memset(&tcp_context[i], 0, sizeof(struct net_tcp));
 
 	tcp_context[i].flags = NET_TCP_IN_USE;
 	tcp_context[i].state = NET_TCP_CLOSED;
@@ -716,7 +716,7 @@ static inline void copy_sockaddr_to_sockaddr_ptr(struct net_tcp *tcp,
 						 const struct sockaddr *local,
 						 struct sockaddr_ptr *addr)
 {
-	memset(addr, 0, sizeof(struct sockaddr_ptr));
+	(void)memset(addr, 0, sizeof(struct sockaddr_ptr));
 
 #if defined(CONFIG_NET_IPV4)
 	if (local->sa_family == AF_INET) {
@@ -1566,7 +1566,7 @@ static void backlog_ack_timeout(struct k_work *work)
 	 */
 	send_reset(backlog->tcp->context, NULL, &backlog->remote);
 
-	memset(backlog, 0, sizeof(struct tcp_backlog_entry));
+	(void)memset(backlog, 0, sizeof(struct tcp_backlog_entry));
 }
 
 static int tcp_backlog_find(struct net_pkt *pkt, int *empty_slot)
@@ -1696,7 +1696,7 @@ static int tcp_backlog_ack(struct net_pkt *pkt, struct net_context *context)
 	context->tcp->send_mss = tcp_backlog[r].send_mss;
 
 	k_delayed_work_cancel(&tcp_backlog[r].ack_timer);
-	memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_entry));
+	(void)memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_entry));
 
 	return 0;
 }
@@ -1722,7 +1722,7 @@ static int tcp_backlog_rst(struct net_pkt *pkt)
 	}
 
 	k_delayed_work_cancel(&tcp_backlog[r].ack_timer);
-	memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_entry));
+	(void)memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_entry));
 
 	return 0;
 }
@@ -1806,7 +1806,7 @@ int net_tcp_unref(struct net_context *context)
 		}
 
 		k_delayed_work_cancel(&tcp_backlog[i].ack_timer);
-		memset(&tcp_backlog[i], 0, sizeof(tcp_backlog[i]));
+		(void)memset(&tcp_backlog[i], 0, sizeof(tcp_backlog[i]));
 	}
 
 	net_tcp_release(context->tcp);
@@ -2267,7 +2267,7 @@ static void pkt_get_sockaddr(sa_family_t family, struct net_pkt *pkt,
 		return;
 	}
 
-	memset(addr, 0, sizeof(*addr));
+	(void)memset(addr, 0, sizeof(*addr));
 
 #if defined(CONFIG_NET_IPV4)
 	if (family == AF_INET) {

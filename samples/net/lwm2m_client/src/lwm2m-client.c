@@ -358,7 +358,7 @@ void main(void)
 		return;
 	}
 
-	memset(&client, 0x0, sizeof(client));
+	(void)memset(&client, 0x0, sizeof(client));
 	client.net_init_timeout = WAIT_TIME;
 	client.net_timeout = CONNECT_TIME;
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)

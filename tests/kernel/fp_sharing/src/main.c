@@ -155,7 +155,7 @@ void load_store_low(void)
 		 * floating point values that have been saved.
 		 */
 
-		memset(&float_reg_set_store, 0, SIZEOF_FP_REGISTER_SET);
+		(void)memset(&float_reg_set_store, 0, SIZEOF_FP_REGISTER_SET);
 
 		/*
 		 * Utilize an architecture specific function to load all the

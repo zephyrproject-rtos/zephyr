@@ -258,7 +258,7 @@ int net_icmpv6_set_na_hdr(struct net_pkt *pkt, struct net_icmpv6_na_hdr *hdr)
 	struct net_buf *frag;
 	u16_t pos;
 
-	memset(hdr->reserved, 0, sizeof(hdr->reserved));
+	(void)memset(hdr->reserved, 0, sizeof(hdr->reserved));
 
 	frag = net_pkt_write(pkt, pkt->frags,
 			     net_pkt_ip_hdr_len(pkt) +

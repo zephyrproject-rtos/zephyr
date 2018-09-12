@@ -109,7 +109,7 @@ static void run_program_read(struct device *i2c, u8_t addr, unsigned int offset)
 			      offset, i2c_buffer, TEST_DATA_SIZE-offset);
 	zassert_equal(ret, 0, "Failed to write EEPROM");
 
-	memset(i2c_buffer, 0xFF, TEST_DATA_SIZE);
+	(void)memset(i2c_buffer, 0xFF, TEST_DATA_SIZE);
 
 	/* Read back EEPROM from I2C Master requests, then compare */
 	ret = i2c_burst_read(i2c, addr,

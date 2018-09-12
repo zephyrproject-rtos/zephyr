@@ -483,7 +483,7 @@ static void firmware_transfer(struct k_work *work)
 	server_addr[off + len] = '\0';
 
 	/* setup the local firmware download client port */
-	memset(&client_addr, 0, sizeof(client_addr));
+	(void)memset(&client_addr, 0, sizeof(client_addr));
 #if defined(CONFIG_NET_IPV6)
 	client_addr.sa_family = AF_INET6;
 	net_sin6(&client_addr)->sin6_port =
@@ -560,7 +560,7 @@ int lwm2m_firmware_start_transfer(char *package_uri)
 		net_app_release(&firmware_ctx.net_app_ctx);
 	}
 
-	memset(&firmware_ctx, 0, sizeof(struct lwm2m_ctx));
+	(void)memset(&firmware_ctx, 0, sizeof(struct lwm2m_ctx));
 	firmware_retry = 0;
 	firmware_ctx.net_init_timeout = NETWORK_INIT_TIMEOUT;
 	firmware_ctx.net_timeout = NETWORK_CONNECT_TIMEOUT;

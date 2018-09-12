@@ -816,7 +816,7 @@ int do_read_op_tlv(struct lwm2m_engine_obj *obj,
 	struct tlv_out_formatter_data fd;
 	int ret;
 
-	memset(&fd, 0, sizeof(fd));
+	(void)memset(&fd, 0, sizeof(fd));
 	engine_set_out_user_data(context->out, &fd);
 	ret = lwm2m_perform_read_op(obj, context, content_format);
 	engine_clear_out_user_data(context->out);

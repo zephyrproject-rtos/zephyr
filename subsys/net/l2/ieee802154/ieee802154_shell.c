@@ -186,7 +186,7 @@ static int shell_cmd_scan(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	memset(&params, 0, sizeof(struct ieee802154_req_params));
+	(void)memset(&params, 0, sizeof(struct ieee802154_req_params));
 
 	net_mgmt_init_event_callback(&scan_cb, scan_result_cb,
 				     NET_EVENT_IEEE802154_SCAN_RESULT);

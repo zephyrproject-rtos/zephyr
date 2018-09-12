@@ -350,8 +350,8 @@ int net_app_init_client(struct net_app_ctx *ctx,
 		return -EALREADY;
 	}
 
-	memset(&addr, 0, sizeof(addr));
-	memset(&remote_addr, 0, sizeof(remote_addr));
+	(void)memset(&addr, 0, sizeof(addr));
+	(void)memset(&remote_addr, 0, sizeof(remote_addr));
 
 	if (peer_addr) {
 		memcpy(&remote_addr, peer_addr, sizeof(remote_addr));

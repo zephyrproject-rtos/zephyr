@@ -1671,28 +1671,28 @@ static void endpoint_ctx_deinit(void)
 		ep_ctx = in_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
 		k_mem_pool_free(&ep_ctx->buf.block);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
+		(void)memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 
 	for (i = 0; i < CFG_EPOUT_CNT; i++) {
 		ep_ctx = out_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
 		k_mem_pool_free(&ep_ctx->buf.block);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
+		(void)memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 
 	if (CFG_EP_ISOIN_CNT) {
 		ep_ctx = in_endpoint_ctx(NRF_USBD_EPIN(8));
 		__ASSERT_NO_MSG(ep_ctx);
 		k_mem_pool_free(&ep_ctx->buf.block);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
+		(void)memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 
 	if (CFG_EP_ISOOUT_CNT) {
 		ep_ctx = out_endpoint_ctx(NRF_USBD_EPOUT(8));
 		__ASSERT_NO_MSG(ep_ctx);
 		k_mem_pool_free(&ep_ctx->buf.block);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
+		(void)memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 }
 

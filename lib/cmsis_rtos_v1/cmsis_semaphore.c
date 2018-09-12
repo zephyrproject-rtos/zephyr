@@ -28,7 +28,7 @@ osSemaphoreId osSemaphoreCreate(const osSemaphoreDef_t *semaphore_def,
 
 	if (k_mem_slab_alloc(&cmsis_semaphore_slab,
 				(void **)&semaphore, 100) == 0) {
-		memset(semaphore, 0, sizeof(struct k_sem));
+		(void)memset(semaphore, 0, sizeof(struct k_sem));
 	} else {
 		return NULL;
 	}

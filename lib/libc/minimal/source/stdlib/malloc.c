@@ -83,7 +83,7 @@ void *calloc(size_t nmemb, size_t size)
 	ret = malloc(size);
 
 	if (ret) {
-		memset(ret, 0, size);
+		(void)memset(ret, 0, size);
 	}
 
 	return ret;

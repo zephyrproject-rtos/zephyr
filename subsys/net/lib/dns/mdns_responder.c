@@ -341,7 +341,7 @@ static int dns_read(struct net_context *ctx,
 		enum dns_class qclass;
 		u8_t *lquery;
 
-		memset(result->data, 0, net_buf_tailroom(result));
+		(void)memset(result->data, 0, net_buf_tailroom(result));
 		result->len = 0;
 
 		ret = dns_unpack_query(&dns_msg, result, &qtype, &qclass);

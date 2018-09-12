@@ -43,7 +43,7 @@ static void tmslab_api(void *p1, void *p2, void *p3)
 	int i = LOOP, ret;
 
 	while (i--) {
-		memset(block, 0, sizeof(block));
+		(void)memset(block, 0, sizeof(block));
 
 		for (int i = 0; i < BLK_NUM; i++) {
 			ret = k_mem_slab_alloc(slab, &block[i], TIMEOUT);

@@ -126,7 +126,7 @@ static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	/* store bits in buf */
 	j = 0;
-	memset(buf, 0, sizeof(buf));
+	(void)memset(buf, 0, sizeof(buf));
 	for (i = 0; i < DHT_DATA_BITS_NUM; i++) {
 		if (signal_duration[i] >= avg_duration) {
 			buf[j] = (buf[j] << 1) | 1;

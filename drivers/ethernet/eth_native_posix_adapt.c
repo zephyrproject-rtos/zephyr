@@ -61,7 +61,7 @@ int eth_iface_create(const char *if_name, bool tun_only)
 		return -errno;
 	}
 
-	memset(&ifr, 0, sizeof(ifr));
+	(void)memset(&ifr, 0, sizeof(ifr));
 
 #ifdef __linux
 	ifr.ifr_flags = (tun_only ? IFF_TUN : IFF_TAP) | IFF_NO_PI;

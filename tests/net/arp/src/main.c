@@ -192,7 +192,7 @@ static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
 
 	eth->type = htons(NET_ETH_PTYPE_ARP);
 
-	memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
+	(void)memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
 	memcpy(&eth->src.addr, net_if_get_link_addr(iface)->addr,
 	       sizeof(struct net_eth_addr));
 
@@ -249,7 +249,7 @@ static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 
 	eth->type = htons(NET_ETH_PTYPE_ARP);
 
-	memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
+	(void)memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
 	memcpy(&eth->src.addr, addr, sizeof(struct net_eth_addr));
 
 	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
@@ -258,7 +258,7 @@ static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 	hdr->protolen = sizeof(struct in_addr);
 	hdr->opcode = htons(NET_ARP_REQUEST);
 
-	memset(&hdr->dst_hwaddr.addr, 0x00, sizeof(struct net_eth_addr));
+	(void)memset(&hdr->dst_hwaddr.addr, 0x00, sizeof(struct net_eth_addr));
 	memcpy(&hdr->src_hwaddr.addr, addr, sizeof(struct net_eth_addr));
 
 	net_ipaddr_copy(&hdr->src_ipaddr, &req_hdr->src_ipaddr);

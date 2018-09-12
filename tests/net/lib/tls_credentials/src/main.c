@@ -68,7 +68,7 @@ static void test_credential_get(void)
 	int ret;
 
 	/* Read existing credential */
-	memset(cred, 0, sizeof(cred));
+	(void)memset(cred, 0, sizeof(cred));
 	credlen = sizeof(cred);
 	ret = tls_credential_get(common_tag, TLS_CREDENTIAL_PRIVATE_KEY,
 				 cred, &credlen);

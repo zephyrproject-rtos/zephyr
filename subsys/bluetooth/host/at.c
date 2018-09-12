@@ -151,7 +151,7 @@ static int get_response_string(struct at_client *at, struct net_buf *buf,
 
 static void reset_buffer(struct at_client *at)
 {
-	memset(at->buf, 0, at->buf_max_len);
+	(void)memset(at->buf, 0, at->buf_max_len);
 	at->pos = 0;
 }
 

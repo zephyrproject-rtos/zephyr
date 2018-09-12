@@ -13,7 +13,7 @@ void fcb_test_init(void)
 	struct fcb *fcb;
 
 	fcb = &test_fcb;
-	memset(fcb, 0, sizeof(*fcb));
+	(void)memset(fcb, 0, sizeof(*fcb));
 
 	rc = fcb_init(TEST_FCB_FLASH_AREA_ID, fcb);
 	zassert_true(rc == FCB_ERR_ARGS, "fcb_init call should fail");

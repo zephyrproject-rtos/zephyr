@@ -227,7 +227,7 @@ static struct bt_conn *conn_new(void)
 		return NULL;
 	}
 
-	memset(conn, 0, sizeof(*conn));
+	(void)memset(conn, 0, sizeof(*conn));
 
 	atomic_set(&conn->ref, 1);
 
@@ -258,7 +258,7 @@ static struct bt_conn *sco_conn_new(void)
 		return NULL;
 	}
 
-	memset(sco_conn, 0, sizeof(*sco_conn));
+	(void)memset(sco_conn, 0, sizeof(*sco_conn));
 
 	atomic_set(&sco_conn->ref, 1);
 
@@ -297,7 +297,7 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 
 	cp = net_buf_add(buf, sizeof(*cp));
 
-	memset(cp, 0, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
 
 	memcpy(&cp->bdaddr, peer, sizeof(cp->bdaddr));
 	cp->packet_type = sys_cpu_to_le16(0xcc18); /* DM1 DH1 DM3 DH5 DM5 DH5 */
@@ -354,7 +354,7 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer)
 
 	cp = net_buf_add(buf, sizeof(*cp));
 
-	memset(cp, 0, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
 
 	BT_ERR("handle : %x", sco_conn->sco.acl->handle);
 
@@ -805,7 +805,7 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, u8_t rand[8],
 
 	memcpy(cp->ltk, ltk, len);
 	if (len < sizeof(cp->ltk)) {
-		memset(cp->ltk + len, 0, sizeof(cp->ltk) - len);
+		(void)memset(cp->ltk + len, 0, sizeof(cp->ltk) - len);
 	}
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_START_ENCRYPTION, buf, NULL);
@@ -1997,7 +1997,7 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 	}
 
 	conn_update = net_buf_add(buf, sizeof(*conn_update));
-	memset(conn_update, 0, sizeof(*conn_update));
+	(void)memset(conn_update, 0, sizeof(*conn_update));
 	conn_update->handle = sys_cpu_to_le16(conn->handle);
 	conn_update->conn_interval_min = sys_cpu_to_le16(param->interval_min);
 	conn_update->conn_interval_max = sys_cpu_to_le16(param->interval_max);

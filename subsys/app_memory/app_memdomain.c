@@ -21,7 +21,7 @@ void app_bss_zero(void)
 	{
 		struct app_region *region =
 			CONTAINER_OF(node, struct app_region, lnode);
-		memset(region->bmem_start, 0, region->bmem_size);
+		(void)memset(region->bmem_start, 0, region->bmem_size);
 	}
 }
 

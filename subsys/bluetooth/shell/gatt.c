@@ -110,7 +110,7 @@ static u8_t discover_func(struct bt_conn *conn,
 
 	if (!attr) {
 		printk("Discover complete\n");
-		memset(params, 0, sizeof(*params));
+		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -211,7 +211,7 @@ static u8_t read_func(struct bt_conn *conn, u8_t err,
 	printk("Read complete: err %u length %u\n", err, length);
 
 	if (!data) {
-		memset(params, 0, sizeof(*params));
+		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -294,7 +294,7 @@ static void write_func(struct bt_conn *conn, u8_t err,
 {
 	printk("Write complete: err %u\n", err);
 
-	memset(&write_params, 0, sizeof(write_params));
+	(void)memset(&write_params, 0, sizeof(write_params));
 }
 
 int cmd_gatt_write(int argc, char *argv[])

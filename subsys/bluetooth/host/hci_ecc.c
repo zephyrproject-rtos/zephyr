@@ -144,7 +144,7 @@ static void emulate_le_p256_public_key_cmd(void)
 	evt->status = status;
 
 	if (status) {
-		memset(evt->key, 0, sizeof(evt->key));
+		(void)memset(evt->key, 0, sizeof(evt->key));
 	} else {
 		/* Convert X and Y coordinates from big-endian (provided
 		 * by crypto API) to little endian HCI.
@@ -188,7 +188,7 @@ static void emulate_le_generate_dhkey(void)
 
 	if (ret == TC_CRYPTO_FAIL) {
 		evt->status = BT_HCI_ERR_UNSPECIFIED;
-		memset(evt->dhkey, 0, sizeof(evt->dhkey));
+		(void)memset(evt->dhkey, 0, sizeof(evt->dhkey));
 	} else {
 		evt->status = 0;
 		/* Convert from big-endian (provided by crypto API) to

@@ -83,7 +83,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	u8_t cmds[3];
 	struct gap_read_supported_commands_rp *rp = (void *) &cmds;
 
-	memset(cmds, 0, sizeof(cmds));
+	(void)memset(cmds, 0, sizeof(cmds));
 
 	tester_set_bit(cmds, GAP_READ_SUPPORTED_COMMANDS);
 	tester_set_bit(cmds, GAP_READ_CONTROLLER_INDEX_LIST);
@@ -124,7 +124,7 @@ static void controller_info(u8_t *data, u16_t len)
 	struct bt_le_oob oob;
 	u32_t supported_settings;
 
-	memset(&rp, 0, sizeof(rp));
+	(void)memset(&rp, 0, sizeof(rp));
 
 	bt_le_oob_get_local(BT_ID_DEFAULT, &oob);
 	memcpy(rp.address, &oob.addr.a, sizeof(bt_addr_t));
@@ -520,7 +520,7 @@ static void set_io_cap(const u8_t *data, u16_t len)
 	u8_t status;
 
 	/* Reset io cap requirements */
-	memset(&cb, 0, sizeof(cb));
+	(void)memset(&cb, 0, sizeof(cb));
 	bt_conn_auth_cb_register(NULL);
 
 	switch (cmd->io_cap) {

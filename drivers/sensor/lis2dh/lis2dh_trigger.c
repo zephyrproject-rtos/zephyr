@@ -406,7 +406,7 @@ int lis2dh_init_interrupt(struct device *dev)
 		return status;
 	}
 
-	memset(raw, 0, sizeof(raw));
+	(void)memset(raw, 0, sizeof(raw));
 	status = lis2dh_burst_write(dev, LIS2DH_REG_INT2_THS, raw, sizeof(raw));
 	if (status < 0) {
 		SYS_LOG_ERR("Burst write to INT2 THS failed (%d)", status);

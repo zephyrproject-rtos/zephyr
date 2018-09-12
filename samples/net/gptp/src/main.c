@@ -98,7 +98,7 @@ static int init_vlan(void)
 	struct ud ud;
 	int ret;
 
-	memset(&ud, 0, sizeof(ud));
+	(void)memset(&ud, 0, sizeof(ud));
 
 	net_if_foreach(iface_cb, &ud);
 

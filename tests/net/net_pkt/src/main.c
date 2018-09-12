@@ -851,8 +851,8 @@ static void test_fragment_compact(void)
 		       test_data, sizeof(test_data));
 
 		/* Followed by bytes of zeroes */
-		memset(net_buf_add(frags[i], sizeof(test_data)), 0,
-		       sizeof(test_data));
+		(void)memset(net_buf_add(frags[i], sizeof(test_data)), 0,
+			     sizeof(test_data));
 
 		total++;
 	}

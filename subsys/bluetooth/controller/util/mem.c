@@ -25,8 +25,8 @@ void mem_init(void *mem_pool, u16_t mem_size, u16_t mem_count,
 	/* Initialize next pointers to form a free list,
 	 * next pointer is stored in the first 32-bit of each block
 	 */
-	memset(((u8_t *)mem_pool + (mem_size * (--mem_count))), 0,
-	       sizeof(mem_pool));
+	(void)memset(((u8_t *)mem_pool + (mem_size * (--mem_count))), 0,
+		     sizeof(mem_pool));
 	while (mem_count--) {
 		u32_t next;
 

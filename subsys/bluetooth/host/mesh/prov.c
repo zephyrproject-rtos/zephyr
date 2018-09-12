@@ -238,7 +238,7 @@ static void reset_link(void)
 	}
 
 	/* Clear everything except the retransmit delayed work config */
-	memset(&link, 0, offsetof(struct prov_link, tx.retransmit));
+	(void)memset(&link, 0, offsetof(struct prov_link, tx.retransmit));
 
 	link.rx.prev_id = XACT_NVAL;
 
@@ -603,7 +603,7 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 			return -EINVAL;
 		}
 
-		memset(link.auth, 0, sizeof(link.auth));
+		(void)memset(link.auth, 0, sizeof(link.auth));
 		return 0;
 	case AUTH_METHOD_STATIC:
 		if (action || size) {
@@ -612,7 +612,8 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 
 		memcpy(link.auth + 16 - prov->static_val_len,
 		       prov->static_val, prov->static_val_len);
-		memset(link.auth, 0, sizeof(link.auth) - prov->static_val_len);
+		(void)memset(link.auth, 0,
+			     sizeof(link.auth) - prov->static_val_len);
 		return 0;
 
 	case AUTH_METHOD_OUTPUT:
@@ -647,7 +648,8 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 			str[size] = '\0';
 
 			memcpy(link.auth, str, size);
-			memset(link.auth + size, 0, sizeof(link.auth) - size);
+			(void)memset(link.auth + size, 0,
+				     sizeof(link.auth) - size);
 
 			return prov->output_string((char *)str);
 		} else {
@@ -659,7 +661,7 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 			num %= div[size - 1];
 
 			sys_put_be32(num, &link.auth[12]);
-			memset(link.auth, 0, 12);
+			(void)memset(link.auth, 0, 12);
 
 			return prov->output_number(output, num);
 		}
@@ -1540,7 +1542,7 @@ int bt_mesh_pb_gatt_close(struct bt_conn *conn)
 	bt_conn_unref(link.conn);
 
 	pub_key = atomic_test_bit(link.flags, LOCAL_PUB_KEY);
-	memset(&link, 0, sizeof(link));
+	(void)memset(&link, 0, sizeof(link));
 
 	if (pub_key) {
 		atomic_set_bit(link.flags, LOCAL_PUB_KEY);

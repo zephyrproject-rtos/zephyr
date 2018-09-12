@@ -124,7 +124,7 @@ static int json_next_token(struct lwm2m_input_context *in,
 	u8_t c;
 	bool escape = false;
 
-	memset(json, 0, sizeof(struct json_data));
+	(void)memset(json, 0, sizeof(struct json_data));
 	cont = 1;
 
 	/* We will be either at start, or at a specific position */
@@ -527,7 +527,7 @@ int do_read_op_json(struct lwm2m_engine_obj *obj,
 	struct json_out_formatter_data fd;
 	int ret;
 
-	memset(&fd, 0, sizeof(fd));
+	(void)memset(&fd, 0, sizeof(fd));
 	engine_set_out_user_data(context->out, &fd);
 	/* save the level for output processing */
 	fd.path_level = context->path->level;

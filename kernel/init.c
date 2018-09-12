@@ -158,15 +158,15 @@ void k_call_stacks_analyze(void) { }
  */
 void _bss_zero(void)
 {
-	memset(&__bss_start, 0,
-		 ((u32_t) &__bss_end - (u32_t) &__bss_start));
+	(void)memset(&__bss_start, 0,
+		     ((u32_t) &__bss_end - (u32_t) &__bss_start));
 #ifdef CONFIG_CCM_BASE_ADDRESS
-	memset(&__ccm_bss_start, 0,
-		((u32_t) &__ccm_bss_end - (u32_t) &__ccm_bss_start));
+	(void)memset(&__ccm_bss_start, 0,
+		     ((u32_t) &__ccm_bss_end - (u32_t) &__ccm_bss_start));
 #endif
 #ifdef CONFIG_APPLICATION_MEMORY
-	memset(&__app_bss_start, 0,
-		 ((u32_t) &__app_bss_end - (u32_t) &__app_bss_start));
+	(void)memset(&__app_bss_start, 0,
+		     ((u32_t) &__app_bss_end - (u32_t) &__app_bss_start));
 #endif
 }
 
@@ -458,7 +458,7 @@ FUNC_NORETURN void _Cstart(void)
 	char dummy_thread_memory[sizeof(struct k_thread)];
 	struct k_thread *dummy_thread = (struct k_thread *)&dummy_thread_memory;
 
-	memset(dummy_thread_memory, 0, sizeof(dummy_thread_memory));
+	(void)memset(dummy_thread_memory, 0, sizeof(dummy_thread_memory));
 #endif
 #endif
 	/*

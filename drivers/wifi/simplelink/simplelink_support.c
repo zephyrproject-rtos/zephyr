@@ -161,7 +161,7 @@ static s32_t configure_simplelink(void)
 	ASSERT_ON_ERROR(retval, NETAPP_ERROR);
 
 	/* Remove all 64 RX filters (8*8) */
-	memset(rx_filterid_mask.FilterBitmap, 0xFF, 8);
+	(void)memset(rx_filterid_mask.FilterBitmap, 0xFF, 8);
 
 	retval = sl_WlanSet(SL_WLAN_RX_FILTERS_ID, SL_WLAN_RX_FILTER_REMOVE,
 			    sizeof(SlWlanRxFilterOperationCommandBuff_t),
@@ -263,8 +263,8 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *wlan_event)
 			sl_conn.error = event_data->ReasonCode;
 		}
 
-		memset(&(sl_conn.ssid), 0x0, sizeof(sl_conn.ssid));
-		memset(&(sl_conn.bssid), 0x0, sizeof(sl_conn.bssid));
+		(void)memset(&(sl_conn.ssid), 0x0, sizeof(sl_conn.ssid));
+		(void)memset(&(sl_conn.bssid), 0x0, sizeof(sl_conn.bssid));
 
 		/* Continue the notification callback chain... */
 		nwp.cb(SL_WLAN_EVENT_DISCONNECT, &sl_conn);
@@ -288,7 +288,7 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *wlan_event)
 			    sl_conn.bssid[2], sl_conn.bssid[3],
 			    sl_conn.bssid[4], sl_conn.bssid[5]);
 
-		memset(&(sl_conn.bssid), 0x0, sizeof(sl_conn.bssid));
+		(void)memset(&(sl_conn.bssid), 0x0, sizeof(sl_conn.bssid));
 		break;
 	default:
 		SYS_LOG_ERR("\n[WLAN EVENT] Unexpected event [0x%lx]",
@@ -496,7 +496,7 @@ void _simplelink_get_scan_result(int index,
 	__ASSERT_NO_MSG(index <= CONFIG_WIFI_SIMPLELINK_SCAN_COUNT);
 	net_entry = &nwp.net_entries[index];
 
-	memset(scan_result, 0x0, sizeof(struct wifi_scan_result));
+	(void)memset(scan_result, 0x0, sizeof(struct wifi_scan_result));
 
 	__ASSERT_NO_MSG(net_entry->SsidLen <= WIFI_SSID_MAX_LEN);
 	memcpy(scan_result->ssid, net_entry->Ssid, net_entry->SsidLen);
@@ -519,7 +519,7 @@ int _simplelink_start_scan(void)
 	s32_t ret;
 
 	/* Clear the results buffer */
-	memset(&nwp.net_entries, 0x0, sizeof(nwp.net_entries));
+	(void)memset(&nwp.net_entries, 0x0, sizeof(nwp.net_entries));
 
 	/* Attempt to get scan results from NWP
 	 * Note: If scan policy isn't set, invoking 'sl_WlanGetNetworkList()'
@@ -588,7 +588,7 @@ int _simplelink_init(simplelink_wifi_cb_t wifi_cb)
 	nwp.role = ROLE_RESERVED;
 	nwp.cb = wifi_cb;
 
-	memset(&sl_conn, 0x0, sizeof(sl_conn));
+	(void)memset(&sl_conn, 0x0, sizeof(sl_conn));
 
 	retval = configure_simplelink();
 	__ASSERT(retval >= 0, "Unable to configure SimpleLink");

@@ -379,7 +379,7 @@ void test_ctr_prng_reseed(void)
 	 * make entropy different from original value - not really important
 	 * for the purpose of this test
 	 */
-	memset(entropy, 0xFF, sizeof(entropy));
+	(void)memset(entropy, 0xFF, sizeof(entropy));
 	rc = tc_ctr_prng_reseed(&ctx, entropy, sizeof(entropy), extra_input,
 				sizeof(extra_input));
 
@@ -394,7 +394,7 @@ void test_ctr_prng_reseed(void)
 	/* confirm entropy and additional_input are being used correctly
 	 * first, entropy only
 	 */
-	memset(&ctx, 0x0, sizeof(ctx));
+	(void)memset(&ctx, 0x0, sizeof(ctx));
 	for (i = 0; i < sizeof(entropy); i++) {
 		entropy[i] = i;
 	}
@@ -409,7 +409,7 @@ void test_ctr_prng_reseed(void)
 	"expected value different - check failed");
 
 	/* now, entropy and additional_input */
-	memset(&ctx, 0x00, sizeof(ctx));
+	(void)memset(&ctx, 0x00, sizeof(ctx));
 	for (i = 0; i < sizeof(extra_input); i++) {
 		extra_input[i] = i * 2;
 	}

@@ -197,7 +197,7 @@ int usb_dc_attach(void)
 	regs->CTRLA.reg = USB_CTRLA_MODE_DEVICE | USB_CTRLA_RUNSTDBY;
 	regs->CTRLB.reg = USB_DEVICE_CTRLB_SPDCONF_HS;
 
-	memset(data->descriptors, 0, sizeof(data->descriptors));
+	(void)memset(data->descriptors, 0, sizeof(data->descriptors));
 	regs->DESCADD.reg = (uintptr_t)&data->descriptors[0];
 
 	regs->INTENSET.reg = USB_DEVICE_INTENSET_EORST;

@@ -84,7 +84,7 @@ int ws_send_msg(struct http_ctx *ctx, u8_t *payload, size_t payload_len,
 		return -EINVAL;
 	}
 
-	memset(header, 0, sizeof(header));
+	(void)memset(header, 0, sizeof(header));
 
 	/* Is this the last packet? */
 	header[0] = final ? BIT(7) : 0;

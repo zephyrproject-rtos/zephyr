@@ -363,7 +363,7 @@ static void test_cmp_prefix(void)
 	zassert_true(st, "Prefix /65 compare failed");
 
 	/* Set all remaining bits in prefix2, it is now /128 */
-	memset(&prefix2.s6_addr[8], 0xff, 8);
+	(void)memset(&prefix2.s6_addr[8], 0xff, 8);
 
 	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
 	zassert_true(st, "Prefix /65 compare failed");

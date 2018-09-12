@@ -95,7 +95,7 @@ void test_realloc(void)
 	ptr = malloc(orig_size);
 
 	zassert_not_null((ptr), "malloc failed, errno: %d", errno);
-	memset(ptr, 'p', orig_size);
+	(void)memset(ptr, 'p', orig_size);
 
 	reloc_ptr = realloc(ptr, new_size);
 
@@ -103,7 +103,7 @@ void test_realloc(void)
 	zassert_not_null((ptr), "malloc/realloc failed, errno: %d", errno);
 	ptr = reloc_ptr;
 
-	memset(filled_buf, 'p', BUF_LEN);
+	(void)memset(filled_buf, 'p', BUF_LEN);
 	zassert_true(((memcmp(ptr, filled_buf, BUF_LEN)) == 0),
 			"realloc failed to copy malloc data, errno: %d", errno);
 
@@ -131,7 +131,7 @@ void test_reallocarray(void)
 	ptr = malloc(orig_size);
 
 	zassert_not_null((ptr), "malloc failed, errno: %d", errno);
-	memset(ptr, 'p', orig_size);
+	(void)memset(ptr, 'p', orig_size);
 
 	char *reloc_ptr = reallocarray(ptr, 2, orig_size);
 
@@ -139,7 +139,7 @@ void test_reallocarray(void)
 	zassert_not_null((ptr), "malloc/reallocarray failed, errno: %d", errno);
 	ptr = reloc_ptr;
 
-	memset(filled_buf, 'p', BUF_LEN);
+	(void)memset(filled_buf, 'p', BUF_LEN);
 	zassert_true(((memcmp(ptr, filled_buf, BUF_LEN)) == 0),
 			"realloc failed to copy malloc data, errno: %d", errno);
 

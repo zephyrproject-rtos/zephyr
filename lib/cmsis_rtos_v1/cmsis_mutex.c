@@ -26,7 +26,7 @@ osMutexId osMutexCreate(const osMutexDef_t *mutex_def)
 	}
 
 	if (k_mem_slab_alloc(&cmsis_mutex_slab, (void **)&mutex, 100) == 0) {
-		memset(mutex, 0, sizeof(struct k_mutex));
+		(void)memset(mutex, 0, sizeof(struct k_mutex));
 	} else {
 		return NULL;
 	}

@@ -228,7 +228,7 @@ void *_impl_k_object_alloc(enum k_objects otype)
 	dyn_obj->kobj.name = (char *)&dyn_obj->data;
 	dyn_obj->kobj.type = otype;
 	dyn_obj->kobj.flags = K_OBJ_FLAG_ALLOC;
-	memset(dyn_obj->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
+	(void)memset(dyn_obj->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
 
 	/* Need to grab a new thread index for k_thread */
 	if (otype == K_OBJ_THREAD) {
@@ -570,7 +570,7 @@ void _k_object_recycle(void *object)
 	struct _k_object *ko = _k_object_find(object);
 
 	if (ko) {
-		memset(ko->perms, 0, sizeof(ko->perms));
+		(void)memset(ko->perms, 0, sizeof(ko->perms));
 		_thread_perms_set(ko, k_current_get());
 		ko->flags |= K_OBJ_FLAG_INITIALIZED;
 	}

@@ -56,7 +56,7 @@ static int _nvs_flash_al_wrt(struct nvs_fs *fs, u32_t addr, const void *data,
 	}
 	if (len) {
 		memcpy(buf, data, len);
-		memset(buf + len, 0xff, fs->write_block_size - len);
+		(void)memset(buf + len, 0xff, fs->write_block_size - len);
 		rc = flash_write(fs->flash_device, offset, buf,
 				 fs->write_block_size);
 		if (rc) {
@@ -159,7 +159,7 @@ static int _nvs_flash_cmp_const(struct nvs_fs *fs, u32_t addr, u8_t value,
 	u8_t cmp[NVS_BLOCK_SIZE];
 
 	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1);
-	memset(cmp, value, block_size);
+	(void)memset(cmp, value, block_size);
 	while (len) {
 		bytes_to_cmp = min(block_size, len);
 		rc = _nvs_flash_block_cmp(fs, addr, cmp, bytes_to_cmp);
@@ -357,7 +357,7 @@ static int _nvs_sector_close(struct nvs_fs *fs)
 
 	ate_size = sizeof(struct nvs_ate);
 
-	memset(buf, 0, ate_size);
+	(void)memset(buf, 0, ate_size);
 
 	rc = _nvs_flash_al_wrt(fs, fs->ate_wra, buf, ate_size);
 	if (rc) {

@@ -142,7 +142,7 @@ void string2scalar(unsigned int *scalar, unsigned int num_word32, char *str)
 		k_panic();
 	}
 
-	memset(tmp, 0, padding / 2);
+	(void)memset(tmp, 0, padding / 2);
 
 	if (false == hex2bin(tmp + padding / 2, num_bytes, str, hexlen)) {
 		k_panic();
@@ -238,7 +238,7 @@ int keygen_vectors(char **d_vec, char **qx_vec, char **qy_vec, int tests,
 		 * Feed prvkey vector as padded random seed into ecc_make_key.
 		 * Internal mod-reduction will be zero-op and generate correct prv/pub
 		 */
-		memset(d, 0, sizeof(d));
+		(void)memset(d, 0, sizeof(d));
 		string2scalar(d, NUM_ECC_WORDS, d_vec[i]);
 
 		uint8_t pub_bytes[2 * NUM_ECC_BYTES];
