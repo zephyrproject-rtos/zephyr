@@ -12,15 +12,15 @@ menuconfig LSM9DS0_GYRO
 	help
 	  Enable driver for LSM9DS0 I2C-based gyroscope sensor.
 
+if LSM9DS0_GYRO
+
 config LSM9DS0_GYRO_DEV_NAME
 	string "LSM9DS0_GYRO device name"
-	depends on LSM9DS0_GYRO
 	default "lsm9ds0_gyro"
 
 config LSM9DS0_GYRO_I2C_ADDR
 	hex "LSM9DS0_GYRO I2C slave address"
 	default 0x6A
-	depends on LSM9DS0_GYRO
 	help
 	  Specify the I2C slave address for the LSM9DS0_GYRO.
 
@@ -29,19 +29,16 @@ config LSM9DS0_GYRO_I2C_ADDR
 
 config LSM9DS0_GYRO_I2C_MASTER_DEV_NAME
 	string "I2C master where LSM9DS0 gyroscope is connected"
-	depends on LSM9DS0_GYRO
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which LSM9DS0_GYRO
 	  is connected.
 
 menu "Attributes"
-	depends on LSM9DS0_GYRO
 
 choice
 	prompt "Default full-scale"
 	default LSM9DS0_GYRO_FULLSCALE_245
-	depends on LSM9DS0_GYRO
 	help
 	  Specify the default full-scale.
 
@@ -58,14 +55,12 @@ endchoice
 
 config LSM9DS0_GYRO_FULLSCALE_RUNTIME
 	bool "Enable dynamic full-scale"
-	depends on LSM9DS0_GYRO
 	help
 	  Enable alteration of full-scale attribute at runtime.
 
 choice
 	prompt "Default sampling rate frequency"
 	default LSM9DS0_GYRO_SAMPLING_RATE_95
-	depends on LSM9DS0_GYRO
 	help
 	  Specify the default sampling rate frequency.
 
@@ -85,7 +80,6 @@ endchoice
 
 config LSM9DS0_GYRO_SAMPLING_RATE_RUNTIME
 	bool "Enable dynamic sampling rate"
-	depends on LSM9DS0_GYRO
 	help
 	  Enable alteration of sampling rate frequency at runtime.
 
@@ -93,7 +87,7 @@ endmenu
 
 config LSM9DS0_GYRO_TRIGGERS
 	bool "Enable triggers"
-	depends on LSM9DS0_GYRO && GPIO
+	depends on GPIO
 
 config LSM9DS0_GYRO_THREAD_STACK_SIZE
 	int "Thread stack size"
@@ -118,3 +112,5 @@ config LSM9DS0_GYRO_GPIO_DRDY_INT_PIN
 	int "GPIO pin number for the data ready interrupt pin"
 	default 3
 	depends on LSM9DS0_GYRO_TRIGGER_DRDY
+
+endif # LSM9DS0_GYRO

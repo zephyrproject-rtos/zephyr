@@ -12,18 +12,18 @@ menuconfig HDC1008
 	help
 	  Enable driver for HDC1008 temperature and humidity sensors.
 
+if HDC1008
+
 if !HAS_DTS_I2C_DEVICE
 
 config HDC1008_NAME
 	string "Driver name"
 	default "HDC1008"
-	depends on HDC1008
 	help
 	  Device name with which the HDC1008 sensor is identified.
 
 config HDC1008_I2C_ADDR
 	hex "I2C Address for HDC1008"
-	depends on HDC1008
 	default "0x40"
 	help
 	  0x40: A0 connected GND and A1 connected to GND.
@@ -33,7 +33,6 @@ config HDC1008_I2C_ADDR
 
 config HDC1008_I2C_MASTER_DEV_NAME
 	string "I2C master where HDC1008 is connected"
-	depends on HDC1008
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which the
@@ -46,7 +45,6 @@ if !HAS_DTS_GPIO_DEVICE
 config HDC1008_GPIO_DEV_NAME
 	string "GPIO device"
 	default "GPIO_0"
-	depends on HDC1008
 	help
 	  The device name of the GPIO device to which the HDC1008 data-ready
 	  pin is connected.
@@ -54,9 +52,10 @@ config HDC1008_GPIO_DEV_NAME
 config HDC1008_GPIO_PIN_NUM
 	int "Interrupt GPIO pin number"
 	default 0
-	depends on HDC1008
 	help
 	  The number of the GPIO on which the data-ready signal from the HDC1008
 	  chip will be received.
 
 endif # !HAS_DTS_GPIO_DEVICE
+
+endif # HDC1008
