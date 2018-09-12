@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <silabs/efr32fg1p.dtsi>
+#include <silabs/efr32fg1p133f256gm48.dtsi>
 
 / {
 	model = "Silicon Labs EFR32 SLWSTK6061A board";
