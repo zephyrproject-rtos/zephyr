@@ -12,16 +12,16 @@ menuconfig MPU6050
 	help
 	  Enable driver for MPU6050 I2C-based six-axis motion tracking device.
 
+if MPU6050
+
 config MPU6050_NAME
 	string "Driver name"
 	default "MPU6050"
-	depends on MPU6050
 	help
 	  Device name with which the MPU6050 sensor is identified.
 
 config MPU6050_I2C_ADDR
 	hex "I2C address"
-	depends on MPU6050
 	default 0x68
 	range 0x68 0x69
 	help
@@ -31,7 +31,6 @@ config MPU6050_I2C_ADDR
 
 config MPU6050_I2C_MASTER_DEV_NAME
 	string "I2C master where MPU6050 is connected"
-	depends on MPU6050
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which MPU6050 is
@@ -39,7 +38,6 @@ config MPU6050_I2C_MASTER_DEV_NAME
 
 choice
 	prompt "Trigger mode"
-	depends on MPU6050
 	default MPU6050_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
@@ -61,12 +59,11 @@ endchoice
 
 config MPU6050_TRIGGER
 	bool
-	depends on MPU6050
 
 config MPU6050_GPIO_DEV_NAME
 	string "GPIO device"
 	default "GPIO_0"
-	depends on MPU6050 && MPU6050_TRIGGER
+	depends on MPU6050_TRIGGER
 	help
 	  The device name of the GPIO device to which the MPU6050 interrupt pin
 	  is connected.
@@ -74,28 +71,27 @@ config MPU6050_GPIO_DEV_NAME
 config MPU6050_GPIO_PIN_NUM
 	int "Interrupt GPIO pin number"
 	default 0
-	depends on MPU6050 && MPU6050_TRIGGER
+	depends on MPU6050_TRIGGER
 	help
 	  The number of the GPIO on which the interrupt signal from the MPU6050
 	  chip will be received.
 
 config MPU6050_THREAD_PRIORITY
 	int "Thread priority"
-	depends on MPU6050 && MPU6050_TRIGGER_OWN_THREAD
+	depends on MPU6050_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  Priority of thread used by the driver to handle interrupts.
 
 config MPU6050_THREAD_STACK_SIZE
 	int "Thread stack size"
-	depends on MPU6050 && MPU6050_TRIGGER_OWN_THREAD
+	depends on MPU6050_TRIGGER_OWN_THREAD
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
 config MPU6050_ACCEL_FS
 	int "Accelerometer full-scale range"
-	depends on MPU6050
 	default 2
 	help
 	  Magnetometer full-scale range.
@@ -104,9 +100,10 @@ config MPU6050_ACCEL_FS
 
 config MPU6050_GYRO_FS
 	int "Gyroscope full-scale range"
-	depends on MPU6050
 	default 250
 	help
 	  Gyroscope full-scale range.
 	  An X value for the config represents a range of +/- X degrees/second.
 	  Valid values are 250, 500, 1000, 2000.
+
+endif # MPU6050

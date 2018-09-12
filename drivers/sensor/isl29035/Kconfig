@@ -12,16 +12,16 @@ menuconfig ISL29035
 	help
 	  Enable driver for the ISL29035 light sensor.
 
+if ISL29035
+
 config ISL29035_NAME
 	string "Driver name"
 	default "ISL29035"
-	depends on ISL29035
 	help
 	  Device name with which the ISL29035 sensor is identified.
 
 config ISL29035_I2C_MASTER_DEV_NAME
 	string "I2C Master"
-	depends on ISL29035
 	default "I2C_0"
 	help
 	  The device name of the I2C master device to which the ISL29035
@@ -29,7 +29,6 @@ config ISL29035_I2C_MASTER_DEV_NAME
 
 config ISL29035_THREAD_PRIORITY
 	int "Thread priority"
-	depends on ISL29035
 	default 10
 	help
 	  Priority of thread used to handle the timer and threshold triggers.
@@ -37,7 +36,6 @@ config ISL29035_THREAD_PRIORITY
 choice
 	prompt "Full scale lux range"
 	default ISL29035_LUX_RANGE_1K
-	depends on ISL29035
 	help
 	  Maximum allowable lux value. Lower range values offer better
 	  resolution.
@@ -59,7 +57,6 @@ endchoice
 choice
 	prompt "Integration time"
 	default ISL29035_INTEGRATION_TIME_105K
-	depends on ISL29035
 	help
 	  The sampling period of the internal ADC of the light sensor.
 	  Lower integration time values mean lower ADC resolution.
@@ -80,7 +77,6 @@ endchoice
 
 choice
 	prompt "Active sensing mode"
-	depends on ISL29035
 	default ISL29035_MODE_ALS
 	help
 	  Sensing mode in which the ISL29035 will function. The chip can be
@@ -100,7 +96,7 @@ endchoice
 
 choice
 	prompt "Trigger mode"
-	depends on ISL29035 && ISL29035_MODE_ALS && GPIO
+	depends on ISL29035_MODE_ALS && GPIO
 	default ISL29035_TRIGGER_NONE
 	help
 	  Specify the type of triggering to be used by the driver.
@@ -123,12 +119,11 @@ endchoice
 
 config ISL29035_TRIGGER
 	bool
-	depends on ISL29035
 
 config ISL29035_GPIO_DEV_NAME
 	string "GPIO device"
 	default "GPIO_0"
-	depends on ISL29035 && ISL29035_TRIGGER
+	depends on ISL29035_TRIGGER
 	help
 	  The device name of the GPIO device to which the ISL29035 interrupt
 	  pin is connected.
@@ -136,28 +131,28 @@ config ISL29035_GPIO_DEV_NAME
 config ISL29035_GPIO_PIN_NUM
 	int "GPIO pin number"
 	default 0
-	depends on ISL29035 && ISL29035_TRIGGER
+	depends on ISL29035_TRIGGER
 	help
 	  The number of the GPIO pin to which the ISL29035 interrupt pin is
 	  connected.
 
 config ISL29035_THREAD_PRIORITY
 	int "Thread priority"
-	depends on ISL29035 && ISL29035_TRIGGER_OWN_THREAD
+	depends on ISL29035_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  Priority of thread used by the driver to handle interrupts.
 
 config ISL29035_THREAD_STACK_SIZE
 	int "Thread stack size"
-	depends on ISL29035 && ISL29035_TRIGGER_OWN_THREAD
+	depends on ISL29035_TRIGGER_OWN_THREAD
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
 choice
 	prompt "Interrupt persist cycles"
-	depends on ISL29035 && ISL29035_TRIGGER
+	depends on ISL29035_TRIGGER
 	default ISL29035_INT_PERSIST_1
 	help
 	  Number of consecutive integration cycles for which the data samples
@@ -177,3 +172,5 @@ config ISL29035_INT_PERSIST_16
 	bool "16"
 
 endchoice
+
+endif # ISL29035

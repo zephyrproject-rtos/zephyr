@@ -12,18 +12,18 @@ menuconfig CCS811
 	help
 	  Enable driver for CCS811 Gas sensors.
 
+if CCS811
+
 if !HAS_DTS_I2C_DEVICE
 
 config CCS811_NAME
 	string "Driver name"
 	default "CCS811"
-	depends on CCS811
 	help
 	  Device name with which the CCS811 sensor is identified.
 
 config CCS811_I2C_ADDR
 	hex "I2C address for CCS811 Sensor"
-	depends on CCS811
 	range 0x5a 0x5b
 	default "0x5b"
 	help
@@ -33,7 +33,6 @@ config CCS811_I2C_ADDR
 
 config CCS811_I2C_MASTER_DEV_NAME
 	string "I2C master where CCS811 is connected"
-	depends on CCS811
 	default "I2C_1"
 	help
 	  Specify the device name of the I2C master device to which the
@@ -44,35 +43,34 @@ endif
 config CCS811_GPIO_DEV_NAME
 	string "GPIO device"
 	default "GPIOC"
-	depends on CCS811
 	help
 	  The device name of the GPIO device to which the CCS811 WAKE
 	  pin is connected.
 
 config CCS811_GPIO_WAKEUP
 	bool "Enable GPIO Wakeup for CCS811"
-	depends on CCS811
 	help
 	  Enable GPIO Wakeup support for CCS811
 
 config CCS811_GPIO_WAKEUP_PIN_NUM
 	int "GPIO Wakeup pin number"
 	default 0
-	depends on CCS811 && CCS811_GPIO_WAKEUP
+	depends on CCS811_GPIO_WAKEUP
 	help
 	  The number of the GPIO pin on which the WAKE pin of CCS811
 	  is connected
 
 config CCS811_GPIO_RESET
 	bool "Enable GPIO Reset for CCS811"
-	depends on CCS811
 	help
 	  Enable GPIO Reset support for CCS811
 
 config CCS811_GPIO_RESET_PIN_NUM
 	int "GPIO Reset pin number"
 	default 0
-	depends on CCS811 && CCS811_GPIO_RESET
+	depends on CCS811_GPIO_RESET
 	help
 	  The number of the GPIO pin on which the RESET pin of CCS811
 	  is connected
+
+endif # CCS811

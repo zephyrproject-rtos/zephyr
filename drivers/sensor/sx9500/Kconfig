@@ -12,21 +12,20 @@ menuconfig SX9500
 	help
 	  Enable driver for SX9500 I2C-based SAR proximity sensor.
 
+if SX9500
+
 config SX9500_DEV_NAME
 	string "SX9500 device name"
-	depends on SX9500
 	default "SX9500"
 
 config SX9500_I2C_ADDR
 	hex "SX9500 I2C slave address"
-	depends on SX9500
 	default 0x2B
 	help
 	  Specify the I2C slave address for the SX9500.
 
 config SX9500_I2C_DEV_NAME
 	string "I2C master where SX9500 is connected"
-	depends on SX9500
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which SX9500 is
@@ -35,14 +34,12 @@ config SX9500_I2C_DEV_NAME
 config SX9500_PROX_CHANNEL
 	int "Proximity channel to use"
 	default 3
-	depends on SX9500
 	help
 	  The SX9500 offers 4 separate proximity channels.  Choose which one
 	  you are using.  Valid numbers are 0 to 3.
 
 choice
 	prompt "SX9500 trigger mode"
-	depends on SX9500
 	default SX9500_TRIGGER_GLOBAL_THREAD
 
 config SX9500_TRIGGER_NONE
@@ -62,11 +59,10 @@ endchoice
 
 config SX9500_TRIGGER
 	bool
-	depends on SX9500
 
 config SX9500_GPIO_CONTROLLER
 	string "GPIO controller for SX9500 interrupt"
-	depends on SX9500 && SX9500_TRIGGER
+	depends on SX9500_TRIGGER
 	default "GPIO_0"
 	help
 	  Specify the device name of the GPIO controller the SX9500 interrupt
@@ -74,15 +70,17 @@ config SX9500_GPIO_CONTROLLER
 
 config SX9500_GPIO_PIN
 	int "GPIO pin for SX9500 interrupt"
-	depends on SX9500 && SX9500_TRIGGER
+	depends on SX9500_TRIGGER
 	default 3
 
 config SX9500_THREAD_STACK_SIZE
 	int "Sensor delayed work thread stack size"
-	depends on SX9500 && SX9500_TRIGGER_OWN_THREAD
+	depends on SX9500_TRIGGER_OWN_THREAD
 	default 1024
 
 config SX9500_THREAD_PRIORITY
 	int "Thread priority"
-	depends on SX9500 && SX9500_TRIGGER_OWN_THREAD
+	depends on SX9500_TRIGGER_OWN_THREAD
 	default 10
+
+endif # SX9500

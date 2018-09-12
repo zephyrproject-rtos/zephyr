@@ -12,17 +12,17 @@ menuconfig MAX44009
 	help
 	  Enable driver for MAX44009 light sensors.
 
+if MAX44009
+
 config MAX44009_DRV_NAME
 	string "Driver name"
 	default "MAX44009"
-	depends on MAX44009
 	help
 	  Device name with which the MAX44009 light is identified.
 
 
 config MAX44009_I2C_ADDR
 	hex "MAX44009 I2C address"
-	depends on MAX44009
 	default "0x4a"
 	help
 	  I2C address of the MAX44009 sensor. Possible configurations:
@@ -32,8 +32,9 @@ config MAX44009_I2C_ADDR
 
 config MAX44009_I2C_DEV_NAME
 	string "I2C master where MAX44009 is connected"
-	depends on MAX44009
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which the
 	  MAX44009 chip is connected.
+
+endif # MAX44009

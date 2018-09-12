@@ -10,11 +10,12 @@ menuconfig APDS9960
 	help
 	  Enable driver for APDS9960 sensors.
 
+if APDS9960
+
 if !HAS_DTS_I2C_DEVICE
 
 config  APDS9960_I2C_DEV_NAME
 	string "I2C Master"
-	depends on APDS9960
 	default "I2C_0"
 	help
 	  The device name of the I2C master device to which the APDS9960
@@ -23,8 +24,9 @@ config  APDS9960_I2C_DEV_NAME
 config APDS9960_DRV_NAME
 	string "Driver name"
 	default "APDS9960"
-	depends on APDS9960
 	help
 	  Device name with which the APDS9960 is identified.
 
 endif # !HAS_DTS_I2C_DEVICE
+
+endif # APDS9960

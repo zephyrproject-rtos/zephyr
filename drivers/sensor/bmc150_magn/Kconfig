@@ -12,15 +12,15 @@ menuconfig BMC150_MAGN
 	help
 	  Enable driver for BMC150 I2C-based magnetometer sensor.
 
+if BMC150_MAGN
+
 config BMC150_MAGN_DEV_NAME
 	string "BMC150_MAGN device name"
-	depends on BMC150_MAGN
 	default "bmc150_magn"
 
 config BMC150_MAGN_I2C_ADDR
 	hex "BMC150_MAGN I2C slave address"
 	default 0x12
-	depends on BMC150_MAGN
 	help
 	  Specify the I2C slave address for the BMC150_MAGN.
 
@@ -29,19 +29,16 @@ config BMC150_MAGN_I2C_ADDR
 
 config BMC150_MAGN_I2C_MASTER_DEV_NAME
 	string "I2C master where BMC150_MAGN is connected"
-	depends on BMC150_MAGN
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which BMC150_MAGN
 	  is connected.
 
 menu "Attributes"
-	depends on BMC150_MAGN
 
 choice
 	prompt "Default preset"
 	default BMC150_MAGN_PRESET_REGULAR
-	depends on BMC150_MAGN
 	help
 	  Specify the default preset (x/y oversampling, z oversampling, sampling
 	  frequency).
@@ -62,19 +59,16 @@ endchoice
 
 config BMC150_MAGN_SAMPLING_RATE_RUNTIME
 	bool "Enable dynamic sampling rate"
-	depends on BMC150_MAGN
 	help
 	  Enable alteration of sampling rate attribute at runtime.
 
 config BMC150_MAGN_SAMPLING_REP_XY
 	bool "Enable dynamic XY oversampling"
-	depends on BMC150_MAGN
 	help
 	  Enable alteration of XY oversampling at runtime.
 
 config BMC150_MAGN_SAMPLING_REP_Z
 	bool "Enable dynamic Z oversampling"
-	depends on BMC150_MAGN
 	help
 	  Enable alteration of Z oversampling at runtime.
 
@@ -82,7 +76,7 @@ endmenu
 
 config BMC150_MAGN_TRIGGER
 	bool "Enable triggers"
-	depends on BMC150_MAGN && GPIO
+	depends on GPIO
 	help
 	  Enable triggers for BMC150 magnetometer
 
@@ -113,3 +107,5 @@ config BMC150_MAGN_GPIO_DRDY_INT_PIN
 	depends on BMC150_MAGN_TRIGGER_DRDY
 	help
 	  GPIO pin number for the data ready interrupt pin.
+
+endif # BMC150_MAGN
