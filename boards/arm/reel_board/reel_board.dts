@@ -114,6 +114,19 @@
 	sck-pin = <19>;
 	mosi-pin = <20>;
 	miso-pin = <21>;
+	cs-gpios = <&gpio0 17 0>;
+
+	ssd1673fb@0 {
+		compatible = "solomon,ssd1673fb-spi";
+		label = "SSD1673";
+		spi-max-frequency = <4000000>;
+		reg = <0>;
+		width = <250>;
+		height = <120>;
+		reset-gpios = <&gpio0 15 0>;
+		dc-gpios = <&gpio0 16 0>;
+		busy-gpios = <&gpio0 14 0>;
+	};
 };
 
 &flash0 {
