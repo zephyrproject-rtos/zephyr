@@ -18,10 +18,12 @@
 
 #define PKT_WAIT_TIME K_SECONDS(1)
 
-struct net_pkt *net_udp_append_raw(struct net_pkt *pkt,
-				   u16_t src_port,
-				   u16_t dst_port)
+struct net_pkt *net_udp_append(struct net_context *context,
+			       struct net_pkt *pkt,
+			       u16_t dst_port)
 {
+	u16_t src_port = net_sin((struct sockaddr *)
+				 &context->local)->sin_port;
 	struct net_buf *frag;
 	u16_t offset;
 	bool ret;
@@ -60,11 +62,13 @@ out:
 	return NULL;
 }
 
-struct net_pkt *net_udp_insert_raw(struct net_pkt *pkt,
-				   u16_t offset,
-				   u16_t src_port,
-				   u16_t dst_port)
+struct net_pkt *net_udp_insert(struct net_context *context,
+			       struct net_pkt *pkt,
+			       u16_t offset,
+			       u16_t dst_port)
 {
+	u16_t src_port = net_sin((struct sockaddr *)
+				 &context->local)->sin_port;
 	struct net_buf *frag, *prev, *udp;
 	u16_t pos;
 
@@ -247,29 +251,6 @@ struct net_udp_hdr *net_udp_set_hdr(struct net_pkt *pkt,
 	}
 
 	return hdr;
-}
-
-struct net_pkt *net_udp_append(struct net_context *context,
-			       struct net_pkt *pkt,
-			       u16_t port)
-{
-	/* Append writes using *_be16() so it swap the port here */
-	return net_udp_append_raw(pkt,
-				  net_sin((struct sockaddr *)
-					  &context->local)->sin_port,
-				  port);
-}
-
-struct net_pkt *net_udp_insert(struct net_context *context,
-			       struct net_pkt *pkt,
-			       u16_t offset,
-			       u16_t port)
-{
-	return net_udp_insert_raw(pkt,
-				  offset,
-				  net_sin((struct sockaddr *)
-					  &context->local)->sin_port,
-				  port);
 }
 
 int net_udp_register(const struct sockaddr *remote_addr,

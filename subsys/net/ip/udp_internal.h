@@ -28,34 +28,6 @@ extern "C" {
 #endif
 
 #if defined(CONFIG_NET_UDP)
-/**
- * @brief Append UDP packet into net_pkt
- *
- * @param pkt Network packet
- * @param src_port Source port in host byte order.
- * @param dst_port Destination port in host byte order.
- *
- * @return Return network packet that contains the UDP packet.
- */
-struct net_pkt *net_udp_append_raw(struct net_pkt *pkt,
-				   u16_t src_port,
-				   u16_t dst_port);
-
-/**
- * @brief Insert UDP packet into net_pkt chain. The UDP header is added
- * right after the IP header which is after first fragment.
- *
- * @param pkt Network packet
- * @param offset Offset where to insert (typically after IP header)
- * @param src_port Source port in host byte order.
- * @param dst_port Destination port in host byte order.
- *
- * @return Return network packet that contains the UDP packet.
- */
-struct net_pkt *net_udp_insert_raw(struct net_pkt *pkt,
-				   u16_t offset,
-				   u16_t src_port,
-				   u16_t dst_port);
 
 /**
  * @brief Set UDP checksum in network packet.
@@ -98,7 +70,7 @@ struct net_pkt *net_udp_append(struct net_context *context,
  * @param context Network context for a connection
  * @param pkt Network packet
  * @param offset Offset where to insert (typically after IP header)
- * @param port Destination port in network byte order.
+ * @param dst_port Destination port in network byte order.
  *
  * @return Return network packet that contains the UDP packet or NULL if
  * there is an failure.
@@ -106,7 +78,7 @@ struct net_pkt *net_udp_append(struct net_context *context,
 struct net_pkt *net_udp_insert(struct net_context *context,
 			       struct net_pkt *pkt,
 			       u16_t offset,
-			       u16_t port);
+			       u16_t dst_port);
 
 #else
 #define net_udp_append_raw(pkt, src_port, dst_port) (pkt)
