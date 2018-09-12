@@ -387,7 +387,7 @@ static void switch_to_main_thread(void)
 	 * will never be rescheduled in.
 	 */
 
-	_Swap(irq_lock());
+	(void)_Swap(irq_lock());
 #endif
 }
 #endif /* CONFIG_MULTITHREDING */
