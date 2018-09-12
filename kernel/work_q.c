@@ -131,7 +131,7 @@ int k_delayed_work_cancel(struct k_delayed_work *work)
 			return -EINVAL;
 		}
 	} else {
-		_abort_timeout(&work->timeout);
+		(void)_abort_timeout(&work->timeout);
 	}
 
 	/* Detach from workqueue */
