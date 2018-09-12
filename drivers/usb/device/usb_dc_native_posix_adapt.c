@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* For accept4() */
+#define _GNU_SOURCE 1
+
 #define __packed __attribute__((__packed__))
 
-/* System headers */
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -343,8 +345,8 @@ void usbip_start(void)
 		struct sockaddr_in client_addr;
 		socklen_t client_addr_len = sizeof(client_addr);
 
-		connfd = accept(listenfd, (struct sockaddr *)&client_addr,
-				&client_addr_len);
+		connfd = accept4(listenfd, (struct sockaddr *)&client_addr,
+				 &client_addr_len, SOCK_NONBLOCK);
 		if (connfd < 0) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				/* Non-blocking accept */
@@ -373,8 +375,20 @@ void usbip_start(void)
 				struct op_common req;
 
 				read = recv(connfd, &req, sizeof(req), 0);
+				if (read < 0) {
+					if (errno == EAGAIN ||
+					    errno == EWOULDBLOCK) {
+						/* Non-blocking accept */
+						k_sleep(100);
+
+						continue;
+					}
+				}
+
 				if (read != sizeof(req)) {
-					SYS_LOG_WRN("small packet, %u", read);
+					SYS_LOG_WRN("wrong length, %d", read);
+
+					/* Closing connection */
 					break;
 				}
 
@@ -403,8 +417,19 @@ void usbip_start(void)
 			/* Handle attached case */
 
 			read = recv(connfd, hdr, sizeof(*hdr), 0);
+			if (read < 0) {
+				if (errno == EAGAIN || errno == EWOULDBLOCK) {
+					/* Non-blocking accept */
+					k_sleep(100);
+
+					continue;
+				}
+			}
+
 			if (read != sizeof(*hdr)) {
-				SYS_LOG_ERR("recv failed: %d", read);
+				SYS_LOG_ERR("recv wrong length: %d", read);
+
+				/* Closing connection */
 				break;
 			}
 
@@ -428,6 +453,7 @@ void usbip_start(void)
 			}
 		}
 
+		SYS_LOG_DBG("Closing connection");
 		close(connfd);
 	}
 }
