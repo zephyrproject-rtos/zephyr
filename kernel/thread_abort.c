@@ -41,7 +41,7 @@ void _impl_k_thread_abort(k_tid_t thread)
 		irq_unlock(key);
 	} else {
 		if (_current == thread) {
-			_Swap(key);
+			(void)_Swap(key);
 			CODE_UNREACHABLE;
 		}
 

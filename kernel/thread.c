@@ -510,7 +510,7 @@ void _impl_k_thread_suspend(struct k_thread *thread)
 	sys_trace_thread_suspend(thread);
 
 	if (thread == _current) {
-		_Swap(key);
+		(void)_Swap(key);
 	} else {
 		irq_unlock(key);
 	}

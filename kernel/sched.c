@@ -789,10 +789,10 @@ void _impl_k_yield(void)
 	}
 
 #ifdef CONFIG_SMP
-	_Swap(irq_lock());
+	(void)_Swap(irq_lock());
 #else
 	if (_get_next_ready_thread() != _current) {
-		_Swap(irq_lock());
+		(void)_Swap(irq_lock());
 	}
 #endif
 }
@@ -827,7 +827,7 @@ void _impl_k_sleep(s32_t duration)
 	_remove_thread_from_ready_q(_current);
 	_add_thread_timeout(_current, NULL, ticks);
 
-	_Swap(key);
+	(void)_Swap(key);
 #endif
 }
 
