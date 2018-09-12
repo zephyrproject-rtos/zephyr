@@ -679,6 +679,28 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 	.user_data = _value,						\
 }
 
+/** @brief Notification complete result callback.
+ *
+ *  @param conn Connection object.
+ */
+typedef void (*bt_gatt_notify_complete_func_t) (struct bt_conn *conn);
+
+/** @brief Notify attribute value change with callback.
+ *
+ *  This function works in the same way as @ref bt_gatt_notify.
+ *  With the addition that after sending the notification the
+ *  callback function will be called.
+ *
+ *  @param conn Connection object.
+ *  @param attr Characteristic or Characteristic Value attribute.
+ *  @param data Pointer to Attribute data.
+ *  @param len Attribute value length.
+ *  @param func Notification value callback.
+ */
+int bt_gatt_notify_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+		      const void *data, u16_t len,
+		      bt_gatt_notify_complete_func_t func);
+
 /** @brief Notify attribute value change.
  *
  *  Send notification of attribute value change, if connection is NULL notify
@@ -696,8 +718,11 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
  *  @param data Pointer to Attribute data.
  *  @param len Attribute value length.
  */
-int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		   const void *data, u16_t len);
+static inline int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				 const void *data, u16_t len)
+{
+	return bt_gatt_notify_cb(conn, attr, data, len, NULL);
+}
 
 /** @typedef bt_gatt_indicate_func_t
  *  @brief Indication complete result callback.
