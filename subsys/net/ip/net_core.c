@@ -383,7 +383,6 @@ static inline void l3_init(void)
 #if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP)
 	net_conn_init();
 #endif
-	net_udp_init();
 	net_tcp_init();
 
 	net_route_init();

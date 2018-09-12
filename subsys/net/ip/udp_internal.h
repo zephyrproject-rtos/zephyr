@@ -120,12 +120,6 @@ int net_udp_register(const struct sockaddr *remote_addr,
  */
 int net_udp_unregister(struct net_conn_handle *handle);
 
-#if defined(CONFIG_NET_UDP)
-void net_udp_init(void);
-#else
-#define net_udp_init(...)
-#endif
-
 #ifdef __cplusplus
 }
 #endif
