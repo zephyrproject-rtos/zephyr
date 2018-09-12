@@ -102,4 +102,9 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     */
     isb
 
-    b _PrepC
+    /*
+     * 'bl' jumps the furthest of the branch instructions that are
+     * supported on all platforms. So it is used when jumping to _PrepC
+     * (even though we do not intend to return).
+     */
+    bl _PrepC
