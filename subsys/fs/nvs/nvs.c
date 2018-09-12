@@ -11,7 +11,13 @@
 #include <inttypes.h>
 #include <nvs/nvs.h>
 #include <crc8.h>
+
+#define LOG_MODULE_NAME fs_nvs
+#define LOG_LEVEL CONFIG_NVS_LOG_LEVEL
+
 #include "nvs_priv.h"
+
+LOG_MODULE_REGISTER();
 
 /* basic routines */
 /* _nvs_al_size returns size aligned to fs->write_block_size */
@@ -222,8 +228,8 @@ static int _nvs_flash_erase_sector(struct nvs_fs *fs, u32_t addr)
 		/* flash protection set error */
 		return rc;
 	}
-	SYS_LOG_DBG("Erasing flash at %"PRIx32", len %d",
-		    offset, fs->sector_size);
+	LOG_DBG("Erasing flash at %"PRIx32", len %d",
+		offset, fs->sector_size);
 	rc = flash_erase(fs->flash_device, offset, fs->sector_size);
 	if (rc) {
 		/* flash erase error */
@@ -426,7 +432,7 @@ static int _nvs_gc(struct nvs_fs *fs)
 		 */
 		if ((wlk_prev_addr == gc_addr) && gc_ate.len) {
 			/* copy needed */
-			SYS_LOG_DBG("Moving %d, len %d", gc_ate.id, gc_ate.len);
+			LOG_DBG("Moving %d, len %d", gc_ate.id, gc_ate.len);
 
 			data_addr = (gc_addr & ADDR_SECT_MASK);
 			data_addr += gc_ate.offset;
@@ -634,7 +640,7 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 
 	fs->flash_device = device_get_binding(dev_name);
 	if (!fs->flash_device) {
-		SYS_LOG_ERR("No valid flash device found");
+		LOG_ERR("No valid flash device found");
 		return -ENXIO;
 	}
 
@@ -642,7 +648,7 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 
 	/* check the number of sectors, it should be at least 2 */
 	if (fs->sector_count < 2) {
-		SYS_LOG_ERR("Configuration error - sector count");
+		LOG_ERR("Configuration error - sector count");
 		return -EINVAL;
 	}
 
@@ -652,14 +658,14 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 		return rc;
 	}
 
-	SYS_LOG_INF("%d Sectors of %d byte", fs->sector_count, fs->sector_size);
-	SYS_LOG_INF("alloc wra: %d-%"PRIx32"",
-		    (fs->ate_wra >> ADDR_SECT_SHIFT),
-		    (fs->ate_wra & ADDR_OFFS_MASK));
-	SYS_LOG_INF("data wra: %d-%"PRIx32"",
-		    (fs->data_wra >> ADDR_SECT_SHIFT),
-		    (fs->data_wra & ADDR_OFFS_MASK));
-	SYS_LOG_INF("Free space: %d", fs->free_space);
+	LOG_INF("%d Sectors of %d byte", fs->sector_count, fs->sector_size);
+	LOG_INF("alloc wra: %d-%"PRIx32"",
+		(fs->ate_wra >> ADDR_SECT_SHIFT),
+		(fs->ate_wra & ADDR_OFFS_MASK));
+	LOG_INF("data wra: %d-%"PRIx32"",
+		(fs->data_wra >> ADDR_SECT_SHIFT),
+		(fs->data_wra & ADDR_OFFS_MASK));
+	LOG_INF("Free space: %d", fs->free_space);
 
 	return 0;
 }
