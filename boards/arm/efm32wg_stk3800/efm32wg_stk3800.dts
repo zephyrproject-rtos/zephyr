@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <silabs/efm32wg.dtsi>
+#include <silabs/efm32wg990f256.dtsi>
 
 / {
 	model = "Silicon Labs EFM32WG STK3800 board";
