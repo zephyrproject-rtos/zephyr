@@ -115,7 +115,7 @@ SYM_INFO_HINT = """
 You can check symbol information (including dependencies) in the 'menuconfig'
 interface (see the Application Development Primer section of the manual), or in
 the Kconfig reference at
-http://docs.zephyrproject.org/reference/kconfig/CONFIG_{}.html (which is
+http://docs.zephyrproject.org/latest/reference/kconfig/CONFIG_{}.html (which is
 updated regularly from the master branch). See the 'Setting configuration
 values' section of the Board Porting Guide as well."""
 

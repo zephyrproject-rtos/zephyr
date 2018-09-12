@@ -336,7 +336,7 @@ The behavior of Kconfig 'default' properties in Zephyr has changed. The \n\
 earliest default with a satisfied condition is now used, instead of the \n\
 last one. This is standard Kconfig behavior.\n\
 \n\
-See http://docs.zephyrproject.org/porting/board_porting.html#old-zephyr-kconfig-behavior-for-defaults.\n\
+See http://docs.zephyrproject.org/latest/porting/board_porting.html#old-zephyr-kconfig-behavior-for-defaults.\n\
 \n\
 To get rid of this note, create a file called 'hide-defaults-note' in the \n\
 Zephyr root directory. An empty file is fine.")

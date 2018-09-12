@@ -116,7 +116,7 @@
 &flash0 {
 	/*
 	 * For more information, see:
-	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
 	 */
 	partitions {
 		compatible = "fixed-partitions";
