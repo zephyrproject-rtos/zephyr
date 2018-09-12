@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME nrf_soc_power
+#include <logging/log.h>
+LOG_MODULE_REGISTER();
 
 #include <zephyr.h>
 #include <soc_power.h>
@@ -48,7 +49,7 @@ static void _low_power_mode(enum power_states state)
 
 	default:
 		/* Unsupported State */
-		SYS_LOG_ERR("Unsupported State\n");
+		LOG_ERR("Unsupported State");
 		break;
 	}
 
@@ -73,7 +74,7 @@ void _sys_soc_set_power_state(enum power_states state)
 #endif
 	default:
 		/* Unsupported State */
-		SYS_LOG_ERR("Unsupported State\n");
+		LOG_ERR("Unsupported State");
 		break;
 	}
 }
@@ -93,7 +94,7 @@ void _sys_soc_power_state_post_ops(enum power_states state)
 #endif
 	default:
 		/* Unsupported State */
-		SYS_LOG_ERR("Unsupported State\n");
+		LOG_ERR("Unsupported State");
 		break;
 	}
 }
