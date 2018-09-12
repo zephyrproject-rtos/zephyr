@@ -206,7 +206,7 @@ u32_t _impl_k_timer_status_sync(struct k_timer *timer)
 	if (result == 0) {
 		if (timer->timeout.delta_ticks_from_prev != _INACTIVE) {
 			/* wait for timer to expire or stop */
-			_pend_current_thread(key, &timer->wait_q, K_FOREVER);
+			(void)_pend_current_thread(key, &timer->wait_q, K_FOREVER);
 
 			/* get updated timer status */
 			key = irq_lock();
