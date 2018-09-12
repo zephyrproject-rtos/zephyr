@@ -1172,7 +1172,7 @@ testcase_valid_keys = {"tags": {"type": "set", "required": False},
                        "toolchain_whitelist": {"type": "set"},
                        "filter": {"type": "str"},
                        "harness": {"type": "str"},
-                       "harness_config": {"type": "map"}
+                       "harness_config": {"type": "map", "default": {}}
                        }
 
 

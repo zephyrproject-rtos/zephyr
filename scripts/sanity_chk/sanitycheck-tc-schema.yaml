@@ -47,7 +47,10 @@ mapping:
        mapping:
          "type":
             type: str
-            required: yes
+            required: no
+         "fixture":
+            type: str
+            required: no
          "ordered":
             type: bool
             required: no
@@ -56,7 +59,7 @@ mapping:
             required: no
          "regex":
             type: seq
-            required: yes
+            required: no
             sequence:
               - type: str
      "min_ram":
@@ -160,7 +163,10 @@ mapping:
                mapping:
                  "type":
                     type: str
-                    required: yes
+                    required: no
+                 "fixture":
+                    type: str
+                    required: no
                  "ordered":
                     type: bool
                     required: no
@@ -169,7 +175,7 @@ mapping:
                     required: no
                  "regex":
                     type: seq
-                    required: yes
+                    required: no
                     sequence:
                       - type: str
              "min_ram":
