@@ -8,7 +8,7 @@
 
 menuconfig VL53L0X
 	bool "VL53L0X time of flight sensor"
-	depends on SENSOR && I2C
+	depends on I2C
 	select HAS_STLIB
 	help
 	  Enable driver for VL53L0X I2C-based time of flight sensor.
