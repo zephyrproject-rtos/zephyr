@@ -313,7 +313,7 @@ void usbip_start(void)
 		posix_exit(EXIT_FAILURE);
 	}
 
-	listenfd = socket(PF_INET, SOCK_STREAM, 0);
+	listenfd = socket(PF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (listenfd < 0) {
 		SYS_LOG_ERR("socket() failed: %s", strerror(errno));
 		posix_exit(EXIT_FAILURE);
@@ -346,6 +346,13 @@ void usbip_start(void)
 		connfd = accept(listenfd, (struct sockaddr *)&client_addr,
 				&client_addr_len);
 		if (connfd < 0) {
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+				/* Non-blocking accept */
+				k_sleep(100);
+
+				continue;
+			}
+
 			SYS_LOG_ERR("accept() failed: %s", strerror(errno));
 			posix_exit(EXIT_FAILURE);
 		}
