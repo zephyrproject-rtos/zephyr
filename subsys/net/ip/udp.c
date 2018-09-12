@@ -270,7 +270,3 @@ int net_udp_unregister(struct net_conn_handle *handle)
 {
 	return net_conn_unregister(handle);
 }
-
-void net_udp_init(void)
-{
-}
