@@ -388,7 +388,7 @@ static inline void atomic_clear_bit(atomic_t *target, int bit)
 {
 	atomic_val_t mask = ATOMIC_MASK(bit);
 
-	atomic_and(ATOMIC_ELEM(target, bit), ~mask);
+	(void)atomic_and(ATOMIC_ELEM(target, bit), ~mask);
 }
 
 /**
@@ -406,7 +406,7 @@ static inline void atomic_set_bit(atomic_t *target, int bit)
 {
 	atomic_val_t mask = ATOMIC_MASK(bit);
 
-	atomic_or(ATOMIC_ELEM(target, bit), mask);
+	(void)atomic_or(ATOMIC_ELEM(target, bit), mask);
 }
 
 /**

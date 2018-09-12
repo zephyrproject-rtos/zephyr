@@ -123,10 +123,10 @@ static inline void group_set(atomic_t *target, atomic_t *source)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
-		atomic_or(&target[i], atomic_get(&source[i]));
+		(void)atomic_or(&target[i], atomic_get(&source[i]));
 	}
 #else
-	atomic_or(target, atomic_get(source));
+	(void)atomic_or(target, atomic_get(source));
 #endif
 }
 
@@ -136,10 +136,10 @@ static inline void group_clear(atomic_t *target, atomic_t *source)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
-		atomic_and(&target[i], ~atomic_get(&source[i]));
+		(void)atomic_and(&target[i], ~atomic_get(&source[i]));
 	}
 #else
-	atomic_and(target, ~atomic_get(source));
+	(void)atomic_and(target, ~atomic_get(source));
 #endif
 }
 
