@@ -118,7 +118,7 @@ static int fault_clear(struct bt_mesh_model *model, uint16_t cid)
 		return -EINVAL;
 	}
 
-	memset(reg_faults, 0, sizeof(reg_faults));
+	(void)memset(reg_faults, 0, sizeof(reg_faults));
 
 	return 0;
 }
@@ -422,7 +422,7 @@ static int cmd_uuid(int argc, char *argv[])
 	}
 
 	memcpy(dev_uuid, uuid, len);
-	memset(dev_uuid + len, 0, sizeof(dev_uuid) - len);
+	(void)memset(dev_uuid + len, 0, sizeof(dev_uuid) - len);
 
 	printk("Device UUID set\n");
 
@@ -919,7 +919,7 @@ static int cmd_net_key_add(int argc, char *argv[])
 		size_t len;
 
 		len = hex2bin(argv[3], key_val, sizeof(key_val));
-		memset(key_val, 0, sizeof(key_val) - len);
+		(void)memset(key_val, 0, sizeof(key_val) - len);
 	} else {
 		memcpy(key_val, default_key, sizeof(key_val));
 	}
@@ -958,7 +958,7 @@ static int cmd_app_key_add(int argc, char *argv[])
 		size_t len;
 
 		len = hex2bin(argv[3], key_val, sizeof(key_val));
-		memset(key_val, 0, sizeof(key_val) - len);
+		(void)memset(key_val, 0, sizeof(key_val) - len);
 	} else {
 		memcpy(key_val, default_key, sizeof(key_val));
 	}
@@ -1112,7 +1112,7 @@ static int cmd_mod_sub_add_va(int argc, char *argv[])
 	elem_addr = strtoul(argv[1], NULL, 0);
 
 	len = hex2bin(argv[2], label, sizeof(label));
-	memset(label + len, 0, sizeof(label) - len);
+	(void)memset(label + len, 0, sizeof(label) - len);
 
 	mod_id = strtoul(argv[3], NULL, 0);
 
@@ -1158,7 +1158,7 @@ static int cmd_mod_sub_del_va(int argc, char *argv[])
 	elem_addr = strtoul(argv[1], NULL, 0);
 
 	len = hex2bin(argv[2], label, sizeof(label));
-	memset(label + len, 0, sizeof(label) - len);
+	(void)memset(label + len, 0, sizeof(label) - len);
 
 	mod_id = strtoul(argv[3], NULL, 0);
 
@@ -1851,7 +1851,7 @@ static int cmd_del_fault(int argc, char *argv[])
 	u8_t i;
 
 	if (argc < 2) {
-		memset(cur_faults, 0, sizeof(cur_faults));
+		(void)memset(cur_faults, 0, sizeof(cur_faults));
 		printk("All current faults cleared\n");
 		bt_mesh_fault_update(&elements[0]);
 		return 0;

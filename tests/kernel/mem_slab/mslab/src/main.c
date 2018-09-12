@@ -61,7 +61,7 @@ void helper_thread(void)
 {
 	void *ptr[NUMBLOCKS];           /* Pointer to memory block */
 
-	memset(ptr, 0, sizeof(ptr));    /* keep static checkers happy */
+	(void)memset(ptr, 0, sizeof(ptr));    /* keep static checkers happy */
 	/* Wait for part 1 to complete */
 	k_sem_take(&SEM_REGRESSDONE, K_FOREVER);
 
@@ -215,7 +215,7 @@ void test_mslab(void)
 	void *ptr[NUMBLOCKS];           /* Pointer to memory block */
 
 	/* not strictly necessary, but keeps coverity checks happy */
-	memset(ptr, 0, sizeof(ptr));
+	(void)memset(ptr, 0, sizeof(ptr));
 
 	/* Part 1 of test */
 

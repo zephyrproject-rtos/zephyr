@@ -159,7 +159,7 @@ static int spi_rx_half_start(struct device *dev, struct spi_config *spi_conf)
 
 	SYS_LOG_INF("Start");
 
-	memset(buffer_rx, 0, BUF_SIZE);
+	(void)memset(buffer_rx, 0, BUF_SIZE);
 
 	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
@@ -214,7 +214,7 @@ static int spi_rx_half_end(struct device *dev, struct spi_config *spi_conf)
 
 	SYS_LOG_INF("Start");
 
-	memset(buffer_rx, 0, BUF_SIZE);
+	(void)memset(buffer_rx, 0, BUF_SIZE);
 
 	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
@@ -277,7 +277,7 @@ static int spi_rx_every_4(struct device *dev, struct spi_config *spi_conf)
 
 	SYS_LOG_INF("Start");
 
-	memset(buffer_rx, 0, BUF_SIZE);
+	(void)memset(buffer_rx, 0, BUF_SIZE);
 
 	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {

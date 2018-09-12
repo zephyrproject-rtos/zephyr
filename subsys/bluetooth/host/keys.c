@@ -202,7 +202,7 @@ void bt_keys_clear(struct bt_keys *keys)
 		settings_save_one(key, NULL);
 	}
 
-	memset(keys, 0, sizeof(*keys));
+	(void)memset(keys, 0, sizeof(*keys));
 }
 
 static void keys_clear_id(struct bt_keys *keys, void *data)
@@ -285,7 +285,7 @@ static int keys_set(int argc, char **argv, char *val)
 	if (!val) {
 		keys = bt_keys_find(BT_KEYS_ALL, id, &addr);
 		if (keys) {
-			memset(keys, 0, sizeof(*keys));
+			(void)memset(keys, 0, sizeof(*keys));
 			BT_DBG("Cleared keys for %s", bt_addr_le_str(&addr));
 		} else {
 			BT_WARN("Unable to find deleted keys for %s",

@@ -367,7 +367,7 @@ static void gptp_init_clock_ds(void)
 	prop_ds = GPTP_PROPERTIES_DS();
 
 	/* Initialize global data set. */
-	memset(global_ds, 0, sizeof(struct gptp_global_ds));
+	(void)memset(global_ds, 0, sizeof(struct gptp_global_ds));
 
 	/* Initialize default data set. */
 
@@ -390,7 +390,7 @@ static void gptp_init_clock_ds(void)
 	default_ds->time_source = GPTP_TS_INTERNAL_OSCILLATOR;
 
 	/* Initialize current data set. */
-	memset(current_ds, 0, sizeof(struct gptp_current_ds));
+	(void)memset(current_ds, 0, sizeof(struct gptp_current_ds));
 
 	/* Initialize parent data set. */
 
@@ -488,7 +488,7 @@ static void gptp_init_port_ds(int port)
 
 #if defined(CONFIG_NET_GPTP_STATISTICS)
 	/* Initialize stats data set. */
-	memset(port_param_ds, 0, sizeof(struct gptp_port_param_ds));
+	(void)memset(port_param_ds, 0, sizeof(struct gptp_port_param_ds));
 #endif
 }
 

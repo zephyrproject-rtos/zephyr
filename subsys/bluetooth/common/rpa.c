@@ -36,7 +36,7 @@ static int ah(const u8_t irk[16], const u8_t r[3], u8_t out[3])
 
 	/* r' = padding || r */
 	memcpy(res, r, 3);
-	memset(res + 3, 0, 13);
+	(void)memset(res + 3, 0, 13);
 
 	err = bt_encrypt_le(irk, res, res);
 	if (err) {

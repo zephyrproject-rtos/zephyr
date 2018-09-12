@@ -265,7 +265,7 @@ static int tls_init(struct device *unused)
 		 "TLS communication may be insecure!");
 #endif /* defined(CONFIG_ENTROPY_HAS_DRIVER) */
 
-	memset(tls_contexts, 0, sizeof(tls_contexts));
+	(void)memset(tls_contexts, 0, sizeof(tls_contexts));
 
 	k_mutex_init(&context_lock);
 
@@ -299,7 +299,7 @@ static struct tls_context *tls_alloc(void)
 	for (i = 0; i < ARRAY_SIZE(tls_contexts); i++) {
 		if (!tls_contexts[i].is_used) {
 			tls = &tls_contexts[i];
-			memset(tls, 0, sizeof(*tls));
+			(void)memset(tls, 0, sizeof(*tls));
 			tls->is_used = true;
 			tls->options.verify_level = -1;
 
@@ -747,8 +747,8 @@ static int tls_mbedtls_reset(struct net_context *context)
 
 	context->tls->tls_established = false;
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-	memset(&context->tls->dtls_peer_addr, 0,
-	       sizeof(context->tls->dtls_peer_addr));
+	(void)memset(&context->tls->dtls_peer_addr, 0,
+		     sizeof(context->tls->dtls_peer_addr));
 	context->tls->dtls_peer_addrlen = 0;
 #endif
 

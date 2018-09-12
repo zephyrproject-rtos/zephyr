@@ -119,7 +119,7 @@ void blow_up_stack(void)
 	char buf[OVERFLOW_STACKSIZE];
 
 	TC_PRINT("posting %zu bytes of junk to stack...\n", sizeof(buf));
-	memset(buf, 0xbb, sizeof(buf));
+	(void)memset(buf, 0xbb, sizeof(buf));
 }
 
 void stack_thread1(void)

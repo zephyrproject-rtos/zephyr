@@ -255,7 +255,7 @@ static int sam_xdmac_config(struct device *dev, u32_t channel,
 
 	dev_data->dma_channels[channel].callback = cfg->dma_callback;
 
-	memset(&transfer_cfg, 0, sizeof(transfer_cfg));
+	(void)memset(&transfer_cfg, 0, sizeof(transfer_cfg));
 	transfer_cfg.sa = cfg->head_block->source_address;
 	transfer_cfg.da = cfg->head_block->dest_address;
 	transfer_cfg.ublen = cfg->head_block->block_size >> data_size;

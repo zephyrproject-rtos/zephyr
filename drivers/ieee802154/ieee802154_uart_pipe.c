@@ -320,7 +320,7 @@ static int upipe_init(struct device *dev)
 {
 	struct upipe_context *upipe = dev->driver_data;
 
-	memset(upipe, 0, sizeof(struct upipe_context));
+	(void)memset(upipe, 0, sizeof(struct upipe_context));
 
 	uart_pipe_register(upipe->uart_pipe_buf, 1, upipe_rx);
 

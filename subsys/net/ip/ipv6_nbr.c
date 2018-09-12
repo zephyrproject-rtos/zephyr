@@ -1062,8 +1062,8 @@ static inline void set_llao(struct net_linkaddr *lladdr,
 
 	memcpy(&llao[NET_ICMPV6_OPT_DATA_OFFSET], lladdr->addr, lladdr->len);
 
-	memset(&llao[NET_ICMPV6_OPT_DATA_OFFSET + lladdr->len], 0,
-	       llao_len - lladdr->len - 2);
+	(void)memset(&llao[NET_ICMPV6_OPT_DATA_OFFSET + lladdr->len], 0,
+		     llao_len - lladdr->len - 2);
 }
 
 static void setup_headers(struct net_pkt *pkt, u8_t nd6_len,
@@ -2463,8 +2463,8 @@ static inline struct net_buf *handle_ra_6co(struct net_pkt *pkt,
 	 * field that are valid. So set remaining data to zero.
 	 */
 	if (context.context_len != sizeof(struct in6_addr)) {
-		memset(context.prefix.s6_addr + context.context_len, 0,
-		       sizeof(struct in6_addr) - context.context_len);
+		(void)memset(context.prefix.s6_addr + context.context_len, 0,
+			     sizeof(struct in6_addr) - context.context_len);
 	}
 
 	net_6lo_set_context(net_pkt_iface(pkt), &context);

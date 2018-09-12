@@ -211,7 +211,7 @@ void zperf_udp_upload(struct net_context *context,
 	last_print_time = start_time;
 	last_loop_time = start_time;
 
-	memset(sample_packet, 'z', sizeof(sample_packet));
+	(void)memset(sample_packet, 'z', sizeof(sample_packet));
 
 	do {
 		struct zperf_udp_datagram datagram;

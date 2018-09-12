@@ -409,7 +409,7 @@ int coap_packet_init(struct coap_packet *cpkt, struct net_pkt *pkt,
 		return -EINVAL;
 	}
 
-	memset(cpkt, 0, sizeof(*cpkt));
+	(void)memset(cpkt, 0, sizeof(*cpkt));
 	cpkt->pkt = pkt;
 	cpkt->frag = pkt->frags;
 	cpkt->offset = 0;
@@ -440,7 +440,7 @@ int coap_pending_init(struct coap_pending *pending,
 		      const struct coap_packet *request,
 		      const struct sockaddr *addr)
 {
-	memset(pending, 0, sizeof(*pending));
+	(void)memset(pending, 0, sizeof(*pending));
 	pending->id = coap_header_get_id(request);
 	memcpy(&pending->addr, addr, sizeof(*addr));
 
@@ -803,7 +803,7 @@ void coap_reply_init(struct coap_reply *reply,
 
 void coap_reply_clear(struct coap_reply *reply)
 {
-	memset(reply, 0, sizeof(*reply));
+	(void)memset(reply, 0, sizeof(*reply));
 }
 
 int coap_resource_notify(struct coap_resource *resource)

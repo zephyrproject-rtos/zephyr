@@ -86,7 +86,7 @@ void *osMailCAlloc(osMailQId queue_id, uint32_t millisec)
 	}
 
 	if (retval == 0) {
-		memset(ptr, 0, queue_def->item_sz);
+		(void)memset(ptr, 0, queue_def->item_sz);
 		return ptr;
 	} else {
 		return NULL;
@@ -109,7 +109,7 @@ osStatus osMailPut(osMailQId queue_id, void *mail)
 		return osErrorValue;
 	}
 
-	memset(&mmsg, 0, sizeof(mmsg));
+	(void)memset(&mmsg, 0, sizeof(mmsg));
 	mmsg.tx_data = mail;
 	mmsg.rx_source_thread = K_ANY;
 	mmsg.tx_target_thread = K_ANY;
@@ -133,7 +133,7 @@ osEvent osMailGet(osMailQId queue_id, uint32_t millisec)
 		return evt;
 	}
 
-	memset(&mmsg, 0, sizeof(mmsg));
+	(void)memset(&mmsg, 0, sizeof(mmsg));
 	mmsg.rx_source_thread = K_ANY;
 	mmsg.tx_target_thread = K_ANY;
 

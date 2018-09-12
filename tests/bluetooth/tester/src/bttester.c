@@ -41,7 +41,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	u8_t buf[1];
 	struct core_read_supported_commands_rp *rp = (void *) buf;
 
-	memset(buf, 0, sizeof(buf));
+	(void)memset(buf, 0, sizeof(buf));
 
 	tester_set_bit(buf, CORE_READ_SUPPORTED_COMMANDS);
 	tester_set_bit(buf, CORE_READ_SUPPORTED_SERVICES);
@@ -57,7 +57,7 @@ static void supported_services(u8_t *data, u16_t len)
 	u8_t buf[1];
 	struct core_read_supported_services_rp *rp = (void *) buf;
 
-	memset(buf, 0, sizeof(buf));
+	(void)memset(buf, 0, sizeof(buf));
 
 	tester_set_bit(buf, BTP_SERVICE_ID_CORE);
 	tester_set_bit(buf, BTP_SERVICE_ID_GAP);

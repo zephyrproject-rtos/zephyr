@@ -6222,7 +6222,8 @@ static void mayfly_adv_stop(void *param)
 	/* prepare connection complete structure */
 	pdu_data_rx = (void *)node_rx->pdu_data;
 	radio_le_conn_cmplt = (void *)pdu_data_rx->lldata;
-	memset(radio_le_conn_cmplt, 0x00, sizeof(struct radio_le_conn_cmplt));
+	(void)memset(radio_le_conn_cmplt, 0x00,
+		     sizeof(struct radio_le_conn_cmplt));
 	radio_le_conn_cmplt->status = BT_HCI_ERR_ADV_TIMEOUT;
 
 	/* enqueue connection complete structure into queue */
@@ -7176,8 +7177,9 @@ static inline void event_fex_prep(struct connection *conn)
 			!conn->role ?
 			PDU_DATA_LLCTRL_TYPE_FEATURE_REQ :
 			PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ;
-		memset(&pdu_ctrl_tx->llctrl.feature_req.features[0], 0x00,
-		       sizeof(pdu_ctrl_tx->llctrl.feature_req.features));
+		(void)memset(&pdu_ctrl_tx->llctrl.feature_req.features[0],
+			     0x00,
+			     sizeof(pdu_ctrl_tx->llctrl.feature_req.features));
 		pdu_ctrl_tx->llctrl.feature_req.features[0] =
 			conn->llcp_features & 0xFF;
 		pdu_ctrl_tx->llctrl.feature_req.features[1] =
@@ -9557,8 +9559,8 @@ static u8_t feature_rsp_send(struct connection *conn,
 	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, feature_rsp) +
 		sizeof(struct pdu_data_llctrl_feature_rsp);
 	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
-	memset(&pdu_ctrl_tx->llctrl.feature_rsp.features[0], 0x00,
-		sizeof(pdu_ctrl_tx->llctrl.feature_rsp.features));
+	(void)memset(&pdu_ctrl_tx->llctrl.feature_rsp.features[0], 0x00,
+		     sizeof(pdu_ctrl_tx->llctrl.feature_rsp.features));
 	pdu_ctrl_tx->llctrl.feature_req.features[0] =
 		conn->llcp_features & 0xFF;
 	pdu_ctrl_tx->llctrl.feature_req.features[1] =

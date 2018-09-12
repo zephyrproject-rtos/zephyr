@@ -454,7 +454,7 @@ static int rndis_init_handle(u8_t *data, u32_t len)
 							rndis_payload_packet));
 
 	rsp->pkt_align_factor = sys_cpu_to_le32(0);
-	memset(rsp->__reserved, 0, sizeof(rsp->__reserved));
+	(void)memset(rsp->__reserved, 0, sizeof(rsp->__reserved));
 
 	rndis.state = INITIALIZED;
 
@@ -925,7 +925,7 @@ static void rndis_hdr_add(u8_t *buf, u32_t len)
 	struct rndis_payload_packet *hdr = (void *)buf;
 	u32_t offset = offsetof(struct rndis_payload_packet, payload_offset);
 
-	memset(hdr, 0, sizeof(*hdr));
+	(void)memset(hdr, 0, sizeof(*hdr));
 
 	hdr->type = sys_cpu_to_le32(RNDIS_DATA_PACKET);
 	hdr->len = sys_cpu_to_le32(len + sizeof(*hdr));

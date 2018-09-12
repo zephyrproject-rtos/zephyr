@@ -566,7 +566,7 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	memset(cp, 0, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
 
 	/* Interval == window for continuous scanning */
 	cp->scan_interval = sys_cpu_to_le16(BT_GAP_SCAN_FAST_INTERVAL);
@@ -1153,7 +1153,7 @@ static int le_conn_param_req_reply(u16_t handle,
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	memset(cp, 0, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
 
 	cp->handle = sys_cpu_to_le16(handle);
 	cp->interval_min = sys_cpu_to_le16(param->interval_min);
@@ -1306,7 +1306,7 @@ static int set_flow_control(void)
 	}
 
 	hbs = net_buf_add(buf, sizeof(*hbs));
-	memset(hbs, 0, sizeof(*hbs));
+	(void)memset(hbs, 0, sizeof(*hbs));
 	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BT_L2CAP_RX_MTU +
 				       sizeof(struct bt_l2cap_hdr));
 	hbs->acl_pkts = sys_cpu_to_le16(CONFIG_BT_ACL_RX_COUNT);
@@ -1690,8 +1690,8 @@ static void link_key_notify(struct net_buf *buf)
 		break;
 	default:
 		BT_WARN("Unsupported Link Key type %u", evt->key_type);
-		memset(conn->br.link_key->val, 0,
-		       sizeof(conn->br.link_key->val));
+		(void)memset(conn->br.link_key->val, 0,
+			     sizeof(conn->br.link_key->val));
 		break;
 	}
 
@@ -2137,7 +2137,7 @@ static void inquiry_result_with_rssi(struct net_buf *buf)
 		result->rssi = evt->rssi;
 
 		/* we could reuse slot so make sure EIR is cleared */
-		memset(result->eir, 0, sizeof(result->eir));
+		(void)memset(result->eir, 0, sizeof(result->eir));
 
 		/*
 		 * Get next report iteration by moving pointer to right offset
@@ -2467,7 +2467,7 @@ static int hci_id_add(const bt_addr_le_t *addr, u8_t val[16])
 #if defined(CONFIG_BT_PRIVACY)
 	memcpy(cp->local_irk, bt_dev.irk, 16);
 #else
-	memset(cp->local_irk, 0, 16);
+	(void)memset(cp->local_irk, 0, 16);
 #endif
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_RL, buf, NULL);
@@ -2891,8 +2891,8 @@ static void le_ltk_request(struct net_buf *buf)
 		memcpy(cp->ltk, conn->le.keys->ltk.val,
 		       conn->le.keys->enc_size);
 		if (conn->le.keys->enc_size < sizeof(cp->ltk)) {
-			memset(cp->ltk + conn->le.keys->enc_size, 0,
-			       sizeof(cp->ltk) - conn->le.keys->enc_size);
+			(void)memset(cp->ltk + conn->le.keys->enc_size, 0,
+				     sizeof(cp->ltk) - conn->le.keys->enc_size);
 		}
 
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
@@ -2917,8 +2917,8 @@ static void le_ltk_request(struct net_buf *buf)
 		memcpy(cp->ltk, conn->le.keys->slave_ltk.val,
 		       conn->le.keys->enc_size);
 		if (conn->le.keys->enc_size < sizeof(cp->ltk)) {
-			memset(cp->ltk + conn->le.keys->enc_size, 0,
-			       sizeof(cp->ltk) - conn->le.keys->enc_size);
+			(void)memset(cp->ltk + conn->le.keys->enc_size, 0,
+				     sizeof(cp->ltk) - conn->le.keys->enc_size);
 		}
 
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
@@ -3058,7 +3058,7 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 	struct net_buf *buf;
 	int err;
 
-	memset(&set_param, 0, sizeof(set_param));
+	(void)memset(&set_param, 0, sizeof(set_param));
 
 	set_param.scan_type = scan_type;
 
@@ -4741,7 +4741,7 @@ static int set_ad(u16_t hci_op, const struct bt_ad *ad, size_t ad_len)
 
 	set_data = net_buf_add(buf, sizeof(*set_data));
 
-	memset(set_data, 0, sizeof(*set_data));
+	(void)memset(set_data, 0, sizeof(*set_data));
 
 	for (c = 0; c < ad_len; c++) {
 		const struct bt_data *data = ad[c].data;
@@ -5009,7 +5009,7 @@ int bt_id_delete(u8_t id)
 	}
 
 #if defined(CONFIG_BT_PRIVACY)
-	memset(bt_dev.irk[id], 0, 16);
+	(void)memset(bt_dev.irk[id], 0, 16);
 #endif
 	bt_addr_le_copy(&bt_dev.id_addr[id], BT_ADDR_LE_ANY);
 
@@ -5153,7 +5153,7 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 		}
 	}
 
-	memset(&set_param, 0, sizeof(set_param));
+	(void)memset(&set_param, 0, sizeof(set_param));
 
 	set_param.min_interval = sys_cpu_to_le16(param->interval_min);
 	set_param.max_interval = sys_cpu_to_le16(param->interval_max);
@@ -5482,7 +5482,7 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 
 	atomic_set_bit(bt_dev.flags, BT_DEV_INQUIRY);
 
-	memset(results, 0, sizeof(*results) * cnt);
+	(void)memset(results, 0, sizeof(*results) * cnt);
 
 	discovery_cb = cb;
 	discovery_results = results;

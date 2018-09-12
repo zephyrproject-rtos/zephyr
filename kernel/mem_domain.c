@@ -80,7 +80,7 @@ void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
 	key = irq_lock();
 
 	domain->num_partitions = num_parts;
-	memset(domain->partitions, 0, sizeof(domain->partitions));
+	(void)memset(domain->partitions, 0, sizeof(domain->partitions));
 
 	if (num_parts) {
 		u32_t i;

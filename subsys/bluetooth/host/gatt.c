@@ -960,7 +960,7 @@ static void sc_restore(struct bt_gatt_ccc_cfg *cfg)
 	sc_indicate(&gatt_sc, data->start, data->end);
 
 	/* Reset config data */
-	memset(cfg->data, 0, sizeof(cfg->data));
+	(void)memset(cfg->data, 0, sizeof(cfg->data));
 }
 
 static u8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)
@@ -1047,7 +1047,7 @@ static u8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 	}
 
 	/* Reset value while disconnected */
-	memset(&ccc->value, 0, sizeof(ccc->value));
+	(void)memset(&ccc->value, 0, sizeof(ccc->value));
 	if (ccc->cfg_changed) {
 		ccc->cfg_changed(attr, ccc->value);
 	}

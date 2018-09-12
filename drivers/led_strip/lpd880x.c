@@ -68,7 +68,7 @@ static int lpd880x_update(struct device *dev, void *data, size_t size)
 	};
 	size_t rc;
 
-	memset(reset_buf, 0x00, reset_size);
+	(void)memset(reset_buf, 0x00, reset_size);
 
 	rc = spi_write(drv_data->spi, &drv_data->config, &tx);
 	if (rc) {

@@ -214,8 +214,9 @@ int net_context_get(sa_family_t family,
 		net_context_set_type(&contexts[i], type);
 		net_context_set_ip_proto(&contexts[i], ip_proto);
 
-		memset(&contexts[i].remote, 0, sizeof(struct sockaddr));
-		memset(&contexts[i].local, 0, sizeof(struct sockaddr_ptr));
+		(void)memset(&contexts[i].remote, 0, sizeof(struct sockaddr));
+		(void)memset(&contexts[i].local, 0,
+			     sizeof(struct sockaddr_ptr));
 
 #if defined(CONFIG_NET_IPV6)
 		if (family == AF_INET6) {

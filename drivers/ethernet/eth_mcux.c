@@ -785,7 +785,7 @@ static int eth_0_init(struct device *dev)
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	ts_tx_rd = 0;
 	ts_tx_wr = 0;
-	memset(ts_tx_pkt, 0, sizeof(ts_tx_pkt));
+	(void)memset(ts_tx_pkt, 0, sizeof(ts_tx_pkt));
 #endif
 
 	k_sem_init(&context->tx_buf_sem,

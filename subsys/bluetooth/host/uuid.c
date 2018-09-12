@@ -104,7 +104,7 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 			 tmp5, tmp4, tmp3, tmp2, tmp1, tmp0);
 		break;
 	default:
-		memset(str, 0, len);
+		(void)memset(str, 0, len);
 		return;
 	}
 }

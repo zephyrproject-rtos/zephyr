@@ -1067,7 +1067,7 @@ static void dao_retransmit_timer(struct k_work *work)
 static inline void net_rpl_instance_init(struct net_rpl_instance *instance,
 					 u8_t id)
 {
-	memset(instance, 0, sizeof(struct net_rpl_instance));
+	(void)memset(instance, 0, sizeof(struct net_rpl_instance));
 
 	instance->instance_id = id;
 	instance->default_route = NULL;
@@ -1135,7 +1135,7 @@ static struct net_rpl_dag *alloc_dag(struct net_if *iface,
 			continue;
 		}
 
-		memset(dag, 0, sizeof(*dag));
+		(void)memset(dag, 0, sizeof(*dag));
 
 		net_rpl_dag_set_used(dag);
 		dag->rank = NET_RPL_INFINITE_RANK;
@@ -1211,7 +1211,7 @@ static inline void set_ip_from_prefix(struct net_linkaddr *lladdr,
 				      struct net_rpl_prefix *prefix,
 				      struct in6_addr *addr)
 {
-	memset(addr, 0, sizeof(struct in6_addr));
+	(void)memset(addr, 0, sizeof(struct in6_addr));
 
 	net_ipv6_addr_create_iid(addr, lladdr);
 
@@ -1469,8 +1469,8 @@ bool net_rpl_set_prefix(struct net_if *iface,
 		       sizeof(struct net_rpl_prefix));
 	}
 
-	memset(&dag->prefix_info.prefix, 0,
-	       sizeof(dag->prefix_info.prefix));
+	(void)memset(&dag->prefix_info.prefix, 0,
+		     sizeof(dag->prefix_info.prefix));
 	memcpy(&dag->prefix_info.prefix, prefix, (prefix_len + 7) / 8);
 	dag->prefix_info.length = prefix_len;
 	dag->prefix_info.flags = NET_ICMPV6_RA_FLAG_AUTONOMOUS;
@@ -4304,7 +4304,7 @@ void net_rpl_init(void)
 		sizeof(net_rpl_neighbor_pool));
 
 #if defined(CONFIG_NET_STATISTICS_RPL)
-	memset(&net_stats.rpl, 0, sizeof(net_stats.rpl));
+	(void)memset(&net_stats.rpl, 0, sizeof(net_stats.rpl));
 #endif
 
 	rpl_dao_sequence = net_rpl_lollipop_init();

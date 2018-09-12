@@ -1280,7 +1280,7 @@ void test_addr_parse(void)
 
 #if defined(CONFIG_NET_IPV4)
 	for (i = 0; i < ARRAY_SIZE(parse_ipv4_entries) - 1; i++) {
-		memset(&addr, 0, sizeof(addr));
+		(void)memset(&addr, 0, sizeof(addr));
 
 		ret = net_ipaddr_parse(
 			parse_ipv4_entries[i].address,
@@ -1309,7 +1309,7 @@ void test_addr_parse(void)
 #endif
 #if defined(CONFIG_NET_IPV6)
 	for (i = 0; i < ARRAY_SIZE(parse_ipv6_entries) - 1; i++) {
-		memset(&addr, 0, sizeof(addr));
+		(void)memset(&addr, 0, sizeof(addr));
 
 		ret = net_ipaddr_parse(
 			parse_ipv6_entries[i].address,

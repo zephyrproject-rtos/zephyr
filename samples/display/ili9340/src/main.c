@@ -63,7 +63,7 @@ void main(void)
 
 	/* Clear ili9340 frame buffer before enabling LCD, reuse corner buffer
 	 */
-	memset(buf, 0, buf_size);
+	(void)memset(buf, 0, buf_size);
 	h_step = (w * h) / SCREEN_WIDTH;
 
 	for (int idx = 0; idx < SCREEN_HEIGHT; idx += h_step) {
@@ -76,7 +76,7 @@ void main(void)
 		/* Update the color of the rectangle buffer and write the buffer
 		 * to  one of the corners
 		 */
-		memset(buf, 0, buf_size);
+		(void)memset(buf, 0, buf_size);
 		for (size_t idx = color; idx < buf_size; idx += 3) {
 			*(buf + idx) = 255;
 		}

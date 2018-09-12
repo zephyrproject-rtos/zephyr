@@ -686,7 +686,7 @@ int net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
 	frag = src;
 
 	/* clear dst */
-	memset(dst, 0, dst_len);
+	(void)memset(dst, 0, dst_len);
 
 	/* find the right fragment to start copying from */
 	while (frag && offset >= frag->len) {

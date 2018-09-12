@@ -93,7 +93,7 @@ void test_printk(void)
 	ram_console[pos] = '\0';
 	zassert_true((strcmp(ram_console, expected) == 0), "printk failed");
 
-	memset(ram_console, 0, sizeof(ram_console));
+	(void)memset(ram_console, 0, sizeof(ram_console));
 	count = 0;
 
 	count += snprintk(ram_console + count, sizeof(ram_console) - count,

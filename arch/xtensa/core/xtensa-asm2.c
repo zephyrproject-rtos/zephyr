@@ -27,7 +27,7 @@ void *xtensa_init_stack(int *stack_top,
 	const int bsasz = BASE_SAVE_AREA_SIZE - 16;
 	void **bsa = (void **) (((char *) stack_top) - bsasz);
 
-	memset(bsa, 0, bsasz);
+	(void)memset(bsa, 0, bsasz);
 
 	bsa[BSA_PC_OFF/4] = _thread_entry;
 	bsa[BSA_PS_OFF/4] = (void *)(PS_WOE | PS_UM | PS_CALLINC(1));

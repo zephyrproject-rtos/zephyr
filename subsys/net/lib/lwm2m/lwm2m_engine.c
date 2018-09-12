@@ -371,8 +371,8 @@ static void clear_attrs(void *ref)
 
 	for (i = 0; i < CONFIG_LWM2M_NUM_ATTR; i++) {
 		if (ref == write_attr_pool[i].ref) {
-			memset(&write_attr_pool[i], 0,
-			       sizeof(write_attr_pool[i]));
+			(void)memset(&write_attr_pool[i], 0,
+				     sizeof(write_attr_pool[i]));
 		}
 	}
 }
@@ -584,7 +584,7 @@ static int engine_remove_observer(const u8_t *token, u8_t tkl)
 	}
 
 	sys_slist_remove(&engine_observer_list, prev_node, &found_obj->node);
-	memset(found_obj, 0, sizeof(*found_obj));
+	(void)memset(found_obj, 0, sizeof(*found_obj));
 
 	SYS_LOG_DBG("observer '%s' removed", sprint_token(token, tkl));
 
@@ -606,7 +606,7 @@ static void engine_remove_observer_by_id(u16_t obj_id, s32_t obj_inst_id)
 		}
 
 		sys_slist_remove(&engine_observer_list, prev_node, &obs->node);
-		memset(obs, 0, sizeof(*obs));
+		(void)memset(obs, 0, sizeof(*obs));
 	}
 }
 
@@ -789,12 +789,12 @@ int lwm2m_delete_obj_inst(u16_t obj_id, u16_t obj_inst_id)
 	/* reset obj_inst and res_inst data structure */
 	for (i = 0; i < obj_inst->resource_count; i++) {
 		clear_attrs(&obj_inst->resources[i]);
-		memset(obj_inst->resources + i, 0,
-		       sizeof(struct lwm2m_engine_res_inst));
+		(void)memset(obj_inst->resources + i, 0,
+			     sizeof(struct lwm2m_engine_res_inst));
 	}
 
 	clear_attrs(obj_inst);
-	memset(obj_inst, 0, sizeof(struct lwm2m_engine_obj_inst));
+	(void)memset(obj_inst, 0, sizeof(struct lwm2m_engine_obj_inst));
 #ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
 	engine_trigger_update();
 #endif
@@ -820,15 +820,17 @@ static int get_option_int(const struct coap_packet *cpkt, u8_t opt)
 static void engine_clear_context(struct lwm2m_engine_context *context)
 {
 	if (context->in) {
-		memset(context->in, 0, sizeof(struct lwm2m_input_context));
+		(void)memset(context->in, 0,
+			     sizeof(struct lwm2m_input_context));
 	}
 
 	if (context->out) {
-		memset(context->out, 0, sizeof(struct lwm2m_output_context));
+		(void)memset(context->out, 0,
+			     sizeof(struct lwm2m_output_context));
 	}
 
 	if (context->path) {
-		memset(context->path, 0, sizeof(struct lwm2m_obj_path));
+		(void)memset(context->path, 0, sizeof(struct lwm2m_obj_path));
 	}
 
 	context->operation = 0;
@@ -964,14 +966,14 @@ void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
 	}
 
 	if (release) {
-		memset(msg, 0, sizeof(*msg));
+		(void)memset(msg, 0, sizeof(*msg));
 	} else {
 		if (msg->cpkt.pkt) {
 			net_pkt_unref(msg->cpkt.pkt);
 		}
 
 		msg->message_timeout_cb = NULL;
-		memset(&msg->cpkt, 0, sizeof(msg->cpkt));
+		(void)memset(&msg->cpkt, 0, sizeof(msg->cpkt));
 	}
 }
 
@@ -1244,7 +1246,7 @@ static int string_to_path(char *pathstr, struct lwm2m_obj_path *path,
 	int i, tokstart = -1, toklen;
 	int end_index = strlen(pathstr) - 1;
 
-	memset(path, 0, sizeof(*path));
+	(void)memset(path, 0, sizeof(*path));
 	for (i = 0; i <= end_index; i++) {
 		/* search for first numeric */
 		if (tokstart == -1) {
@@ -2428,9 +2430,9 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		if (options[i].len == plen) {
 			nattrs.flags &= ~BIT(type);
 
-			memset(nattr_ptrs[type], 0,
-			       type <= LWM2M_ATTR_PMAX ?
-			       sizeof(s32_t) : sizeof(float32_value_t));
+			(void)memset(nattr_ptrs[type], 0,
+				     type <= LWM2M_ATTR_PMAX ? sizeof(s32_t) :
+				     sizeof(float32_value_t));
 			continue;
 		}
 
@@ -2515,7 +2517,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 
 		if (!(BIT(type) & nattrs.flags)) {
 			SYS_LOG_DBG("Unset attr %s", LWM2M_ATTR_STR[type]);
-			memset(attr, 0, sizeof(*attr));
+			(void)memset(attr, 0, sizeof(*attr));
 
 			if (type <= LWM2M_ATTR_PMAX) {
 				update_observe_node = true;
@@ -2657,7 +2659,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			    nattrs.pmin, max(nattrs.pmin, nattrs.pmax));
 		obs->min_period_sec = (u32_t)nattrs.pmin;
 		obs->max_period_sec = (u32_t)max(nattrs.pmin, nattrs.pmax);
-		memset(&nattrs, 0, sizeof(nattrs));
+		(void)memset(&nattrs, 0, sizeof(nattrs));
 	}
 
 	return 0;
@@ -3146,7 +3148,7 @@ static int handle_request(struct coap_packet *request,
 	bool last_block = false;
 
 	/* setup engine context */
-	memset(&context, 0, sizeof(struct lwm2m_engine_context));
+	(void)memset(&context, 0, sizeof(struct lwm2m_engine_context));
 	context.in   = &in;
 	context.out  = &out;
 	context.path = &path;
@@ -3724,7 +3726,7 @@ static int generate_notify_message(struct observe_node *obs,
 	}
 
 	/* setup engine context */
-	memset(&context, 0, sizeof(struct lwm2m_engine_context));
+	(void)memset(&context, 0, sizeof(struct lwm2m_engine_context));
 	context.out = &out;
 	engine_clear_context(&context);
 	/* dont clear the path */
@@ -3967,7 +3969,7 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 	/* TODO: use security object for initial setup */
 
 	/* setup the local client port */
-	memset(&client_addr, 0, sizeof(client_addr));
+	(void)memset(&client_addr, 0, sizeof(client_addr));
 #if defined(CONFIG_NET_IPV6)
 	client_addr.sa_family = AF_INET6;
 	net_sin6(&client_addr)->sin6_port = htons(CONFIG_LWM2M_LOCAL_PORT);
@@ -4032,8 +4034,8 @@ error_start:
 
 static int lwm2m_engine_init(struct device *dev)
 {
-	memset(block1_contexts, 0,
-	       sizeof(struct block_context) * NUM_BLOCK1_CONTEXT);
+	(void)memset(block1_contexts, 0,
+		     sizeof(struct block_context) * NUM_BLOCK1_CONTEXT);
 
 	/* start thread to handle OBSERVER / NOTIFY events */
 	k_thread_create(&engine_thread_data,

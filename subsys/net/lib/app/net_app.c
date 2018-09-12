@@ -2031,7 +2031,8 @@ reset:
 	do {
 	again:
 		len = ctx->tls.request_buf_len - 1;
-		memset(ctx->tls.request_buf, 0, ctx->tls.request_buf_len);
+		(void)memset(ctx->tls.request_buf, 0,
+			     ctx->tls.request_buf_len);
 
 		ret = mbedtls_ssl_read(&ctx->tls.mbedtls.ssl,
 				       ctx->tls.request_buf, len);

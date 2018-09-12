@@ -115,7 +115,7 @@ static void gptp_mi_init_port_sync_sync_rcv_sm(int port)
 	struct gptp_pss_rcv_state *pss_rcv;
 
 	pss_rcv = &GPTP_PORT_STATE(port)->pss_rcv;
-	memset(pss_rcv, 0, sizeof(struct gptp_pss_rcv_state));
+	(void)memset(pss_rcv, 0, sizeof(struct gptp_pss_rcv_state));
 
 	k_timer_init(&pss_rcv->rcv_sync_receipt_timeout_timer,
 		     gptp_mi_rcv_sync_receipt_timeout, NULL);
@@ -128,7 +128,7 @@ static void gptp_mi_init_port_sync_sync_send_sm(int port)
 	struct gptp_pss_send_state *pss_send;
 
 	pss_send = &GPTP_PORT_STATE(port)->pss_send;
-	memset(pss_send, 0, sizeof(struct gptp_pss_send_state));
+	(void)memset(pss_send, 0, sizeof(struct gptp_pss_send_state));
 
 	k_timer_init(&pss_send->half_sync_itv_timer,
 		     gptp_mi_half_sync_itv_timeout, NULL);
@@ -143,7 +143,7 @@ static void gptp_mi_init_site_sync_sync_sm(void)
 	struct gptp_site_sync_sync_state *site_ss;
 
 	site_ss = &GPTP_STATE()->site_ss;
-	memset(site_ss, 0, sizeof(struct gptp_site_sync_sync_state));
+	(void)memset(site_ss, 0, sizeof(struct gptp_site_sync_sync_state));
 	site_ss->state = GPTP_SSS_INITIALIZING;
 }
 
@@ -152,7 +152,7 @@ static void gptp_mi_init_clock_slave_sync_sm(void)
 	struct gptp_clk_slave_sync_state *clk_ss;
 
 	clk_ss = &GPTP_STATE()->clk_slave_sync;
-	memset(clk_ss, 0, sizeof(struct gptp_clk_slave_sync_state));
+	(void)memset(clk_ss, 0, sizeof(struct gptp_clk_slave_sync_state));
 	clk_ss->state = GPTP_CLK_SLAVE_SYNC_INITIALIZING;
 }
 
@@ -161,7 +161,8 @@ static void gptp_mi_init_port_announce_rcv_sm(int port)
 	struct gptp_port_announce_receive_state *pa_rcv;
 
 	pa_rcv = &GPTP_PORT_STATE(port)->pa_rcv;
-	memset(pa_rcv, 0, sizeof(struct gptp_port_announce_receive_state));
+	(void)memset(pa_rcv, 0,
+		     sizeof(struct gptp_port_announce_receive_state));
 	pa_rcv->state = GPTP_PA_RCV_DISCARD;
 }
 
@@ -170,7 +171,7 @@ static void gptp_mi_init_clock_master_sync_rcv_sm(void)
 	struct gptp_clk_master_sync_state *cms_rcv;
 
 	cms_rcv = &GPTP_STATE()->clk_master_sync_receive;
-	memset(cms_rcv, 0, sizeof(struct gptp_clk_master_sync_state));
+	(void)memset(cms_rcv, 0, sizeof(struct gptp_clk_master_sync_state));
 	cms_rcv->state = GPTP_CMS_RCV_INITIALIZING;
 }
 
@@ -208,15 +209,15 @@ static void gptp_mi_init_bmca_data(int port)
 
 	bmca_data = GPTP_PORT_BMCA_DATA(port);
 
-	memset(bmca_data, 0, sizeof(struct gptp_port_bmca_data));
+	(void)memset(bmca_data, 0, sizeof(struct gptp_port_bmca_data));
 
 	gptp_set_time_itv(&bmca_data->announce_interval, 1,
 			  CONFIG_NET_GPTP_INIT_LOG_ANNOUNCE_ITV);
 
-	memset(&bmca_data->port_priority, 0xFF,
-	       sizeof(struct gptp_priority_vector));
-	memset(&bmca_data->master_priority, 0xFF,
-	       sizeof(struct gptp_priority_vector));
+	(void)memset(&bmca_data->port_priority, 0xFF,
+		     sizeof(struct gptp_priority_vector));
+	(void)memset(&bmca_data->master_priority, 0xFF,
+		     sizeof(struct gptp_priority_vector));
 }
 
 static void announce_periodic_timer_handler(struct k_timer *timer)
@@ -1195,8 +1196,8 @@ static void gptp_updt_role_disabled_tree(void)
 	}
 
 	/* Set lastGmPriority to all ones. */
-	memset(&global_ds->last_gm_priority, 0xFF,
-	       sizeof(struct gptp_priority_vector));
+	(void)memset(&global_ds->last_gm_priority, 0xFF,
+		     sizeof(struct gptp_priority_vector));
 
 	/* Set pathTrace array to contain the single element thisClock. */
 	global_ds->path_trace.len = htons(GPTP_CLOCK_ID_LEN);
@@ -1226,7 +1227,7 @@ static int compute_best_vector(void)
 	gm_prio = &global_ds->gm_priority;
 
 	/* Write systemPriority into grandmaster. */
-	memset(gm_prio, 0, sizeof(struct gptp_priority_vector));
+	(void)memset(gm_prio, 0, sizeof(struct gptp_priority_vector));
 	gm_prio->root_system_id.grand_master_prio1 = default_ds->priority1;
 	gm_prio->root_system_id.grand_master_prio2 = default_ds->priority2;
 	gm_prio->root_system_id.clk_quality.clock_class =

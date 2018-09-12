@@ -514,7 +514,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 end:
 	/* So it's a last block, reset context */
 	if (!more) {
-		memset(&ctx, 0, sizeof(ctx));
+		(void)memset(&ctx, 0, sizeof(ctx));
 	}
 
 	return r;

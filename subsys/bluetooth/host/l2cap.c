@@ -671,7 +671,7 @@ static void l2cap_chan_tx_init(struct bt_l2cap_le_chan *chan)
 {
 	BT_DBG("chan %p", chan);
 
-	memset(&chan->tx, 0, sizeof(chan->tx));
+	(void)memset(&chan->tx, 0, sizeof(chan->tx));
 	k_sem_init(&chan->tx.credits, 0, UINT_MAX);
 	k_fifo_init(&chan->tx_queue);
 }
@@ -752,7 +752,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, u8_t ident,
 				      sizeof(*rsp));
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
-	memset(rsp, 0, sizeof(*rsp));
+	(void)memset(rsp, 0, sizeof(*rsp));
 
 	/* Check if there is a server registered */
 	server = l2cap_server_lookup_psm(psm);

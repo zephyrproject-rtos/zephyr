@@ -31,7 +31,7 @@ static void tmpool_api(void *p1, void *p2, void *p3)
 	int ret[BLK_NUM_MIN];
 	struct k_mem_pool *pool = pools[atomic_inc(&pool_id) % POOL_NUM];
 
-	memset(block, 0, sizeof(block));
+	(void)memset(block, 0, sizeof(block));
 
 	for (int i = 0; i < 4; i++) {
 		ret[i] = k_mem_pool_alloc(pool, &block[i], BLK_SIZE_MIN,

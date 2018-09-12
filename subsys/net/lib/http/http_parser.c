@@ -2305,7 +2305,7 @@ void http_parser_init(struct http_parser *parser, enum http_parser_type t)
 {
 	void *data = parser->data; /* preserve application data */
 
-	memset(parser, 0, sizeof(*parser));
+	(void)memset(parser, 0, sizeof(*parser));
 	parser->data = data;
 	parser->type = t;
 	parser->state =
@@ -2316,7 +2316,7 @@ void http_parser_init(struct http_parser *parser, enum http_parser_type t)
 
 void http_parser_settings_init(struct http_parser_settings *settings)
 {
-	memset(settings, 0, sizeof(*settings));
+	(void)memset(settings, 0, sizeof(*settings));
 }
 
 const char *http_errno_name(enum http_errno err)
