@@ -159,6 +159,17 @@ appear in exactly one of them. Each other file should use
    #include <logging/log.h>
    LOG_MODULE_DECLARE(foo); /* In all files comprising the module but one */
 
+Dedicated Kconfig template (:file:`subsys/logging/Kconfig.template.log_config`)
+can be used to create local log level configuration.
+
+Example below presents usage of the template. As a result CONFIG_FOO_LOG_LEVEL
+will be generated:
+
+.. code-block:: none
+   module = FOO
+   module-str = foo
+   source "subsys/logging/Kconfig.template.log_config"
+
 Logging in a module instance
 ============================
 
