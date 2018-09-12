@@ -1110,6 +1110,8 @@ static void light_lightness_range_get(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 5 + 4);
 	struct light_lightness_state *state = model->user_data;
 
+	state->status_code = RANGE_SUCCESSFULLY_UPDATED;
+
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x58));
 	net_buf_simple_add_u8(msg, state->status_code);
 	net_buf_simple_add_le16(msg, state->light_range_min);
@@ -1118,8 +1120,6 @@ static void light_lightness_range_get(struct bt_mesh_model *model,
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send LightLightnessRange Status response\n");
 	}
-
-	state->status_code = RANGE_SUCCESSFULLY_UPDATED;
 }
 
 /* Light Lightness Setup Server message handlers */
@@ -1427,6 +1427,8 @@ static void light_ctl_temp_range_get(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 5 + 4);
 	struct light_ctl_state *state = model->user_data;
 
+	state->status_code = RANGE_SUCCESSFULLY_UPDATED;
+
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x63));
 	net_buf_simple_add_u8(msg, state->status_code);
 	net_buf_simple_add_le16(msg, state->temp_range_min);
@@ -1435,8 +1437,6 @@ static void light_ctl_temp_range_get(struct bt_mesh_model *model,
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send LightCTL Temp Range Status response\n");
 	}
-
-	state->status_code = RANGE_SUCCESSFULLY_UPDATED;
 }
 
 static void light_ctl_default_get(struct bt_mesh_model *model,
