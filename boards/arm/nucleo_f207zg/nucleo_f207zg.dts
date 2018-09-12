@@ -49,9 +49,17 @@
 	};
 };
 
+arduino_serial: &usart6 {};
+
 &usart3 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart3_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart6 {
+	current-speed = <115200>;
 	pinctrl-names = "default";
 	status = "ok";
 };
