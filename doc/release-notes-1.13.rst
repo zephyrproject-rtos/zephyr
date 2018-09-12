@@ -53,6 +53,8 @@ Architectures
 * arch: arm: clean up MPU code for ARM and NXP
 * arch: arm: Set Zero Latency IRQ to priority level zero
 * arch/arm: Fix locking in __pendsv
+* arch: arm: nxp_imx: Added RDC (Resource Domain Controller) configuration for
+  i.MX SoCs to share peripherals between the Cortex A and Cortex M4 cores.
 
 Boards & SoC Support
 ********************
