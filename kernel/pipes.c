@@ -54,7 +54,7 @@ K_STACK_DEFINE(pipe_async_msgs, CONFIG_NUM_PIPE_ASYNC_MSGS);
 /* Allocate an asynchronous message descriptor */
 static void pipe_async_alloc(struct k_pipe_async **async)
 {
-	k_stack_pop(&pipe_async_msgs, (u32_t *)async, K_FOREVER);
+	(void)k_stack_pop(&pipe_async_msgs, (u32_t *)async, K_FOREVER);
 }
 
 /* Free an asynchronous message descriptor */

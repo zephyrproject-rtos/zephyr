@@ -96,7 +96,7 @@ void smp_init(void)
 {
 	atomic_t start_flag;
 
-	atomic_clear(&start_flag);
+	(void)atomic_clear(&start_flag);
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
 	_arch_start_cpu(1, _interrupt_stack1, CONFIG_ISR_STACK_SIZE,
@@ -113,5 +113,5 @@ void smp_init(void)
 			smp_init_top, &start_flag);
 #endif
 
-	atomic_set(&start_flag, 1);
+	(void)atomic_set(&start_flag, 1);
 }
