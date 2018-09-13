@@ -448,16 +448,16 @@ static int char2hex(const char *c, u8_t *x)
 	return 0;
 }
 
-static int str2bt_addr(const char *str, bt_addr_t *addr)
+static int hexstr2array(const char *str, u8_t *array, u8_t size)
 {
 	int i, j;
 	u8_t tmp;
 
-	if (strlen(str) != 17) {
+	if (strlen(str) != ((size * 2) + (size - 1))) {
 		return -EINVAL;
 	}
 
-	for (i = 5, j = 1; *str != '\0'; str++, j++) {
+	for (i = size - 1, j = 1; *str != '\0'; str++, j++) {
 		if (!(j % 3) && (*str != ':')) {
 			return -EINVAL;
 		} else if (*str == ':') {
@@ -465,16 +465,21 @@ static int str2bt_addr(const char *str, bt_addr_t *addr)
 			continue;
 		}
 
-		addr->val[i] = addr->val[i] << 4;
+		array[i] = array[i] << 4;
 
 		if (char2hex(str, &tmp) < 0) {
 			return -EINVAL;
 		}
 
-		addr->val[i] |= tmp;
+		array[i] |= tmp;
 	}
 
 	return 0;
+}
+
+static int str2bt_addr(const char *str, bt_addr_t *addr)
+{
+	return hexstr2array(str, addr->val, 6);
 }
 
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
@@ -1150,6 +1155,31 @@ static int cmd_clear(int argc, char *argv[])
 		printk("Failed to clear pairing (err %d)\n", err);
 	} else {
 		printk("Pairing successfully cleared\n");
+	}
+
+	return 0;
+}
+
+static int cmd_chan_map(int argc, char *argv[])
+{
+	u8_t chan_map[5];
+	int err;
+
+	if (argc != 2) {
+		return -EINVAL;
+	}
+
+	err = hexstr2array(argv[1], chan_map, 5);
+	if (err) {
+		printk("Invalid channel map\n");
+		return err;
+	}
+
+	err = bt_le_set_chan_map(chan_map);
+	if (err) {
+		printk("Failed to set channel map (err %d)\n", err);
+	} else {
+		printk("Channel map set\n");
 	}
 
 	return 0;
@@ -2236,6 +2266,7 @@ static const struct shell_cmd bt_commands[] = {
 	{ "conn-update", cmd_conn_update, "<min> <max> <latency> <timeout>" },
 	{ "oob", cmd_oob },
 	{ "clear", cmd_clear },
+	{ "channel-map", cmd_chan_map, "<channel-map: XX:XX:XX:XX:XX> (36-0)" },
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	{ "security", cmd_security, "<security level: 0, 1, 2, 3>" },
 	{ "bondable", cmd_bondable, "<bondable: on, off>" },
