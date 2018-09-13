@@ -387,23 +387,25 @@ again.
 .. _application_debugging:
 .. _custom_board_definition:
 
-Custom Board Definition
-***********************
+Custom Board and SOC Definitions
+********************************
 
 In cases where the board or platform you are developing for is not yet supported
-by Zephyr, you can add the board definition to your application and build for
-this board without having to add it to the Zephyr tree.
+by Zephyr, you can add the board and SOC definition to your application and
+build for this board or SOC without having to add them to the Zephyr tree.
 
-The structure needed to support out-of-tree board development
-is similar to how boards are maintained in the Zephyr tree.  By using
-this structure, it will be much easier to upstream your board work into
+The structure needed to support out-of-tree board and SOC development
+is similar to how boards and SOCs are maintained in the Zephyr tree. By using
+this structure, it will be much easier to upstream your platform related work into
 the Zephyr tree after your initial development is done.
 
-Add the custom board to your application using the following structure:
+Add the custom board to your application or a dedicated repository using the
+following structure:
 
 .. code-block:: console
 
    boards/
+   soc/
    CMakeLists.txt
    prj.conf
    README.rst
@@ -422,6 +424,11 @@ where the ``boards`` directory hosts the board you are building for:
    │           └── support
    └── src
 
+and the ``soc`` directory hosts any SOC code. You can also have boards that are
+supported by a SOC that is available in the Zephyr tree.
+
+Boards
+======
 
 Use the proper architecture folder name (e.g., ``x86``, ``arm``, etc.)
 under ``boards`` for ``my_custom_board``.  (See  :ref:`boards` for a
@@ -459,6 +466,59 @@ This will use your custom board configuration and will generate the
 Zephyr binary into your application directory.
 
 You can also define the ``BOARD_ROOT`` variable in the application
+:file:`CMakeLists.txt` file.
+
+
+SOC Definitions
+===============
+
+Similar to board support, the structure is similar to how SOCs are maintained in
+the Zephyr tree, for example:
+
+.. code-block:: console
+
+        soc
+        └── arm
+            └── st_stm32
+                    ├── common
+                            └── stm32l0
+
+
+
+The pathes to any Kconfig files inside the structure needs to prefixed with
+$(SOC_DIR) to make Kconfig aware of the location of the Kconfig files related to
+the custom SOC.
+
+In the ``soc`` directory you will need a top-level Kconfig file pointing to the
+custom SOC definitions:
+
+
+.. code-block: console
+
+	choice
+		prompt "SoC/CPU/Configuration Selection"
+
+	source "$(SOC_DIR)/$(ARCH)/\*/Kconfig.soc"
+
+	endchoice
+
+	menu "Hardware Configuration"
+	osource "$(SOC_DIR)/$(ARCH)/\*/Kconfig"
+
+	endmenu
+
+Once the SOC structure is in place, you can build your application
+targeting this platform by specifying the location of your custom platform
+information with the ``-DSOC_ROOT`` parameter to the CMake
+build system::
+
+   cmake -DBOARD=<board name> -DSOC_ROOT=<path to soc> -DBOARD_ROOT=<path to boards> ..
+
+
+This will use your custom platform configurations and will generate the
+Zephyr binary into your application directory.
+
+You can also define the ``SOC_ROOT`` variable in the application
 :file:`CMakeLists.txt` file.
 
 Application Debugging
