@@ -69,7 +69,7 @@ static int print_formatted(const struct log_output *log_output,
 	int length = 0;
 
 	va_start(args, fmt);
-#ifndef CONFIG_NEWLIB_LIBC
+#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX)
 	length = _prf(out_func, (void *)log_output, (char *)fmt, args);
 #else
 	_vprintk(out_func, (void *)log_output, fmt, args);

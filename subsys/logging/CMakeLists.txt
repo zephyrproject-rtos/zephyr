@@ -13,3 +13,8 @@ zephyr_sources_ifdef(
   CONFIG_LOG_BACKEND_UART
   log_backend_uart.c
   )
+
+zephyr_sources_ifdef(
+  CONFIG_LOG_BACKEND_NATIVE_POSIX
+  log_backend_native_posix.c
+  )
