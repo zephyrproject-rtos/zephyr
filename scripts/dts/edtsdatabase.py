@@ -17,7 +17,15 @@ class EDTSConsumerMixin(object):
 
 
     ##
-    # @brief Generate a compatible devices dict, using "device_id" as key
+    # @brief Get all supported device types
+    #
+    # @param none
+    # @return list of supported device types
+    def get_device_types(self):
+        return list(self._edts['device-types'])
+
+    ##
+    # @brief Get all activated compatible devices.
     #
     # @param compatible
     # @return dict of compatible devices
@@ -130,6 +138,21 @@ class EDTSProviderMixin(object):
             self._edts['compatibles'][compatible].append(device_id)
             self._edts['compatibles'][compatible].sort()
 
+    def _update_device_type(self, device_id, device_type):
+        if device_type not in self._edts['device-types']:
+            self._edts['device-types'][device_type] = list()
+        if device_id not in self._edts['device-types'][device_type]:
+            self._edts['device-types'][device_type].append(device_id)
+            self._edts['device-types'][device_type].sort()
+
+    def insert_device_type(self, compatible, device_type):
+        if device_type not in self._edts['device-types']:
+            self._edts['device-types'][device_type] = list()
+        if compatible not in self._edts['device-types'][device_type]:
+            self._edts['device-types'][device_type].append(compatible)
+            self._edts['device-types'][device_type].sort()
+
+
     ##
     # @brief Insert property value for the device of the given device id.
     #
@@ -185,6 +208,7 @@ class EDTSProviderMixin(object):
 # _edts dict(
 #   'devices':  dict(device-id :  device-struct),
 #   'compatibles':  dict(compatible : sorted list(device-id)),
+#   'device-types': dict(device-type : sorted list(compatible)),
 #   ...
 # )
 #
@@ -206,7 +230,7 @@ class EDTSDatabase(EDTSConsumerMixin, EDTSProviderMixin, Mapping):
     def __init__(self, *args, **kw):
         self._edts = dict(*args, **kw)
         # setup basic database schema
-        for edts_key in ('devices', 'compatibles'):
+        for edts_key in ('devices', 'compatibles', 'device-types'):
             if not edts_key in self._edts:
                 self._edts[edts_key] = dict()
 
