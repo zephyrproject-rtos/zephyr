@@ -5,8 +5,8 @@
  */
 #include <device.h>
 
-#ifndef _kernel_offsets__h_
-#define _kernel_offsets__h_
+#ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_OFFSETS_H_
+#define ZEPHYR_KERNEL_INCLUDE_KERNEL_OFFSETS_H_
 
 #include <syscall_list.h>
 
@@ -80,4 +80,4 @@ GEN_ABSOLUTE_SYM(K_THREAD_SIZEOF, sizeof(struct k_thread));
 /* size of the device structure. Used by linker scripts */
 GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_SIZE, sizeof(struct device));
 
-#endif /* _kernel_offsets__h_ */
+#endif /* ZEPHYR_KERNEL_INCLUDE_KERNEL_OFFSETS_H_ */

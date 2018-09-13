@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _kernel_include_wait_q__h_
-#define _kernel_include_wait_q__h_
+#ifndef ZEPHYR_KERNEL_INCLUDE_WAIT_Q_H_
+#define ZEPHYR_KERNEL_INCLUDE_WAIT_Q_H_
 
 #include <kernel_structs.h>
 #include <misc/dlist.h>
@@ -85,4 +85,4 @@ static inline struct k_thread *_waitq_head(_wait_q_t *w)
 }
 #endif
 
-#endif /* _kernel_include_wait_q__h_ */
+#endif /* ZEPHYR_KERNEL_INCLUDE_WAIT_Q_H_ */

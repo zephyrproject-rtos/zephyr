@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _ZEPHYR_SYSCALL_HANDLER_H_
-#define _ZEPHYR_SYSCALL_HANDLER_H_
+#ifndef ZEPHYR_KERNEL_INCLUDE_SYSCALL_HANDLER_H_
+#define ZEPHYR_KERNEL_INCLUDE_SYSCALL_HANDLER_H_
 
 #ifdef CONFIG_USERSPACE
 
@@ -605,4 +605,4 @@ static inline int _obj_validation_check(struct _k_object *ko,
 
 #endif /* CONFIG_USERSPACE */
 
-#endif /* _ZEPHYR_SYSCALL_H_ */
+#endif /* ZEPHYR_KERNEL_INCLUDE_SYSCALL_HANDLER_H_ */

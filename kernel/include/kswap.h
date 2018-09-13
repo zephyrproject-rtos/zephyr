@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _KSWAP_H
-#define _KSWAP_H
+#ifndef ZEPHYR_KERNEL_INCLUDE_KSWAP_H_
+#define ZEPHYR_KERNEL_INCLUDE_KSWAP_H_
 
 #include <ksched.h>
 #include <kernel_arch_func.h>
@@ -110,4 +110,4 @@ static inline int _Swap(unsigned int key)
 }
 #endif
 
-#endif /* _KSWAP_H */
+#endif /* ZEPHYR_KERNEL_INCLUDE_KSWAP_H_ */
