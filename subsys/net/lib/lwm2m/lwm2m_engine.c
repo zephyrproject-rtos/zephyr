@@ -3649,7 +3649,7 @@ static void retransmit_request(struct k_work *work)
 	if (r < 0) {
 		LOG_ERR("Error sending lwm2m message: %d", r);
 		/* don't error here, retry until timeout */
-		net_pkt_unref(pending->pkt);
+		net_pkt_unref(msg->cpkt.pkt);
 	}
 
 	if (!coap_pending_cycle(pending)) {
