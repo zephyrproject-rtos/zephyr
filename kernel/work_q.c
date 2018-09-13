@@ -50,7 +50,7 @@ void k_work_q_start(struct k_work_q *work_q, k_thread_stack_t *stack,
 		    size_t stack_size, int prio)
 {
 	k_queue_init(&work_q->queue);
-	k_thread_create(&work_q->thread, stack, stack_size, work_q_main,
+	(void)k_thread_create(&work_q->thread, stack, stack_size, work_q_main,
 			work_q, 0, 0, prio, 0, 0);
 	_k_object_init(work_q);
 }
