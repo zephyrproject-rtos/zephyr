@@ -1,6 +1,6 @@
 ---
 title: Flash Partitions
-id: fixed-partition
+type: mtd
 version: 0.1
 
 description: >
@@ -12,6 +12,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "fixed-partitions"
+      generation: define
 
     partition\d+:
       type: string

@@ -5,7 +5,7 @@
 #
 ---
 title: CAN Device Base Structure
-id: can-device
+type: can-device
 version: 0.1
 
 description: >
@@ -19,6 +19,7 @@ properties:
       type: string
       category: required
       description: compatible strings
+      generation: define
     reg:
       type: array
       description: register base address

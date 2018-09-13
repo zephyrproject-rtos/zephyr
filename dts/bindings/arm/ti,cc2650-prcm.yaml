@@ -1,6 +1,7 @@
 ---
 # SPDX-License-Identifier: Apache-2.0
 title: TI CC2650 PRCM
+type: prcm
 version: 0.1
 
 description: >
@@ -13,6 +14,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "ti,cc2650-prcm"
+      generation: define
 
     reg:
       type: array

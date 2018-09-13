@@ -1,5 +1,6 @@
 ---
 title: Intel I/O Advanced Programmable Interrupt Controller
+type: interrupt-controller
 version: 0.1
 
 description: >
@@ -12,6 +13,7 @@ properties:
       type: string
       description: compatible strings
       constraint: "intel,ioapic"
+      generation: define
 
   reg:
       category: required

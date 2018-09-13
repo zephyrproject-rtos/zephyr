@@ -5,7 +5,7 @@
 #
 ---
 title: ARC DCCM
-id: arc,dccm
+type: dccm
 version: 0.1
 
 description: >
@@ -17,6 +17,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "arc,dccm"
+      generation: define
 
     reg:
       type: array

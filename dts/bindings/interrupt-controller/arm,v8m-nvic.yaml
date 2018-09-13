@@ -1,6 +1,6 @@
 ---
 title: ARMv8-M NVIC Interrupt Controller
-id: arm,v8m-nvic
+type: interrupt-controller
 version: 0.1
 
 description: >
@@ -12,6 +12,7 @@ properties:
       type: string
       description: compatible strings
       constraint: "arm,v8m-nvic"
+      generation: define
 
     reg:
       category: required

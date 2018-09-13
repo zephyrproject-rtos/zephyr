@@ -1,6 +1,7 @@
 ---
 # SPDX-License-Identifier: Apache-2.0
 title: TI CC2650 GPIO
+type: gpio
 version: 0.1
 
 description: >
@@ -12,6 +13,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "ti,cc2650-gpio"
+      generation: define
 
     reg:
       type: int

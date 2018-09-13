@@ -1,6 +1,6 @@
 ---
 title: CAN Base Structure
-id: can
+type: can
 version: 0.1
 
 description: >
@@ -10,6 +10,11 @@ child:
     bus: can
 
 properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
     "#address-cells":
       type: int
       category: required

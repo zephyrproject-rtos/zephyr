@@ -11,6 +11,7 @@ to applications.
 
    bluetooth/bluetooth.rst
    c_library
+   codegen/index
    dfu
    logging/index
    tracing/index

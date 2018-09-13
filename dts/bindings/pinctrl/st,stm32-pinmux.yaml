@@ -1,6 +1,6 @@
 ---
 title: STM32 PINMUX
-id: st,stm32-pinmux
+type: pinmux
 version: 0.1
 
 description: >
@@ -12,6 +12,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "st,stm32-pinmux"
+      generation: define
 
     reg:
       type: int

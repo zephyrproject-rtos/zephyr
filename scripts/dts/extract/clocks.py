@@ -5,6 +5,7 @@
 #
 
 from extract.globals import *
+from extract.edts import *
 from extract.directive import DTDirective
 
 ##
@@ -12,15 +13,53 @@ from extract.directive import DTDirective
 #
 # Handles:
 # - clocks
-# directives.
+#
+# Generates in EDTS:
+#
+# Clock consumer
+# --------------
+# - clocks/<index>/<cell-name> : <cell-value>
+#                  (cell-name from cell-names of provider)
 #
 class DTClocks(DTDirective):
 
     def __init__(self):
         pass
 
-    def _extract_consumer(self, node_address, yaml, clocks, names, def_label):
+    ##
+    # @brief Insert clock cells into EDTS
+    #
+    # @param clock_consumer
+    # @param yaml
+    # @param clock_provider
+    # @param clock_cells
+    # @param property_path_templ "xxx/yyy/{}"
+    #
+    def _edts_insert_clock_cells(self, clock_consumer_node_address, yaml,
+                                 clock_provider_node_address, clock_cells,
+                                 property_path_templ):
+        if len(clock_cells) == 0:
+            return
+        clock_consumer_device_id = edts_device_id(clock_consumer_node_address)
+        clock_provider_device_id = edts_device_id(clock_provider_node_address)
+        clock_provider = reduced[clock_provider_node_address]
+        clock_provider_compat = get_compat(clock_provider_node_address)
+        clock_provider_bindings = yaml[clock_provider_compat]
+        clock_nr_cells = int(clock_provider['props'].get('#clock-cells', 0))
+        clock_cells_names = clock_provider_bindings.get(
+                    '#cells', ['ID', 'CELL1',  "CELL2", "CELL3"])
+        for i, cell in enumerate(clock_cells):
+            if i >= len(clock_cells_names):
+                clock_cell_name = 'CELL{}'.format(i).lower()
+            else:
+                clock_cell_name = clock_cells_names[i].lower()
+            edts_insert_device_property(clock_consumer_device_id,
+                property_path_templ.format(clock_cell_name), cell)
 
+
+    def _extract_consumer(self, node_address, yaml, clocks, def_label):
+
+        clock_consumer_device_id = edts_device_id(node_address)
         clock_consumer = reduced[node_address]
         clock_consumer_compat = get_compat(node_address)
         clock_consumer_bindings = yaml[clock_consumer_compat]
@@ -28,7 +67,7 @@ class DTClocks(DTDirective):
 
         clock_index = 0
         clock_cell_index = 0
-        nr_clock_cells = 0
+        clock_nr_cells = 0
         clock_provider_node_address = ''
         clock_provider = {}
         for cell in clocks:
@@ -42,27 +81,37 @@ class DTClocks(DTDirective):
                                     str(clock_provider)))
                 clock_provider_node_address = phandles[cell]
                 clock_provider = reduced[clock_provider_node_address]
-                clock_provider_compat = get_compat(clock_provider_node_address)
-                clock_provider_bindings = yaml[clock_provider_compat]
-                clock_provider_label = self.get_node_label_string( \
-                                                clock_provider_node_address)
-                nr_clock_cells = int(clock_provider['props'].get(
-                                     '#clock-cells', 0))
-                clock_cells_string = clock_provider_bindings.get(
-                    'cell_string', 'CLOCK')
-                clock_cells_names = clock_provider_bindings.get(
-                    '#cells', ['ID', 'CELL1',  "CELL2", "CELL3"])
+                clock_nr_cells = int(clock_provider['props'].get('#clock-cells', 0))
                 clock_cells = []
             else:
                 clock_cells.append(cell)
             clock_cell_index += 1
-            if clock_cell_index > nr_clock_cells:
-                # clock consumer device - clocks info
-                #####################################
+            if clock_cell_index > clock_nr_cells:
+
+                 # generate EDTS
+                edts_insert_device_property(clock_consumer_device_id,
+                    'clocks/{}/provider'.format(clock_index),
+                    clock_provider_node_address)
+                self._edts_insert_clock_cells(node_address, yaml,
+                                        clock_provider_node_address,
+                                        clock_cells,
+                                        "clocks/{}/{{}}".format(clock_index))
+
+                # generate defines
                 prop_def = {}
                 prop_alias = {}
 
+                # legacy definitions for backwards compatibility
+                # @todo remove legacy definitions
+
                 # Legacy clocks definitions by extract_cells
+                clock_provider_compat = get_compat(clock_provider_node_address)
+                clock_provider_bindings = yaml[clock_provider_compat]
+                clock_cells_string = clock_provider_bindings.get(
+                    'cell_string', 'CLOCK')
+                clock_cells_names = clock_provider_bindings.get(
+                            '#cells', ['ID', 'CELL1',  "CELL2", "CELL3"])
+
                 for i, cell in enumerate(clock_cells):
                     if i >= len(clock_cells_names):
                         clock_cell_name = 'CELL{}'.format(i)
@@ -93,25 +142,17 @@ class DTClocks(DTDirective):
                                     clock_cell_name, index])
                             prop_alias[clock_alias_label] = clock_label
                     # alias
-                    if i < nr_clock_cells:
+                    if i < clock_nr_cells:
                         # clocks info for first clock
                         clock_alias_label = self.get_label_string([
                             clock_consumer_label, clock_cells_string,
                             clock_cell_name])
                         prop_alias[clock_alias_label] = clock_label
-                # Legacy clocks definitions by extract_controller
+                # ----- legacy clocks definitions
                 clock_provider_label_str = clock_provider['props'].get('label',
                                                                        None)
                 if clock_provider_label_str is not None:
-                    try:
-                        generation = clock_consumer_bindings['properties'][
-                            'clocks']['generation']
-                    except:
-                        generation = ''
-                    if 'use-prop-name' in generation:
-                        clock_cell_name = 'CLOCKS_CONTROLLER'
-                    else:
-                        clock_cell_name = 'CLOCK_CONTROLLER'
+                    clock_cell_name = 'CLOCK_CONTROLLER'
                     if clock_index == 0 and \
                         len(clocks) == (len(clock_cells) + 1):
                         index = ''
@@ -128,6 +169,7 @@ class DTClocks(DTDirective):
                             prop_alias[clock_alias_label] = clock_label
 
                 insert_defs(node_address, prop_def, prop_alias)
+                # ------ legacy end
 
                 clock_cell_index = 0
                 clock_index += 1
@@ -138,10 +180,9 @@ class DTClocks(DTDirective):
     # @param node_address Address of node owning the clockxxx definition.
     # @param yaml YAML definition for the owning node.
     # @param prop clockxxx property name
-    # @param names (unused)
     # @param def_label Define label string of node owning the directive.
     #
-    def extract(self, node_address, yaml, prop, names, def_label):
+    def extract(self, node_address, yaml, prop, def_label):
 
         properties = reduced[node_address]['props'][prop]
 
@@ -153,7 +194,7 @@ class DTClocks(DTDirective):
 
         if prop == 'clocks':
             # indicator for clock consumers
-            self._extract_consumer(node_address, yaml, prop_list, names, def_label)
+            self._extract_consumer(node_address, yaml, prop_list, def_label)
         else:
             raise Exception(
                 "DTClocks.extract called with unexpected directive ({})."

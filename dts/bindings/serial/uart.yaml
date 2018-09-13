@@ -1,6 +1,6 @@
 ---
 title: Uart Base Structure
-id: uart
+type: uart
 version: 0.1
 
 description: >
@@ -10,6 +10,11 @@ child:
     bus: uart
 
 properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
     clock-frequency:
       type: int
       category: optional

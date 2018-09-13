@@ -5,7 +5,7 @@
 #
 ---
 title: USB Base Structure
-id: USB
+type: USB
 version: 0.1
 
 description: >
@@ -16,6 +16,7 @@ properties:
       type: string
       category: required
       description: compatible strings
+      generation: define
 
     label:
       type: string

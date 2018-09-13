@@ -1,6 +1,5 @@
 ---
 title: EFM32 USART
-id: silabs,efm32-usart
 version: 0.1
 
 description: >
@@ -11,9 +10,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "silabs,efm32-usart"
 
     reg:

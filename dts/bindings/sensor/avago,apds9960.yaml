@@ -5,7 +5,7 @@
 #
 ---
 title: APDS9960 Digital Proximity, Ambient Light, RGB and Gesture Sensor
-id: avago,apds9960
+type: sensor
 version: 0.1
 
 description: >

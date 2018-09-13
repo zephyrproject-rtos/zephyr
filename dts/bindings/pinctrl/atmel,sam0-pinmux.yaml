@@ -1,6 +1,6 @@
 ---
 title: Atmel SAM0 PINMUX
-id: atmel,sam0-pinmux
+type: pinmux
 version: 0.1
 
 description: >
@@ -12,6 +12,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "atmel,sam0-pinmux"
+      generation: define
 
     reg:
       type: int

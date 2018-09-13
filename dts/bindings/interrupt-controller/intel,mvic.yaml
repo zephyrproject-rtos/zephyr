@@ -1,5 +1,6 @@
 ---
 title: Intel Quark D2000 Interrupt Controller
+type: interrupt-controller
 version: 0.1
 
 description: >
@@ -12,6 +13,7 @@ properties:
       type: string
       description: compatible strings
       constraint: "intel,mvic"
+      generation: define
 
   reg:
       category: required

@@ -5,7 +5,7 @@
 #
 ---
 title: ARC ICCM
-id: arc,iccm
+type: iccm
 version: 0.1
 
 description: >
@@ -17,6 +17,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "arc,iccm"
+      generation: define
 
     reg:
       type: array

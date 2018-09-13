@@ -5,7 +5,7 @@
 #
 ---
 title: LPC MAILBOX
-id: nxp,lpc-mailbox
+type: mailbox
 version: 0.1
 
 description: >
@@ -17,6 +17,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "nxp,lpc-mailbox"
+      generation: define
 
   reg:
       type: array

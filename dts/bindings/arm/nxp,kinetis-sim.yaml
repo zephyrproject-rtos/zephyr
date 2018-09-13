@@ -5,7 +5,7 @@
 #
 ---
 title: Kinetis System Integration Module (SIM)
-id: nxp,kinetis-sim
+type: clock-controller
 version: 0.1
 
 description: >
@@ -17,6 +17,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "nxp,kinetis-sim"
+      generation: define
 
     reg:
       type: int

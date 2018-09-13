@@ -19,12 +19,16 @@ from copy import deepcopy
 
 from devicetree import parse_file
 from extract.globals import *
+from extract.edts import edts
 
 from extract.clocks import clocks
+from extract.gpios import gpios
+from extract.compatible import compatible
 from extract.interrupts import interrupts
 from extract.reg import reg
 from extract.flash import flash
 from extract.pinctrl import pinctrl
+from extract.heuristics import heuristics
 from extract.default import default
 
 class Bindings(yaml.Loader):
@@ -197,144 +201,6 @@ def extract_reg_prop(node_address, names, def_label, div, post_label):
         index += 1
 
 
-def extract_controller(node_address, yaml, prop, prop_values, index, def_label, generic):
-
-    prop_def = {}
-    prop_alias = {}
-
-    # get controller node (referenced via phandle)
-    cell_parent = phandles[prop_values[0]]
-
-    for k in reduced[cell_parent]['props'].keys():
-        if k[0] == '#' and '-cells' in k:
-            num_cells = reduced[cell_parent]['props'].get(k)
-
-    # get controller node (referenced via phandle)
-    cell_parent = phandles[prop_values[0]]
-
-    try:
-       l_cell = reduced[cell_parent]['props'].get('label')
-    except KeyError:
-        l_cell = None
-
-    if l_cell is not None:
-
-        l_base = def_label.split('/')
-
-        # Check is defined should be indexed (_0, _1)
-        if index == 0 and len(prop_values) < (num_cells + 2):
-            # 0 or 1 element in prop_values
-            # ( ie len < num_cells + phandle + 1 )
-            l_idx = []
-        else:
-            l_idx = [str(index)]
-
-        # Check node generation requirements
-        try:
-            generation = yaml[get_compat(node_address)]['properties'][prop][
-                'generation']
-        except:
-            generation = ''
-
-        if 'use-prop-name' in generation:
-            l_cellname = convert_string_to_label(prop + '_' + 'controller')
-        else:
-            l_cellname = convert_string_to_label(generic + '_' + 'controller')
-
-        label = l_base + [l_cellname] + l_idx
-
-        prop_def['_'.join(label)] = "\"" + l_cell + "\""
-
-        #generate defs also if node is referenced as an alias in dts
-        if node_address in aliases:
-            for i in aliases[node_address]:
-                alias_label = \
-                    convert_string_to_label(i)
-                alias = [alias_label] + label[1:]
-                prop_alias['_'.join(alias)] = '_'.join(label)
-
-        insert_defs(node_address, prop_def, prop_alias)
-
-    # prop off phandle + num_cells to get to next list item
-    prop_values = prop_values[num_cells+1:]
-
-    # recurse if we have anything left
-    if len(prop_values):
-        extract_controller(node_address, yaml, prop, prop_values, index + 1,
-                           def_label, generic)
-
-
-def extract_cells(node_address, yaml, prop, prop_values, names, index,
-                  def_label, generic):
-
-    cell_parent = phandles[prop_values.pop(0)]
-
-    try:
-        cell_yaml = yaml[get_compat(cell_parent)]
-    except:
-        raise Exception(
-            "Could not find yaml description for " +
-                reduced[cell_parent]['name'])
-
-    try:
-        name = names.pop(0).upper()
-    except:
-        name = []
-
-    # Get number of cells per element of current property
-    for k in reduced[cell_parent]['props'].keys():
-        if k[0] == '#' and '-cells' in k:
-            num_cells = reduced[cell_parent]['props'].get(k)
-    try:
-        generation = yaml[get_compat(node_address)]['properties'][prop][
-            'generation']
-    except:
-        generation = ''
-
-    if 'use-prop-name' in generation:
-        l_cell = [convert_string_to_label(str(prop))]
-    else:
-        l_cell = [convert_string_to_label(str(generic))]
-
-    l_base = def_label.split('/')
-    # Check if #define should be indexed (_0, _1, ...)
-    if index == 0 and len(prop_values) < (num_cells + 2):
-        # Less than 2 elements in prop_values (ie len < num_cells + phandle + 1)
-        # Indexing is not needed
-        l_idx = []
-    else:
-        l_idx = [str(index)]
-
-    prop_def = {}
-    prop_alias = {}
-
-    # Generate label for each field of the property element
-    for i in range(num_cells):
-        l_cellname = [str(cell_yaml['#cells'][i]).upper()]
-        if l_cell == l_cellname:
-            label = l_base + l_cell + l_idx
-        else:
-            label = l_base + l_cell + l_cellname + l_idx
-        label_name = l_base + name + l_cellname
-        prop_def['_'.join(label)] = prop_values.pop(0)
-        if len(name):
-            prop_alias['_'.join(label_name)] = '_'.join(label)
-
-        # generate defs for node aliases
-        if node_address in aliases:
-            for i in aliases[node_address]:
-                alias_label = convert_string_to_label(i)
-                alias = [alias_label] + label[1:]
-                prop_alias['_'.join(alias)] = '_'.join(label)
-
-        insert_defs(node_address, prop_def, prop_alias)
-
-    # recurse if we have anything left
-    if len(prop_values):
-        extract_cells(node_address, yaml, prop, prop_values, names,
-                      index + 1, def_label, generic)
-
-
 def extract_single(node_address, yaml, prop, key, def_label):
 
     prop_def = {}
@@ -438,27 +304,24 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
     if prop == 'reg':
         if 'partition@' in node_address:
             # reg in partition is covered by flash handling
-            flash.extract(node_address, yaml, prop, names, def_label)
+            flash.extract(node_address, yaml, prop, def_label)
         else:
-            reg.extract(node_address, yaml, prop, names, def_label)
+            reg.extract(node_address, yaml, prop, def_label)
     elif prop == 'interrupts' or prop == 'interrupts-extended':
         interrupts.extract(node_address, yaml, prop, names, def_label)
+    elif prop == 'compatible':
+        compatible.extract(node_address, yaml, prop, def_label)
+        # do extra property definition based on heuristics
+        # do it here as the compatible property is mandatory
+        heuristics.extract(node_address, yaml, prop, def_label)
     elif 'pinctrl-' in prop:
-        pinctrl.extract(node_address, yaml, prop, names, def_label)
+        pinctrl.extract(node_address, yaml, prop, def_label)
     elif 'clocks' in prop:
-        clocks.extract(node_address, yaml, prop, names, def_label)
+        clocks.extract(node_address, yaml, prop, def_label)
     elif 'gpios' in prop:
-        try:
-            prop_values = list(reduced[node_address]['props'].get(prop))
-        except:
-            prop_values = reduced[node_address]['props'].get(prop)
-
-        extract_controller(node_address, yaml, prop, prop_values, 0,
-                           def_label, 'gpio')
-        extract_cells(node_address, yaml, prop, prop_values,
-                      names, 0, def_label, 'gpio')
+        gpios.extract(node_address, yaml, prop, def_label)
     else:
-        default.extract(node_address, yaml, prop, names, def_label)
+        default.extract(node_address, yaml, prop, def_label)
 
 
 def extract_node_include_info(reduced, root_node_address, sub_node_address,
@@ -543,7 +406,6 @@ def yaml_traverse_inherited(node):
     """ Recursive overload procedure inside ``node``
     ``inherits`` section is searched for and used as node base when found.
     Base values are then overloaded by node values
-    Additionally, 'id' key of 'inherited' dict is converted to 'node_type'
     and some consistency checks are done.
     :param node:
     :return: node
@@ -555,14 +417,11 @@ def yaml_traverse_inherited(node):
         # If 'title' is missing, make fault finding more easy.
         # Give a hint what node we are looking at.
         print("extract_dts_includes.py: node without 'title' -", node)
-    for prop in ('title', 'id', 'version', 'description'):
+    for prop in ('title', 'version', 'description'):
         if prop not in node:
             node[prop] = "<unknown {}>".format(prop)
             print("extract_dts_includes.py: '{}' property missing".format(prop),
                   "in '{}' binding. Using '{}'.".format(node['title'], node[prop]))
-
-    if 'node_type' not in node:
-        node['node_type'] = [node['id'],]
 
     if 'inherits' in node:
         if isinstance(node['inherits'], list):
@@ -573,21 +432,20 @@ def yaml_traverse_inherited(node):
         for inherits in inherits_list:
             if 'inherits' in inherits:
                 inherits = yaml_traverse_inherited(inherits)
-            if 'node_type' in inherits:
-                node['node_type'].extend(inherits['node_type'])
-            else:
-                if 'id' not in inherits:
-                    inherits['id'] = "<unknown id>"
-                    title = inherits.get('title', "<unknown title>")
-                    print("extract_dts_includes.py: 'id' property missing in",
-                          "'{}' binding. Using '{}'.".format(title,
-                                                             inherits['id']))
-                node['node_type'].append(inherits['id'])
-            # id, node_type, title, description, version of inherited node
+            if 'type' in inherits:
+                if 'type' not in node:
+                    node['type'] = []
+                if not isinstance(node['type'], list):
+                    node['type'] = [node['type'],]
+                if isinstance(inherits['type'], list):
+                    node['type'].extend(inherits['type'])
+                else:
+                    node['type'].append(inherits['type'])
+
+            # type, title, description, version of inherited node
             # are overwritten by intention. Remove to prevent dct_merge to
             # complain about duplicates.
-            inherits.pop('id')
-            inherits.pop('node_type', None)
+            inherits.pop('type', None)
             inherits.pop('title', None)
             inherits.pop('version', None)
             inherits.pop('description', None)
@@ -754,10 +612,9 @@ def generate_node_definitions(yaml_list):
             extract_string_prop(chosen[k], None, "label", v)
 
     node_address = chosen.get('zephyr,flash', 'dummy-flash')
-    flash.extract(node_address, yaml_list, 'zephyr,flash', None, 'FLASH')
+    flash.extract(node_address, yaml_list, 'zephyr,flash', 'FLASH')
     node_address = chosen.get('zephyr,code-partition', node_address)
-    flash.extract(node_address, yaml_list, 'zephyr,code-partition', None,
-                  'FLASH')
+    flash.extract(node_address, yaml_list, 'zephyr,code-partition', 'FLASH')
 
     return defs
 
@@ -769,6 +626,8 @@ def parse_arguments():
     parser.add_argument("-d", "--dts", nargs=1, required=True, help="DTS file")
     parser.add_argument("-y", "--yaml", nargs='+', required=True,
                         help="YAML file directories, we allow multiple")
+    parser.add_argument("-e", "--edts", nargs=1, required=True,
+                        help="Generate EDTS database file for the build system")
     parser.add_argument("-f", "--fixup", nargs='+',
                         help="Fixup file(s), we allow multiple")
     parser.add_argument("-i", "--include", nargs=1, required=True,
@@ -797,6 +656,7 @@ def main():
     generate_keyvalue_file(args.keyvalue[0])
 
     generate_include_file(args.include[0], args.fixup)
+    edts.save(args.edts[0])
 
 
 if __name__ == '__main__':

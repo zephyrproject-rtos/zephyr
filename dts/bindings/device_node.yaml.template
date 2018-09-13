@@ -1,5 +1,6 @@
 ---
 title: <Title should describe what node you are describing>
+type: <zephyr generic type for the described device>
 version: 0.1
 
 description: >
@@ -37,6 +38,7 @@ properties:
       category: required
       type: string
       description: compatible of node
+      generation: define
 
 # reg is used to denote mmio registers
     reg:

@@ -1,6 +1,6 @@
 ---
 title: ARM CMSDK DUALTIMER
-id: arm,cmsdk-dtimer
+type: timer
 version: 0.1
 
 description: >
@@ -12,6 +12,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "arm,cmsdk-dtimer"
+      generation: define
 
     reg:
       type: array

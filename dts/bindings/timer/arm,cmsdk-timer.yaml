@@ -1,6 +1,6 @@
 ---
 title: ARM CMSDK TIMER
-id: arm,cmsdk-timer
+type: timer
 version: 0.1
 
 description: >
@@ -12,6 +12,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "arm,cmsdk-timer"
+      generation: define
 
     reg:
       type: array

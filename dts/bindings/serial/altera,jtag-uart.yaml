@@ -1,6 +1,5 @@
 ---
 title: Altera JTAG UART
-id: altera,jtag-uart
 version: 0.1
 
 description: >
@@ -11,9 +10,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "altera,jtag-uart"
 
     reg:

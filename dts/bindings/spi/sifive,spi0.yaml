@@ -5,7 +5,6 @@
 #
 ---
 title: Sifive SPI driver
-id: sifive,spi0
 version: 0.1
 
 description: >

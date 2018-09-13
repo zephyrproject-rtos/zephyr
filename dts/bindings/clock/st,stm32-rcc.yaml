@@ -1,6 +1,6 @@
 ---
 title: STM32 RCC
-id: st,stm32-rcc
+type: clock-control
 version: 0.1
 
 description: >
@@ -12,6 +12,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "st,stm32-rcc"
+      generation: define
 
     reg:
       type: array

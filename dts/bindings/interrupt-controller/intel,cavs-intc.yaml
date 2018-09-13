@@ -1,5 +1,6 @@
 ---
 title: CAVS Interrupt Controller
+type: interrupt-controller
 version: 0.1
 
 description: >
@@ -11,6 +12,7 @@ properties:
       type: string
       description: compatible strings
       constraint: "intel,cavs-intc"
+      generation: define
 
   reg:
       category: required

@@ -1,6 +1,6 @@
 ---
 title: Atmel SAM0 GPIO PORT driver
-id: atmel,sam0-gpio
+type: gpio
 version: 0.1
 
 description: >
@@ -12,6 +12,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "atmel,sam0-gpio"
+      generation: define
 
     reg:
       type: int
