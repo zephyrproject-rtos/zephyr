@@ -334,7 +334,7 @@ struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
 	struct k_thread *t = _unpend1_no_timeout(wait_q);
 
 	if (t) {
-		_abort_thread_timeout(t);
+		(void)_abort_thread_timeout(t);
 	}
 
 	return t;
@@ -343,7 +343,7 @@ struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
 void _unpend_thread(struct k_thread *thread)
 {
 	_unpend_thread_no_timeout(thread);
-	_abort_thread_timeout(thread);
+	(void)_abort_thread_timeout(thread);
 }
 
 /* FIXME: this API is glitchy when used in SMP.  If the thread is
