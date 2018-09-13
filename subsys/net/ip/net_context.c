@@ -889,9 +889,11 @@ static int create_udp_packet(struct net_context *context,
 			return -ENOMEM;
 		}
 
-		tmp = net_udp_insert(context, pkt,
+		tmp = net_udp_insert(pkt,
 				     net_pkt_ip_hdr_len(pkt) +
 				     net_pkt_ipv6_ext_len(pkt),
+				     net_sin((struct sockaddr *)
+					     &context->local)->sin_port,
 				     addr6->sin6_port);
 		if (!tmp) {
 			return -ENOMEM;
@@ -912,7 +914,9 @@ static int create_udp_packet(struct net_context *context,
 			return -ENOMEM;
 		}
 
-		tmp = net_udp_insert(context, pkt, net_pkt_ip_hdr_len(pkt),
+		tmp = net_udp_insert(pkt, net_pkt_ip_hdr_len(pkt),
+				     net_sin((struct sockaddr *)
+					     &context->local)->sin_port,
 				     addr4->sin_port);
 		if (!tmp) {
 			return -ENOMEM;
