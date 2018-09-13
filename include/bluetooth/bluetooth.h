@@ -440,6 +440,16 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
  */
 int bt_le_scan_stop(void);
 
+
+/** @brief Set (LE) channel map.
+ *
+ * @param chan_map Channel map.
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_le_set_chan_map(u8_t chan_map[5]);
+
 /** @brief Helper for parsing advertising (or EIR or OOB) data.
  *
  *  A helper for parsing the basic data types used for Extended Inquiry
