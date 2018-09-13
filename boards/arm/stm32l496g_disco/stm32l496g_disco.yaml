@@ -5,5 +5,10 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
+ram: 320
+flash: 1024
 supported:
   - pwm
+  - i2c
+  - spi
+  - gpio
