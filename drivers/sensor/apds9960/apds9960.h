@@ -8,6 +8,8 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_APDS9960_APDS9960_H_
 #define ZEPHYR_DRIVERS_SENSOR_APDS9960_APDS9960_H_
 
+#include <gpio.h>
+
 #define APDS9960_I2C_ADDRESS		0x39
 
 #define APDS9960_ENABLE_REG		0x80
@@ -210,8 +212,14 @@
 
 struct apds9960_data {
 	struct device *i2c;
+	struct device *gpio;
+	struct gpio_callback gpio_cb;
+	struct k_work work;
+	struct device *dev;
 	u16_t sample_crgb[4];
 	u8_t pdata;
+
+	struct k_sem data_sem;
 };
 
 #define SYS_LOG_DOMAIN "APDS9960"
