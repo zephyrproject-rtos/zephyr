@@ -79,8 +79,7 @@ Z_SYSCALL_HANDLER(k_stack_alloc_init, stack, num_entries)
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(stack, K_OBJ_STACK));
 	Z_OOPS(Z_SYSCALL_VERIFY(num_entries > 0));
 
-	_impl_k_stack_alloc_init((struct k_stack *)stack, num_entries);
-	return 0;
+	return _impl_k_stack_alloc_init((struct k_stack *)stack, num_entries);
 }
 #endif
 
