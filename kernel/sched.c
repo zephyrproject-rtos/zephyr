@@ -376,7 +376,7 @@ void _thread_priority_set(struct k_thread *thread, int prio)
 	}
 }
 
-int _reschedule(int key)
+void _reschedule(int key)
 {
 #ifdef CONFIG_SMP
 	if (!_current_cpu->swap_ok) {
@@ -394,13 +394,13 @@ int _reschedule(int key)
 	return _Swap(key);
 #else
 	if (_get_next_ready_thread() != _current) {
-		return _Swap(key);
+		(void)_Swap(key);
+		return;
 	}
 #endif
 
  noswap:
 	irq_unlock(key);
-	return 0;
 }
 
 void k_sched_lock(void)
