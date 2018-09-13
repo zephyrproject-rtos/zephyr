@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_NETWORK_DEBUG_LEVEL
-#define SYS_LOG_DOMAIN "function/eem"
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME usb_eem
+#define LOG_LEVEL CONFIG_USB_DEVICE_NETWORK_DEBUG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <net_private.h>
 #include <zephyr.h>
@@ -80,7 +82,7 @@ static int eem_send(struct net_pkt *pkt)
 				tx_buf, b_idx,
 				USB_TRANS_WRITE);
 	if (ret != b_idx) {
-		SYS_LOG_ERR("Transfer failure");
+		LOG_ERR("Transfer failure");
 		return -EIO;
 	}
 
@@ -105,7 +107,7 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 
 		if (eem_size + sizeof(u16_t) > size) {
 			/* eem pkt greater than transferred data */
-			SYS_LOG_ERR("pkt size error");
+			LOG_ERR("pkt size error");
 			break;
 		}
 
@@ -117,23 +119,23 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 			goto done;
 		}
 
-		SYS_LOG_DBG("hdr 0x%x, eem_size %d, size %d",
-			    eem_hdr, eem_size, size);
+		LOG_DBG("hdr 0x%x, eem_size %d, size %d",
+			eem_hdr, eem_size, size);
 
 		if (!size || !eem_size) {
-			SYS_LOG_DBG("no payload");
+			LOG_DBG("no payload");
 			break;
 		}
 
 		pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 		if (!pkt) {
-			SYS_LOG_ERR("Unable to alloc pkt\n");
+			LOG_ERR("Unable to alloc pkt");
 			break;
 		}
 
 		frag = net_pkt_get_frag(pkt, K_FOREVER);
 		if (!frag) {
-			SYS_LOG_ERR("Unable to alloc fragment");
+			LOG_ERR("Unable to alloc fragment");
 			net_pkt_unref(pkt);
 			break;
 		}
@@ -142,7 +144,7 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 
 		/* copy payload and discard 32-bit sentinel */
 		if (!net_pkt_append_all(pkt, eem_size - 4, ptr, K_FOREVER)) {
-			SYS_LOG_ERR("Unable to append pkt\n");
+			LOG_ERR("Unable to append pkt");
 			net_pkt_unref(pkt);
 			break;
 		}
@@ -173,7 +175,7 @@ static int eem_connect(bool connected)
 
 static inline void eem_status_interface(u8_t *iface)
 {
-	SYS_LOG_DBG("");
+	LOG_DBG("");
 
 	if (*iface != netusb_get_first_iface_number()) {
 		return;
@@ -187,12 +189,12 @@ static void eem_status_cb(enum usb_dc_status_code status, u8_t *param)
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_DISCONNECTED:
-		SYS_LOG_DBG("USB device disconnected");
+		LOG_DBG("USB device disconnected");
 		netusb_disable();
 		break;
 
 	case USB_DC_INTERFACE:
-		SYS_LOG_DBG("USB interface selected");
+		LOG_DBG("USB interface selected");
 		eem_status_interface(param);
 		break;
 
@@ -202,12 +204,12 @@ static void eem_status_cb(enum usb_dc_status_code status, u8_t *param)
 	case USB_DC_CONFIGURED:
 	case USB_DC_SUSPEND:
 	case USB_DC_RESUME:
-		SYS_LOG_DBG("USB unhandlded state: %d", status);
+		LOG_DBG("USB unhandlded state: %d", status);
 		break;
 
 	case USB_DC_UNKNOWN:
 	default:
-		SYS_LOG_DBG("USB unknown state: %d", status);
+		LOG_DBG("USB unknown state: %d", status);
 		break;
 	}
 }

@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_NETWORK_DEBUG_LEVEL
-#define SYS_LOG_DOMAIN "function/ecm"
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME usb_ecm
+#define LOG_LEVEL CONFIG_USB_DEVICE_NETWORK_DEBUG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* Enable verbose debug printing extra hexdumps */
 #define VERBOSE_DEBUG	0
@@ -58,17 +60,15 @@ static u8_t tx_buf[NETUSB_MTU], rx_buf[NETUSB_MTU];
 static int ecm_class_handler(struct usb_setup_packet *setup, s32_t *len,
 			     u8_t **data)
 {
-	SYS_LOG_DBG("");
-
 	if (setup->bmRequestType != USB_CDC_ECM_REQ_TYPE) {
-		SYS_LOG_WRN("Unhandled req_type 0x%x", setup->bmRequestType);
+		LOG_WRN("Unhandled req_type 0x%x", setup->bmRequestType);
 		return 0;
 	}
 
 	switch (setup->bRequest) {
 	case USB_CDC_SET_ETH_PKT_FILTER:
-		SYS_LOG_DBG("intf 0x%x filter 0x%x", setup->wIndex,
-			    setup->wValue);
+		LOG_DBG("intf 0x%x filter 0x%x", setup->wIndex,
+			setup->wValue);
 		break;
 	default:
 		break;
@@ -79,7 +79,7 @@ static int ecm_class_handler(struct usb_setup_packet *setup, s32_t *len,
 
 static void ecm_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
-	SYS_LOG_DBG("EP 0x%x status %d", ep, ep_status);
+	LOG_DBG("EP 0x%x status %d", ep, ep_status);
 }
 
 /* Retrieve expected pkt size from ethernet/ip header */
@@ -103,7 +103,7 @@ static size_t ecm_eth_size(void *ecm_pkt, size_t len)
 		ip_len = ntohs(((struct net_ipv6_hdr *)ip_data)->len);
 		break;
 	default:
-		SYS_LOG_DBG("Unknown hdr type 0x%04x", hdr->type);
+		LOG_DBG("Unknown hdr type 0x%04x", hdr->type);
 		return 0;
 	}
 
@@ -135,7 +135,7 @@ static int ecm_send(struct net_pkt *pkt)
 	ret = usb_transfer_sync(ecm_ep_data[ECM_IN_EP_IDX].ep_addr,
 				tx_buf, b_idx, USB_TRANS_WRITE);
 	if (ret != b_idx) {
-		SYS_LOG_ERR("Transfer failure");
+		LOG_ERR("Transfer failure");
 		return -EINVAL;
 	}
 
@@ -165,13 +165,13 @@ static void ecm_read_cb(u8_t ep, int size, void *priv)
 
 	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 	if (!pkt) {
-		SYS_LOG_ERR("no memory for network packet\n");
+		LOG_ERR("no memory for network packet");
 		goto done;
 	}
 
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
 	if (!frag) {
-		SYS_LOG_ERR("no memory for network packet\n");
+		LOG_ERR("no memory for network packet");
 		net_pkt_unref(pkt);
 		goto done;
 	}
@@ -179,7 +179,7 @@ static void ecm_read_cb(u8_t ep, int size, void *priv)
 	net_pkt_frag_insert(pkt, frag);
 
 	if (!net_pkt_append_all(pkt, size, rx_buf, K_FOREVER)) {
-		SYS_LOG_ERR("no memory for network packet\n");
+		LOG_ERR("no memory for network packet");
 		net_pkt_unref(pkt);
 		goto done;
 	}
@@ -206,7 +206,7 @@ static int ecm_connect(bool connected)
 
 static inline void ecm_status_interface(u8_t *iface)
 {
-	SYS_LOG_DBG("iface %u", *iface);
+	LOG_DBG("iface %u", *iface);
 
 	/* First interface is CDC Comm interface */
 	if (*iface != netusb_get_first_iface_number() + 1) {
@@ -221,12 +221,12 @@ static void ecm_status_cb(enum usb_dc_status_code status, u8_t *param)
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_DISCONNECTED:
-		SYS_LOG_DBG("USB device disconnected");
+		LOG_DBG("USB device disconnected");
 		netusb_disable();
 		break;
 
 	case USB_DC_INTERFACE:
-		SYS_LOG_DBG("USB interface selected");
+		LOG_DBG("USB interface selected");
 		ecm_status_interface(param);
 		break;
 
@@ -236,12 +236,12 @@ static void ecm_status_cb(enum usb_dc_status_code status, u8_t *param)
 	case USB_DC_CONFIGURED:
 	case USB_DC_SUSPEND:
 	case USB_DC_RESUME:
-		SYS_LOG_DBG("USB unhandlded state: %d", status);
+		LOG_DBG("USB unhandlded state: %d", status);
 		break;
 
 	case USB_DC_UNKNOWN:
 	default:
-		SYS_LOG_DBG("USB unknown state: %d", status);
+		LOG_DBG("USB unknown state: %d", status);
 		break;
 	}
 }
