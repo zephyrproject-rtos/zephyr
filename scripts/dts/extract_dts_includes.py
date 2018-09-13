@@ -685,6 +685,14 @@ def generate_node_definitions(yaml_list):
         if node_compat is not None and node_compat in yaml_list:
             extract_node_include_info(
                 reduced, k, k, yaml_list, None)
+        compats = []
+        # For a given node we only want compats that we know about
+        # eg, if a node has 3 compats and we only know about 2 from yaml we
+        # filter out the one compat this isn't known.
+        for node_compat in get_node_compats(k):
+            if node_compat is not None and node_compat in yaml_list:
+                compats.append(node_compat)
+        compatible.populate_edts(k, compats)
 
     if defs == {}:
         raise Exception("No information parsed from dts file.")
