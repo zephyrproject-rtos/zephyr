@@ -1168,6 +1168,7 @@ testcase_valid_keys = {"tags": {"type": "set", "required": False},
                        "extra_sections": {"type": "list", "default": []},
                        "platform_exclude": {"type": "set"},
                        "platform_whitelist": {"type": "set"},
+                       "runtime_filter": {"type": "str"},
                        "toolchain_exclude": {"type": "set"},
                        "toolchain_whitelist": {"type": "set"},
                        "filter": {"type": "str"},
@@ -1406,6 +1407,7 @@ class TestCase:
         self.skip = tc_dict["skip"]
         self.platform_exclude = tc_dict["platform_exclude"]
         self.platform_whitelist = tc_dict["platform_whitelist"]
+        self.runtime_filter = tc_dict["runtime_filter"]
         self.toolchain_exclude = tc_dict["toolchain_exclude"]
         self.toolchain_whitelist = tc_dict["toolchain_whitelist"]
         self.tc_filter = tc_dict["filter"]
@@ -1713,7 +1715,6 @@ class TestSuite:
             print(str(e))
             sys.exit(2)
 
-
         instances = []
         discards = {}
         platform_filter = options.platform
@@ -1812,6 +1813,19 @@ class TestSuite:
 
                     if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
                         continue
+
+                    # Evaluate the platform filter for the current platform name
+                    runtime_kws = dict(options.device_settings)
+                    runtime_kws.update({
+                        "platform": plat.name,
+                        plat.name: True
+                    })
+                    if tc.runtime_filter != '' and \
+                       not expr_parser.parse(tc.runtime_filter, runtime_kws):
+                        info("%s@%s: build only, as the platform doesn't fullfil "
+                             "runtime requirements: '%s'" %
+                             (tc.name, plat.name, tc.runtime_filter))
+                        tc.build_only = True
 
                     if (tc.tc_filter and (plat.default or all_plats or platform_filter)
                             and toolchain in plat.supported_toolchains):
@@ -2450,6 +2464,14 @@ def parse_arguments():
         "--device-serial",
 		help="Serial device for accessing the board (e.g., /dev/ttyACM0)")
     parser.add_argument(
+        "--device-settings", action='append', type=str, default=[],
+	       help="Add settings to the platform, like for example what "
+                    "runtime features it supports (eg: ABC adds ABC as "
+                    "True, CDE=XYZ as CDE as a string XYZ; these can be "
+                    "used to match testcases that require said feature "
+                    "with the runtime_filter keyword to the testcase "
+                    "(eg: platform == 'quark_d2000_crb' and ABC or CDE)")
+    parser.add_argument(
             "--show-footprint", action="store_true",
             help="Show footprint statistics and deltas since last release."
             )
@@ -2679,6 +2701,19 @@ def main():
     if options.device_testing:
         if options.device_serial is None or len(options.platform) != 1:
             sys.exit(1)
+        settings = {}
+        for setting in options.device_settings:
+            if '=' in setting:
+                key, val = setting.split('=', 1)
+                if val.lower() == 'false':
+                    val = False
+                elif val.lower() == 'true':
+                    val = True
+            else:
+                val = True
+            settings[key] = val
+        # override the list from the cmdline with a key/val dict
+        options.device_settings = settings
 
     VERBOSE += options.verbose
     INLINE_LOGS = options.inline_logs
