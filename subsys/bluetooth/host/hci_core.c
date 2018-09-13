@@ -5387,6 +5387,36 @@ int bt_le_scan_stop(void)
 }
 #endif /* CONFIG_BT_OBSERVER */
 
+int bt_le_set_chan_map(u8_t chan_map[5])
+{
+	struct bt_hci_cp_le_set_host_chan_classif *cp;
+	struct net_buf *buf;
+
+	if (!IS_ENABLED(CONFIG_BT_CENTRAL)) {
+		return -ENOTSUP;
+	}
+
+	if (!BT_CMD_TEST(bt_dev.supported_commands, 27, 3)) {
+		BT_WARN("Set Host Channel Classification command is "
+			"not supported");
+		return -ENOTSUP;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF,
+				sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	memcpy(&cp->ch_map[0], &chan_map[0], 4);
+	cp->ch_map[4] = chan_map[4] & BIT_MASK(5);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF,
+				    buf, NULL);
+}
+
 struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
 {
 	struct net_buf *buf;
