@@ -26,9 +26,11 @@ config ARM_MPU
 	depends on SOC_FAMILY_ARM || SOC_FAMILY_STM32 || SOC_FAMILY_NRF || SOC_FAMILY_IMX || SOC_FAMILY_SAM
 	select ARM_CORE_MPU
 	select ARCH_HAS_EXECUTABLE_PAGE_BIT
-	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT if !(ARMV8_M_BASELINE || ARMV8_M_MAINLINE)
 	help
-	  MCU has ARM MPU
+	  MCU implements the standard ARM Memory Protection Unit.
+	  Note that ARMv8-M MPU does not require MPU regions to have
+	  power-of-two alignment for base address and region size.
 
 config NXP_MPU
 	bool "NXP MPU Support"
