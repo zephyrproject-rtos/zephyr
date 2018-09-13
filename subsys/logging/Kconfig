@@ -270,18 +270,26 @@ config LOG_BACKEND_UART
 	help
 	  When enabled backend is using UART to output logs.
 
+config LOG_BACKEND_NATIVE_POSIX
+	bool "Enable native backend"
+	depends on ARCH_POSIX
+	default n
+	help
+	  Enable backend in native_posix
+
 config LOG_BACKEND_SHOW_COLOR
 	bool "Enable colors in the backend"
-	depends on LOG_BACKEND_UART
+	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX
 	default y
 	help
 	  When enabled UART backend prints errors in red and warning in yellow.
 
 config LOG_BACKEND_FORMAT_TIMESTAMP
 	bool "Enable timestamp formatting in the backend"
-	depends on LOG_BACKEND_UART
+	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX
 	default y
 	help
 	  When enabled timestamp is formatted to hh:mm:ss:ms,us.
+
 endif
 endmenu
