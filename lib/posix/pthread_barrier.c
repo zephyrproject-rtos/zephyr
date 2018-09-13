@@ -11,7 +11,7 @@
 
 int pthread_barrier_wait(pthread_barrier_t *b)
 {
-	int key = irq_lock();
+	int key = irq_lock(), ret, serial = 0;
 
 	b->count++;
 
@@ -21,8 +21,11 @@ int pthread_barrier_wait(pthread_barrier_t *b)
 		while (_waitq_head(&b->wait_q)) {
 			_ready_one_thread(&b->wait_q);
 		}
-		return _reschedule(key);
+		serial = PTHREAD_BARRIER_SERIAL_THREAD;
+		ret = _reschedule(key);
 	} else {
-		return _pend_current_thread(key, &b->wait_q, K_FOREVER);
+		ret = _pend_current_thread(key, &b->wait_q, K_FOREVER);
 	}
+
+	return ret ? ret : serial;
 }

@@ -332,7 +332,9 @@ static inline int pthread_mutexattr_destroy(pthread_mutexattr_t *m)
 	struct pthread_barrier name = {				\
 		.wait_q = _WAIT_Q_INIT(&name.wait_q),		\
 		.max = count,					\
-	}
+}
+
+#define PTHREAD_BARRIER_SERIAL_THREAD 0
 
 /**
  * @brief POSIX threading compatibility API
