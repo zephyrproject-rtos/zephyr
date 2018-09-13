@@ -184,8 +184,6 @@
 #define APDS9960_DEFAULT_WTIME		255
 #define APDS9960_DEFAULT_CONFIG1	0x60
 #define APDS9960_DEFAULT_AGAIN		APDS9960_AGAIN_4X
-#define APDS9960_DEFAULT_AILT		0xFFFF
-#define APDS9960_DEFAULT_AIHT		0
 #define APDS9960_DEFAULT_PERS		0x11
 #define APDS9960_DEFAULT_CONFIG2	0x01
 #define APDS9960_DEFAULT_PROX_PPULSE	0x87
@@ -195,11 +193,21 @@
 #define APDS9960_DEFAULT_LDRIVE		APDS9960_LED_DRIVE_100MA
 #define APDS9960_DEFAULT_PGAIN		APDS9960_PGAIN_4X
 
+#ifdef CONFIG_APDS9960_TRIGGER
 #define APDS9960_DEFAULT_PILT		0
 #define APDS9960_DEFAULT_PIHT		50
+#define APDS9960_DEFAULT_AILT		10
+#define APDS9960_DEFAULT_AIHT		1000
+#define APDS9960_DEFAULT_CONFIG3	0
+#else
+#define APDS9960_DEFAULT_PILT		0
+#define APDS9960_DEFAULT_PIHT		1
+#define APDS9960_DEFAULT_AILT		0xFFFF
+#define APDS9960_DEFAULT_AIHT		0
+#define APDS9960_DEFAULT_CONFIG3	APDS9960_CONFIG3_SAI
+#endif
 
 #define APDS9960_DEFAULT_CONFIG2	0x01
-#define APDS9960_DEFAULT_CONFIG3	0
 #define APDS9960_DEFAULT_GPENTH		40
 #define APDS9960_DEFAULT_GEXTH		30
 #define APDS9960_DEFAULT_GCONF1		0x40
@@ -219,8 +227,26 @@ struct apds9960_data {
 	u16_t sample_crgb[4];
 	u8_t pdata;
 
+#ifdef CONFIG_APDS9960_TRIGGER
+	sensor_trigger_handler_t p_th_handler;
+	struct sensor_trigger p_th_trigger;
+#else
 	struct k_sem data_sem;
+#endif
 };
+
+#ifdef CONFIG_APDS9960_TRIGGER
+void apds9960_work_cb(struct k_work *work);
+
+int apds9960_attr_set(struct device *dev,
+		      enum sensor_channel chan,
+		      enum sensor_attribute attr,
+		      const struct sensor_value *val);
+
+int apds9960_trigger_set(struct device *dev,
+			 const struct sensor_trigger *trig,
+			 sensor_trigger_handler_t handler);
+#endif /* CONFIG_APDS9960_TRIGGER */
 
 #define SYS_LOG_DOMAIN "APDS9960"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL

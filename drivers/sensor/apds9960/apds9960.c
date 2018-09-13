@@ -1,9 +1,8 @@
 /*
- *
- *Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2018 Phytec Messtechnik GmbH
  *
  *SPDX-License-Identifier: Apache-2.0
- *
  */
 
 /* @file
@@ -29,7 +28,11 @@ static void apds9960_gpio_callback(struct device *dev,
 
 	gpio_pin_disable_callback(dev, CONFIG_APDS9960_GPIO_PIN_NUM);
 
+#ifdef CONFIG_APDS9960_TRIGGER
+	k_work_submit(&drv_data->work);
+#else
 	k_sem_give(&drv_data->data_sem);
+#endif
 }
 
 static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
@@ -37,9 +40,12 @@ static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct apds9960_data *data = dev->driver_data;
 	u8_t status;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+	if (chan != SENSOR_CHAN_ALL) {
+		SYS_LOG_ERR("Unsupported sensor channel");
+		return -ENOTSUP;
+	}
 
-	SYS_LOG_DBG("");
+#ifndef CONFIG_APDS9960_TRIGGER
 	gpio_pin_enable_callback(data->gpio,
 				 CONFIG_APDS9960_GPIO_PIN_NUM);
 
@@ -52,6 +58,7 @@ static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 
 	k_sem_take(&data->data_sem, K_FOREVER);
+#endif
 
 	if (i2c_reg_read_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			      APDS9960_STATUS_REG, &status)) {
@@ -76,12 +83,14 @@ static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	}
 
+#ifndef CONFIG_APDS9960_TRIGGER
 	if (i2c_reg_update_byte(data->i2c, APDS9960_I2C_ADDRESS,
 				APDS9960_ENABLE_REG,
 				APDS9960_ENABLE_PON,
 				0)) {
 		return -EIO;
 	}
+#endif
 
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_AICLEAR_REG, 0)) {
@@ -258,6 +267,11 @@ static int apds9960_sensor_setup(struct device *dev)
 		return -EIO;
 	}
 
+	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
+			       APDS9960_AICLEAR_REG, 0)) {
+		return -EIO;
+	}
+
 	/* Disable gesture interrupt */
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_GCONFIG4_REG, 0)) {
@@ -287,7 +301,7 @@ static int apds9960_sensor_setup(struct device *dev)
 
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_CONFIG3_REG,
-			       APDS9960_CONFIG3_SAI)) {
+			       APDS9960_DEFAULT_CONFIG3)) {
 		SYS_LOG_ERR("Configuration Register Three not set");
 		return -EIO;
 	}
@@ -338,8 +352,20 @@ static int apds9960_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
-	k_sem_init(&drv_data->data_sem, 0, UINT_MAX);
+#ifdef CONFIG_APDS9960_TRIGGER
+	drv_data->work.handler = apds9960_work_cb;
+	drv_data->dev = dev;
+	if (i2c_reg_update_byte(drv_data->i2c, APDS9960_I2C_ADDRESS,
+				APDS9960_ENABLE_REG,
+				APDS9960_ENABLE_PON,
+				APDS9960_ENABLE_PON)) {
+		SYS_LOG_ERR("Power on bit not set.");
+		return -EIO;
+	}
 
+#else
+	k_sem_init(&drv_data->data_sem, 0, UINT_MAX);
+#endif
 	return 0;
 }
 
@@ -373,6 +399,10 @@ static int apds9960_init(struct device *dev)
 static const struct sensor_driver_api apds9960_driver_api = {
 	.sample_fetch = &apds9960_sample_fetch,
 	.channel_get = &apds9960_channel_get,
+#ifdef CONFIG_APDS9960_TRIGGER
+	.attr_set = apds9960_attr_set,
+	.trigger_set = apds9960_trigger_set,
+#endif
 };
 
 static struct apds9960_data apds9960_data;
