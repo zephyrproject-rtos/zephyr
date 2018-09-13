@@ -364,7 +364,6 @@ static int dma_stm32_config(struct device *dev, u32_t id,
 	struct dma_stm32_stream_reg *regs = &ddata->stream[id].regs;
 	int ret;
 
-
 	if (id >= DMA_STM32_MAX_STREAMS) {
 		return -EINVAL;
 	}
@@ -376,6 +375,12 @@ static int dma_stm32_config(struct device *dev, u32_t id,
 	if (config->head_block->block_size > DMA_STM32_MAX_DATA_ITEMS) {
 		SYS_LOG_ERR("DMA error: Data size too big: %d\n",
 		       config->head_block->block_size);
+		return -EINVAL;
+	}
+
+	if ((MEMORY_TO_MEMORY == stream->direction) && (!ddata->mem2mem)) {
+		SYS_LOG_ERR("DMA error: Memcopy not supported for device %s",
+				dev->config->name);
 		return -EINVAL;
 	}
 
@@ -541,6 +546,7 @@ static void dma_stm32_irq_7(void *arg) { dma_stm32_irq_handler(arg, 7); }
 static void dma_stm32_1_config(struct dma_stm32_device *ddata)
 {
 	ddata->base = DMA_STM32_1_BASE;
+	ddata->mem2mem = false;
 
 	IRQ_CONNECT(DMA1_Stream0_IRQn, DMA_STM32_IRQ_PRI,
 		    dma_stm32_irq_0, DEVICE_GET(dma_stm32_1), 0);
