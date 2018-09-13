@@ -25,7 +25,7 @@
 #endif
 #endif
 
-#ifdef CONFIG_MQTT_LEGACY_LIB_TLS
+#ifdef CONFIG_MQTT_LIB_TLS
 #define SERVER_PORT		8883
 #else
 #define SERVER_PORT		1883
@@ -38,6 +38,8 @@
 #define APP_CONNECT_TRIES	10
 
 #define APP_MAX_ITERATIONS	100
+
+#define APP_MQTT_BUFFER_SIZE	128
 
 #define MQTT_CLIENTID		"zephyr_publisher"
 
