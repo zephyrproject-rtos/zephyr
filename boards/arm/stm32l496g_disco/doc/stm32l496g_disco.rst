@@ -139,6 +139,8 @@ The Zephyr stm32l496g_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 
@@ -160,10 +162,11 @@ For mode details please refer to `STM32L496G Discovery board User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
-- UART_1_TX : PB6
-- UART_1_RX : PG10
-- UART_2_TX : PA2
-- UART_2_RX : PD6
+- UART_1 TX/RX : PB6/PG10
+- UART_2 TX/RX : PA2/PD6 (ST-Link Virtual Port Com)
+- LPUART_1 TX/RX : PG7/PG8 (Arduino Serial)
+- I2C1 SCL/SDA : PB8/PB7 (Arduino I2C)
+- SPI1 SCK/MISO/MOSI : PA5/PB4/PB5 (Arduino SPI)
 - I2C_1_SCL : PB8
 - I2C_1_SDA : PB7
 - PWM_2_CH1 : PA0
