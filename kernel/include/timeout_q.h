@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _kernel_include_timeout_q__h_
-#define _kernel_include_timeout_q__h_
+#ifndef ZEPHYR_KERNEL_INCLUDE_TIMEOUT_Q_H_
+#define ZEPHYR_KERNEL_INCLUDE_TIMEOUT_Q_H_
 
 /**
  * @file
@@ -290,4 +290,4 @@ static inline s32_t _get_next_timeout_expiry(void)
 }
 #endif
 
-#endif /* _kernel_include_timeout_q__h_ */
+#endif /* ZEPHYR_KERNEL_INCLUDE_TIMEOUT_Q_H_ */

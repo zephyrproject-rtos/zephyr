@@ -659,8 +659,8 @@ def output_include_lines(fd, fixups):
     fd.write(" *               DO NOT MODIFY\n")
     fd.write(" */\n")
     fd.write("\n")
-    fd.write("#ifndef _DEVICE_TREE_BOARD_H" + "\n")
-    fd.write("#define _DEVICE_TREE_BOARD_H" + "\n")
+    fd.write("#ifndef DEVICE_TREE_BOARD_H" + "\n")
+    fd.write("#define DEVICE_TREE_BOARD_H" + "\n")
     fd.write("\n")
 
     node_keys = sorted(defs.keys())

@@ -11,8 +11,8 @@
  * This file contains private kernel APIs that are not architecture-specific.
  */
 
-#ifndef _NANO_INTERNAL__H_
-#define _NANO_INTERNAL__H_
+#ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
+#define ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
 
 #include <kernel.h>
 
@@ -232,4 +232,4 @@ extern int z_stack_adjust_initialized;
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* _NANO_INTERNAL__H_ */
+#endif /* ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_ */

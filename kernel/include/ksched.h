@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ksched__h_
-#define _ksched__h_
+#ifndef ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
+#define ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 
 #include <kernel_structs.h>
 #include <tracing.h>
@@ -287,4 +287,4 @@ static inline struct k_thread *_unpend1_no_timeout(_wait_q_t *wait_q)
 	return thread;
 }
 
-#endif /* _ksched__h_ */
+#endif /* ZEPHYR_KERNEL_INCLUDE_KSCHED_H_ */

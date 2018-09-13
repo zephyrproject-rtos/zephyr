@@ -154,8 +154,8 @@ driver_macro_tpl = """
 
 
 def write_validation_output(fp):
-    fp.write("#ifndef __DRIVER_VALIDATION_GEN_H__\n")
-    fp.write("#define __DRIVER_VALIDATION_GEN_H__\n")
+    fp.write("#ifndef DRIVER_VALIDATION_GEN_H\n")
+    fp.write("#define DRIVER_VALIDATION_GEN_H\n")
 
     fp.write("""#define Z_SYSCALL_DRIVER_GEN(ptr, op, driver_lower_case, driver_upper_case) \\
 		(Z_SYSCALL_OBJ(ptr, K_OBJ_DRIVER_##driver_upper_case) || \\
@@ -170,7 +170,7 @@ def write_validation_output(fp):
             "driver_upper": subsystem.upper(),
         })
 
-    fp.write("#endif /* __DRIVER_VALIDATION_GEN_H__ */\n")
+    fp.write("#endif /* DRIVER_VALIDATION_GEN_H */\n")
 
 
 def write_kobj_types_output(fp):
