@@ -21,22 +21,70 @@
 
 #include "apds9960.h"
 
+static void apds9960_gpio_callback(struct device *dev,
+				  struct gpio_callback *cb, u32_t pins)
+{
+	struct apds9960_data *drv_data =
+		CONTAINER_OF(cb, struct apds9960_data, gpio_cb);
+
+	gpio_pin_disable_callback(dev, CONFIG_APDS9960_GPIO_PIN_NUM);
+
+	k_sem_give(&drv_data->data_sem);
+}
+
 static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct apds9960_data *data = dev->driver_data;
+	u8_t status;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	/* Read CRGB registers */
-	if (i2c_burst_read(data->i2c, APDS9960_I2C_ADDRESS,
-			   APDS9960_CDATAL_REG,
-			   (u8_t *)&data->sample_crgb,
-			   sizeof(data->sample_crgb))) {
+	SYS_LOG_DBG("");
+	gpio_pin_enable_callback(data->gpio,
+				 CONFIG_APDS9960_GPIO_PIN_NUM);
+
+	if (i2c_reg_update_byte(data->i2c, APDS9960_I2C_ADDRESS,
+				APDS9960_ENABLE_REG,
+				APDS9960_ENABLE_PON | APDS9960_ENABLE_AIEN,
+				APDS9960_ENABLE_PON | APDS9960_ENABLE_AIEN)) {
+		SYS_LOG_ERR("Power on bit not set.");
 		return -EIO;
 	}
 
+	k_sem_take(&data->data_sem, K_FOREVER);
+
 	if (i2c_reg_read_byte(data->i2c, APDS9960_I2C_ADDRESS,
-			      APDS9960_PDATA_REG, &data->pdata)) {
+			      APDS9960_STATUS_REG, &status)) {
+		return -EIO;
+	}
+
+	SYS_LOG_DBG("status: 0x%x", status);
+	if (status & APDS9960_STATUS_PINT) {
+		if (i2c_reg_read_byte(data->i2c, APDS9960_I2C_ADDRESS,
+				      APDS9960_PDATA_REG, &data->pdata)) {
+			return -EIO;
+		}
+	}
+
+	if (status & APDS9960_STATUS_AINT) {
+		if (i2c_burst_read(data->i2c, APDS9960_I2C_ADDRESS,
+				   APDS9960_CDATAL_REG,
+				   (u8_t *)&data->sample_crgb,
+				   sizeof(data->sample_crgb))) {
+			return -EIO;
+		}
+
+	}
+
+	if (i2c_reg_update_byte(data->i2c, APDS9960_I2C_ADDRESS,
+				APDS9960_ENABLE_REG,
+				APDS9960_ENABLE_PON,
+				0)) {
+		return -EIO;
+	}
+
+	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
+			       APDS9960_AICLEAR_REG, 0)) {
 		return -EIO;
 	}
 
@@ -238,6 +286,13 @@ static int apds9960_sensor_setup(struct device *dev)
 	}
 
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
+			       APDS9960_CONFIG3_REG,
+			       APDS9960_CONFIG3_SAI)) {
+		SYS_LOG_ERR("Configuration Register Three not set");
+		return -EIO;
+	}
+
+	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_PERS_REG,
 			       APDS9960_DEFAULT_PERS)) {
 		SYS_LOG_ERR("Interrupt persistence not set");
@@ -254,25 +309,46 @@ static int apds9960_sensor_setup(struct device *dev)
 		return -EIO;
 	}
 
-	if (i2c_reg_update_byte(data->i2c, APDS9960_I2C_ADDRESS,
-				APDS9960_ENABLE_REG,
-				APDS9960_ENABLE_PON, APDS9960_ENABLE_PON)) {
-		SYS_LOG_ERR("Power on bit not set");
-		return -EIO;
-	}
-
 	return 0;
 }
 
-static const struct sensor_driver_api apds9960_driver_api = {
-	.sample_fetch = &apds9960_sample_fetch,
-	.channel_get = &apds9960_channel_get,
-};
+static int apds9960_init_interrupt(struct device *dev)
+{
+	struct apds9960_data *drv_data = dev->driver_data;
+
+	/* setup gpio interrupt */
+	drv_data->gpio = device_get_binding(CONFIG_APDS9960_GPIO_DEV_NAME);
+	if (drv_data->gpio == NULL) {
+		SYS_LOG_ERR("Failed to get pointer to %s device!",
+			    CONFIG_APDS9960_GPIO_DEV_NAME);
+		return -EINVAL;
+	}
+
+	gpio_pin_configure(drv_data->gpio, CONFIG_APDS9960_GPIO_PIN_NUM,
+			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
+			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE |
+			   GPIO_PUD_PULL_UP);
+
+	gpio_init_callback(&drv_data->gpio_cb,
+			   apds9960_gpio_callback,
+			   BIT(CONFIG_APDS9960_GPIO_PIN_NUM));
+
+	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
+		SYS_LOG_DBG("Failed to set gpio callback!");
+		return -EIO;
+	}
+
+	k_sem_init(&drv_data->data_sem, 0, UINT_MAX);
+
+	return 0;
+}
 
 static int apds9960_init(struct device *dev)
 {
 	struct apds9960_data *data = dev->driver_data;
 
+	/* Initialize time 5.7ms */
+	k_sleep(6);
 	data->i2c = device_get_binding(CONFIG_APDS9960_I2C_DEV_NAME);
 
 	if (data->i2c == NULL) {
@@ -286,11 +362,21 @@ static int apds9960_init(struct device *dev)
 
 	apds9960_sensor_setup(dev);
 
+	if (apds9960_init_interrupt(dev) < 0) {
+		SYS_LOG_ERR("Failed to initialize interrupt!");
+		return -EIO;
+	}
+
 	return 0;
 }
+
+static const struct sensor_driver_api apds9960_driver_api = {
+	.sample_fetch = &apds9960_sample_fetch,
+	.channel_get = &apds9960_channel_get,
+};
 
 static struct apds9960_data apds9960_data;
 
 DEVICE_AND_API_INIT(apds9960, CONFIG_APDS9960_DRV_NAME, &apds9960_init,
-		&apds9960_data, NULL, POST_KERNEL,
-		CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
+		    &apds9960_data, NULL, POST_KERNEL,
+		    CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
