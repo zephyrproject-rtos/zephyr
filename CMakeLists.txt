@@ -336,7 +336,7 @@ add_subdirectory(misc)
 # property which is set implicitly for custom command outputs
 include(misc/generated/CMakeLists.txt)
 
-if(EXISTS soc/${ARCH}/CMakeLists.txt)
+if(EXISTS ${SOC_DIR}/${ARCH}/CMakeLists.txt)
   add_subdirectory(${SOC_DIR}/${ARCH} soc/${ARCH})
 else()
   add_subdirectory(${SOC_DIR}/${ARCH}/${SOC_PATH} soc/${ARCH}/${SOC_PATH})
