@@ -40,6 +40,18 @@ const struct net_eth_addr *net_eth_broadcast_addr(void)
 	return &broadcast_eth_addr;
 }
 
+#if defined(CONFIG_NET_VLAN)
+static u8_t eth_hdr_buffer[sizeof(struct net_eth_vlan_hdr)];
+#else
+static u8_t eth_hdr_buffer[sizeof(struct net_eth_hdr)];
+#endif /* CONFIG_NET_VLAN */
+
+static struct net_buf eth_hdr_send = {
+	.data = eth_hdr_buffer,
+	.size = sizeof(eth_hdr_buffer),
+	.__buf = eth_hdr_buffer,
+};
+
 void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 				    struct net_eth_addr *mac_addr)
 {
@@ -457,16 +469,24 @@ static void set_vlan_priority(struct ethernet_context *ctx,
 #define set_vlan_priority(...)
 #endif /* CONFIG_NET_VLAN */
 
-static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
+static struct net_buf *ethernet_fill_header(struct net_if *iface,
 					    struct net_pkt *pkt,
 					    u32_t ptype)
 {
+	const struct ethernet_api *api = net_if_get_device(iface)->driver_api;
+	struct ethernet_context *ctx = net_if_l2_data(iface);
 	struct net_buf *hdr_frag;
 	struct net_eth_hdr *hdr;
 
-	hdr_frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
-	if (!hdr_frag) {
-		return NULL;
+	if (api->get_capabilities &&
+	    api->get_capabilities(net_if_get_device(iface)) &
+	    ETHERNET_TX_QUEUE) {
+		hdr_frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
+		if (!hdr_frag) {
+			return NULL;
+		}
+	} else {
+		hdr_frag = &eth_hdr_send;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_VLAN) &&
@@ -542,7 +562,11 @@ static void ethernet_remove_l2_header(struct net_pkt *pkt)
 	pkt->buffer = buf->frags;
 	buf->frags = NULL;
 
-	net_pkt_frag_unref(buf);
+	if (buf == &eth_hdr_send) {
+		buf->len = 0;
+	} else {
+		net_pkt_frag_unref(buf);
+	}
 }
 
 static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
@@ -620,7 +644,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 
 	/* Then set the ethernet header.
 	 */
-	if (!ethernet_fill_header(ctx, pkt, ptype)) {
+	if (!ethernet_fill_header(iface, pkt, ptype)) {
 		ret = -ENOMEM;
 		goto error;
 	}
