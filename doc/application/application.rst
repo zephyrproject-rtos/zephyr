@@ -481,7 +481,7 @@ the Zephyr tree, for example:
         └── arm
             └── st_stm32
                     ├── common
-                            └── stm32l0
+                    └── stm32l0
 
 
 
