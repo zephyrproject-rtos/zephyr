@@ -262,7 +262,15 @@ if(GIT_FOUND)
   execute_process(COMMAND ${GIT_EXECUTABLE} describe
     WORKING_DIRECTORY ${ZEPHYR_BASE}
     OUTPUT_VARIABLE BUILD_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_VARIABLE stderr
+    RESULT_VARIABLE return_code
+    )
+  if(return_code)
+    message(FATAL_ERROR "${stderr}")
+  elseif(CMAKE_VERBOSE_MAKEFILE)
+    message(STATUS "git describe stderr: ${stderr}")
+  endif()
 endif()
 
 set(SOC_NAME ${CONFIG_SOC})
