@@ -40,9 +40,13 @@ boards/arm/cc3220sf_launchxl/            @GAnthony
 boards/arm/curie_ble/                    @jhedberg
 boards/arm/disco_l475_iot1/              @erwango
 boards/arm/frdm*/                        @MaureenHelm
+boards/arm/frdm*/doc/                    @MaureenHelm @MeganHansen
 boards/arm/hexiwear*/                    @MaureenHelm
+boards/arm/hexiwear*/doc/                @MaureenHelm @MeganHansen
 boards/arm/lpcxpresso*/                  @MaureenHelm
+boards/arm/lpcxpresso*/doc/              @MaureenHelm @MeganHansen
 boards/arm/mimxrt*/                      @MaureenHelm
+boards/arm/mimxrt*/doc/                  @MaureenHelm @MeganHansen
 boards/arm/mps2_an385/                   @fvincenzo
 boards/arm/msp_exp432p401r_launchxl/     @Mani-Sadhasivam
 boards/arm/nrf51_blenano/                @rsalveti
