@@ -10,7 +10,6 @@
 #include <logging/log_ctrl.h>
 #include <logging/log_output.h>
 #include <logging/log_backend_uart.h>
-#include <logging/log_backend_native_posix.h>
 #include <misc/printk.h>
 #include <assert.h>
 #include <atomic.h>
@@ -24,13 +23,6 @@ LOG_BACKEND_UART_DEFINE(log_backend_uart);
 const struct log_backend *uart_backend = &log_backend_uart;
 #else
 const struct log_backend *uart_backend;
-#endif
-
-#ifdef CONFIG_LOG_BACKEND_NATIVE_POSIX
-LOG_BACKEND_DEFINE(log_backend_native_posix, log_backend_native_posix_api);
-const struct log_backend *native_posix_backend = &log_backend_native_posix;
-#else
-#define native_posix_backend NULL
 #endif
 
 static struct log_list_t list;
