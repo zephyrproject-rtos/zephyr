@@ -7,17 +7,23 @@
 	compatible = "qemu,nios2";
 
 	aliases {
-		uart-0 = &uart0;
+		uart_0 = &jtag_uart;
+		uart_1 = &ns16550_uart;
 	};
 
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,console = &uart0;
+		zephyr,console = &jtag_uart;
 	};
 };
 
-&uart0 {
+&jtag_uart {
+	status = "ok";
+	current-speed = <115200>;
+};
+
+&ns16550_uart {
 	status = "ok";
 	current-speed = <115200>;
 };
