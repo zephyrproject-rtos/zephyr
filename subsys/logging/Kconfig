@@ -270,15 +270,15 @@ config LOG_BACKEND_UART
 	help
 	  When enabled backend is using UART to output logs.
 
-config LOG_BACKEND_UART_SHOW_COLOR
-	bool "Enable colors in the UART backend"
+config LOG_BACKEND_SHOW_COLOR
+	bool "Enable colors in the backend"
 	depends on LOG_BACKEND_UART
 	default y
 	help
 	  When enabled UART backend prints errors in red and warning in yellow.
 
-config LOG_BACKEND_UART_FORMAT_TIMESTAMP
-	bool "Enable timestamp formatting in the UART backend"
+config LOG_BACKEND_FORMAT_TIMESTAMP
+	bool "Enable timestamp formatting in the backend"
 	depends on LOG_BACKEND_UART
 	default y
 	help

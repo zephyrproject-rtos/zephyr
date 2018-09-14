@@ -124,10 +124,10 @@ arguments or hexdump message with 12 bytes of data take 32 bytes.
 
 :option:`CONFIG_LOG_BACKEND_UART`: Enabled build-in UART backend.
 
-:option:`CONFIG_LOG_BACKEND_UART_SHOW_COLOR`: Enables coloring of errors (red)
+:option:`CONFIG_LOG_BACKEND_SHOW_COLOR`: Enables coloring of errors (red)
 and warnings (yellow).
 
-:option:`CONFIG_LOG_BACKEND_UART_FORMAT_TIMESTAMP`: If enabled timestamp is
+:option:`CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP`: If enabled timestamp is
 formatted to *hh:mm:ss:mmm,uuu*. Otherwise is printed in raw format.
 
 .. _log_usage:
