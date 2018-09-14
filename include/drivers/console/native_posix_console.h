@@ -13,9 +13,7 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_NATIVE_POSIX_STDOUT_CONSOLE)
 void posix_flush_stdout(void);
-#endif
 
 #if defined(CONFIG_NATIVE_POSIX_STDIN_CONSOLE)
 void native_stdin_register_input(struct k_fifo *avail, struct k_fifo *lines,
