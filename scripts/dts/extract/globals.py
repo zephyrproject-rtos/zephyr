@@ -121,6 +121,11 @@ def get_phandles(root, name, handles):
 
 
 def insert_defs(node_address, new_defs, new_aliases):
+
+    for key in new_defs.keys():
+        if key.startswith('CONFIG_DT_COMPAT_'):
+            node_address = 'Compatibles'
+
     if node_address in defs:
         if 'aliases' in defs[node_address]:
             defs[node_address]['aliases'].update(new_aliases)
