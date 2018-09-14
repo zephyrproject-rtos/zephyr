@@ -9,8 +9,8 @@
  * @brief Socket Offload Redirect API
  */
 
-#ifndef __SOCKET_OFFLOAD_OPS_H__
-#define __SOCKET_OFFLOAD_OPS_H__
+#ifndef ZEPHYR_INCLUDE_NET_SOCKET_OFFLOAD_OPS_H_
+#define ZEPHYR_INCLUDE_NET_SOCKET_OFFLOAD_OPS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,4 +53,4 @@ extern void socket_offload_register(const struct socket_offload *ops);
 }
 #endif
 
-#endif /* __SOCKET_OFFLOAD_OPS_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_SOCKET_OFFLOAD_OPS_H_ */

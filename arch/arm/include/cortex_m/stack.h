@@ -11,8 +11,8 @@
  * Stack helper functions.
  */
 
-#ifndef _ARM_CORTEXM_STACK__H_
-#define _ARM_CORTEXM_STACK__H_
+#ifndef ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_STACK_H_
+#define ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_STACK_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,4 +63,4 @@ static ALWAYS_INLINE void _InterruptStackSetup(void)
 }
 #endif
 
-#endif /* _ARM_CORTEXM_STACK__H_ */
+#endif /* ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_STACK_H_ */

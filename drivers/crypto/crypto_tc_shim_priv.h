@@ -14,8 +14,8 @@
  * from dynamic memory allocation.
  */
 
-#ifndef __TC_SHIM_PRIV_H__
-#define __TC_SHIM_PRIV_H__
+#ifndef ZEPHYR_DRIVERS_CRYPTO_CRYPTO_TC_SHIM_PRIV_H_
+#define ZEPHYR_DRIVERS_CRYPTO_CRYPTO_TC_SHIM_PRIV_H_
 
 #include <tinycrypt/aes.h>
 
@@ -24,4 +24,4 @@ struct tc_shim_drv_state {
 	struct tc_aes_key_sched_struct session_key;
 };
 
-#endif  /* __TC_SHIM_PRIV_H__ */
+#endif  /* ZEPHYR_DRIVERS_CRYPTO_CRYPTO_TC_SHIM_PRIV_H_ */

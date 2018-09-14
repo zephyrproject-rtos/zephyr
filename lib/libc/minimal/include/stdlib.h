@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INC_stdlib_h__
-#define __INC_stdlib_h__
+#ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDLIB_H_
+#define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDLIB_H_
 
 #include <stddef.h>
 #ifdef __cplusplus
@@ -30,4 +30,4 @@ void *reallocarray(void *ptr, size_t nmemb, size_t size);
 }
 #endif
 
-#endif  /* __INC_stdlib_h__ */
+#endif  /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDLIB_H_ */

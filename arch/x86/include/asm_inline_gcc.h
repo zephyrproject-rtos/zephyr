@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ASM_INLINE_GCC_H
-#define _ASM_INLINE_GCC_H
+#ifndef ZEPHYR_ARCH_X86_INCLUDE_ASM_INLINE_GCC_H_
+#define ZEPHYR_ARCH_X86_INCLUDE_ASM_INLINE_GCC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -141,4 +141,4 @@ static inline void _do_sse_regs_init(void)
 }
 #endif
 
-#endif /* _ASM_INLINE_GCC_H */
+#endif /* ZEPHYR_ARCH_X86_INCLUDE_ASM_INLINE_GCC_H_ */

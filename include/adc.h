@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INCLUDE_ADC_H__
-#define __INCLUDE_ADC_H__
+#ifndef ZEPHYR_INCLUDE_ADC_H_
+#define ZEPHYR_INCLUDE_ADC_H_
 
 #include <device.h>
 
@@ -374,4 +374,4 @@ static inline int adc_read_async(struct device *dev,
 }
 #endif
 
-#endif  /* __INCLUDE_ADC_H__ */
+#endif  /* ZEPHYR_INCLUDE_ADC_H_ */

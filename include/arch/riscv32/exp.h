@@ -11,8 +11,8 @@
  * RISCV32-specific kernel exception handling interface.
  */
 
-#ifndef _ARCH_RISCV32_EXP_H_
-#define _ARCH_RISCV32_EXP_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_RISCV32_EXP_H_
+#define ZEPHYR_INCLUDE_ARCH_RISCV32_EXP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,4 +79,4 @@ extern void _SysFatalErrorHandler(unsigned int reason,
 }
 #endif
 
-#endif /* _ARCH_RISCV32_EXP_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_RISCV32_EXP_H_ */

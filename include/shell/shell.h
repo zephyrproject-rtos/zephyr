@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SHELL_H_
-#define _SHELL_H_
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -205,4 +205,4 @@ static inline int shell_run(struct device *dev)
 }
 #endif
 
-#endif /* _SHELL_H_ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_H_ */

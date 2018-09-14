@@ -13,8 +13,8 @@
 
 /* Data buffer API - used for all data to/from net */
 
-#ifndef __NET_PKT_H__
-#define __NET_PKT_H__
+#ifndef ZEPHYR_INCLUDE_NET_NET_PKT_H_
+#define ZEPHYR_INCLUDE_NET_NET_PKT_H_
 
 #include <zephyr/types.h>
 #include <stdbool.h>
@@ -1882,4 +1882,4 @@ const char *net_pkt_pool2str(struct net_buf_pool *pool);
 }
 #endif
 
-#endif /* __NET_PKT_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_NET_PKT_H_ */

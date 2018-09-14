@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _AIO_COMPARATOR_H_
-#define _AIO_COMPARATOR_H_
+#ifndef ZEPHYR_INCLUDE_AIO_COMPARATOR_H_
+#define ZEPHYR_INCLUDE_AIO_COMPARATOR_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -109,4 +109,4 @@ static inline int _impl_aio_cmp_get_pending_int(struct device *dev)
 
 #include <syscalls/aio_comparator.h>
 
-#endif /* _AIO_COMPARATOR_H_ */
+#endif /* ZEPHYR_INCLUDE_AIO_COMPARATOR_H_ */

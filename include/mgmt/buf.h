@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_MGMT_BUF
-#define H_MGMT_BUF
+#ifndef ZEPHYR_INCLUDE_MGMT_BUF_H_
+#define ZEPHYR_INCLUDE_MGMT_BUF_H_
 
 #include <inttypes.h>
 #include "cbor_encoder_writer.h"

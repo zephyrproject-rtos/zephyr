@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef TOOLCHAIN_GCC_H
-#define TOOLCHAIN_GCC_H
+#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_
+#define ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_
 /**
  * @file
  * @brief GCC toolchain abstraction
@@ -366,4 +366,4 @@ A##a:
 	__asm__ __volatile__ ("" ::: "memory"); \
 } while ((0))
 
-#endif /* TOOLCHAIN_GCC_H */
+#endif /* ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_ */

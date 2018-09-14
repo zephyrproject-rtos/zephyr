@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SENSOR_ADXL372_H__
-#define __SENSOR_ADXL372_H__
+#ifndef ZEPHYR_DRIVERS_SENSOR_ADXL372_ADXL372_H_
+#define ZEPHYR_DRIVERS_SENSOR_ADXL372_ADXL372_H_
 
 #include <zephyr/types.h>
 #include <device.h>
@@ -371,4 +371,4 @@ int adxl372_init_interrupt(struct device *dev);
 #define SYS_LOG_DOMAIN "ADXL372"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <logging/sys_log.h>
-#endif /* __SENSOR_ADXL372_H__ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_ADXL372_ADXL372_H_ */

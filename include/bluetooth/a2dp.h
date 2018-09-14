@@ -7,8 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_A2DP_H
-#define __BT_A2DP_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -108,4 +108,4 @@ int bt_a2dp_register_endpoint(struct bt_a2dp_endpoint *endpoint,
 }
 #endif
 
-#endif /* __BT_A2DP_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_ */

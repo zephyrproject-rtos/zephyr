@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SENSOR_AK8975__
-#define __SENSOR_AK8975__
+#ifndef ZEPHYR_DRIVERS_SENSOR_AK8975_AK8975_H_
+#define ZEPHYR_DRIVERS_SENSOR_AK8975_AK8975_H_
 
 #include <device.h>
 
@@ -59,4 +59,4 @@ struct ak8975_data {
 	u8_t z_adj;
 };
 
-#endif /* __SENSOR_AK8975__ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_AK8975_AK8975_H_ */

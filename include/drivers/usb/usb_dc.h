@@ -14,8 +14,8 @@
  * drivers should implement the APIs described in this file.
  */
 
-#ifndef __USB_DC_H__
-#define __USB_DC_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_USB_USB_DC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_USB_USB_DC_H_
 
 #include <device.h>
 
@@ -394,4 +394,4 @@ int usb_dc_ep_mps(u8_t ep);
  * @}
  */
 
-#endif /* __USB_DC_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_USB_USB_DC_H_ */

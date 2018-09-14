@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SENSOR_APDS9960_H_
-#define _SENSOR_APDS9960_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_APDS9960_APDS9960_H_
+#define ZEPHYR_DRIVERS_SENSOR_APDS9960_APDS9960_H_
 
 #define APDS9960_I2C_ADDRESS		0x39
 
@@ -275,4 +275,4 @@ struct apds9960_data {
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <logging/sys_log.h>
 
-#endif /* _SENSOR_APDS9960_H_*/
+#endif /* ZEPHYR_DRIVERS_SENSOR_APDS9960_APDS9960_H_*/

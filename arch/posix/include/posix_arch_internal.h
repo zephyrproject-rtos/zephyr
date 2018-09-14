@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _POSIX_INTERNAL_H
-#define _POSIX_INTERNAL_H
+#ifndef ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_ARCH_INTERNAL_H_
+#define ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_ARCH_INTERNAL_H_
 
 #include "toolchain.h"
 
@@ -29,7 +29,7 @@ static inline void _safe_call(int test, const char *test_str)
 }
 #endif
 
-#endif /* _POSIX_INTERNAL_H */
+#endif /* ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_ARCH_INTERNAL_H_ */
 
 /*
  * Note 1:

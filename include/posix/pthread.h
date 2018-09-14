@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __PTHREAD_H__
-#define __PTHREAD_H__
+#ifndef ZEPHYR_INCLUDE_POSIX_PTHREAD_H_
+#define ZEPHYR_INCLUDE_POSIX_PTHREAD_H_
 
 #include <kernel.h>
 #include <wait_q.h>
@@ -517,4 +517,4 @@ int pthread_key_delete(pthread_key_t key);
 int pthread_setspecific(pthread_key_t key, const void *value);
 void *pthread_getspecific(pthread_key_t key);
 
-#endif /* __PTHREAD_H__ */
+#endif /* ZEPHYR_INCLUDE_POSIX_PTHREAD_H_ */

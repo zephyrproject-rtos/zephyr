@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _BMI160_H_
-#define _BMI160_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_
+#define ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_
 
 #include <gpio.h>
 #include <spi.h>
@@ -481,4 +481,4 @@ s32_t bmi160_gyr_reg_val_to_range(u8_t reg_val);
 #define SYS_LOG_DOMAIN "BMI160"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <logging/sys_log.h>
-#endif /* _BMI160_H_ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_ */

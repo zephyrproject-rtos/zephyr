@@ -5,8 +5,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _PRINTK_H_
-#define _PRINTK_H_
+#ifndef ZEPHYR_INCLUDE_MISC_PRINTK_H_
+#define ZEPHYR_INCLUDE_MISC_PRINTK_H_
 
 #include <toolchain.h>
 #include <stddef.h>

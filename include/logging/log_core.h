@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef LOG_FRONTEND_H
-#define LOG_FRONTEND_H
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
 
 #include <logging/log_msg.h>
 #include <logging/log_instance.h>
@@ -475,4 +475,4 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap);
 }
 #endif
 
-#endif /* LOG_FRONTEND_H */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_ */

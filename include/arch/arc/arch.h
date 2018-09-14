@@ -13,8 +13,8 @@
  * include/arch/cpu.h)
  */
 
-#ifndef _ARC_ARCH__H_
-#define _ARC_ARCH__H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARC_ARCH_H_
+#define ZEPHYR_INCLUDE_ARCH_ARC_ARCH_H_
 
 #include <generated_dts_board.h>
 #include <sw_isr_table.h>
@@ -227,4 +227,4 @@ typedef u32_t k_mem_partition_attr_t;
 #ifdef __cplusplus
 }
 #endif
-#endif /* _ARC_ARCH__H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARC_ARCH_H_ */

@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _section_tags__h_
-#define _section_tags__h_
+#ifndef ZEPHYR_INCLUDE_LINKER_SECTION_TAGS_H_
+#define ZEPHYR_INCLUDE_LINKER_SECTION_TAGS_H_
 
 #include <toolchain.h>
 
@@ -27,4 +27,4 @@
 
 #endif /* !_ASMLANGUAGE */
 
-#endif /* _section_tags__h_ */
+#endif /* ZEPHYR_INCLUDE_LINKER_SECTION_TAGS_H_ */

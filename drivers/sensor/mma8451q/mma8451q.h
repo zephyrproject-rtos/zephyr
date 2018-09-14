@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SENSOR_MMA8451Q
-#define _SENSOR_MMA8451Q
+#ifndef ZEPHYR_DRIVERS_SENSOR_MMA8451Q_MMA8451Q_H_
+#define ZEPHYR_DRIVERS_SENSOR_MMA8451Q_MMA8451Q_H_
 
 #include <device.h>
 #include <misc/util.h>

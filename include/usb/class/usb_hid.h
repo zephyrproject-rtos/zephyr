@@ -14,8 +14,8 @@
  * Version 1.11 document (HID1_11-1.pdf).
  */
 
-#ifndef __USB_HID_H__
-#define __USB_HID_H__
+#ifndef ZEPHYR_INCLUDE_USB_CLASS_USB_HID_H_
+#define ZEPHYR_INCLUDE_USB_CLASS_USB_HID_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -170,4 +170,4 @@ int usb_hid_init(void);
 }
 #endif
 
-#endif /* __USB_HID_H__ */
+#endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_HID_H_ */

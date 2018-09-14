@@ -12,8 +12,8 @@
  * other definitions for the RISCV32 processor architecture.
  */
 
-#ifndef _kernel_arch_data_h_
-#define _kernel_arch_data_h_
+#ifndef ZEPHYR_ARCH_RISCV32_INCLUDE_KERNEL_ARCH_DATA_H_
+#define ZEPHYR_ARCH_RISCV32_INCLUDE_KERNEL_ARCH_DATA_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,4 +41,4 @@ extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* _kernel_arch_data_h_ */
+#endif /* ZEPHYR_ARCH_RISCV32_INCLUDE_KERNEL_ARCH_DATA_H_ */

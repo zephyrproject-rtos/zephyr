@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SPI_DW_REGS_H__
-#define __SPI_DW_REGS_H__
+#ifndef ZEPHYR_DRIVERS_SPI_SPI_DW_REGS_H_
+#define ZEPHYR_DRIVERS_SPI_SPI_DW_REGS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,4 +62,4 @@ DEFINE_TEST_BIT_OP(icr, DW_SPI_REG_ICR, DW_SPI_SR_ICR_BIT)
 }
 #endif
 
-#endif /* __SPI_DW_REGS_H__ */
+#endif /* ZEPHYR_DRIVERS_SPI_SPI_DW_REGS_H_ */

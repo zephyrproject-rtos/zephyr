@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INC_stdint_h__
-#define __INC_stdint_h__
+#ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDINT_H_
+#define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDINT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,4 +76,4 @@ typedef unsigned int        uintptr_t;
 }
 #endif
 
-#endif /* __INC_stdint_h__ */
+#endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDINT_H_ */

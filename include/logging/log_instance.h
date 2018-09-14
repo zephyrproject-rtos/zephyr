@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef LOG_INSTANCE_H
-#define LOG_INSTANCE_H
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_INSTANCE_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_INSTANCE_H_
 
 #include <zephyr/types.h>
 
@@ -106,4 +106,4 @@ struct log_source_dynamic_data {
 }
 #endif
 
-#endif /* LOG_INSTANCE_H */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_INSTANCE_H_ */

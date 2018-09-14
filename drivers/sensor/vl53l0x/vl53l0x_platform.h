@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _VL53L0X_PLATFORM_H_
-#define _VL53L0X_PLATFORM_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_VL53L0X_VL53L0X_PLATFORM_H_
+#define ZEPHYR_DRIVERS_SENSOR_VL53L0X_VL53L0X_PLATFORM_H_
 
 #include "vl53l0x_def.h"
 #include "vl53l0x_platform_log.h"
@@ -192,7 +192,7 @@ VL53L0X_Error VL53L0X_PollingDelay(VL53L0X_DEV Dev);
 }
 #endif
 
-#endif  /* _VL53L0X_PLATFORM_H_ */
+#endif  /* ZEPHYR_DRIVERS_SENSOR_VL53L0X_VL53L0X_PLATFORM_H_ */
 
 
 

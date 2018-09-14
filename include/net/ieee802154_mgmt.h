@@ -9,8 +9,8 @@
  * @brief IEEE 802.15.4 Management interface public header
  */
 
-#ifndef __IEEE802154_MGMT_H__
-#define __IEEE802154_MGMT_H__
+#ifndef ZEPHYR_INCLUDE_NET_IEEE802154_MGMT_H_
+#define ZEPHYR_INCLUDE_NET_IEEE802154_MGMT_H_
 
 #include <net/net_mgmt.h>
 
@@ -230,4 +230,4 @@ struct ieee802154_security_params {
  * @}
  */
 
-#endif /* __IEEE802154_MGMT_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_IEEE802154_MGMT_H_ */

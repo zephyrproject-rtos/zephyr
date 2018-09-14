@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _MISC_ERRNO_PRIVATE_H_
-#define _MISC_ERRNO_PRIVATE_H_
+#ifndef ZEPHYR_INCLUDE_MISC_ERRNO_PRIVATE_H_
+#define ZEPHYR_INCLUDE_MISC_ERRNO_PRIVATE_H_
 
 #include <toolchain.h>
 
@@ -33,4 +33,4 @@ __syscall int *z_errno(void);
 
 #include <syscalls/errno_private.h>
 
-#endif /* _MISC_ERRNO_PRIVATE_H */
+#endif /* ZEPHYR_INCLUDE_MISC_ERRNO_PRIVATE_H_ */

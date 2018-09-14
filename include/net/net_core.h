@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_CORE_H
-#define __NET_CORE_H
+#ifndef ZEPHYR_INCLUDE_NET_NET_CORE_H_
+#define ZEPHYR_INCLUDE_NET_NET_CORE_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -248,4 +248,4 @@ static inline void net_analyze_stack(const char *name,
 }
 #endif
 
-#endif /* __NET_CORE_H */
+#endif /* ZEPHYR_INCLUDE_NET_NET_CORE_H_ */

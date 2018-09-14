@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_ZEPHYR_SMP_
-#define H_ZEPHYR_SMP_
+#ifndef ZEPHYR_INCLUDE_MGMT_SMP_H_
+#define ZEPHYR_INCLUDE_MGMT_SMP_H_
 
 #ifdef __cplusplus
 extern "C" {

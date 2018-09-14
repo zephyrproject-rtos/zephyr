@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __LLDP_H
-#define __LLDP_H
+#ifndef ZEPHYR_INCLUDE_NET_LLDP_H_
+#define ZEPHYR_INCLUDE_NET_LLDP_H_
 
 /**
  * @brief LLDP definitions and helpers
@@ -208,4 +208,4 @@ enum net_verdict net_lldp_recv(struct net_if *iface, struct net_pkt *pkt);
  * @}
  */
 
-#endif /* __LLDP_H */
+#endif /* ZEPHYR_INCLUDE_NET_LLDP_H_ */

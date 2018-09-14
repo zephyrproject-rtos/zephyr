@@ -10,8 +10,8 @@
  * @brief CoAP implementation for Zephyr.
  */
 
-#ifndef __COAP_H__
-#define __COAP_H__
+#ifndef ZEPHYR_INCLUDE_NET_COAP_H_
+#define ZEPHYR_INCLUDE_NET_COAP_H_
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -812,4 +812,4 @@ u8_t *coap_next_token(void);
 }
 #endif
 
-#endif /* __COAP_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_COAP_H_ */

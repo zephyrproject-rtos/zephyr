@@ -7,8 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_MESH_MAIN_H
-#define __BT_MESH_MAIN_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_MAIN_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_MESH_MAIN_H_
 
 /**
  * @brief Bluetooth Mesh Provisioning
@@ -360,4 +360,4 @@ void bt_mesh_lpn_set_cb(void (*cb)(u16_t friend_addr, bool established));
  * @}
  */
 
-#endif /* __BT_MESH_MAIN_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_MAIN_H_ */

@@ -7,8 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INCioapic_privh
-#define __INCioapic_privh
+#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_IOAPIC_PRIV_H_
+#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_IOAPIC_PRIV_H_
 
 /* IO APIC direct register offsets */
 

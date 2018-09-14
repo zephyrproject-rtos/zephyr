@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _GPIO_DW_REGISTERS_H_
-#define _GPIO_DW_REGISTERS_H_
+#ifndef ZEPHYR_DRIVERS_GPIO_GPIO_DW_REGISTERS_H_
+#define ZEPHYR_DRIVERS_GPIO_GPIO_DW_REGISTERS_H_
 
 #ifdef CONFIG_SOC_QUARK_SE_C1000_SS
 #define SWPORTA_DR     0x00
@@ -61,4 +61,4 @@
 
 #define LS_SYNC_POS	(0)
 
-#endif /* _GPIO_DW_REGISTERS_H_ */
+#endif /* ZEPHYR_DRIVERS_GPIO_GPIO_DW_REGISTERS_H_ */

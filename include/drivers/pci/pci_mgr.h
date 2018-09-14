@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __inc_pci_mgr_h
-#define __inc_pci_mgr_h
+#ifndef ZEPHYR_INCLUDE_DRIVERS_PCI_PCI_MGR_H_
+#define ZEPHYR_INCLUDE_DRIVERS_PCI_PCI_MGR_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -1603,4 +1603,4 @@ extern int pci_config_ext_cap_ptr_find(
 }
 #endif /* __cplusplus */
 
-#endif /* __inc_pci_mgr_h */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_PCI_PCI_MGR_H_ */

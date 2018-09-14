@@ -10,8 +10,8 @@
  * @brief Public APIs for GPIO drivers
  */
 
-#ifndef __GPIO_H__
-#define __GPIO_H__
+#ifndef ZEPHYR_INCLUDE_GPIO_H_
+#define ZEPHYR_INCLUDE_GPIO_H_
 
 #include <misc/__assert.h>
 #include <misc/slist.h>
@@ -456,4 +456,4 @@ struct gpio_pin_config {
 }
 #endif
 
-#endif /* __GPIO_H__ */
+#endif /* ZEPHYR_INCLUDE_GPIO_H_ */

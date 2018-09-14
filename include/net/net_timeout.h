@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_TIMEOUT_H
-#define __NET_TIMEOUT_H
+#ifndef ZEPHYR_INCLUDE_NET_NET_TIMEOUT_H_
+#define ZEPHYR_INCLUDE_NET_NET_TIMEOUT_H_
 
 /**
  * @brief Network long timeout primitives and helpers
@@ -63,4 +63,4 @@ struct net_timeout {
  */
 
 
-#endif /* __NET_TIMEOUT_H */
+#endif /* ZEPHYR_INCLUDE_NET_NET_TIMEOUT_H_ */

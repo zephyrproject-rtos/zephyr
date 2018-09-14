@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _DEVICE_H_
-#define _DEVICE_H_
+#ifndef ZEPHYR_INCLUDE_DEVICE_H_
+#define ZEPHYR_INCLUDE_DEVICE_H_
 
 #include <kernel.h>
 
@@ -434,4 +434,4 @@ int device_busy_check(struct device *chk_dev);
 /**
  * @}
  */
-#endif /* _DEVICE_H_ */
+#endif /* ZEPHYR_INCLUDE_DEVICE_H_ */

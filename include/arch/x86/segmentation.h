@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SEGMENTATION_H
-#define _SEGMENTATION_H
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_SEGMENTATION_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_SEGMENTATION_H_
 
 #include <zephyr/types.h>
 
@@ -559,4 +559,4 @@ static inline u16_t _get_ds(void)
 }
 #endif
 
-#endif /* _SEGMENTATION_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_SEGMENTATION_H_ */

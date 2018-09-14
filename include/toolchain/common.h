@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef TOOLCHAIN_COMMON_H
-#define TOOLCHAIN_COMMON_H
+#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_COMMON_H_
+#define ZEPHYR_INCLUDE_TOOLCHAIN_COMMON_H_
 /**
  * @file
  * @brief Common toolchain abstraction
@@ -130,4 +130,4 @@
 #define BUILD_ASSERT_MSG(EXPR, MSG) BUILD_ASSERT(EXPR)
 #endif
 
-#endif /* TOOLCHAIN_COMMON_H */
+#endif /* ZEPHYR_INCLUDE_TOOLCHAIN_COMMON_H_ */

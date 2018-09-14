@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _FS_H_
-#define _FS_H_
+#ifndef ZEPHYR_INCLUDE_FS_H_
+#define ZEPHYR_INCLUDE_FS_H_
 
 #ifdef CONFIG_ARCH_POSIX
 #ifndef __ssize_t_defined
@@ -494,4 +494,4 @@ int fs_unregister(enum fs_type type, struct fs_file_system_t *fs);
 }
 #endif
 
-#endif /* _FS_H_ */
+#endif /* ZEPHYR_INCLUDE_FS_H_ */

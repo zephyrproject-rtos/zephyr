@@ -16,8 +16,8 @@
  *   section
  */
 
-#ifndef _LINKERDEFS_H
-#define _LINKERDEFS_H
+#ifndef ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_
+#define ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_
 
 #include <toolchain.h>
 #include <linker/sections.h>
@@ -272,4 +272,4 @@ extern char __sg_size[];
 
 #endif /* ! _ASMLANGUAGE */
 
-#endif /* _LINKERDEFS_H */
+#endif /* ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_ */

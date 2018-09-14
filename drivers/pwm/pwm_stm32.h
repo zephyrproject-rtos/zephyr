@@ -8,8 +8,8 @@
  * @file Header file for the STM32 PWM driver.
  */
 
-#ifndef __PWM_STM32_H__
-#define __PWM_STM32_H__
+#ifndef ZEPHYR_DRIVERS_PWM_PWM_STM32_H_
+#define ZEPHYR_DRIVERS_PWM_PWM_STM32_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,4 +39,4 @@ struct pwm_stm32_data {
 }
 #endif
 
-#endif /* __PWM_STM32_H__ */
+#endif /* ZEPHYR_DRIVERS_PWM_PWM_STM32_H_ */

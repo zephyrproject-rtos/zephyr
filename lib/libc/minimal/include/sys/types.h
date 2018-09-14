@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INC_sys_types_h__
-#define __INC_sys_types_h__
+#ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS_TYPES_H_
+#define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS_TYPES_H_
 
 #if !defined(__ssize_t_defined)
 #define __ssize_t_defined
@@ -38,4 +38,4 @@ typedef int off_t;
 
 #endif
 
-#endif /* __INC_sys_types_h__ */
+#endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS_TYPES_H_ */

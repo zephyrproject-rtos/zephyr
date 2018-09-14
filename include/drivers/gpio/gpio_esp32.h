@@ -2,8 +2,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __GPIO_ESP32_H__
-#define __GPIO_ESP32_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_ESP32_H_
+#define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_ESP32_H_
 
 static const char *gpio_esp32_get_gpio_for_pin(int pin)
 {
@@ -22,4 +22,4 @@ static const char *gpio_esp32_get_gpio_for_pin(int pin)
 #endif /* CONFIG_GPIO_ESP32_1 */
 }
 
-#endif /* __GPIO_ESP32_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_ESP32_H_ */

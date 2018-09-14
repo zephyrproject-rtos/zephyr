@@ -9,8 +9,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __DRIVERS_I2C_H
-#define __DRIVERS_I2C_H
+#ifndef ZEPHYR_INCLUDE_I2C_H_
+#define ZEPHYR_INCLUDE_I2C_H_
 
 /**
  * @brief I2C Interface
@@ -877,4 +877,4 @@ struct i2c_client_config {
 
 #include <syscalls/i2c.h>
 
-#endif /* __DRIVERS_I2C_H */
+#endif /* ZEPHYR_INCLUDE_I2C_H_ */

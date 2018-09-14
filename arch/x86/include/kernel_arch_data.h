@@ -23,8 +23,8 @@
 
 /* this file is only meant to be included by kernel_structs.h */
 
-#ifndef _kernel_arch_data__h_
-#define _kernel_arch_data__h_
+#ifndef ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_DATA_H_
+#define ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_DATA_H_
 
 #include <toolchain.h>
 #include <linker/sections.h>
@@ -425,4 +425,4 @@ typedef struct _kernel_arch _kernel_arch_t;
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* _kernel_arch_data__h_ */
+#endif /* ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_DATA_H_ */

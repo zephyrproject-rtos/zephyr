@@ -11,8 +11,8 @@
  * @details See misc/Kconfig and the reboot help for details.
  */
 
-#ifndef _misc_reboot__h_
-#define _misc_reboot__h_
+#ifndef ZEPHYR_INCLUDE_MISC_REBOOT_H_
+#define ZEPHYR_INCLUDE_MISC_REBOOT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,4 +39,4 @@ extern void sys_reboot(int type);
 }
 #endif
 
-#endif /* _misc_reboot__h_ */
+#endif /* ZEPHYR_INCLUDE_MISC_REBOOT_H_ */

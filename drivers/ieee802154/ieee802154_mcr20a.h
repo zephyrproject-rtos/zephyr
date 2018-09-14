@@ -7,8 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __IEEE802154_MCR20A_H__
-#define __IEEE802154_MCR20A_H__
+#ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_MCR20A_H_
+#define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_MCR20A_H_
 
 #include <linker/sections.h>
 #include <atomic.h>
@@ -179,4 +179,4 @@ DEFINE_BURST_WRITE(ext_addr, MCR20A_MACLONGADDRS0_0, 8, false)
 DEFINE_BURST_READ(event_timer, MCR20A_EVENT_TIMER_LSB, 3, true)
 DEFINE_BURST_READ(irqsts1_ctrl4, MCR20A_IRQSTS1, 8, true)
 
-#endif /* __IEEE802154_MCR20A_H__ */
+#endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_MCR20A_H_ */
