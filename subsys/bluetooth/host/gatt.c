@@ -1573,6 +1573,137 @@ static int gatt_read_type(struct bt_conn *conn,
 	return gatt_send(conn, buf, gatt_read_type_rsp, params, NULL);
 }
 
+static u16_t parse_service(struct bt_conn *conn, const void *pdu,
+				  struct bt_gatt_discover_params *params,
+				  u16_t length)
+{
+	const struct bt_att_read_group_rsp *rsp = pdu;
+	u16_t start_handle, end_handle = 0;
+	union {
+		struct bt_uuid uuid;
+		struct bt_uuid_16 u16;
+		struct bt_uuid_128 u128;
+	} u;
+
+	/* Data can be either in UUID16 or UUID128 */
+	switch (rsp->len) {
+	case 6: /* UUID16 */
+		u.uuid.type = BT_UUID_TYPE_16;
+		break;
+	case 20: /* UUID128 */
+		u.uuid.type = BT_UUID_TYPE_128;
+		break;
+	default:
+		BT_ERR("Invalid data len %u", rsp->len);
+		goto done;
+	}
+
+	/* Parse services found */
+	for (length--, pdu = rsp->data; length >= rsp->len;
+	     length -= rsp->len, pdu += rsp->len) {
+		struct bt_gatt_attr attr = {};
+		struct bt_gatt_service_val value;
+		const struct bt_att_group_data *data = pdu;
+
+		start_handle = sys_le16_to_cpu(data->start_handle);
+		if (!start_handle) {
+			goto done;
+		}
+
+		end_handle = sys_le16_to_cpu(data->end_handle);
+		if (!end_handle || end_handle < start_handle) {
+			goto done;
+		}
+
+		switch (u.uuid.type) {
+		case BT_UUID_TYPE_16:
+			memcpy(&u.u16.val, data->value, sizeof(u.u16.val));
+			u.u16.val = sys_le16_to_cpu(u.u16.val);
+			break;
+		case BT_UUID_TYPE_128:
+			memcpy(u.u128.val, data->value, sizeof(u.u128.val));
+			break;
+		}
+
+		BT_DBG("start_handle 0x%04x end_handle 0x%04x uuid %s",
+		       start_handle, end_handle, bt_uuid_str(&u.uuid));
+
+		if (params->type == BT_GATT_DISCOVER_PRIMARY) {
+			attr.uuid = BT_UUID_GATT_PRIMARY;
+		} else {
+			attr.uuid = BT_UUID_GATT_SECONDARY;
+		}
+
+		value.end_handle = end_handle;
+		value.uuid = &u.uuid;
+
+		attr.handle = start_handle;
+		attr.user_data = &value;
+
+		if (params->func(conn, &attr, params) == BT_GATT_ITER_STOP) {
+			return 0;
+		}
+	}
+
+	/* Whole PDU read without error */
+	if (length == 0 && end_handle) {
+		return end_handle;
+	}
+
+done:
+	params->func(conn, NULL, params);
+	return 0;
+}
+
+static void gatt_read_group_rsp(struct bt_conn *conn, u8_t err,
+				const void *pdu, u16_t length,
+				void *user_data)
+{
+	struct bt_gatt_discover_params *params = user_data;
+	u16_t handle;
+
+	BT_DBG("err 0x%02x", err);
+
+	if (err) {
+		params->func(conn, NULL, params);
+		return;
+	}
+
+	handle = parse_service(conn, pdu, params, length);
+	if (!handle) {
+		return;
+	}
+
+	gatt_discover_next(conn, handle, params);
+}
+
+static int gatt_read_group(struct bt_conn *conn,
+			   struct bt_gatt_discover_params *params)
+{
+	struct net_buf *buf;
+	struct bt_att_read_group_req *req;
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_GROUP_REQ, sizeof(*req));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	req = net_buf_add(buf, sizeof(*req));
+	req->start_handle = sys_cpu_to_le16(params->start_handle);
+	req->end_handle = sys_cpu_to_le16(params->end_handle);
+
+	if (params->type == BT_GATT_DISCOVER_PRIMARY) {
+		net_buf_add_le16(buf, BT_UUID_16(BT_UUID_GATT_PRIMARY)->val);
+	} else {
+		net_buf_add_le16(buf, BT_UUID_16(BT_UUID_GATT_SECONDARY)->val);
+	}
+
+	BT_DBG("start_handle 0x%04x end_handle 0x%04x", params->start_handle,
+	       params->end_handle);
+
+	return gatt_send(conn, buf, gatt_read_group_rsp, params, NULL);
+}
+
 static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 			       const void *pdu, u16_t length,
 			       void *user_data)
@@ -1696,7 +1827,10 @@ int bt_gatt_discover(struct bt_conn *conn,
 	switch (params->type) {
 	case BT_GATT_DISCOVER_PRIMARY:
 	case BT_GATT_DISCOVER_SECONDARY:
-		return gatt_find_type(conn, params);
+		if (params->uuid) {
+			return gatt_find_type(conn, params);
+		}
+		return gatt_read_group(conn, params);
 	case BT_GATT_DISCOVER_INCLUDE:
 	case BT_GATT_DISCOVER_CHARACTERISTIC:
 		return gatt_read_type(conn, params);
