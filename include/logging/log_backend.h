@@ -30,6 +30,7 @@ struct log_backend_api {
 		    struct log_msg *msg);
 
 	void (*panic)(const struct log_backend *const backend);
+	void (*init)(void);
 };
 
 /**

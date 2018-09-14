@@ -59,10 +59,10 @@ void log_backend_uart_init(void)
 
 static void panic(struct log_backend const *const backend)
 {
-
 }
 
 const struct log_backend_api log_backend_uart_api = {
 	.put = put,
 	.panic = panic,
+	.init = log_backend_uart_init,
 };
