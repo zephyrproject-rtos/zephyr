@@ -3,7 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <logging/log_backend_uart.h>
+
+#include <logging/log_backend.h>
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
@@ -66,3 +67,5 @@ const struct log_backend_api log_backend_uart_api = {
 	.panic = panic,
 	.init = log_backend_uart_init,
 };
+
+LOG_BACKEND_DEFINE(log_backend_uart, log_backend_uart_api);
