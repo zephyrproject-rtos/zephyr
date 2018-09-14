@@ -264,6 +264,9 @@ zephyr_system_include_directories(${NOSTDINC})
 # Force an error when things like SYS_INIT(foo, ...) occur with a missing header.
 zephyr_cc_option(-Werror=implicit-int)
 
+# Prohibit void pointer arithmetic. Illegal in C99
+zephyr_cc_option(-Wpointer-arith)
+
 # Prohibit date/time macros, which would make the build non-deterministic
 # cc-option(-Werror=date-time)
 
