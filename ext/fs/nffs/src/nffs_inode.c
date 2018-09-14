@@ -641,7 +641,7 @@ nffs_inode_update(struct nffs_inode_entry *inode_entry)
     struct nffs_inode inode;
     uint32_t area_offset;
     uint8_t area_idx;
-    char *filename;
+    char filename[NFFS_INODE_FILENAME_BUF_SZ];
     int filename_len;
     int rc;
 
@@ -664,12 +664,10 @@ nffs_inode_update(struct nffs_inode_entry *inode_entry)
     STATS_INC(nffs_stats, nffs_readcnt_update);
     rc = nffs_flash_read(area_idx,
                          area_offset + sizeof (struct nffs_disk_inode),
-                         nffs_flash_buf, filename_len);
+                         filename, filename_len);
     if (rc != 0) {
         return rc;
     }
-
-    filename = (char *)nffs_flash_buf;
 
     rc = nffs_misc_reserve_space(sizeof disk_inode + filename_len,
                                  &area_idx, &area_offset);
