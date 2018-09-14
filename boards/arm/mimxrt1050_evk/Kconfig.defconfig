@@ -29,6 +29,13 @@ config GPIO_MCUX_IGPIO_5
 
 endif # GPIO_MCUX_IGPIO
 
+if SPI_MCUX_LPSPI
+
+config SPI_3
+	def_bool y
+
+endif # SPI_MCUX_LPSPI
+
 if UART_MCUX_LPUART
 
 config UART_MCUX_LPUART_1

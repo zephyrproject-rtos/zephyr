@@ -21,6 +21,7 @@
 		uart-1 = &uart1;
 		led0 = &green_led;
 		sw0 = &user_button;
+		spi-3 = &spi3;
 	};
 
 	chosen {
@@ -83,4 +84,8 @@
 &uart1 {
 	status = "ok";
 	current-speed = <115200>;
+};
+
+&spi3 {
+	status = "ok";
 };
