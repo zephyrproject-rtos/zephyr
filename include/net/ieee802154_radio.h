@@ -9,8 +9,8 @@
  * @brief Public IEEE 802.15.4 Radio API
  */
 
-#ifndef __IEEE802154_RADIO_H__
-#define __IEEE802154_RADIO_H__
+#ifndef ZEPHYR_INCLUDE_NET_IEEE802154_RADIO_H_
+#define ZEPHYR_INCLUDE_NET_IEEE802154_RADIO_H_
 
 #include <device.h>
 #include <net/net_if.h>
@@ -189,4 +189,4 @@ static inline enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
  * @}
  */
 
-#endif /* __IEEE802154_RADIO_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_IEEE802154_RADIO_H_ */

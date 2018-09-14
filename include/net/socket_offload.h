@@ -9,8 +9,8 @@
  * @brief Socket Offload Redirect API
  */
 
-#ifndef __SOCKET_OFFLOAD_H__
-#define __SOCKET_OFFLOAD_H__
+#ifndef ZEPHYR_INCLUDE_NET_SOCKET_OFFLOAD_H_
+#define ZEPHYR_INCLUDE_NET_SOCKET_OFFLOAD_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -144,4 +144,4 @@ static inline ssize_t sendto(int sock, const void *buf,
 }
 #endif
 
-#endif /* __SOCKET_OFFLOAD_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_SOCKET_OFFLOAD_H_ */

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef LOG_H_
-#define LOG_H_
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_H_
 
 #include <logging/log_instance.h>
 #include <logging/log_core.h>
@@ -362,4 +362,4 @@ int log_printk(const char *fmt, va_list ap);
 }
 #endif
 
-#endif /* LOG_H_ */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_H_ */

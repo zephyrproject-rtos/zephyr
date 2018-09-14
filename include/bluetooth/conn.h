@@ -7,8 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_CONN_H
-#define __BT_CONN_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CONN_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CONN_H_
 
 /**
  * @brief Connection management
@@ -665,4 +665,4 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer);
  * @}
  */
 
-#endif /* __BT_CONN_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CONN_H_ */

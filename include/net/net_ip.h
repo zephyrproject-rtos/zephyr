@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_IP_H
-#define __NET_IP_H
+#ifndef ZEPHYR_INCLUDE_NET_NET_IP_H_
+#define ZEPHYR_INCLUDE_NET_NET_IP_H_
 
 /**
  * @brief IPv4/IPv6 primitives and helpers
@@ -1054,4 +1054,4 @@ static inline u8_t net_priority2vlan(enum net_priority priority)
  */
 
 
-#endif /* __NET_IP_H */
+#endif /* ZEPHYR_INCLUDE_NET_NET_IP_H_ */

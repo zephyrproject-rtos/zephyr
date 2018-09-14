@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _ARC_MPU_H_
-#define _ARC_MPU_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_MPU_ARC_MPU_H_
+#define ZEPHYR_INCLUDE_ARCH_ARC_V2_MPU_ARC_MPU_H_
 
 
 

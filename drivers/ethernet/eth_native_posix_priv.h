@@ -8,8 +8,8 @@
  * @brief Private functions for native posix ethernet driver.
  */
 
-#ifndef _ETH_NATIVE_POSIX_PRIV_H
-#define _ETH_NATIVE_POSIX_PRIV_H
+#ifndef ZEPHYR_DRIVERS_ETHERNET_ETH_NATIVE_POSIX_PRIV_H_
+#define ZEPHYR_DRIVERS_ETHERNET_ETH_NATIVE_POSIX_PRIV_H_
 
 int eth_iface_create(const char *if_name, bool tun_only);
 int eth_iface_remove(int fd);
@@ -37,4 +37,4 @@ static inline int eth_promisc_mode(const char *if_name, bool enable)
 }
 #endif
 
-#endif /* _ETH_NATIVE_POSIX_PRIV_H */
+#endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_NATIVE_POSIX_PRIV_H_ */

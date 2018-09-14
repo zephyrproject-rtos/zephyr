@@ -11,8 +11,8 @@
  * Data types for a software-managed ISR table, with a parameter per-ISR.
  */
 
-#ifndef _SW_ISR_TABLE__H_
-#define _SW_ISR_TABLE__H_
+#ifndef ZEPHYR_INCLUDE_SW_ISR_TABLE_H_
+#define ZEPHYR_INCLUDE_SW_ISR_TABLE_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,4 +77,4 @@ struct _isr_list {
 }
 #endif
 
-#endif /* _SW_ISR_TABLE__H_ */
+#endif /* ZEPHYR_INCLUDE_SW_ISR_TABLE_H_ */

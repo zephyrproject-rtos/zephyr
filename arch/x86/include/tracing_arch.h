@@ -9,8 +9,8 @@
  * @brief Kernel event logger support for x86
  */
 
-#ifndef __KERNEL_TRACING_H__
-#define __KERNEL_TRACING_H__
+#ifndef ZEPHYR_ARCH_X86_INCLUDE_TRACING_ARCH_H_
+#define ZEPHYR_ARCH_X86_INCLUDE_TRACING_ARCH_H_
 
 #include <arch/x86/irq_controller.h>
 
@@ -35,4 +35,4 @@ static inline int _sys_current_irq_key_get(void)
 }
 #endif
 
-#endif /* __KERNEL_TRACING_H__ */
+#endif /* ZEPHYR_ARCH_X86_INCLUDE_TRACING_ARCH_H_ */

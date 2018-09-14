@@ -10,8 +10,8 @@
  * by the generic kernel interface header (include/arch/cpu.h)
  */
 
-#ifndef _ARCH_IFACE_H
-#define _ARCH_IFACE_H
+#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_
+#define ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_
 
 #include <irq.h>
 
@@ -139,4 +139,4 @@ extern u32_t _timer_cycle_get_32(void);
 }
 #endif
 
-#endif /* _ARCH_IFACE_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_ */

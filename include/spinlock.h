@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SPINLOCK_H
-#define _SPINLOCK_H
+#ifndef ZEPHYR_INCLUDE_SPINLOCK_H_
+#define ZEPHYR_INCLUDE_SPINLOCK_H_
 
 #include <atomic.h>
 
@@ -66,4 +66,4 @@ static inline void k_spin_unlock(struct k_spinlock *l, k_spinlock_key_t key)
 	_arch_irq_unlock(key.key);
 }
 
-#endif /* _SPINLOCK_H */
+#endif /* ZEPHYR_INCLUDE_SPINLOCK_H_ */

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __MISC_DEBUG_GDB_SERVER__H_
-#define __MISC_DEBUG_GDB_SERVER__H_
+#ifndef ZEPHYR_INCLUDE_DEBUG_GDB_SERVER_H_
+#define ZEPHYR_INCLUDE_DEBUG_GDB_SERVER_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,4 +65,4 @@ extern void gdb_handler(enum gdb_exc_mode mode, void *esf, int signal);
 #ifdef __cplusplus
 }
 #endif
-#endif /* __MISC_DEBUG_GDB_SERVER__H_*/
+#endif /* ZEPHYR_INCLUDE_DEBUG_GDB_SERVER_H_*/

@@ -11,8 +11,8 @@
  * included by the generic kernel interface header (include/arch/cpu.h)
  */
 
-#ifndef _ARCH_IFACE_H
-#define _ARCH_IFACE_H
+#ifndef ZEPHYR_INCLUDE_ARCH_NIOS2_ARCH_H_
+#define ZEPHYR_INCLUDE_ARCH_NIOS2_ARCH_H_
 
 #include <system.h>
 #include <arch/nios2/asm_inline.h>

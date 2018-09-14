@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _cache_private__h_
-#define _cache_private__h_
+#ifndef ZEPHYR_ARCH_X86_INCLUDE_CACHE_PRIVATE_H_
+#define ZEPHYR_ARCH_X86_INCLUDE_CACHE_PRIVATE_H_
 
 #include <cache.h>
 
@@ -21,4 +21,4 @@ extern size_t _cache_line_size_get(void);
 }
 #endif
 
-#endif /* _cache_private__h_ */
+#endif /* ZEPHYR_ARCH_X86_INCLUDE_CACHE_PRIVATE_H_ */

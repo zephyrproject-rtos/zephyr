@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef MVIC_H
-#define MVIC_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MVIC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MVIC_H_
 
 #include <arch/cpu.h>
 
@@ -72,4 +72,4 @@ static inline void __irq_controller_eoi(void)
 
 #endif
 
-#endif /* MVIC_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MVIC_H_ */

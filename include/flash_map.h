@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __FLASH_MAP_H__
-#define __FLASH_MAP_H__
+#ifndef ZEPHYR_INCLUDE_FLASH_MAP_H_
+#define ZEPHYR_INCLUDE_FLASH_MAP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,4 +81,4 @@ int flash_area_get_sectors(int fa_id, u32_t *count,
 }
 #endif
 
-#endif /* __FLASH_MAP_H__ */
+#endif /* ZEPHYR_INCLUDE_FLASH_MAP_H_ */

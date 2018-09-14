@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SPI_INTEL_H__
-#define __SPI_INTEL_H__
+#ifndef ZEPHYR_DRIVERS_SPI_SPI_INTEL_H_
+#define ZEPHYR_DRIVERS_SPI_SPI_INTEL_H_
 
 #include "spi_intel_regs.h"
 #include "spi_context.h"
@@ -99,4 +99,4 @@ DEFINE_CLEAR_BIT_OP(sssr_ror, INTEL_SPI_REG_SSSR, INTEL_SPI_SSSR_ROR_BIT)
 }
 #endif
 
-#endif /* __SPI_INTEL_H__ */
+#endif /* ZEPHYR_DRIVERS_SPI_SPI_INTEL_H_ */

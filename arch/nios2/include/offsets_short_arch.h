@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _offsets_short_arch__h_
-#define _offsets_short_arch__h_
+#ifndef ZEPHYR_ARCH_NIOS2_INCLUDE_OFFSETS_SHORT_ARCH_H_
+#define ZEPHYR_ARCH_NIOS2_INCLUDE_OFFSETS_SHORT_ARCH_H_
 
 #include <offsets.h>
 
@@ -58,4 +58,4 @@
 
 /* end - threads */
 
-#endif /* _offsets_short_arch__h_ */
+#endif /* ZEPHYR_ARCH_NIOS2_INCLUDE_OFFSETS_SHORT_ARCH_H_ */

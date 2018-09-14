@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _POSIX_TRACE_H
-#define _POSIX_TRACE_H
+#ifndef ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_TRACE_H_
+#define ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_TRACE_H_
 
 #ifdef __cplusplus
 extern "C" {

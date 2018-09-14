@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __MQUEUE_H__
-#define __MQUEUE_H__
+#ifndef ZEPHYR_INCLUDE_POSIX_MQUEUE_H_
+#define ZEPHYR_INCLUDE_POSIX_MQUEUE_H_
 
 #include <kernel.h>
 #include <posix/time.h>
@@ -63,4 +63,4 @@ int mq_timedsend(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
 }
 #endif
 
-#endif  /* __MQUEUE_H__ */
+#endif  /* ZEPHYR_INCLUDE_POSIX_MQUEUE_H_ */

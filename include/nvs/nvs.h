@@ -4,8 +4,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __NVS_H_
-#define __NVS_H_
+#ifndef ZEPHYR_INCLUDE_NVS_NVS_H_
+#define ZEPHYR_INCLUDE_NVS_NVS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -179,4 +179,4 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, u16_t id, void *data, size_t len,
 }
 #endif
 
-#endif /* __NVS_H_ */
+#endif /* ZEPHYR_INCLUDE_NVS_NVS_H_ */

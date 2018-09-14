@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ATOMIC_H__
-#define __ATOMIC_H__
+#ifndef ZEPHYR_INCLUDE_ATOMIC_H_
+#define ZEPHYR_INCLUDE_ATOMIC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -417,4 +417,4 @@ static inline void atomic_set_bit(atomic_t *target, int bit)
 }
 #endif
 
-#endif /* __ATOMIC_H__ */
+#endif /* ZEPHYR_INCLUDE_ATOMIC_H_ */

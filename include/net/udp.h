@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __UDP_H
-#define __UDP_H
+#ifndef ZEPHYR_INCLUDE_NET_UDP_H_
+#define ZEPHYR_INCLUDE_NET_UDP_H_
 
 #include <zephyr/types.h>
 
@@ -92,4 +92,4 @@ static inline struct net_udp_hdr *net_udp_set_hdr(struct net_pkt *pkt,
 }
 #endif
 
-#endif /* __UDP_H */
+#endif /* ZEPHYR_INCLUDE_NET_UDP_H_ */

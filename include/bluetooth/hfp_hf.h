@@ -7,8 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_HFP_H
-#define __BT_HFP_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_HFP_HF_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_HFP_HF_H_
 
 /**
  * @brief Hands Free Profile (HFP)
@@ -169,4 +169,4 @@ int bt_hfp_hf_send_cmd(struct bt_conn *conn, enum bt_hfp_hf_at_cmd cmd);
  * @}
  */
 
-#endif /* __BT_HFP_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_HFP_HF_H_ */

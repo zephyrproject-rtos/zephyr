@@ -21,8 +21,8 @@
  *  - Removed mbedtls_ prefixes
  *  - Reworked coding style
  */
-#ifndef __BASE64_H__
-#define __BASE64_H__
+#ifndef ZEPHYR_INCLUDE_BASE64_H_
+#define ZEPHYR_INCLUDE_BASE64_H_
 
 #include <stddef.h>
 #include <zephyr/types.h>
@@ -76,4 +76,4 @@ int base64_decode(u8_t *dst, size_t dlen, size_t *olen, const u8_t *src,
 }
 #endif
 
-#endif /* __BASE64_H__ */
+#endif /* ZEPHYR_INCLUDE_BASE64_H_ */

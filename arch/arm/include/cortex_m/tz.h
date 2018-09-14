@@ -11,8 +11,8 @@
  * TrustZone API for Cortex-M23/M33 CPUs implementing the Security Extension.
  */
 
-#ifndef _ARM_CORTEXM_TZ__H_
-#define _ARM_CORTEXM_TZ__H_
+#ifndef ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_TZ_H_
+#define ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_TZ_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -326,4 +326,4 @@ typedef void __attribute__((cmse_nonsecure_call)) (*tz_ns_func_ptr_t) (void);
 }
 #endif
 
-#endif /* _ARM_CORTEXM_TZ__H_ */
+#endif /* ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_TZ_H_ */

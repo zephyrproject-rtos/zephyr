@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ARCHSYSCALL_H__
-#define __ARCHSYSCALL_H__
+#ifndef ZEPHYR_INCLUDE_ARCH_SYSCALL_H_
+#define ZEPHYR_INCLUDE_ARCH_SYSCALL_H_
 
 #if defined(CONFIG_X86)
 #include <arch/x86/syscall.h>
@@ -17,4 +17,4 @@
 #include <arch/arc/syscall.h>
 #endif
 
-#endif /* __ARCHSYSCALL_H__ */
+#endif /* ZEPHYR_INCLUDE_ARCH_SYSCALL_H_ */

@@ -11,8 +11,8 @@
 
 /* Either public functions or macros or invoked by public functions */
 
-#ifndef _ASM_INLINE_GCC_PUBLIC_GCC_H_INCLUDE_ARCH_POSIX
-#define _ASM_INLINE_GCC_PUBLIC_GCC_H_INCLUDE_ARCH_POSIX
+#ifndef ZEPHYR_INCLUDE_ARCH_POSIX_ASM_INLINE_GCC_H_
+#define ZEPHYR_INCLUDE_ARCH_POSIX_ASM_INLINE_GCC_H_
 
 /*
  * The file must not be included directly
@@ -195,4 +195,4 @@ static ALWAYS_INLINE
 }
 #endif
 
-#endif /* _ASM_INLINE_GCC_PUBLIC_GCC_H_INCLUDE_ARCH_POSIX */
+#endif /* ZEPHYR_INCLUDE_ARCH_POSIX_ASM_INLINE_GCC_H_ */

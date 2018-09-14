@@ -8,8 +8,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_TESTING_H
-#define __BT_TESTING_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_TESTING_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_TESTING_H_
 
 /**
  * @brief Bluetooth testing
@@ -90,4 +90,4 @@ int bt_test_mesh_rpl_clear(void);
 }
 #endif
 
-#endif /* __BT_TESTING_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_TESTING_H_ */

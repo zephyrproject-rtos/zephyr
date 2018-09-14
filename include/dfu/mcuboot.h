@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __MCUBOOT_H__
-#define __MCUBOOT_H__
+#ifndef ZEPHYR_INCLUDE_DFU_MCUBOOT_H_
+#define ZEPHYR_INCLUDE_DFU_MCUBOOT_H_
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -167,4 +167,4 @@ int boot_request_upgrade(int permanent);
  */
 int boot_erase_img_bank(u32_t bank_offset);
 
-#endif  /* __MCUBOOT_H__ */
+#endif  /* ZEPHYR_INCLUDE_DFU_MCUBOOT_H_ */

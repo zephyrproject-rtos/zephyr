@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ETHERNET_VLAN_H
-#define __ETHERNET_VLAN_H
+#ifndef ZEPHYR_INCLUDE_NET_ETHERNET_VLAN_H_
+#define ZEPHYR_INCLUDE_NET_ETHERNET_VLAN_H_
 
 /**
  * @brief VLAN definitions and helpers
@@ -73,4 +73,4 @@ static inline u16_t net_eth_vlan_set_pcp(u16_t tci, u8_t pcp)
  */
 
 
-#endif /* __ETHERNET_VLAN_H */
+#endif /* ZEPHYR_INCLUDE_NET_ETHERNET_VLAN_H_ */

@@ -1,5 +1,5 @@
-#ifndef _APP_MEMDOMAIN__H_
-#define _APP_MEMDOMAIN__H_
+#ifndef ZEPHYR_INCLUDE_APP_MEMORY_APP_MEMDOMAIN_H_
+#define ZEPHYR_INCLUDE_APP_MEMORY_APP_MEMDOMAIN_H_
 
 #include <linker/linker-defs.h>
 #include <misc/dlist.h>
@@ -131,4 +131,4 @@ extern void app_calc_size(void);
 
 extern void appmem_init_app_memory(void);
 
-#endif /* _APP_MEMDOMAIN__H_ */
+#endif /* ZEPHYR_INCLUDE_APP_MEMORY_APP_MEMDOMAIN_H_ */

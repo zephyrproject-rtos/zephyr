@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_MISC_LIST_GEN_H
-#define ZEPHYR_MISC_LIST_GEN_H
+#ifndef ZEPHYR_INCLUDE_MISC_LIST_GEN_H_
+#define ZEPHYR_INCLUDE_MISC_LIST_GEN_H_
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -230,4 +230,4 @@
 		return false;						 \
 	}
 
-#endif /* ZEPHYR_MISC_LIST_GEN_H */
+#endif /* ZEPHYR_INCLUDE_MISC_LIST_GEN_H_ */

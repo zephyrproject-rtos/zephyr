@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _ZEPHYR_SYSCALL_H_
-#define _ZEPHYR_SYSCALL_H_
+#ifndef ZEPHYR_INCLUDE_SYSCALL_H_
+#define ZEPHYR_INCLUDE_SYSCALL_H_
 
 #include <syscall_list.h>
 #include <arch/syscall.h>

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __TLV320DAC3101_H__
-#define __TLV320DAC3101_H__
+#ifndef ZEPHYR_DRIVERS_AUDIO_TLV320DAC310X_H_
+#define ZEPHYR_DRIVERS_AUDIO_TLV320DAC310X_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -158,4 +158,4 @@ enum cm_voltage {
 }
 #endif
 
-#endif /* __TLV320DAC3101_H__ */
+#endif /* ZEPHYR_DRIVERS_AUDIO_TLV320DAC310X_H_ */

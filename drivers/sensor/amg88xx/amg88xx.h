@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SENSOR_AMG88XX
-#define _SENSOR_AMG88XX
+#ifndef ZEPHYR_DRIVERS_SENSOR_AMG88XX_AMG88XX_H_
+#define ZEPHYR_DRIVERS_SENSOR_AMG88XX_AMG88XX_H_
 
 #include <device.h>
 #include <gpio.h>

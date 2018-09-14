@@ -10,8 +10,8 @@
  *
  */
 
-#ifndef __PTP_TIME_H
-#define __PTP_TIME_H
+#ifndef ZEPHYR_INCLUDE_NET_PTP_TIME_H_
+#define ZEPHYR_INCLUDE_NET_PTP_TIME_H_
 
 /**
  * @brief Precision Time Protocol time specification
@@ -66,4 +66,4 @@ struct net_ptp_time {
  * @}
  */
 
-#endif /* __PTP_TIME_H */
+#endif /* ZEPHYR_INCLUDE_NET_PTP_TIME_H_ */

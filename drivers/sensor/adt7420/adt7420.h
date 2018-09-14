@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SENSOR_ADT7420_H__
-#define __SENSOR_ADT7420_H__
+#ifndef ZEPHYR_DRIVERS_SENSOR_ADT7420_ADT7420_H_
+#define ZEPHYR_DRIVERS_SENSOR_ADT7420_ADT7420_H_
 
 #include <zephyr/types.h>
 #include <device.h>
@@ -101,4 +101,4 @@ int adt7420_init_interrupt(struct device *dev);
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <logging/sys_log.h>
 
-#endif /* __SENSOR_ADT7420_H__ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_ADT7420_ADT7420_H_ */

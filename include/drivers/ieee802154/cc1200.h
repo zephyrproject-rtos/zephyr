@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __CC1200_H__
-#define __CC1200_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_IEEE802154_CC1200_H_
+#define ZEPHYR_INCLUDE_DRIVERS_IEEE802154_CC1200_H_
 
 #include <device.h>
 
@@ -56,4 +56,4 @@ struct cc1200_gpio_configuration {
 
 struct cc1200_gpio_configuration *cc1200_configure_gpios(void);
 
-#endif /* __CC1200_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_IEEE802154_CC1200_H_ */

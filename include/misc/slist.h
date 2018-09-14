@@ -14,8 +14,8 @@
  * calls to functions must be protected with synchronization primitives.
  */
 
-#ifndef __SLIST_H__
-#define __SLIST_H__
+#ifndef ZEPHYR_INCLUDE_MISC_SLIST_H_
+#define ZEPHYR_INCLUDE_MISC_SLIST_H_
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -413,4 +413,4 @@ Z_GENLIST_FIND_AND_REMOVE(slist, snode);
 }
 #endif
 
-#endif /* __SLIST_H__ */
+#endif /* ZEPHYR_INCLUDE_MISC_SLIST_H_ */

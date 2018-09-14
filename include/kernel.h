@@ -10,8 +10,8 @@
  * @brief Public kernel APIs.
  */
 
-#ifndef _kernel__h_
-#define _kernel__h_
+#ifndef ZEPHYR_INCLUDE_KERNEL_H_
+#define ZEPHYR_INCLUDE_KERNEL_H_
 
 #if !defined(_ASMLANGUAGE)
 #include <kernel_includes.h>
@@ -4983,4 +4983,4 @@ inline void *operator new[](size_t size, void *ptr)
 
 #endif /* !_ASMLANGUAGE */
 
-#endif /* _kernel__h_ */
+#endif /* ZEPHYR_INCLUDE_KERNEL_H_ */

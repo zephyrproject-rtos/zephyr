@@ -9,8 +9,8 @@
  * @brief Public APIs for the I2S (Inter-IC Sound) bus drivers.
  */
 
-#ifndef __I2S_H__
-#define __I2S_H__
+#ifndef ZEPHYR_INCLUDE_I2S_H_
+#define ZEPHYR_INCLUDE_I2S_H_
 
 /**
  * @defgroup i2s_interface I2S Interface
@@ -523,4 +523,4 @@ static inline int _impl_i2s_trigger(struct device *dev, enum i2s_dir dir,
  * @}
  */
 
-#endif /* __I2S_H__ */
+#endif /* ZEPHYR_INCLUDE_I2S_H_ */

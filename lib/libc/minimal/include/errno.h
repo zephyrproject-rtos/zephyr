@@ -14,8 +14,8 @@
  *	@(#)errno.h	7.1 (Berkeley) 6/4/86
  */
 
-#ifndef __INCerrnoh
-#define __INCerrnoh
+#ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_ERRNO_H_
+#define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_ERRNO_H_
 
 #include <misc/errno_private.h>
 
@@ -132,4 +132,4 @@ extern "C" {
 }
 #endif
 
-#endif /* __INCerrnoh */
+#endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_ERRNO_H_ */

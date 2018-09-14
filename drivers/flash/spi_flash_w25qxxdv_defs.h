@@ -10,8 +10,8 @@
  * @brief This file has the WinBond SPI flash private definitions
  */
 
-#ifndef __SPI_FLASH_W25QXXDV_DEFS_H__
-#define __SPI_FLASH_W25QXXDV_DEFS_H__
+#ifndef ZEPHYR_DRIVERS_FLASH_SPI_FLASH_W25QXXDV_DEFS_H_
+#define ZEPHYR_DRIVERS_FLASH_SPI_FLASH_W25QXXDV_DEFS_H_
 
 /* Status Registers
  *    S7     S6     S5     S4     S3     S2     S1     S0
@@ -115,4 +115,4 @@
 
 #define W25QXXDV_CMD_NOP         0x00
 
-#endif /*__SPI_FLASH_W25QXXDV_DEFS_H__*/
+#endif /*ZEPHYR_DRIVERS_FLASH_SPI_FLASH_W25QXXDV_DEFS_H_*/

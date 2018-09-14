@@ -33,8 +33,8 @@
  * This file contains structures and defines of the standard USB packets
  */
 
-#ifndef _USBSTRUCT_H_
-#define _USBSTRUCT_H_
+#ifndef ZEPHYR_INCLUDE_USB_USBSTRUCT_H_
+#define ZEPHYR_INCLUDE_USB_USBSTRUCT_H_
 
 #define REQTYPE_GET_DIR(x)          (((x)>>7)&0x01)
 #define REQTYPE_GET_TYPE(x)         (((x)>>5)&0x03)
@@ -96,4 +96,4 @@ struct usb_desc_header {
 #define GET_DESC_TYPE(x)            (((x)>>8)&0xFF)
 #define GET_DESC_INDEX(x)           ((x)&0xFF)
 
-#endif /* _USBSTRUCT_H_ */
+#endif /* ZEPHYR_INCLUDE_USB_USBSTRUCT_H_ */

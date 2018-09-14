@@ -11,8 +11,8 @@
  * ARM-specific kernel interrupt handling interface. Included by arm/arch.h.
  */
 
-#ifndef _ARCH_ARM_CORTEXM_IRQ_H_
-#define _ARCH_ARM_CORTEXM_IRQ_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_IRQ_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_IRQ_H_
 
 #include <irq.h>
 #include <sw_isr_table.h>
@@ -158,4 +158,4 @@ extern void _isr_wrapper(void);
 }
 #endif
 
-#endif /* _ARCH_ARM_CORTEXM_IRQ_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_IRQ_H_ */

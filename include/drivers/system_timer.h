@@ -12,8 +12,8 @@
  * Declare API implemented by system timer driver and used by kernel components.
  */
 
-#ifndef _TIMER__H_
-#define _TIMER__H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,4 +88,4 @@ static inline void _sys_clock_final_tick_announce(void)
 }
 #endif
 
-#endif /* _TIMER__H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_ */

@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INC_limits_h__
-#define __INC_limits_h__
+#ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_LIMITS_H_
+#define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_LIMITS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,4 +54,4 @@ extern "C" {
 }
 #endif
 
-#endif  /* __INC_limits_h__ */
+#endif  /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_LIMITS_H_ */

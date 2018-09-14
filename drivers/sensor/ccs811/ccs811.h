@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SENSOR_CCS811
-#define _SENSOR_CCS811
+#ifndef ZEPHYR_DRIVERS_SENSOR_CCS811_CCS811_H_
+#define ZEPHYR_DRIVERS_SENSOR_CCS811_CCS811_H_
 
 #include <device.h>
 #include <gpio.h>

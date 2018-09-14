@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef CONF_WINC_H_INCLUDED
-#define CONF_WINC_H_INCLUDED
+#ifndef ZEPHYR_DRIVERS_WIFI_WINC1500_WIFI_WINC1500_CONFIG_H_
+#define ZEPHYR_DRIVERS_WIFI_WINC1500_WIFI_WINC1500_CONFIG_H_
 
 /*
    ---------------------------------
@@ -63,4 +63,4 @@
 #define CONF_WINC_DEBUG				(0)
 #define CONF_WINC_PRINTF			printf
 
-#endif /* CONF_WINC_H_INCLUDED */
+#endif /* ZEPHYR_DRIVERS_WIFI_WINC1500_WIFI_WINC1500_CONFIG_H_ */

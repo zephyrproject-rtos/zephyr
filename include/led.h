@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ZEPHYR_LED_H
-#define _ZEPHYR_LED_H
+#ifndef ZEPHYR_INCLUDE_LED_H_
+#define ZEPHYR_INCLUDE_LED_H_
 
 /**
  * @file
@@ -142,4 +142,4 @@ static inline int _impl_led_off(struct device *dev, u32_t led)
 
 #include <syscalls/led.h>
 
-#endif	/* _ZEPHYR_LED_H */
+#endif	/* ZEPHYR_INCLUDE_LED_H_ */

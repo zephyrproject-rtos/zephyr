@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INC_stdio_h__
-#define __INC_stdio_h__
+#ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDIO_H_
+#define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDIO_H_
 
 #include <toolchain.h>
 #include <stdarg.h>     /* Needed to get definition of va_list */
@@ -66,4 +66,4 @@ size_t fwrite(const void *_MLIBC_RESTRICT ptr, size_t size, size_t nitems,
 }
 #endif
 
-#endif /* __INC_stdio_h__ */
+#endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDIO_H_ */

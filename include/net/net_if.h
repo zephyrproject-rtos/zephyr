@@ -9,8 +9,8 @@
  * @brief Public API for network interface
  */
 
-#ifndef __NET_IF_H__
-#define __NET_IF_H__
+#ifndef ZEPHYR_INCLUDE_NET_NET_IF_H_
+#define ZEPHYR_INCLUDE_NET_NET_IF_H_
 
 /**
  * @brief Network Interface abstraction layer
@@ -1857,4 +1857,4 @@ struct net_if_api {
  * @}
  */
 
-#endif /* __NET_IF_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_NET_IF_H_ */

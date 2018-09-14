@@ -9,8 +9,8 @@
  * @brief Ethernet Management interface public header
  */
 
-#ifndef __ETHERNET_MGMT_H__
-#define __ETHERNET_MGMT_H__
+#ifndef ZEPHYR_INCLUDE_NET_ETHERNET_MGMT_H_
+#define ZEPHYR_INCLUDE_NET_ETHERNET_MGMT_H_
 
 #include <net/ethernet.h>
 #include <net/net_mgmt.h>
@@ -167,4 +167,4 @@ static inline void ethernet_mgmt_raise_vlan_disabled_event(struct net_if *iface,
 }
 #endif
 
-#endif /* __ETHERNET_MGMT_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_ETHERNET_MGMT_H_ */

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __WEBSOCKET_CONSOLE_H__
-#define __WEBSOCKET_CONSOLE_H__
+#ifndef ZEPHYR_INCLUDE_NET_WEBSOCKET_CONSOLE_H_
+#define ZEPHYR_INCLUDE_NET_WEBSOCKET_CONSOLE_H_
 
 #include <net/websocket.h>
 
@@ -57,4 +57,4 @@ int ws_console_recv(struct http_ctx *ctx, struct net_pkt *pkt);
  * @}
  */
 
-#endif /* __WEBSOCKET_CONSOLE_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_WEBSOCKET_CONSOLE_H_ */

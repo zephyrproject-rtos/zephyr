@@ -40,8 +40,8 @@
  * just two pointers, identical with a doubly-linked list.
  */
 
-#ifndef _RB_H
-#define _RB_H
+#ifndef ZEPHYR_INCLUDE_MISC_RB_H_
+#define ZEPHYR_INCLUDE_MISC_RB_H_
 
 struct rbnode {
 	struct rbnode *children[2];
@@ -182,4 +182,4 @@ struct rbnode *_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f);
 				  __typeof__(*(node)), field));		\
 	     /**/)
 
-#endif /* _RB_H */
+#endif /* ZEPHYR_INCLUDE_MISC_RB_H_ */

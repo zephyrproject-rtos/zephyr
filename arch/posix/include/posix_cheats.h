@@ -9,8 +9,8 @@
  * Header to be able to compile the Zephyr kernel on top of a POSIX OS
  */
 
-#ifndef _POSIX_CHEATS_H
-#define _POSIX_CHEATS_H
+#if !defined(ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_CHEATS_H_) && !defined(NO_POSIX_CHEATS)
+#define ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_CHEATS_H_
 
 #ifdef CONFIG_ARCH_POSIX
 
@@ -193,4 +193,4 @@
 
 #endif /* CONFIG_ARCH_POSIX */
 
-#endif /* _POSIX_CHEATS_H */
+#endif /* ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_CHEATS_H_ */

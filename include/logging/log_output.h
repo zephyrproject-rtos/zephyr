@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef LOG_OUTPUT_H
-#define LOG_OUTPUT_H
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_H_
 
 #include <logging/log_msg.h>
 
@@ -114,4 +114,4 @@ void log_output_timestamp_freq_set(u32_t freq);
 }
 #endif
 
-#endif /* LOG_OUTPUT_H */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_H_ */

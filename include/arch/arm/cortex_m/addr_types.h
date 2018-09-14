@@ -6,12 +6,12 @@
 
 /* @file Cortex-M address types (virtual, physical, etc) definitions */
 
-#ifndef _arm_cortex_m_addr_types__h_
-#define _arm_cortex_m_addr_types__h_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ADDR_TYPES_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ADDR_TYPES_H_
 
 #ifndef _ASMLANGUAGE
 	typedef unsigned int paddr_t;
 	typedef unsigned int vaddr_t;
 #endif
 
-#endif /* _arm_cortex_m_addr_types__h_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ADDR_TYPES_H_ */

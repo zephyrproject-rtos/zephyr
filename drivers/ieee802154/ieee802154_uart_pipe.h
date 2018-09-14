@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __IEEE802154_UART_PIPE_H__
-#define __IEEE802154_UART_PIPE_H__
+#ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_UART_PIPE_H_
+#define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_UART_PIPE_H_
 
 #define UART_PIPE_RADIO_15_4_FRAME_TYPE		0xF0
 
@@ -23,4 +23,4 @@ struct upipe_context {
 	u8_t rx_buf[127];
 };
 
-#endif /* __IEEE802154_UART_PIPE_H__ */
+#endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_UART_PIPE_H_ */

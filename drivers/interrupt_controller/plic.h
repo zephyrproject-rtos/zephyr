@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __PLIC_H_
-#define __PLIC_H_
+#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_PLIC_H_
+#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_PLIC_H_
 
 #include <soc.h>
 

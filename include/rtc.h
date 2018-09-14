@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _RTC_H_
-#define _RTC_H_
+#ifndef ZEPHYR_INCLUDE_RTC_H_
+#define ZEPHYR_INCLUDE_RTC_H_
 #include <zephyr/types.h>
 #include <device.h>
 #include <misc/util.h>

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _NRF5_CLOCK_CONTROL_H_
-#define _NRF5_CLOCK_CONTROL_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF5_CLOCK_CONTROL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF5_CLOCK_CONTROL_H_
 
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
 #include <device.h>
@@ -59,4 +59,4 @@ bool nrf5_power_clock_usb_vbusdet(struct device *dev);
 bool nrf5_power_clock_usb_outrdy(struct device *dev);
 #endif
 
-#endif /* _NRF5_CLOCK_CONTROL_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF5_CLOCK_CONTROL_H_ */

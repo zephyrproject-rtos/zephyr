@@ -8,8 +8,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_BLUETOOTH_H
-#define __BT_BLUETOOTH_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_BLUETOOTH_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_BLUETOOTH_H_
 
 /**
  * @brief Bluetooth APIs
@@ -689,4 +689,4 @@ int bt_unpair(u8_t id, const bt_addr_le_t *addr);
  * @}
  */
 
-#endif /* __BT_BLUETOOTH_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_BLUETOOTH_H_ */

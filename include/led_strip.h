@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ZEPHYR_LED_STRIP_H
-#define _ZEPHYR_LED_STRIP_H
+#ifndef ZEPHYR_INCLUDE_LED_STRIP_H_
+#define ZEPHYR_INCLUDE_LED_STRIP_H_
 
 /**
  * @file
@@ -126,4 +126,4 @@ static inline int led_strip_update_channels(struct device *dev,
 }
 #endif
 
-#endif	/* _ZEPHYR_LED_STRIP_H */
+#endif	/* ZEPHYR_INCLUDE_LED_STRIP_H_ */

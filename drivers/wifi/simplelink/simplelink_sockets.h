@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SIMPLELINK_SOCKETS_H
-#define __SIMPLELINK_SOCKETS_H
+#ifndef ZEPHYR_DRIVERS_WIFI_SIMPLELINK_SIMPLELINK_SOCKETS_H_
+#define ZEPHYR_DRIVERS_WIFI_SIMPLELINK_SIMPLELINK_SOCKETS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,4 +17,4 @@ extern const struct socket_offload simplelink_ops;
 }
 #endif
 
-#endif /* __SIMPLELINK_SOCKETS_H */
+#endif /* ZEPHYR_DRIVERS_WIFI_SIMPLELINK_SIMPLELINK_SOCKETS_H_ */

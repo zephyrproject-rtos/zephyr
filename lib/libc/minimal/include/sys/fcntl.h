@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INC_sys_fcntl_h__
-#define __INC_sys_fcntl_h__
+#ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS_FCNTL_H_
+#define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS_FCNTL_H_
 
 #define O_NONBLOCK 0x4000
 
 #define F_GETFL 3
 #define F_SETFL 4
 
-#endif /* __INC_sys_fcntl_h__ */
+#endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS_FCNTL_H_ */

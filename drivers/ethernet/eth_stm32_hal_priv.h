@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ETH_STM32_HAL_PRIV_H_
-#define _ETH_STM32_HAL_PRIV_H_
+#ifndef ZEPHYR_DRIVERS_ETHERNET_ETH_STM32_HAL_PRIV_H_
+#define ZEPHYR_DRIVERS_ETHERNET_ETH_STM32_HAL_PRIV_H_
 
 #include <kernel.h>
 #include <zephyr/types.h>
@@ -44,5 +44,5 @@ struct eth_stm32_hal_dev_data {
 #define DEV_DATA(dev) \
 	((struct eth_stm32_hal_dev_data *)(dev)->driver_data)
 
-#endif /* _ETH_STM32_HAL_PRIV_H_ */
+#endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_STM32_HAL_PRIV_H_ */
 

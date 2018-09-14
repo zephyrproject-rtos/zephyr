@@ -33,8 +33,8 @@
  * This file contains the USB device core layer APIs and structures.
  */
 
-#ifndef USB_DEVICE_H_
-#define USB_DEVICE_H_
+#ifndef ZEPHYR_INCLUDE_USB_USB_DEVICE_H_
+#define ZEPHYR_INCLUDE_USB_USB_DEVICE_H_
 
 #include <drivers/usb/usb_dc.h>
 #include <usb/usbstruct.h>
@@ -425,4 +425,4 @@ void usb_cancel_transfer(u8_t ep);
 }
 #endif
 
-#endif /* USB_DEVICE_H_ */
+#endif /* ZEPHYR_INCLUDE_USB_USB_DEVICE_H_ */

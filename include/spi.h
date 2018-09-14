@@ -9,8 +9,8 @@
  * @brief Public API for SPI drivers and applications
  */
 
-#ifndef __SPI_H__
-#define __SPI_H__
+#ifndef ZEPHYR_INCLUDE_SPI_H_
+#define ZEPHYR_INCLUDE_SPI_H_
 
 /**
  * @brief SPI Interface
@@ -423,4 +423,4 @@ static inline int _impl_spi_release(struct device *dev,
 
 #include <syscalls/spi.h>
 
-#endif /* __SPI_H__ */
+#endif /* ZEPHYR_INCLUDE_SPI_H_ */

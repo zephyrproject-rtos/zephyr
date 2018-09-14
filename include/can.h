@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __DRIVERS_CAN_H
-#define __DRIVERS_CAN_H
+#ifndef ZEPHYR_INCLUDE_CAN_H_
+#define ZEPHYR_INCLUDE_CAN_H_
 
 /**
  * @brief CAN Interface
@@ -378,4 +378,4 @@ static inline int _impl_can_configure(struct device *dev, enum can_mode mode,
  */
 #include <syscalls/can.h>
 
-#endif /*__DRIVERS_CAN_H*/
+#endif /* ZEPHYR_INCLUDE_CAN_H_ */

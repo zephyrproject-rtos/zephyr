@@ -16,8 +16,8 @@
  * NOTE: The Xtensa architecture requires stack pointer alignment to 16 bytes.
  */
 
-#ifndef XTENSA_CONTEXT_H
-#define XTENSA_CONTEXT_H
+#ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_CONTEXT_H_
+#define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_CONTEXT_H_
 
 #ifdef __ASSEMBLER__
 #include    <xtensa/coreasm.h>
@@ -313,5 +313,5 @@ ret
 #endif /* __ASSEMBLER__ */
 
 
-#endif /* XTENSA_CONTEXT_H */
+#endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_CONTEXT_H_ */
 

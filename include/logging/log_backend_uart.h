@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef LOG_BACKEND_UART_H
-#define LOG_BACKEND_UART_H
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_UART_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_UART_H_
 
 #include <logging/log_backend.h>
 
@@ -28,4 +28,4 @@ extern const struct log_backend_api log_backend_uart_api;
 
 void log_backend_uart_init(void);
 
-#endif /* LOG_BACKEND_UART_H */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_UART_H_ */

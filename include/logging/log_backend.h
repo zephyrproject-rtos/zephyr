@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef LOG_BACKEND_H
-#define LOG_BACKEND_H
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_H_
 
 #include <logging/log_msg.h>
 #include <assert.h>
@@ -199,4 +199,4 @@ static inline bool log_backend_is_active(
 }
 #endif
 
-#endif /* LOG_BACKEND_H */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_H_ */

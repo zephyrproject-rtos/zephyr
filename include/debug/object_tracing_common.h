@@ -9,8 +9,8 @@
  * @brief APIs used to add or remove an object in a debug tracing list.
  */
 
-#ifndef _OBJECT_TRACING_COMMON_H_
-#define _OBJECT_TRACING_COMMON_H_
+#ifndef ZEPHYR_INCLUDE_DEBUG_OBJECT_TRACING_COMMON_H_
+#define ZEPHYR_INCLUDE_DEBUG_OBJECT_TRACING_COMMON_H_
 
 #ifndef CONFIG_OBJECT_TRACING
 
@@ -98,4 +98,4 @@
 	while (0)
 
 #endif  /*CONFIG_OBJECT_TRACING*/
-#endif  /*_OBJECT_TRACING_COMMON_H_*/
+#endif  /*ZEPHYR_INCLUDE_DEBUG_OBJECT_TRACING_COMMON_H_*/

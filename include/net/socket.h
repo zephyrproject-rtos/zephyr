@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_SOCKET_H
-#define __NET_SOCKET_H
+#ifndef ZEPHYR_INCLUDE_NET_SOCKET_H_
+#define ZEPHYR_INCLUDE_NET_SOCKET_H_
 
 /**
  * @brief BSD Sockets compatible API
@@ -369,4 +369,4 @@ static inline void freeaddrinfo(struct zsock_addrinfo *ai)
  * @}
  */
 
-#endif /* __NET_SOCKET_H */
+#endif /* ZEPHYR_INCLUDE_NET_SOCKET_H_ */

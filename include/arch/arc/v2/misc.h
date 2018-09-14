@@ -11,8 +11,8 @@
  * ARC-specific kernel miscellaneous interface. Included by arc/arch.h.
  */
 
-#ifndef _ARCH_ARC_V2_MISC_H_
-#define _ARCH_ARC_V2_MISC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_MISC_H_
+#define ZEPHYR_INCLUDE_ARCH_ARC_V2_MISC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,4 +31,4 @@ extern u32_t _timer_cycle_get_32(void);
 }
 #endif
 
-#endif /* _ARCH_ARC_V2_MISC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARC_V2_MISC_H_ */

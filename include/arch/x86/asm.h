@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INCsysX86Asmh
-#define __INCsysX86Asmh
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_ASM_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_ASM_H_
 
 
 #include <toolchain.h>
@@ -76,4 +76,4 @@
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* __INCsysX86Asmh */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_ASM_H_ */

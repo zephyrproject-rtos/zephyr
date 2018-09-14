@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _cache__h_
-#define _cache__h_
+#ifndef ZEPHYR_INCLUDE_CACHE_H_
+#define ZEPHYR_INCLUDE_CACHE_H_
 
 #include <kernel.h>
 
@@ -57,4 +57,4 @@ static inline _sys_cache_flush_sig(sys_cache_flush)
 }
 #endif
 
-#endif /* _cache__h_ */
+#endif /* ZEPHYR_INCLUDE_CACHE_H_ */

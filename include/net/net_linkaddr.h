@@ -9,8 +9,8 @@
  * @brief Public API for network link address
  */
 
-#ifndef __NET_LINKADDR_H__
-#define __NET_LINKADDR_H__
+#ifndef ZEPHYR_INCLUDE_NET_NET_LINKADDR_H_
+#define ZEPHYR_INCLUDE_NET_NET_LINKADDR_H_
 
 #include <zephyr/types.h>
 #include <stdbool.h>
@@ -140,4 +140,4 @@ static inline int net_linkaddr_set(struct net_linkaddr_storage *lladdr_store,
 }
 #endif
 
-#endif /* __NET_LINKADDR_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_NET_LINKADDR_H_ */

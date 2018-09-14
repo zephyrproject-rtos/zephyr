@@ -33,8 +33,8 @@
  * @brief Designware ADC header file
  */
 
-#ifndef DW_ADC_H_
-#define DW_ADC_H_
+#ifndef ZEPHYR_DRIVERS_ADC_ADC_DW_H_
+#define ZEPHYR_DRIVERS_ADC_ADC_DW_H_
 
 #include <zephyr/types.h>
 #include <adc.h>
@@ -234,4 +234,4 @@ int adc_dw_init(struct device *dev);
 }
 #endif
 
-#endif  /*  DW_ADC_H_ */
+#endif  /*  ZEPHYR_DRIVERS_ADC_ADC_DW_H_ */
