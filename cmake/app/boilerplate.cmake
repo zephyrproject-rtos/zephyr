@@ -91,6 +91,8 @@ set(ZEPHYR_BINARY_DIR ${PROJECT_BINARY_DIR})
 set(ZEPHYR_BASE ${PROJECT_SOURCE_DIR})
 
 set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
+# add pre-processor definitions to allow eclipse to gray out sections
+set(CMAKE_EXTRA_GENERATOR_C_SYSTEM_INCLUDE_MACROS "${AUTOCONF_H}")
 # Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 
