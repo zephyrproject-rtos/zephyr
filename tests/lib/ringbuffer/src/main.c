@@ -25,17 +25,17 @@
  * @defgroup t_ringbuffer_api test_ringbuffer_api
  * @brief TestPurpose: verify zephyr ring buffer API functionality
  * - API coverage
- *   -# SYS_RING_BUF_DECLARE_POW2
- *   -# SYS_RING_BUF_DECLARE_SIZE
- *   -# sys_ring_buf_init
- *   -# sys_ring_buf_is_empty
- *   -# sys_ring_buf_space_get
- *   -# sys_ring_buf_put
- *   -# sys_ring_buf_get
+ *   -# RING_BUF_ITEM_DECLARE_POW2
+ *   -# RING_BUF_ITEM_DECLARE_SIZE
+ *   -# ring_buf_init
+ *   -# ring_buf_is_empty
+ *   -# ring_buf_space_get
+ *   -# ring_buf_item_put
+ *   -# ring_buf_item_get
  * @}
  */
 
-SYS_RING_BUF_DECLARE_POW2(ring_buf1, 8);
+RING_BUF_ITEM_DECLARE_POW2(ring_buf1, 8);
 
 #define TYPE    1
 #define VALUE   2
@@ -58,20 +58,20 @@ void test_ring_buffer_main(void)
 	put_count = 0;
 
 	while (1) {
-		ret = sys_ring_buf_put(&ring_buf1, TYPE, VALUE,
+		ret = ring_buf_item_put(&ring_buf1, TYPE, VALUE,
 				       (u32_t *)rb_data, dsize);
 		if (ret == -EMSGSIZE) {
 			SYS_LOG_DBG("ring buffer is full");
 			break;
 		}
 		SYS_LOG_DBG("inserted %d chunks, %d remaining", dsize,
-			    sys_ring_buf_space_get(&ring_buf1));
+			    ring_buf_space_get(&ring_buf1));
 		dsize = (dsize + 1) % SIZE32_OF(rb_data);
 		put_count++;
 	}
 
 	getsize = INITIAL_SIZE - 1;
-	ret = sys_ring_buf_get(&ring_buf1, &gettype, &getval, getdata, &getsize);
+	ret = ring_buf_item_get(&ring_buf1, &gettype, &getval, getdata, &getsize);
 	if (ret != -EMSGSIZE) {
 		SYS_LOG_DBG("Allowed retreival with insufficient destination buffer space");
 		zassert_true((getsize == INITIAL_SIZE), "Correct size wasn't reported back to the caller");
@@ -79,12 +79,12 @@ void test_ring_buffer_main(void)
 
 	for (i = 0; i < put_count; i++) {
 		getsize = SIZE32_OF(getdata);
-		ret = sys_ring_buf_get(&ring_buf1, &gettype, &getval, getdata,
+		ret = ring_buf_item_get(&ring_buf1, &gettype, &getval, getdata,
 				       &getsize);
 		zassert_true((ret == 0), "Couldn't retrieve a stored value");
 		SYS_LOG_DBG("got %u chunks of type %u and val %u, %u remaining",
 			    getsize, gettype, getval,
-			    sys_ring_buf_space_get(&ring_buf1));
+			    ring_buf_space_get(&ring_buf1));
 
 		zassert_true((memcmp((char *)getdata, rb_data, getsize * sizeof(u32_t)) == 0),
 			     "data corrupted");
@@ -93,16 +93,16 @@ void test_ring_buffer_main(void)
 	}
 
 	getsize = SIZE32_OF(getdata);
-	ret = sys_ring_buf_get(&ring_buf1, &gettype, &getval, getdata,
+	ret = ring_buf_item_get(&ring_buf1, &gettype, &getval, getdata,
 			       &getsize);
 	zassert_true((ret == -EAGAIN), "Got data out of an empty buffer");
 }
 
-/**TESTPOINT: init via SYS_RING_BUF_DECLARE_POW2*/
-SYS_RING_BUF_DECLARE_POW2(ringbuf_pow2, POW);
+/**TESTPOINT: init via RING_BUF_ITEM_DECLARE_POW2*/
+RING_BUF_ITEM_DECLARE_POW2(ringbuf_pow2, POW);
 
-/**TESTPOINT: init via SYS_RING_BUF_DECLARE_SIZE*/
-SYS_RING_BUF_DECLARE_SIZE(ringbuf_size, RINGBUFFER_SIZE);
+/**TESTPOINT: init via RING_BUF_ITEM_DECLARE_SIZE*/
+RING_BUF_ITEM_DECLARE_SIZE(ringbuf_size, RINGBUFFER_SIZE);
 
 static struct ring_buf ringbuf, *pbuf;
 
@@ -124,7 +124,7 @@ static void tringbuf_put(void *p)
 {
 	int index = (int)p;
 	/**TESTPOINT: ring buffer put*/
-	int ret = sys_ring_buf_put(pbuf, data[index].type, data[index].value,
+	int ret = ring_buf_item_put(pbuf, data[index].type, data[index].value,
 				   data[index].buffer, data[index].length);
 
 	zassert_equal(ret, 0, NULL);
@@ -138,7 +138,7 @@ static void tringbuf_get(void *p)
 	int ret, index = (int)p;
 
 	/**TESTPOINT: ring buffer get*/
-	ret = sys_ring_buf_get(pbuf, &type, &value, rx_data, &size32);
+	ret = ring_buf_item_get(pbuf, &type, &value, rx_data, &size32);
 	zassert_equal(ret, 0, NULL);
 	zassert_equal(type, data[index].type, NULL);
 	zassert_equal(value, data[index].value, NULL);
@@ -149,22 +149,22 @@ static void tringbuf_get(void *p)
 /*test cases*/
 void test_ringbuffer_init(void)
 {
-	/**TESTPOINT: init via sys_ring_buf_init*/
-	sys_ring_buf_init(&ringbuf, RINGBUFFER_SIZE, buffer);
-	zassert_true(sys_ring_buf_is_empty(&ringbuf), NULL);
-	zassert_equal(sys_ring_buf_space_get(&ringbuf), RINGBUFFER_SIZE - 1, NULL);
+	/**TESTPOINT: init via ring_buf_init*/
+	ring_buf_init(&ringbuf, RINGBUFFER_SIZE, buffer);
+	zassert_true(ring_buf_is_empty(&ringbuf), NULL);
+	zassert_equal(ring_buf_space_get(&ringbuf), RINGBUFFER_SIZE - 1, NULL);
 }
 
 void test_ringbuffer_declare_pow2(void)
 {
-	zassert_true(sys_ring_buf_is_empty(&ringbuf_pow2), NULL);
-	zassert_equal(sys_ring_buf_space_get(&ringbuf_pow2), (1 << POW) - 1, NULL);
+	zassert_true(ring_buf_is_empty(&ringbuf_pow2), NULL);
+	zassert_equal(ring_buf_space_get(&ringbuf_pow2), (1 << POW) - 1, NULL);
 }
 
 void test_ringbuffer_declare_size(void)
 {
-	zassert_true(sys_ring_buf_is_empty(&ringbuf_size), NULL);
-	zassert_equal(sys_ring_buf_space_get(&ringbuf_size), RINGBUFFER_SIZE - 1,
+	zassert_true(ring_buf_is_empty(&ringbuf_size), NULL);
+	zassert_equal(ring_buf_space_get(&ringbuf_size), RINGBUFFER_SIZE - 1,
 		      NULL);
 }
 
@@ -176,9 +176,9 @@ void test_ringbuffer_put_get_thread(void)
 	tringbuf_get((void *)0);
 	tringbuf_get((void *)1);
 	tringbuf_put((void *)2);
-	zassert_false(sys_ring_buf_is_empty(pbuf), NULL);
+	zassert_false(ring_buf_is_empty(pbuf), NULL);
 	tringbuf_get((void *)2);
-	zassert_true(sys_ring_buf_is_empty(pbuf), NULL);
+	zassert_true(ring_buf_is_empty(pbuf), NULL);
 }
 
 void test_ringbuffer_put_get_isr(void)
@@ -189,9 +189,9 @@ void test_ringbuffer_put_get_isr(void)
 	irq_offload(tringbuf_get, (void *)0);
 	irq_offload(tringbuf_get, (void *)1);
 	irq_offload(tringbuf_put, (void *)2);
-	zassert_false(sys_ring_buf_is_empty(pbuf), NULL);
+	zassert_false(ring_buf_is_empty(pbuf), NULL);
 	irq_offload(tringbuf_get, (void *)2);
-	zassert_true(sys_ring_buf_is_empty(pbuf), NULL);
+	zassert_true(ring_buf_is_empty(pbuf), NULL);
 }
 
 void test_ringbuffer_put_get_thread_isr(void)

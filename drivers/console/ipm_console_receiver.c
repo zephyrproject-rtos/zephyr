@@ -36,9 +36,9 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 	while (1) {
 		k_sem_take(&driver_data->sem, K_FOREVER);
 
-		ret = sys_ring_buf_get(&driver_data->rb, &type,
-				       (u8_t *)&config_info->line_buf[pos],
-				       NULL, &size32);
+		ret = ring_buf_item_get(&driver_data->rb, &type,
+					(u8_t *)&config_info->line_buf[pos],
+					NULL, &size32);
 		if (ret) {
 			/* Shouldn't ever happen... */
 			printk("ipm console ring buffer error: %d\n", ret);
@@ -75,7 +75,7 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 		 * clearing the channel_disabled flag.
 		 */
 		if (driver_data->channel_disabled &&
-		    sys_ring_buf_space_get(&driver_data->rb)) {
+		    ring_buf_space_get(&driver_data->rb)) {
 			key = irq_lock();
 			ipm_set_enabled(driver_data->ipm_device, 1);
 			driver_data->channel_disabled = 0;
@@ -96,7 +96,7 @@ static void ipm_console_receive_callback(void *context, u32_t id,
 	driver_data = d->driver_data;
 
 	/* Should always be at least one free buffer slot */
-	ret = sys_ring_buf_put(&driver_data->rb, 0, id, NULL, 0);
+	ret = ring_buf_item_put(&driver_data->rb, 0, id, NULL, 0);
 	__ASSERT(ret == 0, "Failed to insert data into ring buffer");
 	k_sem_give(&driver_data->sem);
 
@@ -108,7 +108,7 @@ static void ipm_console_receive_callback(void *context, u32_t id,
 	 * call with the wait flag enabled.  It blocks until the receiver side
 	 * re-enables the channel and consumes the data.
 	 */
-	if (sys_ring_buf_space_get(&driver_data->rb) == 0) {
+	if (ring_buf_space_get(&driver_data->rb) == 0) {
 		ipm_set_enabled(driver_data->ipm_device, 0);
 		driver_data->channel_disabled = 1;
 	}
@@ -139,8 +139,8 @@ int ipm_console_receiver_init(struct device *d)
 	driver_data->ipm_device = ipm;
 	driver_data->channel_disabled = 0;
 	k_sem_init(&driver_data->sem, 0, UINT_MAX);
-	sys_ring_buf_init(&driver_data->rb, config_info->rb_size32,
-			  config_info->ring_buf_data);
+	ring_buf_init(&driver_data->rb, config_info->rb_size32,
+		      config_info->ring_buf_data);
 
 	ipm_register_callback(ipm, ipm_console_receive_callback, d);
 

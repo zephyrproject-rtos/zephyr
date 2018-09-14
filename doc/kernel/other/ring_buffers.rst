@@ -72,7 +72,7 @@ Defining a Ring Buffer
 ======================
 
 A ring buffer is defined using a variable of type :c:type:`struct ring_buf`.
-It must then be initialized by calling :cpp:func:`sys_ring_buf_init()`.
+It must then be initialized by calling :cpp:func:`ring_buf_init()`.
 
 The following code defines and initializes an empty ring buffer
 (which is part of a larger data structure). The ring buffer's data buffer
@@ -90,7 +90,7 @@ is capable of holding 64 words of data and metadata information.
     struct my_struct ms;
 
     void init_my_struct {
-        sys_ring_buf_init(&ms.rb, sizeof(ms.buffer), ms.buffer);
+        ring_buf_init(&ms.rb, sizeof(ms.buffer), ms.buffer);
         ...
     }
 
@@ -104,7 +104,7 @@ which can be accessed using efficient masking operations.
 .. code-block:: c
 
     /* Buffer with 2^8 (or 256) words */
-    SYS_RING_BUF_DECLARE_POW2(my_ring_buf, 8);
+    RING_BUF_ITEM_DECLARE_POW2(my_ring_buf, 8);
 
 The following code defines a ring buffer with an arbitrary-sized data buffer,
 which can be accessed using less efficient modulo operations.
@@ -112,19 +112,20 @@ which can be accessed using less efficient modulo operations.
 .. code-block:: c
 
     #define MY_RING_BUF_WORDS 93
-    SYS_RING_BUF_DECLARE_SIZE(my_ring_buf, MY_RING_BUF_WORDS);
+    RING_BUF_ITEM_DECLARE_SIZE(my_ring_buf, MY_RING_BUF_WORDS);
 
 Enqueuing Data
 ==============
 
-A data item is added to a ring buffer by calling :cpp:func:`sys_ring_buf_put()`.
+A data item is added to a ring buffer by calling
+:cpp:func:`ring_buf_item_put()`.
 
 .. code-block:: c
 
-    u32_t my_data[MY_DATA_WORDS];
+    u32_t data[MY_DATA_WORDS];
     int ret;
 
-    ret = sys_ring_buf_put(&ring_buf, TYPE_FOO, 0, my_data, SIZE32_OF(my_data));
+    ret = ring_buf_item_put(&ring_buf, TYPE_FOO, 0, data, SIZE32_OF(data));
     if (ret == -EMSGSIZE) {
         /* not enough room for the data item */
 	...
@@ -138,7 +139,7 @@ can be specified.
 
     int ret;
 
-    ret = sys_ring_buf_put(&ring_buf, TYPE_BAR, 17, NULL, 0);
+    ret = ring_buf_item_put(&ring_buf, TYPE_BAR, 17, NULL, 0);
     if (ret == -EMSGSIZE) {
         /* not enough room for the data item */
 	...
@@ -148,7 +149,7 @@ Retrieving Data
 ===============
 
 A data item is removed from a ring buffer by calling
-:cpp:func:`sys_ring_buf_get()`.
+:cpp:func:`ring_buf_item_get()`.
 
 .. code-block:: c
 
@@ -159,7 +160,7 @@ A data item is removed from a ring buffer by calling
     int ret;
 
     my_size = SIZE32_OF(my_data);
-    ret = sys_ring_buf_get(&ring_buf, &my_type, &my_value, my_data, &my_size);
+    ret = ring_buf_item_get(&ring_buf, &my_type, &my_value, my_data, &my_size);
     if (ret == -EMSGSIZE) {
         printk("Buffer is too small, need %d u32_t\n", my_size);
     } else if (ret == -EAGAIN) {
@@ -175,10 +176,10 @@ APIs
 
 The following ring buffer APIs are provided by :file:`include/ring_buffer.h`:
 
-* :cpp:func:`SYS_RING_BUF_DECLARE_POW2()`
-* :cpp:func:`SYS_RING_BUF_DECLARE_SIZE()`
-* :cpp:func:`sys_ring_buf_init()`
-* :cpp:func:`sys_ring_buf_is_empty()`
-* :cpp:func:`sys_ring_buf_space_get()`
-* :cpp:func:`sys_ring_buf_put()`
-* :cpp:func:`sys_ring_buf_get()`
+* :cpp:func:`RING_BUF_ITEM_DECLARE_POW2()`
+* :cpp:func:`RING_BUF_ITEM_DECLARE_SIZE()`
+* :cpp:func:`ring_buf_init()`
+* :cpp:func:`ring_buf_is_empty()`
+* :cpp:func:`ring_buf_space_get()`
+* :cpp:func:`ring_buf_item_put()`
+* :cpp:func:`ring_buf_item_get()`
