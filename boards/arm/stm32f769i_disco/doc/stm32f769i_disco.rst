@@ -110,6 +110,10 @@ The Zephyr stm32f769i_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -126,10 +130,11 @@ For mode details please refer to `32F769I-DISCO board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
-- UART_1_TX : PA9
-- UART_1_RX : PA10
-- UART_6_TX : PC6
-- UART_6_RX : PC7
+
+- UART_1 TX/RX : PA9/PA10 (ST-Link Virtual Port Com)
+- UART_6 TX/RX : PC6/PC7 (Arduino Serial)
+- I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- SPI2 SCK/MISO/MOSI : PA12/PB14/PB15 (Arduino SPI)
 - LD1 : PJ13
 - LD2 : PJ5
 - LD3 : PA12
