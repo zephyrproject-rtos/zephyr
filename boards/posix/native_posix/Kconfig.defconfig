@@ -38,4 +38,21 @@ endchoice
 
 endif # BT_HCI
 
+if LOG
+
+config LOG_BACKEND_NATIVE_POSIX
+	def_bool y
+
+# For native_posix we can log immediately without any problem
+# Doing so will be nicer for debugging
+config LOG_INPLACE_PROCESS
+	def_bool y
+
+# If we set LOG_INPLACE_PROCESS, there is no need to have the logging thread
+# running
+config LOG_PROCESS_THREAD
+	def_bool n
+
+endif # LOG
+
 endif # BOARD_NATIVE_POSIX
