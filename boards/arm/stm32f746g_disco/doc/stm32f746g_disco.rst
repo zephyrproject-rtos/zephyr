@@ -100,6 +100,10 @@ The Zephyr stm32f746g_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -116,11 +120,12 @@ For mode details please refer to `32F746G-DISCO board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
-- UART_1_TX : PA9
-- UART_1_RX : PB7
-- UART_6_TX : PC6
-- UART_6_RX : PC7
-- LD1 : PI1
+
+- UART_1 TX/RX : PA9/PB7 (ST-Link Virtual Port Com)
+- UART_6 TX/RX : PC6/PC7 (Arduino Serial)
+- I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- SPI1 SCK/MISO/MOSI : PI1/PB14/PB15 (Arduino SPI)
+- LD1 : PI11
 
 System Clock
 ============
