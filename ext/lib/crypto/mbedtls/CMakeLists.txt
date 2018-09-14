@@ -94,8 +94,10 @@ if(CONFIG_MBEDTLS_BUILTIN)
   zephyr_library_sources(library/xtea.c)
 
   zephyr_library_link_libraries(mbedTLS)
-else()
-  assert(CONFIG_MBEDTLS_LIBRARY "MBEDTLS was enabled, but neither BUILTIN or LIBRARY was selected.")
+
+  target_link_libraries(mbedTLS INTERFACE zephyr_interface)
+
+elseif(CONFIG_MBEDTLS_LIBRARY)
 
   # NB: CONFIG_MBEDTLS_LIBRARY is not regression tested and is
   # therefore susceptible to bit rot
@@ -112,6 +114,12 @@ else()
   # Lib mbedtls_external depends on libgcc (I assume?) so to allow
   # mbedtls_external to link with gcc we need to ensure it is placed
   # after mbedtls_external on the linkers command line.
+
+  target_link_libraries(mbedTLS INTERFACE zephyr_interface)
+
+else()
+
+  assert(CONFIG_MBEDTLS_OUT_OF_TREE "MBEDTLS was enabled, but neither BUILTIN or LIBRARY was selected.")
+
 endif()
 
-target_link_libraries(mbedTLS INTERFACE zephyr_interface)

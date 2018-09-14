@@ -17,6 +17,15 @@
 #
 
 
+config MBEDTLS_OUT_OF_TREE
+	bool
+	help
+	  This internal option controls if mbedTLS is provided out-of-tree.
+	  Enabling it removes all mbedTLS related configuration options allowing
+	  out-of-tree configuration to replace them.
+
+if !MBEDTLS_OUT_OF_TREE
+
 menuconfig MBEDTLS
 	bool "mbedTLS Support"
 	help
@@ -145,5 +154,7 @@ config APP_LINK_WITH_MBEDTLS
 	  Add MBEDTLS header files to the 'app' include path. It may be
 	  disabled if the include paths for MBEDTLS are causing aliasing
 	  issues for 'app'.
+
+endif
 
 endif
