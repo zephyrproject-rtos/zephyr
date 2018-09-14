@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <logging/log_backend.h>
-#include <logging/log_backend_native_posix.h>
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
@@ -89,3 +88,5 @@ const struct log_backend_api log_backend_native_posix_api = {
 	.put = put,
 	.panic = panic,
 };
+
+LOG_BACKEND_DEFINE(log_backend_native_posix, log_backend_native_posix_api);
