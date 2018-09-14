@@ -2234,9 +2234,9 @@ static const struct shell_cmd bt_commands[] = {
 #if defined(CONFIG_BT_GATT_CLIENT)
 	{ "gatt-exchange-mtu", cmd_gatt_exchange_mtu, HELP_NONE },
 	{ "gatt-discover-primary", cmd_gatt_discover,
-	  "<UUID> [start handle] [end handle]" },
+	  "[UUID] [start handle] [end handle]" },
 	{ "gatt-discover-secondary", cmd_gatt_discover,
-	  "<UUID> [start handle] [end handle]" },
+	  "[UUID] [start handle] [end handle]" },
 	{ "gatt-discover-include", cmd_gatt_discover,
 	  "[UUID] [start handle] [end handle]" },
 	{ "gatt-discover-characteristic", cmd_gatt_discover,
