@@ -7,29 +7,15 @@ Sorry, Page Not Found
    :align: right
    :scale: 25%
 
-.. raw:: html
-
-   <noscript>
-   Sorry, the page you requested was not found on this site.
-   </noscript>
-   <script type="text/javaScript">
-   <!--
-   var strReferrer=document.referrer;
-   if (strReferrer.length > 0) {
-      document.write("<p>Sorry, the page you requested: " +
-      "<a href=\"" + strReferrer + "\">" +
-      strReferrer + "</a> was not found on this site.</p>");
-   } else {
-      document.write("<p>Sorry, the page you requested was not found on this site.</p>")
-   }
-   //-->
-   </script>
-
-Please check the url for misspellings.
+Sorry, the page you requested was not found on this site.
+Please check the URL for misspellings.
 
 It's also possible we've removed or renamed the page you're looking for.
 
-Please try using the navigation links on the left of this page to navigate
+Try altering the URL to begin with
+``https://docs.zephyrproject.org/latest/...``
+
+Please use the navigation links on the left of this page to navigate
 the major sections of our site, or use the search box.
 
 If you got this error by following a link, please let us know by sending
