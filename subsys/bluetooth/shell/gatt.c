@@ -158,18 +158,12 @@ int cmd_gatt_discover(int argc, char *argv[])
 	discover_params.start_handle = 0x0001;
 	discover_params.end_handle = 0xffff;
 
-	if (argc < 2) {
-		if (!strcmp(argv[0], "gatt-discover-primary") ||
-		    !strcmp(argv[0], "gatt-discover-secondary")) {
-			return -EINVAL;
+	if (argc > 1) {
+		/* Only set the UUID if the value is valid (non zero) */
+		uuid.val = strtoul(argv[1], NULL, 16);
+		if (uuid.val) {
+			discover_params.uuid = &uuid.uuid;
 		}
-		goto done;
-	}
-
-	/* Only set the UUID if the value is valid (non zero) */
-	uuid.val = strtoul(argv[1], NULL, 16);
-	if (uuid.val) {
-		discover_params.uuid = &uuid.uuid;
 	}
 
 	if (argc > 2) {
@@ -179,7 +173,6 @@ int cmd_gatt_discover(int argc, char *argv[])
 		}
 	}
 
-done:
 	if (!strcmp(argv[0], "gatt-discover-secondary")) {
 		discover_params.type = BT_GATT_DISCOVER_SECONDARY;
 	} else if (!strcmp(argv[0], "gatt-discover-include")) {
