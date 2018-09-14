@@ -347,10 +347,12 @@ static struct tls_context *tls_clone(struct tls_context *source_tls)
 	memcpy(&target_tls->options, &source_tls->options,
 	       sizeof(target_tls->options));
 
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
 	if (target_tls->options.is_hostname_set) {
 		mbedtls_ssl_set_hostname(&target_tls->ssl,
 					 source_tls->ssl.hostname);
 	}
+#endif
 
 	return target_tls;
 }
@@ -853,6 +855,7 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 	}
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
 	/* For TLS clients, set hostname to empty string to enforce it's
 	 * verification - only if hostname option was not set. Otherwise
 	 * depend on user configuration.
@@ -860,6 +863,7 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 	if (!is_server && !context->tls->options.is_hostname_set) {
 		mbedtls_ssl_set_hostname(&context->tls->ssl, "");
 	}
+#endif
 
 	/* If verification level was specified explicitly, set it. Otherwise,
 	 * use mbedTLS default values (required for client, none for server)
@@ -940,9 +944,13 @@ static int tls_opt_hostname_set(struct net_context *context,
 {
 	ARG_UNUSED(optlen);
 
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
 	if (mbedtls_ssl_set_hostname(&context->tls->ssl, optval) != 0) {
 		return -EINVAL;
 	}
+#else
+	return -ENOPROTOOPT;
+#endif
 
 	context->tls->options.is_hostname_set = true;
 
