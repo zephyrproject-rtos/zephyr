@@ -105,6 +105,7 @@ def run_kconfig_undef_ref_check(tc, commit_range):
     os.environ["srctree"] = repository_path
 
     # Parse the entire Kconfig tree, to make sure we see all symbols
+    os.environ["SOC_DIR"] = "soc/"
     os.environ["BOARD_DIR"] = "boards/*/*"
     os.environ["ARCH"] = "*"
 
