@@ -131,6 +131,8 @@ static void init_app(void)
 		NET_ERR("Failed to register public certificate: %d", err);
 	}
 #endif
+
+	init_vlan();
 }
 
 void main(void)
