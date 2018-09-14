@@ -55,10 +55,67 @@ if(CONFIG_HAS_DTS)
     -isystem ${ZEPHYR_BASE}/include
     -isystem ${ZEPHYR_BASE}/dts/${ARCH}
     -isystem ${ZEPHYR_BASE}/dts
-    -include ${AUTOCONF_H}
     ${DTC_INCLUDE_FLAG_FOR_DTS}  # include the DTS source and overlays
     -I${ZEPHYR_BASE}/dts/common
     -I${ZEPHYR_BASE}/drivers
+    -DCONFIG_SOC_DUMMY
+    -undef -D__DTS__
+    -P
+    -E ${ZEPHYR_BASE}/misc/empty_file.c
+    -o ${BOARD}.dts.pre.tmp
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    RESULT_VARIABLE ret
+    )
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "command failed with return code: ${ret}")
+  endif()
+
+  # Run the DTC on *.dts.pre.tmp to create the intermediary file *.dts_compiled
+  execute_process(
+    COMMAND ${DTC}
+    -O dts
+    -o ${BOARD}.dts_compiled
+    -b 0
+    ${BOARD}.dts.pre.tmp
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    RESULT_VARIABLE ret
+    )
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "command failed with return code: ${ret}")
+  endif()
+
+  set(CMD_EARLY_EXTRACT_COMPAT ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/dts/extract_early_compat.py ${BOARD}.dts_compiled)
+
+  # Run extract_dts_includes.py to create a .conf and a header file that can be
+  # included into the CMake namespace
+  execute_process(
+    COMMAND ${CMD_EARLY_EXTRACT_COMPAT}
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    OUTPUT_VARIABLE COMPAT_DEFINES
+    RESULT_VARIABLE ret
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "command failed with return code: ${ret}")
+  endif()
+  separate_arguments(COMPAT_DEFINES)
+
+  # Run the C preprocessor on an empty C source file that has one or
+  # more DTS source files -include'd into it to create the
+  # intermediary file *.dts.pre.tmp
+  execute_process(
+    COMMAND ${CMAKE_C_COMPILER}
+    -x assembler-with-cpp
+    -nostdinc
+    -I${ZEPHYR_BASE}/arch/${ARCH}/soc
+    -isystem ${ZEPHYR_BASE}/include
+    -isystem ${ZEPHYR_BASE}/dts/${ARCH}
+    -isystem ${ZEPHYR_BASE}/dts
+    ${DTC_INCLUDE_FLAG_FOR_DTS}  # include the DTS source and overlays
+    -I${ZEPHYR_BASE}/dts/common
+    -I${ZEPHYR_BASE}/drivers
+    ${COMPAT_DEFINES}
     -undef -D__DTS__
     -P
     -E ${ZEPHYR_BASE}/misc/empty_file.c
