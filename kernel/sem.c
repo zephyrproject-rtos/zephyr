@@ -124,6 +124,7 @@ void _impl_k_sem_give(struct k_sem *sem)
 Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_sem_give, K_OBJ_SEM, struct k_sem *);
 #endif
 
+#ifdef CONFIG_MULTITHREADING
 int _impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 {
 	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
@@ -148,6 +149,28 @@ int _impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 
 	return _pend_current_thread(key, &sem->wait_q, timeout);
 }
+#else /* CONFIG_MULTITHREADING */
+int _impl_k_sem_take(struct k_sem *sem, s32_t timeout)
+{
+	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
+
+	u32_t start = k_uptime_get_32();
+
+	do {
+		unsigned int key = irq_lock();
+
+		if (likely(sem->count > 0)) {
+			sem->count--;
+			irq_unlock(key);
+			return 0;
+		}
+
+		irq_unlock(key);
+	} while ((k_uptime_get_32() - start) < timeout);
+
+	return -EBUSY;
+}
+#endif /* CONFIG_MULTITHREADING */
 
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER(k_sem_take, sem, timeout)
