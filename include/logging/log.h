@@ -255,6 +255,77 @@ extern "C" {
  */
 int log_printk(const char *fmt, va_list ap);
 
+/** @brief Copy transient string to a buffer from internal, logger pool.
+ *
+ * Function should be used when transient string is intended to be logged.
+ * Logger allocates a buffer and copies input string returning a pointer to the
+ * copy. Logger ensures that buffer is freed when logger message is freed.
+ *
+ * @param str Transient string.
+ *
+ * @return Copy of the string or default string if buffer could not be
+ *	   allocated. String may be truncated if input string does not fit in
+ *	   a buffer from the pool (see CONFIG_LOG_STRDUP_MAX_STRING).
+ */
+char *log_strdup(char *str);
+
+/** @brief Allocate buffer from internal logger pool.
+ *
+ * When buffer is passed to a log message it must be wrapped with @ref
+ * log_strbuf.
+ *
+ * @param len Buffer len.
+ *
+ * @return Buffer address or NULL if pool is empty or len is bigger than
+ *	   CONFIG_LOG_STRDUP_MAX_STRING.
+ */
+void *log_malloc(u32_t len);
+
+/** @brief Indicate buffer allocated using @ref log_malloc.
+ *
+ * Routine must be used when buffer is passed to a log message
+ * (e.g. LOG_INF("%s", log_strbuf(buf)) to ensure that buffer is freed together
+ * with log message. Wrapper is needed for C preprocessing.
+ *
+ * @warning
+ * Given buffer must be used only once in log message API. Multiple usage leads
+ * to freeing buffer multiple times.
+ *
+ * @param str Buffer.
+ *
+ * @return Input argument.
+ */
+static inline char *log_strbuf(char *str)
+{
+	return str;
+}
+
+/** @brief Must be used to wrap any explicit string (e.g. "string")
+ * passed as an argument to the log API (e.g. LOG_INF("%s",log_str("message"))).
+ *
+ *  When function is missed compilation fails. It is due to internal
+ *  preprocessor operations which concatenates each argument with literal and
+ *  concatenating with string produce invalid token (e.g. PREFIX##"string").
+ *
+ *  @param str Explicit string
+ */
+static inline const char *log_str(const char *str)
+{
+	return str;
+}
+
+/** @brief Wrap around argument which after concatenation does not produce
+ *	   valid token (e.g. *ptr or (a + b)). Must be used to prevent
+ *	   compilation error.
+ *
+ *  @param arg Argument
+ */
+#define LOG_WRAP(arg) log_wrap((u32_t)arg)
+
+static inline u32_t log_wrap(u32_t arg)
+{
+	return arg;
+}
 
 #define __DYNAMIC_MODULE_REGISTER(_name)\
 	struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(_name)	\

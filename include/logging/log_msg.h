@@ -74,6 +74,11 @@ struct log_msg_ids {
 	u16_t source_id : 10;   /*!< Source ID. */
 };
 
+union log_msg_ids_u {
+	struct log_msg_ids ids;
+	u16_t raw;
+};
+
 BUILD_ASSERT_MSG((sizeof(struct log_msg_ids) == sizeof(u16_t)),
 		  "Structure must fit in 2 bytes");
 
@@ -89,8 +94,8 @@ BUILD_ASSERT_MSG((sizeof(struct log_msg_generic_hdr) == sizeof(u16_t)),
 /** Part of log message header specific to standard log message. */
 struct log_msg_std_hdr {
 	COMMON_PARAM_HDR();
-	u16_t reserved : 10;
-	u16_t nargs    : 4;
+	u16_t strdup_mask	: 10;
+	u16_t nargs		: 4;
 };
 
 BUILD_ASSERT_MSG((sizeof(struct log_msg_std_hdr) == sizeof(u16_t)),

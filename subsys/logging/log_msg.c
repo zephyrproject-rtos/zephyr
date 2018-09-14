@@ -6,6 +6,7 @@
 #include <kernel.h>
 #include <logging/log_msg.h>
 #include <logging/log_ctrl.h>
+#include <logging/log_core.h>
 #include <string.h>
 
 #define MSG_SIZE sizeof(union log_msg_chunk)
@@ -38,9 +39,26 @@ static void cont_free(struct log_msg_cont *cont)
 
 static void msg_free(struct log_msg *msg)
 {
+	if (log_msg_is_std(msg) && msg->hdr.params.std.strdup_mask) {
+		u32_t strdup_mask = msg->hdr.params.std.strdup_mask;
+		u32_t current;
+		char *strdup;
+
+		do {
+			current = 31 - __builtin_clz(strdup_mask);
+			strdup = (char *)log_msg_arg_get(msg, current);
+			strdup_mask &= ~(1 << current);
+
+			if (strdup != log_strdup_fail_msg) {
+				log_strdup_free(strdup);
+			}
+		} while (strdup_mask);
+	}
+
 	if (msg->hdr.params.generic.ext == 1) {
 		cont_free(msg->payload.ext.next);
 	}
+
 	k_mem_slab_free(&log_msg_pool, (void **)&msg);
 }
 
@@ -109,7 +127,8 @@ struct log_msg *log_msg_create_n(const char *str,
 
 		if (msg != NULL) {
 			msg->hdr.params.std.nargs = nargs;
-			memcpy(msg->payload.single.args, args, nargs);
+			memcpy(msg->payload.single.args, args,
+			       nargs*sizeof(u32_t));
 		}
 	} else {
 		msg = _log_msg_ext_std_alloc();

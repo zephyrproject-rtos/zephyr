@@ -198,7 +198,9 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
  * http://stackoverflow.com/a/12540675
  */
 #define UTIL_EMPTY(...)
+
 #define UTIL_DEFER(...) __VA_ARGS__ UTIL_EMPTY()
+
 #define UTIL_OBSTRUCT(...) __VA_ARGS__ UTIL_DEFER(UTIL_EMPTY)()
 #define UTIL_EXPAND(...) __VA_ARGS__
 
@@ -366,54 +368,7 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 	20, 19, 18, 17, 16, 15, 14, 13, 12, 11,		 \
 	10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, ~)
 
-/**
- * @brief Mapping macro
- *
- * Macro that process all arguments using given macro
- *
- * @param ... Macro name to be used for argument processing followed by
- *            arguments to process. Macro should have following
- *            form: MACRO(argument).
- *
- * @return All arguments processed by given macro
- */
-#define MACRO_MAP(...) MACRO_MAP_(__VA_ARGS__)
-#define MACRO_MAP_(...)							\
-	/* To make sure it works also for 2 arguments in total */	\
-	MACRO_MAP_N(NUM_VA_ARGS_LESS_1(__VA_ARGS__), __VA_ARGS__)
 
-/**
- * @brief Mapping N arguments macro
- *
- * Macro similar to @ref MACRO_MAP but maps exact number of arguments.
- * If there is more arguments given, the rest would be ignored.
- *
- * @param N   Number of arguments to map
- * @param ... Macro name to be used for argument processing followed by
- *            arguments to process. Macro should have following
- *            form: MACRO(argument).
- *
- * @return Selected number of arguments processed by given macro
- */
-#define MACRO_MAP_N(N, ...) MACRO_MAP_N_(N, __VA_ARGS__)
-#define MACRO_MAP_N_(N, ...) UTIL_CAT(MACRO_MAP_, N)(__VA_ARGS__,)
-
-#define MACRO_MAP_0(...)
-#define MACRO_MAP_1(macro, a, ...)  macro(a)
-#define MACRO_MAP_2(macro, a, ...)  macro(a)MACRO_MAP_1(macro, __VA_ARGS__,)
-#define MACRO_MAP_3(macro, a, ...)  macro(a)MACRO_MAP_2(macro, __VA_ARGS__,)
-#define MACRO_MAP_4(macro, a, ...)  macro(a)MACRO_MAP_3(macro, __VA_ARGS__,)
-#define MACRO_MAP_5(macro, a, ...)  macro(a)MACRO_MAP_4(macro, __VA_ARGS__,)
-#define MACRO_MAP_6(macro, a, ...)  macro(a)MACRO_MAP_5(macro, __VA_ARGS__,)
-#define MACRO_MAP_7(macro, a, ...)  macro(a)MACRO_MAP_6(macro, __VA_ARGS__,)
-#define MACRO_MAP_8(macro, a, ...)  macro(a)MACRO_MAP_7(macro, __VA_ARGS__,)
-#define MACRO_MAP_9(macro, a, ...)  macro(a)MACRO_MAP_8(macro, __VA_ARGS__,)
-#define MACRO_MAP_10(macro, a, ...) macro(a)MACRO_MAP_9(macro, __VA_ARGS__,)
-#define MACRO_MAP_11(macro, a, ...) macro(a)MACRO_MAP_10(macro, __VA_ARGS__,)
-#define MACRO_MAP_12(macro, a, ...) macro(a)MACRO_MAP_11(macro, __VA_ARGS__,)
-#define MACRO_MAP_13(macro, a, ...) macro(a)MACRO_MAP_12(macro, __VA_ARGS__,)
-#define MACRO_MAP_14(macro, a, ...) macro(a)MACRO_MAP_13(macro, __VA_ARGS__,)
-#define MACRO_MAP_15(macro, a, ...) macro(a)MACRO_MAP_14(macro, __VA_ARGS__,)
 /*
  * The following provides variadic preprocessor macro support to
  * help eliminate multiple, repetitive function/macro calls.  This
@@ -436,9 +391,57 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 #define _for_9(_call, x, ...) _call(x) _for_8(_call, ##__VA_ARGS__)
 #define _for_10(_call, x, ...) _call(x) _for_9(_call, ##__VA_ARGS__)
 
+/** brief Processes all arguments using given macro.
+ *
+ * Macro takes one argument (e.g. MACRO(argn)).
+ * Example: FOR_EACH(X, a, b,c) will be resolved to X(a) X(b) X(c).
+ */
 #define FOR_EACH(x, ...) \
 	_GET_ARG(__VA_ARGS__, \
 	_for_10, _for_9, _for_8, _for_7, _for_6, _for_5, \
 	_for_4, _for_3, _for_2, _for_1, _for_0)(x, ##__VA_ARGS__)
+
+#define _fori_0(_call, ...)
+
+#define _fori_1(_call, n, x) \
+	_call(n - 0, x)
+
+#define _fori_2(_call, n, x, ...) \
+	_call(n - 1, x) _fori_1(_call, n, ##__VA_ARGS__)
+
+#define _fori_3(_call, n, x, ...) \
+	_call(n - 2, x) _fori_2(_call, n, ##__VA_ARGS__)
+
+#define _fori_4(_call, n, x, ...) \
+	_call(n - 3, x) _fori_3(_call, n, ##__VA_ARGS__)
+
+#define _fori_5(_call, n, x, ...) \
+	_call(n - 4, x) _fori_4(_call, n, ##__VA_ARGS__)
+
+#define _fori_6(_call, n, x, ...) \
+	_call(n - 5, x) _fori_5(_call, n, ##__VA_ARGS__)
+
+#define _fori_7(_call, n, x, ...) \
+	_call(n - 6, x) _fori_6(_call, n, ##__VA_ARGS__)
+
+#define _fori_8(_call, n, x, ...) \
+	_call(n - 7, x) _fori_7(_call, n, ##__VA_ARGS__)
+
+#define _fori_9(_call, n, x, ...) \
+	_call(n - 8, x) _fori_8(_call, n, ##__VA_ARGS__)
+
+#define _fori_10(_call, n, x, ...) \
+	_call(n - 9, x) _fori_9(_call, n, ##__VA_ARGS__)
+
+/** brief Processes all arguments using given macro.
+ *
+ * Macro takes two arguments: index and current argument.
+ * Example: FOR_EACH_IDX(X, a, b,c) will be resolved to X(0,a), X(1,b), X(2,c).
+ */
+#define FOR_EACH_IDX(x, ...)						    \
+	_GET_ARG(__VA_ARGS__,						    \
+		 _fori_10, _fori_9, _fori_8, _fori_7, _fori_6, _fori_5,	    \
+		 _fori_4, _fori_3, _fori_2, _fori_1, _fori_0)		    \
+			(x, NUM_VA_ARGS_LESS_1(__VA_ARGS__), ##__VA_ARGS__)
 
 #endif /* _UTIL__H_ */

@@ -25,6 +25,15 @@ const struct log_backend *uart_backend = &log_backend_uart;
 const struct log_backend *uart_backend;
 #endif
 
+#define LOG_STRDUP_POOL_BUFFER_SIZE \
+	(CONFIG_LOG_STRDUP_MAX_STRING * CONFIG_LOG_STRDUP_BUF_COUNT)
+
+const char *log_strdup_fail_msg = "log_strdup pool empty!";
+
+struct k_mem_slab log_strdup_pool;
+static u8_t __noinit __aligned(sizeof(u32_t))
+		log_strdup_pool_buf[LOG_STRDUP_POOL_BUFFER_SIZE];
+
 static struct log_list_t list;
 static atomic_t initialized;
 static bool panic_mode;
@@ -37,6 +46,25 @@ static timestamp_get_t timestamp_func = dummy_timestamp;
 static u32_t dummy_timestamp(void)
 {
 	return 0;
+}
+
+static inline struct log_msg_ids metadata_to_log_msg_ids(u32_t metadata)
+{
+	union log_msg_ids_u src_level;
+
+	if (IS_ENABLED(CONFIG_DATA_ENDIANNESS_LITTLE)) {
+		/* In little endian bits can be directly casted to struct. */
+		src_level.raw = (u16_t)metadata;
+	} else {
+		src_level.ids.source_id =
+				_LOG_STD_METADATA_SOURCE_ID_GET(metadata);
+		src_level.ids.domain_id =
+				_LOG_STD_METADATA_DOMAIN_ID_GET(metadata);
+		src_level.ids.level =
+				_LOG_STD_METADATA_LEVEL_GET(metadata);
+	}
+
+	return src_level.ids;
 }
 
 static inline void msg_finalize(struct log_msg *msg,
@@ -66,32 +94,42 @@ static inline void msg_finalize(struct log_msg *msg,
 	}
 }
 
-void log_0(const char *str, struct log_msg_ids src_level)
+static inline void std_msg_finalize(struct log_msg *msg, u32_t metadata)
+{
+	msg->hdr.params.std.strdup_mask =
+			_LOG_STD_METADATA_STRDUP_MASK_GET(metadata);
+
+	msg_finalize(msg, metadata_to_log_msg_ids(metadata));
+}
+
+void log_0(const char *str, u32_t metadata)
 {
 	struct log_msg *msg = log_msg_create_0(str);
 
 	if (msg == NULL) {
 		return;
 	}
-	msg_finalize(msg, src_level);
+
+	std_msg_finalize(msg, metadata);
 }
 
 void log_1(const char *str,
 	   u32_t arg0,
-	   struct log_msg_ids src_level)
+	   u32_t metadata)
 {
 	struct log_msg *msg = log_msg_create_1(str, arg0);
 
 	if (msg == NULL) {
 		return;
 	}
-	msg_finalize(msg, src_level);
+
+	std_msg_finalize(msg, metadata);
 }
 
 void log_2(const char *str,
 	   u32_t arg0,
 	   u32_t arg1,
-	   struct log_msg_ids src_level)
+	   u32_t metadata)
 {
 	struct log_msg *msg = log_msg_create_2(str, arg0, arg1);
 
@@ -99,14 +137,14 @@ void log_2(const char *str,
 		return;
 	}
 
-	msg_finalize(msg, src_level);
+	std_msg_finalize(msg, metadata);
 }
 
 void log_3(const char *str,
 	   u32_t arg0,
 	   u32_t arg1,
 	   u32_t arg2,
-	   struct log_msg_ids src_level)
+	   u32_t metadata)
 {
 	struct log_msg *msg = log_msg_create_3(str, arg0, arg1, arg2);
 
@@ -114,13 +152,13 @@ void log_3(const char *str,
 		return;
 	}
 
-	msg_finalize(msg, src_level);
+	std_msg_finalize(msg, metadata);
 }
 
 void log_n(const char *str,
 	   u32_t *args,
 	   u32_t narg,
-	   struct log_msg_ids src_level)
+	   u32_t metadata)
 {
 	struct log_msg *msg = log_msg_create_n(str, args, narg);
 
@@ -128,21 +166,22 @@ void log_n(const char *str,
 		return;
 	}
 
-	msg_finalize(msg, src_level);
+	std_msg_finalize(msg, metadata);
 }
 
 void log_hexdump(const char *str,
 		 const u8_t *data,
 		 u32_t length,
-		 struct log_msg_ids src_level)
+		 u32_t metadata)
 {
-	struct log_msg *msg = log_msg_hexdump_create(str, data, length);
+	struct log_msg *msg;
 
+	msg = log_msg_hexdump_create(str, data, length);
 	if (msg == NULL) {
 		return;
 	}
 
-	msg_finalize(msg, src_level);
+	msg_finalize(msg, metadata_to_log_msg_ids(metadata));
 }
 
 int log_printk(const char *fmt, va_list ap)
@@ -173,7 +212,7 @@ int log_printk(const char *fmt, va_list ap)
 	}
 }
 
-void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap)
+void log_generic(u32_t metadata, const char *fmt, va_list ap)
 {
 	u32_t args[LOG_MAX_NARGS];
 
@@ -184,7 +223,7 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap)
 	/* Assume maximum amount of parameters. Determining exact number would
 	 * require string analysis.
 	 */
-	log_n(fmt, args, LOG_MAX_NARGS, src_level);
+	log_n(fmt, args, LOG_MAX_NARGS, metadata);
 }
 
 static u32_t timestamp_get(void)
@@ -216,6 +255,10 @@ void log_core_init(void)
 					    level);
 		}
 	}
+
+	k_mem_slab_init(&log_strdup_pool, log_strdup_pool_buf,
+			CONFIG_LOG_STRDUP_MAX_STRING,
+			CONFIG_LOG_STRDUP_BUF_COUNT);
 }
 
 /*
@@ -483,6 +526,50 @@ u32_t log_filter_get(struct log_backend const *const backend,
 	} else {
 		return log_compiled_level_get(src_id);
 	}
+}
+
+void *log_malloc(u32_t len)
+{
+	int err;
+	void *buf;
+
+	if (len > CONFIG_LOG_STRDUP_MAX_STRING) {
+		return NULL;
+	}
+
+	err = k_mem_slab_alloc(&log_strdup_pool, &buf, K_NO_WAIT);
+
+	return (err == 0) ? buf : NULL;
+}
+
+char *log_strdup(char *str)
+{
+	size_t slen = strlen(str);
+	size_t cpylen;
+	char *duplicate;
+
+	duplicate = log_malloc(CONFIG_LOG_STRDUP_MAX_STRING);
+	if (!duplicate) {
+		/* failed to allocate */
+		return (char *)log_strdup_fail_msg;
+	}
+
+	cpylen = (slen < CONFIG_LOG_STRDUP_MAX_STRING) ?
+			slen : CONFIG_LOG_STRDUP_MAX_STRING;
+
+	memcpy(duplicate, str, cpylen);
+	duplicate[cpylen] = '\0';
+
+	if (slen > CONFIG_LOG_STRDUP_MAX_STRING) {
+		duplicate[cpylen-1] = '~'; /* indicate truncation */
+	}
+
+	return duplicate;
+}
+
+void log_strdup_free(void *str)
+{
+	k_mem_slab_free(&log_strdup_pool, &str);
 }
 
 #ifdef CONFIG_LOG_PROCESS_THREAD
