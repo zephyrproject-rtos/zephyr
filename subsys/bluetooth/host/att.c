@@ -1648,6 +1648,13 @@ static u8_t att_handle_read_mult_rsp(struct bt_att *att, struct net_buf *buf)
 }
 #endif /* CONFIG_BT_GATT_READ_MULTIPLE */
 
+static u8_t att_handle_read_group_rsp(struct bt_att *att, struct net_buf *buf)
+{
+	BT_DBG("");
+
+	return att_handle_rsp(att, buf->data, buf->len, 0);
+}
+
 static u8_t att_handle_write_rsp(struct bt_att *att, struct net_buf *buf)
 {
 	BT_DBG("");
@@ -1786,6 +1793,10 @@ static const struct att_handler {
 		sizeof(struct bt_att_read_group_req),
 		ATT_REQUEST,
 		att_read_group_req },
+	{ BT_ATT_OP_READ_GROUP_RSP,
+		sizeof(struct bt_att_read_group_rsp),
+		ATT_RESPONSE,
+		att_handle_read_group_rsp },
 	{ BT_ATT_OP_WRITE_REQ,
 		sizeof(struct bt_att_write_req),
 		ATT_REQUEST,
