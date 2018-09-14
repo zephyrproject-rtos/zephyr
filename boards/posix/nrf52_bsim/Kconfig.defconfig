@@ -1,0 +1,42 @@
+
+if BOARD_NRF52_BSIM
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config BUILD_OUTPUT_EXE
+	default y
+
+config OUTPUT_PRINT_MEMORY_USAGE
+	default n
+
+config BOARD
+	default "nrf52_bsim"
+
+if BT
+
+config BT_CTLR
+	def_bool y
+
+endif # BT
+
+if LOG
+
+# This board can reuse the native_posix logging backend
+config LOG_BACKEND_NATIVE_POSIX
+	def_bool y if !SERIAL
+
+# For native_posix we can log immediately without any problem
+# Doing so will be nicer for debugging
+config LOG_INPLACE_PROCESS
+	def_bool y
+
+# If we set LOG_INPLACE_PROCESS, there is no need to have the logging thread
+# running
+config LOG_PROCESS_THREAD
+	def_bool n
+
+endif # LOG
+
+endif # BOARD_NRF52_BSIM
+
