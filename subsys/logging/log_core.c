@@ -264,19 +264,17 @@ void log_init(void)
 
 	/* Assign ids to backends. */
 	for (i = 0; i < log_backend_count_get(); i++) {
-		log_backend_id_set(log_backend_get(i),
+		const struct log_backend *backend = log_backend_get(i);
+
+		log_backend_id_set(backend,
 				   i + LOG_FILTER_FIRST_BACKEND_SLOT_IDX);
-	}
 
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_UART)) {
-		backend_filter_init(uart_backend);
-		log_backend_uart_init();
-		log_backend_activate(uart_backend, NULL);
-	}
+		backend_filter_init(backend);
+		if (backend->api->init) {
+			backend->api->init();
+		}
 
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_NATIVE_POSIX)) {
-		backend_filter_init(native_posix_backend);
-		log_backend_activate(native_posix_backend, NULL);
+		log_backend_activate(backend, NULL);
 	}
 }
 
