@@ -340,7 +340,7 @@ static void net_buf_test_big_buf(void)
 	}
 
 	ipv6 = (struct ipv6_hdr *)(frag->data - net_buf_headroom(frag));
-	udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
+	udp = (struct udp_hdr *)((u8_t *)ipv6 + sizeof(*ipv6));
 
 	net_buf_frag_add(buf, frag);
 	net_buf_unref(buf);
@@ -393,7 +393,7 @@ static void net_buf_test_multi_frags(void)
 	}
 
 	ipv6 = (struct ipv6_hdr *)(frags[i]->data - net_buf_headroom(frags[i]));
-	udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
+	udp = (struct udp_hdr *)((u8_t *)ipv6 + sizeof(*ipv6));
 
 	net_buf_unref(buf);
 

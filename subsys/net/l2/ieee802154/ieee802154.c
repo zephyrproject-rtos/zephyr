@@ -233,7 +233,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 
 	ieee802154_acknowledge(iface, &mpdu);
 
-	net_pkt_set_ll_reserve(pkt, mpdu.payload - (void *)net_pkt_ll(pkt));
+	net_pkt_set_ll_reserve(pkt, (u8_t *)mpdu.payload - net_pkt_ll(pkt));
 	net_buf_pull(pkt->frags, net_pkt_ll_reserve(pkt));
 
 	set_pkt_ll_addr(net_pkt_lladdr_src(pkt), mpdu.mhr.fs->fc.pan_id_comp,

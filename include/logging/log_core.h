@@ -336,7 +336,7 @@ static inline u8_t log_compiled_level_get(u32_t source_id)
 static inline u32_t log_const_source_id(
 				const struct log_source_const_data *data)
 {
-	return ((char *)data - (char *)__log_const_start)/
+	return ((u8_t *)data - (u8_t *)__log_const_start)/
 			sizeof(struct log_source_const_data);
 }
 
@@ -378,7 +378,7 @@ static inline u32_t *log_dynamic_filters_get(u32_t source_id)
  */
 static inline u32_t log_dynamic_source_id(struct log_source_dynamic_data *data)
 {
-	return ((char *)data - (char *)__log_dynamic_start)/
+	return ((u8_t *)data - (u8_t *)__log_dynamic_start)/
 			sizeof(struct log_source_dynamic_data);
 }
 

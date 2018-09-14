@@ -345,8 +345,8 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 
 	bdt[idx_even].buf_addr = (u32_t)block->data;
 	SYS_LOG_INF("idx_even %x", (u32_t)block->data);
-	bdt[idx_odd].buf_addr = (u32_t)(block->data + cfg->ep_mps);
-	SYS_LOG_INF("idx_odd %x", (u32_t)(block->data + cfg->ep_mps));
+	bdt[idx_odd].buf_addr = (u32_t)((u8_t *)block->data + cfg->ep_mps);
+	SYS_LOG_INF("idx_odd %x", (u32_t)((u8_t *)block->data + cfg->ep_mps));
 
 	if (cfg->ep_addr & USB_EP_DIR_IN) {
 		dev_data.ep_ctrl[ep_idx].mps_in = cfg->ep_mps;

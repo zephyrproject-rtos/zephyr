@@ -29,6 +29,7 @@ static inline size_t _nvs_al_size(struct nvs_fs *fs, size_t len)
 static int _nvs_flash_al_wrt(struct nvs_fs *fs, u32_t addr, const void *data,
 		      size_t len)
 {
+	const u8_t *data8 = (const u8_t *)data;
 	int rc = 0;
 	off_t offset;
 	size_t blen;
@@ -50,17 +51,17 @@ static int _nvs_flash_al_wrt(struct nvs_fs *fs, u32_t addr, const void *data,
 	}
 	blen = len & ~(fs->write_block_size - 1);
 	if (blen > 0) {
-		rc = flash_write(fs->flash_device, offset, data, blen);
+		rc = flash_write(fs->flash_device, offset, data8, blen);
 		if (rc) {
 			/* flash write error */
 			goto end;
 		}
 		len -= blen;
 		offset += blen;
-		data += blen;
+		data8 += blen;
 	}
 	if (len) {
-		memcpy(buf, data, len);
+		memcpy(buf, data8, len);
 		(void)memset(buf + len, 0xff, fs->write_block_size - len);
 		rc = flash_write(fs->flash_device, offset, buf,
 				 fs->write_block_size);
@@ -132,6 +133,7 @@ static int _nvs_flash_ate_rd(struct nvs_fs *fs, u32_t addr,
 static int _nvs_flash_block_cmp(struct nvs_fs *fs, u32_t addr, const void *data,
 			 size_t len)
 {
+	const u8_t *data8 = (const u8_t *)data;
 	int rc;
 	size_t bytes_to_cmp, block_size;
 	u8_t buf[NVS_BLOCK_SIZE];
@@ -143,13 +145,13 @@ static int _nvs_flash_block_cmp(struct nvs_fs *fs, u32_t addr, const void *data,
 		if (rc) {
 			return rc;
 		}
-		rc = memcmp(data, buf, bytes_to_cmp);
+		rc = memcmp(data8, buf, bytes_to_cmp);
 		if (rc) {
 			return 1;
 		}
 		len -= bytes_to_cmp;
 		addr += bytes_to_cmp;
-		data += bytes_to_cmp;
+		data8 += bytes_to_cmp;
 	}
 	return 0;
 }

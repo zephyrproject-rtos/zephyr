@@ -157,7 +157,7 @@ static void spi_sam0_finish(SercomSpi *regs)
 static void spi_sam0_fast_tx(SercomSpi *regs, const struct spi_buf *tx_buf)
 {
 	const u8_t *p = tx_buf->buf;
-	const u8_t *pend = tx_buf->buf + tx_buf->len;
+	const u8_t *pend = (u8_t *)tx_buf->buf + tx_buf->len;
 	u8_t ch;
 
 	while (p != pend) {
@@ -215,7 +215,7 @@ static void spi_sam0_fast_txrx(SercomSpi *regs,
 			       const struct spi_buf *rx_buf)
 {
 	const u8_t *tx = tx_buf->buf;
-	const u8_t *txend = tx_buf->buf + tx_buf->len;
+	const u8_t *txend = (u8_t *)tx_buf->buf + tx_buf->len;
 	u8_t *rx = rx_buf->buf;
 	size_t len = rx_buf->len;
 

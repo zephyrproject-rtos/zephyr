@@ -63,7 +63,7 @@ static inline struct net_nbr *get_nbr(struct net_nbr *start, int idx)
 {
 	NET_ASSERT(idx < CONFIG_NET_IPV6_MAX_NEIGHBORS);
 
-	return (struct net_nbr *)((void *)start +
+	return (struct net_nbr *)((u8_t *)start +
 			((sizeof(struct net_nbr) +
 			  start->size + start->extra_data_size) * idx));
 }

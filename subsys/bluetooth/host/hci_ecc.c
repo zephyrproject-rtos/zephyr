@@ -224,7 +224,7 @@ static void clear_ecc_events(struct net_buf *buf)
 {
 	struct bt_hci_cp_le_set_event_mask *cmd;
 
-	cmd = (void *)buf->data  + sizeof(struct bt_hci_cmd_hdr);
+	cmd = (void *)(buf->data + sizeof(struct bt_hci_cmd_hdr));
 
 	/*
 	 * don't enable controller ECC events as those will be generated from
