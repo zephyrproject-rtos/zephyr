@@ -74,5 +74,16 @@ void main(void)
 
 		printk("ambient light intensity %d, proximity %d\n",
 		       intensity.val1, pdata.val1);
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+		u32_t p_state;
+
+		p_state = DEVICE_PM_LOW_POWER_STATE;
+		device_set_power_state(dev, p_state);
+		printk("set low power state for 2s\n");
+		k_sleep(2000);
+		p_state = DEVICE_PM_ACTIVE_STATE;
+		device_set_power_state(dev, p_state);
+#endif
 	}
 }
