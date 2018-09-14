@@ -85,6 +85,8 @@ The Zephyr stm32f723e_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
 
@@ -103,21 +105,17 @@ For mode details please refer to `32F723E-DISCO board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
-- I2C1_SCL: PB8
-- I2C1_SDA: PB9
-- I2C2_SCL: PH4
-- I2C2_SDA: PH5
-- I2C3_SCL: PA8
-- I2C3_SDA: PH8
+- UART_2 TX/RX : PA2/PA3 (Arduino Serial)
+- UART_6 TX/RX : PC6/PC7 (ST-Link Virtual Port Com)
+- I2C1 SCL/SDA : PB8/PB9
+- I2C2 SCL/SDA : PH4/PH5 (Arduino I2C)
+- I2C3 SCL/SDA : PA8/PH8
+- SPI1 SCK/MISO/MOSI : PA5/PB4/PB5 (Arduino SPI)
 - LD1 : PA5
 - LD5 : PA7
 - LD6 : PB1
 - OTG_FS_DM : PA11
 - OTG_FS_DP : PA12
-- UART_2_TX : PA2
-- UART_2_RX : PA3
-- UART_6_TX : PC6
-- UART_6_RX : PC7
 
 System Clock
 ============
