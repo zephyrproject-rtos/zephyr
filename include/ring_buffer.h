@@ -56,13 +56,17 @@ struct ring_buf {
  * @param name Name of the ring buffer.
  * @param pow Ring buffer size exponent.
  */
-#define SYS_RING_BUF_DECLARE_POW2(name, pow) \
+#define RING_BUF_ITEM_DECLARE_POW2(name, pow) \
 	static u32_t _ring_buffer_data_##name[1 << (pow)]; \
 	struct ring_buf name = { \
 		.size = (1 << (pow)), \
 		.mask = (1 << (pow)) - 1, \
 		.buf = _ring_buffer_data_##name \
 	};
+
+/** @deprecated Renamed to RING_BUF_ITEM_DECLARE_POW2. */
+#define SYS_RING_BUF_DECLARE_POW2(name, pow) \
+	__DEPRECATED_MACRO RING_BUF_ITEM_DECLARE_POW2(name, pow)
 
 /**
  * @brief Statically define and initialize a standard ring buffer.
@@ -78,19 +82,23 @@ struct ring_buf {
  * @param name Name of the ring buffer.
  * @param size32 Size of ring buffer (in 32-bit words).
  */
-#define SYS_RING_BUF_DECLARE_SIZE(name, size32) \
+#define RING_BUF_ITEM_DECLARE_SIZE(name, size32) \
 	static u32_t _ring_buffer_data_##name[size32]; \
 	struct ring_buf name = { \
 		.size = size32, \
 		.buf = _ring_buffer_data_##name \
 	};
 
+/** @deprecated Renamed to RING_BUF_ITEM_DECLARE_SIZE. */
+#define SYS_RING_BUF_DECLARE_SIZE(name, size32) \
+	__DEPRECATED_MACRO RING_BUF_ITEM_DECLARE_SIZE(name, size32)
+
 /**
  * @brief Initialize a ring buffer.
  *
  * This routine initializes a ring buffer, prior to its first use. It is only
- * used for ring buffers not defined using SYS_RING_BUF_DECLARE_POW2 or
- * SYS_RING_BUF_DECLARE_SIZE.
+ * used for ring buffers not defined using RING_BUF_ITEM_DECLARE_POW2 or
+ * RING_BUF_ITEM_DECLARE_SIZE.
  *
  * Setting @a size to a power of 2 establishes a high performance ring buffer
  * that doesn't require the use of modulo arithmetic operations to maintain
@@ -100,8 +108,7 @@ struct ring_buf {
  * @param size Ring buffer size (in 32-bit words).
  * @param data Ring buffer data area (typically u32_t data[size]).
  */
-static inline void sys_ring_buf_init(struct ring_buf *buf, u32_t size,
-				     u32_t *data)
+static inline void ring_buf_init(struct ring_buf *buf, u32_t size, u32_t *data)
 {
 	buf->head = 0;
 	buf->tail = 0;
@@ -113,7 +120,13 @@ static inline void sys_ring_buf_init(struct ring_buf *buf, u32_t size,
 	} else {
 		buf->mask = 0;
 	}
+}
 
+/** @deprecated Renamed to ring_buf_init. */
+__deprecated static inline void sys_ring_buf_init(struct ring_buf *buf,
+						  u32_t size, u32_t *data)
+{
+	ring_buf_init(buf, size, data);
 }
 
 /**
@@ -123,9 +136,15 @@ static inline void sys_ring_buf_init(struct ring_buf *buf, u32_t size,
  *
  * @return 1 if the ring buffer is empty, or 0 if not.
  */
-static inline int sys_ring_buf_is_empty(struct ring_buf *buf)
+static inline int ring_buf_is_empty(struct ring_buf *buf)
 {
 	return (buf->head == buf->tail);
+}
+
+/** @deprecated Renamed to ring_buf_is_empty. */
+__deprecated static inline int sys_ring_buf_is_empty(struct ring_buf *buf)
+{
+	return ring_buf_is_empty(buf);
 }
 
 /**
@@ -135,9 +154,9 @@ static inline int sys_ring_buf_is_empty(struct ring_buf *buf)
  *
  * @return Ring buffer free space (in 32-bit words).
  */
-static inline int sys_ring_buf_space_get(struct ring_buf *buf)
+static inline int ring_buf_space_get(struct ring_buf *buf)
 {
-	if (sys_ring_buf_is_empty(buf)) {
+	if (ring_buf_is_empty(buf)) {
 		return buf->size - 1;
 	}
 
@@ -147,6 +166,12 @@ static inline int sys_ring_buf_space_get(struct ring_buf *buf)
 
 	/* buf->tail > buf->head */
 	return (buf->size - buf->tail) + buf->head - 1;
+}
+
+/** @deprecated Renamed to ring_buf_space_get. */
+__deprecated static inline int sys_ring_buf_space_get(struct ring_buf *buf)
+{
+	return ring_buf_space_get(buf);
 }
 
 /**
@@ -170,8 +195,17 @@ static inline int sys_ring_buf_space_get(struct ring_buf *buf)
  * @retval 0 Data item was written.
  * @retval -EMSGSIZE Ring buffer has insufficient free space.
  */
-int sys_ring_buf_put(struct ring_buf *buf, u16_t type, u8_t value,
-		     u32_t *data, u8_t size32);
+int ring_buf_item_put(struct ring_buf *buf, u16_t type, u8_t value,
+		      u32_t *data, u8_t size32);
+
+
+/** @deprecated Renamed to ring_buf_item_put. */
+__deprecated static inline int sys_ring_buf_put(struct ring_buf *buf,
+						u16_t type, u8_t value,
+						u32_t *data, u8_t size32)
+{
+	return ring_buf_item_put(buf, type, value, data, size32);
+}
 
 /**
  * @brief Read a data item from a ring buffer.
@@ -197,8 +231,16 @@ int sys_ring_buf_put(struct ring_buf *buf, u16_t type, u8_t value,
  * @retval -EMSGSIZE Data area @a data is too small; @a size32 now contains
  *         the number of 32-bit words needed.
  */
-int sys_ring_buf_get(struct ring_buf *buf, u16_t *type, u8_t *value,
-		     u32_t *data, u8_t *size32);
+int ring_buf_item_get(struct ring_buf *buf, u16_t *type, u8_t *value,
+		      u32_t *data, u8_t *size32);
+
+/** @deprecated Renamed to ring_buf_item_get. */
+__deprecated static inline int sys_ring_buf_get(struct ring_buf *buf,
+						u16_t *type, u8_t *value,
+						u32_t *data, u8_t *size32)
+{
+	return ring_buf_item_get(buf, type, value, data, size32);
+}
 
 /**
  * @}
