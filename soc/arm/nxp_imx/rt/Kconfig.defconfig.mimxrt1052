@@ -44,4 +44,11 @@ config UART_MCUX_LPUART
 
 endif # SERIAL
 
+if SPI
+
+config SPI_MCUX_LPSPI
+	def_bool y
+
+endif # SPI
+
 endif # SOC_MIMXRT1052
