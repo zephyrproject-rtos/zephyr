@@ -369,6 +369,47 @@ static int apds9960_init_interrupt(struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static int apds9960_device_ctrl(struct device *dev, u32_t ctrl_command,
+				void *context)
+{
+	struct apds9960_data *data = dev->driver_data;
+
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		u32_t device_pm_state = *(u32_t *)context;
+
+		if (device_pm_state == DEVICE_PM_ACTIVE_STATE) {
+			if (i2c_reg_update_byte(data->i2c, APDS9960_I2C_ADDRESS,
+						APDS9960_ENABLE_REG,
+						APDS9960_ENABLE_PON,
+						APDS9960_ENABLE_PON)) {
+				return -EIO;
+			}
+
+			return 0;
+		}
+
+		if (i2c_reg_update_byte(data->i2c, APDS9960_I2C_ADDRESS,
+					APDS9960_ENABLE_REG,
+					APDS9960_ENABLE_PON, 0)) {
+			return -EIO;
+		}
+
+		if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
+				       APDS9960_AICLEAR_REG, 0)) {
+			return -EIO;
+		}
+
+		return 0;
+
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+		*((u32_t *)context) = DEVICE_PM_ACTIVE_STATE;
+	}
+
+	return 0;
+}
+#endif
+
 static int apds9960_init(struct device *dev)
 {
 	struct apds9960_data *data = dev->driver_data;
@@ -407,6 +448,12 @@ static const struct sensor_driver_api apds9960_driver_api = {
 
 static struct apds9960_data apds9960_data;
 
+#ifndef CONFIG_DEVICE_POWER_MANAGEMENT
 DEVICE_AND_API_INIT(apds9960, CONFIG_APDS9960_DRV_NAME, &apds9960_init,
 		    &apds9960_data, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
+#else
+DEVICE_DEFINE(apds9960, CONFIG_APDS9960_DRV_NAME, apds9960_init,
+	      apds9960_device_ctrl, &apds9960_data, NULL,
+	      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
+#endif
