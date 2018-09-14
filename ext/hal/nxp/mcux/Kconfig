@@ -37,6 +37,11 @@ config HAS_MCUX_LPSCI
 	help
 	  Set if the low power uart (LPSCI) module is present in the SoC.
 
+config HAS_MCUX_LPSPI
+	bool
+	help
+	  Set if the low power SPI (LPSPI) module is present in the SoC.
+
 config HAS_MCUX_LPUART
 	bool
 	help
