@@ -77,7 +77,7 @@ static void test_ipv6_multi_frags(void)
 	/* Place the IP + UDP header in the first fragment */
 	if (!net_buf_tailroom(frag)) {
 		ipv6 = (struct ipv6_hdr *)(frag->data);
-		udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
+		udp = (struct udp_hdr *)((u8_t *)ipv6 + sizeof(*ipv6));
 		if (net_buf_tailroom(frag) < sizeof(ipv6)) {
 			printk("Not enough space for IPv6 header, "
 			       "needed %zd bytes, has %zd bytes\n",
@@ -93,7 +93,7 @@ static void test_ipv6_multi_frags(void)
 			zassert_true(false, "No space for UDP header");
 		}
 
-		net_pkt_set_appdata(pkt, (void *)udp + sizeof(*udp));
+		net_pkt_set_appdata(pkt, (u8_t *)udp + sizeof(*udp));
 		net_pkt_set_appdatalen(pkt, 0);
 	}
 
@@ -198,7 +198,7 @@ static void test_fragment_copy(void)
 	/* Place the IP + UDP header in the first fragment */
 	if (net_buf_tailroom(frag)) {
 		ipv6 = (struct ipv6_hdr *)(frag->data);
-		udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
+		udp = (struct udp_hdr *)((u8_t *)ipv6 + sizeof(*ipv6));
 		if (net_buf_tailroom(frag) < sizeof(*ipv6)) {
 			printk("Not enough space for IPv6 header, "
 			       "needed %zd bytes, has %zd bytes\n",
@@ -218,7 +218,7 @@ static void test_fragment_copy(void)
 
 		memcpy(net_buf_add(frag, 15), example_data, 15);
 
-		net_pkt_set_appdata(pkt, (void *)udp + sizeof(*udp) + 15);
+		net_pkt_set_appdata(pkt, (u8_t *)udp + sizeof(*udp) + 15);
 		net_pkt_set_appdatalen(pkt, 0);
 	}
 
@@ -332,7 +332,7 @@ static void test_pkt_read_append(void)
 	/* Place the IP + UDP header in the first fragment */
 	if (!net_buf_tailroom(frag)) {
 		ipv6 = (struct ipv6_hdr *)(frag->data);
-		udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
+		udp = (struct udp_hdr *)((u8_t *)ipv6 + sizeof(*ipv6));
 		if (net_buf_tailroom(frag) < sizeof(ipv6)) {
 			printk("Not enough space for IPv6 header, "
 			       "needed %zd bytes, has %zd bytes\n",
@@ -348,7 +348,7 @@ static void test_pkt_read_append(void)
 			zassert_true(false, "No space for UDP header");
 		}
 
-		net_pkt_set_appdata(pkt, (void *)udp + sizeof(*udp));
+		net_pkt_set_appdata(pkt, (u8_t *)udp + sizeof(*udp));
 		net_pkt_set_appdatalen(pkt, 0);
 	}
 

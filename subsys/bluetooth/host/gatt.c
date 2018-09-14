@@ -389,7 +389,7 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	BT_DBG("handle 0x%04x offset %u length %u", attr->handle, offset,
 	       len);
 
-	memcpy(buf, value + offset, len);
+	memcpy(buf, (u8_t *)value + offset, len);
 
 	return len;
 }
@@ -1408,7 +1408,7 @@ static u16_t parse_include(struct bt_conn *conn, const void *pdu,
 
 	/* Parse include found */
 	for (length--, pdu = rsp->data; length >= rsp->len;
-	     length -= rsp->len, pdu += rsp->len) {
+	     length -= rsp->len, pdu = (const u8_t *)pdu + rsp->len) {
 		struct bt_gatt_attr *attr;
 		const struct bt_att_data *data = pdu;
 		struct gatt_incl *incl = (void *)data->value;
@@ -1501,7 +1501,7 @@ static u16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 
 	/* Parse characteristics found */
 	for (length--, pdu = rsp->data; length >= rsp->len;
-	     length -= rsp->len, pdu += rsp->len) {
+	     length -= rsp->len, pdu = (const u8_t *)pdu + rsp->len) {
 		struct bt_gatt_attr *attr;
 		const struct bt_att_data *data = pdu;
 		struct gatt_chrc *chrc = (void *)data->value;
@@ -1629,7 +1629,7 @@ static u16_t parse_service(struct bt_conn *conn, const void *pdu,
 
 	/* Parse services found */
 	for (length--, pdu = rsp->data; length >= rsp->len;
-	     length -= rsp->len, pdu += rsp->len) {
+	     length -= rsp->len, pdu = (const u8_t *)pdu + rsp->len) {
 		struct bt_gatt_attr attr = {};
 		struct bt_gatt_service_val value;
 		const struct bt_att_group_data *data = pdu;
@@ -1774,7 +1774,7 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 
 	/* Parse descriptors found */
 	for (length--, pdu = rsp->info; length >= len;
-	     length -= len, pdu += len) {
+	     length -= len, pdu = (const u8_t *)pdu + len) {
 		struct bt_gatt_attr *attr;
 
 		info.i16 = pdu;
@@ -2126,7 +2126,7 @@ static int gatt_prepare_write(struct bt_conn *conn,
 
 	/* Update params */
 	params->offset += len;
-	params->data += len;
+	params->data = (const u8_t *)params->data + len;
 	params->length -= len;
 
 	BT_DBG("handle 0x%04x offset %u len %u", params->handle, params->offset,

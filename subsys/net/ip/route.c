@@ -65,7 +65,7 @@ static inline struct net_nbr *get_nexthop_nbr(struct net_nbr *start, int idx)
 	NET_ASSERT_INFO(idx < CONFIG_NET_MAX_NEXTHOPS, "idx %d >= max %d",
 			idx, CONFIG_NET_MAX_NEXTHOPS);
 
-	return (struct net_nbr *)((void *)start +
+	return (struct net_nbr *)((u8_t *)start +
 			((sizeof(struct net_nbr) + start->size) * idx));
 }
 

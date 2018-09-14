@@ -44,8 +44,8 @@ static inline const struct shell_cmd_entry *shell_root_cmd_get(u32_t id)
 
 static inline u32_t shell_root_cmd_count(void)
 {
-	return ((void *)__shell_root_cmds_end -
-			(void *)__shell_root_cmds_start)/
+	return ((u8_t *)__shell_root_cmds_end -
+			(u8_t *)__shell_root_cmds_start)/
 				sizeof(struct shell_cmd_entry);
 }
 

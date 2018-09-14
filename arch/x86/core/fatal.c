@@ -408,7 +408,7 @@ static FUNC_NORETURN __used void _df_handler_bottom(void)
 	 * one byte, since if a single push operation caused the fault ESP
 	 * wouldn't be decremented
 	 */
-	_x86_mmu_get_flags((void *)_df_esf.esp - 1, &pde_flags, &pte_flags);
+	_x86_mmu_get_flags((u8_t *)_df_esf.esp - 1, &pde_flags, &pte_flags);
 	if (pte_flags & MMU_ENTRY_PRESENT) {
 		printk("***** Double Fault *****\n");
 		reason = _NANO_ERR_CPU_EXCEPTION;

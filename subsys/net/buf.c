@@ -698,7 +698,7 @@ int net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
 	copied = 0;
 	while (frag && len > 0) {
 		to_copy = min(len, frag->len - offset);
-		memcpy(dst + copied, frag->data + offset, to_copy);
+		memcpy((u8_t *)dst + copied, frag->data + offset, to_copy);
 
 		copied += to_copy;
 
@@ -727,15 +727,15 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 {
 	struct net_buf *frag = net_buf_frag_last(buf);
 	size_t added_len = 0;
+	const u8_t *value8 = value;
 
 	do {
 		u16_t count = min(len, net_buf_tailroom(frag));
 
-		net_buf_add_mem(frag, value, count);
-
+		net_buf_add_mem(frag, value8, count);
 		len -= count;
 		added_len += count;
-		value += count;
+		value8 += count;
 
 		if (len == 0) {
 			return added_len;
