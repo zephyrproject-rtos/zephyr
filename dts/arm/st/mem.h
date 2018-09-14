@@ -125,7 +125,9 @@
 #define DT_FLASH_SIZE		__SIZE_K(256)
 #define DT_SRAM_SIZE		__SIZE_K(64)
 #else
-#error "Flash, RAM, and CCM sizes not defined for this chip"
+#if !defined(DT_FLASH_SIZE) || !defined(DT_SRAM_SIZE)
+#error "Flash, RAM, or CCM sizes not defined for this chip"
+#endif /* !DT_FLASH_SIZE || !DT_FLASH_SIZE */
 #endif
 
 #endif /* __DT_BINDING_ST_MEM_H */
