@@ -9,20 +9,12 @@
 #include <logging/log_backend.h>
 #include <logging/log_ctrl.h>
 #include <logging/log_output.h>
-#include <logging/log_backend_uart.h>
 #include <misc/printk.h>
 #include <assert.h>
 #include <atomic.h>
 
 #ifndef CONFIG_LOG_PRINTK_MAX_STRING_LENGTH
 #define CONFIG_LOG_PRINTK_MAX_STRING_LENGTH 1
-#endif
-
-#ifdef CONFIG_LOG_BACKEND_UART
-LOG_BACKEND_UART_DEFINE(log_backend_uart);
-const struct log_backend *uart_backend = &log_backend_uart;
-#else
-const struct log_backend *uart_backend;
 #endif
 
 static struct log_list_t list;
