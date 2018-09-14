@@ -13,6 +13,7 @@
 #include <stdbool.h>
 
 #include <init.h>
+#include <entropy.h>
 #include <misc/util.h>
 #include <net/net_context.h>
 #include <net/socket.h>
