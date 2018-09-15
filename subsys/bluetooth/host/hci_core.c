@@ -4844,7 +4844,7 @@ static void id_create(u8_t id, bt_addr_le_t *addr, u8_t *irk)
 	}
 
 #if defined(CONFIG_BT_PRIVACY)
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+	{
 		u8_t zero_irk[16] = { 0 };
 
 		if (irk && memcmp(irk, zero_irk, 16)) {
