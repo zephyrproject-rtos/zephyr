@@ -26,6 +26,15 @@
 #define CANNOT_SET_RANGE_MIN		0x01
 #define CANNOT_SET_RANGE_MAX		0x02
 
+enum get_messages {
+	NULL_GET = 0x00,
+	ONOFF_GET,
+	LEVEL_GET,
+	LIGHT_LIGHTNESS_ACTUAL_GET,
+	LIGHT_LIGHTNESS_LINEAR_GET,
+	LIGHT_CTL_GET
+};
+
 enum lightness {
 	ONPOWERUP = 0x01,
 	ONOFF,
@@ -188,5 +197,13 @@ extern struct bt_mesh_model vnd_models[];
 extern struct bt_mesh_model s0_models[];
 
 extern const struct bt_mesh_comp comp;
+
+extern u8_t get_msg, last_get_msg;
+
+void gen_onoff_publisher(struct bt_mesh_model *model);
+void gen_level_publisher(struct bt_mesh_model *model);
+void light_lightness_publisher(struct bt_mesh_model *model);
+void light_lightness_linear_publisher(struct bt_mesh_model *model);
+void light_ctl_publisher(struct bt_mesh_model *model);
 
 #endif

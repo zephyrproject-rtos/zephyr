@@ -90,6 +90,7 @@ struct generic_onoff_state gen_onoff_srv_s0_user_data;
 struct generic_level_state gen_level_srv_s0_user_data;
 /* Definitions of models user data (End) */
 
+u8_t get_msg, last_get_msg;
 static struct bt_mesh_elem elements[];
 
 /* message handlers (Start) */
@@ -114,6 +115,35 @@ static void gen_onoff_get(struct bt_mesh_model *model,
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send GEN_ONOFF_SRV Status response\n");
 	}
+
+	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
+		last_get_msg = get_msg;
+		get_msg = ONOFF_GET;
+	}
+}
+
+void gen_onoff_publisher(struct bt_mesh_model *model)
+{
+	struct net_buf_simple *msg = model->pub->msg;
+	struct generic_onoff_state *state = model->user_data;
+
+	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
+		int err;
+
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
+		net_buf_simple_add_u8(msg, state->onoff);
+
+		if (state->tt_counter) {
+			onoff_calculate_rt(state);
+			net_buf_simple_add_u8(msg, state->target_onoff);
+			net_buf_simple_add_u8(msg, state->rt);
+		}
+
+		err = bt_mesh_model_publish(model);
+		if (err) {
+			printk("bt_mesh_model_publish err %d\n", err);
+		}
+	}
 }
 
 static bool gen_onoff_setunack(struct bt_mesh_model *model,
@@ -122,7 +152,6 @@ static bool gen_onoff_setunack(struct bt_mesh_model *model,
 {
 	u8_t tid, onoff;
 	s64_t now;
-	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_onoff_state *state = model->user_data;
 
 	onoff = net_buf_simple_pull_u8(buf);
@@ -179,23 +208,7 @@ static bool gen_onoff_setunack(struct bt_mesh_model *model,
 		printk("Hello World\n");
 	}
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
-
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
-		net_buf_simple_add_u8(msg, state->onoff);
-
-		if (state->tt_counter) {
-			onoff_calculate_rt(state);
-			net_buf_simple_add_u8(msg, state->target_onoff);
-			net_buf_simple_add_u8(msg, state->rt);
-		}
-
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
-	}
+	gen_onoff_publisher(model);
 
 	return true;
 }
@@ -263,6 +276,35 @@ static void gen_level_get(struct bt_mesh_model *model,
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send GEN_LEVEL_SRV Status response\n");
 	}
+
+	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
+		last_get_msg = get_msg;
+		get_msg = LEVEL_GET;
+	}
+}
+
+void gen_level_publisher(struct bt_mesh_model *model)
+{
+	struct net_buf_simple *msg = model->pub->msg;
+	struct generic_level_state *state = model->user_data;
+
+	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
+		int err;
+
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
+		net_buf_simple_add_le16(msg, state->level);
+
+		if (state->tt_counter) {
+			level_calculate_rt(state);
+			net_buf_simple_add_le16(msg, state->target_level);
+			net_buf_simple_add_u8(msg, state->rt);
+		}
+
+		err = bt_mesh_model_publish(model);
+		if (err) {
+			printk("bt_mesh_model_publish err %d\n", err);
+		}
+	}
 }
 
 static bool gen_level_setunack(struct bt_mesh_model *model,
@@ -272,7 +314,6 @@ static bool gen_level_setunack(struct bt_mesh_model *model,
 	u8_t tid;
 	s16_t level;
 	s64_t now;
-	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_level_state *state = model->user_data;
 
 	level = (s16_t) net_buf_simple_pull_le16(buf);
@@ -327,23 +368,7 @@ static bool gen_level_setunack(struct bt_mesh_model *model,
 		level_temp_handler(state);
 	}
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
-
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
-		net_buf_simple_add_le16(msg, state->level);
-
-		if (state->tt_counter) {
-			level_calculate_rt(state);
-			net_buf_simple_add_le16(msg, state->target_level);
-			net_buf_simple_add_u8(msg, state->rt);
-		}
-
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
-	}
+	gen_level_publisher(model);
 
 	return true;
 }
@@ -371,7 +396,6 @@ static bool gen_delta_setunack(struct bt_mesh_model *model,
 	u8_t tid;
 	s32_t tmp32, delta;
 	s64_t now;
-	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_level_state *state = model->user_data;
 
 	delta = (s32_t) net_buf_simple_pull_le32(buf);
@@ -445,23 +469,7 @@ static bool gen_delta_setunack(struct bt_mesh_model *model,
 		level_temp_handler(state);
 	}
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
-
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
-		net_buf_simple_add_le16(msg, state->level);
-
-		if (state->tt_counter) {
-			level_calculate_rt(state);
-			net_buf_simple_add_le16(msg, state->target_level);
-			net_buf_simple_add_u8(msg, state->rt);
-		}
-
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
-	}
+	gen_level_publisher(model);
 
 	return true;
 }
@@ -861,6 +869,33 @@ static void light_lightness_get(struct bt_mesh_model *model,
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send LightLightnessAct Status response\n");
 	}
+
+	last_get_msg = get_msg;
+	get_msg = LIGHT_LIGHTNESS_ACTUAL_GET;
+}
+
+void light_lightness_publisher(struct bt_mesh_model *model)
+{
+	struct net_buf_simple *msg = model->pub->msg;
+	struct light_lightness_state *state = model->user_data;
+
+	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
+		int err;
+
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x4E));
+		net_buf_simple_add_le16(msg, state->actual);
+
+		if (state->tt_counter_actual) {
+			light_lightness_actual_calculate_rt(state);
+			net_buf_simple_add_le16(msg, state->target_actual);
+			net_buf_simple_add_u8(msg, state->rt);
+		}
+
+		err = bt_mesh_model_publish(model);
+		if (err) {
+			printk("bt_mesh_model_publish err %d\n", err);
+		}
+	}
 }
 
 static bool light_lightness_setunack(struct bt_mesh_model *model,
@@ -870,7 +905,6 @@ static bool light_lightness_setunack(struct bt_mesh_model *model,
 	u8_t tid;
 	u16_t actual;
 	s64_t now;
-	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
 	actual = net_buf_simple_pull_le16(buf);
@@ -924,23 +958,7 @@ static bool light_lightness_setunack(struct bt_mesh_model *model,
 
 	light_lightness_actual_handler(state);
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
-
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x4E));
-		net_buf_simple_add_le16(msg, state->actual);
-
-		if (state->tt_counter_actual) {
-			light_lightness_actual_calculate_rt(state);
-			net_buf_simple_add_le16(msg, state->target_actual);
-			net_buf_simple_add_u8(msg, state->rt);
-		}
-
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
-	}
+	light_lightness_publisher(model);
 
 	return true;
 }
@@ -980,6 +998,33 @@ static void light_lightness_linear_get(struct bt_mesh_model *model,
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send LightLightnessLin Status response\n");
 	}
+
+	last_get_msg = get_msg;
+	get_msg = LIGHT_LIGHTNESS_LINEAR_GET;
+}
+
+void light_lightness_linear_publisher(struct bt_mesh_model *model)
+{
+	struct net_buf_simple *msg = model->pub->msg;
+	struct light_lightness_state *state = model->user_data;
+
+	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
+		int err;
+
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x52));
+		net_buf_simple_add_le16(msg, state->linear);
+
+		if (state->tt_counter_linear) {
+			light_lightness_linear_calculate_rt(state);
+			net_buf_simple_add_le16(msg, state->target_linear);
+			net_buf_simple_add_u8(msg, state->rt);
+		}
+
+		err = bt_mesh_model_publish(model);
+		if (err) {
+			printk("bt_mesh_model_publish err %d\n", err);
+		}
+	}
 }
 
 static bool light_lightness_linear_setunack(struct bt_mesh_model *model,
@@ -989,7 +1034,6 @@ static bool light_lightness_linear_setunack(struct bt_mesh_model *model,
 	u8_t tid;
 	u16_t linear;
 	s64_t now;
-	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
 	linear = net_buf_simple_pull_le16(buf);
@@ -1036,23 +1080,7 @@ static bool light_lightness_linear_setunack(struct bt_mesh_model *model,
 
 	light_lightness_linear_handler(state);
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
-
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x52));
-		net_buf_simple_add_le16(msg, state->linear);
-
-		if (state->tt_counter_linear) {
-			light_lightness_linear_calculate_rt(state);
-			net_buf_simple_add_le16(msg, state->target_linear);
-			net_buf_simple_add_u8(msg, state->rt);
-		}
-
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
-	}
+	light_lightness_linear_publisher(model);
 
 	return true;
 }
@@ -1301,6 +1329,39 @@ static void light_ctl_get(struct bt_mesh_model *model,
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send LightCTL Status response\n");
 	}
+
+	last_get_msg = get_msg;
+	get_msg = LIGHT_CTL_GET;
+}
+
+void light_ctl_publisher(struct bt_mesh_model *model)
+{
+	struct net_buf_simple *msg = model->pub->msg;
+	struct light_ctl_state *state = model->user_data;
+
+	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
+		int err;
+
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x60));
+
+		/* Here, as per Model specification, status should be
+		 * made up of lightness & temperature values only
+		 */
+		net_buf_simple_add_le16(msg, state->lightness);
+		net_buf_simple_add_le16(msg, state->temp);
+
+		if (state->tt_counter) {
+			light_ctl_calculate_rt(state);
+			net_buf_simple_add_le16(msg, state->target_lightness);
+			net_buf_simple_add_le16(msg, state->target_temp);
+			net_buf_simple_add_u8(msg, state->rt);
+		}
+
+		err = bt_mesh_model_publish(model);
+		if (err) {
+			printk("bt_mesh_model_publish err %d\n", err);
+		}
+	}
 }
 
 static bool light_ctl_setunack(struct bt_mesh_model *model,
@@ -1311,7 +1372,6 @@ static bool light_ctl_setunack(struct bt_mesh_model *model,
 	s16_t delta_uv;
 	u16_t lightness, temp;
 	s64_t now;
-	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
 
 	lightness = net_buf_simple_pull_le16(buf);
@@ -1377,29 +1437,7 @@ static bool light_ctl_setunack(struct bt_mesh_model *model,
 
 	light_ctl_handler(state);
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
-
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x60));
-
-		/* Here, as per Model specification, status should be
-		 * made up of lightness & temperature values only
-		 */
-		net_buf_simple_add_le16(msg, state->lightness);
-		net_buf_simple_add_le16(msg, state->temp);
-
-		if (state->tt_counter) {
-			light_ctl_calculate_rt(state);
-			net_buf_simple_add_le16(msg, state->target_lightness);
-			net_buf_simple_add_le16(msg, state->target_temp);
-			net_buf_simple_add_u8(msg, state->rt);
-		}
-
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
-	}
+	light_ctl_publisher(model);
 
 	return true;
 }
