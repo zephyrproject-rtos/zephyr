@@ -95,8 +95,7 @@ class DTFlash(DTDirective):
         if node and node is not self._flash_node:
             # only compute the load offset if the code partition
             # is not the same as the flash base address
-            load_offset = str(int(node['props']['reg'][0]) \
-                              - int(self._flash_node['props']['reg'][0]))
+            load_offset = node['props']['reg'][0]
             load_defs['CONFIG_FLASH_LOAD_OFFSET'] = load_offset
             load_size = node['props']['reg'][1]
             load_defs['CONFIG_FLASH_LOAD_SIZE'] = load_size
