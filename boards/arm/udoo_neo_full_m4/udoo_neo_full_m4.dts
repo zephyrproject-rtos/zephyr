@@ -6,14 +6,14 @@
 
 /dts-v1/;
 
-#define __SIZE_K(x)	((x) * 1024)
+#include <mem.h>
 
 /*
  * Determines the address and size for code memory which will be applied
  * when "zephyr,flash = &flash". Use this to select a custom region,
  * usually within DDR.
  */
-#define DT_FLASH_SIZE	__SIZE_K(512)
+#define DT_FLASH_SIZE	DT_SIZE_K(512)
 #define DT_FLASH_ADDR	0x84000000
 
 /*
@@ -21,7 +21,7 @@
  * when "zephyr,sram = &sram". Use this to select a custom region,
  * usually within DDR.
  */
-#define DT_SRAM_SIZE	__SIZE_K(128)
+#define DT_SRAM_SIZE	DT_SIZE_K(128)
 #define DT_SRAM_ADDR	0x84080000
 
 #include <nxp/nxp_imx6sx_m4.dtsi>

@@ -1,8 +1,10 @@
 /dts-v1/;
 
-#define DT_FLASH_SIZE		__SIZE_K(152)
-#define DT_SRAM_SIZE		__SIZE_K(24)
-#define DT_DCCM_SIZE		__SIZE_K(8)
+#include <mem.h>
+
+#define DT_FLASH_SIZE		DT_SIZE_K(152)
+#define DT_SRAM_SIZE		DT_SIZE_K(24)
+#define DT_DCCM_SIZE		DT_SIZE_K(8)
 
 #define DT_FLASH_ADDR		0x40000000
 
