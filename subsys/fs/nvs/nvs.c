@@ -34,6 +34,11 @@ static int _nvs_flash_al_wrt(struct nvs_fs *fs, u32_t addr, const void *data,
 	size_t blen;
 	u8_t buf[fs->write_block_size];
 
+	if (!len) {
+		/* Nothing to write, avoid changing the flash protection */
+		return 0;
+	}
+
 	offset = fs->offset;
 	offset += fs->sector_size * (addr >> ADDR_SECT_SHIFT);
 	offset += addr & ADDR_OFFS_MASK;
