@@ -10,6 +10,7 @@ soc/arm/                                 @MaureenHelm @galak
 soc/arm/arm/mps2/                        @fvincenzo
 soc/arm/atmel_sam/sam4s                  @fallrisk
 soc/arm/nxp*/                            @MaureenHelm
+soc/arm/nordic_nrf/                      @ioannisg
 soc/arm/st_stm32/                        @erwango
 soc/arm/st_stm32/stm32f4/                @rsalveti @idlethread
 soc/arm/ti_simplelink/cc32xx             @GAnthony
@@ -50,7 +51,12 @@ boards/arm/mimxrt*/doc/                  @MaureenHelm @MeganHansen
 boards/arm/mps2_an385/                   @fvincenzo
 boards/arm/msp_exp432p401r_launchxl/     @Mani-Sadhasivam
 boards/arm/nrf51_blenano/                @rsalveti
+boards/arm/nrf51_pca10028/               @carlescufi
 boards/arm/nrf52_pca10040/               @carlescufi
+boards/arm/nrf52_pca20020/               @tkln
+boards/arm/nrf52810_pca10040/            @carlescufi
+boards/arm/nrf52840_pca10056/            @carlescufi
+boards/arm/nrf52840_pca10059/            @lemrey
 boards/arm/nucleo_f401re/                @rsalveti @idlethread
 boards/arm/sam4s_xplained/               @fallrisk
 boards/arm/v2m_beetle/                   @fvincenzo
