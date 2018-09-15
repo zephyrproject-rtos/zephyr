@@ -39,7 +39,7 @@ struct nvs_ate {
 	u16_t len;	/* data len within sector */
 	u8_t part;	/* part of a multipart data - future extension */
 	u8_t crc8;	/* crc8 check of the entry */
-};
+} __packed;
 
 #ifdef __cplusplus
 }
