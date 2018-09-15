@@ -6,7 +6,6 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <atmel/same70_mem.h>
 #include <dt-bindings/i2c/i2c.h>
 
 / {
@@ -24,13 +23,11 @@
 	flash0: flash@400000 {
 		compatible = "soc-nv-flash";
 		label = "FLASH_0";
-		reg = <0x00400000 DT_FLASH_SIZE>;
 	};
 
 	sram0: memory@20400000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0x20400000 DT_SRAM_SIZE>;
 	};
 
 	soc {
