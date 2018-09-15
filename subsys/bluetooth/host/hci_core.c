@@ -4211,49 +4211,6 @@ int bt_addr_le_create_static(bt_addr_le_t *addr)
 	return 0;
 }
 
-int bt_setup_id_addr(void)
-{
-#if defined(CONFIG_BT_HCI_VS_EXT)
-	/* Check for VS_Read_Static_Addresses support. Only read the
-	 * addresses if the user has not already configured one or
-	 * more identities (!bt_dev.id_count).
-	 */
-	if (!bt_dev.id_count && (bt_dev.vs_commands[1] & BIT(0))) {
-		struct bt_hci_rp_vs_read_static_addrs *rp;
-		struct net_buf *rsp;
-		int err, i;
-
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_STATIC_ADDRS,
-					   NULL, &rsp);
-		if (err) {
-			BT_WARN("Failed to read static addresses");
-			goto generate;
-		}
-
-		rp = (void *)rsp->data;
-		bt_dev.id_count = min(rp->num_addrs, CONFIG_BT_ID_MAX);
-		for (i = 0; i < bt_dev.id_count; i++) {
-			bt_dev.id_addr[i].type = BT_ADDR_LE_RANDOM;
-			bt_addr_copy(&bt_dev.id_addr[i].a, &rp->a[i].bdaddr);
-		}
-
-		net_buf_unref(rsp);
-
-		if (bt_dev.id_count) {
-			return set_random_address(&bt_dev.id_addr[0].a);
-		}
-
-		BT_WARN("No static addresses stored in controller");
-	} else {
-		BT_WARN("Read Static Addresses command not available");
-	}
-
-generate:
-#endif
-
-	return bt_id_create(NULL, NULL);
-}
-
 #if defined(CONFIG_BT_DEBUG)
 static const char *ver_str(u8_t ver)
 {
@@ -5023,6 +4980,49 @@ int bt_id_delete(u8_t id)
 	}
 
 	return 0;
+}
+
+int bt_setup_id_addr(void)
+{
+#if defined(CONFIG_BT_HCI_VS_EXT)
+	/* Check for VS_Read_Static_Addresses support. Only read the
+	 * addresses if the user has not already configured one or
+	 * more identities (!bt_dev.id_count).
+	 */
+	if (!bt_dev.id_count && (bt_dev.vs_commands[1] & BIT(0))) {
+		struct bt_hci_rp_vs_read_static_addrs *rp;
+		struct net_buf *rsp;
+		int err, i;
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_STATIC_ADDRS,
+					   NULL, &rsp);
+		if (err) {
+			BT_WARN("Failed to read static addresses");
+			goto generate;
+		}
+
+		rp = (void *)rsp->data;
+		bt_dev.id_count = min(rp->num_addrs, CONFIG_BT_ID_MAX);
+		for (i = 0; i < bt_dev.id_count; i++) {
+			bt_dev.id_addr[i].type = BT_ADDR_LE_RANDOM;
+			bt_addr_copy(&bt_dev.id_addr[i].a, &rp->a[i].bdaddr);
+		}
+
+		net_buf_unref(rsp);
+
+		if (bt_dev.id_count) {
+			return set_random_address(&bt_dev.id_addr[0].a);
+		}
+
+		BT_WARN("No static addresses stored in controller");
+	} else {
+		BT_WARN("Read Static Addresses command not available");
+	}
+
+generate:
+#endif
+
+	return bt_id_create(NULL, NULL);
 }
 
 bool bt_addr_le_is_bonded(u8_t id, const bt_addr_le_t *addr)
