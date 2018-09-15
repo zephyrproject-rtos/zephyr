@@ -33,8 +33,8 @@ Running
 =======
 
 menuconfig.py can be run either as a standalone executable or by calling the
-menu.menuconfig() function with an existing Kconfig instance. The second option
-is a bit inflexible in that it will still load and save .config, etc.
+menuconfig() function with an existing Kconfig instance. The second option is a
+bit inflexible in that it will still load and save .config, etc.
 
 When run in standalone mode, the top-level Kconfig file to load can be passed
 as a command-line argument. With no argument, it defaults to "Kconfig".
@@ -48,12 +48,84 @@ $srctree is supported through Kconfiglib.
 Color schemes
 =============
 
-Setting the environment variable MENUCONFIG_THEME to 'aquatic' will enable an
+It is possible to customize the color scheme by setting the MENUCONFIG_STYLE
+environment variable. For example, setting it to 'aquatic' will enable an
 alternative, less yellow, more 'make menuconfig'-like color scheme, contributed
 by Mitja Horvat (pinkfluid).
 
-See the _init_styles() function if you want to add additional themes. I'm happy
-to take them in upstream.
+This is the current list of built-in styles:
+    - default       classic Kconfiglib theme with a yellow accent
+    - monochrome    colorless theme (uses only bold and standout) attributes,
+                    this style is used if the terminal doesn't support colors
+    - aquatic       blue tinted style loosely resembling the lxdialog theme
+
+It is possible to customize the current style by changing colors of UI
+elements on the screen. This is the list of elements that can be stylized:
+
+    - path          Top row in the main display, with the menu path
+    - separator     Separator lines between windows. Also used for the top line
+                    in the symbol information display.
+    - list          List of items, e.g. the main display
+    - selection     Style for the selected item
+    - inv-list      Like list, but for invisible items. Used in show-all mode.
+    - inv-selection Like selection, but for invisible items. Used in show-all
+                    mode.
+    - help          Help text windows at the bottom of various fullscreen
+                    dialogs
+    - frame         Frame around dialog boxes
+    - body          Body of dialog boxes
+    - edit          Edit box in pop-up dialogs
+    - jump-edit     Edit box in jump-to dialog
+    - text          Symbol information text
+
+The color definition is a comma separated list of attributes:
+
+    - fg:COLOR      Set the foreground/background colors. COLOR can be one of
+      * or *        the basic 16 colors (black, red, green, yellow, blue,
+    - bg:COLOR      magenta,cyan, white and brighter versions, for example,
+                    brightred). On terminals that support more than 8 colors,
+                    you can also directly put in a color number, e.g. fg:123
+                    (hexadecimal and octal constants are accepted as well).
+                    Colors outside the range -1..curses.COLORS-1 (which is
+                    terminal-dependent) are ignored (with a warning). The COLOR
+                    can be also specified using a RGB value in the HTML
+                    notation, for example #RRGGBB. If the terminal supports
+                    color changing, the color is rendered accurately. Otherwise,
+                    the visually nearest color is used.
+
+                    If the background or foreground color of an element is not
+                    specified, it defaults to -1, representing the default
+                    terminal foreground or background color.
+
+                    Note: On some terminals a bright version of the color implies
+                    bold.
+    - bold          Use bold text
+    - underline     Use underline text
+    - standout      Standout text attribute (reverse color)
+
+More often than not, some UI elements share the same color definition. In such
+cases the right value may specify an UI element from which the color definition
+will be copied. For example, "separator=help" will apply the current color
+definition for "help" to "separator".
+
+A keyword without the '=' is assumed to be a style template. The template name
+is looked up in the built-in styles list and the style definition is expanded
+in-place. With this, built-in styles can be used as basis for new styles.
+
+For example, take the aquatic theme and give it a red selection bar:
+
+MENUCONFIG_STYLE="aquatic selection=fg:white,bg:red"
+
+If there's an error in the style definition or if a missing style is assigned
+to, the assignment will be ignored, along with a warning being printed on
+stderr.
+
+The 'default' theme is always implicitly parsed first (or the 'monochrome'
+theme if the terminal lacks colors), so the following two settings have the
+same effect:
+
+    MENUCONFIG_STYLE="selection=fg:white,bg:red"
+    MENUCONFIG_STYLE="default selection=fg:white,bg:red"
 
 
 Other features
@@ -102,6 +174,7 @@ import locale
 import os
 import platform
 import re
+import sys
 import textwrap
 
 from kconfiglib import Symbol, Choice, MENU, COMMENT, MenuNode, \
@@ -165,121 +238,350 @@ strings/regexes to find entries that match all of them. Type Ctrl-F to
 view the help of the selected item without leaving the dialog.
 """[1:-1].split("\n")
 
+#
+# Styling
+#
+
+_STYLES = {
+    "default": """
+    path=fg:black,bg:white,bold
+    separator=fg:black,bg:yellow,bold
+    list=fg:black,bg:white
+    selection=fg:white,bg:blue,bold
+    inv-list=fg:red,bg:white
+    inv-selection=fg:red,bg:blue
+    help=path
+    frame=fg:black,bg:yellow,bold
+    body=fg:white,bg:black
+    edit=fg:white,bg:blue
+    jump-edit=edit
+    text=list
+    """,
+
+    # This style is forced on terminals that do no support colors
+    "monochrome": """
+    path=bold
+    separator=bold,standout
+    list=
+    selection=bold,standout
+    inv-list=bold
+    inv-selection=bold,standout
+    help=bold
+    frame=bold,standout
+    body=
+    edit=standout
+    jump-edit=
+    text=
+    """,
+
+    # Blue tinted style loosely resembling lxdialog
+    "aquatic": """
+    path=fg:cyan,bg:blue,bold
+    separator=fg:white,bg:cyan,bold
+    help=path
+    frame=fg:white,bg:cyan,bold
+    body=fg:brightwhite,bg:blue
+    edit=fg:black,bg:white
+    """
+}
+
+# Standard colors definition
+_STYLE_STD_COLORS = {
+    # Basic colors
+    "black":         curses.COLOR_BLACK,
+    "red":           curses.COLOR_RED,
+    "green":         curses.COLOR_GREEN,
+    "yellow":        curses.COLOR_YELLOW,
+    "blue":          curses.COLOR_BLUE,
+    "magenta":       curses.COLOR_MAGENTA,
+    "cyan":          curses.COLOR_CYAN,
+    "white":         curses.COLOR_WHITE,
+
+    # Bright versions
+    "brightblack":   curses.COLOR_BLACK + 8,
+    "brightred":     curses.COLOR_RED + 8,
+    "brightgreen":   curses.COLOR_GREEN + 8,
+    "brightyellow":  curses.COLOR_YELLOW + 8,
+    "brightblue":    curses.COLOR_BLUE + 8,
+    "brightmagenta": curses.COLOR_MAGENTA + 8,
+    "brightcyan":    curses.COLOR_CYAN + 8,
+    "brightwhite":   curses.COLOR_WHITE + 8,
+
+    # Aliases
+    "purple":        curses.COLOR_MAGENTA,
+    "brightpurple":  curses.COLOR_MAGENTA + 8,
+}
+
+def _rgb_to_6cube(rgb):
+    # Converts an 888 RGB color to a 3-tuple (nice in that it's hashable)
+    # representing the closests xterm 256-color 6x6x6 color cube color.
+    #
+    # The xterm 256-color extension uses a RGB color palette with components in
+    # the range 0-5 (a 6x6x6 cube). The catch is that the mapping is nonlinear.
+    # Index 0 in the 6x6x6 cube is mapped to 0, index 1 to 95, then 135, 175,
+    # etc., in increments of 40. See the links below:
+    #
+    #   https://commons.wikimedia.org/wiki/File:Xterm_256color_chart.svg
+    #   https://github.com/tmux/tmux/blob/master/colour.c
+
+    # 48 is the middle ground between 0 and 95.
+    return tuple(0 if x < 48 else int(round(max(1, (x - 55)/40))) for x in rgb)
+
+def _6cube_to_rgb(r6g6b6):
+    # Returns the 888 RGB color for a 666 xterm color cube index
+
+    return tuple(0 if x == 0 else 40*x + 55 for x in r6g6b6)
+
+def _rgb_to_gray(rgb):
+    # Converts an 888 RGB color to the index of an xterm 256-color grayscale
+    # color with approx. the same perceived brightness
+
+    # Calculate the luminance (gray intensity) of the color. See
+    #   https://stackoverflow.com/questions/596216/formula-to-determine-brightness-of-rgb-color
+    # and
+    #   https://www.w3.org/TR/AERT/#color-contrast
+    luma = 0.299*rgb[0] + 0.587*rgb[1] + 0.114*rgb[2]
+
+    # Closests index in the grayscale palette, which starts at RGB 0x080808,
+    # with stepping 0x0A0A0A
+    index = int(round((luma - 8)/10))
+
+    # Clamp the index to 0-23, corresponding to 232-255
+    return max(0, min(index, 23))
+
+def _gray_to_rgb(index):
+    # Convert a grayscale index to its closet single RGB component
+
+    return 3*(10*index + 8,)  # Returns a 3-tuple
+
+# Obscure Python: We never pass a value for rgb2index, and it keeps pointing to
+# the same dict. This avoids a global.
+def _alloc_rgb(rgb, rgb2index={}):
+    # Initialize a new entry in the xterm palette to the given RGB color,
+    # returning its index. If the color has already been initialized, the index
+    # of the existing entry is returned.
+    #
+    # ncurses is palette-based, so we need to overwrite palette entries to make
+    # new colors.
+    #
+    # The colors from 0 to 15 are user-defined, and there's no way to query
+    # their RGB values, so we better leave them untouched. Also leave any
+    # hypothetical colors above 255 untouched (though we're unlikely to
+    # allocate that many colors anyway).
+
+    if rgb in rgb2index:
+        return rgb2index[rgb]
+
+    # Many terminals allow the user to customize the first 16 colors. Avoid
+    # changing their values.
+    color_index = 16 + len(rgb2index)
+    if color_index >= 256:
+        _warn("Unable to allocate new RGB color ", rgb, ". Too many colors "
+              "allocated.")
+        return 0
+
+    # Map each RGB component from the range 0-255 to the range 0-1000, which is
+    # what curses uses
+    curses.init_color(color_index, *(int(round(1000*x/255)) for x in rgb))
+    rgb2index[rgb] = color_index
+
+    return color_index
+
+def _color_from_num(num):
+    # Returns the index of a color that looks like color 'num' in the xterm
+    # 256-color palette (but that might not be 'num', if we're redefining
+    # colors)
+
+    # - _alloc_rgb() won't touch the first 16 colors or any (hypothetical)
+    #   colors above 255, so we can always return them as-is
+    #
+    # - If the terminal doesn't support changing color definitions, or if
+    #   curses.COLORS < 256, _alloc_rgb() won't touch any color, and all colors
+    #   can be returned as-is
+    if num < 16 or num > 255 or not curses.can_change_color() or \
+       curses.COLORS < 256:
+        return num
+
+    # _alloc_rgb() might redefine colors, so emulate the xterm 256-color
+    # palette by allocating new colors instead of returning color numbers
+    # directly
+
+    if num < 232:
+        num -= 16
+        return _alloc_rgb(_6cube_to_rgb(((num//36)%6, (num//6)%6, num%6)))
+
+    return _alloc_rgb(_gray_to_rgb(num - 232))
+
+
+def _color_from_rgb(rgb):
+    # Returns the index of a color matching the 888 RGB color 'rgb'. The
+    # returned color might be an ~exact match or an approximation, depending on
+    # terminal capabilities.
+
+    # Calculates the Euclidean distance between two RGB colors
+    dist = lambda r1, r2: sum((x - y)**2 for x, y in zip(r1, r2))
+
+    if curses.COLORS >= 256:
+        # Assume we're dealing with xterm's 256-color extension
+
+        if curses.can_change_color():
+            # Best case -- the terminal supports changing palette entries via
+            # curses.init_color(). Initialize an unused palette entry and
+            # return it.
+            return _alloc_rgb(rgb)
+
+        # Second best case -- pick between the xterm 256-color extension colors
+
+        # Closest 6-cube "color" color
+        c6 = _rgb_to_6cube(rgb)
+        # Closest gray color
+        gray = _rgb_to_gray(rgb)
+
+        if dist(rgb, _6cube_to_rgb(c6)) < dist(rgb, _gray_to_rgb(gray)):
+            # Use the "color" color from the 6x6x6 color palette. Calculate the
+            # color number from the 6-cube index triplet.
+            return 16 + 36*c6[0] + 6*c6[1] + c6[2]
+
+        # Use the color from the gray palette
+        return 232 + gray
+
+    # Terminal not in xterm 256-color mode. This is probably the best we can
+    # do, or is it? Submit patches. :)
+    min_dist = float('inf')
+    best = -1
+    for color in range(curses.COLORS):
+        # ncurses uses the range 0..1000. Scale that down to 0..255.
+        d = dist(rgb, tuple(int(round(255*c/1000))
+                            for c in curses.color_content(color)))
+        if d < min_dist:
+            min_dist = d
+            best = color
+
+    return best
+
+# Dictionary mapping element types to the curses attributes used to display
+# them
+_style = {}
+
+def _parse_style(style_str, parsing_default):
+    # Parses a string with '<element>=<style>' assignments. Anything not
+    # containing '=' is assumed to be a reference to a built-in style, which is
+    # treated as if all the assignments from the style were inserted at that
+    # point in the string.
+    #
+    # The parsing_default flag is set to True when we're implicitly parsing the
+    # 'default'/'monochrome' style, to prevent warnings.
+
+    for sline in style_str.split():
+        # Words without a "=" character represents a style template
+        if "=" in sline:
+            key, data = sline.split("=", 1)
+
+            # The 'default' style template is assumed to define all keys. We
+            # run _style_to_curses() for non-existing keys as well, so that we
+            # print warnings for errors to the right of '=' for those too.
+            if key not in _style and not parsing_default:
+                _warn("Ignoring non-existent style", key)
+
+            # If data is a reference to another key, copy its style
+            if data in _style:
+                _style[key] = _style[data]
+            else:
+                _style[key] = _style_to_curses(data)
+
+        elif sline in _STYLES:
+            # Recursively parse style template. Ignore styles that don't exist,
+            # for backwards/forwards compatibility.
+            _parse_style(_STYLES[sline], parsing_default)
+
+        else:
+            _warn("Ignoring non-existent style template", sline)
+
+def _style_to_curses(style_def):
+    # Parses a style definition string (<element>=<style>), returning
+    # a (fg_color, bg_color, attributes) tuple.
+
+    def parse_color(color_def):
+        color_def = color_def.split(":", 1)[1]
+
+        if color_def in _STYLE_STD_COLORS:
+            return _color_from_num(_STYLE_STD_COLORS[color_def])
+
+        # HTML format, #RRGGBB
+        if re.match("#[A-Fa-f0-9]{6}", color_def):
+            return _color_from_rgb((
+                int(color_def[1:3], 16),
+                int(color_def[3:5], 16),
+                int(color_def[5:7], 16)))
+
+        try:
+            color_num = _color_from_num(int(color_def, 0))
+        except ValueError:
+            _warn("Ignoring color ", color_def, "that's neither predefined "
+                  "nor a number")
+
+            return -1
+
+        if not -1 <= color_num < curses.COLORS:
+            _warn("Ignoring color {}, which is outside the range "
+                  "-1..curses.COLORS-1 (-1..{})"
+                  .format(color_def, curses.COLORS - 1))
+
+            return -1
+
+        return color_num
+
+    fg_color = -1
+    bg_color = -1
+    attrs = 0
+
+    if style_def:
+        for field in style_def.split(","):
+            if field.startswith("fg:"):
+                fg_color = parse_color(field)
+            elif field.startswith("bg:"):
+                bg_color = parse_color(field)
+            elif field == "bold":
+                # A_BOLD tends to produce faint and hard-to-read text on the
+                # Windows console, especially with the old color scheme, before
+                # the introduction of
+                # https://blogs.msdn.microsoft.com/commandline/2017/08/02/updating-the-windows-console-colors/
+                attrs |= curses.A_NORMAL if _IS_WINDOWS else curses.A_BOLD
+            elif field == "standout":
+                attrs |= curses.A_STANDOUT
+            elif field == "underline":
+                attrs |= curses.A_UNDERLINE
+            else:
+                _warn("Ignoring unknown style attribute", field)
+
+    return _style_attr(fg_color, bg_color, attrs)
+
 def _init_styles():
-    global _PATH_STYLE
-    global _SEPARATOR_STYLE
-    global _LIST_STYLE
-    global _LIST_SEL_STYLE
-    global _LIST_INVISIBLE_STYLE
-    global _LIST_INVISIBLE_SEL_STYLE
-    global _HELP_STYLE
-    global _DIALOG_FRAME_STYLE
-    global _DIALOG_BODY_STYLE
-    global _DIALOG_EDIT_STYLE
-    global _JUMP_TO_EDIT_STYLE
-    global _INFO_TEXT_STYLE
+    if curses.has_colors():
+        curses.use_default_colors()
 
-    # Initialize styles for different parts of the application. The arguments
-    # are ordered as follows:
-    #
-    #   1. Text color
-    #   2. Background color
-    #   3. Attributes
-    #   4. Extra attributes if colors aren't available. The colors will be
-    #      ignored in this case, and the attributes from (3.) and (4.) will be
-    #      ORed together.
+    # Use the 'monochrome' style template as the base on terminals without
+    # color
+    _parse_style("default" if curses.has_colors() else "monochrome", True)
 
-    # A_BOLD tends to produce faint and hard-to-read text on the Windows
-    # console, especially with the old color scheme, before the introduction of
-    # https://blogs.msdn.microsoft.com/commandline/2017/08/02/updating-the-windows-console-colors/
-    BOLD = curses.A_NORMAL if _IS_WINDOWS else curses.A_BOLD
-
-    # Default styling. Themes can override these settings below.
-
-    # Top row in the main display, with the menu path
-    PATH_STYLE               = (curses.COLOR_BLACK, curses.COLOR_WHITE,  BOLD                              )
-
-    # Separator lines between windows. Also used for the top line in the symbol
-    # information dialog.
-    SEPARATOR_STYLE          = (curses.COLOR_BLACK, curses.COLOR_YELLOW, BOLD,            curses.A_STANDOUT)
-
-    # List of items, e.g. the main display
-    LIST_STYLE               = (curses.COLOR_BLACK, curses.COLOR_WHITE,  curses.A_NORMAL                   )
-
-    # Style for the selected item
-    LIST_SEL_STYLE           = (curses.COLOR_WHITE, curses.COLOR_BLUE,   BOLD,            curses.A_STANDOUT)
-
-    # Like _LIST_(SEL_)STYLE, for invisible items. Used in show-all mode.
-    LIST_INVISIBLE_STYLE     = (curses.COLOR_RED,   curses.COLOR_WHITE,  curses.A_NORMAL, BOLD             )
-    LIST_INVISIBLE_SEL_STYLE = (curses.COLOR_RED,   curses.COLOR_BLUE,   BOLD,            curses.A_STANDOUT)
-
-    # Help text windows at the bottom of various fullscreen dialogs
-    HELP_STYLE               = PATH_STYLE
-
-    # Frame around dialog boxes
-    DIALOG_FRAME_STYLE       = SEPARATOR_STYLE
-
-    # Body of dialog boxes
-    DIALOG_BODY_STYLE        = (curses.COLOR_WHITE, curses.COLOR_BLACK,  curses.A_NORMAL                   )
-
-    # Edit box in pop-up dialogs
-    DIALOG_EDIT_STYLE        = (curses.COLOR_WHITE, curses.COLOR_BLUE,   curses.A_NORMAL, curses.A_STANDOUT)
-
-    # Edit box in jump-to dialog
-    JUMP_TO_EDIT_STYLE       = (curses.COLOR_WHITE, curses.COLOR_BLUE,   curses.A_NORMAL,                  )
-
-    # Symbol information text
-    INFO_TEXT_STYLE          = LIST_STYLE
-
-    if os.environ.get("MENUCONFIG_THEME") == "aquatic":
-        # More 'make menuconfig'-like theme, contributed by Mitja Horvat
-        # (pinkfluid)
-        PATH_STYLE         = (curses.COLOR_CYAN,  curses.COLOR_BLUE,  BOLD                              )
-        SEPARATOR_STYLE    = (curses.COLOR_WHITE, curses.COLOR_CYAN,  BOLD,            curses.A_STANDOUT)
-        HELP_STYLE         = PATH_STYLE
-        DIALOG_FRAME_STYLE = SEPARATOR_STYLE
-        DIALOG_BODY_STYLE  = (curses.COLOR_WHITE, curses.COLOR_BLUE,  curses.A_NORMAL                   )
-        DIALOG_EDIT_STYLE  = (curses.COLOR_BLACK, curses.COLOR_WHITE, curses.A_NORMAL, curses.A_STANDOUT)
-
-    # Turn styles into attributes and store them in global variables. Doing
-    # this separately minimizes the number of curses color pairs, and shortens
-    # the style definitions a bit.
-    #
-    # Could do some locals()/globals() trickery here too, but keep it
-    # searchable.
-    _PATH_STYLE               = _style(*PATH_STYLE)
-    _SEPARATOR_STYLE          = _style(*SEPARATOR_STYLE)
-    _LIST_STYLE               = _style(*LIST_STYLE)
-    _LIST_SEL_STYLE           = _style(*LIST_SEL_STYLE)
-    _LIST_INVISIBLE_STYLE     = _style(*LIST_INVISIBLE_STYLE)
-    _LIST_INVISIBLE_SEL_STYLE = _style(*LIST_INVISIBLE_SEL_STYLE)
-    _HELP_STYLE               = _style(*HELP_STYLE)
-    _DIALOG_FRAME_STYLE       = _style(*DIALOG_FRAME_STYLE)
-    _DIALOG_BODY_STYLE        = _style(*DIALOG_BODY_STYLE)
-    _DIALOG_EDIT_STYLE        = _style(*DIALOG_EDIT_STYLE)
-    _JUMP_TO_EDIT_STYLE       = _style(*JUMP_TO_EDIT_STYLE)
-    _INFO_TEXT_STYLE          = _style(*INFO_TEXT_STYLE)
-
-
-#
-# Main application
-#
+    # Add any user-defined style from the environment
+    if "MENUCONFIG_STYLE" in os.environ:
+        _parse_style(os.environ["MENUCONFIG_STYLE"], False)
 
 # color_attribs holds the color pairs we've already created, indexed by a
 # (<foreground color>, <background color>) tuple.
 #
 # Obscure Python: We never pass a value for color_attribs, and it keeps
 # pointing to the same dict. This avoids a global.
-def _style(fg_color, bg_color, attribs, no_color_extra_attribs=0,
-           color_attribs={}):
+def _style_attr(fg_color, bg_color, attribs, color_attribs={}):
     # Returns an attribute with the specified foreground and background color
     # and the attributes in 'attribs'. Reuses color pairs already created if
     # possible, and creates a new color pair otherwise.
     #
-    # Returns 'attribs | no_color_extra_attribs' if colors aren't supported.
+    # Returns 'attribs' if colors aren't supported.
 
     if not curses.has_colors():
-        return attribs | no_color_extra_attribs
+        return attribs
 
     if (fg_color, bg_color) not in color_attribs:
         # Create new color pair. Color pair number 0 is hardcoded and cannot be
@@ -290,33 +592,11 @@ def _style(fg_color, bg_color, attribs, no_color_extra_attribs=0,
 
     return color_attribs[(fg_color, bg_color)] | attribs
 
+#
+# Main application
+#
 
-def _name_and_val_str(sc):
-    # Custom symbol printer that shows the symbol value after the symbol, used
-    # for the information display
-
-    # Show the values of non-constant (non-quoted) symbols that don't look like
-    # numbers. Things like 123 are actually symbol references, and only work as
-    # expected due to undefined symbols getting their name as their value.
-    # Showing the symbol value for those isn't helpful though.
-    if isinstance(sc, Symbol) and \
-       not sc.is_constant and \
-       not _is_num(sc.name):
-
-        if not sc.nodes:
-            # Undefined symbol reference
-            return "{}(undefined/n)".format(sc.name)
-
-        return '{}(={})'.format(sc.name, sc.str_value)
-
-    # For other symbols, use the standard format
-    return standard_sc_expr_str(sc)
-
-def _expr_str(expr):
-    # Custom expression printer that shows symbol values
-    return expr_str(expr, _name_and_val_str)
-
-# Note: Used as the entry point in setup.py
+# Used as the entry point in setup.py
 def _main():
     menuconfig(standard_kconfig())
 
@@ -334,7 +614,6 @@ def menuconfig(kconf):
 
     _kconf = kconf
 
-
     _config_filename = standard_config_filename()
 
     if os.path.exists(_config_filename):
@@ -344,7 +623,7 @@ def menuconfig(kconf):
         _kconf.load_config(_config_filename)
 
     else:
-        # Always prompt for save if the output configuration file doesn't exist
+        # Always prompt for save if the .config doesn't exist
         _conf_changed = True
 
         if kconf.defconfig_filename is not None:
@@ -449,7 +728,7 @@ def _menuconfig(stdscr):
         if c == curses.KEY_RESIZE:
             _resize_main()
 
-        if c in (curses.KEY_DOWN, "j", "J"):
+        elif c in (curses.KEY_DOWN, "j", "J"):
             _select_next_menu_entry()
 
         elif c in (curses.KEY_UP, "k", "K"):
@@ -623,20 +902,20 @@ def _init():
     # Initialize windows
 
     # Top row, with menu path
-    _path_win = _styled_win(_PATH_STYLE)
+    _path_win = _styled_win("path")
 
     # Separator below menu path, with title and arrows pointing up
-    _top_sep_win = _styled_win(_SEPARATOR_STYLE)
+    _top_sep_win = _styled_win("separator")
 
     # List of menu entries with symbols, etc.
-    _menu_win = _styled_win(_LIST_STYLE)
+    _menu_win = _styled_win("list")
     _menu_win.keypad(True)
 
     # Row below menu list, with arrows pointing down
-    _bot_sep_win = _styled_win(_SEPARATOR_STYLE)
+    _bot_sep_win = _styled_win("separator")
 
     # Help window with keys at the bottom
-    _help_win = _styled_win(_HELP_STYLE)
+    _help_win = _styled_win("help")
 
     # The rows we'd like the nodes in the parent menus to appear on. This
     # prevents the scroll from jumping around when going in and out of menus.
@@ -646,8 +925,7 @@ def _init():
 
     _cur_menu = _kconf.top_node
     _shown = _shown_nodes(_cur_menu)
-    _sel_node_i = 0
-    _menu_scroll = 0
+    _sel_node_i = _menu_scroll = 0
 
     _show_name = False
 
@@ -725,8 +1003,7 @@ def _enter_menu(menu):
         # Jump into menu
         _cur_menu = menu
         _shown = shown_sub
-        _sel_node_i = 0
-        _menu_scroll = 0
+        _sel_node_i = _menu_scroll = 0
 
 def _jump_to(node):
     # Jumps directly to the menu node 'node'
@@ -950,7 +1227,7 @@ def _draw_main():
 
     # Add the 'mainmenu' text as the title, centered at the top
     _safe_addstr(_top_sep_win,
-                 0, (term_width - len(_kconf.mainmenu_text))//2,
+                 0, max((term_width - len(_kconf.mainmenu_text))//2, 0),
                  _kconf.mainmenu_text)
 
     _top_sep_win.noutrefresh()
@@ -974,10 +1251,9 @@ def _draw_main():
         # symbols show up outside show-all mode if an invisible symbol has
         # visible children in an implicit (indented) menu.
         if not _show_all or (node.prompt and expr_value(node.prompt[1])):
-            style = _LIST_SEL_STYLE if i == _sel_node_i else _LIST_STYLE
+            style = _style["selection" if i == _sel_node_i else "list"]
         else:
-            style = _LIST_INVISIBLE_SEL_STYLE if i == _sel_node_i else \
-                    _LIST_INVISIBLE_STYLE
+            style = _style["inv-selection" if i == _sel_node_i else "inv-list"]
 
         _safe_addstr(_menu_win, i - _menu_scroll, 0, _node_str(node), style)
 
@@ -1203,7 +1479,7 @@ def _input_dialog(title, initial_text, info_text=None):
     #   String to show next to the input field. If None, just the input field
     #   is shown.
 
-    win = _styled_win(_DIALOG_BODY_STYLE)
+    win = _styled_win("body")
     win.keypad(True)
 
     info_lines = info_text.split("\n") if info_text else []
@@ -1236,19 +1512,18 @@ def _input_dialog(title, initial_text, info_text=None):
 
         c = _get_wch_compat(win)
 
-        if c == "\n":
-            _safe_curs_set(0)
-            return s
-
-        if c == "\x1B":  # \x1B = ESC
-            _safe_curs_set(0)
-            return None
-
-
         if c == curses.KEY_RESIZE:
             # Resize the main display too. The dialog floats above it.
             _resize_main()
             _resize_input_dialog(win, title, info_lines)
+
+        elif c == "\n":
+            _safe_curs_set(0)
+            return s
+
+        elif c == "\x1B":  # \x1B = ESC
+            _safe_curs_set(0)
+            return None
 
         else:
             s, i, hscroll = _edit_text(c, s, i, hscroll, edit_width())
@@ -1277,15 +1552,16 @@ def _draw_input_dialog(win, title, info_lines, s, i, hscroll):
 
     win.erase()
 
-    _draw_frame(win, title)
-
     # Note: Perhaps having a separate window for the input field would be nicer
     visible_s = s[hscroll:hscroll + edit_width]
     _safe_addstr(win, 2, 2, visible_s + " "*(edit_width - len(visible_s)),
-                 _DIALOG_EDIT_STYLE)
+                 _style["edit"])
 
     for linenr, line in enumerate(info_lines):
         _safe_addstr(win, 4 + linenr, 2, line)
+
+    # Draw the frame last so that it overwrites the body text for small windows
+    _draw_frame(win, title)
 
     _safe_move(win, 2, 2 + i - hscroll)
 
@@ -1416,7 +1692,7 @@ def _key_dialog(title, text, keys):
     #   converted to lowercase. ESC will always close the dialog, and returns
     #   None.
 
-    win = _styled_win(_DIALOG_BODY_STYLE)
+    win = _styled_win("body")
     win.keypad(True)
 
     _resize_key_dialog(win, text)
@@ -1430,14 +1706,13 @@ def _key_dialog(title, text, keys):
 
         c = _get_wch_compat(win)
 
-        if c == "\x1B":  # \x1B = ESC
-            return None
-
-
         if c == curses.KEY_RESIZE:
             # Resize the main display too. The dialog floats above it.
             _resize_main()
             _resize_key_dialog(win, text)
+
+        elif c == "\x1B":  # \x1B = ESC
+            return None
 
         elif isinstance(c, str):
             c = c.lower()
@@ -1460,10 +1735,12 @@ def _resize_key_dialog(win, text):
 
 def _draw_key_dialog(win, title, text):
     win.erase()
-    _draw_frame(win, title)
 
     for i, line in enumerate(text.split("\n")):
         _safe_addstr(win, 2 + i, 2, line)
+
+    # Draw the frame last so that it overwrites the body text for small windows
+    _draw_frame(win, title)
 
     win.noutrefresh()
 
@@ -1472,7 +1749,7 @@ def _draw_frame(win, title):
 
     win_height, win_width = win.getmaxyx()
 
-    win.attron(_DIALOG_FRAME_STYLE)
+    win.attron(_style["frame"])
 
     # Draw top/bottom edge
     _safe_hline(win,              0, 0, " ", win_width)
@@ -1483,9 +1760,9 @@ def _draw_frame(win, title):
     _safe_vline(win, 0, win_width - 1, " ", win_height)
 
     # Draw title
-    _safe_addstr(win, 0, (win_width - len(title))//2, title)
+    _safe_addstr(win, 0, max((win_width - len(title))//2, 0), title)
 
-    win.attroff(_DIALOG_FRAME_STYLE)
+    win.attroff(_style["frame"])
 
 def _jump_to_dialog():
     # Implements the jump-to dialog, where symbols can be looked up via
@@ -1509,17 +1786,17 @@ def _jump_to_dialog():
     scroll = 0
 
     # Edit box at the top
-    edit_box = _styled_win(_JUMP_TO_EDIT_STYLE)
+    edit_box = _styled_win("jump-edit")
     edit_box.keypad(True)
 
     # List of matches
-    matches_win = _styled_win(_LIST_STYLE)
+    matches_win = _styled_win("list")
 
     # Bottom separator, with arrows pointing down
-    bot_sep_win = _styled_win(_SEPARATOR_STYLE)
+    bot_sep_win = _styled_win("separator")
 
     # Help window with instructions at the bottom
-    help_win = _styled_win(_HELP_STYLE)
+    help_win = _styled_win("help")
 
     # Give windows their initial size
     _resize_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
@@ -1735,7 +2012,7 @@ def _draw_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
                 sym_str += ' "{}"'.format(matches[i].prompt[0])
 
             _safe_addstr(matches_win, i - scroll, 0, sym_str,
-                         _LIST_SEL_STYLE if i == sel_node_i else _LIST_STYLE)
+                         _style["selection" if i == sel_node_i else "list"])
 
     else:
         # bad_re holds the error message from the re.error exception on errors
@@ -1780,9 +2057,9 @@ def _draw_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
 
     # Draw arrows pointing up if the symbol list is scrolled down
     if scroll > 0:
-        # TODO: Bit ugly that _DIALOG_FRAME_STYLE is repeated here
+        # TODO: Bit ugly that _style["frame"] is repeated here
         _safe_hline(edit_box, 2, 4, curses.ACS_UARROW, _N_SCROLL_ARROWS,
-                    _DIALOG_FRAME_STYLE)
+                    _style["frame"])
 
     visible_s = s[hscroll:hscroll + edit_width]
     _safe_addstr(edit_box, 1, 1, visible_s)
@@ -1800,17 +2077,17 @@ def _info_dialog(node, from_jump_to_dialog):
     # of the jump-to-dialog.
 
     # Top row, with title and arrows point up
-    top_line_win = _styled_win(_SEPARATOR_STYLE)
+    top_line_win = _styled_win("separator")
 
     # Text display
-    text_win = _styled_win(_INFO_TEXT_STYLE)
+    text_win = _styled_win("text")
     text_win.keypad(True)
 
     # Bottom separator, with arrows pointing down
-    bot_sep_win = _styled_win(_SEPARATOR_STYLE)
+    bot_sep_win = _styled_win("separator")
 
     # Help window with keys at the bottom
-    help_win = _styled_win(_HELP_STYLE)
+    help_win = _styled_win("help")
 
     # Give windows their initial size
     _resize_info_dialog(top_line_win, text_win, bot_sep_win, help_win)
@@ -1924,7 +2201,8 @@ def _draw_info_dialog(node, lines, scroll, top_line_win, text_win,
              "Choice" if isinstance(node.item, Choice) else
              "Menu"   if node.item == MENU else
              "Comment") + " information"
-    _safe_addstr(top_line_win, 0, (text_win_width - len(title))//2, title)
+    _safe_addstr(top_line_win, 0, max((text_win_width - len(title))//2, 0),
+                 title)
 
     top_line_win.noutrefresh()
 
@@ -2210,13 +2488,38 @@ def _menu_path_info(node):
 
     return "(top menu)" + path
 
+def _name_and_val_str(sc):
+    # Custom symbol printer that shows the symbol value after the symbol, used
+    # for the information display
+
+    # Show the values of non-constant (non-quoted) symbols that don't look like
+    # numbers. Things like 123 are actually symbol references, and only work as
+    # expected due to undefined symbols getting their name as their value.
+    # Showing the symbol value for those isn't helpful though.
+    if isinstance(sc, Symbol) and \
+       not sc.is_constant and \
+       not _is_num(sc.name):
+
+        if not sc.nodes:
+            # Undefined symbol reference
+            return "{}(undefined/n)".format(sc.name)
+
+        return '{}(={})'.format(sc.name, sc.str_value)
+
+    # For other symbols, use the standard format
+    return standard_sc_expr_str(sc)
+
+def _expr_str(expr):
+    # Custom expression printer that shows symbol values
+    return expr_str(expr, _name_and_val_str)
+
 def _styled_win(style):
-    # Returns a new curses window with background 'style' and space as the fill
+    # Returns a new curses window with style 'style' and space as the fill
     # character. The initial dimensions are (1, 1), so the window needs to be
     # sized and positioned separately.
 
     win = curses.newwin(1, 1)
-    win.bkgdset(" ", style)
+    win.bkgdset(" ", _style[style])
     return win
 
 def _max_scroll(lst, win):
@@ -2501,6 +2804,14 @@ def _get_wch_compat(win):
 
     return c
 
+def _warn(*args):
+    # Temporarily returns from curses to shell mode and prints a warning to
+    # stderr. The warning would get lost in curses mode.
+    curses.endwin()
+    print("menuconfig warning: ", end="", file=sys.stderr)
+    print(*args, file=sys.stderr)
+    curses.doupdate()
+
 # Ignore exceptions from some functions that might fail, e.g. for small
 # windows. They usually do reasonable things anyway.
 
@@ -2511,8 +2822,32 @@ def _safe_curs_set(visibility):
         pass
 
 def _safe_addstr(win, *args):
+    # Clip the line to avoid wrapping to the next line, which looks glitchy.
+    # addchstr() would do it for us, but it's not available in the 'curses'
+    # module.
+
+    attr = None
+    if isinstance(args[0], str):
+        y, x = win.getyx()
+        s = args[0]
+        if len(args) == 2:
+            attr = args[1]
+    else:
+        y, x, s = args[:3]
+        if len(args) == 4:
+            attr = args[3]
+
+    maxlen = win.getmaxyx()[1] - x
+    s = s.expandtabs()
+
     try:
-        win.addstr(*args)
+        # The 'curses' module uses wattr_set() internally if you pass 'attr',
+        # overwriting the background style, so setting 'attr' to 0 in the first
+        # case won't do the right thing
+        if attr is None:
+            win.addnstr(y, x, s, maxlen)
+        else:
+            win.addnstr(y, x, s, maxlen, attr)
     except curses.error:
         pass
 
