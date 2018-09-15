@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf52840.dtsi>
+#include <nordic/nrf52840_qiaa.dtsi>
 
 / {
 	model = "Nordic PCA10056 Dev Kit";

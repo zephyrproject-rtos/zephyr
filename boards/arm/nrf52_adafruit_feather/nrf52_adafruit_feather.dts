@@ -6,7 +6,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf52832.dtsi>
+#include <nordic/nrf52832_qfaa.dtsi>
 
 / {
 	model = "nRF52 Adafruit Feather";

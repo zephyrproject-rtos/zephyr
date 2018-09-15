@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf51822.dtsi>
+#include <nordic/nrf51822_qfaa.dtsi>
 
 / {
 	model = "Redbear BLE Nano";
