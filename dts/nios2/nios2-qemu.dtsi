@@ -1,7 +1,5 @@
 #include "skeleton.dtsi"
 
-#define __SIZE_K(x) (x * 1024)
-
 / {
 	cpus {
 		#address-cells = <1>;

@@ -7,8 +7,6 @@
 #include "skeleton.dtsi"
 #include <dt-bindings/interrupt-controller/intel-ioapic.h>
 
-#define __SIZE_K(x) (x * 1024)
-
 / {
 	cpus {
 		#address-cells = <1>;

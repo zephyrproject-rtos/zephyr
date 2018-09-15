@@ -6,8 +6,10 @@
 
 /dts-v1/;
 
-#define DT_FLASH_SIZE		__SIZE_K(8912)
-#define DT_SRAM_SIZE		__SIZE_K(2097152)
+#include <mem.h>
+
+#define DT_FLASH_SIZE		DT_SIZE_K(8912)
+#define DT_SRAM_SIZE		DT_SIZE_M(2048)
 
 #include <apollo_lake.dtsi>
 #include <dt-bindings/i2c/i2c.h>
