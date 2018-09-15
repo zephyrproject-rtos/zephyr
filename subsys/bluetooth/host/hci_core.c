@@ -5004,8 +5004,11 @@ int bt_setup_id_addr(void)
 		rp = (void *)rsp->data;
 		bt_dev.id_count = min(rp->num_addrs, CONFIG_BT_ID_MAX);
 		for (i = 0; i < bt_dev.id_count; i++) {
-			bt_dev.id_addr[i].type = BT_ADDR_LE_RANDOM;
-			bt_addr_copy(&bt_dev.id_addr[i].a, &rp->a[i].bdaddr);
+			bt_addr_le_t addr;
+
+			addr.type = BT_ADDR_LE_RANDOM;
+			bt_addr_copy(&addr.a, &rp->a[i].bdaddr);
+			id_create(i, &addr, NULL);
 		}
 
 		net_buf_unref(rsp);
