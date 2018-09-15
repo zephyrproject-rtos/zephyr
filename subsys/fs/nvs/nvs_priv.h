@@ -41,6 +41,10 @@ struct nvs_ate {
 	u8_t crc8;	/* crc8 check of the entry */
 } __packed;
 
+BUILD_ASSERT_MSG(offsetof(struct nvs_ate, crc8) ==
+		 sizeof(struct nvs_ate) - sizeof(u8_t),
+		 "crc8 must be the last member");
+
 #ifdef __cplusplus
 }
 #endif
