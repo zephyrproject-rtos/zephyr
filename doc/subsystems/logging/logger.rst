@@ -166,6 +166,7 @@ Example below presents usage of the template. As a result CONFIG_FOO_LOG_LEVEL
 will be generated:
 
 .. code-block:: none
+
    module = FOO
    module-str = foo
    source "subsys/logging/Kconfig.template.log_config"
