@@ -238,25 +238,21 @@ static void _nvs_ate_crc8_update(struct nvs_ate *entry)
 {
 	u8_t crc8;
 
-	entry->crc8 = 0xff;
-	crc8 = crc8_ccitt(0xff, entry, sizeof(struct nvs_ate));
+	crc8 = crc8_ccitt(0xff, entry, offsetof(struct nvs_ate, crc8));
 	entry->crc8 = crc8;
 }
 
 /* crc check on allocation entry
  * returns 0 if OK, 1 on crc fail
  */
-static int _nvs_ate_crc8_check(struct nvs_ate *entry)
+static int _nvs_ate_crc8_check(const struct nvs_ate *entry)
 {
 	u8_t crc8;
 
-	crc8 = entry->crc8;
-	_nvs_ate_crc8_update(entry);
+	crc8 = crc8_ccitt(0xff, entry, offsetof(struct nvs_ate, crc8));
 	if (crc8 == entry->crc8) {
 		return 0;
 	}
-	/* set back the original crc8 if different */
-	entry->crc8 = crc8;
 	return 1;
 }
 
