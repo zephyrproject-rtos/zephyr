@@ -325,6 +325,11 @@ static int _nvs_prev_ate(struct nvs_fs *fs, u32_t *addr, struct nvs_ate *ate)
 			if (!rc) {
 				break;
 			}
+			/* stop at the end of the sector in case it is not
+			   closed properly */
+			if (((*addr) & ADDR_OFFS_MASK) == 0) {
+				break;
+			}
 		}
 		/* stop after stepping through all sectors */
 		if (*addr == fs->ate_wra) {
