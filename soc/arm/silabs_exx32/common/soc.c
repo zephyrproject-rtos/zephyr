@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2017, Christian Taedcke
+ * Copyright (c) 2018, Christian Taedcke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * @brief SoC initialization for the EFM32WG
+ * @brief Common SoC initialization for the EXX32
  */
 
 #include <kernel.h>
@@ -38,17 +38,21 @@ static const CMU_LFXOInit_TypeDef lfxoInit = CMU_LFXOINIT_DEFAULT;
 static ALWAYS_INLINE void clkInit(void)
 {
 #ifdef CONFIG_CMU_HFCLK_HFXO
-	CMU_HFXOInit(&hfxoInit);
-	CMU_OscillatorEnable(cmuOsc_HFXO, true, true);
-	CMU_ClockSelectSet(cmuClock_HF, cmuSelect_HFXO);
-	CMU_OscillatorEnable(cmuOsc_HFRCO, false, false);
+	if (CMU_ClockSelectGet(cmuClock_HF) != cmuSelect_HFXO) {
+		CMU_HFXOInit(&hfxoInit);
+		CMU_OscillatorEnable(cmuOsc_HFXO, true, true);
+		CMU_ClockSelectSet(cmuClock_HF, cmuSelect_HFXO);
+	}
 	SystemHFXOClockSet(CONFIG_CMU_HFXO_FREQ);
-#elif (defined CONFIG_CMU_HFCLK_LFXO)
-	CMU_LFXOInit(&lfxoInit);
-	CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
-	CMU_ClockSelectSet(cmuClock_HF, cmuSelect_LFXO);
 	CMU_OscillatorEnable(cmuOsc_HFRCO, false, false);
+#elif (defined CONFIG_CMU_HFCLK_LFXO)
+	if (CMU_ClockSelectGet(cmuClock_HF) != cmuSelect_LFXO) {
+		CMU_LFXOInit(&lfxoInit);
+		CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
+		CMU_ClockSelectSet(cmuClock_HF, cmuSelect_LFXO);
+	}
 	SystemLFXOClockSet(CONFIG_CMU_LFXO_FREQ);
+	CMU_OscillatorEnable(cmuOsc_HFRCO, false, false);
 #elif (defined CONFIG_CMU_HFCLK_HFRCO)
 	/*
 	 * This is the default clock, the controller starts with, so nothing to
@@ -74,7 +78,7 @@ static ALWAYS_INLINE void clkInit(void)
  *
  * @return 0
  */
-static int silabs_efm32wg_init(struct device *arg)
+static int silabs_exx32_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -102,4 +106,4 @@ static int silabs_efm32wg_init(struct device *arg)
 	return 0;
 }
 
-SYS_INIT(silabs_efm32wg_init, PRE_KERNEL_1, 0);
+SYS_INIT(silabs_exx32_init, PRE_KERNEL_1, 0);
