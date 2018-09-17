@@ -326,6 +326,7 @@ static void onoff_work_handler(struct k_work *work)
 
 		if (state->tt_counter == 0) {
 			state_binding(ONOFF, IGNORE_TEMP);
+			enable_transition = DISABLE_TRANSITION;
 			update_light_state();
 
 			k_timer_stop(&onoff_transition_timer);
@@ -351,6 +352,7 @@ static void onoff_work_handler(struct k_work *work)
 		state->onoff = state->target_onoff;
 
 		state_binding(ONOFF, IGNORE_TEMP);
+		enable_transition = DISABLE_TRANSITION;
 		update_light_state();
 
 		k_timer_stop(&onoff_transition_timer);
@@ -382,6 +384,7 @@ static void level_lightness_work_handler(struct k_work *work)
 
 		if (state->tt_counter == 0) {
 			state_binding(level, IGNORE_TEMP);
+			enable_transition = DISABLE_TRANSITION;
 			update_light_state();
 
 			k_timer_stop(&level_lightness_transition_timer);
@@ -405,6 +408,7 @@ static void level_lightness_work_handler(struct k_work *work)
 		state->level = state->target_level;
 
 		state_binding(level, IGNORE_TEMP);
+		enable_transition = DISABLE_TRANSITION;
 		update_light_state();
 
 		k_timer_stop(&level_lightness_transition_timer);
@@ -432,6 +436,7 @@ static void level_temp_work_handler(struct k_work *work)
 
 		if (state->tt_counter == 0) {
 			state_binding(IGNORE, LEVEL_TEMP);
+			enable_transition = DISABLE_TRANSITION;
 			update_light_state();
 
 			k_timer_stop(&level_temp_transition_timer);
@@ -455,6 +460,7 @@ static void level_temp_work_handler(struct k_work *work)
 		state->level = state->target_level;
 
 		state_binding(IGNORE, LEVEL_TEMP);
+		enable_transition = DISABLE_TRANSITION;
 		update_light_state();
 
 		k_timer_stop(&level_temp_transition_timer);
@@ -475,6 +481,7 @@ static void light_lightness_actual_work_handler(struct k_work *work)
 
 		if (state->tt_counter_actual == 0) {
 			state_binding(ACTUAL, IGNORE_TEMP);
+			enable_transition = DISABLE_TRANSITION;
 			update_light_state();
 
 			k_timer_stop(&light_lightness_actual_transition_timer);
@@ -498,6 +505,7 @@ static void light_lightness_actual_work_handler(struct k_work *work)
 		state->actual = state->target_actual;
 
 		state_binding(ACTUAL, IGNORE_TEMP);
+		enable_transition = DISABLE_TRANSITION;
 		update_light_state();
 
 		k_timer_stop(&light_lightness_actual_transition_timer);
@@ -518,6 +526,7 @@ static void light_lightness_linear_work_handler(struct k_work *work)
 
 		if (state->tt_counter_linear == 0) {
 			state_binding(LINEAR, IGNORE_TEMP);
+			enable_transition = DISABLE_TRANSITION;
 			update_light_state();
 
 			k_timer_stop(&light_lightness_linear_transition_timer);
@@ -541,6 +550,7 @@ static void light_lightness_linear_work_handler(struct k_work *work)
 		state->linear = state->target_linear;
 
 		state_binding(LINEAR, IGNORE_TEMP);
+		enable_transition = DISABLE_TRANSITION;
 		update_light_state();
 
 		k_timer_stop(&light_lightness_linear_transition_timer);
@@ -561,6 +571,7 @@ static void light_ctl_work_handler(struct k_work *work)
 
 		if (state->tt_counter == 0) {
 			state_binding(CTL, CTL_TEMP);
+			enable_transition = DISABLE_TRANSITION;
 			update_light_state();
 
 			k_timer_stop(&light_ctl_transition_timer);
@@ -593,6 +604,7 @@ static void light_ctl_work_handler(struct k_work *work)
 		state->delta_uv = state->target_delta_uv;
 
 		state_binding(CTL, CTL_TEMP);
+		enable_transition = DISABLE_TRANSITION;
 		update_light_state();
 
 		k_timer_stop(&light_ctl_transition_timer);
@@ -613,6 +625,7 @@ static void light_ctl_temp_work_handler(struct k_work *work)
 
 		if (state->tt_counter_temp == 0) {
 			state_binding(IGNORE, CTL_TEMP);
+			enable_transition = DISABLE_TRANSITION;
 			update_light_state();
 
 			k_timer_stop(&light_ctl_temp_transition_timer);
@@ -641,6 +654,7 @@ static void light_ctl_temp_work_handler(struct k_work *work)
 		state->delta_uv = state->target_delta_uv;
 
 		state_binding(IGNORE, CTL_TEMP);
+		enable_transition = DISABLE_TRANSITION;
 		update_light_state();
 
 		k_timer_stop(&light_ctl_temp_transition_timer);
