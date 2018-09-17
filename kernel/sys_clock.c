@@ -196,7 +196,7 @@ static inline void handle_timeouts(s32_t ticks)
 	 * prohibited.
 	 */
 
-	while (next) {
+	while (next != NULL) {
 
 		/*
 		 * In the case where ticks number is greater than the first
