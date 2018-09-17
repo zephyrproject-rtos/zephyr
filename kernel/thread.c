@@ -162,8 +162,8 @@ void _thread_monitor_exit(struct k_thread *thread)
 		struct k_thread *prev_thread;
 
 		prev_thread = _kernel.threads;
-		while (prev_thread != NULL &&
-		       thread != prev_thread->next_thread) {
+		while ((prev_thread != NULL) &&
+			(thread != prev_thread->next_thread)) {
 			prev_thread = prev_thread->next_thread;
 		}
 		if (prev_thread != NULL) {
