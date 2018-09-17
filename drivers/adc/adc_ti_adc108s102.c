@@ -10,12 +10,13 @@
 
 #include <kernel.h>
 #include <misc/util.h>
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ADC_LEVEL
-#include <logging/sys_log.h>
 #include <string.h>
 #include <init.h>
 
 #include "adc_ti_adc108s102.h"
+#define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(adc_ti_adc108s102);
 
 static inline int _ti_adc108s102_sampling(struct device *dev)
 {
@@ -37,7 +38,7 @@ static inline int _ti_adc108s102_sampling(struct device *dev)
 		.count = 1
 	};
 
-	SYS_LOG_DBG("Sampling!");
+	LOG_DBG("Sampling!");
 
 	return spi_transceive(adc->spi, &adc->spi_cfg, &tx, &rx);
 }
@@ -50,7 +51,7 @@ static inline void _ti_adc108s102_handle_result(struct device *dev)
 	struct adc_seq_entry *entry;
 	u32_t s_i, i;
 
-	SYS_LOG_DBG("_ti_adc108s102_handle_result()");
+	LOG_DBG("_ti_adc108s102_handle_result()");
 
 	for (i = 0, s_i = 1; i < seq_table->num_entries; i++, s_i++) {
 		entry = &seq_table->entries[i];
@@ -87,7 +88,7 @@ static inline s32_t _ti_adc108s102_prepare(struct device *dev)
 			continue;
 		}
 
-		SYS_LOG_DBG("Requesting channel %d", entry->channel_id);
+		LOG_DBG("Requesting channel %d", entry->channel_id);
 		adc->cmd_buffer[adc->cmd_buf_len] =
 				ADC108S102_CHANNEL_CMD(entry->channel_id);
 
@@ -105,7 +106,7 @@ static inline s32_t _ti_adc108s102_prepare(struct device *dev)
 	adc->cmd_buffer[adc->cmd_buf_len] = 0;
 	adc->cmd_buf_len++;
 
-	SYS_LOG_DBG("ADC108S102 is prepared...");
+	LOG_DBG("ADC108S102 is prepared...");
 
 	return sampling_delay;
 }
@@ -221,7 +222,7 @@ static int ti_adc108s102_init(struct device *dev)
 	adc->spi_cfg.slave = CONFIG_ADC_TI_ADC108S102_SPI_SLAVE;
 
 
-	SYS_LOG_DBG("ADC108s102 initialized");
+	LOG_DBG("ADC108s102 initialized");
 
 	dev->driver_api = &ti_adc108s102_api;
 

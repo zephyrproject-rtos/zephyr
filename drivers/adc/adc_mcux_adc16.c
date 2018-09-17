@@ -8,8 +8,9 @@
 #include <adc.h>
 #include <fsl_adc16.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ADC_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(adc_mcux_adc16);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -34,27 +35,27 @@ static int mcux_adc16_channel_setup(struct device *dev,
 	u8_t channel_id = channel_cfg->channel_id;
 
 	if (channel_id > (ADC_SC1_ADCH_MASK >> ADC_SC1_ADCH_SHIFT)) {
-		SYS_LOG_ERR("Channel %d is not valid", channel_id);
+		LOG_ERR("Channel %d is not valid", channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		SYS_LOG_ERR("Invalid channel acquisition time");
+		LOG_ERR("Invalid channel acquisition time");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
-		SYS_LOG_ERR("Differential channels are not supported");
+		LOG_ERR("Differential channels are not supported");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		SYS_LOG_ERR("Invalid channel gain");
+		LOG_ERR("Invalid channel gain");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		SYS_LOG_ERR("Invalid channel reference");
+		LOG_ERR("Invalid channel reference");
 		return -EINVAL;
 	}
 
@@ -69,7 +70,7 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	int error;
 
 	if (sequence->resolution != 12) {
-		SYS_LOG_ERR("Invalid resolution");
+		LOG_ERR("Invalid resolution");
 		return -EINVAL;
 	}
 
@@ -90,7 +91,7 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 		mode = kADC16_HardwareAverageCount32;
 		break;
 	default:
-		SYS_LOG_ERR("Invalid oversampling");
+		LOG_ERR("Invalid oversampling");
 		return -EINVAL;
 	}
 	ADC16_SetHardwareAverage(config->base, mode);
@@ -136,7 +137,7 @@ static void mcux_adc16_start_channel(struct device *dev)
 
 	data->channel_id = find_lsb_set(data->channels) - 1;
 
-	SYS_LOG_DBG("Starting channel %d", data->channel_id);
+	LOG_DBG("Starting channel %d", data->channel_id);
 
 #if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE) && FSL_FEATURE_ADC16_HAS_DIFF_MODE
 	channel_config.enableDifferentialConversion = false;
@@ -177,7 +178,7 @@ static void mcux_adc16_isr(void *arg)
 	u16_t result;
 
 	result = ADC16_GetChannelConversionValue(base, channel_group);
-	SYS_LOG_DBG("Finished channel %d. Result is 0x%04x",
+	LOG_DBG("Finished channel %d. Result is 0x%04x",
 		    data->channel_id, result);
 
 	*data->buffer++ = result;

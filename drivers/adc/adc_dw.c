@@ -19,7 +19,10 @@
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 #include "adc_dw.h"
-#include <logging/sys_log.h>
+
+#define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(adc_dw);
 
 #define ADC_CLOCK_GATE      (1 << 31)
 #define ADC_DEEP_POWER_DOWN  0x01
@@ -231,27 +234,27 @@ static int adc_dw_channel_setup(struct device *dev,
 	struct adc_info *info = dev->driver_data;
 
 	if (channel_id >= DW_CHANNEL_COUNT) {
-		SYS_LOG_ERR("Invalid channel id");
+		LOG_ERR("Invalid channel id");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		SYS_LOG_ERR("Invalid channel gain");
+		LOG_ERR("Invalid channel gain");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		SYS_LOG_ERR("Invalid channel reference");
+		LOG_ERR("Invalid channel reference");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		SYS_LOG_ERR("Invalid channel acquisition time");
+		LOG_ERR("Invalid channel acquisition time");
 		return -EINVAL;
 	}
 
 	if (info->state != ADC_STATE_IDLE) {
-		SYS_LOG_ERR("ADC is busy or in error state");
+		LOG_ERR("ADC is busy or in error state");
 		return -EAGAIN;
 	}
 
