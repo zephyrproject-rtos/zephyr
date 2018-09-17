@@ -8,8 +8,6 @@
  * @file Shim layer for mbedTLS, crypto API compliant.
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_CRYPTO_LEVEL
-#include <logging/sys_log.h>
 
 #include <kernel.h>
 #include <init.h>
@@ -26,6 +24,10 @@
 #include <mbedtls/aes.h>
 
 #define MTLS_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
+
+#define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(mbedtls);
 
 struct mtls_shim_session {
 	mbedtls_ccm_context mtls;
@@ -57,7 +59,7 @@ static int mtls_ccm_encrypt_auth(struct cipher_ctx *ctx,
 					  apkt->pkt->out_buf, apkt->tag,
 					  ctx->mode_params.ccm_info.tag_len);
 	if (ret) {
-		SYS_LOG_ERR("Could non encrypt/auth (%d)", ret);
+		LOG_ERR("Could non encrypt/auth (%d)", ret);
 
 		/*ToDo: try to return relevant code depending on ret? */
 		return -EINVAL;
@@ -87,7 +89,7 @@ static int mtls_ccm_decrypt_auth(struct cipher_ctx *ctx,
 				       apkt->pkt->out_buf, apkt->tag,
 				       ctx->mode_params.ccm_info.tag_len);
 	if (ret) {
-		SYS_LOG_ERR("Could non decrypt/auth (%d)", ret);
+		LOG_ERR("Could non decrypt/auth (%d)", ret);
 
 		/*ToDo: try to return relevant code depending on ret? */
 		return -EINVAL;
@@ -122,28 +124,28 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 	int ret;
 
 	if (ctx->flags & ~(MTLS_SUPPORT)) {
-		SYS_LOG_ERR("Unsupported flag");
+		LOG_ERR("Unsupported flag");
 		return -EINVAL;
 	}
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
-		SYS_LOG_ERR("Unsupported algo");
+		LOG_ERR("Unsupported algo");
 		return -EINVAL;
 	}
 
 	if (mode != CRYPTO_CIPHER_MODE_CCM) {
-		SYS_LOG_ERR("Unsupported mode");
+		LOG_ERR("Unsupported mode");
 		return -EINVAL;
 	}
 
 	if (ctx->keylen != 16) {
-		SYS_LOG_ERR("%u key size is not supported", ctx->keylen);
+		LOG_ERR("%u key size is not supported", ctx->keylen);
 		return -EINVAL;
 	}
 
 	ctx_idx = mtls_get_unused_session_index();
 	if (ctx_idx < 0) {
-		SYS_LOG_ERR("No free session for now");
+		LOG_ERR("No free session for now");
 		return -ENOSPC;
 	}
 
@@ -154,7 +156,7 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 	ret = mbedtls_ccm_setkey(mtls_ctx, MBEDTLS_CIPHER_ID_AES,
 				 ctx->key.bit_stream, ctx->keylen * 8);
 	if (ret) {
-		SYS_LOG_ERR("Could not setup the key (%d)", ret);
+		LOG_ERR("Could not setup the key (%d)", ret);
 		mtls_sessions[ctx_idx].in_use = false;
 
 		return -EINVAL;

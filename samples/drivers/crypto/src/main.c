@@ -13,7 +13,7 @@
 #include <string.h>
 #include <crypto/cipher.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_CRYPTO_LEVEL
+#define SYS_LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
 #include <logging/sys_log.h>
 
 #ifdef CONFIG_CRYPTO_TINYCRYPT_SHIM
