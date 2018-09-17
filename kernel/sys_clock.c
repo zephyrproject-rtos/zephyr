@@ -252,7 +252,7 @@ static inline void handle_timeouts(s32_t ticks)
 	_handle_expired_timeouts(&expired);
 }
 #else
-	#define handle_timeouts(ticks) do { } while ((0))
+	#define handle_timeouts(ticks) do { } while (false)
 #endif
 
 #ifdef CONFIG_TIMESLICING
@@ -295,7 +295,7 @@ static void handle_time_slicing(s32_t ticks)
 #endif
 }
 #else
-#define handle_time_slicing(ticks) do { } while (0)
+#define handle_time_slicing(ticks) do { } while (false)
 #endif
 
 /**

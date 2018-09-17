@@ -32,6 +32,7 @@
 #include <entropy.h>
 #include <logging/log_ctrl.h>
 #include <tracing.h>
+#include <stdbool.h>
 
 /* kernel build timestamp items */
 #define BUILD_TIMESTAMP "BUILD: " __DATE__ " " __TIME__
@@ -55,7 +56,7 @@ static const unsigned int boot_delay;
 #endif
 
 #if !defined(CONFIG_BOOT_BANNER)
-#define PRINT_BOOT_BANNER() do { } while (0)
+#define PRINT_BOOT_BANNER() do { } while (false)
 #else
 #define PRINT_BOOT_BANNER() printk("***** " BOOT_BANNER " *****\n")
 #endif
@@ -493,7 +494,7 @@ FUNC_NORETURN void _Cstart(void)
 	bg_thread_main(NULL, NULL, NULL);
 
 	irq_lock();
-	while (1) {
+	while (true) {
 	}
 #endif
 
