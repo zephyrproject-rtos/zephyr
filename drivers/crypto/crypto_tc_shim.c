@@ -17,9 +17,9 @@
 #include <crypto/cipher.h>
 #include "crypto_tc_shim_priv.h"
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_CRYPTO_LEVEL
-#include <logging/sys_log.h>
-
+#define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(tinycrypt);
 
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_TINYCRYPT_SHIM_MAX_SESSION
 
@@ -35,7 +35,7 @@ static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 				op->in_buf, op->in_len,
 				iv,
 				&data->session_key) == TC_CRYPTO_FAIL) {
-		SYS_LOG_ERR("TC internal error during CBC encryption");
+		LOG_ERR("TC internal error during CBC encryption");
 		return -EIO;
 	}
 
@@ -54,7 +54,7 @@ static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 	 * buffer for efficieny
 	 */
 	if (iv != op->in_buf) {
-		SYS_LOG_ERR("TC needs contiguous iv and ciphertext");
+		LOG_ERR("TC needs contiguous iv and ciphertext");
 		return -EIO;
 	}
 
@@ -63,7 +63,7 @@ static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 			op->in_buf + TC_AES_BLOCK_SIZE,
 			op->in_len - TC_AES_BLOCK_SIZE,
 			op->in_buf, &data->session_key) == TC_CRYPTO_FAIL) {
-		SYS_LOG_ERR("Func TC internal error during CBC decryption");
+		LOG_ERR("Func TC internal error during CBC decryption");
 		return -EIO;
 	}
 
@@ -88,7 +88,7 @@ static int do_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *op,
 	if (tc_ctr_mode(op->out_buf, op->out_buf_max, op->in_buf,
 			op->in_len, ctr,
 			&data->session_key) == TC_CRYPTO_FAIL) {
-		SYS_LOG_ERR("TC internal error during CTR OP");
+		LOG_ERR("TC internal error during CTR OP");
 		return -EIO;
 	}
 
@@ -109,14 +109,14 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 	if (tc_ccm_config(&ccm, &data->session_key, nonce,
 			ccm_param->nonce_len,
 			ccm_param->tag_len) == TC_CRYPTO_FAIL) {
-		SYS_LOG_ERR("TC internal error during CCM encryption config");
+		LOG_ERR("TC internal error during CCM encryption config");
 		return -EIO;
 	}
 
 	if (tc_ccm_generation_encryption(op->out_buf, op->out_buf_max,
 					 aead_op->ad, aead_op->ad_len, op->in_buf,
 					 op->in_len, &ccm) == TC_CRYPTO_FAIL) {
-		SYS_LOG_ERR("TC internal error during CCM Encryption OP");
+		LOG_ERR("TC internal error during CCM Encryption OP");
 		return -EIO;
 	}
 
@@ -147,7 +147,7 @@ static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
 	if (tc_ccm_config(&ccm, &data->session_key, nonce,
 			  ccm_param->nonce_len,
 			  ccm_param->tag_len) == TC_CRYPTO_FAIL) {
-		SYS_LOG_ERR("TC internal error during CCM decryption config");
+		LOG_ERR("TC internal error during CCM decryption config");
 		return -EIO;
 	}
 
@@ -156,7 +156,7 @@ static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
 	 * be moved to a ctx.flag check during session_setup, later.
 	 */
 	if (aead_op->tag != op->in_buf + op->in_len) {
-		SYS_LOG_ERR("TC needs contiguous hash  at the end of inbuf");
+		LOG_ERR("TC needs contiguous hash  at the end of inbuf");
 		return -EIO;
 	}
 
@@ -165,7 +165,7 @@ static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
 					   op->in_buf,
 					   op->in_len + ccm_param->tag_len,
 					   &ccm) == TC_CRYPTO_FAIL) {
-		SYS_LOG_ERR("TC internal error during CCM decryption OP");
+		LOG_ERR("TC internal error during CCM decryption OP");
 		return -EIO;
 	}
 
@@ -199,7 +199,7 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 
 	/* The shim currently supports only CBC or CTR mode for AES */
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
-		SYS_LOG_ERR("TC Shim Unsupported algo");
+		LOG_ERR("TC Shim Unsupported algo");
 		return -EINVAL;
 	}
 
@@ -207,13 +207,13 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 	 * make sense.
 	 */
 	if (!(ctx->flags & CAP_SYNC_OPS)) {
-		SYS_LOG_ERR("Async not supported by this driver");
+		LOG_ERR("Async not supported by this driver");
 		return -EINVAL;
 	}
 
 	if (ctx->keylen != TC_AES_KEY_SIZE) {
 		/* TinyCrypt supports only 128 bits */
-		SYS_LOG_ERR("TC Shim Unsupported key size");
+		LOG_ERR("TC Shim Unsupported key size");
 		return -EINVAL;
 	}
 
@@ -224,7 +224,7 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 			break;
 		case CRYPTO_CIPHER_MODE_CTR:
 			if (ctx->mode_params.ctr_info.ctr_len != 32) {
-				SYS_LOG_ERR("Tinycrypt supports only 32 bit "
+				LOG_ERR("Tinycrypt supports only 32 bit "
 					    "counter");
 				return -EINVAL;
 			}
@@ -234,7 +234,7 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 			ctx->ops.ccm_crypt_hndlr = do_ccm_encrypt_mac;
 			break;
 		default:
-			SYS_LOG_ERR("TC Shim Unsupported mode");
+			LOG_ERR("TC Shim Unsupported mode");
 			return -EINVAL;
 		}
 	} else {
@@ -245,7 +245,7 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 		case CRYPTO_CIPHER_MODE_CTR:
 			/* Maybe validate CTR length */
 			if (ctx->mode_params.ctr_info.ctr_len != 32) {
-				SYS_LOG_ERR("Tinycrypt supports only 32 bit "
+				LOG_ERR("Tinycrypt supports only 32 bit "
 					    "counter");
 				return -EINVAL;
 			}
@@ -255,7 +255,7 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 			ctx->ops.ccm_crypt_hndlr = do_ccm_decrypt_auth;
 			break;
 		default:
-			SYS_LOG_ERR("TC Shim Unsupported mode");
+			LOG_ERR("TC Shim Unsupported mode");
 			return -EINVAL;
 		}
 
@@ -265,7 +265,7 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 
 	idx = get_unused_session();
 	if (idx == CRYPTO_MAX_SESSION) {
-		SYS_LOG_ERR("Max sessions in progress");
+		LOG_ERR("Max sessions in progress");
 		return -ENOSPC;
 	}
 
@@ -273,7 +273,7 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 
 	if (tc_aes128_set_encrypt_key(&data->session_key, ctx->key.bit_stream)
 			 == TC_CRYPTO_FAIL) {
-		SYS_LOG_ERR("TC internal error in setting key");
+		LOG_ERR("TC internal error in setting key");
 		tc_driver_state[idx].in_use = 0;
 
 		return -EIO;
