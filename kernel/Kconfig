@@ -9,6 +9,10 @@
 
 menu "General Kernel Options"
 
+module = KERNEL
+module-str = kernel
+source "subsys/logging/Kconfig.template.log_config"
+
 config MULTITHREADING
 	bool "Multi-threading"
 	default y

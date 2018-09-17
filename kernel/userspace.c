@@ -16,7 +16,11 @@
 #include <syscall_handler.h>
 #include <device.h>
 #include <init.h>
-#include <logging/sys_log.h>
+
+#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(kernel);
+
 #if defined(CONFIG_NETWORKING) && defined (CONFIG_DYNAMIC_OBJECTS)
 /* Used by auto-generated obj_size_get() switch body, as we need to
  * know the size of struct net_context
@@ -221,7 +225,7 @@ void *_impl_k_object_alloc(enum k_objects otype)
 
 	dyn_obj = z_thread_malloc(sizeof(*dyn_obj) + obj_size_get(otype));
 	if (dyn_obj == NULL) {
-		SYS_LOG_WRN("could not allocate kernel object");
+		LOG_WRN("could not allocate kernel object");
 		return NULL;
 	}
 
