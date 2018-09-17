@@ -85,7 +85,7 @@ config NET_GPTP_INIT_LOG_ANNOUNCE_ITV
 
 config NET_GPTP_SYNC_RECEIPT_TIMEOUT
 	int "Number of sync intervals to wait"
-	default 6
+	default 3
 	help
 	  Defines the number of sync intervals to wait without receiving
 	  synchronization information before assuming that the master is no
