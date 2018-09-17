@@ -17,9 +17,9 @@
 #include <dma.h>
 #include "dma_sam_xdmac.h"
 
-#define SYS_LOG_DOMAIN "dev/dma_sam_xdmac"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_DMA_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(dma_sam_xdmac)
 
 #define XDMAC_INT_ERR (XDMAC_CIE_RBIE | XDMAC_CIE_WBIE | XDMAC_CIE_ROIE)
 #define DMA_CHANNELS_NO  XDMACCHID_NUMBER
@@ -191,20 +191,20 @@ static int sam_xdmac_config(struct device *dev, u32_t channel,
 
 	if (cfg->source_data_size != 1 && cfg->source_data_size != 2 &&
 	    cfg->source_data_size != 4) {
-		SYS_LOG_ERR("Invalid 'source_data_size' value");
+		LOG_ERR("Invalid 'source_data_size' value");
 		return -EINVAL;
 	}
 
 	if (cfg->block_count != 1) {
-		SYS_LOG_ERR("Only single block transfer is currently supported."
+		LOG_ERR("Only single block transfer is currently supported."
 			    " Please submit a patch.");
 		return -EINVAL;
 	}
 
 	burst_size = find_msb_set(cfg->source_burst_length) - 1;
-	SYS_LOG_DBG("burst_size=%d", burst_size);
+	LOG_DBG("burst_size=%d", burst_size);
 	data_size = find_msb_set(cfg->source_data_size) - 1;
-	SYS_LOG_DBG("data_size=%d", data_size);
+	LOG_DBG("data_size=%d", data_size);
 
 	switch (cfg->channel_direction) {
 	case MEMORY_TO_MEMORY:
@@ -231,7 +231,7 @@ static int sam_xdmac_config(struct device *dev, u32_t channel,
 			| XDMAC_CC_DAM_INCREMENTED_AM;
 		break;
 	default:
-		SYS_LOG_ERR("'channel_direction' value %d is not supported",
+		LOG_ERR("'channel_direction' value %d is not supported",
 			    cfg->channel_direction);
 		return -EINVAL;
 	}
@@ -330,7 +330,7 @@ static int sam_xdmac_initialize(struct device *dev)
 	/* Enable module's IRQ */
 	irq_enable(dev_cfg->irq_id);
 
-	SYS_LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", DEV_NAME(dev));
 
 	return 0;
 }

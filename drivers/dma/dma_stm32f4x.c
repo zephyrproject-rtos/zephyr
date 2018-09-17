@@ -5,16 +5,18 @@
  *
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_DMA_LEVEL
 
 #include <board.h>
 #include <device.h>
 #include <dma.h>
 #include <errno.h>
 #include <init.h>
-#include <logging/sys_log.h>
 #include <stdio.h>
 #include <string.h>
+
+#define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(dma_stm32f4x)
 
 #include <clock_control/stm32_clock_control.h>
 
@@ -166,7 +168,7 @@ struct dma_stm32_config {
 #define   DMA_STM32_SFCR_MASK		(DMA_STM32_SFCR_FEIE \
 					 | DMA_STM32_SFCR_DMDIS)
 
-#define SYS_LOG_U32			__attribute((__unused__)) u32_t
+#define LOG_U32			__attribute((__unused__)) u32_t
 
 static void dma_stm32_1_config(struct dma_stm32_device *ddata);
 static void dma_stm32_2_config(struct dma_stm32_device *ddata);
@@ -184,18 +186,18 @@ static void dma_stm32_write(struct dma_stm32_device *ddata,
 
 static void dma_stm32_dump_reg(struct dma_stm32_device *ddata, u32_t id)
 {
-	SYS_LOG_INF("Using stream: %d\n", id);
-	SYS_LOG_INF("SCR:   0x%x \t(config)\n",
+	LOG_INF("Using stream: %d\n", id);
+	LOG_INF("SCR:   0x%x \t(config)\n",
 		    dma_stm32_read(ddata, DMA_STM32_SCR(id)));
-	SYS_LOG_INF("SNDTR:  0x%x \t(length)\n",
+	LOG_INF("SNDTR:  0x%x \t(length)\n",
 		    dma_stm32_read(ddata, DMA_STM32_SNDTR(id)));
-	SYS_LOG_INF("SPAR:  0x%x \t(source)\n",
+	LOG_INF("SPAR:  0x%x \t(source)\n",
 		    dma_stm32_read(ddata, DMA_STM32_SPAR(id)));
-	SYS_LOG_INF("SM0AR: 0x%x \t(destination)\n",
+	LOG_INF("SM0AR: 0x%x \t(destination)\n",
 		    dma_stm32_read(ddata, DMA_STM32_SM0AR(id)));
-	SYS_LOG_INF("SM1AR: 0x%x \t(destination (double buffer mode))\n",
+	LOG_INF("SM1AR: 0x%x \t(destination (double buffer mode))\n",
 		    dma_stm32_read(ddata, DMA_STM32_SM1AR(id)));
-	SYS_LOG_INF("SFCR:  0x%x \t(fifo control)\n",
+	LOG_INF("SFCR:  0x%x \t(fifo control)\n",
 		    dma_stm32_read(ddata, DMA_STM32_SFCR(id)));
 }
 
@@ -249,7 +251,7 @@ static void dma_stm32_irq_handler(void *arg, u32_t id)
 
 		stream->dma_callback(stream->dev, id, 0);
 	} else {
-		SYS_LOG_ERR("Internal error: IRQ status: 0x%x\n", irqstatus);
+		LOG_ERR("Internal error: IRQ status: 0x%x\n", irqstatus);
 		dma_stm32_irq_clear(ddata, id, irqstatus);
 
 		stream->dma_callback(stream->dev, id, -EIO);
@@ -277,7 +279,7 @@ static int dma_stm32_disable_stream(struct dma_stm32_device *ddata,
 		/* After trying for 5 seconds, give up */
 		k_sleep(K_SECONDS(5));
 		if (count++ > (5 * 1000) / 50) {
-			SYS_LOG_ERR("DMA error: Stream in use\n");
+			LOG_ERR("DMA error: Stream in use\n");
 			return -EBUSY;
 		}
 	}
@@ -319,7 +321,7 @@ static int dma_stm32_config_devcpy(struct device *dev, u32_t id,
 			DMA_STM32_SCR_MINC;
 		break;
 	default:
-		SYS_LOG_ERR("DMA error: Direction not supported: %d",
+		LOG_ERR("DMA error: Direction not supported: %d",
 			    direction);
 		return -EINVAL;
 	}
@@ -373,7 +375,7 @@ static int dma_stm32_config(struct device *dev, u32_t id,
 	}
 
 	if (config->head_block->block_size > DMA_STM32_MAX_DATA_ITEMS) {
-		SYS_LOG_ERR("DMA error: Data size too big: %d\n",
+		LOG_ERR("DMA error: Data size too big: %d\n",
 		       config->head_block->block_size);
 		return -EINVAL;
 	}
