@@ -661,7 +661,7 @@ void k_thread_access_grant(struct k_thread *thread, ...)
 	va_list args;
 	va_start(args, thread);
 
-	while (1) {
+	while (true) {
 		void *object = va_arg(args, void *);
 		if (object == NULL) {
 			break;

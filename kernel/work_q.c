@@ -14,6 +14,7 @@
 #include <kernel_structs.h>
 #include <wait_q.h>
 #include <errno.h>
+#include <stdbool.h>
 
 static void work_q_main(void *work_q_ptr, void *p2, void *p3)
 {
@@ -22,7 +23,7 @@ static void work_q_main(void *work_q_ptr, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	while (1) {
+	while (true) {
 		struct k_work *work;
 		k_work_handler_t handler;
 

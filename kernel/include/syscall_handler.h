@@ -14,6 +14,7 @@
 #include <kernel.h>
 #include <misc/printk.h>
 #include <kernel_internal.h>
+#include <stdbool.h>
 
 extern const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT];
 
@@ -259,7 +260,7 @@ extern int z_user_string_copy(char *dst, char *src, size_t maxlen);
 		if (expr) { \
 			_arch_syscall_oops(ssf); \
 		} \
-	} while (0)
+	} while (false)
 
 static inline __attribute__((warn_unused_result)) __printf_like(2, 3)
 bool z_syscall_verify_msg(bool expr, const char *fmt, ...)

@@ -15,6 +15,7 @@
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
 
 #include <kernel.h>
+#include <stdbool.h>
 
 #ifndef _ASMLANGUAGE
 
@@ -198,7 +199,7 @@ extern void _thread_monitor_exit(struct k_thread *thread);
 #else
 #define _thread_monitor_exit(thread) \
 	do {/* nothing */    \
-	} while (0)
+	} while (false)
 #endif /* CONFIG_THREAD_MONITOR */
 
 extern void smp_init(void);
