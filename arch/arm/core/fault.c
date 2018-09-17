@@ -34,7 +34,7 @@
 #define PR_FAULT_INFO(...)
 #endif
 
-#if defined(CONFIG_NXP_MPU)
+#if defined(CONFIG_ARM_MPU) && defined(CONFIG_CPU_HAS_NXP_MPU)
 #define EMN(edr)   (((edr) & SYSMPU_EDR_EMN_MASK) >> SYSMPU_EDR_EMN_SHIFT)
 #define EACD(edr)  (((edr) & SYSMPU_EDR_EACD_MASK) >> SYSMPU_EDR_EACD_SHIFT)
 #endif
@@ -331,7 +331,7 @@ static int _BusFault(NANO_ESF *esf, int fromHardFault)
 	}
 #endif /* !defined(CONFIG_ARMV7_M_ARMV8_M_FP) */
 
-#if defined(CONFIG_NXP_MPU)
+#if defined(CONFIG_ARM_MPU) && defined(CONFIG_CPU_HAS_NXP_MPU)
 	u32_t sperr = SYSMPU->CESR & SYSMPU_CESR_SPERR_MASK;
 	u32_t mask = BIT(31);
 	int i;
@@ -356,7 +356,7 @@ static int _BusFault(NANO_ESF *esf, int fromHardFault)
 		}
 		SYSMPU->CESR &= ~sperr;
 	}
-#endif /* CONFIG_NXP_MPU */
+#endif /* defined(CONFIG_ARM_MPU) && defined(CONFIG_CPU_HAS_NXP_MPU) */
 
 #if defined(CONFIG_ARMV8_M_MAINLINE)
 	/* clear BSFR sticky bits */

@@ -253,7 +253,7 @@ extern "C" {
 		((char *)(sym) + MPU_GUARD_ALIGN_AND_SIZE)
 
 #ifdef CONFIG_USERSPACE
-#ifdef CONFIG_ARM_MPU
+#ifdef CONFIG_CPU_HAS_ARM_MPU
 #ifndef _ASMLANGUAGE
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>
 #endif /* _ASMLANGUAGE */
@@ -263,8 +263,8 @@ extern "C" {
 		"the size of the partition must be power of 2" \
 		" and greater than or equal to 32." \
 		"start address of the partition must align with size.")
-#endif /* CONFIG_ARM_MPU*/
-#ifdef CONFIG_NXP_MPU
+#endif /* CONFIG_CPU_HAS_ARM_MPU */
+#ifdef CONFIG_CPU_HAS_NXP_MPU
 #ifndef _ASMLANGUAGE
 #include <arch/arm/cortex_m/mpu/nxp_mpu.h>
 
@@ -318,7 +318,7 @@ extern "C" {
 		"the size of the partition must align with 32" \
 		" and greater than or equal to 32." \
 		"start address of the partition must align with 32.")
-#endif  /* CONFIG_NXP_MPU */
+#endif  /* CONFIG_CPU_HAS_ARM_MPU */
 #endif /* CONFIG_USERSPACE */
 
 #ifndef _ASMLANGUAGE
