@@ -202,7 +202,7 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 
 		/* handle first thread waiting to write (if any) */
 		pending_thread = _unpend_first_thread(&q->wait_q);
-		if (pending_thread) {
+		if (pending_thread != NULL) {
 			/* add thread's message to queue */
 			(void)memcpy(q->write_ptr, pending_thread->base.swap_data,
 			       q->msg_size);
