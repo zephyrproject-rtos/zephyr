@@ -7,40 +7,12 @@
 
 menuconfig ADT7420
 	bool "ADT7420 Temperature Sensor"
-	depends on I2C
+	depends on I2C && HAS_DTS_I2C
 	help
 	  Enable the driver for Analog Devices ADT7420 High-Accuracy
 	  16-bit Digital I2C Temperature Sensors.
 
 if ADT7420
-
-if !HAS_DTS_I2C
-
-config ADT7420_NAME
-	string "Driver name"
-	default "ADT7420"
-	help
-	  Device name with which the ADT7420 sensor is identified.
-
-config ADT7420_I2C_ADDR
-	hex "I2C address for ADT7420"
-	default 0x48
-	help
-	  I2C address of the ADT7420 sensor.
-
-	  0x48: A0 connected GND and A1 connected to GND.
-	  0x49: A0 connected VDD and A1 connected to GND.
-	  0x4A: A0 connected GND and A1 connected to VDD.
-	  0x4B: A0 connected VDD and A1 connected to VDD.
-
-config ADT7420_I2C_MASTER_DEV_NAME
-	string "I2C master where ADT7420 is connected"
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which the
-	  ADT7420 chip is connected.
-
-endif # !HAS_DTS_I2C
 
 config ADT7420_TEMP_HYST
 	int "Temperature hysteresis in °C"

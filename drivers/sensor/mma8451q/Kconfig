@@ -7,30 +7,11 @@
 
 menuconfig MMA8451Q
 	bool "MMA8451Q Accelerometer driver"
-	depends on I2C
+	depends on I2C && HAS_DTS_I2C
 	help
 	  Enable driver for MMA8451Q Accelerometer.
 
 if MMA8451Q
-
-if !HAS_DTS_I2C
-
-config MMA8451Q_NAME
-	string "Device name"
-	default "MMA8451Q"
-
-config MMA8451Q_I2C_NAME
-	string "I2C device name"
-	default I2C_0_NAME
-
-config MMA8451Q_I2C_ADDRESS
-	hex "I2C address for MMA8451Q Sensor"
-	default 0x1D
-	help
-	  I2C address of the MMA8451Q sensor.
-	  0x1D: I2C_ADDR
-
-endif # !HAS_DTS_I2C
 
 config MMA8451Q_WHOAMI
 	hex "WHOAMI value"

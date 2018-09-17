@@ -7,7 +7,7 @@
 
 menuconfig ADXL372
 	bool "ADXL372 Three Axis High-g I2C/SPI accelerometer"
-	depends on I2C || SPI
+	depends on (I2C && HAS_DTS_I2C) || SPI
 	help
 	  Enable driver for ADXL372 Three-Axis Digital Accelerometers.
 
@@ -27,33 +27,6 @@ config ADXL372_SPI
 	bool "SPI Interface"
 
 endchoice
-
-if !HAS_DTS_I2C
-
-config ADXL372_DEV_NAME
-	string "ADXL372 device name"
-	depends on ADXL372_I2C
-	default "ADXL372"
-
-config ADXL372_I2C_ADDR
-	hex "I2C address for ADXL372"
-	depends on ADXL372_I2C
-	default 0x1D
-	help
-	  I2C address of the ADXL372 sensor.
-
-	  0x1D: if MISO is pulled low
-	  0x53: if MISO is pulled high
-
-config ADXL372_I2C_MASTER_DEV_NAME
-	string "I2C master where ADXL372 is connected"
-	depends on ADXL372_I2C
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which the
-	  ADXL372 chip is connected.
-
-endif # !HAS_DTS_I2C
 
 if !HAS_DTS_SPI
 

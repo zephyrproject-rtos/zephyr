@@ -6,28 +6,11 @@
 
 menuconfig HTS221
 	bool "HTS221 temperature and humidity sensor"
-	depends on I2C
+	depends on I2C && HAS_DTS_I2C
 	help
 	  Enable driver for HTS221 I2C-based temperature and humidity sensor.
 
 if HTS221
-
-if !HAS_DTS_I2C
-
-config HTS221_NAME
-	string "Driver name"
-	default "HTS221"
-	help
-	  Device name with which the HTS221 sensor is identified.
-
-config HTS221_I2C_MASTER_DEV_NAME
-	string "I2C master where HTS221 is connected"
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which HTS221 is
-	  connected.
-
-endif
 
 choice HTS221_TRIGGER_MODE
 	prompt "Trigger mode"

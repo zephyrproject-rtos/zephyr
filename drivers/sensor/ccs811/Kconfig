@@ -8,37 +8,11 @@
 
 menuconfig CCS811
 	bool "CCS811 Digital Gas Sensor"
-	depends on I2C
+	depends on I2C && HAS_DTS_I2C
 	help
 	  Enable driver for CCS811 Gas sensors.
 
 if CCS811
-
-if !HAS_DTS_I2C
-
-config CCS811_NAME
-	string "Driver name"
-	default "CCS811"
-	help
-	  Device name with which the CCS811 sensor is identified.
-
-config CCS811_I2C_ADDR
-	hex "I2C address for CCS811 Sensor"
-	range 0x5a 0x5b
-	default "0x5b"
-	help
-	  I2C address of the CCS811 sensor.
-	  0x5a: I2C_ADDR connected to GND.
-	  0x5b: I2C_ADDR connected to VDD.
-
-config CCS811_I2C_MASTER_DEV_NAME
-	string "I2C master where CCS811 is connected"
-	default "I2C_1"
-	help
-	  Specify the device name of the I2C master device to which the
-	  CCS811 chip is connected.
-
-endif
 
 config CCS811_GPIO_DEV_NAME
 	string "GPIO device"

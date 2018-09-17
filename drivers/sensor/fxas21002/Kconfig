@@ -7,31 +7,11 @@
 
 menuconfig FXAS21002
 	bool "FXAS21002 gyroscope driver"
-	depends on I2C
+	depends on I2C && HAS_DTS_I2C
 	help
 	  Enable driver for the FXAS21002 gyroscope
 
 if FXAS21002
-
-if !HAS_DTS_I2C
-
-config FXAS21002_NAME
-	string "Device name"
-	default "FXAS21002"
-
-config FXAS21002_I2C_NAME
-	string "I2C device name"
-	default I2C_0_NAME
-
-config FXAS21002_I2C_ADDRESS
-	hex "I2C address"
-	range 0x20 0x21
-	default 0x20
-	help
-	  The I2C slave address can be configured by the SA0 input pin. This
-	  option should usually be set by the board defconfig.
-
-endif # !HAS_DTS_I2C
 
 config FXAS21002_WHOAMI
 	hex "WHOAMI value"

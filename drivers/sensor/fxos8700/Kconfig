@@ -7,31 +7,11 @@
 
 menuconfig FXOS8700
 	bool "FXOS8700 accelerometer/magnetometer driver"
-	depends on I2C
+	depends on I2C && HAS_DTS_I2C
 	help
 	  Enable driver for the FXOS8700 accelerometer/magnetometer
 
 if FXOS8700
-
-if !HAS_DTS_I2C
-
-config FXOS8700_NAME
-	string "Device name"
-	default "FXOS8700"
-
-config FXOS8700_I2C_NAME
-	string "I2C device name"
-	default I2C_0_NAME
-
-config FXOS8700_I2C_ADDRESS
-	hex "I2C address"
-	range 0x1c 0x1f
-	default 0x1d
-	help
-	  The I2C slave address can be configured by the SA0 and SA1 input
-	  pins. This option should usually be set by the board defconfig.
-
-endif # !HAS_DTS_I2C
 
 config FXOS8700_WHOAMI
 	hex "WHOAMI value"
