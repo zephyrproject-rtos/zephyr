@@ -27,7 +27,7 @@ static void work_q_main(void *work_q_ptr, void *p2, void *p3)
 		k_work_handler_t handler;
 
 		work = k_queue_get(&work_q->queue, K_FOREVER);
-		if (!work) {
+		if (work == NULL) {
 			continue;
 		}
 

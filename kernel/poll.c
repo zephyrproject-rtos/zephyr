@@ -80,8 +80,9 @@ static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
 	struct k_poll_event *pending;
 
 	pending = (struct k_poll_event *)sys_dlist_peek_tail(events);
-	if (!pending || _is_t1_higher_prio_than_t2(pending->poller->thread,
-						   poller->thread)) {
+	if ((pending == NULL) ||
+		_is_t1_higher_prio_than_t2(pending->poller->thread,
+		poller->thread)) {
 		sys_dlist_append(events, &event->_node);
 		return;
 	}
@@ -358,7 +359,7 @@ void _handle_obj_poll_events(sys_dlist_t *events, u32_t state)
 	struct k_poll_event *poll_event;
 
 	poll_event = (struct k_poll_event *)sys_dlist_get(events);
-	if (poll_event) {
+	if (poll_event != NULL) {
 		(void) signal_poll_event(poll_event, state);
 	}
 }
@@ -409,7 +410,7 @@ int _impl_k_poll_signal(struct k_poll_signal *signal, int result)
 	signal->signaled = 1;
 
 	poll_event = (struct k_poll_event *)sys_dlist_get(&signal->poll_events);
-	if (!poll_event) {
+	if (poll_event == NULL) {
 		irq_unlock(key);
 		return 0;
 	}

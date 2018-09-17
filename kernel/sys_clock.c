@@ -183,7 +183,7 @@ static inline void handle_timeouts(s32_t ticks)
 	K_DEBUG("head: %p, delta: %d\n",
 		timeout, timeout ? timeout->delta_ticks_from_prev : -2112);
 
-	if (!next) {
+	if (next == NULL) {
 		irq_unlock(key);
 		return;
 	}

@@ -70,7 +70,7 @@ void _timer_expiration_handler(struct _timeout *t)
 
 	thread = _waitq_head(&timer->wait_q);
 
-	if (!thread) {
+	if (thread == NULL) {
 		return;
 	}
 
@@ -163,7 +163,7 @@ void _impl_k_timer_stop(struct k_timer *timer)
 	key = irq_lock();
 	struct k_thread *pending_thread = _unpend1_no_timeout(&timer->wait_q);
 
-	if (pending_thread) {
+	if (pending_thread != NULL) {
 		_ready_thread(pending_thread);
 	}
 

@@ -127,7 +127,7 @@ void _impl_k_queue_cancel_wait(struct k_queue *queue)
 
 	first_pending_thread = _unpend_first_thread(&queue->wait_q);
 
-	if (first_pending_thread) {
+	if (first_pending_thread != NULL) {
 		prepare_thread_to_run(first_pending_thread, NULL);
 	}
 #else
@@ -151,7 +151,7 @@ static int queue_insert(struct k_queue *queue, void *prev, void *data,
 
 	first_pending_thread = _unpend_first_thread(&queue->wait_q);
 
-	if (first_pending_thread) {
+	if (first_pending_thread != NULL) {
 		prepare_thread_to_run(first_pending_thread, data);
 		_reschedule(key);
 		return 0;
@@ -163,7 +163,7 @@ static int queue_insert(struct k_queue *queue, void *prev, void *data,
 		struct alloc_node *anode;
 
 		anode = z_thread_malloc(sizeof(*anode));
-		if (!anode) {
+		if (anode == NULL) {
 			return -ENOMEM;
 		}
 		anode->data = data;
@@ -242,7 +242,7 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 		head = *(void **)head;
 	}
 
-	if (head) {
+	if (head != NULL) {
 		sys_sflist_append_list(&queue->data_q, head, tail);
 	}
 
@@ -303,7 +303,7 @@ static void *k_queue_poll(struct k_queue *queue, s32_t timeout)
 		val = z_queue_node_peek(sys_sflist_get(&queue->data_q), true);
 		irq_unlock(key);
 
-		if (!val && timeout != K_FOREVER) {
+		if ((val == NULL) && (timeout != K_FOREVER)) {
 			elapsed = k_uptime_get_32() - start;
 			done = elapsed > timeout;
 		}

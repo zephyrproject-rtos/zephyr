@@ -169,7 +169,7 @@ static struct k_thread *next_up(void)
 
 	/* Choose the best thread that is not current */
 	struct k_thread *th = _priq_run_best(&_kernel.ready_q.runq);
-	if (!th) {
+	if (th == NULL) {
 		th = _current_cpu->idle_thread;
 	}
 
@@ -269,7 +269,7 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 		irq_unlock(key);
 	}
 
-	if (wait_q) {
+	if (wait_q != NULL) {
 #ifdef CONFIG_WAITQ_SCALABLE
 		thread->base.pended_on = wait_q;
 #endif
@@ -333,7 +333,7 @@ struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
 {
 	struct k_thread *t = _unpend1_no_timeout(wait_q);
 
-	if (t) {
+	if (t != NULL) {
 		(void)_abort_thread_timeout(t);
 	}
 
@@ -622,7 +622,7 @@ int _is_thread_time_slicing(struct k_thread *thread)
 	LOCKED(&sched_lock) {
 		struct k_thread *next = _priq_run_best(&_kernel.ready_q.runq);
 
-		if (next) {
+		if (next != NULL) {
 			ret = thread->base.prio == next->base.prio;
 		}
 	}

@@ -192,7 +192,7 @@ void *k_calloc(size_t nmemb, size_t size)
 	}
 
 	ret = k_malloc(bounds);
-	if (ret) {
+	if (ret != NULL) {
 		(void)memset(ret, 0, bounds);
 	}
 	return ret;

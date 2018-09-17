@@ -22,7 +22,7 @@ void *malloc(size_t size)
 	void *ret;
 
 	ret = sys_mem_pool_alloc(&z_malloc_mem_pool, size);
-	if (!ret) {
+	if (ret == NULL) {
 		errno = ENOMEM;
 	}
 
@@ -82,7 +82,7 @@ void *calloc(size_t nmemb, size_t size)
 
 	ret = malloc(size);
 
-	if (ret) {
+	if (ret != NULL) {
 		(void)memset(ret, 0, size);
 	}
 
@@ -120,7 +120,7 @@ void *realloc(void *ptr, size_t requested_size)
 	}
 
 	new_ptr = malloc(requested_size);
-	if (!new_ptr) {
+	if (new_ptr == NULL) {
 		return NULL;
 	}
 

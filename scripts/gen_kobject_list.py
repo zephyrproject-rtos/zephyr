@@ -85,7 +85,7 @@ void _k_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
     int i;
 
     for (i = MIN_HASH_VALUE; i <= MAX_HASH_VALUE; i++) {
-        if (wordlist[i].name) {
+        if (wordlist[i].name != NULL) {
             func(&wordlist[i], context);
         }
     }
