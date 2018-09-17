@@ -11,8 +11,9 @@
 #include <altera_common.h>
 #include "altera_avalon_i2c.h"
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(i2c_nios2);
 
 #define NIOS2_I2C_TIMEOUT_USEC		1000
 
@@ -32,19 +33,19 @@ static int i2c_nios2_configure(struct device *dev, u32_t dev_config)
 
 	k_sem_take(&config->sem_lock, K_FOREVER);
 	if (!(I2C_MODE_MASTER & dev_config)) {
-		SYS_LOG_ERR("i2c config mode error\n");
+		LOG_ERR("i2c config mode error\n");
 		rc = -EINVAL;
 		goto i2c_cfg_err;
 	}
 
 	if (I2C_ADDR_10_BITS & dev_config) {
-		SYS_LOG_ERR("i2c config addresing error\n");
+		LOG_ERR("i2c config addresing error\n");
 		rc = -EINVAL;
 		goto i2c_cfg_err;
 	}
 
 	if (I2C_SPEED_GET(dev_config) != I2C_SPEED_STANDARD) {
-		SYS_LOG_ERR("i2c config speed error\n");
+		LOG_ERR("i2c config speed error\n");
 		rc = -EINVAL;
 		goto i2c_cfg_err;
 	}
@@ -106,7 +107,7 @@ static int i2c_nios2_transfer(struct device *dev, struct i2c_msg *msgs,
 		 * start successfully e.g., if the bus was busy
 		 */
 		if (status != ALT_AVALON_I2C_SUCCESS) {
-			SYS_LOG_ERR("i2c transfer error %lu\n", status);
+			LOG_ERR("i2c transfer error %lu\n", status);
 			rc = -EIO;
 			goto i2c_transfer_err;
 		}
@@ -123,7 +124,7 @@ static int i2c_nios2_transfer(struct device *dev, struct i2c_msg *msgs,
 		}
 
 		if (timeout <= 0) {
-			SYS_LOG_ERR("i2c busy or timeout error %lu\n", status);
+			LOG_ERR("i2c busy or timeout error %lu\n", status);
 			rc = -EIO;
 			goto i2c_transfer_err;
 		}
@@ -180,7 +181,7 @@ static int i2c_nios2_init(struct device *dev)
 			I2C_MODE_MASTER |
 			I2C_SPEED_SET(I2C_SPEED_STANDARD));
 	if (rc) {
-		SYS_LOG_ERR("i2c configure failed %d\n", rc);
+		LOG_ERR("i2c configure failed %d\n", rc);
 		return rc;
 	}
 

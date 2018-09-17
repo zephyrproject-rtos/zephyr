@@ -20,11 +20,12 @@
 #include <init.h>
 #include <soc.h>
 #include <i2c.h>
-#include "i2c-priv.h"
 
-#define SYS_LOG_DOMAIN "dev/i2c_sam_twi"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(i2c_sam_twi)
+
+#include "i2c-priv.h"
 
 /** I2C bus speed [Hz] in Standard Mode */
 #define BUS_SPEED_STANDARD_HZ         100000U
@@ -90,7 +91,7 @@ static int i2c_clk_set(Twi *const twi, u32_t speed)
 	}
 
 	if (ck_div > CKDIV_MAX) {
-		SYS_LOG_ERR("Failed to configure I2C clock");
+		LOG_ERR("Failed to configure I2C clock");
 		return -EIO;
 	}
 
@@ -109,13 +110,13 @@ static int i2c_sam_twi_configure(struct device *dev, u32_t config)
 	int ret;
 
 	if (!(config & I2C_MODE_MASTER)) {
-		SYS_LOG_ERR("Master Mode is not enabled");
+		LOG_ERR("Master Mode is not enabled");
 		return -EIO;
 	}
 
 	if (config & I2C_ADDR_10_BITS) {
-		SYS_LOG_ERR("I2C 10-bit addressing is currently not supported");
-		SYS_LOG_ERR("Please submit a patch");
+		LOG_ERR("I2C 10-bit addressing is currently not supported");
+		LOG_ERR("Please submit a patch");
 		return -EIO;
 	}
 
@@ -128,7 +129,7 @@ static int i2c_sam_twi_configure(struct device *dev, u32_t config)
 		bitrate = BUS_SPEED_FAST_HZ;
 		break;
 	default:
-		SYS_LOG_ERR("Unsupported I2C speed value");
+		LOG_ERR("Unsupported I2C speed value");
 		return -EIO;
 	}
 
@@ -318,14 +319,14 @@ static int i2c_sam_twi_initialize(struct device *dev)
 
 	ret = i2c_sam_twi_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (ret < 0) {
-		SYS_LOG_ERR("Failed to initialize %s device", DEV_NAME(dev));
+		LOG_ERR("Failed to initialize %s device", DEV_NAME(dev));
 		return ret;
 	}
 
 	/* Enable module's IRQ */
 	irq_enable(dev_cfg->irq_id);
 
-	SYS_LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", DEV_NAME(dev));
 
 	return 0;
 }

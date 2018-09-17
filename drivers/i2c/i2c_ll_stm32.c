@@ -12,11 +12,13 @@
 #include <board.h>
 #include <errno.h>
 #include <i2c.h>
-#include "i2c-priv.h"
 #include "i2c_ll_stm32.h"
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(i2c_ll_stm32);
+
+#include "i2c-priv.h"
 
 int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
 {
@@ -202,7 +204,7 @@ static int i2c_stm32_init(struct device *dev)
 
 	ret = i2c_stm32_runtime_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (ret < 0) {
-		SYS_LOG_ERR("i2c: failure initializing");
+		LOG_ERR("i2c: failure initializing");
 		return ret;
 	}
 

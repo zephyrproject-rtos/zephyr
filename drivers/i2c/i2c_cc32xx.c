@@ -10,7 +10,6 @@
 #include <errno.h>
 #include <i2c.h>
 #include <soc.h>
-#include "i2c-priv.h"
 
 /* Driverlib includes */
 #include <inc/hw_memmap.h>
@@ -18,6 +17,12 @@
 #include <driverlib/rom.h>
 #include <driverlib/rom_map.h>
 #include <driverlib/i2c.h>
+
+#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(i2c_cc32xx)
+
+#include "i2c-priv.h"
 
 #define I2C_MASTER_CMD_BURST_RECEIVE_START_NACK	 I2C_MASTER_CMD_BURST_SEND_START
 #define I2C_MASTER_CMD_BURST_RECEIVE_STOP \
@@ -269,7 +274,7 @@ static void i2c_cc32xx_isr(void *arg)
 	/* Clear interrupt source to avoid additional interrupts */
 	MAP_I2CMasterIntClearEx(base, int_status);
 
-	SYS_LOG_DBG("primed state: %d; err_status: 0x%x; int_status: 0x%x",
+	LOG_DBG("primed state: %d; err_status: 0x%x; int_status: 0x%x",
 		    data->state, err_status, int_status);
 
 	/* Handle errors: */
