@@ -16,19 +16,9 @@ menuconfig CAN
 
 if CAN
 
-config SYS_LOG_CAN_LEVEL
-	int "CAN driver log level"
-	depends on SYS_LOG
-	default 0
-	range 0 4
-	help
-	  Sets log level for CAN Device Drivers.
-	  Levels are:
-	  0 OFF, do not write
-	  1 ERROR, only write SYS_LOG_ERR
-	  2 WARNING, write SYS_LOG_WRN in addition to previous level
-	  3 INFO, write SYS_LOG_INF in addition to previous levels
-	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+module = CAN
+module-str = CAN
+source "subsys/logging/Kconfig.template.log_config"
 
 config CAN_INIT_PRIORITY
 	int "CAN driver init priority"
