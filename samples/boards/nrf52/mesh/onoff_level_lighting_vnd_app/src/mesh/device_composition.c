@@ -91,6 +91,8 @@ struct generic_level_state gen_level_srv_s0_user_data;
 /* Definitions of models user data (End) */
 
 u8_t get_msg, last_get_msg;
+bool is_light_lightness_actual_state_published;
+bool is_light_ctl_state_published;
 static struct bt_mesh_elem elements[];
 
 /* message handlers (Start) */
@@ -114,9 +116,7 @@ static void gen_onoff_get(struct bt_mesh_model *model,
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send GEN_ONOFF_SRV Status response\n");
-	}
-
-	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
+	} else if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		last_get_msg = get_msg;
 		get_msg = ONOFF_GET;
 	}
@@ -275,9 +275,7 @@ static void gen_level_get(struct bt_mesh_model *model,
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send GEN_LEVEL_SRV Status response\n");
-	}
-
-	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
+	} else if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		last_get_msg = get_msg;
 		get_msg = LEVEL_GET;
 	}
@@ -868,10 +866,10 @@ static void light_lightness_get(struct bt_mesh_model *model,
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send LightLightnessAct Status response\n");
+	} else {
+		last_get_msg = get_msg;
+		get_msg = LIGHT_LIGHTNESS_ACTUAL_GET;
 	}
-
-	last_get_msg = get_msg;
-	get_msg = LIGHT_LIGHTNESS_ACTUAL_GET;
 }
 
 void light_lightness_publisher(struct bt_mesh_model *model)
@@ -894,6 +892,8 @@ void light_lightness_publisher(struct bt_mesh_model *model)
 		err = bt_mesh_model_publish(model);
 		if (err) {
 			printk("bt_mesh_model_publish err %d\n", err);
+		} else {
+			is_light_lightness_actual_state_published = true;
 		}
 	}
 }
@@ -997,10 +997,10 @@ static void light_lightness_linear_get(struct bt_mesh_model *model,
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send LightLightnessLin Status response\n");
+	} else {
+		last_get_msg = get_msg;
+		get_msg = LIGHT_LIGHTNESS_LINEAR_GET;
 	}
-
-	last_get_msg = get_msg;
-	get_msg = LIGHT_LIGHTNESS_LINEAR_GET;
 }
 
 void light_lightness_linear_publisher(struct bt_mesh_model *model)
@@ -1328,10 +1328,10 @@ static void light_ctl_get(struct bt_mesh_model *model,
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send LightCTL Status response\n");
+	} else {
+		last_get_msg = get_msg;
+		get_msg = LIGHT_CTL_GET;
 	}
-
-	last_get_msg = get_msg;
-	get_msg = LIGHT_CTL_GET;
 }
 
 void light_ctl_publisher(struct bt_mesh_model *model)
@@ -1360,6 +1360,8 @@ void light_ctl_publisher(struct bt_mesh_model *model)
 		err = bt_mesh_model_publish(model);
 		if (err) {
 			printk("bt_mesh_model_publish err %d\n", err);
+		} else {
+			is_light_ctl_state_published = true;
 		}
 	}
 }

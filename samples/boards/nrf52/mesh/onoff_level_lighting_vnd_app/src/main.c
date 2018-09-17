@@ -148,6 +148,56 @@ void light_default_status_init(void)
 	default_tt = gen_def_trans_time_srv_user_data.tt;
 }
 
+static void status_work_handler(struct k_work *work)
+{
+	u16_t publisher;
+
+	/* publisher values is based on enum get_messages
+	 * which is defined in device_configuration.h
+	 */
+	publisher = (get_msg << 8) | last_get_msg;
+
+	switch (publisher) {
+	case PUB_ONOFF_1:
+	case PUB_ONOFF_2:
+	case PUB_ONOFF_3:
+		gen_onoff_publisher(&root_models[2]);
+		break;
+	case PUB_LEVEL_1:
+	case PUB_LEVEL_2:
+	case PUB_LEVEL_3:
+		gen_level_publisher(&root_models[4]);
+		break;
+	case PUB_LIGHT_ACTUAL_1:
+	case PUB_LIGHT_ACTUAL_2:
+		light_lightness_publisher(&root_models[11]);
+		break;
+	case PUB_LIGHT_LINEAR_1:
+	case PUB_LIGHT_LINEAR_2:
+		light_lightness_linear_publisher(&root_models[11]);
+		break;
+	case PUB_LIGHT_CTL_1:
+	case PUB_LIGHT_CTL_2:
+		light_ctl_publisher(&root_models[14]);
+		break;
+	}
+
+	if (!is_light_lightness_actual_state_published) {
+		light_lightness_publisher(&root_models[11]);
+	}
+
+	if (!is_light_ctl_state_published) {
+		light_ctl_publisher(&root_models[14]);
+	}
+
+	last_get_msg = NULL_GET;
+	get_msg = NULL_GET;
+	is_light_lightness_actual_state_published = false;
+	is_light_ctl_state_published = false;
+}
+
+K_WORK_DEFINE(status_work, status_work_handler);
+
 void update_light_state(void)
 {
 	u8_t power, color;
@@ -180,6 +230,10 @@ void update_light_state(void)
 	} else {
 		/* LED4 Off */
 		gpio_pin_write(led_device[3], LED3_GPIO_PIN, 1);
+	}
+
+	if (enable_transition == DISABLE_TRANSITION) {
+		k_work_submit(&status_work);
 	}
 }
 
