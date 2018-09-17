@@ -2991,12 +2991,6 @@ static u8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 
 	BT_ERR("reason 0x%x", req->reason);
 
-	/* TODO report error
-	 * for now this to avoid warning about unused variable when debugs are
-	 * disabled
-	 */
-	ARG_UNUSED(req);
-
 	if (atomic_test_and_clear_bit(smp->flags, SMP_FLAG_USER) ||
 	    atomic_test_and_clear_bit(smp->flags, SMP_FLAG_DISPLAY)) {
 		if (bt_auth && bt_auth->cancel) {
