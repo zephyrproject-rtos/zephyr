@@ -72,6 +72,11 @@ build:
       - rm test_file.txt
       - ccache -s
     on_failure:
+      - >
+         if [ -f "$HOME/.cache/zephyr/ToolchainCapabilityDatabase.cmake" ]; then
+           echo "Dumping the capability database in case we are affected by #9992"
+           cat $HOME/.cache/zephyr/ToolchainCapabilityDatabase.cmake
+         fi;
       - rm -rf ccache $HOME/.cache/zephyr
       - mkdir -p shippable/testresults
       - mkdir -p shippable/codecoverage
