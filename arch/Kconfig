@@ -53,6 +53,14 @@ endchoice
 
 menu "General Architecture Options"
 
+module = ARCH
+module-str = arch
+source "subsys/logging/Kconfig.template.log_config"
+
+module = MPU
+module-str = mpu
+source "subsys/logging/Kconfig.template.log_config"
+
 config HW_STACK_PROTECTION
 	bool "Hardware Stack Protection"
 	depends on ARCH_HAS_STACK_PROTECTION

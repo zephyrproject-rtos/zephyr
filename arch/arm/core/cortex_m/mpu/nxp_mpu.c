@@ -10,9 +10,12 @@
 #include <soc.h>
 #include <arch/arm/cortex_m/cmsis.h>
 #include <arch/arm/cortex_m/mpu/nxp_mpu.h>
-#include <logging/sys_log.h>
 #include <misc/__assert.h>
 #include <linker/linker-defs.h>
+
+#define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(mpu);
 
 /* NXP MPU Enabled state */
 static u8_t nxp_mpu_enabled;
@@ -92,7 +95,7 @@ static void _region_init(u32_t index, u32_t region_base,
 		SYSMPU->WORD[index][3] = SYSMPU_WORD_VLD_MASK;
 	}
 
-	SYS_LOG_DBG("[%d] 0x%08x 0x%08x 0x%08x 0x%08x", index,
+	LOG_DBG("[%d] 0x%08x 0x%08x 0x%08x 0x%08x", index,
 		    SYSMPU->WORD[index][0],
 		    SYSMPU->WORD[index][1],
 		    SYSMPU->WORD[index][2],
@@ -225,7 +228,7 @@ void arm_core_mpu_disable(void)
  */
 void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 {
-	SYS_LOG_DBG("Region info: 0x%x 0x%x", base, size);
+	LOG_DBG("Region info: 0x%x 0x%x", base, size);
 	u32_t region_index = _get_region_index_by_type(type);
 	u32_t region_attr = _get_region_attr_by_type(type);
 
@@ -265,11 +268,11 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 	struct k_mem_partition *pparts;
 
 	if (mem_domain) {
-		SYS_LOG_DBG("configure domain: %p", mem_domain);
+		LOG_DBG("configure domain: %p", mem_domain);
 		num_partitions = mem_domain->num_partitions;
 		pparts = mem_domain->partitions;
 	} else {
-		SYS_LOG_DBG("disable domain partition regions");
+		LOG_DBG("disable domain partition regions");
 		num_partitions = 0;
 		pparts = NULL;
 	}
@@ -280,7 +283,7 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 	 */
 	for (; region_index < _get_num_usable_regions(); region_index++) {
 		if (num_partitions && pparts->size) {
-			SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
+			LOG_DBG("set region 0x%x 0x%x 0x%x",
 				    region_index, pparts->start, pparts->size);
 			region_attr = pparts->attr;
 			_region_init(region_index, pparts->start,
@@ -288,7 +291,7 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 				     region_attr);
 			num_partitions--;
 		} else {
-			SYS_LOG_DBG("disable region 0x%x", region_index);
+			LOG_DBG("disable region 0x%x", region_index);
 			/* Disable region */
 			SYSMPU->WORD[region_index][0] = 0;
 			SYSMPU->WORD[region_index][1] = 0;
@@ -312,17 +315,17 @@ void arm_core_mpu_configure_mem_partition(u32_t part_index,
 		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
 	u32_t region_attr;
 
-	SYS_LOG_DBG("configure partition index: %u", part_index);
+	LOG_DBG("configure partition index: %u", part_index);
 
 	if (part) {
-		SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
+		LOG_DBG("set region 0x%x 0x%x 0x%x",
 			    region_index + part_index, part->start, part->size);
 		region_attr = part->attr;
 		_region_init(region_index + part_index, part->start,
 			     ENDADDR_ROUND(part->start + part->size),
 			     region_attr);
 	} else {
-		SYS_LOG_DBG("disable region 0x%x", region_index);
+		LOG_DBG("disable region 0x%x", region_index);
 		/* Disable region */
 		SYSMPU->WORD[region_index + part_index][0] = 0;
 		SYSMPU->WORD[region_index + part_index][1] = 0;
@@ -341,7 +344,7 @@ void arm_core_mpu_mem_partition_remove(u32_t part_index)
 	u32_t region_index =
 		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
 
-	SYS_LOG_DBG("disable region 0x%x", region_index);
+	LOG_DBG("disable region 0x%x", region_index);
 	/* Disable region */
 	SYSMPU->WORD[region_index + part_index][0] = 0;
 	SYSMPU->WORD[region_index + part_index][1] = 0;
@@ -424,7 +427,7 @@ static void _nxp_mpu_config(void)
 
 	__ASSERT(mpu_config.num_regions <= _get_num_regions(),
 		 "too many static MPU regions defined");
-	SYS_LOG_DBG("total region count: %d", _get_num_regions());
+	LOG_DBG("total region count: %d", _get_num_regions());
 
 	/* Disable MPU */
 	SYSMPU->CESR &= ~SYSMPU_CESR_VLD_MASK;
@@ -491,7 +494,7 @@ static int nxp_mpu_init(struct device *arg)
 	return 0;
 }
 
-#if defined(CONFIG_SYS_LOG)
+#if defined(CONFIG_LOG)
 /* To have logging the driver needs to be initialized later */
 SYS_INIT(nxp_mpu_init, POST_KERNEL,
 	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
