@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_DRIVERS_IEEE802154_CC2520_H_
+#define ZEPHYR_INCLUDE_DRIVERS_IEEE802154_CC2520_H_
+
 #include <device.h>
 
 enum cc2520_gpio_index {
@@ -23,3 +26,5 @@ struct cc2520_gpio_configuration {
 };
 
 struct cc2520_gpio_configuration *cc2520_configure_gpios(void);
+
+#endif	/* ZEPHYR_INCLUDE_DRIVERS_IEEE802154_CC2520_H_ */
