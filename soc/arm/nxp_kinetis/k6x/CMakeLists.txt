@@ -3,6 +3,6 @@ zephyr_sources(
   wdog.S
   )
 zephyr_sources_ifdef(
-  CONFIG_NXP_MPU
+  CONFIG_ARM_MPU
   nxp_mpu_regions.c
   )

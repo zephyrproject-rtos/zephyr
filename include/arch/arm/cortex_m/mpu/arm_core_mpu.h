@@ -8,9 +8,9 @@
 
 #include <kernel_structs.h>
 
-#if defined(CONFIG_ARM_MPU)
+#if defined(CONFIG_CPU_HAS_ARM_MPU)
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>
-#elif defined(CONFIG_NXP_MPU)
+#elif defined(CONFIG_CPU_HAS_NXP_MPU)
 #include <arch/arm/cortex_m/mpu/nxp_mpu.h>
 #else
 #error "Unsupported MPU"
