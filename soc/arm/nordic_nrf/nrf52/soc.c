@@ -36,6 +36,10 @@ extern void _NmiInit(void);
 #include <nrf.h>
 #include <hal/nrf_power.h>
 
+#define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(soc);
+
 static int nordicsemi_nrf52_init(struct device *arg)
 {
 	u32_t key;
