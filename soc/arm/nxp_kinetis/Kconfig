@@ -37,13 +37,6 @@ config HAS_MCG
 	help
 	  Set if the multipurpose clock generator (MCG) module is present in the SoC.
 
-config HAS_SYSMPU
-	bool "Enable MPU on NXP Kinetis"
-	depends on CPU_HAS_MPU
-	select NXP_MPU
-	help
-	  Enable MPU support on NXP Kinetis SoCs
-
 if HAS_OSC
 
 choice
