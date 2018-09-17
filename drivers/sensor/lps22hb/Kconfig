@@ -6,38 +6,12 @@
 
 menuconfig LPS22HB
 	bool "LPS22HB pressure and temperature"
-	depends on I2C
+	depends on I2C && HAS_DTS_I2C
 	help
 	  Enable driver for LPS22HB I2C-based pressure and temperature
 	  sensor.
 
 if LPS22HB
-
-if !HAS_DTS_I2C
-
-config LPS22HB_DEV_NAME
-	string "Device name"
-	default "LPS22HB"
-	help
-	  Device name used for LPS22HB sensor identification.
-
-config LPS22HB_I2C_ADDR
-	hex "I2C address"
-	default 0x5D
-	range 0x5C 0x5D
-	help
-	  I2C address of the LPS22HB sensor.
-	  Use 0x5C if the SA0 pin is pulled to GND or 0x5D if the SA0
-	  pin is pulled to VDD.
-
-config LPS22HB_I2C_MASTER_DEV_NAME
-	string "I2C master where LPS22HB is connected"
-	default I2C_0_NAME
-	help
-	  Specify the device name of the I2C master device to which
-	  LPS22HB is connected.
-
-endif
 
 menu "Attributes"
 

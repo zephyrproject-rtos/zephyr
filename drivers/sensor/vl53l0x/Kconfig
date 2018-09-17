@@ -8,35 +8,12 @@
 
 menuconfig VL53L0X
 	bool "VL53L0X time of flight sensor"
-	depends on I2C
+	depends on I2C && HAS_DTS_I2C
 	select HAS_STLIB
 	help
 	  Enable driver for VL53L0X I2C-based time of flight sensor.
 
 if VL53L0X
-
-if !HAS_DTS_I2C
-
-config VL53L0X_NAME
-	string "Driver name"
-	default "VL53L0X"
-	help
-	  Device name with which the VL53L0X sensor is identified.
-
-config VL53L0X_I2C_ADDR
-	hex "Vl53l0x I2C address"
-	default 0x29
-	help
-	  address of the i2c used for the vl53l0x sensor
-
-config VL53L0X_I2C_MASTER_DEV_NAME
-	string "I2C master where VL53L0X is connected"
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which VL53L0X is
-	  connected.
-
-endif
 
 config VL53L0X_XSHUT_CONTROL_ENABLE
 	bool "Enable XSHUT pin control"

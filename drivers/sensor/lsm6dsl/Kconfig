@@ -9,7 +9,7 @@
 
 menuconfig LSM6DSL
 	bool "LSM6DSL I2C/SPI accelerometer and gyroscope Chip"
-	depends on I2C || SPI
+	depends on (I2C && HAS_DTS_I2C) || SPI
 	help
 	  Enable driver for LSM6DSL accelerometer and gyroscope
 	  sensor.
@@ -33,30 +33,8 @@ endchoice
 
 config LSM6DSL_DEV_NAME
 	string "LSM6DSL device name"
-	depends on (LSM6DSL_I2C && !HAS_DTS_I2C) || LSM6DSL_SPI
+	depends on LSM6DSL_SPI
 	default "LSM6DSL"
-
-if !HAS_DTS_I2C
-
-config LSM6DSL_I2C_ADDR
-	hex "LSM6DSL I2C address"
-	depends on LSM6DSL_I2C
-	default 0x6A
-	range 0x6A 0x6B
-	help
-	  I2C address of the LSM6DSL sensor.
-	  Use 0x6A if the SA0 pin is pulled to GND or 0x6B if the SA0 pin
-	  is pulled to VCC.
-
-config LSM6DSL_I2C_MASTER_DEV_NAME
-	string "I2C master name where LSM6DSL chip is connected"
-	depends on LSM6DSL_I2C
-	default "I2C_2"
-	help
-	  Specify the device name of the I2C master device to which LSM6DSL is
-	  connected.
-
-endif #HAS_DTS_I2C
 
 if !HAS_DTS_SPI
 

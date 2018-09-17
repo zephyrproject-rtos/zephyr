@@ -9,35 +9,12 @@
 
 menuconfig LSM6DS0
 	bool "LSM6DS0 I2C accelerometer and gyroscope Chip"
-	depends on I2C
+	depends on I2C && HAS_DTS_I2C
 	help
 	  Enable driver for LSM6DS0 I2C-based accelerometer and gyroscope
 	  sensor.
 
 if LSM6DS0
-
-if !HAS_DTS_I2C
-
-config LSM6DS0_DEV_NAME
-	string "LSM6DS0 device name"
-	default "lsm6ds0"
-
-config LSM6DS0_I2C_ADDR
-	hex "LSM6DS0 I2C address"
-	default 0x6B
-	help
-	  I2C address of the LSM6DS0 sensor.
-	  Use 0x6A if the SA0 pin is pulled to GND or 0x6B if the SA0 pin
-	  is pulled to VCC.
-
-config LSM6DS0_I2C_MASTER_DEV_NAME
-	string "I2C master where LSM6DS0 chip is connected"
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which LSM6DS0 is
-	  connected.
-
-endif
 
 config LSM6DS0_ACCEL_ENABLE_X_AXIS
 	bool "Enable accelerometer X axis"
