@@ -11,8 +11,9 @@
 #include <string.h>
 #include <drivers/i2c/slave/eeprom.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_SLAVE_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(i2c_slave)
 
 struct i2c_eeprom_slave_data {
 	struct device *i2c_controller;
@@ -71,7 +72,7 @@ static int eeprom_slave_write_requested(struct i2c_slave_config *config)
 						struct i2c_eeprom_slave_data,
 						config);
 
-	SYS_LOG_DBG("eeprom: write req");
+	LOG_DBG("eeprom: write req");
 
 	data->first_write = true;
 
@@ -87,7 +88,7 @@ static int eeprom_slave_read_requested(struct i2c_slave_config *config,
 
 	*val = data->buffer[data->buffer_idx];
 
-	SYS_LOG_DBG("eeprom: read req, val=0x%x", *val);
+	LOG_DBG("eeprom: read req, val=0x%x", *val);
 
 	/* Increment will be done in the read_processed callback */
 
@@ -101,7 +102,7 @@ static int eeprom_slave_write_received(struct i2c_slave_config *config,
 						struct i2c_eeprom_slave_data,
 						config);
 
-	SYS_LOG_DBG("eeprom: write done, val=0x%x", val);
+	LOG_DBG("eeprom: write done, val=0x%x", val);
 
 	/* In case EEPROM wants to be R/O, return !0 here could trigger
 	 * a NACK to the I2C controller, support depends on the
@@ -132,7 +133,7 @@ static int eeprom_slave_read_processed(struct i2c_slave_config *config,
 
 	*val = data->buffer[data->buffer_idx];
 
-	SYS_LOG_DBG("eeprom: read done, val=0x%x", *val);
+	LOG_DBG("eeprom: read done, val=0x%x", *val);
 
 	/* Increment will be done in the next read_processed callback
 	 * In case of STOP, the byte won't be taken in account
@@ -147,7 +148,7 @@ static int eeprom_slave_stop(struct i2c_slave_config *config)
 						struct i2c_eeprom_slave_data,
 						config);
 
-	SYS_LOG_DBG("eeprom: stop");
+	LOG_DBG("eeprom: stop");
 
 	data->first_write = true;
 
@@ -189,7 +190,7 @@ static int i2c_eeprom_slave_init(struct device *dev)
 	data->i2c_controller =
 		device_get_binding(cfg->controller_dev_name);
 	if (!data->i2c_controller) {
-		SYS_LOG_ERR("i2c controller not found: %s",
+		LOG_ERR("i2c controller not found: %s",
 			    cfg->controller_dev_name);
 		return -EINVAL;
 	}

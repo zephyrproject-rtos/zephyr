@@ -13,11 +13,7 @@ extern "C" {
 
 #include <i2c.h>
 #include <dt-bindings/i2c/i2c.h>
-
-#ifndef SYS_LOG_LEVEL
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
-#endif
-#include <logging/sys_log.h>
+#include <logging/log.h>
 
 static inline u32_t _i2c_map_dt_bitrate(u32_t bitrate)
 {
@@ -34,7 +30,7 @@ static inline u32_t _i2c_map_dt_bitrate(u32_t bitrate)
 		return I2C_SPEED_ULTRA << I2C_SPEED_SHIFT;
 	}
 
-	SYS_LOG_ERR("Invalid I2C bit rate value");
+	LOG_ERR("Invalid I2C bit rate value");
 
 	return 0;
 }

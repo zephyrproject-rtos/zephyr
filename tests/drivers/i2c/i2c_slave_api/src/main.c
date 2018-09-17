@@ -7,8 +7,9 @@
 #include <errno.h>
 #include <string.h>
 
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(main);
 
 #include <zephyr.h>
 #include <device.h>
@@ -46,7 +47,7 @@ static void run_full_read(struct device *i2c, u8_t addr, u8_t *comp_buffer)
 {
 	int ret;
 
-	SYS_LOG_INF("Start full read. Master: %s, address: 0x%x",
+	LOG_INF("Start full read. Master: %s, address: 0x%x",
 		    i2c->config->name, addr);
 
 	/* Read EEPROM from I2C Master requests, then compare */
@@ -59,9 +60,9 @@ static void run_full_read(struct device *i2c, u8_t addr, u8_t *comp_buffer)
 				  buffer_print_i2c);
 		to_display_format(comp_buffer, TEST_DATA_SIZE,
 				  buffer_print_eeprom);
-		SYS_LOG_ERR("Buffer contents are different: %s",
+		LOG_ERR("Buffer contents are different: %s",
 			    buffer_print_i2c);
-		SYS_LOG_ERR("                           vs: %s",
+		LOG_ERR("                           vs: %s",
 			    buffer_print_eeprom);
 
 		ztest_test_fail();
@@ -73,7 +74,7 @@ static void run_partial_read(struct device *i2c, u8_t addr, u8_t *comp_buffer,
 {
 	int ret;
 
-	SYS_LOG_INF("Start partial read. Master: %s, address: 0x%x, off=%d",
+	LOG_INF("Start partial read. Master: %s, address: 0x%x, off=%d",
 		    i2c->config->name, addr, offset);
 
 	ret = i2c_burst_read(i2c, addr,
@@ -85,9 +86,9 @@ static void run_partial_read(struct device *i2c, u8_t addr, u8_t *comp_buffer,
 				  buffer_print_i2c);
 		to_display_format(&comp_buffer[offset], TEST_DATA_SIZE-offset,
 				  buffer_print_eeprom);
-		SYS_LOG_ERR("Buffer contents are different: %s",
+		LOG_ERR("Buffer contents are different: %s",
 			    buffer_print_i2c);
-		SYS_LOG_ERR("                           vs: %s",
+		LOG_ERR("                           vs: %s",
 			    buffer_print_eeprom);
 
 		ztest_test_fail();
@@ -98,7 +99,7 @@ static void run_program_read(struct device *i2c, u8_t addr, unsigned int offset)
 {
 	int ret, i;
 
-	SYS_LOG_INF("Start program. Master: %s, address: 0x%x, off=%d",
+	LOG_INF("Start program. Master: %s, address: 0x%x, off=%d",
 		    i2c->config->name, addr, offset);
 
 	for (i = 0 ; i < TEST_DATA_SIZE-offset ; ++i) {
@@ -120,7 +121,7 @@ static void run_program_read(struct device *i2c, u8_t addr, unsigned int offset)
 		if (i2c_buffer[i] != i) {
 			to_display_format(i2c_buffer, TEST_DATA_SIZE-offset,
 					  buffer_print_i2c);
-			SYS_LOG_ERR("Invalid Buffer content: %s",
+			LOG_ERR("Invalid Buffer content: %s",
 				    buffer_print_i2c);
 
 			ztest_test_fail();
@@ -141,7 +142,7 @@ void test_eeprom_slave(void)
 	zassert_not_null(i2c_0, "I2C device %s not found",
 			 EEPROM_SLAVE_0_BUS_NAME);
 
-	SYS_LOG_INF("Found I2C Master device %s",
+	LOG_INF("Found I2C Master device %s",
 		    EEPROM_SLAVE_0_BUS_NAME);
 
 	i2c_1 = device_get_binding(
@@ -149,20 +150,20 @@ void test_eeprom_slave(void)
 	zassert_not_null(i2c_1, "I2C device %s not found",
 			 EEPROM_SLAVE_1_BUS_NAME);
 
-	SYS_LOG_INF("Found I2C Master device %s",
+	LOG_INF("Found I2C Master device %s",
 		    EEPROM_SLAVE_1_BUS_NAME);
 
 	eeprom_0 = device_get_binding(EEPROM_SLAVE_0_LABEL);
 	zassert_not_null(eeprom_0, "EEPROM device %s not found",
 			 EEPROM_SLAVE_0_LABEL);
 
-	SYS_LOG_INF("Found EEPROM device %s", EEPROM_SLAVE_0_LABEL);
+	LOG_INF("Found EEPROM device %s", EEPROM_SLAVE_0_LABEL);
 
 	eeprom_1 = device_get_binding(EEPROM_SLAVE_1_LABEL);
 	zassert_not_null(eeprom_1, "EEPROM device %s not found",
 			 EEPROM_SLAVE_1_LABEL);
 
-	SYS_LOG_INF("Found EEPROM device %s", EEPROM_SLAVE_1_LABEL);
+	LOG_INF("Found EEPROM device %s", EEPROM_SLAVE_1_LABEL);
 
 	/* Program dummy bytes */
 	ret = eeprom_slave_program(eeprom_0, eeprom_0_data, TEST_DATA_SIZE);
@@ -178,13 +179,13 @@ void test_eeprom_slave(void)
 	zassert_equal(ret, 0, "Failed to register EEPROM %s",
 		      EEPROM_SLAVE_0_LABEL);
 
-	SYS_LOG_INF("EEPROM %s Attached !", EEPROM_SLAVE_0_LABEL);
+	LOG_INF("EEPROM %s Attached !", EEPROM_SLAVE_0_LABEL);
 
 	ret = i2c_slave_driver_register(eeprom_1);
 	zassert_equal(ret, 0, "Failed to register EEPROM %s",
 		      EEPROM_SLAVE_1_LABEL);
 
-	SYS_LOG_INF("EEPROM %s Attached !", EEPROM_SLAVE_1_LABEL);
+	LOG_INF("EEPROM %s Attached !", EEPROM_SLAVE_1_LABEL);
 
 	/* Run Tests without bus access conflicts */
 	run_full_read(i2c_0, EEPROM_SLAVE_1_BASE_ADDRESS, eeprom_1_data);
@@ -210,21 +211,21 @@ void test_eeprom_slave(void)
 				 offset);
 	}
 
-	SYS_LOG_INF("Success !");
+	LOG_INF("Success !");
 
 	/* Detach EEPROM */
 	ret = i2c_slave_driver_unregister(eeprom_0);
 	zassert_equal(ret, 0, "Failed to unregister EEPROM %s",
 		      EEPROM_SLAVE_0_LABEL);
 
-	SYS_LOG_INF("EEPROM %s Detached !",
+	LOG_INF("EEPROM %s Detached !",
 		    EEPROM_SLAVE_0_LABEL);
 
 	ret = i2c_slave_driver_unregister(eeprom_1);
 	zassert_equal(ret, 0, "Failed to unregister EEPROM %s",
 		      EEPROM_SLAVE_1_LABEL);
 
-	SYS_LOG_INF("EEPROM %s Detached !",
+	LOG_INF("EEPROM %s Detached !",
 		    EEPROM_SLAVE_1_LABEL);
 }
 

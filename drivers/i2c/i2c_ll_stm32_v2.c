@@ -15,11 +15,13 @@
 #include <board.h>
 #include <errno.h>
 #include <i2c.h>
-#include "i2c-priv.h"
 #include "i2c_ll_stm32.h"
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(i2c_ll_stm32_v2);
+
+#include "i2c-priv.h"
 
 static inline void msg_init(struct device *dev, struct i2c_msg *msg,
 			    u8_t *next_msg_flags, u16_t slave,
@@ -197,7 +199,7 @@ int i2c_stm32_slave_register(struct device *dev,
 
 	ret = i2c_stm32_runtime_configure(dev, bitrate_cfg);
 	if (ret < 0) {
-		SYS_LOG_ERR("i2c: failure initializing");
+		LOG_ERR("i2c: failure initializing");
 		return ret;
 	}
 
@@ -211,7 +213,7 @@ int i2c_stm32_slave_register(struct device *dev,
 
 	data->slave_attached = true;
 
-	SYS_LOG_DBG("i2c: slave registered");
+	LOG_DBG("i2c: slave registered");
 
 	LL_I2C_EnableIT_ADDR(i2c);
 
@@ -244,7 +246,7 @@ int i2c_stm32_slave_unregister(struct device *dev,
 
 	LL_I2C_Disable(i2c);
 
-	SYS_LOG_DBG("i2c: slave unregistered");
+	LOG_DBG("i2c: slave unregistered");
 
 	return 0;
 }
@@ -396,18 +398,18 @@ int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	return 0;
 error:
 	if (data->current.is_arlo) {
-		SYS_LOG_DBG("%s: ARLO %d", __func__,
+		LOG_DBG("%s: ARLO %d", __func__,
 				    data->current.is_arlo);
 		data->current.is_arlo = 0;
 	}
 
 	if (data->current.is_nack) {
-		SYS_LOG_DBG("%s: NACK", __func__);
+		LOG_DBG("%s: NACK", __func__);
 		data->current.is_nack = 0;
 	}
 
 	if (data->current.is_err) {
-		SYS_LOG_DBG("%s: ERR %d", __func__,
+		LOG_DBG("%s: ERR %d", __func__,
 				    data->current.is_err);
 		data->current.is_err = 0;
 	}
@@ -445,18 +447,18 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	return 0;
 error:
 	if (data->current.is_arlo) {
-		SYS_LOG_DBG("%s: ARLO %d", __func__,
+		LOG_DBG("%s: ARLO %d", __func__,
 				    data->current.is_arlo);
 		data->current.is_arlo = 0;
 	}
 
 	if (data->current.is_nack) {
-		SYS_LOG_DBG("%s: NACK", __func__);
+		LOG_DBG("%s: NACK", __func__);
 		data->current.is_nack = 0;
 	}
 
 	if (data->current.is_err) {
-		SYS_LOG_DBG("%s: ERR %d", __func__,
+		LOG_DBG("%s: ERR %d", __func__,
 				    data->current.is_err);
 		data->current.is_err = 0;
 	}
@@ -517,7 +519,7 @@ int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	return 0;
 error:
 	LL_I2C_ClearFlag_NACK(i2c);
-	SYS_LOG_DBG("%s: NACK", __func__);
+	LOG_DBG("%s: NACK", __func__);
 
 	return -EIO;
 }
@@ -601,7 +603,7 @@ int stm32_i2c_configure_timing(struct device *dev, u32_t clock)
 	} while (presc < 16);
 
 	if (presc >= 16) {
-		SYS_LOG_DBG("I2C:failed to find prescaler value");
+		LOG_DBG("I2C:failed to find prescaler value");
 		return -EINVAL;
 	}
 
