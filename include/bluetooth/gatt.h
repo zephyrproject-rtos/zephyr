@@ -581,7 +581,7 @@ ssize_t bt_gatt_attr_read_cep(struct bt_conn *conn,
  *  @param _value Descriptor attribute value.
  */
 #define BT_GATT_CEP(_value)						\
-	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CEP, BT_GATT_PERM_READ,		\
+	BT_GATT_DESCRIPTOR(BT_UUID_GATT_CEP, BT_GATT_PERM_READ,		\
 			  bt_gatt_attr_read_cep, NULL, _value)
 
 /** @brief Read Characteristic User Description Descriptor Attribute helper
@@ -612,8 +612,8 @@ ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn,
  *  @param _perm Descriptor attribute access permissions.
  */
 #define BT_GATT_CUD(_value, _perm)					\
-	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CUD, _perm, bt_gatt_attr_read_cud, \
-			  NULL, _value)
+	BT_GATT_DESCRIPTOR(BT_UUID_GATT_CUD, _perm, bt_gatt_attr_read_cud, \
+			   NULL, _value)
 
 /** @brief Read Characteristic Presentation format Descriptor Attribute helper
  *
@@ -642,8 +642,8 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
  *  @param _value Descriptor attribute value.
  */
 #define BT_GATT_CPF(_value)						\
-	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CPF, BT_GATT_PERM_READ,		\
-			  bt_gatt_attr_read_cpf, NULL, _value)
+	BT_GATT_DESCRIPTOR(BT_UUID_GATT_CPF, BT_GATT_PERM_READ,		\
+			  bt_gatt_attr_read_cpf, NULL, (void * const)_value)
 
 /** @def BT_GATT_DESCRIPTOR
  *  @brief Descriptor Declaration Macro.
