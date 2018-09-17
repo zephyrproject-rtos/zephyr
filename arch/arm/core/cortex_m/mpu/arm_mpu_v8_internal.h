@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_ARCH_ARM_CORE_CORTEX_M_MPU_ARM_MPU_V8_INTERNAL_H_
+#define ZEPHYR_ARCH_ARM_CORE_CORTEX_M_MPU_ARM_MPU_V8_INTERNAL_H_
+
 #include <cmse.h>
 
 /* Global MPU configuration at system initialization. */
@@ -137,3 +140,5 @@ static inline int _mpu_buffer_validate(void *addr, size_t size, int write)
 	return -EPERM;
 }
 #endif /* USERSPACE || MPU_STACK_GUARD || APPLICATION_MEMORY */
+
+#endif	/* ZEPHYR_ARCH_ARM_CORE_CORTEX_M_MPU_ARM_MPU_V8_INTERNAL_H_ */

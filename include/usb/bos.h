@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_USB_BOS_H_
+#define ZEPHYR_INCLUDE_USB_BOS_H_
+
 #if defined(CONFIG_USB_DEVICE_BOS)
 #define USB_DEVICE_BOS_DESC_DEFINE_HDR \
 	static __in_section(usb, bos_desc_area, 0) __used
@@ -55,3 +58,5 @@ int usb_handle_bos(struct usb_setup_packet *setup, s32_t *len, u8_t **data);
 #else
 #define usb_handle_bos(x, y, z)		-ENOTSUP
 #endif
+
+#endif	/* ZEPHYR_INCLUDE_USB_BOS_H_ */
