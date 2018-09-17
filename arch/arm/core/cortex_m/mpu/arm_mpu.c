@@ -11,8 +11,11 @@
 #include <arch/arm/cortex_m/cmsis.h>
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>
 #include <arch/arm/cortex_m/mpu/arm_core_mpu.h>
-#include <logging/sys_log.h>
 #include <linker/linker-defs.h>
+
+#define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(mpu);
 
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
 	defined(CONFIG_CPU_CORTEX_M3) || \
@@ -149,7 +152,7 @@ static inline void _disable_region(u32_t r_index)
 		"Index 0x%x out-of-bound (supported regions: 0x%x)\n",
 		r_index,
 		_get_num_regions());
-	SYS_LOG_DBG("disable region 0x%x", r_index);
+	LOG_DBG("disable region 0x%x", r_index);
 	/* Disable region */
 	ARM_MPU_ClrRegion(r_index);
 }
@@ -165,7 +168,7 @@ void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 {
 	struct arm_mpu_region region_conf;
 
-	SYS_LOG_DBG("Region info: 0x%x 0x%x", base, size);
+	LOG_DBG("Region info: 0x%x 0x%x", base, size);
 	u32_t region_index = _get_region_index_by_type(type);
 
 	if (_get_region_attr_by_type(&region_conf.attr, type, base, size)) {
@@ -208,18 +211,18 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 	struct arm_mpu_region region_conf;
 
 	if (mem_domain) {
-		SYS_LOG_DBG("configure domain: %p", mem_domain);
+		LOG_DBG("configure domain: %p", mem_domain);
 		num_partitions = mem_domain->num_partitions;
 		pparts = mem_domain->partitions;
 	} else {
-		SYS_LOG_DBG("disable domain partition regions");
+		LOG_DBG("disable domain partition regions");
 		num_partitions = 0;
 		pparts = NULL;
 	}
 
 	for (; region_index < _get_num_regions(); region_index++) {
 		if (num_partitions && pparts->size) {
-			SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
+			LOG_DBG("set region 0x%x 0x%x 0x%x",
 				    region_index, pparts->start, pparts->size);
 			region_conf.base = pparts->start;
 			_get_ram_region_attr_by_conf(&region_conf.attr,
@@ -246,11 +249,11 @@ void arm_core_mpu_configure_mem_partition(u32_t part_index,
 		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
 	struct arm_mpu_region region_conf;
 
-	SYS_LOG_DBG("configure partition index: %u", part_index);
+	LOG_DBG("configure partition index: %u", part_index);
 
 	if (part &&
 		(region_index + part_index < _get_num_regions())) {
-		SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
+		LOG_DBG("set region 0x%x 0x%x 0x%x",
 			    region_index + part_index, part->start, part->size);
 		_get_ram_region_attr_by_conf(&region_conf.attr,
 			part->attr, part->start, part->size);
@@ -327,7 +330,7 @@ static int arm_mpu_init(struct device *arg)
 		return -1;
 	}
 
-	SYS_LOG_DBG("total region count: %d", _get_num_regions());
+	LOG_DBG("total region count: %d", _get_num_regions());
 
 	arm_core_mpu_disable();
 

@@ -12,8 +12,10 @@
 #include <arch/arc/v2/mpu/arc_mpu.h>
 #include <arch/arc/v2/mpu/arc_core_mpu.h>
 #include <linker/linker-defs.h>
-#include <logging/sys_log.h>
 
+#define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(mpu);
 
 #define AUX_MPU_RDB_VALID_MASK (0x1)
 #define AUX_MPU_EN_ENABLE   (0x40000000)
@@ -330,7 +332,7 @@ void arc_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 	u32_t region_index =  _get_region_index_by_type(type);
 	u32_t region_attr = _get_region_attr_by_type(type);
 
-	SYS_LOG_DBG("Region info: 0x%x 0x%x", base, size);
+	LOG_DBG("Region info: 0x%x 0x%x", base, size);
 
 	if (region_attr == 0) {
 		return;
@@ -488,11 +490,11 @@ void arc_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 	struct k_mem_partition *pparts;
 
 	if (mem_domain) {
-		SYS_LOG_DBG("configure domain: %p", mem_domain);
+		LOG_DBG("configure domain: %p", mem_domain);
 		num_partitions = mem_domain->num_partitions;
 		pparts = mem_domain->partitions;
 	} else {
-		SYS_LOG_DBG("disable domain partition regions");
+		LOG_DBG("disable domain partition regions");
 		num_partitions = 0;
 		pparts = NULL;
 	}
@@ -511,13 +513,13 @@ void arc_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 	for (; region_index < num_regions; region_index++) {
 #endif
 		if (num_partitions && pparts->size) {
-			SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
+			LOG_DBG("set region 0x%x 0x%x 0x%x",
 				    region_index, pparts->start, pparts->size);
 			_region_init(region_index, pparts->start, pparts->size,
 					pparts->attr);
 			num_partitions--;
 		} else {
-			SYS_LOG_DBG("disable region 0x%x", region_index);
+			LOG_DBG("disable region 0x%x", region_index);
 			/* Disable region */
 			_region_init(region_index, 0, 0, 0);
 		}
@@ -537,15 +539,15 @@ void arc_core_mpu_configure_mem_partition(u32_t part_index,
 	u32_t region_index =
 		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
 
-	SYS_LOG_DBG("configure partition index: %u", part_index);
+	LOG_DBG("configure partition index: %u", part_index);
 
 	if (part) {
-		SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
+		LOG_DBG("set region 0x%x 0x%x 0x%x",
 			    region_index + part_index, part->start, part->size);
 		_region_init(region_index, part->start, part->size,
 				part->attr);
 	} else {
-		SYS_LOG_DBG("disable region 0x%x", region_index + part_index);
+		LOG_DBG("disable region 0x%x", region_index + part_index);
 		/* Disable region */
 		_region_init(region_index + part_index, 0, 0, 0);
 	}
@@ -561,7 +563,7 @@ void arc_core_mpu_mem_partition_remove(u32_t part_index)
 	u32_t region_index =
 		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
 
-	SYS_LOG_DBG("disable region 0x%x", region_index + part_index);
+	LOG_DBG("disable region 0x%x", region_index + part_index);
 	/* Disable region */
 	_region_init(region_index + part_index, 0, 0, 0);
 }
