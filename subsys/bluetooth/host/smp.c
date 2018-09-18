@@ -249,6 +249,7 @@ static struct bt_smp_br bt_smp_br_pool[CONFIG_BT_MAX_CONN];
 #endif /* CONFIG_BT_BREDR */
 
 static struct bt_smp bt_smp_pool[CONFIG_BT_MAX_CONN];
+static bool bondable = IS_ENABLED(CONFIG_BT_BONDABLE);
 static bool sc_supported;
 static bool sc_local_pkey_valid;
 static u8_t sc_public_key[64];
@@ -2267,6 +2268,11 @@ static int smp_init(struct bt_smp *smp)
 	return 0;
 }
 
+void bt_set_bondable(bool enable)
+{
+	bondable = enable;
+}
+
 static u8_t get_auth(u8_t auth)
 {
 	if (sc_supported) {
@@ -2279,6 +2285,12 @@ static u8_t get_auth(u8_t auth)
 		auth &= ~(BT_SMP_AUTH_MITM);
 	} else {
 		auth |= BT_SMP_AUTH_MITM;
+	}
+
+	if (bondable) {
+		auth |= BT_SMP_AUTH_BONDING;
+	} else {
+		auth &= ~BT_SMP_AUTH_BONDING;
 	}
 
 	return auth;
