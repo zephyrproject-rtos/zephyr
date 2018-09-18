@@ -1142,6 +1142,26 @@ static int cmd_security(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_bondable(int argc, char *argv[])
+{
+	const char *bondable;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	bondable = argv[1];
+	if (!strcmp(bondable, "on")) {
+		bt_set_bondable(true);
+	} else if (!strcmp(bondable, "off")) {
+		bt_set_bondable(false);
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -2179,6 +2199,7 @@ static const struct shell_cmd bt_commands[] = {
 	{ "clear", cmd_clear },
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	{ "security", cmd_security, "<security level: 0, 1, 2, 3>" },
+	{ "bondable", cmd_bondable, "<bondable: on, off>" },
 	{ "auth", cmd_auth,
 	  "<auth method: all, input, display, yesno, confirm, none>" },
 	{ "auth-cancel", cmd_auth_cancel, HELP_NONE },
