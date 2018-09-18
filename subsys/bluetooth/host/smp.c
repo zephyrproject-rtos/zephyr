@@ -4478,15 +4478,20 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	 * exclusive with legacy pairing. Other keys are added on keys
 	 * distribution.
 	 */
-	if (atomic_test_bit(smp->flags, SMP_FLAG_SC) &&
-	    atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
-		bt_keys_add_type(conn->le.keys, BT_KEYS_LTK_P256);
-		memcpy(conn->le.keys->ltk.val, smp->tk,
-		       sizeof(conn->le.keys->ltk.val));
-		memset(conn->le.keys->ltk.rand, 0,
-		       sizeof(conn->le.keys->ltk.rand));
-		memset(conn->le.keys->ltk.ediv, 0,
-		       sizeof(conn->le.keys->ltk.ediv));
+	if (atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
+		conn->le.keys->flags |= BT_KEYS_SC;
+
+		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
+			bt_keys_add_type(conn->le.keys, BT_KEYS_LTK_P256);
+			memcpy(conn->le.keys->ltk.val, smp->tk,
+			       sizeof(conn->le.keys->ltk.val));
+			(void)memset(conn->le.keys->ltk.rand, 0,
+				     sizeof(conn->le.keys->ltk.rand));
+			(void)memset(conn->le.keys->ltk.ediv, 0,
+				     sizeof(conn->le.keys->ltk.ediv));
+		}
+	} else {
+		conn->le.keys->flags &= ~BT_KEYS_SC;
 	}
 }
 
