@@ -311,6 +311,14 @@ config BT_USE_DEBUG_KEYS
 	  If this option is enabled anyone is able to decipher encrypted air
 	  traffic.
 
+config BT_BONDABLE
+	bool "Bondable Mode"
+	default y
+	help
+	  This option enables support for Bondable Mode. In this mode,
+	  Bonding flag in AuthReq of SMP Pairing Request/Response will be set
+	  indicating the support for this mode.
+
 endif # BT_SMP
 
 config BT_L2CAP_DYNAMIC_CHANNEL
