@@ -315,8 +315,13 @@ int log_printk(const char *fmt, va_list ap);
 		()/*Empty*/						\
 	)
 
-#define __DYNAMIC_MODULE_DECLARE(_name)				\
-	extern struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(_name)
+#define __DYNAMIC_MODULE_DECLARE(_name)					   \
+	extern struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(_name);\
+	static inline struct log_source_dynamic_data *			   \
+				__log_current_dynamic_data_get(void)	   \
+	{								   \
+		return &LOG_ITEM_DYNAMIC_DATA(_name);			   \
+	}
 
 #define _LOG_RUNTIME_MODULE_DECLARE(_name)			\
 	_LOG_EVAL(						\
@@ -325,9 +330,14 @@ int log_printk(const char *fmt, va_list ap);
 		()						\
 		)
 
-#define _LOG_MODULE_DECLARE(_name, _level)				\
+#define _LOG_MODULE_DECLARE(_name, _level)				     \
 	extern const struct log_source_const_data LOG_ITEM_CONST_DATA(_name) \
-	_LOG_RUNTIME_MODULE_DECLARE(_name)
+	_LOG_RUNTIME_MODULE_DECLARE(_name);				     \
+	static inline const struct log_source_const_data *		     \
+				__log_current_const_data_get(void)	     \
+	{								     \
+		return &LOG_ITEM_CONST_DATA(_name);			     \
+	}
 
 /**
  * @brief Macro for declaring a log module (not registering it).
