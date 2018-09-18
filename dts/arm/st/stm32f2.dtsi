@@ -30,6 +30,11 @@
 
 	soc {
 		flash-controller@40023c00 {
+			compatible = "st,stm32f2-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x40023c00 0x400>;
+			interrupts = <4 0>;
+
 			#address-cells = <1>;
 			#size-cells = <1>;
 
