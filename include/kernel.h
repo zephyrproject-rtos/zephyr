@@ -16,6 +16,7 @@
 #if !defined(_ASMLANGUAGE)
 #include <kernel_includes.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -4206,9 +4207,9 @@ extern void *k_calloc(size_t nmemb, size_t size);
 /* polling API - PRIVATE */
 
 #ifdef CONFIG_POLL
-#define _INIT_OBJ_POLL_EVENT(obj) do { (obj)->poll_event = NULL; } while ((0))
+#define _INIT_OBJ_POLL_EVENT(obj) do { (obj)->poll_event = NULL; } while (false)
 #else
-#define _INIT_OBJ_POLL_EVENT(obj) do { } while ((0))
+#define _INIT_OBJ_POLL_EVENT(obj) do { } while (false)
 #endif
 
 /* private - implementation data created as needed, per-type */
@@ -4563,7 +4564,7 @@ extern void _sys_power_save_idle_exit(s32_t ticks);
 		printk("@ %s:%d:\n", __FILE__,  __LINE__); \
 		_NanoFatalErrorHandler(reason, &_default_esf); \
 		CODE_UNREACHABLE; \
-	} while (0)
+	} while (false)
 
 #endif /* _ARCH__EXCEPT */
 
@@ -4605,7 +4606,7 @@ extern void _init_static_threads(void);
 /**
  * @internal
  */
-#define _init_static_threads() do { } while ((0))
+#define _init_static_threads() do { } while (false)
 #endif
 
 /**

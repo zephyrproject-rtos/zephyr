@@ -17,6 +17,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
+#include <stdbool.h>
 
 /* Helper to pass a int as a pointer or vice-versa.
  * Those are available for 32 bits architectures:
@@ -181,7 +182,7 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
  *   ENABLED:   _IS_ENABLED3(_YYYY,    1,    0)
  *   DISABLED   _IS_ENABLED3(_XXXX 1,  0)
  */
-#define _IS_ENABLED2(one_or_two_args) _IS_ENABLED3(one_or_two_args 1, 0)
+#define _IS_ENABLED2(one_or_two_args) _IS_ENABLED3(one_or_two_args true, false)
 
 /* And our second argument is thus now cooked to be 1 in the case
  * where the value is defined to 1, and 0 if not:

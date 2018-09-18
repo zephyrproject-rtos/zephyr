@@ -26,6 +26,7 @@ GTEXT(_timer_int_handler)
 #else /* _ASMLANGUAGE */
 
 #include <device.h>
+#include <stdbool.h>
 
 extern int _sys_clock_driver_init(struct device *device);
 
@@ -39,8 +40,8 @@ extern void sys_clock_disable(void);
 extern void _timer_idle_enter(s32_t ticks);
 extern void _timer_idle_exit(void);
 #else
-#define _timer_idle_enter(ticks) do { } while ((0))
-#define _timer_idle_exit() do { } while ((0))
+#define _timer_idle_enter(ticks) do { } while (false)
+#define _timer_idle_exit() do { } while (false)
 #endif /* CONFIG_TICKLESS_IDLE */
 
 extern void _nano_sys_clock_tick_announce(s32_t ticks);

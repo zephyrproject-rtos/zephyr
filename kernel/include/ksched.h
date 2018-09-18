@@ -9,6 +9,7 @@
 
 #include <kernel_structs.h>
 #include <tracing.h>
+#include <stdbool.h>
 
 #ifdef CONFIG_MULTITHREADING
 #define _VALID_PRIO(prio, entry_point) \
@@ -24,7 +25,7 @@
 		 (prio), \
 		 K_LOWEST_APPLICATION_THREAD_PRIO, \
 		 K_HIGHEST_APPLICATION_THREAD_PRIO); \
-	} while ((0))
+	} while (false)
 #else
 #define _VALID_PRIO(prio, entry_point) ((prio) == -1)
 #define _ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")

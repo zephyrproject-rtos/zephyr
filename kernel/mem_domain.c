@@ -9,6 +9,7 @@
 #include <kernel_structs.h>
 #include <kernel_internal.h>
 #include <misc/__assert.h>
+#include <stdbool.h>
 
 static u8_t max_partitions;
 
@@ -26,7 +27,8 @@ static bool sane_partition(const struct k_mem_partition *part,
 	write = K_MEM_PARTITION_IS_WRITABLE(part->attr);
 
 	if (exec && write) {
-		__ASSERT(0, "partition is writable and executable <start %x>",
+		__ASSERT(false,
+			"partition is writable and executable <start %x>",
 			 part->start);
 		return false;
 	}
@@ -45,7 +47,7 @@ static bool sane_partition(const struct k_mem_partition *part,
 		cur_exec = K_MEM_PARTITION_IS_EXECUTABLE(parts[i].attr);
 
 		if ((cur_write && exec) || (cur_exec && write)) {
-			__ASSERT(0, "overlapping partitions are "
+			__ASSERT(false, "overlapping partitions are "
 				 "writable and executable "
 				 "<%x...%x>, <%x...%x>",
 				 part->start, end,

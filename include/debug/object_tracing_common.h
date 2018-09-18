@@ -12,11 +12,13 @@
 #ifndef ZEPHYR_INCLUDE_DEBUG_OBJECT_TRACING_COMMON_H_
 #define ZEPHYR_INCLUDE_DEBUG_OBJECT_TRACING_COMMON_H_
 
+#include <stdbool.h>
+
 #ifndef CONFIG_OBJECT_TRACING
 
-#define SYS_TRACING_OBJ_INIT(name, obj) do { } while ((0))
-#define SYS_TRACING_OBJ_INIT_DLL(name, obj) do { } while ((0))
-#define SYS_TRACING_OBJ_REMOVE_DLL(name, obj) do { } while ((0))
+#define SYS_TRACING_OBJ_INIT(name, obj) do { } while (false)
+#define SYS_TRACING_OBJ_INIT_DLL(name, obj) do { } while (false)
+#define SYS_TRACING_OBJ_REMOVE_DLL(name, obj) do { } while (false)
 
 #else
 
@@ -40,7 +42,7 @@
 		_trace_list_ ## name = obj;	       \
 		irq_unlock(key);		       \
 	}					       \
-	while (0)
+	while (false)
 
 /**
  * @def SYS_TRACING_OBJ_INIT_DLL
@@ -67,7 +69,7 @@
 		_trace_list_ ## name = obj;		      \
 		irq_unlock(key);			      \
 	}						      \
-	while (0)
+	while (false)
 
 /**
  * @def SYS_TRACING_OBJ_REMOVE_DLL
@@ -95,7 +97,7 @@
 		}					      \
 		irq_unlock(key);			      \
 	}						      \
-	while (0)
+	while (false)
 
 #endif  /*CONFIG_OBJECT_TRACING*/
 #endif  /*ZEPHYR_INCLUDE_DEBUG_OBJECT_TRACING_COMMON_H_*/

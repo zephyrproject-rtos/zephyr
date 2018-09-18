@@ -67,7 +67,7 @@ static inline int is_condition_met(struct k_poll_event *event, u32_t *state)
 	case K_POLL_TYPE_IGNORE:
 		return 0;
 	default:
-		__ASSERT(0, "invalid event type (0x%x)\n", event->type);
+		__ASSERT(false, "invalid event type (0x%x)\n", event->type);
 		break;
 	}
 
@@ -120,7 +120,7 @@ static inline int register_event(struct k_poll_event *event,
 		/* nothing to do */
 		break;
 	default:
-		__ASSERT(0, "invalid event type\n");
+		__ASSERT(false, "invalid event type\n");
 		break;
 	}
 
@@ -151,7 +151,7 @@ static inline void clear_event_registration(struct k_poll_event *event)
 		/* nothing to do */
 		break;
 	default:
-		__ASSERT(0, "invalid event type\n");
+		__ASSERT(false, "invalid event type\n");
 		break;
 	}
 }
@@ -198,7 +198,7 @@ int _impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 			if (rc == 0) {
 				++last_registered;
 			} else {
-				__ASSERT(0, "unexpected return code\n");
+				__ASSERT(false, "unexpected return code\n");
 			}
 		}
 		irq_unlock(key);

@@ -16,6 +16,7 @@
 
 #include <irq.h>
 #include <sw_isr_table.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -104,7 +105,7 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio,
 extern void _arch_isr_direct_pm(void);
 #define _ARCH_ISR_DIRECT_PM() _arch_isr_direct_pm()
 #else
-#define _ARCH_ISR_DIRECT_PM() do { } while (0)
+#define _ARCH_ISR_DIRECT_PM() do { } while (false)
 #endif
 
 #define _ARCH_ISR_DIRECT_HEADER() _arch_isr_direct_header()
