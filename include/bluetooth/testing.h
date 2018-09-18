@@ -11,6 +11,10 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_TESTING_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_TESTING_H_
 
+#if defined(CONFIG_BT_MESH)
+#include <bluetooth/mesh.h>
+#endif /* CONFIG_BT_MESH */
+
 /**
  * @brief Bluetooth testing
  * @defgroup bt_test_cb Bluetooth testing callbacks
@@ -28,6 +32,7 @@ extern "C" {
  *  Allows access to Bluetooth stack internals, not exposed by public API.
  */
 struct bt_test_cb {
+#if defined(CONFIG_BT_MESH)
 	void (*mesh_net_recv)(u8_t ttl, u8_t ctl, u16_t src, u16_t dst,
 			      const void *payload, size_t payload_len);
 	void (*mesh_model_bound)(u16_t addr, struct bt_mesh_model *model,
@@ -36,6 +41,7 @@ struct bt_test_cb {
 				   u16_t key_idx);
 	void (*mesh_prov_invalid_bearer)(u8_t opcode);
 	void (*mesh_trans_incomp_timer_exp)(void);
+#endif /* CONFIG_BT_MESH */
 
 	sys_snode_t node;
 };
