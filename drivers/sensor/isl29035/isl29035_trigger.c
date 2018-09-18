@@ -171,7 +171,7 @@ int isl29035_init_interrupt(struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_ISL29035_THREAD_STACK_SIZE,
-			(k_thread_entry_t)isl29035_thread, POINTER_TO_INT(dev),
+			(k_thread_entry_t)isl29035_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_ISL29035_THREAD_PRIORITY),
 			0, 0);
 #elif defined(CONFIG_ISL29035_TRIGGER_GLOBAL_THREAD)
