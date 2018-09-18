@@ -18,6 +18,11 @@
 #include <kernel_structs.h>
 #include <misc/printk.h>
 
+#include <logging/log.h>
+#include <logging/log_ctrl.h>
+
+LOG_MODULE_DECLARE(fatal);
+
 /**
  *
  * @brief Fatal error handler
@@ -43,6 +48,8 @@ FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
 {
 	ARG_UNUSED(pEsf);
 
+	LOG_PANIC();
+
 #if !defined(CONFIG_SIMPLE_FATAL_ERROR_HANDLER)
 #ifdef CONFIG_STACK_SENTINEL
 	if (reason == _NANO_ERR_STACK_CHK_FAIL) {
@@ -53,11 +60,11 @@ FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
 		goto hang_system;
 	}
 	if (k_is_in_isr() || _is_thread_essential()) {
-		printk("Fatal fault in %s! Spinning...\n",
+		LOG_ERR("Fatal fault in %s! Spinning...",
 		       k_is_in_isr() ? "ISR" : "essential thread");
 		goto hang_system;
 	}
-	printk("Fatal fault in thread %p! Aborting.\n", _current);
+	LOG_ERR("Fatal fault in thread %p! Aborting.", _current);
 	k_thread_abort(_current);
 
 hang_system:
@@ -66,7 +73,7 @@ hang_system:
 #endif
 
 #ifdef CONFIG_BOARD_QEMU_X86
-	printk("Terminate emulator due to fatal kernel error\n");
+	LOG_ERR("Terminate emulator due to fatal kernel error");
 	/* Causes QEMU to exit. We passed the following on the command line:
 	 * -device isa-debug-exit,iobase=0xf4,iosize=0x04
 	 */

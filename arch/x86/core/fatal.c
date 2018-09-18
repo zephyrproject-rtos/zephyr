@@ -16,12 +16,15 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <misc/printk.h>
 #include <arch/x86/irq_controller.h>
 #include <arch/x86/segmentation.h>
 #include <exception.h>
 #include <inttypes.h>
 #include <exc_handle.h>
+#include <logging/log.h>
+#include <logging/log_ctrl.h>
+
+LOG_MODULE_REGISTER(fatal);
 
 __weak void _debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
 
@@ -39,14 +42,16 @@ static void unwind_stack(u32_t base_ptr)
 	struct stack_frame *frame;
 	int i;
 
+	LOG_ERR("call trace:");
+
 	if (!base_ptr) {
-		printk("NULL base ptr\n");
+		LOG_ERR("NULL base ptr");
 		return;
 	}
 
 	for (i = 0; i < MAX_STACK_FRAMES; i++) {
 		if (base_ptr % sizeof(base_ptr) != 0) {
-			printk("unaligned frame ptr\n");
+			LOG_ERR("unaligned frame ptr");
 			return;
 		}
 
@@ -55,9 +60,9 @@ static void unwind_stack(u32_t base_ptr)
 			break;
 		}
 #ifdef CONFIG_X86_IAMCU
-		printk("     0x%08x\n", frame->ret_addr);
+		LOG_ERR("     0x%08x", frame->ret_addr);
 #else
-		printk("     0x%08x (0x%x)\n", frame->ret_addr, frame->args);
+		LOG_ERR("     0x%08x (0x%x)", frame->ret_addr, frame->args);
 #endif
 		base_ptr = frame->next;
 	}
@@ -83,9 +88,9 @@ static void unwind_stack(u32_t base_ptr)
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *pEsf)
 {
-	_debug_fatal_hook(pEsf);
+	LOG_PANIC();
 
-#ifdef CONFIG_PRINTK
+	_debug_fatal_hook(pEsf);
 
 	/* Display diagnostic information about the error */
 
@@ -96,55 +101,49 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	case _NANO_ERR_SPURIOUS_INT: {
 		int vector = _irq_controller_isr_vector_get();
 
-		printk("***** Unhandled interrupt vector ");
+		LOG_ERR("***** Unhandled interrupt vector ");
 		if (vector >= 0) {
-			printk("%d ", vector);
+			LOG_ERR("%d ", vector);
 		}
-		printk("*****\n");
+		LOG_ERR("*****");
 		break;
 	}
 #if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_STACK_SENTINEL) || \
 		defined(CONFIG_HW_STACK_PROTECTION) || \
 		defined(CONFIG_USERSPACE)
 	case _NANO_ERR_STACK_CHK_FAIL:
-		printk("***** Stack Check Fail! *****\n");
+		LOG_ERR("***** Stack Check Fail! *****");
 		break;
 #endif /* CONFIG_STACK_CANARIES */
 
 	case _NANO_ERR_KERNEL_OOPS:
-		printk("***** Kernel OOPS! *****\n");
+		LOG_ERR("***** Kernel OOPS! *****");
 		break;
 
 	case _NANO_ERR_KERNEL_PANIC:
-		printk("***** Kernel Panic! *****\n");
+		LOG_ERR("***** Kernel Panic! *****");
 		break;
 
 	case _NANO_ERR_ALLOCATION_FAIL:
-		printk("**** Kernel Allocation Failure! ****\n");
+		LOG_ERR("**** Kernel Allocation Failure! ****");
 		break;
 
 	default:
-		printk("**** Unknown Fatal Error %d! ****\n", reason);
+		LOG_ERR("**** Unknown Fatal Error %d! ****", reason);
 		break;
 	}
 
-	printk("Current thread ID = %p\n"
-	       "eax: 0x%08x, ebx: 0x%08x, ecx: 0x%08x, edx: 0x%08x\n"
-	       "esi: 0x%08x, edi: 0x%08x, ebp: 0x%08x, esp: 0x%08x\n"
-	       "eflags: 0x%08x cs: 0x%04x\n"
-#ifdef CONFIG_EXCEPTION_STACK_TRACE
-	       "call trace:\n"
-#endif
-	       "eip: 0x%08x\n",
-	       k_current_get(),
-	       pEsf->eax, pEsf->ebx, pEsf->ecx, pEsf->edx,
-	       pEsf->esi, pEsf->edi, pEsf->ebp, pEsf->esp,
+	LOG_ERR("Current thread ID = %p", k_current_get());
+	LOG_ERR("eax: 0x%08x, ebx: 0x%08x, ecx: 0x%08x, edx: 0x%08x",
+	       pEsf->eax, pEsf->ebx, pEsf->ecx, pEsf->edx);
+	LOG_ERR("esi: 0x%08x, edi: 0x%08x, ebp: 0x%08x, esp: 0x%08x",
+	       pEsf->esi, pEsf->edi, pEsf->ebp, pEsf->esp);
+	LOG_ERR("eflags: 0x%08x cs: 0x%04x eip: 0x%08x",
 	       pEsf->eflags, pEsf->cs & 0xFFFF, pEsf->eip);
+
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
 	unwind_stack(pEsf->ebp);
 #endif
-
-#endif /* CONFIG_PRINTK */
 
 
 	/*
@@ -216,14 +215,14 @@ const NANO_ESF _default_esf = {
 static FUNC_NORETURN void generic_exc_handle(unsigned int vector,
 					     const NANO_ESF *pEsf)
 {
-	printk("***** ");
+	LOG_ERR("***** ");
 	if (vector == 13) {
-		printk("General Protection Fault\n");
+		LOG_ERR("General Protection Fault");
 	} else {
-		printk("CPU exception %d\n", vector);
+		LOG_ERR("CPU exception %d", vector);
 	}
 	if ((1 << vector) & _EXC_ERROR_CODE_FAULTS) {
-		printk("***** Exception code: 0x%x\n", pEsf->errorCode);
+		LOG_ERR("***** Exception code: 0x%x", pEsf->errorCode);
 	}
 	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, pEsf);
 }
@@ -281,7 +280,7 @@ EXC_FUNC_NOCODE(IV_MACHINE_CHECK);
 static void dump_entry_flags(x86_page_entry_data_t flags)
 {
 #ifdef CONFIG_X86_PAE_MODE
-	printk("0x%x%x %s, %s, %s, %s\n", (u32_t)(flags>>32),
+	LOG_ERR("0x%x%x %s, %s, %s, %s", (u32_t)(flags>>32),
 	       (u32_t)(flags),
 	       flags & (x86_page_entry_data_t)MMU_ENTRY_PRESENT ?
 	       "Present" : "Non-present",
@@ -292,7 +291,7 @@ static void dump_entry_flags(x86_page_entry_data_t flags)
 	       flags & (x86_page_entry_data_t)MMU_ENTRY_EXECUTE_DISABLE ?
 	       "Execute Disable" : "Execute Enabled");
 #else
-	printk("0x%03x %s, %s, %s\n", flags,
+	LOG_ERR("0x%03x %s, %s, %s", flags,
 	       flags & (x86_page_entry_data_t)MMU_ENTRY_PRESENT ?
 	       "Present" : "Non-present",
 	       flags & (x86_page_entry_data_t)MMU_ENTRY_WRITE ?
@@ -308,10 +307,10 @@ static void dump_mmu_flags(void *addr)
 
 	_x86_mmu_get_flags(addr, &pde_flags, &pte_flags);
 
-	printk("PDE: ");
+	LOG_ERR("PDE: ");
 	dump_entry_flags(pde_flags);
 
-	printk("PTE: ");
+	LOG_ERR("PTE: ");
 	dump_entry_flags(pte_flags);
 }
 #endif
@@ -342,9 +341,9 @@ void page_fault_handler(NANO_ESF *pEsf)
 	__asm__ ("mov %%cr2, %0" : "=r" (cr2));
 
 	err = pEsf->errorCode;
-	printk("***** CPU Page Fault (error code 0x%08x)\n", err);
+	LOG_ERR("***** CPU Page Fault (error code 0x%08x)", err);
 
-	printk("%s thread %s address 0x%08x\n",
+	LOG_ERR("%s thread %s address 0x%08x",
 	       err & US ? "User" : "Supervisor",
 	       err & ID ? "executed" : (err & WR ? "wrote" : "read"),
 	       cr2);
@@ -407,7 +406,7 @@ static FUNC_NORETURN __used void _df_handler_bottom(void)
 	 */
 	_x86_mmu_get_flags((void *)_df_esf.esp - 1, &pde_flags, &pte_flags);
 	if (pte_flags & MMU_ENTRY_PRESENT) {
-		printk("***** Double Fault *****\n");
+		LOG_ERR("***** Double Fault *****");
 		reason = _NANO_ERR_CPU_EXCEPTION;
 	} else {
 		reason = _NANO_ERR_STACK_CHK_FAIL;
