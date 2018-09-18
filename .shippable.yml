@@ -19,7 +19,7 @@ env:
         - MATRIX_BUILD="5"
 
 build:
-    cache: true
+    cache: false
     cache_dir_list:
         - ${SHIPPABLE_BUILD_DIR}/ccache
     pre_ci_boot:
