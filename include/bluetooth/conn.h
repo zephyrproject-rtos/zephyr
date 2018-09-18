@@ -386,6 +386,18 @@ struct bt_conn_cb {
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
 
+/** Enable/disable bonding.
+ *
+ *  Set/clear the Bonding flag in the Authentication Requirements of
+ *  SMP Pairing Request/Response data.
+ *  The initial value of this flag depends on BT_BONDABLE Kconfig setting.
+ *  For the vast majority of applications calling this function shouldn't be
+ *  needed.
+ *
+ *  @param enable Value allowing/disallowing to be bondable.
+ */
+void bt_set_bondable(bool enable);
+
 /** @def BT_PASSKEY_INVALID
  *
  *  Special passkey value that can be used to disable a previously
