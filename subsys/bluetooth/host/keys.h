@@ -24,6 +24,7 @@ enum {
 	BT_KEYS_DEBUG           = BIT(1),
 	BT_KEYS_ID_PENDING_ADD  = BIT(2),
 	BT_KEYS_ID_PENDING_DEL  = BIT(3),
+	BT_KEYS_SC              = BIT(4),
 };
 
 struct bt_ltk {

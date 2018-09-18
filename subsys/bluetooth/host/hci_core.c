@@ -2652,7 +2652,7 @@ static void update_sec_level(struct bt_conn *conn)
 	}
 
 	if (conn->le.keys && (conn->le.keys->flags & BT_KEYS_AUTHENTICATED)) {
-		if (conn->le.keys->keys & BT_KEYS_LTK_P256) {
+		if (conn->le.keys->flags & BT_KEYS_SC) {
 			conn->sec_level = BT_SECURITY_FIPS;
 		} else {
 			conn->sec_level = BT_SECURITY_HIGH;
