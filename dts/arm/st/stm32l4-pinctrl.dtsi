@@ -9,55 +9,55 @@
 / {
 	soc {
 		pinctrl: pin-controller@48000000 {
-			usart1_pins_a: usart1@0 {
+			usart1_pins_a: usart1_a {
 				rx_tx {
 					rx = <STM32_PIN_PB7 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
 					tx = <STM32_PIN_PB6 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
 				};
 			};
-			usart1_pins_b: usart1@1 {
+			usart1_pins_b: usart1_b {
 				rx_tx {
 					rx = <STM32_PIN_PA10 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
 					tx = <STM32_PIN_PA9 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
 				};
 			};
-			usart1_pins_c: usart1@2 {
+			usart1_pins_c: usart1_c {
 				rx_tx {
 					rx = <STM32_PIN_PG10 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
 					tx = <STM32_PIN_PB6 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
 				};
 			};
-			usart2_pins_a: usart2@0 {
+			usart2_pins_a: usart2_a {
 				rx_tx {
 					rx = <STM32_PIN_PA3 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
 					tx = <STM32_PIN_PA2 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
 				};
 			};
-			usart2_pins_b: usart2@1 {
+			usart2_pins_b: usart2_b {
 				rx_tx {
 					rx = <STM32_PIN_PA15 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
 					tx = <STM32_PIN_PA2 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
 				};
 			};
-			usart2_pins_c: usart2@2 {
+			usart2_pins_c: usart2_c {
 				rx_tx {
 					rx = <STM32_PIN_PD6 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
 					tx = <STM32_PIN_PA2 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
 				};
 			};
-			usart2_pins_d: usart2@3 {
+			usart2_pins_d: usart2_d {
 				rx_tx {
 					rx = <STM32_PIN_PD6 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
 					tx = <STM32_PIN_PD5 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
 				};
 			};
-			usart3_pins_a: usart3@0 {
+			usart3_pins_a: usart3_a {
 				rx_tx {
 					rx = <STM32_PIN_PB11 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
 					tx = <STM32_PIN_PB10 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
 				};
 			};
-			can_pins_a: can@0 {
+			can_pins_a: can_a {
 				rx_tx {
 					rx = <STM32_PIN_PA11 (STM32_PINMUX_ALT_FUNC_9 | STM32_PUPDR_PULL_UP)>;
 					tx = <STM32_PIN_PA12 (STM32_PINMUX_ALT_FUNC_9 | STM32_PUSHPULL_NOPULL)>;
