@@ -12,20 +12,20 @@
 #include <misc/util.h>
 
 #define Z_GENLIST_FOR_EACH_NODE(__lname, __l, __sn)			\
-	for (__sn = sys_ ## __lname ## _peek_head(__l); __sn;		\
+	for (__sn = sys_ ## __lname ## _peek_head(__l); __sn != NULL;	\
 	     __sn = sys_ ## __lname ## _peek_next(__sn))
 
 
 #define Z_GENLIST_ITERATE_FROM_NODE(__lname, __l, __sn)			\
 	for (__sn = __sn ? sys_ ## __lname ## _peek_next_no_check(__sn)	\
 			 : sys_ ## __lname ## _peek_head(__l);		\
-	     __sn;							\
+	     __sn != NULL;						\
 	     __sn = sys_ ## __lname ## _peek_next(__sn))
 
 #define Z_GENLIST_FOR_EACH_NODE_SAFE(__lname, __l, __sn, __sns)		\
 	for (__sn = sys_ ## __lname ## _peek_head(__l),			\
 		     __sns = sys_ ## __lname ## _peek_next(__sn);	\
-	     __sn; __sn = __sns,					\
+	     __sn != NULL ; __sn = __sns,				\
 		     __sns = sys_ ## __lname ## _peek_next(__sn))
 
 #define Z_GENLIST_CONTAINER(__ln, __cn, __n)				\
@@ -45,13 +45,13 @@
 #define Z_GENLIST_FOR_EACH_CONTAINER(__lname, __l, __cn, __n)		\
 	for (__cn = Z_GENLIST_PEEK_HEAD_CONTAINER(__lname, __l, __cn,	\
 						  __n);			\
-	     __cn;							\
+	     __cn != NULL;						\
 	     __cn = Z_GENLIST_PEEK_NEXT_CONTAINER(__lname, __cn, __n))
 
 #define Z_GENLIST_FOR_EACH_CONTAINER_SAFE(__lname, __l, __cn, __cns, __n)     \
 	for (__cn = Z_GENLIST_PEEK_HEAD_CONTAINER(__lname, __l, __cn, __n),   \
-	     __cns = Z_GENLIST_PEEK_NEXT_CONTAINER(__lname, __cn, __n); __cn; \
-	     __cn = __cns,						      \
+	     __cns = Z_GENLIST_PEEK_NEXT_CONTAINER(__lname, __cn, __n); \
+	     __cn != NULL; __cn = __cns,				\
 	     __cns = Z_GENLIST_PEEK_NEXT_CONTAINER(__lname, __cn, __n))
 
 #define Z_GENLIST_IS_EMPTY(__lname)					\
