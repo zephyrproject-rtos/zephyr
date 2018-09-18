@@ -1029,7 +1029,7 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
         add_custom_target(
           ${APP_SMEM_DEP} ALL
           DEPENDS app
-          DEPENDS ${PRIV_STACK_DEP}
+          DEPENDS ${ALIGN_SIZING_DEP}
          )
 
         add_custom_command(
@@ -1095,7 +1095,7 @@ if(CONFIG_ARM)
   add_custom_target(
     linker_priv_stacks_script
     DEPENDS
-    ${ALIGN_SIZING_DEP}
+    ${ALIGN_SIZING_DEP} ${APP_SMEM_DEP}
     linker_priv_stacks.cmd
     offsets_h
     )
