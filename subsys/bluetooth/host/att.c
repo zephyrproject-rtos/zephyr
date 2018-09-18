@@ -1298,9 +1298,9 @@ static u8_t prep_write_cb(const struct bt_gatt_attr *attr, void *user_data)
 		return BT_GATT_ITER_STOP;
 	}
 
+	/* Check if attribute requires handler to accept the data */
 	if (!(attr->perm & BT_GATT_PERM_PREPARE_WRITE)) {
-		data->err = BT_ATT_ERR_WRITE_NOT_PERMITTED;
-		return BT_GATT_ITER_STOP;
+		goto append;
 	}
 
 	/* Write attribute value to check if device is authorized */
@@ -1311,6 +1311,7 @@ static u8_t prep_write_cb(const struct bt_gatt_attr *attr, void *user_data)
 		return BT_GATT_ITER_STOP;
 	}
 
+append:
 	/* Copy data into the outstanding queue */
 	data->buf = net_buf_alloc(&prep_pool, K_NO_WAIT);
 	if (!data->buf) {
