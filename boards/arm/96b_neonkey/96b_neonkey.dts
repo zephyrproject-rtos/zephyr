@@ -19,19 +19,19 @@
 
 	leds {
 		compatible = "gpio-leds";
-		green_led_0: led@0 {
+		green_led_0: led_0 {
 			gpios = <&gpiob 12 GPIO_INT_ACTIVE_HIGH>;
 			label = "USR0 LED";
 		};
-		green_led_1: led@1 {
+		green_led_1: led_1 {
 			gpios = <&gpiob 13 GPIO_INT_ACTIVE_HIGH>;
 			label = "USR1 LED";
 		};
-		green_led_2: led@2 {
+		green_led_2: led_2 {
 			gpios = <&gpiob 14 GPIO_INT_ACTIVE_HIGH>;
 			label = "USR2 LED";
 		};
-		green_led_3: led@3 {
+		green_led_3: led_3 {
 			gpios = <&gpiob 15 GPIO_INT_ACTIVE_HIGH>;
 			label = "USR3 LED";
 		};
