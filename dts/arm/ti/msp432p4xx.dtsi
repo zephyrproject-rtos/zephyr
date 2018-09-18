@@ -8,11 +8,11 @@
 		};
 	};
 
-	sram0: memory {
+	sram0: memory@20000000 {
 		compatible = "sram";
 	};
 
-	flash0: serial-flash {
+	flash0: serial-flash@0 {
 		compatible = "serial-flash";
 	};
 

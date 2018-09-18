@@ -8,9 +8,14 @@
 		};
 	};
 
-	flash0: flash {
+	flash0: flash@0 {
 		compatible = "soc-nv-flash";
 		label = "FLASH_0";
+	};
+
+	sram0: memory@20000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
 	};
 
 	soc {
