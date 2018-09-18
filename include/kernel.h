@@ -604,26 +604,6 @@ typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
 				   void *user_data);
 
 /**
- * @brief Analyze the main, idle, interrupt and system workqueue call stacks
- *
- * This routine calls @ref STACK_ANALYZE on the 4 call stacks declared and
- * maintained by the kernel. The sizes of those 4 call stacks are defined by:
- *
- * CONFIG_MAIN_STACK_SIZE
- * CONFIG_IDLE_STACK_SIZE
- * CONFIG_ISR_STACK_SIZE
- * CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE
- *
- * @note CONFIG_INIT_STACKS and CONFIG_PRINTK must be set for this function to
- * produce output.
- *
- * @return N/A
- *
- * @deprecated This API is deprecated.  Use k_thread_foreach().
- */
-__deprecated extern void k_call_stacks_analyze(void);
-
-/**
  * @brief Iterate over all the threads in the system.
  *
  * This routine iterates over all the threads in the system and
