@@ -219,11 +219,53 @@ config SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	  This option signifies that the target supports the SYS_POWER_LOW_POWER_STATE
 	  configuration option.
 
+config SYS_POWER_STATE_CPU_LPS_SUPPORTED
+	# Hidden
+	bool
+	help
+	  This option signifies that the target supports the SYS_POWER_STATE_CPU_LPS
+	  configuration option.
+
+config SYS_POWER_STATE_CPU_LPS_1_SUPPORTED
+	# Hidden
+	bool
+	help
+	  This option signifies that the target supports the SYS_POWER_STATE_CPU_LPS_1
+	  configuration option.
+
+config SYS_POWER_STATE_CPU_LPS_2_SUPPORTED
+	# Hidden
+	bool
+	help
+	  This option signifies that the target supports the SYS_POWER_STATE_CPU_LPS_2
+	  configuration option.
+
 config SYS_POWER_DEEP_SLEEP_SUPPORTED
 	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_DEEP_SLEEP
+	  configuration option.
+
+config SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
+	# Hidden
+	bool
+	help
+	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP
+	  configuration option.
+
+config SYS_POWER_STATE_DEEP_SLEEP_1_SUPPORTED
+	# Hidden
+	bool
+	help
+	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_1
+	  configuration option.
+
+config SYS_POWER_STATE_DEEP_SLEEP_2_SUPPORTED
+	# Hidden
+	bool
+	help
+	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_2
 	  configuration option.
 
 config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
