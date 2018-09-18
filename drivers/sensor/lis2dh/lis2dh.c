@@ -183,7 +183,6 @@ static int lis2dh_freq_to_odr_val(u16_t freq)
 
 static int lis2dh_acc_odr_set(struct device *dev, u16_t freq)
 {
-	struct lis2dh_data *lis2dh = dev->driver_data;
 	int odr;
 	int status;
 	u8_t value;

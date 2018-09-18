@@ -158,7 +158,6 @@ int lis2dh_trigger_set(struct device *dev,
 int lis2dh_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 			    const struct sensor_value *val)
 {
-	struct lis2dh_data *lis2dh = dev->driver_data;
 	int status;
 
 	if (attr == SENSOR_ATTR_SLOPE_TH) {
