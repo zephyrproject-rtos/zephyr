@@ -27,6 +27,8 @@ struct backend_cb {
 	size_t counter;
 	bool panic;
 	bool keep_msgs;
+	bool check_id;
+	u32_t exp_id[100];
 	bool check_timestamp;
 	u32_t exp_timestamps[100];
 	bool check_args;
@@ -39,6 +41,13 @@ static void put(struct log_backend const *const backend,
 	log_msg_get(msg);
 	struct backend_cb *cb = (struct backend_cb *)backend->cb->ctx;
 
+	if (cb->check_id) {
+		u32_t exp_id = cb->exp_id[cb->counter];
+
+		zassert_equal(log_msg_source_id_get(msg),
+			      exp_id,
+			      "Unexpected source_id");
+	}
 	if (cb->check_timestamp) {
 		u32_t exp_timestamp = cb->exp_timestamps[cb->counter];
 
@@ -293,6 +302,28 @@ static void test_log_panic(void)
 		      "Unexpected amount of messages received by the backend.");
 }
 
+/* extern function comes from the file which is part of test module. It is
+ * expected that logs coming from it will have same source_id as current
+ * module (this file).
+ */
+extern void test_func(void);
+static void test_log_from_declared_module(void)
+{
+	log_setup(false);
+
+	/* Setup log backend to validate source_id of the message. */
+	backend1_cb.check_id = true;
+	backend1_cb.exp_id[0] = LOG_CURRENT_MODULE_ID();
+
+	test_func();
+
+	while (log_process(false)) {
+	}
+
+	zassert_equal(1, backend1_cb.counter,
+		      "Unexpected amount of messages received by the backend.");
+}
+
 /*test case main entry*/
 void test_main(void)
 {
@@ -300,6 +331,7 @@ void test_main(void)
 			 ztest_unit_test(test_log_backend_runtime_filtering),
 			 ztest_unit_test(test_log_overflow),
 			 ztest_unit_test(test_log_arguments),
-			 ztest_unit_test(test_log_panic));
+			 ztest_unit_test(test_log_panic),
+			 ztest_unit_test(test_log_from_declared_module));
 	ztest_run_test_suite(test_log_list);
 }
