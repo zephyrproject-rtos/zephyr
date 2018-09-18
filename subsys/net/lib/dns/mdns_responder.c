@@ -46,7 +46,7 @@ static struct net_context *ipv6;
 #define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + \
 				 CONFIG_MDNS_RESOLVER_ADDITIONAL_BUF_CTR)
 
-NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
+NET_BUF_POOL_DEFINE(mdns_msg_pool, DNS_RESOLVER_BUF_CTR,
 		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
 
 #if defined(CONFIG_NET_IPV6)
@@ -403,7 +403,7 @@ static void recv_cb(struct net_context *net_ctx,
 		goto quit;
 	}
 
-	dns_data = net_buf_alloc(&dns_msg_pool, BUF_ALLOC_TIMEOUT);
+	dns_data = net_buf_alloc(&mdns_msg_pool, BUF_ALLOC_TIMEOUT);
 	if (!dns_data) {
 		goto quit;
 	}
