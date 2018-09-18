@@ -7,7 +7,10 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <inttypes.h>
-#include <misc/printk.h>
+#include <logging/log.h>
+#include <logging/log_ctrl.h>
+
+LOG_MODULE_REGISTER(fatal);
 
 const NANO_ESF _default_esf = {
 	0xdeadbaad,
@@ -60,6 +63,8 @@ const NANO_ESF _default_esf = {
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *esf)
 {
+	LOG_PANIC();
+
 	switch (reason) {
 	case _NANO_ERR_CPU_EXCEPTION:
 	case _NANO_ERR_SPURIOUS_INT:
@@ -67,40 +72,39 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 
 #if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_STACK_SENTINEL)
 	case _NANO_ERR_STACK_CHK_FAIL:
-		printk("***** Stack Check Fail! *****\n");
+		LOG_ERR("***** Stack Check Fail! *****");
 		break;
 #endif /* CONFIG_STACK_CANARIES */
 
 	case _NANO_ERR_ALLOCATION_FAIL:
-		printk("**** Kernel Allocation Failure! ****\n");
+		LOG_ERR("**** Kernel Allocation Failure! ****");
 		break;
 
 	case _NANO_ERR_KERNEL_OOPS:
-		printk("***** Kernel OOPS! *****\n");
+		LOG_ERR("***** Kernel OOPS! *****");
 		break;
 
 	case _NANO_ERR_KERNEL_PANIC:
-		printk("***** Kernel Panic! *****\n");
+		LOG_ERR("***** Kernel Panic! *****");
 		break;
 
 	default:
-		printk("**** Unknown Fatal Error %d! ****\n", reason);
+		LOG_ERR("**** Unknown Fatal Error %d! ****", reason);
 		break;
 	}
 
-	printk("Current thread ID = %p\n"
-	       "Faulting instruction address = 0x%x\n"
-	       "  ra: 0x%x  gp: 0x%x  tp: 0x%x  t0: 0x%x\n"
-	       "  t1: 0x%x  t2: 0x%x  t3: 0x%x  t4: 0x%x\n"
-	       "  t5: 0x%x  t6: 0x%x  a0: 0x%x  a1: 0x%x\n"
-	       "  a2: 0x%x  a3: 0x%x  a4: 0x%x  a5: 0x%x\n"
-	       "  a6: 0x%x  a7: 0x%x\n",
-	       k_current_get(),
-	       (esf->mepc == 0xdeadbaad) ? 0xdeadbaad : esf->mepc,
-	       esf->ra, esf->gp, esf->tp, esf->t0,
-	       esf->t1, esf->t2, esf->t3, esf->t4,
-	       esf->t5, esf->t6, esf->a0, esf->a1,
-	       esf->a2, esf->a3, esf->a4, esf->a5,
+	LOG_ERR("Current thread ID = %p", k_current_get());
+	LOG_ERR("Faulting instruction address = 0x%x",
+	       (esf->mepc == 0xdeadbaad) ? 0xdeadbaad : esf->mepc);
+	LOG_ERR("  ra: 0x%x  gp: 0x%x  tp: 0x%x  t0: 0x%x",
+	       esf->ra, esf->gp, esf->tp, esf->t0);
+	LOG_ERR("  t1: 0x%x  t2: 0x%x  t3: 0x%x  t4: 0x%x",
+	       esf->t1, esf->t2, esf->t3, esf->t4);
+	LOG_ERR("  t5: 0x%x  t6: 0x%x  a0: 0x%x  a1: 0x%x",
+	       esf->t5, esf->t6, esf->a0, esf->a1);
+	LOG_ERR("  a2: 0x%x  a3: 0x%x  a4: 0x%x  a5: 0x%x",
+	       esf->a2, esf->a3, esf->a4, esf->a5);
+	LOG_ERR("  a6: 0x%x  a7: 0x%x",
 	       esf->a6, esf->a7);
 
 	_SysFatalErrorHandler(reason, esf);
@@ -135,6 +139,8 @@ FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
 {
 	ARG_UNUSED(esf);
 
+	LOG_PANIC();
+
 #if !defined(CONFIG_SIMPLE_FATAL_ERROR_HANDLER)
 #ifdef CONFIG_STACK_SENTINEL
 	if (reason == _NANO_ERR_STACK_CHK_FAIL) {
@@ -145,11 +151,11 @@ FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
 		goto hang_system;
 	}
 	if (k_is_in_isr() || _is_thread_essential()) {
-		printk("Fatal fault in %s! Spinning...\n",
+		LOG_ERR("Fatal fault in %s! Spinning...",
 		       k_is_in_isr() ? "ISR" : "essential thread");
 		goto hang_system;
 	}
-	printk("Fatal fault in thread %p! Aborting.\n", _current);
+	LOG_ERR("Fatal fault in thread %p! Aborting.", _current);
 	k_thread_abort(_current);
 
 hang_system:
@@ -163,8 +169,6 @@ hang_system:
 	CODE_UNREACHABLE;
 }
 
-
-#ifdef CONFIG_PRINTK
 static char *cause_str(u32_t cause)
 {
 	switch (cause) {
@@ -184,8 +188,6 @@ static char *cause_str(u32_t cause)
 		return "unknown";
 	}
 }
-#endif
-
 
 FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 {
@@ -195,7 +197,7 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 
 	mcause &= SOC_MCAUSE_EXP_MASK;
 
-	printk("Exception cause %s (%d)\n", cause_str(mcause), (int)mcause);
+	LOG_ERR("Exception cause %s (%d)", cause_str(mcause), (int)mcause);
 
 	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, esf);
 }
