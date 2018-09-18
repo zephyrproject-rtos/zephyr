@@ -102,6 +102,9 @@ static int i2c_mcux_transfer(struct device *dev, struct i2c_msg *msgs,
 
 	/* Iterate over all the messages */
 	for (int i = 0; i < num_msgs; i++) {
+		if (I2C_MSG_ADDR_10_BITS & msgs->flags) {
+			return -ENOTSUP;
+		}
 
 		/* Initialize the transfer descriptor */
 		transfer.flags = i2c_mcux_convert_flags(msgs->flags);
