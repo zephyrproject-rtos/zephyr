@@ -15,7 +15,9 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <kernel_structs.h>
-#include <misc/printk.h>
+#include <logging/log.h>
+
+LOG_MODULE_DECLARE(fatal);
 
 /**
  *
@@ -53,11 +55,11 @@ __weak void _SysFatalErrorHandler(unsigned int reason,
 	}
 
 	if (_is_thread_essential()) {
-		printk("Fatal fault in essential thread! Spinning...\n");
+		LOG_ERR("Fatal fault in essential thread! Spinning...");
 		goto hang_system;
 	}
 
-	printk("Fatal fault in thread %p! Aborting.\n", _current);
+	LOG_ERR("Fatal fault in thread %p! Aborting.", _current);
 
 	k_thread_abort(_current);
 

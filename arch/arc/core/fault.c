@@ -17,8 +17,11 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <misc/printk.h>
 #include <exc_handle.h>
+#include <logging/log.h>
+#include <logging/log_ctrl.h>
+
+LOG_MODULE_DECLARE(fatal);
 
 #ifdef CONFIG_USERSPACE
 Z_EXC_DECLARE(z_arch_user_string_nlen);
@@ -41,6 +44,8 @@ void _Fault(NANO_ESF *esf)
 	u32_t vector, code, parameter;
 	u32_t exc_addr = _arc_v2_aux_reg_read(_ARC_V2_EFA);
 	u32_t ecr = _arc_v2_aux_reg_read(_ARC_V2_ECR);
+
+	LOG_PANIC();
 
 #ifdef CONFIG_USERSPACE
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
@@ -65,9 +70,9 @@ void _Fault(NANO_ESF *esf)
 		return;
 	}
 
-	printk("Exception vector: 0x%x, cause code: 0x%x, parameter 0x%x\n",
+	LOG_ERR("Exception vector: 0x%x, cause code: 0x%x, parameter 0x%x",
 	       vector, code, parameter);
-	printk("Address 0x%x\n", exc_addr);
+	LOG_ERR("Address 0x%x", exc_addr);
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* Vector 6 = EV_ProV. Regardless of code, parameter 2 means stack
 	 * check violation
