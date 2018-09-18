@@ -14,11 +14,12 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <inttypes.h>
-
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <misc/printk.h>
+#include <logging/log.h>
+#include <logging/log_ctrl.h>
 
+LOG_MODULE_REGISTER(fatal);
 
 /**
  *
@@ -47,35 +48,37 @@
 void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *pEsf)
 {
+	LOG_PANIC();
+
 	switch (reason) {
 	case _NANO_ERR_HW_EXCEPTION:
-		printk("***** Hardware exception *****\n");
+		LOG_ERR("***** Hardware exception *****");
 		break;
 #if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_STACK_SENTINEL)
 	case _NANO_ERR_STACK_CHK_FAIL:
-		printk("***** Stack Check Fail! *****\n");
+		LOG_ERR("***** Stack Check Fail! *****");
 		break;
 #endif /* CONFIG_STACK_CANARIES */
 
 	case _NANO_ERR_ALLOCATION_FAIL:
-		printk("**** Kernel Allocation Failure! ****\n");
+		LOG_ERR("**** Kernel Allocation Failure! ****");
 		break;
 
 	case _NANO_ERR_KERNEL_OOPS:
-		printk("***** Kernel OOPS! *****\n");
+		LOG_ERR("***** Kernel OOPS! *****");
 		break;
 
 	case _NANO_ERR_KERNEL_PANIC:
-		printk("***** Kernel Panic! *****\n");
+		LOG_ERR("***** Kernel Panic! *****");
 		break;
 
 	default:
-		printk("**** Unknown Fatal Error %d! ****\n", reason);
+		LOG_ERR("**** Unknown Fatal Error %d! ****", reason);
 		break;
 	}
-	printk("Current thread ID = %p\n"
-	       "Faulting instruction address = 0x%x\n",
-	       k_current_get(), pEsf->pc);
+
+	LOG_ERR("Current thread ID = %p", k_current_get());
+	LOG_ERR("Faulting instruction address = 0x%x", pEsf->pc);
 
 	/*
 	 * Now that the error has been reported, call the user implemented
@@ -97,6 +100,8 @@ FUNC_NORETURN void _arch_syscall_oops(void *ssf_ptr)
 {
 	u32_t *ssf_contents = ssf_ptr;
 	NANO_ESF oops_esf = { 0 };
+
+	LOG_PANIC();
 
 	oops_esf.pc = ssf_contents[3];
 
