@@ -75,6 +75,8 @@ class DTGpios(DTDirective):
                     '{}/{}/controller'.format(prop, index),
                     cell_parent)
 
+            edts_insert_device_parent_device_property(node_address)
+
             label = l_base + [l_cellname] + l_idx
 
             prop_def['_'.join(label)] = "\"" + l_cell + "\""
@@ -92,13 +94,10 @@ class DTGpios(DTDirective):
         # prop off phandle + num_cells to get to next list item
         prop_values = prop_values[num_cells+1:]
 
-        # recurse if we have anything left
-        if len(prop_values):
-            self._extract_controller(node_address, yaml, prop, prop_values,
-                                     def_label, index + 1)
+        return cell_parent
 
 
-    def _extract_cells(self, node_address, yaml, prop, prop_values, def_label, index):
+    def _extract_cells(self, node_address, yaml, prop, prop_values, def_label, index, controller):
 
         cell_parent = phandles[prop_values.pop(0)]
 
@@ -168,12 +167,13 @@ class DTGpios(DTDirective):
             edts_insert_device_property(edts_device_id(node_address),
                     '{}/{}/{}'.format(prop, index, cell_name), cell_value)
 
+            if 'pin' in cell_name:
+                edts_insert_device_controller(controller, node_address,
+                                              cell_value)
+
             insert_defs(node_address, prop_def, prop_alias)
 
-        # recurse if we have anything left
-        if len(prop_values):
-            extract_cells(node_address, yaml, prop, prop_values, def_label,
-                          index + 1)
+        return prop_values
 
 
     ##
@@ -193,10 +193,13 @@ class DTGpios(DTDirective):
 
         if 'gpio' in prop:
             # indicator for clock consumers
-            self._extract_controller(node_address, yaml, prop, prop_values,
-                                     def_label, 0)
-            self._extract_cells(node_address, yaml, prop, prop_values,
-                                def_label, 0)
+            index = 0
+            while len(prop_values) > 0:
+                controller = self._extract_controller(node_address, yaml, prop, prop_values,
+                                         def_label, index)
+                prop_values = self._extract_cells(node_address, yaml, prop, prop_values,
+                                    def_label, index, controller)
+                index += 1
         else:
             raise Exception(
                 "DTGpios.extract called with unexpected directive ({})."

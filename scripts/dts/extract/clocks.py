@@ -47,6 +47,7 @@ class DTClocks(DTDirective):
         clock_provider_bindings = yaml[clock_provider_compat]
         clock_nr_cells = int(clock_provider['props'].get('#clock-cells', 0))
         clock_cells_names = clock_provider_bindings.get('#cells', ['ID', ])
+        cells_list = []
         for i, cell in enumerate(clock_cells):
             if i >= len(clock_cells_names):
                 clock_cell_name = 'CELL{}'.format(i).lower()
@@ -54,6 +55,10 @@ class DTClocks(DTDirective):
                 clock_cell_name = clock_cells_names[i].lower()
             edts_insert_device_property(clock_consumer_device_id,
                 property_path_templ.format(clock_cell_name), cell)
+            cells_list.append(cell)
+        edts_insert_device_controller(clock_provider_node_address,
+                                      clock_consumer_node_address,
+                                      cells_list)
 
 
     def _extract_consumer(self, node_address, yaml, clocks, def_label):
