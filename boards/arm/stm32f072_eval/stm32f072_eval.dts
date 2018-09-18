@@ -40,27 +40,27 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		tamper: tamper@0 {
+		tamper: tamper_button {
 			label = "tamper button";
 			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
 		};
-		joy_sel: joystick@1 {
+		joy_sel: joystick_selection {
 			label = "joystick selection";
 			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
 		};
-		joy_down: joystick@2 {
+		joy_down: joystick_down {
 			label = "joystick down";
 			gpios = <&gpiof 10 GPIO_INT_ACTIVE_LOW>;
 		};
-		joy_up: joystick@3 {
+		joy_up: joystick_up {
 			label = "joystick up";
 			gpios = <&gpiof 9 GPIO_INT_ACTIVE_LOW>;
 		};
-		joy_left: joystick@4 {
+		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&gpiof 2 GPIO_INT_ACTIVE_LOW>;
 		};
-		joy_right: joystick@5 {
+		joy_right: joystick_right {
 			label = "joystick right";
 			gpios = <&gpioe 3 GPIO_INT_ACTIVE_LOW>;
 		};
