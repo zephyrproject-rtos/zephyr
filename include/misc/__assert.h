@@ -61,6 +61,8 @@
 #ifndef ZEPHYR_INCLUDE_MISC___ASSERT_H_
 #define ZEPHYR_INCLUDE_MISC___ASSERT_H_
 
+#include <stdbool.h>
+
 #ifdef CONFIG_ASSERT
 #ifndef __ASSERT_ON
 #define __ASSERT_ON CONFIG_ASSERT_LEVEL
@@ -106,7 +108,7 @@ extern void posix_exit(int exit_code);
 	do {                                                       \
 		expr2;                                             \
 		__ASSERT(test, fmt, ##__VA_ARGS__);                \
-	} while (0)
+	} while (false)
 
 #if (__ASSERT_ON == 1)
 #warning "__ASSERT() statements are ENABLED"
@@ -114,13 +116,13 @@ extern void posix_exit(int exit_code);
 #else
 #define __ASSERT(test, fmt, ...) \
 	do {/* nothing */        \
-	} while ((0))
+	} while (false)
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...) expr1
 #endif
 #else
 #define __ASSERT(test, fmt, ...) \
 	do {/* nothing */        \
-	} while ((0))
+	} while (false)
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...) expr1
 #endif
 
