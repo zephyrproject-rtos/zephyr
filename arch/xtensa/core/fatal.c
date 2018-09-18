@@ -8,8 +8,11 @@
 #include <kernel_structs.h>
 #include <inttypes.h>
 #include <kernel_arch_data.h>
-#include <misc/printk.h>
 #include <xtensa/specreg.h>
+#include <logging/log.h>
+#include <logging/log_ctrl.h>
+
+LOG_MODULE_REGISTER(fatal);
 
 #ifdef XT_SIMULATOR
 #include <xtensa/simcall.h>
@@ -51,6 +54,8 @@ const NANO_ESF _default_esf = {
 XTENSA_ERR_NORET void _NanoFatalErrorHandler(unsigned int reason,
 					     const NANO_ESF *pEsf)
 {
+	LOG_PANIC();
+
 	switch (reason) {
 	case _NANO_ERR_HW_EXCEPTION:
 	case _NANO_ERR_RESERVED_IRQ:
@@ -58,29 +63,27 @@ XTENSA_ERR_NORET void _NanoFatalErrorHandler(unsigned int reason,
 
 #if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_STACK_SENTINEL)
 	case _NANO_ERR_STACK_CHK_FAIL:
-		printk("***** Stack Check Fail! *****\n");
+		LOG_ERR("***** Stack Check Fail! *****");
 		break;
 #endif /* CONFIG_STACK_CANARIES */
 	case _NANO_ERR_ALLOCATION_FAIL:
-		printk("**** Kernel Allocation Failure! ****\n");
+		LOG_ERR("**** Kernel Allocation Failure! ****");
 		break;
 
 	case _NANO_ERR_KERNEL_OOPS:
-		printk("***** Kernel OOPS! *****\n");
+		LOG_ERR("***** Kernel OOPS! *****");
 		break;
 
 	case _NANO_ERR_KERNEL_PANIC:
-		printk("***** Kernel Panic! *****\n");
+		LOG_ERR("***** Kernel Panic! *****");
 		break;
 
 	default:
-		printk("**** Unknown Fatal Error %d! ****\n", reason);
+		LOG_ERR("**** Unknown Fatal Error %d! ****", reason);
 		break;
 	}
-	printk("Current thread ID = %p\n"
-	       "Faulting instruction address = 0x%x\n",
-	       k_current_get(),
-	       pEsf->pc);
+	LOG_ERR("Current thread ID = %p", k_current_get());
+	LOG_ERR("Faulting instruction address = 0x%x", pEsf->pc);
 
 	/*
 	 * Now that the error has been reported, call the user implemented
@@ -92,8 +95,6 @@ XTENSA_ERR_NORET void _NanoFatalErrorHandler(unsigned int reason,
 	_SysFatalErrorHandler(reason, pEsf);
 }
 
-
-#ifdef CONFIG_PRINTK
 static char *cause_str(unsigned int cause_code)
 {
 	switch (cause_code) {
@@ -147,7 +148,6 @@ static char *cause_str(unsigned int cause_code)
 		return "unknown/reserved";
 	}
 }
-#endif
 
 static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
 {
@@ -160,42 +160,39 @@ static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
 
 static void dump_exc_state(void)
 {
-#ifdef CONFIG_PRINTK
 	unsigned int cause, ps;
 
 	cause = get_sreg(EXCCAUSE);
 	ps = get_sreg(PS);
 
-	printk("Exception cause %d (%s):\n"
-	       "  EPC1     : 0x%08x EXCSAVE1 : 0x%08x EXCVADDR : 0x%08x\n",
+	LOG_ERR("Exception cause %d (%s):"
+	       "  EPC1     : 0x%08x EXCSAVE1 : 0x%08x EXCVADDR : 0x%08x",
 	       cause, cause_str(cause), get_sreg(EPC_1),
 	       get_sreg(EXCSAVE_1), get_sreg(EXCVADDR));
 
-	printk("Program state (PS):\n"
-	       "  INTLEVEL : %02d EXCM    : %d UM  : %d RING : %d WOE : %d\n",
+	LOG_ERR("Program state (PS):");
+	LOG_ERR("  INTLEVEL : %02d EXCM    : %d UM  : %d RING : %d WOE : %d",
 	       get_bits(0, 4, ps), get_bits(4, 1, ps), get_bits(5, 1, ps),
 	       get_bits(6, 2, ps), get_bits(18, 1, ps));
 #ifndef __XTENSA_CALL0_ABI__
-	printk("  OWB      : %02d CALLINC : %d\n",
+	LOG_ERR("  OWB      : %02d CALLINC : %d",
 	       get_bits(8, 4, ps), get_bits(16, 2, ps));
 #endif
-#endif /* CONFIG_PRINTK */
 }
 
 
 XTENSA_ERR_NORET void FatalErrorHandler(void)
 {
-	printk("*** Unhandled exception ****\n");
+	LOG_ERR("*** Unhandled exception ****");
 	dump_exc_state();
 	_NanoFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &_default_esf);
 }
 
 XTENSA_ERR_NORET void ReservedInterruptHandler(unsigned int intNo)
 {
-	printk("*** Reserved Interrupt ***\n");
+	LOG_ERR("*** Reserved Interrupt ***");
 	dump_exc_state();
-	printk("INTENABLE = 0x%x\n"
-	       "INTERRUPT = 0x%x (%d)\n",
+	LOG_ERR("INTENABLE = 0x%x INTERRUPT = 0x%x (%d)",
 	       get_sreg(INTENABLE), (1 << intNo), intNo);
 	_NanoFatalErrorHandler(_NANO_ERR_RESERVED_IRQ, &_default_esf);
 }
@@ -211,7 +208,7 @@ void exit(int return_code)
 	    : [code] "r" (return_code), [call] "i" (SYS_exit)
 	    : "a3", "a2");
 #else
-	printk("exit(%d)\n", return_code);
+	LOG_ERR("exit(%d)", return_code);
 	k_panic();
 #endif
 }
@@ -241,6 +238,8 @@ XTENSA_ERR_NORET __weak void _SysFatalErrorHandler(unsigned int reason,
 {
 	ARG_UNUSED(pEsf);
 
+	LOG_PANIC();
+
 #if !defined(CONFIG_SIMPLE_FATAL_ERROR_HANDLER)
 #ifdef CONFIG_STACK_SENTINEL
 	if (reason == _NANO_ERR_STACK_CHK_FAIL) {
@@ -251,11 +250,11 @@ XTENSA_ERR_NORET __weak void _SysFatalErrorHandler(unsigned int reason,
 		goto hang_system;
 	}
 	if (k_is_in_isr() || _is_thread_essential()) {
-		printk("Fatal fault in %s! Spinning...\n",
+		LOG_ERR("Fatal fault in %s! Spinning...",
 		       k_is_in_isr() ? "ISR" : "essential thread");
 		goto hang_system;
 	}
-	printk("Fatal fault in thread %p! Aborting.\n", _current);
+	LOG_ERR("Fatal fault in thread %p! Aborting.", _current);
 	k_thread_abort(_current);
 
 hang_system:
