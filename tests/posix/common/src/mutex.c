@@ -58,7 +58,7 @@ void *recursive_mutex_entry(void *p1)
  *	    and pthread_mutex_lock are tested with mutex type being
  *	    normal.
  */
-static void test_mutex_normal(void)
+void test_posix_normal_mutex(void)
 {
 	pthread_t thread_1;
 	pthread_attr_t attr;
@@ -117,7 +117,7 @@ static void test_mutex_normal(void)
  *	    twice and unlocked for the same number of time.
  *
  */
-static void test_recursive_mutex(void)
+void test_posix_recursive_mutex(void)
 {
 	pthread_t thread_2;
 	pthread_attr_t attr2;
@@ -161,11 +161,4 @@ static void test_recursive_mutex(void)
 	pthread_join(thread_2, NULL);
 	temp = pthread_mutex_destroy(&mutex2);
 	zassert_false(temp, "Destroying mutex2 is failed");
-}
-
-void test_main(void)
-{
-	ztest_test_suite(test_mutex, ztest_unit_test(test_mutex_normal),
-			ztest_unit_test(test_recursive_mutex));
-	ztest_run_test_suite(test_mutex);
 }

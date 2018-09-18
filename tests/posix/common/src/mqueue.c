@@ -17,7 +17,6 @@
 #define MESSAGE_SIZE 16
 #define MESG_COUNT_PERMQ 4
 
-
 K_THREAD_STACK_ARRAY_DEFINE(stacks, N_THR, STACKSZ);
 
 char queue[16] = "server";
@@ -59,7 +58,7 @@ void *receiver_thread(void *p1)
 	return NULL;
 }
 
-void test_mqueue(void)
+void test_posix_mqueue(void)
 {
 	mqd_t mqd;
 	struct mq_attr attrs;
@@ -105,10 +104,4 @@ void test_mqueue(void)
 	zassert_false(mq_close(mqd),
 		      "unable to close message queue descriptor.");
 	zassert_false(mq_unlink(queue), "Not able to unlink Queue");
-}
-
-void test_main(void)
-{
-	ztest_test_suite(test_posix_mqueue, ztest_unit_test(test_mqueue));
-	ztest_run_test_suite(test_posix_mqueue);
 }

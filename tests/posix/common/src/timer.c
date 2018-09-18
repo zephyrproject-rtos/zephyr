@@ -22,7 +22,7 @@ void handler(union sigval val)
 	       ++exp_count);
 }
 
-void test_timer(void)
+void test_posix_timer(void)
 {
 	int ret;
 	struct sigevent sig = { 0 };
@@ -85,11 +85,4 @@ void test_timer(void)
 	/*TESTPOINT: Check if POSIX timer test passed*/
 	zassert_equal(total_secs_timer, secs_elapsed,
 		      "POSIX timer test has failed");
-}
-
-void test_main(void)
-{
-	ztest_test_suite(test_posix_timer,
-			 ztest_unit_test(test_timer));
-	ztest_run_test_suite(test_posix_timer);
 }

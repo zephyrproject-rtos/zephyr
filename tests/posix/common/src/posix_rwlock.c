@@ -10,7 +10,7 @@
 #define N_THR 3
 #define STACKSZ 1024
 
-K_THREAD_STACK_ARRAY_DEFINE(stacks, N_THR, STACKSZ);
+K_THREAD_STACK_ARRAY_DEFINE(stack, N_THR, STACKSZ);
 pthread_rwlock_t rwlock;
 
 static void *thread_top(void *p1)
@@ -51,7 +51,7 @@ static void *thread_top(void *p1)
 	return NULL;
 }
 
-static void test_rw_lock(void)
+void test_posix_rw_lock(void)
 {
 	s32_t i, ret;
 	pthread_attr_t attr[N_THR];
@@ -88,7 +88,7 @@ static void test_rw_lock(void)
 		pthread_attr_setschedparam(&attr[i], &schedparam);
 
 		/* Setting stack */
-		pthread_attr_setstack(&attr[i], &stacks[i][0], STACKSZ);
+		pthread_attr_setstack(&attr[i], &stack[i][0], STACKSZ);
 
 		ret = pthread_create(&newthread[i], &attr[i], thread_top,
 				     (void *)i);
@@ -140,11 +140,4 @@ static void test_rw_lock(void)
 
 	zassert_false(pthread_rwlock_destroy(&rwlock),
 		      "Failed to destroy rwlock");
-}
-
-void test_main(void)
-{
-	ztest_test_suite(test_posix_rwlock_api,
-			 ztest_unit_test(test_rw_lock));
-	ztest_run_test_suite(test_posix_rwlock_api);
 }
