@@ -7,8 +7,11 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <kernel_structs.h>
-#include <misc/printk.h>
 #include <inttypes.h>
+#include <logging/log.h>
+#include <logging/log_ctrl.h>
+
+LOG_MODULE_REGISTER(fatal);
 
 const NANO_ESF _default_esf = {
 	0xdeadbaad,
@@ -50,31 +53,32 @@ const NANO_ESF _default_esf = {
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *esf)
 {
-#ifdef CONFIG_PRINTK
+	LOG_PANIC();
+
 	switch (reason) {
 	case _NANO_ERR_CPU_EXCEPTION:
 	case _NANO_ERR_SPURIOUS_INT:
 		break;
 
 	case _NANO_ERR_ALLOCATION_FAIL:
-		printk("**** Kernel Allocation Failure! ****\n");
+		LOG_ERR("**** Kernel Allocation Failure! ****");
 		break;
 
 	case _NANO_ERR_KERNEL_OOPS:
-		printk("***** Kernel OOPS! *****\n");
+		LOG_ERR("***** Kernel OOPS! *****");
 		break;
 
 	case _NANO_ERR_KERNEL_PANIC:
-		printk("***** Kernel Panic! *****\n");
+		LOG_ERR("***** Kernel Panic! *****");
 		break;
 
 #ifdef CONFIG_STACK_SENTINEL
 	case _NANO_ERR_STACK_CHK_FAIL:
-		printk("***** Stack overflow *****\n");
+		LOG_ERR("***** Stack overflow *****");
 		break;
 #endif
 	default:
-		printk("**** Unknown Fatal Error %u! ****\n", reason);
+		LOG_ERR("**** Unknown Fatal Error %u! ****", reason);
 		break;
 	}
 
@@ -85,24 +89,22 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	 * We may want to introduce a config option to save and dump all
 	 * registers, at the expense of some stack space.
 	 */
-	printk("Current thread ID: %p\n"
-	       "Faulting instruction: 0x%x\n"
-	       "  r1: 0x%x  r2: 0x%x  r3: 0x%x  r4: 0x%x\n"
-	       "  r5: 0x%x  r6: 0x%x  r7: 0x%x  r8: 0x%x\n"
-	       "  r9: 0x%x r10: 0x%x r11: 0x%x r12: 0x%x\n"
-	       " r13: 0x%x r14: 0x%x r15: 0x%x  ra: 0x%x\n"
-	       "estatus: %x\n", k_current_get(), esf->instr - 4,
-	       esf->r1, esf->r2, esf->r3, esf->r4,
-	       esf->r5, esf->r6, esf->r7, esf->r8,
-	       esf->r9, esf->r10, esf->r11, esf->r12,
-	       esf->r13, esf->r14, esf->r15, esf->ra,
-	       esf->estatus);
-#endif
+	LOG_ERR("Current thread ID: %p",k_current_get());
+	LOG_ERR("Faulting instruction: 0x%x", esf->instr - 4);
+	LOG_ERR("  r1: 0x%x  r2: 0x%x  r3: 0x%x  r4: 0x%x",
+			esf->r1, esf->r2, esf->r3, esf->r4);
+	LOG_ERR("  r5: 0x%x  r6: 0x%x  r7: 0x%x  r8: 0x%x",
+			esf->r5, esf->r6, esf->r7, esf->r8);
+	LOG_ERR("  r9: 0x%x r10: 0x%x r11: 0x%x r12: 0x%x",
+			esf->r9, esf->r10, esf->r11, esf->r12);
+	LOG_ERR(" r13: 0x%x r14: 0x%x r15: 0x%x  ra: 0x%x",
+			esf->r13, esf->r14, esf->r15, esf->ra);
+	LOG_ERR("estatus: %x", esf->estatus);
 
 	_SysFatalErrorHandler(reason, esf);
 }
 
-#if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_PRINTK) \
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO) \
 	&& defined(ALT_CPU_HAS_EXTRA_EXCEPTION_INFO)
 static char *cause_str(u32_t cause_code)
 {
@@ -165,7 +167,6 @@ static char *cause_str(u32_t cause_code)
 
 FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 {
-#ifdef CONFIG_PRINTK
 	/* Unfortunately, completely unavailable on Nios II/e cores */
 #ifdef ALT_CPU_HAS_EXTRA_EXCEPTION_INFO
 	u32_t exc_reg, badaddr_reg, eccftl;
@@ -180,16 +181,15 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 	cause = (exc_reg & NIOS2_EXCEPTION_REG_CAUSE_MASK)
 		 >> NIOS2_EXCEPTION_REG_CAUSE_OFST;
 
-	printk("Exception cause: %d ECCFTL: 0x%x\n", cause, eccftl);
+	LOG_ERR("Exception cause: %d ECCFTL: 0x%x", cause, eccftl);
 #if CONFIG_EXTRA_EXCEPTION_INFO
-	printk("reason: %s\n", cause_str(cause));
+	LOG_ERR("reason: %s", cause_str(cause));
 #endif
 	if (BIT(cause) & NIOS2_BADADDR_CAUSE_MASK) {
 		badaddr_reg = _nios2_creg_read(NIOS2_CR_BADADDR);
-		printk("Badaddr: 0x%x\n", badaddr_reg);
+		LOG_ERR("Badaddr: 0x%x", badaddr_reg);
 	}
 #endif /* ALT_CPU_HAS_EXTRA_EXCEPTION_INFO */
-#endif /* CONFIG_PRINTK */
 
 	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, esf);
 }
@@ -230,11 +230,11 @@ FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
 		goto hang_system;
 	}
 	if (k_is_in_isr() || _is_thread_essential()) {
-		printk("Fatal fault in %s! Spinning...\n",
+		LOG_ERR("Fatal fault in %s! Spinning...",
 		       k_is_in_isr() ? "ISR" : "essential thread");
 		goto hang_system;
 	}
-	printk("Fatal fault in thread %p! Aborting.\n", _current);
+	LOG_ERR("Fatal fault in thread %p! Aborting.", _current);
 	k_thread_abort(_current);
 
 hang_system:
