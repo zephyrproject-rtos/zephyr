@@ -281,7 +281,7 @@ static inline u8_t sys_sfnode_flags_get(sys_sfnode_t *node)
  */
 static inline void sys_sfnode_init(sys_sfnode_t *node, u8_t flags)
 {
-	__ASSERT(!(flags & ~SYS_SFLIST_FLAGS_MASK), "flags too large");
+	__ASSERT((flags & ~SYS_SFLIST_FLAGS_MASK) == 0, "flags too large");
 	node->next_and_flags = flags;
 }
 
@@ -297,7 +297,7 @@ static inline void sys_sfnode_init(sys_sfnode_t *node, u8_t flags)
  */
 static inline void sys_sfnode_flags_set(sys_sfnode_t *node, u8_t flags)
 {
-	__ASSERT(!(flags & ~SYS_SFLIST_FLAGS_MASK), "flags too large");
+	__ASSERT((flags & ~SYS_SFLIST_FLAGS_MASK) == 0, "flags too large");
 	node->next_and_flags = (unative_t)(z_sfnode_next_peek(node)) | flags;
 }
 

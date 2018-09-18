@@ -44,7 +44,7 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 	struct k_thread *thread;
 	unsigned int key;
 
-	__ASSERT(user_cb, "user_cb can not be NULL");
+	__ASSERT(user_cb != NULL, "user_cb can not be NULL");
 
 	/*
 	 * Lock is needed to make sure that the _kernel.threads is not being

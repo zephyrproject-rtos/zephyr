@@ -31,7 +31,7 @@ void _impl_k_thread_abort(k_tid_t thread)
 
 	key = irq_lock();
 
-	__ASSERT(!(thread->base.user_options & K_ESSENTIAL),
+	__ASSERT((thread->base.user_options & K_ESSENTIAL) == 0,
 		 "essential thread aborted");
 
 	_k_thread_single_abort(thread);
