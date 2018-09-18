@@ -43,6 +43,8 @@ config MODEM_WNCM14A2A
 	bool "Enable Wistron LTE-M modem driver"
 	depends on UART_INTERRUPT_DRIVEN
 	select MODEM_RECEIVER
+	select NET_MGMT
+	select NET_MGMT_EVENT
 	select NET_OFFLOAD
 	select UART_MCUX_2 if BOARD_FRDM_K64F
 	select GPIO_NRF_P1 if SOC_NRF52840
@@ -51,6 +53,16 @@ config MODEM_WNCM14A2A
 	help
 	  Choose this setting to enable Wistron WNC-M14A2A LTE-M modem driver.
 	  NOTE: Currently the pin settings only work with FRDM K64F shield.
+
+config MODEM_WNCM14A2A_INIT_TIMEOUT
+	int "# of seconds to wait for the modem interface to be ready"
+	depends on MODEM_WNCM14A2A
+	default 60
+	range 30 360
+	help
+	  Prior to sending data, the network driver will wait this long
+	  (in seconds) for the modem to place it's network interface into a
+	  ready state.
 
 config MODEM_WNCM14A2A_RX_STACK_SIZE
 	int "Size of the stack for the WNC-M14A2A modem driver RX thread"

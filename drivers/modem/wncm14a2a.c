@@ -20,7 +20,9 @@
 #include <init.h>
 
 #include <net/net_context.h>
+#include <net/net_event.h>
 #include <net/net_if.h>
+#include <net/net_mgmt.h>
 #include <net/net_offload.h>
 #include <net/net_pkt.h>
 #if defined(CONFIG_NET_UDP)
@@ -115,6 +117,7 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define MDM_MAX_SOCKETS			6
 
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
+#define NET_IFACE_TIMEOUT K_SECONDS(CONFIG_MODEM_WNCM14A2A_INIT_TIMEOUT)
 
 #define CMD_HANDLER(cmd_, cb_) { \
 	.cmd = cmd_, \
@@ -1515,6 +1518,17 @@ static int offload_get(sa_family_t family,
 	int ret;
 	char buf[sizeof("AT@SOCKCREAT=#,#\r")];
 	struct wncm14a2a_socket *sock = NULL;
+
+	/* wait for network interface to be up */
+	if (!net_if_is_up(ictx.iface)) {
+		ret = net_mgmt_event_wait_on_iface(ictx.iface, NET_EVENT_IF_UP,
+						   NULL, NULL,
+						   NET_IFACE_TIMEOUT);
+		if (ret < 0) {
+			SYS_LOG_ERR("Modem interface timeout! (%d)", ret);
+			return ret;
+		}
+	}
 
 	/* new socket */
 	sock = socket_get();
