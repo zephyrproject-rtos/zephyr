@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include <ztest.h>
 #include <posix/time.h>
 #include <posix/unistd.h>
@@ -101,12 +100,4 @@ void test_posix_realtime(void)
 	}
 
 	printk("POSIX clock set APIs test done\n");
-}
-
-void test_main(void)
-{
-	ztest_test_suite(test_posix_clock_api,
-			ztest_unit_test(test_posix_clock),
-			ztest_unit_test(test_posix_realtime));
-	ztest_run_test_suite(test_posix_clock_api);
 }
