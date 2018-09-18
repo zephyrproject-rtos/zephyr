@@ -19,7 +19,7 @@
 			reg = <0>;
 		};
 
-		intc: mvic@0 {
+		intc: mvic {
 			compatible = "intel,mvic";
 			interrupt-controller;
 			#interrupt-cells = <2>;

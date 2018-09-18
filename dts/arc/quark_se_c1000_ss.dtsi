@@ -19,7 +19,7 @@
 			reg = <1>;
 		};
 
-		core_intc: arcv2-intc@0 {
+		core_intc: arcv2-intc {
 			compatible = "snps,arcv2-intc";
 			interrupt-controller;
 			#interrupt-cells = <2>;
