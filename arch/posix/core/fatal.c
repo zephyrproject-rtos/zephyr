@@ -8,9 +8,12 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <kernel_structs.h>
-#include <misc/printk.h>
 #include <inttypes.h>
 #include "posix_soc_if.h"
+#include <logging/log.h>
+#include <logging/log_ctrl.h>
+
+LOG_MODULE_REGISTER(fatal);
 
 const NANO_ESF _default_esf = {
 	0xdeadbaad
@@ -34,40 +37,39 @@ const NANO_ESF _default_esf = {
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		const NANO_ESF *esf)
 {
-#ifdef CONFIG_PRINTK
+	LOG_PANIC();
+
 	switch (reason) {
 	case _NANO_ERR_CPU_EXCEPTION:
 	case _NANO_ERR_SPURIOUS_INT:
 		break;
 
 	case _NANO_ERR_INVALID_TASK_EXIT:
-		printk("***** Invalid Exit Software Error! *****\n");
+		LOG_ERR("***** Invalid Exit Software Error! *****");
 		break;
 
 
 	case _NANO_ERR_ALLOCATION_FAIL:
-		printk("**** Kernel Allocation Failure! ****\n");
+		LOG_ERR("**** Kernel Allocation Failure! ****");
 		break;
 
 	case _NANO_ERR_KERNEL_OOPS:
-		printk("***** Kernel OOPS! *****\n");
+		LOG_ERR("***** Kernel OOPS! *****");
 		break;
 
 	case _NANO_ERR_KERNEL_PANIC:
-		printk("***** Kernel Panic! *****\n");
+		LOG_ERR("***** Kernel Panic! *****");
 		break;
 
 #ifdef CONFIG_STACK_SENTINEL
 	case _NANO_ERR_STACK_CHK_FAIL:
-		printk("***** Stack overflow *****\n");
+		LOG_ERR("***** Stack overflow *****");
 		break;
 #endif
 	default:
-		printk("**** Unknown Fatal Error %u! ****\n", reason);
+		LOG_ERR("**** Unknown Fatal Error %u! ****", reason);
 		break;
 	}
-
-#endif
 
 	void _SysFatalErrorHandler(unsigned int reason,
 			const NANO_ESF *pEsf);
@@ -110,15 +112,15 @@ FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
 	}
 	if (k_is_in_isr() || _is_thread_essential()) {
 		posix_print_error_and_exit(
-			"Fatal fault in %s! Stopping...\n",
+			"Fatal fault in %s! Stopping...",
 			k_is_in_isr() ? "ISR" : "essential thread");
 	}
-	printk("Fatal fault in thread %p! Aborting.\n", _current);
+	LOG_ERR("Fatal fault in thread %p! Aborting.", _current);
 	k_thread_abort(_current);
 
 hang_system:
 
 	posix_print_error_and_exit(
-		"Stopped in _SysFatalErrorHandler()\n");
+		"Stopped in _SysFatalErrorHandler()");
 	CODE_UNREACHABLE;
 }
