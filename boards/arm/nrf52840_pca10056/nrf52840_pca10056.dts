@@ -43,8 +43,6 @@
 
 	buttons {
 		compatible = "gpio-keys";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		button0: button@0 {
 			gpios = <&gpio0 11 GPIO_PUD_PULL_UP>;
 			label = "Push button switch 0";
