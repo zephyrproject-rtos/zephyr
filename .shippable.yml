@@ -9,16 +9,14 @@ env:
         - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.3
         - ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-        - MATRIX_BUILDS="7"
-        - MATRIX_BUILDS_EXTRA="7"
+        - MATRIX_BUILDS="5"
+        - MATRIX_BUILDS_EXTRA="5"
     matrix:
         - MATRIX_BUILD="1"
         - MATRIX_BUILD="2"
         - MATRIX_BUILD="3"
         - MATRIX_BUILD="4"
         - MATRIX_BUILD="5"
-        - MATRIX_BUILD="6"
-        - MATRIX_BUILD="7"
 
 build:
     cache: true
@@ -39,7 +37,7 @@ build:
       - source zephyr-env.sh
       - ccache -c -s --max-size=5000M
       - >
-          if [ "$MATRIX_BUILD" = "7" -a "$IS_PULL_REQUEST" = "true" ]; then
+          if [ "$MATRIX_BUILD" = "5" -a "$IS_PULL_REQUEST" = "true" ]; then
             export COMMIT_RANGE=origin/${PULL_REQUEST_BASE_BRANCH}..HEAD
             echo "Building a Pull Request";
             echo "- Building Documentation";
