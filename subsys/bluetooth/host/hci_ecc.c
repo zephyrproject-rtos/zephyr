@@ -113,8 +113,9 @@ static u8_t generate_keys(void)
 	/* make sure generated key isn't debug key */
 	} while (memcmp(ecc.private_key, debug_private_key, 32) == 0);
 #else
-	memcpy(&ecc.pk, debug_public_key, 64);
-	memcpy(ecc.private_key, debug_private_key, 32);
+	sys_memcpy_swap(&ecc.pk, debug_public_key, 32);
+	sys_memcpy_swap(&ecc.pk[32], &debug_public_key[32], 32);
+	sys_memcpy_swap(ecc.private_key, debug_private_key, 32);
 #endif
 	return 0;
 }
