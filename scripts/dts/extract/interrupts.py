@@ -66,6 +66,10 @@ class DTInterrupts(DTDirective):
             if irq_names is not None:
                 edts_insert_device_property(device_id,
                     'interrupts/{}/name'.format(irq_index), irq_names[irq_index])
+
+            if 'irq' in irq_cell_name:
+                edts_insert_device_controller(irq_parent, node_address, cell)
+
             irq_cell_index += 1
             if irq_cell_index >= irq_nr_cells:
                 irq_cell_index = 0
