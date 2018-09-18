@@ -17,6 +17,7 @@
 	cpus {
 		cpu@0 {
 			compatible = "arm,cortex-m3";
+			reg = <0>;
 		};
 	};
 

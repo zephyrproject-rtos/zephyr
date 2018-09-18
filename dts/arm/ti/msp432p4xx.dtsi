@@ -4,6 +4,7 @@
 	cpus {
 		cpu@0 {
 			compatible = "arm,cortex-m4f";
+			reg = <0>;
 		};
 	};
 
