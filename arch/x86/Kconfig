@@ -26,6 +26,7 @@ config CPU_ATOM
 	bool
 	select CMOV
 	select CPU_HAS_FPU
+	select FP_DOUBLE_PRECISION
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
 	select ARCH_HAS_USERSPACE if X86_MMU
 	help
@@ -44,6 +45,7 @@ config CPU_APOLLO_LAKE
 	bool
 	select CMOV
 	select CPU_HAS_FPU
+	select FP_DOUBLE_PRECISION
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
 	select ARCH_HAS_USERSPACE if X86_MMU
 	help
