@@ -21,6 +21,7 @@
 #define ZEPHYR_INCLUDE_MISC_DLIST_H_
 
 #include <stddef.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -199,10 +200,10 @@ static inline void sys_dlist_init(sys_dlist_t *list)
  * @param list the doubly-linked list to operate on
  * @param node the node to check
  *
- * @return 1 if node is the head, 0 otherwise
+ * @return true if node is the head, false otherwise
  */
 
-static inline int sys_dlist_is_head(sys_dlist_t *list, sys_dnode_t *node)
+static inline bool sys_dlist_is_head(sys_dlist_t *list, sys_dnode_t *node)
 {
 	return list->head == node;
 }
@@ -213,10 +214,10 @@ static inline int sys_dlist_is_head(sys_dlist_t *list, sys_dnode_t *node)
  * @param list the doubly-linked list to operate on
  * @param node the node to check
  *
- * @return 1 if node is the tail, 0 otherwise
+ * @return true if node is the tail, false otherwise
  */
 
-static inline int sys_dlist_is_tail(sys_dlist_t *list, sys_dnode_t *node)
+static inline bool sys_dlist_is_tail(sys_dlist_t *list, sys_dnode_t *node)
 {
 	return list->tail == node;
 }
@@ -226,10 +227,10 @@ static inline int sys_dlist_is_tail(sys_dlist_t *list, sys_dnode_t *node)
  *
  * @param list the doubly-linked list to operate on
  *
- * @return 1 if empty, 0 otherwise
+ * @return true if empty, false otherwise
  */
 
-static inline int sys_dlist_is_empty(sys_dlist_t *list)
+static inline bool sys_dlist_is_empty(sys_dlist_t *list)
 {
 	return list->head == list;
 }
@@ -241,10 +242,10 @@ static inline int sys_dlist_is_empty(sys_dlist_t *list)
  *
  * @param list the doubly-linked list to operate on
  *
- * @return 1 if multiple nodes, 0 otherwise
+ * @return true if multiple nodes, false otherwise
  */
 
-static inline int sys_dlist_has_multiple_nodes(sys_dlist_t *list)
+static inline bool sys_dlist_has_multiple_nodes(sys_dlist_t *list)
 {
 	return list->head != list->tail;
 }
