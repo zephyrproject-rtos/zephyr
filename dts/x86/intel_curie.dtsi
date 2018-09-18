@@ -104,7 +104,7 @@
 			#gpio-cells = <2>;
 		};
 
-		usb_cdc: virtualcom@0 {
+		usb_cdc: virtualcom {
 			compatible = "intel,qmsi-usb";
 			label = "CDC_ACM";
 		};
