@@ -118,12 +118,12 @@ struct name {                                           \
 
 #define	SLIST_HEAD_INITIALIZER(head)                    \
     { NULL }
- 
+
 #define	SLIST_ENTRY(type)                               \
 struct {                                                \
     struct type *sle_next;  /* next element */          \
 }
- 
+
 /*
  * Singly-linked List functions.
  */
@@ -152,17 +152,18 @@ struct {                                                \
 
 #define SLIST_NEXT(elm, field)	((elm)->field.sle_next)
 
-#define SLIST_REMOVE(head, elm, type, field) do {           \
-    if (SLIST_FIRST((head)) == (elm)) {                     \
-        SLIST_REMOVE_HEAD((head), field);                   \
-    }                                                       \
-    else {                                                  \
-        struct type *curelm = SLIST_FIRST((head));          \
-        while (SLIST_NEXT(curelm, field) != (elm))          \
-            curelm = SLIST_NEXT(curelm, field);             \
-        SLIST_NEXT(curelm, field) =                         \
-            SLIST_NEXT(SLIST_NEXT(curelm, field), field);   \
-    }                                                       \
+#define SLIST_REMOVE(head, elm, type, field) do {                    \
+    if (SLIST_FIRST((head)) == (elm)) {                              \
+        SLIST_REMOVE_HEAD((head), field);                            \
+    }                                                                \
+    else {                                                           \
+        struct type *curelm = SLIST_FIRST((head));                   \
+        while (curelm != NULL && SLIST_NEXT(curelm, field) != (elm)) \
+            curelm = SLIST_NEXT(curelm, field);                      \
+        if (curelm == NULL) break;                                   \
+        SLIST_NEXT(curelm, field) =                                  \
+            SLIST_NEXT(SLIST_NEXT(curelm, field), field);            \
+    }                                                                \
 } while (0)
 
 #define SLIST_REMOVE_HEAD(head, field) do {                         \
