@@ -23,11 +23,11 @@
 
 	leds {
 		compatible = "gpio-leds";
-		green_led_4: led@0 {
+		green_led_4: led_4 {
 			gpios = <&gpiob 2 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD4";
 		};
-		green_led_5: led@1 {
+		green_led_5: led_5 {
 			gpios = <&gpioe 8 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD5";
 		};

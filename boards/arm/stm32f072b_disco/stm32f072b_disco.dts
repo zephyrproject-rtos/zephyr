@@ -19,19 +19,19 @@
 
 	leds {
 		compatible = "gpio-leds";
-		red_up_led_3: led@0 {
+		red_up_led_3: led_3 {
 			gpios = <&gpioc 6 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
-		yellow_left_4: led@1 {
+		yellow_left_4: led_4 {
 			gpios = <&gpioc 8 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD4";
 		};
-		green_right_led_5: led@2 {
+		green_right_led_5: led_5 {
 			gpios = <&gpioc 9 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD5";
 		};
-		blue_low_led_6: led@3 {
+		blue_low_led_6: led_6 {
 			gpios = <&gpioc 7 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD6";
 		};
