@@ -228,10 +228,10 @@ static int send_response(struct net_context *ctx, struct net_pkt *pkt,
 
 	if (qtype == DNS_RR_TYPE_A) {
 #if defined(CONFIG_NET_IPV4)
-		struct in_addr *addr;
+		const struct in_addr *addr;
 
-		/* For IPv4 we take the first address in the interface */
-		addr = &net_pkt_iface(pkt)->ipv4.unicast[0].address.in_addr;
+		addr = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
+						   &NET_IPV4_HDR(pkt)->src);
 
 		create_ipv4_addr(net_sin(&dst));
 		dst_len = sizeof(struct sockaddr_in);
