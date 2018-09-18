@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Freescale Semiconductor, Inc.
+ * Copyright (c) 2018 Phytec Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,8 +38,33 @@ void main(void)
 		return;
 	}
 
+	struct sensor_value attr = {
+		.val1 = 6,
+		.val2 = 250000,
+	};
+
+	if (sensor_attr_set(dev, SENSOR_CHAN_ALL,
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &attr)) {
+		printk("Could not set sampling frequency\n");
+		return;
+	}
+
+#ifdef CONFIG_FXOS8700_MOTION
+	attr.val1 = 10;
+	attr.val2 = 600000;
+	if (sensor_attr_set(dev, SENSOR_CHAN_ALL,
+			    SENSOR_ATTR_SLOPE_TH, &attr)) {
+		printk("Could not set slope threshold\n");
+		return;
+	}
+#endif
+
 	struct sensor_trigger trig = {
+#ifdef CONFIG_FXOS8700_MOTION
+		.type = SENSOR_TRIG_DELTA,
+#else
 		.type = SENSOR_TRIG_DATA_READY,
+#endif
 		.chan = SENSOR_CHAN_ACCEL_XYZ,
 	};
 
