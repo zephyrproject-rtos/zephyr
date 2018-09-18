@@ -6,6 +6,7 @@
 
 #ifndef ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_
 #define ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_
+
 /**
  * @file
  * @brief GCC toolchain abstraction
@@ -28,6 +29,7 @@
 #endif
 
 #include <toolchain/common.h>
+#include <stdbool.h>
 
 #define ALIAS_OF(of) __attribute__((alias(#of)))
 
@@ -85,7 +87,7 @@ do {                                                                    \
 	} *__p = (__typeof__(__p)) (p);                                 \
 	__p->__v = (v);                                                 \
 	compiler_barrier();                                             \
-} while (0)
+} while (false)
 
 #else
 
@@ -95,7 +97,7 @@ do {                                                                    \
 		__typeof__(*p) __v;                                     \
 	} *__p = (__typeof__(__p)) (p);                                 \
 	__p->__v = (v);                                               \
-} while (0)
+} while (false)
 
 #endif
 
@@ -137,8 +139,8 @@ do {                                                                    \
 #define __deprecated	__attribute__((deprecated))
 #define ARG_UNUSED(x) (void)(x)
 
-#define likely(x)   __builtin_expect((long)!!(x), 1L)
-#define unlikely(x) __builtin_expect((long)!!(x), 0L)
+#define likely(x)   __builtin_expect((long)!!(x), true)
+#define unlikely(x) __builtin_expect((long)!!(x), false)
 
 #define popcount(x) __builtin_popcount(x)
 
@@ -364,6 +366,6 @@ A##a:
 
 #define compiler_barrier() do { \
 	__asm__ __volatile__ ("" ::: "memory"); \
-} while ((0))
+} while (false)
 
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_ */

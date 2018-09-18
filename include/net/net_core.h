@@ -17,6 +17,8 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
+
 /**
  * @brief Networking
  * @defgroup networking Networking
@@ -53,12 +55,12 @@ extern "C" {
 #define NET_ASSERT(cond) do {				     \
 		if (!(cond)) {					     \
 			NET_ERR("{assert: '" #cond "' failed}");     \
-		} } while (0)
+		} } while (false)
 #define NET_ASSERT_INFO(cond, fmt, ...) do {			     \
 		if (!(cond)) {					     \
 			NET_ERR("{assert: '" #cond "' failed} " fmt, \
 				##__VA_ARGS__);			     \
-		} } while (0)
+		} } while (false)
 #else /* NET_LOG_ENABLED */
 #define NET_DBG(...)
 #define NET_ERR(...)

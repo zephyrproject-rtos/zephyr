@@ -19,6 +19,7 @@
 #include <kernel_arch_thread.h>
 #include <generated_dts_board.h>
 #include <mmustructs.h>
+#include <stdbool.h>
 
 #ifndef _ASMLANGUAGE
 #include <arch/x86/asm_inline.h>
@@ -48,8 +49,8 @@ extern "C" {
 void _int_latency_start(void);
 void _int_latency_stop(void);
 #else
-#define _int_latency_start()  do { } while (0)
-#define _int_latency_stop()   do { } while (0)
+#define _int_latency_start()  do { } while (false)
+#define _int_latency_stop()   do { } while (false)
 #endif
 
 /* interrupt/exception/error related definitions */
@@ -266,7 +267,7 @@ extern unsigned char _irq_to_interrupt_vector[];
 extern void _arch_irq_direct_pm(void);
 #define _ARCH_ISR_DIRECT_PM() _arch_irq_direct_pm()
 #else
-#define _ARCH_ISR_DIRECT_PM() do { } while (0)
+#define _ARCH_ISR_DIRECT_PM() do { } while (false)
 #endif
 
 #define _ARCH_ISR_DIRECT_HEADER() _arch_isr_direct_header()
@@ -624,7 +625,7 @@ extern struct task_state_segment _main_tss;
 		: [vector] "i" (CONFIG_X86_KERNEL_OOPS_VECTOR), \
 		  [reason] "i" (reason_p)); \
 	CODE_UNREACHABLE; \
-} while (0)
+} while (false)
 #endif
 
 /** Dummy ESF for fatal errors that would otherwise not have an ESF */

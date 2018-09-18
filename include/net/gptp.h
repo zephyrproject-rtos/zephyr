@@ -22,6 +22,7 @@
 
 #include <net/net_core.h>
 #include <net/ptp_time.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -170,7 +171,7 @@ struct gptp_hdr {
 		(uscaled_ns_ptr)->low =					\
 			gptp_get_current_time_nanosecond(port) << 16;	\
 		(uscaled_ns_ptr)->high = 0;				\
-	} while (0)
+	} while (false)
 
 /**
  * @typedef gptp_phase_dis_callback_t

@@ -38,8 +38,8 @@
 #include <syscall_handler.h>
 #include <tracing.h>
 
-#define RECORD_STATE_CHANGE(mutex) do { } while ((0))
-#define RECORD_CONFLICT(mutex) do { } while ((0))
+#define RECORD_STATE_CHANGE(mutex) do { } while (false)
+#define RECORD_CONFLICT(mutex) do { } while (false)
 
 
 extern struct k_mutex _k_mutex_list_start[];

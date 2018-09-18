@@ -102,7 +102,7 @@ extern void posix_exit(int exit_code);
 			(void)printk(fmt, ##__VA_ARGS__);                \
 			__ASSERT_POST;                                   \
 		}                                                        \
-	} while ((0))
+	} while (false)
 
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...)                \
 	do {                                                       \

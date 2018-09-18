@@ -27,7 +27,7 @@ s32_t _sys_idle_threshold_ticks = CONFIG_TICKLESS_IDLE_THRESH;
 		((ticks == K_FOREVER) || (ticks >= _sys_idle_threshold_ticks))
 #endif
 #else
-#define _must_enter_tickless_idle(ticks) ((void)ticks, (0))
+#define _must_enter_tickless_idle(ticks) ((void)ticks, false)
 #endif /* CONFIG_TICKLESS_IDLE */
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
@@ -153,7 +153,7 @@ void _sys_power_save_idle_exit(s32_t ticks)
 #if K_IDLE_PRIO < 0
 #define IDLE_YIELD_IF_COOP() k_yield()
 #else
-#define IDLE_YIELD_IF_COOP() do { } while ((0))
+#define IDLE_YIELD_IF_COOP() do { } while (false)
 #endif
 
 void idle(void *unused1, void *unused2, void *unused3)

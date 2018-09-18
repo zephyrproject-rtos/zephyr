@@ -9,6 +9,7 @@
 #include <logging/log_msg.h>
 #include <logging/log_instance.h>
 #include <misc/util.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -153,7 +154,7 @@ extern "C" {
 	do {							 \
 		u32_t args[] = {__LOG_ARGUMENTS(__VA_ARGS__)};	 \
 		log_n(_str, args, ARRAY_SIZE(args), _src_level); \
-	} while (0)
+	} while (false)
 
 #define _LOG_INTERNAL_4(_src_level, _str, ...) \
 		_LOG_INTERNAL_LONG(_src_level, _str, __VA_ARGS__)
@@ -206,7 +207,7 @@ extern "C" {
 			/* evaluated once when log is enabled.*/	    \
 			log_printf_arg_checker(__VA_ARGS__);		    \
 		}							    \
-	} while (0)
+	} while (false)
 
 #define _LOG(_level, ...)			       \
 	__LOG(_level,				       \
@@ -237,7 +238,7 @@ extern "C" {
 			};					      \
 			log_hexdump(_str, _data, _length, src_level); \
 		}						      \
-	} while (0)
+	} while (false)
 
 #define _LOG_HEXDUMP(_level, _data, _length, _str)	       \
 	__LOG_HEXDUMP(_level,				       \
@@ -286,7 +287,7 @@ extern "C" {
 				 LOG_FILTER_SLOT_SHIFT(_id));	     \
 		*(_filters) |= ((_filter) & LOG_FILTER_SLOT_MASK) << \
 			       LOG_FILTER_SLOT_SHIFT(_id);	     \
-	} while (0)
+	} while (false)
 
 #define LOG_FILTER_AGGR_SLOT_IDX 0
 

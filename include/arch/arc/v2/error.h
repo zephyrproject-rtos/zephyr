@@ -16,6 +16,7 @@
 
 #include <arch/arc/syscall.h>
 #include <arch/arc/v2/exc.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,7 +55,7 @@ extern void _SysFatalErrorHandler(unsigned int cause, const NANO_ESF *esf);
 		: "memory"); \
 		CODE_UNREACHABLE; \
 	} \
-	} while (0)
+	} while (false)
 
 #ifdef __cplusplus
 }
