@@ -35,10 +35,10 @@
 /* length of the output line */
 #define SLINE_LEN 256
 
-#define SLEEP_TIME ((sys_clock_ticks_per_sec() / 4) > 0 ?	\
-		    sys_clock_ticks_per_sec() / 4 : 1)
-#define WAIT_TIME ((sys_clock_ticks_per_sec() / 10) > 0 ?	\
-		   sys_clock_ticks_per_sec() / 10 : 1)
+#define SLEEP_TIME ((CONFIG_SYS_CLOCK_TICKS_PER_SEC / 4) > 0 ?	\
+		    CONFIG_SYS_CLOCK_TICKS_PER_SEC / 4 : 1)
+#define WAIT_TIME ((CONFIG_SYS_CLOCK_TICKS_PER_SEC / 10) > 0 ?	\
+		   CONFIG_SYS_CLOCK_TICKS_PER_SEC / 10 : 1)
 #define NR_OF_NOP_RUNS 10000
 #define NR_OF_FIFO_RUNS 500
 #define NR_OF_SEMA_RUNS 500
@@ -48,7 +48,7 @@
 #define NR_OF_EVENT_RUNS  1000
 #define NR_OF_MBOX_RUNS 128
 #define NR_OF_PIPE_RUNS 256
-/* #define SEMA_WAIT_TIME (5 * sys_clock_ticks_per_sec()) */
+/* #define SEMA_WAIT_TIME (5 * CONFIG_SYS_CLOCK_TICKS_PER_SEC) */
 #define SEMA_WAIT_TIME (5000)
 /* global data */
 extern char msg[MAX_MSG];
