@@ -11,13 +11,31 @@ from elftools.elf.elffile import ELFFile
 # This script will create linker comands for power of two aligned MPU
 # when APP_SHARED_MEM is enabled.
 print_template = """
-/* Auto generated code do not modify */
-. = ALIGN( 1 << LOG2CEIL(data_smem_{0}b_end - data_smem_{0}));
-data_smem_{0} = .;
-KEEP(*(SORT(data_smem_{0}*)))
-. = ALIGN(_app_data_align);
-data_smem_{0}b_end = .;
-. = ALIGN( 1 << LOG2CEIL(data_smem_{0}b_end - data_smem_{0}));
+		/* Auto generated code do not modify */
+		. = ALIGN( 1 << LOG2CEIL(data_smem_{0}b_end - data_smem_{0}));
+		data_smem_{0} = .;
+		KEEP(*(SORT(data_smem_{0}*)))
+		. = ALIGN(_app_data_align);
+		. = ALIGN( 1 << LOG2CEIL(data_smem_{0}b_end - data_smem_{0}));
+		data_smem_{0}b_end = .;
+"""
+linker_start_seq = """
+	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
+	{
+		. = ALIGN(4);
+		_image_ram_start = .;
+		_app_smem_start = .;
+"""
+
+linker_end_seq = """
+		_app_smem_end = .;
+		_app_smem_size = _app_smem_end - _app_smem_start;
+		. = ALIGN(4);
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+"""
+
+size_cal_string = """
+	data_smem_{0}_size = data_smem_{0}b_end - data_smem_{0};
 """
 
 
@@ -46,10 +64,14 @@ def cleanup_remove_bss_regions(full_list_of_partitions):
     return full_list_of_partitions
 
 def generate_final_linker(linker_file, full_list_of_partitions):
-    string= ''
+    string = linker_start_seq
+    size_string = ''
     for partition in full_list_of_partitions:
         string += print_template.format(partition)
+        size_string += size_cal_string.format(partition)
 
+    string += linker_end_seq
+    string += size_string
     with open(linker_file, "w") as fw:
         fw.write(string)
 

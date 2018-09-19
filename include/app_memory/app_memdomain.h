@@ -55,7 +55,11 @@
 struct app_region {
 	char *dmem_start;
 	char *bmem_start;
+#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	char *smem_size;
+#else
 	u32_t smem_size;
+#endif	/* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
 	u32_t dmem_size;
 	u32_t bmem_size;
 	struct k_mem_partition *partition;
@@ -66,9 +70,21 @@ struct app_region {
  * Declares a partition and provides a function to add the
  * partition to the linke dlist and initialize the partition.
  */
+#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+/* For power of 2 MPUs linker provides support to help us
+ * calculate the region sizes.
+ */
+#define smem_size_declare(name) extern char data_smem_##name##_size[]
+#define smem_size_assign(name) name.smem_size = data_smem_##name##_size
+#else
+#define smem_size_declare(name)
+#define smem_size_assign(name)
+#endif	/* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+
 #define appmem_partition(name) \
 	extern char *data_smem_##name; \
 	extern char *data_smem_##name##b; \
+	smem_size_declare(name);		  \
 	_app_dmem_pad(name) char name##_dmem_pad; \
 	_app_bmem_pad(name) char name##_bmem_pad; \
 	__kernel struct k_mem_partition mem_domain_##name; \
@@ -77,6 +93,7 @@ struct app_region {
 	{ \
 		name.dmem_start = (char *)&data_smem_##name; \
 		name.bmem_start = (char *)&data_smem_##name##b; \
+		smem_size_assign(name);				\
 		sys_dlist_append(&app_mem_list, &name.lnode); \
 		mem_domain_##name.start = (u32_t) name.dmem_start; \
 		mem_domain_##name.attr = K_MEM_PARTITION_P_RW_U_RW; \
