@@ -213,15 +213,15 @@ void _timer_idle_enter(s32_t sys_ticks)
 #ifdef CONFIG_TICKLESS_KERNEL
 /*
  * Set RTC Counter Compare (CC) register to max value
- * and update the _sys_clock_tick_count.
+ * and update the z_tick_get().
  */
 static inline void program_max_cycles(void)
 {
 	u32_t max_cycles = _get_max_clock_time();
 
-	_sys_clock_tick_count = _get_elapsed_clock_time();
+	z_tick_set(_get_elapsed_clock_time());
 	/* Update rtc_past to track rtc timer count*/
-	rtc_past = (_sys_clock_tick_count *
+	rtc_past = (z_tick_get() *
 			sys_clock_hw_cycles_per_tick()) & RTC_MASK;
 
 	/* Programe RTC compare register to generate interrupt*/
@@ -305,9 +305,9 @@ void _set_time(u32_t time)
 
 	/* Update expected_sys_ticls to time to programe*/
 	expected_sys_ticks = time;
-	_sys_clock_tick_count = _get_elapsed_clock_time();
+	z_tick_set(_get_elapsed_clock_time());
 	/* Update rtc_past to track rtc timer count*/
-	rtc_past = (_sys_clock_tick_count * sys_clock_hw_cycles_per_tick()) & RTC_MASK;
+	rtc_past = (z_tick_get() * sys_clock_hw_cycles_per_tick()) & RTC_MASK;
 
 	expected_sys_ticks = expected_sys_ticks > _get_max_clock_time() ?
 				_get_max_clock_time() : expected_sys_ticks;
@@ -368,8 +368,8 @@ u64_t _get_elapsed_clock_time(void)
 	u64_t elapsed;
 	u32_t rtc_elapsed, rtc_past_copy;
 
-	/* Read _sys_clock_tick_count and rtc_past before RTC_COUNTER */
-	elapsed = _sys_clock_tick_count;
+	/* Read z_tick_get() and rtc_past before RTC_COUNTER */
+	elapsed = z_tick_get();
 	rtc_past_copy = rtc_past;
 
 	/* Make sure that compiler will not reverse access to RTC and
@@ -549,17 +549,17 @@ u32_t _timer_cycle_get_32(void)
 	u32_t elapsed_cycles;
 
 	/* Number of timer cycles announced as ticks so far. */
-	ticked_cycles = _sys_clock_tick_count * sys_clock_hw_cycles_per_tick();
+	ticked_cycles = z_tick_get() * sys_clock_hw_cycles_per_tick();
 
 	/* Make sure that compiler will not reverse access to RTC and
-	 * _sys_clock_tick_count.
+	 * z_tick_get().
 	 */
 	compiler_barrier();
 
 	/* Number of timer cycles since last announced tick we know about.
 	 *
 	 * The value of RTC_COUNTER is not reset on tick, so it will
-	 * compensate potentialy missed update of _sys_clock_tick_count
+	 * compensate potentialy missed update of z_tick_get()
 	 * which could have happen between the ticked_cycles calculation
 	 * and the code below.
 	 */
