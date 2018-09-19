@@ -17,6 +17,7 @@
 #include <linker/sections.h>
 #include <kernel_structs.h>
 #include <misc/printk.h>
+#include <logging/log_ctrl.h>
 
 /**
  *
@@ -42,6 +43,8 @@ FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
 					 const NANO_ESF *pEsf)
 {
 	ARG_UNUSED(pEsf);
+
+	LOG_PANIC();
 
 #if !defined(CONFIG_SIMPLE_FATAL_ERROR_HANDLER)
 #ifdef CONFIG_STACK_SENTINEL

@@ -22,6 +22,7 @@
 #include <exception.h>
 #include <inttypes.h>
 #include <exc_handle.h>
+#include <logging/log_ctrl.h>
 
 __weak void _debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
 
@@ -83,6 +84,8 @@ static void unwind_stack(u32_t base_ptr)
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *pEsf)
 {
+	LOG_PANIC();
+
 	_debug_fatal_hook(pEsf);
 
 #ifdef CONFIG_PRINTK

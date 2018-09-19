@@ -19,6 +19,7 @@
 #include <kernel_structs.h>
 #include <misc/printk.h>
 #include <exc_handle.h>
+#include <logging/log_ctrl.h>
 
 #ifdef CONFIG_USERSPACE
 Z_EXC_DECLARE(z_arch_user_string_nlen);
@@ -41,6 +42,8 @@ void _Fault(NANO_ESF *esf)
 	u32_t vector, code, parameter;
 	u32_t exc_addr = _arc_v2_aux_reg_read(_ARC_V2_EFA);
 	u32_t ecr = _arc_v2_aux_reg_read(_ARC_V2_ECR);
+
+	LOG_PANIC();
 
 #ifdef CONFIG_USERSPACE
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
