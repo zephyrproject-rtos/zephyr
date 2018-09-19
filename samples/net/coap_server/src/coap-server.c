@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,6 +50,11 @@
 #define GET_BLOCK_SIZE(v)	(((v) & 0x7))
 #define GET_MORE(v)		(!!((v) & 0x08))
 
+#define MAX_PACKET_SIZE (256 + 32)
+/* FIXME: these buffers aren't thread safe: need pool mgmt */
+static u8_t in_buf[MAX_PACKET_SIZE];
+static u8_t out_buf[MAX_PACKET_SIZE];
+
 static struct net_context *context;
 
 static const u8_t plain_text_format;
@@ -67,92 +73,85 @@ static struct coap_resource *resource_to_notify;
 
 struct k_delayed_work retransmit_work;
 
-static void get_from_ip_addr(struct coap_packet *cpkt,
+static void get_from_ip_addr(struct net_pkt *pkt,
 			     struct sockaddr_in6 *from)
 {
 	struct net_udp_hdr hdr, *udp_hdr;
 
-	udp_hdr = net_udp_get_hdr(cpkt->pkt, &hdr);
+	udp_hdr = net_udp_get_hdr(pkt, &hdr);
 	if (!udp_hdr) {
 		return;
 	}
 
-	net_ipaddr_copy(&from->sin6_addr, &NET_IPV6_HDR(cpkt->pkt)->src);
+	net_ipaddr_copy(&from->sin6_addr, &NET_IPV6_HDR(pkt)->src);
 	from->sin6_port = udp_hdr->src_port;
 	from->sin6_family = AF_INET6;
 }
 
-static int well_known_core_get(struct coap_resource *resource,
-			       struct coap_packet *request)
+static int send_coap_packet(u8_t *buf, u16_t buf_len,
+			    const struct sockaddr *from)
 {
-	struct coap_packet response;
-	struct sockaddr_in6 from;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	int r;
 
-	NET_DBG("");
-
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);
-
 	net_pkt_frag_add(pkt, frag);
-
-	r = coap_well_known_core_get(resource, request, &response, pkt);
-	if (r < 0) {
-		net_pkt_unref(response.pkt);
-		return r;
-	}
-
-	get_from_ip_addr(request, &from);
-	r = net_context_sendto(response.pkt, (const struct sockaddr *)&from,
-			       sizeof(struct sockaddr_in6),
+	net_pkt_append(pkt, buf_len, buf, K_FOREVER);
+	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
-		net_pkt_unref(response.pkt);
+		net_pkt_unref(pkt);
 	}
 
 	return r;
 }
 
-static void payload_dump(const char *s, struct net_buf *frag,
-			 u16_t offset, u16_t len)
+static int well_known_core_get(struct coap_resource *resource,
+			       struct coap_packet *request,
+			       const struct sockaddr *from)
+{
+	struct coap_packet response;
+	int r;
+
+	NET_DBG("");
+
+	r = coap_well_known_core_get(resource, request, &response,
+				     out_buf, sizeof(out_buf));
+	if (r < 0) {
+		return r;
+	}
+
+	return send_coap_packet(response.fbuf.buf, response.fbuf.buf_len, from);
+}
+
+static void payload_dump(const char *s, const char *payload,
+			 u16_t len)
 {
 	printk("payload message = %s [%u]\n", s, len);
 
-	while (frag) {
-		_hexdump(frag->data + offset, frag->len - offset, 0);
-		frag = frag->frags;
-		offset = 0;
-	}
+	_hexdump(payload, len, 0);
 }
 
 static int test_del(struct coap_resource *resource,
-		    struct coap_packet *request)
+		    struct coap_packet *request,
+		    const struct sockaddr *from)
 {
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	struct sockaddr_in6 from;
 	struct coap_packet response;
 	u8_t tkl, code, type;
 	u8_t token[8];
 	u16_t id;
 	int r;
 
-	get_from_ip_addr(request, &from);
 	code = coap_header_get_code(request);
 	type = coap_header_get_type(request);
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
-
-	pkt = net_pkt_get_tx(context, K_FOREVER);
-	frag = net_pkt_get_data(context, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
+	NET_INFO("*******");
+	NET_INFO("type: %u code %u id %u", type, code, id);
+	NET_INFO("*******");
 
 	if (type == COAP_TYPE_CON) {
 		type = COAP_TYPE_ACK;
@@ -160,149 +159,120 @@ static int test_del(struct coap_resource *resource,
 		type = COAP_TYPE_NON_CON;
 	}
 
-	r = coap_packet_init(&response, pkt, 1, type,
+	r = coap_packet_init(&response, out_buf, sizeof(out_buf), 1, type,
 			     tkl, (u8_t *)token,
 			     COAP_RESPONSE_CODE_DELETED, id);
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	return net_context_sendto(pkt, (const struct sockaddr *)&from,
-				  sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	return send_coap_packet(response.fbuf.buf, response.fbuf.buf_len, from);
 }
 
 static int test_put(struct coap_resource *resource,
-		    struct coap_packet *request)
+		    struct coap_packet *request,
+		    const struct sockaddr *from)
 {
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	struct sockaddr_in6 from;
+	char *payload;
 	struct coap_packet response;
-	u8_t code, type, tkl;
-	u8_t token[8];
-	u16_t id;
 	int r;
-
-	struct net_buf *payloadfrag;
-
-	u16_t offset;
+	u16_t id;
 	u16_t len;
+	u8_t token[8];
+	u8_t code, type, tkl;
 
 	/* TODO: Check for payload, empty payload is an error case. */
 
-	get_from_ip_addr(request, &from);
 	code = coap_header_get_code(request);
 	type = coap_header_get_type(request);
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("\n ****** test put method  *******\n");
+	NET_INFO("\n ****** test put method  *******");
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	NET_INFO("*******");
+	NET_INFO("type: %u code %u id %u", type, code, id);
+	NET_INFO("*******");
 
-	payloadfrag = coap_packet_get_payload(request, &offset, &len);
-	if (!payloadfrag && len == 0xffff) {
+	payload = coap_packet_get_payload(request, &len);
+	if (!payload) {
 		NET_ERR("Invalid payload");
 		return -EINVAL;
-	} else if (!payloadfrag && !len) {
-		NET_INFO("Packet without payload\n");
+	} else if (!payload && !len) {
+		NET_INFO("Packet without payload");
 		goto next;
 	}
 
-	payload_dump("put_payload", payloadfrag, offset, len);
+	payload_dump("put_payload", payload, len);
 
 next:
-	pkt = net_pkt_get_tx(context, K_FOREVER);
-	frag = net_pkt_get_data(context, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
 	if (type == COAP_TYPE_CON) {
 		type = COAP_TYPE_ACK;
 	} else {
 		type = COAP_TYPE_NON_CON;
 	}
 
-	r = coap_packet_init(&response, pkt, 1, type,
+	r = coap_packet_init(&response, out_buf, sizeof(out_buf), 1, type,
 			     tkl, (u8_t *)token,
 			     COAP_RESPONSE_CODE_CHANGED, id);
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	return net_context_sendto(pkt, (const struct sockaddr *)&from,
-				  sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	return send_coap_packet(response.fbuf.buf, response.fbuf.buf_len, from);
 }
 
 static int test_post(struct coap_resource *resource,
-		     struct coap_packet *request)
+		     struct coap_packet *request,
+		     const struct sockaddr *from)
 {
 	static const char * const location_path[] = { "location1",
 						      "location2",
 						      "location3",
 						      NULL };
 	const char * const *p;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	struct sockaddr_in6 from;
+	char *payload;
 	struct coap_packet response;
-	u8_t code, type, tkl;
-	u8_t token[8];
-	u16_t id;
 	int r;
-
-	struct net_buf *payloadfrag;
-
-	u16_t offset;
+	u16_t id;
 	u16_t len;
+	u8_t token[8];
+	u8_t code, type, tkl;
 
 	/* TODO: Check for payload, empty payload is an error case. */
 
-	get_from_ip_addr(request, &from);
 	code = coap_header_get_code(request);
 	type = coap_header_get_type(request);
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("\n ****** test post method  *******\n");
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	NET_INFO("\n ****** test post method  *******");
+	NET_INFO("*******");
+	NET_INFO("type: %u code %u id %u", type, code, id);
+	NET_INFO("*******");
 
-	payloadfrag = coap_packet_get_payload(request, &offset, &len);
-	if (!payloadfrag && len == 0xffff) {
+	payload = coap_packet_get_payload(request, &len);
+	if (!payload) {
 		NET_ERR("Invalid payload");
 		return -EINVAL;
-	} else if (!payloadfrag && !len) {
-		NET_INFO("Packet without payload\n");
+	} else if (!payload && !len) {
+		NET_INFO("Packet without payload");
 		goto next;
 	}
 
-	payload_dump("post_payload", payloadfrag, offset, len);
+	payload_dump("post_payload", payload, len);
 
 next:
-	pkt = net_pkt_get_tx(context, K_FOREVER);
-	frag = net_pkt_get_data(context, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
 	if (type == COAP_TYPE_CON) {
 		type = COAP_TYPE_ACK;
 	} else {
 		type = COAP_TYPE_NON_CON;
 	}
 
-	r = coap_packet_init(&response, pkt, 1, type,
+	r = coap_packet_init(&response, out_buf, sizeof(out_buf), 1, type,
 			     tkl, (u8_t *)token,
 			     COAP_RESPONSE_CODE_CREATED, id);
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
@@ -315,21 +285,17 @@ next:
 		}
 	}
 
-	return net_context_sendto(pkt, (const struct sockaddr *)&from,
-				  sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	return send_coap_packet(response.fbuf.buf, response.fbuf.buf_len, from);
 }
 
 static int location_query_post(struct coap_resource *resource,
-			       struct coap_packet *request)
+			       struct coap_packet *request,
+			       const struct sockaddr *from)
 {
 	static const char *const location_query[] = { "first=1",
 						      "second=2",
 						      NULL };
 	const char * const *p;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	struct sockaddr_in6 from;
 	struct coap_packet response;
 	u8_t code, type, tkl;
 	u8_t token[8];
@@ -338,20 +304,14 @@ static int location_query_post(struct coap_resource *resource,
 
 	/* TODO: Check for payload, empty payload is an error case. */
 
-	get_from_ip_addr(request, &from);
 	code = coap_header_get_code(request);
 	type = coap_header_get_type(request);
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
-
-	pkt = net_pkt_get_tx(context, K_FOREVER);
-	frag = net_pkt_get_data(context, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
+	NET_INFO("*******");
+	NET_INFO("type: %u code %u id %u", type, code, id);
+	NET_INFO("*******");
 
 	if (type == COAP_TYPE_CON) {
 		type = COAP_TYPE_ACK;
@@ -359,7 +319,7 @@ static int location_query_post(struct coap_resource *resource,
 		type = COAP_TYPE_NON_CON;
 	}
 
-	r = coap_packet_init(&response, pkt, 1, type,
+	r = coap_packet_init(&response, out_buf, sizeof(out_buf), 1, type,
 			     tkl, (u8_t *)token,
 			     COAP_RESPONSE_CODE_CREATED, id);
 	if (r < 0) {
@@ -375,17 +335,13 @@ static int location_query_post(struct coap_resource *resource,
 		}
 	}
 
-	return net_context_sendto(pkt, (const struct sockaddr *)&from,
-				  sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	return send_coap_packet(response.fbuf.buf, response.fbuf.buf_len, from);
 }
 
 static int piggyback_get(struct coap_resource *resource,
-			 struct coap_packet *request)
+			 struct coap_packet *request,
+			 const struct sockaddr *from)
 {
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	struct sockaddr_in6 from;
 	struct coap_packet response;
 	u8_t token[8];
 	u8_t payload[40], code, type;
@@ -393,20 +349,14 @@ static int piggyback_get(struct coap_resource *resource,
 	u8_t tkl;
 	int r;
 
-	get_from_ip_addr(request, &from);
 	code = coap_header_get_code(request);
 	type = coap_header_get_type(request);
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
-
-	pkt = net_pkt_get_tx(context, K_FOREVER);
-	frag = net_pkt_get_data(context, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
+	NET_INFO("*******");
+	NET_INFO("type: %u code %u id %u", type, code, id);
+	NET_INFO("*******");
 
 	if (type == COAP_TYPE_CON) {
 		type = COAP_TYPE_ACK;
@@ -414,11 +364,10 @@ static int piggyback_get(struct coap_resource *resource,
 		type = COAP_TYPE_NON_CON;
 	}
 
-	r = coap_packet_init(&response, pkt, 1, type,
+	r = coap_packet_init(&response, out_buf, sizeof(out_buf), 1, type,
 			     tkl, (u8_t *)token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
@@ -426,13 +375,11 @@ static int piggyback_get(struct coap_resource *resource,
 				      &plain_text_format,
 				      sizeof(plain_text_format));
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
 	r = coap_packet_append_payload_marker(&response);
 	if (r) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
@@ -440,36 +387,28 @@ static int piggyback_get(struct coap_resource *resource,
 	r = snprintk((char *) payload, sizeof(payload),
 		     "Type: %u\nCode: %u\nMID: %u\n", type, code, id);
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	r = coap_packet_append_payload(&response, (u8_t *)payload,
-				       strlen(payload));
+	r = coap_packet_append_payload(&response, payload, strlen(payload));
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	return net_context_sendto(pkt, (const struct sockaddr *)&from,
-				  sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	return send_coap_packet(response.fbuf.buf, response.fbuf.buf_len, from);
 }
 
 static int query_get(struct coap_resource *resource,
-		     struct coap_packet *request)
+		     struct coap_packet *request,
+		     const struct sockaddr *from)
 {
 	struct coap_option options[4];
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	struct sockaddr_in6 from;
 	struct coap_packet response;
 	u8_t payload[40], code, type, tkl;
 	u8_t token[8];
 	u16_t id;
 	int i, r;
 
-	get_from_ip_addr(request, &from);
 	code = coap_header_get_code(request);
 	type = coap_header_get_type(request);
 	id = coap_header_get_id(request);
@@ -480,16 +419,16 @@ static int query_get(struct coap_resource *resource,
 		return -EINVAL;
 	}
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("num queries: %d\n", r);
+	NET_INFO("*******");
+	NET_INFO("type: %u code %u id %u", type, code, id);
+	NET_INFO("num queries: %d", r);
 
 	for (i = 0; i < r; i++) {
 		char str[16];
 
 		if (options[i].len + 1 > sizeof(str)) {
 			NET_INFO("Unexpected length of query: "
-				 "%d (expected %zu)\n",
+				 "%d (expected %zu)",
 				 options[i].len, sizeof(str));
 			break;
 		}
@@ -497,21 +436,15 @@ static int query_get(struct coap_resource *resource,
 		memcpy(str, options[i].value, options[i].len);
 		str[options[i].len] = '\0';
 
-		NET_INFO("query[%d]: %s\n", i + 1, str);
+		NET_INFO("query[%d]: %s", i + 1, str);
 	}
 
-	NET_INFO("*******\n");
+	NET_INFO("*******");
 
-	pkt = net_pkt_get_tx(context, K_FOREVER);
-	frag = net_pkt_get_data(context, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
-			     tkl, (u8_t *) token,
+	r = coap_packet_init(&response, out_buf, sizeof(out_buf), 1,
+			     COAP_TYPE_ACK, tkl, (u8_t *) token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
@@ -519,13 +452,11 @@ static int query_get(struct coap_resource *resource,
 				      &plain_text_format,
 				      sizeof(plain_text_format));
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
 	r = coap_packet_append_payload_marker(&response);
 	if (r) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
@@ -539,21 +470,16 @@ static int query_get(struct coap_resource *resource,
 	r = coap_packet_append_payload(&response, (u8_t *)payload,
 				       strlen(payload));
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	return net_context_sendto(pkt, (const struct sockaddr *)&from,
-				  sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	return send_coap_packet(response.fbuf.buf, response.fbuf.buf_len, from);
 }
 
 static int separate_get(struct coap_resource *resource,
-			struct coap_packet *request)
+			struct coap_packet *request,
+			const struct sockaddr *from)
 {
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	struct sockaddr_in6 from;
 	struct coap_packet response;
 	struct coap_pending *pending;
 	u8_t payload[40], code, type, tkl;
@@ -561,57 +487,41 @@ static int separate_get(struct coap_resource *resource,
 	u16_t id;
 	int r;
 
-	get_from_ip_addr(request, &from);
 	code = coap_header_get_code(request);
 	type = coap_header_get_type(request);
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	NET_INFO("*******");
+	NET_INFO("type: %u code %u id %u", type, code, id);
+	NET_INFO("*******");
 
 	if (type == COAP_TYPE_NON_CON) {
 		goto done;
 	}
 
-	pkt = net_pkt_get_tx(context, K_FOREVER);
-	frag = net_pkt_get_data(context, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
-			     tkl, (u8_t *)token, 0, id);
+	r = coap_packet_init(&response, out_buf, sizeof(out_buf), 1,
+			     COAP_TYPE_ACK, tkl, (u8_t *)token, 0, id);
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	r = net_context_sendto(pkt, (const struct sockaddr *)&from,
-			       sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	r = send_coap_packet(response.fbuf.buf, response.fbuf.buf_len, from);
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
 done:
-	pkt = net_pkt_get_tx(context, K_FOREVER);
-	frag = net_pkt_get_data(context, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
 	if (type == COAP_TYPE_CON) {
 		type = COAP_TYPE_CON;
 	} else {
 		type = COAP_TYPE_NON_CON;
 	}
 
-	r = coap_packet_init(&response, pkt, 1, type,
+	r = coap_packet_init(&response, out_buf, sizeof(out_buf), 1, type,
 			     tkl, (u8_t *)token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
@@ -619,13 +529,11 @@ done:
 				      &plain_text_format,
 				      sizeof(plain_text_format));
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
 	r = coap_packet_append_payload_marker(&response);
-	if (r) {
-		net_pkt_unref(pkt);
+	if (r < 0) {
 		return -EINVAL;
 	}
 
@@ -633,28 +541,22 @@ done:
 	r = snprintk((char *) payload, sizeof(payload),
 		     "Type: %u\nCode: %u\nMID: %u\n", type, code, id);
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	r = coap_packet_append_payload(&response, (u8_t *)payload,
-				       strlen(payload));
+	r = coap_packet_append_payload(&response, payload, strlen(payload));
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
 	if (type == COAP_TYPE_CON) {
 		pending = coap_pending_next_unused(pendings, NUM_PENDINGS);
 		if (!pending) {
-			net_pkt_unref(pkt);
 			return -EINVAL;
 		}
 
-		r = coap_pending_init(pending, &response,
-				      (const struct sockaddr *)&from);
-		if (r) {
-			net_pkt_unref(pkt);
+		r = coap_pending_init(pending, &response, from);
+		if (r < 0) {
 			return -EINVAL;
 		}
 
@@ -664,18 +566,14 @@ done:
 		k_delayed_work_submit(&retransmit_work, pending->timeout);
 	}
 
-	return net_context_sendto(pkt, (const struct sockaddr *)&from,
-				  sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	return send_coap_packet(response.fbuf.buf, response.fbuf.buf_len, from);
 }
 
 static int large_get(struct coap_resource *resource,
-		     struct coap_packet *request)
+		     struct coap_packet *request,
+		     const struct sockaddr *from)
 {
 	static struct coap_block_context ctx;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	struct sockaddr_in6 from;
 	struct coap_packet response;
 	u8_t token[8], code, type;
 	u8_t payload[64];
@@ -694,23 +592,17 @@ static int large_get(struct coap_resource *resource,
 		return -EINVAL;
 	}
 
-	get_from_ip_addr(request, &from);
 	code = coap_header_get_code(request);
 	type = coap_header_get_type(request);
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	NET_INFO("*******");
+	NET_INFO("type: %u code %u id %u", type, code, id);
+	NET_INFO("*******");
 
-	pkt = net_pkt_get_tx(context, K_FOREVER);
-	frag = net_pkt_get_data(context, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
-			     tkl, (u8_t *) token,
+	r = coap_packet_init(&response, out_buf, sizeof(out_buf), 1,
+			     COAP_TYPE_ACK, tkl, (u8_t *) token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		return -EINVAL;
@@ -730,7 +622,6 @@ static int large_get(struct coap_resource *resource,
 
 	r = coap_packet_append_payload_marker(&response);
 	if (r) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
@@ -741,7 +632,6 @@ static int large_get(struct coap_resource *resource,
 
 	r = coap_packet_append_payload(&response, (u8_t *)payload, size);
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
@@ -751,12 +641,10 @@ static int large_get(struct coap_resource *resource,
 		(void)memset(&ctx, 0, sizeof(ctx));
 	}
 
-	return net_context_sendto(pkt, (const struct sockaddr *)&from,
-				  sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	return send_coap_packet(response.fbuf.buf, response.fbuf.buf_len, from);
 }
 
-static int get_option_int(const struct coap_packet *pkt, u8_t opt)
+static int get_option_int(struct coap_packet *pkt, u8_t opt)
 {
 	struct coap_option option = {};
 	int r;
@@ -770,19 +658,18 @@ static int get_option_int(const struct coap_packet *pkt, u8_t opt)
 }
 
 static int large_update_put(struct coap_resource *resource,
-			    struct coap_packet *request)
+			    struct coap_packet *request,
+			    const struct sockaddr *from)
 {
 	static struct coap_block_context ctx;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	struct sockaddr_in6 from;
+	char *payload;
 	struct coap_packet response;
+	int r;
+	u16_t len, id;
 	u8_t token[8];
-	u16_t len, id, offset;
 	u8_t code;
 	u8_t type;
 	u8_t tkl;
-	int r;
 	bool last_block;
 
 	r = get_option_int(request, COAP_OPTION_BLOCK1);
@@ -803,34 +690,28 @@ static int large_update_put(struct coap_resource *resource,
 		return -EINVAL;
 	}
 
-	frag = coap_packet_get_payload(request, &offset, &len);
-	if (!last_block && frag == NULL && len == 0) {
-		NET_ERR("Packet without payload\n");
+	payload = coap_packet_get_payload(request, &len);
+	if (!last_block && payload == NULL && len == 0) {
+		NET_ERR("Packet without payload");
 		return -EINVAL;
 	}
 
-	NET_INFO("**************\n");
-	NET_INFO("[ctx] current %u block_size %u total_size %u\n",
+	NET_INFO("**************");
+	NET_INFO("[ctx] current %zu block_size %u total_size %zu",
 		 ctx.current, coap_block_size_to_bytes(ctx.block_size),
 		 ctx.total_size);
-	NET_INFO("**************\n");
+	NET_INFO("**************");
 
-	get_from_ip_addr(request, &from);
 	code = coap_header_get_code(request);
 	type = coap_header_get_type(request);
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	NET_INFO("*******");
+	NET_INFO("type: %u code %u id %u", type, code, id);
+	NET_INFO("*******");
 
 	/* Do something with the payload */
-
-	pkt = net_pkt_get_tx(context, K_FOREVER);
-	frag = net_pkt_get_data(context, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
 
 	if (!last_block) {
 		code = COAP_RESPONSE_CODE_CONTINUE;
@@ -838,8 +719,8 @@ static int large_update_put(struct coap_resource *resource,
 		code = COAP_RESPONSE_CODE_CHANGED;
 	}
 
-	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
-			     tkl, (u8_t *) token, code, id);
+	r = coap_packet_init(&response, out_buf, sizeof(out_buf), 1,
+			     COAP_TYPE_ACK, tkl, (u8_t *) token, code, id);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -850,24 +731,21 @@ static int large_update_put(struct coap_resource *resource,
 		return -EINVAL;
 	}
 
-	return net_context_sendto(pkt, (const struct sockaddr *)&from,
-				  sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	return send_coap_packet(response.fbuf.buf, response.fbuf.buf_len, from);
 }
 
 static int large_create_post(struct coap_resource *resource,
-			     struct coap_packet *request)
+			     struct coap_packet *request,
+			     const struct sockaddr *from)
 {
 	static struct coap_block_context ctx;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	struct sockaddr_in6 from;
+	char *payload;
 	struct coap_packet response;
+	int r;
+	u16_t len, id;
 	u8_t token[8];
 	u8_t code, type;
-	u16_t len, id, offset;
 	u8_t tkl;
-	int r;
 	bool last_block;
 
 	r = get_option_int(request, COAP_OPTION_BLOCK1);
@@ -888,25 +766,20 @@ static int large_create_post(struct coap_resource *resource,
 		return -EINVAL;
 	}
 
-	frag = coap_packet_get_payload(request, &offset, &len);
-	if (!last_block && frag == NULL && len == 0) {
-		NET_ERR("Packet without payload\n");
+	payload = coap_packet_get_payload(request, &len);
+	if (!last_block && payload == NULL && len == 0) {
+		NET_ERR("Packet without payload");
 		return -EINVAL;
 	}
 
-	get_from_ip_addr(request, &from);
 	code = coap_header_get_code(request);
 	type = coap_header_get_type(request);
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
-
-	pkt = net_pkt_get_tx(context, K_FOREVER);
-	frag = net_pkt_get_data(context, K_FOREVER);
-	net_pkt_frag_add(pkt, frag);
+	NET_INFO("*******");
+	NET_INFO("type: %u code %u id %u", type, code, id);
+	NET_INFO("*******");
 
 	if (!last_block) {
 		code = COAP_RESPONSE_CODE_CONTINUE;
@@ -914,8 +787,8 @@ static int large_create_post(struct coap_resource *resource,
 		code = COAP_RESPONSE_CODE_CREATED;
 	}
 
-	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
-			     tkl, (u8_t *)token, code, id);
+	r = coap_packet_init(&response, out_buf, sizeof(out_buf), 1,
+			     COAP_TYPE_ACK, tkl, (u8_t *)token, code, id);
 	if (r < 0) {
 		return -EINVAL;
 	}
@@ -926,9 +799,7 @@ static int large_create_post(struct coap_resource *resource,
 		return -EINVAL;
 	}
 
-	return net_context_sendto(pkt, (const struct sockaddr *)&from,
-				  sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	return send_coap_packet(response.fbuf.buf, response.fbuf.buf_len, from);
 }
 
 static void update_counter(struct k_work *work)
@@ -943,14 +814,11 @@ static void update_counter(struct k_work *work)
 }
 
 static int send_notification_packet(const struct sockaddr *addr, u16_t age,
-				    socklen_t addrlen, u16_t id,
-				    const u8_t *token, u8_t tkl,
+				    u16_t id, const u8_t *token, u8_t tkl,
 				    bool is_response)
 {
 	struct coap_packet response;
 	struct coap_pending *pending;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	char payload[14];
 	u8_t type = COAP_TYPE_CON;
 	int r;
@@ -963,16 +831,10 @@ static int send_notification_packet(const struct sockaddr *addr, u16_t age,
 		id = coap_next_id();
 	}
 
-	pkt = net_pkt_get_tx(context, K_FOREVER);
-	frag = net_pkt_get_data(context, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	r = coap_packet_init(&response, pkt, 1, type,
+	r = coap_packet_init(&response, out_buf, sizeof(out_buf), 1, type,
 			     tkl, (u8_t *)token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
@@ -984,13 +846,11 @@ static int send_notification_packet(const struct sockaddr *addr, u16_t age,
 				      &plain_text_format,
 				      sizeof(plain_text_format));
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
 	r = coap_packet_append_payload_marker(&response);
 	if (r) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
@@ -1004,7 +864,6 @@ static int send_notification_packet(const struct sockaddr *addr, u16_t age,
 	r = coap_packet_append_payload(&response, (u8_t *)payload,
 				       strlen(payload));
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
@@ -1025,21 +884,19 @@ static int send_notification_packet(const struct sockaddr *addr, u16_t age,
 		k_delayed_work_submit(&retransmit_work, pending->timeout);
 	}
 
-	return net_context_sendto(pkt, addr, addrlen, NULL, 0, NULL, NULL);
+	return send_coap_packet(response.fbuf.buf, response.fbuf.buf_len, addr);
 }
 
 static int obs_get(struct coap_resource *resource,
-		   struct coap_packet *request)
+		   struct coap_packet *request,
+		   const struct sockaddr *from)
 {
 	struct coap_observer *observer;
-	struct sockaddr_in6 from;
 	u8_t token[8];
 	u8_t code, type;
 	u16_t id;
 	u8_t tkl;
 	bool observe = true;
-
-	get_from_ip_addr(request, &from);
 
 	if (!coap_request_is_observe(request)) {
 		observe = false;
@@ -1051,8 +908,7 @@ static int obs_get(struct coap_resource *resource,
 		return -ENOMEM;
 	}
 
-	coap_observer_init(observer, request,
-			   (const struct sockaddr *)&from);
+	coap_observer_init(observer, request, from);
 
 	coap_register_observer(resource, observer);
 
@@ -1064,48 +920,37 @@ done:
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	NET_INFO("*******");
+	NET_INFO("type: %u code %u id %u", type, code, id);
+	NET_INFO("*******");
 
-	return send_notification_packet((const struct sockaddr *)&from,
-					observe ? resource->age : 0,
-					sizeof(struct sockaddr_in6), id,
-					token, tkl, true);
+	return send_notification_packet(from, observe ? resource->age : 0,
+					id, token, tkl, true);
 }
 
 static void obs_notify(struct coap_resource *resource,
 		       struct coap_observer *observer)
 {
-	send_notification_packet(&observer->addr, resource->age,
-				 sizeof(observer->addr), 0,
+	send_notification_packet(&observer->addr, resource->age, 0,
 				 observer->token, observer->tkl, false);
 }
 
 static int core_get(struct coap_resource *resource,
-		     struct coap_packet *request)
+		    struct coap_packet *request,
+		    const struct sockaddr *from)
 {
-	static const char dummy_str[] = "Just a test\n";
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	struct sockaddr_in6 from;
+	static const char dummy_str[] = "Just a test";
 	struct coap_packet response;
 	u8_t tkl;
 	u8_t token[8];
 	u16_t id;
 	int r;
 
-	get_from_ip_addr(request, &from);
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	pkt = net_pkt_get_tx(context, K_FOREVER);
-	frag = net_pkt_get_data(context, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
-			     tkl, (u8_t *)token,
+	r = coap_packet_init(&response, out_buf, sizeof(out_buf), 1,
+			     COAP_TYPE_ACK, tkl, (u8_t *)token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		return -EINVAL;
@@ -1113,20 +958,16 @@ static int core_get(struct coap_resource *resource,
 
 	r = coap_packet_append_payload_marker(&response);
 	if (r) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
 	r = coap_packet_append_payload(&response, (u8_t *)dummy_str,
 				       sizeof(dummy_str));
 	if (r < 0) {
-		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	return net_context_sendto(pkt, (const struct sockaddr *)&from,
-				  sizeof(struct sockaddr_in6),
-				  NULL, 0, NULL, NULL);
+	return send_coap_packet(response.fbuf.buf, response.fbuf.buf_len, from);
 }
 
 static const char * const test_path[] = { "test", NULL };
@@ -1194,9 +1035,6 @@ static struct coap_resource resources[] = {
 	{ .get = well_known_core_get,
 	  .path = COAP_WELL_KNOWN_CORE_PATH,
 	},
-	{ .get = well_known_core_get,
-	  .path = COAP_WELL_KNOWN_CORE_PATH,
-	},
 	{ .get = core_get,
 	  .path = core_1_path,
 	  .user_data = &((struct coap_core_metadata) {
@@ -1239,17 +1077,28 @@ static void udp_receive(struct net_context *context,
 	struct coap_pending *pending;
 	struct sockaddr_in6 from;
 	struct coap_option options[16] = { 0 };
-	u8_t opt_num = 16;
 	int r;
+	u16_t hdr_len = net_pkt_ip_hdr_len(pkt) + NET_UDPH_LEN +
+				net_pkt_ipv6_ext_len(pkt);
+	u16_t buf_len = net_pkt_get_len(pkt) - hdr_len;
+	u8_t opt_num = 16;
 
-	r = coap_packet_parse(&request, pkt, options, opt_num);
+	r = net_frag_linearize(in_buf, sizeof(in_buf), pkt, hdr_len, buf_len);
 	if (r < 0) {
-		NET_ERR("Invalid data received (%d)\n", r);
+		NET_ERR("Unable to linearize data (%d)\n", r);
 		net_pkt_unref(pkt);
 		return;
 	}
 
-	get_from_ip_addr(&request, &from);
+	r = coap_packet_parse(&request, in_buf, buf_len, 0, options, opt_num);
+	if (r < 0) {
+		NET_ERR("Invalid data received (%d)", r);
+		net_pkt_unref(pkt);
+		return;
+	}
+
+	/* save from address */
+	get_from_ip_addr(pkt, &from);
 	pending = coap_pending_received(&request, pendings,
 					NUM_PENDINGS);
 	if (!pending) {
@@ -1263,13 +1112,13 @@ static void udp_receive(struct net_context *context,
 		o = coap_find_observer_by_addr(observers, NUM_OBSERVERS,
 					       (struct sockaddr *)&from);
 		if (!o) {
-			NET_ERR("Observer not found\n");
+			NET_ERR("Observer not found");
 			goto not_found;
 		}
 
 		r = find_resouce_by_observer(resources, o);
 		if (!r) {
-			NET_ERR("Observer found but Resource not found\n");
+			NET_ERR("Observer found but Resource not found");
 			goto not_found;
 		}
 
@@ -1280,9 +1129,10 @@ static void udp_receive(struct net_context *context,
 	return;
 
 not_found:
-	r = coap_handle_request(&request, resources, options, opt_num);
+	r = coap_handle_request(&request, resources, options, opt_num,
+				(const struct sockaddr *) &from);
 	if (r < 0) {
-		NET_ERR("No handler for such request (%d)\n", r);
+		NET_ERR("No handler for such request (%d)", r);
 	}
 
 	net_pkt_unref(pkt);
@@ -1301,7 +1151,7 @@ static bool join_coap_multicast_group(void)
 
 	iface = net_if_get_default();
 	if (!iface) {
-		NET_ERR("Could not get te default interface\n");
+		NET_ERR("Could not get te default interface");
 		return false;
 	}
 
@@ -1324,7 +1174,7 @@ static bool join_coap_multicast_group(void)
 
 	mcast = net_if_ipv6_maddr_add(iface, &mcast_addr.sin6_addr);
 	if (!mcast) {
-		NET_ERR("Could not add multicast address to interface\n");
+		NET_ERR("Could not add multicast address to interface");
 		return false;
 	}
 
@@ -1334,23 +1184,14 @@ static bool join_coap_multicast_group(void)
 static void retransmit_request(struct k_work *work)
 {
 	struct coap_pending *pending;
-	int r;
 
 	pending = coap_pending_next_to_expire(pendings, NUM_PENDINGS);
 	if (!pending) {
 		return;
 	}
 
-	/* ref to avoid being freed by sendto() */
-	net_pkt_ref(pending->pkt);
-
-	r = net_context_sendto(pending->pkt, &pending->addr,
-			       sizeof(struct sockaddr_in6),
-			       NULL, 0, NULL, NULL);
-	if (r < 0) {
-		/* no error, keeps retry */
-		net_pkt_unref(pending->pkt);
-	}
+	/* ignore errors, keeps retrying */
+	send_coap_packet(pending->buf, pending->buf_len, &pending->addr);
 
 	if (!coap_pending_cycle(pending)) {
 		/* last retransmit, clear pending and unreference packet */
@@ -1359,7 +1200,6 @@ static void retransmit_request(struct k_work *work)
 	}
 
 	/* unref to balance ref made previously */
-	net_pkt_unref(pending->pkt);
 	k_delayed_work_submit(&retransmit_work, pending->timeout);
 }
 
@@ -1372,20 +1212,20 @@ void main(void)
 	int r;
 
 	if (!join_coap_multicast_group()) {
-		NET_ERR("Could not join CoAP multicast group\n");
+		NET_ERR("Could not join CoAP multicast group");
 		return;
 	}
 
 	r = net_context_get(PF_INET6, SOCK_DGRAM, IPPROTO_UDP, &context);
 	if (r) {
-		NET_ERR("Could not get an UDP context\n");
+		NET_ERR("Could not get an UDP context");
 		return;
 	}
 
 	r = net_context_bind(context, (struct sockaddr *) &any_addr,
 			     sizeof(any_addr));
 	if (r) {
-		NET_ERR("Could not bind the context\n");
+		NET_ERR("Could not bind the context");
 		return;
 	}
 
@@ -1396,7 +1236,7 @@ void main(void)
 
 	r = net_context_recv(context, udp_receive, 0, NULL);
 	if (r) {
-		NET_ERR("Could not receive in the context\n");
+		NET_ERR("Could not receive in the context");
 		return;
 	}
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +27,7 @@
 #include "net_private.h"
 
 #define MY_COAP_PORT 5683
+#define MAX_PACKET_SIZE 256
 
 static struct sockaddr_in6 peer_addr = {
 	.sin6_family = AF_INET6,
@@ -35,27 +37,24 @@ static struct net_context *context;
 
 static const char * const test_path[] = { "test", NULL };
 
+static u8_t in_buf[MAX_PACKET_SIZE];
+static u8_t out_buf[MAX_PACKET_SIZE];
+
 /* define semaphores */
 K_SEM_DEFINE(coap_sem, 0, 1);
 
-static int dump_payload(const struct coap_packet *response)
+static int dump_payload(struct coap_packet *response)
 {
-	struct net_buf *frag;
-	u16_t offset;
+	u8_t *buf;
 	u16_t len;
 
-	frag = coap_packet_get_payload(response, &offset, &len);
-	if (!frag && len == 0xffff) {
+	buf = coap_packet_get_payload(response, &len);
+	if (buf == NULL) {
 		NET_ERR("Invalid payload");
 		return -EINVAL;
 	}
 
-	while (frag) {
-		_hexdump(frag->data + offset, frag->len - offset, 0);
-		frag = frag->frags;
-		offset = 0;
-	}
-
+	_hexdump(buf, len, 0);
 	printk("\n");
 
 	k_sem_give(&coap_sem);
@@ -70,8 +69,17 @@ static void udp_receive(struct net_context *context,
 {
 	struct coap_packet response;
 	int r;
+	u16_t hdr_len = net_pkt_ip_hdr_len(pkt) + NET_UDPH_LEN +
+				net_pkt_ipv6_ext_len(pkt);
+	u16_t buf_len = net_pkt_get_len(pkt) - hdr_len;
 
-	r = coap_packet_parse(&response, pkt, NULL, 0);
+	r = net_frag_linearize(in_buf, sizeof(in_buf), pkt, hdr_len, buf_len);
+	if (r < 0) {
+		NET_ERR("net_frag_linearize error (%d)\n", r);
+		return;
+	}
+
+	r = coap_packet_parse(&response, in_buf, buf_len, 0, NULL, 0);
 	if (r < 0) {
 		NET_ERR("Invalid data received (%d)\n", r);
 		return;
@@ -89,15 +97,12 @@ static void send_coap_request(u8_t method)
 	const char * const *p;
 	int r;
 
-	pkt = net_pkt_get_tx(context, K_FOREVER);
-	frag = net_pkt_get_data(context, K_FOREVER);
-	net_pkt_frag_add(pkt, frag);
-
-	r = coap_packet_init(&request, pkt, 1, COAP_TYPE_CON,
-			     8, coap_next_token(),
+	r = coap_packet_init(&request, out_buf, sizeof(out_buf), 1,
+			     COAP_TYPE_CON, 8, coap_next_token(),
 			     method, coap_next_id());
 	if (r < 0) {
-		goto end;
+		NET_ERR("Unable to init coap packet");
+		return;
 	}
 
 	for (p = test_path; p && *p; p++) {
@@ -105,7 +110,7 @@ static void send_coap_request(u8_t method)
 					      *p, strlen(*p));
 		if (r < 0) {
 			NET_ERR("Unable add option to request");
-			goto end;
+			return;
 		}
 	}
 
@@ -118,27 +123,28 @@ static void send_coap_request(u8_t method)
 		r = coap_packet_append_payload_marker(&request);
 		if (r < 0) {
 			NET_ERR("Unable to append payload marker");
-			goto end;
+			return;
 		}
 
 		r = coap_packet_append_payload(&request, (u8_t *)payload,
 					       sizeof(payload) - 1);
 		if (r < 0) {
 			NET_ERR("Not able to append payload");
-			goto end;
+			return;
 		}
 	}
 
+	pkt = net_pkt_get_tx(context, K_FOREVER);
+	frag = net_pkt_get_data(context, K_FOREVER);
+	net_pkt_frag_add(pkt, frag);
+	net_pkt_append(pkt, request.fbuf.buf_len, request.fbuf.buf, K_FOREVER);
+
 	r = net_context_sendto(pkt, (struct sockaddr *) &peer_addr,
 			       sizeof(peer_addr), NULL, 0, NULL, NULL);
-	if (!r) {
-		return;
+	if (r < 0) {
+		NET_ERR("Error sending the packet (%d)", r);
+		net_pkt_unref(pkt);
 	}
-
-	NET_ERR("Error sending the packet (%d)", r);
-
-end:
-	net_pkt_unref(pkt);
 }
 
 static int init_app(void)
