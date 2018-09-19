@@ -18,6 +18,7 @@
 #include <kernel_structs.h>
 #include <inttypes.h>
 #include <exc_handle.h>
+#include <logging/log_ctrl.h>
 
 #ifdef CONFIG_PRINTK
 #include <misc/printk.h>
@@ -669,6 +670,8 @@ void _Fault(NANO_ESF *esf, u32_t exc_return)
 {
 	u32_t reason;
 	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
+
+	LOG_PANIC();
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 	if ((exc_return & EXC_RETURN_INDICATOR_PREFIX) !=

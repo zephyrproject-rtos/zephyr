@@ -17,6 +17,7 @@
 #include <toolchain.h>
 #include <arch/cpu.h>
 #include <misc/printk.h>
+#include <logging/log_ctrl.h>
 
 /**
  *
@@ -35,6 +36,8 @@
  */
 void _NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 {
+	LOG_PANIC();
+
 	switch (reason) {
 	case _NANO_ERR_HW_EXCEPTION:
 		break;
@@ -83,6 +86,7 @@ void _NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 
 FUNC_NORETURN void _arch_syscall_oops(void *ssf_ptr)
 {
+	LOG_PANIC();
 	_SysFatalErrorHandler(_NANO_ERR_KERNEL_OOPS, ssf_ptr);
 	CODE_UNREACHABLE;
 }
