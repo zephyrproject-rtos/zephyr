@@ -51,9 +51,9 @@ static ALWAYS_INLINE void riscv_machine_rearm_timer(void)
 
 	/*
 	 * Rearm timer to generate an interrupt after
-	 * sys_clock_hw_cycles_per_tick
+	 * sys_clock_hw_cycles_per_tick()
 	 */
-	rtc += sys_clock_hw_cycles_per_tick;
+	rtc += sys_clock_hw_cycles_per_tick();
 	mtimecmp->val_low = (u32_t)(rtc & 0xffffffff);
 	mtimecmp->val_high = (u32_t)((rtc >> 32) & 0xffffffff);
 

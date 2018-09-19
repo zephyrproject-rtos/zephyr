@@ -589,7 +589,7 @@ int _sys_clock_driver_init(struct device *device)
 	/*
 	 * This driver shall read the COUNTER_CLK_PERIOD value from the general
 	 * capabilities register rather than rely on a board.h provide macro
-	 * (or the global variable 'sys_clock_hw_cycles_per_tick')
+	 * (or the global variable 'sys_clock_hw_cycles_per_tick()')
 	 * to determine the frequency of clock applied to the HPET device.
 	 */
 
@@ -611,10 +611,9 @@ int _sys_clock_driver_init(struct device *device)
 	DBG("HPET: timer0: available interrupts mask 0x%x\n",
 	       (u32_t)(*_HPET_TIMER0_CONFIG_CAPS >> 32));
 
-	/* Initialize sys_clock_hw_cycles_per_tick/sec */
+	/* Initialize sys_clock_hw_cycles_per_sec */
 
-	sys_clock_hw_cycles_per_tick = counter_load_value;
-	z_clock_hw_cycles_per_sec = sys_clock_hw_cycles_per_tick *
+	z_clock_hw_cycles_per_sec = counter_load_value *
 		CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
 

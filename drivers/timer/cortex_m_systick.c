@@ -313,7 +313,7 @@ void _timer_int_handler(void *unused)
 	 * No tickless idle:
 	 * Update the total tick count and announce this tick to the kernel.
 	 */
-	clock_accumulated_count += sys_clock_hw_cycles_per_tick;
+	clock_accumulated_count += sys_clock_hw_cycles_per_tick();
 
 	_sys_clock_tick_announce();
 #endif /* CONFIG_TICKLESS_IDLE */
@@ -336,7 +336,7 @@ void _timer_int_handler(void *unused)
 #else /* !CONFIG_SYS_POWER_MANAGEMENT */
 
 	/* accumulate total counter value */
-	clock_accumulated_count += sys_clock_hw_cycles_per_tick;
+	clock_accumulated_count += sys_clock_hw_cycles_per_tick();
 
 	/*
 	 * one more tick has occurred -- don't need to do anything special since
@@ -709,9 +709,9 @@ int _sys_clock_driver_init(struct device *device)
 	 */
 
 	/* systick supports 24-bit H/W counter */
-	__ASSERT(sys_clock_hw_cycles_per_tick <= (1 << 24),
-		 "sys_clock_hw_cycles_per_tick too large");
-	sysTickReloadSet(sys_clock_hw_cycles_per_tick - 1);
+	__ASSERT(sys_clock_hw_cycles_per_tick() <= (1 << 24),
+		 "sys_clock_hw_cycles_per_tick() too large");
+	sysTickReloadSet(sys_clock_hw_cycles_per_tick() - 1);
 
 #ifdef CONFIG_TICKLESS_IDLE
 
