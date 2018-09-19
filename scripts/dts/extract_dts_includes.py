@@ -354,8 +354,13 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
             # Generate alias definition if parent has any alias
             if parent_address in aliases:
                 for i in aliases[parent_address]:
-                    node_alias = i + '_' + def_label
-                    aliases[node_address].append(node_alias)
+                    # Build an alias name that respects device tree specs
+                    node_name = node_compat + '-' + node_address.split('@')[-1]
+                    node_strip = node_name.replace('@','-').replace(',','-')
+                    node_alias = i + '-' + node_strip
+                    if node_alias not in aliases[node_address]:
+                        # Need to generate alias name for this node:
+                        aliases[node_address].append(node_alias)
 
             # Use parent label to generate label
             parent_label = get_node_label(parent_address)
