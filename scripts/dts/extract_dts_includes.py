@@ -19,7 +19,7 @@ from copy import deepcopy
 
 from devicetree import parse_file
 from extract.globals import *
-from extract.edts import edts
+from extract.edts import edts,edts_insert_chosen
 
 from extract.clocks import clocks
 from extract.gpios import gpios
@@ -550,10 +550,12 @@ def generate_node_definitions(yaml_list):
 
     for k, v in regs_config.items():
         if k in chosen:
+            edts_insert_chosen(k, chosen[k])
             reg.extract(chosen[k], None, None, v, 1024)
 
     for k, v in name_config.items():
         if k in chosen:
+            edts_insert_chosen(k, chosen[k])
             extract_string_prop(chosen[k], None, "label", v)
 
     node_address = chosen.get('zephyr,flash', 'dummy-flash')
