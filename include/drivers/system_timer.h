@@ -19,12 +19,6 @@
 extern "C" {
 #endif
 
-#ifdef _ASMLANGUAGE
-
-GTEXT(_timer_int_handler)
-
-#else /* _ASMLANGUAGE */
-
 #include <device.h>
 #include <stdbool.h>
 
@@ -83,7 +77,6 @@ static inline void _sys_clock_final_tick_announce(void)
 	_sys_idle_elapsed_ticks = 1;
 	_sys_clock_tick_announce();
 }
-#endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
 }
