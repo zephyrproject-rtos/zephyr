@@ -64,9 +64,11 @@ void log_thread_set(k_tid_t process_tid);
 int log_set_timestamp_func(timestamp_get_t timestamp_getter, u32_t freq);
 
 /**
- * @brief Switch logger subsystem to panic mode.
+ * @brief Switch the logger subsystem to the panic mode.
  *
- * @details On panic logger subsystem informs all backends about panic mode.
+ * Returns immediately if the logger is already in the panic mode.
+ *
+ * @details On panic the logger subsystem informs all backends about panic mode.
  *          Backends must switch to blocking mode or halt. All pending logs
  *          are flushed after switching to panic mode. In panic mode, all log
  *          messages must be processed in the context of the call.
