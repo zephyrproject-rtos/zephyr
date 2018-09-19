@@ -55,7 +55,7 @@ config FILE_SYSTEM_NFFS
 
 config FILE_SYSTEM_SHELL
 	bool "Enable file system shell"
-	depends on CONSOLE_SHELL
+	depends on SHELL
 	help
 	  This shell provides basic browsing of the contents of the
 	  file system.
