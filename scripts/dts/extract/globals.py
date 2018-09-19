@@ -93,21 +93,40 @@ def get_node_compats(node_address):
 def get_compat(node_address):
     compat = None
 
-    try:
-        if 'props' in reduced[node_address].keys():
-            compat = reduced[node_address]['props'].get('compatible')
+    compat = get_node_compat(node_address)
 
-        if compat == None:
-            compat = find_parent_prop(node_address, 'compatible')
-
-        if isinstance(compat, list):
-            compat = compat[0]
-
-    except:
-        pass
+    if compat == None:
+        compat = find_parent_prop(node_address, 'compatible')
 
     return compat
 
+def get_node_compat(node_address):
+    compat = None
+
+    try:
+        if 'props' in reduced[node_address].keys():
+            compat = reduced[node_address]['props'].get('compatible')
+    except:
+        pass
+
+    if isinstance(compat, list):
+        compat = compat[0]
+
+    return compat
+
+
+def get_parent_compat(node_address):
+    compat = None
+
+    try:
+        compat = find_parent_prop(node_address, 'compatible')
+    except:
+        pass
+
+    if isinstance(compat, list):
+        compat = compat[0]
+
+    return compat
 
 def get_chosen(root):
     if 'children' in root:
