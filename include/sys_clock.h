@@ -26,20 +26,30 @@ extern "C" {
 #include <toolchain.h>
 #include <zephyr/types.h>
 
+static inline int sys_clock_ticks_per_sec(void)
+{
 #ifdef CONFIG_TICKLESS_KERNEL
-#define sys_clock_ticks_per_sec \
-		(1000000 / (CONFIG_TICKLESS_KERNEL_TIME_UNIT_IN_MICRO_SECS))
+	return 1000000 / (CONFIG_TICKLESS_KERNEL_TIME_UNIT_IN_MICRO_SECS);
+#else
+	return CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+#endif
+}
+
+#ifdef CONFIG_TICKLESS_KERNEL
 extern int _sys_clock_always_on;
 extern void _enable_sys_clock(void);
-#else
-#define sys_clock_ticks_per_sec CONFIG_SYS_CLOCK_TICKS_PER_SEC
 #endif
 
+static inline int sys_clock_hw_cycles_per_sec(void)
+{
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-extern int sys_clock_hw_cycles_per_sec;
+	extern int z_clock_hw_cycles_per_sec;
+
+	return z_clock_hw_cycles_per_sec;
 #else
-#define sys_clock_hw_cycles_per_sec CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+	return CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 #endif
+}
 
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && \
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0)
@@ -74,9 +84,9 @@ extern int sys_clock_hw_cycles_per_sec;
  */
 
 #if !defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-#if	(sys_clock_hw_cycles_per_sec % sys_clock_ticks_per_sec) != 0
+#if	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SEC) != 0
 	#define _NEED_PRECISE_TICK_MS_CONVERSION
-#elif	(MSEC_PER_SEC % sys_clock_ticks_per_sec) != 0
+#elif	(MSEC_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SEC) != 0
 	#define _NON_OPTIMIZED_TICKS_PER_SEC
 #endif
 #endif
@@ -94,12 +104,12 @@ static ALWAYS_INLINE s32_t _ms_to_ticks(s32_t ms)
 #ifdef _NEED_PRECISE_TICK_MS_CONVERSION
 	/* use 64-bit math to keep precision */
 	return (s32_t)ceiling_fraction(
-		(s64_t)ms * sys_clock_hw_cycles_per_sec,
-		((s64_t)MSEC_PER_SEC * sys_clock_hw_cycles_per_sec) /
-		sys_clock_ticks_per_sec);
+		(s64_t)ms * sys_clock_hw_cycles_per_sec(),
+		((s64_t)MSEC_PER_SEC * sys_clock_hw_cycles_per_sec()) /
+		sys_clock_ticks_per_sec());
 #else
 	/* simple division keeps precision */
-	s32_t ms_per_tick = MSEC_PER_SEC / sys_clock_ticks_per_sec;
+	s32_t ms_per_tick = MSEC_PER_SEC / sys_clock_ticks_per_sec();
 
 	return (s32_t)ceiling_fraction(ms, ms_per_tick);
 #endif
@@ -116,10 +126,10 @@ static inline s64_t __ticks_to_ms(s64_t ticks)
 
 #ifdef _NEED_PRECISE_TICK_MS_CONVERSION
 	/* use 64-bit math to keep precision */
-	return (u64_t)ticks * MSEC_PER_SEC / sys_clock_ticks_per_sec;
+	return (u64_t)ticks * MSEC_PER_SEC / sys_clock_ticks_per_sec();
 #else
 	/* simple multiplication keeps precision */
-	u32_t ms_per_tick = MSEC_PER_SEC / sys_clock_ticks_per_sec;
+	u32_t ms_per_tick = MSEC_PER_SEC / sys_clock_ticks_per_sec();
 
 	return (u64_t)ticks * ms_per_tick;
 #endif
@@ -155,7 +165,7 @@ extern int sys_clock_hw_cycles_per_tick;
 
 /* SYS_CLOCK_HW_CYCLES_TO_NS64 converts CPU clock cycles to nanoseconds */
 #define SYS_CLOCK_HW_CYCLES_TO_NS64(X) \
-	(((u64_t)(X) * NSEC_PER_SEC) / sys_clock_hw_cycles_per_sec)
+	(((u64_t)(X) * NSEC_PER_SEC) / sys_clock_hw_cycles_per_sec())
 
 /*
  * SYS_CLOCK_HW_CYCLES_TO_NS_AVG converts CPU clock cycles to nanoseconds
@@ -206,11 +216,11 @@ extern s32_t _timeout_remaining_get(struct _timeout *timeout);
 /*
  * Number of ticks for x seconds. NOTE: With MSEC() or USEC(),
  * since it does an integer division, x must be greater or equal to
- * 1000/sys_clock_ticks_per_sec to get a non-zero value.
+ * 1000/sys_clock_ticks_per_sec() to get a non-zero value.
  * You may want to raise CONFIG_SYS_CLOCK_TICKS_PER_SEC depending on
  * your requirements.
  */
-#define SECONDS(x)	((x) * sys_clock_ticks_per_sec)
+#define SECONDS(x)	((x) * sys_clock_ticks_per_sec())
 #define MSEC(x)		(SECONDS(x) / MSEC_PER_SEC)
 #define USEC(x)		(MSEC(x) / USEC_PER_MSEC)
 

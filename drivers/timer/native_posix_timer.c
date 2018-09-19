@@ -103,7 +103,7 @@ int _sys_clock_driver_init(struct device *device)
 {
 	ARG_UNUSED(device);
 
-	tick_period = 1000000ul / sys_clock_ticks_per_sec;
+	tick_period = 1000000ul / sys_clock_ticks_per_sec();
 
 	hwtimer_enable(tick_period);
 
