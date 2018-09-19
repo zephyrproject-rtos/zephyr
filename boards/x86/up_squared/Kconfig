@@ -1,0 +1,28 @@
+# UP Squared board options
+
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_UP_SQUARED
+
+comment "UP Squared Board Options"
+
+choice
+prompt "UP Squared SoC variant"
+default BOARD_UP_SQUARED_ATOM
+
+config BOARD_UP_SQUARED_ATOM
+	bool "Atom E3940"
+
+config BOARD_UP_SQUARED_CELERON
+	bool "Celeron N3350"
+
+config BOARD_UP_SQUARED_PENTIUM
+	bool "Pentium N4200"
+
+endchoice
+
+endif # BOARD_UP_SQUARED
