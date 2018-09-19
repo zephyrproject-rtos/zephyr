@@ -37,6 +37,7 @@ void app_calc_size(void)
 
 	SYS_DLIST_FOR_EACH_NODE_SAFE(&app_mem_list, node, next_node)
 	{
+#ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 		if (sys_dlist_is_tail(&app_mem_list, node)) {
 			struct app_region *region =
 				CONTAINER_OF(node, struct app_region, lnode);
@@ -67,6 +68,21 @@ void app_calc_size(void)
 			region->partition[0].size =
 				region->dmem_size + region->bmem_size;
 		}
+
+#else
+		/* For power of 2 MPUs linker provides support to help us
+		 * calculate the region sizes.
+		 */
+		struct app_region *region =
+				CONTAINER_OF(node, struct app_region, lnode);
+
+		region->dmem_size = (char *)region->bmem_start -
+			(char *)region->dmem_start;
+		region->bmem_size = (char *)region->smem_size -
+			(char *)region->dmem_size;
+
+		region->partition[0].size = (s32_t)region->smem_size;
+#endif	/* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
 	}
 }
 
