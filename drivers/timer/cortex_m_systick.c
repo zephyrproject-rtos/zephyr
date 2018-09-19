@@ -242,7 +242,7 @@ void _timer_int_handler(void *unused)
 #if defined(CONFIG_TICKLESS_KERNEL)
 	if (!idle_original_ticks) {
 		if (_sys_clock_always_on) {
-			_sys_clock_tick_count = _get_elapsed_clock_time();
+			z_tick_set(_get_elapsed_clock_time());
 			/* clear overflow tracking flag as it is accounted */
 			timer_overflow = 0;
 			sysTickStop();
@@ -272,7 +272,7 @@ void _timer_int_handler(void *unused)
 
 	/* _sys_clock_tick_announce() could cause new programming */
 	if (!idle_original_ticks && _sys_clock_always_on) {
-		_sys_clock_tick_count = _get_elapsed_clock_time();
+		z_tick_set(_get_elapsed_clock_time());
 		/* clear overflow tracking flag as it is accounted */
 		timer_overflow = 0;
 		sysTickStop();
@@ -389,7 +389,7 @@ void _set_time(u32_t time)
 
 	idle_original_ticks = time > max_system_ticks ? max_system_ticks : time;
 
-	_sys_clock_tick_count = _get_elapsed_clock_time();
+	z_tick_set(_get_elapsed_clock_time());
 
 	/* clear overflow tracking flag as it is accounted */
 	timer_overflow = 0;
@@ -415,14 +415,14 @@ static inline u64_t get_elapsed_count(void)
 	if ((SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) || (timer_overflow)) {
 		elapsed = SysTick->LOAD;
 		/* Keep track of overflow till it is accounted in
-		 * _sys_clock_tick_count as COUNTFLAG bit is clear on read
+		 * z_tick_get() as COUNTFLAG bit is clear on read
 		 */
 		timer_overflow = 1;
 	} else {
 		elapsed = (SysTick->LOAD - SysTick->VAL);
 	}
 
-	elapsed += (_sys_clock_tick_count * default_load_value);
+	elapsed += (z_tick_get() * default_load_value);
 
 	return elapsed;
 }
@@ -604,7 +604,7 @@ void _timer_idle_exit(void)
 	if (idle_mode == IDLE_TICKLESS) {
 		idle_mode = IDLE_NOT_TICKLESS;
 		if (!idle_original_ticks && _sys_clock_always_on) {
-			_sys_clock_tick_count = _get_elapsed_clock_time();
+			z_tick_set(_get_elapsed_clock_time());
 			timer_overflow = 0;
 			sysTickReloadSet(max_load_value);
 			sysTickStart();

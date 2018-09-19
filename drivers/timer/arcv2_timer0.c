@@ -196,7 +196,7 @@ void _timer_int_handler(void *unused)
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (!programmed_ticks) {
 		if (_sys_clock_always_on) {
-			_sys_clock_tick_count = _get_elapsed_clock_time();
+			z_tick_set(_get_elapsed_clock_time());
 			program_max_cycles();
 		}
 		return;
@@ -216,7 +216,7 @@ void _timer_int_handler(void *unused)
 
 	/* _sys_clock_tick_announce() could cause new programming */
 	if (!programmed_ticks && _sys_clock_always_on) {
-		_sys_clock_tick_count = _get_elapsed_clock_time();
+		z_tick_set(_get_elapsed_clock_time());
 		program_max_cycles();
 	}
 #else
@@ -280,7 +280,7 @@ void _set_time(u32_t time)
 
 	programmed_ticks = time > max_system_ticks ? max_system_ticks : time;
 
-	_sys_clock_tick_count = _get_elapsed_clock_time();
+	z_tick_set(_get_elapsed_clock_time());
 
 	timer0_limit_register_set(programmed_ticks * cycles_per_tick);
 	timer0_count_register_set(0);
@@ -306,7 +306,7 @@ static inline u64_t get_elapsed_count(void)
 		elapsed = timer0_count_register_get();
 	}
 
-	elapsed += _sys_clock_tick_count * cycles_per_tick;
+	elapsed += z_tick_get() * cycles_per_tick;
 
 	return elapsed;
 }

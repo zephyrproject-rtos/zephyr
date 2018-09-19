@@ -272,7 +272,7 @@ void _timer_int_handler(void *unused)
 	/* If timer not programmed or already consumed exit */
 	if (!programmed_ticks) {
 		if (_sys_clock_always_on) {
-			_sys_clock_tick_count = _get_elapsed_clock_time();
+			z_tick_set(_get_elapsed_clock_time());
 			program_max_cycles();
 		}
 		return;
@@ -301,7 +301,7 @@ void _timer_int_handler(void *unused)
 
 	/* _sys_clock_tick_announce() could cause new programming */
 	if (!programmed_ticks && _sys_clock_always_on) {
-		_sys_clock_tick_count = _get_elapsed_clock_time();
+		z_tick_set(_get_elapsed_clock_time());
 		program_max_cycles();
 	}
 #else
@@ -354,7 +354,7 @@ void _set_time(u32_t time)
 
 	programmed_ticks = time;
 
-	_sys_clock_tick_count = _get_elapsed_clock_time();
+	z_tick_set(_get_elapsed_clock_time());
 
 	stale_irq_check = 1;
 
@@ -375,7 +375,7 @@ u64_t _get_elapsed_clock_time(void)
 {
 	u64_t elapsed;
 
-	elapsed = _sys_clock_tick_count;
+	elapsed = z_tick_get();
 	elapsed +=  ((s64_t)(_hpetMainCounterAtomic() -
 			counter_last_value) / counter_load_value);
 
