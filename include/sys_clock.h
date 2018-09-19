@@ -26,11 +26,6 @@ extern "C" {
 #include <toolchain.h>
 #include <zephyr/types.h>
 
-static inline int sys_clock_ticks_per_sec(void)
-{
-	return CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-}
-
 #ifdef CONFIG_TICKLESS_KERNEL
 extern int _sys_clock_always_on;
 extern void _enable_sys_clock(void);
@@ -102,10 +97,10 @@ static ALWAYS_INLINE s32_t _ms_to_ticks(s32_t ms)
 	return (s32_t)ceiling_fraction(
 		(s64_t)ms * sys_clock_hw_cycles_per_sec(),
 		((s64_t)MSEC_PER_SEC * sys_clock_hw_cycles_per_sec()) /
-		sys_clock_ticks_per_sec());
+		CONFIG_SYS_CLOCK_TICKS_PER_SEC);
 #else
 	/* simple division keeps precision */
-	s32_t ms_per_tick = MSEC_PER_SEC / sys_clock_ticks_per_sec();
+	s32_t ms_per_tick = MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
 	return (s32_t)ceiling_fraction(ms, ms_per_tick);
 #endif
@@ -122,10 +117,10 @@ static inline s64_t __ticks_to_ms(s64_t ticks)
 
 #ifdef _NEED_PRECISE_TICK_MS_CONVERSION
 	/* use 64-bit math to keep precision */
-	return (u64_t)ticks * MSEC_PER_SEC / sys_clock_ticks_per_sec();
+	return (u64_t)ticks * MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 #else
 	/* simple multiplication keeps precision */
-	u32_t ms_per_tick = MSEC_PER_SEC / sys_clock_ticks_per_sec();
+	u32_t ms_per_tick = MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
 	return (u64_t)ticks * ms_per_tick;
 #endif
@@ -212,11 +207,11 @@ extern s32_t _timeout_remaining_get(struct _timeout *timeout);
 /*
  * Number of ticks for x seconds. NOTE: With MSEC() or USEC(),
  * since it does an integer division, x must be greater or equal to
- * 1000/sys_clock_ticks_per_sec() to get a non-zero value.
+ * 1000/CONFIG_SYS_CLOCK_TICKS_PER_SEC to get a non-zero value.
  * You may want to raise CONFIG_SYS_CLOCK_TICKS_PER_SEC depending on
  * your requirements.
  */
-#define SECONDS(x)	((x) * sys_clock_ticks_per_sec())
+#define SECONDS(x)	((x) * CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #define MSEC(x)		(SECONDS(x) / MSEC_PER_SEC)
 #define USEC(x)		(MSEC(x) / USEC_PER_MSEC)
 
