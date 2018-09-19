@@ -13,6 +13,8 @@ along with the following devices:
 
 * Serial Ports in Polling and Interrupt Driven Modes
 
+* GPIO
+
 * I2C
 
 .. note::
@@ -44,6 +46,10 @@ This board supports the following hardware features:
 
 * Serial Ports in Polling and Interrupt Driven Modes
 
+* GPIO
+
+* I2C
+
 +-----------+------------+-----------------------+-----------------+
 | Interface | Controller | Driver/Component      | PCI Enumeration |
 +===========+============+=======================+=================+
@@ -53,6 +59,8 @@ This board supports the following hardware features:
 +-----------+------------+-----------------------+-----------------+
 | UART      | on-chip    | serial port-polling;  | Supported       |
 |           |            | serial port-interrupt |                 |
++-----------+------------+-----------------------+-----------------+
+| GPIO      | on-chip    | GPIO controller       | Not Supported   |
 +-----------+------------+-----------------------+-----------------+
 | I2C       | on-chip    | I2C controller        | Supported       |
 +-----------+------------+-----------------------+-----------------+
@@ -88,6 +96,8 @@ Advanced Programmable Interrupt Controller (APIC) interrupt redirection table.
 | 5   | UART_1  | serial port when used in |
 |     |         | interrupt mode           |
 +-----+---------+--------------------------+
+| 14  | GPIO    | GPIO APL driver          |
++-----+---------+--------------------------+
 | 27  | I2C_0   | I2C DW driver            |
 +-----+---------+--------------------------+
 | 28  | I2C_1   | I2C DW driver            |
@@ -110,6 +120,19 @@ HPET System Clock Support
 
 The SoC uses HPET timing with legacy-free timer support. The board
 configuration uses HPET as a system clock timer.
+
+GPIO
+----
+
+GPIOs are exposed through the HAT header, and can be referred using
+predefined macros such as ``UP2_HAT_PIN3``. The physical pins are
+connected to the on-board FPGA acting as level shifter. Therefore,
+to actually utilize these GPIO pins, the function of the pins and
+directions (input/output) must be set in the BIOS. This can be
+accomplished in BIOS, under menu ``Advanced``, and option
+``HAT Configurations``. When a corresponding pin is set to act as
+GPIO, there is an option to set the direction of the pin. This needs
+to be set accordingly for the GPIO to function properly.
 
 Connections and IOs
 ===================
