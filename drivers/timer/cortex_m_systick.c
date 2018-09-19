@@ -57,9 +57,7 @@ extern void _NanoIdleValClear(void);
 extern void _sys_power_save_idle_exit(s32_t ticks);
 #endif
 
-#ifdef CONFIG_TICKLESS_IDLE
-extern s32_t _sys_idle_elapsed_ticks;
-#endif
+static s32_t _sys_idle_elapsed_ticks = 1;
 
 #ifdef CONFIG_TICKLESS_IDLE
 static u32_t __noinit default_load_value; /* default count */
@@ -268,9 +266,9 @@ void _timer_int_handler(void *unused)
 	 */
 	idle_original_ticks = 0;
 
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 
-	/* _sys_clock_tick_announce() could cause new programming */
+	/* z_clock_announce(_sys_idle_elapsed_ticks) could cause new programming */
 	if (!idle_original_ticks && _sys_clock_always_on) {
 		z_tick_set(_get_elapsed_clock_time());
 		/* clear overflow tracking flag as it is accounted */
@@ -300,9 +298,10 @@ void _timer_int_handler(void *unused)
 		idle_mode = IDLE_NOT_TICKLESS;
 		_sys_idle_elapsed_ticks =
 			idle_original_ticks + 1; /* actual # of idle ticks */
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 	} else {
-		_sys_clock_final_tick_announce();
+		_sys_idle_elapsed_ticks = 1;
+		z_clock_announce(_sys_idle_elapsed_ticks);
 	}
 
 	/* accumulate total counter value */
@@ -315,7 +314,7 @@ void _timer_int_handler(void *unused)
 	 */
 	clock_accumulated_count += sys_clock_hw_cycles_per_tick();
 
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 #endif /* CONFIG_TICKLESS_IDLE */
 
 	numIdleTicks = _NanoIdleValGet(); /* get # of idle ticks requested */
@@ -342,7 +341,7 @@ void _timer_int_handler(void *unused)
 	 * one more tick has occurred -- don't need to do anything special since
 	 * timer is already configured to interrupt on the following tick
 	 */
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
@@ -644,7 +643,7 @@ void _timer_idle_exit(void)
 		 * for it.
 		 */
 		_sys_idle_elapsed_ticks = idle_original_ticks - 1;
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 	} else {
 		u32_t elapsed;   /* elapsed "counter time" */
 		u32_t remaining; /* remaining "counter time" */
@@ -674,7 +673,7 @@ void _timer_idle_exit(void)
 		_sys_idle_elapsed_ticks = elapsed / default_load_value;
 
 		if (_sys_idle_elapsed_ticks) {
-			_sys_clock_tick_announce();
+			z_clock_announce(_sys_idle_elapsed_ticks);
 		}
 	}
 
