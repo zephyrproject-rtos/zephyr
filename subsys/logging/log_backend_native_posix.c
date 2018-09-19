@@ -45,7 +45,7 @@ static void preprint_char(int c)
 
 static u8_t buf[_STDOUT_BUF_SIZE];
 
-int char_out(u8_t *data, size_t length, void *ctx)
+static int char_out(u8_t *data, size_t length, void *ctx)
 {
 	for (size_t i = 0; i < length; i++) {
 		preprint_char(data[i]);
