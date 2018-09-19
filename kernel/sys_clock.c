@@ -30,9 +30,6 @@ int z_clock_hw_cycles_per_sec;
 #endif
 #endif
 
-/* updated by timer driver for tickless, stays at 1 for non-tickless */
-s32_t _sys_idle_elapsed_ticks = 1;
-
 /* Note that this value is 64 bits, and thus non-atomic on almost all
  * Zephyr archtictures.  And of course it's routinely updated inside
  * timer interrupts.  Access to it must be locked.
@@ -284,7 +281,7 @@ static void handle_time_slicing(s32_t ticks)
 
 /**
  *
- * @brief Announce a tick to the kernel
+ * @brief Announce ticks to the kernel
  *
  * This function is only to be called by the system clock timer driver when a
  * tick is to be announced to the kernel. It takes care of dequeuing the
@@ -292,7 +289,7 @@ static void handle_time_slicing(s32_t ticks)
  *
  * @return N/A
  */
-void _nano_sys_clock_tick_announce(s32_t ticks)
+void z_clock_announce(s32_t ticks)
 {
 #ifdef CONFIG_SMP
 	/* sys_clock timekeeping happens only on the main CPU */

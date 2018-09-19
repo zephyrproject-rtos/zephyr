@@ -33,7 +33,7 @@ static void pulpino_timer_irq_handler(void *unused)
 
 	accumulated_cycle_count += sys_clock_hw_cycles_per_tick();
 
-	_sys_clock_tick_announce();
+	z_clock_announce(1);
 }
 
 #ifdef CONFIG_TICKLESS_IDLE

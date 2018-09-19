@@ -22,6 +22,7 @@
 
 static u64_t tick_period; /* System tick period in number of hw cycles */
 static s64_t silent_ticks;
+static s32_t _sys_idle_elapsed_ticks = 1;
 
 /**
  * Return the current HW cycle counter
@@ -77,7 +78,7 @@ void _timer_idle_exit(void)
 	silent_ticks -= hwtimer_get_pending_silent_ticks();
 	if (silent_ticks > 0) {
 		_sys_idle_elapsed_ticks = silent_ticks;
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 	}
 	silent_ticks = 0;
 	hwtimer_set_silent_ticks(0);
@@ -93,7 +94,7 @@ static void sp_timer_isr(void *arg)
 	ARG_UNUSED(arg);
 	_sys_idle_elapsed_ticks = silent_ticks + 1;
 	silent_ticks = 0;
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 }
 
 /*

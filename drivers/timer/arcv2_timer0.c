@@ -67,11 +67,11 @@
 /* running total of timer count */
 static u32_t __noinit cycles_per_tick;
 static volatile u32_t accumulated_cycle_count;
+static s32_t _sys_idle_elapsed_ticks = 1;
 
 #ifdef CONFIG_TICKLESS_IDLE
 static u32_t __noinit max_system_ticks;
 static u32_t __noinit programmed_ticks;
-extern s32_t _sys_idle_elapsed_ticks;
 #ifndef CONFIG_TICKLESS_KERNEL
 static u32_t __noinit programmed_limit;
 static int straddled_tick_on_idle_enter;
@@ -212,9 +212,9 @@ void _timer_int_handler(void *unused)
 	programmed_ticks = 0;
 	timer_expired = 1;
 
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 
-	/* _sys_clock_tick_announce() could cause new programming */
+	/* z_clock_announce(_sys_idle_elapsed_ticks) could cause new programming */
 	if (!programmed_ticks && _sys_clock_always_on) {
 		z_tick_set(_get_elapsed_clock_time());
 		program_max_cycles();
@@ -227,9 +227,10 @@ void _timer_int_handler(void *unused)
 		      timer_count <= (cycles_per_tick - 1),
 		      "timer_count: %d, limit %d\n", timer_count, cycles_per_tick - 1);
 
-	_sys_clock_final_tick_announce();
+	_sys_idle_elapsed_ticks = 1;
+	z_clock_announce(_sys_idle_elapsed_ticks);
 #else
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 #endif
 
 	update_accumulated_count();
@@ -433,7 +434,7 @@ void _timer_idle_exit(void)
 
 		_sys_idle_elapsed_ticks = programmed_ticks - 1;
 		update_accumulated_count();
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 
 		__ASSERT_EVAL({},
 			      u32_t timer_count = timer0_count_register_get(),
@@ -449,7 +450,7 @@ void _timer_idle_exit(void)
 	_sys_idle_elapsed_ticks = current_count / cycles_per_tick;
 	if (_sys_idle_elapsed_ticks > 0) {
 		update_accumulated_count();
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 	}
 
 	/*
