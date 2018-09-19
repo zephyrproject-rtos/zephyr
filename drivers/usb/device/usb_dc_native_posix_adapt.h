@@ -49,6 +49,10 @@ struct devlist_device {
 #define USBIP_RET_SUBMIT	0x0003
 #define USBIP_RET_UNLINK	0x0004
 
+/* USBIP direction */
+#define USBIP_DIR_OUT		0x00
+#define USBIP_DIR_IN		0x01
+
 struct usbip_header_common {
 	u32_t command;
 	u32_t seqnum;
@@ -77,6 +81,8 @@ struct usbip_submit_rsp {
 	s32_t start_frame;
 	s32_t number_of_packets;
 	s32_t error_count;
+
+	u64_t setup;
 } __packed;
 
 struct usbip_header {
