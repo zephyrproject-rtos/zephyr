@@ -299,6 +299,10 @@ void log_panic(void)
 {
 	struct log_backend const *backend;
 
+	if (panic_mode) {
+		return;
+	}
+
 	for (int i = 0; i < log_backend_count_get(); i++) {
 		backend = log_backend_get(i);
 
