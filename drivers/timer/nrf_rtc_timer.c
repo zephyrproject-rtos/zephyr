@@ -42,10 +42,12 @@
  */
 static u32_t rtc_past;
 
+static s32_t _sys_idle_elapsed_ticks = 1;
+
 #ifdef CONFIG_TICKLESS_IDLE
 /*
  * Holds the maximum sys ticks the kernel expects to see in the next
- * _sys_clock_tick_announce().
+ * z_clock_announce(_sys_idle_elapsed_ticks).
  */
 static u32_t expected_sys_ticks;
 #endif /* CONFIG_TICKLESS_IDLE */
@@ -145,7 +147,7 @@ static void rtc_announce_set_next(void)
 			   ) & RTC_MASK;
 
 		_sys_idle_elapsed_ticks = sys_elapsed;
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 	}
 
 	/* Set the RTC to the next sys tick */
@@ -431,7 +433,7 @@ void _timer_idle_exit(void)
 	rtc_announce_set_next();
 
 	/* After exiting idle, the kernel no longer expects more than one sys
-	 * ticks to have passed when _sys_clock_tick_announce() is called.
+	 * ticks to have passed when z_clock_announce(_sys_idle_elapsed_ticks) is called.
 	 */
 	expected_sys_ticks = 1;
 #endif
@@ -487,9 +489,9 @@ void rtc1_nrf5_isr(void *arg)
 	 */
 	expected_sys_ticks = 0;
 	/* Anounce elapsed of _sys_idle_elapsed_ticks systicks*/
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 
-	/* _sys_clock_tick_announce() could cause new programming */
+	/* z_clock_announce(_sys_idle_elapsed_ticks) could cause new programming */
 	if (!expected_sys_ticks && _sys_clock_always_on) {
 		program_max_cycles();
 	}

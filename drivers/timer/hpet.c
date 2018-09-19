@@ -174,11 +174,11 @@ extern u32_t _hw_irq_to_c_handler_latency;
 #define DBG(...)
 #endif
 
+static s32_t _sys_idle_elapsed_ticks = 1;
+
 #ifdef CONFIG_TICKLESS_IDLE
 
 /* additional globals, locals, and forward declarations */
-
-extern s32_t _sys_idle_elapsed_ticks;
 
 /* main counter units per system tick */
 static u32_t __noinit counter_load_value;
@@ -262,7 +262,7 @@ void _timer_int_handler(void *unused)
 	 * timer is already configured to interrupt on the following tick
 	 */
 
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 
 #else
 
@@ -297,9 +297,9 @@ void _timer_int_handler(void *unused)
 	 * announce already consumed elapsed time
 	 */
 	programmed_ticks = 0;
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 
-	/* _sys_clock_tick_announce() could cause new programming */
+	/* z_clock_announce(_sys_idle_elapsed_ticks) could cause new programming */
 	if (!programmed_ticks && _sys_clock_always_on) {
 		z_tick_set(_get_elapsed_clock_time());
 		program_max_cycles();
@@ -309,7 +309,8 @@ void _timer_int_handler(void *unused)
 	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
 	*_HPET_TIMER0_COMPARATOR = counter_last_value + counter_load_value;
 	programmed_ticks = 1;
-	_sys_clock_final_tick_announce();
+	_sys_idle_elapsed_ticks = 1;
+	z_clock_announce(_sys_idle_elapsed_ticks);
 #endif
 #endif /* !CONFIG_TICKLESS_IDLE */
 
@@ -481,7 +482,7 @@ void _timer_idle_exit(void)
 		 * that the timer ISR will execute first before the tick event
 		 * is serviced.
 		 */
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 
 		/* timer interrupt handler reprograms the timer for the next
 		 * tick
@@ -532,7 +533,7 @@ void _timer_idle_exit(void)
 
 	if (_sys_idle_elapsed_ticks) {
 		/* Announce elapsed ticks to the kernel */
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 	}
 
 	/*

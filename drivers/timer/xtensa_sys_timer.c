@@ -96,14 +96,14 @@
 #define MIN_TIMER_PROG_DELAY 50   /* TODO: Update this value */
 #endif /* CONFIG_XTENSA_INTERNAL_TIMER || (CONFIG_XTENSA_TIMER_IRQ < 0) */
 
+static s32_t _sys_idle_elapsed_ticks = 1;
+
 #ifdef CONFIG_TICKLESS_IDLE
 #define TIMER_MODE_PERIODIC 0 /* normal running mode */
 #define TIMER_MODE_ONE_SHOT 1 /* emulated, since sysTick has 1 mode */
 
 #define IDLE_NOT_TICKLESS 0 /* non-tickless idle mode */
 #define IDLE_TICKLESS 1     /* tickless idle  mode */
-
-extern s32_t _sys_idle_elapsed_ticks;
 
 static u32_t __noinit cycles_per_tick;
 static u32_t __noinit max_system_ticks;
@@ -409,7 +409,7 @@ void _timer_idle_exit(void)
 		SET_TIMER_FIRE_TIME(F);
 	}
 	if (_sys_idle_elapsed_ticks) {
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 	}
 
 	/* Exit timer idle mode */
@@ -527,7 +527,7 @@ void _timer_int_handler(void *params)
 	_sys_idle_elapsed_ticks = idle_original_ticks;
 	idle_original_ticks = 0;
 	/* Anounce elapsed of _sys_idle_elapsed_ticks systicks */
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 
 	/* Program timer incase it is not Prgrammed */
 	if (!idle_original_ticks) {
@@ -536,7 +536,8 @@ void _timer_int_handler(void *params)
 	}
 #else
 	/* Announce the tick event to the kernel. */
-	_sys_clock_final_tick_announce();
+	_sys_idle_elapsed_ticks = 1;
+	z_clock_announce(_sys_idle_elapsed_ticks);
 #endif	/* CONFIG_TICKLESS_KERNEL */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING

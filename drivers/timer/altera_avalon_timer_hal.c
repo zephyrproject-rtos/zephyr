@@ -15,6 +15,8 @@
 
 static u32_t accumulated_cycle_count;
 
+static s32_t _sys_idle_elapsed_ticks = 1;
+
 static void timer_irq_handler(void *unused)
 {
 	ARG_UNUSED(unused);
@@ -29,7 +31,7 @@ static void timer_irq_handler(void *unused)
 	/* Clear the interrupt */
 	alt_handle_irq((void *)TIMER_0_BASE, TIMER_0_IRQ);
 
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	extern void read_timer_end_of_tick_handler(void);

@@ -69,7 +69,7 @@ static void riscv_machine_timer_irq_handler(void *unused)
 	read_timer_start_of_tick_handler();
 #endif
 
-	_sys_clock_tick_announce();
+	z_clock_announce(1);
 
 	/* Rearm timer */
 	riscv_machine_rearm_timer();

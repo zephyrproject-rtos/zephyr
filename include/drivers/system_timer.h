@@ -38,7 +38,17 @@ extern void _timer_idle_exit(void);
 #define _timer_idle_exit() do { } while (false)
 #endif /* CONFIG_TICKLESS_IDLE */
 
-extern void _nano_sys_clock_tick_announce(s32_t ticks);
+/**
+ * @brief Announce time progress to the kernel
+ *
+ * Informs the kernel that the specified number of ticks have elapsed
+ * since the last call to z_clock_announce() (or system startup for
+ * the first call).
+ *
+ * @param ticks Elapsed time, in ticks
+ */
+extern void z_clock_announce(s32_t ticks);
+
 #ifdef CONFIG_TICKLESS_KERNEL
 extern void _set_time(u32_t time);
 extern u32_t _get_program_time(void);
@@ -58,25 +68,6 @@ extern int sys_clock_device_ctrl(struct device *device,
 #if !defined(CONFIG_LOAPIC_TIMER) && !defined(CONFIG_ARCV2_TIMER)
 #define sys_clock_device_ctrl device_pm_control_nop
 #endif
-
-extern s32_t _sys_idle_elapsed_ticks;
-#define _sys_clock_tick_announce() \
-		_nano_sys_clock_tick_announce(_sys_idle_elapsed_ticks)
-
-/**
- * @brief Account for the tick due to the timer interrupt
- *
- * @return N/A
- */
-static inline void _sys_clock_final_tick_announce(void)
-{
-	/*
-	 * Ticks are both announced and immediately processed at interrupt
-	 * level. Thus there is only one tick left to announce (and process).
-	 */
-	_sys_idle_elapsed_ticks = 1;
-	_sys_clock_tick_announce();
-}
 
 #ifdef __cplusplus
 }
