@@ -20,7 +20,6 @@
 extern "C" {
 #endif
 
-#ifndef _ASMLANGUAGE
 #include <toolchain.h>
 #include <zephyr/types.h>
 
@@ -121,8 +120,6 @@ extern volatile u64_t _sys_clock_tick_count;
 #define SECONDS(x)	((x) * sys_clock_ticks_per_sec)
 #define MSEC(x)		(SECONDS(x) / MSEC_PER_SEC)
 #define USEC(x)		(MSEC(x) / USEC_PER_MSEC)
-
-#endif /* !_ASMLANGUAGE */
 
 #ifdef __cplusplus
 }
