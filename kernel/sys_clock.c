@@ -42,7 +42,7 @@ volatile u64_t _sys_clock_tick_count;
  * system clock to track passage of time without interruption.
  * To save power, this should be turned on only when required.
  */
-int _sys_clock_always_on;
+int _sys_clock_always_on = 1;
 
 static u32_t next_ts;
 #endif
@@ -339,5 +339,26 @@ void _nano_sys_clock_tick_announce(s32_t ticks)
 		/* Clears current program if next_to = 0 and remaining > 0 */
 		_set_time(next_to);
 	}
+#endif
+}
+
+int k_enable_sys_clock_always_on(void)
+{
+#ifdef CONFIG_TICKLESS_KERNEL
+	int prev_status = _sys_clock_always_on;
+
+	_sys_clock_always_on = 1;
+	_enable_sys_clock();
+
+	return prev_status;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+void k_disable_sys_clock_always_on(void)
+{
+#ifdef CONFIG_TICKLESS_KERNEL
+	_sys_clock_always_on = 0;
 #endif
 }

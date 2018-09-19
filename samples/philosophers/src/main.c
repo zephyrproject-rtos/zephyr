@@ -141,9 +141,7 @@ static s32_t get_random_delay(int id, int period_in_ms)
 	 * and the current uptime to create some pseudo-randomness. It produces
 	 * a value between 0 and 31.
 	 */
-	k_enable_sys_clock_always_on();
 	s32_t delay = (k_uptime_get_32()/100 * (id + 1)) & 0x1f;
-	k_disable_sys_clock_always_on();
 
 	/* add 1 to not generate a delay of 0 */
 	s32_t ms = (delay + 1) * period_in_ms;
