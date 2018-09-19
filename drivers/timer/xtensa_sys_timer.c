@@ -242,7 +242,7 @@ u64_t _get_elapsed_clock_time(void)
 
 static ALWAYS_INLINE void tickless_idle_init(void)
 {
-	cycles_per_tick = sys_clock_hw_cycles_per_tick;
+	cycles_per_tick = sys_clock_hw_cycles_per_tick();
 	/* calculate the max number of ticks with this 32-bit H/W counter */
 	max_system_ticks = MAX_TIMER_CYCLES / cycles_per_tick;
 	max_load_value = max_system_ticks * cycles_per_tick;
