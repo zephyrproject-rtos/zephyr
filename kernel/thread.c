@@ -104,7 +104,7 @@ int saved_always_on = k_enable_sys_clock_always_on();
 	/* use 64-bit math to prevent overflow when multiplying */
 	u32_t cycles_to_wait = (u32_t)(
 		(u64_t)usec_to_wait *
-		(u64_t)sys_clock_hw_cycles_per_sec /
+		(u64_t)sys_clock_hw_cycles_per_sec() /
 		(u64_t)USEC_PER_SEC
 	);
 	u32_t start_cycles = k_cycle_get_32();

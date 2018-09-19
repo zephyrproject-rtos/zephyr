@@ -765,7 +765,7 @@ u32_t _timer_cycle_get_32(void)
 	u64_t tsc;
 
 	/* 64-bit math to avoid overflows */
-	tsc = _tsc_read() * (u64_t)sys_clock_hw_cycles_per_sec /
+	tsc = _tsc_read() * (u64_t)sys_clock_hw_cycles_per_sec() /
 		(u64_t) CONFIG_TSC_CYCLES_PER_SEC;
 	return (u32_t)tsc;
 #else

@@ -19,10 +19,10 @@ int test_frequency(void)
 	end = k_cycle_get_32();
 
 	delta = end - start;
-	pct = (u64_t)delta * 100 / sys_clock_hw_cycles_per_sec;
+	pct = (u64_t)delta * 100 / sys_clock_hw_cycles_per_sec();
 
 	printk("delta: %u  expected: %u  %u%%\n", delta,
-	       sys_clock_hw_cycles_per_sec, pct);
+	       sys_clock_hw_cycles_per_sec(), pct);
 
 	/* Heuristic: if we're more than 10% off, throw an error */
 	if (pct < 90 || pct > 110) {
@@ -45,7 +45,7 @@ int test_frequency(void)
  *
  * @ingroup kernel_timer_tests
  *
- * @see k_cycle_get_32(), sys_clock_hw_cycles_per_sec
+ * @see k_cycle_get_32(), sys_clock_hw_cycles_per_sec()
  */
 void test_timer(void)
 {
@@ -56,8 +56,8 @@ void test_timer(void)
 
 	TC_PRINT("sys_clock_hw_cycles_per_tick = %d\n",
 		 sys_clock_hw_cycles_per_tick);
-	TC_PRINT("sys_clock_hw_cycles_per_sec = %d\n",
-		 sys_clock_hw_cycles_per_sec);
+	TC_PRINT("sys_clock_hw_cycles_per_sec() = %d\n",
+		 sys_clock_hw_cycles_per_sec());
 
 	TC_START("test monotonic timer");
 

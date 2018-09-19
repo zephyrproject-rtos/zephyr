@@ -159,6 +159,7 @@
 #define HPET_IOAPIC_FLAGS  (IOAPIC_LEVEL | IOAPIC_LOW)
 #endif
 
+extern int z_clock_hw_cycles_per_sec;
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 static u32_t main_count_first_irq_value;
@@ -583,7 +584,7 @@ int _sys_clock_driver_init(struct device *device)
 	 * Get tick time (in femptoseconds).
 	 */
 
-	tickFempto = 1000000000000000ull / sys_clock_ticks_per_sec;
+	tickFempto = 1000000000000000ull / sys_clock_ticks_per_sec();
 
 	/*
 	 * This driver shall read the COUNTER_CLK_PERIOD value from the general
@@ -613,8 +614,8 @@ int _sys_clock_driver_init(struct device *device)
 	/* Initialize sys_clock_hw_cycles_per_tick/sec */
 
 	sys_clock_hw_cycles_per_tick = counter_load_value;
-	sys_clock_hw_cycles_per_sec = sys_clock_hw_cycles_per_tick *
-									sys_clock_ticks_per_sec;
+	z_clock_hw_cycles_per_sec = sys_clock_hw_cycles_per_tick *
+		sys_clock_ticks_per_sec();
 
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
