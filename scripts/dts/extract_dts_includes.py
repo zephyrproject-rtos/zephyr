@@ -544,10 +544,17 @@ def load_yaml_descriptions(dts, yaml_dirs):
 def generate_node_definitions(yaml_list):
 
     for k, v in reduced.items():
-        node_compat = get_compat(k)
+        node_compat = get_node_compat(k)
+        # node has a compat, it's a device, generate first
         if node_compat is not None and node_compat in yaml_list:
             extract_node_include_info(
                 reduced, k, k, yaml_list, None)
+        if node_compat is None:
+            # node might be a child, look at parent compat
+            node_compat = get_parent_compat(k)
+            if node_compat is not None and node_compat in yaml_list:
+                extract_node_include_info(
+                            reduced, k, k, yaml_list, None)
         compats = []
         # For a given node we only want compats that we know about
         # eg, if a node has 3 compats and we only know about 2 from yaml we
