@@ -28,11 +28,7 @@ extern "C" {
 
 static inline int sys_clock_ticks_per_sec(void)
 {
-#ifdef CONFIG_TICKLESS_KERNEL
-	return 1000000 / (CONFIG_TICKLESS_KERNEL_TIME_UNIT_IN_MICRO_SECS);
-#else
 	return CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-#endif
 }
 
 #ifdef CONFIG_TICKLESS_KERNEL

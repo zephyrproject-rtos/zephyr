@@ -516,6 +516,11 @@ config SYS_CLOCK_TICKS_PER_SEC
 	  can require a non-trivial extra amount of stack space (e.g. around 80
 	  bytes on x86).
 
+	  Note that when available and enabled, in "tickless" mode
+	  this config variable specifies the minimum available timing
+	  granularity, not necessarily the number or frequency of
+	  interrupts delivered to the kernel.
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
 	help
