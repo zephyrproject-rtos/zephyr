@@ -8,6 +8,8 @@ if(CONFIG_PTP_CLOCK_MCUX)
   target_compile_definitions(drivers PRIVATE ENET_ENHANCEDBUFFERDESCRIPTOR_MODE)
 endif()
 
+zephyr_set_property(TARGET drivers MEMORY_SPACE kernel)
+
 include_relative(console/CMakeLists.txt)
 include_relative(interrupt_controller/CMakeLists.txt)
 include_relative_if_kconfig(adc/CMakeLists.txt)
