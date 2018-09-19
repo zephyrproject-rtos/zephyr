@@ -23,6 +23,8 @@
 #include <random/rand32.h>
 #endif
 
+#include "soc_gpio.h"
+
 #ifdef CONFIG_PCI
 
 /*

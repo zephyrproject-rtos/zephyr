@@ -42,5 +42,21 @@
 		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+
+		gpio: gpio@0 {
+			compatible = "intel,apl-gpio";
+			reg = <0xd0c50000 0x1000>,
+			      <0xd0c40000 0x1000>,
+			      <0xd0c70000 0x1000>,
+			      <0xd0c00000 0x1000>;
+			interrupts = <14 IRQ_TYPE_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			label = "GPIO_0";
+
+			gpio-controller ;
+			#gpio-cells = <2>;
+
+			status = "disabled";
+		};
 	};
 };
