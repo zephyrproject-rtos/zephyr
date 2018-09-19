@@ -98,33 +98,36 @@ static struct hid_device_info {
 
 static void hid_status_cb(enum usb_dc_status_code status, u8_t *param)
 {
-	/* Check the USB status and do needed action if required */
-	switch (status) {
-	case USB_DC_ERROR:
-		USB_DBG("USB device error");
-		break;
-	case USB_DC_RESET:
-		USB_DBG("USB device reset detected");
-		break;
-	case USB_DC_CONNECTED:
-		USB_DBG("USB device connected");
-		break;
-	case USB_DC_CONFIGURED:
-		USB_DBG("USB device configured");
-		break;
-	case USB_DC_DISCONNECTED:
-		USB_DBG("USB device disconnected");
-		break;
-	case USB_DC_SUSPEND:
-		USB_DBG("USB device suspended");
-		break;
-	case USB_DC_RESUME:
-		USB_DBG("USB device resumed");
-		break;
-	case USB_DC_UNKNOWN:
-	default:
-		USB_DBG("USB unknown state");
-		break;
+	if (hid_device.ops->status_cb) {
+		hid_device.ops->status_cb(status, param);
+	} else {
+		switch (status) {
+		case USB_DC_ERROR:
+			USB_DBG("USB device error");
+			break;
+		case USB_DC_RESET:
+			USB_DBG("USB device reset detected");
+			break;
+		case USB_DC_CONNECTED:
+			USB_DBG("USB device connected");
+			break;
+		case USB_DC_CONFIGURED:
+			USB_DBG("USB device configured");
+			break;
+		case USB_DC_DISCONNECTED:
+			USB_DBG("USB device disconnected");
+			break;
+		case USB_DC_SUSPEND:
+			USB_DBG("USB device suspended");
+			break;
+		case USB_DC_RESUME:
+			USB_DBG("USB device resumed");
+			break;
+		case USB_DC_UNKNOWN:
+		default:
+			USB_DBG("USB unknown state");
+			break;
+		}
 	}
 }
 
