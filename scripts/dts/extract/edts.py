@@ -38,8 +38,24 @@ def edts_insert_chosen(chosen, node_address):
 # @brief Insert device property into EDTS
 #
 def edts_insert_device_property(node_address, property_path, property_value):
-    device_id = edts_device_id(node_address)
-    edts.insert_device_property(device_id, property_path, property_value)
+
+    if get_node_compat(node_address) is None:
+        # Node is a child of a device.
+        # Get device ancestor
+        parent_address = ''
+        node_address_split = node_address.split('/')
+        child_name = node_address_split[-1]
+        for comp in node_address_split[1:-1]:
+            parent_address += '/' + comp
+        device_id = edts_device_id(parent_address)
+        # Child is not a device, store it as a prop of his parent, under a child section
+        # Use its relative address as parameter name since extraction can't work with '/'
+        # inside property path.
+        # An aboslute id will be computed and populated at injection
+        edts.insert_child_property(device_id, child_name, property_path, property_value)
+    else:
+        device_id = edts_device_id(node_address)
+        edts.insert_device_property(device_id, property_path, property_value)
 
 ##
 # @brief Insert device type into EDTS
