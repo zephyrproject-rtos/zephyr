@@ -54,7 +54,7 @@ int char_out(u8_t *data, size_t length, void *ctx)
 	return length;
 }
 
-LOG_OUTPUT_DEFINE(log_output, char_out, buf, 1);
+LOG_OUTPUT_DEFINE(log_output, char_out, buf, sizeof(buf));
 
 static void put(const struct log_backend *const backend,
 		struct log_msg *msg)
