@@ -34,7 +34,7 @@ static s8_t dht_measure_signal_duration(struct dht_data *drv_data,
 	u32_t elapsed_cycles;
 	u32_t max_wait_cycles = (u32_t)(
 		(u64_t)DHT_SIGNAL_MAX_WAIT_DURATION *
-		(u64_t)sys_clock_hw_cycles_per_sec /
+		(u64_t)sys_clock_hw_cycles_per_sec() /
 		(u64_t)USEC_PER_SEC
 	);
 	u32_t start_cycles = k_cycle_get_32();
@@ -50,7 +50,7 @@ static s8_t dht_measure_signal_duration(struct dht_data *drv_data,
 
 	return (u64_t)elapsed_cycles *
 	       (u64_t)USEC_PER_SEC /
-	       (u64_t)sys_clock_hw_cycles_per_sec;
+	       (u64_t)sys_clock_hw_cycles_per_sec();
 }
 
 static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
