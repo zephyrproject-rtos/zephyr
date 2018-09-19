@@ -14,8 +14,8 @@ config SOC
 config NUM_IRQS
 	int
 	# must be >= the highest interrupt number used
-	# - include the UART interrupts
-	default 34
+	# - include the UART interrupts and ethernet interrupts
+	default 43
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
