@@ -57,6 +57,8 @@ struct usb_ep_ctrl_prv {
 	u16_t mps;
 	usb_dc_ep_callback cb;
 	u32_t data_len;
+	u8_t buf[64];
+	u8_t buf_len;
 };
 
 /*
@@ -324,11 +326,15 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		return -EINVAL;
 	}
 
-	/* Control */
 	if (USBIP_EP_ADDR2IDX(ep) == 0) {
 		usbip_send_common(ep, data_len);
-		usbip_send(ep, (u8_t *)&setup, sizeof(setup));
 		usbip_send(ep, data, data_len);
+	} else {
+		u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
+		struct usb_ep_ctrl_prv *ctrl = &usbip_ctrl.in_ep_ctrl[ep_idx];
+
+		memcpy(ctrl->buf, data, data_len);
+		ctrl->buf_len = data_len;
 	}
 
 	if (ret_bytes) {
@@ -469,13 +475,59 @@ int handle_usb_control(struct usbip_header *hdr)
 
 	if (ep_cb) {
 		LOG_DBG("Call ep_cb");
-		ep_cb(hdr->common.ep, USB_DC_EP_SETUP);
+		ep_cb(ntohl(hdr->common.ep), USB_DC_EP_SETUP);
 	}
 
 	return 0;
 }
 
+static void usbip_skip_setup(void)
+{
+	u64_t setup;
+
+	LOG_DBG("Skip 8 bytes");
+
+	usbip_recv((void *)&setup, sizeof(setup));
+}
+
 int handle_usb_data(struct usbip_header *hdr)
 {
+	u8_t ep_idx = ntohl(hdr->common.ep);
+	usb_dc_ep_callback ep_cb;
+	int bytes;
+	u8_t ep;
+
+	LOG_DBG("ep_idx %u", ep_idx);
+
+	if (ntohl(hdr->common.direction) == USBIP_DIR_OUT) {
+		ep = ep_idx | USB_EP_DIR_OUT;
+		ep_cb = usbip_ctrl.out_ep_ctrl[ep_idx].cb;
+
+		ep_cb(ep, USB_DC_EP_DATA_OUT);
+
+		/* Send ACK reply */
+		bytes = usbip_send_common(ep, 0);
+	} else {
+		ep = ep_idx | USB_EP_DIR_IN;
+		ep_cb = usbip_ctrl.in_ep_ctrl[ep_idx].cb;
+
+		usbip_skip_setup();
+
+		LOG_DBG("Send %u bytes", usbip_ctrl.in_ep_ctrl[ep_idx].buf_len);
+
+		/* Send queued data */
+		usbip_send_common(ep, usbip_ctrl.in_ep_ctrl[ep_idx].buf_len);
+		usbip_send(ep, usbip_ctrl.in_ep_ctrl[ep_idx].buf,
+			   usbip_ctrl.in_ep_ctrl[ep_idx].buf_len);
+
+		LOG_HEXDUMP_DBG(usbip_ctrl.in_ep_ctrl[ep_idx].buf,
+				usbip_ctrl.in_ep_ctrl[ep_idx].buf_len, ">");
+
+		/* Indicate data sent */
+		ep_cb(ep, USB_DC_EP_DATA_IN);
+	}
+
+	LOG_DBG("ep %x ep_cb %p", ep, ep_cb);
+
 	return 0;
 }

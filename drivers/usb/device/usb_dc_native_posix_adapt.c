@@ -453,5 +453,7 @@ int usbip_send_common(u8_t ep, u32_t data_len)
 	rsp.number_of_packets = htonl(0);
 	rsp.error_count = htonl(0);
 
+	rsp.setup = htonl(0);
+
 	return usbip_send(ep, (u8_t *)&rsp, sizeof(rsp));
 }
