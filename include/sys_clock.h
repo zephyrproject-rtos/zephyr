@@ -185,7 +185,32 @@ static inline s64_t __ticks_to_ms(s64_t ticks)
  * @} end defgroup clock_apis
  */
 
-extern volatile u64_t _sys_clock_tick_count;
+/**
+ *
+ * @brief Return the lower part of the current system tick count
+ *
+ * @return the current system tick count
+ *
+ */
+u32_t z_tick_get_32(void);
+
+/**
+ *
+ * @brief Return the current system tick count
+ *
+ * @return the current system tick count
+ *
+ */
+s64_t z_tick_get(void);
+
+/**
+ *
+ * @brief Sets the current system tick count
+ *
+ * @param ticks Ticks since system start
+ *
+ */
+void z_tick_set(s64_t ticks);
 
 /* timeouts */
 

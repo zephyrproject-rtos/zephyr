@@ -33,7 +33,11 @@ int z_clock_hw_cycles_per_sec;
 /* updated by timer driver for tickless, stays at 1 for non-tickless */
 s32_t _sys_idle_elapsed_ticks = 1;
 
-volatile u64_t _sys_clock_tick_count;
+/* Note that this value is 64 bits, and thus non-atomic on almost all
+ * Zephyr archtictures.  And of course it's routinely updated inside
+ * timer interrupts.  Access to it must be locked.
+ */
+static volatile u64_t tick_count;
 
 #ifdef CONFIG_TICKLESS_KERNEL
 /*
@@ -46,22 +50,15 @@ int _sys_clock_always_on = 1;
 
 static u32_t next_ts;
 #endif
-/**
- *
- * @brief Return the lower part of the current system tick count
- *
- * @return the current system tick count
- *
- */
-u32_t _tick_get_32(void)
+
+u32_t z_tick_get_32(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	return (u32_t)_get_elapsed_clock_time();
 #else
-	return (u32_t)_sys_clock_tick_count;
+	return (u32_t)tick_count;
 #endif
 }
-FUNC_ALIAS(_tick_get_32, sys_tick_get_32, u32_t);
 
 u32_t _impl_k_uptime_get_32(void)
 {
@@ -69,7 +66,7 @@ u32_t _impl_k_uptime_get_32(void)
 	__ASSERT(_sys_clock_always_on,
 		 "Call k_enable_sys_clock_always_on to use clock API");
 #endif
-	return __ticks_to_ms(_tick_get_32());
+	return __ticks_to_ms(z_tick_get_32());
 }
 
 #ifdef CONFIG_USERSPACE
@@ -82,33 +79,26 @@ Z_SYSCALL_HANDLER(k_uptime_get_32)
 }
 #endif
 
-/**
- *
- * @brief Return the current system tick count
- *
- * @return the current system tick count
- *
- */
-s64_t _tick_get(void)
+s64_t z_tick_get(void)
 {
-	s64_t tmp_sys_clock_tick_count;
-	/*
-	 * Lock the interrupts when reading _sys_clock_tick_count 64-bit
-	 * variable. Some architectures (x86) do not handle 64-bit atomically,
-	 * so we have to lock the timer interrupt that causes change of
-	 * _sys_clock_tick_count
-	 */
-	unsigned int imask = irq_lock();
-
 #ifdef CONFIG_TICKLESS_KERNEL
-	tmp_sys_clock_tick_count = _get_elapsed_clock_time();
+	return _get_elapsed_clock_time();
 #else
-	tmp_sys_clock_tick_count = _sys_clock_tick_count;
+	unsigned int key = irq_lock();
+	s64_t ret = tick_count;
+
+	irq_unlock(key);
+	return ret;
 #endif
-	irq_unlock(imask);
-	return tmp_sys_clock_tick_count;
 }
-FUNC_ALIAS(_tick_get, sys_tick_get, s64_t);
+
+void z_tick_set(s64_t val)
+{
+	unsigned int key = irq_lock();
+
+	tick_count = val;
+	irq_unlock(key);
+}
 
 s64_t _impl_k_uptime_get(void)
 {
@@ -116,7 +106,7 @@ s64_t _impl_k_uptime_get(void)
 	__ASSERT(_sys_clock_always_on,
 		 "Call k_enable_sys_clock_always_on to use clock API");
 #endif
-	return __ticks_to_ms(_tick_get());
+	return __ticks_to_ms(z_tick_get());
 }
 
 #ifdef CONFIG_USERSPACE
@@ -316,9 +306,8 @@ void _nano_sys_clock_tick_announce(s32_t ticks)
 
 	K_DEBUG("ticks: %d\n", ticks);
 
-	/* 64-bit value, ensure atomic access with irq lock */
 	key = irq_lock();
-	_sys_clock_tick_count += ticks;
+	tick_count += ticks;
 	irq_unlock(key);
 #endif
 	handle_timeouts(ticks);
