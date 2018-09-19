@@ -14,17 +14,14 @@ menuconfig LWM2M
 
 if LWM2M
 
-config SYS_LOG_LWM2M_LEVEL
-	int "LWM2M log level"
-	depends on SYS_LOG
-	default 1
-	range 0 4
-	help
-	  Set the log level for the LWM2M library.
+module=LWM2M
+module-dep=LOG
+module-str=Log level for LWM2M library
+source "subsys/net/Kconfig.template.log_config.net"
 
 config LWM2M_ENGINE_STACK_SIZE
 	int "LWM2M engine stack size"
-	default 1536 if NET_LOG_GLOBAL
+	default 1536 if NET_LOG
 	default 1024
 	help
 	 Set the stack size for the LWM2M library engine (used for handling

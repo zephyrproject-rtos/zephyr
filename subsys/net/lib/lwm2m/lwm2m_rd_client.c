@@ -42,9 +42,11 @@
  *         Joel Hoglund <joel@sics.se>
  */
 
-#define SYS_LOG_DOMAIN "lib/lwm2m_rd_client"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_LWM2M_LEVEL
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME net_lwm2m_rd_client
+#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -191,24 +193,24 @@ static int do_bootstrap_reply_cb(const struct coap_packet *response,
 	u8_t code;
 
 	code = coap_header_get_code(response);
-	SYS_LOG_DBG("Bootstrap callback (code:%u.%u)",
-		    COAP_RESPONSE_CODE_CLASS(code),
-		    COAP_RESPONSE_CODE_DETAIL(code));
+	LOG_DBG("Bootstrap callback (code:%u.%u)",
+		COAP_RESPONSE_CODE_CLASS(code),
+		COAP_RESPONSE_CODE_DETAIL(code));
 
 	if (code == COAP_RESPONSE_CODE_CHANGED) {
-		SYS_LOG_DBG("Considered done!");
+		LOG_DBG("Considered done!");
 		set_sm_state(ENGINE_BOOTSTRAP_DONE);
 	} else if (code == COAP_RESPONSE_CODE_NOT_FOUND) {
-		SYS_LOG_ERR("Failed: NOT_FOUND.  Not Retrying.");
+		LOG_ERR("Failed: NOT_FOUND.  Not Retrying.");
 		set_sm_state(ENGINE_DO_REGISTRATION);
 	} else if (code == COAP_RESPONSE_CODE_FORBIDDEN) {
-		SYS_LOG_ERR("Failed: 4.03 - Forbidden.  Not Retrying.");
+		LOG_ERR("Failed: 4.03 - Forbidden.  Not Retrying.");
 		set_sm_state(ENGINE_DO_REGISTRATION);
 	} else {
 		/* TODO: Read payload for error message? */
-		SYS_LOG_ERR("Failed with code %u.%u. Retrying ...",
-			    COAP_RESPONSE_CODE_CLASS(code),
-			    COAP_RESPONSE_CODE_DETAIL(code));
+		LOG_ERR("Failed with code %u.%u. Retrying ...",
+			COAP_RESPONSE_CODE_CLASS(code),
+			COAP_RESPONSE_CODE_DETAIL(code));
 		set_sm_state(ENGINE_INIT);
 	}
 
@@ -217,7 +219,7 @@ static int do_bootstrap_reply_cb(const struct coap_packet *response,
 
 static void do_bootstrap_timeout_cb(struct lwm2m_message *msg)
 {
-	SYS_LOG_WRN("Bootstrap Timeout");
+	LOG_WRN("Bootstrap Timeout");
 
 	/* Restart from scratch */
 	sm_handle_timeout_state(msg, ENGINE_INIT);
@@ -232,23 +234,23 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 	int ret;
 
 	code = coap_header_get_code(response);
-	SYS_LOG_DBG("Registration callback (code:%u.%u)",
-		    COAP_RESPONSE_CODE_CLASS(code),
-		    COAP_RESPONSE_CODE_DETAIL(code));
+	LOG_DBG("Registration callback (code:%u.%u)",
+		COAP_RESPONSE_CODE_CLASS(code),
+		COAP_RESPONSE_CODE_DETAIL(code));
 
 	/* check state and possibly set registration to done */
 	if (code == COAP_RESPONSE_CODE_CREATED) {
 		ret = coap_find_options(response, COAP_OPTION_LOCATION_PATH,
 					options, 2);
 		if (ret < 2) {
-			SYS_LOG_ERR("Unexpected endpoint data returned.");
+			LOG_ERR("Unexpected endpoint data returned.");
 			return -EINVAL;
 		}
 
 		/* option[0] should be "rd" */
 
 		if (options[1].len + 1 > sizeof(client.server_ep)) {
-			SYS_LOG_ERR("Unexpected length of query: "
+			LOG_ERR("Unexpected length of query: "
 				    "%u (expected %zu)\n",
 				    options[1].len,
 				    sizeof(client.server_ep));
@@ -259,32 +261,32 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 		       options[1].len);
 		client.server_ep[options[1].len] = '\0';
 		set_sm_state(ENGINE_REGISTRATION_DONE);
-		SYS_LOG_INF("Registration Done (EP='%s')",
+		LOG_INF("Registration Done (EP='%s')",
 			    client.server_ep);
 
 		return 0;
 	} else if (code == COAP_RESPONSE_CODE_NOT_FOUND) {
-		SYS_LOG_ERR("Failed: NOT_FOUND.  Not Retrying.");
+		LOG_ERR("Failed: NOT_FOUND.  Not Retrying.");
 		set_sm_state(ENGINE_REGISTRATION_DONE);
 		return 0;
 	} else if (code == COAP_RESPONSE_CODE_FORBIDDEN) {
-		SYS_LOG_ERR("Failed: 4.03 - Forbidden.  Not Retrying.");
+		LOG_ERR("Failed: 4.03 - Forbidden.  Not Retrying.");
 		set_sm_state(ENGINE_REGISTRATION_DONE);
 		return 0;
 	}
 
 	/* TODO: Read payload for error message? */
 	/* Possible error response codes: 4.00 Bad request */
-	SYS_LOG_ERR("failed with code %u.%u. Re-init network",
-		    COAP_RESPONSE_CODE_CLASS(code),
-		    COAP_RESPONSE_CODE_DETAIL(code));
+	LOG_ERR("failed with code %u.%u. Re-init network",
+		COAP_RESPONSE_CODE_CLASS(code),
+		COAP_RESPONSE_CODE_DETAIL(code));
 	set_sm_state(ENGINE_INIT);
 	return 0;
 }
 
 static void do_registration_timeout_cb(struct lwm2m_message *msg)
 {
-	SYS_LOG_WRN("Registration Timeout");
+	LOG_WRN("Registration Timeout");
 
 	/* Restart from scratch */
 	sm_handle_timeout_state(msg, ENGINE_INIT);
@@ -297,23 +299,23 @@ static int do_update_reply_cb(const struct coap_packet *response,
 	u8_t code;
 
 	code = coap_header_get_code(response);
-	SYS_LOG_INF("Update callback (code:%u.%u)",
-		    COAP_RESPONSE_CODE_CLASS(code),
-		    COAP_RESPONSE_CODE_DETAIL(code));
+	LOG_INF("Update callback (code:%u.%u)",
+		COAP_RESPONSE_CODE_CLASS(code),
+		COAP_RESPONSE_CODE_DETAIL(code));
 
 	/* If NOT_FOUND just continue on */
 	if ((code == COAP_RESPONSE_CODE_CHANGED) ||
 	    (code == COAP_RESPONSE_CODE_CREATED)) {
 		set_sm_state(ENGINE_REGISTRATION_DONE);
-		SYS_LOG_INF("Update Done");
+		LOG_INF("Update Done");
 		return 0;
 	}
 
 	/* TODO: Read payload for error message? */
 	/* Possible error response codes: 4.00 Bad request & 4.04 Not Found */
-	SYS_LOG_ERR("Failed with code %u.%u. Retrying registration",
-		    COAP_RESPONSE_CODE_CLASS(code),
-		    COAP_RESPONSE_CODE_DETAIL(code));
+	LOG_ERR("Failed with code %u.%u. Retrying registration",
+		COAP_RESPONSE_CODE_CLASS(code),
+		COAP_RESPONSE_CODE_DETAIL(code));
 	set_sm_state(ENGINE_DO_REGISTRATION);
 
 	return 0;
@@ -321,7 +323,7 @@ static int do_update_reply_cb(const struct coap_packet *response,
 
 static void do_update_timeout_cb(struct lwm2m_message *msg)
 {
-	SYS_LOG_WRN("Registration Update Timeout");
+	LOG_WRN("Registration Update Timeout");
 
 	/* Re-do registration */
 	sm_handle_timeout_state(msg, ENGINE_DO_REGISTRATION);
@@ -334,17 +336,17 @@ static int do_deregister_reply_cb(const struct coap_packet *response,
 	u8_t code;
 
 	code = coap_header_get_code(response);
-	SYS_LOG_DBG("Deregister callback (code:%u.%u)",
-		    COAP_RESPONSE_CODE_CLASS(code),
-		    COAP_RESPONSE_CODE_DETAIL(code));
+	LOG_DBG("Deregister callback (code:%u.%u)",
+		COAP_RESPONSE_CODE_CLASS(code),
+		COAP_RESPONSE_CODE_DETAIL(code));
 
 	if (code == COAP_RESPONSE_CODE_DELETED) {
-		SYS_LOG_DBG("Deregistration success");
+		LOG_DBG("Deregistration success");
 		set_sm_state(ENGINE_DEREGISTERED);
 	} else {
-		SYS_LOG_ERR("failed with code %u.%u",
-			    COAP_RESPONSE_CODE_CLASS(code),
-			    COAP_RESPONSE_CODE_DETAIL(code));
+		LOG_ERR("failed with code %u.%u",
+			COAP_RESPONSE_CODE_CLASS(code),
+			COAP_RESPONSE_CODE_DETAIL(code));
 		if (get_sm_state() == ENGINE_DEREGISTER_SENT) {
 			set_sm_state(ENGINE_DEREGISTER_FAILED);
 		}
@@ -355,7 +357,7 @@ static int do_deregister_reply_cb(const struct coap_packet *response,
 
 static void do_deregister_timeout_cb(struct lwm2m_message *msg)
 {
-	SYS_LOG_WRN("De-Registration Timeout");
+	LOG_WRN("De-Registration Timeout");
 
 	/* Abort de-registration and start from scratch */
 	sm_handle_timeout_state(msg, ENGINE_INIT);
@@ -365,10 +367,10 @@ static void do_deregister_timeout_cb(struct lwm2m_message *msg)
 
 static int sm_do_init(void)
 {
-	SYS_LOG_INF("RD Client started with endpoint "
-		    "'%s' and client lifetime %d",
-		    client.ep_name,
-		    client.lifetime);
+	LOG_INF("RD Client started with endpoint "
+		"'%s' and client lifetime %d",
+		client.ep_name,
+		client.lifetime);
 	/* Zephyr has joined network already */
 	client.has_registration_info = 1;
 	client.bootstrapped = 0;
@@ -404,7 +406,7 @@ static int sm_do_bootstrap(void)
 		app_ctx = &client.ctx->net_app_ctx;
 		msg = lwm2m_get_message(client.ctx);
 		if (!msg) {
-			SYS_LOG_ERR("Unable to get a lwm2m message!");
+			LOG_ERR("Unable to get a lwm2m message!");
 			return -ENOMEM;
 		}
 
@@ -440,14 +442,13 @@ static int sm_do_bootstrap(void)
 			remote = &app_ctx->default_ctx->remote;
 		}
 
-		SYS_LOG_DBG("Register ID with bootstrap server [%s] as '%s'",
-			    lwm2m_sprint_ip_addr(remote),
-			    query_buffer);
+		LOG_DBG("Register ID with bootstrap server [%s] as '%s'",
+			lwm2m_sprint_ip_addr(remote),
+			query_buffer);
 
 		ret = lwm2m_send_message(msg);
 		if (ret < 0) {
-			SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
-				    ret);
+			LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
 			goto cleanup;
 		}
 
@@ -468,7 +469,7 @@ static int sm_bootstrap_done(void)
 #ifdef CONFIG_LWM2M_SECURITY_OBJ_SUPPORT
 		int i;
 
-		SYS_LOG_DBG("*** Bootstrap - checking for server info ...");
+		LOG_DBG("*** Bootstrap - checking for server info ...");
 
 		/* get the server URI */
 		if (sec_data->server_uri_len > 0) {
@@ -480,13 +481,13 @@ static int sm_bootstrap_done(void)
 #else
 			if (true) {
 #endif
-				SYS_LOG_ERR("Failed to parse URI!");
+				LOG_ERR("Failed to parse URI!");
 			} else {
 				client.has_registration_info = 1;
 				client.bootstrapped++;
 			}
 		} else {
-			SYS_LOG_ERR("** failed to parse URI");
+			LOG_ERR("** failed to parse URI");
 		}
 
 		/* if we did not register above - then fail this and restart */
@@ -517,7 +518,7 @@ static int sm_send_registration(bool send_obj_support_data,
 	app_ctx = &client.ctx->net_app_ctx;
 	msg = lwm2m_get_message(client.ctx);
 	if (!msg) {
-		SYS_LOG_ERR("Unable to get a lwm2m message!");
+		LOG_ERR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
 
@@ -589,8 +590,7 @@ static int sm_send_registration(bool send_obj_support_data,
 
 	ret = lwm2m_send_message(msg);
 	if (ret < 0) {
-		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
-			    ret);
+		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
 		goto cleanup;
 	}
 
@@ -605,8 +605,8 @@ static int sm_send_registration(bool send_obj_support_data,
 		remote = &app_ctx->default_ctx->remote;
 	}
 
-	SYS_LOG_DBG("registration sent [%s]",
-		    lwm2m_sprint_ip_addr(remote));
+	LOG_DBG("registration sent [%s]",
+		lwm2m_sprint_ip_addr(remote));
 
 	return 0;
 
@@ -628,7 +628,7 @@ static int sm_do_registration(void)
 		if (!ret) {
 			set_sm_state(ENGINE_REGISTRATION_SENT);
 		} else {
-			SYS_LOG_ERR("Registration err: %d", ret);
+			LOG_ERR("Registration err: %d", ret);
 		}
 	}
 
@@ -656,7 +656,7 @@ static int sm_registration_done(void)
 		if (!ret) {
 			set_sm_state(ENGINE_UPDATE_SENT);
 		} else {
-			SYS_LOG_ERR("Registration update err: %d", ret);
+			LOG_ERR("Registration update err: %d", ret);
 		}
 	}
 
@@ -672,7 +672,7 @@ static int sm_do_deregister(void)
 	app_ctx = &client.ctx->net_app_ctx;
 	msg = lwm2m_get_message(client.ctx);
 	if (!msg) {
-		SYS_LOG_ERR("Unable to get a lwm2m message!");
+		LOG_ERR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
 
@@ -692,12 +692,11 @@ static int sm_do_deregister(void)
 				  client.server_ep,
 				  strlen(client.server_ep));
 
-	SYS_LOG_INF("Deregister from '%s'", client.server_ep);
+	LOG_INF("Deregister from '%s'", client.server_ep);
 
 	ret = lwm2m_send_message(msg);
 	if (ret < 0) {
-		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
-			    ret);
+		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
 		goto cleanup;
 	}
 
@@ -761,7 +760,7 @@ static void lwm2m_rd_client_service(void)
 			break;
 
 		default:
-			SYS_LOG_ERR("Unhandled state: %d", get_sm_state());
+			LOG_ERR("Unhandled state: %d", get_sm_state());
 
 		}
 	}
@@ -776,12 +775,12 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 
 	ret = lwm2m_engine_start(client_ctx, peer_str, peer_port);
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot init LWM2M engine (%d)", ret);
+		LOG_ERR("Cannot init LWM2M engine (%d)", ret);
 		return ret;
 	}
 
 	if (!client_ctx->net_app_ctx.default_ctx) {
-		SYS_LOG_ERR("Default net_app_ctx not selected!");
+		LOG_ERR("Default net_app_ctx not selected!");
 		return -EINVAL;
 	}
 
@@ -790,7 +789,7 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 	client.event_cb = event_cb;
 	set_sm_state(ENGINE_INIT);
 	strncpy(client.ep_name, ep_name, CLIENT_EP_LEN - 1);
-	SYS_LOG_INF("LWM2M Client: %s", client.ep_name);
+	LOG_INF("LWM2M Client: %s", client.ep_name);
 
 	return 0;
 }

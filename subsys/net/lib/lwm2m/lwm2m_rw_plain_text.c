@@ -56,9 +56,12 @@
  * - Cleanup integer parsing
  */
 
-#define SYS_LOG_DOMAIN "lib/lwm2m_plain_text"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_LWM2M_LEVEL
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME net_lwm2m_plain_text
+#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>

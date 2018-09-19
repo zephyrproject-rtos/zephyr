@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_DOMAIN "lwm2m_obj_firmware_pull"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_LWM2M_LEVEL
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME net_lwm2m_obj_firmware_pull
+#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <ctype.h>
 #include <stdio.h>
@@ -88,7 +90,7 @@ static int transfer_request(struct coap_block_context *ctx,
 
 	msg = lwm2m_get_message(&firmware_ctx);
 	if (!msg) {
-		SYS_LOG_ERR("Unable to get a lwm2m message!");
+		LOG_ERR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
 
@@ -102,7 +104,7 @@ static int transfer_request(struct coap_block_context *ctx,
 
 	ret = lwm2m_init_message(msg);
 	if (ret < 0) {
-		SYS_LOG_ERR("Error setting up lwm2m message");
+		LOG_ERR("Error setting up lwm2m message");
 		goto cleanup;
 	}
 
@@ -115,7 +117,7 @@ static int transfer_request(struct coap_block_context *ctx,
 	/* TODO: convert to lower case */
 	if (len < 4 || len > 5) {
 		ret = -EPROTONOSUPPORT;
-		SYS_LOG_ERR("Unsupported schema");
+		LOG_ERR("Unsupported schema");
 		goto cleanup;
 	}
 
@@ -125,14 +127,14 @@ static int transfer_request(struct coap_block_context *ctx,
 		uri_path = COAP2COAP_PROXY_URI_PATH;
 	} else {
 		ret = -EPROTONOSUPPORT;
-		SYS_LOG_ERR("Unsupported schema");
+		LOG_ERR("Unsupported schema");
 		goto cleanup;
 	}
 
 	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
 					uri_path, strlen(uri_path));
 	if (ret < 0) {
-		SYS_LOG_ERR("Error adding URI_PATH '%s'", uri_path);
+		LOG_ERR("Error adding URI_PATH '%s'", uri_path);
 		goto cleanup;
 	}
 #else
@@ -149,7 +151,7 @@ static int transfer_request(struct coap_block_context *ctx,
 						      COAP_OPTION_URI_PATH,
 						      cursor, path_len);
 				if (ret < 0) {
-					SYS_LOG_ERR("Error adding URI_PATH");
+					LOG_ERR("Error adding URI_PATH");
 					goto cleanup;
 				}
 
@@ -168,7 +170,7 @@ static int transfer_request(struct coap_block_context *ctx,
 							COAP_OPTION_URI_PATH,
 							cursor, path_len + 1);
 			if (ret < 0) {
-				SYS_LOG_ERR("Error adding URI_PATH");
+				LOG_ERR("Error adding URI_PATH");
 				goto cleanup;
 			}
 			break;
@@ -179,7 +181,7 @@ static int transfer_request(struct coap_block_context *ctx,
 
 	ret = coap_append_block2_option(&msg->cpkt, ctx);
 	if (ret < 0) {
-		SYS_LOG_ERR("Unable to add block2 option.");
+		LOG_ERR("Unable to add block2 option.");
 		goto cleanup;
 	}
 
@@ -187,14 +189,14 @@ static int transfer_request(struct coap_block_context *ctx,
 	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_PROXY_URI,
 					firmware_uri, strlen(firmware_uri));
 	if (ret < 0) {
-		SYS_LOG_ERR("Error adding PROXY_URI '%s'", firmware_uri);
+		LOG_ERR("Error adding PROXY_URI '%s'", firmware_uri);
 		goto cleanup;
 	}
 #else
 	/* Ask the server to provide a size estimate */
 	ret = coap_append_option_int(&msg->cpkt, COAP_OPTION_SIZE2, 0);
 	if (ret < 0) {
-		SYS_LOG_ERR("Unable to add size2 option.");
+		LOG_ERR("Unable to add size2 option.");
 		goto cleanup;
 	}
 #endif
@@ -202,7 +204,7 @@ static int transfer_request(struct coap_block_context *ctx,
 	/* send request */
 	ret = lwm2m_send_message(msg);
 	if (ret < 0) {
-		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
+		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
 		goto cleanup;
 	}
 
@@ -220,7 +222,7 @@ static int transfer_empty_ack(u16_t mid)
 
 	msg = lwm2m_get_message(&firmware_ctx);
 	if (!msg) {
-		SYS_LOG_ERR("Unable to get a lwm2m message!");
+		LOG_ERR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
 
@@ -235,8 +237,7 @@ static int transfer_empty_ack(u16_t mid)
 
 	ret = lwm2m_send_message(msg);
 	if (ret < 0) {
-		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).",
-			    ret);
+		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
 		goto cleanup;
 	}
 
@@ -275,7 +276,7 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		/* Send back ACK so the server knows we received the pkt */
 		ret = transfer_empty_ack(coap_header_get_id(check_response));
 		if (ret < 0) {
-			SYS_LOG_ERR("Error transmitting ACK");
+			LOG_ERR("Error transmitting ACK");
 			goto error;
 		}
 	}
@@ -283,9 +284,9 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	/* Check response code from server. Expecting (2.05) */
 	resp_code = coap_header_get_code(check_response);
 	if (resp_code != COAP_RESPONSE_CODE_CONTENT) {
-		SYS_LOG_ERR("Unexpected response from server: %d.%d",
-			    COAP_RESPONSE_CODE_CLASS(resp_code),
-			    COAP_RESPONSE_CODE_DETAIL(resp_code));
+		LOG_ERR("Unexpected response from server: %d.%d",
+			COAP_RESPONSE_CODE_CLASS(resp_code),
+			COAP_RESPONSE_CODE_DETAIL(resp_code));
 		ret = -ENOMSG;
 		goto error;
 	}
@@ -296,14 +297,14 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 
 	ret = coap_update_from_block(check_response, &firmware_block_ctx);
 	if (ret < 0) {
-		SYS_LOG_ERR("Error from block update: %d", ret);
+		LOG_ERR("Error from block update: %d", ret);
 		ret = -EFAULT;
 		goto error;
 	}
 
 	/* test for duplicate transfer */
 	if (firmware_block_ctx.current < received_block_ctx.current) {
-		SYS_LOG_WRN("Duplicate packet ignored");
+		LOG_WRN("Duplicate packet ignored");
 
 		/* restore main firmware block context */
 		memcpy(&firmware_block_ctx, &received_block_ctx,
@@ -321,9 +322,9 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	payload_frag = coap_packet_get_payload(check_response, &payload_offset,
 					       &payload_len);
 	if (payload_len > 0) {
-		SYS_LOG_DBG("total: %zd, current: %zd",
-			    firmware_block_ctx.total_size,
-			    firmware_block_ctx.current);
+		LOG_DBG("total: %zd, current: %zd",
+			firmware_block_ctx.total_size,
+			firmware_block_ctx.current);
 
 		/* look up firmware package resource */
 		ret = lwm2m_engine_get_resource("5/0/0", &res);
@@ -396,7 +397,7 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 
 	if (firmware_retry < PACKET_TRANSFER_RETRY_MAX) {
 		/* retry block */
-		SYS_LOG_WRN("TIMEOUT - Sending a retry packet!");
+		LOG_WRN("TIMEOUT - Sending a retry packet!");
 		tkl = coap_header_get_token(&msg->cpkt, token);
 
 		ret = transfer_request(&firmware_block_ctx, token, tkl,
@@ -410,8 +411,8 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 
 		firmware_retry++;
 	} else {
-		SYS_LOG_ERR("TIMEOUT - Too many retry packet attempts! "
-			    "Aborting firmware download.");
+		LOG_ERR("TIMEOUT - Too many retry packet attempts! "
+			"Aborting firmware download.");
 		lwm2m_firmware_set_update_result(RESULT_CONNECTION_LOST);
 	}
 }
@@ -431,7 +432,7 @@ static void firmware_transfer(struct k_work *work)
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	server_addr = CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR;
 	if (strlen(server_addr) >= URI_LEN) {
-		SYS_LOG_ERR("Invalid Proxy URI: %s", server_addr);
+		LOG_ERR("Invalid Proxy URI: %s", server_addr);
 		ret = -ENOTSUP;
 		goto error;
 	}
@@ -449,14 +450,14 @@ static void firmware_transfer(struct k_work *work)
 				    0,
 				    &parsed_uri);
 	if (ret != 0) {
-		SYS_LOG_ERR("Invalid firmware URI: %s", server_addr);
+		LOG_ERR("Invalid firmware URI: %s", server_addr);
 		ret = -ENOTSUP;
 		goto error;
 	}
 
 	/* Check schema and only support coap for now */
 	if (!(parsed_uri.field_set & (1 << UF_SCHEMA))) {
-		SYS_LOG_ERR("No schema in package uri");
+		LOG_ERR("No schema in package uri");
 		ret = -ENOTSUP;
 		goto error;
 	}
@@ -465,7 +466,7 @@ static void firmware_transfer(struct k_work *work)
 	off = parsed_uri.field_data[UF_SCHEMA].off;
 	len = parsed_uri.field_data[UF_SCHEMA].len;
 	if (len != 4 || memcmp(server_addr + off, "coap", 4)) {
-		SYS_LOG_ERR("Unsupported schema");
+		LOG_ERR("Unsupported schema");
 		ret = -EPROTONOSUPPORT;
 		goto error;
 	}
@@ -500,13 +501,13 @@ static void firmware_transfer(struct k_work *work)
 				      firmware_ctx.net_init_timeout, NULL);
 	server_addr[off + len] = tmp;
 	if (ret < 0) {
-		SYS_LOG_ERR("Could not get an UDP context (err:%d)", ret);
+		LOG_ERR("Could not get an UDP context (err:%d)", ret);
 		ret = -ENOMSG;
 		goto error;
 	}
 
-	SYS_LOG_INF("Connecting to server %s, port %d", server_addr + off,
-		    parsed_uri.port);
+	LOG_INF("Connecting to server %s, port %d", server_addr + off,
+		parsed_uri.port);
 
 	lwm2m_engine_context_init(&firmware_ctx);
 
@@ -514,7 +515,7 @@ static void firmware_transfer(struct k_work *work)
 	ret = net_app_set_cb(&firmware_ctx.net_app_ctx, NULL,
 			     firmware_udp_receive, NULL, NULL);
 	if (ret < 0) {
-		SYS_LOG_ERR("Could not set receive callback (err:%d)", ret);
+		LOG_ERR("Could not set receive callback (err:%d)", ret);
 		/* make sure this sets RESULT_CONNECTION_LOST */
 		ret = -ENOMSG;
 		goto cleanup;
@@ -523,7 +524,7 @@ static void firmware_transfer(struct k_work *work)
 	ret = net_app_connect(&firmware_ctx.net_app_ctx,
 			      firmware_ctx.net_timeout);
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot connect UDP (%d)", ret);
+		LOG_ERR("Cannot connect UDP (%d)", ret);
 		goto cleanup;
 	}
 

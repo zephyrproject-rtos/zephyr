@@ -10,9 +10,12 @@
  * Section: "16. IPSO Object: Light Control"
  */
 
-#define SYS_LOG_DOMAIN "ipso_light_control"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_LWM2M_LEVEL
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME net_ipso_light_control
+#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
 #include <stdint.h>
 #include <init.h>
 #include <net/lwm2m.h>
@@ -87,7 +90,7 @@ static int on_time_post_write_cb(u16_t obj_inst_id,
 	int i;
 
 	if (data_len != 4) {
-		SYS_LOG_ERR("unknown size %u", data_len);
+		LOG_ERR("unknown size %u", data_len);
 		return -EINVAL;
 	}
 
@@ -116,8 +119,8 @@ static struct lwm2m_engine_obj_inst *light_control_create(u16_t obj_inst_id)
 	/* Check that there is no other instance with this ID */
 	for (index = 0; index < MAX_INSTANCE_COUNT; index++) {
 		if (inst[index].obj && inst[index].obj_inst_id == obj_inst_id) {
-			SYS_LOG_ERR("Can not create instance - "
-				    "already existing: %u", obj_inst_id);
+			LOG_ERR("Can not create instance - "
+				"already existing: %u", obj_inst_id);
 			return NULL;
 		}
 
@@ -128,8 +131,8 @@ static struct lwm2m_engine_obj_inst *light_control_create(u16_t obj_inst_id)
 	}
 
 	if (avail < 0) {
-		SYS_LOG_ERR("Can not create instance - "
-			    "no more room: %u", obj_inst_id);
+		LOG_ERR("Can not create instance - no more room: %u",
+			obj_inst_id);
 		return NULL;
 	}
 
@@ -166,7 +169,7 @@ static struct lwm2m_engine_obj_inst *light_control_create(u16_t obj_inst_id)
 	inst[avail].resources = res[avail];
 	inst[avail].resource_count = i;
 
-	SYS_LOG_DBG("Create IPSO Light Control instance: %d", obj_inst_id);
+	LOG_DBG("Create IPSO Light Control instance: %d", obj_inst_id);
 
 	return &inst[avail];
 }

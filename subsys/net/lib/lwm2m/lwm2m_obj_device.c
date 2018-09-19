@@ -10,9 +10,12 @@
  * - Configurable CURRENT_TIME notification delay
  */
 
-#define SYS_LOG_DOMAIN "lwm2m_obj_device"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_LWM2M_LEVEL
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME net_lwm2m_obj_device
+#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
 #include <string.h>
 #include <stdio.h>
 #include <init.h>
@@ -117,13 +120,13 @@ static struct lwm2m_engine_res_inst res[DEVICE_MAX_ID];
 
 static int reboot_cb(u16_t obj_inst_id)
 {
-	SYS_LOG_DBG("REBOOT");
+	LOG_DBG("REBOOT");
 	return -EPERM;
 }
 
 static int factory_default_cb(u16_t obj_inst_id)
 {
-	SYS_LOG_DBG("FACTORY_DEFAULT");
+	LOG_DBG("FACTORY_DEFAULT");
 	return -EPERM;
 }
 
@@ -156,7 +159,7 @@ static int current_time_post_write_cb(u16_t obj_inst_id,
 		return 0;
 	}
 
-	SYS_LOG_ERR("unknown size %u", data_len);
+	LOG_ERR("unknown size %u", data_len);
 	return -EINVAL;
 }
 
@@ -167,8 +170,7 @@ int lwm2m_device_add_pwrsrc(u8_t pwrsrc_type)
 	int index;
 
 	if (pwrsrc_type < 0 || pwrsrc_type >= LWM2M_DEVICE_PWR_SRC_TYPE_MAX) {
-		SYS_LOG_ERR("power source id %d is invalid",
-			    pwrsrc_type);
+		LOG_ERR("power source id %d is invalid", pwrsrc_type);
 		return -EINVAL;
 	}
 
@@ -198,12 +200,12 @@ int lwm2m_device_add_pwrsrc(u8_t pwrsrc_type)
 int lwm2m_device_remove_pwrsrc(int index)
 {
 	if (index < 0 || index >= DEVICE_PWRSRC_MAX) {
-		SYS_LOG_ERR("index is out of range: %d", index);
+		LOG_ERR("index is out of range: %d", index);
 		return -EINVAL;
 	}
 
 	if (pwrsrc_available[index] < 0) {
-		SYS_LOG_ERR("Power source index %d isn't registered", index);
+		LOG_ERR("Power source index %d isn't registered", index);
 		return -EINVAL;
 	}
 
@@ -219,12 +221,12 @@ int lwm2m_device_remove_pwrsrc(int index)
 int lwm2m_device_set_pwrsrc_voltage_mv(int index, int voltage_mv)
 {
 	if (index < 0 || index >= DEVICE_PWRSRC_MAX) {
-		SYS_LOG_ERR("index is out of range: %d", index);
+		LOG_ERR("index is out of range: %d", index);
 		return -EINVAL;
 	}
 
 	if (pwrsrc_available[index] < 0) {
-		SYS_LOG_ERR("Power source index %d isn't registered.", index);
+		LOG_ERR("Power source index %d isn't registered.", index);
 		return -EINVAL;
 	}
 
@@ -237,12 +239,12 @@ int lwm2m_device_set_pwrsrc_voltage_mv(int index, int voltage_mv)
 int lwm2m_device_set_pwrsrc_current_ma(int index, int current_ma)
 {
 	if (index < 0 || index >= DEVICE_PWRSRC_MAX) {
-		SYS_LOG_ERR("index is out of range: %d", index);
+		LOG_ERR("index is out of range: %d", index);
 		return -EINVAL;
 	}
 
 	if (pwrsrc_available[index] < 0) {
-		SYS_LOG_ERR("Power source index %d isn't registered.", index);
+		LOG_ERR("Power source index %d isn't registered.", index);
 		return -EINVAL;
 	}
 
@@ -315,7 +317,7 @@ static struct lwm2m_engine_obj_inst *device_create(u16_t obj_inst_id)
 
 	inst.resources = res;
 	inst.resource_count = i;
-	SYS_LOG_DBG("Create LWM2M device instance: %d", obj_inst_id);
+	LOG_DBG("Create LWM2M device instance: %d", obj_inst_id);
 	return &inst;
 }
 
@@ -348,7 +350,7 @@ static int lwm2m_device_init(struct device *dev)
 	/* auto create the only instance */
 	ret = lwm2m_create_obj_inst(LWM2M_OBJECT_DEVICE_ID, 0, &obj_inst);
 	if (ret < 0) {
-		SYS_LOG_DBG("Create LWM2M instance 0 error: %d", ret);
+		LOG_DBG("Create LWM2M instance 0 error: %d", ret);
 	}
 
 	/* call device_periodic_service() every 10 seconds */

@@ -57,9 +57,11 @@
  * - Research using Zephyr JSON lib for json_next_token()
  */
 
-#define SYS_LOG_DOMAIN "lib/lwm2m_json"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_LWM2M_LEVEL
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME net_lwm2m_json
+#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <stdio.h>
 #include <stddef.h>
@@ -559,7 +561,7 @@ static int parse_path(const u8_t *buf, u16_t buflen,
 		 * and the end will be when pos == pl
 		 */
 		if (c == '/' || pos == buflen) {
-			SYS_LOG_DBG("Setting %u = %u", ret, val);
+			LOG_DBG("Setting %u = %u", ret, val);
 			if (ret == 0) {
 				path->obj_id = val;
 			} else if (ret == 1) {
@@ -571,8 +573,8 @@ static int parse_path(const u8_t *buf, u16_t buflen,
 			ret++;
 			pos++;
 		} else {
-			SYS_LOG_ERR("Error: illegal char '%c' at pos:%d",
-				    c, pos);
+			LOG_ERR("Error: illegal char '%c' at pos:%d",
+				c, pos);
 			return -1;
 		}
 	} while (pos < buflen);
