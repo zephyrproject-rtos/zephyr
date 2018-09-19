@@ -31,6 +31,11 @@ class DTHeuristics(object):
     #
     def extract(self, node_address, yaml):
 
+        # Check aliases
+        if node_address in aliases:
+            for i , alias in enumerate(aliases[node_address]):
+                edts_insert_device_property(node_address, 'alias/{}'.format(i), alias)
+
         # Process compatible related work
         try:
             compatible = reduced[node_address]['props']['compatible']

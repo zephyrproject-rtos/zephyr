@@ -94,6 +94,8 @@ class EDTSProviderMixin(object):
         # special properties
         if property_path.startswith('compatible'):
             self._update_device_compatible(device_id, property_value)
+        if property_path.startswith('alias'):
+            self._update_device_alias(device_id, property_value)
 
         # normal property management
         if device_id not in self._edts['devices']:
@@ -135,6 +137,7 @@ class EDTSProviderMixin(object):
 # Database schema:
 #
 # _edts dict(
+#   'aliases': dict(alias) : sorted list(device-id)),
 #   'devices':  dict(device-id :  device-struct),
 #   'compatibles':  dict(compatible : sorted list(device-id)),
 #   ...
@@ -158,7 +161,7 @@ class EDTSDatabase(EDTSConsumerMixin, EDTSProviderMixin, Mapping):
     def __init__(self, *args, **kw):
         self._edts = dict(*args, **kw)
         # setup basic database schema
-        for edts_key in ('devices', 'compatibles'):
+        for edts_key in ('devices', 'compatibles', 'aliases'):
             if not edts_key in self._edts:
                 self._edts[edts_key] = dict()
 
