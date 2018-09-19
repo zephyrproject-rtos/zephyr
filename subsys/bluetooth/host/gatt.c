@@ -69,10 +69,6 @@ static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 {
 	char value[CONFIG_BT_DEVICE_NAME_MAX] = {};
 
-	if (flags & BT_GATT_WRITE_FLAG_PREPARE) {
-		return len;
-	}
-
 	if (offset) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
