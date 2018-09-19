@@ -5,9 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_DOMAIN "lwm2m-client"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
+#define LOG_MODULE_NAME net_lwm2m_client_app
+#define LOG_LEVEL LOG_LEVEL_DBG
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <board.h>
 #include <zephyr.h>
@@ -130,7 +132,7 @@ static int led_on_off_cb(u16_t obj_inst_id, u8_t *data, u16_t data_len,
 			 * post_write_cb, as there is not much that can be
 			 * done here.
 			 */
-			SYS_LOG_ERR("Fail to write to GPIO %d", LED_GPIO_PIN);
+			LOG_ERR("Fail to write to GPIO %d", LED_GPIO_PIN);
 			return ret;
 		}
 
@@ -166,7 +168,7 @@ static int init_led_device(void)
 
 static int device_reboot_cb(u16_t obj_inst_id)
 {
-	SYS_LOG_INF("DEVICE: REBOOT");
+	LOG_INF("DEVICE: REBOOT");
 	/* Add an error for testing */
 	lwm2m_device_add_err(LWM2M_DEVICE_ERROR_LOW_POWER);
 	/* Change the battery voltage for testing */
@@ -177,7 +179,7 @@ static int device_reboot_cb(u16_t obj_inst_id)
 
 static int device_factory_default_cb(u16_t obj_inst_id)
 {
-	SYS_LOG_INF("DEVICE: FACTORY DEFAULT");
+	LOG_INF("DEVICE: FACTORY DEFAULT");
 	/* Add an error for testing */
 	lwm2m_device_add_err(LWM2M_DEVICE_ERROR_GPS_FAILURE);
 	/* Change the USB current for testing */
@@ -189,7 +191,7 @@ static int device_factory_default_cb(u16_t obj_inst_id)
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
 static int firmware_update_cb(u16_t obj_inst_id)
 {
-	SYS_LOG_DBG("UPDATE");
+	LOG_DBG("UPDATE");
 
 	/* TODO: kick off update process */
 
@@ -213,8 +215,8 @@ static int firmware_block_received_cb(u16_t obj_inst_id,
 				      u8_t *data, u16_t data_len,
 				      bool last_block, size_t total_size)
 {
-	SYS_LOG_INF("FIRMWARE: BLOCK RECEIVED: len:%u last_block:%d",
-		    data_len, last_block);
+	LOG_INF("FIRMWARE: BLOCK RECEIVED: len:%u last_block:%d",
+		data_len, last_block);
 	return 0;
 }
 #endif
@@ -255,7 +257,7 @@ static int lwm2m_setup(void)
 
 	pwrsrc_bat = lwm2m_device_add_pwrsrc(LWM2M_DEVICE_PWR_SRC_TYPE_BAT_INT);
 	if (pwrsrc_bat < 0) {
-		SYS_LOG_ERR("LWM2M battery power source enable error (err:%d)",
+		LOG_ERR("LWM2M battery power source enable error (err:%d)",
 			pwrsrc_bat);
 		return pwrsrc_bat;
 	}
@@ -264,7 +266,7 @@ static int lwm2m_setup(void)
 
 	pwrsrc_usb = lwm2m_device_add_pwrsrc(LWM2M_DEVICE_PWR_SRC_TYPE_USB);
 	if (pwrsrc_usb < 0) {
-		SYS_LOG_ERR("LWM2M usb power source enable error (err:%d)",
+		LOG_ERR("LWM2M usb power source enable error (err:%d)",
 			pwrsrc_usb);
 		return pwrsrc_usb;
 	}
@@ -310,35 +312,35 @@ static void rd_client_event(struct lwm2m_ctx *client,
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_FAILURE:
-		SYS_LOG_DBG("Bootstrap failure!");
+		LOG_DBG("Bootstrap failure!");
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_COMPLETE:
-		SYS_LOG_DBG("Bootstrap complete");
+		LOG_DBG("Bootstrap complete");
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE:
-		SYS_LOG_DBG("Registration failure!");
+		LOG_DBG("Registration failure!");
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE:
-		SYS_LOG_DBG("Registration complete");
+		LOG_DBG("Registration complete");
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE:
-		SYS_LOG_DBG("Registration update failure!");
+		LOG_DBG("Registration update failure!");
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE:
-		SYS_LOG_DBG("Registration update complete");
+		LOG_DBG("Registration update complete");
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE:
-		SYS_LOG_DBG("Deregister failure!");
+		LOG_DBG("Deregister failure!");
 		break;
 
 	case LWM2M_RD_CLIENT_EVENT_DISCONNECT:
-		SYS_LOG_DBG("Disconnected");
+		LOG_DBG("Disconnected");
 		break;
 
 	}
@@ -348,13 +350,13 @@ void main(void)
 {
 	int ret;
 
-	SYS_LOG_INF(APP_BANNER);
+	LOG_INF(APP_BANNER);
 
 	k_sem_init(&quit_lock, 0, UINT_MAX);
 
 	ret = lwm2m_setup();
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot setup LWM2M fields (%d)", ret);
+		LOG_ERR("Cannot setup LWM2M fields (%d)", ret);
 		return;
 	}
 
@@ -388,12 +390,11 @@ void main(void)
 				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD,
 				    rd_client_event);
 #else
-	SYS_LOG_ERR("LwM2M client requires IPv4 or IPv6.");
+	LOG_ERR("LwM2M client requires IPv4 or IPv6.");
 	ret = -EPROTONOSUPPORT;
 #endif
 	if (ret < 0) {
-		SYS_LOG_ERR("LWM2M init LWM2M RD client error (%d)",
-			ret);
+		LOG_ERR("LWM2M init LWM2M RD client error (%d)", ret);
 		return;
 	}
 
