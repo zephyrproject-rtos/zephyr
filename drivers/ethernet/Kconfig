@@ -33,5 +33,6 @@ source "drivers/ethernet/Kconfig.e1000"
 source "drivers/ethernet/Kconfig.sam_gmac"
 source "drivers/ethernet/Kconfig.stm32_hal"
 source "drivers/ethernet/Kconfig.native_posix"
+source "drivers/ethernet/Kconfig.stellaris"
 
 endmenu
