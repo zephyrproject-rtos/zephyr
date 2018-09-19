@@ -1562,26 +1562,16 @@ __syscall s64_t k_uptime_get(void);
 /**
  * @brief Enable clock always on in tickless kernel
  *
- * This routine enables keeping the clock running when
- * there are no timer events programmed in tickless kernel
- * scheduling. This is necessary if the clock is used to track
- * passage of time.
+ * This routine enables keeping the clock running (that is, it always
+ * keeps an active timer interrupt scheduled) when there are no timer
+ * events programmed in tickless kernel scheduling. This is necessary
+ * if the clock is used to track passage of time (e.g. via
+ * k_uptime_get_32()), otherwise the internal hardware counter may
+ * roll over between interrupts.
  *
  * @retval prev_status Previous status of always on flag
  */
-static inline int k_enable_sys_clock_always_on(void)
-{
-#ifdef CONFIG_TICKLESS_KERNEL
-	int prev_status = _sys_clock_always_on;
-
-	_sys_clock_always_on = 1;
-	_enable_sys_clock();
-
-	return prev_status;
-#else
-	return -ENOTSUP;
-#endif
-}
+int k_enable_sys_clock_always_on(void);
 
 /**
  * @brief Disable clock always on in tickless kernel
@@ -1591,12 +1581,7 @@ static inline int k_enable_sys_clock_always_on(void)
  * scheduling. To save power, this routine should be called
  * immediately when clock is not used to track time.
  */
-static inline void k_disable_sys_clock_always_on(void)
-{
-#ifdef CONFIG_TICKLESS_KERNEL
-	_sys_clock_always_on = 0;
-#endif
-}
+void k_disable_sys_clock_always_on(void);
 
 /**
  * @brief Get system uptime (32-bit version).

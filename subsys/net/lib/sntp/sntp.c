@@ -149,9 +149,7 @@ static u32_t get_uptime_in_sec(void)
 {
 	u64_t time;
 
-	k_enable_sys_clock_always_on();
 	time = k_uptime_get_32();
-	k_disable_sys_clock_always_on();
 
 	return time / MSEC_PER_SEC;
 }
