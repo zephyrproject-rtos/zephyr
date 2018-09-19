@@ -53,6 +53,8 @@ static const u8_t hid_report_desc[] = {
 	HID_MI_COLLECTION_END,
 };
 
+static u8_t report_1[2] = { REPORT_ID_1, 0x00 };
+
 int debug_cb(struct usb_setup_packet *setup, s32_t *len,
 	     u8_t **data)
 {
@@ -81,6 +83,27 @@ int get_report_cb(struct usb_setup_packet *setup, s32_t *len,
 	return 0;
 }
 
+static void in_ready_cb(void)
+{
+	int ret, wrote;
+
+	ret = hid_int_ep_write(report_1, sizeof(report_1), &wrote);
+
+	SYS_LOG_DBG("Wrote %d bytes with ret %d", wrote, ret);
+}
+
+static void status_cb(enum usb_dc_status_code status, u8_t *param)
+{
+	switch (status) {
+	case USB_DC_CONFIGURED:
+		in_ready_cb();
+		break;
+	default:
+		SYS_LOG_DBG("status %u unhandled", status);
+		break;
+	}
+}
+
 static const struct hid_ops ops = {
 	.get_report = get_report_cb,
 	.get_idle = debug_cb,
@@ -88,12 +111,12 @@ static const struct hid_ops ops = {
 	.set_report = debug_cb,
 	.set_idle = set_idle_cb,
 	.set_protocol = debug_cb,
+	.int_in_ready = in_ready_cb,
+	.status_cb = status_cb,
 };
 
 void main(void)
 {
-	u8_t report_1[2] = { REPORT_ID_1, 0x00 };
-
 	SYS_LOG_DBG("Starting application");
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
@@ -102,14 +125,9 @@ void main(void)
 #endif
 
 	while (true) {
-		int ret, wrote;
-
 		k_sleep(K_SECONDS(2));
 
 		report_1[1]++;
-
-		ret = hid_int_ep_write(report_1, sizeof(report_1), &wrote);
-		SYS_LOG_DBG("Wrote %d bytes with ret %d", wrote, ret);
 	}
 }
 
