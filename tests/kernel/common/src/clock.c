@@ -101,7 +101,7 @@ void test_clock_cycle(void)
 	c32 = k_cycle_get_32();
 	/*break if cycle counter wrap around*/
 	while (k_cycle_get_32() > c32 &&
-	       k_cycle_get_32() < (c32 + sys_clock_hw_cycles_per_tick))
+	       k_cycle_get_32() < (c32 + sys_clock_hw_cycles_per_tick()))
 #if defined(CONFIG_ARCH_POSIX)
 		posix_halt_cpu();
 #else

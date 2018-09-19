@@ -61,7 +61,7 @@ static int ticks_to_sleep(int ticks)
 	k_sleep(__ticks_to_ms(ticks));
 	stop_time = k_cycle_get_32();
 
-	return (stop_time - start_time) / sys_clock_hw_cycles_per_tick;
+	return (stop_time - start_time) / sys_clock_hw_cycles_per_tick();
 }
 
 

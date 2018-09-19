@@ -648,7 +648,7 @@ int _sys_clock_driver_init(struct device *device)
 	/* determine the timer counter value (in timer clock cycles/system tick)
 	 */
 
-	cycles_per_tick = sys_clock_hw_cycles_per_tick;
+	cycles_per_tick = sys_clock_hw_cycles_per_tick();
 
 	tickless_idle_init();
 

@@ -42,6 +42,20 @@ static inline int sys_clock_hw_cycles_per_sec(void)
 #endif
 }
 
+/* Note that some systems with comparatively slow cycle counters
+ * experience precision loss when doing math like this.  In the
+ * general case it is not correct that "cycles" are much faster than
+ * "ticks".
+ */
+static inline int sys_clock_hw_cycles_per_tick(void)
+{
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+	return sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+#else
+	return 1; /* Just to avoid a division by zero */
+#endif
+}
+
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && \
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 0)
 #error "SYS_CLOCK_HW_CYCLES_PER_SEC must be non-zero!"
@@ -137,22 +151,6 @@ static inline s64_t __ticks_to_ms(s64_t ticks)
 #else
 #define _TICK_ALIGN 1
 #endif
-
-/*
- * sys_clock_us_per_tick global variable represents a number
- * of microseconds in one OS timer tick
- *
- * Note: This variable is deprecated and will be removed soon!
- */
-__deprecated extern int sys_clock_us_per_tick;
-
-/*
- * sys_clock_hw_cycles_per_tick global variable represents a number
- * of platform clock ticks in one OS timer tick.
- * sys_clock_hw_cycles_per_tick often represents a value of divider
- * of the board clock frequency
- */
-extern int sys_clock_hw_cycles_per_tick;
 
 /* SYS_CLOCK_HW_CYCLES_TO_NS64 converts CPU clock cycles to nanoseconds */
 #define SYS_CLOCK_HW_CYCLES_TO_NS64(X) \
