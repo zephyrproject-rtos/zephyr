@@ -33,5 +33,6 @@
 #include <misc/printk.h>
 #include <arch/cpu.h>
 #include <misc/rb.h>
+#include <sys_clock.h>
 
 #endif /* ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_ */
