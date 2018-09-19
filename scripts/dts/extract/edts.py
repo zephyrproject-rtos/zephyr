@@ -16,6 +16,9 @@ edts = edtsdatabase.EDTSDatabase()
 def edts_device_id(node_address):
 	return node_address
 
+def edts_insert_chosen(chosen, node_address):
+    edts.insert_chosen(chosen, edts_device_id(node_address))
+
 ##
 # @brief Insert device property into EDTS
 #

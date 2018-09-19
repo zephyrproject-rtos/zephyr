@@ -90,6 +90,9 @@ class EDTSProviderMixin(object):
             self._edts['compatibles'][compatible].append(device_id)
             self._edts['compatibles'][compatible].sort()
 
+    def insert_chosen(self, chosen, device_id):
+        self._edts['chosen'][chosen] = device_id
+
     ##
     # @brief Insert property value for the device of the given device id.
     #
@@ -146,6 +149,7 @@ class EDTSProviderMixin(object):
 #
 # _edts dict(
 #   'aliases': dict(alias) : sorted list(device-id)),
+#   'chosen': dict(chosen),
 #   'devices':  dict(device-id :  device-struct),
 #   'compatibles':  dict(compatible : sorted list(device-id)),
 #   ...
@@ -169,7 +173,7 @@ class EDTSDatabase(EDTSConsumerMixin, EDTSProviderMixin, Mapping):
     def __init__(self, *args, **kw):
         self._edts = dict(*args, **kw)
         # setup basic database schema
-        for edts_key in ('devices', 'compatibles', 'aliases'):
+        for edts_key in ('devices', 'compatibles', 'aliases', 'chosen'):
             if not edts_key in self._edts:
                 self._edts[edts_key] = dict()
 
