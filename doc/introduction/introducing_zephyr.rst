@@ -32,32 +32,14 @@ Distinguishing Features
 The Zephyr kernel offers a number of features that distinguish it from other
 small-footprint OSes:
 
-**Single address-space**
-   Combines application-specific code
-   with a custom kernel to create a monolithic image that gets loaded
-   and executed on a system's hardware. Both the application code and
-   kernel code execute in a single shared address space.
-
 **Highly configurable / Modular for flexibility**
-   Allows an application to incorporate *only*
-   the capabilities it needs as it needs them, and to specify their
-   quantity and size.
+   Allows an application to incorporate *only* the capabilities it needs as it
+   needs them, and to specify their quantity and size.
 
 **Cross Architecture**
    Supports a wide variety of :ref:`supported boards<boards>` with different CPU
    architectures and developer tools. Contributions have added support
    for an increasing number of SoCs, platforms, and drivers.
-
-**Compile-time resource definition**
-   Allows system resources
-   to be defined at compile-time, which reduces code size and
-   increases performance for resource-limited systems.
-
-**Minimal and Configurable error checking**
-   Provides minimal runtime error checking
-   to reduce code size and increase performance. An optional error-checking
-   infrastructure is provided to assist in debugging during application
-   development.
 
 **Memory Protection**
    Implements configurable architecture-specific stack-overflow protection,
@@ -65,20 +47,83 @@ small-footprint OSes:
    with thread-level memory protection on x86, ARC, and ARM architectures,
    userspace, and memory domains.
 
+   For platforms without MMU/MPU and memory constrained devices, supports
+   combining application-specific code with a custom kernel to create a
+   monolithic image that gets loaded and executed on a system's hardware. Both
+   the application code and kernel code execute in a single shared address
+   space.
+
+**Compile-time resource definition**
+   Allows system resources to be defined at compile-time, which reduces code
+   size and increases performance for resource-limited systems.
+
+**Optimized Device Driver Model**
+   Provides a consistent device model for configuring the drivers that are part
+   of the platform/system and a consistent model for initializing all the
+   drivers configured into the system and Allows the reuse of drivers across
+   platforms that have common devices/IP blocks
+
+**Device Tree Support**
+   Use of Device Tree (DTS) to describe hardware and configuration information for
+   boards. The DTS information will be used only during compile time.
+   Information about the system is extracted from the compiled DTS and used to
+   create the application image.
+
 **Native Networking Stack supporting multiple protocols**
-   Networking support is fully featured and optimized, including LwM2M
-   and BSD sockets compatible support.  Bluetooth Low Energy 5.0 support
-   includes BLE Mesh and a Bluetooth qualification-ready BLE controller.
-   OpenThread support (on Nordic chipsets) is also provided - a mesh
-   network designed to securely and reliably connect hundreds of products
-   around the home.
+   Networking support is fully featured and optimized, including LwM2M and BSD
+   sockets compatible support.  OpenThread support (on Nordic chipsets) is also
+   provided - a mesh network designed to securely and reliably connect hundreds
+   of products around the home.
+
+**Bluetooth Low Energy 5.0 support**
+   Bluetooth 5.0 compliant (ESR10) and Bluetooth Low Energy Controller support
+   (LE Link Layer). Includes BLE Mesh and a Bluetooth qualification-ready BLE
+   controller.
+
+   * Generic Access Profile (GAP) with all possible LE roles.
+   * GATT (Generic Attribute Profile)
+   * Pairing support, including the Secure Connections feature from Bluetooth
+     4.2
+   * Clean HCI driver abstraction
+   * Raw HCI interface to run Zephyr as a Controller instead of a full Host
+     stack
+   * Verified with multiple popular controllers
+   * Highly configurable
 
 **Native Linux, macOS, and Windows Development**
    A command-line CMake build environment runs on popular developer OS
    systems. A native POSIX port, lets you build and run Zephyr as a native
    application on Linux and other OSes, aiding development and testing.
 
-**Extensive suite of services**
+**Virtual File System Interface with NFFS and FATFS Support**
+   Newtron Flash Filesystem (NFFS) and FATFS Support,
+   FCB (Flash Circular Buffer) for memory constrained applications, and
+   file system enhancements for logging and configuration.
+
+**Powerful multi-backend logging Framework**
+   Support for log filtering, object dumping, panic mode, multiple backends
+   (memory, networking, filesystem, console, ..) and integration with the shell
+   subsystem.
+
+**User friendly and full-featured Shell interface**
+   A multi-instance shell subsystem with user-friendly features such as
+   autocompletion, wildcards, coloring, metakeys (arrows, backspace, ctrl+u,
+   etc.) and history. Support for static commands and dynamic sub-commands.
+
+**Settings on non-volatile storage**
+   The settings subsystem gives modules a way to store persistent per-device
+   configuration and runtime state.  Settings items are stored as key-value pair
+   strings.
+
+**Non-volatile storage (NVS)**
+  NVS allows storage of binary blobs, strings, integers, longs, and any
+  combination of these.
+
+**Native POSIX port**
+  Supports running Zephyr as a Linux application with support for various
+  subsystems and networking.
+
+**Extensive suite of Kernel services**
    Zephyr offers a number of familiar services for development:
 
    * *Multi-threading Services* for cooperative, priority-based,
@@ -99,13 +144,6 @@ small-footprint OSes:
    * *Power Management Services* such as tickless idle and an advanced idling
      infrastructure.
 
-   * *File system* with Newtron Flash Filesystem (NFFS) and FATFS
-     support, FCB (Flash Circular Buffer) for memory constrained
-     applications, and file system enhancements for logging and
-     configuration.
-
-   * *ZTest infrastructure* and a coverage test suite for continuous
-     integration testing and verification as features are added and updated.
 
 
 .. include:: ../../README.rst
