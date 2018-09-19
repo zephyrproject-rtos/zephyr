@@ -12,7 +12,7 @@
 #include <uart.h>
 #include <assert.h>
 
-int char_out(u8_t *data, size_t length, void *ctx)
+static int char_out(u8_t *data, size_t length, void *ctx)
 {
 	struct device *dev = (struct device *)ctx;
 
@@ -48,7 +48,7 @@ static void put(const struct log_backend *const backend,
 
 }
 
-void log_backend_uart_init(void)
+static void log_backend_uart_init(void)
 {
 	struct device *dev;
 
