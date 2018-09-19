@@ -52,30 +52,28 @@ To exit from QEMU enter: 'CTRL+a, x'
 [QEMU] CPU: qemu32
 tc_start() - MQTT Library test
 [PASS] 1 - CONNECT, new session, zeros
-[PASS] 2 - CONNECT, new session, zeros and keep alive = 365
-[PASS] 3 - CONNECT, new session, will
-[PASS] 4 - CONNECT, new session, will retain
-[PASS] 5 - CONNECT, new session, will qos = 1
-[PASS] 6 - CONNECT, new session, will qos = 1, will retain
-[PASS] 7 - CONNECT, new session, username and password
-[PASS] 8 - DISCONNECT
-[PASS] 9 - PUBLISH, qos = 0
-[PASS] 10 - PUBLISH, retain = 1
-[PASS] 11 - PUBLISH, retain = 1, qos = 1
-[PASS] 12 - PUBLISH, qos = 2
-[PASS] 13 - SUBSCRIBE, one topic, qos = 0
-[PASS] 14 - SUBSCRIBE, one topic, qos = 1
-[PASS] 15 - SUBSCRIBE, one topic, qos = 2
-[PASS] 16 - SUBACK, one topic, qos = 0
-[PASS] 17 - SUBACK, one topic, qos = 1
-[PASS] 18 - SUBACK, one topic, qos = 2
-[PASS] 19 - PINGREQ
-[PASS] 20 - PINGRESP
-[PASS] 21 - PUBACK
-[PASS] 22 - PUBREC
-[PASS] 23 - PUBREL
-[PASS] 24 - PUBCOMP
-[PASS] 25 - UNSUBACK
+[PASS] 2 - CONNECT, new session, will
+[PASS] 3 - CONNECT, new session, will retain
+[PASS] 4 - CONNECT, new session, will qos = 1
+[PASS] 5 - CONNECT, new session, will qos = 1, will retain
+[PASS] 6 - CONNECT, new session, username and password
+[PASS] 7 - DISCONNECT
+[PASS] 8 - PUBLISH, qos = 0
+[PASS] 9 - PUBLISH, retain = 1
+[PASS] 10 - PUBLISH, retain = 1, qos = 1
+[PASS] 11 - PUBLISH, qos = 2
+[PASS] 12 - SUBSCRIBE, one topic, qos = 0
+[PASS] 13 - SUBSCRIBE, one topic, qos = 1
+[PASS] 14 - SUBSCRIBE, one topic, qos = 2
+[PASS] 15 - SUBACK, one topic, qos = 0
+[PASS] 16 - SUBACK, one topic, qos = 1
+[PASS] 17 - SUBACK, one topic, qos = 2
+[PASS] 18 - PINGREQ
+[PASS] 19 - PUBACK
+[PASS] 20 - PUBREC
+[PASS] 21 - PUBREL
+[PASS] 22 - PUBCOMP
+[PASS] 23 - UNSUBACK
 ===================================================================
 PASS - main.
 ===================================================================
