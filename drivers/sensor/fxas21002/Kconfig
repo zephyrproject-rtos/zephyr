@@ -7,7 +7,7 @@
 
 menuconfig FXAS21002
 	bool "FXAS21002 gyroscope driver"
-	depends on I2C && HAS_DTS_I2C
+	depends on I2C && HAS_DTS_I2C && HAS_DTS_GPIO
 	help
 	  Enable driver for the FXAS21002 gyroscope
 
@@ -69,16 +69,6 @@ config FXAS21002_TRIGGER
 	bool
 
 if FXAS21002_TRIGGER
-
-if !HAS_DTS_GPIO
-
-config FXAS21002_GPIO_NAME
-	string "GPIO device name"
-
-config FXAS21002_GPIO_PIN
-	int "GPIO pin"
-
-endif
 
 config FXAS21002_DRDY_INT1
 	bool "Data ready interrupt to INT1 pin"

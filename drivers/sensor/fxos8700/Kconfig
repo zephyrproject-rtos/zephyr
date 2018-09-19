@@ -7,7 +7,7 @@
 
 menuconfig FXOS8700
 	bool "FXOS8700 accelerometer/magnetometer driver"
-	depends on I2C && HAS_DTS_I2C
+	depends on I2C && HAS_DTS_I2C && HAS_DTS_GPIO
 	help
 	  Enable driver for the FXOS8700 accelerometer/magnetometer
 
@@ -79,18 +79,6 @@ endchoice
 
 config FXOS8700_TRIGGER
 	bool
-
-if !HAS_DTS_GPIO
-
-config FXOS8700_GPIO_NAME
-	string "GPIO device name"
-	depends on FXOS8700_TRIGGER
-
-config FXOS8700_GPIO_PIN
-	int "GPIO pin"
-	depends on FXOS8700_TRIGGER
-
-endif
 
 config FXOS8700_DRDY_INT1
 	bool "Data ready interrupt to INT1 pin"

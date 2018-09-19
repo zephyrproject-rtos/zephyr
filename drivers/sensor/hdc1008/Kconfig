@@ -8,28 +8,6 @@
 
 menuconfig HDC1008
 	bool "HDC1008 Temperature and Humidity Sensor"
-	depends on I2C && HAS_DTS_I2C && GPIO
+	depends on I2C && HAS_DTS_I2C && GPIO && HAS_DTS_GPIO
 	help
 	  Enable driver for HDC1008 temperature and humidity sensors.
-
-if HDC1008
-
-if !HAS_DTS_GPIO
-
-config HDC1008_GPIO_DEV_NAME
-	string "GPIO device"
-	default "GPIO_0"
-	help
-	  The device name of the GPIO device to which the HDC1008 data-ready
-	  pin is connected.
-
-config HDC1008_GPIO_PIN_NUM
-	int "Interrupt GPIO pin number"
-	default 0
-	help
-	  The number of the GPIO on which the data-ready signal from the HDC1008
-	  chip will be received.
-
-endif # !HAS_DTS_GPIO
-
-endif # HDC1008

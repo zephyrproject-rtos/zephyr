@@ -54,24 +54,6 @@ endchoice
 config LSM6DSL_TRIGGER
 	bool
 
-if !HAS_DTS_GPIO
-
-config LSM6DSL_GPIO_DEV_NAME
-	string "GPIO device"
-	depends on LSM6DSL_TRIGGER
-	help
-	  The device name of the GPIO device to which the LSM6DSL interrupt pin
-	  is connected.
-
-config LSM6DSL_GPIO_PIN_NUM
-	int "Interrupt GPIO pin number"
-	depends on LSM6DSL_TRIGGER
-	help
-	  The number of the GPIO on which the interrupt signal from the LSM6DSL
-	  chip will be received.
-
-endif # HAS_DTS_GPIO
-
 config LSM6DSL_THREAD_PRIORITY
 	int "Thread priority"
 	depends on LSM6DSL_TRIGGER_OWN_THREAD
