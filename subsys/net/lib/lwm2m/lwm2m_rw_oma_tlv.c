@@ -57,9 +57,12 @@
  * - Replace magic #'s with defines
  */
 
-#define SYS_LOG_DOMAIN "lib/lwm2m_oma_tlv"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_LWM2M_LEVEL
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME net_lwm2m_oma_tlv
+#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
 #include <string.h>
 #include <stdint.h>
 #include <misc/byteorder.h>
@@ -608,7 +611,7 @@ static size_t get_number(struct lwm2m_input_context *in, s64_t *value,
 	*value = 0;
 	if (size > 0) {
 		if (tlv.length > max_len) {
-			SYS_LOG_ERR("invalid length: %u", tlv.length);
+			LOG_ERR("invalid length: %u", tlv.length);
 			return 0;
 		}
 
@@ -633,7 +636,7 @@ static size_t get_number(struct lwm2m_input_context *in, s64_t *value,
 			*value = sys_cpu_to_be64(temp);
 			break;
 		default:
-			SYS_LOG_ERR("invalid length: %u", tlv.length);
+			LOG_ERR("invalid length: %u", tlv.length);
 			return 0;
 		}
 	}
@@ -716,9 +719,9 @@ static size_t get_float32fix(struct lwm2m_input_context *in,
 		e = e - 127 + bits;
 
 		/* e is the number of times we need to roll the number */
-		SYS_LOG_DBG("Actual e=%d", e);
+		LOG_DBG("Actual e=%d", e);
 		e = e - 23;
-		SYS_LOG_DBG("E after sub %d", e);
+		LOG_DBG("E after sub %d", e);
 		val = val | 1L << 23;
 		if (e > 0) {
 			val = val << e;
@@ -750,7 +753,7 @@ static size_t get_float64fix(struct lwm2m_input_context *in,
 
 	if (size > 0) {
 		if (tlv.length != 8) {
-			SYS_LOG_ERR("invalid length: %u (not 8)", tlv.length);
+			LOG_ERR("invalid length: %u (not 8)", tlv.length);
 			return 0;
 		}
 
