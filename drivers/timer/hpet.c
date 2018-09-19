@@ -584,7 +584,7 @@ int _sys_clock_driver_init(struct device *device)
 	 * Get tick time (in femptoseconds).
 	 */
 
-	tickFempto = 1000000000000000ull / sys_clock_ticks_per_sec();
+	tickFempto = 1000000000000000ull / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
 	/*
 	 * This driver shall read the COUNTER_CLK_PERIOD value from the general
@@ -615,7 +615,7 @@ int _sys_clock_driver_init(struct device *device)
 
 	sys_clock_hw_cycles_per_tick = counter_load_value;
 	z_clock_hw_cycles_per_sec = sys_clock_hw_cycles_per_tick *
-		sys_clock_ticks_per_sec();
+		CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK

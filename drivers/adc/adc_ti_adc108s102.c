@@ -186,7 +186,7 @@ static int ti_adc108s102_read(struct device *dev,
 
 		/* convert to milliseconds */
 		delay = (s32_t)((MSEC_PER_SEC * (u64_t)delay) /
-				sys_clock_ticks_per_sec());
+				CONFIG_SYS_CLOCK_TICKS_PER_SEC);
 
 		k_sleep(delay);
 
