@@ -19,3 +19,5 @@ endif()
 
 target_link_libraries(subsys_bluetooth PRIVATE zephyr_interface)
 target_link_libraries(zephyr_app_linking INTERFACE subsys_bluetooth)
+
+zephyr_set_property(TARGET subsys_bluetooth MEMORY_SPACE kernel)

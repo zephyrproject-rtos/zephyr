@@ -22,6 +22,7 @@ include_relative(lib/CMakeLists.txt)
 
 target_link_libraries(subsys_net PRIVATE zephyr_interface)
 target_link_libraries(zephyr_app_linking INTERFACE subsys_net)
+zephyr_set_property(TARGET subsys_net MEMORY_SPACE kernel)
 
 if(CONFIG_MBEDTLS)
   target_link_libraries(mbedTLS INTERFACE zephyr_interface)
