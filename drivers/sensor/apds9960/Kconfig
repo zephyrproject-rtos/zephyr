@@ -7,28 +7,11 @@
 
 menuconfig APDS9960
 	bool "APDS9960 Sensor"
-	depends on I2C && HAS_DTS_I2C
+	depends on I2C && HAS_DTS_I2C && HAS_DTS_GPIO
 	help
 	  Enable driver for APDS9960 sensors.
 
 if APDS9960
-
-if !HAS_DTS_GPIO
-
-config APDS9960_GPIO_DEV_NAME
-	string "GPIO device"
-	default "GPIO_0"
-	help
-	  The GPIO device's name where the APDS9960 interrupt pin is connected.
-
-config APDS9960_GPIO_PIN_NUM
-	int "Interrupt GPIO pin number"
-	default 0
-	help
-	  The GPIO pin number receiving the interrupt signal from the
-	  APDS9960 sensor.
-
-endif # !HAS_DTS_GPIO
 
 choice
 	prompt "Trigger mode"
