@@ -71,6 +71,9 @@ class DTReg(DTDirective):
             for x in range(nr_size_cells):
                 size += props.pop(0) << (32 * (nr_size_cells - x - 1))
 
+            addr += translate_addr(addr, node_address,
+                    nr_address_cells, nr_size_cells)
+
             l_addr_fqn = '_'.join(l_base + l_addr + l_idx)
             l_size_fqn = '_'.join(l_base + l_size + l_idx)
             if nr_address_cells:
