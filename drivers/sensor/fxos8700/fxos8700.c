@@ -12,6 +12,80 @@
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_REGISTER(FXOS8700);
 
+int fxos8700_set_odr(struct device *dev, const struct sensor_value *val)
+{
+	const struct fxos8700_config *config = dev->config->config_info;
+	struct fxos8700_data *data = dev->driver_data;
+	s32_t dr = val->val1;
+
+#ifdef CONFIG_FXOS8700_MODE_HYBRID
+	/* ODR is halved in hybrid mode */
+	if (val->val1 == 400 && val->val2 == 0) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_800;
+	} else if (val->val1 == 200 && val->val2 == 0) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_400;
+	} else if (val->val1 == 100 && val->val2 == 0) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_200;
+	} else if (val->val1 == 50 && val->val2 == 0) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_100;
+	} else if (val->val1 == 25 && val->val2 == 0) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_50;
+	} else if (val->val1 == 6 && val->val2 == 250000) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_12_5;
+	} else if (val->val1 == 3 && val->val2 == 125000) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_6_25;
+	} else if (val->val1 == 0 && val->val2 == 781300) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_1_56;
+	} else {
+		return -EINVAL;
+	}
+#else
+	if (val->val1 == 800 && val->val2 == 0) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_800;
+	} else if (val->val1 == 400 && val->val2 == 0) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_400;
+	} else if (val->val1 == 200 && val->val2 == 0) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_200;
+	} else if (val->val1 == 100 && val->val2 == 0) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_100;
+	} else if (val->val1 == 50 && val->val2 == 0) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_50;
+	} else if (val->val1 == 12 && val->val2 == 500000) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_12_5;
+	} else if (val->val1 == 6 && val->val2 == 250000) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_6_25;
+	} else if (val->val1 == 1 && val->val2 == 562500) {
+		dr = FXOS8700_CTRLREG1_DR_RATE_1_56;
+	} else {
+		return -EINVAL;
+	}
+#endif
+
+	LOG_DBG("Set ODR to 0x%x", (u8_t)dr);
+
+	return i2c_reg_update_byte(data->i2c, config->i2c_address,
+				   FXOS8700_REG_CTRLREG1,
+				   FXOS8700_CTRLREG1_DR_MASK, (u8_t)dr);
+}
+
+static int fxos8700_attr_set(struct device *dev,
+			     enum sensor_channel chan,
+			     enum sensor_attribute attr,
+			     const struct sensor_value *val)
+{
+	if (chan != SENSOR_CHAN_ALL) {
+		return -ENOTSUP;
+	}
+
+	if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
+		return fxos8700_set_odr(dev, val);
+	} else {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int fxos8700_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	const struct fxos8700_config *config = dev->config->config_info;
@@ -269,6 +343,7 @@ static int fxos8700_init(struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config->config_info;
 	struct fxos8700_data *data = dev->driver_data;
+	struct sensor_value odr = {.val1 = 6, .val2 = 250000};
 	u8_t whoami;
 
 	/* Get the I2C device */
@@ -306,6 +381,11 @@ static int fxos8700_init(struct device *dev)
 	 * attempting further communications.
 	 */
 	k_busy_wait(USEC_PER_MSEC);
+
+	if (fxos8700_set_odr(dev, &odr)) {
+		LOG_ERR("Could not set default data rate");
+		return -EIO;
+	}
 
 	/* Set the mode (accel-only, mag-only, or hybrid) */
 	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
@@ -360,6 +440,7 @@ static int fxos8700_init(struct device *dev)
 static const struct sensor_driver_api fxos8700_driver_api = {
 	.sample_fetch = fxos8700_sample_fetch,
 	.channel_get = fxos8700_channel_get,
+	.attr_set = fxos8700_attr_set,
 #if CONFIG_FXOS8700_TRIGGER
 	.trigger_set = fxos8700_trigger_set,
 #endif
