@@ -78,4 +78,6 @@ source "drivers/gpio/Kconfig.sx1509b"
 
 source "drivers/gpio/Kconfig.imx"
 
+source "drivers/gpio/Kconfig.intel"
+
 endif # GPIO
