@@ -170,6 +170,11 @@ config SHELL_CMDS_RESIZE
 	  must be called to ensure correct text display on the terminal screen.
 	  Resize command can be turned off to safe code memory (~0,5k).
 
+config SHELL_LOG_BACKEND
+	bool
+	default y if LOG
+	default n if !LOG
+
 endif #SHELL
 endmenu
 
