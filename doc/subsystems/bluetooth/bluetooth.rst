@@ -29,6 +29,12 @@ Bluetooth stack:
 
 * Pairing support, including the Secure Connections feature from Bluetooth 4.2
 
+* Bluetooth Mesh support
+
+  * Relay, Friend Node, Low-Power Node (LPN) and GATT Proxy features
+  * Both Provisioning bearers supported (PB-ADV & PB-GATT)
+  * Highly configurable, fits as small as 16k RAM devices
+
 * IPSP/6LoWPAN for IPv6 connectivity over Bluetooth LE
 
   * IPSP node sample application in ``samples/bluetooth/ipsp``
