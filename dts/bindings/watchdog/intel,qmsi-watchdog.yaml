@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2018, Intel
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: QMSI watchdog driver
+id: intel,qmsi-watchdog
+version: 0.1
+
+description: >
+    This is a representation of the QMSI watchdog
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "intel,qmsi-watchdog"
+      generation: define
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    clocks:
+      type: array
+      category: required
+      description: Clock gate control information
+      generation: structures
+...

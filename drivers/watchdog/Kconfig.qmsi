@@ -8,16 +8,11 @@
 
 config WDT_QMSI
 	bool "QMSI Watchdog driver"
+	select HAS_DTS_WDT
 	help
 	  This option enables the QMSI watchdog driver.
 	  This driver is simply a shim driver based on the watchdog
 	  driver provided by the QMSI BSP.
-
-config WDT_0_IRQ_PRI
-	int "Interrupt priority"
-	depends on WDT_QMSI
-	help
-	  Watchdog interrupt priority
 
 config WDT_QMSI_API_REENTRANCY
 	bool "WDT shim driver API reentrancy"

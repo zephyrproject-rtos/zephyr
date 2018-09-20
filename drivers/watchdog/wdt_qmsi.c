@@ -218,8 +218,8 @@ static int init(struct device *dev)
 		k_sem_init(RP_GET(dev), 1, UINT_MAX);
 	}
 
-	IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_WDT_0_INT), CONFIG_WDT_0_IRQ_PRI,
-		    qm_wdt_0_isr, 0, IOAPIC_EDGE | IOAPIC_HIGH);
+	IRQ_CONNECT(CONFIG_WDT_0_IRQ, CONFIG_WDT_0_IRQ_PRI,
+		    qm_wdt_0_isr, 0, CONFIG_WDT_0_IRQ_FLAGS);
 
 	/* Unmask watchdog interrupt */
 	irq_enable(IRQ_GET_NUMBER(QM_IRQ_WDT_0_INT));
