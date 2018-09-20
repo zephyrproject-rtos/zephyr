@@ -449,9 +449,9 @@ Z_SYSCALL_HANDLER(k_thread_create,
 	/* The thread and stack objects *must* be in an uninitialized state */
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD));
 	stack_object = _k_object_find(stack);
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!_obj_validation_check(stack_object, stack,
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(_obj_validation_check(stack_object, stack,
 						K_OBJ__THREAD_STACK_ELEMENT,
-						_OBJ_INIT_FALSE),
+						_OBJ_INIT_FALSE) == 0,
 				    "bad stack object"));
 
 #ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
@@ -463,9 +463,9 @@ Z_SYSCALL_HANDLER(k_thread_create,
 	 * size and not allocated in addition to the stack size
 	 */
 	guard_size = (u32_t)K_THREAD_STACK_BUFFER(stack) - (u32_t)stack;
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!__builtin_uadd_overflow(guard_size,
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(__builtin_uadd_overflow(guard_size,
 							     stack_size,
-							     &total_size),
+							     &total_size) == 0,
 				    "stack size overflow (%u+%u)", stack_size,
 				    guard_size));
 #else
