@@ -1,0 +1,10 @@
+# Kconfig.series - UNISOC UWP566x
+#
+
+config  SOC_SERIES_UWP566X
+	bool "Unisoc UWP566X"
+	select CPU_CORTEX_M4
+	select SOC_FAMILY_UWP
+	select CPU_HAS_SYSTICK
+	help
+	  Enable support for Unisoc UWP566x
