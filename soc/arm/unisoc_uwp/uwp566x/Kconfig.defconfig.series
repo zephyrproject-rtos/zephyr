@@ -1,0 +1,33 @@
+# UNISOC UWP566X family default configuration
+
+# Copyright (c) 2018, UNISOC Incorporated
+# Copyright (c) 2019, Manivannan Sadhasivam
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_UWP566X
+
+source "soc/arm/unisoc_uwp/uwp566x/Kconfig.defconfig.uwp5661"
+
+config SOC_SERIES
+	string
+	default "uwp566x"
+
+config TEXT_SECTION_OFFSET
+	default 0x1000 if XIP && BOOTLOADER_MCUBOOT
+	default 0x0
+
+if SERIAL
+
+config UART_UWP
+	default y
+
+endif #SERIAL
+
+if !XIP
+config FLASH_SIZE
+	default 0
+config FLASH_BASE_ADDRESS
+	default 0
+endif
+
+endif # SOC_SERIES_UWP566X

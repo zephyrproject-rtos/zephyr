@@ -1,0 +1,21 @@
+# UNISOC UWP5661 SoC configuration
+
+# Copyright (c) 2018, UNISOC Incorporated
+# Copyright (c) 2019, Manivannan Sadhasivam
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+prompt "UNISOC UWP5661 MCU Selection"
+depends on SOC_SERIES_UWP566X
+
+config SOC_UWP5661
+	bool "uwp5661"
+endchoice
+
+if SOC_UWP5661
+
+config UWP5661_DEBUG
+	bool "Prepend debug header, disabling flash verification"
+	depends on XIP
+
+endif # SOC_UWP5661

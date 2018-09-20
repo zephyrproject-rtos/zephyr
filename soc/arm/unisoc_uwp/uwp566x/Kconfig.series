@@ -1,0 +1,14 @@
+# UNISOC UWP566x family configuration
+
+# Copyright (c) 2018, UNISOC Incorporated
+# Copyright (c) 2019, Manivannan Sadhasivam
+# SPDX-License-Identifier: Apache-2.0
+
+config  SOC_SERIES_UWP566X
+	bool "UNISOC UWP566X"
+	select ARM
+	select CPU_CORTEX_M4
+	select SOC_FAMILY_UWP
+	select HAS_UWP
+	help
+	  Enable support for UNISOC UWP566x series SoCs.

@@ -1,0 +1,40 @@
+# UNISOC UWP5661 SoC default configuration
+
+# Copyright (c) 2018, UNISOC Incorporated
+# Copyright (c) 2019, Manivannan Sadhasivam
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_UWP5661
+
+config SOC
+	string
+	default "uwp5661"
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	default 179
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 1
+
+config 2ND_LVL_INTR_01_OFFSET
+	default 0
+
+config 2ND_LVL_INTR_02_OFFSET
+	default 20
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 32
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 3
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 64
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 416000000
+
+endif # SOC_UWP5661

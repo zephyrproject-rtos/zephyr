@@ -1,0 +1,6 @@
+# UNISOC UWP SoC
+
+# Copyright (c) 2018, UNISOC Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+source "soc/arm/unisoc_uwp/uwp566x/Kconfig.series"
