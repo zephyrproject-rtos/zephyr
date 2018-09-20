@@ -13,6 +13,13 @@
 #ifndef ZEPHYR_INCLUDE_NET_COAP_H_
 #define ZEPHYR_INCLUDE_NET_COAP_H_
 
+/**
+ * @brief COAP library
+ * @defgroup coap COAP Library
+ * @ingroup networking
+ * @{
+ */
+
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -23,13 +30,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief COAP library
- * @defgroup coap COAP Library
- * @ingroup networking
- * @{
- */
 
 /**
  * @brief Set of CoAP packet options we are aware of.
@@ -804,12 +804,12 @@ struct net_buf *coap_packet_get_payload(const struct coap_packet *cpkt,
  */
 u8_t *coap_next_token(void);
 
-/**
- * @}
- */
-
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_NET_COAP_H_ */
