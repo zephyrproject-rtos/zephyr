@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Freescale Semiconductor, Inc.
+ * Copyright (c) 2018 Phytec Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,6 +85,37 @@ static int fxos8700_handle_pulse_int(struct device *dev)
 }
 #endif
 
+#ifdef CONFIG_FXOS8700_MOTION
+static int fxos8700_handle_motion_int(struct device *dev)
+{
+	const struct fxos8700_config *config = dev->config->config_info;
+	struct fxos8700_data *data = dev->driver_data;
+	sensor_trigger_handler_t handler = data->motion_handler;
+	u8_t motion_source;
+
+	struct sensor_trigger motion_trig = {
+		.chan = SENSOR_CHAN_ALL,
+	};
+
+	k_sem_take(&data->sem, K_FOREVER);
+
+	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
+			      FXOS8700_REG_FF_MT_SRC,
+			      &motion_source)) {
+		LOG_ERR("Could not read pulse source");
+	}
+
+	k_sem_give(&data->sem);
+
+	if (handler) {
+		LOG_DBG("FF_MT_SRC 0x%x", motion_source);
+		handler(dev, &motion_trig);
+	}
+
+	return 0;
+}
+#endif
+
 static void fxos8700_handle_int(void *arg)
 {
 	struct device *dev = (struct device *)arg;
@@ -108,6 +140,11 @@ static void fxos8700_handle_int(void *arg)
 #ifdef CONFIG_FXOS8700_PULSE
 	if (int_source & FXOS8700_PULSE_MASK) {
 		fxos8700_handle_pulse_int(dev);
+	}
+#endif
+#ifdef CONFIG_FXOS8700_MOTION
+	if (int_source & FXOS8700_MOTION_MASK) {
+		fxos8700_handle_motion_int(dev);
 	}
 #endif
 
@@ -165,6 +202,12 @@ int fxos8700_trigger_set(struct device *dev,
 	case SENSOR_TRIG_DOUBLE_TAP:
 		mask = FXOS8700_PULSE_MASK;
 		data->double_tap_handler = handler;
+		break;
+#endif
+#ifdef CONFIG_FXOS8700_MOTION
+	case SENSOR_TRIG_DELTA:
+		mask = FXOS8700_MOTION_MASK;
+		data->motion_handler = handler;
 		break;
 #endif
 	default:
@@ -258,6 +301,35 @@ static int fxos8700_pulse_init(struct device *dev)
 }
 #endif
 
+#ifdef CONFIG_FXOS8700_MOTION
+static int fxos8700_motion_init(struct device *dev)
+{
+	const struct fxos8700_config *config = dev->config->config_info;
+	struct fxos8700_data *data = dev->driver_data;
+
+	/* Set Mode 4, Motion detection with ELE = 1, OAE = 1 */
+	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
+			       FXOS8700_REG_FF_MT_CFG,
+			       FXOS8700_FF_MT_CFG_ELE |
+			       FXOS8700_FF_MT_CFG_OAE |
+			       FXOS8700_FF_MT_CFG_ZEFE |
+			       FXOS8700_FF_MT_CFG_YEFE |
+			       FXOS8700_FF_MT_CFG_XEFE)) {
+		return -EIO;
+	}
+
+	/* Set motion threshold to maximimum */
+	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
+			       FXOS8700_REG_FF_MT_THS,
+			       FXOS8700_REG_FF_MT_THS)) {
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif
+
+
 int fxos8700_trigger_init(struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config->config_info;
@@ -283,6 +355,9 @@ int fxos8700_trigger_init(struct device *dev)
 #if CONFIG_FXOS8700_PULSE_INT1
 	ctrl_reg5 |= FXOS8700_PULSE_MASK;
 #endif
+#if CONFIG_FXOS8700_MOTION_INT1
+	ctrl_reg5 |= FXOS8700_MOTION_MASK;
+#endif
 
 	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
 			       FXOS8700_REG_CTRLREG5, ctrl_reg5)) {
@@ -293,6 +368,12 @@ int fxos8700_trigger_init(struct device *dev)
 #ifdef CONFIG_FXOS8700_PULSE
 	if (fxos8700_pulse_init(dev)) {
 		LOG_ERR("Could not configure pulse");
+		return -EIO;
+	}
+#endif
+#ifdef CONFIG_FXOS8700_MOTION
+	if (fxos8700_motion_init(dev)) {
+		LOG_ERR("Could not configure motion");
 		return -EIO;
 	}
 #endif

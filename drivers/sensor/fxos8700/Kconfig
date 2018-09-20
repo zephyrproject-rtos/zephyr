@@ -206,6 +206,20 @@ config FXOS8700_PULSE_WIND
 
 endif # FXOS8700_PULSE
 
+menuconfig FXOS8700_MOTION
+	bool "Motion detection"
+	help
+	  Enable motion detection
+
+if FXOS8700_MOTION
+
+config FXOS8700_MOTION_INT1
+	bool "Motion interrupt to INT1 pin"
+	help
+	  Say Y to route motion interrupt to INT1 pin. Say N to route to INT2 pin.
+
+endif # FXOS8700_MOTION
+
 endif # FXOS8700_TRIGGER
 
 endif # FXOS8700

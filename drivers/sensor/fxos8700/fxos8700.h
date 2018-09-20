@@ -13,6 +13,10 @@
 #define FXOS8700_REG_INT_SOURCE			0x0c
 #define FXOS8700_REG_WHOAMI			0x0d
 #define FXOS8700_REG_XYZ_DATA_CFG		0x0e
+#define FXOS8700_REG_FF_MT_CFG			0x15
+#define FXOS8700_REG_FF_MT_SRC			0x16
+#define FXOS8700_REG_FF_MT_THS			0x17
+#define FXOS8700_REG_FF_MT_COUNT		0x18
 #define FXOS8700_REG_PULSE_CFG			0x21
 #define FXOS8700_REG_PULSE_SRC			0x22
 #define FXOS8700_REG_PULSE_THSX			0x23
@@ -32,6 +36,7 @@
 #define FXOS8700_REG_M_CTRLREG2			0x5c
 
 #define FXOS8700_DRDY_MASK			(1 << 0)
+#define FXOS8700_MOTION_MASK			(1 << 2)
 #define FXOS8700_PULSE_MASK			(1 << 3)
 
 #define FXOS8700_XYZ_DATA_CFG_FS_MASK		0x03
@@ -51,6 +56,14 @@
 
 #define FXOS8700_CTRLREG2_RST_MASK		0x40
 #define FXOS8700_CTRLREG2_MODS_MASK		0x03
+
+#define FXOS8700_FF_MT_CFG_ELE			BIT(7)
+#define FXOS8700_FF_MT_CFG_OAE			BIT(6)
+#define FXOS8700_FF_MT_CFG_ZEFE			BIT(5)
+#define FXOS8700_FF_MT_CFG_YEFE			BIT(4)
+#define FXOS8700_FF_MT_CFG_XEFE			BIT(3)
+#define FXOS8700_FF_MT_THS_MASK			0x7f
+#define FXOS8700_FF_MT_THS_SCALE		(SENSOR_G * 63000LL / 1000000LL)
 
 #define FXOS8700_M_CTRLREG1_MODE_MASK		0x03
 
@@ -135,6 +148,9 @@ struct fxos8700_data {
 #ifdef CONFIG_FXOS8700_PULSE
 	sensor_trigger_handler_t tap_handler;
 	sensor_trigger_handler_t double_tap_handler;
+#endif
+#ifdef CONFIG_FXOS8700_MOTION
+	sensor_trigger_handler_t motion_handler;
 #endif
 #ifdef CONFIG_FXOS8700_TRIGGER_OWN_THREAD
 	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_FXOS8700_THREAD_STACK_SIZE);
