@@ -51,6 +51,8 @@
 
 #include <board.h>
 
+#include "legacy_api.h"
+
 /* HPET register offsets */
 
 #define GENERAL_CAPS_REG 0	  /* 64-bit register */

@@ -10,6 +10,8 @@
 #include <system_timer.h>
 #include <board.h>
 
+#include "legacy_api.h"
+
 typedef struct {
 	u32_t val_low;
 	u32_t val_high;

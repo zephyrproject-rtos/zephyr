@@ -256,7 +256,7 @@ inserted:
 
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (!program_time || (adjusted_timeout < program_time)) {
-		_set_time(adjusted_timeout);
+		z_clock_set_timeout(adjusted_timeout, false);
 	}
 #endif
 }

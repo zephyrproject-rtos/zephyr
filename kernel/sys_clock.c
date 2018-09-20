@@ -323,7 +323,8 @@ void z_clock_announce(s32_t ticks)
 
 	if ((!remaining && next_to) || (next_to < remaining)) {
 		/* Clears current program if next_to = 0 and remaining > 0 */
-		_set_time(next_to);
+		int dt = next_to ? next_to : (_sys_clock_always_on ? INT_MAX : K_FOREVER);
+		z_clock_set_timeout(dt, false);
 	}
 #endif
 }

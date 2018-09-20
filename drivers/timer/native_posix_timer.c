@@ -20,6 +20,8 @@
 #include "soc.h"
 #include "posix_trace.h"
 
+#include "legacy_api.h"
+
 static u64_t tick_period; /* System tick period in number of hw cycles */
 static s64_t silent_ticks;
 static s32_t _sys_idle_elapsed_ticks = 1;

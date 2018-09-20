@@ -634,7 +634,7 @@ int _is_thread_time_slicing(struct k_thread *thread)
 void z_reset_timeslice(void)
 {
 	if (_is_thread_time_slicing(_get_next_ready_thread())) {
-		_set_time(_time_slice_duration);
+		z_clock_set_timeout(_time_slice_duration, false);
 	}
 }
 #endif
@@ -651,12 +651,12 @@ void _update_time_slice_before_swap(void)
 	u32_t remaining = _get_remaining_program_time();
 
 	if (!remaining || (_time_slice_duration < remaining)) {
-		_set_time(_time_slice_duration);
+		z_clock_set_timeout(_time_slice_duration, false);
 	} else {
 		/* Account previous elapsed time and reprogram
 		 * timer with remaining time
 		 */
-		_set_time(remaining);
+		z_clock_set_timeout(remaining, false);
 	}
 
 #endif

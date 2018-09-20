@@ -76,6 +76,8 @@
 #include <board.h>
 #include <kernel_structs.h>
 
+#include "legacy_api.h"
+
 /* Local APIC Timer Bits */
 
 #define LOAPIC_TIMER_DIVBY_2 0x0	 /* Divide by 2 */
