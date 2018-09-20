@@ -19,6 +19,7 @@ Summary of logger features:
 - Additional run time filtering on module instance level.
 - Timestamping with user provided function.
 - Dedicated API for dumping data
+- Dedicated API for handling transient strings
 - Panic support - in panic mode logger switches to blocking, in-place
   processing.
 - Printk support - printk message can be redirected to the logger.
@@ -119,6 +120,12 @@ which handles log processing.
 :option:`CONFIG_LOG_BUFFER_SIZE`: Number of bytes dedicated for the logger
 message pool. Single message capable of storing standard log with up to 3
 arguments or hexdump message with 12 bytes of data take 32 bytes.
+
+:option:`CONFIG_LOG_STRDUP_MAX_STRING`: Longest string that can be duplicated
+using log_strdup().
+
+:option:`CONFIG_LOG_STRDUP_BUF_COUNT`: Number of buffers in the pool used by
+log_strdup().
 
 :option:`CONFIG_LOG_DOMAIN_ID`: Domain ID. Valid in multi-domain systems.
 
@@ -347,6 +354,30 @@ the message), and severity level. Once all backends are iterated, the message
 is considered processed by the logger, but the message may still be in use by a
 backend.
 
+.. _logger_strings:
+
+Logging strings
+===============
+Logger stores the address of a log message string argument passed to it. Because
+a string variable argument could be transient, allocated on the stack, or
+modifiable, logger provides a mechanism and a dedicated buffer pool to hold
+copies of strings.  The buffer size and count is configurable
+(see :option:`CONFIG_LOG_STRDUP_MAX_STRING` and
+:option:`CONFIG_LOG_STRDUP_BUF_COUNT`).
+
+If a string argument is transient, the user must call cpp:func:`log_strdup` to
+duplicate the passed string into a buffer from the pool. See the examples below.
+If a strdup buffer cannot be allocated, a warning message is logged and an error
+code returned indicating :option:`CONFIG_LOG_STRDUP_BUF_COUNT` should be
+increased. Buffers are freed together with the log message.
+
+.. code-block:: c
+
+   char local_str[] = "abc";
+
+   LOG_INF("logging transient string: %s", log_strdup(local_str));
+   local_str[0] = '\0'; /* String can be modified, logger will use duplicate."
+
 Logger backends
 ===============
 
@@ -403,17 +434,12 @@ memory section. Backends can be dynamically enabled
 Limitations
 ***********
 
-The Logger architecture implies following limitations:
+The Logger architecture has the following limitations:
 
-- Using *%s* for strings which content may be changed before log is processed
-  e.g. strings allocated on stack because logger is storing only argument value
-  and does not perform any string analysis to detect that argument is a
-  pointer. It is recommended to use hexdump in that case. Optionally, user can
-  enable in place processing :option:`CONFIG_LOG_INPLACE_PROCESS`. However,
-  this feature has many limitations and is not recommended when logger is used
-  in multiple contexts.
+- Strings as arguments (*%s*) require special treatment (see
+  :ref:`logger_strings`).
 - Logging double floating point variables is not possible because arguments are
   32 bit values.
-- Number of arguments in the string is limited to 6.
+- Number of arguments in the string is limited to 9.
 
 

@@ -152,6 +152,24 @@ static void severity_levels_showcase(void)
 }
 
 /**
+ * @brief Function demonstrates how transient strings can be logged.
+ *
+ * Logger ensures that allocated buffers are freed when log message is
+ * processed.
+ */
+static void log_strdup_showcase(void)
+{
+	char transient_str[] = "transient_string";
+
+	printk("String logging showcase.\n");
+
+	LOG_INF("Logging transient string:%s", log_strdup(transient_str));
+
+	/* Overwrite transient string to show that the logger has a copy. */
+	transient_str[0] = '\0';
+}
+
+/**
  * @brief Function demonstrates how fast data can be logged.
  *
  * Messages are logged and counted in a loop for 2 ticks (same clock source as
@@ -233,6 +251,10 @@ void log_demo_thread(void *dummy1, void *dummy2, void *dummy3)
 		       CONFIG_LOG_DEFAULT_LEVEL);
 
 	wait_on_log_flushed();
+
+	severity_levels_showcase();
+
+	log_strdup_showcase();
 
 	severity_levels_showcase();
 
