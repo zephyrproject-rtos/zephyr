@@ -14,7 +14,7 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,console = &jtag_uart;
+		zephyr,console = &ns16550_uart;
 	};
 };
 
