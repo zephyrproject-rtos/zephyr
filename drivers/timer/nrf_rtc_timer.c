@@ -11,6 +11,8 @@
 #include <sys_clock.h>
 #include "nrf_rtc.h"
 
+#include "legacy_api.h"
+
 /*
  * Convenience defines.
  */

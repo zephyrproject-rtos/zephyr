@@ -14,6 +14,8 @@
 
 #include    "xtensa_rtos.h"
 
+#include "legacy_api.h"
+
 /*
  * This device driver can be also used with an extenal timer instead of
  * the internal one that may simply not exist.

@@ -59,6 +59,8 @@
 
 #include <board.h>
 
+#include "legacy_api.h"
+
 #define _ARC_V2_TMR_CTRL_IE 0x1 /* interrupt enable */
 #define _ARC_V2_TMR_CTRL_NH 0x2 /* count only while not halted */
 #define _ARC_V2_TMR_CTRL_W  0x4 /* watchdog mode enable */

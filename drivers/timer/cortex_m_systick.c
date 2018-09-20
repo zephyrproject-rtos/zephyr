@@ -42,6 +42,8 @@ static volatile u32_t clock_accumulated_count;
 
 #include <board.h>
 
+#include "legacy_api.h"
+
 #ifdef CONFIG_TICKLESS_IDLE
 #define TIMER_MODE_PERIODIC 0 /* normal running mode */
 #define TIMER_MODE_ONE_SHOT 1 /* emulated, since sysTick has 1 mode */
