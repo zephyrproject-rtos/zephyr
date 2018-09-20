@@ -2078,9 +2078,6 @@ static void gptp_print_port_info(int port)
 	       port_state->pss_send.last_follow_up_correction_field);
 	printk("\tUpstream Tx Time of the last recv PortSyncSync   "
 	       ": %llu\n", port_state->pss_send.last_upstream_tx_time);
-	printk("\tSync Receipt Timeout Time of last recv PSS       "
-	       ": %llu\n",
-	       port_state->pss_send.last_sync_receipt_timeout_time);
 	printf("\tRate Ratio of the last received PortSyncSync     "
 	       ": %f\n",
 	       port_state->pss_send.last_rate_ratio);

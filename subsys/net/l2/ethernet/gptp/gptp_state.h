@@ -315,9 +315,6 @@ struct gptp_pss_send_state {
 	/** Upstream Tx Time of the last received PortSyncSync. */
 	u64_t last_upstream_tx_time;
 
-	/** Sync Receipt Timeout Time of the last received PortSyncSync. */
-	u64_t last_sync_receipt_timeout_time;
-
 	/** PortSyncSync structure received from the SiteSyncSync. */
 	struct gptp_mi_port_sync_sync *pss_sync_ptr;
 
