@@ -347,7 +347,7 @@ static inline struct log_msg *_log_msg_std_alloc(void)
 {
 	struct  log_msg *msg = (struct  log_msg *)log_msg_chunk_alloc();
 
-	if (msg) {
+	if (msg != NULL) {
 		/* all fields reset to 0, reference counter to 1 */
 		msg->hdr.ref_cnt = 1;
 		msg->hdr.params.raw = 0;

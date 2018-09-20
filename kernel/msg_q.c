@@ -76,7 +76,7 @@ int _impl_k_msgq_alloc_init(struct k_msgq *q, size_t msg_size,
 		ret = -EINVAL;
 	} else {
 		buffer = z_thread_malloc(total_size);
-		if (buffer) {
+		if (buffer != NULL) {
 			k_msgq_init(q, buffer, msg_size, max_msgs);
 			q->flags = K_MSGQ_FLAG_ALLOC;
 			ret = 0;
@@ -119,7 +119,7 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 	if (q->used_msgs < q->max_msgs) {
 		/* message queue isn't full */
 		pending_thread = _unpend_first_thread(&q->wait_q);
-		if (pending_thread) {
+		if (pending_thread != NULL) {
 			/* give message to waiting thread */
 			(void)memcpy(pending_thread->base.swap_data, data,
 			       q->msg_size);
