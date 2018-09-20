@@ -472,6 +472,20 @@ int log_printk(const char *fmt, va_list ap);
  */
 void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap);
 
+/** @brief Check if address belongs to the memory pool used for transient.
+ *
+ * @param buf Buffer.
+ *
+ * @return True if address within the pool, false otherwise.
+ */
+bool log_is_strdup(void *buf);
+
+/** @brief Free allocated buffer.
+ *
+ * @param buf Buffer.
+ */
+void log_free(void *buf);
+
 #ifdef __cplusplus
 }
 #endif

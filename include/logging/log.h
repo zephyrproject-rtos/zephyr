@@ -255,6 +255,19 @@ extern "C" {
  */
 int log_printk(const char *fmt, va_list ap);
 
+/** @brief Copy transient string to a buffer from internal, logger pool.
+ *
+ * Function should be used when transient string is intended to be logged.
+ * Logger allocates a buffer and copies input string returning a pointer to the
+ * copy. Logger ensures that buffer is freed when logger message is freed.
+ *
+ * @param str Transient string.
+ *
+ * @return Copy of the string or default string if buffer could not be
+ *	   allocated. String may be truncated if input string does not fit in
+ *	   a buffer from the pool (see CONFIG_LOG_STRDUP_MAX_STRING).
+ */
+char *log_strdup(char *str);
 
 #define __DYNAMIC_MODULE_REGISTER(_name)\
 	struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(_name)	\

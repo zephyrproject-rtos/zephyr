@@ -23,7 +23,7 @@ extern "C" {
  */
 
 /** @brief Maximum number of arguments in the standard log entry. */
-#define LOG_MAX_NARGS 6
+#define LOG_MAX_NARGS 9
 
 /** @brief Number of arguments in the log entry which fits in one chunk.*/
 #define LOG_MSG_NARGS_SINGLE_CHUNK 3

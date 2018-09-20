@@ -6,6 +6,7 @@
 #include <kernel.h>
 #include <logging/log_msg.h>
 #include <logging/log_ctrl.h>
+#include <logging/log_core.h>
 #include <string.h>
 
 #define MSG_SIZE sizeof(union log_msg_chunk)
@@ -38,9 +39,25 @@ static void cont_free(struct log_msg_cont *cont)
 
 static void msg_free(struct log_msg *msg)
 {
+	u32_t nargs = msg->hdr.params.std.nargs;
+
+	/* Free any transient string found in arguments. */
+	if (log_msg_is_std(msg) && nargs) {
+		int i;
+
+		for (i = 0; i < nargs; i++) {
+			void *buf = (void *)log_msg_arg_get(msg, i);
+
+			if (log_is_strdup(buf)) {
+				log_free(buf);
+			}
+		}
+	}
+
 	if (msg->hdr.params.generic.ext == 1) {
 		cont_free(msg->payload.ext.next);
 	}
+
 	k_mem_slab_free(&log_msg_pool, (void **)&msg);
 }
 
