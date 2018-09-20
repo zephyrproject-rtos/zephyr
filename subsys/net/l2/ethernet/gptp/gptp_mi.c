@@ -540,8 +540,7 @@ static void gptp_mi_pss_send_state_machine(int port)
 			k_timer_stop(&state->send_sync_receipt_timeout_timer);
 			state->send_sync_receipt_timeout_timer_expired = false;
 
-			duration = (state->last_sync_receipt_timeout_time -
-				    gptp_get_current_time_nanosecond(port)) /
+			duration = port_ds->sync_receipt_timeout_time_itv /
 				(NSEC_PER_USEC * USEC_PER_MSEC);
 
 			k_timer_start(&state->send_sync_receipt_timeout_timer,
