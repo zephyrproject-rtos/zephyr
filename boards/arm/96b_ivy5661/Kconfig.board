@@ -1,0 +1,9 @@
+# 96Boards IVY5661 board configuration
+
+# Copyright (c) 2018, UNISOC Incorporated
+# Copyright (c) 2019, Manivannan Sadhasivam
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_96B_IVY5661
+	bool "96Boards IVY5661"
+	depends on SOC_UWP5661
