@@ -1,0 +1,34 @@
+# UNISOC UWP UART configuration
+
+# Copyright (c) 2018, UNISOC Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_UWP
+	depends on SOC_SERIES_UWP566X
+	bool "UWP UART driver"
+	default n
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	depends on SOC_FAMILY_UWP
+	help
+	  This option enables the UWP UART driver, for UART_0.
+
+config UART1_UWP
+	depends on SOC_SERIES_UWP566X
+	bool "UWP UART1 driver"
+	default n
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	depends on SOC_FAMILY_UWP
+	help
+	  This option enables the UWP UART driver, for UART_1.
+
+config AON_UART_UWP
+	depends on SOC_SERIES_UWP566X
+	bool "UWP AON UART driver"
+	default n
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	depends on SOC_FAMILY_UWP
+	help
+	  This option enables the UWP AON UART driver.
