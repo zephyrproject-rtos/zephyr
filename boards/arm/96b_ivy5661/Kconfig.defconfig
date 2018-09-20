@@ -1,0 +1,10 @@
+# Kconfig - 96boards IVY5661 board configuration
+#
+
+if BOARD_96B_IVY5661
+
+config BOARD
+	string
+	default "96b_ivy5661"
+
+endif # BOARD_96B_IVY5661
