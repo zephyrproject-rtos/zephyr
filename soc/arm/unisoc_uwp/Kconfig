@@ -1,0 +1,13 @@
+# Kconfig - UNISOC UWP SOC
+#
+
+config SOC_FAMILY_UWP
+	bool
+
+if SOC_FAMILY_UWP
+config SOC_FAMILY
+	string
+	default "unisoc_uwp"
+endif
+
+source "soc/arm/unisoc_uwp/uwp566x/Kconfig.soc"

@@ -1,0 +1,1 @@
+source "soc/arm/unisoc_uwp/uwp566x/Kconfig.defconfig.series"

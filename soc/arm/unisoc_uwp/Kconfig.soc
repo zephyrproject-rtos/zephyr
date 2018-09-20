@@ -1,0 +1,4 @@
+# Kconfig - UNISOC UWP SOC
+#
+
+source "soc/arm/unisoc_uwp/uwp566x/Kconfig.series"

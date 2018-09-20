@@ -1,0 +1,19 @@
+# Kconfig.defconfig.uwp5661
+#
+
+if SOC_UWP5661
+
+config SOC
+	string
+	default "uwp5661"
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	default 179
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 416000000
+
+endif # SOC_UWP5661

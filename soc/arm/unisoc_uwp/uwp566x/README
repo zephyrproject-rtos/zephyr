@@ -1,0 +1,2 @@
+Notes for UWP5661:
+ * Text must start at 0x100000 offset in IRAM.
