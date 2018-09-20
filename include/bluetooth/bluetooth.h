@@ -688,6 +688,22 @@ int bt_br_set_connectable(bool enable);
   */
 int bt_unpair(u8_t id, const bt_addr_le_t *addr);
 
+/** Information about a bond with a remote device. */
+struct bt_bond_info {
+	/** Address of the remote device. */
+	bt_addr_le_t addr;
+};
+
+/** Iterate through all existing bonds.
+  *
+  * @param id         Local identity (mostly just BT_ID_DEFAULT).
+  * @param func       Function to call for each bond.
+  * @param user_data  Data to pass to the callback function.
+  */
+void bt_foreach_bond(u8_t id, void (*func)(const struct bt_bond_info *info,
+					   void *user_data),
+		     void *user_data);
+
 /**
  * @}
  */
