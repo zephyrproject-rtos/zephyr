@@ -1,0 +1,19 @@
+menuconfig UART_UWP
+	depends on SOC_SERIES_UWP566X
+	bool "UWP UART driver"
+	default n
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	depends on SOC_FAMILY_UWP
+	help
+	  This option enables the UWP UART driver, for UART_0.
+
+menuconfig AON_UART_UWP
+	depends on SOC_SERIES_UWP566X
+	bool "UWP AON UART driver"
+	default n
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	depends on SOC_FAMILY_UWP
+	help
+	  This option enables the UWP AON UART driver.
