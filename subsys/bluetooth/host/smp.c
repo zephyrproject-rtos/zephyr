@@ -2250,7 +2250,7 @@ static u8_t smp_master_ident(struct bt_smp *smp, struct net_buf *buf)
 }
 #endif /* !CONFIG_BT_SMP_SC_ONLY */
 
-static int smp_init(struct bt_smp *smp)
+static int _smp_init(struct bt_smp *smp)
 {
 	/* Initialize SMP context without clearing L2CAP channel context */
 	(void)memset((u8_t *)smp + sizeof(smp->chan), 0,
@@ -2353,7 +2353,7 @@ int bt_smp_send_security_req(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	if (smp_init(smp) != 0) {
+	if (_smp_init(smp) != 0) {
 		return -ENOBUFS;
 	}
 
@@ -2391,7 +2391,7 @@ static u8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	 * is already initialized.
 	 */
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ)) {
-		int ret = smp_init(smp);
+		int ret = _smp_init(smp);
 
 		if (ret) {
 			return ret;
@@ -2522,7 +2522,7 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	if (smp_init(smp)) {
+	if (_smp_init(smp)) {
 		return -ENOBUFS;
 	}
 
