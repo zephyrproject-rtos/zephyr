@@ -1,0 +1,71 @@
+# Kconfig - CoAP implementation for Zephyr over sockets
+
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config COAP_SOCK
+	bool "CoAP Support"
+	help
+	  This option enables the CoAP implementation.
+
+# This setting is only used by unit test. Do not enable it in applications
+config COAP_TEST_API_ENABLE
+	bool "Enable test API for CoAP unit tests"
+	depends on COAP_SOCK
+	help
+	  Do not enable this for normal use.
+
+config COAP_WELL_KNOWN_BLOCK_WISE
+	bool "CoAP ./well-known/core services block wise support"
+	depends on COAP_SOCK
+	help
+	  This option enables the block wise support of CoAP response
+	  to ./well-known/core request. Without this option all resource's
+	  information will be sent in a single IP packet (can be multiple
+	  fragments depends on MTU size). This will be useful in mesh kind
+	  of networks.
+
+config COAP_WELL_KNOWN_BLOCK_WISE_SIZE
+	int "CoAP ./well-known/core services block wise support"
+	default 32
+	depends on COAP_WELL_KNOWN_BLOCK_WISE
+	help
+	  Maximum size of CoAP block. Valid values are 16, 32, 64, 128,
+	  256, 512 and 1024.
+
+config COAP_EXTENDED_OPTIONS_LEN
+	bool "Support for CoAP extended options"
+	depends on COAP_SOCK
+	help
+	  This option enables the parsing of extended CoAP options length.
+	  CoAP extended options length can be 2 byte value, which
+	  requires more memory. User can save memory by disabling this.
+	  That means only length of maximum 12 bytes are supported by default.
+	  Enable this if length field going to bigger that 12.
+
+config COAP_EXTENDED_OPTIONS_LEN_VALUE
+	int "CoAP extended options length value"
+	default 13
+	depends on COAP_EXTENDED_OPTIONS_LEN
+	help
+	  This option specifies the maximum value of length field when
+	  COAP_EXTENDED_OPTIONS_LEN is enabled. Define the value according to
+	  user requirement.
+
+config COAP_INIT_ACK_TIMEOUT_MS
+	int "base length of the random generated initial ACK timeout in ms"
+	default 2345
+	range 2345 100000
+	help
+	  This value is used as a base value to retry pending CoAP packets.
+
+if COAP_SOCK
+module=COAP_SOCK
+module-dep=NET_LOG
+module-str=Log level for CoAP
+module-help=Enables CoAP debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # COAP_SOCK

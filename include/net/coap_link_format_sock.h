@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,11 +10,11 @@
  * @brief CoAP implementation for Zephyr.
  */
 
-#ifndef ZEPHYR_INCLUDE_NET_COAP_LINK_FORMAT_H_
-#define ZEPHYR_INCLUDE_NET_COAP_LINK_FORMAT_H_
+#ifndef ZEPHYR_INCLUDE_NET_COAP_LINK_FORMAT_SOCK_H_
+#define ZEPHYR_INCLUDE_NET_COAP_LINK_FORMAT_SOCK_H_
 
 /**
- * @addtogroup coap COAP Library
+ * @addtogroup coap_sock COAP Library over Sockets
  * @{
  */
 
@@ -32,7 +32,7 @@ extern "C" {
 int coap_well_known_core_get(struct coap_resource *resource,
 			     struct coap_packet *request,
 			     struct coap_packet *response,
-			     struct net_pkt *pkt);
+			     u8_t *data, u16_t len);
 
 /**
  * In case you want to add attributes to the resources included in the
@@ -52,4 +52,4 @@ struct coap_core_metadata {
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_NET_COAP_LINK_FORMAT_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_COAP_LINK_FORMAT_SOCK_H_ */
