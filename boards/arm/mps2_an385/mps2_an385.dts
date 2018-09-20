@@ -30,6 +30,7 @@
 	};
 
 	flash0: flash@0 {
+		compatible = "soc-nv-flash";
 		reg = <0 0x400000>;
 	};
 
