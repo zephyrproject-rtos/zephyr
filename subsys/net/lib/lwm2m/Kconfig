@@ -7,12 +7,36 @@
 menuconfig LWM2M
 	bool "OMA LWM2M protocol stack"
 	select COAP
-	select NET_APP_CLIENT
 	select HTTP_PARSER_URL
 	help
 	  This option adds logic for managing OMA LWM2M data
 
 if LWM2M
+
+choice
+	prompt "Network Layer API"
+	default LWM2M_NET_LAYER_NET_APP
+	help
+	  LwM2M client supports both the net-app and sockets network layers.
+	  Choose the network layer API to use.
+
+config LWM2M_NET_LAYER_NET_APP
+	bool "Use the net-app network layer"
+	select NET_APP_CLIENT
+
+config LWM2M_NET_LAYER_SOCKET
+	bool "Use BSD socket network layer"
+	select NET_SOCKETS
+	select NET_SOCKETS_POSIX_NAMES
+
+endchoice
+
+config LWM2M_DTLS_SUPPORT
+	bool "Enable DTLS support in the LwM2M client"
+	select MBEDTLS
+	select NET_APP_DTLS if LWM2M_NET_LAYER_NET_APP
+	select NET_SOCKETS_SOCKOPT_TLS if LWM2M_NET_LAYER_SOCKET
+	select NET_SOCKETS_ENABLE_DTLS if LWM2M_NET_LAYER_SOCKET
 
 config SYS_LOG_LWM2M_LEVEL
 	int "LWM2M log level"
@@ -32,7 +56,7 @@ config LWM2M_ENGINE_STACK_SIZE
 
 config LWM2M_ENGINE_MAX_MESSAGES
 	int "LWM2M engine max. message object"
-	default 10
+	default 5
 	help
 	  Set the maximum message objects for the LWM2M library client
 
@@ -128,10 +152,8 @@ config LWM2M_FIRMWARE_UPDATE_PULL_LOCAL_PORT
 
 config LWM2M_COAP_BLOCK_SIZE
 	int "LWM2M CoAP block-wise transfer size"
-	default 64 if NET_L2_BT
-	default 64 if NET_L2_IEEE802154
 	default 256
-	range 16 1024
+	range 64 1024
 	help
 	  CoAP block size used by LWM2M when performing block-wise
 	  transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024.

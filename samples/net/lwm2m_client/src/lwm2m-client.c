@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2017 Foundries.io
+ * Copyright (c) 2017-2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,8 @@
 #include <board.h>
 #include <zephyr.h>
 #include <gpio.h>
+
+#include <logging/sys_log.h>
 #include <net/lwm2m.h>
 
 #define APP_BANNER "Run LWM2M client"
@@ -60,7 +62,7 @@ static u32_t led_state;
 
 static struct lwm2m_ctx client;
 
-#if defined(CONFIG_NET_APP_DTLS)
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 #if !defined(CONFIG_NET_APP_TLS_STACK_SIZE)
 #define CONFIG_NET_APP_TLS_STACK_SIZE		30000
 #endif /* CONFIG_NET_APP_TLS_STACK_SIZE */
@@ -87,31 +89,13 @@ static const char client_psk_id[] = "Client_identity";
 static u8_t dtls_result[RESULT_BUF_SIZE];
 NET_STACK_DEFINE(NET_APP_DTLS, net_app_dtls_stack,
 		 CONFIG_NET_APP_TLS_STACK_SIZE, CONFIG_NET_APP_TLS_STACK_SIZE);
-#endif /* CONFIG_NET_APP_DTLS */
+#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
 static struct k_sem quit_lock;
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
 static u8_t firmware_buf[64];
 #endif
-
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-NET_PKT_TX_SLAB_DEFINE(lwm2m_tx_udp, 5);
-NET_PKT_DATA_POOL_DEFINE(lwm2m_data_udp, 20);
-
-static struct k_mem_slab *tx_udp_slab(void)
-{
-	return &lwm2m_tx_udp;
-}
-
-static struct net_buf_pool *data_udp_pool(void)
-{
-	return &lwm2m_data_udp;
-}
-#else
-#define tx_udp_slab NULL
-#define data_udp_pool NULL
-#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 /* TODO: Move to a pre write hook that can handle ret codes once available */
 static int led_on_off_cb(u16_t obj_inst_id, u8_t *data, u16_t data_len,
@@ -346,6 +330,9 @@ static void rd_client_event(struct lwm2m_ctx *client,
 
 void main(void)
 {
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+	static struct lwm2m_dtls_data dtls_data;
+#endif
 	int ret;
 
 	SYS_LOG_INF(APP_BANNER);
@@ -366,17 +353,18 @@ void main(void)
 	client.data_pool = data_udp_pool;
 #endif
 
-#if defined(CONFIG_NET_APP_DTLS)
-	client.client_psk = client_psk;
-	client.client_psk_len = 16;
-	client.client_psk_id = (char *)client_psk_id;
-	client.client_psk_id_len = strlen(client_psk_id);
-	client.cert_host = HOSTNAME;
-	client.dtls_pool = &dtls_pool;
-	client.dtls_result_buf = dtls_result;
-	client.dtls_result_buf_len = RESULT_BUF_SIZE;
-	client.dtls_stack = net_app_dtls_stack;
-	client.dtls_stack_len = K_THREAD_STACK_SIZEOF(net_app_dtls_stack);
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+	dtls_data.client_psk = client_psk;
+	dtls_data.client_psk_len = 16;
+	dtls_data.client_psk_id = (char *)client_psk_id;
+	dtls_data.client_psk_id_len = strlen(client_psk_id);
+	dtls_data.cert_host = HOSTNAME;
+	dtls_data.dtls_pool = &dtls_pool;
+	dtls_data.dtls_result_buf = dtls_result;
+	dtls_data.dtls_result_buf_len = RESULT_BUF_SIZE;
+	dtls_data.dtls_stack = net_app_dtls_stack;
+	dtls_data.dtls_stack_len = K_THREAD_STACK_SIZEOF(net_app_dtls_stack);
+	client.dtls_data = &dtls_data;
 #endif /* CONFIG_NET_APP_DTLS */
 
 #if defined(CONFIG_NET_IPV6)

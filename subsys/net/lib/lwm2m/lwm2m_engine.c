@@ -35,12 +35,8 @@
 #include <errno.h>
 #include <init.h>
 #include <misc/printk.h>
-#include <net/net_app.h>
+#include <net/buf.h>
 #include <net/net_ip.h>
-#include <net/net_pkt.h>
-#include <net/udp.h>
-#include <net/coap.h>
-#include <net/lwm2m.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
@@ -75,10 +71,6 @@
 				";ct=" STRINGIFY(LWM2M_FORMAT_OMA_JSON)
 #else
 #define REG_PREFACE		""
-#endif
-
-#if defined(CONFIG_NET_APP_DTLS)
-#define INSTANCE_INFO "Zephyr DTLS LwM2M-client"
 #endif
 
 #if defined(CONFIG_COAP_EXTENDED_OPTIONS_LEN)
@@ -436,7 +428,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	}
 
 	/* remote addr */
-	addr = &msg->ctx->net_app_ctx.default_ctx->remote;
+	addr = &msg->ctx->remote_addr;
 
 	/* TODO: get server object for default pmin/pmax
 	 * and observe dup checking
@@ -803,7 +795,7 @@ int lwm2m_delete_obj_inst(u16_t obj_id, u16_t obj_inst_id)
 
 /* utility functions */
 
-static int get_option_int(const struct coap_packet *cpkt, u8_t opt)
+static int get_option_int(struct coap_packet *cpkt, u8_t opt)
 {
 	struct coap_option option = {};
 	u16_t count = 1;
@@ -968,10 +960,6 @@ void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
 	if (release) {
 		(void)memset(msg, 0, sizeof(*msg));
 	} else {
-		if (msg->cpkt.pkt) {
-			net_pkt_unref(msg->cpkt.pkt);
-		}
-
 		msg->message_timeout_cb = NULL;
 		(void)memset(&msg->cpkt, 0, sizeof(msg->cpkt));
 	}
@@ -979,30 +967,14 @@ void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
 
 int lwm2m_init_message(struct lwm2m_message *msg)
 {
-	struct net_pkt *pkt;
-	struct net_app_ctx *app_ctx;
-	struct net_buf *frag;
-	u8_t tokenlen = 0;
-	u8_t *token = NULL;
+	struct lwm2m_net_layer_api *api;
 	int r = 0;
+	u8_t *token = NULL;
+	u8_t tokenlen = 0;
 
 	if (!msg || !msg->ctx) {
 		SYS_LOG_ERR("LwM2M message is invalid.");
 		return -EINVAL;
-	}
-
-	app_ctx = &msg->ctx->net_app_ctx;
-	pkt = net_app_get_net_pkt(app_ctx, AF_UNSPEC, BUF_ALLOC_TIMEOUT);
-	if (!pkt) {
-		SYS_LOG_ERR("Unable to get TX packet, not enough memory.");
-		return -ENOMEM;
-	}
-
-	frag = net_app_get_net_buf(app_ctx, pkt, BUF_ALLOC_TIMEOUT);
-	if (!frag) {
-		SYS_LOG_ERR("Unable to get DATA buffer, not enough memory.");
-		r = -ENOMEM;
-		goto cleanup;
 	}
 
 	/*
@@ -1017,8 +989,8 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		token = msg->token;
 	}
 
-	r = coap_packet_init(&msg->cpkt, pkt, 1, msg->type,
-			     tokenlen, token, msg->code,
+	r = coap_packet_init(&msg->cpkt, msg->msg_data, sizeof(msg->msg_data),
+			     1, msg->type, tokenlen, token, msg->code,
 			     (msg->mid > 0 ? msg->mid : coap_next_id()));
 	if (r < 0) {
 		SYS_LOG_ERR("coap packet init error (err:%d)", r);
@@ -1040,8 +1012,8 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		goto cleanup;
 	}
 
-	r = coap_pending_init(msg->pending, &msg->cpkt,
-			      &app_ctx->default_ctx->remote);
+	api = (struct lwm2m_net_layer_api *)msg->ctx->net_layer_api;
+	r = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr);
 	if (r < 0) {
 		SYS_LOG_ERR("Unable to initialize a pending "
 			    "retransmission (err:%d).", r);
@@ -1068,9 +1040,6 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 
 cleanup:
 	lwm2m_reset_message(msg, true);
-	if (pkt) {
-		net_pkt_unref(pkt);
-	}
 
 	return r;
 }
@@ -1085,17 +1054,12 @@ int lwm2m_send_message(struct lwm2m_message *msg)
 	}
 
 	if (msg->type == COAP_TYPE_CON) {
-		/*
-		 * Increase packet ref count to avoid being unref after
-		 * net_app_send_pkt()
-		 */
 		coap_pending_cycle(msg->pending);
 	}
 
 	msg->send_attempts++;
-	ret = net_app_send_pkt(&msg->ctx->net_app_ctx, msg->cpkt.pkt,
-			       &msg->ctx->net_app_ctx.default_ctx->remote,
-			       NET_SOCKADDR_MAX_SIZE, K_NO_WAIT, NULL);
+
+	ret = lwm2m_nl_msg_send(msg);
 	if (ret < 0) {
 		if (msg->type == COAP_TYPE_CON) {
 			coap_pending_clear(msg->pending);
@@ -2116,9 +2080,7 @@ size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
 		*last_block = true;
 	}
 
-	in->frag = net_frag_read(in->frag, in->offset, &in->offset, in_len,
-				 buf);
-	if (!in->frag && in->offset == 0xffff) {
+	if (fbuf_read(&in->in_cpkt->fbuf, &in->offset, buf, in_len) < 0) {
 		*last_block = true;
 		return 0;
 	}
@@ -2741,7 +2703,6 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 	struct lwm2m_engine_res_inst *res = NULL;
 	struct lwm2m_engine_obj_field *obj_field;
 	int ret = 0, index;
-	u16_t temp_len;
 	u8_t num_read = 0;
 
 	if (path->level >= 2) {
@@ -2771,9 +2732,7 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 
 	/* store original path values so we can change them during processing */
 	memcpy(&temp_path, path, sizeof(temp_path));
-	out->frag = coap_packet_get_payload(out->out_cpkt, &out->offset,
-					    &temp_len);
-	out->offset++;
+
 	engine_put_begin(out, path);
 
 	while (obj_inst) {
@@ -2868,10 +2827,11 @@ move_forward:
 	return ret;
 }
 
-static int print_attr(struct net_pkt *pkt, char *buf, u16_t buflen, void *ref)
+static int print_attr(struct fbuf_ctx *fbuf, u8_t *buf, u16_t buf_len,
+		      void *ref)
 {
 	struct lwm2m_attr *attr;
-	int i, used, base;
+	int i, used, base, ret;
 	u8_t digit;
 	s32_t fraction;
 
@@ -2884,7 +2844,7 @@ static int print_attr(struct net_pkt *pkt, char *buf, u16_t buflen, void *ref)
 
 		/* assuming integer will have float_val.val2 set as 0 */
 
-		used = snprintk(buf, buflen, ";%s=%s%d%s",
+		used = snprintk(buf, sizeof(buf), ";%s=%s%d%s",
 				LWM2M_ATTR_STR[attr->type],
 				attr->float_val.val1 == 0 &&
 				attr->float_val.val2 < 0 ? "-" : "",
@@ -2894,15 +2854,16 @@ static int print_attr(struct net_pkt *pkt, char *buf, u16_t buflen, void *ref)
 		base = 100000;
 		fraction = attr->float_val.val2 < 0 ?
 			   -attr->float_val.val2 : attr->float_val.val2;
-		while (fraction && used < buflen && base > 0) {
+		while (fraction && used < sizeof(buf) && base > 0) {
 			digit = fraction / base;
 			buf[used++] = '0' + digit;
 			fraction -= digit * base;
 			base /= 10;
 		}
 
-		if (!net_pkt_append_all(pkt, used, buf, BUF_ALLOC_TIMEOUT)) {
-			return -ENOMEM;
+		ret = fbuf_append(fbuf, buf, used);
+		if (ret < 0) {
+			return ret;
 		}
 	}
 
@@ -2917,7 +2878,6 @@ static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 	struct lwm2m_obj_path *path = context->path;
 	struct lwm2m_output_context *out = context->out;
 	int ret;
-	u16_t temp_len;
 	bool reported = false;
 
 	/* object ID is required unless it's bootstrap discover (TODO) or it's
@@ -2944,27 +2904,23 @@ static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 		return ret;
 	}
 
-	out->frag = coap_packet_get_payload(out->out_cpkt, &out->offset,
-					    &temp_len);
-	out->offset++;
-
 	/* Handle CoAP .well-known/core discover */
 	if (well_known) {
 		/* </.well-known/core> */
-		if (!net_pkt_append_all(out->out_cpkt->pkt,
-					strlen(WELL_KNOWN_CORE_PATH),
-					WELL_KNOWN_CORE_PATH,
-					BUF_ALLOC_TIMEOUT)) {
-			return -ENOMEM;
+		ret = fbuf_append(&out->out_cpkt->fbuf, WELL_KNOWN_CORE_PATH,
+				  strlen(WELL_KNOWN_CORE_PATH));
+		if (ret < 0) {
+			return ret;
 		}
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_list, obj, node) {
 			snprintk(disc_buf, sizeof(disc_buf), ",</%u>",
 				 obj->obj_id);
-			if (!net_pkt_append_all(out->out_cpkt->pkt,
-						strlen(disc_buf), disc_buf,
-						BUF_ALLOC_TIMEOUT)) {
-				return -ENOMEM;
+
+			ret = fbuf_append(&out->out_cpkt->fbuf,
+					  disc_buf, strlen(disc_buf));
+			if (ret < 0) {
+				return ret;
 			}
 		}
 
@@ -2991,14 +2947,15 @@ static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 			snprintk(disc_buf, sizeof(disc_buf), "%s</%u>",
 				 reported ? "," : "",
 				 obj_inst->obj->obj_id);
-			if (!net_pkt_append_all(out->out_cpkt->pkt,
-						strlen(disc_buf), disc_buf,
-						BUF_ALLOC_TIMEOUT)) {
-				return -ENOMEM;
+
+			ret = fbuf_append(&out->out_cpkt->fbuf,
+					  disc_buf, strlen(disc_buf));
+			if (ret < 0) {
+				return ret;
 			}
 
 			/* report object attrs (5.4.2) */
-			ret = print_attr(out->out_cpkt->pkt,
+			ret = print_attr(&out->out_cpkt->fbuf,
 					 disc_buf, sizeof(disc_buf),
 					 obj_inst->obj);
 			if (ret < 0) {
@@ -3018,14 +2975,15 @@ static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 			snprintk(disc_buf, sizeof(disc_buf), "%s</%u/%u>",
 				 reported ? "," : "",
 				 obj_inst->obj->obj_id, obj_inst->obj_inst_id);
-			if (!net_pkt_append_all(out->out_cpkt->pkt,
-						strlen(disc_buf), disc_buf,
-						BUF_ALLOC_TIMEOUT)) {
-				return -ENOMEM;
+
+			ret = fbuf_append(&out->out_cpkt->fbuf,
+					  disc_buf, strlen(disc_buf));
+			if (ret < 0) {
+				return ret;
 			}
 
 			/* report object instance attrs (5.4.2) */
-			ret = print_attr(out->out_cpkt->pkt,
+			ret = print_attr(&out->out_cpkt->fbuf,
 					 disc_buf, sizeof(disc_buf),
 					 obj_inst);
 			if (ret < 0) {
@@ -3048,15 +3006,16 @@ static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 				 obj_inst->obj->obj_id,
 				 obj_inst->obj_inst_id,
 				 obj_inst->resources[i].res_id);
-			if (!net_pkt_append_all(out->out_cpkt->pkt,
-						strlen(disc_buf), disc_buf,
-						BUF_ALLOC_TIMEOUT)) {
-				return -ENOMEM;
+
+			ret = fbuf_append(&out->out_cpkt->fbuf,
+					  disc_buf, strlen(disc_buf));
+			if (ret < 0) {
+				return ret;
 			}
 
 			/* report resource attrs when path > 1 (5.4.2) */
 			if (path->level > 1) {
-				ret = print_attr(out->out_cpkt->pkt,
+				ret = print_attr(&out->out_cpkt->fbuf,
 						 disc_buf, sizeof(disc_buf),
 						 &obj_inst->resources[i]);
 				if (ret < 0) {
@@ -3127,8 +3086,8 @@ static int do_write_op(struct lwm2m_engine_obj *obj,
 	}
 }
 
-static int handle_request(struct coap_packet *request,
-			  struct lwm2m_message *msg)
+int lwm2m_handle_request(struct coap_packet *request,
+			 struct lwm2m_message *msg)
 {
 	int r;
 	u8_t code;
@@ -3297,8 +3256,8 @@ static int handle_request(struct coap_packet *request,
 	}
 
 	/* setup incoming data */
-	in.frag = coap_packet_get_payload(in.in_cpkt, &in.offset,
-					  &in.payload_len);
+	in.offset = in.in_cpkt->hdr_len + in.in_cpkt->opt_len;
+	coap_packet_get_payload(in.in_cpkt, &in.payload_len);
 
 	/* Check for block transfer */
 	r = get_option_int(in.in_cpkt, COAP_OPTION_BLOCK1);
@@ -3461,49 +3420,24 @@ error:
 	return 0;
 }
 
-void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
+void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
+		       u8_t *buf, u16_t buf_len,
+		       struct sockaddr *from_addr,
 		       bool handle_separate_response,
 		       udp_request_handler_cb_t udp_request_handler)
 {
 	struct lwm2m_message *msg = NULL;
-	struct net_udp_hdr hdr, *udp_hdr;
 	struct coap_pending *pending;
 	struct coap_reply *reply;
 	struct coap_packet response;
-	struct sockaddr from_addr;
-	int r;
+	int r = 0;
 	u8_t token[8];
 	u8_t tkl;
 
-	udp_hdr = net_udp_get_hdr(pkt, &hdr);
-	if (!udp_hdr) {
-		SYS_LOG_ERR("Invalid UDP data");
-		return;
-	}
-
-	/* Save the from address */
-#if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(pkt) == AF_INET6) {
-		net_ipaddr_copy(&net_sin6(&from_addr)->sin6_addr,
-				&NET_IPV6_HDR(pkt)->src);
-		net_sin6(&from_addr)->sin6_port = udp_hdr->src_port;
-		net_sin6(&from_addr)->sin6_family = AF_INET6;
-	}
-#endif
-
-#if defined(CONFIG_NET_IPV4)
-	if (net_pkt_family(pkt) == AF_INET) {
-		net_ipaddr_copy(&net_sin(&from_addr)->sin_addr,
-				&NET_IPV4_HDR(pkt)->src);
-		net_sin(&from_addr)->sin_port = udp_hdr->src_port;
-		net_sin(&from_addr)->sin_family = AF_INET;
-	}
-#endif
-
-	r = coap_packet_parse(&response, pkt, NULL, 0);
+	r = coap_packet_parse(&response, buf, buf_len, 0, NULL, 0);
 	if (r < 0) {
 		SYS_LOG_ERR("Invalid data received (err:%d)", r);
-		goto cleanup;
+		return;
 	}
 
 	tkl = coap_header_get_token(&response, token);
@@ -3523,8 +3457,8 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 	}
 
 	SYS_LOG_DBG("checking for reply from [%s]",
-		    lwm2m_sprint_ip_addr(&from_addr));
-	reply = coap_response_received(&response, &from_addr,
+		    lwm2m_sprint_ip_addr(from_addr));
+	reply = coap_response_received(&response, from_addr,
 				       client_ctx->replies,
 				       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 	if (reply) {
@@ -3541,7 +3475,8 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		if (handle_separate_response && !tkl &&
 			coap_header_get_type(&response) == COAP_TYPE_ACK) {
 			SYS_LOG_DBG("separated response, not removing reply");
-			goto cleanup;
+			/* return an error for cleanup */
+			return;
 		}
 
 		if (!msg) {
@@ -3555,7 +3490,8 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 			/* reset reply->user_data for next time */
 			reply->user_data = (void *)COAP_REPLY_STATUS_NONE;
 			SYS_LOG_DBG("reply %p NOT removed", reply);
-			goto cleanup;
+			/* return an error for cleanup */
+			return;
 		}
 
 		/* free up msg resources */
@@ -3564,7 +3500,8 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		}
 
 		SYS_LOG_DBG("reply %p handled and removed", reply);
-		goto cleanup;
+		/* return an error for cleanup */
+		return;
 	}
 
 	/*
@@ -3577,7 +3514,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		msg = lwm2m_get_message(client_ctx);
 		if (!msg) {
 			SYS_LOG_ERR("Unable to get a lwm2m message!");
-			goto cleanup;
+			return;
 		}
 
 		/* Create a response message if we reach this point */
@@ -3590,33 +3527,19 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		/* process the response to this request */
 		r = udp_request_handler(&response, msg);
 		if (r < 0) {
-			goto cleanup;
+			return;
 		}
 
 		r = lwm2m_send_message(msg);
 		if (r < 0) {
-			SYS_LOG_ERR("Err sending response: %d",
-				    r);
+			SYS_LOG_ERR("Err sending response: %d", r);
 			lwm2m_reset_message(msg, true);
 		}
 	} else {
 		SYS_LOG_ERR("No handler for response");
 	}
 
-cleanup:
-	if (pkt) {
-		net_pkt_unref(pkt);
-	}
-}
-
-static void udp_receive(struct net_app_ctx *app_ctx, struct net_pkt *pkt,
-			int status, void *user_data)
-{
-	struct lwm2m_ctx *client_ctx = CONTAINER_OF(app_ctx,
-						    struct lwm2m_ctx,
-						    net_app_ctx);
-
-	lwm2m_udp_receive(client_ctx, pkt, false, handle_request);
+	return;
 }
 
 static void retransmit_request(struct k_work *work)
@@ -3624,7 +3547,6 @@ static void retransmit_request(struct k_work *work)
 	struct lwm2m_ctx *client_ctx;
 	struct lwm2m_message *msg;
 	struct coap_pending *pending;
-	int r;
 
 	client_ctx = CONTAINER_OF(work, struct lwm2m_ctx, retransmit_work);
 	pending = coap_pending_next_to_expire(client_ctx->pendings,
@@ -3637,27 +3559,6 @@ static void retransmit_request(struct k_work *work)
 	if (!msg) {
 		SYS_LOG_ERR("pending has no valid LwM2M message!");
 		return;
-	}
-
-	/* ref pkt to avoid being freed after net_app_send_pkt() */
-	net_pkt_ref(pending->pkt);
-
-	SYS_LOG_DBG("Resending message: %p", msg);
-	msg->send_attempts++;
-	/*
-	 * Don't use lwm2m_send_message() because it calls
-	 * coap_pending_cycle() / coap_pending_cycle() in a different order
-	 * and under different circumstances.  It also does it's own ref /
-	 * unref of the net_pkt.  Keep it simple and call net_app_send_pkt()
-	 * directly here.
-	 */
-	r = net_app_send_pkt(&msg->ctx->net_app_ctx, msg->cpkt.pkt,
-			     &msg->ctx->net_app_ctx.default_ctx->remote,
-			     NET_SOCKADDR_MAX_SIZE, K_NO_WAIT, NULL);
-	if (r < 0) {
-		SYS_LOG_ERR("Error sending lwm2m message: %d", r);
-		/* don't error here, retry until timeout */
-		net_pkt_unref(pending->pkt);
 	}
 
 	if (!coap_pending_cycle(pending)) {
@@ -3674,12 +3575,14 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	/* unref to balance ref we made for sendto() */
-	net_pkt_unref(pending->pkt);
+	SYS_LOG_DBG("Resending message: %p", msg);
+	msg->send_attempts++;
+	lwm2m_nl_msg_send(msg);
+
 	k_delayed_work_submit(&client_ctx->retransmit_work, pending->timeout);
 }
 
-static int notify_message_reply_cb(const struct coap_packet *response,
+static int notify_message_reply_cb(struct coap_packet *response,
 				   struct coap_reply *reply,
 				   const struct sockaddr *from)
 {
@@ -3734,15 +3637,13 @@ static int generate_notify_message(struct observe_node *obs,
 	context.path = &path;
 	context.operation = LWM2M_OP_READ;
 
-	SYS_LOG_DBG("[%s] NOTIFY MSG START: %u/%u/%u(%u) token:'%s' [%s] %lld",
+	SYS_LOG_DBG("[%s] NOTIFY MSG START: %u/%u/%u(%u) token:'%s' %lld",
 		    manual_trigger ? "MANUAL" : "AUTO",
 		    obs->path.obj_id,
 		    obs->path.obj_inst_id,
 		    obs->path.res_id,
 		    obs->path.level,
 		    sprint_token(obs->token, obs->tkl),
-		    lwm2m_sprint_ip_addr(
-				&obs->ctx->net_app_ctx.default_ctx->remote),
 		    k_uptime_get());
 
 	obj_inst = get_engine_obj_inst(obs->path.obj_id,
@@ -3919,117 +3820,38 @@ static void lwm2m_engine_service(void)
 	}
 }
 
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-int lwm2m_engine_set_net_pkt_pool(struct lwm2m_ctx *ctx,
-				  net_pkt_get_slab_func_t tx_slab,
-				  net_pkt_get_pool_func_t data_pool)
-{
-	ctx->tx_slab = tx_slab;
-	ctx->data_pool = data_pool;
-
-	return 0;
-}
-#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
-
 void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
 {
 	k_delayed_work_init(&client_ctx->retransmit_work, retransmit_request);
-
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-	net_app_set_net_pkt_pool(&client_ctx->net_app_ctx,
-				 client_ctx->tx_slab, client_ctx->data_pool);
-#endif
 }
-
-#if defined(CONFIG_NET_APP_DTLS)
-static int setup_cert(struct net_app_ctx *app_ctx, void *cert)
-{
-#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
-	struct lwm2m_ctx *client_ctx = CONTAINER_OF(app_ctx,
-						    struct lwm2m_ctx,
-						    net_app_ctx);
-	return mbedtls_ssl_conf_psk(
-			&app_ctx->tls.mbedtls.conf,
-			(const unsigned char *)client_ctx->client_psk,
-			client_ctx->client_psk_len,
-			(const unsigned char *)client_ctx->client_psk_id,
-			client_ctx->client_psk_id_len);
-#else
-	return 0;
-#endif
-}
-#endif /* CONFIG_NET_APP_DTLS */
 
 int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 		       char *peer_str, u16_t peer_port)
 {
-	struct sockaddr client_addr;
-	int ret = 0;
-
 	/* TODO: use security object for initial setup */
-
-	/* setup the local client port */
-	(void)memset(&client_addr, 0, sizeof(client_addr));
-#if defined(CONFIG_NET_IPV6)
-	client_addr.sa_family = AF_INET6;
-	net_sin6(&client_addr)->sin6_port = htons(CONFIG_LWM2M_LOCAL_PORT);
-#elif defined(CONFIG_NET_IPV4)
-	client_addr.sa_family = AF_INET;
-	net_sin(&client_addr)->sin_port = htons(CONFIG_LWM2M_LOCAL_PORT);
-#endif
-
-	ret = net_app_init_udp_client(&client_ctx->net_app_ctx,
-				      &client_addr, NULL,
-				      peer_str,
-				      peer_port,
-				      client_ctx->net_init_timeout,
-				      client_ctx);
-	if (ret) {
-		SYS_LOG_ERR("net_app_init_udp_client err:%d", ret);
-		goto error_start;
-	}
 
 	lwm2m_engine_context_init(client_ctx);
 
-	/* set net_app callbacks */
-	ret = net_app_set_cb(&client_ctx->net_app_ctx,
-			     NULL, udp_receive, NULL, NULL);
-	if (ret) {
-		SYS_LOG_ERR("Could not set receive callback (err:%d)", ret);
-		goto error_start;
-	}
-
-#if defined(CONFIG_NET_APP_DTLS)
-	ret = net_app_client_tls(&client_ctx->net_app_ctx,
-				 client_ctx->dtls_result_buf,
-				 client_ctx->dtls_result_buf_len,
-				 INSTANCE_INFO,
-				 strlen(INSTANCE_INFO),
-				 setup_cert,
-				 client_ctx->cert_host,
-				 NULL,
-				 client_ctx->dtls_pool,
-				 client_ctx->dtls_stack,
-				 client_ctx->dtls_stack_len);
-	if (ret < 0) {
-		SYS_LOG_ERR("Cannot init DTLS (%d)", ret);
-		goto error_start;
-	}
+	/* setup the local client port */
+	(void)memset(&client_ctx->local_addr, 0,
+		     sizeof(client_ctx->local_addr));
+#if defined(CONFIG_NET_IPV6)
+	client_ctx->local_addr.sa_family = AF_INET6;
+	net_sin6(&client_ctx->local_addr)->sin6_port =
+		htons(CONFIG_LWM2M_LOCAL_PORT);
+#elif defined(CONFIG_NET_IPV4)
+	client_ctx->local_addr.sa_family = AF_INET;
+	net_sin(&client_ctx->local_addr)->sin_port =
+		htons(CONFIG_LWM2M_LOCAL_PORT);
 #endif
 
-	ret = net_app_connect(&client_ctx->net_app_ctx,
-			      client_ctx->net_timeout);
-	if (ret < 0) {
-		SYS_LOG_ERR("Cannot connect UDP (%d)", ret);
-		goto error_start;
-	}
+#if defined(CONFIG_LWM2M_NET_LAYER_NET_APP)
+	client_ctx->net_layer_api = lwm2m_engine_nl_net_app_api();
+#elif defined(CONFIG_LWM2M_NET_LAYER_SOCKET)
+	client_ctx->net_layer_api = lwm2m_engine_nl_socket_api();
+#endif
 
-	return 0;
-
-error_start:
-	net_app_close(&client_ctx->net_app_ctx);
-	net_app_release(&client_ctx->net_app_ctx);
-	return ret;
+	return lwm2m_nl_start(client_ctx, peer_str, peer_port);
 }
 
 static int lwm2m_engine_init(struct device *dev)

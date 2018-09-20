@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2017 Foundries.io
+ * Copyright (c) 2017-2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_LWM2M_H_
 #define ZEPHYR_INCLUDE_NET_LWM2M_H_
 
-#include <net/net_app.h>
+#include <kernel.h>
 #include <net/coap.h>
 
 /* LWM2M Objects defined by OMA */
@@ -28,37 +28,10 @@
 #define IPSO_OBJECT_LIGHT_CONTROL_ID			3311
 
 /**
- * @brief LwM2M context structure
- *
- * @details Context structure for the LwM2M high-level API.
- *
- * @param net_app_ctx Related network application context.
- * @param net_init_timeout Used if the net_app API needs to do some time
- *    consuming operation, like resolving DNS address.
- * @param net_timeout How long to wait for the network connection before
- *    giving up.
- * @param tx_slab Network packet (net_pkt) memory pool for network contexts
- *    attached to this LwM2M context.
- * @param data_pool Network data net_buf pool for network contexts attached
- *    to this LwM2M context.
+ * brief LwM2M DTLS data
  */
-struct lwm2m_ctx {
-	/** Net app context structure */
-	struct net_app_ctx net_app_ctx;
-	s32_t net_init_timeout;
-	s32_t net_timeout;
-
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-	net_pkt_get_slab_func_t tx_slab;
-	net_pkt_get_pool_func_t data_pool;
-#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
-
-	/** Private CoAP and networking structures */
-	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
-	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
-	struct k_delayed_work retransmit_work;
-
-#if defined(CONFIG_NET_APP_DTLS)
+struct lwm2m_dtls_data {
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 	/** Pre-Shared Key  Information*/
 	unsigned char *client_psk;
 	size_t client_psk_len;
@@ -73,6 +46,37 @@ struct lwm2m_ctx {
 	k_thread_stack_t *dtls_stack;
 	size_t dtls_stack_len;
 #endif
+};
+
+/**
+ * @brief LwM2M context structure
+ *
+ * @details Context structure for the LwM2M high-level API.
+ *
+ * @param net_init_timeout Used if the network layer needs to do some time
+ *    consuming operation, like resolving DNS address.
+ * @param net_timeout How long to wait for the network connection before
+ *    giving up.
+ * @param local_addr Stored local IP address of the LwM2M client
+ * @param remote_addr Stored remote IP address of the LwM2M client
+ */
+struct lwm2m_ctx {
+	s32_t net_init_timeout;
+	s32_t net_timeout;
+
+	struct sockaddr local_addr;
+	struct sockaddr remote_addr;
+
+	/** Private CoAP and networking structures */
+	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
+	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
+	struct k_delayed_work retransmit_work;
+
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+	struct lwm2m_dtls_data *dtls_data;
+#endif
+
+	void *net_layer_api;
 };
 
 typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,
@@ -225,11 +229,6 @@ int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, u16_t data_len,
 int lwm2m_engine_get_res_data(char *pathstr, void **data_ptr, u16_t *data_len,
 			      u8_t *data_flags);
 
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-int lwm2m_engine_set_net_pkt_pool(struct lwm2m_ctx *ctx,
-				  net_pkt_get_slab_func_t tx_slab,
-				  net_pkt_get_pool_func_t data_pool);
-#endif
 int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 		       char *peer_str, u16_t peer_port);
 

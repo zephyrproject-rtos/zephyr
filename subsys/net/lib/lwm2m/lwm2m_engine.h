@@ -39,11 +39,18 @@
 #define LWM2M_MSG_TOKEN_LEN_SKIP	0xFF
 
 /* length of time in milliseconds to wait for buffer allocations */
-#define BUF_ALLOC_TIMEOUT K_SECONDS(1)
+#define BUF_ALLOC_TIMEOUT		K_SECONDS(1)
 
 /* coap reply status */
 #define COAP_REPLY_STATUS_NONE		0
 #define COAP_REPLY_STATUS_ERROR		1
+
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+#define INSTANCE_INFO "Zephyr DTLS LwM2M-client"
+#endif
+
+/* TODO: 32 is just a guess at "non-payload" room needed */
+#define MAX_PACKET_SIZE		(CONFIG_LWM2M_COAP_BLOCK_SIZE + 32)
 
 struct lwm2m_message;
 
@@ -55,8 +62,11 @@ struct lwm2m_message {
 	/** LwM2M context related to this message */
 	struct lwm2m_ctx *ctx;
 
-	/** CoAP packet data related to this message */
+	/** CoAP packet data related to the outgoing message */
 	struct coap_packet cpkt;
+
+	/** Buffer data related outgoing message */
+	u8_t msg_data[MAX_PACKET_SIZE];
 
 	/** Message transmission handling for TYPE_CON */
 	struct coap_pending *pending;
@@ -98,6 +108,10 @@ int  lwm2m_get_or_create_engine_obj(struct lwm2m_engine_context *context,
 /* LwM2M context functions */
 void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx);
 
+/* Message buffer functions */
+u8_t *lwm2m_get_message_buf(void);
+int lwm2m_put_message_buf(u8_t *buf);
+
 /* LwM2M message functions */
 struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
 void lwm2m_reset_message(struct lwm2m_message *msg, bool release);
@@ -115,7 +129,12 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_obj_field *obj_field,
 			struct lwm2m_engine_context *context);
 
-void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
+int lwm2m_handle_request(struct coap_packet *request,
+			 struct lwm2m_message *msg);
+
+void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
+		       u8_t *buf, u16_t buf_len,
+		       struct sockaddr *from_addr,
 		       bool handle_separate_response,
 		       udp_request_handler_cb_t udp_request_handler);
 
@@ -135,5 +154,58 @@ void lwm2m_firmware_set_update_state(u8_t state);
 void lwm2m_firmware_set_update_result(u8_t result);
 u8_t lwm2m_firmware_get_update_result(void);
 #endif
+
+/* LwM2M Network Layer API */
+
+struct lwm2m_net_layer_api {
+	int  (*nl_start)(struct lwm2m_ctx *client_ctx,
+			 char *peer_str, u16_t peer_port);
+	int  (*nl_msg_send)(struct lwm2m_message *msg);
+	void *nl_user_data;
+};
+
+static inline int lwm2m_nl_start(struct lwm2m_ctx *client_ctx,
+				 char *peer_str, u16_t peer_port)
+{
+	struct lwm2m_net_layer_api *api = client_ctx->net_layer_api;
+
+	if (api && api->nl_start) {
+		return api->nl_start(client_ctx, peer_str, peer_port);
+	} else {
+		return 0;
+	}
+}
+
+static inline int lwm2m_nl_msg_send(struct lwm2m_message *msg)
+{
+	struct lwm2m_net_layer_api *api;
+
+	if (msg && msg->ctx && msg->ctx->net_layer_api) {
+		api = msg->ctx->net_layer_api;
+		if (api->nl_msg_send) {
+			return api->nl_msg_send(msg);
+		}
+	}
+
+	return -EINVAL;
+}
+
+static inline struct lwm2m_net_layer_api *
+lwm2m_nl_api_from_ctx(struct lwm2m_ctx *ctx)
+{
+	return (struct lwm2m_net_layer_api *)ctx->net_layer_api;
+}
+
+/* Network Layer-Specific Data Functions */
+
+#if defined(CONFIG_LWM2M_NET_LAYER_NET_APP)
+struct lwm2m_net_layer_api *lwm2m_engine_nl_net_app_api(void);
+struct lwm2m_net_layer_api *lwm2m_firmware_pull_nl_net_app_api(void);
+#endif /* CONFIG_LWM2M_NET_LAYER_NET_APP */
+
+#if defined(CONFIG_LWM2M_NET_LAYER_SOCKET)
+struct lwm2m_net_layer_api *lwm2m_engine_nl_socket_api(void);
+struct lwm2m_net_layer_api *lwm2m_firmware_pull_nl_socket_api(void);
+#endif /* CONFIG_LWM2M_NET_LAYER_SOCKET */
 
 #endif /* LWM2M_ENGINE_H */
