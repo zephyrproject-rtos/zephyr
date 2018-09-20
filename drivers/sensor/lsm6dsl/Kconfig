@@ -135,7 +135,7 @@ endchoice
 config LSM6DSL_TRIGGER
 	bool
 
-if !HAS_DTS_SPI_PINS
+if !HAS_DTS_GPIO_DEVICE
 
 config LSM6DSL_GPIO_DEV_NAME
 	string "GPIO device"
@@ -151,7 +151,7 @@ config LSM6DSL_GPIO_PIN_NUM
 	  The number of the GPIO on which the interrupt signal from the LSM6DSL
 	  chip will be received.
 
-endif #HAS_DTS_SPI_DEVICE
+endif # HAS_DTS_GPIO_DEVICE
 
 config LSM6DSL_THREAD_PRIORITY
 	int "Thread priority"
