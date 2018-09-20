@@ -57,7 +57,7 @@ typedef struct _dnode sys_dnode_t;
  * @param __dn A sys_dnode_t pointer to peek each node of the list
  */
 #define SYS_DLIST_FOR_EACH_NODE(__dl, __dn)				\
-	for (__dn = sys_dlist_peek_head(__dl); __dn;			\
+	for (__dn = sys_dlist_peek_head(__dl); __dn != NULL;		\
 	     __dn = sys_dlist_peek_next(__dl, __dn))
 
 /**
@@ -83,7 +83,7 @@ typedef struct _dnode sys_dnode_t;
 #define SYS_DLIST_ITERATE_FROM_NODE(__dl, __dn) \
 	for (__dn = __dn ? sys_dlist_peek_next_no_check(__dl, __dn) \
 			 : sys_dlist_peek_head(__dl); \
-	     __dn; \
+	     __dn != NULL; \
 	     __dn = sys_dlist_peek_next(__dl, __dn))
 
 /**
@@ -105,7 +105,7 @@ typedef struct _dnode sys_dnode_t;
 #define SYS_DLIST_FOR_EACH_NODE_SAFE(__dl, __dn, __dns)			\
 	for (__dn = sys_dlist_peek_head(__dl),				\
 		     __dns = sys_dlist_peek_next(__dl, __dn);		\
-	     __dn; __dn = __dns,					\
+	     __dn != NULL; __dn = __dns,				\
 		     __dns = sys_dlist_peek_next(__dl, __dn))
 
 /*
@@ -154,7 +154,8 @@ typedef struct _dnode sys_dnode_t;
  * @param __n The field name of sys_dnode_t within the container struct
  */
 #define SYS_DLIST_FOR_EACH_CONTAINER(__dl, __cn, __n)			\
-	for (__cn = SYS_DLIST_PEEK_HEAD_CONTAINER(__dl, __cn, __n); __cn; \
+	for (__cn = SYS_DLIST_PEEK_HEAD_CONTAINER(__dl, __cn, __n);     \
+	     __cn != NULL;                                              \
 	     __cn = SYS_DLIST_PEEK_NEXT_CONTAINER(__dl, __cn, __n))
 
 /**
@@ -174,8 +175,8 @@ typedef struct _dnode sys_dnode_t;
  */
 #define SYS_DLIST_FOR_EACH_CONTAINER_SAFE(__dl, __cn, __cns, __n)	\
 	for (__cn = SYS_DLIST_PEEK_HEAD_CONTAINER(__dl, __cn, __n),	\
-	     __cns = SYS_DLIST_PEEK_NEXT_CONTAINER(__dl, __cn, __n); __cn; \
-	     __cn = __cns,						\
+	     __cns = SYS_DLIST_PEEK_NEXT_CONTAINER(__dl, __cn, __n);    \
+	     __cn != NULL; __cn = __cns,				\
 	     __cns = SYS_DLIST_PEEK_NEXT_CONTAINER(__dl, __cn, __n))
 
 /**
