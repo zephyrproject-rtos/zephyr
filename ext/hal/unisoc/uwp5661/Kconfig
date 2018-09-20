@@ -1,0 +1,12 @@
+config HAS_UWP
+	bool
+	depends on SOC_FAMILY_UWP
+	default y
+
+if HAS_UWP
+
+config USE_UWP_HAL_UART
+	bool
+	default y
+
+endif
