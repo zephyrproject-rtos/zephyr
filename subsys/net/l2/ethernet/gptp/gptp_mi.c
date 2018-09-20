@@ -501,8 +501,7 @@ static void gptp_mi_pss_send_state_machine(int port)
 						&port_ds->half_sync_itv);
 
 		/* Start 0.5 * syncInterval timeout timer. */
-		k_timer_start(&state->half_sync_itv_timer,
-			      duration, duration);
+		k_timer_start(&state->half_sync_itv_timer, duration, 0);
 
 		gptp_mi_pss_send_md_sync_send(port);
 
