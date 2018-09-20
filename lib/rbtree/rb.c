@@ -227,7 +227,7 @@ void rb_insert(struct rbtree *tree, struct rbnode *node)
 
 	struct rbnode *parent = stack[stacksz - 1];
 
-	int side = !tree->lessthan_fn(node, parent);
+	int side = tree->lessthan_fn(node, parent) ? 0 : 1;
 
 	set_child(parent, side, node);
 	set_color(node, RED);

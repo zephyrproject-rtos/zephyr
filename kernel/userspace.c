@@ -74,7 +74,7 @@ extern struct _k_object *_k_object_gperf_find(void *obj);
 extern void _k_object_gperf_wordlist_foreach(_wordlist_cb_func_t func,
 					     void *context);
 
-static int node_lessthan(struct rbnode *a, struct rbnode *b);
+static bool node_lessthan(struct rbnode *a, struct rbnode *b);
 
 /*
  * Red/black tree of allocated kernel objects, for reasonably fast lookups
@@ -109,7 +109,7 @@ static size_t obj_size_get(enum k_objects otype)
 	return ret;
 }
 
-static int node_lessthan(struct rbnode *a, struct rbnode *b)
+static bool node_lessthan(struct rbnode *a, struct rbnode *b)
 {
 	return a < b;
 }

@@ -49,7 +49,7 @@ int node_index(struct rbnode *n)
 }
 
 /* Our "lessthan" is just the location of the struct */
-int node_lessthan(struct rbnode *a, struct rbnode *b)
+bool node_lessthan(struct rbnode *a, struct rbnode *b)
 {
 	if (current_insertee) {
 		CHECK(a == current_insertee);
