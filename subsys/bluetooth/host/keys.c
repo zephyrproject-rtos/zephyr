@@ -56,6 +56,24 @@ struct bt_keys *bt_keys_get_addr(u8_t id, const bt_addr_le_t *addr)
 	return NULL;
 }
 
+void bt_foreach_bond(u8_t id, void (*func)(const struct bt_bond_info *info,
+					   void *user_data),
+		     void *user_data)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
+		struct bt_keys *keys = &key_pool[i];
+
+		if (keys->keys && keys->id == id) {
+			struct bt_bond_info info;
+
+			bt_addr_le_copy(&info.addr, &keys->addr);
+			func(&info, user_data);
+		}
+	}
+}
+
 void bt_keys_foreach(int type, void (*func)(struct bt_keys *keys, void *data),
 		     void *data)
 {
