@@ -13,6 +13,8 @@
 #include "altera_avalon_timer_regs.h"
 #include "altera_avalon_timer.h"
 
+#include "legacy_api.h"
+
 static u32_t accumulated_cycle_count;
 
 static s32_t _sys_idle_elapsed_ticks = 1;

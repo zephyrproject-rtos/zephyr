@@ -97,7 +97,7 @@ static void sys_power_save_idle(s32_t ticks)
 		 * reprogram timer only if the currently programmed time
 		 * duration is smaller than the idle time.
 		 */
-		_timer_idle_enter(ticks);
+		z_clock_set_timeout(ticks, true);
 	}
 
 	set_kernel_idle_time_in_ticks(ticks);
