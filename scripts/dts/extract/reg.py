@@ -21,19 +21,17 @@ class DTReg(DTDirective):
     # @param node_address Address of node owning the
     #                     reg definition.
     # @param yaml YAML definition for the owning node.
-    # @param prop reg property name
     # @param names (unused)
     # @param def_label Define label string of node owning the
     #                  compatible definition.
     #
-    def extract(self, node_address, yaml, prop, names, def_label):
+    def extract(self, node_address, yaml, names, def_label, div):
 
         node = reduced[node_address]
         node_compat = get_compat(node_address)
 
         reg = reduced[node_address]['props']['reg']
         if type(reg) is not list: reg = [ reg ]
-        props = list(reg)
 
         address_cells = reduced['/']['props'].get('#address-cells')
         size_cells = reduced['/']['props'].get('#size-cells')
@@ -45,16 +43,18 @@ class DTReg(DTDirective):
             size_cells = reduced[address]['props'].get('#size-cells', size_cells)
 
         post_label = "BASE_ADDRESS"
-        if yaml[node_compat].get('use-property-label', False):
-            label = node['props'].get('label', None)
-            if label:
-                post_label = label
+        if def_label not in regs_config.values():
+            if yaml[node_compat].get('use-property-label', False):
+                label = node['props'].get('label', None)
+                if label:
+                    post_label = label
 
-        index = 0
         l_base = def_label.split('/')
         l_addr = [convert_string_to_label(post_label)]
         l_size = ["SIZE"]
 
+        index = 0
+        props = list(reg)
         while props:
             prop_def = {}
             prop_alias = {}
@@ -82,7 +82,7 @@ class DTReg(DTDirective):
             if address_cells:
                 prop_def[l_addr_fqn] = hex(addr)
             if size_cells:
-                prop_def[l_size_fqn] = int(size)
+                prop_def[l_size_fqn] = int(size / div)
             if len(name):
                 if address_cells:
                     prop_alias['_'.join(l_base + name + l_addr)] = l_addr_fqn
