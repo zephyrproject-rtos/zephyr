@@ -68,7 +68,7 @@ _init_thread_timeout(struct _thread_base *thread_base)
 static inline void _unpend_thread_timing_out(struct k_thread *thread,
 					     struct _timeout *timeout_obj)
 {
-	if (timeout_obj->wait_q) {
+	if (timeout_obj->wait_q != NULL) {
 		_unpend_thread_no_timeout(thread);
 		thread->base.timeout.wait_q = NULL;
 	}
@@ -88,14 +88,14 @@ static inline void _handle_one_expired_timeout(struct _timeout *timeout)
 	timeout->delta_ticks_from_prev = _INACTIVE;
 
 	K_DEBUG("timeout %p\n", timeout);
-	if (thread) {
+	if (thread != NULL) {
 		_unpend_thread_timing_out(thread, timeout);
 		_mark_thread_as_started(thread);
 		_ready_thread(thread);
 		irq_unlock(key);
 	} else {
 		irq_unlock(key);
-		if (timeout->func) {
+		if (timeout->func != NULL) {
 			timeout->func(timeout);
 		}
 	}

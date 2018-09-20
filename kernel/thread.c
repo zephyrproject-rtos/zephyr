@@ -394,7 +394,7 @@ void _setup_new_thread(struct k_thread *new_thread,
 #endif
 #ifdef CONFIG_USERSPACE
 	/* New threads inherit any memory domain membership by the parent */
-	if (_current->mem_domain_info.mem_domain) {
+	if (_current->mem_domain_info.mem_domain != NULL) {
 		k_mem_domain_add_thread(_current->mem_domain_info.mem_domain,
 					new_thread);
 	}

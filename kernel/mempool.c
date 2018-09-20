@@ -209,7 +209,7 @@ void *z_thread_malloc(size_t size)
 {
 	void *ret;
 
-	if (_current->resource_pool) {
+	if (_current->resource_pool != NULL) {
 		ret = k_mem_pool_malloc(_current->resource_pool, size);
 	} else {
 		ret = NULL;

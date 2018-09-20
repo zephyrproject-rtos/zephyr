@@ -240,7 +240,7 @@ static inline void _ready_one_thread(_wait_q_t *wq)
 {
 	struct k_thread *th = _unpend_first_thread(wq);
 
-	if (th) {
+	if (th != NULL) {
 		_ready_thread(th);
 	}
 }
@@ -285,7 +285,7 @@ static inline struct k_thread *_unpend1_no_timeout(_wait_q_t *wait_q)
 {
 	struct k_thread *thread = _find_first_thread_to_unpend(wait_q, NULL);
 
-	if (thread) {
+	if (thread != NULL) {
 		_unpend_thread_no_timeout(thread);
 	}
 

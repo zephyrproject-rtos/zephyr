@@ -513,7 +513,8 @@ void k_object_access_all_grant(void *object)
 int _k_object_validate(struct _k_object *ko, enum k_objects otype,
 		       enum _obj_init_check init)
 {
-	if (unlikely(!ko || (otype != K_OBJ_ANY && ko->type != otype))) {
+	if (unlikely((ko == NULL) ||
+		(otype != K_OBJ_ANY && ko->type != otype))) {
 		return -EBADF;
 	}
 
