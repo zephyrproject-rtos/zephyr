@@ -30,7 +30,7 @@ zephyr_sources_ifdef(
 )
 
 zephyr_sources_ifdef(
-  CONFIG_LOG
+  CONFIG_SHELL_LOG_BACKEND
   shell_log_backend.c
 )
 
