@@ -1078,7 +1078,7 @@ static void prov_data(const u8_t *data)
 	/* After PB-GATT provisioning we should start advertising
 	 * using Node Identity.
 	 */
-	if (identity_enable) {
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) && identity_enable) {
 		bt_mesh_proxy_identity_enable();
 	}
 }
