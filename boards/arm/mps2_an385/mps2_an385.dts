@@ -128,6 +128,16 @@
 			interrupts = <17 3>;
 		};
 
+		eth0: eth@0 {
+			/* Linux has "smsc,lan9115" */
+			compatible = "smsc,lan9220";
+			/* Such a big size from memory map in AN385 */
+			/* Actual reg range is ~0x200 */
+			reg = <0x40200000 0x100000>;
+			label = "eth0";
+			interrupts = <13 3>;
+		};
+
 		i2c_touch: i2c@40022000 {
 			compatible = "arm,versatile-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
