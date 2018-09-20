@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Freescale Semiconductor, Inc.
+ * Copyright (c) 2018 Phytec Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +9,7 @@
 #include <misc/util.h>
 #include <misc/__assert.h>
 #include <logging/log.h>
+#include <stdlib.h>
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_REGISTER(FXOS8700);
@@ -68,6 +70,30 @@ int fxos8700_set_odr(struct device *dev, const struct sensor_value *val)
 				   FXOS8700_CTRLREG1_DR_MASK, (u8_t)dr);
 }
 
+static int fxos8700_set_mt_ths(struct device *dev,
+			       const struct sensor_value *val)
+{
+#ifdef CONFIG_FXOS8700_MOTION
+	const struct fxos8700_config *config = dev->config->config_info;
+	struct fxos8700_data *data = dev->driver_data;
+	u64_t micro_ms2 = abs(val->val1 * 1000000LL + val->val2);
+	u64_t ths = micro_ms2 / FXOS8700_FF_MT_THS_SCALE;
+
+	if (ths > FXOS8700_FF_MT_THS_MASK) {
+		LOG_ERR("Threshold value is out of range");
+		return -EINVAL;
+	}
+
+	LOG_DBG("Set FF_MT_THS to %d", (u8_t)ths);
+
+	return i2c_reg_update_byte(data->i2c, config->i2c_address,
+				   FXOS8700_REG_FF_MT_THS,
+				   FXOS8700_FF_MT_THS_MASK, (u8_t)ths);
+#else
+	return -ENOTSUP;
+#endif
+}
+
 static int fxos8700_attr_set(struct device *dev,
 			     enum sensor_channel chan,
 			     enum sensor_attribute attr,
@@ -79,6 +105,8 @@ static int fxos8700_attr_set(struct device *dev,
 
 	if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
 		return fxos8700_set_odr(dev, val);
+	} else if (attr == SENSOR_ATTR_SLOPE_TH) {
+		return fxos8700_set_mt_ths(dev, val);
 	} else {
 		return -ENOTSUP;
 	}
