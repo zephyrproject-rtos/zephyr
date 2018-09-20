@@ -1,0 +1,8 @@
+sample:
+  description: TBD
+  name: TBD
+tests:
+  test:
+    harness: net
+    tags: net
+    platform_whitelist: qemu_x86
