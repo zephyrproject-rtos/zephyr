@@ -15,6 +15,9 @@ Bluetooth™, GPS, displays, and camera sensors. As with other i.MX processors,
 i.MX RT1050 also has rich audio and video features, including LCD display,
 basic 2D graphics, camera interface, SPDIF, and I2S audio interface.
 
+The following document refers to the discontinued MIMXRT1050-EVK board. For the
+MIMXRT1050-EVKB board, refer to `Board Revisions`_ section.
+
 .. image:: mimxrt1050_evk.jpg
    :width: 720px
    :align: center
@@ -34,6 +37,7 @@ Hardware
 - Display
 
   - LCD connector
+  - Touch connector
 
 - Ethernet
 
@@ -187,12 +191,25 @@ your Zephyr application to flash. It will leave you at a GDB prompt.
    :board: mimxrt1050_evk
    :goals: debug
 
+Board Revisions
+***************
+
+The original MIMXRT1050-EVK (rev A0) board was updated with a newer
+MIMXRT1050-EVKB (rev A1) board, with these major hardware differences::
+
+- SoC changed from MIMXRT1052DVL6**A** to MIMXRT1052DVL6**B**
+- Hardware bug fixes for: power, interfaces, and memory
+- Arduino headers included
+
+For more details, please see the following `NXP i.MXRT1050 A0 to A1 Migration Guide`_.
+
+Current Zephyr build supports the new MIMXRT1050-EVKB
 
 .. _MIMXRT1050-EVK Website:
    https://www.nxp.com/products/microcontrollers-and-processors/arm-based-processors-and-mcus/i.mx-applications-processors/i.mx-rt-series/i.mx-rt1050-evaluation-kit:MIMXRT1050-EVK
 
 .. _MIMXRT1050-EVK User Guide:
-   https://www.nxp.com/docs/en/user-guide/MIMXRT1050EVKHUG.pdf
+   https://www.nxp.com/docs/en/user-guide/IMXRT1050EVKBHUG.pdf
 
 .. _MIMXRT1050-EVK Schematics:
    https://www.nxp.com/webapp/Download?colCode=MIMXRT1050-EVK-DESIGNFILES
@@ -211,3 +228,6 @@ your Zephyr application to flash. It will leave you at a GDB prompt.
 
 .. _Segger J-Link OpenSDA V2.1 Firmware:
    https://www.segger.com/downloads/jlink/OpenSDA_V2_1.bin
+
+.. _NXP i.MXRT1050 A0 to A1 Migration Guide:
+   https://www.nxp.com/docs/en/nxp/application-notes/AN12146.pdf
