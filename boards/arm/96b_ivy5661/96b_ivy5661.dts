@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2018, UNISOC Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <unisoc/uwp5661.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "IVY5661 96Boards";
+	compatible = "unisoc,uwp5661", "unisoc,uwp566x", "unisoc,uwp";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &uart0;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&uart0 {
+	status = "ok";
+};
+
+&uart2 {
+	status = "ok";
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xE000>;
+		};
+		scratch_partition: partition@E000 {
+			label = "image-scratch";
+			reg = <0x0000E000 0x2000>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 0xC4000>;
+		};
+		slot1_partition: partition@188000 {
+			label = "image-1";
+			reg = <0x00188000 0xC4000>;
+		};
+		modem0_partition: partition@D4000 {
+			label = "modem-0";
+			reg = <0x000D4000 0xB4000>;
+		};
+		modem1_partition: partition@24C000 {
+			label = "modem-1";
+			reg = <0x0024C000 0xB4000>;
+		};
+		storage_partition: partition@300000 {
+			label = "storage";
+			reg = <0x000300000 0x00100000>;
+		};
+
+	};
+};

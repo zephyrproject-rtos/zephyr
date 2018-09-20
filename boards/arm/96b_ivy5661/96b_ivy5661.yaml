@@ -1,0 +1,7 @@
+identifier: 96b_ivy5661
+name: 96Boards IVY5661
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
