@@ -54,9 +54,6 @@ endif # UART_QMSI
 if WATCHDOG
 config WDT_QMSI
 	def_bool y
-
-config WDT_0_IRQ_PRI
-	default 0
 endif # WATCHDOG
 
 if RTC

@@ -170,5 +170,18 @@
 			label = "SPI_2";
 			status = "disabled";
 		};
+
+		wdog0: watchdog@b0000000 {
+			compatible = "intel,qmsi-watchdog";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			reg = <0xb0000000 0x400>;
+			interrupts = <12 IRQ_TYPE_EDGE_RISING 2>;
+			interrupt-parent = <&intc>;
+
+			label = "WATCHDOG_0";
+
+		};
 	};
 };
