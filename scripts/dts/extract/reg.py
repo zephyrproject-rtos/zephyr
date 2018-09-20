@@ -74,9 +74,9 @@ class DTReg(DTDirective):
                 name = []
 
             for x in range(nr_address_cells):
-                addr += props.pop(0) << (32 * x)
+                addr += props.pop(0) << (32 * (nr_address_cells - x - 1))
             for x in range(nr_size_cells):
-                size += props.pop(0) << (32 * x)
+                size += props.pop(0) << (32 * (nr_size_cells - x - 1))
 
             l_addr_fqn = '_'.join(l_base + l_addr + l_idx)
             l_size_fqn = '_'.join(l_base + l_size + l_idx)
