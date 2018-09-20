@@ -81,7 +81,7 @@ typedef struct {
 	struct _priq_rb waitq;
 } _wait_q_t;
 
-extern int _priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
+extern bool _priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
 
 #define _WAIT_Q_INIT(wait_q) { { { .lessthan_fn = _priq_rb_lessthan } } }
 
