@@ -32,15 +32,15 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led: led@0 {
-			gpios = <&gpiob 18 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiob 18 0>;
 			label = "User LD1";
 		};
 		green_led: led@1 {
-			gpios = <&gpiob 19 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiob 19 0>;
 			label = "User LD2";
 		};
 		blue_led: led@2 {
-			gpios = <&gpiod 1 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiod 1 0>;
 			label = "User LD3";
 		};
 	};

@@ -45,7 +45,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led: led@0 {
-			gpios = <&gpio1 9 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio1 9 0>;
 			label = "User LD1";
 		};
 	};
