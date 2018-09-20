@@ -4,11 +4,12 @@ Introducing Zephyr
 ##################
 
 The Zephyr OS is based on a small-footprint kernel designed for use on
-resource-constrained systems: from simple embedded environmental sensors and LED
-wearables to sophisticated smart watches and IoT wireless gateways.
+resource-constrained and embedded systems: from simple embedded environmental
+sensors and LED wearables to sophisticated embedded controllers, smart
+watches, and IoT wireless applications.
 
 The Zephyr kernel supports multiple architectures, including ARM Cortex-M, Intel
-x86, ARC, NIOS II, Tensilica Xtensa, and RISC-V. The full list of supported
+x86, ARC, NIOS II, Tensilica Xtensa and RISC-V 32. The full list of supported
 boards can be found :ref:`here <boards>`.
 
 Licensing
@@ -29,8 +30,43 @@ as described in :ref:`Zephyr_Licensing`.
 Distinguishing Features
 ***********************
 
-The Zephyr kernel offers a number of features that distinguish it from other
-small-footprint OSes:
+Zephyr offers a large and evergrowing number of features including:
+
+**Extensive suite of Kernel services**
+   Zephyr offers a number of familiar services for development:
+
+   * *Multi-threading Services* for cooperative, priority-based,
+     non-preemptive, and preemptive threads with optional round robin
+     time-slicing. Includes POSIX pthreads compatible API support.
+
+   * *Interrupt Services* for compile-time registration of interrupt handlers.
+
+   * *Memory Allocation Services* for dynamic allocation and freeing of
+     fixed-size or variable-size memory blocks.
+
+   * *Inter-thread Synchronization Services* for binary semaphores,
+     counting semaphores, and mutex semaphores.
+
+   * *Inter-thread Data Passing Services* for basic message queues, enhanced
+     message queues, and byte streams.
+
+   * *Power Management Services* such as tickless idle and an advanced idling
+     infrastructure.
+
+**Multiple Scheduling Algorithms**
+   Zephyr provides a comprehensive set of thread scheduling choices:
+
+   * Cooperative and Preemptive Scheduling
+   * Earliest Deadline First (EDF)
+   * Meta IRQ scheduling implementing "interrupt bottom half" or "tasklet"
+     behavior
+   * Timeslicing: Enables time slicing between preemptible threads of equal
+     priority
+   * Multiple queueing strategies:
+
+     * Simple linked-list ready queue
+     * Red/black tree ready queue
+     * Traditional multi-queue ready queue
 
 **Highly configurable / Modular for flexibility**
    Allows an application to incorporate *only* the capabilities it needs as it
@@ -90,6 +126,12 @@ small-footprint OSes:
    * Verified with multiple popular controllers
    * Highly configurable
 
+   Mesh Support:
+
+   * Relay, Friend Node, Low-Power Node (LPN) and GATT Proxy features
+   * Both Provisioning bearers supported (PB-ADV & PB-GATT)
+   * Highly configurable, fitting in devices with at least 16k RAM
+
 **Native Linux, macOS, and Windows Development**
    A command-line CMake build environment runs on popular developer OS
    systems. A native POSIX port, lets you build and run Zephyr as a native
@@ -122,28 +164,6 @@ small-footprint OSes:
 **Native POSIX port**
   Supports running Zephyr as a Linux application with support for various
   subsystems and networking.
-
-**Extensive suite of Kernel services**
-   Zephyr offers a number of familiar services for development:
-
-   * *Multi-threading Services* for cooperative, priority-based,
-     non-preemptive, and preemptive threads with optional round robin
-     time-slicing.  Includes pthreads compatible API support.
-
-   * *Interrupt Services* for compile-time registration of interrupt handlers.
-
-   * *Memory Allocation Services* for dynamic allocation and freeing of
-     fixed-size or variable-size memory blocks.
-
-   * *Inter-thread Synchronization Services* for binary semaphores,
-     counting semaphores, and mutex semaphores.
-
-   * *Inter-thread Data Passing Services* for basic message queues, enhanced
-     message queues, and byte streams.
-
-   * *Power Management Services* such as tickless idle and an advanced idling
-     infrastructure.
-
 
 
 .. include:: ../../README.rst
