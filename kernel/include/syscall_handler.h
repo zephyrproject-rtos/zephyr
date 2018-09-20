@@ -306,7 +306,8 @@ bool z_syscall_verify_msg(bool expr, const char *fmt, ...)
 #define Z_SYSCALL_VERIFY(expr) Z_SYSCALL_VERIFY_MSG(expr, #expr)
 
 #define Z_SYSCALL_MEMORY(ptr, size, write) \
-	Z_SYSCALL_VERIFY_MSG(!_arch_buffer_validate((void *)ptr, size, write), \
+	Z_SYSCALL_VERIFY_MSG(_arch_buffer_validate((void *)ptr, size, write) \
+			     == 0, \
 			     "Memory region %p (size %u) %s access denied", \
 			     (void *)(ptr), (u32_t)(size), \
 			     write ? "write" : "read")
@@ -350,9 +351,9 @@ bool z_syscall_verify_msg(bool expr, const char *fmt, ...)
 #define Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, write) \
 	({ \
 		u32_t product; \
-		Z_SYSCALL_VERIFY_MSG(!__builtin_umul_overflow((u32_t)(nmemb), \
+		Z_SYSCALL_VERIFY_MSG(__builtin_umul_overflow((u32_t)(nmemb), \
 							      (u32_t)(size), \
-							      &product), \
+							      &product) == 0,\
 				     "%ux%u array is too large", \
 				     (u32_t)(nmemb), (u32_t)(size)) ||  \
 			Z_SYSCALL_MEMORY(ptr, product, write); \
