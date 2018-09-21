@@ -167,7 +167,7 @@ static inline void _set_max_clock_time(void)
 	unsigned int key;
 
 	key = irq_lock();
-	z_tick_set(_get_elapsed_clock_time());
+	z_tick_set(z_clock_uptime());
 	last_timer_value = GET_TIMER_CURRENT_TIME();
 	irq_unlock(key);
 	SET_TIMER_FIRE_TIME(MAX_TIMER_CYCLES); /* Program timer to max value */
@@ -191,7 +191,7 @@ void _set_time(u32_t time)
 	}
 	key = irq_lock();
 	/* Update System Level Ticks Time Keeping */
-	z_tick_set(_get_elapsed_clock_time());
+	z_tick_set(z_clock_uptime());
 	C = GET_TIMER_CURRENT_TIME();
 	last_timer_value = C;
 	irq_unlock(key);
@@ -224,7 +224,7 @@ void _enable_sys_clock(void)
 }
 
 /* Total number of ticks passed since device bootup. */
-u64_t _get_elapsed_clock_time(void)
+u64_t z_clock_uptime(void)
 {
 	u32_t C;
 	unsigned int key;
@@ -329,7 +329,7 @@ void _timer_idle_enter(s32_t ticks)
  *
  * @return N/A
  */
-void _timer_idle_exit(void)
+void z_clock_idle_exit(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (!idle_original_ticks) {
@@ -558,7 +558,7 @@ void _timer_int_handler(void *params)
  *
  * @return 0
  */
-int _sys_clock_driver_init(struct device *device)
+int z_clock_driver_init(struct device *device)
 {
 	IRQ_CONNECT(TIMER_IRQ, 0, _timer_int_handler, 0, 0);
 

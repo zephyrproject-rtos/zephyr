@@ -51,7 +51,7 @@ static u32_t next_ts;
 u32_t z_tick_get_32(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
-	return (u32_t)_get_elapsed_clock_time();
+	return (u32_t)z_clock_uptime();
 #else
 	return (u32_t)tick_count;
 #endif
@@ -79,7 +79,7 @@ Z_SYSCALL_HANDLER(k_uptime_get_32)
 s64_t z_tick_get(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
-	return _get_elapsed_clock_time();
+	return z_clock_uptime();
 #else
 	unsigned int key = irq_lock();
 	s64_t ret = tick_count;

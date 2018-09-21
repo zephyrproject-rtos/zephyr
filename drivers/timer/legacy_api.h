@@ -15,7 +15,7 @@ void _set_time(u32_t time);
 
 #ifdef CONFIG_TICKLESS_IDLE
 void _timer_idle_enter(s32_t ticks);
-void _timer_idle_exit(void);
+void z_clock_idle_exit(void);
 #endif
 
 extern void z_clock_set_timeout(s32_t ticks, bool idle)

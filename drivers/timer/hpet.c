@@ -274,7 +274,7 @@ void _timer_int_handler(void *unused)
 	/* If timer not programmed or already consumed exit */
 	if (!programmed_ticks) {
 		if (_sys_clock_always_on) {
-			z_tick_set(_get_elapsed_clock_time());
+			z_tick_set(z_clock_uptime());
 			program_max_cycles();
 		}
 		return;
@@ -303,7 +303,7 @@ void _timer_int_handler(void *unused)
 
 	/* z_clock_announce(_sys_idle_elapsed_ticks) could cause new programming */
 	if (!programmed_ticks && _sys_clock_always_on) {
-		z_tick_set(_get_elapsed_clock_time());
+		z_tick_set(z_clock_uptime());
 		program_max_cycles();
 	}
 #else
@@ -357,7 +357,7 @@ void _set_time(u32_t time)
 
 	programmed_ticks = time;
 
-	z_tick_set(_get_elapsed_clock_time());
+	z_tick_set(z_clock_uptime());
 
 	stale_irq_check = 1;
 
@@ -374,7 +374,7 @@ void _enable_sys_clock(void)
 	}
 }
 
-u64_t _get_elapsed_clock_time(void)
+u64_t z_clock_uptime(void)
 {
 	u64_t elapsed;
 
@@ -456,7 +456,7 @@ void _timer_idle_enter(s32_t ticks /* system ticks */
  *
  */
 
-void _timer_idle_exit(void)
+void z_clock_idle_exit(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (!programmed_ticks && _sys_clock_always_on) {
@@ -560,7 +560,7 @@ void _timer_idle_exit(void)
  * @return 0
  */
 
-int _sys_clock_driver_init(struct device *device)
+int z_clock_driver_init(struct device *device)
 {
 	u64_t hpetClockPeriod;
 	u64_t tickFempto;

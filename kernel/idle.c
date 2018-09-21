@@ -145,7 +145,7 @@ void _sys_power_save_idle_exit(s32_t ticks)
 
 	if (_must_enter_tickless_idle(ticks)) {
 		/* Resume normal periodic system timer interrupts */
-		_timer_idle_exit();
+		z_clock_idle_exit();
 	}
 }
 
