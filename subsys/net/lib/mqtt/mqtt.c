@@ -7,7 +7,7 @@
 #define LOG_MODULE_NAME net_mqtt
 #define NET_LOG_LEVEL LOG_LEVEL_ERR
 
-#include <net/mqtt.h>
+#include <net/mqtt_legacy.h>
 #include "mqtt_pkt.h"
 
 #include <net/net_ip.h>
@@ -16,8 +16,8 @@
 #include <net/buf.h>
 #include <errno.h>
 
-#define MSG_SIZE        CONFIG_MQTT_MSG_MAX_SIZE
-#define MQTT_BUF_CTR    (1 + CONFIG_MQTT_ADDITIONAL_BUFFER_CTR)
+#define MSG_SIZE        CONFIG_MQTT_LEGACY_MSG_MAX_SIZE
+#define MQTT_BUF_CTR    (1 + CONFIG_MQTT_LEGACY_ADDITIONAL_BUFFER_CTR)
 
 /* Memory pool internally used to handle messages that may exceed the size of
  * system defined network buffer. By using this memory pool, routines don't deal
@@ -27,7 +27,7 @@ NET_BUF_POOL_DEFINE(mqtt_msg_pool, MQTT_BUF_CTR, MSG_SIZE, 0, NULL);
 
 #define MQTT_PUBLISHER_MIN_MSG_SIZE     2
 
-#if defined(CONFIG_MQTT_LIB_TLS)
+#if defined(CONFIG_MQTT_LEGACY_LIB_TLS)
 #define TLS_HS_DEFAULT_TIMEOUT 3000
 #endif
 
@@ -556,7 +556,7 @@ int mqtt_rx_pingresp(struct mqtt_ctx *ctx, struct net_buf *rx)
 
 int mqtt_rx_suback(struct mqtt_ctx *ctx, struct net_buf *rx)
 {
-	enum mqtt_qos suback_qos[CONFIG_MQTT_SUBSCRIBE_MAX_TOPICS];
+	enum mqtt_qos suback_qos[CONFIG_MQTT_LEGACY_SUBSCRIBE_MAX_TOPICS];
 	u16_t pkt_id;
 	u16_t len;
 	u8_t items;
@@ -567,7 +567,8 @@ int mqtt_rx_suback(struct mqtt_ctx *ctx, struct net_buf *rx)
 	len = rx->len;
 
 	rc = mqtt_unpack_suback(data, len, &pkt_id, &items,
-				CONFIG_MQTT_SUBSCRIBE_MAX_TOPICS, suback_qos);
+				CONFIG_MQTT_LEGACY_SUBSCRIBE_MAX_TOPICS,
+				suback_qos);
 	if (rc != 0) {
 		return -EINVAL;
 	}
@@ -663,12 +664,12 @@ struct net_buf *mqtt_linearize_packet(struct mqtt_ctx *ctx, struct net_pkt *rx,
 	u16_t offset;
 	int rc;
 
-	/* CONFIG_MQTT_MSG_MAX_SIZE is defined via Kconfig. So here it's
+	/* CONFIG_MQTT_LEGACY_MSG_MAX_SIZE is defined via Kconfig. So here it's
 	 * determined if the input packet could fit our data buffer or if
 	 * it has the expected size.
 	 */
 	data_len = net_pkt_appdatalen(rx);
-	if (data_len < min_size || data_len > CONFIG_MQTT_MSG_MAX_SIZE) {
+	if (data_len < min_size || data_len > CONFIG_MQTT_LEGACY_MSG_MAX_SIZE) {
 		return NULL;
 	}
 
@@ -779,7 +780,7 @@ void app_connected(struct net_app_ctx *ctx, int status, void *data)
 		return;
 	}
 
-#if defined(CONFIG_MQTT_LIB_TLS)
+#if defined(CONFIG_MQTT_LEGACY_LIB_TLS)
 	k_sem_give(&mqtt->tls_hs_wait);
 #endif
 }
@@ -835,7 +836,7 @@ int mqtt_connect(struct mqtt_ctx *ctx)
 		goto error_connect;
 	}
 
-#if defined(CONFIG_MQTT_LIB_TLS)
+#if defined(CONFIG_MQTT_LEGACY_LIB_TLS)
 	rc = net_app_client_tls(&ctx->net_app_ctx,
 				ctx->request_buf,
 				ctx->request_buf_len,
@@ -857,7 +858,7 @@ int mqtt_connect(struct mqtt_ctx *ctx)
 		goto error_connect;
 	}
 
-#if defined(CONFIG_MQTT_LIB_TLS)
+#if defined(CONFIG_MQTT_LEGACY_LIB_TLS)
 	/* TLS handshake is not finished until app_connected is called */
 	rc = k_sem_take(&ctx->tls_hs_wait, ctx->tls_hs_timeout);
 	if (rc < 0) {
@@ -884,7 +885,7 @@ int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type)
 	ctx->app_type = app_type;
 	ctx->rcv = mqtt_parser;
 
-#if defined(CONFIG_MQTT_LIB_TLS)
+#if defined(CONFIG_MQTT_LEGACY_LIB_TLS)
 	if (ctx->tls_hs_timeout == 0) {
 		ctx->tls_hs_timeout = TLS_HS_DEFAULT_TIMEOUT;
 	}

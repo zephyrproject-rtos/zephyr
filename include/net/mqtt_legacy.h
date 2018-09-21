@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_MQTT_H_
 #define ZEPHYR_INCLUDE_NET_MQTT_H_
 
-#include <net/mqtt_types.h>
+#include <net/mqtt_legacy_types.h>
 #include <net/net_context.h>
 #include <net/net_app.h>
 
@@ -72,7 +72,7 @@ struct mqtt_ctx {
 	char *peer_addr_str;
 	u16_t peer_port;
 
-#if defined(CONFIG_MQTT_LIB_TLS)
+#if defined(CONFIG_MQTT_LEGACY_LIB_TLS)
 	/** TLS parameters */
 	u8_t *request_buf;
 	size_t request_buf_len;

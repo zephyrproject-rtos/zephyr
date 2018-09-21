@@ -25,7 +25,7 @@
 #endif
 #endif
 
-#ifdef CONFIG_MQTT_LIB_TLS
+#ifdef CONFIG_MQTT_LEGACY_LIB_TLS
 #define SERVER_PORT		8883
 #else
 #define SERVER_PORT		1883
