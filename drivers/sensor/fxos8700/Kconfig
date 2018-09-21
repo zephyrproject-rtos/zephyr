@@ -61,6 +61,24 @@ config FXOS8700_RANGE_2G
 endchoice
 
 choice
+	prompt "Power mode"
+	default FXOS8700_PM_NORMAL
+
+config FXOS8700_PM_NORMAL
+	bool "Normal power mode"
+
+config FXOS8700_PM_LOW_NOISE_LOW_POWER
+	bool "Low noise low power mode"
+
+config FXOS8700_PM_HIGH_RESOLUTION
+	bool "High resolution power mode"
+
+config FXOS8700_PM_LOW_POWER
+	bool "Low power mode"
+
+endchoice
+
+choice
 	prompt "Trigger mode"
 	default FXOS8700_TRIGGER_NONE
 

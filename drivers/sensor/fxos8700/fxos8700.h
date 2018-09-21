@@ -50,6 +50,7 @@
 #define FXOS8700_CTRLREG1_DR_RATE_1_56		(7 << 3)
 
 #define FXOS8700_CTRLREG2_RST_MASK		0x40
+#define FXOS8700_CTRLREG2_MODS_MASK		0x03
 
 #define FXOS8700_M_CTRLREG1_MODE_MASK		0x03
 
@@ -83,6 +84,13 @@ enum fxos8700_range {
 	FXOS8700_RANGE_8G,
 };
 
+enum fxos8700_power_mode {
+	FXOS8700_PM_NORMAL		= 0,
+	FXOS8700_PM_LOW_NOISE_LOW_POWER,
+	FXOS8700_PM_HIGH_RESOLUTION,
+	FXOS8700_PM_LOW_POWER,
+};
+
 enum fxos8700_channel {
 	FXOS8700_CHANNEL_ACCEL_X	= 0,
 	FXOS8700_CHANNEL_ACCEL_Y,
@@ -101,6 +109,7 @@ struct fxos8700_config {
 	u8_t i2c_address;
 	u8_t whoami;
 	enum fxos8700_mode mode;
+	enum fxos8700_power_mode power_mode;
 	enum fxos8700_range range;
 	u8_t start_addr;
 	u8_t start_channel;
