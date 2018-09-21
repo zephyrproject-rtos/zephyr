@@ -4563,8 +4563,8 @@ static bool le_sc_supported(void)
 	 * "LE Read Local P-256 Public Key" and "LE Generate DH Key" commands.
 	 * Otherwise LE SC are not supported.
 	 */
-	return (bt_dev.supported_commands[34] & 0x02) &&
-	       (bt_dev.supported_commands[34] & 0x04);
+	return BT_CMD_TEST(bt_dev.supported_commands, 34, 1) &&
+	       BT_CMD_TEST(bt_dev.supported_commands, 34, 2);
 }
 
 int bt_smp_init(void)
