@@ -133,7 +133,9 @@ static pfunc func_array[] = {
 	(pfunc)k_thread_priority_set,
 	(pfunc)k_thread_suspend,
 	(pfunc)k_thread_resume,
+#ifdef CONFIG_TIMESLICING
 	(pfunc)k_sched_time_slice_set,
+#endif
 	(pfunc)k_is_in_isr,
 	(pfunc)k_thread_custom_data_set,
 	(pfunc)k_thread_custom_data_get,
