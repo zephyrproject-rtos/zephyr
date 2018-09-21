@@ -21,6 +21,8 @@
 extern "C" {
 #endif
 
+extern u64_t z_last_tick_announced;
+
 /* initialize the timeouts part of k_thread when enabled in the kernel */
 
 static inline void _init_timeout(struct _timeout *t, _timeout_func_t func)
@@ -172,6 +174,16 @@ static inline void _dump_timeout_q(void)
 #endif
 }
 
+/* find the closest deadline in the timeout queue */
+
+static inline s32_t _get_next_timeout_expiry(void)
+{
+	struct _timeout *t = (struct _timeout *)
+			     sys_dlist_peek_head(&_timeout_q);
+
+	return t ? t->delta_ticks_from_prev : K_FOREVER;
+}
+
 /*
  * Add timeout to timeout queue. Record waiting thread and wait queue if any.
  *
@@ -229,11 +241,9 @@ static inline void _add_timeout(struct k_thread *thread,
 	 * This is like adding this timout back in history.
 	 */
 	u32_t adjusted_timeout;
-	u32_t program_time = _get_program_time();
 
-	if (program_time > 0) {
-		*delta += _get_elapsed_program_time();
-	}
+	*delta += (int)(z_clock_uptime() - z_last_tick_announced);
+
 	adjusted_timeout = *delta;
 #endif
 	SYS_DLIST_FOR_EACH_CONTAINER(&_timeout_q, in_q, node) {
@@ -255,7 +265,7 @@ inserted:
 	_dump_timeout_q();
 
 #ifdef CONFIG_TICKLESS_KERNEL
-	if (!program_time || (adjusted_timeout < program_time)) {
+	if (adjusted_timeout < _get_next_timeout_expiry()) {
 		z_clock_set_timeout(adjusted_timeout, false);
 	}
 #endif
@@ -274,16 +284,6 @@ static inline void _add_thread_timeout(struct k_thread *thread,
 				       s32_t timeout_in_ticks)
 {
 	_add_timeout(thread, &thread->base.timeout, wait_q, timeout_in_ticks);
-}
-
-/* find the closest deadline in the timeout queue */
-
-static inline s32_t _get_next_timeout_expiry(void)
-{
-	struct _timeout *t = (struct _timeout *)
-			     sys_dlist_peek_head(&_timeout_q);
-
-	return t ? t->delta_ticks_from_prev : K_FOREVER;
 }
 
 #ifdef __cplusplus

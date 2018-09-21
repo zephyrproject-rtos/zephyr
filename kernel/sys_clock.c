@@ -36,6 +36,8 @@ int z_clock_hw_cycles_per_sec;
  */
 static volatile u64_t tick_count;
 
+u64_t z_last_tick_announced;
+
 #ifdef CONFIG_TICKLESS_KERNEL
 /*
  * If this flag is set, system clock will run continuously even if
@@ -291,6 +293,8 @@ static void handle_time_slicing(s32_t ticks)
  */
 void z_clock_announce(s32_t ticks)
 {
+	z_last_tick_announced += ticks;
+
 #ifdef CONFIG_SMP
 	/* sys_clock timekeeping happens only on the main CPU */
 	if (_arch_curr_cpu()->id) {
@@ -319,9 +323,7 @@ void z_clock_announce(s32_t ticks)
 	next_to = !next_to || (next_ts
 			       && next_to) > next_ts ? next_ts : next_to;
 
-	u32_t remaining = _get_remaining_program_time();
-
-	if ((!remaining && next_to) || (next_to < remaining)) {
+	if (next_to) {
 		/* Clears current program if next_to = 0 and remaining > 0 */
 		int dt = next_to ? next_to : (_sys_clock_always_on ? INT_MAX : K_FOREVER);
 		z_clock_set_timeout(dt, false);
