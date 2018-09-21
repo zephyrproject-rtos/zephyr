@@ -648,17 +648,11 @@ void _update_time_slice_before_swap(void)
 		return;
 	}
 
-	u32_t remaining = _get_remaining_program_time();
+	int elapsed = (int)(z_clock_uptime() - z_last_tick_announced);
+	int next_timeout = _get_next_timeout_expiry() - elapsed;
+	int t = min(_time_slice_duration, next_timeout);
 
-	if (!remaining || (_time_slice_duration < remaining)) {
-		z_clock_set_timeout(_time_slice_duration, false);
-	} else {
-		/* Account previous elapsed time and reprogram
-		 * timer with remaining time
-		 */
-		z_clock_set_timeout(remaining, false);
-	}
-
+	z_clock_set_timeout(t, false);
 #endif
 	/* Restart time slice count at new thread switch */
 	_time_slice_elapsed = 0;
