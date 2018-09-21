@@ -245,15 +245,6 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	return 0;
 }
 
-/* TODO: Move to <hal/nrf_saadc.h>. */
-static void _nrf_saadc_burst_set(uint8_t channel,
-				 nrf_saadc_burst_t burst)
-{
-	NRF_SAADC->CH[channel].CONFIG =
-		(NRF_SAADC->CH[channel].CONFIG & ~SAADC_CH_CONFIG_BURST_Msk) |
-		(burst << SAADC_CH_CONFIG_BURST_Pos);
-}
-
 static int start_read(struct device *dev, const struct adc_sequence *sequence)
 {
 	int error = 0;
@@ -295,7 +286,7 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 			 * is not used (hence, the multiple channel sampling is
 			 * possible), the burst mode have to be deactivated.
 			 */
-			_nrf_saadc_burst_set(channel_id,
+			nrf_saadc_burst_set(channel_id,
 				(sequence->oversampling != 0 ?
 					NRF_SAADC_BURST_ENABLED :
 					NRF_SAADC_BURST_DISABLED));
