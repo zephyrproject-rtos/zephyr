@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2018 Bryan O'Donoghue
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <atmel/samd21.dtsi>
+
+/ {
+	model = "SAM D21 Xplained Pro";
+	compatible = "atsamd21,xpro", "atmel,samd21j18a", "atmel,samd21";
+
+	chosen {
+		zephyr,console = &sercom3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&sercom0 {
+	status = "ok";
+	compatible = "atmel,sam0-uart";
+	current-speed = <9600>;
+};
+
+&sercom1 {
+	status = "ok";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+};
+
+&sercom3 {
+	status = "ok";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+};
+
+&sercom5 {
+	status = "ok";
+	compatible = "atmel,sam0-spi";
+};
