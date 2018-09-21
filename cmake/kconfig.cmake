@@ -4,7 +4,14 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/generated)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/config)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 
-set_ifndef(KCONFIG_ROOT ${ZEPHYR_BASE}/Kconfig)
+if(KCONFIG_ROOT)
+  # KCONFIG_ROOT has either been specified as a CMake variable or is
+  # already in the CMakeCache.txt. This has precedence.
+elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/Kconfig)
+  set(KCONFIG_ROOT ${APPLICATION_SOURCE_DIR}/Kconfig)
+else()
+  set(KCONFIG_ROOT ${ZEPHYR_BASE}/Kconfig)
+endif()
 
 set(BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_defconfig)
 set(DOTCONFIG       ${PROJECT_BINARY_DIR}/.config)
