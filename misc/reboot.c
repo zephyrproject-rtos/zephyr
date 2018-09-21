@@ -16,6 +16,7 @@
 #include <misc/reboot.h>
 
 extern void sys_arch_reboot(int type);
+extern void sys_clock_disable(void);
 
 void sys_reboot(int type)
 {

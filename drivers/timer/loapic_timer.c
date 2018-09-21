@@ -26,7 +26,7 @@
  * kernel invokes _timer_idle_enter() to program the down counter in one-shot
  * mode to trigger an interrupt in N ticks.  When the timer expires or when
  * another interrupt is detected, the kernel's interrupt stub invokes
- * _timer_idle_exit() to leave the tickless idle state.
+ * z_clock_idle_exit() to leave the tickless idle state.
  *
  * @internal
  * Factors that increase the driver's complexity:
@@ -296,7 +296,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 #if defined(CONFIG_TICKLESS_KERNEL)
 	if (!programmed_full_ticks) {
 		if (_sys_clock_always_on) {
-			z_tick_set(_get_elapsed_clock_time());
+			z_tick_set(z_clock_uptime());
 			program_max_cycles();
 		}
 		return;
@@ -322,7 +322,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 
 	/* z_clock_announce(_sys_idle_elapsed_ticks) could cause new programming */
 	if (!programmed_full_ticks && _sys_clock_always_on) {
-		z_tick_set(_get_elapsed_clock_time());
+		z_tick_set(z_clock_uptime());
 		program_max_cycles();
 	}
 #else
@@ -335,7 +335,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 			 * The timer fired unexpectedly. This is due to one of two cases:
 			 *   1. Entering tickless idle straddled a tick.
 			 *   2. Leaving tickless idle straddled the final tick.
-			 * Due to the timer reprogramming in _timer_idle_exit(), case #2
+			 * Due to the timer reprogramming in z_clock_idle_exit(), case #2
 			 * can be handled as a fall-through.
 			 *
 			 * NOTE: Although the cycle count is supposed to stop decrementing
@@ -411,7 +411,7 @@ void _set_time(u32_t time)
 	programmed_full_ticks =
 	    time > max_system_ticks ? max_system_ticks : time;
 
-	z_tick_set(_get_elapsed_clock_time());
+	z_tick_set(z_clock_uptime());
 
 	programmed_cycles = programmed_full_ticks * cycles_per_tick;
 	initial_count_register_set(programmed_cycles);
@@ -424,7 +424,7 @@ void _enable_sys_clock(void)
 	}
 }
 
-u64_t _get_elapsed_clock_time(void)
+u64_t z_clock_uptime(void)
 {
 	u64_t elapsed;
 
@@ -542,7 +542,7 @@ void _timer_idle_enter(s32_t ticks /* system ticks */
  *
  * @return N/A
  */
-void _timer_idle_exit(void)
+void z_clock_idle_exit(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (!programmed_full_ticks && _sys_clock_always_on) {
@@ -643,7 +643,7 @@ void _timer_idle_exit(void)
  *
  * @return 0
  */
-int _sys_clock_driver_init(struct device *device)
+int z_clock_driver_init(struct device *device)
 {
 	ARG_UNUSED(device);
 
@@ -733,7 +733,7 @@ static int sys_clock_resume(struct device *dev)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-int sys_clock_device_ctrl(struct device *port, u32_t ctrl_command,
+int z_clock_device_ctrl(struct device *port, u32_t ctrl_command,
 			  void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {

@@ -40,7 +40,7 @@ static void pulpino_timer_irq_handler(void *unused)
 #error "Tickless idle not yet implemented for pulpino timer"
 #endif
 
-int _sys_clock_driver_init(struct device *device)
+int z_clock_driver_init(struct device *device)
 {
 	ARG_UNUSED(device);
 	IRQ_CONNECT(PULP_TIMER_A_CMP_IRQ, 0,
