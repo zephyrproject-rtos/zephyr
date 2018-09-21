@@ -45,12 +45,12 @@ osThreadId osThreadCreate(const osThreadDef_t *thread_def, void *arg)
 	k_thread_stack_t
 	   (*stk_ptr)[K_THREAD_STACK_LEN(CONFIG_CMSIS_THREAD_MAX_STACK_SIZE)];
 
-	__ASSERT(thread_def->stacksize <= CONFIG_CMSIS_THREAD_MAX_STACK_SIZE,
-		 "invalid stack size\n");
-
 	if ((thread_def == NULL) || (thread_def->instances == 0)) {
 		return NULL;
 	}
+
+	__ASSERT(thread_def->stacksize <= CONFIG_CMSIS_THREAD_MAX_STACK_SIZE,
+		 "invalid stack size\n");
 
 	if (_is_in_isr()) {
 		return NULL;
