@@ -8,13 +8,10 @@
 #include <sensor.h>
 #include <stdio.h>
 
-#define DECIMATION_FACTOR	4
-
 K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */
 
 static void trigger_handler(struct device *dev, struct sensor_trigger *trigger)
 {
-	static int decimator;
 	ARG_UNUSED(trigger);
 
 	/* Always fetch the sample to clear the data ready interrupt in the
@@ -24,16 +21,6 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trigger)
 		printf("sensor_sample_fetch failed\n");
 		return;
 	}
-
-	/* Decimate the sensor data before printing to the console. There is
-	 * not enough bandwidth on the UART at 115200 baud to print every
-	 * sample.
-	 */
-	if (++decimator < DECIMATION_FACTOR) {
-		return;
-	}
-
-	decimator = 0;
 
 	k_sem_give(&sem);
 }
