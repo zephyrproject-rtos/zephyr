@@ -387,6 +387,14 @@ static int fxos8700_init(struct device *dev)
 		return -EIO;
 	}
 
+	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
+				FXOS8700_REG_CTRLREG2,
+				FXOS8700_CTRLREG2_MODS_MASK,
+				config->power_mode)) {
+		LOG_ERR("Could not set power scheme");
+		return -EIO;
+	}
+
 	/* Set the mode (accel-only, mag-only, or hybrid) */
 	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
 				FXOS8700_REG_M_CTRLREG1,
@@ -465,6 +473,15 @@ static const struct fxos8700_config fxos8700_config = {
 	.start_addr = FXOS8700_REG_OUTXMSB,
 	.start_channel = FXOS8700_CHANNEL_ACCEL_X,
 	.num_channels = FXOS8700_NUM_HYBRID_CHANNELS,
+#endif
+#if CONFIG_FXOS8700_PM_NORMAL
+	.power_mode = FXOS8700_PM_NORMAL,
+#elif CONFIG_FXOS8700_PM_LOW_NOISE_LOW_POWER
+	.power_mode = FXOS8700_PM_LOW_NOISE_LOW_POWER,
+#elif CONFIG_FXOS8700_PM_HIGH_RESOLUTION
+	.power_mode = FXOS8700_PM_HIGH_RESOLUTION,
+#else
+	.power_mode = FXOS8700_PM_LOW_POWER,
 #endif
 #if CONFIG_FXOS8700_RANGE_8G
 	.range = FXOS8700_RANGE_8G,
