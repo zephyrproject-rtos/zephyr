@@ -349,7 +349,7 @@ extern const struct log_backend_api log_backend_shell_api;
  * @brief Shell instance internals.
  */
 struct shell {
-	const char *const name; /*!< Terminal name. */
+	char *const prompt; /*!< shell prompt. */
 
 	const struct shell_transport *iface; /*!< Transport interface.*/
 	struct shell_ctx *ctx; /*!< Internal context.*/
@@ -375,16 +375,17 @@ struct shell {
  * @brief Macro for defining a shell instance.
  *
  * @param[in] _name             Instance name.
- * @param[in] shell_prefix      Shell prefix string.
+ * @param[in] _prompt           Shell prompt string.
  * @param[in] transport_iface   Pointer to the transport interface.
  * @param[in] newline_ch        New line character - only allowed values are
  *				'\\n' or '\\r'.
  * @param[in] log_queue_size    Logger processing queue size.
  */
-#define SHELL_DEFINE(_name, shell_prefix, transport_iface,		     \
+#define SHELL_DEFINE(_name, _prompt, transport_iface,			     \
 		  newline_ch, log_queue_size)				     \
 	static const struct shell _name;				     \
 	static struct shell_ctx UTIL_CAT(_name, _ctx);			     \
+	static char _name##prompt[CONFIG_SHELL_PROMPT_LENGTH + 1] = _prompt; \
 	static u8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];	     \
 	SHELL_LOG_BACKEND_DEFINE(_name, _name##_out_buffer,		     \
 					 CONFIG_SHELL_PRINTF_BUFF_SIZE);     \
@@ -397,7 +398,7 @@ struct shell {
 	static K_THREAD_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE);\
 	static struct k_thread _name##_thread;				     \
 	static const struct shell _name = {				     \
-		.name = shell_prefix,					     \
+		.prompt = _name##prompt,				     \
 		.iface = transport_iface,				     \
 		.ctx = &UTIL_CAT(_name, _ctx),				     \
 		.history = SHELL_HISTORY_PTR(_name),			     \
@@ -527,6 +528,17 @@ static inline bool shell_help_requested(const struct shell *shell)
  */
 void shell_help_print(const struct shell *shell,
 		      const struct shell_getopt_option *opt, size_t opt_len);
+
+/*
+ * @brief Change displayed shell prompt.
+ *
+ * @param[in] shell	Pointer to the shell instance.
+ * @param[in] prompt	New shell prompt.
+ *
+ * @return 0		success
+ * @return -1		new string is too long
+ */
+int shell_prompt_change(const struct shell *shell, char *prompt);
 
 /*
  * @brief Prints help if request and prints error message on wrong argument

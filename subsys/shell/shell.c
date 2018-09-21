@@ -234,7 +234,7 @@ static void shell_state_set(const struct shell *shell, enum shell_state state)
 
 	if (state == SHELL_STATE_ACTIVE) {
 		shell_cmd_buffer_clear(shell);
-		shell_fprintf(shell, SHELL_INFO, "%s", shell->name);
+		shell_fprintf(shell, SHELL_INFO, "%s", shell->prompt);
 	}
 }
 
@@ -598,7 +598,7 @@ static void tab_options_print(const struct shell *shell,
 		idx++;
 	}
 
-	shell_fprintf(shell, SHELL_INFO, "\r\n%s", shell->name);
+	shell_fprintf(shell, SHELL_INFO, "\r\n%s", shell->prompt);
 	shell_fprintf(shell, SHELL_NORMAL, "%s", shell->ctx->cmd_buff);
 
 	shell_op_cursor_position_synchronize(shell);
@@ -718,7 +718,7 @@ static void metakeys_handle(const struct shell *shell, char data)
 	case SHELL_VT100_ASCII_CTRL_L: /* CTRL + L */
 		SHELL_VT100_CMD(shell, SHELL_VT100_CURSORHOME);
 		SHELL_VT100_CMD(shell, SHELL_VT100_CLEARSCREEN);
-		shell_fprintf(shell, SHELL_INFO, "%s", shell->name);
+		shell_fprintf(shell, SHELL_INFO, "%s", shell->prompt);
 		if (flag_echo_is_set(shell)) {
 			shell_fprintf(shell, SHELL_NORMAL, "%s",
 				      shell->ctx->cmd_buff);
@@ -1116,7 +1116,7 @@ static void shell_current_command_erase(const struct shell *shell)
 
 static void shell_current_command_print(const struct shell *shell)
 {
-	shell_fprintf(shell, SHELL_INFO, "%s", shell->name);
+	shell_fprintf(shell, SHELL_INFO, "%s", shell->prompt);
 
 	if (flag_echo_is_set(shell)) {
 		shell_fprintf(shell, SHELL_NORMAL, "%s", shell->ctx->cmd_buff);
@@ -1145,7 +1145,7 @@ static int shell_instance_init(const struct shell *shell, const void *p_config,
 			       bool use_colors)
 {
 	assert(shell);
-	assert(shell->ctx && shell->iface && shell->name);
+	assert(shell->ctx && shell->iface && shell->prompt);
 	assert((shell->newline_char == '\n') || (shell->newline_char == '\r'));
 
 	int err;
@@ -1174,7 +1174,7 @@ static int shell_instance_init(const struct shell *shell, const void *p_config,
 	shell->ctx->state = SHELL_STATE_INITIALIZED;
 	shell->ctx->vt100_ctx.cons.terminal_wid = SHELL_DEFAULT_TERMINAL_WIDTH;
 	shell->ctx->vt100_ctx.cons.terminal_hei = SHELL_DEFAULT_TERMINAL_HEIGHT;
-	shell->ctx->vt100_ctx.cons.name_len = shell_strlen(shell->name);
+	shell->ctx->vt100_ctx.cons.name_len = shell_strlen(shell->prompt);
 	shell->ctx->internal.flags.use_colors =
 					IS_ENABLED(CONFIG_SHELL_VT100_COLORS);
 
@@ -1268,7 +1268,7 @@ int shell_init(const struct shell *shell, const void *transport_config,
 static int shell_instance_uninit(const struct shell *shell)
 {
 	assert(shell);
-	assert(shell->ctx && shell->iface && shell->name);
+	assert(shell->ctx && shell->iface && shell->prompt);
 	int err;
 
 	if (flag_processing_is_set(shell)) {
@@ -1307,7 +1307,7 @@ int shell_uninit(const struct shell *shell)
 int shell_start(const struct shell *shell)
 {
 	assert(shell);
-	assert(shell->ctx && shell->iface && shell->name);
+	assert(shell->ctx && shell->iface && shell->prompt);
 	int err;
 
 	if (shell->ctx->state != SHELL_STATE_INITIALIZED) {
@@ -1661,6 +1661,21 @@ void shell_help_print(const struct shell *shell,
 	help_cmd_print(shell);
 	help_options_print(shell, opt, opt_len);
 	help_subcmd_print(shell);
+}
+
+int shell_prompt_change(const struct shell *shell, char *prompt)
+{
+
+	size_t len = shell_strlen(prompt);
+
+	assert(shell);
+	assert(prompt);
+
+	if (len <= CONFIG_SHELL_PROMPT_LENGTH) {
+		memcpy(shell->prompt, prompt, len + 1); /* +1 for '\0' */
+		return 0;
+	}
+	return -1;
 }
 
 bool shell_cmd_precheck(const struct shell *shell,
