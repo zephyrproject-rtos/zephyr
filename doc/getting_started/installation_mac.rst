@@ -93,7 +93,8 @@ Install tools to build Zephyr documentation:
 
 .. code-block:: console
 
-   brew install mactex librsvg
+   brew cask install mactex
+   brew install librsvg
    tlmgr install latexmk
    tlmgr install collection-fontsrecommended
 
