@@ -853,8 +853,9 @@ Make sure to follow these steps in order.
 
    More details are available below in :ref:`application_dt`.
 
-#. If your application has its own kernel configuration options, add a
-   line setting the location of the Kconfig file that defines them.
+#. If your application has its own kernel configuration options,
+   create a :file:`Kconfig` file in the same directory as your
+   application's :file:`CMakeLists.txt`.
 
    An (unlikely) advanced use case would be if your application has its own
    unique configuration **options** that are set differently depending on the
@@ -862,13 +863,6 @@ Make sure to follow these steps in order.
 
    If you just want to set application specific **values** for existing Zephyr
    configuration options, refer to the :makevar:`CONF_FILE` description above.
-
-   For example, if you have a file named :file:`Kconfig` in the same directory
-   as your application's :file:`CMakeLists.txt`, add the following line:
-
-   .. code-block:: cmake
-
-      set(KCONFIG_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/Kconfig)
 
    Structure your :file:`Kconfig` file like this:
 
@@ -883,6 +877,11 @@ Make sure to follow these steps in order.
 
        See the :ref:`kconfig_extensions` section in the
        :ref:`board_porting_guide` for more information.
+
+   The :file:`Kconfig` file is automatically detected when placed in
+   the application directory, but it is also possible for it to be
+   found elsewhere if the CMake variable :makevar:`KCONFIG_ROOT` is
+   set with an absolute path.
 
 #. Now include the mandatory boilerplate that integrates the
    application with the Zephyr build system on a new line, **after any
