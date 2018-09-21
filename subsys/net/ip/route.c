@@ -366,13 +366,16 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 
 			tmp = net_route_get_nexthop(route);
 			nbr = net_ipv6_nbr_lookup(iface, tmp);
-			llstorage = net_nbr_get_lladdr(nbr->idx);
+			if (nbr) {
+				llstorage = net_nbr_get_lladdr(nbr->idx);
 
-			NET_DBG("Removing the oldest route %s via %s [%s]",
-				net_sprint_ipv6_addr(&route->addr),
-				net_sprint_ipv6_addr(tmp),
-				net_sprint_ll_addr(llstorage->addr,
-						   llstorage->len));
+				NET_DBG("Removing the oldest route %s "
+					"via %s [%s]",
+					net_sprint_ipv6_addr(&route->addr),
+					net_sprint_ipv6_addr(tmp),
+					net_sprint_ll_addr(llstorage->addr,
+							   llstorage->len));
+			}
 		} while (0);
 #endif /* CONFIG_NET_DEBUG_ROUTE */
 
