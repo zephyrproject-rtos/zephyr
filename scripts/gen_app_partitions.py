@@ -22,15 +22,14 @@ print_template = """
 linker_start_seq = """
 	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
 	{
-		. = ALIGN(4);
+		APP_SHARED_ALIGN;
 		_image_ram_start = .;
 		_app_smem_start = .;
 """
 
 linker_end_seq = """
 		_app_smem_end = .;
-		_app_smem_size = _app_smem_end - _app_smem_start;
-		. = ALIGN(4);
+		APP_SHARED_ALIGN;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 """
 
