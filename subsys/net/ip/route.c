@@ -531,6 +531,9 @@ int net_route_del_by_nexthop_data(struct net_if *iface,
 	NET_ASSERT(nexthop);
 
 	nbr_nexthop = net_ipv6_nbr_lookup(iface, nexthop);
+	if (!nbr_nexthop) {
+		return -EINVAL;
+	}
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTES; i++) {
 		struct net_nbr *nbr = get_nbr(i);
