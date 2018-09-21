@@ -31,17 +31,18 @@ class DTReg(DTDirective):
         node_compat = get_compat(node_address)
 
         reg = reduced[node_address]['props']['reg']
-        if type(reg) is not list: reg = [ reg ]
+        if type(reg) is not list: reg = [ reg, ]
 
-        address_cells = reduced['/']['props'].get('#address-cells')
-        size_cells = reduced['/']['props'].get('#size-cells')
+        nr_address_cells = reduced['/']['props'].get('#address-cells')
+        nr_size_cells = reduced['/']['props'].get('#size-cells')
         address = ''
         for comp in node_address.split('/')[1:-1]:
             address += '/' + comp
-            address_cells = reduced[address]['props'].get(
-                '#address-cells', address_cells)
-            size_cells = reduced[address]['props'].get('#size-cells', size_cells)
+            nr_address_cells = reduced[address]['props'].get(
+                '#address-cells', nr_address_cells)
+            nr_size_cells = reduced[address]['props'].get('#size-cells', nr_size_cells)
 
+        # generate defines
         post_label = "BASE_ADDRESS"
         if def_label not in regs_config.values():
             if yaml[node_compat].get('use-property-label', False):
@@ -72,21 +73,21 @@ class DTReg(DTDirective):
             except:
                 name = []
 
-            for x in range(address_cells):
+            for x in range(nr_address_cells):
                 addr += props.pop(0) << (32 * x)
-            for x in range(size_cells):
+            for x in range(nr_size_cells):
                 size += props.pop(0) << (32 * x)
 
             l_addr_fqn = '_'.join(l_base + l_addr + l_idx)
             l_size_fqn = '_'.join(l_base + l_size + l_idx)
-            if address_cells:
+            if nr_address_cells:
                 prop_def[l_addr_fqn] = hex(addr)
-            if size_cells:
+            if nr_size_cells:
                 prop_def[l_size_fqn] = int(size / div)
             if len(name):
-                if address_cells:
+                if nr_address_cells:
                     prop_alias['_'.join(l_base + name + l_addr)] = l_addr_fqn
-                if size_cells:
+                if nr_size_cells:
                     prop_alias['_'.join(l_base + name + l_size)] = l_size_fqn
 
             # generate defs for node aliases
