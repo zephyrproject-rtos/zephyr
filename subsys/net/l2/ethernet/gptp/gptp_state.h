@@ -30,7 +30,7 @@ enum gptp_pdelay_req_states {
 	GPTP_PDELAY_REQ_WAIT_RESP,
 	GPTP_PDELAY_REQ_WAIT_FOLLOW_UP,
 	GPTP_PDELAY_REQ_WAIT_ITV_TIMER,
-};
+} __packed;
 
 /* Path Delay Response states. */
 enum gptp_pdelay_resp_states {
@@ -38,27 +38,27 @@ enum gptp_pdelay_resp_states {
 	GPTP_PDELAY_RESP_INITIAL_WAIT_REQ,
 	GPTP_PDELAY_RESP_WAIT_REQ,
 	GPTP_PDELAY_RESP_WAIT_TSTAMP,
-};
+} __packed;
 
 /* SyncReceive states. */
 enum gptp_sync_rcv_states {
 	GPTP_SYNC_RCV_DISCARD,
 	GPTP_SYNC_RCV_WAIT_SYNC,
 	GPTP_SYNC_RCV_WAIT_FOLLOW_UP,
-};
+} __packed;
 
 /* SyncSend states. */
 enum gptp_sync_send_states {
 	GPTP_SYNC_SEND_INITIALIZING,
 	GPTP_SYNC_SEND_SEND_SYNC,
 	GPTP_SYNC_SEND_SEND_FUP,
-};
+} __packed;
 
 /* PortSyncSyncReceive states. */
 enum gptp_pss_rcv_states {
 	GPTP_PSS_RCV_DISCARD,
 	GPTP_PSS_RCV_RECEIVED_SYNC,
-};
+} __packed;
 
 /* PortSyncSyncSend states. */
 enum gptp_pss_send_states {
@@ -66,25 +66,25 @@ enum gptp_pss_send_states {
 	GPTP_PSS_SEND_SYNC_RECEIPT_TIMEOUT,
 	GPTP_PSS_SEND_SEND_MD_SYNC,
 	GPTP_PSS_SEND_SET_SYNC_RECEIPT_TIMEOUT,
-};
+} __packed;
 
 /* SiteSyncSyncReceive states. */
 enum gptp_site_sync_sync_states {
 	GPTP_SSS_INITIALIZING,
 	GPTP_SSS_RECEIVING_SYNC,
-};
+} __packed;
 
 /* ClockSlaveSync states. */
 enum gptp_clk_slave_sync_states {
 	GPTP_CLK_SLAVE_SYNC_INITIALIZING,
 	GPTP_CLK_SLAVE_SYNC_SEND_SYNC_IND,
-};
+} __packed;
 
 /* PortAnnounceReceive states. */
 enum gptp_pa_rcv_states {
 	GPTP_PA_RCV_DISCARD,
 	GPTP_PA_RCV_RECEIVE,
-};
+} __packed;
 
 /* PortAnnounceInformation states. */
 enum gptp_pa_info_states {
@@ -98,13 +98,13 @@ enum gptp_pa_info_states {
 	GPTP_PA_INFO_SUPERIOR_MASTER_PORT,
 	GPTP_PA_INFO_REPEATED_MASTER_PORT,
 	GPTP_PA_INFO_INFERIOR_MASTER_OR_OTHER_PORT,
-};
+} __packed;
 
 /* PortRoleSelection states. */
 enum gptp_pr_selection_states {
 	GPTP_PR_SELECTION_INIT_BRIDGE,
 	GPTP_PR_SELECTION_ROLE_SELECTION,
-};
+} __packed;
 
 /* PortAnnounceTransmit states. */
 enum gptp_pa_transmit_states {
@@ -112,14 +112,14 @@ enum gptp_pa_transmit_states {
 	GPTP_PA_TRANSMIT_PERIODIC,
 	GPTP_PA_TRANSMIT_IDLE,
 	GPTP_PA_TRANSMIT_POST_IDLE,
-};
+} __packed;
 
 /* ClockMasterSyncReceive states. */
 enum gptp_cms_rcv_states {
 	GPTP_CMS_RCV_INITIALIZING,
 	GPTP_CMS_RCV_WAITING,
 	GPTP_CMS_RCV_SOURCE_TIME,
-};
+} __packed;
 
 /* Info_is enumeration2. */
 enum gptp_info_is {
@@ -127,7 +127,7 @@ enum gptp_info_is {
 	GPTP_INFO_IS_MINE,
 	GPTP_INFO_IS_AGED,
 	GPTP_INFO_IS_DISABLED,
-};
+} __packed;
 
 enum gptp_time_source {
 	GPTP_TS_ATOMIC_CLOCK        = 0x10,
@@ -138,7 +138,7 @@ enum gptp_time_source {
 	GPTP_TS_HAND_SET            = 0x60,
 	GPTP_TS_OTHER               = 0x90,
 	GPTP_TS_INTERNAL_OSCILLATOR = 0xA0,
-};
+} __packed;
 
 /**
  * @brief gPTP time-synchronization spanning tree priority vector
@@ -181,9 +181,6 @@ struct gptp_pdelay_req_state {
 	/** Pointer to the Path Delay Request to be transmitted. */
 	struct net_pkt *tx_pdelay_req_ptr;
 
-	/** Current state of the state machine. */
-	enum gptp_pdelay_req_states state;
-
 	/** Path Delay Response messages received. */
 	u32_t rcvd_pdelay_resp;
 
@@ -192,6 +189,9 @@ struct gptp_pdelay_req_state {
 
 	/** Number of lost Path Delay Responses. */
 	u16_t lost_responses;
+
+	/** Current state of the state machine. */
+	enum gptp_pdelay_req_states state;
 
 	/** Timer expired, a new Path Delay Request needs to be sent. */
 	bool pdelay_timer_expired;
@@ -451,9 +451,6 @@ struct gptp_port_states {
 	/** PathDelayRequest state machine variables. */
 	struct gptp_pdelay_req_state pdelay_req;
 
-	/** PathDelayResponse state machine variables. */
-	struct gptp_pdelay_resp_state pdelay_resp;
-
 	/** SyncReceive state machine variables. */
 	struct gptp_sync_rcv_state sync_rcv;
 
@@ -466,14 +463,17 @@ struct gptp_port_states {
 	/** PortSyncSync Send state machine variables. */
 	struct gptp_pss_send_state pss_send;
 
-	/** PortAnnounceReceive state machine variables. */
-	struct gptp_port_announce_receive_state pa_rcv;
-
 	/** PortAnnounceInformation state machine variables. */
 	struct gptp_port_announce_information_state pa_info;
 
 	/** PortAnnounceTransmit state machine variables. */
 	struct gptp_port_announce_transmit_state pa_transmit;
+
+	/** PathDelayResponse state machine variables. */
+	struct gptp_pdelay_resp_state pdelay_resp;
+
+	/** PortAnnounceReceive state machine variables. */
+	struct gptp_port_announce_receive_state pa_rcv;
 };
 
 /**
