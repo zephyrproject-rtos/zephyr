@@ -29,14 +29,14 @@ void shell_op_cursor_horiz_move(const struct shell *shell, s32_t delta)
  */
 static inline bool full_line_cmd(const struct shell *shell)
 {
-	return ((shell->ctx->cmd_buff_len + shell_strlen(shell->name))
+	return ((shell->ctx->cmd_buff_len + shell_strlen(shell->prompt))
 			% shell->ctx->vt100_ctx.cons.terminal_wid == 0);
 }
 
 /* Function returns true if cursor is at beginning of an empty line. */
 bool shell_cursor_in_empty_line(const struct shell *shell)
 {
-	return ((shell->ctx->cmd_buff_pos + shell_strlen(shell->name))
+	return ((shell->ctx->cmd_buff_pos + shell_strlen(shell->prompt))
 			% shell->ctx->vt100_ctx.cons.terminal_wid == 0);
 }
 
