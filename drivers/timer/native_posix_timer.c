@@ -51,7 +51,7 @@ void _timer_idle_enter(s32_t sys_ticks)
 		posix_print_warning("native timer: Re-entering idle mode with "
 				    "%i ticks pending\n",
 				    silent_ticks);
-		_timer_idle_exit();
+		z_clock_idle_exit();
 		/* LCOV_EXCL_STOP */
 	}
 	if (sys_ticks < 0) {
@@ -75,7 +75,7 @@ void _timer_idle_enter(s32_t sys_ticks)
  * Note that we do not assume this function is called before the interrupt is
  * raised (the interrupt can handle it announcing all ticks)
  */
-void _timer_idle_exit(void)
+void z_clock_idle_exit(void)
 {
 	silent_ticks -= hwtimer_get_pending_silent_ticks();
 	if (silent_ticks > 0) {
@@ -102,7 +102,7 @@ static void sp_timer_isr(void *arg)
 /*
  * Enable the hw timer, setting its tick period, and setup its interrupt
  */
-int _sys_clock_driver_init(struct device *device)
+int z_clock_driver_init(struct device *device)
 {
 	ARG_UNUSED(device);
 

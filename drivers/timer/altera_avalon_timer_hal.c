@@ -41,7 +41,7 @@ static void timer_irq_handler(void *unused)
 #endif
 }
 
-int _sys_clock_driver_init(struct device *device)
+int z_clock_driver_init(struct device *device)
 {
 	ARG_UNUSED(device);
 

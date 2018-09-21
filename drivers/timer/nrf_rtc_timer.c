@@ -93,10 +93,10 @@ static void rtc_compare_set(u32_t rtc_ticks)
  *
  * This function is not reentrant. It is called from:
  *
- * * _timer_idle_exit(), which in turn is called with interrupts disabled when
+ * * z_clock_idle_exit(), which in turn is called with interrupts disabled when
  * an interrupt fires.
  * * rtc1_nrf5_isr(), which runs with interrupts enabled but at that time the
- * device cannot be idle and hence _timer_idle_exit() cannot be called.
+ * device cannot be idle and hence z_clock_idle_exit() cannot be called.
  *
  * Since this function can be preempted, we need to take some provisions to
  * announce all expected sys ticks that have passed.
@@ -223,7 +223,7 @@ static inline void program_max_cycles(void)
 {
 	u32_t max_cycles = _get_max_clock_time();
 
-	z_tick_set(_get_elapsed_clock_time());
+	z_tick_set(z_clock_uptime());
 	/* Update rtc_past to track rtc timer count*/
 	rtc_past = (z_tick_get() *
 			sys_clock_hw_cycles_per_tick()) & RTC_MASK;
@@ -309,7 +309,7 @@ void _set_time(u32_t time)
 
 	/* Update expected_sys_ticls to time to programe*/
 	expected_sys_ticks = time;
-	z_tick_set(_get_elapsed_clock_time());
+	z_tick_set(z_clock_uptime());
 	/* Update rtc_past to track rtc timer count*/
 	rtc_past = (z_tick_get() * sys_clock_hw_cycles_per_tick()) & RTC_MASK;
 
@@ -367,7 +367,7 @@ void _enable_sys_clock(void)
  * returns : total number of sys ticks passed since device bootup.
  */
 
-u64_t _get_elapsed_clock_time(void)
+u64_t z_clock_uptime(void)
 {
 	u64_t elapsed;
 	u32_t rtc_elapsed, rtc_past_copy;
@@ -418,7 +418,7 @@ u64_t _get_elapsed_clock_time(void)
  * b) Schedule next sys tick at 400.
  *
  */
-void _timer_idle_exit(void)
+void z_clock_idle_exit(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (!expected_sys_ticks && _sys_clock_always_on) {
@@ -509,7 +509,7 @@ void rtc1_nrf5_isr(void *arg)
 
 }
 
-int _sys_clock_driver_init(struct device *device)
+int z_clock_driver_init(struct device *device)
 {
 	struct device *clock;
 

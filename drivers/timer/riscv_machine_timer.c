@@ -86,7 +86,7 @@ static void riscv_machine_timer_irq_handler(void *unused)
 #error "Tickless idle not yet implemented for riscv-machine timer"
 #endif
 
-int _sys_clock_driver_init(struct device *device)
+int z_clock_driver_init(struct device *device)
 {
 	ARG_UNUSED(device);
 

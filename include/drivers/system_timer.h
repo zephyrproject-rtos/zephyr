@@ -23,9 +23,25 @@ extern "C" {
 #include <device.h>
 #include <stdbool.h>
 
-extern int _sys_clock_driver_init(struct device *device);
+/**
+ * @brief Initialize system clock driver
+ *
+ * The system clock is a Zephyr device created globally.  This is its
+ * initialization callback.  It is a weak symbol that will be
+ * implemented as a noop if undefined in the clock driver.
+ */
+extern int z_clock_driver_init(struct device *device);
 
-extern void _timer_int_handler(void *arg);
+/**
+ * @brief Initialize system clock driver
+ *
+ * The system clock is a Zephyr device created globally.  This is its
+ * device control callback, used in a few devices for power
+ * management.  It is a weak symbol that will be implemented as a noop
+ * if undefined in the clock driver.
+ */
+extern int z_clock_device_ctrl(struct device *device,
+				 u32_t ctrl_command, void *context);
 
 /**
  * @brief Set system clock timeout
@@ -60,15 +76,19 @@ extern void _timer_int_handler(void *arg);
  */
 extern void z_clock_set_timeout(s32_t ticks, bool idle);
 
-#ifdef CONFIG_SYSTEM_CLOCK_DISABLE
-extern void sys_clock_disable(void);
-#endif
-
-#ifdef CONFIG_TICKLESS_IDLE
-extern void _timer_idle_exit(void);
-#else
-#define _timer_idle_exit() do { } while (false)
-#endif /* CONFIG_TICKLESS_IDLE */
+/**
+ * @brief Timer idle exit notification
+ *
+ * This notifies the timer driver that the system is exiting the idle
+ * and allows it to do whatever bookeeping is needed to restore timer
+ * operation and compute elapsed ticks.
+ *
+ * @note Legacy timer drivers also use this opportunity to call back
+ * into z_clock_announce() to notify the kernel of expired ticks.
+ * This is allowed for compatibility, but not recommended.  The kernel
+ * will figure that out on its own.
+ */
+extern void z_clock_idle_exit(void);
 
 /**
  * @brief Announce time progress to the kernel
@@ -81,23 +101,18 @@ extern void _timer_idle_exit(void);
  */
 extern void z_clock_announce(s32_t ticks);
 
+/**
+ * @brief System uptime in ticks
+ *
+ * Queries the clock driver for the current time elapsed since system
+ * bootup in ticks.
+ */
+extern u64_t z_clock_uptime(void);
+
 #ifdef CONFIG_TICKLESS_KERNEL
 extern u32_t _get_program_time(void);
 extern u32_t _get_remaining_program_time(void);
 extern u32_t _get_elapsed_program_time(void);
-extern u64_t _get_elapsed_clock_time(void);
-#endif
-
-extern int sys_clock_device_ctrl(struct device *device,
-				 u32_t ctrl_command, void *context);
-
-/*
- * Currently regarding timers, only loapic timer and arcv2_timer0 implements
- * device pm functionality. For other timers, use default handler in case
- * the app enables CONFIG_DEVICE_POWER_MANAGEMENT.
- */
-#if !defined(CONFIG_LOAPIC_TIMER) && !defined(CONFIG_ARCV2_TIMER)
-#define sys_clock_device_ctrl device_pm_control_nop
 #endif
 
 #ifdef __cplusplus
