@@ -140,6 +140,24 @@ static inline ssize_t sendto(int sock, const void *buf,
 	return socket_ops->sendto(sock, buf, len, flags, to, tolen);
 }
 
+static inline int getaddrinfo(const char *node, const char *service,
+			      const struct addrinfo *hints,
+			      struct addrinfo **res)
+{
+	__ASSERT_NO_MSG(socket_ops);
+	__ASSERT_NO_MSG(socket_ops->getaddrinfo);
+
+	return socket_ops->getaddrinfo(node, service, hints, res);
+}
+
+static inline void freeaddrinfo(struct addrinfo *res)
+{
+	__ASSERT_NO_MSG(socket_ops);
+	__ASSERT_NO_MSG(socket_ops->freeaddrinfo);
+
+	return socket_ops->freeaddrinfo(res);
+}
+
 #ifdef __cplusplus
 }
 #endif

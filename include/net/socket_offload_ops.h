@@ -45,6 +45,10 @@ struct socket_offload {
 	ssize_t (*send)(int sock, const void *buf, size_t len, int flags);
 	ssize_t (*sendto)(int sock, const void *buf, size_t len, int flags,
 			  const struct sockaddr *to, socklen_t tolen);
+	int (*getaddrinfo)(const char *node, const char *service,
+			   const struct addrinfo *hints,
+			   struct addrinfo **res);
+	void (*freeaddrinfo)(struct addrinfo *res);
 };
 
 extern void socket_offload_register(const struct socket_offload *ops);

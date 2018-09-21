@@ -506,6 +506,24 @@ exit:
 	return _SlDrvSetErrno(retval);
 }
 
+static int simplelink_getaddrinfo(const char *node, const char *service,
+				  const struct addrinfo *hints,
+				  struct addrinfo **res)
+{
+	ARG_UNUSED(node);
+	ARG_UNUSED(service);
+	ARG_UNUSED(hints);
+	ARG_UNUSED(res);
+
+	errno = ENOTSUP;
+	return EAI_SYSTEM;
+}
+
+static void simplelink_freeaddrinfo(struct addrinfo *res)
+{
+	ARG_UNUSED(res);
+}
+
 const struct socket_offload simplelink_ops = {
 	.socket = simplelink_socket,
 	.close = simplelink_close,
@@ -520,4 +538,6 @@ const struct socket_offload simplelink_ops = {
 	.recvfrom = simplelink_recvfrom,
 	.send = simplelink_send,
 	.sendto = simplelink_sendto,
+	.getaddrinfo = simplelink_getaddrinfo,
+	.freeaddrinfo = simplelink_freeaddrinfo,
 };
