@@ -239,6 +239,7 @@ SECTIONS
 
 #if defined(CONFIG_APP_SHARED_MEM)
 #if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+#define APP_SHARED_ALIGN . = ALIGN(4);
 		#include <app_smem.ld>
 #else
 	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
@@ -248,11 +249,11 @@ SECTIONS
 		_app_smem_start = .;
 		APP_SMEM_SECTION()
 		_app_smem_end = .;
-		_app_smem_size = _app_smem_end - _app_smem_start;
 		. = ALIGN(4);
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif  /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
 
+	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif  /* CONFIG_APP_SHARED_MEM */
 
