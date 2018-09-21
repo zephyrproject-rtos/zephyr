@@ -8,7 +8,7 @@
 #define NET_LOG_LEVEL LOG_LEVEL_WRN
 
 #include <ztest.h>
-#include <net/mqtt.h>
+#include <net/mqtt_legacy.h>
 
 #include <net/net_context.h>
 #include <net/net_pkt.h>

@@ -5,7 +5,7 @@
  */
 
 #include <zephyr.h>
-#include <net/mqtt.h>
+#include <net/mqtt_legacy.h>
 
 #include <net/net_context.h>
 
@@ -66,7 +66,7 @@ static struct mqtt_client_ctx client_ctx;
 /* This routine sets some basic properties for the network context variable */
 static int network_setup(void);
 
-#if defined(CONFIG_MQTT_LIB_TLS)
+#if defined(CONFIG_MQTT_LEGACY_LIB_TLS)
 
 #include "test_certs.h"
 
@@ -311,7 +311,7 @@ static void publisher(void)
 	client_ctx.mqtt_ctx.peer_addr_str = SERVER_ADDR;
 	client_ctx.mqtt_ctx.peer_port = SERVER_PORT;
 
-#if defined(CONFIG_MQTT_LIB_TLS)
+#if defined(CONFIG_MQTT_LEGACY_LIB_TLS)
 	/** TLS setup */
 	client_ctx.mqtt_ctx.request_buf = tls_request_buf;
 	client_ctx.mqtt_ctx.request_buf_len = TLS_REQUEST_BUF_SIZE;

@@ -7,7 +7,7 @@
 #define LOG_MODULE_NAME net_test
 #define NET_LOG_LEVEL LOG_LEVEL_WRN
 
-#include <net/mqtt.h>
+#include <net/mqtt_legacy.h>
 #include <ztest.h>
 
 #include <net/net_context.h>
