@@ -109,12 +109,6 @@ extern void z_clock_announce(s32_t ticks);
  */
 extern u64_t z_clock_uptime(void);
 
-#ifdef CONFIG_TICKLESS_KERNEL
-extern u32_t _get_program_time(void);
-extern u32_t _get_remaining_program_time(void);
-extern u32_t _get_elapsed_program_time(void);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
