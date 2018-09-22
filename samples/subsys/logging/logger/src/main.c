@@ -8,7 +8,6 @@
 #include <string.h>
 #include <misc/printk.h>
 #include <logging/log_ctrl.h>
-#include <soc.h>
 #include "sample_instance.h"
 #include "sample_module.h"
 #include "ext_log_system.h"
@@ -28,6 +27,10 @@ SAMPLE_INSTANCE_DEFINE(inst1);
 
 #define INST2_NAME STRINGIFY(SAMPLE_INSTANCE_NAME.inst2)
 SAMPLE_INSTANCE_DEFINE(inst2);
+
+#if !defined(NRF_RTC1) && defined(CONFIG_SOC_FAMILY_NRF)
+#include <soc.h>
+#endif
 
 static u32_t timestamp_get(void)
 {
