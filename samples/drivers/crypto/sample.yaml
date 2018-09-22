@@ -6,6 +6,7 @@ common:
   tags: crypto
   harness: console
   min_ram: 20
+  arch_exclude: xtensa
 tests:
   test-mbedtls:
     min_flash: 34
@@ -15,11 +16,8 @@ tests:
       regex:
         - ".*: Cipher Sample"
         - ".*main: CBC Mode"
-        - ".*mtls_session_setup: Unsupported mode"
         - ".*main: CTR Mode"
         - ".*main: CCM Mode"
-        - ".*ccm_mode: CCM mode ENCRYPT - Match"
-        - ".*ccm_mode: CCM mode DECRYPT - Match"
   test-micro:
     tags: micro
     harness_config:
@@ -27,11 +25,5 @@ tests:
       regex:
         - ".*: Cipher Sample"
         - ".*main: CBC Mode"
-        - ".*cbc_mode: CBC mode ENCRYPT - Match"
-        - ".*cbc_mode: CBC mode DECRYPT - Match"
         - ".*main: CTR Mode"
-        - ".*ctr_mode: CTR mode ENCRYPT - Match"
-        - ".*ctr_mode: CTR mode DECRYPT - Match"
         - ".*main: CCM Mode"
-        - ".*ccm_mode: CCM mode ENCRYPT - Match"
-        - ".*ccm_mode: CCM mode DECRYPT - Match"

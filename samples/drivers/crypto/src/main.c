@@ -13,8 +13,9 @@
 #include <string.h>
 #include <crypto/cipher.h>
 
-#define SYS_LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
+#include <logging/log.h>
+LOG_DOMAIN_REGISTER(main);
 
 #ifdef CONFIG_CRYPTO_TINYCRYPT_SHIM
 #define CRYPTO_DRV_NAME CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME
@@ -88,19 +89,19 @@ int validate_hw_compatibility(struct device *dev)
 
 	flags = cipher_query_hwcaps(dev);
 	if ((flags & CAP_RAW_KEY) == 0) {
-		SYS_LOG_INF(" Please provision the key separately "
+		LOG_INF(" Please provision the key separately "
 			"as the module doesnt support a raw key");
 		return -1;
 	}
 
 	if ((flags & CAP_SYNC_OPS) == 0) {
-		SYS_LOG_ERR("The app assumes sync semantics. "
+		LOG_ERR("The app assumes sync semantics. "
 		  "Please rewrite the app accordingly before proceeding");
 		return -1;
 	}
 
 	if ((flags & CAP_SEPARATE_IO_BUFS) == 0) {
-		SYS_LOG_ERR("The app assumes distinct IO buffers. "
+		LOG_ERR("The app assumes distinct IO buffers. "
 		"Please rewrite the app accordingly before proceeding");
 		return -1;
 	}
@@ -140,21 +141,21 @@ void cbc_mode(struct device *dev)
 	}
 
 	if (cipher_cbc_op(&ini, &encrypt, iv)) {
-		SYS_LOG_ERR("CBC mode ENCRYPT - Failed");
+		LOG_ERR("CBC mode ENCRYPT - Failed");
 		goto out;
 	}
 
-	SYS_LOG_INF("Output length (encryption): %d", encrypt.out_len);
+	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
 	if (memcmp(encrypt.out_buf, ciphertext, sizeof(ciphertext))) {
-		SYS_LOG_ERR("CBC mode ENCRYPT - Mismatch between expected and "
+		LOG_ERR("CBC mode ENCRYPT - Mismatch between expected and "
 			    "returned cipher text");
 		print_buffer_comparison(ciphertext,
 					encrypt.out_buf, sizeof(ciphertext));
 		goto out;
 	}
 
-	SYS_LOG_INF("CBC mode ENCRYPT - Match");
+	LOG_INF("CBC mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -165,21 +166,21 @@ void cbc_mode(struct device *dev)
 
 	/* TinyCrypt keeps IV at the start of encrypted buffer */
 	if (cipher_cbc_op(&ini, &decrypt, encrypted)) {
-		SYS_LOG_ERR("CBC mode DECRYPT - Failed");
+		LOG_ERR("CBC mode DECRYPT - Failed");
 		goto out;
 	}
 
-	SYS_LOG_INF("Output length (decryption): %d", decrypt.out_len);
+	LOG_INF("Output length (decryption): %d", decrypt.out_len);
 
 	if (memcmp(decrypt.out_buf, plaintext, sizeof(plaintext))) {
-		SYS_LOG_ERR("CBC mode DECRYPT - Mismatch between plaintext and "
+		LOG_ERR("CBC mode DECRYPT - Mismatch between plaintext and "
 			    "decrypted cipher text");
 		print_buffer_comparison(plaintext,
 					decrypt.out_buf, sizeof(plaintext));
 		goto out;
 	}
 
-	SYS_LOG_INF("CBC mode DECRYPT - Match");
+	LOG_INF("CBC mode DECRYPT - Match");
 out:
 	cipher_free_session(dev, &ini);
 }
@@ -230,21 +231,21 @@ void ctr_mode(struct device *dev)
 	}
 
 	if (cipher_ctr_op(&ini, &encrypt, iv)) {
-		SYS_LOG_ERR("CTR mode ENCRYPT - Failed");
+		LOG_ERR("CTR mode ENCRYPT - Failed");
 		goto out;
 	}
 
-	SYS_LOG_INF("Output length (encryption): %d", encrypt.out_len);
+	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
 	if (memcmp(encrypt.out_buf, ctr_ciphertext, sizeof(ctr_ciphertext))) {
-		SYS_LOG_ERR("CTR mode ENCRYPT - Mismatch between expected "
+		LOG_ERR("CTR mode ENCRYPT - Mismatch between expected "
 			    "and returned cipher text");
 		print_buffer_comparison(ctr_ciphertext, encrypt.out_buf,
 					sizeof(ctr_ciphertext));
 		goto out;
 	}
 
-	SYS_LOG_INF("CTR mode ENCRYPT - Match");
+	LOG_INF("CTR mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -254,21 +255,21 @@ void ctr_mode(struct device *dev)
 	}
 
 	if (cipher_ctr_op(&ini, &decrypt, iv)) {
-		SYS_LOG_ERR("CTR mode DECRYPT - Failed");
+		LOG_ERR("CTR mode DECRYPT - Failed");
 		goto out;
 	}
 
-	SYS_LOG_INF("Output length (decryption): %d", decrypt.out_len);
+	LOG_INF("Output length (decryption): %d", decrypt.out_len);
 
 	if (memcmp(decrypt.out_buf, plaintext, sizeof(plaintext))) {
-		SYS_LOG_ERR("CTR mode DECRYPT - Mismatch between plaintext "
+		LOG_ERR("CTR mode DECRYPT - Mismatch between plaintext "
 			    "and decypted cipher text");
 		print_buffer_comparison(plaintext,
 					decrypt.out_buf, sizeof(plaintext));
 		goto out;
 	}
 
-	SYS_LOG_INF("CTR mode DECRYPT - Match");
+	LOG_INF("CTR mode DECRYPT - Match");
 out:
 	cipher_free_session(dev, &ini);
 }
@@ -341,21 +342,21 @@ void ccm_mode(struct device *dev)
 
 	ccm_op.pkt = &encrypt;
 	if (cipher_ccm_op(&ini, &ccm_op, ccm_nonce)) {
-		SYS_LOG_ERR("CCM mode ENCRYPT - Failed");
+		LOG_ERR("CCM mode ENCRYPT - Failed");
 		goto out;
 	}
 
-	SYS_LOG_INF("Output length (encryption): %d", encrypt.out_len);
+	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
 	if (memcmp(encrypt.out_buf, ccm_expected, sizeof(ccm_expected))) {
-		SYS_LOG_ERR("CCM mode ENCRYPT - Mismatch between expected "
+		LOG_ERR("CCM mode ENCRYPT - Mismatch between expected "
 			    "and returned cipher text");
 		print_buffer_comparison(ccm_expected,
 					encrypt.out_buf, sizeof(ccm_expected));
 		goto out;
 	}
 
-	SYS_LOG_INF("CCM mode ENCRYPT - Match");
+	LOG_INF("CCM mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -366,21 +367,21 @@ void ccm_mode(struct device *dev)
 
 	ccm_op.pkt = &decrypt;
 	if (cipher_ccm_op(&ini, &ccm_op, ccm_nonce)) {
-		SYS_LOG_ERR("CCM mode DECRYPT - Failed");
+		LOG_ERR("CCM mode DECRYPT - Failed");
 		goto out;
 	}
 
-	SYS_LOG_INF("Output length (decryption): %d", decrypt.out_len);
+	LOG_INF("Output length (decryption): %d", decrypt.out_len);
 
 	if (memcmp(decrypt.out_buf, ccm_data, sizeof(ccm_data))) {
-		SYS_LOG_ERR("CCM mode DECRYPT - Mismatch between plaintext "
+		LOG_ERR("CCM mode DECRYPT - Mismatch between plaintext "
 			"and decrypted cipher text");
 		print_buffer_comparison(ccm_data,
 					decrypt.out_buf, sizeof(ccm_data));
 		goto out;
 	}
 
-	SYS_LOG_INF("CCM mode DECRYPT - Match");
+	LOG_INF("CCM mode DECRYPT - Match");
 out:
 	cipher_free_session(dev, &ini);
 }
@@ -402,19 +403,19 @@ void main(void)
 	int i;
 
 	if (!dev) {
-		SYS_LOG_ERR("%s pseudo device not found", CRYPTO_DRV_NAME);
+		LOG_ERR("%s pseudo device not found", CRYPTO_DRV_NAME);
 		return;
 	}
 
 	if (validate_hw_compatibility(dev)) {
-		SYS_LOG_ERR("Incompatible h/w");
+		LOG_ERR("Incompatible h/w");
 		return;
 	}
 
-	SYS_LOG_INF("Cipher Sample");
+	LOG_INF("Cipher Sample");
 
 	for (i = 0; modes[i].mode; i++) {
-		SYS_LOG_INF("%s", modes[i].mode);
+		LOG_INF("%s", modes[i].mode);
 		modes[i].mode_func(dev);
 	}
 }
