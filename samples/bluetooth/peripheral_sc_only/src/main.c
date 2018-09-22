@@ -97,10 +97,23 @@ static void auth_cancel(struct bt_conn *conn)
 	printk("Pairing cancelled: %s\n", addr);
 }
 
+static void pairing_complete(struct bt_conn *conn, bool bonded)
+{
+	printk("Pairing Complete\n");
+}
+
+static void pairing_failed(struct bt_conn *conn)
+{
+	printk("Pairing Failed. Disconnecting.\n");
+	bt_conn_disconnect(conn, BT_HCI_ERR_AUTHENTICATION_FAIL);
+}
+
 static struct bt_conn_auth_cb auth_cb_display = {
 	.passkey_display = auth_passkey_display,
 	.passkey_entry = NULL,
 	.cancel = auth_cancel,
+	.pairing_complete = pairing_complete,
+	.pairing_failed = pairing_failed,
 };
 
 void main(void)
