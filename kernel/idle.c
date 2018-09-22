@@ -13,22 +13,11 @@
 #include <power.h>
 #include <stdbool.h>
 
-#if defined(CONFIG_TICKLESS_IDLE)
-/*
- * Idle time must be this value or higher for timer to go into tickless idle
- * state.
- */
-s32_t _sys_idle_threshold_ticks = CONFIG_TICKLESS_IDLE_THRESH;
-
-#if defined(CONFIG_TICKLESS_KERNEL)
-#define _must_enter_tickless_idle(ticks) (true)
+#ifdef CONFIG_TICKLESS_IDLE_THRESH
+#define IDLE_THRESH CONFIG_TICKLESS_IDLE_THRESH
 #else
-#define _must_enter_tickless_idle(ticks) \
-		((ticks == K_FOREVER) || (ticks >= _sys_idle_threshold_ticks))
+#define IDLE_THRESH 1
 #endif
-#else
-#define _must_enter_tickless_idle(ticks) ((void)ticks, false)
-#endif /* CONFIG_TICKLESS_IDLE */
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 /*
@@ -70,19 +59,13 @@ static void set_kernel_idle_time_in_ticks(s32_t ticks)
 #ifndef CONFIG_SMP
 static void sys_power_save_idle(s32_t ticks)
 {
-	if (_must_enter_tickless_idle(ticks)) {
-		/*
-		 * Stop generating system timer interrupts until it's time for
-		 * the next scheduled kernel timer to expire.
-		 */
-
-		/*
-		 * In the case of tickless kernel, timer driver should
-		 * reprogram timer only if the currently programmed time
-		 * duration is smaller than the idle time.
-		 */
-		z_clock_set_timeout(ticks, true);
-	}
+	/* The documented behavior of CONFIG_TICKLESS_IDLE_THRESH is
+	 * that the system should not enter a tickless idle for
+	 * periods less than that.  This seems... silly, given that it
+	 * saves no power and does not improve latency.  But it's an
+	 * API we need to honor...
+	 */
+	z_clock_set_timeout(ticks < IDLE_THRESH ? 1 : ticks, true);
 
 	set_kernel_idle_time_in_ticks(ticks);
 #if (defined(CONFIG_SYS_POWER_LOW_POWER_STATE) || \
@@ -127,10 +110,7 @@ void _sys_power_save_idle_exit(s32_t ticks)
 	}
 #endif
 
-	if (_must_enter_tickless_idle(ticks)) {
-		/* Resume normal periodic system timer interrupts */
-		z_clock_idle_exit();
-	}
+	z_clock_idle_exit();
 }
 
 

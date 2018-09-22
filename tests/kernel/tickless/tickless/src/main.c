@@ -27,7 +27,12 @@ static struct k_thread thread_tickless;
 static K_THREAD_STACK_DEFINE(thread_tickless_stack, STACKSIZE);
 
 #ifdef CONFIG_TICKLESS_IDLE
-extern s32_t _sys_idle_threshold_ticks;
+/* This used to poke an internal kernel variable, which doesn't exit
+ * any more.  It was never documented as an API, and the test never
+ * failed when it was removed.  So just leave it here as a vestigial
+ * thing until the test gets reworked
+ */
+s32_t _sys_idle_threshold_ticks;
 #endif
 
 #define TICKS_TO_MS  (MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
