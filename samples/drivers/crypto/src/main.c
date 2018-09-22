@@ -15,7 +15,7 @@
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
 #include <logging/log.h>
-LOG_DOMAIN_REGISTER(main);
+LOG_MODULE_REGISTER(main);
 
 #ifdef CONFIG_CRYPTO_TINYCRYPT_SHIM
 #define CRYPTO_DRV_NAME CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME
@@ -89,7 +89,7 @@ int validate_hw_compatibility(struct device *dev)
 
 	flags = cipher_query_hwcaps(dev);
 	if ((flags & CAP_RAW_KEY) == 0) {
-		LOG_INF(" Please provision the key separately "
+		LOG_INF("Please provision the key separately "
 			"as the module doesnt support a raw key");
 		return -1;
 	}
