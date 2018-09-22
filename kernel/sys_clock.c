@@ -97,6 +97,9 @@ void z_tick_set(s64_t val)
 {
 	unsigned int key = irq_lock();
 
+	__ASSERT_NO_MSG(val > tick_count);
+	__ASSERT_NO_MSG(val > z_last_tick_announced);
+
 	tick_count = val;
 	irq_unlock(key);
 }
@@ -296,6 +299,8 @@ static void handle_time_slicing(s32_t ticks)
 void z_clock_announce(s32_t ticks)
 {
 	z_last_tick_announced += ticks;
+
+	__ASSERT_NO_MSG(z_last_tick_announced >= tick_count);
 
 #ifdef CONFIG_SMP
 	/* sys_clock timekeeping happens only on the main CPU */
