@@ -38,10 +38,17 @@ endchoice
 
 endif # BT_HCI
 
+if SERIAL
+
+config UART_NATIVE_POSIX
+	def_bool y
+
+endif # SERIAL
+
 if LOG
 
 config LOG_BACKEND_NATIVE_POSIX
-	def_bool y
+	def_bool y if !SERIAL
 
 # For native_posix we can log immediately without any problem
 # Doing so will be nicer for debugging
@@ -54,5 +61,15 @@ config LOG_PROCESS_THREAD
 	def_bool n
 
 endif # LOG
+
+if CONSOLE
+
+config NATIVE_POSIX_CONSOLE
+	def_bool y if !SERIAL
+
+config UART_CONSOLE
+	def_bool y if SERIAL
+
+endif #CONSOLE
 
 endif # BOARD_NATIVE_POSIX
