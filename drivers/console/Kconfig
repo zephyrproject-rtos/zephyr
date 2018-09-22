@@ -255,7 +255,6 @@ config NATIVE_POSIX_CONSOLE
 	bool "Use the host terminal for console"
 	depends on ARCH_POSIX
 	select CONSOLE_HAS_DRIVER
-	default y
 	help
 	  Use the host terminal (where the native_posix binary was launched) for the
 	  Zephyr console
@@ -263,7 +262,7 @@ config NATIVE_POSIX_CONSOLE
 config NATIVE_POSIX_STDIN_CONSOLE
 	bool "Use the host terminal stdin"
 	depends on NATIVE_POSIX_CONSOLE
-	default y
+	default y if !NATIVE_UART_0_ON_STDINOUT
 	help
 	  Feed the host terminal stdin to the Zephyr console/shell.
 

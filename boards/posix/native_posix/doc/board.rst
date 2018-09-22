@@ -19,6 +19,9 @@ you use native host tools for compiling, debugging, and analyzing your
 Zephyr application, eliminating the need for architecture-specific
 target hardware in the early phases of development.
 
+This board provides a few peripherals such as an Ethernet driver and UART.
+See `Peripherals`_ for more information.
+
 Host system dependencies
 ========================
 
@@ -458,8 +461,8 @@ The following peripherals are currently provided with this board:
     ``stdout``.
 
   - Feed any input from the native application ``stdin`` to a possible
-    running :ref:`Shell`. For more information refer to the section
-    `Shell support`_.
+    running legacy shell. For more information refer to the section
+    `Legacy shell support`_.
 
 **Clock, timer and system tick model**
   This model provides the system tick timer. By default
@@ -538,11 +541,40 @@ The following peripherals are currently provided with this board:
   must be powered down and support Bluetooth Low Energy (i.e. support the
   Bluetooth specification version 4.0 or greater).
 
-Shell support
-*************
+**UART**
+  An optional UART driver can be compiled with native_posix.
+  For more information refer to the section `UART`_.
 
-When the :ref:`Shell` subsystem is compiled with your application, the native
-standard input (``stdin``) will be redirected to the shell.
+
+UART
+*****
+
+This driver can be configured to either create and link the UART to a new
+pseudoterminal (i.e. ``/dev/pts<nbr>``), or to map the UART input and
+output to the executable's ``stdin`` and ``stdout``.
+This is chosen by selecting either
+:option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` or
+:option:`CONFIG_NATIVE_UART_0_ON_STDINOUT`
+Note that for interactive use, the first option should be chosen. The
+second option is only intended for automated testing or feeding/piping other
+processes output to the UART.
+
+When :option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` is chosen, the name of the
+newly created UART pseudo-terminal will be displayed in the console.
+You may also chose to automatically attach a terminal emulator to it by
+passing the command line option ``-attach_uart`` to the executable.
+The command used for attaching to the new shell can be set with the command line
+option ``-attach_uart_cmd=<"cmd">``. Where the default command is given by
+:option:`CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD`.
+Note that the default command assumes both ``xterm`` and ``screen`` are
+installed in the system.
+
+
+Legacy shell support
+********************
+
+When the legacy :ref:`Shell` subsystem is compiled with your application,
+the native standard input (``stdin``) will be redirected to the shell.
 You may use the shell interactively through the console,
 by piping another process output to it, or by feeding it a file.
 
@@ -580,16 +612,8 @@ These directives are:
 Use example
 ===========
 
-For example, you can build the shell sample app:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/subsys/shell/shell_module
-   :host-os: unix
-   :board: native_posix
-   :goals: build
-   :compact:
-
-And feed it the following set of commands through a pipe:
+For example, after you have built an application with the legacy shell, you
+can feed it the following set of commands through a pipe:
 
 .. code-block:: console
 
