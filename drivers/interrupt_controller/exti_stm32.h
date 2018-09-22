@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef _STM32_EXTI_H_
-#define _STM32_EXTI_H_
+#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_EXTI_STM32_H_
+#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_EXTI_STM32_H_
 
 #include <zephyr/types.h>
 
@@ -77,4 +77,4 @@ void stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *data);
  */
 void stm32_exti_unset_callback(int line);
 
-#endif /* _STM32_EXTI_H_ */
+#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_EXTI_STM32_H_ */

@@ -9,12 +9,11 @@
 #include <string.h>
 #include <soc.h>
 #include <device.h>
-#include "pm_policy.h"
+#include "policy/pm_policy.h"
 
-#define LOG_MODULE_NAME power
 #define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
 #include <logging/log.h>
-LOG_MODULE_DECLARE();
+LOG_MODULE_DECLARE(power);
 
 /*
  * FIXME: Remove the conditional inclusion of

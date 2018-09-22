@@ -11,8 +11,8 @@
  * ARM-specific kernel error handling interface. Included by arm/arch.h.
  */
 
-#ifndef _ARCH_ARM_CORTEXM_ERROR_H_
-#define _ARCH_ARM_CORTEXM_ERROR_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ERROR_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ERROR_H_
 
 #include <arch/arm/syscall.h>
 #include <arch/arm/cortex_m/exc.h>
@@ -72,4 +72,4 @@ extern void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
 }
 #endif
 
-#endif /* _ARCH_ARM_CORTEXM_ERROR_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ERROR_H_ */

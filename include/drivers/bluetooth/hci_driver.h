@@ -7,8 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_HCI_DRIVER_H
-#define __BT_HCI_DRIVER_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_BLUETOOTH_HCI_DRIVER_H_
+#define ZEPHYR_INCLUDE_DRIVERS_BLUETOOTH_HCI_DRIVER_H_
 
 /**
  * @brief HCI drivers
@@ -175,4 +175,4 @@ int bt_hci_driver_register(const struct bt_hci_driver *drv);
  * @}
  */
 
-#endif /* __BT_HCI_DRIVER_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_BLUETOOTH_HCI_DRIVER_H_ */

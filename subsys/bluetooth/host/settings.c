@@ -118,7 +118,8 @@ static int set(int argc, char **argv, char *val)
 		settings_bytes_from_str(val, &bt_dev.id_addr, &len);
 		if (len < sizeof(bt_dev.id_addr[0])) {
 			BT_ERR("Invalid length ID address in storage");
-			memset(bt_dev.id_addr, 0, sizeof(bt_dev.id_addr));
+			(void)memset(bt_dev.id_addr, 0,
+				     sizeof(bt_dev.id_addr));
 			bt_dev.id_count = 0;
 		} else {
 			int i;
@@ -150,7 +151,7 @@ static int set(int argc, char **argv, char *val)
 		settings_bytes_from_str(val, bt_dev.irk, &len);
 		if (len < sizeof(bt_dev.irk[0])) {
 			BT_ERR("Invalid length IRK in storage");
-			memset(bt_dev.irk, 0, sizeof(bt_dev.irk));
+			(void)memset(bt_dev.irk, 0, sizeof(bt_dev.irk));
 		} else {
 			BT_DBG("IRK set to %s", bt_hex(bt_dev.irk[0], 16));
 		}

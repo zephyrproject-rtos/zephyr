@@ -42,7 +42,9 @@ packages from their respective websites.
    running that every time you open a Command Prompt.
 
 #. If you're behind a corporate firewall, you'll likely need to specify a
-   proxy to get access to internet resources::
+   proxy to get access to internet resources:
+
+   .. code-block:: console
 
       set HTTP_PROXY=http://user:password@proxy.mycompany.com:1234
       set HTTPS_PROXY=http://user:password@proxy.mycompany.com:1234
@@ -82,12 +84,15 @@ packages from their respective websites.
       cd %userprofile%
       git clone https://github.com/zephyrproject-rtos/zephyr.git
 
-#. Install the required Python modules::
+#. Install the required Python modules:
+
+   .. code-block:: console
 
       cd %userprofile%\zephyr
       pip3 install -r scripts/requirements.txt
 
-.. note::
+   .. note::
+
       Although pip can install packages in the user's directory by means
       of the ``--user`` flag, this makes it harder for the Command Prompt
       to find the executables in Python modules installed by ``pip3``.
@@ -144,8 +149,8 @@ packages from their respective websites.
 
       zephyr-env.cmd
 
-.. note:: In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT``
-          variable was called ``ZEPHYR_GCC_VARIANT``.
+   .. note:: In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT``
+             variable was called ``ZEPHYR_GCC_VARIANT``.
 
 #. Finally, you can try building the :ref:`hello_world` sample to check things
    out.
@@ -308,21 +313,21 @@ to set it up:
 #. Finally, you can try building the :ref:`hello_world` sample to check things
    out.
 
-To build for the Intel |reg| Quark |trade| (x86-based) Arduino 101:
+   To build for the Intel |reg| Quark |trade| (x86-based) Arduino 101:
 
-.. zephyr-app-commands::
-  :zephyr-app: samples/hello_world
-  :board: arduino_101
-  :host-os: win
-  :goals: build
+   .. zephyr-app-commands::
+     :zephyr-app: samples/hello_world
+     :board: arduino_101
+     :host-os: win
+     :goals: build
 
-To build for the ARM-based Nordic nRF52 Development Kit:
+   To build for the ARM-based Nordic nRF52 Development Kit:
 
-.. zephyr-app-commands::
-  :zephyr-app: samples/hello_world
-  :board: nrf52_pca10040
-  :host-os: win
-  :goals: build
+   .. zephyr-app-commands::
+     :zephyr-app: samples/hello_world
+     :board: nrf52_pca10040
+     :host-os: win
+     :goals: build
 
 This should check that all the tools and toolchain are set up correctly for
 your own Zephyr development.

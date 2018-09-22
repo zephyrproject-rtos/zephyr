@@ -196,6 +196,12 @@ if(NOT BOARD_ROOT)
   set(BOARD_ROOT ${ZEPHYR_BASE})
 endif()
 
+if(NOT SOC_ROOT)
+  set(SOC_DIR ${ZEPHYR_BASE}/soc)
+else()
+  set(SOC_DIR ${SOC_ROOT}/soc)
+endif()
+
 find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS ${BOARD_ROOT}/boards/*/* NO_DEFAULT_PATH)
 
 assert_with_usage(BOARD_DIR "No board named '${BOARD}' found")
@@ -256,7 +262,15 @@ if(GIT_FOUND)
   execute_process(COMMAND ${GIT_EXECUTABLE} describe
     WORKING_DIRECTORY ${ZEPHYR_BASE}
     OUTPUT_VARIABLE BUILD_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_VARIABLE stderr
+    RESULT_VARIABLE return_code
+    )
+  if(return_code)
+    message(FATAL_ERROR "${stderr}")
+  elseif(CMAKE_VERBOSE_MAKEFILE)
+    message(STATUS "git describe stderr: ${stderr}")
+  endif()
 endif()
 
 set(SOC_NAME ${CONFIG_SOC})
@@ -336,7 +350,7 @@ The behavior of Kconfig 'default' properties in Zephyr has changed. The \n\
 earliest default with a satisfied condition is now used, instead of the \n\
 last one. This is standard Kconfig behavior.\n\
 \n\
-See http://docs.zephyrproject.org/porting/board_porting.html#old-zephyr-kconfig-behavior-for-defaults.\n\
+See http://docs.zephyrproject.org/latest/porting/board_porting.html#old-zephyr-kconfig-behavior-for-defaults.\n\
 \n\
 To get rid of this note, create a file called 'hide-defaults-note' in the \n\
 Zephyr root directory. An empty file is fine.")

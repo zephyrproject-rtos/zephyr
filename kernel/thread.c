@@ -162,8 +162,8 @@ void _thread_monitor_exit(struct k_thread *thread)
 		struct k_thread *prev_thread;
 
 		prev_thread = _kernel.threads;
-		while (prev_thread != NULL &&
-		       thread != prev_thread->next_thread) {
+		while ((prev_thread != NULL) &&
+			(thread != prev_thread->next_thread)) {
 			prev_thread = prev_thread->next_thread;
 		}
 		if (prev_thread != NULL) {
@@ -479,7 +479,7 @@ int _impl_k_thread_cancel(k_tid_t tid)
 		return -EINVAL;
 	}
 
-	_abort_thread_timeout(thread);
+	(void)_abort_thread_timeout(thread);
 	_thread_monitor_exit(thread);
 
 	irq_unlock(key);
@@ -510,7 +510,7 @@ void _impl_k_thread_suspend(struct k_thread *thread)
 	sys_trace_thread_suspend(thread);
 
 	if (thread == _current) {
-		_Swap(key);
+		(void)_Swap(key);
 	} else {
 		irq_unlock(key);
 	}
@@ -553,7 +553,7 @@ void _k_thread_single_abort(struct k_thread *thread)
 			_unpend_thread_no_timeout(thread);
 		}
 		if (_is_thread_timeout_active(thread)) {
-			_abort_thread_timeout(thread);
+			(void)_abort_thread_timeout(thread);
 		}
 	}
 
@@ -661,7 +661,7 @@ void k_thread_access_grant(struct k_thread *thread, ...)
 	va_list args;
 	va_start(args, thread);
 
-	while (1) {
+	while (true) {
 		void *object = va_arg(args, void *);
 		if (object == NULL) {
 			break;

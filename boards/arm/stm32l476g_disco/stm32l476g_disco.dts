@@ -35,23 +35,23 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		joy_center: joystick@0 {
+		joy_center: joystick_center {
 			label = "joystick center";
 			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
 		};
-		joy_down: joystick@1 {
+		joy_down: joystick_down {
 			label = "joystick down";
 			gpios = <&gpioa 5 GPIO_INT_ACTIVE_LOW>;
 		};
-		joy_up: joystick@2 {
+		joy_up: joystick_up {
 			label = "joystick up";
 			gpios = <&gpioa 3 GPIO_INT_ACTIVE_LOW>;
 		};
-		joy_left: joystick@3 {
+		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&gpioa 1 GPIO_INT_ACTIVE_LOW>;
 		};
-		joy_right: joystick@4 {
+		joy_right: joystick_right {
 			label = "joystick right";
 			gpios = <&gpioa 2 GPIO_INT_ACTIVE_LOW>;
 		};

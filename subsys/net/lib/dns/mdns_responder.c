@@ -46,7 +46,7 @@ static struct net_context *ipv6;
 #define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + \
 				 CONFIG_MDNS_RESOLVER_ADDITIONAL_BUF_CTR)
 
-NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
+NET_BUF_POOL_DEFINE(mdns_msg_pool, DNS_RESOLVER_BUF_CTR,
 		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
 
 #if defined(CONFIG_NET_IPV6)
@@ -228,10 +228,10 @@ static int send_response(struct net_context *ctx, struct net_pkt *pkt,
 
 	if (qtype == DNS_RR_TYPE_A) {
 #if defined(CONFIG_NET_IPV4)
-		struct in_addr *addr;
+		const struct in_addr *addr;
 
-		/* For IPv4 we take the first address in the interface */
-		addr = &net_pkt_iface(pkt)->ipv4.unicast[0].address.in_addr;
+		addr = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
+						   &NET_IPV4_HDR(pkt)->src);
 
 		create_ipv4_addr(net_sin(&dst));
 		dst_len = sizeof(struct sockaddr_in);
@@ -341,7 +341,7 @@ static int dns_read(struct net_context *ctx,
 		enum dns_class qclass;
 		u8_t *lquery;
 
-		memset(result->data, 0, net_buf_tailroom(result));
+		(void)memset(result->data, 0, net_buf_tailroom(result));
 		result->len = 0;
 
 		ret = dns_unpack_query(&dns_msg, result, &qtype, &qclass);
@@ -403,7 +403,7 @@ static void recv_cb(struct net_context *net_ctx,
 		goto quit;
 	}
 
-	dns_data = net_buf_alloc(&dns_msg_pool, BUF_ALLOC_TIMEOUT);
+	dns_data = net_buf_alloc(&mdns_msg_pool, BUF_ALLOC_TIMEOUT);
 	if (!dns_data) {
 		goto quit;
 	}

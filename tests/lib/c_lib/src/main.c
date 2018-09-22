@@ -123,7 +123,7 @@ char buffer[BUFSIZE];
 
 void test_memset(void)
 {
-	memset(buffer, 'a', BUFSIZE);
+	(void)memset(buffer, 'a', BUFSIZE);
 	zassert_true((buffer[0] == 'a'), "memset");
 	zassert_true((buffer[BUFSIZE - 1] == 'a'), "memset");
 }
@@ -136,8 +136,8 @@ void test_memset(void)
 
 void test_strlen(void)
 {
-	memset(buffer, '\0', BUFSIZE);
-	memset(buffer, 'b', 5); /* 5 is BUFSIZE / 2 */
+	(void)memset(buffer, '\0', BUFSIZE);
+	(void)memset(buffer, 'b', 5); /* 5 is BUFSIZE / 2 */
 	zassert_equal(strlen(buffer), 5, "strlen");
 }
 
@@ -185,7 +185,7 @@ void test_strncmp(void)
 
 void test_strcpy(void)
 {
-	memset(buffer, '\0', BUFSIZE);
+	(void)memset(buffer, '\0', BUFSIZE);
 	strcpy(buffer, "10 chars!\0");
 
 	zassert_true((strcmp(buffer, "10 chars!\0") == 0), "strcpy");
@@ -201,7 +201,7 @@ void test_strncpy(void)
 {
 	int ret;
 
-	memset(buffer, '\0', BUFSIZE);
+	(void)memset(buffer, '\0', BUFSIZE);
 	strncpy(buffer, "This is over 10 characters", BUFSIZE);
 
 	/* Purposely different values */
@@ -221,7 +221,7 @@ void test_strchr(void)
 	char *rs = NULL;
 	int ret;
 
-	memset(buffer, '\0', BUFSIZE);
+	(void)memset(buffer, '\0', BUFSIZE);
 	strncpy(buffer, "Copy 10", BUFSIZE);
 
 	rs = strchr(buffer, '1');

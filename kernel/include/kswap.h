@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _KSWAP_H
-#define _KSWAP_H
+#ifndef ZEPHYR_KERNEL_INCLUDE_KSWAP_H_
+#define ZEPHYR_KERNEL_INCLUDE_KSWAP_H_
 
 #include <ksched.h>
 #include <kernel_arch_func.h>
@@ -40,7 +40,7 @@ void _smp_release_global_lock(struct k_thread *thread);
  * Needed for SMP, where the scheduler requires spinlocking that we
  * don't want to have to do in per-architecture assembly.
  */
-static inline unsigned int _Swap(unsigned int key)
+static inline int _Swap(unsigned int key)
 {
 	struct k_thread *new_thread, *old_thread;
 	int ret = 0;
@@ -90,11 +90,11 @@ static inline unsigned int _Swap(unsigned int key)
 
 #else /* !CONFIG_USE_SWITCH */
 
-extern unsigned int __swap(unsigned int key);
+extern int __swap(unsigned int key);
 
-static inline unsigned int _Swap(unsigned int key)
+static inline int _Swap(unsigned int key)
 {
-	unsigned int ret;
+	int ret;
 	_check_stack_sentinel();
 	_update_time_slice_before_swap();
 
@@ -110,4 +110,4 @@ static inline unsigned int _Swap(unsigned int key)
 }
 #endif
 
-#endif /* _KSWAP_H */
+#endif /* ZEPHYR_KERNEL_INCLUDE_KSWAP_H_ */

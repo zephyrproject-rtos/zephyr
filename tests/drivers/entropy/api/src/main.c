@@ -29,7 +29,7 @@ static int random_entropy(struct device *dev, char *buffer, char num)
 	int ret, i;
 	int count = 0;
 
-	memset(buffer, num, BUFFER_LENGTH);
+	(void)memset(buffer, num, BUFFER_LENGTH);
 
 	/* The BUFFER_LENGTH-1 is used so the driver will not
 	 * write the last byte of the buffer. If that last

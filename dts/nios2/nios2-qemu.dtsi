@@ -1,7 +1,5 @@
 #include "skeleton.dtsi"
 
-#define __SIZE_K(x) (x * 1024)
-
 / {
 	cpus {
 		#address-cells = <1>;
@@ -16,6 +14,7 @@
 	};
 
 	flash0: flash@0 {
+		compatible = "soc-nv-flash";
 		reg = <0x420000 0x20000>;
 	};
 
@@ -31,10 +30,18 @@
 		compatible = "simple-bus";
 		ranges;
 
-		uart0: uart@201000 {
+		jtag_uart: uart@201000 {
 			compatible = "altera,jtag-uart";
 			reg = <0x201000 0x400>;
 			label = "jtag_uart0";
+
+			status = "disabled";
+		};
+
+		ns16550_uart: uart@440000 {
+			compatible = "ns16550";
+			reg = <0x440000 0x400>;
+			label = "UART_0";
 
 			status = "disabled";
 		};

@@ -50,9 +50,9 @@ zephyr_library_named(zephyr)
 zephyr_include_directories(
   kernel/include
   arch/${ARCH}/include
-  arch/${ARCH}/soc/${SOC_PATH}
-  arch/${ARCH}/soc/${SOC_PATH}/include
-  arch/${ARCH}/soc/${SOC_FAMILY}/include
+  ${SOC_DIR}/${ARCH}/${SOC_PATH}
+  ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
+  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/include
   ${BOARD_DIR}
   include
   include/drivers
@@ -295,7 +295,7 @@ else()
   set(LINKER_SCRIPT ${BOARD_DIR}/linker.ld)
   if(NOT EXISTS ${LINKER_SCRIPT})
     # If not available, try an SoC specific linker file
-    set(LINKER_SCRIPT ${ZEPHYR_BASE}/arch/${ARCH}/soc/${SOC_PATH}/linker.ld)
+    set(LINKER_SCRIPT ${SOC_DIR}/${ARCH}/${SOC_PATH}/linker.ld)
   endif()
 endif()
 
@@ -335,6 +335,13 @@ add_subdirectory(misc)
 # This is because source file properties are directory scoped, including the GENERATED
 # property which is set implicitly for custom command outputs
 include(misc/generated/CMakeLists.txt)
+
+if(EXISTS ${SOC_DIR}/${ARCH}/CMakeLists.txt)
+  add_subdirectory(${SOC_DIR}/${ARCH} soc/${ARCH})
+else()
+  add_subdirectory(${SOC_DIR}/${ARCH}/${SOC_PATH} soc/${ARCH}/${SOC_PATH})
+endif()
+
 add_subdirectory(boards)
 add_subdirectory(ext)
 add_subdirectory(subsys)
@@ -1022,7 +1029,7 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
         add_custom_target(
           ${APP_SMEM_DEP} ALL
           DEPENDS app
-          DEPENDS ${PRIV_STACK_DEP}
+          kernel
          )
 
         add_custom_command(
@@ -1050,6 +1057,7 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
       DEPENDS
       linker_app_sizing.cmd
       offsets_h
+      ${APP_SMEM_DEP}
     )
 
     set_property(TARGET
@@ -1088,7 +1096,7 @@ if(CONFIG_ARM)
   add_custom_target(
     linker_priv_stacks_script
     DEPENDS
-    ${ALIGN_SIZING_DEP}
+    ${ALIGN_SIZING_DEP} ${APP_SMEM_DEP}
     linker_priv_stacks.cmd
     offsets_h
     )

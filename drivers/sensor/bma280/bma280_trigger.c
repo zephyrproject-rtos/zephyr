@@ -264,7 +264,7 @@ int bma280_init_interrupt(struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_BMA280_THREAD_STACK_SIZE,
-			(k_thread_entry_t)bma280_thread, POINTER_TO_INT(dev),
+			(k_thread_entry_t)bma280_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_BMA280_THREAD_PRIORITY),
 			0, 0);
 #elif defined(CONFIG_BMA280_TRIGGER_GLOBAL_THREAD)

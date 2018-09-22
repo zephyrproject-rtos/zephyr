@@ -304,8 +304,8 @@ static void socket_put(struct wncm14a2a_socket *sock)
 
 	sock->context = NULL;
 	sock->socket_id = 0;
-	memset(&sock->src, 0, sizeof(struct sockaddr));
-	memset(&sock->dst, 0, sizeof(struct sockaddr));
+	(void)memset(&sock->src, 0, sizeof(struct sockaddr));
+	(void)memset(&sock->dst, 0, sizeof(struct sockaddr));
 }
 
 char *wncm14a2a_sprint_ip_addr(const struct sockaddr *addr)
@@ -512,7 +512,7 @@ static int net_pkt_setup_ip_data(struct net_pkt *pkt,
 
 		net_buf_add(pkt->frags, NET_UDPH_LEN);
 		udp = net_udp_get_hdr(pkt, &hdr);
-		memset(udp, 0, NET_UDPH_LEN);
+		(void)memset(udp, 0, NET_UDPH_LEN);
 
 		/* Setup UDP header */
 		udp->src_port = src_port;
@@ -527,7 +527,7 @@ static int net_pkt_setup_ip_data(struct net_pkt *pkt,
 
 		net_buf_add(pkt->frags, NET_TCPH_LEN);
 		tcp = net_tcp_get_hdr(pkt, &hdr);
-		memset(tcp, 0, NET_TCPH_LEN);
+		(void)memset(tcp, 0, NET_TCPH_LEN);
 
 		/* Setup TCP header */
 		tcp->src_port = src_port;
@@ -621,7 +621,7 @@ static void on_cmd_atcmdinfo_rssi(struct net_buf **buf, u16_t len)
 	char value[64];
 
 	value_size = sizeof(value);
-	memset(value, 0, value_size);
+	(void)memset(value, 0, value_size);
 	while (*buf && len > 0 && i < value_size) {
 		value[i] = net_buf_pull_u8(*buf);
 		if (!(*buf)->len) {
@@ -777,7 +777,7 @@ static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 	/* first comma marks the end of actual_length */
 	i = 0;
 	value_size = sizeof(value);
-	memset(value, 0, value_size);
+	(void)memset(value, 0, value_size);
 	while (*buf && i < value_size) {
 		value[i++] = net_buf_pull_u8(*buf);
 		len--;
@@ -1444,7 +1444,7 @@ static int wncm14a2a_init(struct device *dev)
 	__ASSERT(sizeof(pinconfig) == MAX_MDM_CONTROL_PINS,
 	       "Incorrect modem pinconfig!");
 
-	memset(&ictx, 0, sizeof(ictx));
+	(void)memset(&ictx, 0, sizeof(ictx));
 	for (i = 0; i < MDM_MAX_SOCKETS; i++) {
 		k_work_init(&ictx.sockets[i].recv_cb_work,
 			    sockreadrecv_cb_work);

@@ -17,8 +17,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef __BT_A2DP_SBC_H
-#define __BT_A2DP_SBC_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_A2DP_CODEC_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_A2DP_CODEC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,4 +70,4 @@ struct bt_a2dp_codec_sbc_params {
 }
 #endif
 
-#endif /* __BT_A2DP_SBC_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_A2DP_CODEC_H_ */

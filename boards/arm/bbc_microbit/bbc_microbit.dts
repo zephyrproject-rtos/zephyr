@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf51822.dtsi>
+#include <nordic/nrf51822_qfaa.dtsi>
 
 / {
 	model = "BBC Micro:bit";
@@ -29,6 +29,8 @@
 &uart0 {
 	status = "ok";
 	current-speed = <115200>;
+	tx-pin = <24>;
+	rx-pin = <25>;
 };
 
 &i2c0 {
@@ -41,7 +43,7 @@
 &flash0 {
 	/*
 	 * For more information, see:
-	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
 	 */
 	partitions {
 		compatible = "fixed-partitions";

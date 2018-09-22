@@ -208,13 +208,13 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 		return -ENOTEMPTY;
 	}
 
-	memset(ctx, 0, sizeof(*ctx));
+	(void)memset(ctx, 0, sizeof(*ctx));
 
 	if (servers) {
 		for (i = 0; idx < SERVER_COUNT && servers[i]; i++) {
 			struct sockaddr *addr = &ctx->servers[idx].dns_server;
 
-			memset(addr, 0, sizeof(*addr));
+			(void)memset(addr, 0, sizeof(*addr));
 
 			ret = net_ipaddr_parse(servers[i], strlen(servers[i]),
 					       addr);

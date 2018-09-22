@@ -385,7 +385,7 @@ void pci_header_get(u32_t controller,
 
 	/* clear out the header */
 
-	memset(pci_dev_header, 0, sizeof(*pci_dev_header));
+	(void)memset(pci_dev_header, 0, sizeof(*pci_dev_header));
 
 	/* fill in the PCI header from the device */
 

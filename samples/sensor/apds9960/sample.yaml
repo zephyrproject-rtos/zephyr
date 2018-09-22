@@ -6,3 +6,10 @@ tests:
     platform_whitelist: reel_board
     tags: samples sensor
     depends_on: i2c gpio
+  test-trigger:
+    harness: sensor
+    platform_whitelist: reel_board
+    tags: samples sensor
+    depends_on: i2c gpio
+    extra_configs:
+      - CONFIG_APDS9960_TRIGGER_GLOBAL_THREAD=y

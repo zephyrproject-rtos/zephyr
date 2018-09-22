@@ -8,6 +8,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define BT_GATT_CENTRAL_ADDR_RES_NOT_SUPP	0
+#define BT_GATT_CENTRAL_ADDR_RES_SUPP		1
+
 void bt_gatt_init(void);
 void bt_gatt_connected(struct bt_conn *conn);
 void bt_gatt_disconnected(struct bt_conn *conn);

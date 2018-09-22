@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf52832.dtsi>
+#include <nordic/nrf52832_qfaa.dtsi>
 
 / {
 	model = "Redbear BLE Nano 2";
@@ -31,6 +31,10 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "ok";
+	tx-pin = <29>;
+	rx-pin = <30>;
+	rts-pin = <2>;
+	cts-pin = <28>;
 };
 
 &i2c0 {
@@ -42,7 +46,7 @@
 &flash0 {
 	/*
 	 * For more information, see:
-	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
 	 */
 	partitions {
 		compatible = "fixed-partitions";

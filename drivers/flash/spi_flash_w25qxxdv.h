@@ -10,8 +10,8 @@
  * @brief This file defines the private data structures for spi flash driver
  */
 
-#ifndef __SPI_FLASH_W25QXXDV_H__
-#define __SPI_FLASH_W25QXXDV_H__
+#ifndef ZEPHYR_DRIVERS_FLASH_SPI_FLASH_W25QXXDV_H_
+#define ZEPHYR_DRIVERS_FLASH_SPI_FLASH_W25QXXDV_H_
 
 
 struct spi_flash_data {
@@ -26,4 +26,4 @@ struct spi_flash_data {
 };
 
 
-#endif /* __SPI_FLASH_W25QXXDV_H__ */
+#endif /* ZEPHYR_DRIVERS_FLASH_SPI_FLASH_W25QXXDV_H_ */

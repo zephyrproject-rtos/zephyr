@@ -41,8 +41,8 @@
 
 #include <version.h>
 
-#ifndef USB_COMMON_H_
-#define USB_COMMON_H_
+#ifndef ZEPHYR_INCLUDE_USB_USB_COMMON_H_
+#define ZEPHYR_INCLUDE_USB_USB_COMMON_H_
 
 #define BCD(x) ((((x) / 10) << 4) | ((x) / 10))
 
@@ -198,4 +198,4 @@ struct usb_ep_descriptor {
 	u8_t bInterval;
 } __packed;
 
-#endif /* USB_COMMON_H_ */
+#endif /* ZEPHYR_INCLUDE_USB_USB_COMMON_H_ */

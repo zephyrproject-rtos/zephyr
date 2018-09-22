@@ -258,7 +258,7 @@ int net_icmpv6_set_na_hdr(struct net_pkt *pkt, struct net_icmpv6_na_hdr *hdr)
 	struct net_buf *frag;
 	u16_t pos;
 
-	memset(hdr->reserved, 0, sizeof(hdr->reserved));
+	(void)memset(hdr->reserved, 0, sizeof(hdr->reserved));
 
 	frag = net_pkt_write(pkt, pkt->frags,
 			     net_pkt_ip_hdr_len(pkt) +
@@ -363,13 +363,13 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 #endif
 	}
 
-	net_pkt_ll_src(pkt)->addr = net_pkt_ll_dst(orig)->addr;
-	net_pkt_ll_src(pkt)->len = net_pkt_ll_dst(orig)->len;
+	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_dst(orig)->addr;
+	net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_dst(orig)->len;
 
 	/* We must not set the destination ll address here but trust
 	 * that it is set properly using a value from neighbor cache.
 	 */
-	net_pkt_ll_dst(pkt)->addr = NULL;
+	net_pkt_lladdr_dst(pkt)->addr = NULL;
 
 	/* ICMPv6 fields */
 	ret = net_icmpv6_get_hdr(pkt, &icmp_hdr);
@@ -498,10 +498,10 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, &addr);
 	}
 
-	net_pkt_ll_src(pkt)->addr = net_pkt_ll_dst(orig)->addr;
-	net_pkt_ll_src(pkt)->len = net_pkt_ll_dst(orig)->len;
-	net_pkt_ll_dst(pkt)->addr = net_pkt_ll_src(orig)->addr;
-	net_pkt_ll_dst(pkt)->len = net_pkt_ll_src(orig)->len;
+	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_dst(orig)->addr;
+	net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_dst(orig)->len;
+	net_pkt_lladdr_dst(pkt)->addr = net_pkt_lladdr_src(orig)->addr;
+	net_pkt_lladdr_dst(pkt)->len = net_pkt_lladdr_src(orig)->len;
 
 	/* Clear and then set the chksum */
 	err = net_icmpv6_set_chksum(pkt);

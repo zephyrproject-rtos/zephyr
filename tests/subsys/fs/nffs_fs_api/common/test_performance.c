@@ -91,7 +91,7 @@ void test_performance(void)
 
 	rc = fs_open(&file, NFFS_MNTP"/file");
 	zassert_equal(rc, 0, "cannot open file");
-	memset(nffs_test_buf, 0, RW_CHUNK_LENGTH);
+	(void)memset(nffs_test_buf, 0, RW_CHUNK_LENGTH);
 	for (i = 0; i < RW_DATA_LENGTH; ) {
 		rc = fs_write(&file, nffs_test_buf, RW_CHUNK_LENGTH);
 		zassert_equal(rc, RW_CHUNK_LENGTH, "cannot write file");
@@ -134,7 +134,7 @@ void test_performance(void)
 
 	rc = fs_open(&file, NFFS_MNTP"/file");
 	zassert_equal(rc, 0, "cannot open file");
-	memset(nffs_test_buf, 0, NFFS_BLOCK_MAX_DATA_SZ_MAX);
+	(void)memset(nffs_test_buf, 0, NFFS_BLOCK_MAX_DATA_SZ_MAX);
 	for (i = 0; i < RW_DATA_LENGTH; ) {
 		rc = fs_write(&file, nffs_test_buf, NFFS_BLOCK_MAX_DATA_SZ_MAX);
 		zassert_equal(rc, NFFS_BLOCK_MAX_DATA_SZ_MAX,

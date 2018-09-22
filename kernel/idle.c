@@ -11,6 +11,7 @@
 #include <drivers/system_timer.h>
 #include <wait_q.h>
 #include <power.h>
+#include <stdbool.h>
 
 #if defined(CONFIG_TICKLESS_IDLE)
 /*
@@ -20,7 +21,7 @@
 s32_t _sys_idle_threshold_ticks = CONFIG_TICKLESS_IDLE_THRESH;
 
 #if defined(CONFIG_TICKLESS_KERNEL)
-#define _must_enter_tickless_idle(ticks) (1)
+#define _must_enter_tickless_idle(ticks) (true)
 #else
 #define _must_enter_tickless_idle(ticks) \
 		((ticks == K_FOREVER) || (ticks >= _sys_idle_threshold_ticks))
@@ -47,7 +48,6 @@ void __attribute__((weak)) _sys_soc_resume_from_deep_sleep(void)
 {
 }
 #endif
-
 /**
  *
  * @brief Indicate that kernel is idling in tickless mode
@@ -64,7 +64,7 @@ static void set_kernel_idle_time_in_ticks(s32_t ticks)
 	_kernel.idle = ticks;
 }
 #else
-#define set_kernel_idle_time_in_ticks(x) do { } while (0)
+#define set_kernel_idle_time_in_ticks(x) do { } while (false)
 #endif
 
 #ifndef CONFIG_SMP
@@ -175,7 +175,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 	 * busy waiting is needed to prevent lock contention.  Long
 	 * term we need to wake up idle CPUs with an IPI.
 	 */
-	while (1) {
+	while (true) {
 		k_busy_wait(100);
 		k_yield();
 	}

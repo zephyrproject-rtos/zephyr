@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef LOG_MSG_H
-#define LOG_MSG_H
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_
 
 #include <kernel.h>
 #include <atomic.h>
@@ -522,4 +522,4 @@ struct log_msg *log_msg_create_n(const char *str,
 }
 #endif
 
-#endif /* LOG_MSG_H */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_ */

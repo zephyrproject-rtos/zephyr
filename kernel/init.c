@@ -32,6 +32,7 @@
 #include <entropy.h>
 #include <logging/log_ctrl.h>
 #include <tracing.h>
+#include <stdbool.h>
 
 /* kernel build timestamp items */
 #define BUILD_TIMESTAMP "BUILD: " __DATE__ " " __TIME__
@@ -55,7 +56,7 @@ static const unsigned int boot_delay;
 #endif
 
 #if !defined(CONFIG_BOOT_BANNER)
-#define PRINT_BOOT_BANNER() do { } while (0)
+#define PRINT_BOOT_BANNER() do { } while (false)
 #else
 #define PRINT_BOOT_BANNER() printk("***** " BOOT_BANNER " *****\n")
 #endif
@@ -129,24 +130,6 @@ K_THREAD_STACK_DEFINE(_interrupt_stack3, CONFIG_ISR_STACK_SIZE);
 
 extern void idle(void *unused1, void *unused2, void *unused3);
 
-/* LCOV_EXCL_START */
-#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_PRINTK)
-extern K_THREAD_STACK_DEFINE(sys_work_q_stack,
-			     CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE);
-
-
-void k_call_stacks_analyze(void)
-{
-	printk("Kernel stacks:\n");
-	STACK_ANALYZE("main     ", _main_stack);
-	STACK_ANALYZE("idle     ", _idle_stack);
-	STACK_ANALYZE("interrupt", _interrupt_stack);
-	STACK_ANALYZE("workqueue", sys_work_q_stack);
-}
-#else
-void k_call_stacks_analyze(void) { }
-#endif
-/* LCOV_EXCL_STOP */
 
 /**
  *
@@ -158,15 +141,15 @@ void k_call_stacks_analyze(void) { }
  */
 void _bss_zero(void)
 {
-	memset(&__bss_start, 0,
-		 ((u32_t) &__bss_end - (u32_t) &__bss_start));
+	(void)memset(&__bss_start, 0,
+		     ((u32_t) &__bss_end - (u32_t) &__bss_start));
 #ifdef CONFIG_CCM_BASE_ADDRESS
-	memset(&__ccm_bss_start, 0,
-		((u32_t) &__ccm_bss_end - (u32_t) &__ccm_bss_start));
+	(void)memset(&__ccm_bss_start, 0,
+		     ((u32_t) &__ccm_bss_end - (u32_t) &__ccm_bss_start));
 #endif
 #ifdef CONFIG_APPLICATION_MEMORY
-	memset(&__app_bss_start, 0,
-		 ((u32_t) &__app_bss_end - (u32_t) &__app_bss_start));
+	(void)memset(&__app_bss_start, 0,
+		     ((u32_t) &__app_bss_end - (u32_t) &__app_bss_start));
 #endif
 }
 
@@ -387,7 +370,7 @@ static void switch_to_main_thread(void)
 	 * will never be rescheduled in.
 	 */
 
-	_Swap(irq_lock());
+	(void)_Swap(irq_lock());
 #endif
 }
 #endif /* CONFIG_MULTITHREDING */
@@ -436,18 +419,6 @@ sys_rand32_fallback:
 extern uintptr_t __stack_chk_guard;
 #endif /* CONFIG_STACK_CANARIES */
 
-#ifndef CONFIG_MULTITHREADING
-static void enable_interrupts(void)
-{
-#ifdef Z_ARCH_INT_ENABLE
-	Z_ARCH_INT_ENABLE();
-#else
-# pragma message "Z_ARCH_INT_ENABLE not defined for this architecture."
-# pragma message "Entry to MULTITHREADING=n app code will be with interrupts disabled."
-#endif
-}
-#endif
-
 /**
  *
  * @brief Initialize kernel
@@ -470,7 +441,7 @@ FUNC_NORETURN void _Cstart(void)
 	char dummy_thread_memory[sizeof(struct k_thread)];
 	struct k_thread *dummy_thread = (struct k_thread *)&dummy_thread_memory;
 
-	memset(dummy_thread_memory, 0, sizeof(dummy_thread_memory));
+	(void)memset(dummy_thread_memory, 0, sizeof(dummy_thread_memory));
 #endif
 #endif
 	/*
@@ -502,11 +473,10 @@ FUNC_NORETURN void _Cstart(void)
 	prepare_multithreading(dummy_thread);
 	switch_to_main_thread();
 #else
-	enable_interrupts();
 	bg_thread_main(NULL, NULL, NULL);
 
 	irq_lock();
-	while (1) {
+	while (true) {
 	}
 #endif
 

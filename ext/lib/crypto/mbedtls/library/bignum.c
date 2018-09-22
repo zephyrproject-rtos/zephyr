@@ -45,6 +45,7 @@
 
 #include "mbedtls/bignum.h"
 #include "mbedtls/bn_mul.h"
+#include "mbedtls/platform_util.h"
 
 #include <string.h>
 
@@ -58,16 +59,6 @@
 #define mbedtls_free       free
 #endif
 
-/* Implementation that should never be optimized out by the compiler */
-static void mbedtls_mpi_zeroize( mbedtls_mpi_uint *v, size_t n ) {
-    volatile mbedtls_mpi_uint *p = v; while( n-- ) *p++ = 0;
-}
-
-/* Implementation that should never be optimized out by the compiler */
-static void mbedtls_zeroize( void *v, size_t n ) {
-    volatile unsigned char *p = v; while( n-- ) *p++ = 0;
-}
-
 #define ciL    (sizeof(mbedtls_mpi_uint))         /* chars in limb  */
 #define biL    (ciL << 3)               /* bits  in limb  */
 #define biH    (ciL << 2)               /* half limb size */
@@ -80,6 +71,12 @@ static void mbedtls_zeroize( void *v, size_t n ) {
  */
 #define BITS_TO_LIMBS(i)  ( (i) / biL + ( (i) % biL != 0 ) )
 #define CHARS_TO_LIMBS(i) ( (i) / ciL + ( (i) % ciL != 0 ) )
+
+/* Implementation that should never be optimized out by the compiler */
+static void mbedtls_mpi_zeroize( mbedtls_mpi_uint *v, size_t n )
+{
+    mbedtls_platform_zeroize( v, ciL * n );
+}
 
 /*
  * Initialize one MPI
@@ -1897,7 +1894,7 @@ int mbedtls_mpi_fill_random( mbedtls_mpi *X, size_t size,
     MBEDTLS_MPI_CHK( mbedtls_mpi_read_binary( X, buf, size ) );
 
 cleanup:
-    mbedtls_zeroize( buf, sizeof( buf ) );
+    mbedtls_platform_zeroize( buf, sizeof( buf ) );
     return( ret );
 }
 

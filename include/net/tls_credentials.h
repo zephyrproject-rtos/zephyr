@@ -10,8 +10,8 @@
  * An API for applications to configure TLS credentials.
  */
 
-#ifndef __TLS_CREDENTIAL_H
-#define __TLS_CREDENTIAL_H
+#ifndef ZEPHYR_INCLUDE_NET_TLS_CREDENTIALS_H_
+#define ZEPHYR_INCLUDE_NET_TLS_CREDENTIALS_H_
 
 /**
  * @brief TLS credentials management
@@ -108,4 +108,4 @@ int tls_credential_delete(sec_tag_t tag, enum tls_credential_type type);
  * @}
  */
 
-#endif /* __TLS_CREDENTIAL_H */
+#endif /* ZEPHYR_INCLUDE_NET_TLS_CREDENTIALS_H_ */

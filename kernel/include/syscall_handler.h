@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _ZEPHYR_SYSCALL_HANDLER_H_
-#define _ZEPHYR_SYSCALL_HANDLER_H_
+#ifndef ZEPHYR_KERNEL_INCLUDE_SYSCALL_HANDLER_H_
+#define ZEPHYR_KERNEL_INCLUDE_SYSCALL_HANDLER_H_
 
 #ifdef CONFIG_USERSPACE
 
@@ -14,6 +14,7 @@
 #include <kernel.h>
 #include <misc/printk.h>
 #include <kernel_internal.h>
+#include <stdbool.h>
 
 extern const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT];
 
@@ -259,7 +260,7 @@ extern int z_user_string_copy(char *dst, char *src, size_t maxlen);
 		if (expr) { \
 			_arch_syscall_oops(ssf); \
 		} \
-	} while (0)
+	} while (false)
 
 static inline __attribute__((warn_unused_result)) __printf_like(2, 3)
 bool z_syscall_verify_msg(bool expr, const char *fmt, ...)
@@ -605,4 +606,4 @@ static inline int _obj_validation_check(struct _k_object *ko,
 
 #endif /* CONFIG_USERSPACE */
 
-#endif /* _ZEPHYR_SYSCALL_H_ */
+#endif /* ZEPHYR_KERNEL_INCLUDE_SYSCALL_HANDLER_H_ */

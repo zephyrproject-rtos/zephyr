@@ -52,7 +52,7 @@ static void prepare_sock_v6(const char *addr,
 	*sock = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(*sock >= 0, "socket open failed");
 
-	memset(sockaddr, 0, sizeof(*sockaddr));
+	(void)memset(sockaddr, 0, sizeof(*sockaddr));
 	sockaddr->sin6_family = AF_INET6;
 	sockaddr->sin6_port = htons(port);
 	rv = inet_pton(AF_INET6, addr, &sockaddr->sin6_addr);

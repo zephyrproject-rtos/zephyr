@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _STM32_IWDG_H_
-#define _STM32_IWDG_H_
+#ifndef ZEPHYR_DRIVERS_WATCHDOG_IWDG_STM32_H_
+#define ZEPHYR_DRIVERS_WATCHDOG_IWDG_STM32_H_
 
 #include <zephyr/types.h>
 
@@ -32,4 +32,4 @@ struct iwdg_stm32_data {
 #define IWDG_STM32_STRUCT(dev)					\
 	((IWDG_TypeDef *)(IWDG_STM32_DATA(dev))->Instance)
 
-#endif	/* _STM32_IWDG_H_ */
+#endif	/* ZEPHYR_DRIVERS_WATCHDOG_IWDG_STM32_H_ */

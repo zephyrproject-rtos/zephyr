@@ -1,0 +1,21 @@
+# Kconfig - EFR32FG1P series configuration options
+
+#
+# Copyright (c) 2018 Christian Taedcke
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_EFR32FG1P
+
+config SOC_SERIES
+	default "efr32fg1p"
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	default 33
+
+source "soc/arm/silabs_exx32/efr32fg1p/Kconfig.defconfig.e*"
+
+endif # SOC_SERIES_EFR32FG1P

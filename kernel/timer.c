@@ -70,7 +70,7 @@ void _timer_expiration_handler(struct _timeout *t)
 
 	thread = _waitq_head(&timer->wait_q);
 
-	if (!thread) {
+	if (thread == NULL) {
 		return;
 	}
 
@@ -122,10 +122,7 @@ void _impl_k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
 
 	unsigned int key = irq_lock();
 
-	if (timer->timeout.delta_ticks_from_prev != _INACTIVE) {
-		_abort_timeout(&timer->timeout);
-	}
-
+	(void)_abort_timeout(&timer->timeout);
 	timer->period = period_in_ticks;
 	timer->status = 0;
 	_add_timeout(NULL, &timer->timeout, &timer->wait_q, duration_in_ticks);
@@ -166,7 +163,7 @@ void _impl_k_timer_stop(struct k_timer *timer)
 	key = irq_lock();
 	struct k_thread *pending_thread = _unpend1_no_timeout(&timer->wait_q);
 
-	if (pending_thread) {
+	if (pending_thread != NULL) {
 		_ready_thread(pending_thread);
 	}
 
@@ -206,7 +203,7 @@ u32_t _impl_k_timer_status_sync(struct k_timer *timer)
 	if (result == 0) {
 		if (timer->timeout.delta_ticks_from_prev != _INACTIVE) {
 			/* wait for timer to expire or stop */
-			_pend_current_thread(key, &timer->wait_q, K_FOREVER);
+			(void)_pend_current_thread(key, &timer->wait_q, K_FOREVER);
 
 			/* get updated timer status */
 			key = irq_lock();

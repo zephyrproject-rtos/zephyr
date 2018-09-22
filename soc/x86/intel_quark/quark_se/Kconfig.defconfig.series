@@ -1,0 +1,207 @@
+#
+# Copyright (c) 2016 Intel Corporation Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_QUARK_SE
+
+config SOC_SERIES
+	default "quark_se"
+
+config X86_IAMCU
+	def_bool y
+
+config X86_NO_MELTDOWN
+	def_bool y
+
+config	SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32000000
+
+config IOAPIC_NUM_RTES
+	default 64 if IOAPIC
+
+config LOAPIC_TIMER_IRQ
+	default 64 if LOAPIC_TIMER
+
+config QMSI
+	def_bool y
+
+config QMSI_BUILTIN
+	def_bool y
+
+if PWM
+config PWM_QMSI
+	def_bool y
+endif
+
+if PINMUX
+config PINMUX_QMSI
+	def_bool y
+endif
+
+if GPIO
+config GPIO_QMSI
+	def_bool y
+
+config GPIO_QMSI_0
+	def_bool y
+
+config GPIO_QMSI_1
+	def_bool y
+endif # GPIO
+
+if I2C
+config I2C_QMSI
+	def_bool y
+
+config I2C_0
+	def_bool y
+
+config I2C_1
+	def_bool y
+
+config I2C_SDA_SETUP
+	default 2
+
+config I2C_SDA_TX_HOLD
+	default 16
+
+config I2C_SDA_RX_HOLD
+	default 24
+
+endif # I2C
+
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_QUARK_SE
+	def_bool y
+
+if CLOCK_CONTROL_QUARK_SE
+
+config CLOCK_CONTROL_QUARK_SE_PERIPHERAL
+	def_bool y
+config CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
+	default "clk_peripheral"
+
+config CLOCK_CONTROL_QUARK_SE_EXTERNAL
+	def_bool y
+config CLOCK_CONTROL_QUARK_SE_EXTERNAL_DRV_NAME
+	default "clk_external"
+
+config CLOCK_CONTROL_QUARK_SE_SENSOR
+	def_bool y
+config CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME
+	default "clk_sensor"
+
+endif # CLOCK_CONTROL_QUARK_SE
+
+endif # CLOCK_CONTROL
+
+
+if COUNTER
+config AON_COUNTER_QMSI
+	def_bool y
+config AON_TIMER_QMSI
+	def_bool y
+config AON_TIMER_IRQ_PRI
+	default 2
+
+endif
+
+
+if SPI
+config SPI_DW
+	def_bool y
+
+config SPI_0
+	def_bool y
+
+config SPI_0_IRQ_PRI
+	default 2
+
+config SPI_1
+	def_bool y
+
+config SPI_1_IRQ_PRI
+	default 2
+
+config SPI_DW_FIFO_DEPTH
+	default 7
+
+if SPI_SLAVE
+
+config SPI_2
+	def_bool y
+
+config SPI_2_OP_MODES
+	default 2
+
+config SPI_2_IRQ_PRI
+	default 2
+
+endif # SPI_SLAVE
+
+endif # SPI
+
+
+if AIO_COMPARATOR
+config AIO_COMPARATOR_QMSI
+	def_bool y
+endif
+
+
+if WATCHDOG
+config WDT_QMSI
+	def_bool y
+
+config WDT_0_IRQ_PRI
+	default 2
+endif # WATCHDOG
+
+if RTC
+config RTC_QMSI
+	def_bool y
+endif # RTC
+
+if BT_H4
+
+config UART_QMSI_0
+	def_bool y
+
+config UART_QMSI_0_HW_FC
+	def_bool y
+
+endif # BT_H4
+
+if UART_QMSI
+
+config UART_QMSI_1
+	def_bool y
+
+endif # UART_QMSI
+
+if SOC_FLASH_QMSI
+config SOC_FLASH_QMSI_SYS_SIZE
+	default 0x60000
+endif # SOC_FLASH_QMSI
+
+if DMA
+config DMA_QMSI
+	def_bool y
+endif
+
+if USB
+config USB_DW
+	def_bool y
+config GPIO
+	def_bool y
+config USB_DW_IRQ_PRI
+	default 3
+endif # USB
+
+source "soc/x86/intel_quark/quark_se/Kconfig.defconfig.quark_se*"
+source "soc/x86/intel_quark/quark_se/Kconfig.defconfig.curie*"
+
+endif # SOC_SERIES_QUARK_SE

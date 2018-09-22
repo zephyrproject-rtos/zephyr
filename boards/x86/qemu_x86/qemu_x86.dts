@@ -1,11 +1,13 @@
 /dts-v1/;
 
-#define DT_FLASH_SIZE		__SIZE_K(4092)
+#include <mem.h>
+
+#define DT_FLASH_SIZE		DT_SIZE_K(4092)
 
 #if XIP
-	#define DT_SRAM_SIZE		__SIZE_K(4096)
+	#define DT_SRAM_SIZE		DT_SIZE_K(4096)
 #else
-	#define DT_SRAM_SIZE		__SIZE_K(8188)
+	#define DT_SRAM_SIZE		DT_SIZE_K(8188)
 #endif
 
 #include <ia32.dtsi>

@@ -168,7 +168,7 @@ int sntp_init(struct sntp_ctx *ctx, const char *srv_addr, u16_t srv_port,
 		return -EFAULT;
 	}
 
-	memset(ctx, 0, sizeof(struct sntp_ctx));
+	(void)memset(ctx, 0, sizeof(struct sntp_ctx));
 
 	rv = net_app_init_udp_client(&ctx->net_app_ctx, NULL, NULL, srv_addr,
 				     srv_port, timeout, ctx);

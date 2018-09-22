@@ -220,7 +220,7 @@ struct net_pkt *gptp_prepare_sync(int port)
 	hdr->reserved2 = 0;
 
 	/* PTP configuration. */
-	memset(&sync->reserved, 0, sizeof(sync->reserved));
+	(void)memset(&sync->reserved, 0, sizeof(sync->reserved));
 
 	net_buf_add(frag, sizeof(struct gptp_hdr) + sizeof(struct gptp_sync));
 
@@ -358,8 +358,8 @@ struct net_pkt *gptp_prepare_pdelay_req(int port)
 	       port_ds->port_id.clk_id, GPTP_CLOCK_ID_LEN);
 
 	/* PTP configuration. */
-	memset(&req->reserved1, 0, sizeof(req->reserved1));
-	memset(&req->reserved2, 0, sizeof(req->reserved2));
+	(void)memset(&req->reserved1, 0, sizeof(req->reserved1));
+	(void)memset(&req->reserved2, 0, sizeof(req->reserved2));
 
 	net_buf_add(frag, sizeof(struct gptp_hdr) +
 		    sizeof(struct gptp_pdelay_req));
@@ -622,7 +622,7 @@ struct net_pkt *gptp_prepare_announce(int port)
 	ann->tlv.type = GPTP_ANNOUNCE_MSG_PATH_SEQ_TYPE;
 
 	/* Clear reserved fields. */
-	memset(ann->reserved1, 0, sizeof(ann->reserved1));
+	(void)memset(ann->reserved1, 0, sizeof(ann->reserved1));
 	ann->reserved2 = 0;
 
 	hdr->message_length = htons(sizeof(struct gptp_hdr) +

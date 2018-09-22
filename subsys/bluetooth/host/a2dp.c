@@ -41,7 +41,7 @@ static struct bt_a2dp connection[CONFIG_BT_MAX_CONN];
 
 void a2d_reset(struct bt_a2dp *a2dp_conn)
 {
-	memset(a2dp_conn, 0, sizeof(struct bt_a2dp));
+	(void)memset(a2dp_conn, 0, sizeof(struct bt_a2dp));
 }
 
 struct bt_a2dp *get_new_connection(struct bt_conn *conn)

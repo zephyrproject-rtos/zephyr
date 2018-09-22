@@ -51,3 +51,12 @@ struct net_pkt *prepare_send_pkt(struct net_app_ctx *ctx,
 				 const char *name,
 				 int *expecting_len);
 void panic(const char *msg);
+
+#if defined(CONFIG_NET_VLAN)
+int init_vlan(void);
+#else
+static inline int init_vlan(void)
+{
+	return 0;
+}
+#endif /* CONFIG_NET_VLAN */

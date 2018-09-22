@@ -176,8 +176,8 @@ int ieee802154_security_init(struct ieee802154_security_ctx *sec_ctx)
 {
 	struct device *dev;
 
-	memset(&sec_ctx->enc, 0, sizeof(struct cipher_ctx));
-	memset(&sec_ctx->dec, 0, sizeof(struct cipher_ctx));
+	(void)memset(&sec_ctx->enc, 0, sizeof(struct cipher_ctx));
+	(void)memset(&sec_ctx->dec, 0, sizeof(struct cipher_ctx));
 
 	dev = device_get_binding(
 		CONFIG_NET_L2_IEEE802154_SECURITY_CRYPTO_DEV_NAME);

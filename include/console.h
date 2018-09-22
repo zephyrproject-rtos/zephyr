@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __CONSOLE_H__
-#define __CONSOLE_H__
+#ifndef ZEPHYR_INCLUDE_CONSOLE_H_
+#define ZEPHYR_INCLUDE_CONSOLE_H_
 
 #include <zephyr/types.h>
 #include <kernel.h>
@@ -102,4 +102,4 @@ void console_register_line_input(struct k_fifo *avail_queue,
 }
 #endif
 
-#endif /* __CONSOLE_H__ */
+#endif /* ZEPHYR_INCLUDE_CONSOLE_H_ */

@@ -4,18 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-choice
-	prompt "RISCV32 configuration selection"
-	depends on RISCV32
-	source "arch/riscv32/soc/*/Kconfig.soc"
-endchoice
-
 menu "RISCV32 Options"
 	depends on RISCV32
-
-# Include these first so that any properties (e.g. defaults) below can be
-# overriden (by defining symbols in multiple locations)
-source "arch/riscv32/soc/*/Kconfig"
 
 config ARCH
 	string

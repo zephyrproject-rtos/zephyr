@@ -23,11 +23,10 @@
 			reg = <1>;
 		};
 
-		intc: arcv2-intc@0 {
+		intc: arcv2-intc {
 			compatible = "snps,arcv2-intc";
 			interrupt-controller;
 			#interrupt-cells = <2>;
-			reg = <0>;
 		};
 	};
 

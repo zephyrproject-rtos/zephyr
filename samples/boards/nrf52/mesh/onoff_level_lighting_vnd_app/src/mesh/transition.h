@@ -16,17 +16,18 @@ enum transition_time {
 	LEVEL_TT,
 	LEVEL_TT_DELTA,
 	LEVEL_TT_MOVE,
-	LIGTH_LIGHTNESS_ACTUAL_TT,
-	LIGTH_LIGHTNESS_LINEAR_TT,
-	LIGTH_CTL_TT,
+	LIGHT_LIGHTNESS_ACTUAL_TT,
+	LIGHT_LIGHTNESS_LINEAR_TT,
+	LIGHT_CTL_TT,
 	LEVEL_TEMP_TT,
 	LEVEL_TEMP_TT_DELTA,
 	LEVEL_TEMP_TT_MOVE,
 	LIGHT_CTL_TEMP_TT
 };
 
-extern u8_t enable_transition;
-extern u8_t default_tt;
+extern u8_t enable_transition, default_tt;
+extern u32_t *ptr_tt_counter;
+extern s64_t transition_start_timestamp;
 
 struct k_timer onoff_transition_timer;
 struct k_timer level_lightness_transition_timer;
@@ -36,12 +37,19 @@ struct k_timer light_lightness_linear_transition_timer;
 struct k_timer light_ctl_transition_timer;
 struct k_timer light_ctl_temp_transition_timer;
 
+u8_t calculate_rt(s32_t duration_remainder);
+
+void onoff_calculate_rt(struct generic_onoff_state *state);
+void level_calculate_rt(struct generic_level_state *state);
+void light_lightness_actual_calculate_rt(struct light_lightness_state *state);
+void light_lightness_linear_calculate_rt(struct light_lightness_state *state);
+void light_ctl_calculate_rt(struct light_ctl_state *state);
+void light_ctl_temp_calculate_rt(struct light_ctl_state *state);
+
 void onoff_tt_values(struct generic_onoff_state *state);
 void level_tt_values(struct generic_level_state *state);
-void delta_level_tt_values(struct generic_level_state *state);
-void move_level_tt_values(struct generic_level_state *state);
-void light_lightnes_actual_tt_values(struct light_lightness_state *state);
-void light_lightnes_linear_tt_values(struct light_lightness_state *state);
+void light_lightness_actual_tt_values(struct light_lightness_state *state);
+void light_lightness_linear_tt_values(struct light_lightness_state *state);
 void light_ctl_tt_values(struct light_ctl_state *state);
 void light_ctl_temp_tt_values(struct light_ctl_state *state);
 

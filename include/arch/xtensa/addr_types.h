@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef XTENSA_ADDR_TYPES_H
-#define XTENSA_ADDR_TYPES_H
+#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_ADDR_TYPES_H_
+#define ZEPHYR_INCLUDE_ARCH_XTENSA_ADDR_TYPES_H_
 
 #ifndef _ASMLANGUAGE
 typedef unsigned int paddr_t;
 typedef unsigned int vaddr_t;
 #endif
 
-#endif /* XTENSA_ADDR_TYPES_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_ADDR_TYPES_H_ */
 

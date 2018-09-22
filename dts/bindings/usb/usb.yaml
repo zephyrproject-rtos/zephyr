@@ -16,6 +16,7 @@ properties:
       type: string
       category: required
       description: compatible strings
+      generation: define
 
     label:
       type: string

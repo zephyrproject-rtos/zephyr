@@ -11,21 +11,20 @@ menuconfig FXOS8700
 	help
 	  Enable driver for the FXOS8700 accelerometer/magnetometer
 
+if FXOS8700
+
 if !HAS_DTS_I2C_DEVICE
 
 config FXOS8700_NAME
 	string "Device name"
-	depends on FXOS8700
 	default "FXOS8700"
 
 config FXOS8700_I2C_NAME
 	string "I2C device name"
-	depends on FXOS8700
 	default I2C_0_NAME
 
 config FXOS8700_I2C_ADDRESS
 	hex "I2C address"
-	depends on FXOS8700
 	range 0x1c 0x1f
 	default 0x1d
 	help
@@ -36,7 +35,6 @@ endif # !HAS_DTS_I2C_DEVICE
 
 config FXOS8700_WHOAMI
 	hex "WHOAMI value"
-	depends on FXOS8700
 	range 0x00 0xff
 	default 0xc7
 	help
@@ -46,7 +44,6 @@ config FXOS8700_WHOAMI
 
 choice
 	prompt "Mode"
-	depends on FXOS8700
 	default FXOS8700_MODE_ACCEL
 
 config FXOS8700_MODE_ACCEL
@@ -62,7 +59,7 @@ endchoice
 
 config FXOS8700_TEMP
 	bool "Enable temperature"
-	depends on FXOS8700 && (FXOS8700_MODE_MAGN || FXOS8700_MODE_HYBRID)
+	depends on FXOS8700_MODE_MAGN || FXOS8700_MODE_HYBRID
 	help
 	  Enable the temperature sensor. Note that the temperature sensor is
 	  uncalibrated and its output for a given temperature may vary from one
@@ -70,7 +67,6 @@ config FXOS8700_TEMP
 
 choice
 	prompt "Range"
-	depends on FXOS8700
 	default FXOS8700_RANGE_8G
 
 config FXOS8700_RANGE_8G
@@ -86,7 +82,6 @@ endchoice
 
 choice
 	prompt "Trigger mode"
-	depends on FXOS8700
 	default FXOS8700_TRIGGER_NONE
 
 config FXOS8700_TRIGGER_NONE
@@ -104,7 +99,6 @@ endchoice
 
 config FXOS8700_TRIGGER
 	bool
-	depends on FXOS8700
 
 if !HAS_DTS_GPIO_DEVICE
 
@@ -227,3 +221,5 @@ config FXOS8700_PULSE_WIND
 endif # FXOS8700_PULSE
 
 endif # FXOS8700_TRIGGER
+
+endif # FXOS8700

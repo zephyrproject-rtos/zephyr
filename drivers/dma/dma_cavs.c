@@ -164,7 +164,8 @@ static int dw_dma_config(struct device *dev, u32_t channel,
 		return -ENOMEM;
 	}
 
-	memset(chan_data->lli, 0, (sizeof(struct dw_lli2) * cfg->block_count));
+	(void)memset(chan_data->lli, 0,
+		     (sizeof(struct dw_lli2) * cfg->block_count));
 	lli_desc = chan_data->lli;
 	lli_desc_tail = lli_desc + cfg->block_count - 1;
 

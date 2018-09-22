@@ -1,0 +1,3 @@
+tests:
+  kernel.sched.deadline:
+    tags: core

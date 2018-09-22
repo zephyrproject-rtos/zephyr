@@ -7,8 +7,8 @@
 
 /* this file is only meant to be included by kernel_structs.h */
 
-#ifndef _kernel_arch_func__h_
-#define _kernel_arch_func__h_
+#ifndef ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_
+#define ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_
 
 #ifndef _ASMLANGUAGE
 
@@ -146,4 +146,4 @@ extern FUNC_NORETURN void _x86_userspace_enter(k_thread_entry_t user_entry,
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* _kernel_arch_func__h_ */
+#endif /* ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_ */

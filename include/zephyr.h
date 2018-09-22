@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ZEPHYR__H
-#define _ZEPHYR__H
+#ifndef ZEPHYR_INCLUDE_ZEPHYR_H_
+#define ZEPHYR_INCLUDE_ZEPHYR_H_
 
 /*
  * Applications can identify whether they are built for Zephyr by
@@ -17,4 +17,4 @@
 
 #include <kernel.h>
 
-#endif /* _ZEPHYR__H */
+#endif /* ZEPHYR_INCLUDE_ZEPHYR_H_ */

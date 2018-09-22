@@ -13,20 +13,19 @@ menuconfig BMI160
 	  Enable Bosch BMI160 inertial measurement unit that provides acceleration
 	  and angular rate measurements.
 
+if BMI160
+
 config BMI160_NAME
 	string "Driver's name"
-	depends on BMI160
 	default "BMI160"
 
 config BMI160_SPI_PORT_NAME
 	string "SPI master controller port name"
-	depends on BMI160
 	help
 	  Master SPI port name through which BMI160 chip is accessed.
 
 config BMI160_SLAVE
 	hex "BMI160 SPI slave select pin"
-	depends on BMI160
 	default 0
 	help
 	  BMI160 chip select pin.
@@ -34,14 +33,12 @@ config BMI160_SLAVE
 config BMI160_SPI_BUS_FREQ
 	int "BMI160 SPI bus speed in Hz"
 	default 640000
-	depends on BMI160
 	help
 	  This is the maximum supported SPI bus frequency. The chip supports a
 	  frequency up to 10MHz.
 
 choice
 	prompt "Trigger mode"
-	depends on BMI160
 	default BMI160_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
@@ -60,18 +57,17 @@ endchoice
 
 config BMI160_TRIGGER
 	bool
-	depends on BMI160
 
 config BMI160_THREAD_PRIORITY
 	int "Own thread priority"
-	depends on BMI160 && BMI160_TRIGGER_OWN_THREAD
+	depends on BMI160_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  The priority of the thread used for handling interrupts.
 
 config BMI160_THREAD_STACK_SIZE
 	int "Own thread stack size"
-	depends on BMI160 && BMI160_TRIGGER_OWN_THREAD
+	depends on BMI160_TRIGGER_OWN_THREAD
 	default 1024
 	help
 	  The thread stack size.
@@ -79,7 +75,7 @@ config BMI160_THREAD_STACK_SIZE
 config BMI160_GPIO_DEV_NAME
 	string "Gpio device"
 	default "GPIO_1"
-	depends on BMI160 && BMI160_TRIGGER
+	depends on BMI160_TRIGGER
 	help
 	  The name of the GPIO device to which the BMI160 interrupt pin is
 	  connected.
@@ -87,35 +83,30 @@ config BMI160_GPIO_DEV_NAME
 config BMI160_GPIO_PIN_NUM
 	int "Interrupt GPIO pin number"
 	default 4
-	depends on BMI160 && BMI160_TRIGGER
+	depends on BMI160_TRIGGER
 	help
 	  The number of the GPIO pin which is connected to BMI160 interrupt pin.
 
 choice
 	prompt "Accelerometer power mode"
-	depends on BMI160
 	default BMI160_ACCEL_PMU_RUNTIME
 
 config BMI160_ACCEL_PMU_RUNTIME
 	bool "Set at runtime."
-	depends on BMI160
 
 config BMI160_ACCEL_PMU_SUSPEND
 	bool "suspended/not used"
-	depends on BMI160
 
 config BMI160_ACCEL_PMU_NORMAL
 	bool "normal"
-	depends on BMI160
 
 config BMI160_ACCEL_PMU_LOW_POWER
 	bool "low power"
-	depends on BMI160
 endchoice
 
 choice
 	prompt "Accelerometer range setting"
-	depends on BMI160 && (BMI160_ACCEL_PMU_RUNTIME || BMI160_ACCEL_PMU_NORMAL || BMI160_ACCEL_PMU_LOW_POWER)
+	depends on BMI160_ACCEL_PMU_RUNTIME || BMI160_ACCEL_PMU_NORMAL || BMI160_ACCEL_PMU_LOW_POWER
 	default BMI160_ACCEL_RANGE_RUNTIME
 
 config BMI160_ACCEL_RANGE_RUNTIME
@@ -136,7 +127,7 @@ endchoice
 
 choice
 	prompt "Accelerometer sampling frequency."
-	depends on BMI160 && (BMI160_ACCEL_PMU_RUNTIME || BMI160_ACCEL_PMU_NORMAL || BMI160_ACCEL_PMU_LOW_POWER)
+	depends on BMI160_ACCEL_PMU_RUNTIME || BMI160_ACCEL_PMU_NORMAL || BMI160_ACCEL_PMU_LOW_POWER
 	default BMI160_ACCEL_ODR_RUNTIME
 
 config BMI160_ACCEL_ODR_RUNTIME
@@ -185,29 +176,24 @@ endchoice
 
 choice
 	prompt "Gyroscope power mode"
-	depends on BMI160
 	default BMI160_GYRO_PMU_RUNTIME
 
 config BMI160_GYRO_PMU_RUNTIME
 	bool "Set at runtime."
-	depends on BMI160
 
 config BMI160_GYRO_PMU_SUSPEND
 	bool "suspended/not used"
-	depends on BMI160
 
 config BMI160_GYRO_PMU_NORMAL
 	bool "normal"
-	depends on BMI160
 
 config BMI160_GYRO_PMU_FAST_STARTUP
 	bool "fast start-up"
-	depends on BMI160
 endchoice
 
 choice
 	prompt "Gyroscope range setting."
-	depends on BMI160 && (BMI160_GYRO_PMU_RUNTIME || BMI160_GYRO_PMU_NORMAL || BMI160_GYRO_PMU_FAST_STARTUP)
+	depends on BMI160_GYRO_PMU_RUNTIME || BMI160_GYRO_PMU_NORMAL || BMI160_GYRO_PMU_FAST_STARTUP
 	default BMI160_GYRO_RANGE_RUNTIME
 
 config BMI160_GYRO_RANGE_RUNTIME
@@ -231,7 +217,7 @@ endchoice
 
 choice
 	prompt "Gyroscope sampling frequency."
-	depends on BMI160 && (BMI160_GYRO_PMU_RUNTIME || BMI160_GYRO_PMU_NORMAL || BMI160_GYRO_PMU_FAST_STARTUP)
+	depends on BMI160_GYRO_PMU_RUNTIME || BMI160_GYRO_PMU_NORMAL || BMI160_GYRO_PMU_FAST_STARTUP
 	default BMI160_GYRO_ODR_RUNTIME
 
 config BMI160_GYRO_ODR_RUNTIME
@@ -261,3 +247,5 @@ config BMI160_GYRO_ODR_1600
 config BMI160_GYRO_ODR_3200
 	bool "3200 Hz"
 endchoice
+
+endif # BMI160

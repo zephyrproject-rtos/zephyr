@@ -14,6 +14,46 @@ set_ifndef(DTS_SOURCE ${BOARD_ROOT}/boards/${ARCH}/${BOARD_FAMILY}/${BOARD}.dts)
 set_ifndef(DTS_COMMON_OVERLAYS ${ZEPHYR_BASE}/dts/common/common.dts)
 set_ifndef(DTS_APP_BINDINGS ${APPLICATION_SOURCE_DIR}/dts/bindings)
 
+set(dts_files
+  ${DTS_SOURCE}
+  ${DTS_COMMON_OVERLAYS}
+  )
+
+#Parse boards/shields to generate the shield list
+
+set(shield_dir ${ZEPHYR_BASE}/boards/shields)
+
+# Match the .overlay files in the shield directories to make sure we are
+# finding shields, e.g. x_nucleo_iks01a1/x_nucleo_iks01a1.overlay
+file(GLOB_RECURSE shields_refs_list
+     RELATIVE ${shield_dir}
+     ${shield_dir}/*/*.overlay
+     )
+
+# The above gives a list like
+# x_nucleo_iks01a1/x_nucleo_iks01a1.overlay;x_nucleo_iks01a2/x_nucleo_iks01a2.overlay
+# we construct a list of shield names by extracting file name and
+# removing the extension.
+foreach(shield_path ${shields_refs_list})
+  get_filename_component(shield ${shield_path} NAME_WE)
+
+  # Generate CONFIG flags matching each shield
+  string(TOUPPER "CONFIG_SHIELD_${shield}" shield_config)
+
+  if(${shield_config})
+    # if shield config flag is on, add shield overlay to the shield overlays
+    # list and dts.fixup file to the shield fixup file
+    list(APPEND
+      dts_files
+      ${shield_dir}/${shield_path}
+      )
+    list(APPEND
+      dts_fixups
+      ${shield_dir}/${shield}/dts.fixup
+      )
+  endif()
+endforeach()
+
 message(STATUS "Generating zephyr/include/generated/generated_dts_board.h")
 
 if(CONFIG_HAS_DTS)
@@ -21,16 +61,11 @@ if(CONFIG_HAS_DTS)
   if(DTC_OVERLAY_FILE)
     # Convert from space-separated files into file list
     string(REPLACE " " ";" DTC_OVERLAY_FILE_AS_LIST ${DTC_OVERLAY_FILE})
+    list(APPEND
+      dts_files
+      ${DTC_OVERLAY_FILE_AS_LIST}
+      )
   endif()
-
-  # Prepend common overlays
-  set(DTC_OVERLAY_FILE_AS_LIST ${DTS_COMMON_OVERLAYS} ${DTC_OVERLAY_FILE_AS_LIST})
-
-  set(
-    dts_files
-    ${DTS_SOURCE}
-    ${DTC_OVERLAY_FILE_AS_LIST}
-  )
 
   unset(DTC_INCLUDE_FLAG_FOR_DTS)
   foreach(dts_file ${dts_files})
@@ -51,7 +86,7 @@ if(CONFIG_HAS_DTS)
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
     -nostdinc
-    -I${ZEPHYR_BASE}/arch/${ARCH}/soc
+    -I${ZEPHYR_BASE}/soc/${ARCH}
     -isystem ${ZEPHYR_BASE}/include
     -isystem ${ZEPHYR_BASE}/dts/${ARCH}
     -isystem ${ZEPHYR_BASE}/dts
@@ -86,21 +121,25 @@ if(CONFIG_HAS_DTS)
 
   # Run extract_dts_includes.py for the header file
   # generated_dts_board.h
-  set_ifndef(DTS_BOARD_FIXUP_FILE ${BOARD_ROOT}/boards/${ARCH}/${BOARD_FAMILY}/dts.fixup)
-  if(EXISTS ${DTS_BOARD_FIXUP_FILE})
-    set(DTS_BOARD_FIXUP ${DTS_BOARD_FIXUP_FILE})
-  endif()
-  set_ifndef(DTS_SOC_FIXUP_FILE ${ZEPHYR_BASE}/arch/${ARCH}/soc/${SOC_PATH}/dts.fixup)
-  if(EXISTS ${DTS_SOC_FIXUP_FILE})
-    set(DTS_SOC_FIXUP ${DTS_SOC_FIXUP_FILE})
-  endif()
-  if(EXISTS ${APPLICATION_SOURCE_DIR}/dts.fixup)
-    set(DTS_APP_FIXUP ${APPLICATION_SOURCE_DIR}/dts.fixup)
-  endif()
+  set_ifndef(DTS_BOARD_FIXUP_FILE       ${BOARD_ROOT}/boards/${ARCH}/${BOARD_FAMILY}/dts.fixup)
+  set_ifndef(DTS_SOC_FIXUP_FILE   ${PROJECT_SOURCE_DIR}/soc/${ARCH}/${SOC_PATH}/dts.fixup)
 
-  set(DTS_FIXUPS ${DTS_SOC_FIXUP} ${DTS_BOARD_FIXUP} ${DTS_APP_FIXUP})
-  if(NOT "${DTS_FIXUPS}" STREQUAL "")
-    set(DTS_FIXUPS --fixup ${DTS_FIXUPS})
+  list(APPEND dts_fixups
+    ${DTS_BOARD_FIXUP_FILE}
+    ${DTS_SOC_FIXUP_FILE}
+    ${APPLICATION_SOURCE_DIR}/dts.fixup
+    )
+
+  foreach(fixup ${dts_fixups})
+    if(EXISTS ${fixup})
+      list(APPEND existing_dts_fixups ${fixup})
+    endif()
+  endforeach()
+
+  if("${existing_dts_fixups}" STREQUAL "")
+    unset(DTS_FIXUPS_WITH_FLAG)
+  else()
+    set(DTS_FIXUPS_WITH_FLAG --fixup ${existing_dts_fixups})
   endif()
 
   if(NOT EXISTS ${DTS_APP_BINDINGS})
@@ -110,7 +149,7 @@ if(CONFIG_HAS_DTS)
   set(CMD_EXTRACT_DTS_INCLUDES ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/extract_dts_includes.py
     --dts ${BOARD}.dts_compiled
     --yaml ${ZEPHYR_BASE}/dts/bindings ${DTS_APP_BINDINGS}
-    ${DTS_FIXUPS}
+    ${DTS_FIXUPS_WITH_FLAG}
     --keyvalue ${GENERATED_DTS_BOARD_CONF}
     --include ${GENERATED_DTS_BOARD_H}
     )

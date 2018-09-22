@@ -172,7 +172,7 @@ static void fix_extra_red(struct rbnode **stack, int stacksz)
 		int side = get_side(grandparent, parent);
 		struct rbnode *aunt = get_child(grandparent, !side);
 
-		if (aunt && is_red(aunt)) {
+		if ((aunt != NULL) && is_red(aunt)) {
 			set_color(grandparent, RED);
 			set_color(parent, BLACK);
 			set_color(aunt, BLACK);
@@ -431,7 +431,7 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 
 	struct rbnode *child = get_child(node, 0);
 
-	if (!child) {
+	if (child == NULL) {
 		child = get_child(node, 1);
 	}
 
@@ -481,7 +481,7 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 
 void _rb_walk(struct rbnode *node, rb_visit_t visit_fn, void *cookie)
 {
-	if (node) {
+	if (node != NULL) {
 		_rb_walk(get_child(node, 0), visit_fn, cookie);
 		visit_fn(node, cookie);
 		_rb_walk(get_child(node, 1), visit_fn, cookie);
@@ -557,7 +557,7 @@ struct rbnode *_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f)
 	 * it's right subtree if it has a right child
 	 */
 	n = get_child(f->stack[f->top], 1);
-	if (n) {
+	if (n != NULL) {
 		return stack_left_limb(n, f);
 	}
 

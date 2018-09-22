@@ -241,7 +241,7 @@ void _impl_k_mutex_unlock(struct k_mutex *mutex)
 	K_DEBUG("new owner of mutex %p: %p (prio: %d)\n",
 		mutex, new_owner, new_owner ? new_owner->base.prio : -1000);
 
-	if (new_owner) {
+	if (new_owner != NULL) {
 		_ready_thread(new_owner);
 
 		irq_unlock(key);

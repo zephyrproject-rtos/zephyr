@@ -488,6 +488,14 @@ void nrfx_uarte_tx_abort(nrfx_uarte_t const * p_instance)
 
 void nrfx_uarte_rx_abort(nrfx_uarte_t const * p_instance)
 {
+    uarte_control_block_t * p_cb = &m_cb[p_instance->drv_inst_idx];
+
+    // Short between ENDRX event and STARTRX task must be disabled before
+    // aborting transmission.
+    if (p_cb->rx_secondary_buffer_length != 0)
+    {
+        nrf_uarte_shorts_disable(p_instance->p_reg, NRF_UARTE_SHORT_ENDRX_STARTRX);
+    }
     nrf_uarte_task_trigger(p_instance->p_reg, NRF_UARTE_TASK_STOPRX);
     NRFX_LOG_INFO("RX transaction aborted.");
 }
@@ -520,7 +528,7 @@ static void uarte_irq_handler(NRF_UARTE_Type *        p_uarte,
         // will not be equal to the buffer length. Interrupted transfer is ignored.
         if (amount == p_cb->rx_buffer_length)
         {
-            if (p_cb->rx_secondary_buffer_length)
+            if (p_cb->rx_secondary_buffer_length != 0)
             {
                 uint8_t * p_data = p_cb->p_rx_buffer;
                 nrf_uarte_shorts_disable(p_uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
@@ -540,9 +548,13 @@ static void uarte_irq_handler(NRF_UARTE_Type *        p_uarte,
     if (nrf_uarte_event_check(p_uarte, NRF_UARTE_EVENT_RXTO))
     {
         nrf_uarte_event_clear(p_uarte, NRF_UARTE_EVENT_RXTO);
-        if (p_cb->rx_buffer_length)
+
+        if (p_cb->rx_buffer_length != 0)
         {
             p_cb->rx_buffer_length = 0;
+            // In case of using double-buffered reception both variables storing buffer length
+            // have to be cleared to prevent incorrect behaviour of the driver.
+            p_cb->rx_secondary_buffer_length = 0;
             rx_done_event(p_cb, nrf_uarte_rx_amount_get(p_uarte), p_cb->p_rx_buffer);
         }
     }
@@ -550,7 +562,7 @@ static void uarte_irq_handler(NRF_UARTE_Type *        p_uarte,
     if (nrf_uarte_event_check(p_uarte, NRF_UARTE_EVENT_ENDTX))
     {
         nrf_uarte_event_clear(p_uarte, NRF_UARTE_EVENT_ENDTX);
-        if (p_cb->tx_buffer_length)
+        if (p_cb->tx_buffer_length != 0)
         {
             tx_done_event(p_cb, nrf_uarte_tx_amount_get(p_uarte));
         }

@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_IP_H
-#define __NET_IP_H
+#ifndef ZEPHYR_INCLUDE_NET_NET_IP_H_
+#define ZEPHYR_INCLUDE_NET_NET_IP_H_
 
 /**
  * @brief IPv4/IPv6 primitives and helpers
@@ -179,7 +179,11 @@ struct net_addr {
 extern const struct in6_addr in6addr_any;
 extern const struct in6_addr in6addr_loopback;
 
+/* Defined by POSIX. INET6_ADDRSTRLEN accounts for mapped IPv4 addresses. */
+#define INET_ADDRSTRLEN 16
 #define INET6_ADDRSTRLEN 46
+
+/* These are for internal usage of the stack */
 #define NET_IPV6_ADDR_LEN sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")
 #define NET_IPV4_ADDR_LEN sizeof("xxx.xxx.xxx.xxx")
 
@@ -232,7 +236,7 @@ enum net_addr_type {
 } __packed;
 
 #if NET_LOG_ENABLED > 0
-static inline char *net_addr_type2str(enum net_addr_type type)
+static inline const char *net_addr_type2str(enum net_addr_type type)
 {
 	switch (type) {
 	case NET_ADDR_AUTOCONF:
@@ -251,7 +255,7 @@ static inline char *net_addr_type2str(enum net_addr_type type)
 	return "<unknown>";
 }
 #else /* NET_LOG_ENABLED */
-static inline char *net_addr_type2str(enum net_addr_type type)
+static inline const char *net_addr_type2str(enum net_addr_type type)
 {
 	ARG_UNUSED(type);
 
@@ -902,7 +906,7 @@ int net_addr_pton(sa_family_t family, const char *src, void *dst);
  * @param family IP address family (AF_INET or AF_INET6)
  * @param src Pointer to struct in_addr if family is AF_INET or
  *        pointer to struct in6_addr if family is AF_INET6
- * @param dst IP address in a non-null terminated string
+ * @param dst Buffer for IP address as a null terminated string
  * @param size Number of bytes available in the buffer
  *
  * @return dst pointer if ok, NULL if error
@@ -1050,4 +1054,4 @@ static inline u8_t net_priority2vlan(enum net_priority priority)
  */
 
 
-#endif /* __NET_IP_H */
+#endif /* ZEPHYR_INCLUDE_NET_NET_IP_H_ */

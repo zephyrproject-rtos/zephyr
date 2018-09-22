@@ -8,8 +8,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_BLUETOOTH_H
-#define __BT_BLUETOOTH_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_BLUETOOTH_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_BLUETOOTH_H_
 
 /**
  * @brief Bluetooth APIs
@@ -271,6 +271,12 @@ enum {
 
 	/* Advertise using GAP device name */
 	BT_LE_ADV_OPT_USE_NAME = BIT(3),
+
+	/** Use low duty directed advertising mode, otherwise high duty mode
+	 *  will be used. This option is only effective when used with
+	 *  bt_conn_create_slave_le().
+	 */
+	BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY = BIT(4),
 };
 
 /** LE Advertising Parameters. */
@@ -309,6 +315,14 @@ struct bt_le_adv_param {
 					    BT_LE_ADV_OPT_USE_NAME, \
 					    BT_GAP_ADV_FAST_INT_MIN_2, \
 					    BT_GAP_ADV_FAST_INT_MAX_2)
+
+#define BT_LE_ADV_CONN_DIR_LOW_DUTY \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_ONE_TIME | \
+			BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY, \
+			BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2)
+
+#define BT_LE_ADV_CONN_DIR BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
+					   BT_LE_ADV_OPT_ONE_TIME, 0, 0)
 
 #define BT_LE_ADV_NCONN BT_LE_ADV_PARAM(0, BT_GAP_ADV_FAST_INT_MIN_2, \
 					BT_GAP_ADV_FAST_INT_MAX_2)
@@ -425,6 +439,16 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
  *  of protocol error or negative (POSIX) in case of stack internal error
  */
 int bt_le_scan_stop(void);
+
+
+/** @brief Set (LE) channel map.
+ *
+ * @param chan_map Channel map.
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_le_set_chan_map(u8_t chan_map[5]);
 
 /** @brief Helper for parsing advertising (or EIR or OOB) data.
  *
@@ -675,4 +699,4 @@ int bt_unpair(u8_t id, const bt_addr_le_t *addr);
  * @}
  */
 
-#endif /* __BT_BLUETOOTH_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_BLUETOOTH_H_ */

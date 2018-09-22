@@ -45,8 +45,8 @@ int client_reset(struct http_ctx *ctx)
 {
 	http_parser_init(&ctx->http.parser, HTTP_RESPONSE);
 
-	memset(ctx->http.rsp.http_status, 0,
-	       sizeof(ctx->http.rsp.http_status));
+	(void)memset(ctx->http.rsp.http_status, 0,
+		     sizeof(ctx->http.rsp.http_status));
 
 	ctx->http.rsp.cl_present = 0;
 	ctx->http.rsp.content_length = 0;
@@ -55,7 +55,8 @@ int client_reset(struct http_ctx *ctx)
 	ctx->http.rsp.message_complete = 0;
 	ctx->http.rsp.body_start = NULL;
 
-	memset(ctx->http.rsp.response_buf, 0, ctx->http.rsp.response_buf_len);
+	(void)memset(ctx->http.rsp.response_buf, 0,
+		     ctx->http.rsp.response_buf_len);
 	ctx->http.rsp.data_len = 0;
 
 	return 0;
@@ -649,7 +650,7 @@ int http_client_init(struct http_ctx *ctx,
 {
 	int ret;
 
-	memset(ctx, 0, sizeof(*ctx));
+	(void)memset(ctx, 0, sizeof(*ctx));
 
 	ret = net_app_init_tcp_client(&ctx->app_ctx,
 				      NULL,         /* use any local address */

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_LIBC_HOOKS_H
-#define ZEPHYR_LIBC_HOOKS_H
+#ifndef ZEPHYR_INCLUDE_MISC_LIBC_HOOKS_H_
+#define ZEPHYR_INCLUDE_MISC_LIBC_HOOKS_H_
 
 #include <toolchain.h>
 #include <stdio.h>
@@ -39,4 +39,4 @@ __syscall size_t _zephyr_fwrite(const void *_MLIBC_RESTRICT ptr, size_t size,
 
 #include <syscalls/libc-hooks.h>
 
-#endif /* ZEPHYR_LIBC_HOOKS_H */
+#endif /* ZEPHYR_INCLUDE_MISC_LIBC_HOOKS_H_ */

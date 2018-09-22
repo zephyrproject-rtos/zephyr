@@ -7,5 +7,6 @@ toolchain:
   - gnuarmemb
 supported:
   - pwm
+  - rtc
 ram: 96
 flash: 512

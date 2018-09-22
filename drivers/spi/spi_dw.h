@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SPI_DW_H__
-#define __SPI_DW_H__
+#ifndef ZEPHYR_DRIVERS_SPI_SPI_DW_H_
+#define ZEPHYR_DRIVERS_SPI_SPI_DW_H_
 
 #include <spi.h>
 
@@ -291,4 +291,4 @@ static inline void _clock_off(struct device *dev)
 #ifdef __cplusplus
 }
 #endif
-#endif /* __SPI_DW_H__ */
+#endif /* ZEPHYR_DRIVERS_SPI_SPI_DW_H_ */

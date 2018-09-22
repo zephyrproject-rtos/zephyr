@@ -121,6 +121,8 @@ static inline int init_app(void)
 {
 	k_sem_init(&quit_lock, 0, UINT_MAX);
 
+	init_vlan();
+
 	return 0;
 }
 

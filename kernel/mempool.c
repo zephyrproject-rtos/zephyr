@@ -10,6 +10,7 @@
 #include <init.h>
 #include <string.h>
 #include <misc/__assert.h>
+#include <stdbool.h>
 
 /* Linker-defined symbols bound the static pool structs */
 extern struct k_mem_pool _k_mem_pool_list_start[];
@@ -59,7 +60,7 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 		end = _tick_get() + _ms_to_ticks(timeout);
 	}
 
-	while (1) {
+	while (true) {
 		u32_t level_num, block_num;
 
 		/* There is a "managed race" in alloc that can fail
@@ -91,7 +92,7 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 			return ret;
 		}
 
-		_pend_current_thread(irq_lock(), &p->wait_q, timeout);
+		(void)_pend_current_thread(irq_lock(), &p->wait_q, timeout);
 
 		if (timeout != K_FOREVER) {
 			timeout = end - _tick_get();
@@ -192,8 +193,8 @@ void *k_calloc(size_t nmemb, size_t size)
 	}
 
 	ret = k_malloc(bounds);
-	if (ret) {
-		memset(ret, 0, bounds);
+	if (ret != NULL) {
+		(void)memset(ret, 0, bounds);
 	}
 	return ret;
 }

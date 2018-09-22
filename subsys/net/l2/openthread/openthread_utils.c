@@ -95,7 +95,7 @@ void add_ipv6_addr_to_ot(struct openthread_context *context)
 	struct net_if_ipv6 *ipv6;
 	int i;
 
-	memset(&addr, 0, sizeof(addr));
+	(void)memset(&addr, 0, sizeof(addr));
 
 	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
 		NET_DBG("Cannot allocate IPv6 address");

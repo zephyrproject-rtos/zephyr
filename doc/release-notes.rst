@@ -18,7 +18,7 @@ Git clone and checkout commands, such as:
 
    git clone https://github.com/zephyrproject-rtos/zephyr
    cd zephyr
-   git checkout tags/v1.12.0
+   git checkout tags/v1.13.0
 
 
 The project's technical documentation is also tagged to correspond with a
@@ -30,6 +30,7 @@ Zephyr Kernel Releases
 .. toctree::
    :maxdepth: 1
 
+   release-notes-1.13
    release-notes-1.12
    release-notes-1.11
    release-notes-1.10

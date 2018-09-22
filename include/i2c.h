@@ -9,8 +9,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __DRIVERS_I2C_H
-#define __DRIVERS_I2C_H
+#ifndef ZEPHYR_INCLUDE_I2C_H_
+#define ZEPHYR_INCLUDE_I2C_H_
 
 /**
  * @brief I2C Interface
@@ -52,7 +52,7 @@ extern "C" {
 #define I2C_SPEED_GET(cfg) 		(((cfg) & I2C_SPEED_MASK) \
 						>> I2C_SPEED_SHIFT)
 
-/** Use 10-bit addressing. */
+/** Use 10-bit addressing. DEPRECATED - Use I2C_MSG_ADDR_10_BITS instead. */
 #define I2C_ADDR_10_BITS		(1 << 0)
 
 /** Controller to act as Master. */
@@ -63,7 +63,7 @@ extern "C" {
  */
 
 /** Slave device responds to 10-bit addressing. */
-#define I2C_SLAVE_FLAGS_ADDR_10_BITS		I2C_ADDR_10_BITS
+#define I2C_SLAVE_FLAGS_ADDR_10_BITS	(1 << 0)
 
 /*
  * I2C_MSG_* are I2C Message flags.
@@ -84,6 +84,9 @@ extern "C" {
 
 /** RESTART I2C transaction for this message. */
 #define I2C_MSG_RESTART			(1 << 2)
+
+/** Use 10-bit addressing for this message. */
+#define I2C_MSG_ADDR_10_BITS		(1 << 3)
 
 /**
  * @brief One I2C Message.
@@ -196,7 +199,8 @@ __syscall int i2c_configure(struct device *dev, u32_t dev_config);
 
 static inline int _impl_i2c_configure(struct device *dev, u32_t dev_config)
 {
-	const struct i2c_driver_api *api = dev->driver_api;
+	const struct i2c_driver_api *api =
+		(const struct i2c_driver_api *)dev->driver_api;
 
 	return api->configure(dev, dev_config);
 }
@@ -227,7 +231,8 @@ static inline int _impl_i2c_transfer(struct device *dev,
 				     struct i2c_msg *msgs, u8_t num_msgs,
 				     u16_t addr)
 {
-	const struct i2c_driver_api *api = dev->driver_api;
+	const struct i2c_driver_api *api =
+		(const struct i2c_driver_api *)dev->driver_api;
 
 	return api->transfer(dev, msgs, num_msgs, addr);
 }
@@ -261,7 +266,8 @@ __syscall int i2c_slave_register(struct device *dev,
 static inline int _impl_i2c_slave_register(struct device *dev,
 					   struct i2c_slave_config *cfg)
 {
-	const struct i2c_driver_api *api = dev->driver_api;
+	const struct i2c_driver_api *api =
+		(const struct i2c_driver_api *)dev->driver_api;
 
 	if (!api->slave_register) {
 		return -ENOTSUP;
@@ -291,7 +297,8 @@ __syscall int i2c_slave_unregister(struct device *dev,
 static inline int _impl_i2c_slave_unregister(struct device *dev,
 					     struct i2c_slave_config *cfg)
 {
-	const struct i2c_driver_api *api = dev->driver_api;
+	const struct i2c_driver_api *api =
+		(const struct i2c_driver_api *)dev->driver_api;
 
 	if (!api->slave_unregister) {
 		return -ENOTSUP;
@@ -316,7 +323,8 @@ __syscall int i2c_slave_driver_register(struct device *dev);
 
 static inline int _impl_i2c_slave_driver_register(struct device *dev)
 {
-	const struct i2c_slave_driver_api *api = dev->driver_api;
+	const struct i2c_slave_driver_api *api =
+		(const struct i2c_slave_driver_api *)dev->driver_api;
 
 	return api->driver_register(dev);
 }
@@ -337,7 +345,8 @@ __syscall int i2c_slave_driver_unregister(struct device *dev);
 
 static inline int _impl_i2c_slave_driver_unregister(struct device *dev)
 {
-	const struct i2c_slave_driver_api *api = dev->driver_api;
+	const struct i2c_slave_driver_api *api =
+		(const struct i2c_slave_driver_api *)dev->driver_api;
 
 	return api->driver_unregister(dev);
 }
@@ -877,4 +886,4 @@ struct i2c_client_config {
 
 #include <syscalls/i2c.h>
 
-#endif /* __DRIVERS_I2C_H */
+#endif /* ZEPHYR_INCLUDE_I2C_H_ */

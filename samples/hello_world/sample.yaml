@@ -11,5 +11,5 @@ common:
       regex:
         - "Hello World! (.*)"
 tests:
-  sample.helloworld.multithread:
+  sample.helloworld:
     tags: samples

@@ -1,0 +1,159 @@
+#
+# Copyright (c) 2015-2016 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_QUARK_D2000
+
+config SOC_SERIES
+	default "quark_d2000"
+
+config X86_IAMCU
+        def_bool y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32000000
+
+config IDT_NUM_VECTORS
+	default 64
+
+config IOAPIC_NUM_RTES
+	default 32
+
+config LOAPIC_TIMER_IRQ
+	default 10
+
+config LOAPIC_TIMER_IRQ_PRIORITY
+	default 2
+
+config QMSI
+	def_bool y
+
+config QMSI_BUILTIN
+	def_bool y
+
+if PINMUX
+config PINMUX_QMSI
+	def_bool y
+endif
+
+if UART_QMSI
+config UART_QMSI_0
+	def_bool y
+config UART_QMSI_0_IRQ_PRI
+	int
+	default 0
+config UART_QMSI_1
+	def_bool y
+config UART_QMSI_1_IRQ_PRI
+	int
+	default 0
+endif # UART_QMSI
+
+if WATCHDOG
+config WDT_QMSI
+	def_bool y
+
+config WDT_0_IRQ_PRI
+	default 0
+endif # WATCHDOG
+
+if RTC
+config RTC_QMSI
+	def_bool y
+
+config RTC_0_IRQ_PRI
+	int
+	default 0
+
+endif # RTC
+
+if GPIO
+
+config GPIO_QMSI
+	def_bool y
+config GPIO_QMSI_0
+	def_bool y
+config GPIO_QMSI_0_IRQ_PRI
+	int
+	default 0
+
+endif # GPIO
+
+if PWM
+config PWM_QMSI
+	def_bool y
+endif
+
+if I2C
+config I2C_QMSI
+	def_bool y
+
+if I2C_QMSI
+config I2C_0
+	def_bool y
+
+config I2C_0_IRQ_PRI
+	default 0
+endif # I2C_QMSI
+
+config I2C_SDA_SETUP
+	default 2
+
+config I2C_SDA_TX_HOLD
+	default 16
+
+config I2C_SDA_RX_HOLD
+	default 24
+
+endif # I2C
+
+
+if AIO_COMPARATOR
+config AIO_COMPARATOR_QMSI
+	def_bool y
+endif
+
+if COUNTER
+config AON_COUNTER_QMSI
+	def_bool y
+config AON_TIMER_QMSI
+	def_bool y
+config AON_TIMER_IRQ_PRI
+	default 0
+endif
+
+if ADC
+config ADC_INTEL_QUARK_D2000
+	def_bool y
+config ADC_0_IRQ_PRI
+	int
+	default 2
+endif
+
+if DMA
+config DMA_QMSI
+	def_bool y
+endif
+
+if SPI
+config SPI_DW
+	def_bool y
+config SPI_DW_FIFO_DEPTH
+	default 7
+config SPI_0
+	def_bool y
+config SPI_0_IRQ_PRI
+	default 0
+endif # SPI
+
+if SOC_FLASH_QMSI
+config SOC_FLASH_QMSI_SYS_SIZE
+	default 0x8000
+endif # SOC_FLASH_QMSI
+
+
+source "soc/x86/intel_quark/quark_d2000/Kconfig.defconfig.quark_d2000"
+
+endif # SOC_SERIES_QUARK_D2000

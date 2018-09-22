@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef LOG_FRONTEND_H
-#define LOG_FRONTEND_H
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
 
 #include <logging/log_msg.h>
 #include <logging/log_instance.h>
@@ -98,7 +98,7 @@ extern "C" {
 #define LOG_CURRENT_MODULE_ID()						\
 	_LOG_EVAL(							\
 	  _LOG_LEVEL(),							\
-	  (log_const_source_id(&LOG_ITEM_CONST_DATA(LOG_MODULE_NAME))),	\
+	  (log_const_source_id(__log_current_const_data_get())),	\
 	  (0)								\
 	)
 
@@ -109,7 +109,7 @@ extern "C" {
 #define LOG_CURRENT_DYNAMIC_DATA_ADDR()			\
 	_LOG_EVAL(					\
 	  _LOG_LEVEL(),					\
-	  (&LOG_ITEM_DYNAMIC_DATA(LOG_MODULE_NAME)),	\
+	  (__log_current_dynamic_data_get()),		\
 	  ((struct log_source_dynamic_data *)0)		\
 	)
 
@@ -475,4 +475,4 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap);
 }
 #endif
 
-#endif /* LOG_FRONTEND_H */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_ */

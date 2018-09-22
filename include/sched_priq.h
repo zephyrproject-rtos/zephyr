@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _sched_priq__h_
-#define _sched_priq__h_
+#ifndef ZEPHYR_INCLUDE_SCHED_PRIQ_H_
+#define ZEPHYR_INCLUDE_SCHED_PRIQ_H_
 
 #include <misc/util.h>
 #include <misc/dlist.h>
@@ -60,4 +60,4 @@ void _priq_mq_add(struct _priq_mq *pq, struct k_thread *thread);
 void _priq_mq_remove(struct _priq_mq *pq, struct k_thread *thread);
 struct k_thread *_priq_mq_best(struct _priq_mq *pq);
 
-#endif /* _sched_priq__h_ */
+#endif /* ZEPHYR_INCLUDE_SCHED_PRIQ_H_ */

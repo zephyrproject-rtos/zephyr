@@ -8,8 +8,8 @@
 
 /* Either public functions or macros or invoked by public functions */
 
-#ifndef _ASM_INLINE_GCC_PUBLIC_GCC_H
-#define _ASM_INLINE_GCC_PUBLIC_GCC_H
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ASM_INLINE_GCC_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ASM_INLINE_GCC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -175,8 +175,6 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 }
 
-/* Used to unconditionally enable interrupts when MULTITHREADING=n */
-#define Z_ARCH_INT_ENABLE() _arch_irq_unlock(0)
 
 #endif /* _ASMLANGUAGE */
 
@@ -184,4 +182,4 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 }
 #endif
 
-#endif /* _ASM_INLINE_GCC_PUBLIC_GCC_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ASM_INLINE_GCC_H_ */

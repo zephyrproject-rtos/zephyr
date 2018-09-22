@@ -31,7 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button {
 			label = "Key";
 			gpios = <&gpioc 9 GPIO_INT_ACTIVE_LOW>;
 		};

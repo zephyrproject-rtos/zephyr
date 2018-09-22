@@ -794,7 +794,7 @@ int bmi160_init(struct device *dev)
 
 	bmi160->spi = device_get_binding(CONFIG_BMI160_SPI_PORT_NAME);
 	if (!bmi160->spi) {
-		SYS_LOG_DBG("SPI master controller not found: %d.",
+		SYS_LOG_DBG("SPI master controller not found: %s.",
 			    CONFIG_BMI160_SPI_PORT_NAME);
 		return -EINVAL;
 	}

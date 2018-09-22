@@ -9,8 +9,8 @@
  * @brief Private API for SPI drivers
  */
 
-#ifndef __SPI_DRIVER_COMMON_H__
-#define __SPI_DRIVER_COMMON_H__
+#ifndef ZEPHYR_DRIVERS_SPI_SPI_CONTEXT_H_
+#define ZEPHYR_DRIVERS_SPI_SPI_CONTEXT_H_
 
 #include <gpio.h>
 #include <spi.h>
@@ -357,4 +357,4 @@ static inline size_t spi_context_longest_current_buf(struct spi_context *ctx)
 }
 #endif
 
-#endif /* __SPI_DRIVER_COMMON_H__ */
+#endif /* ZEPHYR_DRIVERS_SPI_SPI_CONTEXT_H_ */

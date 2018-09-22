@@ -179,9 +179,9 @@ static void msd_state_machine_reset(void)
 
 static void msd_init(void)
 {
-	memset((void *)&cbw, 0, sizeof(struct CBW));
-	memset((void *)&csw, 0, sizeof(struct CSW));
-	memset(page, 0, sizeof(page));
+	(void)memset((void *)&cbw, 0, sizeof(struct CBW));
+	(void)memset((void *)&csw, 0, sizeof(struct CSW));
+	(void)memset(page, 0, sizeof(page));
 	addr = 0;
 	length = 0;
 }

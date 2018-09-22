@@ -18,7 +18,7 @@ static struct k_mutex credential_lock;
 
 static int credentials_init(struct device *unused)
 {
-	memset(credentials, 0, sizeof(credentials));
+	(void)memset(credentials, 0, sizeof(credentials));
 
 	k_mutex_init(&credential_lock);
 
@@ -157,7 +157,7 @@ int tls_credential_delete(sec_tag_t tag, enum tls_credential_type type)
 		goto exit;
 	}
 
-	memset(credential, 0, sizeof(struct tls_credential));
+	(void)memset(credential, 0, sizeof(struct tls_credential));
 	credential->type = TLS_CREDENTIAL_NONE;
 
 exit:

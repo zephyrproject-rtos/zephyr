@@ -11,8 +11,8 @@
  * ARC-specific kernel error handling interface. Included by arc/arch.h.
  */
 
-#ifndef _ARCH_ARC_V2_ERROR_H_
-#define _ARCH_ARC_V2_ERROR_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_ERROR_H_
+#define ZEPHYR_INCLUDE_ARCH_ARC_V2_ERROR_H_
 
 #include <arch/arc/syscall.h>
 #include <arch/arc/v2/exc.h>
@@ -61,4 +61,4 @@ extern void _SysFatalErrorHandler(unsigned int cause, const NANO_ESF *esf);
 #endif
 
 
-#endif /* _ARCH_ARC_V2_ERROR_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARC_V2_ERROR_H_ */

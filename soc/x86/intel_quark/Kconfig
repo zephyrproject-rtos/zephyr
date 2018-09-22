@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_FAMILY_QUARK
+	bool
+
+if SOC_FAMILY_QUARK
+config SOC_FAMILY
+	string
+	default "intel_quark"
+endif
+
+source "soc/x86/intel_quark/*/Kconfig.soc"
+
+source "soc/x86/intel_quark/*/Kconfig"

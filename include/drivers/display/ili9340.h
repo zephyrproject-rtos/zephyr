@@ -2,8 +2,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ILI9340_H
-#define ILI9340_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_DISPLAY_ILI9340_H_
+#define ZEPHYR_INCLUDE_DRIVERS_DISPLAY_ILI9340_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,4 +57,4 @@ void ili9340_display_off(struct device *dev);
 }
 #endif
 
-#endif /* ILI9340_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_DISPLAY_ILI9340_H_ */

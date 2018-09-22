@@ -113,6 +113,8 @@ static inline const char *state2str(bt_conn_state_t state)
 		return "disconnected";
 	case BT_CONN_CONNECT_SCAN:
 		return "connect-scan";
+	case BT_CONN_CONNECT_DIR_ADV:
+		return "connect-dir-adv";
 	case BT_CONN_CONNECT:
 		return "connect";
 	case BT_CONN_CONNECTED:
@@ -225,7 +227,7 @@ static struct bt_conn *conn_new(void)
 		return NULL;
 	}
 
-	memset(conn, 0, sizeof(*conn));
+	(void)memset(conn, 0, sizeof(*conn));
 
 	atomic_set(&conn->ref, 1);
 
@@ -256,7 +258,7 @@ static struct bt_conn *sco_conn_new(void)
 		return NULL;
 	}
 
-	memset(sco_conn, 0, sizeof(*sco_conn));
+	(void)memset(sco_conn, 0, sizeof(*sco_conn));
 
 	atomic_set(&sco_conn->ref, 1);
 
@@ -295,7 +297,7 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 
 	cp = net_buf_add(buf, sizeof(*cp));
 
-	memset(cp, 0, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
 
 	memcpy(&cp->bdaddr, peer, sizeof(cp->bdaddr));
 	cp->packet_type = sys_cpu_to_le16(0xcc18); /* DM1 DH1 DM3 DH5 DM5 DH5 */
@@ -352,7 +354,7 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer)
 
 	cp = net_buf_add(buf, sizeof(*cp));
 
-	memset(cp, 0, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
 
 	BT_ERR("handle : %x", sco_conn->sco.acl->handle);
 
@@ -803,7 +805,7 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, u8_t rand[8],
 
 	memcpy(cp->ltk, ltk, len);
 	if (len < sizeof(cp->ltk)) {
-		memset(cp->ltk + len, 0, sizeof(cp->ltk) - len);
+		(void)memset(cp->ltk + len, 0, sizeof(cp->ltk) - len);
 	}
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_START_ENCRYPTION, buf, NULL);
@@ -1493,10 +1495,19 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			}
 
 			bt_conn_unref(conn);
+		} else if (old_state == BT_CONN_CONNECT_DIR_ADV) {
+			/* this indicate Directed advertising stopped */
+			if (conn->err) {
+				notify_connected(conn);
+			}
+
+			bt_conn_unref(conn);
 		}
 
 		break;
 	case BT_CONN_CONNECT_SCAN:
+		break;
+	case BT_CONN_CONNECT_DIR_ADV:
 		break;
 	case BT_CONN_CONNECT:
 		if (conn->type == BT_CONN_TYPE_SCO) {
@@ -1776,6 +1787,16 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason)
 			bt_le_scan_update(false);
 		}
 		return 0;
+	case BT_CONN_CONNECT_DIR_ADV:
+		conn->err = reason;
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
+			/* User should unref connection object when receiving
+			 * error in connection callback.
+			 */
+			return bt_le_adv_stop();
+		}
+		return 0;
 	case BT_CONN_CONNECT:
 #if defined(CONFIG_BT_BREDR)
 		if (conn->type == BT_CONN_TYPE_BR) {
@@ -1912,7 +1933,54 @@ int bt_le_set_auto_conn(bt_addr_le_t *addr,
 struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 					const struct bt_le_adv_param *param)
 {
-	return NULL;
+	int err;
+	struct bt_conn *conn;
+	struct bt_le_adv_param param_int;
+
+	memcpy(&param_int, param, sizeof(param_int));
+	param_int.options |= (BT_LE_ADV_OPT_CONNECTABLE |
+			      BT_LE_ADV_OPT_ONE_TIME);
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, peer);
+	if (conn) {
+		switch (conn->state) {
+		case BT_CONN_CONNECT_DIR_ADV:
+			/* Handle the case when advertising is stopped with
+			 * bt_le_adv_stop function
+			 */
+			err = bt_le_adv_start_internal(&param_int, NULL, 0,
+						       NULL, 0, peer);
+			if (err && (err != -EALREADY)) {
+				BT_WARN("Directed advertising could not be"
+					" started: %d", err);
+				return NULL;
+			}
+
+		case BT_CONN_CONNECT:
+		case BT_CONN_CONNECTED:
+			return conn;
+		default:
+			bt_conn_unref(conn);
+			return NULL;
+		}
+	}
+
+	conn = bt_conn_add_le(peer);
+	if (!conn) {
+		return NULL;
+	}
+
+	bt_conn_set_state(conn, BT_CONN_CONNECT_DIR_ADV);
+
+	err = bt_le_adv_start_internal(&param_int, NULL, 0, NULL, 0, peer);
+	if (err) {
+		BT_WARN("Directed advertising could not be started: %d", err);
+
+		bt_conn_unref(conn);
+		return NULL;
+	}
+
+	return conn;
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
@@ -1929,7 +1997,7 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 	}
 
 	conn_update = net_buf_add(buf, sizeof(*conn_update));
-	memset(conn_update, 0, sizeof(*conn_update));
+	(void)memset(conn_update, 0, sizeof(*conn_update));
 	conn_update->handle = sys_cpu_to_le16(conn->handle);
 	conn_update->conn_interval_min = sys_cpu_to_le16(param->interval_min);
 	conn_update->conn_interval_max = sys_cpu_to_le16(param->interval_max);

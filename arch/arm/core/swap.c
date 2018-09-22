@@ -41,11 +41,11 @@ extern const int _k_neg_eagain;
  * On ARMv6-M, the intlock key is represented by the PRIMASK register,
  * as BASEPRI is not available.
  *
- * @return may contain a return value setup by a call to
+ * @return -EAGAIN, or a return value set by a call to
  * _set_thread_return_value()
  *
  */
-unsigned int __swap(int key)
+int __swap(int key)
 {
 #ifdef CONFIG_USERSPACE
 	/* Save off current privilege mode */

@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INCipmh
-#define __INCipmh
+#ifndef ZEPHYR_INCLUDE_IPM_H_
+#define ZEPHYR_INCLUDE_IPM_H_
 
 /**
  * @brief IPM Interface
@@ -222,4 +222,4 @@ static inline int _impl_ipm_set_enabled(struct device *ipmdev, int enable)
 
 #include <syscalls/ipm.h>
 
-#endif /* __INCipmh */
+#endif /* ZEPHYR_INCLUDE_IPM_H_ */

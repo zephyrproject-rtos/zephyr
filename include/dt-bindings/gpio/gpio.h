@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __DT_BINDINGS_GPIO_GPIO_H
-#define __DT_BINDINGS_GPIO_GPIO_H
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_GPIO_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_GPIO_H_
 
 
 /**
@@ -180,4 +180,4 @@
 
 
 
-#endif /* __DT_BINDINGS_GPIO_GPIO_H */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_GPIO_H_ */

@@ -31,7 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button {
 			label = "User";
 			gpios = <&gpioa 2 GPIO_INT_ACTIVE_LOW>;
 		};
@@ -101,4 +101,8 @@
 		reg = <0x60>;
 		label = "LP3943";
 	};
+};
+
+&rtc {
+	status = "ok";
 };

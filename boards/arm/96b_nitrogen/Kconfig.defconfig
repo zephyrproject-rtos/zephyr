@@ -9,20 +9,4 @@ if BOARD_96B_NITROGEN
 config BOARD
 	default "96b_nitrogen"
 
-if UART_NRFX
-
-config UART_0_NRF_TX_PIN
-	default 13
-
-config UART_0_NRF_RX_PIN
-	default 15
-
-config UART_0_NRF_RTS_PIN
-	default 12
-
-config UART_0_NRF_CTS_PIN
-	default 14
-
-endif # UART_NRFX
-
 endif # BOARD_96B_NITROGEN

@@ -14,8 +14,8 @@
  * calls to functions must be protected with synchronization primitives.
  */
 
-#ifndef __SFLIST_H__
-#define __SFLIST_H__
+#ifndef ZEPHYR_INCLUDE_MISC_SFLIST_H_
+#define ZEPHYR_INCLUDE_MISC_SFLIST_H_
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -475,4 +475,4 @@ Z_GENLIST_FIND_AND_REMOVE(sflist, sfnode);
 }
 #endif
 
-#endif /* __SFLIST_H__ */
+#endif /* ZEPHYR_INCLUDE_MISC_SFLIST_H_ */

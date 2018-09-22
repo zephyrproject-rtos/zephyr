@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _INTTYPES_H_
-#define _INTTYPES_H_
+#ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_INTTYPES_H_
+#define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_INTTYPES_H_
 
 #include <stdint.h>
 

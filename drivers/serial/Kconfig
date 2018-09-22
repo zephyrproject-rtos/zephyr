@@ -101,13 +101,6 @@ source "drivers/serial/Kconfig.msp432p4xx"
 
 source "drivers/serial/Kconfig.sam0"
 
-config HW_UART0_ENABLED
-    bool
-
-config HW_UARTE0_ENABLED
-    bool
-
-config HW_UARTE1_ENABLED
-    bool
+source "drivers/serial/Kconfig.psoc6"
 
 endif

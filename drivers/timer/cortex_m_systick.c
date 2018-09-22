@@ -772,6 +772,7 @@ return (u32_t) get_elapsed_count();
 #else
 		count = SysTick->LOAD - SysTick->VAL;
 #endif
+		__ISB();
 	} while (cac != clock_accumulated_count);
 
 	return cac + count;

@@ -40,5 +40,4 @@ zephyr_ld_options(
 # be included in a few zephyr kernel files.
 
 
-add_subdirectory(soc)
 add_subdirectory(core)

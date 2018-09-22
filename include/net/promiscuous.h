@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __PROMISCUOUS_H
-#define __PROMISCUOUS_H
+#ifndef ZEPHYR_INCLUDE_NET_PROMISCUOUS_H_
+#define ZEPHYR_INCLUDE_NET_PROMISCUOUS_H_
 
 /**
  * @brief Promiscuous mode support.
@@ -90,4 +90,4 @@ static inline int net_promisc_mode_off(struct net_if *iface)
  * @}
  */
 
-#endif /* __PROMISCUOUS_H */
+#endif /* ZEPHYR_INCLUDE_NET_PROMISCUOUS_H_ */

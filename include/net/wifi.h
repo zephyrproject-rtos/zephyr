@@ -9,8 +9,8 @@
  * @brief General WiFi Definitions
  */
 
-#ifndef __WIFI_H__
-#define __WIFI_H__
+#ifndef ZEPHYR_INCLUDE_NET_WIFI_H_
+#define ZEPHYR_INCLUDE_NET_WIFI_H_
 
 enum wifi_security_type {
 	WIFI_SECURITY_TYPE_NONE = 0,
@@ -23,4 +23,4 @@ enum wifi_security_type {
 #define WIFI_CHANNEL_MAX 14
 #define WIFI_CHANNEL_ANY 255
 
-#endif /* __WIFI_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_WIFI_H_ */

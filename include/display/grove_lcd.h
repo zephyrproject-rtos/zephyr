@@ -4,8 +4,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef DISPLAY_GROVE_LCD_H
-#define DISPLAY_GROVE_LCD_H
+#ifndef ZEPHYR_INCLUDE_DISPLAY_GROVE_LCD_H_
+#define ZEPHYR_INCLUDE_DISPLAY_GROVE_LCD_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -179,4 +179,4 @@ int glcd_initialize(struct device *port);
 }
 #endif
 
-#endif /* DISPLAY_GROVE_LCD_H */
+#endif /* ZEPHYR_INCLUDE_DISPLAY_GROVE_LCD_H_ */

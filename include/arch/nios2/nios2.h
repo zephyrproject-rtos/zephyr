@@ -1,5 +1,5 @@
-#ifndef __NIOS2_H__
-#define __NIOS2_H__
+#ifndef ZEPHYR_INCLUDE_ARCH_NIOS2_NIOS2_H_
+#define ZEPHYR_INCLUDE_ARCH_NIOS2_NIOS2_H_
 
 /******************************************************************************
 *                                                                             *
@@ -322,4 +322,4 @@ static inline u32_t _nios2_reg_read(void *base, int regnum)
 }
 #endif /* __cplusplus */
 
-#endif /* __NIOS2_H__ */
+#endif /* ZEPHYR_INCLUDE_ARCH_NIOS2_NIOS2_H_ */

@@ -114,6 +114,15 @@
 #define ADC_1ST_CHANNEL_ID	10
 #define ADC_2ND_CHANNEL_ID	11
 
+#elif defined(CONFIG_BOARD_QUARK_D2000_CRB)
+#define ADC_DEVICE_NAME		CONFIG_ADC_0_NAME
+#define ADC_RESOLUTION		10
+#define ADC_GAIN		ADC_GAIN_1
+#define ADC_REFERENCE		ADC_REF_INTERNAL
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
+#define ADC_1ST_CHANNEL_ID	3
+#define ADC_2ND_CHANNEL_ID	4
+
 #else
 #error "Unsupported board."
 #endif
@@ -159,7 +168,7 @@ static struct device *init_adc(void)
 		"Setting up of the second channel failed with code %d", ret);
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
 
-	memset(m_sample_buffer, 0, sizeof(m_sample_buffer));
+	(void)memset(m_sample_buffer, 0, sizeof(m_sample_buffer));
 
 	return adc_dev;
 }

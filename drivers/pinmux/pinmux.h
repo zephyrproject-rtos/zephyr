@@ -5,8 +5,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __DRIVERS_PINMUX_H
-#define __DRIVERS_PINMUX_H
+#ifndef ZEPHYR_DRIVERS_PINMUX_PINMUX_H_
+#define ZEPHYR_DRIVERS_PINMUX_PINMUX_H_
 
 #include <zephyr/types.h>
 #include <device.h>
@@ -28,4 +28,4 @@ struct pinmux_config {
 }
 #endif
 
-#endif /* __DRIVERS_PINMUX_H */
+#endif /* ZEPHYR_DRIVERS_PINMUX_PINMUX_H_ */

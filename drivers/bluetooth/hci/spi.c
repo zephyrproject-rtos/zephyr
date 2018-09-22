@@ -285,7 +285,7 @@ static void bt_spi_rx_thread(void)
 	u8_t size = 0;
 	int ret;
 
-	memset(&txmsg, 0xFF, SPI_MAX_MSG_LEN);
+	(void)memset(&txmsg, 0xFF, SPI_MAX_MSG_LEN);
 
 	while (true) {
 		k_sem_take(&sem_request, K_FOREVER);

@@ -61,7 +61,7 @@ void fcb_test_rotate(void)
 	zassert_true(fcb->f_active_id == old_id,
 		     "flash location should be kept");
 
-	memset(cnts, 0, sizeof(cnts));
+	(void)memset(cnts, 0, sizeof(cnts));
 	rc = fcb_walk(fcb, NULL, fcb_test_cnt_elems_cb, &aa_arg);
 	zassert_true(rc == 0, "fcb_walk call failure");
 	zassert_true(aa_arg.elem_cnts[0] == elem_cnts[0] ||
@@ -89,7 +89,7 @@ void fcb_test_rotate(void)
 	zassert_true(fcb->f_active_id == old_id,
 		     "flash location should be kept");
 
-	memset(cnts, 0, sizeof(cnts));
+	(void)memset(cnts, 0, sizeof(cnts));
 	rc = fcb_walk(fcb, NULL, fcb_test_cnt_elems_cb, &aa_arg);
 	zassert_true(rc == 0, "fcb_walk call failure");
 	zassert_true(aa_arg.elem_cnts[0] == 1 || aa_arg.elem_cnts[1] == 1,

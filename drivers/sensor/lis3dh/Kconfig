@@ -12,16 +12,16 @@ menuconfig LIS3DH
 	help
 	  Enable driver for LIS3DH I2C-based triaxial accelerometer sensor.
 
+if LIS3DH
+
 config LIS3DH_NAME
 	string "Driver name"
 	default "LIS3DH"
-	depends on LIS3DH
 	help
 	  Device name with which the LIS3DH sensor is identified.
 
 config LIS3DH_I2C_ADDR
 	hex "LIS3DH I2C address"
-	depends on LIS3DH
 	default 0x18
 	help
 	  I2C address of the LIS3DH sensor.
@@ -31,7 +31,6 @@ config LIS3DH_I2C_ADDR
 
 config LIS3DH_I2C_MASTER_DEV_NAME
 	string "I2C master where LIS3DH is connected"
-	depends on LIS3DH
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which LIS3DH is
@@ -39,7 +38,6 @@ config LIS3DH_I2C_MASTER_DEV_NAME
 
 choice
 	prompt "Trigger mode"
-	depends on LIS3DH
 	default LIS3DH_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
@@ -61,12 +59,11 @@ endchoice
 
 config LIS3DH_TRIGGER
 	bool
-	depends on LIS3DH
 
 config LIS3DH_GPIO_DEV_NAME
 	string "GPIO device"
 	default "GPIO_0"
-	depends on LIS3DH && LIS3DH_TRIGGER
+	depends on LIS3DH_TRIGGER
 	help
 	  The device name of the GPIO device to which the LIS3DH interrupt pins
 	  are connected.
@@ -74,28 +71,27 @@ config LIS3DH_GPIO_DEV_NAME
 config LIS3DH_GPIO_PIN_NUM
 	int "Interrupt GPIO pin number"
 	default 0
-	depends on LIS3DH && LIS3DH_TRIGGER
+	depends on LIS3DH_TRIGGER
 	help
 	  The number of the GPIO on which the interrupt signal from the LIS3DH
 	  chip will be received.
 
 config LIS3DH_THREAD_PRIORITY
 	int "Thread priority"
-	depends on LIS3DH && LIS3DH_TRIGGER_OWN_THREAD
+	depends on LIS3DH_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  Priority of thread used by the driver to handle interrupts.
 
 config LIS3DH_THREAD_STACK_SIZE
 	int "Thread stack size"
-	depends on LIS3DH && LIS3DH_TRIGGER_OWN_THREAD
+	depends on LIS3DH_TRIGGER_OWN_THREAD
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
 choice
 	prompt "Acceleration measurement range"
-	depends on LIS3DH
 	default LIS3DH_ACCEL_RANGE_2G
 	help
 	  Measurement full scale range for acceleration values.
@@ -116,7 +112,6 @@ endchoice
 
 choice
 	prompt "Power mode"
-	depends on LIS3DH
 	default LIS3DH_POWER_MODE_NORMAL
 	help
 	  Choose between normal or low power operation mode for chip.
@@ -131,7 +126,6 @@ endchoice
 
 choice
 	prompt "Data rate frequency"
-	depends on LIS3DH
 	default LIS3DH_ODR_1
 	help
 	  Data rate frequency of acceleration data.
@@ -170,3 +164,5 @@ config LIS3DH_ODR_9_LOW
 	depends on LIS3DH_POWER_MODE_LOW
 
 endchoice
+
+endif # LIS3DH

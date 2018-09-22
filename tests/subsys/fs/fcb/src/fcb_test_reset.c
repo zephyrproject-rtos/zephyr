@@ -58,7 +58,7 @@ void fcb_test_reset(void)
 	/*
 	 * Pretend reset
 	 */
-	memset(fcb, 0, sizeof(*fcb));
+	(void)memset(fcb, 0, sizeof(*fcb));
 	fcb->f_sector_cnt = 2;
 	fcb->f_sectors = test_fcb_sector;
 
@@ -96,7 +96,7 @@ void fcb_test_reset(void)
 	rc = fcb_append(fcb, 34, &loc);
 	zassert_true(rc == 0, "fcb_append call failure");
 
-	memset(fcb, 0, sizeof(*fcb));
+	(void)memset(fcb, 0, sizeof(*fcb));
 	fcb->f_sector_cnt = 2;
 	fcb->f_sectors = test_fcb_sector;
 

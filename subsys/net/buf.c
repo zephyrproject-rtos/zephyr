@@ -673,11 +673,11 @@ struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
 }
 
 int net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
-		      u16_t offset, u16_t len)
+		      size_t offset, size_t len)
 {
 	struct net_buf *frag;
-	u16_t to_copy;
-	u16_t copied;
+	size_t to_copy;
+	size_t copied;
 
 	if (dst_len < (size_t)len) {
 		return -ENOMEM;
@@ -686,7 +686,7 @@ int net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
 	frag = src;
 
 	/* clear dst */
-	memset(dst, 0, dst_len);
+	(void)memset(dst, 0, dst_len);
 
 	/* find the right fragment to start copying from */
 	while (frag && offset >= frag->len) {
@@ -721,15 +721,13 @@ int net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
  * the data in current fragment then create new fragment and add it to
  * the buffer. It assumes that the buffer has at least one fragment.
  */
-u16_t net_buf_append_bytes(struct net_buf *buf, u16_t len,
-			   const u8_t *value, s32_t timeout,
-			   net_buf_allocator_cb allocate_cb, void *user_data)
+size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
+			    const void *value, s32_t timeout,
+			    net_buf_allocator_cb allocate_cb, void *user_data)
 {
-    printk("A");
 	struct net_buf *frag = net_buf_frag_last(buf);
-	u16_t added_len = 0;
-    printk("B");
-    while(true);
+	size_t added_len = 0;
+
 	do {
 		u16_t count = min(len, net_buf_tailroom(frag));
 		void *data = net_buf_add(frag, count);

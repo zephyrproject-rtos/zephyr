@@ -6,22 +6,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-choice
-	prompt "ARM SoC Selection"
-	default SOC_SERIES_KINETIS_K6X
-	depends on ARM
-
-	source "arch/arm/soc/*/Kconfig.soc"
-endchoice
 
 menu "ARM Options"
 	depends on ARM
-
-menu "SoC Configuration"
-# Include these first so that any properties (e.g. defaults) below can be
-# overriden (by defining symbols in multiple locations)
-source "arch/arm/soc/*/Kconfig"
-endmenu
 
 source "arch/arm/core/Kconfig"
 

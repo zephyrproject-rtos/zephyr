@@ -13,14 +13,14 @@ menuconfig BME280
 	help
 	 Enable driver for BME280 I2C-based or SPI-based temperature and pressure sensor.
 
+if BME280
+
 config BME280_DEV_NAME
 	string "BME280 device name"
-	depends on BME280
 	default "BME280"
 
 choice
 	prompt "BME280 device select"
-	depends on BME280
 	default BME280_DEV_TYPE_I2C
 	help
 	  Select interface to communicate with BME280 sensor. This sensor can communicate
@@ -38,7 +38,7 @@ endchoice
 config BME280_I2C_ADDR
 	hex "BME280 I2C slave address"
 	default 0x76
-	depends on BME280 && BME280_DEV_TYPE_I2C
+	depends on BME280_DEV_TYPE_I2C
 	help
 	  Specify the I2C slave address for the BME280.
 
@@ -47,7 +47,7 @@ config BME280_I2C_ADDR
 
 config BME280_I2C_MASTER_DEV_NAME
 	string "I2C master where BME280 is connected"
-	depends on BME280 && BME280_DEV_TYPE_I2C
+	depends on BME280_DEV_TYPE_I2C
 	default "I2C_0"
 	help
 	 Specify the device name of the I2C master device to which BME280 is
@@ -55,7 +55,7 @@ config BME280_I2C_MASTER_DEV_NAME
 
 config BME280_SPI_DEV_NAME
 	string "SPI device where BME280 is connected"
-	depends on BME280 && BME280_DEV_TYPE_SPI
+	depends on BME280_DEV_TYPE_SPI
 	default "SPI_0"
 	help
 	 Specify the device name of the SPI device to which BME280 is
@@ -63,18 +63,16 @@ config BME280_SPI_DEV_NAME
 
 config BME280_SPI_DEV_SLAVE
 	int "SPI Slave Select where BME280 is connected"
-	depends on BME280 && BME280_DEV_TYPE_SPI
+	depends on BME280_DEV_TYPE_SPI
 	default 3
 	help
 	 Specify the Slave Select pin of the SPI device to which BME280 CS is
 	 connected.
 
 menu "Attributes"
-	depends on BME280
 
 choice
 	prompt "BME280 temperature oversampling"
-	depends on BME280
 	default BME280_TEMP_OVER_2X
 	help
 	  Select temperature oversampling for the BME280 sensor.  Higher values
@@ -93,7 +91,6 @@ endchoice
 
 choice
 	prompt "BME280 pressure oversampling"
-	depends on BME280
 	default BME280_PRESS_OVER_16X
 	help
 	  Select pressure oversampling for the BME280 sensor.  Higher values
@@ -112,7 +109,6 @@ endchoice
 
 choice
 	prompt "BME280 humidity oversampling"
-	depends on BME280
 	default BME280_HUMIDITY_OVER_16X
 	help
 	  Select humidity oversampling for the BME280 sensor.  Higher values
@@ -131,7 +127,6 @@ endchoice
 
 choice
 	prompt "BME280 standby time"
-	depends on BME280
 	default BME280_STANDBY_1000MS
 	help
 	  Select standby time between measurements for the BME280 sensor.
@@ -156,7 +151,6 @@ endchoice
 
 choice
 	prompt "BME280 filter coefficient"
-	depends on BME280
 	default BME280_FILTER_4
 	help
 	  Select the filter coefficient for the BME280 sensor.
@@ -173,3 +167,5 @@ config BME280_FILTER_16
 endchoice
 
 endmenu
+
+endif # BME280

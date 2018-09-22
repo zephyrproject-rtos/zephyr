@@ -110,7 +110,7 @@ static u8_t discover_func(struct bt_conn *conn,
 
 	if (!attr) {
 		printk("Discover complete\n");
-		memset(params, 0, sizeof(*params));
+		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -158,18 +158,12 @@ int cmd_gatt_discover(int argc, char *argv[])
 	discover_params.start_handle = 0x0001;
 	discover_params.end_handle = 0xffff;
 
-	if (argc < 2) {
-		if (!strcmp(argv[0], "gatt-discover-primary") ||
-		    !strcmp(argv[0], "gatt-discover-secondary")) {
-			return -EINVAL;
+	if (argc > 1) {
+		/* Only set the UUID if the value is valid (non zero) */
+		uuid.val = strtoul(argv[1], NULL, 16);
+		if (uuid.val) {
+			discover_params.uuid = &uuid.uuid;
 		}
-		goto done;
-	}
-
-	/* Only set the UUID if the value is valid (non zero) */
-	uuid.val = strtoul(argv[1], NULL, 16);
-	if (uuid.val) {
-		discover_params.uuid = &uuid.uuid;
 	}
 
 	if (argc > 2) {
@@ -179,7 +173,6 @@ int cmd_gatt_discover(int argc, char *argv[])
 		}
 	}
 
-done:
 	if (!strcmp(argv[0], "gatt-discover-secondary")) {
 		discover_params.type = BT_GATT_DISCOVER_SECONDARY;
 	} else if (!strcmp(argv[0], "gatt-discover-include")) {
@@ -211,7 +204,7 @@ static u8_t read_func(struct bt_conn *conn, u8_t err,
 	printk("Read complete: err %u length %u\n", err, length);
 
 	if (!data) {
-		memset(params, 0, sizeof(*params));
+		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -294,7 +287,7 @@ static void write_func(struct bt_conn *conn, u8_t err,
 {
 	printk("Write complete: err %u\n", err);
 
-	memset(&write_params, 0, sizeof(write_params));
+	(void)memset(&write_params, 0, sizeof(write_params));
 }
 
 int cmd_gatt_write(int argc, char *argv[])

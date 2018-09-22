@@ -14,8 +14,8 @@
  * and the interrupt controller implementation for x86
  */
 
-#ifndef IRQ_CONTROLLER_H
-#define IRQ_CONTROLLER_H
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_IRQ_CONTROLLER_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_IRQ_CONTROLLER_H_
 
 #ifdef CONFIG_MVIC
 #include <drivers/mvic.h>
@@ -110,4 +110,4 @@ static inline void _irq_controller_eoi(void)
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* IRQ_CONTROLLER_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_IRQ_CONTROLLER_H_ */

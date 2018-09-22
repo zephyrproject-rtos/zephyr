@@ -12,7 +12,7 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 static void test_shell_exec(const char *line, int result)
 {

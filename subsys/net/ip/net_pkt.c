@@ -312,7 +312,7 @@ struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
 		return NULL;
 	}
 
-	memset(pkt, 0, sizeof(struct net_pkt));
+	(void)memset(pkt, 0, sizeof(struct net_pkt));
 
 	net_pkt_set_ll_reserve(pkt, reserve_head);
 
@@ -1249,7 +1249,7 @@ u16_t net_pkt_append_memset(struct net_pkt *pkt, u16_t len, const u8_t data,
 		u16_t count = min(len, net_buf_tailroom(frag));
 		void *mem = net_buf_add(frag, count);
 
-		memset(mem, data, count);
+		(void)memset(mem, data, count);
 		len -= count;
 		appended += count;
 
@@ -1558,7 +1558,7 @@ static inline bool insert_data(struct net_pkt *pkt, struct net_buf *frag,
 			memcpy(frag->data + offset, data, count);
 		} else {
 			/* If there is no data, just clear the area */
-			memset(frag->data + offset, 0, count);
+			(void)memset(frag->data + offset, 0, count);
 		}
 
 		net_buf_add(frag, count);

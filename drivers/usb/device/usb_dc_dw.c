@@ -801,7 +801,7 @@ int usb_dc_reset(void)
 	ret = usb_dw_reset();
 
 	/* Clear private data */
-	memset(&usb_dw_ctrl, 0, sizeof(usb_dw_ctrl));
+	(void)memset(&usb_dw_ctrl, 0, sizeof(usb_dw_ctrl));
 
 	return ret;
 }

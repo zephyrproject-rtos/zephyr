@@ -373,6 +373,7 @@ __STATIC_INLINE nrfx_err_t twim_xfer(twim_control_block_t        * p_cb,
         nrf_twim_shorts_set(p_twim, NRF_TWIM_SHORT_LASTTX_STARTRX_MASK |
                                     NRF_TWIM_SHORT_LASTRX_STOP_MASK);
         p_cb->int_mask = NRF_TWIM_INT_STOPPED_MASK | NRF_TWIM_INT_ERROR_MASK;
+        nrf_twim_task_trigger(p_twim, NRF_TWIM_TASK_RESUME);
         break;
     case NRFX_TWIM_XFER_TX:
         nrf_twim_tx_buffer_set(p_twim, p_xfer_desc->p_primary_buf, p_xfer_desc->primary_length);

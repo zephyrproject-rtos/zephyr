@@ -8,30 +8,29 @@
 
 menuconfig VL53L0X
 	bool "VL53L0X time of flight sensor"
-	depends on SENSOR && I2C
+	depends on I2C
 	select HAS_STLIB
 	help
 	  Enable driver for VL53L0X I2C-based time of flight sensor.
+
+if VL53L0X
 
 if !HAS_DTS_I2C_DEVICE
 
 config VL53L0X_NAME
 	string "Driver name"
 	default "VL53L0X"
-	depends on VL53L0X
 	help
 	  Device name with which the VL53L0X sensor is identified.
 
 config VL53L0X_I2C_ADDR
 	hex "Vl53l0x I2C address"
 	default 0x29
-	depends on VL53L0X
 	help
 	  address of the i2c used for the vl53l0x sensor
 
 config VL53L0X_I2C_MASTER_DEV_NAME
 	string "I2C master where VL53L0X is connected"
-	depends on VL53L0X
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which VL53L0X is
@@ -41,7 +40,6 @@ endif
 
 config VL53L0X_XSHUT_CONTROL_ENABLE
 	bool "Enable XSHUT pin control"
-	depends on VL53L0X
 	help
 	    Enable it if XSHUT pin is controlled by host.
 
@@ -64,6 +62,7 @@ config VL53L0X_XSHUT_GPIO_PIN_NUM
 config VL53L0X_PROXIMITY_THRESHOLD
 	int "Proximity threshold in millimeters"
 	default 100
-	depends on VL53L0X
 	help
 	  Threshold used for proximity detection when sensor is used with SENSOR_CHAN_PROX.
+
+endif # VL53L0X

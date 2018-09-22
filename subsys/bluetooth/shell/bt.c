@@ -28,7 +28,7 @@
 #include <bluetooth/rfcomm.h>
 #include <bluetooth/sdp.h>
 
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 #include "bt.h"
 #include "gatt.h"
@@ -155,7 +155,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[NAME_LEN];
 
-	memset(name, 0, sizeof(name));
+	(void)memset(name, 0, sizeof(name));
 
 	bt_data_parse(buf, data_cb, name);
 
@@ -210,7 +210,7 @@ static void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 		break;
 #endif
 	case BT_CONN_TYPE_LE:
-		bt_addr_le_to_str(info.le.dst, addr, len);
+		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, len);
 		break;
 	}
 }
@@ -448,16 +448,16 @@ static int char2hex(const char *c, u8_t *x)
 	return 0;
 }
 
-static int str2bt_addr(const char *str, bt_addr_t *addr)
+static int hexstr2array(const char *str, u8_t *array, u8_t size)
 {
 	int i, j;
 	u8_t tmp;
 
-	if (strlen(str) != 17) {
+	if (strlen(str) != ((size * 2) + (size - 1))) {
 		return -EINVAL;
 	}
 
-	for (i = 5, j = 1; *str != '\0'; str++, j++) {
+	for (i = size - 1, j = 1; *str != '\0'; str++, j++) {
 		if (!(j % 3) && (*str != ':')) {
 			return -EINVAL;
 		} else if (*str == ':') {
@@ -465,16 +465,21 @@ static int str2bt_addr(const char *str, bt_addr_t *addr)
 			continue;
 		}
 
-		addr->val[i] = addr->val[i] << 4;
+		array[i] = array[i] << 4;
 
 		if (char2hex(str, &tmp) < 0) {
 			return -EINVAL;
 		}
 
-		addr->val[i] |= tmp;
+		array[i] |= tmp;
 	}
 
 	return 0;
+}
+
+static int str2bt_addr(const char *str, bt_addr_t *addr)
+{
+	return hexstr2array(str, addr->val, 6);
 }
 
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
@@ -994,6 +999,44 @@ static int cmd_auto_conn(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_directed_adv(int argc, char *argv[])
+{
+	int err;
+	bt_addr_le_t addr;
+	struct bt_conn *conn;
+	struct bt_le_adv_param *param = BT_LE_ADV_CONN_DIR;
+
+	if (argc < 3) {
+		return -EINVAL;
+	}
+
+	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	if (err) {
+		printk("Invalid peer address (err %d)\n", err);
+		return 0;
+	}
+
+	if (argc > 3) {
+		if (!strcmp(argv[3], "low")) {
+			param = BT_LE_ADV_CONN_DIR_LOW_DUTY;
+		} else {
+			return -EINVAL;
+		}
+	}
+
+	conn = bt_conn_create_slave_le(&addr, param);
+	if (!conn) {
+		printk("Failed to start directed advertising\n");
+	} else {
+		printk("Started directed advertising\n");
+
+		/* unref connection obj in advance as app user */
+		bt_conn_unref(conn);
+	}
+
+	return 0;
+}
+
 static int cmd_select(int argc, char *argv[])
 {
 	struct bt_conn *conn;
@@ -1116,6 +1159,31 @@ static int cmd_clear(int argc, char *argv[])
 
 	return 0;
 }
+
+static int cmd_chan_map(int argc, char *argv[])
+{
+	u8_t chan_map[5];
+	int err;
+
+	if (argc != 2) {
+		return -EINVAL;
+	}
+
+	err = hexstr2array(argv[1], chan_map, 5);
+	if (err) {
+		printk("Invalid channel map\n");
+		return err;
+	}
+
+	err = bt_le_set_chan_map(chan_map);
+	if (err) {
+		printk("Failed to set channel map (err %d)\n", err);
+	} else {
+		printk("Channel map set\n");
+	}
+
+	return 0;
+}
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
@@ -1137,6 +1205,26 @@ static int cmd_security(int argc, char *argv[])
 	err = bt_conn_security(default_conn, sec);
 	if (err) {
 		printk("Setting security failed (err %d)\n", err);
+	}
+
+	return 0;
+}
+
+static int cmd_bondable(int argc, char *argv[])
+{
+	const char *bondable;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	bondable = argv[1];
+	if (!strcmp(bondable, "on")) {
+		bt_set_bondable(true);
+	} else if (!strcmp(bondable, "off")) {
+		bt_set_bondable(false);
+	} else {
+		return -EINVAL;
 	}
 
 	return 0;
@@ -1506,7 +1594,7 @@ static void br_device_found(const bt_addr_t *addr, s8_t rssi,
 	char name[239];
 	int len = 240;
 
-	memset(name, 0, sizeof(name));
+	(void)memset(name, 0, sizeof(name));
 
 	while (len) {
 		if (len < 2) {
@@ -2173,12 +2261,15 @@ static const struct shell_cmd bt_commands[] = {
 	{ "connect", cmd_connect_le, HELP_ADDR_LE },
 	{ "disconnect", cmd_disconnect, HELP_NONE },
 	{ "auto-conn", cmd_auto_conn, HELP_ADDR_LE },
+	{ "directed-adv", cmd_directed_adv, HELP_ADDR_LE " [mode: low]" },
 	{ "select", cmd_select, HELP_ADDR_LE },
 	{ "conn-update", cmd_conn_update, "<min> <max> <latency> <timeout>" },
 	{ "oob", cmd_oob },
 	{ "clear", cmd_clear },
+	{ "channel-map", cmd_chan_map, "<channel-map: XX:XX:XX:XX:XX> (36-0)" },
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	{ "security", cmd_security, "<security level: 0, 1, 2, 3>" },
+	{ "bondable", cmd_bondable, "<bondable: on, off>" },
 	{ "auth", cmd_auth,
 	  "<auth method: all, input, display, yesno, confirm, none>" },
 	{ "auth-cancel", cmd_auth_cancel, HELP_NONE },
@@ -2195,9 +2286,9 @@ static const struct shell_cmd bt_commands[] = {
 #if defined(CONFIG_BT_GATT_CLIENT)
 	{ "gatt-exchange-mtu", cmd_gatt_exchange_mtu, HELP_NONE },
 	{ "gatt-discover-primary", cmd_gatt_discover,
-	  "<UUID> [start handle] [end handle]" },
+	  "[UUID] [start handle] [end handle]" },
 	{ "gatt-discover-secondary", cmd_gatt_discover,
-	  "<UUID> [start handle] [end handle]" },
+	  "[UUID] [start handle] [end handle]" },
 	{ "gatt-discover-include", cmd_gatt_discover,
 	  "[UUID] [start handle] [end handle]" },
 	{ "gatt-discover-characteristic", cmd_gatt_discover,

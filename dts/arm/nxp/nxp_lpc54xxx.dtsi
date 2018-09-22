@@ -44,6 +44,7 @@
 	soc {
 
 		flash0:flash@0 {
+			compatible = "soc-nv-flash";
 			reg = <0 0x40000>;
 		};
 
@@ -86,4 +87,3 @@
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
-

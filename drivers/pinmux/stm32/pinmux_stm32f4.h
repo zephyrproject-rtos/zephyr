@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _STM32F4_PINMUX_H_
-#define _STM32F4_PINMUX_H_
+#ifndef ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32F4_H_
+#define ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32F4_H_
 
 /**
  * @file Header for STM32F4 pin multiplexing helper
@@ -353,4 +353,4 @@
 #define STM32F4_PINMUX_FUNC_PH8_I2C3_SDA    \
 	(STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)
 
-#endif /* _STM32F4_PINMUX_H_ */
+#endif /* ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32F4_H_ */

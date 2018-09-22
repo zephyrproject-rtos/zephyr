@@ -35,6 +35,10 @@ Hexiwear K64
 No special board setup is necessary because there is an on-board RGB LED
 connected to the K64 PWM.
 
+nRF52840_PCA10056
+=================
+No special board setup is necessary because there is an on-board LED connected.
+
 Building and Running
 ********************
 

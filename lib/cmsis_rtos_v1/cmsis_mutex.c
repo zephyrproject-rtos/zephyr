@@ -26,7 +26,7 @@ osMutexId osMutexCreate(const osMutexDef_t *mutex_def)
 	}
 
 	if (k_mem_slab_alloc(&cmsis_mutex_slab, (void **)&mutex, 100) == 0) {
-		memset(mutex, 0, sizeof(struct k_mutex));
+		(void)memset(mutex, 0, sizeof(struct k_mutex));
 	} else {
 		return NULL;
 	}
@@ -84,8 +84,8 @@ osStatus osMutexRelease(osMutexId mutex_id)
 		return osErrorISR;
 	}
 
-	/* The mutex was not obtained before */
-	if (mutex->lock_count == 0) {
+	/* Mutex was not obtained before or was not owned by current thread */
+	if ((mutex->lock_count == 0) || (mutex->owner != _current)) {
 		return osErrorResource;
 	}
 

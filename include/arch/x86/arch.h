@@ -11,8 +11,8 @@
  * by the generic kernel interface header (include/arch/cpu.h)
  */
 
-#ifndef _ARCH_IFACE_H
-#define _ARCH_IFACE_H
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_
 
 #include <irq.h>
 #include <arch/x86/irq_controller.h>
@@ -445,9 +445,6 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 	_do_irq_unlock();
 }
 
-/* Used to unconditionally enable interrupts when MULTITHREADING=n */
-#define Z_ARCH_INT_ENABLE() _arch_irq_unlock(0x200)
-
 /**
  * The NANO_SOFT_IRQ macro must be used as the value for the @a irq parameter
  * to NANO_CPU_INT_REGISTER when connecting to an interrupt that does not
@@ -696,4 +693,4 @@ void _x86_mmu_set_flags(void *ptr,
 }
 #endif
 
-#endif /* _ARCH_IFACE_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_ */

@@ -4,12 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
-title: nRF GPIO
+title: NRF5 GPIO
 id: nordic,nrf-gpio
 version: 0.1
 
 description: >
-    This is a representation of the nRF GPIO nodes
+    This is a representation of the NRF GPIO nodes
 
 properties:
     compatible:
@@ -17,6 +17,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "nordic,nrf-gpio"
+      generation: define
 
     reg:
       type: int

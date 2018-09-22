@@ -249,7 +249,7 @@ int c2_handle_set(int argc, char **argv, char *val)
 		if (val) {
 			strncpy(valptr, val, sizeof(val_string[0]));
 		} else {
-			memset(valptr, 0, sizeof(val_string[0]));
+			(void)memset(valptr, 0, sizeof(val_string[0]));
 		}
 
 		return 0;

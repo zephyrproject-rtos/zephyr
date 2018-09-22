@@ -686,11 +686,11 @@ static struct net_pkt *update_ll_reserve(struct net_pkt *pkt,
 	 */
 	if (0) {
 		NET_DBG("ll src %s",
-			net_sprint_ll_addr(net_pkt_ll_src(pkt)->addr,
-					   net_pkt_ll_src(pkt)->len));
+			net_sprint_ll_addr(net_pkt_lladdr_src(pkt)->addr,
+					   net_pkt_lladdr_src(pkt)->len));
 		NET_DBG("ll dst %s",
-			net_sprint_ll_addr(net_pkt_ll_dst(pkt)->addr,
-					   net_pkt_ll_dst(pkt)->len));
+			net_sprint_ll_addr(net_pkt_lladdr_dst(pkt)->addr,
+					   net_pkt_lladdr_dst(pkt)->len));
 		NET_DBG("ip src %s",
 			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src));
 		NET_DBG("ip dst %s",
@@ -883,7 +883,7 @@ ignore_frag_error:
 	 * contain public IPv6 address information so in that case we should
 	 * not enter this branch.
 	 */
-	if ((net_pkt_ll_dst(pkt)->addr &&
+	if ((net_pkt_lladdr_dst(pkt)->addr &&
 	     ((IS_ENABLED(CONFIG_NET_ROUTING) &&
 	      net_is_ipv6_ll_addr(&NET_IPV6_HDR(pkt)->dst)) ||
 	      !IS_ENABLED(CONFIG_NET_ROUTING))) ||
@@ -953,8 +953,8 @@ try_send:
 
 		lladdr = net_nbr_get_lladdr(nbr->idx);
 
-		net_pkt_ll_dst(pkt)->addr = lladdr->addr;
-		net_pkt_ll_dst(pkt)->len = lladdr->len;
+		net_pkt_lladdr_dst(pkt)->addr = lladdr->addr;
+		net_pkt_lladdr_dst(pkt)->len = lladdr->len;
 
 		NET_DBG("Neighbor %p addr %s", nbr,
 			net_sprint_ll_addr(lladdr->addr, lladdr->len));
@@ -1062,8 +1062,8 @@ static inline void set_llao(struct net_linkaddr *lladdr,
 
 	memcpy(&llao[NET_ICMPV6_OPT_DATA_OFFSET], lladdr->addr, lladdr->len);
 
-	memset(&llao[NET_ICMPV6_OPT_DATA_OFFSET + lladdr->len], 0,
-	       llao_len - lladdr->len - 2);
+	(void)memset(&llao[NET_ICMPV6_OPT_DATA_OFFSET + lladdr->len], 0,
+		     llao_len - lladdr->len - 2);
 }
 
 static void setup_headers(struct net_pkt *pkt, u8_t nd6_len,
@@ -1113,8 +1113,8 @@ static inline struct net_nbr *handle_ns_neighbor(struct net_pkt *pkt,
 	 * 2 * 8 bytes - 2 - padding.
 	 * The formula above needs to be adjusted.
 	 */
-	if (net_pkt_ll_src(pkt)->len < nbr_lladdr.len) {
-		nbr_lladdr.len = net_pkt_ll_src(pkt)->len;
+	if (net_pkt_lladdr_src(pkt)->len < nbr_lladdr.len) {
+		nbr_lladdr.len = net_pkt_lladdr_src(pkt)->len;
 	}
 
 	return nbr_add(pkt, &nbr_lladdr, false, NET_IPV6_NBR_STATE_INCOMPLETE);
@@ -2198,8 +2198,8 @@ static inline struct net_buf *handle_ra_neighbor(struct net_pkt *pkt,
 	llstorage.len = NET_LINK_ADDR_MAX_LENGTH;
 	lladdr.len = NET_LINK_ADDR_MAX_LENGTH;
 	lladdr.addr = llstorage.addr;
-	if (net_pkt_ll_src(pkt)->len < lladdr.len) {
-		lladdr.len = net_pkt_ll_src(pkt)->len;
+	if (net_pkt_lladdr_src(pkt)->len < lladdr.len) {
+		lladdr.len = net_pkt_lladdr_src(pkt)->len;
 	}
 
 	frag = net_frag_read(frag, offset, pos, lladdr.len, lladdr.addr);
@@ -2290,17 +2290,26 @@ static inline void handle_prefix_onlink(struct net_pkt *pkt,
 
 #define TWO_HOURS (2 * 60 * 60)
 
+static u32_t time_diff(u32_t time1, u32_t time2)
+{
+	return (u32_t)abs((s32_t)time1 - (s32_t)time2);
+}
+
 static inline u32_t remaining_lifetime(struct net_if_addr *ifaddr)
 {
-	s32_t remaining;
+	u64_t remaining;
 
-	if (ifaddr->lifetime_timer_timeout == 0) {
+	if (ifaddr->lifetime.timer_timeout == 0) {
 		return 0;
 	}
 
-	remaining = k_uptime_get() - ifaddr->lifetime_timer_start;
+	remaining = (u64_t)ifaddr->lifetime.timer_timeout +
+		(u64_t)ifaddr->lifetime.wrap_counter *
+		(u64_t)NET_TIMEOUT_MAX_VALUE -
+		(u64_t)time_diff(k_uptime_get_32(),
+				 ifaddr->lifetime.timer_start);
 
-	return abs(remaining) / K_MSEC(1000);
+	return (u32_t)(remaining / K_MSEC(1000));
 }
 
 static inline void handle_prefix_autonomous(struct net_pkt *pkt,
@@ -2454,8 +2463,8 @@ static inline struct net_buf *handle_ra_6co(struct net_pkt *pkt,
 	 * field that are valid. So set remaining data to zero.
 	 */
 	if (context.context_len != sizeof(struct in6_addr)) {
-		memset(context.prefix.s6_addr + context.context_len, 0,
-		       sizeof(struct in6_addr) - context.context_len);
+		(void)memset(context.prefix.s6_addr + context.context_len, 0,
+			     sizeof(struct in6_addr) - context.context_len);
 	}
 
 	net_6lo_set_context(net_pkt_iface(pkt), &context);

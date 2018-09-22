@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef LOG_CTRL_H
-#define LOG_CTRL_H
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_
 
 #include <logging/log_backend.h>
 
@@ -104,7 +104,7 @@ u32_t log_src_cnt_get(u32_t domain_id);
  * @param domain_id Domain ID.
  * @param src_id    Source ID.
  *
- * @return Source name.
+ * @return Source name or NULL if invalid arguments.
  */
 const char *log_source_name_get(u32_t domain_id, u32_t src_id);
 
@@ -180,4 +180,4 @@ void log_backend_disable(struct log_backend const *const backend);
 }
 #endif
 
-#endif /* LOG_CTRL_H */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_ */

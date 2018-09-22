@@ -6,21 +6,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-choice
-	prompt "POSIX Configuration Selection"
-	depends on ARCH_POSIX
-
-	source "arch/posix/soc/*/Kconfig.soc"
-endchoice
-
 menu "POSIX (native) Options"
 	depends on ARCH_POSIX
-
-# Include these first so that any properties (e.g. defaults) below can be
-# overriden (by defining symbols in multiple locations)
-#
-# (No SoC-specific Kconfig files as of writing, hence the optional source.)
-osource "arch/posix/soc/*/Kconfig"
 
 config ARCH
 	default "posix"

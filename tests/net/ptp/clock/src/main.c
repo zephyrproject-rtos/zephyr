@@ -421,7 +421,7 @@ static void test_ptp_clock_iface(int idx)
 
 	ptp_clock_adjust(clk, rnd_value);
 
-	memset(&tm, 0, sizeof(tm));
+	(void)memset(&tm, 0, sizeof(tm));
 	ptp_clock_get(clk, &tm);
 
 	new_value = timestamp_to_nsec(&tm);

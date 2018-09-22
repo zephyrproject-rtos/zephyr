@@ -180,7 +180,7 @@ static void bt_sdp_disconnected(struct bt_l2cap_chan *chan)
 
 	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
 
-	memset(sdp, 0, sizeof(*sdp));
+	(void)memset(sdp, 0, sizeof(*sdp));
 }
 
 /* @brief Creates an SDP PDU
@@ -1575,7 +1575,7 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 		/* Invalidate cached param in context */
 		session->param = NULL;
 		/* Reset continuation state in current context */
-		memset(&session->cstate, 0, sizeof(session->cstate));
+		(void)memset(&session->cstate, 0, sizeof(session->cstate));
 
 		/* Check if there's valid next UUID */
 		if (!sys_slist_is_empty(&session->reqs)) {
@@ -1880,7 +1880,8 @@ static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
 	 * Reset session excluding L2CAP channel member. Let's the channel
 	 * resets autonomous.
 	 */
-	memset(&session->reqs, 0, sizeof(*session) - sizeof(session->chan));
+	(void)memset(&session->reqs, 0,
+		     sizeof(*session) - sizeof(session->chan));
 }
 
 static struct bt_l2cap_chan_ops sdp_client_chan_ops = {
@@ -1910,7 +1911,7 @@ static struct bt_sdp_client *sdp_client_new_session(struct bt_conn *conn)
 
 		err = sdp_client_chan_connect(session);
 		if (err) {
-			memset(session, 0, sizeof(*session));
+			(void)memset(session, 0, sizeof(*session));
 			BT_ERR("Cannot connect %d", err);
 			return NULL;
 		}

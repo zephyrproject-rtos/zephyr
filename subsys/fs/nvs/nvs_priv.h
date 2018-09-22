@@ -35,11 +35,15 @@ extern "C" {
 /* Allocation Table Entry */
 struct nvs_ate {
 	u16_t id;	/* data id */
-	u16_t offset;	/* data offset in sector */
-	u16_t len;	/* data len in sector */
+	u16_t offset;	/* data offset within sector */
+	u16_t len;	/* data len within sector */
 	u8_t part;	/* part of a multipart data - future extension */
 	u8_t crc8;	/* crc8 check of the entry */
-};
+} __packed;
+
+BUILD_ASSERT_MSG(offsetof(struct nvs_ate, crc8) ==
+		 sizeof(struct nvs_ate) - sizeof(u8_t),
+		 "crc8 must be the last member");
 
 #ifdef __cplusplus
 }

@@ -925,7 +925,7 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_ll(pkt),
 				     net_pkt_ll_reserve(pkt),
 				     net_pkt_get_len(pkt),
-				     net_pkt_ll_src(pkt)->addr,
+				     net_pkt_lladdr_src(pkt)->addr,
 				     sys_le32_to_cpu(
 					mpdu->mhr.aux_sec->frame_counter))) {
 		NET_ERR("Could not decipher the frame");

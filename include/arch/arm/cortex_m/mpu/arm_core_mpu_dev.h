@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _ARM_CORE_MPU_DEV_H_
-#define _ARM_CORE_MPU_DEV_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_ARM_CORE_MPU_DEV_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_ARM_CORE_MPU_DEV_H_
 
 #include <zephyr/types.h>
 
@@ -46,7 +46,7 @@ enum {
 	THREAD_MPU_REGION_LAST
 };
 
-#if defined(CONFIG_ARM_CORE_MPU)
+#if defined(CONFIG_ARM_MPU)
 struct k_mem_domain;
 struct k_mem_partition;
 struct k_thread;
@@ -55,7 +55,7 @@ struct k_thread;
 
 /*
  * This API has to be implemented by all the MPU drivers that have
- * ARM_CORE_MPU support.
+ * ARM_MPU support.
  */
 
 /**
@@ -117,10 +117,10 @@ int arm_core_mpu_get_max_domain_partition_regions(void);
  */
 int arm_core_mpu_buffer_validate(void *addr, size_t size, int write);
 
-#endif /* CONFIG_ARM_CORE_MPU */
+#endif /* CONFIG_ARM_MPU */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _ARM_CORE_MPU_DEV_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_ARM_CORE_MPU_DEV_H_ */

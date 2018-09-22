@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SYS_IO_H__
-#define __SYS_IO_H__
+#ifndef ZEPHYR_INCLUDE_SYS_IO_H_
+#define ZEPHYR_INCLUDE_SYS_IO_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -336,4 +336,4 @@ typedef u32_t mem_addr_t;
 }
 #endif
 
-#endif /* __SYS_IO_H__ */
+#endif /* ZEPHYR_INCLUDE_SYS_IO_H_ */

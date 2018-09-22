@@ -214,8 +214,9 @@ int net_context_get(sa_family_t family,
 		net_context_set_type(&contexts[i], type);
 		net_context_set_ip_proto(&contexts[i], ip_proto);
 
-		memset(&contexts[i].remote, 0, sizeof(struct sockaddr));
-		memset(&contexts[i].local, 0, sizeof(struct sockaddr_ptr));
+		(void)memset(&contexts[i].remote, 0, sizeof(struct sockaddr));
+		(void)memset(&contexts[i].local, 0,
+			     sizeof(struct sockaddr_ptr));
 
 #if defined(CONFIG_NET_IPV6)
 		if (family == AF_INET6) {
@@ -431,7 +432,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			ptr = &maddr->address.in6_addr;
 
 		} else if (net_is_ipv6_addr_unspecified(&addr6->sin6_addr)) {
-			iface = net_if_get_default();
+			iface = net_if_ipv6_select_src_iface(
+				&net_sin6(&context->remote)->sin6_addr);
 
 			ptr = (struct in6_addr *)net_ipv6_unspecified_address();
 		} else {
@@ -518,7 +520,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			ptr = &maddr->address.in_addr;
 
 		} else if (addr4->sin_addr.s_addr == INADDR_ANY) {
-			iface = net_if_get_default();
+			iface = net_if_ipv4_select_src_iface(
+				&net_sin(&context->remote)->sin_addr);
 
 			ptr = (struct in_addr *)net_ipv4_unspecified_address();
 		} else {
@@ -694,11 +697,6 @@ int net_context_connect(struct net_context *context,
 		return -EBADF;
 	}
 
-	ret = bind_default(context);
-	if (ret) {
-		return ret;
-	}
-
 	if (addr->sa_family != net_context_get_family(context)) {
 		NET_ASSERT_INFO(addr->sa_family == \
 				net_context_get_family(context),
@@ -753,6 +751,17 @@ int net_context_connect(struct net_context *context,
 
 		rport = addr6->sin6_port;
 
+		/* The binding must be done after we have set the remote
+		 * address but before checking the local address. Otherwise
+		 * the laddr might not be set properly which would then cause
+		 * issues when doing net_tcp_connect(). This issue was seen
+		 * with socket tests and when connecting to loopback interface.
+		 */
+		ret = bind_default(context);
+		if (ret) {
+			return ret;
+		}
+
 		net_sin6_ptr(&context->local)->sin6_family = AF_INET6;
 		net_sin6(&local_addr)->sin6_family = AF_INET6;
 		net_sin6(&local_addr)->sin6_port = lport =
@@ -793,6 +802,11 @@ int net_context_connect(struct net_context *context,
 		}
 
 		rport = addr4->sin_port;
+
+		ret = bind_default(context);
+		if (ret) {
+			return ret;
+		}
 
 		net_sin_ptr(&context->local)->sin_family = AF_INET;
 		net_sin(&local_addr)->sin_family = AF_INET;
@@ -889,9 +903,11 @@ static int create_udp_packet(struct net_context *context,
 			return -ENOMEM;
 		}
 
-		tmp = net_udp_insert(context, pkt,
+		tmp = net_udp_insert(pkt,
 				     net_pkt_ip_hdr_len(pkt) +
 				     net_pkt_ipv6_ext_len(pkt),
+				     net_sin((struct sockaddr *)
+					     &context->local)->sin_port,
 				     addr6->sin6_port);
 		if (!tmp) {
 			return -ENOMEM;
@@ -912,7 +928,9 @@ static int create_udp_packet(struct net_context *context,
 			return -ENOMEM;
 		}
 
-		tmp = net_udp_insert(context, pkt, net_pkt_ip_hdr_len(pkt),
+		tmp = net_udp_insert(pkt, net_pkt_ip_hdr_len(pkt),
+				     net_sin((struct sockaddr *)
+					     &context->local)->sin_port,
 				     addr4->sin_port);
 		if (!tmp) {
 			return -ENOMEM;

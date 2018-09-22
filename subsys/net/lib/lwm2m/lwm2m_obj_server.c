@@ -161,9 +161,9 @@ static int lwm2m_server_init(struct device *dev)
 	int ret = 0;
 
 	/* Set default values */
-	memset(inst, 0, sizeof(*inst) * MAX_INSTANCE_COUNT);
-	memset(res, 0, sizeof(struct lwm2m_engine_res_inst) *
-		       MAX_INSTANCE_COUNT * SERVER_MAX_ID);
+	(void)memset(inst, 0, sizeof(*inst) * MAX_INSTANCE_COUNT);
+	(void)memset(res, 0, sizeof(struct lwm2m_engine_res_inst) *
+			MAX_INSTANCE_COUNT * SERVER_MAX_ID);
 
 	server.obj_id = LWM2M_OBJECT_SERVER_ID;
 	server.fields = fields;

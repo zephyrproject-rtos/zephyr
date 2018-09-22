@@ -82,6 +82,20 @@ config NET_SOCKETS_TLS_MAX_CIPHERSUITES
 	  By default, all ciphersuites that are available in the system are
 	  available to the socket.
 
+config NET_SOCKETS_OFFLOAD
+	bool "Offload Socket APIs [EXPERIMENTAL]"
+	select NET_SOCKETS_POSIX_NAMES
+	help
+	  Enables direct offloading of socket operations to dedicated TCP/IP
+	  hardware.
+	  This feature is intended to save resources by bypassing the Zephyr
+	  TCP/IP stack in the case where there is only one network interface
+	  required in the system, providing full BSD socket offload capability.
+	  As a result, it bypasses any potential IP routing that Zephyr might
+	  provide between multiple network interfaces.
+	  See NET_OFFLOAD for a more deeply integrated approach which offloads
+	  from the net_context() API within the Zephyr IP stack.
+
 config NET_DEBUG_SOCKETS
 	bool "Debug BSD Sockets compatible API calls"
 	default y if NET_LOG_GLOBAL

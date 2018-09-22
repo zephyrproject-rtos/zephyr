@@ -1,6 +1,6 @@
 mainmenu "SPI Loopback Test"
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
+source "$(ZEPHYR_BASE)/Kconfig.zephyr"
 
 config SPI_LOOPBACK_DRV_NAME
 	string "SPI device name to use for test"

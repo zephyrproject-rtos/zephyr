@@ -7,7 +7,6 @@
 import sys
 import argparse
 import math
-import pprint
 import os
 import struct
 from elf_helper import ElfHelper, kobject_to_enum
@@ -18,20 +17,20 @@ from elf_helper import ElfHelper, kobject_to_enum
 # available in all configurations.
 
 kobjects = {
-    "k_alert" : None,
-    "k_msgq" : None,
-    "k_mutex" : None,
-    "k_pipe" : None,
-    "k_queue" : None,
-    "k_poll_signal" : None,
-    "k_sem" : None,
-    "k_stack" : None,
-    "k_thread" : None,
-    "k_timer" : None,
-    "_k_thread_stack_element" : None,
-    "net_context" : "CONFIG_NETWORKING",
-    "device" : None
-    }
+    "k_alert": None,
+    "k_msgq": None,
+    "k_mutex": None,
+    "k_pipe": None,
+    "k_queue": None,
+    "k_poll_signal": None,
+    "k_sem": None,
+    "k_stack": None,
+    "k_thread": None,
+    "k_timer": None,
+    "_k_thread_stack_element": None,
+    "net_context": "CONFIG_NETWORKING",
+    "device": None
+}
 
 subsystems = [
     "adc_driver_api",
@@ -86,7 +85,7 @@ void _k_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
     int i;
 
     for (i = MIN_HASH_VALUE; i <= MAX_HASH_VALUE; i++) {
-        if (wordlist[i].name) {
+        if (wordlist[i].name != NULL) {
             func(&wordlist[i], context);
         }
     }
@@ -153,9 +152,10 @@ driver_macro_tpl = """
 #define Z_SYSCALL_DRIVER_%(driver_upper)s(ptr, op) Z_SYSCALL_DRIVER_GEN(ptr, op, %(driver_lower)s, %(driver_upper)s)
 """
 
+
 def write_validation_output(fp):
-    fp.write("#ifndef __DRIVER_VALIDATION_GEN_H__\n")
-    fp.write("#define __DRIVER_VALIDATION_GEN_H__\n")
+    fp.write("#ifndef DRIVER_VALIDATION_GEN_H\n")
+    fp.write("#define DRIVER_VALIDATION_GEN_H\n")
 
     fp.write("""#define Z_SYSCALL_DRIVER_GEN(ptr, op, driver_lower_case, driver_upper_case) \\
 		(Z_SYSCALL_OBJ(ptr, K_OBJ_DRIVER_##driver_upper_case) || \\
@@ -170,7 +170,7 @@ def write_validation_output(fp):
             "driver_upper": subsystem.upper(),
         })
 
-    fp.write("#endif /* __DRIVER_VALIDATION_GEN_H__ */\n")
+    fp.write("#endif /* DRIVER_VALIDATION_GEN_H */\n")
 
 
 def write_kobj_types_output(fp):
@@ -202,17 +202,19 @@ def write_kobj_otype_output(fp):
         if dep:
             fp.write("#ifdef %s\n" % dep)
 
-        fp.write('case %s: return "%s";\n' % (kobject_to_enum(kobj), kobj))
+        fp.write('case %s: ret = "%s"; break;\n' %
+                 (kobject_to_enum(kobj), kobj))
         if dep:
             fp.write("#endif\n")
 
     fp.write("/* Driver subsystems */\n")
     for subsystem in subsystems:
         subsystem = subsystem.replace("_driver_api", "")
-        fp.write('case K_OBJ_DRIVER_%s: return "%s driver";\n' % (
+        fp.write('case K_OBJ_DRIVER_%s: ret = "%s driver"; break;\n' % (
             subsystem.upper(),
             subsystem
         ))
+
 
 def write_kobj_size_output(fp):
     fp.write("/* Non device/stack objects */\n")
@@ -225,8 +227,8 @@ def write_kobj_size_output(fp):
         if dep:
             fp.write("#ifdef %s\n" % dep)
 
-        fp.write('case %s: return sizeof(struct %s);\n' %
-                (kobject_to_enum(kobj), kobj))
+        fp.write('case %s: ret = sizeof(struct %s); break;\n' %
+                 (kobject_to_enum(kobj), kobj))
         if dep:
             fp.write("#endif\n")
 
@@ -271,7 +273,8 @@ def main():
         max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
         objs = eh.find_kobjects(syms)
 
-        if eh.get_thread_counter() > max_threads:
+        thread_counter = eh.get_thread_counter()
+        if thread_counter > max_threads:
             sys.stderr.write("Too many thread objects (%d)\n" % thread_counter)
             sys.stderr.write("Increase CONFIG_MAX_THREAD_BYTES to %d\n",
                              -(-thread_counter // 8))
@@ -297,6 +300,7 @@ def main():
     if args.kobj_size_output:
         with open(args.kobj_size_output, "w") as fp:
             write_kobj_size_output(fp)
+
 
 if __name__ == "__main__":
     main()

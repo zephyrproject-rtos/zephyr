@@ -137,7 +137,7 @@ void _check_tree(int size, int use_foreach)
 	int nwalked = 0, i, ni;
 	struct rbnode *n, *last = NULL;
 
-	memset(walked_nodes, 0, sizeof(walked_nodes));
+	(void)memset(walked_nodes, 0, sizeof(walked_nodes));
 
 	if (use_foreach) {
 		RB_FOR_EACH(&tree, n) {
@@ -200,10 +200,10 @@ void test_tree(int size)
 	/* Small trees get checked after every op, big trees less often */
 	int small_tree = size <= 32;
 
-	memset(&tree, 0, sizeof(tree));
+	(void)memset(&tree, 0, sizeof(tree));
 	tree.lessthan_fn = node_lessthan;
-	memset(nodes, 0, sizeof(nodes));
-	memset(node_mask, 0, sizeof(node_mask));
+	(void)memset(nodes, 0, sizeof(nodes));
+	(void)memset(node_mask, 0, sizeof(node_mask));
 
 	for (j = 0; j < 10; j++) {
 		for (i = 0; i < size; i++) {

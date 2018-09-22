@@ -11,10 +11,11 @@
  * This file contains private kernel APIs that are not architecture-specific.
  */
 
-#ifndef _NANO_INTERNAL__H_
-#define _NANO_INTERNAL__H_
+#ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
+#define ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
 
 #include <kernel.h>
+#include <stdbool.h>
 
 #ifndef _ASMLANGUAGE
 
@@ -198,7 +199,7 @@ extern void _thread_monitor_exit(struct k_thread *thread);
 #else
 #define _thread_monitor_exit(thread) \
 	do {/* nothing */    \
-	} while (0)
+	} while (false)
 #endif /* CONFIG_THREAD_MONITOR */
 
 extern void smp_init(void);
@@ -232,4 +233,4 @@ extern int z_stack_adjust_initialized;
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* _NANO_INTERNAL__H_ */
+#endif /* ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_ */

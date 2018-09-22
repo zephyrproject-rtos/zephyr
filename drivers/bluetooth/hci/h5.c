@@ -286,7 +286,7 @@ static void h5_send(const u8_t *payload, u8_t type, int len)
 
 	hexdump("<= ", payload, len);
 
-	memset(hdr, 0, sizeof(hdr));
+	(void)memset(hdr, 0, sizeof(hdr));
 
 	/* Set ACK for outgoing packet and stop delayed work */
 	H5_SET_ACK(hdr, h5.tx_ack);

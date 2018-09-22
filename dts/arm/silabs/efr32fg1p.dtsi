@@ -1,21 +1,24 @@
 #include <arm/armv7-m.dtsi>
-#include <silabs/mem.h>
 
 / {
 	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		cpu@0 {
 			compatible = "arm,cortex-m4f";
+			reg = <0>;
 		};
 	};
 
-	flash0: flash {
+	flash0: flash@0 {
 		compatible = "soc-nv-flash";
 		label = "FLASH_0";
-		reg = <0 DT_FLASH_SIZE>;
 	};
 
-	sram0: memory {
-		reg = <0x20000000 DT_SRAM_SIZE>;
+	sram0: memory@20000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
 	};
 
 	soc {

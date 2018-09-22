@@ -8,8 +8,8 @@
  * @file Header where utility code can be found for GPIO drivers
  */
 
-#ifndef __GPIO_UTILS_H__
-#define __GPIO_UTILS_H__
+#ifndef ZEPHYR_DRIVERS_GPIO_GPIO_UTILS_H_
+#define ZEPHYR_DRIVERS_GPIO_GPIO_UTILS_H_
 
 
 /**
@@ -54,4 +54,4 @@ static inline void _gpio_fire_callbacks(sys_slist_t *list,
 	}
 }
 
-#endif /* __GPIO_UTILS_H__ */
+#endif /* ZEPHYR_DRIVERS_GPIO_GPIO_UTILS_H_ */

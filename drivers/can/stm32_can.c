@@ -285,7 +285,8 @@ static int can_stm32_init(struct device *dev)
 	data->mb2.tx_callback = NULL;
 
 	data->filter_usage = (1ULL << CAN_MAX_NUMBER_OF_FILTES) - 1ULL;
-	memset(data->rx_response, 0, sizeof(void *) * CONFIG_CAN_MAX_FILTER);
+	(void)memset(data->rx_response, 0,
+		     sizeof(void *) * CONFIG_CAN_MAX_FILTER);
 	data->response_type = 0;
 
 	clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
@@ -418,7 +419,7 @@ static int can_stm32_shift_arr(void **arr, int start, int count)
 		cnt = (CONFIG_CAN_MAX_FILTER - start - count) * sizeof(void *);
 		move_dest = start_ptr + count;
 		memmove(move_dest, start_ptr, cnt);
-		memset(start_ptr, 0, count * sizeof(void *));
+		(void)memset(start_ptr, 0, count * sizeof(void *));
 	} else if (count < 0) {
 		count = -count;
 
@@ -428,8 +429,8 @@ static int can_stm32_shift_arr(void **arr, int start, int count)
 
 		cnt = (CONFIG_CAN_MAX_FILTER - start) * sizeof(void *);
 		memmove(start_ptr - count, start_ptr, cnt);
-		memset(arr + CONFIG_CAN_MAX_FILTER - count, 0,
-		       count * sizeof(void *));
+		(void)memset(arr + CONFIG_CAN_MAX_FILTER - count, 0,
+			     count * sizeof(void *));
 	}
 
 	return 0;

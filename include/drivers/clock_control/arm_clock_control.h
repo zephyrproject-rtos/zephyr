@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ARM_CLOCK_CONTROL_H_
-#define _ARM_CLOCK_CONTROL_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_ARM_CLOCK_CONTROL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_ARM_CLOCK_CONTROL_H_
 
 #include <clock_control.h>
 
@@ -37,4 +37,4 @@ struct arm_clock_control_t {
 	u32_t device;
 };
 
-#endif /* _ARM_CLOCK_CONTROL_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_ARM_CLOCK_CONTROL_H_ */

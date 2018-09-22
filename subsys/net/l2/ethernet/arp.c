@@ -47,8 +47,8 @@ static void arp_entry_cleanup(struct arp_entry *entry, bool pending)
 
 	entry->iface = NULL;
 
-	memset(&entry->ip, 0, sizeof(struct in_addr));
-	memset(&entry->eth, 0, sizeof(struct net_eth_addr));
+	(void)memset(&entry->ip, 0, sizeof(struct in_addr));
+	(void)memset(&entry->eth, 0, sizeof(struct net_eth_addr));
 }
 
 static struct arp_entry *arp_entry_find(sys_slist_t *list,
@@ -310,7 +310,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 		       sizeof(struct net_eth_addr));
 	}
 
-	memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
+	(void)memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
 
 	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
 	hdr->protocol = htons(NET_ETH_PTYPE_IP);
@@ -318,7 +318,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	hdr->protolen = sizeof(struct in_addr);
 	hdr->opcode = htons(NET_ARP_REQUEST);
 
-	memset(&hdr->dst_hwaddr.addr, 0x00, sizeof(struct net_eth_addr));
+	(void)memset(&hdr->dst_hwaddr.addr, 0x00, sizeof(struct net_eth_addr));
 
 	net_ipaddr_copy(&hdr->dst_ipaddr, next_addr);
 
@@ -334,7 +334,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	if (my_addr) {
 		net_ipaddr_copy(&hdr->src_ipaddr, my_addr);
 	} else {
-		memset(&hdr->src_ipaddr, 0, sizeof(struct in_addr));
+		(void)memset(&hdr->src_ipaddr, 0, sizeof(struct in_addr));
 	}
 
 	return pkt;
@@ -461,8 +461,8 @@ static inline void arp_update(struct net_if *iface,
 	}
 
 	/* Set the dst in the pending packet */
-	net_pkt_ll_dst(entry->pending)->len = sizeof(struct net_eth_addr);
-	net_pkt_ll_dst(entry->pending)->addr =
+	net_pkt_lladdr_dst(entry->pending)->len = sizeof(struct net_eth_addr);
+	net_pkt_lladdr_dst(entry->pending)->addr =
 		(u8_t *) &NET_ETH_HDR(entry->pending)->dst.addr;
 
 	NET_DBG("dst %s pending %p frag %p",

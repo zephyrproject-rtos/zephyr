@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __POSIX_TIME_H__
-#define __POSIX_TIME_H__
+#ifndef ZEPHYR_INCLUDE_POSIX_TIME_H_
+#define ZEPHYR_INCLUDE_POSIX_TIME_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,6 +18,11 @@ struct timespec {
 struct itimerspec {
 	struct timespec it_interval;  /* Timer interval */
 	struct timespec it_value;     /* Timer expiration */
+};
+
+struct timeval {
+	signed int  tv_sec;
+	signed int  tv_usec;
 };
 
 #include <kernel.h>
@@ -44,18 +49,8 @@ static inline s32_t _ts_to_ms(const struct timespec *to)
 	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);
 }
 
-/**
- * @brief Set clock time.
- *
- * See IEEE 1003.1
- */
-static inline int clock_settime(clockid_t clock_id, const struct timespec *ts)
-{
-	errno = ENOSYS;
-	return -1;
-}
-
 int clock_gettime(clockid_t clock_id, struct timespec *ts);
+int clock_settime(clockid_t clock_id, const struct timespec *ts);
 /* Timer APIs */
 int timer_create(clockid_t clockId, struct sigevent *evp, timer_t *timerid);
 int timer_delete(timer_t timerid);
@@ -63,8 +58,10 @@ int timer_gettime(timer_t timerid, struct itimerspec *its);
 int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 		  struct itimerspec *ovalue);
 
+int gettimeofday(struct timeval *tv, const void *tz);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __POSIX_TIME_H__ */
+#endif /* ZEPHYR_INCLUDE_POSIX_TIME_H_ */

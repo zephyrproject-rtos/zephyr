@@ -169,7 +169,7 @@ static int start_dma(struct device *dev_dma, u32_t channel,
 	struct dma_block_config blk_cfg;
 	int ret;
 
-	memset(&blk_cfg, 0, sizeof(blk_cfg));
+	(void)memset(&blk_cfg, 0, sizeof(blk_cfg));
 	blk_cfg.block_size = blk_size;
 	blk_cfg.source_address = (u32_t)src;
 	blk_cfg.dest_address = (u32_t)dst;
@@ -557,7 +557,7 @@ static int i2s_sam_configure(struct device *dev, enum i2s_dir dir,
 
 	if (i2s_cfg->frame_clk_freq == 0) {
 		stream->queue_drop(stream);
-		memset(&stream->cfg, 0, sizeof(struct i2s_config));
+		(void)memset(&stream->cfg, 0, sizeof(struct i2s_config));
 		stream->state = I2S_STATE_NOT_READY;
 		return 0;
 	}

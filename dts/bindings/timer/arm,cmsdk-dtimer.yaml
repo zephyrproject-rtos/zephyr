@@ -12,6 +12,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "arm,cmsdk-dtimer"
+      generation: define
 
     reg:
       type: array

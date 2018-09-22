@@ -12,16 +12,16 @@ menuconfig SHT3XD
 	help
 	  Enable driver for SHT3xD temperature and humidity sensors.
 
+if SHT3XD
+
 config SHT3XD_NAME
 	string "Driver name"
 	default "SHT3XD"
-	depends on SHT3XD
 	help
 	  Device name with which the SHT3xD sensor is identified.
 
 config SHT3XD_I2C_ADDR
 	hex "SHT3XD I2C address"
-	depends on SHT3XD
 	default "0x44"
 	help
 	  I2C address of the SHT3xD sensor.
@@ -31,7 +31,6 @@ config SHT3XD_I2C_ADDR
 
 config SHT3XD_I2C_MASTER_DEV_NAME
 	string "I2C master where SHT3xD is connected"
-	depends on SHT3XD
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which the
@@ -39,7 +38,6 @@ config SHT3XD_I2C_MASTER_DEV_NAME
 
 choice
 	prompt "Trigger mode"
-	depends on SHT3XD
 	default SHT3XD_TRIGGER_NONE
 	help
 	  Specify the type of triggering to be used by the driver.
@@ -61,12 +59,11 @@ endchoice
 
 config SHT3XD_TRIGGER
 	bool
-	depends on SHT3XD
 
 config SHT3XD_GPIO_DEV_NAME
 	string "GPIO device"
 	default "GPIO_0"
-	depends on SHT3XD && SHT3XD_TRIGGER
+	depends on SHT3XD_TRIGGER
 	help
 	  The device name of the GPIO device to which the SHT3xD interrupt
 	  pins are connected.
@@ -74,28 +71,27 @@ config SHT3XD_GPIO_DEV_NAME
 config SHT3XD_GPIO_PIN_NUM
 	int "Interrupt GPIO pin number"
 	default 0
-	depends on SHT3XD && SHT3XD_TRIGGER
+	depends on SHT3XD_TRIGGER
 	help
 	  The number of the GPIO on which the interrupt signal from the
 	  SHT3xD chip will be received.
 
 config SHT3XD_THREAD_PRIORITY
 	int "Thread priority"
-	depends on SHT3XD && SHT3XD_TRIGGER_OWN_THREAD
+	depends on SHT3XD_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  Priority of thread used by the driver to handle interrupts.
 
 config SHT3XD_THREAD_STACK_SIZE
 	int "Thread stack size"
-	depends on SHT3XD && SHT3XD_TRIGGER_OWN_THREAD
+	depends on SHT3XD_TRIGGER_OWN_THREAD
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
 choice
 	prompt "Measurement repeatability"
-	depends on SHT3XD
 	default SHT3XD_REPEATABILITY_HIGH
 	help
 	  Repeatability modes differ with respect to measurement duration,
@@ -114,7 +110,6 @@ endchoice
 
 choice
 	prompt "Measurements per second"
-	depends on SHT3XD
 	default SHT3XD_MPS_1
 	help
 	  Number of measurements per second.
@@ -135,3 +130,5 @@ config SHT3XD_MPS_10
 	bool "10"
 
 endchoice
+
+endif # SHT3XD

@@ -54,3 +54,12 @@ void stop_udp(void);
 int start_tcp(void);
 int process_tcp(void);
 void stop_tcp(void);
+
+#if defined(CONFIG_NET_VLAN)
+int init_vlan(void);
+#else
+static inline int init_vlan(void)
+{
+	return 0;
+}
+#endif

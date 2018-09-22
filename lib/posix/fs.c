@@ -106,7 +106,7 @@ int open(const char *name, int flags)
 		errno = ENFILE;
 		return -1;
 	}
-	memset(ptr, 0, sizeof(struct fs_file_t));
+	(void)memset(ptr, 0, sizeof(struct fs_file_t));
 
 	rc = fs_open(ptr, name);
 	if (rc < 0) {
@@ -233,7 +233,7 @@ DIR *opendir(const char *dirname)
 		errno = EMFILE;
 		return NULL;
 	}
-	memset(ptr, 0, sizeof(struct fs_dir_t));
+	(void)memset(ptr, 0, sizeof(struct fs_dir_t));
 
 	rc = fs_opendir(ptr, dirname);
 	if (rc < 0) {

@@ -11,8 +11,8 @@
  * Misc utilities usable by the kernel and application code.
  */
 
-#ifndef _UTIL__H_
-#define _UTIL__H_
+#ifndef ZEPHYR_INCLUDE_MISC_UTIL_H_
+#define ZEPHYR_INCLUDE_MISC_UTIL_H_
 
 #ifndef _ASMLANGUAGE
 
@@ -441,4 +441,4 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 	_for_10, _for_9, _for_8, _for_7, _for_6, _for_5, \
 	_for_4, _for_3, _for_2, _for_1, _for_0)(x, ##__VA_ARGS__)
 
-#endif /* _UTIL__H_ */
+#endif /* ZEPHYR_INCLUDE_MISC_UTIL_H_ */

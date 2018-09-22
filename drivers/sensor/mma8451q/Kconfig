@@ -11,21 +11,20 @@ menuconfig MMA8451Q
 	help
 	  Enable driver for MMA8451Q Accelerometer.
 
+if MMA8451Q
+
 if !HAS_DTS_I2C_DEVICE
 
 config MMA8451Q_NAME
 	string "Device name"
-	depends on MMA8451Q
 	default "MMA8451Q"
 
 config MMA8451Q_I2C_NAME
 	string "I2C device name"
-	depends on MMA8451Q
 	default I2C_0_NAME
 
 config MMA8451Q_I2C_ADDRESS
 	hex "I2C address for MMA8451Q Sensor"
-	depends on MMA8451Q
 	default 0x1D
 	help
 	  I2C address of the MMA8451Q sensor.
@@ -35,14 +34,12 @@ endif # !HAS_DTS_I2C_DEVICE
 
 config MMA8451Q_WHOAMI
 	hex "WHOAMI value"
-	depends on MMA8451Q
 	default 0x1A
 	help
 	  The whoami value for MMA8451Q (0x1A).
 
 choice
 	prompt "Range"
-	depends on MMA8451Q
 	default MMA8451Q_RANGE_2G
 
 config MMA8451Q_RANGE_8G
@@ -55,3 +52,5 @@ config MMA8451Q_RANGE_2G
 	bool "2g (0.244 mg/LSB)"
 
 endchoice
+
+endif # MMA8451Q

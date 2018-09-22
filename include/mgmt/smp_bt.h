@@ -8,8 +8,8 @@
  * @brief Bluetooth transport for the mcumgr SMP protocol.
  */
 
-#ifndef H_SMP_BT_
-#define H_SMP_BT_
+#ifndef ZEPHYR_INCLUDE_MGMT_SMP_BT_H_
+#define ZEPHYR_INCLUDE_MGMT_SMP_BT_H_
 
 #include <zephyr/types.h>
 struct bt_conn;

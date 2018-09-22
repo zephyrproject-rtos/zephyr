@@ -9,8 +9,8 @@
  */
 
 
-#ifndef _VL53L0X_PLATFORM_LOG_H_
-#define _VL53L0X_PLATFORM_LOG_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_VL53L0X_VL53L0X_PLATFORM_LOG_H_
+#define ZEPHYR_DRIVERS_SENSOR_VL53L0X_VL53L0X_PLATFORM_LOG_H_
 
 #include <stdio.h>
 #include <string.h>
@@ -53,7 +53,7 @@ enum {
 }
 #endif
 
-#endif  /* _VL53L0X_PLATFORM_LOG_H_ */
+#endif  /* ZEPHYR_DRIVERS_SENSOR_VL53L0X_VL53L0X_PLATFORM_LOG_H_ */
 
 
 

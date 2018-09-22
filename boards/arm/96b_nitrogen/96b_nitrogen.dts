@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf52832.dtsi>
+#include <nordic/nrf52832_qfaa.dtsi>
 
 / {
 	model = "Seeed Studio Nitrogen 96board";
@@ -31,12 +31,16 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "ok";
+	tx-pin = <13>;
+	rx-pin = <15>;
+	rts-pin = <12>;
+	cts-pin = <14>;
 };
 
 &flash0 {
 	/*
 	 * For more information, see:
-	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
 	 */
 	partitions {
 		compatible = "fixed-partitions";

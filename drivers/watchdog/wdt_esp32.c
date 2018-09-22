@@ -204,7 +204,7 @@ static int wdt_esp32_init(struct device *dev)
 {
 	struct wdt_esp32_data *data = dev->driver_data;
 
-	memset(&data->config, 0, sizeof(data->config));
+	(void)memset(&data->config, 0, sizeof(data->config));
 
 #ifdef CONFIG_WDT_DISABLE_AT_BOOT
 	wdt_esp32_disable(dev);

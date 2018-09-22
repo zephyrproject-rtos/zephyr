@@ -151,11 +151,18 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	prio = posix_to_zephyr_priority(attr->priority, attr->schedpolicy);
 
 	thread = &posix_thread_pool[pthread_num];
-	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & attr->flags;
-	thread->state = attr->detachstate;
-	thread->cancel_pending = 0;
 	pthread_mutex_init(&thread->state_lock, NULL);
 	pthread_mutex_init(&thread->cancel_lock, NULL);
+
+	pthread_mutex_lock(&thread->cancel_lock);
+	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & attr->flags;
+	thread->cancel_pending = 0;
+	pthread_mutex_unlock(&thread->cancel_lock);
+
+	pthread_mutex_lock(&thread->state_lock);
+	thread->state = attr->detachstate;
+	pthread_mutex_unlock(&thread->state_lock);
+
 	pthread_cond_init(&thread->state_cond, &cond_attr);
 	sys_slist_init(&thread->key_list);
 	pthread_num++;

@@ -7,3 +7,5 @@ toolchain:
   - gnuarmemb
 supported:
   - pwm
+  - rtc
+  - usb

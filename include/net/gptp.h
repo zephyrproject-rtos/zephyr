@@ -10,8 +10,8 @@
  *
  */
 
-#ifndef __GPTP_H
-#define __GPTP_H
+#ifndef ZEPHYR_INCLUDE_NET_GPTP_H_
+#define ZEPHYR_INCLUDE_NET_GPTP_H_
 
 /**
  * @brief generic Precision Time Protocol (gPTP) support
@@ -286,4 +286,4 @@ struct gptp_domain *gptp_get_domain(void);
  * @}
  */
 
-#endif /* __GPTP_H */
+#endif /* ZEPHYR_INCLUDE_NET_GPTP_H_ */

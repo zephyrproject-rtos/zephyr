@@ -3,6 +3,13 @@ sample:
 tests:
   test:
     filter: ( CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_INTERRUPT )
-             or CONFIG_NATIVE_POSIX_STDIN_CONSOLE
+    tags: samples shell
+    platform_whitelist: quark_se_c1000_devboard galileo
+      frdm_k64f qemu_cortex_m3 qemu_x86 nrf52_pca10040 nrf51_pca10028
+    harness: keyboard
+  test_minimal:
+    filter: ( CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_INTERRUPT )
     tags: samples shell
     harness: keyboard
+    extra_args: CONF_FILE="prj_minimal.conf"
+

@@ -17,7 +17,7 @@
 #define  MBEDTLS_PRINT printf
 #else
 #include <misc/printk.h>
-#define  MBEDTLS_PRINT printk
+#define  MBEDTLS_PRINT (int(*)(const char *, ...)) printk
 #endif /* CONFIG_STDOUT_CONSOLE */
 #include <zephyr.h>
 #include <string.h>
@@ -2031,7 +2031,8 @@ reset:
 	do {
 	again:
 		len = ctx->tls.request_buf_len - 1;
-		memset(ctx->tls.request_buf, 0, ctx->tls.request_buf_len);
+		(void)memset(ctx->tls.request_buf, 0,
+			     ctx->tls.request_buf_len);
 
 		ret = mbedtls_ssl_read(&ctx->tls.mbedtls.ssl,
 				       ctx->tls.request_buf, len);

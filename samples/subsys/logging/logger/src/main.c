@@ -14,9 +14,9 @@
 #include "ext_log_system.h"
 #include "ext_log_system_adapter.h"
 
-#define LOG_MODULE_NAME main
 #include <logging/log.h>
-LOG_MODULE_REGISTER();
+
+LOG_MODULE_REGISTER(main);
 
 /* size of stack area used by each thread */
 #define STACKSIZE 1024
@@ -171,6 +171,9 @@ static void performance_showcase(void)
 	start_timestamp = timestamp_get();
 
 	while (start_timestamp == timestamp_get()) {
+#if (CONFIG_ARCH_POSIX)
+		k_busy_wait(100);
+#endif
 	}
 
 	start_timestamp = timestamp_get();
@@ -179,6 +182,9 @@ static void performance_showcase(void)
 		LOG_INF("performance test - log message %d", cnt);
 		cnt++;
 		current_timestamp = timestamp_get();
+#if (CONFIG_ARCH_POSIX)
+		k_busy_wait(100);
+#endif
 	} while (current_timestamp < (start_timestamp + window));
 
 	per_sec = (cnt * timestamp_freq()) / window;

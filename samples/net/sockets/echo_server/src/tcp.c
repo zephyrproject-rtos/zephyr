@@ -181,7 +181,7 @@ static void process_tcp4(void)
 	int ret;
 	struct sockaddr_in addr4;
 
-	memset(&addr4, 0, sizeof(addr4));
+	(void)memset(&addr4, 0, sizeof(addr4));
 	addr4.sin_family = AF_INET;
 	addr4.sin_port = htons(MY_PORT);
 
@@ -205,7 +205,7 @@ static void process_tcp6(void)
 	int ret;
 	struct sockaddr_in6 addr6;
 
-	memset(&addr6, 0, sizeof(addr6));
+	(void)memset(&addr6, 0, sizeof(addr6));
 	addr6.sin6_family = AF_INET6;
 	addr6.sin6_port = htons(MY_PORT);
 

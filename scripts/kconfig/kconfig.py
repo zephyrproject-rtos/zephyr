@@ -14,7 +14,6 @@ WARNING_WHITELIST = (
     # Warning generated when a symbol with unsatisfied dependencies is being
     # selected. These should be investigated, but whitelist them for now.
     "y-selected",
-
 )
 
 def fatal(warning):
@@ -47,28 +46,22 @@ def main():
     # Enable warnings for assignments to undefined symbols
     kconf.enable_undef_warnings()
 
-    # This script uses alldefconfig as the base. Other starting states could be set
-    # up here as well. The approach in examples/allnoconfig_simpler.py could
-    # provide an allnoconfig starting state for example.
-
-    print("Using {} as base".format(args.conf_fragments[0]))
-    for config in args.conf_fragments[1:]:
-        print("Merging {}".format(config))
-    # Create a merged configuration by loading the fragments with replace=False
-    for config in args.conf_fragments:
+    for i, config in enumerate(args.conf_fragments):
+        print(("Loading {} as base" if i == 0 else "Merging {}")
+              .format(config))
+        # replace=False creates a merged configuration
         kconf.load_config(config, replace=False)
-
 
     # Print warnings for symbols whose actual value doesn't match the assigned
     # value
-    for sym in kconf.defined_syms:
+    for sym in kconf.unique_defined_syms:
         # Was the symbol assigned to? Choice symbols are checked separately.
         if sym.user_value is not None and not sym.choice:
             verify_assigned_sym_value(sym)
 
     # Print warnings for choices whose actual selection doesn't match the user
     # selection
-    for choice in kconf.choices:
+    for choice in kconf.unique_choices:
         if choice.user_selection:
             verify_assigned_choice_value(choice)
 
@@ -84,7 +77,7 @@ def main():
     # warnings, even if one of them turns out to be fatal
     for warning in kconf.warnings:
         if enabled(warning):
-            print(warning, file=sys.stderr)
+            print("\n" + warning, file=sys.stderr)
 
     # Turn all warnings except for explicity whitelisted ones into errors. In
     # particular, this will turn assignments to undefined Kconfig variables
@@ -95,12 +88,13 @@ def main():
     # now as well.
     for warning in kconf.warnings:
         if fatal(warning):
-            sys.exit("Error: Aborting due to non-whitelisted Kconfig "
-                     "warning '{}'.\nNote: If this warning doesn't point "
-                     "to an actual problem, you can add it to the "
-                     "whitelist at the top of {}."
-                     .format(warning, sys.argv[0]))
-
+            sys.exit("\n" + textwrap.fill(
+                "Error: Aborting due to non-whitelisted Kconfig "
+                "warning '{}'.\nNote: If this warning doesn't point "
+                "to an actual problem, you can add it to the "
+                "whitelist at the top of {}."
+                .format(warning, sys.argv[0]),
+                100) + "\n")
 
     # Write the merged configuration and the C header
     kconf.write_config(args.dotconfig)
@@ -114,20 +108,19 @@ This symbol has no prompt, meaning assignments in configuration files have no
 effect on it. It can only be set indirectly, via Kconfig defaults (e.g. in a
 Kconfig.defconfig file) or through being 'select'ed or 'imply'd (note: try to
 avoid Kconfig 'select's except for trivial promptless "helper" symbols without
-dependencies, as it ignores dependencies and forces symbols on).
-"""
+dependencies, as it ignores dependencies and forces symbols on)."""
 
 # Message about where to look up symbol information
 SYM_INFO_HINT = """
 You can check symbol information (including dependencies) in the 'menuconfig'
 interface (see the Application Development Primer section of the manual), or in
 the Kconfig reference at
-http://docs.zephyrproject.org/reference/kconfig/CONFIG_{}.html (which is
+http://docs.zephyrproject.org/latest/reference/kconfig/CONFIG_{}.html (which is
 updated regularly from the master branch). See the 'Setting configuration
-values' section of the Board Porting Guide as well.
-"""[1:]  # Remove initial newline for nicer textwrap output when joining texts
+values' section of the Board Porting Guide as well."""
 
-PROMPTLESS_HINT_EXTRA = "It covers Kconfig.defconfig files."
+PROMPTLESS_HINT_EXTRA = """
+It covers Kconfig.defconfig files."""
 
 def verify_assigned_sym_value(sym):
     # Verifies that the value assigned to 'sym' "took" (matches the value the
@@ -142,20 +135,16 @@ def verify_assigned_sym_value(sym):
 
     if user_value != sym.str_value:
         msg = "warning: {} was assigned the value '{}' but got the " \
-              "value '{}'. " \
+              "value '{}'." \
               .format(name_and_loc(sym), user_value, sym.str_value)
 
-        if promptless(sym):
-            msg += PROMPTLESS_HINT
-
+        if promptless(sym): msg += PROMPTLESS_HINT
         msg += SYM_INFO_HINT.format(sym.name)
-
-        if promptless(sym):
-            msg += PROMPTLESS_HINT_EXTRA
+        if promptless(sym): msg += PROMPTLESS_HINT_EXTRA
 
         # Use a large fill() width to try to avoid linebreaks in the symbol
         # reference link
-        print(textwrap.fill(msg, 100), file=sys.stderr)
+        print("\n" + textwrap.fill(msg, 100), file=sys.stderr)
 
 
 def verify_assigned_choice_value(choice):
@@ -173,14 +162,13 @@ def verify_assigned_choice_value(choice):
 
     if choice.user_selection is not choice.selection:
         msg = "warning: the choice symbol {} was selected (set =y), but {} " \
-              "ended up as the choice selection. " \
+              "ended up as the choice selection. {}" \
               .format(name_and_loc(choice.user_selection),
                       name_and_loc(choice.selection) if choice.selection
-                          else "no symbol")
+                          else "no symbol",
+                      SYM_INFO_HINT.format(choice.user_selection.name))
 
-        msg += SYM_INFO_HINT.format(choice.user_selection.name)
-
-        print(textwrap.fill(msg, 100), file=sys.stderr)
+        print("\n" + textwrap.fill(msg, 100), file=sys.stderr)
 
 
 def name_and_loc(sym):
@@ -199,11 +187,7 @@ def promptless(sym):
     # Returns True if 'sym' has no prompt. Since the symbol might be defined in
     # multiple locations, we need to check all locations.
 
-    for node in sym.nodes:
-        if node.prompt:
-            return False
-
-    return True
+    return not any(node.prompt for node in sym.nodes)
 
 
 def parse_args():

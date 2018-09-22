@@ -12,6 +12,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "atmel,sam-gpio"
+      generation: define
 
     reg:
       type: int

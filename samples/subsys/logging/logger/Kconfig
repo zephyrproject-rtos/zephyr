@@ -1,0 +1,18 @@
+# Kconfig - Config options for logger sample app
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Logger sample application"
+
+menu "Application configuration"
+
+module = SAMPLE_MODULE
+module-str = Sample module
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu
+
+source "$(ZEPHYR_BASE)/Kconfig.zephyr"

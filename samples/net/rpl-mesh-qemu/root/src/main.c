@@ -30,7 +30,7 @@ void main(void)
 	}
 
 	/* Read prefix from KConfig and parse it */
-	memset(prefix_str, 0, sizeof(prefix_str));
+	(void)memset(prefix_str, 0, sizeof(prefix_str));
 	memcpy(prefix_str, CONFIG_NET_RPL_PREFIX,
 			min(strlen(CONFIG_NET_RPL_PREFIX), NET_IPV6_ADDR_LEN));
 

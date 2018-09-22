@@ -4,20 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-choice
-	prompt "Nios II configuration selection"
-	depends on NIOS2
-	source "arch/nios2/soc/*/Kconfig.soc"
-endchoice
-
 menu "Nios II Options"
 	depends on NIOS2
-
-# Include these first so that any properties (e.g. defaults) below can be
-# overriden (by defining symbols in multiple locations)
-#
-# (No SoC-specific Kconfig files as of writing, hence the optional source.)
-osource "arch/nios2/soc/*/Kconfig"
 
 config ARCH
 	string

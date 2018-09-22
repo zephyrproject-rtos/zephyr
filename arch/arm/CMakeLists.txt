@@ -17,5 +17,4 @@ zephyr_compile_options(
   ${ARCH_FLAG}
   )
 
-add_subdirectory(soc)
 add_subdirectory(core)

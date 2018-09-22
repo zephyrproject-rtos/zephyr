@@ -84,3 +84,7 @@
 &spi1 {
 	status = "ok";
 };
+
+&rtc {
+	status = "ok";
+};

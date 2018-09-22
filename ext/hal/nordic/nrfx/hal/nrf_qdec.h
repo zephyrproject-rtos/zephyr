@@ -45,6 +45,13 @@ extern "C" {
  */
 
 /**
+ * @brief This value can be provided as a parameter for the @ref nrf_qdec_pio_assign
+ *        function call to specify that a LED signal shall not be use by the QDEC and
+ *        connected to a physical pin.
+ */
+#define NRF_QDEC_LED_NOT_CONNECTED  0xFFFFFFFF
+
+/**
  * @enum nrf_qdec_task_t
  * @brief QDEC tasks.
  */

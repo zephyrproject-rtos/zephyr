@@ -7,8 +7,8 @@
  */
 /** @file */
 
-#ifndef __RING_BUFFER_H__
-#define __RING_BUFFER_H__
+#ifndef ZEPHYR_INCLUDE_RING_BUFFER_H_
+#define ZEPHYR_INCLUDE_RING_BUFFER_H_
 
 #include <kernel.h>
 #include <misc/util.h>
@@ -208,4 +208,4 @@ int sys_ring_buf_get(struct ring_buf *buf, u16_t *type, u8_t *value,
 }
 #endif
 
-#endif /* __RING_BUFFER_H__ */
+#endif /* ZEPHYR_INCLUDE_RING_BUFFER_H_ */

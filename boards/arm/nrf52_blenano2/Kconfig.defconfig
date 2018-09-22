@@ -9,22 +9,6 @@ if BOARD_NRF52_BLENANO2
 config BOARD
 	default "nrf52_blenano2"
 
-if UART_NRFX
-
-config UART_0_NRF_TX_PIN
-	default 29
-
-config UART_0_NRF_RX_PIN
-	default 30
-
-config UART_0_NRF_RTS_PIN
-	default 2
-
-config UART_0_NRF_CTS_PIN
-	default 28
-
-endif # UART_NRFX
-
 if I2C
 
 config I2C_NRFX

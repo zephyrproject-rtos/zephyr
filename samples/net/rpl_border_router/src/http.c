@@ -280,7 +280,7 @@ static int http_basic_auth(struct http_ctx *ctx,
 		char *end, *colon;
 		int ret;
 
-		memset(output, 0, sizeof(output));
+		(void)memset(output, 0, sizeof(output));
 
 		end = strstr(ptr + 2, HTTP_CRLF);
 		if (!end) {
@@ -502,11 +502,11 @@ static inline u32_t remaining_lifetime(struct net_if_addr *ifaddr)
 {
 	s32_t remaining;
 
-	if (ifaddr->lifetime_timer_timeout == 0) {
+	if (ifaddr->lifetime.timer_timeout == 0) {
 		return 0;
 	}
 
-	remaining = k_uptime_get() - ifaddr->lifetime_timer_start;
+	remaining = k_uptime_get() - ifaddr->lifetime.timer_start;
 
 	return abs(remaining) / K_MSEC(1000);
 }
@@ -1926,7 +1926,7 @@ void start_http_server(struct net_if *iface)
 
 #elif ADDR_OPTION == 2
 	/* Accept any local listening address */
-	memset(&addr, 0, sizeof(addr));
+	(void)memset(&addr, 0, sizeof(addr));
 
 	net_sin(&addr)->sin_port = htons(ZEPHYR_PORT);
 
@@ -1937,7 +1937,7 @@ void start_http_server(struct net_if *iface)
 
 #elif ADDR_OPTION == 3
 	/* Set the bind address according to your configuration */
-	memset(&addr, 0, sizeof(addr));
+	(void)memset(&addr, 0, sizeof(addr));
 
 	/* In this example, listen only IPv6 */
 	addr.sa_family = AF_INET6;

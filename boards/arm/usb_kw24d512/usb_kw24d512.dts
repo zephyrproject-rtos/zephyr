@@ -34,11 +34,11 @@
 	leds {
 		compatible = "gpio-leds";
 		led_0: led@0 {
-			gpios = <&gpiod 4 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiod 4 0>;
 			label = "User LD1";
 		};
 		led_1: led@1 {
-			gpios = <&gpiod 5 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiod 5 0>;
 			label = "User LD2";
 		};
 	};

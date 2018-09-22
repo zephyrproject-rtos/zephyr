@@ -8,8 +8,8 @@
  * @brief RISCV32 memory mapped register I/O operations
  */
 
-#ifndef _RISCV32_SYS_IO_H_
-#define _RISCV32_SYS_IO_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_RISCV32_SYS_IO_H_
+#define ZEPHYR_INCLUDE_ARCH_RISCV32_SYS_IO_H_
 
 #if !defined(_ASMLANGUAGE)
 
@@ -130,4 +130,4 @@ static ALWAYS_INLINE
 
 #endif /* !_ASMLANGUAGE */
 
-#endif /* _RISCV32_SYS_IO_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_RISCV32_SYS_IO_H_ */

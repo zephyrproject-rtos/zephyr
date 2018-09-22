@@ -9,22 +9,6 @@ if BOARD_REEL_BOARD
 config BOARD
 	default "reel_board"
 
-if UART_NRFX
-
-config UART_0_NRF_TX_PIN
-	default 6
-
-config UART_0_NRF_RX_PIN
-	default 8
-
-config UART_0_NRF_RTS_PIN
-	default 5
-
-config UART_0_NRF_CTS_PIN
-	default 7
-
-endif # UART_NRFX
-
 config I2C
 	def_bool y
 
@@ -73,12 +57,18 @@ if SPI_NRFX
 config SPI_3
 	def_bool y
 
+config SPI_NRFX_RAM_BUFFER_SIZE
+	default 8
+
 endif #SPI_NRFX
 
 if SPI_3
 
 config SPI_3_NRF_SPIM
 	def_bool y
+
+config SPI_3_NRF_RX_DELAY
+	default 1
 
 endif # SPI_3
 

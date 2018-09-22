@@ -12,8 +12,8 @@
  * Declare API implemented by system timer driver and used by kernel components.
  */
 
-#ifndef _TIMER__H_
-#define _TIMER__H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,13 +65,8 @@ extern int sys_clock_device_ctrl(struct device *device,
 #endif
 
 extern s32_t _sys_idle_elapsed_ticks;
-
-#ifdef CONFIG_MULTITHREADING
 #define _sys_clock_tick_announce() \
 		_nano_sys_clock_tick_announce(_sys_idle_elapsed_ticks)
-#else
-#define _sys_clock_tick_announce() /**/
-#endif
 
 /**
  * @brief Account for the tick due to the timer interrupt
@@ -93,4 +88,4 @@ static inline void _sys_clock_final_tick_announce(void)
 }
 #endif
 
-#endif /* _TIMER__H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_ */

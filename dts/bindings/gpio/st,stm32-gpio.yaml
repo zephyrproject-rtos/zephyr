@@ -17,6 +17,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "st,stm32-gpio"
+      generation: define
 
     reg:
       type: int

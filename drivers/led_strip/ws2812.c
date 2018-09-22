@@ -95,7 +95,7 @@ static int ws2812_reset_strip(struct ws2812_data *data)
 		.count = 1
 	};
 
-	memset(reset_buf, 0x00, sizeof(reset_buf));
+	(void)memset(reset_buf, 0x00, sizeof(reset_buf));
 
 	return spi_write(data->spi, &data->config, &tx);
 }

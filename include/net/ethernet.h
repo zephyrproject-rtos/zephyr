@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ETHERNET_H
-#define __ETHERNET_H
+#ifndef ZEPHYR_INCLUDE_NET_ETHERNET_H_
+#define ZEPHYR_INCLUDE_NET_ETHERNET_H_
 
 #include <zephyr/types.h>
 #include <stdbool.h>
@@ -258,6 +258,9 @@ struct ethernet_lldp {
 
 	/** LLDP TX timeout */
 	u32_t tx_timer_timeout;
+
+	/** LLDP RX callback function */
+	net_lldp_recv_cb_t cb;
 };
 #endif /* CONFIG_NET_LLDP */
 
@@ -653,4 +656,4 @@ static inline void net_eth_unset_lldpdu(struct net_if *iface)
  * @}
  */
 
-#endif /* __ETHERNET_H */
+#endif /* ZEPHYR_INCLUDE_NET_ETHERNET_H_ */

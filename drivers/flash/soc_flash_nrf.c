@@ -22,8 +22,11 @@
 #include "controller/ticker/ticker.h"
 #include "controller/include/ll.h"
 
-#define FLASH_SLOT     FLASH_PAGE_ERASE_MAX_TIME_US
-#define FLASH_INTERVAL FLASH_SLOT
+#define FLASH_SLOT_ERASE     FLASH_PAGE_ERASE_MAX_TIME_US
+#define FLASH_INTERVAL_ERASE FLASH_SLOT_ERASE
+#define FLASH_SLOT_WRITE     7500
+#define FLASH_INTERVAL_WRITE FLASH_SLOT_WRITE
+
 #define FLASH_RADIO_ABORT_DELAY_US 500
 #define FLASH_TIMEOUT_MS ((FLASH_PAGE_ERASE_MAX_TIME_US)\
 			* (FLASH_PAGE_MAX_CNT) / 1000)
@@ -32,29 +35,23 @@
 #define FLASH_OP_DONE    (0) /* 0 for compliance with the driver API. */
 #define FLASH_OP_ONGOING (-1)
 
-struct erase_context {
-	u32_t addr; /* Address off the 1st page to erase */
-	u32_t size; /* Size off area to erase [B] */
+struct flash_context {
+	u32_t data_addr;  /* Address of data to write. */
+	u32_t flash_addr; /* Address of flash to write or erase. */
+	u32_t len;        /* Size off data to write or erase [B]. */
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
-	u8_t enable_time_limit; /* execution limited to timeslot */
+	u8_t  enable_time_limit; /* execution limited to timeslot. */
+	u32_t interval;   /* timeslot interval. */
+	u32_t slot;       /* timeslot length. */
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
-}; /*< Context type for f. @ref erase_op */
-
-struct write_context {
-	u32_t data_addr;
-	u32_t flash_addr; /* Address off the 1st page to erase */
-	u32_t len;        /* Size off data to write [B] */
-#if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
-	u8_t  enable_time_limit; /* execution limited to timeslot*/
-#endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
-}; /*< Context type for f. @ref write_op */
+}; /*< Context type for f. @ref write_op @ref erase_op */
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 typedef int (*flash_op_handler_t) (void *context);
 
 struct flash_op_desc {
 	flash_op_handler_t handler;
-	void *context; /* [in,out] */
+	struct flash_context *context; /* [in,out] */
 	int result;
 };
 
@@ -331,6 +328,7 @@ static int work_in_time_slice(struct flash_op_desc *p_flash_op_desc)
 	u8_t ticker_id;
 	int result;
 	u32_t err;
+	struct flash_context *context = p_flash_op_desc->context;
 
 	ll_timeslice_ticker_id_get(&instance_index, &ticker_id);
 
@@ -340,10 +338,12 @@ static int work_in_time_slice(struct flash_op_desc *p_flash_op_desc)
 			   ticker_id, /* flash ticker id */
 			   ticker_ticks_now_get(), /* current tick */
 			   0, /* first int. immediately */
-			   HAL_TICKER_US_TO_TICKS(FLASH_INTERVAL), /* period */
-			   HAL_TICKER_REMAINDER(FLASH_INTERVAL), /* per. rem.*/
+			   /* period */
+			   HAL_TICKER_US_TO_TICKS(context->interval),
+			   /* period remainder */
+			   HAL_TICKER_REMAINDER(context->interval),
 			   0, /* lazy, voluntary skips */
-			   HAL_TICKER_US_TO_TICKS(FLASH_SLOT),
+			   HAL_TICKER_US_TO_TICKS(context->slot),
 			   time_slot_callback_helper,
 			   p_flash_op_desc,
 			   NULL, /* no op callback */
@@ -363,10 +363,12 @@ static int work_in_time_slice(struct flash_op_desc *p_flash_op_desc)
 
 static int erase_in_timeslice(u32_t addr, u32_t size)
 {
-	struct erase_context context = {
-		.addr = addr,
-		.size = size,
-		.enable_time_limit = 1 /* enable time limit */
+	struct flash_context context = {
+		.flash_addr = addr,
+		.len = size,
+		.enable_time_limit = 1, /* enable time limit */
+		.interval = FLASH_INTERVAL_ERASE,
+		.slot = FLASH_SLOT_ERASE
 	};
 
 	struct flash_op_desc flash_op_desc = {
@@ -379,11 +381,13 @@ static int erase_in_timeslice(u32_t addr, u32_t size)
 
 static int write_in_timeslice(off_t addr, const void *data, size_t len)
 {
-	struct write_context context = {
+	struct flash_context context = {
 		.data_addr = (u32_t) data,
 		.flash_addr = addr,
 		.len = len,
-		.enable_time_limit = 1 /* enable time limit */
+		.enable_time_limit = 1, /* enable time limit */
+		.interval = FLASH_INTERVAL_WRITE,
+		.slot = FLASH_SLOT_WRITE
 	};
 
 	struct flash_op_desc flash_op_desc = {
@@ -400,7 +404,7 @@ static int erase_op(void *context)
 {
 	u32_t prev_nvmc_cfg = NRF_NVMC->CONFIG;
 	u32_t pg_size = NRF_FICR->CODEPAGESIZE;
-	struct erase_context *e_ctx = context;
+	struct flash_context *e_ctx = context;
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 	u32_t ticks_begin = 0;
@@ -417,11 +421,11 @@ static int erase_op(void *context)
 	nvmc_wait_ready();
 
 	do {
-		NRF_NVMC->ERASEPAGE = e_ctx->addr;
+		NRF_NVMC->ERASEPAGE = e_ctx->flash_addr;
 		nvmc_wait_ready();
 
-		e_ctx->size -= pg_size;
-		e_ctx->addr += pg_size;
+		e_ctx->len -= pg_size;
+		e_ctx->flash_addr += pg_size;
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 		i++;
@@ -431,21 +435,21 @@ static int erase_op(void *context)
 				ticker_ticks_diff_get(ticker_ticks_now_get(),
 						      ticks_begin);
 			if (ticks_diff + ticks_diff/i >
-			    HAL_TICKER_US_TO_TICKS(FLASH_SLOT)) {
+			    HAL_TICKER_US_TO_TICKS(e_ctx->slot)) {
 				break;
 			}
 		}
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
 
-	} while (e_ctx->size > 0);
+	} while (e_ctx->len > 0);
 
 	NRF_NVMC->CONFIG = prev_nvmc_cfg;
 	nvmc_wait_ready();
 
-	return (e_ctx->size > 0) ? FLASH_OP_ONGOING : FLASH_OP_DONE;
+	return (e_ctx->len > 0) ? FLASH_OP_ONGOING : FLASH_OP_DONE;
 }
 
-static void shift_write_context(u32_t shift, struct write_context *w_ctx)
+static void shift_write_context(u32_t shift, struct flash_context *w_ctx)
 {
 	w_ctx->flash_addr += shift;
 	w_ctx->data_addr += shift;
@@ -454,7 +458,7 @@ static void shift_write_context(u32_t shift, struct write_context *w_ctx)
 
 static int write_op(void *context)
 {
-	struct write_context *w_ctx = context;
+	struct flash_context *w_ctx = context;
 	u32_t addr_word;
 	u32_t tmp_word;
 	u32_t count;
@@ -495,7 +499,7 @@ static int write_op(void *context)
 				ticker_ticks_diff_get(ticker_ticks_now_get(),
 						      ticks_begin);
 			if (2 * ticks_diff >
-			    HAL_TICKER_US_TO_TICKS(FLASH_SLOT)) {
+			    HAL_TICKER_US_TO_TICKS(w_ctx->slot)) {
 				nvmc_wait_ready();
 				return FLASH_OP_ONGOING;
 			}
@@ -519,7 +523,7 @@ static int write_op(void *context)
 				ticker_ticks_diff_get(ticker_ticks_now_get(),
 						      ticks_begin);
 			if (ticks_diff + ticks_diff/i >
-			    HAL_TICKER_US_TO_TICKS(FLASH_SLOT)) {
+			    HAL_TICKER_US_TO_TICKS(w_ctx->slot)) {
 				nvmc_wait_ready();
 				return FLASH_OP_ONGOING;
 			}
@@ -544,9 +548,9 @@ static int write_op(void *context)
 
 static int erase(u32_t addr, u32_t size)
 {
-	struct erase_context context = {
-		.addr = addr,
-		.size = size,
+	struct flash_context context = {
+		.flash_addr = addr,
+		.len = size,
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 		.enable_time_limit = 0 /* disable time limit */
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
@@ -557,7 +561,7 @@ static int erase(u32_t addr, u32_t size)
 
 static int write(off_t addr, const void *data, size_t len)
 {
-	struct write_context context = {
+	struct flash_context context = {
 		.data_addr = (u32_t) data,
 		.flash_addr = addr,
 		.len = len,

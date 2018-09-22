@@ -7,8 +7,8 @@
  * @brief Atmel SAM MCU family Ethernet MAC (GMAC) driver.
  */
 
-#ifndef _ETH_SAM_GMAC_PRIV_H_
-#define _ETH_SAM_GMAC_PRIV_H_
+#ifndef ZEPHYR_DRIVERS_ETHERNET_ETH_SAM_GMAC_PRIV_H_
+#define ZEPHYR_DRIVERS_ETHERNET_ETH_SAM_GMAC_PRIV_H_
 
 #include <zephyr/types.h>
 
@@ -209,4 +209,4 @@ struct eth_sam_dev_data {
 #define DEV_DATA(dev) \
 	((struct eth_sam_dev_data *const)(dev)->driver_data)
 
-#endif /* _ETH_SAM_GMAC_PRIV_H_ */
+#endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_SAM_GMAC_PRIV_H_ */

@@ -13,9 +13,10 @@ menuconfig BMA280
 	  Enable driver for BMA280 I2C-based triaxial accelerometer sensor
 	  family.
 
+if BMA280
+
 choice
 	prompt "Chip type"
-	depends on BMA280
 	default BMA280_CHIP_BMA280
 	help
 	  Choose desired chip type from the BMA280 family.
@@ -36,13 +37,11 @@ config BMA280_NAME
 	string "Driver name"
 	default "BMA280" if BMA280_CHIP_BMA280
 	default "BMC150_ACCEL" if BMA280_CHIP_BMC150_ACCEL
-	depends on BMA280
 	help
 	  Device name with which the sensor is identified.
 
 config BMA280_I2C_ADDR
 	hex "BMA280 I2C address"
-	depends on BMA280
 	default 0x18 if BMA280_CHIP_BMA280
 	default 0x10 if BMA280_CHIP_BMC150_ACCEL
 	help
@@ -55,7 +54,6 @@ config BMA280_I2C_ADDR
 
 config BMA280_I2C_MASTER_DEV_NAME
 	string "I2C master device name"
-	depends on BMA280
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which chip is
@@ -63,7 +61,6 @@ config BMA280_I2C_MASTER_DEV_NAME
 
 choice
 	prompt "Trigger mode"
-	depends on BMA280
 	default BMA280_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
@@ -85,12 +82,11 @@ endchoice
 
 config BMA280_TRIGGER
 	bool
-	depends on BMA280
 
 config BMA280_GPIO_DEV_NAME
 	string "GPIO device"
 	default "GPIO_0"
-	depends on BMA280 && BMA280_TRIGGER
+	depends on BMA280_TRIGGER
 	help
 	  The device name of the GPIO device to which the chip's interrupt pins
 	  are connected.
@@ -98,28 +94,27 @@ config BMA280_GPIO_DEV_NAME
 config BMA280_GPIO_PIN_NUM
 	int "Interrupt GPIO pin number"
 	default 0
-	depends on BMA280 && BMA280_TRIGGER
+	depends on BMA280_TRIGGER
 	help
 	  The number of the GPIO on which the interrupt signal from the chip
 	  will be received.
 
 config BMA280_THREAD_PRIORITY
 	int "Thread priority"
-	depends on BMA280 && BMA280_TRIGGER_OWN_THREAD
+	depends on BMA280_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  Priority of thread used by the driver to handle interrupts.
 
 config BMA280_THREAD_STACK_SIZE
 	int "Thread stack size"
-	depends on BMA280 && BMA280_TRIGGER_OWN_THREAD
+	depends on BMA280_TRIGGER_OWN_THREAD
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
 choice
 	prompt "Acceleration measurement range"
-	depends on BMA280
 	default BMA280_PMU_RANGE_2G
 	help
 	  Measurement range for acceleration values.
@@ -140,7 +135,6 @@ endchoice
 
 choice
 	prompt "Acceleration data filter bandwidth"
-	depends on BMA280
 	default BMA280_PMU_BW_7
 	help
 	  Bandwidth of filtered acceleration data.
@@ -170,3 +164,5 @@ config BMA280_PMU_BW_8
 	bool "unfiltered"
 
 endchoice
+
+endif # BMA280

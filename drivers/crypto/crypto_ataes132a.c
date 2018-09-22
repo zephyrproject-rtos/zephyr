@@ -632,7 +632,7 @@ int ataes132a_aes_ecb_block(struct device *dev,
 	param_buffer[1] = key_id;
 	param_buffer[2] = 0x0;
 	memcpy(param_buffer + 3, pkt->in_buf, buf_len);
-	memset(param_buffer + 3 + buf_len, 0x0, 16 - buf_len);
+	(void)memset(param_buffer + 3 + buf_len, 0x0, 16 - buf_len);
 
 	return_code = ataes132a_send_command(dev, ATAES_LEGACY_OP, 0x00,
 					     param_buffer, buf_len + 3,

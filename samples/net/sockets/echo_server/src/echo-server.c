@@ -64,6 +64,8 @@ static void init_app(void)
 		NET_ERR("Failed to register private key: %d", err);
 	}
 #endif
+
+	init_vlan();
 }
 
 void main(void)

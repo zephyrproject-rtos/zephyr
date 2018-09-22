@@ -34,7 +34,7 @@ time filtering is independent for each backend and each source of log messages.
 Source of log messages can be a module or specific instance of the module.
 
 There are four severity levels available in the system: error, warning, info
-and debug. For each severity level the logger API (:file:`subsys/logging/log.h`)
+and debug. For each severity level the logger API (:file:`include/logging/log.h`)
 has set of dedicated macros. Logger API also has macros for logging data.
 
 For each level following set of macros are available:
@@ -124,10 +124,10 @@ arguments or hexdump message with 12 bytes of data take 32 bytes.
 
 :option:`CONFIG_LOG_BACKEND_UART`: Enabled build-in UART backend.
 
-:option:`CONFIG_LOG_BACKEND_UART_SHOW_COLOR`: Enables coloring of errors (red)
+:option:`CONFIG_LOG_BACKEND_SHOW_COLOR`: Enables coloring of errors (red)
 and warnings (yellow).
 
-:option:`CONFIG_LOG_BACKEND_UART_FORMAT_TIMESTAMP`: If enabled timestamp is
+:option:`CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP`: If enabled timestamp is
 formatted to *hh:mm:ss:mmm,uuu*. Otherwise is printed in raw format.
 
 .. _log_usage:
@@ -145,10 +145,9 @@ module can be specified as well.
 
 .. code-block:: c
 
-   #define LOG_MODULE_NAME foo
    #define LOG_LEVEL CONFIG_FOO_LOG_LEVEL /* From foo module Kconfig */
    #include <logging/log.h>
-   LOG_MODULE_REGISTER(); /* One per given LOG_MODULE_NAME */
+   LOG_MODULE_REGISTER(foo); /* One per given log_module_name */
 
 If the module consists of multiple files, then ``LOG_MODULE_REGISTER()`` should
 appear in exactly one of them. Each other file should use
@@ -156,10 +155,21 @@ appear in exactly one of them. Each other file should use
 
 .. code-block:: c
 
-   #define LOG_MODULE_NAME foo
    #define LOG_LEVEL CONFIG_FOO_LOG_LEVEL /* From foo module Kconfig */
    #include <logging/log.h>
-   LOG_MODULE_DECLARE(); /* In all files comprising the module but one */
+   LOG_MODULE_DECLARE(foo); /* In all files comprising the module but one */
+
+Dedicated Kconfig template (:file:`subsys/logging/Kconfig.template.log_config`)
+can be used to create local log level configuration.
+
+Example below presents usage of the template. As a result CONFIG_FOO_LOG_LEVEL
+will be generated:
+
+.. code-block:: none
+
+   module = FOO
+   module-str = foo
+   source "subsys/logging/Kconfig.template.log_config"
 
 Logging in a module instance
 ============================

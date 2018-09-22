@@ -184,7 +184,7 @@ static void ipv4_autoconf_send(struct net_if_ipv4_autoconf *ipv4auto)
 		ipv4auto->probe_cnt = 0;
 		ipv4auto->announce_cnt = 0;
 		ipv4auto->conflict_cnt = 0;
-		memset(&ipv4auto->current_ip, 0, sizeof(struct in_addr));
+		(void)memset(&ipv4auto->current_ip, 0, sizeof(struct in_addr));
 		ipv4auto->requested_ip.s4_addr[0] = 169;
 		ipv4auto->requested_ip.s4_addr[1] = 254;
 		ipv4auto->requested_ip.s4_addr[2] = sys_rand32_get() % 254;
@@ -199,7 +199,7 @@ static void ipv4_autoconf_send(struct net_if_ipv4_autoconf *ipv4auto)
 		ipv4auto->probe_cnt = 0;
 		ipv4auto->announce_cnt = 0;
 		ipv4auto->conflict_cnt = 0;
-		memset(&ipv4auto->current_ip, 0, sizeof(struct in_addr));
+		(void)memset(&ipv4auto->current_ip, 0, sizeof(struct in_addr));
 		NET_DBG("%s: Starting probe for 169.254.%d.%d", "Renew",
 			ipv4auto->requested_ip.s4_addr[2],
 			ipv4auto->requested_ip.s4_addr[3]);

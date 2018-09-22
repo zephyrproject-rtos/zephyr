@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __POSIX_STAT_H__
-#define __POSIX_STAT_H__
+#ifndef ZEPHYR_INCLUDE_POSIX_SYS_STAT_H_
+#define ZEPHYR_INCLUDE_POSIX_SYS_STAT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,4 +54,4 @@ struct stat {
 }
 #endif
 
-#endif	/* __POSIX_STAT_H__ */
+#endif	/* ZEPHYR_INCLUDE_POSIX_SYS_STAT_H_ */

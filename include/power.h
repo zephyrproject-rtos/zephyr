@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INCpower
-#define __INCpower
+#ifndef ZEPHYR_INCLUDE_POWER_H_
+#define ZEPHYR_INCLUDE_POWER_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -121,4 +121,4 @@ extern int _sys_soc_suspend(s32_t ticks);
 }
 #endif
 
-#endif /* __INCpower */
+#endif /* ZEPHYR_INCLUDE_POWER_H_ */

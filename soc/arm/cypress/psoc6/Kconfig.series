@@ -1,0 +1,15 @@
+# Kconfig.series - Cypress PSoC6 MCU line
+#
+# Copyright (c) 2018, Cypress Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_PSOC62
+	bool "Cypress PSoC6 series MCU"
+	select SOC_FAMILY_PSOC6
+	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
+	select CPU_HAS_SYSTICK
+	select HAS_CYPRESS_DRIVERS
+	help
+	  Enable support for Cypress PSoC6 MCU series

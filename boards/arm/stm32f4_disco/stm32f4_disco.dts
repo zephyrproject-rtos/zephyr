@@ -39,7 +39,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button {
 			label = "Key";
 			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
 		};
@@ -71,4 +71,12 @@
 	pwm {
 		status = "ok";
 	};
+};
+
+&rtc {
+	status = "ok";
+};
+
+&usbotg_fs {
+	status = "ok";
 };

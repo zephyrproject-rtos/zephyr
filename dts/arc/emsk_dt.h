@@ -7,19 +7,19 @@
 #ifndef __EMSK_DT_H
 #define __EMSK_DT_H
 
-#define __SIZE_K(x) (x * 1024)
+#include <mem.h>
 
 #define DT_APB_CLK_HZ		50000000
 
 #if defined(CONFIG_SOC_EMSK_EM11D)
-#define DT_ICCM_SIZE	__SIZE_K(64)
-#define DT_DCCM_SIZE	__SIZE_K(64)
+#define DT_ICCM_SIZE	DT_SIZE_K(64)
+#define DT_DCCM_SIZE	DT_SIZE_K(64)
 #elif defined(CONFIG_SOC_EMSK_EM7D)
-#define DT_ICCM_SIZE	__SIZE_K(256)
-#define DT_DCCM_SIZE	__SIZE_K(128)
+#define DT_ICCM_SIZE	DT_SIZE_K(256)
+#define DT_DCCM_SIZE	DT_SIZE_K(128)
 #elif defined(CONFIG_SOC_EMSK_EM9D)
-#define DT_ICCM_SIZE	__SIZE_K(256)
-#define DT_DCCM_SIZE	__SIZE_K(128)
+#define DT_ICCM_SIZE	DT_SIZE_K(256)
+#define DT_DCCM_SIZE	DT_SIZE_K(128)
 #endif
 
 #ifdef CONFIG_BOARD_EM_STARTERKIT_R23

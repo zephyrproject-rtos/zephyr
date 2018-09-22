@@ -294,7 +294,7 @@ static int tc_session_free(struct device *dev, struct cipher_ctx *sessn)
 	struct tc_shim_drv_state *data =  sessn->drv_sessn_state;
 
 	ARG_UNUSED(dev);
-	memset(data, 0, sizeof(struct tc_shim_drv_state));
+	(void)memset(data, 0, sizeof(struct tc_shim_drv_state));
 	data->in_use = 0;
 
 	return 0;

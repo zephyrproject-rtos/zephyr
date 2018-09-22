@@ -17,8 +17,8 @@
  * simplifies the adding and removing of nodes to/from the list.
  */
 
-#ifndef _misc_dlist__h_
-#define _misc_dlist__h_
+#ifndef ZEPHYR_INCLUDE_MISC_DLIST_H_
+#define ZEPHYR_INCLUDE_MISC_DLIST_H_
 
 #include <stddef.h>
 
@@ -311,6 +311,41 @@ static inline sys_dnode_t *sys_dlist_peek_next(sys_dlist_t *list,
 }
 
 /**
+ * @brief get a reference to the previous item in the list, node is not NULL
+ *
+ * Faster than sys_dlist_peek_prev() if node is known not to be NULL.
+ *
+ * @param list the doubly-linked list to operate on
+ * @param node the node from which to get the previous element in the list
+ *
+ * @return a pointer to the previous element from a node, NULL if node is the
+ *	   tail
+ */
+
+static inline sys_dnode_t *sys_dlist_peek_prev_no_check(sys_dlist_t *list,
+							sys_dnode_t *node)
+{
+	return (node == list->head) ? NULL : node->prev;
+}
+
+/**
+ * @brief get a reference to the previous item in the list
+ *
+ * @param list the doubly-linked list to operate on
+ * @param node the node from which to get the previous element in the list
+ *
+ * @return a pointer to the previous element from a node, NULL if node is the
+ * 	   tail or NULL (when node comes from reading the head of an empty
+ * 	   list).
+ */
+
+static inline sys_dnode_t *sys_dlist_peek_prev(sys_dlist_t *list,
+					       sys_dnode_t *node)
+{
+	return node ? sys_dlist_peek_prev_no_check(list, node) : NULL;
+}
+
+/**
  * @brief get a reference to the tail item in the list
  *
  * @param list the doubly-linked list to operate on
@@ -491,4 +526,4 @@ static inline sys_dnode_t *sys_dlist_get(sys_dlist_t *list)
 }
 #endif
 
-#endif /* _misc_dlist__h_ */
+#endif /* ZEPHYR_INCLUDE_MISC_DLIST_H_ */

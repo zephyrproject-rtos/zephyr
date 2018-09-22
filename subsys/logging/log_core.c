@@ -9,20 +9,12 @@
 #include <logging/log_backend.h>
 #include <logging/log_ctrl.h>
 #include <logging/log_output.h>
-#include <logging/log_backend_uart.h>
 #include <misc/printk.h>
 #include <assert.h>
 #include <atomic.h>
 
 #ifndef CONFIG_LOG_PRINTK_MAX_STRING_LENGTH
 #define CONFIG_LOG_PRINTK_MAX_STRING_LENGTH 1
-#endif
-
-#ifdef CONFIG_LOG_BACKEND_UART
-LOG_BACKEND_UART_DEFINE(log_backend_uart);
-const struct log_backend *uart_backend = &log_backend_uart;
-#else
-const struct log_backend *uart_backend;
 #endif
 
 static struct log_list_t list;
@@ -256,14 +248,17 @@ void log_init(void)
 
 	/* Assign ids to backends. */
 	for (i = 0; i < log_backend_count_get(); i++) {
-		log_backend_id_set(log_backend_get(i),
-				   i + LOG_FILTER_FIRST_BACKEND_SLOT_IDX);
-	}
+		const struct log_backend *backend = log_backend_get(i);
 
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_UART)) {
-		backend_filter_init(uart_backend);
-		log_backend_uart_init();
-		log_backend_activate(uart_backend, NULL);
+		log_backend_id_set(backend,
+				   i + LOG_FILTER_FIRST_BACKEND_SLOT_IDX);
+
+		backend_filter_init(backend);
+		if (backend->api->init) {
+			backend->api->init();
+		}
+
+		log_backend_activate(backend, NULL);
 	}
 }
 
@@ -381,9 +376,7 @@ u32_t log_src_cnt_get(u32_t domain_id)
 
 const char *log_source_name_get(u32_t domain_id, u32_t src_id)
 {
-	assert(src_id < log_sources_count());
-
-	return log_name_get(src_id);
+	return src_id < log_sources_count() ? log_name_get(src_id) : NULL;
 }
 
 static u32_t max_filter_get(u32_t filters)
@@ -501,4 +494,13 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 K_THREAD_DEFINE(log_process_thread, CONFIG_LOG_PROCESS_THREAD_STACK_SIZE,
 		log_process_thread_func, NULL, NULL, NULL,
 		CONFIG_LOG_PROCESS_THREAD_PRIO, 0, K_NO_WAIT);
+#else
+#include <init.h>
+static int enable_logger(struct device *arg)
+{
+	ARG_UNUSED(arg);
+	log_init();
+	return 0;
+}
+SYS_INIT(enable_logger, POST_KERNEL, 0);
 #endif /* CONFIG_LOG_PROCESS_THREAD */

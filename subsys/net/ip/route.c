@@ -366,13 +366,16 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 
 			tmp = net_route_get_nexthop(route);
 			nbr = net_ipv6_nbr_lookup(iface, tmp);
-			llstorage = net_nbr_get_lladdr(nbr->idx);
+			if (nbr) {
+				llstorage = net_nbr_get_lladdr(nbr->idx);
 
-			NET_DBG("Removing the oldest route %s via %s [%s]",
-				net_sprint_ipv6_addr(&route->addr),
-				net_sprint_ipv6_addr(tmp),
-				net_sprint_ll_addr(llstorage->addr,
-						   llstorage->len));
+				NET_DBG("Removing the oldest route %s "
+					"via %s [%s]",
+					net_sprint_ipv6_addr(&route->addr),
+					net_sprint_ipv6_addr(tmp),
+					net_sprint_ll_addr(llstorage->addr,
+							   llstorage->len));
+			}
 		} while (0);
 #endif /* CONFIG_NET_DEBUG_ROUTE */
 
@@ -528,6 +531,9 @@ int net_route_del_by_nexthop_data(struct net_if *iface,
 	NET_ASSERT(nexthop);
 
 	nbr_nexthop = net_ipv6_nbr_lookup(iface, nexthop);
+	if (!nbr_nexthop) {
+		return -EINVAL;
+	}
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTES; i++) {
 		struct net_nbr *nbr = get_nbr(i);
@@ -782,7 +788,7 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 	 */
 	if (net_if_l2(net_pkt_iface(pkt)) != &NET_L2_GET_NAME(DUMMY)) {
 #endif
-		if (!net_pkt_ll_src(pkt)->addr) {
+		if (!net_pkt_lladdr_src(pkt)->addr) {
 			NET_DBG("Link layer source address not set");
 			return -EINVAL;
 		}
@@ -790,7 +796,7 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 		/* Sanitycheck: If src and dst ll addresses are going to be
 		 * same, then something went wrong in route lookup.
 		 */
-		if (!memcmp(net_pkt_ll_src(pkt)->addr, lladdr->addr,
+		if (!memcmp(net_pkt_lladdr_src(pkt)->addr, lladdr->addr,
 			    lladdr->len)) {
 			NET_ERR("Src ll and Dst ll are same");
 			return -EINVAL;
@@ -804,13 +810,13 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 	/* Set the destination and source ll address in the packet.
 	 * We set the destination address to be the nexthop recipient.
 	 */
-	net_pkt_ll_src(pkt)->addr = net_pkt_ll_if(pkt)->addr;
-	net_pkt_ll_src(pkt)->type = net_pkt_ll_if(pkt)->type;
-	net_pkt_ll_src(pkt)->len = net_pkt_ll_if(pkt)->len;
+	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_if(pkt)->addr;
+	net_pkt_lladdr_src(pkt)->type = net_pkt_lladdr_if(pkt)->type;
+	net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
 
-	net_pkt_ll_dst(pkt)->addr = lladdr->addr;
-	net_pkt_ll_dst(pkt)->type = lladdr->type;
-	net_pkt_ll_dst(pkt)->len = lladdr->len;
+	net_pkt_lladdr_dst(pkt)->addr = lladdr->addr;
+	net_pkt_lladdr_dst(pkt)->type = lladdr->type;
+	net_pkt_lladdr_dst(pkt)->len = lladdr->len;
 
 	net_pkt_set_iface(pkt, nbr->iface);
 

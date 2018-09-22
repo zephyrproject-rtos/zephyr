@@ -70,7 +70,7 @@ static int fatfs_open(struct fs_file_t *zfp, const char *file_name)
 	void *ptr;
 
 	if (k_mem_slab_alloc(&fatfs_filep_pool, &ptr, K_NO_WAIT) == 0) {
-		memset(ptr, 0, sizeof(FIL));
+		(void)memset(ptr, 0, sizeof(FIL));
 		zfp->filep = ptr;
 	} else {
 		return -ENOMEM;
@@ -233,7 +233,7 @@ static int fatfs_opendir(struct fs_dir_t *zdp, const char *path)
 	void *ptr;
 
 	if (k_mem_slab_alloc(&fatfs_dirp_pool, &ptr, K_NO_WAIT) == 0) {
-		memset(ptr, 0, sizeof(DIR));
+		(void)memset(ptr, 0, sizeof(DIR));
 		zdp->dirp = ptr;
 	} else {
 		return -ENOMEM;

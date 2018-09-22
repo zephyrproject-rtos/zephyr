@@ -27,7 +27,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
 		};
@@ -56,4 +56,8 @@
 &i2c1 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&rtc {
+	status = "ok";
 };

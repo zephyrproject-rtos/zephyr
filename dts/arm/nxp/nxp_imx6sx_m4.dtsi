@@ -63,6 +63,7 @@
 	};
 
 	flash:memory@DT_FLASH_ADDR {
+		compatible = "soc-nv-flash";
 		reg = <DT_FLASH_ADDR DT_FLASH_SIZE>;
 	};
 

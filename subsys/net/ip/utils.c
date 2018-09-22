@@ -275,7 +275,7 @@ int net_addr_pton(sa_family_t family, const char *src,
 			}
 		}
 
-		memset(addr, 0, sizeof(struct in_addr));
+		(void)memset(addr, 0, sizeof(struct in_addr));
 
 		for (i = 0; i < sizeof(struct in_addr); i++) {
 			char *endptr;
@@ -763,7 +763,7 @@ int net_bytes_from_str(u8_t *buf, int buf_len, const char *src)
 		}
 	}
 
-	memset(buf, 0, buf_len);
+	(void)memset(buf, 0, buf_len);
 
 	for (i = 0; i < buf_len; i++) {
 		buf[i] = strtol(src, &endptr, 16);

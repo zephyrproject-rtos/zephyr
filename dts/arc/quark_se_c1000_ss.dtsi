@@ -8,8 +8,6 @@
 
 #include <dt-bindings/i2c/i2c.h>
 
-#define __SIZE_K(x) (x * 1024)
-
 / {
 	cpus {
 		#address-cells = <1>;
@@ -21,7 +19,7 @@
 			reg = <1>;
 		};
 
-		core_intc: arcv2-intc@0 {
+		core_intc: arcv2-intc {
 			compatible = "snps,arcv2-intc";
 			interrupt-controller;
 			#interrupt-cells = <2>;
@@ -29,6 +27,7 @@
 	};
 
 	flash0: flash@DT_FLASH_ADDR {
+		compatible = "soc-nv-flash";
 		reg = <DT_FLASH_ADDR DT_FLASH_SIZE>;
 	};
 
