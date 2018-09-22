@@ -7,7 +7,7 @@
 /* Value of 0 will cause the IP stack to select next free port */
 #define MY_PORT 0
 
-#define PEER_PORT 4242
+#define PEER_PORT 1337
 
 #define WAIT_TIME  K_SECONDS(10)
 #define CONNECT_TIME  K_SECONDS(10)

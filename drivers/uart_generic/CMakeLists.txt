@@ -1,1 +1,2 @@
 zephyr_sources(uart_generic_dev.c uart_generic_drv.c)
+zephyr_sources_ifdef(CONFIG_UART_SHELL uart_generic_shell.c)

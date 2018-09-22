@@ -7,9 +7,9 @@
 #        message(WARNING "You have selected a LoRa device which requires UART, but did not choose a UART peripheral to use")
 #    endif()
 #endif()
-zephyr_sources_ifdef(CONFIG_LORA_DEVICE_USES_UARTE lora_device_uart.c)
+#zephyr_sources_ifdef(CONFIG_LORA_DEVICE_USES_UARTE lora_device_uart.c)
 
 zephyr_sources(lora_context.c)
 
-zephyr_sources_ifdef(CONFIG_LORA_DEVICE_RN2483 generic_uart_drv.c generic_uart_dev.c lora_shell.c)
+zephyr_sources_ifdef(CONFIG_LORA_SHELL lora_shell.c)
 zephyr_sources_ifdef(CONFIG_LORA_DEVICE_RN2483 rn2483.c)

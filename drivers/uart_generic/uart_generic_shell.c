@@ -20,10 +20,10 @@
 
 #include <drivers/generic_uart/generic_uart_drv.h>
 
-#define LORA_SHELL_MODULE "lora"
-int lorashell_selected_device = 0;
+#define UART_SHELL_MODULE "uart"
+int uart_shell_selected_device = 0;
 
-int lora_shell_cmd_list(int argc, char *argv[])
+int uart_shell_cmd_list(int argc, char *argv[])
 {
 	struct uart_drv_context *drv_ctx;
 	int i, count = 0;
@@ -52,7 +52,7 @@ int lora_shell_cmd_list(int argc, char *argv[])
 	return 0;
 }
 
-int lora_shell_cmd_select(int argc, char *argv[]) {
+int uart_shell_cmd_select(int argc, char *argv[]) {
 
 	struct uart_drv_context *drv_ctx;
 	char *endptr;
@@ -79,18 +79,18 @@ int lora_shell_cmd_select(int argc, char *argv[]) {
 	}
 
 
-	lorashell_selected_device = i;
+	uart_shell_selected_device = i;
 	return 0;
 }
 
-int lora_shell_cmd_send(int argc, char *argv[])
+int uart_shell_cmd_send(int argc, char *argv[])
 {
 
 	struct uart_drv_context *drv_ctx;
 	char *endptr;
 	int ret, i, arg = 1;
 
-	drv_ctx = uart_drv_context_from_id(lorashell_selected_device);
+	drv_ctx = uart_drv_context_from_id(uart_shell_selected_device);
 	if (!drv_ctx) {
 		printk("Device not found!\n");
 		return 0;
@@ -122,14 +122,14 @@ int lora_shell_cmd_send(int argc, char *argv[])
 }
 
 
-static struct shell_cmd modem_commands[] = {
+static struct shell_cmd uart_commands[] = {
 	/* Keep the commands in alphabetical order */
-    { "device", lora_shell_cmd_select, "\n\tSelect device at <index>" },
-	{ "list", lora_shell_cmd_list, "\n\tList registered devices" },
-	{ "send", lora_shell_cmd_send,
+    { "device", uart_shell_cmd_select, "\n\tSelect device at <index>" },
+	{ "list", uart_shell_cmd_list, "\n\tList registered devices" },
+	{ "send", uart_shell_cmd_send,
 		"\n\tSend an AT <command> to selected device:"
 		"\n\tsend <command>" },
 	{ NULL, NULL, NULL }
 };
 
-SHELL_REGISTER(LORA_SHELL_MODULE, modem_commands);
+SHELL_REGISTER(UART_SHELL_MODULE, uart_commands);

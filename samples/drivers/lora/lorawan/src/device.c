@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <logging/sys_log.h>
 #include "test.h"
 
 static struct device *gpiob;
@@ -47,8 +48,13 @@ void suspend_devices(void)
 		 * device in the device list is busy as shown below :
 		 * if(device_busy_check(&device_list[idx])) {do something}
 		 */
+		if(device_busy_check(&device_list[idx])) {
+			SYS_LOG_DBG("device #%u is busy, can't sleep", idx);
+		}
+
 		device_retval[i] = device_set_power_state(&device_list[idx],
 						DEVICE_PM_SUSPEND_STATE);
+
 	}
 }
 
@@ -80,12 +86,9 @@ void create_device_list(void)
 	 * in the beginning of the list will be resumed first.
 	 */
 	device_list_get(&device_list, &count);
-	device_count = 3; /* Reserve for 32KHz, 16MHz, system clock, and uart */
-
+	device_count = 2; /* Reserve for 32KHz, 16MHz, system clock, and uart */
+SYS_LOG_DBG("create_device_list");
 	for (i = 0; (i < count) && (device_count < DEVICE_POLICY_MAX); i++) {
-		/*if (!strcmp(device_list[i].config->name, "clk_k32src")) {
-			device_ordered_list[0] = i;
-		} else*/
 		if (!strcmp(device_list[i].config->name, "clk_m16src")) {
 			device_ordered_list[0] = i;
 		} else if (!strcmp(device_list[i].config->name, "sys_clock")) {

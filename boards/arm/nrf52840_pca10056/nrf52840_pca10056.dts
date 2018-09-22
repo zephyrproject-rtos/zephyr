@@ -46,7 +46,7 @@
 
 #ifdef CONFIG_UART_1_NRF_UARTE
 &uart1 {
-	current-speed = <115200>;
+	current-speed = <9600>;
 	status = "ok";
 
 #ifdef CONFIG_MODEM_WNCM14A2A

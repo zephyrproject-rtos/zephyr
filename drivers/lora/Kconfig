@@ -36,6 +36,7 @@ config LORA_SHELL
         config LORA_DEVICE_RN2483
             bool "Microchip RN2483 LoRaWAN driver"
             select LORA_DEVICE_USES_UARTE
+            select UART_GENERIC
             help
               Choose this setting to enable Microchip RN2483 via UART.
     endchoice

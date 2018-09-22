@@ -31,7 +31,12 @@
 #define PWM_DEV2	BLUE_PWM_NAME
 #define PWM_CH2		BLUE_PWM_CHANNEL
 #else
-#error "Choose supported board or add new board for the application"
+#define PWM_DEV0	CONFIG_PWM_0_NAME
+#define PWM_CH0		0
+#define PWM_DEV1	CONFIG_PWM_0_NAME
+#define PWM_CH1		1
+#define PWM_DEV2	CONFIG_PWM_0_NAME
+#define PWM_CH2		2
 #endif
 
 /*
@@ -63,7 +68,80 @@ void main(void)
 		printk("Cannot find PWM device!\n");
 		return;
 	}
+	while(1)
+	{
+		for (pulse_width0 = 0; pulse_width0 <= PERIOD;
+			 pulse_width0 += STEPSIZE) {
+			if (write_pin(pwm_dev[0], PWM_CH0,
+						  pulse_width0) != 0) {
+				printk("pin 0 write fails!\n");
+				return;
+			}
+			k_sleep(100);
+		}
+		k_sleep(500);
+		for (pulse_width0 = PERIOD; pulse_width0 > 0;
+			 pulse_width0 -= STEPSIZE) {
+			if (write_pin(pwm_dev[0], PWM_CH0,
+						  pulse_width0) != 0) {
+				printk("pin 0 write fails!\n");
+				return;
+			}
+			k_sleep(50);
+		}
+		write_pin(pwm_dev[0], PWM_CH0,
+				  0);
 
+        for (pulse_width0 = 0; pulse_width0 <= PERIOD;
+             pulse_width0 += STEPSIZE) {
+            if (write_pin(pwm_dev[1], PWM_CH1,
+                          pulse_width0) != 0) {
+                printk("pin 0 write fails!\n");
+                return;
+            }
+            k_sleep(100);
+        }
+        k_sleep(500);
+        for (pulse_width0 = PERIOD; pulse_width0 > 0;
+             pulse_width0 -= STEPSIZE) {
+            if (write_pin(pwm_dev[1], PWM_CH1,
+                          pulse_width0) != 0) {
+                printk("pin 0 write fails!\n");
+                return;
+            }
+            k_sleep(50);
+        }
+        write_pin(pwm_dev[0], PWM_CH1,
+                  0);
+
+
+
+        for (pulse_width0 = 0; pulse_width0 <= PERIOD;
+             pulse_width0 += STEPSIZE) {
+            if (write_pin(pwm_dev[2], PWM_CH2,
+                          pulse_width0) != 0) {
+                printk("pin 0 write fails!\n");
+                return;
+            }
+            k_sleep(100);
+        }
+        k_sleep(500);
+        for (pulse_width0 = PERIOD; pulse_width0 > 0;
+             pulse_width0 -= STEPSIZE) {
+            if (write_pin(pwm_dev[2], PWM_CH2,
+                          pulse_width0) != 0) {
+                printk("pin 0 write fails!\n");
+                return;
+            }
+            k_sleep(50);
+        }
+        write_pin(pwm_dev[0], PWM_CH2,
+                  0);
+
+		k_sleep(5000);
+		//k_sleep(5000);
+	}
+return;
 	while (1) {
 		for (pulse_width0 = 0; pulse_width0 <= PERIOD;
 		     pulse_width0 += STEPSIZE) {
@@ -88,7 +166,9 @@ void main(void)
 						printk("pin 2 write fails!\n");
 						return;
 					}
-					k_sleep(MSEC_PER_SEC);
+					printk("Sleep\n");
+					k_sleep(500);
+
 				}
 			}
 		}

@@ -1,3 +1,5 @@
 zephyr_sources_ifdef(CONFIG_MODEM_RECEIVER modem_receiver.c)
 zephyr_sources_ifdef(CONFIG_MODEM_SHELL modem_shell.c)
 zephyr_sources_ifdef(CONFIG_MODEM_WNCM14A2A wncm14a2a.c)
+#zephyr_sources_ifdef(CONFIG_MODEM_QUECTELMDM quectelmdm.c)
+zephyr_sources(quectelmdm.c)

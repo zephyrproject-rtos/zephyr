@@ -19,40 +19,16 @@
 
 //#undef CONFIG_NET_BUF
 
-struct uart_dev_ctx {
-    int last_error;
-
-    struct uart_drv_context drv_ctx;
-    const struct cmd_handler* command_handlers;
-    int (*cmd_resp_handler)(uint8_t* buf, u16_t len);
-    int (*generic_resp_handler)(uint8_t* buf, u16_t len);
-    uint8_t command_handler_cnt;
-
-    /* semaphores */
-    struct k_sem response_sem;
-};
-static struct uart_dev_ctx ictx;
-
-#define MDM_RECV_BUF_SIZE		128 // TODO
-#define MDM_MAX_DATA_LENGTH 1500 // TODO
-#define CONFIG_MODEM_uart_dev_RX_WORKQ_STACK_SIZE 2048 // TODO
-#define CONFIG_MODEM_uart_dev_RX_STACK_SIZE 1028// TODO
-
-/* RX thread structures */
-K_THREAD_STACK_DEFINE(uart_dev_rx_stack,
-                      CONFIG_MODEM_uart_dev_RX_STACK_SIZE);
-struct k_thread uart_dev_rx_thread;
-
-/* RX thread work queue */
-K_THREAD_STACK_DEFINE(uart_dev_workq_stack,
-                      CONFIG_MODEM_uart_dev_RX_WORKQ_STACK_SIZE);
-static struct k_work_q uart_dev_workq;
-
-static u8_t mdm_recv_buf[MDM_MAX_DATA_LENGTH];
 
 
-const static char* new_line_constant;
-static u16_t new_line_len;
+
+#define UART_DRV_RECV_BUF_SIZE		128 // TODO
+
+
+
+
+
+
 
 
 
@@ -109,40 +85,42 @@ static inline void _hexdump(const u8_t *packet, size_t length)
 
 
 int uart_dev_send_cmd(/*struct uart_dev_socket *sock,*/
-                       const u8_t *cmd, int timeout, int (*response_handler)(uint8_t* buf, u16_t len))
+        struct uart_dev_ctx *dev_ctx,
+        const u8_t *cmd, int timeout, int (*response_handler)(uint8_t* buf, u16_t len))
 {
     int ret;
 
-    ictx.last_error = 0;
+    dev_ctx->last_error = 0;
 
     size_t buff_len = strlen(cmd);
-    size_t size = buff_len + new_line_len;
+    size_t size = buff_len + dev_ctx->linebreak_len;
     u8_t* data = k_malloc(size);
 
     strcpy(data, cmd);
-    memcpy(&data[buff_len], new_line_constant, new_line_len);
+    memcpy(&data[buff_len], dev_ctx->linebreak_constant,  dev_ctx->linebreak_len);
 
 
     SYS_LOG_DBG("OUT: [%s]", cmd);
 
-    uart_drv_send(&ictx.drv_ctx, data, strlen(data));
+    uart_drv_send(&dev_ctx->drv_ctx, data, strlen(data));
+
     k_free(data);
 
     if (timeout == K_NO_WAIT) {
         return 0;
     }
 
-    if(ictx.cmd_resp_handler)
+    if(dev_ctx->cmd_resp_handler)
     {
         SYS_LOG_WRN("Trying to assign new response handler while previous handler is still waiting");
         ret = -EAGAIN;
     } else {
-        ictx.cmd_resp_handler = response_handler;
+        dev_ctx->cmd_resp_handler = response_handler;
     }
 
     //if (!sock) {
-        k_sem_reset(&ictx.response_sem);
-        ret = k_sem_take(&ictx.response_sem, timeout);
+        k_sem_reset(&dev_ctx->response_sem);
+        ret = k_sem_take(&dev_ctx->response_sem, timeout);
     /*   }  TODO: implement sock and transform to CHANNEL or so
  else {
          k_sem_reset(&sock->sock_send_sem);
@@ -150,7 +128,7 @@ int uart_dev_send_cmd(/*struct uart_dev_socket *sock,*/
      }
  */
     if (ret == 0) {
-        ret = ictx.last_error;
+        ret = dev_ctx->last_error;
     } else if (ret == -EAGAIN) {
         ret = -ETIMEDOUT;
     }
@@ -167,7 +145,7 @@ int uart_dev_send_cmd(/*struct uart_dev_socket *sock,*/
 #define UART_DEV_MAX_BUF_CNT 30
 #define NETBUF_ALLOC_TIMEOUT K_SECONDS(1)
 
-NET_BUF_POOL_DEFINE(mdm_recv_pool, UART_DEV_MAX_BUF_CNT, MDM_RECV_BUF_SIZE, 0, NULL);
+NET_BUF_POOL_DEFINE(uart_drv_recv_pool, UART_DEV_MAX_BUF_CNT, UART_DRV_RECV_BUF_SIZE, 0, NULL);
 
 static inline struct net_buf *read_rx_allocator(s32_t timeout, void *user_data)
 {
@@ -245,19 +223,18 @@ static int net_buf_ncmp(struct net_buf *buf, const u8_t *s2, size_t n)
 
 static void uart_dev_read_rx(struct net_buf **buf)
 {
-    u8_t uart_buffer[MDM_RECV_BUF_SIZE];
+    u8_t uart_buffer[UART_DRV_RECV_BUF_SIZE];
 	size_t bytes_read = 0;
 	int ret;
 	u16_t rx_len;
 
-	/* read all of the data from mdm_receiver */
 	while (true) {
 		ret = uart_drv_recv(&ictx.drv_ctx,
 					uart_buffer,
 					sizeof(uart_buffer),
 					&bytes_read);
 		if (ret < 0) {
-			/* mdm_receiver buffer is empty */
+			/*  buffer is empty */
 			break;
 		}
 
@@ -265,7 +242,7 @@ static void uart_dev_read_rx(struct net_buf **buf)
 
 		/* make sure we have storage */
 		if (!*buf) {
-			*buf = net_buf_alloc(&mdm_recv_pool, NETBUF_ALLOC_TIMEOUT);
+			*buf = net_buf_alloc(&uart_drv_recv_pool, NETBUF_ALLOC_TIMEOUT);
 			if (!*buf) {
 				SYS_LOG_ERR("Can't allocate RX data! "
 					    "Skipping data!");
@@ -276,7 +253,7 @@ static void uart_dev_read_rx(struct net_buf **buf)
 		rx_len = net_buf_append_bytes(*buf, bytes_read, uart_buffer,
 					      NETBUF_ALLOC_TIMEOUT,
 					      read_rx_allocator,
-					      &mdm_recv_pool);
+					      &uart_drv_recv_pool);
 		if (rx_len < bytes_read) {
 			SYS_LOG_ERR("Data was lost! read %u of %u!",
 				    rx_len, bytes_read);
@@ -373,12 +350,12 @@ static void uart_dev_rx(void)
 #else
 
 
-static size_t uart_dev_read_rx(u8_t* uart_buffer)
+static size_t uart_dev_read_rx(struct uart_dev_ctx *ictx, u8_t* uart_buffer)
 {
     int ret = 0;
     size_t bytes_read = 0;
     while (true) {
-        ret = uart_drv_recv(&ictx.drv_ctx,
+        ret = uart_drv_recv(&ictx->drv_ctx,
                             uart_buffer,
                             sizeof(uart_buffer),
                             &bytes_read);
@@ -390,22 +367,70 @@ static size_t uart_dev_read_rx(u8_t* uart_buffer)
         return bytes_read;
     }
 }
+
+static int uart_dev_process_line(struct uart_dev_ctx *ictx, char line[], u16_t line_len)
+{
+
+    SYS_LOG_DBG("[%s] IN (%u b): [%s]", ictx->drv_ctx.uart_dev->config->name, strlen(line), line);
+
+
+    int ret_handled = 1;
+
+    if(ret_handled > 0)
+    {
+        if(ictx->cmd_resp_handler)
+        {
+            ret_handled = ictx->cmd_resp_handler(line, line_len);
+            SYS_LOG_DBG("cmd_resp_handler returned %u", ret_handled);
+            if(ret_handled == 0)
+            {
+                ictx->cmd_resp_handler = NULL;
+            }
+        }
+
+    }
+
+    for (int i = 0; i < ictx->command_handler_cnt; ++i) {
+        struct cmd_handler handler = ictx->command_handlers[i];
+
+        if (strncmp(line, handler.cmd,
+                    handler.cmd_len) == 0) {
+
+            char cmd[256];
+            u16_t cmd_len = (u16_t) line_len-handler.cmd_len;
+            memcpy(cmd, &line[handler.cmd_len+1], cmd_len);
+            ret_handled = handler.func(cmd, cmd_len);
+            break;
+        }
+    }
+
+    if(ret_handled > 0)
+    {
+        if(ictx->generic_resp_handler)
+        {
+            ret_handled = ictx->generic_resp_handler(line, line_len);
+        }
+
+    }
+
+    return ret_handled;
+}
 /* RX thread */
-static void uart_dev_rx(void)
+static void uart_dev_rx(struct uart_dev_ctx *ictx)
 {
     int ret = 0;
 
     size_t bytes_read = 0;
-    static u8_t uart_buffer[1024];
-    static u8_t temp_buffer[256];
+    u8_t uart_buffer[1024];
+    u8_t temp_buffer[256];
 
-    static u16_t line_len = 0;
-    static u16_t test_line_len = 0;
+    u16_t line_len = 0;
+    u16_t test_line_len = 0;
 
     while (ret == 0) {
-        k_sem_take(&ictx.drv_ctx.rx_sem, K_FOREVER);
-
-        bytes_read = uart_dev_read_rx(uart_buffer);
+        k_sem_take(&ictx->drv_ctx.rx_sem, K_FOREVER);
+SYS_LOG_DBG("RX SEM taken");
+        bytes_read = uart_dev_read_rx(ictx, uart_buffer);
 
 
         while (bytes_read) {
@@ -413,89 +438,59 @@ static void uart_dev_rx(void)
 
             line_len += bytes_read;
 
-            test_line_len = line_len-(new_line_len);
+            test_line_len = line_len-(ictx->linebreak_len);
 
-            /* check if there is a newline */
-            if(memcmp(&temp_buffer[test_line_len],new_line_constant, new_line_len) == 0)
+            /* check if there is a newline at end of input */
+            if(memcmp(&temp_buffer[test_line_len],ictx->linebreak_constant, ictx->linebreak_len) == 0)
             {
                 u8_t line[256];
                 memcpy(line, temp_buffer, test_line_len);
                 line[test_line_len] = '\0';
-                SYS_LOG_DBG("IN: [%s]", line);
 
 
-                int ret_handled = 1;
-
-                if(ret_handled > 0)
+                u16_t chunk_start_idx = 0;
+                /* check if there are skipped new lines */
+                for(u16_t char_idx = 0; char_idx < ARRAY_SIZE(line) - ictx->linebreak_len; char_idx++)
                 {
-                    if(ictx.cmd_resp_handler)
+
+                    if(memcmp(&temp_buffer[char_idx],ictx->linebreak_constant, ictx->linebreak_len) == 0)
                     {
-                        ret_handled = ictx.cmd_resp_handler(line, test_line_len);
-                        if(ret_handled == 0)
+                        u16_t chunk_len = char_idx-chunk_start_idx;
+                        if(chunk_len > 0)
                         {
-                            ictx.cmd_resp_handler = NULL;
+                            char* chunk = k_malloc(chunk_len);
+                            chunk[chunk_len] = '\0';
+                            memcpy(chunk, &temp_buffer[chunk_start_idx], chunk_len);
+                            int ret_handled = uart_dev_process_line(ictx, chunk, chunk_len);
+
+                            if(ret_handled == 0)
+                            {
+                                SYS_LOG_WRN("UART handled");
+                                // TODO if (!sock) {
+                                k_sem_give(&ictx->response_sem);
+                                SYS_LOG_DBG("%s Sem count (%u)", ictx->drv_ctx.uart_dev->config->name,
+                                        k_sem_count_get(&ictx->response_sem));
+                                //} else {
+                                //    k_sem_give(&sock->sock_send_sem);
+                                //}
+                            } else {
+                                SYS_LOG_WRN("UART not handled");
+                            }
+                            k_free(chunk);
                         }
-                    }
 
+                        chunk_start_idx = char_idx + ictx->linebreak_len;
+                    }
                 }
 
-                for (int i = 0; i < ictx.command_handler_cnt; ++i) {
-                    struct cmd_handler handler = ictx.command_handlers[i];
 
-                    if (strncmp(line, handler.cmd,
-                                handler.cmd_len) == 0) {
-
-                        char cmd[256];
-                        u16_t cmd_len = (u16_t) test_line_len-handler.cmd_len;
-                        memcpy(cmd, &line[handler.cmd_len+1], cmd_len);
-                        ret_handled = handler.func(cmd, cmd_len);
-                        break;
-                    }
-/*
-
-                    if (strncmp(line, handler.cmd,
-                                handler.cmd_len) == 0) {
-                        printk("MATCH %s (len:%u)\n",
-                               handler.cmd,  handler.cmd_len);
-
-                        //memcpy(line, &line[2], 5);
-
-                        //if (test_line_len >= handler.cmd_len) {
-                        if (1> 0) {
-                            printk(".");
-                            //printk("has event %s\n", line);
-
-                  //          handler.func(line, 5);
-                        }
-                        break;
-
-                    }
-                    */
-                }
-
-                if(ret_handled > 0)
-                {
-                    if(ictx.generic_resp_handler)
-                    {
-                        ictx.generic_resp_handler(line, test_line_len);
-                    }
-
-                }
-
-                if(ret_handled == 0)
-                {
-                    // TODO if (!sock) {
-                        k_sem_give(&ictx.response_sem);
-                    //} else {
-                    //    k_sem_give(&sock->sock_send_sem);
-                    //}
-                }
+                memset(temp_buffer, 0, sizeof(temp_buffer));
                 line_len = 0;
                 break;
             }
 
 
-            bytes_read = uart_dev_read_rx(uart_buffer);
+            bytes_read = uart_dev_read_rx(ictx, uart_buffer);
         }
 
         k_yield();
@@ -506,27 +501,31 @@ static void uart_dev_rx(void)
 #endif
 
 
-int uart_dev_init(struct device *uart_dev, const struct cmd_handler command_handlers[], uint8_t cmd_handler_cnt, int (*resp_handler)(uint8_t* buf, u16_t len))
+int uart_dev_init(struct uart_dev_ctx *dev_ctx, struct device *uart_dev)
 {
-    static struct k_delayed_work reset_work;
+
+
     int i, ret = 0;
 
-    memset(&ictx, 0, sizeof(ictx));
-    k_sem_init(&ictx.response_sem, 0, 1);
+    //memset(&ictx, 0, sizeof(ictx));
+    k_sem_init(&dev_ctx->response_sem, 0, 1);
 
-    ictx.command_handlers = command_handlers;
-    ictx.command_handler_cnt = cmd_handler_cnt;
-    ictx.generic_resp_handler = resp_handler;
+    // TODO
+    /*
+    dev_ctx->command_handlers = command_handlers;
+    dev_ctx->command_handler_cnt = cmd_handler_cnt;
+    dev_ctx->generic_resp_handler = resp_handler;
+*/
 
     /* initialize the work queue */
-    k_work_q_start(&uart_dev_workq,
-                   uart_dev_workq_stack,
-                   K_THREAD_STACK_SIZEOF(uart_dev_workq_stack),
+    k_work_q_start(&dev_ctx->workq,
+                   dev_ctx->workq_stack,
+                   K_THREAD_STACK_SIZEOF(dev_ctx->workq_stack),
                    K_PRIO_COOP(7));
 
     // TODO:
-    new_line_constant = "\r\n";
-    new_line_len = 2;
+    dev_ctx->linebreak_constant = "\r\n";
+    dev_ctx->linebreak_len = 2;
 
 /* setup port devices and pin directions */
     // TODO
@@ -547,28 +546,18 @@ int uart_dev_init(struct device *uart_dev, const struct cmd_handler command_hand
     }
     */
 
-    ret = uart_drv_register(&ictx.drv_ctx, uart_dev->config->name,
-                                mdm_recv_buf, sizeof(mdm_recv_buf));
+    ret = uart_drv_register(&dev_ctx->drv_ctx, uart_dev->config->name,
+                                dev_ctx->recv_buf, sizeof(dev_ctx->recv_buf));
     if (ret < 0) {
         SYS_LOG_ERR("Error registering modem receiver (%d)!", ret);
         goto error;
     }
-
     /* start RX thread */
-    k_thread_create(&uart_dev_rx_thread, uart_dev_rx_stack,
-                    K_THREAD_STACK_SIZEOF(uart_dev_rx_stack),
+    k_thread_create(&dev_ctx->rx_thread, dev_ctx->rx_thread_stack,
+                    K_THREAD_STACK_SIZEOF(dev_ctx->rx_thread_stack),
                     (k_thread_entry_t) uart_dev_rx,
-                    NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+                    dev_ctx, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
-    /* init RSSI query */
-    /*
-    k_delayed_work_init(&ictx.rssi_query_work, uart_dev_rssi_query_work);
-*/
-    /* Let's start the modem reset in a workq so that init can proceed */
-  /*  k_delayed_work_init(&reset_work, uart_dev_modem_reset_work);
-    ret = k_delayed_work_submit_to_queue(&uart_dev_workq,
-                                         &reset_work, K_MSEC(10));
-*/
     error:
     return ret;
 }

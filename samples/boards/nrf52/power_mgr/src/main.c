@@ -29,9 +29,11 @@ void main(void)
 	printk("\n\n***Power Management Demo on %s****\n", CONFIG_ARCH);
 	printk(DEMO_DESCRIPTION);
 
-	gpio_setup();
+	//gpio_setup();
+
 	create_device_list();
-	gpio_in = device_get_binding(PORT);
+
+	//gpio_in = device_get_binding(PORT);
 
 	for (int i = 1; i <= 4; i++) {
 		printk("\n<-- App doing busy wait for 10 Sec -->\n");
