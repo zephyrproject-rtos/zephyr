@@ -13,8 +13,6 @@
 #include <power.h>
 #include <stdbool.h>
 
-extern u64_t z_last_tick_announced;
-
 #if defined(CONFIG_TICKLESS_IDLE)
 /*
  * Idle time must be this value or higher for timer to go into tickless idle
@@ -72,22 +70,6 @@ static void set_kernel_idle_time_in_ticks(s32_t ticks)
 #ifndef CONFIG_SMP
 static void sys_power_save_idle(s32_t ticks)
 {
-#ifdef CONFIG_TICKLESS_KERNEL
-	if (ticks != K_FOREVER) {
-		ticks -= (int)(z_clock_uptime() - z_last_tick_announced);
-		if (!ticks) {
-			/*
-			 * Timer has expired or about to expire
-			 * No time for power saving operations
-			 *
-			 * Note that it will never be zero unless some time
-			 * had elapsed since timer was last programmed.
-			 */
-			k_cpu_idle();
-			return;
-		}
-	}
-#endif
 	if (_must_enter_tickless_idle(ticks)) {
 		/*
 		 * Stop generating system timer interrupts until it's time for
