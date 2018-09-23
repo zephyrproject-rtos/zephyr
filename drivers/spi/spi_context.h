@@ -181,7 +181,7 @@ static inline void spi_context_cs_configure(struct spi_context *ctx)
 			       ctx->config->cs->gpio_pin,
 			       spi_context_cs_inactive_value(ctx));
 	} else {
-		SYS_LOG_INF("CS control inhibited (no GPIO device)");
+		LOG_INF("CS control inhibited (no GPIO device)");
 	}
 }
 
@@ -212,7 +212,7 @@ void spi_context_buffers_setup(struct spi_context *ctx,
 			       const struct spi_buf_set *rx_bufs,
 			       u8_t dfs)
 {
-	SYS_LOG_DBG("tx_bufs %p - rx_bufs %p - %u", tx_bufs, rx_bufs, dfs);
+	LOG_DBG("tx_bufs %p - rx_bufs %p - %u", tx_bufs, rx_bufs, dfs);
 
 	if (tx_bufs) {
 		ctx->current_tx = tx_bufs->buffers;
@@ -244,7 +244,7 @@ void spi_context_buffers_setup(struct spi_context *ctx,
 	ctx->recv_frames = 0;
 #endif /* CONFIG_SPI_SLAVE */
 
-	SYS_LOG_DBG("current_tx %p (%zu), current_rx %p (%zu),"
+	LOG_DBG("current_tx %p (%zu), current_rx %p (%zu),"
 		    " tx buf/len %p/%zu, rx buf/len %p/%zu",
 		    ctx->current_tx, ctx->tx_count,
 		    ctx->current_rx, ctx->rx_count,
@@ -259,7 +259,7 @@ void spi_context_update_tx(struct spi_context *ctx, u8_t dfs, u32_t len)
 	}
 
 	if (len > ctx->tx_len) {
-		SYS_LOG_ERR("Update exceeds current buffer");
+		LOG_ERR("Update exceeds current buffer");
 		return;
 	}
 
@@ -277,7 +277,7 @@ void spi_context_update_tx(struct spi_context *ctx, u8_t dfs, u32_t len)
 		ctx->tx_buf += dfs * len;
 	}
 
-	SYS_LOG_DBG("tx buf/len %p/%zu", ctx->tx_buf, ctx->tx_len);
+	LOG_DBG("tx buf/len %p/%zu", ctx->tx_buf, ctx->tx_len);
 }
 
 static ALWAYS_INLINE
@@ -307,7 +307,7 @@ void spi_context_update_rx(struct spi_context *ctx, u8_t dfs, u32_t len)
 	}
 
 	if (len > ctx->rx_len) {
-		SYS_LOG_ERR("Update exceeds current buffer");
+		LOG_ERR("Update exceeds current buffer");
 		return;
 	}
 
@@ -325,7 +325,7 @@ void spi_context_update_rx(struct spi_context *ctx, u8_t dfs, u32_t len)
 		ctx->rx_buf += dfs * len;
 	}
 
-	SYS_LOG_DBG("rx buf/len %p/%zu", ctx->rx_buf, ctx->rx_len);
+	LOG_DBG("rx buf/len %p/%zu", ctx->rx_buf, ctx->rx_len);
 }
 
 static ALWAYS_INLINE

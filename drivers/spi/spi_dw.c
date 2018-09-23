@@ -5,11 +5,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#define SYS_LOG_DOMAIN "SPI DW"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
-#include <logging/sys_log.h>
+#define LOG_DOMAIN "SPI DW"
+#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(spi_dw);
 
-#if (CONFIG_SYS_LOG_SPI_LEVEL == 4)
+#if (CONFIG_SPI_LOG_LEVEL == 4)
 #define DBG_COUNTER_INIT()	\
 	u32_t __cnt = 0
 #define DBG_COUNTER_INC()	\
@@ -76,7 +77,7 @@ out:
 
 	spi_context_cs_control(&spi->ctx, false);
 
-	SYS_LOG_DBG("SPI transaction completed %s error",
+	LOG_DBG("SPI transaction completed %s error",
 		    error ? "with" : "without");
 
 	spi_context_complete(&spi->ctx, error);
@@ -148,7 +149,7 @@ static void push_data(struct device *dev)
 		write_txftlr(0, info->regs);
 	}
 
-	SYS_LOG_DBG("Pushed: %d", DBG_COUNTER_RESULT());
+	LOG_DBG("Pushed: %d", DBG_COUNTER_RESULT());
 }
 
 static void pull_data(struct device *dev)
@@ -189,7 +190,7 @@ static void pull_data(struct device *dev)
 		write_rxftlr(spi->ctx.rx_len - 1, info->regs);
 	}
 
-	SYS_LOG_DBG("Pulled: %d", DBG_COUNTER_RESULT());
+	LOG_DBG("Pulled: %d", DBG_COUNTER_RESULT());
 }
 
 static int spi_dw_configure(const struct spi_dw_config *info,
@@ -198,7 +199,7 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 {
 	u32_t ctrlr0 = 0;
 
-	SYS_LOG_DBG("%p (prev %p)", config, spi->ctx.config);
+	LOG_DBG("%p (prev %p)", config, spi->ctx.config);
 
 	if (spi_context_configured(&spi->ctx, config)) {
 		/* Nothing to do */
@@ -208,19 +209,19 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 	/* Verify if requested op mode is relevant to this controller */
 	if (config->operation & SPI_OP_MODE_SLAVE) {
 		if (!(info->op_modes & SPI_CTX_RUNTIME_OP_MODE_SLAVE)) {
-			SYS_LOG_ERR("Slave mode not supported");
+			LOG_ERR("Slave mode not supported");
 			return -ENOTSUP;
 		}
 	} else {
 		if (!(info->op_modes & SPI_CTX_RUNTIME_OP_MODE_MASTER)) {
-			SYS_LOG_ERR("Master mode not supported");
+			LOG_ERR("Master mode not supported");
 			return -ENOTSUP;
 		}
 	}
 
 	if (config->operation & (SPI_TRANSFER_LSB |
 				 SPI_LINES_DUAL | SPI_LINES_QUAD)) {
-		SYS_LOG_ERR("Unsupported configuration");
+		LOG_ERR("Unsupported configuration");
 		return -EINVAL;
 	}
 
@@ -258,7 +259,7 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 	spi_context_cs_configure(&spi->ctx);
 
 	if (spi_dw_is_slave(spi)) {
-		SYS_LOG_DBG("Installed slave config %p:"
+		LOG_DBG("Installed slave config %p:"
 			    " ws/dfs %u/%u, mode %u/%u/%u",
 			    config,
 			    SPI_WORD_SIZE_GET(config->operation), spi->dfs,
@@ -269,7 +270,7 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 			    (SPI_MODE_GET(config->operation) &
 			     SPI_MODE_LOOP) ? 1 : 0);
 	} else {
-		SYS_LOG_DBG("Installed master config %p: freq %uHz (div = %u),"
+		LOG_DBG("Installed master config %p: freq %uHz (div = %u),"
 			    " ws/dfs %u/%u, mode %u/%u/%u, slave %u",
 			    config, config->frequency,
 			    SPI_DW_CLK_DIVIDER(config->frequency),
@@ -319,7 +320,7 @@ static void spi_dw_update_txftlr(const struct spi_dw_config *info,
 		}
 	}
 
-	SYS_LOG_DBG("TxFTLR: %u", reg_data);
+	LOG_DBG("TxFTLR: %u", reg_data);
 
 	write_txftlr(reg_data, info->regs);
 }
@@ -415,7 +416,7 @@ static int transceive(struct device *dev,
 		DW_SPI_IMR_UNMASK;
 	write_imr(reg_data, info->regs);
 
-	SYS_LOG_DBG("Ctrlr0 0x%08x Ctrlr1 0x%04x Txftlr 0x%08x"
+	LOG_DBG("Ctrlr0 0x%08x Ctrlr1 0x%04x Txftlr 0x%08x"
 		    " Rxftlr 0x%08x Imr 0x%02x",
 		    read_ctrlr0(info->regs), read_ctrlr1(info->regs),
 		    read_txftlr(info->regs), read_rxftlr(info->regs),
@@ -423,7 +424,7 @@ static int transceive(struct device *dev,
 
 	spi_context_cs_control(&spi->ctx, true);
 
-	SYS_LOG_DBG("Enabling controller");
+	LOG_DBG("Enabling controller");
 	set_bit_ssienr(info->regs);
 
 	ret = spi_context_wait_for_completion(&spi->ctx);
@@ -438,7 +439,7 @@ static int spi_dw_transceive(struct device *dev,
 			     const struct spi_buf_set *tx_bufs,
 			     const struct spi_buf_set *rx_bufs)
 {
-	SYS_LOG_DBG("%p, %p, %p", dev, tx_bufs, rx_bufs);
+	LOG_DBG("%p, %p, %p", dev, tx_bufs, rx_bufs);
 
 	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL);
 }
@@ -450,7 +451,7 @@ static int spi_dw_transceive_async(struct device *dev,
 				   const struct spi_buf_set *rx_bufs,
 				   struct k_poll_signal *async)
 {
-	SYS_LOG_DBG("%p, %p, %p, %p", dev, tx_bufs, rx_bufs, async);
+	LOG_DBG("%p, %p, %p, %p", dev, tx_bufs, rx_bufs, async);
 
 	return transceive(dev, config, tx_bufs, rx_bufs, true, async);
 }
@@ -477,7 +478,7 @@ void spi_dw_isr(struct device *dev)
 
 	int_status = read_isr(info->regs);
 
-	SYS_LOG_DBG("SPI %p int_status 0x%x - (tx: %d, rx: %d)", dev,
+	LOG_DBG("SPI %p int_status 0x%x - (tx: %d, rx: %d)", dev,
 		    int_status, read_txflr(info->regs), read_rxflr(info->regs));
 
 	if (int_status & DW_SPI_ISR_ERRORS_MASK) {
@@ -522,7 +523,7 @@ int spi_dw_init(struct device *dev)
 	write_imr(DW_SPI_IMR_MASK, info->regs);
 	clear_bit_ssienr(info->regs);
 
-	SYS_LOG_DBG("Designware SPI driver initialized on device: %p", dev);
+	LOG_DBG("Designware SPI driver initialized on device: %p", dev);
 
 	spi_context_unlock_unconditionally(&spi->ctx);
 

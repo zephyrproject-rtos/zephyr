@@ -10,8 +10,9 @@
 #include <clock_control.h>
 #include <fsl_dspi.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(spi_mcux_dspi);
 
 #include "spi_context.h"
 
@@ -90,7 +91,7 @@ static void spi_mcux_transfer_next_packet(struct device *dev)
 
 	status = DSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
 	if (status != kStatus_Success) {
-		SYS_LOG_ERR("Transfer could not start");
+		LOG_ERR("Transfer could not start");
 	}
 }
 
@@ -130,14 +131,14 @@ static int spi_mcux_configure(struct device *dev,
 	DSPI_MasterGetDefaultConfig(&master_config);
 
 	if (spi_cfg->slave > FSL_FEATURE_DSPI_CHIP_SELECT_COUNT) {
-		SYS_LOG_ERR("Slave %d is greater than %d",
+		LOG_ERR("Slave %d is greater than %d",
 			    spi_cfg->slave, FSL_FEATURE_DSPI_CHIP_SELECT_COUNT);
 		return -EINVAL;
 	}
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (word_size > FSL_FEATURE_DSPI_MAX_DATA_WIDTH) {
-		SYS_LOG_ERR("Word size %d is greater than %d",
+		LOG_ERR("Word size %d is greater than %d",
 			    word_size, FSL_FEATURE_DSPI_MAX_DATA_WIDTH);
 		return -EINVAL;
 	}
