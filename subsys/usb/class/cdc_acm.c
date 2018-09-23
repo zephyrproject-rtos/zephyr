@@ -53,8 +53,9 @@
 
 /* definitions */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_CDC_ACM_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_USB_CDC_ACM_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(usb_cdc_acm)
 
 #define DEV_DATA(dev)						\
 	((struct cdc_acm_dev_data_t * const)(dev)->driver_data)
@@ -257,32 +258,32 @@ int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
 	case SET_LINE_CODING:
 		memcpy(&dev_data->line_coding,
 		       *data, sizeof(dev_data->line_coding));
-		SYS_LOG_DBG("\nCDC_SET_LINE_CODING %d %d %d %d",
-			    sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
-			    dev_data->line_coding.bCharFormat,
-			    dev_data->line_coding.bParityType,
-			    dev_data->line_coding.bDataBits);
+		USB_DBG("\nCDC_SET_LINE_CODING %d %d %d %d",
+			sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
+			dev_data->line_coding.bCharFormat,
+			dev_data->line_coding.bParityType,
+			dev_data->line_coding.bDataBits);
 		break;
 
 	case SET_CONTROL_LINE_STATE:
 		dev_data->line_state = (u8_t)sys_le16_to_cpu(pSetup->wValue);
-		SYS_LOG_DBG("CDC_SET_CONTROL_LINE_STATE 0x%x",
-			    dev_data->line_state);
+		USB_DBG("CDC_SET_CONTROL_LINE_STATE 0x%x",
+			dev_data->line_state);
 		break;
 
 	case GET_LINE_CODING:
 		*data = (u8_t *)(&dev_data->line_coding);
 		*len = sizeof(dev_data->line_coding);
-		SYS_LOG_DBG("\nCDC_GET_LINE_CODING %d %d %d %d",
-			    sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
-			    dev_data->line_coding.bCharFormat,
-			    dev_data->line_coding.bParityType,
-			    dev_data->line_coding.bDataBits);
+		USB_DBG("\nCDC_GET_LINE_CODING %d %d %d %d",
+			sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
+			dev_data->line_coding.bCharFormat,
+			dev_data->line_coding.bParityType,
+			dev_data->line_coding.bDataBits);
 		break;
 
 	default:
-		SYS_LOG_DBG("CDC ACM request 0x%x, value 0x%x",
-		    pSetup->bRequest, pSetup->wValue);
+		USB_DBG("CDC ACM request 0x%x, value 0x%x",
+			pSetup->bRequest, pSetup->wValue);
 		return -EINVAL;
 	}
 
@@ -350,7 +351,7 @@ static void cdc_acm_bulk_out(u8_t ep,
 			if (((buf_head + 1) % CDC_ACM_BUFFER_SIZE) ==
 			    dev_data->rx_buf_tail) {
 				/* FIFO full, discard data */
-				SYS_LOG_ERR("CDC buffer full!");
+				USB_ERR("CDC buffer full!");
 			} else {
 				dev_data->rx_buf[buf_head] = tmp_buf[j];
 				buf_head = (buf_head + 1) % CDC_ACM_BUFFER_SIZE;
@@ -381,7 +382,7 @@ static void cdc_acm_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	ARG_UNUSED(ep_status);
 
 	dev_data->notification_sent = 1;
-	SYS_LOG_DBG("CDC_IntIN EP[%x]\r", ep);
+	USB_DBG("CDC_IntIN EP[%x]\r", ep);
 }
 
 /**
@@ -403,29 +404,29 @@ static void cdc_acm_dev_status_cb(enum usb_dc_status_code status, u8_t *param)
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_ERROR:
-		SYS_LOG_DBG("USB device error");
+		USB_DBG("USB device error");
 		break;
 	case USB_DC_RESET:
-		SYS_LOG_DBG("USB device reset detected");
+		USB_DBG("USB device reset detected");
 		break;
 	case USB_DC_CONNECTED:
-		SYS_LOG_DBG("USB device connected");
+		USB_DBG("USB device connected");
 		break;
 	case USB_DC_CONFIGURED:
-		SYS_LOG_DBG("USB device configured");
+		USB_DBG("USB device configured");
 		break;
 	case USB_DC_DISCONNECTED:
-		SYS_LOG_DBG("USB device disconnected");
+		USB_DBG("USB device disconnected");
 		break;
 	case USB_DC_SUSPEND:
-		SYS_LOG_DBG("USB device suspended");
+		USB_DBG("USB device suspended");
 		break;
 	case USB_DC_RESUME:
-		SYS_LOG_DBG("USB device resumed");
+		USB_DBG("USB device resumed");
 		break;
 	case USB_DC_UNKNOWN:
 	default:
-		SYS_LOG_DBG("USB unknown state");
+		USB_DBG("USB unknown state");
 		break;
 	}
 }
@@ -512,14 +513,14 @@ static int cdc_acm_init(struct device *dev)
 	/* Initialize the USB driver with the right configuration */
 	ret = usb_set_config(&cdc_acm_config);
 	if (ret < 0) {
-		SYS_LOG_ERR("Failed to config USB");
+		USB_ERR("Failed to config USB");
 		return ret;
 	}
 
 	/* Enable USB driver */
 	ret = usb_enable(&cdc_acm_config);
 	if (ret < 0) {
-		SYS_LOG_ERR("Failed to enable USB");
+		USB_ERR("Failed to enable USB");
 		return ret;
 	}
 #endif
@@ -789,7 +790,7 @@ static int cdc_acm_send_notification(struct device *dev, u16_t serial_state)
 		k_busy_wait(1);
 
 		if (++cnt > CDC_CONTROL_SERIAL_STATE_TIMEOUT_US) {
-			SYS_LOG_DBG("CDC ACM notification timeout!");
+			USB_DBG("CDC ACM notification timeout!");
 			return -EIO;
 		}
 	}
