@@ -10,8 +10,9 @@
 #include <misc/util.h>
 #include <zephyr.h>
 
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_LOG_LEVEL_DEBUG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(log)
 
 #define LED_DEV_NAME CONFIG_LP3943_DEV_NAME
 #define NUM_LEDS 16
@@ -25,9 +26,9 @@ void main(void)
 
 	led_dev = device_get_binding(LED_DEV_NAME);
 	if (led_dev) {
-		SYS_LOG_INF("Found LED device %s", LED_DEV_NAME);
+		LOG_INF("Found LED device %s", LED_DEV_NAME);
 	} else {
-		SYS_LOG_ERR("LED device %s not found", LED_DEV_NAME);
+		LOG_ERR("LED device %s not found", LED_DEV_NAME);
 		return;
 	}
 
@@ -36,7 +37,7 @@ void main(void)
 	 * one until it reaches the end and turns off LEDs in reverse order.
 	 */
 
-	SYS_LOG_INF("Displaying the pattern");
+	LOG_INF("Displaying the pattern");
 
 	while (1) {
 		/* Turn on LEDs one by one */
