@@ -97,10 +97,6 @@ int _is_thread_essential(void)
 #if !defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
 void k_busy_wait(u32_t usec_to_wait)
 {
-#if defined(CONFIG_TICKLESS_KERNEL) && \
-	    !defined(CONFIG_BUSY_WAIT_USES_ALTERNATE_CLOCK)
-int saved_always_on = k_enable_sys_clock_always_on();
-#endif
 	/* use 64-bit math to prevent overflow when multiplying */
 	u32_t cycles_to_wait = (u32_t)(
 		(u64_t)usec_to_wait *
@@ -117,10 +113,6 @@ int saved_always_on = k_enable_sys_clock_always_on();
 			break;
 		}
 	}
-#if defined(CONFIG_TICKLESS_KERNEL) && \
-	    !defined(CONFIG_BUSY_WAIT_USES_ALTERNATE_CLOCK)
-	_sys_clock_always_on = saved_always_on;
-#endif
 }
 #endif
 
