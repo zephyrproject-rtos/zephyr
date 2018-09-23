@@ -43,7 +43,7 @@ void test_rand32(void)
 	 * Test subsequently calls sys_rand32_get(), checking
 	 * that two values are not equal.
 	 */
-	SYS_LOG_DBG("Generating random numbers");
+	printk("Generating random numbers\n");
 	last_gen = sys_rand32_get();
 	/*
 	 * Get several subsequent numbers as fast as possible.
