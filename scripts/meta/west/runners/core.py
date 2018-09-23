@@ -18,8 +18,8 @@ import platform
 import signal
 import subprocess
 
-from .. import log
-from ..util import quote_sh_list
+import log
+from util import quote_sh_list
 
 # Turn on to enable just printing the commands that would be run,
 # without actually running them. This can break runners that are expecting
@@ -163,7 +163,7 @@ class RunnerCaps:
     Available capabilities:
 
     - commands: set of supported commands; default is {'flash',
-      'debug', 'debugserver'}.
+      'debug', 'debugserver', 'attach'}.
 
     - flash_addr: whether the runner supports flashing to an
       arbitrary address. Default is False. If true, the runner
@@ -171,7 +171,7 @@ class RunnerCaps:
     '''
 
     def __init__(self,
-                 commands={'flash', 'debug', 'debugserver'},
+                 commands={'flash', 'debug', 'debugserver', 'attach'},
                  flash_addr=False):
         self.commands = commands
         self.flash_addr = bool(flash_addr)
@@ -256,14 +256,20 @@ class ZephyrBinaryRunner(abc.ABC):
     - 'flash': flash a previously configured binary to the board,
       start execution on the target, then return.
 
-    - 'debug': connect to the board via a debugging protocol, then
-      drop the user into a debugger interface with symbol tables
-      loaded from the current binary, and block until it exits.
+    - 'debug': connect to the board via a debugging protocol, program
+      the flash, then drop the user into a debugger interface with
+      symbol tables loaded from the current binary, and block until it
+      exits.
 
     - 'debugserver': connect via a board-specific debugging protocol,
       then reset and halt the target. Ensure the user is now able to
       connect to a debug server with symbol tables loaded from the
       binary.
+
+    - 'attach': connect to the board via a debugging protocol, then drop
+      the user into a debugger interface with symbol tables loaded from
+      the current binary, and block until it exits. Unlike 'debug', this
+      command does not program the flash.
 
     This class provides an API for these commands. Every runner has a
     name (like 'pyocd'), and declares commands it can handle (like
@@ -391,7 +397,7 @@ class ZephyrBinaryRunner(abc.ABC):
             return default
 
     def run(self, command, **kwargs):
-        '''Runs command ('flash', 'debug', 'debugserver').
+        '''Runs command ('flash', 'debug', 'debugserver', 'attach').
 
         This is the main entry point to this runner.'''
         caps = self.capabilities()

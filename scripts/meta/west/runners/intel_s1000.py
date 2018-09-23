@@ -8,8 +8,8 @@ from os import path
 import time
 import subprocess
 
-from .. import log
-from .core import ZephyrBinaryRunner
+import log
+from runners.core import ZephyrBinaryRunner
 
 DEFAULT_XT_GDB_PORT = 20000
 

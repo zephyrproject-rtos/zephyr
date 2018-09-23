@@ -6,8 +6,8 @@
 
 import os
 import sys
-from .core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
-from .. import log
+from runners.core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
+import log
 
 DEFAULT_PYOCD_GDB_PORT = 3333
 
@@ -51,7 +51,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(flash_addr=True)
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
+                          flash_addr=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -140,8 +141,10 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             client_cmd = (self.gdb_cmd +
                           self.tui_args +
                           [self.elf_name] +
-                          ['-ex', 'target remote :{}'.format(self.gdb_port),
-                           '-ex', 'load',
-                           '-ex', 'monitor reset halt'])
+                          ['-ex', 'target remote :{}'.format(self.gdb_port)])
+            if command == 'debug':
+                client_cmd += ['-ex', 'load',
+                               '-ex', 'monitor reset halt']
+
             self.print_gdbserver_message()
             self.run_server_and_client(server_cmd, client_cmd)

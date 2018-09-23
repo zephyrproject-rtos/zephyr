@@ -89,7 +89,7 @@ foreach(target flash debug debugserver)
     ${CMAKE_COMMAND} -E env
     PYTHONPATH=${ZEPHYR_BASE}/scripts/meta
     ${PYTHON_EXECUTABLE}
-    -m west
+    ${ZEPHYR_BASE}/scripts/meta/west/main.py
     ${RUNNER_VERBOSE}
     ${target}
     --skip-rebuild

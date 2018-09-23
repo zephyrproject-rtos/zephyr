@@ -28,6 +28,9 @@ ZEPHYR_BUILD = os.path.abspath(os.environ["ZEPHYR_BUILD"])
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'doc', 'extensions'))
 # Also add west, to be able to pull in its API docs.
 sys.path.append(os.path.join(ZEPHYR_BASE, 'scripts', 'meta'))
+# HACK: also add the runners module, to work around some import issues
+# related to west's current packaging.
+sys.path.append(os.path.join(ZEPHYR_BASE, 'scripts', 'meta', 'west'))
 
 # -- General configuration ------------------------------------------------
 
