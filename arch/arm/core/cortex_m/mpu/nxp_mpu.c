@@ -96,10 +96,10 @@ static void _region_init(u32_t index, u32_t region_base,
 	}
 
 	LOG_DBG("[%d] 0x%08x 0x%08x 0x%08x 0x%08x", index,
-		    SYSMPU->WORD[index][0],
-		    SYSMPU->WORD[index][1],
-		    SYSMPU->WORD[index][2],
-		    SYSMPU->WORD[index][3]);
+		    (u32_t)SYSMPU->WORD[index][0],
+		    (u32_t)SYSMPU->WORD[index][1],
+		    (u32_t)SYSMPU->WORD[index][2],
+		    (u32_t)SYSMPU->WORD[index][3]);
 }
 
 /**
