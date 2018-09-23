@@ -51,8 +51,9 @@
 #include <usb/class/usb_dfu.h>
 #include <usb_descriptor.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(usb_dfu)
 
 #define NUMOF_ALTERNATE_SETTINGS	2
 
@@ -328,11 +329,11 @@ static void dfu_flash_write(u8_t *data, size_t len)
 	}
 
 	if (flash_img_buffered_write(&dfu_data.ctx, data, len, flush)) {
-		SYS_LOG_ERR("flash write error");
+		USB_ERR("flash write error");
 		dfu_data.state = dfuERROR;
 		dfu_data.status = errWRITE;
 	} else if (!len) {
-		SYS_LOG_DBG("flash write done");
+		USB_DBG("flash write done");
 		dfu_data.state = dfuMANIFEST_SYNC;
 		dfu_reset_counters();
 		if (boot_request_upgrade(false)) {
@@ -343,8 +344,7 @@ static void dfu_flash_write(u8_t *data, size_t len)
 		dfu_data.state = dfuDNLOAD_IDLE;
 	}
 
-	SYS_LOG_DBG("bytes written 0x%x",
-		    flash_img_bytes_written(&dfu_data.ctx));
+	USB_DBG("bytes written 0x%x", flash_img_bytes_written(&dfu_data.ctx));
 }
 
 
@@ -365,8 +365,8 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 
 	switch (pSetup->bRequest) {
 	case DFU_GETSTATUS:
-		SYS_LOG_DBG("DFU_GETSTATUS: status %d, state %d",
-		    dfu_data.status, dfu_data.state);
+		USB_DBG("DFU_GETSTATUS: status %d, state %d",
+			dfu_data.status, dfu_data.state);
 
 		if (dfu_data.state == dfuMANIFEST_SYNC) {
 			dfu_data.state = dfuIDLE;
@@ -382,13 +382,13 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		break;
 
 	case DFU_GETSTATE:
-		SYS_LOG_DBG("DFU_GETSTATE");
+		USB_DBG("DFU_GETSTATE");
 		(*data)[0] = dfu_data.state;
 		*data_len = 1;
 		break;
 
 	case DFU_ABORT:
-		SYS_LOG_DBG("DFU_ABORT");
+		USB_DBG("DFU_ABORT");
 
 		if (dfu_check_app_state()) {
 			return -EINVAL;
@@ -400,7 +400,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		break;
 
 	case DFU_CLRSTATUS:
-		SYS_LOG_DBG("DFU_CLRSTATUS");
+		USB_DBG("DFU_CLRSTATUS");
 
 		if (dfu_check_app_state()) {
 			return -EINVAL;
@@ -411,8 +411,8 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		break;
 
 	case DFU_DNLOAD:
-		SYS_LOG_DBG("DFU_DNLOAD block %d, len %d, state %d",
-		    pSetup->wValue, pSetup->wLength, dfu_data.state);
+		USB_DBG("DFU_DNLOAD block %d, len %d, state %d",
+			pSetup->wValue, pSetup->wLength, dfu_data.state);
 
 		if (dfu_check_app_state()) {
 			return -EINVAL;
@@ -420,13 +420,13 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 
 		switch (dfu_data.state) {
 		case dfuIDLE:
-			SYS_LOG_DBG("DFU_DNLOAD start");
+			USB_DBG("DFU_DNLOAD start");
 			dfu_reset_counters();
 			if (dfu_data.flash_addr != CONFIG_FLASH_BASE_ADDRESS
 						+ FLASH_AREA_IMAGE_1_OFFSET) {
 				dfu_data.status = errWRITE;
 				dfu_data.state = dfuERROR;
-				SYS_LOG_ERR("This area can not be overwritten");
+				USB_ERR("This area can not be overwritten");
 				break;
 			}
 
@@ -439,8 +439,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			dfu_flash_write(*data, pSetup->wLength);
 			break;
 		default:
-			SYS_LOG_ERR("DFU_DNLOAD wrong state %d",
-				    dfu_data.state);
+			USB_ERR("DFU_DNLOAD wrong state %d", dfu_data.state);
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errUNKNOWN;
 			dfu_reset_counters();
@@ -448,8 +447,8 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		}
 		break;
 	case DFU_UPLOAD:
-		SYS_LOG_DBG("DFU_UPLOAD block %d, len %d, state %d",
-		    pSetup->wValue, pSetup->wLength, dfu_data.state);
+		USB_DBG("DFU_UPLOAD block %d, len %d, state %d",
+			pSetup->wValue, pSetup->wLength, dfu_data.state);
 
 		if (dfu_check_app_state()) {
 			return -EINVAL;
@@ -458,13 +457,13 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		switch (dfu_data.state) {
 		case dfuIDLE:
 			dfu_reset_counters();
-			SYS_LOG_DBG("DFU_UPLOAD start");
+			USB_DBG("DFU_UPLOAD start");
 		case dfuUPLOAD_IDLE:
 			if (!pSetup->wLength ||
 			    dfu_data.block_nr != pSetup->wValue) {
-				SYS_LOG_DBG("DFU_UPLOAD block %d, expected %d, "
-				    "len %d", pSetup->wValue,
-				    dfu_data.block_nr, pSetup->wLength);
+				USB_DBG("DFU_UPLOAD block %d, expected %d, "
+					"len %d", pSetup->wValue,
+					dfu_data.block_nr, pSetup->wLength);
 				dfu_data.state = dfuERROR;
 				dfu_data.status = errUNKNOWN;
 				break;
@@ -508,8 +507,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 
 			break;
 		default:
-			SYS_LOG_ERR("DFU_UPLOAD wrong state %d",
-				    dfu_data.state);
+			USB_ERR("DFU_UPLOAD wrong state %d", dfu_data.state);
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errUNKNOWN;
 			dfu_reset_counters();
@@ -517,7 +515,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		}
 		break;
 	case DFU_DETACH:
-		SYS_LOG_DBG("DFU_DETACH timeout %d, state %d",
+		USB_DBG("DFU_DETACH timeout %d, state %d",
 			pSetup->wValue, dfu_data.state);
 
 		if (dfu_data.state != appIDLE) {
@@ -536,12 +534,12 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		/* Set the DFU mode descriptors to be used after reset */
 		dfu_config.usb_device_description = (u8_t *) &dfu_mode_desc;
 		if (usb_set_config(&dfu_config) != 0) {
-			SYS_LOG_ERR("usb_set_config failed in DFU_DETACH");
+			USB_ERR("usb_set_config failed in DFU_DETACH");
 			return -EIO;
 		}
 		break;
 	default:
-		SYS_LOG_WRN("DFU UNKNOWN STATE: %d", pSetup->bRequest);
+		USB_WRN("DFU UNKNOWN STATE: %d", pSetup->bRequest);
 		return -EINVAL;
 	}
 
@@ -562,33 +560,32 @@ static void dfu_status_cb(enum usb_dc_status_code status, u8_t *param)
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_ERROR:
-		SYS_LOG_DBG("USB device error");
+		USB_DBG("USB device error");
 		break;
 	case USB_DC_RESET:
-		SYS_LOG_DBG("USB device reset detected, state %d",
-			    dfu_data.state);
+		USB_DBG("USB device reset detected, state %d", dfu_data.state);
 		if (dfu_data.state == appDETACH) {
 			dfu_data.state = dfuIDLE;
 		}
 		break;
 	case USB_DC_CONNECTED:
-		SYS_LOG_DBG("USB device connected");
+		USB_DBG("USB device connected");
 		break;
 	case USB_DC_CONFIGURED:
-		SYS_LOG_DBG("USB device configured");
+		USB_DBG("USB device configured");
 		break;
 	case USB_DC_DISCONNECTED:
-		SYS_LOG_DBG("USB device disconnected");
+		USB_DBG("USB device disconnected");
 		break;
 	case USB_DC_SUSPEND:
-		SYS_LOG_DBG("USB device supended");
+		USB_DBG("USB device supended");
 		break;
 	case USB_DC_RESUME:
-		SYS_LOG_DBG("USB device resumed");
+		USB_DBG("USB device resumed");
 		break;
 	case USB_DC_UNKNOWN:
 	default:
-		SYS_LOG_DBG("USB unknown state");
+		USB_DBG("USB unknown state");
 		break;
 	}
 }
@@ -613,7 +610,7 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 	if (REQTYPE_GET_RECIP(pSetup->bmRequestType) ==
 	    REQTYPE_RECIP_INTERFACE) {
 		if (pSetup->bRequest == REQ_SET_INTERFACE) {
-			SYS_LOG_DBG("DFU alternate setting %d", pSetup->wValue);
+			USB_DBG("DFU alternate setting %d", pSetup->wValue);
 
 			switch (pSetup->wValue) {
 			case 0:
@@ -631,7 +628,7 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 					FLASH_AREA_IMAGE_1_SIZE;
 				break;
 			default:
-				SYS_LOG_WRN("Invalid DFU alternate setting");
+				USB_WRN("Invalid DFU alternate setting");
 				return -ENOTSUP;
 			}
 			dfu_data.alt_setting = pSetup->wValue;
@@ -688,7 +685,7 @@ static int usb_dfu_init(struct device *dev)
 
 	dfu_data.flash_dev = device_get_binding(FLASH_DEV_NAME);
 	if (!dfu_data.flash_dev) {
-		SYS_LOG_ERR("Flash device not found\n");
+		USB_ERR("Flash device not found\n");
 		return -ENODEV;
 	}
 
@@ -699,14 +696,14 @@ static int usb_dfu_init(struct device *dev)
 	/* Initialize the USB driver with the right configuration */
 	ret = usb_set_config(&dfu_config);
 	if (ret < 0) {
-		SYS_LOG_ERR("Failed to config USB");
+		USB_ERR("Failed to config USB");
 		return ret;
 	}
 
 	/* Enable USB driver */
 	ret = usb_enable(&dfu_config);
 	if (ret < 0) {
-		SYS_LOG_ERR("Failed to enable USB");
+		USB_ERR("Failed to enable USB");
 		return ret;
 	}
 #endif

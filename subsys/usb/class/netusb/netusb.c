@@ -6,9 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_NETWORK_DEBUG_LEVEL
-#define SYS_LOG_DOMAIN "usb/net"
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_USB_DEVICE_NETWORK_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(usb_net)
 
 /* Enable verbose debug printing extra hexdumps */
 #define VERBOSE_DEBUG	0
@@ -366,7 +366,7 @@ static void netusb_interface_config(u8_t bInterfaceNumber)
 	int idx = usb_get_str_descriptor_idx(&utf16le_mac);
 
 	if (idx) {
-		SYS_LOG_DBG("fixup string %d", idx);
+		USB_DBG("fixup string %d", idx);
 		cdc_ecm_cfg.if0_netfun_ecm.iMACAddress = idx;
 	}
 
@@ -423,10 +423,10 @@ static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	int ret;
 
-	SYS_LOG_DBG("Send pkt, len %u", net_pkt_get_len(pkt));
+	USB_DBG("Send pkt, len %u", net_pkt_get_len(pkt));
 
 	if (!netusb.enabled) {
-		SYS_LOG_ERR("interface disabled");
+		USB_ERR("interface disabled");
 		return -ENODEV;
 	}
 
@@ -441,17 +441,17 @@ static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
 
 void netusb_recv(struct net_pkt *pkt)
 {
-	SYS_LOG_DBG("Recv pkt, len %u", net_pkt_get_len(pkt));
+	USB_DBG("Recv pkt, len %u", net_pkt_get_len(pkt));
 
 	if (net_recv_data(netusb.iface, pkt) < 0) {
-		SYS_LOG_ERR("Packet %p dropped by NET stack", pkt);
+		USB_ERR("Packet %p dropped by NET stack", pkt);
 		net_pkt_unref(pkt);
 	}
 }
 
 static int netusb_connect_media(void)
 {
-	SYS_LOG_DBG("");
+	USB_DBG("");
 
 	if (!netusb.func->connect_media) {
 		return -ENOTSUP;
@@ -462,7 +462,7 @@ static int netusb_connect_media(void)
 
 static int netusb_disconnect_media(void)
 {
-	SYS_LOG_DBG("");
+	USB_DBG("");
 
 	if (!netusb.func->connect_media) {
 		return -ENOTSUP;
@@ -473,7 +473,7 @@ static int netusb_disconnect_media(void)
 
 void netusb_enable(void)
 {
-	SYS_LOG_DBG("");
+	USB_DBG("");
 
 	netusb.enabled = true;
 	net_if_up(netusb.iface);
@@ -482,7 +482,7 @@ void netusb_enable(void)
 
 void netusb_disable(void)
 {
-	SYS_LOG_DBG("");
+	USB_DBG("");
 
 	if (!netusb.enabled) {
 		return;
@@ -495,7 +495,7 @@ void netusb_disable(void)
 
 u8_t netusb_get_first_iface_number(void)
 {
-	SYS_LOG_DBG("");
+	USB_DBG("");
 
 #ifdef CONFIG_USB_DEVICE_NETWORK_ECM
 	return cdc_ecm_cfg.if0.bInterfaceNumber;
@@ -511,12 +511,12 @@ u8_t netusb_get_first_iface_number(void)
 static int netusb_class_handler(struct usb_setup_packet *setup,
 				s32_t *len, u8_t **data)
 {
-	SYS_LOG_DBG("len %d req_type 0x%x req 0x%x enabled %u",
-		    *len, setup->bmRequestType, setup->bRequest,
+	USB_DBG("len %d req_type 0x%x req 0x%x enabled %u",
+		*len, setup->bmRequestType, setup->bRequest,
 		    netusb.enabled);
 
 	if (!netusb.enabled) {
-		SYS_LOG_ERR("interface disabled");
+		USB_ERR("interface disabled");
 		return -ENODEV;
 	}
 
@@ -543,7 +543,7 @@ int try_write(u8_t ep, u8_t *data, u16_t len)
 			 * error from the controller, try only several times.
 			 */
 			if (tries--) {
-				SYS_LOG_WRN("Error: EAGAIN. Another try");
+				USB_WRN("Error: EAGAIN. Another try");
 				continue;
 			}
 
@@ -553,18 +553,18 @@ int try_write(u8_t ep, u8_t *data, u16_t len)
 			break;
 		/* TODO: Handle other error codes */
 		default:
-			SYS_LOG_WRN("Error writing to ep 0x%x ret %d", ep, ret);
+			USB_WRN("Error writing to ep 0x%x ret %d", ep, ret);
 			return ret;
 		}
 
 		len -= wrote;
 		data += wrote;
 #if VERBOSE_DEBUG
-		SYS_LOG_DBG("Wrote %u bytes, remaining %u", wrote, len);
+		USB_DBG("Wrote %u bytes, remaining %u", wrote, len);
 #endif
 
 		if (len) {
-			SYS_LOG_WRN("Remaining bytes %d wrote %d", len, wrote);
+			USB_WRN("Remaining bytes %d wrote %d", len, wrote);
 		}
 	}
 
@@ -575,7 +575,7 @@ static void netusb_init(struct net_if *iface)
 {
 	static u8_t mac[6] = { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x00 };
 
-	SYS_LOG_DBG("netusb device initialization");
+	USB_DBG("netusb device initialization");
 
 	netusb.iface = iface;
 
@@ -598,7 +598,7 @@ static void netusb_init(struct net_if *iface)
 #error Unknown USB Device Networking function
 #endif
 	if (netusb.func->init && netusb.func->init()) {
-		SYS_LOG_ERR("Initialization failed");
+		USB_ERR("Initialization failed");
 		return;
 	}
 
@@ -614,18 +614,18 @@ static void netusb_init(struct net_if *iface)
 
 	ret = usb_set_config(&netusb_config);
 	if (ret < 0) {
-		SYS_LOG_ERR("Failed to configure USB device");
+		USB_ERR("Failed to configure USB device");
 		return;
 	}
 
 	ret = usb_enable(&netusb_config);
 	if (ret < 0) {
-		SYS_LOG_ERR("Failed to enable USB");
+		USB_ERR("Failed to enable USB");
 		return;
 	}
 #endif /* CONFIG_USB_COMPOSITE_DEVICE */
 
-	SYS_LOG_INF("netusb initialized");
+	USB_INF("netusb initialized");
 }
 
 static const struct ethernet_api netusb_api_funcs = {
