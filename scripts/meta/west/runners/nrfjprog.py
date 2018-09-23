@@ -6,8 +6,8 @@
 
 import sys
 
-from .. import log
-from .core import ZephyrBinaryRunner, RunnerCaps
+import log
+from runners.core import ZephyrBinaryRunner, RunnerCaps
 
 
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):

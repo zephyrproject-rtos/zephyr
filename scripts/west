@@ -1,5 +1,6 @@
 #!/bin/sh
 
-# UNIX operating system entry point to the west tool.
-export "PYTHONPATH=${PYTHONPATH:+${PYTHONPATH}:}$ZEPHYR_BASE/scripts/meta"
-python3 -m west $@
+# Zephyr meta-tool (west) launcher alias, which keeps
+# monorepo Zephyr installations' 'make flash' etc. working.
+here=$(readlink -f $(dirname $0))
+python3 "$here/west-launcher.py" $@

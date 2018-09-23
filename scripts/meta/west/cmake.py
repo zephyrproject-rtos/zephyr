@@ -5,32 +5,39 @@
 '''Helpers for dealing with CMake'''
 
 from collections import OrderedDict
+import os.path
 import re
 import subprocess
 import shutil
 
-from . import log
-from .util import quote_sh_list
+import log
+from util import quote_sh_list
 
-__all__ = ['run_build', 'make_c_identifier', 'CMakeCacheEntry', 'CMakeCache']
+__all__ = ['run_cmake', 'run_build',
+           'make_c_identifier',
+           'CMakeCacheEntry', 'CMakeCache']
 
 DEFAULT_CACHE = 'CMakeCache.txt'
 
 
-def run_build(build_directory, extra_args=[], quiet=False):
-    '''Run cmake in build tool mode in `build_directory`'''
+def run_cmake(args, quiet=False):
+    '''Run cmake to (re)generate a build system'''
     cmake = shutil.which('cmake')
     if cmake is None:
         log.die('CMake is not installed or cannot be found; cannot build.')
-    cmd = [cmake, '--build', build_directory] + extra_args
-    kwargs = {}
+    cmd = [cmake] + args
+    kwargs = dict()
     if quiet:
         kwargs['stdout'] = subprocess.DEVNULL
         kwargs['stderr'] = subprocess.STDOUT
-    log.dbg('Re-building', build_directory)
-    log.dbg('Build command list:', cmd, level=log.VERBOSE_VERY)
+    log.dbg('Running CMake:', cmd, level=log.VERBOSE_VERY)
     log.dbg('As command:', quote_sh_list(cmd), level=log.VERBOSE_VERY)
     subprocess.check_call(cmd, **kwargs)
+
+
+def run_build(build_directory, extra_args=(), quiet=False):
+    '''Run cmake in build tool mode in `build_directory`'''
+    run_cmake(['--build', build_directory] + list(extra_args), quiet=quiet)
 
 
 def make_c_identifier(string):
@@ -154,6 +161,10 @@ class CMakeCacheEntry:
 class CMakeCache:
     '''Parses and represents a CMake cache file.'''
 
+    @staticmethod
+    def from_build_dir(build_dir):
+        return CMakeCache(os.path.join(build_dir, DEFAULT_CACHE))
+
     def __init__(self, cache_file):
         self.cache_file = cache_file
         self.load(cache_file)
@@ -189,6 +200,9 @@ class CMakeCache:
                 raise RuntimeError(msg.format(value, type(value)))
         else:
             return default
+
+    def __contains__(self, name):
+        return name in self._entries
 
     def __getitem__(self, name):
         return self._entries[name].value

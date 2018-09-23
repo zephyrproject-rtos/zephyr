@@ -191,26 +191,26 @@ For example, to print usage information about the ``jlink`` runner::
 
 .. _west-runner:
 
-Library Backend: ``west.runner``
-********************************
+Library Backend: ``west.runners``
+*********************************
 
 In keeping with West's :ref:`west-design-constraints`, the flash and
 debug commands are wrappers around a separate library that is part of
 West, and can be used by other code.
 
-This library is the ``west.runner`` subpackage of West itself.  The
+This library is the ``west.runners`` subpackage of West itself.  The
 central abstraction within this library is ``ZephyrBinaryRunner``, an
 abstract class which represents *runner* objects, which can flash
 and/or debug Zephyr programs. The set of available runners is
 determined by the imported subclasses of ``ZephyrBinaryRunner``.
-``ZephyrBinaryRunner`` is available in the ``west.runner.core``
+``ZephyrBinaryRunner`` is available in the ``west.runners.core``
 module; individual runner implementations are in other submodules,
-such as ``west.runner.nrfjprog``, ``west.runner.openocd``, etc.
+such as ``west.runners.nrfjprog``, ``west.runners.openocd``, etc.
 
 Developers can add support for new ways to flash and debug Zephyr
 programs by implementing additional runners. To get this support into
 upstream Zephyr, the runner should be added into a new or existing
-``west.runner`` module, and imported from
+``west.runners`` module, and imported from
 :file:`west/runner/__init__.py`.
 
 .. important::
@@ -223,7 +223,7 @@ upstream Zephyr, the runner should be added into a new or existing
 
 API documentation for the core module follows.
 
-.. automodule:: west.runner.core
+.. automodule:: west.runners.core
    :members:
 
 Doing it By Hand

@@ -4,7 +4,7 @@
 
 '''Runner stub for QEMU.'''
 
-from .core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import ZephyrBinaryRunner, RunnerCaps
 
 
 class QemuBinaryRunner(ZephyrBinaryRunner):

@@ -4,8 +4,8 @@
 
 '''Runner for NIOS II, based on quartus-flash.py and GDB.'''
 
-from .. import log
-from .core import ZephyrBinaryRunner, NetworkPortHelper
+import log
+from runners.core import ZephyrBinaryRunner, NetworkPortHelper
 
 
 class Nios2BinaryRunner(ZephyrBinaryRunner):
