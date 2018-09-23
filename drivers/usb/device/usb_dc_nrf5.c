@@ -16,7 +16,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <kernel.h>
-#include <usb/usb_dc.h>
 #include <usb/usb_device.h>
 #include <clock_control.h>
 #include <nrf_power.h>
@@ -32,12 +31,6 @@
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_nrf5);
-
-#define USB_DBG(fmt, ...) LOG_DBG("(%p): %s: " fmt, k_current_get(), \
-				  __func__, ##__VA_ARGS__)
-#define USB_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
-#define USB_WRN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
-#define USB_INF(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)
 
 #define MAX_EP_BUF_SZ		64UL
 #define MAX_ISO_EP_BUF_SZ	1024UL

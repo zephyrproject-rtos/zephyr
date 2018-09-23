@@ -17,7 +17,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <misc/byteorder.h>
-#include <usb/usb_dc.h>
 #include <usb/usb_device.h>
 #include "usb_dw_registers.h"
 #include <soc.h>
@@ -28,12 +27,6 @@
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_dw);
-
-#define USB_DBG(fmt, ...) LOG_DBG("(%p): %s: " fmt, k_current_get(), \
-				  __func__, ##__VA_ARGS__)
-#define USB_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
-#define USB_WRN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
-#define USB_INF(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)
 
 /* convert from endpoint address to hardware endpoint index */
 #define USB_DW_EP_ADDR2IDX(ep)  ((ep) & ~USB_EP_DIR_MASK)

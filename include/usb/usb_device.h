@@ -38,10 +38,17 @@
 
 #include <drivers/usb/usb_dc.h>
 #include <usb/usbstruct.h>
+#include <logging/log.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define USB_DBG(fmt, ...) LOG_DBG("(%p): %s: " fmt, k_current_get(), \
+				  __func__, ##__VA_ARGS__)
+#define USB_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
+#define USB_WRN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
+#define USB_INF(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)
 
 /*
  * These macros should be used to place the USB descriptors

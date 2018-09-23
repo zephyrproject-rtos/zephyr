@@ -8,13 +8,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_sam0);
 
-#define USB_DBG(fmt, ...) LOG_DBG("(%p): %s: " fmt, k_current_get(), \
-				  __func__, ##__VA_ARGS__)
-#define USB_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
-#define USB_WRN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
-#define USB_INF(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)
-
-#include <drivers/usb/usb_dc.h>
+#include <usb/usb_device.h>
 #include <soc.h>
 #include <string.h>
 
