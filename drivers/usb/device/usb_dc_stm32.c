@@ -46,7 +46,6 @@
 
 #include <soc.h>
 #include <string.h>
-#include <usb/usb_dc.h>
 #include <usb/usb_device.h>
 #include <clock_control/stm32_clock_control.h>
 #include <misc/util.h>
@@ -55,12 +54,6 @@
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_stm32);
-
-#define USB_DBG(fmt, ...) LOG_DBG("(%p): %s: " fmt, k_current_get(), \
-				  __func__, ##__VA_ARGS__)
-#define USB_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
-#define USB_WRN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
-#define USB_INF(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)
 
 #if defined(CONFIG_USB_BASE_ADDRESS) && defined(CONFIG_USB_HS_BASE_ADDRES)
 #error "Only one interface should be enabled at a time, OTG FS or OTG HS"
