@@ -52,7 +52,7 @@ build:
               cp doc/_build/doc.warnings doc.warnings
             fi;
             echo "- Verify commit message, coding style, doc build";
-            CC_FAILED=$(./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true)
+            ./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true;
           fi;
       - >
           if [ "$IS_PULL_REQUEST" = "true" ]; then
@@ -71,10 +71,6 @@ build:
       - ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} --load-tests test_file.txt --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY}
       - rm test_file.txt
       - ccache -s
-      - if [ "$MATRIX_BUILD" = "5" -a "${CC_FAILED}" != "0" ]; then
-          echo "compliance check failed";
-          exit 1;
-        fi;
     on_failure:
       - >
          if [ -f "$HOME/.cache/zephyr/ToolchainCapabilityDatabase.cmake" ]; then
