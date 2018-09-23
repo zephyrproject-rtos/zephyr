@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(spi_ll_stm32);
 
 #include <misc/util.h>
 #include <kernel.h>
@@ -53,7 +54,7 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 	u32_t sr = LL_SPI_ReadReg(spi, SR);
 
 	if (sr & SPI_STM32_ERR_MSK) {
-		SYS_LOG_ERR("%s: err=%d", __func__,
+		LOG_ERR("%s: err=%d", __func__,
 			    sr & (u32_t)SPI_STM32_ERR_MSK);
 
 		/* OVR error must be explicitly cleared */
@@ -269,7 +270,7 @@ static int spi_stm32_configure(struct device *dev,
 	}
 
 	if (br > ARRAY_SIZE(scaler)) {
-		SYS_LOG_ERR("Unsupported frequency %uHz, max %uHz, min %uHz",
+		LOG_ERR("Unsupported frequency %uHz, max %uHz, min %uHz",
 			    config->frequency,
 			    clock >> 1,
 			    clock >> ARRAY_SIZE(scaler));
@@ -336,7 +337,7 @@ static int spi_stm32_configure(struct device *dev,
 
 	spi_context_cs_configure(&data->ctx);
 
-	SYS_LOG_DBG("Installed config %p: freq %uHz (div = %u),"
+	LOG_DBG("Installed config %p: freq %uHz (div = %u),"
 		    " mode %u/%u/%u, slave %u",
 		    config, clock >> br, 1 << br,
 		    (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) ? 1 : 0,

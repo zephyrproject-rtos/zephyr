@@ -7,9 +7,10 @@
 #include <spi.h>
 #include <nrfx_spis.h>
 
-#define SYS_LOG_DOMAIN "spi_nrfx_spis"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
-#include <logging/sys_log.h>
+#define LOG_DOMAIN "spi_nrfx_spis"
+#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(spi_nrfx_spis);
 
 #include "spi_context.h"
 
@@ -69,29 +70,29 @@ static int configure(struct device *dev,
 	}
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
-		SYS_LOG_ERR("Master mode is not supported on %s",
+		LOG_ERR("Master mode is not supported on %s",
 			    dev->config->name);
 		return -EINVAL;
 	}
 
 	if (spi_cfg->operation & SPI_MODE_LOOP) {
-		SYS_LOG_ERR("Loopback mode is not supported");
+		LOG_ERR("Loopback mode is not supported");
 		return -EINVAL;
 	}
 
 	if ((spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		SYS_LOG_ERR("Only single line mode is supported");
+		LOG_ERR("Only single line mode is supported");
 		return -EINVAL;
 	}
 
 	if (SPI_WORD_SIZE_GET(spi_cfg->operation) != 8) {
-		SYS_LOG_ERR("Word sizes other than 8 bits"
+		LOG_ERR("Word sizes other than 8 bits"
 			    " are not supported");
 		return -EINVAL;
 	}
 
 	if (spi_cfg->cs) {
-		SYS_LOG_ERR("CS control via GPIO is not supported");
+		LOG_ERR("CS control via GPIO is not supported");
 		return -EINVAL;
 	}
 
@@ -153,11 +154,11 @@ static int transceive(struct device *dev,
 		/* Invalid configuration. */
 	} else if ((tx_bufs && tx_bufs->count > 1) ||
 		   (rx_bufs && rx_bufs->count > 1)) {
-		SYS_LOG_ERR("Scattered buffers are not supported");
+		LOG_ERR("Scattered buffers are not supported");
 		error = -ENOTSUP;
 	} else if (tx_bufs && tx_bufs->buffers[0].len &&
 		   !nrfx_is_in_ram(tx_bufs->buffers[0].buf)) {
-		SYS_LOG_ERR("Only buffers located in RAM are supported");
+		LOG_ERR("Only buffers located in RAM are supported");
 		error = -ENOTSUP;
 	} else {
 		spi_context_buffers_setup(&dev_data->ctx, tx_bufs, rx_bufs, 1);
@@ -236,7 +237,7 @@ static int init_spis(struct device *dev, const nrfx_spis_config_t *config)
 					   event_handler,
 					   dev);
 	if (result != NRFX_SUCCESS) {
-		SYS_LOG_ERR("Failed to initialize device: %s",
+		LOG_ERR("Failed to initialize device: %s",
 			    dev->config->name);
 		return -EBUSY;
 	}
