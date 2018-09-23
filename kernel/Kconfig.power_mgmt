@@ -97,15 +97,4 @@ config TICKLESS_KERNEL
 	  clock interrupt generation would be stopped at all times. This option
 	  requires Tickless Idle option to be enabled.
 
-config BUSY_WAIT_USES_ALTERNATE_CLOCK
-	bool "Busy wait uses alternate clock in tickless kernel mode"
-	help
-	  In tickless kernel mode, the system clock will be stopped when
-	  there are no timer events programmed. If the system clock is to
-	  be used to keep time e.g. to get a delta of time cycles then it
-	  needs to be turned on using provided APIs. Some platforms have
-	  alternate clocks which can be used instead. In that case this flag
-	  would be set to true. This flag would be checked before turning
-	  on the system clock in APIs that do busy wait reading clock
-	  cycles.
 endif
