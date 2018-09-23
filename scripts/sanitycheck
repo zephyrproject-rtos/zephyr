@@ -2254,7 +2254,9 @@ class TestSuite:
                 if os.path.exists(bl):
                     with open(bl, "rb") as f:
                         log = f.read().decode("utf-8")
-                        failure.text = log
+                        ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+                        failure.text = ansi_escape.sub('', log)
+                        f.close()
 
         result = ET.tostring(eleTestsuites)
         f = open(filename, 'wb')
