@@ -82,6 +82,14 @@
 			label = "I2C_0";
 		};
 
+		qdec: qdec@40012000 {
+			compatible = "nordic,nrf-qdec";
+			reg = <0x40012000 0x1000>;
+			interrupts = <18 1>;
+			status = "disabled";
+			label = "QDEC";
+		};
+
 		spi0: spi@40004000 {
 			compatible = "nordic,nrf-spi";
 			#address-cells = <1>;
