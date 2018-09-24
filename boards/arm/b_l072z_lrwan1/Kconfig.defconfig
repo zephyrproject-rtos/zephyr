@@ -1,0 +1,39 @@
+# Kconfig - STMicroelectronics B-L072Z-LRWAN1 Discovery board configuration
+#
+# Copyright (c) 2018 Aleksandr Makarov <aleksandr.o.makarov@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_B_L072Z_LRWAN1
+
+config BOARD
+	default "b_l072z_lrwan1"
+
+if SERIAL
+config UART_STM32_PORT_1
+	default y
+
+endif # SERIAL
+
+if UART_CONSOLE
+config UART_STM32_PORT_2
+	default y
+
+endif # UART_CONSOLE
+
+if I2C
+config I2C_1
+	def_bool y
+
+endif # I2C
+
+if SPI
+config SPI_1
+	def_bool y
+
+config SPI_2
+	def_bool y
+endif # SPI
+
+endif # BOARD_B_L072Z_LRWAN1
