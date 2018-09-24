@@ -18,3 +18,8 @@ zephyr_sources_ifdef(
   CONFIG_LOG_CMDS
   log_cmds.c
   )
+
+zephyr_sources_ifdef(
+  CONFIG_LOG_BACKEND_NATIVE_POSIX
+  log_backend_native_posix.c
+  )
