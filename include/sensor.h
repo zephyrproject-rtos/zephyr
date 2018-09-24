@@ -143,6 +143,9 @@ enum sensor_channel {
 	/** Current, in amps **/
 	SENSOR_CHAN_CURRENT,
 
+	/** Angular rotation, in degrees */
+	SENSOR_CHAN_ROTATION,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 };
