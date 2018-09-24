@@ -32,18 +32,16 @@ extern "C" {
 
 #define SHELL_CMD_ROOT_LVL		(0u)
 
-/*
- * @defgroup shell Shell
- * @ingroup subsys
- *
- * @brief Module for providing shell.
- *
+/**
+ * @brief Shell API
+ * @defgroup shell_api Shell API
+ * @ingroup shell
  * @{
  */
 
 struct shell_static_entry;
 
-/*
+/**
  * @brief Shell dynamic command descriptor.
  *
  * @details Function shall fill the received shell_static_entry structure
@@ -57,12 +55,12 @@ struct shell_static_entry;
 typedef void (*shell_dynamic_get)(size_t idx,
 				  struct shell_static_entry *entry);
 
-/*
+/**
  * @brief Shell command descriptor.
  */
 struct shell_cmd_entry {
 	bool is_dynamic;
-	union {
+	union union_cmd_entry {
 		/*!< Pointer to function returning dynamic commands.*/
 		shell_dynamic_get dynamic_get;
 
@@ -73,7 +71,7 @@ struct shell_cmd_entry {
 
 struct shell;
 
-/*
+/**
  * @brief Shell command handler prototype.
  */
 typedef void (*shell_cmd_handler)(const struct shell *shell,
@@ -89,8 +87,7 @@ struct shell_static_entry {
 	shell_cmd_handler handler; /*!< Command handler. */
 };
 
-#define SHELL_CMD_NAME(name) UTIL_CAT(shell_cmd_, name)
-/*
+/**
  * @brief Macro for defining and adding a root command (level 0).
  *
  * @note Each root command shall have unique syntax.
@@ -111,7 +108,7 @@ struct shell_static_entry {
 		.u.entry = &UTIL_CAT(shell_, syntax)			   \
 	}
 
-/*
+/**
  * @brief Macro for creating a subcommand set. It must be used outside of any
  * function body.
  *
@@ -125,13 +122,13 @@ struct shell_static_entry {
 	};							\
 	static const struct shell_static_entry shell_##name[] =
 
-/*
+/**
  * @brief Define ending subcommands set.
  *
  */
 #define SHELL_SUBCMD_SET_END {NULL}
 
-/*
+/**
  * @brief Macro for creating a dynamic entry.
  *
  * @param[in] name  Name of the dynamic entry.
@@ -143,7 +140,7 @@ struct shell_static_entry {
 		.u.dynamic_get = get			\
 	}
 
-/*
+/**
  * @brief Initializes a shell command.
  *
  * @param[in] _syntax  Command syntax (for example: history).
@@ -158,7 +155,7 @@ struct shell_static_entry {
 	.handler = _handler				\
 }
 
-/*
+/**
  * @internal @brief Internal shell state in response to data received from the
  * terminal.
  */
@@ -170,7 +167,7 @@ enum shell_receive_state {
 };
 
 
-/*
+/**
  * @internal @brief Internal shell state.
  */
 enum shell_state {
@@ -181,7 +178,7 @@ enum shell_state {
 	SHELL_STATE_PANIC_MODE_INACTIVE /*!< Panic requested, not supported.*/
 };
 
-/* @brief Shell transport event. */
+/** @brief Shell transport event. */
 enum shell_transport_evt {
 	SHELL_TRANSPORT_EVT_RX_RDY,
 	SHELL_TRANSPORT_EVT_TX_RDY
@@ -192,11 +189,11 @@ typedef void (*shell_transport_handler_t)(enum shell_transport_evt evt,
 
 struct shell_transport;
 
-/*
+/**
  * @brief Unified shell transport interface.
  */
 struct shell_transport_api {
-	/*
+	/**
 	 * @brief Function for initializing the shell transport interface.
 	 *
 	 * @param[in] transport   Pointer to the transfer instance.
@@ -212,7 +209,7 @@ struct shell_transport_api {
 		    shell_transport_handler_t evt_handler,
 		    void *context);
 
-	/*
+	/**
 	 * @brief Function for uninitializing the shell transport interface.
 	 *
 	 * @param[in] transport  Pointer to the transfer instance.
@@ -221,7 +218,7 @@ struct shell_transport_api {
 	 */
 	int (*uninit)(const struct shell_transport *transport);
 
-	/*
+	/**
 	 * @brief Function for reconfiguring the transport to work in blocking
 	 * mode.
 	 *
@@ -233,7 +230,7 @@ struct shell_transport_api {
 	 */
 	int (*enable)(const struct shell_transport *transport, bool blocking);
 
-	/*
+	/**
 	 * @brief Function for writing data to the transport interface.
 	 *
 	 * @param[in] transport  Pointer to the transfer instance.
@@ -246,7 +243,7 @@ struct shell_transport_api {
 	int (*write)(const struct shell_transport *transport,
 		     const void *data, size_t length, size_t *cnt);
 
-	/*
+	/**
 	 * @brief Function for reading data from the transport interface.
 	 *
 	 * @param[in] p_transport  Pointer to the transfer instance.
@@ -266,7 +263,9 @@ struct shell_transport {
 	void *ctx;
 };
 
-/** @brief Shell statistics structure. */
+/**
+ * @brief Shell statistics structure.
+ */
 struct shell_stats {
 	u32_t log_lost_cnt; /*!< Lost log counter.*/
 };
@@ -279,7 +278,7 @@ struct shell_stats {
 #define SHELL_STATS_PTR(_name) NULL
 #endif /* CONFIG_SHELL_STATS */
 
-/*
+/**
  * @internal @brief Flags for internal shell usage.
  */
 struct shell_flags {
@@ -292,9 +291,11 @@ struct shell_flags {
 	u32_t mode_delete :1; /*!< Operation mode of backspace key */
 };
 
-BUILD_ASSERT(sizeof(struct shell_flags) == sizeof(u32_t));
+BUILD_ASSERT_MSG((sizeof(struct shell_flags) == sizeof(u32_t)),
+		 "Structure must fit in 4 bytes");
 
-/*
+
+/**
  * @internal @brief Union for internal shell usage.
  */
 union shell_internal {
@@ -310,7 +311,7 @@ enum shell_signal {
 	SHELL_SIGNALS
 };
 
-/*
+/**
  * @brief Shell instance context.
  */
 struct shell_ctx {
@@ -345,7 +346,7 @@ struct shell_ctx {
 
 extern const struct log_backend_api log_backend_shell_api;
 
-/*
+/**
  * @brief Shell instance internals.
  */
 struct shell {
@@ -371,7 +372,7 @@ struct shell {
 	k_thread_stack_t *stack;
 };
 
-/*
+/**
  * @brief Macro for defining a shell instance.
  *
  * @param[in] _name             Instance name.
@@ -393,7 +394,7 @@ struct shell {
 	SHELL_FPRINTF_DEFINE(_name## _fprintf, &_name, _name##_out_buffer,   \
 			     CONFIG_SHELL_PRINTF_BUFF_SIZE,		     \
 			     true, shell_print_stream);			     \
-	LOG_INSTANCE_REGISTER(shell, _name, CONFIG_SHELL_LOG_LEVEL);	      \
+	LOG_INSTANCE_REGISTER(shell, _name, CONFIG_SHELL_LOG_LEVEL);	     \
 	SHELL_STATS_DEFINE(_name);					     \
 	static K_THREAD_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE);\
 	static struct k_thread _name##_thread;				     \
@@ -411,7 +412,7 @@ struct shell {
 		.stack = _name##_stack					     \
 	}
 
-/*
+/**
  * @brief Function for initializing a transport layer and internal shell state.
  *
  * @param[in] shell            Pointer to shell instance.
@@ -426,7 +427,7 @@ struct shell {
 int shell_init(const struct shell *shell, const void *transport_config,
 	       bool use_colors, bool log_backend, u32_t init_log_level);
 
-/*
+/**
  * @brief Uninitializes the transport layer and the internal shell state.
  *
  * @param shell Pointer to shell instance.
@@ -435,7 +436,7 @@ int shell_init(const struct shell *shell, const void *transport_config,
  */
 int shell_uninit(const struct shell *shell);
 
-/*
+/**
  * @brief Function for starting shell processing.
  *
  * @param shell Pointer to the shell instance.
@@ -444,7 +445,7 @@ int shell_uninit(const struct shell *shell);
  */
 int shell_start(const struct shell *shell);
 
-/*
+/**
  * @brief Function for stopping shell processing.
  *
  * @param shell Pointer to shell instance.
@@ -453,16 +454,32 @@ int shell_start(const struct shell *shell);
  */
 int shell_stop(const struct shell *shell);
 
-/*
- * @brief Shell colors for nrf_shell_fprintf function.
+/**
+ * @brief Terminal default text color for nrf_shell_fprintf function.
  */
 #define SHELL_NORMAL	SHELL_VT100_COLOR_DEFAULT
+
+/**
+ * @brief Green text color for nrf_shell_fprintf function.
+ */
 #define SHELL_INFO	SHELL_VT100_COLOR_GREEN
+
+/**
+ * @brief Cyan text color for nrf_shell_fprintf function.
+ */
 #define SHELL_OPTION	SHELL_VT100_COLOR_CYAN
+
+/**
+ * @brief Yellow text color for nrf_shell_fprintf function.
+ */
 #define SHELL_WARNING	SHELL_VT100_COLOR_YELLOW
+
+/**
+ * @brief Red text color for nrf_shell_fprintf function.
+ */
 #define SHELL_ERROR	SHELL_VT100_COLOR_RED
 
-/*
+/**
  * @brief Printf-like function which sends formatted data stream to the shell.
  *	  This function shall not be used outside of the shell command context.
  *
@@ -474,7 +491,7 @@ int shell_stop(const struct shell *shell);
 void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 		   const char *p_fmt, ...);
 
-/*
+/**
  * @brief Process function, which should be executed when data is ready in the
  *	  transport interface. To be used if shell thread is disabled.
  *
@@ -482,7 +499,7 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
  */
 void shell_process(const struct shell *shell);
 
-/*
+/**
  * @brief Option descriptor.
  */
 struct shell_getopt_option {
@@ -491,7 +508,7 @@ struct shell_getopt_option {
 	const char *optname_help; /*!< Option help string.*/
 };
 
-/*
+/**
  * @brief Option structure initializer.
  *
  * @param[in] _optname    Option name long.
@@ -504,7 +521,7 @@ struct shell_getopt_option {
 	.optname_help = _help,				\
 	}
 
-/*
+/**
  * @brief Informs that a command has been called with -h or --help option.
  *
  * @param[in] shell Pointer to the shell instance.
@@ -516,7 +533,7 @@ static inline bool shell_help_requested(const struct shell *shell)
 	return shell->ctx->internal.flags.show_help;
 }
 
-/*
+/**
  * @brief Prints the current command help.
  *
  * Function will print a help string with: the currently entered command, its
@@ -529,7 +546,7 @@ static inline bool shell_help_requested(const struct shell *shell)
 void shell_help_print(const struct shell *shell,
 		      const struct shell_getopt_option *opt, size_t opt_len);
 
-/*
+/**
  * @brief Change displayed shell prompt.
  *
  * @param[in] shell	Pointer to the shell instance.
@@ -540,10 +557,9 @@ void shell_help_print(const struct shell *shell,
  */
 int shell_prompt_change(const struct shell *shell, char *prompt);
 
-/*
- * @brief Prints help if request and prints error message on wrong argument
+/**
+ * @brief Prints help if requested and prints error message on wrong argument
  *	  count.
- *
  *	  Optionally, printing help on wrong argument count can be enabled.
  *
  * @param[in] shell	  Pointer to the shell instance.
@@ -554,11 +570,11 @@ int shell_prompt_change(const struct shell *shell, char *prompt);
  * @return True if check passed, false otherwise or help was requested.
  */
 bool shell_cmd_precheck(const struct shell *shell,
-			bool arg_cnt_nok,
+			bool arg_cnt_ok,
 			const struct shell_getopt_option *opt,
 			size_t opt_len);
 
-/*
+/**
  * @internal @brief This function shall not be used directly, it is required by
  *		    the fprintf module.
  *
@@ -569,7 +585,9 @@ bool shell_cmd_precheck(const struct shell *shell,
 void shell_print_stream(const void *user_ctx, const char *data,
 			size_t data_len);
 
-/* @} */
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
