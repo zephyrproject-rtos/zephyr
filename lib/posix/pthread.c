@@ -296,8 +296,14 @@ int pthread_attr_init(pthread_attr_t *attr)
 int pthread_getschedparam(pthread_t pthread, int *policy,
 			  struct sched_param *param)
 {
-	k_tid_t thread = (k_tid_t)pthread;
-	u32_t  priority = k_thread_priority_get(thread);
+	struct posix_thread *thread = (struct posix_thread *) pthread;
+	u32_t priority;
+
+	if (thread == NULL || thread->state == PTHREAD_TERMINATED) {
+		return ESRCH;
+	}
+
+	priority = k_thread_priority_get((k_tid_t) thread);
 
 	param->priority = zephyr_to_posix_priority(priority, policy);
 	return 0;
