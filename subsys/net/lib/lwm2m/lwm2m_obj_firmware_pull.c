@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,45 +12,34 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <net/coap.h>
-#include <net/net_app.h>
-#include <net/net_core.h>
+
 #include <net/http_parser.h>
-#include <net/net_pkt.h>
-#include <net/udp.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
 
-#define URI_LEN		255
+#define URI_LEN				255
 
-#define BUF_ALLOC_TIMEOUT	K_SECONDS(1)
-#define NETWORK_INIT_TIMEOUT	K_SECONDS(10)
-#define NETWORK_CONNECT_TIMEOUT	K_SECONDS(10)
+#define NETWORK_INIT_TIMEOUT		K_SECONDS(10)
+#define NETWORK_CONNECT_TIMEOUT		K_SECONDS(10)
 #define PACKET_TRANSFER_RETRY_MAX	3
 
 static struct k_work firmware_work;
-static char firmware_uri[URI_LEN];
 static struct http_parser_url parsed_uri;
 static struct lwm2m_ctx firmware_ctx;
-static int firmware_retry;
 static struct coap_block_context firmware_block_ctx;
+
+static char firmware_uri[URI_LEN];
+static int firmware_retry;
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 #define COAP2COAP_PROXY_URI_PATH	"coap2coap"
 #define COAP2HTTP_PROXY_URI_PATH	"coap2http"
 
 static char proxy_uri[URI_LEN];
-#endif
+#endif /* CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT */
 
 static void do_transmit_timeout_cb(struct lwm2m_message *msg);
-
-static void
-firmware_udp_receive(struct net_app_ctx *app_ctx, struct net_pkt *pkt,
-		     int status, void *user_data)
-{
-	lwm2m_udp_receive(&firmware_ctx, pkt, true, NULL);
-}
 
 static void set_update_result_from_error(int error_code)
 {
@@ -248,7 +238,7 @@ cleanup:
 }
 
 static int
-do_firmware_transfer_reply_cb(const struct coap_packet *response,
+do_firmware_transfer_reply_cb(struct coap_packet *response,
 			      struct coap_reply *reply,
 			      const struct sockaddr *from)
 {
@@ -257,7 +247,6 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	u8_t token[8];
 	u8_t tkl;
 	u16_t payload_len, payload_offset, len;
-	struct net_buf *payload_frag;
 	struct coap_packet *check_response = (struct coap_packet *)response;
 	struct lwm2m_engine_res_inst *res = NULL;
 	lwm2m_engine_set_data_cb_t write_cb;
@@ -317,9 +306,9 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	/* Reach last block if ret equals to 0 */
 	last_block = !coap_next_block(check_response, &firmware_block_ctx);
 
-	/* Process incoming data */
-	payload_frag = coap_packet_get_payload(check_response, &payload_offset,
-					       &payload_len);
+	/* setup incoming data */
+	payload_offset = check_response->hdr_len + check_response->opt_len;
+	coap_packet_get_payload(check_response, &payload_len);
 	if (payload_len > 0) {
 		SYS_LOG_DBG("total: %zd, current: %zd",
 			    firmware_block_ctx.total_size,
@@ -347,20 +336,16 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 				len = (payload_len > write_buflen) ?
 				       write_buflen : payload_len;
 				payload_len -= len;
-				payload_frag = net_frag_read(payload_frag,
-							     payload_offset,
-							     &payload_offset,
-							     len,
-							     write_buf);
 				/* check for end of packet */
-				if (!payload_frag && payload_offset == 0xffff) {
+				if (fbuf_read(&check_response->fbuf,
+					      &payload_offset,
+					      write_buf, len) < 0) {
 					/* malformed packet */
 					ret = -EFAULT;
 					goto error;
 				}
 
-				ret = write_cb(0, write_buf, len,
-					       !payload_frag && last_block,
+				ret = write_cb(0, write_buf, len, last_block,
 					       firmware_block_ctx.total_size);
 				if (ret < 0) {
 					goto error;
@@ -390,9 +375,9 @@ error:
 
 static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 {
+	int ret;
 	u8_t token[8];
 	u8_t tkl;
-	int ret;
 
 	if (firmware_retry < PACKET_TRANSFER_RETRY_MAX) {
 		/* retry block */
@@ -418,12 +403,9 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 
 static void firmware_transfer(struct k_work *work)
 {
-	struct sockaddr client_addr;
-	int ret, family;
-	u16_t off;
-	u16_t len;
-	char tmp;
 	char *server_addr;
+	int ret, family;
+	u16_t off, len;
 
 	/* Server Peer IP information */
 	family = AF_INET;
@@ -479,52 +461,27 @@ static void firmware_transfer(struct k_work *work)
 	len = parsed_uri.field_data[UF_HOST].len;
 
 	/* truncate host portion */
-	tmp = server_addr[off + len];
 	server_addr[off + len] = '\0';
-
-	/* setup the local firmware download client port */
-	(void)memset(&client_addr, 0, sizeof(client_addr));
-#if defined(CONFIG_NET_IPV6)
-	client_addr.sa_family = AF_INET6;
-	net_sin6(&client_addr)->sin6_port =
-		htons(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_LOCAL_PORT);
-#elif defined(CONFIG_NET_IPV4)
-	client_addr.sa_family = AF_INET;
-	net_sin(&client_addr)->sin_port =
-		htons(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_LOCAL_PORT);
-#endif
-
-	ret = net_app_init_udp_client(&firmware_ctx.net_app_ctx,
-				      &client_addr, NULL,
-				      &server_addr[off], parsed_uri.port,
-				      firmware_ctx.net_init_timeout, NULL);
-	server_addr[off + len] = tmp;
-	if (ret < 0) {
-		SYS_LOG_ERR("Could not get an UDP context (err:%d)", ret);
-		ret = -ENOMSG;
-		goto error;
-	}
-
-	SYS_LOG_INF("Connecting to server %s, port %d", server_addr + off,
-		    parsed_uri.port);
 
 	lwm2m_engine_context_init(&firmware_ctx);
 
-	/* set net_app callbacks */
-	ret = net_app_set_cb(&firmware_ctx.net_app_ctx, NULL,
-			     firmware_udp_receive, NULL, NULL);
-	if (ret < 0) {
-		SYS_LOG_ERR("Could not set receive callback (err:%d)", ret);
-		/* make sure this sets RESULT_CONNECTION_LOST */
-		ret = -ENOMSG;
-		goto cleanup;
-	}
+	/* setup the local firmware download client port */
+	(void)memset(&firmware_ctx.local_addr, 0,
+		     sizeof(firmware_ctx.local_addr));
+#if defined(CONFIG_NET_IPV6)
+	firmware_ctx.local_addr.sa_family = AF_INET6;
+	net_sin6(&firmware_ctx.local_addr)->sin6_port =
+		htons(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_LOCAL_PORT);
+#elif defined(CONFIG_NET_IPV4)
+	firmware_ctx.local_addr.sa_family = AF_INET;
+	net_sin(&firmware_ctx.local_addr)->sin_port =
+		htons(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_LOCAL_PORT);
+#endif
 
-	ret = net_app_connect(&firmware_ctx.net_app_ctx,
-			      firmware_ctx.net_timeout);
+	ret = lwm2m_nl_start(&firmware_ctx, &server_addr[off], parsed_uri.port);
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot connect UDP (%d)", ret);
-		goto cleanup;
+		SYS_LOG_ERR("Cannot start a firmware-pull connection:%d", ret);
+		goto error;
 	}
 
 	/* reset block transfer context */
@@ -533,14 +490,10 @@ static void firmware_transfer(struct k_work *work)
 	ret = transfer_request(&firmware_block_ctx, coap_next_token(), 8,
 			       do_firmware_transfer_reply_cb);
 	if (ret < 0) {
-		goto cleanup;
+		goto error;
 	}
 
 	return;
-
-cleanup:
-	net_app_close(&firmware_ctx.net_app_ctx);
-	net_app_release(&firmware_ctx.net_app_ctx);
 
 error:
 	set_update_result_from_error(ret);
@@ -554,11 +507,7 @@ int lwm2m_firmware_cancel_transfer(void)
 
 int lwm2m_firmware_start_transfer(char *package_uri)
 {
-	/* free up old context */
-	if (firmware_ctx.net_app_ctx.is_init) {
-		net_app_close(&firmware_ctx.net_app_ctx);
-		net_app_release(&firmware_ctx.net_app_ctx);
-	}
+	/* TODO check for existing transfer */
 
 	(void)memset(&firmware_ctx, 0, sizeof(struct lwm2m_ctx));
 	firmware_retry = 0;
@@ -566,6 +515,12 @@ int lwm2m_firmware_start_transfer(char *package_uri)
 	firmware_ctx.net_timeout = NETWORK_CONNECT_TIMEOUT;
 	k_work_init(&firmware_work, firmware_transfer);
 	lwm2m_firmware_set_update_state(STATE_DOWNLOADING);
+
+#if defined(CONFIG_LWM2M_NET_LAYER_NET_APP)
+	firmware_ctx.net_layer_api = lwm2m_firmware_pull_nl_net_app_api();
+#elif defined(CONFIG_LWM2M_NET_LAYER_SOCKET)
+	firmware_ctx.net_layer_api = lwm2m_firmware_pull_nl_socket_api();
+#endif
 
 	/* start file transfer work */
 	strncpy(firmware_uri, package_uri, URI_LEN - 1);

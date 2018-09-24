@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +33,11 @@
 #define MAX_COAP_REQUEST_ATTEMPTS	5
 #define MAX_COAP_REQUESTS		20
 
+#define MAX_PACKET_SIZE (256 + 32)
+/* FIXME: these buffers aren't thread safe: need pool mgmt */
+static u8_t in_buf[MAX_PACKET_SIZE];
+static u8_t out_buf[MAX_PACKET_SIZE];
+
 struct coap_request {
 	struct k_delayed_work timer; /* Timer to retransmit messages */
 	struct sockaddr_in6 peer; /* Peer CoAP server socket address */
@@ -50,19 +56,51 @@ static struct coap_request requests[MAX_COAP_REQUESTS];
 static const char * const led_uri_path[] = { "led", NULL };
 static const char * const rpl_obs_path[] = { "rpl-obs", NULL };
 
-static void get_from_ip_addr(struct coap_packet *cpkt,
+static void get_from_ip_addr(struct net_pkt *pkt,
 			     struct sockaddr_in6 *from)
 {
 	struct net_udp_hdr hdr, *udp_hdr;
 
-	udp_hdr = net_udp_get_hdr(cpkt->pkt, &hdr);
+	udp_hdr = net_udp_get_hdr(pkt, &hdr);
 	if (!udp_hdr) {
 		return;
 	}
 
-	net_ipaddr_copy(&from->sin6_addr, &NET_IPV6_HDR(cpkt->pkt)->src);
+	net_ipaddr_copy(&from->sin6_addr, &NET_IPV6_HDR(pkt)->src);
 	from->sin6_port = udp_hdr->src_port;
 	from->sin6_family = AF_INET6;
+}
+
+static int send_coap_packet(u8_t *buf, u16_t buf_len,
+			    const struct sockaddr *from)
+{
+	struct net_pkt *pkt;
+	struct net_buf *frag;
+	int r;
+
+	pkt = net_pkt_get_tx(coap, PKT_WAIT_TIME);
+	if (!pkt) {
+		NET_ERR("Ran out of network packets");
+		return -ENOMEM;
+	}
+
+	frag = net_pkt_get_data(coap, PKT_WAIT_TIME);
+	if (!frag) {
+		NET_ERR("Ran out of network buffers");
+		net_pkt_unref(pkt);
+		return -ENOMEM;
+	}
+
+	net_pkt_frag_add(pkt, frag);
+	net_pkt_append(pkt, buf_len, buf, PKT_WAIT_TIME);
+	r = net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
+			       NULL, 0, NULL, NULL);
+	if (r < 0) {
+		NET_ERR("Cannot send data to peer (%d)", r);
+		net_pkt_unref(pkt);
+	}
+
+	return r;
 }
 
 static struct coap_request *
@@ -156,31 +194,15 @@ static void clear_coap_request(struct coap_request *request)
 
 static bool toggle_led(const struct sockaddr_in6 *peer, u16_t id)
 {
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct coap_packet request;
 	const char * const *p;
 	int r;
 
-	pkt = net_pkt_get_tx(coap, PKT_WAIT_TIME);
-	if (!pkt) {
-		NET_ERR("Ran out of network packets");
-		return false;
-	}
-
-	frag = net_pkt_get_data(coap, PKT_WAIT_TIME);
-	if (!frag) {
-		NET_ERR("Ran out of network buffers");
-		goto end;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	r = coap_packet_init(&request, pkt, 1, COAP_TYPE_NON_CON,
-			     0, NULL, COAP_METHOD_POST, id);
+	r = coap_packet_init(&request, out_buf, sizeof(out_buf), 1,
+			     COAP_TYPE_NON_CON, 0, NULL, COAP_METHOD_POST, id);
 	if (r < 0) {
 		NET_ERR("Failed to initialize CoAP packet");
-		goto end;
+		return false;
 	}
 
 	for (p = led_uri_path; p && *p; p++) {
@@ -188,59 +210,33 @@ static bool toggle_led(const struct sockaddr_in6 *peer, u16_t id)
 					      *p, strlen(*p));
 		if (r < 0) {
 			NET_ERR("Unable add option to request.\n");
-			goto end;
+			return false;
 		}
 	}
 
-	r = net_context_sendto(pkt, (const struct sockaddr *)peer,
-			       sizeof(struct sockaddr_in6),
-			       NULL, 0, NULL, NULL);
-	if (r < 0) {
-		NET_ERR("Cannot send data to peer (%d)", r);
-		goto end;
-	}
-
-	return true;
-
-end:
-	net_pkt_unref(pkt);
-	return false;
+	r = send_coap_packet(request.fbuf.buf, request.fbuf.buf_len,
+			     (const struct sockaddr *)peer);
+	return (r == 0);
 }
 
 static bool set_rpl_observer(const struct sockaddr_in6 *peer, u16_t id)
 {
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct coap_packet request;
 	const char * const *p;
 	int r;
 
-	pkt = net_pkt_get_tx(coap, PKT_WAIT_TIME);
-	if (!pkt) {
-		NET_ERR("Ran out of network packets");
-		return false;
-	}
-
-	frag = net_pkt_get_data(coap, PKT_WAIT_TIME);
-	if (!frag) {
-		NET_ERR("Ran out of network buffers");
-		goto end;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	r = coap_packet_init(&request, pkt, 1, COAP_TYPE_CON,
-			     8, coap_next_token(),
+	r = coap_packet_init(&request, out_buf, sizeof(out_buf), 1,
+			     COAP_TYPE_CON, 8, coap_next_token(),
 			     COAP_METHOD_GET, id);
 	if (r < 0) {
 		NET_ERR("Failed to initialize CoAP packet");
-		goto end;
+		return false;
 	}
 
 	r = coap_append_option_int(&request, COAP_OPTION_OBSERVE, 0);
 	if (r < 0) {
 		NET_ERR("Unable add option to request");
-		goto end;
+		return false;
 	}
 
 	for (p = rpl_obs_path; p && *p; p++) {
@@ -248,23 +244,13 @@ static bool set_rpl_observer(const struct sockaddr_in6 *peer, u16_t id)
 					      *p, strlen(*p));
 		if (r < 0) {
 			NET_ERR("Unable add option to request");
-			goto end;
+			return false;
 		}
 	}
 
-	r = net_context_sendto(pkt, (const struct sockaddr *)peer,
-			       sizeof(struct sockaddr_in6),
-			       NULL, 0, NULL, NULL);
-	if (r < 0) {
-		NET_ERR("Cannot send data to peer (%d)", r);
-		goto end;
-	}
-
-	return true;
-
-end:
-	net_pkt_unref(pkt);
-	return false;
+	r = send_coap_packet(request.fbuf.buf, request.fbuf.buf_len,
+			     (const struct sockaddr *)peer);
+	return (r == 0);
 }
 
 static void request_timeout(struct k_work *work)
@@ -375,32 +361,26 @@ static void remove_node_from_topology(struct in6_addr *node)
 			  COAP_REPLY_RANK   + \
 			  COAP_REPLY_RANK_VALUE)
 
-static void node_obs_reply(struct coap_packet *response, void *user_data)
+static void node_obs_reply(struct coap_packet *response, void *user_data,
+			   struct sockaddr_in6 *from)
 {
-	char payload[MAX_PAYLOAD_SIZE];
 	char parent_str[NET_IPV6_ADDR_LEN + 1];
 	char rank_str[COAP_REPLY_RANK_VALUE + 1];
-	struct sockaddr_in6 from;
+	char *payload;
 	struct in6_addr parent;
-	struct net_buf *frag;
-	u16_t offset;
 	u16_t len;
+	u16_t offset;
 	u16_t rank;
 	u8_t i;
 
-	frag = coap_packet_get_payload(response, &offset, &len);
-	if (!frag && offset == 0xffff) {
+	payload = coap_packet_get_payload(response, &len);
+	if (!payload) {
 		NET_ERR("Error while getting payload");
 		return;
 	}
 
 	if (!len) {
 		NET_ERR("Invalid response");
-		return;
-	}
-
-	frag = net_frag_read(frag, offset, &offset, len, (u8_t *) payload);
-	if (!frag && offset == 0xffff) {
 		return;
 	}
 
@@ -448,10 +428,9 @@ static void node_obs_reply(struct coap_packet *response, void *user_data)
 		return;
 	}
 
-	get_from_ip_addr(response, &from);
 	rank = atoi(rank_str);
 
-	update_node_topology(&from.sin6_addr, &parent, rank);
+	update_node_topology(&from->sin6_addr, &parent, rank);
 }
 
 static void pkt_receive(struct net_context *context,
@@ -463,13 +442,23 @@ static void pkt_receive(struct net_context *context,
 	struct coap_packet response;
 	struct coap_request *coap_req;
 	struct sockaddr_in6 from;
+	int r;
 	u16_t id;
+	u16_t hdr_len = net_pkt_ip_hdr_len(pkt) + NET_UDPH_LEN +
+				net_pkt_ipv6_ext_len(pkt);
+	u16_t buf_len = net_pkt_get_len(pkt) - hdr_len;
 	u8_t type;
 	u8_t code;
 	u8_t opt_num = 4;
-	int r;
 
-	r = coap_packet_parse(&response, pkt, options, opt_num);
+	r = net_frag_linearize(in_buf, sizeof(in_buf), pkt, hdr_len, buf_len);
+	if (r < 0) {
+		NET_ERR("Unable to linearize data (%d)\n", r);
+		net_pkt_unref(pkt);
+		return;
+	}
+
+	r = coap_packet_parse(&response, in_buf, buf_len, 0, options, opt_num);
 	if (r < 0) {
 		NET_ERR("Invalid data received (%d)\n", r);
 		net_pkt_unref(pkt);
@@ -479,7 +468,9 @@ static void pkt_receive(struct net_context *context,
 	type = coap_header_get_type(&response);
 	code = coap_header_get_code(&response);
 	id  = coap_header_get_id(&response);
-	get_from_ip_addr(&response, &from);
+
+	/* save from address */
+	get_from_ip_addr(pkt, &from);
 
 	if (type != COAP_TYPE_ACK) {
 		NET_ERR("Invalid response, type %d", type);
@@ -488,7 +479,7 @@ static void pkt_receive(struct net_context *context,
 	}
 
 	NET_DBG("Received %d bytes coap payload",
-		net_pkt_appdatalen(pkt) - response.hdr_len - response.opt_len);
+		buf_len - response.hdr_len - response.opt_len);
 
 	coap_req = get_coap_request_by_id(&from, id);
 	if (!coap_req) {
@@ -502,7 +493,7 @@ static void pkt_receive(struct net_context *context,
 	}
 
 	if (coap_req->type == COAP_REQ_RPL_OBS) {
-		node_obs_reply(&response, coap_req->user_data);
+		node_obs_reply(&response, coap_req->user_data, &from);
 	}
 
 	if (coap_req->cb) {

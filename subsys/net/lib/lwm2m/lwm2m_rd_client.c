@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2017 Foundries.io
+ * Copyright (c) 2017-2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,9 +53,6 @@
 #include <errno.h>
 #include <init.h>
 #include <misc/printk.h>
-#include <net/net_pkt.h>
-#include <net/coap.h>
-#include <net/lwm2m.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
@@ -184,7 +181,7 @@ void engine_trigger_update(void)
 
 /* state machine reply callbacks */
 
-static int do_bootstrap_reply_cb(const struct coap_packet *response,
+static int do_bootstrap_reply_cb(struct coap_packet *response,
 				 struct coap_reply *reply,
 				 const struct sockaddr *from)
 {
@@ -223,7 +220,7 @@ static void do_bootstrap_timeout_cb(struct lwm2m_message *msg)
 	sm_handle_timeout_state(msg, ENGINE_INIT);
 }
 
-static int do_registration_reply_cb(const struct coap_packet *response,
+static int do_registration_reply_cb(struct coap_packet *response,
 				    struct coap_reply *reply,
 				    const struct sockaddr *from)
 {
@@ -290,7 +287,7 @@ static void do_registration_timeout_cb(struct lwm2m_message *msg)
 	sm_handle_timeout_state(msg, ENGINE_INIT);
 }
 
-static int do_update_reply_cb(const struct coap_packet *response,
+static int do_update_reply_cb(struct coap_packet *response,
 			      struct coap_reply *reply,
 			      const struct sockaddr *from)
 {
@@ -327,7 +324,7 @@ static void do_update_timeout_cb(struct lwm2m_message *msg)
 	sm_handle_timeout_state(msg, ENGINE_DO_REGISTRATION);
 }
 
-static int do_deregister_reply_cb(const struct coap_packet *response,
+static int do_deregister_reply_cb(struct coap_packet *response,
 				  struct coap_reply *reply,
 				  const struct sockaddr *from)
 {
@@ -394,14 +391,10 @@ static int sm_do_init(void)
 static int sm_do_bootstrap(void)
 {
 	struct lwm2m_message *msg;
-	struct net_app_ctx *app_ctx = NULL;
 	int ret;
-	struct sockaddr *remote = NULL;
-
 	if (client.use_bootstrap &&
 	    client.bootstrapped == 0 &&
 	    client.has_bs_server_info) {
-		app_ctx = &client.ctx->net_app_ctx;
 		msg = lwm2m_get_message(client.ctx);
 		if (!msg) {
 			SYS_LOG_ERR("Unable to get a lwm2m message!");
@@ -430,18 +423,7 @@ static int sm_do_bootstrap(void)
 					  query_buffer, strlen(query_buffer));
 
 		/* log the bootstrap attempt */
-#if defined(CONFIG_NET_APP_DTLS)
-		if (app_ctx->dtls.ctx) {
-			remote = &app_ctx->dtls.ctx->remote;
-		}
-#endif
-
-		if (!remote) {
-			remote = &app_ctx->default_ctx->remote;
-		}
-
-		SYS_LOG_DBG("Register ID with bootstrap server [%s] as '%s'",
-			    lwm2m_sprint_ip_addr(remote),
+		SYS_LOG_DBG("Register ID with bootstrap server as '%s'",
 			    query_buffer);
 
 		ret = lwm2m_send_message(msg);
@@ -508,13 +490,10 @@ static int sm_send_registration(bool send_obj_support_data,
 				coap_reply_t reply_cb,
 				lwm2m_message_timeout_cb_t timeout_cb)
 {
-	struct net_app_ctx *app_ctx = NULL;
 	struct lwm2m_message *msg;
-	u16_t client_data_len;
 	int ret;
-	struct sockaddr *remote = NULL;
+	u16_t len;
 
-	app_ctx = &client.ctx->net_app_ctx;
 	msg = lwm2m_get_message(client.ctx);
 	if (!msg) {
 		SYS_LOG_ERR("Unable to get a lwm2m message!");
@@ -577,12 +556,9 @@ static int sm_send_registration(bool send_obj_support_data,
 		}
 
 		/* generate the rd data */
-		client_data_len = lwm2m_get_rd_data(client_data,
-						    sizeof(client_data));
-
-		if (!net_pkt_append_all(msg->cpkt.pkt, client_data_len,
-					client_data, BUF_ALLOC_TIMEOUT)) {
-			ret = -ENOMEM;
+		len = lwm2m_get_rd_data(client_data, sizeof(client_data));
+		ret = fbuf_append(&msg->cpkt.fbuf, client_data, len);
+		if (ret < 0) {
 			goto cleanup;
 		}
 	}
@@ -595,18 +571,7 @@ static int sm_send_registration(bool send_obj_support_data,
 	}
 
 	/* log the registration attempt */
-#if defined(CONFIG_NET_APP_DTLS)
-	if (app_ctx->dtls.ctx) {
-		remote = &app_ctx->dtls.ctx->remote;
-	}
-#endif
-
-	if (!remote) {
-		remote = &app_ctx->default_ctx->remote;
-	}
-
-	SYS_LOG_DBG("registration sent [%s]",
-		    lwm2m_sprint_ip_addr(remote));
+	SYS_LOG_DBG("registration sent");
 
 	return 0;
 
@@ -665,11 +630,9 @@ static int sm_registration_done(void)
 
 static int sm_do_deregister(void)
 {
-	struct net_app_ctx *app_ctx = NULL;
 	struct lwm2m_message *msg;
 	int ret;
 
-	app_ctx = &client.ctx->net_app_ctx;
 	msg = lwm2m_get_message(client.ctx);
 	if (!msg) {
 		SYS_LOG_ERR("Unable to get a lwm2m message!");
@@ -778,11 +741,6 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 	if (ret < 0) {
 		SYS_LOG_ERR("Cannot init LWM2M engine (%d)", ret);
 		return ret;
-	}
-
-	if (!client_ctx->net_app_ctx.default_ctx) {
-		SYS_LOG_ERR("Default net_app_ctx not selected!");
-		return -EINVAL;
 	}
 
 	/* TODO: use server URI data from security */

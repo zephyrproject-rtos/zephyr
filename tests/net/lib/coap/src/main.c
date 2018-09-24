@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +16,6 @@
 #include <kernel.h>
 
 #include <net/buf.h>
-#include <net/net_pkt.h>
 #include <net/net_ip.h>
 #include <net/udp.h>
 
@@ -30,11 +30,10 @@
 #define NUM_OBSERVERS 3
 #define NUM_REPLIES 3
 
-NET_PKT_TX_SLAB_DEFINE(coap_pkt_slab, 4);
+#define MAX_PACKET_SIZE 256
 
-NET_BUF_POOL_DEFINE(coap_data_pool, 4, COAP_BUF_SIZE, 0, NULL);
-
-NET_BUF_POOL_DEFINE(coap_limited_data_pool, 4, COAP_LIMITED_BUF_SIZE, 0, NULL);
+static u8_t test_buf[MAX_PACKET_SIZE];
+static u8_t test_buf2[MAX_PACKET_SIZE];
 
 static struct coap_pending pendings[NUM_PENDINGS];
 static struct coap_observer observers[NUM_OBSERVERS];
@@ -49,7 +48,8 @@ static void server_notify_callback(struct coap_resource *resource,
 				   struct coap_observer *observer);
 
 static int server_resource_1_get(struct coap_resource *resource,
-				 struct coap_packet *request);
+				 struct coap_packet *request,
+				 const struct sockaddr *from);
 
 static const char * const server_resource_1_path[] = { "s", "1", NULL };
 static struct coap_resource server_resources[] =  {
@@ -59,7 +59,6 @@ static struct coap_resource server_resources[] =  {
 	{ },
 };
 
-#define MY_PORT 12345
 #define peer_addr { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
 			0, 0, 0, 0, 0, 0, 0, 0x2 } } }
 static struct sockaddr_in6 dummy_addr = {
@@ -70,38 +69,22 @@ static int test_build_empty_pdu(void)
 {
 	u8_t result_pdu[] = { 0x40, 0x01, 0x0, 0x0 };
 	struct coap_packet cpkt;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	int result = TC_FAIL;
 	int r;
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	r = coap_packet_init(&cpkt, pkt, 1, COAP_TYPE_CON,
-			     0, NULL, COAP_METHOD_GET, 0);
+	r = coap_packet_init(&cpkt, test_buf, sizeof(test_buf), 1,
+			     COAP_TYPE_CON, 0, NULL, COAP_METHOD_GET, 0);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
 	}
 
-	if (frag->len != sizeof(result_pdu)) {
+	if (cpkt.fbuf.buf_len != sizeof(result_pdu)) {
 		TC_PRINT("Different size from the reference packet\n");
 		goto done;
 	}
 
-	if (memcmp(result_pdu, frag->data, frag->len)) {
+	if (memcmp(result_pdu, cpkt.fbuf.buf, cpkt.fbuf.buf_len)) {
 		TC_PRINT("Built packet doesn't match reference packet\n");
 		goto done;
 	}
@@ -109,8 +92,6 @@ static int test_build_empty_pdu(void)
 	result = TC_PASS;
 
 done:
-	net_pkt_unref(pkt);
-
 	TC_END_RESULT(result);
 
 	return result;
@@ -122,29 +103,13 @@ static int test_build_simple_pdu(void)
 				 'n', 0xC1, 0x00, 0xFF, 'p', 'a', 'y', 'l',
 				 'o', 'a', 'd', 0x00 };
 	struct coap_packet cpkt;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	const char token[] = "token";
 	u8_t format = 0;
 	int result = TC_FAIL;
 	int r;
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	r = coap_packet_init(&cpkt, pkt, 1, COAP_TYPE_NON_CON,
-			     strlen(token), (u8_t *)token,
+	r = coap_packet_init(&cpkt, test_buf, sizeof(test_buf), 1,
+			     COAP_TYPE_NON_CON, strlen(token), (u8_t *)token,
 			     COAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED,
 			     0x1234);
 	if (r) {
@@ -165,7 +130,7 @@ static int test_build_simple_pdu(void)
 		goto done;
 	}
 
-	if (memcmp(result_pdu, frag->data, frag->len)) {
+	if (memcmp(result_pdu, cpkt.fbuf.buf, cpkt.fbuf.buf_len)) {
 		TC_PRINT("Built packet doesn't match reference packet\n");
 		goto done;
 	}
@@ -173,63 +138,22 @@ static int test_build_simple_pdu(void)
 	result = TC_PASS;
 
 done:
-	net_pkt_unref(pkt);
-
 	TC_END_RESULT(result);
 
 	return result;
 }
-
-/* IPv6 + UDP frame (48 bytes) */
-static const unsigned char ipv6_empty_pdu[] = {
-	/* IPv6 header starts here */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x11, 0xFF,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* UDP */
-	0xd8, 0xb4, 0x16, 0x33, 0x00, 0x0c, 0x00, 0x00,
-	/* CoAP */
-};
 
 /* No options, No payload */
 static int test_parse_empty_pdu(void)
 {
 	u8_t pdu[] = { 0x40, 0x01, 0, 0 };
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct coap_packet cpkt;
 	u8_t ver, type, code;
 	u16_t id;
 	int result = TC_FAIL;
 	int r;
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_append_all(pkt, sizeof(ipv6_empty_pdu),
-			   (u8_t *)ipv6_empty_pdu, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(pdu), (u8_t *)pdu, K_FOREVER);
-
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	memcpy(frag->data, pdu, sizeof(pdu));
-	frag->len = NET_IPV6UDPH_LEN + sizeof(pdu);
-
-	r = coap_packet_parse(&cpkt, pkt, NULL, 0);
+	r = coap_packet_parse(&cpkt, pdu, sizeof(pdu), 0, NULL, 0);
 	if (r) {
 		TC_PRINT("Could not parse packet\n");
 		goto done;
@@ -263,63 +187,22 @@ static int test_parse_empty_pdu(void)
 	result = TC_PASS;
 
 done:
-	net_pkt_unref(pkt);
-
 	TC_END_RESULT(result);
 
 	return result;
 }
-
-/* IPv6 + UDP frame (48 bytes) */
-static const unsigned char ipv6_empty_pdu_1[] = {
-	/* IPv6 header starts here */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x0D, 0x11, 0xFF,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* UDP */
-	0xd8, 0xb4, 0x16, 0x33, 0x00, 0x0D, 0x00, 0x00,
-	/* CoAP */
-};
 
 /* 1 option, No payload (No payload marker) */
 static int test_parse_empty_pdu_1(void)
 {
 	u8_t pdu[] = { 0x40, 0x01, 0, 0, 0x40};
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct coap_packet cpkt;
 	u8_t ver, type, code;
 	u16_t id;
 	int result = TC_FAIL;
 	int r;
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_append_all(pkt, sizeof(ipv6_empty_pdu_1),
-			   (u8_t *)ipv6_empty_pdu_1, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(pdu), (u8_t *)pdu, K_FOREVER);
-
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	memcpy(frag->data, pdu, sizeof(pdu));
-	frag->len = NET_IPV6UDPH_LEN + sizeof(pdu);
-
-	r = coap_packet_parse(&cpkt, pkt, NULL, 0);
+	r = coap_packet_parse(&cpkt, pdu, sizeof(pdu), 0, NULL, 0);
 	if (r) {
 		TC_PRINT("Could not parse packet\n");
 		goto done;
@@ -353,25 +236,10 @@ static int test_parse_empty_pdu_1(void)
 	result = TC_PASS;
 
 done:
-	net_pkt_unref(pkt);
-
 	TC_END_RESULT(result);
 
 	return result;
 }
-
-/* IPv6 + UDP frame (48 bytes) */
-static const unsigned char ipv6_simple_pdu[] = {
-	/* IPv6 header starts here */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x1D, 0x11, 0xFF,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* UDP */
-	0xd8, 0xb4, 0x16, 0x33, 0x00, 0x1D, 0x00, 0x00,
-	/* CoAP */
-};
 
 static int test_parse_simple_pdu(void)
 {
@@ -379,8 +247,6 @@ static int test_parse_simple_pdu(void)
 		       0x00, 0xc1, 0x00, 0xff, 'p', 'a', 'y', 'l', 'o',
 		       'a', 'd', 0x00 };
 	struct coap_packet cpkt;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct coap_option options[16] = {};
 	u8_t ver, type, code, tkl;
 	const u8_t token[8];
@@ -388,28 +254,7 @@ static int test_parse_simple_pdu(void)
 	int result = TC_FAIL;
 	int r, count = ARRAY_SIZE(options) - 1;
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_append_all(pkt, sizeof(ipv6_simple_pdu),
-			   (u8_t *)ipv6_simple_pdu, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(pdu), (u8_t *)pdu, K_FOREVER);
-
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	r = coap_packet_parse(&cpkt, pkt, NULL, 0);
+	r = coap_packet_parse(&cpkt, pdu, sizeof(pdu), 0, NULL, 0);
 	if (r) {
 		TC_PRINT("Could not parse packet\n");
 		goto done;
@@ -479,8 +324,6 @@ static int test_parse_simple_pdu(void)
 	result = TC_PASS;
 
 done:
-	net_pkt_unref(pkt);
-
 	TC_END_RESULT(result);
 
 	return result;
@@ -490,28 +333,14 @@ static int test_retransmit_second_round(void)
 {
 	struct coap_packet cpkt, resp;
 	struct coap_pending *pending, *resp_pending;
-	struct net_pkt *pkt, *resp_pkt = NULL;
-	struct net_buf *frag;
 	int result = TC_FAIL;
 	int r;
 	u16_t id;
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
 	id = coap_next_id();
 
-	r = coap_packet_init(&cpkt, pkt, 1, COAP_TYPE_CON, 0, coap_next_token(),
+	r = coap_packet_init(&cpkt, test_buf, sizeof(test_buf), 1,
+			     COAP_TYPE_CON, 0, coap_next_token(),
 			     COAP_METHOD_GET, id);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
@@ -542,22 +371,8 @@ static int test_retransmit_second_round(void)
 		goto done;
 	}
 
-	resp_pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!resp_pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(resp_pkt, frag);
-
-	r = coap_packet_init(&resp, resp_pkt, 1, COAP_TYPE_ACK,
-			     0, NULL, COAP_METHOD_GET, id);
+	r = coap_packet_init(&resp, test_buf2, sizeof(test_buf2), 1,
+			     COAP_TYPE_ACK, 0, NULL, COAP_METHOD_GET, id);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
@@ -580,83 +395,25 @@ static int test_retransmit_second_round(void)
 	result = TC_PASS;
 
 done:
-	net_pkt_unref(pkt);
-	if (resp_pkt) {
-		net_pkt_unref(resp_pkt);
-	}
-
 	TC_END_RESULT(result);
 
 	return result;
 }
 
-static void get_from_ip_addr(struct coap_packet *cpkt,
-			     struct sockaddr_in6 *from)
-{
-	struct net_udp_hdr hdr, *udp_hdr;
-
-	udp_hdr = net_udp_get_hdr(cpkt->pkt, &hdr);
-	if (!udp_hdr) {
-		return;
-	}
-
-	net_ipaddr_copy(&from->sin6_addr, &NET_IPV6_HDR(cpkt->pkt)->src);
-	from->sin6_port = udp_hdr->src_port;
-	from->sin6_family = AF_INET6;
-}
-
-static bool ipaddr_cmp(const struct sockaddr *a, const struct sockaddr *b)
-{
-	if (a->sa_family != b->sa_family) {
-		return false;
-	}
-
-	if (a->sa_family == AF_INET6) {
-		return net_ipv6_addr_cmp(&net_sin6(a)->sin6_addr,
-					 &net_sin6(b)->sin6_addr);
-	} else if (a->sa_family == AF_INET) {
-		return net_ipv4_addr_cmp(&net_sin(a)->sin_addr,
-					 &net_sin(b)->sin_addr);
-	}
-
-	return false;
-}
-
 static void server_notify_callback(struct coap_resource *resource,
 				   struct coap_observer *observer)
 {
-	if (!ipaddr_cmp(&observer->addr,
-			(const struct sockaddr *) &dummy_addr)) {
-		TC_ERROR("The address of the observer doesn't match.\n");
-		return;
-	}
-
 	coap_remove_observer(resource, observer);
 
 	TC_PRINT("You should see this\n");
 }
 
-/* IPv6 + UDP frame (48 bytes) */
-static const unsigned char ipv6_resource1[] = {
-	/* IPv6 header starts here */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x16, 0x11, 0xFF,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* UDP */
-	0xd8, 0xb4, 0x16, 0x33, 0x00, 0x16, 0x00, 0x00,
-	/* CoAP */
-};
-
 static int server_resource_1_get(struct coap_resource *resource,
-				 struct coap_packet *request)
+				 struct coap_packet *request,
+				 const struct sockaddr *from)
 {
 	struct coap_packet response;
 	struct coap_observer *observer;
-	struct sockaddr_in6 from;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	char payload[] = "This is the payload";
 	u8_t token[8];
 	u8_t tkl;
@@ -676,35 +433,14 @@ static int server_resource_1_get(struct coap_resource *resource,
 
 	tkl = coap_header_get_token(request, (u8_t *) token);
 	id = coap_header_get_id(request);
-	get_from_ip_addr(request, &from);
 
-	coap_observer_init(observer, request,
-			   (const struct sockaddr *)&from);
+	coap_observer_init(observer, request, (struct sockaddr *) &dummy_addr);
 
 	coap_register_observer(resource, observer);
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		return -ENOMEM;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		return -ENOMEM;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_append_all(pkt, sizeof(ipv6_resource1),
-			   (u8_t *)ipv6_resource1, K_FOREVER);
-
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK, tkl, token,
-			     COAP_RESPONSE_CODE_OK, id);
+	r = coap_packet_init(&response, test_buf2, sizeof(test_buf2), 1,
+			     COAP_TYPE_ACK, tkl, token, COAP_RESPONSE_CODE_OK,
+			     id);
 	if (r < 0) {
 		TC_PRINT("Unable to initialize packet.\n");
 		return -EINVAL;
@@ -718,42 +454,16 @@ static int server_resource_1_get(struct coap_resource *resource,
 		return -EINVAL;
 	}
 
-	if (!net_pkt_append_all(pkt, strlen(payload), (u8_t *) payload,
-				K_FOREVER)) {
+	if (coap_packet_append_payload(&response, payload,
+				       strlen(payload)) < 0) {
 		TC_PRINT("Failed to append the payload\n");
 		return -EINVAL;
 	}
 
-	resource->user_data = pkt;
+	resource->user_data = &response.fbuf;
 
 	return 0;
 }
-
-/* IPv6 + UDP frame (48 bytes) */
-static const unsigned char ipv6_valid_req[] = {
-	/* IPv6 header starts here */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x16, 0x11, 0xFF,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* UDP */
-	0xd8, 0xb4, 0x16, 0x33, 0x00, 0x16, 0x00, 0x00,
-	/* CoAP */
-};
-
-/* IPv6 + UDP frame (48 bytes) */
-static const unsigned char ipv6_not_found_req[] = {
-	/* IPv6 header starts here */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x16, 0x11, 0xFF,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* UDP */
-	0xd8, 0xb4, 0x16, 0x33, 0x00, 0x16, 0x00, 0x00,
-	/* CoAP */
-};
 
 static int test_observer_server(void)
 {
@@ -771,41 +481,19 @@ static int test_observer_server(void)
 	};
 	struct coap_packet req;
 	struct coap_option options[4] = {};
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	u8_t opt_num = ARRAY_SIZE(options) - 1;
 	int result = TC_FAIL;
 	int r;
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_append_all(pkt, sizeof(ipv6_valid_req),
-			   (u8_t *)ipv6_valid_req, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(valid_request_pdu),
-			   (u8_t *)valid_request_pdu, K_FOREVER);
-
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	r = coap_packet_parse(&req, pkt, options, opt_num);
+	r = coap_packet_parse(&req, valid_request_pdu,
+			      sizeof(valid_request_pdu), 0, options, opt_num);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
 	}
 
-	r = coap_handle_request(&req, server_resources, options, opt_num);
+	r = coap_handle_request(&req, server_resources, options, opt_num,
+				(struct sockaddr *) &dummy_addr);
 	if (r) {
 		TC_PRINT("Could not handle packet\n");
 		goto done;
@@ -819,37 +507,16 @@ static int test_observer_server(void)
 		goto done;
 	}
 
-	net_pkt_unref(pkt);
-
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_append_all(pkt, sizeof(ipv6_not_found_req),
-			   (u8_t *)ipv6_not_found_req, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(not_found_request_pdu),
-			   (u8_t *)not_found_request_pdu, K_FOREVER);
-
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	r = coap_packet_parse(&req, pkt, options, opt_num);
+	r = coap_packet_parse(&req, not_found_request_pdu,
+			      sizeof(not_found_request_pdu), 0,
+			      options, opt_num);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
 	}
 
-	r = coap_handle_request(&req, server_resources, options, opt_num);
+	r = coap_handle_request(&req, server_resources, options, opt_num,
+				(struct sockaddr *) &dummy_addr);
 	if (r != -ENOENT) {
 		TC_PRINT("There should be no handler for this resource\n");
 		goto done;
@@ -858,27 +525,12 @@ static int test_observer_server(void)
 	result = TC_PASS;
 
 done:
-	net_pkt_unref(pkt);
-
 	TC_END_RESULT(result);
 
 	return result;
 }
 
-/* IPv6 + UDP frame (48 bytes) */
-static const unsigned char ipv6_obs_client[] = {
-	/* IPv6 header starts here */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x15, 0x11, 0xFF,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* UDP */
-	0xd8, 0xb4, 0x16, 0x33, 0x00, 0x15, 0x00, 0x00,
-	/* CoAP */
-};
-
-static int resource_reply_cb(const struct coap_packet *response,
+static int resource_reply_cb(struct coap_packet *response,
 			     struct coap_reply *reply,
 			     const struct sockaddr *from)
 {
@@ -889,11 +541,10 @@ static int resource_reply_cb(const struct coap_packet *response,
 
 static int test_observer_client(void)
 {
-	struct coap_packet req, rsp;
+	struct fbuf_ctx *rsp_fbuf;
+	struct coap_packet dummy, req, rsp;
 	struct coap_reply *reply;
 	struct coap_option options[4] = {};
-	struct net_pkt *pkt, *rsp_pkt = NULL;
-	struct net_buf *frag;
 	const char token[] = "token";
 	const char * const *p;
 	u8_t opt_num = ARRAY_SIZE(options) - 1;
@@ -901,47 +552,23 @@ static int test_observer_client(void)
 	int result = TC_FAIL;
 	int r;
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	if (!net_pkt_append_all(pkt, sizeof(ipv6_obs_client),
-			       (u8_t *)ipv6_obs_client, K_FOREVER)) {
-		TC_PRINT("Unable to append IPv6 header\n");
-		goto done;
-	}
-
-	r = coap_packet_init(&req, pkt, 1, COAP_TYPE_CON,
-			     strlen(token), (u8_t *)token,
+	r = coap_packet_init(&dummy, test_buf, sizeof(test_buf), 1,
+			     COAP_TYPE_CON, strlen(token), (u8_t *)token,
 			     COAP_METHOD_GET, coap_next_id());
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
 		goto done;
 	}
 
-	req.offset = sizeof(ipv6_obs_client);
-
 	/* Enable observing the resource. */
-	r = coap_append_option_int(&req, COAP_OPTION_OBSERVE, observe);
+	r = coap_append_option_int(&dummy, COAP_OPTION_OBSERVE, observe);
 	if (r < 0) {
 		TC_PRINT("Unable to add option to request int.\n");
 		goto done;
 	}
 
 	for (p = server_resource_1_path; p && *p; p++) {
-		r = coap_packet_append_option(&req, COAP_OPTION_URI_PATH,
+		r = coap_packet_append_option(&dummy, COAP_OPTION_URI_PATH,
 					      *p, strlen(*p));
 		if (r < 0) {
 			TC_PRINT("Unable to add option to request.\n");
@@ -955,28 +582,31 @@ static int test_observer_client(void)
 		goto done;
 	}
 
-	coap_reply_init(reply, &req);
+	coap_reply_init(reply, &dummy);
 	reply->reply = resource_reply_cb;
 
 	/* Server side, not interesting for this test */
-	r = coap_packet_parse(&req, pkt, options, opt_num);
+	r = coap_packet_parse(&req, dummy.fbuf.buf, dummy.fbuf.buf_len, 0,
+			      options, opt_num);
 	if (r) {
 		TC_PRINT("Could not parse req packet\n");
 		goto done;
 	}
 
-	r = coap_handle_request(&req, server_resources, options, opt_num);
+	r = coap_handle_request(&req, server_resources, options, opt_num,
+				(struct sockaddr *) &dummy_addr);
 	if (r) {
 		TC_PRINT("Could not handle packet\n");
 		goto done;
 	}
 
 	/* We cheat, and communicate using the resource's user_data */
-	rsp_pkt = server_resources[0].user_data;
+	rsp_fbuf = server_resources[0].user_data;
 
-	/* 'rsp_pkt' contains the response now */
+	/* 'rsp_fbuf' contains the response now */
 
-	r = coap_packet_parse(&rsp, rsp_pkt, options, opt_num);
+	r = coap_packet_parse(&rsp, rsp_fbuf->buf, rsp_fbuf->buf_len, 0,
+			      options, opt_num);
 	if (r) {
 		TC_PRINT("Could not parse rsp packet\n");
 		goto done;
@@ -993,71 +623,27 @@ static int test_observer_client(void)
 	result = TC_PASS;
 
 done:
-	net_pkt_unref(pkt);
-	if (rsp_pkt) {
-		net_pkt_unref(rsp_pkt);
-	}
-
 	TC_END_RESULT(result);
 
 	return result;
 }
 
-/* IPv6 + UDP frame (48 bytes) */
-static const unsigned char ipv6_block[] = {
-	/* IPv6 header starts here */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x17, 0x11, 0xFF,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* UDP */
-	0xd8, 0xb4, 0x16, 0x33, 0x00, 0x17, 0x00, 0x00,
-	/* CoAP */
-};
-
 static int test_block_size(void)
 {
 	struct coap_block_context req_ctx, rsp_ctx;
 	struct coap_packet req;
-	struct net_pkt *pkt = NULL;
-	struct net_buf *frag;
 	const char token[] = "token";
 	u8_t payload[32] = { 0 };
 	int result = TC_FAIL;
 	int r;
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	if (!net_pkt_append_all(pkt, sizeof(ipv6_block),
-			       (u8_t *)ipv6_block, K_FOREVER)) {
-		TC_PRINT("Unable to append IPv6 header\n");
-		goto done;
-	}
-
-	r = coap_packet_init(&req, pkt, 1, COAP_TYPE_CON,
+	r = coap_packet_init(&req, test_buf, sizeof(test_buf), 1, COAP_TYPE_CON,
 			     strlen(token), (u8_t *) token,
 			     COAP_METHOD_POST, coap_next_id());
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
 		goto done;
 	}
-
-	req.offset = sizeof(ipv6_block);
 
 	coap_block_transfer_init(&req_ctx, COAP_BLOCK_32, 127);
 
@@ -1112,40 +698,13 @@ static int test_block_size(void)
 	/* Let's try the second packet */
 	coap_next_block(&req, &req_ctx);
 
-	/* Suppose that pkt was sent */
-	net_pkt_unref(pkt);
-
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	if (!net_pkt_append_all(pkt, sizeof(ipv6_block),
-			       (u8_t *)ipv6_block, K_FOREVER)) {
-		TC_PRINT("Unable to append IPv6 header\n");
-		goto done;
-	}
-
-	r = coap_packet_init(&req, pkt, 1, COAP_TYPE_CON,
+	r = coap_packet_init(&req, test_buf, sizeof(test_buf), 1, COAP_TYPE_CON,
 			     strlen(token), (u8_t *) token,
 			     COAP_METHOD_POST, coap_next_id());
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
 		goto done;
 	}
-
-	req.offset = sizeof(ipv6_block);
 
 	r = coap_append_block1_option(&req, &req_ctx);
 	if (r) {
@@ -1190,8 +749,6 @@ static int test_block_size(void)
 	result = TC_PASS;
 
 done:
-	net_pkt_unref(pkt);
-
 	TC_END_RESULT(result);
 
 	return result;
@@ -1201,44 +758,18 @@ static int test_block_2_size(void)
 {
 	struct coap_block_context req_ctx, rsp_ctx;
 	struct coap_packet req;
-	struct net_pkt *pkt = NULL;
-	struct net_buf *frag;
 	const char token[] = "token";
 	u8_t payload[32] = { 0 };
 	int result = TC_FAIL;
 	int r;
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	if (!net_pkt_append_all(pkt, sizeof(ipv6_block),
-			       (u8_t *)ipv6_block, K_FOREVER)) {
-		TC_PRINT("Unable to append IPv6 header\n");
-		goto done;
-	}
-
-	r = coap_packet_init(&req, pkt, 1, COAP_TYPE_CON,
+	r = coap_packet_init(&req, test_buf, sizeof(test_buf), 1, COAP_TYPE_CON,
 			     strlen(token), (u8_t *) token,
 			     COAP_METHOD_POST, coap_next_id());
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
 		goto done;
 	}
-
-	req.offset = sizeof(ipv6_block);
 
 	coap_block_transfer_init(&req_ctx, COAP_BLOCK_64, 255);
 
@@ -1293,40 +824,13 @@ static int test_block_2_size(void)
 	/* Let's try the second packet */
 	coap_next_block(&req, &req_ctx);
 
-	/* Suppose that pkt was sent */
-	net_pkt_unref(pkt);
-
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	if (!net_pkt_append_all(pkt, sizeof(ipv6_block),
-			       (u8_t *)ipv6_block, K_FOREVER)) {
-		TC_PRINT("Unable to append IPv6 header\n");
-		goto done;
-	}
-
-	r = coap_packet_init(&req, pkt, 1, COAP_TYPE_CON,
+	r = coap_packet_init(&req, test_buf, sizeof(test_buf), 1, COAP_TYPE_CON,
 			     strlen(token), (u8_t *) token,
 			     COAP_METHOD_POST, coap_next_id());
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
 		goto done;
 	}
-
-	req.offset = sizeof(ipv6_block);
 
 	r = coap_append_block2_option(&req, &req_ctx);
 	if (r) {
@@ -1371,8 +875,6 @@ static int test_block_2_size(void)
 	result = TC_PASS;
 
 done:
-	net_pkt_unref(pkt);
-
 	TC_END_RESULT(result);
 
 	return result;
@@ -1443,289 +945,90 @@ out:
 
 }
 
-/* IPv6 + UDP frame (48 bytes) */
-static const unsigned char ipv6_wrong_opt[] = {
-	/* IPv6 header starts here */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x12, 0x11, 0xFF,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* UDP */
-	0xd8, 0xb4, 0x16, 0x33, 0x00, 0x12, 0x00, 0x00,
-	/* CoAP */
-};
-
 static int test_parse_malformed_opt(void)
 {
 	u8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
 		       0xD0 };
 	struct coap_packet cpkt;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	int result = TC_FAIL;
 	int r;
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_append_all(pkt, sizeof(ipv6_wrong_opt),
-			   (u8_t *)ipv6_wrong_opt, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(opt), (u8_t *)opt, K_FOREVER);
-
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	r = coap_packet_parse(&cpkt, pkt, NULL, 0);
+	r = coap_packet_parse(&cpkt, opt, sizeof(opt), 0, NULL, 0);
 	if (r < 0) {
 		result = TC_PASS;
 	}
-
-done:
-	net_pkt_unref(pkt);
 
 	TC_END_RESULT(result);
 
 	return result;
 }
-
-/* IPv6 + UDP frame (48 bytes) */
-static const unsigned char ipv6_wrong_opt_len[] = {
-	/* IPv6 header starts here */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x12, 0x11, 0xFF,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* UDP */
-	0xd8, 0xb4, 0x16, 0x33, 0x00, 0x12, 0x00, 0x00,
-	/* CoAP */
-};
 
 static int test_parse_malformed_opt_len(void)
 {
 	u8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
 		       0xC1 };
 	struct coap_packet cpkt;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	int result = TC_FAIL;
 	int r;
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_append_all(pkt, sizeof(ipv6_wrong_opt_len),
-			   (u8_t *)ipv6_wrong_opt_len, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(opt), (u8_t *)opt, K_FOREVER);
-
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	r = coap_packet_parse(&cpkt, pkt, NULL, 0);
+	r = coap_packet_parse(&cpkt, opt, sizeof(opt), 0, NULL, 0);
 	if (r < 0) {
 		result = TC_PASS;
 	}
-
-done:
-	net_pkt_unref(pkt);
 
 	TC_END_RESULT(result);
 
 	return result;
 }
-
-/* IPv6 + UDP frame (48 bytes) */
-static const unsigned char ipv6_wrong_opt_ext[] = {
-	/* IPv6 header starts here */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x13, 0x11, 0xFF,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* UDP */
-	0xd8, 0xb4, 0x16, 0x33, 0x00, 0x13, 0x00, 0x00,
-	/* CoAP */
-};
 
 static int test_parse_malformed_opt_ext(void)
 {
 	u8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
 		       0xE0, 0x01 };
 	struct coap_packet cpkt;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	int result = TC_FAIL;
 	int r;
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_append_all(pkt, sizeof(ipv6_wrong_opt_ext),
-			   (u8_t *)ipv6_wrong_opt_ext, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(opt), (u8_t *)opt, K_FOREVER);
-
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	r = coap_packet_parse(&cpkt, pkt, NULL, 0);
+	r = coap_packet_parse(&cpkt, opt, sizeof(opt), 0, NULL, 0);
 	if (r < 0) {
 		result = TC_PASS;
 	}
-
-done:
-	net_pkt_unref(pkt);
 
 	TC_END_RESULT(result);
 
 	return result;
 }
-
-/* IPv6 + UDP frame (48 bytes) */
-static const unsigned char ipv6_wrong_opt_len_ext[] = {
-	/* IPv6 header starts here */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x15, 0x11, 0xFF,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* UDP */
-	0xd8, 0xb4, 0x16, 0x33, 0x00, 0x15, 0x00, 0x00,
-	/* CoAP */
-};
 
 static int test_parse_malformed_opt_len_ext(void)
 {
 	u8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
 		       0xEE, 0x01, 0x02, 0x01};
 	struct coap_packet cpkt;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	int result = TC_FAIL;
 	int r;
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_append_all(pkt, sizeof(ipv6_wrong_opt_len_ext),
-			   (u8_t *)ipv6_wrong_opt_len_ext, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(opt), (u8_t *)opt, K_FOREVER);
-
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	r = coap_packet_parse(&cpkt, pkt, NULL, 0);
+	r = coap_packet_parse(&cpkt, opt, sizeof(opt), 0, NULL, 0);
 	if (r < 0) {
 		result = TC_PASS;
 	}
-
-done:
-	net_pkt_unref(pkt);
 
 	TC_END_RESULT(result);
 
 	return result;
 }
 
-/* IPv6 + UDP frame (48 bytes) */
-static const unsigned char ipv6_malformed_marker[] = {
-	/* IPv6 header starts here */
-	0x60, 0x00, 0x00, 0x00, 0x00, 0x0E, 0x11, 0xFF,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
-	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-	/* UDP */
-	0xd8, 0xb4, 0x16, 0x33, 0x00, 0x0E, 0x00, 0x00,
-	/* CoAP */
-};
-
 /* 1 option, No payload (with payload marker) */
 static int test_parse_malformed_marker(void)
 {
 	u8_t pdu[] = { 0x40, 0x01, 0, 0, 0x40, 0xFF};
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct coap_packet cpkt;
 	int result = TC_FAIL;
 	int r;
 
-	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
-	if (!pkt) {
-		TC_PRINT("Could not get packet from pool\n");
-		goto done;
-	}
-
-	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
-	if (!frag) {
-		TC_PRINT("Could not get buffer from pool\n");
-		goto done;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_append_all(pkt, sizeof(ipv6_malformed_marker),
-			   (u8_t *)ipv6_malformed_marker, K_FOREVER);
-	net_pkt_append_all(pkt, sizeof(pdu), (u8_t *)pdu, K_FOREVER);
-
-	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	memcpy(frag->data, pdu, sizeof(pdu));
-	frag->len = NET_IPV6UDPH_LEN + sizeof(pdu);
-
-	/* an empty payload packet with payload marker is malformed */
-	r = coap_packet_parse(&cpkt, pkt, NULL, 0);
+	r = coap_packet_parse(&cpkt, pdu, sizeof(pdu), 0, NULL, 0);
 	if (r) {
 		result = TC_PASS;
 	}
-
-done:
-	net_pkt_unref(pkt);
 
 	TC_END_RESULT(result);
 

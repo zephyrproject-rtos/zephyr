@@ -12,6 +12,14 @@ zephyr_library_sources(
     lwm2m_rw_oma_tlv.c
     )
 
+# Network Layer
+zephyr_library_sources_ifdef(CONFIG_LWM2M_NET_LAYER_NET_APP
+    lwm2m_engine_net_app.c
+    )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_NET_LAYER_SOCKET
+    lwm2m_engine_socket.c
+    )
+
 # LWM2M RD Client Support
 zephyr_library_sources_ifdef(CONFIG_LWM2M_RD_CLIENT_SUPPORT
     lwm2m_rd_client.c
@@ -21,9 +29,18 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_RD_CLIENT_SUPPORT
 zephyr_library_sources_ifdef(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
     lwm2m_obj_firmware.c
     )
-zephyr_library_sources_ifdef(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
-    lwm2m_obj_firmware_pull.c
-    )
+
+if (CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
+    zephyr_library_sources(
+        lwm2m_obj_firmware_pull.c
+        )
+    zephyr_library_sources_ifdef(CONFIG_LWM2M_NET_LAYER_NET_APP
+        lwm2m_obj_firmware_pull_net_app.c
+        )
+    zephyr_library_sources_ifdef(CONFIG_LWM2M_NET_LAYER_SOCKET
+        lwm2m_obj_firmware_pull_socket.c
+        )
+endif (CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
 
 # JSON Support
 zephyr_library_sources_ifdef(CONFIG_LWM2M_RW_JSON_SUPPORT

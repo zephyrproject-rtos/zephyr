@@ -47,12 +47,14 @@
 /* stdint conversions */
 #include <zephyr/types.h>
 #include <stddef.h>
+#include <kernel.h>
+
 #include <net/net_ip.h>
-#include <net/coap.h>
-#include <net/lwm2m.h>
 #include <misc/printk.h>
 #include <misc/util.h>
-#include <kernel.h>
+
+#include <net/coap.h>
+#include <net/lwm2m.h>
 
 /* #####/###/#####/### + NULL */
 #define MAX_RESOURCE_LEN	20
@@ -258,12 +260,6 @@ struct lwm2m_output_context {
 	const struct lwm2m_writer *writer;
 	struct coap_packet *out_cpkt;
 
-	/* current write fragment in net_buf chain */
-	struct net_buf *frag;
-
-	/* current write position in net_buf chain */
-	u16_t offset;
-
 	/* private output data */
 	void *user_data;
 };
@@ -272,8 +268,7 @@ struct lwm2m_input_context {
 	const struct lwm2m_reader *reader;
 	struct coap_packet *in_cpkt;
 
-	/* current read position in net_buf chain */
-	struct net_buf *frag;
+	/* current position in buffer */
 	u16_t offset;
 
 	/* length of incoming coap/lwm2m payload */
