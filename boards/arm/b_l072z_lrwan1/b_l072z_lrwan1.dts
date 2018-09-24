@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2018 Aleksandr Makarov <aleksandr.o.makarov@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/l0/stm32l072Xz.dtsi>
+
+/ {
+	model = "STMicroelectronics B-L072Z-LRWAN1 Discovery kit";
+	compatible = "st,stm32l072z-lrwan1", "st,stm32l072";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_0: led_0 {
+			gpios = <&gpioa 5 GPIO_INT_ACTIVE_HIGH>;
+			label = "Green LED 1";
+		};
+		green_led_1: led_1 {
+			gpios = <&gpiob 5 GPIO_INT_ACTIVE_HIGH>;
+			label = "Green LED 2";
+		};
+		blue_led: led_2 {
+			gpios = <&gpiob 6 GPIO_INT_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+		red_led: led_3 {
+			gpios = <&gpiob 7 GPIO_INT_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			label = "Push button switch";
+			gpios = <&gpiob 2 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &green_led_0;
+		led1 = &green_led_1;
+		led2 = &blue_led;
+		led3 = &red_led;
+		sw0 = &user_button;
+	};
+};
+
+arduino_usart: &usart1 {};
+arduino_spi: &spi2 {};
+arduino_i2c: &i2c1 {};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&spi1 {
+	status = "ok";
+};
+
+&spi2 {
+	status = "ok";
+};
+
+&i2c1 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
