@@ -10,7 +10,7 @@
  *
  * This header contains the ARM specific kernel interface.  It is
  * included by the kernel interface architecture-abstraction header
- * (include/arc/cpu.h)
+ * (include/arm/cpu.h)
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_ARCH_H_
@@ -54,11 +54,11 @@ extern "C" {
 /**
  * @brief Declare a minimum MPU guard alignment and size
  *
- * This specifies the minimum MPU guard alignment/size for the MPU.  This
+ * This specifies the minimum MPU guard alignment/size for the MPU. This
  * will be used to denote the guard section of the stack, if it exists.
  *
  * One key note is that this guard results in extra bytes being added to
- * the stack.  APIs which give the stack ptr and stack size will take this
+ * the stack. APIs which give the stack ptr and stack size will take this
  * guard size into account.
  *
  * Stack is allocated, but initial stack pointer is at the end
@@ -121,7 +121,7 @@ extern "C" {
 		1 << (31 - __builtin_clz(x)))
 
 /**
- * @brief Declare a toplevel thread stack memory region
+ * @brief Declare a top level thread stack memory region
  *
  * This declares a region of memory suitable for use as a thread's stack.
  *
@@ -169,7 +169,7 @@ extern "C" {
 #endif
 
 /**
- * @brief Declare a toplevel array of thread stack memory regions
+ * @brief Declare a top level array of thread stack memory regions
  *
  * Create an array of equally sized stacks. See K_THREAD_STACK_DEFINE
  * definition for additional details and constraints.
