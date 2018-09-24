@@ -32,6 +32,13 @@ config HAS_DTS_SPI
 	  This option specifies that the target platform supports device tree
 	  configuration for SPI.
 
+config HAS_DTS_QDEC
+	bool
+	depends on HAS_DTS
+	help
+	  This option specifies that the target platform supports device tree
+	  configuration for QDEC.
+
 config HAS_DTS_USB
 	bool
 	depends on HAS_DTS
