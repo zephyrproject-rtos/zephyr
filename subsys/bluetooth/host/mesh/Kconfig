@@ -568,4 +568,6 @@ config BT_MESH_DEBUG_SETTINGS
 
 endif # BT_MESH_DEBUG
 
+source "subsys/bluetooth/host/mesh/models/Kconfig"
+
 endif # BT_MESH

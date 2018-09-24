@@ -1,0 +1,38 @@
+# Kconfig - Bluetooth Mesh Models configuration options
+
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig BT_MESH_MODELS
+	bool "Bluetooth Mesh models support"
+	depends on BT_MESH
+	default n
+	help
+	  This option enables build-in Mesh models.
+
+if BT_MESH_MODELS
+
+config BT_MESH_MODEL_BATTERY_SRV
+	bool "Battery server model"
+	depends on BT_MESH_MODELS
+	default n
+	help
+	  Use this option to enable build-in battery model handling.
+
+if BT_MESH_MODEL_BATTERY_SRV
+
+# TODO consider integration with battery subsys once available.
+config BT_MESH_MODEL_BATTERY_SRV_CNT
+	int "Number of Battery server models"
+	range 0 5
+	default 0
+	depends on BT_MESH_MODEL_BATTERY_SRV
+	help
+	  Declare number of required Battery server models on device.
+
+endif # BT_MESH_MODEL_BATTERY_SRV
+
+endif # BT_MESH_MODELS
