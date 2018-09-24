@@ -7,3 +7,5 @@ toolchain:
   - gnuarmemb
 ram: 32
 flash: 256
+supported:
+  - i2c
