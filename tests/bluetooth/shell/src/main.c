@@ -21,21 +21,24 @@
 #include <misc/byteorder.h>
 #include <zephyr.h>
 
-#include <shell/legacy_shell.h>
+#include <shell/shell.h>
+#include <shell/shell_uart.h>
 
 #include <gatt/hrs.h>
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 
-#define MY_SHELL_MODULE "btshell"
+SHELL_UART_DEFINE(shell_transport_uart);
+SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, '\r', 10);
 
 #if defined(CONFIG_BT_CONN)
 static bool hrs_simulate;
 
-static int cmd_hrs_simulate(int argc, char *argv[])
+static void cmd_hrs_simulate(const struct shell *shell,
+			     size_t argc, char *argv[])
 {
-	if (argc < 2) {
-		return -EINVAL;
+	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
+		return;
 	}
 
 	if (!strcmp(argv[1], "on")) {
@@ -54,32 +57,49 @@ static int cmd_hrs_simulate(int argc, char *argv[])
 		hrs_simulate = false;
 	} else {
 		printk("Incorrect value: %s\n", argv[1]);
-		return -EINVAL;
+		shell_help_print(shell, NULL, 0);
+		return;
 	}
-
-	return 0;
 }
 #endif /* CONFIG_BT_CONN */
 
 #define HELP_NONE "[none]"
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
-static const struct shell_cmd commands[] = {
+SHELL_CREATE_STATIC_SUBCMD_SET(hrs_cmds) {
 #if defined(CONFIG_BT_CONN)
-	{ "hrs-simulate", cmd_hrs_simulate,
-	  "register and simulate Heart Rate Service <value: on, off>" },
+	SHELL_CMD(hrs-simulate, NULL,
+		  "register and simulate Heart Rate Service <value: on, off>",
+		  cmd_hrs_simulate),
 #endif /* CONFIG_BT_CONN */
-	{ NULL, NULL }
+	SHELL_SUBCMD_SET_END
 };
+
+static void cmd_hrs(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		shell_help_print(shell, NULL, 0);
+		return;
+	}
+
+	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
+		return;
+	}
+
+	shell_fprintf(shell, SHELL_ERROR, "%s:%s%s\r\n", argv[0],
+		      "unknown parameter: ", argv[1]);
+}
+
+SHELL_CMD_REGISTER(hrs, &hrs_cmds, "Heart Rate Service shell commands",
+		   cmd_hrs);
 
 void main(void)
 {
 	printk("Type \"help\" for supported commands.\n");
-	printk("Before any Bluetooth commands you must \"select bt\" and then "
-	       "run \"init\".\n");
+	printk("Before any Bluetooth commands you must \"bt init\" to "
+	       "initialize the stack.\n");
 
-	SHELL_REGISTER(MY_SHELL_MODULE, commands);
-	shell_register_default_module(MY_SHELL_MODULE);
+	(void)shell_init(&uart_shell, NULL, true, true, LOG_LEVEL_INF);
 
 	while (1) {
 		k_sleep(MSEC_PER_SEC);
