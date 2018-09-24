@@ -23,6 +23,8 @@
 
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+typedef void (*custom_put_callback_t)(struct log_backend const *const backend,
+				      struct log_msg *msg, size_t counter);
 struct backend_cb {
 	size_t counter;
 	bool panic;
@@ -33,6 +35,9 @@ struct backend_cb {
 	u32_t exp_timestamps[100];
 	bool check_args;
 	u32_t exp_nargs[100];
+	bool check_strdup;
+	bool exp_strdup[100];
+	custom_put_callback_t callback;
 };
 
 static void put(struct log_backend const *const backend,
@@ -65,6 +70,16 @@ static void put(struct log_backend const *const backend,
 				      log_msg_arg_get(msg, i),
 				      "Unexpected argument in the message");
 		}
+	}
+
+	if (cb->check_strdup) {
+		zassert_false(cb->exp_strdup[cb->counter]
+				^ log_is_strdup((void *)log_msg_arg_get(msg, 0)),
+			      NULL);
+	}
+
+	if (cb->callback) {
+		cb->callback(backend, msg, cb->counter);
 	}
 
 	cb->counter++;
@@ -324,6 +339,69 @@ static void test_log_from_declared_module(void)
 		      "Unexpected amount of messages received by the backend.");
 }
 
+static void test_log_strdup_gc(void)
+{
+	char test_str[] = "test string";
+
+	log_setup(false);
+
+	BUILD_ASSERT_MSG(CONFIG_LOG_STRDUP_BUF_COUNT == 1,
+			"Test assumes certain configuration");
+
+	backend1_cb.exp_strdup[0] = true;
+	backend1_cb.exp_strdup[1] = false;
+
+	LOG_INF("%s", log_strdup(test_str));
+	LOG_INF("%s", log_strdup(test_str));
+
+	while (log_process(false)) {
+	}
+
+	zassert_equal(2, backend1_cb.counter,
+		      "Unexpected amount of messages received by the backend.");
+
+	/* Processing should free strdup buffer. */
+	backend1_cb.exp_strdup[2] = true;
+	LOG_INF("%s", log_strdup(test_str));
+
+	while (log_process(false)) {
+	}
+
+	zassert_equal(3, backend1_cb.counter,
+		      "Unexpected amount of messages received by the backend.");
+
+}
+
+static void strdup_trim_callback(struct log_backend const *const backend,
+			  struct log_msg *msg, size_t counter)
+{
+	char *str = (char *)log_msg_arg_get(msg, 0);
+	size_t len = strlen(str);
+
+	zassert_equal(len, CONFIG_LOG_STRDUP_MAX_STRING,
+			"Expected trimmed string");
+}
+
+static void test_strdup_trimming(void)
+{
+	char test_str[] = "123456789";
+
+	BUILD_ASSERT_MSG(CONFIG_LOG_STRDUP_MAX_STRING == 8,
+			"Test assumes certain configuration");
+
+	log_setup(false);
+
+	backend1_cb.callback = strdup_trim_callback;
+
+	LOG_INF("%s", log_strdup(test_str));
+
+	while (log_process(false)) {
+	}
+
+	zassert_equal(1, backend1_cb.counter,
+		      "Unexpected amount of messages received by the backend.");
+}
+
 /*test case main entry*/
 void test_main(void)
 {
@@ -332,6 +410,8 @@ void test_main(void)
 			 ztest_unit_test(test_log_overflow),
 			 ztest_unit_test(test_log_arguments),
 			 ztest_unit_test(test_log_panic),
-			 ztest_unit_test(test_log_from_declared_module));
+			 ztest_unit_test(test_log_from_declared_module),
+			 ztest_unit_test(test_log_strdup_gc),
+			 ztest_unit_test(test_strdup_trimming));
 	ztest_run_test_suite(test_log_list);
 }
