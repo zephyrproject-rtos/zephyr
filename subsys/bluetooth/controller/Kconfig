@@ -14,7 +14,7 @@ config BT_CTLR
 
 if BT_CTLR
 
-choice
+choice BT_LL_CHOICE
 	prompt "Bluetooth Link Layer Selection"
 	default BT_LL_SW
 	help
