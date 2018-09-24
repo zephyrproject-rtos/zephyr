@@ -12,6 +12,5 @@ config SOC_MPS2_AN385
 	bool "ARM Cortex-M3 SMM on V2M-MPS2 (Application Note AN385)"
 	select CPU_CORTEX_M3
 	select CPU_HAS_ARM_MPU
-	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 
 endchoice
