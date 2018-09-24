@@ -6,13 +6,13 @@
 #include <zephyr.h>
 #include <logging/log.h>
 
-#define LOG_MODULE_NAME sample_module
+#define MODULE_NAME sample_module
 #define LOG_LEVEL CONFIG_SAMPLE_MODULE_LOG_LEVEL
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(MODULE_NAME);
 
 const char *sample_module_name_get(void)
 {
-	return STRINGIFY(LOG_MODULE_NAME);
+	return STRINGIFY(MODULE_NAME);
 }
 
 void sample_module_func(void)

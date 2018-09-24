@@ -330,7 +330,15 @@ int log_printk(const char *fmt, va_list ap);
 		()						\
 		)
 
-#define _LOG_MODULE_DECLARE(_name, _level)				     \
+#define _LOG_RUNTIME_MODULE_IN_HEADER_DECLARE(_name)			\
+	_LOG_EVAL(							\
+		CONFIG_LOG_RUNTIME_FILTERING,				\
+		(; extern struct log_source_dynamic_data		\
+			LOG_ITEM_DYNAMIC_DATA(LOG_MODULE_NAME);),	\
+		()							\
+		)
+
+#define _LOG_MODULE_DECLARE(_name)					     \
 	extern const struct log_source_const_data LOG_ITEM_CONST_DATA(_name) \
 	_LOG_RUNTIME_MODULE_DECLARE(_name);				     \
 	static inline const struct log_source_const_data *		     \
@@ -338,6 +346,11 @@ int log_printk(const char *fmt, va_list ap);
 	{								     \
 		return &LOG_ITEM_CONST_DATA(_name);			     \
 	}
+
+#define _LOG_MODULE_IN_HEADER_DECLARE()					\
+	extern const struct log_source_const_data			\
+				LOG_ITEM_CONST_DATA(LOG_MODULE_NAME)	\
+	_LOG_RUNTIME_MODULE_IN_HEADER_DECLARE(LOG_MODULE_NAME)
 
 /**
  * @brief Macro for declaring a log module (not registering it).
@@ -356,12 +369,32 @@ int log_printk(const char *fmt, va_list ap);
  *       this macro has no effect.
  * @see LOG_MODULE_REGISTER
  */
-#define LOG_MODULE_DECLARE(log_module_name)				\
-	_LOG_EVAL(							\
-		_LOG_LEVEL(),						\
-		(_LOG_MODULE_DECLARE(log_module_name, _LOG_LEVEL())),	\
-		()							\
-		)							\
+#define LOG_MODULE_DECLARE(log_module_name)			\
+	_LOG_EVAL(						\
+		_LOG_LEVEL(),					\
+		(_LOG_MODULE_DECLARE(log_module_name)),		\
+		()						\
+		)						\
+
+
+/**
+ * @brief Macro for declaring a log module (not registering it) in the header.
+ *
+ * @note In order to use logging in a header, macro must be preceded by
+ * definition of LOG_IN_HEADER (\#define LOG_IN_HEADER 1). LOG_IN_HEADER must be
+ * undefined at the end of the header (\#undef LOG_IN_HEADER).
+ *
+ * @note The module's state is declared in the header only if LOG_LEVEL for the
+ *       current source file is non-zero or it is not defined and
+ *       CONFIG_LOG_DEFAULT_LOG_LEVEL is non-zero.  In other cases,
+ *       this macro has no effect.
+ * @see LOG_MODULE_REGISTER
+ */
+#define LOG_MODULE_IN_HEADER_DECLARE()				\
+		_LOG_LEVEL(),					\
+		(_LOG_MODULE_IN_HEADER_DECLARE()),		\
+		()						\
+		)						\
 
 /**
  * @}

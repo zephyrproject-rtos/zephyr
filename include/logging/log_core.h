@@ -47,8 +47,8 @@ extern "C" {
 /**
  * @brief Macro for conditional code generation if provided log level allows.
  *
- * Macro behaves similarly to standard #if #else #endif clause. The difference is
- * that it is evaluated when used and not when header file is included.
+ * Macro behaves similarly to standard #if #else #endif clause. The difference
+ * is that it is evaluated when used and not when header file is included.
  *
  * @param _eval_level Evaluated level. If level evaluates to one of existing log
  *		      log level (1-4) then macro evaluates to _iftrue.
@@ -95,22 +95,50 @@ extern "C" {
  * @def LOG_CURRENT_MODULE_ID
  * @brief Macro for getting ID of current module.
  */
-#define LOG_CURRENT_MODULE_ID()						\
+
+#define LOG_CURRENT_MODULE_ID_DEFINE()					\
+	_LOG_EVAL(							\
+	  _LOG_LEVEL(),							\
+	  (log_const_source_id(&LOG_ITEM_CONST_DATA(LOG_MODULE_NAME))),	\
+	  (0)								\
+	)
+
+#define LOG_CURRENT_MODULE_ID_FUNC()					\
 	_LOG_EVAL(							\
 	  _LOG_LEVEL(),							\
 	  (log_const_source_id(__log_current_const_data_get())),	\
 	  (0)								\
 	)
 
+#define LOG_CURRENT_MODULE_ID() \
+	_LOG_EVAL(\
+	  IS_ENABLED(LOG_IN_HEADER),\
+	  (LOG_CURRENT_MODULE_ID_DEFINE()),\
+	  (LOG_CURRENT_MODULE_ID_FUNC())\
+	)
 /**
  * @def LOG_CURRENT_DYNAMIC_DATA_ADDR
  * @brief Macro for getting address of dynamic structure of current module.
  */
-#define LOG_CURRENT_DYNAMIC_DATA_ADDR()			\
+#define LOG_CURRENT_DYNAMIC_DATA_ADDR_DEFINE()		\
+	_LOG_EVAL(					\
+	  _LOG_LEVEL(),					\
+	  (&LOG_ITEM_DYNAMIC_DATA(LOG_MODULE_NAME)),	\
+	  ((struct log_source_dynamic_data *)0)		\
+	)
+
+#define LOG_CURRENT_DYNAMIC_DATA_ADDR_FUNC()		\
 	_LOG_EVAL(					\
 	  _LOG_LEVEL(),					\
 	  (__log_current_dynamic_data_get()),		\
 	  ((struct log_source_dynamic_data *)0)		\
+	)
+
+#define LOG_CURRENT_DYNAMIC_DATA_ADDR() \
+	_LOG_EVAL(\
+	  IS_ENABLED(LOG_IN_HEADER),\
+	  (LOG_CURRENT_DYNAMIC_DATA_ADDR_DEFINE()),\
+	  (LOG_CURRENT_DYNAMIC_DATA_ADDR_FUNC())\
 	)
 
 /** @brief Macro for getting ID of the element of the section.
