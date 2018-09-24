@@ -562,7 +562,7 @@ void _k_thread_single_abort(struct k_thread *thread)
 	sys_trace_thread_abort(thread);
 
 #ifdef CONFIG_USERSPACE
-	/* Clear initailized state so that this thread object may be re-used
+	/* Clear initialized state so that this thread object may be re-used
 	 * and triggers errors if API calls are made on it from user threads
 	 */
 	_k_object_uninit(thread->stack_obj);
