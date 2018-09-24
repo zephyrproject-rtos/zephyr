@@ -349,6 +349,44 @@ config BT_MAX_PAIRED
 	  Maximum number of paired Bluetooth devices. The minimum (and
 	  default) number is 1.
 
+config BT_GAP_PERIPHERAL_PREF_PARAMS
+	bool "Configure peripheral preferred connection parameters"
+	default y
+	depends on BT_PERIPHERAL
+	help
+	  This allows to configure periphral preferred connection parameters.
+	  Enabling this option results in adding PPCP characteristic in GAP
+	  and sending request for connection parameters udpate after GAP
+	  recommended 5 seconds of connection as peripheral. If disabled it is
+	  up to application to set expected connection parameters.
+
+if BT_GAP_PERIPHERAL_PREF_PARAMS
+config BT_PERIPHERAL_PREF_MIN_INT
+	int "Peripheral preferred minimum connection interval in 1.25ms units"
+	default 24
+	range 6 3200
+
+config BT_PERIPHERAL_PREF_MAX_INT
+	int "Peripheral preferred maximum connection interval in 1.25ms units"
+	default 40
+	range 6 3200
+
+config BT_PERIPHERAL_PREF_SLAVE_LATENCY
+	int "Peripheral preferred slave latency in Connection Intervals"
+	default 0
+	range 0 499
+
+config BT_PERIPHERAL_PREF_TIMEOUT
+	int "Peripheral preferred supervision timeout in 10ms units"
+	default 42
+	range 10 3200
+	help
+	  It is up to user to provide valid timeout which pass required minimum
+	  value: in milliseconds it shall be larger than
+	  "(1+ Conn_Latency) * Conn_Interval_Max * 2"
+	  where Conn_Interval_Max is given in milliseconds.
+endif # BT_GAP_PERIPHERAL_PREF_PARAMS
+
 endif # BT_CONN
 
 config BT_SCAN_WITH_IDENTITY
