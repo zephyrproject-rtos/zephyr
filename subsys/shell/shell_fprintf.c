@@ -32,7 +32,7 @@ static int out_func(int c, void *ctx)
 void shell_fprintf_fmt(const struct shell_fprintf *sh_fprintf,
 		       const char *fmt, va_list args)
 {
-#ifndef CONFIG_NEWLIB_LIBC
+#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX)
 	(void)_prf(out_func, (void *)sh_fprintf, (char *)fmt, args);
 #else
 	_vprintk(out_func, (void *)sh_fprintf, fmt, args);
