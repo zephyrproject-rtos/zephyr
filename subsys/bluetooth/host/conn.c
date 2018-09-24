@@ -230,12 +230,32 @@ static void conn_le_update_timeout(struct k_work *work)
 		return;
 	}
 
-	param = BT_LE_CONN_PARAM(conn->le.interval_min,
-				 conn->le.interval_max,
-				 conn->le.latency,
-				 conn->le.timeout);
+#if defined (CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
+	/* if application set own params use those, otherwise use defaults */
+	if (atomic_test_and_clear_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET)) {
+		param = BT_LE_CONN_PARAM(conn->le.interval_min,
+					 conn->le.interval_max,
+					 conn->le.latency,
+					 conn->le.timeout);
+	} else {
+		param = BT_LE_CONN_PARAM(CONFIG_BT_PERIPHERAL_PREF_MIN_INT,
+					 CONFIG_BT_PERIPHERAL_PREF_MAX_INT,
+					 CONFIG_BT_PERIPHERAL_PREF_SLAVE_LATENCY,
+					 CONFIG_BT_PERIPHERAL_PREF_TIMEOUT);
+	}
 
 	send_conn_le_param_update(conn, param);
+#else
+	/* update only if application set own params */
+	if (atomic_test_and_clear_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET)) {
+		param = BT_LE_CONN_PARAM(conn->le.interval_min,
+					 conn->le.interval_max,
+					 conn->le.latency,
+					 conn->le.timeout);
+
+		send_conn_le_param_update(conn, param);
+	}
+#endif
 
 	atomic_set_bit(conn->flags, BT_CONN_SLAVE_PARAM_UPDATE);
 }
@@ -1796,6 +1816,7 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 		conn->le.interval_max = param->interval_max;
 		conn->le.latency = param->latency;
 		conn->le.timeout = param->timeout;
+		atomic_set_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET);
 	}
 
 	return 0;
