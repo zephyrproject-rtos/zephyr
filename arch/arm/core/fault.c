@@ -724,6 +724,7 @@ void _Fault(NANO_ESF *esf, u32_t exc_return)
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 _exit_fatal:
+	reason = _NANO_ERR_HW_EXCEPTION;
 #endif
 	_NanoFatalErrorHandler(reason, esf);
 }
