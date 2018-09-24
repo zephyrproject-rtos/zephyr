@@ -8,7 +8,8 @@
 
 config BT_SHELL
 	bool "Enable Bluetooth shell"
-	select CONSOLE_SHELL
+	select SERIAL
+	select SHELL
 	help
 	  Activate shell module that provides Bluetooth commands to the
 	  console.
