@@ -149,7 +149,7 @@ def analyze_fn(match_group):
 
     invocation = "%s(%s)" % (macro, argslist)
 
-    handler = "_handler_" + func_name
+    handler = "hdlr_" + func_name
 
     # Entry in _k_syscall_table
     table_entry = "[%s] = %s" % (sys_id, handler)
