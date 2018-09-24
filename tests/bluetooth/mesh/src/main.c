@@ -14,6 +14,7 @@
 #include "board.h"
 
 #define MAX_FAULT 24
+#define BATTERY_MAIN_ID 0
 
 static bool has_reg_fault = true;
 
@@ -119,6 +120,7 @@ BT_MESH_HEALTH_PUB_DEFINE(health_pub, MAX_FAULT);
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
+	BT_MESH_MODEL_GEN_BATTERY_SRV(BATTERY_MAIN_ID),
 };
 
 static int vnd_publish(struct bt_mesh_model *mod)
@@ -188,12 +190,31 @@ static const struct bt_mesh_prov prov = {
 	.reset = prov_reset,
 };
 
+static void configure_models(void)
+{
+	u8_t flags = BT_MESH_MODEL_BATTERY_SRV_PRES_PRES_NOREMOV |
+		     BT_MESH_MODEL_BATTERY_SRV_IND_GOOD |
+		     BT_MESH_MODEL_BATTERY_SRV_CHAR_NOT_CHARGING |
+		     BT_MESH_MODEL_BATTERY_SRV_SVC_NOT_REQ;
+
+	bt_mesh_model_gen_battery_srv_state_update(BATTERY_MAIN_ID, 100, 0x0123,
+						   0x0456, flags);
+}
+
 static void bt_ready(int err)
 {
+	int status;
+
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
+
+	status = bt_mesh_model_gen_battery_srv_init(BATTERY_MAIN_ID);
+	if (status)
+		return;
+
+	configure_models();
 
 	printk("Bluetooth initialized\n");
 
