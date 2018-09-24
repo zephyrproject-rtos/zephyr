@@ -19,6 +19,7 @@
 		gpio-4= &gpio4;
 		gpio-5= &gpio5;
 		uart-1 = &uart1;
+		uart-3 = &uart3;
 		led0 = &green_led;
 		sw0 = &user_button;
 		spi-3 = &spi3;
@@ -34,6 +35,9 @@
 #endif
 		zephyr,sram = &dtcm0;
 		zephyr,console = &uart1;
+#ifdef CONFIG_BT
+		zephyr,bt-uart = &uart3;
+#endif
 	};
 
 	sdram0: memory@80000000 {
@@ -85,6 +89,13 @@
 	status = "ok";
 	current-speed = <115200>;
 };
+
+#ifdef CONFIG_BT
+&uart3 {
+	status = "ok";
+	current-speed = <115200>;
+};
+#endif
 
 &spi3 {
 	status = "ok";

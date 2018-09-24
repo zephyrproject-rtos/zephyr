@@ -41,6 +41,9 @@ if UART_MCUX_LPUART
 config UART_MCUX_LPUART_1
 	def_bool y
 
+config UART_MCUX_LPUART_3
+	def_bool y if BT_UART
+
 endif # UART_MCUX_LPUART
 
 if CODE_HYPERFLASH || CODE_QSPI
