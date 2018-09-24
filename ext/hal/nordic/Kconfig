@@ -9,7 +9,7 @@ config HAS_NORDIC_DRIVERS
 
 config HAS_NRFX
 	bool
-	
+
 config NRFX_ADC
 	bool
 
@@ -21,6 +21,9 @@ config NRFX_NFCT
 	select NRFX_TIMER4
 
 config NRFX_PWM
+	bool
+
+config NRFX_QDEC
 	bool
 
 config NRFX_SAADC

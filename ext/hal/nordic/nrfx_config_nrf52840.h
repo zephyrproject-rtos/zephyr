@@ -1207,8 +1207,8 @@
 
 // <e> NRFX_QDEC_ENABLED - nrfx_qdec - QDEC peripheral driver
 //==========================================================
-#ifndef NRFX_QDEC_ENABLED
-#define NRFX_QDEC_ENABLED 0
+#ifdef CONFIG_NRFX_QDEC
+#define NRFX_QDEC_ENABLED 1
 #endif
 // <o> NRFX_QDEC_CONFIG_REPORTPER  - Report period
 
