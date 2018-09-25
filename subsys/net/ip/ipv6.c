@@ -452,6 +452,12 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 		goto drop;
 	}
 
+	/* Check extension headers */
+	net_pkt_set_next_hdr(pkt, &hdr->nexthdr);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_HDR(pkt)->hop_limit);
+
 	if (!net_is_my_ipv6_addr(&hdr->dst) &&
 	    !net_is_my_ipv6_maddr(&hdr->dst) &&
 	    !net_is_ipv6_addr_mcast(&hdr->dst) &&
@@ -485,12 +491,6 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 		net_stats_update_ipv6_drop(net_pkt_iface(pkt));
 		goto drop;
 	}
-
-	/* Check extension headers */
-	net_pkt_set_next_hdr(pkt, &hdr->nexthdr);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_HDR(pkt)->hop_limit);
 
 	/* Fast path for main upper layer protocols. The handling of extension
 	 * headers can be slow so do this checking here. There cannot
