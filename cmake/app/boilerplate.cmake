@@ -263,11 +263,12 @@ if(GIT_FOUND)
     WORKING_DIRECTORY ${ZEPHYR_BASE}
     OUTPUT_VARIABLE BUILD_VERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_STRIP_TRAILING_WHITESPACE
     ERROR_VARIABLE stderr
     RESULT_VARIABLE return_code
     )
   if(return_code)
-    message(FATAL_ERROR "${stderr}")
+    message(STATUS "git describe failed: ${stderr}; ${KERNEL_VERSION_STRING} will be used instead")
   elseif(CMAKE_VERBOSE_MAKEFILE)
     message(STATUS "git describe stderr: ${stderr}")
   endif()
