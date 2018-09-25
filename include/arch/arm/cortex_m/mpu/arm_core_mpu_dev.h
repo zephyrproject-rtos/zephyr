@@ -14,20 +14,22 @@ extern "C" {
 
 /*
  * The defines below represent the region types. The MPU driver is responsible
- * to allocate the region accordingly to the type and set the correct
+ * for allocating the region according to the type and for setting the correct
  * attributes.
  *
  * Each MPU is different and has a different set of attributes, hence instead
- * of having the attributes at this level the arm_mpu_core defines the intent
+ * of having the attributes at this level, the arm_mpu_core defines the intent
  * types.
+ *
  * An intent type (i.e. THREAD_STACK_GUARD) can correspond to a different set
- * of operations and attributes for each MPU and it is responsibility of the
- * MPU driver to select the correct ones.
+ * of operations and attributes for each MPU and it is the responsibility of
+ * the MPU driver to select the correct ones.
  *
  * The intent based configuration can't fail hence at this level no error
  * is returned by the configuration functions.
  * If one of the operations corresponding to an intent fails the error has to
- * be managed inside the MPU driver and not escalated.
+ * be managed inside the MPU driver and to not be escalated.
+ *
  */
 /* Thread Stack Region Intent Type */
 enum {
