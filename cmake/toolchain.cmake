@@ -8,6 +8,16 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
+if(NOT TOOLCHAIN_ROOT)
+  if(DEFINED ENV{TOOLCHAIN_ROOT})
+    # Support for out-of-tree toolchain
+    set(TOOLCHAIN_ROOT $ENV{TOOLCHAIN_ROOT})
+  else()
+    # Default toolchain cmake file
+    set(TOOLCHAIN_ROOT ${ZEPHYR_BASE})
+  endif()
+endif()
+
 # Don't inherit compiler flags from the environment
 foreach(var CFLAGS CXXFLAGS)
   if(DEFINED ENV{${var}})
@@ -39,6 +49,10 @@ if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "gccarmemb")
   set(ZEPHYR_TOOLCHAIN_VARIANT "gnuarmemb")
 endif()
 
+
+set(TOOLCHAIN_ROOT ${TOOLCHAIN_ROOT} CACHE STRING "Zephyr toolchain root")
+assert(TOOLCHAIN_ROOT "Zephyr toolchain root path invalid: please set the TOOLCHAIN_ROOT-variable")
+
 set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT} CACHE STRING "Zephyr toolchain variant")
 assert(ZEPHYR_TOOLCHAIN_VARIANT "Zephyr toolchain variant invalid: please set the ZEPHYR_TOOLCHAIN_VARIANT-variable")
 
@@ -49,7 +63,7 @@ endif()
 
 # Configure the toolchain based on what SDK/toolchain is in use.
 if(NOT (COMPILER STREQUAL "host-gcc"))
-  include(${ZEPHYR_BASE}/cmake/toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}.cmake)
+  include(${TOOLCHAIN_ROOT}/cmake/toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}.cmake)
 endif()
 
 # Configure the toolchain based on what toolchain technology is used
