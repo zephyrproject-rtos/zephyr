@@ -536,6 +536,8 @@ int _k_object_validate(struct _k_object *ko, enum k_objects otype,
 		if (unlikely(ko->flags & K_OBJ_FLAG_INITIALIZED)) {
 			return -EADDRINUSE;
 		}
+	} else {
+		/* _OBJ_INIT_ANY */
 	}
 
 	return 0;

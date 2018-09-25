@@ -151,6 +151,8 @@ static int mbox_message_match(struct k_mbox_msg *tx_msg,
 			rx_msg->tx_block.data = NULL;
 		} else if (rx_msg->tx_block.data != NULL) {
 			rx_msg->tx_data = rx_msg->tx_block.data;
+		} else {
+			/* no data */
 		}
 
 		/* update syncing thread field for receiver only */
