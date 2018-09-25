@@ -1,0 +1,4 @@
+tests:
+  test:
+    tags: power
+	platform_exclude: zedboard_pulpino
