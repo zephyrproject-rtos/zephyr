@@ -11,6 +11,8 @@
  */
 #include <logging/log.h>
 
+LOG_LEVEL_SET(LOG_LEVEL_INF);
+
 void sample_instance_call(struct sample_instance *inst)
 {
 	u8_t data[4] = { 1, 2, 3, 4 };
