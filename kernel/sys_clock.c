@@ -237,7 +237,7 @@ static inline void handle_timeouts(s32_t ticks)
 
 			timeout->delta_ticks_from_prev = _EXPIRED;
 
-		} else if (ticks <= 0) {
+		} else {
 			break;
 		}
 
