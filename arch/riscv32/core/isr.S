@@ -30,10 +30,6 @@ GTEXT(z_sys_trace_isr_enter)
 GTEXT(_offload_routine)
 #endif
 
-#ifdef CONFIG_TIMESLICING
-GTEXT(_update_time_slice_before_swap)
-#endif
-
 /* exports */
 GTEXT(__irq_wrapper)
 
@@ -296,9 +292,6 @@ on_thread_stack:
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 reschedule:
-#if CONFIG_TIMESLICING
-	call _update_time_slice_before_swap
-#endif
 #if CONFIG_TRACING
 	call z_sys_trace_thread_switched_in
 #endif

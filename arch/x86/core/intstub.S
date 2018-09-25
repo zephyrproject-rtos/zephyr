@@ -30,9 +30,6 @@
 	/* externs */
 
 	GTEXT(__swap)
-#if defined(CONFIG_TIMESLICING)
-	GTEXT(_update_time_slice_before_swap)
-#endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	GTEXT(_sys_power_save_idle_exit)
@@ -273,9 +270,6 @@ alreadyOnIntStack:
 
 	popl	%esp	/* switch back to outgoing thread's stack */
 
-#if defined(CONFIG_TIMESLICING)
-	call	_update_time_slice_before_swap
-#endif
 #ifdef CONFIG_STACK_SENTINEL
 	call	_check_stack_sentinel
 #endif

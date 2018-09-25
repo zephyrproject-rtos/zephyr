@@ -48,10 +48,7 @@ void *_get_next_switch_handle(void *interrupted);
 struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
 					      struct k_thread *from);
 void idle(void *a, void *b, void *c);
-
-#ifdef CONFIG_TIMESLICING
-void z_reset_timeslice(void);
-#endif
+void z_time_slice(int ticks);
 
 /* find which one is the next thread to run */
 /* must be called with interrupts locked */
@@ -227,13 +224,7 @@ static inline void _ready_thread(struct k_thread *thread)
 		_add_thread_to_ready_q(thread);
 	}
 
-#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_SMP) && \
-    defined(CONFIG_TIMESLICING)
-	z_reset_timeslice();
-#endif
-
 	sys_trace_thread_ready(thread);
-
 }
 
 static inline void _ready_one_thread(_wait_q_t *wq)

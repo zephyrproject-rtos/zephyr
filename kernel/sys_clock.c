@@ -242,49 +242,6 @@ static inline void handle_timeouts(s32_t ticks)
 	#define handle_timeouts(ticks) do { } while (false)
 #endif
 
-#ifdef CONFIG_TIMESLICING
-s32_t _time_slice_elapsed;
-s32_t _time_slice_duration;
-int  _time_slice_prio_ceiling;
-
-/*
- * Always called from interrupt level, and always only from the system clock
- * interrupt, thus:
- * - _current does not have to be protected, since it only changes at thread
- *   level or when exiting a non-nested interrupt
- * - _time_slice_elapsed does not have to be protected, since it can only change
- *   in this function and at thread level
- * - _time_slice_duration does not have to be protected, since it can only
- *   change at thread level
- */
-static void handle_time_slicing(s32_t ticks)
-{
-#ifdef CONFIG_TICKLESS_KERNEL
-	next_ts = 0;
-#endif
-	if (!_is_thread_time_slicing(_current)) {
-		return;
-	}
-
-	_time_slice_elapsed += ticks;
-	if (_time_slice_elapsed >= _time_slice_duration) {
-
-		unsigned int key;
-
-		_time_slice_elapsed = 0;
-
-		key = irq_lock();
-		_move_thread_to_end_of_prio_q(_current);
-		irq_unlock(key);
-	}
-#ifdef CONFIG_TICKLESS_KERNEL
-	next_ts = _time_slice_duration - _time_slice_elapsed;
-#endif
-}
-#else
-#define handle_time_slicing(ticks) do { } while (false)
-#endif
-
 /**
  *
  * @brief Announce ticks to the kernel
@@ -319,8 +276,9 @@ void z_clock_announce(s32_t ticks)
 #endif
 	handle_timeouts(ticks);
 
-	/* time slicing is basically handled like just yet another timeout */
-	handle_time_slicing(ticks);
+#ifdef CONFIG_TIMESLICING
+	z_time_slice(ticks);
+#endif
 
 #ifdef CONFIG_TICKLESS_KERNEL
 	u32_t next_to = _get_next_timeout_expiry();
