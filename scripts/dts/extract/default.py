@@ -37,6 +37,10 @@ class DTDefault(DTDirective):
         # generate EDTS
         edts_insert_device_property(node_address, prop, prop_values)
 
+        if def_label is None:
+            # No #define generation to be done, exit now
+            return
+
         # generate defines
         prop_def = {}
         prop_alias = {}

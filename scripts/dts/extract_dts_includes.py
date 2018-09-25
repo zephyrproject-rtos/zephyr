@@ -276,6 +276,10 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
     else:
         y_node = y_sub
 
+    # Extract status
+    if 'status' in y_node['properties'].keys():
+        default.extract(sub_node_address, yaml, 'status', None)
+
     # do extra property definition based on heuristics
     heuristics.extract(sub_node_address, yaml)
 
