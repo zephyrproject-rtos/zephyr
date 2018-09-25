@@ -67,6 +67,34 @@ setup is needed).
    on the Internet.  Using files on archive.ubuntu.com is not recommended for
    large-scale testing.
 
+Enabling TLS support
+=================================
+
+Enable TLS support in the sample by building the project with the
+``overlay-tls.conf`` overlay file enabled, for example, using these commands:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/big_http_download
+   :board: qemu_x86
+   :conf: "prj.conf overlay-tls.conf"
+   :goals: build
+   :compact:
+
+An alternative way is to specify ``-DOVERLAY_CONFIG=overlay-tls.conf`` when
+running cmake.
+
+The TLS version of this sample downloads a file from
+https://www.7-zip.org/a/7z1805.exe (1.1MB). The certificate
+used by the sample is in the sample's ``src`` directory and is configured
+to access the default website configured in the sample for TLS
+communication (https://www.7-zip.org). To access a different
+web page over TLS, you'll need to provide a different certificate
+to authenticate to that server.
+
+Note, that TLS support in the sample depends on non-posix, TLS socket
+functionality. Therefore, it is only posibly to run TLS in this sample
+on Zephyr.
+
 Running application on POSIX Host
 =================================
 
