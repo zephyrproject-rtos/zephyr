@@ -17,10 +17,10 @@
 #include <ztest.h>
 #include <logging/log_backend.h>
 #include <logging/log_ctrl.h>
+#include <logging/log.h>
+#include "test_module.h"
 
 #define LOG_MODULE_NAME test
-#include "logging/log.h"
-
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 typedef void (*custom_put_callback_t)(struct log_backend const *const backend,
@@ -152,6 +152,8 @@ static void log_setup(bool backend2_enable)
 		memset(&backend2_cb, 0, sizeof(backend2_cb));
 
 		log_backend_enable(&backend2, &backend2_cb, LOG_LEVEL_DBG);
+	} else {
+		log_backend_disable(&backend2);
 	}
 
 	test_source_id = log_source_id_get(STRINGIFY(LOG_MODULE_NAME));
@@ -314,11 +316,10 @@ static void test_log_panic(void)
 		      "Unexpected amount of messages received by the backend.");
 }
 
-/* extern function comes from the file which is part of test module. It is
+/* Function comes from the file which is part of test module. It is
  * expected that logs coming from it will have same source_id as current
  * module (this file).
  */
-extern void test_func(void);
 static void test_log_from_declared_module(void)
 {
 	log_setup(false);
@@ -326,13 +327,15 @@ static void test_log_from_declared_module(void)
 	/* Setup log backend to validate source_id of the message. */
 	backend1_cb.check_id = true;
 	backend1_cb.exp_id[0] = LOG_CURRENT_MODULE_ID();
+	backend1_cb.exp_id[1] = LOG_CURRENT_MODULE_ID();
 
 	test_func();
+	test_inline_func();
 
 	while (log_process(false)) {
 	}
 
-	zassert_equal(1, backend1_cb.counter,
+	zassert_equal(2, backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 }
 
