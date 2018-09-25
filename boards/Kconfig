@@ -27,9 +27,5 @@ osource "$(BOARD_DIR)/Kconfig"
 endmenu
 
 menu "Shields"
-source "boards/shields/Kconfig"
-endmenu
-
-menu "Shields"
 source "boards/shields/*/Kconfig.shield"
 endmenu
