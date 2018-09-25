@@ -11,6 +11,10 @@ zephyr_library_sources_ifdef(
   bredr.c
   )
 zephyr_library_sources_ifdef(
+  CONFIG_BT_RFCOMM
+  rfcomm.c
+  )
+zephyr_library_sources_ifdef(
   CONFIG_BT_CTLR
   ll.c
   ticker.c
