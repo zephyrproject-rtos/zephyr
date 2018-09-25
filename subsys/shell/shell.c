@@ -12,7 +12,6 @@
 #include "shell_ops.h"
 #include "shell_wildcard.h"
 #include "shell_vt100.h"
-#include <assert.h>
 #include <atomic.h>
 
 /* 2 == 1 char for cmd + 1 char for '\0' */
@@ -98,7 +97,7 @@ static void shell_cmd_buffer_clear(const struct shell *shell)
 static void shell_write(const struct shell *shell, const void *data,
 			size_t length)
 {
-	assert(shell && data);
+	__ASSERT_NO_MSG(shell && data);
 
 	size_t offset = 0;
 	size_t tmp_cnt;
@@ -108,8 +107,8 @@ static void shell_write(const struct shell *shell, const void *data,
 				&((const u8_t *) data)[offset], length,
 				&tmp_cnt);
 		(void)err;
-		assert(err == 0);
-		assert(length >= tmp_cnt);
+		__ASSERT_NO_MSG(err == 0);
+		__ASSERT_NO_MSG(length >= tmp_cnt);
 		offset += tmp_cnt;
 		length -= tmp_cnt;
 		if (tmp_cnt == 0 &&
@@ -147,8 +146,8 @@ static void cmd_get(const struct shell_cmd_entry *command, size_t lvl,
 		    size_t idx, const struct shell_static_entry **entry,
 		    struct shell_static_entry *d_entry)
 {
-	assert(entry != NULL);
-	assert(d_entry != NULL);
+	__ASSERT_NO_MSG(entry != NULL);
+	__ASSERT_NO_MSG(d_entry != NULL);
 
 	if (lvl == SHELL_CMD_ROOT_LVL) {
 		if (idx < shell_root_cmd_count()) {
@@ -975,7 +974,7 @@ static void shell_execute(const struct shell *shell)
 	}
 
 	/* Root command shall be always static. */
-	assert(p_cmd->is_dynamic == false);
+	__ASSERT_NO_MSG(p_cmd->is_dynamic == false);
 
 	/* checking if root command has a handler */
 	shell->ctx->active_cmd = *p_cmd->u.entry;
@@ -1143,9 +1142,10 @@ static void shell_log_process(const struct shell *shell)
 static int shell_instance_init(const struct shell *shell, const void *p_config,
 			       bool use_colors)
 {
-	assert(shell);
-	assert(shell->ctx && shell->iface && shell->prompt);
-	assert((shell->newline_char == '\n') || (shell->newline_char == '\r'));
+	__ASSERT_NO_MSG(shell);
+	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
+	__ASSERT_NO_MSG((shell->newline_char == '\n') ||
+			(shell->newline_char == '\r'));
 
 	int err;
 
@@ -1241,7 +1241,7 @@ void shell_thread(void *shell_handle, void *dummy1, void *dummy2)
 int shell_init(const struct shell *shell, const void *transport_config,
 	       bool use_colors, bool log_backend, u32_t init_log_level)
 {
-	assert(shell);
+	__ASSERT_NO_MSG(shell);
 	int err;
 
 	err = shell_instance_init(shell, transport_config, use_colors);
@@ -1266,8 +1266,8 @@ int shell_init(const struct shell *shell, const void *transport_config,
 
 static int shell_instance_uninit(const struct shell *shell)
 {
-	assert(shell);
-	assert(shell->ctx && shell->iface && shell->prompt);
+	__ASSERT_NO_MSG(shell);
+	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
 	int err;
 
 	if (flag_processing_is_set(shell)) {
@@ -1305,8 +1305,8 @@ int shell_uninit(const struct shell *shell)
 
 int shell_start(const struct shell *shell)
 {
-	assert(shell);
-	assert(shell->ctx && shell->iface && shell->prompt);
+	__ASSERT_NO_MSG(shell);
+	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
 	int err;
 
 	if (shell->ctx->state != SHELL_STATE_INITIALIZED) {
@@ -1331,7 +1331,7 @@ int shell_start(const struct shell *shell)
 
 int shell_stop(const struct shell *shell)
 {
-	assert(shell);
+	__ASSERT_NO_MSG(shell);
 
 	if ((shell->ctx->state == SHELL_STATE_INITIALIZED) ||
 	    (shell->ctx->state == SHELL_STATE_UNINITIALIZED)) {
@@ -1345,7 +1345,7 @@ int shell_stop(const struct shell *shell)
 
 void shell_process(const struct shell *shell)
 {
-	assert(shell);
+	__ASSERT_NO_MSG(shell);
 
 	union shell_internal internal;
 
@@ -1387,7 +1387,7 @@ void shell_print_stream(const void *user_ctx, const char *data,
 void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 		   const char *p_fmt, ...)
 {
-	assert(shell);
+	__ASSERT_NO_MSG(shell);
 
 	va_list args = { 0 };
 
@@ -1651,7 +1651,7 @@ static void help_subcmd_print(const struct shell *shell)
 void shell_help_print(const struct shell *shell,
 		      const struct shell_getopt_option *opt, size_t opt_len)
 {
-	assert(shell);
+	__ASSERT_NO_MSG(shell);
 
 	if (!IS_ENABLED(CONFIG_SHELL_HELP)) {
 		return;
@@ -1667,8 +1667,8 @@ int shell_prompt_change(const struct shell *shell, char *prompt)
 
 	size_t len = shell_strlen(prompt);
 
-	assert(shell);
-	assert(prompt);
+	__ASSERT_NO_MSG(shell);
+	__ASSERT_NO_MSG(prompt);
 
 	if (len <= CONFIG_SHELL_PROMPT_LENGTH) {
 		memcpy(shell->prompt, prompt, len + 1); /* +1 for '\0' */

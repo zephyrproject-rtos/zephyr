@@ -13,8 +13,8 @@ static void subcmd_get(const struct shell_cmd_entry *cmd,
 		       size_t idx, const struct shell_static_entry **entry,
 		       struct shell_static_entry *d_entry)
 {
-	assert(entry != NULL);
-	assert(st_entry != NULL);
+	__ASSERT_NO_MSG(entry != NULL);
+	__ASSERT_NO_MSG(st_entry != NULL);
 
 	if (cmd == NULL) {
 		*entry = NULL;
