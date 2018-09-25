@@ -470,7 +470,6 @@ extern void	_arch_irq_disable(unsigned int irq);
  */
 
 struct k_thread;
-typedef struct k_thread *k_tid_t;
 
 /**
  * @brief Enable preservation of floating point context information.
@@ -501,7 +500,7 @@ typedef struct k_thread *k_tid_t;
  *
  * @return N/A
  */
-extern void k_float_enable(k_tid_t thread, unsigned int options);
+extern void k_float_enable(struct k_thread *thread, unsigned int options);
 
 /**
  * @brief Disable preservation of floating point context information.
@@ -517,7 +516,7 @@ extern void k_float_enable(k_tid_t thread, unsigned int options);
  *
  * @return N/A
  */
-extern void k_float_disable(k_tid_t thread);
+extern void k_float_disable(struct k_thread *thread);
 
 /**
  * @}
