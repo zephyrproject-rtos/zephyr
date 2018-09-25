@@ -9,5 +9,9 @@ config PM_CONTROL_OS_DEBUG
 	help
 	  Enable OS Power Management debugging hooks.
 
+module = PM
+module-str = Power Management
+source "subsys/logging/Kconfig.template.log_config"
+
 endmenu
 endif # PM_CONTROL_OS

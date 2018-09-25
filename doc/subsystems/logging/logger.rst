@@ -150,23 +150,45 @@ Logging in a module
 In order to use logger in the module, a unique name of a module must be
 specified and module must be registered with the logger core using
 :c:macro:`LOG_MODULE_REGISTER`. Optionally, a compile time log level for the
-module can be specified as well.
+module can be specified as the second parameter. Default log level
+(:option:`CONFIG_LOG_DEFAULT_LEVEL`) is used if custom log level is not
+provided.
 
 .. code-block:: c
 
-   #define LOG_LEVEL CONFIG_FOO_LOG_LEVEL /* From foo module Kconfig */
    #include <logging/log.h>
-   LOG_MODULE_REGISTER(foo); /* One per given log_module_name */
+   LOG_MODULE_REGISTER(foo, CONFIG_FOO_LOG_LEVEL);
 
 If the module consists of multiple files, then ``LOG_MODULE_REGISTER()`` should
 appear in exactly one of them. Each other file should use
 :c:macro:`LOG_MODULE_DECLARE` to declare its membership in the module.
+Optionally, a compile time log level for the module can be specified as
+the second parameter. Default log level (:option:`CONFIG_LOG_DEFAULT_LEVEL`)
+is used if custom log level is not provided.
 
 .. code-block:: c
 
-   #define LOG_LEVEL CONFIG_FOO_LOG_LEVEL /* From foo module Kconfig */
    #include <logging/log.h>
-   LOG_MODULE_DECLARE(foo); /* In all files comprising the module but one */
+   /* In all files comprising the module but one */
+   LOG_MODULE_DECLARE(foo, CONFIG_FOO_LOG_LEVEL);
+
+In order to use logger API in a function implemented in a header file
+:c:macro:`LOG_MODULE_DECLARE` macro must be used in the function body
+before logger API is called. Optionally, a compile time log level for the module
+can be specified as the second parameter. Default log level
+(:option:`CONFIG_LOG_DEFAULT_LEVEL`) is used if custom log level is not
+provided.
+
+.. code-block:: c
+
+   #include <logging/log.h>
+
+   static inline void foo(void)
+   {
+   	LOG_MODULE_DECLARE(foo, CONFIG_FOO_LOG_LEVEL);
+
+   	LOG_INF("foo");
+   }
 
 Dedicated Kconfig template (:file:`subsys/logging/Kconfig.template.log_config`)
 can be used to create local log level configuration.
@@ -216,12 +238,27 @@ In order to use instance level filtering following steps must be performed:
 Note that when logger is disabled logger instance and pointer to that instance
 are not created.
 
-- logger can be used in function
+In order to use the instance logging API in a source file, a compile-time log
+level must be set using :c:macro:`LOG_LEVEL_SET`.
 
 .. code-block:: c
 
+   LOG_LEVEL_SET(CONFIG_FOO_LOG_LEVEL);
+
    void foo_init(foo_object *f)
    {
+   	LOG_INST_INF(f->log, "Initialized.");
+   }
+
+In order to use the instance logging API in a header file, a compile-time log
+level must be set using :c:macro:`LOG_LEVEL_SET`.
+
+.. code-block:: c
+
+   static inline void foo_init(foo_object *f)
+   {
+   	LOG_LEVEL_SET(CONFIG_FOO_LOG_LEVEL);
+
    	LOG_INST_INF(f->log, "Initialized.");
    }
 

@@ -9,9 +9,19 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <logging/log.h>
+
+#define MODULE_NAME sample_module
 
 const char *sample_module_name_get(void);
 void sample_module_func(void);
+
+static inline void inline_func(void)
+{
+	LOG_MODULE_DECLARE(MODULE_NAME, CONFIG_SAMPLE_MODULE_LOG_LEVEL);
+
+	LOG_INF("Inline function.");
+}
 
 #ifdef __cplusplus
 }

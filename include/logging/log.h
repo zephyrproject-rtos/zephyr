@@ -269,38 +269,46 @@ int log_printk(const char *fmt, va_list ap);
  */
 char *log_strdup(const char *str);
 
-#define __DYNAMIC_MODULE_REGISTER(_name)\
-	struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(_name)	\
-	__attribute__ ((section("." STRINGIFY(				\
-				     LOG_ITEM_DYNAMIC_DATA(_name))))	\
-				     )					\
-	__attribute__((used));						\
-	static inline const struct log_source_dynamic_data  *		\
-				__log_current_dynamic_data_get(void)	\
-	{								\
-		return &LOG_ITEM_DYNAMIC_DATA(_name);			\
-	}
+/* Macro expects that optionally on second argument local log level is provided.
+ * If provided it is returned, otherwise default log level is returned.
+ */
+#if defined(LOG_LEVEL) && defined(CONFIG_LOG)
+#define _LOG_LEVEL_RESOLVE(...) \
+	__LOG_ARG_2(__VA_ARGS__, LOG_LEVEL)
+#else
+#define _LOG_LEVEL_RESOLVE(...) \
+	__LOG_ARG_2(__VA_ARGS__, CONFIG_LOG_DEFAULT_LEVEL)
+#endif
 
-#define _LOG_RUNTIME_MODULE_REGISTER(_name)				\
-	_LOG_EVAL(							\
-		CONFIG_LOG_RUNTIME_FILTERING,				\
-		(; __DYNAMIC_MODULE_REGISTER(_name)),			\
-		()							\
-	)
+/* Return first argument */
+#define _LOG_ARG1(arg1, ...) arg1
 
-#define _LOG_MODULE_REGISTER(_name, _level)				     \
+
+#define _LOG_MODULE_CONST_DATA_CREATE(_name, _level)			     \
 	const struct log_source_const_data LOG_ITEM_CONST_DATA(_name)	     \
 	__attribute__ ((section("." STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
 	__attribute__((used)) = {					     \
 		.name = STRINGIFY(_name),				     \
 		.level = _level						     \
-	}								     \
-	_LOG_RUNTIME_MODULE_REGISTER(_name);				     \
-	static inline const struct log_source_const_data *		     \
-				__log_current_const_data_get(void)	     \
-	{								     \
-		return &LOG_ITEM_CONST_DATA(_name);			     \
 	}
+
+#define _LOG_MODULE_DYNAMIC_DATA_CREATE(_name)				\
+	struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(_name)	\
+	__attribute__ ((section("." STRINGIFY(				\
+				     LOG_ITEM_DYNAMIC_DATA(_name))))	\
+				     )					\
+	__attribute__((used))
+
+#define _LOG_MODULE_DYNAMIC_DATA_COND_CREATE(_name)		\
+	_LOG_EVAL(						\
+		IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING),	\
+		(_LOG_MODULE_DYNAMIC_DATA_CREATE(_name);),	\
+		()						\
+		)
+
+#define _LOG_MODULE_DATA_CREATE(_name, _level)			\
+	_LOG_MODULE_CONST_DATA_CREATE(_name, _level);		\
+	_LOG_MODULE_DYNAMIC_DATA_COND_CREATE(_name)
 
 /**
  * @brief Create module-specific state and register the module with Logger.
@@ -313,7 +321,19 @@ char *log_strdup(const char *str);
  * - The module consists of more than one file, and another file
  *   invokes this macro. (LOG_MODULE_DECLARE() should be used instead
  *   in all of the module's other files.)
- * - Instance logging is used and there is no need to create module entry.
+ * - Instance logging is used and there is no need to create module entry. In
+ *   that case LOG_LEVEL_SET() should be used to set log level used within the
+ *   file.
+ *
+ * Macro accepts one or two parameters:
+ * - module name
+ * - optional log level. If not provided then default log level is used in
+ *  the file.
+ *
+ * Example usage:
+ * - LOG_MODULE_REGISTER(foo, CONFIG_FOO_LOG_LEVEL)
+ * - LOG_MODULE_REGISTER(foo)
+ *
  *
  * @note The module's state is defined, and the module is registered,
  *       only if LOG_LEVEL for the current source file is non-zero or
@@ -321,36 +341,16 @@ char *log_strdup(const char *str);
  *       In other cases, this macro has no effect.
  * @see LOG_MODULE_DECLARE
  */
-#define LOG_MODULE_REGISTER(log_module_name)				\
+
+
+#define LOG_MODULE_REGISTER(...)					\
 	_LOG_EVAL(							\
-		_LOG_LEVEL(),						\
-		(_LOG_MODULE_REGISTER(log_module_name, _LOG_LEVEL())),	\
+		_LOG_LEVEL_RESOLVE(__VA_ARGS__),			\
+		(_LOG_MODULE_DATA_CREATE(_LOG_ARG1(__VA_ARGS__),	\
+				      _LOG_LEVEL_RESOLVE(__VA_ARGS__))),\
 		()/*Empty*/						\
-	)
-
-#define __DYNAMIC_MODULE_DECLARE(_name)					   \
-	extern struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(_name);\
-	static inline struct log_source_dynamic_data *			   \
-				__log_current_dynamic_data_get(void)	   \
-	{								   \
-		return &LOG_ITEM_DYNAMIC_DATA(_name);			   \
-	}
-
-#define _LOG_RUNTIME_MODULE_DECLARE(_name)			\
-	_LOG_EVAL(						\
-		CONFIG_LOG_RUNTIME_FILTERING,			\
-		(; __DYNAMIC_MODULE_DECLARE(_name)),		\
-		()						\
-		)
-
-#define _LOG_MODULE_DECLARE(_name, _level)				     \
-	extern const struct log_source_const_data LOG_ITEM_CONST_DATA(_name) \
-	_LOG_RUNTIME_MODULE_DECLARE(_name);				     \
-	static inline const struct log_source_const_data *		     \
-				__log_current_const_data_get(void)	     \
-	{								     \
-		return &LOG_ITEM_CONST_DATA(_name);			     \
-	}
+	)								\
+	LOG_MODULE_DECLARE(__VA_ARGS__)
 
 /**
  * @brief Macro for declaring a log module (not registering it).
@@ -363,18 +363,50 @@ char *log_strdup(const char *str);
  * declare that same state. (Otherwise, LOG_INF() etc. will not be
  * able to refer to module-specific state variables.)
  *
+ * Macro accepts one or two parameters:
+ * - module name
+ * - optional log level. If not provided then default log level is used in
+ *  the file.
+ *
+ * Example usage:
+ * - LOG_MODULE_DECLARE(foo, CONFIG_FOO_LOG_LEVEL)
+ * - LOG_MODULE_DECLARE(foo)
+ *
  * @note The module's state is declared only if LOG_LEVEL for the
  *       current source file is non-zero or it is not defined and
  *       CONFIG_LOG_DEFAULT_LOG_LEVEL is non-zero.  In other cases,
  *       this macro has no effect.
  * @see LOG_MODULE_REGISTER
  */
-#define LOG_MODULE_DECLARE(log_module_name)				\
-	_LOG_EVAL(							\
-		_LOG_LEVEL(),						\
-		(_LOG_MODULE_DECLARE(log_module_name, _LOG_LEVEL())),	\
-		()							\
-		)							\
+#define LOG_MODULE_DECLARE(...)						      \
+	extern const struct log_source_const_data			      \
+			LOG_ITEM_CONST_DATA(_LOG_ARG1(__VA_ARGS__));	      \
+	extern struct log_source_dynamic_data				      \
+			LOG_ITEM_DYNAMIC_DATA(_LOG_ARG1(__VA_ARGS__));	      \
+									      \
+	static const struct log_source_const_data *			      \
+		__log_current_const_data __attribute__((unused)) =	      \
+			_LOG_LEVEL_RESOLVE(__VA_ARGS__) ?		      \
+			&LOG_ITEM_CONST_DATA(_LOG_ARG1(__VA_ARGS__)) : NULL;  \
+									      \
+	static struct log_source_dynamic_data *				      \
+		__log_current_dynamic_data __attribute__((unused)) =	      \
+			(_LOG_LEVEL_RESOLVE(__VA_ARGS__) &&		      \
+			IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) ?	      \
+			&LOG_ITEM_DYNAMIC_DATA(_LOG_ARG1(__VA_ARGS__)) : NULL;\
+									      \
+	static const u32_t __log_level __attribute__((unused)) =	      \
+					_LOG_LEVEL_RESOLVE(__VA_ARGS__)
+
+/**
+ * @brief Macro for setting log level in the file or function where instance
+ * logging API is used.
+ *
+ * @param level Level used in file or in function.
+ *
+ */
+#define LOG_LEVEL_SET(level) \
+	static const u32_t __log_level __attribute__((unused)) = level
 
 /**
  * @}

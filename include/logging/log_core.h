@@ -55,8 +55,8 @@ extern "C" {
 /**
  * @brief Macro for conditional code generation if provided log level allows.
  *
- * Macro behaves similarly to standard #if #else #endif clause. The difference is
- * that it is evaluated when used and not when header file is included.
+ * Macro behaves similarly to standard #if #else #endif clause. The difference
+ * is that it is evaluated when used and not when header file is included.
  *
  * @param _eval_level Evaluated level. If level evaluates to one of existing log
  *		      log level (1-4) then macro evaluates to _iftrue.
@@ -112,44 +112,39 @@ extern "C" {
  *
  *  @param _addr Address of the element.
  */
-#define LOG_CONST_ID_GET(_addr)						       \
-	_LOG_EVAL(							       \
-	  _LOG_LEVEL(),							       \
-	  (log_const_source_id((const struct log_source_const_data *)_addr)),  \
-	  (0)								       \
+#define LOG_CONST_ID_GET(_addr) \
+	_LOG_EVAL(\
+	  CONFIG_LOG,\
+	  (__log_level ? \
+	  log_const_source_id((const struct log_source_const_data *)_addr) : \
+	  0),\
+	  (0)\
 	)
 
 /**
  * @def LOG_CURRENT_MODULE_ID
  * @brief Macro for getting ID of current module.
  */
-#define LOG_CURRENT_MODULE_ID()						\
-	_LOG_EVAL(							\
-	  _LOG_LEVEL(),							\
-	  (log_const_source_id(__log_current_const_data_get())),	\
-	  (0)								\
-	)
+#define LOG_CURRENT_MODULE_ID() (__log_level ? \
+	log_const_source_id(__log_current_const_data) : 0)
 
 /**
  * @def LOG_CURRENT_DYNAMIC_DATA_ADDR
  * @brief Macro for getting address of dynamic structure of current module.
  */
-#define LOG_CURRENT_DYNAMIC_DATA_ADDR()			\
-	_LOG_EVAL(					\
-	  _LOG_LEVEL(),					\
-	  (__log_current_dynamic_data_get()),		\
-	  ((struct log_source_dynamic_data *)0)		\
-	)
+#define LOG_CURRENT_DYNAMIC_DATA_ADDR()	(__log_level ? \
+	__log_current_dynamic_data : (struct log_source_dynamic_data *)0)
 
 /** @brief Macro for getting ID of the element of the section.
  *
  *  @param _addr Address of the element.
  */
-#define LOG_DYNAMIC_ID_GET(_addr)					     \
-	_LOG_EVAL(							     \
-	  _LOG_LEVEL(),							     \
-	  (log_dynamic_source_id((struct log_source_dynamic_data *)_addr)),  \
-	  (0)								     \
+#define LOG_DYNAMIC_ID_GET(_addr) \
+	_LOG_EVAL(\
+	  CONFIG_LOG,\
+	  (__log_level ? \
+	  log_dynamic_source_id((struct log_source_dynamic_data *)_addr) : 0),\
+	  (0)\
 	)
 
 /**
@@ -230,7 +225,7 @@ extern "C" {
 	_LOG_LEVEL_CHECK(_level, CONFIG_LOG_OVERRIDE_LEVEL, LOG_LEVEL_NONE) \
 	||								    \
 	(!IS_ENABLED(CONFIG_LOG_OVERRIDE_LEVEL) &&			    \
-	_LOG_LEVEL_CHECK(_level, LOG_LEVEL, CONFIG_LOG_DEFAULT_LEVEL) &&    \
+	(_level <= __log_level) &&					    \
 	(_level <= CONFIG_LOG_MAX_LEVEL)				    \
 	)								    \
 	))
