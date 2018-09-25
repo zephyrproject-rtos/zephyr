@@ -21,6 +21,7 @@
 #endif
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
+static void _handle_expired_timeouts(sys_dlist_t *expired);
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 int z_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 #endif
@@ -49,8 +50,6 @@ int _sys_clock_always_on = 1;
 
 static u32_t next_ts;
 #endif
-
-static void _handle_expired_timeouts(sys_dlist_t *expired);
 
 u32_t z_tick_get_32(void)
 {
@@ -359,6 +358,8 @@ void k_disable_sys_clock_always_on(void)
 #endif
 }
 
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+
 extern u64_t z_last_tick_announced;
 
 /* initialize the timeouts part of k_thread when enabled in the kernel */
@@ -412,6 +413,7 @@ static inline void _unpend_thread_timing_out(struct k_thread *thread,
 		thread->base.timeout.wait_q = NULL;
 	}
 }
+
 
 /*
  * Handle one timeout from the expired timeout queue. Removes it from the wait
@@ -620,3 +622,5 @@ void _add_thread_timeout(struct k_thread *thread,
 {
 	_add_timeout(thread, &thread->base.timeout, wait_q, timeout_in_ticks);
 }
+
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
