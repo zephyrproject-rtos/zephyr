@@ -53,15 +53,15 @@ void k_cpu_idle(void)
  *    occurs if this requirement is not met.
  *
  * 2) After waking up from the low-power mode, the interrupt lockout state
- *    must be restored as indicated in the 'imask' input parameter.
+ *    must be restored as indicated in the 'key' input parameter.
  *
  * This function is just a pass thru to the SOC one
  *
  * @return N/A
  */
 
-void k_cpu_atomic_idle(unsigned int imask)
+void k_cpu_atomic_idle(unsigned int key)
 {
 	z_sys_trace_idle();
-	posix_atomic_halt_cpu(imask);
+	posix_atomic_halt_cpu(key);
 }
