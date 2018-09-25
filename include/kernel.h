@@ -4802,7 +4802,7 @@ struct k_mem_partition {
 #endif	/* CONFIG_USERSPACE */
 };
 
-/* memory domian
+/* memory domain
  * Note: Always declare this structure with __kernel prefix
  */
 struct k_mem_domain {
