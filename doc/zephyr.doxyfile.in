@@ -1984,6 +1984,7 @@ PREDEFINED             = "CONFIG_SYS_CLOCK_EXISTS=y" \
                          "DEVICE_DEFINE()=" \
                          "DEVICE_AND_API_INIT()=" \
                          "BUILD_ASSERT_MSG()=" \
+                         "BUILD_ASSERT()=" \
                          "__deprecated=" \
                          "__packed=" \
                          "__aligned(x)=" \
