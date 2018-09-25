@@ -385,6 +385,12 @@ config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	  This option is enabled when the MPU requires a power of two alignment
 	  and size for MPU regions.
 
+config MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+	bool
+	# Omit prompt to signify "hidden" option
+	help
+	  This option is enabled when the MPU requires the active (i.e. enabled)
+	  MPU regions to be non-overlapping with each other.
 
 menu "Floating Point Options"
 depends on CPU_HAS_FPU
