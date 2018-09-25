@@ -28,10 +28,6 @@
 extern "C" {
 #endif
 
-static const int _INIT_LEVEL_PRE_KERNEL_1 = 1;
-static const int _INIT_LEVEL_PRE_KERNEL_2 = 1;
-static const int _INIT_LEVEL_POST_KERNEL = 1;
-static const int _INIT_LEVEL_APPLICATION = 1;
 
 /**
  * @def DEVICE_INIT
