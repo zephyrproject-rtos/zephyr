@@ -45,6 +45,31 @@ and dumps the response. You can edit the source code to issue a request
 to any other site on the Internet (or on the local network, in which
 case no NAT/routing setup is needed).
 
+Enabling TLS support
+=================================
+
+Enable TLS support in the sample by building the project with the
+``overlay-tls.conf`` overlay file enabled, for example, using these commands:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/http_get
+   :board: qemu_x86
+   :conf: "prj.conf overlay-tls.conf"
+   :goals: build
+   :compact:
+
+An alternative way is to specify ``-DOVERLAY_CONFIG=overlay-tls.conf`` when
+running cmake.
+
+The certificate used by the sample can be found in the sample's ``src``
+directory. The certificate was selected to enable access to the default website
+configured in the sample (https://google.com). To access a different web page
+over TLS, provide an appropriate certificate to authenticate to that web server.
+
+Note, that TLS support in the sample depends on non-posix, TLS socket
+functionality. Therefore, it is only posibly to run TLS in this sample
+on Zephyr.
+
 Running application on POSIX Host
 =================================
 
