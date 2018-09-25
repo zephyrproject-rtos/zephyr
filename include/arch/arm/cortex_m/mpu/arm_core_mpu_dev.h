@@ -30,16 +30,71 @@ extern "C" {
  * If one of the operations corresponding to an intent fails the error has to
  * be managed inside the MPU driver and to not be escalated.
  *
+ *
+ * Some MPU architectures, such as the standard (unmodified) ARMv8-M MPU,
+ * require that the active (i.e. enabled) MPU regions do not overlap.
+ * (Overlapping MPU regions lead to MemManage Faults.)
+ *
+ * The requirement for non-overlapping MPU regions is enforced
+ * by symbol: CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS. As a result of this
+ * requirement, a user-defined MPU region (e.g. of type THREAD_STACK_GUARD)
+ * may not be programmed on top of the underlying (existing) SRAM MPU region.
+ * An additional "background" SRAM region is, therefore, required to be
+ * programmed, for every user-defined MPU region. This "background" region
+ * will have the same access permissions as the initially existing SRAM region.
+ * In this way we can maintain the same access permissions above and below the
+ * user-defined MPU region, and no memory space is left uncovered by the MPU
+ * regions. This is shown in the diagram below.
+ *
+ *
+ * Before programming the        After programming the
+ * user-defined region:          user-defined region:
+ *
+ * |.....................|      |.....................|
+ * |                     |      |     Additional      |
+ * |                     |      |    "Background"     |
+ * |                     |      |       SRAM          |
+ * |                     |      |      Region         |
+ * |                     |      |---------------------|
+ * |     Some SRAM       |      |    User-defined     |
+ * |      Region         |      |       MPU           |
+ * |                     |      |      Region         |
+ * |                     |      |---------------------|
+ * |                     |      |                     |
+ * |                     |      |     Some SRAM       |
+ * |                     |      |       Region        |
+ * |.....................|      |.....................|
+ *
+ *
+ * Each region type that is dynamically configured during
+ * run-time (e.g. THREAD_STACK_REGION) introduces the need
+ * for one additional background MPU region.
+ *
+ * On the contrary, fixed, i.e. non run-time configurable
+ * regions (e.g. THREAD_APP_DATA_REGION) do not require
+ * any additional background MPU region.
  */
 enum {
+#ifdef CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+#ifdef CONFIG_APP_SHARED_MEM
+	APP_SHARED_MEM_BKGND_REGION,
+#endif /* CONFIG_APP_SHARED_MEM */
+	KERNEL_BKGND_REGION,
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 #ifdef CONFIG_APPLICATION_MEMORY
 	THREAD_APP_DATA_REGION,
 #endif
 #ifdef CONFIG_MPU_STACK_GUARD
 	THREAD_STACK_GUARD_REGION,
+#ifdef CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+	KERNEL_BKGND_STACK_GUARD_REGION,
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 #endif
 #ifdef CONFIG_USERSPACE
 	THREAD_STACK_REGION,
+#ifdef CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+	KERNEL_BKGND_THREAD_STACK_REGION,
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 	THREAD_DOMAIN_PARTITION_REGION,
 #endif
 	THREAD_MPU_REGION_LAST
