@@ -256,7 +256,7 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 	/* Check if this API is called on correct driver instance. */
 	__ASSERT_NO_MSG(&entropy_nrf5_data == DEV_DATA(dev));
 
-	if (!(flags & ENTROPY_BUSYWAIT)) {
+	if (likely((flags & ENTROPY_BUSYWAIT) == 0)) {
 		return rng_pool_get((struct rng_pool *)(entropy_nrf5_data.isr),
 				    buf, len);
 	}
