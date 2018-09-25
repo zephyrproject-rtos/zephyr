@@ -283,7 +283,7 @@ config INIT_STACKS
 	  This option instructs the kernel to initialize stack areas with a
 	  known value (0xaa) before they are first used, so that the high
 	  water mark can be easily determined. This applies to the stack areas
-	  for threads.
+	  for threads, as well as to the interrupt stack.
 
 config KERNEL_DEBUG
 	bool "Kernel debugging"
