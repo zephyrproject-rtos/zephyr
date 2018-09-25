@@ -77,6 +77,7 @@ static void module_logging_showcase(void)
 {
 	printk("Module logging showcase.\n");
 
+	sample_module_inline_func();
 	sample_module_func();
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
@@ -87,6 +88,7 @@ static void module_logging_showcase(void)
 			       log_source_id_get(sample_module_name_get()),
 			       LOG_LEVEL_NONE);
 
+		sample_module_inline_func();
 		sample_module_func();
 
 		printk("Function called again but with logging disabled.\n");

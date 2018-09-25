@@ -159,6 +159,26 @@ appear in exactly one of them. Each other file should use
    #include <logging/log.h>
    LOG_MODULE_DECLARE(foo); /* In all files comprising the module but one */
 
+In order to use the logger in the header file,
+:c:macro:`LOG_MODULE_DECLARE_IN_HEADER` must be used. Additionally, macro must
+be preceded by definition of LOG_IN_HEADER and LOG_LEVEL. Both defines must be
+undefined at the bottom of the file.
+
+.. code-block:: c
+
+   #include <logging/log.h>
+   #define LOG_LEVEL CONFIG_FOO_LOG_LEVEL /* From foo module Kconfig */
+   #define LOG_IN_HEADER 1
+   LOG_MODULE_DECLARE_IN_HEADER();
+
+   static inline void foo(void)
+   {
+   	LOG_DBG("foo");
+   }
+
+   #undef LOG_IN_HEADER
+   #undef LOG_LEVEL
+
 Dedicated Kconfig template (:file:`subsys/logging/Kconfig.template.log_config`)
 can be used to create local log level configuration.
 
