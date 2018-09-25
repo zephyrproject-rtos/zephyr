@@ -77,7 +77,8 @@ build:
            echo "Dumping the capability database in case we are affected by #9992"
            cat $HOME/.cache/zephyr/ToolchainCapabilityDatabase.cmake
          fi;
-      - rm -rf ccache $HOME/.cache/zephyr
+      - rm -rf ccache
+      - rm $HOME/.cache/zephyr/*
       - mkdir -p shippable/testresults
       - mkdir -p shippable/codecoverage
       - source zephyr-env.sh
@@ -102,7 +103,8 @@ build:
             cp ./scripts/sanity_chk/last_sanity.xml shippable/testresults/;
           fi;
     on_success:
-      - rm -rf ccache $HOME/.cache/zephyr
+      - rm -rf ccache
+      - rm $HOME/.cache/zephyr/*
       - mkdir -p shippable/testresults
       - mkdir -p shippable/codecoverage
       - source zephyr-env.sh
