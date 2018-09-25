@@ -65,7 +65,7 @@ _set_thread_return_value(struct k_thread *thread, unsigned int value)
 	*(unsigned int *)(thread->callee_saved.esp) = value;
 }
 
-extern void k_cpu_atomic_idle(unsigned int imask);
+extern void k_cpu_atomic_idle(unsigned int key);
 
 /**
  * @brief Write to a model specific register (MSR)
