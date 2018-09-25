@@ -23,6 +23,34 @@
 
 #include "bt.h"
 
+int cmd_ll_addr_get(const struct shell *shell, size_t argc, char *argv[])
+{
+	u8_t addr_type;
+	const char *str_type;
+	bt_addr_t addr;
+	char str_addr[BT_ADDR_STR_LEN];
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	str_type = argv[1];
+	if (!strcmp(str_type, "random")) {
+		addr_type = 1;
+	} else if (!strcmp(str_type, "public")) {
+		addr_type = 0;
+	} else {
+		return -EINVAL;
+	}
+
+	(void)ll_addr_get(addr_type, addr.val);
+	bt_addr_to_str(&addr, str_addr, sizeof(str_addr));
+
+	print(shell, "Current %s address: %s\n", str_type, str_addr);
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_CTLR_DTM)
 #include "../controller/ll_sw/ll_test.h"
 
