@@ -292,7 +292,7 @@ struct shell_flags {
 	u32_t mode_delete :1; /*!< Operation mode of backspace key */
 };
 
-_Static_assert(sizeof(struct shell_flags) == sizeof(u32_t), "Must fit in 32b.");
+BUILD_ASSERT(sizeof(struct shell_flags) == sizeof(u32_t));
 
 /*
  * @internal @brief Union for internal shell usage.
