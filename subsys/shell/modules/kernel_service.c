@@ -47,20 +47,35 @@ static void cmd_kernel_cycles(const struct shell *shell,
 			k_cycle_get_32());
 }
 
-#if defined(CONFIG_OBJECT_TRACING) && defined(CONFIG_THREAD_MONITOR)
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_MONITOR) \
+				&& defined(CONFIG_THREAD_STACK_INFO)
 static void shell_tdata_dump(const struct k_thread *thread, void *user_data)
 {
+	unsigned int pcnt, unused = 0;
+	unsigned int size = thread->stack_info.size;
 	const char *tname;
+
+	unused = stack_unused_space_get((char *)thread->stack_info.start,
+					size);
+
+	/* Calculate the real size reserved for the stack */
+	pcnt = ((size - unused) * 100) / size;
 
 	tname = k_thread_name_get((struct k_thread *)thread);
 
 	shell_fprintf((const struct shell *)user_data, SHELL_NORMAL,
-		      "%s%p %-10s:   options: 0x%x priority: %d\r\n",
+		      "%s%p %-10s\r\n",
 		      (thread == k_current_get()) ? "*" : " ",
 		      thread,
-		      tname ? tname : "NA",
+		      tname ? tname : "NA");
+	shell_fprintf((const struct shell *)user_data, SHELL_NORMAL,
+		      "\toptions: 0x%x, priority: %d\r\n",
 		      thread->base.user_options,
 		      thread->base.prio);
+	shell_fprintf((const struct shell *)user_data, SHELL_NORMAL,
+		"\tstack size %u, unused %u, usage %u / %u (%u %%)\r\n\n",
+		      size, unused, size - unused, size, pcnt);
+
 }
 
 static void cmd_kernel_threads(const struct shell *shell,
@@ -72,11 +87,7 @@ static void cmd_kernel_threads(const struct shell *shell,
 	shell_fprintf(shell, SHELL_NORMAL, "Threads:\r\n");
 	k_thread_foreach(shell_tdata_dump, (void *)shell);
 }
-#endif
 
-
-#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_MONITOR) \
-				&& defined(CONFIG_THREAD_STACK_INFO)
 static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 {
 	unsigned int pcnt, unused = 0;
@@ -142,8 +153,6 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_kernel)
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_MONITOR) \
 				&& defined(CONFIG_THREAD_STACK_INFO)
 	SHELL_CMD(stacks, NULL, "List threads stack usage.", cmd_kernel_stacks),
-#endif
-#if defined(CONFIG_OBJECT_TRACING) && defined(CONFIG_THREAD_MONITOR)
 	SHELL_CMD(threads, NULL, "List kernel threads.", cmd_kernel_threads),
 #endif
 	SHELL_CMD(uptime, NULL, "Kernel uptime.", cmd_kernel_uptime),
