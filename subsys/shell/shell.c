@@ -148,7 +148,6 @@ static void cmd_get(const struct shell_cmd_entry *command, size_t lvl,
 		    struct shell_static_entry *d_entry)
 {
 	assert(entry != NULL);
-	assert(command != NULL);
 	assert(d_entry != NULL);
 
 	if (lvl == SHELL_CMD_ROOT_LVL) {
