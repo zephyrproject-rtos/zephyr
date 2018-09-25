@@ -96,6 +96,11 @@ struct _cpu {
 	/* one assigned idle thread per CPU */
 	struct k_thread *idle_thread;
 
+#ifdef CONFIG_TIMESLICING
+	/* number of ticks remaining in current time slice */
+	int slice_ticks;
+#endif
+
 	u8_t id;
 
 #ifdef CONFIG_SMP

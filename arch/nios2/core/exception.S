@@ -18,9 +18,6 @@ GTEXT(__swap)
 GTEXT(_irq_do_offload)
 GTEXT(_offload_routine)
 #endif
-#ifdef CONFIG_TIMESLICING
-GTEXT(_update_time_slice_before_swap)
-#endif
 
 /* Allows use of r1/at register, otherwise reserved for assembler use */
 .set noat
@@ -139,10 +136,6 @@ on_irq_stack:
 	 * we switched stacks. Restore it to go back to thread stack
 	 */
 	ldw sp, 0(sp)
-
-#ifdef CONFIG_TIMESLICING
-	call _update_time_slice_before_swap
-#endif
 
 	/* Argument to Swap() is estatus since that's the state of the
 	 * status register before the exception happened. When coming

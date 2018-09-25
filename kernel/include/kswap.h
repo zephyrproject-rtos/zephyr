@@ -9,12 +9,6 @@
 #include <ksched.h>
 #include <kernel_arch_func.h>
 
-#ifdef CONFIG_TIMESLICING
-extern void _update_time_slice_before_swap(void);
-#else
-#define _update_time_slice_before_swap() /**/
-#endif
-
 #ifdef CONFIG_STACK_SENTINEL
 extern void _check_stack_sentinel(void);
 #else
@@ -53,7 +47,6 @@ static inline int _Swap(unsigned int key)
 	old_thread = _current;
 
 	_check_stack_sentinel();
-	_update_time_slice_before_swap();
 
 #ifdef CONFIG_TRACING
 	sys_trace_thread_switched_out();
@@ -96,7 +89,6 @@ static inline int _Swap(unsigned int key)
 {
 	int ret;
 	_check_stack_sentinel();
-	_update_time_slice_before_swap();
 
 #ifdef CONFIG_TRACING
 	sys_trace_thread_switched_out();
