@@ -38,6 +38,7 @@ menuconfig SHELL
 	bool "Enable shell"
 	select LOG_RUNTIME_FILTERING
 	select POLL
+	depends on SERIAL
 
 if SHELL
 
