@@ -6,6 +6,7 @@
 
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1404,6 +1405,9 @@ SHELL_CREATE_STATIC_SUBCMD_SET(bt_cmds) {
 	SHELL_CMD(advx, NULL, "<on off> [coded] [anon] [txp]", cmd_advx),
 	SHELL_CMD(scanx, NULL, "<on passive off> [coded]", cmd_scanx),
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+#if defined(CONFIG_BT_LL_SW)
+	SHELL_CMD(ll-addr, NULL, "<random|public>", cmd_ll_addr_get),
+#endif
 #if defined(CONFIG_BT_CTLR_DTM)
 	SHELL_CMD(test_tx, NULL, "<chan> <len> <type> <phy>", cmd_test_tx),
 	SHELL_CMD(test_rx, NULL, "<chan> <phy> <mod_idx>", cmd_test_rx),
