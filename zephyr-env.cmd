@@ -11,7 +11,7 @@ rem https://www.python.org/dev/peps/pep-0486/ for details on the
 rem virtualenv-related pieces. (We need to implement this manually
 rem because Zephyr's minimum supported Python version is 3.4.)
 if defined VIRTUAL_ENV (
-	doskey west=python %ZEPHYR_BASE%\scripts\west-launcher.py $*
+	doskey west=python %ZEPHYR_BASE%\scripts\west $*
 ) else (
-	doskey west=py -3 %ZEPHYR_BASE%\scripts\west-launcher.py $*
+	doskey west=py -3 %ZEPHYR_BASE%\scripts\west $*
 )
