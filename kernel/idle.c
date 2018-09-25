@@ -65,7 +65,9 @@ static void sys_power_save_idle(s32_t ticks)
 	 * saves no power and does not improve latency.  But it's an
 	 * API we need to honor...
 	 */
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 	z_clock_set_timeout(ticks < IDLE_THRESH ? 1 : ticks, true);
+#endif
 
 	set_kernel_idle_time_in_ticks(ticks);
 #if (defined(CONFIG_SYS_POWER_LOW_POWER_STATE) || \
