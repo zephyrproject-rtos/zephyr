@@ -495,10 +495,9 @@ s32_t _get_next_timeout_expiry(void)
  */
 
 void _add_timeout(struct k_thread *thread, struct _timeout *timeout,
-		  _wait_q_t *wait_q, s32_t timeout_in_ticks)
+		  s32_t timeout_in_ticks)
 {
 	__ASSERT(timeout_in_ticks >= 0, "");
-	__ASSERT(!thread || thread->base.pended_on == wait_q, "");
 
 	timeout->delta_ticks_from_prev = timeout_in_ticks;
 	timeout->thread = thread;
@@ -568,11 +567,9 @@ inserted:
  */
 
 void _add_thread_timeout(struct k_thread *thread,
-			 _wait_q_t *wait_q,
 			 s32_t timeout_in_ticks)
 {
-	__ASSERT(thread && thread->base.pended_on == wait_q, "");
-	_add_timeout(thread, &thread->base.timeout, wait_q, timeout_in_ticks);
+	_add_timeout(thread, &thread->base.timeout, timeout_in_ticks);
 }
 
 #endif /* CONFIG_SYS_CLOCK_EXISTS */

@@ -275,7 +275,7 @@ static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 		s32_t ticks = _TICK_ALIGN + _ms_to_ticks(delay);
 		int key = irq_lock();
 
-		_add_thread_timeout(thread, NULL, ticks);
+		_add_thread_timeout(thread, ticks);
 		irq_unlock(key);
 	}
 #else

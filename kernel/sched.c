@@ -320,7 +320,7 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 		s32_t ticks = _TICK_ALIGN + _ms_to_ticks(timeout);
 		unsigned int key = irq_lock();
 
-		_add_thread_timeout(thread, wait_q, ticks);
+		_add_thread_timeout(thread, ticks);
 		irq_unlock(key);
 	}
 
@@ -791,7 +791,7 @@ void _impl_k_sleep(s32_t duration)
 	key = irq_lock();
 
 	_remove_thread_from_ready_q(_current);
-	_add_thread_timeout(_current, NULL, ticks);
+	_add_thread_timeout(_current, ticks);
 
 	(void)_Swap(key);
 #endif
