@@ -74,14 +74,10 @@ void shell_log_backend_disable(const struct shell_log_backend *backend)
 static void msg_process(const struct log_output *log_output,
 			struct log_msg *msg)
 {
-	u32_t flags = 0;
+	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 
-	if (IS_ENABLED(CONFIG_SHELL)) {
+	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
 		flags |= LOG_OUTPUT_FLAG_COLORS;
-	}
-
-	if (IS_ENABLED(CONFIG_SHELL)) {
-		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	}
 
 	log_output_msg_process(log_output, msg, flags);

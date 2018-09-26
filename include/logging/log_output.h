@@ -22,10 +22,13 @@ extern "C" {
 /** @brief Flag forcing ANSI escape code colors, red (errors), yellow
  *         (warnings).
  */
-#define LOG_OUTPUT_FLAG_COLORS                  (1 << 0)
+#define LOG_OUTPUT_FLAG_COLORS			(1 << 0)
 
 /** @brief Flag forcing timestamp formatting. */
-#define LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP        (1 << 1)
+#define LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP	(1 << 1)
+
+/** @brief Flag forcing severity level prefix. */
+#define LOG_OUTPUT_FLAG_LEVEL			(1 << 2)
 
 /**
  * @brief Prototype of the function processing output data.
