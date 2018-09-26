@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f070.dtsi>
+#include <st/f0/stm32f070Xb.dtsi>
 
 / {
 	model = "STMicroelectronics NUCLEO-F070RB board";
