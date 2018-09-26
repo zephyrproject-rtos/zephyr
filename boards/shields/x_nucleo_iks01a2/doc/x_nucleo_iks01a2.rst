@@ -1,6 +1,6 @@
 .. _x-nucleo-iks01a2:
 
-X-NUCLEO-IKS01A2: MEMS Interial and Environmental Multi sensor shield
+X-NUCLEO-IKS01A2: MEMS Inertial and Environmental Multi sensor shield
 #####################################################################
 
 Overview
