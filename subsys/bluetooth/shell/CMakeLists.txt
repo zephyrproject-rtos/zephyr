@@ -11,6 +11,10 @@ zephyr_library_sources_ifdef(
   bredr.c
   )
 zephyr_library_sources_ifdef(
+  CONFIG_BT_L2CAP_DYNAMIC_CHANNEL
+  l2cap.c
+  )
+zephyr_library_sources_ifdef(
   CONFIG_BT_RFCOMM
   rfcomm.c
   )
