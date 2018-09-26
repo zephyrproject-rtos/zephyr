@@ -300,9 +300,7 @@ config BOOT_BANNER
 	select PRINTK
 	select EARLY_CONSOLE
 	help
-	  This option outputs a banner to the console device during boot up. It
-	  also embeds a date & time stamp in the kernel if the BUILD_TIMESTAMP
-	  option is enabled.
+	  This option outputs a banner to the console device during boot up.
 
 config BOOT_DELAY
 	int "Boot delay in milliseconds"
@@ -316,13 +314,6 @@ config BOOT_DELAY
 	  receive before it actually gets data. A similar effect can be
 	  achieved by waiting for DCD on the serial port--however, not
 	  all serial ports have DCD.
-
-config BUILD_TIMESTAMP
-	bool "Build Timestamp"
-	help
-	  Record a timestamp from the build and add it to the boot banner.
-	  Note that this will make the build unreproducible: building
-	  Zephyr twice will result in different binaries.
 
 config INT_LATENCY_BENCHMARK
 	bool "Interrupt latency metrics [EXPERIMENTAL]"

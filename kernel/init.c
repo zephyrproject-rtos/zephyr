@@ -34,9 +34,6 @@
 #include <tracing.h>
 #include <stdbool.h>
 
-/* kernel build timestamp items */
-#define BUILD_TIMESTAMP "BUILD: " __DATE__ " " __TIME__
-
 /* boot banner items */
 #if defined(CONFIG_BOOT_DELAY) && CONFIG_BOOT_DELAY > 0
 #define BOOT_DELAY_BANNER " (delayed boot "	\
