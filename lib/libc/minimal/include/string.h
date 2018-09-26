@@ -22,6 +22,7 @@ extern char  *strncpy(char *_MLIBC_RESTRICT d, const char *_MLIBC_RESTRICT s,
 extern char  *strchr(const char *s, int c);
 extern char  *strrchr(const char *s, int c);
 extern size_t strlen(const char *s);
+extern size_t strnlen(const char *s, size_t maxlen);
 extern int    strcmp(const char *s1, const char *s2);
 extern int    strncmp(const char *s1, const char *s2, size_t n);
 extern char *strcat(char *_MLIBC_RESTRICT dest,
