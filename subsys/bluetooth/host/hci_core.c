@@ -3155,8 +3155,8 @@ int bt_le_scan_update(bool fast_scan)
 			interval = BT_GAP_SCAN_FAST_INTERVAL;
 			window = BT_GAP_SCAN_FAST_WINDOW;
 		} else {
-			interval = BT_GAP_SCAN_SLOW_INTERVAL_1;
-			window = BT_GAP_SCAN_SLOW_WINDOW_1;
+			interval = CONFIG_BT_BACKGROUND_SCAN_INTERVAL;
+			window = CONFIG_BT_BACKGROUND_SCAN_WINDOW;
 		}
 
 		return start_le_scan(BT_HCI_LE_SCAN_PASSIVE, interval, window);

@@ -389,6 +389,17 @@ endif # BT_GAP_PERIPHERAL_PREF_PARAMS
 
 endif # BT_CONN
 
+if BT_OBSERVER
+config BT_BACKGROUND_SCAN_INTERVAL
+	int "Scan interval used for background scanning in 0.625 ms units"
+	default 2048
+	range 4 16384
+config BT_BACKGROUND_SCAN_WINDOW
+	int "Scan window used for background scanning in 0.625 ms units"
+	default 18
+	range 4 16384
+endif # BT_OBSERVER
+
 config BT_SCAN_WITH_IDENTITY
 	bool "Perform active scanning using local identity address"
 	depends on !BT_PRIVACY && (BT_CENTRAL || BT_OBSERVER)
