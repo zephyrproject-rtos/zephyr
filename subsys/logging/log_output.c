@@ -166,14 +166,21 @@ static void color_postfix(struct log_msg *msg,
 
 
 static int ids_print(struct log_msg *msg,
-		     const struct log_output *log_output)
+		     const struct log_output *log_output, bool level_on)
 {
 	u32_t domain_id = log_msg_domain_id_get(msg);
 	u32_t source_id = log_msg_source_id_get(msg);
 	u32_t level = log_msg_level_get(msg);
+	int total = 0;
 
-	return print_formatted(log_output, "<%s> %s: ", severity[level],
-		     log_source_name_get(domain_id, source_id));
+	if (level_on) {
+		total += print_formatted(log_output, "<%s> ", severity[level]);
+	}
+
+	total += print_formatted(log_output, "%s: ",
+				log_source_name_get(domain_id, source_id));
+
+	return total;
 }
 
 static void newline_print(const struct log_output *ctx)
@@ -359,10 +366,11 @@ static int prefix_print(struct log_msg *msg,
 	if (!log_msg_is_raw_string(msg)) {
 		bool stamp_format = flags & LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 		bool colors_on = flags & LOG_OUTPUT_FLAG_COLORS;
+		bool level_on = flags & LOG_OUTPUT_FLAG_LEVEL;
 
 		length += timestamp_print(msg, log_output, stamp_format);
 		color_prefix(msg, log_output, colors_on);
-		length += ids_print(msg, log_output);
+		length += ids_print(msg, log_output, level_on);
 	}
 
 	return length;

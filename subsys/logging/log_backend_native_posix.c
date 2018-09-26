@@ -61,7 +61,7 @@ static void put(const struct log_backend *const backend,
 {
 	log_msg_get(msg);
 
-	u32_t flags = 0;
+	u32_t flags = LOG_OUTPUT_FLAG_LEVEL;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
 		if (posix_trace_over_tty(0)) {
