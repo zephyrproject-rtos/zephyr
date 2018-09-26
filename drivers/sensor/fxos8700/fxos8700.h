@@ -35,6 +35,12 @@
 #define FXOS8700_REG_M_CTRLREG1			0x5b
 #define FXOS8700_REG_M_CTRLREG2			0x5c
 
+/* Devices that are compatible with this driver: */
+#define WHOAMI_ID_MMA8451			0x1A
+#define WHOAMI_ID_MMA8652			0x4A
+#define WHOAMI_ID_MMA8653			0x5A
+#define WHOAMI_ID_FXOS8700			0xC7
+
 #define FXOS8700_DRDY_MASK			(1 << 0)
 #define FXOS8700_MOTION_MASK			(1 << 2)
 #define FXOS8700_PULSE_MASK			(1 << 3)
@@ -120,7 +126,6 @@ struct fxos8700_config {
 	u8_t gpio_pin;
 #endif
 	u8_t i2c_address;
-	u8_t whoami;
 	enum fxos8700_mode mode;
 	enum fxos8700_power_mode power_mode;
 	enum fxos8700_range range;
@@ -165,6 +170,7 @@ struct fxos8700_data {
 #ifdef CONFIG_FXOS8700_TEMP
 	s8_t temp;
 #endif
+	u8_t whoami;
 };
 
 int fxos8700_get_power(struct device *dev, enum fxos8700_power *power);

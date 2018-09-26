@@ -372,7 +372,6 @@ static int fxos8700_init(struct device *dev)
 	const struct fxos8700_config *config = dev->config->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	struct sensor_value odr = {.val1 = 6, .val2 = 250000};
-	u8_t whoami;
 
 	/* Get the I2C device */
 	data->i2c = device_get_binding(config->i2c_name);
@@ -381,19 +380,32 @@ static int fxos8700_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	/* Read the WHOAMI register to make sure we are talking to FXOS8700 and
-	 * not some other type of device that happens to have the same I2C
-	 * address.
-	*/
+	/*
+	 * Read the WHOAMI register to make sure we are talking to FXOS8700 or
+	 * compatible device and not some other type of device that happens to
+	 * have the same I2C address.
+	 */
 	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
-			      FXOS8700_REG_WHOAMI, &whoami)) {
+			      FXOS8700_REG_WHOAMI, &data->whoami)) {
 		LOG_ERR("Could not get WHOAMI value");
 		return -EIO;
 	}
 
-	if (whoami != config->whoami) {
-		LOG_ERR("WHOAMI value received 0x%x, expected 0x%x",
-			    whoami, FXOS8700_REG_WHOAMI);
+	switch (data->whoami) {
+	case WHOAMI_ID_MMA8451:
+	case WHOAMI_ID_MMA8652:
+	case WHOAMI_ID_MMA8653:
+		if (config->mode != FXOS8700_MODE_ACCEL) {
+			LOG_ERR("Device 0x%x supports only "
+				    "accelerometer mode",
+				    data->whoami);
+			return -EIO;
+		}
+	case WHOAMI_ID_FXOS8700:
+		LOG_DBG("Device ID 0x%x", data->whoami);
+		break;
+	default:
+		LOG_ERR("Unknown Device ID 0x%x", data->whoami);
 		return -EIO;
 	}
 
@@ -485,7 +497,6 @@ static const struct sensor_driver_api fxos8700_driver_api = {
 static const struct fxos8700_config fxos8700_config = {
 	.i2c_name = CONFIG_FXOS8700_I2C_NAME,
 	.i2c_address = CONFIG_FXOS8700_I2C_ADDRESS,
-	.whoami = CONFIG_FXOS8700_WHOAMI,
 #ifdef CONFIG_FXOS8700_MODE_ACCEL
 	.mode = FXOS8700_MODE_ACCEL,
 	.start_addr = FXOS8700_REG_OUTXMSB,
