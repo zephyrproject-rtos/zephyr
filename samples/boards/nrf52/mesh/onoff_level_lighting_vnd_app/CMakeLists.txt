@@ -8,6 +8,7 @@ target_link_libraries(app PUBLIC subsys__bluetooth)
 
 target_sources(app PRIVATE
 	       src/main.c
+	       src/storage.c
 	       src/mesh/ble_mesh.c
 	       src/mesh/device_composition.c
 	       src/mesh/publisher.c
@@ -18,5 +19,4 @@ target_sources(app PRIVATE
 zephyr_include_directories(
 	src/
 	src/mesh
-	$ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/hal
 )

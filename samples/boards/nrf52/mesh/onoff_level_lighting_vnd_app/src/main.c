@@ -13,6 +13,7 @@
 #include "publisher.h"
 #include "state_binding.h"
 #include "transition.h"
+#include "storage.h"
 
 struct device *led_device[4];
 struct device *button_device[4];
@@ -237,6 +238,29 @@ void update_light_state(void)
 	}
 }
 
+static void short_time_multireset_bt_mesh_unprovisioning(void)
+{
+	if (reset_counter >= 4) {
+		reset_counter = 0;
+		printk("BT Mesh reset\n");
+		bt_mesh_reset();
+	} else {
+		printk("Reset Counter -> %d\n", reset_counter);
+		reset_counter++;
+	}
+
+	save_on_flash(RESET_COUNTER);
+}
+
+static void reset_counter_timer_handler(struct k_timer *dummy)
+{
+	reset_counter = 0;
+	save_on_flash(RESET_COUNTER);
+	printk("Reset Counter set to Zero\n");
+}
+
+K_TIMER_DEFINE(reset_counter_timer, reset_counter_timer_handler, NULL);
+
 void main(void)
 {
 	int err;
@@ -249,6 +273,8 @@ void main(void)
 
 	printk("Initializing...\n");
 
+	ps_settings_init();
+
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);
 	if (err) {
@@ -256,4 +282,7 @@ void main(void)
 	}
 
 	randomize_publishers_TID();
+
+	short_time_multireset_bt_mesh_unprovisioning();
+	k_timer_start(&reset_counter_timer, K_MSEC(7000), 0);
 }
