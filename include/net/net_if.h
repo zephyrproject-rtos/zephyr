@@ -545,6 +545,13 @@ static inline struct net_offload *net_if_offload(struct net_if *iface)
 {
 	return iface->if_dev->offload;
 }
+#else
+static inline bool net_if_is_ip_offloaded(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return false;
+}
 #endif
 
 /**
