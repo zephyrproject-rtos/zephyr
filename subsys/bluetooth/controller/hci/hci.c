@@ -1805,10 +1805,8 @@ static void vs_read_build_info(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_vs_read_build_info *rp;
 
-#define BUILD_TIMESTAMP " " __DATE__ " " __TIME__
-
 #define HCI_VS_BUILD_INFO "Zephyr OS v" \
-	KERNEL_VERSION_STRING BUILD_TIMESTAMP CONFIG_BT_CTLR_HCI_VS_BUILD_INFO
+	KERNEL_VERSION_STRING CONFIG_BT_CTLR_HCI_VS_BUILD_INFO
 
 	const char build_info[] = HCI_VS_BUILD_INFO;
 
