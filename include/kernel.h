@@ -1331,7 +1331,6 @@ struct k_timer {
 #define _K_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
 	.timeout.delta_ticks_from_prev = _INACTIVE, \
-	.timeout.wait_q = NULL, \
 	.timeout.thread = NULL, \
 	.timeout.func = _timer_expiration_handler, \
 	.wait_q = _WAIT_Q_INIT(&obj.wait_q), \
