@@ -92,8 +92,6 @@ struct wifi_status {
 	int status;
 };
 
-#ifdef CONFIG_WIFI_OFFLOAD
-
 #include <net/net_if.h>
 
 typedef void (*scan_result_cb_t)(struct net_if *iface, int status,
@@ -117,6 +115,8 @@ struct net_wifi_mgmt_offload {
 		       struct wifi_connect_req_params *params);
 	int (*disconnect)(struct device *dev);
 };
+
+#ifdef CONFIG_WIFI_OFFLOAD
 
 void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status);
 void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status);
