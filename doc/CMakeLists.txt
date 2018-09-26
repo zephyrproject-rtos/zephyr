@@ -156,12 +156,12 @@ add_custom_command(
   COMMAND ${PYTHON_EXECUTABLE} ${KI_SCRIPT} --config-dir ${CONFIG_DIR} --errors ${DOC_WARN} --warnings ${DOC_WARN} ${DOC_LOG}
   COMMAND ${PYTHON_EXECUTABLE} ${FIX_TEX_SCRIPT} ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+  ${SPHINX_USES_TERMINAL}
 )
 
 add_custom_target(
   latex
   DEPENDS ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
-  ${SPHINX_USES_TERMINAL}
 )
 
 #
@@ -193,7 +193,6 @@ endif()
 add_custom_target(
   pdf
   DEPENDS ${SPHINX_OUTPUT_DIR_PDF}/zephyr.pdf
-  ${SPHINX_USES_TERMINAL}
 )
 
 endif()
