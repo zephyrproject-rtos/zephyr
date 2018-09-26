@@ -18,9 +18,6 @@
 extern "C" {
 #endif
 
-/* If no clock, these get defined in wait_q.h instead.  Weird header
- * convention, should fix.
- */
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
 extern u64_t z_last_tick_announced;
@@ -40,6 +37,14 @@ void _add_thread_timeout(struct k_thread *thread, _wait_q_t *wait_q,
 int _abort_thread_timeout(struct k_thread *thread);
 
 s32_t _get_next_timeout_expiry(void);
+
+#else
+
+/* Stubs when !CONFIG_SYS_CLOCK_EXISTS */
+#define _init_thread_timeout(t) do{}while(0)
+#define _add_thread_timeout(th,wq,to) do{}while(0)
+#define _abort_thread_timeout(t) (0)
+#define _get_next_timeout_expiry() (K_FOREVER)
 
 #endif
 

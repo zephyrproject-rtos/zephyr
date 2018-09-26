@@ -14,34 +14,10 @@
 #include <misc/rb.h>
 #include <ksched.h>
 #include <sched_priq.h>
+#include <timeout_q.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-#include <timeout_q.h>
-#else
-static ALWAYS_INLINE void _init_thread_timeout(struct _thread_base *thread_base)
-{
-	ARG_UNUSED(thread_base);
-}
-
-static ALWAYS_INLINE void
-_add_thread_timeout(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
-{
-	ARG_UNUSED(thread);
-	ARG_UNUSED(wait_q);
-	ARG_UNUSED(timeout);
-}
-
-static ALWAYS_INLINE int _abort_thread_timeout(struct k_thread *thread)
-{
-	ARG_UNUSED(thread);
-
-	return 0;
-}
-#define _get_next_timeout_expiry() (K_FOREVER)
 #endif
 
 #ifdef CONFIG_WAITQ_SCALABLE
