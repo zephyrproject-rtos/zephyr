@@ -364,11 +364,18 @@ static int prefix_print(struct log_msg *msg,
 	int length = 0;
 
 	if (!log_msg_is_raw_string(msg)) {
-		bool stamp_format = flags & LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
+		bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;
 		bool colors_on = flags & LOG_OUTPUT_FLAG_COLORS;
 		bool level_on = flags & LOG_OUTPUT_FLAG_LEVEL;
 
-		length += timestamp_print(msg, log_output, stamp_format);
+		if (stamp) {
+			bool stamp_format =
+				flags & LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
+
+			length += timestamp_print(msg, log_output,
+						  stamp_format);
+		}
+
 		color_prefix(msg, log_output, colors_on);
 		length += ids_print(msg, log_output, level_on);
 	}
