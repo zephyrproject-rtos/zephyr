@@ -48,8 +48,8 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 
 	/*
 	 * Lock is needed to make sure that the _kernel.threads is not being
-	 * modified by the user_cb either dircetly or indircetly.
-	 * The indircet ways are through calling k_thread_create and
+	 * modified by the user_cb either directly or indirectly.
+	 * The indirect ways are through calling k_thread_create and
 	 * k_thread_abort from user_cb.
 	 */
 	key = irq_lock();
