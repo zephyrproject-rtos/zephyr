@@ -108,5 +108,16 @@
 
 			status = "disabled";
 		};
+
+		spi0: spi@b0001000 {
+			compatible = "snps,designware-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xb0001000 0x400>;
+			interrupts = <2 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			label = "SPI_0";
+			status = "disabled";
+		};
 	};
 };

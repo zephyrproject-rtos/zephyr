@@ -49,3 +49,11 @@
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
+
+&spi0 {
+	status = "ok";
+};
+
+&spi1 {
+	status = "ok";
+};

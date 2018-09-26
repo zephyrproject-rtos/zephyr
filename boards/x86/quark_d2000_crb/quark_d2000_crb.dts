@@ -41,3 +41,7 @@
 &adc0 {
 	status = "ok";
 };
+
+&spi0 {
+	status = "ok";
+};
