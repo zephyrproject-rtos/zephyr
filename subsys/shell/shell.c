@@ -507,10 +507,6 @@ static void find_completion_candidates(const struct shell_static_entry *cmd,
 			}
 
 			found = true;
-		} else {
-			if (found) {
-				break;
-			}
 		}
 		idx++;
 	}
@@ -577,8 +573,10 @@ static size_t shell_str_common(const char *s1, const char *s2, size_t n)
 
 static void tab_options_print(const struct shell *shell,
 			      const struct shell_static_entry *cmd,
-			      size_t first, size_t cnt, u16_t longest)
+			      const char *str, size_t first, size_t cnt,
+			      u16_t longest)
 {
+	size_t str_len = shell_strlen(str);
 	const struct shell_static_entry *match;
 	size_t idx = first;
 
@@ -591,9 +589,15 @@ static void tab_options_print(const struct shell *shell,
 		 */
 		cmd_get(cmd ? cmd->subcmd : NULL, cmd ? 1 : 0,
 			idx, &match, &shell->ctx->active_cmd);
+		idx++;
+
+		if (str && match->syntax &&
+		    !is_completion_candidate(match->syntax, str, str_len)) {
+			continue;
+		}
+
 		tab_item_print(shell, match->syntax, longest);
 		cnt--;
-		idx++;
 	}
 
 	shell_fprintf(shell, SHELL_INFO, "\r\n%s", shell->prompt);
@@ -677,7 +681,8 @@ static void shell_tab_handle(const struct shell *shell)
 		/* Autocompletion.*/
 		autocomplete(shell, cmd, argv[arg_idx], first);
 	} else {
-		tab_options_print(shell, cmd, first, cnt, longest);
+		tab_options_print(shell, cmd, argv[arg_idx], first, cnt,
+				  longest);
 		partial_autocomplete(shell, cmd, argv[arg_idx], first, cnt);
 	}
 }
