@@ -88,7 +88,7 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 		block->id.block = block_num;
 
 		if (ret == 0 || timeout == K_NO_WAIT ||
-		    (ret && ret != -ENOMEM)) {
+		    ret != -ENOMEM) {
 			return ret;
 		}
 
