@@ -332,12 +332,6 @@ void _init_timeout(struct _timeout *t, _timeout_func_t func)
 	t->delta_ticks_from_prev = _INACTIVE;
 
 	/*
-	 * Must be initialized here so that k_wakeup can
-	 * verify the thread is not on a wait queue before aborting a timeout.
-	 */
-	t->wait_q = NULL;
-
-	/*
 	 * Must be initialized here, so the _handle_one_timeout()
 	 * routine can check if there is a thread waiting on this timeout
 	 */
@@ -366,10 +360,8 @@ void _init_thread_timeout(struct _thread_base *thread_base)
 static inline void _unpend_thread_timing_out(struct k_thread *thread,
 					     struct _timeout *timeout_obj)
 {
-	__ASSERT(thread->base.pended_on == (void*)timeout_obj->wait_q, "");
-	if (timeout_obj->wait_q) {
+	if (thread->base.pended_on) {
 		_unpend_thread_no_timeout(thread);
-		thread->base.timeout.wait_q = NULL;
 	}
 }
 
@@ -448,11 +440,11 @@ static inline void _dump_timeout(struct _timeout *timeout, int extra_tab)
 	char *tab = extra_tab ? "\t" : "";
 
 	K_DEBUG("%stimeout %p, prev: %p, next: %p\n"
-		"%s\tthread: %p, wait_q: %p\n"
+		"%s\tthread: %p\n"
 		"%s\tticks remaining: %d\n"
 		"%s\tfunction: %p\n",
 		tab, timeout, timeout->node.prev, timeout->node.next,
-		tab, timeout->thread, timeout->wait_q,
+		tab, timeout->thread,
 		tab, timeout->delta_ticks_from_prev,
 		tab, timeout->func);
 #endif
@@ -510,7 +502,6 @@ void _add_timeout(struct k_thread *thread, struct _timeout *timeout,
 
 	timeout->delta_ticks_from_prev = timeout_in_ticks;
 	timeout->thread = thread;
-	timeout->wait_q = (sys_dlist_t *)wait_q;
 
 	K_DEBUG("before adding timeout %p\n", timeout);
 	_dump_timeout(timeout, 0);
