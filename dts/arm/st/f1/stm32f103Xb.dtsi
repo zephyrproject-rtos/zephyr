@@ -7,9 +7,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <st/stm32f1.dtsi>
+#include <mem.h>
+#include <st/f1/stm32f1.dtsi>
 
 / {
+	flash0: flash@8000000 {
+		reg = <0x08000000 DT_SIZE_K(128)>;
+	};
+
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(20)>;
+	};
 	soc {
 		/* spi2 is present on all STM32F103xB SoCs except
 		 * STM32F103TB. Delete node in stm32f103tb.dtsi.
