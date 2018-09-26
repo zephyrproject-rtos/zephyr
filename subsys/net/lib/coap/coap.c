@@ -705,7 +705,7 @@ unsigned int coap_option_value_to_int(const struct coap_option *option)
 		return (option->value[2] << 0) | (option->value[1] << 8) |
 			(option->value[0] << 16);
 	case 4:
-		return (option->value[2] << 0) | (option->value[2] << 8) |
+		return (option->value[3] << 0) | (option->value[2] << 8) |
 			(option->value[1] << 16) | (option->value[0] << 24);
 	default:
 		return 0;
@@ -1060,8 +1060,8 @@ int coap_append_option_int(struct coap_packet *cpkt, u16_t code,
 		sys_put_be16(val, data);
 		len = 2;
 	} else if (val < 0xFFFFFF) {
-		sys_put_be16(val, data);
-		data[2] = val >> 16;
+		sys_put_be16(val, &data[1]);
+		data[0] = val >> 16;
 		len = 3;
 	} else {
 		sys_put_be32(val, data);
