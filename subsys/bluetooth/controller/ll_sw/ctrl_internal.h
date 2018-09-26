@@ -236,6 +236,7 @@ struct connection {
 #define LLCP_LENGTH_STATE_ACK_WAIT   1
 #define LLCP_LENGTH_STATE_RSP_WAIT   2
 #define LLCP_LENGTH_STATE_RESIZE     3
+		u8_t  pause_tx:1;
 		u16_t rx_octets;
 		u16_t tx_octets;
 #if defined(CONFIG_BT_CTLR_PHY)
