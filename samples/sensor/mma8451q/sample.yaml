@@ -1,8 +1,0 @@
-sample:
-  name: MMA8451Q Accelerometer/Magnetometer Sensor
-tests:
-  test:
-    harness: sensor
-    platform_whitelist: frdm_kl25z
-    tags: sensors
-    depends_on: i2c
