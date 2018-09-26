@@ -107,7 +107,6 @@ static int try_resolve(struct net_app_ctx *ctx,
 		       s32_t timeout)
 {
 #if !defined(CONFIG_DNS_RESOLVER)
-	NET_ERR("Invalid IP address %s", peer_addr_str);
 	return -EINVAL;
 #else
 	int ret;
