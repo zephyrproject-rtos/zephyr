@@ -494,13 +494,13 @@ s32_t _get_next_timeout_expiry(void)
  * Must be called with interrupts locked.
  */
 
-void _add_timeout(struct k_thread *thread, struct _timeout *timeout,
-		  s32_t timeout_in_ticks)
+void _add_timeout(struct _timeout *timeout,
+		  _timeout_func_t fn, s32_t timeout_in_ticks)
 {
 	__ASSERT(timeout_in_ticks >= 0, "");
+	__ASSERT(fn == timeout->func, "");
 
 	timeout->delta_ticks_from_prev = timeout_in_ticks;
-	timeout->thread = thread;
 
 	K_DEBUG("before adding timeout %p\n", timeout);
 	_dump_timeout(timeout, 0);
@@ -566,10 +566,10 @@ inserted:
  * Must be called with interrupts locked.
  */
 
-void _add_thread_timeout(struct k_thread *thread,
-			 s32_t timeout_in_ticks)
+void _add_thread_timeout(struct k_thread *thread, s32_t timeout_in_ticks)
 {
-	_add_timeout(thread, &thread->base.timeout, timeout_in_ticks);
+	thread->base.timeout.thread = thread;
+	_add_timeout(&thread->base.timeout, NULL, timeout_in_ticks);
 }
 
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
