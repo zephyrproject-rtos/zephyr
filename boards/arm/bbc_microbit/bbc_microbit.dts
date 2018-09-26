@@ -40,6 +40,18 @@
 	scl-pin = <0>;
 };
 
+/*
+&i2c0 {
+	status = "ok";
+	mma8653fc@1d {
+		compatible = "nxp,mma8653fc";
+		reg = <0x1d>;
+		label = "MMA8653";
+	};
+};
+*/
+
+
 &flash0 {
 	/*
 	 * For more information, see:

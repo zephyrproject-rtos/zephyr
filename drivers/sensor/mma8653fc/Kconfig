@@ -1,0 +1,56 @@
+# Kconfig - MMA8653 Accelerometer sensor configuration options
+#
+# Copyright (c) 2018 William Fish
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig MMA8653
+	bool "MMA8653 Accelerometer driver"
+	depends on I2C
+	help
+	  Enable driver for MMA8653 Accelerometer.
+
+if MMA8653
+
+if !HAS_DTS_I2C_DEVICE
+
+config MMA8653_NAME
+	string "Device name"
+	default "MMA8653"
+
+config MMA8653_I2C_NAME
+	string "I2C device name"
+	default I2C_0_NAME
+
+config MMA8653_I2C_ADDRESS
+	hex "I2C address for MMA8653 Sensor"
+	default 0x3A
+	help
+	  I2C address of the MMA8653 sensor.
+	  0x1D: I2C_ADDR
+
+endif # !HAS_DTS_I2C_DEVICE
+
+config MMA8653_WHOAMI
+	hex "WHOAMI value"
+	default 0x5A
+	help
+	  The whoami value for MMA8653 (0x5A).
+
+choice
+	prompt "Range"
+	default MMA8653_RANGE_2G
+
+config MMA8653_RANGE_8G
+	bool "8g (0.976 mg/LSB)"
+
+config MMA8653_RANGE_4G
+	bool "4g (0.488 mg/LSB)"
+
+config MMA8653_RANGE_2G
+	bool "2g (0.244 mg/LSB)"
+
+endchoice
+
+endif # MMA8653
