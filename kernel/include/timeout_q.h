@@ -25,14 +25,13 @@ extern u64_t z_last_tick_announced;
 void _init_timeout(struct _timeout *t, _timeout_func_t func);
 
 void _add_timeout(struct k_thread *thread, struct _timeout *timeout,
-		  _wait_q_t *wait_q, s32_t timeout_in_ticks);
+                  s32_t timeout_in_ticks);
 
 int _abort_timeout(struct _timeout *timeout);
 
 void _init_thread_timeout(struct _thread_base *thread_base);
 
-void _add_thread_timeout(struct k_thread *thread, _wait_q_t *wait_q,
-			 s32_t timeout_in_ticks);
+void _add_thread_timeout(struct k_thread *thread, s32_t timeout_in_ticks);
 
 int _abort_thread_timeout(struct k_thread *thread);
 
@@ -42,7 +41,7 @@ s32_t _get_next_timeout_expiry(void);
 
 /* Stubs when !CONFIG_SYS_CLOCK_EXISTS */
 #define _init_thread_timeout(t) do{}while(0)
-#define _add_thread_timeout(th,wq,to) do{}while(0)
+#define _add_thread_timeout(th,to) do{}while(0 && (void*)to && (void*)th)
 #define _abort_thread_timeout(t) (0)
 #define _get_next_timeout_expiry() (K_FOREVER)
 
