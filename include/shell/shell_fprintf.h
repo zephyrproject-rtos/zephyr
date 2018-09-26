@@ -61,7 +61,7 @@ struct shell_fprintf {
 	}
 
 /**
- * @brief fprintf like function which send formated data stream to output.
+ * @brief fprintf like function which send formatted data stream to output.
  *
  * @param sh_fprintf	fprintf instance.
  * @param fmt		Format string.

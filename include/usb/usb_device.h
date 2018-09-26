@@ -180,7 +180,7 @@ struct usb_interface_cfg_data {
  *
  * The Application instantiates this with given parameters added
  * using the "usb_set_config" function. Once this function is called
- * changes to this structure will result in undefined behaviour. This structure
+ * changes to this structure will result in undefined behavior. This structure
  * may only be updated after calls to usb_deconfig
  */
 struct usb_cfg_data {
@@ -294,7 +294,7 @@ int usb_read(u8_t ep, u8_t *data, u32_t max_data_len, u32_t *ret_bytes);
  * @brief Set STALL condition on the specified endpoint
  *
  * This function is called by USB device class handler code to set stall
- * conditionin on endpoint.
+ * condition on endpoint.
  *
  * @param[in]  ep           Endpoint address corresponding to the one listed in
  *                          the device configuration table
@@ -307,7 +307,7 @@ int usb_ep_set_stall(u8_t ep);
  * @brief Clears STALL condition on the specified endpoint
  *
  * This function is called by USB device class handler code to clear stall
- * conditionin on endpoint.
+ * condition on endpoint.
  *
  * @param[in]  ep           Endpoint address corresponding to the one listed in
  *                          the device configuration table
