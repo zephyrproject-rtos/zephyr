@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2016-2018 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,16 +55,16 @@ static const u8_t hid_report_desc[] = {
 
 static u8_t report_1[2] = { REPORT_ID_1, 0x00 };
 
-int debug_cb(struct usb_setup_packet *setup, s32_t *len,
-	     u8_t **data)
+static int debug_cb(struct usb_setup_packet *setup, s32_t *len,
+		    u8_t **data)
 {
 	SYS_LOG_DBG("Debug callback");
 
 	return -ENOTSUP;
 }
 
-int set_idle_cb(struct usb_setup_packet *setup, s32_t *len,
-		u8_t **data)
+static int set_idle_cb(struct usb_setup_packet *setup, s32_t *len,
+		       u8_t **data)
 {
 	SYS_LOG_DBG("Set Idle callback");
 
@@ -73,8 +73,8 @@ int set_idle_cb(struct usb_setup_packet *setup, s32_t *len,
 	return 0;
 }
 
-int get_report_cb(struct usb_setup_packet *setup, s32_t *len,
-		  u8_t **data)
+static int get_report_cb(struct usb_setup_packet *setup, s32_t *len,
+			 u8_t **data)
 {
 	SYS_LOG_DBG("Get report callback");
 
