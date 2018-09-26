@@ -22,9 +22,9 @@ extern "C" {
 
 extern u64_t z_last_tick_announced;
 
-void _init_timeout(struct _timeout *t, _timeout_func_t func);
+void _init_timeout(struct _timeout *t, _timeout_func_t fn);
 
-void _add_timeout(struct k_thread *thread, struct _timeout *timeout,
+void _add_timeout(struct _timeout *timeout, _timeout_func_t func,
                   s32_t timeout_in_ticks);
 
 int _abort_timeout(struct _timeout *timeout);
