@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f072.dtsi>
+#include <st/f0/stm32f072Xb.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F072-EVAL board";

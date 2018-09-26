@@ -1,13 +1,23 @@
 /*
- * Copyright (c) 2018 qianfan Zhao
+ * Copyright (c) 2018 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include <st/stm32f0.dtsi>
+#include <mem.h>
+#include <st/f0/stm32f030.dtsi>
 
 / {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(8)>;
+	};
+
 	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(64)>;
+			};
+		};
+
 		spi2: spi@40003800 {
 			compatible = "st,stm32-spi-fifo";
 			#address-cells = <1>;
@@ -17,17 +27,6 @@
 			interrupts = <26 3>;
 			status = "disabled";
 			label = "SPI_2";
-		};
-
-		usb: usb@40005c00 {
-			compatible = "st,stm32-usb";
-			reg = <0x40005c00 0x400>;
-			interrupts = <31 0>;
-			interrupt-names = "usb";
-			num-bidir-endpoints = <8>;
-			ram-size = <1024>;
-			status = "disabled";
-			label= "USB";
 		};
 	};
 };
