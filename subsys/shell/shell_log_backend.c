@@ -74,7 +74,9 @@ void shell_log_backend_disable(const struct shell_log_backend *backend)
 static void msg_process(const struct log_output *log_output,
 			struct log_msg *msg)
 {
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
+	u32_t flags = LOG_OUTPUT_FLAG_LEVEL |
+		      LOG_OUTPUT_FLAG_TIMESTAMP |
+		      LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 
 	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
 		flags |= LOG_OUTPUT_FLAG_COLORS;

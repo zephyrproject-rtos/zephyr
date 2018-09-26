@@ -32,7 +32,7 @@ static void put(const struct log_backend *const backend,
 {
 	log_msg_get(msg);
 
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL;
+	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
 		flags |= LOG_OUTPUT_FLAG_COLORS;
