@@ -366,6 +366,7 @@ void _init_thread_timeout(struct _thread_base *thread_base)
 static inline void _unpend_thread_timing_out(struct k_thread *thread,
 					     struct _timeout *timeout_obj)
 {
+	__ASSERT(thread->base.pended_on == (void*)timeout_obj->wait_q, "");
 	if (timeout_obj->wait_q) {
 		_unpend_thread_no_timeout(thread);
 		thread->base.timeout.wait_q = NULL;
@@ -505,6 +506,7 @@ void _add_timeout(struct k_thread *thread, struct _timeout *timeout,
 		  _wait_q_t *wait_q, s32_t timeout_in_ticks)
 {
 	__ASSERT(timeout_in_ticks >= 0, "");
+	__ASSERT(!thread || thread->base.pended_on == wait_q, "");
 
 	timeout->delta_ticks_from_prev = timeout_in_ticks;
 	timeout->thread = thread;
@@ -578,6 +580,7 @@ void _add_thread_timeout(struct k_thread *thread,
 			 _wait_q_t *wait_q,
 			 s32_t timeout_in_ticks)
 {
+	__ASSERT(thread && thread->base.pended_on == wait_q, "");
 	_add_timeout(thread, &thread->base.timeout, wait_q, timeout_in_ticks);
 }
 
