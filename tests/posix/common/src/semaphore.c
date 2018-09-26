@@ -12,48 +12,117 @@
 #define STACK_SIZE 1024
 
 sem_t sema;
+void *dummy_sem;
+
+struct sched_param schedparam;
+int schedpolicy = SCHED_FIFO;
 
 static K_THREAD_STACK_DEFINE(stack, STACK_SIZE);
 
 static void *child_func(void *p1)
 {
-	zassert_false(sem_post(&sema), "sem_post failed");
+	zassert_equal(sem_post(&sema), 0, "sem_post failed");
 	return NULL;
+}
+
+void initialize_thread_attr(pthread_attr_t *attr)
+{
+	int ret;
+
+	schedparam.priority = 1;
+
+	ret = pthread_attr_init(attr);
+	if (ret != 0) {
+		zassert_equal(pthread_attr_destroy(attr), 0,
+			      "Unable to destroy pthread object attrib");
+		zassert_equal(pthread_attr_init(attr), 0,
+			      "Unable to create pthread object attrib");
+	}
+
+	pthread_attr_setstack(attr, &stack, STACK_SIZE);
+	pthread_attr_setschedpolicy(attr, schedpolicy);
+	pthread_attr_setschedparam(attr, &schedparam);
 }
 
 void test_posix_semaphore(void)
 {
-	pthread_t newthread;
-	pthread_attr_t attr;
-	struct sched_param schedparam;
-	int schedpolicy = SCHED_FIFO;
+	pthread_t thread1, thread2;
+	pthread_attr_t attr1, attr2;
 	int val, ret;
+	struct timespec abstime;
 
-	schedparam.priority = 1;
-    ret = pthread_attr_init(&attr);
-	if (ret != 0) {
-		zassert_false(pthread_attr_destroy(&attr),
-				"Unable to destroy pthread object attrib");
-		zassert_false(pthread_attr_init(&attr),
-				"Unable to create pthread object attrib");
-	}
+	initialize_thread_attr(&attr1);
 
-	pthread_attr_setstack(&attr, &stack, STACK_SIZE);
-	pthread_attr_setschedpolicy(&attr, schedpolicy);
-	pthread_attr_setschedparam(&attr, &schedparam);
-
+	/* TESTPOINT: Check if sema value is less than
+	 * CONFIG_SEM_VALUE_MAX
+	 */
 	zassert_equal(sem_init(&sema, 0, (CONFIG_SEM_VALUE_MAX + 1)), -1,
-			"value larger than %d\n", CONFIG_SEM_VALUE_MAX);
+		      "value larger than %d\n", CONFIG_SEM_VALUE_MAX);
 	zassert_equal(errno, EINVAL, NULL);
 
-	zassert_false(sem_init(&sema, 0, 0), "sem_init failed");
+	zassert_equal(sem_init(&sema, 0, 0), 0, "sem_init failed");
 
+	/* TESTPOINT: Call sem_post with invalid kobject */
+	zassert_equal(sem_post(dummy_sem), -1, "sem_post of"
+		      " invalid semaphore object didn't fail");
+	zassert_equal(errno, EINVAL, NULL);
+
+	/* TESTPOINT: Check if semaphore value is as set */
 	zassert_equal(sem_getvalue(&sema, &val), 0, NULL);
 	zassert_equal(val, 0, NULL);
 
-	ret = pthread_create(&newthread, &attr, child_func, NULL);
-	zassert_false(ret, "Thread creation failed");
+	/* TESTPOINT: Check if sema is acquired when it
+	 * is not available
+	 */
+	zassert_equal(sem_trywait(&sema), -1, NULL);
+	zassert_equal(errno, EAGAIN, NULL);
 
-	zassert_false(sem_wait(&sema), "sem_wait failed");
-	zassert_false(sem_destroy(&sema), "sema is not destroyed");
+	ret = pthread_create(&thread1, &attr1, child_func, NULL);
+	zassert_equal(ret, 0, "Thread creation failed");
+
+	zassert_equal(clock_gettime(CLOCK_REALTIME, &abstime), 0,
+		      "clock_gettime failed");
+
+	abstime.tv_sec += 5;
+
+	/* TESPOINT: Wait for 5 seconds and acquire sema given
+	 * by thread1
+	 */
+	zassert_equal(sem_timedwait(&sema, &abstime), 0, NULL);
+
+	/* TESTPOINT: Semaphore is already acquired, check if
+	 * no semaphore is available
+	 */
+	zassert_equal(sem_timedwait(&sema, &abstime), -1, NULL);
+	zassert_equal(errno, ETIMEDOUT, NULL);
+
+	/* TESTPOINT: sem_destroy with invalid kobject */
+	zassert_equal(sem_destroy(dummy_sem), -1, "invalid"
+		      " semaphore is destroyed");
+	zassert_equal(errno, EINVAL, NULL);
+
+	zassert_equal(sem_destroy(&sema), 0, "semaphore is not destroyed");
+
+	zassert_equal(pthread_attr_destroy(&attr1), 0,
+		      "Unable to destroy pthread object attrib");
+
+	/* TESTPOINT: Initialize sema with 1 */
+	zassert_equal(sem_init(&sema, 0, 1), 0, "sem_init failed");
+	zassert_equal(sem_getvalue(&sema, &val), 0, NULL);
+	zassert_equal(val, 1, NULL);
+
+	zassert_equal(sem_destroy(&sema), -1, "acquired semaphore"
+		      " is destroyed");
+	zassert_equal(errno, EBUSY, NULL);
+
+	/* TESTPOINT: take semaphore which is initialized with 1 */
+	zassert_equal(sem_trywait(&sema), 0, NULL);
+
+	initialize_thread_attr(&attr2);
+
+	zassert_equal(pthread_create(&thread2, &attr2, child_func, NULL), 0,
+		      "Thread creation failed");
+
+	/* TESTPOINT: Wait and acquire semaphore till thread2 gives */
+	zassert_equal(sem_wait(&sema), 0, "sem_wait failed");
 }
