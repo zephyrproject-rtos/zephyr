@@ -67,7 +67,7 @@ configured in the sample (https://google.com). To access a different web page
 over TLS, provide an appropriate certificate to authenticate to that web server.
 
 Note, that TLS support in the sample depends on non-posix, TLS socket
-functionality. Therefore, it is only posibly to run TLS in this sample
+functionality. Therefore, it is only possible to run TLS in this sample
 on Zephyr.
 
 Running application on POSIX Host

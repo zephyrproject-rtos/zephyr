@@ -62,7 +62,7 @@ Zephyr offers a large and evergrowing number of features including:
      behavior
    * Timeslicing: Enables time slicing between preemptible threads of equal
      priority
-   * Multiple queueing strategies:
+   * Multiple queuing strategies:
 
      * Simple linked-list ready queue
      * Red/black tree ready queue
@@ -94,14 +94,14 @@ Zephyr offers a large and evergrowing number of features including:
    size and increases performance for resource-limited systems.
 
 **Optimized Device Driver Model**
-   Provides a consistent device model for configuring the drivers that are part
+   Provides a consistent device model for configuring the drivers that are part
    of the platform/system and a consistent model for initializing all the
-   drivers configured into the system and Allows the reuse of drivers across
-   platforms that have common devices/IP blocks
+   drivers configured into the system and Allows the reuse of drivers across
+   platforms that have common devices/IP blocks
 
 **Device Tree Support**
    Use of Device Tree (DTS) to describe hardware and configuration information for
-   boards. The DTS information will be used only during compile time.
+   boards. The DTS information will be used only during compile time.
    Information about the system is extracted from the compiled DTS and used to
    create the application image.
 

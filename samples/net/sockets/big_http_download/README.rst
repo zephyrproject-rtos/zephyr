@@ -92,7 +92,7 @@ web page over TLS, you'll need to provide a different certificate
 to authenticate to that server.
 
 Note, that TLS support in the sample depends on non-posix, TLS socket
-functionality. Therefore, it is only posibly to run TLS in this sample
+functionality. Therefore, it is only possible to run TLS in this sample
 on Zephyr.
 
 Running application on POSIX Host
