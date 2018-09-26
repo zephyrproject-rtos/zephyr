@@ -324,6 +324,7 @@ static inline int setsockopt(int sock, int level, int optname,
 
 #define POLLIN ZSOCK_POLLIN
 #define POLLOUT ZSOCK_POLLOUT
+#define POLLERR ZSOCK_POLLERR
 
 #define MSG_PEEK ZSOCK_MSG_PEEK
 #define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
