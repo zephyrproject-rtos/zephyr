@@ -393,12 +393,10 @@ struct _thread_base {
 		struct rbnode qnode_rb;
 	};
 
-#ifdef CONFIG_WAITQ_SCALABLE
 	/* wait queue on which the thread is pended (needed only for
 	 * trees, not dumb lists)
 	 */
 	_wait_q_t *pended_on;
-#endif
 
 	/* user facing 'thread options'; values defined in include/kernel.h */
 	u8_t user_options;

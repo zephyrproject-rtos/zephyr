@@ -307,6 +307,11 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 	_remove_thread_from_ready_q(thread);
 	_mark_thread_as_pending(thread);
 
+	if (wait_q != NULL) {
+		thread->base.pended_on = wait_q;
+		_priq_wait_add(&wait_q->waitq, thread);
+	}
+
 	/* The timeout handling is currently synchronized external to
 	 * the scheduler using the legacy global lock.  Should fix
 	 * that.
@@ -317,13 +322,6 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 
 		_add_thread_timeout(thread, wait_q, ticks);
 		irq_unlock(key);
-	}
-
-	if (wait_q != NULL) {
-#ifdef CONFIG_WAITQ_SCALABLE
-		thread->base.pended_on = wait_q;
-#endif
-		_priq_wait_add(&wait_q->waitq, thread);
 	}
 
 	sys_trace_thread_pend(thread);
@@ -337,14 +335,9 @@ void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 
 static _wait_q_t *pended_on(struct k_thread *thread)
 {
-#ifdef CONFIG_WAITQ_SCALABLE
 	__ASSERT_NO_MSG(thread->base.pended_on);
 
 	return thread->base.pended_on;
-#else
-	ARG_UNUSED(thread);
-	return NULL;
-#endif
 }
 
 struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
@@ -368,9 +361,7 @@ void _unpend_thread_no_timeout(struct k_thread *thread)
 		_mark_thread_as_not_pending(thread);
 	}
 
-#if defined(CONFIG_ASSERT) && defined(CONFIG_WAITQ_SCALABLE)
 	thread->base.pended_on = NULL;
-#endif
 }
 
 int _pend_current_thread(int key, _wait_q_t *wait_q, s32_t timeout)
