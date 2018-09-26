@@ -13,15 +13,6 @@ menuconfig FXOS8700
 
 if FXOS8700
 
-config FXOS8700_WHOAMI
-	hex "WHOAMI value"
-	range 0x00 0xff
-	default 0xc7
-	help
-	  The datasheet defines the value of the WHOAMI register, but some
-	  pre-production devices can have a different value. It is unlikely you
-	  should need to change this configuration option from the default.
-
 choice
 	prompt "Mode"
 	default FXOS8700_MODE_ACCEL
