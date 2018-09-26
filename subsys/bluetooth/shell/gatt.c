@@ -24,7 +24,6 @@
 #include <shell/shell.h>
 
 #include "bt.h"
-#include "gatt.h"
 
 #define CHAR_SIZE_MAX           512
 
@@ -37,7 +36,8 @@ static void exchange_func(struct bt_conn *conn, u8_t err,
 
 static struct bt_gatt_exchange_params exchange_params;
 
-void cmd_gatt_exchange_mtu(const struct shell *shell, size_t argc, char *argv[])
+static void cmd_exchange_mtu(const struct shell *shell,
+			     size_t argc, char *argv[])
 {
 	int err;
 
@@ -146,7 +146,7 @@ static u8_t discover_func(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-void cmd_gatt_discover(const struct shell *shell, size_t argc, char *argv[])
+static void cmd_discover(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
@@ -174,13 +174,13 @@ void cmd_gatt_discover(const struct shell *shell, size_t argc, char *argv[])
 		}
 	}
 
-	if (!strcmp(argv[0], "gatt-discover-secondary")) {
+	if (!strcmp(argv[0], "discover-secondary")) {
 		discover_params.type = BT_GATT_DISCOVER_SECONDARY;
-	} else if (!strcmp(argv[0], "gatt-discover-include")) {
+	} else if (!strcmp(argv[0], "discover-include")) {
 		discover_params.type = BT_GATT_DISCOVER_INCLUDE;
-	} else if (!strcmp(argv[0], "gatt-discover-characteristic")) {
+	} else if (!strcmp(argv[0], "discover-characteristic")) {
 		discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
-	} else if (!strcmp(argv[0], "gatt-discover-descriptor")) {
+	} else if (!strcmp(argv[0], "discover-descriptor")) {
 		discover_params.type = BT_GATT_DISCOVER_DESCRIPTOR;
 	} else {
 		discover_params.type = BT_GATT_DISCOVER_PRIMARY;
@@ -210,7 +210,7 @@ static u8_t read_func(struct bt_conn *conn, u8_t err,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-void cmd_gatt_read(const struct shell *shell, size_t argc, char *argv[])
+static void cmd_read(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
@@ -241,7 +241,7 @@ void cmd_gatt_read(const struct shell *shell, size_t argc, char *argv[])
 	}
 }
 
-void cmd_gatt_mread(const struct shell *shell, size_t argc, char *argv[])
+static void cmd_mread(const struct shell *shell, size_t argc, char *argv[])
 {
 	u16_t h[8];
 	int i, err;
@@ -287,7 +287,7 @@ static void write_func(struct bt_conn *conn, u8_t err,
 	(void)memset(&write_params, 0, sizeof(write_params));
 }
 
-void cmd_gatt_write(const struct shell *shell, size_t argc, char *argv[])
+static void cmd_write(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 	u16_t handle, offset;
@@ -337,8 +337,8 @@ void cmd_gatt_write(const struct shell *shell, size_t argc, char *argv[])
 	}
 }
 
-void cmd_gatt_write_without_rsp(const struct shell *shell,
-				size_t argc, char *argv[])
+static void cmd_write_without_rsp(const struct shell *shell,
+				  size_t argc, char *argv[])
 {
 	u16_t handle;
 	u16_t repeat;
@@ -355,7 +355,7 @@ void cmd_gatt_write_without_rsp(const struct shell *shell,
 		return;
 	}
 
-	sign = !strcmp(argv[0], "gatt-write-signed");
+	sign = !strcmp(argv[0], "signed-write");
 	handle = strtoul(argv[1], NULL, 16);
 	gatt_write_buf[0] = strtoul(argv[2], NULL, 16);
 	len = 1;
@@ -408,7 +408,7 @@ static u8_t notify_func(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-void cmd_gatt_subscribe(const struct shell *shell, size_t argc, char *argv[])
+static void cmd_subscribe(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
@@ -444,7 +444,8 @@ void cmd_gatt_subscribe(const struct shell *shell, size_t argc, char *argv[])
 	}
 }
 
-void cmd_gatt_unsubscribe(const struct shell *shell, size_t argc, char *argv[])
+static void cmd_unsubscribe(const struct shell *shell,
+			    size_t argc, char *argv[])
 {
 	int err;
 
@@ -477,7 +478,7 @@ static u8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_CONTINUE;
 }
 
-void cmd_gatt_show_db(const struct shell *shell, size_t argc, char *argv[])
+static void cmd_show_db(const struct shell *shell, size_t argc, char *argv[])
 {
 	bt_gatt_foreach_attr(0x0001, 0xffff, print_attr, (void *)shell);
 }
@@ -624,8 +625,8 @@ static struct bt_gatt_attr vnd1_attrs[] = {
 
 static struct bt_gatt_service vnd1_svc = BT_GATT_SERVICE(vnd1_attrs);
 
-void cmd_gatt_register_test_svc(const struct shell *shell,
-				size_t argc, char *argv[])
+static void cmd_register_test_svc(const struct shell *shell,
+				  size_t argc, char *argv[])
 {
 	bt_gatt_service_register(&vnd_svc);
 	bt_gatt_service_register(&vnd1_svc);
@@ -633,8 +634,8 @@ void cmd_gatt_register_test_svc(const struct shell *shell,
 	print(shell, "Registering test vendor services\n");
 }
 
-void cmd_gatt_unregister_test_svc(const struct shell *shell,
-				  size_t argc, char *argv[])
+static void cmd_unregister_test_svc(const struct shell *shell,
+				    size_t argc, char *argv[])
 {
 	bt_gatt_service_unregister(&vnd_svc);
 	bt_gatt_service_unregister(&vnd1_svc);
@@ -714,8 +715,7 @@ static struct bt_gatt_attr met_attrs[] = {
 
 static struct bt_gatt_service met_svc = BT_GATT_SERVICE(met_attrs);
 
-void cmd_gatt_write_cmd_metrics(const struct shell *shell,
-				size_t argc, char *argv[])
+static void cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err = 0;
 
@@ -748,3 +748,61 @@ void cmd_gatt_write_cmd_metrics(const struct shell *shell,
 		print(shell, "GATT write cmd metrics %s.\n", argv[1]);
 	}
 }
+
+#define HELP_NONE "[none]"
+
+SHELL_CREATE_STATIC_SUBCMD_SET(gatt_cmds) {
+#if defined(CONFIG_BT_GATT_CLIENT)
+	SHELL_CMD(discover-characteristic, NULL,
+		  "[UUID] [start handle] [end handle]", cmd_discover),
+	SHELL_CMD(discover-descriptor, NULL,
+		  "[UUID] [start handle] [end handle]", cmd_discover),
+	SHELL_CMD(discover-include, NULL,
+		  "[UUID] [start handle] [end handle]", cmd_discover),
+	SHELL_CMD(discover-primary, NULL,
+		  "[UUID] [start handle] [end handle]", cmd_discover),
+	SHELL_CMD(discover-secondary, NULL,
+		  "[UUID] [start handle] [end handle]", cmd_discover),
+	SHELL_CMD(exchange-mtu, NULL, HELP_NONE, cmd_exchange_mtu),
+	SHELL_CMD(read, NULL, "<handle> [offset]", cmd_read),
+	SHELL_CMD(read-multiple, NULL, "<handle 1> <handle 2> ...",
+		  cmd_mread),
+	SHELL_CMD(signed-write, NULL, "<handle> <data> [length] [repeat]",
+		  cmd_write_without_rsp),
+	SHELL_CMD(subscribe, NULL, "<CCC handle> <value handle> [ind]",
+		  cmd_subscribe),
+	SHELL_CMD(write, NULL, "<handle> <offset> <data> [length]",
+		  cmd_write),
+	SHELL_CMD(write-without-response, NULL,
+		  "<handle> <data> [length] [repeat]",
+		  cmd_write_without_rsp),
+	SHELL_CMD(unsubscribe, NULL, HELP_NONE, cmd_unsubscribe),
+#endif /* CONFIG_BT_GATT_CLIENT */
+	SHELL_CMD(metrics, NULL,
+		  "register vendr char and measure rx [value on, off]",
+		  cmd_metrics),
+	SHELL_CMD(register, NULL,
+		  "register pre-predefined test service",
+		  cmd_register_test_svc),
+	SHELL_CMD(show-db, NULL, HELP_NONE, cmd_show_db),
+	SHELL_CMD(unregister, NULL,
+		  "unregister pre-predefined test service",
+		  cmd_unregister_test_svc),
+	SHELL_SUBCMD_SET_END
+};
+
+static void cmd_gatt(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		shell_help_print(shell, NULL, 0);
+		return;
+	}
+
+	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
+		return;
+	}
+
+	error(shell, "%s:%s%s\r\n", argv[0], "unknown parameter: ", argv[1]);
+}
+
+SHELL_CMD_REGISTER(gatt, &gatt_cmds, "Bluetooth GATT shell commands", cmd_gatt);

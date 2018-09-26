@@ -31,7 +31,6 @@
 #include <shell/shell.h>
 
 #include "bt.h"
-#include "gatt.h"
 #include "ll.h"
 
 #define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
@@ -1603,42 +1602,6 @@ SHELL_CREATE_STATIC_SUBCMD_SET(bt_cmds) {
 	SHELL_CMD(fixed-passkey, NULL, "[passkey]", cmd_fixed_passkey),
 #endif
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
-#if defined(CONFIG_BT_GATT_CLIENT)
-	SHELL_CMD(gatt-exchange-mtu, NULL, HELP_NONE, cmd_gatt_exchange_mtu),
-	SHELL_CMD(gatt-discover-primary, NULL,
-		  "[UUID] [start handle] [end handle]", cmd_gatt_discover),
-	SHELL_CMD(gatt-discover-secondary, NULL,
-		  "[UUID] [start handle] [end handle]", cmd_gatt_discover),
-	SHELL_CMD(gatt-discover-include, NULL,
-		  "[UUID] [start handle] [end handle]", cmd_gatt_discover),
-	SHELL_CMD(gatt-discover-characteristic, NULL,
-		  "[UUID] [start handle] [end handle]", cmd_gatt_discover),
-	SHELL_CMD(gatt-discover-descriptor, NULL,
-		  "[UUID] [start handle] [end handle]", cmd_gatt_discover),
-	SHELL_CMD(gatt-read, NULL, "<handle> [offset]", cmd_gatt_read),
-	SHELL_CMD(gatt-read-multiple, NULL, "<handle 1> <handle 2> ...",
-		  cmd_gatt_mread),
-	SHELL_CMD(gatt-write, NULL, "<handle> <offset> <data> [length]",
-		  cmd_gatt_write),
-	SHELL_CMD(gatt-write-without-response, NULL,
-		  "<handle> <data> [length] [repeat]",
-		  cmd_gatt_write_without_rsp),
-	SHELL_CMD(gatt-write-signed, NULL, "<handle> <data> [length] [repeat]",
-		  cmd_gatt_write_without_rsp),
-	SHELL_CMD(gatt-subscribe, NULL, "<CCC handle> <value handle> [ind]",
-		  cmd_gatt_subscribe),
-	SHELL_CMD(gatt-unsubscribe, NULL, HELP_NONE, cmd_gatt_unsubscribe),
-#endif /* CONFIG_BT_GATT_CLIENT */
-	SHELL_CMD(gatt-show-db, NULL, HELP_NONE, cmd_gatt_show_db),
-	SHELL_CMD(gatt-register-service, NULL,
-		  "register pre-predefined test service",
-		  cmd_gatt_register_test_svc),
-	SHELL_CMD(gatt-unregister-service, NULL,
-		  "unregister pre-predefined test service",
-		  cmd_gatt_unregister_test_svc),
-	SHELL_CMD(gatt-metrics, NULL,
-		  "register vendr char and measure rx [value on, off]",
-		  cmd_gatt_write_cmd_metrics),
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	SHELL_CMD(l2cap-register, NULL, "<psm> [sec_level]",
 		  cmd_l2cap_register),
