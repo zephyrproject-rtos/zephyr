@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f103Xb.dtsi>
+#include <st/f1/stm32f103Xb.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F103RB-NUCLEO board";

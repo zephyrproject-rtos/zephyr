@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f107.dtsi>
+#include <st/f1/stm32f107Xc.dtsi>
 
 / {
 	model = "STMicroelectronics STM3210C-EVAL board";

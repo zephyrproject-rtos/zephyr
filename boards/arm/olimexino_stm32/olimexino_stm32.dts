@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f103Xb.dtsi>
+#include <st/f1/stm32f103Xb.dtsi>
 
 / {
 	model = "Olimex OLIMEXINO-STM32 board";
