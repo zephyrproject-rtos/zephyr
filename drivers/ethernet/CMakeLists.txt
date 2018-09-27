@@ -14,6 +14,7 @@ if(CONFIG_ETH_NATIVE_POSIX)
 	zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/l2)
 	zephyr_library_compile_definitions(NO_POSIX_CHEATS)
 	zephyr_library_compile_definitions(_BSD_SOURCE)
+	zephyr_library_compile_definitions(_DEFAULT_SOURCE)
 	zephyr_library_sources(
 		eth_native_posix.c
 		eth_native_posix_adapt.c
