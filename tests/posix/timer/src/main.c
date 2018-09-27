@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include <time.h>
-#include <pthread.h>
+#include <unistd.h>
 
 #define SECS_TO_SLEEP 2
 #define DURATION_SECS 1
