@@ -57,15 +57,15 @@ extern u32_t _sse_mxcsr_default_value;
  * specified thread control block. The SSE registers are saved only if the
  * thread is actually using them.
  */
-static void _FpCtxSave(struct tcs *tcs)
+static void _FpCtxSave(struct k_thread *thread)
 {
 #ifdef CONFIG_SSE
-	if (tcs->base.user_options & K_SSE_REGS) {
-		_do_fp_and_sse_regs_save(&tcs->arch.preempFloatReg);
+	if (thread->base.user_options & K_SSE_REGS) {
+		_do_fp_and_sse_regs_save(&thread->arch.preempFloatReg);
 		return;
 	}
 #endif
-	_do_fp_regs_save(&tcs->arch.preempFloatReg);
+	_do_fp_regs_save(&thread->arch.preempFloatReg);
 }
 
 /*
@@ -74,11 +74,11 @@ static void _FpCtxSave(struct tcs *tcs)
  * This routine initializes the system's "live" floating point context.
  * The SSE registers are initialized only if the thread is actually using them.
  */
-static inline void _FpCtxInit(struct tcs *tcs)
+static inline void _FpCtxInit(struct k_thread *thread)
 {
 	_do_fp_regs_init();
 #ifdef CONFIG_SSE
-	if (tcs->base.user_options & K_SSE_REGS) {
+	if (thread->base.user_options & K_SSE_REGS) {
 		_do_sse_regs_init();
 	}
 #endif
@@ -93,10 +93,10 @@ static inline void _FpCtxInit(struct tcs *tcs)
  * The locking isn't really needed when the routine is called by a cooperative
  * thread (since context switching can't occur), but it is harmless.
  */
-void k_float_enable(struct tcs *tcs, unsigned int options)
+void k_float_enable(struct k_thread *thread, unsigned int options)
 {
 	unsigned int imask;
-	struct tcs *fp_owner;
+	struct k_thread *fp_owner;
 
 	/* Ensure a preemptive context switch does not occur */
 
@@ -104,7 +104,7 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 
 	/* Indicate thread requires floating point context saving */
 
-	tcs->base.user_options |= (u8_t)options;
+	thread->base.user_options |= (u8_t)options;
 
 	/*
 	 * The current thread might not allow FP instructions, so clear CR0[TS]
@@ -129,11 +129,11 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 
 	/* Now create a virgin FP context */
 
-	_FpCtxInit(tcs);
+	_FpCtxInit(thread);
 
 	/* Associate the new FP context with the specified thread */
 
-	if (tcs == _current) {
+	if (thread == _current) {
 		/*
 		 * When enabling FP support for the current thread, just claim
 		 * ownership of the FPU and leave CR0[TS] unset.
@@ -141,7 +141,7 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 		 * (The FP context is "live" in hardware, not saved in TCS.)
 		 */
 
-		_kernel.current_fp = tcs;
+		_kernel.current_fp = thread;
 	} else {
 		/*
 		 * When enabling FP support for someone else, assign ownership
@@ -156,7 +156,7 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 			 * to its original state.
 			 */
 
-			_kernel.current_fp = tcs;
+			_kernel.current_fp = thread;
 			_FpAccessDisable();
 		} else {
 			/*
@@ -176,7 +176,7 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
 			 * handling an interrupt or exception.)
 			 */
 
-			_FpCtxSave(tcs);
+			_FpCtxSave(thread);
 		}
 	}
 
@@ -192,7 +192,7 @@ void k_float_enable(struct tcs *tcs, unsigned int options)
  * The locking isn't really needed when the routine is called by a cooperative
  * thread (since context switching can't occur), but it is harmless.
  */
-void k_float_disable(struct tcs *tcs)
+void k_float_disable(struct k_thread *thread)
 {
 	unsigned int imask;
 
@@ -202,14 +202,14 @@ void k_float_disable(struct tcs *tcs)
 
 	/* Disable all floating point capabilities for the thread */
 
-	tcs->base.user_options &= ~_FP_USER_MASK;
+	thread->base.user_options &= ~_FP_USER_MASK;
 
-	if (tcs == _current) {
+	if (thread == _current) {
 		_FpAccessDisable();
-		_kernel.current_fp = (struct tcs *)0;
+		_kernel.current_fp = (struct k_thread *)0;
 	} else {
-		if (_kernel.current_fp == tcs)
-			_kernel.current_fp = (struct tcs *)0;
+		if (_kernel.current_fp == thread)
+			_kernel.current_fp = (struct k_thread *)0;
 	}
 
 	irq_unlock(imask);

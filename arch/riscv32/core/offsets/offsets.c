@@ -75,7 +75,10 @@ GEN_OFFSET_SYM(NANO_ESF, lpcount1);
  */
 GEN_ABSOLUTE_SYM(__NANO_ESF_SIZEOF, STACK_ROUND_UP(sizeof(NANO_ESF)));
 
-/* size of the struct tcs structure sans save area for floating point regs */
+/*
+ * size of the struct k_thread structure sans save area for floating
+ * point regs
+ */
 GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF,
 		 STACK_ROUND_UP(sizeof(struct k_thread)));
 

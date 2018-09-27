@@ -39,7 +39,10 @@ GEN_OFFSET_SYM(_thread_arch_t, excNestCount);
 GEN_OFFSET_SYM(_thread_arch_t, coopFloatReg);
 GEN_OFFSET_SYM(_thread_arch_t, preempFloatReg);
 
-/* size of the struct tcs structure sans save area for floating point regs */
+/**
+ * size of the struct k_thread structure sans save area for floating
+ * point regs
+ */
 
 GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF,
 		 sizeof(struct k_thread) - sizeof(tCoopFloatReg) -
