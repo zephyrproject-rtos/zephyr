@@ -102,12 +102,14 @@ extern void z_clock_idle_exit(void);
 extern void z_clock_announce(s32_t ticks);
 
 /**
- * @brief System uptime in ticks
+ * @brief Ticks elapsed since last z_clock_announce() call
  *
- * Queries the clock driver for the current time elapsed since system
- * bootup in ticks.
+ * Queries the clock driver for the current time elapsed since the
+ * last call to z_clock_announce() was made.  The kernel will call
+ * this with appropriate locking, the driver needs only provide an
+ * instantaneous answer.
  */
-extern u64_t z_clock_uptime(void);
+extern u32_t z_clock_elapsed(void);
 
 #ifdef __cplusplus
 }

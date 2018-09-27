@@ -31,6 +31,8 @@ int z_clock_hw_cycles_per_sec;
 #endif
 #endif
 
+extern u64_t z_clock_uptime(void);
+
 /* Note that this value is 64 bits, and thus non-atomic on almost all
  * Zephyr archtictures.  And of course it's routinely updated inside
  * timer interrupts.  Access to it must be locked.
