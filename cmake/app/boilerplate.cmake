@@ -207,8 +207,8 @@ find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS ${BOARD_ROOT}/boards/*/* NO
 assert_with_usage(BOARD_DIR "No board named '${BOARD}' found")
 
 get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR} DIRECTORY)
-get_filename_component(ARCH ${BOARD_ARCH_DIR} NAME)
-get_filename_component(BOARD_FAMILY ${BOARD_DIR} NAME)
+get_filename_component(BOARD_FAMILY   ${BOARD_DIR} NAME     )
+get_filename_component(ARCH           ${BOARD_ARCH_DIR} NAME)
 
 if(CONF_FILE)
   # CONF_FILE has either been specified on the cmake CLI or is already

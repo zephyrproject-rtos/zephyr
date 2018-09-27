@@ -3,8 +3,10 @@
 
 if(EXISTS ${BOARD_DIR}/CMakeLists.txt)
   if(BOARD_ROOT)
-    add_subdirectory(${BOARD_DIR} boards/${ARCH}/${BOARD})
+	set(build_dir boards/${ARCH}/${BOARD})
   else()
-    add_subdirectory(${BOARD_DIR})
+	unset(build_dir)
   endif()
+
+  add_subdirectory(${BOARD_DIR} ${build_dir})
 endif()
