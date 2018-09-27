@@ -14,7 +14,8 @@
 #include <zephyr.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <shell/legacy_shell.h>
+#include <shell/shell.h>
+#include <shell/shell_uart.h>
 #include <misc/printk.h>
 
 #include <net/net_if.h>
@@ -22,103 +23,131 @@
 
 #include "ieee802154_frame.h"
 
-#define IEEE802154_SHELL_MODULE "ieee15_4"
+#define MAX_EXT_ADDR_STR_LEN sizeof("xx:xx:xx:xx:xx:xx:xx:xx")
 
 struct ieee802154_req_params params;
 static struct net_mgmt_event_callback scan_cb;
+static const struct shell *cb_shell;
 
-static int shell_cmd_ack(int argc, char *argv[])
+static int cmd_ieee802154_ack(const struct shell *shell,
+			      size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
 
+	ARG_UNUSED(argc);
+
+	if (shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
+	}
+
 	if (!iface) {
-		printk("No IEEE 802.15.4 interface found.\n");
-		return -EINVAL;
+		shell_fprintf(shell, SHELL_INFO,
+			      "No IEEE 802.15.4 interface found.\n");
+		return -ENOEXEC;
 	}
 
 	if (!strcmp(argv[1], "set") || !strcmp(argv[1], "1")) {
 		net_mgmt(NET_REQUEST_IEEE802154_SET_ACK, iface, NULL, 0);
-		printk("ACK flag set on outgoing packets\n");
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "ACK flag set on outgoing packets\n");
 
 		return 0;
 	}
 
 	if (!strcmp(argv[1], "unset") || !strcmp(argv[1], "0")) {
 		net_mgmt(NET_REQUEST_IEEE802154_UNSET_ACK, iface, NULL, 0);
-		printk("ACK flag unset on outgoing packets\n");
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "ACK flag unset on outgoing packets\n");
 
 		return 0;
-	}
-
-	return -EINVAL;
-}
-
-static inline void parse_extended_address(char *addr, u8_t *ext_addr)
-{
-	char *p, *n;
-	int i = IEEE802154_EXT_ADDR_LENGTH - 1;
-
-	p = addr;
-
-	do {
-		n = strchr(p, ':');
-		if (n) {
-			*n = '\0';
-		}
-
-		ext_addr[i] = strtol(p, NULL, 16);
-		p = n ? n + 1 : n;
-		i--;
-	} while (n);
-}
-
-static int shell_cmd_associate(int argc, char *argv[])
-{
-	struct net_if *iface = net_if_get_ieee802154();
-
-	if (!iface) {
-		printk("No IEEE 802.15.4 interface found.\n");
-		return -EINVAL;
-	}
-
-	params.pan_id = atoi(argv[1]);
-
-	if (strlen(argv[2]) == 23) {
-		parse_extended_address(argv[2], params.addr);
-		params.len = IEEE802154_EXT_ADDR_LENGTH;
-	} else {
-		params.short_addr = (u16_t) atoi(argv[2]);
-		params.len = IEEE802154_SHORT_ADDR_LENGTH;
-	}
-
-	if (net_mgmt(NET_REQUEST_IEEE802154_ASSOCIATE, iface,
-		     &params, sizeof(struct ieee802154_req_params))) {
-		printk("Could not associate to %s on PAN ID %u\n",
-		       argv[2], params.pan_id);
-	} else {
-		printk("Associated to PAN ID %u\n", params.pan_id);
 	}
 
 	return 0;
 }
 
-static int shell_cmd_disassociate(int argc, char *argv[])
+static inline void parse_extended_address(char *addr, u8_t *ext_addr)
+{
+	net_bytes_from_str(ext_addr, IEEE802154_EXT_ADDR_LENGTH, addr);
+}
+
+static int cmd_ieee802154_associate(const struct shell *shell,
+				    size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_ieee802154();
+	char ext_addr[MAX_EXT_ADDR_STR_LEN];
+
+	if (argc < 3 || shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
+	}
+
+	if (!iface) {
+		shell_fprintf(shell, SHELL_INFO,
+			      "No IEEE 802.15.4 interface found.\n");
+		return -ENOEXEC;
+	}
+
+	params.pan_id = atoi(argv[1]);
+	strncpy(ext_addr, argv[2], MAX_EXT_ADDR_STR_LEN - 1);
+
+	if (strlen(ext_addr) == MAX_EXT_ADDR_STR_LEN) {
+		parse_extended_address(ext_addr, params.addr);
+		params.len = IEEE802154_EXT_ADDR_LENGTH;
+	} else {
+		params.short_addr = (u16_t) atoi(ext_addr);
+		params.len = IEEE802154_SHORT_ADDR_LENGTH;
+	}
+
+	if (net_mgmt(NET_REQUEST_IEEE802154_ASSOCIATE, iface,
+		     &params, sizeof(struct ieee802154_req_params))) {
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Could not associate to %s on PAN ID %u\n",
+			      argv[2], params.pan_id);
+
+		return -ENOEXEC;
+	} else {
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "Associated to PAN ID %u\n", params.pan_id);
+	}
+
+	return 0;
+}
+
+static int cmd_ieee802154_disassociate(const struct shell *shell,
+				       size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
 	int ret;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	if (shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
+	}
+
 	if (!iface) {
-		printk("No IEEE 802.15.4 interface found.\n");
-		return -EINVAL;
+		shell_fprintf(shell, SHELL_INFO,
+			      "No IEEE 802.15.4 interface found.\n");
+		return -ENOEXEC;
 	}
 
 	ret = net_mgmt(NET_REQUEST_IEEE802154_DISASSOCIATE, iface, NULL, 0);
 	if (ret == -EALREADY) {
-		printk("Interface is not associated\n");
+		shell_fprintf(shell, SHELL_INFO,
+			      "Interface is not associated\n");
+
+		return -ENOEXEC;
 	} else if (ret) {
-		printk("Could not disassociate? (status: %i)\n", ret);
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Could not disassociate? (status: %i)\n", ret);
+
+		return -ENOEXEC;
 	} else {
-		printk("Interface is now disassociated\n");
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "Interface is now disassociated\n");
 	}
 
 	return 0;
@@ -150,43 +179,53 @@ static inline u32_t parse_channel_set(char *str_set)
 	return channel_set;
 }
 
-static inline void print_coordinator_address(void)
+static inline char *print_coordinator_address(char *buf, int buf_len)
 {
 	if (params.len == IEEE802154_EXT_ADDR_LENGTH) {
-		int i;
+		int i, pos = 0;
 
-		printk("(extended) ");
+		pos += snprintk(buf + pos, buf_len - pos, "(extended) ");
 
 		for (i = IEEE802154_EXT_ADDR_LENGTH - 1; i > -1; i--) {
-			printk("%02X", params.addr[i]);
-
-			if (i > 0) {
-				printk(":");
-			}
+			pos += snprintk(buf + pos, buf_len - pos,
+					"%02X:", params.addr[i]);
 		}
+
+		buf[pos - 1] = '\0';
 	} else {
-		printk("(short) %u", params.short_addr);
+		snprintk(buf, buf_len, "(short) %u", params.short_addr);
 	}
+
+	return buf;
 }
 
 static void scan_result_cb(struct net_mgmt_event_callback *cb,
 			   u32_t mgmt_event, struct net_if *iface)
 {
-	printk("\nChannel: %u\tPAN ID: %u\tCoordinator Address: ",
-	       params.channel, params.pan_id);
-	print_coordinator_address();
-	printk("LQI: %u\n", params.lqi);
+	char buf[64];
+
+	shell_fprintf(cb_shell, SHELL_NORMAL,
+		      "\nChannel: %u\tPAN ID: %u\tCoordinator Address: %s\t "
+		      "LQI: %u\n", params.channel, params.pan_id,
+		      print_coordinator_address(buf, sizeof(buf)), params.lqi);
 }
 
-static int shell_cmd_scan(int argc, char *argv[])
+static int cmd_ieee802154_scan(const struct shell *shell,
+			       size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
 	u32_t scan_type;
 	int ret;
 
+	if (argc < 3 || shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
+	}
+
 	if (!iface) {
-		printk("No IEEE 802.15.4 interface found.\n");
-		return -EINVAL;
+		shell_fprintf(shell, SHELL_INFO,
+			      "No IEEE 802.15.4 interface found.\n");
+		return -ENOEXEC;
 	}
 
 	(void)memset(&params, 0, sizeof(struct ieee802154_req_params));
@@ -199,7 +238,7 @@ static int shell_cmd_scan(int argc, char *argv[])
 	} else if (!strcmp(argv[1], "passive")) {
 		scan_type = NET_REQUEST_IEEE802154_PASSIVE_SCAN;
 	} else {
-		return -EINVAL;
+		return -ENOEXEC;
 	}
 
 	if (!strcmp(argv[2], "all")) {
@@ -209,14 +248,18 @@ static int shell_cmd_scan(int argc, char *argv[])
 	}
 
 	if (!params.channel_set) {
-		return -EINVAL;
+		return -ENOEXEC;
 	}
 
 	params.duration = atoi(argv[3]);
 
-	printk("%s Scanning (channel set: 0x%08x, duration %u ms)...",
-	       scan_type == NET_REQUEST_IEEE802154_ACTIVE_SCAN ?
-	       "Active" : "Passive", params.channel_set, params.duration);
+	shell_fprintf(shell, SHELL_NORMAL,
+		      "%s Scanning (channel set: 0x%08x, duration %u ms)...\n",
+		      scan_type == NET_REQUEST_IEEE802154_ACTIVE_SCAN ?
+		      "Active" : "Passive", params.channel_set,
+		      params.duration);
+
+	cb_shell = shell;
 
 	if (scan_type == NET_REQUEST_IEEE802154_ACTIVE_SCAN) {
 		ret = net_mgmt(NET_REQUEST_IEEE802154_ACTIVE_SCAN, iface,
@@ -227,266 +270,413 @@ static int shell_cmd_scan(int argc, char *argv[])
 	}
 
 	if (ret) {
-		printk("Could not raise a scan (status: %i)\n", ret);
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Could not raise a scan (status: %i)\n", ret);
+
+		return -ENOEXEC;
 	} else {
-		printk("Done\n");
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "Done\n");
 	}
 
 	return 0;
 }
 
-static int shell_cmd_set_chan(int argc, char *argv[])
-{
-	struct net_if *iface = net_if_get_ieee802154();
-	u16_t channel = (u16_t) atoi(argv[1]);
-
-	if (!iface) {
-		printk("No IEEE 802.15.4 interface found.\n");
-		return -EINVAL;
-	}
-
-	if (net_mgmt(NET_REQUEST_IEEE802154_SET_CHANNEL, iface,
-		     &channel, sizeof(u16_t))) {
-		printk("Could not set channel %u\n", channel);
-	} else {
-		printk("Channel %u set\n", channel);
-	}
-
-	return 0;
-}
-
-static int shell_cmd_get_chan(int argc, char *argv[])
+static int cmd_ieee802154_set_chan(const struct shell *shell,
+				   size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
 	u16_t channel;
 
+	if (argc < 2 || shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
+	}
+
 	if (!iface) {
-		printk("No IEEE 802.15.4 interface found.\n");
-		return -EINVAL;
+		shell_fprintf(shell, SHELL_INFO,
+			      "No IEEE 802.15.4 interface found.\n");
+		return -ENOEXEC;
+	}
+
+	channel = (u16_t)atoi(argv[1]);
+
+	if (net_mgmt(NET_REQUEST_IEEE802154_SET_CHANNEL, iface,
+		     &channel, sizeof(u16_t))) {
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Could not set channel %u\n", channel);
+
+		return -ENOEXEC;
+	} else {
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "Channel %u set\n", channel);
+	}
+
+	return 0;
+}
+
+static int cmd_ieee802154_get_chan(const struct shell *shell,
+				   size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_ieee802154();
+	u16_t channel;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	if (shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
+	}
+
+	if (!iface) {
+		shell_fprintf(shell, SHELL_INFO,
+			      "No IEEE 802.15.4 interface found.\n");
+		return -ENOEXEC;
 	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_GET_CHANNEL, iface,
 		     &channel, sizeof(u16_t))) {
-		printk("Could not get channel\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Could not get channel\n");
+
+		return -ENOEXEC;
 	} else {
-		printk("Channel %u\n", channel);
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "Channel %u\n", channel);
 	}
 
 	return 0;
 }
 
-static int shell_cmd_set_pan_id(int argc, char *argv[])
-{
-	struct net_if *iface = net_if_get_ieee802154();
-	u16_t pan_id = (u16_t) atoi(argv[1]);
-
-	if (!iface) {
-		printk("No IEEE 802.15.4 interface found.\n");
-		return -EINVAL;
-	}
-
-	if (net_mgmt(NET_REQUEST_IEEE802154_SET_PAN_ID, iface,
-		     &pan_id, sizeof(u16_t))) {
-		printk("Could not set PAN ID %u\n", pan_id);
-	} else {
-		printk("PAN ID %u set\n", pan_id);
-	}
-
-	return 0;
-}
-
-static int shell_cmd_get_pan_id(int argc, char *argv[])
+static int cmd_ieee802154_set_pan_id(const struct shell *shell,
+				     size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
 	u16_t pan_id;
 
-	if (!iface) {
-		printk("No IEEE 802.15.4 interface found.\n");
-		return -EINVAL;
+	ARG_UNUSED(argc);
+
+	if (argc < 2 || shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
 	}
 
-	if (net_mgmt(NET_REQUEST_IEEE802154_GET_PAN_ID, iface,
+	if (!iface) {
+		shell_fprintf(shell, SHELL_INFO,
+			      "No IEEE 802.15.4 interface found.\n");
+		return -ENOEXEC;
+	}
+
+	pan_id = (u16_t)atoi(argv[1]);
+
+	if (net_mgmt(NET_REQUEST_IEEE802154_SET_PAN_ID, iface,
 		     &pan_id, sizeof(u16_t))) {
-		printk("Could not get PAN ID\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Could not set PAN ID %u\n", pan_id);
+
+		return -ENOEXEC;
 	} else {
-		printk("PAN ID %u (0x%x)\n", pan_id, pan_id);
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "PAN ID %u set\n", pan_id);
 	}
 
 	return 0;
 }
 
-static int shell_cmd_set_ext_addr(int argc, char *argv[])
+static int cmd_ieee802154_get_pan_id(const struct shell *shell,
+				     size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_ieee802154();
+	u16_t pan_id;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	if (shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
+	}
+
+	if (!iface) {
+		shell_fprintf(shell, SHELL_INFO,
+			      "No IEEE 802.15.4 interface found.\n");
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_IEEE802154_GET_PAN_ID, iface,
+		     &pan_id, sizeof(u16_t))) {
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Could not get PAN ID\n");
+
+		return -ENOEXEC;
+	} else {
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "PAN ID %u (0x%x)\n", pan_id, pan_id);
+	}
+
+	return 0;
+}
+
+static int cmd_ieee802154_set_ext_addr(const struct shell *shell,
+				       size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
 	u8_t addr[IEEE802154_EXT_ADDR_LENGTH];
 
-	if (!iface) {
-		printk("No IEEE 802.15.4 interface found.\n");
-		return -EINVAL;
+	if (argc < 2 || shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
 	}
 
-	if (strlen(argv[1]) != 23) {
-		printk("23 characters needed\n");
-		return 0;
+	if (!iface) {
+		shell_fprintf(shell, SHELL_INFO,
+			      "No IEEE 802.15.4 interface found.\n");
+		return -ENOEXEC;
+	}
+
+	if (strlen(argv[1]) != MAX_EXT_ADDR_STR_LEN) {
+		shell_fprintf(shell, SHELL_INFO,
+			      "%zd characters needed\n", MAX_EXT_ADDR_STR_LEN);
+		return -ENOEXEC;
 	}
 
 	parse_extended_address(argv[1], addr);
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_SET_EXT_ADDR, iface,
 		     addr, IEEE802154_EXT_ADDR_LENGTH)) {
-		printk("Could not set extended address\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Could not set extended address\n");
+
+		return -ENOEXEC;
 	} else {
-		printk("Extended address set\n");
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "Extended address set\n");
 	}
 
 	return 0;
 }
 
-static int shell_cmd_get_ext_addr(int argc, char *argv[])
+static int cmd_ieee802154_get_ext_addr(const struct shell *shell,
+				       size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
 	u8_t addr[IEEE802154_EXT_ADDR_LENGTH];
 
+	if (shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
+	}
+
 	if (!iface) {
-		printk("No IEEE 802.15.4 interface found.\n");
-		return -EINVAL;
+		shell_fprintf(shell, SHELL_INFO,
+			      "No IEEE 802.15.4 interface found.\n");
+		return -ENOEXEC;
 	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_GET_EXT_ADDR, iface,
 		     addr, IEEE802154_EXT_ADDR_LENGTH)) {
-		printk("Could not get extended address\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Could not get extended address\n");
+		return -ENOEXEC;
 	} else {
-		int i;
+		static char ext_addr[MAX_EXT_ADDR_STR_LEN];
+		int i, j;
 
-		printk("Extended address: ");
-		for (i = IEEE802154_EXT_ADDR_LENGTH - 1; i > -1; i--) {
-			printk("%02X", addr[i]);
+		for (j = 0, i = IEEE802154_EXT_ADDR_LENGTH - 1; i > -1; i--) {
+			snprintf(&ext_addr[j], 4, "%02X:", addr[i]);
 
-			if (i > 0) {
-				printk(":");
-			}
+			j += 3;
 		}
 
-		printk("\n");
+		ext_addr[MAX_EXT_ADDR_STR_LEN - 1] = '\0';
+
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "Extended address: %s\n", ext_addr);
 	}
 
 	return 0;
 }
 
-static int shell_cmd_set_short_addr(int argc, char *argv[])
-{
-	struct net_if *iface = net_if_get_ieee802154();
-	u16_t short_addr = (u16_t) atoi(argv[1]);
-
-	if (!iface) {
-		printk("No IEEE 802.15.4 interface found.\n");
-		return -EINVAL;
-	}
-
-	if (net_mgmt(NET_REQUEST_IEEE802154_SET_SHORT_ADDR, iface,
-		     &short_addr, sizeof(u16_t))) {
-		printk("Could not set short address %u\n", short_addr);
-	} else {
-		printk("Short address %u set\n", short_addr);
-	}
-
-	return 0;
-}
-
-static int shell_cmd_get_short_addr(int argc, char *argv[])
+static int cmd_ieee802154_set_short_addr(const struct shell *shell,
+					 size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
 	u16_t short_addr;
 
+	if (argc < 2 || shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
+	}
+
 	if (!iface) {
-		printk("No IEEE 802.15.4 interface found.\n");
-		return -EINVAL;
+		shell_fprintf(shell, SHELL_INFO,
+			      "No IEEE 802.15.4 interface found.\n");
+		return -ENOEXEC;
+	}
+
+	short_addr = (u16_t)atoi(argv[1]);
+
+	if (net_mgmt(NET_REQUEST_IEEE802154_SET_SHORT_ADDR, iface,
+		     &short_addr, sizeof(u16_t))) {
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Could not set short address %u\n", short_addr);
+
+		return -ENOEXEC;
+	} else {
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "Short address %u set\n", short_addr);
+	}
+
+	return 0;
+}
+
+static int cmd_ieee802154_get_short_addr(const struct shell *shell,
+					 size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_ieee802154();
+	u16_t short_addr;
+
+	if (shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
+	}
+
+	if (!iface) {
+		shell_fprintf(shell, SHELL_INFO,
+			      "No IEEE 802.15.4 interface found.\n");
+		return -ENOEXEC;
 	}
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_GET_SHORT_ADDR, iface,
 		     &short_addr, sizeof(u16_t))) {
-		printk("Could not get short address\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Could not get short address\n");
+
+		return -ENOEXEC;
 	} else {
-		printk("Short address %u\n", short_addr);
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "Short address %u\n", short_addr);
 	}
 
 	return 0;
 }
 
-static int shell_cmd_set_tx_power(int argc, char *argv[])
-{
-	struct net_if *iface = net_if_get_ieee802154();
-	s16_t tx_power = (s16_t) atoi(argv[1]);
-
-	if (!iface) {
-		printk("No IEEE 802.15.4 interface found.\n");
-		return -EINVAL;
-	}
-
-	if (net_mgmt(NET_REQUEST_IEEE802154_SET_TX_POWER, iface,
-		     &tx_power, sizeof(s16_t))) {
-		printk("Could not set TX power %d\n", tx_power);
-	} else {
-		printk("TX power %d set\n", tx_power);
-	}
-
-	return 0;
-}
-
-static int shell_cmd_get_tx_power(int argc, char *argv[])
+static int cmd_ieee802154_set_tx_power(const struct shell *shell,
+				       size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_ieee802154();
 	s16_t tx_power;
 
-	if (!iface) {
-		printk("No IEEE 802.15.4 interface found.\n");
-		return -EINVAL;
+	if (argc < 2 || shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
 	}
 
-	if (net_mgmt(NET_REQUEST_IEEE802154_GET_SHORT_ADDR, iface,
+	if (!iface) {
+		shell_fprintf(shell, SHELL_INFO,
+			      "No IEEE 802.15.4 interface found.\n");
+		return -ENOEXEC;
+	}
+
+	tx_power = (s16_t)atoi(argv[1]);
+
+	if (net_mgmt(NET_REQUEST_IEEE802154_SET_TX_POWER, iface,
 		     &tx_power, sizeof(s16_t))) {
-		printk("Could not get TX power\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Could not set TX power %d\n", tx_power);
+
+		return -ENOEXEC;
 	} else {
-		printk("TX power (in dbm) %d\n", tx_power);
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "TX power %d set\n", tx_power);
 	}
 
 	return 0;
 }
 
-static struct shell_cmd ieee802154_commands[] = {
-	{ "ack",		shell_cmd_ack,
-	  "<set/1 | unset/0>" },
-	{ "associate",		shell_cmd_associate,
-	  "<pan_id> <PAN coordinator short or long address (EUI-64)>" },
-	{ "disassociate",	shell_cmd_disassociate,
-	  NULL },
-	{ "scan",		shell_cmd_scan,
-	  "<passive|active> <channels set n[:m:...]:x|all>"
-	  " <per-channel duration in ms>" },
-	{ "set_chan",		shell_cmd_set_chan,
-	  "<channel>" },
-	{ "get_chan",		shell_cmd_get_chan,
-	  NULL },
-	{ "set_pan_id",		shell_cmd_set_pan_id,
-	  "<pan_id>" },
-	{ "get_pan_id",		shell_cmd_get_pan_id,
-	  NULL },
-	{ "set_ext_addr",	shell_cmd_set_ext_addr,
-	  "<long/extended address (EUI-64)>" },
-	{ "get_ext_addr",	shell_cmd_get_ext_addr,
-	  NULL },
-	{ "set_short_addr",	shell_cmd_set_short_addr,
-	  "<short address>" },
-	{ "get_short_addr",	shell_cmd_get_short_addr,
-	  NULL },
-	{ "set_tx_power",	shell_cmd_set_tx_power,
-	  "<-18/-7/-4/-2/0/1/2/3/5>" },
-	{ "get_tx_power",	shell_cmd_get_tx_power,
-	  NULL },
-	{ NULL, NULL, NULL },
+static int cmd_ieee802154_get_tx_power(const struct shell *shell,
+				       size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_ieee802154();
+	s16_t tx_power;
+
+	if (shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
+	}
+
+	if (!iface) {
+		shell_fprintf(shell, SHELL_INFO,
+			      "No IEEE 802.15.4 interface found.\n");
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_IEEE802154_GET_TX_POWER, iface,
+		     &tx_power, sizeof(s16_t))) {
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Could not get TX power\n");
+
+		return -ENOEXEC;
+	} else {
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "TX power (in dbm) %d\n", tx_power);
+	}
+
+	return 0;
+}
+
+SHELL_CREATE_STATIC_SUBCMD_SET(ieee802154_commands)
+{
+	SHELL_CMD(ack, NULL,
+		  "<set/1 | unset/0> Set auto-ack flag",
+		  cmd_ieee802154_ack),
+	SHELL_CMD(associate, NULL,
+		  "<pan_id> <PAN coordinator short or long address (EUI-64)>",
+		  cmd_ieee802154_associate),
+	SHELL_CMD(disassociate,	NULL,
+		  "Disassociate from network",
+		  cmd_ieee802154_disassociate),
+	SHELL_CMD(get_chan, NULL,
+		  "Get currently used channel",
+		  cmd_ieee802154_get_chan),
+	SHELL_CMD(get_ext_addr,	NULL,
+		  "Get currently used extended address",
+		  cmd_ieee802154_get_ext_addr),
+	SHELL_CMD(get_pan_id, NULL,
+		  "Get currently used PAN id",
+		  cmd_ieee802154_get_pan_id),
+	SHELL_CMD(get_short_addr, NULL,
+		  "Get currently used short address",
+		  cmd_ieee802154_get_short_addr),
+	SHELL_CMD(get_tx_power,	NULL,
+		  "Get currently used TX power",
+		  cmd_ieee802154_get_tx_power),
+	SHELL_CMD(scan,	NULL,
+		  "<passive|active> <channels set n[:m:...]:x|all>"
+		  " <per-channel duration in ms>",
+		  cmd_ieee802154_scan),
+	SHELL_CMD(set_chan, NULL,
+		  "<channel> Set used channel",
+		  cmd_ieee802154_set_chan),
+	SHELL_CMD(set_ext_addr,	NULL,
+		  "<long/extended address (EUI-64)> Set extended address",
+		  cmd_ieee802154_set_ext_addr),
+	SHELL_CMD(set_pan_id, NULL,
+		  "<pan_id> Set used PAN id",
+		  cmd_ieee802154_set_pan_id),
+	SHELL_CMD(set_short_addr, NULL,
+		  "<short address> Set short address",
+		  cmd_ieee802154_set_short_addr),
+	SHELL_CMD(set_tx_power,	NULL,
+		  "<-18/-7/-4/-2/0/1/2/3/5> Set TX power",
+		  cmd_ieee802154_set_tx_power),
+	SHELL_SUBCMD_SET_END
 };
+
+SHELL_CMD_REGISTER(ieee802154, &ieee802154_commands, "IEEE 802.15.4 commands",
+		   NULL);
 
 void ieee802154_shell_init(void)
 {
-	SHELL_REGISTER(IEEE802154_SHELL_MODULE, ieee802154_commands);
 }
