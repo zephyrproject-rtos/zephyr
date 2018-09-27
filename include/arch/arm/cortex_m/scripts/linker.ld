@@ -368,6 +368,20 @@ SECTIONS
 	_nocache_ram_size = _nocache_ram_end - _nocache_ram_start;
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+#if defined(CONFIG_RAM_FUNCTION)
+	SECTION_DATA_PROLOGUE(.ramfunc,,)
+	{
+		MPU_ALIGN(_ramfunc_ram_size);
+		_ramfunc_ram_start = .;
+		*(.ramfunc)
+		*(".ramfunc.*")
+		MPU_ALIGN(_ramfunc_ram_size);
+		_ramfunc_ram_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	_ramfunc_ram_size = _ramfunc_ram_end - _ramfunc_ram_start;
+	_ramfunc_rom_start = LOADADDR(.ramfunc);
+#endif /* CONFIG_RAM_FUNCTION */
+
 #if defined(CONFIG_APP_SHARED_MEM)
 #define APP_SHARED_ALIGN . = ALIGN(_region_min_align);
 #define SMEM_PARTITION_ALIGN MPU_ALIGN
