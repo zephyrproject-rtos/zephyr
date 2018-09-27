@@ -25,13 +25,52 @@
 		reg = <0x20070000 0x18000>;
 	};
 
-	flash0: flash@80000 {
-		compatible = "soc-nv-flash";
-		label = "FLASH_0";
-		reg = <0x00080000 0x80000>;
-	};
-
 	soc {
+		eefc0: efc@400e0a00 {
+			compatible = "atmel,sam-efc";
+			label = "FLASH_CTRL_0";
+			reg = <0x400e0a00 0x10>;
+			interrupts = <6 0>;
+			peripheral-id = <6>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@80000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_0";
+				reg = <0x00080000 0x40000>;
+			};
+		};
+
+		eefc1: efc@400e0c00 {
+			compatible = "atmel,sam-efc";
+			label = "FLASH_CTRL_1";
+			reg = <0x400e0c00 0x10>;
+			interrupts = <7 0>;
+			peripheral-id = <7>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash1: flash@c0000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_1";
+				reg = <0x000c0000 0x40000>;
+			};
+		};
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "flash";
+				reg = <0x00080000 0x80000>;
+			};
+		};
+
 		i2c0: i2c@4008C000 {
 			compatible = "atmel,sam-i2c-twi";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
