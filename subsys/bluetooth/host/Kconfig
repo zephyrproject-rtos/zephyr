@@ -387,6 +387,10 @@ config BT_PERIPHERAL_PREF_TIMEOUT
 	  where Conn_Interval_Max is given in milliseconds.
 endif # BT_GAP_PERIPHERAL_PREF_PARAMS
 
+config BT_CREATE_CONN_TIMEOUT
+        int "Timeout for pending LE Create Connection command in seconds"
+        default 3
+        range 1 65535
 endif # BT_CONN
 
 if BT_OBSERVER
