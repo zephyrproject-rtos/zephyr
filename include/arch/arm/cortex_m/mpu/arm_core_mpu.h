@@ -20,6 +20,21 @@
 extern "C" {
 #endif
 
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+/**
+ * @brief Reset the access permissions of the entire kernel SRAM region
+ *
+ * This function will reset the access permissions of the kernel RAM region.
+ * It does this by re-programming the MPU region that covers the entire kernel
+ * SRAM (i.e. KERNEL_BKGND_REGION). In addition, it clears any MPU regions
+ * related to memory protection features (e.g. THREAD_STACK, STACK_GUARD, etc.)
+ * and their respective background ram regions. The function intends to be used
+ * during context switch, for MPU architectures that do not allow overlapping
+ * active MPU regions.
+ */
+void configure_mpu_kernel_ram_region_reset(void);
+#endif
+
 #if defined(CONFIG_MPU_STACK_GUARD)
 /**
  * @brief Configure MPU stack guard

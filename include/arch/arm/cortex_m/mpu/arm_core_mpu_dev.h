@@ -132,6 +132,11 @@ void arm_core_mpu_disable(void);
 void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size);
 
 /**
+ * @brief reset access permissions for the entire kernel SRAM region
+ */
+void arm_core_mpu_kernel_ram_region_reset(void);
+
+/**
  * @brief configure MPU regions for the memory partitions of the memory domain
  *
  * @param   mem_domain    memory domain that thread belongs to

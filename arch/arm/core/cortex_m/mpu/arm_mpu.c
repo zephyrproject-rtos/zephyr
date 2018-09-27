@@ -345,6 +345,23 @@ void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 #endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 }
 
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+void arm_core_mpu_kernel_ram_region_reset(void)
+{
+	_mpu_configure_by_type(KERNEL_BKGND_REGION,
+		(u32_t)&__kernel_ram_start,
+		(u32_t)&__kernel_ram_end - (u32_t)&__kernel_ram_start);
+#if defined(CONFIG_MPU_STACK_GUARD)
+	_disable_region_by_type(THREAD_STACK_GUARD_REGION);
+	_disable_region_by_type(KERNEL_BKGND_STACK_GUARD_REGION);
+#endif
+#if defined(CONFIG_USERSPACE)
+	_disable_region_by_type(THREAD_STACK_REGION);
+	_disable_region_by_type(KERNEL_BKGND_THREAD_STACK_REGION);
+#endif
+}
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
+
 #if defined(CONFIG_USERSPACE)
 void arm_core_mpu_configure_user_context(struct k_thread *thread)
 {
@@ -521,6 +538,13 @@ static int arm_mpu_init(struct device *arg)
 		(u32_t)&__app_ram_start,
 		(u32_t)&__app_ram_end - (u32_t)&__app_ram_start);
 #endif
+
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+	/* Set access permissions for Kernel SRAM at init. */
+	_mpu_configure_by_type(KERNEL_BKGND_REGION,
+		(u32_t)&__kernel_ram_start,
+		(u32_t)&__kernel_ram_end - (u32_t)&__kernel_ram_start);
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 
 	arm_core_mpu_enable();
 

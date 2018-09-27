@@ -15,6 +15,20 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(mpu);
 
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
+/*
+ * @brief Reset Kernel SRAM region access permissions at context-switch.
+ */
+void configure_mpu_kernel_ram_region_reset(void)
+{
+	arm_core_mpu_disable();
+	arm_core_mpu_kernel_ram_region_reset();
+	arm_core_mpu_enable();
+}
+#endif /* CONFIG_MPU_STACK_GUARD || CONFIG_USERSPACE */
+#endif
+
 #if defined(CONFIG_MPU_STACK_GUARD)
 /*
  * @brief Configure MPU stack guard

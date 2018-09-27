@@ -56,9 +56,6 @@ static void _region_init(u32_t index, const struct arm_mpu_region *region_conf)
 			region_conf->attr.mair_idx, region_conf->attr.r_limit);
 }
 
-#if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
-	defined(CONFIG_APPLICATION_MEMORY)
-
 /**
  * This internal function returns the MPU region, in which a
  * buffer, specified by its start address and size, lies. If
@@ -124,6 +121,9 @@ static inline void _get_mpu_ram_region_attr(arm_mpu_region_attr_t *p_attr,
 	p_attr->mair_idx = MPU_MAIR_INDEX_SRAM;
 	p_attr->r_limit = REGION_LIMIT_ADDR(base, size);
 }
+
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
+	defined(CONFIG_APPLICATION_MEMORY)
 
 /**
  * This internal function is utilized by the MPU driver to combine a given
