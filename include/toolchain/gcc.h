@@ -115,6 +115,16 @@ do {                                                                    \
 
 #define __in_section_unique(seg) ___in_section(seg, __FILE__, __COUNTER__)
 
+#ifdef CONFIG_RAM_FUNCTION
+/* Using this places a function into RAM instead of FLASH.
+ * Make sure '__ramfunc' are defined only when CONFIG_RAM_FUNCTION,
+ * so the compiler can report error if used '__ramfunc' but hadn't
+ * enable CONFIG_RAM_FUNCTION in Kconfig.
+ */
+#define __ramfunc	__attribute__((noinline))			\
+			__attribute__((long_call, section(".ramfunc")))
+#endif
+
 #ifndef __packed
 #define __packed        __attribute__((__packed__))
 #endif

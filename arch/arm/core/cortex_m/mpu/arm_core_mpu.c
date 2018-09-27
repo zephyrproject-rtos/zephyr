@@ -77,8 +77,15 @@ void _arch_configure_static_mpu_regions(void)
 		.start = (u32_t)&_nocache_ram_start,
 		.size = (u32_t)&_nocache_ram_size,
 		.attr = K_MEM_PARTITION_P_RW_U_NA_NOCACHE,
-		}
+		},
 #endif /* CONFIG_NOCACHE_MEMORY */
+#if defined(CONFIG_RAM_FUNCTION)
+		{
+		.start = (u32_t)&_ramfunc_ram_start,
+		.size = (u32_t)&_ramfunc_ram_start - (u32_t)&_ramfunc_ram_end,
+		.attr = K_MEM_PARTITION_P_RX_U_RX,
+		}
+#endif /* CONFIG_RAM_FUNCTION */
 	};
 
 	/* Configure the static MPU regions within firmware SRAM boundaries.
