@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32l072.dtsi>
+#include <st/l0/stm32l072Xz.dtsi>
 
 / {
 	model = "Dragino LSN50 LoRA Sensor Node";

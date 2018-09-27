@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32l053.dtsi>
+#include <st/l0/stm32l053X8.dtsi>
 
 / {
 	model = "STMicroelectronics STM32L053R8-NUCLEO board";
