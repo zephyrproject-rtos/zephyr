@@ -199,7 +199,8 @@ static void acl_read_cb(u8_t ep, int size, void *priv)
 		     BT_BUF_ACL_SIZE, USB_TRANS_READ, acl_read_cb, buf);
 }
 
-static void bluetooth_status_cb(enum usb_dc_status_code status, u8_t *param)
+static void bluetooth_status_cb(enum usb_dc_status_code status,
+				const u8_t *param)
 {
 	/* Check the USB status and do needed action if required */
 	switch (status) {

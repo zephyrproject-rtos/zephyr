@@ -782,7 +782,8 @@ static void mass_storage_bulk_in(u8_t ep,
  *
  * @return  N/A.
  */
-static void mass_storage_status_cb(enum usb_dc_status_code status, u8_t *param)
+static void mass_storage_status_cb(enum usb_dc_status_code status,
+				   const u8_t *param)
 {
 	ARG_UNUSED(param);
 

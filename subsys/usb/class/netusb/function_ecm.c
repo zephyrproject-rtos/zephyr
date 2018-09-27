@@ -201,7 +201,7 @@ static int ecm_connect(bool connected)
 	return 0;
 }
 
-static inline void ecm_status_interface(u8_t *iface)
+static inline void ecm_status_interface(const u8_t *iface)
 {
 	USB_DBG("iface %u", *iface);
 
@@ -213,7 +213,7 @@ static inline void ecm_status_interface(u8_t *iface)
 	netusb_enable();
 }
 
-static void ecm_status_cb(enum usb_dc_status_code status, u8_t *param)
+static void ecm_status_cb(enum usb_dc_status_code status, const u8_t *param)
 {
 	/* Check the USB status and do needed action if required */
 	switch (status) {

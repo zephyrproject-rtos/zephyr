@@ -103,7 +103,7 @@ static void in_ready_cb(void)
 	k_delayed_work_submit(&delayed_report_send, REPORT_TIMEOUT);
 }
 
-static void status_cb(enum usb_dc_status_code status, u8_t *param)
+static void status_cb(enum usb_dc_status_code status, const u8_t *param)
 {
 	switch (status) {
 	case USB_DC_CONFIGURED:
