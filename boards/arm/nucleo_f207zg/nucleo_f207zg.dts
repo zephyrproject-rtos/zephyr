@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f207.dtsi>
+#include <st/f2/stm32f207Xg.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F207ZG-NUCLEO board";
