@@ -86,12 +86,9 @@ int pthread_attr_setschedparam(pthread_attr_t *attr,
 {
 	int priority = schedparam->priority;
 
-	if (!attr || !attr->initialized) {
+	if (!attr || !attr->initialized ||
+	    (is_posix_prio_valid(priority, attr->schedpolicy) == false)) {
 		return EINVAL;
-	}
-
-	if (is_posix_prio_valid(priority, attr->schedpolicy) == false) {
-		return ENOTSUP;
 	}
 
 	attr->priority = priority;
