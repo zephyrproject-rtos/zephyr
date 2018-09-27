@@ -72,6 +72,11 @@ config ETH_SAM_GMAC_MAC_I2C_EEPROM
 	help
 	  Read MAC address from an I2C EEPROM.
 
+config ETH_SAM_GMAC_RANDOM_MAC
+	bool "Random MAC address"
+	help
+	  Generate a random MAC address dynamically.
+
 endchoice
 
 if ETH_SAM_GMAC_MAC_MANUAL
