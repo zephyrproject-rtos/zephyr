@@ -72,3 +72,8 @@ u32_t _timer_cycle_get_32(void)
 {
 	return accumulated_cycle_count + timer->val;
 }
+
+u32_t z_clock_elapsed(void)
+{
+	return 0;
+}

@@ -1,10 +1,11 @@
 #ifndef ZEPHYR_LEGACY_SET_TIME_H__
 #define ZEPHYR_LEGACY_SET_TIME_H__
 
-/* Stub implementation of z_clock_set_timeout() in terms of the
- * original APIs.  Used by older timer drivers.  Should be replaced.
+/* Stub implementation of z_clock_set_timeout() and z_clock_elapsed()
+ * in terms of the original APIs.  Used by older timer drivers.
+ * Should be replaced.
  *
- * Yes, this "header" includes a function definition and must be
+ * Yes, this "header" includes function definitions and must be
  * included only once in a single compilation.
  */
 
@@ -20,7 +21,9 @@ extern u32_t _get_remaining_program_time(void);
 extern u32_t _get_elapsed_program_time(void);
 #endif
 
-extern void z_clock_set_timeout(s32_t ticks, bool idle)
+extern u64_t z_clock_uptime(void);
+
+void z_clock_set_timeout(s32_t ticks, bool idle)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (idle) {
@@ -30,5 +33,25 @@ extern void z_clock_set_timeout(s32_t ticks, bool idle)
 	}
 #endif
 }
+
+/* The old driver "now" API would return a full uptime value.  The new
+ * one only requires the driver to track ticks since the last announce
+ * call.  Implement the new call in terms of the old one on legacy
+ * drivers by keeping (yet another) uptime value locally.
+ */
+static u32_t driver_uptime;
+
+u32_t z_clock_elapsed(void)
+{
+	return (u32_t)(z_clock_uptime() - driver_uptime);
+}
+
+static void wrapped_announce(s32_t ticks)
+{
+	driver_uptime += ticks;
+	z_clock_announce(ticks);
+}
+
+#define z_clock_announce(t) wrapped_announce(t)
 
 #endif /* ZEPHYR_LEGACY_SET_TIME_H__ */
