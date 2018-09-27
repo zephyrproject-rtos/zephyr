@@ -4,30 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <st/stm32f4.dtsi>
+#include <st/f4/stm32f401.dtsi>
 
 / {
 	soc {
-		spi2: spi@40003800 {
+		spi4: spi@40013400 {
 			compatible = "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40003800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
-			interrupts = <36 5>;
+			reg = <0x40013400 0x400>;
+			interrupts = <84 5>;
 			status = "disabled";
-			label = "SPI_2";
+			label = "SPI_4";
 		};
 
-		spi3: spi@40003C00 {
+		spi5: spi@40015000 {
 			compatible = "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40003C00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
-			interrupts = <51 5>;
+			reg = <0x40015000 0x400>;
+			interrupts = <85 5>;
 			status = "disabled";
-			label = "SPI_3";
+			label = "SPI_5";
 		};
 	};
 };

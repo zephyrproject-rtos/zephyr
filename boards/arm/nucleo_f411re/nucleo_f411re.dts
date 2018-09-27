@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f411.dtsi>
+#include <st/f4/stm32f411Xe.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F411RE-NUCLEO board";

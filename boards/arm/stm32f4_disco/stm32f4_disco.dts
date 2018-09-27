@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f407.dtsi>
+#include <st/f4/stm32f407Xg.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F4DISCOVERY board";
