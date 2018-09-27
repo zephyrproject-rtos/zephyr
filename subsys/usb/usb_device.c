@@ -149,7 +149,7 @@ static struct usb_dev_priv {
 	/** Installed vendor request handler */
 	usb_request_handler vendor_req_handler;
 	/** USB stack status clalback */
-	usb_status_callback status_callback;
+	usb_dc_status_callback status_callback;
 	/** Pointer to registered descriptors */
 	const u8_t *descriptors;
 	/** Array of installed request handler callbacks */
@@ -880,7 +880,7 @@ static void usb_register_custom_req_handler(usb_request_handler handler)
  *
  * @param [in] cb Callback function pointer
  */
-static void usb_register_status_callback(usb_status_callback cb)
+static void usb_register_status_callback(usb_dc_status_callback cb)
 {
 	usb_dev.status_callback = cb;
 }
