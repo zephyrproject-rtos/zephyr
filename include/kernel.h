@@ -1330,9 +1330,8 @@ struct k_timer {
 
 #define _K_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
-	.timeout.delta_ticks_from_prev = _INACTIVE, \
-	.timeout.thread = NULL, \
-	.timeout.func = _timer_expiration_handler, \
+	.timeout.dticks = _INACTIVE, \
+	.timeout.fn = _timer_expiration_handler, \
 	.wait_q = _WAIT_Q_INIT(&obj.wait_q), \
 	.expiry_fn = expiry, \
 	.stop_fn = stop, \
@@ -1608,7 +1607,16 @@ __syscall u32_t k_uptime_get_32(void);
  *
  * @return Elapsed time.
  */
-extern s64_t k_uptime_delta(s64_t *reftime);
+static inline s64_t k_uptime_delta(s64_t *reftime)
+{
+	s64_t uptime, delta;
+
+	uptime = k_uptime_get();
+	delta = uptime - *reftime;
+	*reftime = uptime;
+
+	return delta;
+}
 
 /**
  * @brief Get elapsed time (32-bit version).
@@ -1626,7 +1634,10 @@ extern s64_t k_uptime_delta(s64_t *reftime);
  *
  * @return Elapsed time.
  */
-extern u32_t k_uptime_delta_32(s64_t *reftime);
+static inline u32_t k_uptime_delta_32(s64_t *reftime)
+{
+	return (u32_t)k_uptime_delta(reftime);
+}
 
 /**
  * @brief Read the hardware clock.

@@ -20,22 +20,31 @@ extern "C" {
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
-struct _thread_base;
+static inline void _init_timeout(struct _timeout *t, _timeout_func_t fn)
+{
+	t->dticks = _INACTIVE;
+}
 
-extern u64_t z_last_tick_announced;
+void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks);
 
-void _init_timeout(struct _timeout *t, _timeout_func_t fn);
+int _abort_timeout(struct _timeout *to);
 
-void _add_timeout(struct _timeout *timeout, _timeout_func_t func,
-                  s32_t timeout_in_ticks);
+static inline void _init_thread_timeout(struct _thread_base *thread_base)
+{
+	_init_timeout(&thread_base->timeout, NULL);
+}
 
-int _abort_timeout(struct _timeout *timeout);
+extern void z_thread_timeout(struct _timeout *to);
 
-void _init_thread_timeout(struct _thread_base *thread_base);
+static inline void _add_thread_timeout(struct k_thread *th, s32_t ticks)
+{
+	_add_timeout(&th->base.timeout, z_thread_timeout, ticks);
+}
 
-void _add_thread_timeout(struct k_thread *thread, s32_t timeout_in_ticks);
-
-int _abort_thread_timeout(struct k_thread *thread);
+static inline int _abort_thread_timeout(struct k_thread *thread)
+{
+	return _abort_timeout(&thread->base.timeout);
+}
 
 s32_t _get_next_timeout_expiry(void);
 

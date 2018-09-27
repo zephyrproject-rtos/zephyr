@@ -43,7 +43,11 @@ static u32_t driver_uptime;
 
 u32_t z_clock_elapsed(void)
 {
+#ifdef TICKLESS_KERNEL
 	return (u32_t)(z_clock_uptime() - driver_uptime);
+#else
+	return 0;
+#endif
 }
 
 static void wrapped_announce(s32_t ticks)
@@ -53,5 +57,13 @@ static void wrapped_announce(s32_t ticks)
 }
 
 #define z_clock_announce(t) wrapped_announce(t)
+
+#define _sys_clock_always_on (0)
+
+static inline void z_tick_set(s64_t val)
+{
+	/* noop with current kernel code, use z_clock_announce() */
+	ARG_UNUSED(val);
+}
 
 #endif /* ZEPHYR_LEGACY_SET_TIME_H__ */

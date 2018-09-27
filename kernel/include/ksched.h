@@ -84,7 +84,7 @@ static inline int _is_thread_prevented_from_running(struct k_thread *thread)
 static inline bool _is_thread_timeout_active(struct k_thread *thread)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-	return thread->base.timeout.delta_ticks_from_prev != _INACTIVE;
+	return thread->base.timeout.dticks != _INACTIVE;
 #else
 	return false;
 #endif
@@ -266,7 +266,7 @@ static ALWAYS_INLINE void _sched_unlock_no_reschedule(void)
 static ALWAYS_INLINE bool _is_thread_timeout_expired(struct k_thread *thread)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-	return thread->base.timeout.delta_ticks_from_prev == _EXPIRED;
+	return thread->base.timeout.dticks == _EXPIRED;
 #else
 	return 0;
 #endif
