@@ -90,9 +90,6 @@
 /* SPI */
 #define SPI_DW_SPI_CLOCK			SYSCLK_DEFAULT_IOSC_HZ
 
-#define SPI_DW_PORT_0_REGS			0xF0006000
-#define SPI_DW_PORT_1_REGS			0xF0007000
-
 #define SPI_DW_IRQ_FLAGS			0
 
 /*
@@ -113,14 +110,10 @@
 #define GPIO_DW_0_IRQ				24
 #define CONFIG_I2C_0_IRQ			25
 #define CONFIG_I2C_1_IRQ			26
-#define SPI_DW_PORT_0_IRQ			27
-#define SPI_DW_PORT_1_IRQ			28
 #else /* CONFIG_BOARD_EM_STARTERKIT_R23 */
 #define GPIO_DW_0_IRQ				22
 #define CONFIG_I2C_0_IRQ			23
 #define CONFIG_I2C_1_IRQ			24
-#define SPI_DW_PORT_0_IRQ			25
-#define SPI_DW_PORT_1_IRQ			26
 #endif /* !CONFIG_BOARD_EM_STARTERKIT_R23 */
 
 #define GPIO_DW_1_IRQ				0	/* can't interrupt */
