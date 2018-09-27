@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <st/f4/stm32f405.dtsi>
+#include <st/f4/stm32f417.dtsi>
 
 / {
 	ccm0: memory@10000000 {

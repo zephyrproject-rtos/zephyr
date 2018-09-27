@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f723.dtsi>
+#include <st/f7/stm32f723Xe.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F723E DISCOVERY board";
