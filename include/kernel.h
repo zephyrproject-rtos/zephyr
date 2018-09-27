@@ -576,7 +576,6 @@ struct k_thread {
 
 typedef struct k_thread _thread_t;
 typedef struct k_thread *k_tid_t;
-#define tcs k_thread
 
 enum execution_context_types {
 	K_ISR = 0,

@@ -252,7 +252,7 @@ struct _thread_arch {
 
 	/*
 	 * The location of all floating point related structures/fields MUST be
-	 * located at the end of struct tcs.  This way only the
+	 * located at the end of struct k_thread.  This way only the
 	 * threads that actually utilize non-integer capabilities need to
 	 * account for the increased memory required for storing FP state when
 	 * sizing stacks.
