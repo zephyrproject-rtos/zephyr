@@ -249,6 +249,11 @@ extern char _vector_end[];
 /* end address of image, used by newlib for the heap */
 extern char _end[];
 
+/* ramfunc sections */
+extern char __ramfunc_ram_start[];
+extern char __ramfunc_ram_end[];
+extern char __ramfunc_rom_start[];
+
 #ifdef CONFIG_CCM_BASE_ADDRESS
 extern char __ccm_data_rom_start[];
 extern char __ccm_start[];
