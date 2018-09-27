@@ -2,7 +2,7 @@
 # error if it is missing
 
 if(EXISTS ${BOARD_DIR}/CMakeLists.txt)
-  if(BOARD_ROOT)
+  if(USING_OUT_OF_TREE_BOARD)
 	set(build_dir boards/${ARCH}/${BOARD})
   else()
 	unset(build_dir)

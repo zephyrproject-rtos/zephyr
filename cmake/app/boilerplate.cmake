@@ -189,12 +189,9 @@ message(STATUS "Selected BOARD ${BOARD}")
 # Store the selected board in the cache
 set(CACHED_BOARD ${BOARD} CACHE STRING "Selected board")
 
-# Use BOARD to search zephyr/boards/** for a _defconfig file,
-# e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig. When
-# found, use that path to infer the ARCH we are building for.
-if(NOT BOARD_ROOT)
-  set(BOARD_ROOT ${ZEPHYR_BASE})
-endif()
+# 'BOARD_ROOT' is a prioritized list of directories where boards may
+# be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
+list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
 
 if(NOT SOC_ROOT)
   set(SOC_DIR ${ZEPHYR_BASE}/soc)
@@ -202,7 +199,21 @@ else()
   set(SOC_DIR ${SOC_ROOT}/soc)
 endif()
 
-find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS ${BOARD_ROOT}/boards/*/* NO_DEFAULT_PATH)
+# Use BOARD to search for a '_defconfig' file.
+# e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig.
+# When found, use that path to infer the ARCH we are building for.
+foreach(root ${BOARD_ROOT})
+  # NB: find_path will return immediately if the output variable is
+  # already set
+  find_path(BOARD_DIR
+	NAMES ${BOARD}_defconfig
+	PATHS ${root}/boards/*/*
+	NO_DEFAULT_PATH
+	)
+  if(BOARD_DIR AND NOT (${root} STREQUAL ${ZEPHYR_BASE}))
+	set(USING_OUT_OF_TREE_BOARD 1)
+  endif()
+endforeach()
 
 assert_with_usage(BOARD_DIR "No board named '${BOARD}' found")
 

@@ -1091,10 +1091,11 @@ macro(assert_with_usage test comment)
   if(NOT ${test})
     message(${comment})
     message("see usage:")
+	string(REPLACE ";" " " BOARD_ROOT_SPACE_SEPARATED "${BOARD_ROOT}")
     execute_process(
       COMMAND
       ${CMAKE_COMMAND}
-      -DBOARD_ROOT=${BOARD_ROOT}
+      -DBOARD_ROOT_SPACE_SEPARATED=${BOARD_ROOT_SPACE_SEPARATED}
       -P ${ZEPHYR_BASE}/cmake/usage/usage.cmake
       )
     message(FATAL_ERROR "Invalid usage")
