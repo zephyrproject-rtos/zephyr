@@ -87,7 +87,7 @@ endchoice
 
 config NET_L2_IEEE802154_SHELL
 	bool "Enable IEEE 802.15.4 shell module"
-	select CONSOLE_SHELL
+	select SHELL
 	depends on NET_L2_IEEE802154_RFD
 	help
 	  This can be used for testing 15.4 through the console via exposing
