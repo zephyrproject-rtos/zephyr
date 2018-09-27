@@ -90,15 +90,15 @@ The color definition is a comma separated list of attributes:
                     terminal-dependent) are ignored (with a warning). The COLOR
                     can be also specified using a RGB value in the HTML
                     notation, for example #RRGGBB. If the terminal supports
-                    color changing, the color is rendered accurately. Otherwise,
-                    the visually nearest color is used.
+                    color changing, the color is rendered accurately.
+                    Otherwise, the visually nearest color is used.
 
                     If the background or foreground color of an element is not
                     specified, it defaults to -1, representing the default
                     terminal foreground or background color.
 
-                    Note: On some terminals a bright version of the color implies
-                    bold.
+                    Note: On some terminals a bright version of the color
+                    implies bold.
     - bold          Use bold text
     - underline     Use underline text
     - standout      Standout text attribute (reverse color)
@@ -178,8 +178,8 @@ import sys
 import textwrap
 
 from kconfiglib import Symbol, Choice, MENU, COMMENT, MenuNode, \
-                       BOOL, TRISTATE, STRING, INT, HEX, UNKNOWN, \
-                       AND, OR, NOT, \
+                       BOOL, STRING, INT, HEX, UNKNOWN, \
+                       AND, OR, \
                        expr_str, expr_value, split_expr, \
                        standard_sc_expr_str, \
                        TRI_TO_STR, TYPE_TO_STR, \
@@ -419,7 +419,7 @@ def _color_from_rgb(rgb):
     # terminal capabilities.
 
     # Calculates the Euclidean distance between two RGB colors
-    dist = lambda r1, r2: sum((x - y)**2 for x, y in zip(r1, r2))
+    def dist(r1, r2): return sum((x - y)**2 for x, y in zip(r1, r2))
 
     if curses.COLORS >= 256:
         # Assume we're dealing with xterm's 256-color extension
@@ -1336,7 +1336,7 @@ def _shown_nodes(menu):
         # Show the node if its prompt is visible. For menus, also check
         # 'visible if'. In show-all mode, show everything.
         return _show_all or \
-            (node.prompt and expr_value(node.prompt[1]) and not \
+            (node.prompt and expr_value(node.prompt[1]) and not
              (node.item == MENU and not expr_value(node.visibility)))
 
     if isinstance(menu.item, Choice):
@@ -2433,14 +2433,20 @@ def _select_imply_info(sym):
             s += "\n"
 
     if sym.rev_dep is not _kconf.n:
-        add_sis(sym.rev_dep, 2, "Symbols currently y-selecting this symbol:\n")
-        add_sis(sym.rev_dep, 1, "Symbols currently m-selecting this symbol:\n")
-        add_sis(sym.rev_dep, 0, "Symbols currently n-selecting this symbol (no effect):\n")
+        add_sis(sym.rev_dep, 2,
+                "Symbols currently y-selecting this symbol:\n")
+        add_sis(sym.rev_dep, 1,
+                "Symbols currently m-selecting this symbol:\n")
+        add_sis(sym.rev_dep, 0,
+                "Symbols currently n-selecting this symbol (no effect):\n")
 
     if sym.weak_rev_dep is not _kconf.n:
-        add_sis(sym.weak_rev_dep, 2, "Symbols currently y-implying this symbol:\n")
-        add_sis(sym.weak_rev_dep, 1, "Symbols currently m-implying this symbol:\n")
-        add_sis(sym.weak_rev_dep, 0, "Symbols currently n-implying this symbol (no effect):\n")
+        add_sis(sym.weak_rev_dep, 2,
+                "Symbols currently y-implying this symbol:\n")
+        add_sis(sym.weak_rev_dep, 1,
+                "Symbols currently m-implying this symbol:\n")
+        add_sis(sym.weak_rev_dep, 0,
+                "Symbols currently n-implying this symbol (no effect):\n")
 
     return s
 
