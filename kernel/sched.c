@@ -364,6 +364,20 @@ void _unpend_thread_no_timeout(struct k_thread *thread)
 	thread->base.pended_on = NULL;
 }
 
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+/* Timeout handler for *_thread_timeout() APIs */
+void z_thread_timeout(struct _timeout *to)
+{
+	struct k_thread *th = CONTAINER_OF(to, struct k_thread, base.timeout);
+
+	if (th->base.pended_on != NULL) {
+		_unpend_thread_no_timeout(th);
+	}
+	_mark_thread_as_started(th);
+	_ready_thread(th);
+}
+#endif
+
 int _pend_current_thread(int key, _wait_q_t *wait_q, s32_t timeout)
 {
 	pend(_current, wait_q, timeout);

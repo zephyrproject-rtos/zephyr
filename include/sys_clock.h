@@ -199,14 +199,10 @@ u32_t z_tick_get_32(void);
  */
 s64_t z_tick_get(void);
 
-/**
- *
- * @brief Sets the current system tick count
- *
- * @param ticks Ticks since system start
- *
- */
-void z_tick_set(s64_t ticks);
+#ifndef CONFIG_SYS_CLOCK_EXISTS
+#define z_tick_get() (0)
+#define z_tick_get_32() (0)
+#endif
 
 /* timeouts */
 
@@ -215,9 +211,8 @@ typedef void (*_timeout_func_t)(struct _timeout *t);
 
 struct _timeout {
 	sys_dnode_t node;
-	struct k_thread *thread;
-	s32_t delta_ticks_from_prev;
-	_timeout_func_t func;
+	s32_t dticks;
+	_timeout_func_t fn;
 };
 
 /*
