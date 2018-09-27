@@ -44,6 +44,13 @@ The targets added by the Makefile patch are described in the following
 sections.
 
 
+make kmenuconfig
+----------------
+
+This target runs the curses menuconfig interface with Python 3 (Python 2 is
+currently not supported for the menuconfig).
+
+
 make [ARCH=<arch>] iscriptconfig
 --------------------------------
 
@@ -75,12 +82,23 @@ argument, if given.
 See the examples/ subdirectory for example scripts.
 
 
+make dumpvarsconfig
+-------------------
+
+This target prints a list of all environment variables referenced from the
+Kconfig files, together with their values. See the
+Kconfiglib/examples/dumpvars.py script.
+
+Only environment variables that are referenced via the Kconfig preprocessor
+$(FOO) syntax are included. The preprocessor was added in Linux 4.18.
+
+
 Using Kconfiglib without the Makefile targets
 =============================================
 
 The make targets are only needed to pick up environment variables exported from
 the Kbuild makefiles and referenced inside Kconfig files, via e.g.
-'source "arch/$(SRCARCH)/Kconfig" and '$(shell,...)'.
+'source "arch/$(SRCARCH)/Kconfig" and commands run via '$(shell,...)'.
 
 These variables are referenced as of writing (Linux 4.18), together with sample
 values:
@@ -94,6 +112,12 @@ values:
   HOSTCXX          (g++)
   CC_VERSION_TEXT  (gcc (Ubuntu 7.3.0-16ubuntu3) 7.3.0)
 
+Older kernels only reference ARCH, SRCARCH, and KERNELVERSION.
+
+If your kernel is recent enough (4.18+), you can get a list of referenced
+environment variables via 'make dumpvarsconfig' (see above). Note that this
+command is added by the Makefile patch.
+
 To run Kconfiglib without the Makefile patch, set the environment variables
 manually:
 
@@ -103,13 +127,6 @@ manually:
 
 Search the top-level Makefile for "Additional ARCH settings" to see other
 possibilities for ARCH and SRCARCH.
-
-To see a list of all referenced environment variables together with their
-values, run this code from e.g. 'make iscriptconfig':
-
-  import os
-  for var in kconf.env_vars:
-      print(var, os.environ[var])
 
 
 Intro to symbol values
@@ -321,15 +338,14 @@ functions just avoid printing 'if y' conditions to give cleaner output.
 Kconfig extensions
 ==================
 
-Kconfiglib implements two Kconfig extensions related to 'source':
+Kconfiglib includes a couple of Kconfig extensions:
 
 'source' with relative path
 ---------------------------
 
-Kconfiglib supports a custom 'rsource' statement that sources Kconfig files
-with a path relative to directory of the Kconfig file containing the 'rsource'
-statement, instead of relative to the project root. This extension is not
-supported by Linux kernel tools as of writing.
+The 'rsource' statement sources Kconfig files with a path relative to directory
+of the Kconfig file containing the 'rsource' statement, instead of relative to
+the project root.
 
 Consider following directory tree:
 
@@ -348,11 +364,11 @@ Consider following directory tree:
 In this example, assume that src/SubSystem1/Kconfig wants to source
 src/SubSystem1/ModuleA/Kconfig.
 
-With 'source', the following statement would be used:
+With 'source', this statement would be used:
 
   source "src/SubSystem1/ModuleA/Kconfig"
 
-Using 'rsource', it can be rewritten as:
+With 'rsource', this turns into
 
   rsource "ModuleA/Kconfig"
 
@@ -362,8 +378,8 @@ If an absolute path is given to 'rsource', it acts the same as 'source'.
 be moved around freely.
 
 
-Globbed sourcing
-----------------
+Globbing 'source'
+-----------------
 
 'source' and 'rsource' accept glob patterns, sourcing all matching Kconfig
 files. They require at least one matching file, throwing a KconfigError
@@ -391,6 +407,102 @@ files matching "bar*" exist:
 'source' and 'osource' are analogous to 'include' and '-include' in Make.
 
 
+Generalized def_* keywords
+--------------------------
+
+def_int, def_hex, and def_string are available in addition to def_bool and
+def_tristate, allowing int, hex, and string symbols to be given a type and a
+default at the same time.
+
+
+Warnings for undefined symbols
+------------------------------
+
+Setting the environment variable KCONFIG_STRICT to "y" will cause warnings to
+be printed for all references to undefined Kconfig symbols within Kconfig
+files. The only gotcha is that all hex literals must be prefixed by "0x" or
+"0X", to make it possible to distuinguish them from symbol references.
+
+Some projects (e.g. the Linux kernel) use multiple Kconfig trees with many
+shared Kconfig files, leading to some safe undefined symbol references.
+KCONFIG_STRICT is useful in projects that only have a single Kconfig tree
+though.
+
+
+Preprocessor user functions defined in Python
+---------------------------------------------
+
+Preprocessor functions can be defined in Python, which makes it simple to
+integrate information from existing Python tools into Kconfig (e.g. to have
+Kconfig symbols depend on hardware information stored in some other format).
+
+Putting a Python module named kconfigfunctions(.py) anywhere in sys.path will
+cause it to be imported by Kconfiglib (in Kconfig.__init__()). Note that
+sys.path can be customized via PYTHONPATH, and includes the directory of the
+module being run by default, as well as installation directories.
+
+If the KCONFIG_FUNCTIONS environment variable is set, it gives a different
+module name to use instead of 'kconfigfunctions'.
+
+The imported module is expected to define a dictionary named 'functions', with
+the following format:
+
+  functions = {
+      "my-fn":       (my_fn,       <min.args>, <max.args>/None),
+      "my-other-fn": (my_other_fn, <min.args>, <max.args>/None),
+      ...
+  }
+
+  def my_fn(kconf, name, arg_1, arg_2, ...):
+      # kconf:
+      #   Kconfig instance
+      #
+      # name:
+      #   Name of the user-defined function ("my-fn"). Think argv[0].
+      #
+      # arg_1, arg_2, ...:
+      #   Arguments passed to the function from Kconfig (strings)
+      #
+      # Returns a string to be substituted as the result of calling the
+      # function
+      ...
+
+  def my_other_fn(kconf, name, arg_1, arg_2, ...):
+      ...
+
+  ...
+
+<min.args> and <max.args> are the minimum and maximum number of arguments
+expected by the function (excluding the implicit 'name' argument). If
+<max.args> is None, there is no upper limit to the number of arguments. Passing
+an invalid number of arguments will generate a KconfigError exception.
+
+Once defined, user functions can be called from Kconfig in the same way as
+other preprocessor functions:
+
+    config FOO
+        ...
+        depends on $(my-fn,arg1,arg2)
+
+If my_fn() returns "n", this will result in
+
+    config FOO
+        ...
+	depends on n
+
+Warning
+*******
+
+User-defined preprocessor functions are called as they're encountered at parse
+time, before all Kconfig files have been processed, and before the menu tree
+has been finalized. There are no guarantees that accessing Kconfig symbols or
+the menu tree via the 'kconf' parameter will work, and it could potentially
+lead to a crash. The 'kconf' parameter is provided for future extension (and
+because the predefined functions take it anyway).
+
+Preferably, user-defined functions should be stateless.
+
+
 Feedback
 ========
 
@@ -399,6 +511,7 @@ service, or open a ticket on the GitHub page.
 """
 import errno
 import glob
+import importlib
 import os
 import platform
 import re
@@ -782,6 +895,15 @@ class Kconfig(object):
             "warning-if": (_warning_if_fn, 2, 2),
         }
 
+        # Add any user-defined preprocessor functions
+        try:
+            self._functions.update(
+                importlib.import_module(
+                    os.environ.get("KCONFIG_FUNCTIONS", "kconfigfunctions")
+                ).functions)
+        except ImportError:
+            pass
+
 
         # This is used to determine whether previously unseen symbols should be
         # registered. They shouldn't be if we parse expressions after parsing,
@@ -972,7 +1094,7 @@ class Kconfig(object):
                         # The C implementation only checks the first character
                         # to the right of '=', for whatever reason
                         if not ((sym.orig_type is BOOL and
-                                 val.startswith(("n", "y"))) or \
+                                 val.startswith(("n", "y"))) or
                                 (sym.orig_type is TRISTATE and
                                  val.startswith(("n", "m", "y")))):
                             self._warn("'{}' is not a valid value for the {} "
@@ -2054,7 +2176,7 @@ class Kconfig(object):
         else:  # op == "+="
             # += does immediate expansion if the variable was last set
             # with :=
-            var.value += " " + (val if var.is_recursive else \
+            var.value += " " + (val if var.is_recursive else
                                 self._expand_whole(val, ()))
 
     def _expand_whole(self, s, args):
@@ -2221,13 +2343,17 @@ class Kconfig(object):
             return res
 
         if fn in self._functions:
-            # Built-in function
+            # Built-in or user-defined function
 
             py_fn, min_arg, max_arg = self._functions[fn]
 
-            if not min_arg <= len(args) - 1 <= max_arg:
+            if len(args) - 1 < min_arg or \
+               (max_arg is not None and len(args) - 1 > max_arg):
+
                 if min_arg == max_arg:
                     expected_args = min_arg
+                elif max_arg is None:
+                    expected_args = "{} or more".format(min_arg)
                 else:
                     expected_args = "{}-{}".format(min_arg, max_arg)
 
@@ -2236,7 +2362,7 @@ class Kconfig(object):
                                    .format(self._filename, self._linenr, fn,
                                            expected_args, len(args) - 1))
 
-            return py_fn(self, args)
+            return py_fn(self, *args)
 
         # Environment variables are tried last
         if fn in os.environ:
@@ -2480,7 +2606,13 @@ class Kconfig(object):
                 self.top_node.linenr = self._linenr
 
             else:
-                self._parse_error("unrecognized construct")
+                # A valid endchoice/endif/endmenu is caught by the 'end_token'
+                # check above
+                self._parse_error(
+                    "no corresponding 'choice'" if t0 is _T_ENDCHOICE else
+                    "no corresponding 'if'"     if t0 is _T_ENDIF else
+                    "no corresponding 'menu'"   if t0 is _T_ENDMENU else
+                    "unrecognized construct")
 
         # End of file reached. Terminate the final node and return it.
 
@@ -3018,8 +3150,6 @@ class Kconfig(object):
                               self._make_and(cur.prompt[1], dep))
 
             if isinstance(cur.item, (Symbol, Choice)):
-                sc = cur.item
-
                 # Propagate 'visible if' dependencies to the prompt
                 if cur.prompt:
                     cur.prompt = (cur.prompt[0],
@@ -3443,6 +3573,7 @@ class Symbol(object):
         if self.orig_type is TRISTATE and \
            ((self.choice and self.choice.tri_value == 2) or
             not self.kconfig.modules.tri_value):
+
             return BOOL
 
         return self.orig_type
@@ -4813,7 +4944,7 @@ class MenuNode(object):
         fields.append("deps " + TRI_TO_STR[expr_value(self.dep)])
 
         if self.item is MENU:
-            fields.append("'visible if' deps " + \
+            fields.append("'visible if' deps " +
                           TRI_TO_STR[expr_value(self.visibility)])
 
         if isinstance(self.item, (Symbol, Choice)) and self.help is not None:
@@ -5400,7 +5531,7 @@ def _expr_depends_on(expr, sym):
         elif left is not sym:
             return False
 
-        return (expr[0] is EQUAL and right is sym.kconfig.m or \
+        return (expr[0] is EQUAL and right is sym.kconfig.m or
                                      right is sym.kconfig.y) or \
                (expr[0] is UNEQUAL and right is sym.kconfig.n)
 
@@ -5718,12 +5849,12 @@ def _check_sym_sanity(sym):
                 if not _int_hex_ok(low, sym.orig_type) or \
                    not _int_hex_ok(high, sym.orig_type):
 
-                   sym.kconfig._warn("the {0} symbol {1} has a non-{0} range "
-                                     "[{2}, {3}]"
-                                     .format(TYPE_TO_STR[sym.orig_type],
-                                             _name_and_loc(sym),
-                                             _name_and_loc(low),
-                                             _name_and_loc(high)))
+                    sym.kconfig._warn("the {0} symbol {1} has a non-{0} range "
+                                      "[{2}, {3}]"
+                                      .format(TYPE_TO_STR[sym.orig_type],
+                                              _name_and_loc(sym),
+                                              _name_and_loc(low),
+                                              _name_and_loc(high)))
 
 
 def _int_hex_ok(sym, type_):
@@ -5800,33 +5931,33 @@ def _warn_choice_select_imply(sym, expr, expr_type):
 
 # Predefined preprocessor functions
 
-def _filename_fn(kconf, args):
+def _filename_fn(kconf, _):
     return kconf._filename
 
-def _lineno_fn(kconf, args):
+def _lineno_fn(kconf, _):
     return str(kconf._linenr)
 
-def _info_fn(kconf, args):
-    print("{}:{}: {}".format(kconf._filename, kconf._linenr, args[1]))
+def _info_fn(kconf, _, msg):
+    print("{}:{}: {}".format(kconf._filename, kconf._linenr, msg))
 
     return ""
 
-def _warning_if_fn(kconf, args):
-    if args[1] == "y":
-        kconf._warn(args[2], kconf._filename, kconf._linenr)
+def _warning_if_fn(kconf, _, cond, msg):
+    if cond == "y":
+        kconf._warn(msg, kconf._filename, kconf._linenr)
 
     return ""
 
-def _error_if_fn(kconf, args):
-    if args[1] == "y":
+def _error_if_fn(kconf, _, cond, msg):
+    if cond == "y":
         raise KconfigError("{}:{}: {}".format(
-            kconf._filename, kconf._linenr, args[2]))
+            kconf._filename, kconf._linenr, msg))
 
     return ""
 
-def _shell_fn(kconf, args):
+def _shell_fn(kconf, _, command):
     stdout, stderr = subprocess.Popen(
-        args[1], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ).communicate()
 
     if not _IS_PY2:
@@ -5838,7 +5969,7 @@ def _shell_fn(kconf, args):
 
     if stderr:
         kconf._warn("'{}' wrote to stderr: {}".format(
-                        args[1], "\n".join(stderr.splitlines())),
+                        command, "\n".join(stderr.splitlines())),
                     kconf._filename, kconf._linenr)
 
     # Manual universal newlines with splitlines() (to prevent e.g. stray \r's
