@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32l475.dtsi>
+#include <st/l4/stm32l475Xg.dtsi>
 
 / {
 	model = "STMicroelectronics B-L475E-IOT01Ax board";

@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32l432.dtsi>
+#include <st/l4/stm32l432Xc.dtsi>
 
 / {
 	model = "STMicroelectronics STM32L432KC-NUCLEO board";

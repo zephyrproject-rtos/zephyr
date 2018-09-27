@@ -9,7 +9,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32l476.dtsi>
+#include <st/l4/stm32l476Xg.dtsi>
 
 / {
 	model = "STMicroelectronics STM32L476G-DISCO board";
