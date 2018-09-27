@@ -9,7 +9,11 @@
 #define _STORAGE_H
 
 enum app_variables_id {
-	RESET_COUNTER = 0x01
+	RESET_COUNTER = 0x01,
+	GEN_DEF_TRANS_TIME_STATE,
+	GEN_ONPOWERUP_STATE,
+	LIGHTNESS_TEMP_DEF_STATE,
+	LIGHTNESS_TEMP_LAST_STATE
 };
 
 extern u8_t reset_counter;
