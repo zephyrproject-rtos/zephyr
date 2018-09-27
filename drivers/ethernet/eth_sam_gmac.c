@@ -1548,7 +1548,7 @@ static int eth_initialize(struct device *dev)
 }
 
 #ifdef CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM
-void get_mac_addr_from_i2c_eeprom(u8_t mac_addr[6])
+static void get_mac_addr_from_i2c_eeprom(u8_t mac_addr[6])
 {
 	struct device *dev;
 	u32_t iaddr = CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS;
@@ -1565,6 +1565,34 @@ void get_mac_addr_from_i2c_eeprom(u8_t mac_addr[6])
 			    mac_addr, 6);
 }
 #endif
+
+#if defined(CONFIG_ETH_SAM_GMAC_RANDOM_MAC)
+static void generate_random_mac(u8_t mac_addr[6])
+{
+	u32_t entropy;
+
+	entropy = sys_rand32_get();
+
+	/* Atmel's OUI */
+	mac_addr[0] = 0x00;
+	mac_addr[1] = 0x04;
+	mac_addr[2] = 0x25;
+
+	mac_addr[3] = entropy >> 8;
+	mac_addr[4] = entropy >> 16;
+	/* Locally administered, unicast */
+	mac_addr[5] = ((entropy >> 0) & 0xfc) | 0x02;
+}
+#endif
+
+static void generate_mac(u8_t mac_addr[6])
+{
+#if defined(CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM)
+	get_mac_addr_from_i2c_eeprom(mac_addr);
+#elif defined(CONFIG_ETH_SAM_GMAC_RANDOM_MAC)
+	generate_random_mac(mac_addr);
+#endif
+}
 
 static void eth0_iface_init(struct net_if *iface)
 {
@@ -1602,11 +1630,7 @@ static void eth0_iface_init(struct net_if *iface)
 		return;
 	}
 
-#ifdef CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM
-	/* Read MAC address from an external EEPROM */
-	get_mac_addr_from_i2c_eeprom(dev_data->mac_addr);
-#endif
-
+	generate_mac(dev_data->mac_addr);
 	SYS_LOG_INF("MAC: %x:%x:%x:%x:%x:%x",
 		    dev_data->mac_addr[0], dev_data->mac_addr[1],
 		    dev_data->mac_addr[2], dev_data->mac_addr[3],
