@@ -42,6 +42,8 @@ static volatile u32_t clock_accumulated_count;
 
 #include <board.h>
 
+#include "legacy_api.h"
+
 #ifdef CONFIG_TICKLESS_IDLE
 #define TIMER_MODE_PERIODIC 0 /* normal running mode */
 #define TIMER_MODE_ONE_SHOT 1 /* emulated, since sysTick has 1 mode */
@@ -57,9 +59,7 @@ extern void _NanoIdleValClear(void);
 extern void _sys_power_save_idle_exit(s32_t ticks);
 #endif
 
-#ifdef CONFIG_TICKLESS_IDLE
-extern s32_t _sys_idle_elapsed_ticks;
-#endif
+static s32_t _sys_idle_elapsed_ticks = 1;
 
 #ifdef CONFIG_TICKLESS_IDLE
 static u32_t __noinit default_load_value; /* default count */
@@ -242,7 +242,7 @@ void _timer_int_handler(void *unused)
 #if defined(CONFIG_TICKLESS_KERNEL)
 	if (!idle_original_ticks) {
 		if (_sys_clock_always_on) {
-			_sys_clock_tick_count = _get_elapsed_clock_time();
+			z_tick_set(z_clock_uptime());
 			/* clear overflow tracking flag as it is accounted */
 			timer_overflow = 0;
 			sysTickStop();
@@ -268,11 +268,11 @@ void _timer_int_handler(void *unused)
 	 */
 	idle_original_ticks = 0;
 
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 
-	/* _sys_clock_tick_announce() could cause new programming */
+	/* z_clock_announce(_sys_idle_elapsed_ticks) could cause new programming */
 	if (!idle_original_ticks && _sys_clock_always_on) {
-		_sys_clock_tick_count = _get_elapsed_clock_time();
+		z_tick_set(z_clock_uptime());
 		/* clear overflow tracking flag as it is accounted */
 		timer_overflow = 0;
 		sysTickStop();
@@ -283,7 +283,7 @@ void _timer_int_handler(void *unused)
 #else
 	/*
 	 * If this a wakeup from a completed tickless idle or after
-	 *  _timer_idle_exit has processed a partial idle, return
+	 *  z_clock_idle_exit has processed a partial idle, return
 	 *  to the normal tick cycle.
 	 */
 	if (timer_mode == TIMER_MODE_ONE_SHOT) {
@@ -300,9 +300,10 @@ void _timer_int_handler(void *unused)
 		idle_mode = IDLE_NOT_TICKLESS;
 		_sys_idle_elapsed_ticks =
 			idle_original_ticks + 1; /* actual # of idle ticks */
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 	} else {
-		_sys_clock_final_tick_announce();
+		_sys_idle_elapsed_ticks = 1;
+		z_clock_announce(_sys_idle_elapsed_ticks);
 	}
 
 	/* accumulate total counter value */
@@ -313,9 +314,9 @@ void _timer_int_handler(void *unused)
 	 * No tickless idle:
 	 * Update the total tick count and announce this tick to the kernel.
 	 */
-	clock_accumulated_count += sys_clock_hw_cycles_per_tick;
+	clock_accumulated_count += sys_clock_hw_cycles_per_tick();
 
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 #endif /* CONFIG_TICKLESS_IDLE */
 
 	numIdleTicks = _NanoIdleValGet(); /* get # of idle ticks requested */
@@ -326,7 +327,7 @@ void _timer_int_handler(void *unused)
 		/*
 		 * Complete idle processing.
 		 * Note that for tickless idle, nothing will be done in
-		 * _timer_idle_exit.
+		 * z_clock_idle_exit.
 		 */
 		_sys_power_save_idle_exit(numIdleTicks);
 	}
@@ -336,13 +337,13 @@ void _timer_int_handler(void *unused)
 #else /* !CONFIG_SYS_POWER_MANAGEMENT */
 
 	/* accumulate total counter value */
-	clock_accumulated_count += sys_clock_hw_cycles_per_tick;
+	clock_accumulated_count += sys_clock_hw_cycles_per_tick();
 
 	/*
 	 * one more tick has occurred -- don't need to do anything special since
 	 * timer is already configured to interrupt on the following tick
 	 */
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
@@ -389,7 +390,7 @@ void _set_time(u32_t time)
 
 	idle_original_ticks = time > max_system_ticks ? max_system_ticks : time;
 
-	_sys_clock_tick_count = _get_elapsed_clock_time();
+	z_tick_set(z_clock_uptime());
 
 	/* clear overflow tracking flag as it is accounted */
 	timer_overflow = 0;
@@ -415,19 +416,19 @@ static inline u64_t get_elapsed_count(void)
 	if ((SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) || (timer_overflow)) {
 		elapsed = SysTick->LOAD;
 		/* Keep track of overflow till it is accounted in
-		 * _sys_clock_tick_count as COUNTFLAG bit is clear on read
+		 * z_tick_get() as COUNTFLAG bit is clear on read
 		 */
 		timer_overflow = 1;
 	} else {
 		elapsed = (SysTick->LOAD - SysTick->VAL);
 	}
 
-	elapsed += (_sys_clock_tick_count * default_load_value);
+	elapsed += (z_tick_get() * default_load_value);
 
 	return elapsed;
 }
 
-u64_t _get_elapsed_clock_time(void)
+u64_t z_clock_uptime(void)
 {
 	return get_elapsed_count() / default_load_value;
 }
@@ -598,13 +599,13 @@ void _timer_idle_enter(s32_t ticks /* system ticks */
  *
  * @return N/A
  */
-void _timer_idle_exit(void)
+void z_clock_idle_exit(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (idle_mode == IDLE_TICKLESS) {
 		idle_mode = IDLE_NOT_TICKLESS;
 		if (!idle_original_ticks && _sys_clock_always_on) {
-			_sys_clock_tick_count = _get_elapsed_clock_time();
+			z_tick_set(z_clock_uptime());
 			timer_overflow = 0;
 			sysTickReloadSet(max_load_value);
 			sysTickStart();
@@ -644,7 +645,7 @@ void _timer_idle_exit(void)
 		 * for it.
 		 */
 		_sys_idle_elapsed_ticks = idle_original_ticks - 1;
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 	} else {
 		u32_t elapsed;   /* elapsed "counter time" */
 		u32_t remaining; /* remaining "counter time" */
@@ -674,7 +675,7 @@ void _timer_idle_exit(void)
 		_sys_idle_elapsed_ticks = elapsed / default_load_value;
 
 		if (_sys_idle_elapsed_ticks) {
-			_sys_clock_tick_announce();
+			z_clock_announce(_sys_idle_elapsed_ticks);
 		}
 	}
 
@@ -696,7 +697,7 @@ void _timer_idle_exit(void)
  *
  * @return 0
  */
-int _sys_clock_driver_init(struct device *device)
+int z_clock_driver_init(struct device *device)
 {
 	/* enable counter, interrupt and set clock src to system clock */
 	u32_t ctrl = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk |
@@ -709,9 +710,9 @@ int _sys_clock_driver_init(struct device *device)
 	 */
 
 	/* systick supports 24-bit H/W counter */
-	__ASSERT(sys_clock_hw_cycles_per_tick <= (1 << 24),
-		 "sys_clock_hw_cycles_per_tick too large");
-	sysTickReloadSet(sys_clock_hw_cycles_per_tick - 1);
+	__ASSERT(sys_clock_hw_cycles_per_tick() <= (1 << 24),
+		 "sys_clock_hw_cycles_per_tick() too large");
+	sysTickReloadSet(sys_clock_hw_cycles_per_tick() - 1);
 
 #ifdef CONFIG_TICKLESS_IDLE
 
@@ -755,7 +756,7 @@ return (u32_t) get_elapsed_count();
 #ifdef CONFIG_TICKLESS_IDLE
 		/* When we leave a tickless period the reload value of the timer
 		 * can be set to a remaining value to wait until end of tick.
-		 * (see _timer_idle_exit). The remaining value is always smaller
+		 * (see z_clock_idle_exit). The remaining value is always smaller
 		 * than default_load_value. In this case the time elapsed until
 		 * the timer restart was not yet added to
 		 * clock_accumulated_count. To retrieve a correct cycle count

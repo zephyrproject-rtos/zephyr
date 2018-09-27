@@ -51,6 +51,8 @@
 
 #include <board.h>
 
+#include "legacy_api.h"
+
 /* HPET register offsets */
 
 #define GENERAL_CAPS_REG 0	  /* 64-bit register */
@@ -159,6 +161,7 @@
 #define HPET_IOAPIC_FLAGS  (IOAPIC_LEVEL | IOAPIC_LOW)
 #endif
 
+extern int z_clock_hw_cycles_per_sec;
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 static u32_t main_count_first_irq_value;
@@ -173,11 +176,11 @@ extern u32_t _hw_irq_to_c_handler_latency;
 #define DBG(...)
 #endif
 
+static s32_t _sys_idle_elapsed_ticks = 1;
+
 #ifdef CONFIG_TICKLESS_IDLE
 
 /* additional globals, locals, and forward declarations */
-
-extern s32_t _sys_idle_elapsed_ticks;
 
 /* main counter units per system tick */
 static u32_t __noinit counter_load_value;
@@ -261,7 +264,7 @@ void _timer_int_handler(void *unused)
 	 * timer is already configured to interrupt on the following tick
 	 */
 
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 
 #else
 
@@ -271,7 +274,7 @@ void _timer_int_handler(void *unused)
 	/* If timer not programmed or already consumed exit */
 	if (!programmed_ticks) {
 		if (_sys_clock_always_on) {
-			_sys_clock_tick_count = _get_elapsed_clock_time();
+			z_tick_set(z_clock_uptime());
 			program_max_cycles();
 		}
 		return;
@@ -296,11 +299,11 @@ void _timer_int_handler(void *unused)
 	 * announce already consumed elapsed time
 	 */
 	programmed_ticks = 0;
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 
-	/* _sys_clock_tick_announce() could cause new programming */
+	/* z_clock_announce(_sys_idle_elapsed_ticks) could cause new programming */
 	if (!programmed_ticks && _sys_clock_always_on) {
-		_sys_clock_tick_count = _get_elapsed_clock_time();
+		z_tick_set(z_clock_uptime());
 		program_max_cycles();
 	}
 #else
@@ -308,7 +311,8 @@ void _timer_int_handler(void *unused)
 	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
 	*_HPET_TIMER0_COMPARATOR = counter_last_value + counter_load_value;
 	programmed_ticks = 1;
-	_sys_clock_final_tick_announce();
+	_sys_idle_elapsed_ticks = 1;
+	z_clock_announce(_sys_idle_elapsed_ticks);
 #endif
 #endif /* !CONFIG_TICKLESS_IDLE */
 
@@ -353,7 +357,7 @@ void _set_time(u32_t time)
 
 	programmed_ticks = time;
 
-	_sys_clock_tick_count = _get_elapsed_clock_time();
+	z_tick_set(z_clock_uptime());
 
 	stale_irq_check = 1;
 
@@ -370,11 +374,11 @@ void _enable_sys_clock(void)
 	}
 }
 
-u64_t _get_elapsed_clock_time(void)
+u64_t z_clock_uptime(void)
 {
 	u64_t elapsed;
 
-	elapsed = _sys_clock_tick_count;
+	elapsed = z_tick_get();
 	elapsed +=  ((s64_t)(_hpetMainCounterAtomic() -
 			counter_last_value) / counter_load_value);
 
@@ -452,7 +456,7 @@ void _timer_idle_enter(s32_t ticks /* system ticks */
  *
  */
 
-void _timer_idle_exit(void)
+void z_clock_idle_exit(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (!programmed_ticks && _sys_clock_always_on) {
@@ -480,7 +484,7 @@ void _timer_idle_exit(void)
 		 * that the timer ISR will execute first before the tick event
 		 * is serviced.
 		 */
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 
 		/* timer interrupt handler reprograms the timer for the next
 		 * tick
@@ -531,7 +535,7 @@ void _timer_idle_exit(void)
 
 	if (_sys_idle_elapsed_ticks) {
 		/* Announce elapsed ticks to the kernel */
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 	}
 
 	/*
@@ -556,7 +560,7 @@ void _timer_idle_exit(void)
  * @return 0
  */
 
-int _sys_clock_driver_init(struct device *device)
+int z_clock_driver_init(struct device *device)
 {
 	u64_t hpetClockPeriod;
 	u64_t tickFempto;
@@ -583,12 +587,12 @@ int _sys_clock_driver_init(struct device *device)
 	 * Get tick time (in femptoseconds).
 	 */
 
-	tickFempto = 1000000000000000ull / sys_clock_ticks_per_sec;
+	tickFempto = 1000000000000000ull / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
 	/*
 	 * This driver shall read the COUNTER_CLK_PERIOD value from the general
 	 * capabilities register rather than rely on a board.h provide macro
-	 * (or the global variable 'sys_clock_hw_cycles_per_tick')
+	 * (or the global variable 'sys_clock_hw_cycles_per_tick()')
 	 * to determine the frequency of clock applied to the HPET device.
 	 */
 
@@ -610,11 +614,10 @@ int _sys_clock_driver_init(struct device *device)
 	DBG("HPET: timer0: available interrupts mask 0x%x\n",
 	       (u32_t)(*_HPET_TIMER0_CONFIG_CAPS >> 32));
 
-	/* Initialize sys_clock_hw_cycles_per_tick/sec */
+	/* Initialize sys_clock_hw_cycles_per_sec */
 
-	sys_clock_hw_cycles_per_tick = counter_load_value;
-	sys_clock_hw_cycles_per_sec = sys_clock_hw_cycles_per_tick *
-									sys_clock_ticks_per_sec;
+	z_clock_hw_cycles_per_sec = counter_load_value *
+		CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK

@@ -19,70 +19,94 @@
 extern "C" {
 #endif
 
-#ifdef _ASMLANGUAGE
-
-GTEXT(_timer_int_handler)
-
-#else /* _ASMLANGUAGE */
-
+#include <stdbool.h>
 #include <device.h>
 
-extern int _sys_clock_driver_init(struct device *device);
-
-extern void _timer_int_handler(void *arg);
-
-#ifdef CONFIG_SYSTEM_CLOCK_DISABLE
-extern void sys_clock_disable(void);
-#endif
-
-#ifdef CONFIG_TICKLESS_IDLE
-extern void _timer_idle_enter(s32_t ticks);
-extern void _timer_idle_exit(void);
-#else
-#define _timer_idle_enter(ticks) do { } while ((0))
-#define _timer_idle_exit() do { } while ((0))
-#endif /* CONFIG_TICKLESS_IDLE */
-
-extern void _nano_sys_clock_tick_announce(s32_t ticks);
-#ifdef CONFIG_TICKLESS_KERNEL
-extern void _set_time(u32_t time);
-extern u32_t _get_program_time(void);
-extern u32_t _get_remaining_program_time(void);
-extern u32_t _get_elapsed_program_time(void);
-extern u64_t _get_elapsed_clock_time(void);
-#endif
-
-extern int sys_clock_device_ctrl(struct device *device,
-				 u32_t ctrl_command, void *context);
-
-/*
- * Currently regarding timers, only loapic timer and arcv2_timer0 implements
- * device pm functionality. For other timers, use default handler in case
- * the app enables CONFIG_DEVICE_POWER_MANAGEMENT.
+/**
+ * @brief Initialize system clock driver
+ *
+ * The system clock is a Zephyr device created globally.  This is its
+ * initialization callback.  It is a weak symbol that will be
+ * implemented as a noop if undefined in the clock driver.
  */
-#if !defined(CONFIG_LOAPIC_TIMER) && !defined(CONFIG_ARCV2_TIMER)
-#define sys_clock_device_ctrl device_pm_control_nop
-#endif
-
-extern s32_t _sys_idle_elapsed_ticks;
-#define _sys_clock_tick_announce() \
-		_nano_sys_clock_tick_announce(_sys_idle_elapsed_ticks)
+extern int z_clock_driver_init(struct device *device);
 
 /**
- * @brief Account for the tick due to the timer interrupt
+ * @brief Initialize system clock driver
  *
- * @return N/A
+ * The system clock is a Zephyr device created globally.  This is its
+ * device control callback, used in a few devices for power
+ * management.  It is a weak symbol that will be implemented as a noop
+ * if undefined in the clock driver.
  */
-static inline void _sys_clock_final_tick_announce(void)
-{
-	/*
-	 * Ticks are both announced and immediately processed at interrupt
-	 * level. Thus there is only one tick left to announce (and process).
-	 */
-	_sys_idle_elapsed_ticks = 1;
-	_sys_clock_tick_announce();
-}
-#endif /* _ASMLANGUAGE */
+extern int z_clock_device_ctrl(struct device *device,
+				 u32_t ctrl_command, void *context);
+
+/**
+ * @brief Set system clock timeout
+ *
+ * Informs the system clock driver that the next needed call to
+ * z_clock_announce() will not be until the specified number of ticks
+ * from the the current time have elapsed.  Note that spurious calls
+ * to z_clock_announce() are allowed (i.e. it's legal to announce
+ * every tick and implement this function as a noop), the requirement
+ * is that one tick announcement should occur within one tick after
+ * the specified expiration.
+ *
+ * Note that ticks can also be passed the special value K_FOREVER,
+ * indicating that no future timer interrupts are expected or required
+ * and that the system is permitted to enter an indefinite sleep even
+ * if this could cause rolloever of the internal counter (i.e. the
+ * system uptime counter is allowed to be wrong, see
+ * k_enable_sys_clock_always_on().
+ *
+ * Note also that it is conventional for the kernel to pass INT_MAX
+ * for ticks if it wants to preserve the uptime tick count but doesn't
+ * have a specific event to await.  The intent here is that the driver
+ * will schedule any needed timeout as far into the future as
+ * possible.  For the specific case of INT_MAX, the next call to
+ * z_clock_announce() may occur at any point in the future, not just
+ * at INT_MAX ticks.  But the correspondence between the announced
+ * ticks and real-world time must be correct.
+ *
+ * @param ticks Timeout in tick units
+ * @param idle Hint to the driver that the system is about to enter
+ *        the idle state immediately after setting the timeout
+ */
+extern void z_clock_set_timeout(s32_t ticks, bool idle);
+
+/**
+ * @brief Timer idle exit notification
+ *
+ * This notifies the timer driver that the system is exiting the idle
+ * and allows it to do whatever bookeeping is needed to restore timer
+ * operation and compute elapsed ticks.
+ *
+ * @note Legacy timer drivers also use this opportunity to call back
+ * into z_clock_announce() to notify the kernel of expired ticks.
+ * This is allowed for compatibility, but not recommended.  The kernel
+ * will figure that out on its own.
+ */
+extern void z_clock_idle_exit(void);
+
+/**
+ * @brief Announce time progress to the kernel
+ *
+ * Informs the kernel that the specified number of ticks have elapsed
+ * since the last call to z_clock_announce() (or system startup for
+ * the first call).
+ *
+ * @param ticks Elapsed time, in ticks
+ */
+extern void z_clock_announce(s32_t ticks);
+
+/**
+ * @brief System uptime in ticks
+ *
+ * Queries the clock driver for the current time elapsed since system
+ * bootup in ticks.
+ */
+extern u64_t z_clock_uptime(void);
 
 #ifdef __cplusplus
 }

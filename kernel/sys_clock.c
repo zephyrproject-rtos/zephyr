@@ -21,25 +21,22 @@
 #endif
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-int sys_clock_us_per_tick = 1000000 / sys_clock_ticks_per_sec;
-int sys_clock_hw_cycles_per_tick =
-	CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / sys_clock_ticks_per_sec;
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-int sys_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+int z_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 #endif
 #else
-/* don't initialize to avoid division-by-zero error */
-int sys_clock_us_per_tick;
-int sys_clock_hw_cycles_per_tick;
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-int sys_clock_hw_cycles_per_sec;
+int z_clock_hw_cycles_per_sec;
 #endif
 #endif
 
-/* updated by timer driver for tickless, stays at 1 for non-tickless */
-s32_t _sys_idle_elapsed_ticks = 1;
+/* Note that this value is 64 bits, and thus non-atomic on almost all
+ * Zephyr archtictures.  And of course it's routinely updated inside
+ * timer interrupts.  Access to it must be locked.
+ */
+static volatile u64_t tick_count;
 
-volatile u64_t _sys_clock_tick_count;
+u64_t z_last_tick_announced;
 
 #ifdef CONFIG_TICKLESS_KERNEL
 /*
@@ -48,26 +45,19 @@ volatile u64_t _sys_clock_tick_count;
  * system clock to track passage of time without interruption.
  * To save power, this should be turned on only when required.
  */
-int _sys_clock_always_on;
+int _sys_clock_always_on = 1;
 
 static u32_t next_ts;
 #endif
-/**
- *
- * @brief Return the lower part of the current system tick count
- *
- * @return the current system tick count
- *
- */
-u32_t _tick_get_32(void)
+
+u32_t z_tick_get_32(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
-	return (u32_t)_get_elapsed_clock_time();
+	return (u32_t)z_clock_uptime();
 #else
-	return (u32_t)_sys_clock_tick_count;
+	return (u32_t)tick_count;
 #endif
 }
-FUNC_ALIAS(_tick_get_32, sys_tick_get_32, u32_t);
 
 u32_t _impl_k_uptime_get_32(void)
 {
@@ -75,7 +65,7 @@ u32_t _impl_k_uptime_get_32(void)
 	__ASSERT(_sys_clock_always_on,
 		 "Call k_enable_sys_clock_always_on to use clock API");
 #endif
-	return __ticks_to_ms(_tick_get_32());
+	return __ticks_to_ms(z_tick_get_32());
 }
 
 #ifdef CONFIG_USERSPACE
@@ -88,33 +78,26 @@ Z_SYSCALL_HANDLER(k_uptime_get_32)
 }
 #endif
 
-/**
- *
- * @brief Return the current system tick count
- *
- * @return the current system tick count
- *
- */
-s64_t _tick_get(void)
+s64_t z_tick_get(void)
 {
-	s64_t tmp_sys_clock_tick_count;
-	/*
-	 * Lock the interrupts when reading _sys_clock_tick_count 64-bit
-	 * variable. Some architectures (x86) do not handle 64-bit atomically,
-	 * so we have to lock the timer interrupt that causes change of
-	 * _sys_clock_tick_count
-	 */
-	unsigned int imask = irq_lock();
-
 #ifdef CONFIG_TICKLESS_KERNEL
-	tmp_sys_clock_tick_count = _get_elapsed_clock_time();
+	return z_clock_uptime();
 #else
-	tmp_sys_clock_tick_count = _sys_clock_tick_count;
+	unsigned int key = irq_lock();
+	s64_t ret = tick_count;
+
+	irq_unlock(key);
+	return ret;
 #endif
-	irq_unlock(imask);
-	return tmp_sys_clock_tick_count;
 }
-FUNC_ALIAS(_tick_get, sys_tick_get, s64_t);
+
+void z_tick_set(s64_t val)
+{
+	unsigned int key = irq_lock();
+
+	tick_count = val;
+	irq_unlock(key);
+}
 
 s64_t _impl_k_uptime_get(void)
 {
@@ -122,7 +105,7 @@ s64_t _impl_k_uptime_get(void)
 	__ASSERT(_sys_clock_always_on,
 		 "Call k_enable_sys_clock_always_on to use clock API");
 #endif
-	return __ticks_to_ms(_tick_get());
+	return __ticks_to_ms(z_tick_get());
 }
 
 #ifdef CONFIG_USERSPACE
@@ -300,7 +283,7 @@ static void handle_time_slicing(s32_t ticks)
 
 /**
  *
- * @brief Announce a tick to the kernel
+ * @brief Announce ticks to the kernel
  *
  * This function is only to be called by the system clock timer driver when a
  * tick is to be announced to the kernel. It takes care of dequeuing the
@@ -308,8 +291,10 @@ static void handle_time_slicing(s32_t ticks)
  *
  * @return N/A
  */
-void _nano_sys_clock_tick_announce(s32_t ticks)
+void z_clock_announce(s32_t ticks)
 {
+	z_last_tick_announced += ticks;
+
 #ifdef CONFIG_SMP
 	/* sys_clock timekeeping happens only on the main CPU */
 	if (_arch_curr_cpu()->id) {
@@ -322,9 +307,8 @@ void _nano_sys_clock_tick_announce(s32_t ticks)
 
 	K_DEBUG("ticks: %d\n", ticks);
 
-	/* 64-bit value, ensure atomic access with irq lock */
 	key = irq_lock();
-	_sys_clock_tick_count += ticks;
+	tick_count += ticks;
 	irq_unlock(key);
 #endif
 	handle_timeouts(ticks);
@@ -339,11 +323,31 @@ void _nano_sys_clock_tick_announce(s32_t ticks)
 	next_to = !next_to || (next_ts
 			       && next_to) > next_ts ? next_ts : next_to;
 
-	u32_t remaining = _get_remaining_program_time();
-
-	if ((!remaining && next_to) || (next_to < remaining)) {
+	if (next_to) {
 		/* Clears current program if next_to = 0 and remaining > 0 */
-		_set_time(next_to);
+		int dt = next_to ? next_to : (_sys_clock_always_on ? INT_MAX : K_FOREVER);
+		z_clock_set_timeout(dt, false);
 	}
+#endif
+}
+
+int k_enable_sys_clock_always_on(void)
+{
+#ifdef CONFIG_TICKLESS_KERNEL
+	int prev_status = _sys_clock_always_on;
+
+	_sys_clock_always_on = 1;
+	_enable_sys_clock();
+
+	return prev_status;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+void k_disable_sys_clock_always_on(void)
+{
+#ifdef CONFIG_TICKLESS_KERNEL
+	_sys_clock_always_on = 0;
 #endif
 }

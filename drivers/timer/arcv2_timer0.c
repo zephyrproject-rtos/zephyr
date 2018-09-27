@@ -15,7 +15,7 @@
  * be programmed to wake the system in N >= TICKLESS_IDLE_THRESH ticks. The
  * kernel invokes _timer_idle_enter() to program the up counter to trigger an
  * interrupt in N ticks.  When the timer expires (or when another interrupt is
- * detected), the kernel's interrupt stub invokes _timer_idle_exit() to leave
+ * detected), the kernel's interrupt stub invokes z_clock_idle_exit() to leave
  * the tickless idle state.
  *
  * @internal
@@ -28,13 +28,13 @@
  *
  * 2. The act of entering tickless idle may potentially straddle a tick
  * boundary. This can be detected in _timer_idle_enter() after Timer0 is
- * programmed with the new limit and acted upon in _timer_idle_exit().
+ * programmed with the new limit and acted upon in z_clock_idle_exit().
  *
  * 3. Tickless idle may be prematurely aborted due to a straddled tick. See
  * previous factor.
  *
  * 4. Tickless idle may end naturally.  This is detected and handled in
- * _timer_idle_exit().
+ * z_clock_idle_exit().
  *
  * 5. Tickless idle may be prematurely aborted due to a non-timer interrupt.
  * If this occurs, Timer0 is reprogrammed to trigger at the next tick.
@@ -59,6 +59,8 @@
 
 #include <board.h>
 
+#include "legacy_api.h"
+
 #define _ARC_V2_TMR_CTRL_IE 0x1 /* interrupt enable */
 #define _ARC_V2_TMR_CTRL_NH 0x2 /* count only while not halted */
 #define _ARC_V2_TMR_CTRL_W  0x4 /* watchdog mode enable */
@@ -67,11 +69,11 @@
 /* running total of timer count */
 static u32_t __noinit cycles_per_tick;
 static volatile u32_t accumulated_cycle_count;
+static s32_t _sys_idle_elapsed_ticks = 1;
 
 #ifdef CONFIG_TICKLESS_IDLE
 static u32_t __noinit max_system_ticks;
 static u32_t __noinit programmed_ticks;
-extern s32_t _sys_idle_elapsed_ticks;
 #ifndef CONFIG_TICKLESS_KERNEL
 static u32_t __noinit programmed_limit;
 static int straddled_tick_on_idle_enter;
@@ -196,7 +198,7 @@ void _timer_int_handler(void *unused)
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (!programmed_ticks) {
 		if (_sys_clock_always_on) {
-			_sys_clock_tick_count = _get_elapsed_clock_time();
+			z_tick_set(z_clock_uptime());
 			program_max_cycles();
 		}
 		return;
@@ -212,11 +214,11 @@ void _timer_int_handler(void *unused)
 	programmed_ticks = 0;
 	timer_expired = 1;
 
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 
-	/* _sys_clock_tick_announce() could cause new programming */
+	/* z_clock_announce(_sys_idle_elapsed_ticks) could cause new programming */
 	if (!programmed_ticks && _sys_clock_always_on) {
-		_sys_clock_tick_count = _get_elapsed_clock_time();
+		z_tick_set(z_clock_uptime());
 		program_max_cycles();
 	}
 #else
@@ -227,9 +229,10 @@ void _timer_int_handler(void *unused)
 		      timer_count <= (cycles_per_tick - 1),
 		      "timer_count: %d, limit %d\n", timer_count, cycles_per_tick - 1);
 
-	_sys_clock_final_tick_announce();
+	_sys_idle_elapsed_ticks = 1;
+	z_clock_announce(_sys_idle_elapsed_ticks);
 #else
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 #endif
 
 	update_accumulated_count();
@@ -280,7 +283,7 @@ void _set_time(u32_t time)
 
 	programmed_ticks = time > max_system_ticks ? max_system_ticks : time;
 
-	_sys_clock_tick_count = _get_elapsed_clock_time();
+	z_tick_set(z_clock_uptime());
 
 	timer0_limit_register_set(programmed_ticks * cycles_per_tick);
 	timer0_count_register_set(0);
@@ -306,12 +309,12 @@ static inline u64_t get_elapsed_count(void)
 		elapsed = timer0_count_register_get();
 	}
 
-	elapsed += _sys_clock_tick_count * cycles_per_tick;
+	elapsed += z_tick_get() * cycles_per_tick;
 
 	return elapsed;
 }
 
-u64_t _get_elapsed_clock_time(void)
+u64_t z_clock_uptime(void)
 {
 	return get_elapsed_count() / cycles_per_tick;
 }
@@ -398,7 +401,7 @@ void _timer_idle_enter(s32_t ticks)
  * RETURNS: N/A
  */
 
-void _timer_idle_exit(void)
+void z_clock_idle_exit(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (!programmed_ticks && _sys_clock_always_on) {
@@ -433,7 +436,7 @@ void _timer_idle_exit(void)
 
 		_sys_idle_elapsed_ticks = programmed_ticks - 1;
 		update_accumulated_count();
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 
 		__ASSERT_EVAL({},
 			      u32_t timer_count = timer0_count_register_get(),
@@ -449,7 +452,7 @@ void _timer_idle_exit(void)
 	_sys_idle_elapsed_ticks = current_count / cycles_per_tick;
 	if (_sys_idle_elapsed_ticks > 0) {
 		update_accumulated_count();
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 	}
 
 	/*
@@ -479,7 +482,7 @@ static void tickless_idle_init(void) {}
  *
  * @return 0
  */
-int _sys_clock_driver_init(struct device *device)
+int z_clock_driver_init(struct device *device)
 {
 	ARG_UNUSED(device);
 
@@ -487,7 +490,7 @@ int _sys_clock_driver_init(struct device *device)
 	timer0_control_register_set(0);
 	timer0_count_register_set(0);
 
-	cycles_per_tick = sys_clock_hw_cycles_per_tick;
+	cycles_per_tick = sys_clock_hw_cycles_per_tick();
 
 	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
 		    _timer_int_handler, NULL, 0);
@@ -544,7 +547,7 @@ static int sys_clock_resume(struct device *dev)
  * Implements the driver control management functionality
  * the *context may include IN data or/and OUT data
  */
-int sys_clock_device_ctrl(struct device *port, u32_t ctrl_command,
+int z_clock_device_ctrl(struct device *port, u32_t ctrl_command,
 			  void *context)
 {
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {

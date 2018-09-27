@@ -14,6 +14,8 @@
 
 #include    "xtensa_rtos.h"
 
+#include "legacy_api.h"
+
 /*
  * This device driver can be also used with an extenal timer instead of
  * the internal one that may simply not exist.
@@ -96,14 +98,14 @@
 #define MIN_TIMER_PROG_DELAY 50   /* TODO: Update this value */
 #endif /* CONFIG_XTENSA_INTERNAL_TIMER || (CONFIG_XTENSA_TIMER_IRQ < 0) */
 
+static s32_t _sys_idle_elapsed_ticks = 1;
+
 #ifdef CONFIG_TICKLESS_IDLE
 #define TIMER_MODE_PERIODIC 0 /* normal running mode */
 #define TIMER_MODE_ONE_SHOT 1 /* emulated, since sysTick has 1 mode */
 
 #define IDLE_NOT_TICKLESS 0 /* non-tickless idle mode */
 #define IDLE_TICKLESS 1     /* tickless idle  mode */
-
-extern s32_t _sys_idle_elapsed_ticks;
 
 static u32_t __noinit cycles_per_tick;
 static u32_t __noinit max_system_ticks;
@@ -165,7 +167,7 @@ static inline void _set_max_clock_time(void)
 	unsigned int key;
 
 	key = irq_lock();
-	_sys_clock_tick_count = _get_elapsed_clock_time();
+	z_tick_set(z_clock_uptime());
 	last_timer_value = GET_TIMER_CURRENT_TIME();
 	irq_unlock(key);
 	SET_TIMER_FIRE_TIME(MAX_TIMER_CYCLES); /* Program timer to max value */
@@ -189,7 +191,7 @@ void _set_time(u32_t time)
 	}
 	key = irq_lock();
 	/* Update System Level Ticks Time Keeping */
-	_sys_clock_tick_count = _get_elapsed_clock_time();
+	z_tick_set(z_clock_uptime());
 	C = GET_TIMER_CURRENT_TIME();
 	last_timer_value = C;
 	irq_unlock(key);
@@ -222,7 +224,7 @@ void _enable_sys_clock(void)
 }
 
 /* Total number of ticks passed since device bootup. */
-u64_t _get_elapsed_clock_time(void)
+u64_t z_clock_uptime(void)
 {
 	u32_t C;
 	unsigned int key;
@@ -233,7 +235,7 @@ u64_t _get_elapsed_clock_time(void)
 	C = GET_TIMER_CURRENT_TIME();
 	elapsed = (last_timer_value <= C) ? (C - last_timer_value) :
 				(MAX_TIMER_CYCLES - last_timer_value) + C;
-	total = (_sys_clock_tick_count + (elapsed / cycles_per_tick));
+	total = (z_tick_get() + (elapsed / cycles_per_tick));
 	irq_unlock(key);
 
 	return total;
@@ -242,7 +244,7 @@ u64_t _get_elapsed_clock_time(void)
 
 static ALWAYS_INLINE void tickless_idle_init(void)
 {
-	cycles_per_tick = sys_clock_hw_cycles_per_tick;
+	cycles_per_tick = sys_clock_hw_cycles_per_tick();
 	/* calculate the max number of ticks with this 32-bit H/W counter */
 	max_system_ticks = MAX_TIMER_CYCLES / cycles_per_tick;
 	max_load_value = max_system_ticks * cycles_per_tick;
@@ -327,7 +329,7 @@ void _timer_idle_enter(s32_t ticks)
  *
  * @return N/A
  */
-void _timer_idle_exit(void)
+void z_clock_idle_exit(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (!idle_original_ticks) {
@@ -409,7 +411,7 @@ void _timer_idle_exit(void)
 		SET_TIMER_FIRE_TIME(F);
 	}
 	if (_sys_idle_elapsed_ticks) {
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 	}
 
 	/* Exit timer idle mode */
@@ -527,7 +529,7 @@ void _timer_int_handler(void *params)
 	_sys_idle_elapsed_ticks = idle_original_ticks;
 	idle_original_ticks = 0;
 	/* Anounce elapsed of _sys_idle_elapsed_ticks systicks */
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 
 	/* Program timer incase it is not Prgrammed */
 	if (!idle_original_ticks) {
@@ -536,7 +538,8 @@ void _timer_int_handler(void *params)
 	}
 #else
 	/* Announce the tick event to the kernel. */
-	_sys_clock_final_tick_announce();
+	_sys_idle_elapsed_ticks = 1;
+	z_clock_announce(_sys_idle_elapsed_ticks);
 #endif	/* CONFIG_TICKLESS_KERNEL */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
@@ -555,7 +558,7 @@ void _timer_int_handler(void *params)
  *
  * @return 0
  */
-int _sys_clock_driver_init(struct device *device)
+int z_clock_driver_init(struct device *device)
 {
 	IRQ_CONNECT(TIMER_IRQ, 0, _timer_int_handler, 0, 0);
 

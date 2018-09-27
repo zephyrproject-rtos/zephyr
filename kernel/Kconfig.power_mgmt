@@ -97,18 +97,6 @@ config TICKLESS_KERNEL
 	  clock interrupt generation would be stopped at all times. This option
 	  requires Tickless Idle option to be enabled.
 
-config TICKLESS_KERNEL_TIME_UNIT_IN_MICRO_SECS
-	int "Tickless kernel time unit in micro seconds"
-	default 1000
-	depends on TICKLESS_KERNEL
-	help
-	  This option makes the system clock and scheduling granularity.
-	  The default will be one millisecond. This option also determines
-	  the time unit passed in functions like _sys_soc_suspend. The
-	  value should be determined based what the timer hardware and driver
-	  can support. Specifying too small a time unit than what the overall
-	  system speed can support would cause scheduling errors.
-
 config BUSY_WAIT_USES_ALTERNATE_CLOCK
 	bool "Busy wait uses alternate clock in tickless kernel mode"
 	help

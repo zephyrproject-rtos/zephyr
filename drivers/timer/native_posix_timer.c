@@ -20,8 +20,11 @@
 #include "soc.h"
 #include "posix_trace.h"
 
+#include "legacy_api.h"
+
 static u64_t tick_period; /* System tick period in number of hw cycles */
 static s64_t silent_ticks;
+static s32_t _sys_idle_elapsed_ticks = 1;
 
 /**
  * Return the current HW cycle counter
@@ -48,7 +51,7 @@ void _timer_idle_enter(s32_t sys_ticks)
 		posix_print_warning("native timer: Re-entering idle mode with "
 				    "%i ticks pending\n",
 				    silent_ticks);
-		_timer_idle_exit();
+		z_clock_idle_exit();
 		/* LCOV_EXCL_STOP */
 	}
 	if (sys_ticks < 0) {
@@ -72,12 +75,12 @@ void _timer_idle_enter(s32_t sys_ticks)
  * Note that we do not assume this function is called before the interrupt is
  * raised (the interrupt can handle it announcing all ticks)
  */
-void _timer_idle_exit(void)
+void z_clock_idle_exit(void)
 {
 	silent_ticks -= hwtimer_get_pending_silent_ticks();
 	if (silent_ticks > 0) {
 		_sys_idle_elapsed_ticks = silent_ticks;
-		_sys_clock_tick_announce();
+		z_clock_announce(_sys_idle_elapsed_ticks);
 	}
 	silent_ticks = 0;
 	hwtimer_set_silent_ticks(0);
@@ -93,17 +96,17 @@ static void sp_timer_isr(void *arg)
 	ARG_UNUSED(arg);
 	_sys_idle_elapsed_ticks = silent_ticks + 1;
 	silent_ticks = 0;
-	_sys_clock_tick_announce();
+	z_clock_announce(_sys_idle_elapsed_ticks);
 }
 
 /*
  * Enable the hw timer, setting its tick period, and setup its interrupt
  */
-int _sys_clock_driver_init(struct device *device)
+int z_clock_driver_init(struct device *device)
 {
 	ARG_UNUSED(device);
 
-	tick_period = 1000000ul / sys_clock_ticks_per_sec;
+	tick_period = 1000000ul / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
 	hwtimer_enable(tick_period);
 

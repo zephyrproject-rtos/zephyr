@@ -16,8 +16,6 @@
 extern struct k_mem_pool _k_mem_pool_list_start[];
 extern struct k_mem_pool _k_mem_pool_list_end[];
 
-s64_t _tick_get(void);
-
 static struct k_mem_pool *get_pool(int id)
 {
 	return &_k_mem_pool_list_start[id];
@@ -57,7 +55,7 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 	__ASSERT(!(_is_in_isr() && timeout != K_NO_WAIT), "");
 
 	if (timeout > 0) {
-		end = _tick_get() + _ms_to_ticks(timeout);
+		end = z_tick_get() + _ms_to_ticks(timeout);
 	}
 
 	while (true) {
@@ -95,7 +93,7 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 		(void)_pend_current_thread(irq_lock(), &p->wait_q, timeout);
 
 		if (timeout != K_FOREVER) {
-			timeout = end - _tick_get();
+			timeout = end - z_tick_get();
 
 			if (timeout < 0) {
 				break;

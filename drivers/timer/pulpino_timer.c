@@ -31,16 +31,16 @@ static void pulpino_timer_irq_handler(void *unused)
 	/* Reset counter */
 	timer->val = 0;
 
-	accumulated_cycle_count += sys_clock_hw_cycles_per_tick;
+	accumulated_cycle_count += sys_clock_hw_cycles_per_tick();
 
-	_sys_clock_tick_announce();
+	z_clock_announce(1);
 }
 
 #ifdef CONFIG_TICKLESS_IDLE
 #error "Tickless idle not yet implemented for pulpino timer"
 #endif
 
-int _sys_clock_driver_init(struct device *device)
+int z_clock_driver_init(struct device *device)
 {
 	ARG_UNUSED(device);
 	IRQ_CONNECT(PULP_TIMER_A_CMP_IRQ, 0,
@@ -50,10 +50,10 @@ int _sys_clock_driver_init(struct device *device)
 	/*
 	 * Initialize timer.
 	 * Reset counter and set timer to generate interrupt
-	 * every sys_clock_hw_cycles_per_tick
+	 * every sys_clock_hw_cycles_per_tick()
 	 */
 	timer->val = 0;
-	timer->cmp = sys_clock_hw_cycles_per_tick;
+	timer->cmp = sys_clock_hw_cycles_per_tick();
 	timer->ctrl = TIMER_CTRL_EN;
 
 	return 0;

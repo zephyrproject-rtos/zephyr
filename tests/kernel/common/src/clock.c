@@ -101,7 +101,7 @@ void test_clock_cycle(void)
 	c32 = k_cycle_get_32();
 	/*break if cycle counter wrap around*/
 	while (k_cycle_get_32() > c32 &&
-	       k_cycle_get_32() < (c32 + sys_clock_hw_cycles_per_tick))
+	       k_cycle_get_32() < (c32 + sys_clock_hw_cycles_per_tick()))
 #if defined(CONFIG_ARCH_POSIX)
 		posix_halt_cpu();
 #else
@@ -124,7 +124,7 @@ void test_clock_cycle(void)
 	if (c1 > c0) {
 		/* delta cycle should be greater than 1 milli-second*/
 		zassert_true((c1 - c0) >
-			     (sys_clock_hw_cycles_per_sec / MSEC_PER_SEC), NULL);
+			     (sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC), NULL);
 		/* delta NS should be greater than 1 milli-second */
 		zassert_true(SYS_CLOCK_HW_CYCLES_TO_NS(c1 - c0) >
 			     (NSEC_PER_SEC / MSEC_PER_SEC), NULL);
