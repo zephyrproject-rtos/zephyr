@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f303.dtsi>
+#include <st/f3/stm32f303Xc.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F3DISCOVERY board";

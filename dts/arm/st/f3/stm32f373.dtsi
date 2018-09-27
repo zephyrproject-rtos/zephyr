@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <st/stm32f3.dtsi>
+#include <st/f3/stm32f3.dtsi>
 
 / {
 	soc {
