@@ -31,9 +31,6 @@ extern "C" {
  */
 /* Thread Stack Region Intent Type */
 enum {
-#ifdef CONFIG_USERSPACE
-	THREAD_STACK_REGION,
-#endif
 #ifdef CONFIG_APPLICATION_MEMORY
 	THREAD_APP_DATA_REGION,
 #endif
@@ -41,6 +38,7 @@ enum {
 	THREAD_STACK_GUARD_REGION,
 #endif
 #ifdef CONFIG_USERSPACE
+	THREAD_STACK_REGION,
 	THREAD_DOMAIN_PARTITION_REGION,
 #endif
 	THREAD_MPU_REGION_LAST
