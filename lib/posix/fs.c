@@ -9,6 +9,7 @@
 #include <limits.h>
 #include <posix/pthread.h>
 #include <posix/unistd.h>
+#include <posix/dirent.h>
 #include <string.h>
 
 BUILD_ASSERT_MSG(PATH_MAX > MAX_FILE_NAME,
