@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f334.dtsi>
+#include <st/f3/stm32f334X8.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F334R8-NUCLEO board";

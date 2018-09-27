@@ -4,14 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <st/stm32f3.dtsi>
+#include <st/f3/stm32f3.dtsi>
 
 / {
-	ccm0: memory@10000000 {
-		compatible = "st,stm32-ccm";
-		reg = <0x10000000 DT_CCM_SIZE>;
-	};
-
 	soc {
 		i2c2: i2c@40005800 {
 			compatible = "st,stm32-i2c-v2";
