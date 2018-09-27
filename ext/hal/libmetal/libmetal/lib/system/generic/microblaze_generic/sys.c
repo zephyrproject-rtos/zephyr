@@ -22,36 +22,36 @@
 
 #define MSR_IE  0x2UL /* MicroBlaze status register interrupt enable mask */
 
-static unsigned int int_old_val = 0;
-
 #if (XPAR_MICROBLAZE_USE_MSR_INSTR != 0)
-void sys_irq_save_disable(void)
+unsigned int sys_irq_save_disable(void)
 {
+	unsigned int state;
+
 	asm volatile("  mfs     %0, rmsr	\n"
 		     "  msrclr  r0, %1		\n"
-		     :  "=r"(int_old_val)
+		     :  "=r"(state)
 		     :  "i"(MSR_IE)
 		     :  "memory");
 
-	int_old_val &= MSR_IE;
+	return state &= MSR_IE;
 }
 #else /* XPAR_MICROBLAZE_USE_MSR_INSTR == 0 */
-void sys_irq_save_disable(void)
+unsigned int sys_irq_save_disable(void)
 {
-	unsigned int tmp;
+	unsigned int tmp, state;
 
 	asm volatile ("  mfs   %0, rmsr		\n"
 		      "  andi  %1, %0, %2	\n"
 		      "  mts   rmsr, %1		\n"
-		      :  "=r"(int_old_val), "=r"(tmp)
+		      :  "=r"(state), "=r"(tmp)
 		      :  "i"(~MSR_IE)
 		      :  "memory");
 
-	int_old_val &= MSR_IE;
+	return state &= MSR_IE;
 }
 #endif /* XPAR_MICROBLAZE_USE_MSR_INSTR */
 
-void sys_irq_restore_enable(void)
+void sys_irq_restore_enable(unsigned int flags)
 {
 	unsigned int tmp;
 
@@ -59,7 +59,7 @@ void sys_irq_restore_enable(void)
 		     "  or      %0, %0, %1	\n"
 		     "  mts     rmsr, %0	\n"
 		     :  "=r"(tmp)
-		     :  "r"(int_old_val)
+		     :  "r"(~flags)
 		     :  "memory");
 }
 
