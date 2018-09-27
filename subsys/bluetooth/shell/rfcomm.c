@@ -102,18 +102,18 @@ static const struct shell *rf_shell;
 
 static void rfcomm_recv(struct bt_rfcomm_dlc *dlci, struct net_buf *buf)
 {
-	print(rf_shell, "Incoming data dlc %p len %u\n", dlci,
+	print(rf_shell, "Incoming data dlc %p len %u", dlci,
 		     buf->len);
 }
 
 static void rfcomm_connected(struct bt_rfcomm_dlc *dlci)
 {
-	print(rf_shell, "Dlc %p connected\n", dlci);
+	print(rf_shell, "Dlc %p connected", dlci);
 }
 
 static void rfcomm_disconnected(struct bt_rfcomm_dlc *dlci)
 {
-	print(rf_shell, "Dlc %p disconnected\n", dlci);
+	print(rf_shell, "Dlc %p disconnected", dlci);
 }
 
 static struct bt_rfcomm_dlc_ops rfcomm_ops = {
@@ -129,10 +129,10 @@ static struct bt_rfcomm_dlc rfcomm_dlc = {
 
 static int rfcomm_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 {
-	print(rf_shell, "Incoming RFCOMM conn %p\n", conn);
+	print(rf_shell, "Incoming RFCOMM conn %p", conn);
 
 	if (rfcomm_dlc.session) {
-		error(rf_shell, "No channels available\n");
+		error(rf_shell, "No channels available");
 		return -ENOMEM;
 	}
 
@@ -150,7 +150,7 @@ static void cmd_register(const struct shell *shell, size_t argc, char *argv[])
 	int ret;
 
 	if (rfcomm_server.channel) {
-		error(shell, "Already registered\n");
+		error(shell, "Already registered");
 		return;
 	}
 
@@ -159,10 +159,10 @@ static void cmd_register(const struct shell *shell, size_t argc, char *argv[])
 
 	ret = bt_rfcomm_server_register(&rfcomm_server);
 	if (ret < 0) {
-		error(shell, "Unable to register channel %x\n", ret);
+		error(shell, "Unable to register channel %x", ret);
 		rfcomm_server.channel = 0;
 	} else {
-		print(shell, "RFCOMM channel %u registered\n",
+		print(shell, "RFCOMM channel %u registered",
 			     rfcomm_server.channel);
 		bt_sdp_register_service(&spp_rec);
 	}
@@ -174,7 +174,7 @@ static void cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 	int err;
 
 	if (!default_conn) {
-		error(shell, "Not connected\n");
+		error(shell, "Not connected");
 		return;
 	}
 
@@ -186,10 +186,10 @@ static void cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_rfcomm_dlc_connect(default_conn, &rfcomm_dlc, channel);
 	if (err < 0) {
-		error(shell, "Unable to connect to channel %d (err %u)\n",
+		error(shell, "Unable to connect to channel %d (err %u)",
 			    channel, err);
 	} else {
-		print(shell, "RFCOMM connection pending\n");
+		print(shell, "RFCOMM connection pending");
 	}
 }
 
@@ -211,7 +211,7 @@ static void cmd_send(const struct shell *shell, size_t argc, char *argv[])
 		net_buf_add_mem(buf, buf_data, len);
 		ret = bt_rfcomm_dlc_send(&rfcomm_dlc, buf);
 		if (ret < 0) {
-			error(shell, "Unable to send: %d\n", -ret);
+			error(shell, "Unable to send: %d", -ret);
 			net_buf_unref(buf);
 			break;
 		}
@@ -224,7 +224,7 @@ static void cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_rfcomm_dlc_disconnect(&rfcomm_dlc);
 	if (err) {
-		error(shell, "Unable to disconnect: %u\n", -err);
+		error(shell, "Unable to disconnect: %u", -err);
 	}
 }
 
@@ -250,7 +250,7 @@ static void cmd_rfcomm(const struct shell *shell, size_t argc, char **argv)
 		return;
 	}
 
-	error(shell, "%s:%s%s\r\n", argv[0], "unknown parameter: ", argv[1]);
+	error(shell, "%s:%s%s", argv[0], "unknown parameter: ", argv[1]);
 }
 
 SHELL_CMD_REGISTER(rfcomm, &rfcomm_cmds, "Bluetooth RFCOMM shell commands",
