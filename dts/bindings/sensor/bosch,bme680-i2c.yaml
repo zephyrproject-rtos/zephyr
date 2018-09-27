@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2018, Bosch Sensortec GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: BME680 integrated environmental sensor
+version: 0.1
+
+description: >
+    The BME680 is an integrated environmental sensor that measures
+    temperature, pressure, humidity and air quality
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      constraint: "bosch,bme680"
+...
