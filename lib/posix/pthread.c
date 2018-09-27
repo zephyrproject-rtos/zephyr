@@ -387,6 +387,10 @@ int pthread_join(pthread_t thread, void **status)
 		return ESRCH;
 	}
 
+	if (pthread == pthread_self()) {
+		return EDEADLK;
+	}
+
 	pthread_mutex_lock(&pthread->state_lock);
 
 	if (pthread->state == PTHREAD_JOINABLE) {
