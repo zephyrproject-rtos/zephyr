@@ -569,7 +569,8 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		}
 	} while (recv_len == 0);
 
-	if (!(flags & ZSOCK_MSG_PEEK)) {
+	if (!(flags & ZSOCK_MSG_PEEK) &&
+	    (net_context_get_state(ctx) != NET_CONTEXT_UNCONNECTED)) {
 		net_context_update_recv_wnd(ctx, recv_len);
 	}
 
