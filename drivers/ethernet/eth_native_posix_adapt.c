@@ -11,8 +11,6 @@
  * because there is naming conflicts between host and zephyr network stacks.
  */
 
-#define _DEFAULT_SOURCE
-
 /* Host include files */
 #include <stdio.h>
 #include <stdlib.h>
