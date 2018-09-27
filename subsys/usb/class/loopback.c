@@ -98,7 +98,8 @@ static struct usb_ep_cfg_data ep_cfg[] = {
 	},
 };
 
-static void loopback_status_cb(enum usb_dc_status_code status, u8_t *param)
+static void loopback_status_cb(enum usb_dc_status_code status,
+			       const u8_t *param)
 {
 	switch (status) {
 	case USB_DC_CONFIGURED:

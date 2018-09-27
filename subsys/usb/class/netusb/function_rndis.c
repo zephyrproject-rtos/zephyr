@@ -1145,7 +1145,7 @@ static int rndis_connect_media(bool status)
 #endif
 }
 
-static void rndis_status_cb(enum usb_dc_status_code status, u8_t *param)
+static void rndis_status_cb(enum usb_dc_status_code status, const u8_t *param)
 {
 	/* Check the USB status and do needed action if required */
 	switch (status) {

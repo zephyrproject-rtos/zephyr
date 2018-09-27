@@ -30,7 +30,7 @@ struct netusb_function {
 	int (*send_pkt)(struct net_pkt *pkt);
 	int (*class_handler)(struct usb_setup_packet *setup, s32_t *len,
 			     u8_t **data);
-	void (*status_cb)(enum usb_dc_status_code status, u8_t *param);
+	void (*status_cb)(enum usb_dc_status_code status, const u8_t *param);
 };
 
 void netusb_recv(struct net_pkt *pkt);

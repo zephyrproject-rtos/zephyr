@@ -121,7 +121,7 @@ typedef void (*usb_dc_ep_callback)(u8_t ep,
  * Callback function signature for the device
  */
 typedef void (*usb_dc_status_callback)(enum usb_dc_status_code cb_status,
-				       u8_t *param);
+				       const u8_t *param);
 
 /**
  * @brief Attach USB for device connection

@@ -1362,7 +1362,7 @@ int usb_transfer_sync(u8_t ep, u8_t *data, size_t dlen, unsigned int flags)
 
 static u8_t iface_data_buf[CONFIG_USB_COMPOSITE_BUFFER_SIZE];
 
-static void forward_status_cb(enum usb_dc_status_code status, u8_t *param)
+static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
 {
 	size_t size = (__usb_data_end - __usb_data_start);
 

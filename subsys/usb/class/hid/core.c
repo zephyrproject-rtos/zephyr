@@ -95,7 +95,7 @@ static void usb_set_hid_report_size(u16_t report_desc_size)
 		sys_cpu_to_le16(report_desc_size);
 }
 
-static void hid_status_cb(enum usb_dc_status_code status, u8_t *param)
+static void hid_status_cb(enum usb_dc_status_code status, const u8_t *param)
 {
 	if (hid_device.ops->status_cb) {
 		hid_device.ops->status_cb(status, param);

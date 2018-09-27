@@ -283,7 +283,7 @@ done:
  * @return  N/A.
  */
 static void webusb_serial_dev_status_cb(enum usb_dc_status_code status,
-					u8_t *param)
+					const u8_t *param)
 {
 	ARG_UNUSED(param);
 
