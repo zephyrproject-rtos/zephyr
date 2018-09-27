@@ -93,32 +93,48 @@ static void gpio_init(void)
 	gpio_pin_enable_callback(button_device[3], SW3_GPIO_PIN);
 }
 
-void light_default_status_init(void)
+static void light_default_var_init(void)
 {
-	/* Assume following vaules are retrived from Persistence Storage
-	 * and these had saved by respective Setup Servers.
-	 * (Start)
-	 */
 	gen_def_trans_time_srv_user_data.tt = 0x00;
+
 	gen_power_onoff_srv_user_data.onpowerup = STATE_DEFAULT;
 
 	light_lightness_srv_user_data.light_range_min = LIGHTNESS_MIN;
 	light_lightness_srv_user_data.light_range_max = LIGHTNESS_MAX;
+	light_lightness_srv_user_data.last = LIGHTNESS_MAX;
 	light_lightness_srv_user_data.def = LIGHTNESS_MAX;
 
 	light_ctl_srv_user_data.temp_range_min = TEMP_MIN;
 	light_ctl_srv_user_data.temp_range_max = TEMP_MAX;
 	light_ctl_srv_user_data.lightness_def = LIGHTNESS_MAX;
 	light_ctl_srv_user_data.temp_def = TEMP_MIN;
-	/* (End) */
 
-	/* Assume following values are retrived from Persistence
-	 * Storage and these had saved before power down.
-	 * (Start)
-	 */
-	light_lightness_srv_user_data.last = LIGHTNESS_MAX;
-	light_ctl_srv_user_data.temp_last = TEMP_MIN;
-	/* (End) */
+	light_ctl_srv_user_data.lightness_temp_last =
+		(u32_t) ((LIGHTNESS_MAX << 16) | TEMP_MIN);
+}
+
+static void light_default_status_init(void)
+{
+	u16_t lightness;
+
+	lightness = (u16_t) (light_ctl_srv_user_data.lightness_temp_last >> 16);
+
+	if (lightness) {
+		gen_onoff_srv_root_user_data.onoff = STATE_ON;
+	} else {
+		gen_onoff_srv_root_user_data.onoff = STATE_OFF;
+	}
+
+	if (light_ctl_srv_user_data.lightness_temp_def) {
+		light_ctl_srv_user_data.lightness_def = (u16_t)
+			(light_ctl_srv_user_data.lightness_temp_def >> 16);
+
+		light_ctl_srv_user_data.temp_def = (u16_t)
+			(light_ctl_srv_user_data.lightness_temp_def);
+	}
+
+	light_lightness_srv_user_data.def =
+		light_ctl_srv_user_data.lightness_def;
 
 	light_ctl_srv_user_data.temp = light_ctl_srv_user_data.temp_def;
 
@@ -132,15 +148,11 @@ void light_default_status_init(void)
 		state_binding(ONOFF, ONOFF_TEMP);
 		break;
 	case STATE_RESTORE:
-		/* Assume following value is retrived from Persistence
-		 * Storage and it had saved before power down.
-		 * (Start)
-		 */
-		gen_onoff_srv_root_user_data.onoff = STATE_ON;
-		/* (End) */
+		light_lightness_srv_user_data.last = (u16_t)
+			(light_ctl_srv_user_data.lightness_temp_last >> 16);
 
 		light_ctl_srv_user_data.temp =
-			light_ctl_srv_user_data.temp_last;
+			(u16_t) (light_ctl_srv_user_data.lightness_temp_last);
 
 		state_binding(ONPOWERUP, ONOFF_TEMP);
 		break;
@@ -149,7 +161,15 @@ void light_default_status_init(void)
 	default_tt = gen_def_trans_time_srv_user_data.tt;
 }
 
-static void status_work_handler(struct k_work *work)
+static void save_lightness_temp_last_state_timer_handler(struct k_timer *dummy)
+{
+	save_on_flash(LIGHTNESS_TEMP_LAST_STATE);
+}
+
+K_TIMER_DEFINE(save_lightness_temp_last_state_timer,
+	       save_lightness_temp_last_state_timer_handler, NULL);
+
+static void no_transition_work_handler(struct k_work *work)
 {
 	u16_t publisher;
 
@@ -195,9 +215,17 @@ static void status_work_handler(struct k_work *work)
 	get_msg = NULL_GET;
 	is_light_lightness_actual_state_published = false;
 	is_light_ctl_state_published = false;
+
+	/* If Lightness & Temperature values remains stable for
+	 * 10 Seconds then & then only get stored on SoC flash.
+	 */
+	if (gen_power_onoff_srv_user_data.onpowerup == STATE_RESTORE) {
+		k_timer_start(&save_lightness_temp_last_state_timer,
+			      K_MSEC(10000), 0);
+	}
 }
 
-K_WORK_DEFINE(status_work, status_work_handler);
+K_WORK_DEFINE(no_transition_work, no_transition_work_handler);
 
 void update_light_state(void)
 {
@@ -234,7 +262,7 @@ void update_light_state(void)
 	}
 
 	if (enable_transition == DISABLE_TRANSITION) {
-		k_work_submit(&status_work);
+		k_work_submit(&no_transition_work);
 	}
 }
 
@@ -265,11 +293,9 @@ void main(void)
 {
 	int err;
 
-	light_default_status_init();
+	light_default_var_init();
 
 	gpio_init();
-
-	update_light_state();
 
 	printk("Initializing...\n");
 
@@ -280,6 +306,10 @@ void main(void)
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
+
+	light_default_status_init();
+
+	update_light_state();
 
 	randomize_publishers_TID();
 

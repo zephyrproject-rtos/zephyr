@@ -13,6 +13,7 @@
 #include "device_composition.h"
 #include "state_binding.h"
 #include "transition.h"
+#include "storage.h"
 
 static struct bt_mesh_cfg_srv cfg_srv = {
 	.relay = BT_MESH_RELAY_DISABLED,
@@ -655,10 +656,12 @@ static bool gen_def_trans_time_setunack(struct bt_mesh_model *model,
 		return false;
 	}
 
-	state->tt = tt;
-	default_tt = tt;
+	if (state->tt != tt) {
+		state->tt = tt;
+		default_tt = tt;
 
-	/* Do some work here to save value of state->tt on SoC flash */
+		save_on_flash(GEN_DEF_TRANS_TIME_STATE);
+	}
 
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
@@ -741,9 +744,12 @@ static bool gen_onpowerup_setunack(struct bt_mesh_model *model,
 	if (onpowerup > STATE_RESTORE) {
 		return false;
 	}
-	state->onpowerup = onpowerup;
 
-	/* Do some work here to save value of state->onpowerup on SoC flash */
+	if (state->onpowerup != onpowerup) {
+		state->onpowerup = onpowerup;
+
+		save_on_flash(GEN_ONPOWERUP_STATE);
+	}
 
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
@@ -1155,14 +1161,20 @@ static void light_lightness_default_set_unack(struct bt_mesh_model *model,
 					      struct bt_mesh_msg_ctx *ctx,
 					      struct net_buf_simple *buf)
 {
+	u16_t lightness;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
-	state->def = net_buf_simple_pull_le16(buf);
+	lightness = net_buf_simple_pull_le16(buf);
 
 	/* Here, Model specification is silent about tid implementation */
 
-	/* Do some work here to save value of state->def on SoC flash */
+	if (state->def != lightness) {
+		state->def = lightness;
+		light_ctl_srv_user_data.lightness_def = state->def;
+
+		save_on_flash(LIGHTNESS_TEMP_DEF_STATE);
+	}
 
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
@@ -1522,14 +1534,14 @@ static bool light_ctl_default_setunack(struct bt_mesh_model *model,
 		temp = state->temp_range_max;
 	}
 
-	state->lightness_def = lightness;
-	state->temp_def = temp;
-	state->delta_uv_def = delta_uv;
+	if (state->lightness_def != lightness || state->temp_def != temp ||
+	    state->delta_uv_def != delta_uv) {
+		state->lightness_def = lightness;
+		state->temp_def = temp;
+		state->delta_uv_def = delta_uv;
 
-	/* Do some work here to save values of
-	 * state->lightness_def, state->temp_Def & state->delta_uv_def
-	 * on SoC flash
-	 */
+		save_on_flash(LIGHTNESS_TEMP_DEF_STATE);
+	}
 
 	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
 		int err;
