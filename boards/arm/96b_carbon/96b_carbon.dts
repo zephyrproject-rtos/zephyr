@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f401.dtsi>
+#include <st/f4/stm32f401Xe.dtsi>
 
 / {
 	model = "Seeed Studio Carbon 96boards";

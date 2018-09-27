@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f405.dtsi>
+#include <st/f4/stm32f405Xg.dtsi>
 
 / {
 	model = "Olimex STM32-P405 board";

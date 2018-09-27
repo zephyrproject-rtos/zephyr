@@ -5,8 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <st/stm32f4-pinctrl.dtsi>
-#include <st/mem.h>
+#include <st/f4/stm32f4-pinctrl.dtsi>
 #include <dt-bindings/clock/stm32_clock.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
@@ -26,7 +25,6 @@
 	sram0: memory@20000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0x20000000 DT_SRAM_SIZE>;
 	};
 
 	soc {
@@ -42,7 +40,6 @@
 			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
 				label = "FLASH_STM32";
-				reg = <0x08000000 DT_FLASH_SIZE>;
 
 				write-block-size = <1>;
 			};

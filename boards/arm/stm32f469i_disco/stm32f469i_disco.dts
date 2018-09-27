@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f469.dtsi>
+#include <st/f4/stm32f469Xi.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F469I-DISCO board";

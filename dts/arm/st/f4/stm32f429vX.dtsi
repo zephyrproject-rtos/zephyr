@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <st/stm32f429.dtsi>
+#include <st/f4/stm32f429.dtsi>
 
 /delete-node/ &spi5;
 

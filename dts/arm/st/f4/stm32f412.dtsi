@@ -1,21 +1,16 @@
 /*
- * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2017 Florian Vaussard, HEIG-VD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <st/stm32f405-pinctrl.dtsi>
-#include <st/stm32f401.dtsi>
+#include <st/f4/stm32f412-pinctrl.dtsi>
+#include <st/f4/stm32f411.dtsi>
 
 / {
-	ccm0: memory@10000000 {
-		compatible = "st,stm32-ccm";
-		reg = <0x10000000 DT_CCM_SIZE>;
-	};
-
 	soc {
 		pinctrl: pin-controller@40020000 {
-			reg = <0x40020000 0x2400>;
+			reg = <0x40020000 0x1c00>;
 
 			gpiof: gpio@40021400 {
 				compatible = "st,stm32-gpio";
@@ -34,24 +29,6 @@
 				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000040>;
 				label = "GPIOG";
 			};
-
-			gpioh: gpio@40021c00 {
-				compatible = "st,stm32-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x40021c00 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000040>;
-				label = "GPIOH";
-			};
-
-			gpioi: gpio@40022000 {
-				compatible = "st,stm32-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x40022000 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000100>;
-				label = "GPIOI";
-			};
 		};
 
 		usart3: serial@40004800 {
@@ -61,24 +38,6 @@
 			interrupts = <39 0>;
 			status = "disabled";
 			label = "UART_3";
-		};
-
-		uart4: serial@40004c00 {
-			compatible ="st,stm32-uart";
-			reg = <0x40004c00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
-			interrupts = <52 0>;
-			status = "disabled";
-			label = "UART_4";
-		};
-
-		uart5: serial@40005000 {
-			compatible = "st,stm32-uart";
-			reg = <0x40005000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
-			interrupts = <53 0>;
-			status = "disabled";
-			label = "UART_5";
 		};
 
 		timers6: timers@40001000 {
@@ -171,15 +130,8 @@
 			};
 		};
 
-		usbotg_hs: usb@40040000 {
-			compatible = "st,stm32-otghs", "st,stm32-otgfs";
-			reg = <0x40040000 0x40000>;
-			interrupts = <77 0>, <74 0>, <75 0>;
-			interrupt-names = "otghs", "ep1_out", "ep1_in";
+		usbotg_fs: usb@50000000 {
 			num-bidir-endpoints = <6>;
-			ram-size = <4096>;
-			status = "disabled";
-			label= "OTGHS";
 		};
 	};
 };

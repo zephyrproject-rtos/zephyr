@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f429.dtsi>
+#include <st/f4/stm32f429Xi.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F429ZI-NUCLEO board";

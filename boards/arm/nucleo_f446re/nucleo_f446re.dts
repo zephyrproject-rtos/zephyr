@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f446.dtsi>
+#include <st/f4/stm32f446Xe.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F446RE-NUCLEO board";
