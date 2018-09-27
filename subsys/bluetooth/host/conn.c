@@ -57,7 +57,7 @@ NET_BUF_POOL_FIXED_DEFINE(frag_pool, CONFIG_BT_L2CAP_TX_FRAG_COUNT, FRAG_SIZE,
 #endif /* CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0 */
 
 /* How long until we cancel HCI_LE_Create_Connection */
-#define CONN_TIMEOUT	K_SECONDS(3)
+#define CONN_TIMEOUT	K_SECONDS(CONFIG_BT_CREATE_CONN_TIMEOUT)
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 const struct bt_conn_auth_cb *bt_auth;
