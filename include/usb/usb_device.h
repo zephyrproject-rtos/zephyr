@@ -100,12 +100,6 @@ struct usb_setup_packet {
  */
 
 /**
- * @brief Callback function signature for the device
- */
-typedef void (*usb_status_callback)(enum usb_dc_status_code status_code,
-				    u8_t *param);
-
-/**
  * @brief Callback function signature for the USB Endpoint status
  */
 typedef void (*usb_ep_callback)(u8_t ep,
@@ -201,7 +195,7 @@ struct usb_cfg_data {
 	/** Function for interface runtime configuration */
 	usb_interface_config interface_config;
 	/** Callback to be notified on USB connection status change */
-	usb_status_callback cb_usb_status;
+	usb_dc_status_callback cb_usb_status;
 	/** USB interface (Class) handler and storage space */
 	struct usb_interface_cfg_data interface;
 	/** Number of individual endpoints in the device configuration */
