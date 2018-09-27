@@ -117,6 +117,9 @@ void test_pthread_join(void)
 
 	/* Test PASS if all threads have exited before main exit */
 	zassert_equal(exit_count, N_THR, "pthread join test failed");
+
+	/* Test for deadlock */
+	zassert_equal(pthread_join(pthread_self(), &retval), EDEADLK, NULL);
 }
 
 void test_main(void)
