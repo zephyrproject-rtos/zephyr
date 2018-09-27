@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2018, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Ethernet Base Structure
+version: 0.1
+
+description: >
+    This binding gives a base structures for all Ethernet devices
+properties:
+    local-mac-address:
+      type: array
+      category: optional
+      description: mac address
+      generation: define
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+...

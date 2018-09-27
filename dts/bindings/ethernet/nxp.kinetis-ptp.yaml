@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2018, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: NXP Kinetis Ethernet PTP
+version: 0.1
+
+description: >
+    This binding gives a base representation of the NXP Kinetis Ethernet PTP
+inherits:
+  !include ethernet.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nxp,kinetis-ptp"
+...
