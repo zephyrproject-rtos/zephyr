@@ -33,6 +33,7 @@
 		led2 = &red_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_2;
+		eth = &eth;
 	};
 
 	chosen {
@@ -192,5 +193,12 @@
 			label = "image-scratch";
 			reg = <0x000e0000 0x00020000>;
 		};
+	};
+};
+
+&eth {
+	status = "ok";
+	ptp {
+		status = "ok";
 	};
 };

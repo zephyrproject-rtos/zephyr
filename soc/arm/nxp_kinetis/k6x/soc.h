@@ -31,13 +31,6 @@ extern "C" {
 
 #define PERIPH_ADDR_BASE_WDOG 0x40052000 /* Watchdog Timer module */
 
-/* IRQs */
-
-#define IRQ_ETH_IEEE1588_TMR 82
-#define IRQ_ETH_TX 83
-#define IRQ_ETH_RX 84
-#define IRQ_ETH_ERR_MISC 85
-
 #ifndef _ASMLANGUAGE
 
 #include <fsl_common.h>

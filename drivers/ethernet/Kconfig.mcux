@@ -53,18 +53,6 @@ config ETH_MCUX_0
 	help
 	 Include port 0 driver
 
-config ETH_MCUX_0_NAME
-	string "Driver name"
-	depends on ETH_MCUX_0
-	default "ETH_0"
-
-config ETH_MCUX_0_IRQ_PRI
-	int "Controller interrupt priority"
-	depends on ETH_MCUX_0
-	default 0
-	help
-	  IRQ priority
-
 choice ETH_MCUX_0_MAC_SELECT
 	prompt "MAC address"
 	help
@@ -88,30 +76,6 @@ config ETH_MCUX_0_MANUAL_MAC
 	bool "Manual MAC address"
 
 endchoice
-
-if ETH_MCUX_0_MANUAL_MAC
-
-config ETH_MCUX_0_MAC3
-	hex "MAC Address Byte 3"
-	default 0
-	range 0 0xff
-	help
-	  This is the byte 3 of the MAC address.
-
-config ETH_MCUX_0_MAC4
-	hex "MAC Address Byte 4"
-	default 0
-	range 0 0xff
-	help
-	  This is the byte 4 of the MAC address.
-
-config ETH_MCUX_0_MAC5
-	hex "MAC Address Byte 5"
-	default 0
-	range 0 0xff
-	help
-	  This is the byte 5 of the MAC address.
-endif
 
 config PTP_CLOCK_MCUX
 	bool "MCUX PTP clock driver support"
@@ -145,4 +109,4 @@ config ETH_MCUX_PTP_CLOCK_SRC_HZ
 
 endif # PTP_CLOCK_MCUX
 
-endif
+endif # ETH_MCUX
