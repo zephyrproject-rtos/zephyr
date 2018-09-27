@@ -143,9 +143,12 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	 * pointer and stack size. So even though POSIX 1003.1 spec accepts
 	 * attrib as NULL but zephyr needs it initialized with valid stack.
 	 */
-	if (!attr || !attr->initialized || !attr->stack || !attr->stacksize ||
-		(pthread_num >= CONFIG_MAX_PTHREAD_COUNT)) {
+	if (!attr || !attr->initialized || !attr->stack || !attr->stacksize) {
 		return EINVAL;
+	}
+
+	if (pthread_num >= CONFIG_MAX_PTHREAD_COUNT) {
+		return EAGAIN;
 	}
 
 	prio = posix_to_zephyr_priority(attr->priority, attr->schedpolicy);
