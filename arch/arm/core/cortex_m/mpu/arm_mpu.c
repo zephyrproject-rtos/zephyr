@@ -80,7 +80,8 @@ void arm_core_mpu_disable(void)
 }
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
-	defined(CONFIG_APPLICATION_MEMORY)
+	defined(CONFIG_APPLICATION_MEMORY) || \
+	defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
 
 /**
  * This internal function is utilized by the MPU driver to parse the intent
@@ -93,15 +94,34 @@ static inline int _get_region_attr_by_type(arm_mpu_region_attr_t *p_attr,
 	u32_t type, u32_t base, u32_t size)
 {
 	switch (type) {
+#ifdef CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+#ifdef CONFIG_APP_SHARED_MEM
+	case APP_SHARED_MEM_BKGND_REGION:
+		/* Intentional fallthrough */
+#endif
+	case KERNEL_BKGND_REGION:
+		_get_mpu_ram_region_attr(p_attr, P_RW_U_NA, base, size);
+		return 0;
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 #ifdef CONFIG_USERSPACE
 	case THREAD_STACK_REGION:
 		_get_mpu_ram_region_attr(p_attr, P_RW_U_RW, base, size);
 		return 0;
+#ifdef CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+	case KERNEL_BKGND_THREAD_STACK_REGION:
+		_get_mpu_ram_region_attr(p_attr, P_RW_U_NA, base, size);
+		return 0;
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 #endif
 #ifdef CONFIG_MPU_STACK_GUARD
 	case THREAD_STACK_GUARD_REGION:
 		_get_mpu_ram_region_attr(p_attr, P_RO_U_NA, base, size);
 		return 0;
+#ifdef CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+	case KERNEL_BKGND_STACK_GUARD_REGION:
+		_get_mpu_ram_region_attr(p_attr, P_RW_U_NA, base, size);
+		return 0;
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 #endif
 #ifdef CONFIG_APPLICATION_MEMORY
 	case THREAD_APP_DATA_REGION:
@@ -163,6 +183,9 @@ static void _mpu_configure_by_type(u8_t type, u32_t base, u32_t size)
 
 	_region_init(region_index, &region_conf);
 }
+
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
+	defined(CONFIG_APPLICATION_MEMORY)
 
 /**
  * This internal function disables a given MPU region.
@@ -368,6 +391,8 @@ int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
 }
 #endif /* CONFIG_USERSPACE */
 #endif /* USERSPACE || MPU_STACK_GUARD || APPLICATION_MEMORY */
+#endif /* USERSPACE || MPU_STACK_GUARD || APPLICATION_MEMORY ||
+	    * MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 
 /* ARM MPU Driver Initial Setup */
 
