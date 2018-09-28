@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -92,6 +93,8 @@
 			interrupts = <11 1>;
 			peripheral-id = <11>;
 			label = "PORTA";
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		portb: gpio@400E1000 {
@@ -100,6 +103,8 @@
 			interrupts = <12 1>;
 			peripheral-id = <12>;
 			label = "PORTB";
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		portc: gpio@400E1200 {
@@ -108,6 +113,8 @@
 			interrupts = <13 1>;
 			peripheral-id = <13>;
 			label = "PORTC";
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 	};
 };

@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv6-m.dtsi>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -113,12 +114,16 @@
 			compatible = "atmel,sam0-gpio";
 			reg = <0x41004400 0x80>;
 			label = "PORTA";
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		portb: gpio@41004480 {
 			compatible = "atmel,sam0-gpio";
 			reg = <0x41004480 0x80>;
 			label = "PORTB";
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		usb0: usb@41005000 {

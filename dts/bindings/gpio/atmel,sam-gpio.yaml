@@ -37,3 +37,8 @@ properties:
       description: peripheral ID
       generation: define
       category: required
+
+"#cells":
+  - pin
+  - flags
+...
