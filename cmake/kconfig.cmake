@@ -146,8 +146,8 @@ execute_process(
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/kconfig/kconfig.py
   ${KCONFIG_ROOT}
-  ${PROJECT_BINARY_DIR}/.config
-  ${PROJECT_BINARY_DIR}/include/generated/autoconf.h
+  ${DOTCONFIG}
+  ${AUTOCONF_H}
   ${merge_fragments}
   WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
   # The working directory is set to the app dir such that the user
