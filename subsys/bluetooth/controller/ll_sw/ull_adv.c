@@ -1011,18 +1011,18 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	if (!lll->is_hdcd)
 #endif /* CONFIG_BT_PERIPHERAL */
 	{
-		u8_t random_delay;
+		u32_t random_delay;
 		u32_t ret;
 
 		ull_entropy_get(sizeof(random_delay), &random_delay);
-		random_delay %= 10;
-		random_delay += 1U;
+		random_delay %= HAL_TICKER_US_TO_TICKS(10000);
+		random_delay += 1;
 
 		ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
 				    (TICKER_ID_ADV_BASE +
 				     ull_adv_handle_get(adv)),
-				    HAL_TICKER_US_TO_TICKS(random_delay * 1000U),
+				    random_delay,
 				    0, 0, 0, 0, 0,
 				    ticker_op_update_cb, adv);
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
