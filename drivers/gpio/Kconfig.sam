@@ -6,5 +6,6 @@
 menuconfig GPIO_SAM
 	bool "Atmel SAM GPIO (PORT) driver"
 	depends on GPIO && SOC_FAMILY_SAM
+	select HAS_DTS_GPIO
 	help
 	  Enable support for the Atmel SAM 'PORT' GPIO controllers.
