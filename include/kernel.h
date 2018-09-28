@@ -1483,6 +1483,8 @@ __syscall u32_t k_timer_status_get(struct k_timer *timer);
  */
 __syscall u32_t k_timer_status_sync(struct k_timer *timer);
 
+extern s32_t z_timeout_remaining(struct _timeout *timeout);
+
 /**
  * @brief Get time remaining before a timer next expires.
  *
@@ -1497,7 +1499,7 @@ __syscall s32_t k_timer_remaining_get(struct k_timer *timer);
 
 static inline s32_t _impl_k_timer_remaining_get(struct k_timer *timer)
 {
-	return _timeout_remaining_get(&timer->timeout);
+	return __ticks_to_ms(z_timeout_remaining(&timer->timeout));
 }
 
 /**
@@ -2730,7 +2732,7 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
  */
 static inline s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 {
-	return _timeout_remaining_get(&work->timeout);
+	return __ticks_to_ms(z_timeout_remaining(&work->timeout));
 }
 
 /** @} */

@@ -574,4 +574,31 @@ void _add_thread_timeout(struct k_thread *thread, s32_t timeout_in_ticks)
 	_add_timeout(&thread->base.timeout, NULL, timeout_in_ticks);
 }
 
+s32_t z_timeout_remaining(struct _timeout *timeout)
+{
+	unsigned int key = irq_lock();
+	s32_t remaining_ticks;
+
+	if (timeout->delta_ticks_from_prev == _INACTIVE) {
+		remaining_ticks = 0;
+	} else {
+		/*
+		 * compute remaining ticks by walking the timeout list
+		 * and summing up the various tick deltas involved
+		 */
+		struct _timeout *t =
+			(struct _timeout *)sys_dlist_peek_head(&_timeout_q);
+
+		remaining_ticks = t->delta_ticks_from_prev;
+		while (t != timeout) {
+			t = (struct _timeout *)sys_dlist_peek_next(&_timeout_q,
+								   &t->node);
+			remaining_ticks += t->delta_ticks_from_prev;
+		}
+	}
+
+	irq_unlock(key);
+	return remaining_ticks;
+}
+
 #endif /* CONFIG_SYS_CLOCK_EXISTS */

@@ -220,8 +220,6 @@ struct _timeout {
 	_timeout_func_t func;
 };
 
-extern s32_t _timeout_remaining_get(struct _timeout *timeout);
-
 /*
  * Number of ticks for x seconds. NOTE: With MSEC() or USEC(),
  * since it does an integer division, x must be greater or equal to

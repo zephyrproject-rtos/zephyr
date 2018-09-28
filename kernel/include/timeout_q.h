@@ -20,6 +20,8 @@ extern "C" {
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
+struct _thread_base;
+
 extern u64_t z_last_tick_announced;
 
 void _init_timeout(struct _timeout *t, _timeout_func_t fn);
@@ -36,6 +38,8 @@ void _add_thread_timeout(struct k_thread *thread, s32_t timeout_in_ticks);
 int _abort_thread_timeout(struct k_thread *thread);
 
 s32_t _get_next_timeout_expiry(void);
+
+s32_t z_timeout_remaining(struct _timeout *timeout);
 
 #else
 
