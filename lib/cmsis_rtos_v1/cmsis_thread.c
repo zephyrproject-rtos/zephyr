@@ -8,6 +8,8 @@
 #include <atomic.h>
 #include <cmsis_os.h>
 
+#define TOTAL_CMSIS_THREAD_PRIORITIES (osPriorityRealtime - osPriorityIdle + 1)
+
 static inline int _is_thread_cmsis_inactive(struct k_thread *thread)
 {
 	u8_t state = thread->base.thread_state;
@@ -49,12 +51,21 @@ osThreadId osThreadCreate(const osThreadDef_t *thread_def, void *arg)
 		return NULL;
 	}
 
+	BUILD_ASSERT_MSG(
+		CONFIG_NUM_PREEMPT_PRIORITIES >= TOTAL_CMSIS_THREAD_PRIORITIES,
+		"Configure NUM_PREEMPT_PRIORITIES to at least"
+		" TOTAL_CMSIS_THREAD_PRIORITIES");
+
 	__ASSERT(thread_def->stacksize <= CONFIG_CMSIS_THREAD_MAX_STACK_SIZE,
 		 "invalid stack size\n");
 
 	if (_is_in_isr()) {
 		return NULL;
 	}
+
+	__ASSERT((thread_def->tpriority >= osPriorityIdle) &&
+		 (thread_def->tpriority <= osPriorityRealtime),
+		 "invalid priority\n");
 
 	stacksz = thread_def->stacksize;
 	if (stacksz == 0) {
