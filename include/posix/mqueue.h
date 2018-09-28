@@ -10,6 +10,7 @@
 #include <kernel.h>
 #include <posix/time.h>
 #include "sys/types.h"
+#include "sys/stat.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,10 +39,6 @@ typedef struct mq_attr {
 
 #define O_NONBLOCK_POS	14
 #define O_NONBLOCK      (1 << O_NONBLOCK_POS)
-
-#define O_RDONLY        0
-#define O_WRONLY        1
-#define O_RDWR          2
 #endif /* _SYS_FCNTL_H_ */
 
 mqd_t mq_open(const char *name, int oflags, ...);
