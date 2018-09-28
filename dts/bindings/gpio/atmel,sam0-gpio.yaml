@@ -25,3 +25,8 @@ properties:
       category: required
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
+
+"#cells":
+  - pin
+  - flags
+...
