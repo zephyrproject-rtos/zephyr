@@ -31,6 +31,29 @@ config NRFX_SPIM
 config NRFX_SPIS
 	bool
 
+config NRFX_TIMER
+	bool
+
+config NRFX_TIMER0
+	bool
+	select NRFX_TIMER
+
+config NRFX_TIMER1
+	bool
+	select NRFX_TIMER
+
+config NRFX_TIMER2
+	bool
+	select NRFX_TIMER
+
+config NRFX_TIMER3
+	bool
+	select NRFX_TIMER
+
+config NRFX_TIMER4
+	bool
+	select NRFX_TIMER
+
 config NRFX_TWI
 	bool
 
