@@ -21,7 +21,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_2: led_2 {
-			gpios = <&gpioa 0 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioa 0 0>;
 			label = "User LD2";
 		};
 	};

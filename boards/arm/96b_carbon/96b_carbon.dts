@@ -20,15 +20,15 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
-			gpios = <&gpiod 2 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiod 2 0>;
 			label = "USR1 LED";
 		};
 		green_led_2: led_2 {
-			gpios = <&gpioa 15 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioa 15 0>;
 			label = "USR2 LED";
 		};
 		bt_blue_led: led_3 {
-			gpios = <&gpioa 15 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioa 15 0>;
 			label = "BT LED";
 		};
 	};
