@@ -30,7 +30,7 @@
 
 /* change to use another GPIO pin interrupt config */
 #ifdef SW0_GPIO_FLAGS
-#define EDGE    SW0_GPIO_FLAGS
+#define EDGE    (SW0_GPIO_FLAGS | GPIO_INT_EDGE)
 #else
 /*
  * If SW0_GPIO_FLAGS not defined used default EDGE value.
