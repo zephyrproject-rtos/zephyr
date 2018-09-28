@@ -1,0 +1,27 @@
+# Copyright (c) 2019, Manivannan Sadhasivam
+# SPDX-License-Identifier: Apache-2.0
+
+description: UNISOC Core Interrupt Controller
+
+compatible: "unisoc,uwp-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    label:
+      required: true
+
+    unisoc,num-irq-priority-bits:
+      required: false
+      type: int
+      description: number of bits of IRQ priorities
+
+interrupt-cells:
+  - irq
+  - priority
