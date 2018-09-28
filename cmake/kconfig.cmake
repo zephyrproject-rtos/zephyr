@@ -23,7 +23,6 @@ endif()
 set(ENV{srctree}            ${ZEPHYR_BASE})
 set(ENV{KERNELVERSION}      ${PROJECT_VERSION})
 set(ENV{KCONFIG_CONFIG}     ${DOTCONFIG})
-set(ENV{KCONFIG_AUTOHEADER} ${AUTOCONF_H})
 
 # Set environment variables so that Kconfig can prune Kconfig source
 # files for other architectures
