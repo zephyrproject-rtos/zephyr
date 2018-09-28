@@ -21,40 +21,6 @@
 #error "Unsupported ARM CPU"
 #endif
 
-#ifdef CONFIG_USERSPACE
-#ifndef _ASMLANGUAGE
-/* Read-Write access permission attributes */
-#define K_MEM_PARTITION_P_NA_U_NA	(NO_ACCESS_Msk | NOT_EXEC)
-#define K_MEM_PARTITION_P_RW_U_RW	(P_RW_U_RW_Msk | NOT_EXEC)
-#define K_MEM_PARTITION_P_RW_U_RO	(P_RW_U_RO_Msk | NOT_EXEC)
-#define K_MEM_PARTITION_P_RW_U_NA	(P_RW_U_NA_Msk | NOT_EXEC)
-#define K_MEM_PARTITION_P_RO_U_RO	(P_RO_U_RO_Msk | NOT_EXEC)
-#define K_MEM_PARTITION_P_RO_U_NA	(P_RO_U_NA_Msk | NOT_EXEC)
-
-/* Execution-allowed attributes */
-#define K_MEM_PARTITION_P_RWX_U_RWX	(P_RW_U_RW_Msk)
-#define K_MEM_PARTITION_P_RWX_U_RX	(P_RW_U_RO_Msk)
-#define K_MEM_PARTITION_P_RX_U_RX	(P_RO_U_RO_Msk)
-
-#define K_MEM_PARTITION_IS_WRITABLE(attr) \
-	({ \
-		int __is_writable__; \
-		switch (attr) { \
-		case P_RW_U_RW: \
-		case P_RW_U_RO: \
-		case P_RW_U_NA: \
-			__is_writable__ = 1; \
-			break; \
-		default: \
-			__is_writable__ = 0; \
-		} \
-		__is_writable__; \
-	})
-#define K_MEM_PARTITION_IS_EXECUTABLE(attr) \
-	(!((attr) & (NOT_EXEC)))
-#endif /* _ASMLANGUAGE */
-#endif /* USERSPACE */
-
 /* Region definition data structure */
 struct arm_mpu_region {
 	/* Region Base Address */
