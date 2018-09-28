@@ -80,6 +80,12 @@ config PRINTK_BUFFER_SIZE
 	  not have to make a system call for every character emitted. Specify
 	  the size of this buffer.
 
+config PRINTK_PARSE_STAR
+	bool "Enable parsing star."
+	depends on PRINTK
+	help
+	  This option will enable _vprintk function to parse '*'.
+
 config EARLY_CONSOLE
 	bool "Send stdout at the earliest stage possible"
 	help

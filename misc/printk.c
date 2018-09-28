@@ -129,6 +129,35 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 					padding = PAD_SPACE_BEFORE;
 				}
 				goto still_might_format;
+#if CONFIG_PRINTK_PARSE_STAR
+			case '*': {
+				const char *valid_fmt = "cdilpsuxX";
+				char next = *(fmt + 1);
+				char prev = *(fmt - 1);
+				u8_t i = 0;
+
+				if ((prev != '%') && (prev != '-')) {
+					out((int)prev, ctx);
+					out((int)'*', ctx);
+					break;
+				}
+
+				if (padding != PAD_SPACE_AFTER) {
+					padding = PAD_SPACE_BEFORE;
+				}
+
+				while ((valid_fmt + i) != 0) {
+					if (next == valid_fmt[i++]) {
+						min_width =
+						       va_arg(ap, unsigned int);
+						goto still_might_format;
+					}
+				}
+				out((int)prev, ctx);
+				out((int)'*', ctx);
+				break;
+			}
+#endif
 			case 'l':
 				long_ctr++;
 				/* Fall through */
@@ -139,6 +168,7 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 			case 'd':
 			case 'i': {
 				long d;
+
 				if (long_ctr < 2) {
 					d = va_arg(ap, long);
 				} else {
@@ -192,12 +222,28 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 			case 's': {
 				char *s = va_arg(ap, char *);
 				char *start = s;
+#if CONFIG_PRINTK_PARSE_STAR
+				u32_t len;
 
+				if (padding == PAD_SPACE_BEFORE) {
+					len = strlen(s);
+					if (min_width > len) {
+						min_width -= len;
+					} else {
+						min_width = 0;
+					}
+
+					while (min_width--) {
+						out(' ', ctx);
+					}
+				}
+#endif
 				while (*s)
 					out((int)(*s++), ctx);
 
 				if (padding == PAD_SPACE_AFTER) {
 					int remaining = min_width - (s - start);
+
 					while (remaining-- > 0) {
 						out(' ', ctx);
 					}
