@@ -14,6 +14,7 @@
 
 	aliases {
 		uart-0 = &uart0;
+		gpio-0 = &gpio0;
 	};
 
 	chosen {
@@ -26,3 +27,6 @@
 	current-speed = <115200>;
 };
 
+&gpio0 {
+	status = "ok";
+};
