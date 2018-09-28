@@ -13,6 +13,9 @@ config HAS_NRFX
 config NRFX_ADC
 	bool
 
+config NRFX_CLOCK
+	bool
+
 config NRFX_PWM
 	bool
 
