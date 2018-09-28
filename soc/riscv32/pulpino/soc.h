@@ -22,7 +22,6 @@
 
 /* IRQ numbers */
 #define PULP_I2C_0_IRQ             23 /* I2C Controller */
-#define PULP_GPIO_0_IRQ            25 /* GPIO Controller */
 #define PULP_SPI_0_IRQ             26 /* SPI Controller #0 */
 #define PULP_SPI_1_IRQ             27 /* SPI Controller #1 */
 #define PULP_TIMER_A_OVERFLOW_IRQ  28 /* Timer Overflow A */
@@ -60,9 +59,6 @@
 /* UART configuration */
 #define CONFIG_UART_NS16550_PORT_0_IRQ_PRI       0
 #define CONFIG_UART_NS16550_PORT_0_IRQ_FLAGS     0
-
-/* GPIO configuration */
-#define PULP_GPIO_0_BASE           0x1A101000
 
 /* PAD configuration */
 #define PULP_PAD_BASE              0x1A107000
