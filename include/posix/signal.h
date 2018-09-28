@@ -34,7 +34,9 @@ typedef struct sigevent {
 	int sigev_signo;
 	sigval sigev_value;
 	void (*sigev_notify_function)(sigval val);
+	#ifdef CONFIG_PTHREAD_IPC
 	pthread_attr_t *sigev_notify_attributes;
+	#endif
 } sigevent;
 
 #ifdef __cplusplus
