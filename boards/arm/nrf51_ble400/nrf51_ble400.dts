@@ -16,6 +16,60 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+		led4 = &led4;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 18 0>;
+			label = "Red LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 19 0>;
+			label = "Red LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 20 0>;
+			label = "Red LED 2";
+		};
+		led3: led_3 {
+			gpios = <&gpio0 21 0>;
+			label = "Red LED 3";
+		};
+		led4: led_4 {
+			gpios = <&gpio0 22 0>;
+			label = "Red LED 4";
+		};
+	};
+
+	buttons {
+		/* Push button switch 0 KEY1 */
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 16 (GPIO_PUD_PULL_UP |
+					    GPIO_INT_ACTIVE_LOW |
+					    GPIO_INT_EDGE)>;
+			label = "Push button switch 0";
+		};
+		/* Push button switch 1 KEY2 */
+		button1: button_1 {
+			gpios = <&gpio0 17 (GPIO_PUD_PULL_UP |
+					    GPIO_INT_ACTIVE_LOW |
+					    GPIO_INT_EDGE)>;
+			label = "Push button switch 1";
+		};
+	};
+
 };
 
 &gpiote {
