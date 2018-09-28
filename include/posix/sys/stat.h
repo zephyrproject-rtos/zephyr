@@ -11,10 +11,9 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_PTHREAD_IPC
+#ifdef CONFIG_POSIX_API
 #include <kernel.h>
 
-#ifdef CONFIG_POSIX_FS
 #define S_IRWXU 00700
 #define S_IRUSR 00400
 #define S_IWUSR 00200
@@ -46,9 +45,7 @@ struct stat {
 	unsigned long st_blocks;
 };
 
-#endif	/* CONFIG_POSIX_FS */
-
-#endif	/* CONFIG_PTHREAD_IPC */
+#endif	/* CONFIG_POSIX_API */
 
 #ifdef __cplusplus
 }
