@@ -172,4 +172,6 @@ source "drivers/interrupt_controller/Kconfig.rv32m1"
 
 source "drivers/interrupt_controller/Kconfig.sam0"
 
+source "drivers/interrupt_controller/Kconfig.uwp"
+
 endmenu

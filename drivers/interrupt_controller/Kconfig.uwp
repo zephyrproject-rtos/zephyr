@@ -1,0 +1,67 @@
+#
+# Copyright (c) 2018, UNISOC Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig UWP_ICTL
+	bool "UNISOC Interrupt Controller Driver"
+	depends on SOC_FAMILY_UWP
+	depends on MULTI_LEVEL_INTERRUPTS
+	help
+	  Enable UNISOC uwp5 interrupt controller.
+
+if UWP_ICTL
+
+config UWP_ICTL_0
+	bool "UNISOC UWP irq Interrupt Controller"
+	help
+	  Enable ICTL irq for UNISOC UWP MCU.
+
+config UWP_ICTL_0_NAME
+	string "Device name for ICTL IRQ"
+	depends on UWP_ICTL_0
+	default "UWP_ICTL_IRQ"
+	help
+	  Set the name used by ICTL irq device during registration.
+
+config UWP_ICTL_0_OFFSET
+	hex "Parent interrupt number to which UWP_ICTL_0 maps"
+	depends on UWP_ICTL_0
+	default 0x40
+
+config UWP_ICTL_1
+	bool "UNISOC UWP fiq Interrupt Controller"
+	help
+	  Enable ICTL fiq for UNISOC UWP MCU.
+
+config UWP_ICTL_1_NAME
+	string "Device name for ICTL FIQ"
+	depends on UWP_ICTL_1
+	default "UWP_ICTL_FIQ"
+	help
+	  Set the name used by ICTL fiq device during registration.
+
+config UWP_ICTL_1_OFFSET
+	hex "Parent interrupt number to which UWP_ICTL_1 maps"
+	depends on UWP_ICTL_1
+	default 0x60
+
+config UWP_ICTL_2
+	bool "UNISOC UWP AON Interrupt Controller"
+	help
+	  Enable AON ICTL for UNISOC UWP MCU.
+
+config UWP_ICTL_2_NAME
+	string "Device name for AON ICTL"
+	depends on UWP_ICTL_2
+	default "UWP_ICTL_AON"
+	help
+	  Set the name used by AON ICTL device during registration.
+
+config UWP_ICTL_2_OFFSET
+	hex "Parent interrupt number to which UWP_ICTL_2 maps"
+	depends on UWP_ICTL_2
+	default 0x80
+
+endif
