@@ -9,6 +9,7 @@
 menuconfig SPI_DW
 	bool "Designware SPI controller driver"
 	select HAS_DTS_SPI
+	select HAS_DTS_SPI_DEVICE
 	help
 	  Enable support for Designware's SPI controllers.
 
