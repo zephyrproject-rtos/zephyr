@@ -380,7 +380,7 @@ static void nrfx_nfct_field_poll(void)
 
 static void nrfx_nfct_field_timer_handler(nrf_timer_event_t event_type, void * p_context)
 {
-    UNUSED_PARAMETER(p_context);
+    (void)p_context;
 
     if (event_type != NRF_TIMER_EVENT_COMPARE0)
     {
@@ -463,7 +463,7 @@ nrfx_err_t nrfx_nfct_init(nrfx_nfct_config_t const * p_config)
     m_nrf52840.eng_bc = nrfx_nfct_type_52840_final_check();
 #endif // NRF52840_XXAA
 
-    memcpy(&m_nfct_cb.config, p_config, sizeof(nrfx_nfct_config_t));
+    m_nfct_cb.config = *p_config;
     nrfx_nfct_hw_init_setup();
 
 #ifdef USE_TIMER_WORKAROUND
@@ -572,7 +572,7 @@ nrfx_err_t nrfx_nfct_tx(nrfx_nfct_data_desc_t const * p_tx_data,
     nrfx_nfct_rxtx_int_enable(NRFX_NFCT_TX_INT_MASK);
     nrf_nfct_task_trigger(NRF_NFCT_TASK_STARTTX);
 
-    NRF_LOG_INFO("Tx start");
+    NRFX_LOG_INFO("Tx start");
     return NRFX_SUCCESS;
 }
 

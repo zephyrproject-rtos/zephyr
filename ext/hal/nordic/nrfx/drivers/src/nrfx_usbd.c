@@ -1579,7 +1579,8 @@ void nrfx_usbd_irq_handler(void)
                 *((volatile uint32_t *)(NRF_USBD_BASE + 0x800)) = 0x7A9;
                 *((volatile uint32_t *)(NRF_USBD_BASE + 0x804)) = uii;
                 rb = (uint8_t)*((volatile uint32_t *)(NRF_USBD_BASE + 0x804));
-            NRFX_USBD_LOG_PROTO1_FIX_PRINTF("   uii: 0x%.2x (0x%.2x)", uii, rb);
+                NRFX_USBD_LOG_PROTO1_FIX_PRINTF("   uii: 0x%.2x (0x%.2x)", uii, rb);
+                (void)rb;
             }
 
             *((volatile uint32_t *)(NRF_USBD_BASE + 0x800)) = 0x7AD;
@@ -1591,7 +1592,8 @@ void nrfx_usbd_irq_handler(void)
                 *((volatile uint32_t *)(NRF_USBD_BASE + 0x800)) = 0x7AA;
                 *((volatile uint32_t *)(NRF_USBD_BASE + 0x804)) = uoi;
                 rb = (uint8_t)*((volatile uint32_t *)(NRF_USBD_BASE + 0x804));
-            NRFX_USBD_LOG_PROTO1_FIX_PRINTF("   uoi: 0x%.2u (0x%.2x)", uoi, rb);
+                NRFX_USBD_LOG_PROTO1_FIX_PRINTF("   uoi: 0x%.2u (0x%.2x)", uoi, rb);
+                (void)rb;
             }
 
             *((volatile uint32_t *)(NRF_USBD_BASE + 0x800)) = 0x7AE;
@@ -1610,7 +1612,8 @@ void nrfx_usbd_irq_handler(void)
                 *((volatile uint32_t *)(NRF_USBD_BASE + 0x800)) = 0x7AB;
                 *((volatile uint32_t *)(NRF_USBD_BASE + 0x804)) = usbi;
                 rb = (uint8_t)*((volatile uint32_t *)(NRF_USBD_BASE + 0x804));
-            NRFX_USBD_LOG_PROTO1_FIX_PRINTF("   usbi: 0x%.2u (0x%.2x)", usbi, rb);
+                NRFX_USBD_LOG_PROTO1_FIX_PRINTF("   usbi: 0x%.2u (0x%.2x)", usbi, rb);
+                (void)rb;
             }
 
             if (0 != (m_simulated_dataepstatus &
@@ -1797,7 +1800,7 @@ void nrfx_usbd_enable(void)
 
     if (nrfx_usbd_errata_187())
     {
-        CRITICAL_REGION_ENTER();
+        NRFX_CRITICAL_SECTION_ENTER();
         if (*((volatile uint32_t *)(0x4006EC00)) == 0x00000000)
         {
             *((volatile uint32_t *)(0x4006EC00)) = 0x00009375;
@@ -1808,7 +1811,7 @@ void nrfx_usbd_enable(void)
         {
             *((volatile uint32_t *)(0x4006ED14)) = 0x00000000;
         }
-        CRITICAL_REGION_EXIT();
+        NRFX_CRITICAL_SECTION_EXIT();
     }
 }
 
@@ -2228,14 +2231,14 @@ void * nrfx_usbd_feeder_buffer_get(void)
     return m_tx_buffer;
 }
 
-nrfx_err_t nrfx_usbd_ep_status_get(nrfx_usbd_ep_t ep, size_t * p_size)
+nrfx_usbd_ep_status_t nrfx_usbd_ep_status_get(nrfx_usbd_ep_t ep, size_t * p_size)
 {
-    nrfx_err_t ret;
+    nrfx_usbd_ep_status_t ret;
 
     usbd_ep_state_t const * p_state = ep_state_access(ep);
     NRFX_CRITICAL_SECTION_ENTER();
     *p_size = p_state->transfer_cnt;
-    ret = (p_state->handler.consumer == NULL) ? p_state->status : NRFX_ERROR_BUSY;
+    ret = (p_state->handler.consumer == NULL) ? p_state->status : NRFX_USBD_EP_BUSY;
     NRFX_CRITICAL_SECTION_EXIT();
     return ret;
 }

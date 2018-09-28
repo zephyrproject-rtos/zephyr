@@ -149,25 +149,27 @@ typedef enum
 } nrfx_usbd_event_type_t;
 
 /**
- * @brief Possible endpoint error codes.
+ * @brief Endpoint status codes.
  *
- * Error codes that may be returned with @ref NRFX_USBD_EVT_EPTRANSFER.
+ * Status codes that may be returned by @ref nrfx_usbd_ep_status_get or, except for
+ * @ref NRFX_USBD_EP_BUSY, reported together with @ref NRFX_USBD_EVT_EPTRANSFER.
  */
 typedef enum
 {
-    NRFX_USBD_EP_OK,       /**< No error */
+    NRFX_USBD_EP_OK,       /**< No error occured. */
     NRFX_USBD_EP_WAITING,  /**< Data received, no buffer prepared already - waiting for configured transfer. */
     NRFX_USBD_EP_OVERLOAD, /**< Received number of bytes cannot fit given buffer.
-                           *   This error would also be returned when next_transfer function has been defined
-                           *   but currently received data cannot fit completely in current buffer.
-                           *   No data split from single endpoint transmission is supported.
-                           *
-                           *   When this error is reported - data is left inside endpoint buffer.
-                           *   Clear endpoint or prepare new buffer and read it.
-                           */
+                            *   This error would also be returned when next_transfer function has been defined
+                            *   but currently received data cannot fit completely in current buffer.
+                            *   No data split from single endpoint transmission is supported.
+                            *
+                            *   When this error is reported - data is left inside endpoint buffer.
+                            *   Clear endpoint or prepare new buffer and read it.
+                            */
     NRFX_USBD_EP_ABORTED,  /**< EP0 transfer can be aborted when new setup comes.
-                           *   Any other transfer can be aborted by USB reset or driver stopping.
-                           */
+                            *   Any other transfer can be aborted by USB reset or driver stopping.
+                            */
+    NRFX_USBD_EP_BUSY,     /**< A transfer is in progress. */
 } nrfx_usbd_ep_status_t;
 
 /**
@@ -702,12 +704,11 @@ void * nrfx_usbd_feeder_buffer_get(void);
  * @param[in]  ep     Endpoint number.
  * @param[out] p_size Information about the current/last transfer size.
  *
- * @retval NRFX_SUCCESS         Transfer already finished.
- * @retval NRFX_ERROR_BUSY      Ongoing transfer.
- * @retval NRFX_ERROR_DATA_SIZE Too much of data received that cannot fit into buffer and cannot be splited into chunks.
- *                             This may happen if buffer size is not a multiplication of endpoint buffer size.
+ * @return Endpoint status.
+ *
+ * @sa nrfx_usbd_ep_status_t
  */
-nrfx_err_t nrfx_usbd_ep_status_get(nrfx_usbd_ep_t ep, size_t * p_size);
+nrfx_usbd_ep_status_t nrfx_usbd_ep_status_get(nrfx_usbd_ep_t ep, size_t * p_size);
 
 /**
  * @brief Get number of received bytes.
