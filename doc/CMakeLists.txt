@@ -5,6 +5,8 @@ set(ZEPHYR_BASE $ENV{ZEPHYR_BASE})
 
 message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
 
+include(${ZEPHYR_BASE}/cmake/version.cmake)
+
 find_package(PythonInterp 3.4)
 set(DOXYGEN_SKIP_DOT True)
 find_package(Doxygen REQUIRED)
@@ -115,10 +117,10 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E env
   PYTHONPATH="${ZEPHYR_BASE}/scripts/kconfig${SEP}$ENV{PYTHONPATH}"
   srctree=${ZEPHYR_BASE}
+  KERNELVERSION=${KERNELVERSION}
   BOARD_DIR=boards/*/*/
   ARCH=*
   SOC_DIR=soc/
-  KERNELVERSION=${PROJECT_VERSION}
   SRCARCH=x86
   ${PYTHON_EXECUTABLE} scripts/genrest.py Kconfig ${RST_OUT}/doc/reference/kconfig/
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
