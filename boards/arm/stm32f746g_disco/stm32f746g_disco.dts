@@ -29,7 +29,8 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "User";
-			gpios = <&gpioi 11 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioi 11 (GPIO_INT_ACTIVE_HIGH |
+					    GPIO_INT_EDGE)>;
 		};
 	};
 

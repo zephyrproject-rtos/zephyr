@@ -65,11 +65,13 @@
 		compatible = "gpio-keys";
 		user_button_2: button@0 {
 			label = "User SW2";
-			gpios = <&gpioc 6 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc 6 (GPIO_INT_ACTIVE_LOW |
+					   GPIO_INT_EDGE)>;
 		};
 		user_button_3: button@1 {
 			label = "User SW3";
-			gpios = <&gpioa 4 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioa 4 (GPIO_INT_ACTIVE_LOW |
+					   GPIO_INT_EDGE)>;
 		};
 	};
 };
