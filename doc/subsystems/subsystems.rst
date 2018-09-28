@@ -13,6 +13,7 @@ to applications.
    c_library
    dfu
    logging/index
+   tracing/index
    mgmt
    networking/networking.rst
    power_management.rst

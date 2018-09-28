@@ -276,6 +276,11 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		static int ptp_iface_idx;
 		struct device *clk;
 
+		if (ud->eth_if_count >= ARRAY_SIZE(eth_interfaces)) {
+			DBG("Invalid interface %p\n", iface);
+			return;
+		}
+
 		clk = net_eth_get_ptp_clock(iface);
 		if (!clk) {
 			non_ptp_interface = ud->eth_if_count;
@@ -416,7 +421,7 @@ static void test_ptp_clock_iface(int idx)
 
 	ptp_clock_adjust(clk, rnd_value);
 
-	memset(&tm, 0, sizeof(tm));
+	(void)memset(&tm, 0, sizeof(tm));
 	ptp_clock_get(clk, &tm);
 
 	new_value = timestamp_to_nsec(&tm);

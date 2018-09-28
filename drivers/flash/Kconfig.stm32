@@ -9,8 +9,7 @@
 if FLASH && SOC_FAMILY_STM32
 
 menuconfig SOC_FLASH_STM32
-	bool
-	prompt "STM32 flash driver"
+	bool "STM32 flash driver"
 	depends on (SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32L4X)
 	select FLASH_HAS_DRIVER_ENABLED
 	default y

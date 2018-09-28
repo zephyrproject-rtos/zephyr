@@ -1,4 +1,4 @@
-set(KCONFIG_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/Kconfig)
+cmake_minimum_required(VERSION 3.8.2)
 
 macro(set_conf_file)
   if(EXISTS         ${APPLICATION_SOURCE_DIR}/prj_${BOARD}.conf)

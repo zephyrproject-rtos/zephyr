@@ -10,6 +10,7 @@
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,
 	BT_CONN_CONNECT_SCAN,
+	BT_CONN_CONNECT_DIR_ADV,
 	BT_CONN_CONNECT,
 	BT_CONN_CONNECTED,
 	BT_CONN_DISCONNECT,
@@ -26,6 +27,8 @@ enum {
 	BT_CONN_CLEANUP,                /* Disconnected, pending cleanup */
 	BT_CONN_AUTO_PHY_UPDATE,        /* Auto-update PHY */
 	BT_CONN_AUTO_DATA_LEN,          /* Auto data len change in progress */
+	BT_CONN_SLAVE_PARAM_UPDATE,	/* If slave param update timer fired */
+	BT_CONN_SLAVE_PARAM_SET,	/* If slave param were set from app */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
@@ -87,6 +90,9 @@ struct bt_conn {
 	u8_t			role;
 
 	ATOMIC_DEFINE(flags, BT_CONN_NUM_FLAGS);
+
+	/* Which local identity address this connection uses */
+	u8_t                    id;
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	bt_security_t		sec_level;
@@ -159,7 +165,7 @@ u8_t bt_conn_get_io_capa(void);
 u8_t bt_conn_ssp_get_auth(const struct bt_conn *conn);
 void bt_conn_ssp_auth(struct bt_conn *conn, u32_t passkey);
 
-void bt_conn_disconnect_all(void);
+void bt_conn_disconnect_all(u8_t id);
 
 /* Look up an existing connection */
 struct bt_conn *bt_conn_lookup_handle(u16_t handle);

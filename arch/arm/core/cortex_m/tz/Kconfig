@@ -1,0 +1,12 @@
+# Kconfig - ARM TrustZone-M core configuration options
+
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+config ARM_SAU
+	bool "ARM Security Attribution Unit"
+	help
+	  MCU implements the ARM Security Attribution Unit (SAU).

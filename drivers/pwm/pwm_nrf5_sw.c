@@ -142,16 +142,9 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	/* calc div, to scale down to fit in 16 bits */
 	div = period_cycles >> 16;
 
-	/* setup HF timer in 16MHz frequency */
-	timer->MODE = TIMER_MODE_MODE_Timer;
-	timer->PRESCALER = config->prescaler;
-	timer->BITMODE = TIMER_BITMODE_BITMODE_16Bit;
 	timer->EVENTS_COMPARE[channel] = 0;
 	timer->EVENTS_COMPARE[config->map_size] = 0;
-	/* TODO: set shorts according to map_size if not 3, i.e. if NRF_TIMER
-	 * supports more than 4 compares, then more channels can be supported.
-	 */
-	timer->SHORTS = TIMER_SHORTS_COMPARE3_CLEAR_Msk;
+
 	timer->CC[channel] = pulse_cycles >> div;
 	timer->CC[config->map_size] = period_cycles >> div;
 	timer->TASKS_CLEAR = 1;
@@ -166,7 +159,8 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	NRF_PPI->CH[ppi_index].TEP = (u32_t)
 				     &(NRF_GPIOTE->TASKS_OUT[channel]);
 	NRF_PPI->CH[ppi_index + 1].EEP = (u32_t)
-					 &(timer->EVENTS_COMPARE[3]);
+					 &(timer->EVENTS_COMPARE[
+							 config->map_size]);
 	NRF_PPI->CH[ppi_index + 1].TEP = (u32_t)
 					 &(NRF_GPIOTE->TASKS_OUT[channel]);
 	NRF_PPI->CHENSET = BIT(ppi_index) | BIT(ppi_index + 1);
@@ -221,6 +215,22 @@ static const struct pwm_driver_api pwm_nrf5_sw_drv_api_funcs = {
 
 static int pwm_nrf5_sw_init(struct device *dev)
 {
+	struct pwm_config *config;
+	NRF_TIMER_Type *timer;
+
+	config = (struct pwm_config *)dev->config->config_info;
+	timer = config->timer;
+
+	/* setup HF timer */
+	timer->MODE = TIMER_MODE_MODE_Timer;
+	timer->PRESCALER = config->prescaler;
+	timer->BITMODE = TIMER_BITMODE_BITMODE_16Bit;
+
+	/* TODO: set shorts according to map_size if not 3, i.e. if NRF_TIMER
+	 * supports more than 4 compares, then more channels can be supported.
+	 */
+	timer->SHORTS = TIMER_SHORTS_COMPARE3_CLEAR_Msk;
+
 	return 0;
 }
 

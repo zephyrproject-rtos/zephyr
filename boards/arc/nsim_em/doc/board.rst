@@ -19,7 +19,7 @@ There are two sub configurations in board:
 * nsim_sem which includes secure em features and ARC MPUv3
 
 For detailed arc features, please refer to
-:file:`boards/arc/nsim_em/support/nsim_em.props` and
+:file:`boards/arc/nsim_em/support/nsim.props` and
 :file:`boards/arc/nsim_em/support/nsim_sem.props`.
 
 

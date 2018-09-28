@@ -96,6 +96,11 @@ static void execute_from_buffer(u8_t *dst)
 }
 #endif
 
+/**
+ * @brief Test write to read only section
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void write_ro(void)
 {
 	u32_t *ptr = (u32_t *)&rodata_var;
@@ -120,6 +125,11 @@ static void write_ro(void)
 	zassert_unreachable("Write to rodata did not fault");
 }
 
+/**
+ * @brief Test to execute on text section
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void write_text(void)
 {
 	void *src = FUNC_TO_PTR(add_one);
@@ -146,6 +156,11 @@ static void write_text(void)
 	zassert_unreachable("Write to text did not fault");
 }
 
+/**
+ * @brief Test execution from data section
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 #ifdef NO_EXECUTE_SUPPORT
 static void exec_data(void)
 {
@@ -153,6 +168,11 @@ static void exec_data(void)
 	zassert_unreachable("Execute from data did not fault");
 }
 
+/**
+ * @brief Test execution from stack section
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void exec_stack(void)
 {
 	u8_t stack_buf[BUF_SIZE] __aligned(sizeof(int));
@@ -161,6 +181,11 @@ static void exec_stack(void)
 	zassert_unreachable("Execute from stack did not fault");
 }
 
+/**
+ * @brief Test execution from heap
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 #if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
 static void exec_heap(void)
 {

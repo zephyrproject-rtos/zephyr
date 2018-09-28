@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INC_stdint_h__
-#define __INC_stdint_h__
+#ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDINT_H_
+#define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDINT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,17 +16,17 @@ extern "C" {
 #define INT8_MAX    0x7F
 #define INT16_MAX   0x7FFF
 #define INT32_MAX   0x7FFFFFFF
-#define INT64_MAX   0x7FFFFFFFFFFFFFFFll
+#define INT64_MAX   0x7FFFFFFFFFFFFFFFLL
 
 #define INT8_MIN    (-INT8_MAX - 1)
 #define INT16_MIN   (-INT16_MAX - 1)
 #define INT32_MIN   (-INT32_MAX - 1)
-#define INT64_MIN   (-INT64_MAX - 1ll)
+#define INT64_MIN   (-INT64_MAX - 1LL)
 
 #define UINT8_MAX   0xFF
 #define UINT16_MAX  0xFFFF
-#define UINT32_MAX  0xFFFFFFFFu
-#define UINT64_MAX  0xFFFFFFFFFFFFFFFFull
+#define UINT32_MAX  0xFFFFFFFFU
+#define UINT64_MAX  0xFFFFFFFFFFFFFFFFULL
 
 #define INTPTR_MIN  INT32_MIN
 #define INTPTR_MAX  INT32_MAX
@@ -76,4 +76,4 @@ typedef unsigned int        uintptr_t;
 }
 #endif
 
-#endif /* __INC_stdint_h__ */
+#endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDINT_H_ */

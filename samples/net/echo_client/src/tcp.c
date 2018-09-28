@@ -328,7 +328,7 @@ int start_tcp(void)
 	int ret = 0;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		ret = connect_tcp(&tcp6, CONFIG_NET_APP_PEER_IPV6_ADDR,
+		ret = connect_tcp(&tcp6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
 				  &conf.ipv6, tls_result_ipv6,
 				  sizeof(tls_result_ipv6),
 				  net_app_tls_stack_ipv6,
@@ -340,7 +340,7 @@ int start_tcp(void)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		ret = connect_tcp(&tcp4, CONFIG_NET_APP_PEER_IPV4_ADDR,
+		ret = connect_tcp(&tcp4, CONFIG_NET_CONFIG_PEER_IPV4_ADDR,
 				  &conf.ipv4, tls_result_ipv4,
 				  sizeof(tls_result_ipv4),
 				  net_app_tls_stack_ipv4,

@@ -9,8 +9,8 @@
  * Public APIs for Pinmux drivers
  */
 
-#ifndef __INCLUDE_PINMUX_H
-#define __INCLUDE_PINMUX_H
+#ifndef ZEPHYR_INCLUDE_PINMUX_H_
+#define ZEPHYR_INCLUDE_PINMUX_H_
 
 /**
  * @brief Pinmux Interface
@@ -111,4 +111,4 @@ static inline int pinmux_pin_input_enable(struct device *dev, u32_t pin,
  * @}
  */
 
-#endif /* __INCLUDE_PINMUX_H */
+#endif /* ZEPHYR_INCLUDE_PINMUX_H_ */

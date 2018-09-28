@@ -17,6 +17,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "arc,dccm"
+      generation: define
 
     reg:
       type: array

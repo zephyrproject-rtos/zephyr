@@ -363,7 +363,7 @@ int net_conn_unregister(struct net_conn_handle *handle)
 	NET_DBG("[%zu] connection handler %p removed",
 		(conn - conns) / sizeof(*conn), conn);
 
-	memset(conn, 0, sizeof(*conn));
+	(void)memset(conn, 0, sizeof(*conn));
 
 	return 0;
 }
@@ -867,12 +867,10 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 
 		if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		    net_pkt_family(pkt) == AF_INET) {
-			data_len = NET_IPV4_HDR(pkt)->len[0] * 256 +
-				NET_IPV4_HDR(pkt)->len[1];
+			data_len = ntohs(NET_IPV4_HDR(pkt)->len);
 		} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 			   net_pkt_family(pkt) == AF_INET6) {
-			data_len = NET_IPV6_HDR(pkt)->len[0] * 256 +
-				NET_IPV6_HDR(pkt)->len[1];
+			data_len = ntohs(NET_IPV6_HDR(pkt)->len);
 		}
 
 		NET_DBG("Check %s listener for pkt %p src port %u dst port %u "

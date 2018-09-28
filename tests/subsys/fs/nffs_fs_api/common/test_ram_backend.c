@@ -34,7 +34,7 @@ static int test_flash_ram_erase(struct device *dev, off_t offset, size_t len)
 
 	while (offset < end_offset) {
 		flash_get_page_info_by_offs(dev, offset, &info);
-		memset(rambuf + info.start_offset, 0xff, info.size);
+		(void)memset(rambuf + info.start_offset, 0xff, info.size);
 		offset = info.start_offset + info.size;
 	}
 

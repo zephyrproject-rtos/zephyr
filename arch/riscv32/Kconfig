@@ -4,12 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-choice
-	prompt "RISCV32 configuration selection"
-	depends on RISCV32
-	gsource "arch/riscv32/soc/*/Kconfig.soc"
-endchoice
-
 menu "RISCV32 Options"
 	depends on RISCV32
 
@@ -60,7 +54,5 @@ config GEN_IRQ_VECTOR_TABLE
 	default n
 
 endmenu
-
-gsource "arch/riscv32/soc/*/Kconfig"
 
 endmenu

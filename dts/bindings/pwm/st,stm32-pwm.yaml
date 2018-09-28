@@ -8,9 +8,6 @@ description: >
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "st,stm32-pwm"
 
     label:

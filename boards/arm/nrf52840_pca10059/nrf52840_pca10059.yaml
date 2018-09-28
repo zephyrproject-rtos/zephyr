@@ -1,0 +1,13 @@
+identifier: nrf52840_pca10059
+name: nRF52840-PCA10059
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - usb_device
+  - ble
+  - ieee802154

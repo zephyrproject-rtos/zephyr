@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * All rights reserved.
+ * 
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef __FSL_FLEXSPI_H_
@@ -46,8 +24,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief FLEXSPI driver version 2.0.1. */
-#define FSL_FLEXSPI_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
+/*! @brief FLEXSPI driver version 2.0.3. */
+#define FSL_FLEXSPI_DRIVER_VERSION (MAKE_VERSION(2, 0, 3))
 /*@}*/
 
 #define FSL_FEATURE_FLEXSPI_AHB_BUFFER_COUNT FSL_FEATURE_FLEXSPI_AHB_BUFFER_COUNTn(0)
@@ -231,9 +209,11 @@ typedef enum _flexspi_command_type
 
 typedef struct _flexspi_ahbBuffer_config
 {
-    uint8_t priority;
-    uint8_t masterIndex;
-    uint16_t bufferSize;
+    uint8_t priority;    /*!< This priority for AHB Master Read which this AHB RX Buffer is assigned. */
+    uint8_t masterIndex; /*!< AHB Master ID the AHB RX Buffer is assigned. */
+    uint16_t bufferSize; /*!< AHB buffer size in byte. */
+    bool enablePrefetch; /*!< AHB Read Prefetch Enable for current AHB RX Buffer corresponding Master, allows
+                          prefetch disable/enable seperately for each master. */
 } flexspi_ahbBuffer_config_t;
 
 /*! @brief FLEXSPI configuration structure. */
@@ -269,6 +249,8 @@ typedef struct _flexspi_config
         flexspi_ahbBuffer_config_t buffer[FSL_FEATURE_FLEXSPI_AHB_BUFFER_COUNT]; /*!< AHB buffer size. */
         bool enableClearAHBBufferOpt; /*!< Enable/disable automatically clean AHB RX Buffer and TX Buffer
                                        when FLEXSPI returns STOP mode ACK. */
+        bool enableReadAddressOpt;    /*!< Enable/disable remove AHB read burst start address alignment limitation.
+                                       when eanble, there is no AHB read burst start address alignment limitation. */
         bool enableAHBPrefetch;       /*!< Enable/disable AHB read prefetch feature, when enabled, FLEXSPI
                                        will fetch more data than current AHB burst. */
         bool enableAHBBufferable;     /*!< Enable/disable AHB bufferable write access support, when enabled,

@@ -85,6 +85,8 @@ static void thread_entry(void *p1, void *p2, void *p3)
  * @brief test preempt thread initialization via K_THREAD_DEFINE
  *
  * @see #K_THREAD_DEFINE(x)
+ *
+ * @ingroup kernel_thread_tests
  */
 void test_kdefine_preempt_thread(void)
 {
@@ -106,6 +108,8 @@ void test_kdefine_preempt_thread(void)
 
 /**
  * @brief test coop thread initialization via K_THREAD_DEFINE
+ *
+ * @ingroup kernel_thread_tests
  *
  * @see #K_THREAD_DEFINE(x)
  */
@@ -129,6 +133,8 @@ void test_kdefine_coop_thread(void)
 
 /**
  * @brief test preempt thread initialization via k_thread_create
+ *
+ * @ingroup kernel_thread_tests
  *
  * @see k_thread_create()
  */
@@ -160,6 +166,9 @@ void test_kinit_preempt_thread(void)
 
 /**
  * @brief test coop thread initialization via k_thread_create
+ *
+ * @ingroup kernel_thread_tests
+ *
  * @see k_thread_create()
  */
 void test_kinit_coop_thread(void)

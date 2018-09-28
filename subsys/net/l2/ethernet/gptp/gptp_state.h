@@ -285,12 +285,6 @@ struct gptp_pss_rcv_state {
 
 /* PortSyncSyncSend state machine variables. */
 struct gptp_pss_send_state {
-	/** Sync send to be transmitted to the MD Sync Send State Machine. */
-	struct gptp_md_sync_info sync_send;
-
-	/** Source Port Identity of the last received PortSyncSync. */
-	struct gptp_port_identity last_src_port_id;
-
 	/** Precise Origin Timestamp of the last received PortSyncSync. */
 	struct net_ptp_time last_precise_orig_ts;
 
@@ -330,6 +324,9 @@ struct gptp_pss_send_state {
 	/** Received Port Number of the last received PortSyncSync. */
 	u16_t last_rcvd_port_num;
 
+	/** Sync send to be transmitted to the MD Sync Send State Machine. */
+	struct gptp_md_sync_info sync_send;
+
 	/** A PortSyncSync structure is ready to be processed. */
 	bool rcvd_pss_sync;
 
@@ -338,6 +335,9 @@ struct gptp_pss_send_state {
 
 	/** Flag when the half_sync_itv_timer has expired twice. */
 	bool sync_itv_timer_expired;
+
+	/** Source Port Identity of the last received PortSyncSync. */
+	struct gptp_port_identity last_src_port_id;
 
 	/** Flag when the syncReceiptTimeoutTime has expired. */
 	bool send_sync_receipt_timeout_timer_expired;
@@ -495,14 +495,14 @@ struct gptp_port_bmca_data {
 	/** Announce receipt timeout time interval. */
 	struct gptp_uscaled_ns ann_rcpt_timeout_time_interval;
 
-	/** Last announce message flags. */
-	struct gptp_flags ann_flags;
-
 	/** Origin and state of the port's spanning tree information. */
 	enum gptp_info_is info_is;
 
 	/** Last announce message time source. */
 	enum gptp_time_source ann_time_source;
+
+	/** Last announce message flags. */
+	struct gptp_flags ann_flags;
 
 	/** The value of steps removed for the port. */
 	u16_t port_steps_removed;

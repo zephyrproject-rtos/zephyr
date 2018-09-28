@@ -80,14 +80,23 @@ void ot_state_changed_handler(uint32_t flags, void *context)
 
 	if (flags & OT_CHANGED_IP6_ADDRESS_REMOVED) {
 		NET_DBG("Ipv6 address removed");
-		rm_ipv6_maddr_from_zephyr(ot_context);
+		rm_ipv6_addr_from_zephyr(ot_context);
 	}
 
 	if (flags & OT_CHANGED_IP6_ADDRESS_ADDED) {
 		NET_DBG("Ipv6 address added");
-		add_ipv6_maddr_to_zephyr(ot_context);
+		add_ipv6_addr_to_zephyr(ot_context);
 	}
 
+	if (flags & OT_CHANGED_IP6_MULTICAST_UNSUBSRCRIBED) {
+		NET_DBG("Ipv6 multicast address removed");
+		rm_ipv6_maddr_from_zephyr(ot_context);
+	}
+
+	if (flags & OT_CHANGED_IP6_MULTICAST_SUBSRCRIBED) {
+		NET_DBG("Ipv6 multicast address added");
+		add_ipv6_maddr_to_zephyr(ot_context);
+	}
 }
 
 void ot_receive_handler(otMessage *aMessage, void *context)
@@ -284,6 +293,9 @@ enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 static int openthread_init(struct net_if *iface)
 {
 	struct openthread_context *ot_context = net_if_l2_data(iface);
+	u8_t xpanid[8];
+
+	net_bytes_from_str(xpanid, 8, (char *)CONFIG_OPENTHREAD_XPANID);
 
 	NET_DBG("openthread_init");
 
@@ -300,11 +312,14 @@ static int openthread_init(struct net_if *iface)
 
 	NET_INFO("OpenThread version: %s",
 		    otGetVersionString());
+
+	otThreadSetNetworkName(ot_context->instance, CONFIG_OPENTHREAD_NETWORK_NAME);
 	NET_INFO("Network name:   %s",
 		    otThreadGetNetworkName(ot_context->instance));
 
 	otLinkSetChannel(ot_context->instance, CONFIG_OPENTHREAD_CHANNEL);
 	otLinkSetPanId(ot_context->instance, CONFIG_OPENTHREAD_PANID);
+	otThreadSetExtendedPanId(ot_context->instance, xpanid);
 	otIp6SetEnabled(ot_context->instance, true);
 	otThreadSetEnabled(ot_context->instance, true);
 	otIp6SetReceiveFilterEnabled(ot_context->instance, true);
@@ -345,5 +360,10 @@ int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt)
 	return -EIO;
 }
 
+static enum net_l2_flags openthread_flags(struct net_if *iface)
+{
+	return NET_L2_MULTICAST;
+}
+
 NET_L2_INIT(OPENTHREAD_L2, openthread_recv, openthread_send,
-	    openthread_reserve, NULL);
+	    openthread_reserve, NULL, openthread_flags);

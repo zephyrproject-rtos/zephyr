@@ -16,8 +16,8 @@ config TEST
 
 config TEST_EXTRA_STACKSIZE
 	int "Test function extra thread stack size"
-	default 0
 	default 768 if XTENSA
+	default 0
 	help
 	  Additional stack for tests on some platform where default is not
 	  enough.

@@ -83,9 +83,13 @@ The Zephyr nucleo_413zh board configuration supports the following hardware feat
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
+| I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| USB       | on-chip    | usb                                 |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
@@ -128,8 +132,10 @@ For mode details please refer to `STM32 Nucleo-144 board User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
-- UART_3_TX : PD8
-- UART_3_RX : PD9
+- UART_3 TX/RX : PD8/PD9 (ST-Link Virtual Port Com)
+- UART_6 TX/RX : PG14/PG9 (Arduino Serial)
+- I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- SPI1 NSS/SCK/MISO/MOSI : PA4/PA5/PA6/PA7 (Arduino SPI)
 - PWM_2_CH1 : PA0
 - USB_DM : PA11
 - USB_DP : PA12

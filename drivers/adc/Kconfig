@@ -10,16 +10,29 @@
 # ADC options
 #
 menuconfig ADC
-	bool
-	prompt "ADC drivers"
+	bool "ADC drivers"
+	# All platforms that implement the ADC driver are now required to
+	# provide relevant DTS entries.
+	select HAS_DTS_ADC
 	help
-	  Enable ADC (Analog to Digital Converter) driver configuration
+	  Enable ADC (Analog to Digital Converter) driver configuration.
 
 if ADC
 
+# By selecting or not this option particular ADC drivers indicate if it is
+# required to explicitly specify analog inputs when configuring channels or
+# just the channel identifier is sufficient.
+config ADC_CONFIGURABLE_INPUTS
+	bool
+
+config ADC_ASYNC
+	bool "Enable asynchronous call support"
+	select POLL
+	help
+	  This option enables the asynchronous API calls.
+
 config SYS_LOG_ADC_LEVEL
-	int
-	prompt "ADC drivers log level"
+	int "ADC drivers log level"
 	depends on SYS_LOG
 	default 0
 	range 0 4
@@ -40,9 +53,8 @@ config SYS_LOG_ADC_LEVEL
 	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config ADC_INIT_PRIORITY
-	int
+	int "Init priority"
 	default 80
-	prompt "Init priority"
 	help
 	  ADC Device driver initialization priority.
 
@@ -55,9 +67,8 @@ config ADC_0_NAME
 	default "ADC_0"
 
 config ADC_0_IRQ_PRI
-	int
+	int "ADC 0 interrupt priority"
 	depends on ADC_0 && !HAS_DTS_ADC
-	prompt "ADC 0 interrupt priority"
 	default 2
 
 config ADC_1
@@ -69,19 +80,20 @@ config ADC_1_NAME
 	default "ADC_1"
 
 config ADC_1_IRQ_PRI
-	int
+	int "ADC 1 interrupt priority"
 	depends on ADC_1 && !HAS_DTS_ADC
-	prompt "ADC 1 interrupt priority"
 	default 2
 
 source "drivers/adc/Kconfig.dw"
 
 source "drivers/adc/Kconfig.mcux"
 
-source "drivers/adc/Kconfig.qmsi"
+source "drivers/adc/Kconfig.nrfx"
 
 source "drivers/adc/Kconfig.sam_afec"
 
 source "drivers/adc/Kconfig.ti_adc108s102"
+
+source "drivers/adc/Kconfig.intel_quark"
 
 endif # ADC

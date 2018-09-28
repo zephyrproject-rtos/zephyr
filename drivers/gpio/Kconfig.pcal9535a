@@ -15,8 +15,7 @@ menuconfig GPIO_PCAL9535A
 if GPIO_PCAL9535A
 
 config SYS_LOG_GPIO_PCAL9535A_LEVEL
-	int
-	prompt "PCAL9535A driver log level"
+	int "PCAL9535A driver log level"
 	depends on GPIO_PCAL9535A && SYS_LOG
 	default 0
 	help
@@ -35,9 +34,8 @@ config SYS_LOG_GPIO_PCAL9535A_LEVEL
 	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config GPIO_PCAL9535A_INIT_PRIORITY
-	int
+	int "Init priority"
 	default 70
-	prompt "Init priority"
 	help
 	  Device driver initialization priority.
 

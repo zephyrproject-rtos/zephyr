@@ -30,6 +30,11 @@
 
 	soc {
 		flash-controller@40023c00 {
+			compatible = "st,stm32f2-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x40023c00 0x400>;
+			interrupts = <4 0>;
+
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -190,6 +195,17 @@
 			interrupts = <53 0>;
 			status = "disabled";
 			label = "UART_5";
+		};
+
+		usbotg_fs: usb@50000000 {
+			compatible = "st,stm32-otgfs";
+			reg = <0x50000000 0x40000>;
+			interrupts = <67 0>;
+			interrupt-names = "otgfs";
+			num-bidir-endpoints = <4>;
+			ram-size = <1280>;
+			status = "disabled";
+			label = "OTGFS";
 		};
 	};
 };

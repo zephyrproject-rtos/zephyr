@@ -17,6 +17,7 @@
 #include <kernel_structs.h>
 #include "posix_core.h"
 #include "irq.h"
+#include "kswap.h"
 
 /**
  *
@@ -33,7 +34,7 @@
  *
  */
 
-unsigned int __swap(unsigned int key)
+int __swap(unsigned int key)
 {
 /*
  * struct k_thread * _kernel.current is the currently runnig thread
@@ -49,9 +50,7 @@ unsigned int __swap(unsigned int key)
 	_kernel.current->callee_saved.retval = -EAGAIN;
 	/* retval may be modified with a call to _set_thread_return_value() */
 
-#if CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
-	_sys_k_event_logger_context_switch();
-#endif
+	z_sys_trace_thread_switched_in();
 
 	posix_thread_status_t *ready_thread_ptr =
 		(posix_thread_status_t *)

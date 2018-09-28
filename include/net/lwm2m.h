@@ -1,12 +1,12 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2017 Open Source Foundries Limited.
+ * Copyright (c) 2017 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __LWM2M_H__
-#define __LWM2M_H__
+#ifndef ZEPHYR_INCLUDE_NET_LWM2M_H_
+#define ZEPHYR_INCLUDE_NET_LWM2M_H_
 
 #include <net/net_app.h>
 #include <net/coap.h>
@@ -81,7 +81,7 @@ typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,
 typedef int (*lwm2m_engine_set_data_cb_t)(u16_t obj_inst_id,
 				       u8_t *data, u16_t data_len,
 				       bool last_block, size_t total_size);
-typedef int (*lwm2m_engine_exec_cb_t)(u16_t obj_inst_id);
+typedef int (*lwm2m_engine_user_cb_t)(u16_t obj_inst_id);
 
 
 /* LWM2M Device Object */
@@ -144,8 +144,8 @@ void lwm2m_firmware_set_write_cb(lwm2m_engine_set_data_cb_t cb);
 lwm2m_engine_set_data_cb_t lwm2m_firmware_get_write_cb(void);
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
-void lwm2m_firmware_set_update_cb(lwm2m_engine_exec_cb_t cb);
-lwm2m_engine_exec_cb_t lwm2m_firmware_get_update_cb(void);
+void lwm2m_firmware_set_update_cb(lwm2m_engine_user_cb_t cb);
+lwm2m_engine_user_cb_t lwm2m_firmware_get_update_cb(void);
 #endif
 #endif
 
@@ -205,7 +205,11 @@ int lwm2m_engine_register_pre_write_callback(char *path,
 int lwm2m_engine_register_post_write_callback(char *path,
 					      lwm2m_engine_set_data_cb_t cb);
 int lwm2m_engine_register_exec_callback(char *path,
-					lwm2m_engine_exec_cb_t cb);
+					lwm2m_engine_user_cb_t cb);
+int lwm2m_engine_register_create_callback(u16_t obj_id,
+					  lwm2m_engine_user_cb_t cb);
+int lwm2m_engine_register_delete_callback(u16_t obj_id,
+					  lwm2m_engine_user_cb_t cb);
 
 /* resource data bit values */
 #define LWM2M_RES_DATA_READ_ONLY	0
@@ -253,4 +257,4 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 			  const char *ep_name,
 			  lwm2m_ctx_event_cb_t event_cb);
 
-#endif	/* __LWM2M_H__ */
+#endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */

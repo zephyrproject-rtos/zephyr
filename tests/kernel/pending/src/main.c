@@ -94,7 +94,7 @@ static inline void *my_lifo_get(struct k_lifo *lifo, s32_t timeout)
 static int increment_counter(void)
 {
 	int tmp;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	tmp = ++counter;
 	irq_unlock(key);

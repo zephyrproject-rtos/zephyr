@@ -1,0 +1,36 @@
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig GPIO_NRFX
+	bool "nRF GPIO driver"
+	depends on SOC_FAMILY_NRF
+	select HAS_DTS_GPIO
+	help
+	  Enable GPIO driver for nRF line of MCUs.
+
+if GPIO_NRFX
+
+config GPIO_NRF_INIT_PRIORITY
+	int "nRF GPIO initialization priority"
+	default 40
+	help
+	  Initialization priority for nRF GPIO.
+
+config GPIO_NRF_P0
+	bool "nRF GPIO Port P0"
+	depends on HAS_HW_NRF_GPIO0
+	default y
+	help
+	  Enable nRF GPIO port P0 config options.
+
+config GPIO_NRF_P1
+	bool "nRF GPIO Port P1"
+	depends on HAS_HW_NRF_GPIO1
+	default y
+	help
+	  Enable nRF GPIO port P1 config options.
+
+
+endif # GPIO_NRFX

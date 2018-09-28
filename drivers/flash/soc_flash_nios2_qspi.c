@@ -217,7 +217,8 @@ static int flash_nios2_qspi_write_block(struct device *dev, int block_offset,
 
 		/* prepare the word to be written */
 		memcpy((u8_t *)&word_to_write + padding,
-				data + buffer_offset, bytes_to_copy);
+				(const u8_t *)data + buffer_offset,
+				bytes_to_copy);
 
 		/* enable write */
 		IOWR_32DIRECT(qspi_dev->csr_base,
@@ -298,7 +299,8 @@ static int flash_nios2_qspi_write(struct device *dev, off_t offset,
 
 		rc = flash_nios2_qspi_write_block(dev,
 				block_offset, write_offset,
-				data + buffer_offset, length_to_write);
+				(const u8_t *)data + buffer_offset,
+				length_to_write);
 		if (rc < 0) {
 			goto qspi_write_err;
 		}
@@ -347,7 +349,8 @@ static int flash_nios2_qspi_read(struct device *dev, off_t offset,
 
 		/* read from flash 32 bits at a time */
 		word_to_read = IORD_32DIRECT(qspi_dev->data_base, read_offset);
-		memcpy(data + buffer_offset, &word_to_read, bytes_to_copy);
+		memcpy((u8_t *)data + buffer_offset, &word_to_read,
+		       bytes_to_copy);
 
 		/* update offset and length variables */
 		read_offset += bytes_to_copy;

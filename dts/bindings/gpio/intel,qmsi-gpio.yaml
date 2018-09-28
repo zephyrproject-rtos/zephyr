@@ -17,6 +17,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "intel,qmsi-gpio"
+      generation: define
 
     reg:
       type: int

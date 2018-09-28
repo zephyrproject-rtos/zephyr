@@ -28,12 +28,12 @@ struct configs {
 	struct data ipv6;
 };
 
-#if !defined(CONFIG_NET_APP_PEER_IPV4_ADDR)
-#define CONFIG_NET_APP_PEER_IPV4_ADDR ""
+#if !defined(CONFIG_NET_CONFIG_PEER_IPV4_ADDR)
+#define CONFIG_NET_CONFIG_PEER_IPV4_ADDR ""
 #endif
 
-#if !defined(CONFIG_NET_APP_PEER_IPV6_ADDR)
-#define CONFIG_NET_APP_PEER_IPV6_ADDR ""
+#if !defined(CONFIG_NET_CONFIG_PEER_IPV6_ADDR)
+#define CONFIG_NET_CONFIG_PEER_IPV6_ADDR ""
 #endif
 
 extern const char lorem_ipsum[];
@@ -51,3 +51,12 @@ struct net_pkt *prepare_send_pkt(struct net_app_ctx *ctx,
 				 const char *name,
 				 int *expecting_len);
 void panic(const char *msg);
+
+#if defined(CONFIG_NET_VLAN)
+int init_vlan(void);
+#else
+static inline int init_vlan(void)
+{
+	return 0;
+}
+#endif /* CONFIG_NET_VLAN */

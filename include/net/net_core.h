@@ -10,12 +10,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_CORE_H
-#define __NET_CORE_H
+#ifndef ZEPHYR_INCLUDE_NET_NET_CORE_H_
+#define ZEPHYR_INCLUDE_NET_NET_CORE_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stdbool.h>
 
 /**
  * @brief Networking
@@ -53,12 +55,12 @@ extern "C" {
 #define NET_ASSERT(cond) do {				     \
 		if (!(cond)) {					     \
 			NET_ERR("{assert: '" #cond "' failed}");     \
-		} } while (0)
+		} } while (false)
 #define NET_ASSERT_INFO(cond, fmt, ...) do {			     \
 		if (!(cond)) {					     \
 			NET_ERR("{assert: '" #cond "' failed} " fmt, \
 				##__VA_ARGS__);			     \
-		} } while (0)
+		} } while (false)
 #else /* NET_LOG_ENABLED */
 #define NET_DBG(...)
 #define NET_ERR(...)
@@ -248,4 +250,4 @@ static inline void net_analyze_stack(const char *name,
 }
 #endif
 
-#endif /* __NET_CORE_H */
+#endif /* ZEPHYR_INCLUDE_NET_NET_CORE_H_ */

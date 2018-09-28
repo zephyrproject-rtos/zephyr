@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ARC_V2_IRQ_UNIT__H
-#define _ARC_V2_IRQ_UNIT__H
+#ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_ARCV2_IRQ_UNIT_H_
+#define ZEPHYR_INCLUDE_ARCH_ARC_V2_ARCV2_IRQ_UNIT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -188,4 +188,4 @@ void _arc_v2_irq_unit_int_eoi(int irq);
 }
 #endif
 
-#endif /* _ARC_V2_IRQ_UNIT__H */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARC_V2_ARCV2_IRQ_UNIT_H_ */

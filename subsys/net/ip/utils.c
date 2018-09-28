@@ -24,6 +24,16 @@
 #include <net/net_pkt.h>
 #include <net/net_core.h>
 
+char *net_sprint_addr(sa_family_t af, const void *addr)
+{
+#define NBUFS 3
+	static char buf[NBUFS][NET_IPV6_ADDR_LEN];
+	static int i;
+	char *s = buf[++i % NBUFS];
+
+	return net_addr_ntop(af, addr, s, NET_IPV6_ADDR_LEN);
+}
+
 const char *net_proto2str(enum net_ip_protocol proto)
 {
 	switch (proto) {
@@ -265,7 +275,7 @@ int net_addr_pton(sa_family_t family, const char *src,
 			}
 		}
 
-		memset(addr, 0, sizeof(struct in_addr));
+		(void)memset(addr, 0, sizeof(struct in_addr));
 
 		for (i = 0; i < sizeof(struct in_addr); i++) {
 			char *endptr;
@@ -309,11 +319,14 @@ int net_addr_pton(sa_family_t family, const char *src,
 				UNALIGNED_PUT(htons(strtol(src, NULL, 16)),
 					      &addr->s6_addr16[i]);
 				src = strchr(src, ':');
-				if (!src && i < expected_groups - 1) {
-					return -EINVAL;
+				if (src) {
+					src++;
+				} else {
+					if (i < expected_groups - 1) {
+						return -EINVAL;
+					}
 				}
 
-				src++;
 				continue;
 			}
 
@@ -363,11 +376,13 @@ int net_addr_pton(sa_family_t family, const char *src,
 				addr->s6_addr[12 + i] = strtol(src, NULL, 10);
 
 				src = strchr(src, '.');
-				if (!src && i < 3) {
-					return -EINVAL;
+				if (src) {
+					src++;
+				} else {
+					if (i < 3) {
+						return -EINVAL;
+					}
 				}
-
-				src++;
 			}
 		}
 	} else {
@@ -462,8 +477,7 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 	switch (net_pkt_family(pkt)) {
 #if defined(CONFIG_NET_IPV4)
 	case AF_INET:
-		upper_layer_len = (NET_IPV4_HDR(pkt)->len[0] << 8) +
-			NET_IPV4_HDR(pkt)->len[1] -
+		upper_layer_len = ntohs(NET_IPV4_HDR(pkt)->len) -
 			net_pkt_ipv6_ext_len(pkt) -
 			net_pkt_ip_hdr_len(pkt);
 
@@ -476,8 +490,8 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 #endif
 #if defined(CONFIG_NET_IPV6)
 	case AF_INET6:
-		upper_layer_len = (NET_IPV6_HDR(pkt)->len[0] << 8) +
-			NET_IPV6_HDR(pkt)->len[1] - net_pkt_ipv6_ext_len(pkt);
+		upper_layer_len = ntohs(NET_IPV6_HDR(pkt)->len) -
+			net_pkt_ipv6_ext_len(pkt);
 		sum = calc_chksum(upper_layer_len + proto,
 				  (u8_t *)&NET_IPV6_HDR(pkt)->src,
 				  2 * sizeof(struct in6_addr));
@@ -749,7 +763,7 @@ int net_bytes_from_str(u8_t *buf, int buf_len, const char *src)
 		}
 	}
 
-	memset(buf, 0, buf_len);
+	(void)memset(buf, 0, buf_len);
 
 	for (i = 0; i < buf_len; i++) {
 		buf[i] = strtol(src, &endptr, 16);

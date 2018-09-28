@@ -7,11 +7,17 @@
 /*
  * @brief test context and thread APIs
  *
+ * @defgroup kernel_context_tests Context Tests
+ *
+ * @ingroup all_tests
+ *
  * This module tests the following CPU and thread related routines:
  * k_thread_create(), k_yield(), k_is_in_isr(),
  * k_current_get(), k_cpu_idle(), k_cpu_atomic_idle(),
  * irq_lock(), irq_unlock(),
  * irq_offload(), irq_enable(), irq_disable(),
+ * @{
+ * @}
  */
 
 #include <ztest.h>
@@ -245,7 +251,7 @@ static void _test_kernel_cpu_idle(int atomic)
 			k_cpu_idle();
 		}
 		/* calculating milliseconds per tick*/
-		tms += sys_clock_us_per_tick / USEC_PER_MSEC;
+		tms += __ticks_to_ms(1);
 		tms2 = k_uptime_get_32();
 		zassert_false(tms2 < tms, "Bad ms per tick value computed,"
 			      "got %d which is less than %d\n",
@@ -256,6 +262,8 @@ static void _test_kernel_cpu_idle(int atomic)
 /**
  *
  * @brief Test the k_cpu_idle() routine
+ *
+ * @ingroup kernel_context_tests
  *
  * This tests the k_cpu_idle() routine. The first thing it does is align to
  * a tick boundary. The only source of interrupts while the test is running is
@@ -363,6 +371,8 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
  *
  * @brief Test routines for disabling and enabling interrupts
  *
+ * @ingroup kernel_context_tests
+ *
  * This routine tests the routines for disabling and enabling interrupts.
  * These include irq_lock() and irq_unlock(), irq_disable() and irq_enable().
  *
@@ -376,6 +386,8 @@ static void test_kernel_interrupts(void)
 /**
  *
  * @brief Test routines for disabling and enabling interrupts (disable timer)
+ *
+ * @ingroup kernel_context_tests
  *
  * This routine tests the routines for disabling and enabling interrupts.
  * These include irq_lock() and irq_unlock(), irq_disable() and irq_enable().
@@ -395,6 +407,8 @@ static void test_kernel_timer_interrupts(void)
 /**
  *
  * @brief Test some context routines from a preemptible thread
+ *
+ * @ingroup kernel_context_tests
  *
  * This routines tests the k_current_get() and
  * k_is_in_isr() routines from both a preemptible thread  and an ISR (that
@@ -691,6 +705,8 @@ static void delayed_thread(void *num, void *arg2, void *arg3)
 /**
  * @brief Test timouts
  *
+ * @ingroup kernel_context_tests
+ *
  * @see k_busy_wait(), k_sleep()
  */
 static void test_busy_wait(void)
@@ -712,6 +728,8 @@ static void test_busy_wait(void)
 
 /**
  * @brief Test timouts
+ *
+ * @ingroup kernel_context_tests
  *
  * @see k_sleep()
  */
@@ -832,6 +850,8 @@ static void test_k_sleep(void)
  *
  * @brief Test the k_yield() routine
  *
+ * @ingroup kernel_context_tests
+ *
  * Tests the k_yield() routine. It starts another thread
  * (thus also testing k_thread_create()) and checks that behavior of
  * k_yield() against the a higher priority thread,
@@ -858,7 +878,13 @@ void test_k_yield(void)
 	k_sem_give(&sem_thread);
 }
 
-
+/**
+ * @brief Test kernel thread creation
+ *
+ * @ingroup kernel_context_tests
+ *
+ * @see k_thread_create
+ */
 void test_kernel_thread(void)
 {
 

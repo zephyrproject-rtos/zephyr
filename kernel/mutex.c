@@ -36,9 +36,10 @@
 #include <errno.h>
 #include <init.h>
 #include <syscall_handler.h>
+#include <tracing.h>
 
-#define RECORD_STATE_CHANGE(mutex) do { } while ((0))
-#define RECORD_CONFLICT(mutex) do { } while ((0))
+#define RECORD_STATE_CHANGE(mutex) do { } while (false)
+#define RECORD_CONFLICT(mutex) do { } while (false)
 
 
 extern struct k_mutex _k_mutex_list_start[];
@@ -72,13 +73,17 @@ void _impl_k_mutex_init(struct k_mutex *mutex)
 	mutex->owner = NULL;
 	mutex->lock_count = 0;
 
+	sys_trace_void(SYS_TRACE_ID_MUTEX_INIT);
+
 	/* initialized upon first use */
 	/* mutex->owner_orig_prio = 0; */
 
 	_waitq_init(&mutex->wait_q);
 
+
 	SYS_TRACING_OBJ_INIT(k_mutex, mutex);
 	_k_object_init(mutex);
+	sys_trace_end_call(SYS_TRACE_ID_MUTEX_INIT);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -115,8 +120,10 @@ static void adjust_owner_prio(struct k_mutex *mutex, int new_prio)
 
 int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 {
-	int new_prio, key;
+	int new_prio;
+	unsigned int key;
 
+	sys_trace_void(SYS_TRACE_ID_MUTEX_LOCK);
 	_sched_lock();
 
 	if (likely(mutex->lock_count == 0 || mutex->owner == _current)) {
@@ -135,6 +142,7 @@ int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 			mutex->owner_orig_prio);
 
 		k_sched_unlock();
+		sys_trace_end_call(SYS_TRACE_ID_MUTEX_LOCK);
 
 		return 0;
 	}
@@ -143,6 +151,7 @@ int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 
 	if (unlikely(timeout == K_NO_WAIT)) {
 		k_sched_unlock();
+		sys_trace_end_call(SYS_TRACE_ID_MUTEX_LOCK);
 		return -EBUSY;
 	}
 
@@ -166,6 +175,7 @@ int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 
 	if (got_mutex == 0) {
 		k_sched_unlock();
+		sys_trace_end_call(SYS_TRACE_ID_MUTEX_LOCK);
 		return 0;
 	}
 
@@ -187,6 +197,7 @@ int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 
 	k_sched_unlock();
 
+	sys_trace_end_call(SYS_TRACE_ID_MUTEX_LOCK);
 	return -EAGAIN;
 }
 
@@ -200,11 +211,12 @@ Z_SYSCALL_HANDLER(k_mutex_lock, mutex, timeout)
 
 void _impl_k_mutex_unlock(struct k_mutex *mutex)
 {
-	int key;
+	unsigned int key;
 
 	__ASSERT(mutex->lock_count > 0, "");
 	__ASSERT(mutex->owner == _current, "");
 
+	sys_trace_void(SYS_TRACE_ID_MUTEX_UNLOCK);
 	_sched_lock();
 
 	RECORD_STATE_CHANGE();
@@ -229,7 +241,7 @@ void _impl_k_mutex_unlock(struct k_mutex *mutex)
 	K_DEBUG("new owner of mutex %p: %p (prio: %d)\n",
 		mutex, new_owner, new_owner ? new_owner->base.prio : -1000);
 
-	if (new_owner) {
+	if (new_owner != NULL) {
 		_ready_thread(new_owner);
 
 		irq_unlock(key);

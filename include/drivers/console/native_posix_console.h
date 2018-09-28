@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _NATIVE_POSIX_CONSOLE_H
-#define _NATIVE_POSIX_CONSOLE_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CONSOLE_NATIVE_POSIX_CONSOLE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CONSOLE_NATIVE_POSIX_CONSOLE_H_
 
 #include "kernel.h"
 
@@ -26,4 +26,4 @@ void native_stdin_register_input(struct k_fifo *avail, struct k_fifo *lines,
 }
 #endif
 
-#endif /* _NATIVE_POSIX_CONSOLE_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CONSOLE_NATIVE_POSIX_CONSOLE_H_ */

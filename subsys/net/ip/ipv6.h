@@ -87,10 +87,13 @@ struct net_ipv6_nbr_data {
 	struct in6_addr addr;
 
 	/** Reachable timer. */
-	struct k_delayed_work reachable;
+	s64_t reachable;
+
+	/** Reachable timeout */
+	s32_t reachable_timeout;
 
 	/** Neighbor Solicitation reply timer */
-	struct k_delayed_work send_ns;
+	s64_t send_ns;
 
 	/** State of the neighbor discovery */
 	enum net_ipv6_nbr_state state;
@@ -134,7 +137,8 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
  * @param iface Network interface
  * @param next_header_proto Protocol type of the next header after IPv6 header.
  *
- * @return Return network packet that contains the IPv6 packet.
+ * @return Returns the input pkt network packet (which now contains IPv6
+ * header) or NULL if network packet could not be allocated.
  */
 struct net_pkt *net_ipv6_create(struct net_pkt *pkt,
 				const struct in6_addr *src,
@@ -381,8 +385,6 @@ typedef void (*net_ipv6_frag_cb_t)(struct net_ipv6_reassembly *reass,
  */
 void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data);
 
-#endif /* CONFIG_NET_IPV6_FRAGMENT */
-
 /**
  * @brief Find the last IPv6 extension header in the network packet.
  *
@@ -397,10 +399,37 @@ void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data);
 int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_idx,
 			       u16_t *last_hdr_idx);
 
+/**
+ * @brief Handles IPv6 fragmented packets.
+ *
+ * @param pkt Network head packet.
+ * @param frag Network packet fragment
+ * @param total_len Total length of the packet
+ * @param offset Start of fragment header
+ * @param loc End of fragment header, this is returned to the caller
+ * @param nexthdr IPv6 next header after fragment header part
+ *
+ * @return Return verdict about the packet
+ */
+enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
+					      struct net_buf *frag,
+					      int total_len,
+					      u16_t buf_offset,
+					      u16_t *loc,
+					      u8_t nexthdr);
+#endif /* CONFIG_NET_IPV6_FRAGMENT */
+
 #if defined(CONFIG_NET_IPV6)
 void net_ipv6_init(void);
+void net_ipv6_nbr_init(void);
+#if defined(CONFIG_NET_IPV6_MLD)
+void net_ipv6_mld_init(void);
+#else
+#define net_ipv6_mld_init(...)
+#endif
 #else
 #define net_ipv6_init(...)
+#define net_ipv6_nbr_init(...)
 #endif
 
 #endif /* __IPV6_H */

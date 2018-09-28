@@ -16,8 +16,7 @@
 # under the License.
 
 config MCUMGR
-    bool
-    prompt "mcumgr Support"
+    bool "mcumgr Support"
     select TINYCBOR
     help
       This option enables the mcumgr management library.

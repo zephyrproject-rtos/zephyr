@@ -386,7 +386,7 @@ static int mb_display_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	display.dev = device_get_binding(CONFIG_GPIO_NRF5_P0_DEV_NAME);
+	display.dev = device_get_binding(CONFIG_GPIO_P0_DEV_NAME);
 
 	__ASSERT(dev, "No GPIO device found");
 

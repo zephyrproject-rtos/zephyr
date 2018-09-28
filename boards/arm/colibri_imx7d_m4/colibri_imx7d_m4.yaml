@@ -12,7 +12,7 @@ ram: 32
 flash: 32
 toolchain:
   - zephyr
-  - gccarmemb
+  - gnuarmemb
 testing:
   ignore_tags:
     - net

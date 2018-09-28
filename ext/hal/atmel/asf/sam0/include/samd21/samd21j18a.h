@@ -62,8 +62,8 @@ typedef volatile       uint32_t RwReg;   /**< Read-Write 32-bit register (volati
 typedef volatile       uint16_t RwReg16; /**< Read-Write 16-bit register (volatile unsigned int) */
 typedef volatile       uint8_t  RwReg8;  /**< Read-Write  8-bit register (volatile unsigned int) */
 #if !defined(_UL)
-#define _U(x)          x ## U            /**< C code: Unsigned integer literal constant value */
-#define _L(x)          x ## L            /**< C code: Long integer literal constant value */
+#define __U(x)          x ## U            /**< C code: Unsigned integer literal constant value */
+#define __L(x)          x ## L            /**< C code: Long integer literal constant value */
 #define _UL(x)         x ## UL           /**< C code: Unsigned Long integer literal constant value */
 #endif
 #else

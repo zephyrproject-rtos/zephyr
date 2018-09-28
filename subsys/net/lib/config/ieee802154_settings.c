@@ -14,25 +14,25 @@
 #include <net/net_mgmt.h>
 #include <net/ieee802154_mgmt.h>
 
-int _net_app_ieee802154_setup(void)
+int _net_config_ieee802154_setup(void)
 {
-	u16_t channel = CONFIG_NET_APP_IEEE802154_CHANNEL;
-	u16_t pan_id = CONFIG_NET_APP_IEEE802154_PAN_ID;
-	s16_t tx_power = CONFIG_NET_APP_IEEE802154_RADIO_TX_POWER;
+	u16_t channel = CONFIG_NET_CONFIG_IEEE802154_CHANNEL;
+	u16_t pan_id = CONFIG_NET_CONFIG_IEEE802154_PAN_ID;
+	s16_t tx_power = CONFIG_NET_CONFIG_IEEE802154_RADIO_TX_POWER;
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	struct ieee802154_security_params sec_params = {
-		.key = CONFIG_NET_APP_IEEE802154_SECURITY_KEY,
-		.key_len = sizeof(CONFIG_NET_APP_IEEE802154_SECURITY_KEY),
-		.key_mode = CONFIG_NET_APP_IEEE802154_SECURITY_KEY_MODE,
-		.level = CONFIG_NET_APP_IEEE802154_SECURITY_LEVEL,
+		.key = CONFIG_NET_CONFIG_IEEE802154_SECURITY_KEY,
+		.key_len = sizeof(CONFIG_NET_CONFIG_IEEE802154_SECURITY_KEY),
+		.key_mode = CONFIG_NET_CONFIG_IEEE802154_SECURITY_KEY_MODE,
+		.level = CONFIG_NET_CONFIG_IEEE802154_SECURITY_LEVEL,
 	};
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
 	struct net_if *iface;
 	struct device *dev;
 
-	dev = device_get_binding(CONFIG_NET_APP_IEEE802154_DEV_NAME);
+	dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
 	if (!dev) {
 		return -ENODEV;
 	}

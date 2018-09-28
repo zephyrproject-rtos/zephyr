@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.8.2)
 # Copyright (c) 2018 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0

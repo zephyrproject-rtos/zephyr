@@ -556,7 +556,7 @@ void bt_mesh_app_key_del(struct bt_mesh_app_key *key, bool store)
 	}
 
 	key->net_idx = BT_MESH_KEY_UNUSED;
-	memset(key->keys, 0, sizeof(key->keys));
+	(void)memset(key->keys, 0, sizeof(key->keys));
 }
 
 static void app_key_del(struct bt_mesh_model *model,
@@ -985,7 +985,7 @@ static void relay_set(struct bt_mesh_model *model,
 		       cfg->relay, change ? "changed" : "not changed",
 		       cfg->relay_retransmit,
 		       BT_MESH_TRANSMIT_COUNT(cfg->relay_retransmit),
-		       BT_MESH_TRANSMIT_INT(cfg->relay_retransmit))
+		       BT_MESH_TRANSMIT_INT(cfg->relay_retransmit));
 
 		sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx);
 		if ((cfg->hb_pub.feat & BT_MESH_FEAT_RELAY) && sub && change) {
@@ -1020,7 +1020,7 @@ static void send_mod_pub_status(struct bt_mesh_model *cfg_mod,
 	net_buf_simple_add_le16(&msg, elem_addr);
 
 	if (status != STATUS_SUCCESS) {
-		memset(net_buf_simple_add(&msg, 7), 0, 7);
+		(void)memset(net_buf_simple_add(&msg, 7), 0, 7);
 	} else {
 		u16_t idx_cred;
 
@@ -1230,7 +1230,7 @@ static void mod_sub_list_clear(struct bt_mesh_model *mod)
 	}
 
 	/* Clear all subscriptions (0x0000 is the unassigned address) */
-	memset(mod->groups, 0, sizeof(mod->groups));
+	(void)memset(mod->groups, 0, sizeof(mod->groups));
 }
 
 static void mod_pub_va_set(struct bt_mesh_model *model,
@@ -1305,7 +1305,7 @@ send_status:
 static void mod_sub_list_clear(struct bt_mesh_model *mod)
 {
 	/* Clear all subscriptions (0x0000 is the unassigned address) */
-	memset(mod->groups, 0, sizeof(mod->groups));
+	(void)memset(mod->groups, 0, sizeof(mod->groups));
 }
 
 static void mod_pub_va_set(struct bt_mesh_model *model,
@@ -3069,19 +3069,12 @@ static void hb_sub_send_status(struct bt_mesh_model *model,
 	bt_mesh_model_msg_init(&msg, OP_HEARTBEAT_SUB_STATUS);
 
 	net_buf_simple_add_u8(&msg, status);
-
 	net_buf_simple_add_le16(&msg, cfg->hb_sub.src);
 	net_buf_simple_add_le16(&msg, cfg->hb_sub.dst);
-
-	if (cfg->hb_sub.src == BT_MESH_ADDR_UNASSIGNED ||
-	    cfg->hb_sub.dst == BT_MESH_ADDR_UNASSIGNED) {
-		memset(net_buf_simple_add(&msg, 4), 0, 4);
-	} else {
-		net_buf_simple_add_u8(&msg, hb_log(period));
-		net_buf_simple_add_u8(&msg, hb_log(cfg->hb_sub.count));
-		net_buf_simple_add_u8(&msg, cfg->hb_sub.min_hops);
-		net_buf_simple_add_u8(&msg, cfg->hb_sub.max_hops);
-	}
+	net_buf_simple_add_u8(&msg, hb_log(period));
+	net_buf_simple_add_u8(&msg, hb_log(cfg->hb_sub.count));
+	net_buf_simple_add_u8(&msg, cfg->hb_sub.min_hops);
+	net_buf_simple_add_u8(&msg, cfg->hb_sub.max_hops);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		BT_ERR("Unable to send Heartbeat Subscription Status");
@@ -3136,12 +3129,17 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
 	if (sub_src == BT_MESH_ADDR_UNASSIGNED ||
 	    sub_dst == BT_MESH_ADDR_UNASSIGNED ||
 	    sub_period == 0x00) {
-		/* Setting the same addresses with zero period should retain
-		 * the addresses according to MESH/NODE/CFG/HBS/BV-02-C.
+		/* Only an explicit address change to unassigned should
+		 * trigger clearing of the values according to
+		 * MESH/NODE/CFG/HBS/BV-02-C.
 		 */
-		if (cfg->hb_sub.src != sub_src || cfg->hb_sub.dst != sub_dst) {
+		if (sub_src == BT_MESH_ADDR_UNASSIGNED ||
+		    sub_dst == BT_MESH_ADDR_UNASSIGNED) {
 			cfg->hb_sub.src = BT_MESH_ADDR_UNASSIGNED;
 			cfg->hb_sub.dst = BT_MESH_ADDR_UNASSIGNED;
+			cfg->hb_sub.min_hops = BT_MESH_TTL_MAX;
+			cfg->hb_sub.max_hops = 0;
+			cfg->hb_sub.count = 0;
 		}
 
 		period_ms = 0;
@@ -3166,6 +3164,13 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
 	}
 
 	hb_sub_send_status(model, ctx, STATUS_SUCCESS);
+
+	/* MESH/NODE/CFG/HBS/BV-01-C expects the MinHops to be 0x7f after
+	 * disabling subscription, but 0x00 for subsequent Get requests.
+	 */
+	if (!period_ms) {
+		cfg->hb_sub.min_hops = 0;
+	}
 }
 
 const struct bt_mesh_model_op bt_mesh_cfg_srv_op[] = {
@@ -3322,7 +3327,7 @@ static void mod_reset(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 
 	mod_sub_list_clear(mod);
 
-	if (IS_ENABLED(BT_SETTINGS)) {
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_store_mod_sub(mod);
 	}
 }
@@ -3355,7 +3360,7 @@ void bt_mesh_cfg_reset(void)
 
 	bt_mesh_model_foreach(mod_reset, NULL);
 
-	memset(labels, 0, sizeof(labels));
+	(void)memset(labels, 0, sizeof(labels));
 }
 
 void bt_mesh_heartbeat(u16_t src, u16_t dst, u8_t hops, u16_t feat)
@@ -3522,6 +3527,6 @@ void bt_mesh_subnet_del(struct bt_mesh_subnet *sub, bool store)
 		bt_mesh_clear_subnet(sub);
 	}
 
-	memset(sub, 0, sizeof(*sub));
+	(void)memset(sub, 0, sizeof(*sub));
 	sub->net_idx = BT_MESH_KEY_UNUSED;
 }

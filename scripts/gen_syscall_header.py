@@ -70,10 +70,12 @@ def gen_make_syscall(ret, argc, tabcount):
     # from gc-sections; these references will not consume space.
 
     sys.stdout.write(
-        "static _GENERIC_SECTION(hndlr_ref) __used void *href = (void *)&_handler_##name; \\\n")
+        "static _GENERIC_SECTION(hndlr_ref) __used void *href = (void *)&hdlr_##name; \\\n")
     tabs(tabcount)
     if (ret != Retval.VOID):
         sys.stdout.write("return (ret)")
+    else:
+        sys.stdout.write("return (void)")
     if (argc <= 6 and ret != Retval.U64):
         sys.stdout.write("_arch")
     sys.stdout.write("_syscall%s_invoke%d(" %

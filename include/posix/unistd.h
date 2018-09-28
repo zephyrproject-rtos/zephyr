@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __POSIX_UNISTD_H__
-#define __POSIX_UNISTD_H__
+#ifndef ZEPHYR_INCLUDE_POSIX_UNISTD_H_
+#define ZEPHYR_INCLUDE_POSIX_UNISTD_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,4 +50,4 @@ int usleep(useconds_t useconds);
 }
 #endif
 
-#endif	/* __POSIX_UNISTD_H__ */
+#endif	/* ZEPHYR_INCLUDE_POSIX_UNISTD_H_ */

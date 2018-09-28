@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_L2_IEEE802154) && defined(CONFIG_NET_APP_SETTINGS)
-int _net_app_ieee802154_setup(void);
+#if defined(CONFIG_NET_L2_IEEE802154) && defined(CONFIG_NET_CONFIG_SETTINGS)
+int _net_config_ieee802154_setup(void);
 #else
-#define _net_app_ieee802154_setup(...) 0
+#define _net_config_ieee802154_setup(...) 0
 #endif

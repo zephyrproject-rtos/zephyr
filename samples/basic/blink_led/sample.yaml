@@ -5,5 +5,6 @@ tests:
     # FIXME: We should remove those and just rely on depends_on
     platform_whitelist: arduino_101 quark_d2000_crb
         nucleo_f103rb nucleo_f401re nucleo_l476rg stm32f4_disco hexiwear_k64
+        colibri_imx7d_m4
     tags: drivers pwm
     depends_on: pwm

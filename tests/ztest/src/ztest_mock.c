@@ -108,7 +108,7 @@ struct parameter *alloc_parameter(void)
 	}
 	sys_bitfield_set_bit((mem_addr_t) params_allocation, allocation_index);
 	param = params + allocation_index;
-	memset(param, 0, sizeof(*param));
+	(void)memset(param, 0, sizeof(*param));
 	return param;
 }
 

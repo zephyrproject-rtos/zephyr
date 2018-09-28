@@ -12,16 +12,17 @@
 #include <gpio.h>
 #include <counter.h>
 #include <aio_comparator.h>
-
+#include <ztest.h>
 #include <power.h>
 #include <soc_power.h>
 #include <string.h>
-#include "soc_watch_logger.h"
 
 static enum power_states states_list[] = {
 	SYS_POWER_STATE_CPU_LPS,
 	SYS_POWER_STATE_CPU_LPS_1,
+#ifdef CONFIG_X86
 	SYS_POWER_STATE_CPU_LPS_2,
+#endif
 #if (CONFIG_SYS_POWER_DEEP_SLEEP)
 	SYS_POWER_STATE_DEEP_SLEEP,
 	SYS_POWER_STATE_DEEP_SLEEP_1,
@@ -31,6 +32,7 @@ static enum power_states states_list[] = {
 #define TIMEOUT 5 /* in seconds */
 #define MAX_SUSPEND_DEVICE_COUNT 15
 #define NB_STATES ARRAY_SIZE(states_list)
+#define MAX_SYS_PM_STATES	5
 
 /* In Tickless Kernel mode, time is passed in milliseconds instead of ticks */
 #ifdef CONFIG_TICKLESS_KERNEL
@@ -48,6 +50,8 @@ static struct device *suspend_devices[MAX_SUSPEND_DEVICE_COUNT];
 static int suspend_device_count;
 static unsigned int current_state = NB_STATES - 1;
 static int post_ops_done = 1;
+static s64_t start_time, milliseconds_spent;
+static int test_complete;
 
 static enum power_states get_next_state(void)
 {
@@ -62,8 +66,10 @@ static const char *state_to_string(int state)
 		return "SYS_POWER_STATE_CPU_LPS";
 	case SYS_POWER_STATE_CPU_LPS_1:
 		return "SYS_POWER_STATE_CPU_LPS_1";
+#ifdef CONFIG_X86
 	case SYS_POWER_STATE_CPU_LPS_2:
 		return "SYS_POWER_STATE_CPU_LPS_2";
+#endif
 	case SYS_POWER_STATE_DEEP_SLEEP:
 		return "SYS_POWER_STATE_DEEP_SLEEP";
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
@@ -115,10 +121,8 @@ static void setup_counter(void)
 
 	counter_dev = device_get_binding("AON_TIMER");
 
-	if (!counter_dev) {
-		printk("Timer device not found\n");
-		return;
-	}
+	/* TESTPOINT: Check timer device binding */
+	zassert_true(counter_dev, "timer device not found.");
 
 	counter_start(counter_dev);
 
@@ -147,10 +151,9 @@ static struct device *gpio_dev;
 static void setup_aon_gpio(void)
 {
 	gpio_dev = device_get_binding("GPIO_1");
-	if (!gpio_dev) {
-		printk("gpio device not found.\n");
-		return;
-	}
+
+	/* TESTPOINT: Check gpio device binding */
+	zassert_true(gpio_dev, "gpio device not found.");
 
 	gpio_pin_configure(gpio_dev, GPIO_INTERRUPT_PIN,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
@@ -165,10 +168,9 @@ static void setup_aon_comparator(void)
 	volatile u32_t delay = 0;
 
 	cmp_dev = device_get_binding("AIO_CMP_0");
-	if (!cmp_dev) {
-		printk("comparator device not found.\n");
-		return;
-	}
+
+	/* TESTPOINT: Check comparator device binding */
+	zassert_true(cmp_dev, "comparator device not found.");
 
 	/* Wait for the comparator to be grounded. */
 	printk("USER_ACTION: Ground the comparator pin.\n");
@@ -244,11 +246,17 @@ int _sys_soc_suspend(s32_t ticks)
 {
 	enum power_states state;
 	int pm_operation = SYS_PM_NOT_HANDLED;
+
 	post_ops_done = 0;
 
 	if ((ticks != K_FOREVER) && (ticks < MIN_TIME_TO_SUSPEND)) {
 		printk("Not enough time for PM operations (" TIME_UNIT_STRING
 		       ": %d).\n", ticks);
+		return SYS_PM_NOT_HANDLED;
+	}
+
+	/* If test is completed then do not enter LPS states */
+	if (test_complete) {
 		return SYS_PM_NOT_HANDLED;
 	}
 
@@ -259,7 +267,9 @@ int _sys_soc_suspend(s32_t ticks)
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS:
 	case SYS_POWER_STATE_CPU_LPS_1:
+#ifdef CONFIG_X86
 	case SYS_POWER_STATE_CPU_LPS_2:
+#endif
 		/*
 		 * A wake event is needed in the following cases:
 		 *
@@ -321,7 +331,9 @@ void _sys_soc_resume(void)
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS:
 	case SYS_POWER_STATE_CPU_LPS_1:
+#ifdef CONFIG_X86
 	case SYS_POWER_STATE_CPU_LPS_2:
+#endif
 		if (!post_ops_done) {
 			post_ops_done = 1;
 			printk("Exiting %s state\n", state_to_string(state));
@@ -346,12 +358,12 @@ static void build_suspend_device_list(void)
 	struct device *devices;
 
 	device_list_get(&devices, &devcount);
-	if (devcount > MAX_SUSPEND_DEVICE_COUNT) {
-		printk("Error: List of devices exceeds what we can track "
-		       "for suspend. Built: %d, Max: %d\n",
-		       devcount, MAX_SUSPEND_DEVICE_COUNT);
-		return;
-	}
+
+	/* TESTPOINT: Check if device list is in tracking range */
+	zassert_false((devcount > MAX_SUSPEND_DEVICE_COUNT),
+			"Error: List of devices exceeds what we can track "
+			"for suspend. Built: %d, Max: %d",
+			devcount, MAX_SUSPEND_DEVICE_COUNT);
 
 #if (CONFIG_X86)
 	suspend_device_count = 3;
@@ -381,9 +393,12 @@ static void build_suspend_device_list(void)
 #endif
 }
 
-void main(void)
+void test_power_state(void)
 {
-	printk("Quark SE: Power Management sample application\n");
+	int i;
+
+	printk("Quark SE(%s): Power Management sample application\n",
+								CONFIG_ARCH);
 
 #if (CONFIG_RTC)
 	setup_rtc();
@@ -395,16 +410,23 @@ void main(void)
 
 	build_suspend_device_list();
 
-#ifdef CONFIG_SOC_WATCH
-	/* Start the event monitoring thread */
-	soc_watch_logger_thread_start();
-#endif
-
 	/* All our application does is putting the task to sleep so the kernel
 	 * triggers the suspend operation.
 	 */
-	while (1) {
+	for (i = 0; i < MAX_SYS_PM_STATES; i++) {
+		start_time = k_uptime_get();
 		k_sleep(TIMEOUT * 1000);
-		printk("Back to the application\n");
+		milliseconds_spent = k_uptime_delta(&start_time);
+		printk("Time elapsed from suspend to resume is %lld milliseconds\n",
+				milliseconds_spent);
+		printk("Back to the application\n\n");
 	}
+	test_complete = 1;
+}
+
+void test_main(void)
+{
+	ztest_test_suite(test_power_states,
+			ztest_unit_test(test_power_state));
+	ztest_run_test_suite(test_power_states);
 }

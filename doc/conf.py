@@ -17,13 +17,20 @@ import os
 
 if "ZEPHYR_BASE" not in os.environ:
     sys.exit("$ZEPHYR_BASE environment variable undefined.")
-ZEPHYR_BASE = os.environ["ZEPHYR_BASE"]
+ZEPHYR_BASE = os.path.abspath(os.environ["ZEPHYR_BASE"])
+
+if "ZEPHYR_BUILD" not in os.environ:
+    sys.exit("$ZEPHYR_BUILD environment variable undefined.")
+ZEPHYR_BUILD = os.path.abspath(os.environ["ZEPHYR_BUILD"])
 
 # Add the 'extensions' directory to sys.path, to enable finding Sphinx
 # extensions within.
-sys.path.insert(0, os.path.join(os.path.abspath('.'), 'extensions'))
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'doc', 'extensions'))
 # Also add west, to be able to pull in its API docs.
-sys.path.append(os.path.abspath(os.path.join(ZEPHYR_BASE, 'scripts', 'meta')))
+sys.path.append(os.path.join(ZEPHYR_BASE, 'scripts', 'meta'))
+# HACK: also add the runners module, to work around some import issues
+# related to west's current packaging.
+sys.path.append(os.path.join(ZEPHYR_BASE, 'scripts', 'meta', 'west'))
 
 # -- General configuration ------------------------------------------------
 
@@ -39,6 +46,10 @@ extensions = [
     'sphinx.ext.autodoc',
     'zephyr.application',
 ]
+
+# Only use SVG converter when it is really needed, e.g. LaTeX.
+if tags.has("svgconvert"):
+    extensions.append('sphinxcontrib.rsvgconverter')
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -56,7 +67,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Zephyr Project'
-copyright = u'2015-2017 Zephyr Project members and individual contributors.'
+copyright = u'2015-2018 Zephyr Project members and individual contributors'
 author = u'many'
 
 # The following code tries to extract the information by reading the Makefile,
@@ -145,19 +156,9 @@ rst_epilog = """
 
 # -- Options for HTML output ----------------------------------------------
 
-try:
-    import sphinx_rtd_theme
-except ImportError:
-    html_theme = 'zephyr'
-    html_theme_path = ['./themes']
-else:
-    html_theme = "sphinx_rtd_theme"
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-
-if tags.has('daily') or tags.has('release'):
-    html_theme = 'zephyr-docs-theme'
-    html_theme_path = ['./themes']
-
+import sphinx_rtd_theme
+html_theme = "sphinx_rtd_theme"
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 if tags.has('release'):
     is_release = True
@@ -179,17 +180,17 @@ html_title = "Zephyr Project Documentation"
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = 'images/Zephyr-Kite-logo.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-#html_favicon = None
+html_favicon = 'images/zp_favicon.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['static']
+html_static_path = ['{}/doc/static'.format(ZEPHYR_BASE)]
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -221,13 +222,13 @@ html_use_index = True
 html_split_index = True
 
 # If true, links to the reST sources are added to the pages.
-#html_show_sourcelink =
+html_show_sourcelink = False
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
 html_show_sphinx = False
 
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
-html_show_copyright = tags.has('development')
+# html_show_copyright = tags.has('development')
 
 # If true, license is shown in the HTML footer. Default is True.
 html_show_license = True
@@ -269,7 +270,7 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
-#'preamble': '',
+'preamble': '\setcounter{tocdepth}{2}',
 
 # Latex figure (float) alignment
 #'figure_align': 'htbp',
@@ -302,7 +303,6 @@ latex_documents = [
 
 # If false, no module index is generated.
 #latex_domain_indices = True
-
 
 # -- Options for manual page output ---------------------------------------
 
@@ -341,8 +341,8 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 breathe_projects = {
-    "Zephyr": "doxygen/xml",
-    "doc-examples": "doxygen/xml"
+    "Zephyr": "{}/doxygen/xml".format(ZEPHYR_BUILD),
+    "doc-examples": "{}/doxygen/xml".format(ZEPHYR_BUILD)
 }
 breathe_default_project = "Zephyr"
 
@@ -359,6 +359,15 @@ html_context = {
     'show_license': html_show_license,
     'docs_title': docs_title,
     'is_release': is_release,
+    'theme_logo_only': False,
+    'current_version': version,
+    'versions': ( ("latest", "/"),
+                 ("1.13.0", "/1.13.0/"),
+                 ("1.12.0", "/1.12.0/"),
+                 ("1.11.0", "/1.11.0/"),
+                 ("1.10.0", "/1.10.0/"),
+                 ("1.9.2", "/1.9.0/"),
+                )
 }
 
 extlinks = {'jira': ('https://jira.zephyrproject.org/browse/%s', ''),
@@ -379,3 +388,4 @@ linkcheck_anchors = False
 
 def setup(app):
    app.add_stylesheet("zephyr-custom.css")
+   app.add_javascript("zephyr-custom.js")

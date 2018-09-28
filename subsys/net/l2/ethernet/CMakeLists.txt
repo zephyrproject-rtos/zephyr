@@ -12,3 +12,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_STATISTICS_ETHERNET ethernet_stats.c)
 if(CONFIG_NET_GPTP)
   add_subdirectory(gptp)
 endif()
+
+if(CONFIG_NET_LLDP)
+  add_subdirectory(lldp)
+endif()

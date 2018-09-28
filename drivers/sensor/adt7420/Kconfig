@@ -6,8 +6,7 @@
 #
 
 menuconfig ADT7420
-	bool
-	prompt "ADT7420 Temperature Sensor"
+	bool "ADT7420 Temperature Sensor"
 	depends on I2C
 	help
 	  Enable the driver for Analog Devices ADT7420 High-Accuracy
@@ -18,8 +17,7 @@ if ADT7420
 if !HAS_DTS_I2C_DEVICE
 
 config ADT7420_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "ADT7420"
 	help
 	  Device name with which the ADT7420 sensor is identified.
@@ -36,8 +34,7 @@ config ADT7420_I2C_ADDR
 	  0x4B: A0 connected VDD and A1 connected to VDD.
 
 config ADT7420_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C master where ADT7420 is connected"
+	string "I2C master where ADT7420 is connected"
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which the

@@ -7,9 +7,8 @@
 #
 
 menuconfig GPIO_DW
-	prompt "Designware GPIO"
+	bool "Designware GPIO"
 	depends on GPIO
-	bool
 	help
 	  Enable driver for Designware GPIO
 
@@ -19,9 +18,8 @@ config GPIO_DW_SHARED_IRQ
 	bool
 
 config GPIO_DW_INIT_PRIORITY
-	int
+	int "Init priority"
 	default 60
-	prompt "Init priority"
 	help
 	  Device driver initialization priority.
 

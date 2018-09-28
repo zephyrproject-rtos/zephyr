@@ -30,6 +30,14 @@ config SYS_LOG_FS_LEVEL
 
 if FILE_SYSTEM
 
+config APP_LINK_WITH_FS
+	bool "Link 'app' with FS"
+	default y
+	help
+	  Add FS header files to the 'app' include path. It may be
+	  disabled if the include paths for FS are causing aliasing
+	  issues for 'app'.
+
 config FAT_FILESYSTEM_ELM
 	bool "ELM FAT File System"
 	select DISK_ACCESS

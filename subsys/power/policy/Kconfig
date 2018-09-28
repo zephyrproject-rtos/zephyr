@@ -1,0 +1,64 @@
+
+choice
+	prompt "Idle State Power Management Policy"
+	depends on PM_CONTROL_OS
+	help
+	  Storage back-end to be used by the settings subsystem.
+
+config PM_POLICY_RESIDENCY
+	bool "PM Policy based on CPU residency"
+	help
+	  Select this option for PM policy based on CPU residencies.
+
+config PM_POLICY_DUMMY
+	bool "Dummy PM Policy"
+	help
+	  Dummy PM Policy which simply returns next PM state in a loop.
+
+endchoice
+
+if PM_POLICY_RESIDENCY
+
+config PM_LPS_MIN_RES
+	int "LPS minimum residency"
+	depends on SYS_POWER_STATE_CPU_LPS_SUPPORTED
+	default 5
+	help
+	  Minimum residency in ticks to enter LPS state.
+
+config PM_LPS_1_MIN_RES
+	int "LPS_1 minimum residency"
+	depends on SYS_POWER_STATE_CPU_LPS_1_SUPPORTED
+	default 10
+	help
+	  Minimum residency in ticks to enter LPS_1 state.
+
+config PM_LPS_2_MIN_RES
+	int "LPS_2 minimum residency"
+	depends on SYS_POWER_STATE_CPU_LPS_2_SUPPORTED
+	default 30
+	help
+	  Minimum residency in ticks to enter LPS_2 state.
+
+config PM_DEEP_SLEEP_MIN_RES
+	int "DEEP_SLEEP minimum residency"
+	depends on SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
+	default 60
+	help
+	  Minimum residency in ticks to enter DEEP_SLEEP state.
+
+config PM_DEEP_SLEEP_1_MIN_RES
+	int "DEEP_SLEEP_1 minimum residency"
+	depends on SYS_POWER_STATE_DEEP_SLEEP_1_SUPPORTED
+	default 90
+	help
+	  Minimum residency in ticks to enter DEEP_SLEEP_1 state.
+
+config PM_DEEP_SLEEP_2_MIN_RES
+	int "DEEP_SLEEP_2 minimum residency"
+	depends on SYS_POWER_STATE_DEEP_SLEEP_2_SUPPORTED
+	default 120
+	help
+	  Minimum residency in ticks to enter DEEP_SLEEP_2 state.
+
+endif # PM_POLICY_RESIDENCY

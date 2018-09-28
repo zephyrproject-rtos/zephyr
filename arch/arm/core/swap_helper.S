@@ -16,6 +16,7 @@
 #include <offsets_short.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
+#include <syscall.h>
 
 _ASM_FILE_PROLOGUE
 
@@ -42,17 +43,17 @@ GDATA(_kernel)
 
 SECTION_FUNC(TEXT, __pendsv)
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
+#ifdef CONFIG_TRACING
     /* Register the context switch */
     push {lr}
-    bl _sys_k_event_logger_context_switch
+    bl z_sys_trace_thread_switched_in
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     pop {r0}
     mov lr, r0
 #else
     pop {lr}
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-#endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH  */
+#endif /* CONFIG_TRACING */
 
     /* protect the kernel state while we play with the thread lists */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -126,9 +127,23 @@ SECTION_FUNC(TEXT, __pendsv)
     str v3, [v4, #0]
 
     /* Restore previous interrupt disable state (irq_lock key) */
+#if (defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M0)) && \
+	    _thread_offset_to_basepri > 124
+    /* Doing it this way since the offset to thread->arch.basepri can in
+     * some configurations be larger than the maximum of 124 for ldr/str
+     * immediate offsets.
+     */
+    ldr r4, =_thread_offset_to_basepri
+    adds r4, r2, r4
+
+    ldr r0, [r4]
+    movs.n r3, #0
+    str r3, [r4]
+#else
     ldr r0, [r2, #_thread_offset_to_basepri]
     movs.n r3, #0
     str r3, [r2, #_thread_offset_to_basepri]
+#endif
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     /* BASEPRI not available, previous interrupt disable state
@@ -373,13 +388,13 @@ _do_syscall:
     str r1, [r0, #24]   /* overwrite the LR to point to _arm_do_syscall */
 
     /* validate syscall limit, only set priv mode if valid */
-    ldr ip, =_SYSCALL_LIMIT
+    ldr ip, =K_SYSCALL_LIMIT
     cmp r6, ip
     blt valid_syscall_id
 
     /* bad syscall id.  Set arg0 to bad id and set call_id to SYSCALL_BAD */
     str r6, [r0, #0]
-    ldr r6, =_SYSCALL_BAD
+    ldr r6, =K_SYSCALL_BAD
 
 valid_syscall_id:
     /* set mode to privileged, r2 still contains value from CONTROL */

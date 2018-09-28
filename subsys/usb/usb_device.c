@@ -1309,7 +1309,7 @@ done:
 void usb_cancel_transfer(u8_t ep)
 {
 	struct usb_transfer_data *trans;
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 

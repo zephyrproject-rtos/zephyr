@@ -8,6 +8,16 @@
 #include <zephyr.h>
 #include <errno.h>
 
+/**
+ * @brief Test the thread context
+ *
+ * @defgroup kernel_threadcontext_tests Thread Context Tests
+ *
+ * @ingroup all_tests
+ *
+ * @{
+ * @}
+ */
 #define N_THREADS 2
 #define STACK_SIZE 384
 
@@ -45,6 +55,9 @@ static void errno_thread(int n, int my_errno)
 
 /**
  * @brief Verify thread context
+ *
+ * @ingroup kernel_threadcontext_tests
+ *
  * @details Check whether variable value per-thread are saved during
  *	context switch
  */

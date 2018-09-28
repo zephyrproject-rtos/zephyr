@@ -3,17 +3,33 @@
 Sorry, Page Not Found
 #####################
 
-.. image:: Zephyr-Kite-in-tree.png
+.. image:: images/Zephyr-Kite-in-tree.png
    :align: right
-   :scale: 30 %
+   :scale: 25%
 
-Sorry, the page you requested was not found on this site.
+.. raw:: html
+
+   <noscript>
+   Sorry, the page you requested was not found on this site.
+   </noscript>
+   <script type="text/javaScript">
+   <!--
+   var strReferrer=document.referrer;
+   if (strReferrer.length > 0) {
+      document.write("<p>Sorry, the page you requested: " +
+      "<a href=\"" + strReferrer + "\">" +
+      strReferrer + "</a> was not found on this site.</p>");
+   } else {
+      document.write("<p>Sorry, the page you requested was not found on this site.</p>")
+   }
+   //-->
+   </script>
 
 Please check the url for misspellings.
 
 It's also possible we've removed or renamed the page you're looking for.
 
-Please try using the links at the top and left of the page, to navigate
+Please try using the navigation links on the left of this page to navigate
 the major sections of our site, or use the search box.
 
 If you got this error by following a link, please let us know by sending
@@ -21,3 +37,7 @@ us a message using this `contact us form`_, or send an email message to
 info@zephyrproject.org
 
 .. _contact us form: https://www.zephyrproject.org/about/#contact-us
+
+.. raw:: html
+
+   <div style='clear:both'></div>

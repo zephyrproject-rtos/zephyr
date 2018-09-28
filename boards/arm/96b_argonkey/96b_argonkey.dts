@@ -31,7 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button {
 			label = "User";
 			gpios = <&gpioa 2 GPIO_INT_ACTIVE_LOW>;
 		};
@@ -60,7 +60,7 @@
 		reg = <1>;
 		spi-max-frequency = <1000000>;
 		irq-gpios = <&gpiob 1 0>;
-		label = "LSM6DSL-SPI";
+		label = "LSM6DSL_SPI";
 	};
 };
 
@@ -101,4 +101,8 @@
 		reg = <0x60>;
 		label = "LP3943";
 	};
+};
+
+&rtc {
+	status = "ok";
 };

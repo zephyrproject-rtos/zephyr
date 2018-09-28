@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_APP_H
-#define __NET_APP_H
+#ifndef ZEPHYR_INCLUDE_NET_NET_APP_H_
+#define ZEPHYR_INCLUDE_NET_NET_APP_H_
 
 #if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 #if defined(CONFIG_MBEDTLS)
@@ -59,7 +59,7 @@ enum net_app_type {
 	NET_APP_UNSPEC = 0,
 	NET_APP_SERVER,
 	NET_APP_CLIENT,
-};
+} __packed;
 
 struct net_app_ctx;
 
@@ -993,4 +993,4 @@ void net_app_client_foreach(net_app_ctx_cb_t cb, void *user_data);
 }
 #endif
 
-#endif /* __NET_APP_H */
+#endif /* ZEPHYR_INCLUDE_NET_NET_APP_H_ */

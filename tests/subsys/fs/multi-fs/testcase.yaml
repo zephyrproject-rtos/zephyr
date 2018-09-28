@@ -2,3 +2,7 @@ tests:
   filesystem.multifs:
     platform_whitelist: qemu_x86
     tags: nffs fatfs fs
+  fs_shell:
+    extra_args: CONF_FILE="prj_fs_shell.conf"
+    platform_whitelist: qemu_x86
+    tags: nffs fatfs fs

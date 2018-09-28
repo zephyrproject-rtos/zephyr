@@ -21,18 +21,28 @@
 	#define B_CONST			4250
 #endif
 
+#define ADC_RESOLUTION 12
+
 struct gts_data {
 	struct device *adc;
-	struct adc_seq_entry sample;
-	struct adc_seq_table adc_table;
+	struct adc_channel_cfg ch10_cfg;
 	u8_t adc_buffer[4];
+};
+
+static struct adc_sequence_options options = {
+	.extra_samplings = 0,
+	.interval_us = 15,
+};
+
+static struct adc_sequence adc_table = {
+	.options = &options,
 };
 
 static int gts_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct gts_data *drv_data = dev->driver_data;
 
-	return adc_read(drv_data->adc, &drv_data->adc_table);
+	return adc_read(drv_data->adc, &adc_table);
 }
 
 static int gts_channel_get(struct device *dev,
@@ -78,16 +88,18 @@ static int gts_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	drv_data->sample.sampling_delay = 12;
-	drv_data->sample.channel_id =
-		CONFIG_GROVE_TEMPERATURE_SENSOR_ADC_CHANNEL;
-	drv_data->sample.buffer = drv_data->adc_buffer;
-	drv_data->sample.buffer_length = 4;
+	/*Change following parameters according to board if necessary*/
+	drv_data->ch10_cfg.channel_id =	CONFIG_GROVE_TEMPERATURE_SENSOR_ADC_CHANNEL;
+	drv_data->ch10_cfg.differential = false;
+	drv_data->ch10_cfg.gain = ADC_GAIN_1,
+	drv_data->ch10_cfg.reference = ADC_REF_INTERNAL;
+	drv_data->ch10_cfg.acquisition_time = ADC_ACQ_TIME_DEFAULT;
+	adc_table.buffer = drv_data->adc_buffer;
+	adc_table.resolution = ADC_RESOLUTION;
+	adc_table.buffer_size = 4;
+	adc_table.channels = BIT(CONFIG_GROVE_TEMPERATURE_SENSOR_ADC_CHANNEL);
 
-	drv_data->adc_table.entries = &drv_data->sample;
-	drv_data->adc_table.num_entries = 1;
-
-	adc_enable(drv_data->adc);
+	adc_channel_setup(drv_data->adc, &drv_data->ch10_cfg);
 
 	dev->driver_api = &gts_api;
 

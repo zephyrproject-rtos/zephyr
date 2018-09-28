@@ -19,7 +19,7 @@ class DTClocks(DTDirective):
     def __init__(self):
         pass
 
-    def _extract_consumer(self, node_address, yaml, clocks, names, defs, def_label):
+    def _extract_consumer(self, node_address, yaml, clocks, def_label):
 
         clock_consumer = reduced[node_address]
         clock_consumer_compat = get_compat(node_address)
@@ -77,6 +77,21 @@ class DTClocks(DTDirective):
                             clock_consumer_label, clock_cells_string,
                             clock_cell_name, str(clock_index)])
                     prop_def[clock_label] = str(cell)
+                    if clock_index == 0 and \
+                        len(clocks) == (len(clock_cells) + 1):
+                        index = ''
+                    else:
+                        index = str(clock_index)
+                    if node_address in aliases:
+                        for alias in aliases[node_address]:
+                            if clock_cells_string == clock_cell_name:
+                                clock_alias_label = self.get_label_string([
+                                    alias, clock_cells_string, index])
+                            else:
+                                clock_alias_label = self.get_label_string([
+                                    alias, clock_cells_string,
+                                    clock_cell_name, index])
+                            prop_alias[clock_alias_label] = clock_label
                     # alias
                     if i < nr_clock_cells:
                         # clocks info for first clock
@@ -112,7 +127,7 @@ class DTClocks(DTDirective):
                                 alias, clock_cell_name, index])
                             prop_alias[clock_alias_label] = clock_label
 
-                insert_defs(node_address, defs, prop_def, prop_alias)
+                insert_defs(node_address, prop_def, prop_alias)
 
                 clock_cell_index = 0
                 clock_index += 1
@@ -123,11 +138,9 @@ class DTClocks(DTDirective):
     # @param node_address Address of node owning the clockxxx definition.
     # @param yaml YAML definition for the owning node.
     # @param prop clockxxx property name
-    # @param names (unused)
-    # @param[out] defs Property definitions for each node address
     # @param def_label Define label string of node owning the directive.
     #
-    def extract(self, node_address, yaml, prop, names, defs, def_label):
+    def extract(self, node_address, yaml, prop, def_label):
 
         properties = reduced[node_address]['props'][prop]
 
@@ -139,7 +152,7 @@ class DTClocks(DTDirective):
 
         if prop == 'clocks':
             # indicator for clock consumers
-            self._extract_consumer(node_address, yaml, prop_list, names, defs, def_label)
+            self._extract_consumer(node_address, yaml, prop_list, def_label)
         else:
             raise Exception(
                 "DTClocks.extract called with unexpected directive ({})."

@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _KSWAP_H
-#define _KSWAP_H
+#ifndef ZEPHYR_KERNEL_INCLUDE_KSWAP_H_
+#define ZEPHYR_KERNEL_INCLUDE_KSWAP_H_
 
 #include <ksched.h>
 #include <kernel_arch_func.h>
@@ -21,7 +21,6 @@ extern void _check_stack_sentinel(void);
 #define _check_stack_sentinel() /**/
 #endif
 
-extern void _sys_k_event_logger_context_switch(void);
 
 /* In SMP, the irq_lock() is a spinlock which is implicitly released
  * and reacquired on context switch to preserve the existing
@@ -41,18 +40,23 @@ void _smp_release_global_lock(struct k_thread *thread);
  * Needed for SMP, where the scheduler requires spinlocking that we
  * don't want to have to do in per-architecture assembly.
  */
-static inline unsigned int _Swap(unsigned int key)
+static inline int _Swap(unsigned int key)
 {
 	struct k_thread *new_thread, *old_thread;
 	int ret = 0;
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_start_of_swap(void);
+	read_timer_start_of_swap();
+#endif
 
 	old_thread = _current;
 
 	_check_stack_sentinel();
 	_update_time_slice_before_swap();
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
-	_sys_k_event_logger_context_switch();
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_out();
 #endif
 
 	new_thread = _get_next_ready_thread();
@@ -75,6 +79,10 @@ static inline unsigned int _Swap(unsigned int key)
 		ret = _current->swap_retval;
 	}
 
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_in();
+#endif
+
 	irq_unlock(key);
 
 	return ret;
@@ -82,15 +90,24 @@ static inline unsigned int _Swap(unsigned int key)
 
 #else /* !CONFIG_USE_SWITCH */
 
-extern unsigned int __swap(unsigned int key);
+extern int __swap(unsigned int key);
 
-static inline unsigned int _Swap(unsigned int key)
+static inline int _Swap(unsigned int key)
 {
+	int ret;
 	_check_stack_sentinel();
 	_update_time_slice_before_swap();
 
-	return __swap(key);
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_out();
+#endif
+	ret = __swap(key);
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_in();
+#endif
+
+	return ret;
 }
 #endif
 
-#endif /* _KSWAP_H */
+#endif /* ZEPHYR_KERNEL_INCLUDE_KSWAP_H_ */

@@ -18,6 +18,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "nxp,imx-semc"
+      generation: define
 
     reg:
       type: array

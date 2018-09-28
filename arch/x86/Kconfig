@@ -5,14 +5,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-
-choice
-	prompt "x86 SoC Selection"
-	depends on X86
-
-	gsource "arch/x86/soc/*/Kconfig.soc"
-endchoice
-
 menu "X86 Architecture Options"
 	depends on X86
 
@@ -47,11 +39,20 @@ config CPU_MINUTEIA
 	help
 	  This option signifies the use of a CPU from the Minute IA family.
 
+config CPU_APOLLO_LAKE
+	# Hidden
+	bool
+	select CMOV
+	select CPU_HAS_FPU
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU
+	help
+	  This option signifies the use of a CPU from the Apollo Lake family.
+
 menu "Processor Capabilities"
 
 config X86_IAMCU
-	bool
-	prompt "IAMCU calling convention"
+	bool "IAMCU calling convention"
 	help
 	  The IAMCU calling convention changes the X86 C calling convention to
 	  pass some arguments via registers allowing for code size and performance
@@ -62,16 +63,14 @@ config X86_IAMCU
 
 menu "Memory Management"
 config X86_MMU
-	bool
-	prompt "Enable Memory Management Unit"
+	bool "Enable Memory Management Unit"
 	help
 	  This options enables the memory management unit present in x86. Enabling
 	  this will create boot time page table structure.
 
 config X86_PAE_MODE
-	bool
+	bool "Enable PAE page tables"
 	depends on X86_MMU
-	prompt "Enable PAE page tables"
 	help
 	  When selected the Page address extension mode is enabled. The PAE
 	  page tables provides a mechanism to selectively disable execution.
@@ -138,15 +137,13 @@ menu "Architecture Floating Point Options"
 depends on CPU_HAS_FPU
 
 config SSE
-	bool
-	prompt "SSE registers"
+	bool "SSE registers"
 	depends on FLOAT
 	help
 	  This option enables the use of SSE registers by threads.
 
 config SSE_FP_MATH
-	bool
-	prompt "Compiler-generated SSEx instructions"
+	bool "Compiler-generated SSEx instructions"
 	depends on SSE
 	help
 	  This option allows the compiler to generate SSEx instructions for
@@ -166,8 +163,7 @@ depends on REBOOT
 default REBOOT_RST_CNT
 
 config REBOOT_RST_CNT
-	bool
-	prompt "Reboot via RST_CNT register"
+	bool "Reboot via RST_CNT register"
 	help
 	  Reboot via the RST_CNT register, going back to BIOS.
 
@@ -182,15 +178,14 @@ config ISA_IA32
 	  instruction set architecture.
 
 config IA32_LEGACY_IO_PORTS
-	bool
-	prompt "Support IA32 legacy IO ports"
+	bool "Support IA32 legacy IO ports"
 	depends on ISA_IA32
 	help
 	  This option enables IA32 legacy IO ports. Note these are much slower
 	  than memory access, so they should be used in last resort.
 
 config CMOV
-	def_bool n
+	bool
 	help
 	  This option signifies the use of an Intel CPU that supports
 	  the CMOV instruction.
@@ -208,16 +203,15 @@ config CACHE_LINE_SIZE_DETECT
 
 config CACHE_LINE_SIZE
 	int "Cache line size" if !CACHE_LINE_SIZE_DETECT
-	default 0
 	default 64 if CPU_ATOM
+	default 0
 	help
 	  Size in bytes of a CPU cache line.
 
 	  Detect automatically at runtime by selecting CACHE_LINE_SIZE_DETECT.
 
 config CLFLUSH_INSTRUCTION_SUPPORTED
-	bool
-	prompt "CLFLUSH instruction supported"
+	bool "CLFLUSH instruction supported"
 	depends on !CLFLUSH_DETECT && CACHE_FLUSHING
 	help
 	  An implementation of sys_cache_flush() that uses CLFLUSH is made
@@ -228,8 +222,7 @@ config CLFLUSH_INSTRUCTION_SUPPORTED
 	  CLFLUSH support thereby reducing both memory footprint and boot time.
 
 config CLFLUSH_DETECT
-	bool
-	prompt "Detect support of CLFLUSH instruction at runtime"
+	bool "Detect support of CLFLUSH instruction at runtime"
 	depends on CACHE_FLUSHING
 	help
 	  This option should be enabled if it is not known in advance whether the
@@ -248,8 +241,7 @@ config ARCH_CACHE_FLUSH_DETECT
 	depends on CLFLUSH_DETECT
 
 config CACHE_FLUSHING
-	bool
-	prompt "Enable cache flushing mechanism"
+	bool "Enable cache flushing mechanism"
 	help
 	  This links in the sys_cache_flush() function. A mechanism for flushing the
 	  cache must be selected as well. By default, that mechanism is discovered at
@@ -304,7 +296,5 @@ config X86_FIXED_IRQ_MAPPING
 	  mapping between IDT vectors and IRQ lines.
 
 endmenu
-
-gsource "arch/x86/soc/*/Kconfig"
 
 endmenu

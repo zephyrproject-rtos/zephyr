@@ -16,9 +16,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "nxp,imx-uart"
 
     reg:
@@ -48,7 +45,13 @@ properties:
     modem-mode:
      type: int
      category: required
-     description: Set the UART Port to modem mode 0 (dce) 1 (dte)
+     description: Set the UART Port to modem mode 0 (dce) 64 (dte)
+     generation: define
+
+    rdc:
+     type: int
+     category: required
+     description: Set the RDC permission for this peripheral
      generation: define
 
 ...

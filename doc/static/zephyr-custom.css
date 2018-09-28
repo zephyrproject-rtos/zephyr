@@ -1,5 +1,108 @@
 /* -- Extra CSS styles for Zephyr content (RTD theme) ----------------------- */
 
+/* make the page width fill the window */
+.wy-nav-content {
+   max-width: none;
+}
+
+/* pygments tweak for white-on-black console */
+/* hold off on this change for now
+
+.highlight-console .highlight {
+   background-color: black;
+}
+.highlight-console .highlight .go, .highlight-console .highlight .gp {
+   color: white;
+}
+.highlight-console .highlight .hll {
+   background-color: white;
+}
+.highlight-console .highlight .hll .go, .highlight-console .highlight .hll .gp {
+   color: black;
+   font-weight: bold;
+}
+*/
+
+/* tweak doc version selection
+.rst-versions {
+   position: static;
+   border-top: none;
+   padding: 0px;
+}
+*/
+
+.rst-versions .rst-current-version {
+   padding: 5px;
+   background-color: #2980B9;
+   color: #80FF80;
+}
+
+.rst-versions .rst-other-versions {
+   padding: 5px;
+}
+
+div.rst-other-versions dl {
+   margin-bottom: 0;
+}
+
+
+/* code block highlight color in rtd changed to lime green, no no no */
+
+.rst-content tt.literal, .rst-content code.literal, .highlight {
+   background: #f0f0f0;
+}
+.rst-content tt.literal, .rst-content code.literal {
+    color: #000000;
+}
+
+/* Make the version number more visible */
+.wy-side-nav-search>div.version {
+    color: rgba(255,255,255,1);
+}
+
+/* squish the space between a paragraph before a list */
+div > p + ul, div > p + ol {
+   margin-top: -20px;
+}
+
+/* add some space before the figure caption */
+p.caption  {
+#    border-top: 1px solid;
+    margin-top: 1em;
+}
+
+/* decrease line leading a bit, 24px is too wide */
+
+p {
+   line-height: 22px;
+}
+
+/* add a colon after the figure/table number (before the caption) */
+span.caption-number::after {
+   content: ": ";
+}
+
+p.extrafooter {
+   text-align: right;
+   margin-top: -36px;
+}
+
+table.align-center {
+   display: table !important;
+}
+
+/* put the table caption at the bottom, as done for figures */
+table {
+   caption-side: bottom;
+}
+
+.code-block-caption {
+    color: #000;
+    font: italic 85%/1 arial,sans-serif;
+    padding: 1em 0;
+    text-align: center;
+}
+
 /*  make .. hlist:: tables fill the page */
 table.hlist {
     width: 95% !important;
@@ -33,4 +136,25 @@ th,td {
 /* tweak display of option tables to make first column wider */
 col.option {
   width: 25%;
+}
+
+/* tweak format for <kbd> (:kbd:`F10`) */
+kbd
+{
+  -moz-border-radius:3px;
+  -moz-box-shadow:0 1px 0 rgba(0,0,0,0.2),0 0 0 2px #fff inset;
+  -webkit-border-radius:3px;
+  -webkit-box-shadow:0 1px 0 rgba(0,0,0,0.2),0 0 0 2px #fff inset;
+  background-color:#f7f7f7;
+  border:1px solid #ccc;
+  border-radius:3px;
+  box-shadow:0 1px 0 rgba(0,0,0,0.2),0 0 0 2px #fff inset;
+  color:#333;
+  display:inline-block;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:11px;
+  line-height:1.4;
+  margin:0 .1em;
+  padding:.1em .6em;
+  text-shadow:0 1px 0 #fff;
 }

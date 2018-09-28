@@ -4,10 +4,11 @@ type: mcu
 arch: arm
 toolchain:
   - zephyr
-  - gccarmemb
+  - gnuarmemb
 ram: 40
 supported:
   - gpio
   - i2c
+  - rtc
   - spi
   - usb_device

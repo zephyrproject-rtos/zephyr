@@ -102,34 +102,29 @@
 
 /* Some helper defines for common regions */
 #define REGION_RAM_ATTR(size) \
+{ \
 	(NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE | \
-	 MPU_RASR_XN_Msk | size | P_RW_U_NA_Msk)
+	 MPU_RASR_XN_Msk | size | P_RW_U_NA_Msk) \
+}
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
 #define REGION_FLASH_ATTR(size) \
+{ \
 	(NORMAL_OUTER_INNER_WRITE_THROUGH_NON_SHAREABLE | size | \
-		P_RW_U_RO_Msk)
+		P_RW_U_RO_Msk) \
+}
 #else
 #define REGION_FLASH_ATTR(size) \
-	(NORMAL_OUTER_INNER_WRITE_THROUGH_NON_SHAREABLE | size | RO_Msk)
+{ \
+	(NORMAL_OUTER_INNER_WRITE_THROUGH_NON_SHAREABLE | size | RO_Msk) \
+}
 #endif
-#define REGION_PPB_ATTR(size) (STRONGLY_ORDERED_SHAREABLE | size | \
-		P_RW_U_NA_Msk)
-#define REGION_IO_ATTR(size) (DEVICE_NON_SHAREABLE | size | P_RW_U_NA_Msk)
+#define REGION_PPB_ATTR(size) { (STRONGLY_ORDERED_SHAREABLE | size | \
+		P_RW_U_NA_Msk) }
+#define REGION_IO_ATTR(size) { (DEVICE_NON_SHAREABLE | size | P_RW_U_NA_Msk) }
 
-
-/* Region definition data structure */
-struct arm_mpu_region {
-	/* Region Base Address */
-	u32_t base;
-	/* Region Name */
-	const char *name;
-	/* Region Attributes */
-	u32_t attr;
+struct arm_mpu_region_attr {
+	/* Attributes belonging to RASR (including the encoded region size) */
+	u32_t rasr;
 };
 
-#define MPU_REGION_ENTRY(_name, _base, _attr) \
-	{\
-		.name = _name, \
-		.base = _base, \
-		.attr = _attr, \
-	}
+typedef struct arm_mpu_region_attr arm_mpu_region_attr_t;

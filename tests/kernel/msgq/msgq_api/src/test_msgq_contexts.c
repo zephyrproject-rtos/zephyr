@@ -8,10 +8,17 @@
 
 /**TESTPOINT: init via K_MSGQ_DEFINE*/
 K_MSGQ_DEFINE(kmsgq, MSG_SIZE, MSGQ_LEN, 4);
+K_MSGQ_DEFINE(kmsgq_test_alloc, MSG_SIZE, MSGQ_LEN, 4);
 __kernel struct k_msgq msgq;
+__kernel struct k_msgq msgq1;
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
+K_THREAD_STACK_DEFINE(tstack1, STACK_SIZE);
+K_THREAD_STACK_DEFINE(tstack2, STACK_SIZE);
 __kernel struct k_thread tdata;
+__kernel struct k_thread tdata1;
+__kernel struct k_thread tdata2;
 static char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
+static char __aligned(4) tbuffer1[MSG_SIZE];
 static u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
 __kernel struct k_sem end_sema;
 
@@ -131,13 +138,56 @@ static void msgq_isr(struct k_msgq *pmsgq)
 	/**TESTPOINT: msgq purge*/
 	purge_msgq(pmsgq);
 }
+
+static void thread_entry_get_data(void *p1, void *p2, void *p3)
+{
+	u32_t rx_buf[MSGQ_LEN];
+	int i = 0;
+
+	while (k_msgq_get(p1, &rx_buf[i], K_NO_WAIT) != 0) {
+		++i;
+	}
+
+	k_sem_give(&end_sema);
+}
+
+static void pend_thread_entry(void *p1, void *p2, void *p3)
+{
+	int ret;
+
+	ret = k_msgq_put(p1, &data[1], TIMEOUT);
+	zassert_equal(ret, 0, NULL);
+}
+
+static void msgq_thread_data_passing(struct k_msgq *pmsgq)
+{
+	while (k_msgq_put(pmsgq, &data[0], K_NO_WAIT) != 0) {
+	}
+
+	k_tid_t tid = k_thread_create(&tdata2, tstack2, STACK_SIZE,
+					pend_thread_entry, pmsgq, NULL,
+					NULL, K_PRIO_PREEMPT(0), 0, 0);
+
+	k_tid_t tid1 = k_thread_create(&tdata1, tstack1, STACK_SIZE,
+					thread_entry_get_data, pmsgq, NULL,
+					NULL, K_PRIO_PREEMPT(1), 0, 0);
+
+	k_sem_take(&end_sema, K_FOREVER);
+	k_thread_abort(tid);
+	k_thread_abort(tid1);
+
+	/**TESTPOINT: msgq purge*/
+	k_msgq_purge(pmsgq);
+}
+
 /**
  * @addtogroup kernel_message_queue_tests
  * @{
  */
 
 /**
- * @see k_msgq_init()
+ * @brief Test thread to thread data passing via message queue
+ * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
 void test_msgq_thread(void)
 {
@@ -150,7 +200,8 @@ void test_msgq_thread(void)
 }
 
 /**
- * @see k_msgq_init()
+ * @brief Test thread to thread data passing via message queue
+ * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
 void test_msgq_thread_overflow(void)
 {
@@ -164,7 +215,8 @@ void test_msgq_thread_overflow(void)
 
 #ifdef CONFIG_USERSPACE
 /**
- * @see k_msgq_init()
+ * @brief Test user thread to kernel thread data passing via message queue
+ * @see k_msgq_alloc_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
 void test_msgq_user_thread(void)
 {
@@ -179,7 +231,8 @@ void test_msgq_user_thread(void)
 }
 
 /**
- * @see k_msgq_init()
+ * @brief Test thread to thread data passing via message queue
+ * @see k_msgq_alloc_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
 void test_msgq_user_thread_overflow(void)
 {
@@ -195,7 +248,8 @@ void test_msgq_user_thread_overflow(void)
 #endif /* CONFIG_USERSPACE */
 
 /**
- * @see k_msgq_init()
+ * @brief Test thread to isr data passing via message queue
+ * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
  */
 void test_msgq_isr(void)
 {
@@ -206,6 +260,42 @@ void test_msgq_isr(void)
 
 	msgq_isr(&stack_msgq);
 	msgq_isr(&kmsgq);
+}
+
+/**
+ * @brief Test pending writer in msgq
+ * @see k_msgq_init(), k_msgq_get(), k_msgq_put(), k_msgq_purge()
+ */
+void test_msgq_pend_thread(void)
+{
+	k_msgq_init(&msgq1, tbuffer1, MSG_SIZE, 1);
+	k_sem_init(&end_sema, 0, 1);
+
+	msgq_thread_data_passing(&msgq1);
+}
+
+/**
+ * @brief Test k_msgq_alloc_init()
+ * @details Initialization and buffer allocation for msgq from resource
+ * pool with various parameters
+ * @see k_msgq_alloc_init(), k_msgq_cleanup()
+ */
+void test_msgq_alloc(void)
+{
+	int ret;
+
+	k_msgq_alloc_init(&kmsgq_test_alloc, MSG_SIZE, MSGQ_LEN);
+	msgq_isr(&kmsgq_test_alloc);
+	k_msgq_cleanup(&kmsgq_test_alloc);
+
+	/** Requesting buffer allocation from the test pool.*/
+	ret = k_msgq_alloc_init(&kmsgq_test_alloc, MSG_SIZE * 64, MSGQ_LEN);
+	zassert_true(ret == -ENOMEM,
+		"resource pool is smaller then requested buffer");
+
+	/* Requesting a huge size of MSG to validate overflow*/
+	ret = k_msgq_alloc_init(&kmsgq_test_alloc, OVERFLOW_SIZE_MSG, MSGQ_LEN);
+	zassert_true(ret == -EINVAL, "Invalid request");
 }
 
 /**

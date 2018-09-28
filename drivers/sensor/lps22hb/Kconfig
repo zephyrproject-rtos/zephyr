@@ -5,27 +5,24 @@
 #
 
 menuconfig LPS22HB
-	bool
-	prompt "LPS22HB pressure and temperature"
+	bool "LPS22HB pressure and temperature"
 	depends on I2C
 	help
 	  Enable driver for LPS22HB I2C-based pressure and temperature
 	  sensor.
 
+if LPS22HB
+
 if !HAS_DTS_I2C_DEVICE
 
 config LPS22HB_DEV_NAME
-	string
-	prompt "Device name"
+	string "Device name"
 	default "LPS22HB"
-	depends on LPS22HB
 	help
 	  Device name used for LPS22HB sensor identification.
 
 config LPS22HB_I2C_ADDR
-	hex
-	prompt "I2C address"
-	depends on LPS22HB
+	hex "I2C address"
 	default 0x5D
 	range 0x5C 0x5D
 	help
@@ -34,9 +31,7 @@ config LPS22HB_I2C_ADDR
 	  pin is pulled to VDD.
 
 config LPS22HB_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C master where LPS22HB is connected"
-	depends on LPS22HB
+	string "I2C master where LPS22HB is connected"
 	default I2C_0_NAME
 	help
 	  Specify the device name of the I2C master device to which
@@ -45,15 +40,14 @@ config LPS22HB_I2C_MASTER_DEV_NAME
 endif
 
 menu "Attributes"
-	depends on LPS22HB
 
 config LPS22HB_SAMPLING_RATE
-	int
-	prompt "Output data rate"
-	depends on LPS22HB
+	int "Output data rate"
 	default 25
 	help
 	  Sensor output data rate expressed in samples per second.
 	  Data rates supported by the chip are 1, 10, 25, 50, 75.
 
 endmenu
+
+endif # LPS22HB

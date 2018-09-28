@@ -56,8 +56,8 @@
  * | Initial Value | 0             |
  */
 
-#ifndef H_MGMT_SERIAL_
-#define H_MGMT_SERIAL_
+#ifndef ZEPHYR_INCLUDE_MGMT_SERIAL_H_
+#define ZEPHYR_INCLUDE_MGMT_SERIAL_H_
 
 #include <zephyr/types.h>
 

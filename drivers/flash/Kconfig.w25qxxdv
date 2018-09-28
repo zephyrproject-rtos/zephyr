@@ -6,21 +6,17 @@
 
 
 menuconfig SPI_FLASH_W25QXXDV
-	bool
-	prompt "SPI NOR Flash Winbond W25QXXDV"
+	bool "SPI NOR Flash Winbond W25QXXDV"
 	select FLASH_HAS_DRIVER_ENABLED
 	depends on SPI && FLASH
 
 if SPI_FLASH_W25QXXDV
 
 config SPI_FLASH_W25QXXDV_SPI_NAME
-	string
-	prompt "SPI controller device name"
-	default ""
+	string "SPI controller device name"
 
 config SPI_FLASH_W25QXXDV_DRV_NAME
-	string
-	prompt "SPI flash device name"
+	string "SPI flash device name"
 	default "W25QXXDV"
 
 config SPI_FLASH_W25QXXDV_INIT_PRIORITY
@@ -53,7 +49,6 @@ config SPI_FLASH_W25QXXDV_GPIO_SPI_CS
 
 config SPI_FLASH_W25QXXDV_GPIO_SPI_CS_DRV_NAME
 	string "GPIO driver's name to use to drive SPI CS through"
-	default ""
 	depends on SPI_FLASH_W25QXXDV_GPIO_SPI_CS
 	help
 	This option is mandatory to set which GPIO controller to use in order

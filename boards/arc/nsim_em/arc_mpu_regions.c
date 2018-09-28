@@ -41,12 +41,12 @@ static struct arc_mpu_region mpu_regions[] = {
 			 CONFIG_DCCM_SIZE * 1024,
 			 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR),
 #endif
+#endif /* ARC_MPU_VER == 3 */
 	/* Region Peripheral */
 	MPU_REGION_ENTRY("PERIPHERAL",
 			 0xF0000000,
 			 64 * 1024,
-			 REGION_IO_ATTR),
-#endif /* ARC_MPU_VER == 3 */
+			 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR),
 };
 #else /* CONFIG_USERSPACE */
 static struct arc_mpu_region mpu_regions[] = {

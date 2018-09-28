@@ -28,14 +28,14 @@ extern "C" {
  * This structure applies for MDSyncReceive as well as MDSyncSend.
  */
 struct gptp_mi_port_sync_sync {
-	/** Port to which the Sync Information belongs to. */
-	u16_t local_port_number;
-
 	/** Time at which the sync receipt timeout occurs. */
 	u64_t sync_receipt_timeout_time;
 
 	/** Copy of the gptp_md_sync_info to be transmitted. */
 	struct gptp_md_sync_info sync_info;
+
+	/** Port to which the Sync Information belongs to. */
+	u16_t local_port_number;
 };
 
 /**

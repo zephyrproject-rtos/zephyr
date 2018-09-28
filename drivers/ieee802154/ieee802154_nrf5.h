@@ -5,8 +5,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __IEEE802154_NRF5_H__
-#define __IEEE802154_NRF5_H__
+#ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_
+#define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_
 
 #include <linker/sections.h>
 #include <atomic.h>
@@ -58,4 +58,4 @@ struct nrf5_802154_data {
 	s8_t rssi;
 };
 
-#endif /* __IEEE802154_NRF5_H__ */
+#endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_NRF5_H_ */

@@ -17,7 +17,8 @@
 
 struct uart_cc32xx_dev_data_t {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_callback_t cb; /**< Callback function pointer */
+	uart_irq_callback_user_data_t cb; /**< Callback function pointer */
+	void *cb_data; /**< Callback function arg */
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
@@ -243,11 +244,13 @@ static int uart_cc32xx_irq_update(struct device *dev)
 }
 
 static void uart_cc32xx_irq_callback_set(struct device *dev,
-					 uart_irq_callback_t cb)
+					 uart_irq_callback_user_data_t cb,
+					 void *cb_data)
 {
 	struct uart_cc32xx_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	dev_data->cb = cb;
+	dev_data->cb_data = cb_data;
 }
 
 /**
@@ -272,7 +275,7 @@ static void uart_cc32xx_isr(void *arg)
 						    1);
 
 	if (dev_data->cb) {
-		dev_data->cb(dev);
+		dev_data->cb(dev_data->cb_data);
 	}
 	/*
 	 * Clear interrupts only after cb called, as Zephyr UART clients expect

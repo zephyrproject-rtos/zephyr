@@ -36,9 +36,9 @@ void test_lost_found(void)
 {
 	char buf[32];
 	struct nffs_inode_entry *inode_entry;
-	u32_t flash_offset;
-	u32_t area_offset;
-	u8_t area_idx;
+	uint32_t flash_offset;
+	uint32_t area_offset;
+	uint8_t area_idx;
 	int rc;
 	struct nffs_disk_inode ndi;
 	u8_t off;    /* calculated offset for memset */

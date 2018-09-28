@@ -138,7 +138,8 @@ struct uart_miv_device_config {
 
 struct uart_miv_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_callback_t callback;
+	uart_irq_callback_user_data_t callback;
+	void *cb_data;
 #endif
 };
 
@@ -300,7 +301,7 @@ static void uart_miv_irq_handler(void *arg)
 	struct uart_miv_data *data = DEV_DATA(dev);
 
 	if (data->callback) {
-		data->callback(dev);
+		data->callback(data->cb_data);
 	}
 }
 
@@ -329,11 +330,13 @@ void uart_miv_rx_thread(void *arg1, void *arg2, void *arg3)
 }
 
 static void uart_miv_irq_callback_set(struct device *dev,
-				      uart_irq_callback_t cb)
+				      uart_irq_callback_user_data_t cb,
+				      void *cb_data)
 {
 	struct uart_miv_data *data = DEV_DATA(dev);
 
 	data->callback = cb;
+	data->cb_data = cb_data;
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

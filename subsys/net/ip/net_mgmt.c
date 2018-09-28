@@ -376,9 +376,8 @@ void net_mgmt_event_init(void)
 	in_event = -1;
 	out_event = -1;
 
-	memset(events, 0,
-	       CONFIG_NET_MGMT_EVENT_QUEUE_SIZE *
-	       sizeof(struct mgmt_event_entry));
+	(void)memset(events, 0, CONFIG_NET_MGMT_EVENT_QUEUE_SIZE *
+			sizeof(struct mgmt_event_entry));
 
 	k_thread_create(&mgmt_thread_data, mgmt_stack,
 			K_THREAD_STACK_SIZEOF(mgmt_stack),

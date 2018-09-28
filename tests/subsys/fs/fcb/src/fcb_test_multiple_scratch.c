@@ -27,7 +27,7 @@ void fcb_test_multi_scratch(void)
 	 * Now fill up everything. We should be able to get 3 of the sectors
 	 * full.
 	 */
-	memset(elem_cnts, 0, sizeof(elem_cnts));
+	(void)memset(elem_cnts, 0, sizeof(elem_cnts));
 	while (1) {
 		rc = fcb_append(fcb, sizeof(test_data), &loc);
 		if (rc == FCB_ERR_NOSPACE) {
@@ -80,7 +80,7 @@ void fcb_test_multi_scratch(void)
 	rc = fcb_rotate(fcb);
 	zassert_true(rc == 0, "fcb_rotate call failure");
 
-	memset(&cnts, 0, sizeof(cnts));
+	(void)memset(&cnts, 0, sizeof(cnts));
 	rc = fcb_walk(fcb, NULL, fcb_test_cnt_elems_cb, &aa_arg);
 	zassert_true(rc == 0, "fcb_walk call failure");
 

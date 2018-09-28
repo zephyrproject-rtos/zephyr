@@ -21,7 +21,7 @@
 #include <misc/byteorder.h>
 #include <zephyr.h>
 
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 #include <gatt/hrs.h>
 

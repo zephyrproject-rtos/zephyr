@@ -29,8 +29,8 @@ config HTTP_CLIENT
 config HTTP_HEADERS
 	int "HTTP header field max number of items"
 	depends on HTTP_SERVER
-	default 8
 	default 20 if WEBSOCKET
+	default 8
 	help
 	  Number of HTTP header field items that an HTTP server
 	  application will handle. If websocket is enabled, then the

@@ -29,8 +29,7 @@ config PWM_QMSI_NUM_PORTS
 	  Specify how many PWM ports on the IP block.
 
 config PWM_QMSI_API_REENTRANCY
-	bool
-	prompt "PWM shim driver API reentrancy"
+	bool "PWM shim driver API reentrancy"
 	depends on PWM_QMSI
 	help
 	  Enable support for PWM shim driver API reentrancy.

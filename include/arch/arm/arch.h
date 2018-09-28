@@ -10,18 +10,14 @@
  *
  * This header contains the ARM specific kernel interface.  It is
  * included by the kernel interface architecture-abstraction header
- * (include/arc/cpu.h)
+ * (include/arm/cpu.h)
  */
 
-#ifndef _ARM_ARCH__H_
-#define _ARM_ARCH__H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_ARCH_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_ARCH_H_
 
 /* Add include for DTS generated information */
 #include <generated_dts_board.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* ARM GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
@@ -38,6 +34,9 @@ extern "C" {
 #include <arch/arm/cortex_m/nmi.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Declare the STACK_ALIGN_SIZE
@@ -55,11 +54,11 @@ extern "C" {
 /**
  * @brief Declare a minimum MPU guard alignment and size
  *
- * This specifies the minimum MPU guard alignment/size for the MPU.  This
+ * This specifies the minimum MPU guard alignment/size for the MPU. This
  * will be used to denote the guard section of the stack, if it exists.
  *
  * One key note is that this guard results in extra bytes being added to
- * the stack.  APIs which give the stack ptr and stack size will take this
+ * the stack. APIs which give the stack ptr and stack size will take this
  * guard size into account.
  *
  * Stack is allocated, but initial stack pointer is at the end
@@ -99,27 +98,6 @@ extern "C" {
 #endif
 
 /**
- * @brief Declare a toplevel thread stack memory region
- *
- * This declares a region of memory suitable for use as a thread's stack.
- *
- * This is the generic, historical definition. Align to STACK_ALIGN_SIZE and
- * put in * 'noinit' section so that it isn't zeroed at boot
- *
- * The declared symbol will always be a character array which can be passed to
- * k_thread_create, but should otherwise not be manipulated.
- *
- * It is legal to precede this definition with the 'static' keyword.
- *
- * It is NOT legal to take the sizeof(sym) and pass that to the stackSize
- * parameter of k_thread_create(), it may not be the same as the
- * 'size' parameter. Use K_THREAD_STACK_SIZEOF() instead.
- *
- * @param sym Thread stack symbol name
- * @param size Size of the stack memory region
- */
-
-/**
  * @brief Define alignment of a stack buffer
  *
  * This is used for two different things:
@@ -142,6 +120,26 @@ extern "C" {
 		1 << (31 - __builtin_clz(x) + 1) : \
 		1 << (31 - __builtin_clz(x)))
 
+/**
+ * @brief Declare a top level thread stack memory region
+ *
+ * This declares a region of memory suitable for use as a thread's stack.
+ *
+ * This is the generic, historical definition. Align to STACK_ALIGN_SIZE and
+ * put in * 'noinit' section so that it isn't zeroed at boot
+ *
+ * The declared symbol will always be a character array which can be passed to
+ * k_thread_create, but should otherwise not be manipulated.
+ *
+ * It is legal to precede this definition with the 'static' keyword.
+ *
+ * It is NOT legal to take the sizeof(sym) and pass that to the stackSize
+ * parameter of k_thread_create(), it may not be the same as the
+ * 'size' parameter. Use K_THREAD_STACK_SIZEOF() instead.
+ *
+ * @param sym Thread stack symbol name
+ * @param size Size of the stack memory region
+ */
 #if defined(CONFIG_USERSPACE) && \
 	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
@@ -171,7 +169,7 @@ extern "C" {
 #endif
 
 /**
- * @brief Declare a toplevel array of thread stack memory regions
+ * @brief Declare a top level array of thread stack memory regions
  *
  * Create an array of equally sized stacks. See K_THREAD_STACK_DEFINE
  * definition for additional details and constraints.
@@ -255,7 +253,7 @@ extern "C" {
 		((char *)(sym) + MPU_GUARD_ALIGN_AND_SIZE)
 
 #ifdef CONFIG_USERSPACE
-#ifdef CONFIG_ARM_MPU
+#ifdef CONFIG_CPU_HAS_ARM_MPU
 #ifndef _ASMLANGUAGE
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>
 #endif /* _ASMLANGUAGE */
@@ -265,8 +263,8 @@ extern "C" {
 		"the size of the partition must be power of 2" \
 		" and greater than or equal to 32." \
 		"start address of the partition must align with size.")
-#endif /* CONFIG_ARM_MPU*/
-#ifdef CONFIG_NXP_MPU
+#endif /* CONFIG_CPU_HAS_ARM_MPU */
+#ifdef CONFIG_CPU_HAS_NXP_MPU
 #ifndef _ASMLANGUAGE
 #include <arch/arm/cortex_m/mpu/nxp_mpu.h>
 
@@ -320,7 +318,7 @@ extern "C" {
 		"the size of the partition must align with 32" \
 		" and greater than or equal to 32." \
 		"start address of the partition must align with 32.")
-#endif  /* CONFIG_NXP_MPU */
+#endif  /* CONFIG_CPU_HAS_ARM_MPU */
 #endif /* CONFIG_USERSPACE */
 
 #ifndef _ASMLANGUAGE
@@ -328,152 +326,8 @@ extern "C" {
 typedef u32_t k_mem_partition_attr_t;
 #endif /* _ASMLANGUAGE */
 
-#ifdef CONFIG_USERSPACE
-#ifndef _ASMLANGUAGE
-
-/* Syscall invocation macros. arm-specific machine constraints used to ensure
- * args land in the proper registers.
- */
-static inline u32_t _arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t arg5, u32_t arg6,
-					  u32_t call_id)
-{
-	register u32_t ret __asm__("r0") = arg1;
-	register u32_t r1 __asm__("r1") = arg2;
-	register u32_t r2 __asm__("r2") = arg3;
-	register u32_t r3 __asm__("r3") = arg4;
-	register u32_t r4 __asm__("r4") = arg5;
-	register u32_t r5 __asm__("r5") = arg6;
-	register u32_t r6 __asm__("r6") = call_id;
-
-	__asm__ volatile("svc %[svid]\n"
-			 : "=r"(ret)
-			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
-			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
-			   "r" (r4), "r" (r5), "r" (r6)
-			 : "r8", "memory");
-
-	return ret;
-}
-
-static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t arg5, u32_t call_id)
-{
-	register u32_t ret __asm__("r0") = arg1;
-	register u32_t r1 __asm__("r1") = arg2;
-	register u32_t r2 __asm__("r2") = arg3;
-	register u32_t r3 __asm__("r3") = arg4;
-	register u32_t r4 __asm__("r4") = arg5;
-	register u32_t r6 __asm__("r6") = call_id;
-
-	__asm__ volatile("svc %[svid]\n"
-			 : "=r"(ret)
-			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
-			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
-			   "r" (r4), "r" (r6)
-			 : "r8", "memory");
-
-	return ret;
-}
-
-static inline u32_t _arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t call_id)
-{
-	register u32_t ret __asm__("r0") = arg1;
-	register u32_t r1 __asm__("r1") = arg2;
-	register u32_t r2 __asm__("r2") = arg3;
-	register u32_t r3 __asm__("r3") = arg4;
-	register u32_t r6 __asm__("r6") = call_id;
-
-	__asm__ volatile("svc %[svid]\n"
-			 : "=r"(ret)
-			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
-			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
-			   "r" (r6)
-			 : "r8", "memory");
-
-	return ret;
-}
-
-static inline u32_t _arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t call_id)
-{
-	register u32_t ret __asm__("r0") = arg1;
-	register u32_t r1 __asm__("r1") = arg2;
-	register u32_t r2 __asm__("r2") = arg3;
-	register u32_t r6 __asm__("r6") = call_id;
-
-	__asm__ volatile("svc %[svid]\n"
-			 : "=r"(ret)
-			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
-			   "r" (ret), "r" (r1), "r" (r2), "r" (r6)
-			 : "r8", "memory", "r3");
-
-	return ret;
-}
-
-static inline u32_t _arch_syscall_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
-{
-	register u32_t ret __asm__("r0") = arg1;
-	register u32_t r1 __asm__("r1") = arg2;
-	register u32_t r6 __asm__("r6") = call_id;
-
-	__asm__ volatile("svc %[svid]\n"
-			 : "=r"(ret)
-			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
-			   "r" (ret), "r" (r1), "r" (r6)
-			 : "r8", "memory", "r2", "r3");
-
-	return ret;
-}
-
-static inline u32_t _arch_syscall_invoke1(u32_t arg1, u32_t call_id)
-{
-	register u32_t ret __asm__("r0") = arg1;
-	register u32_t r6 __asm__("r6") = call_id;
-
-	__asm__ volatile("svc %[svid]\n"
-			 : "=r"(ret)
-			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
-			   "r" (ret), "r" (r6)
-			 : "r8", "memory", "r1", "r2", "r3");
-	return ret;
-}
-
-static inline u32_t _arch_syscall_invoke0(u32_t call_id)
-{
-	register u32_t ret __asm__("r0");
-	register u32_t r6 __asm__("r6") = call_id;
-
-	__asm__ volatile("svc %[svid]\n"
-			 : "=r"(ret)
-			 : [svid] "i" (_SVC_CALL_SYSTEM_CALL),
-			   "r" (ret), "r" (r6)
-			 : "r8", "memory", "r1", "r2", "r3");
-
-	return ret;
-}
-
-static inline int _arch_is_user_context(void)
-{
-	u32_t value;
-
-	/* check for handler mode */
-	__asm__ volatile("mrs %0, IPSR\n\t" : "=r"(value));
-	if (value) {
-		return 0;
-	}
-
-	/* if not handler mode, return mode information */
-	__asm__ volatile("mrs %0, CONTROL\n\t" : "=r"(value));
-	return value & 0x1;
-}
-
-#endif /* _ASMLANGUAGE */
-#endif /* CONFIG_USERSPACE */
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _ARM_ARCH__H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_ARCH_H_ */

@@ -5,11 +5,14 @@
  */
 
 /*
- * @file
- * load/store portion of FPU sharing test
+ * @brief load/store portion of FPU sharing test
  *
- * This module implements the load/store portion of the FPU sharing test. This
- * version of this test utilizes a pair of tasks.
+ * @defgroup kernel_fpsharing_tests FP Sharing Tests
+ *
+ * @ingroup all_tests
+ *
+ * @details This module implements the load/store portion of the
+ * FPU sharing test. This version of this test utilizes a pair of tasks.
  *
  * The load/store test validates the floating point unit context
  * save/restore mechanism. This test utilizes a pair of threads of different
@@ -28,6 +31,8 @@
  * registers will be utilized (k_fp_enable()).  The thread should continue
  * to load ALL non-integer registers, but main() should validate that only the
  * x87 FPU registers are being saved/restored.
+ * @{
+ * @}
  */
 
 #ifndef CONFIG_FLOAT
@@ -52,7 +57,7 @@
 #else
 #include "float_regs_x86_other.h"
 #endif /* __GNUC__ */
-#elif defined(CONFIG_CPU_CORTEX_M4)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_FP)
 #if defined(__GNUC__)
 #include "float_regs_arm_gcc.h"
 #else
@@ -100,7 +105,10 @@ extern void calculate_pi_high(void);
  *
  * @brief Low priority FPU load/store thread
  *
- * @return N/A
+ * @ingroup kernel_fpsharing_tests
+ *
+ * @see k_sched_time_slice_set(), memset(),
+ * _load_all_float_registers(), _store_all_float_registers()
  */
 
 void load_store_low(void)
@@ -147,7 +155,7 @@ void load_store_low(void)
 		 * floating point values that have been saved.
 		 */
 
-		memset(&float_reg_set_store, 0, SIZEOF_FP_REGISTER_SET);
+		(void)memset(&float_reg_set_store, 0, SIZEOF_FP_REGISTER_SET);
 
 		/*
 		 * Utilize an architecture specific function to load all the
@@ -246,7 +254,9 @@ void load_store_low(void)
  *
  * @brief High priority FPU load/store thread
  *
- * @return N/A
+ * @ingroup kernel_fpsharing_tests
+ *
+ * @see _load_then_store_all_float_registers()
  */
 
 void load_store_high(void)

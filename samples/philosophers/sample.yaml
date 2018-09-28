@@ -15,6 +15,10 @@ common:
 tests:
   sample.philosopher:
     tags: samples
+  sample.philosopher.tracing:
+    min_ram: 32
+    extra_configs:
+      - CONFIG_SEGGER_SYSTEMVIEW=y
   sample.philosopher.same_prio:
     extra_args: "-DSAME_PRIO=1"
   sample.philosopher.static:

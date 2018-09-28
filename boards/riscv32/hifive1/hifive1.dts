@@ -1,0 +1,25 @@
+/dts-v1/;
+
+#include <riscv32-fe310.dtsi>
+
+/ {
+	model = "SiFive HiFive 1";
+	compatible = "sifive,hifive1";
+	chosen {
+		zephyr,console = &uart0;
+	};
+};
+
+&gpio0 {
+	status = "ok";
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+};
+
+&spi0 {
+	status = "ok";
+};
+

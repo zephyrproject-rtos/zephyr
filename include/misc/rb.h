@@ -40,8 +40,10 @@
  * just two pointers, identical with a doubly-linked list.
  */
 
-#ifndef _RB_H
-#define _RB_H
+#ifndef ZEPHYR_INCLUDE_MISC_RB_H_
+#define ZEPHYR_INCLUDE_MISC_RB_H_
+
+#include <stdbool.h>
 
 struct rbnode {
 	struct rbnode *children[2];
@@ -51,8 +53,8 @@ struct rbnode {
  * @typedef rb_lessthan_t
  * @brief Red/black tree comparison predicate
  *
- * Compares the two nodes and returns 1 if node A is strictly less
- * than B according to the tree's sorting criteria, 0 otherwise.
+ * Compares the two nodes and returns true if node A is strictly less
+ * than B according to the tree's sorting criteria, false otherwise.
  *
  * Note that during insert, the new node being inserted will always be
  * "A", where "B" is the existing node within the tree against which
@@ -60,7 +62,7 @@ struct rbnode {
  * implement "most/least recently added" semantics between nodes which
  * would otherwise compare as equal.
  */
-typedef int (*rb_lessthan_t)(struct rbnode *a, struct rbnode *b);
+typedef bool (*rb_lessthan_t)(struct rbnode *a, struct rbnode *b);
 
 struct rbtree {
 	struct rbnode *root;
@@ -182,4 +184,4 @@ struct rbnode *_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f);
 				  __typeof__(*(node)), field));		\
 	     /**/)
 
-#endif /* _RB_H */
+#endif /* ZEPHYR_INCLUDE_MISC_RB_H_ */

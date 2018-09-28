@@ -7,8 +7,7 @@
 #
 
 config AON_COUNTER_QMSI
-	bool
-	prompt "AON counter driver"
+	bool "AON counter driver"
 	depends on COUNTER && QMSI
 	help
 	  Enable support for AON counter.
@@ -21,8 +20,7 @@ config AON_COUNTER_QMSI_DEV_NAME
 	  Specify the device name for AON counter driver.
 
 config AON_TIMER_QMSI
-	bool
-	prompt "AON periodic timer driver"
+	bool "AON periodic timer driver"
 	depends on COUNTER && QMSI
 	help
 	  Enable support for AON periodic timer.
@@ -41,8 +39,7 @@ config AON_TIMER_IRQ_PRI
 	  aon timer interrupt priority.
 
 config AON_API_REENTRANCY
-	bool
-	prompt "AON driver API reentrancy"
+	bool "AON driver API reentrancy"
 	depends on AON_TIMER_QMSI
 	help
 	  Enable support for AON driver API reentrancy.

@@ -167,8 +167,6 @@ u32_t k_uptime_delta_32(s64_t *reftime)
  * interrupt.
  */
 
-volatile int _handling_timeouts;
-
 static inline void handle_timeouts(s32_t ticks)
 {
 	sys_dlist_t expired;
@@ -185,7 +183,7 @@ static inline void handle_timeouts(s32_t ticks)
 	K_DEBUG("head: %p, delta: %d\n",
 		timeout, timeout ? timeout->delta_ticks_from_prev : -2112);
 
-	if (!next) {
+	if (next == NULL) {
 		irq_unlock(key);
 		return;
 	}
@@ -198,9 +196,7 @@ static inline void handle_timeouts(s32_t ticks)
 	 * prohibited.
 	 */
 
-	_handling_timeouts = 1;
-
-	while (next) {
+	while (next != NULL) {
 
 		/*
 		 * In the case where ticks number is greater than the first
@@ -241,7 +237,7 @@ static inline void handle_timeouts(s32_t ticks)
 
 			timeout->delta_ticks_from_prev = _EXPIRED;
 
-		} else if (ticks <= 0) {
+		} else {
 			break;
 		}
 
@@ -254,17 +250,15 @@ static inline void handle_timeouts(s32_t ticks)
 	irq_unlock(key);
 
 	_handle_expired_timeouts(&expired);
-
-	_handling_timeouts = 0;
 }
 #else
-	#define handle_timeouts(ticks) do { } while ((0))
+	#define handle_timeouts(ticks) do { } while (false)
 #endif
 
 #ifdef CONFIG_TIMESLICING
 s32_t _time_slice_elapsed;
-s32_t _time_slice_duration = CONFIG_TIMESLICE_SIZE;
-int  _time_slice_prio_ceiling = CONFIG_TIMESLICE_PRIORITY;
+s32_t _time_slice_duration;
+int  _time_slice_prio_ceiling;
 
 /*
  * Always called from interrupt level, and always only from the system clock
@@ -285,7 +279,7 @@ static void handle_time_slicing(s32_t ticks)
 		return;
 	}
 
-	_time_slice_elapsed += __ticks_to_ms(ticks);
+	_time_slice_elapsed += ticks;
 	if (_time_slice_elapsed >= _time_slice_duration) {
 
 		unsigned int key;
@@ -297,12 +291,11 @@ static void handle_time_slicing(s32_t ticks)
 		irq_unlock(key);
 	}
 #ifdef CONFIG_TICKLESS_KERNEL
-	next_ts =
-	    _ms_to_ticks(_time_slice_duration - _time_slice_elapsed);
+	next_ts = _time_slice_duration - _time_slice_elapsed;
 #endif
 }
 #else
-#define handle_time_slicing(ticks) do { } while (0)
+#define handle_time_slicing(ticks) do { } while (false)
 #endif
 
 /**

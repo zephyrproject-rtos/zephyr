@@ -12,8 +12,8 @@
  * use with the GCC linker.
  */
 
-#ifndef __LINKER_TOOL_GCC_H
-#define __LINKER_TOOL_GCC_H
+#ifndef ZEPHYR_INCLUDE_LINKER_LINKER_TOOL_GCC_H_
+#define ZEPHYR_INCLUDE_LINKER_LINKER_TOOL_GCC_H_
 
 #if defined(CONFIG_ARM)
 	OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")
@@ -121,4 +121,4 @@
 
 #define COMMON_SYMBOLS *(COMMON)
 
-#endif /* !__LINKER_TOOL_GCC_H */
+#endif /* ZEPHYR_INCLUDE_LINKER_LINKER_TOOL_GCC_H_ */

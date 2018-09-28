@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 #include <usb/usbstruct.h>
@@ -44,6 +45,10 @@ struct common_descriptor {
 	struct usb_cfg_descriptor cfg_descr;
 } __packed;
 
+#define USB_DESC_MANUFACTURER_IDX			1
+#define USB_DESC_PRODUCT_IDX				2
+#define USB_DESC_SERIAL_NUMBER_IDX			3
+
 /*
  * Device and configuration descriptor placed in the device section,
  * no additional descriptor may be placed there.
@@ -67,9 +72,9 @@ USBD_DEVICE_DESCR_DEFINE(primary) struct common_descriptor common_desc = {
 		.idVendor = sys_cpu_to_le16((u16_t)CONFIG_USB_DEVICE_VID),
 		.idProduct = sys_cpu_to_le16((u16_t)CONFIG_USB_DEVICE_PID),
 		.bcdDevice = sys_cpu_to_le16(BCDDEVICE_RELNUM),
-		.iManufacturer = 1,
-		.iProduct = 2,
-		.iSerialNumber = 3,
+		.iManufacturer = USB_DESC_MANUFACTURER_IDX,
+		.iProduct = USB_DESC_PRODUCT_IDX,
+		.iSerialNumber = USB_DESC_SERIAL_NUMBER_IDX,
 		.bNumConfigurations = 1,
 	},
 	/* Configuration descriptor */
@@ -282,6 +287,41 @@ static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
 }
 
 /*
+ * Default USB SN string descriptor is CONFIG_USB_DEVICE_SN, but sometimes
+ * we want use another string as SN descriptor such as the chip's unique
+ * ID. So user can implement this function return a string thats will be
+ * replaced the default SN.
+ * Please note that the new SN descriptor you changed must has same length
+ * as CONFIG_USB_DEVICE_SN.
+ */
+__weak u8_t *usb_update_sn_string_descriptor(void)
+{
+	return NULL;
+}
+
+static void
+usb_fix_ascii_sn_string_descriptor(struct usb_sn_descriptor *sn)
+{
+	u8_t *runtime_sn =  usb_update_sn_string_descriptor();
+	int runtime_sn_len, default_sn_len;
+
+	if (!runtime_sn) {
+		return;
+	}
+
+	runtime_sn_len = strlen(runtime_sn);
+	default_sn_len = strlen(CONFIG_USB_DEVICE_SN);
+
+	if (runtime_sn_len != default_sn_len) {
+		SYS_LOG_ERR("the new SN descriptor doesn't has the same "
+			    "length as CONFIG_USB_DEVICE_SN");
+		return;
+	}
+
+	memcpy(sn->bString, runtime_sn, runtime_sn_len);
+}
+
+/*
  * The entire descriptor, placed in the .usb.descriptor section,
  * needs to be fixed before use. Currently, only the length of the
  * entire device configuration (with all interfaces and endpoints)
@@ -347,6 +387,14 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 			break;
 		case 0:
 		case USB_STRING_DESC:
+			/*
+			 * Copy runtime SN string descriptor first, if has
+			 */
+			if (str_descr_idx == USB_DESC_SERIAL_NUMBER_IDX) {
+				struct usb_sn_descriptor *sn =
+					(struct usb_sn_descriptor *)head;
+				usb_fix_ascii_sn_string_descriptor(sn);
+			}
 			/*
 			 * Skip language descriptor but correct
 			 * wTotalLength and bNumInterfaces once.

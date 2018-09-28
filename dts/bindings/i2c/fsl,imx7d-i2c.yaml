@@ -5,6 +5,7 @@
 #
 ---
 title: i.MX I2C Controller
+id: fsl,imx7d-i2c
 version: 0.1
 
 description: >
@@ -15,9 +16,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "fsl,imx7d-i2c"
 
     reg:
@@ -31,3 +29,9 @@ properties:
       category: required
       description: required interrupts
       generation: define
+
+    rdc:
+     type: int
+     category: required
+     description: Set the RDC permission for this peripheral
+     generation: define

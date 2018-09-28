@@ -28,3 +28,11 @@
 	status = "ok";
 	current-speed = <115200>;
 };
+
+&spi0 {
+	status = "ok";
+};
+
+&spi1 {
+	status = "ok";
+};

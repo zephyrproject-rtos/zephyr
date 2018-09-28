@@ -4,12 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-choice
-	prompt "Nios II configuration selection"
-	depends on NIOS2
-	gsource "arch/nios2/soc/*/Kconfig.soc"
-endchoice
-
 menu "Nios II Options"
 	depends on NIOS2
 
@@ -108,7 +102,5 @@ config GP_ALL_DATA
 endchoice
 
 endmenu
-
-gsource "arch/nios2/soc/*/Kconfig"
 
 endmenu

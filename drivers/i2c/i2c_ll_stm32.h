@@ -6,8 +6,8 @@
  *
  */
 
-#ifndef _STM32_I2C_H_
-#define _STM32_I2C_H_
+#ifndef ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_
+#define ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_
 
 typedef void (*irq_config_func_t)(struct device *port);
 
@@ -72,4 +72,4 @@ int i2c_stm32_slave_unregister(struct device *dev,
 #define DEV_CFG(dev)	\
 ((const struct i2c_stm32_config * const)(dev)->config->config_info)
 
-#endif	/* _STM32_I2C_H_ */
+#endif	/* ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_ */

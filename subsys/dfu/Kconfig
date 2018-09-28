@@ -31,9 +31,8 @@ config MCUBOOT_IMG_MANAGER
 endchoice
 
 config IMG_BLOCK_BUF_SIZE
-	int
+	int "Image writer buffer size"
 	depends on MCUBOOT_IMG_MANAGER
-	prompt "Image writer buffer size"
 	default 512
 	help
 	  Size (in Bytes) of buffer for image writer. Must be a multiple of

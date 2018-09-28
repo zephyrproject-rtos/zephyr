@@ -580,6 +580,7 @@ static void gptp_md_pdelay_req_state_machine(int port)
 
 	case GPTP_PDELAY_REQ_INITIAL_SEND_REQ:
 		gptp_md_start_pdelay_req(port);
+		/* Fallthrough. */
 
 	case GPTP_PDELAY_REQ_SEND_REQ:
 		if (state->tx_pdelay_req_ptr) {

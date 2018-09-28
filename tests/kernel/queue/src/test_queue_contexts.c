@@ -11,11 +11,17 @@
 /**TESTPOINT: init via K_QUEUE_DEFINE*/
 K_QUEUE_DEFINE(kqueue);
 
+K_MEM_POOL_DEFINE(mem_pool_fail, 4, 8, 1, 4);
+K_MEM_POOL_DEFINE(mem_pool_pass, 4, 64, 4, 4);
+
 struct k_queue queue;
 static qdata_t data[LIST_LEN];
 static qdata_t data_p[LIST_LEN];
 static qdata_t data_l[LIST_LEN];
 static qdata_t data_sl[LIST_LEN];
+
+static qdata_t *data_append;
+static qdata_t *data_prepend;
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
@@ -25,7 +31,10 @@ static struct k_sem end_sema;
 
 static void tqueue_append(struct k_queue *pqueue)
 {
-	for (int i = 0; i < LIST_LEN; i++) {
+	k_queue_insert(pqueue, k_queue_peek_tail(pqueue),
+		       (void *)&data[0]);
+
+	for (int i = 1; i < LIST_LEN; i++) {
 		/**TESTPOINT: queue append */
 		k_queue_append(pqueue, (void *)&data[i]);
 	}
@@ -125,6 +134,11 @@ static void tqueue_isr_thread(struct k_queue *pqueue)
 }
 
 /*test cases*/
+/**
+ * @brief Verify data passing between threads using queue
+ * @ingroup kernel_queue_tests
+ * @see k_queue_init(), k_queue_insert(), k_queue_append()
+ */
 void test_queue_thread2thread(void)
 {
 	/**TESTPOINT: init via k_queue_init*/
@@ -135,6 +149,11 @@ void test_queue_thread2thread(void)
 	tqueue_thread_thread(&kqueue);
 }
 
+/**
+ * @brief Verify data passing between thread and ISR
+ * @ingroup kernel_queue_tests
+ * @see k_queue_init(), k_queue_insert(), k_queue_append()
+ */
 void test_queue_thread2isr(void)
 {
 	/**TESTPOINT: init via k_queue_init*/
@@ -145,6 +164,12 @@ void test_queue_thread2isr(void)
 	tqueue_thread_isr(&kqueue);
 }
 
+/**
+ * @brief Verify data passing between ISR and thread
+ * @see k_queue_init(), k_queue_insert(), k_queue_get(),
+ * k_queue_append(), k_queue_remove()
+ * @ingroup kernel_queue_tests
+ */
 void test_queue_isr2thread(void)
 {
 	/**TESTPOINT: test k_queue_init queue*/
@@ -170,15 +195,14 @@ static void tqueue_get_2threads(struct k_queue *pqueue)
 				      K_PRIO_PREEMPT(0), 0, 0);
 
 	k_tid_t tid1 = k_thread_create(&tdata1, tstack1, STACK_SIZE,
-				      tThread_get, pqueue, NULL, NULL,
-				      K_PRIO_PREEMPT(0), 0, 0);
+				       tThread_get, pqueue, NULL, NULL,
+				       K_PRIO_PREEMPT(0), 0, 0);
 
 	/* Wait threads to initialize */
 	k_sleep(10);
 
 	k_queue_append(pqueue, (void *)&data[0]);
 	k_queue_append(pqueue, (void *)&data[1]);
-
 	/* Wait threads to finalize */
 	k_sem_take(&end_sema, K_FOREVER);
 	k_sem_take(&end_sema, K_FOREVER);
@@ -187,10 +211,67 @@ static void tqueue_get_2threads(struct k_queue *pqueue)
 	k_thread_abort(tid1);
 }
 
+/**
+ * @brief Verify k_queue_get()
+ * @ingroup kernel_queue_tests
+ * @see k_queue_init(), k_queue_get(),
+ * k_queue_append(), k_queue_alloc_prepend()
+ */
 void test_queue_get_2threads(void)
 {
 	/**TESTPOINT: test k_queue_init queue*/
 	k_queue_init(&queue);
 
 	tqueue_get_2threads(&queue);
+}
+
+static void tqueue_alloc(struct k_queue *pqueue)
+{
+	/* Alloc append without resource pool */
+	k_queue_alloc_append(pqueue, (void *)&data_append);
+
+	/* Insertion fails and alloc returns NOMEM */
+	zassert_false(k_queue_remove(pqueue, &data_append), NULL);
+
+	/* Assign resource pool of lower size */
+	k_thread_resource_pool_assign(k_current_get(), &mem_pool_fail);
+
+	/* Prepend to the queue, but fails because of
+	 * insufficient memory
+	 */
+	k_queue_alloc_prepend(pqueue, (void *)&data_prepend);
+
+	zassert_false(k_queue_remove(pqueue, &data_prepend), NULL);
+
+	/* No element must be present in the queue, as all
+	 * operations failed
+	 */
+	zassert_true(k_queue_is_empty(pqueue), NULL);
+
+	/* Assign resource pool of sufficient size */
+	k_thread_resource_pool_assign(k_current_get(),
+				      &mem_pool_pass);
+
+	zassert_false(k_queue_alloc_prepend(pqueue, (void *)&data_prepend),
+		      NULL);
+
+	/* Now queue shouldn't be empty */
+	zassert_false(k_queue_is_empty(pqueue), NULL);
+
+	zassert_true(k_queue_get(pqueue, K_FOREVER) != NULL,
+		     NULL);
+}
+
+/**
+ * @brief Test queue alloc append and prepend
+ * @ingroup kernel_queue_tests
+ * @see k_queue_alloc_append(), k_queue_alloc_prepend(),
+ * k_thread_resource_pool_assign(), k_queue_is_empty(),
+ * k_queue_get(), k_queue_remove()
+ */
+void test_queue_alloc(void)
+{
+	k_queue_init(&queue);
+
+	tqueue_alloc(&queue);
 }

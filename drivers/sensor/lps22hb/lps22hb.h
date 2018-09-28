@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SENSOR_LPS22HB_H__
-#define __SENSOR_LPS22HB_H__
+#ifndef ZEPHYR_DRIVERS_SENSOR_LPS22HB_LPS22HB_H_
+#define ZEPHYR_DRIVERS_SENSOR_LPS22HB_LPS22HB_H_
 
 #include <stdint.h>
 #include <i2c.h>
@@ -167,4 +167,4 @@ struct lps22hb_data {
 #define SYS_LOG_DOMAIN "LPS22HB"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <logging/sys_log.h>
-#endif /* __SENSOR_LPS22HB_H__ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_LPS22HB_LPS22HB_H_ */

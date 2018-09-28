@@ -83,6 +83,7 @@ SECTIONS
 		*(.text)
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
+		*(.eh_frame)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
     _image_text_end = .;

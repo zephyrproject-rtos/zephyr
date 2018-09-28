@@ -1,3 +1,4 @@
 config BOARD_HIFIVE1
 	bool "HiFive1 target"
-	depends on SOC_RISCV32_FE310
+	depends on SOC_RISCV32_SIFIVE_FREEDOM
+	select HAS_DTS

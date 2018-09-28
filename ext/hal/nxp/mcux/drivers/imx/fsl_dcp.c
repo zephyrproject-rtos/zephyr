@@ -2,30 +2,8 @@
  * Copyright 2017 NXP
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_dcp.h"
@@ -33,6 +11,12 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.dcp"
+#endif
+
 
 /*! Compile time sizeof() check */
 #define BUILD_ASSURE(condition, msg) extern int msg[1 - 2 * (!(condition))] __attribute__((unused))
@@ -358,7 +342,7 @@ status_t DCP_AES_EncryptEcbNonBlocking(DCP_Type *base,
         return kStatus_InvalidArgument;
     }
 
-    dcpPacket->control0 = 0x122u; /* CIPHER_ENCRYPT | ENABLE_CIPHER | DECR_SEMAPHORE */
+    dcpPacket->control0 = 0x122u | (handle->swapConfig & 0xFC0000u); /* CIPHER_ENCRYPT | ENABLE_CIPHER | DECR_SEMAPHORE */
     dcpPacket->sourceBufferAddress = (uint32_t)plaintext;
     dcpPacket->destinationBufferAddress = (uint32_t)ciphertext;
     dcpPacket->bufferSize = (uint32_t)size;
@@ -419,7 +403,7 @@ status_t DCP_AES_DecryptEcbNonBlocking(DCP_Type *base,
         return kStatus_InvalidArgument;
     }
 
-    dcpPacket->control0 = 0x22u; /* ENABLE_CIPHER | DECR_SEMAPHORE */
+    dcpPacket->control0 = 0x22u | (handle->swapConfig & 0xFC0000u); /* ENABLE_CIPHER | DECR_SEMAPHORE */
     dcpPacket->sourceBufferAddress = (uint32_t)ciphertext;
     dcpPacket->destinationBufferAddress = (uint32_t)plaintext;
     dcpPacket->bufferSize = (uint32_t)size;
@@ -485,7 +469,7 @@ status_t DCP_AES_EncryptCbcNonBlocking(DCP_Type *base,
         return kStatus_InvalidArgument;
     }
 
-    dcpPacket->control0 = 0x322u; /* CIPHER_INIT | CIPHER_ENCRYPT | ENABLE_CIPHER | DECR_SEMAPHORE */
+    dcpPacket->control0 = 0x322u | (handle->swapConfig & 0xFC0000u); /* CIPHER_INIT | CIPHER_ENCRYPT | ENABLE_CIPHER | DECR_SEMAPHORE */
     dcpPacket->control1 = 0x10u;  /* CBC */
     dcpPacket->sourceBufferAddress = (uint32_t)plaintext;
     dcpPacket->destinationBufferAddress = (uint32_t)ciphertext;
@@ -557,7 +541,7 @@ status_t DCP_AES_DecryptCbcNonBlocking(DCP_Type *base,
         return kStatus_InvalidArgument;
     }
 
-    dcpPacket->control0 = 0x222u; /* CIPHER_INIT | ENABLE_CIPHER | DECR_SEMAPHORE */
+    dcpPacket->control0 = 0x222u | (handle->swapConfig & 0xFC0000u); /* CIPHER_INIT | ENABLE_CIPHER | DECR_SEMAPHORE */
     dcpPacket->control1 = 0x10u;  /* CBC */
     dcpPacket->sourceBufferAddress = (uint32_t)ciphertext;
     dcpPacket->destinationBufferAddress = (uint32_t)plaintext;
@@ -744,7 +728,7 @@ static status_t dcp_hash_engine_init(DCP_Type *base, dcp_hash_ctx_internal_t *ct
 static status_t dcp_hash_update_non_blocking(
     DCP_Type *base, dcp_hash_ctx_internal_t *ctxInternal, dcp_work_packet_t *dcpPacket, const uint8_t *msg, size_t size)
 {
-    dcpPacket->control0 = ctxInternal->ctrl0 | kDCP_CONTROL0_ENABLE_HASH | kDCP_CONTROL0_DECR_SEMAPHOR;
+    dcpPacket->control0 = ctxInternal->ctrl0 | (ctxInternal->handle->swapConfig & 0xFC0000u) | kDCP_CONTROL0_ENABLE_HASH | kDCP_CONTROL0_DECR_SEMAPHOR;
     if (ctxInternal->algo == kDCP_Sha256)
     {
         dcpPacket->control1 = kDCP_CONTROL1_HASH_SELECT_SHA256;

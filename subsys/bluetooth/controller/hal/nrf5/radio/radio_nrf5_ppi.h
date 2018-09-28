@@ -269,12 +269,8 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(u8_t trx)
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_DISABLE \
 	((PPI_CHENCLR_CH10_Clear << PPI_CHENCLR_CH10_Pos) \
 	& PPI_CHENCLR_CH10_Msk)
-#define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_EVT \
-	NRF_PPI->CH[HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI].EEP
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT \
 	((u32_t)&(NRF_RADIO->EVENTS_END))
-#define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK \
-	NRF_PPI->CH[HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI].TEP
 #define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_TASK(index) \
 	((u32_t)&(NRF_PPI->TASKS_CHG[SW_SWITCH_TIMER_TASK_GROUP(index)].EN))
 
@@ -309,14 +305,14 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(u8_t trx)
 
 static inline void hal_radio_txen_on_sw_switch(u8_t ppi)
 {
-	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(ppi) =
-		HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX;
+	nrf_ppi_task_endpoint_setup(ppi,
+		HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX);
 }
 
 static inline void hal_radio_rxen_on_sw_switch(u8_t ppi)
 {
-	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(ppi) =
-		HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_RX;
+	nrf_ppi_task_endpoint_setup(ppi,
+		HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_RX);
 }
 
 #if defined(CONFIG_SOC_NRF52840)

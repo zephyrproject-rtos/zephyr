@@ -9,8 +9,7 @@
 if SOC_FAMILY_ARM
 
 menuconfig CLOCK_CONTROL_BEETLE
-	bool
-	prompt "BEETLE Clock Control"
+	bool "BEETLE Clock Control"
 	depends on SOC_SERIES_BEETLE
 	default y if SOC_SERIES_BEETLE
 	help

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __JSON_H
-#define __JSON_H
+#ifndef ZEPHYR_INCLUDE_JSON_H_
+#define ZEPHYR_INCLUDE_JSON_H_
 
 
 
@@ -633,4 +633,4 @@ int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
 /**
  * @}
  */
-#endif /* __JSON_H */
+#endif /* ZEPHYR_INCLUDE_JSON_H_ */

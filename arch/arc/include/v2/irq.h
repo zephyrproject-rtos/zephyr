@@ -12,8 +12,8 @@
  * other definitions for the ARCv2 processor architecture.
  */
 
-#ifndef _ARCV2_IRQ__H_
-#define _ARCV2_IRQ__H_
+#ifndef ZEPHYR_ARCH_ARC_INCLUDE_V2_IRQ_H_
+#define ZEPHYR_ARCH_ARC_INCLUDE_V2_IRQ_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,4 +64,4 @@ static ALWAYS_INLINE void _irq_setup(void)
 }
 #endif
 
-#endif /* _ARCV2_IRQ__H_ */
+#endif /* ZEPHYR_ARCH_ARC_INCLUDE_V2_IRQ_H_ */

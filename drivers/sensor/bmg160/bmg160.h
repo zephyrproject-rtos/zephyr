@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _BMG160_H_
-#define _BMG160_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_BMG160_BMG160_H_
+#define ZEPHYR_DRIVERS_SENSOR_BMG160_BMG160_H_
 
 #include <i2c.h>
 #include <gpio.h>
@@ -230,4 +230,4 @@ int bmg160_slope_config(struct device *dev, enum sensor_attribute attr,
 #define SYS_LOG_DOMAIN "BMG160"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <logging/sys_log.h>
-#endif /* _BMG160_H_ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_BMG160_BMG160_H_ */

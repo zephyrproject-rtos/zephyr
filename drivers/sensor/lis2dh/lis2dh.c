@@ -183,7 +183,6 @@ static int lis2dh_freq_to_odr_val(u16_t freq)
 
 static int lis2dh_acc_odr_set(struct device *dev, u16_t freq)
 {
-	struct lis2dh_data *lis2dh = dev->driver_data;
 	int odr;
 	int status;
 	u8_t value;
@@ -324,7 +323,7 @@ int lis2dh_init(struct device *dev)
 	 * pin. Register values are retained if power is not removed.
 	 * Default values see LIS2DH documentation page 30, chapter 6.
 	 */
-	memset(raw, 0, sizeof(raw));
+	(void)memset(raw, 0, sizeof(raw));
 	raw[LIS2DH_DATA_OFS] = LIS2DH_ACCEL_EN_BITS;
 
 	status = lis2dh_burst_write(dev, LIS2DH_REG_CTRL1, raw,

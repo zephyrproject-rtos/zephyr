@@ -127,16 +127,26 @@ static u16_t smp_bt_get_mtu(const struct net_buf *nb)
 	return mtu - 3;
 }
 
-static void smp_bt_buf_free(struct net_buf *nb)
+static void smp_bt_ud_free(void *ud)
 {
-	struct smp_bt_user_data *ud = net_buf_user_data(nb);
+	struct smp_bt_user_data *user_data = ud;
 
-	if (ud->conn) {
-		bt_conn_unref(ud->conn);
-		ud->conn = NULL;
+	if (user_data->conn) {
+		bt_conn_unref(user_data->conn);
+		user_data->conn = NULL;
+	}
+}
+
+static int smp_bt_ud_copy(struct net_buf *dst, const struct net_buf *src)
+{
+	struct smp_bt_user_data *src_ud = net_buf_user_data(src);
+	struct smp_bt_user_data *dst_ud = net_buf_user_data(dst);
+
+	if (src_ud->conn) {
+		dst_ud->conn = bt_conn_ref(src_ud->conn);
 	}
 
-	mcumgr_buf_free(nb);
+	return 0;
 }
 
 /**
@@ -155,7 +165,8 @@ static int smp_bt_tx_pkt(struct zephyr_smp_transport *zst, struct net_buf *nb)
 		bt_conn_unref(conn);
 	}
 
-	smp_bt_buf_free(nb);
+	smp_bt_ud_free(net_buf_user_data(nb));
+	mcumgr_buf_free(nb);
 
 	return rc;
 }
@@ -170,7 +181,8 @@ static int smp_bt_init(struct device *dev)
 	ARG_UNUSED(dev);
 
 	zephyr_smp_transport_init(&smp_bt_transport, smp_bt_tx_pkt,
-				  smp_bt_get_mtu);
+				  smp_bt_get_mtu, smp_bt_ud_copy,
+				  smp_bt_ud_free);
 	return 0;
 }
 

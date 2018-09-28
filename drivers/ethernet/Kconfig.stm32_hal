@@ -7,12 +7,12 @@
 #
 
 menuconfig ETH_STM32_HAL
-	bool
-	prompt "STM32 HAL Ethernet driver"
+	bool "STM32 HAL Ethernet driver"
 	depends on NET_L2_ETHERNET
 	select USE_STM32_HAL_ETH
 	help
-	  Enable STM32 HAL based Ethernet driver.
+	  Enable STM32 HAL based Ethernet driver. It is available for
+          all Ethernet enabled variants of the F2, F4 and F7 series.
 
 if ETH_STM32_HAL
 

@@ -234,15 +234,12 @@ int metal_irq_unregister(int irq,
 
 unsigned int metal_irq_save_disable(void)
 {
-	sys_irq_save_disable();
-	return 0;
+	return sys_irq_save_disable();
 }
 
 void metal_irq_restore_enable(unsigned int flags)
 {
-	(void)flags;
-
-	sys_irq_restore_enable();
+	sys_irq_restore_enable(flags);
 }
 
 void metal_irq_enable(unsigned int vector)

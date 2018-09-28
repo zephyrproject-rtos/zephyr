@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef DRIVERS_FLASH_FLASH_STM32_H_
-#define DRIVERS_FLASH_FLASH_STM32_H_
+#ifndef ZEPHYR_DRIVERS_FLASH_FLASH_STM32F3X_H_
+#define ZEPHYR_DRIVERS_FLASH_FLASH_STM32F3X_H_
 
 #include <soc.h>
 #include <flash.h>
@@ -63,4 +63,4 @@ u8_t flash_stm32_erase_page(struct device *flash,
 
 u8_t flash_stm32_erase_all_pages(struct device *flash);
 
-#endif /* DRIVERS_FLASH_FLASH_STM32_H_ */
+#endif /* ZEPHYR_DRIVERS_FLASH_FLASH_STM32F3X_H_ */

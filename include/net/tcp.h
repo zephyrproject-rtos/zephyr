@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __TCP_H
-#define __TCP_H
+#ifndef ZEPHYR_INCLUDE_NET_TCP_H_
+#define ZEPHYR_INCLUDE_NET_TCP_H_
 
 #include <zephyr/types.h>
 
@@ -66,4 +66,4 @@ struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
 }
 #endif
 
-#endif /* __TCP_H */
+#endif /* ZEPHYR_INCLUDE_NET_TCP_H_ */

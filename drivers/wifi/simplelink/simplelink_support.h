@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef __SIMPLELINK_SUPPORT_H__
-#define __SIMPLELINK_SUPPORT_H__
+#ifndef ZEPHYR_DRIVERS_WIFI_SIMPLELINK_SIMPLELINK_SUPPORT_H_
+#define ZEPHYR_DRIVERS_WIFI_SIMPLELINK_SIMPLELINK_SUPPORT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,4 +51,4 @@ extern int _simplelink_disconnect(void);
  * @}
  */
 
-#endif /* __SIMPLELINK_SUPPORT_H__ */
+#endif /* ZEPHYR_DRIVERS_WIFI_SIMPLELINK_SIMPLELINK_SUPPORT_H_ */

@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __POSIX_SIGNAL_H__
-#define __POSIX_SIGNAL_H__
+#ifndef ZEPHYR_INCLUDE_POSIX_SIGNAL_H_
+#define ZEPHYR_INCLUDE_POSIX_SIGNAL_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,4 +41,4 @@ typedef struct sigevent {
 }
 #endif
 
-#endif /* __POSIX_TIME_H__ */
+#endif /* POSIX__SIGNAL_H */

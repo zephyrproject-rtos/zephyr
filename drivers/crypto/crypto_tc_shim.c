@@ -61,7 +61,7 @@ static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 	if (tc_cbc_mode_decrypt(op->out_buf,
 			op->out_buf_max,
 			op->in_buf + TC_AES_BLOCK_SIZE,
-			op->in_len,
+			op->in_len - TC_AES_BLOCK_SIZE,
 			op->in_buf, &data->session_key) == TC_CRYPTO_FAIL) {
 		SYS_LOG_ERR("Func TC internal error during CBC decryption");
 		return -EIO;
@@ -294,7 +294,7 @@ static int tc_session_free(struct device *dev, struct cipher_ctx *sessn)
 	struct tc_shim_drv_state *data =  sessn->drv_sessn_state;
 
 	ARG_UNUSED(dev);
-	memset(data, 0, sizeof(struct tc_shim_drv_state));
+	(void)memset(data, 0, sizeof(struct tc_shim_drv_state));
 	data->in_use = 0;
 
 	return 0;

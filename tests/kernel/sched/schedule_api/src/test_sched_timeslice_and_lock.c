@@ -6,6 +6,7 @@
 
 #include "test_sched.h"
 #define THREADS_NUM     3
+#define DURATION	1
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREADS_NUM, STACK_SIZE);
 
 static struct thread_data tdata[THREADS_NUM];
@@ -16,6 +17,8 @@ K_THREAD_STACK_DEFINE(t_stack, STACK_SIZE);
 struct k_thread t;
 
 K_SEM_DEFINE(pend_sema, 0, 1);
+K_SEM_DEFINE(timer_sema, 0, 1);
+struct k_timer timer;
 
 static void thread_entry(void *p1, void *p2, void *p3)
 {
@@ -67,11 +70,25 @@ static void teardown_threads(void)
 	k_thread_priority_set(k_current_get(), old_prio);
 }
 
+static void timer_handler(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+	k_sem_give(&timer_sema);
+}
+
+static void thread_handler(void *p1, void *p2, void *p3)
+{
+	k_timer_init(&timer, timer_handler, NULL);
+	k_timer_start(&timer, DURATION, 0);
+}
+
 /*test cases*/
 
 /**
  * @brief Validate the behavior of cooperative thread
  * when it yields
+ *
+ * @ingroup kernel_sched_tests
  *
  * @details Create 3 threads of priority -2, -1 and 0.
  * Yield the main thread which is cooperative. Check
@@ -101,6 +118,8 @@ void test_yield_cooperative(void)
  * @details Create 3 threads of priority -2, -1 and 0. Put the main
  * thread in timeout queue by calling k_sleep() which is cooperative.
  * Check if all the threads gets executed.
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_sleep_cooperative(void)
 {
@@ -145,6 +164,8 @@ void test_busy_wait_cooperative(void)
  * executing.
  *
  * @see k_wakeup()
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_sleep_wakeup_preemptible(void)
 {
@@ -178,6 +199,8 @@ static void coop_thread(void *p1, void *p2, void *p3)
  * call should return gracefully without waking up the thread
  *
  * @see k_wakeup()
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_pending_thread_wakeup(void)
 {
@@ -211,6 +234,8 @@ void test_pending_thread_wakeup(void)
  * @details Create 3 threads with -1, 0, and 1 as priority, setup
  * time slice for threads with priority 0. Make sure the threads
  * with equal priorities are executed in time slice.
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_time_slicing_preemptible(void)
 {
@@ -244,6 +269,8 @@ void test_time_slicing_preemptible(void)
  * are not executed at that time.
  *
  * @see k_busy_wait()
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_time_slicing_disable_preemptible(void)
 {
@@ -270,6 +297,8 @@ void test_time_slicing_disable_preemptible(void)
  * @details Create 3 threads and lock the scheduler. Make sure that the
  * threads are not executed. Call k_sleep() and check if the threads
  * have executed.
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_lock_preemptible(void)
 {
@@ -303,6 +332,8 @@ void test_lock_preemptible(void)
  * and check if the threads have executed.
  *
  * @see k_sched_lock(), k_sched_unlock()
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_unlock_preemptible(void)
 {
@@ -323,4 +354,25 @@ void test_unlock_preemptible(void)
 	}
 	/* restore environment */
 	teardown_threads();
+}
+
+/**
+ * @brief validate k_wakeup() in some corner scenario
+ * @details trigger a timer and after expiration of timer
+ * call k_wakeup(), even the thread is not in sleep state neither
+ * in pending state
+ *
+ * @see k_wakeup()
+ *
+ * @ingroup kernel_sched_tests
+ */
+void test_wakeup_expired_timer_thread(void)
+{
+	k_tid_t tid = k_thread_create(&tthread[0], t_stack, STACK_SIZE,
+					thread_handler, NULL, NULL, NULL,
+					K_PRIO_PREEMPT(0), 0, 0);
+	k_sem_take(&timer_sema, K_FOREVER);
+	/* wakeup a thread if the timer is expired */
+	k_wakeup(tid);
+	k_thread_abort(tid);
 }

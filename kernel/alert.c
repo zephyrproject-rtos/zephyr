@@ -17,6 +17,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <syscall_handler.h>
+#include <stdbool.h>
 
 extern struct k_alert _k_alert_list_start[];
 extern struct k_alert _k_alert_list_end[];
@@ -48,7 +49,7 @@ void _alert_deliver(struct k_work *work)
 {
 	struct k_alert *alert = CONTAINER_OF(work, struct k_alert, work_item);
 
-	while (1) {
+	while (true) {
 		if ((alert->handler)(alert) == 0) {
 			/* do nothing -- handler has processed the alert */
 		} else {

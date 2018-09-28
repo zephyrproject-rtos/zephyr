@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SENSOR_MCP9808_H__
-#define __SENSOR_MCP9808_H__
+#ifndef ZEPHYR_DRIVERS_SENSOR_MCP9808_MCP9808_H_
+#define ZEPHYR_DRIVERS_SENSOR_MCP9808_MCP9808_H_
 
 #include <errno.h>
 
@@ -89,4 +89,4 @@ static void mcp9808_setup_interrupt(struct device *dev)
 #define SYS_LOG_DOMAIN "MCP9808"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <logging/sys_log.h>
-#endif /* __SENSOR_MCP9808_H__ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_MCP9808_MCP9808_H_ */

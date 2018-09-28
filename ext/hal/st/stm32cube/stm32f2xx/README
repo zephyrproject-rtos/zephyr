@@ -35,3 +35,16 @@ License Link:
    http://www.st.com/resource/en/license_agreement/dm00218346.pdf
 
 Patch List:
+
+   *Fix VBUS sensing deactivation
+     The error is detected if USART1 TX configured to PA9 and RX to PA10.
+     The serial cable removal stops the USB communication.
+     In case of VBUS sensing deactivation, erroneously
+     both USB_OTG_GCCFG_VBUSBSEN and USB_OTG_GCCFG_NOVBUSSENS are set in GCCFG.
+     Correct handling is:
+      - VBUS sensing deactivation: set USB_OTG_GCCFG_NOVBUSSENS in GCCFG.
+      - VBUS sensing activation:   set USB_OTG_GCCFG_VBUSBSEN in GCCFG.
+    Impacted files:
+     ext/hal/st/stm32cube/stm32f2xx/drivers/src/stm32f2xx_ll_usb.c
+    ST Bug Tracker ID: 34714
+

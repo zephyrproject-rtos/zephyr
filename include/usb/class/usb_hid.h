@@ -14,8 +14,8 @@
  * Version 1.11 document (HID1_11-1.pdf).
  */
 
-#ifndef __USB_HID_H__
-#define __USB_HID_H__
+#ifndef ZEPHYR_INCLUDE_USB_CLASS_USB_HID_H_
+#define ZEPHYR_INCLUDE_USB_CLASS_USB_HID_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,6 +69,9 @@ struct hid_ops {
 	 * the next transfer.
 	 */
 	hid_int_ready_callback int_in_ready;
+#ifdef CONFIG_ENABLE_HID_INT_OUT_EP
+	hid_int_ready_callback int_out_ready;
+#endif
 };
 
 /* HID Report Definitions */
@@ -157,6 +160,9 @@ void usb_hid_register_device(const u8_t *desc, size_t size,
 /* Write to hid interrupt endpoint */
 int hid_int_ep_write(const u8_t *data, u32_t data_len, u32_t *bytes_ret);
 
+/* Read from hid interrupt endpoint */
+int hid_int_ep_read(u8_t *data, u32_t max_data_len, u32_t *ret_bytes);
+
 /* Initialize USB HID */
 int usb_hid_init(void);
 
@@ -164,4 +170,4 @@ int usb_hid_init(void);
 }
 #endif
 
-#endif /* __USB_HID_H__ */
+#endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_HID_H_ */

@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.8.2)
 if(BOARD STREQUAL bbc_microbit)
   set(CONF_FILE microbit.conf)
 else()

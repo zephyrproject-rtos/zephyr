@@ -20,6 +20,7 @@ extern void test_queue_loop(void);
 extern void test_queue_supv_to_user(void);
 extern void test_auto_free(void);
 #endif
+extern void test_queue_alloc(void);
 
 typedef struct qdata {
 	sys_snode_t snode;

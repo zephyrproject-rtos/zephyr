@@ -99,4 +99,13 @@ config NET_STATISTICS_ETHERNET
 	  requires support from the ethernet driver. The driver needs
 	  to collect the statistics.
 
+config NET_STATISTICS_ETHERNET_VENDOR
+	bool "Vendor specific Ethernet statistics"
+	depends on NET_STATISTICS_ETHERNET
+	help
+	  Allows Ethernet drivers to provide statistics information
+	  from vendor specific hardware registers in a form of
+	  key-value pairs. Deciphering the information may require
+	  vendor documentation.
+
 endif # NET_STATISTICS

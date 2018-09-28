@@ -3,13 +3,16 @@ breathe==4.9.1
 sphinx==1.7.5
 docutils==0.14
 sphinx_rtd_theme
+sphinxcontrib-svg2pdfconverter
 junit2html
-PyYAML==3.12
+PyYAML>=3.12
 ply==3.10
 hub==2.0
 gitlint
 pyelftools==0.24
+pyocd
 pyserial
 pykwalify
 # "win32" is used for 64-bit Windows as well
 windows-curses; sys_platform == "win32"
+colorama

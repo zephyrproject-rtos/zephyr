@@ -196,16 +196,13 @@
 
 static inline void hal_radio_reset(void)
 {
-#if !defined(CONFIG_SOC_SERIES_NWTSIM_NRFXX)
 	/* Anomalies 102, 106 and 107 */
 	*(volatile u32_t *)0x40001774 = ((*(volatile u32_t *)0x40001774) &
 					 0xfffffffe) | 0x01000000;
-#endif /* !CONFIG_SOC_SERIES_NWTSIM_NRFXX */
 }
 
 static inline void hal_radio_ram_prio_setup(void)
 {
-#if !defined(CONFIG_SOC_SERIES_NWTSIM_NRFXX)
 	struct {
 		u32_t volatile reserved_0[0x5a0 >> 2];
 		u32_t volatile bridge_type;
@@ -242,7 +239,6 @@ static inline void hal_radio_ram_prio_setup(void)
 	NRF_AMLI->RAMPRI.I2S     = 0xFFFFFFFFUL;
 	NRF_AMLI->RAMPRI.PDM     = 0xFFFFFFFFUL;
 	NRF_AMLI->RAMPRI.PWM     = 0xFFFFFFFFUL;
-#endif /* !CONFIG_SOC_SERIES_NWTSIM_NRFXX */
 }
 
 static inline u32_t hal_radio_phy_mode_get(u8_t phy, u8_t flags)

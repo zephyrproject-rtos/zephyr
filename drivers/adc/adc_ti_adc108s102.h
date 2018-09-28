@@ -5,8 +5,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __ADC108S102_PRIV_H__
-#define __ADC108S102_PRIV_H__
+#ifndef ZEPHYR_DRIVERS_ADC_ADC_TI_ADC108S102_H_
+#define ZEPHYR_DRIVERS_ADC_ADC_TI_ADC108S102_H_
 
 #include <spi.h>
 #include <adc.h>
@@ -53,4 +53,4 @@ struct ti_adc108s102_data {
 }
 #endif
 
-#endif /* __ADC108S102_PRIV_H__ */
+#endif /* ZEPHYR_DRIVERS_ADC_ADC_TI_ADC108S102_H_ */

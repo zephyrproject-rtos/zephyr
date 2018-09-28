@@ -479,7 +479,7 @@ static int connect_udp(sa_family_t family, struct net_app_ctx *ctx,
 		net_context_set_option(ctx->ipv6.ctx, NET_OPT_PRIORITY,
 				       &priority, sizeof(u8_t));
 
-		net_context_get_option(ctx->ipv4.ctx, NET_OPT_PRIORITY,
+		net_context_get_option(ctx->ipv6.ctx, NET_OPT_PRIORITY,
 				       &priority, &optlen);
 	}
 #endif
@@ -512,9 +512,9 @@ static void setup_clients(void)
 
 		if (i % 2) {
 			NET_DBG("TC %d connecting to %s", i,
-				CONFIG_NET_APP_PEER_IPV6_ADDR);
+				CONFIG_NET_CONFIG_PEER_IPV6_ADDR);
 			ret = connect_udp(AF_INET6, &udp6[i],
-					  CONFIG_NET_APP_PEER_IPV6_ADDR,
+					  CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
 					  &conf.ipv6[i], i);
 		} else {
 			NET_DBG("TC %d connecting to %s", i,
@@ -539,9 +539,9 @@ static void setup_clients(void)
 
 		if (i % 2) {
 			NET_DBG("TC %d connecting to %s", i,
-				CONFIG_NET_APP_PEER_IPV4_ADDR);
+				CONFIG_NET_CONFIG_PEER_IPV4_ADDR);
 			ret = connect_udp(AF_INET, &udp4[i],
-					  CONFIG_NET_APP_PEER_IPV4_ADDR,
+					  CONFIG_NET_CONFIG_PEER_IPV4_ADDR,
 					  &conf.ipv4[i], i);
 		} else {
 			NET_DBG("TC %d connecting to %s", i,

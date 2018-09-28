@@ -36,6 +36,10 @@ static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
 				  u8_t num_msgs, u16_t addr)
 {
 	for (size_t i = 0; i < num_msgs; i++) {
+		if (I2C_MSG_ADDR_10_BITS & msgs[i].flags) {
+			return -ENOTSUP;
+		}
+
 		nrfx_twim_xfer_desc_t cur_xfer = {
 			.p_primary_buf  = msgs[i].buf,
 			.primary_length = msgs[i].len,

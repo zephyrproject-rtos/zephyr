@@ -18,7 +18,7 @@
 #define GPIO_CFG_SENSE_LOW (GPIO_PIN_CNF_SENSE_Low << GPIO_PIN_CNF_SENSE_Pos)
 
 /* change this to use another GPIO port */
-#define PORT		SW0_GPIO_NAME
+#define PORT		SW0_GPIO_CONTROLLER
 #define BUTTON_1	SW0_GPIO_PIN
 #define BUTTON_2	SW1_GPIO_PIN
 #define LOW		0

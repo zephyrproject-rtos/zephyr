@@ -7,8 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_MESH_H
-#define __BT_MESH_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_MESH_H_
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -22,4 +22,4 @@
 #include <bluetooth/mesh/health_cli.h>
 #include <bluetooth/mesh/proxy.h>
 
-#endif /* __BT_MESH_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_H_ */

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _STM32_GPIO_H_
-#define _STM32_GPIO_H_
+#ifndef ZEPHYR_DRIVERS_GPIO_GPIO_STM32_H_
+#define ZEPHYR_DRIVERS_GPIO_GPIO_STM32_H_
 
 /**
  * @file header for STM32 GPIO
@@ -16,6 +16,9 @@
 #include <gpio.h>
 
 /* GPIO buses definitions */
+
+#define STM32_PORT_NOT_AVAILABLE 0xFFFFFFFF
+
 #ifdef CONFIG_SOC_SERIES_STM32F0X
 #define STM32_CLOCK_BUS_GPIO STM32_CLOCK_BUS_AHB1
 #define STM32_PERIPH_GPIOA LL_AHB1_GRP1_PERIPH_GPIOA
@@ -167,5 +170,5 @@ int stm32_gpio_get(u32_t *base, int pin);
  */
 int stm32_gpio_enable_int(int port, int pin);
 
-#endif /* _STM32_GPIO_H_ */
+#endif /* ZEPHYR_DRIVERS_GPIO_GPIO_STM32_H_ */
 

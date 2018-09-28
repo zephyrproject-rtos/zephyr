@@ -10,8 +10,7 @@
 # CRYPTO options
 #
 menuconfig CRYPTO
-	bool
-	prompt "Crypto Drivers [EXPERIMENTAL]"
+	bool "Crypto Drivers [EXPERIMENTAL]"
 
 if CRYPTO
 

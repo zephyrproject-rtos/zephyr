@@ -1,0 +1,247 @@
+# Kconfig - Quark X1000 SoC configuration options
+
+#
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2015-2016 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_QUARK_X1000
+
+config SOC_SERIES
+	default "quark_x1000"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 25000000  if HPET_TIMER
+
+config CLFLUSH_DETECT
+	def_bool y if CACHE_FLUSHING
+
+if SHARED_IRQ
+
+config SHARED_IRQ_0
+	def_bool y
+
+if SHARED_IRQ_0
+
+config SHARED_IRQ_0_NAME
+	default "SHARED_IRQ0"
+config SHARED_IRQ_0_IRQ
+	default 18
+config SHARED_IRQ_0_PRI
+	default 2
+
+endif # SHARED_IRQ_0
+
+endif # SHARED_IRQ
+
+if PCI_LEGACY_BRIDGE
+
+config PCI_LEGACY_BRIDGE_BUS
+	default 0
+config PCI_LEGACY_BRIDGE_DEV
+	default 31
+config PCI_LEGACY_BRIDGE_VENDOR_ID
+	default 0x8086
+config PCI_LEGACY_BRIDGE_DEVICE_ID
+	default 0x095e
+
+endif # PCI_LEGACY_BRIDGE
+
+if I2C
+
+config I2C_DW
+	def_bool y
+
+if I2C_DW
+
+config I2C_DW_CLOCK_SPEED
+	default 25
+
+config I2C_0
+	def_bool y
+
+if I2C_0
+
+config I2C_0_IRQ_PRI
+	default 2
+
+config I2C_DW_0_IRQ_SHARED_NAME
+	default SHARED_IRQ_0_NAME if SHARED_IRQ
+
+endif # I2C_0
+
+endif # I2C_DW
+
+endif # I2C
+
+
+if GPIO
+
+config GPIO_SCH
+	def_bool y
+
+if GPIO_SCH
+
+config GPIO_SCH_0
+	def_bool y
+
+config GPIO_SCH_1
+	def_bool y
+
+if GPIO_SCH_0
+
+config GPIO_SCH_0_DEV_NAME
+	default "GPIO_CW"
+
+endif # GPIO_SCH_0
+
+if GPIO_SCH_1
+
+config GPIO_SCH_1_DEV_NAME
+	default "GPIO_RW"
+
+endif # GPIO_SCH_1
+
+endif # GPIO_SCH
+
+config GPIO_DW
+	def_bool y
+
+if GPIO_DW
+
+config GPIO_DW_0
+	def_bool y
+
+if GPIO_DW_0
+
+config GPIO_DW_0_NAME
+	default "GPIO_0"
+config GPIO_DW_0_IRQ_PRI
+	default 2
+config GPIO_DW_0_IRQ_SHARED_NAME
+	default SHARED_IRQ_0_NAME if SHARED_IRQ
+
+endif # GPIO_DW_0
+
+endif # GPIO_DW
+
+endif # GPIO
+
+
+if SPI
+
+config SPI_INTEL
+	def_bool y
+
+if SPI_INTEL
+
+config SPI_CS_GPIO
+	def_bool y
+
+config SPI_0
+	def_bool y
+
+if SPI_0
+
+config SPI_0_IRQ_PRI
+	default 2
+config SPI_0_CS_GPIO_PORT
+	default "GPIO_0"
+config SPI_0_CS_GPIO_PIN
+	default 0
+
+endif # SPI_0
+
+config SPI_1
+	def_bool n
+
+if SPI_1
+
+config SPI_1_NAME
+	default "SPI_1"
+config SPI_1_IRQ_PRI
+	default 2
+config SPI_1_CS_GPIO_PORT
+	default "GPIO_0"
+config SPI_1_CS_GPIO_PIN
+	default 2
+
+endif # SPI_1
+
+endif # SPI_INTEL
+
+endif # SPI
+
+if UART_NS16550
+
+config UART_NS16550_PCI
+	def_bool y if PCI
+
+config UART_NS16550_PORT_0
+	def_bool y
+
+if UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_0_OPTIONS
+	default 0
+
+config UART_NS16550_PORT_0_PCI
+	def_bool y if UART_NS16550_PCI
+
+endif # UART_NS16550_PORT_0
+
+config UART_NS16550_PORT_1
+	def_bool y if PCI
+
+if UART_NS16550_PORT_1
+
+config UART_NS16550_PORT_1_OPTIONS
+	default 0
+
+config UART_NS16550_PORT_1_PCI
+	def_bool y if UART_NS16550_PCI
+
+endif # UART_NS16550_PORT_1
+
+endif # UART_NS16550
+
+
+if NET_L2_ETHERNET
+config ETH_DW
+	def_bool y
+
+if ETH_DW
+
+config ETH_DW_0
+	def_bool y
+
+if ETH_DW_0
+
+config ETH_DW_0_IRQ_SHARED_NAME
+	default SHARED_IRQ_0_NAME if SHARED_IRQ
+
+endif # ETH_DW_0
+
+endif # ETH_DW
+
+endif # NET_L2_ETHERNET
+
+# Pin multiplexer uses PCAL9535A, needs to be initialized after it
+config PINMUX_INIT_PRIORITY
+	default 80 if PINMUX
+
+if UART_CONSOLE
+
+endif
+
+if BT_UART
+
+config BT_UART_ON_DEV_NAME
+	default "UART_1"
+
+endif
+
+source "soc/x86/intel_quark/quark_x1000/Kconfig.defconfig.quark_x1000"
+endif # SOC_SERIES_QUARK_X1000

@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_S_H
+#define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_S_H
+
 #include "xtensa-asm2-context.h"
 
 /* Assembler header!  This file contains macros designed to be included
@@ -397,3 +400,5 @@ _after_imms\LVL:
 	jx a0
 .popsection
 .endm
+
+#endif	/* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_S_H */

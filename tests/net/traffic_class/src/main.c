@@ -567,7 +567,7 @@ static void traffic_class_send_data_mix(void)
 	 */
 	int total_packets = 0;
 
-	memset(send_priorities, 0, sizeof(send_priorities));
+	(void)memset(send_priorities, 0, sizeof(send_priorities));
 
 	traffic_class_send_priority(NET_PRIORITY_BK, MAX_PKT_TO_SEND, false);
 	total_packets += MAX_PKT_TO_SEND;
@@ -590,7 +590,7 @@ static void traffic_class_send_data_mix_all_1(void)
 {
 	int total_packets = 0;
 
-	memset(send_priorities, 0, sizeof(send_priorities));
+	(void)memset(send_priorities, 0, sizeof(send_priorities));
 
 	traffic_class_send_priority(NET_PRIORITY_BK, MAX_PKT_TO_SEND, false);
 	total_packets += MAX_PKT_TO_SEND;
@@ -635,7 +635,7 @@ static void traffic_class_send_data_mix_all_2(void)
 	int total_packets = 0;
 	int i;
 
-	memset(send_priorities, 0, sizeof(send_priorities));
+	(void)memset(send_priorities, 0, sizeof(send_priorities));
 
 	/* In this test send one packet for each queue instead of sending
 	 * n packets to same queue at a time.
@@ -876,7 +876,7 @@ static void traffic_class_recv_data_mix(void)
 	 */
 	int total_packets = 0;
 
-	memset(recv_priorities, 0, sizeof(recv_priorities));
+	(void)memset(recv_priorities, 0, sizeof(recv_priorities));
 
 	traffic_class_recv_priority(NET_PRIORITY_BK, MAX_PKT_TO_RECV, false);
 	total_packets += MAX_PKT_TO_RECV;
@@ -899,7 +899,7 @@ static void traffic_class_recv_data_mix_all_1(void)
 {
 	int total_packets = 0;
 
-	memset(recv_priorities, 0, sizeof(recv_priorities));
+	(void)memset(recv_priorities, 0, sizeof(recv_priorities));
 
 	traffic_class_recv_priority(NET_PRIORITY_BK, MAX_PKT_TO_RECV, false);
 	total_packets += MAX_PKT_TO_RECV;
@@ -944,7 +944,7 @@ static void traffic_class_recv_data_mix_all_2(void)
 	int total_packets = 0;
 	int i;
 
-	memset(recv_priorities, 0, sizeof(recv_priorities));
+	(void)memset(recv_priorities, 0, sizeof(recv_priorities));
 
 	/* In this test receive one packet for each queue instead of receiving
 	 * n packets to same queue at a time.

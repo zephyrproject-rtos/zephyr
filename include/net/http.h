@@ -10,8 +10,8 @@
  * @brief HTTP server and client implementation for Zephyr.
  */
 
-#ifndef __HTTP_H__
-#define __HTTP_H__
+#ifndef ZEPHYR_INCLUDE_NET_HTTP_H_
+#define ZEPHYR_INCLUDE_NET_HTTP_H_
 
 #include <net/net_app.h>
 #include <net/http_parser.h>
@@ -53,12 +53,12 @@ enum http_state {
 	  HTTP_STATE_RECEIVING_HEADER,
 	  HTTP_STATE_HEADER_RECEIVED,
 	  HTTP_STATE_OPEN,
-};
+} __packed;
 
 enum http_url_flags {
 	HTTP_URL_STANDARD = 0,
 	HTTP_URL_WEBSOCKET,
-};
+} __packed;
 
 enum http_connection_type {
 	HTTP_CONNECTION = 1,
@@ -1122,4 +1122,4 @@ void http_server_conn_del(struct http_ctx *ctx);
 }
 #endif
 
-#endif /* __HTTP_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_HTTP_H_ */

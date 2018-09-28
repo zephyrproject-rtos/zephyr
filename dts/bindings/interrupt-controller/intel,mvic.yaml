@@ -12,6 +12,7 @@ properties:
       type: string
       description: compatible strings
       constraint: "intel,mvic"
+      generation: define
 
   reg:
       category: required

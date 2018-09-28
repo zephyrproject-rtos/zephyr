@@ -8,7 +8,7 @@
 
 menuconfig I2C_ESP32
 	bool "ESP32 I2C"
-	depends on I2C && SOC_ESP32
+	depends on SOC_ESP32
 	select GPIO_ESP32
 	help
 	  Enables the ESP32 I2C driver

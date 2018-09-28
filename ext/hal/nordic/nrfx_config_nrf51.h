@@ -38,8 +38,8 @@
 
 // <e> NRFX_ADC_ENABLED - nrfx_adc - ADC peripheral driver
 //==========================================================
-#ifndef NRFX_ADC_ENABLED
-#define NRFX_ADC_ENABLED 0
+#ifdef CONFIG_NRFX_ADC
+#define NRFX_ADC_ENABLED 1
 #endif
 // <o> NRFX_ADC_CONFIG_IRQ_PRIORITY  - Interrupt priority
 

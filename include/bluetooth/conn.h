@@ -7,8 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_CONN_H
-#define __BT_CONN_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CONN_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CONN_H_
 
 /**
  * @brief Connection management
@@ -83,13 +83,14 @@ void bt_conn_unref(struct bt_conn *conn);
  *
  *  Look up an existing connection based on the remote address.
  *
+ *  @param id   Local identity (in most cases BT_ID_DEFAULT).
  *  @param peer Remote address.
  *
  *  @return Connection object or NULL if not found. The caller gets a
  *  new reference to the connection object which must be released with
  *  bt_conn_unref() once done using the object.
  */
-struct bt_conn *bt_conn_lookup_addr_le(const bt_addr_le_t *peer);
+struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer);
 
 /** @brief Get destination (peer) address of a connection.
  *
@@ -134,6 +135,7 @@ enum {
  *
  *  @param type Connection Type
  *  @param role Connection Role
+ *  @param id Which local identity the connection was created with
  *  @param le LE Connection specific Info
  *  @param br BR/EDR Connection specific Info
  */
@@ -141,6 +143,8 @@ struct bt_conn_info {
 	u8_t type;
 
 	u8_t role;
+
+	u8_t id;
 
 	union {
 		struct bt_conn_le_info le;
@@ -382,22 +386,182 @@ struct bt_conn_cb {
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
 
+/** Enable/disable bonding.
+ *
+ *  Set/clear the Bonding flag in the Authentication Requirements of
+ *  SMP Pairing Request/Response data.
+ *  The initial value of this flag depends on BT_BONDABLE Kconfig setting.
+ *  For the vast majority of applications calling this function shouldn't be
+ *  needed.
+ *
+ *  @param enable Value allowing/disallowing to be bondable.
+ */
+void bt_set_bondable(bool enable);
+
+/** @def BT_PASSKEY_INVALID
+ *
+ *  Special passkey value that can be used to disable a previously
+ *  set fixed passkey.
+ */
+#define BT_PASSKEY_INVALID 0xffffffff
+
+/** @brief Set a fixed passkey to be used for pairing.
+ *
+ *  This API is only available when the CONFIG_BT_FIXED_PASSKEY
+ *  configuration option has been enabled.
+ *
+ *  Sets a fixed passkey to be used for pairing. If set, the
+ *  pairing_confim() callback will be called for all incoming pairings.
+ *
+ *  @param passkey A valid passkey (0 - 999999) or BT_PASSKEY_INVALID
+ *                 to disable a previously set fixed passkey.
+ *
+ *  @return 0 on success or a negative error code on failure.
+ */
+int bt_passkey_set(unsigned int passkey);
+
 /** Authenticated pairing callback structure */
 struct bt_conn_auth_cb {
+	/** @brief Display a passkey to the user.
+	 *
+	 *  When called the application is expected to display the given
+	 *  passkey to the user, with the expectation that the passkey will
+	 *  then be entered on the peer device. The passkey will be in the
+	 *  range of 0 - 999999, and is expected to be padded with zeroes so
+	 *  that six digits are always shown. E.g. the value 37 should be
+	 *  shown as 000037.
+	 *
+	 *  This callback may be set to NULL, which means that the local
+	 *  device lacks the ability do display a passkey. If set
+	 *  to non-NULL the cancel callback must also be provided, since
+	 *  this is the only way the application can find out that it should
+	 *  stop displaying the passkey.
+	 *
+	 *  @param conn Connection where pairing is currently active.
+	 *  @param passkey Passkey to show to the user.
+	 */
 	void (*passkey_display)(struct bt_conn *conn, unsigned int passkey);
+
+	/** @brief Request the user to enter a passkey.
+	 *
+	 *  When called the user is expected to enter a passkey. The passkey
+	 *  must be in the range of 0 - 999999, and should be expected to
+	 *  be zero-padded, as that's how the peer device will typically be
+	 *  showing it (e.g. 37 would be shown as 000037).
+	 *
+	 *  Once the user has entered the passkey its value should be given
+	 *  to the stack using the bt_conn_auth_passkey_entry() API.
+	 *
+	 *  This callback may be set to NULL, which means that the local
+	 *  device lacks the ability to enter a passkey. If set to non-NULL
+	 *  the cancel callback must also be provided, since this is the
+	 *  only way the application can find out that it should stop
+	 *  requesting the user to enter a passkey.
+	 *
+	 *  @param conn Connection where pairing is currently active.
+	 */
 	void (*passkey_entry)(struct bt_conn *conn);
+
+	/** @brief Request the user to confirm a passkey.
+	 *
+	 *  When called the user is expected to confirm that the given
+	 *  passkey is also shown on the peer device.. The passkey will
+	 *  be in the range of 0 - 999999, and should be zero-padded to
+	 *  always be six digits (e.g. 37 would be shown as 000037).
+	 *
+	 *  Once the user has confirmed the passkey to match, the
+	 *  bt_conn_auth_passkey_confirm() API should be called. If the
+	 *  user concluded that the passkey doesn't match the
+	 *  bt_conn_auth_cancel() API should be called.
+	 *
+	 *  This callback may be set to NULL, which means that the local
+	 *  device lacks the ability to confirm a passkey. If set to non-NULL
+	 *  the cancel callback must also be provided, since this is the
+	 *  only way the application can find out that it should stop
+	 *  requesting the user to confirm a passkey.
+	 *
+	 *  @param conn Connection where pairing is currently active.
+	 *  @param passkey Passkey to be confirmed.
+	 */
 	void (*passkey_confirm)(struct bt_conn *conn, unsigned int passkey);
+
+	/** @brief Cancel the ongoing user request.
+	 *
+	 *  This callback will be called to notify the application that it
+	 *  should cancel any previous user request (passkey display, entry
+	 *  or confirmation).
+	 *
+	 *  This may be set to NULL, but must always be provided whenever the
+	 *  passkey_display, passkey_entry passkey_confirm or pairing_confirm
+	 *  callback has been provided.
+	 *
+	 *  @param conn Connection where pairing is currently active.
+	 */
 	void (*cancel)(struct bt_conn *conn);
+
+	/** @brief Request confirmation for an incoming pairing.
+	 *
+	 *  This callback will be called to confirm an incoming pairing
+	 *  request where none of the other user callbacks is applicable.
+	 *
+	 *  If the user decides to accept the pairing the
+	 *  bt_conn_auth_pairing_confirm() API should be called. If the
+	 *  user decides to reject the pairing the bt_conn_auth_cancel() API
+	 *  should be called.
+	 *
+	 *  This callback may be set to NULL, which means that the local
+	 *  device lacks the ability to confirm a pairing request. If set
+	 *  to non-NULL the cancel callback must also be provided, since
+	 *  this is the only way the application can find out that it should
+	 *  stop requesting the user to confirm a pairing request.
+	 *
+	 *  @param conn Connection where pairing is currently active.
+	 */
 	void (*pairing_confirm)(struct bt_conn *conn);
+
 #if defined(CONFIG_BT_BREDR)
+	/** @brief Request the user to enter a passkey.
+	 *
+	 *  This callback will be called for a BR/EDR (Bluetooth Classic)
+	 *  connection where pairing is being performed. Once called the
+	 *  user is expected to enter a PIN code with a length between
+	 *  1 and 16 digits. If the @a highsec parameter is set to true
+	 *  the PIN code must be 16 digits long.
+	 *
+	 *  Once entered, the PIN code should be given to the stack using
+	 *  the bt_conn_auth_pincode_entry() API.
+	 *
+	 *  This callback may be set to NULL, however in that case pairing
+	 *  over BR/EDR will not be possible. If provided, the cancel
+	 *  callback must be provided as well.
+	 *
+	 *  @param conn Connection where pairing is currently active.
+	 *  @param highsec true if 16 digit PIN is required.
+	 */
 	void (*pincode_entry)(struct bt_conn *conn, bool highsec);
 #endif
+
+	/** @brief notify that pairing process was complete.
+	 *
+	 * This callback notifies the applicaiton that the pairing process
+	 * has been completed.
+	 *
+	 * @param conn Connection object.
+	 * @param bonded pairing is bonded or not.
+	 */
+	void (*pairing_complete)(struct bt_conn *conn, bool bonded);
+
+	/** @brief notify that pairing process has failed.
+	 *
+	 * @param conn Connection object.
+	 */
+	void (*pairing_failed)(struct bt_conn *conn);
 };
 
 /** @brief Register authentication callbacks.
  *
- *  Register callbacks to handle authenticated pairing. Passing NULL unregisters
- *  previous callbacks structure.
+ *  Register callbacks to handle authenticated pairing. Passing NULL
+ *  unregisters a previous callbacks structure.
  *
  *  @param cb Callback struct.
  *
@@ -513,4 +677,4 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer);
  * @}
  */
 
-#endif /* __BT_CONN_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CONN_H_ */

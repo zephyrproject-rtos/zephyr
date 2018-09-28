@@ -42,7 +42,7 @@ static void button_send_pressed(struct k_work *work)
 }
 
 static void button_pressed(struct device *dev, struct gpio_callback *cb,
-			   uint32_t pins)
+			   u32_t pins)
 {
 	struct mb_display *disp = mb_display_get();
 
@@ -103,11 +103,11 @@ void board_play_tune(const char *str)
 	while (*str) {
 		u32_t period, duration = 0;
 
-		while (*str && !isdigit(*str)) {
+		while (*str && !isdigit((unsigned char)*str)) {
 			str++;
 		}
 
-		while (isdigit(*str)) {
+		while (isdigit((unsigned char)*str)) {
 			duration *= 10;
 			duration += *str - '0';
 			str++;

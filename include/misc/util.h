@@ -11,12 +11,13 @@
  * Misc utilities usable by the kernel and application code.
  */
 
-#ifndef _UTIL__H_
-#define _UTIL__H_
+#ifndef ZEPHYR_INCLUDE_MISC_UTIL_H_
+#define ZEPHYR_INCLUDE_MISC_UTIL_H_
 
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
+#include <stdbool.h>
 
 /* Helper to pass a int as a pointer or vice-versa.
  * Those are available for 32 bits architectures:
@@ -117,8 +118,22 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 #define MHZ(x) (KHZ(x) * 1000)
 
 #ifndef BIT
+#if defined(_ASMLANGUAGE)
+#define BIT(n)  (1 << (n))
+#else
 #define BIT(n)  (1UL << (n))
 #endif
+#endif
+
+/**
+ * @brief Macro sets or clears bit depending on boolean value
+ *
+ * @param var Variable to be altered
+ * @param bit Bit number
+ * @param set Value 0 clears bit, any other value sets bit
+ */
+#define WRITE_BIT(var, bit, set) \
+	((var) = (set) ? ((var) | BIT(bit)) : ((var) & ~BIT(bit)))
 
 #define BIT_MASK(n) (BIT(n) - 1)
 
@@ -167,7 +182,7 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
  *   ENABLED:   _IS_ENABLED3(_YYYY,    1,    0)
  *   DISABLED   _IS_ENABLED3(_XXXX 1,  0)
  */
-#define _IS_ENABLED2(one_or_two_args) _IS_ENABLED3(one_or_two_args 1, 0)
+#define _IS_ENABLED2(one_or_two_args) _IS_ENABLED3(one_or_two_args true, false)
 
 /* And our second argument is thus now cooked to be 1 in the case
  * where the value is defined to 1, and 0 if not:
@@ -400,5 +415,31 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 #define MACRO_MAP_13(macro, a, ...) macro(a)MACRO_MAP_12(macro, __VA_ARGS__,)
 #define MACRO_MAP_14(macro, a, ...) macro(a)MACRO_MAP_13(macro, __VA_ARGS__,)
 #define MACRO_MAP_15(macro, a, ...) macro(a)MACRO_MAP_14(macro, __VA_ARGS__,)
+/*
+ * The following provides variadic preprocessor macro support to
+ * help eliminate multiple, repetitive function/macro calls.  This
+ * allows up to 10 "arguments" in addition to _call .
+ * Note - derived from work on:
+ * https://codecraft.co/2014/11/25/variadic-macros-tricks/
+ */
 
-#endif /* _UTIL__H_ */
+#define _GET_ARG(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
+
+#define _for_0(_call, ...)
+#define _for_1(_call, x) _call(x)
+#define _for_2(_call, x, ...) _call(x) _for_1(_call, ##__VA_ARGS__)
+#define _for_3(_call, x, ...) _call(x) _for_2(_call, ##__VA_ARGS__)
+#define _for_4(_call, x, ...) _call(x) _for_3(_call, ##__VA_ARGS__)
+#define _for_5(_call, x, ...) _call(x) _for_4(_call, ##__VA_ARGS__)
+#define _for_6(_call, x, ...) _call(x) _for_5(_call, ##__VA_ARGS__)
+#define _for_7(_call, x, ...) _call(x) _for_6(_call, ##__VA_ARGS__)
+#define _for_8(_call, x, ...) _call(x) _for_7(_call, ##__VA_ARGS__)
+#define _for_9(_call, x, ...) _call(x) _for_8(_call, ##__VA_ARGS__)
+#define _for_10(_call, x, ...) _call(x) _for_9(_call, ##__VA_ARGS__)
+
+#define FOR_EACH(x, ...) \
+	_GET_ARG(__VA_ARGS__, \
+	_for_10, _for_9, _for_8, _for_7, _for_6, _for_5, \
+	_for_4, _for_3, _for_2, _for_1, _for_0)(x, ##__VA_ARGS__)
+
+#endif /* ZEPHYR_INCLUDE_MISC_UTIL_H_ */

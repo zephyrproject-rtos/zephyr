@@ -12,6 +12,8 @@ phandles = {}
 aliases = defaultdict(list)
 chosen = {}
 reduced = {}
+defs = {}
+structs = {}
 
 regs_config = {
     'zephyr,flash' : 'CONFIG_FLASH',
@@ -79,11 +81,11 @@ def get_compat(node_address):
         if 'props' in reduced[node_address].keys():
             compat = reduced[node_address]['props'].get('compatible')
 
-        if isinstance(compat, list):
-            compat = compat[0]
-
         if compat == None:
             compat = find_parent_prop(node_address, 'compatible')
+
+        if isinstance(compat, list):
+            compat = compat[0]
 
     except:
         pass
@@ -118,7 +120,12 @@ def get_phandles(root, name, handles):
                 get_phandles(v, name + k, handles)
 
 
-def insert_defs(node_address, defs, new_defs, new_aliases):
+def insert_defs(node_address, new_defs, new_aliases):
+
+    for key in new_defs.keys():
+        if key.startswith('CONFIG_DT_COMPAT_'):
+            node_address = 'Compatibles'
+
     if node_address in defs:
         if 'aliases' in defs[node_address]:
             defs[node_address]['aliases'].update(new_aliases)

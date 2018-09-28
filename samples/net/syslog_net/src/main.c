@@ -12,7 +12,7 @@
 
 #include <zephyr.h>
 
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 
@@ -37,7 +37,7 @@ static void init_app(void)
 #if defined(CONFIG_NET_IPV6)
 	if (server_addr.sa_family == AF_INET6) {
 		snprintk(cmd, sizeof(cmd), "net ping %s",
-			 CONFIG_NET_APP_PEER_IPV6_ADDR);
+			 CONFIG_NET_CONFIG_PEER_IPV6_ADDR);
 		shell_exec(cmd);
 		return;
 	}
@@ -46,7 +46,7 @@ static void init_app(void)
 #if defined(CONFIG_NET_IPV4)
 	if (server_addr.sa_family == AF_INET) {
 		snprintk(cmd, sizeof(cmd), "net ping %s",
-			 CONFIG_NET_APP_PEER_IPV4_ADDR);
+			 CONFIG_NET_CONFIG_PEER_IPV4_ADDR);
 		shell_exec(cmd);
 		return;
 	}

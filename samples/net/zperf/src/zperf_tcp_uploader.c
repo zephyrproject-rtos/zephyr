@@ -42,7 +42,7 @@ void zperf_tcp_upload(struct net_context *ctx,
 	last_loop_time = start_time;
 	printk(TAG "New session started\n");
 
-	memset(sample_packet, 'z', sizeof(sample_packet));
+	(void)memset(sample_packet, 'z', sizeof(sample_packet));
 
 	do {
 		int ret = 0;

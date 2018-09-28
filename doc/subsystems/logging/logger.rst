@@ -34,7 +34,7 @@ time filtering is independent for each backend and each source of log messages.
 Source of log messages can be a module or specific instance of the module.
 
 There are four severity levels available in the system: error, warning, info
-and debug. For each severity level the logger API (:file:`subsys/logging/log.h`)
+and debug. For each severity level the logger API (:file:`include/logging/log.h`)
 has set of dedicated macros. Logger API also has macros for logging data.
 
 For each level following set of macros are available:
@@ -49,15 +49,14 @@ For each level following set of macros are available:
 There are two configuration categories: configurations per module and global
 configuration. When logging is enabled globally, it works for modules. However,
 modules can disable logging locally. Every module can specify its own logging
-level. The module must define the :c:macro:`LOG_LEVEL` macro before including
-the :file:`include/logging/log.h` header file to do so. Unless a global
-override is set, the module logging level will be honored. The global override
-can only increase the logging level. It cannot be used to lower module logging
-levels that were previously set higher. It is also possible to globally limit
-logs by providing maximal severity level present in the system, where maximal
-means lowest severity (e.g. if maximal level in the system is set to info, it
-means that errors, warnings and info levels are present but debug messages are
-excluded).
+level. The module must define the :c:macro:`LOG_LEVEL` macro before using the
+API. Unless a global override is set, the module logging level will be honored.
+The global override can only increase the logging level. It cannot be used to
+lower module logging levels that were previously set higher. It is also possible
+to globally limit logs by providing maximal severity level present in the
+system, where maximal means lowest severity (e.g. if maximal level in the system
+is set to info, it means that errors, warnings and info levels are present but
+debug messages are excluded).
 
 Each module which is using the logger must specify its unique name and
 register itself to the logger. If module consists of more than one file,
@@ -80,13 +79,13 @@ Global Kconfig Options
 
 These options can be found in the following path :file:`subsys/logging/Kconfig`.
 
-:option:`CONFIG_LOG`: Global switch, turs on/off the logger.
+:option:`CONFIG_LOG`: Global switch, turns on/off the logger.
 
 :option:`CONFIG_LOG_RUNTIME_FILTERING`: Enables runtime reconfiguration of the
 logger.
 
 :option:`CONFIG_LOG_MODE_OVERFLOW`: When logger cannot allocate new message
-oldests one are discarded.
+oldest one are discarded.
 
 :option:`CONFIG_LOG_MODE_NO_OVERFLOW`: When logger cannot allocate new message
 it is discarded.
@@ -109,6 +108,14 @@ be processed by printk. Longer strings are trimmed.
 the log macro call. Note that it can lead to errors when logger is used in the
 interrupt context.
 
+:option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`: When number of buffered log
+messages reaches the threshold dedicated thread (see :cpp:func:`log_thread_set`)
+is waken up. If :option:`CONFIG_LOG_PROCESS_THREAD` is enabled then this
+threshold is used by the internal thread.
+
+:option:`CONFIG_LOG_PROCESS_THREAD`: When enabled, logger is creating own thread
+which handles log processing.
+
 :option:`CONFIG_LOG_BUFFER_SIZE`: Number of bytes dedicated for the logger
 message pool. Single message capable of storing standard log with up to 3
 arguments or hexdump message with 12 bytes of data take 32 bytes.
@@ -117,10 +124,10 @@ arguments or hexdump message with 12 bytes of data take 32 bytes.
 
 :option:`CONFIG_LOG_BACKEND_UART`: Enabled build-in UART backend.
 
-:option:`CONFIG_LOG_BACKEND_UART_SHOW_COLOR`: Enables coloring of errors (red)
+:option:`CONFIG_LOG_BACKEND_SHOW_COLOR`: Enables coloring of errors (red)
 and warnings (yellow).
 
-:option:`CONFIG_LOG_BACKEND_UART_FORMAT_TIMESTAMP`: If enabled timestamp is
+:option:`CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP`: If enabled timestamp is
 formatted to *hh:mm:ss:mmm,uuu*. Otherwise is printed in raw format.
 
 .. _log_usage:
@@ -132,16 +139,37 @@ Logging in a module
 ===================
 
 In order to use logger in the module, a unique name of a module must be
-specified and module must be registered to the logger. Optionally, local,
-compile time level can be specified. If module consists of multiple files then
-registration is present only in one file.
+specified and module must be registered with the logger core using
+:c:macro:`LOG_MODULE_REGISTER`. Optionally, a compile time log level for the
+module can be specified as well.
 
 .. code-block:: c
 
-   #define LOG_MODULE_NAME foo
    #define LOG_LEVEL CONFIG_FOO_LOG_LEVEL /* From foo module Kconfig */
    #include <logging/log.h>
-   LOG_MODULE_REGISTER(); /* One per given LOG_MODULE_NAME */
+   LOG_MODULE_REGISTER(foo); /* One per given log_module_name */
+
+If the module consists of multiple files, then ``LOG_MODULE_REGISTER()`` should
+appear in exactly one of them. Each other file should use
+:c:macro:`LOG_MODULE_DECLARE` to declare its membership in the module.
+
+.. code-block:: c
+
+   #define LOG_LEVEL CONFIG_FOO_LOG_LEVEL /* From foo module Kconfig */
+   #include <logging/log.h>
+   LOG_MODULE_DECLARE(foo); /* In all files comprising the module but one */
+
+Dedicated Kconfig template (:file:`subsys/logging/Kconfig.template.log_config`)
+can be used to create local log level configuration.
+
+Example below presents usage of the template. As a result CONFIG_FOO_LOG_LEVEL
+will be generated:
+
+.. code-block:: none
+
+   module = FOO
+   module-str = foo
+   source "subsys/logging/Kconfig.template.log_config"
 
 Logging in a module instance
 ============================
@@ -192,7 +220,7 @@ Controlling the logger
 ======================
 
 Logger can be controlled using API defined in
-:file:`include/logging/log_ctrl.h`. Logger must be initilized before it can be
+:file:`include/logging/log_ctrl.h`. Logger must be initialized before it can be
 used. Optionally, user can provide function which returns timestamp value. If
 not provided, :c:macro:`k_cycle_get_32` is used for timestamping.
 :cpp:func:`log_process` function is used to trigger processing of one log
@@ -221,6 +249,13 @@ be used to change maximal severity level for given module. Module is identified
 by source ID and domain ID. Source ID can be retrieved if source name is known
 by iterating through all registered sources.
 
+If logger is processed from a thread then it is possible to enable a feature
+which will wake up processing thread when certain amount of log messages are
+buffered (see :option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`). It is also
+possible to enable internal logger thread (see
+:option:`CONFIG_LOG_PROCESS_THREAD`). In that case logger thread is initialized
+and log messages are processed implicitly.
+
 .. _log_panic:
 
 Logger panic
@@ -232,7 +267,7 @@ Logger controlling API provides a function for entering into panic mode
 (:cpp:func:`log_panic`) which should be called in such situation.
 
 When :cpp:func:`log_panic()` is called, logger sends _panic_ notification to
-all active backends. It is backend reponsibility to react. Backend should
+all active backends. It is backend responsibility to react. Backend should
 switch to blocking, synchronous mode (stop using interrupts) or disable itself.
 Once all backends are notified, logger flushes all buffered messages. Since
 that moment all logs are processed in a blocking way.
@@ -291,7 +326,7 @@ that log entry. Backend slots are examined when message is process by the
 logger core to determine if message is accepted by given backend.
 
 In the example below backend 1 is set to receive errors (*slot 1*) and backend
-2 up to info level (*slot 2*). Slots 3-9 are not used. Aggregatated filter
+2 up to info level (*slot 2*). Slots 3-9 are not used. Aggregated filter
 (*slot 0*) is set to info level and up to this level message from that
 particular source will be buffered.
 
@@ -308,7 +343,7 @@ When log processing is triggered, a message is removed from the list of pending
 messages.  If runtime filtering is disabled, the message is passed to all
 active backends, otherwise the message is passed to only those backends that
 have requested messages from that particular source (based on the source ID in
-the message), and security level. Once all backends are iterated, the message
+the message), and severity level. Once all backends are iterated, the message
 is considered processed by the logger, but the message may still be in use by a
 backend.
 

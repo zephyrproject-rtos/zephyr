@@ -121,6 +121,7 @@ void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
  */
 
 /**
+ * @brief Test semaphore count when given by an ISR
  * @see k_sem_give()
  */
 void test_simple_sem_from_isr(void)
@@ -144,6 +145,7 @@ void test_simple_sem_from_isr(void)
 }
 
 /**
+ * @brief Test semaphore count when given by thread
  * @see k_sem_give()
  */
 void test_simple_sem_from_task(void)
@@ -169,6 +171,7 @@ void test_simple_sem_from_task(void)
 }
 
 /**
+ * @brief Test if k_sem_take() decreases semaphore count
  * @see k_sem_take()
  */
 void test_sem_take_no_wait(void)
@@ -197,6 +200,7 @@ void test_sem_take_no_wait(void)
 }
 
 /**
+ * @brief Test k_sem_take() when there is no semaphore to take
  * @see k_sem_take()
  */
 void test_sem_take_no_wait_fails(void)
@@ -225,6 +229,7 @@ void test_sem_take_no_wait_fails(void)
 }
 
 /**
+ * @brief Test k_sem_take() with timeout expiry
  * @see k_sem_take()
  */
 void test_sem_take_timeout_fails(void)
@@ -246,6 +251,7 @@ void test_sem_take_timeout_fails(void)
 }
 
 /**
+ * @brief Test k_sem_take() with timeout
  * @see k_sem_take()
  */
 void test_sem_take_timeout(void)
@@ -272,6 +278,7 @@ void test_sem_take_timeout(void)
 }
 
 /**
+ * @brief Test k_sem_take() with forever timeout
  * @see k_sem_take()
  */
 void test_sem_take_timeout_forever(void)
@@ -298,6 +305,7 @@ void test_sem_take_timeout_forever(void)
 }
 
 /**
+ * @brief Test k_sem_take() with timeout in ISR context
  * @see k_sem_take()
  */
 void test_sem_take_timeout_isr(void)
@@ -323,6 +331,7 @@ void test_sem_take_timeout_isr(void)
 }
 
 /**
+ * @brief Test multiple semaphore take
  * @see k_sem_take()
  */
 void test_sem_take_multiple(void)
@@ -410,10 +419,10 @@ void test_sem_take_multiple(void)
 	zassert_true(signal_count == 1,
 		     "low priority thread didn't get executed");
 
-
 }
 
 /**
+ * @brief Test semaphore give and take and its count from ISR
  * @see k_sem_give()
  */
 void test_sem_give_take_from_isr(void)
@@ -441,12 +450,12 @@ void test_sem_give_take_from_isr(void)
 			     "signal count missmatch Expected %d, got %d\n",
 			     (i - 1), signal_count);
 	}
-
 }
 
 /**
- * @see k_sem_take(), k_sem_give()
+ * @}
  */
+
 void test_sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
 {
 	/* get blocked until the test thread gives the semaphore */
@@ -458,6 +467,8 @@ void test_sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
 
 
 /**
+ * @brief Test multiple semaphore take and give with wait
+ * @ingroup kernel_semaphore_tests
  * @see k_sem_take(), k_sem_give()
  */
 void test_sem_multiple_threads_wait(void)
@@ -517,6 +528,8 @@ void test_sem_multiple_threads_wait(void)
 }
 
 /**
+ * @brief Test semaphore timeout period
+ * @ingroup kernel_semaphore_tests
  * @see k_sem_take(), k_sem_give(), k_sem_reset()
  */
 void test_sem_measure_timeouts(void)
@@ -537,8 +550,8 @@ void test_sem_measure_timeouts(void)
 		     "k_sem_take failed when its shouldn't have");
 
 	zassert_true((end_ticks - start_ticks >= SECONDS(1)),
-		      "time missmatch expected %d ,got %d\n",
-		      SECONDS(1), end_ticks - start_ticks);
+		     "time missmatch expected %d ,got %d\n",
+		     SECONDS(1), end_ticks - start_ticks);
 
 	/* With 0 as the timeout */
 	start_ticks = k_uptime_get();
@@ -551,14 +564,11 @@ void test_sem_measure_timeouts(void)
 		     "k_sem_take failed when its shouldn't have");
 
 	zassert_true((end_ticks - start_ticks < 1),
-		      "time missmatch expected %d ,got %d\n",
-		      1, end_ticks - start_ticks);
+		     "time missmatch expected %d ,got %d\n",
+		     1, end_ticks - start_ticks);
 
 }
 
-/**
- * @see k_sem_give()
- */
 void test_sem_measure_timeout_from_thread_helper(void *p1, void *p2, void *p3)
 {
 	/* first sync the 2 threads */
@@ -571,6 +581,8 @@ void test_sem_measure_timeout_from_thread_helper(void *p1, void *p2, void *p3)
 
 
 /**
+ * @brief Test timeout of semaphore from thread
+ * @ingroup kernel_semaphore_tests
  * @see k_sem_give(), k_sem_reset(), k_sem_take()
  */
 void test_sem_measure_timeout_from_thread(void)
@@ -602,14 +614,11 @@ void test_sem_measure_timeout_from_thread(void)
 		     "k_sem_take failed when its shouldn't have");
 
 	zassert_true((end_ticks - start_ticks <= SECONDS(1)),
-		      "time missmatch. expected less than%d ,got %d\n",
-		      SECONDS(1), end_ticks - start_ticks);
+		     "time missmatch. expected less than%d ,got %d\n",
+		     SECONDS(1), end_ticks - start_ticks);
 
 }
 
-/**
- * @see k_sem_take()
- */
 void test_sem_multiple_take_and_timeouts_helper(void *timeout,
 						void *p2,
 						void *p3)
@@ -624,8 +633,8 @@ void test_sem_multiple_take_and_timeouts_helper(void *timeout,
 	end_ticks = k_uptime_get();
 
 	zassert_true((end_ticks - start_ticks >= (int)timeout),
-		      "time missmatch. expected less than%d ,got %d\n",
-		      timeout, end_ticks - start_ticks);
+		     "time missmatch. expected less than%d ,got %d\n",
+		     timeout, end_ticks - start_ticks);
 
 
 	k_pipe_put(&timeout_info_pipe, &timeout, sizeof(int),
@@ -634,6 +643,8 @@ void test_sem_multiple_take_and_timeouts_helper(void *timeout,
 }
 
 /**
+ * @brief Test multiple semaphore take with timeouts
+ * @ingroup kernel_semaphore_tests
  * @see k_sem_take(), k_sem_reset()
  */
 void test_sem_multiple_take_and_timeouts(void)
@@ -658,7 +669,7 @@ void test_sem_multiple_take_and_timeouts(void)
 		k_pipe_get(&timeout_info_pipe, &timeout, sizeof(int),
 			   &bytes_read, sizeof(int), K_FOREVER);
 		zassert_true(timeout == SECONDS(i + 1),
-			      "timeout didn't occur properly");
+			     "timeout didn't occur properly");
 	}
 
 	/* cleanup */
@@ -668,12 +679,9 @@ void test_sem_multiple_take_and_timeouts(void)
 
 }
 
-/**
- * @see k_sem_take()
- */
 void test_sem_multi_take_timeout_diff_sem_helper(void *timeout,
-						void *sema,
-						void *p3)
+						 void *sema,
+						 void *p3)
 {
 	u32_t start_ticks, end_ticks;
 	s32_t ret_value;
@@ -690,28 +698,30 @@ void test_sem_multi_take_timeout_diff_sem_helper(void *timeout,
 	end_ticks = k_uptime_get();
 
 	zassert_true((end_ticks - start_ticks >= (int)timeout),
-		      "time missmatch. expected less than%d ,got %d\n",
-		      timeout, end_ticks - start_ticks);
+		     "time missmatch. expected less than%d ,got %d\n",
+		     timeout, end_ticks - start_ticks);
 
 
 	k_pipe_put(&timeout_info_pipe, &info, sizeof(struct timeout_info),
-		   &bytes_written, sizeof(struct timeout_info),	K_FOREVER);
+		   &bytes_written, sizeof(struct timeout_info), K_FOREVER);
 
 }
 
 /**
+ * @brief Test sequence of multiple semaphore timeouts
+ * @ingroup kernel_semaphore_tests
  * @see k_sem_take(), k_sem_reset()
  */
 void test_sem_multi_take_timeout_diff_sem(void)
 {
 	size_t bytes_read;
 	struct timeout_info seq_info[] = {
-			{SECONDS(2), &simple_sem},
-			{SECONDS(1), &multiple_thread_sem},
-			{SECONDS(3), &simple_sem},
-			{SECONDS(5), &multiple_thread_sem},
-			{SECONDS(4), &simple_sem},
-		};
+		{ SECONDS(2), &simple_sem },
+		{ SECONDS(1), &multiple_thread_sem },
+		{ SECONDS(3), &simple_sem },
+		{ SECONDS(5), &multiple_thread_sem },
+		{ SECONDS(4), &simple_sem },
+	};
 
 	struct timeout_info retrieved_info;
 
@@ -742,14 +752,10 @@ void test_sem_multi_take_timeout_diff_sem(void)
 
 
 		zassert_true(retrieved_info.timeout == SECONDS(i + 1),
-			      "timeout didn't occur properly");
+			     "timeout didn't occur properly");
 	}
 
 }
-/**
- * @}
- */
-
 
 /* ztest main entry*/
 void test_main(void)

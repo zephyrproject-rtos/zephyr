@@ -27,8 +27,7 @@ config SYS_LOG_SHOW_COLOR
 	  Use color in the logs. This requires an ANSI capable terminal.
 
 config SYS_LOG_DEFAULT_LEVEL
-	int
-	prompt "Default log level"
+	int "Default log level"
 	depends on SYS_LOG
 	default 0
 	range 0 4
@@ -43,8 +42,7 @@ config SYS_LOG_DEFAULT_LEVEL
 	  4 DEBUG, default to write SYS_LOG_DBG in addition to previous levels
 
 config SYS_LOG_OVERRIDE_LEVEL
-	int
-	prompt "Override lowest log level"
+	int "Override lowest log level"
 	depends on SYS_LOG
 	default 0
 	range 0 4
@@ -188,7 +186,7 @@ config LOG_MAX_LEVEL
 config LOG_PRINTK
 	bool "Enable processing of printk messages."
 	help
-	  LOG_PRINTK messages are formatten in place and logged unconditionally.
+	  LOG_PRINTK messages are formatted in place and logged unconditionally.
 
 config LOG_PRINTK_MAX_STRING_LENGTH
 	int "Maximum string length supported by LOG_PRINTK"
@@ -201,11 +199,55 @@ config LOG_INPLACE_PROCESS
 	bool "Enable in place processing"
 	help
 	  When enabled log is processed in the context of the call. It impacts
-	  performance of the system since time consuming operations are performed in
-	  the context of the log entry (e.g. high priority interrupt). When enabled
-	  LOG_BUFFER_SIZE can be reduced. Logger backends must support exclusive
-	  access to work flawlessly in that mode because one log operation can be
-	  interrupted by another one in higher priority context.
+	  performance of the system since time consuming operations are
+	  performed in the context of the log entry (e.g. high priority
+	  interrupt). When enabled LOG_BUFFER_SIZE can be reduced. Logger
+	  backends must support exclusive access to work flawlessly in that mode
+	  because one log operation can be interrupted by another one in higher
+	  priority context.
+
+config LOG_PROCESS_TRIGGER_THRESHOLD
+	int "Amount of buffered logs which triggers processing thread."
+	default 10
+	help
+	  When number of buffered messages reaches the threshold thread is waken
+	  up. Log processing thread ID is provided during log initialization.
+	  Set 0 to disable the feature. If LOG_PROCESS_THREAD is enabled then
+	  this threshold is used by the internal thread.
+
+config LOG_PROCESS_THREAD
+	bool "Enable internal thread for log processing"
+	depends on MULTITHREADING
+	default y
+	help
+	  When enabled thread is created by the logger subsystem. Thread is
+	  waken up periodically (see LOG_PROCESS_THREAD_SLEEP_MS) and whenever
+	  number of buffered messages exceeds the threshold (see
+	  LOG_PROCESS_TRIGGER_THR).
+
+if LOG_PROCESS_THREAD
+
+config LOG_PROCESS_THREAD_SLEEP_MS
+	int "Set internal log processing thread sleep period"
+	default 1000
+	help
+	  Log processing thread sleeps for requested period given in
+	  milliseconds. When waken up, thread process any buffered messages.
+
+config LOG_PROCESS_THREAD_PRIO
+	int "Priority of the log internal thread"
+	default -2
+	help
+	  Change with care since log processing can be time consuming thus it
+	  should be on low priority.
+
+config LOG_PROCESS_THREAD_STACK_SIZE
+	int "Stack size for the internal log processing thread"
+	default 768
+	help
+	  Set the internal stack size for log processing thread.
+
+endif
 
 config LOG_BUFFER_SIZE
 	int "Number of bytes dedicated for the logger internal buffer."
@@ -221,6 +263,10 @@ config LOG_DOMAIN_ID
 	help
 	  In multicore system each application/core must have unique domain ID.
 
+config LOG_CMDS
+	bool "Enable shell commands"
+	default y if SHELL
+
 config LOG_BACKEND_UART
 	bool "Enable UART backend"
 	depends on UART_CONSOLE
@@ -228,18 +274,26 @@ config LOG_BACKEND_UART
 	help
 	  When enabled backend is using UART to output logs.
 
-config LOG_BACKEND_UART_SHOW_COLOR
-	bool "Enable colors in the UART backend"
-	depends on LOG_BACKEND_UART
+config LOG_BACKEND_NATIVE_POSIX
+	bool "Enable native backend"
+	depends on ARCH_POSIX
+	default n
+	help
+	  Enable backend in native_posix
+
+config LOG_BACKEND_SHOW_COLOR
+	bool "Enable colors in the backend"
+	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX
 	default y
 	help
 	  When enabled UART backend prints errors in red and warning in yellow.
 
-config LOG_BACKEND_UART_FORMAT_TIMESTAMP
-	bool "Enable timestamp formatting in the UART backend"
-	depends on LOG_BACKEND_UART
+config LOG_BACKEND_FORMAT_TIMESTAMP
+	bool "Enable timestamp formatting in the backend"
+	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX
 	default y
 	help
 	  When enabled timestamp is formatted to hh:mm:ss:ms,us.
+
 endif
 endmenu

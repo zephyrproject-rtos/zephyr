@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __CRC8_H_
-#define __CRC8_H_
+#ifndef ZEPHYR_INCLUDE_CRC8_H_
+#define ZEPHYR_INCLUDE_CRC8_H_
 
 #include <zephyr/types.h>
 #include <stddef.h>

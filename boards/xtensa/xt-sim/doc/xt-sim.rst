@@ -118,35 +118,35 @@ Add your own core to the list of supported cores as follows:
 .. code-block:: console
 
     $ XTENSA_CORE=myCore
-    $ $(which echo) -e "config ${XTENSA_CORE}\n\tbool \"${XTENSA_CORE} core\"\n" >> "arch/xtensa/soc/Kconfig.cores"
+    $ $(which echo) -e "config ${XTENSA_CORE}\n\tbool \"${XTENSA_CORE} core\"\n" >> "soc/xtensa/Kconfig.cores"
 
 Create a folder for that core:
 
 .. code-block:: console
 
-    $ mkdir arch/xtensa/soc/${XTENSA_CORE}
+    $ mkdir soc/xtensa/${XTENSA_CORE}
 
 Create and copy to that folder a custom linker script (more on linker script in next section):
 
 .. code-block:: console
 
-    $ cp  linker.ld  arch/xtensa/soc/${XTENSA_CORE}/linker.ld
+    $ cp  linker.ld  soc/xtensa/${XTENSA_CORE}/linker.ld
 
 Add a Makefile:
 
 .. code-block:: console
 
-    $ echo "obj-y = soc.o" > arch/xtensa/soc/${XTENSA_CORE}/Makefile
+    $ echo "obj-y = soc.o" > soc/xtensa/${XTENSA_CORE}/Makefile
 
 Add Zephyr specific sections to the linker script.
-The file "arch/xtensa/soc/linker_more.ld" contains Zephyr-specific linker
+The file "soc/xtensa/linker_more.ld" contains Zephyr-specific linker
 sections that should be added to the default linker script linker.ld (inside
 SECTIONS region). If you are not using a linker script, you must create one
 and add these sections. The memory segment and PHDR should be replaced by
-appropriate values. See :file:`arch/xtensa/soc/hifi3_bd5/linker.ld` for an example.
+appropriate values. See :file:`soc/xtensa/hifi3_bd5/linker.ld` for an example.
 
 The linker script should be named ``linker.ld`` and placed in the directory
-``arch/xtensa/soc/${XTENSA_CORE}``.
+``soc/xtensa/${XTENSA_CORE}``.
 
 Configuring build
 =================

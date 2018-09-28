@@ -18,8 +18,10 @@
 #include <stdio.h>
 
 #include <net/socket.h>
+#include <net/tls_credentials.h>
 
 #include "common.h"
+#include "certificate.h"
 
 #define MAX_CLIENT_QUEUE 1
 
@@ -54,12 +56,31 @@ static int start_tcp_proto(struct data *data, struct sockaddr *bind_addr,
 {
 	int ret;
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	data->tcp.sock = socket(bind_addr->sa_family, SOCK_STREAM,
+				IPPROTO_TLS_1_2);
+#else
 	data->tcp.sock = socket(bind_addr->sa_family, SOCK_STREAM, IPPROTO_TCP);
+#endif
 	if (data->tcp.sock < 0) {
 		NET_ERR("Failed to create TCP socket (%s): %d", data->proto,
 			errno);
 		return -errno;
 	}
+
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	sec_tag_t sec_tag_list[] = {
+		SERVER_CERTIFICATE_TAG,
+	};
+
+	ret = setsockopt(data->tcp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
+			 sec_tag_list, sizeof(sec_tag_list));
+	if (ret < 0) {
+		NET_ERR("Failed to set TCP secure option (%s): %d", data->proto,
+			errno);
+		ret = -errno;
+	}
+#endif
 
 	ret = bind(data->tcp.sock, bind_addr, bind_addrlen);
 	if (ret < 0) {
@@ -118,6 +139,7 @@ static int process_tcp(struct data *data)
 
 		offset += received;
 
+#if !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 		/* To prevent fragmentation of the response, reply only if
 		 * buffer is full or there is no more data to read
 		 */
@@ -126,6 +148,7 @@ static int process_tcp(struct data *data)
 			  sizeof(data->tcp.recv_buffer)  - offset,
 			  MSG_PEEK | MSG_DONTWAIT) < 0 &&
 		     (errno == EAGAIN || errno == EWOULDBLOCK))) {
+#endif
 			ret = sendall(client, data->tcp.recv_buffer, offset);
 			if (ret < 0) {
 				NET_ERR("TCP (%s): Failed to send, "
@@ -143,7 +166,9 @@ static int process_tcp(struct data *data)
 			}
 
 			offset = 0;
+#if !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 		}
+#endif
 	} while (true);
 
 	close(client);
@@ -156,7 +181,7 @@ static void process_tcp4(void)
 	int ret;
 	struct sockaddr_in addr4;
 
-	memset(&addr4, 0, sizeof(addr4));
+	(void)memset(&addr4, 0, sizeof(addr4));
 	addr4.sin_family = AF_INET;
 	addr4.sin_port = htons(MY_PORT);
 
@@ -180,7 +205,7 @@ static void process_tcp6(void)
 	int ret;
 	struct sockaddr_in6 addr6;
 
-	memset(&addr6, 0, sizeof(addr6));
+	(void)memset(&addr6, 0, sizeof(addr6));
 	addr6.sin6_family = AF_INET6;
 	addr6.sin6_port = htons(MY_PORT);
 
@@ -218,14 +243,14 @@ void stop_tcp(void)
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		k_thread_abort(tcp6_thread_id);
 		if (conf.ipv6.tcp.sock > 0) {
-			close(conf.ipv6.tcp.sock);
+			(void)close(conf.ipv6.tcp.sock);
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		k_thread_abort(tcp4_thread_id);
 		if (conf.ipv4.tcp.sock > 0) {
-			close(conf.ipv4.tcp.sock);
+			(void)close(conf.ipv4.tcp.sock);
 		}
 	}
 }

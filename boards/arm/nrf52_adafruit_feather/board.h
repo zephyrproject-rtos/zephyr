@@ -11,16 +11,16 @@
 
 /* Push button switch 0 */
 #define SW0_GPIO_PIN    20
-#define SW0_GPIO_NAME   CONFIG_GPIO_NRF5_P0_DEV_NAME
+#define SW0_GPIO_NAME   CONFIG_GPIO_P0_DEV_NAME
 #define SW0_GPIO_INT_CONF       (GPIO_INT_EDGE | GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP)
 
 /* Onboard RED LED 0 */
 #define LED0_GPIO_PIN   17
-#define LED0_GPIO_PORT  CONFIG_GPIO_NRF5_P0_DEV_NAME
+#define LED0_GPIO_PORT  CONFIG_GPIO_P0_DEV_NAME
 
 /* Onboard BLUE LED 1 */
 #define LED1_GPIO_PIN   19
-#define LED1_GPIO_PORT  CONFIG_GPIO_NRF5_P0_DEV_NAME
+#define LED1_GPIO_PORT  CONFIG_GPIO_P0_DEV_NAME
 
 /* External edge connector pin mappings to nRF52 GPIO pin numbers.
  * More information:

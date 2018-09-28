@@ -1,0 +1,14 @@
+# Kconfig - Texas Instruments SimpleLink Family
+#
+
+config SOC_FAMILY_TISIMPLELINK
+	bool
+	# omit prompt to signify a "hidden" option
+
+if SOC_FAMILY_TISIMPLELINK
+config SOC_FAMILY
+	string
+	default "ti_simplelink"
+
+source "soc/arm/ti_simplelink/*/Kconfig.soc"
+endif # SOC_FAMILY_TISIMPLELINK

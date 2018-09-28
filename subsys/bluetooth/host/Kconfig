@@ -25,8 +25,8 @@ config BT_HCI_CMD_COUNT
 
 config BT_RX_BUF_COUNT
 	int "Number of HCI RX buffers"
-	default 10
 	default 3 if BT_RECV_IS_RX_THREAD
+	default 10
 	range 2 255
 	help
 	  Number of buffers available for incoming ACL packets or HCI events
@@ -34,9 +34,9 @@ config BT_RX_BUF_COUNT
 
 config BT_RX_BUF_LEN
 	int "Maximum supported HCI RX buffer length"
-	default 76
-	default 77 if BT_MESH_PROXY
 	default 264 if BT_BREDR
+	default 77 if BT_MESH_PROXY
+	default 76
 	range 73 2000
 	help
 	  Maximum data size for each HCI RX buffer. This size includes
@@ -48,16 +48,17 @@ config BT_RX_BUF_LEN
 	  (4 bytes) and the ACL header (also 4 bytes) which yields 73 bytes.
 
 config BT_HCI_TX_STACK_SIZE
-	# Stack size needed for executing bt_send with specified driver
 	int
-	# Even if no driver is selected the following default is still
-	# needed e.g. for unit tests.
-	default 256
 	default 256 if BT_H4
 	default 256 if BT_H5
 	default 416 if BT_SPI
 	default 640 if BT_CTLR
 	default 256 if BT_USERCHAN
+	# Even if no driver is selected the following default is still
+	# needed e.g. for unit tests.
+	default 256
+	help
+	  Stack size needed for executing bt_send with specified driver
 
 config BT_HCI_TX_PRIO
 	# Hidden option for Co-Operative Tx thread priority
@@ -73,17 +74,18 @@ config BT_WAIT_NOP
 	  This option should be selected if the controller used
 	  exhibits such behavior.
 
-# Headroom that the driver needs for sending and receiving buffers.
-# Add a new 'default' entry for each new driver.
 config BT_HCI_RESERVE
 	int
-	# Even if no driver is selected the following default is still
-	# needed e.g. for unit tests.
-	default 0
 	default 0 if BT_H4
 	default 1 if BT_H5
 	default 1 if BT_SPI
 	default 1 if BT_USERCHAN
+	# Even if no driver is selected the following default is still
+	# needed e.g. for unit tests.
+	default 0
+	help
+	  Headroom that the driver needs for sending and receiving buffers. Add a
+	  new 'default' entry for each new driver.
 
 config BT_RECV_IS_RX_THREAD
 	# Hidden option set by the HCI driver to indicate that there's
@@ -97,10 +99,10 @@ config BT_RECV_IS_RX_THREAD
 config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
 	depends on BT_HCI_HOST || BT_RECV_IS_RX_THREAD
-	default 1024
-	default 2048 if BT_SETTINGS
-	default 2048 if BT_MESH
 	default 512 if BT_HCI_RAW
+	default 2048 if BT_MESH
+	default 2048 if BT_SETTINGS
+	default 1024
 	range 512 65536 if BT_HCI_RAW
 	range 1100 65536 if BT_MESH
 	range 1024 65536
@@ -156,19 +158,19 @@ if BT_CONN
 if BT_HCI_ACL_FLOW_CONTROL
 config BT_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
-	default 6
 	default BT_CTLR_RX_BUFFERS if BT_CTLR
-	range 2 64
+	default 6
+	range 1 64
 	help
 	  Number of buffers available for incoming ACL data.
 
 config BT_L2CAP_RX_MTU
 	int "Maximum supported L2CAP MTU for incoming data"
-	default 23
-	default 65 if BT_SMP
 	default 200 if BT_BREDR
-	range 23 1300
+	default 65 if BT_SMP
+	default 23
 	range 65 1300 if BT_SMP
+	range 23 1300
 	help
 	  Maximum size of each incoming L2CAP PDU.
 endif # BT_HCI_ACL_FLOW_CONTROL
@@ -194,18 +196,18 @@ config BT_L2CAP_TX_FRAG_COUNT
 
 config BT_L2CAP_TX_MTU
 	int "Maximum supported L2CAP MTU for L2CAP TX buffers"
-	default 23
-	default 65 if BT_SMP
 	default 253 if BT_BREDR
-	range 23 2000
+	default 65 if BT_SMP
+	default 23
 	range 65 2000 if BT_SMP
+	range 23 2000
 	help
 	  Maximum L2CAP MTU for L2CAP TX buffers.
 
 config BT_CONN_TX_MAX
 	int "Maximum number of pending TX buffers"
-	default 7
 	default BT_CTLR_TX_BUFFERS if BT_CTLR
+	default 7
 	range 1 128
 	help
 	  Maximum number of pending TX buffers that have not yet
@@ -239,6 +241,16 @@ config BT_ATT_TX_MAX
 	  transmission. If the application tries to send more than this
 	  amount the calls will block until an existing queued PDU gets
 	  sent.
+
+config BT_AUTO_PHY_UPDATE
+	bool "Auto-initiate PHY Update Procedure"
+	default y
+	help
+	  Initiate PHY Update Procedure on connection establishment.
+
+	  Disable this if you want PHY Update Procedure feature supported but
+	  want to rely on remote device to initiate the procedure at its
+	  discretion.
 
 config BT_SMP
 	bool "Security Manager Protocol support"
@@ -281,6 +293,13 @@ config BT_SMP_SC_ONLY
 	  Security Mode 1 Level 4 stands for authenticated LE Secure Connections
 	  pairing with encryption. Enabling this option disables legacy pairing.
 
+config BT_FIXED_PASSKEY
+	bool "Use a fixed passkey for pairing"
+	help
+	  With this option enabled, the application will be able to call the
+	  bt_passkey_set() API to set a fixed passkey. If set, the
+	  pairing_confim() callback will be called for all incoming pairings.
+
 config BT_USE_DEBUG_KEYS
 	bool "Enable Security Manager Debug Mode"
 	depends on BT_TINYCRYPT_ECC
@@ -291,6 +310,14 @@ config BT_USE_DEBUG_KEYS
 	  only be enabled for debugging and should never be used in production.
 	  If this option is enabled anyone is able to decipher encrypted air
 	  traffic.
+
+config BT_BONDABLE
+	bool "Bondable Mode"
+	default y
+	help
+	  This option enables support for Bondable Mode. In this mode,
+	  Bonding flag in AuthReq of SMP Pairing Request/Response will be set
+	  indicating the support for this mode.
 
 endif # BT_SMP
 
@@ -315,14 +342,63 @@ config BT_GATT_READ_MULTIPLE
 
 config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
-	default 1
 	default 0 if !BT_SMP
+	default 1
 	range 0 128
 	help
 	  Maximum number of paired Bluetooth devices. The minimum (and
 	  default) number is 1.
 
+config BT_GAP_PERIPHERAL_PREF_PARAMS
+	bool "Configure peripheral preferred connection parameters"
+	default y
+	depends on BT_PERIPHERAL
+	help
+	  This allows to configure periphral preferred connection parameters.
+	  Enabling this option results in adding PPCP characteristic in GAP
+	  and sending request for connection parameters udpate after GAP
+	  recommended 5 seconds of connection as peripheral. If disabled it is
+	  up to application to set expected connection parameters.
+
+if BT_GAP_PERIPHERAL_PREF_PARAMS
+config BT_PERIPHERAL_PREF_MIN_INT
+	int "Peripheral preferred minimum connection interval in 1.25ms units"
+	default 24
+	range 6 3200
+
+config BT_PERIPHERAL_PREF_MAX_INT
+	int "Peripheral preferred maximum connection interval in 1.25ms units"
+	default 40
+	range 6 3200
+
+config BT_PERIPHERAL_PREF_SLAVE_LATENCY
+	int "Peripheral preferred slave latency in Connection Intervals"
+	default 0
+	range 0 499
+
+config BT_PERIPHERAL_PREF_TIMEOUT
+	int "Peripheral preferred supervision timeout in 10ms units"
+	default 42
+	range 10 3200
+	help
+	  It is up to user to provide valid timeout which pass required minimum
+	  value: in milliseconds it shall be larger than
+	  "(1+ Conn_Latency) * Conn_Interval_Max * 2"
+	  where Conn_Interval_Max is given in milliseconds.
+endif # BT_GAP_PERIPHERAL_PREF_PARAMS
+
 endif # BT_CONN
+
+if BT_OBSERVER
+config BT_BACKGROUND_SCAN_INTERVAL
+	int "Scan interval used for background scanning in 0.625 ms units"
+	default 2048
+	range 4 16384
+config BT_BACKGROUND_SCAN_WINDOW
+	int "Scan window used for background scanning in 0.625 ms units"
+	default 18
+	range 4 16384
+endif # BT_OBSERVER
 
 config BT_SCAN_WITH_IDENTITY
 	bool "Perform active scanning using local identity address"
@@ -333,6 +409,29 @@ config BT_SCAN_WITH_IDENTITY
 	  always use a non-resolvable private address (NRPA) in order to avoid
 	  disclosing local identity information. However, if the use case
 	  requires disclosing it then enable this option.
+
+config BT_DEVICE_NAME_DYNAMIC
+	bool "Allow to set Bluetooth device name on runtime"
+	help
+	  Enabling this option allows for runtime configuration of Bluetooth
+	  device name.
+
+config BT_DEVICE_NAME_MAX
+	int "Maximum size in bytes for device name"
+	depends on BT_DEVICE_NAME_DYNAMIC
+	default 28
+	range 2 248
+	help
+	  Bluetooth device name storage size. Storage can be up to 248 bytes
+	  long (excluding NULL termination).
+
+config BT_DEVICE_NAME_GATT_WRITABLE
+	bool "Allow to write name by remote GATT clients"
+	depends on BT_CONN && BT_DEVICE_NAME_DYNAMIC
+	default y
+	help
+	  Enabling this option allows remote GATT clients to write to device
+	  name GAP characteristic.
 
 config BT_DEVICE_NAME
 	string "Bluetooth device name"
@@ -350,6 +449,14 @@ config BT_DEVICE_APPEARANCE
 	  consult the following link:
 	  https://www.bluetooth.com/specifications/assigned-numbers
 
+config BT_ID_MAX
+	int "Maximum number of local identities"
+	range 1 10
+	default 1
+	help
+	  Maximum number of supported local identity addresses. For most
+	  products this is safe to leave as the default value (1).
+
 endif # BT_HCI_HOST
 
 config BT_TINYCRYPT_ECC
@@ -357,6 +464,7 @@ config BT_TINYCRYPT_ECC
 	select TINYCRYPT
 	select TINYCRYPT_ECC_DH
 	depends on BT_HCI_RAW || BT_HCI_HOST
+	default y if BT_CTLR && (BT_SMP || BT_MESH_PROV)
 	help
 	  If this option is set TinyCrypt library is used for emulating the
 	  ECDH HCI commands and events needed by e.g. LE Secure Connections.
@@ -365,7 +473,9 @@ config BT_TINYCRYPT_ECC
 	  commands the LE Secure Connections support will be disabled.
 	  In builds including the HCI Raw interface and the BLE Controller, this
 	  option injects support for the 2 HCI commands required for LE Secure
-	  Connections so that Hosts can make use of those.
+	  Connections so that Hosts can make use of those. The option defaults
+	  to enabled for a combined build with Zephyr's own controller, since it
+	  does not have any special ECC support itself (at least not currently).
 
 if BT_DEBUG
 config BT_DEBUG_SETTINGS
@@ -507,11 +617,11 @@ config BT_RFCOMM
 
 config BT_RFCOMM_L2CAP_MTU
 	int "L2CAP MTU for RFCOMM frames"
-	default BT_RX_BUF_LEN
 	default BT_L2CAP_RX_MTU if BT_HCI_ACL_FLOW_CONTROL
+	default BT_RX_BUF_LEN
 	depends on BT_RFCOMM
-	range BT_RX_BUF_LEN 32767
 	range BT_L2CAP_RX_MTU 32767 if BT_HCI_ACL_FLOW_CONTROL
+	range BT_RX_BUF_LEN 32767
 	help
 	  Maximum size of L2CAP PDU for RFCOMM frames.
 

@@ -1,0 +1,25 @@
+# Kconfig - Cypress UART configuration
+#
+# Copyright (c) 2018 Cypress
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig UART_PSOC6
+	bool "PSoC6 MCU serial driver"
+	select SERIAL_HAS_DRIVER
+	depends on SOC_FAMILY_PSOC6
+	help
+	  This option enables the UART driver for PSoC6 family of processors.
+
+config UART_PSOC6_UART_5
+	bool "Enable PSOC6 SCB6 as UART_5 on Port 5"
+	depends on UART_PSOC6
+	help
+	  Enable support for UART_5 on port 5 in the driver.
+
+config UART_PSOC6_UART_6
+	bool "Enable PSOC6 SCB6 as UART_6 on Port 12"
+	depends on UART_PSOC6
+	help
+	  Enable support for UART_6 on port 12 in the driver.

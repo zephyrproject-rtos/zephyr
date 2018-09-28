@@ -42,10 +42,10 @@
 	GTEXT(_sys_soc_resume_from_deep_sleep)
 #endif
 
-#ifdef CONFIG_JAILHOUSE
+#ifdef CONFIG_REALMODE
 
-#define JAILHOUSE_INMATE_CS32   0x8
-#define JAILHOUSE_INMATE_DS32   0x18
+#define RM_CODE_SEG             0x8
+#define RM_DATA_SEG             0x18
 #define MSR_MTRR_DEF_TYPE       0x000002ff
 #define MTRR_ENABLE             0x00000800
 #define X86_CR0_PE              0x00000001
@@ -63,7 +63,7 @@ __jh_entry:
 	or $X86_CR0_PE,%al
 	mov %eax,%cr0
 
-	ljmpl $JAILHOUSE_INMATE_CS32,$start32
+	ljmpl $RM_CODE_SEG,$start32
 
 	.code32
 start32:
@@ -86,12 +86,12 @@ start32:
 	or $MTRR_ENABLE,%eax
 	wrmsr
 
-	mov $JAILHOUSE_INMATE_DS32,%eax
+	mov $RM_DATA_SEG,%eax
 	mov %eax,%ds
 	mov %eax,%es
 	mov %eax,%ss
 
-	ljmp $JAILHOUSE_INMATE_CS32, $__start
+	ljmp $RM_CODE_SEG, $__start
 
 	.global loader_gdt
 loader_gdt:
@@ -132,7 +132,7 @@ gdt_ptr:
 	.align(4096)
 
 	.popsection
-#endif /* CONFIG_JAILHOUSE */
+#endif /* CONFIG_REALMODE */
 
 	/* processor is executing in 32-bit protected mode */
 

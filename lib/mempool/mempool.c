@@ -17,12 +17,12 @@ static bool level_empty(struct sys_mem_pool_base *p, int l)
 
 static void *block_ptr(struct sys_mem_pool_base *p, size_t lsz, int block)
 {
-	return p->buf + lsz * block;
+	return (u8_t *)p->buf + lsz * block;
 }
 
 static int block_num(struct sys_mem_pool_base *p, void *block, int sz)
 {
-	return (block - p->buf) / sz;
+	return ((u8_t *)block - (u8_t *)p->buf) / sz;
 }
 
 /* Places a 32 bit output pointer in word, and an integer bit index
@@ -73,14 +73,16 @@ static size_t buf_size(struct sys_mem_pool_base *p)
 
 static bool block_fits(struct sys_mem_pool_base *p, void *block, size_t bsz)
 {
-	return (block + bsz - 1 - p->buf) < buf_size(p);
+	return ((u8_t *)block + bsz - 1 - (u8_t *)p->buf) < buf_size(p);
 }
 
 void _sys_mem_pool_base_init(struct sys_mem_pool_base *p)
 {
 	int i;
 	size_t buflen = p->n_max * p->max_sz, sz = p->max_sz;
-	u32_t *bits = p->buf + buflen;
+	u32_t *bits = (u32_t *)((u8_t *)p->buf + buflen);
+
+	p->max_inline_level = -1;
 
 	for (i = 0; i < p->n_levels; i++) {
 		int nblocks = buflen / sz;
@@ -145,7 +147,7 @@ static void *block_alloc(struct sys_mem_pool_base *p, int l, size_t lsz)
 	int key = pool_irq_lock(p);
 
 	block = sys_dlist_get(&p->levels[l].free_list);
-	if (block) {
+	if (block != NULL) {
 		clear_free_bit(p, l, block_num(p, block, lsz));
 	}
 	pool_irq_unlock(p, key);
@@ -256,7 +258,7 @@ int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 	/* Iteratively break the smallest enclosing block... */
 	data = block_alloc(p, free_l, lsizes[free_l]);
 
-	if (!data) {
+	if (data == NULL) {
 		/* This can happen if we race with another allocator.
 		 * It's OK, just back out and the timeout code will
 		 * retry.  Note mild overloading: -EAGAIN isn't for
@@ -335,7 +337,7 @@ void sys_mem_pool_free(void *ptr)
 	struct sys_mem_pool_block *blk;
 	struct sys_mem_pool *p;
 
-	if (!ptr) {
+	if (ptr == NULL) {
 		return;
 	}
 

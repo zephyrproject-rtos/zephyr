@@ -1,0 +1,36 @@
+# Kconfig.defconfig - Nordic Semiconductor nRFx MCU line
+#
+# Copyright (c) 2016-2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_FAMILY_NRF
+
+source "soc/arm/nordic_nrf/*/Kconfig.defconfig.series"
+
+config BUILD_OUTPUT_HEX
+	default y
+
+if SERIAL
+
+config GPIO
+	default y
+
+endif # SERIAL
+
+if GPIO
+
+config GPIO_NRFX
+	default y
+
+endif # GPIO
+
+if FLASH
+
+config SOC_FLASH_NRF
+	def_bool y
+
+endif # FLASH
+
+endif # SOC_FAMILY_NRF

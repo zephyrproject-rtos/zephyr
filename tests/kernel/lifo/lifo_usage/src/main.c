@@ -161,7 +161,9 @@ static void thread_entry_wait(void *p1, void *p2, void *p3)
  */
 
 /**
- * @brief try getting data on lifo with special timeout value, return result in lifo
+ * @brief try getting data on lifo with special timeout value,
+ * return result in lifo
+ *
  *
  * @see k_lifo_put()
  */
@@ -201,10 +203,9 @@ static void test_thread_put_timeout(void *p1, void *p2, void *p3)
 	k_lifo_put((struct k_lifo *)p1, get_scratch_packet());
 }
 
-
 /**
- *
- * @see k_lifo_put()
+ * @brief Test last in, first out queue using LIFO
+ * @see k_sem_init(), k_lifo_put(), k_lifo_get()
  */
 static void test_lifo_nowait(void)
 {
@@ -227,8 +228,8 @@ static void test_lifo_nowait(void)
 }
 
 /**
- *
- * @see k_lifo_get()
+ * @brief Test pending reader in LIFO
+ * @see k_lifo_init(), k_lifo_get(), k_lifo_put()
  */
 static void test_lifo_wait(void)
 {
@@ -255,7 +256,7 @@ static void test_lifo_wait(void)
 }
 
 /**
- *
+ * @brief Test reading empty LIFO
  * @see k_lifo_get()
  */
 static void test_timeout_empty_lifo(void)
@@ -280,7 +281,8 @@ static void test_timeout_empty_lifo(void)
 }
 
 /**
- * @see k_lifo_put()
+ * @brief Test read and write operation in LIFO with timeout
+ * @see k_lifo_put(), k_lifo_get()
  */
 static void test_timeout_non_empty_lifo(void)
 {
@@ -301,6 +303,7 @@ static void test_timeout_non_empty_lifo(void)
 }
 
 /**
+ * @brief Test LIFO with timeout
  * @see k_lifo_put(), k_lifo_get()
  */
 static void test_timeout_lifo_thread(void)
@@ -402,6 +405,9 @@ void test_thread_pend_and_timeout(void *p1, void *p2, void *p3)
 
 
 /**
+ * @brief Test multiple pending readers in LIFO
+ * @details test multiple threads pending on the same lifo
+ * with different timeouts
  * @see k_lifo_get()
  */
 static void test_timeout_threads_pend_on_lifo(void)
@@ -418,6 +424,7 @@ static void test_timeout_threads_pend_on_lifo(void)
 }
 
 /**
+ * @brief Test LIFO initialization with various parameters
  * @see k_lifo_init(), k_lifo_put()
  */
 static void test_para_init(void)

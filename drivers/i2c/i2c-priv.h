@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _I2C_PRIV_H_
-#define _I2C_PRIV_H_
+#ifndef ZEPHYR_DRIVERS_I2C_I2C_PRIV_H_
+#define ZEPHYR_DRIVERS_I2C_I2C_PRIV_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,4 +43,4 @@ static inline u32_t _i2c_map_dt_bitrate(u32_t bitrate)
 }
 #endif
 
-#endif /* _I2C_PRIV_H_ */
+#endif /* ZEPHYR_DRIVERS_I2C_I2C_PRIV_H_ */

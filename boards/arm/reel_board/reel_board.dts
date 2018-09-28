@@ -1,0 +1,158 @@
+/*
+ * Copyright (c) 2018 Phytec Messtechnik GmbH
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+
+/ {
+	model = "reel board";
+	compatible = "nordic,pca10056-dk", "nordic,nrf52840-qiaa",
+		     "nordic,nrf52840";
+
+	chosen {
+		zephyr,console = &uart0;
+#ifdef CONFIG_MCUMGR_SMP_UART
+		zephyr,uart-mcumgr = &uart0;
+#endif
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		yellow_led: led@0 {
+			gpios = <&gpio0 13 0>;
+			label = "User D13";
+		};
+		red_led: led@1 {
+			gpios = <&gpio0 11 0>;
+			label = "User D3 red";
+		};
+		green_led: led@2 {
+			gpios = <&gpio0 12 0>;
+			label = "User D3 green";
+		};
+		blue_led: led@3 {
+			gpios = <&gpio1 9 0>;
+			label = "User D3 blue";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button@0 {
+			gpios = <&gpio0 7 GPIO_PUD_PULL_UP>;
+			label = "User Button";
+		};
+	};
+
+	aliases {
+		led0 = &yellow_led;
+		led1 = &red_led;
+		led2 = &green_led;
+		led3 = &blue_led;
+		sw0 = &user_button;
+	};
+};
+
+&gpiote {
+	status ="ok";
+};
+
+&gpio0 {
+	status ="ok";
+};
+
+&gpio1 {
+	status ="ok";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	status = "ok";
+	tx-pin = <6>;
+	rx-pin = <8>;
+	rts-pin = <5>;
+	cts-pin = <7>;
+};
+
+&i2c0 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-pin = <26>;
+	scl-pin = <27>;
+
+	fxos8700@1d {
+		compatible = "nxp,fxos8700";
+		reg = <0x1d>;
+		label = "FXOS8700";
+		int1-gpios = <&gpio0 24 0>;
+	};
+
+	hdc1008@43 {
+		compatible = "ti,hdc1008";
+		reg = <0x43>;
+		label = "HDC1008";
+		drdy-gpios = <&gpio0 22 GPIO_PUD_PULL_UP>;
+	};
+
+	apds9960@29 {
+		compatible = "avago,apds9960";
+		reg = <0x29>;
+		label = "APDS9960";
+		int-gpios = <&gpio0 23 0>;
+	};
+};
+
+&spi3 {
+	status = "ok";
+	sck-pin = <19>;
+	mosi-pin = <20>;
+	miso-pin = <21>;
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x000000000 0x0000C000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x000069000>;
+		};
+		slot1_partition: partition@75000 {
+			label = "image-1";
+			reg = <0x00075000 0x000069000>;
+		};
+		scratch_partition: partition@de000 {
+			label = "image-scratch";
+			reg = <0x000de000 0x0001e000>;
+		};
+
+#if defined(CONFIG_FS_FLASH_STORAGE_PARTITION)
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0x000fc000 0x00004000>;
+		};
+#endif
+	};
+};
+
+&usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "ok";
+};

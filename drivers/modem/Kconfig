@@ -1,0 +1,104 @@
+# Kconfig - Modem configuration options
+
+#
+# Copyright (c) 2018 Foundries.io
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig MODEM
+	bool "Modem Drivers"
+	help
+	  Enable config options for modem drivers.
+
+if MODEM
+
+config MODEM_RECEIVER
+	bool "Enable modem receiver helper driver"
+	help
+	  This driver allows modem drivers to communicate over UART with custom
+	  defined protocols. Driver doesn't inspect received data and all
+	  aspects of received protocol data are handled by application via
+	  work method provided.  This driver differs from the pipe UART driver
+	  in that callbacks are executed in a different work queue and data is
+	  passed around in k_pipe structures.
+
+config MODEM_RECEIVER_MAX_CONTEXTS
+	int "Maximum number of modem receiver contexts"
+	depends on MODEM_RECEIVER
+	range 1 10
+	default 1
+	help
+	  Maximum number of modem receiver contexts to handle.  For most
+	  purposes this should stay at 1.
+
+config MODEM_SHELL
+	bool "Enable modem shell utilities"
+	select CONSOLE_SHELL
+	help
+	  Activate shell module that provides modem utilities like
+	  sending a command to the modem UART.
+
+config MODEM_WNCM14A2A
+	bool "Enable Wistron LTE-M modem driver"
+	depends on UART_INTERRUPT_DRIVEN
+	select MODEM_RECEIVER
+	select NET_OFFLOAD
+	select UART_MCUX_2 if BOARD_FRDM_K64F
+	select GPIO_NRF_P1 if SOC_NRF52840
+	select UART_1_NRF_UARTE if SOC_NRF52840
+	select UART_1_NRF_FLOW_CONTROL if SOC_NRF52840
+	help
+	  Choose this setting to enable Wistron WNC-M14A2A LTE-M modem driver.
+	  NOTE: Currently the pin settings only work with FRDM K64F shield.
+
+config MODEM_WNCM14A2A_RX_STACK_SIZE
+	int "Size of the stack for the WNC-M14A2A modem driver RX thread"
+	depends on MODEM_WNCM14A2A
+	default 1028
+	help
+	  This stack is used by the WNCM14A2A RX thread.
+
+config MODEM_WNCM14A2A_RX_WORKQ_STACK_SIZE
+	int "Size of the stack for the WNC-M14A2A modem driver work queue"
+	depends on MODEM_WNCM14A2A
+	default 2048
+	help
+	  This stack is used by the work queue to pass off net_pkt data
+	  to the rest of the network stack, letting the rx thread continue
+	  processing data.
+
+config MODEM_WNCM14A2A_APN_NAME
+	string "APN name for establishing network connection"
+	depends on MODEM_WNCM14A2A
+	default "m2m.com.attz"
+	help
+	  This setting is used in the AT%PDNSET command to set the APN name
+	  for the network connection context.  Normally, don't need to change
+	  this value.
+
+config MODEM_WNCM14A2A_INIT_PRIORITY
+	int "WNC-M14A2A driver init priority"
+	depends on MODEM_WNCM14A2A
+	default 80
+	help
+	  WNC-M14A2A device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
+config SYS_LOG_MODEM_LEVEL
+	int "Modem driver log level"
+	depends on SYS_LOG
+	default 0
+	range 0 4
+	help
+	  Sets log level for modem drivers.
+	  Levels are:
+	  0 OFF, do not write
+	  1 ERROR, only write SYS_LOG_ERR
+	  2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  3 INFO, write SYS_LOG_INF in addition to previous levels
+	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+endif # MODEM

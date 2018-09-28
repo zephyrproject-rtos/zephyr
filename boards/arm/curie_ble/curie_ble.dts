@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf51822.dtsi>
+#include <nordic/nrf51822_qfaa.dtsi>
 
 / {
 	model = "Intel Curie BLE";
@@ -19,7 +19,19 @@
 	};
 };
 
+&gpiote {
+	status ="ok";
+};
+
+&gpio0 {
+	status ="ok";
+};
+
 &uart0 {
 	current-speed = <1000000>;
 	status = "ok";
+	tx-pin = <9>;
+	rx-pin = <11>;
+	rts-pin = <12>;
+	cts-pin = <10>;
 };

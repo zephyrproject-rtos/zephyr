@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf52840.dtsi>
+#include <nordic/nrf52840_qiaa.dtsi>
 
 / {
 	model = "Nordic PCA10056 Dev Kit";
@@ -20,6 +20,62 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led@0 {
+			gpios = <&gpio0 13 GPIO_INT_ACTIVE_LOW>;
+			label = "Green LED 0";
+		};
+		led1: led@1 {
+			gpios = <&gpio0 14 GPIO_INT_ACTIVE_LOW>;
+			label = "Green LED 1";
+		};
+		led2: led@2 {
+			gpios = <&gpio0 15 GPIO_INT_ACTIVE_LOW>;
+			label = "Green LED 2";
+		};
+		led3: led@3 {
+			gpios = <&gpio0 16 GPIO_INT_ACTIVE_LOW>;
+			label = "Green LED 3";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button@0 {
+			gpios = <&gpio0 11 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 0";
+		};
+		button1: button@1 {
+			gpios = <&gpio0 12 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 1";
+		};
+		button2: button@2 {
+			gpios = <&gpio0 24 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 2";
+		};
+		button3: button@3 {
+			gpios = <&gpio0 25 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 3";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+		sw0 = &button0;
+		sw1 = &button1;
+		sw2 = &button2;
+		sw3 = &button3;
+	};
+};
+
+&adc {
+	status ="ok";
 };
 
 &gpiote {
@@ -38,7 +94,35 @@
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	status = "ok";
+	tx-pin = <6>;
+	rx-pin = <8>;
+	rts-pin = <5>;
+	cts-pin = <7>;
 };
+
+#ifdef CONFIG_UART_1_NRF_UARTE
+&uart1 {
+	current-speed = <115200>;
+	status = "ok";
+	tx-pin = <46>;
+	rx-pin = <45>;
+	rts-pin = <44>;
+	cts-pin = <47>;
+
+#ifdef CONFIG_MODEM_WNCM14A2A
+	wncm14a2a {
+		compatible = "wnc,m14a2a";
+		label = "wncm14a2a";
+		mdm-boot-mode-sel-gpios = <&gpio1 2 0>;
+		mdm-power-gpios = <&gpio1 3 0>;
+		mdm-keep-awake-gpios = <&gpio1 7 0>;
+		mdm-reset-gpios = <&gpio1 10 0>;
+		mdm-shld-trans-ena-gpios = <&gpio1 11 0>;
+		status = "ok";
+	};
+#endif
+};
+#endif
 
 &i2c0 {
 	status = "ok";
@@ -52,10 +136,38 @@
 	scl-pin = <31>;
 };
 
+&spi0 {
+	status = "ok";
+	sck-pin = <27>;
+	mosi-pin = <26>;
+	miso-pin = <29>;
+};
+
+&spi1 {
+	status = "ok";
+	sck-pin = <31>;
+	mosi-pin = <30>;
+	miso-pin = <40>;
+};
+
+&spi2 {
+	status = "ok";
+	sck-pin = <43>;
+	mosi-pin = <44>;
+	miso-pin = <45>;
+};
+
+&spi3 {
+	status = "ok";
+	sck-pin = <42>;
+	mosi-pin = <41>;
+	miso-pin = <20>;
+};
+
 &flash0 {
 	/*
 	 * For more information, see:
-	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
 	 */
 	partitions {
 		compatible = "fixed-partitions";

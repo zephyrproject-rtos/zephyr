@@ -193,7 +193,7 @@ int usb_dc_reset(void)
 	for (u8_t i = 0; i < 16; i++) {
 		USB0->ENDPOINT[i].ENDPT = 0;
 	}
-	memset(bdt, 0, sizeof(bdt));
+	(void)memset(bdt, 0, sizeof(bdt));
 	dev_data.bd_active = 0;
 	dev_data.address = 0;
 
@@ -333,11 +333,11 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 	}
 
 	USB0->ENDPOINT[ep_idx].ENDPT = 0;
-	memset(&bdt[idx_even], 0, sizeof(struct buf_descriptor));
-	memset(&bdt[idx_odd], 0, sizeof(struct buf_descriptor));
+	(void)memset(&bdt[idx_even], 0, sizeof(struct buf_descriptor));
+	(void)memset(&bdt[idx_odd], 0, sizeof(struct buf_descriptor));
 
 	if (k_mem_pool_alloc(&ep_buf_pool, block, cfg->ep_mps * 2, 10) == 0) {
-		memset(block->data, 0, cfg->ep_mps * 2);
+		(void)memset(block->data, 0, cfg->ep_mps * 2);
 	} else {
 		SYS_LOG_ERR("Memory allocation time-out");
 		return -ENOMEM;
@@ -345,8 +345,8 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 
 	bdt[idx_even].buf_addr = (u32_t)block->data;
 	SYS_LOG_INF("idx_even %x", (u32_t)block->data);
-	bdt[idx_odd].buf_addr = (u32_t)(block->data + cfg->ep_mps);
-	SYS_LOG_INF("idx_odd %x", (u32_t)(block->data + cfg->ep_mps));
+	bdt[idx_odd].buf_addr = (u32_t)((u8_t *)block->data + cfg->ep_mps);
+	SYS_LOG_INF("idx_odd %x", (u32_t)((u8_t *)block->data + cfg->ep_mps));
 
 	if (cfg->ep_addr & USB_EP_DIR_IN) {
 		dev_data.ep_ctrl[ep_idx].mps_in = cfg->ep_mps;
@@ -474,15 +474,14 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
 		*stalled = dev_data.ep_ctrl[ep_idx].status.in_stalled;
 	}
 
-	if (SYS_LOG_LEVEL == SYS_LOG_LEVEL_INFO) {
-		u8_t bd_idx = get_bdt_idx(ep,
-				dev_data.ep_ctrl[ep_idx].status.in_odd);
-		bd_idx = bd_idx;
-		SYS_LOG_WRN("active bd ctrl: %x", bdt[bd_idx].set.bd_ctrl);
-		bd_idx = get_bdt_idx(ep,
-				~dev_data.ep_ctrl[ep_idx].status.in_odd);
-		SYS_LOG_WRN("next bd ctrl: %x", bdt[bd_idx].set.bd_ctrl);
-	}
+#if defined(CONFIG_SYS_LOG) && (SYS_LOG_LEVEL >= SYS_LOG_LEVEL_WARNING)
+	u8_t bd_idx = get_bdt_idx(ep,
+			dev_data.ep_ctrl[ep_idx].status.in_odd);
+	SYS_LOG_WRN("active bd ctrl: %x", bdt[bd_idx].set.bd_ctrl);
+	bd_idx = get_bdt_idx(ep,
+			~dev_data.ep_ctrl[ep_idx].status.in_odd);
+	SYS_LOG_WRN("next bd ctrl: %x", bdt[bd_idx].set.bd_ctrl);
+#endif
 
 	return 0;
 }
@@ -572,7 +571,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		    const u32_t data_len, u32_t * const ret_bytes)
 {
 	u8_t ep_idx = EP_ADDR2IDX(ep);
-	bool odd = dev_data.ep_ctrl[ep_idx].status.in_odd;
+	u8_t odd = dev_data.ep_ctrl[ep_idx].status.in_odd;
 	u8_t bd_idx = get_bdt_idx(ep, odd);
 	u8_t *bufp = (u8_t *)bdt[bd_idx].buf_addr;
 	u32_t len_to_send = data_len;

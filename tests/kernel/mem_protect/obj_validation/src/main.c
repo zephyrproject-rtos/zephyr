@@ -67,6 +67,13 @@ void object_permission_checks(struct k_sem *sem, bool skip_init)
 
 extern const k_tid_t _main_thread;
 
+/**
+ * @brief Tests to verify object permission
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_object_alloc(), k_object_access_grant()
+ */
 void test_generic_object(void)
 {
 	struct k_sem stack_sem;

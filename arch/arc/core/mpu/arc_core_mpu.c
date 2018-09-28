@@ -60,6 +60,7 @@ void configure_mpu_stack_guard(struct k_thread *thread)
 		arc_core_mpu_configure(THREAD_STACK_GUARD_REGION,
 			thread->arch.priv_stack_start - STACK_GUARD_SIZE,
 			STACK_GUARD_SIZE);
+		return;
 	}
 #endif
 	arc_core_mpu_configure(THREAD_STACK_GUARD_REGION,

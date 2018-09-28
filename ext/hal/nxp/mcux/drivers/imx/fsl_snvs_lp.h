@@ -1,59 +1,9 @@
 /*
- * Copyright (c) 2017, Freescale Semiconductor, Inc.
+ * Copyright (c) 2016, Freescale Semiconductor, Inc.
+ * Copyright (c) 2017, NXP
  * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Copyright (c) 2017, NXP Semiconductors, Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of Freescale Semiconductor, Inc. nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef _FSL_SNVS_LP_H_
@@ -75,16 +25,18 @@
 #define FSL_SNVS_LP_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Version 2.0.0 */
 /*@}*/
 
+#define SNVS_ZMK_REG_COUNT 8 /* 8 Zeroizable Master Key registers. */
+
 /*! @brief List of SNVS_LP interrupts */
-typedef enum _snvs_lp_srtc_interrupt_enable
+typedef enum _snvs_lp_srtc_interrupts
 {
-    kSNVS_SRTC_AlarmInterruptEnable = 4U, /*!< SRTC time alarm.*/
-} snvs_lp_srtc_interrupt_enable_t;
+    kSNVS_SRTC_AlarmInterrupt = SNVS_LPCR_LPTA_EN_MASK, /*!< SRTC time alarm.*/
+} snvs_lp_srtc_interrupts_t;
 
 /*! @brief List of SNVS_LP flags */
 typedef enum _snvs_lp_srtc_status_flags
 {
-    kSNVS_SRTC_AlarmInterruptFlag = 4U, /*!< SRTC time alarm flag*/
+    kSNVS_SRTC_AlarmInterruptFlag = SNVS_LPSR_LPTA_MASK, /*!< SRTC time alarm flag */
 } snvs_lp_srtc_status_flags_t;
 
 /*! @brief List of SNVS_LP external tampers */
@@ -153,6 +105,25 @@ typedef struct _snvs_lp_srtc_config
                                 This is a 5-bit 2's complement value, range from -16 to +15 */
 } snvs_lp_srtc_config_t;
 
+/*!
+ * @brief SNVS_LP Zeroizable Master Key programming mode.
+ */
+typedef enum _snvs_lp_zmk_program_mode
+{
+    kSNVS_ZMKSoftwareProgram, /*!< Software programming mode. */
+    kSNVS_ZMKHardwareProgram, /*!< Hardware programming mode. */
+} snvs_lp_zmk_program_mode_t;
+
+/*!
+ * @brief SNVS_LP Master Key mode.
+ */
+typedef enum _snvs_lp_master_key_mode
+{
+    kSNVS_OTPMK = 0, /*!< One Time Programmable Master Key. */
+    kSNVS_ZMK = 2,   /*!< Zeroizable Master Key. */
+    kSNVS_CMK = 3,   /*!< Combined Master Key, it is XOR of OPTMK and ZMK. */
+} snvs_lp_master_key_mode_t;
+
 /*******************************************************************************
  * API
  ******************************************************************************/
@@ -165,6 +136,25 @@ extern "C" {
  * @name Initialization and deinitialization
  * @{
  */
+
+/*!
+ * @brief Ungates the SNVS clock and configures the peripheral for basic operation.
+ *
+ * @note This API should be called at the beginning of the application using the SNVS driver.
+ *
+ * @param base   SNVS peripheral base address
+ * @param config Pointer to the user's SNVS configuration structure.
+ */
+void SNVS_LP_Init(SNVS_Type *base);
+
+/*!
+ * @brief Deinit the SNVS LP section.
+ *
+ * @param base SNVS peripheral base address
+ */
+void SNVS_LP_Deinit(SNVS_Type *base);
+
+/*! @}*/
 
 /*!
  * @brief Ungates the SNVS clock and configures the peripheral for basic operation.
@@ -194,8 +184,6 @@ void SNVS_LP_SRTC_Deinit(SNVS_Type *base);
  * @param config Pointer to the user's SNVS configuration structure.
  */
 void SNVS_LP_SRTC_GetDefaultConfig(snvs_lp_srtc_config_t *config);
-
-/*! @}*/
 
 /*!
  * @name Secure RTC (SRTC) current Time & Alarm
@@ -263,7 +251,10 @@ void SNVS_LP_SRTC_GetAlarm(SNVS_Type *base, snvs_lp_srtc_datetime_t *datetime);
  * @param mask The interrupts to enable. This is a logical OR of members of the
  *             enumeration ::snvs_interrupt_enable_t
  */
-void SNVS_LP_SRTC_EnableInterrupts(SNVS_Type *base, uint32_t mask);
+static inline void SNVS_LP_SRTC_EnableInterrupts(SNVS_Type *base, uint32_t mask)
+{
+    base->LPCR |= mask;
+}
 
 /*!
  * @brief Disables the selected SNVS interrupts.
@@ -272,7 +263,10 @@ void SNVS_LP_SRTC_EnableInterrupts(SNVS_Type *base, uint32_t mask);
  * @param mask The interrupts to enable. This is a logical OR of members of the
  *             enumeration ::snvs_interrupt_enable_t
  */
-void SNVS_LP_SRTC_DisableInterrupts(SNVS_Type *base, uint32_t mask);
+static inline void SNVS_LP_SRTC_DisableInterrupts(SNVS_Type *base, uint32_t mask)
+{
+    base->LPCR &= ~mask;
+}
 
 /*!
  * @brief Gets the enabled SNVS interrupts.
@@ -308,7 +302,10 @@ uint32_t SNVS_LP_SRTC_GetStatusFlags(SNVS_Type *base);
  * @param mask The status flags to clear. This is a logical OR of members of the
  *             enumeration ::snvs_status_flags_t
  */
-void SNVS_LP_SRTC_ClearStatusFlags(SNVS_Type *base, uint32_t mask);
+static inline void SNVS_LP_SRTC_ClearStatusFlags(SNVS_Type *base, uint32_t mask)
+{
+    base->LPSR |= mask;
+}
 
 /*! @}*/
 
@@ -386,6 +383,156 @@ snvs_lp_external_tamper_status_t SNVS_LP_GetExternalTamperStatus(SNVS_Type *base
  * @param pin SNVS external tamper pin
  */
 void SNVS_LP_ClearExternalTamperStatus(SNVS_Type *base, snvs_lp_external_tamper_t pin);
+
+/*! @}*/
+
+/*!
+ * @name Monotonic Counter (MC)
+ * @{
+ */
+
+/*!
+ * @brief Enable or disable the Monotonic Counter.
+ *
+ * @param base SNVS peripheral base address
+ * @param enable Pass true to enable, false to disable.
+ */
+static inline void SNVS_LP_EnableMonotonicCounter(SNVS_Type *base, bool enable)
+{
+    if (enable)
+    {
+        base->LPCR |= SNVS_LPCR_MC_ENV_MASK;
+    }
+    else
+    {
+        base->LPCR &= (~SNVS_LPCR_MC_ENV_MASK);
+    }
+}
+
+/*!
+ * @brief Get the current Monotonic Counter.
+ *
+ * @param base SNVS peripheral base address
+ * @return Current Monotonic Counter value.
+ */
+uint64_t SNVS_LP_GetMonotonicCounter(SNVS_Type *base);
+
+/*!
+ * @brief Increase the Monotonic Counter.
+ *
+ * Increase the Monotonic Counter by 1.
+ *
+ * @param base SNVS peripheral base address
+ */
+static inline void SNVS_LP_IncreaseMonotonicCounter(SNVS_Type *base)
+{
+    /* Write to the LPSMCLR or LPSMCLR, the counter increases. */
+    *((volatile uint32_t *)(&(base->LPSMCLR))) = 0xFFFFFFFFU;
+}
+
+/*! @}*/
+
+/*!
+ * @name Zeroizable Master Key (ZMK)
+ * @{
+ */
+
+/*!
+ * @brief Write Zeroizable Master Key (ZMK) to the SNVS registers.
+ *
+ * @param base SNVS peripheral base address
+ * @param ZMKey The ZMK write to the SNVS register.
+ */
+void SNVS_LP_WriteZeroizableMasterKey(SNVS_Type *base, uint32_t ZMKey[SNVS_ZMK_REG_COUNT]);
+
+/*!
+ * @brief Set Zeroizable Master Key valid.
+ *
+ * This API could only be called when using software programming mode. After writing
+ * ZMK using @ref SNVS_LP_WriteZeroizableMasterKey, call this API to make the ZMK
+ * valid.
+ *
+ * @param base SNVS peripheral base address
+ * @param valid Pass true to set valid, false to set invalid.
+ */
+static inline void SNVS_LP_SetZeroizableMasterKeyValid(SNVS_Type *base, bool valid)
+{
+    if (valid)
+    {
+        base->LPMKCR |= SNVS_LPMKCR_ZMK_VAL_MASK;
+    }
+    else
+    {
+        base->LPMKCR &= (~SNVS_LPMKCR_ZMK_VAL_MASK);
+    }
+}
+
+/*!
+ * @brief Get Zeroizable Master Key valid status.
+ *
+ * In hardware programming mode, call this API to check whether the ZMK is valid.
+ *
+ * @param base SNVS peripheral base address
+ * @return true if valid, false if invalid.
+ */
+static inline bool SNVS_LP_GetZeroizableMasterKeyValid(SNVS_Type *base)
+{
+    return (SNVS_LPMKCR_ZMK_VAL_MASK == (base->LPMKCR & SNVS_LPMKCR_ZMK_VAL_MASK));
+}
+
+/*!
+ * @brief Set Zeroizable Master Key programming mode.
+ *
+ * @param base SNVS peripheral base address
+ * @param mode ZMK programming mode.
+ */
+static inline void SNVS_LP_SetZeroizableMasterKeyProgramMode(SNVS_Type *base, snvs_lp_zmk_program_mode_t mode)
+{
+    if (kSNVS_ZMKSoftwareProgram == mode)
+    {
+        base->LPMKCR &= (~SNVS_LPMKCR_ZMK_HWP_MASK);
+    }
+    else
+    {
+        base->LPMKCR |= SNVS_LPMKCR_ZMK_HWP_MASK;
+    }
+}
+
+/*!
+ * @brief Enable or disable Zeroizable Master Key ECC.
+ *
+ * @param base SNVS peripheral base address
+ * @param enable Pass true to enable, false to disable.
+ */
+static inline void SNVS_LP_EnableZeroizableMasterKeyECC(SNVS_Type *base, bool enable)
+{
+    if (enable)
+    {
+        base->LPMKCR |= SNVS_LPMKCR_ZMK_ECC_EN_MASK;
+    }
+    else
+    {
+        base->LPMKCR &= (~SNVS_LPMKCR_ZMK_ECC_EN_MASK);
+    }
+}
+
+/*!
+ * @brief Set SNVS Master Key mode.
+ *
+ * @param base SNVS peripheral base address
+ * @param mode Master Key mode.
+ * @note When @ref kSNVS_ZMK or @ref kSNVS_CMK used, the SNVS_HP must be configured
+ * to enable the master key selection.
+ */
+static inline void SNVS_LP_SetMasterKeyMode(SNVS_Type *base, snvs_lp_master_key_mode_t mode)
+{
+    uint32_t lpmkcr = base->LPMKCR;
+    lpmkcr = (lpmkcr & (~SNVS_LPMKCR_MASTER_KEY_SEL_MASK)) | SNVS_LPMKCR_MASTER_KEY_SEL(mode);
+    base->LPMKCR = lpmkcr;
+}
+
+/*! @}*/
+
 
 #if defined(__cplusplus)
 }

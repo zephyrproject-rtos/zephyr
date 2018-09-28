@@ -1,0 +1,56 @@
+#
+# Copyright (c) 2018, Foundries.io
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: WNC-M14A2A LTE-M Modem
+id: wnc,m14a2a
+version: 0.1
+
+description: >
+    This is a representation of the WNC-M14A2A LTE-M modem.
+
+inherits:
+    !include uart-device.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      constraint: "wnc,m14a2a"
+      generation: define
+
+    mdm-boot-mode-sel-gpios:
+      type: compound
+      category: required
+      generation: define, use-prop-name
+
+    mdm-power-gpios:
+      type: compound
+      category: required
+      generation: define, use-prop-name
+
+    mdm-keep-awake-gpios:
+      type: compound
+      category: required
+      generation: define, use-prop-name
+
+    mdm-reset-gpios:
+      type: compound
+      category: required
+      generation: define, use-prop-name
+
+    mdm-shld-trans-ena-gpios:
+      type: compound
+      category: required
+      generation: define, use-prop-name
+
+    mdm-send-ok-gpios:
+      type: compound
+      category: optional
+      description: UART RTS pin if no HW flow control (set to always enabled)
+      generation: define, use-prop-name
+
+base_label: WNCM14A2A
+...

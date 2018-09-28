@@ -123,7 +123,7 @@ static void tcp_received(struct net_app_ctx *ctx,
 	snprintk(dbg, MAX_DBG_PRINT, "TCP IPv%c",
 		 family == AF_INET6 ? '6' : '4');
 
-	reply_pkt = build_reply_pkt(dbg, ctx, pkt);
+	reply_pkt = build_reply_pkt(dbg, ctx, pkt, NET_TCPH_LEN);
 
 	net_pkt_unref(pkt);
 

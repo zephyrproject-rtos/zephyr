@@ -55,11 +55,11 @@ endif
 
 config	OPENTHREAD_LOG_LEVEL
 	int
-	default 0
 	default 1 if OPENTHREAD_LOG_LEVEL_ERROR
 	default 2 if OPENTHREAD_LOG_LEVEL_WARNING
 	default 3 if OPENTHREAD_LOG_LEVEL_INFO
 	default 4 if OPENTHREAD_LOG_LEVEL_DEBUG
+	default 0
 
 menuconfig OPENTHREAD_L2_DEBUG
 	bool "OpenThread L2 log support"
@@ -97,11 +97,11 @@ endif
 
 config	OPENTHREAD_L2_LOG_LEVEL
 	int
-	default 0
 	default 1 if OPENTHREAD_L2_LOG_LEVEL_ERROR
 	default 2 if OPENTHREAD_L2_LOG_LEVEL_WARNING
 	default 3 if OPENTHREAD_L2_LOG_LEVEL_INFO
 	default 4 if OPENTHREAD_L2_LOG_LEVEL_DEBUG
+	default 0
 
 config OPENTHREAD_THREAD_PRIORITY
 	int "OpenThread thread priority"
@@ -122,6 +122,19 @@ config OPENTHREAD_PANID
 config OPENTHREAD_CHANNEL
 	int "Default Channel"
 	default 11
+
+config OPENTHREAD_NETWORK_NAME
+	string "Default network name"
+	default "ot_zephyr"
+	help
+	  Network name for OpenThread
+
+config OPENTHREAD_XPANID
+	string "Default Extended PAN ID"
+	default "de:ad:00:be:ef:00:ca:fe"
+	help
+	  Extended PAN ID for OpenThread with
+	  format "de:ad:00:be:ef:00:ca:fe"
 
 choice
 	prompt "OpenThread device type"

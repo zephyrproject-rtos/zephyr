@@ -7,6 +7,7 @@ tests:
     build_only: true
     extra_args: CONF_FILE=newlib.conf
     tags: apps
+    platform_exclude: esp32
   test_runtime_nmi:
     arch_whitelist: arm
     build_only: true

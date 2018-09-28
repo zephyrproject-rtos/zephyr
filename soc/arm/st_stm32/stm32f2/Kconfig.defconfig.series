@@ -1,0 +1,37 @@
+# Kconfig - ST Microelectronics STM32F2 MCU line
+#
+# Copyright (c) 2018 qianfan Zhao <qianfanguijin@163.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_STM32F2X
+
+source "soc/arm/st_stm32/stm32f2/Kconfig.defconfig.stm32f2*"
+
+config SOC_SERIES
+	default "stm32f2"
+
+if GPIO_STM32
+
+config GPIO_STM32_PORTD
+	default y
+
+config GPIO_STM32_PORTE
+	default y
+
+config GPIO_STM32_PORTF
+	default y
+
+config GPIO_STM32_PORTG
+	default y
+
+config GPIO_STM32_PORTH
+	default y
+
+config GPIO_STM32_PORTI
+	default y
+
+endif # GPIO_STM32
+
+endif # SOC_SERIES_STM32F2X

@@ -7,16 +7,14 @@
 #
 
 menuconfig GPIO
-	bool
-	prompt "GPIO Drivers"
+	bool "GPIO Drivers"
 	help
 	  Include GPIO drivers in system config
 
 if GPIO
 
 config SYS_LOG_GPIO_LEVEL
-	int
-	prompt "GPIO drivers log level"
+	int "GPIO drivers log level"
 	default 0
 	depends on SYS_LOG
 	help
@@ -54,7 +52,7 @@ source "drivers/gpio/Kconfig.atmel_sam3"
 
 source "drivers/gpio/Kconfig.stm32"
 
-source "drivers/gpio/Kconfig.nrf5"
+source "drivers/gpio/Kconfig.nrfx"
 
 source "drivers/gpio/Kconfig.cmsdk_ahb"
 
@@ -62,7 +60,7 @@ source "drivers/gpio/Kconfig.cc32xx"
 
 source "drivers/gpio/Kconfig.pulpino"
 
-source "drivers/gpio/Kconfig.fe310"
+source "drivers/gpio/Kconfig.sifive"
 
 source "drivers/gpio/Kconfig.cc2650"
 
@@ -79,5 +77,7 @@ source "drivers/gpio/Kconfig.sam"
 source "drivers/gpio/Kconfig.sx1509b"
 
 source "drivers/gpio/Kconfig.imx"
+
+source "drivers/gpio/Kconfig.intel"
 
 endif # GPIO

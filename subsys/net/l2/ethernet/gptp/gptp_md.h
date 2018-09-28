@@ -28,9 +28,6 @@ extern "C" {
  * This structure applies for MDSyncReceive as well as MDSyncSend.
  */
 struct gptp_md_sync_info {
-	/** PortIdentity of this port. */
-	struct gptp_port_identity src_port_id;
-
 	/* Time of the current grandmaster compared to the previous. */
 	struct gptp_scaled_ns last_gm_phase_change;
 
@@ -48,6 +45,9 @@ struct gptp_md_sync_info {
 
 	/** Most recent rateRatio from the PortSyncSync. */
 	double rate_ratio;
+
+	/** PortIdentity of this port. */
+	struct gptp_port_identity src_port_id;
 
 	/* Time Base Indicator of the current Grand Master. */
 	u16_t gm_time_base_indicator;

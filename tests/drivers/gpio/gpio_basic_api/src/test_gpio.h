@@ -40,6 +40,18 @@
 #define DEV_NAME CONFIG_GPIO_SAM0_PORTA_LABEL
 #define PIN_OUT 20  /* PA20 / pin 6 */
 #define PIN_IN 15  /* PA15 / pin 5 */
+#elif defined(CONFIG_BOARD_NRF52840_PCA10056)
+#define DEV_NAME CONFIG_GPIO_P1_DEV_NAME
+#define PIN_OUT 1  /* P1.01 */
+#define PIN_IN 2  /* P1.02 */
+#elif defined(CONFIG_BOARD_NRF52_PCA10040)
+#define DEV_NAME CONFIG_GPIO_P0_DEV_NAME
+#define PIN_OUT 11  /* P0.11 */
+#define PIN_IN 12  /* P0.12 */
+#elif defined(CONFIG_BOARD_NRF51_PCA10028)
+#define DEV_NAME CONFIG_GPIO_P0_DEV_NAME
+#define PIN_OUT 12  /* P0.12 */
+#define PIN_IN 13  /* P0.13 */
 #else
 #error Unsupported board
 #endif

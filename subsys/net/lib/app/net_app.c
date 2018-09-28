@@ -17,7 +17,7 @@
 #define  MBEDTLS_PRINT printf
 #else
 #include <misc/printk.h>
-#define  MBEDTLS_PRINT printk
+#define  MBEDTLS_PRINT (int(*)(const char *, ...)) printk
 #endif /* CONFIG_STDOUT_CONSOLE */
 #include <zephyr.h>
 #include <string.h>
@@ -200,7 +200,7 @@ void _net_app_received(struct net_context *net_ctx,
 			 * context do not call the close callback.
 			 */
 			for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
-				if (!ctx->server.net_ctxs[i]) {
+				if (ctx->server.net_ctxs[i]) {
 					close = false;
 					break;
 				}
@@ -1402,6 +1402,12 @@ static void dtls_cleanup(struct net_app_ctx *ctx, bool cancel_timer)
 
 	/* It might be that ctx is already cleared so check it here */
 	if (ctx->dtls.ctx) {
+		/* Notify peers that we are closing. This must be called
+		 * here as the call in _net_app_ssl_mainloop() is too
+		 * late. Fixes #8605
+		 */
+		mbedtls_ssl_close_notify(&ctx->tls.mbedtls.ssl);
+
 		net_udp_unregister(ctx->dtls.ctx->conn_handler);
 		net_context_put(ctx->dtls.ctx);
 		ctx->dtls.ctx = NULL;
@@ -2025,7 +2031,8 @@ reset:
 	do {
 	again:
 		len = ctx->tls.request_buf_len - 1;
-		memset(ctx->tls.request_buf, 0, ctx->tls.request_buf_len);
+		(void)memset(ctx->tls.request_buf, 0,
+			     ctx->tls.request_buf_len);
 
 		ret = mbedtls_ssl_read(&ctx->tls.mbedtls.ssl,
 				       ctx->tls.request_buf, len);

@@ -1,0 +1,121 @@
+# Kconfig - Kinetis KWx MCU series
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "Kinetis KWx MCU Selection"
+depends on SOC_SERIES_KINETIS_KWX
+
+config SOC_MKW22D5
+	bool "SOC_MKW22D5"
+	select CPU_CORTEX_M4
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_FTM
+	select HAS_MCUX_RNGA
+	select HAS_MCUX_SIM
+	select HAS_OSC
+	select HAS_MCG
+
+config SOC_MKW24D5
+	bool "SOC_MKW24D5"
+	select CPU_CORTEX_M4
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_FTM
+	select HAS_MCUX_RNGA
+	select HAS_MCUX_SIM
+	select HAS_OSC
+	select HAS_MCG
+
+config SOC_MKW40Z4
+	bool "SOC_MKW40Z4"
+	select CPU_CORTEX_M0PLUS
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_LPUART
+	select HAS_MCUX_SIM
+	select HAS_MCUX_TRNG
+	select HAS_OSC
+	select HAS_MCG
+
+config SOC_MKW41Z4
+	bool "SOC_MKW41Z4"
+	select CPU_CORTEX_M0PLUS
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_LPUART
+	select HAS_MCUX_RTC
+	select HAS_MCUX_SIM
+	select HAS_MCUX_TRNG
+	select HAS_OSC
+	select HAS_MCG
+
+endchoice
+
+if SOC_SERIES_KINETIS_KWX
+
+config SOC_PART_NUMBER_MKW22D512VHA5
+	bool
+
+config SOC_PART_NUMBER_MKW24D512VHA5
+	bool
+
+config SOC_PART_NUMBER_MKW40Z160VHT4
+	bool
+
+config SOC_PART_NUMBER_MKW41Z256VHT4
+	bool
+
+config SOC_PART_NUMBER_MKW41Z512VHT4
+	bool
+
+config SOC_PART_NUMBER_KINETIS_KWX
+	string
+	default "MKW22D512VHA5" if SOC_PART_NUMBER_MKW22D512VHA5
+	default "MKW24D512VHA5" if SOC_PART_NUMBER_MKW24D512VHA5
+	default "MKW40Z160VHT4" if SOC_PART_NUMBER_MKW40Z160VHT4
+	default "MKW41Z256VHT4" if SOC_PART_NUMBER_MKW41Z256VHT4
+	default "MKW41Z512VHT4" if SOC_PART_NUMBER_MKW41Z512VHT4
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
+if SOC_MKW24D5 || SOC_MKW22D5
+
+config KW2XD_CORE_CLOCK_DIVIDER
+	int "KW2xD core clock divider"
+	default 1
+	help
+	  This option specifies the divide value for the KW2xD processor core
+	  clock from the system clock.
+
+config KW2XD_BUS_CLOCK_DIVIDER
+	int "KW2xD bus clock divider"
+	default 1
+	help
+	  This option specifies the divide value for the KW2xD bus clock from
+	  the system clock.
+
+config KW2XD_FLASH_CLOCK_DIVIDER
+	int "KW2xD flash clock divider"
+	default 2
+	help
+	  This option specifies the divide value for the KW2xD flash clock from
+	  the system clock.
+
+config WDOG_INIT
+	def_bool y
+	# omit prompt to signify a "hidden" option
+	help
+	  This processor enables the watchdog timer with a short timeout
+	  upon reset. Therefore, this requires that the watchdog be configured
+	  during reset handling.
+
+endif # SOC_MKW24D5 || SOC_MKW22D5
+
+endif # SOC_SERIES_KINETIS_KWX

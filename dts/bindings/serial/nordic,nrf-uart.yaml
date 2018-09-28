@@ -11,9 +11,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "nordic,nrf-uart"
 
     reg:
@@ -27,4 +24,28 @@ properties:
       category: required
       description: required interrupts
       generation: define
+
+    tx-pin:
+      type: int
+      description: TX pin
+      generation: define
+      category: required
+
+    rx-pin:
+      type: int
+      description: RX pin
+      generation: define
+      category: required
+
+    rts-pin:
+      type: int
+      description: RTS pin
+      generation: define
+      category: optional
+
+    cts-pin:
+      type: int
+      description: CTS pin
+      generation: define
+      category: optional
 ...

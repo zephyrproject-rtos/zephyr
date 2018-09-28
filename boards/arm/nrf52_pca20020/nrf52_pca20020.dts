@@ -7,7 +7,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf52832.dtsi>
+#include <nordic/nrf52832_qfaa.dtsi>
 
 / {
 	model = "Nordic PCA20020 Dev Kit";
@@ -19,6 +19,10 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+};
+
+&adc {
+	status = "ok";
 };
 
 &gpiote {
@@ -33,6 +37,8 @@
 	status = "ok";
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
+	tx-pin = <3>;
+	rx-pin = <2>;
 };
 
 &i2c0 {

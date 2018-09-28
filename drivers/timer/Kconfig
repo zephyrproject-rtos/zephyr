@@ -103,8 +103,7 @@ config LOAPIC_TIMER_IRQ_PRIORITY
 	  This options specifies the IRQ priority used by the LOAPIC timer.
 
 config TSC_CYCLES_PER_SEC
-	int
-	prompt "Frequency of x86 CPU timestamp counter"
+	int "Frequency of x86 CPU timestamp counter"
 	default 0
 	depends on LOAPIC_TIMER
 	help

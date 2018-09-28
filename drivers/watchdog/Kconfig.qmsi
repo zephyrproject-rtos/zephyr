@@ -20,8 +20,7 @@ config WDT_0_IRQ_PRI
 	  Watchdog interrupt priority
 
 config WDT_QMSI_API_REENTRANCY
-	bool
-	prompt "WDT shim driver API reentrancy"
+	bool "WDT shim driver API reentrancy"
 	depends on WDT_QMSI
 	help
 	  Enable support for WDT shim driver API reentrancy.

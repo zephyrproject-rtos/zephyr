@@ -1,3 +1,5 @@
+set(EMU_PLATFORM nsim)
+
 set(BOARD_FLASH_RUNNER arc-nsim)
 set(BOARD_DEBUG_RUNNER arc-nsim)
 

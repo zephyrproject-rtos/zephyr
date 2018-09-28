@@ -74,7 +74,7 @@ static void setup_dhcpv4(struct net_if *iface)
 
 #if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_DHCPV4)
 
-#if !defined(CONFIG_NET_APP_MY_IPV4_ADDR)
+#if !defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
 #error "You need to define an IPv4 Address or enable DHCPv4!"
 #endif
 
@@ -83,8 +83,8 @@ static void setup_ipv4(struct net_if *iface)
 	char hr_addr[NET_IPV4_ADDR_LEN];
 	struct in_addr addr;
 
-	if (net_addr_pton(AF_INET, CONFIG_NET_APP_MY_IPV4_ADDR, &addr)) {
-		NET_ERR("Invalid address: %s", CONFIG_NET_APP_MY_IPV4_ADDR);
+	if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &addr)) {
+		NET_ERR("Invalid address: %s", CONFIG_NET_CONFIG_MY_IPV4_ADDR);
 		return;
 	}
 
@@ -102,7 +102,7 @@ static void setup_ipv4(struct net_if *iface)
 
 #define MCAST_IP6ADDR "ff84::2"
 
-#ifndef CONFIG_NET_APP_MY_IPV6_ADDR
+#ifndef CONFIG_NET_CONFIG_MY_IPV6_ADDR
 #error "You need to define an IPv6 Address!"
 #endif
 
@@ -111,8 +111,8 @@ static void setup_ipv6(struct net_if *iface)
 	char hr_addr[NET_IPV6_ADDR_LEN];
 	struct in6_addr addr;
 
-	if (net_addr_pton(AF_INET6, CONFIG_NET_APP_MY_IPV6_ADDR, &addr)) {
-		NET_ERR("Invalid address: %s", CONFIG_NET_APP_MY_IPV6_ADDR);
+	if (net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR, &addr)) {
+		NET_ERR("Invalid address: %s", CONFIG_NET_CONFIG_MY_IPV6_ADDR);
 		return;
 	}
 

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SENSOR_SHT3XD_
-#define _SENSOR_SHT3XD_
+#ifndef ZEPHYR_DRIVERS_SENSOR_SHT3XD_SHT3XD_H_
+#define ZEPHYR_DRIVERS_SENSOR_SHT3XD_SHT3XD_H_
 
 #include <device.h>
 #include <kernel.h>
@@ -107,4 +107,4 @@ int sht3xd_init_interrupt(struct device *dev);
 #define SYS_LOG_DOMAIN "SHT3XD"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <logging/sys_log.h>
-#endif /* _SENSOR_SHT3XD_ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_SHT3XD_SHT3XD_H_ */

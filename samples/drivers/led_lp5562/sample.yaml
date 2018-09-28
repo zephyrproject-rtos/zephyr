@@ -1,0 +1,8 @@
+sample:
+  description: Demonstration of the LP5562 LED driver
+  name: LP5562 sample
+  platforms: all
+tests:
+  test:
+    platform_whitelist: nrf52840_pca10056
+    tags: samples

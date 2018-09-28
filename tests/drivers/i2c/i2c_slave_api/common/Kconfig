@@ -9,12 +9,11 @@
 config I2C_VIRTUAL
 	bool "Virtual I2C Driver for Slave development"
 	depends on I2C
-	default n
 	help
 	  This driver exposes a virtual I2C driver used to debug virtual
 	  I2C slave drivers.
 
 config I2C_VIRTUAL_NAME
 	string "Virtual Port device name"
-	depends on I2C_VIRTUAL
 	default "I2C_VIRTUAL"
+	depends on I2C_VIRTUAL

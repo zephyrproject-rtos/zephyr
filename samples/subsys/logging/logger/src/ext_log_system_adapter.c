@@ -9,7 +9,8 @@
 
 #define LOG_MODULE_NAME ext_log_system
 #include <logging/log.h>
-LOG_MODULE_REGISTER();
+
+LOG_MODULE_REGISTER(ext_log_system);
 
 /** @brief Translation of custom log levels to logging subsystem levels. */
 static const u8_t log_level_lut[] = {

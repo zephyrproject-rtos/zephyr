@@ -462,7 +462,7 @@ int http_parse_host(const char *buf, struct http_parser_url *u,
 void
 http_parser_url_init(struct http_parser_url *u)
 {
-	memset(u, 0, sizeof(*u));
+	(void)memset(u, 0, sizeof(*u));
 }
 
 int

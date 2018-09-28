@@ -38,12 +38,12 @@ struct metal_state {
 /**
  * @brief restore interrupts to state before disable_global_interrupt()
  */
-void sys_irq_restore_enable(void);
+void sys_irq_restore_enable(unsigned int flags);
 
 /**
  * @brief disable all interrupts
  */
-void sys_irq_save_disable(void);
+unsigned int sys_irq_save_disable(void);
 
 #endif /* METAL_INTERNAL */
 

@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INC_string_h__
-#define __INC_string_h__
+#ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STRING_H_
+#define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STRING_H_
 
 #include <stddef.h>
 #include <bits/restrict.h>
@@ -41,4 +41,4 @@ extern void  *memchr(const void *s, unsigned char c, size_t n);
 }
 #endif
 
-#endif  /* __INC_string_h__ */
+#endif  /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STRING_H_ */

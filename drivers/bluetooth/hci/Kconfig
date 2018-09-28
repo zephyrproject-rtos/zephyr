@@ -87,7 +87,6 @@ if BT_SPI
 
 config BT_BLUENRG_ACI
 	bool "Enable ACI message with with BlueNRG-based devices"
-	default n
 	help
 	  Enable support for devices compatible with the BlueNRG Bluetooth
 	  Stack. Current driver supports: ST BLUENRG-MS.

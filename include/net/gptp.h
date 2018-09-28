@@ -10,8 +10,8 @@
  *
  */
 
-#ifndef __GPTP_H
-#define __GPTP_H
+#ifndef ZEPHYR_INCLUDE_NET_GPTP_H_
+#define ZEPHYR_INCLUDE_NET_GPTP_H_
 
 /**
  * @brief generic Precision Time Protocol (gPTP) support
@@ -22,6 +22,7 @@
 
 #include <net/net_core.h>
 #include <net/ptp_time.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -170,7 +171,7 @@ struct gptp_hdr {
 		(uscaled_ns_ptr)->low =					\
 			gptp_get_current_time_nanosecond(port) << 16;	\
 		(uscaled_ns_ptr)->high = 0;				\
-	} while (0)
+	} while (false)
 
 /**
  * @typedef gptp_phase_dis_callback_t
@@ -286,4 +287,4 @@ struct gptp_domain *gptp_get_domain(void);
  * @}
  */
 
-#endif /* __GPTP_H */
+#endif /* ZEPHYR_INCLUDE_NET_GPTP_H_ */

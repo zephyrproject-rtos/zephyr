@@ -19,7 +19,7 @@
 
 #include "posix_core.h"
 #include "posix_soc_if.h"
-#include "logging/kernel_event_logger.h"
+#include <tracing.h>
 
 /**
  *
@@ -35,7 +35,7 @@
  */
 void k_cpu_idle(void)
 {
-	_sys_k_event_logger_enter_sleep();
+	z_sys_trace_idle();
 	posix_irq_full_unlock();
 	posix_halt_cpu();
 }
@@ -53,15 +53,15 @@ void k_cpu_idle(void)
  *    occurs if this requirement is not met.
  *
  * 2) After waking up from the low-power mode, the interrupt lockout state
- *    must be restored as indicated in the 'imask' input parameter.
+ *    must be restored as indicated in the 'key' input parameter.
  *
  * This function is just a pass thru to the SOC one
  *
  * @return N/A
  */
 
-void k_cpu_atomic_idle(unsigned int imask)
+void k_cpu_atomic_idle(unsigned int key)
 {
-	_sys_k_event_logger_enter_sleep();
-	posix_atomic_halt_cpu(imask);
+	z_sys_trace_idle();
+	posix_atomic_halt_cpu(key);
 }

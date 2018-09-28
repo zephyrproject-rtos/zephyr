@@ -1,7 +1,11 @@
-Zephyr Project
-##############
 
 .. raw:: html
+
+   <a href="https://www.zephyrproject.org">
+     <p align="center">
+       <img src="doc/images/Zephyr-Project.png">
+     </p>
+   </a>
 
    <a href="https://bestpractices.coreinfrastructure.org/projects/74"><img
    src="https://bestpractices.coreinfrastructure.org/projects/74/badge"></a>
@@ -18,12 +22,20 @@ resource-constrained systems: from simple embedded environmental sensors and
 LED wearables to sophisticated smart watches and IoT wireless gateways.
 
 The Zephyr kernel supports multiple architectures, including ARM Cortex-M,
-Intel x86, ARC, NIOS II, Tensilica Xtensa, and RISC V, and a large number of
+Intel x86, ARC, Nios II, Tensilica Xtensa, and RISC-V, and a large number of
 `supported boards`_.
 
 .. below included in doc/introduction/introduction.rst
 
 .. start_include_here
+
+Getting Started
+***************
+
+To start developing Zephyr applications refer to the `Getting Started Guide`_
+in the `Zephyr Documentation`_ pages.
+A brief introduction to Zephyr can be found in the  `Zephyr Introduction`_
+page.
 
 Community Support
 *****************
@@ -47,8 +59,7 @@ support systems:
 * **Zephyr Project Website**: The https://zephyrproject.org website is the
   central source of information about the Zephyr Project. On this site, you'll
   find background and current information about the project as well as all the
-  relevant links to project material.  For a quick start, refer to the
-  `Zephyr Introduction`_ and `Getting Started Guide`_.
+  relevant links to project material.
 
 * **Releases**: Source code for Zephyr kernel releases are available at
   https://zephyrproject.org/developers/#downloads. On this page,
@@ -103,12 +114,13 @@ support systems:
   client or use a client-side application such as pidgin.
 
 
-.. _supported boards: http://docs.zephyrproject.org/boards/boards.html
-.. _Zephyr Introduction: http://docs.zephyrproject.org/introduction/introducing_zephyr.html
-.. _Getting Started Guide: http://docs.zephyrproject.org/getting_started/getting_started.html
-.. _Contribution Guide: http://docs.zephyrproject.org/contribute/contribute_guidelines.html
+.. _supported boards: http://docs.zephyrproject.org/latest/boards/boards.html
+.. _Zephyr Documentation: http://docs.zephyrproject.org
+.. _Zephyr Introduction: http://docs.zephyrproject.org/latest/introduction/introducing_zephyr.html
+.. _Getting Started Guide: http://docs.zephyrproject.org/latest/getting_started/getting_started.html
+.. _Contribution Guide: http://docs.zephyrproject.org/latest/contribute/contribute_guidelines.html
 .. _Zephyr GitHub wiki: https://github.com/zephyrproject-rtos/zephyr/wiki
 .. _Zephyr Development mailing list: https://lists.zephyrproject.org/g/devel
 .. _Zephyr mailing list subgroups: https://lists.zephyrproject.org/g/main/subgroups
-.. _Sample and Demo Code Examples: http://docs.zephyrproject.org/samples/samples.html
-.. _Security Overview: http://docs.zephyrproject.org/security/security-overview.html
+.. _Sample and Demo Code Examples: http://docs.zephyrproject.org/latest/samples/samples.html
+.. _Security Overview: http://docs.zephyrproject.org/latest/security/security-overview.html

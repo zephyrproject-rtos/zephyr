@@ -21,13 +21,14 @@
 
 #include <settings/settings.h>
 
+#include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/l2cap.h>
 #include <bluetooth/rfcomm.h>
 #include <bluetooth/sdp.h>
 
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 #include "bt.h"
 #include "gatt.h"
@@ -40,6 +41,8 @@
 #define DATA_BREDR_MTU		48
 
 #define BT_SHELL_MODULE "bt"
+
+static u8_t selected_id = BT_ID_DEFAULT;
 
 #if defined(CONFIG_BT_CONN)
 struct bt_conn *default_conn;
@@ -152,7 +155,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[NAME_LEN];
 
-	memset(name, 0, sizeof(name));
+	(void)memset(name, 0, sizeof(name));
 
 	bt_data_parse(buf, data_cb, name);
 
@@ -207,7 +210,7 @@ static void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 		break;
 #endif
 	case BT_CONN_TYPE_LE:
-		bt_addr_le_to_str(info.le.dst, addr, len);
+		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, len);
 		break;
 	}
 }
@@ -445,16 +448,16 @@ static int char2hex(const char *c, u8_t *x)
 	return 0;
 }
 
-static int str2bt_addr(const char *str, bt_addr_t *addr)
+static int hexstr2array(const char *str, u8_t *array, u8_t size)
 {
 	int i, j;
 	u8_t tmp;
 
-	if (strlen(str) != 17) {
+	if (strlen(str) != ((size * 2) + (size - 1))) {
 		return -EINVAL;
 	}
 
-	for (i = 5, j = 1; *str != '\0'; str++, j++) {
+	for (i = size - 1, j = 1; *str != '\0'; str++, j++) {
 		if (!(j % 3) && (*str != ':')) {
 			return -EINVAL;
 		} else if (*str == ':') {
@@ -462,16 +465,21 @@ static int str2bt_addr(const char *str, bt_addr_t *addr)
 			continue;
 		}
 
-		addr->val[i] = addr->val[i] << 4;
+		array[i] = array[i] << 4;
 
 		if (char2hex(str, &tmp) < 0) {
 			return -EINVAL;
 		}
 
-		addr->val[i] |= tmp;
+		array[i] |= tmp;
 	}
 
 	return 0;
+}
+
+static int str2bt_addr(const char *str, bt_addr_t *addr)
+{
+	return hexstr2array(str, addr->val, 6);
 }
 
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
@@ -522,6 +530,210 @@ static int cmd_init(int argc, char *argv[])
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
+
+	return 0;
+}
+
+#if defined(CONFIG_BT_HCI) || defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+static void hexdump(const u8_t *data, size_t len)
+{
+	int n = 0;
+
+	while (len--) {
+		if (n % 16 == 0) {
+			printk("%08X ", n);
+		}
+
+		printk("%02X ", *data++);
+
+		n++;
+		if (n % 8 == 0) {
+			if (n % 16 == 0) {
+				printk("\n");
+			} else {
+				printk(" ");
+			}
+		}
+	}
+
+	if (n % 16) {
+		printk("\n");
+	}
+}
+#endif /* CONFIG_BT_HCI || CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
+
+#if defined(CONFIG_BT_HCI)
+static int cmd_hci_cmd(int argc, char *argv[])
+{
+	u8_t ogf;
+	u16_t ocf;
+	struct net_buf *buf = NULL, *rsp;
+	int err;
+
+	if (argc < 3) {
+		return -EINVAL;
+	}
+
+	ogf = strtoul(argv[1], NULL, 16);
+	ocf = strtoul(argv[2], NULL, 16);
+
+	if (argc > 3) {
+		int i;
+
+		buf = bt_hci_cmd_create(BT_OP(ogf, ocf), argc - 3);
+
+		for (i = 3; i < argc; i++) {
+			net_buf_add_u8(buf, strtoul(argv[i], NULL, 16));
+		}
+	}
+
+	err = bt_hci_cmd_send_sync(BT_OP(ogf, ocf), buf, &rsp);
+	if (err) {
+		printk("HCI command failed (err %d)\n", err);
+	} else {
+		hexdump(rsp->data, rsp->len);
+		net_buf_unref(rsp);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_HCI */
+
+static int cmd_name(int argc, char *argv[])
+{
+	int err;
+
+	if (argc < 2) {
+		printk("Bluetooth Local Name: %s\n", bt_get_name());
+		return 0;
+	}
+
+	err = bt_set_name(argv[1]);
+	if (err) {
+		printk("Unable to set name %s (err %d)", argv[1], err);
+	}
+
+	return 0;
+}
+
+static int cmd_id_create(int argc, char *argv[])
+{
+	bt_addr_le_t addr;
+	int err;
+
+	if (argc > 1) {
+		err = str2bt_addr_le(argv[1], "random", &addr);
+		if (err) {
+			printk("Invalid address\n");
+			return err;
+		}
+	} else {
+		bt_addr_le_copy(&addr, BT_ADDR_LE_ANY);
+	}
+
+	err = bt_id_create(&addr, NULL);
+	if (err < 0) {
+		printk("Creating new ID failed (err %d)\n", err);
+		return 0;
+	}
+
+	printk("New identity (%d) created: %s\n", err, bt_addr_le_str(&addr));
+
+	return 0;
+}
+
+static int cmd_id_reset(int argc, char *argv[])
+{
+	bt_addr_le_t addr;
+	u8_t id;
+	int err;
+
+	if (argc < 2) {
+		printk("Identity identifier not specified\n");
+		return -EINVAL;
+	}
+
+	id = strtol(argv[1], NULL, 10);
+
+	if (argc > 2) {
+		err = str2bt_addr_le(argv[2], "random", &addr);
+		if (err) {
+			printk("Invalid address\n");
+			return err;
+		}
+	} else {
+		bt_addr_le_copy(&addr, BT_ADDR_LE_ANY);
+	}
+
+	err = bt_id_reset(id, &addr, NULL);
+	if (err < 0) {
+		printk("Resetting ID %u failed (err %d)\n", id, err);
+		return 0;
+	}
+
+	printk("Identity %u reset: %s\n", id, bt_addr_le_str(&addr));
+
+	return 0;
+}
+
+static int cmd_id_delete(int argc, char *argv[])
+{
+	u8_t id;
+	int err;
+
+	if (argc < 2) {
+		printk("Identity identifier not specified\n");
+		return -EINVAL;
+	}
+
+	id = strtol(argv[1], NULL, 10);
+
+	err = bt_id_delete(id);
+	if (err < 0) {
+		printk("Deleting ID %u failed (err %d)\n", id, err);
+		return 0;
+	}
+
+	printk("Identity %u deleted\n", id);
+
+	return 0;
+}
+
+static int cmd_id_show(int argc, char *argv[])
+{
+	bt_addr_le_t addrs[CONFIG_BT_ID_MAX];
+	size_t i, count = CONFIG_BT_ID_MAX;
+
+	bt_id_get(addrs, &count);
+
+	for (i = 0; i < count; i++) {
+		printk("%s%zu: %s\n", i == selected_id ? "*" : " ", i,
+		       bt_addr_le_str(&addrs[i]));
+	}
+
+	return 0;
+}
+
+static int cmd_id_select(int argc, char *argv[])
+{
+	bt_addr_le_t addrs[CONFIG_BT_ID_MAX];
+	size_t count = CONFIG_BT_ID_MAX;
+	u8_t id;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	id = strtol(argv[1], NULL, 10);
+
+	bt_id_get(addrs, &count);
+	if (count <= id) {
+		printk("Invalid identity\n");
+		return 0;
+	}
+
+	printk("Selected identity: %s\n", bt_addr_le_str(&addrs[id]));
+	selected_id = id;
 
 	return 0;
 }
@@ -620,10 +832,6 @@ static const struct bt_data ad_discov[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 };
 
-static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
-};
-
 static int cmd_advertise(int argc, char *argv[])
 {
 	struct bt_le_adv_param param;
@@ -645,17 +853,15 @@ static int cmd_advertise(int argc, char *argv[])
 		return 0;
 	}
 
+	param.id = selected_id;
 	param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
 	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
 
 	if (!strcmp(argv[1], "on")) {
-		param.options = BT_LE_ADV_OPT_CONNECTABLE;
-		scan_rsp = sd;
-		scan_rsp_len = ARRAY_SIZE(sd);
+		param.options = (BT_LE_ADV_OPT_CONNECTABLE |
+				 BT_LE_ADV_OPT_USE_NAME);
 	} else if (!strcmp(argv[1], "scan")) {
-		param.options = 0;
-		scan_rsp = sd;
-		scan_rsp_len = ARRAY_SIZE(sd);
+		param.options = BT_LE_ADV_OPT_USE_NAME;
 	} else if (!strcmp(argv[1], "nconn")) {
 		param.options = 0;
 		scan_rsp = NULL;
@@ -747,7 +953,7 @@ static int cmd_disconnect(int argc, char *argv[])
 			return 0;
 		}
 
-		conn = bt_conn_lookup_addr_le(&addr);
+		conn = bt_conn_lookup_addr_le(selected_id, &addr);
 	}
 
 	if (!conn) {
@@ -793,6 +999,44 @@ static int cmd_auto_conn(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_directed_adv(int argc, char *argv[])
+{
+	int err;
+	bt_addr_le_t addr;
+	struct bt_conn *conn;
+	struct bt_le_adv_param *param = BT_LE_ADV_CONN_DIR;
+
+	if (argc < 3) {
+		return -EINVAL;
+	}
+
+	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	if (err) {
+		printk("Invalid peer address (err %d)\n", err);
+		return 0;
+	}
+
+	if (argc > 3) {
+		if (!strcmp(argv[3], "low")) {
+			param = BT_LE_ADV_CONN_DIR_LOW_DUTY;
+		} else {
+			return -EINVAL;
+		}
+	}
+
+	conn = bt_conn_create_slave_le(&addr, param);
+	if (!conn) {
+		printk("Failed to start directed advertising\n");
+	} else {
+		printk("Started directed advertising\n");
+
+		/* unref connection obj in advance as app user */
+		bt_conn_unref(conn);
+	}
+
+	return 0;
+}
+
 static int cmd_select(int argc, char *argv[])
 {
 	struct bt_conn *conn;
@@ -809,7 +1053,7 @@ static int cmd_select(int argc, char *argv[])
 		return 0;
 	}
 
-	conn = bt_conn_lookup_addr_le(&addr);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &addr);
 	if (!conn) {
 		printk("No matching connection found\n");
 		return 0;
@@ -854,7 +1098,7 @@ static int cmd_oob(int argc, char *argv[])
 	struct bt_le_oob oob;
 	int err;
 
-	err = bt_le_oob_get_local(&oob);
+	err = bt_le_oob_get_local(selected_id, &oob);
 	if (err) {
 		printk("OOB data failed\n");
 		return 0;
@@ -879,7 +1123,7 @@ static int cmd_clear(int argc, char *argv[])
 	}
 
 	if (strcmp(argv[1], "all") == 0) {
-		err = bt_unpair(NULL);
+		err = bt_unpair(selected_id, NULL);
 		if (err) {
 			printk("Failed to clear pairings (err %d)\n", err);
 		} else {
@@ -906,11 +1150,36 @@ static int cmd_clear(int argc, char *argv[])
 		return 0;
 	}
 
-	err = bt_unpair(&addr);
+	err = bt_unpair(selected_id, &addr);
 	if (err) {
 		printk("Failed to clear pairing (err %d)\n", err);
 	} else {
 		printk("Pairing successfully cleared\n");
+	}
+
+	return 0;
+}
+
+static int cmd_chan_map(int argc, char *argv[])
+{
+	u8_t chan_map[5];
+	int err;
+
+	if (argc != 2) {
+		return -EINVAL;
+	}
+
+	err = hexstr2array(argv[1], chan_map, 5);
+	if (err) {
+		printk("Invalid channel map\n");
+		return err;
+	}
+
+	err = bt_le_set_chan_map(chan_map);
+	if (err) {
+		printk("Failed to set channel map (err %d)\n", err);
+	} else {
+		printk("Channel map set\n");
 	}
 
 	return 0;
@@ -936,6 +1205,26 @@ static int cmd_security(int argc, char *argv[])
 	err = bt_conn_security(default_conn, sec);
 	if (err) {
 		printk("Setting security failed (err %d)\n", err);
+	}
+
+	return 0;
+}
+
+static int cmd_bondable(int argc, char *argv[])
+{
+	const char *bondable;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	bondable = argv[1];
+	if (!strcmp(bondable, "on")) {
+		bt_set_bondable(true);
+	} else if (!strcmp(bondable, "off")) {
+		bt_set_bondable(false);
+	} else {
+		return -EINVAL;
 	}
 
 	return 0;
@@ -998,6 +1287,24 @@ static void auth_pairing_confirm(struct bt_conn *conn)
 	printk("Confirm pairing for %s\n", addr);
 }
 
+static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("%s with %s\n", bonded ? "Bonded" : "Paired",  addr);
+}
+
+static void auth_pairing_failed(struct bt_conn *conn)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	printk("Pairing failed with %s\n", addr);
+}
+
 #if defined(CONFIG_BT_BREDR)
 static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 {
@@ -1039,6 +1346,8 @@ static struct bt_conn_auth_cb auth_cb_display = {
 #endif
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
 };
 
 static struct bt_conn_auth_cb auth_cb_display_yes_no = {
@@ -1050,6 +1359,8 @@ static struct bt_conn_auth_cb auth_cb_display_yes_no = {
 #endif
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
 };
 
 static struct bt_conn_auth_cb auth_cb_input = {
@@ -1061,6 +1372,18 @@ static struct bt_conn_auth_cb auth_cb_input = {
 #endif
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
+};
+
+static struct bt_conn_auth_cb auth_cb_confirm = {
+#if defined(CONFIG_BT_BREDR)
+	.pincode_entry = auth_pincode_entry,
+#endif
+	.cancel = auth_cancel,
+	.pairing_confirm = auth_pairing_confirm,
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
 };
 
 static struct bt_conn_auth_cb auth_cb_all = {
@@ -1072,6 +1395,8 @@ static struct bt_conn_auth_cb auth_cb_all = {
 #endif
 	.cancel = auth_cancel,
 	.pairing_confirm = auth_pairing_confirm,
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
 };
 
 static int cmd_auth(int argc, char *argv[])
@@ -1088,6 +1413,8 @@ static int cmd_auth(int argc, char *argv[])
 		bt_conn_auth_cb_register(&auth_cb_display);
 	} else if (!strcmp(argv[1], "yesno")) {
 		bt_conn_auth_cb_register(&auth_cb_display_yes_no);
+	} else if (!strcmp(argv[1], "confirm")) {
+		bt_conn_auth_cb_register(&auth_cb_confirm);
 	} else if (!strcmp(argv[1], "none")) {
 		bt_conn_auth_cb_register(NULL);
 	} else {
@@ -1142,6 +1469,33 @@ static int cmd_auth_pairing_confirm(int argc, char *argv[])
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_FIXED_PASSKEY)
+static int cmd_fixed_passkey(int argc, char *argv[])
+{
+	unsigned int passkey;
+	int err;
+
+	if (argc < 2) {
+		bt_passkey_set(BT_PASSKEY_INVALID);
+		printk("Fixed passkey cleared\n");
+		return 0;
+	}
+
+	passkey = atoi(argv[1]);
+	if (passkey > 999999) {
+		printk("Passkey should be between 0-999999\n");
+		return 0;
+	}
+
+	err = bt_passkey_set(passkey);
+	if (err) {
+		printk("Setting fixed passkey failed (err %d)\n", err);
+	}
+
+	return 0;
+}
+#endif
 
 static int cmd_auth_passkey(int argc, char *argv[])
 {
@@ -1240,7 +1594,7 @@ static void br_device_found(const bt_addr_t *addr, s8_t rssi,
 	char name[239];
 	int len = 240;
 
-	memset(name, 0, sizeof(name));
+	(void)memset(name, 0, sizeof(name));
 
 	while (len) {
 		if (len < 2) {
@@ -1343,35 +1697,18 @@ static int cmd_bredr_discovery(int argc, char *argv[])
 #endif /* CONFIG_BT_BREDR */
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-static void hexdump(const u8_t *data, size_t len)
-{
-	int n = 0;
-
-	while (len--) {
-		if (n % 16 == 0) {
-			printk("%08X ", n);
-		}
-
-		printk("%02X ", *data++);
-
-		n++;
-		if (n % 8 == 0) {
-			if (n % 16 == 0) {
-				printk("\n");
-			} else {
-				printk(" ");
-			}
-		}
-	}
-
-	if (n % 16) {
-		printk("\n");
-	}
-}
-
 static u32_t l2cap_rate;
+static u32_t l2cap_recv_delay;
+static K_FIFO_DEFINE(l2cap_recv_fifo);
+struct l2ch {
+	struct k_delayed_work recv_work;
+	struct bt_l2cap_le_chan ch;
+};
+#define L2CH_CHAN(_chan) CONTAINER_OF(_chan, struct l2ch, ch.chan)
+#define L2CH_WORK(_work) CONTAINER_OF(_work, struct l2ch, recv_work)
+#define L2CAP_CHAN(_chan) _chan->ch.chan
 
-static void l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	static u32_t len;
 	static u32_t cycle_stamp;
@@ -1391,19 +1728,52 @@ static void l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		len += buf->len;
 		l2cap_rate = ((u64_t)len << 3) * 1000000000 / delta;
 	}
+
+	return 0;
 }
 
-static void l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static void l2cap_recv_cb(struct k_work *work)
 {
+	struct l2ch *c = L2CH_WORK(work);
+	struct net_buf *buf;
+
+	while ((buf = net_buf_get(&l2cap_recv_fifo, K_NO_WAIT))) {
+		printk("Confirming reception\n");
+		bt_l2cap_chan_recv_complete(&c->ch.chan, buf);
+	}
+}
+
+static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	struct l2ch *l2ch = L2CH_CHAN(chan);
+
 	printk("Incoming data channel %p len %u\n", chan, buf->len);
 
 	if (buf->len) {
 		hexdump(buf->data, buf->len);
 	}
+
+	if (l2cap_recv_delay) {
+		/* Submit work only if queue is empty */
+		if (k_fifo_is_empty(&l2cap_recv_fifo)) {
+			printk("Delaying response in %u ms...\n",
+			       l2cap_recv_delay);
+			k_delayed_work_submit(&l2ch->recv_work,
+					      l2cap_recv_delay);
+		}
+		net_buf_put(&l2cap_recv_fifo, buf);
+		return -EINPROGRESS;
+	}
+
+	return 0;
 }
 
 static void l2cap_connected(struct bt_l2cap_chan *chan)
 {
+	struct l2ch *c = L2CH_CHAN(chan);
+
+	k_delayed_work_init(&c->recv_work, l2cap_recv_cb);
+
 	printk("Channel %p connected\n", chan);
 }
 
@@ -1429,21 +1799,22 @@ static struct bt_l2cap_chan_ops l2cap_ops = {
 	.disconnected	= l2cap_disconnected,
 };
 
-static struct bt_l2cap_le_chan l2cap_chan = {
-	.chan.ops	= &l2cap_ops,
-	.rx.mtu		= DATA_MTU,
+
+static struct l2ch l2ch_chan = {
+	.ch.chan.ops	= &l2cap_ops,
+	.ch.rx.mtu	= DATA_MTU,
 };
 
 static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
 	printk("Incoming conn %p\n", conn);
 
-	if (l2cap_chan.chan.conn) {
+	if (l2ch_chan.ch.chan.conn) {
 		printk("No channels available\n");
 		return -ENOMEM;
 	}
 
-	*chan = &l2cap_chan.chan;
+	*chan = &l2ch_chan.ch.chan;
 
 	return 0;
 }
@@ -1494,14 +1865,14 @@ static int cmd_l2cap_connect(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (l2cap_chan.chan.conn) {
+	if (l2ch_chan.ch.chan.conn) {
 		printk("Channel already in use\n");
 		return -EINVAL;
 	}
 
 	psm = strtoul(argv[1], NULL, 16);
 
-	err = bt_l2cap_chan_connect(default_conn, &l2cap_chan.chan, psm);
+	err = bt_l2cap_chan_connect(default_conn, &l2ch_chan.ch.chan, psm);
 	if (err < 0) {
 		printk("Unable to connect to psm %u (err %u)\n", psm, err);
 	} else {
@@ -1515,7 +1886,7 @@ static int cmd_l2cap_disconnect(int argc, char *argv[])
 {
 	int err;
 
-	err = bt_l2cap_chan_disconnect(&l2cap_chan.chan);
+	err = bt_l2cap_chan_disconnect(&l2ch_chan.ch.chan);
 	if (err) {
 		printk("Unable to disconnect: %u\n", -err);
 	}
@@ -1533,19 +1904,30 @@ static int cmd_l2cap_send(int argc, char *argv[])
 		count = strtoul(argv[1], NULL, 10);
 	}
 
-	len = min(l2cap_chan.tx.mtu, DATA_MTU - BT_L2CAP_CHAN_SEND_RESERVE);
+	len = min(l2ch_chan.ch.tx.mtu, DATA_MTU - BT_L2CAP_CHAN_SEND_RESERVE);
 
 	while (count--) {
 		buf = net_buf_alloc(&data_tx_pool, K_FOREVER);
 		net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
 
 		net_buf_add_mem(buf, buf_data, len);
-		ret = bt_l2cap_chan_send(&l2cap_chan.chan, buf);
+		ret = bt_l2cap_chan_send(&l2ch_chan.ch.chan, buf);
 		if (ret < 0) {
 			printk("Unable to send: %d\n", -ret);
 			net_buf_unref(buf);
 			break;
 		}
+	}
+
+	return 0;
+}
+
+static int cmd_l2cap_recv(int argc, char *argv[])
+{
+	if (argc > 1) {
+		l2cap_recv_delay = strtoul(argv[1], NULL, 10);
+	} else {
+		printk("l2cap receive delay: %u ms\n", l2cap_recv_delay);
 	}
 
 	return 0;
@@ -1579,9 +1961,11 @@ static int cmd_l2cap_metrics(int argc, char *argv[])
 #endif
 
 #if defined(CONFIG_BT_BREDR)
-static void l2cap_bredr_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int l2cap_bredr_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	printk("Incoming data channel %p len %u\n", chan, buf->len);
+
+	return 0;
 }
 
 static void l2cap_bredr_connected(struct bt_l2cap_chan *chan)
@@ -1916,6 +2300,15 @@ static int cmd_bredr_sdp_find_record(int argc, char *argv[])
 
 static const struct shell_cmd bt_commands[] = {
 	{ "init", cmd_init, HELP_ADDR_LE },
+#if defined(CONFIG_BT_HCI)
+	{ "hci-cmd", cmd_hci_cmd, "<ogf> <ocf> [data]" },
+#endif
+	{ "id-create", cmd_id_create, "[addr]" },
+	{ "id-reset", cmd_id_reset, "<id> [addr]" },
+	{ "id-delete", cmd_id_delete, "<id>" },
+	{ "id-show", cmd_id_show, HELP_NONE },
+	{ "id-select", cmd_id_select, "<id>" },
+	{ "name", cmd_name, "[name]" },
 	{ "scan", cmd_scan,
 	  "<value: on, passive, off> <dup filter: dups, nodups>" },
 	{ "advertise", cmd_advertise,
@@ -1924,18 +2317,24 @@ static const struct shell_cmd bt_commands[] = {
 	{ "connect", cmd_connect_le, HELP_ADDR_LE },
 	{ "disconnect", cmd_disconnect, HELP_NONE },
 	{ "auto-conn", cmd_auto_conn, HELP_ADDR_LE },
+	{ "directed-adv", cmd_directed_adv, HELP_ADDR_LE " [mode: low]" },
 	{ "select", cmd_select, HELP_ADDR_LE },
 	{ "conn-update", cmd_conn_update, "<min> <max> <latency> <timeout>" },
 	{ "oob", cmd_oob },
 	{ "clear", cmd_clear },
+	{ "channel-map", cmd_chan_map, "<channel-map: XX:XX:XX:XX:XX> (36-0)" },
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	{ "security", cmd_security, "<security level: 0, 1, 2, 3>" },
+	{ "bondable", cmd_bondable, "<bondable: on, off>" },
 	{ "auth", cmd_auth,
-	  "<authentication method: all, input, display, yesno, none>" },
+	  "<auth method: all, input, display, yesno, confirm, none>" },
 	{ "auth-cancel", cmd_auth_cancel, HELP_NONE },
 	{ "auth-passkey", cmd_auth_passkey, "<passkey>" },
 	{ "auth-passkey-confirm", cmd_auth_passkey_confirm, HELP_NONE },
 	{ "auth-pairing-confirm", cmd_auth_pairing_confirm, HELP_NONE },
+#if defined(CONFIG_BT_FIXED_PASSKEY)
+	{ "fixed-passkey", cmd_fixed_passkey, "[passkey]" },
+#endif
 #if defined(CONFIG_BT_BREDR)
 	{ "auth-pincode", cmd_auth_pincode, "<pincode>" },
 #endif /* CONFIG_BT_BREDR */
@@ -1943,9 +2342,9 @@ static const struct shell_cmd bt_commands[] = {
 #if defined(CONFIG_BT_GATT_CLIENT)
 	{ "gatt-exchange-mtu", cmd_gatt_exchange_mtu, HELP_NONE },
 	{ "gatt-discover-primary", cmd_gatt_discover,
-	  "<UUID> [start handle] [end handle]" },
+	  "[UUID] [start handle] [end handle]" },
 	{ "gatt-discover-secondary", cmd_gatt_discover,
-	  "<UUID> [start handle] [end handle]" },
+	  "[UUID] [start handle] [end handle]" },
 	{ "gatt-discover-include", cmd_gatt_discover,
 	  "[UUID] [start handle] [end handle]" },
 	{ "gatt-discover-characteristic", cmd_gatt_discover,
@@ -1975,6 +2374,7 @@ static const struct shell_cmd bt_commands[] = {
 	{ "l2cap-connect", cmd_l2cap_connect, "<psm>" },
 	{ "l2cap-disconnect", cmd_l2cap_disconnect, HELP_NONE },
 	{ "l2cap-send", cmd_l2cap_send, "<number of packets>" },
+	{ "l2cap-recv", cmd_l2cap_recv, "[delay (in miliseconds)]" },
 	{ "l2cap-metrics", cmd_l2cap_metrics, "<value on, off>" },
 #endif
 #if defined(CONFIG_BT_BREDR)

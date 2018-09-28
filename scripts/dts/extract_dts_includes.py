@@ -15,130 +15,118 @@ import re
 import yaml
 import argparse
 import collections
+from copy import deepcopy
 
 from devicetree import parse_file
 from extract.globals import *
 
 from extract.clocks import clocks
+from extract.compatible import compatible
 from extract.interrupts import interrupts
 from extract.reg import reg
 from extract.flash import flash
 from extract.pinctrl import pinctrl
 from extract.default import default
 
-class Loader(yaml.Loader):
-    def __init__(self, stream):
-        self._root = os.path.realpath(stream.name)
-        super(Loader, self).__init__(stream)
-        Loader.add_constructor('!include', Loader.include)
-        Loader.add_constructor('!import',  Loader.include)
+class Bindings(yaml.Loader):
 
-    def include(self, node):
+    ##
+    # List of all yaml files available for yaml loaders
+    # of this class. Must be preset before the first
+    # load operation.
+    _files = []
+
+    ##
+    # Files that are already included.
+    # Must be reset on the load of every new binding
+    _included = []
+
+    @classmethod
+    def bindings(cls, compatibles, yaml_dirs):
+        # find unique set of compatibles across all active nodes
+        s = set()
+        for k, v in compatibles.items():
+            if isinstance(v, list):
+                for item in v:
+                    s.add(item)
+            else:
+                s.add(v)
+
+        # scan YAML files and find the ones we are interested in
+        cls._files = []
+        for yaml_dir in yaml_dirs:
+            for root, dirnames, filenames in os.walk(yaml_dir):
+                for filename in fnmatch.filter(filenames, '*.yaml'):
+                    cls._files.append(os.path.join(root, filename))
+
+        yaml_list = {}
+        file_load_list = set()
+        for file in cls._files:
+            for line in open(file, 'r'):
+                if re.search('^\s+constraint:*', line):
+                    c = line.split(':')[1].strip()
+                    c = c.strip('"')
+                    if c in s:
+                        if file not in file_load_list:
+                            file_load_list.add(file)
+                            with open(file, 'r') as yf:
+                                cls._included = []
+                                yaml_list[c] = yaml.load(yf, cls)
+        return yaml_list
+
+    def __init__(self, stream):
+        filepath = os.path.realpath(stream.name)
+        if filepath in self._included:
+            print("Error:: circular inclusion for file name '{}'".
+                  format(stream.name))
+            raise yaml.constructor.ConstructorError
+        self._included.append(filepath)
+        super(Bindings, self).__init__(stream)
+        Bindings.add_constructor('!include', Bindings._include)
+        Bindings.add_constructor('!import',  Bindings._include)
+
+    def _include(self, node):
         if isinstance(node, yaml.ScalarNode):
-            return self.extractFile(self.construct_scalar(node))
+            return self._extract_file(self.construct_scalar(node))
 
         elif isinstance(node, yaml.SequenceNode):
             result = []
             for filename in self.construct_sequence(node):
-                result.append(self.extractFile(filename))
+                result.append(self._extract_file(filename))
             return result
 
         elif isinstance(node, yaml.MappingNode):
             result = {}
             for k, v in self.construct_mapping(node).iteritems():
-                result[k] = self.extractFile(v)
+                result[k] = self._extract_file(v)
             return result
 
         else:
             print("Error:: unrecognised node type in !include statement")
             raise yaml.constructor.ConstructorError
 
-    def extractFile(self, filename):
-        filepath = os.path.join(os.path.dirname(self._root), filename)
-        if not os.path.isfile(filepath):
-            # we need to look in bindings/* directories
-            # take path and back up 1 directory and parse in '/bindings/*'
-            filepath = os.path.dirname(os.path.dirname(self._root))
-            for root, dirnames, file in os.walk(filepath):
-                if fnmatch.filter(file, filename):
-                    filepath = os.path.join(root, filename)
-        with open(filepath, 'r') as f:
-            return yaml.load(f, Loader)
+    def _extract_file(self, filename):
+        filepaths = [filepath for filepath in self._files if filepath.endswith(filename)]
+        if len(filepaths) == 0:
+            print("Error:: unknown file name '{}' in !include statement".
+                  format(filename))
+            raise yaml.constructor.ConstructorError
+        elif len(filepaths) > 1:
+            # multiple candidates for filename
+            files = []
+            for filepath in filepaths:
+                if os.path.basename(filename) == os.path.basename(filepath):
+                    files.append(filepath)
+            if len(files) > 1:
+                print("Error:: multiple candidates for file name '{}' in !include statement".
+                      format(filename), filepaths)
+                raise yaml.constructor.ConstructorError
+            filepaths = files
+        with open(filepaths[0], 'r') as f:
+            return yaml.load(f, Bindings)
 
 
-def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
-
-    reg = reduced[node_address]['props']['reg']
-    if type(reg) is not list: reg = [ reg ]
-    props = list(reg)
-
-    address_cells = reduced['/']['props'].get('#address-cells')
-    size_cells = reduced['/']['props'].get('#size-cells')
-    address = ''
-    for comp in node_address.split('/')[1:-1]:
-        address += '/' + comp
-        address_cells = reduced[address]['props'].get(
-            '#address-cells', address_cells)
-        size_cells = reduced[address]['props'].get('#size-cells', size_cells)
-
-    if post_label is None:
-        post_label = "BASE_ADDRESS"
-
-    index = 0
-    l_base = def_label.split('/')
-    l_addr = [convert_string_to_label(post_label)]
-    l_size = ["SIZE"]
-
-    while props:
-        prop_def = {}
-        prop_alias = {}
-        addr = 0
-        size = 0
-        # Check is defined should be indexed (_0, _1)
-        if index == 0 and len(props) < 3:
-            # 1 element (len 2) or no element (len 0) in props
-            l_idx = []
-        else:
-            l_idx = [str(index)]
-
-        try:
-            name = [names.pop(0).upper()]
-        except:
-            name = []
-
-        for x in range(address_cells):
-            addr += props.pop(0) << (32 * x)
-        for x in range(size_cells):
-            size += props.pop(0) << (32 * x)
-
-        l_addr_fqn = '_'.join(l_base + l_addr + l_idx)
-        l_size_fqn = '_'.join(l_base + l_size + l_idx)
-        if address_cells:
-            prop_def[l_addr_fqn] = hex(addr)
-        if size_cells:
-            prop_def[l_size_fqn] = int(size / div)
-        if len(name):
-            if address_cells:
-                prop_alias['_'.join(l_base + name + l_addr)] = l_addr_fqn
-            if size_cells:
-                prop_alias['_'.join(l_base + name + l_size)] = l_size_fqn
-
-        # generate defs for node aliases
-        if node_address in aliases:
-            for i in aliases[node_address]:
-                alias_label = convert_string_to_label(i)
-                alias_addr = [alias_label] + l_addr
-                alias_size = [alias_label] + l_size
-                prop_alias['_'.join(alias_addr)] = '_'.join(l_base + l_addr)
-                prop_alias['_'.join(alias_size)] = '_'.join(l_base + l_size)
-
-        insert_defs(node_address, defs, prop_def, prop_alias)
-
-        # increment index for definition creation
-        index += 1
-
-
-def extract_controller(node_address, yaml, prop, prop_values, index, defs, def_label, generic):
+def extract_controller(node_address, yaml, prop, prop_values, index, def_label, generic):
 
     prop_def = {}
     prop_alias = {}
@@ -194,7 +182,7 @@ def extract_controller(node_address, yaml, prop, prop_values, index, defs, def_l
                 alias = [alias_label] + label[1:]
                 prop_alias['_'.join(alias)] = '_'.join(label)
 
-        insert_defs(node_address, defs, prop_def, prop_alias)
+        insert_defs(node_address, prop_def, prop_alias)
 
     # prop off phandle + num_cells to get to next list item
     prop_values = prop_values[num_cells+1:]
@@ -202,10 +190,10 @@ def extract_controller(node_address, yaml, prop, prop_values, index, defs, def_l
     # recurse if we have anything left
     if len(prop_values):
         extract_controller(node_address, yaml, prop, prop_values, index + 1,
-                           defs, def_label, generic)
+                           def_label, generic)
 
 
-def extract_cells(node_address, yaml, prop, prop_values, names, index, defs,
+def extract_cells(node_address, yaml, prop, prop_values, names, index,
                   def_label, generic):
 
     cell_parent = phandles[prop_values.pop(0)]
@@ -268,15 +256,15 @@ def extract_cells(node_address, yaml, prop, prop_values, names, index, defs,
                 alias = [alias_label] + label[1:]
                 prop_alias['_'.join(alias)] = '_'.join(label)
 
-        insert_defs(node_address, defs, prop_def, prop_alias)
+        insert_defs(node_address, prop_def, prop_alias)
 
     # recurse if we have anything left
     if len(prop_values):
         extract_cells(node_address, yaml, prop, prop_values, names,
-                      index + 1, defs, def_label, generic)
+                      index + 1, def_label, generic)
 
 
-def extract_single(node_address, yaml, prop, key, defs, def_label):
+def extract_single(node_address, yaml, prop, key, def_label):
 
     prop_def = {}
     prop_alias = {}
@@ -306,9 +294,9 @@ def extract_single(node_address, yaml, prop, key, defs, def_label):
                 alias = alias_label + '_' + k
                 prop_alias[alias] = label
 
-    insert_defs(node_address, defs, prop_def, prop_alias)
+    insert_defs(node_address, prop_def, prop_alias)
 
-def extract_string_prop(node_address, yaml, key, label, defs):
+def extract_string_prop(node_address, yaml, key, label):
 
     prop_def = {}
 
@@ -325,7 +313,7 @@ def extract_string_prop(node_address, yaml, key, label, defs):
 
 
 def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
-                     defs, label_override):
+                     label_override):
 
     if 'base_label' in yaml[node_compat]:
         def_label = yaml[node_compat].get('base_label')
@@ -371,7 +359,7 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
 
             # Generate bus-name define
             extract_single(node_address, yaml, 'parent-label',
-                           'bus-name', defs, def_label)
+                           'bus-name', def_label)
 
     if label_override is not None:
         def_label += '_' + label_override
@@ -379,31 +367,33 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
     if prop == 'reg':
         if 'partition@' in node_address:
             # reg in partition is covered by flash handling
-            flash.extract(node_address, yaml, prop, names, defs, def_label)
+            flash.extract(node_address, yaml, prop, def_label)
         else:
-            reg.extract(node_address, yaml, prop, names, defs, def_label)
+            reg.extract(node_address, yaml, names, def_label, 1)
     elif prop == 'interrupts' or prop == 'interrupts-extended':
-        interrupts.extract(node_address, yaml, prop, names, defs, def_label)
+        interrupts.extract(node_address, yaml, prop, names, def_label)
+    elif prop == 'compatible':
+        compatible.extract(node_address, yaml, prop, def_label)
     elif 'pinctrl-' in prop:
-        pinctrl.extract(node_address, yaml, prop, names, defs, def_label)
+        pinctrl.extract(node_address, yaml, prop, def_label)
     elif 'clocks' in prop:
-        clocks.extract(node_address, yaml, prop, names, defs, def_label)
+        clocks.extract(node_address, yaml, prop, def_label)
     elif 'gpios' in prop:
         try:
             prop_values = list(reduced[node_address]['props'].get(prop))
         except:
             prop_values = reduced[node_address]['props'].get(prop)
 
-        extract_controller(node_address, yaml, prop, prop_values, 0, defs,
+        extract_controller(node_address, yaml, prop, prop_values, 0,
                            def_label, 'gpio')
         extract_cells(node_address, yaml, prop, prop_values,
-                      names, 0, defs, def_label, 'gpio')
+                      names, 0, def_label, 'gpio')
     else:
-        default.extract(node_address, yaml, prop, names, defs, def_label)
+        default.extract(node_address, yaml, prop, def_label)
 
 
 def extract_node_include_info(reduced, root_node_address, sub_node_address,
-                              yaml, defs, structs, y_sub):
+                              yaml, y_sub):
     node = reduced[sub_node_address]
     node_compat = get_compat(root_node_address)
     label_override = None
@@ -429,8 +419,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                 for c in reduced:
                     if root_node_address + '/' in c:
                         extract_node_include_info(
-                            reduced, root_node_address, c, yaml, defs, structs,
-                            v)
+                            reduced, root_node_address, c, yaml, v)
             if 'generation' in v:
 
                 for c in node['props'].keys():
@@ -440,18 +429,23 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                     if re.match(k + '$', c):
 
                         if 'pinctrl-' in c:
-                            names = node['props'].get('pinctrl-names', [])
+                            names = deepcopy(node['props'].get(
+                                                        'pinctrl-names', []))
                         else:
-                            names = node['props'].get(c[:-1] + '-names', [])
-                            if not names:
-                                names = node['props'].get(c + '-names', [])
-
+                            if not c.endswith("-names"):
+                                names = deepcopy(node['props'].get(
+                                                        c[:-1] + '-names', []))
+                                if not names:
+                                    names = deepcopy(node['props'].get(
+                                                            c + '-names', []))
+                            else:
+                                names = []
                         if not isinstance(names, list):
                             names = [names]
 
                         extract_property(
                             node_compat, yaml, sub_node_address, c, v, names,
-                            defs, label_override)
+                            label_override)
 
 
 def dict_merge(dct, merge_dct):
@@ -562,7 +556,7 @@ def get_key_value(k, v, tabstop):
     return line
 
 
-def output_keyvalue_lines(fd, defs):
+def output_keyvalue_lines(fd):
     node_keys = sorted(defs.keys())
     for node in node_keys:
         fd.write('# ' + node.split('/')[-1])
@@ -579,12 +573,12 @@ def output_keyvalue_lines(fd, defs):
 
         fd.write("\n")
 
-def generate_keyvalue_file(defs, kv_file):
+def generate_keyvalue_file(kv_file):
     with open(kv_file, "w") as fd:
-        output_keyvalue_lines(fd, defs)
+        output_keyvalue_lines(fd)
 
 
-def output_include_lines(fd, defs, fixups):
+def output_include_lines(fd, fixups):
     compatible = reduced['/']['props']['compatible'][0]
 
     fd.write("/**************************************************\n")
@@ -593,8 +587,8 @@ def output_include_lines(fd, defs, fixups):
     fd.write(" *               DO NOT MODIFY\n")
     fd.write(" */\n")
     fd.write("\n")
-    fd.write("#ifndef _DEVICE_TREE_BOARD_H" + "\n")
-    fd.write("#define _DEVICE_TREE_BOARD_H" + "\n")
+    fd.write("#ifndef DEVICE_TREE_BOARD_H" + "\n")
+    fd.write("#define DEVICE_TREE_BOARD_H" + "\n")
     fd.write("\n")
 
     node_keys = sorted(defs.keys())
@@ -646,9 +640,9 @@ def output_include_lines(fd, defs, fixups):
     fd.write("#endif\n")
 
 
-def generate_include_file(defs, inc_file, fixups):
+def generate_include_file(inc_file, fixups):
     with open(inc_file, "w") as fd:
-        output_include_lines(fd, defs, fixups)
+        output_include_lines(fd, fixups)
 
 
 def load_and_parse_dts(dts_file):
@@ -658,36 +652,10 @@ def load_and_parse_dts(dts_file):
     return dts
 
 
-def load_yaml_descriptions(dts, yaml_dir):
+def load_yaml_descriptions(dts, yaml_dirs):
     compatibles = get_all_compatibles(dts['/'], '/', {})
-    # find unique set of compatibles across all active nodes
-    s = set()
-    for k, v in compatibles.items():
-        if isinstance(v, list):
-            for item in v:
-                s.add(item)
-        else:
-            s.add(v)
 
-    # scan YAML files and find the ones we are interested in
-    yaml_files = []
-    for root, dirnames, filenames in os.walk(yaml_dir):
-        for filename in fnmatch.filter(filenames, '*.yaml'):
-            yaml_files.append(os.path.join(root, filename))
-
-    yaml_list = {}
-    file_load_list = set()
-    for file in yaml_files:
-        for line in open(file, 'r'):
-            if re.search('^\s+constraint:*', line):
-                c = line.split(':')[1].strip()
-                c = c.strip('"')
-                if c in s:
-                    if file not in file_load_list:
-                        file_load_list.add(file)
-                        with open(file, 'r') as yf:
-                            yaml_list[c] = yaml.load(yf, Loader)
-
+    yaml_list = Bindings.bindings(compatibles, yaml_dirs)
     if yaml_list == {}:
         raise Exception("Missing YAML information.  Check YAML sources")
 
@@ -698,31 +666,28 @@ def load_yaml_descriptions(dts, yaml_dir):
 
 
 def generate_node_definitions(yaml_list):
-    defs = {}
-    structs = {}
 
     for k, v in reduced.items():
         node_compat = get_compat(k)
         if node_compat is not None and node_compat in yaml_list:
             extract_node_include_info(
-                reduced, k, k, yaml_list, defs, structs, None)
+                reduced, k, k, yaml_list, None)
 
     if defs == {}:
         raise Exception("No information parsed from dts file.")
 
     for k, v in regs_config.items():
         if k in chosen:
-            extract_reg_prop(chosen[k], None, defs, v, 1024, None)
+            reg.extract(chosen[k], None, None, v, 1024)
 
     for k, v in name_config.items():
         if k in chosen:
-            extract_string_prop(chosen[k], None, "label", v, defs)
+            extract_string_prop(chosen[k], None, "label", v)
 
     node_address = chosen.get('zephyr,flash', 'dummy-flash')
-    flash.extract(node_address, yaml_list, 'zephyr,flash', None, defs, 'FLASH')
+    flash.extract(node_address, yaml_list, 'zephyr,flash', 'FLASH')
     node_address = chosen.get('zephyr,code-partition', node_address)
-    flash.extract(node_address, yaml_list, 'zephyr,code-partition', None,
-                  defs, 'FLASH')
+    flash.extract(node_address, yaml_list, 'zephyr,code-partition', 'FLASH')
 
     return defs
 
@@ -732,8 +697,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=rdh)
 
     parser.add_argument("-d", "--dts", nargs=1, required=True, help="DTS file")
-    parser.add_argument("-y", "--yaml", nargs=1, required=True,
-                        help="YAML file")
+    parser.add_argument("-y", "--yaml", nargs='+', required=True,
+                        help="YAML file directories, we allow multiple")
     parser.add_argument("-f", "--fixup", nargs='+',
                         help="Fixup file(s), we allow multiple")
     parser.add_argument("-i", "--include", nargs=1, required=True,
@@ -754,14 +719,14 @@ def main():
     get_aliases(dts['/'])
     get_chosen(dts['/'])
 
-    yaml_list = load_yaml_descriptions(dts, args.yaml[0])
+    yaml_list = load_yaml_descriptions(dts, args.yaml)
 
     defs = generate_node_definitions(yaml_list)
 
      # generate config and include file
-    generate_keyvalue_file(defs, args.keyvalue[0])
+    generate_keyvalue_file(args.keyvalue[0])
 
-    generate_include_file(defs, args.include[0], args.fixup)
+    generate_include_file(args.include[0], args.fixup)
 
 
 if __name__ == '__main__':

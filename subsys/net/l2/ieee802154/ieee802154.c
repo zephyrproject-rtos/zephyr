@@ -32,6 +32,8 @@
 #include "ieee802154_security.h"
 #include "ieee802154_utils.h"
 
+#define BUF_TIMEOUT K_MSEC(50)
+
 #define PKT_TITLE      "IEEE 802.15.4 packet content:"
 #define TX_PKT_TITLE   "> " PKT_TITLE
 #define RX_PKT_TITLE   "< " PKT_TITLE
@@ -75,12 +77,16 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 		return;
 	}
 
-	pkt = net_pkt_get_reserve_tx(IEEE802154_ACK_PKT_LENGTH, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(IEEE802154_ACK_PKT_LENGTH, BUF_TIMEOUT);
 	if (!pkt) {
 		return;
 	}
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
+	frag = net_pkt_get_frag(pkt, BUF_TIMEOUT);
+	if (!frag) {
+		net_pkt_unref(pkt);
+		return;
+	}
 
 	net_pkt_frag_insert(pkt, frag);
 
@@ -135,25 +141,25 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 	/* Upper IP stack expects the link layer address to be in
 	 * big endian format so we must swap it here.
 	 */
-	if (net_pkt_ll_src(pkt)->addr &&
-	    net_pkt_ll_src(pkt)->len == IEEE802154_EXT_ADDR_LENGTH) {
-		sys_mem_swap(net_pkt_ll_src(pkt)->addr,
-			     net_pkt_ll_src(pkt)->len);
+	if (net_pkt_lladdr_src(pkt)->addr &&
+	    net_pkt_lladdr_src(pkt)->len == IEEE802154_EXT_ADDR_LENGTH) {
+		sys_mem_swap(net_pkt_lladdr_src(pkt)->addr,
+			     net_pkt_lladdr_src(pkt)->len);
 	}
 
-	if (net_pkt_ll_dst(pkt)->addr &&
-	    net_pkt_ll_dst(pkt)->len == IEEE802154_EXT_ADDR_LENGTH) {
-		sys_mem_swap(net_pkt_ll_dst(pkt)->addr,
-			     net_pkt_ll_dst(pkt)->len);
+	if (net_pkt_lladdr_dst(pkt)->addr &&
+	    net_pkt_lladdr_dst(pkt)->len == IEEE802154_EXT_ADDR_LENGTH) {
+		sys_mem_swap(net_pkt_lladdr_dst(pkt)->addr,
+			     net_pkt_lladdr_dst(pkt)->len);
 	}
 
 	/** Uncompress will drop the current fragment. Pkt ll src/dst address
 	 * will then be wrong and must be updated according to the new fragment.
 	 */
-	src = net_pkt_ll_src(pkt)->addr ?
-		net_pkt_ll_src(pkt)->addr - net_pkt_ll(pkt) : 0;
-	dst = net_pkt_ll_dst(pkt)->addr ?
-		net_pkt_ll_dst(pkt)->addr - net_pkt_ll(pkt) : 0;
+	src = net_pkt_lladdr_src(pkt)->addr ?
+		net_pkt_lladdr_src(pkt)->addr - net_pkt_ll(pkt) : 0;
+	dst = net_pkt_lladdr_dst(pkt)->addr ?
+		net_pkt_lladdr_dst(pkt)->addr - net_pkt_ll(pkt) : 0;
 
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 	verdict = ieee802154_reassemble(pkt);
@@ -167,8 +173,8 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 		goto out;
 	}
 #endif
-	net_pkt_ll_src(pkt)->addr = src ? net_pkt_ll(pkt) + src : NULL;
-	net_pkt_ll_dst(pkt)->addr = dst ? net_pkt_ll(pkt) + dst : NULL;
+	net_pkt_lladdr_src(pkt)->addr = src ? net_pkt_ll(pkt) + src : NULL;
+	net_pkt_lladdr_dst(pkt)->addr = dst ? net_pkt_ll(pkt) + dst : NULL;
 
 	pkt_hexdump(RX_PKT_TITLE, pkt, true, false);
 out:
@@ -227,13 +233,13 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 
 	ieee802154_acknowledge(iface, &mpdu);
 
-	net_pkt_set_ll_reserve(pkt, mpdu.payload - (void *)net_pkt_ll(pkt));
+	net_pkt_set_ll_reserve(pkt, (u8_t *)mpdu.payload - net_pkt_ll(pkt));
 	net_buf_pull(pkt->frags, net_pkt_ll_reserve(pkt));
 
-	set_pkt_ll_addr(net_pkt_ll_src(pkt), mpdu.mhr.fs->fc.pan_id_comp,
+	set_pkt_ll_addr(net_pkt_lladdr_src(pkt), mpdu.mhr.fs->fc.pan_id_comp,
 			mpdu.mhr.fs->fc.src_addr_mode, mpdu.mhr.src_addr);
 
-	set_pkt_ll_addr(net_pkt_ll_dst(pkt), false,
+	set_pkt_ll_addr(net_pkt_lladdr_dst(pkt), false,
 			mpdu.mhr.fs->fc.dst_addr_mode, mpdu.mhr.dst_addr);
 
 	if (!ieee802154_decipher_data_frame(iface, pkt, &mpdu)) {
@@ -268,7 +274,7 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 			return NET_DROP;
 		}
 
-		if (!ieee802154_create_data_frame(ctx, net_pkt_ll_dst(pkt),
+		if (!ieee802154_create_data_frame(ctx, net_pkt_lladdr_dst(pkt),
 						  frag, reserved_space)) {
 			return NET_DROP;
 		}
@@ -305,9 +311,16 @@ static int ieee802154_enable(struct net_if *iface, bool state)
 	return ieee802154_stop(iface);
 }
 
+enum net_l2_flags ieee802154_flags(struct net_if *iface)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+
+	return ctx->flags;
+}
+
 NET_L2_INIT(IEEE802154_L2,
 	    ieee802154_recv, ieee802154_send,
-	    ieee802154_reserve, ieee802154_enable);
+	    ieee802154_reserve, ieee802154_enable, ieee802154_flags);
 
 void ieee802154_init(struct net_if *iface)
 {
@@ -319,6 +332,7 @@ void ieee802154_init(struct net_if *iface)
 	NET_DBG("Initializing IEEE 802.15.4 stack on iface %p", iface);
 
 	ctx->channel = IEEE802154_NO_CHANNEL;
+	ctx->flags = NET_L2_MULTICAST;
 
 	ieee802154_mgmt_init(iface);
 

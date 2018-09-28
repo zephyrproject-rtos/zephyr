@@ -5,8 +5,6 @@
  */
 
 #include <nrfx_wdt.h>
-#include <nrf_clock.h>
-#include <clock_control.h>
 #include <watchdog.h>
 
 #define SYS_LOG_DOMAIN "wdt_nrfx"
@@ -20,80 +18,42 @@ DEVICE_DECLARE(wdt_nrfx);
  */
 static wdt_callback_t m_callbacks[NRF_WDT_CHANNEL_NUMBER];
 
-/*
- * The m_allocated_channels variable stores number of currently allocated
+/* The m_allocated_channels variable stores number of currently allocated
  * and activated watchdog channels.
  */
-static u8_t           m_allocated_channels;
+static u8_t m_allocated_channels;
 
-/*
- * The m_timeout variable stores watchdog timeout value in millisecond units.
+/* The m_timeout variable stores watchdog timeout value in millisecond units.
  * It is used to check whether installing watchdog provide the same timeout
  * value in the window configuration.
  */
-static u32_t          m_timeout;
-
-
-static void wdt_event_handler(void)
-{
-	int i;
-
-	for (i = 0; i < m_allocated_channels ; ++i) {
-		if (nrf_wdt_request_status((nrf_wdt_rr_register_t)i)) {
-			if (m_callbacks[i]) {
-				m_callbacks[i](DEVICE_GET(wdt_nrfx), i);
-			}
-		}
-	}
-}
-
-static void wdt_nrf_isr(struct device *dev)
-{
-	ARG_UNUSED(dev);
-	/* We need to implement our own interrupt handler until nrfx one will
-	 * be fixed.
-	 * Clearing events also clears the reload register and has to be done
-	 * AFTER event handler.
-	 */
-	wdt_event_handler();
-	nrf_wdt_event_clear(NRF_WDT_EVENT_TIMEOUT);
-}
+static u32_t m_timeout;
 
 static int wdt_nrf_setup(struct device *dev, u8_t options)
 {
-	nrfx_wdt_config_t config;
-	nrfx_err_t err_code;
+	nrf_wdt_behaviour_t behaviour;
 
 	ARG_UNUSED(dev);
 
-	if (!nrf_clock_lf_is_running()) {
-		return -ENOTSUP;
-	}
-
 	/* Activate all available options. Run in all cases. */
-	config.behaviour = NRF_WDT_BEHAVIOUR_RUN_SLEEP_HALT;
+	behaviour = NRF_WDT_BEHAVIOUR_RUN_SLEEP_HALT;
 
 	/* Deactivate running in sleep mode. */
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
-		config.behaviour &= ~NRF_WDT_BEHAVIOUR_RUN_SLEEP;
+		behaviour &= ~NRF_WDT_BEHAVIOUR_RUN_SLEEP;
 	}
 
 	/* Deactivate running when debugger is attached. */
 	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
-		config.behaviour &= ~NRF_WDT_BEHAVIOUR_RUN_HALT;
+		behaviour &= ~NRF_WDT_BEHAVIOUR_RUN_HALT;
 	}
 
-	config.reload_value = m_timeout;
-
-	err_code = nrfx_wdt_init(&config, wdt_event_handler);
-	if (err_code != NRFX_SUCCESS) {
-		return -EBUSY;
-	}
-
-	IRQ_CONNECT(CONFIG_WDT_NRF_IRQ,
-		    CONFIG_WDT_NRF_IRQ_PRI, wdt_nrf_isr,
-		    DEVICE_GET(wdt_nrfx), 0);
-	irq_enable(CONFIG_WDT_NRF_IRQ);
+	nrf_wdt_behaviour_set(behaviour);
+	/* The watchdog timer is driven by the LFCLK clock running at 32768 Hz.
+	 * The timeout value given in milliseconds needs to be converted here
+	 * to watchdog ticks.*/
+	nrf_wdt_reload_value_set(
+			(uint32_t)(((uint64_t)m_timeout * 32768) / 1000));
 
 	nrfx_wdt_enable();
 
@@ -124,6 +84,16 @@ static int wdt_nrf_install_timeout(struct device *dev,
 	}
 
 	if (m_allocated_channels == 0) {
+		/* According to relevant Product Specifications, watchdogs
+		 * in all nRF chips can use reload values (determining
+		 * the timeout) from range 0xF-0xFFFFFFFF given in 32768 Hz
+		 * clock ticks. This makes the allowed range of 0x1-0x07CFFFFF
+		 * in milliseconds. Check if the provided value is within
+		 * this range. */
+		if ((cfg->window.max == 0) || (cfg->window.max > 0x07CFFFFF)) {
+			return -EINVAL;
+		}
+
 		/* Save timeout value from first registered watchdog channel. */
 		m_timeout = cfg->window.max;
 	} else if (cfg->window.max != m_timeout) {
@@ -198,9 +168,39 @@ static const struct wdt_driver_api wdt_nrf_api = {
 	.reload = wdt_nrf_reload,
 };
 
+static void wdt_event_handler(void)
+{
+	int i;
+
+	for (i = 0; i < m_allocated_channels ; ++i) {
+		if (nrf_wdt_request_status((nrf_wdt_rr_register_t)i)) {
+			if (m_callbacks[i]) {
+				m_callbacks[i](DEVICE_GET(wdt_nrfx), i);
+			}
+		}
+	}
+}
+
 static int init_wdt(struct device *dev)
 {
+	nrfx_err_t err_code;
+	/* Set default values. They will be overwritten by setup function. */
+	const nrfx_wdt_config_t config = {
+		.behaviour          = NRF_WDT_BEHAVIOUR_RUN_SLEEP_HALT,
+		.reload_value       = 2000
+	};
+
 	ARG_UNUSED(dev);
+
+	err_code = nrfx_wdt_init(&config, wdt_event_handler);
+	if (err_code != NRFX_SUCCESS) {
+		return -EBUSY;
+	}
+
+	IRQ_CONNECT(CONFIG_WDT_NRF_IRQ, CONFIG_WDT_NRF_IRQ_PRI,
+		    nrfx_isr, nrfx_wdt_irq_handler, 0);
+	irq_enable(CONFIG_WDT_NRF_IRQ);
+
 	return 0;
 }
 

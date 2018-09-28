@@ -7,6 +7,9 @@
  */
 
 #include <stdio.h>
+#include <misc/libc-hooks.h>
+#include <syscall_handler.h>
+#include <string.h>
 
 static int _stdout_hook_default(int c)
 {
@@ -22,29 +25,35 @@ void __stdout_hook_install(int (*hook)(int))
 	_stdout_hook = hook;
 }
 
-int fputc(int c, FILE *stream)
+int _impl__zephyr_fputc(int c, FILE *stream)
 {
 	return (stdout == stream) ? _stdout_hook(c) : EOF;
 }
 
-int fputs(const char *_MLIBC_RESTRICT string, FILE *_MLIBC_RESTRICT stream)
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(_zephyr_fputc, c, stream)
 {
-	if (stream != stdout) {
-		return EOF;
-	}
+	return _impl__zephyr_fputc(c, (FILE *)stream);
+}
+#endif
 
-	while (*string != '\0') {
-		if (_stdout_hook((int)*string) == EOF) {
-			return EOF;
-		}
-		string++;
-	}
-
-	return 0;
+int fputc(int c, FILE *stream)
+{
+	return _zephyr_fputc(c, stream);
 }
 
-size_t fwrite(const void *_MLIBC_RESTRICT ptr, size_t size, size_t nitems,
-			  FILE *_MLIBC_RESTRICT stream)
+int fputs(const char *_MLIBC_RESTRICT string, FILE *_MLIBC_RESTRICT stream)
+{
+	int len = strlen(string);
+	int ret;
+
+	ret = fwrite(string, len, 1, stream);
+
+	return len == ret ? 0 : EOF;
+}
+
+size_t _impl__zephyr_fwrite(const void *_MLIBC_RESTRICT ptr, size_t size,
+			    size_t nitems, FILE *_MLIBC_RESTRICT stream)
 {
 	size_t i;
 	size_t j;
@@ -71,11 +80,28 @@ done:
 	return (nitems - i);
 }
 
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(_zephyr_fwrite, ptr, size, nitems, stream)
+{
+
+	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(ptr, nitems, size));
+	return _impl__zephyr_fwrite((const void *_MLIBC_RESTRICT)ptr, size,
+				    nitems, (FILE *_MLIBC_RESTRICT)stream);
+}
+#endif
+
+size_t fwrite(const void *_MLIBC_RESTRICT ptr, size_t size, size_t nitems,
+			  FILE *_MLIBC_RESTRICT stream)
+{
+	return _zephyr_fwrite(ptr, size, nitems, stream);
+}
+
+
 int puts(const char *string)
 {
 	if (fputs(string, stdout) == EOF) {
 		return EOF;
 	}
 
-	return (_stdout_hook((int) '\n') == EOF) ? EOF : 0;
+	return fputc('\n', stdout) == EOF ? EOF : 0;
 }

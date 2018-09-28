@@ -130,19 +130,6 @@ void main(void)
 		led_off(ledc, i);
 		k_sleep(DELAY_TIME);
 	}
-
-	/* blink all leds */
-	for (i = 0; i < NUM_LEDS; i++) {
-		led_blink(ledc, i, 200, 50);
-	}
-
-	k_sleep(1000);
-
-	/* turn all leds off */
-	for (i = 0; i < NUM_LEDS; i++) {
-		led_off(ledc, i);
-		k_sleep(5);
-	}
 #endif
 
 	led0 = device_get_binding(LED0_GPIO_CONTROLLER);

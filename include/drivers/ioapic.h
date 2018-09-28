@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INCioapich
-#define __INCioapich
+#ifndef ZEPHYR_INCLUDE_DRIVERS_IOAPIC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_IOAPIC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,4 +45,4 @@ void _ioapic_irq_set(unsigned int irq, unsigned int vector, u32_t flags);
 }
 #endif
 
-#endif /* __INCioapich */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_IOAPIC_H_ */

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __POSIX_TYPES_H__
-#define __POSIX_TYPES_H__
+#ifndef ZEPHYR_INCLUDE_POSIX_SYS_TYPES_H_
+#define ZEPHYR_INCLUDE_POSIX_SYS_TYPES_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,4 +88,4 @@ typedef struct pthread_rwlock_obj {
 }
 #endif
 
-#endif	/* __POSIX_TYPES_H__ */
+#endif	/* ZEPHYR_INCLUDE_POSIX_SYS_TYPES_H_ */

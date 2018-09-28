@@ -7,12 +7,13 @@
 #include <zephyr.h>
 #include <stddef.h>
 
-#include <bluetooth/mesh.h>
 #include <bluetooth/testing.h>
 
+#if defined(CONFIG_BT_MESH)
 #include "mesh/net.h"
 #include "mesh/lpn.h"
 #include "mesh/transport.h"
+#endif /* CONFIG_BT_MESH */
 
 #include "testing.h"
 
@@ -28,6 +29,7 @@ void bt_test_cb_unregister(struct bt_test_cb *cb)
 	sys_slist_find_and_remove(&cb_slist, &cb->node);
 }
 
+#if defined(CONFIG_BT_MESH)
 void bt_test_mesh_net_recv(u8_t ttl, u8_t ctl, u16_t src, u16_t dst,
 			   const void *payload, size_t payload_len)
 {
@@ -107,3 +109,4 @@ int bt_test_mesh_rpl_clear(void)
 
 	return 0;
 }
+#endif /* CONFIG_BT_MESH */

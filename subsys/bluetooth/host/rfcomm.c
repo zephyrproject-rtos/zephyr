@@ -1443,7 +1443,7 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	return buf->len;
 }
 
-static void rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_rfcomm_session *session = RFCOMM_SESSION(chan);
 	struct bt_rfcomm_hdr *hdr = (void *)buf->data;
@@ -1452,7 +1452,7 @@ static void rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	/* Need to consider FCS also*/
 	if (buf->len < (sizeof(*hdr) + 1)) {
 		BT_ERR("Too small RFCOMM Frame");
-		return;
+		return 0;
 	}
 
 	dlci = BT_RFCOMM_GET_DLCI(hdr->address);
@@ -1465,7 +1465,7 @@ static void rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	fcs = *(net_buf_tail(buf) - 1);
 	if (!rfcomm_check_fcs(fcs_len, buf->data, fcs)) {
 		BT_ERR("FCS check failed");
-		return;
+		return 0;
 	}
 
 	if (BT_RFCOMM_LEN_EXTENDED(hdr->length)) {
@@ -1500,6 +1500,8 @@ static void rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			frame_type);
 		break;
 	}
+
+	return 0;
 }
 
 static void rfcomm_encrypt_change(struct bt_l2cap_chan *chan,

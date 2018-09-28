@@ -11,6 +11,15 @@ extern void test_mheap_min_block_size(void);
 extern void test_mheap_block_desc(void);
 extern void test_mheap_calloc(void);
 
+/**
+ * @brief Heap tests
+ *
+ * @defgroup kernel_heap_tests Heap Memory Tests
+ *
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
 /*test case main entry*/
 void test_main(void)
 {

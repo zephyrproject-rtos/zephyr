@@ -79,7 +79,7 @@ More information about STM32F429ZI can be found here:
 Supported Features
 ==================
 
-The Zephyr nucleo_f249zi board configuration supports the following hardware features:
+The Zephyr nucleo_f429zi board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -98,6 +98,8 @@ The Zephyr nucleo_f249zi board configuration supports the following hardware fea
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| USB       | on-chip    | usb                                 |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
@@ -155,6 +157,8 @@ and a ST morpho connector. Board is configured as follows
 - LD1 : PB0
 - LD2 : PB7
 - LD3 : PB14
+- USB DM : PA11
+- USB DP : PA12
 
 System Clock
 ------------

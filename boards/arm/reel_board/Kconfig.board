@@ -1,0 +1,11 @@
+# Kconfig - reel board configuration
+#
+# Copyright (c) 2018 Phytec Messtechnik GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config  BOARD_REEL_BOARD
+	bool "reel Board"
+	depends on SOC_NRF52840_QIAA
+	select HAS_DTS_GPIO_DEVICE
+	select HAS_DTS_I2C_DEVICE if I2C

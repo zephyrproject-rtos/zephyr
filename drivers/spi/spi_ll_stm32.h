@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _STM32_SPI_H_
-#define _STM32_SPI_H_
+#ifndef ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_
+#define ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_
 
 #include "spi_context.h"
 
@@ -23,4 +23,4 @@ struct spi_stm32_data {
 	struct spi_context ctx;
 };
 
-#endif	/* _STM32_SPI_H_ */
+#endif	/* ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_ */

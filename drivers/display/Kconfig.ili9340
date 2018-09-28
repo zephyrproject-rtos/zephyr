@@ -104,8 +104,7 @@ choice
 	Specify the type of LCD connected to the ILI9340 display controller.
 
 config ILI9340_LCD_ADAFRUIT_1480
-	bool
-	prompt "Adafruit 2.2\" TFT 1480"
+	bool "Adafruit 2.2\" TFT 1480"
 
 endchoice
 

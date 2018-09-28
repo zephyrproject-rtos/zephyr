@@ -111,6 +111,12 @@ static void tqueue_read_write(struct k_queue *pqueue)
 }
 
 /*test cases*/
+/**
+ * @brief Test queue operations in loop
+ * @ingroup kernel_queue_tests
+ * @see k_queue_append(), k_queue_get(),
+ * k_queue_init(), k_queue_remove()
+ */
 void test_queue_loop(void)
 {
 	k_queue_init(&queue);

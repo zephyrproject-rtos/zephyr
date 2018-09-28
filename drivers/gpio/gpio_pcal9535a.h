@@ -8,8 +8,8 @@
  * @file Header file for the PCAL9535A driver.
  */
 
-#ifndef _GPIO_PCAL9535A_H_
-#define _GPIO_PCAL9535A_H_
+#ifndef ZEPHYR_DRIVERS_GPIO_GPIO_PCAL9535A_H_
+#define ZEPHYR_DRIVERS_GPIO_GPIO_PCAL9535A_H_
 
 #include <kernel.h>
 
@@ -64,4 +64,4 @@ struct gpio_pcal9535a_drv_data {
 }
 #endif
 
-#endif /* _GPIO_PCAL9535A_H_ */
+#endif /* ZEPHYR_DRIVERS_GPIO_GPIO_PCAL9535A_H_ */

@@ -18,8 +18,8 @@
  * Header is limited to ACM and ECM Subclasses.
  */
 
-#ifndef __USB_CDC_H__
-#define __USB_CDC_H__
+#ifndef ZEPHYR_INCLUDE_USB_CLASS_USB_CDC_H_
+#define ZEPHYR_INCLUDE_USB_CLASS_USB_CDC_H_
 
 /** CDC Specification release number in BCD format */
 #define CDC_SRN_1_20			0x0120
@@ -162,4 +162,4 @@ struct cdc_ecm_descriptor {
 	u8_t bNumberPowerFilters;
 } __packed;
 
-#endif /* __USB_CDC_H__ */
+#endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_CDC_H_ */

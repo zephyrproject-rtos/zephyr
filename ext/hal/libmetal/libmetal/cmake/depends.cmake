@@ -1,4 +1,6 @@
-find_package (Doxygen)
+if (WITH_DOC)
+  find_package (Doxygen)
+endif (WITH_DOC)
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 

@@ -48,15 +48,15 @@
 	leds {
 		compatible = "gpio-leds";
 		red_led: led@0 {
-			gpios = <&gpiob 22 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiob 22 0>;
 			label = "User LD1";
 		};
 		green_led: led@1 {
-			gpios = <&gpioe 26 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioe 26 0>;
 			label = "User LD2";
 		};
 		blue_led: led@2 {
-			gpios = <&gpiob 21 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiob 21 0>;
 			label = "User LD3";
 		};
 	};
@@ -118,6 +118,27 @@
 	current-speed = <115200>;
 };
 
+#ifdef CONFIG_UART_MCUX_2
+&uart2 {
+	status = "ok";
+	current-speed = <115200>;
+
+#ifdef CONFIG_MODEM_WNCM14A2A
+	wncm14a2a {
+		compatible = "wnc,m14a2a";
+		label = "wncm14a2a";
+		mdm-boot-mode-sel-gpios = <&gpioc 17 0>;
+		mdm-power-gpios = <&gpiob 9 0>;
+		mdm-keep-awake-gpios = <&gpioc 2 0>;
+		mdm-reset-gpios = <&gpioc 12 0>;
+		mdm-shld-trans-ena-gpios = <&gpioc 4 0>;
+		mdm-send-ok-gpios = <&gpiod 0 0>;
+		status = "ok";
+	};
+#endif
+};
+#endif
+
 #ifdef CONFIG_BT
 &uart3 {
 	status = "ok";
@@ -134,7 +155,7 @@
 &flash0 {
 	/*
 	 * For more information, see:
-	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
 	 */
 	partitions {
 		compatible = "fixed-partitions";
@@ -152,6 +173,12 @@
 		 * 0x0001ffff (sectors 16-31) is reserved for use
 		 * by the application.
 		 */
+#if defined(CONFIG_FS_FLASH_STORAGE_PARTITION)
+		 storage_partition: partition@1e000 {
+			label = "storage";
+			reg = <0x0001e000 0x00002000>;
+		};
+#endif
 
 		slot0_partition: partition@20000 {
 			label = "image-0";

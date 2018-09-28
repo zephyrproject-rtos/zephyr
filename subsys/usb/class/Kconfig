@@ -35,8 +35,7 @@ config CDC_ACM_BULK_EP_MPS
 	  CDC ACM class bulk endpoints size
 
 config SYS_LOG_USB_CDC_ACM_LEVEL
-	int
-	prompt "USB CDC ACM device class driver log level"
+	int "USB CDC ACM device class driver log level"
 	depends on USB_CDC_ACM && SYS_LOG
 	default 0
 	help
@@ -76,8 +75,7 @@ config MASS_STORAGE_BULK_EP_MPS
 	  Mass storage device class bulk endpoints size
 
 config SYS_LOG_USB_MASS_STORAGE_LEVEL
-	int
-	prompt "USB Mass Storage device class driver log level"
+	int "USB Mass Storage device class driver log level"
 	depends on USB_MASS_STORAGE && SYS_LOG
 	default 0
 	help
@@ -119,8 +117,7 @@ config BLUETOOTH_BULK_EP_MPS
 	  Bluetooth device class bulk endpoint size
 
 config USB_DEVICE_LOOPBACK
-	bool
-	prompt "USB Loopback Function Driver"
+	bool "USB Loopback Function Driver"
 	help
 	  USB Loopback Function Driver
 

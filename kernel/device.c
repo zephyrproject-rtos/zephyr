@@ -51,7 +51,7 @@ void _sys_device_do_config_level(int level)
 								info++) {
 		struct device_config *device = info->config;
 
-		device->init(info);
+		(void)device->init(info);
 		_k_object_init(info);
 	}
 }

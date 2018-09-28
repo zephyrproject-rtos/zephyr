@@ -231,11 +231,16 @@ To do this, we extend the definition of ``FOO_WIDTH`` as follows, in
     Since the type of the symbol (``int``) has already been given at the first
     definition location, it does not need to be repeated here.
 
-``default`` properties from :file:`Kconfig.defconfig` files override
-``default`` properties given on the "base" definition of the symbol. Zephyr
-uses a custom Kconfig patch that makes Kconfig prefer later defaults, and
-includes any :file:`Kconfig.defconfig` file last. See the
-:ref:`zephyr-specific_kconfig_behavior_for_defaults` section.
+``default`` values in :file:`Kconfig.defconfig` files have priority over
+``default`` values given on the "base" definition of a symbol. Internally, this
+is implemented by including the :file:`Kconfig.defconfig` files first. Kconfig
+uses the first ``default`` with a satisfied condition, where an empty condition
+works like ``if y`` (is always satisfied).
+
+.. note::
+
+    ``range`` properties on ``int`` and ``hex`` symbols work the same way, and
+    can also be added or overriden in :file:`Kconfig.defconfig` files.
 
 If you want a symbol to only be user-configurable on some boards, make its base
 definition have no prompt, and then add a prompt to it in the
@@ -247,23 +252,76 @@ definition have no prompt, and then add a prompt to it in the
     the :file:`Kconfig.defconfig` file in the ``menuconfig`` interface, rather
     than at the location of the base definition of the symbol.
 
+
+Configuring choices
+-------------------
+
+There are two ways to configure a Kconfig ``choice``:
+
+1. By setting one of the choice symbols to ``y`` in :file:`BOARD_defconfig`.
+
+   .. note::
+
+       Setting one choice symbol to ``y`` automatically gives all other choice
+       symbols the value ``n``.
+
+       If multiple choice symbols are set to ``y``, only the last one set to
+       ``y`` will be honored (and the rest will get the value ``n``). This
+       allows a choice selection from a board :file:`defconfig` file to be
+       overridden from an application :file:`prj.conf` file.
+
+2. By changing the ``default`` of the choice in :file:`Kconfig.defconfig`.
+
+   As with symbols, changing the default for a choice is done by defining the
+   choice in multiple locations. For this to work, the choice must have a name.
+
+   As an example, assume that a choice has the following base definition (here,
+   the name of the choice is ``FOO``):
+
+   .. code-block:: none
+
+       choice FOO
+           bool "Foo choice"
+           default B
+
+       config A
+           bool "A"
+
+       config B
+           bool "B"
+
+       endchoice
+
+   To change the default symbol of ``FOO`` to ``A``, you would add the
+   following definition to :file:`Kconfig.defconfig`:
+
+   .. code-block:: none
+
+       choice FOO
+           default A
+       endchoice
+
+The :file:`Kconfig.defconfig` method should be used when the dependencies of
+the choice might not be satisfied. In that case, you're setting the default
+selection whenever the user makes the choice visible.
+
+
 Motivation
 ----------
 
-One motivation for this scheme is to avoid making fixed ``BOARD``-specific
-settings configurable in the ``menuconfig`` interface. If all
-configuration were done via :file:`boards/ARCHITECTURE/BOARD/BOARD_defconfig`,
-all symbols would have to be visible, as values given in
-:file:`boards/ARCHITECTURE/BOARD/BOARD_defconfig` have no effect on invisible
-symbols.
+One motivation for this configuration scheme is to avoid making fixed
+``BOARD``-specific settings configurable in the ``menuconfig`` interface. If
+all configuration were done via :file:`BOARD_defconfig`, all symbols would have
+to be visible, as values given in :file:`BOARD_defconfig` have no effect on
+invisible symbols.
 
 Having fixed settings be user-configurable might be confusing, and would allow
 the user to create broken configurations.
 
-.. _kconfig_extensions_and_changes:
+.. _kconfig_extensions:
 
-Kconfig extensions and changes
-==============================
+Kconfig extensions
+==================
 
 Zephyr uses the `Kconfiglib <https://github.com/ulfalizer/Kconfiglib>`_
 implementation of `Kconfig
@@ -278,19 +336,18 @@ as the corresponding environment variables.
 
 .. note::
 
-    As of writing, there are plans to remove ``option env`` from the C tools as
-    well.
+    ``option env`` has been removed from the C tools in Linux 4.18 as well.
 
 The following Kconfig extensions are available:
 
-- The ``gsource`` statement, which includes each file matching a given wildcard
-  pattern.
+- The ``source`` statement supports glob patterns and includes each matching
+  file. A pattern is required to match at least one file.
 
   Consider the following example:
 
   .. code-block:: none
 
-      gsource "foo/bar/*/Kconfig"
+      source "foo/bar/*/Kconfig"
 
   If the pattern ``foo/bar/*/Kconfig`` matches the files
   :file:`foo/bar/baz/Kconfig` and :file:`foo/bar/qaz/Kconfig`, the statement
@@ -301,39 +358,25 @@ The following Kconfig extensions are available:
       source "foo/bar/baz/Kconfig"
       source "foo/bar/qaz/Kconfig"
 
-  .. note
+  .. note::
 
       The wildcard patterns accepted are the same as for the Python `glob
       <https://docs.python.org/3/library/glob.html>`_ module.
 
-  If no files match the pattern, ``gsource`` has no effect. This means that
-  ``gsource`` also functions as an "optional" include statement (similar to
-  ``-include`` in Make):
+  If no files match the pattern, an error is generated.
 
-  .. code-block:: none
-
-      gsource "foo/include-if-exists"
+  For cases where it's okay for a pattern to match no files (or for a plain
+  filename to not exist), a separate ``osource`` (*optional source*) statement
+  is available. ``osource`` is a no-op in case of no matches.
 
   .. note::
 
-     Wildcard patterns that do not include any wildcard symbols (e.g., ``*``)
-     only match exactly the filename given, and only match it if the file
-     exists.
+      ``source`` and ``osource`` are analogous to ``include`` and
+      ``-include`` in Make.
 
-  It might help to think of *g* as standing for *generalized* rather than
-  *glob* in this case.
-
-  .. note::
-
-      Only use ``gsource`` if you need it. Trying to ``source`` a non-existent
-      file produces an error, while ``gsource`` silently ignores missing files.
-      ``source`` also makes it clearer which files are being included.
-
-- The ``rsource`` statement, which includes a file specified with a relative
-  path.
-
-  The path is relative to the directory of the :file:`Kconfig` file that has
-  the ``rsource`` statement.
+- An ``rsource`` statement is available for including files specified with a
+  relative path. The path is relative to the directory of the :file:`Kconfig`
+  file that contains the ``rsource`` statement.
 
   As an example, assume that :file:`foo/Kconfig` is the top-level
   :file:`Kconfig` file, and that :file:`foo/bar/Kconfig` has the following
@@ -350,25 +393,30 @@ The following Kconfig extensions are available:
   ``rsource`` can be used to create :file:`Kconfig` "subtrees" that can be
   moved around freely.
 
-- The ``grsource`` statement, which combines ``gsource`` and ``rsource``.
+  .. note::
+
+     ``rsource`` also supports glob patterns.
+
+- An ``orsource`` statement, which combines ``osource`` and ``rsource``.
 
   For example, the following statement will include :file:`Kconfig1` and
   :file:`Kconfig2` from the current directory (if they exist):
 
   .. code-block:: none
 
-      grsource "Kconfig[12]"
+      orsource "Kconfig[12]"
 
-.. _zephyr-specific_kconfig_behavior_for_defaults:
+- ``def_int``, ``def_hex``, and ``def_string`` keywords, which are analogous to
+  ``def_bool``. These set the type and add a ``default`` at the same time.
 
-Zephyr-specific Kconfig behavior for defaults
-=============================================
+Old Zephyr Kconfig behavior for defaults
+========================================
 
-Zephyr uses a Kconfig patch that gives later ``default``\ s precedence over
-earlier ``default``\ s. This is a significant change from standard Kconfig
-behavior, which is to pick the first ``default`` with a satisfied condition.
+Prior to early August 2018 (during development of Zephyr 1.13), Zephyr used a
+custom patch that made Kconfig prefer the last ``default`` with a satisfied
+condition, instead of the first one.
 
-Consider the following example:
+Consider this example:
 
 .. code-block:: none
 
@@ -380,8 +428,32 @@ Consider the following example:
         default "fourth"
         default "fifth" if n
 
-In unpatched Kconfig, this will give ``FOO`` the value ``"second"``, which is
-the first ``default`` with a satisfied condition.
-
-In Zephyr, this will give ``FOO`` the value ``"fourth"``, which is the last
+With the old behavior, ``FOO`` got the value ``"fourth"``, from the last
 ``default`` with a satisfied condition.
+
+With the new behavior, ``FOO`` gets the value ``"second"``, from the first
+``default`` with a satisfied condition. This is standard Kconfig behavior.
+
+There are two issues with the old behavior:
+
+1. It's inconsistent with how Kconfig works in other projects, which is
+   confusing.
+
+2. Due to oversights, earlier ``range`` properties were still preferred, as
+   well as earlier ``default`` properties on choices.
+
+   In addition to being inconsistent, this made it impossible to override
+   ``range`` properties and ``default`` properties on choices if the base
+   definition of the symbol/choice already had ``range``/``default``
+   properties.
+
+.. note::
+
+    If you're maintaining an external project that has symbols with multiple
+    ``default`` properties, you will need to swap the order of the ``default``
+    properties to get the same behavior as before.
+
+    If your external project is modifying symbols in the base Zephyr
+    configuration by sourcing ``Kconfig.zephyr`` and adding additional symbol
+    definitions, you might need to move the ``source`` from before the extra
+    symbol definitions to after them.

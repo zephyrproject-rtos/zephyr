@@ -14,9 +14,12 @@
 #include "ext_log_system.h"
 #include "ext_log_system_adapter.h"
 
-#define LOG_MODULE_NAME main
 #include <logging/log.h>
-LOG_MODULE_REGISTER();
+
+LOG_MODULE_REGISTER(main);
+
+/* size of stack area used by each thread */
+#define STACKSIZE 1024
 
 extern void sample_module_func(void);
 
@@ -157,28 +160,35 @@ static void severity_levels_showcase(void)
  */
 static void performance_showcase(void)
 {
+	volatile u32_t current_timestamp;
+	volatile u32_t start_timestamp;
+	u32_t per_sec;
+	u32_t cnt = 0;
+	u32_t window = 2;
 
 	printk("Logging performance showcase.\n");
 
-	volatile u32_t start_timestamp = timestamp_get();
+	start_timestamp = timestamp_get();
 
 	while (start_timestamp == timestamp_get()) {
+#if (CONFIG_ARCH_POSIX)
+		k_busy_wait(100);
+#endif
 	}
 
 	start_timestamp = timestamp_get();
-
-	volatile u32_t current_timestamp;
-	u32_t cnt = 0;
-	u32_t window = 2;
 
 	do {
 		LOG_INF("performance test - log message %d", cnt);
 		cnt++;
 		current_timestamp = timestamp_get();
+#if (CONFIG_ARCH_POSIX)
+		k_busy_wait(100);
+#endif
 	} while (current_timestamp < (start_timestamp + window));
 
-	printk("Estimated logging capabilities: %d messages/second\n",
-					cnt * timestamp_freq() / window);
+	per_sec = (cnt * timestamp_freq()) / window;
+	printk("Estimated logging capabilities: %d messages/second\n", per_sec);
 }
 
 static void external_log_system_showcase(void)
@@ -190,12 +200,18 @@ static void external_log_system_showcase(void)
 	ext_log_system_foo();
 }
 
-void main(void)
+static void wait_on_log_flushed(void)
 {
-	LOG_INIT();
+	while (log_buffered_cnt()) {
+		k_sleep(5);
+	}
+}
 
-	int err = log_set_timestamp_func(timestamp_get, timestamp_freq());
-	(void)err;
+void log_demo_thread(void *dummy1, void *dummy2, void *dummy3)
+{
+	k_sleep(100);
+
+	(void)log_set_timestamp_func(timestamp_get, timestamp_freq());
 
 	module_logging_showcase();
 
@@ -216,21 +232,21 @@ void main(void)
 		       log_source_id_get(INST2_NAME),
 		       CONFIG_LOG_DEFAULT_LEVEL);
 
-	while (true == LOG_PROCESS()) {
-	}
+	wait_on_log_flushed();
 
 	severity_levels_showcase();
 
-	while (true == LOG_PROCESS()) {
-	}
+	wait_on_log_flushed();
 
 	performance_showcase();
 
-	while (true == LOG_PROCESS()) {
-	}
+	wait_on_log_flushed();
 
 	external_log_system_showcase();
 
-	while (true == LOG_PROCESS()) {
-	}
+	wait_on_log_flushed();
 }
+
+K_THREAD_DEFINE(log_demo_thread_id, STACKSIZE, log_demo_thread,
+		NULL, NULL, NULL,
+		K_LOWEST_APPLICATION_THREAD_PRIO, 0, 1);

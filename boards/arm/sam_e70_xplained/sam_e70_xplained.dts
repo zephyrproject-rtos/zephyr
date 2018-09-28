@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <atmel/same70.dtsi>
+#include <atmel/same70q21.dtsi>
 
 / {
 	model = "Atmel SAM E70 Xplained board";

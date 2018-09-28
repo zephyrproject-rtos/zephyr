@@ -1,0 +1,6 @@
+common:
+  platform_whitelist: native_posix qemu_x86 qemu_cortex_m3
+tests:
+  net.tls_credentials:
+    tags: net tls
+    depends_on: netif

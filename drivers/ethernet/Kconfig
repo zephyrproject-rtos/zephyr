@@ -9,8 +9,7 @@
 menu "Ethernet Drivers"
 
 config SYS_LOG_ETHERNET_LEVEL
-	int
-	prompt "Ethernet driver log level"
+	int "Ethernet driver log level"
 	depends on SYS_LOG && NET_L2_ETHERNET
 	default 0
 	range 0 4
@@ -24,8 +23,7 @@ config SYS_LOG_ETHERNET_LEVEL
 	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config ETH_INIT_PRIORITY
-	int
-	prompt "Ethernet driver init priority"
+	int "Ethernet driver init priority"
 	depends on NET_L2_ETHERNET
 	default 80
 	help

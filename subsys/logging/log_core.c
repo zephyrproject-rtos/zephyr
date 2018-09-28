@@ -12,20 +12,16 @@
 #include <misc/printk.h>
 #include <assert.h>
 #include <atomic.h>
-#include <stdio.h>
 
 #ifndef CONFIG_LOG_PRINTK_MAX_STRING_LENGTH
 #define CONFIG_LOG_PRINTK_MAX_STRING_LENGTH 1
 #endif
 
-#ifdef CONFIG_LOG_BACKEND_UART
-#include <logging/log_backend_uart.h>
-LOG_BACKEND_UART_DEFINE(log_backend_uart);
-#endif
-
 static struct log_list_t list;
 static atomic_t initialized;
 static bool panic_mode;
+static atomic_t buffered_cnt;
+static k_tid_t proc_tid;
 
 static u32_t dummy_timestamp(void);
 static timestamp_get_t timestamp_func = dummy_timestamp;
@@ -38,9 +34,14 @@ static u32_t dummy_timestamp(void)
 static inline void msg_finalize(struct log_msg *msg,
 				struct log_msg_ids src_level)
 {
+	unsigned int key;
+
 	msg->hdr.ids = src_level;
 	msg->hdr.timestamp = timestamp_func();
-	unsigned int key = irq_lock();
+
+	atomic_inc(&buffered_cnt);
+
+	key = irq_lock();
 
 	log_list_add_tail(&list, msg);
 
@@ -48,6 +49,12 @@ static inline void msg_finalize(struct log_msg *msg,
 
 	if (IS_ENABLED(CONFIG_LOG_INPLACE_PROCESS) || panic_mode) {
 		(void)log_process(false);
+	} else if (!IS_ENABLED(CONFIG_LOG_INPLACE_PROCESS) &&
+		   CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
+		if (buffered_cnt == CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
+		    proc_tid) {
+			k_wakeup(proc_tid);
+		}
 	}
 }
 
@@ -116,11 +123,12 @@ void log_n(const char *str,
 	msg_finalize(msg, src_level);
 }
 
-void log_hexdump(const u8_t *data,
+void log_hexdump(const char *str,
+		 const u8_t *data,
 		 u32_t length,
 		 struct log_msg_ids src_level)
 {
-	struct log_msg *msg = log_msg_hexdump_create(data, length);
+	struct log_msg *msg = log_msg_hexdump_create(str, data, length);
 
 	if (msg == NULL) {
 		return;
@@ -137,13 +145,13 @@ int log_printk(const char *fmt, va_list ap)
 		struct log_msg *msg;
 		int length;
 
-		length = vsnprintf(formatted_str,
+		length = vsnprintk(formatted_str,
 				   sizeof(formatted_str), fmt, ap);
 
 		length = (length > sizeof(formatted_str)) ?
 			 sizeof(formatted_str) : length;
 
-		msg = log_msg_hexdump_create(formatted_str, length);
+		msg = log_msg_hexdump_create(NULL, formatted_str, length);
 		if (!msg) {
 			return 0;
 		}
@@ -181,17 +189,46 @@ void log_core_init(void)
 	log_msg_pool_init();
 	log_list_init(&list);
 
-	/* No backends attached so far but set default level as a filter for
-	 * any source of logging in the system. When backends are attached later
-	 * logs will be filtered out during processing.
+	/*
+	 * Initialize aggregated runtime filter levels (no backends are
+	 * attached yet, so leave backend slots in each dynamic filter set
+	 * alone for now).
+	 *
+	 * Each log source's aggregated runtime level is set to match its
+	 * compile-time level. When backends are attached later on in
+	 * log_init(), they'll be initialized to the same value.
 	 */
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
 		for (int i = 0; i < log_sources_count(); i++) {
 			u32_t *filters = log_dynamic_filters_get(i);
+			u8_t level = log_compiled_level_get(i);
 
 			LOG_FILTER_SLOT_SET(filters,
 					    LOG_FILTER_AGGR_SLOT_IDX,
-					    CONFIG_LOG_DEFAULT_LEVEL);
+					    level);
+		}
+	}
+}
+
+/*
+ * Initialize a backend's runtime filters to match the compile-time
+ * settings.
+ *
+ * (Aggregated filters were already set up in log_core_init().
+ */
+static void backend_filter_init(struct log_backend const *const backend)
+{
+	u8_t level;
+	int i;
+
+	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
+		for (i = 0; i < log_sources_count(); i++) {
+			level = log_compiled_level_get(i);
+
+			log_filter_set(backend,
+				       CONFIG_LOG_DOMAIN_ID,
+				       i,
+				       level);
 		}
 	}
 }
@@ -211,16 +248,39 @@ void log_init(void)
 
 	/* Assign ids to backends. */
 	for (i = 0; i < log_backend_count_get(); i++) {
-		log_backend_id_set(log_backend_get(i),
-				   i + LOG_FILTER_FIRST_BACKEND_SLOT_IDX);
-	}
+		const struct log_backend *backend = log_backend_get(i);
 
-#ifdef CONFIG_LOG_BACKEND_UART
-	log_backend_uart_init();
-	log_backend_enable(&log_backend_uart,
-			   NULL,
-			   CONFIG_LOG_DEFAULT_LEVEL);
-#endif
+		log_backend_id_set(backend,
+				   i + LOG_FILTER_FIRST_BACKEND_SLOT_IDX);
+
+		backend_filter_init(backend);
+		if (backend->api->init) {
+			backend->api->init();
+		}
+
+		log_backend_activate(backend, NULL);
+	}
+}
+
+static void thread_set(k_tid_t process_tid)
+{
+	proc_tid = process_tid;
+
+	if (!IS_ENABLED(CONFIG_LOG_INPLACE_PROCESS) &&
+	    CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
+	    process_tid &&
+	    buffered_cnt >= CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
+		k_wakeup(proc_tid);
+	}
+}
+
+void log_thread_set(k_tid_t process_tid)
+{
+	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
+		assert(0);
+	} else {
+		thread_set(process_tid);
+	}
 }
 
 int log_set_timestamp_func(timestamp_get_t timestamp_getter, u32_t freq)
@@ -238,6 +298,10 @@ int log_set_timestamp_func(timestamp_get_t timestamp_getter, u32_t freq)
 void log_panic(void)
 {
 	struct log_backend const *backend;
+
+	if (panic_mode) {
+		return;
+	}
 
 	for (int i = 0; i < log_backend_count_get(); i++) {
 		backend = log_backend_get(i);
@@ -297,10 +361,16 @@ bool log_process(bool bypass)
 	irq_unlock(key);
 
 	if (msg != NULL) {
+		atomic_dec(&buffered_cnt);
 		msg_process(msg, bypass);
 	}
 
 	return (log_list_head_peek(&list) != NULL);
+}
+
+u32_t log_buffered_cnt(void)
+{
+	return buffered_cnt;
 }
 
 u32_t log_src_cnt_get(u32_t domain_id)
@@ -310,9 +380,7 @@ u32_t log_src_cnt_get(u32_t domain_id)
 
 const char *log_source_name_get(u32_t domain_id, u32_t src_id)
 {
-	assert(src_id < log_sources_count());
-
-	return log_name_get(src_id);
+	return src_id < log_sources_count() ? log_name_get(src_id) : NULL;
 }
 
 static u32_t max_filter_get(u32_t filters)
@@ -387,8 +455,8 @@ void log_backend_enable(struct log_backend const *const backend,
 			void *ctx,
 			u32_t level)
 {
-	log_backend_activate(backend, ctx);
 	backend_filter_set(backend, level);
+	log_backend_activate(backend, ctx);
 }
 
 void log_backend_disable(struct log_backend const *const backend)
@@ -413,3 +481,30 @@ u32_t log_filter_get(struct log_backend const *const backend,
 		return log_compiled_level_get(src_id);
 	}
 }
+
+#ifdef CONFIG_LOG_PROCESS_THREAD
+static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
+{
+	log_init();
+	thread_set(k_current_get());
+
+	while (1) {
+		if (log_process(false) == false) {
+			k_sleep(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS);
+		}
+	}
+}
+
+K_THREAD_DEFINE(logging, CONFIG_LOG_PROCESS_THREAD_STACK_SIZE,
+		log_process_thread_func, NULL, NULL, NULL,
+		CONFIG_LOG_PROCESS_THREAD_PRIO, 0, K_NO_WAIT);
+#else
+#include <init.h>
+static int enable_logger(struct device *arg)
+{
+	ARG_UNUSED(arg);
+	log_init();
+	return 0;
+}
+SYS_INIT(enable_logger, POST_KERNEL, 0);
+#endif /* CONFIG_LOG_PROCESS_THREAD */

@@ -37,7 +37,6 @@
  */
 struct dns_msg_t {
 	u8_t *msg;
-	u16_t msg_size;
 
 	int response_type;
 	u16_t response_position;
@@ -45,6 +44,7 @@ struct dns_msg_t {
 
 	u16_t query_offset;
 	u16_t answer_offset;
+	u16_t msg_size;
 };
 
 #define DNS_MSG_INIT(b, s)	{.msg = b, .msg_size = s,	\

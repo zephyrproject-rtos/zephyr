@@ -12,24 +12,3 @@ menuconfig SPI_MCUX_DSPI
 	select HAS_DTS_SPI
 	help
 	  Enable support for mcux spi driver.
-
-if SPI_MCUX_DSPI
-
-config SPI_MCUX_BUF_SIZE
-	int "Number of bytes in the local buffer"
-	default 16
-	help
-	  The mcux driver requires that the RX and TX buffers are the same
-	  length, however the Zephyr spi interface allows them to be different.
-	  When they are different, the mcux shim driver uses a local buffer. This
-	  option defines the size of the local buffer.
-
-config SPI_MCUX_DUMMY_CHAR
-	hex "Dummy character"
-	default 0x00
-	range 0x00 0xff
-	help
-	  This option configures what value to send when the TX buffer length is
-	  less than the RX buffer length.
-
-endif # SPI_MCUX_DSPI

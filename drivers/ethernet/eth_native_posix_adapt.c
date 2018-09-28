@@ -11,19 +11,21 @@
  * because there is naming conflicts between host and zephyr network stacks.
  */
 
-#define _DEFAULT_SOURCE
-
 /* Host include files */
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <net/if.h>
 #include <time.h>
+#include "posix_trace.h"
 
 #ifdef __linux
 #include <linux/if_tun.h>
@@ -58,7 +60,7 @@ int eth_iface_create(const char *if_name, bool tun_only)
 		return -errno;
 	}
 
-	memset(&ifr, 0, sizeof(ifr));
+	(void)memset(&ifr, 0, sizeof(ifr));
 
 #ifdef __linux
 	ifr.ifr_flags = (tun_only ? IFF_TUN : IFF_TAP) | IFF_NO_PI;
@@ -88,15 +90,17 @@ static int ssystem(const char *fmt, ...)
 {
 	char cmd[255];
 	va_list ap;
+	int ret;
 
 	va_start(ap, fmt);
 	vsnprintf(cmd, sizeof(cmd), fmt, ap);
 	va_end(ap);
 
-	printk("%s\n", cmd);
-	fflush(stdout);
+	posix_print_trace("%s\n", cmd);
 
-	return system(cmd);
+	ret = system(cmd);
+
+	return -WEXITSTATUS(ret);
 }
 
 int eth_setup_host(const char *if_name)
@@ -107,6 +111,23 @@ int eth_setup_host(const char *if_name)
 	 */
 	return ssystem("%s -i %s", CONFIG_ETH_NATIVE_POSIX_SETUP_SCRIPT,
 		       if_name);
+}
+
+int eth_start_script(const char *if_name)
+{
+	if (CONFIG_ETH_NATIVE_POSIX_STARTUP_SCRIPT[0] == '\0') {
+		return 0;
+	}
+
+	if (CONFIG_ETH_NATIVE_POSIX_STARTUP_SCRIPT_USER[0] == '\0') {
+		return ssystem("%s %s", CONFIG_ETH_NATIVE_POSIX_STARTUP_SCRIPT,
+			       if_name);
+	} else {
+		return ssystem("sudo -u %s %s %s",
+			       CONFIG_ETH_NATIVE_POSIX_STARTUP_SCRIPT_USER,
+			       CONFIG_ETH_NATIVE_POSIX_STARTUP_SCRIPT,
+			       if_name);
+	}
 }
 
 int eth_wait_data(int fd)
@@ -161,3 +182,21 @@ int eth_clock_gettime(struct net_ptp_time *time)
 	return 0;
 }
 #endif /* CONFIG_NET_GPTP */
+
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+int eth_promisc_mode(const char *if_name, bool enable)
+{
+	return ssystem("ip link set dev %s promisc %s",
+		       if_name, enable ? "on" : "off");
+}
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */
+
+int eth_if_up(const char *if_name)
+{
+	return ssystem("ip link set dev %s up", if_name);
+}
+
+int eth_if_down(const char *if_name)
+{
+	return ssystem("ip link set dev %s down", if_name);
+}

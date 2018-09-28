@@ -56,7 +56,10 @@ static void tfifo_thread_thread(struct k_fifo *pfifo)
  */
 
 /**
- * @see k_fifo_cancel_wait()
+ * @brief Test cancel waiting on a FIFO queue.
+ * @details This routine causes first thread pending on fifo (if any),
+ * to return from k_fifo_get() with NULL value (as if timeout expired).
+ * @see k_fifo_init(),k_fifo_get(), k_fifo_cancel_wait()
  */
 void test_fifo_cancel_wait(void)
 {

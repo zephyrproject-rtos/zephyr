@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SWAP_MACROS__H_
-#define _SWAP_MACROS__H_
+#ifndef ZEPHYR_ARCH_ARC_INCLUDE_SWAP_MACROS_H_
+#define ZEPHYR_ARCH_ARC_INCLUDE_SWAP_MACROS_H_
 
 #include <kernel_structs.h>
 #include <offsets_short.h>
@@ -278,4 +278,4 @@ extern "C" {
 }
 #endif
 
-#endif /*  _SWAP_MACROS__H_ */
+#endif /*  ZEPHYR_ARCH_ARC_INCLUDE_SWAP_MACROS_H_ */

@@ -15,7 +15,7 @@ try:
     import ply.yacc as yacc
 except ImportError:
     print("PLY library for Python 3 not installed.")
-    print("Please install the python3-ply package using your workstation's")
+    print("Please install the ply package using your workstation's")
     print("package manager or the 'pip' tool.")
     sys.exit(1)
 

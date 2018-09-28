@@ -15,7 +15,7 @@ static atomic_t global_lock;
 
 unsigned int _smp_global_lock(void)
 {
-	int key = _arch_irq_lock();
+	unsigned int key = _arch_irq_lock();
 
 	if (!_current->base.global_lock_count) {
 		while (!atomic_cas(&global_lock, 0, 1)) {
@@ -84,9 +84,9 @@ static void smp_init_top(int key, void *arg)
 	};
 
 	_arch_curr_cpu()->current = &dummy_thread;
-	int k = irq_lock();
+	unsigned int k = irq_lock();
 	smp_timer_init();
-	_Swap(k);
+	(void)_Swap(k);
 
 	CODE_UNREACHABLE;
 }
@@ -96,7 +96,7 @@ void smp_init(void)
 {
 	atomic_t start_flag;
 
-	atomic_clear(&start_flag);
+	(void)atomic_clear(&start_flag);
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
 	_arch_start_cpu(1, _interrupt_stack1, CONFIG_ISR_STACK_SIZE,
@@ -113,5 +113,5 @@ void smp_init(void)
 			smp_init_top, &start_flag);
 #endif
 
-	atomic_set(&start_flag, 1);
+	(void)atomic_set(&start_flag, 1);
 }

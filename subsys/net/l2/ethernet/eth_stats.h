@@ -16,10 +16,15 @@
 static inline void eth_stats_update_bytes_rx(struct net_if *iface,
 					     u32_t bytes)
 {
+	const struct ethernet_api *api = (const struct ethernet_api *)
+		net_if_get_device(iface)->driver_api;
 	struct net_stats_eth *stats;
 
-	stats = ((const struct ethernet_api *)
-		 net_if_get_device(iface)->driver_api)->stats;
+	if (!api->get_stats) {
+		return;
+	}
+
+	stats = api->get_stats(net_if_get_device(iface));
 	if (!stats) {
 		return;
 	}
@@ -30,10 +35,15 @@ static inline void eth_stats_update_bytes_rx(struct net_if *iface,
 static inline void eth_stats_update_bytes_tx(struct net_if *iface,
 					     u32_t bytes)
 {
+	const struct ethernet_api *api = (const struct ethernet_api *)
+		net_if_get_device(iface)->driver_api;
 	struct net_stats_eth *stats;
 
-	stats = ((const struct ethernet_api *)
-		 net_if_get_device(iface)->driver_api)->stats;
+	if (!api->get_stats) {
+		return;
+	}
+
+	stats = api->get_stats(net_if_get_device(iface));
 	if (!stats) {
 		return;
 	}
@@ -43,10 +53,15 @@ static inline void eth_stats_update_bytes_tx(struct net_if *iface,
 
 static inline void eth_stats_update_pkts_rx(struct net_if *iface)
 {
+	const struct ethernet_api *api = (const struct ethernet_api *)
+		net_if_get_device(iface)->driver_api;
 	struct net_stats_eth *stats;
 
-	stats = ((const struct ethernet_api *)
-		 net_if_get_device(iface)->driver_api)->stats;
+	if (!api->get_stats) {
+		return;
+	}
+
+	stats = api->get_stats(net_if_get_device(iface));
 	if (!stats) {
 		return;
 	}
@@ -56,10 +71,15 @@ static inline void eth_stats_update_pkts_rx(struct net_if *iface)
 
 static inline void eth_stats_update_pkts_tx(struct net_if *iface)
 {
+	const struct ethernet_api *api = (const struct ethernet_api *)
+		net_if_get_device(iface)->driver_api;
 	struct net_stats_eth *stats;
 
-	stats = ((const struct ethernet_api *)
-		 net_if_get_device(iface)->driver_api)->stats;
+	if (!api->get_stats) {
+		return;
+	}
+
+	stats = api->get_stats(net_if_get_device(iface));
 	if (!stats) {
 		return;
 	}
@@ -69,10 +89,15 @@ static inline void eth_stats_update_pkts_tx(struct net_if *iface)
 
 static inline void eth_stats_update_broadcast_rx(struct net_if *iface)
 {
+	const struct ethernet_api *api = (const struct ethernet_api *)
+		net_if_get_device(iface)->driver_api;
 	struct net_stats_eth *stats;
 
-	stats = ((const struct ethernet_api *)
-		 net_if_get_device(iface)->driver_api)->stats;
+	if (!api->get_stats) {
+		return;
+	}
+
+	stats = api->get_stats(net_if_get_device(iface));
 	if (!stats) {
 		return;
 	}
@@ -82,10 +107,15 @@ static inline void eth_stats_update_broadcast_rx(struct net_if *iface)
 
 static inline void eth_stats_update_broadcast_tx(struct net_if *iface)
 {
+	const struct ethernet_api *api = (const struct ethernet_api *)
+		net_if_get_device(iface)->driver_api;
 	struct net_stats_eth *stats;
 
-	stats = ((const struct ethernet_api *)
-		 net_if_get_device(iface)->driver_api)->stats;
+	if (!api->get_stats) {
+		return;
+	}
+
+	stats = api->get_stats(net_if_get_device(iface));
 	if (!stats) {
 		return;
 	}
@@ -95,10 +125,15 @@ static inline void eth_stats_update_broadcast_tx(struct net_if *iface)
 
 static inline void eth_stats_update_multicast_rx(struct net_if *iface)
 {
+	const struct ethernet_api *api = (const struct ethernet_api *)
+		net_if_get_device(iface)->driver_api;
 	struct net_stats_eth *stats;
 
-	stats = ((const struct ethernet_api *)
-		 net_if_get_device(iface)->driver_api)->stats;
+	if (!api->get_stats) {
+		return;
+	}
+
+	stats = api->get_stats(net_if_get_device(iface));
 	if (!stats) {
 		return;
 	}
@@ -108,10 +143,15 @@ static inline void eth_stats_update_multicast_rx(struct net_if *iface)
 
 static inline void eth_stats_update_multicast_tx(struct net_if *iface)
 {
+	const struct ethernet_api *api = (const struct ethernet_api *)
+		net_if_get_device(iface)->driver_api;
 	struct net_stats_eth *stats;
 
-	stats = ((const struct ethernet_api *)
-		 net_if_get_device(iface)->driver_api)->stats;
+	if (!api->get_stats) {
+		return;
+	}
+
+	stats = api->get_stats(net_if_get_device(iface));
 	if (!stats) {
 		return;
 	}

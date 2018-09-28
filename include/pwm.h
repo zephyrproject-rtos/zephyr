@@ -9,8 +9,8 @@
  * @brief Public PWM Driver APIs
  */
 
-#ifndef __PWM_H__
-#define __PWM_H__
+#ifndef ZEPHYR_INCLUDE_PWM_H_
+#define ZEPHYR_INCLUDE_PWM_H_
 
 /**
  * @brief PWM Interface
@@ -144,4 +144,4 @@ static inline int pwm_pin_set_usec(struct device *dev, u32_t pwm,
 
 #include <syscalls/pwm.h>
 
-#endif /* __PWM_H__ */
+#endif /* ZEPHYR_INCLUDE_PWM_H_ */

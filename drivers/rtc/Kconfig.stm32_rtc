@@ -1,0 +1,67 @@
+# Kconfig - STM32 RTC configuration options
+#
+# Copyright (c) 2018 Workaround GmbH
+# Copyright (c) 2018 Allterco Robotics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config RTC_STM32
+	bool "STM32 RTC Driver"
+	depends on SOC_FAMILY_STM32
+	select USE_STM32_LL_RTC
+	select USE_STM32_LL_PWR
+	select USE_STM32_LL_RCC
+	select USE_STM32_LL_EXTI
+	select NEWLIB_LIBC
+	help
+	  Build RTC driver for STM32 SoCs. Tested on STM32 F3, F4, L4 series.
+
+choice RTC_STM32_CLOCK_SRC
+	bool "RTC clock source"
+	depends on RTC_STM32
+
+config RTC_STM32_CLOCK_LSI
+	bool "LSI"
+	help
+	  Use LSI as RTC clock
+
+config RTC_STM32_CLOCK_LSE
+	bool "LSE"
+	help
+	  Use LSE as RTC clock
+
+endchoice #RTC_STM32_CLOCK_SRC
+
+choice RTC_STM32_LSE_DRIVE
+	prompt "LSE oscillator drive capability"
+	depends on RTC_STM32_CLOCK_LSE
+
+config RTC_STM32_LSE_DRIVE_LOW
+	bool "Low"
+	help
+	  Xtal mode lower driving capability
+
+config RTC_STM32_LSE_DRIVE_MEDIUMLOW
+	bool "Medium Low"
+	help
+	  Xtal mode medium low driving capability
+
+config RTC_STM32_LSE_DRIVE_MEDIUMHIGH
+	bool "Medium High"
+	help
+	  Xtal mode medium high driving capability
+
+config RTC_STM32_LSE_DRIVE_HIGH
+	bool "High"
+	help
+	  Xtal mode higher driving capability
+
+endchoice
+
+config RTC_STM32_LSE_DRIVE_STRENGTH
+	hex
+	default 0x00000000 if RTC_STM32_LSE_DRIVE_LOW
+	default 0x00000008 if RTC_STM32_LSE_DRIVE_MEDIUMLOW
+	default 0x00000010 if RTC_STM32_LSE_DRIVE_MEDIUMHIGH
+	default 0x00000018 if RTC_STM32_LSE_DRIVE_HIGH

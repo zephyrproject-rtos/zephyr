@@ -4,13 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * @file
+/**
+ * @brief Test to verify XIP
  *
- * This module tests that XIP performs as expected. If the first
+ * @defgroup kernel_xip_tests XIP Tests
+ *
+ * @ingroup all_tests
+ *
+ * @details This module tests that XIP performs as expected. If the first
  * task is even activated that is a good indication that XIP is
  * working. However, the test does do some some testing on
  * global variables for completeness sake.
+ *
+ * @{
+ * @}
  */
 
 #include <ztest.h>
@@ -32,6 +39,11 @@ extern u32_t xip_array[XIP_TEST_ARRAY_SZ];
 u32_t xip_array[XIP_TEST_ARRAY_SZ] = {
 	TEST_VAL_1, TEST_VAL_2, TEST_VAL_3, TEST_VAL_4};
 
+/**
+ * @brief Test XIP
+ *
+ * @ingroup kernel_xip_tests
+ */
 void test_globals(void)
 {
 	int  i;

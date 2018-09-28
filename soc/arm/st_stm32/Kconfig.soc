@@ -1,0 +1,8 @@
+# Kconfig - ST Microelectronics STM32 MCU line
+#
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+source "soc/arm/st_stm32/*/Kconfig.series"

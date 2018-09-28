@@ -27,6 +27,7 @@
 #include <ksched.h>
 #include <init.h>
 #include <syscall_handler.h>
+#include <tracing.h>
 
 extern struct k_sem _k_sem_list_start[];
 extern struct k_sem _k_sem_list_end[];
@@ -60,6 +61,7 @@ void _impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	__ASSERT(limit != 0, "limit cannot be zero");
 	__ASSERT(initial_count <= limit, "count cannot be greater than limit");
 
+	sys_trace_void(SYS_TRACE_ID_SEMA_INIT);
 	sem->count = initial_count;
 	sem->limit = limit;
 	_waitq_init(&sem->wait_q);
@@ -70,6 +72,7 @@ void _impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	SYS_TRACING_OBJ_INIT(k_sem, sem);
 
 	_k_object_init(sem);
+	sys_trace_end_call(SYS_TRACE_ID_SEMA_INIT);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -98,7 +101,7 @@ static void do_sem_give(struct k_sem *sem)
 {
 	struct k_thread *thread = _unpend_first_thread(&sem->wait_q);
 
-	if (thread) {
+	if (thread != NULL) {
 		_ready_thread(thread);
 		_set_thread_return_value(thread, 0);
 	} else {
@@ -107,34 +110,13 @@ static void do_sem_give(struct k_sem *sem)
 	}
 }
 
-/*
- * This function is meant to be called only by
- * _sys_event_logger_put_non_preemptible(), which itself is really meant to be
- * called only by _sys_k_event_logger_context_switch(), used within a context
- * switch to log the event.
- *
- * WARNING:
- * It must be called with interrupts already locked.
- * It cannot be called for a sempahore part of a group.
- */
-void _sem_give_non_preemptible(struct k_sem *sem)
-{
-	struct k_thread *thread;
-
-	thread = _unpend1_no_timeout(&sem->wait_q);
-	if (!thread) {
-		increment_count_up_to_limit(sem);
-		return;
-	}
-
-	_set_thread_return_value(thread, 0);
-}
-
 void _impl_k_sem_give(struct k_sem *sem)
 {
 	unsigned int key = irq_lock();
 
+	sys_trace_void(SYS_TRACE_ID_SEMA_GIVE);
 	do_sem_give(sem);
+	sys_trace_end_call(SYS_TRACE_ID_SEMA_GIVE);
 	_reschedule(key);
 }
 
@@ -146,18 +128,23 @@ int _impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 {
 	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
 
+	sys_trace_void(SYS_TRACE_ID_SEMA_TAKE);
 	unsigned int key = irq_lock();
 
 	if (likely(sem->count > 0)) {
 		sem->count--;
 		irq_unlock(key);
+		sys_trace_end_call(SYS_TRACE_ID_SEMA_TAKE);
 		return 0;
 	}
 
 	if (timeout == K_NO_WAIT) {
 		irq_unlock(key);
+		sys_trace_end_call(SYS_TRACE_ID_SEMA_TAKE);
 		return -EBUSY;
 	}
+
+	sys_trace_end_call(SYS_TRACE_ID_SEMA_TAKE);
 
 	return _pend_current_thread(key, &sem->wait_q, timeout);
 }

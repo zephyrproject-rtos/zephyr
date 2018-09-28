@@ -5,8 +5,11 @@
  */
 
 /**
- * @file
  * @brief Test memory slab APIs
+ *
+ * @defgroup kernel_memory_slab_tests Memory Slab Tests
+ *
+ * @ingroup all_tests
  *
  * This module tests the following memory slab routines:
  *
@@ -58,7 +61,7 @@ void helper_thread(void)
 {
 	void *ptr[NUMBLOCKS];           /* Pointer to memory block */
 
-	memset(ptr, 0, sizeof(ptr));    /* keep static checkers happy */
+	(void)memset(ptr, 0, sizeof(ptr));    /* keep static checkers happy */
 	/* Wait for part 1 to complete */
 	k_sem_take(&SEM_REGRESSDONE, K_FOREVER);
 
@@ -194,15 +197,15 @@ void test_slab_free_all_blocks(void **p)
  *
  * @brief Main task to test memory slab interfaces
  *
- * This routine calls test_slab_get_all_blocks() to get all memory blocks from
- * the map and calls test_slab_free_all_blocks() to free all memory blocks.
- * It also tries to wait (with and without timeout) for a memory block.
+ * @ingroup kernel_memory_slab_tests
  *
- * This routine tests the following:
+ * @details This routine calls test_slab_get_all_blocks() to get all
+ * memory blocks from the map and calls test_slab_free_all_blocks()
+ * to free all memory blocks. It also tries to wait (with and without
+ * timeout) for a memory block.
  *
- *   k_mem_slab_alloc
- *
- * @return  N/A
+ * @see k_mem_slab_alloc(), k_mem_slab_num_used_get(),
+ * memset(), k_mem_slab_free()
  */
 
 void test_mslab(void)
@@ -212,7 +215,7 @@ void test_mslab(void)
 	void *ptr[NUMBLOCKS];           /* Pointer to memory block */
 
 	/* not strictly necessary, but keeps coverity checks happy */
-	memset(ptr, 0, sizeof(ptr));
+	(void)memset(ptr, 0, sizeof(ptr));
 
 	/* Part 1 of test */
 

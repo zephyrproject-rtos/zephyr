@@ -25,7 +25,8 @@ struct uarte_nrfx_data {
 	u8_t rx_data;
 
 #ifdef UARTE_INTERRUPT_DRIVEN
-	uart_irq_callback_t cb; /**< Callback function pointer */
+	uart_irq_callback_user_data_t cb; /**< Callback function pointer */
+	void *cb_data; /**< Callback function arg */
 	u8_t *tx_buffer;
 #endif /* UARTE_INTERRUPT_DRIVEN */
 };
@@ -84,7 +85,7 @@ static void uarte_nrfx_isr(void *arg)
 	const struct uarte_nrfx_data *data = get_dev_data(dev);
 
 	if (data->cb) {
-		data->cb(dev);
+		data->cb(data->cb_data);
 	}
 }
 #endif /* UARTE_INTERRUPT_DRIVEN */
@@ -405,11 +406,13 @@ static int uarte_nrfx_irq_update(struct device *dev)
 
 /** Set the callback function */
 static void uarte_nrfx_irq_callback_set(struct device *dev,
-					uart_irq_callback_t cb)
+					uart_irq_callback_user_data_t cb,
+					void *cb_data)
 {
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 
 	data->cb = cb;
+	data->cb_data = cb_data;
 }
 #endif /* UARTE_INTERRUPT_DRIVEN */
 
@@ -512,8 +515,8 @@ static int uarte_instance_init(struct device *dev,
 	static int uarte_##idx##_init(struct device *dev)		  \
 	{								  \
 		const struct uarte_init_config init_config = {		  \
-			.pseltxd = CONFIG_UART_##idx##_NRF_TX_PIN,	  \
-			.pselrxd = CONFIG_UART_##idx##_NRF_RX_PIN,	  \
+			.pseltxd = CONFIG_UART_##idx##_TX_PIN,	  \
+			.pselrxd = CONFIG_UART_##idx##_RX_PIN,	  \
 			UARTE_##idx##_NRF_HWFC_CONFIG			  \
 			.parity = UARTE_##idx##_NRF_PARITY_BIT,		  \
 			.baudrate = CONFIG_UART_##idx##_BAUD_RATE	  \
@@ -533,8 +536,8 @@ static int uarte_instance_init(struct device *dev,
 			&uart_nrfx_uarte_driver_api)
 
 #define UARTE_NRF_HWFC_ENABLED(idx)				\
-	.pselcts = CONFIG_UART_##idx##_NRF_CTS_PIN,		\
-	.pselrts = CONFIG_UART_##idx##_NRF_RTS_PIN,		\
+	.pselcts = CONFIG_UART_##idx##_CTS_PIN,		\
+	.pselrts = CONFIG_UART_##idx##_RTS_PIN,		\
 	.hwfc = NRF_UARTE_HWFC_ENABLED,
 #define UARTE_NRF_HWFC_DISABLED					\
 	.pselcts = NRF_UARTE_PSEL_DISCONNECTED,			\
@@ -581,6 +584,12 @@ static int uarte_instance_init(struct device *dev,
 
 	#ifdef CONFIG_UART_0_NRF_FLOW_CONTROL
 		#define UARTE_0_NRF_HWFC_CONFIG	       UARTE_NRF_HWFC_ENABLED(0)
+		#ifndef CONFIG_UART_0_RTS_PIN
+		#error Flow control for UARTE0 is enabled, but RTS pin is not defined.
+		#endif
+		#ifndef CONFIG_UART_0_CTS_PIN
+		#error Flow control for UARTE0 is enabled, but CTS pin is not defined.
+		#endif
 	#else
 		#define UARTE_0_NRF_HWFC_CONFIG	       UARTE_NRF_HWFC_DISABLED
 	#endif /* CONFIG_UART_0_NRF_FLOW_CONTROL */
@@ -611,6 +620,12 @@ static int uarte_instance_init(struct device *dev,
 
 	#ifdef CONFIG_UART_1_NRF_FLOW_CONTROL
 		#define UARTE_1_NRF_HWFC_CONFIG	       UARTE_NRF_HWFC_ENABLED(1)
+		#ifndef CONFIG_UART_1_RTS_PIN
+		#error Flow control for UARTE0 is enabled, but RTS pin is not defined.
+		#endif
+		#ifndef CONFIG_UART_1_CTS_PIN
+		#error Flow control for UARTE0 is enabled, but CTS pin is not defined.
+		#endif
 	#else
 		#define UARTE_1_NRF_HWFC_CONFIG	       UARTE_NRF_HWFC_DISABLED
 	#endif /* CONFIG_UART_1_NRF_FLOW_CONTROL */

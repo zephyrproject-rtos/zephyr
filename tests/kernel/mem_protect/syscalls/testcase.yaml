@@ -1,0 +1,4 @@
+tests:
+  kernel.memory_protection.syscalls:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: core security userspace ignore_faults

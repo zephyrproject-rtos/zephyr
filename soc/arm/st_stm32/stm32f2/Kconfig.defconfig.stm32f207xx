@@ -1,0 +1,18 @@
+# Kconfig - ST Microelectronics stm32f207 MCU
+#
+# Copyright (c) 2018 qianfan Zhao <qianfanguijin@163.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32F207XE || SOC_STM32F207XG
+
+config SOC
+	string
+	default "STM32F207xx"
+
+config NUM_IRQS
+	int
+	default 81
+
+endif

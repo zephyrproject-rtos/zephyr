@@ -1,0 +1,330 @@
+# Kconfig - Micropower, 3-Axis, +/-200g Digital Accelerometer
+#
+# Copyright (c) 2018 Analog Devices Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ADXL372
+	bool "ADXL372 Three Axis High-g I2C/SPI accelerometer"
+	depends on I2C || SPI
+	help
+	  Enable driver for ADXL372 Three-Axis Digital Accelerometers.
+
+if ADXL372
+
+choice ADXL372_BUS_TYPE
+	prompt "Interface type"
+	help
+	  Select interface the digital interface type for the ADXL372
+
+config ADXL372_I2C
+	depends on I2C
+	bool "I2C Interface"
+
+config ADXL372_SPI
+	depends on SPI
+	bool "SPI Interface"
+
+endchoice
+
+if !HAS_DTS_I2C_DEVICE
+
+config ADXL372_DEV_NAME
+	string "ADXL372 device name"
+	depends on ADXL372_I2C
+	default "ADXL372"
+
+config ADXL372_I2C_ADDR
+	hex "I2C address for ADXL372"
+	depends on ADXL372_I2C
+	default 0x1D
+	help
+	  I2C address of the ADXL372 sensor.
+
+	  0x1D: if MISO is pulled low
+	  0x53: if MISO is pulled high
+
+config ADXL372_I2C_MASTER_DEV_NAME
+	string "I2C master where ADXL372 is connected"
+	depends on ADXL372_I2C
+	default "I2C_0"
+	help
+	  Specify the device name of the I2C master device to which the
+	  ADXL372 chip is connected.
+
+endif # !HAS_DTS_I2C_DEVICE
+
+if !HAS_DTS_SPI_DEVICE
+
+config ADXL372_DEV_NAME
+	string "ADXL372 device name"
+	depends on ADXL372_SPI
+	default "ADXL372"
+
+config ADXL372_SPI_DEV_NAME
+	string "SPI device where ADXL372 is connected"
+	depends on ADXL372_SPI
+	default "SPI_0"
+	help
+	  Specify the device name of the SPI device to which ADXL372 is
+	  connected.
+
+config ADXL372_SPI_DEV_SLAVE
+	int "SPI Slave Select where ADXL372 is connected"
+	depends on ADXL372_SPI
+	default 2
+	help
+	  Specify the slave select pin of the SPI to which ADXL372 is
+	  connected.
+
+config ADXL372_SPI_GPIO_CS
+	bool "ADXL372 SPI CS through a GPIO pin"
+	depends on ADXL372_SPI
+	help
+	  This option is useful if one needs to manage SPI CS through a GPIO
+	  pin to by-pass the SPI controller's CS logic.
+
+config ADXL372_SPI_BUS_FREQ
+	int "ADXL372 SPI bus speed in Hz"
+	range 10000 10000000
+	default 8000000
+	help
+	  This is the maximum supported SPI bus frequency. The chip supports a
+	  frequency up to 10MHz.
+
+endif # !HAS_DTS_SPI_DEVICE
+
+if !HAS_DTS_SPI_PINS
+
+config ADXL372_SPI_GPIO_CS_DRV_NAME
+	string "GPIO driver's name to use to drive SPI CS through"
+	default "GPIO_0"
+	depends on ADXL372_SPI_GPIO_CS
+	help
+	  This option is mandatory to set which GPIO controller to use in order
+	  to actually emulate the SPI CS.
+
+config ADXL372_SPI_GPIO_CS_PIN
+	int "GPIO PIN to use to drive SPI CS through"
+	default 0
+	depends on ADXL372_SPI_GPIO_CS
+	help
+	  This option is mandatory to set which GPIO pin to use in order
+	  to actually emulate the SPI CS.
+
+endif # !HAS_DTS_SPI_PINS
+
+choice
+	prompt "Operating mode"
+	default ADXL372_PEAK_DETECT_MODE
+
+config ADXL372_PEAK_DETECT_MODE
+	bool "Max Peak detect mode"
+	help
+	  In most high-g applications, a single (3-axis) acceleration sample at
+	  the peak of an impact event contains sufficient information
+	  about the event, and the full acceleration history is not required.
+	  In this mode the device returns only the over threshold
+	  Peak Acceleration between two consecutive sample fetches.
+
+config ADXL372_MEASUREMENT_MODE
+	bool "Measurement Mode"
+	help
+	  In this mode, acceleration data is provided continuously at the
+	  output data rate (ODR).
+
+endchoice
+
+choice
+	prompt "Accelerometer sampling frequency (ODR)"
+	default ADXL372_ODR_6400HZ if ADXL372_PEAK_DETECT_MODE
+	default ADXL372_ODR_400HZ if ADXL372_MEASUREMENT_MODE
+
+config ADXL372_ODR_400HZ
+	bool "400 Hz"
+
+config ADXL372_ODR_800HZ
+	bool "800 Hz"
+
+config ADXL372_ODR_1600HZ
+	bool "1600 Hz"
+
+config ADXL372_ODR_3200HZ
+	bool "3200 Hz"
+
+config ADXL372_ODR_6400HZ
+	bool "6400 Hz"
+
+endchoice
+
+choice
+	prompt "Low-Pass (Antialiasing) Filter corner frequency"
+	default ADXL372_BW_200HZ if ADXL372_ODR_400HZ
+	default ADXL372_BW_400HZ if ADXL372_ODR_800HZ
+	default ADXL372_BW_800HZ if ADXL372_ODR_1600HZ
+	default ADXL372_BW_1600HZ if ADXL372_ODR_3200HZ
+	default ADXL372_BW_3200HZ if ADXL372_ODR_6400HZ
+	help
+	  High g events often include acceleration content over a wide range
+	  of frequencies. The ADC of the ADXL372 samples the input acceleration
+	  at the user selected ODR.
+	  In the absence of antialiasing filters, input signals whose frequency
+	  is more than half the ODR alias or fold into the measurement bandwidth
+	  can lead to inaccurate measurements.
+
+config ADXL372_LPF_DISABLE
+	bool "Disabled"
+
+config ADXL372_BW_200HZ
+	bool "200 Hz"
+
+config ADXL372_BW_400HZ
+	bool "400 Hz"
+
+config ADXL372_BW_800HZ
+	bool "800 Hz"
+
+config ADXL372_BW_1600HZ
+	bool "1600 Hz"
+
+config ADXL372_BW_3200HZ
+	bool "3200 Hz"
+
+endchoice
+
+choice
+	prompt "High-Pass Filter corner frequency"
+	default ADXL372_HPF_CORNER0
+	help
+	  The ADXL372 offers a one-pole, high-pass filter with a user
+	  selectable −3 dB frequency. Applications that do not require dc
+	  acceleration measurements can use the high-pass filter to minimize
+	  constant or slow varying offset errors including initial bias,
+	  bias drift due to temperature, and bias drift due to supply voltage
+
+config ADXL372_HPF_DISABLE
+	bool "Disabled"
+
+config ADXL372_HPF_CORNER0
+	bool "ODR/210"
+
+config ADXL372_HPF_CORNER1
+	bool "ODR/411"
+
+config ADXL372_HPF_CORNER2
+	bool "ODR/812"
+
+config ADXL372_HPF_CORNER3
+	bool "ODR/1616"
+
+endchoice
+
+
+config ADXL372_ACTIVITY_THRESHOLD
+	int "Activity threshold in mg"
+	range 0 200000
+	default 500
+	help
+	  Threshold for activity detection.
+
+config ADXL372_INACTIVITY_THRESHOLD
+	int "In-activity threshold in mg"
+	range 0 200000
+	default 400
+	help
+	  Threshold for in-activity detection.
+
+config ADXL372_ACTIVITY_TIME
+	int "Activity time"
+	range 0 255
+	default 1
+	help
+	  The activity timer implements a robust activity detection that
+	  minimizes false positive motion triggers. When the timer is used,
+	  only sustained motion can trigger activity detection.
+	  Number of multiples of 3.3 ms activity timer for which above threshold
+	  acceleration is required to detect activity. It is 3.3 ms per code
+	  for 6400 Hz ODR, and it is 6.6 ms per code for 3200 Hz ODR and below.
+
+config ADXL372_INACTIVITY_TIME
+	int "In-activity time"
+	range 0 255
+	default 2
+	help
+	  The time that all enabled axes must be lower than the inactivity
+	  threshold for an inactivity event to be detected. Number of multiples
+	  of 26 ms inactivity timer for which below threshold acceleration is
+	  required to detect inactivity. It is 26 ms per code for 3200 Hz ODR
+	  and below, and it is 13 ms per code for 6400 Hz ODR.
+
+config ADXL372_REFERENCED_ACTIVITY_DETECTION_MODE
+	bool "Use referenced activity/in-activity detection"
+	default y
+	help
+	  Activity detection can be configured as referenced or absolute.
+	  When using absolute activity detection, acceleration samples are
+	  compared directly to a user set threshold to determine whether
+	  motion is present. In many applications, it is advantageous for
+	  activity detection to be based not on an absolute threshold,
+	  but on a deviation from a reference point or orientation.
+
+choice
+	prompt "Trigger mode"
+	default ADXL372_TRIGGER_NONE
+	help
+	  Specify the type of triggering used by the driver.
+
+config ADXL372_TRIGGER_NONE
+	bool "No trigger"
+
+config ADXL372_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select ADXL372_TRIGGER
+
+config ADXL372_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select ADXL372_TRIGGER
+
+endchoice
+
+config ADXL372_TRIGGER
+	bool
+
+if !HAS_DTS_GPIO_DEVICE
+
+config ADXL372_GPIO_DEV_NAME
+	string "GPIO device"
+	default "GPIO_0"
+	depends on ADXL372_TRIGGER
+	help
+	  The GPIO device's name where the ADXL372 interrupt 1 or 2 pin is
+	  connected.
+
+config ADXL372_GPIO_PIN_NUM
+	int "Interrupt GPIO pin number"
+	default 0
+	depends on ADXL372_TRIGGER
+	help
+	  The GPIO pin number receiving the interrupt signal from the
+	  ADXL372 sensor.
+
+endif # !HAS_DTS_GPIO_DEVICE
+
+config ADXL372_THREAD_PRIORITY
+	int "Thread priority"
+	depends on ADXL372_TRIGGER_OWN_THREAD && ADXL372_TRIGGER
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config ADXL372_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on ADXL372_TRIGGER_OWN_THREAD && ADXL372_TRIGGER
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif #ADXL372

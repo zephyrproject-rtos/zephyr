@@ -7,7 +7,6 @@
 menuconfig PCA9633
 	bool "PCA9633 LED driver"
 	depends on I2C
-	default n
 	help
 	  Enable LED driver for PCA9633.
 

@@ -61,7 +61,8 @@ extern "C" {
  *
  * @param expression  Expression to evaluate.
  */
-#define NRFX_STATIC_ASSERT(expression)  static_assert(expression)
+#define NRFX_STATIC_ASSERT(expression) \
+        static_assert(expression, "assertion failed")
 
 //------------------------------------------------------------------------------
 
@@ -146,6 +147,79 @@ extern "C" {
 
 //------------------------------------------------------------------------------
 
+#include <atomic.h>
+
+/**
+ * @brief Atomic 32-bit unsigned type.
+ */
+#define nrfx_atomic_t  atomic_t
+
+/**
+ * @brief Macro for storing a value to an atomic object and returning its previous value.
+ *
+ * @param[in] p_data  Atomic memory pointer.
+ * @param[in] value   Value to store.
+ *
+ * @return Previous value of the atomic object.
+ */
+#define NRFX_ATOMIC_FETCH_STORE(p_data, value)  atomic_set(p_data, value)
+
+/**
+ * @brief Macro for running a bitwise OR operation on an atomic object and returning its previous value.
+ *
+ * @param[in] p_data  Atomic memory pointer.
+ * @param[in] value   Value of the second operand in the OR operation.
+ *
+ * @return Previous value of the atomic object.
+ */
+#define NRFX_ATOMIC_FETCH_OR(p_data, value)  atomic_or(p_data, value)
+
+/**
+ * @brief Macro for running a bitwise AND operation on an atomic object
+ *        and returning its previous value.
+ *
+ * @param[in] p_data  Atomic memory pointer.
+ * @param[in] value   Value of the second operand in the AND operation.
+ *
+ * @return Previous value of the atomic object.
+ */
+#define NRFX_ATOMIC_FETCH_AND(p_data, value)  atomic_and(p_data, value)
+
+/**
+ * @brief Macro for running a bitwise XOR operation on an atomic object
+ *        and returning its previous value.
+ *
+ * @param[in] p_data  Atomic memory pointer.
+ * @param[in] value   Value of the second operand in the XOR operation.
+ *
+ * @return Previous value of the atomic object.
+ */
+#define NRFX_ATOMIC_FETCH_XOR(p_data, value)  atomic_xor(p_data, value)
+
+/**
+ * @brief Macro for running an addition operation on an atomic object
+ *        and returning its previous value.
+ *
+ * @param[in] p_data  Atomic memory pointer.
+ * @param[in] value   Value of the second operand in the ADD operation.
+ *
+ * @return Previous value of the atomic object.
+ */
+#define NRFX_ATOMIC_FETCH_ADD(p_data, value)  atomic_add(p_data, value)
+
+/**
+ * @brief Macro for running a subtraction operation on an atomic object
+ *        and returning its previous value.
+ *
+ * @param[in] p_data  Atomic memory pointer.
+ * @param[in] value   Value of the second operand in the SUB operation.
+ *
+ * @return Previous value of the atomic object.
+ */
+#define NRFX_ATOMIC_FETCH_SUB(p_data, value)  atomic_sub(p_data, value)
+
+//------------------------------------------------------------------------------
+
 /**
  * @brief When set to a non-zero value, this macro specifies that the
  *        @ref nrfx_error_codes and the @ref nrfx_err_t type itself are defined
@@ -177,24 +251,6 @@ extern "C" {
 #define NRFX_TIMERS_USED        0
 
 //------------------------------------------------------------------------------
-
-/**
- * @brief Macro for getting the interrupt number assigned to a specific
- *        peripheral.
- *
- * In Nordic SoCs the IRQ number assigned to a peripheral is equal to the ID
- * of this peripheral, and there is a direct relationship between this ID and
- * the peripheral base address, i.e. the address of a fixed block of 0x1000
- * bytes of address space assigned to this peripheral.
- * See the chapter "Peripheral interface" (sections "Peripheral ID" and
- * "Interrupts") in the product specification of a given SoC.
- *
- * @param[in] base_addr  Peripheral base address.
- *
- * @return Interrupt number associated with the specified peripheral.
- */
-/* TODO - this macro should become a part of <nrfx_common.h> */
-#define NRFX_IRQ_NUMBER_GET(base_addr)  (uint8_t)((uint32_t)(base_addr) >> 12)
 
 /**
  * @brief Function helping to integrate nrfx IRQ handlers with IRQ_CONNECT.

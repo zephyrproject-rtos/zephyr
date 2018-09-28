@@ -39,8 +39,8 @@
  * Device Firmware Upgrade Version 1.1
  */
 
-#ifndef __USB_DFU_H__
-#define __USB_DFU_H__
+#ifndef ZEPHYR_INCLUDE_USB_CLASS_USB_DFU_H_
+#define ZEPHYR_INCLUDE_USB_CLASS_USB_DFU_H_
 
 /** DFU Class Subclass */
 #define DFU_SUBCLASS			0x01
@@ -119,4 +119,4 @@ enum dfu_state {
 	dfuERROR,
 };
 
-#endif /* __USB_DFU_H__ */
+#endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_DFU_H_ */

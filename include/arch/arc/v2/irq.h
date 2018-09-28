@@ -11,8 +11,8 @@
  * ARCv2 kernel interrupt handling interface. Included by arc/arch.h.
  */
 
-#ifndef _ARCH_ARC_V2_IRQ__H_
-#define _ARCH_ARC_V2_IRQ__H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_IRQ_H_
+#define ZEPHYR_INCLUDE_ARCH_ARC_V2_IRQ_H_
 
 #include <arch/arc/v2/aux_regs.h>
 #include <toolchain/common.h>
@@ -133,4 +133,4 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 }
 #endif
 
-#endif /* _ARCH_ARC_V2_IRQ__H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARC_V2_IRQ_H_ */

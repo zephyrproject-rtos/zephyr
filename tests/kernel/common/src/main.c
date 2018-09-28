@@ -20,6 +20,15 @@ extern void test_timeout_order(void);
 extern void test_clock_cycle(void);
 extern void test_clock_uptime(void);
 extern void test_multilib(void);
+
+/**
+ * @defgroup kernel_common_tests Common Tests
+ * @ingroup all_tests
+ * @{
+ * @}
+ *
+ */
+
 #ifdef CONFIG_ARM
 void test_bitfield(void)
 {
@@ -36,7 +45,13 @@ void test_printk(void)
 }
 #endif
 
-
+/**
+ * @brief Test sys_kernel_version_get() functionality
+ *
+ * @ingroup kernel_common_tests
+ *
+ * @see sys_kernel_version_get()
+ */
 static void test_version(void)
 {
 	u32_t version = sys_kernel_version_get();

@@ -1,0 +1,47 @@
+# Kconfig - Audio Codec configuration options
+
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig AUDIO
+	bool "Support for Audio"
+	help
+	  Enable support for Audio
+
+if AUDIO
+#
+# Audio Codec options
+#
+menuconfig AUDIO_CODEC
+	bool "Audio Codec Drivers"
+	help
+	  Enable Audio Codec Driver Configuration
+
+if AUDIO_CODEC
+
+config AUDIO_CODEC_INIT_PRIORITY
+	int "Init priority"
+	default 60
+	help
+	  Audio codec device driver initialization priority.
+
+config SYS_LOG_AUDIO_CODEC_LEVEL
+	int "Audio codec driver log level"
+	depends on SYS_LOG
+	default 0
+	help
+	  Sets log level for Audio codec drivers.
+	  Levels are:
+	  - 0 OFF, do not write
+	  - 1 ERROR, only write SYS_LOG_ERR
+	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
+	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+source "drivers/audio/Kconfig.tlv320dac"
+
+endif # AUDIO_CODEC
+endif # AUDIO

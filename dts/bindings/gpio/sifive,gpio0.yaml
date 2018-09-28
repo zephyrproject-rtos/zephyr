@@ -1,0 +1,33 @@
+#
+# Copyright (c) 2018, SiFive Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: SiFive GPIO
+id: sifive,gpio0
+version: 0.1
+
+description: >
+    This is a representation of the SiFive GPIO nodes
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "sifive,gpio0"
+      generation: define
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: int
+      generation: define
+      category: required
+
+...

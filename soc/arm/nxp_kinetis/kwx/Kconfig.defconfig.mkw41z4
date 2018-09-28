@@ -1,0 +1,103 @@
+# Kconfig - Kinetis KWx SoC configuration options
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_MKW41Z4
+
+config SOC
+	string
+	default "mkw41z4"
+
+config NUM_IRQS
+	int
+	default 32
+
+if RTC
+
+config RTC_MCUX
+	def_bool y
+
+endif # RTC
+
+if ADC
+
+config ADC_MCUX_ADC16
+	def_bool y
+
+endif # ADC
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_SIM
+	def_bool y
+
+endif # CLOCK_CONTROL
+
+if PINMUX
+
+config PINMUX_MCUX
+	def_bool y
+
+endif # PINMUX
+
+if GPIO
+
+config GPIO_MCUX
+	def_bool y
+
+endif # GPIO
+
+if SERIAL
+
+config UART_MCUX_LPUART
+	def_bool y
+
+endif # SERIAL
+
+if I2C
+
+config I2C_MCUX
+	def_bool y
+
+endif # I2C
+
+if SPI
+
+config SPI_MCUX_DSPI
+	def_bool y
+
+endif # SPI
+
+if ENTROPY_GENERATOR
+
+config ENTROPY_MCUX_TRNG
+	def_bool y
+
+endif # ENTROPY_GENERATOR
+
+if FLASH
+
+config SOC_FLASH_MCUX
+	def_bool y
+
+endif # FLASH
+
+if NETWORKING
+
+if !NET_L2_OPENTHREAD
+config NET_L2_IEEE802154
+	def_bool y
+endif # NET_L2_OPENTHREAD
+
+config IEEE802154_KW41Z
+	def_bool y
+
+config NET_CONFIG_IEEE802154_DEV_NAME
+	default IEEE802154_KW41Z_DRV_NAME
+
+endif # NETWORKING
+
+endif # SOC_MKW41Z4

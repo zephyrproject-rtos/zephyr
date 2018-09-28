@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,6 +78,14 @@ struct oma_tlv {
 	u8_t  type;
 	u16_t id; /* can be 8-bit or 16-bit when serialized */
 	u32_t length;
+};
+
+struct tlv_out_formatter_data {
+	struct net_buf *mark_frag_oi;
+	u16_t mark_pos_oi;
+	struct net_buf *mark_frag_ri;
+	u16_t mark_pos_ri;
+	u8_t writer_flags;
 };
 
 static u8_t get_len_type(const struct oma_tlv *tlv)
@@ -196,25 +205,14 @@ static size_t oma_tlv_put(const struct oma_tlv *tlv,
 	}
 
 	/* finally add the value */
-	if (value != NULL && tlv->length > 0) {
-		if (insert) {
-			if (!net_pkt_insert(out->out_cpkt->pkt, out->frag,
-					    out->offset, tlv->length, value,
-					    BUF_ALLOC_TIMEOUT)) {
-				/* TODO: Generate error? */
-				return 0;
-			}
-
-			out->offset += tlv->length;
-		} else {
-			out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
-						  out->offset, &out->offset,
-						  tlv->length, value,
-						  BUF_ALLOC_TIMEOUT);
-			if (!out->frag && out->offset == 0xffff) {
-				/* TODO: Generate error? */
-				return 0;
-			}
+	if (value != NULL && tlv->length > 0 && !insert) {
+		out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
+					  out->offset, &out->offset,
+					  tlv->length, value,
+					  BUF_ALLOC_TIMEOUT);
+		if (!out->frag && out->offset == 0xffff) {
+			/* TODO: Generate error? */
+			return 0;
 		}
 	}
 
@@ -300,51 +298,46 @@ error:
 	return 0;
 }
 
-static size_t put_begin_ri(struct lwm2m_output_context *out,
-			   struct lwm2m_obj_path *path)
+static size_t put_begin_tlv(struct lwm2m_output_context *out,
+			    struct net_buf **mark_frag, u16_t *mark_pos,
+			    u8_t *writer_flags, int writer_flag)
 {
-	/* set some flags in state */
-	out->writer_flags |= WRITER_RESOURCE_INSTANCE;
+	/* set flags */
+	*writer_flags |= writer_flag;
 
 	/*
 	 * store position for inserting TLV when we know the length
 	 */
-	out->mark_frag_ri = out->frag;
-	out->mark_pos_ri = out->offset;
+	*mark_frag = out->frag;
+	*mark_pos = out->offset;
+
 	return 0;
 }
 
-static size_t put_end_ri(struct lwm2m_output_context *out,
-			 struct lwm2m_obj_path *path)
+static size_t put_end_tlv(struct lwm2m_output_context *out,
+			  struct net_buf *mark_frag, u16_t mark_pos,
+			  u8_t *writer_flags, u8_t writer_flag,
+			  int tlv_type, int tlv_id)
 {
 	struct oma_tlv tlv;
 	struct net_buf *tmp_frag;
 	u16_t tmp_pos;
 	u32_t len = 0;
 
-	out->writer_flags &= ~WRITER_RESOURCE_INSTANCE;
+	*writer_flags &= ~writer_flag;
 
-	/* loop through buffers and add lengths */
-	tmp_frag = out->mark_frag_ri;
-	tmp_pos = out->mark_pos_ri;
-	while (tmp_frag != out->frag) {
-		len += tmp_frag->len - tmp_pos;
-		tmp_pos = 0;
-	}
-
-	len += out->offset - tmp_pos;
+	len = net_buf_frags_len(mark_frag) - mark_pos;
 
 	/* backup out location */
 	tmp_frag = out->frag;
 	tmp_pos = out->offset;
 
 	/* use stored location */
-	out->frag = out->mark_frag_ri;
-	out->offset = out->mark_pos_ri;
+	out->frag = mark_frag;
+	out->offset = mark_pos;
 
-	/* update the length */
-	tlv_setup(&tlv, OMA_TLV_TYPE_MULTI_RESOURCE, path->res_id,
-		  len);
+	/* set instance length */
+	tlv_setup(&tlv, tlv_type, tlv_id, len);
 	len = oma_tlv_put(&tlv, out, NULL, true) - tlv.length;
 
 	/* restore out location + newly inserted */
@@ -354,14 +347,78 @@ static size_t put_end_ri(struct lwm2m_output_context *out,
 	return 0;
 }
 
+static size_t put_begin_oi(struct lwm2m_output_context *out,
+			   struct lwm2m_obj_path *path)
+{
+	struct tlv_out_formatter_data *fd;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
+	return put_begin_tlv(out, &fd->mark_frag_oi, &fd->mark_pos_oi,
+			     &fd->writer_flags, 0);
+}
+
+static size_t put_end_oi(struct lwm2m_output_context *out,
+			 struct lwm2m_obj_path *path)
+{
+	struct tlv_out_formatter_data *fd;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
+	return put_end_tlv(out, fd->mark_frag_oi, fd->mark_pos_oi,
+			   &fd->writer_flags, 0,
+			   OMA_TLV_TYPE_OBJECT_INSTANCE, path->obj_inst_id);
+}
+
+static size_t put_begin_ri(struct lwm2m_output_context *out,
+			   struct lwm2m_obj_path *path)
+{
+	struct tlv_out_formatter_data *fd;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
+	return put_begin_tlv(out, &fd->mark_frag_ri, &fd->mark_pos_ri,
+			     &fd->writer_flags, WRITER_RESOURCE_INSTANCE);
+}
+
+static size_t put_end_ri(struct lwm2m_output_context *out,
+			 struct lwm2m_obj_path *path)
+{
+	struct tlv_out_formatter_data *fd;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
+	return put_end_tlv(out, fd->mark_frag_ri, fd->mark_pos_ri,
+			   &fd->writer_flags, WRITER_RESOURCE_INSTANCE,
+			   OMA_TLV_TYPE_MULTI_RESOURCE, path->res_id);
+}
+
 static size_t put_s8(struct lwm2m_output_context *out,
 		     struct lwm2m_obj_path *path, s8_t value)
 {
+	struct tlv_out_formatter_data *fd;
 	size_t len;
 	struct oma_tlv tlv;
 
-	tlv_setup(&tlv, tlv_calc_type(out->writer_flags),
-		  tlv_calc_id(out->writer_flags, path), sizeof(value));
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
+	tlv_setup(&tlv, tlv_calc_type(fd->writer_flags),
+		  tlv_calc_id(fd->writer_flags, path), sizeof(value));
 
 	len = oma_tlv_put(&tlv, out, (u8_t *)&value, false);
 	return len;
@@ -370,13 +427,19 @@ static size_t put_s8(struct lwm2m_output_context *out,
 static size_t put_s16(struct lwm2m_output_context *out,
 		      struct lwm2m_obj_path *path, s16_t value)
 {
+	struct tlv_out_formatter_data *fd;
 	size_t len;
 	struct oma_tlv tlv;
 	s16_t net_value;
 
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
 	net_value = sys_cpu_to_be16(value);
-	tlv_setup(&tlv, tlv_calc_type(out->writer_flags),
-		  tlv_calc_id(out->writer_flags, path), sizeof(net_value));
+	tlv_setup(&tlv, tlv_calc_type(fd->writer_flags),
+		  tlv_calc_id(fd->writer_flags, path), sizeof(net_value));
 
 	len = oma_tlv_put(&tlv, out, (u8_t *)&net_value, false);
 	return len;
@@ -385,13 +448,19 @@ static size_t put_s16(struct lwm2m_output_context *out,
 static size_t put_s32(struct lwm2m_output_context *out,
 			struct lwm2m_obj_path *path, s32_t value)
 {
+	struct tlv_out_formatter_data *fd;
 	size_t len;
 	struct oma_tlv tlv;
 	s32_t net_value;
 
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
 	net_value = sys_cpu_to_be32(value);
-	tlv_setup(&tlv, tlv_calc_type(out->writer_flags),
-		  tlv_calc_id(out->writer_flags, path), sizeof(net_value));
+	tlv_setup(&tlv, tlv_calc_type(fd->writer_flags),
+		  tlv_calc_id(fd->writer_flags, path), sizeof(net_value));
 
 	len = oma_tlv_put(&tlv, out, (u8_t *)&net_value, false);
 	return len;
@@ -400,13 +469,19 @@ static size_t put_s32(struct lwm2m_output_context *out,
 static size_t put_s64(struct lwm2m_output_context *out,
 			struct lwm2m_obj_path *path, s64_t value)
 {
+	struct tlv_out_formatter_data *fd;
 	size_t len;
 	struct oma_tlv tlv;
 	s64_t net_value;
 
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
 	net_value = sys_cpu_to_be64(value);
-	tlv_setup(&tlv, tlv_calc_type(out->writer_flags),
-		  tlv_calc_id(out->writer_flags, path), sizeof(net_value));
+	tlv_setup(&tlv, tlv_calc_type(fd->writer_flags),
+		  tlv_calc_id(fd->writer_flags, path), sizeof(net_value));
 
 	len = oma_tlv_put(&tlv, out, (u8_t *)&net_value, false);
 	return len;
@@ -416,10 +491,16 @@ static size_t put_string(struct lwm2m_output_context *out,
 			 struct lwm2m_obj_path *path,
 			 char *buf, size_t buflen)
 {
+	struct tlv_out_formatter_data *fd;
 	size_t len;
 	struct oma_tlv tlv;
 
-	tlv_setup(&tlv, tlv_calc_type(out->writer_flags),
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
+	tlv_setup(&tlv, tlv_calc_type(fd->writer_flags),
 		  path->res_id, (u32_t)buflen);
 	len = oma_tlv_put(&tlv, out, (u8_t *)buf, false);
 	return len;
@@ -430,6 +511,7 @@ static size_t put_float32fix(struct lwm2m_output_context *out,
 			     struct lwm2m_obj_path *path,
 			     float32_value_t *value)
 {
+	struct tlv_out_formatter_data *fd;
 	size_t len;
 	struct oma_tlv tlv;
 	int e = 0;
@@ -446,6 +528,11 @@ static size_t put_float32fix(struct lwm2m_output_context *out,
 	 * HACK BELOW: hard code the decimal mask to 0 (whole number)
 	 */
 	int bits = 0;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
 
 	v = value->val1;
 	if (v < 0) {
@@ -475,8 +562,8 @@ static size_t put_float32fix(struct lwm2m_output_context *out,
 	b[2] = (val >> 8) & 0xff;
 	b[3] = val & 0xff;
 
-	tlv_setup(&tlv, tlv_calc_type(out->writer_flags),
-		  tlv_calc_id(out->writer_flags, path), 4);
+	tlv_setup(&tlv, tlv_calc_type(fd->writer_flags),
+		  tlv_calc_id(fd->writer_flags, path), 4);
 	len = oma_tlv_put(&tlv, out, b, false);
 	return len;
 }
@@ -485,15 +572,21 @@ static size_t put_float64fix(struct lwm2m_output_context *out,
 			     struct lwm2m_obj_path *path,
 			     float64_value_t *value)
 {
+	struct tlv_out_formatter_data *fd;
 	size_t len;
 	s64_t binary64 = 0, net_binary64 = 0;
 	struct oma_tlv tlv;
 
 	/* TODO */
 
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
 	net_binary64 = sys_cpu_to_be64(binary64);
-	tlv_setup(&tlv, tlv_calc_type(out->writer_flags),
-		  tlv_calc_id(out->writer_flags, path),
+	tlv_setup(&tlv, tlv_calc_type(fd->writer_flags),
+		  tlv_calc_id(fd->writer_flags, path),
 		  sizeof(net_binary64));
 	len = oma_tlv_put(&tlv, out, (u8_t *)&net_binary64, false);
 	return len;
@@ -692,30 +785,58 @@ static size_t get_opaque(struct lwm2m_input_context *in,
 }
 
 const struct lwm2m_writer oma_tlv_writer = {
-	NULL,
-	NULL,
-	put_begin_ri,
-	put_end_ri,
-	put_s8,
-	put_s16,
-	put_s32,
-	put_s64,
-	put_string,
-	put_float32fix,
-	put_float64fix,
-	put_bool,
-	NULL
+	.put_begin_oi = put_begin_oi,
+	.put_end_oi = put_end_oi,
+	.put_begin_ri = put_begin_ri,
+	.put_end_ri = put_end_ri,
+	.put_s8 = put_s8,
+	.put_s16 = put_s16,
+	.put_s32 = put_s32,
+	.put_s64 = put_s64,
+	.put_string = put_string,
+	.put_float32fix = put_float32fix,
+	.put_float64fix = put_float64fix,
+	.put_bool = put_bool,
 };
 
 const struct lwm2m_reader oma_tlv_reader = {
-	get_s32,
-	get_s64,
-	get_string,
-	get_float32fix,
-	get_float64fix,
-	get_bool,
-	get_opaque
+	.get_s32 = get_s32,
+	.get_s64 = get_s64,
+	.get_string = get_string,
+	.get_float32fix = get_float32fix,
+	.get_float64fix = get_float64fix,
+	.get_bool = get_bool,
+	.get_opaque = get_opaque,
 };
+
+int do_read_op_tlv(struct lwm2m_engine_obj *obj,
+		   struct lwm2m_engine_context *context,
+		   int content_format)
+{
+	struct tlv_out_formatter_data fd;
+	int ret;
+
+	(void)memset(&fd, 0, sizeof(fd));
+	engine_set_out_user_data(context->out, &fd);
+	ret = lwm2m_perform_read_op(obj, context, content_format);
+	engine_clear_out_user_data(context->out);
+	return ret;
+}
+
+static int do_write_op_tlv_dummy_read(struct lwm2m_engine_context *context)
+{
+	struct lwm2m_input_context *in = context->in;
+	struct oma_tlv tlv;
+	u8_t read_char;
+
+	oma_tlv_get(&tlv, in, false);
+	while (in->frag && tlv.length--) {
+		in->frag = net_frag_read_u8(in->frag, in->offset, &in->offset,
+					    &read_char);
+	}
+
+	return 0;
+}
 
 static int do_write_op_tlv_item(struct lwm2m_engine_context *context)
 {
@@ -727,26 +848,24 @@ static int do_write_op_tlv_item(struct lwm2m_engine_context *context)
 
 	ret = lwm2m_get_or_create_engine_obj(context, &obj_inst, &created);
 	if (ret < 0) {
-		return ret;
+		goto error;
 	}
 
 	obj_field = lwm2m_get_engine_obj_field(obj_inst->obj,
 					       context->path->res_id);
-	/* if obj_field is not found, treat as an optional resource */
 	if (!obj_field) {
-		if (context->operation == LWM2M_OP_CREATE) {
-			return -ENOTSUP;
-		}
-
-		return -ENOENT;
+		ret = -ENOENT;
+		goto error;
 	}
 
 	if (!LWM2M_HAS_PERM(obj_field, LWM2M_PERM_W)) {
-		return -EPERM;
+		ret = -EPERM;
+		goto error;
 	}
 
 	if (!obj_inst->resources || obj_inst->resource_count == 0) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto error;
 	}
 
 	for (i = 0; i < obj_inst->resource_count; i++) {
@@ -757,10 +876,29 @@ static int do_write_op_tlv_item(struct lwm2m_engine_context *context)
 	}
 
 	if (!res) {
-		return -ENOENT;
+		/* if OPTIONAL and OP_CREATE use ENOTSUP */
+		if (context->operation == LWM2M_OP_CREATE &&
+		    LWM2M_HAS_PERM(obj_field, BIT(LWM2M_FLAG_OPTIONAL))) {
+			ret = -ENOTSUP;
+			goto error;
+		}
+
+		ret = -ENOENT;
+		goto error;
 	}
 
-	return lwm2m_write_handler(obj_inst, res, obj_field, context);
+	ret = lwm2m_write_handler(obj_inst, res, obj_field, context);
+	if (ret == -EACCES || ret == -ENOENT) {
+		/* if read-only or non-existent data buffer move on */
+		do_write_op_tlv_dummy_read(context);
+		ret = 0;
+	}
+
+	return ret;
+
+error:
+	do_write_op_tlv_dummy_read(context);
+	return ret;
 }
 
 int do_write_op_tlv(struct lwm2m_engine_obj *obj,

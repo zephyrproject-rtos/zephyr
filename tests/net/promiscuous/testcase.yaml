@@ -1,0 +1,7 @@
+common:
+  platform_whitelist: native_posix qemu_x86 qemu_cortex_m3
+tests:
+  net.promisc:
+    min_ram: 16
+    tags: net promisc
+    depends_on: netif

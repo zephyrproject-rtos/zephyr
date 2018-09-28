@@ -94,8 +94,8 @@ static int flash_block_write(struct flash_img_context *ctx, off_t offset,
 
 	if (finished && ctx->buf_bytes > 0) {
 		/* pad the rest of ctx->buf and write it out */
-		memset(ctx->buf + ctx->buf_bytes, 0xFF,
-		       CONFIG_IMG_BLOCK_BUF_SIZE - ctx->buf_bytes);
+		(void)memset(ctx->buf + ctx->buf_bytes, 0xFF,
+			     CONFIG_IMG_BLOCK_BUF_SIZE - ctx->buf_bytes);
 
 		flash_write_protection_set(ctx->dev, false);
 		rc = flash_write(ctx->dev, offset + ctx->bytes_written,

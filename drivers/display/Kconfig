@@ -7,8 +7,7 @@
 #
 
 menuconfig DISPLAY
-	bool
-	prompt "Display Drivers"
+	bool "Display Drivers"
 	help
 	  Enable display drivers
 

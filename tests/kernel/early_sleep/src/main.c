@@ -8,6 +8,10 @@
  * @file
  * @brief Test early sleep functionality
  *
+ * @defgroup kernel_earlysleep_tests Early Sleep Tests
+ *
+ * @ingroup all_tests
+ *
  * This test verifies that k_sleep() can be used to put the calling thread to
  * sleep for a specified number of ticks during system initialization.  In this
  * test we are calling k_sleep() at POST_KERNEL and APPLICATION level
@@ -16,6 +20,8 @@
  * Note: We can not call k_sleep() during PRE_KERNEL1 or PRE_KERNEL2 level
  * because the core kernel objects and devices initialization happens at these
  * levels.
+ * @{
+ * @}
  */
 
 #include <init.h>
@@ -80,6 +86,8 @@ SYS_INIT(test_early_sleep_app, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 /**
  * @brief Test early sleep
+ *
+ * @ingroup kernel_earlysleep_tests
  *
  * @see k_sleep()
  */

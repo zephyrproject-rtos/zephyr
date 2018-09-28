@@ -124,6 +124,7 @@ static inline void adv_send(struct net_buf *buf)
 		param.options = 0;
 	}
 
+	param.id = BT_ID_DEFAULT;
 	param.interval_min = ADV_SCAN_UNIT(adv_int);
 	param.interval_max = param.interval_min;
 
@@ -220,7 +221,7 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 	adv = get_id(net_buf_id(buf));
 	BT_MESH_ADV(buf) = adv;
 
-	memset(adv, 0, sizeof(*adv));
+	(void)memset(adv, 0, sizeof(*adv));
 
 	adv->type         = type;
 	adv->xmit         = xmit;

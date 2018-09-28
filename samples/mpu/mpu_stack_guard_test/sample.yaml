@@ -11,7 +11,7 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "Fatal fault in thread 0x[0-9a-f]+! Aborting."
+        - "Fatal fault in .*thread"
         - "STACK_ALIGN.*"
         - "Canary Initial Value = 0x[0-9a-f]+ threads 0x[0-9a-f]+"
   test_stack_guard:
@@ -20,3 +20,10 @@ tests:
     filter: CONFIG_MPU_STACK_GUARD
     tags: apps
     harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Fatal fault in thread 0x[0-9a-f]+! Aborting."
+        - "STACK_ALIGN.*"
+        - "Canary Initial Value = 0x[0-9a-f]+ threads 0x[0-9a-f]+"

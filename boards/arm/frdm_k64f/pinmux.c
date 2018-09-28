@@ -39,6 +39,14 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
+#ifdef CONFIG_UART_MCUX_2
+	/* UART2 RX, TX */
+	pinmux_pin_set(portd, 0, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(portd, 1, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(portd, 2, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAlt3));
+#endif
+
 #ifdef CONFIG_UART_MCUX_3
 	/* UART3 RX, TX */
 	pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
@@ -57,6 +65,27 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portb, 22, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(porte, 26, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portb, 21, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
+#ifdef CONFIG_MODEM_WNCM14A2A
+	/* WNC-M14A2A Modem POWER_ON */
+	pinmux_pin_set(portb,  9, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	/* WNC-M14A2A Shield PMOD_D1 */
+	pinmux_pin_set(portb, 10, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	/* WNC-M14A2A Shield PMOD_D2 */
+	pinmux_pin_set(portb, 11, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	/* WNC-M14A2A Modem WWAN_STATE */
+	pinmux_pin_set(portb, 23, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	/* WNC-M14A2A Modem WAKEUP_ENABLE */
+	pinmux_pin_set(portc,  2, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	/* WNC-M14A2A Modem HTS221_DRDY */
+	pinmux_pin_set(portc,  3, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	/* WNC-M14A2A Shield LEVEL_TRANSFORM_ENABLE */
+	pinmux_pin_set(portc,  4, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	/* WNC-M14A2A Modem RESET */
+	pinmux_pin_set(portc, 12, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	/* WNC-M14A2A Modem BOOT_MODE_SELECT */
+	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
 
 #ifdef CONFIG_IEEE802154_MCR20A
 	/* FRDM-MCR20A Reset (D5) */

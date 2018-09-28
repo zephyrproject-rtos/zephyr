@@ -34,6 +34,13 @@
 #include "settings.h"
 #include "transport.h"
 
+/* The transport layer needs at least three buffers for itself to avoid
+ * deadlocks. Ensure that there are a sufficient number of advertising
+ * buffers available compared to the maximum supported outgoing segment
+ * count.
+ */
+BUILD_ASSERT(CONFIG_BT_MESH_ADV_BUF_COUNT >= (CONFIG_BT_MESH_TX_SEG_MAX + 3));
+
 #define AID_MASK                    ((u8_t)(BIT_MASK(6)))
 
 #define SEG(data)                   ((data)[0] >> 7)
@@ -64,7 +71,7 @@
 
 static struct seg_tx {
 	struct bt_mesh_subnet   *sub;
-	struct net_buf          *seg[BT_MESH_TX_SEG_COUNT];
+	struct net_buf          *seg[CONFIG_BT_MESH_TX_SEG_MAX];
 	u64_t                    seq_auth;
 	u16_t                    dst;
 	u8_t                     seg_n:5,       /* Last segment index */
@@ -647,7 +654,8 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u32_t seq, u8_t hdr,
 					  rx->ctx.recv_dst, seq,
 					  BT_MESH_NET_IVI_RX(rx));
 		if (err) {
-			BT_WARN("Unable to decrypt with AppKey %u", i);
+			BT_WARN("Unable to decrypt with AppKey 0x%03x",
+				key->app_idx);
 			continue;
 
 		}
@@ -1182,8 +1190,23 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 		return -EINVAL;
 	}
 
+	/* According to Mesh 1.0 specification:
+	 * "The SeqAuth is composed of the IV Index and the sequence number
+	 *  (SEQ) of the first segment"
+	 *
+	 * Therefore we need to calculate very first SEQ in order to find
+	 * seqAuth. We can calculate as below:
+	 *
+	 * SEQ(0) = SEQ(n) - (delta between seqZero and SEQ(n) by looking into
+	 * 14 least significant bits of SEQ(n))
+	 *
+	 * Mentioned delta shall be >= 0, if it is not then seq_auth will
+	 * be broken and it will be verified by the code below.
+	 */
 	*seq_auth = SEQ_AUTH(BT_MESH_NET_IVI_RX(net_rx),
-			     (net_rx->seq & 0xffffe000) | seq_zero);
+			     (net_rx->seq -
+			      ((((net_rx->seq & BIT_MASK(14)) - seq_zero)) &
+			       BIT_MASK(13))));
 
 	/* Look for old RX sessions */
 	rx = seg_rx_find(net_rx, seq_auth);
@@ -1420,7 +1443,7 @@ void bt_mesh_rx_reset(void)
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_clear_rpl();
 	} else {
-		memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
+		(void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
 	}
 }
 
@@ -1454,5 +1477,5 @@ void bt_mesh_trans_init(void)
 void bt_mesh_rpl_clear(void)
 {
 	BT_DBG("");
-	memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
+	(void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
 }

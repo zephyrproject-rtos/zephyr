@@ -29,6 +29,8 @@
 #include "ieee802154_frame.h"
 #include "ieee802154_security.h"
 
+#define BUF_TIMEOUT K_MSEC(50)
+
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 const u8_t level_2_tag_size[4] = {
 	0,
@@ -821,12 +823,12 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 	struct net_buf *frag;
 	u8_t *p_buf;
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(0, BUF_TIMEOUT);
 	if (!pkt) {
 		return NULL;
 	}
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
+	frag = net_pkt_get_frag(pkt, BUF_TIMEOUT);
 	if (!frag) {
 		goto error;
 	}
@@ -923,7 +925,7 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_ll(pkt),
 				     net_pkt_ll_reserve(pkt),
 				     net_pkt_get_len(pkt),
-				     net_pkt_ll_src(pkt)->addr,
+				     net_pkt_lladdr_src(pkt)->addr,
 				     sys_le32_to_cpu(
 					mpdu->mhr.aux_sec->frame_counter))) {
 		NET_ERR("Could not decipher the frame");

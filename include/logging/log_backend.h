@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef LOG_BACKEND_H
-#define LOG_BACKEND_H
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_H_
 
 #include <logging/log_msg.h>
 #include <assert.h>
@@ -30,6 +30,7 @@ struct log_backend_api {
 		    struct log_msg *msg);
 
 	void (*panic)(const struct log_backend *const backend);
+	void (*init)(void);
 };
 
 /**
@@ -147,7 +148,7 @@ static inline const struct log_backend *log_backend_get(u32_t idx)
  */
 static inline int log_backend_count_get(void)
 {
-	return ((void *)__log_backends_end - (void *)__log_backends_start) /
+	return ((u8_t *)__log_backends_end - (u8_t *)__log_backends_start) /
 			sizeof(struct log_backend);
 }
 
@@ -199,4 +200,4 @@ static inline bool log_backend_is_active(
 }
 #endif
 
-#endif /* LOG_BACKEND_H */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_H_ */

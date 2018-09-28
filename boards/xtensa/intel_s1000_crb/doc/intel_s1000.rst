@@ -39,7 +39,7 @@ The Intel S1000 contains the following:
 
   - Host I/O: SPI or USB 2.0 High-speed device
   - Microphone: I2S/TDM 9.6 MHz max. bit clock
-  - Digital Microphone: 4 stereo PDM ports upto 4.8 MHz clock
+  - Digital Microphone: 4 stereo PDM ports up to 4.8 MHz clock
   - Speaker: I2S/TDM 9.6 MHz max. bit clock
   - Instrumentation: I2C master @ 100/400 KHz
   - Debug: UART up to 2.4 Mbaud/s

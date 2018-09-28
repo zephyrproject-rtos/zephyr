@@ -1,34 +1,18 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * All rights reserved.
+ * 
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_flexspi.h"
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.flexspi"
+#endif
+
 
 /*******************************************************************************
  * Definitations
@@ -97,8 +81,10 @@ status_t FLEXSPI_CheckAndClearError(FLEXSPI_Type *base, uint32_t status);
  * Variables
  ******************************************************************************/
 
+#if defined(FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ) && FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ
 /*! @brief Pointers to flexspi handles for each instance. */
 static void *s_flexspiHandle[FSL_FEATURE_SOC_FLEXSPI_COUNT];
+#endif
 
 /*! @brief Pointers to flexspi bases for each instance. */
 static FLEXSPI_Type *const s_flexspiBases[] = FLEXSPI_BASE_PTRS;
@@ -247,7 +233,7 @@ void FLEXSPI_Init(FLEXSPI_Type *base, const flexspi_config_t *config)
                   FLEXSPI_MCR0_HSEN(config->enableHalfSpeedAccess) |
                   FLEXSPI_MCR0_COMBINATIONEN(config->enableCombination) |
                   FLEXSPI_MCR0_ATDFEN(config->ahbConfig.enableAHBWriteIpTxFifo) |
-                  FLEXSPI_MCR0_ATDFEN(config->ahbConfig.enableAHBWriteIpRxFifo) | FLEXSPI_MCR0_MDIS_MASK;
+                  FLEXSPI_MCR0_ARDFEN(config->ahbConfig.enableAHBWriteIpRxFifo) | FLEXSPI_MCR0_MDIS_MASK;
     base->MCR0 = configValue;
 
     /* Configure MCR1 configurations. */
@@ -256,28 +242,45 @@ void FLEXSPI_Init(FLEXSPI_Type *base, const flexspi_config_t *config)
     base->MCR1 = configValue;
 
     /* Configure MCR2 configurations. */
-    configValue = FLEXSPI_MCR2_RESUMEWAIT(config->ahbConfig.resumeWaitCycle) |
-                  FLEXSPI_MCR2_SCKBDIFFOPT(config->enableSckBDiffOpt) |
-                  FLEXSPI_MCR2_SAMEDEVICEEN(config->enableSameConfigForAll) |
-                  FLEXSPI_MCR2_CLRAHBBUFOPT(config->ahbConfig.enableClearAHBBufferOpt);
+    configValue = base->MCR2;
+    configValue &= ~(FLEXSPI_MCR2_RESUMEWAIT_MASK | FLEXSPI_MCR2_SCKBDIFFOPT_MASK | FLEXSPI_MCR2_SAMEDEVICEEN_MASK |
+                     FLEXSPI_MCR2_CLRAHBBUFOPT_MASK);
+    configValue |= FLEXSPI_MCR2_RESUMEWAIT(config->ahbConfig.resumeWaitCycle) |
+                   FLEXSPI_MCR2_SCKBDIFFOPT(config->enableSckBDiffOpt) |
+                   FLEXSPI_MCR2_SAMEDEVICEEN(config->enableSameConfigForAll) |
+                   FLEXSPI_MCR2_CLRAHBBUFOPT(config->ahbConfig.enableClearAHBBufferOpt);
+
     base->MCR2 = configValue;
 
     /* Configure AHB control items. */
-    base->AHBCR = FLEXSPI_AHBCR_PREFETCHEN(config->ahbConfig.enableAHBPrefetch) |
-                  FLEXSPI_AHBCR_BUFFERABLEEN(config->ahbConfig.enableAHBBufferable) |
-                  FLEXSPI_AHBCR_CACHABLEEN(config->ahbConfig.enableAHBCachable);
+    configValue = base->AHBCR;
+    configValue &= ~(FLEXSPI_AHBCR_READADDROPT_MASK | FLEXSPI_AHBCR_PREFETCHEN_MASK | FLEXSPI_AHBCR_BUFFERABLEEN_MASK |
+                     FLEXSPI_AHBCR_CACHABLEEN_MASK);
+    configValue |= FLEXSPI_AHBCR_READADDROPT(config->ahbConfig.enableReadAddressOpt) |
+                   FLEXSPI_AHBCR_PREFETCHEN(config->ahbConfig.enableAHBPrefetch) |
+                   FLEXSPI_AHBCR_BUFFERABLEEN(config->ahbConfig.enableAHBBufferable) |
+                   FLEXSPI_AHBCR_CACHABLEEN(config->ahbConfig.enableAHBCachable);
+    base->AHBCR = configValue;
 
     /* Configure AHB rx buffers. */
-    for (i = 0; i < FSL_FEATURE_FLEXSPI_AHB_BUFFER_COUNT - 1; i++)
+    for (i = 0; i < FSL_FEATURE_FLEXSPI_AHB_BUFFER_COUNT; i++)
     {
-        base->AHBRXBUFCR0[i] = FLEXSPI_AHBRXBUFCR0_PRIORITY(config->ahbConfig.buffer[i].priority) |
-                               FLEXSPI_AHBRXBUFCR0_MSTRID(config->ahbConfig.buffer[i].masterIndex) |
-                               FLEXSPI_AHBRXBUFCR0_BUFSZ(config->ahbConfig.buffer[i].bufferSize / 8);
+        configValue = base->AHBRXBUFCR0[i];
+
+        configValue &= ~(FLEXSPI_AHBRXBUFCR0_PREFETCHEN_MASK | FLEXSPI_AHBRXBUFCR0_PRIORITY_MASK |
+                         FLEXSPI_AHBRXBUFCR0_MSTRID_MASK | FLEXSPI_AHBRXBUFCR0_BUFSZ_MASK);
+        configValue |= FLEXSPI_AHBRXBUFCR0_PREFETCHEN(config->ahbConfig.buffer[i].enablePrefetch) |
+                       FLEXSPI_AHBRXBUFCR0_PRIORITY(config->ahbConfig.buffer[i].priority) |
+                       FLEXSPI_AHBRXBUFCR0_MSTRID(config->ahbConfig.buffer[i].masterIndex) |
+                       FLEXSPI_AHBRXBUFCR0_BUFSZ(config->ahbConfig.buffer[i].bufferSize / 8);
+        base->AHBRXBUFCR0[i] = configValue;
     }
 
     /* Configure IP Fifo watermarks. */
+    base->IPRXFCR &= ~FLEXSPI_IPRXFCR_RXWMRK_MASK;
     base->IPRXFCR |= FLEXSPI_IPRXFCR_RXWMRK(config->rxWatermark / 8 - 1);
-    base->IPTXFCR |= FLEXSPI_IPRXFCR_RXWMRK(config->txWatermark / 8 - 1);
+    base->IPTXFCR &= ~FLEXSPI_IPTXFCR_TXWMRK_MASK;
+    base->IPTXFCR |= FLEXSPI_IPTXFCR_TXWMRK(config->txWatermark / 8 - 1);
 }
 
 void FLEXSPI_GetDefaultConfig(flexspi_config_t *config)
@@ -299,7 +302,12 @@ void FLEXSPI_GetDefaultConfig(flexspi_config_t *config)
     config->ahbConfig.ahbBusTimeoutCycle = 0xFFFFU;
     config->ahbConfig.resumeWaitCycle = 0x20U;
     memset(config->ahbConfig.buffer, 0, sizeof(config->ahbConfig.buffer));
+    for (uint8_t i = 0; i < FSL_FEATURE_FLEXSPI_AHB_BUFFER_COUNT; i++)
+    {
+        config->ahbConfig.buffer[i].bufferSize = 256; /* Default buffer size 256 bytes*/
+    }
     config->ahbConfig.enableClearAHBBufferOpt = false;
+    config->ahbConfig.enableReadAddressOpt = false;
     config->ahbConfig.enableAHBPrefetch = false;
     config->ahbConfig.enableAHBBufferable = false;
     config->ahbConfig.enableAHBCachable = false;
@@ -358,6 +366,15 @@ void FLEXSPI_SetFlashConfig(FLEXSPI_Type *base, flexspi_device_config_t *config,
     base->DLLCR[index] = FLEXSPI_ConfigureDll(base, config);
 
     /* Configure write mask. */
+    if (config->enableWriteMask)
+    {
+        base->FLSHCR4 &= ~FLEXSPI_FLSHCR4_WMOPT1_MASK;
+    }
+    else
+    {
+        base->FLSHCR4 |= FLEXSPI_FLSHCR4_WMOPT1_MASK;
+    }
+
     if (index == 0) /*PortA*/
     {
         base->FLSHCR4 &= ~FLEXSPI_FLSHCR4_WMENA_MASK;
@@ -591,8 +608,10 @@ void FLEXSPI_TransferCreateHandle(FLEXSPI_Type *base,
     handle->completionCallback = callback;
     handle->userData = userData;
 
+#if defined(FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ) && FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ
     /* Save the context in global variables to support the double weak mechanism. */
     s_flexspiHandle[instance] = handle;
+#endif
 
     /* Enable NVIC interrupt. */
     EnableIRQ(s_flexspiIrqs[instance]);
@@ -785,6 +804,7 @@ void FLEXSPI_TransferHandleIRQ(FLEXSPI_Type *base, flexspi_handle_t *handle)
     }
 }
 
+#if defined(FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ) && FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ
 #if defined(FLEXSPI)
 void FLEXSPI_DriverIRQHandler(void)
 {
@@ -818,4 +838,29 @@ void FLEXSPI1_DriverIRQHandler(void)
     __DSB();
 #endif
 }
+#endif
+
+#if defined(LSIO__FLEXSPI0)
+void LSIO_OCTASPI0_INT_DriverIRQHandler(void)
+{
+    FLEXSPI_TransferHandleIRQ(LSIO__FLEXSPI0, s_flexspiHandle[0]);
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
+}
+#endif
+#if defined(LSIO__FLEXSPI1)
+void LSIO_OCTASPI1_INT_DriverIRQHandler(void)
+{
+    FLEXSPI_TransferHandleIRQ(LSIO__FLEXSPI1, s_flexspiHandle[1]);
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
+}
+#endif
+
 #endif

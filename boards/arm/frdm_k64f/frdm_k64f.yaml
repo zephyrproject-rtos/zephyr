@@ -4,11 +4,12 @@ type: mcu
 arch: arm
 toolchain:
   - zephyr
-  - gccarmemb
+  - gnuarmemb
 supported:
   - netif:eth
   - adc
   - i2c
+  - nvs
   - spi
   - gpio
   - usb_device

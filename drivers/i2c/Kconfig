@@ -16,6 +16,18 @@ menuconfig I2C
 
 if I2C
 
+# Include these first so that any properties (e.g. defaults) below can be
+# overriden (by defining symbols in multiple locations)
+source "drivers/i2c/Kconfig.dw"
+source "drivers/i2c/Kconfig.esp32"
+source "drivers/i2c/slave/Kconfig"
+source "drivers/i2c/Kconfig.gpio"
+source "drivers/i2c/Kconfig.nrfx"
+source "drivers/i2c/Kconfig.qmsi"
+source "drivers/i2c/Kconfig.sbcon"
+source "drivers/i2c/Kconfig.stm32"
+
+
 config I2C_INIT_PRIORITY
 	int "Init priority"
 	default 60
@@ -160,6 +172,81 @@ config I2C_4_IRQ_PRI
 	help
 	  IRQ priority.
 
+config I2C_5
+	bool "Enable I2C Port 5"
+
+config I2C_5_NAME
+	string "Port 5 device name"
+	depends on I2C_5 && !HAS_DTS_I2C
+	default "I2C_5"
+
+config I2C_5_DEFAULT_CFG
+	hex "Port 5 default configuration"
+	depends on I2C_5 && !HAS_DTS_I2C
+	default 0x0
+	help
+	  Allows the I2C port to be brought up with a default configuration.
+	  This is useful to set if other drivers depend upon using the I2C bus
+	  before the application has a chance to custom configure the port.
+	  Setting this value does not prohibit the application from customizing
+	  the values later.  Refer to include/i2c.h file for proper values.
+
+config I2C_5_IRQ_PRI
+	int "Port 5 interrupt priority"
+	depends on I2C_5 && !HAS_DTS_I2C
+	help
+	  IRQ priority.
+
+config I2C_6
+	bool "Enable I2C Port 6"
+
+config I2C_6_NAME
+	string "Port 6 device name"
+	depends on I2C_6 && !HAS_DTS_I2C
+	default "I2C_6"
+
+config I2C_6_DEFAULT_CFG
+	hex "Port 6 default configuration"
+	depends on I2C_6 && !HAS_DTS_I2C
+	default 0x0
+	help
+	  Allows the I2C port to be brought up with a default configuration.
+	  This is useful to set if other drivers depend upon using the I2C bus
+	  before the application has a chance to custom configure the port.
+	  Setting this value does not prohibit the application from customizing
+	  the values later.  Refer to include/i2c.h file for proper values.
+
+config I2C_6_IRQ_PRI
+	int "Port 6 interrupt priority"
+	depends on I2C_6 && !HAS_DTS_I2C
+	help
+	  IRQ priority.
+
+config I2C_7
+	bool "Enable I2C Port 7"
+
+config I2C_7_NAME
+	string "Port 7 device name"
+	depends on I2C_7 && !HAS_DTS_I2C
+	default "I2C_7"
+
+config I2C_7_DEFAULT_CFG
+	hex "Port 7 default configuration"
+	depends on I2C_7 && !HAS_DTS_I2C
+	default 0x0
+	help
+	  Allows the I2C port to be brought up with a default configuration.
+	  This is useful to set if other drivers depend upon using the I2C bus
+	  before the application has a chance to custom configure the port.
+	  Setting this value does not prohibit the application from customizing
+	  the values later.  Refer to include/i2c.h file for proper values.
+
+config I2C_7_IRQ_PRI
+	int "Port 7 interrupt priority"
+	depends on I2C_7 && !HAS_DTS_I2C
+	help
+	  IRQ priority.
+
 config I2C_ATMEL_SAM3
 	bool "[deprecated] Atmel SAM3X I2C Driver"
 	depends on SOC_SERIES_SAM3X
@@ -216,20 +303,5 @@ config I2C_NIOS2
 	depends on HAS_ALTERA_HAL
 	help
 	  Enable the Nios-II I2C driver.
-
-source "drivers/i2c/Kconfig.dw"
-
-source "drivers/i2c/Kconfig.esp32"
-source "drivers/i2c/slave/Kconfig"
-
-source "drivers/i2c/Kconfig.gpio"
-
-source "drivers/i2c/Kconfig.nrfx"
-
-source "drivers/i2c/Kconfig.qmsi"
-
-source "drivers/i2c/Kconfig.sbcon"
-
-source "drivers/i2c/Kconfig.stm32"
 
 endif # I2C

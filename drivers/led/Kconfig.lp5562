@@ -1,0 +1,42 @@
+#
+# Copyright (c) 2018 Workaround GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig LP5562
+	bool "LP5562 LED driver"
+	depends on I2C
+	help
+	  Enable LED driver for LP5562.
+
+	  LP5562 LED driver has 4 channels (RGBW). Each channel can drive up to
+	  25.5 mA per LED.
+
+if !HAS_DTS_I2C_DEVICE && LP5562
+
+config LP5562_DEV_NAME
+	string "LP5562 device name"
+	default "LP5562"
+	help
+	  Device name for LP5562 LED driver.
+
+config LP5562_I2C_ADDRESS
+	hex "LP5562 I2C slave address"
+	range 0x30 0x33
+	default 0x30
+	help
+	  Specify the I2C slave address for the LP5562 LED driver.
+	  0x30: ADR0 = 0, ADR1 = 0
+	  0x31: ADR0 = 0, ADR1 = 1
+	  0x32: ADR0 = 1, ADR1 = 0
+	  0x33: ADR0 = 1, ADR1 = 1
+
+config LP5562_I2C_MASTER_DEV_NAME
+	string "I2C master where LP5562 is connected"
+	default "I2C_0"
+	help
+	  Specify the device name of the I2C master device to which
+	  LP5562 is connected.
+
+endif

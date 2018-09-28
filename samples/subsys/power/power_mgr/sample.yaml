@@ -1,0 +1,6 @@
+sample:
+  name: OS managed Power Management Sample
+tests:
+  ospm.low_power_state:
+    platform_whitelist: nrf52840_pca10056 nrf52_pca10040
+    tags: power

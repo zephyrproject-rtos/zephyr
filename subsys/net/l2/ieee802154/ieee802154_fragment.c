@@ -26,6 +26,8 @@
 #include "6lo.h"
 #include "6lo_private.h"
 
+#define BUF_TIMEOUT K_MSEC(50)
+
 #define FRAG_REASSEMBLY_TIMEOUT \
 	K_SECONDS(CONFIG_NET_L2_IEEE802154_REASSEMBLY_TIMEOUT)
 #define REASS_CACHE_SIZE CONFIG_NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE
@@ -84,7 +86,7 @@ static inline struct net_buf *prepare_new_fragment(struct net_pkt *pkt,
 {
 	struct net_buf *frag;
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
+	frag = net_pkt_get_frag(pkt, BUF_TIMEOUT);
 	if (!frag) {
 		return NULL;
 	}
@@ -317,8 +319,7 @@ static void update_protocol_header_lengths(struct net_pkt *pkt, u16_t size)
 {
 	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
 
-	NET_IPV6_HDR(pkt)->len[0] = (size - NET_IPV6H_LEN) >> 8;
-	NET_IPV6_HDR(pkt)->len[1] = (u8_t) (size - NET_IPV6H_LEN);
+	NET_IPV6_HDR(pkt)->len = htons(size - NET_IPV6H_LEN);
 
 	if (NET_IPV6_HDR(pkt)->nexthdr == IPPROTO_UDP) {
 		struct net_udp_hdr hdr, *udp_hdr;

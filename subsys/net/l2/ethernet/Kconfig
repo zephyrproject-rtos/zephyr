@@ -63,5 +63,6 @@ config NET_DEBUG_ARP
 	  Enables core ARP code part to output debug messages
 
 source "subsys/net/l2/ethernet/gptp/Kconfig"
+source "subsys/net/l2/ethernet/lldp/Kconfig"
 
 endif # NET_L2_ETHERNET

@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef LOG_CTRL_H
-#define LOG_CTRL_H
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_
 
 #include <logging/log_backend.h>
 
@@ -43,6 +43,17 @@ void log_core_init(void);
 void log_init(void);
 
 /**
+ * @brief Function for providing thread which is processing logs.
+ *
+ * See CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD.
+ *
+ * @note Function has asserts and has no effect when CONFIG_LOG_PROCESS is set.
+ *
+ * @param process_tid Process thread id. Used to wake up the thread.
+ */
+void log_thread_set(k_tid_t process_tid);
+
+/**
  * @brief Function for providing timestamp function.
  *
  * @param timestamp_getter	Timestamp function.
@@ -53,9 +64,11 @@ void log_init(void);
 int log_set_timestamp_func(timestamp_get_t timestamp_getter, u32_t freq);
 
 /**
- * @brief Switch logger subsystem to panic mode.
+ * @brief Switch the logger subsystem to the panic mode.
  *
- * @details On panic logger subsystem informs all backends about panic mode.
+ * Returns immediately if the logger is already in the panic mode.
+ *
+ * @details On panic the logger subsystem informs all backends about panic mode.
  *          Backends must switch to blocking mode or halt. All pending logs
  *          are flushed after switching to panic mode. In panic mode, all log
  *          messages must be processed in the context of the call.
@@ -72,6 +85,13 @@ void log_panic(void);
  */
 bool log_process(bool bypass);
 
+/**
+ * @brief Return number of buffered log messages.
+ *
+ * @return Number of currently buffered log messages.
+ */
+u32_t log_buffered_cnt(void);
+
 /** @brief Get number of independent logger sources (modules and instances)
  *
  * @param domain_id Domain ID.
@@ -86,7 +106,7 @@ u32_t log_src_cnt_get(u32_t domain_id);
  * @param domain_id Domain ID.
  * @param src_id    Source ID.
  *
- * @return Source name.
+ * @return Source name or NULL if invalid arguments.
  */
 const char *log_source_name_get(u32_t domain_id, u32_t src_id);
 
@@ -129,7 +149,7 @@ void log_filter_set(struct log_backend const *const backend,
  * @brief Enable backend with initial maximum filtering level.
  *
  * @param backend	Backend instance.
- * @param ctx		User csontext.
+ * @param ctx		User context.
  * @param level		Severity level.
  */
 void log_backend_enable(struct log_backend const *const backend,
@@ -162,4 +182,4 @@ void log_backend_disable(struct log_backend const *const backend);
 }
 #endif
 
-#endif /* LOG_CTRL_H */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_ */

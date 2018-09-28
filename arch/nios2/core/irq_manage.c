@@ -17,9 +17,9 @@
 #include <irq.h>
 #include <misc/printk.h>
 #include <sw_isr_table.h>
-#include <logging/kernel_event_logger.h>
 #include <ksched.h>
 #include <kswap.h>
+#include <tracing.h>
 
 void _irq_spurious(void *unused)
 {
@@ -33,7 +33,7 @@ void _irq_spurious(void *unused)
 void _arch_irq_enable(unsigned int irq)
 {
 	u32_t ienable;
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 
@@ -49,7 +49,7 @@ void _arch_irq_enable(unsigned int irq)
 void _arch_irq_disable(unsigned int irq)
 {
 	u32_t ienable;
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 
@@ -72,6 +72,11 @@ void _enter_irq(u32_t ipending)
 {
 	int index;
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_start_of_isr(void);
+	read_timer_start_of_isr();
+#endif
+
 	_kernel.nested++;
 
 #ifdef CONFIG_IRQ_OFFLOAD
@@ -81,15 +86,19 @@ void _enter_irq(u32_t ipending)
 	while (ipending) {
 		struct _isr_table_entry *ite;
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
-		_sys_k_event_logger_interrupt();
-#endif
+		z_sys_trace_isr_enter();
 
 		index = find_lsb_set(ipending) - 1;
 		ipending &= ~(1 << index);
 
 		ite = &_sw_isr_table[index];
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+		extern void read_timer_end_of_isr(void);
+		read_timer_end_of_isr();
+#endif
 		ite->isr(ite->arg);
+		sys_trace_isr_exit();
 	}
 
 	_kernel.nested--;

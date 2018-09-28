@@ -1015,13 +1015,13 @@ static int hf_clock_enable(bool on, bool blocking)
 		ret = clock_control_off(clock, (void *)blocking);
 	}
 
-	if (ret) {
+	if (ret && (blocking || (ret != -EINPROGRESS))) {
 		SYS_LOG_ERR("NRF5 HF clock %s fail: %d",
 			    on ? "start" : "stop", ret);
 		return ret;
 	}
 
-	SYS_LOG_DBG("HF clock %s success", on ? "start" : "stop");
+	SYS_LOG_DBG("HF clock %s success (%d)", on ? "start" : "stop", ret);
 
 	return ret;
 }
@@ -1671,28 +1671,28 @@ static void endpoint_ctx_deinit(void)
 		ep_ctx = in_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
 		k_mem_pool_free(&ep_ctx->buf.block);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
+		(void)memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 
 	for (i = 0; i < CFG_EPOUT_CNT; i++) {
 		ep_ctx = out_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
 		k_mem_pool_free(&ep_ctx->buf.block);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
+		(void)memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 
 	if (CFG_EP_ISOIN_CNT) {
 		ep_ctx = in_endpoint_ctx(NRF_USBD_EPIN(8));
 		__ASSERT_NO_MSG(ep_ctx);
 		k_mem_pool_free(&ep_ctx->buf.block);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
+		(void)memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 
 	if (CFG_EP_ISOOUT_CNT) {
 		ep_ctx = out_endpoint_ctx(NRF_USBD_EPOUT(8));
 		__ASSERT_NO_MSG(ep_ctx);
 		k_mem_pool_free(&ep_ctx->buf.block);
-		memset(ep_ctx, 0, sizeof(*ep_ctx));
+		(void)memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 }
 
@@ -1731,15 +1731,18 @@ int usb_dc_attach(void)
 	usbd_install_isr();
 	usbd_enable_interrupts();
 
+	/* NOTE: Non-blocking HF clock enable can return -EINPROGRESS if HF
+	 * clock start was already requested.
+	 */
 	ret = hf_clock_enable(true, false);
-	if (ret) {
+	if (ret && ret != -EINPROGRESS) {
 		goto err_clk_enable;
 	}
 
 	endpoint_ctx_init();
 	ctx->attached = true;
 
-	return ret;
+	return 0;
 
 err_clk_enable:
 	usbd_disable_interrupts();

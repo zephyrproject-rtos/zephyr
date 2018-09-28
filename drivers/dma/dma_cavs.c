@@ -164,7 +164,8 @@ static int dw_dma_config(struct device *dev, u32_t channel,
 		return -ENOMEM;
 	}
 
-	memset(chan_data->lli, 0, (sizeof(struct dw_lli2) * cfg->block_count));
+	(void)memset(chan_data->lli, 0,
+		     (sizeof(struct dw_lli2) * cfg->block_count));
 	lli_desc = chan_data->lli;
 	lli_desc_tail = lli_desc + cfg->block_count - 1;
 
@@ -389,10 +390,6 @@ found:
 static int dw_dma0_initialize(struct device *dev)
 {
 	const struct dw_dma_dev_cfg *const dev_cfg = DEV_CFG(dev);
-
-#ifdef CONFIG_SOC_INTEL_S1000
-	setup_ownership_dma0();
-#endif
 
 	/* Disable all channels and Channel interrupts */
 	dw_dma_setup(dev);

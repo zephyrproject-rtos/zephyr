@@ -135,8 +135,7 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 
 
 #if defined(CONFIG_INT_LATENCY_BENCHMARK) || \
-		defined(CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT) || \
-		defined(CONFIG_KERNEL_EVENT_LOGGER_SLEEP)
+		defined(CONFIG_TRACING)
 
 	/* Save these as we are using to keep track of isr and isr_param */
 	pushl	%eax
@@ -153,13 +152,7 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	call	_int_latency_start
 #endif
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
-	call	_sys_k_event_logger_interrupt
-#endif
-
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
-	call	_sys_k_event_logger_exit_sleep
-#endif
+	call	z_sys_trace_isr_enter
 
 	popl	%edx
 	popl	%eax

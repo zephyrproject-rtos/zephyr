@@ -12,12 +12,14 @@ menuconfig PMS7003
 	help
 	  Enable driver for pms7003 particulate matter sensor.
 
+if PMS7003
+
 config PMS7003_UART_DEVICE
 	string "UART device"
-	depends on PMS7003
 	default "UART_3"
 
 config PMS7003_DRIVER_NAME
 	string "Driver name"
-	depends on PMS7003
 	default "PMS7003"
+
+endif # PMS7003

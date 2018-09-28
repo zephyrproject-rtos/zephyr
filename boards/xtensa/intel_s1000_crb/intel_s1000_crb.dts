@@ -24,4 +24,10 @@
 &i2c0 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
+
+	codec0: tlv320dac@18 {
+		compatible = "ti,tlv320dac";
+		reg = <0x18>;
+		label = "TLV320DAC";
+	};
 };

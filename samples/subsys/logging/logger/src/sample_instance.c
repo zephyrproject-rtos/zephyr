@@ -16,7 +16,7 @@ void sample_instance_call(struct sample_instance *inst)
 	u8_t data[4] = { 1, 2, 3, 4 };
 
 	LOG_INST_INF(inst->log, "counter_value: %d", inst->cnt++);
-	LOG_INST_WRN(inst->log, "Example of hexdump:");
-	LOG_INST_HEXDUMP_WRN(inst->log, data, sizeof(data));
-	memset(data, 0, sizeof(data));
+	LOG_INST_HEXDUMP_WRN(inst->log, data, sizeof(data),
+					"Example of hexdump:");
+	(void)memset(data, 0, sizeof(data));
 }

@@ -82,7 +82,7 @@ To change the sample to use IPv4, disable IPv6 by changing these two
 configurations in ``prj.conf``::
 
     CONFIG_NET_IPV6=n
-    CONFIG_NET_APP_NEED_IPV6=n
+    CONFIG_NET_CONFIG_NEED_IPV6=n
 
 DTLS Support
 ============
@@ -132,6 +132,20 @@ commands (requires Bluetooth for networking):
    :host-os: unix
    :board: nrf52_blenano2
    :conf: "prj.conf overlay-bt.conf overlay-dtls.conf"
+   :goals: build
+   :compact:
+
+WNC-M14A2A LTE-M Modem Support
+==============================
+
+To build the lwm2m-client sample for use with the WNC-M14A2A LTE-M modem
+shield do the following:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/lwm2m_client
+   :host-os: unix
+   :board: <board to use>
+   :conf: "prj.conf overlay-wncm14a2a.conf"
    :goals: build
    :compact:
 

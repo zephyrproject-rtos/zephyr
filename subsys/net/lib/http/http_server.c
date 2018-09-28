@@ -784,29 +784,27 @@ ws_only:
 			struct net_buf *hdr, *payload;
 			struct net_pkt *cloned;
 
-			ret = net_pkt_split(pkt, pkt->frags,
-					    ctx->websocket.data_waiting,
-					    &payload, &hdr,
-					    ctx->timeout);
-			if (ret < 0) {
-				net_pkt_unref(pkt);
-				return;
-			}
-
-			net_pkt_frag_unref(pkt->frags);
+			payload = pkt->frags;
 			pkt->frags = NULL;
 
 			cloned = net_pkt_clone(pkt, ctx->timeout);
 			if (!cloned) {
 				net_pkt_unref(pkt);
+				net_pkt_frag_unref(payload);
+				return;
+			}
+
+			ret = net_pkt_split(pkt, payload,
+					    ctx->websocket.data_waiting,
+					    &hdr, ctx->timeout);
+			if (ret < 0) {
+				net_pkt_unref(pkt);
+				net_pkt_frag_unref(payload);
+				net_pkt_unref(cloned);
 				return;
 			}
 
 			pkt->frags = payload;
-			payload->frags = NULL;
-
-			net_pkt_compact(pkt);
-
 			cloned->frags = hdr;
 
 			ctx->websocket.pending = cloned;
@@ -979,7 +977,8 @@ static int on_headers_complete(struct http_parser *parser)
 
 static int init_http_parser(struct http_ctx *ctx)
 {
-	memset(ctx->http.field_values, 0, sizeof(ctx->http.field_values));
+	(void)memset(ctx->http.field_values, 0,
+		     sizeof(ctx->http.field_values));
 
 	ctx->http.parser_settings.on_header_field = on_header_field;
 	ctx->http.parser_settings.on_header_value = on_header_value;
@@ -1019,7 +1018,7 @@ static void init_net(struct http_ctx *ctx,
 		     struct sockaddr *server_addr,
 		     u16_t port)
 {
-	memset(&ctx->local, 0, sizeof(ctx->local));
+	(void)memset(&ctx->local, 0, sizeof(ctx->local));
 
 	if (server_addr) {
 		memcpy(&ctx->local, server_addr, sizeof(ctx->local));
@@ -1052,7 +1051,7 @@ int http_server_init(struct http_ctx *ctx,
 		return -EINVAL;
 	}
 
-	memset(ctx, 0, sizeof(*ctx));
+	(void)memset(ctx, 0, sizeof(*ctx));
 
 	init_net(ctx, server_addr, HTTP_DEFAULT_PORT);
 

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SENSOR_DHT
-#define _SENSOR_DHT
+#ifndef ZEPHYR_DRIVERS_SENSOR_DHT_DHT_H_
+#define ZEPHYR_DRIVERS_SENSOR_DHT_DHT_H_
 
 #include <device.h>
 

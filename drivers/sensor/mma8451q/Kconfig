@@ -1,0 +1,56 @@
+# Kconfig - MMA8451Q Accelerometer sensor configuration options
+#
+# Copyright (c) 2018 Lars Knudsen
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig MMA8451Q
+	bool "MMA8451Q Accelerometer driver"
+	depends on I2C
+	help
+	  Enable driver for MMA8451Q Accelerometer.
+
+if MMA8451Q
+
+if !HAS_DTS_I2C_DEVICE
+
+config MMA8451Q_NAME
+	string "Device name"
+	default "MMA8451Q"
+
+config MMA8451Q_I2C_NAME
+	string "I2C device name"
+	default I2C_0_NAME
+
+config MMA8451Q_I2C_ADDRESS
+	hex "I2C address for MMA8451Q Sensor"
+	default 0x1D
+	help
+	  I2C address of the MMA8451Q sensor.
+	  0x1D: I2C_ADDR
+
+endif # !HAS_DTS_I2C_DEVICE
+
+config MMA8451Q_WHOAMI
+	hex "WHOAMI value"
+	default 0x1A
+	help
+	  The whoami value for MMA8451Q (0x1A).
+
+choice
+	prompt "Range"
+	default MMA8451Q_RANGE_2G
+
+config MMA8451Q_RANGE_8G
+	bool "8g (0.976 mg/LSB)"
+
+config MMA8451Q_RANGE_4G
+	bool "4g (0.488 mg/LSB)"
+
+config MMA8451Q_RANGE_2G
+	bool "2g (0.244 mg/LSB)"
+
+endchoice
+
+endif # MMA8451Q

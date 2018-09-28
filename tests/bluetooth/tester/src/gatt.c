@@ -83,7 +83,7 @@ static void *gatt_buf_add(const void *data, size_t len)
 	if (data) {
 		memcpy(ptr, data, len);
 	} else {
-		memset(ptr, 0, len);
+		(void)memset(ptr, 0, len);
 	}
 
 	gatt_buf.len += len;
@@ -100,7 +100,7 @@ static void *gatt_buf_reserve(size_t len)
 
 static void gatt_buf_clear(void)
 {
-	memset(&gatt_buf, 0, sizeof(gatt_buf));
+	(void)memset(&gatt_buf, 0, sizeof(gatt_buf));
 }
 
 union uuid {
@@ -175,7 +175,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	u8_t cmds[4];
 	struct gatt_read_supported_commands_rp *rp = (void *) cmds;
 
-	memset(cmds, 0, sizeof(cmds));
+	(void)memset(cmds, 0, sizeof(cmds));
 
 	tester_set_bit(cmds, GATT_READ_SUPPORTED_COMMANDS);
 	tester_set_bit(cmds, GATT_ADD_SERVICE);
@@ -376,7 +376,7 @@ static int alloc_characteristic(struct add_characteristic *ch)
 		return -EINVAL;
 	}
 
-	memset(&value, 0, sizeof(value));
+	(void)memset(&value, 0, sizeof(value));
 
 	if (ch->permissions & GATT_PERM_READ_AUTHORIZATION) {
 		tester_set_bit(value.flags, GATT_VALUE_READ_AUTHOR_FLAG);
@@ -531,7 +531,7 @@ static int alloc_descriptor(const struct bt_gatt_attr *attr,
 	} else if (!bt_uuid_cmp(d->uuid, BT_UUID_GATT_CCC)) {
 		attr_desc = add_ccc(attr);
 	} else {
-		memset(&value, 0, sizeof(value));
+		(void)memset(&value, 0, sizeof(value));
 
 		if (d->permissions & GATT_PERM_READ_AUTHORIZATION) {
 			tester_set_bit(value.flags,
@@ -884,7 +884,7 @@ static void exchange_mtu(u8_t *data, u16_t len)
 {
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail;
 	}
@@ -911,7 +911,7 @@ static u8_t btp_opcode;
 
 static void discover_destroy(struct bt_gatt_discover_params *params)
 {
-	memset(params, 0, sizeof(*params));
+	(void)memset(params, 0, sizeof(*params));
 	gatt_buf_clear();
 }
 
@@ -966,7 +966,7 @@ static void disc_prim_uuid(u8_t *data, u16_t len)
 	const struct gatt_disc_prim_uuid_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1054,7 +1054,7 @@ static void find_included(u8_t *data, u16_t len)
 	const struct gatt_find_included_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1136,7 +1136,7 @@ static void disc_all_chrc(u8_t *data, u16_t len)
 	const struct gatt_disc_all_chrc_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1175,7 +1175,7 @@ static void disc_chrc_uuid(u8_t *data, u16_t len)
 	const struct gatt_disc_chrc_uuid_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1261,7 +1261,7 @@ static void disc_all_desc(u8_t *data, u16_t len)
 	const struct gatt_disc_all_desc_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1296,7 +1296,7 @@ static struct bt_gatt_read_params read_params;
 
 static void read_destroy(struct bt_gatt_read_params *params)
 {
-	memset(params, 0, sizeof(*params));
+	(void)memset(params, 0, sizeof(*params));
 	gatt_buf_clear();
 }
 
@@ -1336,7 +1336,7 @@ static void read(u8_t *data, u16_t len)
 	const struct gatt_read_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1375,7 +1375,7 @@ static void read_long(u8_t *data, u16_t len)
 	const struct gatt_read_long_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1420,7 +1420,7 @@ static void read_multiple(u8_t *data, u16_t len)
 		handles[i] = sys_le16_to_cpu(cmd->handles[i]);
 	}
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail_conn;
 	}
@@ -1459,7 +1459,7 @@ static void write_without_rsp(u8_t *data, u16_t len, u8_t op,
 	struct bt_conn *conn;
 	u8_t status = BTP_STATUS_SUCCESS;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		status = BTP_STATUS_FAILED;
 		goto rsp;
@@ -1491,7 +1491,7 @@ static void write(u8_t *data, u16_t len)
 	const struct gatt_write_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail;
 	}
@@ -1527,7 +1527,7 @@ static void write_long(u8_t *data, u16_t len)
 	const struct gatt_write_long_cmd *cmd = (void *) data;
 	struct bt_conn *conn;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail;
 	}
@@ -1565,7 +1565,7 @@ static u8_t notify_func(struct bt_conn *conn,
 
 	if (!data) {
 		SYS_LOG_DBG("Unsubscribed");
-		memset(params, 0, sizeof(*params));
+		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1604,7 +1604,7 @@ fail:
 							    GATT_CFG_INDICATE;
 
 	if (status == BTP_STATUS_FAILED) {
-		memset(&subscribe_params, 0, sizeof(subscribe_params));
+		(void)memset(&subscribe_params, 0, sizeof(subscribe_params));
 	}
 
 	tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX, status);
@@ -1675,7 +1675,7 @@ static void config_subscription(u8_t *data, u16_t len, u16_t op)
 	u16_t ccc_handle = sys_le16_to_cpu(cmd->ccc_handle);
 	u8_t status;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX,
 			   BTP_STATUS_FAILED);

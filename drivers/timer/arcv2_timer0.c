@@ -185,6 +185,10 @@ static inline void program_max_cycles(void)
  */
 void _timer_int_handler(void *unused)
 {
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_start_of_tick_handler(void);
+	read_timer_start_of_tick_handler();
+#endif
 	ARG_UNUSED(unused);
 	/* clear the interrupt by writing 0 to IP bit of the control register */
 	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
@@ -229,6 +233,10 @@ void _timer_int_handler(void *unused)
 #endif
 
 	update_accumulated_count();
+#endif
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_end_of_tick_handler(void);
+	read_timer_end_of_tick_handler();
 #endif
 }
 

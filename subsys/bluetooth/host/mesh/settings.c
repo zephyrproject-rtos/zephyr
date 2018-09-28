@@ -133,7 +133,7 @@ static int net_set(int argc, char **argv, char *val)
 
 	if (!val) {
 		bt_mesh_comp_unprovision();
-		memset(bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
+		(void)memset(bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
 		return 0;
 	}
 
@@ -281,7 +281,7 @@ static int rpl_set(int argc, char **argv, char *val)
 
 	if (!val) {
 		if (entry) {
-			memset(entry, 0, sizeof(*entry));
+			(void)memset(entry, 0, sizeof(*entry));
 		} else {
 			BT_WARN("Unable to find RPL entry for 0x%04x", src);
 		}
@@ -390,7 +390,6 @@ static int net_key_set(int argc, char **argv, char *val)
 static int app_key_set(int argc, char **argv, char *val)
 {
 	struct bt_mesh_app_key *app;
-	struct bt_mesh_subnet *sub;
 	struct app_key_val key;
 	u16_t app_idx;
 	int len, err;
@@ -420,12 +419,6 @@ static int app_key_set(int argc, char **argv, char *val)
 	if (len != sizeof(key)) {
 		BT_ERR("Unexpected value length (%d != %zu)", len, sizeof(key));
 		return -EINVAL;
-	}
-
-	sub = bt_mesh_subnet_get(key.net_idx);
-	if (!sub) {
-		BT_ERR("Failed to find subnet 0x%03x", key.net_idx);
-		return -ENOENT;
 	}
 
 	app = bt_mesh_app_key_find(app_idx);
@@ -571,7 +564,7 @@ static int mod_set_sub(struct bt_mesh_model *mod, char *val)
 	int len, err;
 
 	/* Start with empty array regardless of cleared or set value */
-	memset(mod->groups, 0, sizeof(mod->groups));
+	(void)memset(mod->groups, 0, sizeof(mod->groups));
 
 	if (!val) {
 		BT_DBG("Cleared subscriptions for model");
@@ -745,7 +738,7 @@ static int subnet_init(struct bt_mesh_subnet *sub)
 		err = bt_mesh_net_keys_create(&sub->keys[1], sub->keys[1].net);
 		if (err) {
 			BT_ERR("Unable to generate keys for subnet");
-			memset(&sub->keys[0], 0, sizeof(sub->keys[0]));
+			(void)memset(&sub->keys[0], 0, sizeof(sub->keys[0]));
 			return -EIO;
 		}
 	}
@@ -1003,7 +996,7 @@ static void clear_rpl(void)
 		snprintk(path, sizeof(path), "bt/mesh/RPL/%x", rpl->src);
 		settings_save_one(path, NULL);
 
-		memset(rpl, 0, sizeof(*rpl));
+		(void)memset(rpl, 0, sizeof(*rpl));
 	}
 }
 

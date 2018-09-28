@@ -1,4 +1,0 @@
-tests:
-  crypto.aes:
-    min_ram: 30
-    tags: crypto aes

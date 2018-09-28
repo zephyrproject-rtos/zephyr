@@ -49,7 +49,8 @@ static void purge_when_put(struct k_msgq *q)
  */
 
 /**
- * @see k_msgq_init(), k_msgq_purge()
+ * @brief Test purge a message queue
+ * @see k_msgq_init(), k_msgq_purge(), k_msgq_put()
  */
 void test_msgq_purge_when_put(void)
 {
@@ -60,7 +61,8 @@ void test_msgq_purge_when_put(void)
 
 #ifdef CONFIG_USERSPACE
 /**
- * @see k_msgq_init(), k_msgq_purge()
+ * @brief Test purge a message queue
+ * @see k_msgq_init(), k_msgq_purge(), k_msgq_put()
  */
 void test_msgq_user_purge_when_put(void)
 {

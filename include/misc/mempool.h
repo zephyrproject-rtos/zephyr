@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SYS_MEMPOOL_H
-#define SYS_MEMPOOL_H
+#ifndef ZEPHYR_INCLUDE_MISC_MEMPOOL_H_
+#define ZEPHYR_INCLUDE_MISC_MEMPOOL_H_
 
 #include <kernel.h>
 #include <misc/mempool_base.h>
@@ -59,7 +59,7 @@ struct sys_mem_pool_block {
 			.n_max = nmax,					\
 			.n_levels = _MPOOL_LVLS(maxsz, minsz),		\
 			.levels = _mpool_lvls_##name,			\
-			.flags = SYS_MEM_POOL_KERNEL			\
+			.flags = SYS_MEM_POOL_USER			\
 		},							\
 		.mutex = kmutex,					\
 	}

@@ -8,7 +8,7 @@
 #include <ztest.h>
 
 K_PIPE_DEFINE(test_pipe, 256, 4);
-#define STACK_SIZE (512)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define PIPE_SIZE (256)
 
 K_THREAD_STACK_DEFINE(stack_1, STACK_SIZE);
@@ -180,7 +180,7 @@ void pipe_get_single(void *p1, void *p2, void *p3)
 		k_sem_take(&get_sem, K_FOREVER);
 
 		/* reset the rx buffer for the next interation */
-		memset(rx_buffer, 0, sizeof(rx_buffer));
+		(void)memset(rx_buffer, 0, sizeof(rx_buffer));
 
 		min_xfer = (single_elements[index].min_size == ALL_BYTES ?
 			    single_elements[index].size :
@@ -258,7 +258,7 @@ void pipe_get_multiple(void *p1, void *p2, void *p3)
 
 
 		/* reset the rx buffer for the next interation */
-		memset(rx_buffer, 0, sizeof(rx_buffer));
+		(void)memset(rx_buffer, 0, sizeof(rx_buffer));
 
 		min_xfer = (multiple_elements[index].min_size == ALL_BYTES ?
 			    multiple_elements[index].size :
@@ -691,6 +691,11 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 }
 /******************************************************************************/
 /* Test case entry points */
+/**
+ * @brief Verify pipe with 1 element insert
+ * @ingroup kernel_pipe_tests
+ * @see k_pipe_put()
+ */
 void test_pipe_on_single_elements(void)
 {
 	/* initialize the tx buffer */
@@ -708,7 +713,11 @@ void test_pipe_on_single_elements(void)
 	ztest_test_pass();
 }
 
-/* Test when multiple items are present in the pipe */
+/**
+ * @brief Test when multiple items are present in the pipe
+ * @ingroup kernel_pipe_tests
+ * @see k_pipe_put()
+ */
 void test_pipe_on_multiple_elements(void)
 {
 	k_thread_create(&get_single_tid, stack_1, STACK_SIZE,
@@ -721,7 +730,11 @@ void test_pipe_on_multiple_elements(void)
 	ztest_test_pass();
 }
 
-/* Test when multiple items are present in the pipe */
+/**
+ * @brief Test when multiple items are present with wait
+ * @ingroup kernel_pipe_tests
+ * @see k_pipe_put()
+ */
 void test_pipe_forever_wait(void)
 {
 	k_thread_create(&get_single_tid, stack_1, STACK_SIZE,
@@ -734,7 +747,11 @@ void test_pipe_forever_wait(void)
 	ztest_test_pass();
 }
 
-/* Test when multiple items are present in the pipe */
+/**
+ * @brief Test pipes with timeout
+ * @ingroup kernel_pipe_tests
+ * @see k_pipe_put()
+ */
 void test_pipe_timeout(void)
 {
 	k_thread_create(&get_single_tid, stack_1, STACK_SIZE,
@@ -747,16 +764,23 @@ void test_pipe_timeout(void)
 	ztest_test_pass();
 }
 
-/* Test when multiple items are present in the pipe */
+/**
+ * @brief Test pipe get from a empty pipe
+ * @ingroup kernel_pipe_tests
+ * @see k_pipe_get()
+ */
 void test_pipe_get_on_empty_pipe(void)
 {
 	pipe_get_on_empty_pipe();
 	ztest_test_pass();
 }
 
-/* Test the pipe_get with K_FOREVER as timeout.
- * Testcase is similar to test_pipe_on_single_elements() but with K_FOREVER
- * as timeout.
+/**
+ * @brief Test the pipe_get with K_FOREVER as timeout.
+ * @details Testcase is similar to test_pipe_on_single_elements()
+ * but with K_FOREVER as timeout.
+ * @ingroup kernel_pipe_tests
+ * @see k_pipe_put()
  */
 void test_pipe_forever_timeout(void)
 {
@@ -771,7 +795,11 @@ void test_pipe_forever_timeout(void)
 	ztest_test_pass();
 }
 
-/* k_pipe_get timeout test */
+/**
+ * @brief k_pipe_get timeout test
+ * @ingroup kernel_pipe_tests
+ * @see k_pipe_get()
+ */
 void test_pipe_get_timeout(void)
 {
 	pipe_put_get_timeout();
@@ -779,6 +807,11 @@ void test_pipe_get_timeout(void)
 	ztest_test_pass();
 }
 
+/**
+ * @brief Test pipe get of invalid size
+ * @ingroup kernel_pipe_tests
+ * @see k_pipe_get()
+ */
 #ifdef CONFIG_USERSPACE
 /* userspace invalid size */
 void test_pipe_get_invalid_size(void)

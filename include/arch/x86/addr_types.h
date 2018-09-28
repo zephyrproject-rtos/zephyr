@@ -6,10 +6,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _x86_addr_types__h_
-#define _x86_addr_types__h_
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_ADDR_TYPES_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_ADDR_TYPES_H_
 
 typedef unsigned int paddr_t;
 typedef unsigned int vaddr_t;
 
-#endif /* _x86_addr_types__h_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_ADDR_TYPES_H_ */

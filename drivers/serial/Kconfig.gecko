@@ -50,7 +50,6 @@ endif # UART_GECKO_1
 
 menuconfig USART_GECKO_0
 	bool "USART 0"
-	default n
 	help
 	  Enable USART 0.
 
@@ -67,7 +66,6 @@ endif # USART_GECKO_0
 
 menuconfig USART_GECKO_1
 	bool "USART 1"
-	default n
 	help
 	  Enable USART 1.
 

@@ -140,7 +140,7 @@ config MDNS_RESPONDER_INIT_PRIO
 	int "Startup priority for the mDNS responder init"
 	default 96
 	help
-	  Note that if NET_APP_AUTO_INIT is enabled, then this value
+	  Note that if NET_CONFIG_AUTO_INIT is enabled, then this value
 	  should be bigger than its value.
 
 config NET_DEBUG_MDNS_RESPONDER
@@ -150,8 +150,7 @@ config NET_DEBUG_MDNS_RESPONDER
 	  Enables mDNS responder code to output debug messages
 
 config MDNS_RESOLVER_ADDITIONAL_BUF_CTR
-	int
-	prompt "Additional DNS buffers"
+	int "Additional DNS buffers"
 	default 0
 	help
 	  Number of additional buffers available for the mDNS responder.
@@ -186,7 +185,7 @@ config LLMNR_RESPONDER_INIT_PRIO
 	int "Startup priority for the LLMNR responder init"
 	default 96
 	help
-	  Note that if NET_APP_AUTO_INIT is enabled, then this value
+	  Note that if NET_CONFIG_AUTO_INIT is enabled, then this value
 	  should be bigger than its value.
 
 config NET_DEBUG_LLMNR_RESPONDER
@@ -196,8 +195,7 @@ config NET_DEBUG_LLMNR_RESPONDER
 	  Enables LLMNR responder code to output debug messages
 
 config LLMNR_RESOLVER_ADDITIONAL_BUF_CTR
-	int
-	prompt "Additional DNS buffers"
+	int "Additional DNS buffers"
 	default 0
 	help
 	  Number of additional buffers available for the LLMNR responder.

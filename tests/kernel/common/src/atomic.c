@@ -7,6 +7,20 @@
 #include <ztest.h>
 #include <atomic.h>
 
+/**
+ * @addtogroup kernel_common_tests
+ * @{
+ */
+
+/**
+ * @brief Verify automic functionalities
+ *
+ * @see atomic_cas(), atomic_add(), atomic_sub(),
+ * atomic_inc(), atomic_dec(), atomic_get(), atomic_set(),
+ * atomic_clear(), atomic_or(), atomic_and(), atomic_xor(),
+ * atomic_nand(), atomic_test_bit(), atomic_test_and_clear_bit(),
+ * atomic_test_and_set_bit(), atomic_clear_bit(), atomic_set_bit()
+ */
 void test_atomic(void)
 {
 	int i;
@@ -129,3 +143,6 @@ void test_atomic(void)
 	}
 
 }
+/**
+ * @}
+ */

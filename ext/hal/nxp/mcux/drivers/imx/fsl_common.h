@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Copyright 2016-2018 NXP
+ * All rights reserved.
+ * 
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef _FSL_COMMON_H_
@@ -65,14 +43,16 @@
 /*@}*/
 
 /* Debug console type definition. */
-#define DEBUG_CONSOLE_DEVICE_TYPE_NONE 0U     /*!< No debug console.             */
-#define DEBUG_CONSOLE_DEVICE_TYPE_UART 1U     /*!< Debug console base on UART.   */
-#define DEBUG_CONSOLE_DEVICE_TYPE_LPUART 2U   /*!< Debug console base on LPUART. */
-#define DEBUG_CONSOLE_DEVICE_TYPE_LPSCI 3U    /*!< Debug console base on LPSCI.  */
-#define DEBUG_CONSOLE_DEVICE_TYPE_USBCDC 4U   /*!< Debug console base on USBCDC. */
-#define DEBUG_CONSOLE_DEVICE_TYPE_FLEXCOMM 5U /*!< Debug console base on USBCDC. */
-#define DEBUG_CONSOLE_DEVICE_TYPE_IUART 6U    /*!< Debug console base on i.MX UART. */
-#define DEBUG_CONSOLE_DEVICE_TYPE_VUSART 7U   /*!< Debug console base on LPC_USART. */
+#define DEBUG_CONSOLE_DEVICE_TYPE_NONE          0U      /*!< No debug console.             */
+#define DEBUG_CONSOLE_DEVICE_TYPE_UART          1U      /*!< Debug console based on UART.   */
+#define DEBUG_CONSOLE_DEVICE_TYPE_LPUART        2U      /*!< Debug console based on LPUART. */
+#define DEBUG_CONSOLE_DEVICE_TYPE_LPSCI         3U      /*!< Debug console based on LPSCI.  */
+#define DEBUG_CONSOLE_DEVICE_TYPE_USBCDC        4U      /*!< Debug console based on USBCDC. */
+#define DEBUG_CONSOLE_DEVICE_TYPE_FLEXCOMM      5U      /*!< Debug console based on FLEXCOMM. */
+#define DEBUG_CONSOLE_DEVICE_TYPE_IUART         6U      /*!< Debug console based on i.MX UART. */
+#define DEBUG_CONSOLE_DEVICE_TYPE_VUSART        7U      /*!< Debug console based on LPC_VUSART. */
+#define DEBUG_CONSOLE_DEVICE_TYPE_MINI_USART    8U      /*!< Debug console based on LPC_USART. */
+#define DEBUG_CONSOLE_DEVICE_TYPE_SWO           9U      /*!< Debug console based on SWO. */
 
 /*! @brief Status group numbers. */
 enum _status_groups
@@ -136,14 +116,16 @@ enum _status_groups
     kStatusGroup_ESAI = 69,                   /*!< Group number for ESAI status codes. */
     kStatusGroup_FLEXSPI = 70,                /*!< Group number for FLEXSPI status codes. */
     kStatusGroup_MMDC = 71,                   /*!< Group number for MMDC status codes. */
-    kStatusGroup_MICFIL = 72,                 /*!< Group number for MIC status codes. */
+    kStatusGroup_PDM = 72,                    /*!< Group number for MIC status codes. */
     kStatusGroup_SDMA = 73,                   /*!< Group number for SDMA status codes. */
     kStatusGroup_ICS = 74,                    /*!< Group number for ICS status codes. */
     kStatusGroup_SPDIF = 75,                  /*!< Group number for SPDIF status codes. */
+    kStatusGroup_LPC_MINISPI = 76,            /*!< Group number for LPC_MINISPI status codes. */
     kStatusGroup_NOTIFIER = 98,               /*!< Group number for NOTIFIER status codes. */
     kStatusGroup_DebugConsole = 99,           /*!< Group number for debug console status codes. */
-    kStatusGroup_SEMC = 100,                   /*!< Group number for SEMC status codes. */    
+    kStatusGroup_SEMC = 100,                  /*!< Group number for SEMC status codes. */    
     kStatusGroup_ApplicationRangeStart = 101, /*!< Starting number for application groups. */
+    kStatusGroup_IAP = 102,                   /*!< Group number for IAP status codes */
 };
 
 /*! @brief Generic status return codes. */
@@ -173,6 +155,13 @@ typedef int32_t status_t;
 #if ((defined(FSL_FEATURE_SOC_SYSCON_COUNT) && (FSL_FEATURE_SOC_SYSCON_COUNT > 0)) || \
      (defined(FSL_FEATURE_SOC_ASYNC_SYSCON_COUNT) && (FSL_FEATURE_SOC_ASYNC_SYSCON_COUNT > 0)))
 #include "fsl_reset.h"
+#endif
+
+/*
+ * Macro guard for whether to use default weak IRQ implementation in drivers
+ */
+#ifndef FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ
+#define FSL_DRIVER_TRANSFER_DOUBLE_WEAK_IRQ 1
 #endif
 
 /*! @name Min/max macros */
@@ -273,13 +262,6 @@ _Pragma("diag_suppress=Pm120")
     ((unsigned int)((var) + ((alignbytes)-1)) & (unsigned int)(~(unsigned int)((alignbytes)-1)))
 /* @} */
 
-/*! Function to allocate/free L1 cache aligned memory using the malloc/free. */
-void *SDK_Malloc(size_t size, size_t alignbytes);
-
-void SDK_Free(void *ptr);
-
-/* @} */
-
 /*! @name Non-cacheable region definition macros */
 /* For initialized non-zero non-cacheable variables, please using "AT_NONCACHEABLE_SECTION_INIT(var) ={xx};" or
  * "AT_NONCACHEABLE_SECTION_ALIGN_INIT(var) ={xx};" in your projects to define them, for zero-inited non-cacheable variables,
@@ -337,6 +319,37 @@ void SDK_Free(void *ptr);
 #define AT_NONCACHEABLE_SECTION_INIT(var) var
 #define AT_NONCACHEABLE_SECTION_ALIGN_INIT(var, alignbytes) var
 #endif
+/* @} */
+
+/*! @name Time sensitive region */
+/* @{ */
+#if defined(FSL_SDK_DRIVER_QUICK_ACCESS_ENABLE) && FSL_SDK_DRIVER_QUICK_ACCESS_ENABLE
+#if (defined(__ICCARM__))
+#define AT_QUICKACCESS_SECTION_CODE(func) func @"CodeQuickAccess"
+#define AT_QUICKACCESS_SECTION_DATA(func) func @"DataQuickAccess"
+#elif(defined(__ARMCC_VERSION))
+#define AT_QUICKACCESS_SECTION_CODE(func) __attribute__((section("CodeQuickAccess"))) func
+#define AT_QUICKACCESS_SECTION_DATA(func) __attribute__((section("DataQuickAccess"))) func
+#elif(defined(__GNUC__))
+#define AT_QUICKACCESS_SECTION_CODE(func) __attribute__((section("CodeQuickAccess"))) func
+#define AT_QUICKACCESS_SECTION_DATA(func) __attribute__((section("DataQuickAccess"))) func
+#else
+#error Toolchain not supported.
+#endif /* defined(__ICCARM__) */
+#else
+#if (defined(__ICCARM__))
+#define AT_QUICKACCESS_SECTION_CODE(func) func
+#define AT_QUICKACCESS_SECTION_DATA(func) func
+#elif(defined(__ARMCC_VERSION))
+#define AT_QUICKACCESS_SECTION_CODE(func) func
+#define AT_QUICKACCESS_SECTION_DATA(func) func
+#elif(defined(__GNUC__))
+#define AT_QUICKACCESS_SECTION_CODE(func) func
+#define AT_QUICKACCESS_SECTION_DATA(func) func
+#else
+#error Toolchain not supported.
+#endif    
+#endif /* __FSL_SDK_DRIVER_QUICK_ACCESS_ENABLE */
 /* @} */
 
 /*******************************************************************************
@@ -453,7 +466,7 @@ void SDK_Free(void *ptr);
      * @brief Enaable the global IRQ
      *
      * Set the primask register with the provided primask value but not just enable the primask. The idea is for the
-     * convinience of integration of RTOS. some RTOS get its own management mechanism of primask. User is required to
+     * convenience of integration of RTOS. some RTOS get its own management mechanism of primask. User is required to
      * use the EnableGlobalIRQ() and DisableGlobalIRQ() in pair.
      *
      * @param primask value of primask register to be restored. The primask value is supposed to be provided by the
@@ -489,7 +502,7 @@ void SDK_Free(void *ptr);
      * those clocks (significantly increasing power consumption in the reduced power mode),
      * making these wake-ups possible.
      *
-     * @note This function also enables the interrupt in the NVIC (EnableIRQ() is called internally).
+     * @note This function also enables the interrupt in the NVIC (EnableIRQ() is called internaly).
      *
      * @param interrupt The IRQ number.
      */
@@ -504,12 +517,30 @@ void SDK_Free(void *ptr);
      * those clocks (significantly increasing power consumption in the reduced power mode),
      * making these wake-ups possible.
      *
-     * @note This function also disables the interrupt in the NVIC (DisableIRQ() is called internally).
+     * @note This function also disables the interrupt in the NVIC (DisableIRQ() is called internaly).
      *
      * @param interrupt The IRQ number.
      */
     void DisableDeepSleepIRQ(IRQn_Type interrupt);
 #endif /* FSL_FEATURE_SOC_SYSCON_COUNT */
+
+    /*!
+     * @brief Allocate memory with given alignment and aligned size.
+     *
+     * This is provided to support the dynamically allocated memory
+     * used in cache-able region.
+     * @param size The length required to malloc.
+     * @param alignbytes The alignment size.
+     * @retval The allocated memory.
+     */    
+    void *SDK_Malloc(size_t size, size_t alignbytes);
+    
+    /*!
+     * @brief Free memory.
+     *
+     * @param ptr The memory to be release.
+     */ 
+    void SDK_Free(void *ptr);    
 
 #if defined(__cplusplus)
 }

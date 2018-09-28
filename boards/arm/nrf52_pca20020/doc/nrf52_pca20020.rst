@@ -10,12 +10,24 @@ Zephyr uses the nrf52_pca20020 board configuration for building for the
 Thingy:52 board. The board has the nRF52832 MCU with ARM Cortex-M4F processor,
 a set of environmental sensors, a pushbutton, and two RGB LEDs.
 
-* :abbr:`NVIC (Nested Vectored Interrupt Controller)`
-* :abbr:`RTC (nRF RTC System Clock)`
-* UART
-* GPIO
+* :abbr:`ADC (Analog to Digital Converter)`
+* CLOCK
 * FLASH
-* RADIO (Bluetooth Low Energy)
+* Gas sensor
+* :abbr:`GPIO (General Purpose Input Output)`
+* GPIO Expander
+* Humidity and temperature sensor
+* :abbr:`I2C (Inter-Integrated Circuit)`
+* :abbr:`MPU (Memory Protection Unit)`
+* :abbr:`NVIC (Nested Vectored Interrupt Controller)`
+* Pressure sensor
+* :abbr:`PWM (Pulse Width Modulation)`
+* RADIO (Bluetooth Low Energy and 802.15.4)
+* RGB LEDs
+* :abbr:`RTC (nRF RTC System Clock)`
+* :abbr:`SPI (Serial Peripheral Interface)`
+* :abbr:`UART (Universal asynchronous receiver-transmitter)`
+* :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/nrf52_pca20020.jpg
      :width: 442px
@@ -47,20 +59,43 @@ Supported Features
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |
 +===========+============+======================+
-| NVIC      | on-chip    | nested vectored      |
-|           |            | interrupt controller |
 +-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
+| ADC       | on-chip    | adc                  |
 +-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| I2C       | on-chip    | i2c master           |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
+| CLOCK     | on-chip    | clock_control        |
 +-----------+------------+----------------------+
 | FLASH     | on-chip    | flash                |
 +-----------+------------+----------------------+
+| Gas       | on-board   | ccs811               |
+| Sensor    |            |                      |
++-----------+------------+----------------------+
+| GPIO      | on-chip    | gpio                 |
++-----------+------------+----------------------+
+| GPIO Exp  | on-board   | sx1509b              |
++-----------+------------+----------------------+
+| Humidity  | on-board   | hts221               |
+| and Temp  |            |                      |
++-----------+------------+----------------------+
+| I2C(M)    | on-chip    | i2c                  |
++-----------+------------+----------------------+
+| MPU       | on-chip    | arch/arm             |
++-----------+------------+----------------------+
+| NVIC      | on-chip    | arch/arm             |
++-----------+------------+----------------------+
+| Pressure  | on-board   | lps22hb_press        |
+| and Temp  |            |                      |
++-----------+------------+----------------------+
+| PWM       | on-chip    | pwm                  |
++-----------+------------+----------------------+
 | RADIO     | on-chip    | Bluetooth            |
++-----------+------------+----------------------+
+| RTC       | on-chip    | system clock         |
++-----------+------------+----------------------+
+| SPI(M/S)  | on-chip    | spi                  |
++-----------+------------+----------------------+
+| UART      | on-chip    | serial               |
++-----------+------------+----------------------+
+| WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
 Connections and IOs
