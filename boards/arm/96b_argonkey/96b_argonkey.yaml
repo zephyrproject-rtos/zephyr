@@ -6,4 +6,7 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - gpio
+  - i2c
   - rtc
+  - spi
