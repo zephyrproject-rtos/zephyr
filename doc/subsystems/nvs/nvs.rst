@@ -100,6 +100,19 @@ Sample
 
 A sample of how NVS can be used is supplied in ``samples/subsys/nvs``.
 
+Troubleshooting
+***************
+
+MPU fault while using NVS, or ``-ETIMEDOUT`` error returned
+   NVS can use the internal flash of the SoC.  While the MPU is enabled,
+   the flash driver requires MPU RWX access to flash memory, configured
+   using :option:`CONFIG_MPU_ALLOW_FLASH_WRITE`.  If this option is
+   disabled, the NVS application will get an MPU fault if it references
+   the internal SoC flash and it's the only thread running.  In a
+   multi-threaded application, another thread might intercept the fault
+   and the NVS API will return an ``-ETIMEDOUT`` error.
+
+
 API Reference
 *************
 
