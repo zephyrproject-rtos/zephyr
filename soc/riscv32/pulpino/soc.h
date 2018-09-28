@@ -22,7 +22,6 @@
 
 /* IRQ numbers */
 #define PULP_I2C_0_IRQ             23 /* I2C Controller */
-#define PULP_UART_0_IRQ            24 /* Uart Controller */
 #define PULP_GPIO_0_IRQ            25 /* GPIO Controller */
 #define PULP_SPI_0_IRQ             26 /* SPI Controller #0 */
 #define PULP_SPI_1_IRQ             27 /* SPI Controller #1 */
@@ -59,9 +58,6 @@
 #define SOC_ERET                   eret
 
 /* UART configuration */
-#define CONFIG_UART_NS16550_PORT_0_BASE_ADDR     0x1A100000
-#define CONFIG_UART_NS16550_PORT_0_CLK_FREQ      2500000
-#define CONFIG_UART_NS16550_PORT_0_IRQ           PULP_UART_0_IRQ
 #define CONFIG_UART_NS16550_PORT_0_IRQ_PRI       0
 #define CONFIG_UART_NS16550_PORT_0_IRQ_FLAGS     0
 
@@ -72,7 +68,7 @@
 #define PULP_PAD_BASE              0x1A107000
 
 /* IRQ configuration */
-#define PULP_IRQ_BASE              0x1A104000
+#define PULP_IRQ_BASE              PULPINO_EVENT_UNIT_BASE_ADDRESS
 
 #define PULP_IER_ADDR  (PULP_IRQ_BASE + 0x00) /* IRQ Enable Register */
 #define PULP_IPR_ADDR  (PULP_IRQ_BASE + 0x04) /* IRQ Pending Register */
