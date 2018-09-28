@@ -7,4 +7,4 @@
 config BOARD_96B_ARGONKEY
 	bool "96Boards Argonkey"
 	depends on SOC_STM32F412CG
-	select HAS_DTS_SPI_PINS
+	select HAS_DTS_GPIO_DEVICE
