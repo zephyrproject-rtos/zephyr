@@ -244,7 +244,6 @@ void __weak main(void)
 	/* NOP default main() if the application does not provide one. */
 }
 
-#if defined(CONFIG_MULTITHREADING)
 static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
 {
 #ifdef CONFIG_SMP
@@ -256,7 +255,6 @@ static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
 			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL, IDLE_THREAD_NAME);
 	_mark_thread_as_started(thr);
 }
-#endif
 
 /**
  *
@@ -270,7 +268,6 @@ static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
  *
  * @return N/A
  */
-#ifdef CONFIG_MULTITHREADING
 static void prepare_multithreading(struct k_thread *dummy_thread)
 {
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
@@ -322,11 +319,9 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	_mark_thread_as_started(_main_thread);
 	_ready_thread(_main_thread);
 
-#ifdef CONFIG_MULTITHREADING
 	init_idle_thread(_idle_thread, _idle_stack);
 	_kernel.cpus[0].idle_thread = _idle_thread;
 	sys_trace_thread_create(_idle_thread);
-#endif
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
 	init_idle_thread(_idle_thread1, _idle_stack1);
@@ -371,7 +366,6 @@ static void switch_to_main_thread(void)
 	(void)_Swap(irq_lock());
 #endif
 }
-#endif /* CONFIG_MULTITHREDING */
 
 u32_t z_early_boot_rand32_get(void)
 {
@@ -429,7 +423,6 @@ extern uintptr_t __stack_chk_guard;
  */
 FUNC_NORETURN void _Cstart(void)
 {
-#ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	struct k_thread *dummy_thread = NULL;
 #else
@@ -440,7 +433,6 @@ FUNC_NORETURN void _Cstart(void)
 	struct k_thread *dummy_thread = (struct k_thread *)&dummy_thread_memory;
 
 	(void)memset(dummy_thread_memory, 0, sizeof(dummy_thread_memory));
-#endif
 #endif
 	/*
 	 * The interrupt library needs to be initialized early since a series
@@ -467,16 +459,8 @@ FUNC_NORETURN void _Cstart(void)
 	__stack_chk_guard = z_early_boot_rand32_get();
 #endif
 
-#ifdef CONFIG_MULTITHREADING
 	prepare_multithreading(dummy_thread);
 	switch_to_main_thread();
-#else
-	bg_thread_main(NULL, NULL, NULL);
-
-	irq_lock();
-	while (true) {
-	}
-#endif
 
 	/*
 	 * Compiler can't tell that the above routines won't return and issues

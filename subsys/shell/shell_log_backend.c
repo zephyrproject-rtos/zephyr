@@ -112,10 +112,8 @@ static void put(const struct log_backend *const backend, struct log_msg *msg)
 	case SHELL_LOG_BACKEND_ENABLED:
 		msg_to_fifo(shell, msg);
 
-		if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-			signal = &shell->ctx->signals[SHELL_SIGNAL_LOG_MSG];
-			k_poll_signal(signal, 0);
-		}
+		signal = &shell->ctx->signals[SHELL_SIGNAL_LOG_MSG];
+		k_poll_signal(signal, 0);
 
 		break;
 

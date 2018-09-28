@@ -803,7 +803,6 @@ Z_SYSCALL_HANDLER0_SIMPLE_VOID(k_yield);
 
 void _impl_k_sleep(s32_t duration)
 {
-#ifdef CONFIG_MULTITHREADING
 	/* volatile to guarantee that irq_lock() is executed after ticks is
 	 * populated
 	 */
@@ -828,7 +827,6 @@ void _impl_k_sleep(s32_t duration)
 	_add_thread_timeout(_current, NULL, ticks);
 
 	(void)_Swap(key);
-#endif
 }
 
 #ifdef CONFIG_USERSPACE

@@ -9,22 +9,8 @@
 
 menu "General Kernel Options"
 
-config MULTITHREADING
-	bool "Multi-threading"
-	default y
-	help
-	  If disabled, only the main thread is available, so a main() function
-	  must be provided. Interrupts are available. Kernel objects will most
-	  probably not behave as expected, especially with regards to pending,
-	  since the main thread cannot pend, it being the only thread in the
-	  system.
-
-	  Many drivers and subsystems will not work with this option; use only
-	  when you REALLY know what you are doing.
-
 config NUM_COOP_PRIORITIES
-	int "Number of coop priorities" if MULTITHREADING
-	default 1 if !MULTITHREADING
+	int "Number of coop priorities"
 	default 16
 	range 0 128
 	help
@@ -52,8 +38,7 @@ config NUM_COOP_PRIORITIES
 	  priority, and be the only thread at that priority.
 
 config NUM_PREEMPT_PRIORITIES
-	int "Number of preemptible priorities" if MULTITHREADING
-	default 0 if !MULTITHREADING
+	int "Number of preemptible priorities"
 	default 15
 	range 0 128
 	help

@@ -11,7 +11,6 @@
 #include <tracing.h>
 #include <stdbool.h>
 
-#ifdef CONFIG_MULTITHREADING
 #define _VALID_PRIO(prio, entry_point) \
 	(((prio) == K_IDLE_PRIO && _is_idle_thread(entry_point)) || \
 		 (_is_prio_higher_or_equal((prio), \
@@ -26,10 +25,6 @@
 		 K_LOWEST_APPLICATION_THREAD_PRIO, \
 		 K_HIGHEST_APPLICATION_THREAD_PRIO); \
 	} while (false)
-#else
-#define _VALID_PRIO(prio, entry_point) ((prio) == -1)
-#define _ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")
-#endif
 
 void _sched_init(void);
 void _add_thread_to_ready_q(struct k_thread *thread);

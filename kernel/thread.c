@@ -253,7 +253,6 @@ void _check_stack_sentinel(void)
 }
 #endif
 
-#ifdef CONFIG_MULTITHREADING
 void _impl_k_thread_start(struct k_thread *thread)
 {
 	int key = irq_lock(); /* protect kernel queues */
@@ -271,9 +270,7 @@ void _impl_k_thread_start(struct k_thread *thread)
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_thread_start, K_OBJ_THREAD, struct k_thread *);
 #endif
-#endif
 
-#ifdef CONFIG_MULTITHREADING
 static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -291,7 +288,6 @@ static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 	k_thread_start(thread);
 #endif
 }
-#endif
 
 #if !CONFIG_STACK_POINTER_RANDOM
 static inline size_t adjust_stack_size(size_t stack_size)
@@ -410,7 +406,6 @@ void _setup_new_thread(struct k_thread *new_thread,
 	sys_trace_thread_create(new_thread);
 }
 
-#ifdef CONFIG_MULTITHREADING
 k_tid_t _impl_k_thread_create(struct k_thread *new_thread,
 			      k_thread_stack_t *stack,
 			      size_t stack_size, k_thread_entry_t entry,
@@ -512,7 +507,6 @@ Z_SYSCALL_HANDLER(k_thread_create,
 	return new_thread_p;
 }
 #endif /* CONFIG_USERSPACE */
-#endif /* CONFIG_MULTITHREADING */
 
 /* LCOV_EXCL_START */
 int _impl_k_thread_cancel(k_tid_t tid)
@@ -621,7 +615,6 @@ void _k_thread_single_abort(struct k_thread *thread)
 #endif
 }
 
-#ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_USERSPACE
 extern char __object_access_start[];
 extern char __object_access_end[];
@@ -685,7 +678,6 @@ void _init_static_threads(void)
 	irq_unlock(key);
 	k_sched_unlock();
 }
-#endif
 
 void _init_thread_base(struct _thread_base *thread_base, int priority,
 		       u32_t initial_state, unsigned int options)

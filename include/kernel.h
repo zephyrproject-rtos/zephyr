@@ -4597,17 +4597,10 @@ extern void _sys_power_save_idle_exit(s32_t ticks);
  * private APIs that are utilized by one or more public APIs
  */
 
-#ifdef CONFIG_MULTITHREADING
 /**
  * @internal
  */
 extern void _init_static_threads(void);
-#else
-/**
- * @internal
- */
-#define _init_static_threads() do { } while (false)
-#endif
 
 /**
  * @internal

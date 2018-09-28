@@ -48,14 +48,12 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config SHELL_STACK_SIZE
 	int "Shell thread stack size"
-	default 2048 if MULTITHREADING
-	default 0 if !MULTITHREADING
+	default 2048
 	help
 	  Stack size for thread created for each instance.
 
 config SHELL_THREAD_PRIO
 	int "Shell thread priority"
-	depends on MULTITHREADING
 	default -2
 	help
 	  Shell thread priority.

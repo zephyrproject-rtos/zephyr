@@ -126,7 +126,6 @@ config DYNAMIC_OBJECTS
 
 config SIMPLE_FATAL_ERROR_HANDLER
 	bool "Simple system fatal error handler"
-	default y if !MULTITHREADING
 	help
 	  Provides an implementation of _SysFatalErrorHandler() that hard hangs
 	  instead of aborting the faulting thread, and does not print anything,

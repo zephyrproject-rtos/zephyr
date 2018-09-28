@@ -217,7 +217,6 @@ config LOG_PROCESS_TRIGGER_THRESHOLD
 
 config LOG_PROCESS_THREAD
 	bool "Enable internal thread for log processing"
-	depends on MULTITHREADING
 	default y
 	help
 	  When enabled thread is created by the logger subsystem. Thread is

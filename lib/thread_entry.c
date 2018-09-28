@@ -28,13 +28,7 @@ FUNC_NORETURN void _thread_entry(k_thread_entry_t entry,
 {
 	entry(p1, p2, p3);
 
-#ifdef CONFIG_MULTITHREADING
 	k_thread_abort(k_current_get());
-#else
-	for (;;) {
-		k_cpu_idle();
-	}
-#endif
 
 	/*
 	 * Compiler can't tell that k_thread_abort() won't return and issues a

@@ -114,16 +114,8 @@ static void shell_write(const struct shell *shell, const void *data,
 		if (tmp_cnt == 0 &&
 		    (shell->ctx->state != SHELL_STATE_PANIC_MODE_ACTIVE)) {
 			/* todo  semaphore pend*/
-			if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-				k_poll(&shell->ctx->events[SHELL_SIGNAL_TXDONE],
-				1, K_FOREVER);
-			} else {
-				/* Blocking wait in case of bare metal. */
-				while (!shell->ctx->internal.flags.tx_rdy) {
-
-				}
-				shell->ctx->internal.flags.tx_rdy = 0;
-			}
+			k_poll(&shell->ctx->events[SHELL_SIGNAL_TXDONE],
+			1, K_FOREVER);
 		}
 	}
 }
@@ -1294,14 +1286,10 @@ static int shell_instance_uninit(const struct shell *shell)
 
 int shell_uninit(const struct shell *shell)
 {
-	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		/* signal kill message */
-		(void)k_poll_signal(&shell->ctx->signals[SHELL_SIGNAL_KILL], 0);
+	/* signal kill message */
+	(void)k_poll_signal(&shell->ctx->signals[SHELL_SIGNAL_KILL], 0);
 
-		return 0;
-	} else {
-		return shell_instance_uninit(shell);
-	}
+	return 0;
 }
 
 int shell_start(const struct shell *shell)
