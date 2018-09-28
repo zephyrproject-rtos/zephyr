@@ -199,7 +199,29 @@ static int mcux_adc16_init(struct device *dev)
 	adc16_config_t adc_config;
 
 	ADC16_GetDefaultConfig(&adc_config);
+
+#if CONFIG_ADC_MCUX_ADC16_VREF_DEFAULT
+	adc_config.referenceVoltageSource = kADC16_ReferenceVoltageSourceVref;
+#else /* CONFIG_ADC_MCUX_ADC16_VREF_ALTERNATE */
+	adc_config.referenceVoltageSource = kADC16_ReferenceVoltageSourceValt;
+#endif
+
+#if CONFIG_ADC_MCUX_ADC16_CLK_DIV_RATIO_1
+	adc_config.clockDivider = kADC16_ClockDivider1;
+#elif CONFIG_ADC_MCUX_ADC16_CLK_DIV_RATIO_2
+	adc_config.clockDivider = kADC16_ClockDivider2;
+#elif CONFIG_ADC_MCUX_ADC16_CLK_DIV_RATIO_4
+	adc_config.clockDivider = kADC16_ClockDivider4;
+#else /* CONFIG_ADC_MCUX_ADC16_CLK_DIV_RATIO_8 */
+	adc_config.clockDivider = kADC16_ClockDivider8;
+#endif
+
 	ADC16_Init(base, &adc_config);
+#if defined(FSL_FEATURE_ADC16_HAS_CALIBRATION) && \
+	    FSL_FEATURE_ADC16_HAS_CALIBRATION
+	ADC16_SetHardwareAverage(base, kADC16_HardwareAverageCount32);
+	ADC16_DoAutoCalibration(base);
+#endif
 
 	ADC16_EnableHardwareTrigger(base, false);
 
