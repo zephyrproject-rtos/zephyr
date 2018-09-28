@@ -97,7 +97,6 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	ADC16_SetHardwareAverage(config->base, mode);
 
 	data->buffer = sequence->buffer;
-	data->repeat_buffer = sequence->buffer;
 
 	adc_context_start_read(&data->ctx, sequence);
 	error = adc_context_wait_for_completion(&data->ctx);
@@ -153,6 +152,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		CONTAINER_OF(ctx, struct mcux_adc16_data, ctx);
 
 	data->channels = ctx->sequence->channels;
+	data->repeat_buffer = data->buffer;
 
 	mcux_adc16_start_channel(data->dev);
 }
