@@ -7,7 +7,6 @@
 #include <errno.h>
 #include <kernel.h>
 #include <limits.h>
-#include <posix/pthread.h>
 #include <posix/unistd.h>
 #include <posix/dirent.h>
 #include <string.h>
