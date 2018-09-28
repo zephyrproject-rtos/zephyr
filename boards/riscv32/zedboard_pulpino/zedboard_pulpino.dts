@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <pulpino.dtsi>
+
+/ {
+	model = "zedboard_pulpino";
+	compatible = "pulp,zedboard-pulpino";
+
+	aliases {
+		uart-0 = &uart0;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+	};
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+};
+
