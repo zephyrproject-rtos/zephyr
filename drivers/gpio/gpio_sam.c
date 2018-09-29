@@ -28,17 +28,8 @@ struct gpio_sam_runtime {
 #define DEV_CFG(dev) \
 	((const struct gpio_sam_config *const)(dev)->config->config_info)
 
-static int gpio_sam_config(struct device *dev, int access_op, u32_t pin,
-			   int flags)
+static int gpio_sam_config_pin(Pio *const pio, u32_t mask, int flags)
 {
-	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
-	Pio *const pio = cfg->regs;
-	u32_t mask = 1 << pin;
-
-	if (access_op != GPIO_ACCESS_BY_PIN) {
-		return -ENOTSUP;
-	}
-
 	/* Setup the pin direcion. */
 	if ((flags & GPIO_DIR_MASK) == GPIO_DIR_OUT) {
 		pio->PIO_OER = mask;
@@ -112,6 +103,32 @@ static int gpio_sam_config(struct device *dev, int access_op, u32_t pin,
 
 	/* Enable the PIO to control the pin (instead of a peripheral). */
 	pio->PIO_PER = mask;
+
+	return 0;
+}
+
+static int gpio_sam_config(struct device *dev, int access_op, u32_t pin,
+			   int flags)
+{
+	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	Pio *const pio = cfg->regs;
+	int i, result;
+
+	switch (access_op) {
+	case GPIO_ACCESS_BY_PIN:
+		gpio_sam_config_pin(pio, BIT(pin), flags);
+		break;
+	case GPIO_ACCESS_BY_PORT:
+		for (i = 0; i < 32; i++) {
+			result = gpio_sam_config_pin(pio, BIT(i), flags);
+			if (result < 0) {
+				return result;
+			}
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
 
 	return 0;
 }
