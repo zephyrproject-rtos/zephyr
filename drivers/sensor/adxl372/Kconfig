@@ -55,7 +55,7 @@ config ADXL372_I2C_MASTER_DEV_NAME
 
 endif # !HAS_DTS_I2C
 
-if !HAS_DTS_SPI_DEVICE
+if !HAS_DTS_SPI
 
 config ADXL372_DEV_NAME
 	string "ADXL372 device name"
@@ -93,7 +93,7 @@ config ADXL372_SPI_BUS_FREQ
 	  This is the maximum supported SPI bus frequency. The chip supports a
 	  frequency up to 10MHz.
 
-endif # !HAS_DTS_SPI_DEVICE
+endif # !HAS_DTS_SPI
 
 if !HAS_DTS_SPI_PINS
 

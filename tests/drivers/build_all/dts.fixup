@@ -107,7 +107,7 @@
 
 #endif /* CONFIG_HAS_DTS_I2C */
 
-#if defined(CONFIG_HAS_DTS_SPI_DEVICE)
+#if defined(CONFIG_HAS_DTS_SPI)
 
 #ifndef CONFIG_ADXL372_DEV_NAME
 #define CONFIG_ADXL372_DEV_NAME ""
@@ -116,4 +116,4 @@
 #define CONFIG_ADXL372_SPI_BUS_FREQ 8000000
 #endif
 
-#endif /* CONFIG_HAS_DTS_SPI_DEVICE */
+#endif /* CONFIG_HAS_DTS_SPI */
