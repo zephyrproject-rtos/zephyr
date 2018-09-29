@@ -320,7 +320,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 
 	z_clock_announce(_sys_idle_elapsed_ticks);
 
-	/* z_clock_announce(_sys_idle_elapsed_ticks) could cause new programming */
+	/* z_clock_announce() could cause new programming */
 	if (!programmed_full_ticks && _sys_clock_always_on) {
 		z_tick_set(z_clock_uptime());
 		program_max_cycles();
@@ -332,16 +332,20 @@ void _timer_int_handler(void *unused /* parameter is not used */
 			u32_t  cycles;
 
 			/*
-			 * The timer fired unexpectedly. This is due to one of two cases:
+			 * The timer fired unexpectedly. This is due
+			 * to one of two cases:
 			 *   1. Entering tickless idle straddled a tick.
 			 *   2. Leaving tickless idle straddled the final tick.
-			 * Due to the timer reprogramming in z_clock_idle_exit(), case #2
-			 * can be handled as a fall-through.
+			 * Due to the timer reprogramming in
+			 * z_clock_idle_exit(), case #2 can be handled
+			 * as a fall-through.
 			 *
-			 * NOTE: Although the cycle count is supposed to stop decrementing
-			 * once it hits zero in one-shot mode, not all targets implement
-			 * this properly (and continue to decrement).  Thus, we have to
-			 * perform a second comparison to check for wrap-around.
+			 * NOTE: Although the cycle count is supposed
+			 * to stop decrementing once it hits zero in
+			 * one-shot mode, not all targets implement
+			 * this properly (and continue to decrement).
+			 * Thus, we have to perform a second
+			 * comparison to check for wrap-around.
 			 */
 
 			cycles = current_count_register_get();
@@ -604,7 +608,7 @@ void z_clock_idle_exit(void)
 	 *
 	 * NOTE #1: In the case of a straddled tick, the '_sys_idle_elapsed_ticks'
 	 * calculation below may result in either 0 or 1. If 1, then this may
-	 * result in a harmless extra call to z_clock_announce(_sys_idle_elapsed_ticks).
+	 * result in a harmless extra call to z_clock_announce().
 	 *
 	 * NOTE #2: In the case of a straddled tick, it is assumed that when the
 	 * timer is reprogrammed, it will be reprogrammed with a cycle count

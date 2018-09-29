@@ -216,7 +216,7 @@ void _timer_int_handler(void *unused)
 
 	z_clock_announce(_sys_idle_elapsed_ticks);
 
-	/* z_clock_announce(_sys_idle_elapsed_ticks) could cause new programming */
+	/* z_clock_announce() could cause new programming */
 	if (!programmed_ticks && _sys_clock_always_on) {
 		z_tick_set(z_clock_uptime());
 		program_max_cycles();

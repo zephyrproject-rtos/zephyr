@@ -124,7 +124,8 @@ void test_clock_cycle(void)
 	if (c1 > c0) {
 		/* delta cycle should be greater than 1 milli-second*/
 		zassert_true((c1 - c0) >
-			     (sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC), NULL);
+			     (sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC),
+			     NULL);
 		/* delta NS should be greater than 1 milli-second */
 		zassert_true(SYS_CLOCK_HW_CYCLES_TO_NS(c1 - c0) >
 			     (NSEC_PER_SEC / MSEC_PER_SEC), NULL);
