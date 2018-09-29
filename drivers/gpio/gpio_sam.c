@@ -28,7 +28,7 @@ struct gpio_sam_runtime {
 #define DEV_CFG(dev) \
 	((const struct gpio_sam_config *const)(dev)->config->config_info)
 
-static int gpio_sam_config_pin(Pio *const pio, u32_t mask, int flags)
+static int gpio_sam_config_pin(Pio * const pio, u32_t mask, int flags)
 {
 	/* Setup the pin direcion. */
 	if ((flags & GPIO_DIR_MASK) == GPIO_DIR_OUT) {
@@ -111,7 +111,7 @@ static int gpio_sam_config(struct device *dev, int access_op, u32_t pin,
 			   int flags)
 {
 	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
-	Pio *const pio = cfg->regs;
+	Pio * const pio = cfg->regs;
 	int i, result;
 
 	switch (access_op) {
@@ -151,13 +151,9 @@ static int gpio_sam_write(struct device *dev, int access_op, u32_t pin,
 		}
 		break;
 	case GPIO_ACCESS_BY_PORT:
-		if (value) {
-			/* Set all pins. */
-			pio->PIO_SODR = 0xffffffff;
-		} else {
-			/* Clear all pins. */
-			pio->PIO_CODR = 0xffffffff;
-		}
+		pio->PIO_OWER = pio->PIO_OSR; /* Write those out pin only */
+		pio->PIO_ODSR = value;
+		pio->PIO_OWDR = 0xffffffff;   /* Disable write ODSR */
 		break;
 	default:
 		return -ENOTSUP;
