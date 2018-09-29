@@ -14,7 +14,7 @@ menuconfig ADT7420
 
 if ADT7420
 
-if !HAS_DTS_I2C_DEVICE
+if !HAS_DTS_I2C
 
 config ADT7420_NAME
 	string "Driver name"
@@ -40,7 +40,7 @@ config ADT7420_I2C_MASTER_DEV_NAME
 	  Specify the device name of the I2C master device to which the
 	  ADT7420 chip is connected.
 
-endif # !HAS_DTS_I2C_DEVICE
+endif # !HAS_DTS_I2C
 
 config ADT7420_TEMP_HYST
 	int "Temperature hysteresis in °C"

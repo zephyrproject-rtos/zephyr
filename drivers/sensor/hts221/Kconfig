@@ -12,7 +12,7 @@ menuconfig HTS221
 
 if HTS221
 
-if !HAS_DTS_I2C_DEVICE
+if !HAS_DTS_I2C
 
 config HTS221_NAME
 	string "Driver name"

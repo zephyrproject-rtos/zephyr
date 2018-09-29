@@ -12,7 +12,7 @@ menuconfig LIS3MDL
 
 if LIS3MDL
 
-if !HAS_DTS_I2C_DEVICE
+if !HAS_DTS_I2C
 
 config LIS3MDL_NAME
 	string "Driver name"

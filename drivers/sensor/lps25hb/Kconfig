@@ -13,7 +13,7 @@ menuconfig LPS25HB
 
 if LPS25HB
 
-if !HAS_DTS_I2C_DEVICE
+if !HAS_DTS_I2C
 
 config LPS25HB_DEV_NAME
 	string "Device name"

@@ -16,7 +16,7 @@ menuconfig LSM6DS0
 
 if LSM6DS0
 
-if !HAS_DTS_I2C_DEVICE
+if !HAS_DTS_I2C
 
 config LSM6DS0_DEV_NAME
 	string "LSM6DS0 device name"

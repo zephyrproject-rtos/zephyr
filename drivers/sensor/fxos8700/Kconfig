@@ -13,7 +13,7 @@ menuconfig FXOS8700
 
 if FXOS8700
 
-if !HAS_DTS_I2C_DEVICE
+if !HAS_DTS_I2C
 
 config FXOS8700_NAME
 	string "Device name"
@@ -31,7 +31,7 @@ config FXOS8700_I2C_ADDRESS
 	  The I2C slave address can be configured by the SA0 and SA1 input
 	  pins. This option should usually be set by the board defconfig.
 
-endif # !HAS_DTS_I2C_DEVICE
+endif # !HAS_DTS_I2C
 
 config FXOS8700_WHOAMI
 	hex "WHOAMI value"

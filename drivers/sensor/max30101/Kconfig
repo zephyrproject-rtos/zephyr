@@ -11,7 +11,7 @@ menuconfig MAX30101
 
 if MAX30101
 
-if !HAS_DTS_I2C_DEVICE
+if !HAS_DTS_I2C
 
 config MAX30101_NAME
 	string "Driver name"
@@ -21,7 +21,7 @@ config MAX30101_I2C_NAME
 	string "I2C device name"
 	default "I2C_0"
 
-endif # !HAS_DTS_I2C_DEVICE
+endif # !HAS_DTS_I2C
 
 config MAX30101_SMP_AVE
 	int "Sample averaging"
