@@ -20,7 +20,7 @@ config GPIO_SX1509B_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
-if !HAS_DTS_I2C_DEVICE
+if !HAS_DTS_I2C
 
 config GPIO_SX1509B_DEV_NAME
 	string "SX1509B GPIO chip Device Name"

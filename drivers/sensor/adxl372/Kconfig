@@ -28,7 +28,7 @@ config ADXL372_SPI
 
 endchoice
 
-if !HAS_DTS_I2C_DEVICE
+if !HAS_DTS_I2C
 
 config ADXL372_DEV_NAME
 	string "ADXL372 device name"
@@ -53,7 +53,7 @@ config ADXL372_I2C_MASTER_DEV_NAME
 	  Specify the device name of the I2C master device to which the
 	  ADXL372 chip is connected.
 
-endif # !HAS_DTS_I2C_DEVICE
+endif # !HAS_DTS_I2C
 
 if !HAS_DTS_SPI_DEVICE
 

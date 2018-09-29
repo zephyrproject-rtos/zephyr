@@ -33,10 +33,10 @@ endchoice
 
 config LSM6DSL_DEV_NAME
 	string "LSM6DSL device name"
-	depends on (LSM6DSL_I2C && !HAS_DTS_I2C_DEVICE) || LSM6DSL_SPI
+	depends on (LSM6DSL_I2C && !HAS_DTS_I2C) || LSM6DSL_SPI
 	default "LSM6DSL"
 
-if !HAS_DTS_I2C_DEVICE
+if !HAS_DTS_I2C
 
 config LSM6DSL_I2C_ADDR
 	hex "LSM6DSL I2C address"
@@ -56,7 +56,7 @@ config LSM6DSL_I2C_MASTER_DEV_NAME
 	  Specify the device name of the I2C master device to which LSM6DSL is
 	  connected.
 
-endif #HAS_DTS_I2C_DEVICE
+endif #HAS_DTS_I2C
 
 if !HAS_DTS_SPI_DEVICE
 

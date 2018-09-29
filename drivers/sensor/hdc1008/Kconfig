@@ -14,7 +14,7 @@ menuconfig HDC1008
 
 if HDC1008
 
-if !HAS_DTS_I2C_DEVICE
+if !HAS_DTS_I2C
 
 config HDC1008_NAME
 	string "Driver name"
@@ -38,7 +38,7 @@ config HDC1008_I2C_MASTER_DEV_NAME
 	  Specify the device name of the I2C master device to which the
 	  HDC1008 chip is connected.
 
-endif # !HAS_DTS_I2C_DEVICE
+endif # !HAS_DTS_I2C
 
 if !HAS_DTS_GPIO_DEVICE
 

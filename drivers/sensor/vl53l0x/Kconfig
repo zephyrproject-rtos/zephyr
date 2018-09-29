@@ -15,7 +15,7 @@ menuconfig VL53L0X
 
 if VL53L0X
 
-if !HAS_DTS_I2C_DEVICE
+if !HAS_DTS_I2C
 
 config VL53L0X_NAME
 	string "Driver name"

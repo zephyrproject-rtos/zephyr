@@ -13,7 +13,7 @@ menuconfig FXAS21002
 
 if FXAS21002
 
-if !HAS_DTS_I2C_DEVICE
+if !HAS_DTS_I2C
 
 config FXAS21002_NAME
 	string "Device name"
@@ -31,7 +31,7 @@ config FXAS21002_I2C_ADDRESS
 	  The I2C slave address can be configured by the SA0 input pin. This
 	  option should usually be set by the board defconfig.
 
-endif # !HAS_DTS_I2C_DEVICE
+endif # !HAS_DTS_I2C
 
 config FXAS21002_WHOAMI
 	hex "WHOAMI value"
