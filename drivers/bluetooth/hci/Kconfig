@@ -75,7 +75,7 @@ endif
 config BT_SPI_DEV_NAME
 	string "Device Name of SPI Device for Bluetooth"
 	default "SPI_0"
-	depends on BT_SPI && !HAS_DTS_SPI_DEVICE
+	depends on BT_SPI && !HAS_DTS_SPI
 	help
 	  This option specifies the name of SPI device to be used for Bluetooth.
 	  On the controller side, this SPI device is used to encapsulate the
@@ -140,7 +140,7 @@ endif # !HAS_DTS_SPI_PINS
 config BT_SPI_MAX_CLK_FREQ
 	int "Maximum clock frequency for the HCI SPI interface"
 	default 5000000
-	depends on !HAS_DTS_SPI_DEVICE
+	depends on !HAS_DTS_SPI
 	help
 	  This option specifies the maximum clock rate the HCI SPI
 	  interface is capable of running at.

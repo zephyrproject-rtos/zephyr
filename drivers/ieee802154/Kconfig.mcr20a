@@ -18,7 +18,7 @@ config IEEE802154_MCR20A_DRV_NAME
 	help
 	  This option sets the driver name
 
-if !HAS_DTS_SPI_DEVICE
+if !HAS_DTS_SPI
 
 config IEEE802154_MCR20A_SPI_DRV_NAME
 	string "SPI driver's name to use to access MCR20A"
@@ -42,7 +42,7 @@ config IEEE802154_MCR20A_SPI_SLAVE
 	  This option sets the SPI slave number SPI controller has to switch
 	  to when dealing with MCR20A chip.
 
-endif # !HAS_DTS_SPI_DEVICE
+endif # !HAS_DTS_SPI
 
 config IEEE802154_MCR20A_GPIO_SPI_CS
 	bool "Manage SPI CS through a GPIO pin"
