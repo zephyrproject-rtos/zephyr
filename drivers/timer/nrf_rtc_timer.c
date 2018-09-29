@@ -209,7 +209,8 @@ void _timer_idle_enter(s32_t sys_ticks)
 	/* If ticks is 0, the RTC interrupt handler will be set pending
 	 * immediately, meaning that we will not go to sleep.
 	 */
-	rtc_compare_set(rtc_past + (sys_ticks * sys_clock_hw_cycles_per_tick()));
+	rtc_compare_set(rtc_past +
+			(sys_ticks * sys_clock_hw_cycles_per_tick()));
 #endif
 }
 
@@ -435,7 +436,7 @@ void z_clock_idle_exit(void)
 	rtc_announce_set_next();
 
 	/* After exiting idle, the kernel no longer expects more than one sys
-	 * ticks to have passed when z_clock_announce(_sys_idle_elapsed_ticks) is called.
+	 * ticks to have passed when z_clock_announce() is called.
 	 */
 	expected_sys_ticks = 1;
 #endif
@@ -493,7 +494,7 @@ void rtc1_nrf5_isr(void *arg)
 	/* Anounce elapsed of _sys_idle_elapsed_ticks systicks*/
 	z_clock_announce(_sys_idle_elapsed_ticks);
 
-	/* z_clock_announce(_sys_idle_elapsed_ticks) could cause new programming */
+	/* z_clock_announce() could cause new programming */
 	if (!expected_sys_ticks && _sys_clock_always_on) {
 		program_max_cycles();
 	}
@@ -530,7 +531,8 @@ int z_clock_driver_init(struct device *device)
 
 	/* TODO: replace with counter driver to access RTC */
 	SYS_CLOCK_RTC->PRESCALER = 0;
-	nrf_rtc_cc_set(SYS_CLOCK_RTC, RTC_CC_IDX, sys_clock_hw_cycles_per_tick());
+	nrf_rtc_cc_set(SYS_CLOCK_RTC, RTC_CC_IDX,
+		       sys_clock_hw_cycles_per_tick());
 	nrf_rtc_event_enable(SYS_CLOCK_RTC, RTC_EVTENSET_COMPARE0_Msk);
 	nrf_rtc_int_enable(SYS_CLOCK_RTC, RTC_INTENSET_COMPARE0_Msk);
 

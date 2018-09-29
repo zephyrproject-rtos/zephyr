@@ -362,7 +362,7 @@ void thread_producer_get_msgq_w_cxt_switch(void *p1, void *p2, void *p3)
 
 void thread_consumer_get_msgq_w_cxt_switch(void *p1, void *p2, void *p3)
 {
-	producer_get_w_cxt_switch_tid->base.timeout.dticks =_EXPIRED;
+	producer_get_w_cxt_switch_tid->base.timeout.dticks = _EXPIRED;
 	__read_swap_end_time_value = 1;
 	TIMING_INFO_PRE_READ();
 	__msg_q_get_w_cxt_start_time = TIMING_INFO_OS_GET_TIME();

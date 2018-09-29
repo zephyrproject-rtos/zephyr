@@ -1234,6 +1234,10 @@ __syscall void k_thread_name_set(k_tid_t thread_id, const char *value);
 __syscall const char *k_thread_name_get(k_tid_t thread_id);
 
 /**
+ * @}
+ */
+
+/**
  * @addtogroup clock_apis
  * @{
  */

@@ -270,7 +270,7 @@ void _timer_int_handler(void *unused)
 
 	z_clock_announce(_sys_idle_elapsed_ticks);
 
-	/* z_clock_announce(_sys_idle_elapsed_ticks) could cause new programming */
+	/* z_clock_announce() could cause new programming */
 	if (!idle_original_ticks && _sys_clock_always_on) {
 		z_tick_set(z_clock_uptime());
 		/* clear overflow tracking flag as it is accounted */
@@ -754,15 +754,16 @@ return (u32_t) get_elapsed_count();
 	do {
 		cac = clock_accumulated_count;
 #ifdef CONFIG_TICKLESS_IDLE
-		/* When we leave a tickless period the reload value of the timer
-		 * can be set to a remaining value to wait until end of tick.
-		 * (see z_clock_idle_exit). The remaining value is always smaller
-		 * than default_load_value. In this case the time elapsed until
-		 * the timer restart was not yet added to
-		 * clock_accumulated_count. To retrieve a correct cycle count
-		 * we must therefore consider the number of cycle since current
-		 * tick period start and not only the cycle number since
-		 * the timer restart.
+		/* When we leave a tickless period the reload value of
+		 * the timer can be set to a remaining value to wait
+		 * until end of tick.  (see z_clock_idle_exit). The
+		 * remaining value is always smaller than
+		 * default_load_value. In this case the time elapsed
+		 * until the timer restart was not yet added to
+		 * clock_accumulated_count. To retrieve a correct
+		 * cycle count we must therefore consider the number
+		 * of cycle since current tick period start and not
+		 * only the cycle number since the timer restart.
 		 */
 		if (SysTick->LOAD < default_load_value)	{
 			count = default_load_value;
