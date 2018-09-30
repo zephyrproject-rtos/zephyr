@@ -133,3 +133,19 @@ void k_busy_wait(u32_t usec_to_wait)
 	}
 }
 #endif
+
+#if defined(CONFIG_SYSTEM_CLOCK_DISABLE)
+/**
+ *
+ * @brief Stop announcing sys ticks into the kernel
+ *
+ * Disable the system ticks generation
+ *
+ * @return N/A
+ */
+void sys_clock_disable(void)
+{
+	irq_disable(TIMER_TICK_IRQ);
+	hwtimer_set_silent_ticks(INT64_MAX);
+}
+#endif /* CONFIG_SYSTEM_CLOCK_DISABLE */
