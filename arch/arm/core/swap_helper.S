@@ -182,6 +182,15 @@ _thread_irq_disabled:
     vldmia r0, {s16-s31}
 #endif
 
+#ifdef CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
+	/* r2 contains k_thread */
+    push {r2, lr}
+    blx configure_mpu_kernel_ram_region_reset
+    pop {r2, lr}
+#endif /* CONFIG_MPU_STACK_GUARD || USERSPACE */
+#endif
+
 #ifdef CONFIG_MPU_STACK_GUARD
     /* r2 contains k_thread */
     add r0, r2, #0

@@ -366,8 +366,17 @@ void arm_core_mpu_kernel_ram_region_reset(void)
 void arm_core_mpu_configure_user_context(struct k_thread *thread)
 {
 	if (!thread->arch.priv_stack_start) {
+		/* If this is a supervisor thread,
+		 * disable thread stack MPU region.
+		 */
+#if !defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+		/* For ARMv8-M MPU with requirement for non-overlapping regions
+		 * Kernel SRAM access permissions are reset in context-switch,
+		 * so this region has already been disabled.
+		 */
 		_disable_region(_get_region_index_by_type(
 			THREAD_STACK_REGION));
+#endif
 		return;
 	}
 
