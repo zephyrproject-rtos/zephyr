@@ -31,7 +31,6 @@ extern "C" {
  * be managed inside the MPU driver and to not be escalated.
  *
  */
-/* Thread Stack Region Intent Type */
 enum {
 #ifdef CONFIG_APPLICATION_MEMORY
 	THREAD_APP_DATA_REGION,
