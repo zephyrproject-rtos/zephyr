@@ -527,12 +527,21 @@ output to the executable's ``stdin`` and ``stdout``.
 This is chosen by selecting either
 :option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` or
 :option:`CONFIG_NATIVE_UART_0_ON_STDINOUT`
-Note that for interactive use, the first option should be chosen. The
-second option is only intended for automated testing or feeding/piping other
-processes output to the UART.
+For interactive use with the :ref:`Shell`, choose the first (OWN_PTY) option.
+The second (STDINOUT) option can be used with the shell for automated
+testing, such as when piping other processes' output to control it.
+This is because the shell subsystem expects access to a raw terminal,
+which (by default) a normal Linux terminal is not.
 
 When :option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` is chosen, the name of the
 newly created UART pseudo-terminal will be displayed in the console.
+If you want to interact with it manually, you should attach a terminal emulator
+to it. This can be done, for example with the command::
+
+   $ xterm -e screen /dev/<ttyn> &
+
+where ``/dev/<ttyn>`` should be replaced with the actual TTY device.
+
 You may also chose to automatically attach a terminal emulator to it by
 passing the command line option ``-attach_uart`` to the executable.
 The command used for attaching to the new shell can be set with the command line
