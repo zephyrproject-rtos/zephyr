@@ -451,9 +451,9 @@ The following peripherals are currently provided with this board:
   - Redirect any :c:func:`printk` write to the native host application's
     ``stdout``.
 
-  - Feed any input from the native application ``stdin`` to a possible
-    running legacy shell. For more information refer to the section
-    `Legacy shell support`_.
+  - If the legacy shell is compiled with your application, redirect the
+    native application's ``stdin`` to the legacy shell for any input.
+    For more information refer to the section `Legacy shell support`_.
 
 **Real time clock**
   The real time clock model provides a model of a constantly powered clock.
@@ -554,9 +554,9 @@ installed in the system.
 Legacy shell support
 ********************
 
-When the legacy :ref:`Shell` subsystem is compiled with your application,
+When the legacy shell subsystem is compiled with your application,
 the native standard input (``stdin``) will be redirected to the shell.
-You may use the shell interactively through the console,
+You may use this shell interactively through the console,
 by piping another process output to it, or by feeding it a file.
 
 When using it interactively you may want to select the option
