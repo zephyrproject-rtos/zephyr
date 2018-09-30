@@ -426,15 +426,10 @@ Peripherals
 
 The following peripherals are currently provided with this board:
 
-**Console driver**:
-  A console driver is provided which by default is configured to:
-
-  - Redirect any :c:func:`printk` write to the native host application's
-    ``stdout``.
-
-  - Feed any input from the native application ``stdin`` to a possible
-    running legacy shell. For more information refer to the section
-    `Legacy shell support`_.
+**Interrupt controller**:
+  A simple yet generic interrupt controller is provided. It can nest interrupts
+  and provides interrupt priorities. Interrupts can be individually masked or
+  unmasked. SW interrupts are also supported.
 
 **Clock, timer and system tick model**
   This model provides the system tick timer. By default
@@ -445,6 +440,20 @@ The following peripherals are currently provided with this board:
 
   Please refer to the section `About time in native_posix`_ for more
   information.
+
+**UART**
+  An optional UART driver can be compiled with native_posix.
+  For more information refer to the section `UART`_.
+
+**Console driver**:
+  A console driver is provided which by default is configured to:
+
+  - Redirect any :c:func:`printk` write to the native host application's
+    ``stdout``.
+
+  - Feed any input from the native application ``stdin`` to a possible
+    running legacy shell. For more information refer to the section
+    `Legacy shell support`_.
 
 **Real time clock**
   The real time clock model provides a model of a constantly powered clock.
@@ -485,11 +494,6 @@ The following peripherals are currently provided with this board:
   ``--seed=<random_seed>`` where the value specified is a 32-bit integer
   such as 97229 (decimal),  0x17BCD (hex), or 0275715 (octal).
 
-**Interrupt controller**:
-  A simple yet generic interrupt controller is provided. It can nest interrupts
-  and provides interrupt priorities. Interrupts can be individually masked or
-  unmasked. SW interrupts are also supported.
-
 **Ethernet driver**:
   A simple TAP based ethernet driver is provided. The driver will create
   a **zeth** network interface to the host system. One can communicate with
@@ -512,10 +516,6 @@ The following peripherals are currently provided with this board:
   ``zephyr.exe`` needs to be run through ``sudo``. The chosen HCI device
   must be powered down and support Bluetooth Low Energy (i.e. support the
   Bluetooth specification version 4.0 or greater).
-
-**UART**
-  An optional UART driver can be compiled with native_posix.
-  For more information refer to the section `UART`_.
 
 
 UART
