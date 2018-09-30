@@ -166,34 +166,6 @@ available options::
 
    $ zephyr/zephyr.exe --help
 
-     [-h] [--h] [--help] [-?]  :Display this help
-     [-rt]                     :Slow down the execution to the host real time
-     [-no-rt]                  :Do NOT slow down the execution to real time, but
-                                advance Zephyr's time as fast as possible and
-                                decoupled from the host time
-     [-rt-drift=<drift>]       :Drift of the simulated clock relative to the
-                                real host time.
-                                Normally this would be set to a value of a few
-                                ppm (e.g. 50e-6)
-                                This option has no effect in non-real time mode
-     [-rt-ratio=<ratio>]       :Relative speed of the simulated time vs real
-                                time, for example, set to 2 to have simulated
-                                time pass at double the speed of real time.
-                                Note that both rt-drift & rt-ratio adjust the
-                                same clock speed, and therefore it does not make
-                                sense to use them simultaneously.
-                                This option has no effect in non-real time mode
-     [-rtc-offset=<offset>]    :At boot, offset the RTC by this number of
-                                seconds.
-     [-rtc-reset]              :Start the simulated real time clock at 0.
-                                Otherwise, it is started at the value of the
-                                host's RTC.
-     [-stop_at=<time>]         :In simulated seconds, when to stop automatically
-     [-seed=<r_seed>]          :Seed for the entropy device
-     [-testargs <arg>...]      :Any argument that follows will be ignored
-                                by the top level, and made
-                                available for possible tests
-
 Note that the Zephyr kernel does not actually exit once the application is
 finished. It simply goes into the idle loop forever.
 Therefore you must stop the application manually (Ctrl+C in Linux).
