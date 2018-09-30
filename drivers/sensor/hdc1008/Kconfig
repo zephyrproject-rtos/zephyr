@@ -40,7 +40,7 @@ config HDC1008_I2C_MASTER_DEV_NAME
 
 endif # !HAS_DTS_I2C
 
-if !HAS_DTS_GPIO_DEVICE
+if !HAS_DTS_GPIO
 
 config HDC1008_GPIO_DEV_NAME
 	string "GPIO device"
@@ -56,6 +56,6 @@ config HDC1008_GPIO_PIN_NUM
 	  The number of the GPIO on which the data-ready signal from the HDC1008
 	  chip will be received.
 
-endif # !HAS_DTS_GPIO_DEVICE
+endif # !HAS_DTS_GPIO
 
 endif # HDC1008

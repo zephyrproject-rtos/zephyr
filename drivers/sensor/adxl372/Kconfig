@@ -293,7 +293,7 @@ endchoice
 config ADXL372_TRIGGER
 	bool
 
-if !HAS_DTS_GPIO_DEVICE
+if !HAS_DTS_GPIO
 
 config ADXL372_GPIO_DEV_NAME
 	string "GPIO device"
@@ -311,7 +311,7 @@ config ADXL372_GPIO_PIN_NUM
 	  The GPIO pin number receiving the interrupt signal from the
 	  ADXL372 sensor.
 
-endif # !HAS_DTS_GPIO_DEVICE
+endif # !HAS_DTS_GPIO
 
 config ADXL372_THREAD_PRIORITY
 	int "Thread priority"

@@ -69,7 +69,7 @@ config IEEE802154_MCR20A_GPIO_SPI_CS_PIN
 
 endif # !HAS_DTS_SPI_PINS
 
-if !HAS_DTS_GPIO_DEVICE
+if !HAS_DTS_GPIO
 
 config MCR20A_GPIO_IRQ_B_NAME
 	string "GPIO device used for IRQ_B output of MCR20A"
@@ -85,7 +85,7 @@ config MCR20A_GPIO_RESET_PIN
 	int "GPIO pin connected to RESET input of MCR20A"
 	default 2
 
-endif # !HAS_DTS_GPIO_DEVICE
+endif # !HAS_DTS_GPIO
 
 config MCR20A_IS_PART_OF_KW2XD_SIP
 	bool "MCR20A device is part of KW2xD SiP"

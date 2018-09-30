@@ -30,7 +30,7 @@ config APDS9960_DRV_NAME
 
 endif # !HAS_DTS_I2C
 
-if !HAS_DTS_GPIO_DEVICE
+if !HAS_DTS_GPIO
 
 config APDS9960_GPIO_DEV_NAME
 	string "GPIO device"
@@ -45,7 +45,7 @@ config APDS9960_GPIO_PIN_NUM
 	  The GPIO pin number receiving the interrupt signal from the
 	  APDS9960 sensor.
 
-endif # !HAS_DTS_GPIO_DEVICE
+endif # !HAS_DTS_GPIO
 
 choice
 	prompt "Trigger mode"

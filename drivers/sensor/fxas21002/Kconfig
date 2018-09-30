@@ -90,7 +90,7 @@ config FXAS21002_TRIGGER
 
 if FXAS21002_TRIGGER
 
-if !HAS_DTS_GPIO_DEVICE
+if !HAS_DTS_GPIO
 
 config FXAS21002_GPIO_NAME
 	string "GPIO device name"
