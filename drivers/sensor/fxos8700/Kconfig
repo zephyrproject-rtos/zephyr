@@ -100,7 +100,7 @@ endchoice
 config FXOS8700_TRIGGER
 	bool
 
-if !HAS_DTS_GPIO_DEVICE
+if !HAS_DTS_GPIO
 
 config FXOS8700_GPIO_NAME
 	string "GPIO device name"
