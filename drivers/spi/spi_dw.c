@@ -416,12 +416,6 @@ static int transceive(struct device *dev,
 		DW_SPI_IMR_UNMASK;
 	write_imr(reg_data, info->regs);
 
-	LOG_DBG("Ctrlr0 0x%08x Ctrlr1 0x%04x Txftlr 0x%08x"
-		    " Rxftlr 0x%08x Imr 0x%02x",
-		    read_ctrlr0(info->regs), read_ctrlr1(info->regs),
-		    read_txftlr(info->regs), read_rxftlr(info->regs),
-		    read_imr(info->regs));
-
 	spi_context_cs_control(&spi->ctx, true);
 
 	LOG_DBG("Enabling controller");
