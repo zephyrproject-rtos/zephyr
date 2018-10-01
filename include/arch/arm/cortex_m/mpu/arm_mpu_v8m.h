@@ -89,7 +89,15 @@
 #define MPU_MAIR_ATTR_SRAM   MPU_CACHE_ATTRIBUTES_SRAM
 #define MPU_MAIR_INDEX_SRAM  1
 
-/* Some helper defines for common regions */
+/* Some helper defines for common regions.
+ *
+ * Note that the ARMv8-M MPU architecture requires that the
+ * enabled MPU regions are non-overlapping. Therefore, it is
+ * recommended to use these helper defines only for configuring
+ * fixed MPU regions at build-time (i.e. regions that are not
+ * expected to be re-programmed or re-adjusted at run-time so
+ * that they do not overlap with other MPU regions).
+ */
 #define REGION_RAM_ATTR(base, size) \
 	{\
 		.rbar = NOT_EXEC | \
