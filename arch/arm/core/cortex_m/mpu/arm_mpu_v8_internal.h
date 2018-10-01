@@ -60,6 +60,26 @@ static void _region_init(u32_t index, const struct arm_mpu_region *region_conf)
 	defined(CONFIG_APPLICATION_MEMORY)
 
 /**
+ * This internal function returns the MPU region, in which a
+ * buffer, specified by its start address and size, lies. If
+ * a valid MPU region cannot be derived, the function returns
+ * -EINVAL.
+ */
+static inline int _get_region_index(u32_t start, u32_t size)
+{
+	u32_t region_start_addr = arm_cmse_mpu_region_get(start);
+	u32_t region_end_addr = arm_cmse_mpu_region_get(start + size - 1);
+
+	/* MPU regions are contiguous so return the region number,
+	 * if both start and end address are in the same region.
+	 */
+	if (region_start_addr == region_end_addr) {
+		return region_start_addr;
+	}
+	return -EINVAL;
+}
+
+/**
  * This internal function allocates default RAM cache-ability, share-ability,
  * and execution allowance attributes along with the requested access
  * permissions and size.
@@ -107,13 +127,9 @@ static inline int _is_enabled_region(u32_t r_index)
  */
 static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 {
-	u32_t region_start_addr = arm_cmse_mpu_region_get(start);
-	u32_t region_end_addr = arm_cmse_mpu_region_get(start + size - 1);
+	int region = _get_region_index(start, size);
 
-	/* MPU regions are contiguous so return true if both start and end address
-	 * are in the same region and this region is indexed by r_index.
-	 */
-	if ((region_start_addr == r_index) && (region_end_addr == r_index)) {
+	if (region == r_index) {
 		return 1;
 	}
 
