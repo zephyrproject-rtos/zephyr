@@ -41,9 +41,6 @@ tags
 .envrc
 .vscode
 
-# Disables the warning about the changed behavior for Kconfig defaults
-hide-defaults-note
-
 # Tag files
 GPATH
 GRTAGS
