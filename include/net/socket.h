@@ -55,6 +55,10 @@ struct zsock_pollfd {
 
 /** zsock_recv: Read data without removing it from socket input queue */
 #define ZSOCK_MSG_PEEK 0x02
+/** zsock_recv: Control received data truncation */
+#define ZSOCK_MSG_TRUNC 0x10
+/** zsock_recv: Request a blocking operation until the request is satisfied. */
+#define ZSOCK_MSG_WAITALL 0x20
 /** zsock_recv/zsock_send: Override operation to non-blocking */
 #define ZSOCK_MSG_DONTWAIT 0x40
 
@@ -120,12 +124,19 @@ struct zsock_pollfd {
  *    - 1 - server
  */
 #define TLS_DTLS_ROLE 6
+
 /** Socket option for setting the supported Application Layer Protocols.
  *  It accepts and returns a const char array of NULL terminated strings
  *  representing the supported application layer protocols listed during
  *  the TLS handshake.
  */
 #define TLS_ALPN_LIST 7
+
+/** Socket option to control TLS session caching. Accepted values:
+ *  - 0 - Disabled.
+ *  - 1 - Enabled.
+ */
+#define TLS_SESSION_CACHE 8
 
 /** @} */
 
@@ -137,6 +148,10 @@ struct zsock_pollfd {
 /* Valid values for TLS_DTLS_ROLE option */
 #define TLS_DTLS_ROLE_CLIENT 0 /**< Client role in a DTLS session. */
 #define TLS_DTLS_ROLE_SERVER 1 /**< Server role in a DTLS session. */
+
+/* Valid values for TLS_SESSION_CACHE option */
+#define TLS_SESSION_CACHE_DISABLED 0 /**< Disable TLS session caching. */
+#define TLS_SESSION_CACHE_ENABLED 1 /**< Enable TLS session caching. */
 
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;
@@ -771,6 +786,8 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define POLLNVAL ZSOCK_POLLNVAL
 
 #define MSG_PEEK ZSOCK_MSG_PEEK
+#define MSG_TRUNC ZSOCK_MSG_TRUNC
+#define MSG_WAITALL ZSOCK_MSG_WAITALL
 #define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
 
 #define SHUT_RD ZSOCK_SHUT_RD
@@ -791,10 +808,18 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define SOL_SOCKET 1
 
 /* Socket options for SOL_SOCKET level */
-/** sockopt: Enable server address reuse (ignored, for compatibility) */
+/** sockopt: Enable server address reuse */
 #define SO_REUSEADDR 2
 /** sockopt: Async error (ignored, for compatibility) */
 #define SO_ERROR 4
+#define SO_SNDTIMEO 21
+#define SO_BINDTODEVICE 25
+/** sockopt: disable all replies to unexpected traffics */
+#define SO_SILENCE_ALL 30
+/** sockopt: disable IPv4 ICMP replies */
+#define SO_IP_ECHO_REPLY 31
+/** sockopt: disable IPv6 ICMP replies */
+#define SO_IPV6_ECHO_REPLY 32
 
 /**
  * sockopt: Receive timeout
@@ -823,6 +848,34 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 /* Socket options for SOCKS5 proxy */
 /** sockopt: Enable SOCKS5 for Socket */
 #define SO_SOCKS5 60
+
+/* Interface description structure */
+#define IFNAMSIZ 64
+
+struct ifreq {
+	char ifr_name[IFNAMSIZ]; /* Interface name */
+};
+
+/* Protocol level for PDN. */
+#define SOL_PDN 514
+
+/* Socket options for SOL_PDN level */
+#define SO_PDN_AF 1
+#define SO_PDN_CONTEXT_ID 2
+#define SO_PDN_STATE 3
+
+/* Protocol level for DFU. */
+#define SOL_DFU 515
+
+/* Socket options for SOL_DFU level */
+#define SO_DFU_FW_VERSION 1
+#define SO_DFU_RESOURCES 2
+#define SO_DFU_TIMEO 3
+#define SO_DFU_APPLY 4
+#define SO_DFU_REVERT 5
+#define SO_DFU_BACKUP_DELETE 6
+#define SO_DFU_OFFSET 7
+#define SO_DFU_ERROR 20
 
 /** @cond INTERNAL_HIDDEN */
 /**
