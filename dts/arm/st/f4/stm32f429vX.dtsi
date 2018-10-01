@@ -19,3 +19,7 @@
 /delete-node/ &spi5;
 
 /delete-node/ &spi6;
+
+/delete-node/ &i2s5;
+
+/delete-node/ &i2s6;
