@@ -1008,32 +1008,16 @@ static void le_create_connection(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
 
-static void le_create_conn_cancel(struct net_buf *buf, struct net_buf **evt)
+static void le_create_conn_cancel(struct net_buf *buf, struct net_buf **evt,
+				  void **node_rx)
 {
 	struct bt_hci_evt_cc_status *ccst;
-	struct net_buf *cc;
-	u8_t cmd_status;
 	u32_t status;
 
-	status = ll_connect_disable();
-	cmd_status = status ? BT_HCI_ERR_CMD_DISALLOWED : 0x00;
-
-	if (!cmd_status) {
-		*evt = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
-		le_conn_complete(BT_HCI_ERR_UNKNOWN_CONN_ID, NULL, 0x0000,
-				 *evt);
-		if ((*evt)->len) {
-			ccst = cmd_complete(&cc, sizeof(*ccst));
-			ccst->status = cmd_status;
-			bt_recv_prio(cc);
-			return;
-		} else {
-			net_buf_unref(*evt);
-		}
-	}
+	status = ll_connect_disable(node_rx);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
-	ccst->status = cmd_status;
+	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
 static void le_set_host_chan_classif(struct net_buf *buf, struct net_buf **evt)
@@ -1513,7 +1497,7 @@ static void le_enh_tx_test(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_CTLR_DTM_HCI */
 
 static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
-				 struct net_buf **evt)
+				 struct net_buf **evt, void **node_rx)
 {
 	switch (ocf) {
 	case BT_OCF(BT_HCI_OP_LE_SET_EVENT_MASK):
@@ -1601,7 +1585,7 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_CREATE_CONN_CANCEL):
-		le_create_conn_cancel(cmd, evt);
+		le_create_conn_cancel(cmd, evt, node_rx);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF):
@@ -1991,7 +1975,7 @@ static void data_buf_overflow(struct net_buf **buf)
 	ep->link_type = BT_OVERFLOW_LINK_ACL;
 }
 
-struct net_buf *hci_cmd_handle(struct net_buf *cmd)
+struct net_buf *hci_cmd_handle(struct net_buf *cmd, void **node_rx)
 {
 	struct bt_hci_evt_cc_status *ccst;
 	struct bt_hci_cmd_hdr *chdr;
@@ -2031,7 +2015,7 @@ struct net_buf *hci_cmd_handle(struct net_buf *cmd)
 		err = status_cmd_handle(ocf, cmd, &evt);
 		break;
 	case BT_OGF_LE:
-		err = controller_cmd_handle(ocf, cmd, &evt);
+		err = controller_cmd_handle(ocf, cmd, &evt, node_rx);
 		break;
 #if defined(CONFIG_BT_HCI_VS)
 	case BT_OGF_VS:
