@@ -83,16 +83,12 @@ config LSM6DSL_SPI_MASTER_DEV_NAME
 	  Specify the device name of the spi master device to which LSM6DSL is
 	  connected.
 
-endif #HAS_DTS_SPI
-
 config LSM6DSL_SPI_GPIO_CS
 	bool "LSM6DSL SPI CS through a GPIO pin"
 	depends on LSM6DSL_SPI
 	help
 	  This option is useful if one needs to manage SPI CS through a GPIO
 	  pin to by-pass the SPI controller's CS logic.
-
-if !HAS_DTS_SPI_PINS
 
 config LSM6DSL_SPI_GPIO_CS_DRV_NAME
 	string "GPIO driver's name to use to drive SPI CS through"
@@ -110,7 +106,7 @@ config LSM6DSL_SPI_GPIO_CS_PIN
 	  This option is mandatory to set which GPIO pin to use in order
 	  to actually emulate the SPI CS.
 
-endif # !HAS_DTS_SPI_PINS
+endif # !HAS_DTS_SPI
 
 choice LSM6DSL_TRIGGER_MODE
 	prompt "Trigger mode"
