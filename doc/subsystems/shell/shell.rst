@@ -182,7 +182,7 @@ Simple command handler implementation:
 
 .. code-block:: c
 
-	static void cmd_handler(const struct shell *shell, size_t argc,
+	static int cmd_handler(const struct shell *shell, size_t argc,
 				char **argv)
 	{
 		ARG_UNUSED(argc);
@@ -196,6 +196,8 @@ Simple command handler implementation:
 
 		shell_fprintf(shell, SHELL_ERROR,
 			      "Print error text.\r\n");
+
+		return 0;
 	}
 
 .. warning::
@@ -222,8 +224,8 @@ checks for valid arguments count.
 
 .. code-block:: c
 
-	static void cmd_dummy_1(const struct shell *shell, size_t argc,
-				char **argv)
+	static int cmd_dummy_1(const struct shell *shell, size_t argc,
+			       char **argv)
 	{
 		ARG_UNUSED(argv);
 
@@ -234,28 +236,30 @@ checks for valid arguments count.
 		 * Each of these actions can be deactivated in Kconfig.
 		 */
 		if (!shell_cmd_precheck(shell, (argc <= 2), NULL, 0) {
-			return;
+			return 0;
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL,
 			      "Command called with no -h or --help option."
 			      "\r\n");
+		return 0;
 	}
 
-	static void cmd_dummy_2(const struct shell *shell, size_t argc,
-				char **argv)
+	static int cmd_dummy_2(const struct shell *shell, size_t argc,
+			       char **argv)
 	{
 		ARG_UNUSED(argc);
 		ARG_UNUSED(argv);
 
 		if (hell_help_requested(shell) {
 			shell_help_print(shell, NULL, 0);
-			return;
-		}
-
-		shell_fprintf(shell, SHELL_NORMAL,
+		} else {
+			shell_fprintf(shell, SHELL_NORMAL,
 			      "Command called with no -h or --help option."
 			      "\r\n");
+		}
+
+		return 0;
 	}
 
 Command options
@@ -271,8 +275,8 @@ in command handler.
 
 .. code-block:: c
 
-	static void cmd_with_options(const struct shell *shell, size_t argc,
-				     char **argv)
+	static int cmd_with_options(const struct shell *shell, size_t argc,
+			            char **argv)
 	{
 		/* Dummy options showing options usage */
 		static const struct shell_getopt_option opt[] = {
@@ -293,25 +297,26 @@ in command handler.
 		 */
 		if (!shell_cmd_precheck(shell, (argc <= 2), opt,
 					  sizeof(opt)/sizeof(opt[1]))) {
-			return;
+			return 0;
 		}
 
 		/* checking if command was called with test option */
 		if (!strcmp(argv[1], "-t") || !strcmp(argv[1], "--test")) {
 		    shell_fprintf(shell, SHELL_NORMAL, "Command called with -t"
 				  " or --test option.\r\n");
-		    return;
+		    return 0;
 		}
 
 		/* checking if command was called with dummy option */
 		if (!strcmp(argv[1], "-d") || !strcmp(argv[1], "--dummy")) {
 		    shell_fprintf(shell, SHELL_NORMAL, "Command called with -d"
 				  " or --dummy option.\r\n");
-		    return;
+		    return 0;
 		}
 
 		shell_fprintf(shell, SHELL_WARNING,
 			      "Command called with no valid option.\r\n");
+		return 0;
 	}
 
 Parent commands
@@ -327,8 +332,8 @@ commands or the parent commands, depending on how you index ``argv``.
 
 .. code-block:: c
 
-	static void cmd_handler(const struct shell *shell, size_t argc,
-					char **argv)
+	static int cmd_handler(const struct shell *shell, size_t argc,
+			       char **argv)
 	{
 		ARG_UNUSED(argc);
 
@@ -348,6 +353,8 @@ commands or the parent commands, depending on how you index ``argv``.
 		shell_fprintf(shell, SHELL_NORMAL,
 			      "This command has an argument: %s\r\n",
 			      argv[1]);
+
+		return 0;
 	}
 
 Built-in commands
@@ -436,17 +443,18 @@ The following code shows a simple use case of this library:
 		(void)shell_init(&uart_shell, NULL, true, true, LOG_LEVEL_INF);
 	}
 
-	static void cmd_demo_ping(const struct shell *shell, size_t argc,
-				  char **argv)
+	static int cmd_demo_ping(const struct shell *shell, size_t argc,
+				 char **argv)
 	{
 		ARG_UNUSED(argc);
 		ARG_UNUSED(argv);
 
 		shell_fprintf(shell, SHELL_NORMAL, "pong\r\n");
+		return 0;
 	}
 
-	static void cmd_demo_params(const struct shell *shell, size_t argc,
-				    char **argv)
+	static int cmd_demo_params(const struct shell *shell, size_t argc,
+				   char **argv)
 	{
 		int cnt;
 
@@ -455,6 +463,7 @@ The following code shows a simple use case of this library:
 			shell_fprintf(shell, SHELL_NORMAL,
 					"  argv[%d] = %s\r\n", cnt, argv[cnt]);
 		}
+		return 0;
 	}
 
 	/* Creating subcommands (level 1 command) array for command "demo".
