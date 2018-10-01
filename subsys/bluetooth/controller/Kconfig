@@ -434,7 +434,10 @@ config BT_CTLR_SW_SWITCH_SINGLE_TIMER
 	  (+) removes jitter for HCTO implementation
 	  (-) introduces drifting to the absolute time inside BLE
 	  events, that increases linearly with the number of
-	  packets exchanged in the event.
+	  packets exchanged in the event
+	  (-) makes it impossible to use most of the pre-programmed
+	  PPI channels for the controller, resulting in 4 channels
+	  less left for other uses
 
 if BT_CONN
 
