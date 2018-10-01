@@ -47,6 +47,7 @@ extern "C" {
 #define PF_NET_MGMT     5          /**< Network management info.      */
 #define PF_LOCAL        6          /**< Inter-process communication   */
 #define PF_UNIX         PF_LOCAL   /**< Inter-process communication   */
+#define PF_LTE          102        /**< Specific to LTE.              */
 
 /* Address families. */
 #define AF_UNSPEC      PF_UNSPEC   /**< Unspecified address family.   */
@@ -57,6 +58,7 @@ extern "C" {
 #define AF_NET_MGMT    PF_NET_MGMT /**< Network management info.      */
 #define AF_LOCAL       PF_LOCAL    /**< Inter-process communication   */
 #define AF_UNIX        PF_UNIX     /**< Inter-process communication   */
+#define AF_LTE         PF_LTE      /**< Specific to LTE.              */
 
 /** Protocol numbers from IANA/BSD */
 enum net_ip_protocol {
@@ -78,11 +80,23 @@ enum net_ip_protocol_secure {
 	IPPROTO_DTLS_1_2 = 273,    /**< DTLS 1.2 protocol */
 };
 
+/* Protocol numbers for LTE protocols */
+enum net_lte_protocol {
+	NPROTO_AT = 513,
+	NPROTO_PDN = 514
+};
+
+/* Protocol numbers for LOCAL protocols */
+enum net_local_protocol {
+	NPROTO_DFU = 515
+};
+
 /** Socket type */
 enum net_sock_type {
-	SOCK_STREAM = 1,           /**< Stream socket type   */
-	SOCK_DGRAM,                /**< Datagram socket type */
-	SOCK_RAW                   /**< RAW socket type      */
+	SOCK_STREAM = 1,           /**< Stream socket type     */
+	SOCK_DGRAM,                /**< Datagram socket type   */
+	SOCK_RAW,                  /**< RAW socket type        */
+	SOCK_MGMT                  /**< Management socket type */
 };
 
 /** @brief Convert 16-bit value from network to host byte order.

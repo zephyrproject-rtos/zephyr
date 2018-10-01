@@ -119,6 +119,11 @@ struct zsock_pollfd {
  *    - 1 - server
  */
 #define TLS_DTLS_ROLE 6
+/** Socket option to control TLS session caching. Accepted values:
+ *  - 0 - Disabled.
+ *  - 1 - Enabled.
+ */
+#define TLS_SESSION_CACHE 7
 
 /** @} */
 
@@ -130,6 +135,10 @@ struct zsock_pollfd {
 /* Valid values for TLS_DTLS_ROLE option */
 #define TLS_DTLS_ROLE_CLIENT 0 /**< Client role in a DTLS session. */
 #define TLS_DTLS_ROLE_SERVER 1 /**< Server role in a DTLS session. */
+
+/* Valid values for TLS_SESSION_CACHE option */
+#define TLS_SESSION_CACHE_DISABLED 0 /**< Disable TLS session caching. */
+#define TLS_SESSION_CACHE_ENABLED 1 /**< Enable TLS session caching. */
 
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;
@@ -745,6 +754,8 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define SO_REUSEADDR 2
 /** sockopt: Async error (ignored, for compatibility) */
 #define SO_ERROR 4
+#define SO_RCVTIMEO 20
+#define SO_BINDTODEVICE 25
 
 /** sockopt: Timestamp TX packets */
 #define SO_TIMESTAMPING 37
@@ -767,6 +778,34 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 /* Socket options for SOCKS5 proxy */
 /** sockopt: Enable SOCKS5 for Socket */
 #define SO_SOCKS5 60
+
+/* Interface description structure */
+#define IFNAMSIZ 64
+
+struct ifreq {
+    char ifr_name[IFNAMSIZ]; /* Interface name */
+};
+
+/* Protocol level for PDN. */
+#define SOL_PDN 514
+
+/* Socket options for SOL_PDN level */
+#define SO_PDN_AF 1
+#define SO_PDN_CONTEXT_ID 2
+#define SO_PDN_STATE 3
+
+/* Protocol level for DFU. */
+#define SOL_DFU 515
+
+/* Socket options for SOL_DFU level */
+#define SO_DFU_FW_VERSION 1
+#define SO_DFU_RESOURCES 2
+#define SO_DFU_TIMEO 3
+#define SO_DFU_APPLY 4
+#define SO_DFU_REVERT 5
+#define SO_DFU_BACKUP_DELETE 6
+#define SO_DFU_OFFSET 7
+#define SO_DFU_ERROR 20
 
 /** @cond INTERNAL_HIDDEN */
 /**
