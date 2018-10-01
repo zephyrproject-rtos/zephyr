@@ -23,6 +23,8 @@ struct flash_stm32_priv {
 	struct stm32_pclken pclken;
 #elif defined(CONFIG_SOC_SERIES_STM32F4X)
 	struct stm32f4x_flash *regs;
+#elif defined(CONFIG_SOC_SERIES_STM32F7X)
+	struct stm32f7x_flash *regs;
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 	struct stm32l4x_flash *regs;
 	/* clock subsystem driving this peripheral */
