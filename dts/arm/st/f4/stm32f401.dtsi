@@ -29,5 +29,23 @@
 			status = "disabled";
 			label = "SPI_3";
 		};
+
+		i2s2: i2s@40003800 {
+			compatible = "st,stm32-i2s";
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			interrupts = <36 5>;
+			status = "disabled";
+			label = "I2S_2";
+		};
+
+		i2s3: i2s@40003C00 {
+			compatible = "st,stm32-i2s";
+			reg = <0x40003C00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
+			interrupts = <51 5>;
+			status = "disabled";
+			label = "I2S_3";
+		};
 	};
 };

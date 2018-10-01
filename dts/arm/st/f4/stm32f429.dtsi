@@ -58,7 +58,16 @@
 			label = "SPI_4";
 		};
 
-		/* spi5 is present on all STM32F429XX SoCs except
+		i2s4: i2s@40013400 {
+			compatible = "st,stm32-i2s";
+			reg = <0x40013400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
+			interrupts = <84 5>;
+			status = "disabled";
+			label = "I2S_4";
+		};
+
+		/* spi5/i2s5 is present on all STM32F429XX SoCs except
 		 * STM32F429vX SoCs. Delete node in stm32f429vX.dtsi.
 		 */
 		 spi5: spi@40015000 {
@@ -71,7 +80,16 @@
 			label = "SPI_5";
 		};
 
-		/* spi6 is present on all STM32F429XX SoCs except
+		 i2s5: i2s@40015000 {
+			compatible = "st,stm32-i2s";
+			reg = <0x40015000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
+			interrupts = <85 5>;
+			status = "disabled";
+			label = "I2S_5";
+		};
+
+		/* spi6/i2s6 is present on all STM32F429XX SoCs except
 		 * STM32F429vX SoCs. Delete node in stm32f429vX.dtsi.
 		 */
 		spi6: spi@40015400 {
@@ -82,6 +100,15 @@
 			interrupts = <86 5>;
 			status = "disabled";
 			label = "SPI_6";
+		};
+
+		i2s6: i2s@40015400 {
+			compatible = "st,stm32-i2s";
+			reg = <0x40015400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00200000>;
+			interrupts = <86 5>;
+			status = "disabled";
+			label = "I2S_6";
 		};
 	};
 };
