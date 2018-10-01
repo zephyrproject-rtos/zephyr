@@ -166,6 +166,8 @@ static void _mpu_configure_by_type(u8_t type, u32_t base, u32_t size)
 
 /**
  * This internal function disables a given MPU region.
+ *
+ * @param r_index MPU region index
  */
 static inline void _disable_region(u32_t r_index)
 {
@@ -182,6 +184,23 @@ static inline void _disable_region(u32_t r_index)
 	/* Disable region */
 	ARM_MPU_ClrRegion(r_index);
 }
+
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+/**
+ * This internal function disables the MPU region of the given type
+ *
+ * @param   type    MPU region type
+ */
+static void _disable_region_by_type(u8_t type)
+{
+	LOG_DBG("disable region type ox%x", type);
+	u32_t region_index = _get_region_index_by_type(type);
+	if (region_index >= _get_num_regions()) {
+		return;
+	}
+	_disable_region(region_index);
+}
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 
 /**
  * @brief configure the base address and size for an MPU region
