@@ -10458,23 +10458,11 @@ u32_t radio_scan_disable(void)
 
 	status = role_disable(RADIO_TICKER_ID_SCAN,
 			      RADIO_TICKER_ID_SCAN_STOP);
-	if (!status) {
-		struct connection *conn;
-
+	if (!status && !_radio.scanner.conn) {
 		_radio.scanner.is_enabled = 0;
 
 		if (!_radio.advertiser.is_enabled) {
 			ll_adv_scan_state_cb(0);
-		}
-
-		conn = _radio.scanner.conn;
-		if (conn) {
-			_radio.scanner.conn = NULL;
-
-			mem_release(conn->llcp_terminate.
-				    radio_pdu_node_rx.hdr.onion.link,
-				    &_radio.link_rx_free);
-			mem_release(conn, &_radio.conn_free);
 		}
 	}
 
@@ -10661,7 +10649,7 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	return 0;
 }
 
-u32_t ll_connect_disable(void)
+u32_t ll_connect_disable(void **node_rx)
 {
 	u32_t status;
 
@@ -10670,6 +10658,20 @@ u32_t ll_connect_disable(void)
 	}
 
 	status = radio_scan_disable();
+	if (!status) {
+		struct connection *conn = _radio.scanner.conn;
+		struct radio_pdu_node_rx *rx;
+
+		rx = (void *)&conn->llcp_terminate.radio_pdu_node_rx;
+
+		/* free the memq link early, as caller could overwrite it */
+		mem_release(rx->hdr.onion.link, &_radio.link_rx_free);
+
+		rx->hdr.type = NODE_RX_TYPE_CONNECTION;
+		rx->hdr.handle = 0xffff;
+		*((u8_t *)rx->pdu_data) = BT_HCI_ERR_UNKNOWN_CONN_ID;
+		*node_rx = rx;
+	}
 
 	return status;
 }
@@ -11352,6 +11354,26 @@ void ll_rx_mem_release(void **node_rx)
 		_node_rx = _node_rx->hdr.onion.next;
 
 		switch (_node_rx_free->hdr.type) {
+		case NODE_RX_TYPE_CONNECTION:
+			if (*((u8_t *)_node_rx_free->pdu_data) ==
+			    BT_HCI_ERR_UNKNOWN_CONN_ID) {
+				struct connection *conn;
+
+				conn = _radio.scanner.conn;
+				_radio.scanner.conn = NULL;
+
+				mem_release(conn, &_radio.conn_free);
+
+				_radio.scanner.is_enabled = 0;
+
+				if (!_radio.advertiser.is_enabled) {
+					ll_adv_scan_state_cb(0);
+				}
+
+				break;
+			}
+			/* passthrough */
+
 		case NODE_RX_TYPE_DC_PDU:
 		case NODE_RX_TYPE_REPORT:
 
@@ -11364,7 +11386,6 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_SCAN_REQ:
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
-		case NODE_RX_TYPE_CONNECTION:
 		case NODE_RX_TYPE_CONN_UPDATE:
 		case NODE_RX_TYPE_ENC_REFRESH:
 
