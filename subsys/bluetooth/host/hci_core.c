@@ -829,13 +829,12 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
-		/* Drop the reference got by lookup call in CONNECT state.
-		 * We are now in DISCONNECTED state since no successful LE
-		 * link been made.
-		 */
-		bt_conn_unref(conn);
+		/* check if device is market for auto connect */
+		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+			bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+		}
 
-		return;
+		goto done;
 	}
 
 	bt_addr_le_copy(&id_addr, &evt->peer_addr);
