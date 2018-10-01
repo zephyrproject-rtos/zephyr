@@ -9,10 +9,10 @@
 #include <logging/log.h>
 #include <string.h>
 
-typedef void (*log_backend_cmd_t)(const struct shell *shell,
-				const struct log_backend *backend,
-				size_t argc,
-				char **argv);
+typedef int (*log_backend_cmd_t)(const struct shell *shell,
+				 const struct log_backend *backend,
+				 size_t argc,
+				 char **argv);
 
 static const char * const severity_lvls[] = {
 	"none",
@@ -68,10 +68,10 @@ static bool shell_state_precheck(const struct shell *shell)
 /**
  * @brief Function for executing command on given backend.
  */
-static void shell_backend_cmd_execute(const struct shell *shell,
-				      size_t argc,
-				      char **argv,
-				      log_backend_cmd_t func)
+static int shell_backend_cmd_execute(const struct shell *shell,
+				     size_t argc,
+				     char **argv,
+				     log_backend_cmd_t func)
 {
 	/* Based on the structure of backend commands, name of the backend can
 	 * be found at -1 (log backend <name> command).
@@ -84,13 +84,15 @@ static void shell_backend_cmd_execute(const struct shell *shell,
 	} else {
 		shell_fprintf(shell, SHELL_ERROR,
 			      "Invalid backend: %s\r\n", name);
+		return -ENOEXEC;
 	}
+	return 0;
 }
 
 
-static void log_status(const struct shell *shell,
-		       const struct log_backend *backend,
-		       size_t argc, char **argv)
+static int log_status(const struct shell *shell,
+		      const struct log_backend *backend,
+		      size_t argc, char **argv)
 {
 	u32_t modules_cnt = log_sources_count();
 	u32_t dynamic_lvl;
@@ -118,23 +120,26 @@ static void log_status(const struct shell *shell,
 			      severity_lvls[dynamic_lvl],
 			      severity_lvls[compiled_lvl]);
 	}
+	return 0;
 }
 
 
-static void cmd_log_self_status(const struct shell *shell,
-				size_t argc, char **argv)
+static int cmd_log_self_status(const struct shell *shell,
+			       size_t argc, char **argv)
 {
 	if (!shell_state_precheck(shell)) {
-		return;
+		return 0;
 	}
 
 	log_status(shell, shell->log_backend->backend, argc, argv);
+	return 0;
 }
 
-static void cmd_log_backend_status(const struct shell *shell,
-				   size_t argc, char **argv)
+static int cmd_log_backend_status(const struct shell *shell,
+				  size_t argc, char **argv)
 {
 	shell_backend_cmd_execute(shell, argc, argv, log_status);
+	return 0;
 }
 
 static int module_id_get(const char *name)
@@ -154,7 +159,7 @@ static int module_id_get(const char *name)
 }
 
 static u32_t module_filter_set(const struct log_backend *backend,
-			      int module_id, u32_t level)
+			       int module_id, u32_t level)
 {
 	u32_t compiled_lvl;
 
@@ -217,15 +222,15 @@ static int severity_level_get(const char *str)
 
 	return -1;
 }
-static void log_enable(const struct shell *shell,
-		       const struct log_backend *backend,
-		       size_t argc,
-		       char **argv)
+static int log_enable(const struct shell *shell,
+		      const struct log_backend *backend,
+		      size_t argc,
+		      char **argv)
 {
 	int severity_level;
 
 	if (!shell_cmd_precheck(shell, (argc > 1), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	severity_level = severity_level_get(argv[1]);
@@ -233,55 +238,57 @@ static void log_enable(const struct shell *shell,
 	if (severity_level < 0) {
 		shell_fprintf(shell, SHELL_ERROR, "Invalid severity: %s\r\n",
 			      argv[1]);
-		return;
+		return -ENOEXEC;
 	}
 
 	/* Arguments following severity level are interpreted as module names.*/
 	filters_set(shell, backend, argc - 2, &argv[2], severity_level);
+	return 0;
 }
 
-static void cmd_log_self_enable(const struct shell *shell,
-				size_t argc, char **argv)
+static int cmd_log_self_enable(const struct shell *shell,
+			       size_t argc, char **argv)
 {
 	if (!shell_state_precheck(shell)) {
-		return;
+		return 0;
 	}
 
-	log_enable(shell, shell->log_backend->backend, argc, argv);
+	return log_enable(shell, shell->log_backend->backend, argc, argv);
 }
 
-static void cmd_log_backend_enable(const struct shell *shell,
-				   size_t argc, char **argv)
+static int cmd_log_backend_enable(const struct shell *shell,
+				  size_t argc, char **argv)
 {
-	shell_backend_cmd_execute(shell, argc, argv, log_enable);
+	return shell_backend_cmd_execute(shell, argc, argv, log_enable);
 }
 
-static void log_disable(const struct shell *shell,
-			const struct log_backend *backend,
-			size_t argc,
-			char **argv)
+static int log_disable(const struct shell *shell,
+		       const struct log_backend *backend,
+		       size_t argc,
+		       char **argv)
 {
 	if (!shell_cmd_precheck(shell, (argc > 1), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	filters_set(shell, backend, argc - 1, &argv[1], LOG_LEVEL_NONE);
+	return 0;
 }
 
-static void cmd_log_self_disable(const struct shell *shell,
+static int cmd_log_self_disable(const struct shell *shell,
 				 size_t argc, char **argv)
 {
 	if (!shell_state_precheck(shell)) {
-		return;
+		return 0;
 	}
 
-	log_disable(shell, shell->log_backend->backend, argc, argv);
+	return log_disable(shell, shell->log_backend->backend, argc, argv);
 }
 
-static void cmd_log_backend_disable(const struct shell *shell,
-				    size_t argc, char **argv)
+static int cmd_log_backend_disable(const struct shell *shell,
+				   size_t argc, char **argv)
 {
-	shell_backend_cmd_execute(shell, argc, argv, log_disable);
+	return shell_backend_cmd_execute(shell, argc, argv, log_disable);
 }
 
 static void module_name_get(size_t idx, struct shell_static_entry *entry);
@@ -308,64 +315,66 @@ static void severity_lvl_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_CREATE_DYNAMIC_CMD(dsub_severity_lvl, severity_lvl_get);
 
-static void log_halt(const struct shell *shell,
-		     const struct log_backend *backend,
-		     size_t argc,
-		     char **argv)
+static int log_halt(const struct shell *shell,
+		    const struct log_backend *backend,
+		    size_t argc,
+		    char **argv)
 {
 	log_backend_deactivate(backend);
+	return 0;
 }
 
 
-static void cmd_log_self_halt(const struct shell *shell,
+static int cmd_log_self_halt(const struct shell *shell,
 			      size_t argc, char **argv)
 {
 	if (!shell_state_precheck(shell)) {
-		return;
+		return 0;
 	}
 
-	log_halt(shell, shell->log_backend->backend, argc, argv);
+	return log_halt(shell, shell->log_backend->backend, argc, argv);
 }
 
-static void cmd_log_backend_halt(const struct shell *shell,
-				 size_t argc, char **argv)
+static int cmd_log_backend_halt(const struct shell *shell,
+				size_t argc, char **argv)
 {
-	shell_backend_cmd_execute(shell, argc, argv, log_halt);
+	return shell_backend_cmd_execute(shell, argc, argv, log_halt);
 }
 
-static void log_go(const struct shell *shell,
-		   const struct log_backend *backend,
-		   size_t argc,
-		   char **argv)
+static int log_go(const struct shell *shell,
+		  const struct log_backend *backend,
+		  size_t argc,
+		  char **argv)
 {
 	log_backend_activate(backend, backend->cb->ctx);
+	return 0;
 }
 
 
-static void cmd_log_self_go(const struct shell *shell,
-			    size_t argc, char **argv)
+static int cmd_log_self_go(const struct shell *shell,
+			   size_t argc, char **argv)
 {
 	if (!shell_state_precheck(shell)) {
-		return;
+		return 0;
 	}
 
-	log_go(shell, shell->log_backend->backend, argc, argv);
+	return log_go(shell, shell->log_backend->backend, argc, argv);
 }
 
-static void cmd_log_backend_go(const struct shell *shell,
-			       size_t argc, char **argv)
+static int cmd_log_backend_go(const struct shell *shell,
+			      size_t argc, char **argv)
 {
-	shell_backend_cmd_execute(shell, argc, argv, log_go);
+	return shell_backend_cmd_execute(shell, argc, argv, log_go);
 }
 
 
-static void cmd_log_backends_list(const struct shell *shell,
-			  size_t argc, char **argv)
+static int cmd_log_backends_list(const struct shell *shell,
+				 size_t argc, char **argv)
 {
 	int backend_count;
 
 	if (!shell_cmd_precheck(shell, (argc == 1), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	backend_count = log_backend_count_get();
@@ -382,6 +391,7 @@ static void cmd_log_backends_list(const struct shell *shell,
 			      backend->cb->id);
 
 	}
+	return 0;
 }
 
 
@@ -439,15 +449,16 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_log_stat)
 	SHELL_SUBCMD_SET_END
 };
 
-static void cmd_log(const struct shell *shell, size_t argc, char **argv)
+static int cmd_log(const struct shell *shell, size_t argc, char **argv)
 {
 	if ((argc == 1) || shell_help_requested(shell)) {
 		shell_help_print(shell, NULL, 0);
-		return;
+		return 0;
 	}
 
 	shell_fprintf(shell, SHELL_ERROR, "%s:%s%s\r\n",
 		      argv[0], " unknown parameter: ", argv[1]);
+	return -ENOEXEC;
 }
 
 SHELL_CMD_REGISTER(log, &sub_log_stat, "Commands for controlling logger",

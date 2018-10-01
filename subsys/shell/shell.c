@@ -32,7 +32,7 @@
 /* Initial cursor position is: (1, 1). */
 #define SHELL_INITIAL_CURS_POS		(1u)
 
-static void shell_execute(const struct shell *shell);
+static int shell_execute(const struct shell *shell);
 
 extern const struct shell_cmd_entry __shell_root_cmds_start[0];
 extern const struct shell_cmd_entry __shell_root_cmds_end[0];
@@ -760,13 +760,15 @@ static void shell_state_collect(const struct shell *shell)
 		switch (shell->ctx->receive_state) {
 		case SHELL_RECEIVE_DEFAULT:
 			if (data == shell->newline_char) {
+
 				if (!shell->ctx->cmd_buff_len) {
 					history_mode_exit(shell);
 					cursor_next_line_move(shell);
 				} else {
 					/* Command execution */
-					shell_execute(shell);
+					(void)shell_execute(shell);
 				}
+
 				shell_state_set(shell, SHELL_STATE_ACTIVE);
 				return;
 			}
@@ -922,7 +924,7 @@ static const struct shell_cmd_entry *root_cmd_find(const char *syntax)
  * invokes the  last recognized command which has a handler and passes the rest
  * of command buffer as arguments.
  */
-static void shell_execute(const struct shell *shell)
+static int shell_execute(const struct shell *shell)
 {
 	struct shell_static_entry d_entry; /* Memory for dynamic commands. */
 	char *argv[CONFIG_SHELL_ARGC_MAX + 1]; /* +1 reserved for NULL */
@@ -931,6 +933,7 @@ static void shell_execute(const struct shell *shell)
 	size_t cmd_lvl = SHELL_CMD_ROOT_LVL;
 	size_t cmd_with_handler_lvl = 0;
 	bool wildcard_found = false;
+	int ret_val = 0;
 	size_t cmd_idx;
 	size_t argc;
 	char quote;
@@ -956,13 +959,13 @@ static void shell_execute(const struct shell *shell)
 				CONFIG_SHELL_ARGC_MAX);
 
 	if (!argc) {
-		return;
+		return -ENOEXEC;
 	}
 
 	if (quote != 0) {
 		shell_fprintf(shell, SHELL_ERROR, "not terminated: %c\r\n",
 			      quote);
-		return;
+		return -ENOEXEC;
 	}
 
 	/*  Searching for a matching root command. */
@@ -970,7 +973,7 @@ static void shell_execute(const struct shell *shell)
 	if (p_cmd == NULL) {
 		shell_fprintf(shell, SHELL_ERROR, "%s%s\r\n", argv[0],
 					SHELL_MSG_COMMAND_NOT_FOUND);
-		return;
+		return -ENOEXEC;
 	}
 
 	/* Root command shall be always static. */
@@ -1047,7 +1050,7 @@ static void shell_execute(const struct shell *shell)
 							" executions\r\n");
 						help_flag_clear(shell);
 
-						return;
+						return -ENOEXEC;
 					}
 				}
 
@@ -1079,14 +1082,17 @@ static void shell_execute(const struct shell *shell)
 		} else {
 			shell_fprintf(shell, SHELL_ERROR,
 				      SHELL_MSG_SPECIFY_SUBCOMMAND);
+			ret_val = -ENOEXEC;
 		}
 	} else {
-		shell->ctx->active_cmd.handler(shell,
-					       argc - cmd_with_handler_lvl,
-					       &argv[cmd_with_handler_lvl]);
+		ret_val = shell->ctx->active_cmd.handler(shell,
+						   argc - cmd_with_handler_lvl,
+						   &argv[cmd_with_handler_lvl]);
 	}
 
 	help_flag_clear(shell);
+
+	return ret_val;
 }
 
 static void shell_transport_evt_handler(enum shell_transport_evt evt_type,

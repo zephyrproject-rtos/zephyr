@@ -34,11 +34,11 @@ SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, '\r', 10);
 #if defined(CONFIG_BT_CONN)
 static bool hrs_simulate;
 
-static void cmd_hrs_simulate(const struct shell *shell,
-			     size_t argc, char *argv[])
+static int cmd_hrs_simulate(const struct shell *shell,
+			    size_t argc, char *argv[])
 {
 	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	if (!strcmp(argv[1], "on")) {
@@ -58,8 +58,10 @@ static void cmd_hrs_simulate(const struct shell *shell,
 	} else {
 		printk("Incorrect value: %s\n", argv[1]);
 		shell_help_print(shell, NULL, 0);
-		return;
+		return -ENOEXEC;
 	}
+
+	return 0;
 }
 #endif /* CONFIG_BT_CONN */
 
@@ -75,19 +77,21 @@ SHELL_CREATE_STATIC_SUBCMD_SET(hrs_cmds) {
 	SHELL_SUBCMD_SET_END
 };
 
-static void cmd_hrs(const struct shell *shell, size_t argc, char **argv)
+static int cmd_hrs(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
 		shell_help_print(shell, NULL, 0);
-		return;
+		return 0;
 	}
 
 	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	shell_fprintf(shell, SHELL_ERROR, "%s:%s%s\r\n", argv[0],
 		      "unknown parameter: ", argv[1]);
+
+	return -ENOEXEC;
 }
 
 SHELL_CMD_REGISTER(hrs, &hrs_cmds, "Heart Rate Service shell commands",
