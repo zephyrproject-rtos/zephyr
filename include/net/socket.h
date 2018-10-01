@@ -27,6 +27,7 @@
 #include <net/net_ip.h>
 #include <net/dns_resolve.h>
 #include <net/socket_select.h>
+#include <net/socket_ncs.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus
