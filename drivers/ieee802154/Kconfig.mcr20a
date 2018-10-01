@@ -42,15 +42,11 @@ config IEEE802154_MCR20A_SPI_SLAVE
 	  This option sets the SPI slave number SPI controller has to switch
 	  to when dealing with MCR20A chip.
 
-endif # !HAS_DTS_SPI
-
 config IEEE802154_MCR20A_GPIO_SPI_CS
 	bool "Manage SPI CS through a GPIO pin"
 	help
 	This option is useful if one needs to manage SPI CS through a GPIO
 	pin to by-pass the SPI controller's CS logic.
-
-if !HAS_DTS_SPI_PINS
 
 config IEEE802154_MCR20A_GPIO_SPI_CS_DRV_NAME
 	string "GPIO driver's name to use to drive SPI CS through"
@@ -67,7 +63,7 @@ config IEEE802154_MCR20A_GPIO_SPI_CS_PIN
 	This option is mandatory to set which GPIO pin to use in order
 	to actually emulate the SPI CS.
 
-endif # !HAS_DTS_SPI_PINS
+endif # !HAS_DTS_SPI
 
 if !HAS_DTS_GPIO
 
