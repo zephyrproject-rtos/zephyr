@@ -29,41 +29,46 @@ void timer_expired_handler(struct k_timer *timer)
 
 K_TIMER_DEFINE(log_timer, timer_expired_handler, NULL);
 
-static void cmd_log_test_start(const struct shell *shell, size_t argc,
-			       char **argv, u32_t period)
+static int cmd_log_test_start(const struct shell *shell, size_t argc,
+			      char **argv, u32_t period)
 {
 	if (!shell_cmd_precheck(shell, argc == 1, NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	k_timer_start(&log_timer, period, period);
 	shell_fprintf(shell, SHELL_NORMAL, "Log test started\r\n");
+	return 0;
 }
 
-static void cmd_log_test_start_demo(const struct shell *shell, size_t argc,
-				    char **argv)
+static int cmd_log_test_start_demo(const struct shell *shell, size_t argc,
+				   char **argv)
 {
 	cmd_log_test_start(shell, argc, argv, 200);
+	return 0;
 }
 
-static void cmd_log_test_start_flood(const struct shell *shell, size_t argc,
-				     char **argv)
+static int cmd_log_test_start_flood(const struct shell *shell, size_t argc,
+				    char **argv)
 {
 	cmd_log_test_start(shell, argc, argv, 10);
+	return 0;
 }
 
-static void cmd_log_test_stop(const struct shell *shell, size_t argc,
-			      char **argv)
+static int cmd_log_test_stop(const struct shell *shell, size_t argc,
+			     char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
 	if (!shell_cmd_precheck(shell, argc == 1, NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	k_timer_stop(&log_timer);
 	shell_fprintf(shell, SHELL_NORMAL, "Log test stopped\r\n");
+
+	return 0;
 }
 SHELL_CREATE_STATIC_SUBCMD_SET(sub_log_test_start)
 {
@@ -86,15 +91,17 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_log_test)
 
 SHELL_CMD_REGISTER(log_test, &sub_log_test, "Log test", NULL);
 
-static void cmd_demo_ping(const struct shell *shell, size_t argc, char **argv)
+static int cmd_demo_ping(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
 	shell_fprintf(shell, SHELL_NORMAL, "pong\r\n");
+
+	return 0;
 }
 
-static void cmd_demo_params(const struct shell *shell, size_t argc, char **argv)
+static int cmd_demo_params(const struct shell *shell, size_t argc, char **argv)
 {
 	int cnt;
 
@@ -103,15 +110,17 @@ static void cmd_demo_params(const struct shell *shell, size_t argc, char **argv)
 		shell_fprintf(shell, SHELL_NORMAL,
 				"  argv[%d] = %s\r\n", cnt, argv[cnt]);
 	}
+	return 0;
 }
 
-static void cmd_version(const struct shell *shell, size_t argc, char **argv)
+static int cmd_version(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
 	shell_fprintf(shell, SHELL_NORMAL,
 		      "Zephyr version %s\r\n", KERNEL_VERSION_STRING);
+	return 0;
 }
 
 SHELL_CREATE_STATIC_SUBCMD_SET(sub_demo)

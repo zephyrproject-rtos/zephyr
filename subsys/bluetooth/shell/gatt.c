@@ -36,14 +36,14 @@ static void exchange_func(struct bt_conn *conn, u8_t err,
 
 static struct bt_gatt_exchange_params exchange_params;
 
-static void cmd_exchange_mtu(const struct shell *shell,
+static int cmd_exchange_mtu(const struct shell *shell,
 			     size_t argc, char *argv[])
 {
 	int err;
 
 	if (!default_conn) {
 		print(shell, "Not connected\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	exchange_params.func = exchange_func;
@@ -54,6 +54,8 @@ static void cmd_exchange_mtu(const struct shell *shell,
 	} else {
 		print(shell, "Exchange pending\n");
 	}
+
+	return err;
 }
 
 static struct bt_gatt_discover_params discover_params;
@@ -146,13 +148,13 @@ static u8_t discover_func(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void cmd_discover(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_discover(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
 	if (!default_conn) {
 		error(shell, "Not connected\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	discover_params.func = discover_func;
@@ -192,6 +194,8 @@ static void cmd_discover(const struct shell *shell, size_t argc, char *argv[])
 	} else {
 		print(shell, "Discover pending\n");
 	}
+
+	return err;
 }
 
 static struct bt_gatt_read_params read_params;
@@ -210,19 +214,19 @@ static u8_t read_func(struct bt_conn *conn, u8_t err,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void cmd_read(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
 	if (!default_conn) {
 		error(shell, "Not connected\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	read_params.func = read_func;
 
 	if (!shell_cmd_precheck(shell, (argc >= 2), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	read_params.handle_count = 1;
@@ -239,26 +243,28 @@ static void cmd_read(const struct shell *shell, size_t argc, char *argv[])
 	} else {
 		print(shell, "Read pending\n");
 	}
+
+	return err;
 }
 
-static void cmd_mread(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_mread(const struct shell *shell, size_t argc, char *argv[])
 {
 	u16_t h[8];
 	int i, err;
 
 	if (!default_conn) {
 		error(shell, "Not connected\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	if (!shell_cmd_precheck(shell, (argc >= 3), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	if (argc - 1 >  ARRAY_SIZE(h)) {
 		print(shell, "Enter max %lu handle items to read\n",
 		      ARRAY_SIZE(h));
-		return;
+		return -ENOEXEC;
 	}
 
 	for (i = 0; i < argc - 1; i++) {
@@ -274,6 +280,8 @@ static void cmd_mread(const struct shell *shell, size_t argc, char *argv[])
 		error(shell, "GATT multiple read request failed (err %d)\n",
 		      err);
 	}
+
+	return err;
 }
 
 static struct bt_gatt_write_params write_params;
@@ -287,23 +295,23 @@ static void write_func(struct bt_conn *conn, u8_t err,
 	(void)memset(&write_params, 0, sizeof(write_params));
 }
 
-static void cmd_write(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 	u16_t handle, offset;
 
 	if (!default_conn) {
 		error(shell, "Not connected\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	if (write_params.func) {
 		error(shell, "Write ongoing\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	if (!shell_cmd_precheck(shell, (argc >= 4), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	handle = strtoul(argv[1], NULL, 16);
@@ -335,10 +343,12 @@ static void cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	} else {
 		print(shell, "Write pending\n");
 	}
+
+	return err;
 }
 
-static void cmd_write_without_rsp(const struct shell *shell,
-				  size_t argc, char *argv[])
+static int cmd_write_without_rsp(const struct shell *shell,
+				 size_t argc, char *argv[])
 {
 	u16_t handle;
 	u16_t repeat;
@@ -348,11 +358,11 @@ static void cmd_write_without_rsp(const struct shell *shell,
 
 	if (!default_conn) {
 		error(shell, "Not connected\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	if (!shell_cmd_precheck(shell, (argc >= 3), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	sign = !strcmp(argv[0], "signed-write");
@@ -389,13 +399,14 @@ static void cmd_write_without_rsp(const struct shell *shell,
 	}
 
 	print(shell, "Write Complete (err %d)\n", err);
+	return err;
 }
 
 static struct bt_gatt_subscribe_params subscribe_params;
 
 static u8_t notify_func(struct bt_conn *conn,
-			   struct bt_gatt_subscribe_params *params,
-			   const void *data, u16_t length)
+			struct bt_gatt_subscribe_params *params,
+			const void *data, u16_t length)
 {
 	if (!data) {
 		print(NULL, "Unsubscribed\n");
@@ -408,23 +419,23 @@ static u8_t notify_func(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void cmd_subscribe(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_subscribe(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
 	if (subscribe_params.value_handle) {
 		error(shell, "Cannot subscribe: subscription to %x already "
 		      "exists\n", subscribe_params.value_handle);
-		return;
+		return -ENOEXEC;
 	}
 
 	if (!default_conn) {
 		error(shell, "Not connected\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	if (!shell_cmd_precheck(shell, (argc >= 3), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	subscribe_params.ccc_handle = strtoul(argv[1], NULL, 16);
@@ -442,21 +453,23 @@ static void cmd_subscribe(const struct shell *shell, size_t argc, char *argv[])
 	} else {
 		print(shell, "Subscribed\n");
 	}
+
+	return err;
 }
 
-static void cmd_unsubscribe(const struct shell *shell,
-			    size_t argc, char *argv[])
+static int cmd_unsubscribe(const struct shell *shell,
+			   size_t argc, char *argv[])
 {
 	int err;
 
 	if (!default_conn) {
 		error(shell, "Not connected\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	if (!subscribe_params.value_handle) {
 		error(shell, "No subscription found\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	err = bt_gatt_unsubscribe(default_conn, &subscribe_params);
@@ -465,6 +478,8 @@ static void cmd_unsubscribe(const struct shell *shell,
 	} else {
 		print(shell, "Unsubscribe success\n");
 	}
+
+	return err;
 }
 #endif /* CONFIG_BT_GATT_CLIENT */
 
@@ -478,9 +493,10 @@ static u8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void cmd_show_db(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_show_db(const struct shell *shell, size_t argc, char *argv[])
 {
 	bt_gatt_foreach_attr(0x0001, 0xffff, print_attr, (void *)shell);
+	return 0;
 }
 
 /* Custom Service Variables */
@@ -625,22 +641,24 @@ static struct bt_gatt_attr vnd1_attrs[] = {
 
 static struct bt_gatt_service vnd1_svc = BT_GATT_SERVICE(vnd1_attrs);
 
-static void cmd_register_test_svc(const struct shell *shell,
+static int cmd_register_test_svc(const struct shell *shell,
 				  size_t argc, char *argv[])
 {
 	bt_gatt_service_register(&vnd_svc);
 	bt_gatt_service_register(&vnd1_svc);
 
 	print(shell, "Registering test vendor services\n");
+	return 0;
 }
 
-static void cmd_unregister_test_svc(const struct shell *shell,
+static int cmd_unregister_test_svc(const struct shell *shell,
 				    size_t argc, char *argv[])
 {
 	bt_gatt_service_unregister(&vnd_svc);
 	bt_gatt_service_unregister(&vnd1_svc);
 
 	print(shell, "Unregistering test vendor services\n");
+	return 0;
 }
 
 static struct bt_uuid_128 met_svc_uuid = BT_UUID_INIT_128(
@@ -715,7 +733,7 @@ static struct bt_gatt_attr met_attrs[] = {
 
 static struct bt_gatt_service met_svc = BT_GATT_SERVICE(met_attrs);
 
-static void cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err = 0;
 
@@ -723,7 +741,7 @@ static void cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 		print(shell, "Write: count= %u, len= %u, rate= %u bps.\n",
 		       write_count, write_len, write_rate);
 
-		return;
+		return -ENOEXEC;
 	}
 
 	if (!strcmp(argv[1], "on")) {
@@ -741,12 +759,14 @@ static void cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 	} else {
 		error(shell, "Incorrect value: %s\n", argv[1]);
 		shell_help_print(shell, NULL, 0);
-		return;
+		return -ENOEXEC;
 	}
 
 	if (!err) {
 		print(shell, "GATT write cmd metrics %s.\n", argv[1]);
 	}
+
+	return err;
 }
 
 #define HELP_NONE "[none]"
@@ -791,18 +811,19 @@ SHELL_CREATE_STATIC_SUBCMD_SET(gatt_cmds) {
 	SHELL_SUBCMD_SET_END
 };
 
-static void cmd_gatt(const struct shell *shell, size_t argc, char **argv)
+static int cmd_gatt(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
 		shell_help_print(shell, NULL, 0);
-		return;
+		return 0;
 	}
 
 	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	error(shell, "%s:%s%s\r\n", argv[0], "unknown parameter: ", argv[1]);
+	return -ENOEXEC;
 }
 
 SHELL_CMD_REGISTER(gatt, &gatt_cmds, "Bluetooth GATT shell commands", cmd_gatt);

@@ -13,7 +13,7 @@
 #include <misc/stack.h>
 #include <string.h>
 
-static void cmd_kernel_version(const struct shell *shell,
+static int cmd_kernel_version(const struct shell *shell,
 			      size_t argc, char **argv)
 {
 	u32_t version = sys_kernel_version_get();
@@ -25,19 +25,21 @@ static void cmd_kernel_version(const struct shell *shell,
 		      SYS_KERNEL_VER_MAJOR(version),
 		      SYS_KERNEL_VER_MINOR(version),
 		      SYS_KERNEL_VER_PATCHLEVEL(version));
+	return 0;
 }
 
-static void cmd_kernel_uptime(const struct shell *shell,
-			      size_t argc, char **argv)
+static int cmd_kernel_uptime(const struct shell *shell,
+			     size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
 	shell_fprintf(shell, SHELL_NORMAL, "Uptime: %u ms\r\n",
 			k_uptime_get_32());
+	return 0;
 }
 
-static void cmd_kernel_cycles(const struct shell *shell,
+static int cmd_kernel_cycles(const struct shell *shell,
 			      size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -45,6 +47,7 @@ static void cmd_kernel_cycles(const struct shell *shell,
 
 	shell_fprintf(shell, SHELL_NORMAL, "cycles: %u hw cycles\r\n",
 			k_cycle_get_32());
+	return 0;
 }
 
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_MONITOR) \
@@ -78,7 +81,7 @@ static void shell_tdata_dump(const struct k_thread *thread, void *user_data)
 
 }
 
-static void cmd_kernel_threads(const struct shell *shell,
+static int cmd_kernel_threads(const struct shell *shell,
 			      size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -86,6 +89,7 @@ static void cmd_kernel_threads(const struct shell *shell,
 
 	shell_fprintf(shell, SHELL_NORMAL, "Threads:\r\n");
 	k_thread_foreach(shell_tdata_dump, (void *)shell);
+	return 0;
 }
 
 static void shell_stack_dump(const struct k_thread *thread, void *user_data)
@@ -108,30 +112,33 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 		      size, unused, size - unused, size, pcnt);
 }
 
-static void cmd_kernel_stacks(const struct shell *shell,
-			      size_t argc, char **argv)
+static int cmd_kernel_stacks(const struct shell *shell,
+			     size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 	k_thread_foreach(shell_stack_dump, (void *)shell);
+	return 0;
 }
 #endif
 
 #if defined(CONFIG_REBOOT)
-static void cmd_kernel_reboot_warm(const struct shell *shell,
-				   size_t argc, char **argv)
+static int cmd_kernel_reboot_warm(const struct shell *shell,
+				  size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 	sys_reboot(SYS_REBOOT_WARM);
+	return 0;
 }
 
-static void cmd_kernel_reboot_cold(const struct shell *shell,
-				   size_t argc, char **argv)
+static int cmd_kernel_reboot_cold(const struct shell *shell,
+				  size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 	sys_reboot(SYS_REBOOT_COLD);
+	return 0;
 }
 
 SHELL_CREATE_STATIC_SUBCMD_SET(sub_kernel_reboot)

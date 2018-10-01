@@ -177,127 +177,137 @@ static int terminal_size_get(const struct shell *shell)
 	}
 
 	cursor_restore(shell);
-
 	return ret_val;
 }
 
-static void cmd_clear(const struct shell *shell, size_t argc, char **argv)
+static int cmd_clear(const struct shell *shell, size_t argc, char **argv)
 {
 	(void)argv;
 
 	if ((argc == 2) && (shell_help_requested(shell))) {
 		shell_help_print(shell, NULL, 0);
-		return;
+		return 0;
 	}
 	SHELL_VT100_CMD(shell, SHELL_VT100_CURSORHOME);
 	SHELL_VT100_CMD(shell, SHELL_VT100_CLEARSCREEN);
+	return 0;
 }
 
-static void cmd_shell(const struct shell *shell, size_t argc, char **argv)
+static int cmd_shell(const struct shell *shell, size_t argc, char **argv)
 {
 	(void)argv;
 
 	if ((argc == 1) || ((argc == 2) && shell_help_requested(shell))) {
 		shell_help_print(shell, NULL, 0);
-		return;
+		return 0;
 	}
 
 	shell_fprintf(shell, SHELL_ERROR, SHELL_MSG_SPECIFY_SUBCOMMAND);
+	return 0;
 }
 
-static void cmd_bacskpace_mode(const struct shell *shell, size_t argc,
+static int cmd_bacskpace_mode(const struct shell *shell, size_t argc,
 			       char **argv)
 {
 	(void)shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	return 0;
 }
 
-static void cmd_bacskpace_mode_backspace(const struct shell *shell, size_t argc,
+static int cmd_bacskpace_mode_backspace(const struct shell *shell, size_t argc,
 					 char **argv)
 {
 	if (!shell_cmd_precheck(shell, (argc == 1), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	shell->ctx->internal.flags.mode_delete = 0;
+	return 0;
 }
 
-static void cmd_bacskpace_mode_delete(const struct shell *shell, size_t argc,
+static int cmd_bacskpace_mode_delete(const struct shell *shell, size_t argc,
 				      char **argv)
 {
 	if (!shell_cmd_precheck(shell, (argc == 1), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	shell->ctx->internal.flags.mode_delete = 1;
+	return 0;
 }
 
-static void cmd_colors_off(const struct shell *shell, size_t argc, char **argv)
+static int cmd_colors_off(const struct shell *shell, size_t argc, char **argv)
 {
 	if (!shell_cmd_precheck(shell, (argc == 1), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	shell->ctx->internal.flags.use_colors = 0;
+	return 0;
 }
 
-static void cmd_colors_on(const struct shell *shell, size_t argc, char **argv)
+static int cmd_colors_on(const struct shell *shell, size_t argc, char **argv)
 {
 	if (!shell_cmd_precheck(shell, (argc == 1), NULL, 0)) {
-		return;
+		return 0;
 	}
 	shell->ctx->internal.flags.use_colors = 1;
+	return 0;
 }
 
-static void cmd_colors(const struct shell *shell, size_t argc, char **argv)
+static int cmd_colors(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
 		shell_help_print(shell, NULL, 0);
-		return;
+		return 0;
 	}
 
 	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	shell_fprintf(shell, SHELL_ERROR, "%s:%s%s\r\n", argv[0],
 		      SHELL_MSG_UNKNOWN_PARAMETER, argv[1]);
+	return -ENOEXEC;
 }
 
-static void cmd_echo(const struct shell *shell, size_t argc, char **argv)
+static int cmd_echo(const struct shell *shell, size_t argc, char **argv)
 {
 	if (!shell_cmd_precheck(shell, (argc <= 2), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	if (argc == 2) {
 		shell_fprintf(shell, SHELL_ERROR, "%s:%s%s\r\n", argv[0],
 			      SHELL_MSG_UNKNOWN_PARAMETER, argv[1]);
-		return;
+		return -ENOEXEC;
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "Echo status: %s\r\n",
 		      flag_echo_is_set(shell) ? "on" : "off");
+	return 0;
 }
 
-static void cmd_echo_off(const struct shell *shell, size_t argc, char **argv)
+static int cmd_echo_off(const struct shell *shell, size_t argc, char **argv)
 {
 	if (!shell_cmd_precheck(shell, (argc == 1), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	shell->ctx->internal.flags.echo = 0;
+	return 0;
 }
 
-static void cmd_echo_on(const struct shell *shell, size_t argc, char **argv)
+static int cmd_echo_on(const struct shell *shell, size_t argc, char **argv)
 {
 	if (!shell_cmd_precheck(shell, (argc == 1), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	shell->ctx->internal.flags.echo = 1;
+	return 0;
 }
 
-static void cmd_help(const struct shell *shell, size_t argc, char **argv)
+static int cmd_help(const struct shell *shell, size_t argc, char **argv)
 {
 	shell_fprintf(shell, SHELL_NORMAL, "Please press the <Tab> button to "
 					   "see all available commands.\r\n"
@@ -307,21 +317,21 @@ static void cmd_help(const struct shell *shell, size_t argc, char **argv)
 					   "You can try to call commands "
 					   "with <-h> or <--help> parameter to "
 					   "get know what they are doing.\r\n");
-
+	return 0;
 }
 
-static void cmd_history(const struct shell *shell, size_t argc, char **argv)
+static int cmd_history(const struct shell *shell, size_t argc, char **argv)
 {
 	size_t i = 0;
 	size_t len;
 
 	if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
 		shell_fprintf(shell, SHELL_ERROR, "Command not supported.\r\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	if (!shell_cmd_precheck(shell, (argc == 1), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	while (1) {
@@ -338,84 +348,89 @@ static void cmd_history(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	shell->ctx->temp_buff[0] = '\0';
+	return 0;
 }
 
-static void cmd_shell_stats(const struct shell *shell, size_t argc, char **argv)
+static int cmd_shell_stats(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
 		shell_help_print(shell, NULL, 0);
-		return;
+		return 0;
 	}
 
 	if (argc == 2) {
 		shell_fprintf(shell, SHELL_ERROR, "%s:%s%s\r\n", argv[0],
 			      SHELL_MSG_UNKNOWN_PARAMETER, argv[1]);
-		return;
+		return -ENOEXEC;
 	}
 
 	(void)shell_cmd_precheck(shell, (argc <= 2), NULL, 0);
+	return 0;
 }
 
-static void cmd_shell_stats_show(const struct shell *shell, size_t argc,
-			       char **argv)
+static int cmd_shell_stats_show(const struct shell *shell, size_t argc,
+				char **argv)
 {
 	if (!IS_ENABLED(CONFIG_SHELL_STATS)) {
 		shell_fprintf(shell, SHELL_ERROR, "Command not supported.\r\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	if (!shell_cmd_precheck(shell, (argc == 1), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "Lost logs: %u\r\n",
 		      shell->stats->log_lost_cnt);
+	return 0;
 }
 
-static void cmd_shell_stats_reset(const struct shell *shell,
-				size_t argc, char **argv)
+static int cmd_shell_stats_reset(const struct shell *shell,
+				 size_t argc, char **argv)
 {
 	if (!IS_ENABLED(CONFIG_SHELL_STATS)) {
 		shell_fprintf(shell, SHELL_ERROR, "Command not supported.\r\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	if (!shell_cmd_precheck(shell, (argc == 1), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	shell->stats->log_lost_cnt = 0;
+	return 0;
 }
 
-static void cmd_resize_default(const struct shell *shell,
-				     size_t argc, char **argv)
+static int cmd_resize_default(const struct shell *shell,
+			      size_t argc, char **argv)
 {
 	if (!shell_cmd_precheck(shell, (argc == 1), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	SHELL_VT100_CMD(shell, SHELL_VT100_SETCOL_80);
 	shell->ctx->vt100_ctx.cons.terminal_wid = SHELL_DEFAULT_TERMINAL_WIDTH;
 	shell->ctx->vt100_ctx.cons.terminal_hei = SHELL_DEFAULT_TERMINAL_HEIGHT;
+	return 0;
 }
 
-static void cmd_resize(const struct shell *shell, size_t argc, char **argv)
+static int cmd_resize(const struct shell *shell, size_t argc, char **argv)
 {
 	int err;
 
 	if (!IS_ENABLED(CONFIG_SHELL_CMDS_RESIZE)) {
 		shell_fprintf(shell, SHELL_ERROR, "Command not supported.\r\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	if (!shell_cmd_precheck(shell, (argc <= 2), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	if (argc != 1) {
 		shell_fprintf(shell, SHELL_ERROR, "%s:%s%s\r\n", argv[0],
 			      SHELL_MSG_UNKNOWN_PARAMETER, argv[1]);
-		return;
+		return -ENOEXEC;
 	}
 
 	err = terminal_size_get(shell);
@@ -428,6 +443,7 @@ static void cmd_resize(const struct shell *shell, size_t argc, char **argv)
 			      "No response from the terminal, assumed 80x24 "
 			      "screen size\r\n");
 	}
+	return 0;
 }
 
 /* Warning!

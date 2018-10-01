@@ -74,8 +74,8 @@ struct shell;
 /**
  * @brief Shell command handler prototype.
  */
-typedef void (*shell_cmd_handler)(const struct shell *shell,
-				  size_t argc, char **argv);
+typedef int (*shell_cmd_handler)(const struct shell *shell,
+				 size_t argc, char **argv);
 
 /*
  * @brief Shell static command descriptor.

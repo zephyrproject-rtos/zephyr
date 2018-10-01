@@ -45,8 +45,8 @@ NET_BUF_POOL_DEFINE(data_pool, 1, DATA_BREDR_MTU, BT_BUF_USER_DATA_MIN,
 NET_BUF_POOL_DEFINE(sdp_client_pool, CONFIG_BT_MAX_CONN,
 		    SDP_CLIENT_USER_BUF_LEN, BT_BUF_USER_DATA_MIN, NULL);
 
-static void cmd_auth_pincode(const struct shell *shell,
-			     size_t argc, char *argv[])
+static int cmd_auth_pincode(const struct shell *shell,
+			    size_t argc, char *argv[])
 {
 	struct bt_conn *conn;
 	u8_t max = 16;
@@ -61,38 +61,40 @@ static void cmd_auth_pincode(const struct shell *shell,
 
 	if (!conn) {
 		print(shell, "Not connected\n");
-		return;
+		return 0;
 	}
 
 	if (!shell_cmd_precheck(shell, argc == 2, NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	if (strlen(argv[1]) > max) {
 		print(shell, "PIN code value invalid - enter max %u digits\n",
 		      max);
-		return;
+		return 0;
 	}
 
 	print(shell, "PIN code \"%s\" applied\n", argv[1]);
 
 	bt_conn_auth_pincode_entry(conn, argv[1]);
+
+	return 0;
 }
 
-static void cmd_connect(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_conn *conn;
 	bt_addr_t addr;
 	int err;
 
 	if (!shell_cmd_precheck(shell, argc == 2, NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	err = str2bt_addr(argv[1], &addr);
 	if (err) {
 		print(shell, "Invalid peer address (err %d)\n", err);
-		return;
+		return -ENOEXEC;
 	}
 
 	conn = bt_conn_create_br(&addr, BT_BR_CONN_PARAM_DEFAULT);
@@ -105,6 +107,8 @@ static void cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 		/* unref connection obj in advance as app user */
 		bt_conn_unref(conn);
 	}
+
+	return 0;
 }
 
 static void br_device_found(const bt_addr_t *addr, s8_t rssi,
@@ -169,12 +173,12 @@ static void br_discovery_complete(struct bt_br_discovery_result *results,
 	}
 }
 
-static void cmd_discovery(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_discovery(const struct shell *shell, size_t argc, char *argv[])
 {
 	const char *action;
 
 	if (!shell_cmd_precheck(shell, argc >= 2, NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	action = argv[1];
@@ -196,21 +200,22 @@ static void cmd_discovery(const struct shell *shell, size_t argc, char *argv[])
 					  ARRAY_SIZE(br_discovery_results),
 					  br_discovery_complete) < 0) {
 			print(shell, "Failed to start discovery\n");
-			return;
+			return 0;
 		}
 
 		print(shell, "Discovery started\n");
 	} else if (!strcmp(action, "off")) {
 		if (bt_br_discovery_stop()) {
 			print(shell, "Failed to stop discovery\n");
-			return;
+			return 0;
 		}
 
 		print(shell, "Discovery stopped\n");
 	} else {
 		shell_help_print(shell, NULL, 0);
-		return;
 	}
+
+	return 0;
 }
 
 static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -268,16 +273,16 @@ static struct bt_l2cap_server br_server = {
 	.accept = l2cap_accept,
 };
 
-static void cmd_l2cap_register(const struct shell *shell,
-				    size_t argc, char *argv[])
+static int cmd_l2cap_register(const struct shell *shell,
+			      size_t argc, char *argv[])
 {
 	if (!shell_cmd_precheck(shell, argc == 2, NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	if (br_server.psm) {
 		print(shell, "Already registered\n");
-		return;
+		return 0;
 	}
 
 	br_server.psm = strtoul(argv[1], NULL, 16);
@@ -285,19 +290,22 @@ static void cmd_l2cap_register(const struct shell *shell,
 	if (bt_l2cap_br_server_register(&br_server) < 0) {
 		error(shell, "Unable to register psm\n");
 		br_server.psm = 0;
+		return -ENOEXEC;
 	} else {
 		print(shell, "L2CAP psm %u registered\n", br_server.psm);
 	}
+
+	return 0;
 }
 
-static void cmd_discoverable(const struct shell *shell,
-			     size_t argc, char *argv[])
+static int cmd_discoverable(const struct shell *shell,
+			    size_t argc, char *argv[])
 {
 	int err;
 	const char *action;
 
 	if (!shell_cmd_precheck(shell, argc == 2, NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	action = argv[1];
@@ -308,25 +316,28 @@ static void cmd_discoverable(const struct shell *shell,
 		err = bt_br_set_discoverable(false);
 	} else {
 		shell_help_print(shell, NULL, 0);
-		return;
+		return 0;
 	}
 
 	if (err) {
 		print(shell, "BR/EDR set/reset discoverable failed (err %d)\n",
 		      err);
+		return -ENOEXEC;
 	} else {
 		print(shell, "BR/EDR set/reset discoverable done\n");
 	}
+
+	return 0;
 }
 
-static void cmd_connectable(const struct shell *shell,
-			    size_t argc, char *argv[])
+static int cmd_connectable(const struct shell *shell,
+			   size_t argc, char *argv[])
 {
 	int err;
 	const char *action;
 
 	if (!shell_cmd_precheck(shell, argc == 2, NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	action = argv[1];
@@ -337,18 +348,21 @@ static void cmd_connectable(const struct shell *shell,
 		err = bt_br_set_connectable(false);
 	} else {
 		shell_help_print(shell, NULL, 0);
-		return;
+		return 0;
 	}
 
 	if (err) {
 		print(shell, "BR/EDR set/rest connectable failed (err %d)\n",
 		      err);
+		return -ENOEXEC;
 	} else {
 		print(shell, "BR/EDR set/reset connectable done\n");
 	}
+
+	return 0;
 }
 
-static void cmd_oob(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_oob(const struct shell *shell, size_t argc, char *argv[])
 {
 	char addr[BT_ADDR_STR_LEN];
 	struct bt_br_oob oob;
@@ -357,13 +371,14 @@ static void cmd_oob(const struct shell *shell, size_t argc, char *argv[])
 	err = bt_br_oob_get_local(&oob);
 	if (err) {
 		print(shell, "BR/EDR OOB data failed\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	bt_addr_to_str(&oob.addr, addr, sizeof(addr));
 
 	print(shell, "BR/EDR OOB data:\n");
 	print(shell, "  addr %s\n", addr);
+	return 0;
 }
 
 static u8_t sdp_hfp_ag_user(struct bt_conn *conn,
@@ -495,19 +510,19 @@ static struct bt_sdp_discover_params discov_a2src = {
 
 static struct bt_sdp_discover_params discov;
 
-static void cmd_sdp_find_record(const struct shell *shell,
-				size_t argc, char *argv[])
+static int cmd_sdp_find_record(const struct shell *shell,
+			       size_t argc, char *argv[])
 {
 	int err = 0, res;
 	const char *action;
 
 	if (!default_conn) {
 		print(shell, "Not connected\n");
-		return;
+		return 0;
 	}
 
 	if (!shell_cmd_precheck(shell, argc == 2, NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	action = argv[1];
@@ -518,13 +533,13 @@ static void cmd_sdp_find_record(const struct shell *shell,
 		discov = discov_a2src;
 	} else {
 		shell_help_print(shell, NULL, 0);
-		return;
+		return 0;
 	}
 
 	if (err) {
 		error(shell, "SDP UUID to resolve not valid (err %d)\n", err);
 		print(shell, "Supported UUID are \'HFPAG\' \'A2SRC\' only\n");
-		return;
+		return -ENOEXEC;
 	}
 
 	print(shell, "SDP UUID \'%s\' gets applied\n", action);
@@ -532,9 +547,12 @@ static void cmd_sdp_find_record(const struct shell *shell,
 	res = bt_sdp_discover(default_conn, &discov);
 	if (res) {
 		error(shell, "SDP discovery failed: result %d\n", res);
+		return -ENOEXEC;
 	} else {
 		print(shell, "SDP discovery started\n");
 	}
+
+	return 0;
 }
 
 #define HELP_NONE "[none]"
@@ -554,19 +572,21 @@ SHELL_CREATE_STATIC_SUBCMD_SET(br_cmds) {
 	SHELL_SUBCMD_SET_END
 };
 
-static void cmd_br(const struct shell *shell, size_t argc, char **argv)
+static int cmd_br(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
 		shell_help_print(shell, NULL, 0);
-		return;
+		return 0;
 	}
 
 	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
-		return;
+		return 0;
 	}
 
 	shell_fprintf(shell, SHELL_ERROR, "%s:%s%s\r\n", argv[0],
 		      "unknown parameter: ", argv[1]);
+
+	return -ENOEXEC;
 }
 
 SHELL_CMD_REGISTER(br, &br_cmds, "Bluetooth BR/EDR shell commands", cmd_br);
