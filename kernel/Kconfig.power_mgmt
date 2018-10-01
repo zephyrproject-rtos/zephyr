@@ -70,31 +70,4 @@ config DEVICE_POWER_MANAGEMENT
 	  like turning off device clocks and peripherals. The device drivers
 	  may also save and restore states in these hook functions.
 
-config TICKLESS_IDLE
-	bool "Tickless idle"
-	default y
-	help
-	  This option suppresses periodic system clock interrupts whenever the
-	  kernel becomes idle. This permits the system to remain in a power
-	  saving state for extended periods without having to wake up to
-	  service each tick as it occurs.
-
-config TICKLESS_IDLE_THRESH
-	int "Tickless idle threshold"
-	default 3
-	depends on TICKLESS_IDLE
-	help
-	  This option enables clock interrupt suppression when the kernel idles
-	  for only a short period of time. It specifies the minimum number of
-	  ticks that must occur before the next kernel timer expires in order
-	  for suppression to happen.
-
-config TICKLESS_KERNEL
-	bool "Tickless kernel"
-	depends on TICKLESS_IDLE
-	help
-	  This option enables a fully event driven kernel. Periodic system
-	  clock interrupt generation would be stopped at all times. This option
-	  requires Tickless Idle option to be enabled.
-
 endif
