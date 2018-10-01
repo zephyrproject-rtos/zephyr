@@ -52,7 +52,9 @@ extern int z_clock_device_ctrl(struct device *device,
  * to z_clock_announce() are allowed (i.e. it's legal to announce
  * every tick and implement this function as a noop), the requirement
  * is that one tick announcement should occur within one tick after
- * the specified expiration.
+ * the specified expiration.  A ticks value of zero (or even negative)
+ * is legal, it simply indicates the kernel would like the next tick
+ * announcement as soon as possible.
  *
  * Note that ticks can also be passed the special value K_FOREVER,
  * indicating that no future timer interrupts are expected or required
@@ -69,6 +71,14 @@ extern int z_clock_device_ctrl(struct device *device,
  * z_clock_announce() may occur at any point in the future, not just
  * at INT_MAX ticks.  But the correspondence between the announced
  * ticks and real-world time must be correct.
+ *
+ * A final note about SMP: note that the call to z_clock_set_timeout()
+ * is made on any CPU, and reflects the next timeout desired globally.
+ * The resulting calls(s) to z_clock_announce() must be properly
+ * serialized by the driver such that a given tick is announced
+ * exactly once across the system.  The kernel does not (cannot,
+ * really) attempt to serialize things by "assigning" timeouts to
+ * specific CPUs.
  *
  * @param ticks Timeout in tick units
  * @param idle Hint to the driver that the system is about to enter
