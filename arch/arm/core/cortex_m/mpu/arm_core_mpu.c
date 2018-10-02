@@ -49,7 +49,12 @@ void configure_mpu_stack_guard(struct k_thread *thread)
 	u32_t guard_start = thread->stack_info.start;
 #endif
 
+#if !defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+	/* Determining the proper partitioning requires MPU to be enabled.
+	 * The underlying driver shall disable MPU before re-programming it.
+	 */
 	arm_core_mpu_disable();
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 	arm_core_mpu_configure(THREAD_STACK_GUARD_REGION, guard_start,
 			       guard_size);
 	arm_core_mpu_enable();
@@ -68,7 +73,12 @@ void configure_mpu_stack_guard(struct k_thread *thread)
 void configure_mpu_user_context(struct k_thread *thread)
 {
 	LOG_DBG("configure user thread %p's context", thread);
+#if !defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+	/* Determining the proper partitioning requires MPU to be enabled.
+	 * The underlying driver shall disable MPU before re-programming it.
+	 */
 	arm_core_mpu_disable();
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 	arm_core_mpu_configure_user_context(thread);
 	arm_core_mpu_enable();
 }
