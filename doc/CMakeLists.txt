@@ -10,6 +10,7 @@ include(${ZEPHYR_BASE}/cmake/version.cmake)
 find_package(PythonInterp 3.4)
 set(DOXYGEN_SKIP_DOT True)
 find_package(Doxygen REQUIRED)
+find_package(LATEX)
 
 find_program(
   SPHINXBUILD
@@ -175,7 +176,7 @@ add_custom_command(
   OUTPUT ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.pdf
   DEPENDS latexdocs ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
   COMMAND ${CMAKE_COMMAND} -E env
-  LATEXOPTS='-halt-on-error -no-shell-escape'
+  LATEXOPTS="-halt-on-error -no-shell-escape"
   ${LATEXMK} -quiet -pdf -dvi- -ps-
   WORKING_DIRECTORY ${SPHINX_OUTPUT_DIR_LATEX}
 )
