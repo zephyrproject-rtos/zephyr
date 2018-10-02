@@ -15,7 +15,7 @@
 LOG_MODULE_REGISTER(app);
 
 SHELL_UART_DEFINE(shell_transport_uart);
-SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, '\r', 10);
+SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, 10);
 
 extern void foo(void);
 

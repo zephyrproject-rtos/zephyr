@@ -759,8 +759,7 @@ static void shell_state_collect(const struct shell *shell)
 
 		switch (shell->ctx->receive_state) {
 		case SHELL_RECEIVE_DEFAULT:
-			if (data == shell->newline_char) {
-
+			if ((data == '\r') || (data == '\n')) {
 				if (!shell->ctx->cmd_buff_len) {
 					history_mode_exit(shell);
 					cursor_next_line_move(shell);
@@ -1150,8 +1149,6 @@ static int shell_instance_init(const struct shell *shell, const void *p_config,
 {
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
-	__ASSERT_NO_MSG((shell->newline_char == '\n') ||
-			(shell->newline_char == '\r'));
 
 	int err;
 
