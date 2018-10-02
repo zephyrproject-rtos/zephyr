@@ -29,7 +29,7 @@
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 
 SHELL_UART_DEFINE(shell_transport_uart);
-SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, '\r', 10);
+SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, 10);
 
 #if defined(CONFIG_BT_CONN)
 static bool hrs_simulate;
