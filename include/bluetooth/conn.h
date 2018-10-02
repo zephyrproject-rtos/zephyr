@@ -209,7 +209,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
  *
  *  @return Zero on success or error code otherwise.
  */
-int bt_le_set_auto_conn(bt_addr_le_t *addr,
+int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 			const struct bt_le_conn_param *param);
 
 /** @brief Initiate directed advertising to a remote device
