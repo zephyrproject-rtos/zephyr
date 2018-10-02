@@ -28,15 +28,15 @@
 
 	leds {
 		compatible = "gpio-leds";
-		red_led: led@0 {
+		red_led: led_0 {
 			gpios = <&gpio0 29 0>;
 			label = "User LD1";
 		};
-		green_led: led@1 {
+		green_led: led_1 {
 			gpios = <&gpio1 10 0>;
 			label = "User LD2";
 		};
-		blue_led: led@2 {
+		blue_led: led_2 {
 			gpios = <&gpio1 9 0>;
 			label = "User LD3";
 		};
