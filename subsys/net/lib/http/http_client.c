@@ -194,8 +194,9 @@ static inline void print_info(struct http_ctx *ctx,
 			    &ctx->app_ctx.default_ctx->remote);
 
 		NET_DBG("HTTP %s (%s) %s -> %s port %d",
-			http_method_str(method), ctx->http.req.host, local,
-			remote,
+			http_method_str(method),
+			log_strdup(ctx->http.req.host), log_strdup(local),
+			log_strdup(remote),
 			ntohs(net_sin(&ctx->app_ctx.default_ctx->remote)->
 			      sin_port));
 	}
@@ -283,7 +284,7 @@ static void print_header_field(size_t len, const char *str)
 
 		snprintk(output, len + 1, "%s", str);
 
-		NET_DBG("[%zd] %s", len, output);
+		NET_DBG("[%zd] %s", len, log_strdup(output));
 	}
 }
 
@@ -307,7 +308,8 @@ static int on_status(struct http_parser *parser, const char *at, size_t length)
 	memcpy(ctx->http.rsp.http_status, at, len);
 	ctx->http.rsp.http_status[len] = 0;
 
-	NET_DBG("HTTP response status %s", ctx->http.rsp.http_status);
+	NET_DBG("HTTP response status %s",
+		log_strdup(ctx->http.rsp.http_status));
 
 	return 0;
 }

@@ -77,7 +77,8 @@ static int resolve_name(struct net_app_ctx *ctx,
 	ret = dns_get_addr_info(peer_addr_str, type, &ctx->client.dns_id,
 				dns_cb, ctx, timeout);
 	if (ret < 0) {
-		NET_ERR("Cannot resolve %s (%d)", peer_addr_str, ret);
+		NET_ERR("Cannot resolve %s (%d)", log_strdup(peer_addr_str),
+			ret);
 		ctx->client.dns_id = 0;
 		return ret;
 	}
@@ -86,7 +87,8 @@ static int resolve_name(struct net_app_ctx *ctx,
 	 * the DNS will timeout before the semaphore.
 	 */
 	if (k_sem_take(&ctx->client.dns_wait, timeout + K_SECONDS(1))) {
-		NET_ERR("Timeout while resolving %s", peer_addr_str);
+		NET_ERR("Timeout while resolving %s",
+			log_strdup(peer_addr_str));
 		ctx->client.dns_id = 0;
 		return -ETIMEDOUT;
 	}
@@ -113,7 +115,8 @@ static int try_resolve(struct net_app_ctx *ctx,
 
 	ret = resolve_name(ctx, peer_addr_str, type, timeout);
 	if (ret < 0) {
-		NET_ERR("Cannot resolve %s (%d)", peer_addr_str, ret);
+		NET_ERR("Cannot resolve %s (%d)",
+			log_strdup(peer_addr_str), ret);
 	}
 
 	return ret;

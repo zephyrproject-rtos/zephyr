@@ -269,8 +269,8 @@ static void reassembly_info(char *str, struct net_ipv6_reassembly *reass)
 	}
 
 	NET_DBG("%s id 0x%x src %s dst %s remain %d ms len %d", str, reass->id,
-		net_sprint_ipv6_addr(&reass->src),
-		net_sprint_ipv6_addr(&reass->dst),
+		log_strdup(net_sprint_ipv6_addr(&reass->src)),
+		log_strdup(net_sprint_ipv6_addr(&reass->dst)),
 		k_delayed_work_remaining_get(&reass->timer), len);
 }
 

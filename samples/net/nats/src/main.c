@@ -106,7 +106,7 @@ static int in_addr_set(sa_family_t family,
 		}
 
 		if (rc < 0) {
-			NET_ERR("Invalid IP address: %s", ip_addr);
+			NET_ERR("Invalid IP address: %s", log_strdup(ip_addr));
 			return -EINVAL;
 		}
 	}

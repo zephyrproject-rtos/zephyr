@@ -1829,11 +1829,13 @@ int net_tcp_unref(struct net_context *context)
 	if (IS_ENABLED(CONFIG_NET_TCP_LOG_LEVEL_DBG)) {			\
 		if (net_context_get_family(context) == AF_INET6) {	\
 			NET_DBG("%s received from %s port %d", str,	\
-				net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src),\
+				log_strdup(net_sprint_ipv6_addr(	\
+					     &NET_IPV6_HDR(pkt)->src)), \
 				ntohs(port));				\
 		} else if (net_context_get_family(context) == AF_INET) {\
 			NET_DBG("%s received from %s port %d", str,	\
-				net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src),\
+				log_strdup(net_sprint_ipv4_addr(	\
+					     &NET_IPV4_HDR(pkt)->src)), \
 				ntohs(port));				\
 		}							\
 	}
@@ -1843,11 +1845,13 @@ int net_tcp_unref(struct net_context *context)
 		struct net_context *ctx = net_pkt_context(pkt);		\
 		if (net_context_get_family(ctx) == AF_INET6) {		\
 			NET_DBG("%s sent to %s port %d", str,		\
-				net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst),\
+				log_strdup(net_sprint_ipv6_addr(	\
+					     &NET_IPV6_HDR(pkt)->dst)), \
 				ntohs(port));				\
 		} else if (net_context_get_family(ctx) == AF_INET) {	\
 			NET_DBG("%s sent to %s port %d", str,		\
-				net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst),\
+				log_strdup(net_sprint_ipv4_addr(	\
+					     &NET_IPV4_HDR(pkt)->dst)), \
 				ntohs(port));				\
 		}							\
 	}

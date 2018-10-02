@@ -135,8 +135,8 @@ static void gptp_phase_dis_cb(u8_t *gm_identity,
 		memcpy(id, gm_identity, sizeof(id));
 
 		NET_DBG("GM %s last phase %d.%lld",
-			gptp_sprint_clock_id(gm_identity, output,
-					     sizeof(output)),
+			log_strdup(gptp_sprint_clock_id(gm_identity, output,
+							sizeof(output))),
 			last_gm_ph_change->high,
 			last_gm_ph_change->low);
 	}

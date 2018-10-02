@@ -22,7 +22,7 @@
 									\
 		mbedtls_strerror(ret, error, sizeof(error));		\
 									\
-		NET_ERR(fmt " (%s)", -ret, error);			\
+		NET_ERR(fmt " (%s)", -ret, log_strdup(error));		\
 	} while (0)
 #else
 #define _net_app_print_error(fmt, ret) NET_ERR(fmt, -ret)

@@ -1798,7 +1798,8 @@ static void mgmt_cb(struct net_mgmt_event_callback *cb,
 			return;
 		}
 
-		NET_DBG("NBR add %s", net_sprint_ipv6_addr(&nbr_info->addr));
+		NET_DBG("NBR add %s",
+			log_strdup(net_sprint_ipv6_addr(&nbr_info->addr)));
 
 		ret = send_ipv6_neighbors(&http_ctx, ws_dst, nbr);
 		if (ret < 0) {
@@ -1812,7 +1813,8 @@ static void mgmt_cb(struct net_mgmt_event_callback *cb,
 			return;
 		}
 
-		NET_DBG("NBR del %s", net_sprint_ipv6_addr(&nbr_info->addr));
+		NET_DBG("NBR del %s",
+			log_strdup(net_sprint_ipv6_addr(&nbr_info->addr)));
 
 		ret = send_ipv6_neighbor_deletion(&http_ctx, ws_dst, iface,
 						  &nbr_info->addr);
@@ -1834,11 +1836,12 @@ static void mgmt_cb(struct net_mgmt_event_callback *cb,
 		}
 
 		NET_DBG("ROUTE add addr %s/%d",
-			net_sprint_ipv6_addr(&route_info->addr),
+			log_strdup(net_sprint_ipv6_addr(&route_info->addr)),
 			route_info->prefix_len);
 		{
 			NET_DBG("ROUTE add nexthop %s",
-				net_sprint_ipv6_addr(&route_info->nexthop));
+				log_strdup(net_sprint_ipv6_addr(
+						   &route_info->nexthop)));
 
 		}
 
@@ -1858,13 +1861,11 @@ static void mgmt_cb(struct net_mgmt_event_callback *cb,
 		}
 
 		NET_DBG("ROUTE del addr %s/%d",
-			net_sprint_ipv6_addr(&route_info->addr),
+			log_strdup(net_sprint_ipv6_addr(&route_info->addr)),
 			route_info->prefix_len);
-		{
-			NET_DBG("ROUTE del nexthop %s",
-				net_sprint_ipv6_addr(&route_info->nexthop));
-
-		}
+		NET_DBG("ROUTE del nexthop %s",
+			log_strdup(net_sprint_ipv6_addr(
+					   &route_info->nexthop)));
 
 		ret = send_ipv6_route_deletion(&http_ctx, ws_dst, iface,
 					       route_info);

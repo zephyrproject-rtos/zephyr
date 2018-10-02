@@ -222,9 +222,9 @@ void net_nbr_print(struct net_nbr_table *table)
 				nbr->idx,
 				nbr->idx == NET_NBR_LLADDR_UNKNOWN ?
 				"<unknown>" :
-				net_sprint_ll_addr(
-				    net_neighbor_lladdr[nbr->idx].lladdr.addr,
-				    net_neighbor_lladdr[nbr->idx].lladdr.len));
+				log_strdup(net_sprint_ll_addr(
+				   net_neighbor_lladdr[nbr->idx].lladdr.addr,
+				   net_neighbor_lladdr[nbr->idx].lladdr.len)));
 		}
 	}
 }

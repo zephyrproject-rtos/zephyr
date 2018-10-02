@@ -56,17 +56,19 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 
 #if NET_LOG_LEVEL > 2
 		NET_INFO("IPv4 address: %s",
-			 net_addr_ntop(AF_INET, &if_addr->address.in_addr,
-				       hr_addr, sizeof(hr_addr)));
+			 log_strdup(net_addr_ntop(AF_INET,
+						  &if_addr->address.in_addr,
+						  hr_addr, sizeof(hr_addr))));
 		NET_INFO("Lease time: %u seconds",
 			 iface->config.dhcpv4.lease_time);
 		NET_INFO("Subnet: %s",
-			 net_addr_ntop(AF_INET,
+			 log_strdup(net_addr_ntop(AF_INET,
 				       &iface->config.ip.ipv4->netmask,
-				       hr_addr, sizeof(hr_addr)));
+				       hr_addr, sizeof(hr_addr))));
 		NET_INFO("Router: %s",
-			 net_addr_ntop(AF_INET, &iface->config.ip.ipv4->gw,
-				       hr_addr, sizeof(hr_addr)));
+			 log_strdup(net_addr_ntop(AF_INET,
+						  &iface->config.ip.ipv4->gw,
+						  hr_addr, sizeof(hr_addr))));
 #endif
 		break;
 	}
@@ -132,7 +134,8 @@ static void setup_ipv4(struct net_if *iface)
 
 #if NET_LOG_LEVEL > 2
 	NET_INFO("IPv4 address: %s",
-		 net_addr_ntop(AF_INET, &addr, hr_addr, sizeof(hr_addr)));
+		 log_strdup(net_addr_ntop(AF_INET, &addr, hr_addr,
+					  sizeof(hr_addr))));
 #endif
 
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV4_NETMASK) > 1) {
@@ -210,8 +213,8 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 
 #if NET_LOG_LEVEL > 2
 		NET_INFO("IPv6 address: %s",
-			 net_addr_ntop(AF_INET6, &laddr, hr_addr,
-				       NET_IPV6_ADDR_LEN));
+			 log_strdup(net_addr_ntop(AF_INET6, &laddr, hr_addr,
+						  NET_IPV6_ADDR_LEN)));
 #endif
 
 		k_sem_take(&counter, K_NO_WAIT);
@@ -283,7 +286,7 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 	int count = 0;
 
 	if (app_info) {
-		NET_INFO("%s", app_info);
+		NET_INFO("%s", log_strdup(app_info));
 	}
 
 	if (!iface) {

@@ -53,7 +53,7 @@ static bool br_join_dag(struct net_rpl_dio *dio)
 
 			NET_DBG("Other root %s, me %s, "
 				"DIO version %d instance %d",
-				other, me,
+				log_strdup(other), log_strdup(me),
 				dio->version, dio->instance_id);
 		}
 	}
@@ -84,12 +84,12 @@ bool setup_rpl(struct net_if *iface, const char *addr_prefix)
 	}
 
 	if (rpl.prefix_len == 0) {
-		NET_ERR("Invalid prefix length %s", slash + 1);
+		NET_ERR("Invalid prefix length %s", log_strdup(slash + 1));
 		return false;
 	}
 
 	if (net_addr_pton(AF_INET6, prefix, &rpl.prefix) < 0) {
-		NET_ERR("Invalid IPv6 prefix %s", prefix);
+		NET_ERR("Invalid IPv6 prefix %s", log_strdup(prefix));
 		return false;
 	}
 
@@ -114,7 +114,8 @@ bool setup_rpl(struct net_if *iface, const char *addr_prefix)
 
 	ret = net_rpl_set_prefix(iface, dag, &rpl.prefix, rpl.prefix_len);
 	if (!ret) {
-		NET_ERR("Cannot set prefix %s/%d", prefix, rpl.prefix_len);
+		NET_ERR("Cannot set prefix %s/%d", log_strdup(prefix),
+			rpl.prefix_len);
 		return false;
 	}
 
@@ -125,10 +126,11 @@ bool setup_rpl(struct net_if *iface, const char *addr_prefix)
 				  NET_IPV6_ADDR_LEN)) {
 			if (rpl.dag_has_version) {
 				NET_DBG("New RPL dag %s/%d version %u created",
-					out, rpl.prefix_len,
+					log_strdup(out), rpl.prefix_len,
 					rpl.dag_init_version);
 			} else {
-				NET_DBG("New RPL dag %s/%d created", out,
+				NET_DBG("New RPL dag %s/%d created",
+					log_strdup(out),
 					rpl.prefix_len);
 			}
 		}

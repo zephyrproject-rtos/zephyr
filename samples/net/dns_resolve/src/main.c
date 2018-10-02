@@ -83,9 +83,10 @@ void dns_result_cb(enum dns_resolve_status status,
 		return;
 	}
 
-	NET_INFO("%s %s address: %s", user_data ? (char *)user_data : "<null>", hr_family,
-		 net_addr_ntop(info->ai_family, addr,
-			       hr_addr, sizeof(hr_addr)));
+	NET_INFO("%s %s address: %s", user_data ? (char *)user_data : "<null>",
+		 hr_family,
+		 log_strdup(net_addr_ntop(info->ai_family, addr,
+					  hr_addr, sizeof(hr_addr))));
 }
 
 void mdns_result_cb(enum dns_resolve_status status,
@@ -131,9 +132,10 @@ void mdns_result_cb(enum dns_resolve_status status,
 		return;
 	}
 
-	NET_INFO("%s %s address: %s", user_data ? (char *)user_data : "<null>", hr_family,
-		 net_addr_ntop(info->ai_family, addr,
-			       hr_addr, sizeof(hr_addr)));
+	NET_INFO("%s %s address: %s", user_data ? (char *)user_data : "<null>",
+		 hr_family,
+		 log_strdup(net_addr_ntop(info->ai_family, addr,
+					  hr_addr, sizeof(hr_addr))));
 }
 
 #if defined(CONFIG_NET_DHCPV4)
@@ -180,17 +182,19 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 		}
 
 		NET_INFO("IPv4 address: %s",
-			 net_addr_ntop(AF_INET, &if_addr->address.in_addr,
-				       hr_addr, NET_IPV4_ADDR_LEN));
+			 log_strdup(net_addr_ntop(AF_INET,
+					       &if_addr->address.in_addr,
+					       hr_addr, NET_IPV4_ADDR_LEN)));
 		NET_INFO("Lease time: %u seconds",
 			 iface->config.dhcpv4.lease_time);
 		NET_INFO("Subnet: %s",
-			 net_addr_ntop(AF_INET,
-				       &iface->config.ip.ipv4->netmask,
-				       hr_addr, NET_IPV4_ADDR_LEN));
+			 log_strdup(net_addr_ntop(AF_INET,
+					       &iface->config.ip.ipv4->netmask,
+					       hr_addr, NET_IPV4_ADDR_LEN)));
 		NET_INFO("Router: %s",
-			 net_addr_ntop(AF_INET, &iface->config.ip.ipv4->gw,
-				       hr_addr, NET_IPV4_ADDR_LEN));
+			 log_strdup(net_addr_ntop(AF_INET,
+					       &iface->config.ip.ipv4->gw,
+					       hr_addr, NET_IPV4_ADDR_LEN)));
 		break;
 	}
 
@@ -265,7 +269,8 @@ static void setup_ipv4(struct net_if *iface)
 	net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
 
 	NET_INFO("IPv4 address: %s",
-		 net_addr_ntop(AF_INET, &addr, hr_addr, NET_IPV4_ADDR_LEN));
+		 log_strdup(net_addr_ntop(AF_INET, &addr, hr_addr,
+					  NET_IPV4_ADDR_LEN)));
 
 	ret = dns_get_addr_info(query,
 				DNS_QUERY_TYPE_A,

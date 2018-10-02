@@ -336,7 +336,7 @@ static struct net_route_entry *add_route(struct net_if *iface,
 	route = net_route_add(iface, addr, prefix_len, addr);
 
 	NET_DBG("%s route to %s/%d iface %p", route ? "Add" : "Cannot add",
-		net_sprint_ipv6_addr(addr), prefix_len, iface);
+		log_strdup(net_sprint_ipv6_addr(addr)), prefix_len, iface);
 
 	return route;
 }
@@ -347,7 +347,8 @@ static void no_route_info(struct net_pkt *pkt,
 			  struct in6_addr *dst)
 {
 	NET_DBG("Will not route pkt %p ll src %s to dst %s between interfaces",
-		pkt, net_sprint_ipv6_addr(src), net_sprint_ipv6_addr(dst));
+		pkt, log_strdup(net_sprint_ipv6_addr(src)),
+		log_strdup(net_sprint_ipv6_addr(dst)));
 }
 
 #if defined(CONFIG_NET_ROUTE)
@@ -405,14 +406,14 @@ static enum net_verdict route_ipv6_packet(struct net_pkt *pkt,
 		if (ret < 0) {
 			NET_DBG("Cannot re-route pkt %p via %s "
 				"at iface %p (%d)",
-				pkt, net_sprint_ipv6_addr(nexthop),
+				pkt, log_strdup(net_sprint_ipv6_addr(nexthop)),
 				net_pkt_iface(pkt), ret);
 		} else {
 			return NET_OK;
 		}
 	} else {
 		NET_DBG("No route to %s pkt %p dropped",
-			net_sprint_ipv6_addr(&hdr->dst), pkt);
+			log_strdup(net_sprint_ipv6_addr(&hdr->dst)), pkt);
 	}
 
 drop:
@@ -441,8 +442,8 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 	}
 
 	NET_DBG("IPv6 packet len %d received from %s to %s", real_len,
-		net_sprint_ipv6_addr(&hdr->src),
-		net_sprint_ipv6_addr(&hdr->dst));
+		log_strdup(net_sprint_ipv6_addr(&hdr->src)),
+		log_strdup(net_sprint_ipv6_addr(&hdr->dst)));
 
 	if (net_is_ipv6_addr_mcast(&hdr->src)) {
 		NET_DBG("Dropping src multicast packet");

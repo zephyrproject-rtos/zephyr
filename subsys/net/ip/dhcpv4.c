@@ -318,9 +318,10 @@ static u32_t dhcpv4_send_request(struct net_if *iface)
 	iface->config.dhcpv4.attempts++;
 
 	NET_DBG("send request dst=%s xid=0x%x ciaddr=%s%s%s timeout=%us",
-		net_sprint_ipv4_addr(server_addr),
+		log_strdup(net_sprint_ipv4_addr(server_addr)),
 		iface->config.dhcpv4.xid,
-		ciaddr ? net_sprint_ipv4_addr(ciaddr) : "<unknown>",
+		ciaddr ?
+		log_strdup(net_sprint_ipv4_addr(ciaddr)) : "<unknown>",
 		with_server_id ? " +server-id" : "",
 		with_requested_ip ? " +requested-ip" : "",
 		timeout);
@@ -649,7 +650,7 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 
 			net_if_ipv4_set_netmask(iface, &netmask);
 			NET_DBG("options_subnet_mask %s",
-				net_sprint_ipv4_addr(&netmask));
+				log_strdup(net_sprint_ipv4_addr(&netmask)));
 			break;
 		}
 		case DHCPV4_OPTIONS_ROUTER: {
@@ -674,7 +675,7 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 			}
 
 			NET_DBG("options_router: %s",
-				net_sprint_ipv4_addr(&router));
+				log_strdup(net_sprint_ipv4_addr(&router)));
 			net_if_ipv4_set_gw(iface, &router);
 			break;
 		}
@@ -777,8 +778,8 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 			frag = net_frag_read(frag, pos, &pos, length,
 				       iface->config.dhcpv4.server_id.s4_addr);
 			NET_DBG("options_server_id: %s",
-				net_sprint_ipv4_addr(
-					&iface->config.dhcpv4.server_id));
+				log_strdup(net_sprint_ipv4_addr(
+					   &iface->config.dhcpv4.server_id)));
 			break;
 		case DHCPV4_OPTIONS_MSG_TYPE: {
 			u8_t v;
@@ -833,8 +834,8 @@ static void dhcpv4_handle_msg_ack(struct net_if *iface)
 		break;
 	case NET_DHCPV4_REQUESTING:
 		NET_INFO("Received: %s",
-			 net_sprint_ipv4_addr(
-				 &iface->config.dhcpv4.requested_ip));
+			 log_strdup(net_sprint_ipv4_addr(
+					 &iface->config.dhcpv4.requested_ip)));
 
 		if (!net_if_ipv4_addr_add(iface,
 					  &iface->config.dhcpv4.requested_ip,
@@ -941,7 +942,8 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	NET_DBG("Received dhcp msg [op=0x%x htype=0x%x hlen=%u xid=0x%x "
 		"secs=%u flags=0x%x chaddr=%s",
 		msg->op, msg->htype, msg->hlen, ntohl(msg->xid),
-		msg->secs, msg->flags, net_sprint_ll_addr(msg->chaddr, 6));
+		msg->secs, msg->flags,
+		log_strdup(net_sprint_ll_addr(msg->chaddr, 6)));
 	NET_DBG("  ciaddr=%d.%d.%d.%d",
 		msg->ciaddr[0], msg->ciaddr[1], msg->ciaddr[2], msg->ciaddr[3]);
 	NET_DBG("  yiaddr=%d.%d.%d.%d",

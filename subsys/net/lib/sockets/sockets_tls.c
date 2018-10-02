@@ -162,7 +162,8 @@ static void tls_debug(void *ctx, int level, const char *file,
 		}
 	}
 
-	NET_DBG("%s:%04d: |%d| %s", basename, line, level, str);
+	NET_DBG("%s:%04d: |%d| %s", basename, line, level,
+		log_strdup(str));
 }
 #endif /* defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_TLS_DEBUG) */
 

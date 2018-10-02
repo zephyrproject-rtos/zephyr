@@ -40,16 +40,19 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 		}
 
 		NET_INFO("IPv4 address: %s",
-			 net_addr_ntop(AF_INET, &if_addr->address.in_addr,
-				       hr_addr, NET_IPV4_ADDR_LEN));
+			 log_strdup(net_addr_ntop(AF_INET,
+					       &if_addr->address.in_addr,
+					       hr_addr, NET_IPV4_ADDR_LEN)));
 		NET_INFO("Lease time: %u seconds",
 			 iface->config.dhcpv4.lease_time);
 		NET_INFO("Subnet: %s",
-			 net_addr_ntop(AF_INET, &iface->config.ip.ipv4->netmask,
-				       hr_addr, NET_IPV4_ADDR_LEN));
+			 log_strdup(net_addr_ntop(AF_INET,
+					       &iface->config.ip.ipv4->netmask,
+					       hr_addr, NET_IPV4_ADDR_LEN)));
 		NET_INFO("Router: %s",
-			 net_addr_ntop(AF_INET, &iface->config.ip.ipv4->gw,
-				       hr_addr, NET_IPV4_ADDR_LEN));
+			 log_strdup(net_addr_ntop(AF_INET,
+					       &iface->config.ip.ipv4->gw,
+					       hr_addr, NET_IPV4_ADDR_LEN)));
 		break;
 	}
 }
@@ -88,7 +91,8 @@ static void setup_ipv4(struct net_if *iface)
 	net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
 
 	NET_INFO("IPv4 address: %s",
-		 net_addr_ntop(AF_INET, &addr, hr_addr, NET_IPV4_ADDR_LEN));
+		 log_strdup(net_addr_ntop(AF_INET, &addr, hr_addr,
+					  NET_IPV4_ADDR_LEN)));
 }
 
 #else
@@ -116,7 +120,8 @@ static void setup_ipv6(struct net_if *iface)
 	net_if_ipv6_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
 
 	NET_INFO("IPv6 address: %s",
-		 net_addr_ntop(AF_INET6, &addr, hr_addr, NET_IPV6_ADDR_LEN));
+		 log_strdup(net_addr_ntop(AF_INET6, &addr, hr_addr,
+					  NET_IPV6_ADDR_LEN)));
 
 	if (net_addr_pton(AF_INET6, MCAST_IP6ADDR, &addr)) {
 		NET_ERR("Invalid address: %s", MCAST_IP6ADDR);
