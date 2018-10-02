@@ -312,16 +312,10 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 		_priq_wait_add(&wait_q->waitq, thread);
 	}
 
-	/* The timeout handling is currently synchronized external to
-	 * the scheduler using the legacy global lock.  Should fix
-	 * that.
-	 */
 	if (timeout != K_FOREVER) {
 		s32_t ticks = _TICK_ALIGN + _ms_to_ticks(timeout);
-		unsigned int key = irq_lock();
 
 		_add_thread_timeout(thread, ticks);
-		irq_unlock(key);
 	}
 
 	sys_trace_thread_pend(thread);
