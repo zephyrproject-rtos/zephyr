@@ -259,9 +259,9 @@ Z_SYSCALL_HANDLER(k_poll, events, num_events, timeout)
 		goto out;
 	}
 	if (Z_SYSCALL_VERIFY_MSG(
-		__builtin_umul_overflow(num_events,
+		!__builtin_umul_overflow(num_events,
 					sizeof(struct k_poll_event),
-					&bounds) == 0,
+					&bounds),
 					"num_events too large")) {
 		ret = -EINVAL;
 		goto out;
