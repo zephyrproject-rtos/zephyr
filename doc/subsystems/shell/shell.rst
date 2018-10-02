@@ -425,8 +425,6 @@ Usage
 *****
 
 Use the :c:macro:`SHELL_DEFINE` macro to create an instance of the shell.
-Pass the expected newline character to this macro: either ``\r`` or ``\n``,
-otherwise the shell will not respond correctly to the :kbd:`Enter` key.
 
 The following code shows a simple use case of this library:
 
@@ -436,7 +434,7 @@ The following code shows a simple use case of this library:
 	SHELL_UART_DEFINE(shell_transport_uart);
 
 	/* Creating shell instance */
-	SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, '\r', 10);
+	SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, 10);
 
 	void main(void)
 	{
