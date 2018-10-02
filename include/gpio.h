@@ -39,19 +39,6 @@ extern "C" {
  * @endcond
  */
 
-/**
- * @deprecated
- * Deprecated. Formerly used to enable a GPIO pin.
- */
-#define GPIO_PIN_ENABLE		(0 __DEPRECATED_MACRO)
-
-/**
- * @deprecated
- * Deprecated. Formerly used to disable a GPIO pin.
- */
-#define GPIO_PIN_DISABLE	(0 __DEPRECATED_MACRO)
-
-
 struct gpio_callback;
 
 /**
