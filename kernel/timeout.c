@@ -208,10 +208,11 @@ s64_t z_tick_get(void)
 
 u32_t z_tick_get_32(void)
 {
-	/* Returning just the low word doesn't require locking as the
-	 * API is by definition at risk of overflow
-	 */
-	return z_clock_elapsed() + (u32_t)curr_tick;
+#ifdef CONFIG_TICKLESS_KERNEL
+	return (u32_t)z_tick_get();
+#else
+	return (u32_t)curr_tick;
+#endif
 }
 
 u32_t _impl_k_uptime_get_32(void)
