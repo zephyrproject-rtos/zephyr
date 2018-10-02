@@ -31,6 +31,16 @@ struct shell_uart {
 		.ctx = (struct shell_uart *)&_name##_shell_uart		\
 	}
 
+/**
+ * @brief This function provides pointer to shell uart backend instance.
+ *
+ * Function returns pointer to the shell uart instance. This instance can be
+ * next used with shell_execute_cmd function in order to test commands behavior.
+ *
+ * @returns Pointer to the shell instance.
+ */
+const struct shell *shell_backend_uart_get_ptr(void);
+
 #ifdef __cplusplus
 }
 #endif

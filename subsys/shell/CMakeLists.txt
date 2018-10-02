@@ -21,7 +21,12 @@ zephyr_sources_ifdef(
 zephyr_sources_ifdef(
   CONFIG_SHELL_BACKEND_SERIAL
   shell_uart.c
-  )
+)
+
+zephyr_sources_ifdef(
+  CONFIG_SHELL_BACKEND_DUMMY
+  shell_dummy.c
+)
 
 zephyr_sources_ifdef(
   CONFIG_SHELL_CMDS

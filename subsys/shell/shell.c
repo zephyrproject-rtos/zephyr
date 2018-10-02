@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <shell/shell.h>
+#include <shell/shell_dummy.h>
 #include "shell_utils.h"
 #include "shell_ops.h"
 #include "shell_wildcard.h"
@@ -1748,7 +1749,7 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd)
 {
 	u16_t cmd_len = shell_strlen(cmd);
 
-	if ((cmd == NULL) || (shell == NULL)) {
+	if (cmd == NULL) {
 		return -ENOEXEC;
 	}
 
@@ -1756,8 +1757,17 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd)
 		return -ENOEXEC;
 	}
 
+	if (shell == NULL) {
+#if CONFIG_SHELL_BACKEND_DUMMY
+		shell = shell_backend_dummy_get_ptr();
+#else
+		return -EINVAL;
+#endif
+	}
+
 	strcpy(shell->ctx->cmd_buff, cmd);
 	shell->ctx->cmd_buff_len = cmd_len;
+	shell->ctx->cmd_buff_pos = cmd_len;
 
 	return shell_execute(shell);
 }
