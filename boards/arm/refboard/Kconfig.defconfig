@@ -1,0 +1,6 @@
+if BOARD_REFBOARD
+
+config BOARD
+	default "refboard"
+
+endif
