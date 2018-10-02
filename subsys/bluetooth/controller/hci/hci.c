@@ -76,8 +76,8 @@ static u64_t event_mask_page_2 = DEFAULT_EVENT_MASK_PAGE_2;
 static u64_t le_event_mask = DEFAULT_LE_EVENT_MASK;
 
 #if defined(CONFIG_BT_CONN)
-static void le_conn_complete(u8_t status, struct radio_le_conn_cmplt *radio_cc,
-			     u16_t handle, struct net_buf *buf);
+static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
+			     struct net_buf *buf);
 #endif /* CONFIG_BT_CONN */
 
 static void evt_create(struct net_buf *buf, u8_t evt, u8_t len)
@@ -2405,10 +2405,12 @@ static void le_scan_req_received(struct pdu_data *pdu_data, u8_t *b,
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
 #if defined(CONFIG_BT_CONN)
-static void le_conn_complete(u8_t status, struct radio_le_conn_cmplt *radio_cc,
-			     u16_t handle, struct net_buf *buf)
+static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
+			     struct net_buf *buf)
 {
+	struct radio_le_conn_cmplt *radio_cc = (void *)pdu_data;
 	struct bt_hci_evt_le_conn_complete *lecc;
+	u8_t status = radio_cc->status;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (!status) {
@@ -2533,7 +2535,7 @@ static void le_conn_update_complete(struct pdu_data *pdu_data, u16_t handle,
 		return;
 	}
 
-	radio_cu = (void *)pdu_data->lldata;
+	radio_cu = (void *)pdu_data;
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE, sizeof(*sep));
 
@@ -2591,7 +2593,7 @@ static void le_chan_sel_algo(struct pdu_data *pdu_data, u16_t handle,
 		return;
 	}
 
-	radio_le_chan_sel_algo = (void *)pdu_data->lldata;
+	radio_le_chan_sel_algo = (void *)pdu_data;
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_CHAN_SEL_ALGO, sizeof(*sep));
 
@@ -2607,7 +2609,7 @@ static void le_phy_upd_complete(struct pdu_data *pdu_data, u16_t handle,
 	struct bt_hci_evt_le_phy_update_complete *sep;
 	struct radio_le_phy_upd_cmplt *radio_le_phy_upd_cmplt;
 
-	radio_le_phy_upd_cmplt = (void *)pdu_data->lldata;
+	radio_le_phy_upd_cmplt = (void *)pdu_data;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_PHY_UPDATE_COMPLETE)) {
@@ -2659,12 +2661,7 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 
 #if defined(CONFIG_BT_CONN)
 	case NODE_RX_TYPE_CONNECTION:
-		{
-			struct radio_le_conn_cmplt *cc;
-
-			cc = (void *)pdu_data->lldata;
-			le_conn_complete(cc->status, cc, handle, buf);
-		}
+		le_conn_complete(pdu_data, handle, buf);
 		break;
 
 	case NODE_RX_TYPE_TERMINATE:
