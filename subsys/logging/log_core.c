@@ -500,7 +500,7 @@ u32_t log_filter_get(struct log_backend const *const backend,
 	}
 }
 
-char *log_strdup(char *str)
+char *log_strdup(const char *str)
 {
 	u32_t *dupl;
 	char *sdupl;
