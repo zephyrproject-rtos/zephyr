@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2018, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: REFSOC I2C sensor
+type: sensor
+version: 0.1
+
+description: >
+    This binding gives a base representation Reference SoC I2C device sensor
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      constraint: "refsoc,sensor-i2c"
+
+...
