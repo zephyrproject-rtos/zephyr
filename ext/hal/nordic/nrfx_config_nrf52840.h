@@ -664,8 +664,8 @@
 
 // <e> NRFX_NFCT_ENABLED - nrfx_nfct - NFCT peripheral driver
 //==========================================================
-#ifndef NRFX_NFCT_ENABLED
-#define NRFX_NFCT_ENABLED 0
+#ifdef CONFIG_NRFX_NFCT
+#define NRFX_NFCT_ENABLED 1
 #endif
 // <o> NRFX_NFCT_CONFIG_IRQ_PRIORITY  - Interrupt priority
 

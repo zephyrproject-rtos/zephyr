@@ -16,6 +16,10 @@ config NRFX_ADC
 config NRFX_CLOCK
 	bool
 
+config NRFX_NFCT
+	bool
+	select NRFX_TIMER4
+
 config NRFX_PWM
 	bool
 
