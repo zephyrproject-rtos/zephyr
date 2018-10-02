@@ -87,7 +87,7 @@ static void gptp_compute_clock_identity(int port)
 }
 
 #define PRINT_INFO(msg, hdr, pkt)				\
-	NET_DBG("Received %s seq %d pkt %p", msg,		\
+	NET_DBG("Received %s seq %d pkt %p", log_strdup(msg),	\
 		ntohs(hdr->sequence_id), pkt)			\
 
 

@@ -105,7 +105,7 @@ char *_net_app_sprint_ipaddr(char *buf, int buflen,
 		net_addr_ntop(addr->sa_family,
 			      &net_sin6(addr)->sin6_addr,
 			      ipaddr, sizeof(ipaddr));
-		snprintk(buf, buflen, "[%s]:%u", ipaddr,
+		snprintk(buf, buflen, "[%s]:%u", log_strdup(ipaddr),
 			 ntohs(net_sin6(addr)->sin6_port));
 #endif
 	} else if (addr->sa_family == AF_INET) {
@@ -115,7 +115,7 @@ char *_net_app_sprint_ipaddr(char *buf, int buflen,
 		net_addr_ntop(addr->sa_family,
 			      &net_sin(addr)->sin_addr,
 			      ipaddr, sizeof(ipaddr));
-		snprintk(buf, buflen, "%s:%u", ipaddr,
+		snprintk(buf, buflen, "%s:%u", log_strdup(ipaddr),
 			 ntohs(net_sin(addr)->sin_port));
 #endif
 	} else {
@@ -137,9 +137,9 @@ void _net_app_print_info(struct net_app_ctx *ctx)
 			       &ctx->default_ctx->remote);
 
 	NET_DBG("net app connect %s %s %s",
-		local,
+		log_strdup(local),
 		ctx->app_type == NET_APP_CLIENT ? "->" : "<-",
-		remote);
+		log_strdup(remote));
 }
 
 #if defined(CONFIG_NET_APP_SERVER) || defined(CONFIG_NET_APP_CLIENT)
@@ -1179,7 +1179,8 @@ static void my_debug(void *ctx, int level,
 		((char *)str)[len - 1] = '\0';
 	}
 
-	NET_DBG("%s:%04d: |%d| %s", basename, line, level, str);
+	NET_DBG("%s:%04d: |%d| %s", basename, line, level,
+		log_strdup(str));
 }
 #endif /* MBEDTLS_DEBUG_C && NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 

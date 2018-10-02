@@ -617,13 +617,13 @@ static bool parse_ipv6(const char *str, size_t str_len,
 		net_sin6(addr)->sin6_port = htons(port);
 
 		NET_DBG("IPv6 host %s port %d",
-			net_addr_ntop(AF_INET6, addr6,
-				      ipaddr, sizeof(ipaddr) - 1),
+			log_strdup(net_addr_ntop(AF_INET6, addr6,
+						 ipaddr, sizeof(ipaddr) - 1)),
 			port);
 	} else {
 		NET_DBG("IPv6 host %s",
-			net_addr_ntop(AF_INET6, addr6,
-				      ipaddr, sizeof(ipaddr) - 1));
+			log_strdup(net_addr_ntop(AF_INET6, addr6,
+						 ipaddr, sizeof(ipaddr) - 1)));
 	}
 
 	return true;
@@ -688,8 +688,8 @@ static bool parse_ipv4(const char *str, size_t str_len,
 	net_sin(addr)->sin_port = htons(port);
 
 	NET_DBG("IPv4 host %s port %d",
-		net_addr_ntop(AF_INET, addr4,
-			      ipaddr, sizeof(ipaddr) - 1),
+		log_strdup(net_addr_ntop(AF_INET, addr4,
+					 ipaddr, sizeof(ipaddr) - 1)),
 		port);
 	return true;
 }

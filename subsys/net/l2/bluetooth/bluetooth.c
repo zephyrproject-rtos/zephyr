@@ -134,7 +134,7 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 		bt_addr_le_to_str(info.le.dst, dst, sizeof(dst));
 
 		NET_DBG("Channel %p Source %s connected to Destination %s",
-			chan, src, dst);
+			chan, log_strdup(src), log_strdup(dst));
 	}
 
 	/* Swap bytes since net APIs expect big endian address */
@@ -385,7 +385,7 @@ static bool eir_found(u8_t type, const u8_t *data, u8_t data_len,
 			char dev[BT_ADDR_LE_STR_LEN];
 
 			bt_addr_le_to_str(addr, dev, sizeof(dev));
-			NET_DBG("[DEVICE]: %s", dev);
+			NET_DBG("[DEVICE]: %s", log_strdup(dev));
 		}
 
 		/* TODO: Notify device address found */
@@ -512,7 +512,8 @@ static void connected(struct bt_conn *conn, u8_t err)
 			bt_addr_le_to_str(bt_conn_get_dst(conn), addr,
 					  sizeof(addr));
 
-			NET_ERR("Failed to connect to %s (%u)\n", addr, err);
+			NET_ERR("Failed to connect to %s (%u)\n",
+				log_strdup(addr), err);
 		}
 
 		return;
@@ -534,9 +535,11 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 
 	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		char addr[BT_ADDR_LE_STR_LEN];
+
 		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-		NET_DBG("Disconnected: %s (reason %u)\n", addr, reason);
+		NET_DBG("Disconnected: %s (reason %u)\n",
+			log_strdup(addr), reason);
 	}
 
 	bt_conn_unref(default_conn);

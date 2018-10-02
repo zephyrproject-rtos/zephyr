@@ -397,8 +397,8 @@ void prepare_register_debug_print(char *dst, int dst_len,
 	if (remote_addr && remote_addr->sa_family == AF_INET6) {
 		if (IS_ENABLED(CONFIG_NET_IPV6)) {
 			snprintk(dst, dst_len, "%s",
-				 net_sprint_ipv6_addr(&net_sin6(remote_addr)->
-						      sin6_addr));
+				 log_strdup(net_sprint_ipv6_addr(
+					  &net_sin6(remote_addr)->sin6_addr)));
 		} else {
 			snprintk(dst, dst_len, "%s", "?");
 		}
@@ -406,8 +406,8 @@ void prepare_register_debug_print(char *dst, int dst_len,
 	} else if (remote_addr && remote_addr->sa_family == AF_INET) {
 		if (IS_ENABLED(CONFIG_NET_IPV4)) {
 			snprintk(dst, dst_len, "%s",
-				 net_sprint_ipv4_addr(&net_sin(remote_addr)->
-						      sin_addr));
+				 log_strdup(net_sprint_ipv4_addr(
+					  &net_sin(remote_addr)->sin_addr)));
 		} else {
 			snprintk(dst, dst_len, "%s", "?");
 		}
@@ -419,8 +419,8 @@ void prepare_register_debug_print(char *dst, int dst_len,
 	if (local_addr && local_addr->sa_family == AF_INET6) {
 		if (IS_ENABLED(CONFIG_NET_IPV6)) {
 			snprintk(src, src_len, "%s",
-				 net_sprint_ipv6_addr(&net_sin6(local_addr)->
-						      sin6_addr));
+				 log_strdup(net_sprint_ipv6_addr(
+					  &net_sin6(local_addr)->sin6_addr)));
 		} else {
 			snprintk(src, src_len, "%s", "?");
 		}
@@ -428,8 +428,8 @@ void prepare_register_debug_print(char *dst, int dst_len,
 	} else if (local_addr && local_addr->sa_family == AF_INET) {
 		if (IS_ENABLED(CONFIG_NET_IPV4)) {
 			snprintk(src, src_len, "%s",
-				 net_sprint_ipv4_addr(&net_sin(local_addr)->
-						      sin_addr));
+				 log_strdup(net_sprint_ipv4_addr(
+					  &net_sin(local_addr)->sin_addr)));
 		} else {
 			snprintk(src, src_len, "%s", "?");
 		}
@@ -686,9 +686,10 @@ int net_conn_register(enum net_ip_protocol proto,
 
 			NET_DBG("[%d/%d/%u/0x%02x] remote %p/%s/%u ", i,
 				local_addr ? local_addr->sa_family : AF_UNSPEC,
-				proto, rank, remote_addr, dst, remote_port);
+				proto, rank, remote_addr, log_strdup(dst),
+				remote_port);
 			NET_DBG("  local %p/%s/%u cb %p ud %p",
-				local_addr, src, local_port,
+				local_addr, log_strdup(src), local_port,
 				cb, user_data);
 		}
 

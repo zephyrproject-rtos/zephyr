@@ -311,7 +311,7 @@ static int openthread_init(struct net_if *iface)
 
 	otThreadSetNetworkName(ot_context->instance, CONFIG_OPENTHREAD_NETWORK_NAME);
 	NET_INFO("Network name:   %s",
-		    otThreadGetNetworkName(ot_context->instance));
+		 log_strdup(otThreadGetNetworkName(ot_context->instance)));
 
 	otLinkSetChannel(ot_context->instance, CONFIG_OPENTHREAD_CHANNEL);
 	otLinkSetPanId(ot_context->instance, CONFIG_OPENTHREAD_PANID);

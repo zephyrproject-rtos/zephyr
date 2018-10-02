@@ -36,7 +36,7 @@ static void new_client(struct net_context *net_ctx,
 #endif
 
 	NET_INFO("Connection from %s (%p)",
-		 _net_app_sprint_ipaddr(buf, sizeof(buf), addr),
+		 log_strdup(_net_app_sprint_ipaddr(buf, sizeof(buf), addr)),
 		 net_ctx);
 #endif
 }
@@ -298,14 +298,16 @@ static inline void new_server(struct net_app_ctx *ctx,
 #endif
 
 #if defined(CONFIG_NET_IPV6)
-	NET_INFO("%s %s (%p)", server_banner,
-		 _net_app_sprint_ipaddr(buf, sizeof(buf), &ctx->ipv6.local),
+	NET_INFO("%s %s (%p)", log_strdup(server_banner),
+		 log_strdup(_net_app_sprint_ipaddr(buf, sizeof(buf),
+						   &ctx->ipv6.local)),
 		 ctx);
 #endif
 
 #if defined(CONFIG_NET_IPV4)
-	NET_INFO("%s %s (%p)", server_banner,
-		 _net_app_sprint_ipaddr(buf, sizeof(buf), &ctx->ipv4.local),
+	NET_INFO("%s %s (%p)", log_strdup(server_banner),
+		 log_strdup(_net_app_sprint_ipaddr(buf, sizeof(buf),
+						   &ctx->ipv4.local)),
 		 ctx);
 #endif
 #endif

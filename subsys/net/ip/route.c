@@ -157,14 +157,15 @@ void net_routes_print(void)
 
 		NET_DBG("[%d] %p %d addr %s/%d",
 			i, nbr, nbr->ref,
-			net_sprint_ipv6_addr(&net_route_data(nbr)->addr),
+			log_strdup(net_sprint_ipv6_addr(
+					   &net_route_data(nbr)->addr)),
 			net_route_data(nbr)->prefix_len);
 		NET_DBG("    iface %p idx %d ll %s",
 			nbr->iface, nbr->idx,
 			nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "?" :
-			net_sprint_ll_addr(
+			log_strdup(net_sprint_ll_addr(
 				net_nbr_get_lladdr(nbr->idx)->addr,
-				net_nbr_get_lladdr(nbr->idx)->len));
+				net_nbr_get_lladdr(nbr->idx)->len)));
 	}
 }
 
@@ -192,7 +193,7 @@ static struct net_nbr *nbr_new(struct net_if *iface,
 
 	NET_DBG("[%d] nbr %p iface %p IPv6 %s/%d",
 		nbr->idx, nbr, iface,
-		net_sprint_ipv6_addr(&net_route_data(nbr)->addr),
+		log_strdup(net_sprint_ipv6_addr(&net_route_data(nbr)->addr)),
 		prefix_len);
 
 	return nbr;
@@ -209,12 +210,13 @@ static struct net_nbr *nbr_nexthop_get(struct net_if *iface,
 	NET_ASSERT_INFO(nbr, "Next hop neighbor not found!");
 	NET_ASSERT_INFO(nbr->idx != NET_NBR_LLADDR_UNKNOWN,
 			"Nexthop %s not in neighbor cache!",
-			net_sprint_ipv6_addr(addr));
+			log_strdup(net_sprint_ipv6_addr(addr)));
 
 	net_nbr_ref(nbr);
 
 	NET_DBG("[%d] nbr %p iface %p IPv6 %s",
-		nbr->idx, nbr, iface, net_sprint_ipv6_addr(addr));
+		nbr->idx, nbr, iface,
+		log_strdup(net_sprint_ipv6_addr(addr)));
 
 	return nbr;
 }
@@ -238,8 +240,9 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 		NET_ASSERT_INFO(naddr, "Unknown nexthop address");	\
 									\
 		NET_DBG("%s route to %s via %s (iface %p)", str,	\
-			net_sprint_ipv6_addr(dst),			\
-			net_sprint_ipv6_addr(naddr), route->iface);	\
+			log_strdup(net_sprint_ipv6_addr(dst)),		\
+			log_strdup(net_sprint_ipv6_addr(naddr)),	\
+			route->iface);					\
 	} while (0)
 
 /* Route was accessed, so place it in front of the routes list */
@@ -312,7 +315,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 	nbr_nexthop = net_ipv6_nbr_lookup(iface, nexthop);
 	if (!nbr_nexthop) {
 		NET_DBG("No such neighbor %s found",
-			net_sprint_ipv6_addr(nexthop));
+			log_strdup(net_sprint_ipv6_addr(nexthop)));
 		return NULL;
 	}
 
@@ -320,8 +323,10 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 
 	NET_ASSERT(nexthop_lladdr);
 
-	NET_DBG("Nexthop %s lladdr is %s", net_sprint_ipv6_addr(nexthop),
-		net_sprint_ll_addr(nexthop_lladdr->addr, nexthop_lladdr->len));
+	NET_DBG("Nexthop %s lladdr is %s",
+		log_strdup(net_sprint_ipv6_addr(nexthop)),
+		log_strdup(net_sprint_ll_addr(nexthop_lladdr->addr,
+					      nexthop_lladdr->len)));
 
 	route = net_route_lookup(iface, addr);
 	if (route) {
@@ -335,7 +340,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 		}
 
 		NET_DBG("Old route to %s found",
-			net_sprint_ipv6_addr(nexthop_addr));
+			log_strdup(net_sprint_ipv6_addr(nexthop_addr)));
 
 		net_route_del(route);
 	}
@@ -362,10 +367,12 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 
 				NET_DBG("Removing the oldest route %s "
 					"via %s [%s]",
-					net_sprint_ipv6_addr(&route->addr),
-					net_sprint_ipv6_addr(tmp),
-					net_sprint_ll_addr(llstorage->addr,
-							   llstorage->len));
+					log_strdup(net_sprint_ipv6_addr(
+							   &route->addr)),
+					log_strdup(net_sprint_ipv6_addr(tmp)),
+					log_strdup(net_sprint_ll_addr(
+							   llstorage->addr,
+							   llstorage->len)));
 			}
 		}
 
@@ -685,7 +692,7 @@ bool net_route_mcast_del(struct net_route_entry_mcast *route)
 
 	NET_ASSERT_INFO(route->is_used,
 			"Multicast route %p to %s was already removed", route,
-			net_sprint_ipv6_addr(&route->group));
+			log_strdup(net_sprint_ipv6_addr(&route->group)));
 
 	route->is_used = false;
 
@@ -760,14 +767,14 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 	nbr = net_ipv6_nbr_lookup(NULL, nexthop);
 	if (!nbr) {
 		NET_DBG("Cannot find %s neighbor",
-			net_sprint_ipv6_addr(nexthop));
+			log_strdup(net_sprint_ipv6_addr(nexthop)));
 		return -ENOENT;
 	}
 
 	lladdr = net_nbr_get_lladdr(nbr->idx);
 	if (!lladdr) {
 		NET_DBG("Cannot find %s neighbor link layer address.",
-			net_sprint_ipv6_addr(nexthop));
+			log_strdup(net_sprint_ipv6_addr(nexthop)));
 		return -ESRCH;
 	}
 

@@ -494,7 +494,7 @@ static int query_get(struct coap_resource *resource,
 		memcpy(str, options[i].value, options[i].len);
 		str[options[i].len] = '\0';
 
-		NET_INFO("query[%d]: %s\n", i + 1, str);
+		NET_INFO("query[%d]: %s\n", i + 1, log_strdup(str));
 	}
 
 	NET_INFO("*******\n");

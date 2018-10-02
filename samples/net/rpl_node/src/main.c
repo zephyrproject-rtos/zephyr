@@ -236,7 +236,7 @@ static int append_rpl_parent(struct coap_packet *response)
 		parent = net_rpl_get_parent_addr(net_pkt_iface(response->pkt),
 					rpl->current_dag->preferred_parent);
 		pos = snprintk(&out[out_len], sizeof(out), "%s",
-			       net_sprint_ipv6_addr(parent));
+			       log_strdup(net_sprint_ipv6_addr(parent)));
 		out_len += pos;
 	}
 

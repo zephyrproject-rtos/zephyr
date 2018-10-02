@@ -331,8 +331,8 @@ static int dns_read(struct net_context *ctx,
 	NET_DBG("Received %d %s from %s", queries,
 		queries > 1 ? "queries" : "query",
 		net_pkt_family(pkt) == AF_INET ?
-		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src) :
-		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src));
+		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src)) :
+		log_strdup(net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src)));
 
 	do {
 		enum dns_rr_type qtype;
@@ -355,7 +355,7 @@ static int dns_read(struct net_context *ctx,
 
 		NET_DBG("[%d] query %s/%s label %s (%d bytes)", queries,
 			qtype == DNS_RR_TYPE_A ? "A" : "AAAA", "IN",
-			result->data, ret);
+			log_strdup(result->data), ret);
 
 		/* If the query matches to our hostname, then send reply.
 		 * We skip the first dot, and make sure there is dot after
@@ -426,7 +426,7 @@ static void iface_ipv6_cb(struct net_if *iface, void *user_data)
 	ret = net_ipv6_mld_join(iface, addr);
 	if (ret < 0) {
 		NET_DBG("Cannot join %s IPv6 multicast group (%d)",
-			net_sprint_ipv6_addr(addr), ret);
+			log_strdup(net_sprint_ipv6_addr(addr)), ret);
 	}
 }
 

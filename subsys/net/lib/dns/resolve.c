@@ -222,7 +222,7 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 
 			dns_postprocess_server(ctx, idx);
 
-			NET_DBG("[%d] %s", i, servers[i]);
+			NET_DBG("[%d] %s", i, log_strdup(servers[i]));
 
 			idx++;
 		}

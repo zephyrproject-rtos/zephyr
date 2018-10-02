@@ -296,8 +296,8 @@ drop:
 #define dbg_addr(action, pkt_str, src, dst)				\
 	do {								\
 		NET_DBG("%s %s from %s to %s", action, pkt_str,         \
-			net_sprint_ipv6_addr(src),                      \
-			net_sprint_ipv6_addr(dst));                     \
+			log_strdup(net_sprint_ipv6_addr(src)),		\
+			log_strdup(net_sprint_ipv6_addr(dst)));		\
 	} while (0)
 
 #define dbg_addr_recv(pkt_str, src, dst)	\
@@ -354,7 +354,7 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt)
 	/* Currently we only support a unspecified address query. */
 	if (!net_ipv6_addr_cmp(&mcast, net_ipv6_unspecified_address())) {
 		NET_DBG("Only supporting unspecified address query (%s)",
-			net_sprint_ipv6_addr(&mcast));
+			log_strdup(net_sprint_ipv6_addr(&mcast)));
 		goto drop;
 	}
 
