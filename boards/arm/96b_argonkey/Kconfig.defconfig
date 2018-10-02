@@ -13,30 +13,36 @@ config BOARD
 if UART_CONSOLE
 
 config UART_STM32_PORT_1
-	default y
+	def_bool y
 
 endif # UART_CONSOLE
 
 if I2C
 
 config I2C_1
-	default y
+	def_bool y
 
 config I2C_2
-	default y
+	def_bool y
 
 config I2C_3
-	default y
+	def_bool y
 
 config I2C_STM32_INTERRUPT
-	default y
+	def_bool y
 
 endif # I2C
 
 if SPI
 
+config SPI_1
+	def_bool y
+
 config SPI_2
-	default y
+	def_bool y
+
+config SPI_STM32_INTERRUPT
+	def_bool y
 
 endif # SPI
 
@@ -51,7 +57,7 @@ choice LSM6DSL_TRIGGER_MODE
 endchoice
 
 config LSM6DSL_SENSORHUB
-	default y
+	def_bool y
 
 choice LSM6DSL_EXTERNAL_SENSOR_0
 	default LSM6DSL_EXT0_LIS2MDL
