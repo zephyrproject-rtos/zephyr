@@ -67,6 +67,7 @@
 };
 
 &i2c2 {
+	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
