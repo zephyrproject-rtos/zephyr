@@ -87,10 +87,10 @@
 	sda-pin = <26>;
 	scl-pin = <27>;
 
-	fxos8700@1d {
-		compatible = "nxp,fxos8700";
+	mma8652fc@1d {
+		compatible = "nxp,fxos8700","nxp,mma8652fc";
 		reg = <0x1d>;
-		label = "FXOS8700";
+		label = "MMA8652FC";
 		int1-gpios = <&gpio0 24 0>;
 	};
 
