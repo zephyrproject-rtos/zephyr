@@ -6,20 +6,73 @@ FXOS8700 Accelerometer/Magnetometer Sensor
 Overview
 ********
 
-A sensor application that demonstrates how to use the fxos8700 data ready
-interrupt to read accelerometer/magnetometer data synchronously.
+This sample application shows how to use the FXOS8700 driver.
+The driver supports FXOS8700 accelerometer/magnetometer and
+MMA8451Q, MMA8652FC, MMA8653FC accelerometers.
 
 Building and Running
 ********************
 
-This project outputs sensor data to the console. It requires an fxos8700
-sensor, which is present on the :ref:`frdm_k64f`, :ref:`frdm_kw41z`, and
-:ref:`hexiwear_k64` boards.  It does not work on QEMU.
+This project outputs sensor data to the console. FXOS8700
+sensor is present on the :ref:`frdm_k64f`, :ref:`frdm_kw41z`, and
+:ref:`hexiwear_k64` boards. Accelerometer only devices are
+present on the :ref:`frdm_kl25z`, :ref:`bbc_microbit`, and
+:ref:`reel_board` boards. It does not work on QEMU.
+
+Building and Running for FRDM-K64F
+==================================
+FRDM-K64F is equipped with FXOS8700CQ accelerometer and magnetometer.
+Sample can be built and executed for the FRDM-K64F as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/fxos8700
+   :zephyr-app: samples/sensor/fxos8700
    :board: frdm_k64f
-   :goals: build
+   :goals: build flash
+   :compact:
+
+Example building for the FRDM-K64F with motion detection support:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/fxos8700
+   :board: frdm_k64f
+   :conf: "prj.conf overlay-motion.conf"
+   :goals: build flash
+   :compact:
+
+Building and Running for FRDM-KL25Z
+===================================
+FRDM-KL25Z is equipped with MMA8451Q accelerometer.
+Sample can be built and executed for the FRDM-KL25Z as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/fxos8700
+   :board: frdm_kl25z
+   :conf: "prj_accel.conf"
+   :goals: build flash
+   :compact:
+
+Building and Running for Micro Bit
+==================================
+Micro Bit is equipped with MMA8653FC accelerometer.
+Sample can be built and executed for the Micro Bit as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/fxos8700
+   :board: bbc_microbit
+   :conf: "prj_accel.conf"
+   :goals: build flash
+   :compact:
+
+Building and Running for reel board
+===================================
+The reel board is equipped with MMA8652FC accelerometer.
+Sample can be built and executed for the reel board as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/fxos8700
+   :board: reel_board
+   :conf: "prj_accel.conf"
+   :goals: build flash
    :compact:
 
 Sample Output
