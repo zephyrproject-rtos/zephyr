@@ -218,6 +218,21 @@ I2C
 - I2C2_SCL : PB10
 - I2C2_SDA : PB3
 
+SPI
+---
+
+96Boards Carbon board has up to 2 SPIs. SPI1 is used for Bluetooth communication
+over HCI. The default SPI mapping for Zephyr is:
+
+- SPI1_NSS  : PA4
+- SPI1_SCK  : PA5
+- SPI1_MISO : PA6
+- SPI1_MOSI : PA7
+- SPI2_NSS  : PB12
+- SPI2_SCK  : PB13
+- SPI2_MISO : PB14
+- SPI2_MOSI : PB15
+
 USB
 ===
 
