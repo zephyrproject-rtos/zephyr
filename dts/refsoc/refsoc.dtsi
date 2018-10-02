@@ -1,0 +1,130 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+
+#include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "simple-bus";
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "refsoc,refarch";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&intc>;
+		ranges;
+
+		intc: interrupt-controller@e000e100  {
+			compatible = "refsoc,intc";
+			reg = <0xe000e100 0xc00>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+
+		clockcontrol: clock-controller@40000000 {
+			compatible = "refsoc,clock-control";
+			clocks-controller;
+			#clock-cells = <2>;
+			reg = <0x40000000 0x400>;
+			label = "CLOCK_CONTROL";
+		};
+
+		gpioa: gpio@41000000 {
+			compatible = "refsoc,gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x41000000 0x400>;
+			clocks = <&clockcontrol 1 0x00000001>;
+			label = "GPIOA";
+		};
+
+		gpiob: gpio@41000400 {
+			compatible = "refsoc,gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x41000400 0x400>;
+			clocks = <&clockcontrol 1 0x00000002>;
+			label = "GPIOB";
+		};
+
+		uart1: serial@42000000 {
+			compatible = "refsoc,uart", "refsoc,usart";
+			reg = <0x42000000 0x400>;
+			clocks = <&clockcontrol 2 0x0000001>;
+			interrupts = <37 0>;
+			status = "disabled";
+			label = "UART_1";
+		};
+
+		uart2: serial@42000400 {
+			compatible = "refsoc,uart", "refsoc,usart";
+			reg = <0x42000400 0x400>;
+			clocks = <&clockcontrol 2 0x0000002>;
+			interrupts = <38 0>;
+			status = "disabled";
+			label = "UART_2";
+		};
+
+		i2c1: i2c@43000000 {
+			compatible = "refsoc,i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x43000000 0x400>;
+			clocks = <&clockcontrol 3 0x00000001>;
+			interrupts = <31 0>, <32 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label= "I2C_1";
+		};
+
+		i2c2: i2c@430000400 {
+			compatible = "refsoc,i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x43000400 0x400>;
+			clocks = <&clockcontrol 3 0x000000002>;
+			interrupts = <33 0>, <34 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label= "I2C_2";
+		};
+
+		spi1: spi@44000000 {
+			compatible = "refsoc,spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44000000 0x400>;
+			interrupts = <35 5>;
+			clocks = <&clockcontrol 4 0x000000001>;
+			status = "disabled";
+			label = "SPI_1";
+		};
+
+		spi2: spi@44000400 {
+			compatible = "refsoc,spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44000400 0x400>;
+			interrupts = <35 5>;
+			clocks = <&clockcontrol 4 0x000000002>;
+			status = "disabled";
+			label = "SPI_2";
+		};
+	};
+};
