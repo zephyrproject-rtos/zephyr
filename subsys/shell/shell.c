@@ -1720,3 +1720,21 @@ bool shell_cmd_precheck(const struct shell *shell,
 
 	return true;
 }
+
+int shell_execute_cmd(const struct shell *shell, const char *cmd)
+{
+	u16_t cmd_len = shell_strlen(cmd);
+
+	if ((cmd == NULL) || (shell == NULL)) {
+		return -ENOEXEC;
+	}
+
+	if (cmd_len > (CONFIG_SHELL_CMD_BUFF_SIZE - 1)) {
+		return -ENOEXEC;
+	}
+
+	strcpy(shell->ctx->cmd_buff, cmd);
+	shell->ctx->cmd_buff_len = cmd_len;
+
+	return shell_execute(shell);
+}

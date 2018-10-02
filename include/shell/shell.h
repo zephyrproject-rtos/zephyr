@@ -585,6 +585,20 @@ bool shell_cmd_precheck(const struct shell *shell,
 void shell_print_stream(const void *user_ctx, const char *data,
 			size_t data_len);
 
+/** @brief Execute command.
+ *
+ * Pass command line to shell to execute.
+ *
+ * Note: This by no means makes any of the commands a stable interface, so
+ * this function should only be used for debugging/diagnostic.
+ *
+ * @param[in] shell	Pointer to the shell instance.
+ * @param[in] cmd	Command to be executed.
+ *
+ * @returns Result of the execution
+ */
+int shell_execute_cmd(const struct shell *shell, const char *cmd);
+
 /**
  * @}
  */
