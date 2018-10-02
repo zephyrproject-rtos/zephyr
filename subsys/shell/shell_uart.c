@@ -100,3 +100,8 @@ static int enable_shell_uart(struct device *arg)
 	return 0;
 }
 SYS_INIT(enable_shell_uart, POST_KERNEL, 0);
+
+const struct shell *shell_backend_uart_get_ptr(void)
+{
+	return &uart_shell;
+}

@@ -600,7 +600,9 @@ void shell_print_stream(const void *user_ctx, const char *data,
  * Note: This by no means makes any of the commands a stable interface, so
  * this function should only be used for debugging/diagnostic.
  *
- * @param[in] shell	Pointer to the shell instance.
+ * @param[in] shell	Pointer to the shell instance. It can be NULL when
+ *			the :option:`CONFIG_SHELL_BACKEND_DUMMY` option is
+ *			enabled.
  * @param[in] cmd	Command to be executed.
  *
  * @returns Result of the execution
