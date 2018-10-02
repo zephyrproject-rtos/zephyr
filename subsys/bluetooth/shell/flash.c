@@ -10,13 +10,19 @@
  */
 
 #include <zephyr.h>
-#include <shell/legacy_shell.h>
-#include <misc/printk.h>
+
+#include <bluetooth/hci.h>
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
+
+#include <shell/shell.h>
 
 #include <stdlib.h>
 #include <string.h>
 #include "flash.h"
 #include <soc.h>
+
+#include "bt.h"
 
 #define FLASH_SHELL_MODULE "flash"
 #define BUF_ARRAY_CNT 16
@@ -24,7 +30,7 @@
 
 static u8_t test_arr[TEST_ARR_SIZE];
 
-static int cmd_erase(int argc, char *argv[])
+static int cmd_erase(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct device *flash_dev;
 	u32_t page_addr;
@@ -33,12 +39,12 @@ static int cmd_erase(int argc, char *argv[])
 
 	flash_dev = device_get_binding(FLASH_DEV_NAME);
 	if (!flash_dev) {
-		printk("Nordic nRF5 flash driver was not found!\n");
+		error(shell, "Nordic nRF5 flash driver was not found!");
 		return -ENODEV;
 	}
 
 	if (argc < 2) {
-		printk("Missing page address.\n");
+		error(shell, "Missing page address.");
 		return -EINVAL;
 	}
 
@@ -55,15 +61,15 @@ static int cmd_erase(int argc, char *argv[])
 	result = flash_erase(flash_dev, page_addr, size);
 
 	if (result) {
-		printk("Erase Failed, code %d.\n", result);
+		error(shell, "Erase Failed, code %d.", result);
 	} else {
-		printk("Erase success.\n");
+		print(shell, "Erase success.");
 	}
 
 	return result;
 }
 
-static int cmd_flash(int argc, char *argv[])
+static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 {
 	u32_t check_array[BUF_ARRAY_CNT];
 	u32_t buf_array[BUF_ARRAY_CNT];
@@ -73,17 +79,17 @@ static int cmd_flash(int argc, char *argv[])
 
 	flash_dev = device_get_binding(FLASH_DEV_NAME);
 	if (!flash_dev) {
-		printk("Nordic nRF5 flash driver was not found!\n");
+		error(shell, "Nordic nRF5 flash driver was not found!");
 		return -ENODEV;
 	}
 
 	if (argc < 2) {
-		printk("Missing address.\n");
+		error(shell, "Missing address.");
 		return -EINVAL;
 	}
 
 	if (argc <= 2) {
-		printk("Type data to be written.\n");
+		error(shell, "Type data to be written.");
 		return -EINVAL;
 	}
 
@@ -99,25 +105,25 @@ static int cmd_flash(int argc, char *argv[])
 
 	if (flash_write(flash_dev, w_addr, buf_array,
 			sizeof(buf_array[0]) * j) != 0) {
-		printk("Write internal ERROR!\n");
+		error(shell, "Write internal ERROR!");
 		return -EIO;
 	}
 
-	printk("Write OK.\n");
+	print(shell, "Write OK.");
 
 	flash_read(flash_dev, w_addr, check_array, sizeof(buf_array[0]) * j);
 
 	if (memcmp(buf_array, check_array, sizeof(buf_array[0]) * j) == 0) {
-		printk("Verified.\n");
+		print(shell, "Verified.");
 	} else {
-		printk("Verification ERROR!\n");
+		error(shell, "Verification ERROR!");
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static int cmd_read(int argc, char *argv[])
+static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct device *flash_dev;
 	u32_t addr;
@@ -125,12 +131,12 @@ static int cmd_read(int argc, char *argv[])
 
 	flash_dev = device_get_binding(FLASH_DEV_NAME);
 	if (!flash_dev) {
-		printk("Nordic nRF5 flash driver was not found!\n");
+		error(shell, "Nordic nRF5 flash driver was not found!");
 		return -ENODEV;
 	}
 
 	if (argc < 2) {
-		printk("Missing address.\n");
+		error(shell, "Missing address.");
 		return -EINVAL;
 	}
 
@@ -146,16 +152,16 @@ static int cmd_read(int argc, char *argv[])
 		u32_t data;
 
 		flash_read(flash_dev, addr, &data, sizeof(data));
-		printk("0x%08x ", data);
+		print(shell, "0x%08x ", data);
 		addr += sizeof(data);
 	}
 
-	printk("\n");
+	print(shell, "");
 
 	return 0;
 }
 
-static int cmd_test(int argc, char *argv[])
+static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct device *flash_dev;
 	u32_t repeat;
@@ -165,12 +171,12 @@ static int cmd_test(int argc, char *argv[])
 
 	flash_dev = device_get_binding(FLASH_DEV_NAME);
 	if (!flash_dev) {
-		printk("Nordic nRF5 flash driver was not found!\n");
+		error(shell, "Nordic nRF5 flash driver was not found!");
 		return -ENODEV;
 	}
 
 	if (argc != 4) {
-		printk("3 parameters reqired.\n");
+		error(shell, "3 parameters reqired.");
 		return -EINVAL;
 	}
 
@@ -179,7 +185,7 @@ static int cmd_test(int argc, char *argv[])
 	repeat = strtoul(argv[3], NULL, 16);
 
 	if (size > TEST_ARR_SIZE) {
-		printk("<size> must be at most 0x%x.", TEST_ARR_SIZE);
+		error(shell, "<size> must be at most 0x%x.", TEST_ARR_SIZE);
 		return -EINVAL;
 	}
 
@@ -192,31 +198,49 @@ static int cmd_test(int argc, char *argv[])
 	while (repeat--) {
 		result = flash_erase(flash_dev, addr, size);
 		if (result) {
-			printk("Erase Failed, code %d.\n", result);
+			error(shell, "Erase Failed, code %d.", result);
 			return -EIO;
 		}
 
-		printk("Erase OK.\n");
+		print(shell, "Erase OK.");
 
 		if (flash_write(flash_dev, addr, test_arr, size) != 0) {
-			printk("Write internal ERROR!\n");
+			error(shell, "Write internal ERROR!");
 			return -EIO;
 		}
 
-		printk("Write OK.\n");
+		print(shell, "Write OK.");
 	}
 
-	printk("Erase-Write test done.\n");
+	print(shell, "Erase-Write test done.");
 
 	return 0;
 }
 
-static const struct shell_cmd flash_commands[] = {
-	{ "flash-write", cmd_flash, "<address> <Dword> <Dword>..."},
-	{ "flash-erase", cmd_erase, "<page address> <size>"},
-	{ "flash-read", cmd_read, "<address> <Dword count>"},
-	{ "flash-test", cmd_test, "<address> <size> <repeat count>"},
-	{ NULL, NULL, NULL}
+#define HELP_NONE "[none]"
+
+SHELL_CREATE_STATIC_SUBCMD_SET(flash_cmds) {
+	SHELL_CMD(erase, NULL, "<page address> <size>", cmd_erase),
+	SHELL_CMD(read, NULL, "<address> <Dword count>", cmd_read),
+	SHELL_CMD(test, NULL, "<address> <size> <repeat count>", cmd_test),
+	SHELL_CMD(write, NULL, "<address> <dword> <dword>...", cmd_write),
+	SHELL_SUBCMD_SET_END
 };
 
-SHELL_REGISTER(FLASH_SHELL_MODULE, flash_commands);
+static int cmd_flash(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		shell_help_print(shell, NULL, 0);
+		return 0;
+	}
+
+	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
+		return 0;
+	}
+
+	error(shell, "%s:%s%s", argv[0], "unknown parameter: ", argv[1]);
+	return -ENOEXEC;
+}
+
+SHELL_CMD_REGISTER(flash, &flash_cmds, "Bluetooth flash shell commands",
+		   cmd_flash);
