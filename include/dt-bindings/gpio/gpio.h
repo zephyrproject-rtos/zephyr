@@ -40,9 +40,6 @@
 /** GPIO pin trigger on level high or rising edge. */
 #define GPIO_INT_ACTIVE_HIGH	(1 << 2)
 
-/** GPIO pin trigger to be synchronized to clock pulses. */
-#define GPIO_INT_CLOCK_SYNC     (1 << 3)
-
 /** Enable GPIO pin debounce. */
 #define GPIO_INT_DEBOUNCE       (1 << 4)
 
