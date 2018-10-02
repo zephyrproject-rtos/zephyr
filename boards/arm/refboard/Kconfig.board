@@ -1,0 +1,3 @@
+config BOARD_REFBOARD
+	bool "Refsoc Board"
+	select HAS_DTS
