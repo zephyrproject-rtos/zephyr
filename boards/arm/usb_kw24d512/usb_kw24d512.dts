@@ -33,11 +33,11 @@
 
 	leds {
 		compatible = "gpio-leds";
-		led_0: led@0 {
+		led_0: led_0 {
 			gpios = <&gpiod 4 0>;
 			label = "User LD1";
 		};
-		led_1: led@1 {
+		led_1: led_1 {
 			gpios = <&gpiod 5 0>;
 			label = "User LD2";
 		};
