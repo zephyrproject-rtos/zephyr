@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <atmel/sam4s.dtsi>
+#include <atmel/sam4s16c.dtsi>
 
 / {
 	model = "Atmel SAM4S Xplained Board with an Atmel SAM4S16C SoC";
