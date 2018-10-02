@@ -325,7 +325,8 @@ static int cmd_l2cap(const struct shell *shell, size_t argc, char **argv)
 		return 0;
 	}
 
-	error(shell, "%s:%s%s", argv[0], "unknown parameter: ", argv[1]);
+	error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
+
 	return -ENOEXEC;
 }
 

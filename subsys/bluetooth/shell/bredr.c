@@ -583,8 +583,7 @@ static int cmd_br(const struct shell *shell, size_t argc, char **argv)
 		return 0;
 	}
 
-	shell_fprintf(shell, SHELL_ERROR, "%s:%s%s\r\n", argv[0],
-		      "unknown parameter: ", argv[1]);
+	error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
 }
