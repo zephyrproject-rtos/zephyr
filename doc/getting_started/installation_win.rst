@@ -73,6 +73,13 @@ packages from their respective websites.
 
       choco install git python ninja dtc-msys2 gperf doxygen.install
 
+#. **Optionally** install the tools required to build the documentation in .pdf
+   format:
+
+   .. code-block:: console
+
+      choco install strawberryperl miktex rsvg-convert
+
 #. Close the Command Prompt window.
 
 #. Open a Command Prompt (`cmd.exe`) as a **regular user**.
