@@ -1,6 +1,7 @@
 # Kconfig - Atmel SAM4S MCU series
 #
 # Copyright (c) 2017 Justin Watson
+# Copyright (c) 2018 Vincent van der Locht
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -14,4 +15,5 @@ config SOC_SERIES_SAM4S
 	select ASF
 	help
 	  Enable support for Atmel SAM4S Cortex-M4 microcontrollers.
-	  Part No.: SAM4S16C
+	  Part No.: SAM4S16C, SAM4S16B, SAM4S8C, SAM4S8B,
+	  SAM4S4C, SAM4S4B, SAM4S4A, SAM4S2C, SAM4S2B, SAM4S2A

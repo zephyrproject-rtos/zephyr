@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018 Vincent van der Locht
  * Copyright (c) 2017 Justin Watson
  * Copyright (c) 2016 Intel Corporation.
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
@@ -21,6 +22,24 @@
 
 #if defined(CONFIG_SOC_PART_NUMBER_SAM4S16C)
 #include <sam4s16c.h>
+#elif defined(CONFIG_SOC_PART_NUMBER_SAM4S16B)
+#include <sam4s16b.h>
+#elif defined(CONFIG_SOC_PART_NUMBER_SAM4S8C)
+#include <sam4s8c.h>
+#elif defined(CONFIG_SOC_PART_NUMBER_SAM4S18B)
+#include <sam4s8b.h>
+#elif defined(CONFIG_SOC_PART_NUMBER_SAM4S4C)
+#include <sam4s4c.h>
+#elif defined(CONFIG_SOC_PART_NUMBER_SAM4S4B)
+#include <sam4s4b.h>
+#elif defined(CONFIG_SOC_PART_NUMBER_SAM4S4A)
+#include <sam4s4a.h>
+#elif defined(CONFIG_SOC_PART_NUMBER_SAM4S2C)
+#include <sam4s2c.h>
+#elif defined(CONFIG_SOC_PART_NUMBER_SAM4S2B)
+#include <sam4s2b.h>
+#elif defined(CONFIG_SOC_PART_NUMBER_SAM4S2A)
+#include <sam4s2a.h>
 #else
 #error Library does not support the specified device.
 #endif

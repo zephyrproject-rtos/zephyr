@@ -22,13 +22,11 @@
 	sram0: memory@20100000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0x20100000 0x20000>;
 	};
 
 	flash0: flash@400000 {
 		compatible = "soc-nv-flash";
 		label = "FLASH_0";
-		reg = <0x00400000 0x100000>;
 	};
 
 	soc {
