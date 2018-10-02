@@ -1,0 +1,38 @@
+#
+# Copyright (c) 2018, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: REFSOC SPI
+version: 0.1
+
+description: >
+    This binding gives a base representation of the REFSOC SPI controller
+
+inherits:
+    !include spi.yaml
+
+properties:
+    compatible:
+      constraint: "refsoc,spi"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    interrupt-names:
+      type: stringlist
+      category: optional
+      description: readable string describing the interrupts
+      generation: define
+
+...
