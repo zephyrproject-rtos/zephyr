@@ -228,7 +228,8 @@ static inline int sliceable(struct k_thread *t)
 {
 	return _is_preempt(t)
 		&& !_is_prio_higher(t->base.prio, slice_max_prio)
-		&& !_is_idle(t);
+		&& !_is_idle(t)
+		&& !_is_thread_timeout_active(t);
 }
 
 /* Called out of each timer interrupt */
