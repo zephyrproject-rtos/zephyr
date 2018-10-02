@@ -18,7 +18,11 @@
 
 #include "flash_stm32.h"
 
+#if !defined (STM32L4R5xx) && !defined (STM32L4R7xx) && !defined (STM32L4R9xx) && !defined (STM32L4S5xx) && !defined (STM32L4S7xx) && !defined (STM32L4S9xx)
 #define STM32L4X_PAGE_SHIFT	11
+#else
+#define STM32L4X_PAGE_SHIFT	12
+#endif
 
 /* offset and len must be aligned on 8 for write
  * , positive and not beyond end of flash */
@@ -29,7 +33,11 @@ bool flash_stm32_valid_range(struct device *dev, off_t offset, u32_t len,
 		flash_stm32_range_exists(dev, offset, len);
 }
 
-/* STM32L4xx devices can have up to 512 2K pages on two 256x2K pages banks */
+/*
+ * STM32L4xx devices can have up to 512 2K pages on two 256x2K pages banks
+ *
+ * STM32L4R/Sxx devices can have up to 512 4K pages on two 256x4K pages banks
+ */
 static unsigned int get_page(off_t offset)
 {
 	return offset >> STM32L4X_PAGE_SHIFT;
