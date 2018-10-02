@@ -79,6 +79,38 @@ static inline int _get_region_index(u32_t start, u32_t size)
 	return -EINVAL;
 }
 
+/* Get the base address of a configured MPU region
+ *
+ * @param r_index the index number of the MPU region
+ */
+static inline u32_t _get_region_base_addr(u32_t r_index)
+{
+	MPU->RNR = r_index;
+	return MPU->RBAR & MPU_RBAR_BASE_Msk;
+}
+
+/* Get the end address of a configured MPU region
+ *
+ * @param r_index the index number of the MPU region
+ */
+static inline u32_t _get_region_end_addr(u32_t r_index)
+{
+	MPU->RNR = r_index;
+	return (MPU->RLAR & MPU_RLAR_LIMIT_Msk) | (~MPU_RLAR_LIMIT_Msk);
+}
+
+/* Set (i.e. modify) the end address of an MPU region
+ *
+ * @param r_index the index number of the MPU region
+ * @param addr    the address to be set as the end address
+ */
+static inline void _set_region_end_addr(u32_t r_index, u32_t addr)
+{
+	MPU->RNR = r_index;
+	MPU->RLAR = (MPU->RLAR & (~(MPU_RLAR_LIMIT_Msk))) |
+		((addr) & MPU_RLAR_LIMIT_Msk);
+}
+
 /**
  * This internal function allocates default RAM cache-ability, share-ability,
  * and execution allowance attributes along with the requested access
