@@ -1,0 +1,29 @@
+#
+# Copyright (c) 2018, Yannis Damigos
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: PHY Base Structure
+version: 0.1
+
+description: >
+    This binding gives the base structures for all PHY providers
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
+    "#phy-cells":
+      type: int
+      category: required
+      description: Number of cells in a PHY provider. The meaning those
+                   cells is defined by the binding for the phy node.
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+...
