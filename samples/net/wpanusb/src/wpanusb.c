@@ -10,7 +10,6 @@
 #include <net_private.h>
 
 #include <device.h>
-#include <shell/legacy_shell.h>
 
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
@@ -494,10 +493,6 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	return 0;
 }
 
-struct shell_cmd commands[] = {
-	{ NULL, NULL }
-};
-
 void main(void)
 {
 	wpanusb_start(&__dev);
@@ -521,6 +516,4 @@ void main(void)
 	/* TODO: Initialize more */
 
 	NET_DBG("radio_api %p initialized", radio_api);
-
-	SHELL_REGISTER("wpan", commands);
 }
