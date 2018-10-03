@@ -23,10 +23,8 @@ static struct k_spinlock timeout_lock;
 
 static bool can_wait_forever;
 
-/* During a call to z_clock_announce(), the "current" time is "ahead"
- * of the reference used by timeout_list by this amount.
- */
-static int announce_advance;
+/* Cycles left to process in the currently-executing z_clock_announce() */
+static int announce_remaining;
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 int z_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
@@ -58,8 +56,8 @@ static void remove(struct _timeout *t)
 
 static s32_t adjust_elapsed(s32_t ticks)
 {
-	ticks -= z_clock_elapsed();
-	return ticks < 0 ? 0 : ticks;
+	ticks -= announce_remaining == 0 ? z_clock_elapsed() : 0;
+	return max(0, ticks);
 }
 
 void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
@@ -70,7 +68,7 @@ void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
 	LOCKED(&timeout_lock) {
 		struct _timeout *t;
 
-		to->dticks = adjust_elapsed(ticks) + announce_advance;
+		to->dticks = adjust_elapsed(ticks) + announce_remaining;
 		for (t = first(); t != NULL; t = next(t)) {
 			__ASSERT(t->dticks >= 0, "");
 
@@ -133,21 +131,18 @@ void z_clock_announce(s32_t ticks)
 	z_time_slice(ticks);
 #endif
 
-	LOCKED(&timeout_lock) {
-		curr_tick += ticks;
-		announce_advance = ticks;
-	}
-
+	announce_remaining = ticks;
 	while (true) {
 		LOCKED(&timeout_lock) {
 			t = first();
 			if (t != NULL) {
-				if (t->dticks <= announce_advance) {
-					announce_advance -= t->dticks;
+				if (t->dticks <= announce_remaining) {
+					announce_remaining -= t->dticks;
+					curr_tick += t->dticks;
 					t->dticks = 0;
 					remove(t);
 				} else {
-					t->dticks -= announce_advance;
+					t->dticks -= announce_remaining;
 					t = NULL;
 				}
 			}
@@ -160,7 +155,11 @@ void z_clock_announce(s32_t ticks)
 		t->fn(t);
 	}
 
-	announce_advance = 0;
+	LOCKED(&timeout_lock) {
+		curr_tick += announce_remaining;
+		announce_remaining = 0;
+	}
+
 	z_clock_set_timeout(_get_next_timeout_expiry(), false);
 }
 
