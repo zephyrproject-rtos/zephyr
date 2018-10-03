@@ -111,6 +111,8 @@ if(CONFIG_HAS_DTS)
     -O dts
     -o ${BOARD}.dts_compiled
     -b 0
+	${EXTRA_DTC_FLAGS} # User settable
+    -E unit_address_vs_reg
     ${BOARD}.dts.pre.tmp
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     RESULT_VARIABLE ret
