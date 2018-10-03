@@ -54,10 +54,9 @@ static void remove(struct _timeout *t)
 	t->dticks = _INACTIVE;
 }
 
-static s32_t adjust_elapsed(s32_t ticks)
+static s32_t elapsed(void)
 {
-	ticks -= announce_remaining == 0 ? z_clock_elapsed() : 0;
-	return max(0, ticks);
+	return announce_remaining == 0 ? z_clock_elapsed() : 0;
 }
 
 void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
@@ -68,7 +67,7 @@ void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
 	LOCKED(&timeout_lock) {
 		struct _timeout *t;
 
-		to->dticks = adjust_elapsed(ticks) + announce_remaining;
+		to->dticks = ticks + elapsed();
 		for (t = first(); t != NULL; t = next(t)) {
 			__ASSERT(t->dticks >= 0, "");
 
@@ -166,12 +165,12 @@ void z_clock_announce(s32_t ticks)
 s32_t _get_next_timeout_expiry(void)
 {
 	s32_t ret = 0;
-	int max = can_wait_forever ? K_FOREVER : INT_MAX;
+	int maxw = can_wait_forever ? K_FOREVER : INT_MAX;
 
 	LOCKED(&timeout_lock) {
 		struct _timeout *to = first();
 
-		ret = to == NULL ? max : adjust_elapsed(to->dticks);
+		ret = to == NULL ? maxw : max(0, to->dticks - elapsed());
 	}
 
 #ifdef CONFIG_TIMESLICING
