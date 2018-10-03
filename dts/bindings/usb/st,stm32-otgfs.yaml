@@ -41,4 +41,10 @@ properties:
       description: Size of USB dedicated RAM. STM32 SOC's reference
                    manual defines a shared FIFO size.
       generation: define
+
+    phys:
+      type: array
+      category: optional
+      generation: define
+      description: PHY provider specifier
 ...
