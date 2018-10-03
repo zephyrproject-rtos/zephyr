@@ -174,11 +174,17 @@ def get_node_label(node_compat, node_address):
                 convert_string_to_label(node_address.split('/')[-1])
     return def_label
 
-def find_parent_prop(node_address, prop):
+def get_parent_address(node_address):
     parent_address = ''
 
     for comp in node_address.split('/')[1:-1]:
         parent_address += '/' + comp
+
+    return parent_address
+
+
+def find_parent_prop(node_address, prop):
+    parent_address = get_parent_address(node_address)
 
     if prop in reduced[parent_address]['props']:
         parent_prop = reduced[parent_address]['props'].get(prop)
