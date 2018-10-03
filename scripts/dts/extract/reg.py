@@ -33,14 +33,7 @@ class DTReg(DTDirective):
         reg = reduced[node_address]['props']['reg']
         if type(reg) is not list: reg = [ reg, ]
 
-        nr_address_cells = reduced['/']['props'].get('#address-cells')
-        nr_size_cells = reduced['/']['props'].get('#size-cells')
-        address = ''
-        for comp in node_address.split('/')[1:-1]:
-            address += '/' + comp
-            nr_address_cells = reduced[address]['props'].get(
-                '#address-cells', nr_address_cells)
-            nr_size_cells = reduced[address]['props'].get('#size-cells', nr_size_cells)
+        (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_address)
 
         # generate defines
         post_label = "BASE_ADDRESS"
