@@ -249,6 +249,75 @@ static inline int _get_background_region_type(u8_t type)
 }
 
 #endif /* CONFIG_USERSPACE || CONFIG_MPU_STACK_GUARD */
+
+/**
+ * @brief insert a new MPU region, specified with the requested base and size,
+ *        partitioning the underlying MPU region.
+ *
+ * This function configures a requested MPU region, specified by its base
+ * address and region size, over an existing (and currently active) SRAM
+ * region, setting up a partition, so the requested MPU region is not
+ * overlapping with any other MPU regions. To implement the partitioning
+ * an additional background SRAM region may be required to be configured.
+ *
+ * @param   type            MPU region type
+ * @param   background_type Type of the additional MPU background region
+ *                          to be configured
+ * @param   base            base address in RAM
+ * @param   size            size of the region
+ */
+static void _mpu_configure_and_partition(u8_t type, u8_t background_type,
+	u32_t start, u32_t size)
+{
+	/* Obtain the MPU region index of the (background) SRAM region,
+	 * within which we are inserting an MPU region with the given
+	 * <type, start, size> configuration.
+	 */
+	int current_region_index = _get_region_index(start, size);
+	u32_t current_region_base =
+		_get_region_base_addr(current_region_index);
+	u32_t current_region_end = _get_region_end_addr(current_region_index);
+
+	arm_core_mpu_disable();
+
+	/* Adjust the borders of the current background region and (possibly)
+	 * configure an additional background region to maintain the proper
+	 * access permissions in the kernel ram area above and below the
+	 * region we are inserting.
+	 */
+	if (current_region_base == start) {
+		/* The current background region index starts exactly at
+		 * the start or the requested region. Disable the current
+		 * (background) region.
+		 */
+		ARM_MPU_ClrRegion(current_region_index);
+	} else {
+		/* Otherwise, adjust the end of the current background region
+		 * to the boundary of the requested region.
+		 */
+		_set_region_end_addr(current_region_index, start - 1);
+
+	}
+	if (current_region_end == (start + size - 1)) {
+		/* The current background region ends exactly at the end of the,
+		 * requested region. Do not configure the additional background
+		 * region.
+		 */
+	} else {
+		/* Otherwise, adjust the additional background region to end
+		 * at the end of the current background region and to start at
+		 * the end of the requested region.
+		 */
+		_mpu_configure_by_type(background_type,
+			start + size,
+			current_region_end + 1 - (start + size));
+	}
+
+	/* Configure the requested region */
+	_mpu_configure_by_type(type, start, size);
+
+}
+
 #endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 
 /**
@@ -260,7 +329,20 @@ static inline int _get_background_region_type(u8_t type)
  */
 void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 {
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+	/* Determine the kernel background region type, corresponding
+	 * to the type of the region we are configuring.
+	 */
+	int background_type = _get_background_region_type(type);
+
+	if (background_type == -EINVAL) {
+		return;
+	}
+	/* Program the new region by partitioning the underlying ram area */
+	_mpu_configure_and_partition(type, (u8_t)background_type, base, size);
+#else
 	_mpu_configure_by_type(type, base, size);
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 }
 
 #if defined(CONFIG_USERSPACE)
