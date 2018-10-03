@@ -16,3 +16,16 @@ module-str = SOC
 source "subsys/logging/Kconfig.template.log_config"
 
 endmenu
+
+# The helper symbols below are put here due to an unusual setup: The simulated
+# nrf52_bsim board uses the POSIX arch, but is compatible with Nordic ARM
+# boards
+
+config SOC_COMPATIBLE_NRF
+	bool
+
+config SOC_COMPATIBLE_NRF52X
+	bool
+
+config SOC_COMPATIBLE_NRF52832
+	bool
