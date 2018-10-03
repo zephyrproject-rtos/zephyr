@@ -6,7 +6,7 @@
 
 menuconfig CLOCK_CONTROL_NRF5
 	bool "NRF5 Clock controller support"
-	depends on SOC_FAMILY_NRF
+	depends on SOC_COMPATIBLE_NRF
 	help
 	  Enable support for the Nordic Semiconductor nRF5x series SoC clock
 	  driver.
