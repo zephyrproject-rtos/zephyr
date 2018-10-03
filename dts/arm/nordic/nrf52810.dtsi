@@ -39,6 +39,7 @@
 		i2c-0 = &i2c0;
 		spi-0 = &spi0;
 		uart-0 = &uart0;
+		adc-0 = &adc;
 	};
 
 	soc {
