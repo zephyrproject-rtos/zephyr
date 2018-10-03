@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2018, Yannis Damigos
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: NOP USB Transceiver
+version: 0.1
+
+description: >
+    This binding is to be used by all the usb transceivers which are built-in
+    with USB IP
+
+inherits:
+    !include phy.yaml
+
+properties:
+    compatible:
+      constraint: "usb-nop-xceiv"
+
+    "phy-cells":
+      description: should be 0
+...
