@@ -8,6 +8,12 @@
 
 / {
 	soc {
+		otgfs_phy: otgfs_phy {
+			compatible = "usb-nop-xceiv";
+			#phy-cells = <0>;
+			label = "OTGFS_PHY";
+		};
+
 		usb: usb@40006800 {
 			compatible = "st,stm32-usb";
 			reg = <0x40006800 0x40000>;
@@ -15,6 +21,7 @@
 			interrupt-names = "usb";
 			num-bidir-endpoints = <8>;
 			ram-size = <1024>;
+			phys = <&otgfs_phy>;
 			status = "disabled";
 			label = "USB";
 		};

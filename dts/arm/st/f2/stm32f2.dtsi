@@ -194,6 +194,12 @@
 			label = "UART_5";
 		};
 
+		otgfs_phy: otgfs_phy {
+			compatible = "usb-nop-xceiv";
+			#phy-cells = <0>;
+			label = "OTGFS_PHY";
+		};
+
 		usbotg_fs: usb@50000000 {
 			compatible = "st,stm32-otgfs";
 			reg = <0x50000000 0x40000>;
@@ -202,6 +208,7 @@
 			num-bidir-endpoints = <4>;
 			ram-size = <1280>;
 			maximum-speed = "full-speed";
+			phys = <&otgfs_phy>;
 			status = "disabled";
 			label = "OTGFS";
 		};
