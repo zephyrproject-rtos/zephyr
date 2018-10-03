@@ -13,7 +13,7 @@ religion, or sexual identity and orientation.
 
 Also refer to our
 `Zephyr project community guidelines
-<https://www.zephyrproject.org/developers/how-to-contribute/#community-guidelines>`__.
+<https://www.zephyrproject.org/developers/how-to-contribute/#community-guidelines>`
 
 Our Standards
 *************
