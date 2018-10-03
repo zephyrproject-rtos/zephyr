@@ -25,6 +25,8 @@ ExternalProject_Add(
   SOURCE_DIR ${APPLICATION_SOURCE_DIR}/remote
   INSTALL_COMMAND ""      # This particular build system has no install command
   BUILD_BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/openamp_remote-prefix/src/openamp_remote-build/zephyr/zephyr.bin"
+  CMAKE_CACHE_ARGS -DBOARD:STRING=${BOARD}
+  # NB: Do we need to pass on more CMake variables?
 )
 add_dependencies(core_m0_inc_target openamp_remote)
 
